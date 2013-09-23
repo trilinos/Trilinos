@@ -46,6 +46,11 @@
 #ifndef MUELU_COORDINATESTRANSFER_FACTORY_DEF_HPP
 #define MUELU_COORDINATESTRANSFER_FACTORY_DEF_HPP
 
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
+
 #include "Xpetra_ImportFactory.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"
 #include "Xpetra_MapFactory.hpp"
@@ -131,10 +136,8 @@ namespace MueLu {
     const ArrayRCP<const LO>    procWinner   = aggregates->GetProcWinner()->getData(0);
 
     // Fill in coarse coordinates
-    // FIXME: in the case of coupled aggregation, do we need to fetch ghost data
-    // in order to properly compute the center of the aggregate?
     for (size_t j = 0; j < fineCoords->getNumVectors(); j++) {
-      ArrayRCP<const Scalar> fineCoordsData = fineCoords->getData(j);
+      ArrayRCP<const Scalar> fineCoordsData = ghostedCoords->getData(j);
       ArrayRCP<Scalar>     coarseCoordsData = coarseCoords->getDataNonConst(j);
 
       for (LO lnode = 0; lnode < vertex2AggID.size(); lnode++)

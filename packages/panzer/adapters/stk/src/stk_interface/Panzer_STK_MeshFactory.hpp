@@ -59,6 +59,8 @@ class STK_Interface;
   */
 class STK_MeshFactory : public Teuchos::ParameterListAcceptorDefaultBase {
 public:
+   STK_MeshFactory() : enableRebalance_(false) {}
+
    /** Construct a STK_Inteface object described
      * by this factory.
      *
@@ -90,9 +92,45 @@ public:
       periodicBC = parser.getMatchers();
    }
 
+   void enableRebalance(bool enable,const Teuchos::RCP<const Teuchos::ParameterList> & rebalanceList=Teuchos::null) 
+   { enableRebalance_ = enable; 
+     rebalanceList_ = rebalanceList; }
+
+   void rebalance(STK_Interface & mesh) const
+   {
+     if(rebalanceList_!=Teuchos::null) {
+       // loop over user specified partitioning lists
+       for(Teuchos::ParameterList::ConstIterator itr=rebalanceList_->begin();
+           itr!=rebalanceList_->end();++itr) {
+
+         const Teuchos::ParameterEntry & entry = rebalanceList_->entry(itr);
+         TEUCHOS_TEST_FOR_EXCEPTION(!entry.isList(),std::runtime_error,
+                                    "Rebalance list is incorrect:\n" << entry << "\nA Zoltan list formated with strings is expected.");
+
+         // partition according to the list
+         mesh.rebalance(Teuchos::getValue<Teuchos::ParameterList>(entry));
+
+         // rebuild mesh internals
+         mesh.buildLocalElementIDs();
+       }
+     }
+     else if(enableRebalance_) {
+       // do the default thing, once
+       Teuchos::ParameterList emptyList;
+       mesh.rebalance(emptyList);
+
+       // rebuild mesh internals
+       mesh.buildLocalElementIDs();
+     }
+   }
+
 protected:
    // vector of periodic boundary condition objects
    std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > periodicBCVec_; 
+
+   // for managing rebalance
+   bool enableRebalance_;
+   Teuchos::RCP<const Teuchos::ParameterList> rebalanceList_;
 };
 
 }

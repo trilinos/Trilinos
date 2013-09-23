@@ -165,8 +165,8 @@ namespace MueLu {
 
       if (varName == "Smoother") {
         Teuchos::ParameterList smootherParamList;
-        smootherParamList.set("relaxation: type", "Symmetric Gauss-Seidel");
-        smootherParamList.set("relaxation: sweeps", (LO) 1);
+        smootherParamList.set("relaxation: type",           "Symmetric Gauss-Seidel");
+        smootherParamList.set("relaxation: sweeps",         (LO) 1);
         smootherParamList.set("relaxation: damping factor", (Scalar) 1.0); //FIXME once Ifpack2's parameter list validator is fixed, change this back to Scalar
         return SetAndReturnDefaultFactory(varName, rcp( new SmootherFactory(rcp(new TrilinosSmoother("RELAXATION", smootherParamList)))));
       }
@@ -184,7 +184,7 @@ namespace MueLu {
   const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetAndReturnDefaultFactory(const std::string & varName, const RCP<const FactoryBase> & factory) const {
     TEUCHOS_TEST_FOR_EXCEPTION(factory == Teuchos::null, Exceptions::RuntimeError, "");
 
-    GetOStream(Warnings0,  0) << "Attention: No factory has been specified for building '" << varName << "'." << std::endl;
+    GetOStream(Warnings1,  0) << "Attention: No factory has been specified for building '" << varName << "'." << std::endl;
     GetOStream(Warnings00, 0) << "           Using default factory ";
     { Teuchos::OSTab tab(getOStream(), 7); factory->describe(GetOStream(Warnings00), GetVerbLevel());}
 

@@ -242,6 +242,13 @@ class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_
   TEUCHOS_DEPRECATED typedef typename MatrixType::node_type Node;
 
 
+  //! The type of the Kokkos Node used by the input MatrixType.
+  typedef typename MatrixType::mat_vec_type mat_vec_type;
+
+  //! Preserved only for backwards compatibility.  Please use "mat_vec_type".
+  TEUCHOS_DEPRECATED typedef typename MatrixType::mat_vec_type LocalMatOps;
+
+
   //! The type of the magnitude (absolute value) of a matrix entry.
   typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
@@ -422,7 +429,7 @@ class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_
   int getGlobalNumEntries() const {return(getL().getGlobalNumEntries()+getU().getGlobalNumEntries());}
 
   //! Returns the Ifpack2::IlukGraph associated with this factored matrix.
-  const Teuchos::RCP<Ifpack2::IlukGraph<local_ordinal_type,global_ordinal_type,node_type> >& getGraph() const {return(Graph_);}
+  const Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type,mat_vec_type> > >& getGraph() const {return(Graph_);}
 
   //! Returns the L factor associated with this factored matrix.
   const MatrixType& getL() const {return(*L_);}
@@ -470,7 +477,7 @@ class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_
      Teuchos::RCP<const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& Xout,
      Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& Yout) const;
   bool isOverlapped_;
-  Teuchos::RCP<Ifpack2::IlukGraph<local_ordinal_type,global_ordinal_type,node_type> > Graph_;
+  Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type,mat_vec_type> > > Graph_;
   const Teuchos::RCP<const MatrixType> A_;
   Teuchos::RCP<MatrixType> L_;
   Teuchos::RCP<MatrixType> U_;
@@ -522,9 +529,6 @@ template <class MatrixType>
 template <typename new_matrix_type>
 Teuchos::RCP< RILUK< new_matrix_type > >  
 RILUK<MatrixType>::clone(const Teuchos::RCP< const new_matrix_type>& A_newnode) const{
-  typedef typename new_matrix_type::global_ordinal_type global_ordinal_type;
-  typedef typename new_matrix_type::local_ordinal_type local_ordinal_type;
-  typedef typename new_matrix_type::scalar_type scalar_type;
   typedef typename new_matrix_type::node_type new_node_type;
   typedef typename new_matrix_type::mat_solve_type mat_solve_type;
   typedef RILUK< new_matrix_type > new_riluk_type;

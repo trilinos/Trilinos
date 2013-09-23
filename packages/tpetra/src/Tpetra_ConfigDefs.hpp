@@ -322,7 +322,6 @@ namespace Tpetra {
   namespace Ext {
   }
 
-  /// \namespace MatrixMatrix
   /// \brief Distributed sparse matrix-matrix multiply and add.
   ///
   /// This namespace includes functions for computing the sum or product
@@ -340,5 +339,11 @@ namespace Tpetra {
     Symmetric
   };
 }
+
+#if defined(HAVE_TPETRA_KOKKOSCORE) && defined(HAVE_TPETRA_KOKKOSCOMPAT) && defined(TPETRA_ENABLE_KOKKOS_DISTOBJECT)
+#define TPETRA_USE_KOKKOS_DISTOBJECT 1
+#else
+#define TPETRA_USE_KOKKOS_DISTOBJECT 0
+#endif
 
 #endif // TPETRA_CONFIGDEFS_HPP

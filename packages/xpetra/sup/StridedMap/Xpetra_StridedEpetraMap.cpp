@@ -185,21 +185,23 @@ namespace Xpetra {
 
 
   StridedEpetraMap::StridedEpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView<const int> &elementList, int indexBase,
-                       std::vector<size_t>& stridingInfo, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, LocalOrdinal stridedBlockId, const Teuchos::RCP<Node> &node)
-  : EpetraMap(numGlobalElements, elementList, indexBase, comm, node), Xpetra::StridedMap<int,int>(numGlobalElements, elementList, indexBase, stridingInfo, comm, stridedBlockId)
+                       std::vector<size_t>& stridingInfo, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, LocalOrdinal stridedBlockId, GlobalOrdinal offset, const Teuchos::RCP<Node> &node)
+  : EpetraMap(numGlobalElements, elementList, indexBase, comm, node), Xpetra::StridedMap<int,int>(numGlobalElements, elementList.size(), indexBase, stridingInfo, comm, stridedBlockId, offset)
   {
-    int nDofsPerNode = Teuchos::as<int>(getFixedBlockSize());
+    /* XXX */ // I'm responsible to provide valid maps!!!
+    /*int nDofsPerNode = Teuchos::as<int>(getFixedBlockSize());
     if(stridedBlockId != -1) {
       TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo.size() < Teuchos::as<size_t>(stridedBlockId), Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: stridedBlockId > stridingInfo.size()");
       nDofsPerNode = Teuchos::as<int>(stridingInfo[stridedBlockId]);
     }
     TEUCHOS_TEST_FOR_EXCEPTION(map_->NumMyPoints() % nDofsPerNode != 0, Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: wrong distribution of dofs among processors.");
+    */
 
     // create EpetraMap using the dofs from ElementList
-    IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(numGlobalElements, elementList.size(), &elementList[0], 1, indexBase, *toEpetra(comm))))));
+    IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(numGlobalElements, elementList.size(), elementList.getRawPtr(), 1, indexBase, *toEpetra(comm))))));
 
     // set parameters for striding information
-    TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: CheckConsistency() == false");
+    //TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: CheckConsistency() == false");
   }
 
 

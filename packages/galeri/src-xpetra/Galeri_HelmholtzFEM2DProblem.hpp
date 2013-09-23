@@ -168,7 +168,7 @@ namespace Galeri {
       vals.resize(quadPoints.size());
       dxs.resize(quadPoints.size());
       dys.resize(quadPoints.size());
-      for(int i=0; i<quadPoints.size(); i++) {
+      for(unsigned int i=0; i<quadPoints.size(); i++) {
 	EvalBasis(quadPoints[i], vals[i], dxs[i], dys[i]);
       }
 
@@ -200,8 +200,8 @@ namespace Galeri {
 	  Scalar mass = qdwt*cpxshift*omega_*omega_*sx*sy;
 	  Scalar pml1 = qdwt*sy/sx;
 	  Scalar pml2 = qdwt*sx/sy;
-	  for(int m=0; m<numDofPerElem; m++) {
-	    for(int n=0; n<numDofPerElem; n++) {
+	  for(unsigned int m=0; m<numDofPerElem; m++) {
+	    for(unsigned int n=0; n<numDofPerElem; n++) {
 	      KE[m][n] += pml1*curdxs[m]*curdxs[n] + pml2*curdys[m]*curdys[n] - mass*curvals[m]*curvals[n];
 	    }
 	  }
@@ -249,7 +249,7 @@ namespace Galeri {
       vals.resize(quadPoints.size());
       dxs.resize(quadPoints.size());
       dys.resize(quadPoints.size());
-      for(int i=0; i<quadPoints.size(); i++) {
+      for(unsigned int i=0; i<quadPoints.size(); i++) {
 	EvalBasis(quadPoints[i], vals[i], dxs[i], dys[i]);
       }
 
@@ -282,8 +282,8 @@ namespace Galeri {
 	  Scalar mass = qdwt*sx*sy;
 	  Scalar pml1 = qdwt*sy/sx;
 	  Scalar pml2 = qdwt*sx/sy;
-	  for(int m=0; m<numDofPerElem; m++) {
-	    for(int n=0; n<numDofPerElem; n++) {
+	  for(unsigned int m=0; m<numDofPerElem; m++) {
+	    for(unsigned int n=0; n<numDofPerElem; n++) {
 	      KE[m][n] += pml1*curdxs[m]*curdxs[n] + pml2*curdys[m]*curdys[n];
 	      ME[m][n] += mass*curvals[m]*curvals[n];
 	    }
@@ -416,7 +416,7 @@ namespace Galeri {
       // For the current element domain, evaluate the PML stretching functions at the quadrature points
       sx.resize(quadPoints.size());
       sy.resize(quadPoints.size());
-      for(int i=0; i<quadPoints.size(); i++) {
+      for(unsigned int i=0; i<quadPoints.size(); i++) {
 	double quadx=quadPoints[i].x;
 	double quady=quadPoints[i].y;
 	double curx=shiftx+quadx;

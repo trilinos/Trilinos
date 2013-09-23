@@ -210,6 +210,12 @@ void Piro::Epetra::VelocityVerletSolver::evalModel( const InArgs& inArgs,
                      Teuchos::Exceptions::InvalidParameter,
                      std::endl << "Error in Piro::Epetra::VelocityVerletSolver " <<
                      "Requires initial x and x_dot: " << std::endl);
+
+  double t = t_init;
+
+  // Observe initial condition
+  if (observer != Teuchos::null) observer->observeSolution(*x, t);
+
   double vo; v->Norm2(&vo);
   *out << "Initial Velocity = " << vo << std::endl;
 
@@ -223,7 +229,6 @@ void Piro::Epetra::VelocityVerletSolver::evalModel( const InArgs& inArgs,
    model_outargs.set_f(a);
    if (g_out != Teuchos::null) model_outargs.set_g(0, g_out);
 
-   double t = t_init;
    double ddt = 0.5 * delta_t * delta_t;
 
    // Calculate acceleration at time 0
@@ -241,7 +246,9 @@ void Piro::Epetra::VelocityVerletSolver::evalModel( const InArgs& inArgs,
 
      v->Update(0.5*delta_t, *a, 1.0);
 
+     // Observe completed time step
      if (observer != Teuchos::null) observer->observeSolution(*x, t);
+
      if (g_out != Teuchos::null) 
        g_out->Print(*out << "Responses at time step(time) = " << timeStep << "("<<t<<")");
    }

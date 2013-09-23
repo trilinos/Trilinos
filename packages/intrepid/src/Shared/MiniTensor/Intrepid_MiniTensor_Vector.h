@@ -47,36 +47,58 @@
 #include <iostream>
 #include <vector>
 
-#include "Intrepid_MiniTensor_Definitions.h"
-#include "Intrepid_MiniTensor_Storage.h"
 #include "Intrepid_MiniTensor_TensorBase.h"
-#include "Intrepid_MiniTensor_Utilities.h"
 
 namespace Intrepid {
+
+template<typename T, Index N>
+struct vector_store
+{
+  typedef Storage<T, dimension_power<N, 1>::value> type;
+};
 
 ///
 /// Vector class.
 ///
-template<typename T>
-class Vector : public TensorBase<T>
+template<typename T, Index N = DYNAMIC>
+class Vector : public TensorBase<T, typename vector_store<T, N>::type>
 {
 public:
 
   ///
   /// Order
   ///
-  static Index const
-  order = 1U;
+  static
+  Index const
+  ORDER = 1;
 
   ///
-  /// Default constructor
+  /// Static or dynamic
   ///
-  Vector();
+  static
+  bool const
+  IS_DYNAMIC = N == DYNAMIC;
+
+  ///
+  /// Storage type
+  ///
+  typedef typename vector_store<T, N>::type
+  Store;
+
+  ///
+  /// Vector order
+  ///
+  static
+  Index
+  get_order() {return ORDER;}
 
   ///
   /// Construction that initializes to NaNs
   /// \param dimension the space dimension
   ///
+  explicit
+  Vector();
+
   explicit
   Vector(Index const dimension);
 
@@ -86,15 +108,24 @@ public:
   /// \param value all components are set equal to this
   ///
   explicit
-  Vector(Index const dimension, ComponentValue value);
+  Vector(ComponentValue const value);
+
+  explicit
+  Vector(Index const dimension, ComponentValue const value);
 
   ///
-  /// Create vector from a scalar
+  /// Create vector from array.
   /// \param dimension the space dimension
-  /// \param s all components are set equal to this value
+  /// \param data_ptr pointer into the array
   ///
-  explicit
-  Vector(Index const dimension, T const & s);
+  Vector(T const * data_ptr);
+
+  Vector(Index const dimension, T const * data_ptr);
+
+  ///
+  /// Copy constructor
+  ///
+  Vector(Vector<T, N> const & v);
 
   ///
   /// Create vector specifying components
@@ -108,18 +139,6 @@ public:
   /// \param s0 s1 s2 are the vector components in the R^3 canonical basis
   ///
   Vector(T const & s0, T const & s1, T const & s2);
-
-  ///
-  /// Create vector from array.
-  /// \param dimension the space dimension
-  /// \param data_ptr pointer into the array
-  ///
-  Vector(Index const dimension, T const * data_ptr);
-
-  ///
-  /// Copy constructor
-  ///
-  Vector(Vector<T> const & v);
 
   ///
   /// Simple destructor
@@ -141,10 +160,16 @@ public:
   operator()(Index const i);
 
   ///
-  /// Vector order
+  /// \return dimension
   ///
   Index
-  get_order() const {return order;}
+  get_dimension() const;
+
+  ///
+  /// \param dimension of vector
+  ///
+  void
+  set_dimension(Index const dimension);
 
 };
 
@@ -152,49 +177,49 @@ public:
 /// Vector addition
 /// \return \f$ u + v \f$
 ///
-template<typename S, typename T>
-Vector<typename Promote<S, T>::type>
-operator+(Vector<S> const & u, Vector<T> const & v);
+template<typename S, typename T, Index N>
+Vector<typename Promote<S, T>::type, N>
+operator+(Vector<S, N> const & u, Vector<T, N> const & v);
 
 ///
 /// Vector substraction
 /// \return \f$ u - v \f$
 ///
-template<typename S, typename T>
-Vector<typename Promote<S, T>::type>
-operator-(Vector<S> const & u, Vector<T> const & v);
+template<typename S, typename T, Index N>
+Vector<typename Promote<S, T>::type, N>
+operator-(Vector<S, N> const & u, Vector<T, N> const & v);
 
 ///
 /// Vector minus
 /// \return \f$ -u \f$
 ///
-template<typename T>
-Vector<T>
-operator-(Vector<T> const & u);
+template<typename T, Index N>
+Vector<T, N>
+operator-(Vector<T, N> const & u);
 
 ///
 /// Vector dot product
 /// \return \f$ u \cdot v \f$
 ///
-template<typename S, typename T>
+template<typename S, typename T, Index N>
 typename Promote<S, T>::type
-operator*(Vector<S> const & u, Vector<T> const & v);
+operator*(Vector<S, N> const & u, Vector<T, N> const & v);
 
 ///
 /// Vector equality tested by components
 /// \return \f$ u \equiv v \f$
 ///
-template<typename T>
+template<typename T, Index N>
 bool
-operator==(Vector<T> const & u, Vector<T> const & v);
+operator==(Vector<T, N> const & u, Vector<T, N> const & v);
 
 ///
 /// Vector inequality tested by components
 /// \return \f$ u \neq v \f$
 ///
-template<typename T>
+template<typename T, Index N>
 bool
-operator!=(Vector<T> const & u, Vector<T> const & v);
+operator!=(Vector<T, N> const & u, Vector<T, N> const & v);
 
 ///
 /// Scalar vector product
@@ -202,9 +227,9 @@ operator!=(Vector<T> const & u, Vector<T> const & v);
 /// \param u vector factor
 /// \return \f$ s u \f$
 ///
-template<typename S, typename T>
-typename lazy_disable_if< order_1234<S>, apply_vector< Promote<S,T> > >::type
-operator*(S const & s, Vector<T> const & u);
+template<typename S, typename T, Index N>
+typename lazy_disable_if< order_1234<S>, apply_vector< Promote<S,T>, N > >::type
+operator*(S const & s, Vector<T, N> const & u);
 
 ///
 /// Vector scalar product
@@ -212,9 +237,9 @@ operator*(S const & s, Vector<T> const & u);
 /// \param s scalar factor
 /// \return \f$ s u \f$
 ///
-template<typename S, typename T>
-typename lazy_disable_if< order_1234<S>, apply_vector< Promote<S,T> > >::type
-operator*(Vector<T> const & u, S const & s);
+template<typename S, typename T, Index N>
+typename lazy_disable_if< order_1234<S>, apply_vector< Promote<S,T>, N > >::type
+operator*(Vector<T, N> const & u, S const & s);
 
 ///
 /// Vector scalar division
@@ -222,58 +247,75 @@ operator*(Vector<T> const & u, S const & s);
 /// \param s scalar that divides each component of vector
 /// \return \f$ u / s \f$
 ///
-template<typename S, typename T>
-Vector<typename Promote<S, T>::type>
-operator/(Vector<T> const & u, S const & s);
+template<typename S, typename T, Index N>
+Vector<typename Promote<S, T>::type, N>
+operator/(Vector<T, N> const & u, S const & s);
+
+///
+/// Scalar vector division
+/// \param s scalar
+/// \param u vector that divides scalar with each component
+/// \return \f$ s / u \f$
+///
+template<typename S, typename T, Index N>
+Vector<typename Promote<S, T>::type, N>
+operator/(S const & s, Vector<T, N> const & u);
 
 ///
 /// Vector dot product
 /// \return \f$ u \cdot v \f$
 ///
-template<typename S, typename T>
+template<typename S, typename T, Index N>
 typename Promote<S, T>::type
-dot(Vector<S> const & u, Vector<T> const & v);
+dot(Vector<S, N> const & u, Vector<T, N> const & v);
 
 ///
 /// Cross product only valid for R^3.
 /// R^N with N != 3 will produce an error.
 /// \return \f$ u \times v \f$
 ///
-template<typename S, typename T>
-Vector<typename Promote<S, T>::type>
-cross(Vector<S> const & u, Vector<T> const & v);
+template<typename S, typename T, Index N>
+Vector<typename Promote<S, T>::type, N>
+cross(Vector<S, N> const & u, Vector<T, N> const & v);
 
 ///
 /// Vector 2-norm
 /// \return \f$ \sqrt{u \cdot u} \f$
 ///
-template<typename T>
+template<typename T, Index N>
 T
-norm(Vector<T> const & u);
+norm(Vector<T, N> const & u);
 
 ///
 /// Vector 2-norm square. Used for fast distance calculation.
 /// \return \f$ u \cdot u \f$
 ///
-template<typename T>
+template<typename T, Index N>
 T
-norm_square(Vector<T> const & u);
+norm_square(Vector<T, N> const & u);
 
 ///
 /// Vector 1-norm
 /// \return \f$ |u_0|+|u_1|+|u_2| \f$
 ///
-template<typename T>
+template<typename T, Index N>
 T
-norm_1(Vector<T> const & u);
+norm_1(Vector<T, N> const & u);
 
 ///
 /// Vector infinity-norm
 /// \return \f$ \max(|u_0|,|u_1|,|u_2|) \f$
 ///
-template<typename T>
+template<typename T, Index N>
 T
-norm_infinity(Vector<T> const & u);
+norm_infinity(Vector<T, N> const & u);
+
+///
+/// \return u / |u|, fails for |u| = 0
+///
+template<typename T, Index N>
+Vector<T, N>
+unit(Vector<T, N> const & u);
 
 ///
 /// Vector input
@@ -281,9 +323,9 @@ norm_infinity(Vector<T> const & u);
 /// \param is input stream
 /// \return is input stream
 ///
-template<typename T>
+template<typename T, Index N>
 std::istream &
-operator>>(std::istream & is, Vector<T> & u);
+operator>>(std::istream & is, Vector<T, N> & u);
 
 ///
 /// Vector output
@@ -291,9 +333,9 @@ operator>>(std::istream & is, Vector<T> & u);
 /// \param os output stream
 /// \return os output stream
 ///
-template<typename T>
+template<typename T, Index N>
 std::ostream &
-operator<<(std::ostream & os, Vector<T> const & u);
+operator<<(std::ostream & os, Vector<T, N> const & u);
 
 } // namespace Intrepid
 

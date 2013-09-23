@@ -45,7 +45,11 @@
 #include <Teuchos_DataAccess.hpp>
 #include <Teuchos_Range1D.hpp>
 #include "Tpetra_ConfigDefs.hpp"
+#if TPETRA_USE_KOKKOS_DISTOBJECT
+#include "Tpetra_DistObjectKA.hpp"
+#else
 #include "Tpetra_DistObject.hpp"
+#endif
 #include "Tpetra_ViewAccepter.hpp"
 #include <Kokkos_MultiVector.hpp>
 #include <Teuchos_BLAS_types.hpp>
@@ -321,7 +325,11 @@ namespace Tpetra {
            class GlobalOrdinal=LocalOrdinal,
            class Node=KokkosClassic::DefaultNode::DefaultNodeType>
   class MultiVector :
+#if TPETRA_USE_KOKKOS_DISTOBJECT
+    public DistObjectKA<Scalar, LocalOrdinal, GlobalOrdinal, Node>
+#else
     public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
+#endif
   {
   public:
     //! @name Typedefs to facilitate template metaprogramming.
@@ -336,6 +344,12 @@ namespace Tpetra {
     //! The Kokkos Node type.
     typedef Node          node_type;
 
+#if TPETRA_USE_KOKKOS_DISTOBJECT
+    typedef DistObjectKA<Scalar, LocalOrdinal, GlobalOrdinal, Node> DO;
+    typedef typename DO::device_type device_type;
+#else
+    typedef DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> DO;
+#endif
 
     //@}
     //! @name Constructors and destructor
@@ -390,6 +404,21 @@ namespace Tpetra {
     MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
                  const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> >&ArrayOfPtrs,
                  size_t NumVectors);
+
+    /// \brief Expert mode constructor.
+    ///
+    /// \warning This constructor is only for expert users.  We make
+    ///   no promises about backwards compatibility for this interface.
+    ///   It may change or go away at any time.
+    ///
+    /// \param map [in] Map describing the distribution of rows.
+    /// \param data [in] Device pointer to the data (column-major)
+    /// \param LDA [in] Leading dimension (stride) of the data
+    /// \param numVecs [in] Number of vectors (columns)
+    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+                 const Teuchos::ArrayRCP<Scalar>& data,
+                 const size_t LDA,
+                 const size_t numVectors);
 
     //! Create a cloned MultiVector for a different node type
     template <class Node2>
@@ -691,12 +720,25 @@ namespace Tpetra {
     KokkosClassic::MultiVector<Scalar,Node> & getLocalMVNonConst();
 
     //@}
-
     //! @name Mathematical methods
     //@{
 
-    //! Compute dot product of each corresponding pair of vectors, dots[i] = this[i].dot(A[i])
-    void dot(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Teuchos::ArrayView<Scalar> &dots) const;
+    /// \brief Compute the dot product of each corresponding pair of
+    ///   vectors (columns) in A and B.
+    ///
+    /// The "dot product" is the standard Euclidean inner product.  If
+    /// the type of entries of the vectors (scalar_type) is complex,
+    /// then A is transposed, not <tt>*this</tt>.  For example, if x
+    /// and y each have one column, then <tt>x.dot (y, dots)</tt>
+    /// computes \f$y^* x = \bar{y}^T x = \sum_i \bar{y}_i \cdot x_i\f$.
+    ///
+    /// \pre <tt>*this</tt> and A have the same number of columns (vectors).
+    /// \pre \c dots has at least as many entries as the number of columns in A.
+    ///
+    /// \post <tt>dots[j] == (this->getVector[j])->dot (* (A.getVector[j]))</tt>
+    void
+    dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+         const Teuchos::ArrayView<Scalar>& dots) const;
 
     //! Put element-wise absolute values of input Multi-vector in target: A = abs(this)
     void abs(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A);
@@ -802,6 +844,14 @@ namespace Tpetra {
     ///
     /// B must have the same dimensions as <tt>*this</tt>, while A
     /// must have the same number of rows but a single column.
+    ///
+    /// We do not require that A, B, and <tt>*this</tt> have
+    /// compatible Maps, as long as the number of rows in A, B, and
+    /// <tt>*this</tt> on each process is the same.  For example, one
+    /// or more of these vectors might have a locally replicated Map,
+    /// or a Map with a local communicator (<tt>MPI_COMM_SELF</tt>).
+    /// This case may occur in block relaxation algorithms when
+    /// applying a diagonal scaling.
     void
     elementWiseMultiply (Scalar scalarAB,
                          const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
@@ -992,14 +1042,40 @@ namespace Tpetra {
     virtual bool
     checkSizes (const SrcDistObject& sourceObj);
 
+    //! Number of packets to send per LID
+    virtual size_t constantNumberOfPackets () const;
+
+#if TPETRA_USE_KOKKOS_DISTOBJECT
+    virtual void
+    copyAndPermute (
+      const SrcDistObject& sourceObj,
+      size_t numSameIDs,
+      const Kokkos::View<const LocalOrdinal*, device_type> &permuteToLIDs,
+      const Kokkos::View<const LocalOrdinal*, device_type> &permuteFromLIDs);
+
+    virtual void
+    packAndPrepare (
+      const SrcDistObject& sourceObj,
+      const Kokkos::View<const LocalOrdinal*, device_type> &exportLIDs,
+      Kokkos::View<Scalar*, device_type> &exports,
+      const Kokkos::View<size_t*, device_type> &numPacketsPerLID,
+      size_t& constantNumPackets,
+      Distributor &distor);
+
+    virtual void
+    unpackAndCombine (
+      const Kokkos::View<const LocalOrdinal*, device_type> &importLIDs,
+      const Kokkos::View<const Scalar*, device_type> &imports,
+      const Kokkos::View<size_t*, device_type> &numPacketsPerLID,
+      size_t constantNumPackets,
+      Distributor &distor,
+      CombineMode CM);
+#else
     virtual void
     copyAndPermute (const SrcDistObject& sourceObj,
                     size_t numSameIDs,
                     const ArrayView<const LocalOrdinal>& permuteToLIDs,
                     const ArrayView<const LocalOrdinal>& permuteFromLIDs);
-
-    //! Number of packets to send per LID
-    virtual size_t constantNumberOfPackets () const;
 
     virtual void
     packAndPrepare (const SrcDistObject& sourceObj,
@@ -1016,6 +1092,7 @@ namespace Tpetra {
                       size_t constantNumPackets,
                       Distributor& distor,
                       CombineMode CM);
+#endif
 
     void createViews () const;
     void createViewsNonConst (KokkosClassic::ReadWriteOption rwo);
@@ -1039,6 +1116,25 @@ namespace Tpetra {
     mutable bool createViewsNonConstRaisedEfficiencyWarning_;
 
     //@}
+
+#if TPETRA_USE_KOKKOS_DISTOBJECT
+
+    Kokkos::View<const Scalar*, device_type, Kokkos::MemoryUnmanaged>
+    getKokkosView() const {
+      Teuchos::ArrayRCP<const Scalar> buff = MVT::getValues (lclMV_);
+      Kokkos::View<const Scalar*, device_type, Kokkos::MemoryUnmanaged> v(
+        buff.getRawPtr(), buff.size());
+      return v;
+    }
+    Kokkos::View<Scalar*, device_type, Kokkos::MemoryUnmanaged>
+    getKokkosViewNonConst() {
+      Teuchos::ArrayRCP<Scalar> buff = MVT::getValuesNonConst (lclMV_);
+      Kokkos::View<Scalar*, device_type, Kokkos::MemoryUnmanaged> v(
+        buff.getRawPtr(), buff.size());
+      return v;
+    }
+
+#endif
   }; // class MultiVector
 
   /// \brief Nonmember MultiVector constructor: make a MultiVector from a given Map.
@@ -1109,18 +1205,18 @@ namespace Tpetra {
   template <class Node2>
   Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::clone(const RCP<Node2> &node2) const{
-	typedef Map<LocalOrdinal,GlobalOrdinal,Node2> Map2;
+        typedef Map<LocalOrdinal,GlobalOrdinal,Node2> Map2;
         typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node2> MV2;
         Teuchos::ArrayRCP< Teuchos::ArrayRCP<const Scalar> > MV_view = this->get2dView();
-        Teuchos::RCP<const Map2> clonedMap = this->getMap()->template clone(node2);
+        Teuchos::RCP<const Map2> clonedMap = this->getMap()->template clone<Node2> (node2);
         Teuchos::RCP<MV2> clonedMV = Teuchos::rcp(new MV2(clonedMap, this->getNumVectors()));
         Teuchos::ArrayRCP< Teuchos::ArrayRCP<Scalar> > clonedMV_view = clonedMV->get2dViewNonConst();
         for (size_t i = 0; i < this->getNumVectors(); i++)
-		clonedMV_view[i].deepCopy(MV_view[i]());
+                clonedMV_view[i].deepCopy(MV_view[i]());
         clonedMV_view = Teuchos::null;
         return clonedMV;
   }
-      
+
 
 
 } // namespace Tpetra

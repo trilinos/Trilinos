@@ -70,6 +70,7 @@
 
 namespace {
   const std::string id_str()           { return std::string("id");}
+  const std::string db_name_str()      { return std::string("db_name");}
   const std::string orig_topo_str()    { return std::string("original_topology_type");}
   const std::string orig_block_order() { return std::string("original_block_order");}
 
@@ -1505,6 +1506,18 @@ namespace Ioss {
 	    if (this_ge->name() != base) {
 	      this_ge->set_name(base);
 	    }
+	  }
+
+	  // See if there is an 'db_name' property...
+	  if (ge->property_exists(db_name_str())) {
+	    std::string db_name = ge->get_property(db_name_str()).get_string();
+
+	    if (this_ge->property_exists(db_name_str())) {
+	      // Remove the old property...
+	      this_ge->property_erase(db_name_str());
+	    }
+	    // Set the new property
+	    this_ge->property_add(Property(db_name_str(), db_name));
 	  }
 
 	  // See if there is a 'original_topology_type' property...

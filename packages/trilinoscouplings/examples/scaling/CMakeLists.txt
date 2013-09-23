@@ -228,7 +228,7 @@ ENDIF()
 
 # Copy over example xml file for [E|T]petraIntrepidPoisson example
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copyIntrepidPoissonFiles
-  DEST_FILES   intrepid_poisson.xml
+  DEST_FILES   intrepid_poisson.xml intrepid_poisson_muelu_cheby.xml
   )
 
 # mfh 14 Feb 2013

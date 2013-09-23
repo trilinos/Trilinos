@@ -79,7 +79,7 @@ namespace Ifpack2 {
  called before the graph is used for subsequent operations.
  
  */    
-template<class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+template<class GraphType>
 class IlukGraph : public Teuchos::Describable {
 public:
   //! IlukGraph constuctor.
@@ -95,10 +95,10 @@ public:
    
    \warning Actual construction occurs in constructFilledGraph.
    */
-  IlukGraph(const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > &Graph_in, int LevelFill_in, int LevelOverlap_in);
+  IlukGraph(const Teuchos::RCP<const GraphType> &Graph_in, int LevelFill_in, int LevelOverlap_in);
   
   //! Copy constructor.
-  IlukGraph(const IlukGraph<LocalOrdinal,GlobalOrdinal,Node> & Graph_in);
+  IlukGraph(const IlukGraph<GraphType> & Graph_in);
   
   //! IlukGraph Destructor
   virtual ~IlukGraph();
@@ -128,19 +128,19 @@ public:
   int getLevelOverlap() const {return(LevelOverlap_);}
   
   //! Returns the graph of lower triangle of the ILU(k) graph as a Tpetra::CrsGraph.
-  Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > 
+  Teuchos::RCP<GraphType> 
   getL_Graph () const {
     return L_Graph_;
   }
   
   //! Returns the graph of upper triangle of the ILU(k) graph as a Tpetra::CrsGraph.
-  Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > 
+  Teuchos::RCP<GraphType> 
   getU_Graph () const {
     return U_Graph_;
   }
   
   //! Returns the the overlapped graph.
-  Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > 
+  Teuchos::RCP<GraphType> 
   getOverlapGraph () const {
     return OverlapGraph_;
   }
@@ -149,22 +149,22 @@ public:
   size_t getNumGlobalDiagonals() const { return NumGlobalDiagonals_; }
 
 private:
-  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> TpetraMapType;
-  typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> TpetraCrsGraphType;
+  typedef typename GraphType::local_ordinal_type local_ordinal_type;
+  typedef typename GraphType::map_type map_type;
   
-  Teuchos::RCP<const TpetraCrsGraphType > Graph_;
-  Teuchos::RCP<const TpetraCrsGraphType > OverlapGraph_;
+  Teuchos::RCP<const GraphType > Graph_;
+  Teuchos::RCP<const GraphType > OverlapGraph_;
   int LevelFill_;
   int LevelOverlap_;
-  Teuchos::RCP<TpetraCrsGraphType > L_Graph_;
-  Teuchos::RCP<TpetraCrsGraphType > U_Graph_;
+  Teuchos::RCP<GraphType> L_Graph_;
+  Teuchos::RCP<GraphType> U_Graph_;
   size_t NumMyDiagonals_;
   size_t NumGlobalDiagonals_;
 };
 
 //==============================================================================
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::IlukGraph(const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& Graph_in, int LevelFill_in, int LevelOverlap_in)
+template<class GraphType>
+IlukGraph<GraphType>::IlukGraph(const Teuchos::RCP<const GraphType>& Graph_in, int LevelFill_in, int LevelOverlap_in)
 : Graph_(Graph_in),
   OverlapGraph_(),
   LevelFill_(LevelFill_in),
@@ -175,8 +175,8 @@ IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::IlukGraph(const Teuchos::RCP<const T
 }
 
 //==============================================================================
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::IlukGraph(const IlukGraph<LocalOrdinal,GlobalOrdinal,Node> & Graph_in) 
+template<class GraphType>
+IlukGraph<GraphType>::IlukGraph(const IlukGraph<GraphType> & Graph_in) 
 : Graph_(Graph_in.Graph_),
   OverlapGraph_(Graph_in.OverlapGraph_),
   LevelFill_(Graph_in.LevelFill_),
@@ -186,52 +186,52 @@ IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::IlukGraph(const IlukGraph<LocalOrdin
   NumMyDiagonals_(0),
   NumGlobalDiagonals_(0)
 {
-  TpetraCrsGraphType & L_Graph_In = Graph_in.L_Graph();
-  TpetraCrsGraphType & U_Graph_In = Graph_in.U_Graph();
-  L_Graph_ = Teuchos::rcp( new TpetraCrsGraphType(L_Graph_In) );
-  U_Graph_ = Teuchos::rcp( new TpetraCrsGraphType(U_Graph_In) );
+  GraphType & L_Graph_In = Graph_in.L_Graph();
+  GraphType & U_Graph_In = Graph_in.U_Graph();
+  L_Graph_ = Teuchos::rcp( new GraphType(L_Graph_In) );
+  U_Graph_ = Teuchos::rcp( new GraphType(U_Graph_In) );
 }
 
 //==============================================================================
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::~IlukGraph()
+template<class GraphType>
+IlukGraph<GraphType>::~IlukGraph()
 {
 }
 
 //==============================================================================
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-void IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::setParameters(const Teuchos::ParameterList& parameterlist)
+template<class GraphType>
+void IlukGraph<GraphType>::setParameters(const Teuchos::ParameterList& parameterlist)
 {
   getParameter(parameterlist, "iluk level-of-fill", LevelFill_);
   getParameter(parameterlist, "iluk level-of-overlap", LevelOverlap_);
 }
 
 //==============================================================================
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-void IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::constructOverlapGraph() {
+template<class GraphType>
+void IlukGraph<GraphType>::constructOverlapGraph() {
   
   if (OverlapGraph_ == Teuchos::null) {
-    OverlapGraph_ = CreateOverlapGraph(Graph_, LevelOverlap_);
+    OverlapGraph_ = CreateOverlapGraph<GraphType>(Graph_, LevelOverlap_);
   }
 }
 
 //==============================================================================
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-void IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::constructFilledGraph() {
+template<class GraphType>
+void IlukGraph<GraphType>::constructFilledGraph() {
   size_t NumIn, NumL, NumU;
   bool DiagFound;
  
   constructOverlapGraph();
  
-  L_Graph_ = Teuchos::rcp( new TpetraCrsGraphType(OverlapGraph_->getRowMap(), OverlapGraph_->getRowMap(),  0));
-  U_Graph_ = Teuchos::rcp( new TpetraCrsGraphType(OverlapGraph_->getRowMap(), OverlapGraph_->getRowMap(),  0));
+  L_Graph_ = Teuchos::rcp( new GraphType(OverlapGraph_->getRowMap(), OverlapGraph_->getRowMap(),  0));
+  U_Graph_ = Teuchos::rcp( new GraphType(OverlapGraph_->getRowMap(), OverlapGraph_->getRowMap(),  0));
  
  
   // Get Maximum Row length
   int MaxNumIndices = OverlapGraph_->getNodeMaxNumRowEntries();
  
-  Teuchos::Array<LocalOrdinal> L(MaxNumIndices);
-  Teuchos::Array<LocalOrdinal> U(MaxNumIndices);
+  Teuchos::Array<local_ordinal_type> L(MaxNumIndices);
+  Teuchos::Array<local_ordinal_type> U(MaxNumIndices);
  
   // First we copy the user's graph into L and U, regardless of fill level
  
@@ -240,7 +240,7 @@ void IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::constructFilledGraph() {
 
   for (int i=0; i< NumMyRows; i++) {
  
-    Teuchos::ArrayView<const LocalOrdinal> my_indices;
+    Teuchos::ArrayView<const local_ordinal_type> my_indices;
     OverlapGraph_->getLocalRowView(i,my_indices);
  
     // Split into L and U (we don't assume that indices are ordered).
@@ -251,7 +251,7 @@ void IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::constructFilledGraph() {
     NumIn = my_indices.size();
 
     for (size_t j=0; j< NumIn; j++) {
-      LocalOrdinal k = my_indices[j];
+      local_ordinal_type k = my_indices[j];
       
       if (k<NumMyRows) { // Ignore column elements that are not in the square matrix
         
@@ -272,11 +272,11 @@ void IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::constructFilledGraph() {
  
     if (DiagFound) ++NumMyDiagonals_;
     if (NumL) {
-      Teuchos::ArrayView<LocalOrdinal> Lview(&L[0], NumL);
+      Teuchos::ArrayView<local_ordinal_type> Lview(&L[0], NumL);
       L_Graph_->insertLocalIndices(i, Lview );
     }
     if (NumU) {
-      Teuchos::ArrayView<LocalOrdinal> Uview(&U[0], NumU);
+      Teuchos::ArrayView<local_ordinal_type> Uview(&U[0], NumU);
       U_Graph_->insertLocalIndices(i, Uview );
     }
   }
@@ -284,10 +284,10 @@ void IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::constructFilledGraph() {
   if (LevelFill_ > 0) {
     
     // Complete Fill steps
-    Teuchos::RCP<const TpetraMapType> L_DomainMap = OverlapGraph_->getRowMap();
-    Teuchos::RCP<const TpetraMapType> L_RangeMap = Graph_->getRangeMap();
-    Teuchos::RCP<const TpetraMapType> U_DomainMap = Graph_->getDomainMap();
-    Teuchos::RCP<const TpetraMapType> U_RangeMap = OverlapGraph_->getRowMap();
+    Teuchos::RCP<const map_type> L_DomainMap = OverlapGraph_->getRowMap();
+    Teuchos::RCP<const map_type> L_RangeMap = Graph_->getRangeMap();
+    Teuchos::RCP<const map_type> U_DomainMap = Graph_->getDomainMap();
+    Teuchos::RCP<const map_type> U_RangeMap = OverlapGraph_->getRowMap();
     Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::rcp(new Teuchos::ParameterList());
     params->set("Optimize Storage",false);
     L_Graph_->fillComplete(L_DomainMap, L_RangeMap, params);
@@ -303,7 +303,7 @@ void IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::constructFilledGraph() {
     std::vector<std::vector<int> > Levels(MaxRC);
     std::vector<int> LinkList(MaxRC);
     std::vector<int> CurrentLevel(MaxRC);
-    Teuchos::Array<LocalOrdinal> CurrentRow(MaxRC+1);
+    Teuchos::Array<local_ordinal_type> CurrentRow(MaxRC+1);
     std::vector<int> LevelsRowU(MaxRC);
  
     for (int i=0; i<NumMyRows; i++)
@@ -321,7 +321,7 @@ void IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::constructFilledGraph() {
       L_Graph_->getLocalRowCopy(i, CurrentRow(), LenL);      // Get L Indices
       CurrentRow[LenL] = i;                                     // Put in Diagonal
       if (LenU > 0) {
-        Teuchos::ArrayView<LocalOrdinal> URowView(&CurrentRow[LenL+1], LenU);
+        Teuchos::ArrayView<local_ordinal_type> URowView(&CurrentRow[LenL+1], LenU);
         // Get U Indices
         U_Graph_->getLocalRowCopy(i, URowView, LenU);
       }
@@ -346,7 +346,7 @@ void IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::constructFilledGraph() {
         int NextInList = LinkList[Next];
         int RowU = Next;
         // Get Indices for this row of U
-        Teuchos::ArrayView<const LocalOrdinal> IndicesU;
+        Teuchos::ArrayView<const local_ordinal_type> IndicesU;
         U_Graph_->getLocalRowView(RowU,IndicesU);
         int LengthRowU = IndicesU.size();
         
@@ -439,10 +439,10 @@ void IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::constructFilledGraph() {
   }    
   
   // Complete Fill steps
-  Teuchos::RCP<const TpetraMapType> L_DomainMap = OverlapGraph_->getRowMap();
-  Teuchos::RCP<const TpetraMapType> L_RangeMap  = Graph_->getRangeMap();
-  Teuchos::RCP<const TpetraMapType> U_DomainMap = Graph_->getDomainMap();
-  Teuchos::RCP<const TpetraMapType> U_RangeMap  = OverlapGraph_->getRowMap();
+  Teuchos::RCP<const map_type> L_DomainMap = OverlapGraph_->getRowMap();
+  Teuchos::RCP<const map_type> L_RangeMap  = Graph_->getRangeMap();
+  Teuchos::RCP<const map_type> U_DomainMap = Graph_->getDomainMap();
+  Teuchos::RCP<const map_type> U_RangeMap  = OverlapGraph_->getRowMap();
   L_Graph_->fillComplete(L_DomainMap, L_RangeMap);//DoOptimizeStorage is default here...
   U_Graph_->fillComplete(U_DomainMap, U_RangeMap);//DoOptimizeStorage is default here...
 

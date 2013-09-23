@@ -200,7 +200,7 @@ PerformanceData implicit_run( const typename FixtureType::FEMeshType & mesh , co
     }
     }
 
-#if HAVE_MPI
+#if defined( KOKKOS_HAVE_MPI )
   long global[2] = { 0 , 0 };
   long local[2] = { linsys_host_solution.dimension_0() , error_count };
   MPI_Allreduce( local , global , 2 , MPI_LONG , MPI_SUM , mesh.parallel_data_map.machine.mpi_comm );

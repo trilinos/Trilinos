@@ -52,53 +52,86 @@ namespace Intrepid {
 // \param A nonsingular tensor
 // \return \f$ A^{-1} \f$
 //
-template<typename T>
-Tensor<T>
-inverse(Tensor<T> const & A)
+template<typename T, Index N>
+Tensor<T, N>
+inverse(Tensor<T, N> const & A)
 {
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
-  Tensor<T> S = A;
-  Tensor<T> B = identity<T>(N);
+  switch (dimension) {
 
-  typedef std::set<Index> IndexSet;
-  typedef std::set<Index>::const_iterator IndexIter;
+  case 3:
+    {
+      T const determinant = det(A);
+      assert(determinant != 0.0);
+      return Tensor<T, N>(
+        -A(1,2)*A(2,1) + A(1,1)*A(2,2),
+         A(0,2)*A(2,1) - A(0,1)*A(2,2),
+        -A(0,2)*A(1,1) + A(0,1)*A(1,2),
+         A(1,2)*A(2,0) - A(1,0)*A(2,2),
+        -A(0,2)*A(2,0) + A(0,0)*A(2,2),
+         A(0,2)*A(1,0) - A(0,0)*A(1,2),
+        -A(1,1)*A(2,0) + A(1,0)*A(2,1),
+         A(0,1)*A(2,0) - A(0,0)*A(2,1),
+        -A(0,1)*A(1,0) + A(0,0)*A(1,1)
+        ) / determinant;
+    }
+    break;
 
-  IndexSet intact_rows;
-  IndexSet intact_cols;
+  case 2:
+    {
+      T const determinant = det(A);
+      assert(determinant != 0.0);
+      return Tensor<T, N>(A(1,1), -A(0,1), -A(1,0), A(0,0)) / determinant;
+    }
+    break;
 
-  for (Index k = 0; k < N; ++k) {
-    intact_rows.insert(k);
-    intact_cols.insert(k);
+  default:
+    break;
   }
 
+  Tensor<T, N>
+  S = A;
+
+  Tensor<T, N>
+  B = identity<T, N>(dimension);
+
+  // Set 1 ... dimension bits to one.
+  Index
+  intact_rows = (1 << dimension) - 1;
+
+  Index
+  intact_cols = (1 << dimension) - 1;
+
   // Gauss-Jordan elimination with full pivoting
-  for (Index k = 0; k < N; ++k) {
+  for (Index k = 0; k < dimension; ++k) {
 
     // Determine full pivot
-    T pivot = 0.0;
+    T
+    pivot = 0.0;
 
-    // Initialized here due to GCC 4.4.X supurious uninitialized warning.
-    T s = 0.0;
+    Index
+    pivot_row = dimension;
 
-    IndexIter pivot_row_iter = intact_rows.begin();
-    IndexIter pivot_col_iter = intact_cols.begin();
+    Index
+    pivot_col = dimension;
 
-    for (IndexIter rows_iter = intact_rows.begin();
-        rows_iter != intact_rows.end(); ++rows_iter) {
+    for (Index row = 0; row < dimension; ++row) {
 
-      for (IndexIter cols_iter = intact_cols.begin();
-          cols_iter != intact_cols.end(); ++cols_iter) {
+      if (!(intact_rows & (1 << row))) continue;
 
-        Index const row = *rows_iter;
-        Index const col = *cols_iter;
+      for (Index col = 0; col < dimension; ++col) {
+
+        if (!(intact_cols & (1 << col))) continue;
+
+        T
         s = std::abs(S(row, col));
 
         if (s > pivot) {
 
-          pivot_row_iter = rows_iter;
-          pivot_col_iter = cols_iter;
+          pivot_row = row;
+          pivot_col = col;
 
           pivot = s;
 
@@ -108,43 +141,36 @@ inverse(Tensor<T> const & A)
 
     }
 
-    Index const pivot_row = *pivot_row_iter;
-    Index const pivot_col = *pivot_col_iter;
-
     // Gauss-Jordan elimination
-    T const t = S(pivot_row, pivot_col);
+    T const
+    t = S(pivot_row, pivot_col);
 
-    if (t == 0.0) {
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Inverse of singular tensor.";
-      std::cerr << std::endl;
-      exit(1);
-    }
+    assert(t != 0.0);
 
-    for (Index j = 0; j < N; ++j) {
+    for (Index j = 0; j < dimension; ++j) {
       S(pivot_row, j) /= t;
       B(pivot_row, j) /= t;
     }
 
-    for (Index i = 0; i < N; ++i) {
+    for (Index i = 0; i < dimension; ++i) {
       if (i == pivot_row) continue;
 
-      T const c = S(i, pivot_col);
+      T const
+      c = S(i, pivot_col);
 
-      for (Index j = 0; j < N; ++j) {
+      for (Index j = 0; j < dimension; ++j) {
         S(i, j) -= c * S(pivot_row, j);
         B(i, j) -= c * B(pivot_row, j);
       }
     }
 
     // Eliminate current row and col from intact rows and cols
-    intact_rows.erase(pivot_row_iter);
-    intact_cols.erase(pivot_col_iter);
+    intact_rows &= ~(1 << pivot_row);
+    intact_cols &= ~(1 << pivot_col);
 
   }
 
-  Tensor<T>
+  Tensor<T, N> const
   X = t_dot(S, B);
 
   return X;
@@ -157,23 +183,24 @@ inverse(Tensor<T> const & A)
 // \param j index
 // \return Subtensor with i-row and j-col deleted.
 //
-template<typename T>
-Tensor<T>
-subtensor(Tensor<T> const & A, Index const i, Index const j)
+template<typename T, Index N>
+Tensor<T, dimension_subtract<N, 1>::value >
+subtensor(Tensor<T, N> const & A, Index const i, Index const j)
 {
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
-  assert(i < N);
-  assert(j < N);
+  assert(i < dimension);
+  assert(j < dimension);
 
-  Tensor<T> B(N - 1);
+  Tensor<T, dimension_subtract<N, 1>::value >
+  B(dimension - 1);
 
   Index p = 0;
   Index q = 0;
-  for (Index m = 0; m < N; ++m) {
+  for (Index m = 0; m < dimension; ++m) {
     if (m == i) continue;
-    for (Index n = 0; n < N; ++n) {
+    for (Index n = 0; n < dimension; ++n) {
       if (n == j) continue;
       B(p, q) = A(m, n);
       ++q;
@@ -187,9 +214,9 @@ subtensor(Tensor<T> const & A, Index const i, Index const j)
 //
 // Exponential map
 //
-template<typename T>
-Tensor<T>
-exp(Tensor<T> const & A)
+template<typename T, Index N>
+Tensor<T, N>
+exp(Tensor<T, N> const & A)
 {
   return exp_pade(A);
 }
@@ -199,9 +226,9 @@ exp(Tensor<T> const & A)
 // \param A tensor
 // \return \f$ \exp A \f$
 //
-template<typename T>
-Tensor<T>
-exp_taylor(Tensor<T> const & A)
+template<typename T, Index N>
+Tensor<T, N>
+exp_taylor(Tensor<T, N> const & A)
 {
   Index const
   max_iter = 128;
@@ -210,16 +237,16 @@ exp_taylor(Tensor<T> const & A)
   tol = machine_epsilon<T>();
 
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
-  Tensor<T>
-  term = identity<T>(N);
+  Tensor<T, N>
+  term = identity<T, N>(dimension);
 
   // Relative error taken wrt to the first term, which is I and norm = 1
   T
   relative_error = 1.0;
 
-  Tensor<T>
+  Tensor<T, N>
   B = term;
 
   Index
@@ -336,33 +363,33 @@ polynomial_coefficient(Index const order, Index const index)
 //
 // Padé approximant polynomial odd and even terms.
 //
-template<typename T>
-std::pair<Tensor<T>, Tensor<T> >
-pade_polynomial_terms(Tensor<T> const & A, Index const order)
+template<typename T, Index N>
+std::pair<Tensor<T, N>, Tensor<T, N> >
+pade_polynomial_terms(Tensor<T, N> const & A, Index const order)
 {
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
-  Tensor<T>
-  B = identity<T>(N);
+  Tensor<T, N>
+  B = identity<T, N>(dimension);
 
-  Tensor<T>
+  Tensor<T, N>
   U = polynomial_coefficient<Real>(order, 1) * B;
 
-  Tensor<T>
+  Tensor<T, N>
   V = polynomial_coefficient<Real>(order, 0) * B;
 
-  Tensor<T> const
+  Tensor<T, N> const
   A2 = A * A;
 
   for (Index i = 3; i <= order; i += 2) {
 
     B = B * A2;
 
-    Tensor<T> const
+    Tensor<T, N> const
     O = polynomial_coefficient<Real>(order, i) * B;
 
-    Tensor<T> const
+    Tensor<T, N> const
     E = polynomial_coefficient<Real>(order, i - 1) * B;
 
     U += O;
@@ -379,11 +406,11 @@ pade_polynomial_terms(Tensor<T> const & A, Index const order)
 //
 // Compute a non-negative integer power of a tensor by binary manipulation.
 //
-template<typename T>
-Tensor<T>
-binary_powering(Tensor<T> const & A, Index const exponent)
+template<typename T, Index N>
+Tensor<T, N>
+binary_powering(Tensor<T, N> const & A, Index const exponent)
 {
-  if (exponent == 0) return eye<T>(A.get_dimension());
+  if (exponent == 0) return eye<T, N>(A.get_dimension());
 
   Index const
   rightmost_bit = 1;
@@ -408,7 +435,7 @@ binary_powering(Tensor<T> const & A, Index const exponent)
 
   }
 
-  Tensor<T>
+  Tensor<T, N>
   P = A;
 
   Index
@@ -423,7 +450,7 @@ binary_powering(Tensor<T> const & A, Index const exponent)
     m = m >> 1;
   }
 
-  Tensor<T>
+  Tensor<T, N>
   X = P;
 
   for (Index j = i + 1; j <= t; ++j) {
@@ -445,12 +472,12 @@ binary_powering(Tensor<T> const & A, Index const exponent)
 // \param A tensor
 // \return \f$ \exp A \f$
 //
-template<typename T>
-Tensor<T>
-exp_pade(Tensor<T> const & A)
+template<typename T, Index N>
+Tensor<T, N>
+exp_pade(Tensor<T, N> const & A)
 {
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
   Index const
   orders[] = {3, 5, 7, 9, 13};
@@ -461,7 +488,7 @@ exp_pade(Tensor<T> const & A)
   Index const
   highest_order = orders[number_orders - 1];
 
-  Tensor<T>
+  Tensor<T, N>
   B;
 
   Real const
@@ -477,10 +504,10 @@ exp_pade(Tensor<T> const & A)
 
     if (order < highest_order && norm < theta) {
 
-      Tensor<T>
+      Tensor<T, N>
       U;
 
-      Tensor<T>
+      Tensor<T, N>
       V;
 
       boost::tie(U, V) = pade_polynomial_terms(A, order);
@@ -494,8 +521,11 @@ exp_pade(Tensor<T> const & A)
       Real const
       theta_highest = scaling_squaring_theta<Real>(order);
 
+      int const
+      signed_power = static_cast<int>(std::ceil(log2(norm / theta_highest)));
+
       Index const
-      power_two = Index(std::ceil(log2(norm / theta_highest)));
+      power_two = signed_power > 0 ? static_cast<Index>(signed_power) : 0;
 
       Real
       scale = 1.0;
@@ -504,19 +534,19 @@ exp_pade(Tensor<T> const & A)
         scale /= 2.0;
       }
 
-      Tensor<T> const
-      I = identity<T>(N);
+      Tensor<T, N> const
+      I = identity<T, N>(dimension);
 
-      Tensor<T> const
+      Tensor<T, N> const
       A1 = scale * A;
 
-      Tensor<T> const
+      Tensor<T, N> const
       A2 = A1 * A1;
 
-      Tensor<T> const
+      Tensor<T, N> const
       A4 = A2 * A2;
 
-      Tensor<T> const
+      Tensor<T, N> const
       A6 = A2 * A4;
 
       Real const b0  = polynomial_coefficient<Real>(order, 0);
@@ -534,16 +564,16 @@ exp_pade(Tensor<T> const & A)
       Real const b12 = polynomial_coefficient<Real>(order, 12);
       Real const b13 = polynomial_coefficient<Real>(order, 13);
 
-      Tensor<T> const
+      Tensor<T, N> const
       U = A1 * (
           (A6 * (b13 * A6 + b11 * A4 + b9 * A2) +
               b7 * A6 + b5 * A4 + b3 * A2 + b1 * I));
 
-      Tensor<T> const
+      Tensor<T, N> const
       V = A6 * (b12 * A6 + b10 * A4 + b8 * A2) +
       b6 * A6 + b4 * A4 + b2 * A2 + b0 * I;
 
-      Tensor<T> const
+      Tensor<T, N> const
       R = inverse(V - U) * (U + V);
 
       Index const
@@ -561,9 +591,9 @@ exp_pade(Tensor<T> const & A)
 //
 // Logarithmic map by Taylor series.
 //
-template<typename T>
-Tensor<T>
-log_taylor(Tensor<T> const & A)
+template<typename T, Index N>
+Tensor<T, N>
+log_taylor(Tensor<T, N> const & A)
 {
   Index const
   max_iter = 128;
@@ -575,12 +605,12 @@ log_taylor(Tensor<T> const & A)
   norm_tensor = norm_1(A);
 
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
-  Tensor<T> const
-  A_minus_I = A - identity<T>(N);
+  Tensor<T, N> const
+  A_minus_I = A - identity<T, N>(dimension);
 
-  Tensor<T>
+  Tensor<T, N>
   term = A_minus_I;
 
   T
@@ -589,7 +619,7 @@ log_taylor(Tensor<T> const & A)
   T
   relative_error = norm_term / norm_tensor;
 
-  Tensor<T>
+  Tensor<T, N>
   B = term;
 
   Index
@@ -609,9 +639,9 @@ log_taylor(Tensor<T> const & A)
 //
 // Logarithmic map.
 //
-template<typename T>
-Tensor<T>
-log(Tensor<T> const & A)
+template<typename T, Index N>
+Tensor<T, N>
+log(Tensor<T, N> const & A)
 {
   return log_gregory(A);
 }
@@ -619,9 +649,9 @@ log(Tensor<T> const & A)
 //
 // Logarithmic map by Gregory series.
 //
-template<typename T>
-Tensor<T>
-log_gregory(Tensor<T> const & A)
+template<typename T, Index N>
+Tensor<T, N>
+log_gregory(Tensor<T, N> const & A)
 {
   Index const
   max_iter = 128;
@@ -633,30 +663,27 @@ log_gregory(Tensor<T> const & A)
   norm_tensor = norm_1(A);
 
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
-  Tensor<T> const
-  I_minus_A = identity<T>(N) - A;
+  Tensor<T, N> const
+  I_minus_A = identity<T, N>(dimension) - A;
 
-  Tensor<T> const
-  I_plus_A = identity<T>(N) + A;
+  Tensor<T, N> const
+  I_plus_A = identity<T, N>(dimension) + A;
 
-  Tensor<T>
+  Tensor<T, N>
   term = I_minus_A * inverse(I_plus_A);
 
   T
   norm_term = norm_1(term);
 
-  // Initialized here due to GCC 4.4.X supurious uninitialized warning.
   T
-  relative_error = 0.0;
-
   relative_error = norm_term / norm_tensor;
 
-  Tensor<T> const
+  Tensor<T, N> const
   C = term * term;
 
-  Tensor<T>
+  Tensor<T, N>
   B = term;
 
   Index
@@ -678,9 +705,9 @@ log_gregory(Tensor<T> const & A)
 //
 // Logarithmic map for symmetric tensor.
 //
-template<typename T>
-Tensor<T>
-log_sym(Tensor<T> const & A)
+template<typename T, Index N>
+Tensor<T, N>
+log_sym(Tensor<T, N> const & A)
 {
   return log_eig_sym(A);
 }
@@ -688,45 +715,46 @@ log_sym(Tensor<T> const & A)
 //
 // Logarithmic map for symmetric tensor using eigenvalue decomposition.
 //
-template<typename T>
-Tensor<T>
-log_eig_sym(Tensor<T> const & A)
+template<typename T, Index N>
+Tensor<T, N>
+log_eig_sym(Tensor<T, N> const & A)
 {
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
-  Tensor<T>
-  V(N);
+  Tensor<T, N>
+  V(dimension);
 
-  Tensor<T>
-  D(N);
+  Tensor<T, N>
+  D(dimension);
 
   boost::tie(V, D) = eig_sym(A);
 
-  for (Index i = 0; i < N; ++i) {
+  for (Index i = 0; i < dimension; ++i) {
     D(i, i) = std::log(D(i, i));
   }
 
-  Tensor<T> const
+  Tensor<T, N> const
   B = dot_t(dot(V, D), V);
 
   return B;
 }
 
 //
-// R^N logarithmic map of a rotation. Not implemented yet.
+// R^N logarithmic map of a rotation.
 // \param R with \f$ R \in SO(N) \f$
 // \return \f$ r = \log R \f$ with \f$ r \in so(N) \f$
 //
-template<typename T>
-Tensor<T>
-log_rotation(Tensor<T> const & R)
+template<typename T, Index N>
+Tensor<T, N>
+log_rotation(Tensor<T, N> const & R)
 {
   Index const
-  N = R.get_dimension();
+  dimension = R.get_dimension();
 
   //firewalls, make sure R \in SO(N)
-  assert(norm(dot_t(R,R) - eye<T>(N)) < 100.0 * machine_epsilon<T>());
+  assert(norm(dot_t(R,R) - eye<T, N>(dimension)) <
+      100.0 * machine_epsilon<T>());
   assert(std::abs(det(R) - 1.0) < 100.0 * machine_epsilon<T>());
 
   // acos requires input between -1 and +1
@@ -742,10 +770,10 @@ log_rotation(Tensor<T> const & R)
   T
   theta = std::acos(cosine);
 
-  Tensor<T>
-  r(N);
+  Tensor<T, N>
+  r(dimension);
 
-  switch (N) {
+  switch (dimension) {
 
     default:
       std::cerr << "Logarithm of SO(N) N != 2,3 not implemented." << std::endl;
@@ -755,7 +783,7 @@ log_rotation(Tensor<T> const & R)
     case 3:
       if (theta == 0.0) {
 
-        r = zero<T>(3);
+        r = zero<T, N>(3);
 
       } else if (std::abs(cosine + 1.0) < 10.0 * machine_epsilon<T>())  {
 
@@ -780,26 +808,26 @@ log_rotation(Tensor<T> const & R)
   return r;
 }
 
-// R^N Logarithmic map of a 180-degree rotation. Not implemented.
+// R^N Logarithmic map of a 180-degree rotation.
 // \param R with \f$ R \in SO(N) \f$
 // \return \f$ r = \log R \f$ with \f$ r \in so(N) \f$
 //
-template<typename T>
-Tensor<T>
-log_rotation_pi(Tensor<T> const & R)
+template<typename T, Index N>
+Tensor<T, N>
+log_rotation_pi(Tensor<T, N> const & R)
 {
   Index const
-  N = R.get_dimension();
+  dimension = R.get_dimension();
 
   T
   cosine = 0.5*(trace(R) - 1.0);
   // set firewall to make sure the rotation is indeed 180 degrees
   assert(std::abs(cosine + 1.0) < 10.0 * machine_epsilon<T>());
 
-  Tensor<T>
-  r(N);
+  Tensor<T, N>
+  r(dimension);
 
-  switch (N) {
+  switch (dimension) {
 
     default:
       std::cerr << "Logarithm of SO(N) N != 2,3 not implemented." << std::endl;
@@ -809,12 +837,12 @@ log_rotation_pi(Tensor<T> const & R)
     case 3:
     {
       // obtain U from R = LU
-      r = gaussian_elimination((R - identity<T>(3)));
+      r = gaussian_elimination((R - identity<T, N>(3)));
 
       // backward substitution (for rotation exp(R) only)
       T const tol = 10.0 * machine_epsilon<T>();
 
-      Vector<T> normal(3);
+      Vector<T, N> normal(3);
 
       if (std::abs(r(2,2)) < tol){
         normal(2) = 1.0;
@@ -855,7 +883,7 @@ log_rotation_pi(Tensor<T> const & R)
       T theta = std::acos(-1.0);
 
       if (R(0,0) > 0.0) {
-        theta = - theta;
+        theta = -theta;
       }
 
       r(0,0) = 0.0;
@@ -874,14 +902,14 @@ log_rotation_pi(Tensor<T> const & R)
 // \param matrix \f$ A \f$
 // \return \f$ U \f$ where \f$ A = LU \f$
 //
-template<typename T>
-Tensor<T>
-gaussian_elimination(Tensor<T> const & A)
+template<typename T, Index N>
+Tensor<T, N>
+gaussian_elimination(Tensor<T, N> const & A)
 {
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
-  Tensor<T>
+  Tensor<T, N>
   U = A;
 
   T const
@@ -891,10 +919,10 @@ gaussian_elimination(Tensor<T> const & A)
   Index j = 0;
   Index i_max = 0;
 
-  while ((i <  N) && (j < N)) {
+  while ((i < dimension) && (j < dimension)) {
     // find pivot in column j, starting in row i
     i_max = i;
-    for (Index k = i + 1; k < N; ++k) {
+    for (Index k = i + 1; k < dimension; ++k) {
       if (std::abs(U(k,j)) > std::abs(U(i_max,j))) {
         i_max = k;
       }
@@ -904,16 +932,16 @@ gaussian_elimination(Tensor<T> const & A)
     if (std::abs(U(i_max,j)) > tol){
       // swap rows i and i_max and divide each entry in row i
       // by U(i,j)
-      for (Index k = 0; k < N; ++k) {
+      for (Index k = 0; k < dimension; ++k) {
         std::swap(U(i,k), U(i_max,k));
       }
 
-      for (Index k = 0; k < N; ++k) {
+      for (Index k = 0; k < dimension; ++k) {
         U(i,k) = U(i,k) / U(i,j);
       }
 
-      for (Index l = i + 1; l < N; ++l) {
-        for (Index k = 0; k < N; ++k) {
+      for (Index l = i + 1; l < dimension; ++l) {
+        for (Index k = 0; k < dimension; ++k) {
           U(l,k) = U(l,k) - U(l,i) * U(i,k) / U(i,i);
         }
       }
@@ -929,14 +957,14 @@ gaussian_elimination(Tensor<T> const & A)
 // \param c and s for a rotation G in form [c, s; -s, c]
 // \param A
 //
-template<typename T>
+template<typename T, Index N>
 void
-givens_left(T const & c, T const & s, Index i, Index k, Tensor<T> & A)
+givens_left(T const & c, T const & s, Index i, Index k, Tensor<T, N> & A)
 {
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
-  for (Index j = 0; j < N; ++j) {
+  for (Index j = 0; j < dimension; ++j) {
     T const t1 = A(i,j);
     T const t2 = A(k,j);
     A(i,j) = c * t1 - s * t2;
@@ -949,14 +977,14 @@ givens_left(T const & c, T const & s, Index i, Index k, Tensor<T> & A)
 // \param A
 // \param c and s for a rotation G in form [c, s; -s, c]
 //
-template<typename T>
+template<typename T, Index N>
 void
-givens_right(T const & c, T const & s, Index i, Index k, Tensor<T> & A)
+givens_right(T const & c, T const & s, Index i, Index k, Tensor<T, N> & A)
 {
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
-  for (Index j = 0; j < N; ++j) {
+  for (Index j = 0; j < dimension; ++j) {
     T const t1 = A(j,i);
     T const t2 = A(j,k);
     A(j,i) = c * t1 - s * t2;
@@ -966,31 +994,30 @@ givens_right(T const & c, T const & s, Index i, Index k, Tensor<T> & A)
 }
 
 //
-// R^N exponential map of a skew-symmetric tensor. Not implemented.
+// R^N exponential map of a skew-symmetric tensor.
 // \param r \f$ r \in so(N) \f$
 // \return \f$ R = \exp R \f$ with \f$ R \in SO(N) \f$
 //
-template<typename T>
-Tensor<T>
-exp_skew_symmetric(Tensor<T> const & r)
+template<typename T, Index N>
+Tensor<T, N>
+exp_skew_symmetric(Tensor<T, N> const & r)
 {
   // Check whether skew-symmetry holds
   assert(norm(sym(r)) < machine_epsilon<T>());
 
   Index const
-  N = r.get_dimension();
+  dimension = r.get_dimension();
 
-  Tensor<T>
-  R = identity<T>(N);
+  Tensor<T, N>
+  R = identity<T, N>(dimension);
 
   T
   theta = 0.0;
 
-  switch (N) {
+  switch (dimension) {
 
     default:
-      std::cerr << "Exp of so(N) N != 2,3 not implemented." << std::endl;
-      exit(1);
+      R = exp(r);
       break;
 
     case 3:
@@ -1030,20 +1057,21 @@ exp_skew_symmetric(Tensor<T> const & r)
 // \param A
 // \return \f$ \sqrt(\sum_i \sum_{j, j\neq i} a_{ij}^2) \f$
 //
-template<typename T>
+template<typename T, Index N>
 T
-norm_off_diagonal(Tensor<T> const & A)
+norm_off_diagonal(Tensor<T, N> const & A)
 {
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
-  T s = 0.0;
+  T
+  s = 0.0;
 
-  switch (N) {
+  switch (dimension) {
 
     default:
-      for (Index i = 0; i < N; ++i) {
-        for (Index j = 0; j < N; ++j) {
+      for (Index i = 0; i < dimension; ++i) {
+        for (Index j = 0; j < dimension; ++j) {
           if (i != j) s += A(i,j)*A(i,j);
         }
       }
@@ -1069,20 +1097,21 @@ norm_off_diagonal(Tensor<T> const & A)
 // \param A
 // \return \f$ (p,q) = arg max_{i,j} |a_{ij}| \f$
 //
-template<typename T>
+template<typename T, Index N>
 std::pair<Index, Index>
-arg_max_abs(Tensor<T> const & A)
+arg_max_abs(Tensor<T, N> const & A)
 {
   Index p = 0;
   Index q = 0;
 
-  T s = std::abs(A(p,q));
+  T
+  s = std::abs(A(p,q));
 
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
-  for (Index i = 0; i < N; ++i) {
-    for (Index j = 0; j < N; ++j) {
+  for (Index i = 0; i < dimension; ++i) {
+    for (Index j = 0; j < dimension; ++j) {
       if (std::abs(A(i,j)) > s) {
         p = i;
         q = j;
@@ -1100,9 +1129,9 @@ arg_max_abs(Tensor<T> const & A)
 // \param A
 // \return \f$ (p,q) = arg max_{i \neq j} |a_{ij}| \f$
 //
-template<typename T>
+template<typename T, Index N>
 std::pair<Index, Index>
-arg_max_off_diagonal(Tensor<T> const & A)
+arg_max_off_diagonal(Tensor<T, N> const & A)
 {
   Index p = 0;
   Index q = 1;
@@ -1110,10 +1139,10 @@ arg_max_off_diagonal(Tensor<T> const & A)
   T s = std::abs(A(p,q));
 
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
-  for (Index i = 0; i < N; ++i) {
-    for (Index j = 0; j < N; ++j) {
+  for (Index i = 0; i < dimension; ++i) {
+    for (Index j = 0; j < dimension; ++j) {
       if (i != j && std::abs(A(i,j)) > s) {
         p = i;
         q = j;
@@ -1135,8 +1164,8 @@ namespace {
 // \param f, g, h where A = [f, g; 0, h]
 // \return \f$ A = USV^T\f$
 //
-template<typename T>
-boost::tuple<Tensor<T>, Tensor<T>, Tensor<T> >
+template<typename T, Index N>
+boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
 svd_bidiagonal(T f, T g, T h)
 {
   T fa = std::abs(f);
@@ -1215,11 +1244,11 @@ svd_bidiagonal(T f, T g, T h)
     std::swap(su, cv);
   }
 
-  Tensor<T> U(cu, -su, su, cu);
+  Tensor<T, N> U(cu, -su, su, cu);
 
-  Tensor<T> S(s0, 0.0, 0.0, s1);
+  Tensor<T, N> S(s0, 0.0, 0.0, s1);
 
-  Tensor<T> V(cv, -sv, sv, cv);
+  Tensor<T, N> V(cv, -sv, sv, cv);
 
   return boost::make_tuple(U, S, V);
 }
@@ -1229,9 +1258,9 @@ svd_bidiagonal(T f, T g, T h)
 // \param A tensor
 // \return \f$ A = USV^T\f$
 //
-template<typename T>
-boost::tuple<Tensor<T>, Tensor<T>, Tensor<T> >
-svd_2x2(Tensor<T> const & A)
+template<typename T, Index N>
+boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
+svd_2x2(Tensor<T, N> const & A)
 {
   assert(A.get_dimension() == 2);
 
@@ -1240,20 +1269,20 @@ svd_2x2(Tensor<T> const & A)
   T s = 0.0;
   boost::tie(c, s) = givens(A(0,0), A(1,0));
 
-  Tensor<T>
+  Tensor<T, N>
   R(c, -s, s, c);
 
-  Tensor<T>
+  Tensor<T, N>
   B = R * A;
 
   // B is bidiagonal. Use specialized algorithm to compute its SVD
-  Tensor<T>
+  Tensor<T, N>
   X(2), S(2), V(2);
 
-  boost::tie(X, S, V) = svd_bidiagonal(B(0,0), B(0,1), B(1,1));
+  boost::tie(X, S, V) = svd_bidiagonal<T, N>(B(0,0), B(0,1), B(1,1));
 
   // Complete general 2x2 SVD with givens rotation calculated above
-  Tensor<T>
+  Tensor<T, N>
   U = transpose(R) * X;
 
   return boost::make_tuple(U, S, V);
@@ -1264,21 +1293,21 @@ svd_2x2(Tensor<T> const & A)
 // \param A tensor
 // \return \f$ A = USV^T\f$
 //
-template<typename T>
-boost::tuple<Tensor<T>, Tensor<T>, Tensor<T> >
-svd_NxN(Tensor<T> const & A)
+template<typename T, Index N>
+boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
+svd_NxN(Tensor<T, N> const & A)
 {
-  Tensor<T>
+  Tensor<T, N>
   S = A;
 
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
-  Tensor<T>
-  U = identity<T>(N);
+  Tensor<T, N>
+  U = identity<T, N>(dimension);
 
-  Tensor<T>
-  V = identity<T>(N);
+  Tensor<T, N>
+  V = identity<T, N>(dimension);
 
   T
   off = norm_off_diagonal(S);
@@ -1308,10 +1337,10 @@ svd_NxN(Tensor<T> const & A)
     }
 
     // Obtain left and right Givens rotations by using 2x2 SVD
-    Tensor <T>
+    Tensor <T, 2>
     Spq(S(p,p), S(p,q), S(q,p), S(q,q));
 
-    Tensor <T>
+    Tensor <T, 2>
     L(2), D(2), R(2);
 
     boost::tie(L, D, R) = svd_2x2(Spq);
@@ -1346,17 +1375,17 @@ svd_NxN(Tensor<T> const & A)
 
   // Fix signs for entries in the diagonal matrix S
   // that are negative
-  for (Index i = 0; i < N; ++i) {
+  for (Index i = 0; i < dimension; ++i) {
     if (S(i,i) < 0.0) {
       S(i,i) = -S(i,i);
-      for (Index j = 0; j < N; ++j) {
+      for (Index j = 0; j < dimension; ++j) {
         U(j,i) = -U(j,i);
       }
     }
   }
 
-  Vector<T> s(N);
-  Tensor<T> P(N);
+  Vector<T, N> s(dimension);
+  Tensor<T, N> P(dimension);
 
   boost::tie(s, P) = sort_permutation(diag(S));
   S = diag(s);
@@ -1373,17 +1402,17 @@ svd_NxN(Tensor<T> const & A)
 // \param A tensor
 // \return \f$ A = USV^T\f$
 //
-template<typename T>
-boost::tuple<Tensor<T>, Tensor<T>, Tensor<T> >
-svd(Tensor<T> const & A)
+template<typename T, Index N>
+boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
+svd(Tensor<T, N> const & A)
 {
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
-  Tensor<T>
-  U(N), S(N), V(N);
+  Tensor<T, N>
+  U(dimension), S(dimension), V(dimension);
 
-  switch (N) {
+  switch (dimension) {
 
     default:
       boost::tie(U, S, V) = svd_NxN(A);
@@ -1407,12 +1436,12 @@ svd(Tensor<T> const & A)
 // The rotation/reflection obtained through this projection is
 // the orthogonal component of the real polar decomposition
 //
-template<typename T>
-Tensor<T>
-polar_rotation(Tensor<T> const & A)
+template<typename T, Index N>
+Tensor<T, N>
+polar_rotation(Tensor<T, N> const & A)
 {
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
   bool
   scale = true;
@@ -1421,9 +1450,9 @@ polar_rotation(Tensor<T> const & A)
   tol_scale = 0.01;
 
   T const
-  tol_conv = std::sqrt(N) * machine_epsilon<T>();
+  tol_conv = std::sqrt(dimension) * machine_epsilon<T>();
 
-  Tensor<T>
+  Tensor<T, N>
   X = A;
 
   T
@@ -1435,13 +1464,9 @@ polar_rotation(Tensor<T> const & A)
   Index
   num_iter = 0;
  
-  // Initialized here due to GCC 4.4.X supurious uninitialized warning.
-  T
-  delta = 0.0;
-
   while (num_iter < max_iter) {
 
-    Tensor<T>
+    Tensor<T, N>
     Y = inverse(X);
 
     T
@@ -1452,12 +1477,13 @@ polar_rotation(Tensor<T> const & A)
       mu = std::sqrt(std::sqrt(mu));
     }
 
-    Tensor<T>
+    Tensor<T, N>
     Z = 0.5 * (mu * X + transpose(Y) / mu);
 
-    Tensor<T>
+    Tensor<T, N>
     D = Z - X;
 
+    T
     delta = norm(D) / norm(Z);
 
     if (scale == true && delta < tol_scale) {
@@ -1492,14 +1518,14 @@ polar_rotation(Tensor<T> const & A)
 // \param A tensor (often a deformation-gradient-like tensor)
 // \return \f$ VR = A \f$ with \f$ R \in SO(N) \f$ and \f$ V \in SPD(N) \f$
 //
-template<typename T>
-std::pair<Tensor<T>, Tensor<T> >
-polar_left(Tensor<T> const & A)
+template<typename T, Index N>
+std::pair<Tensor<T, N>, Tensor<T, N> >
+polar_left(Tensor<T, N> const & A)
 {
-  Tensor<T>
+  Tensor<T, N>
   R = polar_rotation(A);
 
-  Tensor<T>
+  Tensor<T, N>
   V = sym(A * transpose(R));
 
   return std::make_pair(V, R);
@@ -1510,14 +1536,14 @@ polar_left(Tensor<T> const & A)
 // \param A tensor (often a deformation-gradient-like tensor)
 // \return \f$ RU = A \f$ with \f$ R \in SO(N) \f$ and \f$ U \in SPD(N) \f$
 //
-template<typename T>
-std::pair<Tensor<T>, Tensor<T> >
-polar_right(Tensor<T> const & A)
+template<typename T, Index N>
+std::pair<Tensor<T, N>, Tensor<T, N> >
+polar_right(Tensor<T, N> const & A)
 {
-  Tensor<T>
+  Tensor<T, N>
   R = polar_rotation(A);
 
-  Tensor<T>
+  Tensor<T, N>
   U = sym(transpose(R) * A);
 
   return std::make_pair(R, U);
@@ -1528,46 +1554,46 @@ polar_right(Tensor<T> const & A)
 // \param F tensor (often a deformation-gradient-like tensor)
 // \return \f$ VR = F \f$ with \f$ R \in SO(3) \f$ and V SPD(3)
 //
-template<typename T>
-std::pair<Tensor<T>, Tensor<T> >
-polar_left_eig(Tensor<T> const & F)
+template<typename T, Index N>
+std::pair<Tensor<T, N>, Tensor<T, N> >
+polar_left_eig(Tensor<T, N> const & F)
 {
   assert(F.get_dimension() == 3);
 
   // set up return tensors
-  Tensor<T>
+  Tensor<T, N>
   R(3);
 
-  Tensor<T>
+  Tensor<T, N>
   V(3);
 
   // temporary tensor used to compute R
-  Tensor<T>
+  Tensor<T, N>
   Vinv(3);
 
   // compute spd tensor
-  Tensor<T>
+  Tensor<T, N>
   b = F * transpose(F);
 
   // get eigenvalues/eigenvectors
-  Tensor<T>
+  Tensor<T, N>
   eVal(3);
 
-  Tensor<T>
+  Tensor<T, N>
   eVec(3);
 
   boost::tie(eVec, eVal) = eig_spd(b);
 
   // compute sqrt() and inv(sqrt()) of eigenvalues
-  Tensor<T>
-  x = zero<T>(3);
+  Tensor<T, N>
+  x = zero<T, N>(3);
 
   x(0,0) = std::sqrt(eVal(0,0));
   x(1,1) = std::sqrt(eVal(1,1));
   x(2,2) = std::sqrt(eVal(2,2));
 
-  Tensor<T>
-  xi = zero<T>(3);
+  Tensor<T, N>
+  xi = zero<T, N>(3);
 
   xi(0,0) = 1.0 / x(0,0);
   xi(1,1) = 1.0 / x(1,1);
@@ -1586,45 +1612,49 @@ polar_left_eig(Tensor<T> const & F)
 // \param F tensor (often a deformation-gradient-like tensor)
 // \return \f$ RU = F \f$ with \f$ R \in SO(3) \f$ and U SPD(3)
 //
-template<typename T>
-std::pair<Tensor<T>, Tensor<T> >
-polar_right_eig(Tensor<T> const & F)
+template<typename T, Index N>
+std::pair<Tensor<T, N>, Tensor<T, N> >
+polar_right_eig(Tensor<T, N> const & F)
 {
-  assert(F.get_dimension() == 3);
 
-  Tensor<T>
-  R(3);
+  Index const
+  dimension = F.get_dimension();
 
-  Tensor<T>
-  U(3);
+  assert(dimension == 3);
+
+  Tensor<T, N>
+  R(dimension);
+
+  Tensor<T, N>
+  U(dimension);
 
   // temporary tensor used to compute R
-  Tensor<T>
-  Uinv(3);
+  Tensor<T, N>
+  Uinv(dimension);
 
   // compute spd tensor
-  Tensor<T>
+  Tensor<T, N>
   C = transpose(F) * F;
 
   // get eigenvalues/eigenvectors
-  Tensor<T>
-  eVal(3);
+  Tensor<T, N>
+  eVal(dimension);
 
-  Tensor<T>
-  eVec(3);
+  Tensor<T, N>
+  eVec(dimension);
 
   boost::tie(eVec, eVal) = eig_spd(C);
 
   // compute sqrt() and inv(sqrt()) of eigenvalues
-  Tensor<T>
-  x = zero<T>(3);
+  Tensor<T, N>
+  x = zero<T, N>(dimension);
 
   x(0,0) = std::sqrt(eVal(0,0));
   x(1,1) = std::sqrt(eVal(1,1));
   x(2,2) = std::sqrt(eVal(2,2));
 
-  Tensor<T>
-  xi = zero<T>(3);
+  Tensor<T, N>
+  xi = zero<T, N>(dimension);
 
   xi(0,0) = 1.0 / x(0,0);
   xi(1,1) = 1.0 / x(1,1);
@@ -1643,35 +1673,71 @@ polar_right_eig(Tensor<T> const & F)
 // \param F tensor (often a deformation-gradient-like tensor)
 // \return \f$ VR = F \f$ with \f$ R \in SO(N) \f$ and V SPD(N), and log V
 //
-template<typename T>
-boost::tuple<Tensor<T>, Tensor<T>, Tensor<T> >
-polar_left_logV(Tensor<T> const & F)
+template<typename T, Index N>
+boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
+polar_left_logV(Tensor<T, N> const & F)
 {
   Index const
-  N = F.get_dimension();
+  dimension = F.get_dimension();
 
-  Tensor<T>
-  X(N), S(N), Y(N);
+  Tensor<T, N>
+  X(dimension), S(dimension), Y(dimension);
 
   boost::tie(X, S, Y) = svd(F);
 
-  Tensor<T>
+  Tensor<T, N>
   R = X * transpose(Y);
 
-  Tensor<T>
+  Tensor<T, N>
   V = X * S * transpose(X);
 
-  Tensor<T>
+  Tensor<T, N>
   s = S;
 
-  for (Index i = 0; i < N; ++i) {
+  for (Index i = 0; i < dimension; ++i) {
     s(i,i) = std::log(s(i,i));
   }
 
-  Tensor<T>
+  Tensor<T, N>
   v = X * s * transpose(X);
 
   return boost::make_tuple(V, R, v);
+}
+
+template<typename T, Index N>
+boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
+polar_left_logV_eig(Tensor<T, N> const & F)
+{
+  Index const
+  dimension = F.get_dimension();
+
+  Tensor<T, N> const
+  b = dot_t(F, F);
+
+  Tensor<T, N>
+  V(dimension), D(dimension);
+
+  boost::tie(V, D) = eig_sym(b);
+
+  Tensor<T, N>
+  DQ(dimension, ZEROS), DI(dimension, ZEROS), DL(dimension, ZEROS);
+
+  for (Index i = 0; i < dimension; ++i) {
+    DQ(i,i) = std::sqrt(D(i,i));
+    DI(i,i) = 1.0 / DQ(i,i);
+    DL(i,i) = std::log(DQ(i,i));
+  }
+
+  Tensor<T, N> const
+  R = dot(V, DI) * t_dot(V, F);
+
+  Tensor<T, N> const
+  X = V * dot_t(DQ, V);
+
+  Tensor<T, N> const
+  x = V * dot_t(DL, V);
+
+  return boost::make_tuple(X, R, x);
 }
 
 //
@@ -1679,34 +1745,34 @@ polar_left_logV(Tensor<T> const & F)
 // \param F tensor (often a deformation-gradient-like tensor)
 // \return \f$ VR = F \f$ with \f$ R \in SO(N) \f$ and V SPD(N), and log V
 //
-template<typename T>
-boost::tuple<Tensor<T>, Tensor<T>, Tensor<T> >
-polar_left_logV_lame(Tensor<T> const & F)
+template<typename T, Index N>
+boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
+polar_left_logV_lame(Tensor<T, N> const & F)
 {
   Index const
-  N = F.get_dimension();
+  dimension = F.get_dimension();
 
   // set up return tensors
-  Tensor<T> R(N), V(N), v(N), Vinv(N);
+  Tensor<T, N> R(dimension), V(dimension), v(dimension), Vinv(dimension);
 
   // compute spd tensor
-  Tensor<T> b = F*transpose(F);
+  Tensor<T, N> b = F*transpose(F);
 
   // get eigenvalues/eigenvectors
-  Tensor<T> eVal(N);
-  Tensor<T> eVec(N);
+  Tensor<T, N> eVal(dimension);
+  Tensor<T, N> eVec(dimension);
   boost::tie(eVec,eVal) = eig_spd_cos(b);
 
   // compute sqrt() and inv(sqrt()) of eigenvalues
-  Tensor<T> x = zero<T>(3);
+  Tensor<T, N> x = zero<T, N>(3);
   x(0,0) = std::sqrt(eVal(0,0));
   x(1,1) = std::sqrt(eVal(1,1));
   x(2,2) = std::sqrt(eVal(2,2));
-  Tensor<T> xi = zero<T>(3);
+  Tensor<T, N> xi = zero<T, N>(3);
   xi(0,0) = 1.0/x(0,0);
   xi(1,1) = 1.0/x(1,1);
   xi(2,2) = 1.0/x(2,2);
-  Tensor<T> lnx = zero<T>(3);
+  Tensor<T, N> lnx = zero<T, N>(3);
   lnx(0,0) = std::log(x(0,0));
   lnx(1,1) = std::log(x(1,1));
   lnx(2,2) = std::log(x(2,2));
@@ -1726,9 +1792,9 @@ polar_left_logV_lame(Tensor<T> const & F)
 // \param y tensor
 // \return Baker-Campbell-Hausdorff series up to 4 terms
 //
-template<typename T>
-Tensor<T>
-bch(Tensor<T> const & x, Tensor<T> const & y)
+template<typename T, Index N>
+Tensor<T, N>
+bch(Tensor<T, N> const & x, Tensor<T, N> const & y)
 {
   return
       // first order term
@@ -1807,29 +1873,23 @@ namespace {
 // \param A tensor
 // \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 //
-template<typename T>
-std::pair<Tensor<T>, Tensor<T> >
-eig_sym_NxN(Tensor<T> const & A)
+template<typename T, Index N>
+std::pair<Tensor<T, N>, Tensor<T, N> >
+eig_sym_NxN(Tensor<T, N> const & A)
 {
-  Tensor<T>
+  Tensor<T, N>
   D = sym(A);
 
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
-  Tensor<T>
-  V = identity<T>(N);
+  Tensor<T, N>
+  V = identity<T, N>(dimension);
 
-  // Initialized here due to GCC 4.4.X supurious uninitialized warning.
   T
-  off = 0.0;
-
   off = norm_off_diagonal(D);
 
-  // Initialized here due to GCC 4.4.X supurious uninitialized warning.
-  T 
-  tol = 0.0;
-
+  T
   tol = machine_epsilon<T>() * norm(A);
 
   Index const
@@ -1882,8 +1942,8 @@ eig_sym_NxN(Tensor<T> const & A)
     std::cerr << "WARNING: EIG iteration did not converge." << std::endl;
   }
 
-  Vector<T> d(N);
-  Tensor<T> P(N);
+  Vector<T, N> d(dimension);
+  Tensor<T, N> P(dimension);
 
   boost::tie(d, P) = sort_permutation(diag(D));
   D = diag(d);
@@ -1897,9 +1957,9 @@ eig_sym_NxN(Tensor<T> const & A)
 // \param A tensor
 // \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 //
-template<typename T>
-std::pair<Tensor<T>, Tensor<T> >
-eig_sym_2x2(Tensor<T> const & A)
+template<typename T, Index N>
+std::pair<Tensor<T, N>, Tensor<T, N> >
+eig_sym_2x2(Tensor<T, N> const & A)
 {
   assert(A.get_dimension() == 2);
 
@@ -1950,7 +2010,7 @@ eig_sym_2x2(Tensor<T> const & A)
     s1 = -0.5 * r;
   }
 
-  Tensor<T>
+  Tensor<T, N>
   D(s0, 0.0, 0.0, s1);
 
   //
@@ -1961,7 +2021,7 @@ eig_sym_2x2(Tensor<T> const & A)
 
   boost::tie(c, s) = schur_sym(f, g, h);
 
-  Tensor<T>
+  Tensor<T, N>
   V(c, -s, s, c);
 
   if (swap_diag == true) {
@@ -1980,17 +2040,17 @@ eig_sym_2x2(Tensor<T> const & A)
 // \param A tensor
 // \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 //
-template<typename T>
-std::pair<Tensor<T>, Tensor<T> >
-eig_sym(Tensor<T> const & A)
+template<typename T, Index N>
+std::pair<Tensor<T, N>, Tensor<T, N> >
+eig_sym(Tensor<T, N> const & A)
 {
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
-  Tensor<T>
-  V(N), D(N);
+  Tensor<T, N>
+  V(dimension), D(dimension);
 
-  switch (N) {
+  switch (dimension) {
 
     default:
       boost::tie(V, D) = eig_sym_NxN(A);
@@ -2010,9 +2070,9 @@ eig_sym(Tensor<T> const & A)
 // \param A tensor
 // \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 //
-template<typename T>
-std::pair<Tensor<T>, Tensor<T> >
-eig_spd(Tensor<T> const & A)
+template<typename T, Index N>
+std::pair<Tensor<T, N>, Tensor<T, N> >
+eig_spd(Tensor<T, N> const & A)
 {
   return eig_sym(A);
 }
@@ -2022,42 +2082,45 @@ eig_spd(Tensor<T> const & A)
 // \param A tensor
 // \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 //
-template<typename T>
-std::pair<Tensor<T>, Tensor<T> >
-eig_spd_cos(Tensor<T> const & A)
+template<typename T, Index N>
+std::pair<Tensor<T, N>, Tensor<T, N> >
+eig_spd_cos(Tensor<T, N> const & A)
 {
-  assert(A.get_dimension() == 3);
+  Index const
+  dimension = A.get_dimension();
+
+  assert(dimension == 3);
 
   // This algorithm comes from the journal article
   // Scherzinger and Dohrmann, CMAME 197 (2008) 4007-4015
 
   // this algorithm will return the eigenvalues in D
   // and the eigenvectors in V
-  Tensor<T>
-  D = zero<T>(3);
+  Tensor<T, N>
+  D = zero<T, N>(dimension);
 
-  Tensor<T>
-  V = zero<T>(3);
+  Tensor<T, N>
+  V = zero<T, N>(dimension);
 
   // not sure if this is necessary...
   T
   pi = std::acos(-1);
 
   // convenience operators
-  Tensor<T> const
-  I = identity<T>(3);
+  Tensor<T, N> const
+  I = identity<T, N>(dimension);
 
   int
   ii[3][2] = { { 1, 2 }, { 2, 0 }, { 0, 1 } };
 
-  Tensor<T>
-  rm = zero<T>(3);
+  Tensor<T, N>
+  rm = zero<T, N>(dimension);
 
   // scale the matrix to reduce the characteristic equation
   T
   trA = (1.0/3.0) * I1(A);
 
-  Tensor<T>
+  Tensor<T, N>
   Ap(A - trA*I);
 
   // compute other invariants
@@ -2110,11 +2173,11 @@ eig_spd_cos(Tensor<T> const & A)
     D(2,2) = 2.0 * std::cos(thetad3) * std::sqrt(-J2 / 3.0);
 
     // now reduce the system
-    Tensor<T>
+    Tensor<T, N>
     R = Ap - D(2,2) * I;
 
     // QR factorization with column pivoting
-    Vector<T> a(3);
+    Vector<T, N> a(dimension);
     a(0) = R(0,0)*R(0,0) + R(1,0)*R(1,0) + R(2,0)*R(2,0);
     a(1) = R(0,1)*R(0,1) + R(1,1)*R(1,1) + R(2,1)*R(2,1);
     a(2) = R(0,2)*R(0,2) + R(1,2)*R(1,2) + R(2,2)*R(2,2);
@@ -2134,20 +2197,20 @@ eig_spd_cos(Tensor<T> const & A)
 
     // normalize the most dominant column to get s1
     a(k) = std::sqrt(a(k));
-    for (int i(0); i < 3; ++i)
+    for (int i(0); i < dimension; ++i)
       R(i,k) /= a(k);
 
     // dot products of dominant column with other two columns
     T d0 = 0.0;
     T d1 = 0.0;
-    for (int i(0); i < 3; ++i)
+    for (int i(0); i < dimension; ++i)
     {
       d0 += R(i,k) * R(i,ii[k][0]);
       d1 += R(i,k) * R(i,ii[k][1]);
     }
 
     // projection
-    for (int i(0); i < 3; ++i)
+    for (int i(0); i < dimension; ++i)
     {
       R(i,ii[k][0]) -= d0 * R(i,k);
       R(i,ii[k][1]) -= d1 * R(i,k);
@@ -2155,7 +2218,7 @@ eig_spd_cos(Tensor<T> const & A)
 
     // now finding next most dominant column
     a.clear();
-    for (int i(0); i < 3; ++i)
+    for (int i(0); i < dimension; ++i)
     {
       a(0) += R(i,ii[k][0]) * R(i,ii[k][0]);
       a(1) += R(i,ii[k][1]) * R(i,ii[k][1]);
@@ -2168,7 +2231,7 @@ eig_spd_cos(Tensor<T> const & A)
     a(p) = std::sqrt(a(p));
     int k2 = ii[k][p];
 
-    for (int i(0); i < 3; ++i)
+    for (int i(0); i < dimension; ++i)
       R(i,k2) /= a(p);
 
     // set first eigenvector as cross product of s1 and s2
@@ -2185,17 +2248,17 @@ eig_spd_cos(Tensor<T> const & A)
     V(2,2) /= mag;
 
     // now for the other two eigenvalues, extract vectors
-    Vector<T>
+    Vector<T, N>
     rk(R(0,k), R(1,k), R(2,k));
 
-    Vector<T>
+    Vector<T, N>
     rk2(R(0,k2), R(1,k2), R(2,k2));
 
     // compute projections
-    Vector<T>
+    Vector<T, N>
     ak = Ap * rk;
 
-    Vector<T>
+    Vector<T, N>
     ak2 = Ap * rk2;
 
     // set up reduced remainder matrix
@@ -2261,7 +2324,7 @@ eig_spd_cos(Tensor<T> const & A)
     V(2,1) /= mag;
 
     // add back in the offset
-    for (int i(0); i < 3; ++i)
+    for (int i(0); i < dimension; ++i)
       D(i,i) += trA;
   }
 
@@ -2275,20 +2338,20 @@ eig_spd_cos(Tensor<T> const & A)
 // \return G Cholesky factor A = GG^T
 // \return completed (bool) algorithm ran to completion
 //
-template<typename T>
-std::pair<Tensor<T>, bool >
-cholesky(Tensor<T> const & A)
+template<typename T, Index N>
+std::pair<Tensor<T, N>, bool >
+cholesky(Tensor<T, N> const & A)
 {
-  Tensor<T>
+  Tensor<T, N>
   G = sym(A);
 
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
-  for (Index k = 0; k < N; ++k) {
+  for (Index k = 0; k < dimension; ++k) {
 
     // Zeros above the diagonal
-    for (Index j = k + 1; j < N; ++j) {
+    for (Index j = k + 1; j < dimension; ++j) {
       G(k,j) = 0.0;
     }
 
@@ -2301,14 +2364,14 @@ cholesky(Tensor<T> const & A)
 
     s = std::sqrt(s);
 
-    for (Index j = k + 1; j < N; ++j) {
+    for (Index j = k + 1; j < dimension; ++j) {
       G(j,k) /= s;
     }
 
     G(k,k) = s;
 
-    for (Index j = k + 1; j < N; ++j) {
-      for (Index i = j; i < N; ++i) {
+    for (Index j = k + 1; j < dimension; ++j) {
+      for (Index i = j; i < dimension; ++i) {
         G(i,j) -= G(i,k) * G(j,k);
       }
     }

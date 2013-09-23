@@ -67,8 +67,9 @@ namespace Teuchos {
 
 //! Ifpack_ILU: A class for constructing and using an incomplete lower/upper (ILU) factorization of a given Epetra_RowMatrix.
 
-/*! The Ifpack_ILU class computes a "Relaxed" ILU factorization with level k fill 
-    of a given Epetra_RowMatrix. 
+/*! The Ifpack_ILU class computes a "relaxed" ILU factorization with level k fill 
+    of a given Epetra_RowMatrix.  The notion of relaxation is the same as described
+    in "Experimental study of ILU preconditioners for indefinite matrices" by Chow and Saad.
 
     <P> Please refer to \ref ifp_ilu for a general description of the ILU algorithm.
 

@@ -54,6 +54,7 @@
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_implicit_cast.hpp"
+#include "Teuchos_FancyOStream.hpp"
 
 
 namespace RTOpPack {
@@ -81,6 +82,8 @@ using Teuchos::Range1D;
 using Teuchos::ScalarTraits;
 /** \brief . */
 using Teuchos::TypeNameTraits;
+/** \brief . */
+using Teuchos::FancyOStream;
 
 /** \brief . */
 typedef Teuchos_Ordinal index_type;
@@ -170,7 +173,6 @@ public:
         TEUCHOS_ASSERT(values_in.lowerOffset() <= 0);
       }
       else {
-        TEUCHOS_ASSERT(stride_in == 0);
         TEUCHOS_ASSERT(subDim_in==0);
       }
 #endif
@@ -383,8 +385,6 @@ public:
       }
       else {
         TEUCHOS_ASSERT(subDim_in == 0);
-        TEUCHOS_ASSERT(leadingDim_in == 0);
-        TEUCHOS_ASSERT(numSubCols_in == 0);
       }
 #endif
       globalOffset_=globalOffset_in;

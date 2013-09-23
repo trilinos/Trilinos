@@ -51,6 +51,11 @@
 #ifndef IFPACK2_ILUT_DEF_HPP
 #define IFPACK2_ILUT_DEF_HPP
 
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
+
 namespace Ifpack2 {
 
   namespace {
@@ -756,6 +761,7 @@ void ILUT<MatrixType>::applyTempl(
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::rcpFromRef;
   typedef Tpetra::MultiVector<DomainScalar, local_ordinal_type, global_ordinal_type, node_type> MV;
 
   Teuchos::Time timer ("ILUT::apply");
@@ -773,31 +779,61 @@ void ILUT<MatrixType>::applyTempl(
       "X has " << X.getNumVectors () << " columns, but Y has "
       << Y.getNumVectors () << " columns.");
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      beta != STS::zero (), std::logic_error,
-      "Ifpack2::ILUT::apply: This method does not currently work when beta != 0.");
+    if (alpha == Teuchos::ScalarTraits<RangeScalar>::zero ()) {
+      // alpha == 0, so we don't need to apply the operator.
+      //
+      // The special case for beta == 0 ensures that if Y contains Inf
+      // or NaN values, we replace them with 0 (following BLAS
+      // convention), rather than multiplying them by 0 to get NaN.
+      if (beta == Teuchos::ScalarTraits<RangeScalar>::zero ()) {
+        Y.putScalar (beta);
+      } else {
+        Y.scale (beta);
+      }
+      return;
+    }
 
-    // If X and Y are pointing to the same memory location,
-    // we need to create an auxiliary vector, Xcopy
-    RCP<const MV> Xcopy;
+    // If beta != 0, create a temporary multivector Y_temp to hold the
+    // contents of alpha*M^{-1}*X.  Otherwise, alias Y_temp to Y.
+    RCP<MV> Y_temp;
+    if (beta == Teuchos::ScalarTraits<RangeScalar>::zero ()) {
+      Y_temp = rcpFromRef (Y);
+    } else {
+      Y_temp = rcp (new MV (Y.getMap (), Y.getNumVectors ()));
+    }
+
+    // If X and Y are pointing to the same memory location, create an
+    // auxiliary vector, X_temp, so that we don't clobber the input
+    // when computing the output.  Otherwise, alias X_temp to X.
+    RCP<const MV> X_temp;
     if (X.getLocalMV ().getValues () == Y.getLocalMV ().getValues ()) {
-      Xcopy = rcp (new MV (X));
+      X_temp = rcp (new MV (X));
+    } else {
+      X_temp = rcpFromRef (X);
     }
-    else {
-      Xcopy = rcpFromRef (X);
-    }
+
+    // Create a temporary multivector Y_mid to hold the intermediate
+    // between the L and U (or U and L, for the transpose or conjugate
+    // transpose case) solves.
+    RCP<MV> Y_mid = rcp (new MV (Y.getMap (), Y.getNumVectors ()));
 
     if (mode == Teuchos::NO_TRANS) { // Solve L U Y = X
-      L_->template localSolve<RangeScalar,DomainScalar> (*Xcopy, Y, Teuchos::NO_TRANS);
-      U_->template localSolve<RangeScalar,RangeScalar> (Y, Y, Teuchos::NO_TRANS);
+      L_->template localSolve<RangeScalar,DomainScalar> (*X_temp, *Y_mid, mode);
+      // FIXME (mfh 20 Aug 2013) Is it OK to use Y_temp for both the
+      // input and the output?
+      U_->template localSolve<RangeScalar,RangeScalar> (*Y_mid, *Y_temp, mode);
     }
     else { // Solve U^* L^* Y = X
-      U_->template localSolve<RangeScalar,DomainScalar> (*Xcopy, Y, mode);
-      L_->template localSolve<RangeScalar,RangeScalar> (Y, Y, mode);
+      U_->template localSolve<RangeScalar,DomainScalar> (*X_temp, *Y_mid, mode);
+      // FIXME (mfh 20 Aug 2013) Is it OK to use Y_temp for both the
+      // input and the output?
+      L_->template localSolve<RangeScalar,RangeScalar> (*Y_mid, *Y_temp, mode);
     }
 
-    if (alpha != STS::one ()) {
+    if (beta == Teuchos::ScalarTraits<RangeScalar>::zero ()) {
       Y.scale (alpha);
+    } else { // beta != 0
+      Y.update (alpha, *Y_temp, beta);
     }
   }
   ++NumApply_;

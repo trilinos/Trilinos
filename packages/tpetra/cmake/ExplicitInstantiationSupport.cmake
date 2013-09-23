@@ -7,12 +7,12 @@ SET(Tpetra_ETI_FIELDS "SIN|SOUT|S|LO|GO|N|CS|DS")
 ASSERT_DEFINED(Tpetra_ENABLE_Thrust)
 IF(Tpetra_ENABLE_Thrust)
   # no dd_real/qd_real support for CUDA, nor int/complex even via Cusp :( 
-  SET(CUDA_UNSUPPORTED_SCALARS "long|unsigned int|dd_real|qd_real|std::complex<double>|std::complex<float>")
+  SET(CUDA_UNSUPPORTED_SCALARS "dd_real|qd_real|std::complex<double>|std::complex<float>")
   TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET     "S=${CUDA_UNSUPPORTED_SCALARS}"                 "LO=.*" "GO=.*" "N=KokkosClassic::ThrustGPUNode")
   TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET     "SIN=.*" "SOUT=${CUDA_UNSUPPORTED_SCALARS}|int" "LO=.*" "GO=.*" "N=KokkosClassic::ThrustGPUNode")
   TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET     "SIN=${CUDA_UNSUPPORTED_SCALARS}|int" "SOUT=.*" "LO=.*" "GO=.*" "N=KokkosClassic::ThrustGPUNode")
   # do int separately, because we will instantiate vector in it
-  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET_INT "S=int"                                         "LO=.*" "GO=.*" "N=KokkosClassic::ThrustGPUNode")
+  TRIBITS_ETI_TYPE_EXPANSION(Tpetra_ETI_EXCLUDE_SET_INT "S=int|long|unsigned int"                       "LO=.*" "GO=.*" "N=KokkosClassic::ThrustGPUNode")
   #
   ASSERT_DEFINED(KokkosClassic_ENABLE_CUDA_DOUBLE)
   IF(NOT KokkosClassic_ENABLE_CUDA_DOUBLE)
@@ -78,6 +78,7 @@ TRIBITS_ETI_GENERATE_MACROS(
     "TPETRA_INSTANTIATE_LGN(LO,GO,N)"               TPETRA_ETIMACRO_LGN
     "TPETRA_INSTANTIATE_SLG(S,LO,GO)"               TPETRA_ETIMACRO_SLG  
     "TPETRA_INSTANTIATE_LG(LO,GO)"                  TPETRA_ETIMACRO_LG 
+    "TPETRA_INSTANTIATE_SL(S,LO)"                   TPETRA_ETIMACRO_SL
     "TPETRA_INSTANTIATE_N(N)"                       TPETRA_ETIMACRO_N
     "TPETRA_INSTANTIATE_TSLGN(CS,DS,LO,GO,N)"       TPETRA_ETIMACRO_TSLGN 
     "TPETRA_INSTANTIATE_TSLG(CS,DS,LO,GO)"          TPETRA_ETIMACRO_TSLG

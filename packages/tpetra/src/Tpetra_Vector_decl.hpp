@@ -231,7 +231,7 @@ Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::clone(const RCP<Node2> &node2
         typedef Map<LocalOrdinal,GlobalOrdinal,Node2> Map2;
         typedef Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node2> V2;
         Teuchos::ArrayRCP<const Scalar> V_view = this->getData();
-        Teuchos::RCP<const Map2> clonedMap = this->getMap()->template clone(node2);
+        Teuchos::RCP<const Map2> clonedMap = this->getMap()->template clone<Node2> (node2);
         Teuchos::RCP<V2> clonedV = Teuchos::rcp(new V2(clonedMap));
         Teuchos::ArrayRCP<Scalar> clonedV_view = clonedV->getDataNonConst();
         clonedV_view.deepCopy(V_view());

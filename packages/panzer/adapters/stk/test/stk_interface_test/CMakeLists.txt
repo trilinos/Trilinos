@@ -86,6 +86,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tGhosting
+  SOURCES tGhosting.cpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 4
+  COMM mpi
+  )
+
 TRIBITS_ADD_EXECUTABLE(
   SquareMeshGen 
   SOURCES SquareMeshGen.cpp

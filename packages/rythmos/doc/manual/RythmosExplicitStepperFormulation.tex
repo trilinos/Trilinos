@@ -28,7 +28,7 @@ be fairly easy to invert.
 
 \subsection{Forward Euler\label{rythmos:sec:Forward-Euler}}
 
-Forward Euler (Expicit euler) is simply obtained by first-order differencing
+Forward Euler (Explicit Euler) is simply obtained by first-order differencing
 the time derivative
 \[
 \frac{x_{n}-x_{n-1}}{\Delta t}=\bar{f}(x,t)
@@ -87,36 +87,38 @@ c_{s} & a_{s1} & a_{s2} & \ldots & a_{ss}\\
 \end{table}
 Notes:
 \begin{enumerate}
-\item $c_{i}$ is the fractional timestep that the approximate solution
-$X_{i}$ is known. It is possible for $c_{i}$ to be outside the timestep
-range {[}0,1{]}, however it is odd for a One-Step methods like Runge-Kutta
-to have stage solutions outside the current timestep. 
+\item $c_{i}$ is the fractional time step that the approximate solution
+$X_{i}$ is known. It is possible for $c_{i}$ to be outside the time
+step range {[}0,1{]}, however it is odd for a One-Step methods like
+Runge-Kutta to have stage solutions outside the current time step. 
 \item $c_{i}=\sum_{j=1}^{s}a_{ij}$ for $i=1,\ldots,s$
 \item For explicit methods, \emph{e.g.}, Forward Euler and Explicit RK4,
 $c_{1}=0$ and $a_{1j}=0$ for all $j$ indicates that one needs the
 solution, $x_{n-1}$, and its time derivative, $\dot{x}_{n-1}$, (or
 basically an evaluation of $\bar{f}(x_{n-1},t_{n-1})$) to start the
-timestep.
+time step.
 \item If $a_{ij}=0$ for $j\ge i$, the Runge-Kutta (RK) method is explicit
 (also known as ERK), since each $X_{i}$ is given in terms of known
-quantites.
+quantities.
 \item If $a_{ij}\ne0$ for any $j\ge i$, the Runge-Kutta (RK) method is
 implicit (also known as IRK), since an implicit solve is required
 for at least some of the stages.
 \item If $a_{ij}=0$ for $j>i$, the method is known as a Diagonally Implicit
-Runge-Kutta (DIRK) method.
+Runge-Kutta (DIRK) method. DIRK methods require an implicit solution
+for each stage, but are not coupled to other stages.
 \item If $a_{ij}=0$ for $j>i$ and $a_{ii}=C$, the method is known as
-a Singly Diagonally Implicit Runge-Kutta (SDIRK) method.
-\item $b_{i}$ indicates the weighting of the intermediate solutions, $X_{i}$,
-to obtain the solution at the end time, $x_{n}$.
-\item The stage solutions, $X_{i}$, are summed together to obtain the final
-solution, \emph{i.e.}, the coefficients, $b_{i}$ are a partion of
-unity, $\sum_{i=1}^{s}b_{i}=1$.
+a Singly Diagonally Implicit Runge-Kutta (SDIRK) method. Like with
+DIRK methods, an implicit solve is needed at each stage, but since
+$a_{ii}$ is the same, some of the preportory calculations can be
+reused for each stage.
+\item $b_{i}$ are the weighting of the intermediate solutions, $X_{i}$,
+to obtain the final solution, and they are a partition of unity, $\sum_{i=1}^{s}b_{i}=1$.
 \item If $a_{sj}=b_{j}$ for all $j$ or $a_{i1}=b_{1}$ for all $i$, and
 $a_{ij}$ is a nonsingular matrix, then A-stable RK methods are L-stable
 \cite[p. 45]{HairerWanner}\cite[p. 103]{AscherPetzold}, \emph{e.g.},
-Backward Euler, Trapezoidal, and an SDIRK method. This is not a necessary
-condition for L-stability, but it is a sufficient condition.
+Backward Euler and two SDIRK methods. Each of the above conditions
+are not a necessary condition for L-stability, but they are a sufficient
+condition.
 \end{enumerate}
 
 \subsection{Explicit RK Forward Euler}

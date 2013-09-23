@@ -43,8 +43,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_ARRAYANALYZESHAPE_HPP
-#define KOKKOS_ARRAYANALYZESHAPE_HPP
+#ifndef KOKKOS_COREANALYZESHAPE_HPP
+#define KOKKOS_COREANALYZESHAPE_HPP
 
 #include <Kokkos_Array.hpp>
 #include <impl/Kokkos_AnalyzeShape.hpp>
@@ -173,5 +173,5 @@ public:
 } // namespace Impl
 } // namespace Kokkos
 
-#endif /* #ifndef KOKKOS_ARRAYANALYZESHAPE_HPP */
+#endif /* #ifndef KOKKOS_COREANALYZESHAPE_HPP */
 

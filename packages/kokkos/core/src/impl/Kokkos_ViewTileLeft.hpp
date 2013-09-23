@@ -145,11 +145,7 @@ struct ViewAssignment< LayoutTileLeftFast , LayoutTileLeftFast, void >
   ViewAssignment(       View<DT,DL,DD,DM,LayoutTileLeftFast> & dst ,
                   const View<ST,SL,SD,SM,LayoutTileLeftFast> & src ,
                   const typename enable_if<(
-                    ValueCompatible< ViewTraits<DT,DL,DD,DM> ,
-                                     ViewTraits<ST,SL,SD,SM> >::value
-                    &&
-                    ShapeCompatible< typename ViewTraits<DT,DL,DD,DM>::shape_type ,
-                                     typename ViewTraits<ST,SL,SD,SM>::shape_type >::value
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::value
                   )>::type * = 0 )
   {
     typedef View<DT,DL,DD,DM,LayoutTileLeftFast> DstViewType ;
@@ -238,7 +234,6 @@ struct ViewAssignment< LayoutDefault , LayoutTileLeftFast, void >
     const unsigned NT0 = ( src.dimension_0() + MASK_0 ) >> SHIFT_0 ;
 
     dst.m_ptr_on_device = src.m_ptr_on_device + (( i0 + i1 * NT0 ) << ( SHIFT_0 + SHIFT_1 ));
-    dst.m_stride        = N0 ;
 
     ViewTracking< DstViewType >::increment( dst.m_ptr_on_device );
   }
@@ -288,7 +283,7 @@ public:
 
   typedef View< typename traits::non_const_data_type ,
                 typename traits::array_layout ,
-                Host ,
+                typename traits::device_type::host_mirror_device_type ,
                 void > HostMirror ;
 
   enum { Rank = 2 };
@@ -343,9 +338,9 @@ public:
 
   template< typename iType0 , typename iType1 >
   KOKKOS_INLINE_FUNCTION
-  typename traits::value_type & operator()(
-    const iType0 & i0 , const iType1 & i1 , const int , const int = 0 ,
-    const int = 0 , const int = 0 , const int = 0 , const int = 0 ) const
+  typename traits::value_type &
+    at( const iType0 & i0 , const iType1 & i1 , const int , const int ,
+        const int , const int , const int , const int ) const
     {
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );

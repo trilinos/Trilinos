@@ -43,6 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
+#include <algorithm>
+
 #include "MueLu_ConfigDefs.hpp"
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
@@ -61,24 +63,33 @@
 
 namespace MueLu {
 
-  AmesosSmoother::AmesosSmoother(std::string const & type, Teuchos::ParameterList const & paramList)
-    : type_(type), paramList_(paramList)
-  {
+  AmesosSmoother::AmesosSmoother(const std::string& type, const Teuchos::ParameterList& paramList)
+    : type_(type), paramList_(paramList) {
+    if (!type_.empty()) {
+      // Transform string to "Abcde" notation
+      std::transform(type_.begin(),   type_.end(),   type_.begin(), ::tolower);
+      std::transform(type_.begin(), ++type_.begin(), type_.begin(), ::toupper);
+    }
+    if (type_ == "Amesos_klu")     type_ = "Klu";
+    if (type_ == "Amesos_umfpack") type_ = "Umfpack";
+    if (type_ == "Superlu_dist")   type_ = "Superludist";
+
     // set default solver type
-    if(type_ == "") {
+    if (type_ == "") {
 #if defined(HAVE_AMESOS_SUPERLU)
-      type_ = "Superlu";     // 1. default smoother (if Superlu is available)
+      type_ = "Superlu";
 #elif defined(HAVE_AMESOS_KLU)
-      type_ = "Klu";         // 2. default smoother (if KLU is available)
+      type_ = "Klu";
 #elif defined(HAVE_AMESOS_SUPERLUDIST)
-      type_ = "Superludist"; // 3. default smoother (if Superludist is available)
+      type_ = "Superludist";
 #elif defined(HAVE_AMESOS_UMFPACK)
-      type_ = "Umfpack";     // 4. default smoother (if Umfpack is available)
+      type_ = "Umfpack";
 #endif
-    } // if(type_ == "")
+    }
 
     // check for valid direct solver type
-    TEUCHOS_TEST_FOR_EXCEPTION(type_ != "Superlu" && type_ != "Superludist" && type_ != "Klu" && type_ != "Amesos_Klu" && type_ != "Umfpack" && type_ != "Amesos_Umfpack", Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Solver '" + type_ + "' not supported");
+    TEUCHOS_TEST_FOR_EXCEPTION(type_ != "Superlu" && type_ != "Superludist" && type_ != "Klu" && type_ != "Umfpack",
+                               Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Solver '" + type_ + "' not supported");
     if (type_ == "Superlu") {
 #if not defined(HAVE_AMESOS_SUPERLU)
       TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without SuperLU. Cannot define a solver by default for this AmesosSmoother object");
@@ -89,17 +100,16 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without SuperLU_DIST. Cannot define a solver by default for this AmesosSmoother object");
 #endif
     }
-    if (type_ == "Klu" || type_ == "Amesos_Klu") {
+    if (type_ == "Klu") {
 #if not defined(HAVE_AMESOS_KLU)
       TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without KLU. Cannot define a solver by default for this AmesosSmoother object");
 #endif
     }
-    if (type_ == "Umfpack" || type_ == "Amesos_Umfpack") {
+    if (type_ == "Umfpack") {
 #if not defined(HAVE_AMESOS_UMFPACK)
       TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without Umfpack. Cannot define a solver by default for this AmesosSmoother object");
 #endif
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == true, Exceptions::RuntimeError, "TO BE REMOVED");
   }
 
   AmesosSmoother::~AmesosSmoother() {}
@@ -108,9 +118,11 @@ namespace MueLu {
     Input(currentLevel, "A");
   }
 
-  void AmesosSmoother::Setup(Level &currentLevel) {
+  void AmesosSmoother::Setup(Level& currentLevel) {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
-    if (SmootherPrototype::IsSetup() == true) GetOStream(Warnings0, 0) << "Warning: MueLu::AmesosSmoother::Setup(): Setup() has already been called" << std::endl;
+
+    if (SmootherPrototype::IsSetup() == true)
+      GetOStream(Warnings0, 0) << "Warning: MueLu::AmesosSmoother::Setup(): Setup() has already been called" << std::endl;
 
     A_ = Get< RCP<Matrix> >(currentLevel, "A");
 
@@ -124,18 +136,19 @@ namespace MueLu {
 
     // set Reindex flag, if A is distributed with non-contiguous maps
     // unfortunately there is no reindex for Amesos2, yet. So, this only works for Epetra based problems
-    if(A_->getRowMap()->isDistributed() == true && A_->getRowMap()->isContiguous() == false)
+    if (A_->getRowMap()->isDistributed() == true && A_->getRowMap()->isContiguous() == false)
       paramList_.set("Reindex", true);
 
     prec_->SetParameters(paramList_);
 
     int r = prec_->NumericFactorization();
-    TEUCHOS_TEST_FOR_EXCEPTION(r != 0, Exceptions::RuntimeError, "MueLu::AmesosSmoother::Setup(): Amesos solver returns value of " + Teuchos::Utils::toString(r) + " during NumericFactorization()");
+    TEUCHOS_TEST_FOR_EXCEPTION(r != 0, Exceptions::RuntimeError, "MueLu::AmesosSmoother::Setup(): Amesos solver returns value of " +
+                               Teuchos::Utils::toString(r) + " during NumericFactorization()");
 
     SmootherPrototype::IsSetup(true);
   }
 
-  void AmesosSmoother::Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero) const {
+  void AmesosSmoother::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::Apply(): Setup() has not been called");
 
     Epetra_MultiVector &epX = Utils::MV2NonConstEpetraMV(X);
@@ -166,7 +179,7 @@ namespace MueLu {
   }
 
   //using MueLu::Describable::describe; // overloading, not hiding
-  void AmesosSmoother::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
+  void AmesosSmoother::print(Teuchos::FancyOStream& out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
 
     if (verbLevel & Parameters0) {

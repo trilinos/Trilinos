@@ -679,7 +679,7 @@ Zoltan::~Zoltan()
 void
 Zoltan::reset_dest_proc_data()
 {
-  const int  proc = 0; //Env::parallel_rank();
+  const int  proc = parallel_machine_rank(comm_);
   const unsigned size = m_mesh_information_.mesh_entities.size();
   m_mesh_information_.dest_proc_ids.assign(size, proc);
 }

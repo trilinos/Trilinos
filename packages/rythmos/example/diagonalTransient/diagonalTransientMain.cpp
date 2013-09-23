@@ -25,7 +25,7 @@
 // Questions? Contact Todd S. Coffey (tscoffe@sandia.gov)
 //
 // ***********************************************************************
-//@HEADER 
+//@HEADER
 
 #include "EpetraExt_DiagonalTransientModel.hpp"
 #include "Rythmos_BackwardEulerStepper.hpp"
@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
   typedef Thyra::ModelEvaluatorBase MEB;
   typedef Thyra::DefaultMultiVectorProductVectorSpace<Scalar> DMVPVS;
   using Thyra::productVectorBase;
-  
+
   bool result, success = true;
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
@@ -199,10 +199,10 @@ int main(int argc, char *argv[])
     clp.setOption(
       "dump-final-solutions", "no-dump-final-solutions", &dumpFinalSolutions,
       "Determine if the final solutions are dumpped or not." );
-    
+
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
-    
+
     if ( Teuchos::VERB_DEFAULT == verbLevel )
       verbLevel = Teuchos::VERB_LOW;
 
@@ -213,7 +213,7 @@ int main(int argc, char *argv[])
     // Get the base parameter list that all other parameter lists will be read
     // from.
     //
-    
+
     RCP<ParameterList>
       paramList = Teuchos::parameterList();
     if (paramsFileName.length())
@@ -240,7 +240,7 @@ int main(int argc, char *argv[])
     linearSolverBuilder.setParameterList(sublist(paramList,Stratimikos_name));
     RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >
       W_factory = createLinearSolveStrategy(linearSolverBuilder);
-    
+
     //
     // Create the underlying EpetraExt::ModelEvaluator
     //
@@ -255,16 +255,16 @@ int main(int argc, char *argv[])
     epetraStateModel->getValidParameters()->print(
       *out, PLPrintOptions().indent(2).showTypes(true).showDoc(true)
       );
-    
+
     //
     // Create the Thyra-wrapped ModelEvaluator
     //
-    
+
     RCP<Thyra::ModelEvaluator<double> >
       stateModel = epetraModelEvaluator(epetraStateModel,W_factory);
 
     *out << "\nParameter names = " << *stateModel->get_p_names(0) << "\n";
-    
+
     //
     // Create the Rythmos stateStepper
     //
@@ -345,17 +345,17 @@ int main(int argc, char *argv[])
         stateStepper, integrator, state_ic
         );
     stateIntegratorAsModel->setVerbLevel(verbLevel);
-    
+
     *out << "\nUse the StepperAsModelEvaluator to integrate state x(p,finalTime) ... \n";
-    
+
     RCP<Thyra::VectorBase<Scalar> > x_final;
 
     {
-      
+
       Teuchos::OSTab tab(out);
 
       x_final = createMember(stateIntegratorAsModel->get_g_space(0));
-      
+
       eval_g(
         *stateIntegratorAsModel,
         0, *state_ic.get_p(0),
@@ -378,7 +378,7 @@ int main(int argc, char *argv[])
         epetraStateModel->getExactSolution(finalTime),
         stateModel->get_x_space()
         );
-    
+
     result = Thyra::testRelNormDiffErr(
       "exact_x_final", *exact_x_final, "x_final", *x_final,
       "maxStateError", maxStateError, "warningTol", 1.0, // Don't warn
@@ -389,14 +389,14 @@ int main(int argc, char *argv[])
     //
     // Solve and test the forward sensitivity computation
     //
-      
+
     if (doFwdSensSolve) {
 
       //
       // Create the forward sensitivity stepper
       //
-      
-      RCP<Rythmos::ForwardSensitivityStepper<Scalar> > stateAndSensStepper = 
+
+      RCP<Rythmos::ForwardSensitivityStepper<Scalar> > stateAndSensStepper =
         Rythmos::forwardSensitivityStepper<Scalar>();
       if (doFwdSensErrorControl) {
         stateAndSensStepper->initializeDecoupledSteppers(
@@ -447,30 +447,30 @@ int main(int argc, char *argv[])
         );
 
       *out << "\nstate_and_sens_ic:\n" << describe(state_and_sens_ic,verbLevel);
- 
+
       stateAndSensStepper->setInitialCondition(state_and_sens_ic);
 
       //
       // Use a StepperAsModelEvaluator to integrate the state+sens
       //
-    
+
       RCP<Rythmos::StepperAsModelEvaluator<Scalar> >
         stateAndSensIntegratorAsModel = Rythmos::stepperAsModelEvaluator(
           rcp_implicit_cast<Rythmos::StepperBase<Scalar> >(stateAndSensStepper),
           integrator, state_and_sens_ic
           );
       stateAndSensIntegratorAsModel->setVerbLevel(verbLevel);
-    
+
       *out << "\nUse the StepperAsModelEvaluator to integrate state + sens x_bar(p,finalTime) ... \n";
-    
+
       RCP<Thyra::VectorBase<Scalar> > x_bar_final;
 
       {
-      
+
         Teuchos::OSTab tab(out);
 
         x_bar_final = createMember(stateAndSensIntegratorAsModel->get_g_space(0));
-      
+
         eval_g(
           *stateAndSensIntegratorAsModel,
           0, *state_ic.get_p(0),
@@ -513,46 +513,46 @@ int main(int argc, char *argv[])
       //
 
       *out << "\nApproximating DxDp(p,t) using directional finite differences of integrator for x(p,t) ...\n";
-    
+
       RCP<Thyra::MultiVectorBase<Scalar> > DxDp_fd_final;
 
       {
-      
+
         Teuchos::OSTab tab(out);
-      
-      
+
+
         MEB::InArgs<Scalar>
           fdBasePoint = stateIntegratorAsModel->createInArgs();
-      
+
         fdBasePoint.set_t(finalTime);
         fdBasePoint.set_p(0,stateModel->getNominalValues().get_p(0));
-      
+
         DxDp_fd_final = createMembers(
           stateIntegratorAsModel->get_g_space(0),
           stateIntegratorAsModel->get_p_space(0)->dim()
           );
-      
+
         typedef Thyra::DirectionalFiniteDiffCalculatorTypes::SelectedDerivatives
           SelectedDerivatives;
-      
+
         MEB::OutArgs<Scalar> fdOutArgs =
           fdCalc.createOutArgs(
             *stateIntegratorAsModel,
             SelectedDerivatives().supports(MEB::OUT_ARG_DgDp,0,0)
             );
         fdOutArgs.set_DgDp(0,0,DxDp_fd_final);
-      
+
         // Silence the model evaluators that are called.  The fdCal object
         // will show all of the inputs and outputs for each call.
         stateStepper->setVerbLevel(Teuchos::VERB_NONE);
         stateIntegratorAsModel->setVerbLevel(Teuchos::VERB_NONE);
-      
+
         fdCalc.calcDerivatives(
           *stateIntegratorAsModel, fdBasePoint,
           stateIntegratorAsModel->createOutArgs(), // Don't bother with function value
           fdOutArgs
           );
-        
+
         *out
           << "\nFinite difference DxDp_fd_final = DxDp(p,finalTime): "
           << describe(*DxDp_fd_final,solnVerbLevel);
@@ -571,7 +571,7 @@ int main(int argc, char *argv[])
 
         RCP<const Thyra::VectorBase<Scalar> >
           DxDp_vec_final = Thyra::productVectorBase<Scalar>(x_bar_final)->getVectorBlock(1);
-      
+
         RCP<const Thyra::VectorBase<Scalar> >
           DxDp_fd_vec_final = Thyra::multiVectorProductVector(
             rcp_dynamic_cast<const Thyra::DefaultMultiVectorProductVectorSpace<Scalar> >(
@@ -592,7 +592,7 @@ int main(int argc, char *argv[])
       }
 
     }
-    
+
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,success);
 
@@ -600,7 +600,7 @@ int main(int argc, char *argv[])
     *out << "\nEnd Result: TEST PASSED" << endl;
   else
     *out << "\nEnd Result: TEST FAILED" << endl;
-  
+
   return ( success ? 0 : 1 );
 
 } // end main() [Doxygen looks for this!]

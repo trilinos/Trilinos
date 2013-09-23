@@ -46,50 +46,166 @@ namespace Intrepid
 {
 
 //
-// Get total number of components
+// Default constructor.
 //
-template<typename T>
+template<typename T, typename Store>
 inline
-Index
-TensorBase<T>::get_number_components() const
+TensorBase<T, Store>::TensorBase() :
+dimension_(0)
 {
-  return components_.size();
+  if (Store::IS_DYNAMIC == true) {
+    set_number_components(0);
+  } else {
+    fill(NANS);
+  }
+  return;
 }
 
 //
-// Allocate space for components
+// Construction that initializes to NaNs
 //
-template<typename T>
+template<typename T, typename Store>
 inline
-void
-TensorBase<T>::set_number_components(Index const number_components)
+TensorBase<T, Store>::TensorBase(Index const dimension, Index const order) :
+dimension_(0)
 {
-  components_.resize(number_components);
+  set_dimension(dimension, order);
 
+  fill(NANS);
+
+  return;
+}
+
+//
+// Create with specified value
+//
+template<typename T, typename Store>
+inline
+TensorBase<T, Store>::TensorBase(
+    Index const dimension,
+    Index const order,
+    ComponentValue const value) :
+    dimension_(0)
+{
+  set_dimension(dimension, order);
+
+  fill(value);
+
+  return;
+}
+
+//
+// Construction from a scalar
+//
+template<typename T, typename Store>
+inline
+TensorBase<T, Store>::TensorBase(
+    Index const dimension,
+    Index const order,
+    T const & s) :
+    dimension_(0)
+{
+  set_dimension(dimension, order);
+
+  fill(s);
+
+  return;
+}
+
+//
+// Construction from array
+//
+template<typename T, typename Store>
+inline
+TensorBase<T, Store>::TensorBase(
+    Index const dimension,
+    Index const order,
+    T const * data_ptr) :
+    dimension_(0)
+{
+  set_dimension(dimension, order);
+
+  fill(data_ptr);
+
+  return;
+}
+
+//
+// Copy constructor
+//
+template<typename T, typename Store>
+inline
+TensorBase<T, Store>::TensorBase(TensorBase<T, Store> const & X) :
+dimension_(X.dimension_)
+{
+  Index const
+  number_components = X.get_number_components();
+
+  set_number_components(number_components);
+
+  for (Index i = 0; i < number_components; ++i) {
+    (*this)[i] = X[i];
+  }
+
+  return;
+}
+
+//
+// Copy assignment
+//
+template<typename T, typename Store>
+inline
+TensorBase<T, Store> &
+TensorBase<T, Store>::operator=(TensorBase<T, Store> const & X)
+{
+  if (this == &X) return *this;
+
+  dimension_ = X.dimension_;
+
+  Index const
+  number_components = X.get_number_components();
+
+  set_number_components(number_components);
+
+  for (Index i = 0; i < number_components; ++i) {
+    (*this)[i] = X[i];
+  }
+
+  return *this;
+}
+
+//
+// Simple destructor
+//
+template<typename T, typename Store>
+inline
+TensorBase<T, Store>::~TensorBase()
+{
   return;
 }
 
 //
 // Get dimension
 //
-template<typename T>
+template<typename T, typename Store>
 inline
 Index
-TensorBase<T>::get_dimension() const
+TensorBase<T, Store>::get_dimension() const
 {
+  assert(Store::IS_DYNAMIC == true);
+
   return dimension_;
 }
 
 //
 // Set dimension
 //
-template<typename T>
+template<typename T, typename Store>
 inline
 void
-TensorBase<T>::set_dimension(Index const dimension)
+TensorBase<T, Store>::set_dimension(Index const dimension, Index const order)
 {
-  Index const
-  order = get_order();
+  if (Store::IS_STATIC == true) return;
 
   dimension_ = dimension;
 
@@ -102,12 +218,58 @@ TensorBase<T>::set_dimension(Index const dimension)
 }
 
 //
-// Fill components with value.
+// Linear access to components
 //
-template<typename T>
+template<typename T, typename Store>
+inline
+T const &
+TensorBase<T, Store>::operator[](Index const i) const
+{
+  return components_[i];
+}
+
+//
+// Linear access to components
+//
+template<typename T, typename Store>
+inline
+T &
+TensorBase<T, Store>::operator[](Index const i)
+{
+  return components_[i];
+}
+
+//
+// Get total number of components
+//
+template<typename T, typename Store>
+inline
+Index
+TensorBase<T, Store>::get_number_components() const
+{
+  return components_.size();
+}
+
+//
+// Allocate space for components
+//
+template<typename T, typename Store>
 inline
 void
-TensorBase<T>::fill(ComponentValue value)
+TensorBase<T, Store>::set_number_components(Index const number_components)
+{
+  components_.resize(number_components);
+
+  return;
+}
+
+//
+// Fill components with value.
+//
+template<typename T, typename Store>
+inline
+void
+TensorBase<T, Store>::fill(ComponentValue const value)
 {
   Index const
   number_components = get_number_components();
@@ -126,9 +288,21 @@ TensorBase<T>::fill(ComponentValue value)
       }
       break;
 
+    case SEQUENCE:
+      for (Index i = 0; i < number_components; ++i) {
+        (*this)[i] = i;
+      }
+      break;
+
     case RANDOM:
       for (Index i = 0; i < number_components; ++i) {
-        (*this)[i] = Teuchos::ScalarTraits<T>().random();
+        (*this)[i] = random<T>();
+      }
+      break;
+
+    case NANS:
+      for (Index i = 0; i < number_components; ++i) {
+        (*this)[i] = not_a_number<T>();
       }
       break;
 
@@ -145,12 +319,30 @@ TensorBase<T>::fill(ComponentValue value)
 }
 
 //
-// Fill components from array defined by pointer.
+// Fill components from argument
 //
-template<typename T>
+template<typename T, typename Store>
 inline
 void
-TensorBase<T>::fill(T const * data_ptr)
+TensorBase<T, Store>::fill(T const & s)
+{
+  Index const
+  number_components = get_number_components();
+
+  for (Index i = 0; i < number_components; ++i) {
+    (*this)[i] = s;
+  }
+
+  return;
+}
+
+//
+// Fill components from array defined by pointer.
+//
+template<typename T, typename Store>
+inline
+void
+TensorBase<T, Store>::fill(T const * data_ptr)
 {
   assert(data_ptr != NULL);
 
@@ -165,208 +357,17 @@ TensorBase<T>::fill(T const * data_ptr)
 }
 
 //
-// Default constructor
-//
-template<typename T>
-inline
-TensorBase<T>::TensorBase() :
-dimension_(0)
-{
-  return;
-}
-
-//
-// Construction that initializes to NaNs
-//
-template<typename T>
-inline
-TensorBase<T>::TensorBase(Index const dimension, Index const order) :
-dimension_(dimension)
-{
-  Index const
-  number_components = integer_power(dimension, order);
-
-  set_number_components(number_components);
-
-  for (Index i = 0; i < number_components; ++i) {
-    (*this)[i] = not_a_number<T>();
-  }
-
-  return;
-}
-
-//
-// Create with specified value
-//
-template<typename T>
-inline
-TensorBase<T>::TensorBase(
-    Index const dimension,
-    Index const order,
-    ComponentValue value) :
-dimension_(dimension)
-{
-  Index const
-  number_components = integer_power(dimension, order);
-
-  set_number_components(number_components);
-
-  fill(value);
-
-  return;
-}
-
-//
-// Construction from a scalar
-//
-template<typename T>
-inline
-TensorBase<T>::TensorBase(
-    Index const dimension,
-    Index const order,
-    T const & s) :
-dimension_(dimension)
-{
-  Index const
-  number_components = integer_power(dimension, order);
-
-  set_number_components(number_components);
-
-  for (Index i = 0; i < number_components; ++i) {
-    (*this)[i] = s;
-  }
-
-  return;
-}
-
-//
-// Construction from array
-//
-template<typename T>
-inline
-TensorBase<T>::TensorBase(
-    Index const dimension,
-    Index const order,
-    T const * data_ptr) :
-dimension_(dimension)
-{
-  Index const
-  number_components = integer_power(dimension, order);
-
-  set_number_components(number_components);
-
-  fill(data_ptr);
-
-  return;
-}
-
-//
-// Copy constructor
-//
-template<typename T>
-inline
-TensorBase<T>::TensorBase(TensorBase<T> const & X) :
-dimension_(0)
-{
-  Index const
-  dimension = X.get_dimension();
-
-  dimension_ = dimension;
-
-  Index const
-  order = X.get_order();
-
-  Index const
-  number_components = integer_power(dimension, order);
-
-  set_number_components(number_components);
-
-  for (Index i = 0; i < number_components; ++i) {
-    (*this)[i] = X[i];
-  }
-
-  return;
-}
-
-//
-// Simple destructor
-//
-template<typename T>
-inline
-TensorBase<T>::~TensorBase()
-{
-  return;
-}
-
-//
-// Linear access to components
-//
-template<typename T>
-inline
-T const &
-TensorBase<T>::operator[](Index const i) const
-{
-  assert(i < components_.size());
-  return components_[i];
-}
-
-//
-// Linear access to components
-//
-template<typename T>
-inline
-T &
-TensorBase<T>::operator[](Index const i)
-{
-  assert(i < components_.size());
-  return components_[i];
-}
-
-//
-// Copy assignment
-//
-template<typename T>
-inline
-TensorBase<T> &
-TensorBase<T>::operator=(TensorBase<T> const & X)
-{
-  if (this == &X) return *this;
-
-  Index const
-  order = X.get_order();
-
-  assert(order == get_order());
-
-  Index const
-  dimension = X.get_dimension();
-
-  dimension_ = dimension;
-
-  Index const
-  number_components = integer_power(dimension, order);
-
-  set_number_components(number_components);
-
-  for (Index i = 0; i < number_components; ++i) {
-    (*this)[i] = X[i];
-  }
-
-  return *this;
-}
-
-//
 // Component increment
 //
-template<typename T>
+template<typename T, typename Store>
 inline
-TensorBase<T> &
-TensorBase<T>::operator+=(TensorBase<T> const & X)
+TensorBase<T, Store> &
+TensorBase<T, Store>::operator+=(TensorBase<T, Store> const & X)
 {
-  assert(X.get_order() == get_order());
-  assert(X.get_dimension() == get_dimension());
-
   Index const
   number_components = get_number_components();
+
+  assert(number_components == X.get_number_components());
 
   for (Index i = 0; i < number_components; ++i) {
     (*this)[i] += X[i];
@@ -378,16 +379,15 @@ TensorBase<T>::operator+=(TensorBase<T> const & X)
 //
 // Component decrement
 //
-template<typename T>
+template<typename T, typename Store>
 inline
-TensorBase<T> &
-TensorBase<T>::operator-=(TensorBase<T> const & X)
+TensorBase<T, Store> &
+TensorBase<T, Store>::operator-=(TensorBase<T, Store> const & X)
 {
-  assert(X.get_order() == get_order());
-  assert(X.get_dimension() == get_dimension());
-
   Index const
   number_components = get_number_components();
+
+  assert(number_components == X.get_number_components());
 
   for (Index i = 0; i < number_components; ++i) {
     (*this)[i] -= X[i];
@@ -399,10 +399,10 @@ TensorBase<T>::operator-=(TensorBase<T> const & X)
 //
 // Fill with zeros
 //
-template<typename T>
+template<typename T, typename Store>
 inline
 void
-TensorBase<T>::clear()
+TensorBase<T, Store>::clear()
 {
   fill(ZEROS);
   return;
@@ -411,9 +411,9 @@ TensorBase<T>::clear()
 //
 // Square of Frobenius norm
 //
-template<typename T>
+template<typename T, typename Store>
 T
-norm_f_square(TensorBase<T> const & X)
+norm_f_square(TensorBase<T, Store> const & X)
 {
   T
   s = 0.0;
@@ -428,9 +428,9 @@ norm_f_square(TensorBase<T> const & X)
 //
 // Frobenius norm
 //
-template<typename T>
+template<typename T, typename Store>
 T
-norm_f(TensorBase<T> const & X)
+norm_f(TensorBase<T, Store> const & X)
 {
   return std::sqrt(norm_f_square(X));
 }
@@ -438,17 +438,21 @@ norm_f(TensorBase<T> const & X)
 //
 // Base addition
 //
-template<typename R, typename S, typename T>
+template<typename R, typename S, typename T, typename Store>
 void
-add(TensorBase<R> const & A, TensorBase<S> const & B, TensorBase<T> & C)
+add(
+    TensorBase<R, Store> const & A,
+    TensorBase<S, Store> const & B,
+    TensorBase<T, Store> & C
+)
 {
-  assert(B.get_dimension() == A.get_dimension());
-  assert(B.get_order() == A.get_order());
-  assert(C.get_order() == A.get_order());
+  Index const
+  number_components = A.get_number_components();
 
-  C.set_dimension(A.get_dimension());
+  assert(B.get_number_components() == number_components);
+  assert(C.get_number_components() == number_components);
 
-  for (Index i = 0; i < C.get_number_components(); ++i) {
+  for (Index i = 0; i < number_components; ++i) {
     C[i] = A[i] + B[i];
   }
 
@@ -458,17 +462,20 @@ add(TensorBase<R> const & A, TensorBase<S> const & B, TensorBase<T> & C)
 //
 // Base subtraction
 //
-template<typename R, typename S, typename T>
+template<typename R, typename S, typename T, typename Store>
 void
-subtract(TensorBase<R> const & A, TensorBase<S> const & B, TensorBase<T> & C)
+subtract(
+    TensorBase<R, Store> const & A,
+    TensorBase<S, Store> const & B,
+    TensorBase<T, Store> & C)
 {
-  assert(B.get_dimension() == A.get_dimension());
-  assert(B.get_order() == A.get_order());
-  assert(C.get_order() == A.get_order());
+  Index const
+  number_components = A.get_number_components();
 
-  C.set_dimension(A.get_dimension());
+  assert(B.get_number_components() == number_components);
+  assert(C.get_number_components() == number_components);
 
-  for (Index i = 0; i < C.get_number_components(); ++i) {
+  for (Index i = 0; i < number_components; ++i) {
     C[i] = A[i] - B[i];
   }
 
@@ -478,15 +485,16 @@ subtract(TensorBase<R> const & A, TensorBase<S> const & B, TensorBase<T> & C)
 //
 // Base minus
 //
-template<typename T>
+template<typename T, typename Store>
 void
-minus(TensorBase<T> const & A, TensorBase<T> & B)
+minus(TensorBase<T, Store> const & A, TensorBase<T, Store> & B)
 {
-  assert(B.get_order() == A.get_order());
+  Index const
+  number_components = A.get_number_components();
 
-  B.set_dimension(A.get_dimension());
+  assert(B.get_number_components() == number_components);
 
-  for (Index i = 0; i < B.get_number_components(); ++i) {
+  for (Index i = 0; i < number_components; ++i) {
     B[i] = - A[i];
   }
 
@@ -496,14 +504,16 @@ minus(TensorBase<T> const & A, TensorBase<T> & B)
 //
 // Base equality
 //
-template<typename T>
+template<typename T, typename Store>
 bool
-equal(TensorBase<T> const & A, TensorBase<T> const & B)
+equal(TensorBase<T, Store> const & A, TensorBase<T, Store> const & B)
 {
-  assert(A.get_order() == B.get_order());
-  assert(A.get_dimension() == B.get_dimension());
+  Index const
+  number_components = A.get_number_components();
 
-  for (Index i = 0; i < A.get_number_components(); ++i) {
+  assert(B.get_number_components() == number_components);
+
+  for (Index i = 0; i < number_components; ++i) {
     if (A[i] != B[i]) return false;
   }
 
@@ -513,9 +523,9 @@ equal(TensorBase<T> const & A, TensorBase<T> const & B)
 //
 // Base not equality
 //
-template<typename T>
+template<typename T, typename Store>
 bool
-not_equal(TensorBase<T> const & A, TensorBase<T> const & B)
+not_equal(TensorBase<T, Store> const & A, TensorBase<T, Store> const & B)
 {
   return !(equal(A, B));
 }
@@ -523,15 +533,16 @@ not_equal(TensorBase<T> const & A, TensorBase<T> const & B)
 //
 // Base scaling
 //
-template<typename R, typename S, typename T>
+template<typename R, typename S, typename T, typename Store>
 void
-scale(TensorBase<R> const & A, S const & s, TensorBase<T> & B)
+scale(TensorBase<R, Store> const & A, S const & s, TensorBase<T, Store> & B)
 {
-  assert(B.get_order() == A.get_order());
+  Index const
+  number_components = A.get_number_components();
 
-  B.set_dimension(A.get_dimension());
+  assert(B.get_number_components() == number_components);
 
-  for (Index i = 0; i < B.get_number_components(); ++i) {
+  for (Index i = 0; i < number_components; ++i) {
     B[i] = s * A[i];
   }
 
@@ -541,16 +552,36 @@ scale(TensorBase<R> const & A, S const & s, TensorBase<T> & B)
 //
 // Base division
 //
-template<typename R, typename S, typename T>
+template<typename R, typename S, typename T, typename Store>
 void
-divide(TensorBase<R> const & A, S const & s, TensorBase<T> & B)
+divide(TensorBase<R, Store> const & A, S const & s, TensorBase<T, Store> & B)
 {
-  assert(B.get_order() == A.get_order());
+  Index const
+  number_components = A.get_number_components();
 
-  B.set_dimension(A.get_dimension());
+  assert(B.get_number_components() == number_components);
 
-  for (Index i = 0; i < B.get_number_components(); ++i) {
+  for (Index i = 0; i < number_components; ++i) {
     B[i] = A[i] / s;
+  }
+
+  return;
+}
+
+//
+// Base split (scalar divided by tensor)
+//
+template<typename R, typename S, typename T, typename Store>
+void
+split(TensorBase<R, Store> const & A, S const & s, TensorBase<T, Store> & B)
+{
+  Index const
+  number_components = A.get_number_components();
+
+  assert(B.get_number_components() == number_components);
+
+  for (Index i = 0; i < number_components; ++i) {
+    B[i] = s / A[i];
   }
 
   return;

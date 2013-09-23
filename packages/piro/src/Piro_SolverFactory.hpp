@@ -65,10 +65,8 @@ public:
    *
    *  Currently, the following solver types are available (each accompanied by the corresponding token value):
    *  - Piro::NOXSolver (<tt>"NOX"</tt>)
-   *  - Piro::RythmosSolver (<tt>"Rythmos"</tt>)
-   *
-   *  Additionally, the following \em experimental solver can be built:
    *  - Piro::LOCASolver (<tt>"LOCA"</tt>)
+   *  - Piro::RythmosSolver (<tt>"Rythmos"</tt>)
    *
    *  For Epetra-based models, additional options are available in Piro::Epetra::SolverFactory.
    */

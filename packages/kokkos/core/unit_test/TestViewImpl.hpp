@@ -57,16 +57,6 @@ struct DummyMemorySpace
 {
   typedef DummyMemorySpace memory_space ;
   typedef unsigned size_type ;
-
-  static const unsigned align = 64 ; // Byte alignment
-
-  inline static
-  size_t preferred_alignment( size_t type_size , size_t n )
-  {
-    // goal: ( n * type_size ) % align == 0
-    while ( 0 != ( n * type_size ) % align ) ++n ;
-    return n ;
-  }
 };
 
 /*--------------------------------------------------------------------------*/
@@ -90,9 +80,9 @@ void test_view_impl()
   typedef typename Device::memory_space memory_space ;
 
   typedef ArrayType< int[100]                >::type type_01 ;
-  typedef ArrayType< int[]                   >::type type_11 ;
+  typedef ArrayType< int*                    >::type type_11 ;
   typedef ArrayType< int[5][6][700]          >::type type_03 ;
-  typedef ArrayType< double[][8][9][900]     >::type type_14 ;
+  typedef ArrayType< double*[8][9][900]      >::type type_14 ;
   typedef ArrayType< long**                  >::type type_22 ;
   typedef ArrayType< short***[5][6][7]       >::type type_36 ;
   typedef ArrayType< const short***[5][6][7] >::type const_type_36 ;
@@ -169,6 +159,35 @@ void test_view_impl()
   ASSERT_TRUE( shape_36 == shape_36 );
   ASSERT_TRUE( shape_01 != shape_36 );
   ASSERT_TRUE( shape_22 != shape_36 );
+
+
+  typedef Kokkos::Impl::LayoutStride< shape_01_type , Kokkos::LayoutLeft > shape_01_left_stride ;
+  typedef Kokkos::Impl::LayoutStride< shape_11_type , Kokkos::LayoutLeft > shape_11_left_stride ;
+  typedef Kokkos::Impl::LayoutStride< shape_03_type , Kokkos::LayoutLeft > shape_03_left_stride ;
+  typedef Kokkos::Impl::LayoutStride< shape_14_type , Kokkos::LayoutLeft > shape_14_left_stride ;
+  typedef Kokkos::Impl::LayoutStride< shape_22_type , Kokkos::LayoutLeft > shape_22_left_stride ;
+  typedef Kokkos::Impl::LayoutStride< shape_36_type , Kokkos::LayoutLeft > shape_36_left_stride ;
+
+  typedef Kokkos::Impl::LayoutStride< shape_01_type , Kokkos::LayoutRight > shape_01_right_stride ;
+  typedef Kokkos::Impl::LayoutStride< shape_11_type , Kokkos::LayoutRight > shape_11_right_stride ;
+  typedef Kokkos::Impl::LayoutStride< shape_03_type , Kokkos::LayoutRight > shape_03_right_stride ;
+  typedef Kokkos::Impl::LayoutStride< shape_14_type , Kokkos::LayoutRight > shape_14_right_stride ;
+  typedef Kokkos::Impl::LayoutStride< shape_22_type , Kokkos::LayoutRight > shape_22_right_stride ;
+  typedef Kokkos::Impl::LayoutStride< shape_36_type , Kokkos::LayoutRight > shape_36_right_stride ;
+
+  ASSERT_TRUE( ! shape_01_left_stride::dynamic );
+  ASSERT_TRUE( ! shape_11_left_stride::dynamic );
+  ASSERT_TRUE( ! shape_03_left_stride::dynamic );
+  ASSERT_TRUE(   shape_14_left_stride::dynamic );
+  ASSERT_TRUE(   shape_22_left_stride::dynamic );
+  ASSERT_TRUE(   shape_36_left_stride::dynamic );
+
+  ASSERT_TRUE( ! shape_01_right_stride::dynamic );
+  ASSERT_TRUE( ! shape_11_right_stride::dynamic );
+  ASSERT_TRUE( ! shape_03_right_stride::dynamic );
+  ASSERT_TRUE( ! shape_14_right_stride::dynamic );
+  ASSERT_TRUE(   shape_22_right_stride::dynamic );
+  ASSERT_TRUE(   shape_36_right_stride::dynamic );
 
   //------------------------------------------------------------------------
 }

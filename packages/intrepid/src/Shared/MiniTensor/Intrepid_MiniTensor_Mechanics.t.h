@@ -49,22 +49,22 @@ namespace Intrepid {
 // \param \f$ F, u \f$
 // \return \f$ F^{-T} u \f$
 //
-template<typename T>
-Vector<T>
-push_forward_covariant(Tensor<T> const & F, Vector<T> const & u)
+template<typename T, Index N>
+Vector<T, N>
+push_forward_covariant(Tensor<T, N> const & F, Vector<T, N> const & u)
 {
   Index const
-  N = F.get_dimension();
+  dimension = F.get_dimension();
 
-  Vector<T>
-  v(N);
+  Vector<T, N>
+  v(dimension);
 
   T const
   J = det(F);
 
   assert(J > 0.0);
 
-  switch (N) {
+  switch (dimension) {
 
     default:
       std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
@@ -75,15 +75,18 @@ push_forward_covariant(Tensor<T> const & F, Vector<T> const & u)
       break;
 
     case 3:
-      v(0) = ((-F(1,2)*F(2,1) + F(1,1)*F(2,2)) * u(0) +
+      v(0) = (
+          (-F(1,2)*F(2,1) + F(1,1)*F(2,2)) * u(0) +
           ( F(1,2)*F(2,0) - F(1,0)*F(2,2)) * u(1) +
           (-F(1,1)*F(2,0) + F(1,0)*F(2,1)) * u(2)) / J;
 
-      v(1) = (( F(0,2)*F(2,1) - F(0,1)*F(2,2)) * u(0) +
+      v(1) = (
+          ( F(0,2)*F(2,1) - F(0,1)*F(2,2)) * u(0) +
           (-F(0,2)*F(2,0) + F(0,0)*F(2,2)) * u(1) +
           ( F(0,1)*F(2,0) - F(0,0)*F(2,1)) * u(2)) / J;
 
-      v(2) = ((-F(0,2)*F(1,1) + F(0,1)*F(1,2)) * u(0) +
+      v(2) = (
+          (-F(0,2)*F(1,1) + F(0,1)*F(1,2)) * u(0) +
           ( F(0,2)*F(1,0) - F(0,0)*F(1,2)) * u(1) +
           (-F(0,1)*F(1,0) + F(0,0)*F(1,1)) * u(2)) / J;
 
@@ -104,17 +107,17 @@ push_forward_covariant(Tensor<T> const & F, Vector<T> const & u)
 // \param \f$ F, v \f$
 // \return \f$ F^T v \f$
 //
-template<typename T>
-Vector<T>
-pull_back_covariant(Tensor<T> const & F, Vector<T> const & u)
+template<typename T, Index N>
+Vector<T, N>
+pull_back_covariant(Tensor<T, N> const & F, Vector<T, N> const & u)
 {
   Index const
-  N = F.get_dimension();
+  dimension = F.get_dimension();
 
-  Vector<T>
-  v(N);
+  Vector<T, N>
+  v(dimension);
 
-  switch (N) {
+  switch (dimension) {
 
     default:
       std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
@@ -147,17 +150,17 @@ pull_back_covariant(Tensor<T> const & F, Vector<T> const & u)
 // \param \f$ F, u \f$
 // \return \f$ F u \f$
 //
-template<typename T>
-Vector<T>
-push_forward_contravariant(Tensor<T> const & F, Vector<T> const & u)
+template<typename T, Index N>
+Vector<T, N>
+push_forward_contravariant(Tensor<T, N> const & F, Vector<T, N> const & u)
 {
   Index const
-  N = F.get_dimension();
+  dimension = F.get_dimension();
 
-  Vector<T>
-  v(N);
+  Vector<T, N>
+  v(dimension);
 
-  switch (N) {
+  switch (dimension) {
 
     default:
       std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
@@ -190,22 +193,22 @@ push_forward_contravariant(Tensor<T> const & F, Vector<T> const & u)
 // \param \f$ F, u \f$
 // \return \f$ F^{-1} u \f$
 //
-template<typename T>
-Vector<T>
-pull_back_contravariant(Tensor<T> const & F, Vector<T> const & u)
+template<typename T, Index N>
+Vector<T, N>
+pull_back_contravariant(Tensor<T, N> const & F, Vector<T, N> const & u)
 {
   Index const
-  N = F.get_dimension();
+  dimension = F.get_dimension();
 
-  Vector<T>
-  v(N);
+  Vector<T, N>
+  v(dimension);
 
   T const
   J = det(F);
 
   assert(J > 0.0);
 
-  switch (N) {
+  switch (dimension) {
 
     default:
       std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
@@ -216,15 +219,18 @@ pull_back_contravariant(Tensor<T> const & F, Vector<T> const & u)
       break;
 
     case 3:
-      v(0) = ((-F(1,2)*F(2,1) + F(1,1)*F(2,2)) * u(0) +
+      v(0) = (
+          (-F(1,2)*F(2,1) + F(1,1)*F(2,2)) * u(0) +
           ( F(0,2)*F(2,1) - F(0,1)*F(2,2)) * u(1) +
           (-F(0,2)*F(1,1) + F(0,1)*F(1,2)) * u(2)) / J;
 
-      v(1) = (( F(1,2)*F(2,0) - F(1,0)*F(2,2)) * u(0) +
+      v(1) = (
+          ( F(1,2)*F(2,0) - F(1,0)*F(2,2)) * u(0) +
           (-F(0,2)*F(2,0) + F(0,0)*F(2,2)) * u(1) +
           ( F(0,2)*F(1,0) - F(0,0)*F(1,2)) * u(2)) / J;
 
-      v(2) = ((-F(1,1)*F(2,0) + F(1,0)*F(2,1)) * u(0) +
+      v(2) = (
+          (-F(1,1)*F(2,0) + F(1,0)*F(2,1)) * u(0) +
           ( F(0,1)*F(2,0) - F(0,0)*F(2,1)) * u(1) +
           (-F(0,1)*F(1,0) + F(0,0)*F(1,1)) * u(2)) / J;
 
@@ -245,22 +251,22 @@ pull_back_contravariant(Tensor<T> const & F, Vector<T> const & u)
 // \param \f$ F, A \f$
 // \return \f$ F^{-T} A F^{-1} \f$
 //
-template<typename T>
-Tensor<T>
-push_forward_covariant(Tensor<T> const & F, Tensor<T> const & A)
+template<typename T, Index N>
+Tensor<T, N>
+push_forward_covariant(Tensor<T, N> const & F, Tensor<T, N> const & A)
 {
   Index const
-  N = F.get_dimension();
+  dimension = F.get_dimension();
 
-  Tensor<T>
-  G(N);
+  Tensor<T, N>
+  G(dimension);
 
   T const
   J = det(F);
 
   assert(J > 0.0);
 
-  switch (N) {
+  switch (dimension) {
 
     default:
       std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
@@ -302,9 +308,9 @@ push_forward_covariant(Tensor<T> const & F, Tensor<T> const & A)
 // \param \f$ F, A \f$
 // \return \f$ F^T A F\f$
 //
-template<typename T>
-Tensor<T>
-pull_back_covariant(Tensor<T> const & F, Tensor<T> const & A)
+template<typename T, Index N>
+Tensor<T, N>
+pull_back_covariant(Tensor<T, N> const & F, Tensor<T, N> const & A)
 {
   return t_dot(F, dot(A, F));
 }
@@ -314,9 +320,9 @@ pull_back_covariant(Tensor<T> const & F, Tensor<T> const & A)
 // \param \f$ F, A \f$
 // \return \f$ F A F^T \f$
 //
-template<typename T>
-Tensor<T>
-push_forward_contravariant(Tensor<T> const & F, Tensor<T> const & A)
+template<typename T, Index N>
+Tensor<T, N>
+push_forward_contravariant(Tensor<T, N> const & F, Tensor<T, N> const & A)
 {
   return dot_t(dot(F, A), F);
 }
@@ -326,22 +332,22 @@ push_forward_contravariant(Tensor<T> const & F, Tensor<T> const & A)
 // \param \f$ F, A \f$
 // \return \f$ F^{-1} A F^{-T} \f$
 //
-template<typename T>
-Tensor<T>
-pull_back_contravariant(Tensor<T> const & F, Tensor<T> const & A)
+template<typename T, Index N>
+Tensor<T, N>
+pull_back_contravariant(Tensor<T, N> const & F, Tensor<T, N> const & A)
 {
   Index const
-  N = F.get_dimension();
+  dimension = F.get_dimension();
 
-  Tensor<T>
-  G(N);
+  Tensor<T, N>
+  G(dimension);
 
   T const
   J = det(F);
 
   assert(J > 0.0);
 
-  switch (N) {
+  switch (dimension) {
 
     default:
       std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
@@ -383,17 +389,17 @@ pull_back_contravariant(Tensor<T> const & F, Tensor<T> const & A)
 // \param \f$ F, u \f$
 // \return \f$ \det F F^{-1} u \f$
 //
-template<typename T>
-Vector<T>
-piola(Tensor<T> const & F, Vector<T> const & u)
+template<typename T, Index N>
+Vector<T, N>
+piola(Tensor<T, N> const & F, Vector<T, N> const & u)
 {
   Index const
-  N = F.get_dimension();
+  dimension = F.get_dimension();
 
-  Vector<T>
-  v(N);
+  Vector<T, N>
+  v(dimension);
 
-  switch (N) {
+  switch (dimension) {
 
     default:
       std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
@@ -404,15 +410,18 @@ piola(Tensor<T> const & F, Vector<T> const & u)
       break;
 
     case 3:
-      v(0) = ((-F(1,2)*F(2,1) + F(1,1)*F(2,2)) * u(0) +
+      v(0) = (
+          (-F(1,2)*F(2,1) + F(1,1)*F(2,2)) * u(0) +
           ( F(0,2)*F(2,1) - F(0,1)*F(2,2)) * u(1) +
           (-F(0,2)*F(1,1) + F(0,1)*F(1,2)) * u(2));
 
-      v(1) = (( F(1,2)*F(2,0) - F(1,0)*F(2,2)) * u(0) +
+      v(1) = (
+          ( F(1,2)*F(2,0) - F(1,0)*F(2,2)) * u(0) +
           (-F(0,2)*F(2,0) + F(0,0)*F(2,2)) * u(1) +
           ( F(0,2)*F(1,0) - F(0,0)*F(1,2)) * u(2));
 
-      v(2) = ((-F(1,1)*F(2,0) + F(1,0)*F(2,1)) * u(0) +
+      v(2) = (
+          (-F(1,1)*F(2,0) + F(1,0)*F(2,1)) * u(0) +
           ( F(0,1)*F(2,0) - F(0,0)*F(2,1)) * u(1) +
           (-F(0,1)*F(1,0) + F(0,0)*F(1,1)) * u(2));
 
@@ -433,22 +442,22 @@ piola(Tensor<T> const & F, Vector<T> const & u)
 // \param \f$ F, u \f$
 // \return \f$ (\det F)^{-1} F u \f$
 //
-template<typename T>
-Vector<T>
-piola_inverse(Tensor<T> const & F, Vector<T> const & u)
+template<typename T, Index N>
+Vector<T, N>
+piola_inverse(Tensor<T, N> const & F, Vector<T, N> const & u)
 {
   Index const
-  N = F.get_dimension();
+  dimension = F.get_dimension();
 
-  Vector<T>
-  v(N);
+  Vector<T, N>
+  v(dimension);
 
   T const
   J = det(F);
 
   assert(J > 0.0);
 
-  switch (N) {
+  switch (dimension) {
 
     default:
       std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
@@ -482,17 +491,17 @@ piola_inverse(Tensor<T> const & F, Vector<T> const & u)
 // \param \f$ F, \sigma \f$
 // \return \f$ \det F \sigma F^{-T} \f$
 //
-template<typename T>
-Tensor<T>
-piola(Tensor<T> const & F, Tensor<T> const & sigma)
+template<typename T, Index N>
+Tensor<T, N>
+piola(Tensor<T, N> const & F, Tensor<T, N> const & sigma)
 {
   Index const
-  N = F.get_dimension();
+  dimension = F.get_dimension();
 
-  Tensor<T>
-  G(N);
+  Tensor<T, N>
+  G(dimension);
 
-  switch (N) {
+  switch (dimension) {
 
     default:
       std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
@@ -535,9 +544,9 @@ piola(Tensor<T> const & F, Tensor<T> const & sigma)
 // \param \f$ F, P \f$
 // \return \f$ (\det F)^{-1} P F^T \f$
 //
-template<typename T>
-Tensor<T>
-piola_inverse(Tensor<T> const & F, Tensor<T> const & P)
+template<typename T, Index N>
+Tensor<T, N>
+piola_inverse(Tensor<T, N> const & F, Tensor<T, N> const & P)
 {
   T const
   J = det(F);
@@ -551,12 +560,12 @@ piola_inverse(Tensor<T> const & F, Tensor<T> const & P)
 // Check strict ellipticity condition for 4th-order tensor.
 // Assume A has major symmetries.
 //
-template<typename T>
+template<typename T, Index N>
 bool
-check_strict_ellipticity(Tensor4<T> const & A)
+check_strict_ellipticity(Tensor4<T, N> const & A)
 {
   // Convert to 2nd-order tensor
-  Tensor<T> const
+  Tensor<T, dimension_square<N>::value> const
   B(A);
 
   // Check bounds for eigenvalues
@@ -568,7 +577,7 @@ check_strict_ellipticity(Tensor4<T> const & A)
   }
 
   // Get eigenvalues only
-  Vector<T> const
+  Vector<T, N> const
   D = diag(eig_sym(B).second);
 
   T const
@@ -585,9 +594,9 @@ check_strict_ellipticity(Tensor4<T> const & A)
 // Check strong ellipticity condition for 4th-order tensor.
 // Assume A has major symmetries.
 //
-template<typename T>
-std::pair<bool, Vector<T> >
-check_strong_ellipticity(Tensor4<T> const & A)
+template<typename T, Index N>
+std::pair<bool, Vector<T, N> >
+check_strong_ellipticity(Tensor4<T, N> const & A)
 {
   bool
   is_elliptic = true;
@@ -595,7 +604,7 @@ check_strong_ellipticity(Tensor4<T> const & A)
   Index const
   dimension = A.get_dimension();
 
-  Vector<T>
+  Vector<T, N>
   eigenvector(dimension, 1.0 / dimension);
 
   Index const
@@ -619,13 +628,13 @@ check_strong_ellipticity(Tensor4<T> const & A)
 
   while (error > tolerance && iteration < maximum_iterarions) {
 
-    Tensor<T>
+    Tensor<T, N>
     Q = dot(eigenvector, dot(A, eigenvector));
 
-    Tensor<T>
+    Tensor<T, N>
     V;
 
-    Tensor<T>
+    Tensor<T, N>
     D;
 
     boost::tie(V, D) = eig_sym(Q);

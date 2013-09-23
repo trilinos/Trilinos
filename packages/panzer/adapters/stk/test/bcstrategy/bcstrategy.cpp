@@ -106,6 +106,8 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(bcstrategy, constant_bc_strategy)
   {
 
+    using std::cout;
+    using std::endl;
     using Teuchos::RCP;
   
     // pause_to_attach();
@@ -242,7 +244,7 @@ namespace panzer {
       int* local_column_indices = NULL;
       jac->ExtractMyRowView(i, num_indices, values, local_column_indices);
       for (int j=0; j < num_indices; j++) {
-	cout << "J(" <<jac->GRID(i) << "," << jac->GCID(local_column_indices[j]) << ") = " << values[j] << endl;
+	std::cout << "J(" <<jac->GRID(i) << "," << jac->GCID(local_column_indices[j]) << ") = " << values[j] << std::endl;
 	if (jac->GRID(i) == jac->GCID(local_column_indices[j])) {
 	  TEST_FLOATING_EQUALITY(values[j], 1.0, tol);
 	}

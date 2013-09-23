@@ -553,6 +553,7 @@ public:
 
   template<class Node2>
   RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > clone(const RCP<Node2> &node2) const {
+#ifdef HAVE_XPETRA_TPETRA
     RCP<const Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tMatrix =
         Teuchos::rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(matrixData_);
     if (tMatrix == Teuchos::null)
@@ -560,6 +561,9 @@ public:
 
     return RCP<CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >(new CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node2>(tMatrix->clone(node2)));
     // TODO: inherit strided maps/views ?
+#else
+    return Teuchos::null;
+#endif
   }
 
 private:

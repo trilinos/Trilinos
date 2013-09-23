@@ -31,6 +31,8 @@ namespace MueLu {
       nDofsPerNode = Teuchos::rcp_dynamic_cast<const StridedMap>(permRowMapStrided)->getFixedBlockSize();
     }
 
+    RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+
     //////////////////
     std::vector<std::pair<GlobalOrdinal,GlobalOrdinal> > RowColPairs;
 
@@ -190,8 +192,8 @@ namespace MueLu {
     }
 
     // build permP * A * permQT
-    Teuchos::RCP<Matrix> ApermQt = Utils::Multiply(*A, false, *permQTmatrix, false);
-    Teuchos::RCP<Matrix> permPApermQt = Utils::Multiply(*permPmatrix, false, *ApermQt, false);
+    Teuchos::RCP<Matrix> ApermQt = Utils::Multiply(*A, false, *permQTmatrix, false, GetOStream(Statistics2,0));
+    Teuchos::RCP<Matrix> permPApermQt = Utils::Multiply(*permPmatrix, false, *ApermQt, false, GetOStream(Statistics2,0));
 
     /*
     MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write("A.mat", *A);
@@ -205,15 +207,22 @@ namespace MueLu {
     Teuchos::ArrayRCP< const Scalar > diagVecData = diagVec->getData(0);
     Teuchos::ArrayRCP< Scalar > invDiagVecData = invDiagVec->getDataNonConst(0);
 
+    LO lCntZeroDiagonals = 0;
     permPApermQt->getLocalDiagCopy(*diagVec);
     for(size_t i = 0; i<diagVec->getMap()->getNodeNumElements(); ++i) {
       if(diagVecData[i] != 0.0)
         invDiagVecData[i] = 1/diagVecData[i];
       else {
         invDiagVecData[i] = 1.0;
-        GetOStream(Statistics0,0) << "MueLu::LocalPermutationStrategy: found zero on diagonal in row " << i << std::endl;
+        lCntZeroDiagonals++;
+        //GetOStream(Statistics0,0) << "MueLu::LocalPermutationStrategy: found zero on diagonal in row " << i << std::endl;
       }
     }
+
+    GO gCntZeroDiagonals  = 0;
+    GO glCntZeroDiagonals = Teuchos::as<GlobalOrdinal>(lCntZeroDiagonals);  /* LO->GO conversion */
+    sumAll(comm,glCntZeroDiagonals,gCntZeroDiagonals);
+    GetOStream(Statistics0,0) << "MueLu::LocalPermutationStrategy: found " << gCntZeroDiagonals << " zeros on diagonal" << std::endl;
 
     Teuchos::RCP<CrsMatrixWrap> diagScalingOp = Teuchos::rcp(new CrsMatrixWrap(permPApermQt->getRowMap(),1,Xpetra::StaticProfile));
 
@@ -224,7 +233,7 @@ namespace MueLu {
     }
     diagScalingOp->fillComplete();
 
-    Teuchos::RCP<Matrix> scaledA = Utils::Multiply(*diagScalingOp, false, *permPApermQt, false);
+    Teuchos::RCP<Matrix> scaledA = Utils::Multiply(*diagScalingOp, false, *permPApermQt, false, GetOStream(Statistics2,0));
     currentLevel.Set("A", Teuchos::rcp_dynamic_cast<Matrix>(scaledA), genFactory/*this*/);
 
     currentLevel.Set("permA", Teuchos::rcp_dynamic_cast<Matrix>(permPApermQt), genFactory/*this*/);  // TODO careful with this!!!

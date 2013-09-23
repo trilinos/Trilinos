@@ -15,7 +15,7 @@
 
 namespace {
   const unsigned int HASHSIZE = 5939;
-  const char* version_string = "3.16 (2013/06/11)";
+  const char* version_string = "3.17 (2013/09/12)";
   
   unsigned hash_symbol (const char *symbol)
   {
@@ -256,18 +256,28 @@ namespace SEAMS {
   
   void Aprepro::add_variable(const std::string &sym_name, const std::string &sym_value, bool immutable)
   {
+    if (check_valid_var(sym_name.c_str())) {
     SYMBOL_TYPE type = immutable ? IMMUTABLE_STRING_VARIABLE : STRING_VARIABLE;
     symrec *var = putsym(sym_name, type, false);
     char *tmp = NULL;
     new_string(sym_value.c_str(), &tmp);
     var->value.svar = tmp;
+    }
+    else {
+      std::cerr << "Aprepro: WARN: Invalid variable name syntax '" << sym_name << "'. Variable not defined.\n";
+    }
   }
 
   void Aprepro::add_variable(const std::string &sym_name, double sym_value, bool immutable)
   {
-    SYMBOL_TYPE type = immutable ? IMMUTABLE_VARIABLE : VARIABLE;
-    symrec *var = putsym(sym_name, type, false);
-    var->value.var = sym_value;
+    if (check_valid_var(sym_name.c_str())) {
+      SYMBOL_TYPE type = immutable ? IMMUTABLE_VARIABLE : VARIABLE;
+      symrec *var = putsym(sym_name, type, false);
+      var->value.var = sym_value;
+    }
+    else {
+      std::cerr << "Aprepro: WARN: Invalid variable name syntax '" << sym_name << "'. Variable not defined.\n";
+    }
   }
 
   symrec *Aprepro::getsym (const char *sym_name) const

@@ -678,10 +678,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
     for ( unsigned i1 = 0 ; i1 < lsh.N1 ; ++i1 )
     for ( unsigned i2 = 0 ; i2 < lsh.N2 ; ++i2 )
     {
-      if ( & left(i0,i1,i2)  != & left(i0,i1,i2,0) )  { update |= 3 ; }
-      if ( & left(i0,i1,i2)  != & left(i0,i1,i2,0,0) )  { update |= 3 ; }
-      if ( & right(i0,i1,i2) != & right(i0,i1,i2,0) ) { update |= 3 ; }
-      if ( & right(i0,i1,i2) != & right(i0,i1,i2,0,0) ) { update |= 3 ; }
+      if ( & left(i0,i1,i2)  != & left.at(i0,i1,i2,0,0,0,0,0) )  { update |= 3 ; }
+      if ( & right(i0,i1,i2) != & right.at(i0,i1,i2,0,0,0,0,0) ) { update |= 3 ; }
     }
   }
 };
@@ -772,10 +770,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 2 >
     for ( unsigned i0 = 0 ; i0 < lsh.N0 ; ++i0 )
     for ( unsigned i1 = 0 ; i1 < lsh.N1 ; ++i1 )
     {
-      if ( & left(i0,i1)  != & left(i0,i1,0) )  { update |= 3 ; }
-      if ( & left(i0,i1)  != & left(i0,i1,0,0) )  { update |= 3 ; }
-      if ( & right(i0,i1) != & right(i0,i1,0) ) { update |= 3 ; }
-      if ( & right(i0,i1) != & right(i0,i1,0,0) ) { update |= 3 ; }
+      if ( & left(i0,i1)  != & left.at(i0,i1,0,0,0,0,0,0) )  { update |= 3 ; }
+      if ( & right(i0,i1) != & right.at(i0,i1,0,0,0,0,0,0) ) { update |= 3 ; }
     }
   }
 };
@@ -843,10 +839,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 1 >
   {
     for ( unsigned i0 = 0 ; i0 < lsh.N0 ; ++i0 )
     {
-      if ( & left(i0)  != & left(i0,0) )  { update |= 3 ; }
-      if ( & left(i0)  != & left(i0,0,0) )  { update |= 3 ; }
-      if ( & right(i0) != & right(i0,0) ) { update |= 3 ; }
-      if ( & right(i0) != & right(i0,0,0) ) { update |= 3 ; }
+      if ( & left(i0)  != & left.at(i0,0,0,0,0,0,0,0) )  { update |= 3 ; }
+      if ( & right(i0) != & right.at(i0,0,0,0,0,0,0,0) ) { update |= 3 ; }
     }
   }
 };
@@ -858,7 +852,7 @@ class TestViewAPI
 {
 public:
   typedef DeviceType        device ;
-  typedef Kokkos::Host host ;
+  typedef typename DeviceType::host_mirror_device_type host ;
 
   TestViewAPI()
   {
@@ -892,7 +886,7 @@ public:
   typedef Kokkos::View< T*[N1][N2][N3] , device > dView4 ;
   typedef Kokkos::View< const T*[N1][N2][N3] , device > const_dView4 ;
 
-  typedef Kokkos::View< T*[N1][N2][N3], device, Kokkos::MemoryUnmanaged > dView4_unmanaged ;
+  typedef Kokkos::View< T****, device, Kokkos::MemoryUnmanaged > dView4_unmanaged ;
 
   static void run_test_mirror()
   {
@@ -962,7 +956,11 @@ public:
 
 
     dView4_unmanaged unmanaged_dx = dx;
-    dView4_unmanaged unmanaged_from_ptr_dx = dView4_unmanaged(dx.ptr_on_device(),dx.dimension_0());
+    dView4_unmanaged unmanaged_from_ptr_dx = dView4_unmanaged(dx.ptr_on_device(),
+                                                              dx.dimension_0(),
+                                                              dx.dimension_1(),
+                                                              dx.dimension_2(),
+                                                              dx.dimension_3());
     const_dView4 const_dx = dx ;
 
 
@@ -988,6 +986,10 @@ public:
     hx = Kokkos::create_mirror( dx );
     hy = Kokkos::create_mirror( dy );
 
+    // T v1 = hx() ;    // Generates compile error as intended
+    // T v2 = hx(0,0) ; // Generates compile error as intended
+    // hx(0,0) = v2 ;   // Generates compile error as intended
+
     size_t count = 0 ;
     for ( size_t ip = 0 ; ip < N0 ; ++ip ) {
     for ( size_t i1 = 0 ; i1 < hx.dimension_1() ; ++i1 ) {
@@ -1005,6 +1007,16 @@ public:
     for ( size_t i2 = 0 ; i2 < N2 ; ++i2 ) {
     for ( size_t i3 = 0 ; i3 < N3 ; ++i3 ) {
       { ASSERT_EQ( hx(ip,i1,i2,i3) , hy(ip,i1,i2,i3) ); }
+    }}}}
+
+    Kokkos::deep_copy( dx , T(0) );
+    Kokkos::deep_copy( hx , dx );
+
+    for ( size_t ip = 0 ; ip < N0 ; ++ip ) {
+    for ( size_t i1 = 0 ; i1 < N1 ; ++i1 ) {
+    for ( size_t i2 = 0 ; i2 < N2 ; ++i2 ) {
+    for ( size_t i3 = 0 ; i3 < N3 ; ++i3 ) {
+      { ASSERT_EQ( hx(ip,i1,i2,i3) , T(0) ); }
     }}}}
 
     dz = dx ; ASSERT_EQ( dx, dz); ASSERT_NE( dy, dz);
@@ -1086,30 +1098,35 @@ public:
     multivector_type mv = multivector_type( "mv" , Length , Count );
     multivector_right_type mv_right = multivector_right_type( "mv" , Length , Count );
 
-    vector_type v1 = Kokkos::subview< vector_type >( mv , 0 );
-    vector_type v2 = Kokkos::subview< vector_type >( mv , 1 );
-    vector_type v3 = Kokkos::subview< vector_type >( mv , 2 );
+    vector_type v1 = Kokkos::subview< vector_type >( mv , Kokkos::ALL() , 0 );
+    vector_type v2 = Kokkos::subview< vector_type >( mv , Kokkos::ALL() , 1 );
+    vector_type v3 = Kokkos::subview< vector_type >( mv , Kokkos::ALL() , 2 );
+
+    vector_type rv1 = Kokkos::subview< vector_type >( mv_right , 0 , Kokkos::ALL() );
+    vector_type rv2 = Kokkos::subview< vector_type >( mv_right , 1 , Kokkos::ALL() );
+    vector_type rv3 = Kokkos::subview< vector_type >( mv_right , 2 , Kokkos::ALL() );
 
     multivector_type mv1 = Kokkos::subview< multivector_type >( mv , std::make_pair( 1 , 998 ) ,
-                                                                          std::make_pair( 2 , 5 ) );
+                                                                     std::make_pair( 2 , 5 ) );
 
     multivector_right_type mvr1 =
       Kokkos::subview< multivector_right_type >( mv_right ,
-                                                      std::make_pair( 1 , 998 ) ,
-                                                      std::make_pair( 2 , 5 ) );
+                                                 std::make_pair( 1 , 998 ) ,
+                                                 std::make_pair( 2 , 5 ) );
 
-    const_vector_type cv1 = Kokkos::subview< const_vector_type >( mv , 0 );
-    const_vector_type cv2 = Kokkos::subview< const_vector_type >( mv , 1 );
-    const_vector_type cv3 = Kokkos::subview< const_vector_type >( mv , 2 );
+    const_vector_type cv1 = Kokkos::subview< const_vector_type >( mv , Kokkos::ALL(), 0 );
+    const_vector_type cv2 = Kokkos::subview< const_vector_type >( mv , Kokkos::ALL(), 1 );
+    const_vector_type cv3 = Kokkos::subview< const_vector_type >( mv , Kokkos::ALL(), 2 );
 
-    vector_right_type vr1 = Kokkos::subview< vector_right_type >( mv , 0 );
-    vector_right_type vr2 = Kokkos::subview< vector_right_type >( mv , 1 );
-    vector_right_type vr3 = Kokkos::subview< vector_right_type >( mv , 2 );
+    vector_right_type vr1 = Kokkos::subview< vector_right_type >( mv , Kokkos::ALL() , 0 );
+    vector_right_type vr2 = Kokkos::subview< vector_right_type >( mv , Kokkos::ALL() , 1 );
+    vector_right_type vr3 = Kokkos::subview< vector_right_type >( mv , Kokkos::ALL() , 2 );
 
-    const_vector_right_type cvr1 = Kokkos::subview< const_vector_right_type >( mv , 0 );
-    const_vector_right_type cvr2 = Kokkos::subview< const_vector_right_type >( mv , 1 );
-    const_vector_right_type cvr3 = Kokkos::subview< const_vector_right_type >( mv , 2 );
+    const_vector_right_type cvr1 = Kokkos::subview< const_vector_right_type >( mv , Kokkos::ALL() , 0 );
+    const_vector_right_type cvr2 = Kokkos::subview< const_vector_right_type >( mv , Kokkos::ALL() , 1 );
+    const_vector_right_type cvr3 = Kokkos::subview< const_vector_right_type >( mv , Kokkos::ALL() , 2 );
 
+    ASSERT_TRUE( & v1[0] == & v1(0) );
     ASSERT_TRUE( & v1[0] == & mv(0,0) );
     ASSERT_TRUE( & v2[0] == & mv(0,1) );
     ASSERT_TRUE( & v3[0] == & mv(0,2) );

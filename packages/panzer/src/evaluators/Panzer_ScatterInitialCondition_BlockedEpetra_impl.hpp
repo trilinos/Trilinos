@@ -105,6 +105,7 @@ panzer::ScatterInitialCondition_BlockedEpetra<panzer::Traits::Residual, Traits,L
 ScatterInitialCondition_BlockedEpetra(const Teuchos::RCP<const panzer::BlockedDOFManager<LO,int> > & indexer,
                        const Teuchos::ParameterList& p)
   : globalIndexer_(indexer) 
+  , globalDataKey_("Scatter IC Container")
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ = 
@@ -128,6 +129,9 @@ ScatterInitialCondition_BlockedEpetra(const Teuchos::RCP<const panzer::BlockedDO
 
   // this is what this evaluator provides
   this->addEvaluatedField(*scatterHolder_);
+
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
 
   this->setName(scatterName+" Scatter Residual");
 }
@@ -153,6 +157,17 @@ postRegistrationSetup(typename Traits::SetupData d,
 // **********************************************************************
 template<typename Traits,typename LO,typename GO>
 void panzer::ScatterInitialCondition_BlockedEpetra<panzer::Traits::Residual, Traits,LO,GO>::
+preEvaluate(typename Traits::PreEvalData d)
+{
+   typedef BlockedEpetraLinearObjContainer BLOC;
+
+   // extract linear object container
+   blockedContainer_ = Teuchos::rcp_dynamic_cast<const BLOC>(d.getDataObject(globalDataKey_),true);
+}
+
+// **********************************************************************
+template<typename Traits,typename LO,typename GO>
+void panzer::ScatterInitialCondition_BlockedEpetra<panzer::Traits::Residual, Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData workset)
 { 
    using Teuchos::RCP;
@@ -173,9 +188,7 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   RCP<BLOC> blockedContainer = rcp_dynamic_cast<BLOC>(workset.linContainer);
-
-   RCP<ProductVectorBase<double> > x = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer->get_x());
+   RCP<ProductVectorBase<double> > x = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_x());
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -192,7 +205,7 @@ evaluateFields(typename Traits::EvalData workset)
       LIDs.resize(GIDs.size());
       for(std::size_t i=0;i<GIDs.size();i++) {
          // used for doing local ID lookups
-         RCP<const Epetra_Map> x_map = blockedContainer->getMapForBlock(GIDs[i].first);
+         RCP<const Epetra_Map> x_map = blockedContainer_->getMapForBlock(GIDs[i].first);
 
          LIDs[i] = x_map->LID(GIDs[i].second);
       }
@@ -230,6 +243,7 @@ panzer::ScatterInitialCondition_BlockedEpetra<panzer::Traits::Tangent, Traits,LO
 ScatterInitialCondition_BlockedEpetra(const Teuchos::RCP<const panzer::BlockedDOFManager<LO,int> > & indexer,
                        const Teuchos::ParameterList& p)
   : globalIndexer_(indexer) 
+  , globalDataKey_("Scatter IC Container")
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ = 
@@ -254,6 +268,9 @@ ScatterInitialCondition_BlockedEpetra(const Teuchos::RCP<const panzer::BlockedDO
   // this is what this evaluator provides
   this->addEvaluatedField(*scatterHolder_);
 
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
+
   this->setName(scatterName+" Scatter Tangent");
 }
 
@@ -273,6 +290,17 @@ postRegistrationSetup(typename Traits::SetupData d,
     // fill field data object
     this->utils.setFieldData(scatterFields_[fd],fm);
   }
+}
+
+// **********************************************************************
+template<typename Traits,typename LO,typename GO>
+void panzer::ScatterInitialCondition_BlockedEpetra<panzer::Traits::Tangent, Traits,LO,GO>::
+preEvaluate(typename Traits::PreEvalData d)
+{
+   typedef BlockedEpetraLinearObjContainer BLOC;
+
+   // extract linear object container
+   blockedContainer_ = Teuchos::rcp_dynamic_cast<const BLOC>(d.getDataObject(globalDataKey_),true);
 }
 
 // **********************************************************************
@@ -300,9 +328,7 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   RCP<BLOC> blockedContainer = rcp_dynamic_cast<BLOC>(workset.linContainer);
-
-   RCP<ProductVectorBase<double> > x = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer->get_x());
+   RCP<ProductVectorBase<double> > x = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_x());
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -319,7 +345,7 @@ evaluateFields(typename Traits::EvalData workset)
       LIDs.resize(GIDs.size());
       for(std::size_t i=0;i<GIDs.size();i++) {
          // used for doing local ID lookups
-         RCP<const Epetra_Map> x_map = blockedContainer->getMapForBlock(GIDs[i].first);
+         RCP<const Epetra_Map> x_map = blockedContainer_->getMapForBlock(GIDs[i].first);
 
          LIDs[i] = x_map->LID(GIDs[i].second);
       }

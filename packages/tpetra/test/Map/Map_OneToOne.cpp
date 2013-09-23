@@ -45,6 +45,7 @@
 #include <Teuchos_Tuple.hpp>
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_Map.hpp"
+#include "Tpetra_TieBreak.hpp"
 
 #define NUM_GLOBAL_ELEMENTS 100
 
@@ -60,6 +61,24 @@ typedef Tpetra::Directory<LO, GO, Node> Directory;
     
 
 namespace {
+
+  template <typename LO,typename GO>
+  class GotoLowTieBreak : public Tpetra::Details::TieBreak<LO,GO> {
+  public:
+    std::size_t selectedIndex(GO GID,const std::vector<std::pair<int,LO> > & pid_and_lid) const 
+    {
+      int min = -1; std::size_t index = 0;
+      for(std::size_t i=0;i<pid_and_lid.size();i++) {
+        if(pid_and_lid[i].first<min) {
+          min = pid_and_lid[i].first;
+          index = i;
+        }
+      }
+
+      return index;
+    }
+  };
+
   TEUCHOS_UNIT_TEST( OneToOne, AlreadyOneToOne)
   {
     //Creates a map that is already one-to-one and tests to make sure 
@@ -214,6 +233,72 @@ namespace {
     else//I should have all of them.
     {
       TEST_EQUALITY(new_map->getNodeNumElements(),NUM_GLOBAL_ELEMENTS);
+    }
+  }
+
+  TEUCHOS_UNIT_TEST(OneToOne, TieBreak)
+  {
+    //Creates a map with large overlaps
+    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
+    RCP<const Teuchos::Comm<int> > comm = platform.getComm();
+    RCP<Node> node = platform.getNode();
+    const int myRank = comm->getRank();
+    const int numProc = comm->getSize();
+    
+    int unit = (NUM_GLOBAL_ELEMENTS/(numProc+1));
+    int left_overs = (NUM_GLOBAL_ELEMENTS%(numProc+1));
+    int num_loc_elems=0;
+    Array<GO> elementList;
+
+    if(myRank<numProc-1)
+    {
+      elementList = Array<GO>(2*unit);
+      num_loc_elems=2*unit;
+    }
+    else //I'm the last proc and need to take the leftover elements.
+    {
+      elementList = Array<GO>((2*unit)+(left_overs));
+      num_loc_elems=(2*unit)+(left_overs);
+    }
+
+    for(int i=(myRank*unit),j=0;i<(myRank*unit)+(2*unit);++i,++j)
+    {
+      elementList[j]=i;
+    }
+    //Don't forget to assign leftovers to the last proc!
+    if(myRank==numProc-1 && left_overs!= 0)
+    {
+      for(int i=(myRank*unit)+2*unit, j=2*unit;i<NUM_GLOBAL_ELEMENTS;++i,++j)
+      {
+        elementList[j]=i;
+      }
+    }
+
+    GotoLowTieBreak<LO,GO> tie_break;
+    RCP<const Map> map = Tpetra::createNonContigMapWithNode<LO,GO>(elementList,comm,node);
+    RCP<const Map> new_map = Tpetra::createOneToOne<LO,GO,Node>(map,tie_break);
+    //Now we need to test if we lost anything.
+    
+    Array<int> nodeIDlist(num_loc_elems); //This is unimportant. It's only used in the following function.
+    Tpetra::LookupStatus stat = new_map->getRemoteIndexList(elementList (), nodeIDlist ()); //this style from a tpetra test.
+    //If we pass this we didn't lose any IDs.
+    TEST_EQUALITY_CONST(stat, Tpetra::AllIDsPresent);
+    TEST_EQUALITY(new_map->getGlobalNumElements(),NUM_GLOBAL_ELEMENTS);
+
+    //Now we need to make sure they're in the right place. Keep in mind we are
+    //overriding the tpetra directory precidence
+
+    ArrayView<const GO> my_owned = new_map->getNodeElementList();
+
+    if(myRank==0) { // zero rank should have everythin
+      for(int i=0;i<num_loc_elems;++i) {
+        TEST_EQUALITY(elementList[i],my_owned[i]);
+      }
+    }
+    else {
+      for(int i=(myRank*unit+unit),j=0;i<(myRank*unit)+2*unit; ++i,++j) {
+        TEST_EQUALITY(my_owned[j], i);
+      }
     }
   }
 }

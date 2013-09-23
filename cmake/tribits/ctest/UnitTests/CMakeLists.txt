@@ -124,18 +124,6 @@ FUNCTION(CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE TEST_NAME)
       PASS_REGULAR_EXPRESSION_ALL ${PARSE_PASS_REGULAR_EXPRESSION_ALL}
     )
 
-  IF (NOT PARSE_SKIP_STANDARD_DEPS_CHECK)
-    SET(TEST_BLOCKS ${TEST_BLOCKS}
-      "Dumping the XML dependencies file .*/${TEST_FULL_NAME}/TrilinosPackageDependencies.xml"
-      "CDASH_SUBPROJECT_XML_FILE='.*/${TEST_FULL_NAME}/CDashSubprojectDependencies.xml'"
-      )
-    IF (PYTHON_EXECUTABLE)
-      SET(TEST_BLOCKS ${TEST_BLOCKS}
-        "Dumping the CDash XML dependencies file .*/${TEST_FULL_NAME}/CDashSubprojectDependencies.xml"
-        )
-    ENDIF()
-  ENDIF()
-
   MATH(EXPR TEST_IDX "${TEST_IDX}+1")
 
   IF (PARSE_COMPARE_DEPS_FILE)
@@ -150,6 +138,7 @@ FUNCTION(CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE TEST_NAME)
   TRIBITS_ADD_ADVANCED_TEST( ${TEST_CORE_NAME}
     OVERALL_WORKING_DIRECTORY TEST_NAME
     ${TEST_BLOCKS}
+    OVERALL_NUM_MPI_PROCS 1
     )
 
 ENDFUNCTION()
@@ -639,6 +628,10 @@ IF (PYTHON_EXECUTABLE)
       "Final set of non-enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Stokhos Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Panzer Teko Stalix 26"
       "MODIFIED_PACKAGES_LIST='':  No modified packages to justify continuous integration test iteration"
     )
+
+
+  # ToDo: Test modified package not to be implicitly enabled to not be enabled!
+
 
 ENDIF(PYTHON_EXECUTABLE)
 

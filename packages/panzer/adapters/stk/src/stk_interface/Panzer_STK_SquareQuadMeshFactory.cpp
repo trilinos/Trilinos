@@ -51,7 +51,7 @@ using Teuchos::rcp;
 
 namespace panzer_stk {
 
-SquareQuadMeshFactory::SquareQuadMeshFactory()
+SquareQuadMeshFactory::SquareQuadMeshFactory(bool enableRebalance)
 {
    initializeWithDefaults();
 }
@@ -128,6 +128,9 @@ void SquareQuadMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::P
 
    // add nodesets
    addNodeSets(mesh);
+
+   // calls Stk_MeshFactory::rebalance
+   this->rebalance(mesh);
 }
 
 //! From ParameterListAcceptor

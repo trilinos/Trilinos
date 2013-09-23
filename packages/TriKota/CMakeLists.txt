@@ -98,13 +98,15 @@ IF(TriKota_ENABLE_DakotaCMake)
   SET(HAVE_HOPSPACK OFF CACHE BOOL "")
 
   # Instruct DAKOTA to install its non-standard content to alternate locations
-  SET(DAKOTA_EXAMPLES_INSTALL example/dakota CACHE FILEPATH
+  SET(DAKOTA_EXAMPLES_INSTALL share/dakota/examples CACHE FILEPATH
       "Installation destination for DAKOTA examples/ dir")
-  SET(DAKOTA_TEST_INSTALL example/dakota CACHE FILEPATH
+  SET(DAKOTA_TEST_INSTALL share/dakota/test CACHE FILEPATH
       "Installation destination for DAKOTA test/ dir")
-  SET(DAKOTA_TOPFILES_INSTALL share/dakota/stable CACHE FILEPATH
+  SET(DAKOTA_TOPFILES_INSTALL share/dakota CACHE FILEPATH
       "Installation destination for DAKOTA top-level files")
-  
+  SET(DAKOTA_INSTALL_DYNAMIC_DEPS FALSE CACHE BOOL 
+      "TriKota: not installing Dakota dynamic dependencies")
+
   # Configure Dakota and its packages
   MESSAGE("-->TriKota: Configuring Dakota using CMake")
   ADD_SUBDIRECTORY(Dakota)

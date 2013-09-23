@@ -72,7 +72,7 @@ semi-explicit IRK methods) that has the same nonsingular matrix block
 of the form in Eq.~(\ref{rythmos:eq:dridzj_IRK}) along the diagonal.
 This, of course, requires that $a_{11}=a_{22}=\cdots=a_{ss}$ and
 $c_{1}=c_{2}=\cdots=c_{s}$. (I am not sure that this is possible,
-since $c_{i}=\sum_{j=1}^{s}a_{ij}$. The only method that satisifies
+since $c_{i}=\sum_{j=1}^{s}a_{ij}$. The only method that satisfies
 this is IRK Backward Euler!? CCO) In this class of IRK methods, significant
 savings may be achieved since a single set of linear solver objects
 (\emph{i.e.}, operators and preconditioners) can be utilized for the
@@ -94,6 +94,43 @@ a) $\begin{array}{c|c}
 \end{tabular}\caption{a) Butcher Tableau and b) Order of accuracy for the SinCos Problem
 (Section~\ref{rythmos:sec:SinCos-Problem}) for Implicit RK Backward
 Euler.}
+\end{figure}
+
+
+
+\subsubsection{IRK 1 Stage Theta}
+
+This is a generalization of the midpoint method ($\theta=1/2$).
+
+\begin{figure}[H]
+\centering{}%
+\begin{tabular}{cc}
+a) $\begin{array}{c|c}
+\theta & \theta\\
+\hline  & 1
+\end{array}$ & b)\includegraphics[scale=1.5]{figures/IRK1StageTheta1}\tabularnewline
+\end{tabular}\caption{a) Butcher Tableau and b) Order of accuracy for the SinCos Problem
+(Section~\ref{rythmos:sec:SinCos-Problem}) for IRK 1 Stage Theta
+method.}
+\end{figure}
+
+
+
+\subsubsection{IRK 2 Stage Theta}
+
+This is a generalization of the trapezoid method ($\theta=1/2$).
+
+\begin{figure}[H]
+\centering{}%
+\begin{tabular}{cc}
+a) $\begin{array}{c|cc}
+0 & 0\\
+1 & 1-\theta & \theta\\
+\hline  & 1-\theta & \theta
+\end{array}$ & b)\includegraphics[scale=1.5]{figures/IRK2StageTheta1}\tabularnewline
+\end{tabular}\caption{a) Butcher Tableau and b) Order of accuracy for the SinCos Problem
+(Section~\ref{rythmos:sec:SinCos-Problem}) for IRK 2 Stage Theta
+method.}
 \end{figure}
 
 

@@ -5,6 +5,7 @@ CoupledAggregationFactory
 DemoFactory
 EmergencyAggregationAlgorithm
 Graph
+GraphBase
 IsolatedNodeAggregationAlgorithm
 IsorropiaInterface
 LWGraph
@@ -14,6 +15,7 @@ MaxLinkAggregationAlgorithm
 OnePtAggregationAlgorithm
 PRFactory
 RebalanceMapFactory
+RepartitionInterface
 SmallAggregationAlgorithm
 UncoupledAggregationAlgorithm
 UncoupledAggregationFactory

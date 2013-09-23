@@ -211,6 +211,10 @@ void Piro::Epetra::TrapezoidRuleSolver::evalModel( const InArgs& inArgs,
     nox_outargs.set_g(0, g_out);
   }
   RCP<Epetra_Vector> gx_out = outArgs.get_g(num_g); 
+  if (Teuchos::is_null(gx_out)) {
+    // Solution not requested by caller as a response, create local temporary instead
+    gx_out = rcp(new Epetra_Vector(*model->get_x_map()));
+  }
   nox_outargs.set_g(num_g, gx_out);
 
 
@@ -224,10 +228,14 @@ void Piro::Epetra::TrapezoidRuleSolver::evalModel( const InArgs& inArgs,
                      Teuchos::Exceptions::InvalidParameter,
                      std::endl << "Error in Piro::Epetra::TrapezoidRuleSolver " <<
                      "Requires initial x and x_dot: " << std::endl);
-   double nrm;
-   v->Norm2(&nrm); *out << "Initial Velocity = " << nrm << std::endl;
 
    double t = t_init;
+
+   // Observe initial condition
+   if (observer != Teuchos::null) observer->observeSolution(*x,t);
+
+   double nrm;
+   v->Norm2(&nrm); *out << "Initial Velocity = " << nrm << std::endl;
 
    //calculate intial acceleration using small time step (1.0e-3*delta_t)
    {
@@ -260,7 +268,9 @@ void Piro::Epetra::TrapezoidRuleSolver::evalModel( const InArgs& inArgs,
      a->Update(fdt2, *x,  -fdt2, *x_pred,0.0);
      v->Update(hdt, *a, hdt, *a_old, 1.0); 
 
+     // Observe completed time step
      if (observer != Teuchos::null) observer->observeSolution(*x,t);
+
      if (g_out != Teuchos::null) 
        g_out->Print(*out << "Responses at time step(time) = " << timeStep << "("<<t<<")\n");
    }

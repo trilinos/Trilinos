@@ -57,7 +57,7 @@
       <Parameter name="factory"                             type="string" value="SaPFactory"/>
       <Parameter name="A"                                   type="string" value="myFilteredAFact"/>
       <Parameter name="P"                                   type="string" value="myTentativePFact"/>
-      <!-- <Parameter name="Damping factor"                      type="double" value="4./3"/> -->
+      <!-- <Parameter name="Damping factor"                      type="double" value="1.333"/> -->
     </ParameterList>
 
     <ParameterList name="myTentativeRFact"> <!-- for projecting coordinates -->
@@ -105,7 +105,7 @@
       <Parameter name="minRowsPerProcessor"                 type="int"    value="1000"/> <!-- default = 2000 -->
       <Parameter name="nonzeroImbalance"                    type="double" value="1.327"/> <!-- default = 1.2 -->
       <Parameter name="startLevel"                          type="int"    value="1"/>   <!-- default = 1 -->
-      <Parameter name="diffusiveHeuristic"                  type="int"    value="0"/>
+      <Parameter name="remapPartitions"                     type="bool"   value="false"/>
     </ParameterList>
 
     <ParameterList name="myRebalanceProlongatorFact">

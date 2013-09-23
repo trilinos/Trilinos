@@ -144,6 +144,14 @@ T atomic_compare_exchange( volatile T * const dest, const T compare, const T val
 
 #endif
 
+
+template <typename T>
+KOKKOS_INLINE_FUNCTION
+bool atomic_compare_exchange_strong(volatile T* const dest, const T compare, const T val)
+{
+  return compare == atomic_compare_exchange(dest, compare, val);
+}
+
 //----------------------------------------------------------------------------
 
 } // namespace Kokkos

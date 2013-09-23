@@ -61,6 +61,11 @@
 #  undef TPETRA_DISTRIBUTOR_TIMERS
 #endif // TPETRA_DISTRIBUTOR_TIMERS
 
+#if TPETRA_USE_KOKKOS_DISTOBJECT
+#include "KokkosCompat_View.hpp"
+#include "Kokkos_View.hpp"
+#endif
+
 
 namespace Tpetra {
 
@@ -556,6 +561,162 @@ namespace Tpetra {
     /// instead.
     void doReverseWaits ();
 
+#if TPETRA_USE_KOKKOS_DISTOBJECT
+
+    /// \brief Execute the (forward) communication plan.
+    ///
+    /// Call this version of the method when you have the same number
+    /// of Packets for each LID (local ID) to send or receive.
+    ///
+    /// \tparam Packet The type of data to send and receive.
+    ///
+    /// \param exports [in] Contains the values to be sent by this
+    ///   process.  On exit from this method, it's OK to modify the
+    ///   entries of this buffer.
+    ///
+    /// \param numPackets [in] The number of Packets per export /
+    ///   import.  This version of the routine assumes that each LID
+    ///   has the same number of Packets associated with it.  (\c
+    ///   MultiVector is an example of a DistObject subclass
+    ///   satisfying this property.)
+    ///
+    /// \param imports [out] On entry, buffer must be large enough to
+    ///   accomodate the data exported (sent) to us.  On exit,
+    ///   contains the values exported to us.
+    template <class Packet, class Layout, class Device, class Mem>
+    void
+    doPostsAndWaits (
+      const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+      size_t numPackets,
+      const Kokkos::View<Packet*, Layout, Device, Mem> &imports);
+
+    /// \brief Execute the (forward) communication plan.
+    ///
+    /// Call this version of the method when you have possibly
+    /// different numbers of Packets for each LID (local ID) to send
+    /// or receive.
+    ///
+    /// \tparam Packet The type of data to send and receive.
+    ///
+    /// \param exports [in] Contains the values to be sent by this
+    ///   process.  On exit from this method, it's OK to modify the
+    ///   entries of this buffer.
+    ///
+    /// \param numExportPacketsPerLID [in] The number of packets for
+    ///   each export LID (i.e., each LID to be sent).
+    ///
+    /// \param imports [out] On entry, buffer must be large enough to
+    ///   accomodate the data exported (sent) to us.  On exit,
+    ///   contains the values exported to us.
+    ///
+    /// \param numImportPacketsPerLID [in] The number of packets for
+    ///   each import LID (i.e., each LID to be received).
+    template <class Packet, class Layout, class Device, class Mem>
+    void
+    doPostsAndWaits (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+                     const ArrayView<size_t> &numExportPacketsPerLID,
+                     const Kokkos::View<Packet*, Layout, Device, Mem> &imports,
+                     const ArrayView<size_t> &numImportPacketsPerLID);
+
+    /// \brief Post the data for a forward plan, but do not execute the waits yet.
+    ///
+    /// Call this overload when you have the same number of Packets
+    /// for each LID to send or receive.
+    ///
+    /// \tparam Packet The type of data to send and receive.
+    ///
+    /// \param exports [in] Contains the values to be sent by this
+    ///   process.  This is an ArrayRCP and not an ArrayView so that
+    ///   we have the freedom to use nonblocking sends if we wish.  Do
+    ///   not modify the data in this array until \c doWaits() has
+    ///   completed.
+    ///
+    /// \param numPackets [in] The number of Packets per export /
+    ///   import.  (Same as the three-argument version of
+    ///   doPostsAndWaits().)
+    ///
+    /// \param imports [out] On entry, buffer must be large enough to
+    ///   accomodate the data exported (sent) to us.  This is an
+    ///   ArrayRCP and not an ArrayView so that we have the freedom to
+    ///   use nonblocking sends if we wish.  Do not modify the data in
+    ///   this array until \c doWaits() has completed.  Upon
+    ///   completion of \c doWaits(), this buffer contains the values
+    ///   exported to us.
+    template <class Packet, class Layout, class Device, class Mem>
+    void
+    doPosts (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+             size_t numPackets,
+             const Kokkos::View<Packet*, Layout, Device, Mem> &imports);
+
+    /// \brief Post the data for a forward plan, but do not execute the waits yet.
+    ///
+    /// Call this overload when you have possibly different numbers of
+    /// Packets for each LID to send or receive.
+    ///
+    /// \tparam Packet The type of data to send and receive.
+    ///
+    /// \param exports [in] Same as in the three-argument version of
+    ///   \c doPosts().
+    ///
+    /// \param numExportPacketsPerLID [in] Same as in the
+    ///   four-argument version of \c doPostsAndWaits().
+    ///
+    /// \param imports [out] Same as in the three-argument version of
+    ///   \c doPosts().
+    ///
+    /// \param numImportPacketsPerLID [in] Same as in the
+    ///   four-argument version of \c doPostsAndWaits().
+    template <class Packet, class Layout, class Device, class Mem>
+    void
+    doPosts (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+             const ArrayView<size_t> &numExportPacketsPerLID,
+             const Kokkos::View<Packet*, Layout, Device, Mem> &imports,
+             const ArrayView<size_t> &numImportPacketsPerLID);
+
+    /// \brief Execute the reverse communication plan.
+    ///
+    /// This method takes the same arguments as the three-argument
+    /// version of \c doPostsAndWaits().
+    template <class Packet, class Layout, class Device, class Mem>
+    void
+    doReversePostsAndWaits (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+                            size_t numPackets,
+                            const Kokkos::View<Packet*, Layout, Device, Mem> &imports);
+
+    /// \brief Execute the reverse communication plan.
+    ///
+    /// This method takes the same arguments as the four-argument
+    /// version of \c doPostsAndWaits().
+    template <class Packet, class Layout, class Device, class Mem>
+    void
+    doReversePostsAndWaits (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+                            const ArrayView<size_t> &numExportPacketsPerLID,
+                            const Kokkos::View<Packet*, Layout, Device, Mem> &imports,
+                            const ArrayView<size_t> &numImportPacketsPerLID);
+
+    /// \brief Post the data for a reverse plan, but do not execute the waits yet.
+    ///
+    /// This method takes the same arguments as the three-argument
+    /// version of \c doPosts().
+    template <class Packet, class Layout, class Device, class Mem>
+    void
+    doReversePosts (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+                    size_t numPackets,
+                    const Kokkos::View<Packet*, Layout, Device, Mem> &imports);
+
+    /// \brief Post the data for a reverse plan, but do not execute the waits yet.
+    ///
+    /// This method takes the same arguments as the four-argument
+    /// version of \c doPosts().
+    template <class Packet, class Layout, class Device, class Mem>
+    void
+    doReversePosts (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+                    const ArrayView<size_t> &numExportPacketsPerLID,
+                    const Kokkos::View<Packet*, Layout, Device, Mem> &imports,
+                    const ArrayView<size_t> &numImportPacketsPerLID);
+
+#endif
+
     //@}
     //! @name Implementation of Teuchos::Describable
     //@{
@@ -586,6 +747,19 @@ namespace Tpetra {
 
     //! Whether to print copious debug output to stderr on all processes.
     bool debug_;
+
+    //! Whether to use RDMA for MPI communication between CUDA GPUs.
+    /*!
+     * This is only relevant if Tpetra was configured to support the new
+     * experimental DistObject and Distributor implementation using
+     * Kokkos::View.  The default for this parameter is determined by the
+     * configuration parameter Tpetra_ENABLE_MPI_CUDA_RDMA, which is off
+     * by default.  Thus regardless of how Tpetra was configured, you can
+     * turn this on/off at run-time by setting the parameter list option
+     * "Enable MPI CUDA RDMA support" to true.
+     */
+    bool enable_cuda_rdma_;
+
     //@}
 
     /// \brief The number of export process IDs on input to \c createFromSends().
@@ -1702,6 +1876,906 @@ namespace Tpetra {
     reverseDistributor_->doPosts (exports, numExportPacketsPerLID,
                                   imports, numImportPacketsPerLID);
   }
+
+#if TPETRA_USE_KOKKOS_DISTOBJECT
+
+  template <class Packet, class Layout, class Device, class Mem>
+  void Distributor::
+  doPostsAndWaits (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+                   size_t numPackets,
+                   const Kokkos::View<Packet*, Layout, Device, Mem> &imports)
+  {
+    // If MPI library doesn't support RDMA for communication directly
+    // to/from GPU, transfer exports to the host, do the communication, then
+    // transfer imports back to the GPU
+    //
+    // We need to do this here instead of doPosts() because the copy back
+    // to the GPU must occur after the waits.
+    typedef Kokkos::View<const Packet*, Layout, Device, Mem> exports_view;
+    typedef Kokkos::View<Packet*, Layout, Device, Mem> imports_view;
+    if (!enable_cuda_rdma_ && !exports_view::is_hostspace) {
+      typename exports_view::HostMirror host_exports =
+        Kokkos::create_mirror_view(exports);
+      typename imports_view::HostMirror host_imports =
+        Kokkos::create_mirror_view(imports);
+      Kokkos::deep_copy (host_exports, exports);
+      doPostsAndWaits(Kokkos::Compat::create_const_view(host_exports),
+                      numPackets,
+                      host_imports);
+      Kokkos::deep_copy (imports, host_imports);
+      return;
+    }
+
+    TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
+      Teuchos::typeName(*this) << "::doPostsAndWaits(): There are "
+      << requests_.size() << " outstanding nonblocking messages pending.  It is "
+      "incorrect to call doPostsAndWaits with posts outstanding.");
+
+    doPosts (exports, numPackets, imports);
+    doWaits();
+  }
+
+  template <class Packet, class Layout, class Device, class Mem>
+  void Distributor::
+  doPostsAndWaits (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+                   const ArrayView<size_t> &numExportPacketsPerLID,
+                   const Kokkos::View<Packet*, Layout, Device, Mem> &imports,
+                   const ArrayView<size_t> &numImportPacketsPerLID)
+  {
+    // If MPI library doesn't support RDMA for communication directly
+    // to/from GPU, transfer exports to the host, do the communication, then
+    // transfer imports back to the GPU
+    //
+    // We need to do this here instead of doPosts() because the copy back
+    // to the GPU must occur after the waits.
+    typedef Kokkos::View<const Packet*, Layout, Device, Mem> exports_view;
+    typedef Kokkos::View<Packet*, Layout, Device, Mem> imports_view;
+    if (!enable_cuda_rdma_ && !exports_view::is_hostspace) {
+      typename exports_view::HostMirror host_exports =
+        Kokkos::create_mirror_view(exports);
+      typename imports_view::HostMirror host_imports =
+        Kokkos::create_mirror_view(imports);
+      Kokkos::deep_copy (host_exports, exports);
+      doPostsAndWaits(Kokkos::Compat::create_const_view(host_exports),
+                      numExportPacketsPerLID,
+                      host_imports,
+                      numImportPacketsPerLID);
+      Kokkos::deep_copy (imports, host_imports);
+      return;
+    }
+
+    TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
+      Teuchos::typeName(*this) << "::doPostsAndWaits(): There are "
+      << requests_.size() << " outstanding nonblocking messages pending.  It is "
+      "incorrect to call doPostsAndWaits with posts outstanding.");
+
+    doPosts (exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
+    doWaits();
+  }
+
+
+  template <class Packet, class Layout, class Device, class Mem>
+  void Distributor::
+  doPosts (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+           size_t numPackets,
+           const Kokkos::View<Packet*, Layout, Device, Mem> &imports)
+  {
+    using Teuchos::Array;
+    using Teuchos::as;
+    using Teuchos::FancyOStream;
+    using Teuchos::includesVerbLevel;
+    using Teuchos::ireceive;
+    using Teuchos::isend;
+    using Teuchos::OSTab;
+    using Teuchos::readySend;
+    using Teuchos::send;
+    using Teuchos::ssend;
+    using Teuchos::TypeNameTraits;
+    using Teuchos::typeName;
+    using std::endl;
+    using Kokkos::Compat::create_const_view;
+    using Kokkos::Compat::create_view;
+    using Kokkos::Compat::persistingView;
+    using Kokkos::Compat::subview_offset;
+    using Kokkos::Compat::deep_copy_offset;
+    typedef Array<size_t>::size_type size_type;
+    typedef Kokkos::View<const Packet*, Layout, Device, Mem> exports_view_type;
+    typedef Kokkos::View<Packet*, Layout, Device, Mem> imports_view_type;
+
+    Teuchos::OSTab tab (out_);
+
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+    Teuchos::TimeMonitor timeMon (*timer_doPosts3_);
+#endif // TPETRA_DISTRIBUTOR_TIMERS
+
+    // Run-time configurable parameters that come from the input
+    // ParameterList set by setParameterList().
+    const Details::EDistributorSendType sendType = sendType_;
+    const bool doBarrier = barrierBetween_;
+
+// #ifdef HAVE_TEUCHOS_DEBUG
+//     // Prepare for verbose output, if applicable.
+//     Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel ();
+//     (void) verbLevel; // Silence "unused variable" compiler warning.
+//     RCP<FancyOStream> out = this->getOStream ();
+//     // const bool doPrint = out.get () && (comm_->getRank () == 0) &&
+//     //   includesVerbLevel (verbLevel, Teuchos::VERB_EXTREME, true);
+//     const bool doPrint = out.get () && (comm_->getRank () == 0);
+
+//     if (doPrint) {
+//       // Only need one process to print out parameters.
+//       *out << "Distributor::doPosts (3 args)" << endl;
+//     }
+//     // Add one tab level.  We declare this outside the doPrint scopes
+//     // so that the tab persists until the end of this method.
+//     OSTab tab = this->getOSTab ();
+//     if (doPrint) {
+//       *out << "Parameters:" << endl;
+//       {
+//         OSTab tab2 (out);
+//         *out << "sendType: " << DistributorSendTypeEnumToString (sendType)
+//              << endl << "barrierBetween: " << doBarrier << endl;
+//       }
+//     }
+// #endif // HAVE_TEUCHOS_DEBUG
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier,
+      std::logic_error, "Ready send implementation requires a barrier between "
+      "posting receives and posting ready sends.  This should have been checked "
+      "before.  Please report this bug to the Tpetra developers.");
+
+    const int myImageID = comm_->getRank();
+    size_t selfReceiveOffset = 0;
+
+#ifdef HAVE_TEUCHOS_DEBUG
+    // Each message has the same number of packets.
+    const size_t totalNumImportPackets = totalReceiveLength_ * numPackets;
+    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t> (imports.size ()) != totalNumImportPackets,
+      std::runtime_error, typeName (*this) << "::doPosts(): imports must be "
+      "large enough to store the imported data.  imports.size() = "
+      << imports.size() << ", but total number of import packets = "
+      << totalNumImportPackets << ".");
+#endif // HAVE_TEUCHOS_DEBUG
+
+    // MPI tag for nonblocking receives and blocking sends in this
+    // method.  Some processes might take the "fast" path
+    // (indicesTo_.empty()) and others might take the "slow" path for
+    // the same doPosts() call, so the path tag must be the same for
+    // both.
+    const int pathTag = 0;
+    const int tag = this->getTag (pathTag);
+
+    if (debug_) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        requests_.size () != 0, std::logic_error, "doPosts(3): Process "
+        << myImageID << ": requests_.size() = " << requests_.size ()
+        << " != 0.");
+      std::ostringstream os;
+      os << myImageID << ": doPosts(3,"
+         << (indicesTo_.empty () ? "fast" : "slow") << ")" << endl;
+      *out_ << os.str ();
+    }
+
+    // Distributor uses requests_.size() as the number of outstanding
+    // nonblocking message requests, so we resize to zero to maintain
+    // this invariant.
+    //
+    // numReceives_ does _not_ include the self message, if there is
+    // one.  Here, we do actually send a message to ourselves, so we
+    // include any self message in the "actual" number of receives to
+    // post.
+    //
+    // NOTE (mfh 19 Mar 2012): Epetra_MpiDistributor::DoPosts()
+    // doesn't (re)allocate its array of requests.  That happens in
+    // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
+    // demand), or Resize_().
+    const size_type actualNumReceives = as<size_type> (numReceives_) +
+      as<size_type> (selfMessage_ ? 1 : 0);
+    requests_.resize (0);
+
+    // Post the nonblocking receives.  It's common MPI wisdom to post
+    // receives before sends.  In MPI terms, this means favoring
+    // adding to the "posted queue" (of receive requests) over adding
+    // to the "unexpected queue" (of arrived messages not yet matched
+    // with a receive).
+    {
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+      Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts3_recvs_);
+#endif // TPETRA_DISTRIBUTOR_TIMERS
+
+      size_t curBufferOffset = 0;
+      for (size_type i = 0; i < actualNumReceives; ++i) {
+        if (imagesFrom_[i] != myImageID) {
+          // If my process is receiving these packet(s) from another
+          // process (not a self-receive):
+          //
+          // 1. Set up the persisting view (recvBuf) of the imports
+          //    array, given the offset and size (total number of
+          //    packets from process imagesFrom_[i]).
+          // 2. Start the Irecv and save the resulting request.
+          ArrayRCP<Packet> recvBuf =
+            persistingView (imports, curBufferOffset, lengthsFrom_[i]*numPackets);
+          requests_.push_back (ireceive<int, Packet> (recvBuf, imagesFrom_[i],
+                                                      tag, *comm_));
+          if (debug_) {
+            std::ostringstream os;
+            os << myImageID << ": doPosts(3,"
+               << (indicesTo_.empty () ? "fast" : "slow") << "): "
+               << "Posted irecv from Proc " << imagesFrom_[i] << " with "
+              "specified tag " << tag << endl;
+            *out_ << os.str ();
+          }
+        }
+        else { // Receiving from myself
+          selfReceiveOffset = curBufferOffset; // Remember the self-recv offset
+        }
+        curBufferOffset += lengthsFrom_[i]*numPackets;
+      }
+    }
+
+    if (doBarrier) {
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+      Teuchos::TimeMonitor timeMonBarrier (*timer_doPosts3_barrier_);
+#endif // TPETRA_DISTRIBUTOR_TIMERS
+      // If we are using ready sends (MPI_Rsend) below, we need to do
+      // a barrier before we post the ready sends.  This is because a
+      // ready send requires that its matching receive has already
+      // been posted before the send has been posted.  The only way to
+      // guarantee that in this case is to use a barrier.
+      comm_->barrier ();
+    }
+
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+    Teuchos::TimeMonitor timeMonSends (*timer_doPosts3_sends_);
+#endif // TPETRA_DISTRIBUTOR_TIMERS
+
+    // setup scan through imagesTo_ list starting with higher numbered images
+    // (should help balance message traffic)
+    //
+    // FIXME (mfh 20 Feb 2013) Why haven't we precomputed this?
+    // It doesn't depend on the input at all.
+    size_t numBlocks = numSends_ + selfMessage_;
+    size_t imageIndex = 0;
+    while ((imageIndex < numBlocks) && (imagesTo_[imageIndex] < myImageID)) {
+      ++imageIndex;
+    }
+    if (imageIndex == numBlocks) {
+      imageIndex = 0;
+    }
+
+    size_t selfNum = 0;
+    size_t selfIndex = 0;
+
+    if (indicesTo_.empty()) {
+      if (debug_) {
+        std::ostringstream os;
+        os << myImageID << ": doPosts(3,fast): posting sends" << endl;
+        *out_ << os.str ();
+      }
+
+      // Data are already blocked (laid out) by process, so we don't
+      // need a separate send buffer (besides the exports array).
+      for (size_t i = 0; i < numBlocks; ++i) {
+        size_t p = i + imageIndex;
+        if (p > (numBlocks - 1)) {
+          p -= numBlocks;
+        }
+
+        if (imagesTo_[p] != myImageID) {
+          exports_view_type tmpSend = subview_offset(
+            exports, startsTo_[p]*numPackets, lengthsTo_[p]*numPackets);
+
+          if (sendType == Details::DISTRIBUTOR_SEND) {
+            send<int, Packet> (tmpSend.ptr_on_device (),
+                               as<int> (tmpSend.size ()),
+                               imagesTo_[p], tag, *comm_);
+          }
+          else if (sendType == Details::DISTRIBUTOR_ISEND) {
+            ArrayRCP<const Packet> tmpSendBuf =
+              persistingView (exports, startsTo_[p] * numPackets,
+                              lengthsTo_[p] * numPackets);
+            requests_.push_back (isend<int, Packet> (tmpSendBuf, imagesTo_[p],
+                                                     tag, *comm_));
+          }
+          else if (sendType == Details::DISTRIBUTOR_RSEND) {
+            readySend<int, Packet> (tmpSend.ptr_on_device (),
+                                    as<int> (tmpSend.size ()),
+                                    imagesTo_[p], tag, *comm_);
+          }
+          else if (sendType == Details::DISTRIBUTOR_SSEND) {
+            ssend<int, Packet> (tmpSend.ptr_on_device (),
+                                as<int> (tmpSend.size ()),
+                                imagesTo_[p], tag, *comm_);
+          } else {
+            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Tpetra::"
+              "Distributor (3 args): Invalid send type.  We should never get "
+              "here.  Please report this bug to the Tpetra developers.");
+          }
+
+          if (debug_) {
+            std::ostringstream os;
+            os << myImageID << ": doPosts(3,fast): "
+               << "Posted send to Proc " << imagesTo_[i]
+               << " w/ specified tag " << tag << endl;
+            *out_ << os.str ();
+          }
+        }
+        else { // "Sending" the message to myself
+          selfNum = p;
+        }
+      }
+
+      if (selfMessage_) {
+        // This is how we "send a message to ourself": we copy from
+        // the export buffer to the import buffer.  That saves
+        // Teuchos::Comm implementations other than MpiComm (in
+        // particular, SerialComm) the trouble of implementing self
+        // messages correctly.  (To do this right, SerialComm would
+        // need internal buffer space for messages, keyed on the
+        // message's tag.)
+        deep_copy_offset(imports, exports, selfReceiveOffset,
+                         startsTo_[selfNum]*numPackets,
+                         lengthsTo_[selfNum]*numPackets);
+      }
+      if (debug_) {
+        std::ostringstream os;
+        os << myImageID << ": doPosts(3,fast) done" << endl;
+        *out_ << os.str ();
+      }
+    }
+    else { // data are not blocked by image, use send buffer
+      if (debug_) {
+        std::ostringstream os;
+        os << myImageID << ": doPosts(3,slow): posting sends" << endl;
+        *out_ << os.str ();
+      }
+
+      // FIXME (mfh 05 Mar 2013) This is broken for Isend (nonblocking
+      // sends), because the buffer is only long enough for one send.
+      Kokkos::View<Packet*,Layout,Device,Mem> sendArray =
+        create_view<Packet,Layout,Device,Mem>("sendArray", maxSendLength_ * numPackets); // send buffer
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        sendType == Details::DISTRIBUTOR_ISEND, std::logic_error,
+        "Tpetra::Distributor::doPosts<" << TypeNameTraits<Packet>::name()
+        << "> (3-argument version):" << endl
+        << "The \"send buffer\" code path doesn't currently work with nonblocking sends.");
+
+      for (size_t i = 0; i < numBlocks; ++i) {
+        size_t p = i + imageIndex;
+        if (p > (numBlocks - 1)) {
+          p -= numBlocks;
+        }
+
+        if (imagesTo_[p] != myImageID) {
+          size_t sendArrayOffset = 0;
+          size_t j = startsTo_[p];
+          for (size_t k = 0; k < lengthsTo_[p]; ++k, ++j) {
+            deep_copy_offset(sendArray, exports, sendArrayOffset,
+                             indicesTo_[j]*numPackets, numPackets);
+            sendArrayOffset += numPackets;
+          }
+          Kokkos::View<Packet*, Layout, Device, Mem> tmpSend =
+            subview_offset(sendArray, size_t(0), lengthsTo_[p]*numPackets);
+
+          if (sendType == Details::DISTRIBUTOR_SEND) {
+            send<int, Packet> (tmpSend.ptr_on_device (),
+                               as<int> (tmpSend.size ()),
+                               imagesTo_[p], tag, *comm_);
+          }
+          else if (sendType == Details::DISTRIBUTOR_ISEND) {
+            ArrayRCP<const Packet> tmpSendBuf =
+              persistingView (sendArray, 0, lengthsTo_[p] * numPackets);
+            requests_.push_back (isend<int, Packet> (tmpSendBuf, imagesTo_[p],
+                                                     tag, *comm_));
+          }
+          else if (sendType == Details::DISTRIBUTOR_RSEND) {
+            readySend<int, Packet> (tmpSend.ptr_on_device (),
+                                    as<int> (tmpSend.size ()),
+                                    imagesTo_[p], tag, *comm_);
+          }
+          else if (sendType == Details::DISTRIBUTOR_SSEND) {
+            ssend<int, Packet> (tmpSend.ptr_on_device (),
+                                as<int> (tmpSend.size ()),
+                                imagesTo_[p], tag, *comm_);
+          }
+          else {
+            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Tpetra::"
+              "Distributor (3 args): Invalid send type.  We should never get "
+              "here.  Please report this bug to the Tpetra developers.");
+          }
+
+          if (debug_) {
+            std::ostringstream os;
+            os << myImageID << ": doPosts(3,slow): "
+               << "Posted send to Proc " << imagesTo_[i]
+               << " w/ specified tag " << tag << endl;
+            *out_ << os.str ();
+          }
+        }
+        else { // "Sending" the message to myself
+          selfNum = p;
+          selfIndex = startsTo_[p];
+        }
+      }
+
+      if (selfMessage_) {
+        for (size_t k = 0; k < lengthsTo_[selfNum]; ++k) {
+          deep_copy_offset(imports, exports, selfReceiveOffset,
+                           indicesTo_[selfIndex]*numPackets, numPackets);
+          ++selfIndex;
+          selfReceiveOffset += numPackets;
+        }
+      }
+      if (debug_) {
+        std::ostringstream os;
+        os << myImageID << ": doPosts(3,slow) done" << endl;
+        *out_ << os.str ();
+      }
+    }
+  }
+
+  template <class Packet, class Layout, class Device, class Mem>
+  void Distributor::
+  doPosts (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+           const ArrayView<size_t> &numExportPacketsPerLID,
+           const Kokkos::View<Packet*, Layout, Device, Mem> &imports,
+           const ArrayView<size_t> &numImportPacketsPerLID)
+  {
+    using Teuchos::Array;
+    using Teuchos::as;
+    using Teuchos::ireceive;
+    using Teuchos::isend;
+    using Teuchos::readySend;
+    using Teuchos::send;
+    using Teuchos::ssend;
+    using Teuchos::TypeNameTraits;
+#ifdef HAVE_TEUCHOS_DEBUG
+    using Teuchos::OSTab;
+#endif // HAVE_TEUCHOS_DEBUG
+    using std::endl;
+    using Kokkos::Compat::create_const_view;
+    using Kokkos::Compat::create_view;
+    using Kokkos::Compat::persistingView;
+    using Kokkos::Compat::subview_offset;
+    using Kokkos::Compat::deep_copy_offset;
+    typedef Array<size_t>::size_type size_type;
+    typedef Kokkos::View<const Packet*, Layout, Device, Mem> exports_view_type;
+    typedef Kokkos::View<Packet*, Layout, Device, Mem> imports_view_type;
+
+    Teuchos::OSTab tab (out_);
+
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+    Teuchos::TimeMonitor timeMon (*timer_doPosts4_);
+#endif // TPETRA_DISTRIBUTOR_TIMERS
+
+    // Run-time configurable parameters that come from the input
+    // ParameterList set by setParameterList().
+    const Details::EDistributorSendType sendType = sendType_;
+    const bool doBarrier = barrierBetween_;
+
+// #ifdef HAVE_TEUCHOS_DEBUG
+//     // Prepare for verbose output, if applicable.
+//     Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel ();
+//     RCP<Teuchos::FancyOStream> out = this->getOStream ();
+//     const bool doPrint = out.get () && (comm_->getRank () == 0) &&
+//       includesVerbLevel (verbLevel, Teuchos::VERB_EXTREME, true);
+
+//     if (doPrint) {
+//       // Only need one process to print out parameters.
+//       *out << "Distributor::doPosts (4 args)" << endl;
+//     }
+//     // Add one tab level.  We declare this outside the doPrint scopes
+//     // so that the tab persists until the end of this method.
+//     Teuchos::OSTab tab = this->getOSTab ();
+//     if (doPrint) {
+//       *out << "Parameters:" << endl;
+//       {
+//         OSTab tab2 (out);
+//         *out << "sendType: " << DistributorSendTypeEnumToString (sendType)
+//              << endl << "barrierBetween: " << doBarrier << endl;
+//       }
+//     }
+// #endif // HAVE_TEUCHOS_DEBUG
+
+    TEUCHOS_TEST_FOR_EXCEPTION(sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier,
+      std::logic_error, "Ready send implementation requires a barrier between "
+      "posting receives and posting ready sends.  This should have been checked "
+      "before.  Please report this bug to the Tpetra developers.");
+
+    const int myImageID = comm_->getRank();
+    size_t selfReceiveOffset = 0;
+
+#ifdef HAVE_TEUCHOS_DEBUG
+    // Different messages may have different numbers of packets.
+    size_t totalNumImportPackets = 0;
+    for (int ii = 0; ii < numImportPacketsPerLID.size(); ++ii) {
+      totalNumImportPackets += numImportPacketsPerLID[ii];
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t> (imports.size ()) != totalNumImportPackets,
+      std::runtime_error, Teuchos::typeName (*this) << "::doPosts(): The "
+      "imports array argument must be large enough to store the imported "
+      "data.  imports.size() = " << imports.size() << ", but the total number "
+      "of packets is " << totalNumImportPackets << ".");
+#endif // HAVE_TEUCHOS_DEBUG
+
+    // MPI tag for nonblocking receives and blocking sends in this
+    // method.  Some processes might take the "fast" path
+    // (indicesTo_.empty()) and others might take the "slow" path for
+    // the same doPosts() call, so the path tag must be the same for
+    // both.
+    const int pathTag = 1;
+    const int tag = this->getTag (pathTag);
+
+    if (debug_) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        requests_.size () != 0, std::logic_error, "doPosts(4): Process "
+        << myImageID << ": requests_.size() = " << requests_.size ()
+        << " != 0.");
+      std::ostringstream os;
+      os << myImageID << ": doPosts(4,"
+         << (indicesTo_.empty () ? "fast" : "slow") << ")" << endl;
+      *out_ << os.str ();
+    }
+
+    // Distributor uses requests_.size() as the number of outstanding
+    // nonblocking message requests, so we resize to zero to maintain
+    // this invariant.
+    //
+    // numReceives_ does _not_ include the self message, if there is
+    // one.  Here, we do actually send a message to ourselves, so we
+    // include any self message in the "actual" number of receives to
+    // post.
+    //
+    // NOTE (mfh 19 Mar 2012): Epetra_MpiDistributor::DoPosts()
+    // doesn't (re)allocate its array of requests.  That happens in
+    // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
+    // demand), or Resize_().
+    const size_type actualNumReceives = as<size_type> (numReceives_) +
+      as<size_type> (selfMessage_ ? 1 : 0);
+    requests_.resize (0);
+
+    // Post the nonblocking receives.  It's common MPI wisdom to post
+    // receives before sends.  In MPI terms, this means favoring
+    // adding to the "posted queue" (of receive requests) over adding
+    // to the "unexpected queue" (of arrived messages not yet matched
+    // with a receive).
+    {
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+      Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts4_recvs_);
+#endif // TPETRA_DISTRIBUTOR_TIMERS
+
+      size_t curBufferOffset = 0;
+      size_t curLIDoffset = 0;
+      for (size_type i = 0; i < actualNumReceives; ++i) {
+        size_t totalPacketsFrom_i = 0;
+        for (size_t j = 0; j < lengthsFrom_[i]; ++j) {
+          totalPacketsFrom_i += numImportPacketsPerLID[curLIDoffset+j];
+        }
+        curLIDoffset += lengthsFrom_[i];
+        if (imagesFrom_[i] != myImageID && totalPacketsFrom_i) {
+          // If my process is receiving these packet(s) from another
+          // process (not a self-receive), and if there is at least
+          // one packet to receive:
+          //
+          // 1. Set up the persisting view (recvBuf) into the imports
+          //    array, given the offset and size (total number of
+          //    packets from process imagesFrom_[i]).
+          // 2. Start the Irecv and save the resulting request.
+          ArrayRCP<Packet> recvBuf =
+            persistingView (imports, curBufferOffset, totalPacketsFrom_i);
+          requests_.push_back (ireceive<int, Packet> (recvBuf, imagesFrom_[i],
+                                                      tag, *comm_));
+        }
+        else { // Receiving these packet(s) from myself
+          selfReceiveOffset = curBufferOffset; // Remember the offset
+        }
+        curBufferOffset += totalPacketsFrom_i;
+      }
+    }
+
+    if (doBarrier) {
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+      Teuchos::TimeMonitor timeMonBarrier (*timer_doPosts4_barrier_);
+#endif // TPETRA_DISTRIBUTOR_TIMERS
+      // If we are using ready sends (MPI_Rsend) below, we need to do
+      // a barrier before we post the ready sends.  This is because a
+      // ready send requires that its matching receive has already
+      // been posted before the send has been posted.  The only way to
+      // guarantee that in this case is to use a barrier.
+      comm_->barrier ();
+    }
+
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+    Teuchos::TimeMonitor timeMonSends (*timer_doPosts4_sends_);
+#endif // TPETRA_DISTRIBUTOR_TIMERS
+
+    // setup arrays containing starting-offsets into exports for each send,
+    // and num-packets-to-send for each send.
+    Array<size_t> sendPacketOffsets(numSends_,0), packetsPerSend(numSends_,0);
+    size_t maxNumPackets = 0;
+    size_t curPKToffset = 0;
+    for (size_t pp=0; pp<numSends_; ++pp) {
+      sendPacketOffsets[pp] = curPKToffset;
+      size_t numPackets = 0;
+      for (size_t j=startsTo_[pp]; j<startsTo_[pp]+lengthsTo_[pp]; ++j) {
+        numPackets += numExportPacketsPerLID[j];
+      }
+      if (numPackets > maxNumPackets) maxNumPackets = numPackets;
+      packetsPerSend[pp] = numPackets;
+      curPKToffset += numPackets;
+    }
+
+    // setup scan through imagesTo_ list starting with higher numbered images
+    // (should help balance message traffic)
+    size_t numBlocks = numSends_+ selfMessage_;
+    size_t imageIndex = 0;
+    while ((imageIndex < numBlocks) && (imagesTo_[imageIndex] < myImageID)) {
+      ++imageIndex;
+    }
+    if (imageIndex == numBlocks) {
+      imageIndex = 0;
+    }
+
+    size_t selfNum = 0;
+    size_t selfIndex = 0;
+
+    if (indicesTo_.empty()) {
+      if (debug_) {
+        std::ostringstream os;
+        os << myImageID << ": doPosts(4,fast): posting sends" << endl;
+        *out_ << os.str ();
+      }
+
+      // Data are already blocked (laid out) by process, so we don't
+      // need a separate send buffer (besides the exports array).
+      for (size_t i = 0; i < numBlocks; ++i) {
+        size_t p = i + imageIndex;
+        if (p > (numBlocks - 1)) {
+          p -= numBlocks;
+        }
+
+        if (imagesTo_[p] != myImageID && packetsPerSend[p] > 0) {
+          exports_view_type tmpSend =
+            subview_offset(exports, sendPacketOffsets[p], packetsPerSend[p]);
+
+          if (sendType == Details::DISTRIBUTOR_SEND) { // the default, so put it first
+            send<int, Packet> (tmpSend.ptr_on_device (),
+                               as<int> (tmpSend.size ()),
+                               imagesTo_[p], tag, *comm_);
+          }
+          else if (sendType == Details::DISTRIBUTOR_RSEND) {
+            readySend<int, Packet> (tmpSend.ptr_on_device (),
+                                    as<int> (tmpSend.size ()),
+                                    imagesTo_[p], tag, *comm_);
+          }
+          else if (sendType == Details::DISTRIBUTOR_ISEND) {
+            ArrayRCP<const Packet> tmpSendBuf =
+              persistingView (exports, sendPacketOffsets[p], packetsPerSend[p]);
+            requests_.push_back (isend<int, Packet> (tmpSendBuf, imagesTo_[p],
+                                                     tag, *comm_));
+          }
+          else if (sendType == Details::DISTRIBUTOR_SSEND) {
+            ssend<int, Packet> (tmpSend.ptr_on_device (),
+                                as<int> (tmpSend.size ()),
+                                imagesTo_[p], tag, *comm_);
+          }
+          else {
+            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Tpetra::"
+              "Distributor (4 args): Invalid send type.  We should never get "
+              "here.  Please report this bug to the Tpetra developers.");
+          }
+        }
+        else { // "Sending" the message to myself
+          selfNum = p;
+        }
+      }
+
+      if (selfMessage_) {
+        deep_copy_offset(imports, exports, selfReceiveOffset,
+                         sendPacketOffsets[selfNum], packetsPerSend[selfNum]);
+      }
+      if (debug_) {
+        std::ostringstream os;
+        os << myImageID << ": doPosts(4,fast) done" << endl;
+        *out_ << os.str ();
+      }
+    }
+    else { // data are not blocked by image, use send buffer
+      if (debug_) {
+        std::ostringstream os;
+        os << myImageID << ": doPosts(4,slow): posting sends" << endl;
+        *out_ << os.str ();
+      }
+
+      // FIXME (mfh 05 Mar 2013) This may be broken for Isend.
+      Kokkos::View<Packet*,Layout,Device,Mem> sendArray =
+        create_view<Packet,Layout,Device,Mem>("sendArray", maxNumPackets); // send buffer
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        sendType == Details::DISTRIBUTOR_ISEND, std::logic_error,
+        "Tpetra::Distributor::doPosts<" << TypeNameTraits<Packet>::name()
+        << "> (3-argument version):" << endl
+        << "The \"send buffer\" code path may not necessarily work with nonblocking sends.");
+
+      Array<size_t> indicesOffsets (numExportPacketsPerLID.size(), 0);
+      size_t ioffset = 0;
+      for (int j=0; j<numExportPacketsPerLID.size(); ++j) {
+        indicesOffsets[j] = ioffset;
+        ioffset += numExportPacketsPerLID[j];
+      }
+
+      for (size_t i = 0; i < numBlocks; ++i) {
+        size_t p = i + imageIndex;
+        if (p > (numBlocks - 1)) {
+          p -= numBlocks;
+        }
+
+        if (imagesTo_[p] != myImageID) {
+          size_t sendArrayOffset = 0;
+          size_t j = startsTo_[p];
+          size_t numPacketsTo_p = 0;
+          for (size_t k = 0; k < lengthsTo_[p]; ++k, ++j) {
+            deep_copy_offset(sendArray, exports, sendArrayOffset,
+                             indicesOffsets[j], numExportPacketsPerLID[j]);
+            sendArrayOffset += numExportPacketsPerLID[j];
+          }
+          if (numPacketsTo_p > 0) {
+            Kokkos::View<Packet*, Layout, Device, Mem> tmpSend =
+              subview_offset(sendArray, size_t(0), numPacketsTo_p);
+
+            if (sendType == Details::DISTRIBUTOR_RSEND) {
+              readySend<int, Packet> (tmpSend.ptr_on_device (),
+                                      as<int> (tmpSend.size ()),
+                                      imagesTo_[p], tag, *comm_);
+            }
+            else if (sendType == Details::DISTRIBUTOR_ISEND) {
+              ArrayRCP<const Packet> tmpSendBuf =
+                persistingView (sendArray, 0, numPacketsTo_p);
+              requests_.push_back (isend<int, Packet> (tmpSendBuf, imagesTo_[p],
+                                                       tag, *comm_));
+            }
+            else if (sendType == Details::DISTRIBUTOR_SSEND) {
+              ssend<int, Packet> (tmpSend.ptr_on_device (),
+                                  as<int> (tmpSend.size ()),
+                                  imagesTo_[p], tag, *comm_);
+            }
+            else { // if (sendType == Details::DISTRIBUTOR_SSEND)
+              send<int, Packet> (tmpSend.ptr_on_device (),
+                                 as<int> (tmpSend.size ()),
+                                 imagesTo_[p], tag, *comm_);
+            }
+          }
+        }
+        else { // "Sending" the message to myself
+          selfNum = p;
+          selfIndex = startsTo_[p];
+        }
+      }
+
+      if (selfMessage_) {
+        for (size_t k = 0; k < lengthsTo_[selfNum]; ++k) {
+          deep_copy_offset(imports, exports, selfReceiveOffset,
+                           indicesOffsets[selfIndex],
+                           numExportPacketsPerLID[selfIndex]);
+          selfReceiveOffset += numExportPacketsPerLID[selfIndex];
+          ++selfIndex;
+        }
+      }
+      if (debug_) {
+        std::ostringstream os;
+        os << myImageID << ": doPosts(4,slow) done" << endl;
+        *out_ << os.str ();
+      }
+    }
+  }
+
+  template <class Packet, class Layout, class Device, class Mem>
+  void Distributor::
+  doReversePostsAndWaits (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+                          size_t numPackets,
+                          const Kokkos::View<Packet*, Layout, Device, Mem> &imports)
+  {
+    // If MPI library doesn't support RDMA for communication directly
+    // to/from GPU, transfer exports to the host, do the communication, then
+    // transfer imports back to the GPU
+    //
+    // We need to do this here instead of doPosts() because the copy back
+    // to the GPU must occur after the waits.
+    typedef Kokkos::View<const Packet*, Layout, Device, Mem> exports_view;
+    typedef Kokkos::View<Packet*, Layout, Device, Mem> imports_view;
+    if (!enable_cuda_rdma_ && !exports_view::is_hostspace) {
+      typename exports_view::HostMirror host_exports =
+        Kokkos::create_mirror_view(exports);
+      typename imports_view::HostMirror host_imports =
+        Kokkos::create_mirror_view(imports);
+      Kokkos::deep_copy (host_exports, exports);
+      doPostsAndWaits(Kokkos::Compat::create_const_view(host_exports),
+                      numPackets,
+                      host_imports);
+      Kokkos::deep_copy (imports, host_imports);
+      return;
+    }
+
+    doReversePosts (exports, numPackets, imports);
+    doReverseWaits ();
+  }
+
+  template <class Packet, class Layout, class Device, class Mem>
+  void Distributor::
+  doReversePostsAndWaits (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+                          const ArrayView<size_t> &numExportPacketsPerLID,
+                          const Kokkos::View<Packet*, Layout, Device, Mem> &imports,
+                          const ArrayView<size_t> &numImportPacketsPerLID)
+  {
+    // If MPI library doesn't support RDMA for communication directly
+    // to/from GPU, transfer exports to the host, do the communication, then
+    // transfer imports back to the GPU
+    //
+    // We need to do this here instead of doPosts() because the copy back
+    // to the GPU must occur after the waits.
+    typedef Kokkos::View<const Packet*, Layout, Device, Mem> exports_view;
+    typedef Kokkos::View<Packet*, Layout, Device, Mem> imports_view;
+    if (!enable_cuda_rdma_ && !exports_view::is_hostspace) {
+      typename exports_view::HostMirror host_exports =
+        Kokkos::create_mirror_view(exports);
+      typename imports_view::HostMirror host_imports =
+        Kokkos::create_mirror_view(imports);
+      Kokkos::deep_copy (host_exports, exports);
+      doPostsAndWaits(Kokkos::Compat::create_const_view(host_exports),
+                      numExportPacketsPerLID,
+                      host_imports,
+                      numImportPacketsPerLID);
+      Kokkos::deep_copy (imports, host_imports);
+      return;
+    }
+
+    TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
+      Teuchos::typeName(*this) << "::doReversePostsAndWaits(): There are "
+      << requests_.size() << " outstanding nonblocking messages pending.  It is "
+      "incorrect to call doReversePostsAndWaits with posts outstanding.");
+
+    doReversePosts (exports, numExportPacketsPerLID, imports,
+                    numImportPacketsPerLID);
+    doReverseWaits ();
+  }
+
+  template <class Packet, class Layout, class Device, class Mem>
+  void Distributor::
+  doReversePosts (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+                  size_t numPackets,
+                  const  Kokkos::View<Packet*, Layout, Device, Mem> &imports)
+  {
+    // FIXME (mfh 29 Mar 2012) WHY?
+    TEUCHOS_TEST_FOR_EXCEPTION(! indicesTo_.empty (), std::runtime_error,
+      Teuchos::typeName (*this) << "::doReversePosts(): Can only do reverse "
+      "communication when original data are blocked by process.");
+    if (reverseDistributor_.is_null ()) {
+      createReverseDistributor ();
+    }
+    reverseDistributor_->doPosts (exports, numPackets, imports);
+  }
+
+  template <class Packet, class Layout, class Device, class Mem>
+  void Distributor::
+  doReversePosts (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+                  const ArrayView<size_t> &numExportPacketsPerLID,
+                  const Kokkos::View<Packet*, Layout, Device, Mem> &imports,
+                  const ArrayView<size_t> &numImportPacketsPerLID)
+  {
+    // FIXME (mfh 29 Mar 2012) WHY?
+    TEUCHOS_TEST_FOR_EXCEPTION(! indicesTo_.empty (), std::runtime_error,
+      Teuchos::typeName (*this) << "::doReversePosts(): Can only do reverse "
+      "communication when original data are blocked by process.");
+    if (reverseDistributor_.is_null ()) {
+      createReverseDistributor ();
+    }
+    reverseDistributor_->doPosts (exports, numExportPacketsPerLID,
+                                  imports, numImportPacketsPerLID);
+  }
+
+#endif
 
   template <class OrdinalType>
   void Distributor::

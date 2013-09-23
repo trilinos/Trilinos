@@ -25,3 +25,10 @@ echo
 
 pushd ../../../doc/RefCountPtr/beginners; make pdf ; popd
 cp ../../../doc/RefCountPtr/beginners/RefCountPtrBeginnersGuideSAND.pdf html/.
+
+echo
+echo "Generating TeuchosMemoryManagementSAND.pdf file ..."
+echo
+
+pushd ../../../doc/TeuchosMemoryManagementSAND; make; popd
+cp ../../../doc/TeuchosMemoryManagementSAND/TeuchosMemoryManagementSAND.pdf html/.

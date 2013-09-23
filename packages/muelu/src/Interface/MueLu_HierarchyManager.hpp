@@ -130,13 +130,17 @@ namespace MueLu {
     }
 
     //! Setup Hierarchy object
-    virtual void SetupHierarchy(Hierarchy & H) const {
+    virtual void SetupHierarchy(Hierarchy& H) const {
       TEUCHOS_TEST_FOR_EXCEPTION(!H.GetLevel(0)->IsAvailable("A"), Exceptions::RuntimeError, "No fine level operator");
 
       // Setup Matrix
       // TODO: I should certainly undo this somewhere...
       RCP<Level>  l  = H.GetLevel(0);
       RCP<Matrix> Op = l->Get<RCP<Matrix> >("A");
+
+      Xpetra::UnderlyingLib lib = Op->getRowMap()->lib();
+      H.setlib(lib);
+
       SetupMatrix(*Op);
       SetupExtra(H);
 
@@ -163,6 +167,10 @@ namespace MueLu {
         isLastLevel = r || (levelID == lastLevelID);
         levelID++;
       }
+      RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      fos->setOutputToRootOnly(0);
+      H.print(*fos,verbosity_);
+
       // When we reuse hierarchy, it is necessary that we don't
       // change the number of levels. We also cannot make requests
       // for coarser levels, because we don't construct all the

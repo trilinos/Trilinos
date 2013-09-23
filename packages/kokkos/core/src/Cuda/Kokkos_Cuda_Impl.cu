@@ -187,6 +187,10 @@ public:
   static CudaInternal & singleton();
 
   const CudaInternal & assert_initialized() const ;
+
+  int is_initialized() const
+    { return 0 != m_scratchSpace && 0 != m_scratchFlags ; }
+
   void initialize( int cuda_device_id );
   void finalize();
 
@@ -219,6 +223,22 @@ public:
 void CudaInternal::print_configuration( std::ostream & s ) const
 {
   const CudaInternalDevices & dev_info = CudaInternalDevices::singleton();
+
+#if defined( KOKKOS_HAVE_CUDA )
+    s << "macro  KOKKOS_HAVE_CUDA      : defined" << std::endl ;
+#endif
+#if defined( KOKKOS_HAVE_CUDA_ARCH )
+    s << "macro  KOKKOS_HAVE_CUDA_ARCH = " << KOKKOS_HAVE_CUDA_ARCH
+      << " = capability " << KOKKOS_HAVE_CUDA_ARCH / 100
+      << "." << ( KOKKOS_HAVE_CUDA_ARCH % 100 ) / 10
+      << std::endl ;
+#endif
+#if defined( CUDA_VERSION )
+    s << "macro  CUDA_VERSION          = " << CUDA_VERSION
+      << " = version " << CUDA_VERSION / 1000
+      << "." << ( CUDA_VERSION % 1000 ) / 10
+      << std::endl ;
+#endif
 
   for ( int i = 0 ; i < dev_info.m_cudaDevCount ; ++i ) {
     s << "Kokkos::Cuda[ " << i << " ] "
@@ -269,7 +289,8 @@ void CudaInternal::initialize( int cuda_device_id )
 
   const CudaInternalDevices & dev_info = CudaInternalDevices::singleton();
 
-  const bool ok_init = 0 == m_scratchSpace ;
+  const bool ok_init = 0 == m_scratchSpace || 0 == m_scratchFlags ;
+
   const bool ok_id   = 0 <= cuda_device_id &&
                             cuda_device_id < dev_info.m_cudaDevCount ;
 
@@ -280,7 +301,6 @@ void CudaInternal::initialize( int cuda_device_id )
       0 <= dev_info.m_cudaProp[ cuda_device_id ].minor );
 
   if ( ok_init && ok_dev ) {
-
 
     const struct cudaDeviceProp & cudaProp =
       dev_info.m_cudaProp[ cuda_device_id ];
@@ -336,9 +356,13 @@ void CudaInternal::initialize( int cuda_device_id )
     // and scratch space for partial reduction values.
     // Allocate some initial space.  This will grow as needed.
 
-    (void) scratch_unified( 16 * sizeof(size_type) );
-    (void) scratch_flags( m_maxWarpCount * Impl::CudaTraits::WarpSize * 2 * sizeof(size_type) );
-    (void) scratch_space( m_maxBlock * 2 * sizeof(size_type) );
+    {
+      const unsigned reduce_block_count = m_maxWarpCount * Impl::CudaTraits::WarpSize ;
+
+      (void) scratch_unified( 16 * sizeof(size_type) );
+      (void) scratch_flags( reduce_block_count * 2  * sizeof(size_type) );
+      (void) scratch_space( reduce_block_count * 16 * sizeof(size_type) );
+    }
   }
   else {
 
@@ -454,18 +478,21 @@ CudaInternal::scratch_unified( const Cuda::size_type size )
 
 void CudaInternal::finalize()
 {
-  Cuda::memory_space::decrement( m_scratchSpace );
-  Cuda::memory_space::decrement( m_scratchFlags );
-  (void) scratch_unified( 0 );
+  if ( 0 != m_scratchSpace || 0 != m_scratchFlags ) {
 
-  m_cudaDev            = -1 ;
-  m_maxWarpCount       = 0 ;
-  m_maxBlock           = 0 ; 
-  m_maxSharedWords     = 0 ;
-  m_scratchSpaceCount  = 0 ;
-  m_scratchFlagsCount  = 0 ;
-  m_scratchSpace       = 0 ;
-  m_scratchFlags       = 0 ;
+    Cuda::memory_space::decrement( m_scratchSpace );
+    Cuda::memory_space::decrement( m_scratchFlags );
+    (void) scratch_unified( 0 );
+
+    m_cudaDev            = -1 ;
+    m_maxWarpCount       = 0 ;
+    m_maxBlock           = 0 ; 
+    m_maxSharedWords     = 0 ;
+    m_scratchSpaceCount  = 0 ;
+    m_scratchFlagsCount  = 0 ;
+    m_scratchSpace       = 0 ;
+    m_scratchFlags       = 0 ;
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -498,6 +525,9 @@ namespace Kokkos {
 
 Cuda::size_type Cuda::detect_device_count()
 { return Impl::CudaInternalDevices::singleton().m_cudaDevCount ; }
+
+int Cuda::is_initialized()
+{ return Impl::CudaInternal::raw_singleton().is_initialized(); }
 
 void Cuda::initialize( const Cuda::SelectDevice config )
 { Impl::CudaInternal::raw_singleton().initialize( config.cuda_device_id ); }
@@ -538,7 +568,7 @@ bool Cuda::wake() { return true ; }
 
 void Cuda::fence()
 { 
-  CUDA_SAFE_CALL( cudaDeviceSynchronize() ); 
+  CUDA_SAFE_CALL( cudaDeviceSynchronize() );
 }
 
 } // namespace Kokkos

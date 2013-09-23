@@ -97,10 +97,10 @@
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_EpetraOperator.hpp"
 #if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MUELU_ISORROPIA)
+#include "MueLu_IsorropiaInterface.hpp"
+#include "MueLu_RepartitionInterface.hpp"
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_RebalanceTransferFactory.hpp"
-//#include "MueLu_ZoltanInterface.hpp"
-#include "MueLu_IsorropiaInterface.hpp"
 #include "MueLu_RebalanceAcFactory.hpp"
 #endif
 
@@ -148,14 +148,12 @@ int main(int argc, char *argv[]) {
 
   // - Repartitioning
 #if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MUELU_ISORROPIA)
-  int optRepartition = 1;                 clp.setOption("repartition",    &optRepartition,        "enable repartitioning");
-  LO optMinRowsPerProc = 50;              clp.setOption("minRowsPerProc", &optMinRowsPerProc,     "min #rows allowable per proc before repartitioning occurs");
-  double optNnzImbalance = 1.2;           clp.setOption("nnzImbalance",   &optNnzImbalance,       "max allowable nonzero imbalance before repartitioning occurs");
+  int    optRepartition    = 1;             clp.setOption("repartition",    &optRepartition,        "enable repartitioning");
+  LO     optMinRowsPerProc = 50;            clp.setOption("minRowsPerProc", &optMinRowsPerProc,     "min #rows allowable per proc before repartitioning occurs");
+  double optNnzImbalance   = 1.2;           clp.setOption("nnzImbalance",   &optNnzImbalance,       "max allowable nonzero imbalance before repartitioning occurs");
 #else
   int optRepartition = 0;
-  LO optMinRowsPerProc = 50;
-  double optNnzImbalance = 1.2;
-#endif // HAVE_MPI && HAVE_MUELU_ZOLTAN
+#endif
 
   switch (clp.parse(argc, argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -229,7 +227,7 @@ int main(int argc, char *argv[]) {
   Finest->Set("A",Op);
   //Finest->Set("Nullspace",xNS);
 
-  if(optRepartition==1) {
+  if (optRepartition==1) {
     // create null space
 
     RCP<MultiVector> nullspace;
@@ -338,9 +336,20 @@ int main(int argc, char *argv[]) {
     Acfact->SetFactory("P", Pfact);
     Acfact->SetFactory("R", Rfact);
 
-    // create "Partition"
+    // define rebalancing factory for coarse block matrix A(1,1)
+    RCP<AmalgamationFactory> rebAmalgFact = rcp(new AmalgamationFactory());
+    rebAmalgFact->SetFactory("A", Acfact);
+
+    // create amalgamated "Partition"
     RCP<MueLu::IsorropiaInterface<LO, GO, NO, LMO> > isoInterface = rcp(new MueLu::IsorropiaInterface<LO, GO, NO, LMO>());
     isoInterface->SetFactory("A", Acfact);
+    isoInterface->SetFactory("UnAmalgamationInfo", rebAmalgFact);
+
+    // create "Partition" by unamalgamtion
+    RCP<MueLu::RepartitionInterface<LO, GO, NO, LMO> > repInterface = rcp(new MueLu::RepartitionInterface<LO, GO, NO, LMO>());
+    repInterface->SetFactory("A", Acfact);
+    repInterface->SetFactory("AmalgamatedPartition", isoInterface);
+    repInterface->SetFactory("UnAmalgamationInfo", rebAmalgFact);
 
     // Repartitioning (creates "Importer" from "Partition")
     RCP<Factory> RepartitionFact = rcp(new RepartitionFactory());
@@ -351,7 +360,7 @@ int main(int argc, char *argv[]) {
       RepartitionFact->SetParameterList(paramList);
     }
     RepartitionFact->SetFactory("A", Acfact);
-    RepartitionFact->SetFactory("Partition", isoInterface);
+    RepartitionFact->SetFactory("Partition", repInterface);
 
     // Reordering of the transfer operators
     RCP<Factory> RebalancedPFact = rcp(new RebalanceTransferFactory());
@@ -372,7 +381,6 @@ int main(int argc, char *argv[]) {
     M.SetFactory("A", RebalancedAFact);
     M.SetFactory("P", RebalancedPFact);
     M.SetFactory("R", RebalancedRFact);
-    //M.SetFactory("Partition", isoInterface);
     M.SetFactory("Nullspace",   RebalancedRFact);
     M.SetFactory("Importer",    RepartitionFact);
 #else

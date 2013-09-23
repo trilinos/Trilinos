@@ -43,6 +43,20 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos))
 
   TRIBITS_ADD_EXECUTABLE(
+    ReadMatrix
+    SOURCES ReadMatrix.cpp
+    COMM serial mpi
+    DEPLIBS muelu xpetra muelu-adapters
+    )
+
+  TRIBITS_ADD_EXECUTABLE(
+    MatrixMatrixMultiply
+    SOURCES MatrixMatrixMultiply.cpp
+    COMM mpi
+    DEPLIBS muelu xpetra muelu-adapters
+    )
+
+  TRIBITS_ADD_EXECUTABLE(
     ${MueLu_ScalingTestName}
     SOURCES ScalingTest.cpp
     COMM serial mpi
@@ -100,6 +114,10 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
   TRIBITS_COPY_FILES_TO_BINARY_DIR(ScalingTestParamList_cp
     SOURCE_FILES scalingTest.xml scalingTestIsorropia.xml coupled.xml uncoupled.xml emin.xml isotropicPoisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml
    )
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(ReadMatrix_cp
+    SOURCE_FILES A.mm simple.xml
+  )
 
 ENDIF()
 
@@ -177,6 +195,14 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PAC
     COMM serial mpi
     )
 
+  TRIBITS_ADD_TEST(
+    ReadMatrix
+    NAME "ReadMatrixEpetra"
+    ARGS "--linAlgebra=Epetra --xml=simple.xml"
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    )
+
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
@@ -225,13 +251,22 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
     NUM_MPI_PROCS 4
     COMM serial mpi
     )
-    TRIBITS_ADD_TEST(
-      ScalingTestParamList
-      NAME "ScalingTestParamListTpetra"
-      ARGS "--linAlgebra=Tpetra"
-      NUM_MPI_PROCS 4
-      COMM mpi # HAVE_MPI required
-      )
+
+  TRIBITS_ADD_TEST(
+    ScalingTestParamList
+    NAME "ScalingTestParamListTpetra"
+    ARGS "--linAlgebra=Tpetra"
+    NUM_MPI_PROCS 4
+    COMM mpi # HAVE_MPI required
+    )
+
+  TRIBITS_ADD_TEST(
+    ReadMatrix
+    NAME "ReadMatrixTpetra"
+    ARGS "--linAlgebra=Tpetra --xml=simple.xml"
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    )
 
 ENDIF()
 

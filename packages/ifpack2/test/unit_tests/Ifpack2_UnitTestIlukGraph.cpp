@@ -114,7 +114,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2IlukGraph, IlukGraphTest0, LocalOrdinal
   LocalOrdinal overlap_levels = 2;
   LocalOrdinal fill_levels = 0;
 
-  Ifpack2::IlukGraph<LocalOrdinal,GlobalOrdinal> iluk0_graph(crsgraph, fill_levels, overlap_levels);
+  Ifpack2::IlukGraph<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal> > iluk0_graph(crsgraph, fill_levels, overlap_levels);
   iluk0_graph.constructFilledGraph();
 
   //The number of nonzeros in an ILU(0) graph should be the same as the
@@ -126,7 +126,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2IlukGraph, IlukGraphTest0, LocalOrdinal
 
   fill_levels = 2;
 
-  Ifpack2::IlukGraph<int,int> iluk2_graph(crsgraph, fill_levels, overlap_levels);
+  Ifpack2::IlukGraph<Tpetra::CrsGraph<int,int> > iluk2_graph(crsgraph, fill_levels, overlap_levels);
 
   iluk2_graph.constructFilledGraph();
 

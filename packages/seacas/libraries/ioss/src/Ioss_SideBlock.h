@@ -51,6 +51,7 @@ namespace Ioss {
 	      size_t side_count);
 
     std::string type_string() const {return "SideBlock";}
+    std::string short_type_string() const {return "sideblock";}
     EntityType type() const {return SIDEBLOCK;}
 
     const SideSet* owner() const {return owner_;}

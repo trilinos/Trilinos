@@ -45,6 +45,7 @@
 #ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
 
 #include "Panzer_ExplicitTemplateInstantiation.hpp"
+#include "Panzer_Traits.hpp"
 
 #include "Panzer_ScatterDirichletResidual_Tpetra_decl.hpp"
 #include "Panzer_ScatterDirichletResidual_Tpetra_impl.hpp"
@@ -53,6 +54,6 @@
 #include "Panzer_ScatterDirichletResidual_TpetraSG_impl.hpp"
 
 // PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::ScatterDirichletResidual_Tpetra,int,int)
-PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::ScatterDirichletResidual_Tpetra,int,long)
+PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::ScatterDirichletResidual_Tpetra,int,panzer::Ordinal64)
 
 #endif

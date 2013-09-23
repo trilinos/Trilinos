@@ -128,10 +128,13 @@ MLRigidBodyModes::informML(){
   mlList->set("PDE equations", numPDEs);
 
   if (numElasticityDim > 0 ) {
-    std::cout << "\nEEEEE setting ML Null Space for Elasticity-type problem of Dimension: " 
-          << numElasticityDim <<  " nodes  " << x.size() << " nullspace  " << nullSpaceDim << std::endl;
-    std::cout << "\nIKIKIK number scalar dofs: " <<numScalar <<  ", number PDEs  " << numPDEs << std::endl;
+
+//    std::cout << "\nEEEEE setting ML Null Space for Elasticity-type problem of Dimension: " 
+//          << numElasticityDim <<  " nodes  " << x.size() << " nullspace  " << nullSpaceDim << std::endl;
+//    std::cout << "\nIKIKIK number scalar dofs: " <<numScalar <<  ", number PDEs  " << numPDEs << std::endl;
+
     (void) Piro_ML_Coord2RBM(x.size(), &x[0], &y[0], &z[0], &rr[0], numPDEs, numScalar, nullSpaceDim);
+
     //const Epetra_Comm &comm = app->getMap()->Comm();
     //Epetra_Map map(nNodes*numPDEs, 0, comm);
     //Epetra_MultiVector rbm_mv(Copy, map, rbm, nNodes*numPDEs, nullSpaceDim + numScalar);
@@ -139,6 +142,7 @@ MLRigidBodyModes::informML(){
     //for (int i = 0; i<nNodes*numPDEs*(nullSpaceDim+numScalar); i++)
     //   std::cout << rbm[i] << std::endl;
     //EpetraExt::MultiVectorToMatrixMarketFile("rbm.mm", rbm_mv);
+
     mlList->set("null space: type", "pre-computed");
     mlList->set("null space: dimension", nullSpaceDim);
     mlList->set("null space: vectors", &rr[0]);

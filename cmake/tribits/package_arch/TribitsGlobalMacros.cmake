@@ -64,6 +64,50 @@ INCLUDE(TimingUtils)
 INCLUDE(CheckIncludeFileCXX)
 
 
+#
+# Assert and setup project binary directory and other project varibles.
+#
+
+MACRO(TRIBITS_ASSERT_AND_SETUP_PROJECT_BINARY_DIR_AND_VARS)
+
+  IF ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
+    MESSAGE(FATAL_ERROR "ERROR! "
+      "CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
+      " == CMAKE_CURRENT_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}"
+      "\n${PROJECT_NAME} does not support in source builds!\n"
+      "NOTE: You must now delete the CMakeCache.txt file and the CMakeFiles/ directory under"
+      " the source directory for ${PROJECT_NAME} or you will not be able to configure ${PROJECT_NAME} correctly!"
+      "\nYou must now run something like:\n"
+      "  $ rm -r CMakeCache.txt CMakeFiles/"
+      "\n"
+      "Please create a different directory and configure ${PROJECT_NAME} under that such as:\n"
+      "  $ mkdir MY_BUILD\n"
+      "  $ cd MY_BUILD\n"
+      "  $ cmake [OPTIONS] .."
+      )
+  ENDIF()
+  
+  STRING(TOUPPER ${PROJECT_NAME} PROJECT_NAME_UC)
+  SET(PROJECT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL "")
+  SET(PROJECT_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE INTERNAL "")
+  PRINT_VAR(PROJECT_SOURCE_DIR)
+  PRINT_VAR(PROJECT_BINARY_DIR)
+  # Above, we put these in the cache so we can grep them out of the cache file
+  
+  MESSAGE("-- " "CMAKE_VERSION = ${CMAKE_VERSION}")
+
+ENDMACRO()
+
+
+#
+# Find Python
+#
+
+MACRO(TRIBITS_FIND_PYTHON_INTERP)
+  INCLUDE(TribitsFindPythonInterp)
+  TRIBITS_FIND_PYTHON()
+  PRINT_VAR(PYTHON_EXECUTABLE)
+ENDMACRO()
 
 #
 # Define and option to include a file that reads in a bunch of options
@@ -91,7 +135,7 @@ ENDMACRO()
 # Define all of the standard global package architecture options.
 #
 
-MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
+MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
 
   SET( ${PROJECT_NAME}_ENABLE_ALL_PACKAGES OFF CACHE BOOL
     "Enable all packages (Primary Stable and perhaps Secondary Stable packages)." )
@@ -280,6 +324,9 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
     CACHE BOOL
     "Elevate all defined SS SE packages to PS packages." )
 
+  ADVANCED_SET( ${PROJECT_NAME}_ENABLE_CPACK_PACKAGING OFF CACHE BOOL
+    "Eanble support for creating a distribution using CPack" ) 
+
   ADVANCED_SET( ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE OFF CACHE BOOL
     "Allow secondary stable packages and code to be implicitly enabled." )
   
@@ -287,6 +334,9 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
     "List of categories of tests to enable: '${${PROJECT_NAME}_VALID_CATEGORIES_STR}' (default NIGHLY)."
     )
   TRIBITS_ASSERT_VALID_CATEGORIES(${${PROJECT_NAME}_TEST_CATEGORIES})
+
+  ADVANCED_SET(${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE OFF CACHE BOOL
+    "Generate a <ProjectName>RepoVersion.txt file.")
   
   ADVANCED_SET(${PROJECT_NAME}_REL_CPU_SPEED 1.0 CACHE STRING
     "Relative CPU speed of the computer used to scale performance tests (default 1.0)."
@@ -339,34 +389,26 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
   ADVANCED_SET(${PROJECT_NAME}_ENABLE_CIRCULAR_REF_DETECTION_FAILURE OFF CACHE BOOL
     "If test output complaining about circular references is found, then the test will fail." )
 
-  IF (WIN32 AND NOT CYGWIN)
-    SET(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES_DEFAULT FALSE)
+  ADVANCED_SET(${PROJECT_NAME}_DEPS_DEFAULT_OUTPUT_DIR ""
+    CACHE FILEPATH
+    "If set to non-null, this is the default directory where package dependency files will be written.")
+
+  IF (${PROJECT_NAME}_DEPS_DEFAULT_OUTPUT_DIR)
+    SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE_DEFAULT
+      "${${PROJECT_NAME}_DEPS_DEFAULT_OUTPUT_DIR}/${${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME}")
   ELSE()
-    SET(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES_DEFAULT TRUE)
+    SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE_DEFAULT "")
   ENDIF()
-  ADVANCED_SET(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES
-    "${${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES_DEFAULT}"
-    CACHE BOOL
-    "Output any XML dependency files or not." )
-
-  # 2009/01/19: rabartl: Above: This file outputs just fine on MS Windows
-  # using MS Visual Studio but it causes the entire file to
-  # diff.  There must be something wrong with a newlines or something
-  # that is causing this.  If people are going to be doing real
-  # development work on MS Windows with MS Visual Studio, then we need
-  # to fix this so that the dependency files will get created and
-  # checked in correctly.  I will look into this later.
-
-  SET(DEPENDENCIES_DIR ${${PROJECT_NAME}_PACKAGE_DEPS_FILES_DIR})
-
   ADVANCED_SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE
-    "${CMAKE_CURRENT_SOURCE_DIR}/${DEPENDENCIES_DIR}/${${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME}"
+    "${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE_DEFAULT}"
     CACHE STRING
     "Output XML file containing ${PROJECT_NAME} dependenices used by tools (if not empty)." )
   
-  IF(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE AND PYTHON_EXECUTABLE)
+  IF(${PROJECT_NAME}_DEPS_DEFAULT_OUTPUT_DIR AND
+    ${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE AND PYTHON_EXECUTABLE
+    )
     SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT
-      "${CMAKE_CURRENT_SOURCE_DIR}/${DEPENDENCIES_DIR}/${${PROJECT_NAME}_CDASH_SUBPROJECT_DEPS_XML_FILE_NAME}" )
+      "${${PROJECT_NAME}_DEPS_DEFAULT_OUTPUT_DIR}/${${PROJECT_NAME}_CDASH_SUBPROJECT_DEPS_XML_FILE_NAME}" )
   ELSE()
     SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT "")
   ENDIF()
@@ -375,9 +417,11 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
     CACHE STRING
     "Output XML file used by CDash in ${PROJECT_NAME}-independent format (if not empty)." )
   
-  IF(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE AND PYTHON_EXECUTABLE)
+  IF(${PROJECT_NAME}_DEPS_DEFAULT_OUTPUT_DIR AND
+    ${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE AND PYTHON_EXECUTABLE
+    )
     SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE_DEFAULT
-      "${CMAKE_CURRENT_SOURCE_DIR}/${DEPENDENCIES_DIR}/${${PROJECT_NAME}_PACKAGE_DEPS_TABLE_HTML_FILE_NAME}" )
+      "${${PROJECT_NAME}_DEPS_DEFAULT_OUTPUT_DIR}/${${PROJECT_NAME}_PACKAGE_DEPS_TABLE_HTML_FILE_NAME}" )
   ELSE()
     SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE_DEFAULT "")
   ENDIF()
@@ -385,10 +429,6 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
     "${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE_DEFAULT}"
     CACHE STRING
     "HTML ${PROJECT_NAME} dependenices file that will be written to (if not empty)." )
-
-  ADVANCED_SET(${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR
-    "" CACHE PATH
-    "Output the full XML dependency files in the given directory." )
 
   #
   # Extra repositories
@@ -535,7 +575,6 @@ MACRO(TRIBITS_REPOSITORY_DEFINE_PACKAGING_RUNNER  REPO_NAME)
     CREATE_EMPTY_TRIBITS_REPOSITORY_DEFINE_PACKAGING()
   ENDIF()
 ENDMACRO()
-
 
 #
 # Private helper stuff
@@ -722,12 +761,249 @@ ENDMACRO()
 
 
 #
-# Read in ${PROJECT_NAME} packages and TPLs, process dependencies, write XML files
+# Combine native and extra repos
 #
-# The reason that these steps are all jammed into one macro is so that the XML
-# dependencies of just the core ${PROJECT_NAME} packages can be processed, have the
-# XML files written, and then read in the extra set of packages and process
-# the dependencies again.
+# Combines ${PROJECT_NAME}_NATIVE_REPOSITORIES and
+# ${PROJECT_NAME}_EXTRA_REPOSITORIES into a single list
+# ${PROJECT_NAME}_EXTRA_REPOSITORIES.
+#
+
+MACRO(TRIBITS_COMBINE_NATIVE_AND_EXTRA_REPOS)
+
+  # Define a single variable that will loop over native and extra Repositories
+  #
+  # NOTE: ${PROJECT_NAME}_EXTRA_REPOSITORIES should be defined after the above
+  # options call.
+  #
+  ASSERT_DEFINED(${PROJECT_NAME}_NATIVE_REPOSITORIES)
+  #PRINT_VAR(${PROJECT_NAME}_NATIVE_REPOSITORIES)
+  ASSERT_DEFINED(${PROJECT_NAME}_EXTRA_REPOSITORIES)
+  #PRINT_VAR(${PROJECT_NAME}_EXTRA_REPOSITORIES)
+  SET(${PROJECT_NAME}_ALL_REPOSITORIES ${${PROJECT_NAME}_NATIVE_REPOSITORIES}
+    ${${PROJECT_NAME}_EXTRA_REPOSITORIES})
+
+  # Loop through the Repositories, set their base directories and run their
+  # options setup callback functions.
+  FOREACH(REPO ${${PROJECT_NAME}_ALL_REPOSITORIES})
+    TRIBITS_GET_REPO_NAME_DIR(${REPO}  REPO_NAME  REPO_DIR)
+    SET(${REPO_NAME}_SOURCE_DIR "${PROJECT_SOURCE_DIR}/${REPO_DIR}")
+    SET(${REPO_NAME}_BINARY_DIR "${PROJECT_BINARY_DIR}/${REPO_DIR}")
+    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      MESSAGE("Processing extra options call-backs for ${REPO}")
+      PRINT_VAR(${REPO_NAME}_SOURCE_DIR)
+      PRINT_VAR(${REPO_NAME}_BINARY_DIR)
+    ENDIF()
+    TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS_RUNNER(${REPO_NAME})
+  ENDFOREACH()
+
+ENDMACRO()
+
+
+#
+# Copy an simple text file to the binary dir to be included in the tarball
+#
+
+MACRO(TRIBITS_COPY_INSTALLER_RESOURCE _varname _source _destination)
+  SET("${_varname}" "${_destination}")
+  IF (EXISTS "${_destination}")
+    FILE(REMOVE_RECURSE "${_destination}")
+  ENDIF ()
+  CONFIGURE_FILE(
+    "${_source}" 
+    "${_destination}" 
+    COPYONLY)
+ENDMACRO()
+
+#
+# Run the git log command to get the verison info for a git rep
+#
+
+FUNCTION(TRIBITS_GENERATE_SINGLE_REPO_VERSION_STRING  GIT_REPO_DIR
+   SINGLE_REPO_VERSION_STRING_OUT
+  )
+
+  IF (NOT GIT_EXEC)
+    MESSAGE(SEND_ERROR "ERROR, the program '${GIT_NAME}' could not be found!"
+      "  We can not generate the repo version file!")
+  ENDIF()
+
+  # A) Get the basic version info.
+
+  EXECUTE_PROCESS(
+    COMMAND ${GIT_EXEC} log -1 --pretty=format:"%h [%ad] <%ae>"
+    WORKING_DIRECTORY ${GIT_REPO_DIR}
+    RESULT_VARIABLE GIT_RETURN
+    OUTPUT_VARIABLE GIT_OUTPUT
+    )
+  # NOTE: Above we have to add quotes '"' or CMake will not accept the
+  # command.  However, git will put those quotes in the output so we have to
+  # strip them out later :-(
+
+  IF (NOT GIT_RETURN STREQUAL 0)
+    MESSAGE(SEND_ERROR "ERROR, ${GIT_EXEC} command returned ${GIT_RETURN}!=0!")
+    SET(GIT_VERSION_INFO "Error, could not get version info!")
+  ELSE()
+    # Strip the quotes off :-(
+    STRING(LENGTH "${GIT_OUTPUT}" GIT_OUTPUT_LEN)
+    MATH(EXPR OUTPUT_NUM_CHARS_TO_KEEP "${GIT_OUTPUT_LEN}-2")
+    STRING(SUBSTRING "${GIT_OUTPUT}" 1 ${OUTPUT_NUM_CHARS_TO_KEEP}
+      GIT_VERSION_INFO)
+  ENDIF()
+
+  # B) Get the first 80 chars of the summary message for more info
+
+  EXECUTE_PROCESS(
+    COMMAND ${GIT_EXEC} log -1 --pretty=format:"%s"
+    WORKING_DIRECTORY ${GIT_REPO_DIR}
+    RESULT_VARIABLE GIT_RETURN
+    OUTPUT_VARIABLE GIT_OUTPUT
+    )
+
+  IF (NOT GIT_RETURN STREQUAL 0)
+    MESSAGE(SEND_ERROR "ERROR, ${GIT_EXEC} command returned ${GIT_RETURN}!=0!")
+    SET(GIT_VERSION_SUMMARY "Error, could not get version summary!")
+  ELSE()
+    # Strip ouf quotes and quote the 80 char string
+    SET(MAX_SUMMARY_LEN 80)
+    MATH(EXPR MAX_SUMMARY_LEN_PLUS_2 "${MAX_SUMMARY_LEN}+2")
+    STRING(LENGTH "${GIT_OUTPUT}" GIT_OUTPUT_LEN)
+    MATH(EXPR OUTPUT_NUM_CHARS_TO_KEEP "${GIT_OUTPUT_LEN}-2")
+    STRING(SUBSTRING "${GIT_OUTPUT}" 1 ${OUTPUT_NUM_CHARS_TO_KEEP}
+      GIT_OUTPUT_STRIPPED)
+    IF (GIT_OUTPUT_LEN GREATER ${MAX_SUMMARY_LEN_PLUS_2})
+      STRING(SUBSTRING "${GIT_OUTPUT_STRIPPED}" 0 ${MAX_SUMMARY_LEN}
+         GIT_SUMMARY_STR)
+    ELSE()
+      SET(GIT_SUMMARY_STR "${GIT_OUTPUT_STRIPPED}")
+    ENDIF()
+  ENDIF()
+  
+  SET(${SINGLE_REPO_VERSION_STRING_OUT}
+    "${GIT_VERSION_INFO}\n${GIT_SUMMARY_STR}" PARENT_SCOPE)
+
+ENDFUNCTION()
+
+
+#
+# Get the versions of all the git repos
+#
+
+FUNCTION(TRIBITS_GENERATE_REPO_VERSION_FILE_STRING  PROJECT_REPO_VERSION_FILE_STRING_OUT)
+
+  SET(REPO_VERSION_FILE_STR "")
+
+  TRIBITS_GENERATE_SINGLE_REPO_VERSION_STRING(
+     ${CMAKE_CURRENT_SOURCE_DIR}
+     SINGLE_REPO_VERSION)
+  APPEND_STRING_VAR(REPO_VERSION_FILE_STR
+    "*** Base Git Repo: ${PROJECT_NAME}\n"
+    "${SINGLE_REPO_VERSION}\n" )
+
+  # Allow list to be seprated by ',' instead of just by ';'
+  SPLIT("${${PROJECT_NAME}_EXTRA_REPOSITORIES}"  "," ${PROJECT_NAME}_EXTRA_REPOSITORIES)
+
+  SET(EXTRAREPO_IDX 0)
+  FOREACH(EXTRA_REPO ${${PROJECT_NAME}_EXTRA_REPOSITORIES})
+
+    #PRINT_VAR(EXTRA_REPO)
+    #PRINT_VAR(EXTRAREPO_IDX)
+    #PRINT_VAR(${PROJECT_NAME}_EXTRA_REPOSITORIES_DIRS)
+
+    IF (${PROJECT_NAME}_EXTRA_REPOSITORIES_DIRS)
+      # Read from an extra repo file with potentially different dir.
+      LIST(GET ${PROJECT_NAME}_EXTRA_REPOSITORIES_DIRS ${EXTRAREPO_IDX}
+        EXTRAREPO_DIR )
+    ELSE()
+       # Not read from extra repo file so dir is same as name
+       SET(EXTRAREPO_DIR ${EXTRA_REPO})
+    ENDIF()
+    PRINT_VAR(EXTRAREPO_DIR)
+
+    TRIBITS_GENERATE_SINGLE_REPO_VERSION_STRING(
+       "${CMAKE_CURRENT_SOURCE_DIR}/${EXTRAREPO_DIR}"
+       SINGLE_REPO_VERSION)
+    APPEND_STRING_VAR(REPO_VERSION_FILE_STR
+      "*** Git Repo: ${EXTRAREPO_DIR}\n"
+      "${SINGLE_REPO_VERSION}\n" )
+
+    #PRINT_VAR(REPO_VERSION_FILE_STR)
+
+    MATH(EXPR EXTRAREPO_IDX "${EXTRAREPO_IDX}+1")
+
+  ENDFOREACH()
+
+  SET(${PROJECT_REPO_VERSION_FILE_STRING_OUT} ${REPO_VERSION_FILE_STR} PARENT_SCOPE)
+
+ENDFUNCTION()
+
+
+#
+# Generate the project repos version file and print to stdout
+#
+# This function is designed so that it can be unit tested from inside of a
+# cmake -P script.
+#
+
+FUNCTION(TRIBITS_GENERATE_REPO_VERSION_OUTPUT_AND_FILE)
+  # Get the repos versions
+  TRIBITS_GENERATE_REPO_VERSION_FILE_STRING(PROJECT_REPO_VERSION_FILE_STRING)
+  # Print the versions
+  MESSAGE("\n${PROJECT_NAME} repos versions:\n"
+    "--------------------------------------------------------------------------------\n"
+    "${PROJECT_REPO_VERSION_FILE_STRING}"
+    " --------------------------------------------------------------------------------\n"
+    )
+  #) Write out the version file
+  FILE(WRITE
+    "${CMAKE_CURRENT_BINARY_DIR}/${${PROJECT_NAME}_REPO_VERSION_FILE_NAME}"
+    "${PROJECT_REPO_VERSION_FILE_STRING}")
+ENDFUNCTION()
+
+
+#
+# Create project dependencies file and create install target
+#
+# NOTE: Before calling this function, the extra repos datastructure must be
+# filled out!
+#
+# NOTE: This function can not be called in a cmake -P script because it has a
+# call to INSTALL()!  That is why this function is seprated out from
+# TRIBITS_GENERATE_REPO_VERSION_OUTPUT_AND_FILE().
+#
+
+FUNCTION(TRIBITS_GENERATE_REPO_VERSION_OUTPUT_AND_FILE_AND_INSTALL)
+
+  #
+  # A) Create the ${PROJECT_NAME}RepoVersion.txt file if requested
+  #
+  
+  IF (${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE)
+    # A) Make sure that there is a .git dir in the project.
+    IF (EXISTS "${PROJECT_SOURCE_DIR}/.git")
+      SET(PROJECT_SOURCE_IS_GIT_REPO TRUE)
+    ELSE()
+      SET(PROJECT_SOURCE_IS_GIT_REPO FALSE)
+    ENDIF()
+    IF (PROJECT_SOURCE_IS_GIT_REPO)
+      # Find git first here so we  don't have to find it in called function so
+      # it can be unit tested.
+      FIND_PROGRAM(GIT_EXEC ${GIT_NAME})
+      # Get repo versions, print to stdout and write file 
+      TRIBITS_GENERATE_REPO_VERSION_OUTPUT_AND_FILE()
+      # Add install target for this file
+      INSTALL(
+        FILES "${CMAKE_CURRENT_BINARY_DIR}/${${PROJECT_NAME}_REPO_VERSION_FILE_NAME}"
+        DESTINATION "." )
+    ELSE()
+      MESSAGE("\nNOTE: Skipping generation of ${${PROJECT_NAME}_REPO_VERSION_FILE_NAME}"
+        " because project source is not a git repo!") 
+    ENDIF()
+  ENDIF()
+
+ENDFUNCTION()
+
+#
+# Read in ${PROJECT_NAME} packages and TPLs, process dependencies, write XML files
 #
 
 MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
@@ -738,7 +1014,7 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
   SET(${PROJECT_NAME}_TPLS)
 
   #
-  # A) Process the native repos
+  # B) Read native repos
   #
 
   IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
@@ -757,10 +1033,10 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
     #PRINT_VAR(${NATIVE_REPO_NAME}_SOURCE_DIR)
 
     #
-    # A.1) Define the lists of all ${NATIVE_REPO_NAME} native packages and TPLs
+    # B.1) Define the lists of all ${NATIVE_REPO_NAME} native packages and TPLs
     #
     
-    # A.1.a) Read the core ${NATIVE_REPO_NAME} packages
+    # B.1.a) Read the core ${NATIVE_REPO_NAME} packages
   
     SET(${NATIVE_REPO_NAME}_PACKAGES_FILE
       "${${NATIVE_REPO_NAME}_SOURCE_DIR}/${${PROJECT_NAME}_PACKAGES_FILE_NAME}")
@@ -773,7 +1049,7 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
     
     TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS(${NATIVE_REPO_NAME} ${NATIVE_REPO_DIR})
     
-    # A.1.b) Read the core TPLs dependencies
+    # B.1.b) Read the core TPLs dependencies
   
     SET(${NATIVE_REPO_NAME}_TPLS_FILE
       "${${NATIVE_REPO_NAME}_SOURCE_DIR}/${${PROJECT_NAME}_TPLS_FILE_NAME}")
@@ -787,42 +1063,10 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
     TRIBITS_PROCESS_TPLS_LISTS(${NATIVE_REPO_NAME} ${NATIVE_REPO_DIR})
 
   ENDFOREACH()
-      
-  #
-  # A.2) Process the package and TPL dependencies
-  #
-    
-  TRIBITS_READ_ALL_PACKAGE_DEPENDENCIES()
-  
-  IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
-    TIMER_GET_RAW_SECONDS(SET_UP_DEPENDENCIES_TIME_STOP_SECONDS)
-    TIMER_PRINT_REL_TIME(${SET_UP_DEPENDENCIES_TIME_START_SECONDS}
-      ${SET_UP_DEPENDENCIES_TIME_STOP_SECONDS}
-      "\nTotal time to read in and process native package dependencies")
-  ENDIF()
-  
-  #
-  # 3) Write the XML dependency files for the native ${PROJECT_NAME} packages
-  #
-  
-  IF (${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES)
-    IF (${PROJECT_NAME}_PACKAGES)
-      TRIBITS_WRITE_XML_DEPENDENCY_FILES()
-    ELSE()
-      MESSAGE("\nSkipping the generation of XML dependency files because"
-        " there are no native packages!")
-    ENDIF()
-  ENDIF()
 
   #
-  # 4) Read in the list of externally defined packages and TPLs in external
-  # repositories
+  # C) Read extra repos
   #
-
-  IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
-    TIMER_GET_RAW_SECONDS(SET_UP_EXTRA_DEPENDENCIES_TIME_START_SECONDS)
-  ENDIF()
-
 
   # Allow list to be seprated by ',' instead of just by ';'.  This is needed
   # by the unit test driver code
@@ -919,58 +1163,42 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
   ENDFOREACH()
 
   #
-  # 5) Read in the package dependencies again to now pick up all of the
-  # defined packages (not just the core packages)
+  # D) Process list of list of packages, TPLs, etc.
   #
 
-  IF (${PROJECT_NAME}_EXTRA_REPOSITORIES)
+  #
+  # D.1) Package dependencies for all of the packages for all of the defined
+  # packages (not just the core packages)
+  #
 
-    TRIBITS_READ_ALL_PACKAGE_DEPENDENCIES()
+  TRIBITS_READ_ALL_PACKAGE_DEPENDENCIES()
 
-    IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
-      TIMER_GET_RAW_SECONDS(SET_UP_EXTRA_DEPENDENCIES_TIME_STOP_SECONDS)
-      TIMER_PRINT_REL_TIME(${SET_UP_EXTRA_DEPENDENCIES_TIME_START_SECONDS}
-        ${SET_UP_EXTRA_DEPENDENCIES_TIME_STOP_SECONDS}
-        "\nTotal time to read in and process all (core and extra) package dependencies")
-    ENDIF()
-
+  IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
+    TIMER_GET_RAW_SECONDS(SET_UP_DEPENDENCIES_TIME_STOP_SECONDS)
+    TIMER_PRINT_REL_TIME(${SET_UP_DEPENDENCIES_TIME_START_SECONDS}
+      ${SET_UP_DEPENDENCIES_TIME_STOP_SECONDS}
+      "\nTotal time to read in and process all (native and extra) package dependencies")
   ENDIF()
 
   #
-  # 6) Write out the XML dependency files again but this time for the full
-  # list in the build directory!
+  # D.2) Write out the XML dependency files for the full list of dependencies!
   #
 
-  IF (${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR)
-    #MESSAGE("Writing dependency XML files in ${${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR} ...")
-    SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE
-      "${${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR}/${${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME}" )
-    IF(PYTHON_EXECUTABLE)
-      SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE
-        "${${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR}/${${PROJECT_NAME}_CDASH_SUBPROJECT_DEPS_XML_FILE_NAME}" )
-      IF (${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE)
-        SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE
-          "${${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR}/${${PROJECT_NAME}_PACKAGE_DEPS_TABLE_HTML_FILE_NAME}" )
-      ENDIF()
-    ELSE()
-      SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE "")
-      SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE "")
-    ENDIF()
-    TRIBITS_WRITE_XML_DEPENDENCY_FILES()
-  ENDIF()
+  TRIBITS_WRITE_XML_DEPENDENCY_FILES()
 
 ENDMACRO()
 
 
 #
-# Macro that gets the current list of enables components
+# Get the current list of enables components where the returned list
+# has whitespace seperators.
 #
-MACRO(TRIBITS_GET_ENABLED_LIST
-  LISTVAR ENABLED_PREFIX ENABLED_FLAG INCLUDE_EMPTY
-  ENABLED_LIST_OUT NUM_ENABLED_OUT
+FUNCTION(TRIBITS_GET_ENABLED_LIST
+  LISTVAR  ENABLED_PREFIX  ENABLED_FLAG INCLUDE_EMPTY
+  ENABLED_LIST_OUT_OUT  NUM_ENABLED_OUT_OUT
   )
-  SET(${ENABLED_LIST_OUT} "")
-  SET(${NUM_ENABLED_OUT} 0)
+  SET(ENABLED_LIST_OUT "")
+  SET(NUM_ENABLED_OUT 0)
   FOREACH(ENTITY ${${LISTVAR}})
     SET(ENTITY_NAME ${ENABLED_PREFIX}_ENABLE_${ENTITY})
     ASSERT_DEFINED(${ENTITY_NAME})
@@ -981,11 +1209,29 @@ MACRO(TRIBITS_GET_ENABLED_LIST
       SET(INCLUDE_ENTITY TRUE)
     ENDIF()
     IF (INCLUDE_ENTITY)
-      SET(${ENABLED_LIST_OUT} "${${ENABLED_LIST_OUT}} ${ENTITY}")
-      MATH(EXPR ${NUM_ENABLED_OUT} "${${NUM_ENABLED_OUT}}+1")
+      SET(ENABLED_LIST_OUT "${ENABLED_LIST_OUT} ${ENTITY}")
+      MATH(EXPR NUM_ENABLED_OUT "${NUM_ENABLED_OUT}+1")
     ENDIF()
   ENDFOREACH()
-ENDMACRO()
+  SET(${ENABLED_LIST_OUT_OUT} ${ENABLED_LIST_OUT} PARENT_SCOPE)
+  SET(${NUM_ENABLED_OUT_OUT} ${NUM_ENABLED_OUT} PARENT_SCOPE)
+ENDFUNCTION()
+
+
+#
+# Get the current list of enables components where the returned list
+# has ';' seperators.
+#
+FUNCTION(TRIBITS_GET_ENABLED_LIST_LIST
+  LISTVAR  ENABLED_PREFIX  ENABLED_FLAG INCLUDE_EMPTY
+  ENABLED_LIST_OUT_OUT  NUM_ENABLED_OUT_OUT
+  )
+  TRIBITS_GET_ENABLED_LIST(${LISTVAR}  ${ENABLED_PREFIX}  ${ENABLED_FLAG}
+    ${INCLUDE_EMPTY}  ENABLED_LIST_OUT  NUM_ENABLED_OUT)
+  STRING(REPLACE " " ";" ENABLED_LIST_OUT "${ENABLED_LIST_OUT}")
+  SET(${ENABLED_LIST_OUT_OUT} ${ENABLED_LIST_OUT} PARENT_SCOPE)
+  SET(${NUM_ENABLED_OUT_OUT} ${NUM_ENABLED_OUT} PARENT_SCOPE)
+ENDFUNCTION()
 
 
 #
@@ -1254,7 +1500,7 @@ MACRO(TRIBITS_SETUP_ENV)
   # Find Perl
   
   FIND_PACKAGE(Perl)
-  
+
   # Do Fortran stuff
   
   INCLUDE(TribitsFortranMangling)
@@ -1587,7 +1833,7 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
   # C part 2) Loop backwards over ETI packages if ETI is enabled
   #
 
-  # do this regardless of whether project level ETI is enabled
+  # Do this regardless of whether project level ETI is enabled
   IF("${${PROJECT_NAME}_ETI_PACKAGES}" STREQUAL "")
     MESSAGE("\nNo ETI support requested by packages.\n")
   ELSE()
@@ -1598,11 +1844,20 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
     LIST(REVERSE REVERSE_ETI_LIST)
     FOREACH(PACKAGE_NAME ${REVERSE_ETI_LIST})
       MESSAGE("Processing ETI support: ${PACKAGE_NAME}")
+      IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
+        TIMER_GET_RAW_SECONDS(PROCESS_ETI_START_SECONDS)
+      ENDIF()
       SET(ETIFILE ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/ExplicitInstantiationSupport.cmake)
       IF(NOT EXISTS "${ETIFILE}")
         MESSAGE(FATAL_ERROR "Could not find ${PACKAGE_NAME} ETI support file ${ETIFILE}")
       ENDIF()
       INCLUDE("${ETIFILE}")
+      IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
+        TIMER_GET_RAW_SECONDS(PROCESS_ETI_STOP_SECONDS)
+        TIMER_PRINT_REL_TIME(${PROCESS_ETI_START_SECONDS}
+          ${PROCESS_ETI_STOP_SECONDS}
+          "Time to process ETI support for package ${PACKAGE_NAME}")
+      ENDIF()
     ENDFOREACH()
   ENDIF()
 
@@ -1659,6 +1914,187 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
     TIMER_PRINT_REL_TIME(${CONFIGURE_PACKAGES_TIME_START_SECONDS}
       ${CONFIGURE_PACKAGES_TIME_STOP_SECONDS}
       "\nTotal time to configure enabled packages")
+  ENDIF()
+
+ENDMACRO()
+
+
+#
+# Set up for packaging and distribution
+#
+
+MACRO(TRIBITS_SETUP_PACKAGING_AND_DISTRIBUTION)
+
+  IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
+    # Start the global timer
+    TIMER_GET_RAW_SECONDS(CPACK_SETUP_TIME_START_SECONDS)
+  ENDIF()
+
+  # K.1) Loop through the Repositories and run their callback functions.
+
+  FOREACH(REPO ${${PROJECT_NAME}_ALL_REPOSITORIES})
+    TRIBITS_GET_REPO_NAME_DIR(${REPO}  REPO_NAME  REPO_DIR)
+    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      MESSAGE("Processing packaging call-backs for ${REPO_NAME}")
+    ENDIF()
+    TRIBITS_REPOSITORY_DEFINE_PACKAGING_RUNNER(${REPO_NAME})
+  ENDFOREACH()
+   
+  # K.2) Removing any SE packages not enabled from the tarball
+
+  TRIBITS_GET_ENABLED_LIST_LIST(
+    ${PROJECT_NAME}_SE_PACKAGES ${PROJECT_NAME}
+    OFF  # ENABLED_FLAG
+    TRUE  # INCLUDE_EMPTY 
+    NON_ENABLED_SE_PACKAGES  NUM_NON_ENABLED_SE_PACKAGES)
+  #PRINT_VAR(NON_ENABLED_SE_PACKAGES)
+
+  FOREACH(TRIBITS_PACKAGE ${NON_ENABLED_SE_PACKAGES})
+
+    # Determine if this is a package to not ignore
+    FIND_LIST_ELEMENT(TRIBITS_CPACK_PACKAGES_TO_NOT_IGNORE
+       ${TRIBITS_PACKAGE}  TRIBITS_PACKAGE_DONT_IGNORE)
+
+    IF (NOT TRIBITS_PACKAGE_DONT_IGNORE)
+
+      LIST(FIND ${PROJECT_NAME}_SE_PACKAGES ${TRIBITS_PACKAGE} PACKAGE_IDX)
+      LIST(GET ${PROJECT_NAME}_SE_PACKAGE_DIRS ${PACKAGE_IDX} PACKAGE_DIR)
+      # ToDo: Repalce the above O(N) LIST(FIND ...) with a O(1) lookup ...
+      
+      # Checking if we have a relative path to the package's files. Since the
+      # exclude is a regular expression any "../" will be interpretted as <any
+      # char><any char>/ which would never match the package's actual
+      # directory. There isn't a direct way in cmake to convert a relative
+      # path into an absolute path with string operations so as a way of
+      # making sure that we get the correct path of the package we use a
+      # find_path for the CMakeLists.txt file for the package. Since the
+      # package has to have this file to work correctly it should be
+      # guaranteed to be there.
+      STRING(REGEX MATCH "[.][.]/" IS_RELATIVE_PATH ${PACKAGE_DIR})
+      IF("${IS_RELATIVE_PATH}" STREQUAL "")
+        SET(CPACK_SOURCE_IGNORE_FILES "${PROJECT_SOURCE_DIR}/${PACKAGE_DIR}/"
+          ${CPACK_SOURCE_IGNORE_FILES})
+      ELSE()
+        FIND_PATH(ABSOLUTE_PATH  CMakeLists.txt  PATHS 
+          ${PROJECT_SOURCE_DIR}/${PACKAGE_DIR} NO_DEFAULT_PATH)
+        IF("${ABSOLUTE_PATH}" STREQUAL "ABSOLUTE_PATH-NOTFOUND")
+          MESSAGE(AUTHOR_WARNING "Relative path found for disabled package"
+            " ${TRIBITS_PACKAGE} but package was missing a CMakeLists.txt file."
+            " This disabled package will likely not be excluded from a source release")
+        ENDIF()
+        SET(CPACK_SOURCE_IGNORE_FILES ${ABSOLUTE_PATH} ${CPACK_SOURCE_IGNORE_FILES})
+      ENDIF()
+    ENDIF()
+
+  ENDFOREACH()
+
+  IF(${PROJECT_NAME}_VERBOSE_CONFIGURE OR
+    ${PROJECT_NAME}_DUMP_CPACK_SOURCE_IGNORE_FILES
+    )
+    MESSAGE("Exclude files when building source packages")
+    FOREACH(item ${CPACK_SOURCE_IGNORE_FILES})
+      MESSAGE(${item})
+    ENDFOREACH()
+  ENDIF()
+
+  # K.3) Set up install component dependencies
+
+  TRIBITS_GET_ENABLED_LIST_LIST(
+    ${PROJECT_NAME}_PACKAGES  ${PROJECT_NAME}
+    ON  # ENABLED_FLAG
+    FALSE  # INCLUDE_EMPTY 
+    ENABLED_PACKAGES  NUM_ENABLED)
+  #message("ENABLED PACKAGES: ${ENABLED_PACKAGES} ${NUM_ENABLED}")
+
+  FOREACH(PKG ${ENABLED_PACKAGES})
+    IF(NOT "${${PKG}_LIB_REQUIRED_DEP_PACKAGES}" STREQUAL "")
+        string(TOUPPER ${PKG} UPPER_PKG)
+        #message("${UPPER_PKG} depends on : ${${PKG}_LIB_REQUIRED_DEP_PACKAGES}")
+        SET(CPACK_COMPONENT_${UPPER_PKG}_DEPENDS ${${PKG}_LIB_REQUIRED_DEP_PACKAGES})
+    ENDIF()
+    #message("${PKG} depends on : ${${PKG}_LIB_REQUIRED_DEP_PACKAGES}")
+  ENDFOREACH()
+
+  # K.4) Resetting the name to avoid overwriting registery keys when installing
+
+  IF(WIN32)
+    SET(CPACK_PACKAGE_NAME "${CPACK_PACKAGE_NAME}-${${PROJECT_NAME}_VERSION}")
+    IF (TPL_ENABLE_MPI)
+      SET(CPACK_PACKAGE_NAME "${CPACK_PACKAGE_NAME}-mpi")
+    ELSE ()
+      SET(CPACK_PACKAGE_NAME "${CPACK_PACKAGE_NAME}-serial")
+    ENDIF()
+    SET(CPACK_GENERATOR "NSIS")
+    SET(CPACK_NSIS_MODIFY_PATH OFF)
+  ENDIF()
+
+  # K.5 ) Include <Project>RepoVersion.txt if generated
+  SET(PROJECT_REPO_VERSION_FILE
+     "${CMAKE_CURRENT_BINARY_DIR}/${${PROJECT_NAME}_REPO_VERSION_FILE_NAME}")
+  IF (EXISTS "${PROJECT_REPO_VERSION_FILE}")
+    FOREACH(SOURCE_GEN ${CPACK_SOURCE_GENERATOR})
+      SET(CPACK_INSTALL_COMMANDS ${CPACK_INSTALL_COMMANDS}
+        "${CMAKE_COMMAND} -E copy '${PROJECT_REPO_VERSION_FILE}' '${CMAKE_CURRENT_BINARY_DIR}/_CPack_Packages/Linux-Source/${SOURCE_GEN}/${CPACK_PACKAGE_NAME}-${${PROJECT_NAME}_VERSION}-Source/${${PROJECT_NAME}_REPO_VERSION_FILE_NAME}'")
+    ENDFOREACH()
+  ENDIF()
+ 
+  # K.6) Finally process with CPack
+  INCLUDE(CPack)
+
+  IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
+    TIMER_GET_RAW_SECONDS(CPACK_SETUP_TIME_STOP_SECONDS)
+    TIMER_PRINT_REL_TIME(${CPACK_SETUP_TIME_START_SECONDS}  ${CPACK_SETUP_TIME_STOP_SECONDS}
+      "Total time to set up for CPack packaging")
+  ENDIF()
+
+ENDMACRO()
+
+
+#
+# Setup for installation
+#
+
+MACRO(TRIBITS_SETUP_FOR_INSTALLATION)
+
+  # Set up to install <Package>Config.cmake, <Project>Config.cmake, and export
+  # makefiles.
+
+  IF((${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES
+      OR ${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES)
+    AND NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING
+    )
+  
+    INCLUDE(TribitsWriteClientExportFiles)
+  
+    TRIBITS_WRITE_PROJECT_CLIENT_EXPORT_FILES()
+  
+    IF (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
+      # TEMPORARY: Install a compatibility copy of ${PROJECT_NAME}Config.cmake
+      # where was previously installed to warn and load the new file.
+      SET(COMPATIBILITY_CONFIG_INCLUDE ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake)
+      CONFIGURE_FILE(
+        ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsConfigInclude.cmake.in
+        ${COMPATIBILITY_CONFIG_INCLUDE}
+        @ONLY
+        )
+      INSTALL(
+        FILES ${COMPATIBILITY_CONFIG_INCLUDE}
+        DESTINATION "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}"
+        )
+    ENDIF()
+  
+  ENDIF()
+
+  # Export the library dependencies. This will let client projects
+  # refer to all TPLs used by ${PROJECT_NAME}. (KRL, 26 Nov 2009)
+  #
+  
+  IF (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
+    MESSAGE("")
+    MESSAGE("Exporting library dependencies ...")
+    MESSAGE("")
+    EXPORT_LIBRARY_DEPENDENCIES(
+      ${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}LibraryDepends.cmake )
   ENDIF()
 
 ENDMACRO()
@@ -1867,7 +2303,8 @@ MACRO(TRIBITS_EXCLUDE_FILES)
     SET(MATCH_STRING "${${PROJECT_NAME}_SOURCE_PATH}/${PACKAGE_DIR}")
     STRING(REGEX MATCH ${MATCH_STRING} MATCHED ${FILE} )
     IF(NOT MATCHED)
-      LIST(APPEND MODIFIED_FILES_TO_EXCLUDE ${${PROJECT_NAME}_SOURCE_PATH}/${PACKAGE_DIR}/${FILE})
+      LIST(APPEND MODIFIED_FILES_TO_EXCLUDE
+        ${${PROJECT_NAME}_SOURCE_PATH}/${PACKAGE_DIR}/${FILE})
     ELSE()
       LIST(APPEND MODIFIED_FILES_TO_EXCLUDE ${FILE})
     ENDIF()
@@ -1904,7 +2341,6 @@ MACRO(TRIBITS_EXCLUDE_AUTOTOOLS_FILES) # PACKAGE_NAME LIST_RETURN)
     configure
     Makefile.am
     Makefile.in
-    .*.m4
     bootstrap
     config/
     )
@@ -1917,68 +2353,3 @@ MACRO(TRIBITS_EXCLUDE_AUTOTOOLS_FILES) # PACKAGE_NAME LIST_RETURN)
   TRIBITS_EXCLUDE_FILES(${FILES_TO_EXCLUDE}) 
 
 ENDMACRO()
-
-
-#
-# Function that looks for changed package dependency files and adds reminder
-# to commit the files.
-#
-
-FUNCTION(TRIBITS_REMIND_ABOUT_UNCOMMITTED_DEPENDENCY_FILES)
-  IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
-
-    FIND_PROGRAM(GIT_EXE NAMES ${GIT_NAME})
-    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE("GIT_EXE=${GIT_EXE}")
-    ENDIF()
-
-    IF (GIT_EXE AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
-
-      IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-        MESSAGE("\nChecking for uncommitted changes to generated dependency files ...\n")
-      ENDIF()
-
-      EXECUTE_PROCESS(COMMAND ${GIT_EXE} status
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        TIMEOUT 10
-        OUTPUT_VARIABLE GIT_STATUS_OUT
-        )
-
-      SET(DEPS_FILES_DIR ${${PROJECT_NAME}_PACKAGE_DEPS_FILES_DIR})
-
-      STRING(REGEX MATCH
-        "${DEPS_FILES_DIR}/${${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME}"
-        FOUND_AUTODEP_FILE "${GIT_STATUS_OUT}")
-
-      IF (FOUND_AUTODEP_FILE)
-
-        MESSAGE(
-          "\n***"
-          "\n*** REMINDER: COMMIT AUTOGENERATED DEPENDENCY FILES!"
-          "\n***"
-          "\n"
-          "\nYou must have changed one or more Dependencies.cmake files and therefore"
-          "\nthis configure phase has updated the autogenerated files:"
-          "\n"
-          "\n  ${FOUND_AUTODEP_FILE}"
-          "\n  ${DEPS_FILES_DIR}/${${PROJECT_NAME}_CDASH_SUBPROJECT_DEPS_XML_FILE_NAME}"
-          "\n  ${DEPS_FILES_DIR}/${${PROJECT_NAME}_PACKAGE_DEPS_TABLE_HTML_FILE_NAME}"
-          "\n"
-          "\nIMPORTANT: Remember to commit these files along with the rest of the files"
-          "\nrelated to this dependency change!"
-          "\n"
-          "\nWARNING: Failure to commit these files can cause your fellow developers much"
-          "\npain and aggravation and can break the automated processes that depend on"
-          "\nthese files being up to date!"
-          "\n"
-          "\n***"
-          "\n*** NOTE ABOVE REMINDER TO COMMIT AUTOGENERATED DEPENDENCY FILES!"
-          "\n***"
-          "\n"
-          )
-      ENDIF()
-
-    ENDIF()
-
-  ENDIF()
-ENDFUNCTION()

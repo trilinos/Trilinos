@@ -162,19 +162,30 @@ void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
    stk::io::populate_bulk_data(*bulkData, *meshData);
    mesh.endModification();
 
+   // put in a negative index and (like python) the restart will be from the back
+   // (-1 is the last time step)
+   int restartIndex = restartIndex_;
+   if(restartIndex<0) {
+     std::pair<int,double> lastTimeStep = meshData->m_input_region->get_max_time();
+     restartIndex = 1+restartIndex+lastTimeStep.first;
+   }
+
    // populate mesh fields with specific index
-   stk::io::process_input_request(*meshData,*bulkData,restartIndex_);
+   stk::io::process_input_request(*meshData,*bulkData,restartIndex);
 
    mesh.buildSubcells();
    mesh.buildLocalElementIDs();
 
-   if(restartIndex_>0) // process_input_request is a no-op if restartIndex<=0 ... thus there would be no inital time
-      mesh.setInitialStateTime(meshData->m_input_region->get_state_time(restartIndex_));
+   if(restartIndex>0) // process_input_request is a no-op if restartIndex<=0 ... thus there would be no inital time
+      mesh.setInitialStateTime(meshData->m_input_region->get_state_time(restartIndex));
    else
       mesh.setInitialStateTime(0.0); // no initial time to speak, might as well use 0.0
 
    // clean up mesh data object
    delete meshData;
+
+   // calls Stk_MeshFactory::rebalance
+   this->rebalance(mesh);
 }
 
 //! From ParameterListAcceptor

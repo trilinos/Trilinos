@@ -46,6 +46,11 @@
 #ifndef MUELU_TENTATIVEPFACTORY_DEF_HPP
 #define MUELU_TENTATIVEPFACTORY_DEF_HPP
 
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
+
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_Map.hpp>
 #include <Xpetra_CrsMatrix.hpp>
@@ -120,7 +125,7 @@ namespace MueLu {
 
     RCP<ParameterList> params = rcp(new ParameterList());
     params->set("printLoadBalancingInfo", true);
-    GetOStream(Statistics0,0) << Utils::PrintMatrixInfo(*Ptentative, "Ptent", params);
+    GetOStream(Statistics1,0) << Utils::PrintMatrixInfo(*Ptentative, "Ptent", params);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -174,7 +179,6 @@ namespace MueLu {
     for (size_t i=0; i<NSDim; ++i)
       if (coarseMap->getNodeNumElements() > 0) coarseNS[i] = coarseNullspace->getDataNonConst(i);
 
-
     //This makes the rowmap of Ptent the same as that of fineA.
     //This requires moving some parts of some local Q's to other processors
     //because aggregates can span processors.
@@ -227,6 +231,13 @@ namespace MueLu {
     // Dense QR solver
     Teuchos::SerialQRDenseSolver<LO,SC> qrSolver;
 
+    // decide whether to use ESFC or not
+    // use expert mode if aggregates do not overlap processors
+    bool bExpert = true;
+    if(aggregates.AggregatesCrossProcessors()) {
+      bExpert = false;
+    }
+
     //Allocate temporary storage for the tentative prolongator.
     Array<GO> globalColPtr(maxAggSize*NSDim,0);
     Array<LO> localColPtr(maxAggSize*NSDim,0);
@@ -253,12 +264,12 @@ namespace MueLu {
 
     RCP<CrsMatrix> PtentCrs;
 
-    if (aggregates.AggregatesCrossProcessors()) {
+    if (!bExpert) { // slow mode
       RCP<CrsMatrixWrap> PtentCrsWrap = rcp(new CrsMatrixWrap(rowMapForPtent, NSDim, Xpetra::StaticProfile));
       PtentCrs   = PtentCrsWrap->getCrsMatrix();
       Ptentative = PtentCrsWrap;
     }
-    else {
+    else { // fast mode for aggregates which do not cross processors...
       // Note: NNZ/row estimate is zero since we're using ESFC.
       RCP<CrsMatrixWrap> PtentCrsWrap = rcp(new CrsMatrixWrap(rowMapForPtent, coarseMap, 0, Xpetra::StaticProfile));
       PtentCrs   = PtentCrsWrap->getCrsMatrix();
@@ -270,7 +281,7 @@ namespace MueLu {
       rowptr_temp.resize(numRowsForPtent+1,0);
       rowptr_temp[0]=0;
       for(size_t i=1; i < numRowsForPtent+1; ++i)
-	rowptr_temp[i] = rowptr_temp[i-1] + NSDim;
+        rowptr_temp[i] = rowptr_temp[i-1] + NSDim;
 
       colind_temp.resize(nzEstimate,INVALID);
       values_temp.resize(nzEstimate,Teuchos::ScalarTraits<Scalar>::zero());
@@ -449,7 +460,7 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
         //If it is, the row is inserted.  If not, the row number, columns, and values are saved in
         //MultiVectors that will be sent to other processors.
         GO globalRow = aggToRowMap[aggStart[agg]+j];
-	LO localRow  = rowMapForPtent->getLocalElement(globalRow); // CMS: There has to be an efficient way to do this...
+        LO localRow  = rowMapForPtent->getLocalElement(globalRow); // CMS: There has to be an efficient way to do this...
 
         //TODO is the use of Xpetra::global_size_t below correct?
         if( rowMapForPtentRef.isNodeGlobalElement(globalRow) == false )
@@ -465,10 +476,10 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
           for (size_t k=0; k<NSDim; ++k) {
             try{
               if (localQR(j,k) != Teuchos::ScalarTraits<SC>::zero()) {
-		localColPtr[nnz]  = agg * NSDim + k;
-		globalColPtr[nnz] = coarseMapRef.getGlobalElement(localColPtr[nnz]);
+                localColPtr[nnz]  = agg * NSDim + k;
+                globalColPtr[nnz] = coarseMapRef.getGlobalElement(localColPtr[nnz]);
                 valPtr[nnz] = localQR(j,k);
-		++total_nnz_count;
+                ++total_nnz_count;
                 ++nnz;
               }
             }
@@ -478,17 +489,17 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
           } //for (size_t k=0; k<NSDim; ++k)
 
           try{
-	    if (aggregates.AggregatesCrossProcessors()) {
-	      Ptentative->insertGlobalValues(globalRow,globalColPtr.view(0,nnz),valPtr.view(0,nnz));
-	    }
-	    else {
-	      // Copy all of the *active* cols/vals into the colind_v/values_v arrays.
-	      size_t start = rowptr_v[localRow];
-	      for(size_t i=0; i<nnz; ++i) {
-		colind_v[start+i] = localColPtr[i];
-		values_v[start+i] = valPtr[i];
-	      }
-	    }
+            if (!bExpert) {
+              Ptentative->insertGlobalValues(globalRow,globalColPtr.view(0,nnz),valPtr.view(0,nnz));
+            }
+            else {
+              // Copy all of the *active* cols/vals into the colind_v/values_v arrays.
+              size_t start = rowptr_v[localRow];
+              for(size_t i=0; i<nnz; ++i) {
+                colind_v[start+i] = localColPtr[i];
+                values_v[start+i] = valPtr[i];
+              }
+            }
           }
           catch(...) {
             std::cout << "pid " << fineA.getRowMap()->getComm()->getRank()
@@ -505,7 +516,7 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
     // ************* end of aggregate-wise QR ********************
     // ***********************************************************
 
-    if (!aggregates.AggregatesCrossProcessors()) {
+    if (bExpert) {
       GetOStream(Runtime1,0) << "TentativePFactory : aggregates do not cross process boundaries" << std::endl;
       // The QR will have plenty of zeros if we're NSDim > 1.  If NSDim==1, we still might have a handful of BCs.
       // We need to shrink down the CRS arrays and copy them over the the "real" CrsArrays.
@@ -518,15 +529,17 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
       ArrayView<LO>     colind_new = ptent_colind();
       ArrayView<Scalar> values_new = ptent_values();
       size_t count=0;
+
       // Collapse and copy
       for(size_t i=0; i<numRowsForPtent; i++) {
-	rowptr_new[i]=count;
-	for(size_t j=rowptr_v[i]; j<rowptr_v[i+1] && colind_v[j]!=INVALID; j++){
-	  colind_new[count] = colind_v[j];
-	  values_new[count] = values_v[j];
-	    count++;
-	}
+        rowptr_new[i]=count;
+        for(size_t j=rowptr_v[i]; j<rowptr_v[i+1] && colind_v[j]!=INVALID; j++){
+          colind_new[count] = colind_v[j];
+          values_new[count] = values_v[j];
+          count++;
+        }
       }
+
       rowptr_new[numRowsForPtent]=count;
 
       if(count!=total_nnz_count) throw std::runtime_error("MueLu error in data copy!");
@@ -591,8 +604,6 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
 
       Ptentative->fillComplete(coarseMap,fineA.getDomainMap()); //(domain,range) of Ptentative
     } //if (!aggregatesAreLocal)
-
-
 
 //    RCP<const Map> realColMap = Ptentative->getColMap();
 //    sleep(1);

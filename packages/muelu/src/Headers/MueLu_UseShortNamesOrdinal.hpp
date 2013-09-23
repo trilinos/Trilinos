@@ -26,12 +26,12 @@ typedef MueLu::DemoFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> DemoFact
 typedef MueLu::EmergencyAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> EmergencyAggregationAlgorithm;
 #endif
 
-#ifdef MUELU_GRAPHBASE_SHORT
-typedef MueLu::GraphBase<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> GraphBase;
-#endif
-
 #ifdef MUELU_GRAPH_SHORT
 typedef MueLu::Graph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Graph;
+#endif
+
+#ifdef MUELU_GRAPHBASE_SHORT
+typedef MueLu::GraphBase<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> GraphBase;
 #endif
 
 #ifdef MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_SHORT
@@ -68,6 +68,10 @@ typedef MueLu::PRFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PRFactory;
 
 #ifdef MUELU_REBALANCEMAPFACTORY_SHORT
 typedef MueLu::RebalanceMapFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RebalanceMapFactory;
+#endif
+
+#ifdef MUELU_REPARTITIONINTERFACE_SHORT
+typedef MueLu::RepartitionInterface<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RepartitionInterface;
 #endif
 
 #ifdef MUELU_SMALLAGGREGATIONALGORITHM_SHORT

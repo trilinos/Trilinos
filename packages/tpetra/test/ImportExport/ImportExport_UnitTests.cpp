@@ -43,6 +43,8 @@
 
 #include "Teuchos_UnitTestHarness.hpp"
 
+#include <Tpetra_TestingUtilities.hpp>
+
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_as.hpp>
 #include <Teuchos_Tuple.hpp>
@@ -55,6 +57,7 @@
 #include <iterator>
 
 namespace {
+  using Tpetra::TestingUtilities::getNode;
 
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -80,8 +83,7 @@ namespace {
   using std::endl;
 
   using Tpetra::createContigMap;
-
-  typedef DefaultPlatform::DefaultPlatformType::NodeType Node;
+  using Tpetra::createContigMapWithNode;
 
   bool testMpi = true;
   double errorTolSlack = 1e+1;
@@ -111,15 +113,16 @@ namespace {
   // UNIT TESTS
   //
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ImportExport, basic, Ordinal ) {
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ImportExport, basic, Ordinal, Node ) {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<Node> node = getNode<Node>();
     // create Maps
-    RCP<const Map<Ordinal,Ordinal,Node> > source = createContigMap<Ordinal,Ordinal>(INVALID,10,comm),
-                                          target = createContigMap<Ordinal,Ordinal>(INVALID, 5,comm);
+    RCP<const Map<Ordinal,Ordinal,Node> > source = createContigMapWithNode<Ordinal,Ordinal>(INVALID,10,comm,node),
+                                          target = createContigMapWithNode<Ordinal,Ordinal>(INVALID, 5,comm,node);
     // create Import object
-    RCP<const Import<Ordinal> > importer = Tpetra::createImport<Ordinal>(source, target);
+    RCP<const Import<Ordinal,Ordinal,Node> > importer = Tpetra::createImport<Ordinal,Ordinal,Node>(source, target);
 
     Ordinal same = importer->getNumSameIDs();
     Ordinal permute = importer->getNumPermuteIDs();
@@ -131,15 +134,16 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ImportExport, GetNeighborsForward, Ordinal, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ImportExport, GetNeighborsForward, Ordinal, Scalar, Node )
   {
     // import with the importer to duplicate
     // export with the exporter to add and reduce
     typedef ScalarTraits<Scalar> ST;
-    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<Node> node = getNode<Node>();
     const int numImages = comm->getSize(),
               myImageID = comm->getRank();
     if (numImages < 2) return;
@@ -152,8 +156,9 @@ namespace {
     neighbors.push_back(myImageID);
     if (myImageID != numImages-1) neighbors.push_back(myImageID+1);
     // two maps: one has one entries per node, the other is the 1-D neighbors
-    RCP<const Map<Ordinal,Ordinal,Node> > smap = createContigMap<Ordinal,Ordinal>(INVALID,numLocal,comm),
-                                          tmap = rcp(new Map<Ordinal,Ordinal,Node>(INVALID,neighbors(),0,comm) );
+    RCP<const Map<Ordinal,Ordinal,Node> >
+      smap = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node),
+      tmap = rcp(new Map<Ordinal,Ordinal,Node>(INVALID,neighbors(),0,comm,node) );
     for (size_t tnum=0; tnum < 2; ++tnum) {
       RCP<MV> mvMine, mvWithNeighbors;
       // for tnum=0, these are contiguously allocated multivectors
@@ -174,8 +179,10 @@ namespace {
         mvMine->replaceLocalValue(0,j,static_cast<Scalar>(myImageID + j*numImages));
       }
       // create Import from smap to tmap, Export from tmap to smap, test them
-      RCP<const Import<Ordinal> > importer = Tpetra::createImport<Ordinal>(smap,tmap);
-      RCP<const Export<Ordinal> > exporter = Tpetra::createExport<Ordinal>(tmap,smap);
+      RCP<const Import<Ordinal,Ordinal,Node> > importer =
+        Tpetra::createImport<Ordinal,Ordinal,Node>(smap,tmap);
+      RCP<const Export<Ordinal,Ordinal,Node> > exporter =
+        Tpetra::createExport<Ordinal,Ordinal,Node>(tmap,smap);
       bool local_success = true;
       // importer testing
       TEST_EQUALITY_CONST( importer->getSourceMap() == smap, true );
@@ -213,6 +220,7 @@ namespace {
           TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),2,static_cast<Scalar>(myImageID+j*numImages)+ST::one()); // neighbor
         }
       }
+
       // export values, test
       mvMine->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
       mvMine->doExport(*mvWithNeighbors,*exporter,ADD);
@@ -238,14 +246,15 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ImportExport, GetNeighborsBackward, Ordinal, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ImportExport, GetNeighborsBackward, Ordinal, Scalar, Node )
   {
     // import with the exporter to duplicate
     // export with the importer to add and reduce
     typedef ScalarTraits<Scalar> ST;
-    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<Node> node = getNode<Node>();
     const int numImages = comm->getSize(),
               myImageID = comm->getRank();
     if (numImages < 2) return;
@@ -258,8 +267,8 @@ namespace {
     neighbors.push_back(myImageID);
     if (myImageID != numImages-1) neighbors.push_back(myImageID+1);
     // two maps: one has one entries per node, the other is the 1-D neighbors
-    RCP<const Map<Ordinal,Ordinal,Node> > smap = createContigMap<Ordinal,Ordinal>(INVALID,numLocal,comm),
-                                          tmap = rcp(new Map<Ordinal,Ordinal,Node>(INVALID,neighbors(),0,comm) );
+    RCP<const Map<Ordinal,Ordinal,Node> > smap = createContigMapWithNode<Ordinal,Ordinal,Node>(INVALID,numLocal,comm,node),
+                                          tmap = rcp(new Map<Ordinal,Ordinal,Node>(INVALID,neighbors(),0,comm,node) );
     for (size_t tnum=0; tnum < 2; ++tnum) {
       RCP<MV> mvMine, mvWithNeighbors;
       // for tnum=0, these are contiguously allocated multivectors
@@ -280,8 +289,8 @@ namespace {
         mvMine->replaceLocalValue(0,j,static_cast<Scalar>(myImageID + j*numImages));
       }
       // create Import from smap to tmap, Export from tmap to smap, test them
-      RCP<const Import<Ordinal> > importer = Tpetra::createImport<Ordinal>(smap,tmap);
-      RCP<const Export<Ordinal> > exporter = Tpetra::createExport<Ordinal>(tmap,smap);
+      RCP<const Import<Ordinal,Ordinal,Node> > importer = Tpetra::createImport<Ordinal,Ordinal,Node>(smap,tmap);
+      RCP<const Export<Ordinal,Ordinal,Node> > exporter = Tpetra::createExport<Ordinal,Ordinal,Node>(tmap,smap);
       bool local_success = true;
       // importer testing
       TEST_EQUALITY_CONST( importer->getSourceMap() == smap, true );
@@ -345,19 +354,22 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST( ImportExport, AbsMax )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ImportExport, AbsMax, Node )
   {
     // test ABSMAX CombineMode
     // test with local and remote entries, as copyAndPermute() and unpackAndCombine() both need to be tested
-    typedef Tpetra::Vector<double,int> Vec;
+    typedef Tpetra::Vector<double,int,int,Node> Vec;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
+    RCP<Node> node = getNode<Node>();
     if (numImages < 2) return;
     // create a Map
-    RCP<const Map<int,int> > smap = Tpetra::createContigMap<int,int>(INVALID,1,comm);
+    RCP<const Map<int,int,Node> > smap =
+      Tpetra::createContigMapWithNode<int,int>(INVALID,1,comm,node);
     const int myOnlyGID = smap->getGlobalElement(0);
-    RCP<const Map<int,int> > dmap = Tpetra::createNonContigMap<int,int>(tuple<int>(myOnlyGID, (myOnlyGID+1)%numImages), comm);
+    RCP<const Map<int,int,Node> > dmap =
+      Tpetra::createNonContigMapWithNode<int,int>(tuple<int>(myOnlyGID, (myOnlyGID+1)%numImages), comm, node);
     RCP<Vec> srcVec = Tpetra::createVector<double>(smap);
     srcVec->putScalar(-1.0);
     RCP<Vec> dstVec = Tpetra::createVector<double>(dmap);
@@ -366,7 +378,8 @@ namespace {
     // ergo, during the import:
     // - the first will be over-written (by 1.0) from the source, while
     // - the second will be "combined", i.e., abs(max(1.0,3.0)) = 3.0 from the dest
-    RCP<const Tpetra::Import<int> > importer = Tpetra::createImport<int>(smap,dmap);
+    RCP<const Tpetra::Import<int,int,Node> > importer =
+      Tpetra::createImport<int>(smap,dmap);
     dstVec->doImport(*srcVec,*importer,Tpetra::ABSMAX);
     TEST_COMPARE_ARRAYS( tuple<double>(-1.0,3.0), dstVec->get1dView() )
     // All procs fail if any proc fails
@@ -380,26 +393,31 @@ namespace {
   //
 
 #ifdef HAVE_TEUCHOS_COMPLEX
-#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL)\
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT_NODE(ORDINAL, NODE)  \
      typedef std::complex<float> ComplexFloat; \
-     UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, ComplexFloat)
-#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(ORDINAL)\
+     UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE(ORDINAL, ComplexFloat, NODE)
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE_NODE(ORDINAL, NODE) \
      typedef std::complex<double> ComplexDouble; \
-     UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, ComplexDouble)
+     UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE(ORDINAL, ComplexDouble, NODE)
 #else
-#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL)
-#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(ORDINAL)
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT_NODE(ORDINAL, NODE)
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE_NODE(ORDINAL, NODE)
 #endif
 
-#define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ImportExport, GetNeighborsForward,  ORDINAL, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ImportExport, GetNeighborsBackward, ORDINAL, SCALAR )
+#define UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, NODE )         \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( ImportExport, GetNeighborsForward,  ORDINAL, SCALAR, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( ImportExport, GetNeighborsBackward, ORDINAL, SCALAR, NODE )
 
-#define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ImportExport, basic, ORDINAL ) \
-      UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, double)
+#define UNIT_TEST_GROUP_ORDINAL_NODE( ORDINAL, NODE )                        \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ImportExport, basic, ORDINAL, NODE ) \
+  UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( ORDINAL, double, NODE)
 
-UNIT_TEST_GROUP_ORDINAL(int)
+#define UNIT_TEST_GROUP_NODE( NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ImportExport, AbsMax, NODE ) \
+  UNIT_TEST_GROUP_ORDINAL_NODE( int, NODE )
+
+  TPETRA_ETI_MANGLING_TYPEDEFS()
+
+  TPETRA_INSTANTIATE_N( UNIT_TEST_GROUP_NODE )
 
 }
-

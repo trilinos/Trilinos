@@ -58,29 +58,54 @@ namespace Intrepid {
 ///
 enum ComponentOrder {CANONICAL, SIERRA_FULL, SIERRA_SYMMETRIC};
 
+template<typename T, Index N>
+struct tensor_store
+{
+  typedef Storage<T, dimension_power<N, 2>::value> type;
+};
+
 ///
 /// Second order tensor.
 ///
-template<typename T>
-class Tensor : public TensorBase<T>
+template<typename T, Index N = DYNAMIC>
+class Tensor : public TensorBase<T, typename tensor_store<T, N>::type>
 {
 public:
 
   ///
   /// Order
   ///
-  static Index const
-  order = 2U;
+  static
+  Index const
+  ORDER = 2;
 
   ///
-  /// Default constructor
+  /// Static or dynamic
   ///
-  Tensor();
+  static
+  bool const
+  IS_DYNAMIC = N == DYNAMIC;
+
+  ///
+  /// Storage type
+  ///
+  typedef typename tensor_store<T, N>::type
+  Store;
+
+  ///
+  /// Tensor order
+  ///
+  static
+  Index
+  get_order() {return ORDER;}
 
   ///
   /// Constructor that initializes to NaNs
   /// \param dimension the space dimension
   ///
+  explicit
+  Tensor();
+
   explicit
   Tensor(Index const dimension);
 
@@ -90,14 +115,31 @@ public:
   /// \param value all components are set equal to this
   ///
   explicit
-  Tensor(Index const dimension, ComponentValue value);
+  Tensor(ComponentValue const value);
+
+  explicit
+  Tensor(Index const dimension, ComponentValue const value);
 
   ///
-  /// Create tensor from a scalar
+  /// Create tensor from array
   /// \param dimension the space dimension
-  /// \param s all components are set equal to this value
+  /// \param data_ptr pointer into the array
   ///
-  Tensor(Index const dimension, T const & s);
+  explicit
+  Tensor(T const * data_ptr);
+
+  explicit
+  Tensor(Index const dimension, T const * data_ptr);
+
+  ///
+  /// Copy constructor
+  ///
+  Tensor(Tensor<T, N> const & A);
+
+  ///
+  /// 2nd-order tensor from 4th-order tensor
+  ///
+  Tensor(Tensor4<T, dimension_sqrt<N>::value> const & A);
 
   ///
   /// Create tensor specifying components
@@ -116,30 +158,15 @@ public:
 
   ///
   /// Create tensor from array
-  /// \param dimension the space dimension
-  /// \param data_ptr pointer into the array
-  ///
-  Tensor(Index const dimension, T const * data_ptr);
-
-  ///
-  /// Create tensor from array
   /// \param data_ptr pointer into the array
   /// \param component_order component convention (3D only)
   ///
-  Tensor(
-      Index const dimension,
-      T const * data_ptr,
+  explicit
+  Tensor(T const * data_ptr, ComponentOrder const component_order);
+
+  explicit
+  Tensor(Index const dimension, T const * data_ptr,
       ComponentOrder const component_order);
-
-  ///
-  /// Copy constructor
-  ///
-  Tensor(Tensor<T> const & A);
-
-  ///
-  /// 2nd-order tensor from 4th-order tensor
-  ///
-  Tensor(Tensor4<T> const & A);
 
   ///
   /// Simple destructor
@@ -163,11 +190,37 @@ public:
   operator()(Index const i, Index const j);
 
   ///
-  /// Fill components with value
-  /// \param value all components are set equal to this
+  /// \return dimension
+  ///
+  Index
+  get_dimension() const;
+
+  ///
+  /// \param dimension of vector
   ///
   void
-  fill(ComponentValue value);
+  set_dimension(Index const dimension);
+
+  ///
+  /// Fill components with value specification
+  /// \param value all components are set equal to this specification
+  ///
+  void
+  fill(ComponentValue const value);
+
+  ///
+  /// Fill components with value as parameter
+  /// \param value all components are set equal to this parameter
+  ///
+  void
+  fill(T const & s);
+
+  ///
+  /// Fill components from array defined by pointer.
+  /// \param data_ptr pointer into array for filling components
+  ///
+  void
+  fill(T const * data_ptr);
 
   ///
   /// Fill components from array defined by pointer.
@@ -175,15 +228,7 @@ public:
   /// \param component_order component convention (3D only)
   ///
   void
-  fill(
-      T const * data_ptr,
-      ComponentOrder const component_order = CANONICAL);
-
-  ///
-  /// Tensor order
-  ///
-  Index
-  get_order() const {return order;}
+  fill(T const * data_ptr, ComponentOrder const component_order);
 
 };
 
@@ -191,43 +236,43 @@ public:
 /// Tensor addition
 /// \return \f$ A + B \f$
 ///
-template<typename S, typename T>
-Tensor<typename Promote<S, T>::type>
-operator+(Tensor<S> const & A, Tensor<T> const & B);
+template<typename S, typename T, Index N>
+Tensor<typename Promote<S, T>::type, N>
+operator+(Tensor<S, N> const & A, Tensor<T, N> const & B);
 
 ///
 /// Tensor subtraction
 /// \return \f$ A - B \f$
 ///
-template<typename S, typename T>
-Tensor<typename Promote<S, T>::type>
-operator-(Tensor<S> const & A, Tensor<T> const & B);
+template<typename S, typename T, Index N>
+Tensor<typename Promote<S, T>::type, N>
+operator-(Tensor<S, N> const & A, Tensor<T, N> const & B);
 
 ///
 /// Tensor minus
 /// \return \f$ -A \f$
 ///
-template<typename T>
-Tensor<T>
-operator-(Tensor<T> const & A);
+template<typename T, Index N>
+Tensor<T, N>
+operator-(Tensor<T, N> const & A);
 
 ///
 /// Tensor equality
 /// Tested by components
 /// \return \f$ A \equiv B \f$
 ///
-template<typename T>
+template<typename T, Index N>
 bool
-operator==(Tensor<T> const & A, Tensor<T> const & B);
+operator==(Tensor<T, N> const & A, Tensor<T, N> const & B);
 
 ///
 /// Tensor inequality
 /// Tested by components
 /// \return \f$ A \neq B \f$
 ///
-template<typename T>
+template<typename T, Index N>
 bool
-operator!=(Tensor<T> const & A, Tensor<T> const & B);
+operator!=(Tensor<T, N> const & A, Tensor<T, N> const & B);
 
 ///
 /// Tensor vector product v = A u
@@ -235,9 +280,9 @@ operator!=(Tensor<T> const & A, Tensor<T> const & B);
 /// \param u vector
 /// \return \f$ A u \f$
 ///
-template<typename S, typename T>
-Vector<typename Promote<S, T>::type>
-operator*(Tensor<T> const & A, Vector<S> const & u);
+template<typename S, typename T, Index N>
+Vector<typename Promote<S, T>::type, N>
+operator*(Tensor<T, N> const & A, Vector<S, N> const & u);
 
 ///
 /// Vector tensor product v = u A
@@ -245,17 +290,17 @@ operator*(Tensor<T> const & A, Vector<S> const & u);
 /// \param u vector
 /// \return \f$ u A = A^T u \f$
 ///
-template<typename S, typename T>
-Vector<typename Promote<S, T>::type>
-operator*(Vector<S> const & u, Tensor<T> const & A);
+template<typename S, typename T, Index N>
+Vector<typename Promote<S, T>::type, N>
+operator*(Vector<S, N> const & u, Tensor<T, N> const & A);
 
 ///
 /// Tensor dot product C = A B
 /// \return \f$ A \cdot B \f$
 ///
-template<typename S, typename T>
-Tensor<typename Promote<S, T>::type>
-operator*(Tensor<S> const & A, Tensor<T> const & B);
+template<typename S, typename T, Index N>
+Tensor<typename Promote<S, T>::type, N>
+operator*(Tensor<S, N> const & A, Tensor<T, N> const & B);
 
 ///
 /// Scalar tensor product
@@ -263,9 +308,9 @@ operator*(Tensor<S> const & A, Tensor<T> const & B);
 /// \param A tensor
 /// \return \f$ s A \f$
 ///
-template<typename S, typename T>
-typename lazy_disable_if< order_1234<S>, apply_tensor< Promote<S,T> > >::type
-operator*(S const & s, Tensor<T> const & A);
+template<typename S, typename T, Index N>
+typename lazy_disable_if< order_1234<S>, apply_tensor< Promote<S,T>, N> >::type
+operator*(S const & s, Tensor<T, N> const & A);
 
 ///
 /// Tensor scalar product
@@ -273,9 +318,9 @@ operator*(S const & s, Tensor<T> const & A);
 /// \param s scalar
 /// \return \f$ s A \f$
 ///
-template<typename S, typename T>
-typename lazy_disable_if< order_1234<S>, apply_tensor< Promote<S,T> > >::type
-operator*(Tensor<T> const & A, S const & s);
+template<typename S, typename T, Index N>
+typename lazy_disable_if< order_1234<S>, apply_tensor< Promote<S,T>, N> >::type
+operator*(Tensor<T, N> const & A, S const & s);
 
 ///
 /// Tensor scalar division
@@ -283,9 +328,19 @@ operator*(Tensor<T> const & A, S const & s);
 /// \param s scalar
 /// \return \f$ A / s \f$
 ///
-template<typename S, typename T>
-Tensor<typename Promote<S, T>::type>
-operator/(Tensor<T> const & A, S const & s);
+template<typename S, typename T, Index N>
+Tensor<typename Promote<S, T>::type, N>
+operator/(Tensor<T, N> const & A, S const & s);
+
+///
+/// Scalar tensor division
+/// \param s scalar
+/// \param A tensor that divides scalar with each component
+/// \return \f$ s / A \f$
+///
+template<typename S, typename T, Index N>
+Tensor<typename Promote<S, T>::type, N>
+operator/(S const & s, Tensor<T, N> const & A);
 
 ///
 /// Tensor input
@@ -293,9 +348,9 @@ operator/(Tensor<T> const & A, S const & s);
 /// \param is input stream
 /// \return is input stream
 ///
-template<typename T>
+template<typename T, Index N>
 std::istream &
-operator>>(std::istream & is, Tensor<T> & A);
+operator>>(std::istream & is, Tensor<T, N> & A);
 
 ///
 /// Tensor output
@@ -303,9 +358,9 @@ operator>>(std::istream & is, Tensor<T> & A);
 /// \param os output stream
 /// \return os output stream
 ///
-template<typename T>
+template<typename T, Index N>
 std::ostream &
-operator<<(std::ostream & os, Tensor<T> const & A);
+operator<<(std::ostream & os, Tensor<T, N> const & A);
 
 ///
 /// Extract a row as a vector
@@ -313,9 +368,9 @@ operator<<(std::ostream & os, Tensor<T> const & A);
 /// \param i index of row
 /// \return \f$ v = A(i,:) \f$
 ///
-template<typename T>
-Vector<T>
-row(Tensor<T> const & A, Index const i);
+template<typename T, Index N>
+Vector<T, N>
+row(Tensor<T, N> const & A, Index const i);
 
 ///
 /// Extract a column as a vector
@@ -323,9 +378,9 @@ row(Tensor<T> const & A, Index const i);
 /// \param j index of column
 /// \return \f$ v = A(:,j) \f$
 ///
-template<typename T>
-Vector<T>
-col(Tensor<T> const & A, Index const j);
+template<typename T, Index N>
+Vector<T, N>
+col(Tensor<T, N> const & A, Index const j);
 
 ///
 /// Tensor vector product v = A u
@@ -333,9 +388,9 @@ col(Tensor<T> const & A, Index const j);
 /// \param u vector
 /// \return \f$ A u \f$
 ///
-template<typename S, typename T>
-Vector<typename Promote<S, T>::type>
-dot(Tensor<T> const & A, Vector<S> const & u);
+template<typename S, typename T, Index N>
+Vector<typename Promote<S, T>::type, N>
+dot(Tensor<T, N> const & A, Vector<S, N> const & u);
 
 ///
 /// Vector tensor product v = u A
@@ -343,9 +398,9 @@ dot(Tensor<T> const & A, Vector<S> const & u);
 /// \param u vector
 /// \return \f$ u A = A^T u \f$
 ///
-template<typename S, typename T>
-Vector<typename Promote<S, T>::type>
-dot(Vector<S> const & u, Tensor<T> const & A);
+template<typename S, typename T, Index N>
+Vector<typename Promote<S, T>::type, N>
+dot(Vector<S, N> const & u, Tensor<T, N> const & A);
 
 ///
 /// Tensor tensor product C = A B
@@ -353,9 +408,9 @@ dot(Vector<S> const & u, Tensor<T> const & A);
 /// \param B tensor
 /// \return a tensor \f$ A \cdot B \f$
 ///
-template<typename S, typename T>
-Tensor<typename Promote<S, T>::type>
-dot(Tensor<S> const & A, Tensor<T> const & B);
+template<typename S, typename T, Index N>
+Tensor<typename Promote<S, T>::type, N>
+dot(Tensor<S, N> const & A, Tensor<T, N> const & B);
 
 ///
 /// Tensor tensor product C = A^T B
@@ -363,9 +418,9 @@ dot(Tensor<S> const & A, Tensor<T> const & B);
 /// \param B tensor
 /// \return a tensor \f$ A^T \cdot B \f$
 ///
-template<typename S, typename T>
-Tensor<typename Promote<S, T>::type>
-t_dot(Tensor<S> const & A, Tensor<T> const & B);
+template<typename S, typename T, Index N>
+Tensor<typename Promote<S, T>::type, N>
+t_dot(Tensor<S, N> const & A, Tensor<T, N> const & B);
 
 ///
 /// Tensor tensor product C = A B^T
@@ -373,9 +428,9 @@ t_dot(Tensor<S> const & A, Tensor<T> const & B);
 /// \param B tensor
 /// \return a tensor \f$ A \cdot B^T \f$
 ///
-template<typename S, typename T>
-Tensor<typename Promote<S, T>::type>
-dot_t(Tensor<S> const & A, Tensor<T> const & B);
+template<typename S, typename T, Index N>
+Tensor<typename Promote<S, T>::type, N>
+dot_t(Tensor<S, N> const & A, Tensor<T, N> const & B);
 
 ///
 /// Tensor tensor product C = A^T B^T
@@ -383,9 +438,9 @@ dot_t(Tensor<S> const & A, Tensor<T> const & B);
 /// \param B tensor
 /// \return a tensor \f$ A^T \cdot B^T \f$
 ///
-template<typename S, typename T>
-Tensor<typename Promote<S, T>::type>
-t_dot_t(Tensor<S> const & A, Tensor<T> const & B);
+template<typename S, typename T, Index N>
+Tensor<typename Promote<S, T>::type, N>
+t_dot_t(Tensor<S, N> const & A, Tensor<T, N> const & B);
 
 ///
 /// Tensor tensor double dot product (contraction)
@@ -393,9 +448,9 @@ t_dot_t(Tensor<S> const & A, Tensor<T> const & B);
 /// \param B tensor
 /// \return a scalar \f$ A : B \f$
 ///
-template<typename S, typename T>
+template<typename S, typename T, Index N>
 typename Promote<S, T>::type
-dotdot(Tensor<S> const & A, Tensor<T> const & B);
+dotdot(Tensor<S, N> const & A, Tensor<T, N> const & B);
 
 ///
 /// Dyad
@@ -403,9 +458,9 @@ dotdot(Tensor<S> const & A, Tensor<T> const & B);
 /// \param v vector
 /// \return \f$ u \otimes v \f$
 ///
-template<typename S, typename T>
-Tensor<typename Promote<S, T>::type>
-dyad(Vector<S> const & u, Vector<T> const & v);
+template<typename S, typename T, Index N>
+Tensor<typename Promote<S, T>::type, N>
+dyad(Vector<S, N> const & u, Vector<T, N> const & v);
 
 ///
 /// Bun operator, just for Jay
@@ -413,9 +468,9 @@ dyad(Vector<S> const & u, Vector<T> const & v);
 /// \param v vector
 /// \return \f$ u \otimes v \f$
 ///
-template<typename S, typename T>
-Tensor<typename Promote<S, T>::type>
-bun(Vector<S> const & u, Vector<T> const & v);
+template<typename S, typename T, Index N>
+Tensor<typename Promote<S, T>::type, N>
+bun(Vector<S, N> const & u, Vector<T, N> const & v);
 
 ///
 /// Tensor product
@@ -423,79 +478,103 @@ bun(Vector<S> const & u, Vector<T> const & v);
 /// \param v vector
 /// \return \f$ u \otimes v \f$
 ///
-template<typename S, typename T>
-Tensor<typename Promote<S, T>::type>
-tensor(Vector<S> const & u, Vector<T> const & v);
+template<typename S, typename T, Index N>
+Tensor<typename Promote<S, T>::type, N>
+tensor(Vector<S, N> const & u, Vector<T, N> const & v);
 
 ///
 /// Diagonal tensor from vector
 /// \param v vector
 /// \return A = diag(v)
 ///
-template<typename T>
-Tensor<T>
-diag(Vector<T> const & v);
+template<typename T, Index N>
+Tensor<T, N>
+diag(Vector<T, N> const & v);
 
 ///
 /// Diagonal of tensor in a vector
 /// \param A tensor
 /// \return v = diag(A)
 ///
-template<typename T>
-Vector<T>
-diag(Tensor<T> const & A);
+template<typename T, Index N>
+Vector<T, N>
+diag(Tensor<T, N> const & A);
 
 ///
 /// Zero 2nd-order tensor
 /// All components are zero
 ///
+template<typename T, Index N>
+const Tensor<T, N>
+zero();
+
 template<typename T>
-const Tensor<T>
-zero(Index const N);
+const Tensor<T, DYNAMIC>
+zero(Index const dimension);
+
+template<typename T, Index N>
+const Tensor<T, N>
+zero(Index const dimension);
 
 ///
 /// 2nd-order identity tensor
 ///
+template<typename T, Index N>
+const Tensor<T, N>
+identity();
+
 template<typename T>
-const Tensor<T>
-identity(Index const N);
+const Tensor<T, DYNAMIC>
+identity(Index const dimension);
+
+template<typename T, Index N>
+const Tensor<T, N>
+identity(Index const dimension);
 
 ///
 /// 2nd-order identity tensor, à la Matlab
 ///
+template<typename T, Index N>
+const Tensor<T, N>
+eye();
+
 template<typename T>
-const Tensor<T>
-eye(Index const N);
+const Tensor<T, DYNAMIC>
+eye(Index const dimension);
+
+template<typename T, Index N>
+const Tensor<T, N>
+eye(Index const dimension);
 
 ///
 /// R^N 2nd-order tensor transpose
 ///
-template<typename T>
-Tensor<T>
-transpose(Tensor<T> const & A);
+template<typename T, Index N>
+Tensor<T, N>
+transpose(Tensor<T, N> const & A);
 
 ///
 /// C^N 2nd-order tensor adjoint
 ///
-template<typename T>
-Tensor<T>
-adjoint(Tensor<T> const & A);
+template<typename T, Index N>
+Tensor<T, N>
+adjoint(Tensor<T, N> const & A);
 
 ///
 /// Symmetric part of 2nd-order tensor
 /// \return \f$ \frac{1}{2}(A + A^T) \f$
 ///
-template<typename T>
-Tensor<T>
-sym(Tensor<T> const & A);
+template<typename T, Index N>
+Tensor<T, N>
+sym(Tensor<T, N> const & A);
 
 ///
 /// Skew symmetric part of 2nd-order tensor
 /// \return \f$ \frac{1}{2}(A - A^T) \f$
 ///
-template<typename T>
-Tensor<T>
-skew(Tensor<T> const & A);
+template<typename T, Index N>
+Tensor<T, N>
+skew(Tensor<T, N> const & A);
 
 ///
 /// Skew symmetric 2nd-order tensor from vector valid for R^3 only.
@@ -503,9 +582,9 @@ skew(Tensor<T> const & A);
 /// \param u vector
 /// \return \f$ {{0, -u_2, u_1}, {u_2, 0, -u_0}, {-u_1, u+0, 0}} \f$
 ///
-template<typename T>
-Tensor<T>
-skew(Vector<T> const & u);
+template<typename T, Index N>
+Tensor<T, N>
+skew(Vector<T, N> const & u);
 
 } // namespace Intrepid
 

@@ -102,6 +102,12 @@ namespace MueLu {
     //! Indicates whether this operator supports applying the adjoint operator.
     bool hasTransposeApply() const;
 
+    template <class NewNode, class NewLocalMatOps>
+    Teuchos::RCP< TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, NewNode, NewLocalMatOps> >
+    clone(const RCP<NewNode> &new_node) const {
+      return Teuchos::rcp(new TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, NewNode, NewLocalMatOps>(Hierarchy_->template clone<NewNode,NewLocalMatOps>(new_node)));
+    }
+
   private:
 
     RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Hierarchy_;

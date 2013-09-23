@@ -46,6 +46,11 @@
 #ifndef MUELU_REBALANCETRANSFERFACTORY_DEF_HPP
 #define MUELU_REBALANCETRANSFERFACTORY_DEF_HPP
 
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
+
 #include <Teuchos_Tuple.hpp>
 
 #include "Xpetra_Vector.hpp"
@@ -173,7 +178,7 @@ namespace MueLu {
 
         Set(coarseLevel, "P", rebalancedP);
 
-        GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebalancedP, "P (rebalanced)", params);
+        GetOStream(Statistics1, 0) << Utils::PrintMatrixInfo(*rebalancedP, "P (rebalanced)", params);
 
         ///////////////////////// EXPERIMENTAL
         // TODO FIXME somehow we have to transfer the striding information of the permuted domain/range maps.
@@ -216,7 +221,7 @@ namespace MueLu {
         }
         Set(coarseLevel, "R", rebalancedR);
 
-        GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebalancedR, "R (rebalanced)", params);
+        GetOStream(Statistics1, 0) << Utils::PrintMatrixInfo(*rebalancedR, "R (rebalanced)", params);
 
         ///////////////////////// EXPERIMENTAL
         // TODO FIXME somehow we have to transfer the striding information of the permuted domain/range maps.

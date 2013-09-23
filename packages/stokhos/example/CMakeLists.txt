@@ -375,13 +375,17 @@ IF(Stokhos_ENABLE_Sacado)
     
     SET(CUDA_SOURCES "")
     IF (Stokhos_ENABLE_CUDA)
+      # add MPI include dir to nvcc
+      IF( TPL_ENABLE_MPI )
+        CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
+      ENDIF()
       CUDA_COMPILE(CUDA_SOURCES sacado_mpvector_example_cuda.cu)
     ENDIF()
 
     TRIBITS_ADD_EXECUTABLE(
       sacado_mpvector_example
       SOURCES sacado_mpvector_example.cpp
-              sacado_mpvector_example_host.cpp
+              sacado_mpvector_example_threads.cpp
 	      ${CUDA_SOURCES}
       COMM serial mpi
       DEPLIBS stokhos

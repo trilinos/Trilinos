@@ -117,6 +117,9 @@ namespace ML_Epetra
 
     //! Returns the A1 matrix
     Teuchos::RCP<Epetra_CrsMatrix> GetA1() const {return A1_;}
+
+    //! Return operator complexity and #nonzeros in fine grid matrix.
+    void Complexities(double &complexity, double &fineNnz);
     //@}
 
 

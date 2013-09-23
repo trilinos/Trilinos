@@ -7,14 +7,14 @@
 #include <limits.h>
 #include <cmath>
 
-#include <Kokkos_Host.hpp>
+#include <Kokkos_Threads.hpp>
 #include <Kokkos_Cuda.hpp>
-#include "Kokkos_MultiVector.hpp"
+#include "Kokkos_MV.hpp"
 #ifndef DEVICE
 #define DEVICE 1
 #endif
 #if DEVICE==1
-typedef Kokkos::Host device_type;
+typedef Kokkos::Threads device_type;
 #define KokkosHost(a) a
 #define KokkosCUDA(a)
 #else
@@ -32,7 +32,7 @@ int test_mv_dot(ORDINAL size, int numVecs)
   typedef typename Kokkos::MultiVectorDynamic<SCALAR,device_type>::type mv_type;
   typedef typename mv_type::HostMirror h_mv_type;
   typedef Kokkos::View<SCALAR* ,Kokkos::LayoutLeft,device_type >  vector_type ;
-  typedef Kokkos::View<SCALAR* ,Kokkos::LayoutLeft,Kokkos::Host >  h2_vector_type ;
+  typedef Kokkos::View<SCALAR* ,Kokkos::LayoutLeft,Kokkos::Threads >  h2_vector_type ;
   typedef typename vector_type::HostMirror h_vector_type;
   typedef typename mv_type::size_type            size_type;
 
@@ -81,7 +81,7 @@ int test_mv_add_r_x_y(ORDINAL size, int numVecs){
 	  typedef typename Kokkos::MultiVectorDynamic<ORDINAL,device_type>::type mv_type;
 	  typedef typename mv_type::HostMirror h_mv_type;
 	  typedef Kokkos::View<ORDINAL* ,Kokkos::LayoutLeft,device_type >  vector_type ;
-	  typedef Kokkos::View<ORDINAL* ,Kokkos::LayoutLeft,Kokkos::Host >  h2_vector_type ;
+	  typedef Kokkos::View<ORDINAL* ,Kokkos::LayoutLeft,Kokkos::Threads >  h2_vector_type ;
 	  typedef typename vector_type::HostMirror h_vector_type;
 	  typedef typename mv_type::size_type            size_type;
 
@@ -138,7 +138,7 @@ int test_mv_add_r_x_by(ORDINAL size, int numVecs){
 	  typedef typename Kokkos::MultiVectorDynamic<ORDINAL,device_type>::type mv_type;
 	  typedef typename mv_type::HostMirror h_mv_type;
 	  typedef Kokkos::View<ORDINAL* ,Kokkos::LayoutLeft,device_type >  vector_type ;
-	  typedef Kokkos::View<ORDINAL* ,Kokkos::LayoutLeft,Kokkos::Host >  h2_vector_type ;
+	  typedef Kokkos::View<ORDINAL* ,Kokkos::LayoutLeft,Kokkos::Threads >  h2_vector_type ;
 	  typedef typename vector_type::HostMirror h_vector_type;
 	  typedef typename mv_type::size_type            size_type;
 
@@ -195,7 +195,7 @@ int test_mv_add_r_ax_by(ORDINAL size, int numVecs){
 	  typedef typename Kokkos::MultiVectorDynamic<ORDINAL,device_type>::type mv_type;
 	  typedef typename mv_type::HostMirror h_mv_type;
 	  typedef Kokkos::View<ORDINAL* ,Kokkos::LayoutLeft,device_type >  vector_type ;
-	  typedef Kokkos::View<ORDINAL* ,Kokkos::LayoutLeft,Kokkos::Host >  h2_vector_type ;
+	  typedef Kokkos::View<ORDINAL* ,Kokkos::LayoutLeft,Kokkos::Threads >  h2_vector_type ;
 	  typedef typename vector_type::HostMirror h_vector_type;
 	  typedef typename mv_type::size_type            size_type;
 
@@ -252,7 +252,7 @@ int test_mv_add_r_ax_by(ORDINAL size, int numVecs,int A,int B){
 	  typedef typename Kokkos::MultiVectorDynamic<ORDINAL,device_type>::type mv_type;
 	  typedef typename mv_type::HostMirror h_mv_type;
 	  typedef Kokkos::View<ORDINAL* ,Kokkos::LayoutLeft,device_type >  vector_type ;
-	  typedef Kokkos::View<ORDINAL* ,Kokkos::LayoutLeft,Kokkos::Host >  h2_vector_type ;
+	  typedef Kokkos::View<ORDINAL* ,Kokkos::LayoutLeft,Kokkos::Threads >  h2_vector_type ;
 	  typedef typename vector_type::HostMirror h_vector_type;
 	  typedef typename mv_type::size_type            size_type;
 
@@ -331,7 +331,7 @@ int test_mv_mulscalar_self(ORDINAL size, int numVecs)
   typedef typename Kokkos::MultiVectorDynamic<SCALAR,device_type>::type mv_type;
   typedef typename  mv_type::HostMirror h_mv_type;
   typedef Kokkos::View<SCALAR* ,Kokkos::LayoutLeft,device_type >  vector_type ;
-  typedef Kokkos::View<SCALAR* ,Kokkos::LayoutLeft,Kokkos::Host >  h2_vector_type ;
+  typedef Kokkos::View<SCALAR* ,Kokkos::LayoutLeft,Kokkos::Threads >  h2_vector_type ;
   typedef typename vector_type::HostMirror h_vector_type;
   typedef typename mv_type::size_type            size_type;
 
@@ -385,7 +385,7 @@ int test_mv_mulscalar_diff(ORDINAL size, int numVecs)
   typedef typename Kokkos::MultiVectorDynamic<SCALAR,device_type>::type mv_type;
   typedef typename  mv_type::HostMirror h_mv_type;
   typedef Kokkos::View<SCALAR* ,Kokkos::LayoutLeft,device_type >  vector_type ;
-  typedef Kokkos::View<SCALAR* ,Kokkos::LayoutLeft,Kokkos::Host >  h2_vector_type ;
+  typedef Kokkos::View<SCALAR* ,Kokkos::LayoutLeft,Kokkos::Threads >  h2_vector_type ;
   typedef typename vector_type::HostMirror h_vector_type;
   typedef typename mv_type::size_type            size_type;
 
@@ -535,7 +535,7 @@ int main(int argc, char **argv)
 
  if(numa>1 || threads>1)
  {
-   Kokkos::Host::initialize( numa , threads );
+   Kokkos::Threads::initialize( std::pair<unsigned,unsigned>( numa , threads ) );
  }
 
  int numVecsList[10] = {1, 2, 3, 4, 5, 8, 11, 15, 16, 17};
@@ -556,6 +556,6 @@ int main(int argc, char **argv)
    printf("Kokkos::MultiVector Test: Failed\n");
 
 
- KokkosCUDA(Kokkos::Host::finalize();)
+ KokkosCUDA(Kokkos::Threads::finalize();)
  device_type::finalize(  );
 }

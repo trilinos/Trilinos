@@ -4,7 +4,7 @@
 # Simple build script with options
 #-----------------------------------------------------------------------------
 
-KOKKOS="../../array"
+KOKKOS="../../core"
 
 source ${KOKKOS}/src/build_common.sh
 

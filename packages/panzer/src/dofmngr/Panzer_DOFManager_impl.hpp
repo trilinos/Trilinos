@@ -71,7 +71,36 @@
 
 #include <boost/unordered_set.hpp> // a hash table
 
+/*
+#define HAVE_ZOLTAN2
+#ifdef HAVE_ZOLTAN2
+#include "Zoltan2_XpetraCrsGraphInput.hpp"
+#include "Zoltan2_OrderingProblem.hpp"
+#endif
+*/
+
 namespace panzer {
+
+namespace {
+template <typename LocalOrdinal,typename GlobalOrdinal>
+class HashTieBreak : public Tpetra::Details::TieBreak<LocalOrdinal,GlobalOrdinal> {
+  const unsigned int seed_;
+
+public:
+  HashTieBreak(const unsigned int seed = (2654435761U))
+    : seed_(seed) { }
+
+  virtual std::size_t selectedIndex(GlobalOrdinal GID,
+      const std::vector<std::pair<int,LocalOrdinal> > & pid_and_lid) const
+  {
+    // this is Epetra's hash/Tpetra's default hash: See Tpetra HashTable
+    int intkey = (int) ((GID & 0x000000007fffffffLL) +
+       ((GID & 0x7fffffff80000000LL) >> 31));
+    return std::size_t((seed_ ^ intkey) % pid_and_lid.size());
+  }
+};
+
+}
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -82,12 +111,12 @@ using KokkosClassic::DefaultArithmetic;
 
 template <typename LO, typename GO>
 DOFManager<LO,GO>::DOFManager()
-  : numFields_(0),buildConnectivityRun_(false),requireOrientations_(false)
+  : numFields_(0),buildConnectivityRun_(false),requireOrientations_(false), useTieBreak_(false)
 { }
 
 template <typename LO, typename GO>
 DOFManager<LO,GO>::DOFManager(const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,MPI_Comm mpiComm)
-  : numFields_(0),buildConnectivityRun_(false),requireOrientations_(false)
+  : numFields_(0),buildConnectivityRun_(false),requireOrientations_(false), useTieBreak_(false)
 { 
   setConnManager(connMngr,mpiComm);
 }
@@ -350,7 +379,7 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
     if(faConstruct.size()>0) {
       fa_fps_.push_back(rcp(new FieldAggPattern(faConstruct, ga_fp_)));
     
-      // how many global IDs are this this element block?
+      // how many global IDs are in this element block?
       int gidsInBlock = fa_fps_[fa_fps_.size()-1]->numberIds();
       elementBlockGIDCount_.push_back(gidsInBlock);
     }
@@ -425,7 +454,16 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
   
  /* 6.  Create a OneToOne map from the overlap map.
    */
-  RCP<const Map> non_overlap_map = Tpetra::createOneToOne<LO,GO,Node>(overlapmap);
+  
+  RCP<const Map> non_overlap_map;
+  if(!useTieBreak_) {
+    non_overlap_map = Tpetra::createOneToOne<LO,GO,Node>(overlapmap);
+  }
+  else {
+    // use a hash tie break to get better load balancing from create one to one
+    HashTieBreak<LO,GO> tie_break; 
+    non_overlap_map = Tpetra::createOneToOne<LO,GO,Node>(overlapmap,tie_break);
+  }
 
  /* 7.  Create a non-overlapped multivector from OneToOne map.
    */
@@ -525,6 +563,29 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
       elementGIDs_[thisID]=localOrdering;
     }
   }
+
+  //////////////////////////////////////////////////////////////////
+  // this is where the code is modified to artificially induce GIDs
+  // over 2 Billion unknowns
+  //////////////////////////////////////////////////////////////////
+  #if 0
+  {
+    panzer::Ordinal64 offset = 0xFFFFFFFFLL;
+
+    for (size_t b = 0; b < blockOrder_.size(); ++b) {
+      const std::vector<LO> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
+      for (std::size_t l = 0; l < myElements.size(); ++l) {
+        std::vector<GO> & localGIDs = elementGIDs_[myElements[l]];
+        for(std::size_t c=0;c<localGIDs.size();c++)
+          localGIDs[c] += offset;
+      }
+    }
+
+    Teuchos::ArrayRCP<GO> nvals = non_overlap_mv->get1dViewNonConst();
+    for (int j = 0; j < nvals.size(); ++j) 
+      nvals[j] += offset;
+  }
+  #endif
 
   // build owned vector
   {
@@ -687,7 +748,8 @@ const std::vector<int> & DOFManager<LO,GO>::getBlockFieldNumbers(const std::stri
 
 template <typename LO, typename GO>
 const std::pair<std::vector<int>,std::vector<int> > & 
-DOFManager<LO,GO>::getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum, int subcellDim,int subcellId) const{
+DOFManager<LO,GO>::getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum, int subcellDim,int subcellId) const
+{
   TEUCHOS_TEST_FOR_EXCEPTION(!buildConnectivityRun_,std::logic_error,"DOFManager::getGIDFieldOffsets_closure: BuildConnectivity must be run first.");
   std::map<std::string,int>::const_iterator bitr = blockNameToID_.find(blockId);
   if(bitr==blockNameToID_.end())
@@ -702,7 +764,8 @@ DOFManager<LO,GO>::getGIDFieldOffsets_closure(const std::string & blockId, int f
 }
 
 template <typename LO, typename GO>
-void DOFManager<LO,GO>::ownedIndices(const std::vector<GO> & indices,std::vector<bool> & isOwned) const{
+void DOFManager<LO,GO>::ownedIndices(const std::vector<GO> & indices,std::vector<bool> & isOwned) const
+{
   //Resizes the isOwned array.
   if(indices.size()!=isOwned.size())
     isOwned.resize(indices.size(),false);
@@ -822,7 +885,6 @@ void DOFManager<LO,GO>::buildUnknownsOrientation()
       const GO * connPtr = connMngr_->getConnectivity(elmts[e]); 
       const std::vector<GO> connectivity(connPtr,connPtr+connSz);
 
-
       orientation_helpers::computeCellEdgeOrientations(topEdgeIndices, connectivity, fieldPattern, eOrientation);
     }
   }
@@ -831,8 +893,6 @@ void DOFManager<LO,GO>::buildUnknownsOrientation()
 template <typename LO, typename GO>
 void DOFManager<LO,GO>::getElementOrientation(LO localElmtId,std::vector<double> & gidsOrientation) const
 {
-   // TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::getElementOrientation not implemented yet!");
-
    TEUCHOS_TEST_FOR_EXCEPTION(orientation_.size()==0,std::logic_error,
                               "DOFManager::getElementOrientations: Orientations were not constructed!");
 
@@ -887,6 +947,69 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::printFieldInformation(std::ostrea
       os << "      \"" << getFieldString(fieldIds[f]) << "\" is field ID " << fieldIds[f] << std::endl;
   }
 }
+
+/*
+template <typename LO,typename GO>
+Teuchos::RCP<const Tpetra::Map<LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> >
+DOFManager<LO,GO>::runLocalRCMReordering(const Teuchos::RCP<const Tpetra::Map<LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> > & map)
+{
+  typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+  typedef Tpetra::Map<LO, GO, Node> Map;
+  typedef Tpetra::CrsGraph<LO, GO, Node> Graph;
+
+  Teuchos::RCP<Graph> graph = Teuchos::rcp(new Graph(map,0));
+
+  // build Crs Graph from the mesh
+  for (size_t b = 0; b < blockOrder_.size(); ++b) {
+    if(fa_fps_[b]==Teuchos::null)
+      continue;
+
+    const std::vector<LO> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
+    for (size_t l = 0; l < myElements.size(); ++l) {
+      LO connSize = connMngr_->getConnectivitySize(myElements[l]);
+      const GO * elmtConn = connMngr_->getConnectivity(myElements[l]);
+      for (int c = 0; c < connSize; ++c) {
+        LO lid = map->getLocalElement(elmtConn[c]);
+        if(Teuchos::OrdinalTraits<LO>::invalid()!=lid)
+          continue;
+
+        graph->insertGlobalIndices(elmtConn[c],Teuchos::arrayView(elmtConn,connSize));
+      }
+    }
+  }
+ 
+  graph->fillComplete();
+
+  std::vector<GO> newOrder(map->getNodeNumElements());
+  {
+    // graph is constructed, now run RCM using zoltan2
+    typedef Zoltan2::XpetraCrsGraphInput<Graph> SparseGraphAdapter;
+
+    Teuchos::ParameterList params;
+    params.set("order_method", "rcm");
+    SparseGraphAdapter adapter(graph);
+
+    Zoltan2::OrderingProblem<SparseGraphAdapter> problem(&adapter, &params,MPI_COMM_SELF);
+    problem.solve();
+
+    // build a new global ording array using permutation
+    Zoltan2::OrderingSolution<GO,LO> * soln = problem.getSolution();
+
+    size_t dummy;
+    size_t checkLength = soln->getPermutationSize();
+    LO * checkPerm = soln->getPermutation(&dummy);
+
+    Teuchos::ArrayView<const GO > oldOrder = map->getNodeElementList();
+    TEUCHOS_ASSERT(checkLength==oldOrder.size());
+    TEUCHOS_ASSERT(checkLength==newOrder.size());
+
+    for(size_t i=0;i<checkLength;i++)
+      newOrder[checkPerm[i]] = oldOrder[i];
+  }
+
+  return Tpetra::createNonContigMap<LO,GO>(newOrder,communicator_);
+}
+*/
 
 } /*panzer*/
 

@@ -990,6 +990,9 @@ class test_TribitsGitRepos(unittest.TestCase):
 
 # Test Data
 
+g_cmndinterceptsDumpDepsXMLFile = \
+  "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+
 g_cmndinterceptsCurrentBranch = \
   "IT: eg branch; 0; '* currentbranch'\n"
 
@@ -1095,7 +1098,7 @@ g_cmndinterceptsSendFinalEmail = \
   "IT: mailx -s .*; 0; 'Do not really send email '\n"
 
 g_cmndinterceptsExtraRepo1ThroughStatusPasses = \
-  "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+  g_cmndinterceptsDumpDepsXMLFile \
   +g_cmndinterceptsCurrentBranch \
   +g_cmndinterceptsStatusPasses \
   +g_cmndinterceptsStatusPasses
@@ -1248,7 +1251,8 @@ def create_checkin_test_case_dir(testName, verbose=False):
 # Main unit test driver
 def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
   expectPass, passRegexStrList, filePassRegexStrList=None, mustHaveCheckinTestOut=True, \
-  failRegexStrList=None, fileFailRegexStrList=None, envVars=[], inPathEg=True, egVersion=True \
+  failRegexStrList=None, fileFailRegexStrList=None, envVars=[], inPathEg=True, \
+  egVersion=True \
   ):
 
   verbose = g_verbose
@@ -1379,7 +1383,8 @@ def g_test_do_all_default_builds_mpi_debug_pass(testObject, testName):
     \
     "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG --do-all",
     \
-    g_cmndinterceptsCurrentBranch \
+    g_cmndinterceptsDumpDepsXMLFile \
+    +g_cmndinterceptsCurrentBranch \
     +g_cmndinterceptsPullPasses \
     +g_cmndinterceptsConfigBuildTestPasses \
     +g_cmndinterceptsSendBuildTestCaseEmail \
@@ -1424,7 +1429,8 @@ def checkin_test_configure_test(testObject, testName, optionsStr, filePassRegexS
     +" " +optionsStr \
     ,
     \
-    g_cmndinterceptsCurrentBranch \
+    g_cmndinterceptsDumpDepsXMLFile \
+    +g_cmndinterceptsCurrentBranch \
     +"IT: eg diff --name-status origin/currentbranch; 0; '"+modifiedFilesStr+"'\n" \
     +g_cmndinterceptsConfigPasses \
     ,
@@ -1486,7 +1492,8 @@ def  g_test_ss_extra_builds_ss_do_all_pass(testObject, testName):
     +" --do-all" \
     ,
     \
-    g_cmndinterceptsCurrentBranch \
+    g_cmndinterceptsDumpDepsXMLFile \
+    +g_cmndinterceptsCurrentBranch \
     +g_cmndinterceptsPullPasses \
     +g_cmndinterceptsSendBuildTestCaseEmail \
     +g_cmndinterceptsConfigBuildTestPasses \
@@ -1586,7 +1593,8 @@ class test_checkin_test(unittest.TestCase):
       +" --do-all --push" \
       +" --execute-on-ready-to-push=\"ssh -q godel /some/dir/some_command.sh &\"",
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
@@ -1676,6 +1684,7 @@ class test_checkin_test(unittest.TestCase):
       "IT: git config --get user.email; 0; bogous@somwhere.com\n" \
       +"IT: which eg; 1; '/usr/bin/which: no eg in (path1:path2:path3)'\n" \
       +"IT: "+eg+" --version; 0; "+g_officialEgVersion+"\n" \
+      +g_cmndinterceptsDumpDepsXMLFile \
       +"IT: "+eg+" branch; 0; '* currentbranch'\n" \
       +"IT: "+eg+" status; 0; '(on master branch)'\n" \
       +"IT: "+eg+" pull; 0; 'initial eg pull passed'\n" \
@@ -1716,7 +1725,8 @@ class test_checkin_test(unittest.TestCase):
       +" --extra-pull-from=machine:/path/to/repo:master --local-do-all" \
       +" --execute-on-ready-to-push=\"ssh -q godel /some/dir/some_command.sh &\"",
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsDiffOnlyPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
@@ -1749,7 +1759,8 @@ class test_checkin_test(unittest.TestCase):
       "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG" \
       " --do-all --force-push --push",
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildPasses \
       +"IT: ctest -j5; 1; '80% tests passed, 20 tests failed out of 100'\n" \
@@ -1794,7 +1805,8 @@ class test_checkin_test(unittest.TestCase):
       +" --wipe-clean --pull" \
       ,
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +"FT: rm -rf MPI_DEBUG\n" \
       +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsSendFinalEmail \
@@ -1831,7 +1843,8 @@ class test_checkin_test(unittest.TestCase):
       " --allow-no-pull --default-builds=MPI_DEBUG" \
       " --enable-packages=Teuchos --configure", \
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsDiffOnlyPasses \
       +"FT: rm CMakeCache.txt\n" \
       +"FT: rm -rf CMakeFiles\n" \
@@ -1862,7 +1875,8 @@ class test_checkin_test(unittest.TestCase):
       +" --send-email-only-on-failure" \
       ,
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
@@ -1891,7 +1905,8 @@ class test_checkin_test(unittest.TestCase):
       \
       " --abort-gracefully-if-no-enables --do-all --push",
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPullPasses \
       +g_cmndinterceptsDiffOnlyNoChangesPasses \
       ,
@@ -1930,7 +1945,8 @@ class test_checkin_test(unittest.TestCase):
       "--make-options=-j3 --ctest-options=-j5" \
       +" --do-all --no-append-test-results --push",
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
@@ -1965,7 +1981,8 @@ class test_checkin_test(unittest.TestCase):
       "--make-options=-j3 --ctest-options=-j5" \
       +" --do-all --no-rebase --push",
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
@@ -2012,7 +2029,7 @@ class test_checkin_test(unittest.TestCase):
       "--extra-repos=preCopyrightTrilinos --allow-no-pull --without-default-builds" \
       " --extra-builds=MPI_DEBUG_SS --enable-packages=Stalix --configure", \
       \
-      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      g_cmndinterceptsDumpDepsXMLFile \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsDiffOnlyPasses \
       +g_cmndinterceptsDiffOnlyPassesPreCopyrightTrilinos \
@@ -2045,7 +2062,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "--extra-repos=preCopyrightTrilinos --allow-no-pull --default-builds=MPI_DEBUG --configure", \
       \
-      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      g_cmndinterceptsDumpDepsXMLFile \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsDiffOnlyPasses \
       +g_cmndinterceptsDiffOnlyPassesPreCopyrightTrilinos \
@@ -2123,7 +2140,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "--extra-repos=preCopyrightTrilinos --pull --extra-pull-from=somemachine:someotherbranch", \
       \
-      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      g_cmndinterceptsDumpDepsXMLFile \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -2479,7 +2496,7 @@ class test_checkin_test(unittest.TestCase):
       " --extra-repos-type=Continuous" \
       " --extra-builds=MPI_DEBUG_SS --enable-packages=Stalix --pull", \
       \
-      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      g_cmndinterceptsDumpDepsXMLFile \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -2525,7 +2542,7 @@ class test_checkin_test(unittest.TestCase):
       " --extra-repos-type=Nightly" \
       " --extra-builds=MPI_DEBUG_SS --pull", \
       \
-      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      g_cmndinterceptsDumpDepsXMLFile \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -2544,7 +2561,7 @@ class test_checkin_test(unittest.TestCase):
       "-extra-repos-file=.*ExtraReposListExisting_2.\n" \
       +"-extra-repos-type=.Nightly.\n" \
       +"Pulling in packages from extra repos: preCopyrightTrilinos,extraTrilinosRepo ...\n" \
-      +"cmake .* -DTrilinos_EXTRA_REPOSITORIES=.preCopyrightTrilinos.extraTrilinosRepo. -P .*TribitsDumpDepsXmlScript.cmake\n" \
+      +"cmake .* -DTrilinos_EXTRA_REPOSITORIES=.preCopyrightTrilinos.extraTrilinosRepo. .* -P .*/TribitsDumpDepsXmlScript.cmake\n" \
       +"projectDepsXmlFileOverride="+projectDepsXmlFileOverride+"\n" \
       +"3.a.1) Git Repo: .preCopyrightTrilinos.\n" \
       +"3.a.2) Git Repo: .extraTrilinosRepo.\n" \
@@ -2572,7 +2589,7 @@ class test_checkin_test(unittest.TestCase):
       " --extra-repos-type=Continuous" \
       " --default-builds=MPI_DEBUG --pull --configure", \
       \
-      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      g_cmndinterceptsDumpDepsXMLFile \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -2594,7 +2611,7 @@ class test_checkin_test(unittest.TestCase):
       +"-extra-repos-type=.Continuous.\n" \
       +"Pulling in packages from extra repos: preCopyrightTrilinos ...\n" \
       +"projectDepsXmlFileOverride="+projectDepsXmlFileOverride+"\n" \
-      +"cmake .* -DTrilinos_EXTRA_REPOSITORIES=.preCopyrightTrilinos. -P .*TribitsDumpDepsXmlScript.cmake\n" \
+      +"cmake .* -DTrilinos_EXTRA_REPOSITORIES=.preCopyrightTrilinos. .* -P .*/TribitsDumpDepsXmlScript.cmake\n" \
       +"Modified file: .packages/teuchos/extrastuff/ExtraTeuchosStuff.hpp.\n" \
       +"=> Enabling .Teuchos.!\n" \
       +"Full package enable list: .Teuchos.\n" \
@@ -2629,7 +2646,8 @@ class test_checkin_test(unittest.TestCase):
       " --make-options=-j3 --ctest-options=-j5" \
       " --default-builds=MPI_DEBUG --do-all --push", \
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsPullOnlyPasses \
@@ -2710,7 +2728,7 @@ class test_checkin_test(unittest.TestCase):
       " --extra-repos=preCopyrightTrilinos" \
       " --pull", \
       \
-      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      g_cmndinterceptsDumpDepsXMLFile \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -2776,7 +2794,7 @@ class test_checkin_test(unittest.TestCase):
       " --extra-repos-file="+scriptsDir+"/UnitTests/ExtraReposListExisting1Missing1.cmake" \
       " --extra-repos-type=Continuous --ignore-missing-extra-repos --pull" , \
       \
-      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      g_cmndinterceptsDumpDepsXMLFile \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -2831,7 +2849,8 @@ class test_checkin_test(unittest.TestCase):
       "--abort-gracefully-if-no-updates --do-all --pull" \
       ,
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusChangedButNotUpdatedPasses \
       +g_cmndinterceptsSendFinalEmail \
       ,
@@ -2887,12 +2906,31 @@ class test_checkin_test(unittest.TestCase):
       ("MPI_DEBUG/do-configure.base",
        "\-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\n" \
        +"\-DBUILD_SHARED:BOOL=ON\n" \
+       +"\-DTrilinos_TEST_CATEGORIES:STRING=BASIC\n" \
        +"\-DTPL_BLAS_LIBRARIES:PATH=/usr/local/libblas.a\n" \
        +"\-DTPL_LAPACK_LIBRARIES:PATH=/usr/local/liblapack.a\n"
        +"\-DMPI_BASE_DIR:PATH=/usr/lib64/openmpi/1.2.7-gcc\n" \
        +"\-DMPI_CXX_COMPILER:PATHNAME=/usr/lib64/openmpi/1.2.7-gcc/mpicxx\n" \
        +"\-DMPI_C_COMPILER:PATHNAME=/usr/lib64/openmpi/1.2.7-gcc/mpicc\n" \
        +"\-DMPI_Fortran_COMPILER:PATHNAME=/usr/lib64/openmpi/1.2.7-gcc/mpif77\n" \
+       ),
+      ]
+      )
+
+
+  def test_set_test_categories(self):
+ 
+    checkin_test_configure_test(
+      \
+      self,
+      \
+      "set_test_categories",
+      \
+      "--default-builds=MPI_DEBUG --test-categories=NIGHTLY",
+      \
+      [
+      ("MPI_DEBUG/do-configure.base",
+       "\-DTrilinos_TEST_CATEGORIES:STRING=NIGHTLY\n" \
        ),
       ]
       )
@@ -3039,7 +3077,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "--default-builds=MPI_DEBUG --pull",
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsSendFinalEmail \
       ,
@@ -3062,7 +3101,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "--default-builds=MPI_DEBUG --pull --skip-push-readiness-check",
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
       ,
       \
@@ -3084,7 +3124,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "--pull --extra-pull-from=machine:/repo/dir/repo:master",
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPullPasses \
       +"IT: eg pull machine:/repo/dir/repo master; 0; 'eg extra pull passed'\n"
       +g_cmndinterceptsDiffOnlyPasses \
@@ -3110,7 +3151,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "--extra-pull-from=machine:master",
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsSendFinalEmail \
       ,
       \
@@ -3131,7 +3173,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "--default-builds=MPI_DEBUG --pull --configure",
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
@@ -3159,7 +3202,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "--make-options=-j3 --default-builds=MPI_DEBUG --pull --configure --build",
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
@@ -3270,7 +3314,8 @@ class test_checkin_test(unittest.TestCase):
       +" --ss-extra-builds=MPI_DEBUG_SS" \
       ,
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
@@ -3312,7 +3357,8 @@ class test_checkin_test(unittest.TestCase):
       +" --extra-builds=MPI_DEBUG_SS" \
       ,
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsPullOnlyPasses \
       +"IT: eg diff --name-status origin/currentbranch; 0; 'M\tpackages/stokhos/CMakeLists.txt'\n" \
@@ -3360,7 +3406,8 @@ class test_checkin_test(unittest.TestCase):
       +" --ss-extra-builds=MPI_DEBUG_SS --enable-packages=Phalanx" \
       ,
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +g_cmndinterceptsConfigBuildTestPasses \
@@ -3411,7 +3458,8 @@ class test_checkin_test(unittest.TestCase):
       +" --ss-extra-builds=MPI_DEBUG_SS --enable-packages=Teuchos,Phalanx" \
       ,
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
@@ -3464,7 +3512,8 @@ class test_checkin_test(unittest.TestCase):
       +" --ss-extra-builds=MPI_DEBUG_SS --enable-packages=ThyraCrazyStuff" \
       ,
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
       ,
       \
@@ -3520,7 +3569,8 @@ class test_checkin_test(unittest.TestCase):
       +" --enable-packages=ThyraCrazyStuff" \
       ,
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +g_cmndinterceptsSendBuildTestCaseEmail \
@@ -3567,7 +3617,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG --push",
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsDiffOnlyPasses \
       +g_cmndinterceptsFinalPushPasses \
       +g_cmndinterceptsSendFinalEmail \
@@ -3599,7 +3650,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG",
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +"IT: eg diff --name-status origin/currentbranch; 0; 'eg diff passed'\n" \
       +g_cmndinterceptsSendFinalEmail \
       ,
@@ -3630,7 +3682,8 @@ class test_checkin_test(unittest.TestCase):
       " --default-builds=MPI_DEBUG --ss-extra-builds=MPI_DEBUG_SS --enable-packages=Phalanx" \
       ,
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsDiffOnlyPasses \
       +g_cmndinterceptsSendFinalEmail \
       ,
@@ -3662,7 +3715,8 @@ class test_checkin_test(unittest.TestCase):
       +" --push"
       ,
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsDiffOnlyPasses \
       +g_cmndinterceptsFinalPushPasses \
       +g_cmndinterceptsSendFinalEmail \
@@ -3713,12 +3767,13 @@ class test_checkin_test(unittest.TestCase):
       \
       self,
       \
-      "do_all_wrong_eg_vesion",
+      "wrong_eg_version_ignore",
       \
       "--no-eg-git-version-check --skip-push-readiness-check" \
       ,
       \
       "IT: eg --version; 1; 'eg version wrong-version'\n" \
+      +g_cmndinterceptsDumpDepsXMLFile \
       +g_cmndinterceptsCurrentBranch \
       ,
       \
@@ -3744,7 +3799,7 @@ class test_checkin_test(unittest.TestCase):
       "--enable-packages=TEuchos" \
       ,
       \
-      "" \
+      g_cmndinterceptsDumpDepsXMLFile \
       ,
       \
       False,
@@ -3764,7 +3819,7 @@ class test_checkin_test(unittest.TestCase):
       "--disable-packages=TEuchos" \
       ,
       \
-      "" \
+      g_cmndinterceptsDumpDepsXMLFile \
       ,
       \
       False,
@@ -3820,7 +3875,8 @@ class test_checkin_test(unittest.TestCase):
       "do_all_default_builds_mpi_debug_pull_fail",
       \
       "--do-all",
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +"IT: eg status; 0; 'Changed but not updated'\n" \
       ,
       \
@@ -3842,7 +3898,8 @@ class test_checkin_test(unittest.TestCase):
       "do_all_default_builds_mpi_debug_pull_fail",
       \
       "--do-all",
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +"IT: eg status; 0; 'Changes ready to be committed'\n" \
       ,
       \
@@ -3864,7 +3921,8 @@ class test_checkin_test(unittest.TestCase):
       "do_all_default_builds_mpi_debug_pull_fail",
       \
       "--do-all",
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +"IT: eg status; 0; 'Newly created unknown files'\n" \
       ,
       \
@@ -3886,7 +3944,8 @@ class test_checkin_test(unittest.TestCase):
       "do_all_default_builds_mpi_debug_pull_fail",
       \
       "--do-all",
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +"IT: eg status; 0; '(on master branch)'\n" \
       +"IT: eg pull; 1; 'eg pull failed'\n" \
       ,
@@ -3933,7 +3992,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "--default-builds=MPI_DEBUG --configure --allow-no-pull",
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsDiffOnlyPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +g_cmndinterceptsSendFinalEmail \
@@ -3970,7 +4030,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "--do-all --default-builds=MPI_DEBUG",
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
       +"IT: \./do-configure; 1; 'do-configure failed'\n" \
       +g_cmndinterceptsSendFinalEmail \
@@ -3998,7 +4059,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "--do-all --default-builds=MPI_DEBUG --make-options=-j3 --ctest-options=-j5",
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
       +"IT: \./do-configure; 0; 'do-configure passed'\n" \
       +"IT: make -j3; 1; 'make filed'\n" \
@@ -4029,7 +4091,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "--do-all --default-builds=MPI_DEBUG --make-options=-j3 --ctest-options=-j5",
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
       +"IT: \./do-configure; 0; 'do-configure passed'\n" \
       +"IT: make -j3; 0; 'make passed'\n" \
@@ -4064,7 +4127,8 @@ class test_checkin_test(unittest.TestCase):
       " --do-all --push" \
       ,
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
@@ -4099,7 +4163,8 @@ class test_checkin_test(unittest.TestCase):
       " --do-all --push" \
       ,
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
@@ -4137,7 +4202,8 @@ class test_checkin_test(unittest.TestCase):
       " --do-all --push" \
       ,
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
@@ -4174,7 +4240,8 @@ class test_checkin_test(unittest.TestCase):
       " --enable-packages=Teuchos" \
       " --make-options=-j3 --ctest-options=-j5 --do-all --push",
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsNoChangesPullPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
@@ -4215,7 +4282,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG --do-all --push",
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildPasses \
       +"IT: ctest -j5; 0; 'No tests were found!!!'\n" \
@@ -4246,7 +4314,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "--make-options=-j3 --ctest-options=-j5 --default-builds=MPI_DEBUG --local-do-all --push",
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsDiffOnlyPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
@@ -4307,7 +4376,8 @@ class test_checkin_test(unittest.TestCase):
       +" --do-all --push" \
       ,
       \
-      g_cmndinterceptsCurrentBranch \
+      g_cmndinterceptsDumpDepsXMLFile \
+      +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
       +"IT: \./do-configure; 1; 'do-configure failed'\n" \
       +g_cmndinterceptsSendBuildTestCaseEmail \
@@ -4365,7 +4435,7 @@ class test_checkin_test(unittest.TestCase):
       \
       " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --pull", \
       \
-      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      g_cmndinterceptsDumpDepsXMLFile \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -4396,7 +4466,7 @@ class test_checkin_test(unittest.TestCase):
       \
       " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --pull", \
       \
-      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      g_cmndinterceptsDumpDepsXMLFile \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -4429,7 +4499,7 @@ class test_checkin_test(unittest.TestCase):
       \
       " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --pull --extra-pull-from=ssg:master", \
       \
-      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      g_cmndinterceptsDumpDepsXMLFile \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \
@@ -4464,7 +4534,7 @@ class test_checkin_test(unittest.TestCase):
       \
       " --extra-repos=preCopyrightTrilinos --default-builds=MPI_DEBUG --pull --extra-pull-from=ssg:master", \
       \
-      "IT: .*cmake .+ -P .+/TribitsDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
+      g_cmndinterceptsDumpDepsXMLFile \
       +g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsStatusPasses \
       +g_cmndinterceptsStatusPasses \

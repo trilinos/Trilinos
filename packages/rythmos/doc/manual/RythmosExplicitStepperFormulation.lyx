@@ -145,7 +145,7 @@ name "rythmos:sec:Forward-Euler"
 \end_layout
 
 \begin_layout Standard
-Forward Euler (Expicit euler) is simply obtained by first-order differencing
+Forward Euler (Explicit Euler) is simply obtained by first-order differencing
  the time derivative
 \begin_inset Formula 
 \[
@@ -369,7 +369,7 @@ Notes:
 \begin_inset Formula $c_{i}$
 \end_inset
 
- is the fractional timestep that the approximate solution 
+ is the fractional time step that the approximate solution 
 \begin_inset Formula $X_{i}$
 \end_inset
 
@@ -378,8 +378,9 @@ Notes:
 \begin_inset Formula $c_{i}$
 \end_inset
 
- to be outside the timestep range [0,1], however it is odd for a One-Step
- methods like Runge-Kutta to have stage solutions outside the current timestep.
+ to be outside the time step range [0,1], however it is odd for a One-Step
+ methods like Runge-Kutta to have stage solutions outside the current time
+ step.
  
 \end_layout
 
@@ -423,7 +424,7 @@ e.g.
 \begin_inset Formula $\bar{f}(x_{n-1},t_{n-1})$
 \end_inset
 
-) to start the timestep.
+) to start the time step.
 \end_layout
 
 \begin_layout Enumerate
@@ -440,7 +441,7 @@ If
 \begin_inset Formula $X_{i}$
 \end_inset
 
- is given in terms of known quantites.
+ is given in terms of known quantities.
 \end_layout
 
 \begin_layout Enumerate
@@ -466,6 +467,8 @@ If
 \end_inset
 
 , the method is known as a Diagonally Implicit Runge-Kutta (DIRK) method.
+ DIRK methods require an implicit solution for each stage, but are not coupled
+ to other stages.
 \end_layout
 
 \begin_layout Enumerate
@@ -483,37 +486,24 @@ If
 
 , the method is known as a Singly Diagonally Implicit Runge-Kutta (SDIRK)
  method.
+ Like with DIRK methods, an implicit solve is needed at each stage, but
+ since 
+\begin_inset Formula $a_{ii}$
+\end_inset
+
+ is the same, some of the preportory calculations can be reused for each
+ stage.
 \end_layout
 
 \begin_layout Enumerate
 \begin_inset Formula $b_{i}$
 \end_inset
 
- indicates the weighting of the intermediate solutions, 
+ are the weighting of the intermediate solutions, 
 \begin_inset Formula $X_{i}$
 \end_inset
 
-, to obtain the solution at the end time, 
-\begin_inset Formula $x_{n}$
-\end_inset
-
-.
-\end_layout
-
-\begin_layout Enumerate
-The stage solutions, 
-\begin_inset Formula $X_{i}$
-\end_inset
-
-, are summed together to obtain the final solution, 
-\emph on
-i.e.
-\emph default
-, the coefficients, 
-\begin_inset Formula $b_{i}$
-\end_inset
-
- are a partion of unity, 
+, to obtain the final solution, and they are a partition of unity, 
 \begin_inset Formula $\sum_{i=1}^{s}b_{i}=1$
 \end_inset
 
@@ -561,9 +551,9 @@ key "AscherPetzold"
 \emph on
 e.g.
 \emph default
-, Backward Euler, Trapezoidal, and an SDIRK method.
- This is not a necessary condition for L-stability, but it is a sufficient
- condition.
+, Backward Euler and two SDIRK methods.
+ Each of the above conditions are not a necessary condition for L-stability,
+ but they are a sufficient condition.
 \end_layout
 
 \begin_layout Subsection

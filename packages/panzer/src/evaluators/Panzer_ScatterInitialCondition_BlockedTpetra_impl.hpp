@@ -103,7 +103,7 @@ panzer::ScatterInitialCondition_BlockedTpetra<panzer::Traits::Residual, Traits,S
 ScatterInitialCondition_BlockedTpetra(const Teuchos::RCP<const panzer::BlockedDOFManager<LO,GO> > & indexer,
                        const Teuchos::ParameterList& p)
   : globalIndexer_(indexer) 
-  , globalDataKey_("Residual Scatter Container")
+  , globalDataKey_("Scatter IC Container")
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ = 
@@ -158,7 +158,7 @@ void panzer::ScatterInitialCondition_BlockedTpetra<panzer::Traits::Residual, Tra
 preEvaluate(typename Traits::PreEvalData d)
 {
    // extract linear object container
-   // blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.getDataObject(globalDataKey_),true);
+   blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.getDataObject(globalDataKey_),true);
 }
 
 // **********************************************************************
@@ -182,9 +182,7 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   Teuchos::RCP<const ContainerType> blockedContainer 
-         = Teuchos::rcp_dynamic_cast<const ContainerType>(workset.linContainer,true);
-   RCP<ProductVectorBase<double> > x = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer->get_x(),true);
+   RCP<ProductVectorBase<double> > x = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_x(),true);
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -201,7 +199,7 @@ evaluateFields(typename Traits::EvalData workset)
       LIDs.resize(GIDs.size());
       for(std::size_t i=0;i<GIDs.size();i++) {
          // used for doing local ID lookups
-         RCP<const MapType> x_map = blockedContainer->getMapForBlock(GIDs[i].first);
+         RCP<const MapType> x_map = blockedContainer_->getMapForBlock(GIDs[i].first);
 
          LIDs[i] = x_map->getLocalElement(GIDs[i].second);
       }
@@ -239,7 +237,7 @@ panzer::ScatterInitialCondition_BlockedTpetra<panzer::Traits::Jacobian, Traits,S
 ScatterInitialCondition_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
                        const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
-  , globalDataKey_("Residual Scatter Container")
+  , globalDataKey_("Scatter IC Container")
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ = 

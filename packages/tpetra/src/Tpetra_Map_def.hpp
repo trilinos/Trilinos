@@ -1115,7 +1115,7 @@ namespace Tpetra {
     // Only create the Directory if it hasn't been created yet.
     // This is a collective operation.
     if (directory_.is_null ()) {
-      directory_ = rcp (new directory_type (rcp (this, false)));
+      directory_ = rcp (new directory_type (*this));
     }
   }
 
@@ -1132,7 +1132,7 @@ namespace Tpetra {
     // creation is collective too, so it's OK to create the Directory
     // on demand.
     setupDirectory ();
-    return directory_->getDirectoryEntries (GIDList, imageIDList, LIDList);
+    return directory_->getDirectoryEntries (*this, GIDList, imageIDList, LIDList);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1147,7 +1147,7 @@ namespace Tpetra {
     // creation is collective too, so it's OK to create the Directory
     // on demand.
     setupDirectory ();
-    return directory_->getDirectoryEntries (GIDList, imageIDList);
+    return directory_->getDirectoryEntries (*this, GIDList, imageIDList);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1327,14 +1327,57 @@ Tpetra::createOneToOne (Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdina
   // FIXME (mfh 20 Feb 2013) We should have a bypass for contiguous
   // Maps (which are 1-to-1 by construction).
 
-  //Based off Epetra's one to one.
+  //Based on Epetra's one to one.
 
-  Tpetra::Directory<LO, GO, Node> directory (M);
+  Tpetra::Directory<LO, GO, Node> directory (*M);
   size_t numMyElems = M->getNodeNumElements ();
   ArrayView<const GO> myElems = M->getNodeElementList ();
   Array<int> owner_procs_vec (numMyElems);
 
-  directory.getDirectoryEntries (myElems, owner_procs_vec ());
+  directory.getDirectoryEntries (*M, myElems, owner_procs_vec ());
+
+  Array<GO> myOwned_vec (numMyElems);
+  size_t numMyOwnedElems = 0;
+  for (size_t i = 0; i < numMyElems; ++i) {
+    GO GID = myElems[i];
+    int owner = owner_procs_vec[i];
+
+    if (myID == owner) {
+      myOwned_vec[numMyOwnedElems++] = GID;
+    }
+  }
+  myOwned_vec.resize (numMyOwnedElems);
+
+  const global_size_t GINV =
+    Teuchos::OrdinalTraits<global_size_t>::invalid ();
+  return rcp (new map_type (GINV, myOwned_vec (), M->getIndexBase (),
+                            M->getComm (), M->getNode ()));
+}
+
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
+Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > &M,
+                        const Tpetra::Details::TieBreak<LocalOrdinal,GlobalOrdinal> & tie_break)
+{
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+  using Teuchos::rcp;
+  typedef LocalOrdinal LO;
+  typedef GlobalOrdinal GO;
+  typedef Tpetra::Map<LO,GO,Node> map_type;
+  int myID = M->getComm()->getRank();
+
+  // FIXME (mfh 20 Feb 2013) We should have a bypass for contiguous
+  // Maps (which are 1-to-1 by construction).
+
+  //Based off Epetra's one to one.
+
+  Tpetra::Directory<LO, GO, Node> directory (*M, tie_break);
+  size_t numMyElems = M->getNodeNumElements ();
+  ArrayView<const GO> myElems = M->getNodeElementList ();
+  Array<int> owner_procs_vec (numMyElems);
+
+  directory.getDirectoryEntries (*M, myElems, owner_procs_vec ());
 
   Array<GO> myOwned_vec (numMyElems);
   size_t numMyOwnedElems = 0;
@@ -1385,7 +1428,11 @@ Tpetra::createOneToOne (Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdina
                                               const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< NODE > &node); \
   \
   template Teuchos::RCP<const Map<LO,GO,NODE> > \
-  createOneToOne (Teuchos::RCP<const Map<LO,GO,NODE> > &M);
+  createOneToOne (Teuchos::RCP<const Map<LO,GO,NODE> > &M); \
+  \
+  template Teuchos::RCP<const Map<LO,GO,NODE> > \
+  createOneToOne (const Teuchos::RCP<const Map<LO,GO,NODE> > &M, \
+                  const Tpetra::Details::TieBreak<LO,GO> & tie_break);
 
 
 //! Explicit instantiation macro supporting the Map class, on the default node for specified ordinals.

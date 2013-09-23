@@ -139,6 +139,9 @@ public:
    * Spmd-based vector implementations.
    */
   Ordinal mapCode() const;
+  
+  /** \brief Returns true if vector space is locally replicated space. */
+  bool isLocallyReplicated() const;
 
   //@}
 
@@ -192,32 +195,43 @@ protected:
   /** \brief This function must be called whenever the state of
    * <tt>this</tt> changes and some internal state must be updated.
    *
-   * @param  globalDim
-   *             [in] If <tt>globalDim > 0</tt> then this determines
-   *             the global dimension of the vector space.  If <tt>globalDim==this->localSubDim()</tt>
-   *             then this is a locally replicated vector space.  If <tt>globalDim < 0</tt> then
-   *             the global dimension is computed using a global reduction.
-   *             If <tt>this->getComm()->size()==1</tt> then this argument is ignored.
+   * @param globalDim [in] If <tt>globalDim > 0</tt> then this determines the
+   * global dimension of the vector space.  If
+   * <tt>globalDim==this->localSubDim()</tt> and <tt>this->localSubDim()</tt>
+   * is the same on every process and is > 0 then this is a locally replicated
+   * vector space.  If <tt>globalDim < 0</tt> then the global dimension is
+   * computed using a global reduction.  If
+   * <tt>this->getComm()->size()==1</tt> then this argument is ignored.
+   *
+   * @param isLocallyReplicated [in] If <tt>isLocallyReplicated==true</tt>,
+   * then tt>globalDim</tt> must be equal to <tt>this->localSubDim()</tt> on
+   * every process but no global reduction will be done to verify this.  If
+   * <tt>false</tt>, an global reduction is used to automatically determine if
+   * <tt>globalDim == this->localSubDim()</tt> on every process and therefore
+   * construct a locally replicated vector space.
    *
    * Note that calling this function may involve one or more global reductions
    * being called if this is parallel vector space so it should only be called
-   * when needed by subclasses.
+   * when needed by subclasses and RCP should be use to share a constructed VS
+   * with lots of clients.
    *
    * Usually, this operation only needs to be called once for every
    * *new* parallel vector space constructed and very few parallel
    * vector spaces will be created per application usually.
    */
-  virtual void updateState( const Ordinal globalDim );
+  virtual void updateState(const Ordinal globalDim,
+    const bool isLocallyReplicated = false);
 
 private:
 
   // //////////////////////////////////////
   // Private data members
 
-  Ordinal     mapCode_;    // < 0 is a flag that everything needs initialized
-  Ordinal     defaultLocalOffset_;
-  Ordinal     defaultGlobalDim_;
-  Ordinal     localSubDim_;
+  Ordinal mapCode_;    // < 0 is a flag that everything needs initialized
+  Ordinal defaultLocalOffset_;
+  Ordinal defaultGlobalDim_;
+  Ordinal localSubDim_;
+  bool isLocallyReplicated_;
 
   Teuchos::RCP< const VectorSpaceFactoryBase<Scalar> >  smallVecSpcFcty_;
   

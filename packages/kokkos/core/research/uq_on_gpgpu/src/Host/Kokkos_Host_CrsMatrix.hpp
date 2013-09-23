@@ -52,12 +52,12 @@ namespace Impl {
 
 template< typename MatrixValue , typename VectorValue >
 class Multiply<
-  CrsMatrix< MatrixValue , Host > ,
-  Kokkos::View< VectorValue[] , Host > ,
-  Kokkos::View< VectorValue[] , Host > >
+  CrsMatrix< MatrixValue , Threads > ,
+  Kokkos::View< VectorValue[] , Threads > ,
+  Kokkos::View< VectorValue[] , Threads > >
 {
 public:
-  typedef Host                                      device_type ;
+  typedef Threads                                      device_type ;
   typedef device_type::size_type                    size_type ;
   typedef View< VectorValue[] , device_type >  vector_type ;
   typedef CrsMatrix< MatrixValue , device_type >    matrix_type ;
@@ -102,12 +102,12 @@ public:
 
 template< typename MatrixValue , typename VectorValue >
 class MMultiply<
-  CrsMatrix< MatrixValue , Host > ,
-  Kokkos::View< VectorValue** , LayoutLeft, Host > ,
-  Kokkos::View< VectorValue** , LayoutLeft, Host > >
+  CrsMatrix< MatrixValue , Threads > ,
+  Kokkos::View< VectorValue** , LayoutLeft, Threads > ,
+  Kokkos::View< VectorValue** , LayoutLeft, Threads > >
 {
 public:
-  typedef Host                                             device_type ;
+  typedef Threads                                             device_type ;
   typedef device_type::size_type                           size_type ;
   typedef View< VectorValue** , LayoutLeft, device_type >  multi_vector_type ;
   typedef CrsMatrix< MatrixValue , device_type >           matrix_type ;
@@ -185,12 +185,12 @@ public:
 
 template< typename MatrixValue , typename VectorValue >
 class MMultiply<
-  CrsMatrix< MatrixValue , Host > ,
-  Kokkos::View< VectorValue[] , Host > ,
-  Kokkos::View< VectorValue[] , Host > >
+  CrsMatrix< MatrixValue , Threads > ,
+  Kokkos::View< VectorValue[] , Threads > ,
+  Kokkos::View< VectorValue[] , Threads > >
 {
 public:
-  typedef Host                                             device_type ;
+  typedef Threads                                             device_type ;
   typedef device_type::size_type                           size_type ;
   typedef View< VectorValue[] , device_type >              vector_type ;
   typedef CrsMatrix< MatrixValue , device_type >           matrix_type ;
@@ -243,10 +243,10 @@ public:
 };
 
 template< typename MatrixValue>
-class MatrixMarketWriter<MatrixValue,Host>
+class MatrixMarketWriter<MatrixValue,Threads>
 {
 public:
-  typedef Host                                      device_type ;
+  typedef Threads                                      device_type ;
   typedef device_type::size_type                    size_type ;
   typedef CrsMatrix< MatrixValue , device_type >    matrix_type ;
 

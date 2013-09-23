@@ -122,6 +122,7 @@ APPEND_SET(HEADERS
   NOX_Solver_TrustRegionBased.H
   NOX_Solver_InexactTrustRegionBased.H
   NOX_Solver_TensorBased.H
+  NOX_Solver_AndersonAcceleration.H
   NOX_Solver_PrePostOperator.H
   )
 APPEND_SET(SOURCES
@@ -131,6 +132,7 @@ APPEND_SET(SOURCES
   NOX_Solver_TrustRegionBased.C
   NOX_Solver_InexactTrustRegionBased.C
   NOX_Solver_TensorBased.C
+  NOX_Solver_AndersonAcceleration.C
   NOX_Solver_PrePostOperator.C
   )
 
@@ -181,6 +183,7 @@ APPEND_SET(HEADERS
   NOX_Version.H
   NOX_GlobalData.H
   NOX_PrePostOperator_Vector.H
+  NOX_Assert.H
   )
 APPEND_SET(SOURCES
   NOX_Utils.C

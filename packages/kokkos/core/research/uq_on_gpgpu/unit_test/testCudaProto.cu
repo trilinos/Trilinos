@@ -49,7 +49,6 @@
 #include <string>
 
 #include <Kokkos_Cuda.hpp>
-#include <Kokkos_Host.hpp>
 
 #include <impl/Kokkos_Timer.hpp>
 

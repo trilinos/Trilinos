@@ -63,6 +63,7 @@
 #include <EpetraExt_MultiVectorOut.h>
 #include <EpetraExt_CrsMatrixIn.h>
 #include <EpetraExt_MultiVectorIn.h>
+#include <EpetraExt_BlockMapIn.h>
 #include <Xpetra_EpetraUtils.hpp>
 #include <Xpetra_EpetraMultiVector.hpp>
 #endif // HAVE_MUELU_EPETRAEXT
@@ -99,9 +100,6 @@
 #include <ml_operator.h>
 #include <ml_epetra_utils.h>
 #endif
-
-#define scan(rcpComm, in, out)                                        \
-  Teuchos::scan(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
 
 namespace MueLu {
 
@@ -196,6 +194,14 @@ namespace MueLu {
       throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
     }
   }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  const Epetra_Map& Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Map2EpetraMap(const Map& map) {
+    RCP<const Xpetra::EpetraMap> xeMap = rcp_dynamic_cast<const Xpetra::EpetraMap>(rcpFromRef(map));
+    if (xeMap == Teuchos::null)
+      throw Exceptions::BadCast("Utils::Map2EpetraMap : Cast from Xpetra::Map to Xpetra::EpetraMap failed");
+    return xeMap->getEpetra_Map();
+  }
 #endif
 
 #ifdef HAVE_MUELU_TPETRA
@@ -236,7 +242,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2TpetraCrs(RCP<Matrix> Op) {
+  RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2TpetraCrs(RCP<const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Op) {
     // Get the underlying Tpetra Mtx
     RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(Op);
     if (crsOp == Teuchos::null)
@@ -287,6 +293,14 @@ namespace MueLu {
       throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
     }
   }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal,Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Map2TpetraMap(const Map& map) {
+    const RCP<const TpetraMap>& tmp_TMap = rcp_dynamic_cast<const TpetraMap>(rcpFromRef(map));
+    if (tmp_TMap == Teuchos::null)
+      throw Exceptions::BadCast("Utils::Map2TpetraMap : Cast from Xpetra::Map to Xpetra::TpetraMap failed");
+    return tmp_TMap->getTpetra_Map();
+  }
 #endif
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -294,6 +308,7 @@ namespace MueLu {
   Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Multiply(const Matrix& A, bool transposeA,
                                                                           const Matrix& B, bool transposeB,
                                                                           RCP<Matrix> C_in,
+                                                                          Teuchos::FancyOStream &fos,
                                                                           bool doFillComplete,
                                                                           bool doOptimizeStorage,
                                                                           bool allowMLMultiply) {
@@ -310,7 +325,7 @@ namespace MueLu {
     if (allowMLMultiply && B.getDomainMap()->lib() == Xpetra::UseEpetra && !transposeA && !transposeB) {
       RCP<const Epetra_CrsMatrix> epA = Op2EpetraCrs(rcpFromRef(A));
       RCP<const Epetra_CrsMatrix> epB = Op2EpetraCrs(rcpFromRef(B));
-      RCP<Epetra_CrsMatrix>       epC = MLTwoMatrixMultiply(*epA, *epB);
+      RCP<Epetra_CrsMatrix>       epC = MLTwoMatrixMultiply(*epA, *epB, fos);
 
       RCP<Matrix> C = Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(epC);
       if (doFillComplete) {
@@ -343,9 +358,7 @@ namespace MueLu {
           totalNnz = minNnz;
         nnzPerRow = totalNnz / A.getGlobalNumRows();
 
-        RCP<Teuchos::FancyOStream> fos = MakeFancy(std::cout);
-        fos->setOutputToRootOnly(0);
-        *fos << "Utils::Multiply : Estimate for nnz per row of product matrix = " << Teuchos::as<LO>(nnzPerRow) << std::endl;
+        fos << "Utils::Multiply : Estimate for nnz per row of product matrix = " << Teuchos::as<LO>(nnzPerRow) << std::endl;
       }
 
       if (transposeA) C = MatrixFactory::Build(A.getDomainMap(), Teuchos::as<LO>(nnzPerRow));
@@ -353,7 +366,7 @@ namespace MueLu {
 
     } else {
       C->resumeFill(); // why this is not done inside of Tpetra MxM?
-      std::cout << "Reuse C pattern" << std::endl;
+      fos << "Reuse C pattern" << std::endl;
     }
 
     Xpetra::MatrixMatrix::Multiply(A, transposeA, B, transposeB, *C, doFillComplete, doOptimizeStorage);
@@ -364,16 +377,15 @@ namespace MueLu {
     C->CreateView("stridedMaps", rcpFromRef(A), transposeA, rcpFromRef(B), transposeB);
 
     return C;
-  }
+  } //Multiply()
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Epetra_CrsMatrix> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLTwoMatrixMultiply(const Epetra_CrsMatrix& epA, const Epetra_CrsMatrix& epB) {
+  RCP<Epetra_CrsMatrix> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLTwoMatrixMultiply(const Epetra_CrsMatrix& epA, const Epetra_CrsMatrix& epB, Teuchos::FancyOStream &fos) {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_ML)
     ML_Comm* comm;
     ML_Comm_Create(&comm);
-    if (comm->ML_mypid == 0)
-      std::cout << "****** USING ML's MATRIX MATRIX MULTIPLY (LNM version) ******" << std::endl;
+    fos << "****** USING ML's MATRIX MATRIX MULTIPLY (LNM version) ******" << std::endl;
 #ifdef HAVE_MPI
     // ML_Comm uses MPI_COMM_WORLD, so try to use the same communicator as epA.
     const Epetra_MpiComm * Mcomm = dynamic_cast<const Epetra_MpiComm*>(&(epA.Comm()));
@@ -386,8 +398,8 @@ namespace MueLu {
     const Epetra_CrsMatrix& A = Atransform(const_cast<Epetra_CrsMatrix&>(epA));
     const Epetra_CrsMatrix& B = Btransform(const_cast<Epetra_CrsMatrix&>(epB));
 
-    if (!A.Filled())    throw Exceptions::RuntimeError("A has to be FillCompeleted");
-    if (!B.Filled())    throw Exceptions::RuntimeError("B has to be FillCompeleted");
+    if (!A.Filled())    throw Exceptions::RuntimeError("A has to be FillCompleted");
+    if (!B.Filled())    throw Exceptions::RuntimeError("B has to be FillCompleted");
 
     // create ML operators from EpetraCrsMatrix
     ML_Operator* ml_As = ML_Operator_Create(comm);
@@ -533,7 +545,8 @@ namespace MueLu {
           RCP<CrsMatrixWrap> crop1 = rcp(new CrsMatrixWrap(crmat1));
           RCP<CrsMatrixWrap> crop2 = rcp(new CrsMatrixWrap(crmat2));
 
-          RCP<Matrix> temp = MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Multiply(*crop1, false, *crop2, false);
+          RCP<Matrix> temp = MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Multiply(*crop1, false, *crop2, false,
+          *(Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout))));
 
           // sum up
           MueLu::Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd(*temp, false, 1.0, *Cij, 1.0);
@@ -708,7 +721,7 @@ namespace MueLu {
   } //Write
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Read(const std::string& fileName, const RCP<const Map>& map){
+  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ReadMultiVector(const std::string& fileName, const RCP<const Map>& map){
     Xpetra::UnderlyingLib lib = map->lib();
 
     if (lib == Xpetra::UseEpetra) {
@@ -736,8 +749,37 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >
+  Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ReadMap(const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm) {
+    if (lib == Xpetra::UseEpetra) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, ::Xpetra::Exceptions::BadCast, "Epetra can only be used with Scalar=double and Ordinal=int");
+    } else if (lib == Xpetra::UseTpetra) {
+#ifdef HAVE_MUELU_TPETRA
+      typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> sparse_matrix_type;
+      typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type>                          reader_type;
+
+      RCP<Node> node = rcp(new Node());
+
+      RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > tMap = reader_type::readMapFile(fileName, comm, node);
+      if (tMap.is_null())
+        throw Exceptions::RuntimeError("The Tpetra::Map returned from readSparseFile() is null.");
+
+      return Xpetra::toXpetra(tMap);
+#else
+      throw Exceptions::RuntimeError("MueLu has not been compiled with Tpetra support.");
+#endif
+    } else {
+      throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
+    }
+
+    return Teuchos::null;
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >
   Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Read(const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm, bool binary) {
+
     if (binary == false) {
       // Matrix Market file format (ASCII)
       if (lib == Xpetra::UseEpetra) {
@@ -757,13 +799,18 @@ namespace MueLu {
 #endif
       } else if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
-        typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> sparse_matrix_type;
+//        typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::SerialNode, typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Kokkos::SerialNode>::SparseOps> sparse_matrix_type;
+	typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> sparse_matrix_type;
+
         typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
 
-        RCP<Node> node = Xpetra::DefaultPlatform::getDefaultPlatform().getNode();
+        //RCP<Node> node = Xpetra::DefaultPlatform::getDefaultPlatform().getNode();
+	Teuchos::ParameterList pl = Teuchos::ParameterList();
+	RCP<Node> node = rcp(new Node(pl));
         bool callFillComplete = true;
 
         RCP<sparse_matrix_type> tA = reader_type::readSparseFile(fileName, comm, node, callFillComplete);
+
         if (tA.is_null())
           throw Exceptions::RuntimeError("The Tpetra::CrsMatrix returned from readSparseFile() is null.");
 
@@ -793,16 +840,24 @@ namespace MueLu {
 
       TEUCHOS_TEST_FOR_EXCEPTION(sizeof(int) != sizeof(GO), Exceptions::RuntimeError, "Incompatible sizes");
 
-      Teuchos::Array<GO>     inds;
-      Teuchos::Array<double> vals;
+      Teuchos::Array<GO> inds;
+      Teuchos::Array<SC> vals;
       for (int i = 0; i < m; i++) {
         int row, rownnz;
         ifs.read(reinterpret_cast<char*>(&row),    sizeof(row));
         ifs.read(reinterpret_cast<char*>(&rownnz), sizeof(rownnz));
         inds.resize(rownnz);
         vals.resize(rownnz);
-        for (int j = 0; j < rownnz; j++) ifs.read(reinterpret_cast<char*>(&inds[0]+j), sizeof(inds[j]));
-        for (int j = 0; j < rownnz; j++) ifs.read(reinterpret_cast<char*>(&vals[0]+j), sizeof(vals[j]));
+        for (int j = 0; j < rownnz; j++) {
+          int index;
+          ifs.read(reinterpret_cast<char*>(&index), sizeof(index));
+          inds[j] = Teuchos::as<GO>(index);
+        }
+        for (int j = 0; j < rownnz; j++) {
+          double value;
+          ifs.read(reinterpret_cast<char*>(&value), sizeof(value));
+          vals[j] = Teuchos::as<SC>(value);
+        }
         A->insertGlobalValues(row, inds, vals);
       }
       A->fillComplete();
@@ -810,10 +865,86 @@ namespace MueLu {
     }
 
     return Teuchos::null;
+
   } //Read()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >
+  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Read(const std::string&   fileName,
+                                                                      const RCP<const Map> rowMap,
+                                                                            RCP<const Map> colMap,
+                                                                      const RCP<const Map> domainMap,
+                                                                      const RCP<const Map> rangeMap,
+                                                                      const bool           callFillComplete,
+                                                                      const bool           tolerant,
+                                                                      const bool           debug
+                                                                     ) {
+    TEUCHOS_TEST_FOR_EXCEPTION(rowMap.is_null(), Exceptions::RuntimeError, "Utils::Read() : rowMap cannot be null");
+
+    RCP<const Map> domain = (domainMap.is_null() ? rowMap : domainMap);
+    RCP<const Map> range  = (rangeMap .is_null() ? rowMap : rangeMap);
+
+    const Xpetra::UnderlyingLib lib = rowMap->lib();
+    if (lib == Xpetra::UseEpetra) {
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
+      Epetra_CrsMatrix *eA;
+      const RCP<const Epetra_Comm> epcomm = Xpetra::toEpetra(rowMap->getComm());
+      const Epetra_Map& epetraRowMap    = Map2EpetraMap(*rowMap);
+      const Epetra_Map& epetraDomainMap = (domainMap.is_null() ? epetraRowMap : Map2EpetraMap(*domainMap));
+      const Epetra_Map& epetraRangeMap  = (rangeMap .is_null() ? epetraRowMap : Map2EpetraMap(*rangeMap));
+      int rv;
+      if (colMap.is_null()) {
+        rv = EpetraExt::MatrixMarketFileToCrsMatrix(fileName.c_str(), epetraRowMap, epetraRangeMap, epetraDomainMap, eA);
+
+      } else {
+        const Epetra_Map& epetraColMap  = Map2EpetraMap(*colMap);
+        rv = EpetraExt::MatrixMarketFileToCrsMatrix(fileName.c_str(), epetraRowMap, epetraColMap, epetraRangeMap, epetraDomainMap, eA);
+      }
+
+      if (rv != 0)
+        throw Exceptions::RuntimeError("EpetraExt::MatrixMarketFileToCrsMatrix return value of " + toString(rv));
+
+      RCP<Epetra_CrsMatrix> tmpA = rcp(eA);
+      RCP<Matrix>           A    = Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(tmpA);
+
+      return A;
+#else
+      throw Exceptions::RuntimeError("MueLu has not been compiled with Epetra and EpetraExt support.");
+#endif
+    } else if (lib == Xpetra::UseTpetra) {
+#ifdef HAVE_MUELU_TPETRA
+      typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> sparse_matrix_type;
+      typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type>                          reader_type;
+      typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>                            map_type;
+
+      const RCP<const map_type> tpetraRowMap    = Map2TpetraMap(*rowMap);
+      RCP<const map_type>       tpetraColMap    = (colMap.is_null()    ? Teuchos::null : Map2TpetraMap(*colMap));
+      const RCP<const map_type> tpetraRangeMap  = (rangeMap.is_null()  ? tpetraRowMap  : Map2TpetraMap(*rangeMap));
+      const RCP<const map_type> tpetraDomainMap = (domainMap.is_null() ? tpetraRowMap  : Map2TpetraMap(*domainMap));
+
+      RCP<sparse_matrix_type> tA = reader_type::readSparseFile(fileName, tpetraRowMap, tpetraColMap, tpetraDomainMap, tpetraRangeMap,
+                                                               callFillComplete, tolerant, debug);
+      if (tA.is_null())
+        throw Exceptions::RuntimeError("The Tpetra::CrsMatrix returned from readSparseFile() is null.");
+
+      RCP<TpetraCrsMatrix> tmpA1 = rcp(new TpetraCrsMatrix(tA));
+      RCP<CrsMatrix>       tmpA2 = rcp_implicit_cast<CrsMatrix>(tmpA1);
+      RCP<Matrix>          A     = rcp(new CrsMatrixWrap(tmpA2));
+
+      return A;
+#else
+      throw Exceptions::RuntimeError("MueLu has not been compiled with Tpetra support.");
+#endif
+    } else {
+      throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
+    }
+
+    return Teuchos::null;
+  } //Read
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write(const std::string& fileName, const MultiVector& x) {
+
     std::string mapfile = "map_" + fileName;
     Write(mapfile, *(x.getMap()));
 
@@ -872,6 +1003,7 @@ namespace MueLu {
 #endif // HAVE_MUELU_TPETRA
 
     throw Exceptions::BadCast("Could not cast to EpetraMultiVector or TpetraMultiVector in matrix writing");
+
   } //Write
 
 #include <unistd.h>
@@ -1242,7 +1374,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd(const Matrix& A, bool transposeA, SC const &alpha,
                            const Matrix& B, bool transposeB, SC const &beta,
-                           RCP<Matrix>& C, bool AHasFixedNnzPerRow) {
+                           RCP<Matrix>& C, Teuchos::FancyOStream & fos, bool AHasFixedNnzPerRow) {
     if (!(A.getRowMap()->isSameAs(*(B.getRowMap()))))
       throw Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same.");
 
@@ -1253,9 +1385,6 @@ namespace MueLu {
       size_t maxNzInA     = A.getGlobalMaxNumRowEntries();
       size_t maxNzInB     = B.getGlobalMaxNumRowEntries();
       size_t numLocalRows = A.getNodeNumRows();
-
-      RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-      fos->setOutputToRootOnly(0);
 
       if (maxNzInA == 1 || maxNzInB == 1 || AHasFixedNnzPerRow) {
         // first check if either A or B has at most 1 nonzero per row
@@ -1271,7 +1400,7 @@ namespace MueLu {
             exactNnzPerRow[i] = A.getNumEntriesInLocalRow(Teuchos::as<LO>(i)) + maxNzInB;
         }
 
-        *fos << "Utils::TwoMatrixAdd : special case detected (one matrix has a fixed nnz per row)"
+        fos << "Utils::TwoMatrixAdd : special case detected (one matrix has a fixed nnz per row)"
              << ", using static profiling" << std::endl;
         C = rcp(new CrsMatrixWrap(A.getRowMap(), exactNnzPerRow, Xpetra::StaticProfile));
 
@@ -1286,15 +1415,15 @@ namespace MueLu {
         //possible nnz's in any single row of the result.
         Xpetra::ProfileType pft = (maxPossible) > nnzToAllocate ? Xpetra::DynamicProfile : Xpetra::StaticProfile;
 
-        *fos << "nnzPerRowInA = " << nnzPerRowInA << ", nnzPerRowInB = " << nnzPerRowInB << std::endl;
-        *fos << "Utils::TwoMatrixAdd : space allocated per row = " << nnzToAllocate
+        fos << "nnzPerRowInA = " << nnzPerRowInA << ", nnzPerRowInB = " << nnzPerRowInB << std::endl;
+        fos << "Utils::TwoMatrixAdd : space allocated per row = " << nnzToAllocate
              << ", max possible nnz per row in sum = " << maxPossible
              << ", using " << (pft == Xpetra::DynamicProfile ? "dynamic" : "static" ) << " profiling"
              << std::endl;
         C = rcp(new CrsMatrixWrap(A.getRowMap(), nnzToAllocate, pft));
       }
       if (transposeB)
-        *fos << "Utils::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
+        fos << "Utils::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
     }
 
     if (C->getRowMap()->lib() == Xpetra::UseEpetra) {

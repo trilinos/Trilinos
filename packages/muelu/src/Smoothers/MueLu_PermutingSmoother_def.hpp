@@ -72,58 +72,56 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  PermutingSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PermutingSmoother(std::string const & mapName, const RCP<const FactoryBase> & mapFact, std::string const & type, Teuchos::ParameterList const & paramList, LO const & overlap, RCP<FactoryBase> permFact)
+  PermutingSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PermutingSmoother(const std::string& mapName, const RCP<const FactoryBase>& mapFact, const std::string& type, const Teuchos::ParameterList& paramList, const LO& overlap, RCP<FactoryBase> permFact)
   : type_(type), paramList_(paramList), overlap_(overlap), permQT_(Teuchos::null), permP_(Teuchos::null), diagScalingOp_(Teuchos::null)
   {
     permFact_ = permFact;
-    if(permFact_ == Teuchos::null)
-    {
+    if (permFact_ == Teuchos::null) {
       RCP<PermutationFactory> newPermFact = Teuchos::rcp(new PermutationFactory());
-      newPermFact->SetParameter("PermutationRowMapName",Teuchos::ParameterEntry(mapName));
-      newPermFact->SetFactory("PermutationRowMapFactory", mapFact);
+      newPermFact->SetParameter("PermutationRowMapName",    Teuchos::ParameterEntry(mapName));
+      newPermFact->SetFactory  ("PermutationRowMapFactory", mapFact);
       permFact_ = newPermFact;
     }
+
+    // create internal smoother
+    if (type_ == "ILU") {
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
+      s_ = MueLu::GetIfpackSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(type_, paramList_, overlap_);
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::PermutingSmoother requires Epetra and Ifpack.");
+#endif
+    } else {
+      s_ = Teuchos::rcp(new TrilinosSmoother(type_, paramList_, overlap_));
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(s_ == Teuchos::null, Exceptions::RuntimeError, "");
+
+    // Use permuted matrix A
+    s_->SetFactory("A", permFact_);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   PermutingSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~PermutingSmoother() { }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void PermutingSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
-
-    currentLevel.DeclareInput("permP", permFact_.get());
-    currentLevel.DeclareInput("permQT", permFact_.get());
-    currentLevel.DeclareInput("A", permFact_.get()); // this is the permuted and scaled A!!!
+  void PermutingSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& currentLevel) const {
+    currentLevel.DeclareInput("permP",       permFact_.get());
+    currentLevel.DeclareInput("permQT",      permFact_.get());
     currentLevel.DeclareInput("permScaling", permFact_.get());
+
+    s_->DeclareInput(currentLevel);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void PermutingSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level &currentLevel) {
+  void PermutingSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level& currentLevel) {
     FactoryMonitor monitor(*this, "Permuting Smoother", currentLevel);
 
     if (SmootherPrototype::IsSetup() == true)
       this->GetOStream(Warnings0, 0) << "Warning: MueLu::PermutingSmoother::Setup(): Setup() has already been called" << std::endl;
 
     // extract information from level class
-    RCP<Matrix>      A = currentLevel.Get< RCP<Matrix> >("A",            permFact_.get());
-    permP_  = currentLevel.Get< RCP<Matrix> >           ("permP",        permFact_.get());
-    permQT_ = currentLevel.Get< RCP<Matrix> >           ("permQT",       permFact_.get());
-    diagScalingOp_ = currentLevel.Get< RCP<Matrix> >    ("permScaling",  permFact_.get());
-
-    // create internal smoother
-    if(type_ == "ILU") {
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
-      s_ = MueLu::GetIfpackSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(type_, paramList_,overlap_,permFact_);
-      //s_->SetFactory("A", permFact_);
-#else
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::PermutingSmoother::Setup(): requires Epetra and Ifpack.");
-#endif
-    } else {
-      s_ = Teuchos::rcp(new TrilinosSmoother(type_, paramList_, overlap_, permFact_));
-      //s_->SetFactory("A", permFact_); // use permuted matrix A!
-    }
-
-    TEUCHOS_TEST_FOR_EXCEPTION(s_ == Teuchos::null, Exceptions::RuntimeError, "");
+    permP_         = currentLevel.Get< RCP<Matrix> > ("permP",       permFact_.get());
+    permQT_        = currentLevel.Get< RCP<Matrix> > ("permQT",      permFact_.get());
+    diagScalingOp_ = currentLevel.Get< RCP<Matrix> > ("permScaling", permFact_.get());
 
     s_->Setup(currentLevel);
 
@@ -131,19 +129,19 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void PermutingSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero) const
-  {
+  void PermutingSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::PermutingSmoother::Apply(): Setup() has not been called");
-    TEUCHOS_TEST_FOR_EXCEPTION(s_ == Teuchos::null, Exceptions::RuntimeError, "IsSetup() == true but s_ == Teuchos::null. This does not make sense");
 
-    Teuchos::RCP<MultiVector> Xtemp = MultiVectorFactory::Build(X.getMap(),1,true);
-    Xtemp->update(1.0,X,0.0);
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+
+    Teuchos::RCP<MultiVector> Xtemp = MultiVectorFactory::Build(X.getMap(), 1, true);
+    Xtemp->update(STS::one(), X, STS::zero());
 
     // TODO: unify scaling and left permutation operator
-    Teuchos::RCP<MultiVector> Btemp = MultiVectorFactory::Build(B.getMap(),1,true);
-    Teuchos::RCP<MultiVector> Btemp2 = MultiVectorFactory::Build(B.getMap(),1,true);
-    permP_->apply(B, *Btemp, Teuchos::NO_TRANS);   // apply permutation operator to rhs
-    diagScalingOp_->apply(*Btemp,*Btemp2, Teuchos::NO_TRANS);  // apply scaling operator to rhs
+    Teuchos::RCP<MultiVector> Btemp  = MultiVectorFactory::Build(B.getMap(), 1, true);
+    Teuchos::RCP<MultiVector> Btemp2 = MultiVectorFactory::Build(B.getMap(), 1, true);
+    permP_->apply(B, *Btemp, Teuchos::NO_TRANS);                // apply permutation operator to rhs
+    diagScalingOp_->apply(*Btemp, *Btemp2, Teuchos::NO_TRANS);  // apply scaling operator to rhs
 
     // apply smoother to permuted linear system
     s_->Apply(*Xtemp, *Btemp2, InitialGuessIsZero);
@@ -154,7 +152,7 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > PermutingSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Copy() const {
-    return rcp( new PermutingSmoother(*this) );
+    return rcp(new PermutingSmoother(*this));
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

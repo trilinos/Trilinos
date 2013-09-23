@@ -54,7 +54,6 @@ int file_must_exist = 0; /* Global used by include/conditional include */
 #define LINENUM_INC	ap_file_list[nfile].lineno++
 
 static int get_input(char *buf, int size);
-
 #define YY_INPUT(buf,result,max_size) \
   if ( YY_CURRENT_BUFFER_LVALUE->yy_is_interactive ) {	\
     result = get_input(buf, max_size); \
@@ -83,6 +82,8 @@ char  *temp_f, *tmpstr;
 extern char *get_temp_filename(void);
 extern FILE *open_file(char *file, char *mode);
 extern FILE *check_open_file(char *file, char *mode);
+extern int   check_valid_var(char *var);
+void bad_variable_syntax(char *string);
  
 #define MAX_IF_NESTING 64
 
@@ -137,7 +138,7 @@ integer {D}+({E})?
 
 <GET_LOOP_VAR>{
   {number}")".*"\n" | 
-  {integer}")}".*"\n" {
+	    {integer}")}".*"\n" {
     /* Loop control defined by integer */
     char *pt = strchr(yytext, ')');
     *pt = '\0';
@@ -162,23 +163,28 @@ integer {D}+({E})?
     symrec *s;
     char *pt = strchr(yytext, ')');
     *pt = '\0';
-    s = getsym(yytext);
+    if (!check_valid_var(yytext)) {
+      bad_variable_syntax(yytext);
+      BEGIN(LOOP_SKIP);
+    } else {
+      s = getsym(yytext);
     
-    if (s == 0 || (s->type != SVAR && s->type != IMMSVAR && s->value.var == 0.))
-      {
-	BEGIN(LOOP_SKIP);
-      }
-    else /* Value defined and != 0. */
-      {
-	ap_file_list[nfile+1].loop_count = s->value.var;
-	temp_f = get_temp_filename();
-	tmp_file = open_file(temp_f, "w");
-	loop_lvl++;
-	BEGIN(LOOP);
-      }
+      if (s == 0 || (s->type != SVAR && s->type != IMMSVAR && s->value.var == 0.))
+	{
+	  BEGIN(LOOP_SKIP);
+	}
+      else /* Value defined and != 0. */
+	{
+	  ap_file_list[nfile+1].loop_count = s->value.var;
+	  temp_f = get_temp_filename();
+	  tmp_file = open_file(temp_f, "w");
+	  loop_lvl++;
+	  BEGIN(LOOP);
+	}
+    }
     LINENUM_INC;
   }
- } /* End of <GET_LOOP_VAR> start condition block */
+} /* End of <GET_LOOP_VAR> start condition block */
 
 <LOOP>{
   {WS}"{"[Ee]"nd"[Ll]"oop".*"\n" {
@@ -674,6 +680,14 @@ void redefined_warning (symrec *var)
              "Aprepro: WARN: %s Variable '%s' redefined (%s, line %d)\n",
 	     var->isInternal ? "Pre-defined" : "User-defined",
              var->name, ap_file_list[nfile].name, ap_file_list[nfile].lineno + 1);
+}
+
+void bad_variable_syntax(char *string)
+{
+  if (ap_options.warning_msg == True)
+    fprintf (stderr,
+	     "Aprepro: WARN: Invalid variable name syntax '%s' (%s, line %d)\n",
+	     string, ap_file_list[nfile].name, ap_file_list[nfile].lineno + 1);
 }
 
 void warning (char *string)

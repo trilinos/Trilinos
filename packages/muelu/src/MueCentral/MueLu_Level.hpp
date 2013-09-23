@@ -46,6 +46,8 @@
 #ifndef MUELU_LEVEL_HPP
 #define MUELU_LEVEL_HPP
 
+#include <Xpetra_Map.hpp>               // for UnderlyingLib definition
+
 #include "MueLu_BoostGraphviz.hpp"
 
 #include "MueLu_KeepType.hpp"
@@ -90,7 +92,7 @@ namespace MueLu {
 
     Level() : levelID_(-1) { }
 
-    Level(RCP<FactoryManagerBase>& factoryManager) : levelID_(-1), factoryManager_(factoryManager) { }
+    Level(RCP<FactoryManagerBase>& factoryManager) : lib_(Xpetra::UseTpetra), levelID_(-1), factoryManager_(factoryManager) { }
 
     //! Destructor
     virtual ~Level() { }
@@ -143,8 +145,7 @@ namespace MueLu {
       const FactoryBase* fac = GetFactory(ename, factory);
 
       if (fac == NoFactory::get()) {
-        // user defined data
-        // keep data
+        // Any data set with a NoFactory gets UserData keep flag by default
         AddKeepFlag(ename, NoFactory::get(), MueLu::UserData);
       }
 
@@ -334,6 +335,9 @@ namespace MueLu {
     enum   RequestMode { REQUEST, RELEASE, UNDEF };
     RequestMode GetRequestMode() const { return requestMode_; }
 
+    void setlib(Xpetra::UnderlyingLib lib2) { lib_ = lib2; }
+    Xpetra::UnderlyingLib lib() { return lib_; }
+
   private:
 
     //! Copy constructor.
@@ -362,6 +366,7 @@ namespace MueLu {
     const FactoryBase* GetFactory(const std::string& varname, const FactoryBase* factory) const;
 
     static RequestMode requestMode_;
+    Xpetra::UnderlyingLib lib_;
 
     typedef const FactoryBase*          Key1;
     typedef const std::string           Key2;

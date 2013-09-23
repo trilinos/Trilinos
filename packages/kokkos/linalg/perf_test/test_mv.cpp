@@ -7,14 +7,14 @@
 #include <limits.h>
 #include <cmath>
 
-#include <Kokkos_Host.hpp>
+#include <Kokkos_Threads.hpp>
 #include <Kokkos_Cuda.hpp>
-#include "Kokkos_MultiVector.hpp"
+#include "Kokkos_MV.hpp"
 #ifndef DEVICE
 #define DEVICE 1
 #endif
 #if DEVICE==1
-typedef Kokkos::Host device_type;
+typedef Kokkos::Threads device_type;
 #define KokkosHost(a) a
 #define KokkosCUDA(a)
 #else
@@ -30,7 +30,7 @@ typedef double FLOAT;
 typedef MultiVectorDynamic<FLOAT,device_type>::type mv_type;
 typedef mv_type::HostMirror h_mv_type;
 typedef Kokkos::View<FLOAT* ,Kokkos::LayoutLeft,device_type >  vector_type ;
-typedef Kokkos::View<FLOAT* ,Kokkos::LayoutLeft,Kokkos::Host >  h2_vector_type ;
+typedef Kokkos::View<FLOAT* ,Kokkos::LayoutLeft,Kokkos::Threads >  h2_vector_type ;
 typedef vector_type::HostMirror h_vector_type;
 typedef mv_type::size_type            size_type;
 
@@ -230,13 +230,13 @@ int main(int argc, char **argv)
 
  if(numa>1 || threads>1)
  {
-   Kokkos::Host::initialize( numa , threads );
+   Kokkos::Threads::initialize( std::pair<unsigned,unsigned>( numa , threads ) );
  }
 
  test_mv_dot(size,numVecs,loop);
  test_mv_add(size,numVecs,loop);
  test_mv_mulscalar(size,numVecs,loop);
 
- KokkosCUDA(Kokkos::Host::finalize();)
+ KokkosCUDA(Kokkos::Threads::finalize();)
  device_type::finalize(  );
 }

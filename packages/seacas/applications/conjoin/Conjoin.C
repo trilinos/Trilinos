@@ -64,6 +64,8 @@
 #error "Requires exodusII version 4.68 or later"
 #endif
 
+#define TOPTR(x) (x.empty() ? NULL : &x[0])
+
 namespace {
 template <typename T>
 bool approx_equal(T v1, T v2)
@@ -224,12 +226,11 @@ void filter_truth_table(int id,
 			const StringIdVector &variable_names);
 
 template <typename T, typename INT>
-void get_truth_table(Excn::Mesh<INT>& global, std::vector<T> &glob_blocks,
-		     std::vector<Excn::Mesh<INT> > &local, Excn::Variables &vars, int debug);
+void get_truth_table(Excn::Mesh<INT>& global, std::vector<std::vector<T> > &blocks,
+		     std::vector<T> &glob_blocks, Excn::Variables &vars, int debug);
 
-template <typename U, typename INT>
-void create_output_truth_table(const Excn::Mesh<INT>& global,
-			       std::vector<U> &global_sets,
+template <typename U>
+void create_output_truth_table(std::vector<U> &global_sets,
 			       Excn::Variables &vars,
 			       std::vector<int> &truth_table);
 
@@ -318,7 +319,7 @@ void verify_set_position_mapping(const std::string &type,
     size_t loc_pos = global_sets[i].position_;
     for (size_t p=0; p < part_count; p++) {
       if (global_sets[i].id  != sets[p][loc_pos].id ||
-	  global_sets[i].name_ != sets[p][loc_pos].name_ ||
+	  case_compare(global_sets[i].name_, sets[p][loc_pos].name_) != 0 ||
 	  sets[p][loc_pos].position_ != i) {
 	problem = true;
 	std::cerr << "\nMismatch for global " << type << " at position " << i
@@ -641,13 +642,13 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
     get_variable_params(id, nodeset_vars, interface.nset_var_names());
     get_variable_params(id, sideset_vars, interface.sset_var_names());
     
-    get_truth_table(global, glob_blocks, local_mesh, element_vars,  4);
+    get_truth_table(global, blocks, glob_blocks, element_vars,  4);
     filter_truth_table(id, global, glob_blocks, element_vars, interface.elem_var_names());
 
-    get_truth_table(global, glob_nsets, local_mesh, nodeset_vars, 32);
+    get_truth_table(global, nodesets, glob_nsets, nodeset_vars, 32);
     filter_truth_table(id, global, glob_nsets,  nodeset_vars, interface.nset_var_names());
 
-    get_truth_table(global, glob_ssets, local_mesh, sideset_vars, 16);
+    get_truth_table(global, sidesets, glob_ssets, sideset_vars, 16);
     filter_truth_table(id, global, glob_ssets,  sideset_vars, interface.sset_var_names());
   }
 
@@ -665,15 +666,20 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
       element_vars.count(OUT) + nodeset_vars.count(OUT) +
       sideset_vars.count(OUT) > 0) {
 
-    std::vector<int> elem_truth_table(global.truthTable[EBLK].size());
-    create_output_truth_table(global, glob_blocks, element_vars, elem_truth_table);
+    std::vector<int> elem_truth_table;
+    std::vector<int> nset_truth_table;
+    std::vector<int> sset_truth_table;
+    create_output_truth_table(glob_blocks, element_vars, elem_truth_table);
+    create_output_truth_table(glob_nsets,  nodeset_vars, nset_truth_table);
+    create_output_truth_table(glob_ssets,  sideset_vars, sset_truth_table);
+
 
     ex_put_all_var_param(ExodusFile::output(),
 			 global_vars.count(OUT),
 			 nodal_vars.count(OUT),
-			 element_vars.count(OUT), &elem_truth_table[0],
-			 nodeset_vars.count(OUT), &global.truthTable[NSET][0],
-			 sideset_vars.count(OUT), &global.truthTable[SSET][0]);
+			 element_vars.count(OUT), TOPTR(elem_truth_table),
+			 nodeset_vars.count(OUT), TOPTR(nset_truth_table),
+			 sideset_vars.count(OUT), TOPTR(sset_truth_table));
   }
 
   // II. read/write the variable names
@@ -1113,15 +1119,9 @@ namespace {
 
       error += ex_get_ids(id, EX_ELEM_BLOCK, &block_id[0]);
 
-      // Check that the block id ordering is consistent among files...
-      if (p > 0) {
+      if (p == 0) {
 	for (size_t b = 0; b < global.count(EBLK); b++) {
-	  if (blocks[0][b].id != block_id[b]) {
-	    std::cerr << "ERROR: The internal element block id ordering for part "
-		      << p << "\n       is not consistent with the ordering for part 0."
-		      << std::endl;
-	    exit(EXIT_FAILURE);
-	  }
+	  glob_blocks[b].id    = block_id[b];
 	}
       }
 
@@ -1131,27 +1131,33 @@ namespace {
 
       for (size_t b = 0; b < global.count(EBLK); b++) {
 	if (debug_level & 4)
-	  std::cerr << "Block " << b << ", Id = " << block_id[b];
+	  std::cerr << "Block " << b << ", Id = " << glob_blocks[b].id;
 
 	ex_block block_param;
-	block_param.id = block_id[b];
+	block_param.id = glob_blocks[b].id;
 	block_param.type = EX_ELEM_BLOCK;
 	
 	error += ex_get_block_param(id, &block_param);
 	
 	std::vector<char> name(ExodusFile::max_name_length()+1);
-	ex_get_name(id, EX_ELEM_BLOCK, block_id[b], &name[0]);
+	ex_get_name(id, EX_ELEM_BLOCK, glob_blocks[b].id, &name[0]);
 
-	blocks[p][b].id    = block_id[b];
-	if (name[0] != '\0')
+	blocks[p][b].id    = glob_blocks[b].id;
+	if (name[0] != '\0') {
 	  blocks[p][b].name_ = &name[0];
-	if (p == 0) {
-	  glob_blocks[b].id    = block_id[b];
-	  if (name[0] != '\0')
+	  if (p == 0) {
 	    glob_blocks[b].name_ = &name[0];
+	  }
 	}
 
-	blocks[p][b].position_         = b;
+	// Find position of this block id in the local mesh
+	for (size_t lb = 0; lb < global.count(EBLK); lb++) {
+	  if (block_id[lb] == glob_blocks[b].id) {
+	    blocks[p][b].position_         = lb;
+	    break;
+	  }
+	}
+	      
 	if (block_param.num_entry > 0) {
 	  blocks[p][b].elementCount    = block_param.num_entry;
 	  blocks[p][b].nodesPerElement = block_param.num_nodes_per_entry;
@@ -1188,6 +1194,7 @@ namespace {
 	  std::cerr << "', Elements = " << std::setw(8) << blocks[p][b].entity_count();
 	  std::cerr << ", Nodes/element = " << blocks[p][b].nodesPerElement;
 	  std::cerr << ", Attributes = " << blocks[p][b].attributeCount << std::endl;
+	  std::cerr << ", Position = " << blocks[p][b].position_ << std::endl;
 	}
       }
     }	// end for p=0..part_count
@@ -1379,9 +1386,16 @@ namespace {
 
     size_t goffset = 0;
     for (size_t b = 0; b < glob_blocks.size(); b++) {
+      
       size_t block_size = 0;
       for (size_t p = 0; p < part_count; p++) {
-	block_size += blocks[p][b].entity_count();
+	size_t lb = 0;
+	for ( ; lb < blocks[0].size(); lb++) {
+	  if (glob_blocks[b].id == blocks[p][lb].id)
+	    break;
+	}
+	SMART_ASSERT(glob_blocks[b].id == blocks[p][lb].id);
+	block_size += blocks[p][lb].entity_count();
       }
       GlobalElemMap block_element_map(block_size);
       
@@ -1389,14 +1403,21 @@ namespace {
       for (size_t p = 0; p < part_count; p++) {
 	ExodusFile id(p);
 
+	size_t lb = 0;
+	for ( ; lb < blocks[0].size(); lb++) {
+	  if (glob_blocks[b].id == blocks[p][lb].id)
+	    break;
+	}
+	SMART_ASSERT(glob_blocks[b].id == blocks[p][lb].id);
+
 	// Get connectivity array for this element block...
-	size_t element_count = blocks[p][b].entity_count();
-	size_t nodes_per_elem = blocks[p][b].nodesPerElement;
+	size_t element_count = blocks[p][lb].entity_count();
+	size_t nodes_per_elem = blocks[p][lb].nodesPerElement;
 	size_t maximum_nodes = element_count * nodes_per_elem;
 	
 	std::vector<INT> local_linkage(maximum_nodes);
 
-	size_t bid = blocks[p][b].id;
+	size_t bid = blocks[p][lb].id;
 	error = ex_get_conn(id, EX_ELEM_BLOCK, bid, &local_linkage[0], 0, 0);
 	if (error < 0) {
 	  std::cerr << "ERROR: Cannot get element block connectivity for block "
@@ -1413,7 +1434,7 @@ namespace {
 	// Have element global ids for all elements in this block,
 	// and connectivity.  Can now create out "eleminfo" for these elements.
 	size_t con_offset = 0;
-	size_t boffset = blocks[p][b].offset_;
+	size_t boffset = blocks[p][lb].offset_;
 	for (size_t i=0; i < element_count; i++) {
 	  size_t adler_crc = adler(0, &local_linkage[con_offset], nodes_per_elem * sizeof(int));
 	  global_element_numbers[p][boffset+i].second = adler_crc;
@@ -1449,12 +1470,20 @@ namespace {
     // block is sorted, so if we do the iteration by blocks, we can
     // use equal_range instead of doing global searches...
     for (size_t b = 0; b < glob_blocks.size(); b++) {
+
       GElemMapIter gm_begin = global_element_map.begin() + glob_blocks[b].offset_;
       GElemMapIter gm_end   = gm_begin + glob_blocks[b].elementCount;
       GElemMapIter cur_pos  = gm_begin;
       for (size_t p = 0; p < part_count; p++) {
-	size_t element_count = blocks[p][b].entity_count();
-	size_t boffset = blocks[p][b].offset_;
+	size_t lb = 0;
+	for ( ; lb < blocks[0].size(); lb++) {
+	  if (glob_blocks[b].id == blocks[p][lb].id)
+	    break;
+	}
+	SMART_ASSERT(glob_blocks[b].id == blocks[p][lb].id);
+
+	size_t element_count = blocks[p][lb].entity_count();
+	size_t boffset = blocks[p][lb].offset_;
 	for (size_t i = 0; i < element_count; i++) {
 	  std::pair<int, size_t> global_element = global_element_numbers[p][boffset+i];
 	  
@@ -2384,51 +2413,39 @@ namespace {
 	  // of current value and then iterate over specified blocks and
 	  // set those positive.  This way can make sure that the
 	  // variable truly exists for the block that the user specified.
+	  found_it = false;
 	  for (size_t b=0; b < global.count(vars.objectType); b++) {
-	    int truth_table_loc = (b * vars.count(OUT)) + out_position;
-	    global.truthTable[vars.objectType][truth_table_loc] *= -1;
+	    if (glob_blocks[b].id == variable_names[i].second) {
+	      if (glob_blocks[b].truthTable[out_position] == 0) {
+		std::cerr << "ERROR: Variable '" << variable_names[i].first
+			  << "' does not exist on block " << variable_names[i].second
+			  << ".\n";
+		exit(EXIT_FAILURE);
+	      } else {
+		found_it = true;
+		break;
+	      }
+	    } else {
+	      // User does not want this variable output on these blocks...
+	      glob_blocks[b].truthTable[out_position] = 0;
+	    }
 	  }
-	}
-	// Find out which block corresponds to the specified id.
-	int block = -1;
-	for (size_t b = 0; b < global.count(vars.objectType); b++) {
-	  if (glob_blocks[b].id == variable_names[i].second) {
-	    block = b;
-	    break;
+
+	  if (!found_it) {
+	    std::cerr << "ERROR: User-specified block id of "
+		      << variable_names[i].second
+		      << " for variable '" << variable_names[i].first
+		      << "' does not exist.\n";
+	    exit(EXIT_FAILURE);
 	  }
-	}
-
-	if (block == -1) {
-	  std::cerr << "ERROR: User-specified block id of "
-		    << variable_names[i].second
-		    << " for variable '" << variable_names[i].first
-		    << "' does not exist.\n";
-	  exit(EXIT_FAILURE);
-	}
-
-	int truth_table_loc = block * vars.count(OUT) + out_position;
-	if (global.truthTable[vars.objectType][truth_table_loc] == 0) {
-	  std::cerr << "ERROR: Variable '" << variable_names[i].first
-		    << "' does not exist on block " << variable_names[i].second
-		    << ".\n";
-	  exit(EXIT_FAILURE);
-	} else {
-	  global.truthTable[vars.objectType][truth_table_loc] = 1;
 	}
       }
-    }
-
-    // reset truth table values that may be negative
-    int output_truth_table_length = vars.count(OUT) * global.count(vars.objectType);
-    for (int j = 0; j < output_truth_table_length; j++) {
-      if (global.truthTable[vars.objectType][j] < 0)
-	global.truthTable[vars.objectType][j] = 0;
     }
   }
 
   template <typename T, typename INT>
-  void get_truth_table(Mesh<INT>& global, std::vector<T> &glob_blocks, std::vector<Mesh<INT> > &local,
-		       Variables &vars, int debug)
+  void get_truth_table(Mesh<INT>& global, std::vector<std::vector<T> > &blocks,
+		       std::vector<T> &glob_blocks, Variables &vars, int debug)
   {
     // read truth table - sum across all parts since many will
     // have values set to zero for zero length blocks the element
@@ -2436,65 +2453,59 @@ namespace {
     // [global.count(EBLK)][num_elem_vars]
 
     ObjectType object_type = vars.objectType;
-    int input_truth_table_length  = vars.count(IN)  * global.count(object_type);
-    int output_truth_table_length = vars.count(OUT) * global.count(object_type);
 
-    if (output_truth_table_length) {
-
-      global.truthTable[object_type].resize(output_truth_table_length);
-      std::fill(global.truthTable[object_type].begin(), global.truthTable[object_type].end(), 0);
-
+    if (vars.count(OUT) > 0) {
       // For each input exodus file, get it's truth table and fill
       // in the location in the output truth table...
 
-      bool is_sidenodeset = vars.objectType==NSET || vars.objectType==SSET;
-      size_t part_count = local.size();
+      size_t part_count = blocks.size();
       for (size_t p = 0; p < part_count; p++) {
 	ExodusFile id(p);
 
-	if (vars.count(IN) > 0) {
-	  local[p].truthTable[object_type].resize(input_truth_table_length);
-	  ex_get_truth_table(id, vars.type(), global.count(object_type), vars.count(IN),
-			     &local[p].truthTable[object_type][0]);
-	}
 	for (size_t b=0; b < global.count(object_type); b++) {
-	  int bin = b;
-	  if (is_sidenodeset) {
-	    bin = glob_blocks[b].position_;
+	  size_t gb = 0;
+	  for ( ; gb < global.count(object_type); gb++) {
+	    if (glob_blocks[gb].id == blocks[p][b].id)
+	      break;
 	  }
+	  SMART_ASSERT(glob_blocks[gb].id == blocks[p][b].id);
 
-	  for (int j = 0; j < vars.count(IN); j++) {
-	    if (vars.index_[j] > 0) {
-	      int ki = (bin * vars.count(IN))  + j;
-	      int ko = (b   * vars.count(OUT)) + vars.index_[j] - 1;
-	      SMART_ASSERT(ko < output_truth_table_length);
-	      SMART_ASSERT(ki < input_truth_table_length);
-	      global.truthTable[object_type][ko] += local[p].truthTable[object_type][ki];
+	  if (p==0)
+	    glob_blocks[gb].truthTable.resize(vars.count(OUT));
+
+	  if (vars.count(IN) > 0) {
+	    blocks[p][b].truthTable.resize(vars.count(IN));
+	    ex_get_object_truth_vector(id, vars.type(), blocks[p][b].id, vars.count(IN),
+				       &blocks[p][b].truthTable[0]);
+
+	    // Find global block corresponding to this block. (Ids match)
+	    for (int j = 0; j < vars.count(IN); j++) {
+	      if (vars.index_[j] > 0) {
+		glob_blocks[gb].truthTable[vars.index_[j]-1] += blocks[p][b].truthTable[j];
+	      }
 	    }
 	  }
-          if (vars.addStatus) {
-            int ko = (b * vars.count(OUT)) + vars.count(OUT) - 1;
-            SMART_ASSERT(ko < output_truth_table_length);
-            global.truthTable[object_type][ko] = 1;
-          }
+	  if (vars.addStatus) {
+	    glob_blocks[gb].truthTable[vars.count(OUT)-1] = 1;
+	  }
 	}
       }
 
       // reset truth table values that may be greater than 1
-      for (int j = 0; j < output_truth_table_length; j++) {
-	SMART_ASSERT(global.truthTable[object_type][j] >= 0)(global.truthTable[object_type][j]);
-	if (global.truthTable[object_type][j] > 0)
-	  global.truthTable[object_type][j] = 1;
+      for (size_t b=0; b < global.count(object_type); b++) {
+	for (int j = 0; j < vars.count(OUT); j++) {
+	  if (glob_blocks[b].truthTable[j] > 0)
+	    glob_blocks[b].truthTable[j] = 1;
+	}
       }
 
       if (debug_level & debug) {
 	std::cerr << "Truth table for " << vars.label() << "\t"
 		  << vars.count(OUT) << " variables\t"
 		  << global.count(object_type) << " sets\n";
-	int k = 0;
 	for (size_t b=0; b < global.count(object_type); b++) {
 	  for (int j = 0; j < vars.count(OUT); j++) {
-	    std::cerr << global.truthTable[object_type][k++];
+	    std::cerr << glob_blocks[b].truthTable[j];
 	  }
 	  std::cerr << '\n';
 	}
@@ -2730,7 +2741,6 @@ namespace {
 			       size_t p, int time_step, int time_step_out)
   {
     int error = 0;
-    bool is_sidenodeset = vars.objectType==NSET || vars.objectType==SSET;
 
     ExodusFile id(p);
     int id_out = ExodusFile::output();// output file identifier
@@ -2750,35 +2760,34 @@ namespace {
 	int ivar = vars.index_[i]-1;
 	
 	for (size_t b = 0; b < global.count(vars.objectType); b++) {
-	  size_t bin = b;
-	  if (is_sidenodeset) {
-	    bin = global_sets[b].position_;
+	  size_t lb = 0;
+	  for ( ; lb < global.count(vars.objectType); lb++) {
+	    if (global_sets[b].id == local_sets[p][lb].id)
+	      break;
 	  }
-	  
-	  int output_truth_table_loc = (b   * vars.count(OUT)) + ivar;
-	  int input_truth_table_loc  = (bin * vars.count(IN))  + i;
-	  if (global.truthTable[vars.objectType][output_truth_table_loc] &&
-	      local_sets[p][bin].entity_count() > 0) {
+	  SMART_ASSERT(global_sets[b].id == local_sets[p][lb].id);
+
+	  if (global_sets[b].truthTable[ivar] && local_sets[p][lb].entity_count() > 0) {
 	    
-	    int entity_count = local_sets[p][bin].entity_count();
+	    int entity_count = local_sets[p][lb].entity_count();
 	    
-	    if (local_mesh[p].truthTable[vars.objectType][input_truth_table_loc] > 0) {
+	    if (local_sets[p][lb].truthTable[i] > 0) {
 	      error += ex_get_var(id, time_step+1, exodus_object_type(vars.objectType),
-				  i+1, local_sets[p][bin].id, entity_count, &values[0]);
+				  i+1, local_sets[p][lb].id, entity_count, &values[0]);
 	      
 	      switch (vars.objectType) {
 	      case EBLK:
-		map_element_vars(local_sets[p][bin].offset_, global_sets[b].offset_,
+		map_element_vars(local_sets[p][lb].offset_, global_sets[b].offset_,
 				 entity_count, values, master_values, part_loc_elem_to_global);
 		break;
 		
 	      case SSET:
-		map_sideset_vars(local_sets[p][bin], entity_count, global_sets[b].entity_count(),
+		map_sideset_vars(local_sets[p][lb], entity_count, global_sets[b].entity_count(),
 				 values, master_values);
 		break;
 		
 	      case NSET:
-		map_nodeset_vars(local_sets[p][bin], entity_count, global_sets[b].entity_count(),
+		map_nodeset_vars(local_sets[p][lb], entity_count, global_sets[b].entity_count(),
 				 values, master_values);
 		break;
 	      default:
@@ -2796,19 +2805,18 @@ namespace {
     return error;
   }
 
-  template <typename U, typename INT>
-  void create_output_truth_table(const Excn::Mesh<INT>& global,
-				 std::vector<U> &global_sets,
+  template <typename U>
+  void create_output_truth_table(std::vector<U> &global_sets,
 				 Excn::Variables &vars,
 				 std::vector<int> &truth_table)
   {
-    for (size_t b=0; b < global.count(vars.objectType); b++) {
+    truth_table.resize(global_sets.size() * vars.count(OUT));
+    for (size_t b=0; b < global_sets.size(); b++) {
       int bout = global_sets[b].position_;
       SMART_ASSERT(bout >= 0);
       for (int j = 0; j < vars.count(OUT); j++) {
-	int inp_ttable_loc = (b    * vars.count(OUT)) + j;
 	int out_ttable_loc = (bout * vars.count(OUT)) + j;
-	truth_table[out_ttable_loc] = global.truthTable[vars.objectType][inp_ttable_loc];
+	truth_table[out_ttable_loc] = global_sets[b].truthTable[j];
       }
     }
   }

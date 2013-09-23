@@ -55,6 +55,7 @@
 
 #include "Xpetra_Map_fwd.hpp"
 #include "Xpetra_StridedMap_fwd.hpp"
+#include "Xpetra_StridedMapFactory_fwd.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"

@@ -29,6 +29,11 @@
 // ***********************************************************************
 // @HEADER
 
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
+
 #include "Sacado_ConfigDefs.h"
 #include "Sacado_DynamicArrayTraits.hpp"
 #include <ostream>	// for std::ostream

@@ -8,26 +8,21 @@ SET(SOURCES "")
 
 FILE(GLOB SOURCES *.cpp ../common/*.cpp)
 
-SET(LIBRARIES kokkosarray_devicehost kokkosarray_impl)
-  
+SET(LIBRARIES kokkoscore)
 
-IF( TPL_ENABLE_CUDA AND TPL_ENABLE_CUSPARSE )
-  SET(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF)
+IF( Kokkos_ENABLE_Cuda )
 
   # add MPI include dir to nvcc
   IF( TPL_ENABLE_MPI )
     CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
   ENDIF()
 
-  TRIBITS_ADD_LIBRARY(
-    hybrid_fem_cuda
-    SOURCES TestCuda.cu
-    CUDALIBRARY
-    )
+  # Add subpackage include path dependencies for CUDA_COMPILE().
+  CUDA_INCLUDE_DIRECTORIES( ${KokkosCore_INCLUDE_DIRS} )
+  CUDA_COMPILE( OBJECTS_CUDA TestCuda.cu )
 
-  LIST( APPEND LIBRARIES
-    kokkosarray_devicecuda hybrid_fem_cuda ${CUDA_LIBRARIES} ${CUDA_cusparse_LIBRARY}
-  )
+  LIST( APPEND SOURCES ${OBJECTS_CUDA} )
+  LIST( APPEND LIBRARIES ${CUDA_LIBRARIES} ${CUDA_cusparse_LIBRARY} )
 
 ENDIF()
 

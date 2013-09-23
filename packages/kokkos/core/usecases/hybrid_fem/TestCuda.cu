@@ -1,6 +1,5 @@
 
 #include <Kokkos_Cuda.hpp>
-#include <Kokkos_Host.hpp>
 
 #include <TestBoxMeshFixture.hpp>
 #include <Implicit.hpp>

@@ -10,7 +10,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
+//#if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
 
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
@@ -26,7 +26,6 @@
 #endif
 
 #include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_ZoltanInterface_fwd.hpp"
 
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
@@ -88,7 +87,7 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_ISORROPIAINTERFACE_SHORT
-#endif //if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
+//#endif //if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
 
 
 #endif /* MUELU_ISORROPIAINTERFACE_DECL_HPP_ */

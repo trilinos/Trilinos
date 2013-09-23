@@ -27,9 +27,5 @@ echo "Standardizing the ownership and permissions of $BASE_DIR with owning group
 chgrp -R $OWNING_GROUP $BASE_DIR
 # Give the owning group read/write for all files
 chmod -R g+rw $BASE_DIR
-# Allow everyone to read everything!
-chmod -R a+r $BASE_DIR
-# Allow everyone to execute all directories!
-find $BASE_DIR -type d -exec chmod a+x {} \;
-# Make all files that are executble for the user same for everyone
-find $BASE_DIR -type f -and -executable -exec chmod a+x {} \;
+# Allow everyone to read everything and execute if it is executable!
+chmod -R a+rX $BASE_DIR

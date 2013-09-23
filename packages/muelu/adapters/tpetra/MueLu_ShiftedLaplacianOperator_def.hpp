@@ -123,13 +123,13 @@ void ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps
 
   try {
     tY.putScalar(0.0);
-    Hierarchy_->Iterate(tX, 1, tY, true);
+    Hierarchy_->Iterate(tX, cycles_, tY, true);
   }
 
   catch(std::exception& e) {
     //FIXME add message and rethrow
     std::cerr << "Caught an exception in MueLu::ShiftedLaplacianOperator::ApplyInverse():" << std::endl
-	      << e.what() << std::endl;
+                                                                                              << e.what() << std::endl;
   }
 
   // update solution with 2-grid error correction
@@ -157,8 +157,8 @@ void ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps
   catch(std::exception& e) {
     //FIXME add message and rethrow
     std::cerr << "Caught an exception in MueLu::ShiftedLaplacianOperator::ApplyInverse():" << std::endl
-	      << e.what() << std::endl;
-	      }*/
+    << e.what() << std::endl;
+    }*/
   
 }
 

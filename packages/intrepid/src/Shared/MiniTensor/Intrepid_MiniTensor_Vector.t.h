@@ -50,14 +50,14 @@ namespace Intrepid {
 // \param is input stream
 // \return is input stream
 //
-template<typename T>
+template<typename T, Index N>
 std::istream &
-operator>>(std::istream & is, Vector<T> & u)
+operator>>(std::istream & is, Vector<T, N> & u)
 {
   Index const
-  N = u.get_dimension();
+  dimension = u.get_dimension();
 
-  for (Index i = 0; i < N; ++i) {
+  for (Index i = 0; i < dimension; ++i) {
     is >> u(i);
   }
 
@@ -70,21 +70,21 @@ operator>>(std::istream & is, Vector<T> & u)
 // \param os output stream
 // \return os output stream
 //
-template<typename T>
+template<typename T, Index N>
 std::ostream &
-operator<<(std::ostream & os, Vector<T> const & u)
+operator<<(std::ostream & os, Vector<T, N> const & u)
 {
   Index const
-  N = u.get_dimension();
+  dimension = u.get_dimension();
 
-  if (N == 0) {
+  if (dimension == 0) {
     return os;
   }
 
-  os << std::scientific << u(0);
+  os << std::scientific << std::setprecision(16) << u(0);
 
-  for (Index i = 1; i < N; ++i) {
-    os << std::scientific << "," << u(i);
+  for (Index i = 1; i < dimension; ++i) {
+    os << "," << std::scientific << std::setprecision(16) << u(i);
   }
 
   return os;

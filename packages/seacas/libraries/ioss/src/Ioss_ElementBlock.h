@@ -52,6 +52,7 @@ namespace Ioss {
     ~ElementBlock();
 
     std::string type_string() const {return "ElementBlock";}
+    std::string short_type_string() const {return "block";}
     EntityType type() const {return ELEMENTBLOCK;}
 
     /// Handle implicit properties -- These are calcuated from data stored

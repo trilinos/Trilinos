@@ -52,6 +52,8 @@
 #include "Panzer_Dimension.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_CloneableEvaluator.hpp"
+#include "Panzer_LOCPair_GlobalEvaluationData.hpp"
+#include "Panzer_TpetraLinearObjContainer.hpp"
 
 #include "Kokkos_DefaultNode.hpp"
 
@@ -94,6 +96,8 @@ public:
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
+
+  void preEvaluate(typename Traits::PreEvalData d);
   
   void evaluateFields(typename Traits::EvalData workset);
   
@@ -114,6 +118,9 @@ private:
   Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
   std::vector<int> fieldIds_; // field IDs needing mapping
 
+  std::string globalDataKey_; // what global data does this fill?
+
+  Teuchos::RCP<const TpetraLinearObjContainer<double,LO,GO,NodeT> > tpetraContainer_;
 };
 
 // **************************************************************
@@ -134,6 +141,8 @@ public:
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
+
+  void preEvaluate(typename Traits::PreEvalData d);
   
   void evaluateFields(typename Traits::EvalData workset);
   
@@ -154,6 +163,9 @@ private:
   Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
   std::vector<int> fieldIds_; // field IDs needing mapping
 
+  std::string globalDataKey_; // what global data does this fill?
+
+  Teuchos::RCP<const TpetraLinearObjContainer<double,LO,GO,NodeT> > tpetraContainer_;
 };
 
 // **************************************************************

@@ -91,6 +91,8 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DHDF5_LIBRARY_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/phdf5-1.8.6/lib"
   "-DNetcdf_LIBRARY_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/pnetcdf_4.2/lib"
   "-DNetcdf_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/pnetcdf_4.2/include"
+  "-DPyTrilinos_ENABLE_STK=OFF"
+  "-DTPL_ENABLE_CppUnit:BOOL=ON"
   )
 
 #

@@ -48,7 +48,7 @@
 #include <utility>
 #include <Kokkos_Macros.hpp>
 #include <Kokkos_Layout.hpp>
-#include <impl/Kokkos_ArrayTraits.hpp>
+#include <impl/Kokkos_Traits.hpp>
 #include <impl/Kokkos_StaticAssert.hpp>
 
 //----------------------------------------------------------------------------
@@ -397,7 +397,6 @@ struct Shape< ScalarSize , Rank , 0,s1,s2,s3, s4,s5,s6,s7 >
 
   unsigned N0 ;
 
-  // enum { N1 = s1 };
   enum { N1 = s1 };
   enum { N2 = s2 };
   enum { N3 = s3 };
@@ -761,91 +760,91 @@ struct ShapeCompatible { enum { value = false }; };
 template< class DstShape , class SrcShape >
 struct ShapeCompatible< DstShape , SrcShape , 8 , true >
 {
-  enum { value = DstShape::scalar_size == SrcShape::scalar_size };
+  enum { value = unsigned(DstShape::scalar_size) == unsigned(SrcShape::scalar_size) };
 };
 
 template< class DstShape , class SrcShape >
 struct ShapeCompatible< DstShape , SrcShape , 7 , true >
 {
-  enum { value = DstShape::scalar_size == SrcShape::scalar_size &&
-                 DstShape::N7 == SrcShape::N7 };
+  enum { value = unsigned(DstShape::scalar_size) == unsigned(SrcShape::scalar_size) &&
+                 unsigned(DstShape::N7) == unsigned(SrcShape::N7) };
 };
 
 template< class DstShape , class SrcShape >
 struct ShapeCompatible< DstShape , SrcShape , 6 , true >
 {
-  enum { value = DstShape::scalar_size == SrcShape::scalar_size &&
-                 DstShape::N6 == SrcShape::N6 &&
-                 DstShape::N7 == SrcShape::N7 };
+  enum { value = unsigned(DstShape::scalar_size) == unsigned(SrcShape::scalar_size) &&
+                 unsigned(DstShape::N6) == unsigned(SrcShape::N6) &&
+                 unsigned(DstShape::N7) == unsigned(SrcShape::N7) };
 };
 
 template< class DstShape , class SrcShape >
 struct ShapeCompatible< DstShape , SrcShape , 5 , true >
 {
-  enum { value = DstShape::scalar_size == SrcShape::scalar_size &&
-                 DstShape::N5 == SrcShape::N5 &&
-                 DstShape::N6 == SrcShape::N6 &&
-                 DstShape::N7 == SrcShape::N7 };
+  enum { value = unsigned(DstShape::scalar_size) == unsigned(SrcShape::scalar_size) &&
+                 unsigned(DstShape::N5) == unsigned(SrcShape::N5) &&
+                 unsigned(DstShape::N6) == unsigned(SrcShape::N6) &&
+                 unsigned(DstShape::N7) == unsigned(SrcShape::N7) };
 };
 
 template< class DstShape , class SrcShape >
 struct ShapeCompatible< DstShape , SrcShape , 4 , true >
 {
-  enum { value = DstShape::scalar_size == SrcShape::scalar_size &&
-                 DstShape::N4 == SrcShape::N4 &&
-                 DstShape::N5 == SrcShape::N5 &&
-                 DstShape::N6 == SrcShape::N6 &&
-                 DstShape::N7 == SrcShape::N7 };
+  enum { value = unsigned(DstShape::scalar_size) == unsigned(SrcShape::scalar_size) &&
+                 unsigned(DstShape::N4) == unsigned(SrcShape::N4) &&
+                 unsigned(DstShape::N5) == unsigned(SrcShape::N5) &&
+                 unsigned(DstShape::N6) == unsigned(SrcShape::N6) &&
+                 unsigned(DstShape::N7) == unsigned(SrcShape::N7) };
 };
 
 template< class DstShape , class SrcShape >
 struct ShapeCompatible< DstShape , SrcShape , 3 , true >
 {
-  enum { value = DstShape::scalar_size == SrcShape::scalar_size &&
-                 DstShape::N3 == SrcShape::N3 &&
-                 DstShape::N4 == SrcShape::N4 &&
-                 DstShape::N5 == SrcShape::N5 &&
-                 DstShape::N6 == SrcShape::N6 &&
-                 DstShape::N7 == SrcShape::N7 };
+  enum { value = unsigned(DstShape::scalar_size) == unsigned(SrcShape::scalar_size) &&
+                 unsigned(DstShape::N3) == unsigned(SrcShape::N3) &&
+                 unsigned(DstShape::N4) == unsigned(SrcShape::N4) &&
+                 unsigned(DstShape::N5) == unsigned(SrcShape::N5) &&
+                 unsigned(DstShape::N6) == unsigned(SrcShape::N6) &&
+                 unsigned(DstShape::N7) == unsigned(SrcShape::N7) };
 };
 
 template< class DstShape , class SrcShape >
 struct ShapeCompatible< DstShape , SrcShape , 2 , true >
 {
-  enum { value = DstShape::scalar_size == SrcShape::scalar_size &&
-                 DstShape::N2 == SrcShape::N2 &&
-                 DstShape::N3 == SrcShape::N3 &&
-                 DstShape::N4 == SrcShape::N4 &&
-                 DstShape::N5 == SrcShape::N5 &&
-                 DstShape::N6 == SrcShape::N6 &&
-                 DstShape::N7 == SrcShape::N7 };
+  enum { value = unsigned(DstShape::scalar_size) == unsigned(SrcShape::scalar_size) &&
+                 unsigned(DstShape::N2) == unsigned(SrcShape::N2) &&
+                 unsigned(DstShape::N3) == unsigned(SrcShape::N3) &&
+                 unsigned(DstShape::N4) == unsigned(SrcShape::N4) &&
+                 unsigned(DstShape::N5) == unsigned(SrcShape::N5) &&
+                 unsigned(DstShape::N6) == unsigned(SrcShape::N6) &&
+                 unsigned(DstShape::N7) == unsigned(SrcShape::N7) };
 };
 
 template< class DstShape , class SrcShape >
 struct ShapeCompatible< DstShape , SrcShape , 1 , true >
 {
-  enum { value = DstShape::scalar_size == SrcShape::scalar_size &&
-                 DstShape::N1 == SrcShape::N1 &&
-                 DstShape::N2 == SrcShape::N2 &&
-                 DstShape::N3 == SrcShape::N3 &&
-                 DstShape::N4 == SrcShape::N4 &&
-                 DstShape::N5 == SrcShape::N5 &&
-                 DstShape::N6 == SrcShape::N6 &&
-                 DstShape::N7 == SrcShape::N7 };
+  enum { value = unsigned(DstShape::scalar_size) == unsigned(SrcShape::scalar_size) &&
+                 unsigned(DstShape::N1) == unsigned(SrcShape::N1) &&
+                 unsigned(DstShape::N2) == unsigned(SrcShape::N2) &&
+                 unsigned(DstShape::N3) == unsigned(SrcShape::N3) &&
+                 unsigned(DstShape::N4) == unsigned(SrcShape::N4) &&
+                 unsigned(DstShape::N5) == unsigned(SrcShape::N5) &&
+                 unsigned(DstShape::N6) == unsigned(SrcShape::N6) &&
+                 unsigned(DstShape::N7) == unsigned(SrcShape::N7) };
 };
 
 template< class DstShape , class SrcShape >
 struct ShapeCompatible< DstShape , SrcShape , 0 , true >
 {
-  enum { value = DstShape::scalar_size == SrcShape::scalar_size &&
-                 DstShape::N0 == SrcShape::N0 &&
-                 DstShape::N1 == SrcShape::N1 &&
-                 DstShape::N2 == SrcShape::N2 &&
-                 DstShape::N3 == SrcShape::N3 &&
-                 DstShape::N4 == SrcShape::N4 &&
-                 DstShape::N5 == SrcShape::N5 &&
-                 DstShape::N6 == SrcShape::N6 &&
-                 DstShape::N7 == SrcShape::N7 };
+  enum { value = unsigned(DstShape::scalar_size) == unsigned(SrcShape::scalar_size) &&
+                 unsigned(DstShape::N0) == unsigned(SrcShape::N0) &&
+                 unsigned(DstShape::N1) == unsigned(SrcShape::N1) &&
+                 unsigned(DstShape::N2) == unsigned(SrcShape::N2) &&
+                 unsigned(DstShape::N3) == unsigned(SrcShape::N3) &&
+                 unsigned(DstShape::N4) == unsigned(SrcShape::N4) &&
+                 unsigned(DstShape::N5) == unsigned(SrcShape::N5) &&
+                 unsigned(DstShape::N6) == unsigned(SrcShape::N6) &&
+                 unsigned(DstShape::N7) == unsigned(SrcShape::N7) };
 };
 
 } /* namespace Impl */
@@ -891,5 +890,5 @@ size_t cardinality_count(
 } /* namespace Impl */
 } /* namespace Kokkos */
 
-#endif /* #ifndef KOKKOS_ARRAYSHAPE_HPP */
+#endif /* #ifndef KOKKOS_CORESHAPE_HPP */
 

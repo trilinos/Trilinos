@@ -2,24 +2,23 @@ INCLUDE(TribitsAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINRARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../TPL)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../TPL)
 
-SET(SOURCES PerfTestMain.cpp PerfTestHost.cpp ../TPL/gtest/gtest-all.cc)
-SET(LIBRARIES kokkosarray_devicehost kokkosarray_impl)
+SET(SOURCES
+  PerfTestMain.cpp
+  PerfTestHost.cpp
+  ../../TPL/gtest/gtest-all.cc
+  )
 
 IF(Kokkos_ENABLE_Cuda)
-  TRIBITS_ADD_LIBRARY(
-    perf_cuda
-    SOURCES PerfTestCuda.cu
-    DEPLIBS
-    CUDALIBRARY
-  )
-  LIST( APPEND SOURCES
-    PerfTestCuda.cpp
-  )
-  LIST( APPEND LIBRARIES
-    kokkosarray_devicecuda perf_cuda
-  )
+
+  # Add subpackage include path dependencies for CUDA_COMPILE().
+  CUDA_INCLUDE_DIRECTORIES( ${KokkosCore_INCLUDE_DIRS} )
+  CUDA_COMPILE( OBJECTS_CUDA PerfTestCuda.cu )
+
+  LIST( APPEND SOURCES PerfTestCuda.cpp )
+  LIST( APPEND SOURCES ${OBJECTS_CUDA} )
+
 ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -27,6 +26,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES ${SOURCES}
   COMM serial mpi
   NUM_MPI_PROCS 1
-  PASS_REGULAR_EXPRESSION "[  PASSED  ]"
-  DEPLIBS ${LIBRARIES}
+  FAIL_REGULAR_EXPRESSION "  FAILED  "
+  DEPLIBS kokkoscore
   )

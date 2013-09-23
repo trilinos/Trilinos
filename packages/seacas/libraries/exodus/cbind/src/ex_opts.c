@@ -53,8 +53,7 @@ int exoptval = EX_DEFAULT;  /* set default global options value to NOT print err
 /*!
 The function ex_opts() is used to set message reporting options.
 
-\return In case of an error, ex_opts() returns a negative number; a warning
-        will return a positive number.
+\return Returns previous value for the message reporting option.
 
 \param[in] options   Integer option value. Current options are shown in the table below.
 
@@ -79,8 +78,10 @@ ex_opts(EX_ABORT|EX_VERBOSE);
 \endcode
 
 */
-void ex_opts (int options)      
+int ex_opts (int options)      
 {
+  int oldval = exoptval;
   exerrval = 0; /* clear error code */
   exoptval = options;
+  return oldval;
 }

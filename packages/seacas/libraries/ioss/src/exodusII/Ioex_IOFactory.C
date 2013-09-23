@@ -175,7 +175,24 @@ namespace {
     }
 
     if (properties.exists(compose_property)) {
-      compose = true;
+      if (properties.get(compose_property).get_type() == Ioss::Property::INTEGER) {
+	compose = properties.get(compose_property).get_int() == 1;
+      } else {
+	std::string yesno = Ioss::Utils::uppercase(properties.get(compose_property).get_string());
+	if (yesno == "TRUE" || yesno == "YES" || yesno == "ON") {
+          compose = true;
+        }
+        else if (yesno == "FALSE" || yesno == "NO" || yesno == "OFF") {
+          compose = false;
+        }
+	else {
+          std::ostringstream errmsg;
+          errmsg << "ERROR: Unrecognized value found IOSS_PROPERTIES environment variable\n"
+		 << "       for " << compose_property << ". Found '" << yesno
+		 << "' which is not one of TRUE|FALSE|YES|NO|ON|OFF";
+          IOSS_ERROR(errmsg);
+	}
+      }
       return compose;
     }
 
@@ -192,7 +209,26 @@ namespace {
         Ioss::tokenize(prop_val[i], "=", property);
         std::string prop = Ioss::Utils::uppercase(property[0]);
         if (prop == compose_property) {
-          compose = true;
+	  if (property.size() != 2) {
+	    // Backwards compatibility -- if property exists with no value, enable
+	    compose = true;
+	  } else {
+	    std::string value = property[1];
+	    std::string up_value = Ioss::Utils::uppercase(value);
+	    if (up_value == "TRUE" || up_value == "YES" || up_value == "ON") {
+	      compose = true;
+	    }
+	    else if (up_value == "FALSE" || up_value == "NO" || up_value == "OFF") {
+	      compose = false;
+	    }
+	    else {
+	      std::ostringstream errmsg;
+	      errmsg << "ERROR: Unrecognized value found IOSS_PROPERTIES environment variable\n"
+		     << "       for " << compose_property << ". Found '" << up_value
+		     << "' which is not one of TRUE|FALSE|YES|NO|ON|OFF";
+	      IOSS_ERROR(errmsg);
+	    }
+	  }
           break;
         }
       }

@@ -367,6 +367,18 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
 }/*end ComputePreconditioner*/
 
 
+// ================================================ ====== ==== ==== == = 
+// Return operator complexity and #nonzeros in fine grid matrix.
+void ML_Epetra::RefMaxwellPreconditioner::Complexities(double &complexity, double &fineNnz) {
+  double e_cplex=0.0, e_nnz=0.0, n_cplex=0.0, n_nnz=0.0;
+
+  complexity=1.0; fineNnz=SM_Matrix_->NumGlobalNonzeros();
+
+  if(EdgePC) EdgePC->Complexities(e_cplex,e_nnz);
+  if(NodePC) NodePC->Complexities(n_cplex,n_nnz);
+
+  complexity= 1.0 + (e_cplex*e_nnz + n_cplex * n_nnz) / fineNnz;
+}
 
 
 // ================================================ ====== ==== ==== == = 

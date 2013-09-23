@@ -5,6 +5,11 @@ ADD_SUBDIRECTORY(Simple)
 ADD_SUBDIRECTORY(ParameterList)
 ADD_SUBDIRECTORY(NativeInterface)
 
+IF(${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND
+KokkosClassic_ENABLE_Thrust AND KokkosClassic_ENABLE_ThreadPool)
+ADD_SUBDIRECTORY(Clone)
+ENDIF()
+
 #ADD_SUBDIRECTORY(MultipleSolve)
 
 ADD_SUBDIRECTORY(Misc/Aggregation)
@@ -15,3 +20,4 @@ IF (${PACKAGE_NAME}_ENABLE_Ifpack)
 ENDIF()
 
 ADD_SUBDIRECTORY(transpose_test)
+#ADD_SUBDIRECTORY(Tutorial)

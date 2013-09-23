@@ -50,7 +50,7 @@ namespace panzer {
 template <typename LO,typename GO>
 class BlockedDOFManagerFactory : public virtual UniqueGlobalIndexerFactory<LO,std::pair<int,GO>,LO,GO> {
 public:
-   BlockedDOFManagerFactory() : useDOFManagerFEI_(true) {}
+   BlockedDOFManagerFactory() : useDOFManagerFEI_(true), useTieBreak_(false) {}
    virtual ~BlockedDOFManagerFactory() {}
 
    /** Does a fieldOrder string require blocking? 
@@ -98,8 +98,15 @@ public:
    bool getUseDOFManagerFEI() const
    { return useDOFManagerFEI_; }
 
+   void setUseTieBreak(bool flag) 
+   { useTieBreak_ = flag; }
+
+   bool getUseTieBreak()
+   { return useTieBreak_; }
+
 private:
    bool useDOFManagerFEI_;
+   bool useTieBreak_;
 };
 
 }

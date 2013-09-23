@@ -48,6 +48,12 @@
 
 #include <Teuchos_ParameterList.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
+#include "Xpetra_Matrix.hpp"
+#include "Xpetra_CrsMatrixWrap.hpp"
+#include <Xpetra_MultiVectorFactory_fwd.hpp>
+#ifdef HAVE_XPETRA_TPETRA // needed for clone()
+#include "Xpetra_TpetraCrsMatrix.hpp"
+#endif
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Ifpack2Smoother_fwd.hpp"
@@ -58,12 +64,12 @@
 namespace Ifpack2 {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> class Preconditioner;
 }
-
+#include "Tpetra_CrsMatrix.hpp"
+#include "Ifpack2_Factory.hpp"
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
-
 namespace MueLu {
 
   /*!
@@ -119,6 +125,10 @@ namespace MueLu {
 
     See also Ifpack2_Relaxation, Ifpack2_Chebyshev, Ifpack2_ILUT, Ifpac2_Krylov.
     */
+
+    template<class Scalar2, class LocalOrdinal2, class GlobalOrdinal2, class Node2, class LocalMatOps2>
+    friend class Ifpack2Smoother;
+
     Ifpack2Smoother(std::string const & type, Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0); //TODO: empty paramList valid for Ifpack??
 
     //! Destructor
@@ -164,7 +174,7 @@ namespace MueLu {
     @param B right-hand side
     @param InitialGuessIsZero (optional) If false, some work can be avoided. Whether this actually saves any work depends on the underlying Ifpack2 implementation.
     */
-    void Apply(MultiVector& X, MultiVector const &B, bool const &InitialGuessIsZero=false) const;
+    void Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero = false) const;
 
     //@}
 
@@ -174,6 +184,10 @@ namespace MueLu {
     RCP<SmootherPrototype> Copy() const;
 
     //@}
+
+    //! Clone the smoother to a different node type
+    template<typename Node2, typename LocalMatOps2>
+    RCP<MueLu::Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node2,LocalMatOps2> > clone(const RCP<Node2>& node2, const Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2,LocalMatOps2> >& A_newnode) const;
 
     //! @name Overridden from Teuchos::Describable
     //@{
@@ -189,6 +203,8 @@ namespace MueLu {
     //@}
 
   private:
+
+      
 
     //! ifpack2-specific key phrase that denote smoother type
     std::string type_;
@@ -206,6 +222,31 @@ namespace MueLu {
     RCP<Matrix> A_;
 
   }; // class Ifpack2Smoother
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template<typename Node2, typename LocalMatOps2>
+  RCP<MueLu::Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node2,LocalMatOps2> >
+  Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::clone(const RCP<Node2>& node2, const RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2, LocalMatOps2> >& A_newnode) const {
+#ifdef HAVE_XPETRA_TPETRA
+    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Matrix1;
+    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> Matrix2;
+    RCP<Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > cloneSmoother = rcp(new Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2>(type_, paramList_, overlap_));
+    //Get Tpetra::CrsMatrix from Xpetra::Matrix
+    RCP<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> > crsOp = rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> >(A_newnode);
+    const RCP<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> > &tmp = rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> >(crsOp->getCrsMatrix());
+
+    Ifpack2::Factory factory;
+    cloneSmoother->prec_ = factory.clone<Matrix1, Matrix2>(prec_, tmp->getTpetra_CrsMatrix(), this->paramList_);
+    cloneSmoother->type_ = type_;
+    cloneSmoother->paramList_ = paramList_;
+    cloneSmoother->IsSetup(this->IsSetup());
+    return cloneSmoother;
+#else
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
+        "MueLu::Ifpack2Smoother::clone(): clone only available with Tpetra.");
+#endif
+  }
+
 
 } // namespace MueLu
 

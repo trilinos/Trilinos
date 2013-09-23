@@ -6,14 +6,14 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
   MPI_OPT_DEV
   ctest_linux_nightly_mpi_development_opt_trilinos-test2.cmake
   CTEST_INSTALLER_TYPE release
-  TIMEOUT_MINUTES 240
+  TIMEOUT_MINUTES 300
 )
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
   MPI_OPT_DEV_NOEI
   ctest_linux_nightly_mpi_development_opt_noei_trilinos-test2.cmake
   CTEST_INSTALLER_TYPE release
-  TIMEOUT_MINUTES 240
+  TIMEOUT_MINUTES 300
 )
 
 #TRILINOS_DRIVER_ADD_DASHBOARD(
@@ -26,7 +26,7 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
   MPI_OPT_DEV_SHARED
   ctest_linux_nightly_mpi_development_opt_shared_trilinos-test2.cmake
   CTEST_INSTALLER_TYPE release
-  TIMEOUT_MINUTES 240
+  TIMEOUT_MINUTES 300
 )
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
@@ -75,12 +75,12 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
   REQUIRED_FILES ${INSTALLATION_DIR}/lib/cmake/Trilinos/TrilinosConfig.cmake
 )
 
-TRILINOS_DRIVER_ADD_DASHBOARD(
-  MPI_OPT_DEV_BACKWARDS_COMPATIBILITY_11.2
-  ctest_linux_nightly_mpi_development_opt_backwards_11_2_trilinos-test2.cmake
-  CTEST_INSTALLER_TYPE release
-  DEPENDS Install_Trilinos
-  REQUIRED_FILES ${INSTALLATION_DIR}/lib/cmake/Trilinos/TrilinosConfig.cmake
-)
+#TRILINOS_DRIVER_ADD_DASHBOARD(
+#  MPI_OPT_DEV_BACKWARDS_COMPATIBILITY_11.2
+#  ctest_linux_nightly_mpi_development_opt_backwards_11_2_trilinos-test2.cmake
+#  CTEST_INSTALLER_TYPE release
+#  DEPENDS Install_Trilinos
+#  REQUIRED_FILES ${INSTALLATION_DIR}/lib/cmake/Trilinos/TrilinosConfig.cmake
+#)
 
 TRILINOS_ADD_REQUIRED_CMAKE_INSTALLS()

@@ -89,6 +89,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DHDF5_LIBRARY_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/hdf5-1.8.6/lib"
   "-DNetcdf_LIBRARY_DIRS=/home/trilinos/tpl/gcc4.1.2/netcdf_4.2/lib"
   "-DNetcdf_INCLUDE_DIRS=/home/trilinos/tpl/gcc4.1.2/netcdf_4.2/include"
+  "-DTPL_ENABLE_CppUnit:BOOL=ON"
   )
 
 #

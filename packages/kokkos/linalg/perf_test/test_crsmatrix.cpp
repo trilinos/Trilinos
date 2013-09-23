@@ -10,11 +10,11 @@
 #ifdef _OPENMP
 #include <Kokkos_OpenMP.hpp>
 #else
-#include <Kokkos_Host.hpp>
+#include <Kokkos_Threads.hpp>
 #endif
 #include <Kokkos_Cuda.hpp>
-#include <Kokkos_MultiVector.hpp>
-#include <Kokkos_CRSMatrix.hpp>
+#include <Kokkos_MV.hpp>
+#include <Kokkos_CrsMatrix.hpp>
 #ifndef DEVICE
 #define DEVICE 1
 #endif
@@ -22,7 +22,7 @@
 #ifdef _OPENMP
 typedef Kokkos::OpenMP device_type;
 #else
-typedef Kokkos::Host device_type;
+typedef Kokkos::Threads device_type;
 #endif
 #define KokkosHost(a) a
 #define KokkosCUDA(a)
@@ -60,13 +60,13 @@ int SparseMatrix_MatrixMarket_read(const char* filename, OrdinalType &nrows, Ord
 
   while(line[0]=='%')
   {
-	  fgets(line,511,file);
-	  count++;
-	  if(count==0) symmetric=strstr(line,"symmetric");
+          fgets(line,511,file);
+          count++;
+          if(count==0) symmetric=strstr(line,"symmetric");
   }
   rewind(file);
   for(int i=0;i<count;i++)
-	  fgets(line,511,file);
+          fgets(line,511,file);
   fscanf(file,"%i",&nrows);
   fscanf(file,"%i",&ncols);
   fscanf(file,"%i",&nlines);
@@ -84,19 +84,19 @@ int SparseMatrix_MatrixMarket_read(const char* filename, OrdinalType &nrows, Ord
   for(int ii=0;ii<nlines;ii++)
   {
 
-	  fscanf(file,"%i %i %le",&rowIndtmp[nnz],&colIndtmp[nnz],&valuestmp[nnz]);
-	  priorEntrySameRowInd[nnz] = lastEntryWithRowInd[rowIndtmp[nnz]-1];
-	  lastEntryWithRowInd[rowIndtmp[nnz]-1]=nnz;
-	  if((symmetric) && (rowIndtmp[nnz]!=colIndtmp[nnz]))
-	  {
-		nnz++;
-   	    rowIndtmp[nnz]=colIndtmp[nnz-1];
-   	    colIndtmp[nnz]=rowIndtmp[nnz-1];
-   	    valuestmp[nnz]=valuestmp[nnz-1];
-  	    priorEntrySameRowInd[nnz] = lastEntryWithRowInd[rowIndtmp[nnz]-1];
-  	    lastEntryWithRowInd[rowIndtmp[nnz]-1]=nnz;
-	  }
-	  nnz++;
+          fscanf(file,"%i %i %le",&rowIndtmp[nnz],&colIndtmp[nnz],&valuestmp[nnz]);
+          priorEntrySameRowInd[nnz] = lastEntryWithRowInd[rowIndtmp[nnz]-1];
+          lastEntryWithRowInd[rowIndtmp[nnz]-1]=nnz;
+          if((symmetric) && (rowIndtmp[nnz]!=colIndtmp[nnz]))
+          {
+                nnz++;
+            rowIndtmp[nnz]=colIndtmp[nnz-1];
+            colIndtmp[nnz]=rowIndtmp[nnz-1];
+            valuestmp[nnz]=valuestmp[nnz-1];
+            priorEntrySameRowInd[nnz] = lastEntryWithRowInd[rowIndtmp[nnz]-1];
+            lastEntryWithRowInd[rowIndtmp[nnz]-1]=nnz;
+          }
+          nnz++;
   }
 
   values = new ScalarType[nnz];
@@ -106,12 +106,12 @@ int SparseMatrix_MatrixMarket_read(const char* filename, OrdinalType &nrows, Ord
   int pos = 0;
   for(int row=0;row<nrows;row++)
   {
-	int j = lastEntryWithRowInd[row];
-	rowPtr[row]=pos;
+        int j = lastEntryWithRowInd[row];
+        rowPtr[row]=pos;
     while(j>-1)
     {
-    	values[pos] = valuestmp[j];
-    	colInd[pos] = colIndtmp[j]-1;
+        values[pos] = valuestmp[j];
+        colInd[pos] = colIndtmp[j]-1;
         j = priorEntrySameRowInd[j];
         pos++;
     }
@@ -162,13 +162,13 @@ int SparseMatrix_ReadBinaryGraph(const char* filename, OrdinalType &nrows, Ordin
 
   while(line[0]=='%')
   {
-	  fgets(line,511,file);
-	  count++;
-	  if(count==0) symmetric=strstr(line,"symmetric");
+          fgets(line,511,file);
+          count++;
+          if(count==0) symmetric=strstr(line,"symmetric");
   }
   rewind(file);
   for(int i=0;i<count;i++)
-	  fgets(line,511,file);
+          fgets(line,511,file);
   fscanf(file,"%i",&nrows);
   fscanf(file,"%i",&ncols);
   fscanf(file,"%i",&nlines);
@@ -215,221 +215,221 @@ int SparseMatrix_generate(OrdinalType nrows, OrdinalType ncols, OrdinalType &nnz
   colInd = new OrdinalType[nnz];
   for(int row=0;row<nrows;row++)
   {
-	 for(int k=rowPtr[row];k<rowPtr[row+1];k++)
-	 {
-		int pos = (1.0*rand()/INT_MAX-0.5)*width_row+row;
-		if(pos<0) pos+=ncols;
-		if(pos>=ncols) pos-=ncols;
-		colInd[k]= pos;
-		values[k] = 100.0*rand()/INT_MAX-50.0;
-	 }
+         for(int k=rowPtr[row];k<rowPtr[row+1];k++)
+         {
+                int pos = (1.0*rand()/INT_MAX-0.5)*width_row+row;
+                if(pos<0) pos+=ncols;
+                if(pos>=ncols) pos-=ncols;
+                colInd[k]= pos;
+                values[k] = 100.0*rand()/INT_MAX-50.0;
+         }
   }
   return nnz;
 }
 
 template<typename Scalar>
 int test_crs_matrix_test(LocalOrdinalType numRows, LocalOrdinalType numCols, LocalOrdinalType nnz, LocalOrdinalType numVecs, LocalOrdinalType test, const char* filename,const bool binaryfile) {
-	typedef Kokkos::CrsMatrix<Scalar,LocalOrdinalType,device_type> matrix_type ;
-	typedef typename Kokkos::MultiVectorDynamic<Scalar,device_type>::type mv_type;
-	typedef typename Kokkos::MultiVectorDynamic<Scalar,device_type>::random_read_type mv_random_read_type;
-	typedef typename mv_type::HostMirror h_mv_type;
+        typedef Kokkos::CrsMatrix<Scalar,LocalOrdinalType,device_type> matrix_type ;
+        typedef typename Kokkos::MultiVectorDynamic<Scalar,device_type>::type mv_type;
+        typedef typename Kokkos::MultiVectorDynamic<Scalar,device_type>::random_read_type mv_random_read_type;
+        typedef typename mv_type::HostMirror h_mv_type;
 
-	Scalar* val = NULL;
-	LocalOrdinalType* row = NULL;
-	LocalOrdinalType* col = NULL;
+        Scalar* val = NULL;
+        LocalOrdinalType* row = NULL;
+        LocalOrdinalType* col = NULL;
 
-	srand(17312837);
-	if(filename==NULL)
-	  nnz = SparseMatrix_generate<Scalar,LocalOrdinalType>(numRows,numCols,nnz,nnz/numRows*0.2,numRows*0.01,val,row,col);
-	else
-	  if(!binaryfile)
-	    nnz = SparseMatrix_MatrixMarket_read<Scalar,LocalOrdinalType>(filename,numRows,numCols,nnz,val,row,col);
-	  else
-	    nnz = SparseMatrix_ReadBinaryGraph<Scalar,LocalOrdinalType>(filename,numRows,numCols,nnz,val,row,col);
+        srand(17312837);
+        if(filename==NULL)
+          nnz = SparseMatrix_generate<Scalar,LocalOrdinalType>(numRows,numCols,nnz,nnz/numRows*0.2,numRows*0.01,val,row,col);
+        else
+          if(!binaryfile)
+            nnz = SparseMatrix_MatrixMarket_read<Scalar,LocalOrdinalType>(filename,numRows,numCols,nnz,val,row,col);
+          else
+            nnz = SparseMatrix_ReadBinaryGraph<Scalar,LocalOrdinalType>(filename,numRows,numCols,nnz,val,row,col);
 
-	matrix_type A("CRS::A",numRows,numCols,nnz,val,row,col,false);
+        matrix_type A("CRS::A",numRows,numCols,nnz,val,row,col,false);
 
-	mv_type x("X",numCols,numVecs);
-	mv_random_read_type t_x(x);
-	mv_type y("Y",numRows,numVecs);
-	h_mv_type h_x = Kokkos::create_mirror_view(x);
-	h_mv_type h_y = Kokkos::create_mirror_view(y);
-	h_mv_type h_y_compare = Kokkos::create_mirror(y);
+        mv_type x("X",numCols,numVecs);
+        mv_random_read_type t_x(x);
+        mv_type y("Y",numRows,numVecs);
+        h_mv_type h_x = Kokkos::create_mirror_view(x);
+        h_mv_type h_y = Kokkos::create_mirror_view(y);
+        h_mv_type h_y_compare = Kokkos::create_mirror(y);
     typename matrix_type::CrsArrayType::HostMirror h_graph = Kokkos::create_mirror(A.graph);
     typename matrix_type::values_type::HostMirror h_values = Kokkos::create_mirror_view(A.values);
 
     //Kokkos::deep_copy(h_graph.row_map,A.graph.row_map);
     for(LocalOrdinalType k=0;k<numVecs;k++){
-	  //h_a(k) = (Scalar) (1.0*(rand()%40)-20.);
-	  for(LocalOrdinalType i=0; i<numCols;i++) {
-		  h_x(i,k) = (Scalar) (1.0*(rand()%40)-20.);
-		  h_y(i,k) = (Scalar) (1.0*(rand()%40)-20.);
-	  }
+          //h_a(k) = (Scalar) (1.0*(rand()%40)-20.);
+          for(LocalOrdinalType i=0; i<numCols;i++) {
+                  h_x(i,k) = (Scalar) (1.0*(rand()%40)-20.);
+                  h_y(i,k) = (Scalar) (1.0*(rand()%40)-20.);
+          }
     }
-	for(LocalOrdinalType i=0;i<numRows;i++) {
-		LocalOrdinalType start = h_graph.row_map(i);
-		LocalOrdinalType end = h_graph.row_map(i+1);
-		for(LocalOrdinalType j=start;j<end;j++) {
-		   h_values(j) = h_graph.entries(j) + i;
-		}
-		for(LocalOrdinalType k = 0; k<numVecs; k++)
-		  h_y_compare(i,k) = 0;
-		for(LocalOrdinalType j=start;j<end;j++) {
-		   Scalar val = h_graph.entries(j) + i;
-		   LocalOrdinalType idx = h_graph.entries(j);
-		   for(LocalOrdinalType k = 0; k<numVecs; k++)
-			   h_y_compare(i,k)+=val*h_x(idx,k);
-		}
-	}
+        for(LocalOrdinalType i=0;i<numRows;i++) {
+                LocalOrdinalType start = h_graph.row_map(i);
+                LocalOrdinalType end = h_graph.row_map(i+1);
+                for(LocalOrdinalType j=start;j<end;j++) {
+                   h_values(j) = h_graph.entries(j) + i;
+                }
+                for(LocalOrdinalType k = 0; k<numVecs; k++)
+                  h_y_compare(i,k) = 0;
+                for(LocalOrdinalType j=start;j<end;j++) {
+                   Scalar val = h_graph.entries(j) + i;
+                   LocalOrdinalType idx = h_graph.entries(j);
+                   for(LocalOrdinalType k = 0; k<numVecs; k++)
+                           h_y_compare(i,k)+=val*h_x(idx,k);
+                }
+        }
 
-	Kokkos::deep_copy(x,h_x);
-	Kokkos::deep_copy(y,h_y);
-	Kokkos::deep_copy(A.graph.entries,h_graph.entries);
-	Kokkos::deep_copy(A.values,h_values);
+        Kokkos::deep_copy(x,h_x);
+        Kokkos::deep_copy(y,h_y);
+        Kokkos::deep_copy(A.graph.entries,h_graph.entries);
+        Kokkos::deep_copy(A.values,h_values);
 
-	Kokkos::MV_Multiply(0.0,y,1.0,A,x);
-	device_type::fence();
-	Kokkos::deep_copy(h_y,y);
-	Scalar error[numVecs];
-	Scalar sum[numVecs];
-	for(LocalOrdinalType k = 0; k<numVecs; k++) {
-		error[k] = 0;
-		sum[k] = 0;
-	}
-	for(LocalOrdinalType i=0;i<numRows;i++)
-		for(LocalOrdinalType k = 0; k<numVecs; k++) {
+        Kokkos::MV_Multiply(0.0,y,1.0,A,x);
+        device_type::fence();
+        Kokkos::deep_copy(h_y,y);
+        Scalar error[numVecs];
+        Scalar sum[numVecs];
+        for(LocalOrdinalType k = 0; k<numVecs; k++) {
+                error[k] = 0;
+                sum[k] = 0;
+        }
+        for(LocalOrdinalType i=0;i<numRows;i++)
+                for(LocalOrdinalType k = 0; k<numVecs; k++) {
           error[k]+=(h_y_compare(i,k)-h_y(i,k))*(h_y_compare(i,k)-h_y(i,k));
           sum[k] += h_y_compare(i,k)*h_y_compare(i,k);
          // prLocalOrdinalTypef("%i %i %lf %lf %lf\n",i,k,h_y_compare(i,k),h_y(i,k),h_x(i,k));
-		}
+                }
 
-	//for(LocalOrdinalType i=0;i<A.nnz;i++) prLocalOrdinalTypef("%i %lf\n",h_graph.entries(i),h_values(i));
+        //for(LocalOrdinalType i=0;i<A.nnz;i++) prLocalOrdinalTypef("%i %lf\n",h_graph.entries(i),h_values(i));
     LocalOrdinalType num_errors = 0;
     double total_error = 0;
     double total_sum = 0;
-	for(LocalOrdinalType k = 0; k<numVecs; k++) {
-		num_errors += (error[k]/(sum[k]==0?1:sum[k]))>1e-5?1:0;
-		total_error += error[k];
-		total_sum += sum[k];
-	}
+        for(LocalOrdinalType k = 0; k<numVecs; k++) {
+                num_errors += (error[k]/(sum[k]==0?1:sum[k]))>1e-5?1:0;
+                total_error += error[k];
+                total_sum += sum[k];
+        }
 
     LocalOrdinalType loop = 10;
-	timespec starttime,endtime;
+        timespec starttime,endtime;
     clock_gettime(CLOCK_REALTIME,&starttime);
 
-	for(LocalOrdinalType i=0;i<loop;i++)
-		Kokkos::MV_Multiply(0.0,y,1.0,A,t_x);
-	device_type::fence();
-	clock_gettime(CLOCK_REALTIME,&endtime);
-	double time = endtime.tv_sec - starttime.tv_sec + 1.0 * (endtime.tv_nsec - starttime.tv_nsec) / 1000000000;
-	double matrix_size = 1.0*((nnz*(sizeof(Scalar)+sizeof(LocalOrdinalType)) + numRows*sizeof(LocalOrdinalType)))/1024/1024;
-	double vector_size = 2.0*numRows*numVecs*sizeof(Scalar)/1024/1024;
-	double vector_readwrite = 2.0*nnz*numVecs*sizeof(Scalar)/1024/1024;
+        for(LocalOrdinalType i=0;i<loop;i++)
+                Kokkos::MV_Multiply(0.0,y,1.0,A,t_x);
+        device_type::fence();
+        clock_gettime(CLOCK_REALTIME,&endtime);
+        double time = endtime.tv_sec - starttime.tv_sec + 1.0 * (endtime.tv_nsec - starttime.tv_nsec) / 1000000000;
+        double matrix_size = 1.0*((nnz*(sizeof(Scalar)+sizeof(LocalOrdinalType)) + numRows*sizeof(LocalOrdinalType)))/1024/1024;
+        double vector_size = 2.0*numRows*numVecs*sizeof(Scalar)/1024/1024;
+        double vector_readwrite = 2.0*nnz*numVecs*sizeof(Scalar)/1024/1024;
 
-	double problem_size = matrix_size+vector_size;
+        double problem_size = matrix_size+vector_size;
     printf("%i %i %i %i %6.2lf MB %6.2lf GB/s %6.2lf ms %i\n",nnz, numRows,numCols,numVecs,problem_size,(matrix_size+vector_readwrite)/time*loop/1024, time/loop*1000, num_errors);
-	return (int)total_error;
+        return (int)total_error;
 }
 
 template<typename Scalar>
 int test_crs_matrix_test_singlevec(int numRows, int numCols, int nnz, int test, const char* filename, const bool binaryfile) {
-	typedef Kokkos::CrsMatrix<Scalar,int,device_type> matrix_type ;
-	typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,device_type> mv_type;
-	typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,device_type,Kokkos::MemoryRandomRead> mv_random_read_type;
-	typedef typename mv_type::HostMirror h_mv_type;
+        typedef Kokkos::CrsMatrix<Scalar,int,device_type> matrix_type ;
+        typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,device_type> mv_type;
+        typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,device_type,Kokkos::MemoryRandomRead> mv_random_read_type;
+        typedef typename mv_type::HostMirror h_mv_type;
 
-	Scalar* val = NULL;
-	int* row = NULL;
-	int* col = NULL;
+        Scalar* val = NULL;
+        int* row = NULL;
+        int* col = NULL;
 
-	srand(17312837);
-	if(filename==NULL)
-	  nnz = SparseMatrix_generate<Scalar,int>(numRows,numCols,nnz,nnz/numRows*0.2,numRows*0.01,val,row,col);
-	else
-	  if(!binaryfile)
-	    nnz = SparseMatrix_MatrixMarket_read<Scalar,int>(filename,numRows,numCols,nnz,val,row,col);
-	  else
-	    nnz = SparseMatrix_ReadBinaryGraph<Scalar,int>(filename,numRows,numCols,nnz,val,row,col);
+        srand(17312837);
+        if(filename==NULL)
+          nnz = SparseMatrix_generate<Scalar,int>(numRows,numCols,nnz,nnz/numRows*0.2,numRows*0.01,val,row,col);
+        else
+          if(!binaryfile)
+            nnz = SparseMatrix_MatrixMarket_read<Scalar,int>(filename,numRows,numCols,nnz,val,row,col);
+          else
+            nnz = SparseMatrix_ReadBinaryGraph<Scalar,int>(filename,numRows,numCols,nnz,val,row,col);
 
-	matrix_type A("CRS::A",numRows,numCols,nnz,val,row,col,false);
+        matrix_type A("CRS::A",numRows,numCols,nnz,val,row,col,false);
 
-	mv_type x("X",numCols);
-	mv_random_read_type t_x(x);
-	mv_type y("Y",numRows);
-	h_mv_type h_x = Kokkos::create_mirror_view(x);
-	h_mv_type h_y = Kokkos::create_mirror_view(y);
-	h_mv_type h_y_compare = Kokkos::create_mirror(y);
+        mv_type x("X",numCols);
+        mv_random_read_type t_x(x);
+        mv_type y("Y",numRows);
+        h_mv_type h_x = Kokkos::create_mirror_view(x);
+        h_mv_type h_y = Kokkos::create_mirror_view(y);
+        h_mv_type h_y_compare = Kokkos::create_mirror(y);
     typename matrix_type::CrsArrayType::HostMirror h_graph = Kokkos::create_mirror(A.graph);
     typename matrix_type::values_type::HostMirror h_values = Kokkos::create_mirror_view(A.values);
 
     //Kokkos::deep_copy(h_graph.row_map,A.graph.row_map);
-	  //h_a(k) = (Scalar) (1.0*(rand()%40)-20.);
-	  for(int i=0; i<numCols;i++) {
-		  h_x(i) = (Scalar) (1.0*(rand()%40)-20.);
-		  h_y(i) = (Scalar) (1.0*(rand()%40)-20.);
-	  }
-	for(int i=0;i<numRows;i++) {
-		int start = h_graph.row_map(i);
-		int end = h_graph.row_map(i+1);
-		for(int j=start;j<end;j++) {
-		   h_values(j) = h_graph.entries(j) + i;
-		}
-  	    h_y_compare(i) = 0;
-		for(int j=start;j<end;j++) {
-		   Scalar val = h_graph.entries(j) + i;
-		   int idx = h_graph.entries(j);
-  		     h_y_compare(i)+=val*h_x(idx);
-		}
-	}
+          //h_a(k) = (Scalar) (1.0*(rand()%40)-20.);
+          for(int i=0; i<numCols;i++) {
+                  h_x(i) = (Scalar) (1.0*(rand()%40)-20.);
+                  h_y(i) = (Scalar) (1.0*(rand()%40)-20.);
+          }
+        for(int i=0;i<numRows;i++) {
+                int start = h_graph.row_map(i);
+                int end = h_graph.row_map(i+1);
+                for(int j=start;j<end;j++) {
+                   h_values(j) = h_graph.entries(j) + i;
+                }
+            h_y_compare(i) = 0;
+                for(int j=start;j<end;j++) {
+                   Scalar val = h_graph.entries(j) + i;
+                   int idx = h_graph.entries(j);
+                     h_y_compare(i)+=val*h_x(idx);
+                }
+        }
 
-	Kokkos::deep_copy(x,h_x);
-	Kokkos::deep_copy(y,h_y);
-	Kokkos::deep_copy(A.graph.entries,h_graph.entries);
-	Kokkos::deep_copy(A.values,h_values);
-	/*for(int i=0;i<numRows;i++)
-		for(int k = 0; k<numVecs; k++) {
+        Kokkos::deep_copy(x,h_x);
+        Kokkos::deep_copy(y,h_y);
+        Kokkos::deep_copy(A.graph.entries,h_graph.entries);
+        Kokkos::deep_copy(A.values,h_values);
+        /*for(int i=0;i<numRows;i++)
+                for(int k = 0; k<numVecs; k++) {
           //error[k]+=(h_y_compare(i,k)-h_y(i,k))*(h_y_compare(i,k)-h_y(i,k));
           printf("%i %i %lf %lf %lf\n",i,k,h_y_compare(i,k),h_y(i,k),h_x(i,k));
-		}*/
+                }*/
     typename Kokkos::CrsMatrix<Scalar,int,device_type>::values_type x1("X1",numCols);
     typename Kokkos::CrsMatrix<Scalar,int,device_type>::values_type y1("Y1",numRows);
     Kokkos::MV_Multiply(0.0,y1,1.0,A,x1);
 
-	Kokkos::MV_Multiply(0.0,y,1.0,A,x);
-	device_type::fence();
-	Kokkos::deep_copy(h_y,y);
-	Scalar error = 0;
-	Scalar sum = 0;
-	for(int i=0;i<numRows;i++) {
+        Kokkos::MV_Multiply(0.0,y,1.0,A,x);
+        device_type::fence();
+        Kokkos::deep_copy(h_y,y);
+        Scalar error = 0;
+        Scalar sum = 0;
+        for(int i=0;i<numRows;i++) {
           error+=(h_y_compare(i)-h_y(i))*(h_y_compare(i)-h_y(i));
           sum += h_y_compare(i)*h_y_compare(i);
          // printf("%i %i %lf %lf %lf\n",i,k,h_y_compare(i,k),h_y(i,k),h_x(i,k));
-		}
+                }
 
-	//for(int i=0;i<A.nnz;i++) printf("%i %lf\n",h_graph.entries(i),h_values(i));
+        //for(int i=0;i<A.nnz;i++) printf("%i %lf\n",h_graph.entries(i),h_values(i));
     int num_errors = 0;
     double total_error = 0;
     double total_sum = 0;
-		num_errors += (error/(sum==0?1:sum))>1e-5?1:0;
-		total_error += error;
-		total_sum += sum;
+                num_errors += (error/(sum==0?1:sum))>1e-5?1:0;
+                total_error += error;
+                total_sum += sum;
 
     int loop = 10;
-	timespec starttime,endtime;
+        timespec starttime,endtime;
     clock_gettime(CLOCK_REALTIME,&starttime);
 
-	for(int i=0;i<loop;i++)
-		Kokkos::MV_Multiply(0.0,y,1.0,A,t_x);
-	device_type::fence();
-	clock_gettime(CLOCK_REALTIME,&endtime);
-	double time = endtime.tv_sec - starttime.tv_sec + 1.0 * (endtime.tv_nsec - starttime.tv_nsec) / 1000000000;
-	double matrix_size = 1.0*((nnz*(sizeof(Scalar)+sizeof(int)) + numRows*sizeof(int)))/1024/1024;
-	double vector_size = 2.0*numRows*sizeof(Scalar)/1024/1024;
-	double vector_readwrite = 2.0*nnz*sizeof(Scalar)/1024/1024;
+        for(int i=0;i<loop;i++)
+                Kokkos::MV_Multiply(0.0,y,1.0,A,t_x);
+        device_type::fence();
+        clock_gettime(CLOCK_REALTIME,&endtime);
+        double time = endtime.tv_sec - starttime.tv_sec + 1.0 * (endtime.tv_nsec - starttime.tv_nsec) / 1000000000;
+        double matrix_size = 1.0*((nnz*(sizeof(Scalar)+sizeof(int)) + numRows*sizeof(int)))/1024/1024;
+        double vector_size = 2.0*numRows*sizeof(Scalar)/1024/1024;
+        double vector_readwrite = 2.0*nnz*sizeof(Scalar)/1024/1024;
 
-	double problem_size = matrix_size+vector_size;
+        double problem_size = matrix_size+vector_size;
     printf("%i %i %i %i %6.2lf MB %6.2lf GB/s %6.2lf ms %i\n",nnz, numRows,numCols,1,problem_size,(matrix_size+vector_readwrite)/time*loop/1024, time/loop*1000, num_errors);
-	return (int)total_error;
+        return (int)total_error;
 }
 
 
@@ -476,7 +476,7 @@ int main(int argc, char **argv)
    Kokkos::OpenMP::initialize( numa);
 #pragma message "Compile OpenMP"
 #else
-   Kokkos::Host::initialize( numa , threads );
+   Kokkos::Threads::initialize( std::pair<unsigned,unsigned>( numa , threads ) );
 #pragma message "Compile PThreads"
 #endif
 
@@ -502,7 +502,7 @@ int main(int argc, char **argv)
 #ifdef _OPENMP
  Kokkos::OpenMP::finalize();
 #else
- Kokkos::Host::finalize();
+ Kokkos::Threads::finalize();
 #endif
  )
  device_type::finalize();

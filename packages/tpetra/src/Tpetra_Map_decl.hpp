@@ -66,17 +66,18 @@ namespace Tpetra {
   // Forward declaration of Directory.
   template <class LO, class GO, class N> class Directory;
 
-#  ifdef HAVE_TPETRA_FIXED_HASH_TABLE
   namespace Details {
+    // Forward declaration of TieBreak
+    template <class LO, class GO> class TieBreak;
+
+#  ifdef HAVE_TPETRA_FIXED_HASH_TABLE
     template<class GlobalOrdinal, class LocalOrdinal>
     class FixedHashTable;
-  } // namespace Details
 #  else
-  namespace Details {
     template<class GlobalOrdinal, class LocalOrdinal>
     class HashTable;
-  } // namespace Details
 #  endif // HAVE_TPETRA_FIXED_HASH_TABLE
+  } // namespace Details
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
   /// \class Map
@@ -529,7 +530,6 @@ namespace Tpetra {
     ///
     /// "Globally distributed" means that <i>all</i> of the following
     /// are true:
-    ///
     /// <ol>
     /// <li> The map's communicator has more than one process.</li>
     /// <li> There is at least one process in the map's communicator,
@@ -548,7 +548,6 @@ namespace Tpetra {
     /// \brief True if and only if \c map is compatible with this Map.
     ///
     /// Two Maps are "compatible" if all of the following are true:
-    ///
     /// <ol>
     /// <li> Their communicators have the same numbers of processes.
     ///    (This is necessary even to call this method.)</li>
@@ -566,9 +565,10 @@ namespace Tpetra {
     /// compatible, then it is legal to assign X to Y or to assign Y
     /// to X.
     ///
-    /// If the input Map and this Map have different communicators,
-    /// the behavior of this method is currently undefined if the two
-    /// communicators have different numbers of processes.
+    /// The behavior of this method is undefined if the input Map's
+    /// communicator and this Map's communicator have different
+    /// numbers of processes.  This method must be called collectively
+    /// over this Map's communicator.
     bool isCompatible (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const;
 
     /// \brief True if and only if \c map is identical to this Map.
@@ -597,9 +597,10 @@ namespace Tpetra {
     /// alone identical.  Two identical Maps correspond to the same
     /// permutation.
     ///
-    /// If the input Map and this Map have different communicators,
-    /// the behavior of this method is undefined if the two
-    /// communicators have different numbers of processes.
+    /// The behavior of this method is undefined if the input Map's
+    /// communicator and this Map's communicator have different
+    /// numbers of processes.  This method must be called collectively
+    /// over this Map's communicator.
     bool isSameAs (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const;
 
     //@}
@@ -849,15 +850,18 @@ namespace Tpetra {
     /// common case for the prolongation or restriction operators in
     /// algebraic multigrid.
     ///
-    /// \warning Never allow this pointer to escape the Map.  The
-    ///   directory must hold an RCP to this Map, which must be
-    ///   non-owning to prevent a circular dependency.  Therefore,
-    ///   allowing the Directory to persist beyond this Map would
-    ///   result in a dangling RCP. We avoid this by not sharing the
-    ///   Directory.
-    ///
     /// \note This is declared "mutable" so that getRemoteIndexList()
     ///   can create the Directory on demand.
+    ///
+    /// \warning The Directory is an implementation detail of its Map.
+    ///   It does not make sense to expose in the public interface of
+    ///   Map.  Resist the temptation to do so.  There is no need,
+    ///   because Map's public interface already exposes the one
+    ///   useful feature of Directory, via getRemoteIndexList().  We
+    ///   only use Teuchos::RCP here because the more appropriate
+    ///   std::unique_ptr is a C++11 feature and is therefore not
+    ///   available to us.  Developers should not construe the use of
+    ///   Teuchos::RCP as permission to share this object.
     mutable Teuchos::RCP<Directory<LocalOrdinal,GlobalOrdinal,Node> > directory_;
 
   }; // Map class
@@ -1001,6 +1005,18 @@ namespace Tpetra {
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
   createOneToOne(Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &M);
 
+  /** \brief Creates a one-to-one version of the given Map where each GID is owned by only one process.
+             The rule to break ties is specifed by the tie break object.
+
+      The user must guarantee there are no duplicate GID on the same processor. Unexepected behavior may result.
+
+      \relatesalso Map
+   */
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
+  createOneToOne(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &M,
+                 const Tpetra::Details::TieBreak<LocalOrdinal,GlobalOrdinal> & tie_break);
+
 } // Tpetra namespace
 
 #include "Tpetra_Directory_decl.hpp"
@@ -1038,8 +1054,7 @@ namespace Tpetra {
     // we can clone inexpensively, so there is no harm in creating it
     // here.
     if (! directory_.is_null ()) {
-      // The weak reference prevents circularity.
-      map->directory_ = directory_->template clone<Node2> (map.create_weak ());
+      map->directory_ = directory_->template clone<Node2> (*map);
     }
     return map;
   }

@@ -57,7 +57,8 @@ void PerformSolveImpl(
     const Teuchos::Array<bool> &computeResponses,
     bool computeSensitivities,
     Teuchos::Array<Teuchos::RCP<VectorType> > &responses,
-    Teuchos::Array<Teuchos::Array<Teuchos::RCP<MultiVectorType> > > &sensitivities)
+    Teuchos::Array<Teuchos::Array<Teuchos::RCP<MultiVectorType> > > &sensitivities,
+    Teuchos::RCP<SolutionObserverBase<Scalar, VectorType> > observer)
 {
   const int responseCount = model.Ng();
   const int parameterCount = model.Np();
@@ -74,6 +75,10 @@ void PerformSolveImpl(
         const Teuchos::RCP<Thyra::VectorBase<Scalar> > g = Thyra::createMember(*model.get_g_space(j));
         outArgs.set_g(j, g);
         responses[j] = g;
+
+        if(Teuchos::nonnull(observer))
+           observer->observeResponse(j, Teuchos::rcpFromRef(outArgs), 
+                Teuchos::rcpFromRef(responses), g);
 
         if (computeSensitivities) {
           for (int l = 0; l < parameterCount; ++l) {
@@ -96,6 +101,7 @@ void PerformSolveImpl(
   // Solve the problem using the default values for the parameters
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = model.createInArgs();
   model.evalModel(inArgs, outArgs);
+
 }
 
 template <typename Scalar>
@@ -110,7 +116,8 @@ void PerformSolveImpl(
 
   Teuchos::Array<Teuchos::RCP<Thyra::VectorBase<Scalar> > > responses;
   Teuchos::Array<Teuchos::Array<Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > > > sensitivities;
-  PerformSolveImpl(piroModel, computeResponses, computeSensitivities, responses, sensitivities);
+  Teuchos::RCP<SolutionObserverBase<Scalar, Thyra::VectorBase<Scalar> > > observer;
+  PerformSolveImpl(piroModel, computeResponses, computeSensitivities, responses, sensitivities, observer);
 
   response = responses[responseIndex];
 }
@@ -128,7 +135,25 @@ void PerformSolveImpl(
   const Teuchos::Array<bool> computeResponses = parseResponseParameters(solveParams, responseCount);
   const bool computeSensitivities = parseSensitivityParameters(solveParams);
 
-  PerformSolveImpl(model, computeResponses, computeSensitivities, responses, sensitivities);
+  Teuchos::RCP<SolutionObserverBase<Scalar, VectorType> > observer;
+  PerformSolveImpl(model, computeResponses, computeSensitivities, responses, sensitivities, observer);
+}
+
+template <typename Scalar, typename VectorType, typename MultiVectorType>
+void PerformSolveImpl(
+    const Thyra::ModelEvaluator<Scalar> &model,
+    Teuchos::ParameterList &solveParams,
+    Teuchos::Array<Teuchos::RCP<VectorType> > &responses,
+    Teuchos::Array<Teuchos::Array<Teuchos::RCP<MultiVectorType> > > &sensitivities,
+    Teuchos::RCP<SolutionObserverBase<Scalar, VectorType> > observer)
+{
+  const int responseCount = model.Ng();
+
+  // Parse parameters
+  const Teuchos::Array<bool> computeResponses = parseResponseParameters(solveParams, responseCount);
+  const bool computeSensitivities = parseSensitivityParameters(solveParams);
+
+  PerformSolveImpl(model, computeResponses, computeSensitivities, responses, sensitivities, observer);
 }
 
 } // namespace Detail
@@ -216,7 +241,8 @@ void PerformSolveBase(
 
   Teuchos::Array<Teuchos::RCP<Thyra::VectorBase<Scalar> > > responses;
   Teuchos::Array<Teuchos::Array<Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > > > sensitivities;
-  Detail::PerformSolveImpl(piroModel, computeResponses, computeSensitivities, responses, sensitivities);
+  Teuchos::RCP<SolutionObserverBase<Scalar, Thyra::VectorBase<Scalar> > > observer;
+  Detail::PerformSolveImpl(piroModel, computeResponses, computeSensitivities, responses, sensitivities, observer);
 
   response = responses[index];
   sensitivity = (piroModel.Np() > 0) ? sensitivities[index].front() : Teuchos::null;
@@ -240,6 +266,17 @@ void PerformSolveBase(
     Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > > > &sensitivities)
 {
   Detail::PerformSolveImpl(piroModel, solveParams, responses, sensitivities);
+}
+
+template <typename Scalar>
+void PerformSolveBase(
+    const Thyra::ModelEvaluator<Scalar> &piroModel,
+    Teuchos::ParameterList &solveParams,
+    Teuchos::Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &responses,
+    Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > > > &sensitivities,
+    Teuchos::RCP<SolutionObserverBase<Scalar, const Thyra::VectorBase<Scalar> > > observer)
+{
+  Detail::PerformSolveImpl(piroModel, solveParams, responses, sensitivities, observer);
 }
 
 } // namespace Piro

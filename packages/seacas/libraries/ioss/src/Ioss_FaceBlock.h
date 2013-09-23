@@ -51,6 +51,7 @@ namespace Ioss {
     ~FaceBlock();
 
     std::string type_string() const {return "FaceBlock";}
+    std::string short_type_string() const {return "faceblock";}
     EntityType type() const {return FACEBLOCK;}
 
     /// Handle implicit properties -- These are calcuated from data stored

@@ -53,6 +53,11 @@
 #ifndef MUELU_AGGREGATIONEXPORTFACTORY_DEF_HPP_
 #define MUELU_AGGREGATIONEXPORTFACTORY_DEF_HPP_
 
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
+
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
 
@@ -63,22 +68,24 @@
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
-
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<const ParameterList> AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< RCP<const FactoryBase> >("Aggregates",          Teuchos::null,                        "Generating factory for aggregates");
-    validParamList->set< RCP<const FactoryBase> >("DofsPerNode",         Teuchos::null,                        "Generating factory for number of dofs per node");
-    validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo",  Teuchos::null,                        "Generating factory for amalgamation");
+    std::string output_msg = "Output filename template (%TIMESTEP is replaced by \'Output file: time step\' variable,"
+        "%ITER is replaced by \'Output file: iter\' variable, %LEVELID is replaced level id, %PROCID is replaced by processor id)";
+    std::string output_def = "aggs_level%LEVELID_proc%PROCID.out";
 
-    validParamList->set< std::string >           ("Output filename",     "aggs_level%LEVELID_proc%PROCID.out", "Output filename template (%TIMESTEP is replaced by \'Output file: time step\' variable, %ITER is replaced by \'Output file: iter\' variable, %LEVELID is replaced level id, %PROCID is replaced by processor id)");
-
-    validParamList->set< int > ("Output file: time step", 0, "time step variable for output file name");
-    validParamList->set< int > ("Output file: iter", 0, "nonlinear iteration variable for output file name");
+    validParamList->set< RCP<const FactoryBase> >("Aggregates",             Teuchos::null, "Generating factory for aggregates");
+    validParamList->set< RCP<const FactoryBase> >("DofsPerNode",            Teuchos::null, "Generating factory for number of dofs per node");
+    validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo",     Teuchos::null, "Generating factory for amalgamation");
+    validParamList->set< std::string >           ("Output filename",           output_def, output_msg);
+    validParamList->set< int >                   ("Output file: time step",             0, "time step variable for output file name");
+    validParamList->set< int >                   ("Output file: iter",                  0, "nonlinear iteration variable for output file name");
 
     return validParamList;
   }
@@ -101,51 +108,51 @@ namespace MueLu {
     GetOStream(Runtime0, 0) << "AggregationExportFactory: DofsPerNode: " << DofsPerNode << std::endl;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = aggregates->GetMap()->getComm();
+    int numProcs = comm->getSize();
+    int myRank   = comm->getRank();
 
-    Teuchos::RCP<LocalOrdinalVector>vertex2AggId_vector = aggregates->GetVertex2AggId();
-    Teuchos::RCP<LocalOrdinalVector>procWinner_vector = aggregates->GetProcWinner();
-    Teuchos::ArrayRCP<LocalOrdinal> vertex2AggId = aggregates->GetVertex2AggId()->getDataNonConst(0);
-    Teuchos::ArrayRCP<LocalOrdinal> procWinner = aggregates->GetProcWinner()->getDataNonConst(0);
+    Teuchos::RCP<LocalOrdinalVector> vertex2AggId_vector = aggregates->GetVertex2AggId();
+    Teuchos::RCP<LocalOrdinalVector> procWinner_vector   = aggregates->GetProcWinner();
+    Teuchos::ArrayRCP<LocalOrdinal>  vertex2AggId        = aggregates->GetVertex2AggId()->getDataNonConst(0);
+    Teuchos::ArrayRCP<LocalOrdinal>  procWinner          = aggregates->GetProcWinner()->getDataNonConst(0);
 
     // prepare for calculating global aggregate ids
-    std::vector<GlobalOrdinal> numAggsGlobal(comm->getSize(),0);
-    std::vector<GlobalOrdinal> numAggsLocal(comm->getSize(),0);
-    std::vector<GlobalOrdinal> minGlobalAggId(comm->getSize(),0);
-    numAggsLocal[comm->getRank()] = aggregates->GetNumAggregates();
-    Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM, comm->getSize(),&numAggsLocal[0], &numAggsGlobal[0]);
-    for(int i=1; i<Teuchos::as<int>(numAggsGlobal.size()); ++i) {
-      numAggsGlobal[i] += numAggsGlobal[i-1];
-      minGlobalAggId[i] = numAggsGlobal[i-1];
+    std::vector<GlobalOrdinal> numAggsGlobal (numProcs, 0);
+    std::vector<GlobalOrdinal> numAggsLocal  (numProcs, 0);
+    std::vector<GlobalOrdinal> minGlobalAggId(numProcs, 0);
+
+    numAggsLocal[myRank] = aggregates->GetNumAggregates();
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, numProcs, &numAggsLocal[0], &numAggsGlobal[0]);
+    for (int i = 1; i < Teuchos::as<int>(numAggsGlobal.size()); ++i) {
+      numAggsGlobal [i] += numAggsGlobal[i-1];
+      minGlobalAggId[i]  = numAggsGlobal[i-1];
     }
 
-    ArrayRCP<LO> aggStart;
+    ArrayRCP<LO>            aggStart;
     ArrayRCP<GlobalOrdinal> aggToRowMap;
     AmalgamationFactory::UnamalgamateAggregates(*aggregates, *amalgInfo, aggStart, aggToRowMap);
 
     // write to file
     //std::string outFile = outputFileName_;
     const ParameterList & pL = GetParameterList();
-    std::string outFile = pL.get<std::string> ("Output filename");
-    int timeStep = pL.get< int > ("Output file: time step");
-    int iter = pL.get< int >("Output file: iter");
+    int         timeStep = pL.get< int >      ("Output file: time step");
+    int         iter     = pL.get< int >      ("Output file: iter");
+    std::string outFile  = pL.get<std::string>("Output filename");
 
-    std::stringstream streamLevel; streamLevel << fineLevel.GetLevelID();
-    outFile = replaceAll(outFile,"%LEVELID", streamLevel.str());
-    std::stringstream streamProc; streamProc << comm->getRank();
-    outFile = replaceAll(outFile,"%PROCID", streamProc.str());
-    std::stringstream streamTimeStep; streamTimeStep << timeStep;
-    outFile = replaceAll(outFile,"%TIMESTEP", streamTimeStep.str());
-    std::stringstream streamIter; streamIter << iter;
-    outFile = replaceAll(outFile,"%ITER", streamIter.str());
+    outFile = replaceAll(outFile, "%LEVELID",  toString(fineLevel.GetLevelID()));
+    outFile = replaceAll(outFile, "%PROCID",   toString(myRank));
+    outFile = replaceAll(outFile, "%TIMESTEP", toString(timeStep));
+    outFile = replaceAll(outFile, "%ITER",     toString(iter));
 
     GetOStream(Runtime0, 0) << "AggregationExportFactory: outputfilel \"" << outFile << "\"" << std::endl;
     std::ofstream fout(outFile.c_str());
 
     GO numAggs = aggregates->GetNumAggregates();
     std::vector<GlobalOrdinal> nodeIds;
-    for (int i=0; i< numAggs; ++i) {
-      fout << "Agg " << minGlobalAggId[comm->getRank()] + i << " Proc " << comm->getRank() << ":";
-      for (int k=aggStart[i]; k< aggStart[i+1]; ++k) {
+    for (int i = 0; i < numAggs; ++i) {
+      fout << "Agg " << minGlobalAggId[myRank] + i << " Proc " << myRank << ":";
+
+      for (int k = aggStart[i]; k < aggStart[i+1]; ++k) {
         /*std::cout << "proc: " << comm->getRank() << "\t aggToRowMap[" << i << "][" << k << "]=" <<aggToRowMap[i][k] << "\t node GID: " << aggToRowMap[i][k]/DofsPerNode << "\t GID in colMap=" << aggToRowMap[i][k];
           if(colMap->isNodeGlobalElement(aggToRowMap[i][k])==false)
           std::cout << " NOT ON CUR PROC!";
@@ -155,15 +162,15 @@ namespace MueLu {
       }
 
       // remove duplicate entries from nodeids
-      std::sort(nodeIds.begin(),nodeIds.end());
-      typename std::vector<GlobalOrdinal>::iterator endLocation = std::unique(nodeIds.begin(),nodeIds.end());
-      nodeIds.erase(endLocation,nodeIds.end());
+      std::sort(nodeIds.begin(), nodeIds.end());
+      typename std::vector<GlobalOrdinal>::iterator endLocation = std::unique(nodeIds.begin(), nodeIds.end());
+      nodeIds.erase(endLocation, nodeIds.end());
 
       // print out nodeids
-      for(typename std::vector<GlobalOrdinal>::iterator printIt = nodeIds.begin(); printIt!=nodeIds.end(); printIt++) {
+      for(typename std::vector<GlobalOrdinal>::iterator printIt = nodeIds.begin(); printIt != nodeIds.end(); printIt++)
         fout << " " << *printIt;
-      }
       nodeIds.clear();
+
       fout << std::endl;
     }
 
@@ -172,11 +179,11 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   std::string AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::replaceAll(std::string result, const std::string& replaceWhat, const std::string& replaceWithWhat) const {
-    while(1)
-    {
+    while(1) {
       const int pos = result.find(replaceWhat);
-      if (pos==-1) break;
-      result.replace(pos,replaceWhat.size(),replaceWithWhat);
+      if (pos == -1)
+        break;
+      result.replace(pos, replaceWhat.size(), replaceWithWhat);
     }
     return result;
   }

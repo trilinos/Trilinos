@@ -48,15 +48,9 @@
 #include <cstdlib>
 #include <cstring>
 
-#if defined(__PUMAGON__)
-#define NPOS (size_t)-1
-#else
-#define NPOS std::string::npos
-#endif
-
 Info::Interface::Interface()
   : checkNodeStatus_(false), computeVolume_(false), adjacencies_(false),ints64Bit_(false),
-    computeBBox_(false), fieldSuffixSeparator_('_'), summary_(0),
+    computeBBox_(false), useGenericNames_(false), fieldSuffixSeparator_('_'), summary_(0),
     surfaceSplitScheme_(1), minimumTime_(0.0), maximumTime_(0.0),
     cwd_(""), filetype_("exodus")
 {
@@ -96,6 +90,10 @@ void Info::Interface::enroll_options()
 
   options_.enroll("db_type", Ioss::GetLongOption::MandatoryValue,
 		  "Database Type: exodus, generated","exodusii");
+
+  options_.enroll("use_generic_names", Ioss::GetLongOption::NoValue,
+		  "True to use generic names (type_id) instead of names in database",
+		  NULL);
 
   options_.enroll("summary", Ioss::GetLongOption::NoValue,
 		  "Only output counts of nodes, elements, and entities",
@@ -159,6 +157,10 @@ bool Info::Interface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("compute_bbox")) {
     computeBBox_ = true;
+  }
+
+  if (options_.retrieve("use_generic_names")) {
+    useGenericNames_ = true;
   }
 
   if (options_.retrieve("summary")) {

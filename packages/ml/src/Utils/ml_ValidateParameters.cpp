@@ -183,14 +183,13 @@ void ML_Epetra::SetValidSmooParams(Teuchos::ParameterList *PL, Teuchos::Array<st
   setIntParameter("smoother: max processes",-1,"Maximum number of procs for coarse solve (Superludist/MUMPS)",PL,intParam);  
 
 
-  /* EXPERIMENTAL - Half-GS Smoothing */
+  /* EXPERIMENTAL options*/
   PL->set("smoother: Gauss-Seidel efficient symmetric",false);
   setIntParameter("smoother: Block Chebyshev number of blocks",-1,"Number of blocks to use with Block Chebyshev",PL,intParam);    
   PL->set("smoother: Block Chebyshev block starts",(int*)0);
   PL->set("smoother: Block Chebyshev block list",(int*)0);
-
-  // EXPERIMENTAL
   PL->set("smoother: chebyshev solve normal equations",false);
+  PL->set("smoother: use l1 Gauss-Seidel",false);
   PL->set("use crs matrix storage",false);
 
 

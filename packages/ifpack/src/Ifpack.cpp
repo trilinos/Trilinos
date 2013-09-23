@@ -39,7 +39,6 @@
 // ***********************************************************************
 //@HEADER
 */
-
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack.h"
 #include "Ifpack_Preconditioner.h"
@@ -62,6 +61,9 @@
 #endif
 #ifdef HAVE_IFPACK_SUPERLU
 #include "Ifpack_SILU.h"
+#endif
+#ifdef HAVE_IFPACK_SUPPORTGRAPH
+#include "Ifpack_SupportGraph.h"
 #endif
 
 #include "Ifpack_Chebyshev.h"
@@ -123,6 +125,12 @@ const Ifpack::EPrecType Ifpack::precTypeValues[Ifpack::numPrecTypes] =
 #ifdef HAVE_IFPACK_SUPERLU
   ,SILU
 #endif
+#if defined (HAVE_IFPACK_SUPPORTGRAPH) && defined (HAVE_IFPACK_AMESOS)
+  ,MSF_AMESOS
+#endif
+#ifdef HAVE_IFPACK_SUPPORTGRAPH
+  ,MSF_IC
+#endif
   ,CHEBYSHEV
   ,POLYNOMIAL
   ,KRYLOV
@@ -169,6 +177,12 @@ const char* Ifpack::precTypeNames[Ifpack::numPrecTypes] =
 #ifdef HAVE_IFPACK_SUPERLU
   ,"SILU"
 #endif
+#if defined (HAVE_IFPACK_SUPPORTGRAPH) && defined (HAVE_IFPACK_AMESOS)
+  ,"MSF Amesos"
+#endif
+#ifdef HAVE_IFPACK_SUPPORTGRAPH
+  ,"MSF IC"
+#endif
   ,"Chebyshev"
   ,"Polynomial"
   ,"Krylov"
@@ -214,6 +228,12 @@ const bool Ifpack::supportsUnsymmetric[Ifpack::numPrecTypes] =
 #endif
 #ifdef HAVE_IFPACK_SUPERLU
   ,true // SuperLU's Supernodal ILUTP
+#endif
+#if defined (HAVE_IFPACK_SUPPORTGRAPH) && defined (HAVE_IFPACK_AMESOS)
+  ,false
+#endif
+#ifdef HAVE_IFPACK_SUPPORTGRAPH
+  ,false
 #endif
   ,false // CHEBYSHEV
   ,true  // POLYNOMIAL
@@ -313,6 +333,20 @@ Ifpack_Preconditioner* Ifpack::Create(EPrecType PrecType,
 #ifdef HAVE_IFPACK_SUPERLU
     case SILU:
       return(new Ifpack_SILU(Matrix));
+#endif
+#if defined (HAVE_IFPACK_SUPPORTGRAPH) && defined (HAVE_IFPACK_AMESOS)
+    case MSF_AMESOS:
+      if (serial && !overrideSerialDefault)
+	return(new Ifpack_SupportGraph<Ifpack_Amesos>(Matrix));
+      else
+	return(new Ifpack_AdditiveSchwarz<Ifpack_SupportGraph<Ifpack_Amesos> >(Matrix,Overlap));
+#endif
+#ifdef HAVE_IFPACK_SUPPORTGRAPH
+    case MSF_IC:
+      if (serial && !overrideSerialDefault)
+	return(new Ifpack_SupportGraph<Ifpack_SupportGraph<Ifpack_IC> >(Matrix));
+      else
+	return(new Ifpack_AdditiveSchwarz<Ifpack_SupportGraph<Ifpack_IC> >(Matrix,Overlap));
 #endif
     case CHEBYSHEV:
       return(new Ifpack_Chebyshev(Matrix));

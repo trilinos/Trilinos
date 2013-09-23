@@ -89,7 +89,11 @@ namespace MueLu {
 
     //!
     virtual void CallDeclareInput(Level & requestedLevel) const {
-      TEUCHOS_TEST_FOR_EXCEPTION(requestedLevel.GetPreviousLevel() == Teuchos::null, Exceptions::RuntimeError, "LevelID = " << requestedLevel.GetLevelID());
+      if (requestedLevel.GetPreviousLevel() == Teuchos::null) {
+        std::ostringstream errStr;
+        errStr << "LevelID = " << requestedLevel.GetLevelID();
+        throw Exceptions::DependencyError(errStr.str());
+      }
       DeclareInput(*requestedLevel.GetPreviousLevel(), requestedLevel);
     }
 

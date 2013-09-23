@@ -50,22 +50,7 @@
 
 #include <Kokkos_Macros.hpp>
 #include <Kokkos_MemoryTraits.hpp>
-
-#if defined( __INTEL_COMPILER ) && 0
-  /*
-   *  Optimization level -O3 generates a seg-fault
-   *  with this parameter in the hybrid parallel
-   *  nonlinear use case boundary condition
-   *  residual enforcement function.
-   */
-
-#define KOKKOS_ASSUME_ALIGNED( M , P ) __assume_aligned( P , MEMORY_ALIGNMENT )
-
-#else
-
-#define KOKKOS_ASSUME_ALIGNED( M , P ) /* */
-
-#endif
+#include <impl/Kokkos_Traits.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -79,12 +64,7 @@ public:
   enum { WORK_ALIGNMENT   =  8 };
 
   typedef HostSpace  memory_space ;
-
-#if defined( __INTEL_COMPILER )
-  typedef int        size_type ;
-#else
   typedef size_t     size_type ;
-#endif
 
   /** \brief  Allocate a contiguous block of memory on the Cuda device
    *          with size = scalar_size * scalar_count.
@@ -124,25 +104,11 @@ public:
   static std::string query_label( const void * );
 
   /*--------------------------------*/
+  /* Functions unique to the HostSpace */
 
-  static 
-  size_t preferred_alignment( size_t scalar_size , size_t scalar_count );
+  static int in_parallel();
 
-  /*--------------------------------*/
-  /* Functions unique to the Host memory space */
-
-  /** \brief  Assert called from the original, master thread.  */
-  static void assert_master_thread( const char * const );
-};
-
-//----------------------------------------------------------------------------
-
-template< class DstSpace , class SrcSpace >
-struct DeepCopy ;
-
-template<>
-struct DeepCopy<HostSpace,HostSpace> {
-  DeepCopy( void * dst , const void * src , size_t );
+  static void register_in_parallel( int (*)() );
 };
 
 //----------------------------------------------------------------------------
@@ -157,8 +123,22 @@ struct VerifyExecutionSpaceCanAccessDataSpace< HostSpace , HostSpace >
   inline static void verify(const void *) {}
 };
 
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
+namespace Kokkos {
+namespace Impl {
+
+template< class , class > struct DeepCopy ;
+
+template<>
+struct DeepCopy<HostSpace,HostSpace> {
+  DeepCopy( void * dst , const void * src , size_t n );
+};
+
+} // namespace Impl
 } // namespace Kokkos
 
 #endif /* #define KOKKOS_HOSTSPACE_HPP */

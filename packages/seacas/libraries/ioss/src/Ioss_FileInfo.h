@@ -33,10 +33,10 @@
 #ifndef IOSS_Ioss_FileInfo_h
 #define IOSS_Ioss_FileInfo_h
 
-#include <string>
-#include <iosfwd>
+#include <Ioss_CodeTypes.h>
 
 #include <string>
+#include <iosfwd>
 #include <sys/types.h>
 
 namespace Ioss {
@@ -78,6 +78,13 @@ namespace Ioss {
   
     ~FileInfo();
 
+    //! returns the number of processors that this file exists.
+    //! 0: Exists nowhere
+    //! #proc: Exists everywhere
+    //! else: exists on some proc, but not all.
+    //! In the last case, a list of processors where it is missing is returned in 'where' on processor 0.
+    int  parallel_exists(MPI_Comm communicator, std::string &where)  const;
+    
     bool exists()        const; //!< returns True if file exists, false if nonexistant
     bool is_readable()   const; //!< Exists and is readable
     bool is_writable()   const; //!< Exists and is writable

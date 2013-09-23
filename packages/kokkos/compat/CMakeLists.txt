@@ -11,8 +11,6 @@ TRIBITS_SUBPACKAGE(Compat)
 # Set up subpackage-specific configuration macros
 #
 
-TRIBITS_CONFIGURE_FILE( ${PACKAGE_NAME}_config.h )
-
 IF(NOT ${PROJECT_NAME}_ENABLE_TBB)
   SET(${PROJECT_NAME}_ENABLE_TBB OFF)
 ENDIF()

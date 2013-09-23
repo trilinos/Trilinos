@@ -43,6 +43,26 @@ SET(HAVE_${PACKAGE_NAME}_QD "${PACKAGE_NAME}_ENABLE_QD")
 #This replaces an option that was reusing an existing name.
 SET(HAVE_${PACKAGE_NAME}_MPI "${${PACKAGE_NAME}_ENABLE_MPI}")
 
+IF(${PACKAGE_NAME}_ENABLE_Boost)
+IF(${PACKAGE_NAME}_ENABLE_Amesos2)
+IF(${PACKAGE_NAME}_ENABLE_Cholmod)
+  SET(HAVE_IFPACK2_SUPPORTGRAPH ON )
+ENDIF()
+ENDIF()
+ENDIF()
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Experimental	
+  HAVE_IFPACK2_EXPERIMENTAL
+  "Enable building and installation of experimental Ifpack2 features."
+  NO )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Zoltan2
+  HAVE_IFPACK2_ZOLTAN2
+  "Enables Zoltan2 reordering in Ifpack_AdditiveSchwarz"
+  NO )
+
 #
 # C) Add the libraries, tests, and examples
 #

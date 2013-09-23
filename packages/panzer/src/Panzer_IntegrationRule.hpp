@@ -77,6 +77,9 @@ namespace panzer {
 
     //! print information about the integration rule
     virtual void print(std::ostream & os);
+
+    //! Construct an array containing the reference coordinates 
+    void referenceCoordinates(Intrepid::FieldContainer<double> & container);
   
   private:
 

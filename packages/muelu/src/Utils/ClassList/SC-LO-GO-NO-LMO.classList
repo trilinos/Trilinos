@@ -7,6 +7,7 @@ BlockedCoarseMapFactory
 BlockedGaussSeidelSmoother
 BlockedPFactory
 BlockedRAPFactory
+BrickAggregationFactory
 BraessSarazinSmoother
 CGSolver - #ifdef HAVE_MUELU_EXPERIMENTAL
 CoalesceDropFactory
@@ -46,11 +47,15 @@ ProjectorSmoother
 RAPFactory
 RAPShiftFactory
 RebalanceAcFactory
+RebalanceBlockAcFactory
+RebalanceBlockInterpolationFactory
+RebalanceBlockRestrictionFactory
 RebalanceTransferFactory
 RepartitionFactory - #ifdef HAVE_MPI
 RigidBodyModeFactory
 SaPFactory
 SchurComplementFactory
+ShiftedLaplacian
 ShiftedLaplacianOperator
 SimpleSmoother
 Smoother
@@ -65,3 +70,4 @@ ThresholdAFilterFactory
 TpetraOperator
 TransPFactory
 TrilinosSmoother
+UserPFactory

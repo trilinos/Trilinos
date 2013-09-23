@@ -560,8 +560,8 @@ int ml_maxwell_data_pack::setup_preconditioner(){
 #endif
 
   /* Pull Operator Complexity */
-  operator_complexity=-1;
-    //  operator_complexity = Prec->GetML_Aggregate()->operator_complexity / Prec->GetML_Aggregate()->fine_complexity;
+  double nnz;
+  Prec->Complexities(operator_complexity,nnz);
   
   return IS_TRUE;
 }

@@ -120,6 +120,9 @@ void CubeTetMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::Para
 
    // now that edges are built, sidets can be added
    addSideSets(mesh);
+
+   // calls Stk_MeshFactory::rebalance
+   this->rebalance(mesh);
 }
 
 //! From ParameterListAcceptor

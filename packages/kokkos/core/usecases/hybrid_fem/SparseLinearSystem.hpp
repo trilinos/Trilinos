@@ -78,7 +78,6 @@ struct Multiply ;
 
 /* Device-specific specializations */
 #include <SparseLinearSystem_Cuda.hpp>
-#include <SparseLinearSystem_Host.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -119,9 +118,17 @@ public:
 
     double sum = 0 ;
 
+#if defined( __INTEL_COMPILER )
+#pragma simd reduction(+:sum)
+#pragma ivdep
     for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
       sum += m_A.coefficients(iEntry) * m_x( m_A.graph.entries(iEntry) );
     }
+#else
+    for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
+      sum += m_A.coefficients(iEntry) * m_x( m_A.graph.entries(iEntry) );
+    }
+#endif
 
     m_y(iRow) = sum ;
   }

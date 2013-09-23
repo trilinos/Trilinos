@@ -120,6 +120,12 @@ public:
                                              LinearObjContainer & ghostedObjs,
                                              bool zeroVectorRows=false) const;
 
+   /** Adjust a vector by replacing selected rows with the value of the evaluated
+     * dirichlet conditions. This is handled through the standard container mechanism.
+     */
+   virtual void applyDirichletBCs(const LinearObjContainer & counter,
+                                  LinearObjContainer & result) const;
+
    /** Acess to the MPI Comm used in constructing this LOF.
      */
    virtual Teuchos::MpiComm<int> getComm() const;

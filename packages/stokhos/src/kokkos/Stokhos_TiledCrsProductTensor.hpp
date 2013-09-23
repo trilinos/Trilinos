@@ -50,6 +50,8 @@
 #include "Stokhos_Sparse3TensorPartition.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "Kokkos_Cuda.hpp"
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 

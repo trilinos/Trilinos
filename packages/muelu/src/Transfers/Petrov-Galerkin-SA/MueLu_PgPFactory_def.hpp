@@ -46,6 +46,11 @@
 #ifndef MUELU_PGPFACTORY_DEF_HPP
 #define MUELU_PGPFACTORY_DEF_HPP
 
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
+
 #include <vector>
 
 #include <Xpetra_Vector.hpp>
@@ -161,7 +166,7 @@ namespace MueLu {
     /////////////////// calculate D^{-1} A Ptent (needed for smoothing)
     bool doFillComplete=true;
     bool optimizeStorage=true;
-    RCP<Matrix> DinvAP0 = Utils::Multiply(*A, false, *Ptent, false, doFillComplete, optimizeStorage);
+    RCP<Matrix> DinvAP0 = Utils::Multiply(*A, false, *Ptent, false, GetOStream(Statistics2,0), doFillComplete, optimizeStorage);
 
     doFillComplete=true;
     optimizeStorage=false;
@@ -215,7 +220,7 @@ namespace MueLu {
 
     Utils2::TwoMatrixAdd(*Ptent, false, Teuchos::ScalarTraits<Scalar>::one(),
                          *DinvAP0, false, -Teuchos::ScalarTraits<Scalar>::one(),
-                         P_smoothed);
+                         P_smoothed,GetOStream(Statistics2,0));
     P_smoothed->fillComplete(Ptent->getDomainMap(), Ptent->getRangeMap());
 
     //////////////////// store results in Level
@@ -228,7 +233,7 @@ namespace MueLu {
       // prolongation factory is in prolongation mode
       Set(coarseLevel, "P", P_smoothed);
 
-      GetOStream(Statistics0,0) << Utils::PrintMatrixInfo(*P_smoothed, "P", params);
+      GetOStream(Statistics1,0) << Utils::PrintMatrixInfo(*P_smoothed, "P", params);
 
       // NOTE: EXPERIMENTAL
       if (Ptent->IsView("stridedMaps"))
@@ -239,7 +244,7 @@ namespace MueLu {
       RCP<Matrix> R = Utils2::Transpose(*P_smoothed, true); // use Utils2 -> specialization for double
       Set(coarseLevel, "R", R);
 
-      GetOStream(Statistics0,0) << Utils::PrintMatrixInfo(*R, "P", params);
+      GetOStream(Statistics1,0) << Utils::PrintMatrixInfo(*R, "P", params);
 
       // NOTE: EXPERIMENTAL
       if (Ptent->IsView("stridedMaps"))
@@ -278,10 +283,10 @@ namespace MueLu {
         // calculate A * P0
         bool doFillComplete=true;
         bool optimizeStorage=false;
-        RCP<Matrix> AP0 = Utils::Multiply(*A, false, *P0, false, doFillComplete, optimizeStorage);
+        RCP<Matrix> AP0 = Utils::Multiply(*A, false, *P0, false, GetOStream(Statistics2,0), doFillComplete, optimizeStorage);
 
         // compute A * D^{-1} * A * P0
-        RCP<Matrix> ADinvAP0 = Utils::Multiply(*A, false, *DinvAP0, false, doFillComplete, optimizeStorage);
+        RCP<Matrix> ADinvAP0 = Utils::Multiply(*A, false, *DinvAP0, false, GetOStream(Statistics2,0), doFillComplete, optimizeStorage);
 
         Numerator =   VectorFactory::Build(ADinvAP0->getColMap(), true);
         Denominator = VectorFactory::Build(ADinvAP0->getColMap(), true);
@@ -317,7 +322,7 @@ namespace MueLu {
         bool doFillComplete=true;
         bool optimizeStorage=false;
         Teuchos::ArrayRCP<Scalar> diagA = Utils::GetMatrixDiagonal(*A);
-        RCP<Matrix> DinvADinvAP0 = Utils::Multiply(*A, false, *DinvAP0, false, doFillComplete, optimizeStorage);
+        RCP<Matrix> DinvADinvAP0 = Utils::Multiply(*A, false, *DinvAP0, false, GetOStream(Statistics2,0), doFillComplete, optimizeStorage);
         Utils::MyOldScaleMatrix(*DinvADinvAP0, diagA, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
 
         Numerator =   VectorFactory::Build(DinvADinvAP0->getColMap(), true);

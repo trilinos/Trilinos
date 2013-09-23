@@ -59,6 +59,8 @@
 
 #include <Panzer_STK_config.hpp>
 
+#include <boost/unordered_map.hpp>
+
 #ifdef HAVE_IOSS
 #include <stk_io/MeshReadWriteUtils.hpp>
 #endif
@@ -95,7 +97,6 @@ public:
    typedef stk::mesh::Field<double> SolutionFieldType;
    typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
    typedef stk::mesh::Field<ProcIdData> ProcIdFieldType;
-   typedef stk::mesh::Field<std::size_t> LocalIdFieldType;
 
    // some simple exception classes
    struct ElementBlockException : public std::logic_error 
@@ -207,6 +208,15 @@ public:
    /** Get a vector of elements owned by this processor on a particular block ID
      */
    void getMyElements(const std::string & blockID,std::vector<stk::mesh::Entity*> & elements) const;
+
+   /** Get a vector of elements that share an edge/face with an owned element. Note that these elements
+     * are not owned.
+     */
+   void getNeighborElements(std::vector<stk::mesh::Entity*> & elements) const;
+
+   /** Get a vector of elements not owned by this processor but in a particular block
+     */
+   void getNeighborElements(const std::string & blockID,std::vector<stk::mesh::Entity*> & elements) const;
 
    /** Get Entities corresponding to the side set requested. 
      * The Entites in the vector should be a dimension
@@ -470,6 +480,17 @@ public:
    template <typename ArrayT>
    void getElementVertices(const std::vector<std::size_t> & localIds, ArrayT & vertices) const;
 
+   /** Get vertices associated with a number of elements of the same geometry.
+     *
+     * \param[in] elements Element entities to construct vertices
+     * \param[out] vertices Output array that will be sized (<code>localIds.size()</code>,#Vertices,#Dim)
+     *
+     * \note If not all elements have the same number of vertices an exception is thrown.
+     *       If the size of <code>localIds</code> is 0, the function will silently return
+     */
+   template <typename ArrayT>
+   void getElementVertices(const std::vector<stk::mesh::Entity*> & elements, ArrayT & vertices) const;
+
    // const stk::mesh::fem::FEMInterface & getFEMInterface() const 
    // { return *femPtr_; }
 
@@ -553,6 +574,16 @@ public:
      */
    void setInitialStateTime(double value) { initialStateTime_ = value; }
 
+   /** Rebalance using zoltan. Note that this will void the local element ids.
+     */
+   void rebalance(const Teuchos::ParameterList & params);
+
+   /** Set the weight for a particular element block. Larger means more costly
+     * to assemble and evaluate.
+     */
+   void setBlockWeight(const std::string & blockId,double weight)
+   { blockWeights_[blockId] = weight; }
+
 public: // static operations
    static const std::string coordsString;
    static const std::string nodesString;
@@ -580,6 +611,13 @@ protected:
      */
    Teuchos::RCP<Teuchos::MpiComm<int> > getSafeCommunicator(stk::ParallelMachine parallelMach) const;
 
+   /** In a pure local operation apply the user specified block weights for each
+     * element block to the field that defines the load balance weighting. This
+     * uses the blockWeights_ member to determine the user value that has been
+     * set for a particular element block.
+     */
+   void applyElementLoadBalanceWeights();
+
    std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > periodicBCs_;
 
    Teuchos::RCP<stk::mesh::fem::FEMMetaData> metaData_;
@@ -598,7 +636,7 @@ protected:
 
    VectorFieldType * coordinatesField_;
    ProcIdFieldType * processorIdField_;
-   LocalIdFieldType * localIdField_;
+   SolutionFieldType * loadBalField_;
    
    // maps field names to solution field stk mesh handles
    std::map<std::pair<std::string,std::string>,SolutionFieldType*> fieldNameToSolution_;
@@ -629,6 +667,11 @@ protected:
 
    // uses lazy evaluation
    mutable Teuchos::RCP<std::vector<stk::mesh::Entity*> > orderedElementVector_;
+
+   // for element block weights
+   std::map<std::string,double> blockWeights_;
+
+   boost::unordered_map<stk::mesh::EntityId,std::size_t> localIDHash_;
 
    // Object describing how to sort a vector of elements using
    // local ID as the key, very short lived object
@@ -736,6 +779,50 @@ void STK_Interface::getElementVertices(const std::vector<std::size_t> & localEle
    unsigned dim = getDimension();
    for(std::size_t cell=0;cell<localElementIds.size();cell++) {
       stk::mesh::Entity * element = elements[localElementIds[cell]];
+      TEUCHOS_ASSERT(element!=0);
+ 
+      unsigned vertexCount 
+         = stk::mesh::fem::get_cell_topology(element->bucket()).getCellTopologyData()->vertex_count;
+      TEUCHOS_TEST_FOR_EXCEPTION(vertexCount!=masterVertexCount,std::runtime_error,
+                         "In call to STK_Interface::getElementVertices all elements "
+                         "must have the same vertex count!");
+
+      // loop over all element nodes
+      stk::mesh::PairIterRelation nodes = element->relations(getNodeRank());
+      TEUCHOS_TEST_FOR_EXCEPTION(nodes.size()!=masterVertexCount,std::runtime_error,
+                         "In call to STK_Interface::getElementVertices cardinality of "
+                         "element node relations must be the vertex count!");
+      for(std::size_t node=0;node<nodes.size();++node) {
+         const double * coord = getNodeCoordinates(nodes[node].entity()->identifier());
+
+         // set each dimension of the coordinate
+         for(unsigned d=0;d<dim;d++)
+            vertices(cell,node,d) = coord[d];
+      }
+   }
+}
+
+template <typename ArrayT>
+void STK_Interface::getElementVertices(const std::vector<stk::mesh::Entity*> & elements, ArrayT & vertices) const
+{
+
+   // nothing to do! silently return
+   if(elements.size()==0) {
+      vertices.resize(0,0,0);
+      return;
+   }
+
+   // get *master* cell toplogy...(belongs to first element)
+   unsigned masterVertexCount 
+      = stk::mesh::fem::get_cell_topology(elements[0]->bucket()).getCellTopologyData()->vertex_count;
+
+   // allocate space
+   vertices.resize(elements.size(),masterVertexCount,getDimension());
+
+   // loop over each requested element
+   unsigned dim = getDimension();
+   for(std::size_t cell=0;cell<elements.size();cell++) {
+      stk::mesh::Entity * element = elements[cell];
       TEUCHOS_ASSERT(element!=0);
  
       unsigned vertexCount 

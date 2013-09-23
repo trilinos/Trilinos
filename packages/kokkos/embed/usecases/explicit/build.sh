@@ -6,7 +6,7 @@
 
 # Directory for Kokkos
 
-KOKKOS="../../../array"
+KOKKOS="../../../core"
 KOKKOSEMBED="../.."
 
 source ${KOKKOS}/src/build_common.sh
@@ -25,7 +25,7 @@ EXECUTABLE="test.exe"
 
 INC_PATH="${INC_PATH} -I. -I${KOKKOSEMBED}/src"
 
-CXX_SOURCES="${CXX_SOURCES} ./TestHost.cpp ./TestMain.cpp"
+CXX_SOURCES="${CXX_SOURCES} ./TestThreads.cpp ./TestMain.cpp"
 
 #-----------------------------------------------------------------------------
 

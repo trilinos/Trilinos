@@ -196,7 +196,7 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Cloner, MatrixCloneEpetra, Scalar, LO, GO, N2 )
   {
-#ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_EPETRA
     typedef typename KokkosClassic::DefaultNode::DefaultNodeType N1;
 
     RCP<N1> n1(new N1());
@@ -226,9 +226,20 @@ namespace {
   // INSTANTIATIONS
   //
 
-  typedef KokkosClassic::SerialNode NodeType;
+#ifdef HAVE_XPETRA_KOKKOSCLASSIC
+#if   defined(HAVE_KOKKOSCLASSIC_SERIAL)
+  typedef KokkosClassic::SerialNode   NodeType;
+#elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
+  typedef KokkosClassic::TPINode      NodeType;
+#elif defined(HAVE_KOKKOSCLASSIC_THRUST)
+  typedef KokkosClassic::ThustGPUNode NodeType;
+#endif
+
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Cloner, MapCloneTpetra, int, int, NodeType )
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Cloner, MapCloneEpetra, int, int, NodeType )
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Cloner, MatrixCloneTpetra, double, int, int, NodeType )
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Cloner, MatrixCloneEpetra, double, int, int, NodeType )
+#else
+#warning Skipping Cloner tests as KokkosClassic is not enabled
+#endif
 }

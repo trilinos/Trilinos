@@ -74,7 +74,7 @@ SET(CTEST_TEST_TYPE Nightly)
 
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 
-SET(EXTRA_EXCLUDE_PACKAGES FEApp ForTrilinos MueLu Panzer Optika PyTrilinos RBGen TriKota TrilinosFramework)
+SET(EXTRA_EXCLUDE_PACKAGES Didasko FEApp ForTrilinos MueLu Panzer Optika PyTrilinos RBGen SEACAS TriKota TrilinosFramework)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_INSTALLATION_DIR=${INSTALLATION_DIR}"
@@ -91,6 +91,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DHDF5_LIBRARY_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/phdf5-1.8.6/lib"
   "-DTrilinos_ENABLE_RBGen=OFF"
   "-DTrilinos_ENABLE_MueLu=OFF"
+  "-DTrilinos_ENABLE_SEACAS=OFF"
   "-DTPL_ENABLE_SuperLU:BOOL=OFF"
   )
 

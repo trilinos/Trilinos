@@ -121,6 +121,9 @@ void CubeHexMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::Para
    // now that edges are built, side and node sets can be added
    addSideSets(mesh);
    addNodeSets(mesh);
+
+   // calls Stk_MeshFactory::rebalance
+   this->rebalance(mesh);
 }
 
 //! From ParameterListAcceptor
@@ -248,20 +251,20 @@ void CubeHexMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_Int
 void CubeHexMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBlock,int yBlock,int zBlock,STK_Interface & mesh) const
 {
    // grab this processors rank and machine size
-   std::pair<int,int> sizeAndStartX = determineXElemSizeAndStart(xBlock,xProcs_,machRank_);
-   std::pair<int,int> sizeAndStartY = determineYElemSizeAndStart(yBlock,yProcs_,machRank_);
-   std::pair<int,int> sizeAndStartZ = determineZElemSizeAndStart(zBlock,zProcs_,machRank_);
+   std::pair<panzer::Ordinal64,panzer::Ordinal64> sizeAndStartX = determineXElemSizeAndStart(xBlock,xProcs_,machRank_);
+   std::pair<panzer::Ordinal64,panzer::Ordinal64> sizeAndStartY = determineYElemSizeAndStart(yBlock,yProcs_,machRank_);
+   std::pair<panzer::Ordinal64,panzer::Ordinal64> sizeAndStartZ = determineZElemSizeAndStart(zBlock,zProcs_,machRank_);
 
-   int myXElems_start = sizeAndStartX.first;
-   int myXElems_end  = myXElems_start+sizeAndStartX.second;
-   int myYElems_start = sizeAndStartY.first;
-   int myYElems_end  = myYElems_start+sizeAndStartY.second;
-   int myZElems_start = sizeAndStartZ.first;
-   int myZElems_end  = myZElems_start+sizeAndStartZ.second;
+   panzer::Ordinal64 myXElems_start = sizeAndStartX.first;
+   panzer::Ordinal64 myXElems_end  = myXElems_start+sizeAndStartX.second;
+   panzer::Ordinal64 myYElems_start = sizeAndStartY.first;
+   panzer::Ordinal64 myYElems_end  = myYElems_start+sizeAndStartY.second;
+   panzer::Ordinal64 myZElems_start = sizeAndStartZ.first;
+   panzer::Ordinal64 myZElems_end  = myZElems_start+sizeAndStartZ.second;
 
-   int totalXElems = nXElems_*xBlocks_;
-   int totalYElems = nYElems_*yBlocks_;
-   int totalZElems = nZElems_*zBlocks_;
+   panzer::Ordinal64 totalXElems = nXElems_*xBlocks_;
+   panzer::Ordinal64 totalYElems = nYElems_*yBlocks_;
+   panzer::Ordinal64 totalZElems = nZElems_*zBlocks_;
 
    double deltaX = (xf_-x0_)/double(totalXElems);
    double deltaY = (yf_-y0_)/double(totalYElems);
@@ -270,11 +273,11 @@ void CubeHexMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBlock
    std::vector<double> coord(3,0.0);
 
    // build the nodes
-   for(int nx=myXElems_start;nx<myXElems_end+1;++nx) {
+   for(panzer::Ordinal64 nx=myXElems_start;nx<myXElems_end+1;++nx) {
       coord[0] = double(nx)*deltaX+x0_;
-      for(int ny=myYElems_start;ny<myYElems_end+1;++ny) {
+      for(panzer::Ordinal64 ny=myYElems_start;ny<myYElems_end+1;++ny) {
          coord[1] = double(ny)*deltaY+y0_;
-         for(int nz=myZElems_start;nz<myZElems_end+1;++nz) {
+         for(panzer::Ordinal64 nz=myZElems_start;nz<myZElems_end+1;++nz) {
             coord[2] = double(nz)*deltaZ+z0_;
 
             mesh.addNode(nz*(totalYElems+1)*(totalXElems+1)+ny*(totalXElems+1)+nx+1,coord);
@@ -287,9 +290,9 @@ void CubeHexMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBlock
    stk::mesh::Part * block = mesh.getElementBlockPart(blockName.str());
 
    // build the elements
-   for(int nx=myXElems_start;nx<myXElems_end;++nx) {
-      for(int ny=myYElems_start;ny<myYElems_end;++ny) {
-         for(int nz=myZElems_start;nz<myZElems_end;++nz) {
+   for(panzer::Ordinal64 nx=myXElems_start;nx<myXElems_end;++nx) {
+      for(panzer::Ordinal64 ny=myYElems_start;ny<myYElems_end;++ny) {
+         for(panzer::Ordinal64 nz=myZElems_start;nz<myZElems_end;++nz) {
             stk::mesh::EntityId gid = totalXElems*totalYElems*nz+totalXElems*ny+nx+1;
             std::vector<stk::mesh::EntityId> nodes(8);
             nodes[0] = nx+1+ny*(totalXElems+1) +nz*(totalYElems+1)*(totalXElems+1);
@@ -308,18 +311,18 @@ void CubeHexMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBlock
    }
 }
 
-std::pair<int,int> CubeHexMeshFactory::determineXElemSizeAndStart(int xBlock,unsigned int size,unsigned int rank) const
+std::pair<panzer::Ordinal64,panzer::Ordinal64> CubeHexMeshFactory::determineXElemSizeAndStart(int xBlock,unsigned int size,unsigned int rank) const
 {
    std::size_t xProcLoc = procTuple_[0];
-   unsigned int minElements = nXElems_/size;
-   unsigned int extra = nXElems_ - minElements*size;
+   panzer::Ordinal64 minElements = nXElems_/size;
+   panzer::Ordinal64 extra = nXElems_ - minElements*size;
 
    TEUCHOS_ASSERT(minElements>0);
 
    // first "extra" elements get an extra column of elements
    // this determines the starting X index and number of elements
-   int nume=0, start=0;
-   if(xProcLoc<extra) {
+   panzer::Ordinal64 nume=0, start=0;
+   if(panzer::Ordinal64(xProcLoc)<extra) {
       nume  = minElements+1;
       start = xProcLoc*(minElements+1);
    }
@@ -331,21 +334,21 @@ std::pair<int,int> CubeHexMeshFactory::determineXElemSizeAndStart(int xBlock,uns
    return std::make_pair(start+nXElems_*xBlock,nume);
 }
 
-std::pair<int,int> CubeHexMeshFactory::determineYElemSizeAndStart(int yBlock,unsigned int size,unsigned int rank) const
+std::pair<panzer::Ordinal64,panzer::Ordinal64> CubeHexMeshFactory::determineYElemSizeAndStart(int yBlock,unsigned int size,unsigned int rank) const
 {
    // int start = yBlock*nYElems_;
    // return std::make_pair(start,nYElems_);
 
    std::size_t yProcLoc = procTuple_[1];
-   unsigned int minElements = nYElems_/size;
-   unsigned int extra = nYElems_ - minElements*size;
+   panzer::Ordinal64 minElements = nYElems_/size;
+   panzer::Ordinal64 extra = nYElems_ - minElements*size;
 
    TEUCHOS_ASSERT(minElements>0);
 
    // first "extra" elements get an extra column of elements
    // this determines the starting X index and number of elements
-   int nume=0, start=0;
-   if(yProcLoc<extra) {
+   panzer::Ordinal64 nume=0, start=0;
+   if(panzer::Ordinal64(yProcLoc)<extra) {
       nume  = minElements+1;
       start = yProcLoc*(minElements+1);
    }
@@ -357,19 +360,19 @@ std::pair<int,int> CubeHexMeshFactory::determineYElemSizeAndStart(int yBlock,uns
    return std::make_pair(start+nYElems_*yBlock,nume);
 }
 
-std::pair<int,int> CubeHexMeshFactory::determineZElemSizeAndStart(int zBlock,unsigned int size,unsigned int rank) const
+std::pair<panzer::Ordinal64,panzer::Ordinal64> CubeHexMeshFactory::determineZElemSizeAndStart(int zBlock,unsigned int size,unsigned int rank) const
 {
    // int start = zBlock*nZElems_;
    // return std::make_pair(start,nZElems_);
    std::size_t zProcLoc = procTuple_[2];
-   unsigned int minElements = nZElems_/size;
-   unsigned int extra = nZElems_ - minElements*size;
+   panzer::Ordinal64 minElements = nZElems_/size;
+   panzer::Ordinal64 extra = nZElems_ - minElements*size;
 
    TEUCHOS_ASSERT(minElements>0);
 
    // first "extra" elements get an extra column of elements
    // this determines the starting X index and number of elements
-   int nume=0, start=0;
+   panzer::Ordinal64 nume=0, start=0;
    if(zProcLoc<extra) {
       nume  = minElements+1;
       start = zProcLoc*(minElements+1);

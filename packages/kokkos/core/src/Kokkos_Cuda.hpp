@@ -48,10 +48,21 @@
 
 #include <iosfwd>
 #include <vector>
-#include <Kokkos_Host.hpp>
+
+#include <Kokkos_Macros.hpp>
+#include <Kokkos_Threads.hpp>
+#include <Kokkos_Parallel.hpp>
 #include <Kokkos_Layout.hpp>
 #include <Kokkos_CudaSpace.hpp>
 #include <Kokkos_MemoryTraits.hpp>
+
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
+namespace Impl {
+class CudaExec ;
+}
+} // namespace Kokkos
 
 /*--------------------------------------------------------------------------*/
 
@@ -64,17 +75,22 @@ public:
   //! \name Type declarations that all Kokkos devices must provide.
   //@{
 
-  typedef Cuda                  type ;
   typedef Cuda                  device_type ;
   typedef CudaSpace             memory_space ;
   typedef CudaSpace::size_type  size_type ;
   typedef LayoutLeft            array_layout ;
-
-  //--------------------------------------------------------------------------
+  typedef Kokkos::Threads       host_mirror_device_type ;
 
   //@}
+  //--------------------------------------------------------------------------
   //! \name Functions that all Kokkos devices must implement.
   //@{
+
+#if defined( __CUDA_ARCH__ ) 
+  KOKKOS_INLINE_FUNCTION static bool in_parallel() { return true ; }
+#else
+  KOKKOS_INLINE_FUNCTION static bool in_parallel() { return false ; }
+#endif
 
   /** \brief  Set the device in a "sleep" state.
    *
@@ -123,6 +139,8 @@ public:
   /** \brief  Initialize, telling the CUDA run-time library which device to use. */
   static void initialize( const SelectDevice = SelectDevice() );
 
+  static int is_initialized();
+
   /** \brief  Cuda device architecture of the selected device.
    *          Matches the __CUDA_ARCH__ specification.
    */
@@ -138,6 +156,76 @@ public:
   static std::vector<unsigned> detect_device_arch();
 
   //@}
+  //--------------------------------------------------------------------------
+
+#if defined( __CUDA_ARCH__ )
+
+  //! \name Functions for the functor device interface
+  //@{
+
+  __device__ inline int league_size() const { return gridDim.x ; }
+  __device__ inline int league_rank() const { return blockIdx.x ; }
+
+  __device__ inline int team_size() const { return blockDim.x ; }
+  __device__ inline int team_rank() const { return threadIdx.x ; }
+
+  __device__ inline void team_barrier() const { __syncthreads(); }
+  __device__ inline unsigned int team_barrier_count(bool value) const
+             { return __syncthreads_count(value); }
+
+  /* Collectively compute the league-wide unordered exclusive prefix sum.
+   * Values are ordered within a team, but not between teams (i.e. the start
+   * values of thread 0 in each team are not ordered according to team number).
+   * This call does not use a global synchronization. Multiple unordered scans
+   * can be in-flight at the same time (using different scratch_views).
+   * The scratch-view will hold the complete sum in the end.
+   */
+  template< class VT >
+  __device__ inline typename VT::value_type unordered_scan
+             (typename VT::value_type& value, VT& scratch_view);
+
+  /* Collectively compute the team-wide exclusive prefix sum using CUDA Unbound.
+   * Values are ordered, the last thread returns the sum of all values
+   * in the team less its own value
+   */
+  template< typename T >
+  __device__ inline T team_scan(T& value);
+
+  __device__ inline void * get_shmem( const int size );
+
+  __device__ inline Cuda( Impl::CudaExec & exec ) : m_exec(exec) {}
+  __device__ inline Cuda( const Cuda & rhs ) : m_exec(rhs.m_exec) {}
+
+  //@}
+
+private:
+
+  Impl::CudaExec & m_exec ;
+
+  //--------------------------------------------------------------------------
+#else
+
+  int league_size() const ;
+  int league_rank() const ;
+
+  int team_size() const ;
+  int team_rank() const ;
+
+  void team_barrier() const ;
+  unsigned int team_barrier_count(bool) const ;
+
+  template< class VT >
+    inline typename VT::value_type unordered_scan
+             (typename VT::value_type& value, VT& scratch_view);
+  template< typename T >
+    inline T team_scan(T& value);
+
+  void * get_shmem( const int size );
+
+  Cuda( Impl::CudaExec & );
+
+#endif
+
 };
 
 } // namespace Kokkos
@@ -188,9 +276,10 @@ parallel_reduce( const CudaWorkConfig & work_config ,
 
 /*--------------------------------------------------------------------------*/
 
+#include <Cuda/Kokkos_CudaExec.hpp>
+
 #include <Cuda/Kokkos_Cuda_View.hpp>
 #include <Cuda/Kokkos_Cuda_Parallel.hpp>
-#include <Cuda/Kokkos_Cuda_ParallelFor.hpp>
 #include <Cuda/Kokkos_Cuda_ParallelReduce.hpp>
 
 #endif /* #ifndef KOKKOS_CUDA_HPP */

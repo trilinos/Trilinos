@@ -40,23 +40,23 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Panzer_config.hpp"
-
-#ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
+#include "Panzer_ConfigDefs.hpp"
 
 #include "Panzer_ExplicitTemplateInstantiation.hpp"
+#include "Panzer_Traits.hpp"
 
 #include "Panzer_GatherOrientation_decl.hpp"
 #include "Panzer_GatherOrientation_impl.hpp"
 
 typedef std::pair<int,int> IntPair;
-typedef std::pair<int,long> IntLongPair;
 
 PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::GatherOrientation,int,int)
-PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::GatherOrientation,int,long)
 PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::GatherOrientation,short,int)
 PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::GatherOrientation,char,int)
 PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::GatherOrientation,int,IntPair)
-PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::GatherOrientation,int,IntLongPair)
 
+#ifndef PANZER_ORDINAL64_IS_INT
+typedef std::pair<int,panzer::Ordinal64> IntLongPair;
+PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::GatherOrientation,int,panzer::Ordinal64)
+PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::GatherOrientation,int,IntLongPair)
 #endif

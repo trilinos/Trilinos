@@ -44,6 +44,8 @@
 #ifndef PANZER_EVALUATOR_SCATTER_RESIDUAL_TPETRA_SG_DECL_HPP
 #define PANZER_EVALUATOR_SCATTER_RESIDUAL_TPETRA_SG_DECL_HPP
 
+#include "Panzer_SGTpetraLinearObjContainer.hpp"
+
 namespace panzer {
 
 // **************************************************************
@@ -89,6 +91,10 @@ private:
   //    fieldMap_["RESIDUAL_Velocity"] --> "Velocity"
   //    fieldMap_["RESIDUAL_Pressure"] --> "Pressure"
   Teuchos::RCP<const std::map<std::string,std::string> > fieldMap_;
+
+  std::string globalDataKey_; // what global data does this fill?
+
+  Teuchos::RCP<const SGTpetraLinearObjContainer<double,LO,GO,NodeT> > sgTpetraContainer_;
 };
 
 // **************************************************************
@@ -110,7 +116,7 @@ public:
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
-  
+
   void evaluateFields(typename Traits::EvalData workset);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
@@ -138,6 +144,10 @@ private:
   Teuchos::RCP<const std::map<std::string,std::string> > fieldMap_;
 
   ScatterResidual_Tpetra();
+
+  std::string globalDataKey_; // what global data does this fill?
+
+  Teuchos::RCP<const SGTpetraLinearObjContainer<double,LO,GO,NodeT> > sgTpetraContainer_;
 };
 
 }

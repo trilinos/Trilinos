@@ -68,7 +68,7 @@ namespace MueLu {
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
     try {
-      const Epetra_CrsMatrix& epetraOp = Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2EpetraCrs(Op);
+      Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Op2EpetraCrs(Op);
     }
     catch (...) {
       TorE = "tpetra";
@@ -198,7 +198,7 @@ namespace MueLu {
 
   void Utils2<double,int,int>::TwoMatrixAdd(const Matrix& A, bool transposeA, SC alpha,
                                             const Matrix& B, bool transposeB, SC beta,
-                                            RCP<Matrix>& C,  bool AHasFixedNnzPerRow) {
+                                            RCP<Matrix>& C,  Teuchos::FancyOStream &fos, bool AHasFixedNnzPerRow) {
     if (!(A.getRowMap()->isSameAs(*(B.getRowMap()))))
       throw Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same.");
 
@@ -209,9 +209,6 @@ namespace MueLu {
       size_t maxNzInA     = A.getGlobalMaxNumRowEntries();
       size_t maxNzInB     = B.getGlobalMaxNumRowEntries();
       size_t numLocalRows = A.getNodeNumRows();
-
-      RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-      fos->setOutputToRootOnly(0);
 
       if (maxNzInA == 1 || maxNzInB == 1 || AHasFixedNnzPerRow) {
         // first check if either A or B has at most 1 nonzero per row
@@ -227,7 +224,7 @@ namespace MueLu {
             exactNnzPerRow[i] = A.getNumEntriesInLocalRow(Teuchos::as<LO>(i)) + maxNzInB;
         }
 
-        *fos << "Utils::TwoMatrixAdd : special case detected (one matrix has a fixed nnz per row)"
+        fos << "Utils::TwoMatrixAdd : special case detected (one matrix has a fixed nnz per row)"
              << ", using static profiling" << std::endl;
         C = rcp(new Xpetra::CrsMatrixWrap<double,int,int,NO,LMO>(A.getRowMap(), exactNnzPerRow, Xpetra::StaticProfile));
 
@@ -242,8 +239,8 @@ namespace MueLu {
         //possible nnz's in any single row of the result.
         Xpetra::ProfileType pft = (maxPossible) > nnzToAllocate ? Xpetra::DynamicProfile : Xpetra::StaticProfile;
 
-        *fos << "nnzPerRowInA = " << nnzPerRowInA << ", nnzPerRowInB = " << nnzPerRowInB << std::endl;
-        *fos << "Utils::TwoMatrixAdd : space allocated per row = " << nnzToAllocate
+        fos << "nnzPerRowInA = " << nnzPerRowInA << ", nnzPerRowInB = " << nnzPerRowInB << std::endl;
+        fos << "Utils::TwoMatrixAdd : space allocated per row = " << nnzToAllocate
              << ", max possible nnz per row in sum = " << maxPossible
              << ", using " << (pft == Xpetra::DynamicProfile ? "dynamic" : "static" ) << " profiling"
              << std::endl;
@@ -251,7 +248,7 @@ namespace MueLu {
         C = rcp(new Xpetra::CrsMatrixWrap<double,int,int,NO,LMO>(A.getRowMap(), nnzToAllocate, pft));
       }
       if (transposeB)
-        *fos << "Utils::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
+        fos << "Utils::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
     }
 
     if (C == Teuchos::null) {
@@ -266,9 +263,8 @@ namespace MueLu {
       //Use static profiling (more efficient) if the estimate is at least as big as the max possible nnz's in any single row of the result.
       Xpetra::ProfileType pft = (maxPossible) > nnzToAllocate ? Xpetra::DynamicProfile : Xpetra::StaticProfile;
 
-      RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); fos->setOutputToRootOnly(0);
-      *fos << "nnzPerRowInA = " << nnzPerRowInA << ", nnzPerRowInB = " << nnzPerRowInB << std::endl;
-      *fos << "Utils::TwoMatrixAdd : space allocated per row = " << nnzToAllocate
+      fos << "nnzPerRowInA = " << nnzPerRowInA << ", nnzPerRowInB = " << nnzPerRowInB << std::endl;
+      fos << "Utils::TwoMatrixAdd : space allocated per row = " << nnzToAllocate
            << ", max possible nnz per row in sum = " << maxPossible
            << ", using " << (pft == Xpetra::DynamicProfile ? "dynamic" : "static" ) << " profiling"
            << std::endl;
@@ -276,7 +272,7 @@ namespace MueLu {
       C = rcp(new Xpetra::CrsMatrixWrap<double,int,int,NO,LMO>(A.getRowMap(), nnzToAllocate, pft));
 
       if (transposeB)
-        *fos << "Utils::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
+        fos << "Utils::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
     }
 
     if (C->getRowMap()->lib() == Xpetra::UseEpetra) {
@@ -311,9 +307,12 @@ namespace MueLu {
     if (A.IsView("stridedMaps")) C->CreateView("stridedMaps", rcpFromRef(A));
     if (B.IsView("stridedMaps")) C->CreateView("stridedMaps", rcpFromRef(B));
     ///////////////////////// EXPERIMENTAL
-  }
 
-  RCP<Xpetra::MultiVector<double,int,int> > Utils2<double,int,int>::Read(const std::string& fileName, const RCP<const Map>& map) {
+  } //TwoMatrixAdd()
+
+  // -- ------------------------------------------------------- --
+
+  RCP<Xpetra::MultiVector<double,int,int> > Utils2<double,int,int>::ReadMultiVector(const std::string& fileName, const RCP<const Map>& map) {
     Xpetra::UnderlyingLib lib = map->lib();
 
     if (lib == Xpetra::UseEpetra) {
@@ -343,6 +342,39 @@ namespace MueLu {
     }
 
     return Teuchos::null;
+  }
+
+  RCP<const Xpetra::Map<int,int> > Utils2<double,int,int>::ReadMap(const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm) {
+    if (lib == Xpetra::UseEpetra) {
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
+        Epetra_Map *eMap;
+        int rv = EpetraExt::MatrixMarketFileToMap(fileName.c_str(), *(Xpetra::toEpetra(comm)), eMap);
+        if (rv != 0)
+          throw Exceptions::RuntimeError("Error reading matrix with EpetraExt::MatrixMarketToMap (returned " + toString(rv) + ")");
+
+        RCP<Epetra_Map> eMap1 = rcp(new Epetra_Map(*eMap));
+        return Xpetra::toXpetra(*eMap1);
+#else
+        throw Exceptions::RuntimeError("MueLu has not been compiled with Epetra and EpetraExt support.");
+#endif
+    } else if (lib == Xpetra::UseTpetra) {
+#ifdef HAVE_MUELU_TPETRA
+      typedef Tpetra::CrsMatrix<double,int,int,NO,LMO> sparse_matrix_type;
+      typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type>                          reader_type;
+
+      RCP<NO> node = rcp(new NO());
+
+      RCP<const Tpetra::Map<int,int,NO> > tMap = reader_type::readMapFile(fileName, comm, node);
+      if (tMap.is_null())
+        throw Exceptions::RuntimeError("The Tpetra::Map returned from readSparseFile() is null.");
+
+      return Xpetra::toXpetra(tMap);
+#else
+      throw Exceptions::RuntimeError("MueLu has not been compiled with Tpetra support.");
+#endif
+    } else {
+      throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
+    }
   }
 
 }

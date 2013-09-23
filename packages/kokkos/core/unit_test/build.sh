@@ -21,11 +21,8 @@ source ${KOKKOS}/src/build_common.sh
 #-----------------------------------------------------------------------------
 # Add TPL and local source code:
 
-TPL_PATH="${KOKKOS}/TPL"
-INC_PATH="${INC_PATH} -I. -I${TPL_PATH}"
-
-CXX_SOURCES="${CXX_SOURCES} ${TPL_PATH}/gtest/gtest-all.cc"
-CXX_SOURCES="${CXX_SOURCES} UnitTestMain.cpp TestHost.cpp TestTileHost.cpp"
+CXX_SOURCES="${CXX_SOURCES} ${KOKKOS}/../TPL/gtest/gtest-all.cc"
+CXX_SOURCES="${CXX_SOURCES} UnitTestMain.cpp TestSerial.cpp TestThreads.cpp"
 CXX_SOURCES="${CXX_SOURCES} TestHWLOC.cpp"
 
 if [ -n "${KOKKOS_HAVE_OPENMP}" ]
@@ -38,7 +35,7 @@ fi
 
 if [ -n "${NVCC}" ] ;
 then
-  NVCC_SOURCES="${NVCC_SOURCES} TestCudaFunctions.cu TestTileCuda.cu"
+  NVCC_SOURCES="${NVCC_SOURCES} TestCudaFunctions.cu"
   CXX_SOURCES="${CXX_SOURCES} TestCuda.cpp"
 
   echo ${NVCC} ${INC_PATH} ${NVCC_SOURCES}

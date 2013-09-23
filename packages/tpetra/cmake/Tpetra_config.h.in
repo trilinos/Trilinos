@@ -46,6 +46,27 @@
 /* Define when enabling the Murmur hash function in Tpetra */
 #cmakedefine TPETRA_USE_MURMUR_HASH
 
+/* Define when enabling KokkosCore in Tpetra */
+#cmakedefine HAVE_TPETRA_KOKKOSCORE
+
+/* Define when enabling KokkosCompat in Tpetra */
+#cmakedefine HAVE_TPETRA_KOKKOSCOMPAT
+
+/* Define when enabling KokkosLinAlg in Tpetra */
+#cmakedefine HAVE_TPETRA_KOKKOSLINALG
+
+/* Define when enabling KokkosContainers in Tpetra */
+#cmakedefine HAVE_TPETRA_KOKKOSCONTAINERS
+
+/* Define when enabling Kokkos::View DistObject in Tpetra */
+#cmakedefine TPETRA_ENABLE_KOKKOS_DISTOBJECT
+
+/* Define when enabling RDMA support for MPI communication for CUDA GPUs */
+#cmakedefine TPETRA_ENABLE_MPI_CUDA_RDMA
+
+/* Define when enabling Tpetra for refactoring to new KokkosCore interface */
+#cmakedefine TPETRA_HAVE_KOKKOS_REFACTOR
+
 /* Define if user requested explicit instantiation of classes into libtpetra */
 #cmakedefine HAVE_TPETRA_EXPLICIT_INSTANTIATION
 

@@ -85,7 +85,7 @@ lanczos_ext (
     int       temp;		/* used to prevent redundant index computations */
     double   *extvec;		/* n-vector solving the extended A eigenproblem */
     double   *v;		/* j-vector solving the extended T eigenproblem */
-    double    extval;		/* computed extended eigenvalue (of both A and T) */
+    double    extval=0.0;	/* computed extended eigenvalue (of both A and T) */
     double   *work1, *work2;	/* work vectors */
     double    check;		/* to check an orthogonality condition */
     double    numerical_zero;	/* used for zero in presense of round-off  */

@@ -74,7 +74,7 @@ namespace Impl {
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-template< class ValueType >
+template< unsigned StaticValueSize >
 struct CudaReduceSharedSizes {
 
   typedef Cuda::size_type size_type ;
@@ -83,137 +83,135 @@ private:
 
   enum { WarpStride         = CudaTraits::WarpSize + 1 };
   enum { WordSize           = sizeof(Cuda::size_type) };
-  enum { ValueSize          = sizeof(ValueType) };
+  enum { ValueSize          = StaticValueSize };
   enum { ValueWordCount     = ( ValueSize + WordSize - 1 ) / WordSize };
   enum { ValueWordStride =
            ValueWordCount + ( ValueWordCount % CudaTraits::SharedMemoryBanks ? 0 : 2 ) };
 
   enum { WordsPerWarpStride = ValueWordStride * WarpStride };
-  enum { SharedMemoryWords  = CudaTraits::SharedMemoryUsage / WordSize };
-
-  /* Maximum of 8 ( 1 << 3 ) warps per block.
-   * For simple dot products using 16 warps is slower than 8 warps.
-   */
-  enum { WarpCount =
-           ( WordsPerWarpStride << 3 ) < SharedMemoryWords ? ( 1 << 3 ) : (
-           ( WordsPerWarpStride << 2 ) < SharedMemoryWords ? ( 1 << 2 ) : (
-           ( WordsPerWarpStride << 1 ) < SharedMemoryWords ? ( 1 << 1 ) : (
-           ( WordsPerWarpStride      ) < SharedMemoryWords ? 1 : 0 ))) };
 
 public:
 
+  enum { value_size         = ValueSize };
+  enum { value_word_count   = ValueWordCount };
   enum { value_word_stride  = ValueWordStride };
   enum { value_warp_stride  = WordsPerWarpStride };
-  enum { warp_count         = WarpCount };
-  enum { thread_count       = warp_count * CudaTraits::WarpSize };
-  enum { shmem_size         = warp_count * WordSize * value_warp_stride };
 
-  explicit inline
-  CudaReduceSharedSizes( const size_type )
-  { }
+  const size_type warp_count ;
+  const size_type thread_count ;
+  const size_type shmem_size ;
+
+  CudaReduceSharedSizes( const size_type /* == ValueSize */ ,
+                         const size_type arg_shmem_max )
+    /* Maximum of 8 ( 1 << 3 ) warps per block.
+     * For simple dot products using 16 warps is slower than 8 warps.
+     */
+    : warp_count( ( value_warp_stride == 0 ) ? 0 : (
+                  ( value_warp_stride << 3 ) < ( arg_shmem_max / WordSize ) ? (1 << 3) : (
+                  ( value_warp_stride << 2 ) < ( arg_shmem_max / WordSize ) ? (1 << 2) : (
+                  ( value_warp_stride << 1 ) < ( arg_shmem_max / WordSize ) ? (1 << 1) : (
+                  ( value_warp_stride      ) < ( arg_shmem_max / WordSize ) ? 1 : 0 )))))
+    , thread_count( warp_count * CudaTraits::WarpSize )
+    , shmem_size( warp_count * WordSize * value_warp_stride )
+  {
+  }
 
   __device__ inline
   size_type shared_data_offset( const size_type tx ,
                                 const size_type ty  ) const
     { return value_word_stride * ( tx + WarpStride * ty ); }
+
+  inline
+  size_type block_count( const size_type work_count ) const
+  {
+    const size_type nb = thread_count ? ( work_count + thread_count - 1 ) / thread_count : 0 ;
+
+    // One level:
+    return std::min( size_type(thread_count) , nb );
+
+    // Two level:
+    // return std::min( size_type(thread_count * thread_count) , nb );
+  }
 };
 
 
-template< class MemberType >
-struct CudaReduceSharedSizes< MemberType[] > {
+template<>
+struct CudaReduceSharedSizes<0> {
+public:
 
   typedef Cuda::size_type size_type ;
 
 private:
 
-  enum { WarpStride         = CudaTraits::WarpSize + 1 };
-  enum { WordSize           = sizeof(size_type) };
-  enum { SharedMemoryWords  = CudaTraits::SharedMemoryUsage / WordSize };
-
-  /*  If the reduction value occupies an
-   *  exact multiple of shared memory banks
-   *  then it must be padded to avoid bank conflicts.
-   */
-  static inline
-  size_type word_stride( const size_type value_size )
-  {
-    const size_type n = ( value_size + WordSize - 1 ) / WordSize ;
-    return n ? n + ( n % CudaTraits::SharedMemoryBanks ? 0 : 2 ) : 0 ;
-  }
+  enum { WarpStride  = CudaTraits::WarpSize + 1 };
+  enum { WordSize    = sizeof(size_type) };
 
 public:
 
+  const size_type  value_size ;
+  const size_type  value_word_count ;
   const size_type  value_word_stride ;
   const size_type  value_warp_stride ;
   const size_type  warp_count ;
   const size_type  thread_count ;
   const size_type  shmem_size ;
 
-  explicit inline
-  CudaReduceSharedSizes( const size_type value_size )
-    : value_word_stride( word_stride( value_size ) )
+  inline
+  CudaReduceSharedSizes( const size_type arg_value_size ,
+                         const size_type arg_shmem_max )
+    : value_size( arg_value_size )
+    , value_word_count( ( value_size + WordSize - 1 ) / WordSize )
+      /*  If the reduction value occupies an
+       *  exact multiple of shared memory banks
+       *  then it must be padded to avoid bank conflicts.
+       */
+    , value_word_stride( value_word_count ? value_word_count + ( value_word_count % CudaTraits::SharedMemoryBanks ? 0 : 2 ) : 0 )
     , value_warp_stride( value_word_stride * WarpStride )
     , warp_count( ( value_warp_stride == 0 ) ? 0 : (
-                  ( value_warp_stride << 3 ) < SharedMemoryWords ? (1 << 3) : (
-                  ( value_warp_stride << 2 ) < SharedMemoryWords ? (1 << 2) : (
-                  ( value_warp_stride << 1 ) < SharedMemoryWords ? (1 << 1) : (
-                  ( value_warp_stride      ) < SharedMemoryWords ? 1 : 0 )))))
+                  ( value_warp_stride << 3 ) < ( arg_shmem_max / WordSize ) ? (1 << 3) : (
+                  ( value_warp_stride << 2 ) < ( arg_shmem_max / WordSize ) ? (1 << 2) : (
+                  ( value_warp_stride << 1 ) < ( arg_shmem_max / WordSize ) ? (1 << 1) : (
+                  ( value_warp_stride      ) < ( arg_shmem_max / WordSize ) ? 1 : 0 )))))
     , thread_count( warp_count * CudaTraits::WarpSize )
     , shmem_size( warp_count * WordSize * value_warp_stride )
-    {
-      if ( value_size && ! warp_count ) {
-        // Not enough memory for reduction
-      }
-    }
+    {}
 
   __device__ inline
   size_type shared_data_offset( const size_type tx ,
                                 const size_type ty  ) const
     { return value_word_stride * ( tx + WarpStride * ty ); }
+
+  inline
+  size_type block_count( const size_type work_count ) const
+  {
+    if ( 0 == thread_count ) return 0 ;
+
+    const size_type nb = thread_count ? ( work_count + thread_count - 1 ) / thread_count : 0 ;
+
+    // One level:
+    return std::min( thread_count , nb );
+
+    // Two level:
+    // return std::min( thread_count * thread_count , nb );
+  }
 };
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-template< class ValueOper , class FinalizeType >
+template< unsigned StaticValueSize >
 struct CudaReduceShared
 {
-private:
-
-  typedef CudaReduceSharedSizes< typename ValueOper::value_type > reduce_sizes ;
-  typedef ReduceOperator< ValueOper , FinalizeType >  reduce_operator ;
-
 public:
-
-  //--------------------------------------------------------------------------
 
   typedef Cuda::size_type size_type ;
 
-  inline static
-  size_type value_size( const FinalizeType & f )
-    { return reduce_operator::value_size( f ); }
-
-  static inline
-  size_type warp_count( const FinalizeType & finalize )
-  {
-    const reduce_sizes data( reduce_operator::value_size( finalize ) );
-    return data.warp_count ;
-  }
-
-  inline size_type warp_count() const
-  { return m_data.warp_count ; }
-
-  inline size_type shmem_size() const
-  { return m_data.shmem_size ; }
+  const CudaReduceSharedSizes< StaticValueSize > m_data ;
 
 private:
 
-  const reduce_operator  m_reduce ;
-  const reduce_sizes     m_data ;
-
-  const size_type   m_block_begin ;
-  const size_type   m_block_count ;
-
+  size_type   m_block_begin ;
+  size_type   m_block_count ;
   size_type   m_group_init_count ;
   size_type   m_group_init_offset ;
   size_type   m_group_init_use ;
@@ -221,17 +219,19 @@ private:
   size_type   m_group_init_full_end ;
   size_type * m_scratch_flags ;
   size_type * m_scratch_space ;
+  size_type * m_output_space ;
 
 public:
 
-  CudaReduceShared( const FinalizeType & finalize ,
-                    const size_type block_begin ,
-                    const size_type block_count )
-  : m_reduce( finalize )
-  , m_data( m_reduce.value_size() )
-  , m_block_begin( block_begin )
-  , m_block_count( block_count )
+  CudaReduceShared( const size_type value_size ,
+                    const size_type shmem_size )
+    : m_data( value_size , shmem_size ) {}
+
+  void assign_block_range( const size_type block_begin ,
+                           const size_type block_count )
   {
+    m_block_begin = block_begin ;
+    m_block_count = block_count ;
     m_group_init_count  = 1 ;
     m_group_init_offset = 1 ;
 
@@ -257,6 +257,9 @@ public:
 
     m_scratch_flags = cuda_internal_scratch_flags( m_group_init_offset * sizeof(size_type) );
     m_scratch_space = cuda_internal_scratch_space( n * sizeof(size_type) );
+    m_output_space  = cuda_internal_scratch_unified( m_data.value_size );
+
+    if ( 0 == m_output_space ) { m_output_space = m_scratch_space ; }
 
 #if 0
 std::cout
@@ -285,34 +288,41 @@ std::cout
 private:
 
   //--------------------------------------------------------------------------
-
-  //--------------------------------------------------------------------------
   //  Reduce constributions within a warp.
   //  Warp's reads occur before joins and writes so there is no race condition.
   //  Declare shared data to be volatile to the prevent compiler
   //  from optimizing away read of updated data.
   //    thread's index within warp = tx < WarpSize
+  template< class FunctorType >
   __device__ inline
-  void reduce_intra_warp( volatile size_type * const thread_data ,
+  void reduce_intra_warp( const FunctorType & functor ,
+                          volatile size_type * const thread_data ,
                           const size_type tx ) const
   {
+    typedef ReduceAdapter< FunctorType > Reduce ;
+
     enum { HalfWarpSize = 1 << 4 };
 
     if ( tx < HalfWarpSize ) {
-      m_reduce.join( thread_data ,
-                     thread_data + ( m_data.value_word_stride << 4 ) );
+      Reduce::join( functor ,
+                    thread_data ,
+                    thread_data + ( m_data.value_word_stride << 4 ) );
 
-      m_reduce.join( thread_data ,
-                     thread_data + ( m_data.value_word_stride << 3 ) );
+      Reduce::join( functor ,
+                    thread_data ,
+                    thread_data + ( m_data.value_word_stride << 3 ) );
 
-      m_reduce.join( thread_data ,
-                     thread_data + ( m_data.value_word_stride << 2 ) );
+      Reduce::join( functor ,
+                    thread_data ,
+                    thread_data + ( m_data.value_word_stride << 2 ) );
 
-      m_reduce.join( thread_data ,
-                     thread_data + ( m_data.value_word_stride << 1 ) );
+      Reduce::join( functor ,
+                    thread_data ,
+                    thread_data + ( m_data.value_word_stride << 1 ) );
 
-      m_reduce.join( thread_data ,
-                     thread_data + ( m_data.value_word_stride      ) );
+      Reduce::join( functor ,
+                    thread_data ,
+                    thread_data + ( m_data.value_word_stride      ) );
     }
   }
 
@@ -320,12 +330,15 @@ private:
   // Use a single warp to reduce results from each warp.
   // This requires: m_data.warp_count <= WarpSize
   // Only warp #0 should have 'warp_data'.
-
+  template< class FunctorType >
   __device__ 
   inline
-  void reduce_inter_warp( volatile size_type * const warp_data ,
+  void reduce_inter_warp( const FunctorType & functor ,
+                          volatile size_type * const warp_data ,
                           const size_type tx ) const
   {
+    typedef ReduceAdapter< FunctorType > Reduce ;
+
     __syncthreads(); // Wait for all warps
 
     if ( warp_data && tx + 1 < m_data.warp_count ) {
@@ -336,25 +349,25 @@ private:
 // Hard-wired m_data.warp_count <= 16 so don't need this step
 //
 //          if ( tx + 16 < m_data.warp_count ) {
-//            m_reduce.join( warp_data ,
-//                           warp_data + ( m_data.value_warp_stride << 4 ) ); 
+//            Reduce::join( functor , warp_data ,
+//                          warp_data + ( m_data.value_warp_stride << 4 ) ); 
 //            __threadfence_block();
 //          }
 
-            m_reduce.join( warp_data ,
-                           warp_data + ( m_data.value_warp_stride << 3 ) );
+            Reduce::join( functor , warp_data ,
+                          warp_data + ( m_data.value_warp_stride << 3 ) );
             __threadfence_block();
           }
-          m_reduce.join( warp_data ,
-                         warp_data + ( m_data.value_warp_stride << 2 ) );
+          Reduce::join( functor , warp_data ,
+                        warp_data + ( m_data.value_warp_stride << 2 ) );
           __threadfence_block();
         }
-        m_reduce.join( warp_data ,
-                       warp_data + ( m_data.value_warp_stride << 1 ) );
+        Reduce::join( functor , warp_data ,
+                      warp_data + ( m_data.value_warp_stride << 1 ) );
         __threadfence_block();
       }
-      m_reduce.join( warp_data ,
-                     warp_data + ( m_data.value_warp_stride ) );
+      Reduce::join( functor , warp_data ,
+                    warp_data + ( m_data.value_warp_stride ) );
     }
   }
 
@@ -390,30 +403,28 @@ public:
 
   //--------------------------------------------------------------------------
 
-  typedef typename reduce_operator::reference_type reference_type ;
-
   __device__
   inline
-  reference_type value( const size_type thread_of_block ) const
+  size_type * reduce_data( const size_type thread_of_block ) const
   {
     extern __shared__ size_type shared_data[];
 
-    void * const data = shared_data +
-                        m_data.shared_data_offset(
-                          /* tidx */ thread_of_block &  CudaTraits::WarpIndexMask ,
-                          /* tidy */ thread_of_block >> CudaTraits::WarpIndexShift );
-
-    m_reduce.init( data );
-
-    return m_reduce.reference( data );
+    return shared_data +
+             m_data.shared_data_offset(
+                /* tidx */ thread_of_block &  CudaTraits::WarpIndexMask ,
+                /* tidy */ thread_of_block >> CudaTraits::WarpIndexShift );
   }
 
   //--------------------------------------------------------------------------
 
+  template< class FunctorType >
   __device__
-  void operator()( const size_type thread_of_block ,
+  void operator()( const FunctorType & functor ,
+                   const size_type thread_of_block ,
                    const size_type block_of_grid ) const
   {
+    typedef ReduceAdapter< FunctorType > Reduce ;
+
     extern __shared__ size_type shared_data[];
 
     // tidx == which thread within the warp
@@ -463,14 +474,18 @@ public:
 
     for (;;) {
 
-      reduce_intra_warp( thread_data , tidx );
-      reduce_inter_warp( inter_warp_data , tidx );
+      reduce_intra_warp( functor , thread_data , tidx );
+      reduce_inter_warp( functor , inter_warp_data , tidx );
 
       // If one or less blocks then done.
       // Thread 0 has the final reduction value
       if ( ! group_count ) {
         if ( 0 == thread_of_block ) {
-          m_reduce.finalize( thread_data );
+          // Optional finalization:
+          Reduce::final( functor , shared_data );
+        }
+        for ( unsigned i = thread_of_block ; i < m_data.value_word_count ; ++i ) {
+          m_output_space[i] = shared_data[i] ;
         }
         break ;
       }
@@ -513,7 +528,7 @@ public:
       // A warp's shared memory is contiguous but
       // there is a gap between warps to avoid bank conflicts.
 
-      m_reduce.init( thread_data );
+      functor.init( Reduce::reference( thread_data ) );
 
       if ( wbeg < group_size ) {
 
@@ -555,229 +570,166 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< class FunctorType , class ValueOper , class FinalizeType , class WorkSpec >
-class ParallelReduce< FunctorType , ValueOper , FinalizeType , Cuda , WorkSpec >
+template< class FunctorType , class WorkSpec > struct CudaExecAdapter ;
+
+template< class FunctorType >
+struct CudaExecAdapter< FunctorType , ParallelWorkRequest >
 {
-public:
+  typedef ReduceAdapter< FunctorType >                 Reduce ;
+  typedef CudaReduceShared< Reduce::StaticValueSize >  ReduceSharedType ;
 
-  typedef          Cuda                   device_type ;
-  typedef          Cuda::size_type        size_type ;
-  typedef typename ValueOper::value_type  value_type ;
+  const FunctorType   m_functor ;
+  ReduceSharedType    m_reduce_shared ;
+  ParallelWorkRequest m_work ;
+  const int           m_shmem_size ;
 
-  typedef CudaReduceShared< ValueOper , FinalizeType > ReduceType ;
+  CudaExecAdapter( const FunctorType & functor , const ParallelWorkRequest & work )
+    : m_functor( functor )
+    , m_reduce_shared( Reduce::value_size( functor ) ,
+                       CudaTraits::SharedMemoryUsage - FunctorShmemSize< FunctorType >::value( functor ) )
+    , m_work( std::min( work.league_size , size_t(m_reduce_shared.m_data.thread_count) ) ,
+              m_reduce_shared.m_data.thread_count )
+    , m_shmem_size( FunctorShmemSize< FunctorType >::value( functor ) )
+    {}
 
-  //----------------------------------------------------------------------
+  inline
+  int shmem_size() const
+  { return m_reduce_shared.m_data.shmem_size + m_shmem_size ; }
 
-  const FunctorType    m_work_functor ;
-  const ReduceType     m_reduce_shared ;
-  const size_type      m_work_count ;
+  inline
+  int thread_count()
+  { return m_reduce_shared.m_data.thread_count ; }
 
-  //----------------------------------------------------------------------
-
-  static
-  size_type block_count( const FinalizeType & f ,
-                         const size_type work_count )
-  {
-    const size_type nt =
-      Impl::CudaTraits::WarpSize * ReduceType::warp_count( f );
-
-    if ( 0 == nt ) return 0 ;
-
-    // One level:
-    return std::min( nt , size_type( ( work_count + nt - 1 ) / nt ) );
-
-    // Two level:
-    // return std::min( nt * nt , size_type( ( work_count + nt - 1 ) / nt ) );
-  }
-
-public:
-
-  // For the multi-functor reduce:
-  ParallelReduce( const FunctorType  & functor ,
-                  const FinalizeType & finalize ,
-                  const size_type      work_count ,
-                  const size_type      global_block_begin ,
-                  const size_type      global_block_count )
-    : m_work_functor(  functor )
-    , m_reduce_shared( finalize ,
-                       global_block_begin ,
-                       global_block_count )
-    , m_work_count(    work_count )
-  {}
-
-  //--------------------------------------------------------------------------
-
-  ParallelReduce( const size_type      work_count ,
-                  const FunctorType  & functor ,
-                  const FinalizeType & finalize )
-    : m_work_functor(  functor )
-    , m_reduce_shared( finalize , 0 , block_count(finalize,work_count) )
-    , m_work_count(    work_count )
-  {
-    if ( m_work_count ) {
-      const size_type nw = m_reduce_shared.warp_count();
-
-      const dim3 block( Impl::CudaTraits::WarpSize * nw , 1, 1 );
-      const dim3 grid( block_count(finalize,work_count) , 1 , 1 );
-      const size_type shmem_size = m_reduce_shared.shmem_size();
-
-      CudaParallelLaunch< ParallelReduce >( *this , grid , block , shmem_size );
-    }
-  }
-
-  //--------------------------------------------------------------------------
+  inline
+  int block_count() const
+  { return m_work.league_size ; }
 
   inline
   __device__
   void operator()(void) const
   {
-    typename ReduceType::reference_type value =
-      m_reduce_shared.value( threadIdx.x );
+    typedef typename Reduce::reference_type reference_type ;
 
-    const size_type work_stride = blockDim.x * gridDim.x ;
+    reference_type update = Reduce::reference( m_reduce_shared.reduce_data( threadIdx.x ) );
 
-    // Reduce to per-thread contributions
-    for ( Cuda::size_type iwork = threadIdx.x + blockDim.x * blockIdx.x ;
-          iwork < m_work_count ; iwork += work_stride ) {
-      m_work_functor( iwork , value );
-    }
+    CudaExec exec( m_reduce_shared.m_data.shmem_size ,
+                   m_reduce_shared.m_data.shmem_size + m_shmem_size );
 
-    m_reduce_shared( threadIdx.x , blockIdx.x );
+    m_functor.init( update );
+
+    m_functor( Cuda( exec ) , update );
+
+    m_reduce_shared( m_functor , threadIdx.x , blockIdx.x );
   }
 };
 
-/* Reduction into a view on the host */
-
-template< class FunctorType , class ValueOper ,
-          class ValueType , class LayoutType ,
-          class ManagedType , class WorkSpec >
-class ParallelReduce< FunctorType ,
-                      ValueOper , 
-                      View< ValueType , LayoutType , Host , ManagedType > ,
-                      Cuda , WorkSpec >
+template< class FunctorType , class WorkSpec >
+struct CudaExecAdapter /* < FunctorType , size_t > */
 {
-public:
+  typedef ReduceAdapter< FunctorType >                 Reduce ;
+  typedef CudaReduceShared< Reduce::StaticValueSize >  ReduceSharedType ;
 
-  typedef typename FunctorType::value_type value_type ;
+  const FunctorType  m_functor ;
+  ReduceSharedType   m_reduce_shared ;
+  int                m_work_count ;
 
-  typedef View< ValueType , LayoutType , Host , ManagedType > host_view_type ;
-
-  ParallelReduce( const Cuda::size_type  work_count ,
-                  const FunctorType    & functor ,
-                  const host_view_type & host_view )
-  {
-    typedef typename
-      StaticAssertSame< typename host_view_type::scalar_type[] , value_type >
-        ::type ok_match_type ;
-
-    typedef typename
-      StaticAssert< host_view_type::Rank == 1 >::type ok_rank ;
-
-    if ( functor.value_count != host_view.dimension_0() ) {
-      std::ostringstream msg ;
-      msg << "Kokkos::parallel_reduce( <array_type> ) ERROR "
-          << "given incompatible array lengths: functor.value_count("
-          << functor.value_count
-          << ") != view.dimension_0("
-          << host_view.dimension_0() << ")" ;
-      Kokkos::Impl::throw_runtime_exception( msg.str() );
-    }
-
-    typedef Impl::ParallelReduceFunctorValue< value_type , Cuda >
-      FinalizeType ;
-
-    const FinalizeType finalize( functor.value_count );
-
-    ParallelReduce< FunctorType , ValueOper , FinalizeType , Cuda , void >
-      ( work_count , functor , finalize );
-
-    finalize.result( host_view.ptr_on_device() );
-  }
-};
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-template< typename T >
-struct CudaReduceResult {
-
-  inline static
-  T * device_pointer( const Cuda::size_type count )
-  {
-    T * ptr = (T*) cuda_internal_scratch_unified( sizeof(T) * count );
-    if ( 0 == ptr ) {
-      ptr = (T*) cuda_internal_scratch_space( sizeof(T) * count );
-    }
-    return ptr ;
-  }
-
-  inline static
-  void copy_to_host( T host_pointer[] , const Cuda::size_type count )
-  {
-    Cuda::fence();
-    T * ptr = (T*) cuda_internal_scratch_unified( sizeof(T) * count );
-    if ( 0 != ptr ) {
-      for ( Cuda::size_type i = 0 ; i < count ; ++i )
-        host_pointer[i] = ptr[i] ;
-    }
-    else {
-      ptr = (T*) cuda_internal_scratch_space( sizeof(T) * count );
-      DeepCopy<HostSpace,CudaSpace>( host_pointer , ptr , sizeof(T) * count );
-    }
-  }
-};
-
-template< typename ValueType >
-class ParallelReduceFunctorValue< ValueType , Cuda >
-{
-private:
-  ValueType * const m_dev ; 
-public:
-
-  typedef ValueType value_type ;
-
-  __device__ __host__
-  inline
-  void operator()( const value_type & value ) const
-    { *m_dev = value ; }
-
-  inline
-  ParallelReduceFunctorValue()
-    : m_dev( CudaReduceResult<value_type>::device_pointer(1) ) {}
-
-  inline
-  void result( value_type & value ) const
-  { CudaReduceResult<value_type>::copy_to_host( & value , 1 ); }
-};
-
-template< typename MemberType >
-class ParallelReduceFunctorValue< MemberType[] , Cuda >
-{
-private:
-  MemberType * const m_dev ; 
-public:
-
-  typedef MemberType     value_type[] ;
-  const Cuda::size_type  value_count ;
-
-  __device__ __host__
-  inline
-  void operator()( const MemberType input[] ) const
-    {
-      for ( Cuda::size_type i = 0 ; i < value_count ; ++i )
-        m_dev[i] = input[i] ;
-    }
-
-  explicit
-  ParallelReduceFunctorValue( Cuda::size_type n )
-    : m_dev( CudaReduceResult<MemberType>::device_pointer(n) )
-    , value_count( n )
+  CudaExecAdapter( const FunctorType & functor , const size_t work )
+    : m_functor( functor )
+    , m_reduce_shared( Reduce::value_size( functor ) , CudaTraits::SharedMemoryUsage )
+    , m_work_count( work )
     {}
 
-  void result( MemberType result[] ) const
-  { CudaReduceResult<MemberType>::copy_to_host( result , value_count ); }
+  inline
+  int shmem_size() const
+  { return m_reduce_shared.m_data.shmem_size ; }
+
+  inline
+  int thread_count()
+  { return m_reduce_shared.m_data.thread_count ; }
+
+  inline
+  int block_count() const
+  { return m_reduce_shared.m_data.block_count( m_work_count ); }
+
+  inline
+  __device__
+  void operator()(void) const
+  {
+    typedef typename Reduce::reference_type reference_type ;
+
+    reference_type update = Reduce::reference( m_reduce_shared.reduce_data( threadIdx.x ) );
+
+    m_functor.init( update );
+
+    const int work_stride = blockDim.x * gridDim.x ;
+
+    // Reduce to per-thread contributions
+    for ( int iwork = threadIdx.x + blockDim.x * blockIdx.x ;
+          iwork < m_work_count ; iwork += work_stride ) {
+      m_functor( iwork , update );
+    }
+
+    m_reduce_shared( m_functor , threadIdx.x , blockIdx.x );
+  }
 };
 
+//----------------------------------------------------------------------------
+
+template< class FunctorType , class WorkSpec >
+class ParallelReduce< FunctorType , WorkSpec , Cuda >
+{
+public:
+
+  typedef CudaExecAdapter< FunctorType , WorkSpec >  ExecType ;
+  typedef ReduceAdapter< FunctorType >               Reduce ;
+  typedef typename Reduce::pointer_type              pointer_type ;
+
+private:
+
+  ExecType      m_exec ;
+  pointer_type  m_host_ptr ;
+
+public:
+
+  ParallelReduce( const FunctorType  & functor ,
+                  const WorkSpec     & work ,
+                  pointer_type         result = 0 )
+    : m_exec( functor , work )
+    , m_host_ptr( result )
+  {
+    const int nb = m_exec.block_count();
+
+    if ( nb ) {
+      m_exec.m_reduce_shared.assign_block_range( 0 , nb );
+
+      const dim3 block( m_exec.thread_count() , 1 , 1 );
+      const dim3 grid( nb , 1 , 1 );
+
+      CudaParallelLaunch< ExecType >( m_exec , grid , block , m_exec.shmem_size() );
+    }
+  }
+
+  void wait() const
+  {
+    Cuda::fence();
+
+    if ( m_host_ptr ) {
+      const int size  = Reduce::value_size( m_exec.m_functor );
+      const int count = Reduce::value_count( m_exec.m_functor );
+      pointer_type ptr = (pointer_type) cuda_internal_scratch_unified( size );
+      if ( 0 != ptr ) {
+        for ( int i = 0 ; i < count ; ++i )
+          m_host_ptr[i] = ptr[i] ;
+      }
+      else {
+        ptr = (pointer_type) cuda_internal_scratch_space( size );
+        DeepCopy<HostSpace,CudaSpace>( m_host_ptr , ptr , size );
+      }
+    }
+  }
+};
+
+//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 } // namespace Impl
@@ -789,113 +741,114 @@ public:
 namespace Kokkos {
 namespace Impl {
 
-template < class FunctorType , class ValueOper , class FinalizeType >
+template < class FunctorType >
 class CudaMultiFunctorParallelReduceMember ;
 
-template < class ValueOper , class FinalizeType >
-class CudaMultiFunctorParallelReduceMember<void,ValueOper,FinalizeType> {
+template <>
+class CudaMultiFunctorParallelReduceMember<void> {
 public:
 
   typedef Cuda::size_type size_type ;
 
-  const size_type  m_work_count ;
-
 protected:
 
-  explicit
-  CudaMultiFunctorParallelReduceMember( const size_type work_count )
-    : m_work_count( work_count )
-    {} 
+  size_type m_block_count ;
+
+  CudaMultiFunctorParallelReduceMember()
+    : m_block_count(0) {}
 
 public:
+
+  size_type block_count() const { return m_block_count ; }
 
   virtual ~CudaMultiFunctorParallelReduceMember() {}
 
   virtual
-  void apply( const FinalizeType & finalize ,
-              const size_type      thread_count ,
-              const size_type      block_count ,
-              const size_type      global_block_offset ,
-              const size_type      global_block_count ) const = 0 ;
+  void apply( const size_type  global_block_offset ,
+              const size_type  global_block_count ) = 0 ;
+
+  virtual
+  void output( void * arg_ptr ) const = 0 ;
 };
 
-template < class FunctorType , class ValueOper , class FinalizeType >
+template < class FunctorType >
 class CudaMultiFunctorParallelReduceMember :
-  public CudaMultiFunctorParallelReduceMember<void,ValueOper,FinalizeType>
+  public CudaMultiFunctorParallelReduceMember<void>
 {
 public:
-  typedef CudaMultiFunctorParallelReduceMember<void,ValueOper,FinalizeType> base_type ;
-  typedef ParallelReduce< FunctorType , ValueOper , FinalizeType , Cuda >  driver_type ;
+  typedef CudaMultiFunctorParallelReduceMember<void> base_type ;
+  typedef CudaExecAdapter< FunctorType , size_t >  ExecType ;
   
-  typedef Impl::CudaReduceShared< ValueOper , FinalizeType > ReduceType ;
-
   typedef Cuda            device_type ;
   typedef Cuda::size_type size_type ;
 
-  FunctorType  m_functor ;
+  ExecType  m_exec ;
 
   CudaMultiFunctorParallelReduceMember(
     const FunctorType  & functor ,
     const size_type      work_count )
-  : base_type( work_count )
-  , m_functor( functor )
-  {}
+  : base_type()
+  , m_exec( functor , work_count )
+  {
+    base_type::m_block_count = m_exec.block_count();
+  }
 
   virtual
-  void apply( const FinalizeType & finalize ,
-              const size_type      thread_count ,
-              const size_type      block_count ,
-              const size_type      global_block_begin ,
-              const size_type      global_block_count ) const
+  void apply( const size_type  global_block_begin ,
+              const size_type  global_block_count )
   {
-    const dim3 block( thread_count , 1 , 1 );
-    const dim3 grid(  block_count ,  1 , 1 );
+    m_exec.m_reduce_shared.assign_block_range( global_block_begin , global_block_count );
 
-    driver_type  driver( m_functor, finalize,
-                         base_type::m_work_count ,
-                         global_block_begin ,
-                         global_block_count );
+    const dim3 block( m_exec.m_reduce_shared.m_data.thread_count , 1 , 1 );
+    const dim3 grid(  base_type::m_block_count ,  1 , 1 );
+    const size_type shmem_size = m_exec.m_reduce_shared.m_data.shmem_size ;
 
-    const size_type shmem_size = driver.m_reduce_shared.shmem_size();
-
-    cuda_parallel_launch_local_memory< driver_type ><<< grid , block , shmem_size >>>( driver );
+    cuda_parallel_launch_local_memory< ExecType ><<< grid , block , shmem_size >>>( m_exec );
   }
+
+  virtual
+  void output( void * arg_ptr ) const
+  {
+    typedef ReduceAdapter< FunctorType >   Reduce ;
+    typedef typename Reduce::pointer_type  ptr_type ;
+
+    Cuda::fence();
+    ptr_type host_ptr = (ptr_type) arg_ptr ;
+    ptr_type cuda_ptr = (ptr_type) Impl::cuda_internal_scratch_unified( m_exec.m_reduce_shared.m_data.value_size );
+    if ( 0 != cuda_ptr ) {
+      const Cuda::size_type n = Reduce::value_count( m_exec.m_functor );
+      for ( Cuda::size_type i = 0 ; i < n ; ++i )
+        host_ptr[i] = cuda_ptr[i] ;
+    }
+    else {
+      cuda_ptr = (ptr_type) Impl::cuda_internal_scratch_space( m_exec.m_reduce_shared.m_data.value_size );
+      DeepCopy<HostSpace,CudaSpace>( host_ptr, cuda_ptr , m_exec.m_reduce_shared.m_data.value_size );
+    }
+  }
+
+  //--------------------------------------------------------------------------
 };
 
 } // namespace Impl
 
-template < class ValueOper , class FinalizeType >
-class MultiFunctorParallelReduce< ValueOper , FinalizeType , Cuda > {
+template <>
+class MultiFunctorParallelReduce< Cuda > {
 public:
   typedef  Cuda               device_type ;
   typedef  Cuda::size_type    size_type ;
 
 private:
 
-  typedef Impl::CudaReduceShared< ValueOper , FinalizeType > ReduceType ;
-
-  typedef Impl::CudaMultiFunctorParallelReduceMember< void , ValueOper , FinalizeType > MemberType ;
+  typedef Impl::CudaMultiFunctorParallelReduceMember< void > MemberType ;
   typedef std::vector< MemberType * > MemberVector ;
 
   MemberVector m_member_functors ;
-  FinalizeType m_finalize ;
-
-  inline static 
-  size_type block_count( const size_type warp_count ,
-                         const size_type work_count )
-  {
-    const size_type nt = Impl::CudaTraits::WarpSize * warp_count ;
-
-    return std::min( Impl::cuda_internal_maximum_grid_count() ,
-                     ( work_count + nt - 1 ) / nt );
-  }
 
 public:
 
-  MultiFunctorParallelReduce( const FinalizeType & finalize )
-   : m_member_functors()
-   , m_finalize( finalize )
-   {}
+  MultiFunctorParallelReduce()
+    : m_member_functors()
+    {}
 
   ~MultiFunctorParallelReduce()
   {
@@ -909,49 +862,50 @@ public:
   void push_back( const size_type work_count , const FunctorType & f )
   {
     MemberType * member =
-      new Impl::CudaMultiFunctorParallelReduceMember< FunctorType , ValueOper , FinalizeType >
-        ( f , work_count );
+      new Impl::CudaMultiFunctorParallelReduceMember< FunctorType >( f , work_count );
 
     m_member_functors.push_back( member );
   }
 
   void execute()
   {
-    const size_type warp_count = ReduceType::warp_count( m_finalize );
+    if ( m_member_functors.size() ) {
 
-    const size_type thread_count = warp_count * Impl::CudaTraits::WarpSize ;
+      // Each dispatch has a fixed block count, dispatch the functor
+      // on up to all streams until the requested block count is met.
+      // When the stream_count * blocks_per_stream < blocks_requested
+      // then the functor will iterate within the dispatch.
 
-    // Dispatch to streams, second and subsequent dispatches set the 
-    // recycling flag so previous reduction results will be read.
+      typename MemberVector::iterator m ;
 
-    // Each dispatch has a fixed block count, dispatch the functor
-    // on up to all streams until the requested block count is met.
-    // When the stream_count * blocks_per_stream < blocks_requested
-    // then the functor will iterate within the dispatch.
+      size_type global_block_count = 0 ;
 
-    typename MemberVector::iterator m ;
+      for ( m = m_member_functors.begin() ; m != m_member_functors.end() ; ++m ) {
+        global_block_count += (*m)->block_count();
+      }
 
-    size_type global_block_count = 0 ;
+      size_type global_block_offset = 0 ;
 
-    for ( m = m_member_functors.begin() ; m != m_member_functors.end() ; ++m ) {
-      global_block_count += block_count( warp_count , (*m)->m_work_count );
-    }
+      for ( m = m_member_functors.begin() ; m != m_member_functors.end() ; ++m ) {
+        MemberType & member = **m ;
 
-    size_type global_block_offset = 0 ;
-
-    for ( m = m_member_functors.begin() ; m != m_member_functors.end() ; ++m ) {
-      MemberType & member = **m ;
-
-      if ( (*m)->m_work_count ) {
-        const size_type n = block_count( warp_count , (*m)->m_work_count );
-
-        member.apply( m_finalize , thread_count , n ,
-                      global_block_offset , global_block_count );
-
-        global_block_offset += n ;
+        if ( (*m)->block_count() ) {
+          member.apply( global_block_offset , global_block_count );
+          global_block_offset += (*m)->block_count();
+        }
       }
     }
   }
+
+  void output( void * host_pointer ) const
+  {
+    if ( m_member_functors.size() ) {
+      m_member_functors.back()->output( host_pointer );
+    }
+  }
+
+  //--------------------------------------------------------------------------
+
 };
 
 //----------------------------------------------------------------------------

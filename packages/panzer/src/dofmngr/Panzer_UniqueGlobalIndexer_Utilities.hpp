@@ -57,6 +57,13 @@
 
 namespace panzer {
 
+/** Print out unique global indexer load balancing information. This includes
+  * the minimum unknown, maximum unknown count, mean unknown and standard deviation of
+  * the unknowns for both owned and owned and shared.
+  */
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+std::string printUGILoadBalancingInformation(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi);
+
 /** Construct a vector that contains a reduced set of field numbers.
   * The ordering is based on the ordering from <code>ugi.getOwnedAndSharedIndices()</code>.
   * The term "reduced" means that this processor must be able to fully determine the

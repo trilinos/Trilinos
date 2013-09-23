@@ -46,6 +46,12 @@
 #ifndef MUELU_RAPFACTORY_DEF_HPP
 #define MUELU_RAPFACTORY_DEF_HPP
 
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
+
+
 #include <sstream>
 
 #include <Xpetra_Matrix.hpp>
@@ -123,7 +129,7 @@ namespace MueLu {
 
       {
         SubFactoryMonitor subM(*this, "MxM: A x P", coarseLevel);
-        AP = Utils::Multiply(*A, false, *P, false, AP);
+        AP = Utils::Multiply(*A, false, *P, false, AP, GetOStream(Statistics2,0));
         Set(coarseLevel, "AP Pattern", AP);
       }
 
@@ -141,14 +147,14 @@ namespace MueLu {
       if (implicitTranspose_) {
         SubFactoryMonitor m2(*this, "MxM: P' x (AP) (implicit)", coarseLevel);
 
-        Ac = Utils::Multiply(*P, true, *AP, false, Ac, true, doOptimizedStorage);
+        Ac = Utils::Multiply(*P, true, *AP, false, Ac, GetOStream(Statistics2,0), true, doOptimizedStorage);
 
       } else {
 
         SubFactoryMonitor m2(*this, "MxM: R x (AP) (explicit)", coarseLevel);
 
         RCP<Matrix> R = Get< RCP<Matrix> >(coarseLevel, "R");
-        Ac = Utils::Multiply(*R, false, *AP, false, Ac, true, doOptimizedStorage);
+        Ac = Utils::Multiply(*R, false, *AP, false, Ac, GetOStream(Statistics2,0), true, doOptimizedStorage);
 
       }
 
@@ -157,7 +163,7 @@ namespace MueLu {
 
       RCP<ParameterList> params = rcp(new ParameterList());;
       params->set("printLoadBalancingInfo", true);
-      GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*Ac, "Ac", params);
+      GetOStream(Statistics1, 0) << Utils::PrintMatrixInfo(*Ac, "Ac", params);
 
       Set(coarseLevel, "A",           Ac);
       Set(coarseLevel, "RAP Pattern", Ac);

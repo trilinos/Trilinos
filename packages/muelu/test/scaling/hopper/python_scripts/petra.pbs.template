@@ -1,0 +1,53 @@
+#PBS -q regular
+#PBS -l mppwidth=_CORES_
+#PBS -l walltime=00:10:00
+#PBS -N _MTYPE___CORES_
+#PBS -e screen.err.$PBS_JOBID
+#PBS -o screen.out.$PBS_JOBID
+#PBS -V
+#PBS -A m1327
+#PBS -S /bin/bash
+
+## #PBS -m e
+## #PBS -M aprokop@sandia.gov
+
+cd $PBS_O_WORKDIR
+
+NumRuns=2
+
+echo ""
+echo "==========================================="
+echo "Start Time: " `date`
+echo "==========================================="
+
+for ((ii=1; ii < ${NumRuns}+1; ii++)); do
+  echo "---- run ${ii} of ${NumRuns} ----"
+
+  myRunCommand="aprun -ss -cc numa_node -n _CORES_ ./binary.exe --nx=_NX_ --ny=_NX_ --nz=_NX_ --matrixType=_MTYPE_ --xml=_XMLFILE_ --precond=1 --fixPoint=0"
+  myRunCommandE="$myRunCommand --linAlgebra=Epetra"
+  myRunCommandT="$myRunCommand --linAlgebra=Tpetra"
+  #epetra
+  if [ "_EPETRA_" -eq "1" ]; then
+    echo ${myRunCommandE}
+    epfile="screen_${ii}.epetra"
+    ${myRunCommandE} > ${epfile}
+    ~/bin/mueprof.sh ${epfile} > children_${ii}.epetra
+  fi
+
+  #tpetra
+  if [ "_TPETRA_" -eq "2" ]; then
+    myRunCommand="$myRunCommand --linAlgebra=Tpetra"
+    echo ${myRunCommandT}
+    tpfile="screen_${ii}.tpetra"
+    ${myRunCommandT} > ${tpfile}
+    ~/bin/mueprof.sh ${tpfile} > children_${ii}.tpetra
+  fi
+
+  if [ "_EPETRA_" -eq "1" ] && [ "_TPETRA_" -eq "2" ]; then
+    compareTE.sh -a ${epfile} ${tpfile} > screen_${ii}.compare
+  fi
+done
+
+echo "==========================================="
+echo "Stop Time: " `date`
+echo "==========================================="

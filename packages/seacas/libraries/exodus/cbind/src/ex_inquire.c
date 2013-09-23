@@ -530,7 +530,7 @@ static int ex_inquire_internal (int      exoid,
        * default if not set by the client is 32 characters. The value
        * does not include the trailing null.
        */
-      struct file_item* file = ex_find_file_item(exoid);
+      struct ex_file_item* file = ex_find_file_item(exoid);
 
       if (!file ) {
 	exerrval = EX_BADFILEID;

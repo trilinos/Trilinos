@@ -53,6 +53,11 @@
 #ifndef MUELU_COARSEMAPFACTORY_DEF_HPP_
 #define MUELU_COARSEMAPFACTORY_DEF_HPP_
 
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
+
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_StridedMapFactory.hpp>
 
@@ -126,7 +131,7 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(stridedBlockSize != NSDim , Exceptions::RuntimeError, "MueLu::CoarseMapFactory::Build(): dimension of strided block != NSDim. error.");
     }
 
-    GetOStream(Statistics1, 0) << "domainGIDOffset: " << domainGidOffset_ << " block size: " << getFixedBlockSize() << " stridedBlockId: " << stridedBlockId_ << std::endl;
+    GetOStream(Statistics2, 0) << "domainGIDOffset: " << domainGidOffset_ << " block size: " << getFixedBlockSize() << " stridedBlockId: " << stridedBlockId_ << std::endl;
 
     // number of coarse level dofs (fixed by number of aggregates and blocksize data)
     GlobalOrdinal nCoarseDofs = numAggs * getFixedBlockSize();

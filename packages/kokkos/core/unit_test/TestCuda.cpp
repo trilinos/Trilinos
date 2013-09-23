@@ -45,7 +45,6 @@
 
 #include <gtest/gtest.h>
 
-#include <Kokkos_Host.hpp>
 #include <Kokkos_Cuda.hpp>
 
 namespace Test {
@@ -68,9 +67,11 @@ extern void test_device_cuda_view_impl();
 extern void test_device_cuda_view_api();
 extern void test_device_cuda_crsarray();
 extern void test_device_cuda_reduce();
+extern void test_device_cuda_reduce_request();
 extern void test_device_cuda_reduce_dynamic();
 extern void test_device_cuda_reduce_dynamic_view();
 extern void test_device_cuda_multi_reduce();
+extern void test_device_cuda_shared_request();
 extern void test_device_cuda_atomic();
 
 TEST_F( cuda, view_impl )
@@ -91,6 +92,16 @@ TEST_F( cuda, crsarray )
 TEST_F( cuda, reduce )
 {
   test_device_cuda_reduce();
+}
+
+TEST_F( cuda, reduce_request )
+{
+  test_device_cuda_reduce_request();
+}
+
+TEST_F( cuda, shared_request )
+{
+  test_device_cuda_shared_request();
 }
 
 TEST_F( cuda, reduce_dynamic )

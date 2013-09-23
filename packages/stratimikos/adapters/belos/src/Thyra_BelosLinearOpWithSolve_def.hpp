@@ -161,9 +161,9 @@ void BelosLinearOpWithSolve<Scalar>::initialize(
   const RCP<Belos::SolverManager<Scalar,MV_t,LO_t> > &iterativeSolver,
   const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
   const RCP<const PreconditionerBase<Scalar> > &prec,
-  const bool isExternalPrec,
+  const bool isExternalPrec_in,
   const RCP<const LinearOpSourceBase<Scalar> > &approxFwdOpSrc,
-  const ESupportSolveUse &supportSolveUse,
+  const ESupportSolveUse &supportSolveUse_in,
   const int convergenceTestFrequency
   )
 {
@@ -174,9 +174,9 @@ void BelosLinearOpWithSolve<Scalar>::initialize(
   iterativeSolver_ = iterativeSolver;
   fwdOpSrc_ = fwdOpSrc;
   prec_ = prec;
-  isExternalPrec_ = isExternalPrec;
+  isExternalPrec_ = isExternalPrec_in;
   approxFwdOpSrc_ = approxFwdOpSrc;
-  supportSolveUse_ = supportSolveUse;
+  supportSolveUse_ = supportSolveUse_in;
   convergenceTestFrequency_ = convergenceTestFrequency;
   // Check if "Convergence Tolerance" is in the solver parameter list.  If
   // not, use the default from the solver.
@@ -247,9 +247,9 @@ void BelosLinearOpWithSolve<Scalar>::uninitialize(
   RCP<Belos::SolverManager<Scalar,MV_t,LO_t> > *iterativeSolver,
   RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc,
   RCP<const PreconditionerBase<Scalar> > *prec,
-  bool *isExternalPrec,
+  bool *isExternalPrec_in,
   RCP<const LinearOpSourceBase<Scalar> > *approxFwdOpSrc,
-  ESupportSolveUse *supportSolveUse
+  ESupportSolveUse *supportSolveUse_in
   )
 {
   if (lp) *lp = lp_;
@@ -257,9 +257,9 @@ void BelosLinearOpWithSolve<Scalar>::uninitialize(
   if (iterativeSolver) *iterativeSolver = iterativeSolver_;
   if (fwdOpSrc) *fwdOpSrc = fwdOpSrc_;
   if (prec) *prec = prec_;
-  if (isExternalPrec) *isExternalPrec = isExternalPrec_;
+  if (isExternalPrec_in) *isExternalPrec_in = isExternalPrec_;
   if (approxFwdOpSrc) *approxFwdOpSrc = approxFwdOpSrc_;
-  if (supportSolveUse) *supportSolveUse = supportSolveUse_;
+  if (supportSolveUse_in) *supportSolveUse_in = supportSolveUse_;
 
   lp_ = Teuchos::null;
   solverPL_ = Teuchos::null;
@@ -352,7 +352,7 @@ void BelosLinearOpWithSolve<Scalar>::describe(
         << "rangeDim=" << this->range()->dim()
         << ",domainDim=" << this->domain()->dim() << "}\n";
       if (lp_->getOperator().get()) {
-        OSTab tab(out);
+        OSTab tab1(out);
         *out
           << "iterativeSolver = "<<describe(*iterativeSolver_,verbLevel)
           << "fwdOp = " << describe(*lp_->getOperator(),verbLevel);
@@ -562,7 +562,7 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
         ? out
         : rcp(new FancyOStream(rcp(new Teuchos::oblackholestream())))
         );
-    Teuchos::OSTab tab(outUsed,1,"BELOS");
+    Teuchos::OSTab tab1(outUsed,1,"BELOS");
     tmpPL->set("Output Stream", outUsed);
     iterativeSolver_->setParameters(tmpPL);
     if (nonnull(generalSolveCriteriaBelosStatusTest)) {
@@ -663,7 +663,7 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
 //  is not set to Teuchos::VERB_NONE, so I'm commenting this out for now.
 //  if (out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
 //    *out << "\nTotal solve time in Belos = "<<totalTimer.totalElapsedTime()<<" sec\n";
-
+  
   return solveStatus;
 
 }

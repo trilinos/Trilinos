@@ -261,7 +261,7 @@ namespace Iohb {
     }
 
     if (fileFormat == SPYHIS) {
-      layout_->add("TIME", time);
+      layout_->add("TIME", time/timeScaleFactor);
     }
 
     return true;

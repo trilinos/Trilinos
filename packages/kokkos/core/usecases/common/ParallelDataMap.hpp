@@ -51,7 +51,7 @@
 #include <stdexcept>
 
 #include <Kokkos_View.hpp>
-#include <Kokkos_Host.hpp>
+#include <Kokkos_Serial.hpp>
 #include <ParallelComm.hpp>
 
 namespace Kokkos {
@@ -70,9 +70,9 @@ namespace Kokkos {
  *  send_item { send item offsets within 'send' range }
  */
 struct ParallelDataMap {
-  typedef View< unsigned*[2], Host >  host_recv_type ;
-  typedef View< unsigned*[2], Host >  host_send_type ;
-  typedef View< unsigned* ,   Host >  host_send_item_type ;
+  typedef View< unsigned*[2], Serial >  host_recv_type ;
+  typedef View< unsigned*[2], Serial >  host_send_type ;
+  typedef View< unsigned* ,   Serial >  host_send_item_type ;
 
   comm::Machine        machine ;
   host_recv_type       host_recv ;
@@ -291,10 +291,10 @@ template< class ValueType , class Device >
 class AsyncExchange< ValueType, Device , Kokkos::ParallelDataMap > {
 public:
 
-  typedef Device                                          device_type ;
-  typedef Kokkos::ParallelDataMap                    data_map_type ;
+  typedef Device                                    device_type ;
+  typedef Kokkos::ParallelDataMap                   data_map_type ;
   typedef Kokkos::View< ValueType* , device_type >  buffer_dev_type ;
-  typedef typename buffer_dev_type::HostMirror            buffer_host_type ;
+  typedef typename buffer_dev_type::HostMirror      buffer_host_type ;
 
 private:
 
@@ -485,10 +485,10 @@ template< class ValueType , class Device >
 class AsyncExchange< ValueType, Device , Kokkos::ParallelDataMap > {
 public:
 
-  typedef Device                                          device_type ;
-  typedef Kokkos::ParallelDataMap                    data_map_type ;
+  typedef Device                                    device_type ;
+  typedef Kokkos::ParallelDataMap                   data_map_type ;
   typedef Kokkos::View< ValueType* , device_type >  buffer_dev_type ;
-  typedef Kokkos::View< ValueType* , Host >         buffer_host_type ;
+  typedef typename buffer_dev_type::HostMirror      buffer_host_type ;
 
   buffer_dev_type      dev_buffer ;
 

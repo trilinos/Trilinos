@@ -43,335 +43,237 @@
 #define Intrepid_MiniTensor_Storage_h
 
 #include "Intrepid_MiniTensor_Definitions.h"
-#include "Teuchos_ArrayRCP.hpp"
 
 namespace Intrepid {
-namespace MiniTensor {
+
+/// Set to constant value if not dynamic
+template <Index N, Index C>
+struct dimension_const {
+  static Index const value = C;
+};
+
+template <Index C>
+struct dimension_const<DYNAMIC, C> {
+  static Index const value = DYNAMIC;
+};
+
+/// Integer power template restricted to orders defined below
+template <Index D, Index O>
+struct dimension_power {
+  static Index const value = 0;
+};
+
+template <Index D>
+struct dimension_power<D, 1> {
+  static Index const value = D;
+};
+
+template <Index D>
+struct dimension_power<D, 2> {
+  static Index const value = D * D;
+};
+
+template <Index D>
+struct dimension_power<D, 3> {
+  static Index const value = D * D * D;
+};
+
+template <Index D>
+struct dimension_power<D, 4> {
+  static Index const value = D * D * D * D;
+};
+
+/// Integer square for manipulations between 2nd and 4rd-order tensors.
+template <Index N>
+struct dimension_square {
+  static Index const value = 0;
+};
+
+template <>
+struct dimension_square<DYNAMIC> {
+  static Index const value = DYNAMIC;
+};
+
+template <>
+struct dimension_square<1> {
+  static Index const value = 1;
+};
+
+template <>
+struct dimension_square<2> {
+  static Index const value = 4;
+};
+
+template <>
+struct dimension_square<3> {
+  static Index const value = 9;
+};
+
+template <>
+struct dimension_square<4> {
+  static Index const value = 16;
+};
+
+/// Integer square root template restricted to dimensions defined below.
+/// Useful for constructing a 2nd-order tensor from a 4th-order
+/// tensor with static storage.
+template <Index N>
+struct dimension_sqrt {
+  static Index const value = 0;
+};
+
+template <>
+struct dimension_sqrt<DYNAMIC> {
+  static Index const value = DYNAMIC;
+};
+
+template <>
+struct dimension_sqrt<1> {
+  static Index const value = 1;
+};
+
+template <>
+struct dimension_sqrt<4> {
+  static Index const value = 2;
+};
+
+template <>
+struct dimension_sqrt<9> {
+  static Index const value = 3;
+};
+
+template <>
+struct dimension_sqrt<16> {
+  static Index const value = 4;
+};
+
+/// Manipulation of static and dynamic dimensions.
+template <Index N, Index P>
+struct dimension_add {
+  static Index const value = N + P;
+};
+
+template <Index P>
+struct dimension_add<DYNAMIC, P> {
+  static Index const value = DYNAMIC;
+};
+
+template <Index N, Index P>
+struct dimension_subtract {
+  static Index const value = N - P;
+};
+
+template <Index P>
+struct dimension_subtract<DYNAMIC, P> {
+  static Index const value = DYNAMIC;
+};
 
 ///
-/// Base Storage class. Simple linear access memory model.
+/// Base static storage class. Simple linear access memory model.
 ///
-template<typename T>
+template<typename T, Index N>
 class Storage
 {
 public:
-  ///
-  /// Component type
-  ///
   typedef T type;
 
-  ///
-  /// Default constructor
-  ///
+  static
+  bool const
+  IS_STATIC = true;
+
+  static
+  bool const
+  IS_DYNAMIC = false;
+
   Storage() {}
 
-  ///
-  /// Constructor to given size
-  /// \param number_entries number of entries
-  ///
   explicit
   Storage(Index const number_entries) {resize(number_entries);}
 
-  ///
-  /// Simple destructor
-  ///
-  virtual
   ~Storage() {}
 
-  ///
-  /// Entry access
-  /// \param i the index
-  ///
-  virtual
   T const &
-  operator[](Index const i) const = 0;
+  operator[](Index const i) const
+  {assert(i < N); return storage_[i];}
 
-  ///
-  /// Entry access
-  /// \param i the index
-  ///
-  virtual
   T &
-  operator[](Index const i) = 0;
+  operator[](Index const i)
+  {assert(i < N); return storage_[i];}
 
-  ///
-  /// \return number of entries
-  ///
-  virtual
   Index
-  size() const = 0;
+  size() const {return N;}
 
-  ///
-  /// Resize the storage (assume destructive)
-  /// \param number_entries number of entries
-  ///
-  virtual
   void
-  resize(Index const number_entries) = 0;
+  resize(Index const number_entries) {assert(number_entries == N);}
 
-  ///
-  /// Clear the storage
-  ///
-  virtual
   void
-  clear() = 0;
+  clear() {}
 
 private:
 
-  ///
-  /// No copy constructor
-  ///
-  Storage(Storage<T> const & s);
+  Storage(Storage<T, N> const & s);
 
-  ///
-  /// No copy assignment
-  ///
-  Storage<T> &
-  operator=(Storage<T> const & s);
+  Storage<T, N> &
+  operator=(Storage<T, N> const & s);
+
+  T
+  storage_[N];
 
 };
 
 ///
-/// Storage with raw pointers
+/// Base dynamic storage class. Simple linear access memory model.
 ///
 template<typename T>
-class StorageRaw: public Storage<T>
+class Storage<T, DYNAMIC>
 {
 public:
-  ///
-  /// Default constructor
-  ///
-  StorageRaw();
+  typedef T type;
 
-  ///
-  /// Constructor to given size
-  /// \param number_entries number of entries
- ///
+  static
+  bool const
+  IS_DYNAMIC = true;
+
+  static
+  bool const
+  IS_STATIC = false;
+
+  Storage();
+
   explicit
-  StorageRaw(Index const number_entries);
+  Storage(Index const number_entries);
 
-  ///
-  /// Simple destructor
-  ///
-  ~StorageRaw();
+  ~Storage();
 
-  ///
-  /// Entry access
-  /// \param i the index
-  ///
   T const &
   operator[](Index const i) const;
 
-  ///
-  /// Entry access
-  /// \param i the index
-  ///
   T &
   operator[](Index const i);
 
-  ///
-  /// \return number of entries
-  ///
   Index
   size() const;
 
-  ///
-  /// Resize the storage (assume destructive)
-  /// \param number_entries number of entries
-  ///
   void
   resize(Index const number_entries);
 
-  ///
-  /// Clear the storage
-  ///
   void
   clear();
 
 private:
 
-  ///
-  /// No copy constructor
-  ///
-  StorageRaw(StorageRaw<T> const & s);
+  Storage(Storage<T, DYNAMIC> const & s);
 
-  ///
-  /// No copy assignment
-  ///
-  StorageRaw<T> &
-  operator=(StorageRaw<T> const & s);
+  Storage<T, DYNAMIC> &
+  operator=(Storage<T, DYNAMIC> const & s);
 
-  ///
-  /// Size
-  ///
+  T *
+  storage_;
+
   Index
   size_;
-
-  ///
-  /// Raw pointer
-  ///
-  T *
-  pointer_;
-
 };
 
-///
-/// Storage with an STL vector
-///
-template<typename T>
-class StorageSTLVector: public Storage<T>
-{
-public:
-  ///
-  /// Default constructor
-  ///
-  StorageSTLVector();
-
-  ///
-  /// Constructor to given size
-  /// \param number_entries number of entries
-  ///
-  explicit
-  StorageSTLVector(Index const number_entries);
-
-  ///
-  /// Simple destructor
-  ///
-  ~StorageSTLVector();
-
-  ///
-  /// Entry access
-  /// \param i the index
-  ///
-  T const &
-  operator[](Index const i) const;
-
-  ///
-  /// Entry access
-  /// \param i the index
-  ///
-  T &
-  operator[](Index const i);
-
-  ///
-  /// \return number of entries
-  ///
-  Index
-  size() const;
-
-  ///
-  /// Resize the storage (assume destructive)
-  /// \param number_entries number of entries
-  ///
-  void
-  resize(Index const number_entries);
-
-  ///
-  /// Clear the storage
-  ///
-  void
-  clear();
-
-private:
-
-  ///
-  /// No copy constructor
-  ///
-  StorageSTLVector(StorageSTLVector<T> const & s);
-
-  ///
-  /// No copy assignment
-  ///
-  StorageSTLVector<T> &
-  operator=(StorageSTLVector<T> const & s);
-
-  ///
-  /// STL Vector
-  ///
-  std::vector<T>
-  storage_;
-
-};
-
-///
-/// Storage with Teuchos RCP Array
-///
-template<typename T>
-class StorageRCPArray: public Storage<T>
-{
-public:
-  ///
-  /// Default constructor
-  ///
-  StorageRCPArray();
-
-  ///
-  /// Constructor that initializes to NaNs
-  /// \param number_entries number of entries
-  ///
-  explicit
-  StorageRCPArray(Index const number_entries);
-
-  ///
-  /// Simple destructor
-  ///
-  ~StorageRCPArray();
-
-  ///
-  /// Entry access
-  /// \param i the index
-  ///
-  T const &
-  operator[](Index const i) const;
-
-  ///
-  /// Entry access
-  /// \param i the index
-  ///
-  T &
-  operator[](Index const i);
-
-  ///
-  /// \return number of entries
-  ///
-  Index
-  size() const;
-
-  ///
-  /// Resize the storage (assume destructive)
-  /// \param number_entries number of entries
-  ///
-  void
-  resize(Index const number_entries);
-
-  ///
-  /// Clear the storage
-  ///
-  void
-  clear();
-
-private:
-
-  ///
-  /// No copy constructor
-  ///
-  StorageRCPArray(StorageRCPArray<T> const & s);
-
-  ///
-  /// No copy assignment
-  ///
-  StorageRCPArray<T> &
-  operator=(StorageRCPArray<T> const & s);
-
-  ///
-  /// Teuchos RCP array
-  ///
-  Teuchos::ArrayRCP<T>
-  storage_;
-
-};
-
-} // namespace MiniTensor
 } // namespace Intrepid
 
 #include "Intrepid_MiniTensor_Storage.i.h"

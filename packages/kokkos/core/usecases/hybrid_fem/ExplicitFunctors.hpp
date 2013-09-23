@@ -954,25 +954,12 @@ struct internal_force
     update = update < source ? update : source;
   }
 
-  struct SetNextTimeStep {
-
-    typedef DeviceType  device_type ;
-    typedef Scalar      value_type;
-
-    const typename Fields::scalar_type  dt ;
-    const typename Fields::scalar_type  prev_dt ;
-
-    SetNextTimeStep( const Fields & mesh_fields )
-      : dt( mesh_fields.dt )
-      , prev_dt( mesh_fields.prev_dt )
-      {}
-
-    KOKKOS_INLINE_FUNCTION
-    void operator()( const value_type & result ) const
-    {
-      *prev_dt = *dt ;
-      *dt = result ;
-    }
+  // Final serial processing of reduction value:
+  KOKKOS_INLINE_FUNCTION
+  void final( value_type & result ) const
+  {
+    *prev_dt = *dt ;
+    *dt = result ;
   };
 
   //--------------------------------------------------------------------------
@@ -982,6 +969,7 @@ struct internal_force
   const typename Fields::elem_node_ids_type      elem_node_connectivity ;
   const typename Fields::node_coords_type        model_coords ;
   const typename Fields::scalar_type             dt ;
+  const typename Fields::scalar_type             prev_dt ;
   const typename Fields::geom_state_array_type   displacement ;
   const typename Fields::geom_state_array_type   velocity ;
   const typename Fields::array_type              elem_mass ;
@@ -1004,6 +992,7 @@ struct internal_force
     : elem_node_connectivity( mesh_fields.elem_node_connectivity )
     , model_coords(           mesh_fields.model_coords )
     , dt(                     mesh_fields.dt )
+    , prev_dt(                mesh_fields.prev_dt )
     , displacement(           mesh_fields.displacement )
     , velocity(               mesh_fields.velocity )
     , elem_mass(              mesh_fields.elem_mass )
@@ -1025,9 +1014,8 @@ struct internal_force
                      const int arg_current_state )
   {
     internal_force  op_force( mesh_fields , arg_user_dt , arg_current_state );
-    SetNextTimeStep op_dt( mesh_fields );
 
-    Kokkos::parallel_reduce( mesh_fields.num_elements, op_force, op_dt );
+    Kokkos::parallel_reduce( mesh_fields.num_elements, op_force );
   }
 
   //--------------------------------------------------------------------------

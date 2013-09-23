@@ -39,8 +39,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_KOKKOS_ARRAY_KERNELS_UNIT_TEST_HPP
-#define STOKHOS_KOKKOS_ARRAY_KERNELS_UNIT_TEST_HPP
+#ifndef STOKHOS_KOKKOS_CORE_KERNELS_UNIT_TEST_HPP
+#define STOKHOS_KOKKOS_CORE_KERNELS_UNIT_TEST_HPP
 
 #include "Teuchos_TestingHelpers.hpp"
 #include "Teuchos_TestForException.hpp"
@@ -57,7 +57,7 @@
 #endif
 
 #include "KokkosCore_config.h"
-#include "Kokkos_Host.hpp"
+#include "Kokkos_Threads.hpp"
 
 #include "Stokhos_CrsMatrix.hpp"
 #include "Stokhos_BlockCrsMatrix.hpp"
@@ -290,9 +290,9 @@ struct UnitTestSetup {
         (*sg_y_commuted)[i][block] = (*sg_y)[block][i];
     }
 
-    typedef Stokhos::CrsProductTensor< value_type , Kokkos::Host > tensor_type;
+    typedef Stokhos::CrsProductTensor< value_type , Kokkos::Threads > tensor_type;
     typedef Stokhos::StochasticProductTensor< value_type , tensor_type ,
-      Kokkos::Host > stoch_tensor_type ;
+      Kokkos::Threads > stoch_tensor_type ;
 
     stoch_tensor_type tensor =
       Stokhos::create_stochastic_product_tensor< tensor_type >( *basis, *Cijk );

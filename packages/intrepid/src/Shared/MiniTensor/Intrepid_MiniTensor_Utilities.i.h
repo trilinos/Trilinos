@@ -100,12 +100,25 @@ machine_epsilon()
 }
 
 //
+// Random number generation.
+//
+template<typename T>
+inline
+typename Sacado::ScalarType<T>::type
+random()
+{
+  return Teuchos::ScalarTraits<typename Sacado::ScalarType<T>::type>().random();
+}
+
+//
 // Compute a non-negative integer power by binary manipulation.
 //
 template<typename T>
 T
 integer_power(T const & X, Index const exponent)
 {
+  if (X == 0 || X == 1) return X;
+
   switch (exponent) {
     default:
       break;

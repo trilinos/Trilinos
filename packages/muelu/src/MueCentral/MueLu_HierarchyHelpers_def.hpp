@@ -51,6 +51,7 @@
 #include "MueLu_HierarchyHelpers_decl.hpp"
 
 #include "MueLu_SmootherBase.hpp"
+#include "MueLu_SmootherFactory.hpp"
 
 //TODO/FIXME: DeclareInput(, **this**) cannot be used here
 
@@ -80,22 +81,22 @@ namespace MueLu {
   void TopRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & fineLevel, Level & coarseLevel) const {
     if (PFact_ != Teuchos::null) {
       RCP<Matrix> P = coarseLevel.Get<RCP<Matrix> >("P", PFact_.get());
-      coarseLevel.Set("P", P, NoFactory::get());
-      coarseLevel.AddKeepFlag("P", NoFactory::get(), MueLu::Final);       // FIXME2: Order of Remove/Add matter (data removed otherwise). Should do something about this
+      coarseLevel.Set           ("P", P, NoFactory::get());
+      coarseLevel.AddKeepFlag   ("P", NoFactory::get(), MueLu::Final);    // FIXME2: Order of Remove/Add matter (data removed otherwise). Should do something about this
       coarseLevel.RemoveKeepFlag("P", NoFactory::get(), MueLu::UserData); // FIXME: This is a hack, I should change behavior of Level::Set() instead. FIXME3: Should not be removed if flag was there already
     }
 
     if (RFact_ != Teuchos::null) {
       RCP<Matrix> R = coarseLevel.Get<RCP<Matrix> >("R", RFact_.get());
-      coarseLevel.Set("R", R, NoFactory::get());
-      coarseLevel.AddKeepFlag("R", NoFactory::get(), MueLu::Final);
+      coarseLevel.Set           ("R", R, NoFactory::get());
+      coarseLevel.AddKeepFlag   ("R", NoFactory::get(), MueLu::Final);
       coarseLevel.RemoveKeepFlag("R", NoFactory::get(), MueLu::UserData); // FIXME: This is a hack
     }
 
     if ((AcFact_ != Teuchos::null) && (AcFact_ != NoFactory::getRCP())) {
       RCP<Matrix> Ac = coarseLevel.Get<RCP<Matrix> >("A", AcFact_.get());
-      coarseLevel.Set("A", Ac, NoFactory::get());
-      coarseLevel.AddKeepFlag("A", NoFactory::get(), MueLu::Final);
+      coarseLevel.Set           ("A", Ac, NoFactory::get());
+      coarseLevel.AddKeepFlag   ("A", NoFactory::get(), MueLu::Final);
       coarseLevel.RemoveKeepFlag("A", NoFactory::get(), MueLu::UserData); // FIXME: This is a hack
     }
   }
@@ -105,17 +106,18 @@ namespace MueLu {
   //
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  TopSmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TopSmootherFactory(RCP<const FactoryManagerBase> parentFactoryManager, const std::string& varName)
-  {
+  TopSmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TopSmootherFactory(RCP<const FactoryManagerBase> parentFactoryManager, const std::string& varName) {
     TEUCHOS_TEST_FOR_EXCEPTION(varName != "CoarseSolver" && varName != "Smoother", Exceptions::RuntimeError, "varName should be either \"CoarseSolver\" or \"Smoother\"");
 
     if (varName == "CoarseSolver") {
-      presmootherFact_  = parentFactoryManager->GetFactory("CoarseSolver");
-      postsmootherFact_ = parentFactoryManager->GetFactory("CoarseSolver");
+      // For coarsest level, we only need one smoother (so that we don't call direct solver twice)
+      // If a user wants to do something weird there (like, solve coarsest system by using 2 forward
+      // GS and 1 backward GS), one can use MergedSmoother
+      preSmootherFact_  = parentFactoryManager->GetFactory("CoarseSolver");
 
     } else {
-      presmootherFact_  = parentFactoryManager->GetFactory("PreSmoother");
-      postsmootherFact_ = parentFactoryManager->GetFactory("PostSmoother");
+      preSmootherFact_  = parentFactoryManager->GetFactory("PreSmoother");
+      postSmootherFact_ = parentFactoryManager->GetFactory("PostSmoother");
     }
   }
 
@@ -124,46 +126,77 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TopSmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level & level) const {
-
-    if (presmootherFact_  != Teuchos::null)
-      level.DeclareInput("PreSmoother",  presmootherFact_.get());
-    if (postsmootherFact_ != Teuchos::null)
-      level.DeclareInput("PostSmoother", postsmootherFact_.get());
+    if (preSmootherFact_  != Teuchos::null)
+      level.DeclareInput("PreSmoother",  preSmootherFact_.get());
+    if (postSmootherFact_ != Teuchos::null)
+      level.DeclareInput("PostSmoother", postSmootherFact_.get());
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TopSmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & level) const {
-    typedef MueLu::SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> SmootherBase2; //TODO
+    // TODO: get rid of these
+    typedef MueLu::SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> SmootherBase2_type;
+    typedef MueLu::SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> SmootherFactory_type;
+    typedef MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> SmootherPrototype_type;
 
-    if (presmootherFact_.get() == postsmootherFact_.get()) {
-      // Only call factory if at least one smoother is missing (mimic behavior of level.Get<> but level.Get<> cannot be used here as we don't know if the factory will produce both Pre and Post smoother)
-      if (!level.IsAvailable("PreSmoother", presmootherFact_.get()) || !level.IsAvailable("PostSmoother", postsmootherFact_.get())) {
-        presmootherFact_->CallBuild(level);
+    if (preSmootherFact_.is_null() && postSmootherFact_.is_null())
+      return;
+
+    // NOTE 1: We need to set at least some keep flag for the smoothers, otherwise it is going to be removed as soon as all requests are released.
+    // We choose to set the Final flag for the data. In addition, we allow this data to be retrieved by only using the name by the means
+    // of using NoFactory. However, any data set with NoFactory gets UserData flag by default. We don't really want that flag, so we remove it.
+
+    // NOTE 2: some smoother factories are tricky (see comments in MueLu::SmootherFactory
+    // Sometimes, we don't know whether the factory is able to generate "PreSmoother" or "PostSmoother"
+    // For the SmootherFactory, however, we are able to check that.
+
+    if (!preSmootherFact_.is_null()) {
+      // Checking for null is not sufficient, as SmootherFactory(null, something) does not generate "PreSmoother"
+      bool isAble = true;
+      RCP<const SmootherFactory_type> s = rcp_dynamic_cast<const SmootherFactory_type>(preSmootherFact_);
+      if (!s.is_null()) {
+        RCP<SmootherPrototype_type> pre, post;
+        s->GetSmootherPrototypes(pre, post);
+        if (pre.is_null())
+          isAble = false;
+      } else {
+        // We assume that  if presmoother factory is not SmootherFactory, it *is* able to generate "PreSmoother"
       }
-    } else {
-      if (!level.IsAvailable("PreSmoother",  presmootherFact_.get()))
-        presmootherFact_->CallBuild(level);
-      if (!level.IsAvailable("PostSmoother", postsmootherFact_.get()))
-        postsmootherFact_->CallBuild(level);
+
+      if (isAble) {
+        RCP<SmootherBase2_type> Pre  = level.Get<RCP<SmootherBase2_type> >("PreSmoother", preSmootherFact_.get());
+
+        level.Set           ("PreSmoother", Pre, NoFactory::get());
+
+        level.AddKeepFlag   ("PreSmoother", NoFactory::get(), MueLu::Final);
+        level.RemoveKeepFlag("PreSmoother", NoFactory::get(), MueLu::UserData);
+      }
     }
 
-    // Factory might or might not have created a pre smoother
-    if (level.IsAvailable("PreSmoother", presmootherFact_.get())) {
-      RCP<SmootherBase2> Pre  = level.Get<RCP<SmootherBase2> >("PreSmoother", presmootherFact_.get());
-      level.Set           ("PreSmoother", Pre, NoFactory::get());
-      level.AddKeepFlag   ("PreSmoother", NoFactory::get(), MueLu::Final);
-      level.RemoveKeepFlag("PreSmoother", NoFactory::get(), MueLu::UserData); // FIXME: This is a hack
-    }
+    if (!postSmootherFact_.is_null()) {
+      // Checking for null is not sufficient, as SmootherFactory(something, null) does not generate "PostSmoother"
+      bool isAble = true;
+      RCP<const SmootherFactory_type> s = rcp_dynamic_cast<const SmootherFactory_type>(postSmootherFact_);
+      if (!s.is_null()) {
+        RCP<SmootherPrototype_type> pre, post;
+        s->GetSmootherPrototypes(pre, post);
+        if (post.is_null())
+          isAble = false;
+      } else {
+        // We assume that  if presmoother factory is not SmootherFactory, it *is* able to generate "PreSmoother"
+      }
 
-    // Factory might or might not have created a post smoother
-    if (level.IsAvailable("PostSmoother", postsmootherFact_.get())) {
-      RCP<SmootherBase2> Post = level.Get<RCP<SmootherBase2> >("PostSmoother", postsmootherFact_.get());
-      level.Set           ("PostSmoother", Post, NoFactory::get());
-      level.AddKeepFlag   ("PostSmoother", NoFactory::get(), MueLu::Final);
-      level.RemoveKeepFlag("PostSmoother", NoFactory::get(), MueLu::UserData); // FIXME: This is a hack
-    }
+      if (isAble) {
+        RCP<SmootherBase2_type> Post = level.Get<RCP<SmootherBase2_type> >("PostSmoother", postSmootherFact_.get());
 
+        level.Set           ("PostSmoother", Post, NoFactory::get());
+
+        level.AddKeepFlag   ("PostSmoother", NoFactory::get(), MueLu::Final);
+        level.RemoveKeepFlag("PostSmoother", NoFactory::get(), MueLu::UserData);
+      }
     }
+  }
+
 } // namespace MueLu
 
 #define MUELU_HIERARCHY_HELPERS_SHORT

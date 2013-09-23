@@ -196,6 +196,17 @@ public:
                                              LinearObjContainer & ghostedObjs,
                                              bool zeroVectorRows=false) const = 0;
 
+   /** Adjust a vector by replacing selected rows with the value of the evaluated
+     * dirichlet conditions. This is handled through the standard container mechanism.
+     *
+     * \param[in] counter Contains a counter vector (the "x" vector) indicating which rows contain 
+     *                    dirichlet conditions by having a non zero entry. The dirichlet condition
+     *                    values are specified in the "f" vector.
+     * \param[in,out] result The vector to be modifed is the "f" vector.
+     */
+   virtual void applyDirichletBCs(const LinearObjContainer & counter,
+                                  LinearObjContainer & result) const = 0;
+
    /** Acess to the MPI Comm used in constructing this LOF.
      */
    virtual Teuchos::MpiComm<int> getComm() const = 0;

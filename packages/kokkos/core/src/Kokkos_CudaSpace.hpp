@@ -107,20 +107,18 @@ public:
 
   /*--------------------------------*/
 
-  /** \brief  Query the preferred value of 'scalar_count' which
-   *          would given the best performing alignement for
-   *          memory accesses.
-   */
-  static 
-  size_t preferred_alignment( size_t scalar_size , size_t scalar_count );
-
-  /*--------------------------------*/
-
   static void access_error();
   static void access_error( const void * const );
+
+  /*--------------------------------*/
 };
 
+} // namespace Kokkos
+
 //----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace Impl {
 
 template<>
 struct DeepCopy<HostSpace,CudaSpace> {
@@ -137,6 +135,7 @@ struct DeepCopy<CudaSpace,CudaSpace> {
   DeepCopy( void * dst , const void * src , size_t );
 };
 
+} // namespace Impl
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
@@ -157,10 +156,10 @@ template<>
 struct VerifyExecutionSpaceCanAccessDataSpace< CudaSpace , HostSpace >
 {
   KOKKOS_INLINE_FUNCTION static void verify(void)
-  { Kokkos::cuda_abort("Cuda code called function restricted to Host"); }
+  { Kokkos::cuda_abort("Cuda code called function restricted to HostSpace"); }
 
   KOKKOS_INLINE_FUNCTION static void verify( const void * )
-  { Kokkos::cuda_abort("Cuda code attempted to access Host memory"); }
+  { Kokkos::cuda_abort("Cuda code attempted to access HostSpace memory"); }
 };
 
 /** \brief  Produce error message when trying to access Cuda 

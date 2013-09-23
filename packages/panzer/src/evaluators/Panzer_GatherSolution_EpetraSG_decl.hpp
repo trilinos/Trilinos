@@ -45,6 +45,7 @@
 #ifndef PANZER_EVALUATOR_GATHER_SOLUTION_EPETRA_SG_DECL_HPP
 #define PANZER_EVALUATOR_GATHER_SOLUTION_EPETRA_SG_DECL_HPP
 
+#include "Panzer_SGEpetraLinearObjContainer.hpp"
 
 //
 // Note: This file is included in Panzer_GatherSolution_Epetra.hpp
@@ -75,6 +76,8 @@ public:
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
+
+  void preEvaluate(typename Traits::PreEvalData d);
   
   void evaluateFields(typename Traits::EvalData d);
 
@@ -94,6 +97,10 @@ private:
 
   Teuchos::RCP<std::vector<std::string> > indexerNames_;
   bool useTimeDerivativeSolutionVector_;
+
+  std::string globalDataKey_; // what global data does this fill?
+
+  Teuchos::RCP<SGEpetraLinearObjContainer> sgEpetraContainer_;
 
   GatherSolution_Epetra();
 };
@@ -116,6 +123,8 @@ public:
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
+
+  void preEvaluate(typename Traits::PreEvalData d);
   
   void evaluateFields(typename Traits::EvalData d);
 
@@ -135,6 +144,10 @@ private:
 
   Teuchos::RCP<std::vector<std::string> > indexerNames_;
   bool useTimeDerivativeSolutionVector_;
+
+  std::string globalDataKey_; // what global data does this fill?
+
+  Teuchos::RCP<SGEpetraLinearObjContainer> sgEpetraContainer_;
 
   GatherSolution_Epetra();
 };

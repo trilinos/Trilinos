@@ -6,7 +6,7 @@
 
 # Directory for Kokkos
 
-KOKKOS="../../../array"
+KOKKOS="../../../core"
 
 source ${KOKKOS}/src/build_common.sh
 

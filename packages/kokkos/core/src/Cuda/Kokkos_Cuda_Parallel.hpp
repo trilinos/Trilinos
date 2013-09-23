@@ -44,199 +44,141 @@
 #ifndef KOKKOS_CUDA_PARALLEL_HPP
 #define KOKKOS_CUDA_PARALLEL_HPP
 
-#include <string>
-#include <impl/Kokkos_Error.hpp>
-
-//----------------------------------------------------------------------------
-
-namespace Kokkos {
-namespace Impl {
-
-struct CudaTraits {
-  enum { WarpSize       = 32      /* 0x0020 */ };
-  enum { WarpIndexMask  = 0x001f  /* Mask for warpindex */ };
-  enum { WarpIndexShift = 5       /* WarpSize == 1 << WarpShift */ };
-
-  enum { SharedMemoryBanks    = 32      /* Compute device 2.0 */ };
-  enum { SharedMemoryCapacity = 0x0C000 /* 48k shared / 16k L1 Cache */ };
-  enum { SharedMemoryUsage    = 0x04000 /* 16k shared / 48k L1 Cache */ };
-
-  enum { UpperBoundGridCount    = 65535 /* Hard upper bound */ };
-  enum { ConstantMemoryCapacity = 0x010000 /* 64k bytes */ };
-  enum { ConstantMemoryUsage    = 0x008000 /* 32k bytes */ };
-  enum { ConstantMemoryCache    = 0x002000 /*  8k bytes */ };
-
-  typedef unsigned long
-    ConstantGlobalBufferType[ ConstantMemoryUsage / sizeof(unsigned long) ];
-
-  enum { ConstantMemoryUseThreshold = 0x000100 /* 256 bytes */ };
-
-  KOKKOS_INLINE_FUNCTION static
-  CudaSpace::size_type warp_count( CudaSpace::size_type i )
-    { return ( i + WarpIndexMask ) >> WarpIndexShift ; }
-
-  KOKKOS_INLINE_FUNCTION static
-  CudaSpace::size_type warp_align( CudaSpace::size_type i )
-    {
-      enum { Mask = ~CudaSpace::size_type( WarpIndexMask ) };
-      return ( i + WarpIndexMask ) & Mask ;
-    }
-};
-
-} // namespace Impl
-} // namespace Kokkos
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
 #if defined( __CUDACC__ )
 
-namespace Kokkos {
-namespace Impl {
+#include <utility>
+#include <Kokkos_Parallel.hpp>
 
-CudaSpace::size_type cuda_internal_maximum_warp_count();
-CudaSpace::size_type cuda_internal_maximum_grid_count();
-CudaSpace::size_type cuda_internal_maximum_shared_words();
+#include <Cuda/Kokkos_CudaExec.hpp>
 
-CudaSpace::size_type * cuda_internal_scratch_flags( const CudaSpace::size_type size );
-CudaSpace::size_type * cuda_internal_scratch_space( const CudaSpace::size_type size );
-CudaSpace::size_type * cuda_internal_scratch_unified( const CudaSpace::size_type size );
-
-template< typename ValueType >
-inline
-__device__
-void cuda_internal_atomic_add( ValueType & update , ValueType input )
-{ atomicAdd( & update , input ); }
-
-inline
-__device__
-void cuda_internal_atomic_add( double & update , double input )
-{
-  typedef unsigned long long int UInt64 ;
-
-  UInt64 * const address = reinterpret_cast<UInt64*>( & update );
-  UInt64 test ;
-  union UType { double d ; UInt64 i ; } value ;
-
-  value.i = *address ; // Read existing value
-
-  do {
-    test = value.i ;
-    value.d += input ;
-    value.i = atomicCAS( address , test , value.i );
-  } while ( value.i != test );
-}
-
-} // namespace Impl
-} // namespace Kokkos
-
-/** \brief  Access to constant memory on the device */
-__device__ __constant__
-Kokkos::Impl::CudaTraits::ConstantGlobalBufferType
-kokkos_impl_cuda_constant_memory_buffer ;
-
-template< typename T >
-inline
-__device__
-T * kokkos_impl_cuda_shared_memory()
-{ extern __shared__ Kokkos::CudaSpace::size_type sh[]; return (T*) sh ; }
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 namespace Kokkos {
 namespace Impl {
 
-//----------------------------------------------------------------------------
-// See section B.17 of Cuda C Programming Guide Version 3.2
-// for discussion of
-//   __launch_bounds__(maxThreadsPerBlock,minBlocksPerMultiprocessor)
-// function qualifier which could be used to improve performance.
-//----------------------------------------------------------------------------
-// Maximize L1 cache and minimize shared memory:
-//   cudaFuncSetCacheConfig(MyKernel, cudaFuncCachePreferL1 );
-// For 2.0 capability: 48 KB L1 and 16 KB shared
-//----------------------------------------------------------------------------
+template< class FunctorType , class WorkSpec >
+class ParallelFor< FunctorType , WorkSpec /* size_t */ , Cuda > {
+private:
 
-template< class DriverType >
-__global__
-static void cuda_parallel_launch_constant_memory()
-{
-  const DriverType & driver =
-    *((const DriverType *) kokkos_impl_cuda_constant_memory_buffer );
+  const FunctorType     m_functor ;
+  const Cuda::size_type m_work ;  
 
-  driver();
-}
+  ParallelFor();
+  ParallelFor & operator = ( const ParallelFor & );
 
-template< class DriverType >
-__global__
-static void cuda_parallel_launch_local_memory( const DriverType driver )
-{
-  driver();
-}
-
-template < class DriverType ,
-           bool Large = ( CudaTraits::ConstantMemoryUseThreshold < sizeof(DriverType) ) >
-struct CudaParallelLaunch ;
-
-template < class DriverType >
-struct CudaParallelLaunch< DriverType , true > {
+public:
 
   inline
-  CudaParallelLaunch( const DriverType & driver ,
-                      const dim3       & grid ,
-                      const dim3       & block ,
-                      const int          shmem )
+  __device__
+  void operator()(void) const
   {
-    if ( sizeof( Kokkos::Impl::CudaTraits::ConstantGlobalBufferType ) <
-         sizeof( DriverType ) ) {
-      Kokkos::Impl::throw_runtime_exception( std::string("CudaParallelLaunch FAILED: Functor is too large") );
-    }
+    const Cuda::size_type work_stride = blockDim.x * gridDim.x ;
 
-    if ( CudaTraits::SharedMemoryCapacity < shmem ) {
-      Kokkos::Impl::throw_runtime_exception( std::string("CudaParallelLaunch FAILED: shared memory request is too large") );
+    for ( Cuda::size_type
+            iwork = threadIdx.x + blockDim.x * blockIdx.x ;
+            iwork < m_work ;
+            iwork += work_stride ) {
+      m_functor( iwork );
     }
-    else if ( shmem ) {
-      cudaFuncSetCacheConfig( cuda_parallel_launch_constant_memory< DriverType > , cudaFuncCachePreferShared );
-    } else {
-      cudaFuncSetCacheConfig( cuda_parallel_launch_constant_memory< DriverType > , cudaFuncCachePreferL1 );
-    }
-
-    // Copy functor to constant memory on the device
-    cudaMemcpyToSymbol( kokkos_impl_cuda_constant_memory_buffer , & driver , sizeof(DriverType) );
-
-    // Invoke the driver function on the device
-    cuda_parallel_launch_constant_memory< DriverType ><<< grid , block , shmem >>>();
   }
+
+  ParallelFor( const FunctorType  & functor ,
+               const size_t         work )
+    : m_functor( functor )
+    , m_work(    work )
+    {
+      const dim3 block( CudaTraits::WarpSize * cuda_internal_maximum_warp_count(), 1, 1);
+      const dim3 grid( std::min( ( m_work + block.x - 1 ) / block.x , cuda_internal_maximum_grid_count() ) , 1 , 1 );
+
+      CudaParallelLaunch< ParallelFor >( *this , grid , block , 0 );
+    }
 };
 
-template < class DriverType >
-struct CudaParallelLaunch< DriverType , false > {
+template< class FunctorType >
+class ParallelFor< FunctorType , ParallelWorkRequest , Cuda > {
+private:
+
+  const FunctorType          m_functor ;
+  const ParallelWorkRequest  m_work ;
+  const int                  m_shmem ;
+
+  ParallelFor();
+  ParallelFor & operator = ( const ParallelFor & );
+
+public:
 
   inline
-  CudaParallelLaunch( const DriverType & driver ,
-                      const dim3       & grid ,
-                      const dim3       & block ,
-                      const int          shmem )
+  __device__
+  void operator()(void) const
   {
-    if ( CudaTraits::SharedMemoryCapacity < shmem ) {
-      Kokkos::Impl::throw_runtime_exception( std::string("CudaParallelLaunch FAILED: shared memory request is too large") );
-    }
-    else if ( shmem ) {
-      cudaFuncSetCacheConfig( cuda_parallel_launch_constant_memory< DriverType > , cudaFuncCachePreferShared );
-    } else {
-      cudaFuncSetCacheConfig( cuda_parallel_launch_constant_memory< DriverType > , cudaFuncCachePreferL1 );
-    }
-
-    cuda_parallel_launch_local_memory< DriverType ><<< grid , block , shmem >>>( driver );
+    CudaExec exec( 0 , m_shmem );
+    m_functor( Cuda( exec ) );
   }
-};
 
-//----------------------------------------------------------------------------
+  ParallelFor( const FunctorType         & functor ,
+               const ParallelWorkRequest &  work )
+    : m_functor( functor )
+    , m_work( std::min( work.league_size , size_t(cuda_internal_maximum_grid_count()) ) ,
+              std::min( work.team_size ,   size_t(CudaTraits::WarpSize * cuda_internal_maximum_warp_count()) ) )
+    , m_shmem( FunctorShmemSize< FunctorType >::value( functor ) )
+    {
+      const dim3 grid(  m_work.league_size , 1 , 1 );
+      const dim3 block( m_work.team_size , 1, 1 );
+
+      CudaParallelLaunch< ParallelFor >( *this , grid , block , m_shmem );
+    }
+};
 
 } // namespace Impl
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace Impl {
+
+template< class FunctorType >
+class ParallelFor< FunctorType , CudaWorkConfig , Cuda > {
+public:
+
+  const FunctorType m_work_functor ;
+
+  inline
+  __device__
+  void operator()(void) const
+  {
+    Cuda::size_type iwork = threadIdx.x + blockDim.x * (
+                            threadIdx.y + blockDim.y * (
+                            threadIdx.z + blockDim.z * (
+                            blockIdx.x + gridDim.x * (
+                            blockIdx.y + gridDim.y * (
+                            blockIdx.z )))));
+
+    m_work_functor( iwork );
+  }
+
+  ParallelFor( const FunctorType    & functor ,
+               const CudaWorkConfig & work_config )
+  : m_work_functor( functor )
+  {
+    const dim3 grid( work_config.grid[0] ,
+                     work_config.grid[1] ,
+                     work_config.grid[2] );
+
+    const dim3 block( work_config.block[0] ,
+                      work_config.block[1] ,
+                      work_config.block[2] );
+
+    CudaParallelLaunch< ParallelFor >( *this , grid , block , work_config.shared );
+  }
+};
+
+} // namespace Impl
+} // namespace Kokkos
 
 #endif /* defined( __CUDACC__ ) */
 
-#endif /* #define KOKKOS_CUDA_PARALLEL_HPP */
+#endif /* #ifndef KOKKOS_CUDA_PARALLEL_HPP */
 

@@ -70,7 +70,7 @@ public:
     : nwork( rhs.nwork ) {}
 
   KOKKOS_INLINE_FUNCTION
-  static void init( value_type & dst )
+  void init( value_type & dst ) const
   {
     dst.value[0] = 0 ;
     dst.value[1] = 0 ;
@@ -78,8 +78,8 @@ public:
   }
 
   KOKKOS_INLINE_FUNCTION
-  static void join( volatile value_type & dst ,
-                    const volatile value_type & src )
+  void join( volatile value_type & dst ,
+             const volatile value_type & src ) const
   {
     dst.value[0] += src.value[0] ;
     dst.value[1] += src.value[1] ;
@@ -93,7 +93,25 @@ public:
     dst.value[1] += iwork + 1 ;
     dst.value[2] += nwork - iwork ;
   }
+};
 
+template< class DeviceType >
+class ReduceFunctorFinal : public ReduceFunctor< long , DeviceType > {
+public:
+
+  typedef typename ReduceFunctor< long , DeviceType >::value_type value_type ;
+
+  ReduceFunctorFinal( const size_t n )
+    : ReduceFunctor<long,DeviceType>(n)
+    {}
+
+  KOKKOS_INLINE_FUNCTION
+  void final( value_type & dst ) const
+  {
+    dst.value[0] = - dst.value[0] ;
+    dst.value[1] = - dst.value[1] ;
+    dst.value[2] = - dst.value[2] ;
+  }
 };
 
 template< typename ScalarType , class DeviceType >
@@ -118,31 +136,47 @@ public:
     , nwork( arg_nwork ) {}
 
   KOKKOS_INLINE_FUNCTION
-  static void init( value_type dst ,
-                    const size_type count )
+  void init( value_type dst ) const
   {
-    for ( unsigned i = 0 ; i < count ; ++i ) dst[i] = 0 ;
+    for ( unsigned i = 0 ; i < value_count ; ++i ) dst[i] = 0 ;
   }
 
   KOKKOS_INLINE_FUNCTION
-  static void join( volatile ScalarType dst[] ,
-                    const volatile ScalarType src[] ,
-                    const size_type count )
+  void join( volatile ScalarType dst[] ,
+             const volatile ScalarType src[] ) const
   {
-    for ( unsigned i = 0 ; i < count ; ++i ) dst[i] += src[i] ;
+    for ( unsigned i = 0 ; i < value_count ; ++i ) dst[i] += src[i] ;
   }
 
   KOKKOS_INLINE_FUNCTION
   void operator()( size_type iwork , ScalarType dst[] ) const
   {
+    const unsigned tmp[3] = { 1 , iwork + 1 , nwork - iwork };
+
     for ( unsigned i = 0 ; i < value_count ; ++i ) {
-      if      ( 0 == i % 3 ) dst[i] += 1 ;
-      else if ( 1 == i % 3 ) dst[i] += iwork + 1 ;
-      else                   dst[i] += nwork - iwork ;
+      dst[i] += tmp[ i % 3 ];
     }
   }
 };
 
+template< class DeviceType >
+class RuntimeReduceFunctorFinal : public RuntimeReduceFunctor< long , DeviceType > {
+public:
+
+  typedef RuntimeReduceFunctor< long , DeviceType > base_type ;
+  typedef typename base_type::value_type value_type ;
+  typedef long scalar_type ;
+
+  RuntimeReduceFunctorFinal( const size_t nwork , const size_t count ) : base_type(nwork,count) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void final( value_type dst ) const
+  {
+    for ( unsigned i = 0 ; i < base_type::value_count ; ++i ) {
+      dst[i] = - dst[i] ;
+    }
+  }
+};
 } // namespace Test
 
 namespace {
@@ -159,6 +193,7 @@ public:
   TestReduce( const size_type & nwork )
   {
     run_test(nwork);
+    run_test_final(nwork);
   }
 
   void run_test( const size_type & nwork )
@@ -186,6 +221,32 @@ public:
       }
     }
   }
+
+  void run_test_final( const size_type & nwork )
+  {
+    typedef Test::ReduceFunctorFinal< device_type > functor_type ;
+    typedef typename functor_type::value_type value_type ;
+
+    enum { Count = 3 };
+    enum { Repeat = 100 };
+
+    value_type result[ Repeat ];
+
+    const unsigned long nw   = nwork ;
+    const unsigned long nsum = nw % 2 ? nw * (( nw + 1 )/2 )
+                                      : (nw/2) * ( nw + 1 );
+
+    for ( unsigned i = 0 ; i < Repeat ; ++i ) {
+      Kokkos::parallel_reduce( nwork , functor_type(nwork) , result[i] );
+    }
+
+    for ( unsigned i = 0 ; i < Repeat ; ++i ) {
+      for ( unsigned j = 0 ; j < Count ; ++j ) {
+        const unsigned long correct = 0 == j % 3 ? nw : nsum ;
+        ASSERT_EQ( (ScalarType) correct , - result[i].value[j] );
+      }
+    }
+  }
 };
 
 template< typename ScalarType , class DeviceType >
@@ -200,6 +261,7 @@ public:
   TestReduceDynamic( const size_type nwork )
   {
     run_test_dynamic(nwork);
+    run_test_dynamic_final(nwork);
   }
 
   void run_test_dynamic( const size_type nwork )
@@ -216,13 +278,38 @@ public:
                                       : (nw/2) * ( nw + 1 );
 
     for ( unsigned i = 0 ; i < Repeat ; ++i ) {
-      Kokkos::parallel_reduce( nwork , functor_type(nwork,Count) , result[i] , Count );
+      Kokkos::parallel_reduce( nwork , functor_type(nwork,Count) , result[i] );
     }
 
     for ( unsigned i = 0 ; i < Repeat ; ++i ) {
       for ( unsigned j = 0 ; j < Count ; ++j ) {
         const unsigned long correct = 0 == j % 3 ? nw : nsum ;
-        ASSERT_EQ( result[i][j] , (ScalarType) correct );
+        ASSERT_EQ( (ScalarType) correct , result[i][j] );
+      }
+    }
+  }
+
+  void run_test_dynamic_final( const size_type nwork )
+  {
+    typedef Test::RuntimeReduceFunctorFinal< device_type > functor_type ;
+
+    enum { Count = 3 };
+    enum { Repeat = 100 };
+
+    typename functor_type::scalar_type result[ Repeat ][ Count ] ;
+
+    const unsigned long nw   = nwork ;
+    const unsigned long nsum = nw % 2 ? nw * (( nw + 1 )/2 )
+                                      : (nw/2) * ( nw + 1 );
+
+    for ( unsigned i = 0 ; i < Repeat ; ++i ) {
+      Kokkos::parallel_reduce( nwork , functor_type(nwork,Count) , result[i] );
+    }
+
+    for ( unsigned i = 0 ; i < Repeat ; ++i ) {
+      for ( unsigned j = 0 ; j < Count ; ++j ) {
+        const unsigned long correct = 0 == j % 3 ? nw : nsum ;
+        ASSERT_EQ( (ScalarType) correct , - result[i][j] );
       }
     }
   }
@@ -246,7 +333,7 @@ public:
   {
     typedef Test::RuntimeReduceFunctor< ScalarType , device_type > functor_type ;
 
-    typedef Kokkos::View< ScalarType[] , DeviceType > result_type ;
+    typedef Kokkos::View< ScalarType* , DeviceType > result_type ;
     typedef typename result_type::HostMirror result_host_type ;
 
     const unsigned CountLimit = 23 ;
@@ -260,31 +347,9 @@ public:
       result_type result("result",count);
       result_host_type host_result = Kokkos::create_mirror( result );
 
-      // Test result to device view:
-
-      Kokkos::parallel_reduce( nw , functor_type(nw,count) , result );
-
-      Kokkos::deep_copy( host_result , result );
-
-      for ( unsigned j = 0 ; j < count ; ++j ) {
-        const unsigned long correct = 0 == j % 3 ? nw : nsum ;
-        ASSERT_EQ( (ScalarType) correct , host_result(j) );
-        host_result(j) = 0 ;
-      }
-
-      // Test result to host view:
-
-      Kokkos::parallel_reduce( nw , functor_type(nw,count) , host_result );
-
-      for ( unsigned j = 0 ; j < count ; ++j ) {
-        const unsigned long correct = 0 == j % 3 ? nw : nsum ;
-        ASSERT_EQ( host_result(j), (ScalarType) correct );
-        host_result(j) = 0 ;
-      }
-
       // Test result to host pointer:
 
-      Kokkos::parallel_reduce( nw , functor_type(nw,count) , host_result.ptr_on_device(), count );
+      Kokkos::parallel_reduce( nw , functor_type(nw,count) , host_result.ptr_on_device() );
 
       for ( unsigned j = 0 ; j < count ; ++j ) {
         const unsigned long correct = 0 == j % 3 ? nw : nsum ;

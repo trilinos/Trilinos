@@ -46,6 +46,11 @@
 #ifndef MUELU_ZOLTAN2INTERFACE_DEF_HPP
 #define MUELU_ZOLTAN2INTERFACE_DEF_HPP
 
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
+
 #include <sstream>
 #include <set>
 
@@ -185,8 +190,10 @@ namespace MueLu {
 
     InputAdapterType adapter(numElements, map->getNodeElementList().getRawPtr(), values, strides, weights, strides);
 
-    const Teuchos::MpiComm<int>& comm = static_cast<const Teuchos::MpiComm<int>& >(*map->getComm());
-    RCP<ProblemType> problem(new ProblemType(&adapter, &Zoltan2Params, *comm.getRawMpiComm()));
+    RCP<const Teuchos::MpiComm<int> >            dupMpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(rowMap->getComm()->duplicate());
+    RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > zoltanComm = dupMpiComm->getRawMpiComm();
+
+    RCP<ProblemType> problem(new ProblemType(&adapter, &Zoltan2Params, (*zoltanComm)()));
 
     {
       SubFactoryMonitor m1(*this, "Zoltan2 " + toString(algo), level);
@@ -198,17 +205,18 @@ namespace MueLu {
 
     const zoltan2_partId_t * parts = problem->getSolution().getPartList();
 
-    // KDDKDD NEW:  At present, Zoltan2 does not guarantee that the
-    // KDDKDD NEW:  parts in getPartList() are listed in the same order
-    // KDDKDD NEW:  as the input.  Using getIdList() compensates for
-    // KDDKDD NEW:  differences in the order.  Eventually, Zoltan2 will
-    // KDDKDD NEW:  guarantee identical ordering; at that time, all code
-    // KDDKDD NEW:  marked with "KDDKDD NEW" can be reverted to the code
-    // KDDKDD NEW:  marked with "KDDKDD OLD".
+    // K. Devine comment:
+    //   At present, Zoltan2 does not guarantee that the parts in getPartList() are listed
+    //   in the same order as the input. Using getIdList() compensates for differences
+    //   in the order. Eventually, Zoltan2 will guarantee identical ordering; at that time,
+    //   all code marked with
+    //       "KDDKDD NEW"
+    //   can be reverted to the code marked with
+    //       "KDDKDD OLD".
     const GO * zgids = problem->getSolution().getIdList();  // KDDKDD  NEW
 
     for (GO i = 0; i < numElements; i++) {
-      //GO localID = i;   // KDDKDD OLD
+      // GO localID = i;                           // KDDKDD OLD
       GO localID = map->getLocalElement(zgids[i]); // KDDKDD NEW
       int partNum = parts[i];
 

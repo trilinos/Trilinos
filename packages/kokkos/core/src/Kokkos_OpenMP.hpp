@@ -48,8 +48,11 @@
 
 #include <omp.h>
 #include <cstddef>
-#include <Kokkos_Host.hpp>
+#include <Kokkos_HostSpace.hpp>
+#include <Kokkos_Parallel.hpp>
 #include <Kokkos_Layout.hpp>
+
+#include <OpenMP/Kokkos_Host_Thread.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -62,15 +65,17 @@ public:
   //! \name Type declarations that all Kokkos devices must provide.
   //@{
 
-  typedef OpenMP                type ;
   typedef OpenMP                device_type ;
   typedef HostSpace::size_type  size_type ;
   typedef HostSpace             memory_space ;
   typedef LayoutRight           array_layout ;
+  typedef OpenMP                host_mirror_device_type ;
 
   //@}
   //! \name Functions that all Kokkos devices must implement.
   //@{
+
+  inline static bool in_parallel() { return omp_in_parallel(); }
 
   /** \brief  Set the device in a "sleep" state. A noop for OpenMP.  */
   static bool sleep();
@@ -99,7 +104,7 @@ public:
 
   static void initialize( const std::pair<unsigned,unsigned> gang_topo ,
                           const std::pair<unsigned,unsigned> core_use =
-                                std::pair<unsigned,unsigned>(0,0) );
+                                std::make_pair (0u, 0u) );
 
   //------------------------------------
 

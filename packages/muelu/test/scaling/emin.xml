@@ -138,7 +138,7 @@
       <Parameter name="minRowsPerProcessor"                 type="int"    value="800"/>                     <!-- default = 2000 -->
       <Parameter name="nonzeroImbalance"                    type="double" value="1.1"/>                     <!-- default = 1.2 -->
       <Parameter name="startLevel"                          type="int"    value="2"/>                       <!-- default = 1 -->
-      <Parameter name="diffusiveHeuristic"                  type="int"    value="0"/>
+      <Parameter name="remapPartitions"                     type="bool"   value="false"/>
     </ParameterList>
 
     <ParameterList name="myRebalanceProlongatorFact">

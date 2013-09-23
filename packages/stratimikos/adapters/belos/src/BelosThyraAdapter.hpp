@@ -588,6 +588,16 @@ namespace Belos {
     }
   };
 
+  // Partial specialization for MV=Thyra::MultiVectorBase. This supports 64-bit types
+  template<class ScalarType>
+  class MultiVecTraitsExt<ScalarType, Thyra::MultiVectorBase<ScalarType> > {
+  public: 
+    typedef Thyra::MultiVectorBase<ScalarType> MV; 
+    static ptrdiff_t GetGlobalLength( const MV& mv ) { 
+      return Teuchos::as<ptrdiff_t>(mv.range()->dim());
+    } 
+  };
+
 } // end of Belos namespace
 
 #endif

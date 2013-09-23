@@ -43,93 +43,144 @@
 #ifndef IFPACK2_CONTAINER_HPP
 #define IFPACK2_CONTAINER_HPP
 
+/// \file Ifpack2_Container.hpp
+/// \brief Ifpack2::Container class declaration
+
 #include <Ifpack2_ConfigDefs.hpp>
 #include <Tpetra_RowMatrix.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_Describable.hpp>
 #include <iostream>
 
-
 namespace Ifpack2 {
 
 /// \class Container
 /// \brief Interface for creating and solving a local linear problem.
 ///
-/// This class provides an abstract interface for containers. A
-/// <i>container</i> can create, populate, and solve a local linear
+/// This class is mainly useful for the implementation of
+/// BlockRelaxation, and other preconditioners that need to solve
+/// linear systems with diagonal blocks of a sparse matrix.
+///
+/// Users of BlockRelaxation (and any analogous preconditioners) do
+/// not normally need to interact with the Container interface.
+/// However, they do need to specify a specific Container subclass to
+/// use, for example as the second template parameter
+/// (<tt>ContainerType</tt>) of BlockRelaxation.  Implementations of
+/// Container specify
+/// - the kind of data structure used to store the local matrix, and
+/// - how to solve a linear system with the local matrix.
+///
+/// For example, the SparseContainer subclass uses a sparse matrix (in
+/// particular, Tpetra::CrsMatrix) to store each diagonal block, and
+/// can use any given Ifpack2 Preconditioner subclass to solve linear
+/// systems.
+///
+/// A Container can create, populate, and solve a local linear
 /// system. The local linear system matrix, B, is a submatrix of the
-/// local components of a distributed matrix, A. The idea of container
+/// local components of a distributed matrix, A. The idea of Container
 /// is to specify the rows of A that are contained in B, then extract
 /// B from A, and compute all it is necessary to solve a linear system
 /// in B.  Then, set the initial guess (if necessary) and right-hand
 /// side for B, and solve the linear system in B.
 ///
-/// A container should be used in the following manner:
-/// - Create an container object, specifying the number of rows of B.
-/// - If necessary, set parameters for the solution using
-///   setParameters().
-/// - Initialize the container by calling initialize().
-/// - Specify the ID of the local rows of A that are contained in B,
-///   using ID().
-/// - Prepare the linear system solver using compute().
-/// - set X and/or Y elements using getX() and getY().
-/// - Solve the linear system using apply().
-/// - Get the components of the computed solution using getY().
-///
-/// The number of vectors can be set using setNumVectors(); it
-/// defaults to 1.
-///
-/// Containers are currently used by class Ifpack2::BlockRelaxation.
-///
-/// Ifpack2::Container is a pure virtual class.  Two concrete
-/// implementations are provided in classes Ifpack2::SparseContainer
-/// (that stores matrices in sparse the format Tpetra::CrsMatrix) and
-/// Ifpack2::DenseContainer (for relatively small matrices, as
-/// matrices are stored as Tpetra::SerialDenseMatrix).
-///
-/// \c MatrixType and \c InverseType may store values of different
-/// types, and may have different template parameters (e.g., local or
-/// global ordinal types).  You may mix and match so long as implicit
-/// conversions are available.  The most obvious use case for this are:
-/// - <tt>MatrixType::global_ordinal_type=long long</tt> and 
-///   <tt>InverseType::global_ordinal_type=short</tt>
-/// - <tt>MatrixType::scalar_type=float</tt> and 
-///   <tt>InverseType::scalar_type=double</tt>
-template<class MatrixType, class InverseType>
+/// If you are writing a class (comparable to BlockRelaxation) that
+/// uses Container, you should use it in the following way:
+/// <ol>
+/// <li> Create a Container object, specifying the global matrix A and
+///      the indices of the local rows of A that are contained in B.
+///      The latter indices come from a Partitioner object.</li>
+/// <li> Optionally, set linear solve parameters using setParameters().</li>
+/// <li> Initialize the container by calling initialize().</li>
+/// <li> Prepare the linear system solver using compute().</li>
+/// <li> Solve the linear system using apply().</li>
+/// </ol>
+/// For an example of Steps 1-5 above, see the implementation of
+/// BlockRelaxation::ExtractSubmatrices() in
+/// Ifpack2_BlockRelaxation_def.hpp.
+template<class MatrixType>
 class Container : public Teuchos::Describable {
 public:
-  typedef typename MatrixType::scalar_type          MatrixScalar;
-  typedef typename MatrixType::local_ordinal_type   MatrixLocalOrdinal;
-  typedef typename MatrixType::global_ordinal_type  MatrixGlobalOrdinal;
-  typedef typename MatrixType::node_type            MatrixNode;
+  typedef typename MatrixType::scalar_type          scalar_type;
+  typedef typename MatrixType::local_ordinal_type   local_ordinal_type;
+  typedef typename MatrixType::global_ordinal_type  global_ordinal_type;
+  typedef typename MatrixType::node_type            node_type;
 
-  typedef typename InverseType::scalar_type         InverseScalar;
-  typedef typename InverseType::local_ordinal_type  InverseLocalOrdinal;
-  typedef typename InverseType::global_ordinal_type InverseGlobalOrdinal;
-  typedef typename InverseType::node_type           InverseNode;
+  typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> row_matrix_type;
+
+  /// \brief Constructor.
+  ///
+  /// \brief matrix [in] The original input matrix.  This Container
+  ///   will construct a local diagonal block from the rows given by
+  ///   <tt>localRows</tt>.
+  ///
+  /// \param localRows [in] The set of (local) rows assigned to this
+  ///   container.  <tt>localRows[i] == j</tt>, where i (from 0 to
+  ///   <tt>getNumRows() - 1</tt>) indicates the Container's row, and
+  ///   j indicates the local row in the calling process.  Subclasses
+  ///   must always pass along these indices to the base class.
+  Container (const Teuchos::RCP<const row_matrix_type>& matrix,
+             const Teuchos::ArrayView<const local_ordinal_type>& localRows) :
+    inputMatrix_ (matrix),
+    localRows_ (localRows.begin (), localRows.end ())
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      matrix.is_null (), std::invalid_argument, "Ifpack2::Container: "
+      "The constructor's input matrix must be non-null.");
+  }
 
   //! Destructor.
   virtual ~Container() {};
 
-  //! Returns the number of rows of the matrix and X/Y.
+  /// \brief The input matrix to the constructor.
+  ///
+  /// This is not the local diagonal block that the Container
+  /// extracts; this is the original input matrix, of which that
+  /// diagonal block is a submatrix.  You can't get the local diagonal
+  /// block through the Container interface, because the subclass of
+  /// container can store that block in any format it likes (e.g.,
+  /// dense or sparse).
+  Teuchos::RCP<const row_matrix_type> getMatrix() const {
+    return inputMatrix_;
+  }
+
+  //! The number of rows in the diagonal block.
   virtual size_t getNumRows() const = 0;
 
-  /// \brief A nonconst reference to the local index associated with local row i.
+  /// \brief Local indices of the rows of the input matrix that belong to this block.
   ///
-  /// The set of (local) rows assigned to this container is defined
-  /// by calling ID(i) = j, where i (from 0 to NumRows()) indicates
-  /// the container-row, and j indicates the local row in the calling
-  /// process.
-  /// 
-  /// This method is usually used to recorder the local row index (on
-  /// the calling process) of the i-th row in the container.
-  virtual MatrixLocalOrdinal & ID (const size_t i) = 0;
+  /// The set of (local) rows assigned to this Container is defined by
+  /// passing in a set of indices <tt>localRows[i] = j</tt> to the
+  /// constructor, where i (from 0 to <tt>getNumRows() - 1</tt>)
+  /// indicates the Container's row, and j indicates the local row in
+  /// the calling process.  Subclasses must always pass along these
+  /// indices to the base class.
+  ///
+  /// The indices are usually used to reorder the local row index (on
+  /// the calling process) of the i-th row in the Container.
+  ///
+  /// For an example of how to use these indices, see the
+  /// implementation of BlockRelaxation::ExtractSubmatrices() in
+  /// Ifpack2_BlockRelaxation_def.hpp.
+  Teuchos::ArrayView<const local_ordinal_type> getLocalRows () const {
+    return localRows_ ();
+  }
 
-  //! Initialize the container, by performing all operations that only require matrix structure.
+  /// \brief Do all set-up operations that only require matrix structure.
+  ///
+  /// If the input matrix's structure changes, you must call this
+  /// method before you may call compute().  You must then call
+  /// compute() before you may call apply() or weightedApply().
+  ///
+  /// "Structure" refers to the graph of the matrix: the local and
+  /// global dimensions, and the populated entries in each row.
   virtual void initialize () = 0;
 
-  //! Finalize the linear system matrix and prepare for the application of the inverse.
-  virtual void compute (const Teuchos::RCP<const Tpetra::RowMatrix<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode> >& Matrix) = 0;
+  /// \brief Extract the local diagonal block and prepare the solver.
+  ///
+  /// If any entries' values in the input matrix have changed, you
+  /// must call this method before you may call apply() or
+  /// weightedApply().
+  virtual void compute () = 0;
 
   //! Set parameters.
   virtual void setParameters (const Teuchos::ParameterList& List) = 0;
@@ -140,38 +191,68 @@ public:
   //! Return \c true if the container has been successfully computed.
   virtual bool isComputed () const = 0;
 
-  /// \brief Compute Y = alpha * M^{-1} X + beta*Y
+  /// \brief Compute <tt>Y := alpha * M^{-1} X + beta*Y</tt>.
   ///
-  /// X and Y have as many global rows as the dimension of the global
-  /// problem from which the container was originally extracted.
+  /// X is in the domain Map of the original matrix (the argument to
+  /// compute()), and Y is in the range Map of the original matrix.
+  /// This method only reads resp. modifies the permuted subset of
+  /// entries of X resp. Y related to the diagonal block M.  That
+  /// permuted subset is defined by the indices passed into the
+  /// constructor.
+  ///
+  /// This method is marked \c const for compatibility with
+  /// Tpetra::Operator's method of the same name.  This might require
+  /// subclasses to mark some of their instance data as \c mutable.
   virtual void
-  apply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& X,
-	 Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& Y,
-	 Teuchos::ETransp mode = Teuchos::NO_TRANS,
-	 MatrixScalar alpha = Teuchos::ScalarTraits<MatrixScalar>::one (),
-	 MatrixScalar beta = Teuchos::ScalarTraits<MatrixScalar>::zero ()) = 0;
+  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+         Teuchos::ETransp mode = Teuchos::NO_TRANS,
+         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one (),
+         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero ()) const = 0;
 
-  /// \brief Compute Y = alpha * diag(D) * M^{-1} (diag(D) X) + beta*Y
+  /// \brief Compute <tt>Y := alpha * diag(D) * M^{-1} (diag(D) * X) + beta*Y</tt>.
   ///
-  /// D, X, and Y have as many global rows as the dimension of the
-  /// global problem from which the container was originally
-  /// extracted.  The method is designed to support techniques with
-  /// overlap, such as Schwarz methods.
+  /// X is in the domain Map of the original matrix (the argument to
+  /// compute()), and Y is in the range Map of the original matrix.
+  /// This method only reads resp. modifies the permuted subset of
+  /// entries of X resp. Y related to the diagonal block M.  That
+  /// permuted subset is defined by the indices passed into the
+  /// constructor.  The D scaling vector must have the same number of
+  /// entries on each process as X and Y, but otherwise need not have
+  /// the same Map.  (For example, D could be locally replicated, or
+  /// could be a different object on each process with a local (\c
+  /// MPI_COMM_SELF) communicator.)
+  ///
+  /// This method supports overlap techniques, such as those used in
+  /// Schwarz methods.
+  ///
+  /// This method is marked \c const by analogy with apply(), which
+  /// itself is marked \c const for compatibility with
+  /// Tpetra::Operator's method of the same name.  This might require
+  /// subclasses to mark some of their instance data as \c mutable.
   virtual void
-  weightedApply (const Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& X,
-		 Tpetra::MultiVector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& Y,
-		 const Tpetra::Vector<MatrixScalar,MatrixLocalOrdinal,MatrixGlobalOrdinal,MatrixNode>& D,
-		 Teuchos::ETransp mode = Teuchos::NO_TRANS,
-		 MatrixScalar alpha = Teuchos::ScalarTraits<MatrixScalar>::one (),
-		 MatrixScalar beta = Teuchos::ScalarTraits<MatrixScalar>::zero ()) = 0;
+  weightedApply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                 Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+                 const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& D,
+                 Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                 scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one (),
+                 scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero ()) const = 0;
 
   //! Print basic information about the container to \c os.
   virtual std::ostream& print (std::ostream& os) const = 0;
+
+private:
+  //! The input matrix to the constructor.
+  Teuchos::RCP<const row_matrix_type> inputMatrix_;
+
+  //! Local indices of the rows of the input matrix that belong to this block.
+  Teuchos::Array<local_ordinal_type> localRows_;
 };
 
-template <class MatrixType, class InverseType>
-inline std::ostream& 
-operator<< (std::ostream& os, const Ifpack2::Container<MatrixType,InverseType>& obj)
+//! Print information about the given Container to the output stream \c os.
+template <class MatrixType>
+inline std::ostream&
+operator<< (std::ostream& os, const Ifpack2::Container<MatrixType>& obj)
 {
   return obj.print (os);
 }

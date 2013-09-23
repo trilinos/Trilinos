@@ -43,25 +43,24 @@
 #define Intrepid_MiniTensor_Storage_i_h
 
 namespace Intrepid {
-namespace MiniTensor {
 
 //
 // Raw pointer storage
 //
 template<typename T>
 inline
-StorageRaw<T>::StorageRaw() :
-  size_(0),
-  pointer_(NULL)
+Storage<T, DYNAMIC>::Storage() :
+  storage_(NULL),
+  size_(0)
 {
   return;
 }
 
 template<typename T>
 inline
-StorageRaw<T>::StorageRaw(Index const number_entries) :
-  size_(number_entries),
-  pointer_(NULL)
+Storage<T, DYNAMIC>::Storage(Index const number_entries) :
+  storage_(NULL),
+  size_(0)
 {
   resize(number_entries);
   return;
@@ -69,7 +68,7 @@ StorageRaw<T>::StorageRaw(Index const number_entries) :
 
 template<typename T>
 inline
-StorageRaw<T>::~StorageRaw()
+Storage<T, DYNAMIC>::~Storage()
 {
   clear();
   return;
@@ -78,25 +77,25 @@ StorageRaw<T>::~StorageRaw()
 template<typename T>
 inline
 T const &
-StorageRaw<T>::operator[](Index const i) const
+Storage<T, DYNAMIC>::operator[](Index const i) const
 {
   assert(i < size());
-  return pointer_[i];
+  return storage_[i];
 }
 
 template<typename T>
 inline
 T &
-StorageRaw<T>::operator[](Index const i)
+Storage<T, DYNAMIC>::operator[](Index const i)
 {
   assert(i < size());
-  return pointer_[i];
+  return storage_[i];
 }
 
 template<typename T>
 inline
 Index
-StorageRaw<T>::size() const
+Storage<T, DYNAMIC>::size() const
 {
   return size_;
 }
@@ -104,16 +103,12 @@ StorageRaw<T>::size() const
 template<typename T>
 inline
 void
-StorageRaw<T>::resize(Index const number_entries)
+Storage<T, DYNAMIC>::resize(Index const number_entries)
 {
-  if (number_entries == size()) {
-    return;
-  }
+  if (number_entries == size()) return;
 
   clear();
-
-  pointer_ = new T[number_entries];
-
+  storage_ = new T[number_entries];
   size_ = number_entries;
 
   return;
@@ -122,157 +117,17 @@ StorageRaw<T>::resize(Index const number_entries)
 template<typename T>
 inline
 void
-StorageRaw<T>::clear()
+Storage<T, DYNAMIC>::clear()
 {
-  if (pointer_ != NULL) {
-    delete [] pointer_;
-    pointer_ = NULL;
-    size_ = 0;
-  }
+  if (storage_ == NULL) return;
+
+  delete [] storage_;
+  storage_ = NULL;
+  size_ = 0;
+
   return;
 }
 
-//
-// STL vector storage
-//
-template<typename T>
-inline
-StorageSTLVector<T>::StorageSTLVector()
-{
-  return;
-}
-
-template<typename T>
-inline
-StorageSTLVector<T>::StorageSTLVector(Index const number_entries)
-{
-  resize(number_entries);
-  return;
-}
-
-template<typename T>
-inline
-StorageSTLVector<T>::~StorageSTLVector()
-{
-  return;
-}
-
-template<typename T>
-inline
-T const &
-StorageSTLVector<T>::operator[](Index const i) const
-{
-  assert(i < size());
-  return storage_[i];
-}
-
-template<typename T>
-inline
-T &
-StorageSTLVector<T>::operator[](Index const i)
-{
-  assert(i < size());
-  return storage_[i];
-}
-
-template<typename T>
-inline
-Index
-StorageSTLVector<T>::size() const
-{
-  return storage_.size();
-}
-
-template<typename T>
-inline
-void
-StorageSTLVector<T>::resize(Index const number_entries)
-{
-  storage_.resize(number_entries);
-  return;
-}
-
-template<typename T>
-inline
-void
-StorageSTLVector<T>::clear()
-{
-  storage_.clear();
-  return;
-}
-
-//
-// Teuchos RCP array storage
-//
-template<typename T>
-inline
-StorageRCPArray<T>::StorageRCPArray() :
-  storage_(Teuchos::null)
-{
-  return;
-}
-
-template<typename T>
-inline
-StorageRCPArray<T>::StorageRCPArray(Index const number_entries) :
-  storage_(Teuchos::null)
-{
-  resize(number_entries);
-  return;
-}
-
-template<typename T>
-inline
-StorageRCPArray<T>::~StorageRCPArray()
-{
-  return;
-}
-
-template<typename T>
-inline
-T const &
-StorageRCPArray<T>::operator[](Index const i) const
-{
-  assert(i < size());
-  return storage_[i];
-}
-
-template<typename T>
-inline
-T &
-StorageRCPArray<T>::operator[](Index const i)
-{
-  assert(i < size());
-  return storage_[i];
-}
-
-template<typename T>
-inline
-Index
-StorageRCPArray<T>::size() const
-{
-  return storage_.size();
-}
-
-template<typename T>
-inline
-void
-StorageRCPArray<T>::resize(Index const number_entries)
-{
-  storage_.resize(number_entries);
-  return;
-}
-
-template<typename T>
-inline
-void
-StorageRCPArray<T>::clear()
-{
-  storage_.clear();
-  return;
-}
-
-} // namespace MiniTensor
 } // namespace Intrepid
 
 #endif // Intrepid_MiniTensor_Storage_i_h

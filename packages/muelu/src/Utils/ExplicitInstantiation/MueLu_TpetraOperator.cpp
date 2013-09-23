@@ -70,4 +70,10 @@ template class MueLu::TpetraOperator<std::complex<double>, int, int, KokkosClass
 # endif
 #endif
 
+#if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
+template class MueLu::TpetraOperator<double, int, int, KokkosClassic::ThrustGPUNode, KokkosClassic::DefaultKernels<void, int, KokkosClassic::ThrustGPUNode>::SparseOps>;
+#endif
 
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
+template class MueLu::TpetraOperator<double, int, int, KokkosClassic::TPINode, KokkosClassic::DefaultKernels<void, int, KokkosClassic::TPINode>::SparseOps>;
+#endif

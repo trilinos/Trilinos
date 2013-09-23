@@ -51,12 +51,6 @@
 #include "EP_Version.h"
 #include "SL_tokenize.h"
 
-#if defined(__PUMAGON__)
-#define NPOS (size_t)-1
-#else
-#define NPOS std::string::npos
-#endif
-
 namespace {
   int case_strcmp(const std::string &s1, const std::string &s2)
   {
@@ -607,14 +601,14 @@ bool Excn::SystemInterface::decompose_filename(const std::string &cs)
   // to handle leading and embedded '..' which tokenize threw away...
 
   // Get rid of the 'nn' which is not used at this time...
-  size_t ind = s.find_last_of(".", NPOS); // last '.'
-  if (ind == NPOS)
+  size_t ind = s.find_last_of(".", std::string::npos); // last '.'
+  if (ind == std::string::npos)
     return false;
   s.erase(ind);
   
   // Now find the processor count...
-  ind = s.find_last_of(".", NPOS);
-  if (ind == NPOS)
+  ind = s.find_last_of(".", std::string::npos);
+  if (ind == std::string::npos)
     return false;
   
   std::string tmp = s.substr(ind+1); // Skip the '.'
@@ -627,8 +621,8 @@ bool Excn::SystemInterface::decompose_filename(const std::string &cs)
   s.erase(ind);
   
   // Should now be an extension...
-  ind = s.find_last_of(".", NPOS);
-  if (ind == NPOS)
+  ind = s.find_last_of(".", std::string::npos);
+  if (ind == std::string::npos)
     return false;
 
   inExtension_ = s.substr(ind+1);
@@ -638,9 +632,9 @@ bool Excn::SystemInterface::decompose_filename(const std::string &cs)
   // If there is no '/', then it is all basename_; otherwise the
   // basename_ is the portion following the '/' and the rootDirectory_
   // is the portion preceding the '/'
-  ind = s.find_last_of("/", NPOS);
-  if (ind != NPOS) {
-    basename_ = s.substr(ind+1,NPOS);
+  ind = s.find_last_of("/", std::string::npos);
+  if (ind != std::string::npos) {
+    basename_ = s.substr(ind+1,std::string::npos);
     rootDirectory_ = s.substr(0,ind);
   } else {
     basename_ = s;
