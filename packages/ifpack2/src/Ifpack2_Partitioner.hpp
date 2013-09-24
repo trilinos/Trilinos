@@ -150,56 +150,59 @@ public:
   //! Destructor.
   virtual ~Partitioner() {};
 
-  //! Returns the number of computed local partitions.
-  // See Ifpack2_OverlappingPartitioner_decl.hpp for explanation
-  // of why this is an "int" instead of "LocalOrdinal"
-  virtual int numLocalParts() const = 0;
+  /// \brief Number of computed local partitions.
+  ///
+  /// See Ifpack2_OverlappingPartitioner_decl.hpp for explanation
+  /// of why this is an \c int instead of \c LocalOrdinal.
+  virtual int numLocalParts () const = 0;
 
-  //! Returns the overlapping level.
+  //! The level of overlap.
   virtual int overlappingLevel() const = 0;
 
-  //! Returns the local non-overlapping partition ID of the specified row.
-  /*! Returns the non-overlapping partition ID of the specified row.
-   \param 
-   MyRow - (In) local row number
-
-   \return
-   Local ID of non-overlapping partition for \t MyRow.
-   */
+  /// \brief The local (nonoverlapping) partition index of the
+  ///   specified local row.
+  ///
+  /// \param MyRow [in] Local index of the row.
   virtual LocalOrdinal operator() (LocalOrdinal MyRow) const = 0;
 
-  //! Returns the local overlapping partition ID of the j-th node in partition i.
+  //! The local overlapping partition index of the j-th node in partition i.
   virtual LocalOrdinal operator() (LocalOrdinal i, LocalOrdinal j) const = 0;
 
-  //! Returns the number of rows contained in specified partition.
-  virtual size_t numRowsInPart(const LocalOrdinal Part) const = 0;
+  //! The number of rows contained in the specified partition.
+  virtual size_t numRowsInPart (const LocalOrdinal Part) const = 0;
     
-  //! Copies into List the rows in the (overlapping) partition Part.
-  virtual void rowsInPart(const LocalOrdinal Part, Teuchos::ArrayRCP<LocalOrdinal> &List) const = 0;
+  //! Copy into List the rows in the (overlapping) partition Part.
+  virtual void 
+  rowsInPart (const LocalOrdinal Part, 
+	      Teuchos::ArrayRCP<LocalOrdinal>& List) const = 0;
   
-  //! Returns an ArrayRCP to the integer vector containing the non-overlapping partition ID of each local row.
-  virtual Teuchos::ArrayView<const LocalOrdinal>  nonOverlappingPartition() const = 0;
+  //! The nonoverlapping partition indices of each local row.
+  virtual Teuchos::ArrayView<const LocalOrdinal>
+  nonOverlappingPartition () const = 0;
 
-  //! Sets all the parameters for the partitioner.
-  virtual void setParameters(Teuchos::ParameterList& List) = 0;
+  //! Set all the parameters for the partitioner.
+  virtual void setParameters (Teuchos::ParameterList& List) = 0;
 
-  //! Computes the partitions. Returns 0 if successful.
-  virtual void compute() = 0;
+  //! Compute the partitions.
+  virtual void compute () = 0;
 
-  //! Returns true if partitions have been computed successfully.
-  virtual bool isComputed() const = 0;
+  //! Return true if partitions have been computed successfully.
+  virtual bool isComputed () const = 0;
 
-  //! Prints basic information about the partitioning object.
-  virtual std::ostream& print(std::ostream& os) const = 0;
+  //! Print basic information about the partitioning object.
+  virtual std::ostream& print (std::ostream& os) const = 0;
 
-}; // class Ifpack2::Partitioner
+};
 
+// Overloaded output stream operator for Partitioner
 template <class GraphType>
-inline std::ostream& operator<<(std::ostream& os, const Ifpack2::Partitioner<GraphType>& obj)
+inline std::ostream& 
+operator<< (std::ostream& os, 
+	    const Ifpack2::Partitioner<GraphType>& obj)
 {
-  return(obj.print(os));
+  return obj.print (os);
 }
 
-} //namespace Ipack2
+} // namespace Ifpack2
 
 #endif // IFPACK2_PARTITIONER_HPP
