@@ -2003,7 +2003,6 @@ namespace Ioex {
         std::string side_set_name;
         Ioss::SideSet *side_set = NULL;
 
-        int64_t number_distribution_factors = 0;
         {
           Ioss::SerializeIO	serializeIO__(this);
 

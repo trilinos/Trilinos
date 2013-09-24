@@ -147,11 +147,11 @@ void IOShell::Interface::enroll_options()
 
   options_.enroll("debug" , Ioss::GetLongOption::NoValue,
 		  "turn on debugging output",
-		  false);
+		  NULL);
 
   options_.enroll("statistics" , Ioss::GetLongOption::NoValue,
 		  "output parallel io timing statistics",
-		  false);
+		  NULL);
 
   options_.enroll("Maximum_Time", Ioss::GetLongOption::MandatoryValue,
 		  "Maximum time on input database to transfer to output database",
