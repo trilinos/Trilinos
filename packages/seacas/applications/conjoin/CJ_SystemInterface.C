@@ -20,7 +20,7 @@ Excn::SystemInterface::SystemInterface()
   : outputName_(),
     debugLevel_(0), screenWidth_(0),
     omitNodesets_(false), omitSidesets_(false),
-    ints64Bit_(false), aliveValue_(-1.0)
+    ints64Bit_(false), aliveValue_(-1.0), interpartMinimumTimeDelta_(0.0)
 {
   enroll_options();
 }
@@ -98,6 +98,11 @@ void Excn::SystemInterface::enroll_options()
 		  "Comma-separated list of sideset variables to be joined or ALL or NONE.",
 		  0);
 
+  options_.enroll("interpart_minimum_time_delta",  GetLongOption::MandatoryValue,
+		  "If the time delta between the maximum time on one\n\t\tdatabase and the minimum time on "
+		  "the next database is less than this value, the\n\t\ttime will not be retained in the output file",
+		  "0");
+		  
   options_.enroll("debug", GetLongOption::MandatoryValue,
 		  "debug level (values are or'd)\n"
 		  "\t\t  1 = timing information.\n"
@@ -163,6 +168,11 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
 		<< "\nValid values are '1' or '0'.  Found '" << value << "'\n";
       exit(EXIT_FAILURE);
     }
+  }
+
+  {
+    const char *temp = options_.retrieve("interpart_minimum_time_delta");
+    interpartMinimumTimeDelta_ = strtod(temp, NULL);
   }
 
   {
