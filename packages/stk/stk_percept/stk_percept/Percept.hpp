@@ -79,23 +79,10 @@
 
 #if defined(STK_BUILT_IN_SIERRA) && !defined(STK_PERCEPT_HAS_GEOMETRY)
 #define STK_PERCEPT_HAS_GEOMETRY
-#define STK_PERCEPT_USE_INTREPID
 #endif
 
 #if defined(__IBMCPP__) && defined(STK_PERCEPT_HAS_GEOMETRY)
 #undef STK_PERCEPT_HAS_GEOMETRY
-#endif
-
-#if defined(STK_PERCEPT_LITE) && STK_PERCEPT_LITE == 1
-#if defined(STK_PERCEPT_HAS_GEOMETRY)
-#undef STK_PERCEPT_HAS_GEOMETRY
-#endif
-//#warning "STK_PERCEPT_LITE=1"
-//xxx
-#endif
-#if defined(STK_PERCEPT_LITE) && STK_PERCEPT_LITE == 0
-//#warning "STK_PERCEPT_LITE=0"
-//yyy
 #endif
 
 #define STK_ADAPT_USE_YAML_CPP 1

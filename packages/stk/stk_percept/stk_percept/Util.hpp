@@ -261,13 +261,6 @@ namespace stk {
                                                                stk::percept::Util::debug_stop(); \
                                                                throw std::runtime_error(msg_loc.str()); } } } while (0)
 
-#define VERIFY_MSG( message) do { if (1) { { std::ostringstream msg_loc; \
-                                                               msg_loc << "\n\n  ERROR: " << __FILE__ << " line: " << __LINE__; \
-                                                               msg_loc << "\n          " << message << "\n"; \
-                                                               std::cout << msg_loc.str() << std::endl; \
-                                                               stk::percept::Util::debug_stop(); \
-                                                               throw std::runtime_error(msg_loc.str()); } } } while (0)
-
 
 #ifdef NDEBUG
 

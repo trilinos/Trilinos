@@ -2851,12 +2851,10 @@ namespace stk {
               //   {
               //     continue;
               //   }
-#if  defined(STK_PERCEPT_HAS_GEOMETRY)
               if (m_eMesh.is_in_geometry_parts(m_geomFile, side_bucket))
                 {
                   continue;
                 }
-#endif
 
               const unsigned num_elements_in_side_bucket = side_bucket.size();
               for (unsigned i_side = 0; i_side < num_elements_in_side_bucket; i_side++)
@@ -2917,13 +2915,12 @@ namespace stk {
                   continue;
                 }
 
-#if  defined(STK_PERCEPT_HAS_GEOMETRY)
               if (m_eMesh.is_in_geometry_parts(m_geomFile, side_bucket))
                 {
                   // std::cout << "found geom parts" << std::endl;
                   continue;
                 }
-#endif
+
               const unsigned num_elements_in_side_bucket = side_bucket.size();
               for (unsigned i_side = 0; i_side < num_elements_in_side_bucket; i_side++)
                 {
@@ -3177,10 +3174,8 @@ namespace stk {
 
               if (elem_sides[iside].relation_ordinal() == k_element_side ) {
                 std::cout << "ERROR: Relation already exists: connectSidesForced element= "; m_eMesh.print(element, true, true);
-#if  defined(STK_PERCEPT_HAS_GEOMETRY)
                 std::cout << " side= " << m_eMesh.identifier(side_elem) << " in_geom= " << m_eMesh.is_in_geometry_parts(m_geomFile, m_eMesh.bucket(side_elem)); m_eMesh.print(side_elem, true, true);
                 std::cout << " existing_side= " << m_eMesh.identifier(existing_side) << " in_geom= " << m_eMesh.is_in_geometry_parts(m_geomFile, m_eMesh.bucket(existing_side)); m_eMesh.print(existing_side, true, true);
-#endif
                 VERIFY_OP_ON(elem_sides[iside].relation_ordinal(), !=, k_element_side, "Relation already exists!");
               }
 

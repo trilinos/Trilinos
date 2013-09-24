@@ -19,10 +19,6 @@
 
 #include <stk_percept/PerceptMesh.hpp>
 
-#if defined(STK_PERCEPT_USE_INTREPID)
-#include <stk_percept/element/intrepid/BasisTable.hpp>
-#endif
-
 namespace stk
 {
   namespace percept
@@ -34,7 +30,7 @@ namespace stk
       unsigned m_cached_topo_key;
       //IntrepidBasisType *m_cached_basis;
       //PerceptMesh::BasisTypeRCP m_cached_basis;
-      BasisTable::BasisType* m_cached_basis;
+      PerceptMesh::BasisType* m_cached_basis;
     public:
       ComputeBases() : m_cached_topo_key(0), m_cached_basis(0) {}
 
@@ -84,11 +80,11 @@ namespace stk
           }
 
         // map cell topology to a basis
-        BasisTable::BasisType *basis;
+        PerceptMesh::BasisType *basis;
         //PerceptMesh::BasisTypeRCP basis;
         if (m_cached_topo_key != bucket_cell_topo_data->key)
           {
-            BasisTable::BasisTypeRCP basisRCP = BasisTable::getBasis(topo);
+            PerceptMesh::BasisTypeRCP basisRCP = PerceptMesh::getBasis(topo);
             basis = basisRCP.get();
             m_cached_basis = basis;
             m_cached_topo_key = bucket_cell_topo_data->key;

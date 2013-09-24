@@ -10,13 +10,10 @@
 
 
 #include <stk_percept/Percept.hpp>
+#include <stk_percept/function/Function.hpp>
 #include <stk_percept/Name.hpp>
 
-#if !STK_PERCEPT_LITE
-#include <stk_percept/function/Function.hpp>
 #include "ShardsInterfaceTable.hpp"
-#endif
-
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/util/string_case_compare.hpp>
@@ -34,6 +31,9 @@
 #include <Ioss_SubSystem.h>
 #include <stk_io/IossBridge.hpp>
 #include <stk_io/MeshReadWriteUtils.hpp>
+
+#include <Intrepid_FieldContainer.hpp>
+
 
 #include <Shards_BasicTopologies.hpp>
 #include <Shards_CellTopologyData.h>
@@ -55,6 +55,11 @@
 #define PERCEPT_USE_FAMILY_TREE 1
 
 //using namespace shards;
+
+namespace Intrepid {
+	template<class Scalar, class ArrayScalar>
+	class Basis;
+}
 
 namespace stk {
   namespace percept {
@@ -103,6 +108,10 @@ namespace stk {
     class PerceptMesh
     {
     public:
+      typedef Intrepid::Basis<double, MDArray > BasisType;
+      typedef Teuchos::RCP<BasisType>           BasisTypeRCP;
+      typedef std::map<unsigned, BasisTypeRCP > BasisTableMap;
+
       static std::string s_omit_part;
 
     public:
@@ -276,10 +285,8 @@ namespace stk {
       /// find and return pointer to node closest to given point - in parallel, check return for null (if null, closest node is on another proc)
       stk::mesh::Entity get_node(double x, double y, double z=0, double t=0) ;
 
-#if !STK_PERCEPT_LITE
       /// find and return pointer to element that contains given point - in parallel, check return for null (if null, element containing point is on another proc)
       stk::mesh::Entity get_element(double x, double y, double z=0, double t=0) ;
-#endif
 
       /// return true if the two meshes are different; if @param print is true, print diffs; set print_all_field_diffs to get more output
       static bool mesh_difference(PerceptMesh& mesh1, PerceptMesh& mesh2,
@@ -680,6 +687,9 @@ namespace stk {
 
       double * node_field_data(stk::mesh::FieldBase *field, const mesh::EntityId node_id);
 
+      static BasisTypeRCP getBasis(shards::CellTopology& topo);
+      static void setupBasisTable();
+
       void nodalOpLoop(GenericFunction& nodalOp, stk::mesh::FieldBase *field=0, stk::mesh::Selector* selector=0);
       void elementOpLoop(ElementOp& elementOp, stk::mesh::FieldBase *field=0, stk::mesh::Part *part = 0);
       void bucketOpLoop(BucketOp& bucketOp, stk::mesh::FieldBase *field=0, stk::mesh::Part *part = 0);
@@ -836,6 +846,9 @@ namespace stk {
       bool                                  m_outputActiveChildrenOnly;
       std::string                           m_filename;
       stk::ParallelMachine                  m_comm;
+
+      //static std::map<unsigned, BasisType *> m_basisTable;
+      static BasisTableMap m_basisTable;
 
       SameRankRelation m_adapt_parent_to_child_relations;
 

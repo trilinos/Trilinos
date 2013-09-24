@@ -6,19 +6,10 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#if !STK_PERCEPT_LITE
-
 #include <stk_percept/function/StringFunction.hpp>
 #include <stk_percept/function/FieldFunction.hpp>
 #include <stk_percept/function/ConstantFunction.hpp>
 #include <stk_percept/PerceptMesh.hpp>
-
-#else
-
-#include <stk_percept/lite/PerceptMeshLite.hpp>
-
-#endif
-
 #include <stk_percept/Util.hpp>
 #include <stk_percept/ExceptionWatch.hpp>
 #include <stk_percept/fixtures/Fixture.hpp>
@@ -34,10 +25,7 @@
 #include <stk_percept/fixtures/BeamFixture.hpp>
 #include <stk_percept/fixtures/HeterogeneousFixture.hpp>
 #include <stk_percept/fixtures/QuadFixture.hpp>
-
-#if !STK_PERCEPT_LITE
 #include <stk_percept/fixtures/WedgeFixture.hpp>
-#endif
 
 #include <stk_percept/Histogram.hpp>
 
@@ -170,7 +158,6 @@ namespace stk
 
       STKUNIT_UNIT_TEST(unit_perceptMesh, wedge6_1)
       {
-#if !STK_PERCEPT_LITE
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
 
@@ -190,7 +177,6 @@ namespace stk
                                     0, 1,
                                     std::string("swept-wedge_0.e") );
           }
-#endif
       }
 
 
@@ -496,7 +482,6 @@ namespace stk
 
       STKUNIT_UNIT_TEST(perceptMesh, test_states)
       {
-#if !STK_PERCEPT_LITE
         fixture_setup();
         PerceptMesh eMesh(0);
         eMesh.open(input_files_loc+"hex_fixture.e");
@@ -515,8 +500,8 @@ namespace stk
         eMesh.save_as(output_files_loc+"hex_copy_fields_rot.e");
         eMesh.copy_field(coordinates_None, coordinates_N);
         eMesh.save_as(output_files_loc+"hex_copy_fields.e");
-#endif
       }
+
 
       template<typename T>
       static std::string example_histogram(bool print_table=false, bool use_percentage=false, bool print_simple_table=false)
