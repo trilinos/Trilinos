@@ -592,7 +592,7 @@ namespace stk {
 
                 //eMesh.print_info("srk tmp SingleTetFixture 3", 2);
 
-#if 0
+#if 1
                 MeshUtil::m_debug = true;
                 bool isConsistent = percept::MeshUtil::facesConsistent(eMesh);
                 MeshUtil::m_debug = false;

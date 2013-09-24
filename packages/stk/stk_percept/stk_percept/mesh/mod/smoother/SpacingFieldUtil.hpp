@@ -9,18 +9,15 @@
 #define SpacingFieldUtil_hpp
 
 #include <stk_percept/Percept.hpp>
-#if !defined(__IBMCPP__)
+#if !defined(__IBMCPP__) 
 
-// #if STK_PERCEPT_LITE
-// #include <stk_percept/lite/PerceptMeshLite.hpp>
-// #else
 #include <stk_percept/PerceptMesh.hpp>
-//#endif
+#include "JacobianUtil.hpp"
 
 namespace stk {
   namespace percept {
 
-    class SpacingFieldUtil
+    class SpacingFieldUtil 
     {
     public:
       /// either average or take max of spacing to the nodes
@@ -37,7 +34,7 @@ namespace stk {
     private:
       PerceptMesh& m_eMesh;
       SpacingType m_type;
-
+      
     };
   }
 }

@@ -40,7 +40,7 @@ namespace stk {
       static void checkTopology(percept::PerceptMesh& eMesh);
 
       // low-level support methods
-
+      
       static void fillSideNodes(percept::PerceptMesh& eMesh, stk::mesh::Entity element, unsigned iside, std::vector<stk::mesh::EntityId>& side_nodes);
 
       static void fillSideNodes(percept::PerceptMesh& eMesh, stk::mesh::Entity element, unsigned iside, std::vector<stk::mesh::Entity>& side_nodes);
@@ -53,7 +53,7 @@ namespace stk {
 
       static bool facesConsistent1(percept::PerceptMesh& eMesh, stk::mesh::Entity element1, stk::mesh::Entity element2);
 
-    };
+    }; 
   }
 }
 
