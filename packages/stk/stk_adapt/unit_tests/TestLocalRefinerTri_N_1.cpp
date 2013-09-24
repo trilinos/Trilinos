@@ -51,7 +51,7 @@ namespace stk {
     refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity element, vector<NeededEntityType>& needed_entity_ranks)
     {
       //static int n_seq = 400;
-      static std::vector<unsigned> random_sequence = get_random_sequence(1, 50, 50);
+      static std::vector<unsigned> random_sequence = get_random_sequence(1, 100, 100);
 
       const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
 
@@ -105,6 +105,10 @@ namespace stk {
                   //double * const coord1 = eMesh.field_data( *coordField , node1 );
 
                   // choose to refine or not
+                  if (random_sequence.size() <= m_eMesh.identifier(node0) || random_sequence.size() <= m_eMesh.identifier(node1)) {
+                    std::cout << "sz= " << random_sequence.size() << " n0= " << m_eMesh.identifier(node0) << " n1= " << m_eMesh.identifier(node1) << std::endl;
+                    exit(1);
+                  }
                   if (random_sequence[ m_eMesh.identifier(node0) + m_eMesh.identifier(node1) ] < m_eMesh.identifier(node0) + m_eMesh.identifier(node1))
                     {
                       (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, true);
