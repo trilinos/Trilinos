@@ -955,7 +955,18 @@ namespace Ioss {
 	IOSS_ERROR(errmsg);
       }
     }
-    return add_alias(db_name, db_name);
+
+    bool success = add_alias(db_name, db_name);
+
+    // "db_name" property is used with the canonical name setting.
+    if (success && ge->property_exists("db_name")) {
+      std::string canon_name = ge->get_property("db_name").get_string();
+      if (canon_name != db_name) {
+	success = add_alias(db_name, canon_name);
+      }
+    }
+
+    return success;
   }
 
   bool Region::add_alias(const std::string &db_name, const std::string &alias)
