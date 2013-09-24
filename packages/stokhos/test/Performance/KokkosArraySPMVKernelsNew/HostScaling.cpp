@@ -134,13 +134,10 @@ int main(int argc, char *argv[])
     CLP.parse( argc, argv );
 
     // Detect number of CPUs and number of cores
-    const std::pair<unsigned,unsigned> core_topo =
-    Kokkos::hwloc::get_core_topology();
-    const size_t core_capacity = Kokkos::hwloc::get_core_capacity();
-
-    const size_t num_cpu = core_topo.first;
-    const size_t num_core_per_cpu = core_topo.second;
-    if (static_cast<size_t>(n_thread_per_core) > core_capacity)
+    const size_t num_cpu          = Kokkos::hwloc::get_available_numa_count();
+    const size_t num_core_per_cpu = Kokkos::hwloc::get_available_cores_per_numa();
+    const size_t core_capacity    = Kokkos::hwloc::get_available_threads_per_core();
+    if (static_cast<size_t>(n_thread_per_core) > core_capacity )
       n_thread_per_core = core_capacity;
 
     // Print header

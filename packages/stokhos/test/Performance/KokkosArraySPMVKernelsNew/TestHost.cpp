@@ -143,13 +143,9 @@ template <typename Scalar>
 int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
              bool test_block, bool symmetric, bool mkl)
 {
-  const std::pair<unsigned,unsigned> core_topo =
-    Kokkos::hwloc::get_core_topology();
-  const size_t core_capacity = Kokkos::hwloc::get_core_capacity();
-  //const size_t core_capacity = 1;
-
-  const size_t gang_count = core_topo.first ;
-  const size_t gang_worker_count = core_topo.second * core_capacity;
+  const size_t team_count       = Kokkos::hwloc::get_available_numa_count();
+  const size_t threads_per_team = Kokkos::hwloc::get_available_cores_per_numa() *
+                                  Kokkos::hwloc::get_available_threads_per_core();
 
 #if defined(HAVE_STOKHOS_OPENMP) && defined(HAVE_STOKHOS_MKL)
   // Call a little OpenMP parallel region so that MKL will get the right
@@ -163,12 +159,11 @@ int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
   }
 #endif
 
-  Kokkos::Threads::initialize( std::make_pair(gang_count , gang_worker_count),
-                               core_topo );
+  Kokkos::Threads::initialize( team_count , threads_per_team );
   Kokkos::Threads::print_configuration( std::cout );
 
   std::cout << std::endl << "\"Host Performance with "
-            << gang_count * gang_worker_count << " threads\"" << std::endl ;
+            << team_count * threads_per_team << " threads\"" << std::endl ;
 
   unit_test::performance_test_driver<Scalar,Kokkos::Threads>::run(
     test_flat, test_orig, test_deg, test_lin, test_block, symmetric, mkl);

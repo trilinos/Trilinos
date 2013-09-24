@@ -132,40 +132,42 @@ void OpenMP::assert_ready( const char * const function )
 
 //----------------------------------------------------------------------------
 
-void OpenMP::initialize( const unsigned gang_count ,
-                         const unsigned worker_per_gang )
+void OpenMP::initialize( const unsigned team_count ,
+                         const unsigned threads_per_team ,
+                         const unsigned use_numa_count ,
+                         const unsigned use_cores_per_numa )
 {
   const bool ok_inactive = 0 == m_host_threads[0] ;
   const bool ok_serial   = 0 == omp_in_parallel();
 
   if ( ok_inactive && ok_serial ) {
 
-    // If user specifies worker_per_gang then kill existing threads
+    // If user specifies threads_per_team then kill existing threads
     // allocate new threads.
 
-    if ( worker_per_gang ) {
-      omp_set_num_threads( gang_count * worker_per_gang ); // Spawn threads
+    if ( threads_per_team ) {
+      omp_set_num_threads( team_count * threads_per_team ); // Spawn threads
     }
 
-    const std::pair<unsigned,unsigned> core_topo = hwloc::get_core_topology();
-
-    const unsigned core_capa = hwloc::get_core_capacity();
-
     const unsigned thread_count = (unsigned) omp_get_max_threads();
+
+    const unsigned numa_count       = std::min( use_numa_count ,     hwloc::get_available_numa_count() );
+    const unsigned cores_per_numa   = std::min( use_cores_per_numa , hwloc::get_available_cores_per_numa() );
+    const unsigned threads_per_core = hwloc::get_available_threads_per_core();
 
     // If there are more threads than "allowed" cores
     // then omp threads have already been bound (or overallocated)
     // and there is no opportunity to improve locality.
 
-    const bool bind_threads = thread_count <= core_topo.first * core_topo.second * core_capa ;
+    const bool bind_threads = thread_count <= numa_count * cores_per_numa * threads_per_core ;
 
     //------------------------------------
 
     if ( bind_threads ) {
 
       {
-        const std::pair<unsigned,unsigned> gang_topo( gang_count , worker_per_gang );
-        const std::pair<unsigned,unsigned> core_topo    = hwloc::get_core_topology();
+        const std::pair<unsigned,unsigned> gang_topo( team_count , threads_per_team );
+        const std::pair<unsigned,unsigned> core_topo( numa_count , cores_per_numa );
         const std::pair<unsigned,unsigned> master_coord = hwloc::get_this_thread_coordinate();
 
         Impl::host_thread_mapping( gang_topo , core_topo , core_topo , master_coord , s_coordinates );
@@ -235,10 +237,10 @@ void OpenMP::initialize( const unsigned gang_count ,
 
       // Distribute threads among gangs:
 
-      // thread_count = k * bin + ( gang_count - k ) * ( bin + 1 )
-      const unsigned bin  = thread_count / gang_count ;
+      // thread_count = k * bin + ( team_count - k ) * ( bin + 1 )
+      const unsigned bin  = thread_count / team_count ;
       const unsigned bin1 = bin + 1 ;
-      const unsigned k    = gang_count * bin1 - thread_count ;
+      const unsigned k    = team_count * bin1 - thread_count ;
       const unsigned part = k * bin ;
 
       if ( thread_rank < part ) {
@@ -254,7 +256,7 @@ void OpenMP::initialize( const unsigned gang_count ,
 
       Impl::HostThread::get_thread( thread_rank )->
         set_topology( thread_rank , thread_count ,
-                      gang_rank ,   gang_count ,
+                      gang_rank ,   team_count ,
                       worker_rank , worker_count );
     }
 

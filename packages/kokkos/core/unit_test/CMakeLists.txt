@@ -8,6 +8,7 @@ SET(SOURCES
   UnitTestMain.cpp 
   TestSerial.cpp 
   TestThreads.cpp 
+  TestHWLOC.cpp 
   ../../TPL/gtest/gtest-all.cc
   )
 

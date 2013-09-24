@@ -250,11 +250,15 @@ namespace Kokkos {
 inline int Threads::in_parallel()
 { return Impl::ThreadsExec::in_parallel(); }
 
-inline void Threads::initialize( 
-  const std::pair<unsigned,unsigned> league_team ,
-  const std::pair<unsigned,unsigned> hardware_topology )
+inline void Threads::initialize(
+  unsigned team_count ,
+  unsigned threads_per_team ,
+  unsigned use_numa_count ,
+  unsigned use_cores_per_numa )
 {
-  Impl::ThreadsExec::initialize( league_team , hardware_topology );
+  Impl::ThreadsExec::initialize(
+    std::pair<unsigned,unsigned>( team_count , threads_per_team ),
+    std::pair<unsigned,unsigned>( use_numa_count , use_cores_per_numa ) );
 }
 
 inline void Threads::finalize()
