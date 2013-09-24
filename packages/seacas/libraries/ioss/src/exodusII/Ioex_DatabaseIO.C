@@ -1530,7 +1530,8 @@ namespace Ioex {
 	if (get_use_generic_canonical_name()) {
 	  db_name = &alias;
 	}
-	block->property_add(Ioss::Property("db_name", *db_name));
+	if (alias != block_name)
+	  block->property_add(Ioss::Property("db_name", *db_name));
       }
 
       // Maintain block order on output database...
@@ -2036,7 +2037,8 @@ namespace Ioex {
 	      if (get_use_generic_canonical_name()) {
 		db_name = &alias;
 	      }
-	      side_set->property_add(Ioss::Property("db_name", *db_name));
+	      if (alias != side_set_name)
+		side_set->property_add(Ioss::Property("db_name", *db_name));
 	    }
 
             get_region()->add((Ioss::SideSet*)side_set);
@@ -2553,7 +2555,8 @@ namespace Ioex {
 	      if (get_use_generic_canonical_name()) {
 		db_name = &alias;
 	      }
-	      Xset->property_add(Ioss::Property("db_name", *db_name));
+	      if (alias != Xset_name)
+		Xset->property_add(Ioss::Property("db_name", *db_name));
 	    }
             get_region()->add(Xset);
             get_region()->add_alias(Xset_name, alias);
