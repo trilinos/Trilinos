@@ -60,6 +60,7 @@ namespace Teuchos {
 
 class AztecOO;
 class Epetra_CrsMatrix;
+class Epetra_LinearProblem;
 
 #ifdef HAVE_FEI_ML
 #include <ml_include.h>
