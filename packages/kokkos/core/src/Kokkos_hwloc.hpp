@@ -56,7 +56,7 @@ namespace Kokkos {
  *  runtime system an opportunity to migrate the threads or
  *  touch allocated memory during the function calls.
  *
- *  All calls to these functions should be perform by a thread
+ *  All calls to these functions should be performed by a thread
  *  when it has guaranteed exclusive access; e.g., for OpenMP
  *  within a 'critical' region.
  */

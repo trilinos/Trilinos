@@ -78,17 +78,16 @@ struct ViewAssignment ;
 
 namespace Kokkos {
 
-/** \brief  ViewTraits
+/** \class ViewTraits
+ *  \brief Traits class for accessing attributes of a View.
  *
- *  Template argument permutations:
- *
- *    View< DataType , Device , void         , void >
- *    View< DataType , Device , MemoryTraits , void >
- *    View< DataType , Device , void         , MemoryTraits >
- *    View< DataType , ArrayLayout , Device  , void >
- *    View< DataType , ArrayLayout , Device  , MemoryTraits >
+ * Template argument permutations:
+ *   - View< DataType , Device , void         , void >
+ *   - View< DataType , Device , MemoryTraits , void >
+ *   - View< DataType , Device , void         , MemoryTraits >
+ *   - View< DataType , ArrayLayout , Device  , void >
+ *   - View< DataType , ArrayLayout , Device  , MemoryTraits >
  */
-
 template< class DataType ,
           class Arg1 ,
           class Arg2 ,
@@ -263,18 +262,16 @@ struct ViewEnableArrayOper<
 
 namespace Kokkos {
 
-/** \brief  View to array of data.
+/** \class View
+ *  \brief View to array of data.
  *
- *  Options for template arguments:
- *
- *    View< DataType , Device >
- *    View< DataType , Device ,        MemoryTraits >
- *    View< DataType , Device , void , MemoryTraits >
- *
- *    View< DataType , Layout , Device >
- *    View< DataType , Layout , Device , MemoryTraits >
+ * Options for template arguments:
+ *   - View< DataType , Device >
+ *   - View< DataType , Device ,        MemoryTraits >
+ *   - View< DataType , Device , void , MemoryTraits >
+ *   - View< DataType , Layout , Device >
+ *   - View< DataType , Layout , Device , MemoryTraits >
  */
-
 template< class DataType ,
           class Arg1Type ,        /* ArrayLayout or DeviceType */
           class Arg2Type = void , /* DeviceType or MemoryTraits */
