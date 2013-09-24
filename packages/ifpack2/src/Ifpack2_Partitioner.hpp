@@ -50,100 +50,95 @@
 
 namespace Ifpack2 {
 
-//! Ifpack2::Partitioner: A class to decompose local Ifpack2::Graph objects.
+//! Ifpack2::Partitioner: 
 
-/*!
+/** \class Partitioner
+    \brief A class to decompose local graphs.
  
-  Class Ifpack2::Partitioner enables the decomposition of a local
-  Ifpack2::Graph. It is supposed that the graph refers to
-  a localized matrix (that is, a matrix that has been filtered
-  through Ifpack2::LocalFilter).
+  Implementations of this class can partition a local graph by rows.
+  This class assumes that the graph is local.  A <i>local</i> graph is
+  one for which, on every process, the column Map contains no entries
+  not in the domain Map on that process.  You may use LocalFilter on
+  the graph of a matrix to make a local graph; it excludes entries in
+  the column Map not in the domain Map.
   
-  The overloaded operator (int i) can be used to extract the local partition
-  ID of local row i.  
+  <tt>operator () (LocalOrdinal i)</tt> returns the local partition
+  index corresponding to local row i of the graph.
   
-  The partitions created by Ifpack2::Partitioner derived clased 
-  are non-overlapping in graph sense. This means that each row
-  (or, more approriately, vertex)
-  of \c G is assigned to exactly one partition.
+  The partitions created by Partitioner implementations are
+  nonoverlapping in the graph sense. This means that each row (or,
+  more approriately, vertex) of \c G is assigned to exactly one
+  partition.  Partitioner can be extended using the functionalities of
+  OverlappingPartitioner (itself derived from Partitioner).  This
+  class extends the nonoverlapping partitions by the required amount
+  of overlap, considering local nodes only (that is, this overlap do
+  <i>not</i> modify the overlap among the processes).
 
-  Partitioner can be extended using the functionalities of class
-  Ifpack2_OverlappingPartitioner (itself derived from Ifpack2_Partitioner.
-  This class extends the non-overlapping partitions by the required
-  amount of overlap, considering local nodes only (that is, this
-  overlap do \e not modify the overlap among the processes).
+  Partitioner is a pure virtual class. Concrete implementations include:
+    - LinearPartitioner, which allows the decomposition of the
+      rows of the graph in simple consecutive chunks;
+    - Zoltan2Partitioner, which calls Zoltan2 to decompose the graph
 
-  Ifpack2::Partitioner is a pure virtual class. Concrete implementations
-  are:
-  - Ifpack2_LinearPartitioner, which allows the decomposition of the
-    rows of the graph in simple consecutive chunks;
-  - Ifpack2_Zoltan2Partitioner, which calls Zoltan2 to decompose the graph
-
-  Generically, a constructor requires a Tpetra::RowGraph object. 
+  The constructor requires a Tpetra::RowGraph instance, representing
+  the graph to decompose.
   
-  <P>An example use of a Ifpack2::Partitioner derived class is as follows:  
+  <P>An example use of a Partitioner derived class is as follows:  
   \code
-#include "Ifpack2_Partitioner.hpp"
 #include "Ifpack2_LinearPartitioner.hpp"
-#include "Ifpack2_Graph.hpp"
-#include "Ifpack2_Graph_Tpetra_CrsGraph.hpp"
-...
-Tpetra_CrsMatrix* A;         // A is filled
-// create the wrapper from Tpetra_CrsGraph
-Ifpack2_Graph* Graph = new Ifpack2_Graph_Tpetra_CrsGraph(A);
+#include "Tpetra_CrsMatrix.hpp"
+// ...
 
-// we aim to create non-overlapping partitions only
-Ifpack2_Partitioner Partitioner(Graph);
+// The matrix A must be fill complete.
+void example (Tpetra::CrsMatrix& A) {
+  using std::cout;
+  using std::endl;
 
-Ifpack2_Partitioner* Partitioner;
-Partitioner = new Ifpack2_Graph_Tpetra_CrsGraph(&A);
+  Ifpack2::LinearPartitioner partitioner (A.getGraph ());
 
-// we want 16 local parts
-List.set("partitioner: local parts", 16);
-// and an overlap of 0 among the local parts (default option)
-List.set("partitioner: overlap", 0);
+  // Set up the partitioner's parameters.
+  // We want 16 local partitions, 
+  // and an overlap of 0 among the local partitions.
+  Teuchos::ParameterList params;
+  params.set ("partitioner: local parts", 16);
+  params.set ("partitioner: overlap", 0);
+  partitioner.setParameters (params);
 
-// decompose the graph
-Partitioner.Create(List);
+  // Partition the graph.
+  partitioner.compute ();
 
-// now Graph can be deleted, as Partitioner contains all the
-// necessary information to use the partitions
-delete Graph;
+  // We can get the number of partitions created on the calling process...
+  const int numParts = partitioner.numLocalParts ();
 
-// we can get the number of parts actually created...
-int NumParts = Partitioner.NumParts();
+  // ... and the number of rows in each of them.
+  for (int i = 0; i < numParts; ++i) {
+    cout << "Number of rows in partition " << i << ": " 
+         << partitioner.numRowsInPart (i) << endl;
+  }  
 
-// ... and the number of rows in each of them
-for (int i = 0 ; i < NumParts ; ++i) {
-  cout << "rows in " << i << "=" << Partitioner.RowsInPart(i);
-}  
-
-// .. and, for non-overlapping partitions only, the partition ID 
-// for each local row simply using:
-for (int i = 0 ; i < A->NumMyRows() ; ++i)
-  cout << "Partition[" << i <<"] = " << Partitioner(i) << endl;
-
-\endcode
-  
-When overlapping partitiones are created, the user can get the 
-row ID contained in each partition as follows:
-\code
-for (int i = 0 ; i < NumParts ; ++i) {
-  for (int j = 0 ; j < Partitioner.RowsInPart(i) ; ++j) {
-    cout << "Partition " << i << ", contains local row "
-         << Partitioner(i,j) << endl;
+  // For nonoverlapping partitions only, we can get
+  // the partition index for each local row, by using
+  // the parentheses operator:
+  const size_t numLocalRows = A.getNodeNumRows ();
+  for (size_t i = 0; i < numLocalRows; ++i) {
+    cout << "Partition[" << i <<"] = " << partitioner(i) << endl;
   }
+}
+\endcode
+  
+When overlapping partitions are created, users can get the local
+indices of the rows in each partition:
+\code
+const int numLocalParts = partitioner.numLocalParts ();
+for (int i = 0; i < numLocalParts; ++i) {
+  cout << "Local rows of Partition " << i << ": [";
+  for (size_t j = 0; j < Partitioner.numRowsInPart (i); ++j) {
+    cout << Partitioner(i,j) << " ";
+  }
+  cout << "]";
 }  
 \endcode
   
-Ifpack2_Partitioner is used to create the subblocks in 
-Ifpack2_BlockJacobi, Ifpack2_BlockGaussSeidel, and 
-Ifpack2_BlockSymGaussSeidel.
-
-\author Michael Heroux, SNL 9214.
-
-\date Last modified on Nov-04.
-
+Partitioner is used to create the subblocks in BlockRelaxation.
 */  
 template <class GraphType>
 class Partitioner : public Teuchos::Describable {
