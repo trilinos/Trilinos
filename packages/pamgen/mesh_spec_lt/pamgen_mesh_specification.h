@@ -137,7 +137,18 @@ class Mesh_Specification
         double * const * getMSPPD(MSPPDA ind)       {return msppda[ind];}
   const double * const * getMSPPD(MSPPDA ind) const {return msppda[ind];}
 
-  static Mesh_Specification * static_storage;
+  static Mesh_Specification * ms_static_storage;
+  static Mesh_Specification * first_ms_static_storage;
+  
+  static void Add_MS(Mesh_Specification * ms){
+    /*set the first pointer if unset*/
+    /*add the new entry to next if there is an im_static_storage*/
+    /*set im_static_storage*/
+    if(!first_ms_static_storage)first_ms_static_storage = ms;
+    if(ms_static_storage)ms_static_storage->next = ms;
+    ms_static_storage = ms;
+  }
+
 
   Mesh_Specification();
   Mesh_Specification( long long pid){
@@ -259,6 +270,8 @@ class Mesh_Specification
     QA_Record*  qa_strings;
 
     bool         suppress_warnings;
+
+    Mesh_Specification * next;
 
     //nem data
     std::string file_type;

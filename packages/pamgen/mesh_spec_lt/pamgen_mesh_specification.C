@@ -9,7 +9,8 @@
 
 namespace ms_lt{
 
-  Mesh_Specification * ms_lt::Mesh_Specification::static_storage = NULL;
+  Mesh_Specification * ms_lt::Mesh_Specification::ms_static_storage = NULL;
+  Mesh_Specification * ms_lt::Mesh_Specification::first_ms_static_storage = NULL;
 
 
 /*****************************************************************************/
@@ -24,6 +25,7 @@ Mesh_Specification::Mesh_Specification()
 Mesh_Specification::~Mesh_Specification() 
 /*****************************************************************************/
 {
+  if(next)delete next;
   Free();
 }
 
@@ -408,6 +410,8 @@ void Mesh_Specification::Zero_Set()
   for(long long i = 0; i < NUM_MSPPA;i ++)msppa[i] = NULL;
   for(long long i = 0; i < NUM_MSPPDA;i ++)msppda[i] = NULL;
   for(long long i = 0; i < NUM_MSPSA;i ++)mspsa[i] = NULL;
+
+  next = NULL;
 
   coord                    = NULL;
   qa_strings               = NULL;
