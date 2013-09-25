@@ -86,7 +86,11 @@ struct performance_test_driver<Scalar,Kokkos::Threads> {
 
     // Just polynomial methods compared against original
     if (test_orig) {
+#ifdef __MIC__
+      nGrid = 32 ;
+#else
       nGrid = 64 ;
+#endif
       nIter = 1 ;
       if (mkl) {
 #ifdef HAVE_STOKHOS_MKL
@@ -102,13 +106,17 @@ struct performance_test_driver<Scalar,Kokkos::Threads> {
         performance_test_driver_poly<Scalar,Device,Stokhos::DefaultSparseMatOps>(
           3 , 1 , 12 , nGrid , nIter , test_block , symmetric );
         performance_test_driver_poly<Scalar,Device,Stokhos::DefaultSparseMatOps>(
-          5 , 1 ,  6 , nGrid , nIter , test_block , symmetric );
+          5 , 1,  6 , nGrid , nIter , test_block , symmetric );
       }
     }
 
     // Just polynomial methods compared against original
     if (test_deg) {
+ #ifdef __MIC__
+      nGrid = 32 ;
+#else
       nGrid = 64 ;
+#endif
       nIter = 1 ;
       if (mkl) {
 #ifdef HAVE_STOKHOS_MKL
@@ -126,7 +134,11 @@ struct performance_test_driver<Scalar,Kokkos::Threads> {
 
     // Just polynomial methods compared against original
     if (test_lin) {
+#ifdef __MIC__
+      nGrid = 32 ;
+#else
       nGrid = 64 ;
+#endif
       nIter = 10 ;
       performance_test_driver_linear<Scalar,Device,Stokhos::DefaultSparseMatOps>(
         31 ,  255 , 32 , nGrid , nIter , test_block , symmetric );
@@ -143,9 +155,11 @@ template <typename Scalar>
 int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
              bool test_block, bool symmetric, bool mkl)
 {
-  const size_t team_count       = Kokkos::hwloc::get_available_numa_count();
-  const size_t threads_per_team = Kokkos::hwloc::get_available_cores_per_numa() *
-                                  Kokkos::hwloc::get_available_threads_per_core();
+  const size_t team_count =
+    Kokkos::hwloc::get_available_numa_count() *
+    Kokkos::hwloc::get_available_cores_per_numa();
+  const size_t threads_per_team =
+    Kokkos::hwloc::get_available_threads_per_core();
 
 #if defined(HAVE_STOKHOS_OPENMP) && defined(HAVE_STOKHOS_MKL)
   // Call a little OpenMP parallel region so that MKL will get the right
