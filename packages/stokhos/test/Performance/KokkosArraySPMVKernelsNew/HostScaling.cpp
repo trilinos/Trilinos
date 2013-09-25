@@ -70,9 +70,9 @@ run_test(const size_t num_cpu, const size_t num_core_per_cpu,
 {
   typedef double Scalar;
   typedef Kokkos::Threads Device;
-  const size_t num_core = num_cpu * num_core_per_cpu;
-  const size_t num_threads_per_cpu = num_core_per_cpu * num_threads_per_core;
-  Kokkos::Threads::initialize( std::make_pair(num_cpu , num_threads_per_cpu) );
+  const size_t team_count = num_cpu * num_core_per_cpu;
+  const size_t threads_per_team = num_threads_per_core;
+  Kokkos::Threads::initialize( team_count , threads_per_team );
 
   std::vector<int> var_degree( d , p );
 
@@ -92,9 +92,9 @@ run_test(const size_t num_cpu, const size_t num_core_per_cpu,
     speed_up = perf1[1] / perf[1];
   else
     speed_up = perf[1] / perf[1];
-  double efficiency = speed_up / num_core;
+  double efficiency = speed_up / team_count;
 
-  std::cout << num_core << " , "
+  std::cout << team_count << " , "
             << nGrid << " , "
             << d << " , "
             << p << " , "
