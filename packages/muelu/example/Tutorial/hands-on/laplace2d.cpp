@@ -99,7 +99,8 @@ int main(int argc, char *argv[]) {
   // =========================================================================
   // Convenient definitions
   // =========================================================================
-  SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
+  //SC zero = Teuchos::ScalarTraits<SC>::zero();
+  SC one = Teuchos::ScalarTraits<SC>::one();
 
   // Instead of checking each time for rank, create a rank 0 stream
   RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
