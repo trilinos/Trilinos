@@ -66,9 +66,11 @@
 template <typename EvalT>
 panzer::BCStrategy_Dirichlet_DefaultImpl<EvalT>::
 BCStrategy_Dirichlet_DefaultImpl(const panzer::BC& bc,
-				 const Teuchos::RCP<panzer::GlobalData>& global_data) :
+				 const Teuchos::RCP<panzer::GlobalData>& global_data,
+				 const bool in_check_apply_bc) :
   panzer::BCStrategy<EvalT>(bc),
-  panzer::GlobalDataAcceptorDefaultImpl(global_data)
+  panzer::GlobalDataAcceptorDefaultImpl(global_data),
+  check_apply_bc(in_check_apply_bc)
 {
 
 }
@@ -150,6 +152,8 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set<int>("Side Subcell Dimension", 
 	       pb.getBaseCellTopology().getDimension() - 1);
     p.set<int>("Local Side ID", pb.cellData().side());
+
+    p.set("Check Apply BC",check_apply_bc);
 
     RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildScatterDirichlet<EvalT>(p);
       // rcp(new panzer::ScatterDirichletResidual_Epetra<EvalT,panzer::Traits>(p));

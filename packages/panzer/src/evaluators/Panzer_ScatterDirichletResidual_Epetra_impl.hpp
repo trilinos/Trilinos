@@ -101,6 +101,15 @@ ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,
     this->addDependentField(scatterFields_[eq]);
   }
 
+  checkApplyBC_ = p.get<bool>("Check Apply BC");
+  if (checkApplyBC_) {
+    applyBC_.resize(names.size());
+    for (std::size_t eq = 0; eq < names.size(); ++eq) {
+      applyBC_[eq] = PHX::MDField<bool,Cell,NODE>(std::string("APPLY_BC_")+fieldMap_->find(names[eq])->second,dl);
+      this->addDependentField(applyBC_[eq]);
+    }
+  }
+
   // this is what this evaluator provides
   this->addEvaluatedField(*scatterHolder_);
 
@@ -127,6 +136,9 @@ postRegistrationSetup(typename Traits::SetupData d,
 
     // fill field data object
     this->utils.setFieldData(scatterFields_[fd],fm);
+
+    if (checkApplyBC_)
+      this->utils.setFieldData(applyBC_[fd],fm);
   }
 
   // get the number of nodes (Should be renamed basis)
@@ -206,12 +218,17 @@ evaluateFields(typename Traits::EvalData workset)
             if(lid<0) // not on this processor!
                continue;
 
-            int basisId = basisIdMap[basis];
-            (*r)[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
+	    int basisId = basisIdMap[basis];
 
-            // record that you set a dirichlet condition
-            if(dirichletCounter_!=Teuchos::null)
-              (*dirichletCounter_)[lid] = 1.0;
+	    if (checkApplyBC_)
+	      if (!applyBC_[fieldIndex](worksetCellIndex,basisId))
+		continue;
+
+	    (*r)[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
+	    
+	    // record that you set a dirichlet condition
+	    if(dirichletCounter_!=Teuchos::null)
+	      (*dirichletCounter_)[lid] = 1.0; 
          }
       }
    }
@@ -256,6 +273,15 @@ ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,
     this->addDependentField(scatterFields_[eq]);
   }
 
+  checkApplyBC_ = p.get<bool>("Check Apply BC");
+  if (checkApplyBC_) {
+    applyBC_.resize(names.size());
+    for (std::size_t eq = 0; eq < names.size(); ++eq) {
+      applyBC_[eq] = PHX::MDField<bool,Cell,NODE>(std::string("APPLY_BC_")+fieldMap_->find(names[eq])->second,dl);
+      this->addDependentField(applyBC_[eq]);
+    }
+  }
+
   // this is what this evaluator provides
   this->addEvaluatedField(*scatterHolder_);
 
@@ -282,6 +308,9 @@ postRegistrationSetup(typename Traits::SetupData d,
 
     // fill field data object
     this->utils.setFieldData(scatterFields_[fd],fm);
+
+    if (checkApplyBC_)
+      this->utils.setFieldData(applyBC_[fd],fm);
   }
 
   // get the number of nodes (Should be renamed basis)
@@ -375,21 +404,26 @@ evaluateFields(typename Traits::EvalData workset)
                continue;
 
             int basisId = basisIdMap[basis];
+
+	    if (checkApplyBC_)
+	      if (!applyBC_[fieldIndex](worksetCellIndex,basisId))
+		continue;
+
             ScalarT value = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
             // (*r)[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId).val();
 
-            // then scatter the sensitivity vectors
-            if(value.size()==0) 
-               for(std::size_t d=0;d<dfdp_vectors_.size();d++)
-                 (*dfdp_vectors_[d])[lid] = 0.0;
-            else
-               for(int d=0;d<value.size();d++) {
-                 (*dfdp_vectors_[d])[lid] = value.fastAccessDx(d);
-               }
-
-            // record that you set a dirichlet condition
-            if(dirichletCounter_!=Teuchos::null)
-              (*dirichletCounter_)[lid] = 1.0;
+	    // then scatter the sensitivity vectors
+	    if(value.size()==0) 
+	      for(std::size_t d=0;d<dfdp_vectors_.size();d++)
+		(*dfdp_vectors_[d])[lid] = 0.0;
+	    else
+	      for(int d=0;d<value.size();d++) {
+		(*dfdp_vectors_[d])[lid] = value.fastAccessDx(d);
+	      }
+	    
+	    // record that you set a dirichlet condition
+	    if(dirichletCounter_!=Teuchos::null)
+	      (*dirichletCounter_)[lid] = 1.0;
          }
       }
    }
@@ -433,6 +467,15 @@ ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,
     this->addDependentField(scatterFields_[eq]);
   }
 
+  checkApplyBC_ = p.get<bool>("Check Apply BC");
+  if (checkApplyBC_) {
+    applyBC_.resize(names.size());
+    for (std::size_t eq = 0; eq < names.size(); ++eq) {
+      applyBC_[eq] = PHX::MDField<bool,Cell,NODE>(std::string("APPLY_BC_")+fieldMap_->find(names[eq])->second,dl);
+      this->addDependentField(applyBC_[eq]);
+    }
+  }
+
   // this is what this evaluator provides
   this->addEvaluatedField(*scatterHolder_);
 
@@ -460,6 +503,9 @@ postRegistrationSetup(typename Traits::SetupData d,
 
     // fill field data object
     this->utils.setFieldData(scatterFields_[fd],fm);
+
+    if (checkApplyBC_)
+      this->utils.setFieldData(applyBC_[fd],fm);
   }
 
   // get the number of nodes (Should be renamed basis)
@@ -550,8 +596,14 @@ evaluateFields(typename Traits::EvalData workset)
             if(lid<0) // not on this processor
                continue;
 
+            int basisId = basisIdMap[basis];
+
+	    if (checkApplyBC_)
+	      if (!applyBC_[fieldIndex](worksetCellIndex,basisId))
+		continue;
+
             // zero out matrix row
-            {
+	    {
                int numEntries = 0;
                int * rowIndices = 0;
                double * rowValues = 0;
@@ -568,27 +620,26 @@ evaluateFields(typename Traits::EvalData workset)
                }
             }
  
-            int basisId = basisIdMap[basis];
             int gid = GIDs[offset];
             const ScalarT & scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
-          
-            if(r!=Teuchos::null) 
-              (*r)[lid] = scatterField.val();
-            if(dirichletCounter_!=Teuchos::null)
-              (*dirichletCounter_)[lid] = 1.0; // mark row as dirichlet
-    
+
+	    if(r!=Teuchos::null) 
+	      (*r)[lid] = scatterField.val();
+	    if(dirichletCounter_!=Teuchos::null)
+	      (*dirichletCounter_)[lid] = 1.0; // mark row as dirichlet
+
             // loop over the sensitivity indices: all DOFs on a cell
             std::vector<double> jacRow(scatterField.size(),0.0);
     
             if(!preserveDiagonal_) {
-              // this is the default case
-              for(int sensIndex=0;sensIndex<scatterField.size();++sensIndex)
-                 jacRow[sensIndex] = scatterField.fastAccessDx(sensIndex);
-              TEUCHOS_ASSERT(jacRow.size()==GIDs.size());
-    
-              int err = Jac->ReplaceGlobalValues(gid, scatterField.size(), &jacRow[0],&GIDs[0]);
-              TEUCHOS_ASSERT(err==0); 
-            }
+	      // this is the default case
+	      for(int sensIndex=0;sensIndex<scatterField.size();++sensIndex)
+		jacRow[sensIndex] = scatterField.fastAccessDx(sensIndex);
+	      TEUCHOS_ASSERT(jacRow.size()==GIDs.size());
+		
+	      int err = Jac->ReplaceGlobalValues(gid, scatterField.size(), &jacRow[0],&GIDs[0]);
+	      TEUCHOS_ASSERT(err==0); 
+	    }
          }
       }
    }

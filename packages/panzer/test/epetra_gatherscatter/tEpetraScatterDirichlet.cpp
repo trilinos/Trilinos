@@ -97,6 +97,7 @@ TEUCHOS_UNIT_TEST(tEpetraScatter, constructor)
    scatterParams.set<RCP<panzer::PureBasis> >("Basis",basis);
    scatterParams.set<int>("Side Subcell Dimension",1);
    scatterParams.set<int>("Local Side ID",2);
+   scatterParams.set<bool>("Check Apply BC",false);
 
    // test residual scatter evaluator
    {

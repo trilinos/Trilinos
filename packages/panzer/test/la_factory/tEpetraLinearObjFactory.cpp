@@ -276,6 +276,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
       scatterDirichletParams.set<RCP<panzer::PureBasis> >("Basis",basis);
       scatterDirichletParams.set<int>("Side Subcell Dimension",1);
       scatterDirichletParams.set<int>("Local Side ID",2);
+      scatterDirichletParams.set("Check Apply BC",false);
    }
 
    // Evaluator construction tests
