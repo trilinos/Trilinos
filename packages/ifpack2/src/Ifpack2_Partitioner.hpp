@@ -54,46 +54,82 @@ namespace Ifpack2 {
 
 /** \class Partitioner
     \brief A class to decompose local graphs.
+
+  \section Ifpack2_Partitioner_Summary Summary
+
+  Most Ifpack2 users will not need to create or use a Partitioner
+  instance, or write a Partitioner subclass.  However, those
+  implementing their own block relaxation algorithms may need to
+  interact with Partitioner or write their own subclass thereof.
+  Ifpack2's main application of this class is in BlockRelaxation.
+  Partitioner defines the diagonal blocks of the matrix that
+  BlockRelaxation uses.  BlockRelaxation creates a Partitioner
+  subclass instance internally.
  
-  Implementations of this class can partition a local graph by rows.
-  This class assumes that the graph is local.  A <i>local</i> graph is
-  one for which, on every process, the column Map contains no entries
-  not in the domain Map on that process.  You may use LocalFilter on
-  the graph of a matrix to make a local graph; it excludes entries in
-  the column Map not in the domain Map.
-  
-  <tt>operator () (LocalOrdinal i)</tt> returns the local partition
-  index corresponding to local row i of the graph.
+  \section Ifpack2_Partitioner_Partitions Partitions
+
+  A Partitioner instance can partition a local graph by rows.  A
+  <i>local</i> graph is one for which, on every process, the column
+  Map contains no entries not in the domain Map on that process.  You
+  may use LocalFilter on the graph of a matrix to make a local graph;
+  it excludes entries in the column Map not in the domain Map.  This
+  class assumes that the graph is local.
   
   The partitions created by Partitioner implementations are
-  nonoverlapping in the graph sense. This means that each row (or,
-  more approriately, vertex) of \c G is assigned to exactly one
-  partition.  Partitioner can be extended using the functionalities of
-  OverlappingPartitioner (itself derived from Partitioner).  This
-  class extends the nonoverlapping partitions by the required amount
-  of overlap, considering local nodes only (that is, this overlap do
-  <i>not</i> modify the overlap among the processes).
-
-  Partitioner is a pure virtual class. Concrete implementations include:
-    - LinearPartitioner, which allows the decomposition of the
-      rows of the graph in simple consecutive chunks;
-    - Zoltan2Partitioner, which calls Zoltan2 to decompose the graph
-
-  The constructor requires a Tpetra::RowGraph instance, representing
-  the graph to decompose.
+  <i>nonoverlapping</i> in the graph sense. This means that each row
+  (or, more appropriately, vertex) of the graph belongs to at most one
+  partition.  Furthermore, these nonoverlapping partitions are
+  <i>local</i>: partitions do not cross process boundaries.
   
-  <P>An example use of a Partitioner derived class is as follows:  
+  <tt>operator () (LocalOrdinal i)</tt> returns the local partition
+  index corresponding to local row i of the graph.  The above implies
+  that the local partition index is unique.
+
+  \section Ifpack2_Partitioner_OverlappingPartitions Overlapping decomposition
+
+  The OverlappingPartitioner subclass extends the nonoverlapping
+  partitions by the required amount of overlap, considering local
+  vertices only.  That is, this overlap does <i>not</i> modify the
+  overlap among the processes.  (The mathematical definition of
+  "partition" does not allow overlap, but we accept this as a useful
+  extension.)
+
+  \section Ifpack2_Partitioner_Subclasses Subclasses of Partitioner
+
+  Partitioner is just an interface; it does not implement any
+  fucntionality.  You cannot create an instance of Partitioner; you
+  must instantiate a concrete implementation thereof.  Concrete
+  implementations include:
+    - LinearPartitioner, which partitions the graph into contiguous
+      row blocks
+    - Zoltan2Partitioner, which calls Zoltan2 to partition the graph
+
+  The constructor takes a Tpetra::RowGraph instance, which is the
+  graph to partition.
+
+  \section Ifpack2_Partitioner_Example Example code
+
+  The following example code shows how to use LinearPartitioner, a
+  subclass of Partitioner.  Note that most Ifpack2 users will
+  <i>not</i> need to create or interact with Partitioner instances.
+  We only show this example for the sake of developers who might need
+  to implement or use Preconditioner subclasses, and want an example
+  of a Partitioner "in action."
+
   \code
 #include "Ifpack2_LinearPartitioner.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 // ...
 
 // The matrix A must be fill complete.
-void example (Tpetra::CrsMatrix& A) {
+void example (Tpetra::CrsMatrix<double, int>& A) {
   using std::cout;
   using std::endl;
+  typedef Tpetra::CrsGraph<int> graph_type;
+  typedef Ifpack2::LinearPartitioner<graph_type> partitioner_type;
 
-  Ifpack2::LinearPartitioner partitioner (A.getGraph ());
+  // Create the partitioner.
+  partitioner_type partitioner (A.getGraph ());
 
   // Set up the partitioner's parameters.
   // We want 16 local partitions, 
@@ -103,21 +139,22 @@ void example (Tpetra::CrsMatrix& A) {
   params.set ("partitioner: overlap", 0);
   partitioner.setParameters (params);
 
-  // Partition the graph.
+  // Partition the graph.  If the structure of the 
+  // graph changes, you must call compute() again,
+  // but you need not call setParameters() again.
   partitioner.compute ();
 
-  // We can get the number of partitions created on the calling process...
+  // Get the number of partitions created on the calling process.
   const int numParts = partitioner.numLocalParts ();
 
-  // ... and the number of rows in each of them.
+  // Get the number of rows in each partition.
   for (int i = 0; i < numParts; ++i) {
     cout << "Number of rows in partition " << i << ": " 
          << partitioner.numRowsInPart (i) << endl;
   }  
 
-  // For nonoverlapping partitions only, we can get
-  // the partition index for each local row, by using
-  // the parentheses operator:
+  // For nonoverlapping partitions only, operator()(i)
+  // returns the partition index for each local row.
   const size_t numLocalRows = A.getNodeNumRows ();
   for (size_t i = 0; i < numLocalRows; ++i) {
     cout << "Partition[" << i <<"] = " << partitioner(i) << endl;
@@ -131,14 +168,12 @@ indices of the rows in each partition:
 const int numLocalParts = partitioner.numLocalParts ();
 for (int i = 0; i < numLocalParts; ++i) {
   cout << "Local rows of Partition " << i << ": [";
-  for (size_t j = 0; j < Partitioner.numRowsInPart (i); ++j) {
-    cout << Partitioner(i,j) << " ";
+  for (size_t j = 0; j < partitioner.numRowsInPart (i); ++j) {
+    cout << partitioner(i,j) << " ";
   }
   cout << "]";
 }  
 \endcode
-  
-Partitioner is used to create the subblocks in BlockRelaxation.
 */  
 template <class GraphType>
 class Partitioner : public Teuchos::Describable {
