@@ -87,3 +87,5 @@ const std::string PHX::TypeString<panzer::Traits::Derivative>::value = "Derivati
    const std::string PHX::TypeString<panzer::Traits::SGFadType>::value = "Sacado::Fad::DFad<SGType>";
 
 #endif
+
+const std::string PHX::TypeString<bool>::value = "bool";
