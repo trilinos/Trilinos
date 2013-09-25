@@ -103,8 +103,16 @@ struct performance_test_driver<Scalar,Kokkos::Threads> {
 #endif
       }
       else {
+        // Something funny happens when we go to larger problem sizes on the
+        // MIC where it appears to slow down subsequent calculations (i.e.,
+        // the degree 5 cases will run slower).  Maybe it is getting too hot?
+#ifdef __MIC__
+        performance_test_driver_poly<Scalar,Device,Stokhos::DefaultSparseMatOps>(
+          3 , 1 , 9 , nGrid , nIter , test_block , symmetric );
+#else
         performance_test_driver_poly<Scalar,Device,Stokhos::DefaultSparseMatOps>(
           3 , 1 , 12 , nGrid , nIter , test_block , symmetric );
+#endif
         performance_test_driver_poly<Scalar,Device,Stokhos::DefaultSparseMatOps>(
           5 , 1,  6 , nGrid , nIter , test_block , symmetric );
       }

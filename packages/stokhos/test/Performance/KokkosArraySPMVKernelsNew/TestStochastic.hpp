@@ -1224,10 +1224,8 @@ void performance_test_driver_poly( const int pdeg ,
             << "\"Original-Matrix-Free-Block-MXV-GFLOPS\" , "
             << "\"Block-Crs-Tensor MXV-Speedup\" , "
             << "\"Block-Crs-Tensor MXV-GFLOPS\" , "
-#ifndef __MIC__
             << "\"Block-Coo-Tensor MXV-Speedup\" , "
             << "\"Block-Coo-Tensor MXV-GFLOPS\" , "
-#endif
             // << "\"Block-Tiled Crs-Tensor MXV-Speedup\" , "
             // << "\"Block-Tiled Crs-3-Tensor MXV-GFLOPS\" , "
             << std::endl ;
@@ -1239,12 +1237,10 @@ void performance_test_driver_poly( const int pdeg ,
       test_product_tensor_matrix<Scalar,Stokhos::CrsProductTensor<Scalar,Device>,Device>(
         var_degree , nGrid , nIter , symmetric );
 
-#ifndef __MIC__
     const bool Pack = Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value;
     const std::vector<double> perf_coo_tensor =
       test_product_tensor_matrix<Scalar,Stokhos::CooProductTensor<Scalar,Device,Pack>,Device>(
         var_degree , nGrid , nIter , symmetric );
-#endif
 
     // const std::vector<double> perf_tiled_crs_tensor =
     //   test_tiled_product_tensor_matrix<Scalar,Device>(
@@ -1266,10 +1262,8 @@ void performance_test_driver_poly( const int pdeg ,
               << perf_original_mat_free_block[2] << " , "
               << perf_original_mat_free_block[1] / perf_crs_tensor[1] << " , "
               << perf_crs_tensor[2] << " , "
-#ifndef __MIC__
               << perf_original_mat_free_block[1] / perf_coo_tensor[1] << " , "
               << perf_coo_tensor[2] << " , "
-#endif
               // << perf_original_mat_free_block[1] / perf_tiled_crs_tensor[1] << " , "
               // << perf_tiled_crs_tensor[2]
               << std::endl ;

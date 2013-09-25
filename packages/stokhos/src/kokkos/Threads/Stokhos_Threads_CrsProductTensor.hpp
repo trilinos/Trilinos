@@ -456,6 +456,9 @@ public:
         y[iy] += ytmp ;
       }
 
+      // Add a team barrier to keep the thread team in-sync before going on
+      // to the next block
+      device.team_barrier();
     }
 
   }
@@ -565,6 +568,9 @@ public:
         y[iy] += ytmp ;
       }
 
+      // Add a team barrier to keep the thread team in-sync before going on
+      // to the next block
+      device.team_barrier();
     }
 
   }
@@ -590,7 +596,7 @@ public:
       typedef typename matrix_type::device_type device_type;
       const size_t team_size = device_type::team_max();
       const size_t league_size = row_count;
-      Kokkos::ParallelWorkRequest config(league_size, team_size, 0);
+      Kokkos::ParallelWorkRequest config(league_size, team_size);
       Kokkos::parallel_for( config , Multiply(A,x,y) );
     }
     else {
