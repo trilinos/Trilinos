@@ -157,7 +157,6 @@ void * CudaSpace::allocate(
     try {
       CUDA_SAFE_CALL( cudaDeviceSynchronize() );
       CUDA_SAFE_CALL( cudaMalloc( (void**) &ptr, size) );
-      //CUDA_SAFE_CALL( cudaMemset( ptr, 0, size ) );
       CUDA_SAFE_CALL( cudaThreadSynchronize() );
     }
     catch( std::runtime_error & err) {

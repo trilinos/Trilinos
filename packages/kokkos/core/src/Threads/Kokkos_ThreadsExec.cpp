@@ -583,8 +583,9 @@ void ThreadsExec::print_configuration( std::ostream & s , const bool detail )
 
   fence();
 
-  const std::pair<unsigned,unsigned> core_topo = Kokkos::hwloc::get_core_topology();
-  const unsigned core_size = Kokkos::hwloc::get_core_capacity();
+  const unsigned numa_count       = Kokkos::hwloc::get_available_numa_count();
+  const unsigned cores_per_numa   = Kokkos::hwloc::get_available_cores_per_numa();
+  const unsigned threads_per_core = Kokkos::hwloc::get_available_threads_per_core();
 
 #if defined( KOKKOS_HAVE_HWLOC )
   s << "macro  KOKKOS_HAVE_HWLOC   : defined" << std::endl ;
@@ -593,7 +594,7 @@ void ThreadsExec::print_configuration( std::ostream & s , const bool detail )
   s << "macro  KOKKOS_HAVE_PTHREAD : defined" << std::endl ;
 #endif
 
-  s << "Kokkos::Threads hwloc[" << core_topo.first << "x" << core_topo.second << "x" << core_size << "]" ;
+  s << "Kokkos::Threads hwloc[" << numa_count << "x" << cores_per_numa << "x" << threads_per_core << "]" ;
 
   if ( s_threads_exec[0] ) {
     s << " team_league[" << s_threads_exec[0]->m_init_league_size << "x" << s_threads_exec[0]->m_team_size << "]" ;
@@ -672,51 +673,56 @@ void ThreadsExec::initialize(
   //------------------------------------
   // Query hardware topology and capacity, if available.
 
-  const bool                         hwloc_avail  = Kokkos::hwloc::available();
-  const std::pair<unsigned,unsigned> core_topo    = Kokkos::hwloc::get_core_topology();
-  const unsigned                     core_cap     = Kokkos::hwloc::get_core_capacity();
-  const unsigned                     capacity     = hwloc_avail ? core_topo.first * core_topo.second * core_cap : 0 ;
-        std::pair<unsigned,unsigned> master_coord = Kokkos::hwloc::get_this_thread_coordinate();
-        bool                         asynchronous = false ;
+  const bool     hwloc_avail            = Kokkos::hwloc::available();
+  const unsigned hwloc_numa_count       = Kokkos::hwloc::get_available_numa_count();
+  const unsigned hwloc_cores_per_numa   = Kokkos::hwloc::get_available_cores_per_numa();
+  const unsigned hwloc_threads_per_core = Kokkos::hwloc::get_available_threads_per_core();
+  const unsigned hwloc_capacity         = hwloc_avail ? hwloc_numa_count * hwloc_cores_per_numa * hwloc_threads_per_core : 1 ;
+
+  std::pair<unsigned,unsigned> master_coord = Kokkos::hwloc::get_this_thread_coordinate();
+  bool                         asynchronous = false ;
 
   //------------------------------------
   // Use HWLOC to determine coordinates for pinning threads.
 
   if ( hwloc_avail ) {
 
-    if ( capacity         < thread_count ||
-         core_topo.first  < use_core_topology.first ||
-         core_topo.second < use_core_topology.second ) {
+    if ( hwloc_capacity       < thread_count ||
+         hwloc_numa_count     < use_core_topology.first ||
+         hwloc_cores_per_numa < use_core_topology.second ) {
       msg << " FAILED : Requested more cores or threads than HWLOC reports are available "
-          << " core_topology(" << core_topo.first << "," << core_topo.second << ")"
-          << " thread_capacity(" << capacity << ")" ;
+          << " numa_count(" << hwloc_numa_count << ") , cores_per_numa(" << hwloc_cores_per_numa << ")"
+          << " capacity(" << hwloc_capacity << ")" ;
       Kokkos::Impl::throw_runtime_exception( msg.str() );
     }
+
+    const std::pair<unsigned,unsigned> core_topo( hwloc_numa_count , hwloc_cores_per_numa );
 
     if ( 0 == use_core_topology.first || 0 == use_core_topology.second ) {
       // User requested that we determine best use of cores.
 
       // Start by assuming use of all available cores
-      use_core_topology = core_topo ;
+      use_core_topology.first  = hwloc_numa_count ;
+      use_core_topology.second = hwloc_cores_per_numa ;
 
-      if ( thread_count <= ( core_topo.first - 1 ) * core_topo.second ) {
+      if ( thread_count <= ( hwloc_numa_count - 1 ) * hwloc_cores_per_numa ) {
         // Can spawn all requested threads on their own (NUMA) group of cores,
         // can execute asynchronously.
         --use_core_topology.first ;
       }
-      else if ( thread_count <= core_topo.first * ( core_topo.second - 1 ) ) {
+      else if ( thread_count <= hwloc_numa_count * ( hwloc_cores_per_numa - 1 ) ) {
         // Can spawn all requested threads on their own core and have excess core,
         // can execute asynchronously.
         --use_core_topology.second ;
       }
-      else if ( core_topo.first * core_topo.second < thread_count &&
-                thread_count <= core_topo.first * ( core_topo.second - 1 ) * core_cap ) {
+      else if ( hwloc_numa_count * hwloc_cores_per_numa < thread_count &&
+                thread_count <= hwloc_numa_count * ( hwloc_cores_per_numa - 1 ) * hwloc_threads_per_core ) {
         // Will oversubscribe cores and can omit one core
         --use_core_topology.second ;
       }
     }
 
-    if ( use_core_topology.first < core_topo.first ) {
+    if ( use_core_topology.first < hwloc_numa_count ) {
       // Can omit a (NUMA) group of cores and execute work asynchronously
       // on the other groups.
 
@@ -736,7 +742,7 @@ void ThreadsExec::initialize(
 
       asynchronous = true ;
     }
-    else if ( use_core_topology.second < core_topo.second ) {
+    else if ( use_core_topology.second < hwloc_cores_per_numa ) {
       // Can omit a core from each group and execute work asynchronously
 
       Kokkos::Impl::host_thread_mapping( team_topology , use_core_topology , core_topo , s_threads_coord );

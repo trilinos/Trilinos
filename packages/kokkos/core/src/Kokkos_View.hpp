@@ -78,17 +78,16 @@ struct ViewAssignment ;
 
 namespace Kokkos {
 
-/** \brief  ViewTraits
+/** \class ViewTraits
+ *  \brief Traits class for accessing attributes of a View.
  *
- *  Template argument permutations:
- *
- *    View< DataType , Device , void         , void >
- *    View< DataType , Device , MemoryTraits , void >
- *    View< DataType , Device , void         , MemoryTraits >
- *    View< DataType , ArrayLayout , Device  , void >
- *    View< DataType , ArrayLayout , Device  , MemoryTraits >
+ * Template argument permutations:
+ *   - View< DataType , Device , void         , void >
+ *   - View< DataType , Device , MemoryTraits , void >
+ *   - View< DataType , Device , void         , MemoryTraits >
+ *   - View< DataType , ArrayLayout , Device  , void >
+ *   - View< DataType , ArrayLayout , Device  , MemoryTraits >
  */
-
 template< class DataType ,
           class Arg1 ,
           class Arg2 ,
@@ -263,18 +262,18 @@ struct ViewEnableArrayOper<
 
 namespace Kokkos {
 
-/** \brief  View to array of data.
- *
- *  Options for template arguments:
- *
- *    View< DataType , Device >
- *    View< DataType , Device ,        MemoryTraits >
- *    View< DataType , Device , void , MemoryTraits >
- *
- *    View< DataType , Layout , Device >
- *    View< DataType , Layout , Device , MemoryTraits >
- */
+struct allocate_without_initializing {};
 
+/** \class View
+ *  \brief View to array of data.
+ *
+ * Options for template arguments:
+ *   - View< DataType , Device >
+ *   - View< DataType , Device ,        MemoryTraits >
+ *   - View< DataType , Device , void , MemoryTraits >
+ *   - View< DataType , Layout , Device >
+ *   - View< DataType , Layout , Device , MemoryTraits >
+ */
 template< class DataType ,
           class Arg1Type ,        /* ArrayLayout or DeviceType */
           class Arg2Type = void , /* DeviceType or MemoryTraits */
@@ -282,8 +281,6 @@ template< class DataType ,
           class Specialize =
             typename ViewTraits<DataType,Arg1Type,Arg2Type,Arg3Type>::specialize >
 class View ;
-
-
 
 template< class DataType ,
           class Arg1Type ,
@@ -450,6 +447,34 @@ public:
                                 Impl::capacity( m_shape , m_stride ) );
 
       Impl::ViewInitialize< device_type > init( *this );
+    }
+
+  explicit inline
+  View( const allocate_without_initializing & ,
+        const typename if_allocation_constructor::type & label ,
+        const size_t n0 = 0 ,
+        const size_t n1 = 0 ,
+        const size_t n2 = 0 ,
+        const size_t n3 = 0 ,
+        const size_t n4 = 0 ,
+        const size_t n5 = 0 ,
+        const size_t n6 = 0 ,
+        const size_t n7 = 0 )
+    : m_ptr_on_device(0)
+    {
+      typedef typename traits::device_type   device_type ;
+      typedef typename traits::memory_space  memory_space ;
+      typedef typename traits::shape_type    shape_type ;
+      typedef typename traits::scalar_type   scalar_type ;
+
+      shape_type ::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
+      stride_type::assign_with_padding( m_stride , m_shape );
+
+      m_ptr_on_device = (scalar_type *)
+        memory_space::allocate( if_allocation_constructor::select( label ) ,
+                                typeid(scalar_type) ,
+                                sizeof(scalar_type) ,
+                                Impl::capacity( m_shape , m_stride ) );
     }
 
   //------------------------------------

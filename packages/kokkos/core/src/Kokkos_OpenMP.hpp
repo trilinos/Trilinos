@@ -98,13 +98,10 @@ public:
    *  2) Allocate a HostThread for each OpenMP thread to hold its
    *     topology and fan in/out data.
    */
-  static void initialize( const unsigned gang_count = 1 ,
-                          const unsigned worker_per_gang = 0 );
-
-
-  static void initialize( const std::pair<unsigned,unsigned> gang_topo ,
-                          const std::pair<unsigned,unsigned> core_use =
-                                std::make_pair (0u, 0u) );
+  static void initialize( const unsigned team_count         = 1 ,
+                          const unsigned threads_per_team   = 0 ,
+                          const unsigned use_numa_count     = 0 ,
+                          const unsigned use_cores_per_numa = 0 );
 
   //------------------------------------
 

@@ -32,7 +32,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(laplace2d_cp
-  SOURCE_FILES hands-on.sh MueLu_Agg2VTK.py xml/s2a.xml xml/s2b.xml xml/s4a.xml
+  SOURCE_FILES hands-on.sh MueLu_Agg2VTK.py xml/s2a.xml xml/s2b.xml xml/s4a.xml xml/s4b.xml xml/s4c.xml xml/s5a.xml
   )
   
 TRIBITS_ADD_EXECUTABLE_AND_TEST(

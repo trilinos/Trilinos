@@ -31,6 +31,7 @@ touch $DAKOTA_DIR/src/CMakeLists.txt
 echo "add_subdirectory(src)" > $DAKOTA_DIR/CMakeLists.txt
 
 cmake \
+-DTrilinos_ENABLE_CPACK_PACKAGING=ON \
 -D TPL_ENABLE_MPI=ON \
   -D MPI_BASE_DIR:PATH=/home/trilinos/bin \
 -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \

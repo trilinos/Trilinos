@@ -488,15 +488,12 @@ int main( int argc, char* argv[] ) {
   setup.setup();
 
   // Initialize threads
-  const std::pair<unsigned,unsigned> core_topo =
-    Kokkos::hwloc::get_core_topology();
-  const size_t core_capacity = Kokkos::hwloc::get_core_capacity();
-  const size_t gang_count = core_topo.first;
-  const size_t gang_worker_count = core_topo.second * core_capacity;
-  // const size_t gang_count = 1 ;
-  // const size_t gang_worker_count = 1;
-  Kokkos::Threads::initialize( std::make_pair(gang_count , gang_worker_count),
-                               core_topo );
+  const size_t team_count       = Kokkos::hwloc::get_available_numa_count();
+  const size_t threads_per_team = Kokkos::hwloc::get_available_cores_per_numa();
+                                  Kokkos::hwloc::get_available_threads_per_core();
+  // const size_t team_count       = 1 ;
+  // const size_t threads_per_team = 1 ;
+  Kokkos::Threads::initialize( team_count , threads_per_team );
   Kokkos::Threads::print_configuration( std::cout );
 
 #ifdef KOKKOS_HAVE_CUDA
