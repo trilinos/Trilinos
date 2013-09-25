@@ -656,8 +656,11 @@ std::pair<unsigned,unsigned> get_this_thread_coordinate()
 namespace Kokkos {
 namespace hwloc {
 
-bool available()
-{ return false ; }
+bool available() { return false ; }
+
+unsigned get_available_numa_count() { return 1 ; }
+unsigned get_available_cores_per_numa() { return 1 ; }
+unsigned get_available_threads_per_core() { return 1 ; }
 
 unsigned bind_this_thread( const unsigned , std::pair<unsigned,unsigned>[] )
 { return ~0 ; }
