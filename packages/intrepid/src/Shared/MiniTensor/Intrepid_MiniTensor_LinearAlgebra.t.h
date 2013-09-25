@@ -689,7 +689,7 @@ log_gregory(Tensor<T, N> const & A)
   Index
   k = 1;
 
-  while (relative_error > tol && k <= max_iter) {
+  while (relative_error > tol && k <= max_iter + 1) {
     term = static_cast<T>((2 * k - 1.0) / (2 * k + 1.0)) * term * C;
     B = B + term;
     norm_term = norm_1(term);
@@ -953,9 +953,8 @@ gaussian_elimination(Tensor<T, N> const & A)
   return U;
 }
 
+//
 // Apply Givens-Jacobi rotation on the left in place.
-// \param c and s for a rotation G in form [c, s; -s, c]
-// \param A
 //
 template<typename T, Index N>
 void
@@ -973,9 +972,8 @@ givens_left(T const & c, T const & s, Index i, Index k, Tensor<T, N> & A)
   return;
 }
 
+//
 // Apply Givens-Jacobi rotation on the right in place.
-// \param A
-// \param c and s for a rotation G in form [c, s; -s, c]
 //
 template<typename T, Index N>
 void
@@ -993,10 +991,30 @@ givens_right(T const & c, T const & s, Index i, Index k, Tensor<T, N> & A)
   return;
 }
 
+///
+/// Apply rank-one update on the left in place
+///
+template<typename T, Index N>
+void
+rank_one_left(T const & beta, Vector<T, N> const & v, Tensor<T, N> & A)
+{
+  A -= beta * dyad(v, dot(v, A));
+  return;
+}
+
+///
+/// Apply rank-one update on the right in place
+///
+template<typename T, Index N>
+void
+rank_one_right(T const & beta, Vector<T, N> const & v, Tensor<T, N> & A)
+{
+  A -= beta * dyad(dot(A, v), v);
+  return;
+}
+
 //
 // R^N exponential map of a skew-symmetric tensor.
-// \param r \f$ r \in so(N) \f$
-// \return \f$ R = \exp R \f$ with \f$ R \in SO(N) \f$
 //
 template<typename T, Index N>
 Tensor<T, N>

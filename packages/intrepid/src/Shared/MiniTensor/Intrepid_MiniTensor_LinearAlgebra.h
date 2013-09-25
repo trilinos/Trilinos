@@ -231,6 +231,7 @@ template<typename T, Index N>
 Tensor<T, N>
 log_rotation_pi(Tensor<T, N> const & R);
 
+///
 /// Gaussian Elimination with partial pivot
 /// \return \f$ xvec \f$
 ///
@@ -238,6 +239,7 @@ template<typename T, Index N>
 Tensor<T, N>
 gaussian_elimination(Tensor<T, N> const & A);
 
+///
 /// Apply Givens-Jacobi rotation on the left in place.
 /// \param c and s for a rotation G in form [c, s; -s, c]
 /// \param i and k indices for rows and columns where rotation is applied.
@@ -247,6 +249,7 @@ template<typename T, Index N>
 void
 givens_left(T const & c, T const & s, Index i, Index k, Tensor<T, N> & A);
 
+///
 /// Apply Givens-Jacobi rotation on the right in place.
 /// \param c and s for a rotation G in form [c, s; -s, c]
 /// \param i and k indices for rows and columns where rotation is applied.
@@ -255,6 +258,22 @@ givens_left(T const & c, T const & s, Index i, Index k, Tensor<T, N> & A);
 template<typename T, Index N>
 void
 givens_right(T const & c, T const & s, Index i, Index k, Tensor<T, N> & A);
+
+///
+/// Apply rank-one update on the left in place
+/// \f$ A = (I - beta v v^T) A \f$
+///
+template<typename T, Index N>
+void
+rank_one_left(T const & beta, Vector<T, N> const & v, Tensor<T, N> & A);
+
+///
+/// Apply rank-one update on the right in place
+/// \f$ A = A (I - beta v v^T) \f$
+///
+template<typename T, Index N>
+void
+rank_one_right(T const & beta, Vector<T, N> const & v, Tensor<T, N> & A);
 
 ///
 /// Exponential map of a skew-symmetric tensor

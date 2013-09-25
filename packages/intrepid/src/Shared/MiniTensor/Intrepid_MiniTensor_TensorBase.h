@@ -68,7 +68,7 @@ public:
   ///
   /// Component type
   ///
-  typedef T type;
+  typedef T value_type;
 
   ///
   /// Default constructor
