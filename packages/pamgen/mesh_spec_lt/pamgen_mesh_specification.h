@@ -137,23 +137,41 @@ class Mesh_Specification
         double * const * getMSPPD(MSPPDA ind)       {return msppda[ind];}
   const double * const * getMSPPD(MSPPDA ind) const {return msppda[ind];}
 
-  static Mesh_Specification * ms_static_storage;
   static Mesh_Specification * first_ms_static_storage;
   
   static void Add_MS(Mesh_Specification * ms){
     /*set the first pointer if unset*/
     /*add the new entry to next if there is an im_static_storage*/
     /*set im_static_storage*/
-    if(!first_ms_static_storage)first_ms_static_storage = ms;
-    if(ms_static_storage)ms_static_storage->next = ms;
-    ms_static_storage = ms;
+    if(!first_ms_static_storage){
+      first_ms_static_storage = ms;
+    }
+    else{
+      Mesh_Specification * ams = first_ms_static_storage;
+      while(ams->next){
+	ams=ams->next;
+      }
+      ams->next = ms;
+    }
   }
 
+  static void Replace_MS(Mesh_Specification * ms){
+    /*set the first pointer if unset*/
+    /*add the new entry to next if there is an im_static_storage*/
+    /*set im_static_storage*/
+    if(ms == first_ms_static_storage)return;
+    else if(first_ms_static_storage){
+      delete first_ms_static_storage;
+    }
+    first_ms_static_storage = ms;
+  }
+
+  Mesh_Specification * consolidateMS();
+
+  Mesh_Specification * Next(){return next;}
 
   Mesh_Specification();
-  Mesh_Specification( long long pid){
-    Zero_Set();
-    msia[PROC_ID] = pid;}
+
   virtual ~Mesh_Specification();
   
   std::string getErrorString()  {return error_stream.str();}

@@ -8,7 +8,9 @@
 #include <cstring>
 
 /****************************************************************************/
-ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh_Desc* imd,long long rank, long long num_procs)
+ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh_Desc* imd,
+						      long long rank, 
+						      long long num_procs)
 /****************************************************************************/
 {
   imd->my_rank = rank;
@@ -45,15 +47,10 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
     nny = imd->nely_tot;
   }
 
-  ms_lt::Mesh_Specification * nemesis_db = new ms_lt::Mesh_Specification(imd->my_rank);
+  ms_lt::Mesh_Specification * nemesis_db = new ms_lt::Mesh_Specification();
+  nemesis_db->setMSI(ms_lt::Mesh_Specification::PROC_ID, imd->my_rank);
 
-  ms_lt::Mesh_Specification::Add_MS(nemesis_db);
 
-  //Only room for one static copy
-//   if(ms_lt::Mesh_Specification::static_storage != NULL)delete ms_lt::Mesh_Specification::static_storage;
-  
-  // this is available to the "C" linked routines
-//   ms_lt::Mesh_Specification::static_storage = nemesis_db;
 
   // The strategy is to implement serial with a trivial decomposition.
   // The trivial decomposition is to disperse the elements based on their
@@ -325,4 +322,12 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
 
 
   return nemesis_db;
+}
+
+
+/****************************************************************************/
+ms_lt::Mesh_Specification * consolidateMeshSpecification_LT(ms_lt::Mesh_Specification *)
+/****************************************************************************/
+{
+  return NULL;
 }
