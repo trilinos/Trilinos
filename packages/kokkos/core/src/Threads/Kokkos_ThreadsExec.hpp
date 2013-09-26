@@ -62,6 +62,7 @@ public:
 
   enum { MAX_FAN_COUNT    = 16 };
   enum { MAX_THREAD_COUNT = 1 << MAX_FAN_COUNT };
+  enum { VECTOR_LENGTH    = 8 };
 
   /** \brief States of a worker thread */
   enum { Terminating ///<  Termination in progress
@@ -206,21 +207,18 @@ public:
   std::pair< size_t , size_t >
   work_range( const size_t work_count ) const
   {
-    enum { work_align = Kokkos::HostSpace::WORK_ALIGNMENT };
-    enum { work_shift = Kokkos::Impl::power_of_two< work_align >::value };
-    enum { work_mask  = work_align - 1 };
+    typedef integral_constant< size_t , VECTOR_LENGTH - 1 > work_mask ;
 
-    // unit_of_work_count = ( work_count + work_mask ) >> work_shift
-    // unit_of_work_per_thread = ( unit_of_work_count + thread_count - 1 ) / thread_count
-    // work_per_thread = unit_of_work_per_thread * work_align
+    // work per thread rounded up and aligned to vector length:
 
     const size_t work_per_thread =
-      ( ( ( ( work_count + work_mask ) >> work_shift ) + m_init_thread_size - 1 ) / m_init_thread_size ) << work_shift ;
+      ( ( ( work_count + m_init_thread_size - 1 ) / m_init_thread_size ) + work_mask::value ) & ~(work_mask::value);
 
-    const size_t work_begin = std::min( m_init_thread_rank * work_per_thread , work_count );
-    const size_t work_end   = std::min( work_begin + work_per_thread , work_count );
+    const size_t work_begin = std::min( work_count , work_per_thread * m_init_thread_rank );
+    const size_t work_end   = std::min( work_count , work_per_thread + work_begin );
 
     return std::pair< size_t , size_t >( work_begin , work_end );
+
   }
 
 

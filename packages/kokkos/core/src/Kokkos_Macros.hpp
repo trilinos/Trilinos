@@ -133,9 +133,20 @@ class CudaSpace ;
  *  These devices are used in no-offload mode so the HostSpace is the MIC space.
  */
 
+#else
+
+#ifndef KOKKOS_USE_PRAGMA_SIMD_VECTORLENGTH
+#define KOKKOS_USE_PRAGMA_SIMD_VECTORLENGTH 8
 #endif
 
-#endif
+/*
+  #pragma simd vectorlength(N)
+  #pragma ivdep
+*/
+
+#endif /* #if defined( __MIC__ ) */
+
+#endif /* #if defined( __INTEL_COMPILER ) */
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -179,6 +190,10 @@ class CudaSpace ;
 
 #ifndef KOKKOS_FORCEINLINE_FUNCTION
 #define KOKKOS_FORCEINLINE_FUNCTION  inline
+#endif
+
+#ifndef KOKKOS_USE_PRAGMA_SIMD_VECTORLENGTH
+#define KOKKOS_USE_PRAGMA_SIMD_VECTORLENGTH 0
 #endif
 
 //----------------------------------------------------------------------------

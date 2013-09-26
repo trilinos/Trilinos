@@ -128,7 +128,6 @@ private:
 } // namespace Kokkos
 
 #include <OpenMP/Kokkos_OpenMP_Parallel.hpp>
-#include <OpenMP/Kokkos_OpenMP_View.hpp>
 
 #endif /* #define KOKKOS_OPENMP_HPP */
 

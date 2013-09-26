@@ -702,27 +702,26 @@ void ThreadsExec::initialize(
       // User requested that we determine best use of cores.
 
       // Start by assuming use of all available cores
-      use_core_topology.first  = hwloc_numa_count ;
-      use_core_topology.second = hwloc_cores_per_numa ;
+      use_core_topology = core_topo ;
 
-      if ( thread_count <= ( hwloc_numa_count - 1 ) * hwloc_cores_per_numa ) {
+      if ( thread_count <= ( core_topo.first - 1 ) * core_topo.second ) {
         // Can spawn all requested threads on their own (NUMA) group of cores,
         // can execute asynchronously.
         --use_core_topology.first ;
       }
-      else if ( thread_count <= hwloc_numa_count * ( hwloc_cores_per_numa - 1 ) ) {
+      else if ( thread_count <= core_topo.first * ( core_topo.second - 1 ) ) {
         // Can spawn all requested threads on their own core and have excess core,
         // can execute asynchronously.
         --use_core_topology.second ;
       }
-      else if ( hwloc_numa_count * hwloc_cores_per_numa < thread_count &&
-                thread_count <= hwloc_numa_count * ( hwloc_cores_per_numa - 1 ) * hwloc_threads_per_core ) {
+      else if ( core_topo.first * core_topo.second < thread_count &&
+                thread_count <= core_topo.first * ( core_topo.second - 1 ) * hwloc_threads_per_core ) {
         // Will oversubscribe cores and can omit one core
         --use_core_topology.second ;
       }
     }
 
-    if ( use_core_topology.first < hwloc_numa_count ) {
+    if ( use_core_topology.first < core_topo.first ) {
       // Can omit a (NUMA) group of cores and execute work asynchronously
       // on the other groups.
 
@@ -742,12 +741,21 @@ void ThreadsExec::initialize(
 
       asynchronous = true ;
     }
-    else if ( use_core_topology.second < hwloc_cores_per_numa ) {
+    else if ( use_core_topology.second < core_topo.second ) {
       // Can omit a core from each group and execute work asynchronously
 
       Kokkos::Impl::host_thread_mapping( team_topology , use_core_topology , core_topo , s_threads_coord );
 
-      // Force master thread onto the highest rank unused core.
+      // Threads' coordinates are in the range
+      //   0 <= numa_begin = core_topo.first - use_core_topology.first
+      //   1 <= numa_end   = core_topo.first
+      //   1 <= core_begin = core_topo.second - use_core_topology.second
+      //   1 <= core_end   = core_topo.second
+      //
+      //   range: ( [numa_begin,numa_end) , [core_begin,core_end) )
+      //
+      // Force master thread onto the highest rank unused core of its current numa region.
+      //
       master_coord.second = ( core_topo.second - use_core_topology.second ) - 1 ;
 
       asynchronous = true ;

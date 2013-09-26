@@ -166,11 +166,11 @@ void OpenMP::initialize( const unsigned team_count ,
     if ( bind_threads ) {
 
       {
-        const std::pair<unsigned,unsigned> gang_topo( team_count , threads_per_team );
+        const std::pair<unsigned,unsigned> team_topo( team_count , threads_per_team );
         const std::pair<unsigned,unsigned> core_topo( numa_count , cores_per_numa );
         const std::pair<unsigned,unsigned> master_coord = hwloc::get_this_thread_coordinate();
 
-        Impl::host_thread_mapping( gang_topo , core_topo , core_topo , master_coord , s_coordinates );
+        Impl::host_thread_mapping( team_topo , core_topo , core_topo , master_coord , s_coordinates );
       }
 
       const std::pair<unsigned,unsigned> master_core = s_coordinates[0] ;
@@ -231,7 +231,7 @@ void OpenMP::initialize( const unsigned team_count ,
     // Set the thread's ranks and counts
     for ( unsigned thread_rank = 0 ; thread_rank < thread_count ; ++thread_rank ) {
 
-      unsigned gang_rank    = 0 ;
+      unsigned team_rank    = 0 ;
       unsigned worker_count = 0 ;
       unsigned worker_rank  = 0 ;
 
@@ -244,19 +244,19 @@ void OpenMP::initialize( const unsigned team_count ,
       const unsigned part = k * bin ;
 
       if ( thread_rank < part ) {
-        gang_rank    = thread_rank / bin ;
+        team_rank    = thread_rank / bin ;
         worker_rank  = thread_rank % bin ;
         worker_count = bin ;
       }
       else {
-        gang_rank    = k + ( thread_rank - part ) / bin1 ;
+        team_rank    = k + ( thread_rank - part ) / bin1 ;
         worker_rank  = ( thread_rank - part ) % bin1 ;
         worker_count = bin1 ;
       }
 
       Impl::HostThread::get_thread( thread_rank )->
         set_topology( thread_rank , thread_count ,
-                      gang_rank ,   team_count ,
+                      team_rank ,   team_count ,
                       worker_rank , worker_count );
     }
 

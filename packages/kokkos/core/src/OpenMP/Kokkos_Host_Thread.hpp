@@ -87,7 +87,7 @@ public:
   inline
   work_range_type work_range( const size_type work_count ) const
     {
-      enum { work_align = HostSpace::WORK_ALIGNMENT };
+      enum { work_align = 8 };
       enum { work_shift = power_of_two< work_align >::value };
       enum { work_mask  = work_align - 1 };
 
@@ -107,13 +107,7 @@ public:
   //----------------------------------------------------------------------
 
   inline
-  void * reduce_data() const
-    {
-#if defined( __INTEL_COMPILER )
-__assume_aligned(m_reduce,MEMORY_ALIGNMENT);
-#endif
-      return m_reduce ;
-    }
+  void * reduce_data() const { return m_reduce ; }
 
   //----------------------------------------------------------------------
 

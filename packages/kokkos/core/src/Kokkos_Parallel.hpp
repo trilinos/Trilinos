@@ -68,12 +68,13 @@ template< class FunctorType ,
           class DeviceType = typename FunctorType::device_type >
 class ParallelFor ;
 
+} // namespace Impl
+} // namespace Kokkos
+
+namespace Kokkos {
+
 /// \class VectorParallel
-/// \brief Implementation detail of the vector_parallel_for operator.
-///
-/// This is an implementation detail of vector_parallel_for.  Users
-/// should skip this and go directly to the nonmember function
-/// vector_parallel_for.
+/// \brief Request for parallel_for to attempt thread+vector parallelism.
 struct VectorParallel
 {
   const size_t nwork ;
@@ -81,7 +82,6 @@ struct VectorParallel
   operator size_t () const { return nwork ; }
 };
 
-} // namespace Impl
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
@@ -136,7 +136,7 @@ inline
 void vector_parallel_for( const size_t        work_count ,
                           const FunctorType & functor )
 {
-  Impl::ParallelFor< FunctorType , Impl::VectorParallel > tmp( functor , work_count );
+  Impl::ParallelFor< FunctorType , VectorParallel > tmp( functor , work_count );
 }
 
 template< class DeviceType >
@@ -224,12 +224,24 @@ void parallel_reduce( const size_t        work_count ,
  *    - <tt>PodType[]</tt>, then \c reference_type is <tt>PodType * </tt>.
  */
 template< class FunctorType >
-void
-parallel_reduce (const size_t work_count ,
-		 const FunctorType & functor ,
-		 typename Kokkos::Impl::ReduceAdapter< FunctorType >::reference_type result)
+inline
+void parallel_reduce( const size_t work_count ,
+                      const FunctorType & functor ,
+                      typename Kokkos::Impl::ReduceAdapter< FunctorType >::reference_type result )
 {
   Impl::ParallelReduce< FunctorType, size_t >
+    reduce( functor , work_count , Kokkos::Impl::ReduceAdapter< FunctorType >::pointer( result ) );
+
+  reduce.wait();
+}
+
+template< class FunctorType >
+inline
+void parallel_reduce( const VectorParallel & work_count ,
+                      const FunctorType & functor ,
+                      typename Kokkos::Impl::ReduceAdapter< FunctorType >::reference_type result )
+{
+  Impl::ParallelReduce< FunctorType, VectorParallel >
     reduce( functor , work_count , Kokkos::Impl::ReduceAdapter< FunctorType >::pointer( result ) );
 
   reduce.wait();
