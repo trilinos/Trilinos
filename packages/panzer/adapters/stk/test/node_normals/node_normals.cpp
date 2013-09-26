@@ -55,20 +55,10 @@
 
 #include "Panzer_STK_SurfaceNodeNormals.hpp"
 
-// #include "Panzer_STK_SetupUtilities.hpp"
-// #include "Panzer_WorksetContainer.hpp"
-// #include "Panzer_Workset_Builder.hpp"
-// #include "Panzer_STK_WorksetFactory.hpp"
-// #include "Panzer_CellData.hpp"
-
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/fem/CreateAdjacentEntities.hpp>
-
-// #include "Shards_CellTopology.hpp"
-// #include "Intrepid_FunctionSpaceTools.hpp"
-// #include "Intrepid_CellTools.hpp"
 
 namespace panzer {
   
@@ -91,7 +81,6 @@ namespace panzer {
     panzer_stk::CubeHexMeshFactory factory;
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-
 
     // This is testing for learning about stk mesh
       
@@ -116,8 +105,6 @@ namespace panzer {
     //stk::mesh::Selector side = *sidePart;
     
     std::cout << std::endl;
-    
-    //comm->barrier();
     
     for (std::vector<stk::mesh::Entity*>::const_iterator side=sides.begin(); side != sides.end(); ++side) {
       *pout << "side element: rank(" << (*side)->entity_rank() << ")"
@@ -176,11 +163,11 @@ namespace panzer {
     std::string sideName = "top";
     std::string blockName = "eblock-0_0_0";
     
-    std::map<unsigned,std::vector<double> > normals;
+    boost::unordered_map<unsigned,std::vector<double> > normals;
     
     panzer_stk::computeSidesetNodeNormals(normals,mesh,sideName,blockName,&std::cout,pout.get());
 
-    for (std::map<unsigned,std::vector<double> >::const_iterator node = normals.begin();
+    for (boost::unordered_map<unsigned,std::vector<double> >::const_iterator node = normals.begin();
 	 node != normals.end(); ++node) {
       double tol = 100.0 * Teuchos::ScalarTraits<double>::eps();
       TEST_FLOATING_EQUALITY(normals[node->first][0], 0.0, tol);
@@ -215,11 +202,11 @@ namespace panzer {
     std::string sideName = "top";
     std::string blockName = "eblock-0_0_0";
     
-    std::map<unsigned,std::vector<double> > normals;
+    boost::unordered_map<unsigned,std::vector<double> > normals;
     
     panzer_stk::computeSidesetNodeNormals(normals,mesh,sideName,blockName);
 
-    for (std::map<unsigned,std::vector<double> >::const_iterator node = normals.begin();
+    for (boost::unordered_map<unsigned,std::vector<double> >::const_iterator node = normals.begin();
 	 node != normals.end(); ++node) {
       double tol = 100.0 * Teuchos::ScalarTraits<double>::eps();
       TEST_FLOATING_EQUALITY(normals[node->first][0], 0.0, tol);
@@ -254,11 +241,11 @@ namespace panzer {
     std::string sideName = "top";
     std::string blockName = "eblock-0_0_0";
     
-    std::map<std::size_t,Intrepid::FieldContainer<double> > normals;
+    boost::unordered_map<std::size_t,Intrepid::FieldContainer<double> > normals;
     
     panzer_stk::computeSidesetNodeNormals(normals,mesh,sideName,blockName);
 
-    for (std::map<std::size_t,Intrepid::FieldContainer<double> >::const_iterator element = normals.begin();
+    for (boost::unordered_map<std::size_t,Intrepid::FieldContainer<double> >::const_iterator element = normals.begin();
 	 element != normals.end(); ++element) {
 
       const Intrepid::FieldContainer<double>& values = element->second;

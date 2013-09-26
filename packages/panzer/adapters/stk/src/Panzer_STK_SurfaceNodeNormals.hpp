@@ -46,8 +46,8 @@
 #include "Panzer_STK_config.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Intrepid_FieldContainer.hpp"
+#include <boost/unordered_map.hpp>
 #include <string>
-#include <map>
 #include <vector>
 
 namespace panzer_stk {
@@ -72,7 +72,7 @@ namespace panzer_stk {
       \param[in] out (Optional) The ostream used for serial debug output on print process only.  If non-null this will print debug info.
       \param[in] pout (Optional) The ostream used for parallel debug output by all processes.  If non-null this will print debug info.
   */
-  void computeSidesetNodeNormals(std::map<unsigned,std::vector<double> >& normals,
+  void computeSidesetNodeNormals(boost::unordered_map<unsigned,std::vector<double> >& normals,
 				 const Teuchos::RCP<const panzer_stk::STK_Interface>& mesh,
 				 const std::string& sidesetName,
 				 const std::string& elementBlockName,
@@ -96,7 +96,7 @@ namespace panzer_stk {
       \param[in] out (Optional) The ostream used for serial debug output on print process only.  If non-null this will print debug info.
       \param[in] pout (Optional) The ostream used for parallel debug output by all processes.  If non-null this will print debug info.
   */
-  void computeSidesetNodeNormals(std::map<std::size_t,Intrepid::FieldContainer<double> >& elementToNormalMap,
+  void computeSidesetNodeNormals(boost::unordered_map<std::size_t,Intrepid::FieldContainer<double> >& elementToNormalMap,
 				 const Teuchos::RCP<const panzer_stk::STK_Interface>& mesh,
 				 const std::string& sidesetName,
 				 const std::string& elementBlockName,

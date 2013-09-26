@@ -62,7 +62,7 @@
 
 namespace panzer_stk {
 
-  void computeSidesetNodeNormals(std::map<unsigned,std::vector<double> >& normals,
+  void computeSidesetNodeNormals(boost::unordered_map<unsigned,std::vector<double> >& normals,
 				 const Teuchos::RCP<const panzer_stk::STK_Interface>& mesh,
 				 const std::string& sidesetName,
 				 const std::string& elementBlockName,
@@ -100,7 +100,7 @@ namespace panzer_stk {
     // into faces
 
     // maps a panzer local element id to a list of normals
-    std::map<unsigned,std::vector<double> > nodeNormals;
+    boost::unordered_map<unsigned,std::vector<double> > nodeNormals;
     
     TEUCHOS_ASSERT(sides.size() == localSideTopoIDs.size());
     TEUCHOS_ASSERT(localSideTopoIDs.size() == parentElements.size());
@@ -146,8 +146,8 @@ namespace panzer_stk {
     }
 
     // Now do the averaging of contributions
-    //std::map<unsigned,std::vector<double> > normals;
-    for (std::map<unsigned,std::vector<double> >::const_iterator node = nodeNormals.begin(); node != nodeNormals.end(); ++node) {
+    //boost::unordered_map<unsigned,std::vector<double> > normals;
+    for (boost::unordered_map<unsigned,std::vector<double> >::const_iterator node = nodeNormals.begin(); node != nodeNormals.end(); ++node) {
 
       TEUCHOS_ASSERT( (node->second.size() % parentTopology->getDimension()) == 0);
 
@@ -207,7 +207,7 @@ namespace panzer_stk {
     
   }
 
-  void computeSidesetNodeNormals(std::map<std::size_t,Intrepid::FieldContainer<double> >& normals,
+  void computeSidesetNodeNormals(boost::unordered_map<std::size_t,Intrepid::FieldContainer<double> >& normals,
 				 const Teuchos::RCP<const panzer_stk::STK_Interface>& mesh,
 				 const std::string& sidesetName,
 				 const std::string& elementBlockName,
@@ -216,7 +216,7 @@ namespace panzer_stk {
   {    
     using Teuchos::RCP;
     
-    std::map<unsigned,std::vector<double> > nodeEntityIdToNormals;
+    boost::unordered_map<unsigned,std::vector<double> > nodeEntityIdToNormals;
     
     computeSidesetNodeNormals(nodeEntityIdToNormals,mesh,sidesetName,elementBlockName,out,pout);
 
