@@ -680,7 +680,7 @@ namespace DynamicVecTest {
   typedef Kokkos::Threads device_type;
   typedef Stokhos::DynamicStorage<int,double,device_type> storage_type;
   typedef Sacado::Fad::DFad<double> fad_type;
-  typedef Sacado::MP::Vector<storage_type,device_type> vec_type;
+  typedef Sacado::MP::Vector<storage_type> vec_type;
   UnitTestSetup<vec_type, fad_type> setup;
   VEC_COMM_TESTS(vec_type, fad_type, DynamicVector, DFad)
 }
@@ -691,7 +691,7 @@ namespace DynamicStridedVecTest {
   typedef Kokkos::Threads device_type;
   typedef Stokhos::DynamicStridedStorage<int,double,device_type> storage_type;
   typedef Sacado::Fad::DFad<double> fad_type;
-  typedef Sacado::MP::Vector<storage_type,device_type> vec_type;
+  typedef Sacado::MP::Vector<storage_type> vec_type;
   UnitTestSetup<vec_type, fad_type> setup;
   VEC_COMM_TESTS(vec_type, fad_type, DynamicStridedVector, DFad)
 }
@@ -702,7 +702,7 @@ namespace StaticVecTest {
   typedef Kokkos::Threads device_type;
   typedef Stokhos::StaticStorage<int,double,8,device_type> storage_type;
   typedef Sacado::Fad::DFad<double> fad_type;
-  typedef Sacado::MP::Vector<storage_type,device_type> vec_type;
+  typedef Sacado::MP::Vector<storage_type> vec_type;
   UnitTestSetup<vec_type, fad_type> setup;
   VEC_COMM_TESTS(vec_type, fad_type, StaticVector, DFad)
 }
@@ -713,7 +713,7 @@ namespace StaticFixedVecTest {
   typedef Kokkos::Threads device_type;
   typedef Stokhos::StaticFixedStorage<int,double,8,device_type> storage_type;
   typedef Sacado::Fad::DFad<double> fad_type;
-  typedef Sacado::MP::Vector<storage_type,device_type> vec_type;
+  typedef Sacado::MP::Vector<storage_type> vec_type;
   UnitTestSetup<vec_type, fad_type> setup;
   VEC_COMM_TESTS(vec_type, fad_type, StaticFixedVector, DFad)
 }
@@ -724,7 +724,7 @@ namespace LocalVecTest {
   typedef Kokkos::Threads device_type;
   typedef Stokhos::LocalStorage<int,double,8,device_type> storage_type;
   typedef Sacado::Fad::DFad<double> fad_type;
-  typedef Sacado::MP::Vector<storage_type,device_type> vec_type;
+  typedef Sacado::MP::Vector<storage_type> vec_type;
   UnitTestSetup<vec_type, fad_type> setup;
   VEC_COMM_TESTS(vec_type, fad_type, LocalVector, DFad)
 }

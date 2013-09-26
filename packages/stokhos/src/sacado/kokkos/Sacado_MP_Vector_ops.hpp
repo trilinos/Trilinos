@@ -46,9 +46,9 @@
 namespace Sacado {
   namespace MP {
 
-    template <typename T, typename D>
+    template <typename T>
     class LogOp :
-      public Expr< LogOp< T,D >,D > {
+      public Expr< LogOp< T > > {
     public:
 
       typedef typename T::value_type value_type;
@@ -95,10 +95,10 @@ namespace Sacado {
 
     template <typename T, typename N>
     KOKKOS_INLINE_FUNCTION
-    LogOp< T,D >
-    log (const Expr<T,D>& expr)
+    LogOp< T >
+    log (const Expr<T>& expr)
     {
-      typedef LogOp< typename Expr<T,D>::derived_type, D > expr_t;
+      typedef LogOp< typename Expr<T>::derived_type > expr_t;
 
       return expr_t(expr.derived());
     }
@@ -111,9 +111,9 @@ namespace Sacado {                                                      \
   namespace MP {                                                        \
                                                                         \
                                                                         \
-    template <typename T, typename D>                                   \
+    template <typename T>                                               \
     class OP :                                                          \
-      public Expr< OP< T,D >,D > {                                      \
+      public Expr< OP< T > > {                                          \
     public:                                                             \
                                                                         \
       typedef typename T::value_type value_type;                        \
@@ -164,12 +164,12 @@ namespace Sacado {                                                      \
                                                                         \
     };                                                                  \
                                                                         \
-    template <typename T, typename D>                                   \
+    template <typename T>                                               \
     KOKKOS_INLINE_FUNCTION                                              \
-    OP< T,D >                                                           \
-    OPNAME (const Expr<T,D>& expr)                                      \
+    OP< T >                                                             \
+    OPNAME (const Expr<T>& expr)                                        \
     {                                                                   \
-      typedef OP< typename Expr<T,D>::derived_type, D > expr_t;         \
+      typedef OP< typename Expr<T>::derived_type > expr_t;              \
                                                                         \
       return expr_t(expr.derived());                                    \
     }                                                                   \
@@ -203,9 +203,9 @@ MP_UNARYOP_MACRO(fabs, FAbsOp, std::fabs)
 namespace Sacado {                                                      \
   namespace MP {                                                        \
                                                                         \
-    template <typename T1, typename T2, typename D>                     \
+    template <typename T1, typename T2>                                 \
     class OP :                                                          \
-      public Expr< OP< T1, T2, D>, D > {                                \
+      public Expr< OP< T1, T2> > {                                      \
                                                                         \
     public:                                                             \
                                                                         \
@@ -215,7 +215,6 @@ namespace Sacado {                                                      \
                                        value_type_2>::type value_type;  \
                                                                         \
       typedef typename T1::storage_type storage_type;                   \
-                                                                        \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       OP(const T1& expr1_, const T2& expr2_) :                          \
@@ -265,9 +264,9 @@ namespace Sacado {                                                      \
                                                                         \
     };                                                                  \
                                                                         \
-    template <typename T1, typename D>                                  \
-    class OP< T1, typename T1::value_type, D > :                        \
-      public Expr< OP< T1, typename T1::value_type, D >, D > {          \
+    template <typename T1>                                              \
+    class OP< T1, typename T1::value_type > :                           \
+      public Expr< OP< T1, typename T1::value_type > > {                \
                                                                         \
     public:                                                             \
                                                                         \
@@ -322,9 +321,9 @@ namespace Sacado {                                                      \
       const ConstT& c;                                                  \
     };                                                                  \
                                                                         \
-    template <typename T2, typename D>                                  \
-    class OP< typename T2::value_type, T2, D > :                        \
-      public Expr< OP< typename T2::value_type, T2, D >, D > {          \
+    template <typename T2>                                              \
+    class OP< typename T2::value_type, T2 > :                           \
+      public Expr< OP< typename T2::value_type, T2 > > {                \
                                                                         \
     public:                                                             \
                                                                         \
@@ -377,42 +376,38 @@ namespace Sacado {                                                      \
       typename const_expr_ref<T2>::type expr2;                          \
     };                                                                  \
                                                                         \
-    template <typename T1, typename T2, typename D>                     \
+    template <typename T1, typename T2>                                 \
     KOKKOS_INLINE_FUNCTION                                              \
-    OP< T1, T2, D >                                                     \
-    OPNAME (const Expr<T1,D>& expr1,                                    \
-            const Expr<T2,D>& expr2)                                    \
+    OP< T1, T2 >                                                        \
+    OPNAME (const Expr<T1>& expr1,                                      \
+            const Expr<T2>& expr2)                                      \
     {                                                                   \
-      typedef OP< typename Expr<T1,D>::derived_type,                    \
-                  typename Expr<T2,D>::derived_type,                    \
-                  D > expr_t;                                           \
+      typedef OP< typename Expr<T1>::derived_type,                      \
+                  typename Expr<T2>::derived_type > expr_t;             \
                                                                         \
       return expr_t(expr1.derived(), expr2.derived());                  \
     }                                                                   \
                                                                         \
-    template <typename T, typename D>                                   \
+    template <typename T>                                               \
     KOKKOS_INLINE_FUNCTION                                              \
-    OP< typename T::value_type, T, D >                                  \
+    OP< typename T::value_type, T >                                     \
     OPNAME (const typename T::value_type& c,                            \
-            const Expr<T,D>& expr)                                      \
+            const Expr<T>& expr)                                        \
     {                                                                   \
       typedef typename T::value_type ConstT;                            \
-      typedef OP< ConstT,                                               \
-                  typename Expr<T,D>::derived_type,                     \
-                  D > expr_t;                                           \
+      typedef OP< ConstT, typename Expr<T>::derived_type > expr_t;      \
                                                                         \
       return expr_t(c, expr.derived());                                 \
     }                                                                   \
                                                                         \
-    template <typename T, typename D>                                   \
+    template <typename T>                                               \
     KOKKOS_INLINE_FUNCTION                                              \
-    OP< T, typename T::value_type,D >                                   \
-    OPNAME (const Expr<T,D>& expr,                                      \
+    OP< T, typename T::value_type >                                     \
+    OPNAME (const Expr<T>& expr,                                        \
             const typename T::value_type& c)                            \
     {                                                                   \
       typedef typename T::value_type ConstT;                            \
-      typedef OP< typename Expr<T,D>::derived_type,                     \
-                  ConstT, D > expr_t;                                   \
+      typedef OP< typename Expr<T>::derived_type, ConstT > expr_t;      \
                                                                         \
       return expr_t(expr.derived(), c);                                 \
     }                                                                   \
@@ -430,9 +425,9 @@ MP_BINARYOP_MACRO(operator/, DivisionOp, /)
 namespace Sacado {                                                      \
   namespace MP {                                                        \
                                                                         \
-    template <typename T1, typename T2, typename D>                     \
+    template <typename T1, typename T2>                                 \
     class OP :                                                          \
-      public Expr< OP< T1, T2, D >, D > {                               \
+      public Expr< OP< T1, T2 > > {                                     \
                                                                         \
     public:                                                             \
                                                                         \
@@ -493,9 +488,9 @@ namespace Sacado {                                                      \
                                                                         \
     };                                                                  \
                                                                         \
-    template <typename T1, typename D>                                  \
-    class OP< T1, typename T1::value_type, D > :                        \
-      public Expr< OP< T1, typename T1::value_type, D >, D > {          \
+    template <typename T1>                                              \
+    class OP< T1, typename T1::value_type > :                           \
+      public Expr< OP< T1, typename T1::value_type > > {                \
                                                                         \
     public:                                                             \
                                                                         \
@@ -548,9 +543,9 @@ namespace Sacado {                                                      \
       const ConstT& c;                                                  \
     };                                                                  \
                                                                         \
-    template <typename T2, typename D>                                  \
-    class OP< typename T2::value_type, T2, D > :                        \
-      public Expr< OP< typename T2::value_type, T2, D >, D > {          \
+    template <typename T2>                                              \
+    class OP< typename T2::value_type, T2 > :                           \
+      public Expr< OP< typename T2::value_type, T2 > > {                \
                                                                         \
     public:                                                             \
                                                                         \
@@ -603,42 +598,38 @@ namespace Sacado {                                                      \
       typename const_expr_ref<T2>::type expr2;                          \
     };                                                                  \
                                                                         \
-    template <typename T1, typename T2, typename D>                     \
+    template <typename T1, typename T2>                                 \
     KOKKOS_INLINE_FUNCTION                                              \
-    OP< T1, T2, D >                                                     \
-    OPNAME (const Expr<T1,D>& expr1,                                    \
-            const Expr<T2,D>& expr2)                                    \
+    OP< T1, T2 >                                                        \
+    OPNAME (const Expr<T1>& expr1,                                      \
+            const Expr<T2>& expr2)                                      \
     {                                                                   \
-      typedef OP< typename Expr<T1,D>::derived_type,                    \
-                  typename Expr<T2,D>::derived_type,                    \
-                  D > expr_t;                                           \
+      typedef OP< typename Expr<T1>::derived_type,                      \
+                  typename Expr<T2>::derived_type > expr_t;             \
                                                                         \
       return expr_t(expr1.derived(), expr2.derived());                  \
     }                                                                   \
                                                                         \
-    template <typename T, typename D>                                   \
+    template <typename T>                                               \
     KOKKOS_INLINE_FUNCTION                                              \
-    OP< typename T::value_type, T, D >                                  \
+    OP< typename T::value_type, T >                                     \
     OPNAME (const typename T::value_type& c,                            \
-            const Expr<T,D>& expr)                                      \
+            const Expr<T>& expr)                                        \
     {                                                                   \
       typedef typename T::value_type ConstT;                            \
-      typedef OP< ConstT,                                               \
-                  typename Expr<T,D>::derived_type,                     \
-                  D > expr_t;                                           \
+      typedef OP< ConstT, typename Expr<T>::derived_type > expr_t;      \
                                                                         \
       return expr_t(c, expr.derived());                                 \
     }                                                                   \
                                                                         \
-    template <typename T, typename D>                                   \
+    template <typename T>                                               \
     KOKKOS_INLINE_FUNCTION                                              \
-    OP< T, typename T::value_type, D >                                  \
-    OPNAME (const Expr<T,D>& expr,                                      \
+    OP< T, typename T::value_type >                                     \
+    OPNAME (const Expr<T>& expr,                                        \
             const typename T::value_type& c)                            \
     {                                                                   \
       typedef typename T::value_type ConstT;                            \
-      typedef OP< typename Expr<T,D>::derived_type,                     \
-                  ConstT, D > expr_t;                                   \
+      typedef OP< typename Expr<T>::derived_type, ConstT > expr_t;      \
                                                                         \
       return expr_t(expr.derived(), c);                                 \
     }                                                                   \
@@ -658,28 +649,28 @@ MP_BINARYOP_MACRO(min, MinOp, std::min)
 namespace Sacado {                                                      \
   namespace MP {                                                        \
                                                                         \
-    template <typename T1, typename T2, typename D>                     \
+    template <typename T1, typename T2>                                 \
     KOKKOS_INLINE_FUNCTION                                              \
     bool                                                                \
-    operator OP (const Expr<T1,D>& expr1,                               \
-                 const Expr<T2,D>& expr2)                               \
+    operator OP (const Expr<T1>& expr1,                                 \
+                 const Expr<T2>& expr2)                                 \
     {                                                                   \
       return expr1.derived().val() OP expr2.derived().val();            \
     }                                                                   \
                                                                         \
-    template <typename T2, typename D>                                  \
+    template <typename T2>                                              \
     KOKKOS_INLINE_FUNCTION                                              \
     bool                                                                \
     operator OP (const typename T2::value_type& a,                      \
-                 const Expr<T2,D>& expr2)                               \
+                 const Expr<T2>& expr2)                                 \
     {                                                                   \
       return a OP expr2.derived().val();                                \
     }                                                                   \
                                                                         \
-    template <typename T1, typename D>                                  \
+    template <typename T1>                                              \
     KOKKOS_INLINE_FUNCTION                                              \
     bool                                                                \
-    operator OP (const Expr<T1,D>& expr1,                               \
+    operator OP (const Expr<T1>& expr1,                                 \
                  const typename T1::value_type& b)                      \
     {                                                                   \
       return expr1.derived().val() OP b;                                \
@@ -704,9 +695,9 @@ namespace Sacado {
 
   namespace MP {
 
-    template <typename T, typename D>
+    template <typename T>
     KOKKOS_INLINE_FUNCTION
-    bool operator ! (const Expr<T,D>& expr)
+    bool operator ! (const Expr<T>& expr)
     {
       return ! expr.derived().val();
     }
@@ -721,10 +712,10 @@ namespace Sacado {
 
   namespace MP {
 
-    template <typename T, typename D>
+    template <typename T>
     KOKKOS_INLINE_FUNCTION
-    bool toBool(const Expr<T,D>& xx) {
-      const typename Expr<T,D>::derived_type& x =
+    bool toBool(const Expr<T>& xx) {
+      const typename Expr<T>::derived_type& x =
         xx.derived();
       bool is_zero = true;
       for (int i=0; i<x.size(); i++)
@@ -740,28 +731,28 @@ namespace Sacado {
 namespace Sacado {                                                      \
   namespace MP {                                                        \
                                                                         \
-    template <typename T1, typename T2, typename D>                     \
+    template <typename T1, typename T2>                                 \
     KOKKOS_INLINE_FUNCTION                                              \
     bool                                                                \
-    operator OP (const Expr<T1,D>& expr1,                               \
-                 const Expr<T2,D>& expr2)                               \
+    operator OP (const Expr<T1>& expr1,                                 \
+                 const Expr<T2>& expr2)                                 \
     {                                                                   \
       return toBool(expr1) OP toBool(expr2);                            \
     }                                                                   \
                                                                         \
-    template <typename T2, typename D>                                  \
+    template <typename T2>                                              \
     KOKKOS_INLINE_FUNCTION                                              \
     bool                                                                \
     operator OP (const typename T2::value_type& a,                      \
-                 const Expr<T2,D>& expr2)                               \
+                 const Expr<T2>& expr2)                                 \
     {                                                                   \
       return a OP toBool(expr2);                                        \
     }                                                                   \
                                                                         \
-    template <typename T1, typename D>                                  \
+    template <typename T1>                                              \
     KOKKOS_INLINE_FUNCTION                                              \
     bool                                                                \
-    operator OP (const Expr<T1,D>& expr1,                               \
+    operator OP (const Expr<T1>& expr1,                                 \
                  const typename T1::value_type& b)                      \
     {                                                                   \
       return toBool(expr1) OP b;                                        \
@@ -781,13 +772,12 @@ namespace Sacado {
 
   namespace MP {
 
-    template <typename T, typename D>
+    template <typename T>
     KOKKOS_INLINE_FUNCTION
     std::ostream& operator << (std::ostream& os,
-                               const Expr<T,D>& x) {
-      typedef typename T::value_type value_type;
+                               const Expr<T>& x) {
       typedef typename T::storage_type storage_type;
-      Vector<value_type, storage_type> a(x);
+      Vector<storage_type> a(x);
       os << a;
       return os;
     }

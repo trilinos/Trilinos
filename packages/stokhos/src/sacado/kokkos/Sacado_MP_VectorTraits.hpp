@@ -54,102 +54,102 @@
 // Forward declarations
 namespace Sacado {
   namespace MP {
-    template <typename S, typename D> class Vector;
+    template <typename S> class Vector;
   }
 }
 
 namespace Sacado {
 
   //! Specialization of %Promote to Taylor types
-  template <typename S, typename D>
-  class Promote< MP::Vector<S,D>, MP::Vector<S,D> > {
+  template <typename S>
+  class Promote< MP::Vector<S>, MP::Vector<S> > {
   public:
 
-    typedef MP::Vector<S,D> type;
+    typedef MP::Vector<S> type;
   };
 
   //! Specialization of %Promote to Vector types
-  template <typename R, typename S, typename D>
-  class Promote< MP::Vector<S,D>, R > {
+  template <typename R, typename S>
+  class Promote< MP::Vector<S>, R > {
   public:
 
-    typedef typename ValueType< MP::Vector<S,D> >::type value_type_l;
+    typedef typename ValueType< MP::Vector<S> >::type value_type_l;
     typedef typename ValueType<R>::type value_type_r;
     typedef typename Promote<value_type_l,value_type_r>::type value_type;
     typedef typename S::ordinal_type ordinal_type;
     typedef typename Sacado::mpl::apply<S,ordinal_type,value_type>::type storage_type;
 
-    typedef MP::Vector<storage_type,D> type;
+    typedef MP::Vector<storage_type> type;
   };
 
   //! Specialization of %Promote to Vector types
-  template <typename L, typename S, typename D>
-  class Promote< L, MP::Vector<S,D> > {
+  template <typename L, typename S>
+  class Promote< L, MP::Vector<S> > {
   public:
 
     typedef typename ValueType<L>::type value_type_l;
-    typedef typename ValueType< MP::Vector<S,D> >::type value_type_r;
+    typedef typename ValueType< MP::Vector<S> >::type value_type_r;
     typedef typename Promote<value_type_l,value_type_r>::type value_type;
     typedef typename S::ordinal_type ordinal_type;
     typedef typename Sacado::mpl::apply<S,ordinal_type,value_type>::type storage_type;
 
-    typedef MP::Vector<storage_type,D> type;
+    typedef MP::Vector<storage_type> type;
   };
 
   //! Specialization of %ScalarType to Vector types
-  template <typename S, typename D>
-  struct ScalarType< MP::Vector<S,D> > {
-    typedef typename ScalarType<typename MP::Vector<S,D>::value_type>::type type;
+  template <typename S>
+  struct ScalarType< MP::Vector<S> > {
+    typedef typename ScalarType<typename MP::Vector<S>::value_type>::type type;
   };
 
   //! Specialization of %ValueType to Vector types
-  template <typename S, typename D>
-  struct ValueType< MP::Vector<S,D> > {
-    typedef typename MP::Vector<S,D>::value_type type;
+  template <typename S>
+  struct ValueType< MP::Vector<S> > {
+    typedef typename MP::Vector<S>::value_type type;
   };
 
   //! Specialization of %IsADType to Vector types
-  template <typename S, typename D>
-  struct IsADType< MP::Vector<S,D> > {
+  template <typename S>
+  struct IsADType< MP::Vector<S> > {
     static const bool value = true;
   };
 
   //! Specialization of %IsADType to Vector types
-  template <typename S, typename D>
-  struct IsScalarType< MP::Vector<S,D> > {
+  template <typename S>
+  struct IsScalarType< MP::Vector<S> > {
     static const bool value = false;
   };
 
   //! Specialization of %Value to Vector types
-  template <typename S, typename D>
-  struct Value< MP::Vector<S,D> > {
-    typedef typename ValueType< MP::Vector<S,D> >::type value_type;
-    static const value_type& eval(const MP::Vector<S,D>& x) {
+  template <typename S>
+  struct Value< MP::Vector<S> > {
+    typedef typename ValueType< MP::Vector<S> >::type value_type;
+    static const value_type& eval(const MP::Vector<S>& x) {
       return x.val(); }
   };
 
   //! Specialization of %ScalarValue to Vector types
-  template <typename S, typename D>
-  struct ScalarValue< MP::Vector<S,D> > {
-    typedef typename ValueType< MP::Vector<S,D> >::type value_type;
-    typedef typename ScalarType< MP::Vector<S,D> >::type scalar_type;
-    static const scalar_type& eval(const MP::Vector<S,D>& x) {
+  template <typename S>
+  struct ScalarValue< MP::Vector<S> > {
+    typedef typename ValueType< MP::Vector<S> >::type value_type;
+    typedef typename ScalarType< MP::Vector<S> >::type scalar_type;
+    static const scalar_type& eval(const MP::Vector<S>& x) {
       return ScalarValue<value_type>::eval(x.val()); }
   };
 
   //! Specialization of %StringName to Vector types
-  template <typename S, typename D>
-  struct StringName< MP::Vector<S,D> > {
+  template <typename S>
+  struct StringName< MP::Vector<S> > {
     static std::string eval() {
       return std::string("Sacado::MP::Vector< ") +
         StringName<S>::eval() + " >"; }
   };
 
   //! Specialization of IsEqual to Vector types
-  template <typename S, typename D>
-  struct IsEqual< MP::Vector<S,D> > {
-    static bool eval(const MP::Vector<S,D>& x,
-                     const MP::Vector<S,D>& y) {
+  template <typename S>
+  struct IsEqual< MP::Vector<S> > {
+    static bool eval(const MP::Vector<S>& x,
+                     const MP::Vector<S>& y) {
       return x.isEqualTo(y);
     }
   };
@@ -165,50 +165,50 @@ namespace Sacado {
 
 namespace Teuchos {
 
-  //! Specialization of %Teuchos::PromotionTraits to DFad types
-  template <typename S, typename D>
-  struct PromotionTraits< Sacado::MP::Vector<S,D>,
-                          Sacado::MP::Vector<S,D> > {
-    typedef typename Sacado::Promote< Sacado::MP::Vector<S,D>,
-                                      Sacado::MP::Vector<S,D> >::type
+  //! Specialization of %Teuchos::PromotionTraits to Vector types
+  template <typename S>
+  struct PromotionTraits< Sacado::MP::Vector<S>,
+                          Sacado::MP::Vector<S> > {
+    typedef typename Sacado::Promote< Sacado::MP::Vector<S>,
+                                      Sacado::MP::Vector<S> >::type
     promote;
   };
 
-  //! Specialization of %Teuchos::PromotionTraits to DFad types
-  template <typename S, typename D, typename R>
-  struct PromotionTraits< Sacado::MP::Vector<S,D>, R > {
-    typedef typename Sacado::Promote< Sacado::MP::Vector<S,D>, R >::type
+  //! Specialization of %Teuchos::PromotionTraits to Vector types
+  template <typename S, typename R>
+  struct PromotionTraits< Sacado::MP::Vector<S>, R > {
+    typedef typename Sacado::Promote< Sacado::MP::Vector<S>, R >::type
     promote;
   };
 
-  //! Specialization of %Teuchos::PromotionTraits to DFad types
-  template <typename L, typename S, typename D>
-  struct PromotionTraits< L, Sacado::MP::Vector<S,D> > {
+  //! Specialization of %Teuchos::PromotionTraits to Vector types
+  template <typename L, typename S>
+  struct PromotionTraits< L, Sacado::MP::Vector<S> > {
   public:
-    typedef typename Sacado::Promote< L, Sacado::MP::Vector<S,D> >::type
+    typedef typename Sacado::Promote< L, Sacado::MP::Vector<S> >::type
     promote;
   };
 
   //! Specializtion of Teuchos::ScalarTraits
-  template <typename S, typename D>
-  struct ScalarTraits< Sacado::MP::Vector<S,D> > :
-    public Sacado::ETV::ScalarTraitsImp< Sacado::MP::Vector<S,D> > {};
+  template <typename S>
+  struct ScalarTraits< Sacado::MP::Vector<S> > :
+    public Sacado::ETV::ScalarTraitsImp< Sacado::MP::Vector<S> > {};
 
 
   //! Specialization of %Teuchos::SerializationTraits
-  template <typename Ordinal, typename S, typename D>
-  struct SerializationTraits<Ordinal, Sacado::MP::Vector<S,D> > :
+  template <typename Ordinal, typename S>
+  struct SerializationTraits<Ordinal, Sacado::MP::Vector<S> > :
     public Sacado::ETV::SerializationTraitsImp< Ordinal,
-                                                Sacado::MP::Vector<S,D> > {};
+                                                Sacado::MP::Vector<S> > {};
 
   //! Specialization of %Teuchos::ValueTypeSerializer
-  template <typename Ordinal, typename S, typename D>
-  struct ValueTypeSerializer<Ordinal, Sacado::MP::Vector<S,D> > :
+  template <typename Ordinal, typename S>
+  struct ValueTypeSerializer<Ordinal, Sacado::MP::Vector<S> > :
     public Sacado::ETV::SerializerImp< Ordinal,
-                                       Sacado::MP::Vector<S,D>,
-                                       ValueTypeSerializer<Ordinal,typename Sacado::MP::Vector<S,D>::value_type> >
+                                       Sacado::MP::Vector<S>,
+                                       ValueTypeSerializer<Ordinal,typename Sacado::MP::Vector<S>::value_type> >
   {
-    typedef Sacado::MP::Vector<S,D> VecType;
+    typedef Sacado::MP::Vector<S> VecType;
     typedef typename VecType::value_type value_type;
     typedef ValueTypeSerializer<Ordinal,value_type> ValueSerializer;
     typedef Sacado::ETV::SerializerImp< Ordinal,VecType,ValueSerializer> Base;

@@ -54,21 +54,19 @@ namespace Stokhos {
   namespace mpl {
 
     template <class Seq,
-              class device_t,
               class Iter1 = typename Sacado::mpl::begin<Seq>::type,
               class Iter2 = typename Sacado::mpl::end<Seq>::type>
     struct for_each {
-      typedef device_t device_type;
       template <typename Op>
       KOKKOS_INLINE_FUNCTION
       for_each(const Op& op) {
         op(typename Sacado::mpl::deref<Iter1>::type());
-        for_each<Seq, device_type, typename Sacado::mpl::next<Iter1>::type, Iter2> f(op);
+        for_each<Seq, typename Sacado::mpl::next<Iter1>::type, Iter2> f(op);
       }
     };
 
-    template <class Seq, class device_t, class Iter1>
-    struct for_each<Seq, device_t, Iter1, Iter1> {
+    template <class Seq, class Iter1>
+    struct for_each<Seq, Iter1, Iter1> {
       template <typename Op>
       KOKKOS_INLINE_FUNCTION
       for_each(const Op& op) {}

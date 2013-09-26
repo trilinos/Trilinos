@@ -76,12 +76,9 @@ namespace Sacado {
      * any expression class.  If not, an expression class is free to change
      * the implementation through partial specialization.
      */
-    template <typename T, typename device>
+    template <typename T>
     class Expr {
     public:
-
-      //! Device type
-      typedef device device_type;
 
       //! Typename of derived object, returned by derived()
       /*!
@@ -103,15 +100,12 @@ namespace Sacado {
     };
 
     //! Vectorized evaluation class
-    template <typename Storage, typename Device>
-    class Vector : public Expr< Vector<Storage,Device>, Device > {
+    template <typename Storage>
+    class Vector : public Expr< Vector<Storage> > {
     public:
 
       //! Typename of storage class
       typedef Storage storage_type;
-
-       //! Device type
-      typedef Device device_type;
 
       typedef typename storage_type::value_type value_type;
       typedef typename storage_type::ordinal_type ordinal_type;
@@ -127,7 +121,7 @@ namespace Sacado {
       template <typename S>
       struct apply {
         typedef typename Sacado::mpl::apply<Storage,ordinal_type,S>::type new_storage_type;
-        typedef Vector<new_storage_type,device_type> type;
+        typedef Vector<new_storage_type> type;
       };
 
       //! Number of arguments
@@ -161,16 +155,16 @@ namespace Sacado {
       //! Copy constructor from any Expression object
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Vector(const Expr<S,device_type>& xx) :
+      Vector(const Expr<S>& xx) :
         s(xx.derived().size()) {
-        typedef typename Expr<S,device_type>::derived_type expr_type;
+        typedef typename Expr<S>::derived_type expr_type;
         const expr_type& x = xx.derived();
 
         if (storage_type::is_static) {
           typedef Sacado::mpl::range_c< int, 0,
                                         storage_type::static_size > range_type;
           StaticOp<expr_type> op(s,x);
-          Stokhos::mpl::for_each< range_type, device_type > f(op);
+          Stokhos::mpl::for_each< range_type > f(op);
         }
         else if (x.hasFastAccess(s.size())) {
           for (ordinal_type i=0; i<s.size(); i++)
@@ -195,9 +189,9 @@ namespace Sacado {
       void init(const value_type* v) { s.init(v); }
 
       //! Initialize coefficients from an Vector with different storage
-      template <typename S, typename D>
+      template <typename S>
       KOKKOS_INLINE_FUNCTION
-      void init(const Vector<S,D>& v) {
+      void init(const Vector<S>& v) {
         s.init(v.s.coeff(), v.s.size());
       }
 
@@ -206,9 +200,9 @@ namespace Sacado {
       void load(value_type* v) { s.load(v); }
 
       //! Load coefficients into an Vector with different storage
-      template <typename S, typename D>
+      template <typename S>
       KOKKOS_INLINE_FUNCTION
-      void load(Vector<S,D>& v) { s.load(v.s.coeff()); }
+      void load(Vector<S>& v) { s.load(v.s.coeff()); }
 
       //! Reset size
       /*!
@@ -239,8 +233,8 @@ namespace Sacado {
       //! Returns whether two ETV objects have the same values
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      bool isEqualTo(const Expr<S,device_type>& xx) const {
-        const typename Expr<S,device_type>::derived_type& x = xx.derived();
+      bool isEqualTo(const Expr<S>& xx) const {
+        const typename Expr<S>::derived_type& x = xx.derived();
         typedef IsEqual<value_type> IE;
         if (x.size() != this->size()) return false;
         bool eq = true;
@@ -271,8 +265,8 @@ namespace Sacado {
       //! Assignment with any expression right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Vector& operator=(const Expr<S,device_type>& xx) {
-        typedef typename Expr<S,device_type>::derived_type expr_type;
+      Vector& operator=(const Expr<S>& xx) {
+        typedef typename Expr<S>::derived_type expr_type;
         const expr_type& x = xx.derived();
 
         this->reset(x.size());
@@ -280,7 +274,7 @@ namespace Sacado {
           typedef Sacado::mpl::range_c< int, 0,
                                         storage_type::static_size > range_type;
           StaticOp<expr_type > op(s,x);
-          Stokhos::mpl::for_each< range_type, device_type > f(op);
+          Stokhos::mpl::for_each< range_type > f(op);
         }
         else if (x.hasFastAccess(s.size())) {
           for (ordinal_type i=0; i<s.size(); i++)
@@ -406,7 +400,7 @@ namespace Sacado {
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Vector& operator += (const Expr<S,device_type>& x) {
+      Vector& operator += (const Expr<S>& x) {
         *this = *this + x;
         return *this;
       }
@@ -414,7 +408,7 @@ namespace Sacado {
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Vector& operator -= (const Expr<S,device_type>& x) {
+      Vector& operator -= (const Expr<S>& x) {
         *this = *this - x;
         return *this;
       }
@@ -422,7 +416,7 @@ namespace Sacado {
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Vector& operator *= (const Expr<S,device_type>& x) {
+      Vector& operator *= (const Expr<S>& x) {
         *this = *this * x;
         return *this;
       }
@@ -430,7 +424,7 @@ namespace Sacado {
       //! Division-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Vector& operator /= (const Expr<S,device_type>& x) {
+      Vector& operator /= (const Expr<S>& x) {
         *this = *this / x;
         return *this;
       }
@@ -477,17 +471,17 @@ namespace Sacado {
      * Specialization for leaf-nodes, which can be stored by reference
      * since they are an argument to the expression.
      */
-    template <typename S, typename D> struct const_expr_ref< Vector<S,D> > {
-      typedef const Vector<S,D>& type;
+    template <typename S> struct const_expr_ref< Vector<S> > {
+      typedef const Vector<S>& type;
     };
 
-    template <typename Storage, typename Device>
+    template <typename Storage>
     KOKKOS_INLINE_FUNCTION
     std::ostream&
     operator << (std::ostream& os,
-                 const Vector<Storage,Device>& a)
+                 const Vector<Storage>& a)
     {
-      typedef typename Vector<Storage,Device>::ordinal_type ordinal_type;
+      typedef typename Vector<Storage>::ordinal_type ordinal_type;
 
       os << "[ ";
 

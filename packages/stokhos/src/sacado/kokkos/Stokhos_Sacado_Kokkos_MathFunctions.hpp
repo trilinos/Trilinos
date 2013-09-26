@@ -48,13 +48,13 @@
 namespace Sacado {                                                      \
                                                                         \
   namespace MP {                                                        \
-    template <typename T, typename D> class FADOP;                      \
-    template <typename T, typename D> class Expr;                       \
+    template <typename T> class FADOP;                                  \
+    template <typename T> class Expr;                                   \
                                                                         \
-    template <typename T, typename D>                                   \
+    template <typename T>                                               \
     KOKKOS_INLINE_FUNCTION                                              \
-    FADOP< T,D >                                                        \
-    OP (const Expr<T,D>&);                                              \
+    FADOP< T >                                                          \
+    OP (const Expr<T>&);                                                \
   }                                                                     \
 }                                                                       \
                                                                         \
@@ -87,25 +87,25 @@ UNARYFUNC_MACRO(fabs, FAbsOp)
 namespace Sacado {                                                      \
                                                                         \
   namespace MP {                                                        \
-    template <typename T1, typename T2, typename D> class FADOP;        \
-    template <typename T, typename D> class Expr;                       \
+    template <typename T1, typename T2> class FADOP;                    \
+    template <typename T> class Expr;                                   \
                                                                         \
-    template <typename T1, typename T2, typename D>                     \
+    template <typename T1, typename T2>                                 \
     KOKKOS_INLINE_FUNCTION                                              \
-    FADOP< T1, T2, D >                                                  \
-    OP (const Expr<T1,D>&,                                              \
-        const Expr<T2,D>&);                                             \
+    FADOP< T1, T2 >                                                     \
+    OP (const Expr<T1>&,                                                \
+        const Expr<T2>&);                                               \
                                                                         \
-    template <typename T, typename D>                                   \
+    template <typename T>                                               \
     KOKKOS_INLINE_FUNCTION                                              \
-    FADOP< typename T::value_type, T, D >                               \
+    FADOP< typename T::value_type, T >                                  \
     OP (const typename T::value_type&,                                  \
-        const Expr<T,D>&);                                              \
+        const Expr<T>&);                                                \
                                                                         \
-    template <typename T, typename D>                                   \
+    template <typename T>                                               \
     KOKKOS_INLINE_FUNCTION                                              \
-    FADOP< T, typename T::value_type, D >                               \
-    OP (const Expr<T,D>&,                                               \
+    FADOP< T, typename T::value_type >                                  \
+    OP (const Expr<T>&,                                                 \
         const typename T::value_type&);                                 \
   }                                                                     \
                                                                         \

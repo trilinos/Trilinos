@@ -47,7 +47,7 @@
 // Forward declarations
 namespace Sacado {
   namespace MP {
-    template <typename T, typename D> class Expr;
+    template <typename T> class Expr;
   }
 }
 
@@ -57,43 +57,43 @@ namespace Sacado {
   // partial specializations with the Vector classes.
 
   //! Specialization of %ScalarType to Expr types
-  template <typename T, typename D>
-  struct ScalarType< MP::Expr<T,D> > {
-    typedef typename ScalarType< typename MP::Expr<T,D>::value_type >::type type;
+  template <typename T>
+  struct ScalarType< MP::Expr<T> > {
+    typedef typename ScalarType< typename MP::Expr<T>::value_type >::type type;
   };
 
   //! Specialization of %ValueType to Expr types
-  template <typename T, typename D>
-  struct ValueType< MP::Expr<T,D> > {
-    typedef typename MP::Expr<T,D>::value_type type;
+  template <typename T>
+  struct ValueType< MP::Expr<T> > {
+    typedef typename MP::Expr<T>::value_type type;
   };
 
   //! Specialization of %IsADType to Expr types
-  template <typename T, typename D>
-  struct IsADType< MP::Expr<T,D> > {
+  template <typename T>
+  struct IsADType< MP::Expr<T> > {
     static const bool value = true;
   };
 
   //! Specialization of %IsADType to Expr types
-  template <typename T, typename D>
-  struct IsScalarType< MP::Expr<T,D> > {
+  template <typename T>
+  struct IsScalarType< MP::Expr<T> > {
     static const bool value = false;
   };
 
   //! Specialization of %Value to Expr types
-  template <typename T, typename D>
-  struct Value< MP::Expr<T,D> > {
-    typedef typename ValueType< MP::Expr<T,D> >::type value_type;
-    static const value_type& eval(const MP::Expr<T,D>& x) {
+  template <typename T>
+  struct Value< MP::Expr<T> > {
+    typedef typename ValueType< MP::Expr<T> >::type value_type;
+    static const value_type& eval(const MP::Expr<T>& x) {
       return x.val(); }
   };
 
   //! Specialization of %ScalarValue to Expr types
-  template <typename T, typename D>
-  struct ScalarValue< MP::Expr<T,D> > {
-    typedef typename ValueType< MP::Expr<T,D> >::type value_type;
-    typedef typename ScalarType< MP::Expr<T,D> >::type scalar_type;
-    static const scalar_type& eval(const MP::Expr<T,D>& x) {
+  template <typename T>
+  struct ScalarValue< MP::Expr<T> > {
+    typedef typename ValueType< MP::Expr<T> >::type value_type;
+    typedef typename ScalarType< MP::Expr<T> >::type scalar_type;
+    static const scalar_type& eval(const MP::Expr<T>& x) {
       return ScalarValue<value_type>::eval(x.val()); }
   };
 

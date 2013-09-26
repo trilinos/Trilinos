@@ -60,12 +60,12 @@ struct MPVectorTypes {
   typedef Stokhos::DynamicThreadedStorage<int,double,device_type> dynamic_threaded_storage;
 
   // Vector types
-  typedef Sacado::MP::Vector<static_storage, device_type> static_vector;
-  typedef Sacado::MP::Vector<static_fixed_storage, device_type> static_fixed_vector;
-  typedef Sacado::MP::Vector<local_storage, device_type> local_vector;
-  typedef Sacado::MP::Vector<dynamic_storage, device_type> dynamic_vector;
-  typedef Sacado::MP::Vector<dynamic_strided_storage, device_type> dynamic_strided_vector;
-  typedef Sacado::MP::Vector<dynamic_threaded_storage, device_type> dynamic_threaded_vector;
+  typedef Sacado::MP::Vector<static_storage> static_vector;
+  typedef Sacado::MP::Vector<static_fixed_storage> static_fixed_vector;
+  typedef Sacado::MP::Vector<local_storage> local_vector;
+  typedef Sacado::MP::Vector<dynamic_storage> dynamic_vector;
+  typedef Sacado::MP::Vector<dynamic_strided_storage> dynamic_strided_vector;
+  typedef Sacado::MP::Vector<dynamic_threaded_storage> dynamic_threaded_vector;
 };
 
 template <int MaxSize, typename device_type> struct MPVectorExample {
