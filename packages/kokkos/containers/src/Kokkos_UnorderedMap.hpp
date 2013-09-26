@@ -41,6 +41,12 @@
 //@HEADER
 */
 
+/// \file Kokkos_UnorderedMap.hpp
+/// \brief Declaration and definition of Kokkos::UnorderedMap.
+///
+/// This header file declares and defines Kokkos::UnorderedMap and its
+/// related nonmember functions.
+
 #ifndef KOKKOS_UNORDERED_MAP_HPP
 #define KOKKOS_UNORDERED_MAP_HPP
 
@@ -59,6 +65,76 @@
 
 namespace Kokkos {
 
+/// \class UnorderedMap
+/// \brief Thread-safe, performance-portable lookup table.
+///
+/// This class provides a lookup table.  In terms of functionality,
+/// this class compares to std::unordered_map (new in C++11).
+/// "Unordered" means that keys are not stored in any particular
+/// order, unlike (for example) std::map.  "Thread-safe" means that
+/// lookups, insertion, and deletion are safe to call by multiple
+/// threads in parallel.  "Performance-portable" means that parallel
+/// performance of these operations is reasonable, on multiple
+/// hardware platforms.  Platforms on which performance has been
+/// tested include conventional Intel x86 multicore processors, Intel
+/// Xeon Phi ("MIC"), and NVIDIA GPUs.
+///
+/// Parallel performance portability entails design decisions that
+/// might differ from one's expectation for a sequential interface.
+/// This particularly affects insertion of single elements.  In an
+/// interface intended for sequential use, insertion might reallocate
+/// memory if the original allocation did not suffice to hold the new
+/// element.  In this class, insertion does <i>not</i> reallocate
+/// memory.  This means that it might fail.  insert() returns an enum
+/// which indicates whether the insert failed.  There are three
+/// possible conditions:
+/// <ol>
+/// <li> <tt>INSERT_FAILED</tt>: The insert failed.  This usually
+///      means that the UnorderedMap ran out of space. </li>
+/// <li> <tt>INSERT_SUCCESS</tt>: The insert succeeded, and the key
+///      did <i>not</i> exist in the table before. </li>
+/// <li> <tt>INSERT_EXISTING</tt>: The insert succeeded, and the key
+///      <i>did</i> exist in the table before.  The old value was
+///      replaced with the new one that you provided. </li>
+/// </ol>
+///
+/// Users can access the number of failed insertions thus far by
+/// calling failed_inserts().  This requires computation, and thus is
+/// a computational kernel, <i>not</i> a device function.  Once users
+/// have the number of failed inserts, they may reserve() as much
+/// space as they need and add the remaining elements (in a second
+/// CUDA kernel launch, if applicable).  We reiterate: users may
+/// <i>not</i> call these methods in a parallel computational kernel.
+/// They must run their parallel operation to completion, then call
+/// failed_inserts(), reserve() if necessary, and run another parallel
+/// kernel to add any remaining elements.
+///
+/// \tparam Key Type of keys of the lookup table.  If \c const, users
+///   are not allowed to add or remove keys, though they are allowed
+///   to change values.  In that case, the implementation may make
+///   optimizations specific to the <tt>Device</tt>.  For example, if
+///   <tt>Device</tt> is \c Cuda, it may use texture fetches to access
+///   keys.
+///
+/// \tparam T Type of values stored in the lookup table.  You may use
+///   \c void here, in which case the table will be a set of keys.  If
+///   \c const, users are not allowed to add, remove, or change
+///   entries.  In that case, the implementation may make
+///   optimizations specific to the \c Device, such as using texture
+///   fetches to access values.
+///
+/// \tparam Device The Kokkos Device type.
+///
+/// \tparam Compare Definition of the less-than comparison function
+///   for instances of <tt>Key</tt>.  If you rely on the default
+///   template parameter for \c Hash, then there must be a
+///   specialization of Kokkos::less for \c Key (without the \c const,
+///   if \c Key is const).
+///
+/// \tparam Hash Definition of the hash function for instances of
+///   <tt>Key</tt>.  If you rely on the default template parameter for
+///   \c Hash, then there must be a specialization of Kokkos::hash for
+///   \c Key (without the \c const, if \c Key is const).
 template <   typename Key
            , typename T
            , typename Device
@@ -68,6 +144,7 @@ template <   typename Key
 class UnorderedMap;
 
 
+// Specialization of deep_copy for two UnorderedMap objects.
 template <  typename DKey, typename DT, typename DDevice
           , typename SKey, typename ST, typename SDevice
           , typename Compare, typename Hash >
@@ -78,7 +155,19 @@ inline void deep_copy(         UnorderedMap<DKey, DT, DDevice, Compare, Hash> & 
 }
 
 
-
+/// \brief First element of the return value of UnorderedMap::insert().
+///
+/// Inserting an element into an UnorderedMap is not guaranteed to
+/// succeed.  There are three possible conditions:
+/// <ol>
+/// <li> <tt>INSERT_FAILED</tt>: The insert failed.  This usually
+///      means that the UnorderedMap ran out of space. </li>
+/// <li> <tt>INSERT_SUCCESS</tt>: The insert succeeded, and the key
+///      did <i>not</i> exist in the table before. </li>
+/// <li> <tt>INSERT_EXISTING</tt>: The insert succeeded, and the key
+///      <i>did</i> exist in the table before.  The old value was
+///      replaced with the new one that you provided. </li>
+/// </ol>
 enum UnorderedMap_insert_state
 {
     INSERT_FAILED
