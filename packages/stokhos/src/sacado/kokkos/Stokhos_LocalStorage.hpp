@@ -1,14 +1,12 @@
-// $Id$
-// $Source$ 
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -49,23 +47,23 @@
 namespace Stokhos {
 
   //! Statically allocated storage class
-  template <typename ordinal_t, typename value_t, int Num, typename node_t>
+  template <typename ordinal_t, typename value_t, int Num, typename device_t>
   class LocalStorage {
   public:
 
     typedef ordinal_t ordinal_type;
     typedef value_t value_type;
-    typedef node_t node_type;
+    typedef device_t device_type;
     typedef value_type& reference;
     typedef const value_type& const_reference;
     typedef value_type* pointer;
     typedef const value_type* const_pointer;
-    typedef Stokhos::StaticArrayTraits<value_type,node_type> ss;
+    typedef Stokhos::StaticArrayTraits<value_type,device_type> ss;
 
     //! Turn LocalStorage into a meta-function class usable with mpl::apply
-    template <typename ord_t, typename val_t> 
+    template <typename ord_t, typename val_t>
     struct apply {
-      typedef LocalStorage<ord_t,val_t,Num,node_type> type;
+      typedef LocalStorage<ord_t,val_t,Num,device_type> type;
     };
 
     //! Constructor
@@ -110,34 +108,34 @@ namespace Stokhos {
   };
 
   //! Statically allocated storage class
-  template <typename ordinal_t, typename value_t, typename node_t>
-  class LocalStorage<ordinal_t, value_t, 2, node_t> {
+  template <typename ordinal_t, typename value_t, typename device_t>
+  class LocalStorage<ordinal_t, value_t, 2, device_t> {
   public:
 
     static const int Num = 2;
-    
+
     static const bool is_static = true;
     static const int static_size = Num;
     static const bool supports_reset = false;
 
     typedef ordinal_t ordinal_type;
     typedef value_t value_type;
-    typedef node_t node_type;
+    typedef device_t device_type;
     typedef value_type& reference;
     typedef const value_type& const_reference;
     typedef value_type* pointer;
     typedef const value_type* const_pointer;
 
     //! Turn LocalStorage into a meta-function class usable with mpl::apply
-    template <typename ord_t, typename val_t> 
+    template <typename ord_t, typename val_t>
     struct apply {
-      typedef LocalStorage<ord_t,val_t,Num,node_type> type;
+      typedef LocalStorage<ord_t,val_t,Num,device_type> type;
     };
 
     //! Constructor
     KOKKOS_INLINE_FUNCTION
     LocalStorage(const ordinal_type& sz,
-		 const value_type& x = value_type(0.0)) { 
+                 const value_type& x = value_type(0.0)) {
       c0 = x;
       c1 = x;
     }
@@ -150,7 +148,7 @@ namespace Stokhos {
 
     //! Initialize values to a constant value
     KOKKOS_INLINE_FUNCTION
-    void init(const_reference v) { 
+    void init(const_reference v) {
       c0 = v;
       c1 = v;
     }
@@ -166,7 +164,7 @@ namespace Stokhos {
 
     //! Load values to an array of values
     KOKKOS_INLINE_FUNCTION
-    void load(pointer v) { 
+    void load(pointer v) {
       v[0] = c0;
       v[1] = c1;
     }
@@ -177,8 +175,8 @@ namespace Stokhos {
 
     //! Reset storage to given array, size, and stride
     KOKKOS_INLINE_FUNCTION
-    void shallowReset(pointer v, const ordinal_type& sz, 
-		      const ordinal_type& stride, bool owned) {}
+    void shallowReset(pointer v, const ordinal_type& sz,
+                      const ordinal_type& stride, bool owned) {}
 
     //! Return size
     KOKKOS_INLINE_FUNCTION
@@ -186,7 +184,7 @@ namespace Stokhos {
 
     //! Coefficient access
     KOKKOS_INLINE_FUNCTION
-    const_reference operator[] (const ordinal_type& i) const { 
+    const_reference operator[] (const ordinal_type& i) const {
       if (i == 0) return c0;
       else if (i == 1) return c1;
       return c0;
@@ -194,7 +192,7 @@ namespace Stokhos {
 
     //! Coefficient access
     KOKKOS_INLINE_FUNCTION
-    reference operator[] (const ordinal_type& i) { 
+    reference operator[] (const ordinal_type& i) {
       if (i == 0) return c0;
       else if (i == 1) return c1;
       return c0;
@@ -230,34 +228,34 @@ namespace Stokhos {
   };
 
   //! Statically allocated storage class
-  template <typename ordinal_t, typename value_t, typename node_t>
-  class LocalStorage<ordinal_t, value_t, 4, node_t> {
+  template <typename ordinal_t, typename value_t, typename device_t>
+  class LocalStorage<ordinal_t, value_t, 4, device_t> {
   public:
 
     static const int Num = 4;
-    
+
     static const bool is_static = true;
     static const int static_size = Num;
     static const bool supports_reset = false;
 
     typedef ordinal_t ordinal_type;
     typedef value_t value_type;
-    typedef node_t node_type;
+    typedef device_t device_type;
     typedef value_type& reference;
     typedef const value_type& const_reference;
     typedef value_type* pointer;
     typedef const value_type* const_pointer;
 
     //! Turn LocalStorage into a meta-function class usable with mpl::apply
-    template <typename ord_t, typename val_t> 
+    template <typename ord_t, typename val_t>
     struct apply {
-      typedef LocalStorage<ord_t,val_t,Num,node_type> type;
+      typedef LocalStorage<ord_t,val_t,Num,device_type> type;
     };
 
     //! Constructor
     KOKKOS_INLINE_FUNCTION
     LocalStorage(const ordinal_type& sz,
-		 const value_type& x = value_type(0.0)) { 
+                 const value_type& x = value_type(0.0)) {
       c0 = x;
       c1 = x;
       c2 = x;
@@ -272,7 +270,7 @@ namespace Stokhos {
 
     //! Initialize values to a constant value
     KOKKOS_INLINE_FUNCTION
-    void init(const_reference v) { 
+    void init(const_reference v) {
       c0 = v;
       c1 = v;
       c2 = v;
@@ -292,7 +290,7 @@ namespace Stokhos {
 
     //! Load values to an array of values
     KOKKOS_INLINE_FUNCTION
-    void load(pointer v) { 
+    void load(pointer v) {
       v[0] = c0;
       v[1] = c1;
       v[2] = c2;
@@ -305,8 +303,8 @@ namespace Stokhos {
 
     //! Reset storage to given array, size, and stride
     KOKKOS_INLINE_FUNCTION
-    void shallowReset(pointer v, const ordinal_type& sz, 
-		      const ordinal_type& stride, bool owned) {}
+    void shallowReset(pointer v, const ordinal_type& sz,
+                      const ordinal_type& stride, bool owned) {}
 
     //! Return size
     KOKKOS_INLINE_FUNCTION
@@ -314,7 +312,7 @@ namespace Stokhos {
 
     //! Coefficient access
     KOKKOS_INLINE_FUNCTION
-    const_reference operator[] (const ordinal_type& i) const { 
+    const_reference operator[] (const ordinal_type& i) const {
       if (i == 0) return c0;
       else if (i == 1) return c1;
       else if (i == 2) return c2;
@@ -324,7 +322,7 @@ namespace Stokhos {
 
     //! Coefficient access
     KOKKOS_INLINE_FUNCTION
-    reference operator[] (const ordinal_type& i) { 
+    reference operator[] (const ordinal_type& i) {
       if (i == 0) return c0;
       else if (i == 1) return c1;
       else if (i == 2) return c2;
@@ -366,34 +364,34 @@ namespace Stokhos {
   };
 
   //! Statically allocated storage class
-  template <typename ordinal_t, typename value_t, typename node_t>
-  class LocalStorage<ordinal_t, value_t, 8, node_t> {
+  template <typename ordinal_t, typename value_t, typename device_t>
+  class LocalStorage<ordinal_t, value_t, 8, device_t> {
   public:
 
     static const int Num = 8;
-    
+
     static const bool is_static = true;
     static const int static_size = Num;
     static const bool supports_reset = false;
 
     typedef ordinal_t ordinal_type;
     typedef value_t value_type;
-    typedef node_t node_type;
+    typedef device_t device_type;
     typedef value_type& reference;
     typedef const value_type& const_reference;
     typedef value_type* pointer;
     typedef const value_type* const_pointer;
 
     //! Turn LocalStorage into a meta-function class usable with mpl::apply
-    template <typename ord_t, typename val_t> 
+    template <typename ord_t, typename val_t>
     struct apply {
-      typedef LocalStorage<ord_t,val_t,Num,node_type> type;
+      typedef LocalStorage<ord_t,val_t,Num,device_type> type;
     };
 
     //! Constructor
     KOKKOS_INLINE_FUNCTION
     LocalStorage(const ordinal_type& sz,
-		 const value_type& x = value_type(0.0)) { 
+                 const value_type& x = value_type(0.0)) {
       c0 = x;
       c1 = x;
       c2 = x;
@@ -412,7 +410,7 @@ namespace Stokhos {
 
     //! Initialize values to a constant value
     KOKKOS_INLINE_FUNCTION
-    void init(const_reference v) { 
+    void init(const_reference v) {
       c0 = v;
       c1 = v;
       c2 = v;
@@ -440,7 +438,7 @@ namespace Stokhos {
 
     //! Load values to an array of values
     KOKKOS_INLINE_FUNCTION
-    void load(pointer v) { 
+    void load(pointer v) {
       v[0] = c0;
       v[1] = c1;
       v[2] = c2;
@@ -457,8 +455,8 @@ namespace Stokhos {
 
     //! Reset storage to given array, size, and stride
     KOKKOS_INLINE_FUNCTION
-    void shallowReset(pointer v, const ordinal_type& sz, 
-		      const ordinal_type& stride, bool owned) {}
+    void shallowReset(pointer v, const ordinal_type& sz,
+                      const ordinal_type& stride, bool owned) {}
 
     //! Return size
     KOKKOS_INLINE_FUNCTION
@@ -466,7 +464,7 @@ namespace Stokhos {
 
     //! Coefficient access
     KOKKOS_INLINE_FUNCTION
-    const_reference operator[] (const ordinal_type& i) const { 
+    const_reference operator[] (const ordinal_type& i) const {
       if (i == 0) return c0;
       else if (i == 1) return c1;
       else if (i == 2) return c2;
@@ -480,7 +478,7 @@ namespace Stokhos {
 
     //! Coefficient access
     KOKKOS_INLINE_FUNCTION
-    reference operator[] (const ordinal_type& i) { 
+    reference operator[] (const ordinal_type& i) {
       if (i == 0) return c0;
       else if (i == 1) return c1;
       else if (i == 2) return c2;

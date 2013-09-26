@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -47,7 +47,7 @@
 // Forward declarations
 namespace Sacado {
   namespace MP {
-    template <typename T, typename N> class Expr;
+    template <typename T, typename D> class Expr;
   }
 }
 
@@ -57,43 +57,43 @@ namespace Sacado {
   // partial specializations with the Vector classes.
 
   //! Specialization of %ScalarType to Expr types
-  template <typename T, typename N>
-  struct ScalarType< MP::Expr<T,N> > {
-    typedef typename ScalarType< typename MP::Expr<T,N>::value_type >::type type;
+  template <typename T, typename D>
+  struct ScalarType< MP::Expr<T,D> > {
+    typedef typename ScalarType< typename MP::Expr<T,D>::value_type >::type type;
   };
 
   //! Specialization of %ValueType to Expr types
-  template <typename T, typename N>
-  struct ValueType< MP::Expr<T,N> > {
-    typedef typename MP::Expr<T,N>::value_type type;
+  template <typename T, typename D>
+  struct ValueType< MP::Expr<T,D> > {
+    typedef typename MP::Expr<T,D>::value_type type;
   };
 
   //! Specialization of %IsADType to Expr types
-  template <typename T, typename N>
-  struct IsADType< MP::Expr<T,N> > {
+  template <typename T, typename D>
+  struct IsADType< MP::Expr<T,D> > {
     static const bool value = true;
   };
 
   //! Specialization of %IsADType to Expr types
-  template <typename T, typename N>
-  struct IsScalarType< MP::Expr<T,N> > {
+  template <typename T, typename D>
+  struct IsScalarType< MP::Expr<T,D> > {
     static const bool value = false;
   };
 
   //! Specialization of %Value to Expr types
-  template <typename T, typename N>
-  struct Value< MP::Expr<T,N> > {
-    typedef typename ValueType< MP::Expr<T,N> >::type value_type;
-    static const value_type& eval(const MP::Expr<T,N>& x) {
+  template <typename T, typename D>
+  struct Value< MP::Expr<T,D> > {
+    typedef typename ValueType< MP::Expr<T,D> >::type value_type;
+    static const value_type& eval(const MP::Expr<T,D>& x) {
       return x.val(); }
   };
 
   //! Specialization of %ScalarValue to Expr types
-  template <typename T, typename N>
-  struct ScalarValue< MP::Expr<T,N> > {
-    typedef typename ValueType< MP::Expr<T,N> >::type value_type;
-    typedef typename ScalarType< MP::Expr<T,N> >::type scalar_type;
-    static const scalar_type& eval(const MP::Expr<T,N>& x) {
+  template <typename T, typename D>
+  struct ScalarValue< MP::Expr<T,D> > {
+    typedef typename ValueType< MP::Expr<T,D> >::type value_type;
+    typedef typename ScalarType< MP::Expr<T,D> >::type scalar_type;
+    static const scalar_type& eval(const MP::Expr<T,D>& x) {
       return ScalarValue<value_type>::eval(x.val()); }
   };
 

@@ -130,12 +130,12 @@ void kernel(int offset, int stride, int n, int sz, double *dev_x, double *dev_y)
 // Partial specialization of vector example runner for CUDA
 template <int MaxSize>
 struct MPVectorExample<MaxSize,Kokkos::Threads> {
-  typedef Kokkos::Threads node_type;
+  typedef Kokkos::Threads device_type;
 
   static bool
   run(Storage_Method storage_method, int n, int sz, int nblocks, int nthreads,
       bool reset, bool print) {
-    typedef MPVectorTypes<MaxSize, node_type> MPT;
+    typedef MPVectorTypes<MaxSize, device_type> MPT;
 
     bool status;
     if (storage_method == STATIC)
@@ -154,7 +154,7 @@ struct MPVectorExample<MaxSize,Kokkos::Threads> {
       status = run_impl<typename MPT::dynamic_strided_vector>(
         n, sz, nblocks, nthreads, reset, print);
     else if (storage_method == DYNAMIC_THREADED) {
-      std::cout << "Threads node doesn't support dynamic-threaded storage!"
+      std::cout << "Threads device doesn't support dynamic-threaded storage!"
                 << std::endl;
       status = false;
     }

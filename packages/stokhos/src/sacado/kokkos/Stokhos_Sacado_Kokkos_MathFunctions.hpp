@@ -1,14 +1,12 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -46,21 +44,21 @@
 
 #include "Kokkos_Macros.hpp"
 
-#define UNARYFUNC_MACRO(OP,FADOP)					\
-namespace Sacado {							\
-									\
-  namespace MP {							\
-    template <typename T, typename N> class FADOP;			\
-    template <typename T, typename N> class Expr;			\
-									\
-    template <typename T, typename N>					\
-    FADOP< T,N >							\
-    OP (const Expr<T,N>&);						\
-  }									\
+#define UNARYFUNC_MACRO(OP,FADOP)                                       \
+namespace Sacado {                                                      \
+                                                                        \
+  namespace MP {                                                        \
+    template <typename T, typename D> class FADOP;                      \
+    template <typename T, typename D> class Expr;                       \
+                                                                        \
+    template <typename T, typename D>                                   \
+    FADOP< T,D >                                                        \
+    OP (const Expr<T,D>&);                                              \
+  }                                                                     \
 }                                                                       \
                                                                         \
 namespace std {                                                         \
-  using Sacado::MP::OP;							\
+  using Sacado::MP::OP;                                                 \
 }
 
 UNARYFUNC_MACRO(exp, ExpOp)
@@ -84,33 +82,33 @@ UNARYFUNC_MACRO(fabs, FAbsOp)
 
 #undef UNARYFUNC_MACRO
 
-#define BINARYFUNC_MACRO(OP,FADOP)					\
-namespace Sacado {							\
-									\
-  namespace MP {							\
-    template <typename T1, typename T2, typename N> class FADOP;	\
-    template <typename T, typename N> class Expr;			\
-									\
-    template <typename T1, typename T2, typename N>			\
-    FADOP< T1, T2, N >							\
-    OP (const Expr<T1,N>&,						\
-	const Expr<T2,N>&);						\
-									\
-    template <typename T, typename N>					\
-    FADOP< typename T::value_type, T, N >				\
-    OP (const typename T::value_type&,					\
-	const Expr<T,N>&);						\
-    									\
-    template <typename T, typename N>					\
-    FADOP< T, typename T::value_type, N >				\
-    OP (const Expr<T,N>&,						\
-	const typename T::value_type&);					\
-  }									\
-  									\
-}									\
+#define BINARYFUNC_MACRO(OP,FADOP)                                      \
+namespace Sacado {                                                      \
+                                                                        \
+  namespace MP {                                                        \
+    template <typename T1, typename T2, typename D> class FADOP;        \
+    template <typename T, typename D> class Expr;                       \
+                                                                        \
+    template <typename T1, typename T2, typename D>                     \
+    FADOP< T1, T2, D >                                                  \
+    OP (const Expr<T1,D>&,                                              \
+        const Expr<T2,D>&);                                             \
+                                                                        \
+    template <typename T, typename D>                                   \
+    FADOP< typename T::value_type, T, D >                               \
+    OP (const typename T::value_type&,                                  \
+        const Expr<T,D>&);                                              \
+                                                                        \
+    template <typename T, typename D>                                   \
+    FADOP< T, typename T::value_type, D >                               \
+    OP (const Expr<T,D>&,                                               \
+        const typename T::value_type&);                                 \
+  }                                                                     \
+                                                                        \
+}                                                                       \
                                                                         \
 namespace std {                                                         \
-  using Sacado::MP::OP;							\
+  using Sacado::MP::OP;                                                 \
 }
 
 BINARYFUNC_MACRO(atan2, Atan2Op)

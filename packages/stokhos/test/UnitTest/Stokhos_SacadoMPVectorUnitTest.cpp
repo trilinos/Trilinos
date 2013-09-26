@@ -450,45 +450,45 @@ struct UnitTestSetup {
   SAXPY_UNIT_TEST(VEC)
 
 namespace DynamicVecTest {
-  typedef Kokkos::Threads node_type;
-  typedef Stokhos::DynamicStorage<int,double,node_type> storage_type;
-  typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
+  typedef Kokkos::Threads device_type;
+  typedef Stokhos::DynamicStorage<int,double,device_type> storage_type;
+  typedef Sacado::MP::Vector<storage_type,device_type> vec_type;
   typedef UnitTestSetup<vec_type> UTS;
   UTS setup;
   VECTOR_UNIT_TESTS(DynamicVector)
 }
 
 namespace DynamicStridedVecTest {
-  typedef Kokkos::Threads node_type;
-  typedef Stokhos::DynamicStridedStorage<int,double,node_type> storage_type;
-  typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
+  typedef Kokkos::Threads device_type;
+  typedef Stokhos::DynamicStridedStorage<int,double,device_type> storage_type;
+  typedef Sacado::MP::Vector<storage_type,device_type> vec_type;
   typedef UnitTestSetup<vec_type> UTS;
   UTS setup;
   VECTOR_UNIT_TESTS(DynamicStridedVector)
 }
 
 namespace StaticVecTest {
-  typedef Kokkos::Threads node_type;
-  typedef Stokhos::StaticStorage<int,double,8,node_type> storage_type;
-  typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
+  typedef Kokkos::Threads device_type;
+  typedef Stokhos::StaticStorage<int,double,8,device_type> storage_type;
+  typedef Sacado::MP::Vector<storage_type,device_type> vec_type;
   typedef UnitTestSetup<vec_type> UTS;
   UTS setup;
   VECTOR_UNIT_TESTS(StaticVector)
 }
 
 namespace StaticFixedVecTest {
-  typedef Kokkos::Threads node_type;
-  typedef Stokhos::StaticFixedStorage<int,double,8,node_type> storage_type;
-  typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
+  typedef Kokkos::Threads device_type;
+  typedef Stokhos::StaticFixedStorage<int,double,8,device_type> storage_type;
+  typedef Sacado::MP::Vector<storage_type,device_type> vec_type;
   typedef UnitTestSetup<vec_type> UTS;
   UTS setup;
   VECTOR_UNIT_TESTS(StaticFixedVector)
 }
 
 namespace LocalVecTest {
-  typedef Kokkos::Threads node_type;
-  typedef Stokhos::LocalStorage<int,double,8,node_type> storage_type;
-  typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
+  typedef Kokkos::Threads device_type;
+  typedef Stokhos::LocalStorage<int,double,8,device_type> storage_type;
+  typedef Sacado::MP::Vector<storage_type,device_type> vec_type;
   typedef UnitTestSetup<vec_type> UTS;
   UTS setup;
   VECTOR_UNIT_TESTS(LocalVector)
