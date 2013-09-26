@@ -143,6 +143,7 @@ public:
   static void print_configuration( std::ostream & );
 
   //@}
+  //--------------------------------------------------------------------------
   //! \name Device-specific functions
   //@{
 

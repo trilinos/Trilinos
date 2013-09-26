@@ -52,8 +52,6 @@
 #include <Kokkos_Parallel.hpp>
 #include <Kokkos_Layout.hpp>
 
-#include <OpenMP/Kokkos_Host_Thread.hpp>
-
 /*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
@@ -105,22 +103,6 @@ public:
 
   //------------------------------------
 
-  static void resize_reduce_scratch( unsigned );
-
-  static void * root_reduce_scratch();
-
-  static void assert_ready( const char * const );
-
-  inline static
-  Impl::HostThread * get_host_thread()
-    { return m_host_threads[ omp_get_thread_num() ]; }
-
-  inline static
-  Impl::HostThread * get_host_thread( const unsigned i )
-    { return m_host_threads[ i ]; }
-
-private:
-  static Impl::HostThread * m_host_threads[ Impl::HostThread::max_thread_count ];
 };
 
 /*--------------------------------------------------------------------------*/
