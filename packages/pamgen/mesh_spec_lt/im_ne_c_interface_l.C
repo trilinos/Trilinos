@@ -14,7 +14,7 @@ int im_ne_get_init_global_l(int   neid, 		  /* NemesisI file ID */
 			  )
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;
   *num_nodes_g     = ms->getMSI(ms_lt::Mesh_Specification::NUM_NODES_GLOBAL);
   *num_elems_g     = ms->getMSI(ms_lt::Mesh_Specification::NUM_ELEMS_GLOBAL);
@@ -32,7 +32,7 @@ int im_ne_get_init_info_l(int   neid,		/* NemesisI file ID */
 			char *ftype)
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;    
   *num_proc = ms->getMSI(ms_lt::Mesh_Specification::NUM_TOTAL_PROC);
   *num_proc_in_f = ms->getMSI(ms_lt::Mesh_Specification::NUM_PROC_IN_FILE);
@@ -48,7 +48,7 @@ int im_ne_get_eb_info_global_l(int neid,		/* NemesisI file ID                 */
 			     )
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;
   long long num_eb = ms->getMSI(ms_lt::Mesh_Specification::NUM_ELM_BLKS_GLOBAL);
   long long * ebids = ms->getMSP(ms_lt::Mesh_Specification::ELEM_BLK_IDS_GLOBAL);
@@ -73,7 +73,7 @@ int im_ne_get_loadbal_param_l(int   neid, 	/* NetCDF/Exodus file ID */
 			    )
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;
 
   *num_int_nodes  = ms->getMSI(ms_lt::Mesh_Specification::NUM_INTERNAL_NODES);
@@ -96,7 +96,7 @@ int im_ne_get_elem_map_l(int   neid,		/* NetCDF/Exodus file ID */
 		       )
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;
   
   long long int_elems = ms->getMSI(ms_lt::Mesh_Specification::NUM_INTERNAL_ELEMS);
@@ -120,7 +120,7 @@ int im_ne_get_node_map_l(int   neid,		/* NetCDF/Exodus file ID */
 		       )
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1; 
   
   long long int_nodes = ms->getMSI(ms_lt::Mesh_Specification::NUM_INTERNAL_NODES);
@@ -148,7 +148,7 @@ int im_ne_get_cmap_params_l(int neid,                  /* NetCDF/Exodus file ID 
 			  )
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1; 
   
   long long num_node_cmaps = ms->getMSI(ms_lt::Mesh_Specification::NUM_NODE_COMM_MAPS);
@@ -181,7 +181,7 @@ int im_ne_get_node_cmap_l(int  neid,             /* NetCDF/Exodus file ID */
 			)
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;
 
   long long map_index = -1;  
@@ -216,7 +216,7 @@ int im_ne_get_elem_cmap_l(int  neid,     /* NetCDF/Exodus file ID */
 			)
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;
 
   long long map_index = -1;
@@ -251,7 +251,7 @@ int im_ne_get_ns_param_global_l(int neid,	     /* NetCDF/Exodus file ID */
 			      )
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;
   
   long long nns = ms->getMSI(ms_lt::Mesh_Specification::NUM_NODE_SETS_GLOBAL);
@@ -275,7 +275,7 @@ int im_ne_get_ss_param_global_l(int neid,	    /* NetCDF/Exodus file ID */
 			      )
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;
   
   int nss = ms->getMSI(ms_lt::Mesh_Specification::NUM_SIDE_SETS_GLOBAL);

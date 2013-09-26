@@ -6270,6 +6270,7 @@ void sequentialTaskPartitioning(
     delete currentPartitions;
     delete newFuturePartitions;
 
+    freeArray<partId_t>(partIds);
     freeArray<pq_lno_t>(partitionedPointCoordinates);
     freeArray<pq_lno_t>(newpartitionedPointCoordinates);
     freeArray<pq_lno_t>(inTotalCounts);
