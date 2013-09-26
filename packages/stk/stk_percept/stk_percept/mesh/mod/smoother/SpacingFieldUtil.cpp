@@ -1,12 +1,16 @@
 #include <stk_percept/Percept.hpp>
-#if !defined(__IBMCPP__) 
+#if !defined(__IBMCPP__)
 
+#if defined(STK_PERCEPT_HAS_GEOMETRY)
 #include <stk_percept/mesh/mod/smoother/MeshSmoother.hpp>
+#endif
+
 #include <stk_mesh/base/FieldParallel.hpp>
 
 #include <stk_percept/math/DenseMatrix.hpp>
 
-#include "SpacingFieldUtil.hpp"
+#include <stk_percept/mesh/mod/smoother/SpacingFieldUtil.hpp>
+#include <stk_percept/mesh/mod/smoother/JacobianUtil.hpp>
 
 #include "mpi.h"
 
@@ -34,7 +38,11 @@ namespace stk {
 
         for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
           {
-            if (MeshSmoother::select_bucket(**k, &m_eMesh) && on_locally_owned_part(**k))
+            bool sel_bucket = true;
+#if defined(STK_PERCEPT_HAS_GEOMETRY)
+            sel_bucket = MeshSmoother::select_bucket(**k, &m_eMesh);
+#endif
+            if (sel_bucket && on_locally_owned_part(**k))
               {
                 stk::mesh::Bucket & bucket = **k ;
                 const unsigned num_elements_in_bucket = bucket.size();
@@ -80,12 +88,21 @@ namespace stk {
               }
           }
 
-        VectorFieldType *spacing_field_v = static_cast<VectorFieldType *>(spacing_field);
-        stk::mesh::Selector sel(m_eMesh.get_fem_meta_data()->universal_part());
-        stk::mesh::parallel_reduce(*m_eMesh.get_bulk_data(), stk::mesh::sum(*spacing_field_v, &sel));
+        typedef mesh::Field<double, stk::mesh::Cartesian>    AVectorFieldType ;
 
-        VectorFieldType *spacing_field_counter_v = static_cast<VectorFieldType *>(spacing_field_counter);
-        stk::mesh::parallel_reduce(*m_eMesh.get_bulk_data(), stk::mesh::sum(*spacing_field_counter_v));
+        // AVectorFieldType *spacing_field_v = static_cast<AVectorFieldType *>(spacing_field);
+        // stk::mesh::Selector sel(m_eMesh.get_fem_meta_data()->universal_part());
+        // stk::mesh::parallel_reduce(*m_eMesh.get_bulk_data(), stk::mesh::sum(*spacing_field_v, &sel));
+
+        //AVectorFieldType *spacing_field_v = static_cast<AVectorFieldType *>(spacing_field);
+        //stk::mesh::Selector sel(m_eMesh.get_fem_meta_data()->universal_part());
+        std::vector<stk::mesh::FieldBase*> spacing_field_vec(1,spacing_field);
+        stk::mesh::parallel_sum(*m_eMesh.get_bulk_data(), spacing_field_vec);
+
+        //AVectorFieldType *spacing_field_counter_v = static_cast<AVectorFieldType *>(spacing_field_counter);
+        //stk::mesh::parallel_reduce(*m_eMesh.get_bulk_data(), stk::mesh::sum(*spacing_field_counter_v));
+        std::vector<stk::mesh::FieldBase*> spacing_field_counter_vec(1,spacing_field_counter);
+        stk::mesh::parallel_sum(*m_eMesh.get_bulk_data(), spacing_field_counter_vec);
 
         {
           std::vector< const stk::mesh::FieldBase *> fields;
@@ -93,7 +110,7 @@ namespace stk {
           fields.push_back(spacing_field_counter);
 
           // only the aura = !locally_owned_part && !globally_shared_part (outer layer)
-          stk::mesh::communicate_field_data(m_eMesh.get_bulk_data()->shared_aura(), fields); 
+          stk::mesh::communicate_field_data(m_eMesh.get_bulk_data()->shared_aura(), fields);
 
           // the shared part (just the shared boundary)
           //stk::mesh::communicate_field_data(*m_eMesh->get_bulk_data()->ghostings()[0], fields);
@@ -143,7 +160,11 @@ namespace stk {
       for (unsigned i_element = 0; i_element < node_elems.size(); i_element++)
         {
           stk::mesh::Entity element = node_elems[i_element].entity();
-          if (!MeshSmoother::select_bucket(m_eMesh.bucket(element), &m_eMesh))
+          bool sel_bucket = true;
+#if defined(STK_PERCEPT_HAS_GEOMETRY)
+          sel_bucket = MeshSmoother::select_bucket(m_eMesh.bucket(element), &m_eMesh);
+#endif
+          if (!sel_bucket)
             continue;
 
           if (!element_selector || (*element_selector)(m_eMesh.bucket(element)))
@@ -195,8 +216,8 @@ namespace stk {
                   for (int jdim=0; jdim < spatial_dim; jdim++)
                     {
                       if (0)
-                        std::cout << "(i,j)= " << idim << " " << jdim << " coord= " << coord[0] << " " << coord[1] 
-                                  << " AI= " << AI(idim,jdim) <<  " num_elem= " << num_elem << " i_element= " << i_element 
+                        std::cout << "(i,j)= " << idim << " " << jdim << " coord= " << coord[0] << " " << coord[1]
+                                  << " AI= " << AI(idim,jdim) <<  " num_elem= " << num_elem << " i_element= " << i_element
                                   << " A_ = " << A_ << " A= " << A(idim,jdim) << " uv= " << unit_vector_dir[jdim] << " topo= " << topo.getName() << "\n";
                       spacing[idim] += AI(idim,jdim)*unit_vector_dir[jdim];
                     }
@@ -204,7 +225,7 @@ namespace stk {
               double sum=0.0;
               for (int jdim=0; jdim < spatial_dim; jdim++)
                 {
-                  if ( 0 && m_eMesh.identifier(element) == 6659) 
+                  if ( 0 && m_eMesh.identifier(element) == 6659)
                     {
                       std::cout << " nodeid= " << m_eMesh.identifier(node) << " spacing[" << jdim << "]= " << spacing[jdim] << " unit_vector_dir= " << unit_vector_dir[jdim] << std::endl;
                       PerceptMesh::get_static_instance()->print(element);
@@ -215,7 +236,7 @@ namespace stk {
               VERIFY_OP_ON(sum, >, 1.e-12, "bad sum");
               spacing_ave += 1.0/sum;
 
-              if (0 && m_eMesh.identifier(element) == 6659) 
+              if (0 && m_eMesh.identifier(element) == 6659)
                 {
                   PerceptMesh::get_static_instance()->print(element, false);
                   std::cout << " nodeid= " << m_eMesh.identifier(node) << " spacing= " << 1.0/sum << std::endl;

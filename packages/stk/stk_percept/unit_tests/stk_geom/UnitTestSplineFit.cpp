@@ -31,6 +31,7 @@ namespace stk
       //=============================================================================
       //=============================================================================
 
+#if !defined(__IBMCPP__)
       STKUNIT_UNIT_TEST(unit_stk_geom, test_1)
       {
         const bool debug_print = false;
@@ -637,6 +638,7 @@ namespace stk
           }
 
       }
+#endif
 
     }
   }
