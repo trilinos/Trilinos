@@ -876,7 +876,8 @@ public:
         int myProcPerm=  myPermutation % procPerm; // the index of the proc permutation
         int myTaskPerm  = myPermutation / procPerm; // the index of the task permutation
 
-        int *permutation = allocMemory<int> (taskPerm);
+        int *permutation = allocMemory<int> ((this->proc_coord_dim > this->task_coord_dim) 
+                                                   ? this->proc_coord_dim : this->task_coord_dim);
 
         //get the permutation order from the proc permutation index.
         ithPermutation<int>(this->proc_coord_dim, myProcPerm, permutation);
@@ -1927,6 +1928,7 @@ pcoord_t **shiftMachineCoordinates(int machine_dim, procId_t *machine_dimensions
             //cout << "I:" << i << "j:" << j << " coord:" << coords[j] << " now:" << result_machine_coords[i][j] << endl;
         }
         delete [] machineCounts;
+        delete [] filledCoordinates;
     }
 
     return result_machine_coords;
