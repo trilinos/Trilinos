@@ -48,6 +48,8 @@
 
 #include <Kokkos_Parallel.hpp>
 #include <Kokkos_ParallelReduce.hpp>
+#include <OpenMP/Kokkos_OpenMPexec.hpp>
+
 #include <OpenMP/Kokkos_Host_Thread.hpp>
 
 namespace Kokkos {
@@ -191,6 +193,67 @@ public:
 };
 
 //----------------------------------------------------------------------------
+
+} // namespace Impl
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace Impl {
+
+template< class FunctorType >
+class ParallelReduce< FunctorType , ParallelWorkRequest , OpenMP >
+{
+  typedef ReduceAdapter< FunctorType >   Reduce ;
+  typedef typename Reduce::pointer_type  pointer_type ;
+
+  inline
+  ParallelReduce( const FunctorType         & functor ,
+                  const ParallelWorkRequest & work ,
+                  pointer_type                result = 0 )
+  {
+    OpenMPexec::assert_ready("Kokkos::OpenMP - parallel_reduce");
+
+    OpenMPexec::resize_reduce_scratch( Reduce::value_size( functor ) );
+
+#pragma omp parallel
+    {
+      OpenMPexec & exec = * OpenMPexec::get_thread( omp_get_thread_num() );
+
+      typename Reduce::reference_type update = exec.reduce_reference( functor );
+
+      functor.init( update );
+
+      for ( exec.team_work_init( work.league_size ) ; exec.team_work_avail() ; exec.team_work_next() ) {
+        functor( OpenMP( exec ) , update );
+      }
+    }
+/* END #pragma omp parallel */
+
+    {
+      const int n = omp_get_max_threads();
+      OpenMPexec & root = * OpenMPexec::get_thread(0);
+
+      for ( int i = 1 ; i < n ; ++i ) {
+        functor.join( root.reduce_reference( functor ) ,
+                      OpenMPexec::get_thread(i)->reduce_reference( functor ) );
+      }
+
+      Reduce::final( functor , root.reduce_pointer( functor ) );
+
+      if ( result ) {
+        const pointer_type ptr = root.reduce_pointer( functor );
+        const int n = Reduce::value_count( functor );
+
+        for ( int i = 0 ; i < n ; ++i ) { result[i] = ptr[i] ; }
+      }
+    }
+  }
+
+  void wait() {}
+};
 
 } // namespace Impl
 } // namespace Kokkos

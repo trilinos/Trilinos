@@ -45,6 +45,7 @@
 #define KOKKOS_THREADSEXEC_HPP
 
 #include <utility>
+#include <impl/Kokkos_spinwait.hpp>
 
 //----------------------------------------------------------------------------
 
@@ -137,7 +138,6 @@ public:
 
   //------------------------------------
 
-  static void wait( volatile int & , const int );
   static void wait_yield( volatile int & , const int );
 
   void * get_shmem( const int size );
@@ -158,7 +158,7 @@ public:
 
         ThreadsExec & fan = *m_fan[i] ;
 
-        ThreadsExec::wait( fan.m_state , ThreadsExec::Active );
+        Impl::spinwait( fan.m_state , ThreadsExec::Active );
 
         f.join( Reduce::reference( m_reduce ) ,
                 Reduce::reference( fan.m_reduce ) );
@@ -171,18 +171,18 @@ public:
   fan_in( const Functor & ) const
     {
       for ( int i = 0 ; i < m_fan_size ; ++i ) {
-        ThreadsExec::wait( m_fan[i]->m_state , ThreadsExec::Active );
+        Impl::spinwait( m_fan[i]->m_state , ThreadsExec::Active );
       }
     }
 
   void team_barrier()
     {
       for ( int i = 0 ; i < m_fan_team_size ; ++i ) {
-        ThreadsExec::wait( m_fan[i]->m_state , ThreadsExec::Active );
+        Impl::spinwait( m_fan[i]->m_state , ThreadsExec::Active );
       }
       if ( m_team_rank ) {
         m_state = Rendezvous ;
-        ThreadsExec::wait( m_state , ThreadsExec::Rendezvous );
+        Impl::spinwait( m_state , ThreadsExec::Rendezvous );
       }
       for ( int i = 0 ; i < m_fan_team_size ; ++i ) {
         m_fan[i]->m_state = ThreadsExec::Active ;

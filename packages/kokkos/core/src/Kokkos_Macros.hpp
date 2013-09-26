@@ -135,8 +135,8 @@ class CudaSpace ;
 
 #else
 
-#ifndef KOKKOS_USE_PRAGMA_SIMD_VECTORLENGTH
-#define KOKKOS_USE_PRAGMA_SIMD_VECTORLENGTH 8
+#ifndef KOKKOS_USE_PRAGMA_SIMD
+#define KOKKOS_USE_PRAGMA_SIMD
 #endif
 
 /*
@@ -190,10 +190,6 @@ class CudaSpace ;
 
 #ifndef KOKKOS_FORCEINLINE_FUNCTION
 #define KOKKOS_FORCEINLINE_FUNCTION  inline
-#endif
-
-#ifndef KOKKOS_USE_PRAGMA_SIMD_VECTORLENGTH
-#define KOKKOS_USE_PRAGMA_SIMD_VECTORLENGTH 0
 #endif
 
 //----------------------------------------------------------------------------

@@ -289,7 +289,7 @@ void ThreadsExec::execute_sleep( ThreadsExec & exec , const void * )
   const int n = exec.m_fan_size ;
 
   for ( int i = 0 ; i < n ; ++i ) {
-    wait( exec.m_fan[i]->m_state , ThreadsExec::Active );
+    Impl::spinwait( exec.m_fan[i]->m_state , ThreadsExec::Active );
   }
 
   exec.m_state = ThreadsExec::Inactive ;
@@ -399,7 +399,7 @@ void ThreadsExec::fence()
 {
   if ( s_threads_count ) {
     // Wait for the root thread to complete:
-    wait( s_threads_exec[0]->m_state , ThreadsExec::Active );
+    Impl::spinwait( s_threads_exec[0]->m_state , ThreadsExec::Active );
 
     if ( s_exception_msg.size() ) {
       Kokkos::Impl::throw_runtime_exception( s_exception_msg );
@@ -673,64 +673,31 @@ void ThreadsExec::initialize(
   //------------------------------------
   // Query hardware topology and capacity, if available.
 
-  const bool     hwloc_avail            = Kokkos::hwloc::available();
-  const unsigned hwloc_numa_count       = Kokkos::hwloc::get_available_numa_count();
-  const unsigned hwloc_cores_per_numa   = Kokkos::hwloc::get_available_cores_per_numa();
-  const unsigned hwloc_threads_per_core = Kokkos::hwloc::get_available_threads_per_core();
-  const unsigned hwloc_capacity         = hwloc_avail ? hwloc_numa_count * hwloc_cores_per_numa * hwloc_threads_per_core : 1 ;
+  const bool hwloc_avail = Kokkos::hwloc::available();
+
+  const std::pair<unsigned,unsigned>
+    hwloc_core_topo( Kokkos::hwloc::get_available_numa_count() ,
+                     Kokkos::hwloc::get_available_cores_per_numa() );
 
   std::pair<unsigned,unsigned> master_coord = Kokkos::hwloc::get_this_thread_coordinate();
   bool                         asynchronous = false ;
 
-  //------------------------------------
-  // Use HWLOC to determine coordinates for pinning threads.
-
   if ( hwloc_avail ) {
 
-    if ( hwloc_capacity       < thread_count ||
-         hwloc_numa_count     < use_core_topology.first ||
-         hwloc_cores_per_numa < use_core_topology.second ) {
-      msg << " FAILED : Requested more cores or threads than HWLOC reports are available "
-          << " numa_count(" << hwloc_numa_count << ") , cores_per_numa(" << hwloc_cores_per_numa << ")"
-          << " capacity(" << hwloc_capacity << ")" ;
-      Kokkos::Impl::throw_runtime_exception( msg.str() );
+    if ( 0 == use_core_topology.first && 0 == use_core_topology.second ) {
+      use_core_topology = Kokkos::hwloc::use_core_topology( thread_count );
     }
 
-    const std::pair<unsigned,unsigned> core_topo( hwloc_numa_count , hwloc_cores_per_numa );
-
-    if ( 0 == use_core_topology.first || 0 == use_core_topology.second ) {
-      // User requested that we determine best use of cores.
-
-      // Start by assuming use of all available cores
-      use_core_topology = core_topo ;
-
-      if ( thread_count <= ( core_topo.first - 1 ) * core_topo.second ) {
-        // Can spawn all requested threads on their own (NUMA) group of cores,
-        // can execute asynchronously.
-        --use_core_topology.first ;
-      }
-      else if ( thread_count <= core_topo.first * ( core_topo.second - 1 ) ) {
-        // Can spawn all requested threads on their own core and have excess core,
-        // can execute asynchronously.
-        --use_core_topology.second ;
-      }
-      else if ( core_topo.first * core_topo.second < thread_count &&
-                thread_count <= core_topo.first * ( core_topo.second - 1 ) * hwloc_threads_per_core ) {
-        // Will oversubscribe cores and can omit one core
-        --use_core_topology.second ;
-      }
-    }
-
-    if ( use_core_topology.first < core_topo.first ) {
+    if ( use_core_topology.first < hwloc_core_topo.first ) {
       // Can omit a (NUMA) group of cores and execute work asynchronously
       // on the other groups.
 
-      Kokkos::Impl::host_thread_mapping( team_topology , use_core_topology , core_topo , s_threads_coord );
+      Kokkos::hwloc::thread_mapping( team_topology , use_core_topology , hwloc_core_topo , s_threads_coord );
 
       // Don't use master thread's first core coordinate (NUMA region).
       // Originally mapped:
-      //   begin = core_topo.first - use_core_topology.first ;
-      //   end   = core_topo.first ;
+      //   begin = hwloc_core_topo.first - use_core_topology.first ;
+      //   end   = hwloc_core_topo.first ;
       // So can decrement.
 
       for ( unsigned i = 0 ; i < thread_count ; ++i ) {
@@ -741,29 +708,29 @@ void ThreadsExec::initialize(
 
       asynchronous = true ;
     }
-    else if ( use_core_topology.second < core_topo.second ) {
+    else if ( use_core_topology.second < hwloc_core_topo.second ) {
       // Can omit a core from each group and execute work asynchronously
 
-      Kokkos::Impl::host_thread_mapping( team_topology , use_core_topology , core_topo , s_threads_coord );
+      Kokkos::hwloc::thread_mapping( team_topology , use_core_topology , hwloc_core_topo , s_threads_coord );
 
       // Threads' coordinates are in the range
-      //   0 <= numa_begin = core_topo.first - use_core_topology.first
-      //   1 <= numa_end   = core_topo.first
-      //   1 <= core_begin = core_topo.second - use_core_topology.second
-      //   1 <= core_end   = core_topo.second
+      //   0 <= numa_begin = hwloc_core_topo.first - use_core_topology.first
+      //   1 <= numa_end   = hwloc_core_topo.first
+      //   1 <= core_begin = hwloc_core_topo.second - use_core_topology.second
+      //   1 <= core_end   = hwloc_core_topo.second
       //
       //   range: ( [numa_begin,numa_end) , [core_begin,core_end) )
       //
       // Force master thread onto the highest rank unused core of its current numa region.
       //
-      master_coord.second = ( core_topo.second - use_core_topology.second ) - 1 ;
+      master_coord.second = ( hwloc_core_topo.second - use_core_topology.second ) - 1 ;
 
       asynchronous = true ;
     }
     else {
       // Spawn threads with root thread on the master process' core
 
-      Kokkos::Impl::host_thread_mapping( team_topology , use_core_topology , core_topo , master_coord , s_threads_coord );
+      Kokkos::hwloc::thread_mapping( team_topology , use_core_topology , hwloc_core_topo , master_coord , s_threads_coord );
 
       s_threads_coord[0] = std::pair<unsigned,unsigned>( ~0u , ~0u );
     }
