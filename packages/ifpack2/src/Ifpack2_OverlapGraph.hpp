@@ -140,24 +140,35 @@ public:
 };
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-OverlapGraph<LocalOrdinal,GlobalOrdinal,Node>::OverlapGraph(const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& UserMatrixGraph_in, int OverlapLevel_in)
- : UserMatrixGraph_(UserMatrixGraph_in),
-   OverlapLevel_(OverlapLevel_in),
-   IsOverlapped_(OverlapLevel_in>0 && UserMatrixGraph_in->getDomainMap()->isDistributed())
+OverlapGraph<LocalOrdinal,GlobalOrdinal,Node>::
+OverlapGraph (const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& UserMatrixGraph_in, 
+	      int OverlapLevel_in)
+  : UserMatrixGraph_ (UserMatrixGraph_in),
+    OverlapLevel_ (OverlapLevel_in),
+    IsOverlapped_ (OverlapLevel_in > 0 && UserMatrixGraph_in->getDomainMap ()->isDistributed ())
 {
-  OverlapGraph_ = CreateOverlapGraph(UserMatrixGraph_, OverlapLevel_);
+  OverlapGraph_ = createOverlapGraph (UserMatrixGraph_, OverlapLevel_);
 }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-OverlapGraph<LocalOrdinal,GlobalOrdinal,Node>::OverlapGraph(const OverlapGraph<LocalOrdinal,GlobalOrdinal,Node>& Source)
- : UserMatrixGraph_(Source.UserMatrixGraph_),
-   OverlapRowMap_(Source.OverlapRowMap_),
-   OverlapLevel_(Source.OverlapLevel_),
-   IsOverlapped_(Source.IsOverlapped_)
+OverlapGraph<LocalOrdinal,GlobalOrdinal,Node>::
+OverlapGraph (const OverlapGraph<LocalOrdinal,GlobalOrdinal,Node>& Source)
+  : UserMatrixGraph_ (Source.UserMatrixGraph_),
+    OverlapRowMap_ (Source.OverlapRowMap_),
+    OverlapLevel_ (Source.OverlapLevel_),
+    IsOverlapped_ (Source.IsOverlapped_)
 {
+  using Teuchos::rcp;
+  typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> graph_type;
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
+
   if (IsOverlapped_) {
-    if (OverlapGraph_!=Teuchos::null) OverlapGraph_ = Teuchos::rcp(new Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node>(*OverlapGraph_));
-    if (OverlapRowMap_!=Teuchos::null) OverlapRowMap_ = Teuchos::rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(*OverlapRowMap_));
+    if (! OverlapGraph_.is_null ()) {
+      OverlapGraph_ = rcp (new graph_type (*OverlapGraph_));
+    }
+    if (! OverlapRowMap_.is_null ()) {
+      OverlapRowMap_ = rcp (new map_type (*OverlapRowMap_));
+    }
   }
 }
 
