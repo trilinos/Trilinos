@@ -48,8 +48,6 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, induced_part )
 {
   check_valgrind_version();
 
-  CALLGRIND_START_INSTRUMENTATION;
-
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 
   const size_t p_size = stk::parallel_machine_size(pm);
@@ -61,7 +59,7 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, induced_part )
   const int y_dim = 3;
   const int z_dim = 3;
 
-  // Set up fixture, add additional parts to make it more realistic
+  // Set up dead-simple mesh, 2 quads sharing 2 nodes
   stk::mesh::fixtures::HexFixture mesh(pm, x_dim, y_dim, z_dim);
   MetaData & meta = mesh.m_meta;
   BulkData & bulk = mesh.m_bulk_data;
@@ -109,8 +107,9 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, induced_part )
 
   bulk.modification_begin();
 
+  CALLGRIND_START_INSTRUMENTATION;
   CALLGRIND_TOGGLE_COLLECT;
-  // Remove and reattach the shared nodes from/to middle element over and over.
+  // Remove and reattach the shared nodes from/to element1 over and over.
   // We don't want the node to change parts because we don't want to measure
   // entity movement costs. We just want to time the induced-part logic.
   for (int i = 0; i < num_iterations; ++i) {
@@ -120,7 +119,6 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, induced_part )
     }
   }
   CALLGRIND_TOGGLE_COLLECT;
-
   CALLGRIND_STOP_INSTRUMENTATION;
 
   bulk.modification_end();
