@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -56,10 +56,13 @@ int main(int argc, char **argv)
     CLP.setDocString(
       "This example explores operator overloading on CUDA.\n");
 
+    const int num_storage_method = 6;
+    const Storage_Method storage_method_values[] = { STATIC, STATIC_FIXED, LOCAL, DYNAMIC, DYNAMIC_STRIDED, DYNAMIC_THREADED };
+    const char *storage_method_names[] = { "static", "static-fixed", "local", "dynamic", "dynamic-strided", "dynamic-threaded" };
     Storage_Method storage_method = STATIC_FIXED;
-    CLP.setOption("storage_method", &storage_method, 
-		  num_storage_method, storage_method_values, 
-		  storage_method_names, "Vector storage method");
+    CLP.setOption("storage_method", &storage_method,
+                  num_storage_method, storage_method_values,
+                  storage_method_names, "Vector storage method");
 
     int n = 100;
     CLP.setOption("num_loop", &n, "Number of loop iterations");
@@ -92,37 +95,37 @@ int main(int argc, char **argv)
     CLP.parse( argc, argv );
 
     std::cout << "Summary of command line options:" << std::endl
-	      << "\tstorage_method = " 
-	      << storage_method_names[storage_method] << std::endl
-	      << "\tnum_loop    = " << n << std::endl
-	      << "\tnum_vec     = " << sz << std::endl
-	      << "\tnum_blocks  = " << nblocks << std::endl
-	      << "\tnum_threads = " << nthreads << std::endl
-	      << "\treset       = " << reset << std::endl
-	      << "\tprint       = " << print << std::endl
-	      << "\thost        = " << test_host << std::endl
-	      << "\tcuda        = " << test_cuda << std::endl << std::endl;
+              << "\tstorage_method = "
+              << storage_method_names[storage_method] << std::endl
+              << "\tnum_loop    = " << n << std::endl
+              << "\tnum_vec     = " << sz << std::endl
+              << "\tnum_blocks  = " << nblocks << std::endl
+              << "\tnum_threads = " << nthreads << std::endl
+              << "\treset       = " << reset << std::endl
+              << "\tprint       = " << print << std::endl
+              << "\thost        = " << test_host << std::endl
+              << "\tcuda        = " << test_cuda << std::endl << std::endl;
 
 #ifdef HAVE_KOKKOSCLASSIC_CUDA
     if (test_cuda) {
       bool status = MPVectorExample<MaxSize,Kokkos::Cuda>::run(
-	storage_method, n, sz, nblocks, nthreads, reset, print);
+        storage_method, n, sz, nblocks, nthreads, reset, print);
 
       if (status)
-	std::cout << "CUDA Test Passed!" << std::endl;
+        std::cout << "CUDA Test Passed!" << std::endl;
       else
-	std::cout << "CUDA Test Failed!" << std::endl;
+        std::cout << "CUDA Test Failed!" << std::endl;
     }
 #endif
 
      if (test_host) {
        bool status = MPVectorExample<MaxSize,Kokkos::Threads>::run(
-	 storage_method, n, sz, nblocks, nthreads, reset, print);
-       
+         storage_method, n, sz, nblocks, nthreads, reset, print);
+
        if (status)
-	 std::cout << "Host Test Passed!" << std::endl;
+         std::cout << "Host Test Passed!" << std::endl;
        else
-	 std::cout << "Host Test Failed!" << std::endl;
+         std::cout << "Host Test Failed!" << std::endl;
     }
 
     Teuchos::TimeMonitor::summarize(std::cout);
