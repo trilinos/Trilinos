@@ -137,7 +137,7 @@ struct MPVectorExample<MaxSize,Kokkos::Threads> {
       bool reset, bool print) {
     typedef MPVectorTypes<MaxSize, device_type> MPT;
 
-    bool status;
+    bool status = false;
     if (storage_method == STATIC)
       status = run_impl<typename MPT::static_vector>(
         n, sz, nblocks, nthreads, reset, print);

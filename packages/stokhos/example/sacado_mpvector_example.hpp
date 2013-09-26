@@ -42,10 +42,12 @@
 #include "Stokhos_Sacado_Kokkos.hpp"
 
 // storage options
-enum Storage_Method { STATIC, STATIC_FIXED, LOCAL, DYNAMIC, DYNAMIC_STRIDED, DYNAMIC_THREADED };
-static const int num_storage_method = 6;
-static const Storage_Method storage_method_values[] = { STATIC, STATIC_FIXED, LOCAL, DYNAMIC, DYNAMIC_STRIDED, DYNAMIC_THREADED };
-static const char *storage_method_names[] = { "static", "static-fixed", "local", "dynamic", "dynamic-strided", "dynamic-threaded" };
+enum Storage_Method { STATIC,
+                      STATIC_FIXED,
+                      LOCAL,
+                      DYNAMIC,
+                      DYNAMIC_STRIDED,
+                      DYNAMIC_THREADED };
 
 template <int MaxSize, typename device_type>
 struct MPVectorTypes {

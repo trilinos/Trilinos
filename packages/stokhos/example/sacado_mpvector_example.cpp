@@ -56,6 +56,9 @@ int main(int argc, char **argv)
     CLP.setDocString(
       "This example explores operator overloading on CUDA.\n");
 
+    const int num_storage_method = 6;
+    const Storage_Method storage_method_values[] = { STATIC, STATIC_FIXED, LOCAL, DYNAMIC, DYNAMIC_STRIDED, DYNAMIC_THREADED };
+    const char *storage_method_names[] = { "static", "static-fixed", "local", "dynamic", "dynamic-strided", "dynamic-threaded" };
     Storage_Method storage_method = STATIC_FIXED;
     CLP.setOption("storage_method", &storage_method,
                   num_storage_method, storage_method_values,

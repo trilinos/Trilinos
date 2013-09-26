@@ -52,6 +52,7 @@ namespace Sacado {                                                      \
     template <typename T, typename D> class Expr;                       \
                                                                         \
     template <typename T, typename D>                                   \
+    KOKKOS_INLINE_FUNCTION                                              \
     FADOP< T,D >                                                        \
     OP (const Expr<T,D>&);                                              \
   }                                                                     \
@@ -90,16 +91,19 @@ namespace Sacado {                                                      \
     template <typename T, typename D> class Expr;                       \
                                                                         \
     template <typename T1, typename T2, typename D>                     \
+    KOKKOS_INLINE_FUNCTION                                              \
     FADOP< T1, T2, D >                                                  \
     OP (const Expr<T1,D>&,                                              \
         const Expr<T2,D>&);                                             \
                                                                         \
     template <typename T, typename D>                                   \
+    KOKKOS_INLINE_FUNCTION                                              \
     FADOP< typename T::value_type, T, D >                               \
     OP (const typename T::value_type&,                                  \
         const Expr<T,D>&);                                              \
                                                                         \
     template <typename T, typename D>                                   \
+    KOKKOS_INLINE_FUNCTION                                              \
     FADOP< T, typename T::value_type, D >                               \
     OP (const Expr<T,D>&,                                               \
         const typename T::value_type&);                                 \
