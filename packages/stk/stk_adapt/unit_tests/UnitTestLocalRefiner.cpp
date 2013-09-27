@@ -687,13 +687,14 @@ namespace stk {
               bool isCommitted = true;
               percept::PerceptMesh eMesh(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
 
-              if (0)
+#if 0
                 {
                   percept::GeometryVerifier gv(true);
                   std::cout << "tmp GeometryVerifier= " << eMesh.get_bulk_data() << std::endl;
                   bool igb = gv.isGeometryBad(*eMesh.get_bulk_data(), true);
                   std::cout << "tmp isGeometryBad= " << igb << std::endl;
                 }
+#endif
 
               double totalVol0 = totalVolume(eMesh);
               std::cout << "tmp 64 totalVol0 = " << totalVol0 << std::endl;
@@ -712,6 +713,7 @@ namespace stk {
               breaker.doBreak();
               //breaker.deleteParentElements();
 
+#if 0
               if (0)
                 {
                   percept::GeometryVerifier gv(true);
@@ -719,6 +721,7 @@ namespace stk {
                   bool igb = gv.isGeometryBad(*eMesh.get_bulk_data(), true);
                   std::cout << "tmp isGeometryBad= " << igb << std::endl;
                 }
+#endif
 
               double totalVol1 = totalVolume(eMesh);
               std::cout << "tmp 64 totalVol1 = " << totalVol1 << std::endl;
