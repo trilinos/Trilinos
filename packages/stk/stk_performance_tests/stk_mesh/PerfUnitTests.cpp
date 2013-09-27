@@ -44,6 +44,17 @@ void check_valgrind_version()
   STKUNIT_ASSERT_EQ(__VALGRIND_MINOR__, 8);
 }
 
+void print_debug_skip(stk::ParallelMachine pm)
+{
+#ifndef NDEBUG
+  // We're in debug; need to tell test script not to validate cycle count
+  const size_t p_rank = stk::parallel_machine_rank(pm);
+  if (p_rank == 0) {
+    std::cout << "\nSTKPERF SKIP VALIDATION" << std::endl;
+  }
+#endif
+}
+
 STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, induced_part )
 {
   check_valgrind_version();
@@ -124,6 +135,8 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, induced_part )
   bulk.modification_end();
 
   print_memory_sum_all_procs(pm);
+
+  print_debug_skip(pm);
 }
 
 }
