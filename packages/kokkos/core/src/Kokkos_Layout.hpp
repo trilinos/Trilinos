@@ -43,6 +43,9 @@
 //@HEADER
 */
 
+/// \file Kokkos_Layout.hpp
+/// \brief Declaration of various \c MemoryLayout options.
+
 #ifndef KOKKOS_LAYOUT_HPP
 #define KOKKOS_LAYOUT_HPP
 
@@ -50,17 +53,53 @@
 
 namespace Kokkos {
 
-/** \brief  Left-to-right striding of multi-indices (Fortran scheme). */
+/// \struct LayoutLeft
+/// \brief Memory layout tag indicating left-to-right (Fortran scheme)
+///   striding of multi-indices.
+///
+/// This is an example of a \c MemoryLayout template parameter of
+/// View.  The memory layout describes how View maps from a
+/// multi-index (i0, i1, ..., ik) to a memory location.  
+///
+/// "Layout left" indicates a mapping where the leftmost index i0
+/// refers to contiguous access, and strides increase for dimensions
+/// going right from there (i1, i2, ...).  This layout imitates how
+/// Fortran stores multi-dimensional arrays.  For the special case of
+/// a two-dimensional array, "layout left" is also called "column
+/// major."
 struct LayoutLeft { typedef LayoutLeft array_layout ; };
 
-/** \brief  Right-to-left striding of multi-indices
- *         (C or lexigraphical scheme).
- */
+/// \struct LayoutRight
+/// \brief Memory layout tag indicating right-to-left (C or
+///   lexigraphical scheme) striding of multi-indices.
+///
+/// This is an example of a \c MemoryLayout template parameter of
+/// View.  The memory layout describes how View maps from a
+/// multi-index (i0, i1, ..., ik) to a memory location.  
+///
+/// "Right layout" indicates a mapping where the rightmost index ik
+/// refers to contiguous access, and strides increase for dimensions
+/// going left from there.  This layout imitates how C stores
+/// multi-dimensional arrays.  For the special case of a
+/// two-dimensional array, "layout right" is also called "row major."
 struct LayoutRight { typedef LayoutRight array_layout ; };
 
-
-/** \brief  Left-to-right striding of multi-indices (Fortran scheme) by tiles.
- */
+/// \struct LayoutTileLeft
+/// \brief Memory layout tag indicating left-to-right (Fortran scheme)
+///   striding of multi-indices by tiles.
+///
+/// This is an example of a \c MemoryLayout template parameter of
+/// View.  The memory layout describes how View maps from a
+/// multi-index (i0, i1, ..., ik) to a memory location.  
+///
+/// "Tiled layout" indicates a mapping to contiguously stored
+/// <tt>ArgN0</tt> by <tt>ArgN1</tt> tiles for the rightmost two
+/// dimensions.  Indices are LayoutLeft within each tile, and the
+/// tiles themselves are arranged using LayoutLeft.  Note that the
+/// dimensions <tt>ArgN0</tt> and <tt>ArgN1</tt> of the tiles must be
+/// compile-time constants.  This speeds up index calculations.  If
+/// both tile dimensions are powers of two, Kokkos can optimize
+/// further.
 template < unsigned ArgN0 , unsigned ArgN1 ,
            bool IsPowerOfTwo = ( Impl::is_power_of_two<ArgN0>::value &&
                                  Impl::is_power_of_two<ArgN1>::value )
@@ -71,7 +110,7 @@ struct LayoutTileLeft {
   enum { N1 = ArgN1 };
 };
 
-} /* namespace Kokkos */
+} // namespace Kokkos
 
-#endif /* #ifndef KOKKOS_LAYOUT_HPP */
+#endif // #ifndef KOKKOS_LAYOUT_HPP
 
