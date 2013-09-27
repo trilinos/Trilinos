@@ -10,6 +10,7 @@
 
    By: Chris Siefert <csiefer@sandia.gov>
    Version History
+   09/27/2013 - Bug fixes for Maxwell2.
    05/23/2013 - Adding thresholding control to Maxwell2
    05/01/2013 - Adding reuse support.
    04/26/2013 - Adding Maxwell2 support
@@ -125,12 +126,13 @@ Epetra_CrsMatrix* epetra_setup(int Nrows, int Ncols, int* rowind,int* colptr, do
   Epetra_Map RangeMap(Nrows,0,Comm);
   Epetra_Map DomainMap(Ncols,0,Comm);
 
-  Epetra_CrsMatrix *A=new Epetra_CrsMatrix(Copy,RangeMap,0);
+  Epetra_CrsMatrix *A=new Epetra_CrsMatrix(Copy,RangeMap,DomainMap,0);
 
   /* Do the matrix assembly */
   for(int i=0;i<Ncols;i++)
-    for(int j=colptr[i];j<colptr[i+1];j++)
+    for(int j=colptr[i];j<colptr[i+1];j++){
       A->InsertGlobalValues(rowind[j],1,&vals[j],&i);
+    }
   A->FillComplete(DomainMap,RangeMap);
 
   return A;
@@ -483,7 +485,7 @@ int ml_epetra_data_pack::solve(Teuchos::ParameterList *TPL, Epetra_CrsMatrix *Am
 /************* ml_maxwell_data_pack class functions ************/
 /**************************************************************/
 /**************************************************************/
-ml_maxwell_data_pack::ml_maxwell_data_pack():ml_data_pack(),EdgeMatrix(NULL),GradMatrix(NULL),NodeMatrix(NULL),Prec(NULL){}
+ml_maxwell_data_pack::ml_maxwell_data_pack():ml_data_pack(),EdgeMatrix(NULL),GradMatrix(NULL),NodeMatrix(NULL),DummyMatrix(NULL),Prec(NULL){}
 
 ml_maxwell_data_pack::~ml_maxwell_data_pack(){
   delete Prec;
@@ -552,14 +554,16 @@ int ml_maxwell_data_pack::setup_preconditioner(){
     operator_complexity=-1;
     return IS_FALSE;
   }
-
   /* Avoid aliasing */
-  DummyMatrix = new Epetra_CrsMatrix(*EdgeMatrix);
-  DummyMatrix->OptimizeStorage();
+  DummyMatrix = new Epetra_CrsMatrix(Copy,EdgeMatrix->RowMap(),0);
+  for(int i=0; i<DummyMatrix->NumMyRows(); i++) {
+    int GID=DummyMatrix->GRID(i);
+    double one=1.0;
+    DummyMatrix->InsertGlobalValues(GID,1,&one,&GID);    
+  }
+  DummyMatrix->FillComplete();
  
-  /* Build Hierarchy */
-
-  
+  /* Build Hierarchy */  
 #ifdef ENABLE_MS_MATRIX
   Prec=new RefMaxwellPreconditioner(*EdgeMatrix, *GradMatrix,*DummyMatrix,*NodeMatrix,*DummyMatrix,*List);
 #else
