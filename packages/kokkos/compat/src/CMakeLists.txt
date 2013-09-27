@@ -11,6 +11,11 @@ SET(SOURCES "")
 
 FILE(GLOB HEADERS *.hpp)
 FILE(GLOB SOURCES *.cpp)
+# Make sure that the subpackage's automatically generated 
+# configuration header file gets installed, along with the
+# human-authored header files.  PACKAGE_NAME here indicates
+# the subpackage's name.
+LIST( APPEND HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h )
 
 # Define targets for the subpackage's library.
 # No need to use DEPLIBS, since this subpackage will only make one library;

@@ -955,7 +955,18 @@ namespace Ioss {
 	IOSS_ERROR(errmsg);
       }
     }
-    return add_alias(db_name, db_name);
+
+    bool success = add_alias(db_name, db_name);
+
+    // "db_name" property is used with the canonical name setting.
+    if (success && ge->property_exists("db_name")) {
+      std::string canon_name = ge->get_property("db_name").get_string();
+      if (canon_name != db_name) {
+	success = add_alias(db_name, canon_name);
+      }
+    }
+
+    return success;
   }
 
   bool Region::add_alias(const std::string &db_name, const std::string &alias)
@@ -1510,14 +1521,14 @@ namespace Ioss {
 
 	  // See if there is an 'db_name' property...
 	  if (ge->property_exists(db_name_str())) {
-	    std::string name = ge->get_property(db_name_str()).get_string();
+	    std::string db_name = ge->get_property(db_name_str()).get_string();
 
 	    if (this_ge->property_exists(db_name_str())) {
 	      // Remove the old property...
 	      this_ge->property_erase(db_name_str());
 	    }
 	    // Set the new property
-	    this_ge->property_add(Property(db_name_str(), name));
+	    this_ge->property_add(Property(db_name_str(), db_name));
 	  }
 
 	  // See if there is a 'original_topology_type' property...

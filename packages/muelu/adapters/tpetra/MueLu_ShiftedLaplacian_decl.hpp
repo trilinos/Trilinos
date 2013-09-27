@@ -121,7 +121,7 @@ namespace MueLu {
     void setcoords(RCP<MultiVector>& Coords);
     void setProblemShifts(Scalar ashift1, Scalar ashift2);
     void setPreconditioningShifts(Scalar pshift1, Scalar pshift2);
-    void setLevelShifts(vector<Scalar> levelshifts);
+    void setLevelShifts(std::vector<Scalar> levelshifts);
     void setAggregation(int stype);
     void setSmoother(int stype);
     void setSolver(int stype);
@@ -167,7 +167,7 @@ namespace MueLu {
     double     omega_;
     SC         ashift1_, ashift2_;
     SC         pshift1_, pshift2_;
-    vector<SC> levelshifts_;
+    std::vector<SC> levelshifts_;
 
     // Krylov solver inputs
     // iters  -> max number of iterations

@@ -288,6 +288,12 @@ TensorBase<T, Store>::fill(ComponentValue const value)
       }
       break;
 
+    case SEQUENCE:
+      for (Index i = 0; i < number_components; ++i) {
+        (*this)[i] = i;
+      }
+      break;
+
     case RANDOM:
       for (Index i = 0; i < number_components; ++i) {
         (*this)[i] = random<T>();

@@ -109,6 +109,40 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
 //===========================================================================
 //===========================================================================
 template <typename EvalT>
+Teuchos::RCP<panzer::LinearObjContainer> panzer::AssemblyEngine<EvalT>::
+evaluateOnlyDirichletBCs(const panzer::AssemblyEngineInArgs& in)
+{
+  typedef LinearObjContainer LOC;
+
+  // make sure this container gets a dirichlet adjustment
+  in.ghostedContainer_->setRequiresDirichletAdjustment(true);
+
+  GlobalEvaluationDataContainer gedc;
+  in.fillGlobalEvaluationDataContainer(gedc);
+  gedc.initialize(); // make sure all ghosted data is ready to go
+  gedc.globalToGhost(LOC::X | LOC::DxDt);
+
+  // Push solution, x and dxdt into ghosted domain
+  m_lin_obj_factory->globalToGhostContainer(*in.container_,*in.ghostedContainer_,LOC::X | LOC::DxDt);
+  m_lin_obj_factory->beginFill(*in.ghostedContainer_);
+
+  // Dirchlet conditions require a global matrix
+  Teuchos::RCP<LOC> counter = this->evaluateDirichletBCs(in);
+
+  m_lin_obj_factory->ghostToGlobalContainer(*in.ghostedContainer_,*in.container_,LOC::F | LOC::Mat);
+
+  m_lin_obj_factory->beginFill(*in.container_);
+  gedc.ghostToGlobal(LOC::F | LOC::Mat);
+  m_lin_obj_factory->endFill(*in.container_);
+
+  m_lin_obj_factory->endFill(*in.ghostedContainer_);
+
+  return counter;
+}
+
+//===========================================================================
+//===========================================================================
+template <typename EvalT>
 void panzer::AssemblyEngine<EvalT>::
 evaluateVolume(const panzer::AssemblyEngineInArgs& in)
 {
@@ -135,8 +169,6 @@ evaluateVolume(const panzer::AssemblyEngineInArgs& in)
     for (std::size_t i = 0; i < w.size(); ++i) {
       panzer::Workset& workset = w[i];
 
-      workset.ghostedLinContainer = in.ghostedContainer_;
-      workset.linContainer = in.container_;
       workset.alpha = in.alpha;
       workset.beta = in.beta;
       workset.time = in.time;
@@ -161,7 +193,7 @@ evaluateNeumannBCs(const panzer::AssemblyEngineInArgs& in)
 //===========================================================================
 //===========================================================================
 template <typename EvalT>
-void panzer::AssemblyEngine<EvalT>::
+Teuchos::RCP<panzer::LinearObjContainer> panzer::AssemblyEngine<EvalT>::
 evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& in)
 {
   typedef LinearObjContainer LOC;
@@ -181,8 +213,9 @@ evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& in)
   summedGhostedCounter->initialize();
 
   // do communication to build summed ghosted counter for dirichlet conditions
+  Teuchos::RCP<LinearObjContainer> globalCounter;
   {
-     Teuchos::RCP<LinearObjContainer> globalCounter = m_lin_obj_factory->buildPrimitiveLinearObjContainer();
+     globalCounter = m_lin_obj_factory->buildPrimitiveLinearObjContainer();
      m_lin_obj_factory->initializeContainer(LinearObjContainer::X,*globalCounter); // store counter in X
      globalCounter->initialize();
      m_lin_obj_factory->ghostToGlobalContainer(*localCounter,*globalCounter,LOC::X);
@@ -213,6 +246,8 @@ evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& in)
       }
     }
   }
+
+  return globalCounter;
 }
 
 //===========================================================================
@@ -282,8 +317,6 @@ evaluateBCs(const panzer::BCType bc_type,
           local_side_fm.template preEvaluate<EvalT>(gedc);
 
           // build and evaluate fields for the workset: only one workset per face
-          workset.ghostedLinContainer = in.ghostedContainer_;
-          workset.linContainer = in.container_;
 	  workset.alpha = in.alpha;
 	  workset.beta = in.beta;
 	  workset.time = in.time;

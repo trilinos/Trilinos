@@ -70,9 +70,9 @@ run_test(const size_t num_cpu, const size_t num_core_per_cpu,
 {
   typedef double Scalar;
   typedef Kokkos::Threads Device;
-  const size_t num_core = num_cpu * num_core_per_cpu;
-  const size_t num_threads_per_cpu = num_core_per_cpu * num_threads_per_core;
-  Kokkos::Threads::initialize( std::make_pair(num_cpu , num_threads_per_cpu) );
+  const size_t team_count = num_cpu * num_core_per_cpu;
+  const size_t threads_per_team = num_threads_per_core;
+  Kokkos::Threads::initialize( team_count , threads_per_team );
 
   std::vector<int> var_degree( d , p );
 
@@ -92,9 +92,9 @@ run_test(const size_t num_cpu, const size_t num_core_per_cpu,
     speed_up = perf1[1] / perf[1];
   else
     speed_up = perf[1] / perf[1];
-  double efficiency = speed_up / num_core;
+  double efficiency = speed_up / team_count;
 
-  std::cout << num_core << " , "
+  std::cout << team_count << " , "
             << nGrid << " , "
             << d << " , "
             << p << " , "
@@ -134,13 +134,10 @@ int main(int argc, char *argv[])
     CLP.parse( argc, argv );
 
     // Detect number of CPUs and number of cores
-    const std::pair<unsigned,unsigned> core_topo =
-    Kokkos::hwloc::get_core_topology();
-    const size_t core_capacity = Kokkos::hwloc::get_core_capacity();
-
-    const size_t num_cpu = core_topo.first;
-    const size_t num_core_per_cpu = core_topo.second;
-    if (static_cast<size_t>(n_thread_per_core) > core_capacity)
+    const size_t num_cpu          = Kokkos::hwloc::get_available_numa_count();
+    const size_t num_core_per_cpu = Kokkos::hwloc::get_available_cores_per_numa();
+    const size_t core_capacity    = Kokkos::hwloc::get_available_threads_per_core();
+    if (static_cast<size_t>(n_thread_per_core) > core_capacity )
       n_thread_per_core = core_capacity;
 
     // Print header

@@ -62,8 +62,6 @@
 #include "Kokkos_hwloc.hpp"
 #include "Kokkos_Cuda.hpp"
 
-#include "cuda_runtime_api.h"
-
 using namespace KokkosKernelsUnitTest;
 
 UnitTestSetup setup;
@@ -115,6 +113,7 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsFlatOriginal_Threads ) {
 
 TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsProductTensor_Threads ) {
   typedef double Scalar;
+  typedef int Ordinal;
   typedef Kokkos::Threads Device;
   typedef Stokhos::CrsProductTensor<Scalar,Device> Tensor;
 
@@ -168,6 +167,7 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsProductTensorCijk ) {
   success = true;
 
   typedef double value_type;
+  typedef int size_type;
   typedef Kokkos::Threads Device;
   typedef Stokhos::CrsProductTensor< value_type , Device > tensor_type ;
 
@@ -175,14 +175,14 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, CrsProductTensorCijk ) {
    Stokhos::create_product_tensor<Device>( *setup.basis, *setup.Cijk );
 
   for (int i=0; i<setup.stoch_length; ++i) {
-    const size_t iEntryBeg = tensor.entry_begin(i);
-    const size_t iEntryEnd = tensor.entry_end(i);
-    for (size_t iEntry = iEntryBeg ; iEntry < iEntryEnd ; ++iEntry ) {
-      const size_t kj = tensor.coord( iEntry );
-      const size_t j  = kj & 0x0ffff;
-      const size_t k  = kj >> 16;
-      // const size_t j = tensor.coord(iEntry,0);
-      // const size_t k = tensor.coord(iEntry,1);
+    const int iEntryBeg = tensor.entry_begin(i);
+    const int iEntryEnd = tensor.entry_end(i);
+    for (int iEntry = iEntryBeg ; iEntry < iEntryEnd ; ++iEntry ) {
+      const int kj = tensor.coord( iEntry );
+      const int j  = kj & 0x0ffff;
+      const int k  = kj >> 16;
+      // const int j = tensor.coord(iEntry,0);
+      // const int k = tensor.coord(iEntry,1);
       double c2 = tensor.value(iEntry);
       if (j == k) c2 *= 2.0;
 
@@ -488,15 +488,14 @@ int main( int argc, char* argv[] ) {
   setup.setup();
 
   // Initialize threads
-  const std::pair<unsigned,unsigned> core_topo =
-    Kokkos::hwloc::get_core_topology();
-  const size_t core_capacity = Kokkos::hwloc::get_core_capacity();
-  const size_t gang_count = core_topo.first;
-  const size_t gang_worker_count = core_topo.second * core_capacity;
-  // const size_t gang_count = 1 ;
-  // const size_t gang_worker_count = 1;
-  Kokkos::Threads::initialize( std::make_pair(gang_count , gang_worker_count),
-                               core_topo );
+  const size_t team_count =
+    Kokkos::hwloc::get_available_numa_count() *
+    Kokkos::hwloc::get_available_cores_per_numa();
+  const size_t threads_per_team =
+    Kokkos::hwloc::get_available_threads_per_core();
+  // const size_t team_count       = 1 ;
+  // const size_t threads_per_team = 1 ;
+  Kokkos::Threads::initialize( team_count , threads_per_team );
   Kokkos::Threads::print_configuration( std::cout );
 
 #ifdef KOKKOS_HAVE_CUDA

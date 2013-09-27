@@ -63,7 +63,6 @@ C   --           4 = Node Randomize
 
 C ... Randomize Each Nodeset node
       IDUM = 1
-      NPOS = 0
       DO 150 I = 1, NUMNPS
         if (XEXPL(I) .ne. 0.0 .or. YEXPL(I) .ne. 0.0 .or.
      *    ZEXPL(I) .ne. 0.0) THEN

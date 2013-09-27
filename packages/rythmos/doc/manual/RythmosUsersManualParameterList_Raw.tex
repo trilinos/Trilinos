@@ -15,6 +15,8 @@
     \index{Integration Control Strategy Selection} \\ 
 \hspace*{0.4in} Simple Integration Control Strategy (Section~\ref{sec:Simple Integration Control Strategy})
     \index{Simple Integration Control Strategy} \\ 
+\hspace*{0.4in} Ramping Integration Control Strategy (Section~\ref{sec:Ramping Integration Control Strategy})
+    \index{Ramping Integration Control Strategy} \\ 
 \hspace*{0.2in} Stepper Settings (Section~\ref{sec:Stepper Settings})
     \index{Stepper Settings} \\ 
 \hspace*{0.4in} Stepper Selection (Section~\ref{sec:Stepper Selection})
@@ -33,6 +35,12 @@
     \index{Step Control Settings} \\ 
 \hspace*{0.6in} Step Control Strategy Selection (Section~\ref{sec:Step Control Strategy Selection})
     \index{Step Control Strategy Selection} \\ 
+\hspace*{0.8in} Fixed Step Control Strategy (Section~\ref{sec:Fixed Step Control Strategy})
+    \index{Fixed Step Control Strategy} \\ 
+\hspace*{0.8in} Simple Step Control Strategy (Section~\ref{sec:Simple Step Control Strategy})
+    \index{Simple Step Control Strategy} \\ 
+\hspace*{0.8in} First Order Error Step Control Strategy (Section~\ref{sec:First Order Error Step Control Strategy})
+    \index{First Order Error Step Control Strategy} \\ 
 \hspace*{0.8in} Implicit BDF Stepper Step Control Strategy (Section~\ref{sec:Implicit BDF Stepper Step Control Strategy})
     \index{Implicit BDF Stepper Step Control Strategy} \\ 
 \hspace*{1in} magicNumbers (Section~\ref{sec:magicNumbers})
@@ -98,6 +106,7 @@
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
+    The root ParameterList for the Integrator Builder.
   \item[Parent(s):]
    ROOT 
   \item[Child(ren):]
@@ -126,7 +135,7 @@
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
-    These parameters are used directly in setting up the Integrator
+    These parameters are used directly in setting up the Integrator.
   \item[Parent(s):]
     Integrator Base (Section~\ref{sec:Integrator Base})
       \index{Integrator Base} 
@@ -135,12 +144,16 @@
       \index{Integrator Selection} 
   \item[Parameters:]
     \begin{description}
+      \item[Initial Time = 0] 
+The initial time to start integration.
+        \index{Integrator Settings!Initial Time}
+        \index{Initial Time}
       \item[Final Time = 1] 
-
+The final time to end integration.
         \index{Integrator Settings!Final Time}
         \index{Final Time}
       \item[Land On Final Time = 1] 
-
+Exactly land on the final time; do not step past final time and interpolate.
         \index{Integrator Settings!Land On Final Time}
         \index{Land On Final Time}
 \end{description}
@@ -157,6 +170,7 @@
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
+    Select the Integrator to be used.
   \item[Parent(s):]
     Integrator Settings (Section~\ref{sec:Integrator Settings})
       \index{Integrator Settings} 
@@ -191,6 +205,7 @@ The parameters for each Integrator Type are specified in this sublist
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
+    This Integrator will accept an IntergationControlStrategy, and can have an IntegrationObserver.  The client can specify the maximum number of time steps allowed.  The Integrator will loop over the Stepper until it reaches the requested time. For each step, the step size will be determined through a couple mechanisms/filters.  If an Integration Control Strategy has been specified, the step size and the step type (fixed or variable) will be determined by it.  Otherwise the step size will be set to the maximum real value and the step type will be variable.  Next if the step size is beyond the final time and the `Land On Final Time' is specified, the step size is adjusted to advance the state to the final time.  The Stepper is passed this step size and type to advance the state.  The DefaultIntegrator determines the step size and type taken by the Stepper, and if the step has failed.  If the IntegrationControlStrategy handles failures, it can suggest another step size and retry with the Stepper.  Otherwise, the Integrator will fall through with a failure.  With a successful step of the Stepper, the Integrator repeats the above until it reaches the requested time.  Multiple requested times can be passed to the Integrator.
   \item[Parent(s):]
     Integrator Selection (Section~\ref{sec:Integrator Selection})
       \index{Integrator Selection} 
@@ -224,6 +239,9 @@ Set the maximum number of integration time-steps allowed.
     Simple Integration Control Strategy (Section~\ref{sec:Simple Integration Control Strategy})
       \index{Simple Integration Control Strategy} 
       \newline 
+    Ramping Integration Control Strategy (Section~\ref{sec:Ramping Integration Control Strategy})
+      \index{Ramping Integration Control Strategy} 
+      \newline 
     Forward Euler (Section~\ref{sec:Forward Euler})
       \index{Forward Euler} 
       \newline 
@@ -238,6 +256,15 @@ Set the maximum number of integration time-steps allowed.
       \newline 
     Implicit RK (Section~\ref{sec:Implicit RK})
       \index{Implicit RK} 
+      \newline 
+    Fixed Step Control Strategy (Section~\ref{sec:Fixed Step Control Strategy})
+      \index{Fixed Step Control Strategy} 
+      \newline 
+    Simple Step Control Strategy (Section~\ref{sec:Simple Step Control Strategy})
+      \index{Simple Step Control Strategy} 
+      \newline 
+    First Order Error Step Control Strategy (Section~\ref{sec:First Order Error Step Control Strategy})
+      \index{First Order Error Step Control Strategy} 
       \newline 
     magicNumbers (Section~\ref{sec:magicNumbers})
       \index{magicNumbers} 
@@ -283,6 +310,12 @@ Set the maximum number of integration time-steps allowed.
       \newline 
     Backward Euler (Section~\ref{sec:Backward Euler-Runge Kutta Butcher Tableau Selection})
       \index{Backward Euler} 
+      \newline 
+    IRK 1 Stage Theta Method (Section~\ref{sec:IRK 1 Stage Theta Method})
+      \index{IRK 1 Stage Theta Method} 
+      \newline 
+    IRK 2 Stage Theta Method (Section~\ref{sec:IRK 2 Stage Theta Method})
+      \index{IRK 2 Stage Theta Method} 
       \newline 
     Singly Diagonal IRK 2 Stage 2nd order (Section~\ref{sec:Singly Diagonal IRK 2 Stage 2nd order})
       \index{Singly Diagonal IRK 2 Stage 2nd order} 
@@ -417,16 +450,16 @@ Therefore, any valid file name is a valid std::string value for this parameter.
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
-    Note that some settings conflict between step control and integration control.
-    In general, the integration control decides which steps will be fixed or variable,
-    not the stepper.  When the integration control decides to take variable steps, the
-    step control is then responsible for choosing appropriate step-sizes.
+    Note that some settings conflict between step control and integration control.  In general, the integration control decides which steps will be fixed or variable, not the stepper.  When the integration control decides to take variable steps, the step control is then responsible for choosing appropriate step-sizes.
   \item[Parent(s):]
     Integrator Base (Section~\ref{sec:Integrator Base})
       \index{Integrator Base} 
   \item[Child(ren):]
     Simple Integration Control Strategy (Section~\ref{sec:Simple Integration Control Strategy})
       \index{Simple Integration Control Strategy} 
+      \newline 
+    Ramping Integration Control Strategy (Section~\ref{sec:Ramping Integration Control Strategy})
+      \index{Ramping Integration Control Strategy} 
   \item[Parameters:]
     \begin{description}
       \item[Integration Control Strategy Type = None] 
@@ -438,6 +471,7 @@ The parameters for each Integration Control Strategy Type are specified in this 
       \begin{tabular}{lp{0.4\textwidth}}
       "None" & \\ 
       "Simple Integration Control Strategy" & \\ 
+      "Ramping Integration Control Strategy" & \\ 
       \end{tabular}
         \index{Integration Control Strategy Selection!Integration Control Strategy Type}
         \index{Integration Control Strategy Type}
@@ -455,6 +489,7 @@ The parameters for each Integration Control Strategy Type are specified in this 
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
+    This Integration Control Strategy is meant to be simple with very few parameters controlling it.  Basically the client can select fixed step type (the Stepper can only take the requested step size) or variable step type (the Stepper can adjust the step size to meet accuracy, order, or other criteria).  For fixed step type, the client can specify the step size and number of steps. For variable step type, the client can set the maximum step size allowable.
   \item[Parent(s):]
     Integration Control Strategy Selection (Section~\ref{sec:Integration Control Strategy Selection})
       \index{Integration Control Strategy Selection} 
@@ -490,6 +525,60 @@ Gives the size of the fixed time steps.  This is only read and used if
 \end{list}
 
 % ----------------------------------------------------------
+\subsection{Ramping Integration Control Strategy}
+\label{sec:Ramping Integration Control Strategy}
+\index{Ramping Integration Control Strategy}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+    This Integration Control Strategy is very similar to `Simple Integration Control Strategy' except for handling an initial constant-sized steps followed by a ramped-fixed-sized steps, and finally variable- or fixed-sized steps.  The client needs to additionally set the initial step size and the maximum number of step failures allowed.
+  \item[Parent(s):]
+    Integration Control Strategy Selection (Section~\ref{sec:Integration Control Strategy Selection})
+      \index{Integration Control Strategy Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    \begin{description}
+      \item[Take Variable Steps = 1] 
+Take variable time steps after 'Number of Initial Constant Steps' plus 'Number of Ramping Steps' steps.  Variable time stepping allows the Stepper to adjust the time step through a StepControlStrategy after fixed time steps during initial constant steps and ramping steps.  If false, fixed-time steps are taken after ramping.  Fixed time stepping requires the Stepper to take the time step set by this IntegrationControlStrategy.
+        \index{Ramping Integration Control Strategy!Take Variable Steps}
+        \index{Take Variable Steps}
+      \item[Number of Initial Constant Steps = 0] 
+Number of initial constant steps to take before starting the ramping.
+        \index{Ramping Integration Control Strategy!Number of Initial Constant Steps}
+        \index{Number of Initial Constant Steps}
+      \item[Number of Ramping Steps = 6] 
+Number of ramping steps to take before handing control to variable stepper if 'Take Variable Steps' is set to true.  Otherwise take fixed-time steps.
+        \index{Ramping Integration Control Strategy!Number of Ramping Steps}
+        \index{Number of Ramping Steps}
+      \item[Initial dt = -1] 
+Initial time step.
+        \index{Ramping Integration Control Strategy!Initial dt}
+        \index{Initial dt}
+      \item[Min dt = 2.22507e-308] 
+Minimum time step.
+        \index{Ramping Integration Control Strategy!Min dt}
+        \index{Min dt}
+      \item[Max dt = 1.79769e+308] 
+Maximum time step.
+        \index{Ramping Integration Control Strategy!Max dt}
+        \index{Max dt}
+      \item[Ramping Factor = 1] 
+Time step growth factor used during ramping phase. dt\_{n+1} = (ramping factor) * dt\_n
+        \index{Ramping Integration Control Strategy!Ramping Factor}
+        \index{Ramping Factor}
+      \item[Maximum Number of Step Failures = 100] 
+The maximum number of step failures before exiting with error.
+        \index{Ramping Integration Control Strategy!Maximum Number of Step Failures}
+        \index{Maximum Number of Step Failures}
+\end{description}
+
+\end{list}
+
+% ----------------------------------------------------------
 \subsection{Stepper Settings}
 \label{sec:Stepper Settings}
 \index{Stepper Settings}
@@ -499,6 +588,7 @@ Gives the size of the fixed time steps.  This is only read and used if
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
+    This parameter list sets various parameters for the Stepper.
   \item[Parent(s):]
     Integrator Base (Section~\ref{sec:Integrator Base})
       \index{Integrator Base} 
@@ -528,6 +618,7 @@ Gives the size of the fixed time steps.  This is only read and used if
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
+    Selects the Stepper for the time integration.  It should be that some time integrators can be accessed through different Steppers, e.g., Backward Euler can be obtained through the `Backward Euler', a first-order `Implicit BDF', or a one-stage `Implicit RK' Stepper.Special note for `Implicit RK' Stepper:  If a fully implicit RK Butcher tableau is chosen, then the stepper will not be fully initialized unless a W factory object is set on the IntegratorBuilder through setWFactoryObject.
   \item[Parent(s):]
     Stepper Settings (Section~\ref{sec:Stepper Settings})
       \index{Stepper Settings} 
@@ -578,6 +669,7 @@ The parameters for each Stepper Type are specified in this sublist
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
+    This is the basic Forward Euler method: x\_n = x\_{n-1} + dt*x\_dot\_{n-1}
   \item[Parent(s):]
     Stepper Selection (Section~\ref{sec:Stepper Selection})
       \index{Stepper Selection} 
@@ -597,6 +689,7 @@ The parameters for each Stepper Type are specified in this sublist
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
+    This is the basic Backward Euler method: x\_n = x\_{n-1} + dt*x\_dot\_n
   \item[Parent(s):]
     Stepper Selection (Section~\ref{sec:Stepper Selection})
       \index{Stepper Selection} 
@@ -616,6 +709,7 @@ The parameters for each Stepper Type are specified in this sublist
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
+    This Stepper provides a re-implementation of the algorithms in the LLNL Sundials code IDA. This is an implicit BDF integrator for DAEs which uses variable step-sizes and variable-orders first through fourth.
   \item[Parent(s):]
     Stepper Selection (Section~\ref{sec:Stepper Selection})
       \index{Stepper Selection} 
@@ -635,6 +729,7 @@ The parameters for each Stepper Type are specified in this sublist
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
+    This Stepper has many explicit time-integrators using Runge-Kutta formulation and the Butcher Tableau specification.  See `Runge Kutta Butcher Tableau Selection' ParameterList for available options.
   \item[Parent(s):]
     Stepper Selection (Section~\ref{sec:Stepper Selection})
       \index{Stepper Selection} 
@@ -654,6 +749,7 @@ The parameters for each Stepper Type are specified in this sublist
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
+    This Stepper has many implicit time-integrators using Runge-Kutta formulation and the Butcher Tableau specification.  See `Runge Kutta Butcher Tableau Selection' ParameterList for available options.
   \item[Parent(s):]
     Stepper Selection (Section~\ref{sec:Stepper Selection})
       \index{Stepper Selection} 
@@ -673,8 +769,7 @@ The parameters for each Stepper Type are specified in this sublist
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
-    Not all step control strategies are compatible with each stepper.  If the strategy
-    has the name of a stepper in its name, then it only works with that stepper.
+    Not all step control strategies are compatible with each stepper.  If the strategy has the name of a stepper in its name, then it only works with that stepper.
   \item[Parent(s):]
     Stepper Settings (Section~\ref{sec:Stepper Settings})
       \index{Stepper Settings} 
@@ -698,10 +793,20 @@ The parameters for each Stepper Type are specified in this sublist
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
+    Used to select the Control Strategy for the stepper.
   \item[Parent(s):]
     Step Control Settings (Section~\ref{sec:Step Control Settings})
       \index{Step Control Settings} 
   \item[Child(ren):]
+    Fixed Step Control Strategy (Section~\ref{sec:Fixed Step Control Strategy})
+      \index{Fixed Step Control Strategy} 
+      \newline 
+    Simple Step Control Strategy (Section~\ref{sec:Simple Step Control Strategy})
+      \index{Simple Step Control Strategy} 
+      \newline 
+    First Order Error Step Control Strategy (Section~\ref{sec:First Order Error Step Control Strategy})
+      \index{First Order Error Step Control Strategy} 
+      \newline 
     Implicit BDF Stepper Step Control Strategy (Section~\ref{sec:Implicit BDF Stepper Step Control Strategy})
       \index{Implicit BDF Stepper Step Control Strategy} 
       \newline 
@@ -717,11 +822,142 @@ The parameters for each Step Control Strategy Type are specified in this sublist
 
       \begin{tabular}{lp{0.4\textwidth}}
       "None" & \\ 
+      "Fixed Step Control Strategy" & \\ 
+      "Simple Step Control Strategy" & \\ 
+      "First Order Error Step Control Strategy" & \\ 
       "Implicit BDF Stepper Step Control Strategy" & \\ 
       "Implicit BDF Stepper Ramping Step Control Strategy" & \\ 
       \end{tabular}
         \index{Step Control Strategy Selection!Step Control Strategy Type}
         \index{Step Control Strategy Type}
+\end{description}
+
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Fixed Step Control Strategy}
+\label{sec:Fixed Step Control Strategy}
+\index{Fixed Step Control Strategy}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+    This Step Control Strategy can be used for Steppers setup for variable step type (a stepper that can adjust its step size based on accuracy, order or other criteria), but would like to make fixed step sizes or used fixed step size as its default.
+  \item[Parent(s):]
+    Step Control Strategy Selection (Section~\ref{sec:Step Control Strategy Selection})
+      \index{Step Control Strategy Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    None. 
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{Simple Step Control Strategy}
+\label{sec:Simple Step Control Strategy}
+\index{Simple Step Control Strategy}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+    This Step Control Strategy starts with the initial step size, and simply increases or decreases the step size by the appropriate factor which is based on the change in the solution relative to the specified relative and absolute tolerances (|dx| < r*|x| + a) and if solution status from the solver passes.  Additionally the step size is bounded by the miminum and maximum step size, and the stepper will fail if the step size fails more than the specified value.
+  \item[Parent(s):]
+    Step Control Strategy Selection (Section~\ref{sec:Step Control Strategy Selection})
+      \index{Step Control Strategy Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    \begin{description}
+      \item[Initial Step Size = 2.22507e-308] 
+Initial step size.
+        \index{Simple Step Control Strategy!Initial Step Size}
+        \index{Initial Step Size}
+      \item[Min Step Size = 2.22507e-308] 
+Minimum step size.
+        \index{Simple Step Control Strategy!Min Step Size}
+        \index{Min Step Size}
+      \item[Max Step Size = 1.79769e+308] 
+Maximum step size.
+        \index{Simple Step Control Strategy!Max Step Size}
+        \index{Max Step Size}
+      \item[Step Size Increase Factor = 1.5] 
+Factor used to increase the step size after a successful step.
+        \index{Simple Step Control Strategy!Step Size Increase Factor}
+        \index{Step Size Increase Factor}
+      \item[Step Size Decrease Factor = 0.5] 
+Factor used to decrease the step size after a step failure.
+        \index{Simple Step Control Strategy!Step Size Decrease Factor}
+        \index{Step Size Decrease Factor}
+      \item[Maximum Number of Step Failures = 100] 
+The maximum number of step failures before exiting with an error.  The number of failure steps are carried between successful steps.
+        \index{Simple Step Control Strategy!Maximum Number of Step Failures}
+        \index{Maximum Number of Step Failures}
+      \item[Solution Change Relative Tolerance = 1e-06] 
+The allowable relative change in the solution for each step to pass.  The stepper solution status is also used to determine pass/fail.
+        \index{Simple Step Control Strategy!Solution Change Relative Tolerance}
+        \index{Solution Change Relative Tolerance}
+      \item[Solution Change Absolute Tolerance = 1e-12] 
+The allowable absolute change in the solution for each step to pass.  The stepper solution status is also used to determine pass/fail.
+        \index{Simple Step Control Strategy!Solution Change Absolute Tolerance}
+        \index{Solution Change Absolute Tolerance}
+\end{description}
+
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{First Order Error Step Control Strategy}
+\label{sec:First Order Error Step Control Strategy}
+\index{First Order Error Step Control Strategy}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+    This Step Control Strategy produces a step size based on a first-order predictor (Forward Euler) and a first-order solution (Backward Euler) by by using a weight norm of the difference between the predicted and solution.  See Gresho and Sani, `Incompressible Flow and the Finite Element Method', Vol. 1, 1998, p. 268.
+  \item[Parent(s):]
+    Step Control Strategy Selection (Section~\ref{sec:Step Control Strategy Selection})
+      \index{Step Control Strategy Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    \begin{description}
+      \item[Initial Step Size = 1] 
+Initial step size.
+        \index{First Order Error Step Control Strategy!Initial Step Size}
+        \index{Initial Step Size}
+      \item[Min Step Size = 2.22507e-308] 
+Minimum step size.
+        \index{First Order Error Step Control Strategy!Min Step Size}
+        \index{Min Step Size}
+      \item[Max Step Size = 1.79769e+308] 
+Maximum step size.
+        \index{First Order Error Step Control Strategy!Max Step Size}
+        \index{Max Step Size}
+      \item[Max Step Size Increase Factor = 1.5] 
+The maximum factor to increase the step size after a successful step.
+        \index{First Order Error Step Control Strategy!Max Step Size Increase Factor}
+        \index{Max Step Size Increase Factor}
+      \item[Min Step Size Decrease Factor = 0.5] 
+The minimum allowable factor to decrease the step size.  If the stepSizeFactor\_ is below this, the current step is considered a failure and retried with `Min Step Size Decrease Factor' applied.
+        \index{First Order Error Step Control Strategy!Min Step Size Decrease Factor}
+        \index{Min Step Size Decrease Factor}
+      \item[Maximum Number of Step Failures = 100] 
+The maximum number of step failures before exiting with an error.  The number of failure steps are carried between successful steps.
+        \index{First Order Error Step Control Strategy!Maximum Number of Step Failures}
+        \index{Maximum Number of Step Failures}
+      \item[Error Relative Tolerance = 1e-06] 
+The allowable relative change in the error (the difference between the solution at the end of the step and the predicted solution) for each step to pass.  The stepper solution status is also used to determine pass/fail.
+        \index{First Order Error Step Control Strategy!Error Relative Tolerance}
+        \index{Error Relative Tolerance}
+      \item[Error Absolute Tolerance = 1e-12] 
+The allowable absolute change in the error (the difference between the solution at the end of the step and the predicted solution) for each step to pass.  The stepper solution status is also used to determine pass/fail.
+        \index{First Order Error Step Control Strategy!Error Absolute Tolerance}
+        \index{Error Absolute Tolerance}
 \end{description}
 
 \end{list}
@@ -736,6 +972,7 @@ The parameters for each Step Control Strategy Type are specified in this sublist
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
+    This Step Control Strategy is specifically for use with the `Implicit BDF' Stepper.  The parameters in this list and sublist are directly related to those available in SUNDAILS/IDA.  See Hindmarsh, `The PVODE and IDA Algorithms', 2000 for more details.
   \item[Parent(s):]
     Step Control Strategy Selection (Section~\ref{sec:Step Control Strategy Selection})
       \index{Step Control Strategy Selection} 
@@ -753,23 +990,23 @@ upper limit of order selection, does not guarantee this order
         \index{Implicit BDF Stepper Step Control Strategy!maxOrder}
         \index{maxOrder}
       \item[relErrTol = 0.0001] 
-
+Relative tolerance value used in WRMS calculation.
         \index{Implicit BDF Stepper Step Control Strategy!relErrTol}
         \index{relErrTol}
       \item[absErrTol = 1e-06] 
-
+Absolute tolerance value used in WRMS calculation.
         \index{Implicit BDF Stepper Step Control Strategy!absErrTol}
         \index{absErrTol}
       \item[constantStepSize = 0] 
-
+Use constant (=0) or variable (=1) step sizes during BDF steps.
         \index{Implicit BDF Stepper Step Control Strategy!constantStepSize}
         \index{constantStepSize}
       \item[stopTime = 10] 
-
+The final time for time integration.  This may be in conflict with the Integrator's final time.
         \index{Implicit BDF Stepper Step Control Strategy!stopTime}
         \index{stopTime}
       \item[failStepIfNonlinearSolveFails = 0] 
-Power user command. Will force the function acceptStep() to return false ieven if the LET is acceptable.  Used to run with loose tolerances but enforce a correct nonlinear solution to the step.
+Power user command. Will force the function acceptStep() to return false even if the LET is acceptable.  Used to run with loose tolerances but enforce a correct nonlinear solution to the step.
         \index{Implicit BDF Stepper Step Control Strategy!failStepIfNonlinearSolveFails}
         \index{failStepIfNonlinearSolveFails}
 \end{description}
@@ -795,55 +1032,55 @@ Power user command. Will force the function acceptStep() to return false ieven i
   \item[Parameters:]
     \begin{description}
       \item[h0\_safety = 2] 
-
+Safety factor on the initial step size for time-dependent DAEs.  Larger values will tend to reduce the initial step size.
         \index{magicNumbers!h0\_safety}
         \index{h0\_safety}
       \item[h0\_max\_factor = 0.001] 
-
+Factor multipler for the initial step size for non-time-dependent DAEs.
         \index{magicNumbers!h0\_max\_factor}
         \index{h0\_max\_factor}
       \item[h\_phase0\_incr = 2] 
-initial ramp-up in variable mode (stepSize multiplier)
+Initial ramp-up in variable mode (stepSize multiplier).
         \index{magicNumbers!h\_phase0\_incr}
         \index{h\_phase0\_incr}
       \item[h\_max\_inv = 0] 
-
+The inverse of the maximum time step (maxTimeStep). (Not used?)
         \index{magicNumbers!h\_max\_inv}
         \index{h\_max\_inv}
       \item[Tkm1\_Tk\_safety = 2] 
-
+Used to help control the decrement of the order when the order is less than or equal to 2.  Larger values will tend to reduce the order from one step to the next.
         \index{magicNumbers!Tkm1\_Tk\_safety}
         \index{Tkm1\_Tk\_safety}
       \item[Tkp1\_Tk\_safety = 0.5] 
-
+Used to control the increment of the order when the order is one.  Larger values tend to increase the order for the next step.
         \index{magicNumbers!Tkp1\_Tk\_safety}
         \index{Tkp1\_Tk\_safety}
       \item[r\_factor = 0.9] 
-used in rejectStep:  time step ratio multiplier
+Used in rejectStep:  time step ratio multiplier.
         \index{magicNumbers!r\_factor}
         \index{r\_factor}
       \item[r\_safety = 2] 
-local error multiplier as part of time step ratio calculation
+Local error multiplier as part of time step ratio calculation.
         \index{magicNumbers!r\_safety}
         \index{r\_safety}
       \item[r\_fudge = 0.0001] 
-local error addition as part of time step ratio calculation
+Local error addition as part of time step ratio calculation.
         \index{magicNumbers!r\_fudge}
         \index{r\_fudge}
       \item[r\_min = 0.125] 
-used in rejectStep:  how much to cut step and lower bound for time step ratio
+Used in rejectStep:  How much to cut step and lower bound for time step ratio.
         \index{magicNumbers!r\_min}
         \index{r\_min}
       \item[r\_max = 0.9] 
-upper bound for time step ratio
+Upper bound for time step ratio.
         \index{magicNumbers!r\_max}
         \index{r\_max}
       \item[r\_hincr\_test = 2] 
-used in completeStep:  if time step ratio > this then set time step ratio to r\_hincr
+Used in completeStep:  If time step ratio > this then set time step ratio to r\_hincr.
         \index{magicNumbers!r\_hincr\_test}
         \index{r\_hincr\_test}
       \item[r\_hincr = 2] 
-used in completeStep:  limit on time step ratio increases, not checked by r\_max
+Used in completeStep:  Limit on time step ratio increases, not checked by r\_max.
         \index{magicNumbers!r\_hincr}
         \index{r\_hincr}
       \item[max\_LET\_fail = 15] 
@@ -851,7 +1088,7 @@ Max number of rejected steps
         \index{magicNumbers!max\_LET\_fail}
         \index{max\_LET\_fail}
       \item[minTimeStep = 0] 
-bound on smallest time step in variable mode.
+Bound on smallest time step in variable mode.
         \index{magicNumbers!minTimeStep}
         \index{minTimeStep}
       \item[maxTimeStep = 10] 
@@ -872,6 +1109,7 @@ bound on largest time step in variable mode.
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
+    This Step Control Strategy is specifically for use with the `Implicit BDF' Stepper, and has a two-phase approach: constant step sizes and followed by variable step sizes.  The step size is adjusted based on the WRMS, see Implicit BDF Stepper Error Weight Vector Calculator
   \item[Parent(s):]
     Step Control Strategy Selection (Section~\ref{sec:Step Control Strategy Selection})
       \index{Step Control Strategy Selection} 
@@ -944,9 +1182,7 @@ If set to TRUE, then acceptance of step dependes on LET in addition to Nonlinear
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
-    Not all ErrWtVec calculators are compatible with each step control strategy.
-    If the calculator has the name of a stepper or another step control strategy in
-    its name, then it only works with that step control strategy.
+    Not all ErrWtVec calculators are compatible with each step control strategy.  If the calculator has the name of a stepper or another step control strategy in its name, then it only works with that step control strategy.
   \item[Parent(s):]
     Step Control Settings (Section~\ref{sec:Step Control Settings})
       \index{Step Control Settings} 
@@ -981,6 +1217,7 @@ The parameters for each Error Weight Vector Calculator Type are specified in thi
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
+    This Error Weight Vector Calculator is specifically for use with the `Implicit BDF' Stepper.
   \item[Parent(s):]
     Error Weight Vector Calculator Selection (Section~\ref{sec:Error Weight Vector Calculator Selection})
       \index{Error Weight Vector Calculator Selection} 
@@ -1000,8 +1237,7 @@ The parameters for each Error Weight Vector Calculator Type are specified in thi
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
-    Note all Steppers accept an interpolator.  Currently, only the BackwardEuler
-    stepper does.
+    Note all Steppers accept an interpolator.  Currently, only the BackwardEuler stepper does.
   \item[Parent(s):]
     Stepper Settings (Section~\ref{sec:Stepper Settings})
       \index{Stepper Settings} 
@@ -1044,6 +1280,7 @@ The parameters for each Interpolator Type are specified in this sublist
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
+    This provides a simple linear interpolation between time nodes.
   \item[Parent(s):]
     Interpolator Selection (Section~\ref{sec:Interpolator Selection})
       \index{Interpolator Selection} 
@@ -1063,6 +1300,7 @@ The parameters for each Interpolator Type are specified in this sublist
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
+    This provides a piecewise cubic Hermite interpolation on each interval where the data is the solution and its time derivatives at the end points of the interval.  It will match 3rd degree polynomials exactly with both function values and derivatives.
   \item[Parent(s):]
     Interpolator Selection (Section~\ref{sec:Interpolator Selection})
       \index{Interpolator Selection} 
@@ -1082,6 +1320,7 @@ The parameters for each Interpolator Type are specified in this sublist
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
+    This provides a cubic spline interpolation between time nodes.
   \item[Parent(s):]
     Interpolator Selection (Section~\ref{sec:Interpolator Selection})
       \index{Interpolator Selection} 
@@ -1101,8 +1340,7 @@ The parameters for each Interpolator Type are specified in this sublist
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
-    Only the Explicit RK Stepper and the Implicit RK Stepper accept an RK Butcher
-    Tableau.
+    Only the Explicit RK Stepper and the Implicit RK Stepper accept an RK Butcher Tableau.
   \item[Parent(s):]
     Stepper Settings (Section~\ref{sec:Stepper Settings})
       \index{Stepper Settings} 
@@ -1136,6 +1374,12 @@ The parameters for each Interpolator Type are specified in this sublist
       \newline 
     Backward Euler (Section~\ref{sec:Backward Euler-Runge Kutta Butcher Tableau Selection})
       \index{Backward Euler} 
+      \newline 
+    IRK 1 Stage Theta Method (Section~\ref{sec:IRK 1 Stage Theta Method})
+      \index{IRK 1 Stage Theta Method} 
+      \newline 
+    IRK 2 Stage Theta Method (Section~\ref{sec:IRK 2 Stage Theta Method})
+      \index{IRK 2 Stage Theta Method} 
       \newline 
     Singly Diagonal IRK 2 Stage 2nd order (Section~\ref{sec:Singly Diagonal IRK 2 Stage 2nd order})
       \index{Singly Diagonal IRK 2 Stage 2nd order} 
@@ -1234,6 +1478,8 @@ The parameters for each Runge Kutta Butcher Tableau Type are specified in this s
       "Explicit 4 Stage" & \\ 
       "Explicit 3/8 Rule" & \\ 
       "Backward Euler" & \\ 
+      "IRK 1 Stage Theta Method" & \\ 
+      "IRK 2 Stage Theta Method" & \\ 
       "Singly Diagonal IRK 2 Stage 2nd order" & \\ 
       "Singly Diagonal IRK 2 Stage 3rd order" & \\ 
       "Singly Diagonal IRK 3 Stage 4th order" & \\ 
@@ -1306,7 +1552,7 @@ The parameters for each Runge Kutta Butcher Tableau Type are specified in this s
   Explicit 2 Stage 2nd order by Runge
   Also known as Explicit Midpoint
   Solving Ordinary Differential Equations I:
-  Nonstiff Problems, 2nd Revided Edition
+  Nonstiff Problems, 2nd Revised Edition
   E. Hairer, S.P. Norsett, G. Wanner
   Table 1.1, pg 135
   c = [  0  1/2 ]'
@@ -1389,7 +1635,7 @@ The parameters for each Runge Kutta Butcher Tableau Type are specified in this s
 \begin{verbatim}
   Explicit 3 Stage 3rd order by Heun
   Solving Ordinary Differential Equations I:
-  Nonstiff Problems, 2nd Revided Edition
+  Nonstiff Problems, 2nd Revised Edition
   E. Hairer, S.P. Norsett, G. Wanner
   Table 1.1, pg 135
   c = [  0  1/3 2/3 ]'
@@ -1420,7 +1666,7 @@ The parameters for each Runge Kutta Butcher Tableau Type are specified in this s
 \begin{verbatim}
   Explicit 3 Stage 3rd order TVD
   Sigal Gottlieb and Chi-Wang Shu
-  'Total Variation Diminishing Runge-Kutta Schemes'
+  `Total Variation Diminishing Runge-Kutta Schemes'
   Mathematics of Computation
   Volume 67, Number 221, January 1998, pp. 73-85
   c = [  0   1  1/2 ]'
@@ -1428,6 +1674,10 @@ The parameters for each Runge Kutta Butcher Tableau Type are specified in this s
       [  1   0      ]
       [ 1/4 1/4  0  ]
   b = [ 1/6 1/6 4/6 ]'
+  This is also written in the following set of updates.
+  u1 = u^n + dt L(u^n)
+  u2 = 3 u^n/4 + u1/4 + dt L(u1)/4
+  u^(n+1) = u^n/3 + 2 u2/2 + 2 dt L(u2)/3
 \end{verbatim}
   \item[Parent(s):]
     Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
@@ -1451,7 +1701,7 @@ The parameters for each Runge Kutta Butcher Tableau Type are specified in this s
 \begin{verbatim}
   Explicit 4 Stage 3rd order by Runge
   Solving Ordinary Differential Equations I:
-  Nonstiff Problems, 2nd Revided Edition
+  Nonstiff Problems, 2nd Revised Edition
   E. Hairer, S.P. Norsett, G. Wanner
   Table 1.1, pg 135
   c = [  0  1/2  1   1  ]'
@@ -1516,7 +1766,7 @@ The parameters for each Runge Kutta Butcher Tableau Type are specified in this s
 \begin{verbatim}
   Explicit 3/8 Rule
   Solving Ordinary Differential Equations I:
-  Nonstiff Problems, 2nd Revided Edition
+  Nonstiff Problems, 2nd Revised Edition
   E. Hairer, S.P. Norsett, G. Wanner
   Table 1.2, pg 138
   c = [  0  1/3 2/3  1  ]'
@@ -1561,6 +1811,76 @@ The parameters for each Runge Kutta Butcher Tableau Type are specified in this s
 \end{list}
 
 % ----------------------------------------------------------
+\subsection{IRK 1 Stage Theta Method}
+\label{sec:IRK 1 Stage Theta Method}
+\index{IRK 1 Stage Theta Method}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  IRK 1 Stage Theta Method
+  Non-standard finite-difference methods
+  in dynamical systems, P. Kama,
+  Dissertation, University of Pretoria, pg. 49.
+  Comment:  Generalized Implicit Midpoint Method
+  c = [ theta ]'
+  A = [ theta ]
+  b = [  1  ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    \begin{description}
+      \item[theta = 0.5] 
+Valid values are 0 <= theta <= 1, where theta = 0 implies Forward Euler, theta = 1/2 implies midpoint method, and theta = 1 implies Backward Euler. For theta != 1/2, this method is first-order accurate, and with theta = 1/2, it is second-order accurate.  This method is A-stable, but becomes L-stable with theta=1.
+        \index{IRK 1 Stage Theta Method!theta}
+        \index{theta}
+\end{description}
+
+\end{list}
+
+% ----------------------------------------------------------
+\subsection{IRK 2 Stage Theta Method}
+\label{sec:IRK 2 Stage Theta Method}
+\index{IRK 2 Stage Theta Method}
+
+\begin{list}{}
+  {\setlength{\leftmargin}{1.0in}
+   \setlength{\labelwidth}{0.75in}
+   \setlength{\labelsep}{0.125in}}
+  \item[Description:]
+\begin{verbatim}
+  IRK 2 Stage Theta Method
+  Computer Methods for ODEs and DAEs
+  U. M. Ascher and L. R. Petzold
+  p. 113
+  c = [  0       1     ]'
+  A = [  0       0     ]
+      [ 1-theta  theta ]
+  b = [ 1-theta  theta ]'
+\end{verbatim}
+  \item[Parent(s):]
+    Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
+      \index{Runge Kutta Butcher Tableau Selection} 
+  \item[Child(ren):]
+    None. 
+  \item[Parameters:]
+    \begin{description}
+      \item[theta = 0.5] 
+Valid values are 0 < theta <= 1, where theta = 0 implies Forward Euler, theta = 1/2 implies trapezoidal method, and theta = 1 implies Backward Euler. For theta != 1/2, this method is first-order accurate, and with theta = 1/2, it is second-order accurate.  This method is A-stable, but becomes L-stable with theta=1.
+        \index{IRK 2 Stage Theta Method!theta}
+        \index{theta}
+\end{description}
+
+\end{list}
+
+% ----------------------------------------------------------
 \subsection{Singly Diagonal IRK 2 Stage 2nd order}
 \label{sec:Singly Diagonal IRK 2 Stage 2nd order}
 \index{Singly Diagonal IRK 2 Stage 2nd order}
@@ -1589,7 +1909,7 @@ The parameters for each Runge Kutta Butcher Tableau Type are specified in this s
   \item[Parameters:]
     \begin{description}
       \item[gamma = 0.292893] 
-The default value is gamma = (2-sqrt(2))/2 = 0.29289321881345243. This will produce an L-stable 2nd order method with the stage times within the timestep.  Other values of gamma will still produce an L-stable scheme, but will only be 1st order accurate.
+The default value is gamma = (2-sqrt(2))/2. This will produce an L-stable 2nd order method with the stage times within the timestep.  Other values of gamma will still produce an L-stable scheme, but will only be 1st order accurate.
         \index{Singly Diagonal IRK 2 Stage 2nd order!gamma}
         \index{gamma}
 \end{description}
@@ -1609,7 +1929,7 @@ The default value is gamma = (2-sqrt(2))/2 = 0.29289321881345243. This will prod
 \begin{verbatim}
   Singly Diagonal IRK 2 Stage 3rd order
   Solving Ordinary Differential Equations I:
-  Nonstiff Problems, 2nd Revided Edition
+  Nonstiff Problems, 2nd Revised Edition
   E. Hairer, S. P. Norsett, and G. Wanner
   Table 7.2, pg 207
   gamma = (3+-sqrt(3))/6 -> 3rd order and A-stable
@@ -1731,13 +2051,42 @@ If both '3rd Order A-stable' and '2nd Order L-stable' are false, gamma will be u
   2nd Revised Edition
   E. Hairer and G. Wanner
   pg101
-  c = [ (6-sqrt(6))/10                (6+9*sqrt(6))/35             1                        (4-sqrt(6))/10         (4+sqrt(6))/10  ]'
-  A = [ (6-sqrt(6))/10                                                                                                             ]
-      [ (-6+5*sqrt(6))/14             (6-sqrt(6))/10                                                                               ]
-      [ (888+607*sqrt(6))/2850        (126-161*sqrt(6))/1425       (6-sqrt(6))/10                                                  ]
-      [ (3153-3082*sqrt(6))/14250     (3213+1148*sqrt(6))/28500    (-267+88*sqrt(6))/500    (6-sqrt(6))/10                         ]
-      [ (-32583+14638*sqrt(6))/71250  (-17199+364*sqrt(6))/142500  (1329-544*sqrt(6))/2500  (-96+131*sqrt(6))/625  (6-sqrt(6))/10  ]
-  b = [ 0                             0                            1/9                      (16-sqrt(6))/36        (16+sqrt(6))/36 ]'
+  c = [ (6-sqrt(6))/10   ]
+      [ (6+9*sqrt(6))/35 ]
+      [ 1                ]
+      [ (4-sqrt(6))/10   ]
+      [ (4+sqrt(6))/10   ]
+  A = [ A1 A2 A3 A4 A5 ]
+        A1 = [ (6-sqrt(6))/10               ]
+             [ (-6+5*sqrt(6))/14            ]
+             [ (888+607*sqrt(6))/2850       ]
+             [ (3153-3082*sqrt(6))/14250    ]
+             [ (-32583+14638*sqrt(6))/71250 ]
+        A2 = [ 0                           ]
+             [ (6-sqrt(6))/10              ]
+             [ (126-161*sqrt(6))/1425      ]
+             [ (3213+1148*sqrt(6))/28500   ]
+             [ (-17199+364*sqrt(6))/142500 ]
+        A3 = [ 0                       ]
+             [ 0                       ]
+             [ (6-sqrt(6))/10          ]
+             [ (-267+88*sqrt(6))/500   ]
+             [ (1329-544*sqrt(6))/2500 ]
+        A4 = [ 0                     ]
+             [ 0                     ]
+             [ 0                     ]
+             [ (6-sqrt(6))/10        ]
+             [ (-96+131*sqrt(6))/625 ]
+        A5 = [ 0              ]
+             [ 0              ]
+             [ 0              ]
+             [ 0              ]
+             [ (6-sqrt(6))/10 ]
+  b = [               0 ]
+      [               0 ]
+      [             1/9 ]
+      [ (16-sqrt(6))/36 ]
+      [ (16+sqrt(6))/36 ]
 \end{verbatim}
   \item[Parent(s):]
     Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
@@ -1762,7 +2111,7 @@ If both '3rd Order A-stable' and '2nd Order L-stable' are false, gamma will be u
   Diagonal IRK 2 Stage 3rd order
   Hammer & Hollingsworth method
   Solving Ordinary Differential Equations I:
-  Nonstiff Problems, 2nd Revided Edition
+  Nonstiff Problems, 2nd Revised Edition
   E. Hairer, S. P. Norsett, and G. Wanner
   Table 7.1, pg 205
   c = [  0   2/3 ]'
@@ -1799,7 +2148,7 @@ If both '3rd Order A-stable' and '2nd Order L-stable' are false, gamma will be u
   Table 5.2, pg 72
   Also:  Implicit midpoint rule
   Solving Ordinary Differential Equations I:
-  Nonstiff Problems, 2nd Revided Edition
+  Nonstiff Problems, 2nd Revised Edition
   E. Hairer, S. P. Norsett, and G. Wanner
   Table 7.1, pg 205
   c = [ 1/2 ]'
@@ -1894,7 +2243,7 @@ If both '3rd Order A-stable' and '2nd Order L-stable' are false, gamma will be u
   Implicit 2 Stage 4th Order Hammer & Hollingsworth
   Hammer & Hollingsworth method
   Solving Ordinary Differential Equations I:
-  Nonstiff Problems, 2nd Revided Edition
+  Nonstiff Problems, 2nd Revised Edition
   E. Hairer, S. P. Norsett, and G. Wanner
   Table 7.3, pg 207
   c = [ 1/2-sqrt(3)/6  1/2+sqrt(3)/6 ]'
@@ -1925,7 +2274,7 @@ If both '3rd Order A-stable' and '2nd Order L-stable' are false, gamma will be u
   Implicit 3 Stage 6th Order Kuntzmann & Butcher
   Kuntzmann & Butcher method
   Solving Ordinary Differential Equations I:
-  Nonstiff Problems, 2nd Revided Edition
+  Nonstiff Problems, 2nd Revised Edition
   E. Hairer, S. P. Norsett, and G. Wanner
   Table 7.4, pg 209
   c = [ 1/2-sqrt(15)/10   1/2              1/2-sqrt(15)/10  ]'
@@ -2120,11 +2469,18 @@ If both '3rd Order A-stable' and '2nd Order L-stable' are false, gamma will be u
   2nd Revised Edition
   E. Hairer and G. Wanner
   Table 5.6, pg 74
-  c = [ (4-sqrt(6))/10          (4+sqrt(6))/10                 1            ]'
-  A = [ (88-7*sqrt(6))/360      (296-169*sqrt(6))/1800  (-2+3*sqrt(6))/225  ]
-      [ (296+169*sqrt(6))/1800  (88+7*sqrt(6))/360      (-2-3*sqrt(6))/225  ]
-      [ (16-sqrt(6))/36         (16+sqrt(6))/36         1/9                 ]
-  b = [ (16-sqrt(6))/36         (16+sqrt(6))/36         1/9                 ]'
+  c = [ (4-sqrt(6))/10          (4+sqrt(6))/10          1    ]'
+  A = [ A1 A2 A3 ]
+        A1 = [ (88-7*sqrt(6))/360     ]
+             [ (296+169*sqrt(6))/1800 ]
+             [ (16-sqrt(6))/36        ]
+        A2 = [ (296-169*sqrt(6))/1800 ]
+             [ (88+7*sqrt(6))/360     ]
+             [ (16+sqrt(6))/36        ]
+        A3 = [ (-2+3*sqrt(6))/225 ]
+             [ (-2-3*sqrt(6))/225 ]
+             [ 1/9                ]
+  b = [ (16-sqrt(6))/36         (16+sqrt(6))/36         1/9 ]'
 \end{verbatim}
   \item[Parent(s):]
     Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
@@ -2218,12 +2574,25 @@ If both '3rd Order A-stable' and '2nd Order L-stable' are false, gamma will be u
   2nd Revised Edition
   E. Hairer and G. Wanner
   Table 5.8, pg 75
-  c = [ 0               (5-sqrt(5))/10       (5+sqrt(5))/10       1                 ]'
-  A = [ 0               0                    0                    0                 ]
-      [ (11+sqrt(5)/120 (25-sqrt(5))/120     (25-13*sqrt(5))/120  (-1+sqrt(5))/120  ]
-      [ (11-sqrt(5)/120 (25+13*sqrt(5))/120  (25+sqrt(5))/120     (-1-sqrt(5))/120  ]
-      [ 1/12            5/12                 5/12                 1/12              ]
-  b = [ 1/12            5/12                 5/12                 1/12              ]'
+  c = [ 0  (5-sqrt(5))/10  (5+sqrt(5))/10  1 ]'
+  A = [ A1  A2  A3  A4 ]
+        A1 = [ 0               ]
+             [ (11+sqrt(5)/120 ]
+             [ (11-sqrt(5)/120 ]
+             [ 1/12            ]
+        A2 = [ 0                    ]
+             [ (25-sqrt(5))/120     ]
+             [ (25+13*sqrt(5))/120  ]
+             [ 5/12                 ]
+        A3 = [ 0                   ]
+             [ (25-13*sqrt(5))/120 ]
+             [ (25+sqrt(5))/120    ]
+             [ 5/12                ]
+        A4 = [ 0                ]
+             [ (-1+sqrt(5))/120 ]
+             [ (-1-sqrt(5))/120 ]
+             [ 1/12             ]
+  b = [ 1/12  5/12  5/12   1/12 ]'
 \end{verbatim}
   \item[Parent(s):]
     Runge Kutta Butcher Tableau Selection (Section~\ref{sec:Runge Kutta Butcher Tableau Selection})
@@ -2442,6 +2811,7 @@ If both '3rd Order A-stable' and '2nd Order L-stable' are false, gamma will be u
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
+    This parameter list sets various parameters for the InterpolationBuffer.
   \item[Parent(s):]
     Integrator Base (Section~\ref{sec:Integrator Base})
       \index{Integrator Base} 
@@ -2468,6 +2838,7 @@ If both '3rd Order A-stable' and '2nd Order L-stable' are false, gamma will be u
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
+    Used to select the Interpolation Buffer.
   \item[Parent(s):]
     Interpolation Buffer Settings (Section~\ref{sec:Interpolation Buffer Settings})
       \index{Interpolation Buffer Settings} 
@@ -2502,6 +2873,7 @@ The parameters for each Interpolation Buffer Type are specified in this sublist
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
+    Sets parameters for the Interpolation Buffer.
   \item[Parent(s):]
     Trailing Interpolation Buffer Selection (Section~\ref{sec:Trailing Interpolation Buffer Selection})
       \index{Trailing Interpolation Buffer Selection} 
@@ -2539,6 +2911,7 @@ Storage limit for the interpolation buffer.
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
+    Used to select the Interpolation Buffer Appender.
   \item[Parent(s):]
     Interpolation Buffer Settings (Section~\ref{sec:Interpolation Buffer Settings})
       \index{Interpolation Buffer Settings} 
@@ -2573,6 +2946,7 @@ The parameters for each Interpolation Buffer Appender Type are specified in this
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
+    Appender that just transfers nodes without any regard for accuracy or order.
   \item[Parent(s):]
     Interpolation Buffer Appender Selection (Section~\ref{sec:Interpolation Buffer Appender Selection})
       \index{Interpolation Buffer Appender Selection} 
@@ -2592,6 +2966,7 @@ The parameters for each Interpolation Buffer Appender Type are specified in this
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
+    Choose the interpolator to use.
   \item[Parent(s):]
     Interpolation Buffer Settings (Section~\ref{sec:Interpolation Buffer Settings})
       \index{Interpolation Buffer Settings} 
@@ -2634,6 +3009,7 @@ The parameters for each Interpolator Type are specified in this sublist
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
+    This provides a simple linear interpolation between time nodes.
   \item[Parent(s):]
     Interpolator Selection (Section~\ref{sec:Interpolator Selection-Interpolation Buffer Settings})
       \index{Interpolator Selection} 
@@ -2653,6 +3029,7 @@ The parameters for each Interpolator Type are specified in this sublist
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
+    This provides a piecewise cubic Hermite interpolation on each interval where the data is the solution and its time derivatives at the end points of the interval.  It will match 3rd degree polynomials exactly with both function values and derivatives.
   \item[Parent(s):]
     Interpolator Selection (Section~\ref{sec:Interpolator Selection-Interpolation Buffer Settings})
       \index{Interpolator Selection} 
@@ -2672,6 +3049,7 @@ The parameters for each Interpolator Type are specified in this sublist
    \setlength{\labelwidth}{0.75in}
    \setlength{\labelsep}{0.125in}}
   \item[Description:]
+    This provides a cubic spline interpolation between time nodes.
   \item[Parent(s):]
     Interpolator Selection (Section~\ref{sec:Interpolator Selection-Interpolation Buffer Settings})
       \index{Interpolator Selection} 

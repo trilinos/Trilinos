@@ -844,15 +844,38 @@ This will override the global behavior set by
 ``<TRIBITS_PACKAGE>``.
 
 
-Disable update of package dependency information
-------------------------------------------------
+Outputting package dependency information
+-----------------------------------------
 
-To turn off the update/generation of the various XML and HTML package
-dependency files (and speed up configuration), use the configure option::
+To generate the various XML and HTML package dependency files, one can set the
+output directory when configuring using::
 
-  -D <Project>_DEPS_XML_OUTPUT_FILE:FILEPATH=
+  -D <Project>_DEPS_DEFAULT_OUTPUT_DIR:FILEPATH=<SOME_PATH>
 
-NOTE: One must start with a clean CMake cache for this to work.
+This will generate, by default, the output files
+<Project>PackageDependencies.xml, <Project>PackageDependenciesTable.html, and
+CDashSubprojectDependencies.xml.
+
+The filepath for <Project>PackageDependencies.xml can be overridden using::
+
+  -D <Project>_DEPS_XML_OUTPUT_FILE:FILEPATH=<SOME_FILE_PATH>
+
+The filepath for <Project>PackageDependenciesTable.html can be overridden
+using::
+
+  -D <Project>_DEPS_HTML_OUTPUT_FILE:FILEPATH=<SOME_FILE_PATH>
+
+The filepath for CDashSubprojectDependencies.xml can be overridden using::
+
+  -D <Project>_CDASH_DEPS_XML_OUTPUT_FILE:FILEPATH=<SOME_FILE_PATH>
+
+NOTES:
+
+* One must start with a clean CMake cache for all of these defaults to work.
+
+* The files <Project>PackageDependenciesTable.html and
+  CDashSubprojectDependencies.xml will only get generated if support for
+  Python is enabled.
 
 
 Enabling different test categories
@@ -1022,6 +1045,20 @@ the time is being spent.
 NOTE: This requires that you are running on a Linux/Unix system that has the
 stanard command 'date'.  CMake does not have built-in timing functions so you
 have to query the system.
+
+
+Generating a project repo version file
+--------------------------------------
+
+In development mode working with local git repos for the project sources, on
+can generate a <Project>RepoVersion.txt file which lists all of the repos and
+their current versions using::
+
+   -D <PROJECT>_GENERATE_REPO_VERSION_FILE:BOOL=ON
+
+This will cause a <Project>RepoVersion.txt file to get created in the binary
+directory, get installed in the install directory, and get included in the
+soruce distribution tarball.
 
 
 Building (Makefile generator)
@@ -1275,19 +1312,26 @@ CPack.
 Creating a tarball of the source tree
 -------------------------------------
 
-To create a source tarball of the project, use::
+To create a source tarball of the project, first configure with the list of
+desired packages and configure with::
 
- $ make package_source
+  -D <Project>_ENABLE_CPACK_PACKAGING:BOOL=ON
+
+see `Selecting the list of packages to enable`_), then generate the
+distribution files using::
+
+  $ make package_source
 
 The above command will tar up *everything* in the source tree (except for
-files explicitly excluded in the CMakeLists.txt files) so make sure that you
-start with a totally clean source tree before you do this.  You can also
-include generated files, such as Doxygen output files first, then run ``make
-package_source`` and it will be included in the distribution.
+files explicitly excluded in the CMakeLists.txt files and packages that are
+not enabled) so make sure that you start with a totally clean source tree
+before you do this.  You can clean the source tree first to remove all ignored
+files using::
 
-Note to developers: You can control what gets put into the tarball by setting
-the cache variable ``CPACK_SOURCE_IGNORE_FILES`` when configuring with CMake.
-This variable is set internally the <Project> CMakeLists.txt files.
+  $ git clean -fd -x
+
+You can also include generated files, such as Doxygen output files first, then
+run ``make package_source`` and it will be included in the distribution.
 
 
 Dashboard submissions

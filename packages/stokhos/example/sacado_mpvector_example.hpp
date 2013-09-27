@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,40 +35,42 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
 #include "Stokhos_Sacado_Kokkos.hpp"
 
 // storage options
-enum Storage_Method { STATIC, STATIC_FIXED, LOCAL, DYNAMIC, DYNAMIC_STRIDED, DYNAMIC_THREADED };
-static const int num_storage_method = 6;
-static const Storage_Method storage_method_values[] = { STATIC, STATIC_FIXED, LOCAL, DYNAMIC, DYNAMIC_STRIDED, DYNAMIC_THREADED };
-static const char *storage_method_names[] = { "static", "static-fixed", "local", "dynamic", "dynamic-strided", "dynamic-threaded" };
+enum Storage_Method { STATIC,
+                      STATIC_FIXED,
+                      LOCAL,
+                      DYNAMIC,
+                      DYNAMIC_STRIDED,
+                      DYNAMIC_THREADED };
 
-template <int MaxSize, typename node_type>
+template <int MaxSize, typename device_type>
 struct MPVectorTypes {
   // Storage types
-  typedef Stokhos::StaticStorage<int,double,MaxSize,node_type> static_storage;
-  typedef Stokhos::StaticFixedStorage<int,double,MaxSize,node_type> static_fixed_storage;
-  typedef Stokhos::LocalStorage<int,double,MaxSize,node_type> local_storage;
-  typedef Stokhos::DynamicStorage<int,double,node_type> dynamic_storage;
-  typedef Stokhos::DynamicStridedStorage<int,double,node_type> dynamic_strided_storage;
-  typedef Stokhos::DynamicThreadedStorage<int,double,node_type> dynamic_threaded_storage;
+  typedef Stokhos::StaticStorage<int,double,MaxSize,device_type> static_storage;
+  typedef Stokhos::StaticFixedStorage<int,double,MaxSize,device_type> static_fixed_storage;
+  typedef Stokhos::LocalStorage<int,double,MaxSize,device_type> local_storage;
+  typedef Stokhos::DynamicStorage<int,double,device_type> dynamic_storage;
+  typedef Stokhos::DynamicStridedStorage<int,double,device_type> dynamic_strided_storage;
+  typedef Stokhos::DynamicThreadedStorage<int,double,device_type> dynamic_threaded_storage;
 
   // Vector types
-  typedef Sacado::MP::Vector<static_storage, node_type> static_vector;
-  typedef Sacado::MP::Vector<static_fixed_storage, node_type> static_fixed_vector;
-  typedef Sacado::MP::Vector<local_storage, node_type> local_vector;
-  typedef Sacado::MP::Vector<dynamic_storage, node_type> dynamic_vector;
-  typedef Sacado::MP::Vector<dynamic_strided_storage, node_type> dynamic_strided_vector;
-  typedef Sacado::MP::Vector<dynamic_threaded_storage, node_type> dynamic_threaded_vector;
+  typedef Sacado::MP::Vector<static_storage> static_vector;
+  typedef Sacado::MP::Vector<static_fixed_storage> static_fixed_vector;
+  typedef Sacado::MP::Vector<local_storage> local_vector;
+  typedef Sacado::MP::Vector<dynamic_storage> dynamic_vector;
+  typedef Sacado::MP::Vector<dynamic_strided_storage> dynamic_strided_vector;
+  typedef Sacado::MP::Vector<dynamic_threaded_storage> dynamic_threaded_vector;
 };
 
-template <int MaxSize, typename node_type> struct MPVectorExample {
-  static bool 
-  run(Storage_Method storage_method, int n, int sz, int nblocks, int nthreads, 
+template <int MaxSize, typename device_type> struct MPVectorExample {
+  static bool
+  run(Storage_Method storage_method, int n, int sz, int nblocks, int nthreads,
       bool reset, bool print);
 };
 

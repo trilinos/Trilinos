@@ -13,7 +13,7 @@
 #include <Kokkos_Threads.hpp>
 #endif
 #include <Kokkos_Cuda.hpp>
-#include <Kokkos_MultiVector.hpp>
+#include <Kokkos_MV.hpp>
 #include <Kokkos_CrsMatrix.hpp>
 #ifndef DEVICE
 #define DEVICE 1

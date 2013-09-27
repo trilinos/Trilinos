@@ -176,7 +176,11 @@ PHX_EVALUATOR_CTOR(DOF_PointValues,p)
   Teuchos::RCP<const PointRule> pointRule = p.get< Teuchos::RCP<const PointRule> >("Point Rule");
   requires_orientation = basis->requiresOrientations();
 
-  const std::string evalName = fieldName+"_"+pointRule->getName();
+  std::string evalName = fieldName+"_"+pointRule->getName();
+  if(p.isType<bool>("Use DOF Name")) {
+    if(p.get<bool>("Use DOF Name"))
+      evalName = fieldName;
+  }
 
   dof_basis = PHX::MDField<ScalarT,Cell,Point>(fieldName, basis->functional);
 

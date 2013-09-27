@@ -348,12 +348,13 @@ void Ioss::Map::build_reorder_map(int64_t start, int64_t count)
       }
     }
     if (need_reorder_map) {
-      reorder.resize(map.size()-1);
+      int64_t map_size = map.size()-1;
+      reorder.resize(map_size);
       // If building a partial reorder map, assume all entries
       // are a direct 1-1 and then let the partial fills overwrite
       // if needed.
-      if (start > 0 || my_end < map.size()-1) {
-	for (int64_t i=0; i < reorder.size(); i++) {
+      if (start > 0 || my_end < map_size) {
+	for (size_t i=0; i < reorder.size(); i++) {
 	  reorder[i] = i;
 	}
       }

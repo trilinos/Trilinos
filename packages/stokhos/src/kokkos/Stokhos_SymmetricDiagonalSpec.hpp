@@ -63,6 +63,8 @@ template< class DeviceType >
 class SymmetricDiagonalSpec {
 public:
 
+  typedef unsigned size_type;
+
   /** \brief  Dimension of vector block */
   KOKKOS_INLINE_FUNCTION
   unsigned dimension() const { return m_dimension ; }

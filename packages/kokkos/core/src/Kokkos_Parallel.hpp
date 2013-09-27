@@ -46,7 +46,7 @@
 
 #include <cstddef>
 #include <Kokkos_Macros.hpp>
-#include <impl/Kokkos_ArrayTraits.hpp>
+#include <impl/Kokkos_Traits.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -197,30 +197,14 @@ namespace Kokkos {
  *  If the league or team size are too large then they will be reduced.
  */
 struct ParallelWorkRequest {
-  enum { shared_align = sizeof(double) }; ///< Alignment for shared memory variables
-
   size_t  league_size ; ///<  Size of league (number of teams in a league)
   size_t  team_size ;   ///<  Size of team (number of threads in a team)
-  size_t  shared_size ; ///<  Size of team-shared memory (in bytes)
 
   KOKKOS_INLINE_FUNCTION
-  ParallelWorkRequest()
-    : league_size(0), team_size(0), shared_size(0) {}
+  ParallelWorkRequest() : league_size(0), team_size(0) {}
 
   KOKKOS_INLINE_FUNCTION
-  ParallelWorkRequest( size_t s0 , size_t s1 , size_t s2 = 0 )
-    : league_size(s0), team_size(s1), shared_size(s2) {}
-
-  template< typename T >
-  inline
-  ParallelWorkRequest & add_shmem( const size_t count )
-  {
-    enum { MASK = ParallelWorkRequest::shared_align - 1 };
-
-    shared_size += ( sizeof(T) * count + size_t(MASK) ) & ~size_t(MASK);
-
-    return *this ;
-  }
+  ParallelWorkRequest( size_t s0 , size_t s1 ) : league_size(s0), team_size(s1) {}
 };
 
 /** \brief  Execute functor in parallel with work request,
@@ -314,6 +298,26 @@ template< class FunctorType >
 struct FunctorHasFinal< FunctorType , typename enable_if< 0 < sizeof( & FunctorType::final ) >::type >
   : public true_type {};
 
+template< class FunctorType , class Enable = void >
+struct FunctorShmemSize
+{
+  static inline size_t value( const FunctorType & ) { return 0 ; }
+};
+
+template< class FunctorType >
+struct FunctorShmemSize< FunctorType , typename enable_if< 0 < sizeof( & FunctorType::shmem_size ) >::type >
+{
+  static inline size_t value( const FunctorType & f ) { return f.shmem_size() ; }
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace Impl {
 
 template< class FunctorType , class ScalarType >
 struct ReduceAdapter

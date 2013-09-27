@@ -148,8 +148,7 @@ public:
   template< typename T >
   inline T team_scan(T& value);
 
-  template< typename T >
-  inline T * get_shmem( const int count );
+  inline void * get_shmem( const int size );
 
   explicit inline Threads( Impl::ThreadsExec & );
 
@@ -168,27 +167,17 @@ public:
    *  resources, but it will take time (latency) to awaken the device
    *  again (via the wake()) method so that it is ready for work.
    *
-   *  The 'team_topology' argument specifies
-   *    (first) the number of teams of threads - the league_size
-   *    (second) the number of threads per team - the team_size.
+   *  Teams of threads are distributed as evenly as possible across
+   *  the requested number of numa regions and cores per numa region.
+   *  A team will not be split across a numa region.
    *
-   *  The 'use_core_topology' argument specifies the subset of available cores
-   *  to use for the device's threads.  If 'hwloc' is available then the
-   *  full core topology can be queried via 'hwloc::get_core_topology()'.
-   *  If 'use_core_topology' is not specified and 'hwloc' is available
-   *  then the full core topology is used.  If 'hwloc' in not available
-   *  then 'use_core_topology' is ignored.
-   *
-   *  Teams of threads are evenly distributed across the core topology.
-   *  If team_topology.first*team_topology.second is less than or equal to
-   *  use_core_topology.first*use_core_topology.second then each thread
-   *  is assigned its own core.  Otherwise multiple threads in a team are
-   *  assigned to a shared core (using hyperthreads).
+   *  If the 'use_' arguments are not supplied the hwloc is queried
+   *  to use all available cores.
    */
-  static void initialize( const std::pair<unsigned,unsigned> team_topology ,
-                          const std::pair<unsigned,unsigned> use_core_topology =
-                                std::make_pair (0u, 0u) );
-
+  static void initialize( unsigned team_count ,
+                          unsigned threads_per_team ,
+                          unsigned use_numa_count = 0 ,
+                          unsigned use_cores_per_numa = 0 );
 
   static int league_max();
   static int team_max();

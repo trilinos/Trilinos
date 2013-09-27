@@ -936,11 +936,11 @@ operator<<(std::ostream & os, Tensor4<T, N> const & A)
 
       for (Index k = 0; k < dimension; ++k) {
 
-        os << std::scientific << A(i,j,k,0);
+        os << std::scientific << std::setprecision(16) << A(i,j,k,0);
 
         for (Index l = 1; l < dimension; ++l) {
 
-          os << std::scientific << "," << A(i,j,k,l);
+          os << "," << std::scientific  << std::setprecision(16) << A(i,j,k,l);
         }
 
         os << std::endl;

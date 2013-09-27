@@ -482,11 +482,23 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
     // A database will include all times from step 0 up to the
     // last time that is less than t_min on the following database.
     // Note that we are iterating through the databases from last to first...
+    
+    // Check delta between the last used timestep on this database
+    // and the first time on the previous (later in time) database
+    // (which is t_min). It must be > user-specified minimum delta.
+    // Set by -interpart_minimum_time_delta {delta} command line option.
+    
+    // NOTE that this is not the delta between individual timesteps
+    // within a database, it is the delta between the last timestep 
+    // on one database and the first on the next database.
+    
     int i = 0;
     for (i=nts; i > 0; i--) {
       if (times[i-1] <t_min) {
-	used = true;
-	global_times.push_back(TimeStepMap<T>(p-1, i-1, times[i-1]));
+	if (used == true || t_min - times[i-1] >= interface.interpart_minimum_time_delta()) {
+	  used = true;
+	  global_times.push_back(TimeStepMap<T>(p-1, i-1, times[i-1]));
+	}
       }
     }
     local_mesh[p-1].timestepCount = i;
@@ -495,7 +507,9 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
       std::string part = "Part " + to_string(p) + ": ";
       part += interface.inputFiles_[p-1];
       std::cerr << "\nWARNING: " << part
-		<< " does not contain any time steps which will be used in conjoined file.\n";
+		<< " does not contain any time steps which will be used in conjoined file.\n"
+		<< " Current minimum time = " << t_min << ", timestep range on this part is "
+		<< times[0] << " to " << times[nts-1] << "\n";
       local_mesh[p-1].isActive = false;
     }
   }
@@ -2413,7 +2427,7 @@ namespace {
 	  // of current value and then iterate over specified blocks and
 	  // set those positive.  This way can make sure that the
 	  // variable truly exists for the block that the user specified.
-	  bool found_it = false;
+	  found_it = false;
 	  for (size_t b=0; b < global.count(vars.objectType); b++) {
 	    if (glob_blocks[b].id == variable_names[i].second) {
 	      if (glob_blocks[b].truthTable[out_position] == 0) {
@@ -2458,7 +2472,6 @@ namespace {
       // For each input exodus file, get it's truth table and fill
       // in the location in the output truth table...
 
-      bool is_sidenodeset = vars.objectType==NSET || vars.objectType==SSET;
       size_t part_count = blocks.size();
       for (size_t p = 0; p < part_count; p++) {
 	ExodusFile id(p);
@@ -2742,7 +2755,6 @@ namespace {
 			       size_t p, int time_step, int time_step_out)
   {
     int error = 0;
-    bool is_sidenodeset = vars.objectType==NSET || vars.objectType==SSET;
 
     ExodusFile id(p);
     int id_out = ExodusFile::output();// output file identifier

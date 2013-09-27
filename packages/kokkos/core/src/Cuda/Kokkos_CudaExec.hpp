@@ -70,18 +70,15 @@ public:
   __device__ inline
   void * get_shmem( const int size )
   {
-    enum { MASK  = ParallelWorkRequest::shared_align - 1 };
-
     extern __shared__ int sh[];
 
     // m_shmem_iter is in bytes, convert to integer offsets
     const int offset = m_shmem_iter >> power_of_two<sizeof(int)>::value ;
 
-    // Round up size alignment
-    m_shmem_iter += ( size + int(MASK) ) & ~int(MASK);
+    m_shmem_iter += size ;
 
     if ( m_shmem_end < m_shmem_iter ) {
-      cuda_abort("Cuda::get_shmem");
+      cuda_abort("Cuda::get_shmem out of memory");
     }
 
     return sh + offset ;
@@ -136,10 +133,8 @@ __device__ inline T Cuda::team_scan(T& value) {
   return sum;
 }
 
-template< typename T >
 inline __device__ 
-T * Cuda::get_shmem( const int count )
-{ return (T*) m_exec.get_shmem( sizeof(T) * count ); }
+void * Cuda::get_shmem( const int size ) { return m_exec.get_shmem( size ); }
 
 } // namespace Kokkos
 

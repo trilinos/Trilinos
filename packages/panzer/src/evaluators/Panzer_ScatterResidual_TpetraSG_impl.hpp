@@ -113,6 +113,8 @@ template<typename Traits,typename LO,typename GO,typename NodeT>
 void panzer::ScatterResidual_Tpetra<panzer::Traits::SGResidual, Traits,LO,GO,NodeT>::
 evaluateFields(typename Traits::EvalData workset)
 { 
+   TEUCHOS_ASSERT(false); // this doesn't even work
+/*
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
    typedef SGTpetraLinearObjContainer<double,LO,GO,NodeT> SGLOC;
 
@@ -166,6 +168,7 @@ evaluateFields(typename Traits::EvalData workset)
          }
       }
    }
+*/
 }
 
 // **********************************************************************
@@ -231,7 +234,10 @@ postRegistrationSetup(typename Traits::SetupData d,
 template<typename Traits,typename LO,typename GO,typename NodeT>
 void panzer::ScatterResidual_Tpetra<panzer::Traits::SGJacobian, Traits,LO,GO,NodeT>::
 evaluateFields(typename Traits::EvalData workset)
-{ 
+{  
+   TEUCHOS_ASSERT(false);
+
+/*
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
    typedef SGTpetraLinearObjContainer<double,LO,GO,NodeT> SGLOC;
 
@@ -303,6 +309,7 @@ evaluateFields(typename Traits::EvalData workset)
          } // end rowBasisNum
       } // end fieldIndex
    }
+*/
 }
 
 // **********************************************************************

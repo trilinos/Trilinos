@@ -438,7 +438,23 @@ void ML_Epetra::FaceMatrixFreePreconditioner::Print(int whichHierarchy)
 {
   if(CoarsePC) CoarsePC->Print();
 }/*end Print*/
- 
+
+// ================================================ ====== ==== ==== == = 
+// Return operator complexity and #nonzeros in fine grid matrix.
+void ML_Epetra::FaceMatrixFreePreconditioner::Complexities(double &complexity, double &fineNnz){
+  fineNnz=0.0;  complexity=1.0;
+
+  if(!Operator_.is_null()) {
+    const Epetra_RowMatrix * rm = dynamic_cast<const Epetra_RowMatrix*>(&*Operator_);
+    if(!rm) return;
+
+    fineNnz=rm->NumGlobalNonzeros();
+    double coarse_oc=0.0, coarse_nnz=0.0;
+    if(CoarsePC) CoarsePC->Complexities(coarse_oc,coarse_nnz);
+
+    complexity = 1.0 + coarse_oc*coarse_nnz / fineNnz;
+  }
+}/*end Complexities*/
 
 // ================================================ ====== ==== ==== == = 
 // Destroys all structures allocated in \c ComputePreconditioner() if the preconditioner has been computed.

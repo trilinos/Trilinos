@@ -58,6 +58,7 @@ panzer::ScatterDirichletResidual_Epetra<panzer::Traits::SGResidual, Traits,LO,GO
 ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
                                 const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
+   , globalDataKey_("Residual Scatter Container")
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ = 
@@ -88,6 +89,9 @@ ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,
 
   // this is what this evaluator provides
   this->addEvaluatedField(*scatterHolder_);
+
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
 
   this->setName(scatterName+" Scatter Residual (SGResidual)");
 }
@@ -125,6 +129,9 @@ preEvaluate(typename Traits::PreEvalData d)
 
    dirichletCounter_ = epetraContainer->get_x();
    TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
+
+   // extract linear object container
+   sgEpetraContainer_ = Teuchos::rcp_dynamic_cast<SGEpetraLinearObjContainer>(d.getDataObject(globalDataKey_));
 }
 
 // **********************************************************************
@@ -139,9 +146,7 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   Teuchos::RCP<SGEpetraLinearObjContainer> sgEpetraContainer 
-         = Teuchos::rcp_dynamic_cast<SGEpetraLinearObjContainer>(workset.ghostedLinContainer);
-   Teuchos::RCP<Epetra_Vector> r_template = (*sgEpetraContainer->begin())->get_f();
+   Teuchos::RCP<Epetra_Vector> r_template = (*sgEpetraContainer_->begin())->get_f();
    const Epetra_BlockMap & map = r_template->Map();
 
    // NOTE: A reordering of these loops will likely improve performance
@@ -186,7 +191,7 @@ evaluateFields(typename Traits::EvalData workset)
             // loop over stochastic basis scatter field values to residual vectors
             int stochIndex = 0;
             panzer::SGEpetraLinearObjContainer::iterator itr; 
-            for(itr=sgEpetraContainer->begin();itr!=sgEpetraContainer->end();++itr,++stochIndex)
+            for(itr=sgEpetraContainer_->begin();itr!=sgEpetraContainer_->end();++itr,++stochIndex)
                (*(*itr)->get_f())[lid] = field.coeff(stochIndex);
 
             // dirichlet condition application
@@ -205,6 +210,7 @@ panzer::ScatterDirichletResidual_Epetra<panzer::Traits::SGJacobian, Traits,LO,GO
 ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
                                 const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
+   , globalDataKey_("Residual Scatter Container")
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ = 
@@ -234,6 +240,9 @@ ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,
 
   // this is what this evaluator provides
   this->addEvaluatedField(*scatterHolder_);
+
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
 
   this->setName(scatterName+" Scatter Residual (SGJacobian)");
 }
@@ -273,6 +282,9 @@ preEvaluate(typename Traits::PreEvalData d)
 
    dirichletCounter_ = epetraContainer->get_x();
    TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
+
+   // extract linear object container
+   sgEpetraContainer_ = Teuchos::rcp_dynamic_cast<SGEpetraLinearObjContainer>(d.getDataObject(globalDataKey_));
 }
 
 // **********************************************************************
@@ -287,9 +299,7 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   Teuchos::RCP<SGEpetraLinearObjContainer> sgEpetraContainer 
-         = Teuchos::rcp_dynamic_cast<SGEpetraLinearObjContainer>(workset.ghostedLinContainer);
-   Teuchos::RCP<Epetra_CrsMatrix> Jac_template = (*sgEpetraContainer->begin())->get_A();
+   Teuchos::RCP<Epetra_CrsMatrix> Jac_template = (*sgEpetraContainer_->begin())->get_A();
    const Epetra_BlockMap & map = Jac_template->RowMap();
 
    // NOTE: A reordering of these loops will likely improve performance
@@ -335,7 +345,7 @@ evaluateFields(typename Traits::EvalData workset)
             // loop over stochastic basis scatter field values to residual vectors
             int stochIndex = 0;
             panzer::SGEpetraLinearObjContainer::iterator itr; 
-            for(itr=sgEpetraContainer->begin();itr!=sgEpetraContainer->end();++itr,++stochIndex) {
+            for(itr=sgEpetraContainer_->begin();itr!=sgEpetraContainer_->end();++itr,++stochIndex) {
                Teuchos::RCP<Epetra_Vector> r = (*itr)->get_f();
                Teuchos::RCP<Epetra_CrsMatrix> Jac = (*itr)->get_A();
 

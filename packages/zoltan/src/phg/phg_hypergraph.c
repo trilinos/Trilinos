@@ -454,7 +454,7 @@ int Zoltan_HG_Check (
   if (hg->comm && hg->comm->nProc_x == 1) { 
     /* In 2D distribution, check makes sense only if proc has entire hedge */
     for (i = 0; i < hg->nEdge; i++)
-      if ((hg->hindex[i+1] == hg->hindex[i])) {
+      if (hg->hindex[i+1] == hg->hindex[i]) {
         sprintf (str, "Found hyperedge with no vertices: "
          "edge %d has %d vtxs\n", i, (hg->hindex[i+1] - hg->hindex[i]));
         ZOLTAN_PRINT_WARN(zz->Proc, yo, str);

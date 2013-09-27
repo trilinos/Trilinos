@@ -55,23 +55,75 @@ namespace shards {
 namespace panzer {
   
   struct Workset;
+  struct WorksetDetails;
   class MeshData;
   class BoundaryCondition;
   class PhysicsBlock;
   class BC;
 
   template<typename ArrayT>
-  Teuchos::RCP<std::vector<panzer::Workset> > 
-  buildWorksets(const panzer::PhysicsBlock & pb,
+  Teuchos::RCP<std::vector<Workset> > 
+  buildWorksets(const PhysicsBlock & pb,
 		const std::vector<std::size_t>& local_cell_ids,
 		const ArrayT& vertex_coordinates);
   
   template<typename ArrayT>
-  Teuchos::RCP<std::map<unsigned,panzer::Workset> >
-  buildBCWorkset(const panzer::PhysicsBlock & volume_pb,
+  Teuchos::RCP<std::map<unsigned,Workset> >
+  buildBCWorkset(const PhysicsBlock & volume_pb,
 		 const std::vector<std::size_t>& local_cell_ids,
 		 const std::vector<std::size_t>& local_side_ids,
 		 const ArrayT& vertex_coordinates);
+
+  /** This routine supports construction of worksets that are
+    * more DG like. The elements are assumed to shared an
+    * edge (or face) and the side id is specified accordingly.
+    * Note that no checking of "sharing" is done when the workset
+    * is constructed.
+    */
+  template<typename ArrayT>
+  Teuchos::RCP<std::vector<Workset> > 
+  buildEdgeWorksets(const PhysicsBlock & pb_a,
+	 	   const std::vector<std::size_t>& local_cell_ids_a,
+		   const std::vector<std::size_t>& local_side_ids_a,
+		   const ArrayT& vertex_coordinates_a,
+                   const PhysicsBlock & pb_b,
+		   const std::vector<std::size_t>& local_cell_ids_b,
+		   const std::vector<std::size_t>& local_side_ids_b,
+		   const ArrayT& vertex_coordinates_b);
+
+  template<typename ArrayT>
+  std::vector<Workset>::iterator
+  buildEdgeWorksets(const std::vector<std::size_t> & cell_indices,
+                   const PhysicsBlock & pb_a,
+	 	   const std::vector<std::size_t>& local_cell_ids_a,
+		   const std::vector<std::size_t>& local_side_ids_a,
+		   const ArrayT& vertex_coordinates_a,
+                   const PhysicsBlock & pb_b,
+		   const std::vector<std::size_t>& local_cell_ids_b,
+		   const std::vector<std::size_t>& local_side_ids_b,
+		   const ArrayT& vertex_coordinates_b,
+                   std::vector<Workset>::iterator beg);
+
+  /** Populate basis values and integration values data structures in
+    * the WorksetDetails object being passed in. Note that this works for
+    * both edge data structures and for volumetric data structures. Note
+    * that for this function to work the WorksetDetails object must already
+    * be populated with coordinates.
+    *
+    * \param[in] num_cells The number of cells contained in the workset
+    * \param[in] isSide    Populate using a side subcell
+    * \param[in] pb        Physics block that contains the integration rules
+    *                      and basis functions
+    * \param[in,out] details Object to be populated already containing the
+    *                        vertex coordinates for the cells.
+    *
+    * \note This function is primarily for internal use. A user should not
+    *       call it directly.
+    */
+  void populateValueArrays(std::size_t num_cells,
+                           bool isSide,
+                           const PhysicsBlock & pb,
+                           WorksetDetails & details);
 
 }
 

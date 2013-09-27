@@ -212,7 +212,7 @@ int main()
 //  test_elem();
   {
     std::cout << "test_fixture< Threads >" << std::endl ;
-    Kokkos::Threads::initialize( std::pair<unsigned,unsigned>( 1 , 1 ) );
+    Kokkos::Threads::initialize( 1 , 1 );
     Kokkos::Example::test_fixture< Kokkos::Threads >();
     Kokkos::Threads::finalize();
   }

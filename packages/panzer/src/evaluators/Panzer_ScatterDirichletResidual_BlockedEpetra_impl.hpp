@@ -137,6 +137,15 @@ ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManage
     this->addDependentField(scatterFields_[eq]);
   }
 
+  checkApplyBC_ = p.get<bool>("Check Apply BC");
+  if (checkApplyBC_) {
+    applyBC_.resize(names.size());
+    for (std::size_t eq = 0; eq < names.size(); ++eq) {
+      applyBC_[eq] = PHX::MDField<bool,Cell,NODE>(std::string("APPLY_BC_")+fieldMap_->find(names[eq])->second,dl);
+      this->addDependentField(applyBC_[eq]);
+    }
+  }
+
   // this is what this evaluator provides
   this->addEvaluatedField(*scatterHolder_);
 
@@ -161,6 +170,9 @@ postRegistrationSetup(typename Traits::SetupData d,
 
     // fill field data object
     this->utils.setFieldData(scatterFields_[fd],fm);
+
+    if (checkApplyBC_)
+      this->utils.setFieldData(applyBC_[fd],fm);
   }
 
   // get the number of nodes (Should be renamed basis)
@@ -267,6 +279,11 @@ evaluateFields(typename Traits::EvalData workset)
                continue;
 
             int basisId = basisIdMap[basis];
+
+	    if (checkApplyBC_)
+	      if (!applyBC_[fieldIndex](worksetCellIndex,basisId))
+		continue;
+
             local_r[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
 
             // record that you set a dirichlet condition
@@ -315,6 +332,15 @@ ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManage
     this->addDependentField(scatterFields_[eq]);
   }
 
+  checkApplyBC_ = p.get<bool>("Check Apply BC");
+  if (checkApplyBC_) {
+    applyBC_.resize(names.size());
+    for (std::size_t eq = 0; eq < names.size(); ++eq) {
+      applyBC_[eq] = PHX::MDField<bool,Cell,NODE>(std::string("APPLY_BC_")+fieldMap_->find(names[eq])->second,dl);
+      this->addDependentField(applyBC_[eq]);
+    }
+  }
+
   // this is what this evaluator provides
   this->addEvaluatedField(*scatterHolder_);
 
@@ -339,6 +365,9 @@ postRegistrationSetup(typename Traits::SetupData d,
 
     // fill field data object
     this->utils.setFieldData(scatterFields_[fd],fm);
+
+    if (checkApplyBC_)
+      this->utils.setFieldData(applyBC_[fd],fm);
   }
 
   // get the number of nodes (Should be renamed basis)
@@ -447,6 +476,11 @@ evaluateFields(typename Traits::EvalData workset)
                continue;
 
             int basisId = basisIdMap[basis];
+
+	    if (checkApplyBC_)
+	      if (!applyBC_[fieldIndex](worksetCellIndex,basisId))
+		continue;
+
             local_r[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId).val();
 
             // record that you set a dirichlet condition
@@ -493,6 +527,15 @@ ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManage
     this->addDependentField(scatterFields_[eq]);
   }
 
+  checkApplyBC_ = p.get<bool>("Check Apply BC");
+  if (checkApplyBC_) {
+    applyBC_.resize(names.size());
+    for (std::size_t eq = 0; eq < names.size(); ++eq) {
+      applyBC_[eq] = PHX::MDField<bool,Cell,NODE>(std::string("APPLY_BC_")+fieldMap_->find(names[eq])->second,dl);
+      this->addDependentField(applyBC_[eq]);
+    }
+  }
+
   // this is what this evaluator provides
   this->addEvaluatedField(*scatterHolder_);
 
@@ -517,6 +560,9 @@ postRegistrationSetup(typename Traits::SetupData d,
 
     // fill field data object
     this->utils.setFieldData(scatterFields_[fd],fm);
+
+    if (checkApplyBC_)
+      this->utils.setFieldData(applyBC_[fd],fm);
   }
 
   // get the number of nodes (Should be renamed basis)
@@ -630,6 +676,12 @@ evaluateFields(typename Traits::EvalData workset)
             if(lid<0) // not on this processor
                continue;
 
+            int basisId = basisIdMap[basis];
+
+	    if (checkApplyBC_)
+	      if (!applyBC_[fieldIndex](worksetCellIndex,basisId))
+		continue;
+
             // zero out matrix row
             for(int blockColIndex=0;blockColIndex<numFieldBlocks;blockColIndex++) {
                int start = blockOffsets[blockColIndex];
@@ -665,7 +717,6 @@ evaluateFields(typename Traits::EvalData workset)
                   rowValues[i] = 0.0;
             }
  
-            int basisId = basisIdMap[basis];
             const ScalarT & scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
     
             local_r[lid] = scatterField.val();

@@ -5,14 +5,22 @@ MAKEGLOSSARY = makeglossary
 BIBTEX = bibtex
 
 DEPS = \
+	RythmosAbstract.tex \
+  RythmosAcknowledgment.tex \
   RythmosConvergenceTestExamples.tex \
+	RythmosDevelopersGuide.tex \
   RythmosExplicitStepperFormulation.tex \
+  RythmosExtraCitations.tex \
   RythmosImplicitStepperFormulation.tex \
+	RythmosSAND.tex \
   RythmosTheoryBDF.tex \
   RythmosTheoryIRK.tex \
   RythmosTheoryIntroduction.tex \
   RythmosUsersManualParameterList.tex \
   RythmosUsersManualParameterList_Raw.tex \
+	SANDdistribution.tex \
+  SANDmath.tex \
+  SANDreport.cls \
   rab_commands.tex \
   RythmosTheory.bib \
   ../design_document/RythmosDesignSAND.bib
@@ -46,9 +54,12 @@ RythmosSAND.pdf: RythmosSAND.tex $(DEPS)
 #	ps2pdf -dPDFSETTINGS=/prepress $(<:.dvi=.ps)
 
 clean:
-	@rm -f RythmosSAND.pdf \
+	@rm -f \
 	*.dvi *.aux *.toc *.idx *.ind *.ilg \
 	*.log *.out *.bbl *.blg *.lof *.lot *.tex~ *.log *~
+
+cleanall: clean
+	@rm -f Rythmos.pdf RythmosSAND.pdf
 
 help:
 	@echo ''
@@ -58,6 +69,7 @@ help:
 	@echo ''
 	@echo ' a) all........build all manuals'
 	@echo ' b) clean......remove all built objects'
+	@echo ' b) cleanall...clean + remove Rythmos.pdf and RythmosSAND.pdf'
 	@echo ' c) article....build manual using article format'
 	@echo ' d) sand.......build manual using SAND format'
 

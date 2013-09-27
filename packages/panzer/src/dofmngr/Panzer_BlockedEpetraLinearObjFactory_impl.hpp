@@ -329,6 +329,14 @@ adjustForDirichletConditions(const Epetra_Vector & local_bcs,
 }
 
 template <typename Traits,typename LocalOrdinalT>
+void BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
+applyDirichletBCs(const LinearObjContainer & counter,
+                  LinearObjContainer & result) const
+{
+  TEUCHOS_ASSERT(false); // not yet implemented
+}
+
+template <typename Traits,typename LocalOrdinalT>
 Teuchos::MpiComm<int> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getComm() const
 {

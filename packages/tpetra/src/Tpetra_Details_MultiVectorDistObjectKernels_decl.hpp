@@ -41,6 +41,11 @@
 // @HEADER
 */
 
+// mfh 13/14 Sep 2013 The "should use as<size_t>" comments are both
+// incorrect (as() is not a device function) and usually irrelevant
+// (it would only matter if LocalOrdinal were bigger than size_t on a
+// particular platform, which is unlikely).
+
 #ifndef TPETRA_DETAILS_MULTI_VECTOR_DIST_OBJECT_KERNELS_DECL_HPP
 #define TPETRA_DETAILS_MULTI_VECTOR_DIST_OBJECT_KERNELS_DECL_HPP
 

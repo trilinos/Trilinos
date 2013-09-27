@@ -52,6 +52,7 @@
 #include "Panzer_Dimension.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_CloneableEvaluator.hpp"
+#include "Panzer_BlockedEpetraLinearObjContainer.hpp"
 
 class Epetra_Vector;
 class Epetra_CrsMatrix;
@@ -117,6 +118,8 @@ public:
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
   
+  void preEvaluate(typename Traits::PreEvalData d);
+  
   void evaluateFields(typename Traits::EvalData workset);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
@@ -137,6 +140,8 @@ private:
 
   std::vector<int> fieldIds_; // field IDs needing mapping
 
+  std::string globalDataKey_; // what global data does this fill?
+  Teuchos::RCP<const BlockedEpetraLinearObjContainer> blockedContainer_;
 };
 
 // **************************************************************
@@ -156,6 +161,8 @@ public:
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
+  
+  void preEvaluate(typename Traits::PreEvalData d);
   
   void evaluateFields(typename Traits::EvalData workset);
   
@@ -177,6 +184,8 @@ private:
 
   std::vector<int> fieldIds_; // field IDs needing mapping
 
+  std::string globalDataKey_; // what global data does this fill?
+  Teuchos::RCP<const BlockedEpetraLinearObjContainer> blockedContainer_;
 };
 
 // **************************************************************

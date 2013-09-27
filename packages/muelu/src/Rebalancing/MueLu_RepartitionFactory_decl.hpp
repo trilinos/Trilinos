@@ -63,6 +63,7 @@
 
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_RepartitionFactory_fwd.hpp"
+#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
 
@@ -101,7 +102,7 @@ namespace MueLu {
         If this class requires some data, but the generating factory is not specified in DeclareInput, then this class
         will fall back to the settings in FactoryManager.
     */
-    void DeclareInput(Level &currentLevel) const;
+    void DeclareInput(Level& currentLevel) const;
 
     //@}
 
@@ -109,7 +110,7 @@ namespace MueLu {
     //@{
 
     //! Build an object with this factory.
-    void Build(Level & currentLevel) const;
+    void Build(Level& currentLevel) const;
 
     //@}
 
@@ -121,12 +122,8 @@ namespace MueLu {
 
       Partitions are assigned to processes in order to minimize data movement.  The basic idea is that a good choice for partition
       owner is to choose the pid that already has the greatest number of nonzeros for a particular partition.
-
-      @param[in]  currentLevel      The current multigrid level's Level object.
-      @param[out] myPartitionNumber The partition number this PID owns, otherwise -1.
-      @param[out] partitionOwner    An Array (fancy std::vector) such that the PID of the process that owns partition i is given by partitionOwner[i].
     */
-    void DeterminePartitionPlacement(Level & currentLevel, GlobalOrdinal &myPartitionNumber, Array<int> &partitionOwner) const;
+    void DeterminePartitionPlacement(const Matrix& A, GOVector& decomposition, GO numPartitions, bool keepProc0) const;
 
   }; // class RepartitionFactory
 

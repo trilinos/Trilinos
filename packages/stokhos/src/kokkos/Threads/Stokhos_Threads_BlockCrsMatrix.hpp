@@ -58,8 +58,8 @@ class Multiply<
 {
 public:
 
-  typedef Kokkos::Threads                                      device_type ;
-  typedef device_type::size_type                    size_type ;
+  typedef Kokkos::Threads device_type ;
+  typedef typename BlockSpec::size_type size_type ;
   typedef Kokkos::View< VectorValue** , Kokkos::LayoutLeft , Kokkos::Threads > block_vector_type ;
   typedef BlockCrsMatrix< BlockSpec , MatrixValue , device_type >  matrix_type ;
 
@@ -100,6 +100,7 @@ public:
 
       Multiply< BlockSpec , void , void , DefaultSparseMatOps >::apply( m_A.block , a , x , y );
     }
+
   }
 
   static void apply( const matrix_type & A ,

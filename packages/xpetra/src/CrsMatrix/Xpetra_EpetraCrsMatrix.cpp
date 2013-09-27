@@ -191,7 +191,9 @@ namespace Xpetra {
 
     TEUCHOS_TEST_FOR_EXCEPTION((size_t)rowptr.size()!=getNodeNumRows()+1, Xpetra::Exceptions::RuntimeError, "An exception is thrown to let you know that the size of your rowptr array is incorrect.");
     TEUCHOS_TEST_FOR_EXCEPTION(colind.getRawPtr()!=mtx_->ExpertExtractIndices().Values(), Xpetra::Exceptions::RuntimeError, "An exception is thrown to let you know that you mismatched your pointers.");
-    TEUCHOS_TEST_FOR_EXCEPTION(values.getRawPtr()!=mtx_->ExpertExtractValues(), Xpetra::Exceptions::RuntimeError, "An exception is thrown to let you know that you mismatched your pointers.");
+    if (values.size() > 0) {
+      TEUCHOS_TEST_FOR_EXCEPTION(values.getRawPtr()!=mtx_->ExpertExtractValues(), Xpetra::Exceptions::RuntimeError, "An exception is thrown to let you know that you mismatched your pointers.");
+    }
     TEUCHOS_TEST_FOR_EXCEPTION(values.size()!=colind.size(), Xpetra::Exceptions::RuntimeError, "An exception is thrown to let you know that you mismatched your pointers.");
 
     // NOTE: Tpetra's insistence on using size_t's necessitate not directly accessing the rowptr here... Thus is is the ONLY thing we copy in setAllValues.

@@ -250,11 +250,15 @@ namespace Kokkos {
 inline int Threads::in_parallel()
 { return Impl::ThreadsExec::in_parallel(); }
 
-inline void Threads::initialize( 
-  const std::pair<unsigned,unsigned> league_team ,
-  const std::pair<unsigned,unsigned> hardware_topology )
+inline void Threads::initialize(
+  unsigned team_count ,
+  unsigned threads_per_team ,
+  unsigned use_numa_count ,
+  unsigned use_cores_per_numa )
 {
-  Impl::ThreadsExec::initialize( league_team , hardware_topology );
+  Impl::ThreadsExec::initialize(
+    std::pair<unsigned,unsigned>( team_count , threads_per_team ),
+    std::pair<unsigned,unsigned>( use_numa_count , use_cores_per_numa ) );
 }
 
 inline void Threads::finalize()
@@ -300,8 +304,10 @@ inline void Threads::team_barrier()
 inline Threads::Threads( Impl::ThreadsExec & t ) : m_exec( t ) {}
 
 template< class ViewType >
-inline typename ViewType::value_type Threads::unordered_scan
-   (typename ViewType::value_type& value, ViewType& scratch_view) {
+inline typename ViewType::value_type
+Threads::unordered_scan
+   (typename ViewType::value_type& value, ViewType& scratch_view)
+{
   //gives back an ordered sum within a team, last thread has the highest value)
   typename ViewType::value_type sum = team_scan(value);
 
@@ -311,7 +317,9 @@ inline typename ViewType::value_type Threads::unordered_scan
   if(team_rank()==team_size()-1)
     global_sum = atomic_fetch_add(&scratch_view(0),sum+value);
 
-  typename ViewType::value_type* temp = get_shmem<typename ViewType::value_type>( 1 );
+  typename ViewType::value_type* temp =
+    (typename ViewType::value_type *) get_shmem( sizeof(typename ViewType::value_type) );
+
   if(team_rank()==team_size()-1)
     temp[0]=global_sum;
 
@@ -328,7 +336,7 @@ inline T Threads::team_scan( T& value ) {
 
   if( team_size() == 1 ) return 0;
 
-  T* temp = get_shmem<T>( team_size() );
+  T* temp = (T*) get_shmem( sizeof(T) * team_size() );
   temp[team_rank()] = value;
 
 
@@ -351,10 +359,8 @@ inline T Threads::team_scan( T& value ) {
   //TODO: implement team_scan with log(n) algorithm? Probably not usefull if team_size is small CRT
 }
 
-template< typename T >
 inline
-T * Threads::get_shmem( const int count )
-{ return (T*) m_exec.get_shmem( sizeof(T) * count ); }
+void * Threads::get_shmem( const int size ) { return m_exec.get_shmem( size ); }
 
 } /* namespace Kokkos */
 

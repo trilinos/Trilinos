@@ -68,24 +68,21 @@ Ioss_CommSet.C \
 Ioss_CompositeVariableType.C \
 Ioss_ConcreteVariableType.C \
 Ioss_ConstructedVariableType.C \
+Ioss_CoordinateFrame.C \
 Ioss_DatabaseIO.C \
 Ioss_Edge2.C \
 Ioss_Edge2D2.C \
 Ioss_Edge2D3.C \
 Ioss_Edge3.C \
-Ioss_ElementBlock.C \
-Ioss_FaceBlock.C \
 Ioss_EdgeBlock.C \
-Ioss_NodeBlock.C \
-Ioss_ElementSet.C \
-Ioss_FaceSet.C \
 Ioss_EdgeSet.C \
-Ioss_NodeSet.C \
+Ioss_ElementBlock.C \
+Ioss_ElementSet.C \
 Ioss_ElementTopology.C \
 Ioss_EntityBlock.C \
 Ioss_EntitySet.C \
-Ioss_SideBlock.C \
-Ioss_SideSet.C \
+Ioss_FaceBlock.C \
+Ioss_FaceSet.C \
 Ioss_Field.C \
 Ioss_FieldManager.C \
 Ioss_FileInfo.C \
@@ -93,14 +90,17 @@ Ioss_GroupingEntity.C \
 Ioss_Hex20.C \
 Ioss_Hex27.C \
 Ioss_Hex8.C \
-Ioss_Initializer.C \
 Ioss_IOFactory.C \
+Ioss_Initializer.C \
 Ioss_Map.C \
 Ioss_Node.C \
+Ioss_NodeBlock.C \
+Ioss_NodeSet.C \
 Ioss_ParallelUtils.C \
 Ioss_Property.C \
 Ioss_PropertyManager.C \
 Ioss_Pyramid13.C \
+Ioss_Pyramid14.C \
 Ioss_Pyramid5.C \
 Ioss_Quad4.C \
 Ioss_Quad8.C \
@@ -112,9 +112,12 @@ Ioss_Shell8.C \
 Ioss_Shell9.C \
 Ioss_ShellLine2D2.C \
 Ioss_ShellLine2D3.C \
+Ioss_SideBlock.C \
+Ioss_SideSet.C \
 Ioss_Sphere.C \
 Ioss_Super.C \
 Ioss_Tet10.C \
+Ioss_Tet11.C \
 Ioss_Tet4.C \
 Ioss_Tet7.C \
 Ioss_Tet8.C \
@@ -124,11 +127,13 @@ Ioss_Tri4.C \
 Ioss_Tri4a.C \
 Ioss_Tri6.C \
 Ioss_TriShell3.C \
+Ioss_TriShell4.C \
 Ioss_TriShell6.C \
 Ioss_Unknown.C \
 Ioss_Utils.C \
 Ioss_VariableType.C \
 Ioss_Wedge15.C \
+Ioss_Wedge18.C \
 Ioss_Wedge6.C \
 tokenize.C
 
@@ -138,9 +143,11 @@ all:: libIoex.a libIoss.a libIotr.a libIonit.a libIogn.a libIohb.a ${LIB_IOPX} S
 
 INCLIST = \
 	SEACASIoss_config.h \
+	Ioss_BoundingBox.h \
 	Ioss_CodeTypes.h \
 	Ioss_CommSet.h \
 	Ioss_ConcreteVariableType.h \
+	Ioss_CoordinateFrame.h \
 	Ioss_DBUsage.h \
 	Ioss_DataSize.h \
 	Ioss_DatabaseIO.h \

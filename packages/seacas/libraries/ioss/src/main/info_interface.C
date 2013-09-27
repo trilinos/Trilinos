@@ -48,12 +48,6 @@
 #include <cstdlib>
 #include <cstring>
 
-#if defined(__PUMAGON__)
-#define NPOS (size_t)-1
-#else
-#define NPOS std::string::npos
-#endif
-
 Info::Interface::Interface()
   : checkNodeStatus_(false), computeVolume_(false), adjacencies_(false),ints64Bit_(false),
     computeBBox_(false), useGenericNames_(false), fieldSuffixSeparator_('_'), summary_(0),

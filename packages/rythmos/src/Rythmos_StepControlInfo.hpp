@@ -2,12 +2,17 @@
 #ifndef RYTHMOS_STEP_CONTROL_INFO_HPP
 #define RYTHMOS_STEP_CONTROL_INFO_HPP
 
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
+
 #include "Rythmos_StepperSupportTypes.hpp"
 
 namespace Rythmos {
 
 
-/** \brief Simple strict to aggregate integration/stepper control information.
+/** \brief Simple struct to aggregate integration/stepper control information.
  */
 template<class Scalar>
 struct StepControlInfo {
@@ -20,7 +25,7 @@ struct StepControlInfo {
   /** \brief True if the time integrator should restart when passing
    * over the breakpoint. */
   EBreakPointType breakPointType;
-  /** \brief Initalize to invalid state. */
+  /** \brief Initialize to invalid state. */
   StepControlInfo()
     :stepSize(-1.0), stepType(STEP_TYPE_FIXED),
      limitedByBreakPoint(false),
@@ -54,7 +59,7 @@ std::ostream& operator<<(
  */
 template<class Scalar>
 StepControlInfo<Scalar>
-stepCtrlInfoTaken( 
+stepCtrlInfoTaken(
   const StepControlInfo<Scalar> &trialStepCtrlInfo,
   const Scalar &stepSizeTaken
   )

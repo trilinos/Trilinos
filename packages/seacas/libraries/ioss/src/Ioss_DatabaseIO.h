@@ -48,6 +48,7 @@
 #include <Ioss_BoundingBox.h>
 
 #include <vector>
+#include <set>
 
 namespace Ioss {
   class GroupingEntity;
@@ -76,11 +77,16 @@ namespace Ioss {
   {
     public:
 
-      // Check to see if database state is ok...
-      // If 'write_message' true, then output a warning message indicating the problem.
-      // If 'error_message' non-null, then put the warning message into the string and return it.
-      virtual bool ok(bool write_message = false, std::string *error_message=NULL) const
-    {return dbState != Ioss::STATE_INVALID;}
+    // Check to see if database state is ok...
+    // If 'write_message' true, then output a warning message indicating the problem.
+    // If 'error_message' non-null, then put the warning message into the string and return it.
+    // If 'bad_count' non-null, it counts the number of processors where the file does not exist.
+      //    if ok returns false, but *bad_count==0, then the routine does not support this argument.
+    virtual bool ok(bool write_message = false, std::string *error_message=NULL, int *bad_count=NULL) const
+    {
+      if (bad_count) *bad_count = 0;
+      return dbState != Ioss::STATE_INVALID;
+    }
 
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
@@ -401,6 +407,7 @@ namespace Ioss {
     DatabaseIO(const DatabaseIO&); // Do not implement
     DatabaseIO& operator=(const DatabaseIO&); // Do not implement
 
+    
     mutable std::map<std::string, AxisAlignedBoundingBox> elementBlockBoundingBoxes;
 
     Ioss::ParallelUtils util_; // Encapsulate parallel and other utility functions.
@@ -412,6 +419,13 @@ namespace Ioss {
                                   // given on the mesh file e.g. "fireset".  Both names are still aliases.
     static bool useGenericCanonicalNameDefault; // Default setting for useGenericCanonicalName. 
                                                 // Typically set by app.
+
+    // Keep a list of files that are currently going to be written to by the current application.
+    // Throw an exception if application has multiple output requests with the same basename.
+    // For example, a 2 processor results.e.2.0 results.e.2.1 would raise an error if also
+    // outputting to results.e
+    static void check_for_duplicate_output_file(const std::string &filename);
+    static std::set<std::string> outputFileList; 
   };
 }
 #endif

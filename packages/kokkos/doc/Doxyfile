@@ -45,8 +45,25 @@ QUIET                  = NO
 WARNINGS               = YES
 WARN_IF_UNDOCUMENTED   = YES
 WARN_FORMAT            = "$file:$line: $text"
-INPUT                  = index.doc ../classic ../array
-FILE_PATTERNS          = *.hpp *.cpp
+
+#
+# INPUT: Where to find files that Doxygen should process.  ../classic
+# has a doc/ subdirectory with its own Doxyfile that points to its own
+# files.  The other Kokkos subpackages don't currently have their own
+# Doxyfile files, so we have to do it manually here.
+#
+# mfh 26 Sep 2013: I've only added those directories in the Core
+# subpackage that constitute the "public interface" of that
+# subpackage.  Please feel free to include additional subdirectories
+# of ../core if you want to generate their documentation as well.
+#
+# mfh 26 Sep 2013: I've only added the Kokkos subpackages here that I
+# think are ready for Doxygen documentation generation.  Please feel
+# free to amend this list as you see fit.
+#
+
+INPUT                  = index.doc ../classic ../core/src ../containers/src ../linalg/src
+FILE_PATTERNS          = *.hpp *.cpp *.cuh *.cu
 RECURSIVE              = NO
 EXCLUDE_PATTERNS       = *.x *.o *.out
 EXAMPLE_PATH           = 

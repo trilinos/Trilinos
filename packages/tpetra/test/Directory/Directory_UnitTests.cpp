@@ -110,14 +110,14 @@ namespace {
     const GO numEntries = 2;
     RCP<M> map = rcp(new M(numEntries,0,comm));
     // create a directory
-    D dir(map);
+    D dir (*map);
     
     Array<int> imageIDs(2);
     Array<LO> localIDs(2);
-    TEST_THROW( dir.getDirectoryEntries(tuple<GO>(0,1), imageIDs(0,1)), std::invalid_argument );
-    TEST_THROW( dir.getDirectoryEntries(tuple<GO>(0,1), imageIDs(0,1), localIDs(0,1)), std::invalid_argument );
-    TEST_THROW( dir.getDirectoryEntries(tuple<GO>(0,1), imageIDs(0,2), localIDs(0,1)), std::invalid_argument );
-    TEST_THROW( dir.getDirectoryEntries(tuple<GO>(0,1), imageIDs(0,1), localIDs(0,2)), std::invalid_argument );
+    TEST_THROW( dir.getDirectoryEntries(*map, tuple<GO>(0,1), imageIDs(0,1)), std::invalid_argument );
+    TEST_THROW( dir.getDirectoryEntries(*map, tuple<GO>(0,1), imageIDs(0,1), localIDs(0,1)), std::invalid_argument );
+    TEST_THROW( dir.getDirectoryEntries(*map, tuple<GO>(0,1), imageIDs(0,2), localIDs(0,1)), std::invalid_argument );
+    TEST_THROW( dir.getDirectoryEntries(*map, tuple<GO>(0,1), imageIDs(0,1), localIDs(0,2)), std::invalid_argument );
     // All procs fail if any node fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
@@ -136,15 +136,15 @@ namespace {
     const GO numEntries = 1;
     RCP<M> map = rcp( new M(numEntries,0,comm) );
     // create a directory
-    D dir(map);
+    D dir (*map);
     {
       LookupStatus stat;
       Array<int> imageIDs(numEntries);
       Array<LO>  localIDs(numEntries); 
-      stat = dir.getDirectoryEntries(tuple<GO>(0),imageIDs);
+      stat = dir.getDirectoryEntries (*map, tuple<GO>(0), imageIDs);
       TEST_EQUALITY_CONST( stat, AllIDsPresent );
       TEST_COMPARE_ARRAYS( tuple<int>(0), imageIDs );
-      stat = dir.getDirectoryEntries(tuple<GO>(0),imageIDs,localIDs);
+      stat = dir.getDirectoryEntries (*map, tuple<GO>(0), imageIDs, localIDs);
       TEST_EQUALITY_CONST( stat, AllIDsPresent );
       TEST_COMPARE_ARRAYS( tuple<int>(0), imageIDs );
       TEST_COMPARE_ARRAYS( tuple<LO>(0), localIDs );
@@ -153,10 +153,10 @@ namespace {
       LookupStatus stat;
       Array<int> imageIDs(numEntries+1);
       Array<LO>  localIDs(numEntries+1);
-      stat = dir.getDirectoryEntries(tuple<GO>(0,1), imageIDs);
+      stat = dir.getDirectoryEntries (*map, tuple<GO> (0, 1), imageIDs);
       TEST_EQUALITY_CONST( stat, IDNotPresent );
       TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
-      stat = dir.getDirectoryEntries(tuple<GO>(0,1),imageIDs,localIDs);
+      stat = dir.getDirectoryEntries (*map, tuple<GO> (0, 1), imageIDs, localIDs);
       TEST_EQUALITY_CONST( stat, IDNotPresent );
       TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
       TEST_COMPARE_ARRAYS( tuple<LO>(0,LINV), localIDs );
@@ -181,7 +181,7 @@ namespace {
     const GO numEntries = 2*numImages + remainder;
     RCP<M> map = rcp(new M(numEntries,0,comm));
     // create a directory
-    D dir(map);
+    D dir (*map);
     // all GIDs
     Array<GO> allGIDs(numEntries);
     for (GO gid = 0; gid < numEntries; ++gid) {
@@ -208,10 +208,10 @@ namespace {
       LookupStatus stat;
       Array<int> imageIDs(numEntries);
       Array<LO> localIDs(numEntries);
-      stat = dir.getDirectoryEntries(allGIDs,imageIDs);
+      stat = dir.getDirectoryEntries (*map, allGIDs, imageIDs);
       TEST_EQUALITY_CONST( stat, AllIDsPresent );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
-      stat = dir.getDirectoryEntries(allGIDs,imageIDs,localIDs);
+      stat = dir.getDirectoryEntries (*map, allGIDs, imageIDs, localIDs);
       TEST_EQUALITY_CONST( stat, AllIDsPresent );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
       TEST_COMPARE_ARRAYS( expectedLIDs, localIDs );
@@ -220,10 +220,10 @@ namespace {
       LookupStatus stat;
       Array<int> imageIDs(2);
       Array<LO> localIDs(2);
-      stat = dir.getDirectoryEntries( tuple<GO>(0,numEntries),imageIDs);
+      stat = dir.getDirectoryEntries (*map, tuple<GO> (0, numEntries), imageIDs);
       TEST_EQUALITY_CONST( stat, IDNotPresent );
       TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
-      stat = dir.getDirectoryEntries( tuple<GO>(0,numEntries),imageIDs,localIDs);
+      stat = dir.getDirectoryEntries (*map, tuple<GO> (0, numEntries), imageIDs, localIDs);
       TEST_EQUALITY_CONST( stat, IDNotPresent );
       TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
       TEST_COMPARE_ARRAYS( tuple<LO>(0,LINV), localIDs );
@@ -250,7 +250,7 @@ namespace {
     const LO numMyEntries = (myImageID == numImages-1 ? 2 : 1);
     RCP<M> map = rcp(new M(numEntries,numMyEntries,0,comm));
     // create a directory
-    D dir(map);
+    D dir (*map);
     // all GIDs
     Array<GO> allGIDs;
     allGIDs.reserve(numEntries);
@@ -275,10 +275,10 @@ namespace {
       LookupStatus stat;
       Array<int> imageIDs(numEntries);
       Array<LO> localIDs(numEntries); 
-      stat = dir.getDirectoryEntries(allGIDs,imageIDs);
+      stat = dir.getDirectoryEntries (*map, allGIDs, imageIDs);
       TEST_EQUALITY_CONST( stat, AllIDsPresent );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
-      stat = dir.getDirectoryEntries(allGIDs,imageIDs,localIDs);
+      stat = dir.getDirectoryEntries (*map, allGIDs, imageIDs, localIDs);
       TEST_EQUALITY_CONST( stat, AllIDsPresent );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
       TEST_COMPARE_ARRAYS( expectedLIDs, localIDs );
@@ -287,10 +287,10 @@ namespace {
       LookupStatus stat;
       Array<int> imageIDs(2);
       Array<LO> localIDs(2); 
-      stat = dir.getDirectoryEntries(tuple<GO>(0,numEntries),imageIDs);
+      stat = dir.getDirectoryEntries (*map, tuple<GO> (0, numEntries), imageIDs);
       TEST_EQUALITY_CONST( stat, IDNotPresent );
       TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
-      stat = dir.getDirectoryEntries(tuple<GO>(0,numEntries),imageIDs,localIDs);
+      stat = dir.getDirectoryEntries (*map, tuple<GO> (0, numEntries), imageIDs, localIDs);
       TEST_EQUALITY_CONST( stat, IDNotPresent );
       TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
       TEST_COMPARE_ARRAYS( tuple<LO>(0,LINV), localIDs );
@@ -318,7 +318,7 @@ namespace {
     const GO numEntries = as<GO>((numImages*numImages+numImages)/2);
     RCP<M> map = rcp(new M(numEntries,numMyEntries,0,comm));
     // create a directory
-    D dir(map);
+    D dir (*map);
     // all GIDs
     Array<GO> allGIDs(numEntries);
     for (GO gid = 0; gid < numEntries; ++gid) {
@@ -339,10 +339,10 @@ namespace {
       LookupStatus stat;
       Array<int> imageIDs(numEntries);                           
       Array<LO> localIDs(numEntries); 
-      stat = dir.getDirectoryEntries(allGIDs,imageIDs);
+      stat = dir.getDirectoryEntries (*map, allGIDs, imageIDs);
       TEST_EQUALITY_CONST( stat, AllIDsPresent );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
-      stat = dir.getDirectoryEntries(allGIDs,imageIDs,localIDs);
+      stat = dir.getDirectoryEntries (*map, allGIDs, imageIDs, localIDs);
       TEST_EQUALITY_CONST( stat, AllIDsPresent );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
       TEST_COMPARE_ARRAYS( expectedLIDs, localIDs );
@@ -351,10 +351,10 @@ namespace {
       LookupStatus stat;
       Array<int> imageIDs(2);                           
       Array<LO> localIDs(2); 
-      stat = dir.getDirectoryEntries( tuple<GO>(0,numEntries) ,imageIDs);
+      stat = dir.getDirectoryEntries (*map, tuple<GO> (0, numEntries), imageIDs);
       TEST_EQUALITY_CONST( stat, IDNotPresent );
       TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
-      stat = dir.getDirectoryEntries( tuple<GO>(0,numEntries) ,imageIDs,localIDs);
+      stat = dir.getDirectoryEntries (*map, tuple<GO> (0, numEntries), imageIDs, localIDs);
       TEST_EQUALITY_CONST( stat, IDNotPresent );
       TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
       TEST_COMPARE_ARRAYS( tuple<LO>(0,LINV), localIDs );
@@ -381,7 +381,7 @@ namespace {
     const GO numEntries = as<GO>(3*numImages);
     RCP<M> map = rcp(new M(numEntries, tuple<GO>(myImageID, myImageID+numImages, myImageID+2*numImages) ,0,comm));
     // create a directory
-    D dir(map);
+    D dir (*map);
     // all GIDs
     Array<GO> allGIDs;
     allGIDs.reserve(numEntries);
@@ -403,10 +403,10 @@ namespace {
       LookupStatus stat;
       Array<int> imageIDs(numEntries);                           
       Array<LO> localIDs(numEntries); 
-      stat = dir.getDirectoryEntries(allGIDs,imageIDs);
+      stat = dir.getDirectoryEntries (*map, allGIDs,imageIDs);
       TEST_EQUALITY_CONST( stat, AllIDsPresent );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
-      stat = dir.getDirectoryEntries(allGIDs,imageIDs,localIDs);
+      stat = dir.getDirectoryEntries (*map, allGIDs, imageIDs, localIDs);
       TEST_EQUALITY_CONST( stat, AllIDsPresent );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
       TEST_COMPARE_ARRAYS( expectedLIDs, localIDs );
@@ -415,10 +415,10 @@ namespace {
       LookupStatus stat;
       Array<int> imageIDs(2);                           
       Array<LO> localIDs(2); 
-      stat = dir.getDirectoryEntries(tuple<GO>(0,numEntries), imageIDs);
+      stat = dir.getDirectoryEntries (*map, tuple<GO> (0, numEntries), imageIDs);
       TEST_EQUALITY_CONST( stat, IDNotPresent );
       TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
-      stat = dir.getDirectoryEntries(tuple<GO>(0,numEntries),imageIDs,localIDs);
+      stat = dir.getDirectoryEntries (*map, tuple<GO> (0, numEntries), imageIDs, localIDs);
       TEST_EQUALITY_CONST( stat, IDNotPresent );
       TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
       TEST_COMPARE_ARRAYS( tuple<LO>(0,LINV), localIDs );

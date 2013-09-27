@@ -46,14 +46,17 @@ EXAMPLE
       fout.close();
       ...
 
+      A good place to rse this is within a unit test!  That way it is
+      easily auto-generated.
+
       One can generate the latex to be 'input'ted another latex
       document by executing this script
 
-      % pl2tex.py -r "Integrator Base" --singleDescription VerboseObject \\
-           --schematic \\
-           ../../../../build/packages/rythmos/test/UnitTest/Rythmos_ParameterList.txt \\
-           RythmosUsersManualParameterList_Raw.tex
-
+      % pl2tex.py -r "Integrator Base" \\
+                  -d "The root ParameterList for the Integrator Builder." \\
+                  --singleDescription VerboseObject --schematic \\
+                  ../../../../build/packages/rythmos/test/UnitTest/Rythmos_ParameterList.txt \\
+                  RythmosUsersManualParameterList_Raw.tex
 
 DESIRED NEW FEATURES
       * ???
@@ -140,7 +143,7 @@ class PListObj:
       print "ParameterList name = '%s'" % (self.name)
       print "  label = '%s'" % (self.label)
       print "  level = '%s'" % (self.level)
-      print "  parent = " 
+      print "  parent = "
       for p in self.parent: print "     '%s, %s'" % (p[0], p[1])
       print "  children = "
       for c in self.children: print "     '%s, %s'" % (c[0], c[1])
@@ -350,6 +353,10 @@ def main():
                      action="store", type="string", \
                      help='''Specify the root ParameterList name.''')
 
+  p.add_option("-d", dest="rootDescription", default="", \
+                     action="store", type="string", \
+                     help='''Description for the root ParameterList.''')
+
   p.add_option("--singleDescription", dest="singleDescription", default=[], \
                      action="callback", type="string", callback=getList, \
                      help='''List of ParameterLists that only a single
@@ -376,10 +383,13 @@ def main():
   line = fin.readline()
   root_line = (getLevel(line)-1)*' ' + opts.root + ' ->'
   current_plist = PListObj(root_line, getPLName(root_line), 'ROOT', 'ROOT')
+  if opts.rootDescription != "":
+    current_plist.addDescription(laFix("# "+opts.rootDescription))
   plists.append(current_plist)
 
   while line:
 
+    #print "------------------------"
     #print line
     # Check for ParameterList
     if line.find('->') >= 0 :
@@ -397,26 +407,22 @@ def main():
           match_plist = plist
           break
 
+      foundPListDescription = False
       # New plist to add.
       if add_plist:
-        next_line = fin.readline()
-        if next_line.strip() == '[empty list]':
-          print "Warning -- '%s' is an empty list!" % (line.strip())
-          line = fin.readline()
-        else:
-          # Determine which plist is parent.
-          parent_plist = None
-          label = getPLName(line)
-          for plist in reversed(plists):
-            if current_level-1 == plist.level:
-              parent_plist = plist
-              if duplicate_plist: label += '-' + parent_plist.name
-              parent_plist.addChild(line, label) 
-              break
-          current_plist = PListObj(line, label,
-                                   parent_plist.name, parent_plist.label)
-          plists.append(current_plist)
-          line = next_line
+        # Determine which plist is parent.
+        parent_plist = None
+        label = getPLName(line)
+        for plist in reversed(plists):
+          if current_level-1 == plist.level:
+            parent_plist = plist
+            if duplicate_plist: label += '-' + parent_plist.name
+            parent_plist.addChild(line, label)
+            break
+        current_plist = PListObj(line, label,
+                                 parent_plist.name, parent_plist.label)
+        plists.append(current_plist)
+        line = fin.readline()
         #current_plist.write()
 
       # plist already in plists.
@@ -428,10 +434,13 @@ def main():
         while getLevel(line) >= current_level:
           line = fin.readline()
         current_level = getLevel(line)
+        # Only report missing descriptions once.
+        foundPListDescription = True
 
       # Check for ParameterList description.
       while getLevel(line) == current_level+1 and line[getLevel(line)] == '#':
-        current_plist.addDescription(line)
+        current_plist.addDescription(laFix(line))
+        foundPListDescription = True
         line = fin.readline()
 
       # Check for ParameterList verbatim description.
@@ -439,18 +448,36 @@ def main():
         line = fin.readline()
         while getLevel(line) == current_level+2 and line[getLevel(line)] == '#':
           current_plist.addVerbatim(line)
+          foundPListDescription = True
           line = fin.readline()
+
+      # Double check that we got PL description
+      if foundPListDescription == False:
+        print"Warning -- '%s' does not have a description!"%(current_plist.name)
 
       # Check for parameters in ParameterList
       while getLevel(line) == current_level+1 and line.find('=') >= 0:
         current_param = Parameter(line)
         line = fin.readline()
         # Check for Parameter description.
+        foundParamDescription = False
         while getLevel(line) == current_level+2 and line[getLevel(line)] == '#':
+          #current_param.addDescription(laFix(line))
           current_param.addDescription(line)
+          foundParamDescription = True
           line = fin.readline()
         #current_param.write()
         current_plist.addParam(current_param)
+
+        # Double check that we got Param description
+        if foundParamDescription == False:
+          print"Warning -- '%s' does not have a description!"%(current_param.name)
+
+      # Check for empty list
+      while line.strip() == '[empty list]':
+        print "Warning -- '%s' has line, '%s'" % (current_plist.name,
+                                                  line.strip())
+        line = fin.readline()
       #current_plist.write()
 
     elif line.strip() == '':  # Blank line

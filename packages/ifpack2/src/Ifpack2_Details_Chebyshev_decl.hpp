@@ -91,15 +91,20 @@ namespace Details {
 /// \tparam MV Specialization of Tpetra::MultiVector.
 /// \tparam MAT Corresponding specialization of Tpetra::RowMatrix.
 ///
+/// \warning This class is NOT for users; it is an implementation
+///   detail of Ifpack2.  Users should use Ifpack2::Chebyshev instead.
+///
 /// This class implements two variants of Chebyshev iteration:
-/// 1. A direct imitation of Ifpack's implementation
-/// 2. A textbook version of the algorithm
+/// <ol>
+/// <li> A direct imitation of Ifpack's implementation </li>
+/// <li> A textbook version of the algorithm </li>
+/// </ol>
 ///
 /// All implemented variants use the diagonal of the matrix to
-/// precondition the linear system on the left.  Diagonal entries less
+/// precondition the linear system on the left.  %Diagonal entries less
 /// than machine precision are replaced with machine precision.
 ///
-/// The first version imitates Ifpack::Chebyshev, both in how it sets
+/// The first version imitates Ifpack_Chebyshev, both in how it sets
 /// parameters and in the actual iteration (ApplyInverse()).  The
 /// "textbook" in variant #2 above is "Templates for the Solution of
 /// Linear Systems," 2nd edition.  Experiments show that the Ifpack
@@ -124,17 +129,24 @@ class Chebyshev : public Teuchos::Describable {
 public:
   //! \name Typedefs
   //@{
+
+  //! The type of entries in the matrix and vectors.
   typedef ScalarType ST;
+  //! Traits class for ST.
   typedef Teuchos::ScalarTraits<ScalarType> STS;
+  //! The type of the absolute value of a ScalarType.
   typedef typename STS::magnitudeType MT;
+  //! Specialization of Tpetra::Operator.
   typedef Tpetra::Operator<typename MV::scalar_type,
                            typename MV::local_ordinal_type,
                            typename MV::global_ordinal_type,
                            typename MV::node_type> OP;
+  //! Specialization of Tpetra::Vector.
   typedef Tpetra::Vector<typename MV::scalar_type,
                          typename MV::local_ordinal_type,
                          typename MV::global_ordinal_type,
                          typename MV::node_type> V;
+  //! Specialization of Tpetra::Map.
   typedef Tpetra::Map<typename MV::local_ordinal_type,
                       typename MV::global_ordinal_type,
                       typename MV::node_type> map_type;

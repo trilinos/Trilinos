@@ -13,7 +13,8 @@
 //#pragma warning(disable:383)
 namespace PAMGEN_NEVADA {
 
-  Inline_Mesh_Desc * Inline_Mesh_Desc::static_storage = NULL;
+  Inline_Mesh_Desc * Inline_Mesh_Desc::im_static_storage = NULL;
+  Inline_Mesh_Desc * Inline_Mesh_Desc::first_im_static_storage = NULL;
   std::stringstream Inline_Mesh_Desc::echo_stream;
 
 
@@ -41,6 +42,8 @@ bool part_compare_centroid(const Partition *a, const Partition *b) {
 Inline_Mesh_Desc::~Inline_Mesh_Desc()
 /*****************************************************************************/
 {
+  if(next)delete next;
+  next = NULL;
   for(long long i = 0; i < 3; i ++){
     if(block_dist[i])delete []  block_dist[i];
     if(c_block_dist[i])delete []  c_block_dist[i];
@@ -1190,6 +1193,7 @@ void Inline_Mesh_Desc::ZeroSet()
   nodeset_vectors = NULL;
 
   debug_mode = false;
+  next = NULL;
 
 }
 

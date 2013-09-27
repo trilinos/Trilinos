@@ -40,15 +40,14 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Panzer_config.hpp"
+#include "Panzer_ConfigDefs.hpp"
 #include "Panzer_Traits.hpp"
 
 #include "Panzer_SingleBlockDOFManager_impl.hpp"
 #include "Panzer_SingleBlockDOFManager_decl.hpp"
 
-#ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
-
-template class panzer::SingleBlockDOFManager<int,panzer::Ordinal64>;
 template class panzer::SingleBlockDOFManager<int,int>;
 
+#ifndef PANZER_ORDINAL64_IS_INT
+template class panzer::SingleBlockDOFManager<int,panzer::Ordinal64>;
 #endif

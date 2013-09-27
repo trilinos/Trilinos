@@ -53,7 +53,9 @@ namespace panzer {
 #ifdef PANZER_HAVE_LONG_LONG_INT
   typedef long long int Ordinal64;
 #else
-  typedef long Ordinal64;
+  // typedef long Ordinal64;
+  #define PANZER_ORDINAL64_IS_INT
+  typedef int Ordinal64;
 #endif
 }
 

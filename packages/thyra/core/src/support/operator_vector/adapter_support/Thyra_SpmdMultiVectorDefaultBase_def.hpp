@@ -42,6 +42,11 @@
 #ifndef THYRA_SPMD_MULTI_VECTOR_DEFAULT_BASE_DEF_HPP
 #define THYRA_SPMD_MULTI_VECTOR_DEFAULT_BASE_DEF_HPP
 
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
+
 
 #include "Thyra_SpmdMultiVectorDefaultBase_decl.hpp"
 #include "Thyra_MultiVectorDefaultBase.hpp"

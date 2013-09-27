@@ -188,39 +188,27 @@ test_product_tensor_matrix(
                                                              *Cijk );
   matrix.graph = Kokkos::create_crsarray<graph_type>( std::string("test crs graph") , graph );
 
-  const size_t inner_length      = matrix.block.dimension();
+  const size_t inner_length         = matrix.block.dimension();
+  const size_t inner_length_aligned = matrix.block.aligned_dimension();
 
-  matrix.values = block_vector_type( "matrix" , inner_length , graph_length );
+  matrix.values =
+    block_vector_type( "matrix" , inner_length_aligned , graph_length );
 
-  block_vector_type x = block_vector_type( "x" , inner_length , outer_length );
-  block_vector_type y = block_vector_type( "y" , inner_length , outer_length );
+  block_vector_type x =
+    block_vector_type( "x" , inner_length_aligned , outer_length );
+  block_vector_type y =
+    block_vector_type( "y" , inner_length_aligned , outer_length );
 
-  typename block_vector_type::HostMirror hM =
-    Kokkos::create_mirror( matrix.values );
-
-  for ( size_t i=0 ; i < graph_length ; ++i ) {
-    for ( size_t j = 0 ; j < inner_length ; ++j ) {
-      hM(j,i) = 1.0;
-    }
-  }
-
-  Kokkos::deep_copy( matrix.values , hM );
+  Kokkos::deep_copy( matrix.values , ScalarType(1.0) );
 
   //------------------------------
   // Generate input multivector:
 
-  typename block_vector_type::HostMirror hx = Kokkos::create_mirror( x );
-
-  for ( size_t i = 0 ; i < outer_length ; ++i ) {
-    for ( size_t j = 0 ; j < inner_length ; ++j ) {
-      hx(j,i) = 1.0 ;
-    }
-  }
-
-  Kokkos::deep_copy( x , hx );
+  Kokkos::deep_copy( x , ScalarType(1.0) );
 
   //------------------------------
 
+  Device::fence();
   Kokkos::Impl::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
     Stokhos::multiply( matrix , x , y );
@@ -230,9 +218,6 @@ test_product_tensor_matrix(
   const double seconds_per_iter = clock.seconds() / ((double) iterCount );
   const double flops_per_block = matrix.block.tensor().num_flops();
   const double flops = 1.0e-9*graph_length*flops_per_block;
-
-  // std::cout << "tensor: flops = " << flops
-  //        << " time = " << seconds_per_iter << std::endl;
 
   std::vector<double> perf(6) ;
 
@@ -306,14 +291,7 @@ test_product_tensor_diagonal_matrix(
   block_vector_type x = block_vector_type( "x" , stoch_length , fem_length );
   block_vector_type y = block_vector_type( "y" , stoch_length , fem_length );
 
-  typename block_vector_type::HostMirror hx = Kokkos::create_mirror( x );
-
-  for ( size_t iColFEM = 0 ;   iColFEM < fem_length ;   ++iColFEM ) {
-  for ( size_t iColStoch = 0 ; iColStoch < stoch_length ; ++iColStoch ) {
-    hx(iColStoch,iColFEM) = 1.0;
-  }}
-
-  Kokkos::deep_copy( x , hx );
+  Kokkos::deep_copy( x , ScalarType(1.0) );
 
   //------------------------------
   // Generate CRS matrix of blocks with symmetric diagonal storage
@@ -326,31 +304,11 @@ test_product_tensor_diagonal_matrix(
   matrix.values = block_vector_type(
     "matrix" , matrix.block.matrix_size() , fem_graph_length );
 
-  {
-    typename block_vector_type::HostMirror hM =
-      Kokkos::create_mirror( matrix.values );
-
-    for ( size_t iRowStoch = 0 ; iRowStoch < stoch_length ; ++iRowStoch ) {
-      for ( size_t iRowFEM = 0 , iEntryFEM = 0 ; iRowFEM < fem_length ; ++iRowFEM ) {
-
-        for ( size_t iRowEntryFEM = 0 ; iRowEntryFEM < fem_graph[iRowFEM].size() ; ++iRowEntryFEM , ++iEntryFEM ) {
-
-          for ( size_t iColStoch = 0 ; iColStoch < stoch_length ; ++iColStoch ) {
-
-            const size_t offset = matrix.block.matrix_offset( iRowStoch , iColStoch );
-
-            hM( offset , iEntryFEM ) = 1.0 ;
-          }
-        }
-
-      }
-    }
-
-    Kokkos::deep_copy( matrix.values , hM );
-  }
+  Kokkos::deep_copy( matrix.values , ScalarType(1.0) );
 
   //------------------------------
 
+  Device::fence();
   Kokkos::Impl::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
     Stokhos::multiply( matrix , x , y );
@@ -489,13 +447,7 @@ test_product_flat_commuted_matrix(
   vector_type x = vector_type( "x" , flat_length );
   vector_type y = vector_type( "y" , flat_length );
 
-  typename vector_type::HostMirror hx = Kokkos::create_mirror( x );
-
-  for ( size_t iCol = 0 ; iCol < flat_length ; ++iCol ) {
-    hx(iCol) = 1.0;
-  }
-
-  Kokkos::deep_copy( x , hx );
+  Kokkos::deep_copy( x , ScalarType(1.0) );
 
   //------------------------------
 
@@ -507,26 +459,14 @@ test_product_flat_commuted_matrix(
   const size_t flat_graph_length = matrix.graph.entries.dimension_0();
 
   matrix.values = vector_type( "matrix" , flat_graph_length );
-  {
-    typename vector_type::HostMirror hM =
-      Kokkos::create_mirror( matrix.values );
 
-    for ( size_t iRow = 0 , iEntry = 0 ; iRow < flat_length ; ++iRow ) {
-
-      for ( size_t iRowEntry = 0 ; iRowEntry < flat_graph[ iRow ].size() ; ++iRowEntry , ++iEntry ) {
-
-        hM( iEntry ) = 1.0 ;
-      }
-
-    }
-
-    Kokkos::deep_copy( matrix.values , hM );
-  }
+  Kokkos::deep_copy( matrix.values , ScalarType(1.0) );
 
   //Kokkos::write_matrix_market(matrix, "flat_commuted.mm");
 
   //------------------------------
 
+  Device::fence();
   Kokkos::Impl::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
     Stokhos::multiply( matrix , x , y );
@@ -662,13 +602,7 @@ test_product_flat_original_matrix(
   vector_type x = vector_type( "x" , flat_length );
   vector_type y = vector_type( "y" , flat_length );
 
-  typename vector_type::HostMirror hx = Kokkos::create_mirror( x );
-
-  for ( size_t iCol = 0 ; iCol < flat_length ; ++iCol ) {
-    hx(iCol) = 1.0;
-  }
-
-  Kokkos::deep_copy( x , hx );
+  Kokkos::deep_copy( x , ScalarType(1.0) );
 
   //------------------------------
 
@@ -679,27 +613,14 @@ test_product_flat_original_matrix(
   const size_t flat_graph_length = matrix.graph.entries.dimension_0();
 
   matrix.values = vector_type( "matrix" , flat_graph_length );
-  {
-    typename vector_type::HostMirror hM =
-      Kokkos::create_mirror( matrix.values );
 
-    for ( size_t iRow = 0 , iEntry = 0 ; iRow < flat_length ; ++iRow ) {
-
-      for ( size_t iRowEntry = 0 ; iRowEntry < flat_graph[ iRow ].size() ; ++iRowEntry , ++iEntry ) {
-
-        hM( iEntry ) = 1.0 ;
-
-      }
-
-    }
-
-    Kokkos::deep_copy( matrix.values , hM );
-  }
+  Kokkos::deep_copy( matrix.values , ScalarType(1.0) );
 
   //Kokkos::write_matrix_market(matrix, "flat_original.mm");
 
   //------------------------------
 
+  Device::fence();
   Kokkos::Impl::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
     Stokhos::multiply( matrix , x , y );
@@ -789,32 +710,16 @@ test_tiled_product_tensor_matrix(
   block_vector_type x = block_vector_type( "x" , inner_length , outer_length );
   block_vector_type y = block_vector_type( "y" , inner_length , outer_length );
 
-  typename block_vector_type::HostMirror hM =
-    Kokkos::create_mirror( matrix.values );
-
-  for ( size_t i=0 ; i < graph_length ; ++i ) {
-    for ( size_t j = 0 ; j < inner_length ; ++j ) {
-      hM(j,i) = 1.0;
-    }
-  }
-
-  Kokkos::deep_copy( matrix.values , hM );
+  Kokkos::deep_copy( matrix.values , ScalarType(1.0) );
 
   //------------------------------
   // Generate input multivector:
 
-  typename block_vector_type::HostMirror hx = Kokkos::create_mirror( x );
-
-  for ( size_t i = 0 ; i < outer_length ; ++i ) {
-    for ( size_t j = 0 ; j < inner_length ; ++j ) {
-      hx(j,i) = 1.0 ;
-    }
-  }
-
-  Kokkos::deep_copy( x , hx );
+  Kokkos::deep_copy( x , ScalarType(1.0) );
 
   //------------------------------
 
+  Device::fence();
   Kokkos::Impl::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
     Stokhos::multiply( matrix , x , y );
@@ -910,32 +815,16 @@ test_lexo_block_tensor(
   block_vector_type x = block_vector_type( "x" , inner_length , outer_length );
   block_vector_type y = block_vector_type( "y" , inner_length , outer_length );
 
-  typename block_vector_type::HostMirror hM =
-    Kokkos::create_mirror( matrix.values );
-
-  for ( size_t i=0 ; i < graph_length ; ++i ) {
-    for ( size_t j = 0 ; j < inner_length ; ++j ) {
-      hM(j,i) = 1.0;
-    }
-  }
-
-  Kokkos::deep_copy( matrix.values , hM );
+  Kokkos::deep_copy( matrix.values , ScalarType(1.0) );
 
   //------------------------------
   // Generate input multivector:
 
-  typename block_vector_type::HostMirror hx = Kokkos::create_mirror( x );
-
-  for ( size_t i = 0 ; i < outer_length ; ++i ) {
-    for ( size_t j = 0 ; j < inner_length ; ++j ) {
-      hx(j,i) = 1.0 ;
-    }
-  }
-
-  Kokkos::deep_copy( x , hx );
+  Kokkos::deep_copy( x , ScalarType(1.0) );
 
   //------------------------------
 
+  Device::fence();
   Kokkos::Impl::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
     Stokhos::multiply( matrix , x , y );
@@ -1034,32 +923,16 @@ test_linear_tensor(
   block_vector_type x = block_vector_type( "x" , inner_length_aligned , outer_length );
   block_vector_type y = block_vector_type( "y" , inner_length_aligned , outer_length );
 
-  typename block_vector_type::HostMirror hM =
-    Kokkos::create_mirror( matrix.values );
-
-  for ( size_t i=0 ; i < graph_length ; ++i ) {
-    for ( size_t j = 0 ; j < inner_length ; ++j ) {
-      hM(j,i) = 1.0;
-    }
-  }
-
-  Kokkos::deep_copy( matrix.values , hM );
+  Kokkos::deep_copy( matrix.values , ScalarType(1.0) );
 
   //------------------------------
   // Generate input multivector:
 
-  typename block_vector_type::HostMirror hx = Kokkos::create_mirror( x );
-
-  for ( size_t i = 0 ; i < outer_length ; ++i ) {
-    for ( size_t j = 0 ; j < inner_length ; ++j ) {
-      hx(j,i) = 1.0 ;
-    }
-  }
-
-  Kokkos::deep_copy( x , hx );
+  Kokkos::deep_copy( x , ScalarType(1.0) );
 
   //------------------------------
 
+  Device::fence();
   Kokkos::Impl::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
     Stokhos::multiply( matrix , x , y );
@@ -1152,29 +1025,13 @@ test_original_matrix_free_vec(
     y[block]   = vec_type( "y" , inner_length );
     tmp[block] = vec_type( "tmp" , inner_length );
 
-    typename vec_type::HostMirror hM =
-      Kokkos::create_mirror( matrix[block].values );
+    Kokkos::deep_copy( matrix[block].values , ScalarType(1.0) );
 
-    for ( size_t i = 0 ; i < graph_length ; ++i ) {
-      hM(i) = 1.0 ;
-    }
-
-    Kokkos::deep_copy( matrix[block].values , hM );
-
-    typename vec_type::HostMirror hx =
-      Kokkos::create_mirror( x[block] );
-    typename vec_type::HostMirror hy =
-      Kokkos::create_mirror( y[block] );
-
-    for ( size_t i = 0 ; i < inner_length ; ++i ) {
-      hx(i) = 1.0 ;
-      hy(i) = 0.0 ;
-    }
-
-    Kokkos::deep_copy( x[block] , hx );
-    Kokkos::deep_copy( y[block] , hy );
+    Kokkos::deep_copy( x[block] , ScalarType(1.0) );
+    Kokkos::deep_copy( y[block] , ScalarType(1.0) );
   }
 
+  Device::fence();
   SparseMatOps smo;
   Kokkos::Impl::Timer clock ;
   int n_apply = 0;
