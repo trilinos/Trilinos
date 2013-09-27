@@ -81,6 +81,9 @@ namespace Kokkos {
 /** \class ViewTraits
  *  \brief Traits class for accessing attributes of a View.
  *
+ * This is an implementation detail of View.  It is only of interest
+ * to developers implementing a new specialization of View.
+ *
  * Template argument permutations:
  *   - View< DataType , Device , void         , void >
  *   - View< DataType , Device , MemoryTraits , void >
@@ -310,13 +313,20 @@ struct allocate_without_initializing {};
  *
  * \tparam MemoryTraits (optional) Assertion of the user's intended
  *   access behavior.  For example, RandomRead indicates read-only
- *   access with limited spatial locality.  This may have different
- *   interpretations for different \c Device types.  For example, with
- *   the Cuda device, RandomRead tells Kokkos to fetch the data
- *   through the texture cache, whereas the non-GPU devices have no
- *   such hardware construct.
+ *   access with limited spatial locality, and Unmanaged lets users
+ *   wrap externally allocated memory in a View without automatic
+ *   deallocation.
  *
- * \section Kokkos_View_MemoryTraits Preferred use of \c MemoryTraits
+ * \section Kokkos_View_MT \c MemoryTraits discussion
+ *
+ * \subsection Kokkos_View_MT_Interp \c MemoryTraits interpretation depends on \c Device
+ *
+ * Some \c MemoryTraits options may have different interpretations for
+ * different \c Device types.  For example, with the Cuda device,
+ * RandomRead tells Kokkos to fetch the data through the texture
+ * cache, whereas the non-GPU devices have no such hardware construct.
+ *
+ * \subsection Kokkos_View_MT_PrefUse Preferred use of \c MemoryTraits
  *
  * Users should defer applying the optional \c MemoryTraits parameter
  * until the point at which they actually plan to rely on it in a
