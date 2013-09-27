@@ -840,7 +840,8 @@ FUNCTION(TRIBITS_GENERATE_SINGLE_REPO_VERSION_STRING  GIT_REPO_DIR
   # strip them out later :-(
 
   IF (NOT GIT_RETURN STREQUAL 0)
-    MESSAGE(SEND_ERROR "ERROR, ${GIT_EXEC} command returned ${GIT_RETURN}!=0!")
+    MESSAGE(FATAL_ERROR "ERROR, ${GIT_EXEC} command returned ${GIT_RETURN}!=0"
+      " for extra repo ${GIT_REPO_DIR}!")
     SET(GIT_VERSION_INFO "Error, could not get version info!")
   ELSE()
     # Strip the quotes off :-(
@@ -860,7 +861,8 @@ FUNCTION(TRIBITS_GENERATE_SINGLE_REPO_VERSION_STRING  GIT_REPO_DIR
     )
 
   IF (NOT GIT_RETURN STREQUAL 0)
-    MESSAGE(SEND_ERROR "ERROR, ${GIT_EXEC} command returned ${GIT_RETURN}!=0!")
+    MESSAGE(FATAL_ERROR "ERROR, ${GIT_EXEC} command returned ${GIT_RETURN}!=0"
+      " for extra repo ${GIT_REPO_DIR}!")
     SET(GIT_VERSION_SUMMARY "Error, could not get version summary!")
   ELSE()
     # Strip ouf quotes and quote the 80 char string
