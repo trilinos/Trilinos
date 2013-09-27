@@ -666,7 +666,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyBoxGhosting )
   if ( 8 < p_size ) { return ; }
 
   stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, 2, 2, 2 );
-  fixture.m_fem_meta.commit();
+  fixture.m_meta.commit();
   fixture.generate_mesh();
   const stk::mesh::BulkData& mesh = fixture.m_bulk_data;
 

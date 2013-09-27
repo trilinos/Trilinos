@@ -85,15 +85,15 @@ STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id_large )
 
   fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
 
-  Field<int> & simple_nodal_field = hf.m_fem_meta.declare_field<Field<int> >("simple_nodal_field");
+  Field<int> & simple_nodal_field = hf.m_meta.declare_field<Field<int> >("simple_nodal_field");
 
   put_field( simple_nodal_field,
              MetaData::NODE_RANK,
-             hf.m_hex_part);
+             *hf.m_elem_parts[0]);
 
   //create nodal field on hex topo
 
-  hf.m_fem_meta.commit();
+  hf.m_meta.commit();
 
   hf.generate_mesh();
 

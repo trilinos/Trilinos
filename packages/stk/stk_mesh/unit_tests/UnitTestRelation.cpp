@@ -59,7 +59,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationCoverage)
 
   // Just use any random fixture for convenience
   HexFixture fixture(pm, 3 /*x*/, 3 /*y*/, 3 /*z*/);
-  MetaData& meta  = fixture.m_fem_meta;
+  MetaData& meta  = fixture.m_meta;
   BulkData& bulk  = fixture.m_bulk_data;
 
   meta.commit();

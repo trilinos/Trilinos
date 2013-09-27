@@ -25,7 +25,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_1d_x )
   const unsigned NY = 1;
   const unsigned NZ = 1;
   stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
-  hf.m_fem_meta.commit();
+  hf.m_meta.commit();
   hf.generate_mesh();
   STKUNIT_EXPECT_EQUAL( hf.elem_id(0,0,0), 1u );
   STKUNIT_EXPECT_EQUAL( hf.elem_id(1,0,0), 2u );
@@ -39,7 +39,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_3d_x )
   const unsigned NY = 3;
   const unsigned NZ = 3;
   stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
-  hf.m_fem_meta.commit();
+  hf.m_meta.commit();
   hf.generate_mesh();
   STKUNIT_EXPECT_EQUAL( hf.elem_id(0,0,0), 1u );
   STKUNIT_EXPECT_EQUAL( hf.elem_id(1,0,0), 2u );
@@ -53,7 +53,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_1d_y )
   const unsigned NY = 3;
   const unsigned NZ = 1;
   stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
-  hf.m_fem_meta.commit();
+  hf.m_meta.commit();
   hf.generate_mesh();
   STKUNIT_EXPECT_EQUAL( hf.elem_id(0,0,0), 1u );
   STKUNIT_EXPECT_EQUAL( hf.elem_id(0,1,0), 2u );
@@ -67,7 +67,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_3d_y )
   const unsigned NY = 3;
   const unsigned NZ = 3;
   stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
-  hf.m_fem_meta.commit();
+  hf.m_meta.commit();
   hf.generate_mesh();
   STKUNIT_EXPECT_EQUAL( hf.elem_id(0,0,0), 1u );
   STKUNIT_EXPECT_EQUAL( hf.elem_id(0,1,0), 4u );
@@ -81,7 +81,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_1d_z )
   const unsigned NY = 1;
   const unsigned NZ = 3;
   stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
-  hf.m_fem_meta.commit();
+  hf.m_meta.commit();
   hf.generate_mesh();
   STKUNIT_EXPECT_EQUAL( hf.elem_id(0,0,0), 1u );
   STKUNIT_EXPECT_EQUAL( hf.elem_id(0,0,1), 2u );
@@ -95,7 +95,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_3d_z )
   const unsigned NY = 3;
   const unsigned NZ = 3;
   stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
-  hf.m_fem_meta.commit();
+  hf.m_meta.commit();
   hf.generate_mesh();
   STKUNIT_EXPECT_EQUAL( hf.elem_id(0,0,0), 1u );
   STKUNIT_EXPECT_EQUAL( hf.elem_id(0,0,1), 10u );
@@ -109,7 +109,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_3d_diag )
   const unsigned NY = 3;
   const unsigned NZ = 3;
   stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
-  hf.m_fem_meta.commit();
+  hf.m_meta.commit();
   hf.generate_mesh();
   STKUNIT_EXPECT_EQUAL( hf.elem_id(0,0,0), 1u );
   STKUNIT_EXPECT_EQUAL( hf.elem_id(1,1,1), 14u );
@@ -146,7 +146,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, trivial_parallel_2 )
 
   // Create the fixture
   stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
-  hf.m_fem_meta.commit();
+  hf.m_meta.commit();
   if (p_rank <= 1) {
     hf.generate_mesh(parallel_distribution[p_rank]);
   }
@@ -196,7 +196,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_psizex1x1 )
 
   // Create the fixture
   stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
-  hf.m_fem_meta.commit();
+  hf.m_meta.commit();
   hf.generate_mesh(parallel_distribution[p_rank]);
   stk::mesh::BulkData & mesh = hf.m_bulk_data;
   const EntityRank element_rank = MetaData::ELEMENT_RANK;
@@ -264,7 +264,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_4x2x1 )
 
   // Create the fixture
   stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
-  hf.m_fem_meta.commit();
+  hf.m_meta.commit();
   if (p_rank <= 1) {
     hf.generate_mesh(parallel_distribution[p_rank]);
   }
@@ -366,7 +366,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_5x1x1 )
 
   // Create the fixture
   stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
-  hf.m_fem_meta.commit();
+  hf.m_meta.commit();
   if (p_rank <= 1) {
     hf.generate_mesh(parallel_distribution[p_rank]);
   }

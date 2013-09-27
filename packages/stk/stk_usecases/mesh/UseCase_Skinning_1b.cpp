@@ -39,7 +39,7 @@ void destroy_entity_and_create_particles(
   const stk::mesh::EntityRank particle_rank = element_rank;
 
   // forumlate request for 8 particles on owning process
-  std::vector<size_t> requests(fixture.m_fem_meta.entity_rank_count(), 0);
+  std::vector<size_t> requests(fixture.m_meta.entity_rank_count(), 0);
   if ( fixture.m_bulk_data.is_valid(elem) && p_rank == fixture.m_bulk_data.parallel_owner_rank(elem) ) {
     requests[particle_rank] = 8;
   }
@@ -124,14 +124,14 @@ bool skinning_use_case_1b(stk::ParallelMachine pm)
       const stk::mesh::EntityRank particle_rank = element_rank;
 
       stk::mesh::Part & skin_part =
-        fixture.m_fem_meta.declare_part("skin_part");
+        fixture.m_meta.declare_part("skin_part");
 
       stk::mesh::put_field( fixture.m_coord_field,
                             particle_rank,
-                            fixture.m_fem_meta.universal_part(),
+                            fixture.m_meta.universal_part(),
                             3 );
 
-      fixture.m_fem_meta.commit();
+      fixture.m_meta.commit();
 
       fixture.generate_mesh();
 

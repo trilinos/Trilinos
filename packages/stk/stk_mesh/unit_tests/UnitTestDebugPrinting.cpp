@@ -36,7 +36,7 @@ STKUNIT_UNIT_TEST( UnitTestDebugDump, BulkData )
   const unsigned NY = 1;
   const unsigned NZ = 1;
   stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD, NX, NY, NZ);
-  hf.m_fem_meta.commit();
+  hf.m_meta.commit();
   hf.generate_mesh();
 
   // Doesn't check anything, but at least makes sure it passes

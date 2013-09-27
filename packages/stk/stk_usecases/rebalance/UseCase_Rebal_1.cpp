@@ -45,7 +45,7 @@ bool test_unequal_weights( stk::ParallelMachine pm )
 
   stk::mesh::fixtures::HexFixture fixture(pm, nx, ny, nz);
 
-  stk::mesh::MetaData & fem_meta  = fixture.m_fem_meta;
+  stk::mesh::MetaData & fem_meta  = fixture.m_meta;
   stk::mesh::BulkData & bulk  = fixture.m_bulk_data;
 
   // Put weights field on all elements

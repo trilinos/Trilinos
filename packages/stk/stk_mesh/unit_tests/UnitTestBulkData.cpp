@@ -1656,7 +1656,7 @@ STKUNIT_UNIT_TEST( UnitTestingOfBulkData, test_total_field_data_footprint )
   const unsigned NY = 1;
   const unsigned NZ = 1;
   stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
-  hf.m_fem_meta.commit();
+  hf.m_meta.commit();
   hf.generate_mesh();
 
   const stk::mesh::BulkData &mesh = hf.m_bulk_data;

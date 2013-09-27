@@ -126,7 +126,7 @@ STKUNIT_UNIT_TEST ( UnitTestCreateEdges, Hex_2x1x1 )
 {
   stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, 2, 1, 1);
 
-  fixture.m_fem_meta.commit();
+  fixture.m_meta.commit();
   fixture.generate_mesh();
 
   {
@@ -158,7 +158,7 @@ STKUNIT_UNIT_TEST( UnitTestCreateEdges , Hex_3x1x1 )
 
   fixtures::HexFixture fixture(MPI_COMM_WORLD, 3, 1, 1);
 
-  fixture.m_fem_meta.commit();
+  fixture.m_meta.commit();
   fixture.generate_mesh();
 
   {
@@ -197,7 +197,7 @@ STKUNIT_UNIT_TEST( UnitTestCreateEdges , testCreateEdges3x3x3 )
 
   stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, NX, NY, NZ);
 
-  fixture.m_fem_meta.commit();
+  fixture.m_meta.commit();
   fixture.generate_mesh();
 
   {
@@ -275,7 +275,7 @@ STKUNIT_UNIT_TEST( UnitTestCreateEdges , testSkinAndCreateEdges3x3x3 )
 
   stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, NX, NY, NZ);
 
-  fixture.m_fem_meta.commit();
+  fixture.m_meta.commit();
   fixture.generate_mesh();
 
   {

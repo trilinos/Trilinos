@@ -47,7 +47,7 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
     //setup the mesh
     stk::mesh::fixtures::HexFixture fixture(pm,3,3,3);
 
-    stk::mesh::MetaData & fem_meta = fixture.m_fem_meta;
+    stk::mesh::MetaData & fem_meta = fixture.m_meta;
     stk::mesh::BulkData & mesh = fixture.m_bulk_data;
     const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
     const stk::mesh::EntityRank side_rank    = fem_meta.side_rank();
@@ -110,7 +110,7 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
     //setup the mesh
     stk::mesh::fixtures::HexFixture fixture(pm,3,3,3);
 
-    stk::mesh::MetaData & fem_meta = fixture.m_fem_meta;
+    stk::mesh::MetaData & fem_meta = fixture.m_meta;
     stk::mesh::BulkData & mesh = fixture.m_bulk_data;
     const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
     const stk::mesh::EntityRank side_rank    = fem_meta.side_rank();
