@@ -395,6 +395,7 @@ int ML_Epetra::RefMaxwellPreconditioner::DestroyPreconditioner(){
   int printl=ML_Get_PrintLevel();
   int output_level=List_.get("ML output",0);
   output_level=List_.get("output",output_level);
+  bool disable_addon = List_.get("refmaxwell: disable addon",true);
 
   ML_Set_PrintLevel(output_level);
   if(EdgePC) {delete EdgePC; EdgePC=0;}
@@ -403,7 +404,7 @@ int ML_Epetra::RefMaxwellPreconditioner::DestroyPreconditioner(){
   if(D0_Matrix_) {delete D0_Matrix_; D0_Matrix_=0;}
   if(TMT_Matrix_) {delete TMT_Matrix_; TMT_Matrix_=0;}
   if(TMT_Agg_Matrix_) {delete TMT_Agg_Matrix_; TMT_Agg_Matrix_=0;}
-  if(lump_m1) {delete M1_Matrix_; M1_Matrix_=0;}
+  if(!disable_addon && lump_m1) {delete M1_Matrix_; M1_Matrix_=0;}
   if(BCrows) {delete [] BCrows; BCrows=0;numBCrows=0;}
   ML_Set_PrintLevel(output_level);  
   if(PreEdgeSmoother)  {delete PreEdgeSmoother; PreEdgeSmoother=0;}
