@@ -41,13 +41,31 @@
 //@HEADER
 */
 
+/// \file Kokkos_Atomic.hpp
+/// \brief Atomic functions
+///
+/// This header file defines prototypes for the following atomic functions:
+///   - exchange
+///   - compare and exchange
+///   - add
+///
+/// Supported types include: 
+///   - signed and unsigned 4 and 8 byte integers
+///   - float
+///   - double
+///
+/// They are implemented through GCC compatible intrinsics, OpenMP
+/// directives and native CUDA intrinsics.
+///
+/// Including this header file requires one of the following
+/// compilers:
+///   - NVCC (for CUDA device code only)
+///   - GCC (for host code only)
+///   - Intel (for host code only)
+///   - A compiler that supports OpenMP 3.1 (for host code only)
 
 #ifndef KOKKOS_ATOMIC_HPP
 #define KOKKOS_ATOMIC_HPP
-
-// This header file defines prototypes for the atomic functions: exchange, compare_exchange, add
-// Supported types are: signed and unsigned 4 and 8 byte integers, float, and double
-// They are implemented through GCC compatible intrinsics, OpenMP directives and native CUDA intrinsics.
 
 #include <Kokkos_Macros.hpp>
 #include <impl/Kokkos_Utility.hpp>
@@ -64,8 +82,8 @@
       ! defined( KOKKOS_ATOMICS_USE_INTEL ) && \
       ! defined( KOKKOS_ATOMICS_USE_OMP31 )
 
-// Compiling for non-Cuda atomic implementation has not been pre-selected,
-// choose the best implementation for the detected compiler.
+// Compiling for non-Cuda atomic implementation has not been pre-selected.
+// Choose the best implementation for the detected compiler.
 // Preference: GCC, INTEL, OMP31
 
 #if defined( __GNUC__ ) || defined( __GNUG__ )
