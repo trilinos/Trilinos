@@ -707,7 +707,8 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
 
   clp.add_option(
     "--skip-deps-update", dest="skipDepsUpdate", action="store_true",
-    help="If set, skip the update of the dependency XML file (debug only).",
+    help="If set, skip the update of the dependency XML file.  If the package structure" \
+      " has not changed since the last invocation, then it is safe to use this option.",
     default=False )
 
   clp.add_option(

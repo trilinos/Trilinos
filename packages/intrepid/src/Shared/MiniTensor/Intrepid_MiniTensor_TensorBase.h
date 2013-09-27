@@ -55,7 +55,7 @@ namespace Intrepid {
 ///
 /// Type for setting components all at once
 ///
-enum ComponentValue {ZEROS, ONES, RANDOM, NANS};
+enum ComponentValue {ZEROS, ONES, SEQUENCE, RANDOM, NANS};
 
 ///
 /// Base class for all vector and tensor types.

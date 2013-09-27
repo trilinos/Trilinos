@@ -46,10 +46,10 @@ namespace Rythmos {
  *
  * 1. An initial startup phase with constant initial time step
  * (failures can reduce the time step) at 1st order.
- *  
+ *
  * 2. A second phase with constant time step that increases the order
  * to max order.
- * 
+ *
  * 3. A ramping phase that runs at max order and increases the time
  * step up to the max time step.  LTE control during the ramping phase
  * is optional.
@@ -65,11 +65,11 @@ namespace Rythmos {
  // strategy object.
  */
   template<class Scalar>
-  class ImplicitBDFStepperRampingStepControl 
+  class ImplicitBDFStepperRampingStepControl
     : virtual public ErrWtVecCalcAcceptingStepControlStrategyBase<Scalar>
   {
   public:
-    
+
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
     ImplicitBDFStepperRampingStepControl();
@@ -83,21 +83,21 @@ namespace Rythmos {
     /** \brief . */
     void nextStepSize(const StepperBase<Scalar>& stepper, Scalar* stepSize,
 		      StepSizeType* stepSizeType, int* order);
-    
+
     /** \brief . */
     void setCorrection(
          const StepperBase<Scalar>& stepper
         ,const RCP<const Thyra::VectorBase<Scalar> >& soln
         ,const RCP<const Thyra::VectorBase<Scalar> >& ee
         ,int solveStatus
-        ); 
+        );
 
     /** \brief . */
     bool acceptStep(const StepperBase<Scalar>& stepper, Scalar* LETValue);
 
     /** \brief . */
     void completeStep(const StepperBase<Scalar>& stepper);
-    
+
     /** \brief . */
     AttemptedStepStatusFlag rejectStep(const StepperBase<Scalar>& stepper);
 
@@ -159,24 +159,24 @@ namespace Rythmos {
 
     /** \brief . */
     void initialize(const StepperBase<Scalar>& stepper);
-    
+
     /** \name Accessor functions (used for testing) */
     //@{
-    
+
     int numberOfSteps() const;
-    
+
     int numberOfFailedSteps() const;
-    
+
     Scalar currentStepSize() const;
-    
+
     int currentOrder() const;
-    
+
     //@}
 
   private:
 
     Scalar wRMSNorm_(
-        const Thyra::VectorBase<Scalar>& weight, 
+        const Thyra::VectorBase<Scalar>& weight,
         const Thyra::VectorBase<Scalar>& vector
         ) const;
 
@@ -186,7 +186,7 @@ namespace Rythmos {
 
     //* returns true if the objects verbosity level is equal to or greater than level in verbLevel */
     bool doOutput_(Teuchos::EVerbosityLevel verbLevel);
-    
+
   private:
 
     StepControlStrategyState stepControlState_;
@@ -231,18 +231,18 @@ namespace Rythmos {
     // note:   $h_n$ = current step size, n = current time step
     Array<Scalar> sigma_;    // $\sigma_j(n) = \frac{h_n^j(j-1)!}{\psi_1(n)*\cdots *\psi_j(n)}$
     Array<Scalar> gamma_;    // $\gamma_j(n)=\sum_{l=1}^{j-1}1/\psi_l(n)$ coefficient used to
-    // calculate time derivative of history array for predictor 
+    // calculate time derivative of history array for predictor
     Array<Scalar> beta_;     // coefficients used to evaluate predictor from history array
-    Array<Scalar> psi_;      // $\psi_j(n) = t_n-t_{n-j}$ intermediary variable used to 
+    Array<Scalar> psi_;      // $\psi_j(n) = t_n-t_{n-j}$ intermediary variable used to
     // compute $\beta_j(n)$
     Scalar alpha_s_;    // $\alpha_s$ fixed-leading coefficient of this BDF method
     Scalar alpha_0_;     // $-\sum_{j=1}^k \alpha_j(n)$ coefficient used in local error test
     Scalar cj_ ;        // $-\alpha_s/h_n$ coefficient used in local error test
-    Scalar ck_ ;        // local error coefficient gamma[0] = 0; 
+    Scalar ck_ ;        // local error coefficient gamma[0] = 0;
     Scalar ck_enorm_;   // ck * enorm
 
   };
-  
+
 } // namespace Rythmos
 
 #endif // Rythmos_IMPLICITBDF_STEPPER_STEP_CONTROL_DECL_H

@@ -125,7 +125,7 @@ public:
   //! The type of global indices in the input MatrixType.
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
 
-  //! Preserved only for backwards compatibility.  Please use "global_ordinal_type".
+  //! Preserved only for backwards compatibility. Please use "global_ordinal_type".
   TEUCHOS_DEPRECATED typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
 
 
@@ -140,7 +140,8 @@ public:
   typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
   //! Preserved only for backwards compatibility.  Please use "magnitude_type".
-  TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
+  TEUCHOS_DEPRECATED typedef typename 
+  Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
 
   //@}
   //! \name Constructors and Destructors
@@ -152,16 +153,16 @@ public:
   ///   Tpetra::RowMatrix.  (Tpetra::CrsMatrix inherits from this, so
   ///   you may use a Tpetra::CrsMatrix here instead.)
   ///
-  /// The factorization will <i>not</i> modify the input matrix.  It
-  /// stores the L and U factors in the incomplete factorization
-  /// separately.
-  explicit SupportGraph(const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &A);
+  /// This will <i>not</i> modify the input matrix.  It
+  /// stores the support graph separately.
+  explicit SupportGraph(const Teuchos::RCP<const Tpetra::RowMatrix
+                        <scalar_type, local_ordinal_type, global_ordinal_type, node_type> > &A);
 
   //! Destructor
   virtual ~SupportGraph();
 
   //@}
-  //! \name Methods for setting up and computing the incomplete factorization
+  //! \name Methods for setting up and computing support graph
   //@{
 
   /// \brief Set preconditioner parameters.
@@ -174,14 +175,13 @@ public:
   /// The absolute and relative threshold parameters affect how this
   /// code modifies the diagonal entry of the output factor.
   ///
- 
   void setParameters (const Teuchos::ParameterList& params);
 
 
-  void findSupport ();
+  
 
 
-  /// \brief Clear any previously computed factors.
+  /// \brief Clear any previously computed support graph.
   ///
   /// You may call this before calling compute().  The compute()
   /// method will call this automatically if it has not yet been
@@ -213,7 +213,8 @@ public:
   //! @name Methods implementing Tpetra::Operator.
   //@{
 
-  //! Returns the result of a SupportGraph forward/back solve on a Tpetra::MultiVector X in Y.
+  //! Returns the result of a SupportGraph forward/back solve on a 
+  //! Tpetra::MultiVector X in Y.
   /*!
     \param
     X - (In) A Tpetra::MultiVector of dimension NumVectors to solve for.
@@ -221,19 +222,24 @@ public:
     Y - (Out) A Tpetra::MultiVector of dimension NumVectors containing result.
   */
   void apply(
-      const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-            Teuchos::ETransp mode = Teuchos::NO_TRANS,
-               scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-               scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+             const Tpetra::MultiVector
+             <scalar_type, local_ordinal_type, global_ordinal_type,node_type>& X,
+             Tpetra::MultiVector
+             <scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
+             Teuchos::ETransp mode = Teuchos::NO_TRANS,
+             scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+             scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! Tpetra::Map representing the domain of this operator.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getDomainMap() const;
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> > 
+  getDomainMap() const;
 
   //! Tpetra::Map representing the range of this operator.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getRangeMap() const;
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type,
+                                 node_type> > getRangeMap() const;
 
-  //! Whether this object's apply() method can apply the transpose (or conjugate transpose, if applicable).
+  //! Whether this object's apply() method can apply the transpose 
+  //! (or conjugate transpose, if applicable).
   bool hasTransposeApply() const;
 
   //@}
@@ -250,17 +256,21 @@ public:
   */
   template<class DomainScalar, class RangeScalar>
   void applyTempl(
-      const Tpetra::MultiVector<DomainScalar,local_ordinal_type,global_ordinal_type,node_type>& X,
-            Tpetra::MultiVector<RangeScalar,local_ordinal_type,global_ordinal_type,node_type>& Y,
-            Teuchos::ETransp mode = Teuchos::NO_TRANS,
-               RangeScalar alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-               RangeScalar beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+                  const Tpetra::MultiVector
+                  <DomainScalar, local_ordinal_type, global_ordinal_type, node_type>& X,
+                  Tpetra::MultiVector
+                  <RangeScalar, local_ordinal_type, global_ordinal_type, node_type>& Y,
+                  Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                  RangeScalar alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+                  RangeScalar beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! Computes the estimated condition number and returns the value.
-  magnitude_type computeCondEst(CondestType CT = Cheap,
-                               local_ordinal_type MaxIters = 1550,
-                               magnitude_type Tol = 1e-9,
-                               const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &Matrix_in = Teuchos::null);
+  magnitude_type computeCondEst(CondestType CT = Cheap, local_ordinal_type MaxIters = 1550,
+                                magnitude_type Tol = 1e-9, 
+                                const Teuchos::Ptr<const Tpetra::RowMatrix
+                                <scalar_type, local_ordinal_type, 
+                                global_ordinal_type, node_type> > &Matrix_in 
+                                = Teuchos::null);
 
   //! Returns the computed estimated condition number, or -1.0 if no computed.
   magnitude_type getCondEst() const { return Condest_; }
@@ -269,7 +279,9 @@ public:
   Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
   //! Returns a reference to the matrix to be preconditioned.
-  Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > getMatrix() const;
+  Teuchos::RCP<const Tpetra::RowMatrix
+               <scalar_type, local_ordinal_type, global_ordinal_type, node_type> > 
+  getMatrix() const;
 
 
   //! Returns the number of calls to Initialize().
@@ -311,8 +323,10 @@ public:
   /** \brief Return a simple one-line description of this object. */
   std::string description() const;
 
-  /** \brief Print the object with some verbosity level to an FancyOStream object. */
-  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+  /** \brief Print the object with some verbosity level to an 
+      FancyOStream object. */
+  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel 
+                = Teuchos::Describable::verbLevel_default) const;
 
   //@}
 
@@ -323,6 +337,9 @@ private:
 
   //@{ Internal methods
 
+  //! Find the maximum weight spanning tree and construct a CrsMatrix with it
+  void findSupport ();
+  
   //! Copy constructor (declared private and undefined; may not be used)
   SupportGraph(const SupportGraph<MatrixType>& RHS);
 
@@ -334,11 +351,14 @@ private:
   //@{
 
   //! reference to the matrix to be preconditioned.
-  const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > A_;
+  const Teuchos::RCP<const Tpetra::RowMatrix
+                     <scalar_type,local_ordinal_type,global_ordinal_type,node_type> > A_;
   
   Teuchos::RCP<MatrixType> Support_;
 
-  Teuchos::RCP<Amesos2::Solver<MatrixType, Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > > solver;
+  Teuchos::RCP<Amesos2::Solver
+               <MatrixType, Tpetra::MultiVector
+                <scalar_type,local_ordinal_type,global_ordinal_type,node_type> > > solver;
 
   //@}
   // \name Parameters (set by the input ParameterList)

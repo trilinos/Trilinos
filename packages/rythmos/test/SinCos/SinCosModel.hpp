@@ -44,10 +44,10 @@ using Thyra::ModelEvaluatorBase;
 namespace Rythmos {
 
   /*
-   * This is the canonical Sine Cosine differential equation 
-   * 
-   * \ddot{x} = -x 
-   * 
+   * This is the canonical Sine Cosine differential equation
+   *
+   * \ddot{x} = -x
+   *
    * with a few enhancements.
    * We start with the exact solution to the differential equation as:
    *
@@ -80,7 +80,7 @@ namespace Rythmos {
    *
    */
 
-class SinCosModel 
+class SinCosModel
   : public Thyra::StateFuncModelEvaluatorBase<double>,
     public Teuchos::ParameterListAcceptorDefaultBase
 {
@@ -124,10 +124,10 @@ class SinCosModel
   RCP<const Thyra::VectorSpaceBase<double> > get_g_space(int j) const;
 
   //@}
-  
+
   /** \name Public functions overridden from ParameterListAcceptor. */
   //@{
-  
+
   /** \brief . */
   void setParameterList(RCP<ParameterList> const& paramList);
 
@@ -177,7 +177,7 @@ private:
 
   // Parameters for the model:  x_0(t) = a + b*sin(f*t+phi)
   //                            x_1(t) = b*f*cos(f*t+phi)
-  double a_; // This is a model parameter 
+  double a_; // This is a model parameter
   double f_; // This is a model parameter
   double L_; // This is a model parameter
   double phi_; // This is a parameter determined from the IC
@@ -192,6 +192,6 @@ RCP<SinCosModel> sinCosModel(bool implicit);
 RCP<SinCosModel> sinCosModel();
 
 
-} // namespace Rythmos 
+} // namespace Rythmos
 
 #endif // SIN_COS_MODEL_HPP

@@ -40,16 +40,14 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Panzer_config.hpp"
-
-#ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
+#include "Panzer_ConfigDefs.hpp"
 
 #include "Panzer_Traits.hpp"
 
 #include "Panzer_BlockedDOFManager_decl.hpp"
 #include "Panzer_BlockedDOFManager_impl.hpp"
 
-template class panzer::BlockedDOFManager<int,panzer::Ordinal64>;
 template class panzer::BlockedDOFManager<int,int>;
-
+#ifndef PANZER_ORDINAL64_IS_INT
+template class panzer::BlockedDOFManager<int,panzer::Ordinal64>;
 #endif

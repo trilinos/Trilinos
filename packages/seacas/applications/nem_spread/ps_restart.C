@@ -169,7 +169,6 @@ void NemSpread<T,INT>::read_restart_data ()
   std::vector<INT> ns_cnts_global(globals.Num_Node_Set);
 
   INT ***eb_map_ptr = NULL, **eb_cnts_local = NULL;
-  int    iblk, time_idx;
   int    exoid=0, *par_exoid = NULL;
 
   float  vers;
@@ -437,7 +436,7 @@ void NemSpread<T,INT>::read_restart_data ()
   }
 
   /* Now loop over the number of time steps */
-  for (time_idx = 0; time_idx < Restart_Info.Num_Times; time_idx++) {
+  for (int time_idx = 0; time_idx < Restart_Info.Num_Times; time_idx++) {
 
     double start_t = second ();
 

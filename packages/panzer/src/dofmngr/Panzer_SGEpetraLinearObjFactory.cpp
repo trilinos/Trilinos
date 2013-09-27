@@ -40,18 +40,14 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Panzer_config.hpp"
+#include "Panzer_ConfigDefs.hpp"
 
 #ifdef HAVE_STOKHOS
-
-#ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
 
 #include "Panzer_Traits.hpp"
 #include "Panzer_SGEpetraLinearObjFactory_decl.hpp"
 #include "Panzer_SGEpetraLinearObjFactory_impl.hpp"
 
 template class panzer::SGEpetraLinearObjFactory<panzer::Traits,int>;
-
-#endif
 
 #endif

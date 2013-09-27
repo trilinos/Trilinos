@@ -1,0 +1,39 @@
+Time integration is a central component for most transient simulations.
+It coordinates many of the major parts of a simulation together, e.g.,
+a residual calculation with a transient solver, solution with the
+output, various operator-split physics, and forward and adjoint solutions
+for inversion. Even though there is this variety in these transient
+simulations, there is still a common set of algorithms and procedures
+to progress transient solutions for ordinary-differential equations
+(ODEs) and differential-alegbraic equations (DAEs). 
+
+Rythmos is a collection of these algorithms that can be used for the
+solution of transient simulations. It provides common time-integration
+methods, such as Backward and Forward Euler, Explicit and Implicit
+Runge-Kutta, and Backward-Difference Formulas. It can also provide
+sensitivities, and adjoint components for transient simulations. Rythmos
+is a package within Trilinos, and requires some other packages (e.g.,
+Teuchos and Thrya) to provide basic time-integration capabilities.
+It also can be coupled with several other Trilinos packages to provide
+additional capabilities (e.g., AztecOO and Belos for linear solutions,
+and NOX for non-linear solutions).
+
+This document is broken down into three parts: Theory Manual, User's
+Manual, and Developer's Guide. The Theory Manual contains the basic
+theory of the time integrators, the nomenclature and mathematical
+structure utilized within Rythmos, and verification results demonstrating
+that the designed order of accuracy is achieved. The User's Manual
+provides information on how to use the Rythmos, description of input
+parameters through Teuchos Parameter Lists, and description of convergence
+test examples. The Developer's Guide is a high-level discussion of
+the design and structure of Rythmos to provide information to developers
+for the continued development of capabilities. Details of individual
+components can be found in the Doxygen webpages.
+
+This document is still under construction, and only provides some
+information on its current capabilities. However several pieces of
+information would be very useful to the Rythmos community, and was
+felt that a release of the current documentation would be beneficial.
+Documentation is continuing, and will be included in subsequent versions.
+The reader is encouraged to contact one of the authors for additional
+information not found within this document.

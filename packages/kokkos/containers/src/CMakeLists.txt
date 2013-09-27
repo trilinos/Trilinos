@@ -15,12 +15,11 @@ SET(HEADERS_IMPL "")
 
 FILE(GLOB HEADERS *.hpp)
 FILE(GLOB HEADERS_IMPL impl/*.hpp)
+FILE(GLOB SOURCES impl/*.cpp)
 
 SET(TRILINOS_INCDIR ${CMAKE_INSTALL_PREFIX}/${Trilinos_INSTALL_INCLUDE_DIR})
 
-INSTALL(FILES ${HEADERS} DESTINATION ${TRILINOS_INCDIR}/)
 INSTALL(FILES ${HEADERS_IMPL} DESTINATION ${TRILINOS_INCDIR}/impl/)
-
 
 TRIBITS_ADD_LIBRARY(
     kokkoscontainers
@@ -31,3 +30,4 @@ TRIBITS_ADD_LIBRARY(
     )
 
 #-----------------------------------------------------------------------------
+

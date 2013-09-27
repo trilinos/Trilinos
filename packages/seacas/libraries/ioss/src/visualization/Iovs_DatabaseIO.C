@@ -86,13 +86,9 @@ namespace Iovs {
     this->pvcsa = 0;
     this->globalNodeAndElementIDsCreated = false;
 
-    if(props.exists("VISUALIZATION_BLOCK_PARSE_JSON_STRING"))
+    if(props.exists("CATALYST_BLOCK_PARSE_JSON_STRING"))
       {
-      this->paraview_json_parse = props.get("VISUALIZATION_BLOCK_PARSE_JSON_STRING").get_string();
-      }
-    else
-      {
-      this->paraview_json_parse = "{}";
+      this->paraview_json_parse = props.get("CATALYST_BLOCK_PARSE_JSON_STRING").get_string();
       }
 
     if(props.exists("CATALYST_SCRIPT"))
@@ -101,32 +97,44 @@ namespace Iovs {
       }
 
     this->underscoreVectors = 1;
-    if(props.exists("VISUALIZATION_UNDERSCORE_VECTORS"))
+    if(props.exists("CATALYST_UNDERSCORE_VECTORS"))
       {
-      this->underscoreVectors = props.get("VISUALIZATION_UNDERSCORE_VECTORS").get_int();
+      this->underscoreVectors = props.get("CATALYST_UNDERSCORE_VECTORS").get_int();
       }
 
     this->applyDisplacements = 1;
-    if(props.exists("VISUALIZATION_APPLY_DISPLACEMENTS"))
+    if(props.exists("CATALYST_APPLY_DISPLACEMENTS"))
       {
-      this->applyDisplacements = props.get("VISUALIZATION_APPLY_DISPLACEMENTS").get_int();
+      this->applyDisplacements = props.get("CATALYST_APPLY_DISPLACEMENTS").get_int();
       }
 
     this->createNodeSets = 0;
-    if(props.exists("VISUALIZATION_CREATE_NODE_SETS"))
+    if(props.exists("CATALYST_CREATE_NODE_SETS"))
       {
-      this->createNodeSets = props.get("VISUALIZATION_CREATE_NODE_SETS").get_int();
+      this->createNodeSets = props.get("CATALYST_CREATE_NODE_SETS").get_int();
       }
 
     this->createSideSets = 0;
-    if(props.exists("VISUALIZATION_CREATE_SIDE_SETS"))
+    if(props.exists("CATALYST_CREATE_SIDE_SETS"))
       {
-      this->createSideSets = props.get("VISUALIZATION_CREATE_SIDE_SETS").get_int();
+      this->createSideSets = props.get("CATALYST_CREATE_SIDE_SETS").get_int();
       }
 
-    if(props.exists("VISUALIZATION_BLOCK_PARSE_INPUT_DECK_NAME"))
+    if(props.exists("CATALYST_BLOCK_PARSE_INPUT_DECK_NAME"))
       {
-        this->sierra_input_deck_name = props.get("VISUALIZATION_BLOCK_PARSE_INPUT_DECK_NAME").get_string();
+      this->sierra_input_deck_name = props.get("CATALYST_BLOCK_PARSE_INPUT_DECK_NAME").get_string();
+      }
+
+    this->enableLogging = 0;
+    if(props.exists("CATALYST_ENABLE_LOGGING"))
+      {
+      this->enableLogging = props.get("CATALYST_ENABLE_LOGGING").get_int();
+      }
+
+    this->debugLevel = 0;
+    if(props.exists("CATALYST_DEBUG_LEVEL"))
+      {
+      this->enableLogging = props.get("CATALYST_DEBUG_LEVEL").get_int();
       }
   }
 
@@ -195,13 +203,25 @@ namespace Iovs {
 
       std::string separator(1, this->get_field_separator());
 
+      // See if we are in a restart by looking for '.e-s' in the output filename
+      std::string restart_tag = "";
+      std::string::size_type pos = this->DBFilename.rfind(".e-s");
+      if(pos != std::string::npos) {
+          if(pos + 3 <= this->DBFilename.length()) {
+              restart_tag = this->DBFilename.substr(pos + 3, 5);
+          }
+      }
+
       if(this->pvcsa)
         this->pvcsa->InitializeParaViewCatalyst(this->paraview_script_filename.c_str(),
                                                 this->paraview_json_parse.c_str(),
                                                 separator.c_str(),
                                                 this->sierra_input_deck_name.c_str(),
                                                 this->underscoreVectors,
-                                                this->applyDisplacements);
+                                                this->applyDisplacements,
+                                                restart_tag.c_str(),
+                                                this->enableLogging,
+                                                this->debugLevel);
       std::vector<int> element_block_id_list;
       Ioss::ElementBlockContainer const & ebc = region->get_element_blocks();
       for(int i = 0;i<ebc.size();i++)
@@ -261,7 +281,9 @@ namespace Iovs {
 
     if(this->pvcsa)
       {
+      this->pvcsa->logMemoryUsageAndTakeTimerReading();
       this->pvcsa->PerformCoProcessing();
+      this->pvcsa->logMemoryUsageAndTakeTimerReading();
       this->pvcsa->ReleaseMemory();
       }
 

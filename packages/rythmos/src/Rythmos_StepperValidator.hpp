@@ -34,9 +34,9 @@
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Rythmos_IntegratorBuilder.hpp"
-#include "Thyra_StateFuncModelEvaluatorBase.hpp" 
+#include "Thyra_StateFuncModelEvaluatorBase.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
-#include "Thyra_ModelEvaluator.hpp" 
+#include "Thyra_ModelEvaluator.hpp"
 
 #include "Rythmos_StepperBase.hpp"
 #include "Rythmos_Types.hpp"
@@ -57,10 +57,10 @@ namespace Rythmos {
  * There are a variety of requirements placed on the steppers by the higher
  * level objects like the integrator.  These requirements are documented and
  * tested in this class.
- * 
+ *
  */
-template<class Scalar> 
-class StepperValidator 
+template<class Scalar>
+class StepperValidator
   : virtual public Teuchos::Describable
   , virtual public Teuchos::ParameterListAcceptor
   , virtual public Teuchos::VerboseObject<StepperValidator<Scalar> >
@@ -197,10 +197,10 @@ public:
   RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int j) const;
 
   //@}
-  
+
   /** \name Public functions overridden from ParameterListAcceptor. */
   //@{
-  
+
   /** \brief . */
   void setParameterList(RCP<ParameterList> const& paramList);
 
@@ -208,7 +208,7 @@ public:
   RCP<const ParameterList> getValidParameters() const;
 
   //@}
-  
+
 private:
 
   /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
@@ -224,7 +224,7 @@ private:
     ) const;
 
   //@}
-  
+
   void defaultInitializeAll_();
   void initialize_();
 
@@ -248,7 +248,7 @@ private:
 // StepperValidatorMockModel nonmember constructors:
 //
 template<class Scalar>
-RCP<StepperValidatorMockModel<Scalar> > stepperValidatorMockModel() 
+RCP<StepperValidatorMockModel<Scalar> > stepperValidatorMockModel()
 {
   return(rcp(new StepperValidatorMockModel<Scalar>()));
 }
@@ -256,7 +256,7 @@ RCP<StepperValidatorMockModel<Scalar> > stepperValidatorMockModel()
 template<class Scalar>
 RCP<StepperValidatorMockModel<Scalar> > stepperValidatorMockModel(
     bool isImplicit
-    ) 
+    )
 {
   RCP<StepperValidatorMockModel<Scalar> > model = rcp(new StepperValidatorMockModel<Scalar>());
   RCP<ParameterList> pl = Teuchos::parameterList();
@@ -270,7 +270,7 @@ RCP<StepperValidatorMockModel<Scalar> > stepperValidatorMockModel(
 //
 template<class Scalar>
 StepperValidatorMockModel<Scalar>::StepperValidatorMockModel()
-{ 
+{
   this->defaultInitializeAll_();
   Np_ = 1;
   Ng_ = 0;
@@ -279,7 +279,7 @@ StepperValidatorMockModel<Scalar>::StepperValidatorMockModel()
   // Create x_space and f_space
   x_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(dim_);
   f_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(dim_);
-  // Create p_space 
+  // Create p_space
   p_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(np_);
   passedInArgs_ = rcp(new std::vector<Thyra::ModelEvaluatorBase::InArgs<Scalar> >);
   this->initialize_();
@@ -321,7 +321,7 @@ void StepperValidatorMockModel<Scalar>::initialize_()
     // For ExplicitTaylorPolynomialStepper
     inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_x_poly );
 #endif // HAVE_THYRA_ME_POLYNOMIAL
-    inArgs.set_Np(1); 
+    inArgs.set_Np(1);
     if (isImplicit_) {
       inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_x_dot );
       inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_alpha );
@@ -404,7 +404,7 @@ RCP<Thyra::LinearOpWithSolveBase<Scalar> > StepperValidatorMockModel<Scalar>::cr
       V_V(multivec->col(0).ptr(),*vec);
     }
   }
-  RCP<Thyra::LinearOpWithSolveBase<Scalar> > W = 
+  RCP<Thyra::LinearOpWithSolveBase<Scalar> > W =
     Thyra::linearOpWithSolve<Scalar>(
       *W_factory,
       matrix
@@ -424,7 +424,7 @@ RCP<Thyra::LinearOpBase<Scalar> > StepperValidatorMockModel<Scalar>::create_W_op
 template<class Scalar>
 RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > StepperValidatorMockModel<Scalar>::get_W_factory() const
 {
-  RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory = 
+  RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory =
     Thyra::defaultSerialDenseLinearOpWithSolveFactory<Scalar>();
   return W_factory;
 }
@@ -449,7 +449,7 @@ RCP<const Thyra::VectorSpaceBase<Scalar> > StepperValidatorMockModel<Scalar>::ge
 template<class Scalar>
 RCP<const Teuchos::Array<std::string> > StepperValidatorMockModel<Scalar>::get_p_names(int l) const
 {
-  RCP<Teuchos::Array<std::string> > p_strings = 
+  RCP<Teuchos::Array<std::string> > p_strings =
     Teuchos::rcp(new Teuchos::Array<std::string>());
   p_strings->push_back("Model Coefficient");
   return p_strings;
@@ -527,7 +527,7 @@ void StepperValidatorMockModel<Scalar>::evalModelImpl(
 
 template<class Scalar>
 StepperValidator<Scalar>::StepperValidator()
-{ 
+{
   this->defaultInitializeAll_();
 }
 
@@ -576,7 +576,7 @@ template<class Scalar>
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,local_success);
   success_array.push_back(local_success);
 
-  // Verify that the stepper states are correct 
+  // Verify that the stepper states are correct
   //   uninitialized => getTimeRange == invalidTimeRange
   //   initialized, but no step => getTimeRange.length() == 0, [t_ic,t_ic]
   //   initialized, step taken => getTimeRange.length() > 0
@@ -587,7 +587,8 @@ template<class Scalar>
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,local_success);
   success_array.push_back(local_success);
 
-  // Verify that getPoints(t_ic) returns the IC after initialization and after the first step
+  // Verify that getPoints(t_ic) returns the IC after initialization
+  // and after the first step
   local_success = true;
   try {
     this->validateGetIC_();
@@ -604,7 +605,8 @@ template<class Scalar>
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,local_success);
   success_array.push_back(local_success);
 
-  // Validate that the stepper supports getNodes, which is used by the Trailing Interpolation Buffer feature of the Integrator.
+  // Validate that the stepper supports getNodes, which is used by
+  // the Trailing Interpolation Buffer feature of the Integrator.
   local_success = true;
   try {
     this->validateGetNodes_();
@@ -621,8 +623,8 @@ template<class Scalar>
   }
 
   TEUCHOS_TEST_FOR_EXCEPTION( !global_success, std::logic_error,
-      "Error!  StepperValidator:  The stepper " << stepperName_ << " did not pass stepper validation."
-      );
+      "Error!  StepperValidator:  The stepper " << stepperName_
+      << " did not pass stepper validation.");
 }
 
 template<class Scalar>
@@ -690,7 +692,7 @@ bool StepperValidator<Scalar>::isImplicitStepper_() const
 
 template<class Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar> StepperValidator<Scalar>::getSomeIC_(
-    const Thyra::ModelEvaluator<Scalar>& model 
+    const Thyra::ModelEvaluator<Scalar>& model
     ) const
 {
   // Set up some initial condition:
@@ -733,7 +735,7 @@ void StepperValidator<Scalar>::validateIC_() const
   typedef Teuchos::ScalarTraits<Scalar> ST;
   // Determine if the stepper is implicit or not:
   bool isImplicit = this->isImplicitStepper_();
-  RCP<StepperValidatorMockModel<Scalar> > model = 
+  RCP<StepperValidatorMockModel<Scalar> > model =
     stepperValidatorMockModel<Scalar>(isImplicit);
   // Set up some initial condition:
   Thyra::ModelEvaluatorBase::InArgs<Scalar> stepper_ic = this->getSomeIC_(*model);
@@ -755,7 +757,7 @@ void StepperValidator<Scalar>::validateIC_() const
   bool valid_t = false;
   // Technically this will fail for any Runge Kutta Butcher Tableau where:
   //  c(0) != 0 and c(s) != 1, where s = # of stages.
-  if ( (passedInArgs[0].get_t() == stepper_ic.get_t()   )   || 
+  if ( (passedInArgs[0].get_t() == stepper_ic.get_t()   )   ||
        (passedInArgs[0].get_t() == stepper_ic.get_t()+dt) )
   {
     valid_t = true;
@@ -787,33 +789,42 @@ template<class Scalar>
 void StepperValidator<Scalar>::validateStates_() const
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  RCP<const StepperBuilder<Scalar> > sb = integratorBuilder_->getStepperBuilder();
+  RCP<const StepperBuilder<Scalar> > sb =
+    integratorBuilder_->getStepperBuilder();
   RCP<StepperBase<Scalar> > stepper = sb->create(stepperName_);
   {
     // Uninitialized Stepper:
     TimeRange<Scalar> tr = stepper->getTimeRange();
     TEUCHOS_TEST_FOR_EXCEPTION( tr.isValid(), std::logic_error,
-        "Error!  StepperValidator::validateStates:  Uninitialized stepper returned a valid time range!"
+        "Error!  StepperValidator::validateStates:  Uninitialized "
+        "stepper returned a valid time range!"
         );
     const StepStatus<Scalar> ss = stepper->getStepStatus();
-    TEUCHOS_TEST_FOR_EXCEPTION( ss.stepStatus != STEP_STATUS_UNINITIALIZED, std::logic_error,
-        "Error!  StepperValidator::validateStates:  Uninitialized stepper returned a valid step status!"
+    TEUCHOS_TEST_FOR_EXCEPTION( ss.stepStatus != STEP_STATUS_UNINITIALIZED,
+        std::logic_error,
+        "Error!  StepperValidator::validateStates:  Uninitialized "
+        "stepper returned a valid step status!"
         );
   }
   bool isImplicit = stepper->isImplicit();
-  RCP<StepperValidatorMockModel<Scalar> > model = 
+  RCP<StepperValidatorMockModel<Scalar> > model =
     stepperValidatorMockModel<Scalar>(isImplicit);
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> stepper_ic = this->getSomeIC_(*model);
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> stepper_ic =
+    this->getSomeIC_(*model);
   stepper->setInitialCondition(stepper_ic);
   {
     // Has initial condition:
     TimeRange<Scalar> tr = stepper->getTimeRange();
-    TEUCHOS_TEST_FOR_EXCEPTION( compareTimeValues(tr.lower(),tr.upper()) != 0, std::logic_error,
-        "Error!  StepperValidator::validateStates:  Stepper with initial condition returned a non zero time range!"
+    TEUCHOS_TEST_FOR_EXCEPTION( compareTimeValues(tr.lower(),tr.upper()) != 0,
+        std::logic_error,
+        "Error!  StepperValidator::validateStates:  Stepper with "
+        "initial condition returned a non zero time range!"
         );
 //    const StepStatus<Scalar> ss = stepper->getStepStatus();
-//    TEUCHOS_TEST_FOR_EXCEPTION( ss.stepStatus != STEP_STATUS_UNKNOWN, std::logic_error,
-//        "Error!  StepperValidator::validateStates:  Stepper with initial condition did not return STEP_STATUS_UNKNOWN!"
+//    TEUCHOS_TEST_FOR_EXCEPTION( ss.stepStatus != STEP_STATUS_UNKNOWN,
+//        std::logic_error,
+//        "Error!  StepperValidator::validateStates:  Stepper with "
+//        "initial condition did not return STEP_STATUS_UNKNOWN!"
 //        );
   }
   // 04/16/09 tscoffe:  Now we use the integratorBuilder to create a fully
@@ -827,12 +838,16 @@ void StepperValidator<Scalar>::validateStates_() const
   {
     // Still has initial condition:
     TimeRange<Scalar> tr = stepper->getTimeRange();
-    TEUCHOS_TEST_FOR_EXCEPTION( compareTimeValues(tr.lower(),tr.upper()) != 0, std::logic_error,
-        "Error!  StepperValidator::validateStates:  Fully initialized stepper returned a non zero time range!"
+    TEUCHOS_TEST_FOR_EXCEPTION( compareTimeValues(tr.lower(),tr.upper()) != 0,
+        std::logic_error,
+        "Error!  StepperValidator::validateStates:  Fully initialized "
+        "stepper returned a non zero time range!"
         );
 //    const StepStatus<Scalar> ss = stepper->getStepStatus();
-//    TEUCHOS_TEST_FOR_EXCEPTION( ss.stepStatus != STEP_STATUS_UNKNOWN, std::logic_error,
-//        "Error!  StepperValidator::validateStates:  Fully initialized stepper, prior to taking a step, did not return STEP_STATUS_UNKNOWN!"
+//    TEUCHOS_TEST_FOR_EXCEPTION( ss.stepStatus != STEP_STATUS_UNKNOWN,
+//        std::logic_error,
+//        "Error!  StepperValidator::validateStates:  Fully initialized "
+//        "stepper, prior to taking a step, did not return STEP_STATUS_UNKNOWN!"
 //        );
   }
   Scalar dt = Scalar(0.1);
@@ -841,12 +856,16 @@ void StepperValidator<Scalar>::validateStates_() const
   {
     // Taken Step:
     TimeRange<Scalar> tr = stepper->getTimeRange();
-    TEUCHOS_TEST_FOR_EXCEPTION( compareTimeValues(tr.lower(),tr.upper()) >= 0, std::logic_error,
-        "Error!  StepperValidator::validateStates:  Stepper returned a zero (or invalid) time range after taking a step!"
+    TEUCHOS_TEST_FOR_EXCEPTION( compareTimeValues(tr.lower(),tr.upper()) >= 0,
+        std::logic_error,
+        "Error!  StepperValidator::validateStates:  Stepper returned "
+        "a zero (or invalid) time range after taking a step!"
         );
     const StepStatus<Scalar> ss = stepper->getStepStatus();
-    TEUCHOS_TEST_FOR_EXCEPTION( ss.stepStatus != STEP_STATUS_CONVERGED, std::logic_error,
-        "Error!  StepperValidator::validateStates:  Stepper did not return converged step status after taking a step!"
+    TEUCHOS_TEST_FOR_EXCEPTION( ss.stepStatus != STEP_STATUS_CONVERGED,
+        std::logic_error,
+        "Error!  StepperValidator::validateStates:  Stepper did not "
+        "return converged step status after taking a step!"
         );
   }
 }
@@ -858,7 +877,7 @@ void StepperValidator<Scalar>::validateGetIC_() const
   typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
   // Determine if the stepper is implicit or not:
   bool isImplicit = this->isImplicitStepper_();
-  RCP<StepperValidatorMockModel<Scalar> > model = 
+  RCP<StepperValidatorMockModel<Scalar> > model =
     stepperValidatorMockModel<Scalar>(isImplicit);
   // Set up some initial condition:
   Thyra::ModelEvaluatorBase::InArgs<Scalar> stepper_ic = this->getSomeIC_(*model);
@@ -931,7 +950,7 @@ void StepperValidator<Scalar>::validateGetIC2_() const
   typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
   // Determine if the stepper is implicit or not:
   bool isImplicit = this->isImplicitStepper_();
-  RCP<StepperValidatorMockModel<Scalar> > model = 
+  RCP<StepperValidatorMockModel<Scalar> > model =
     stepperValidatorMockModel<Scalar>(isImplicit);
   // Set up some initial condition:
   Thyra::ModelEvaluatorBase::InArgs<Scalar> stepper_ic = this->getSomeIC_(*model);
@@ -974,7 +993,7 @@ void StepperValidator<Scalar>::validateGetNodes_() const
   }
   // Create fully initialize stepper and verify we get back one node for IC
   bool isImplicit = this->isImplicitStepper_();
-  RCP<StepperValidatorMockModel<Scalar> > model = 
+  RCP<StepperValidatorMockModel<Scalar> > model =
     stepperValidatorMockModel<Scalar>(isImplicit);
   Thyra::ModelEvaluatorBase::InArgs<Scalar> stepper_ic = this->getSomeIC_(*model);
   RCP<Thyra::NonlinearSolverBase<Scalar> > nlSolver;

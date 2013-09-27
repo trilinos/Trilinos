@@ -1,14 +1,14 @@
-%% LyX 2.0.4 created this file.  For more info, see http://www.lyx.org/.
+%% LyX 2.0.5 created this file.  For more info, see http://www.lyx.org/.
 %% Do not edit unless you really know what you are doing.
-\documentclass[english]{article}
+\documentclass{article}
 \usepackage[T1]{fontenc}
 \usepackage[latin9]{inputenc}
 \usepackage{geometry}
 \geometry{verbose,tmargin=1in,bmargin=1in,lmargin=1.25in,rmargin=1.25in}
 \usepackage{color}
-\usepackage{babel}
 \usepackage{array}
 \usepackage{float}
+\usepackage{amsmath}
 \usepackage{makeidx}
 \makeindex
 \usepackage{graphicx}
@@ -22,6 +22,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% LyX specific LaTeX commands.
 %% Because html converters don't know tabularnewline
 \providecommand{\tabularnewline}{\\}
+%% A simple dot to overcome graphicx limitations
+\newcommand{\lyxdot}{.}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
 \usepackage[nottoc]{tocbibind} 
@@ -33,18 +36,24 @@
 
 
 \title{Rythmos: Solution and Analysis Package for Differential-Algebraic
-Equations (DAEs) and Ordinary-Differential Equations (ODEs)}
+and Ordinary-Differential Equations}
 
 
-\author{Roscoe A. Bartlett, Oak Ridge National Laboratories\\
+\author{Curtis C. Ober, Numerical Analysis and Applications\\
+Roscoe A. Bartlett, Oak Ridge National Laboratories\\
 Todd S. Coffey, Simulation Modeling Sciences\\
-Roger P. Pawlowski, Multiphysics Simulation Technology\\
-Curtis C. Ober, Numerical Analysis and Applications}
+Roger P. Pawlowski, Multiphysics Simulation Technology}
 \maketitle
 \begin{abstract}
-This document contains the basic theory on the time integrators; examples
-and usage; and software design and developer's guide for Rythmos.\newpage{}\tableofcontents{}
+\input{RythmosAbstract.tex}
 \end{abstract}
+
+\section*{\newpage{}}
+
+\include{RythmosAcknowledgment}
+
+\newpage{}\tableofcontents{}
+
 \newpage{}
 
 
@@ -64,10 +73,12 @@ and usage; and software design and developer's guide for Rythmos.\newpage{}\tabl
 
 \part{Developer's Guide}
 
+\include{RythmosDevelopersGuide}
+
 
 \part{Back Matter}
 
-\newpage{}
+\include{RythmosExtraCitations}\newpage{}
 
 \printindex{}
 

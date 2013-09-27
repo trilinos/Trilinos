@@ -29,6 +29,11 @@
 #ifndef Rythmos_IMPLICITBDF_STEPPER_STEP_CONTROL_DEF_H
 #define Rythmos_IMPLICITBDF_STEPPER_STEP_CONTROL_DEF_H
 
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
+
 #include "Rythmos_ImplicitBDFStepperStepControl_decl.hpp"
 #include "Rythmos_ImplicitBDFStepper.hpp"
 #include "Rythmos_ImplicitBDFStepperErrWtVecCalc.hpp"
@@ -60,7 +65,7 @@ StepControlStrategyState ImplicitBDFStepperStepControl<Scalar>::getCurrentState(
 }
 
 template<class Scalar>
-void ImplicitBDFStepperStepControl<Scalar>::updateCoeffs_() 
+void ImplicitBDFStepperStepControl<Scalar>::updateCoeffs_()
 {
   TEUCHOS_TEST_FOR_EXCEPT(!((stepControlState_ == BEFORE_FIRST_STEP) || (stepControlState_ == READY_FOR_NEXT_STEP)));
   using Teuchos::as;
@@ -70,7 +75,7 @@ void ImplicitBDFStepperStepControl<Scalar>::updateCoeffs_()
   // more than the current order + 1 then we don't bother to update the
   // coefficients because we've reached a constant step-size formula.  When
   // this is is not true, then we update the coefficients for the variable
-  // step-sizes. 
+  // step-sizes.
   if ((hh_ != usedStep_) || (currentOrder_ != usedOrder_)) {
     nscsco_ = 0;
   }
@@ -169,8 +174,8 @@ void ImplicitBDFStepperStepControl<Scalar>::initialize(const StepperBase<Scalar>
   alpha_s_=Scalar(-ST::one());  // $\alpha_s$ fixed-leading coefficient of this BDF method
   alpha_.clear();  // $\alpha_j(n)=h_n/\psi_j(n)$ coefficient used in local error test
   // note:   $h_n$ = current step size, n = current time step
-  gamma_.clear();  // calculate time derivative of history array for predictor 
-  psi_.clear();    // $\psi_j(n) = t_n-t_{n-j}$ intermediary variable used to 
+  gamma_.clear();  // calculate time derivative of history array for predictor
+  psi_.clear();    // $\psi_j(n) = t_n-t_{n-j}$ intermediary variable used to
   sigma_.clear();  // $\sigma_j(n) = \frac{h_n^j(j-1)!}{\psi_1(n)*\cdots *\psi_j(n)}$
   Scalar zero = ST::zero();
   for (int i=0 ; i<=maxOrder_ ; ++i) {
@@ -237,7 +242,7 @@ void ImplicitBDFStepperStepControl<Scalar>::initialize(const StepperBase<Scalar>
   if (is_null(errWtVec_)) {
     errWtVec_ = createMember(stepper.get_x_space());
   }
-  V_S(delta_.ptr(),zero); 
+  V_S(delta_.ptr(),zero);
 
   setStepControlState_(BEFORE_FIRST_STEP);
 
@@ -251,7 +256,7 @@ void ImplicitBDFStepperStepControl<Scalar>::initialize(const StepperBase<Scalar>
 template<class Scalar>
 void ImplicitBDFStepperStepControl<Scalar>::getFirstTimeStep_(const StepperBase<Scalar>& stepper)
 {
-  
+
   TEUCHOS_TEST_FOR_EXCEPT(!(stepControlState_ == BEFORE_FIRST_STEP));
 
   using Teuchos::as;
@@ -263,7 +268,7 @@ void ImplicitBDFStepperStepControl<Scalar>::getFirstTimeStep_(const StepperBase<
   const bool doTrace = (as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH));
   Teuchos::OSTab ostab(out,1,"getFirstTimeStep_");
 
-  const ImplicitBDFStepper<Scalar>& implicitBDFStepper 
+  const ImplicitBDFStepper<Scalar>& implicitBDFStepper
               = Teuchos::dyn_cast<const ImplicitBDFStepper<Scalar> >(stepper);
   const Thyra::VectorBase<Scalar>& xHistory0
               = implicitBDFStepper.getxHistory(0);
@@ -277,7 +282,7 @@ void ImplicitBDFStepperStepControl<Scalar>::getFirstTimeStep_(const StepperBase<
     //currentTimeStep = 0.1 * time_to_stop;
     //currentTimeStep = std::min(hh_, currentTimeStep);
   } else {
-    // compute an initial step-size based on rate of change 
+    // compute an initial step-size based on rate of change
     // in the solution initially
     const Thyra::VectorBase<Scalar>& xHistory1
       = implicitBDFStepper.getxHistory(1);
@@ -296,14 +301,14 @@ void ImplicitBDFStepperStepControl<Scalar>::getFirstTimeStep_(const StepperBase<
 #ifdef HAVE_RYTHMOS_DEBUG
       TEUCHOS_TEST_FOR_EXCEPT(ST::isnaninf(currentTimeStep));
 #endif // HAVE_RYTHMOS_DEBUG
-    Scalar rh = std::abs(currentTimeStep)*h_max_inv_; 
+    Scalar rh = std::abs(currentTimeStep)*h_max_inv_;
     if (rh>1.0) {
       currentTimeStep = currentTimeStep/rh;
     }
   }
   hh_ = currentTimeStep;
-  
-  // Coefficient initialization 
+
+  // Coefficient initialization
   psi_[0] = hh_;
   cj_ = 1/psi_[0];
 
@@ -312,7 +317,7 @@ void ImplicitBDFStepperStepControl<Scalar>::getFirstTimeStep_(const StepperBase<
     *out << "psi_[0] = " << psi_[0] << std::endl;
     *out << "cj_ = " << cj_ << std::endl;
   }
-  
+
 }
 
 template<class Scalar>
@@ -323,13 +328,16 @@ void ImplicitBDFStepperStepControl<Scalar>::setRequestedStepSize(
     )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  TEUCHOS_TEST_FOR_EXCEPT(!((stepControlState_ == UNINITIALIZED) || (stepControlState_ == BEFORE_FIRST_STEP) || (stepControlState_ == READY_FOR_NEXT_STEP) || (stepControlState_ == MID_STEP)));
+  TEUCHOS_TEST_FOR_EXCEPT(!((stepControlState_ == UNINITIALIZED) ||
+                            (stepControlState_ == BEFORE_FIRST_STEP) ||
+                            (stepControlState_ == READY_FOR_NEXT_STEP) ||
+                            (stepControlState_ == MID_STEP)));
   TEUCHOS_TEST_FOR_EXCEPTION(
-      ((stepSizeType == STEP_TYPE_FIXED) && (stepSize == ST::zero())), 
-      std::logic_error, 
+      ((stepSizeType == STEP_TYPE_FIXED) && (stepSize == ST::zero())),
+      std::logic_error,
       "Error, step size type == STEP_TYPE_FIXED, but requested step size == 0!\n"
       );
-  bool didInitialization = false; 
+  bool didInitialization = false;
   if (stepControlState_ == UNINITIALIZED) {
     initialize(stepper);
     didInitialization = true;
@@ -360,8 +368,8 @@ void ImplicitBDFStepperStepControl<Scalar>::setRequestedStepSize(
 template<class Scalar>
 void ImplicitBDFStepperStepControl<Scalar>::nextStepSize(const StepperBase<Scalar>& stepper, Scalar* stepSize, StepSizeType* stepSizeType, int* order)
 {
-  TEUCHOS_TEST_FOR_EXCEPT(!((stepControlState_ == BEFORE_FIRST_STEP) || 
-         (stepControlState_ == MID_STEP) ||  
+  TEUCHOS_TEST_FOR_EXCEPT(!((stepControlState_ == BEFORE_FIRST_STEP) ||
+         (stepControlState_ == MID_STEP) ||
          (stepControlState_ == READY_FOR_NEXT_STEP) )
         );
   if (stepControlState_ == BEFORE_FIRST_STEP) {
@@ -395,7 +403,7 @@ void ImplicitBDFStepperStepControl<Scalar>::setCorrection(
   ee_ = ee;
   newtonConvergenceStatus_ = solveStatus;
   setStepControlState_(AFTER_CORRECTION);
-} 
+}
 
 template<class Scalar>
 void ImplicitBDFStepperStepControl<Scalar>::completeStep(const StepperBase<Scalar>& stepper)
@@ -416,14 +424,14 @@ void ImplicitBDFStepperStepControl<Scalar>::completeStep(const StepperBase<Scala
     *out << "nef_ = " << nef_ << std::endl;
     *out << "time_ = " << time_ << std::endl;
   }
-  
+
   // Only update the time step if we are NOT running constant stepsize.
   bool adjustStep = (stepSizeType_ == STEP_TYPE_VARIABLE);
 
   Scalar newTimeStep = hh_;
   Scalar rr = ST::one(); // step size ratio = new step / old step
   // 03/11/04 tscoffe:  Here is the block for choosing order & step-size when
-  // the local error test PASSES (and Newton succeeded). 
+  // the local error test PASSES (and Newton succeeded).
   int orderDiff = currentOrder_ - usedOrder_;
   usedOrder_ = currentOrder_;
   usedStep_ = hh_;
@@ -453,7 +461,7 @@ void ImplicitBDFStepperStepControl<Scalar>::completeStep(const StepperBase<Scala
       // If we just raised the order last time then we won't raise it again
       // until we've taken currentOrder_+1 steps at order currentOrder_.
       action = ACTION_MAINTAIN;
-    } else { // consider changing the order 
+    } else { // consider changing the order
       const ImplicitBDFStepper<Scalar>& implicitBDFStepper = Teuchos::dyn_cast<const ImplicitBDFStepper<Scalar> >(stepper);
       const Thyra::VectorBase<Scalar>& xHistory = implicitBDFStepper.getxHistory(currentOrder_+1);
       V_StVpStV(delta_.ptr(),ST::one(),*ee_,Scalar(-ST::one()),xHistory);
@@ -508,7 +516,7 @@ void ImplicitBDFStepperStepControl<Scalar>::completeStep(const StepperBase<Scala
       *out << "newTimeStep = " << newTimeStep << std::endl;
     }
   }
-  
+
   if (time_ < stopTime_) {
     // If the step needs to be adjusted:
     if (adjustStep) {
@@ -552,12 +560,12 @@ AttemptedStepStatusFlag ImplicitBDFStepperStepControl<Scalar>::rejectStep(const 
   // This routine changes the following variables:
   //    initialPhase, nef, psi, newTimeStep,
   //    newOrder, currentOrder_, currentTimeStep, dsDae.xHistory,
-  //    dsDae.qHistory, nextTimePt, 
+  //    dsDae.qHistory, nextTimePt,
   //    currentTimeStepSum, nextTimePt
 
   // This routine reads but does not change the following variables:
   //    r_factor, r_safety, Est_, r_fudge_, r_min_, r_max_,
-  //    minTimeStep_, maxTimeStep_, time, stopTime_ 
+  //    minTimeStep_, maxTimeStep_, time, stopTime_
 
   // Only update the time step if we are NOT running constant stepsize.
   bool adjustStep = (stepSizeType_ == STEP_TYPE_VARIABLE);
@@ -585,7 +593,7 @@ AttemptedStepStatusFlag ImplicitBDFStepperStepControl<Scalar>::rejectStep(const 
     }
 
     if ((newtonConvergenceStatus_ < 0)) {
-      /// 11/11/05 erkeite:  If the Newton solver fails, don't 
+      /// 11/11/05 erkeite:  If the Newton solver fails, don't
       // rely on the error estimate - it may be full of Nan's.
       rr = r_min_;
       newTimeStep = rr * hh_;
@@ -594,9 +602,9 @@ AttemptedStepStatusFlag ImplicitBDFStepperStepControl<Scalar>::rejectStep(const 
         newOrder_ = 1;//consistent with block below.
       }
     } else {
-      // 03/11/04 tscoffe:  Here is the block for choosing order & 
-      // step-size when the local error test FAILS (but Newton 
-      // succeeded). 
+      // 03/11/04 tscoffe:  Here is the block for choosing order &
+      // step-size when the local error test FAILS (but Newton
+      // succeeded).
       if (nef_ == 1) { // first local error test failure
         rr = r_factor_*pow(r_safety_*Est_+r_fudge_,-1.0/(newOrder_+1.0));
         rr = std::max(r_min_,std::min(r_max_,rr));
@@ -649,7 +657,7 @@ AttemptedStepStatusFlag ImplicitBDFStepperStepControl<Scalar>::rejectStep(const 
     }
 
     hh_ = newTimeStep;
-  
+
   } else { // if time step is constant for this step:
     Scalar nextTimePt = time_ + hh_;
 
@@ -673,22 +681,25 @@ AttemptedStepStatusFlag ImplicitBDFStepperStepControl<Scalar>::rejectStep(const 
 }
 
 template<class Scalar>
-Scalar ImplicitBDFStepperStepControl<Scalar>::checkReduceOrder_(const StepperBase<Scalar>& stepper)
+Scalar ImplicitBDFStepperStepControl<Scalar>::checkReduceOrder_(
+  const StepperBase<Scalar>& stepper)
 {
   TEUCHOS_TEST_FOR_EXCEPT(stepControlState_ != AFTER_CORRECTION);
   TEUCHOS_TEST_FOR_EXCEPT(checkReduceOrderCalled_ == true);
 
   using Teuchos::as;
 
-  const ImplicitBDFStepper<Scalar>& implicitBDFStepper = Teuchos::dyn_cast<const ImplicitBDFStepper<Scalar> >(stepper);
+  const ImplicitBDFStepper<Scalar>& implicitBDFStepper =
+    Teuchos::dyn_cast<const ImplicitBDFStepper<Scalar> >(stepper);
 
   // This routine puts its output in newOrder_
-  
+
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"checkReduceOrder_");
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-    *out << "sigma_[" << currentOrder_ << "] = " << sigma_[currentOrder_] << std::endl;
+    *out << "sigma_[" << currentOrder_ << "] = "
+         << sigma_[currentOrder_] << std::endl;
     *out << "ee_ = " << std::endl;
     ee_->describe(*out,verbLevel);
     *out << "errWtVec_ = " << std::endl;
@@ -707,7 +718,8 @@ Scalar ImplicitBDFStepperStepControl<Scalar>::checkReduceOrder_(const StepperBas
     *out << "enorm = " << enorm << std::endl;
   }
   if (currentOrder_>1) {
-    const Thyra::VectorBase<Scalar>& xHistoryCur = implicitBDFStepper.getxHistory(currentOrder_);
+    const Thyra::VectorBase<Scalar>& xHistoryCur =
+      implicitBDFStepper.getxHistory(currentOrder_);
     V_VpV(delta_.ptr(),xHistoryCur,*ee_);
     Ekm1_ = sigma_[currentOrder_-1]*wRMSNorm_(*errWtVec_,*delta_);
     Tkm1_ = currentOrder_*Ekm1_;
@@ -716,7 +728,8 @@ Scalar ImplicitBDFStepperStepControl<Scalar>::checkReduceOrder_(const StepperBas
       *out << "Tkm1_ = " << Tkm1_ << std::endl;
     }
     if (currentOrder_>2) {
-      const Thyra::VectorBase<Scalar>& xHistoryPrev = implicitBDFStepper.getxHistory(currentOrder_-1);
+      const Thyra::VectorBase<Scalar>& xHistoryPrev =
+        implicitBDFStepper.getxHistory(currentOrder_-1);
       Vp_V(delta_.ptr(),xHistoryPrev);
       Ekm2_ = sigma_[currentOrder_-2]*wRMSNorm_(*errWtVec_,*delta_);
       Tkm2_ = (currentOrder_-1)*Ekm2_;
@@ -794,7 +807,7 @@ void ImplicitBDFStepperStepControl<Scalar>::describe(
   else if (as<int>(verbLevel) >= as<int>(Teuchos::VERB_MEDIUM)) {
   }
   else if (as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH)) {
-    out << "ee_ = "; 
+    out << "ee_ = ";
     if (ee_ == Teuchos::null) {
       out << "Teuchos::null" << std::endl;
     } else {
@@ -817,8 +830,7 @@ void ImplicitBDFStepperStepControl<Scalar>::describe(
 
 template<class Scalar>
 void ImplicitBDFStepperStepControl<Scalar>::setParameterList(
-  RCP<Teuchos::ParameterList> const& paramList
-  )
+  RCP<Teuchos::ParameterList> const& paramList)
 {
 
   using Teuchos::as;
@@ -844,14 +856,14 @@ void ImplicitBDFStepperStepControl<Scalar>::setParameterList(
   absErrTol_ = parameterList_->get( "absErrTol", Scalar(1.0e-6) );
   bool constantStepSize = parameterList_->get( "constantStepSize", false );
   stopTime_ = parameterList_->get( "stopTime", Scalar(1.0) );
-  
+
   if (constantStepSize == true) {
     stepSizeType_ = STEP_TYPE_FIXED;
   } else {
     stepSizeType_ = STEP_TYPE_VARIABLE;
   }
 
-  failStepIfNonlinearSolveFails_ = 
+  failStepIfNonlinearSolveFails_ =
     parameterList_->get( "failStepIfNonlinearSolveFails", false );
 
   RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -868,7 +880,7 @@ void ImplicitBDFStepperStepControl<Scalar>::setParameterList(
     *out << "absErrTol  = " << absErrTol_  << std::endl;
     *out << "stepSizeType = " << stepSizeType_  << std::endl;
     *out << "stopTime_  = " << stopTime_  << std::endl;
-    *out << "failStepIfNonlinearSolveFails_ = " 
+    *out << "failStepIfNonlinearSolveFails_ = "
 	 << failStepIfNonlinearSolveFails_  << std::endl;
   }
 
@@ -897,7 +909,7 @@ void ImplicitBDFStepperStepControl<Scalar>::setDefaultMagicNumbers_(
   r_hincr_        = magicNumberList.get( "r_hincr",        Scalar(2.0)     );
   max_LET_fail_   = magicNumberList.get( "max_LET_fail",   int(15)         );
   minTimeStep_    = magicNumberList.get( "minTimeStep",    Scalar(0.0)     );
-  maxTimeStep_    = magicNumberList.get( "maxTimeStep",    Scalar(10.0)    ); 
+  maxTimeStep_    = magicNumberList.get( "maxTimeStep",    Scalar(10.0)    );
 
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
@@ -936,61 +948,67 @@ ImplicitBDFStepperStepControl<Scalar>::getValidParameters() const
       pl = Teuchos::parameterList();
 
     pl->set<int>   ( "minOrder",         1,
-        "lower limit of order selection, guaranteed"
-        );
+      "lower limit of order selection, guaranteed");
     pl->set<int>   ( "maxOrder",         5,
-        "upper limit of order selection, does not guarantee this order"        
-        );
-    pl->set<Scalar>( "relErrTol",        Scalar(1.0e-4) );
-    pl->set<Scalar>( "absErrTol",        Scalar(1.0e-6) );
-    pl->set<bool>  ( "constantStepSize", false          );
-    pl->set<Scalar>( "stopTime",         Scalar(10.0)   );
+      "upper limit of order selection, does not guarantee this order");
+    pl->set<Scalar>( "relErrTol",        Scalar(1.0e-4),
+      "Relative tolerance value used in WRMS calculation.");
+    pl->set<Scalar>( "absErrTol",        Scalar(1.0e-6),
+      "Absolute tolerance value used in WRMS calculation.");
+    pl->set<bool>  ( "constantStepSize", false,
+      "Use constant (=0) or variable (=1) step sizes during BDF steps.");
+    pl->set<Scalar>( "stopTime",         Scalar(10.0),
+      "The final time for time integration.  This may be in conflict with "
+      "the Integrator's final time.");
     pl->set<bool>("failStepIfNonlinearSolveFails", false,
-		  "Power user command. Will force the function acceptStep() to return false ieven if the LET is acceptable.  Used to run with loose tolerances but enforce a correct nonlinear solution to the step.");
+		  "Power user command. Will force the function acceptStep() to return "
+      "false even if the LET is acceptable.  Used to run with loose "
+      "tolerances but enforce a correct nonlinear solution to the step.");
 
     Teuchos::ParameterList
-      &magicNumberList = pl->sublist("magicNumbers", 
-          false,
-          "These are knobs in the algorithm that have been set to reasonable values using lots of testing and heuristics and some theory."
-          );
-    magicNumberList.set<Scalar>( "h0_safety",      Scalar(2.0)     );
-    magicNumberList.set<Scalar>( "h0_max_factor",  Scalar(0.001)   );
+      &magicNumberList = pl->sublist("magicNumbers", false,
+          "These are knobs in the algorithm that have been set to reasonable "
+          "values using lots of testing and heuristics and some theory.");
+    magicNumberList.set<Scalar>( "h0_safety",      Scalar(2.0),
+      "Safety factor on the initial step size for time-dependent DAEs.  "
+      "Larger values will tend to reduce the initial step size.");
+    magicNumberList.set<Scalar>( "h0_max_factor",  Scalar(0.001),
+      "Factor multipler for the initial step size for non-time-dependent "
+      "DAEs.");
     magicNumberList.set<Scalar>( "h_phase0_incr",  Scalar(2.0),
-        "initial ramp-up in variable mode (stepSize multiplier) "     
-        );
-    magicNumberList.set<Scalar>( "h_max_inv",      Scalar(0.0)     );
-    magicNumberList.set<Scalar>( "Tkm1_Tk_safety", Scalar(2.0)     );
-    magicNumberList.set<Scalar>( "Tkp1_Tk_safety", Scalar(0.5)     );
+      "Initial ramp-up in variable mode (stepSize multiplier).");
+    magicNumberList.set<Scalar>( "h_max_inv",      Scalar(0.0),
+      "The inverse of the maximum time step (maxTimeStep). (Not used?)");
+    magicNumberList.set<Scalar>( "Tkm1_Tk_safety", Scalar(2.0),
+      "Used to help control the decrement of the order when the order is "
+      "less than or equal to 2.  Larger values will tend to reduce the "
+      "order from one step to the next.");
+    magicNumberList.set<Scalar>( "Tkp1_Tk_safety", Scalar(0.5),
+      "Used to control the increment of the order when the order is one.  "
+      "Larger values tend to increase the order for the next step.");
     magicNumberList.set<Scalar>( "r_factor",       Scalar(0.9),
-        "used in rejectStep:  time step ratio multiplier"
-        );
+      "Used in rejectStep:  time step ratio multiplier.");
     magicNumberList.set<Scalar>( "r_safety",       Scalar(2.0),
-        "local error multiplier as part of time step ratio calculation"
-        );
+      "Local error multiplier as part of time step ratio calculation.");
     magicNumberList.set<Scalar>( "r_fudge",        Scalar(0.0001),
-        "local error addition as part of time step ratio calculation"
-        );
+      "Local error addition as part of time step ratio calculation.");
     magicNumberList.set<Scalar>( "r_min",          Scalar(0.125),
-        "used in rejectStep:  how much to cut step and lower bound for time step ratio"   
-        );
+      "Used in rejectStep:  How much to cut step and lower bound for time "
+      "step ratio.");
     magicNumberList.set<Scalar>( "r_max",          Scalar(0.9),
-        "upper bound for time step ratio"
-        );
-    magicNumberList.set<Scalar>( "r_hincr_test",   Scalar(2.0),     
-        "used in completeStep:  if time step ratio > this then set time step ratio to r_hincr"
-        );
+      "Upper bound for time step ratio.");
+    magicNumberList.set<Scalar>( "r_hincr_test",   Scalar(2.0),
+      "Used in completeStep:  If time step ratio > this then set time step "
+      "ratio to r_hincr.");
     magicNumberList.set<Scalar>( "r_hincr",        Scalar(2.0),
-        "used in completeStep:  limit on time step ratio increases, not checked by r_max"
-        );
+      "Used in completeStep:  Limit on time step ratio increases, not "
+      "checked by r_max.");
     magicNumberList.set<int>   ( "max_LET_fail",   int(15),
-        "Max number of rejected steps"
-        );
+      "Max number of rejected steps");
     magicNumberList.set<Scalar>( "minTimeStep",    Scalar(0.0),
-        "bound on smallest time step in variable mode."     
-        );
+      "Bound on smallest time step in variable mode.");
     magicNumberList.set<Scalar>( "maxTimeStep",    Scalar(10.0),
-        "bound on largest time step in variable mode."    
-        ); 
+      "bound on largest time step in variable mode.");
 
     Teuchos::setupVerboseObjectSublist(&*pl);
 
@@ -999,7 +1017,7 @@ ImplicitBDFStepperStepControl<Scalar>::getValidParameters() const
   }
 
   return (validPL);
-  
+
 }
 
 template<class Scalar>
@@ -1029,8 +1047,8 @@ void ImplicitBDFStepperStepControl<Scalar>::setStepControlData(const StepperBase
   TEUCHOS_TEST_FOR_EXCEPT(!((1 <= desiredOrder) && (desiredOrder <= maxOrder_)));
   if (stepControlState_ == BEFORE_FIRST_STEP) {
     TEUCHOS_TEST_FOR_EXCEPTION(
-        desiredOrder > 1, 
-        std::logic_error, 
+        desiredOrder > 1,
+        std::logic_error,
         "Error, this ImplicitBDF stepper has not taken a step yet, so it cannot take a step of order " << desiredOrder << " > 1!\n"
         );
   }
@@ -1083,7 +1101,7 @@ RCP<const ErrWtVecCalcBase<Scalar> > ImplicitBDFStepperStepControl<Scalar>::getE
 
 template<class Scalar>
 Scalar ImplicitBDFStepperStepControl<Scalar>::wRMSNorm_(
-    const Thyra::VectorBase<Scalar>& weight, 
+    const Thyra::VectorBase<Scalar>& weight,
     const Thyra::VectorBase<Scalar>& vector) const
 {
   return(norm_2(weight,vector));
@@ -1171,14 +1189,14 @@ int ImplicitBDFStepperStepControl<Scalar>::getMaxOrder() const
   return(maxOrder_);
 }
 
-// 
+//
 // Explicit Instantiation macro
 //
 // Must be expanded from within the Rythmos namespace!
 //
 
 #define RYTHMOS_IMPLICITBDF_STEPPER_STEPCONTROL_INSTANT(SCALAR) \
-  template class ImplicitBDFStepperStepControl< SCALAR >; 
+  template class ImplicitBDFStepperStepControl< SCALAR >;
 
 
 } // namespace Rythmos

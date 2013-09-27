@@ -1,7 +1,7 @@
 %!PS-Adobe-2.0 EPSF-2.0
 %%Title: figures/IRK_BackwardEuler.eps
-%%Creator: gnuplot 4.6 patchlevel 0
-%%CreationDate: Tue Aug 14 13:11:39 2012
+%%Creator: gnuplot 4.6 patchlevel 3
+%%CreationDate: Sat Aug 24 11:27:10 2013
 %%DocumentFonts: (atend)
 %%BoundingBox: 50 50 230 176
 %%EndComments
@@ -47,7 +47,7 @@ gnudict begin
   } if
 } def
 %
-% Gnuplot Prolog Version 4.4 (August 2010)
+% Gnuplot Prolog Version 4.6 (September 2012)
 %
 %/SuppressPDFMark true def
 %
@@ -314,7 +314,8 @@ gnudict begin
 /PatternFill {gsave /PFa [ 9 2 roll ] def
   PFa 0 get PFa 2 get 2 div add PFa 1 get PFa 3 get 2 div add translate
   PFa 2 get -2 div PFa 3 get -2 div PFa 2 get PFa 3 get Rec
-  gsave 1 setgray fill grestore clip
+  TransparentPatterns {} {gsave 1 setgray fill grestore} ifelse
+  clip
   currentlinewidth 0.5 mul setlinewidth
   /PFs PFa 2 get dup mul PFa 3 get dup mul add sqrt def
   0 0 M PFa 5 get rotate PFs -2 div dup translate
@@ -428,11 +429,11 @@ systemdict /pdfmark known not {
 SDict begin [
   /Title (figures/IRK_BackwardEuler.eps)
   /Subject (gnuplot plot)
-  /Creator (gnuplot 4.6 patchlevel 0)
+  /Creator (gnuplot 4.6 patchlevel 3)
   /Author (ccober)
 %  /Producer (gnuplot)
 %  /Keywords ()
-  /CreationDate (Tue Aug 14 13:11:39 2012)
+  /CreationDate (Sat Aug 24 11:27:10 2013)
   /DOCINFO pdfmark
 end
 } ifelse
@@ -450,6 +451,7 @@ newpath
 BackgroundColor 0 lt 3 1 roll 0 lt exch 0 lt or or not {BackgroundColor C 1.000 0 0 3600.00 2520.00 BoxColFill} if
 1.000 UL
 LTb
+LCb setrgbcolor
 854 448 M
 63 0 V
 2430 0 R
@@ -458,6 +460,7 @@ LTb
 (1.0e-4) Rshow
 1.000 UL
 LTb
+LCb setrgbcolor
 854 639 M
 31 0 V
 2462 0 R
@@ -498,6 +501,7 @@ LTb
 (1.0e-3) Rshow
 1.000 UL
 LTb
+LCb setrgbcolor
 854 1274 M
 31 0 V
 2462 0 R
@@ -538,6 +542,7 @@ LTb
 (1.0e-2) Rshow
 1.000 UL
 LTb
+LCb setrgbcolor
 854 1908 M
 31 0 V
 2462 0 R
@@ -578,6 +583,7 @@ LTb
 (1.0e-1) Rshow
 1.000 UL
 LTb
+LCb setrgbcolor
 854 448 M
 0 31 V
 0 1873 R
@@ -614,6 +620,7 @@ LTb
 (1.0e-2) Cshow
 1.000 UL
 LTb
+LCb setrgbcolor
 2203 448 M
 0 31 V
 0 1873 R
@@ -654,8 +661,10 @@ LTb
 (1.0e-1) Cshow
 1.000 UL
 LTb
+LCb setrgbcolor
 1.000 UL
 LTb
+LCb setrgbcolor
 854 2352 N
 854 448 L
 2493 0 V
@@ -675,17 +684,19 @@ LTb
 1.000 UP
 1.000 UL
 LTb
+LCb setrgbcolor
 % Begin plot #1
 1.000 UP
 2.000 UL
 LT0
+LC0 setrgbcolor
 LCb setrgbcolor
-2531 2244 M
-(Implicit RK BackwardEuler) Rshow
+2696 721 M
+(IRK Backward Euler) Rshow
 LT0
-2615 2244 M
+2780 721 M
 399 0 V
-333 -325 R
+168 1198 R
 2854 1736 L
 2361 1548 L
 1869 1359 L
@@ -697,18 +708,19 @@ LT0
 1869 1359 Pls
 1376 1169 Pls
 883 978 Pls
-2814 2244 Pls
+2979 721 Pls
 % End plot #1
 % Begin plot #2
 2.000 UL
 LT1
+LC1 setrgbcolor
 LCb setrgbcolor
-2531 2104 M
+2696 581 M
 (Order = 1) Rshow
 LT1
-2615 2104 M
+2780 581 M
 399 0 V
-333 -387 R
+168 1136 R
 2854 1526 L
 2361 1335 L
 1869 1144 L
@@ -718,6 +730,7 @@ LT1
 stroke
 1.000 UL
 LTb
+LCb setrgbcolor
 854 2352 N
 854 448 L
 2493 0 V
@@ -727,6 +740,7 @@ Z stroke
 1.000 UP
 1.000 UL
 LTb
+LCb setrgbcolor
 stroke
 grestore
 end

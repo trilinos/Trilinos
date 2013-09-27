@@ -1,4 +1,29 @@
 
-\section{ParameterLists Description}
+\section{ParameterList Description}
+
+The following description of the Rythmos ParameterList was auto-generated
+from the ParameterList itself, thus allowing easy refreshing of the
+input description and providing up-to-date information. Fig.~\ref{fig:ParameterList-schematic}
+is a hyperlinked, indented heirarchy of the Rythmos ParameterList,
+that provides an overall structure of the Rythmos ParameterList. The
+hyerlinks are connected to subsequent sections, which contain additional
+hyperlinks to parent and children sublists, and descriptions of the
+sublist and parameters. All these hyperlinks provide an easy way to
+hop around the parameters in order to setup the time-integrator. 
+
+The basic structure starts with the ``Integrator Base'', and is
+broken down into the Integrator and the Stepper. Each of these contain
+several sublists giving the details of the Integrator and Stepper,
+e.g., IntegrationControlStrategy, InterpolationBuffer, StepControlStrategy,
+and error weight vector.
+
+An easy way to create a Rythmos ParameterList is to get a valid ParameterList
+from the IntegatorBuilder, and manipulate the parameters from there.
+In this way, one able to correctly setup the Integrator and Stepper
+for a transient soution. For example, \input{RythmosParameterListExample.tex}
+Obviously, most software will get its input specification from the
+XML version of the ParameterLists, and then pass them onto Rythmos.
+The description provided here can also help in setting up those XML
+files. 
 
 \input{RythmosUsersManualParameterList_Raw.tex}

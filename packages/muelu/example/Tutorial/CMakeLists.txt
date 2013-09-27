@@ -24,4 +24,6 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(tutorial1_cp
   SOURCE_FILES tutorial1a.xml tutorial1b.xml tutorial1c.xml tutorial1d.xml tutorial1e.xml
   )
 
+ADD_SUBDIRECTORY(hands-on)
+
 ENDIF()

@@ -129,7 +129,7 @@ lanczos_FO (
     double    macheps;		/* machine precision calculated by symmlq */
     double    normxlim;		/* a stopping criteria for symmlq */
     long      itnmin;		/* enforce minimum number of iterations */
-    int       symmlqitns;	/* # symmlq itns */
+    int       symmlqitns=0;	/* # symmlq itns */
     double   *wv1=NULL, *wv2=NULL, *wv3=NULL;	/* Symmlq work space */
     double   *wv4=NULL, *wv5=NULL, *wv6=NULL;	/* Symmlq work space */
     long      long_n;		/* long int copy of n for symmlq */

@@ -48,6 +48,9 @@
 namespace panzer_stk {
 
 template class STKConnManager<int>;
+
+#ifndef PANZER_ORDINAL64_IS_INT
 template class STKConnManager<panzer::Ordinal64>;
+#endif
 
 }

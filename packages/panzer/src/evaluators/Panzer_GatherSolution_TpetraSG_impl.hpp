@@ -67,8 +67,9 @@ panzer::GatherSolution_Tpetra<panzer::Traits::SGResidual, Traits,LO,GO,NodeT>::
 GatherSolution_Tpetra(
   const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
   const Teuchos::ParameterList& p)
-  : globalIndexer_(indexer),
-    useTimeDerivativeSolutionVector_(false)
+  : globalIndexer_(indexer)
+  , useTimeDerivativeSolutionVector_(false)
+  , globalDataKey_("Solution Gather Container")
 { 
   const std::vector<std::string>& names = 
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("DOF Names"));
@@ -87,6 +88,9 @@ GatherSolution_Tpetra(
 
   if (p.isType<bool>("Use Time Derivative Solution Vector"))
     useTimeDerivativeSolutionVector_ = p.get<bool>("Use Time Derivative Solution Vector");
+
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
 
   this->setName("Gather Solution");
 }
@@ -118,8 +122,20 @@ postRegistrationSetup(typename Traits::SetupData d,
 // **********************************************************************
 template<typename Traits,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_Tpetra<panzer::Traits::SGResidual, Traits,LO,GO,NodeT>::
+preEvaluate(typename Traits::PreEvalData d)
+{
+   typedef SGTpetraLinearObjContainer<double,LO,GO,NodeT> SGLOC;
+
+   // extract linear object container
+   sgTpetraContainer_ = Teuchos::rcp_dynamic_cast<SGLOC>(d.getDataObject(globalDataKey_),true);
+}
+
+// **********************************************************************
+template<typename Traits,typename LO,typename GO,typename NodeT>
+void panzer::GatherSolution_Tpetra<panzer::Traits::SGResidual, Traits,LO,GO,NodeT>::
 evaluateFields(typename Traits::EvalData workset)
 { 
+/*
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
    typedef SGTpetraLinearObjContainer<double,LO,GO,NodeT> SGLOC;
 
@@ -130,15 +146,13 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   Teuchos::RCP<SGLOC> sgTpetraContainer 
-         = Teuchos::rcp_dynamic_cast<SGLOC>(workset.ghostedLinContainer);
-   Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = sgTpetraContainer->getExpansion();
+   Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = sgTpetraContainer_->getExpansion();
 
    Teuchos::RCP<typename LOC::VectorType> x_template; // this will be used to map from GIDs --> LIDs
    if (useTimeDerivativeSolutionVector_)
-     x_template = (*sgTpetraContainer->begin())->get_dxdt();
+     x_template = (*sgTpetraContainer_->begin())->get_dxdt();
    else
-     x_template = (*sgTpetraContainer->begin())->get_x(); 
+     x_template = (*sgTpetraContainer_->begin())->get_x(); 
  
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -173,7 +187,7 @@ evaluateFields(typename Traits::EvalData workset)
             // loop over stochastic basis initialzing field gather values
             int stochIndex = 0;
             typename SGLOC::iterator itr; 
-            for(itr=sgTpetraContainer->begin();itr!=sgTpetraContainer->end();++itr,++stochIndex) {
+            for(itr=sgTpetraContainer_->begin();itr!=sgTpetraContainer_->end();++itr,++stochIndex) {
                // extract solution and time derivative vectors
                Teuchos::RCP<typename LOC::VectorType> x; 
                if (useTimeDerivativeSolutionVector_)
@@ -187,6 +201,7 @@ evaluateFields(typename Traits::EvalData workset)
          }
       }
    }
+*/
 }
 
 // **********************************************************************
@@ -198,8 +213,9 @@ panzer::GatherSolution_Tpetra<panzer::Traits::SGJacobian, Traits,LO,GO,NodeT>::
 GatherSolution_Tpetra(
   const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
   const Teuchos::ParameterList& p)
-  : globalIndexer_(indexer),
-    useTimeDerivativeSolutionVector_(false)
+  : globalIndexer_(indexer)
+  , useTimeDerivativeSolutionVector_(false)
+  , globalDataKey_("Solution Gather Container")
 { 
   const std::vector<std::string>& names = 
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("DOF Names"));
@@ -218,6 +234,9 @@ GatherSolution_Tpetra(
 
   if (p.isType<bool>("Use Time Derivative Solution Vector"))
     useTimeDerivativeSolutionVector_ = p.get<bool>("Use Time Derivative Solution Vector");
+
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
 
   this->setName("Gather Solution");
 }
@@ -249,8 +268,20 @@ postRegistrationSetup(typename Traits::SetupData d,
 // **********************************************************************
 template<typename Traits,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_Tpetra<panzer::Traits::SGJacobian, Traits,LO,GO,NodeT>::
+preEvaluate(typename Traits::PreEvalData d)
+{
+   typedef SGTpetraLinearObjContainer<double,LO,GO,NodeT> SGLOC;
+
+   // extract linear object container
+   sgTpetraContainer_ = Teuchos::rcp_dynamic_cast<SGLOC>(d.getDataObject(globalDataKey_),true);
+}
+
+// **********************************************************************
+template<typename Traits,typename LO,typename GO,typename NodeT>
+void panzer::GatherSolution_Tpetra<panzer::Traits::SGJacobian, Traits,LO,GO,NodeT>::
 evaluateFields(typename Traits::EvalData workset)
 { 
+/*
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
    typedef SGTpetraLinearObjContainer<double,LO,GO,NodeT> SGLOC;
 
@@ -261,18 +292,16 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   Teuchos::RCP<SGLOC> sgTpetraContainer 
-         = Teuchos::rcp_dynamic_cast<SGLOC>(workset.ghostedLinContainer);
-   Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = sgTpetraContainer->getExpansion();
+   Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = sgTpetraContainer_->getExpansion();
 
    Teuchos::RCP<typename LOC::VectorType> x_template; // this will be used to map from GIDs --> LIDs
    double seed_value = 0.0;
    if (useTimeDerivativeSolutionVector_) {
-     x_template = (*sgTpetraContainer->begin())->get_dxdt();
+     x_template = (*sgTpetraContainer_->begin())->get_dxdt();
      seed_value = workset.alpha;
    }
    else {
-     x_template = (*sgTpetraContainer->begin())->get_x(); 
+     x_template = (*sgTpetraContainer_->begin())->get_x(); 
      seed_value = workset.beta;
    }
 
@@ -315,7 +344,7 @@ evaluateFields(typename Traits::EvalData workset)
             // loop over stochastic basis initialzing field gather values
             int stochIndex = 0;
             typename SGLOC::iterator itr; 
-            for(itr=sgTpetraContainer->begin();itr!=sgTpetraContainer->end();++itr,++stochIndex) {
+            for(itr=sgTpetraContainer_->begin();itr!=sgTpetraContainer_->end();++itr,++stochIndex) {
                // extract solution and time derivative vectors
                Teuchos::RCP<typename LOC::VectorType> x; 
                if (useTimeDerivativeSolutionVector_)
@@ -329,6 +358,7 @@ evaluateFields(typename Traits::EvalData workset)
          }
       }
    }
+*/
 }
 
 // **********************************************************************

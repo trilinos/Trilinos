@@ -49,6 +49,11 @@
 #ifndef INTREPID_CELLTOOLSDEF_HPP
 #define INTREPID_CELLTOOLSDEF_HPP
 
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
+
 
 namespace Intrepid {
 

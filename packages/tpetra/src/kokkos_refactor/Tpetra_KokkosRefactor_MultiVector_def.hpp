@@ -74,10 +74,7 @@ namespace KokkosRefactor {
                size_t NumVectors,
                bool zeroOut) : /* default is true */
     DO (map),
-    lclMV_ (map->getNode ()),
-    releaseViewsRaisedEfficiencyWarning_ (false),
-    createViewsRaisedEfficiencyWarning_ (false),
-    createViewsNonConstRaisedEfficiencyWarning_ (false)
+    lclMV_ (map->getNode ())
   {
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
@@ -108,10 +105,7 @@ namespace KokkosRefactor {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   MultiVector (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& source) :
     DO (source),
-    lclMV_ (MVT::getNode (source.lclMV_)),
-    releaseViewsRaisedEfficiencyWarning_ (false),
-    createViewsRaisedEfficiencyWarning_ (false),
-    createViewsNonConstRaisedEfficiencyWarning_ (false)
+    lclMV_ (MVT::getNode (source.lclMV_))
   {
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
@@ -149,10 +143,7 @@ namespace KokkosRefactor {
                const KokkosClassic::MultiVector<Scalar,Node>& localMultiVector,
                EPrivateComputeViewConstructor /* dummy */) :
     DO (map),
-    lclMV_ (localMultiVector),
-    releaseViewsRaisedEfficiencyWarning_ (false),
-    createViewsRaisedEfficiencyWarning_ (false),
-    createViewsNonConstRaisedEfficiencyWarning_ (false)
+    lclMV_ (localMultiVector)
   {
     const size_t localNumElts = map->getNodeNumElements ();
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -172,10 +163,7 @@ namespace KokkosRefactor {
                size_t NumVectors,
                EPrivateHostViewConstructor /* dummy */) :
     DO (map),
-    lclMV_ (map->getNode ()),
-    releaseViewsRaisedEfficiencyWarning_ (false),
-    createViewsRaisedEfficiencyWarning_ (false),
-    createViewsNonConstRaisedEfficiencyWarning_ (false)
+    lclMV_ (map->getNode ())
   {
     using Teuchos::as;
     using Teuchos::ArrayRCP;
@@ -203,10 +191,7 @@ namespace KokkosRefactor {
                size_t NumVectors,
                EPrivateComputeViewConstructor /* dummy */) :
     DO (map),
-    lclMV_ (map->getNode ()),
-    releaseViewsRaisedEfficiencyWarning_ (false),
-    createViewsRaisedEfficiencyWarning_ (false),
-    createViewsNonConstRaisedEfficiencyWarning_ (false)
+    lclMV_ (map->getNode ())
   {
     using Teuchos::as;
     using Teuchos::ArrayRCP;
@@ -234,10 +219,7 @@ namespace KokkosRefactor {
                EPrivateComputeViewConstructor /* dummy */) :
     DO (map),
     lclMV_ (map->getNode ()),
-    whichVectors_ (WhichVectors),
-    releaseViewsRaisedEfficiencyWarning_ (false),
-    createViewsRaisedEfficiencyWarning_ (false),
-    createViewsNonConstRaisedEfficiencyWarning_ (false)
+    whichVectors_ (WhichVectors)
   {
     using Teuchos::as;
     using Teuchos::ArrayRCP;
@@ -275,10 +257,7 @@ namespace KokkosRefactor {
                const size_t LDA,
                const size_t numVecs) :
     DO (map),
-    lclMV_ (map->getNode ()),
-    releaseViewsRaisedEfficiencyWarning_ (false),
-    createViewsRaisedEfficiencyWarning_ (false),
-    createViewsNonConstRaisedEfficiencyWarning_ (false)
+    lclMV_ (map->getNode ())
   {
     const char tfecfFuncName[] = "MultiVector(map,data,LDA,numVecs)";
     const size_t numRows = this->getLocalLength ();
@@ -295,10 +274,7 @@ namespace KokkosRefactor {
                EPrivateComputeViewConstructor /* dummy */) :
     DO (map),
     lclMV_ (localMultiVector),
-    whichVectors_ (WhichVectors),
-    releaseViewsRaisedEfficiencyWarning_ (false),
-    createViewsRaisedEfficiencyWarning_ (false),
-    createViewsNonConstRaisedEfficiencyWarning_ (false)
+    whichVectors_ (WhichVectors)
   {
     const size_t localNumElts = map->getNodeNumElements ();
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -333,10 +309,7 @@ namespace KokkosRefactor {
                size_t LDA,
                size_t NumVectors) :
     DO (map),
-    lclMV_ (map->getNode ()),
-    releaseViewsRaisedEfficiencyWarning_ (false),
-    createViewsRaisedEfficiencyWarning_ (false),
-    createViewsNonConstRaisedEfficiencyWarning_ (false)
+    lclMV_ (map->getNode ())
   {
     using Teuchos::as;
     using Teuchos::ArrayRCP;
@@ -387,10 +360,7 @@ namespace KokkosRefactor {
                const Teuchos::ArrayView<const ArrayView<const Scalar> >& ArrayOfPtrs,
                size_t NumVectors) :
     DO (map),
-    lclMV_ (map->getNode ()),
-    releaseViewsRaisedEfficiencyWarning_ (false),
-    createViewsRaisedEfficiencyWarning_ (false),
-    createViewsNonConstRaisedEfficiencyWarning_ (false)
+    lclMV_ (map->getNode ())
   {
     using Teuchos::as;
     using Teuchos::ArrayRCP;
@@ -522,6 +492,18 @@ namespace KokkosRefactor {
     const size_t numCols = this->getNumVectors ();
     const size_t stride = MVT::getStride (lclMV_);
 
+    // TODO (mfh 15 Sep 2013) When we replace
+    // KokkosClassic::MultiVector with a Kokkos::View, there are two
+    // ways to copy the data:
+    //
+    // 1. Get a (sub)view of each column and call deep_copy on that.
+    // 2. Write a custom kernel to copy the data.
+    //
+    // The first is easier, but the second might be more performant in
+    // case we decide to use layouts other than LayoutLeft.  It might
+    // even make sense to hide whichVectors_ in an entirely new layout
+    // for Kokkos Views.
+
     // Copy rows [0, numSameIDs-1] of the local multivectors.
     //
     // For GPU Nodes: All of this happens using device pointers; this
@@ -585,9 +567,9 @@ namespace KokkosRefactor {
       perm.src = sourceMV.getKokkosView();
       perm.dest = getKokkosViewNonConst();
       perm.src_whichVectors =
-        getKokkosViewDeepCopy<device_type>(sourceMV.whichVectors_ ());
+        getKokkosViewDeepCopy<device_type> (sourceMV.whichVectors_ ());
       perm.dest_whichVectors =
-        getKokkosViewDeepCopy<device_type>(whichVectors_ ());
+        getKokkosViewDeepCopy<device_type> (whichVectors_ ());
       perm.src_stride = MVT::getStride (sourceMV.lclMV_);
       perm.dest_stride = stride;
       perm.numCols = numCols;
@@ -615,8 +597,9 @@ namespace KokkosRefactor {
     typedef Array<size_t>::size_type size_type;
 
     // If we have no exports, there is nothing to do
-    if (exportLIDs.size() == 0)
+    if (exportLIDs.size () == 0) {
       return;
+    }
 
     // We've already called checkSizes(), so this cast must succeed.
     const MV& sourceMV = dynamic_cast<const MV&> (sourceObj);
@@ -633,8 +616,22 @@ namespace KokkosRefactor {
       the data for a Packet (all data associated with an LID) is
       required to be contiguous. */
 
+    // FIXME (mfh 15 Sep 2013) Would it make sense to rethink the
+    // packing scheme in the above comment?  The data going to a
+    // particular process must be contiguous, of course, but those
+    // data could include entries from multiple LIDs.  DistObject just
+    // needs to know how to index into that data.  Kokkos is good at
+    // decoupling storage intent from data layout choice.
+
     const size_t numCols = sourceMV.getNumVectors ();
+
+    // FIXME (mfh 15 Sep 2013) MVT doesn't make sense, since (a) we
+    // only ever plan to support one local multivector implementation,
+    // and (b) Tpetra::MultiVector doesn't give users hooks to insert
+    // their own data structure, anyway.
+
     const size_t stride = MVT::getStride (sourceMV.lclMV_);
+
     // This spares us from needing to fill numExportPacketsPerLID.
     // Setting constantNumPackets to a nonzero value signals that
     // all packets have the same number of entries.
@@ -643,7 +640,7 @@ namespace KokkosRefactor {
     const size_t numExportLIDs = exportLIDs.size ();
     const size_t newExportsSize = numCols * numExportLIDs;
     if (exports.size () != newExportsSize) {
-      Kokkos::Compat::realloc(exports, newExportsSize);
+      Kokkos::Compat::realloc (exports, newExportsSize);
     }
 
     if (numCols == 1) { // special case for one column only
@@ -653,14 +650,18 @@ namespace KokkosRefactor {
         Details::PackArraySingleColumnConstantStride<Scalar,LocalOrdinal,device_type> pack;
         pack.exportLIDs = exportLIDs;
         pack.exports = exports;
-        pack.src = sourceMV.getKokkosView();
+        pack.src = sourceMV.getKokkosView ();
         pack.pack();
       }
       else {
+        // FIXME (mfh 15 Sep 2013) It's not clear to me whether this
+        // case could ever get triggered, since single-column
+        // MultiVectors should always have constant stride.  However,
+        // we would need to check this first.
         Details::PackArraySingleColumnOffset<Scalar,LocalOrdinal,device_type> pack;
         pack.exportLIDs = exportLIDs;
         pack.exports = exports;
-        pack.src = sourceMV.getKokkosView();
+        pack.src = sourceMV.getKokkosView ();
         pack.offset = sourceMV.whichVectors_[0] * stride;
         pack.pack();
       }
@@ -673,18 +674,18 @@ namespace KokkosRefactor {
         pack.src = sourceMV.getKokkosView();
         pack.stride = stride;
         pack.numCols = numCols;
-        pack.pack();
+        pack.pack ();
       }
       else {
         Details::PackArrayMultiColumnVariableStride<Scalar,LocalOrdinal,device_type> pack;
         pack.exportLIDs = exportLIDs;
         pack.exports = exports;
         pack.src = sourceMV.getKokkosView();
-        pack.srcWhichVectors =
-          getKokkosViewDeepCopy<device_type>(sourceMV.whichVectors_ ());
         pack.stride = stride;
         pack.numCols = numCols;
-        pack.pack();
+        pack.srcWhichVectors =
+          getKokkosViewDeepCopy<device_type> (sourceMV.whichVectors_ ());
+        pack.pack ();
       }
     }
   }
@@ -1237,6 +1238,15 @@ namespace KokkosRefactor {
     using Teuchos::ScalarTraits;
     typedef typename ScalarTraits<Scalar>::magnitudeType MT;
     typedef ScalarTraits<MT> STM;
+
+    // FIXME (mfh 15 Sep 2013) When migrating to use Kokkos::View, we
+    // should have the post-reduce kernel do the square root(s) on the
+    // device.  If we make norm2() fill in a Kokkos::View instead of a
+    // Teuchos::ArrayView, we could have norm2() leave the results of
+    // the norm(s) on the device, instead of bringing them back to the
+    // host.  I don't think it makes sense to template norm2() on the
+    // output View type; users should use a View type compatible with
+    // the MultiVector's native device.
 
     const size_t numVecs = this->getNumVectors();
     TEUCHOS_TEST_FOR_EXCEPTION(as<size_t>(norms.size()) != numVecs,
@@ -2932,28 +2942,13 @@ namespace KokkosRefactor {
     // Do nothing in Kokkos::View implementation
   }
 
-#else
+#else // NOT TPETRA_USE_KOKKOS_DISTOBJECT
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   createViews() const
   {
-    if (! createViewsRaisedEfficiencyWarning_) {
-      TPETRA_EFFICIENCY_WARNING(! cview_.is_null (), std::runtime_error,
-        "::createViews(): The const view "
-        "has already been created and is therefore not null.  (For"
-        "Tpetra developers: cview_.total_count() = " << cview_.total_count ()
-        << ".  This "
-        "means that MultiVector is either creating a view unnecessarily, or "
-        "hanging on to a view beyond its needed scope (since releaseViews() "
-        "should always release both the const and nonconst views).  This probably "
-        "does not affect correctness, it but does affect total memory use.  "
-        "We will only report this warning once per (Multi)Vector instance.  "
-        "Please report this performance bug to the Tpetra developers.");
-      createViewsRaisedEfficiencyWarning_ = true;
-    }
-
     Teuchos::RCP<Node> node = this->getMap ()->getNode ();
     if (cview_.is_null () && getLocalLength () > 0) {
       Teuchos::ArrayRCP<const Scalar> buff = MVT::getValues (lclMV_);
@@ -2967,20 +2962,6 @@ namespace KokkosRefactor {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   createViewsNonConst (KokkosClassic::ReadWriteOption rwo)
   {
-    if (! createViewsNonConstRaisedEfficiencyWarning_) {
-      TPETRA_EFFICIENCY_WARNING(! ncview_.is_null (), std::runtime_error,
-        "::createViewsNonConst(): The nonconst view "
-        "has already been created and is therefore not null.  (For"
-        "Tpetra developers: ncview_.total_count() = " << ncview_.total_count ()
-        << ".  This means that MultiVector is either creating a view "
-        "unnecessarily, or hanging on to a view beyond its needed scope (since "
-        "releaseViews() should always release both the const and nonconst "
-        "views).  This probably does not affect correctness, it but does affect "
-        "total memory use.  "
-        "Please report this performance bug to the Tpetra developers.");
-      createViewsNonConstRaisedEfficiencyWarning_ = true;
-    }
-
     Teuchos::RCP<Node> node = this->getMap ()->getNode ();
     if (ncview_.is_null () && getLocalLength () > 0) {
       Teuchos::ArrayRCP<Scalar> buff = MVT::getValuesNonConst (lclMV_);
@@ -3001,32 +2982,12 @@ namespace KokkosRefactor {
     (void) constViewCount;
     (void) nonconstViewCount;
 
-    const bool viewWontGetReleased = constViewCount > 1 || nonconstViewCount > 1;
-    if (viewWontGetReleased && ! releaseViewsRaisedEfficiencyWarning_) {
-      const bool both = constViewCount > 1 && nonconstViewCount > 1;
-      const char* const text = both ? "Both the const view and the nonconst view have" :
-        ((constViewCount > 1) ? "The const view has" : "The nonconst view has");
-      // Prevent (unused variable) compiler warning, since the macro
-      // below doesn't exist unless efficiency warnings are enabled.
-      (void) text;
-
-      TPETRA_EFFICIENCY_WARNING(viewWontGetReleased, std::runtime_error,
-        "::releaseViews(): " << text << " a reference count greater than 1.  "
-        "For Tpetra developers: cview_.total_count() = " << constViewCount
-        << " and ncview_.total_count() = " << nonconstViewCount << ".  This "
-        "means that releaseViews() won't actually free memory.  This probably "
-        "does not affect correctness, it but does affect total memory use.  "
-        "We will only report this warning once per (Multi)Vector instance.  "
-        "Please report this performance bug to the Tpetra developers.");
-      releaseViewsRaisedEfficiencyWarning_ = true;
-    }
-
     // Release the views.
     cview_ = Teuchos::null;
     ncview_ = Teuchos::null;
   }
 
-#endif
+#endif // TPETRA_USE_KOKKOS_DISTOBJECT
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void

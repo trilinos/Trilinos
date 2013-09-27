@@ -84,7 +84,7 @@ struct OpenMPViewRemap
       for ( OpenMP::size_type i5 = 0 ; i5 < n5 ; ++i5 ) {
       for ( OpenMP::size_type i6 = 0 ; i6 < n6 ; ++i6 ) {
       for ( OpenMP::size_type i7 = 0 ; i7 < n7 ; ++i7 ) {
-        output(i0,i1,i2,i3,i4,i5,i6,i7) = input(i0,i1,i2,i3,i4,i5,i6,i7);
+        output.at(i0,i1,i2,i3,i4,i5,i6,i7) = input.at(i0,i1,i2,i3,i4,i5,i6,i7);
       }}}}}}}}
     }
   }
@@ -157,20 +157,6 @@ void deep_copy( const View< DT, DL, OpenMP, DM, DS> & dst ,
 
   Impl::OpenMPViewRemap< dst_type , src_type , dst_type::rank >( dst , src );
 }
-
-/** \brief  Deep copy of scalar value */
-
-template< typename ValueType , class LayoutSrc , class MemoryTraits >
-inline
-void deep_copy( ValueType & dst ,
-                const View< ValueType , LayoutSrc , OpenMP , MemoryTraits , Impl::LayoutScalar > & src )
-{ dst = src ; }
-
-template< typename ValueType , class LayoutDst , class MemoryTraits >
-inline
-void deep_copy( const View< ValueType , LayoutDst , OpenMP , MemoryTraits , Impl::LayoutScalar > & dst ,
-                const ValueType & src )
-{ dst = src ; }
 
 } // namespace Kokkos
 

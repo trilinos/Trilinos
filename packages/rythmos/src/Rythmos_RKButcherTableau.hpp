@@ -30,6 +30,11 @@
 #ifndef RYTHMOS_RK_BUTCHER_TABLEAU_HPP
 #define RYTHMOS_RK_BUTCHER_TABLEAU_HPP
 
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
+
 #include "Rythmos_Types.hpp"
 #include "Rythmos_RKButcherTableauBase.hpp"
 
@@ -60,6 +65,8 @@ namespace Rythmos {
   inline const std::string Explicit3Stage3rdOrderTVD_name() { return  "Explicit 3 Stage 3rd order TVD"; } // done
   inline const std::string Explicit4Stage3rdOrderRunge_name() { return  "Explicit 4 Stage 3rd order by Runge"; } // done
 
+  inline const std::string IRK1StageTheta_name() { return  "IRK 1 Stage Theta Method"; } // done
+  inline const std::string IRK2StageTheta_name() { return  "IRK 2 Stage Theta Method"; } // done
   inline const std::string Implicit1Stage2ndOrderGauss_name() { return  "Implicit 1 Stage 2nd order Gauss"; } // done
   inline const std::string Implicit2Stage4thOrderGauss_name() { return  "Implicit 2 Stage 4th order Gauss"; } // done
   inline const std::string Implicit3Stage6thOrderGauss_name() { return  "Implicit 3 Stage 6th order Gauss"; } // done
@@ -123,7 +130,7 @@ class RKButcherTableauDefaultBase :
         const int order_in,
         const std::string& longDescription_in
         )
-    { 
+    {
       const int numStages_in = A_in.numRows();
       TEUCHOS_ASSERT_EQUALITY( A_in.numRows(), numStages_in );
       TEUCHOS_ASSERT_EQUALITY( A_in.numCols(), numStages_in );
@@ -139,7 +146,7 @@ class RKButcherTableauDefaultBase :
 
     /* \brief Redefined from Teuchos::ParameterListAcceptorDefaultBase */
     //@{
-    
+
     /** \brief . */
     virtual void setParameterList(RCP<Teuchos::ParameterList> const& paramList)
     {
@@ -150,21 +157,21 @@ class RKButcherTableauDefaultBase :
     }
 
     /** \brief . */
-    virtual RCP<const Teuchos::ParameterList> getValidParameters() const 
-    { 
+    virtual RCP<const Teuchos::ParameterList> getValidParameters() const
+    {
       if (is_null(validPL_)) {
         validPL_ = Teuchos::parameterList();
         validPL_->set("Description","",this->getMyDescription());
         Teuchos::setupVerboseObjectSublist(&*validPL_);
       }
-      return validPL_; 
+      return validPL_;
     }
 
     //@}
 
     /* \brief Redefined from Teuchos::Describable */
     //@{
-    
+
     /** \brief . */
     virtual std::string description() const { return "Rythmos::RKButcherTableauDefaultBase"; }
 
@@ -233,11 +240,11 @@ RCP<RKButcherTableauBase<Scalar> > rKButcherTableau(
 
 
 template<class Scalar>
-class BackwardEuler_RKBT : 
+class BackwardEuler_RKBT :
   virtual public RKButcherTableauDefaultBase<Scalar>
 {
   public:
-  BackwardEuler_RKBT() 
+  BackwardEuler_RKBT()
   {
     std::ostringstream myDescription;
     myDescription << RKBT_BackwardEuler_name() << "\n"
@@ -295,7 +302,7 @@ class Explicit4Stage4thOrder_RKBT :
   virtual public RKButcherTableauDefaultBase<Scalar>
 {
   public:
-    Explicit4Stage4thOrder_RKBT() 
+    Explicit4Stage4thOrder_RKBT()
     {
       std::ostringstream myDescription;
       myDescription << Explicit4Stage_name() << "\n"
@@ -348,7 +355,7 @@ class Explicit4Stage4thOrder_RKBT :
       myb(1) = onethird;
       myb(2) = onethird;
       myb(3) = onesixth;
-      
+
       // fill b_c_
       myc(0) = zero;
       myc(1) = onehalf;
@@ -370,12 +377,12 @@ class Explicit3_8Rule_RKBT :
 {
   public:
     Explicit3_8Rule_RKBT()
-    { 
+    {
 
       std::ostringstream myDescription;
       myDescription << Explicit3_8Rule_name() << "\n"
                   << "Solving Ordinary Differential Equations I:\n"
-                  << "Nonstiff Problems, 2nd Revided Edition\n"
+                  << "Nonstiff Problems, 2nd Revised Edition\n"
                   << "E. Hairer, S.P. Norsett, G. Wanner\n"
                   << "Table 1.2, pg 138\n"
                   << "c = [  0  1/3 2/3  1  ]'\n"
@@ -423,7 +430,7 @@ class Explicit3_8Rule_RKBT :
       myb(1) = three_eighth;
       myb(2) = three_eighth;
       myb(3) = one_eighth;
-      
+
       // Fill myc:
       myc(0) = zero;
       myc(1) = one_third;
@@ -445,12 +452,12 @@ class Explicit4Stage3rdOrderRunge_RKBT :
 {
   public:
     Explicit4Stage3rdOrderRunge_RKBT()
-    { 
+    {
 
       std::ostringstream myDescription;
       myDescription << Explicit4Stage3rdOrderRunge_name() << "\n"
                   << "Solving Ordinary Differential Equations I:\n"
-                  << "Nonstiff Problems, 2nd Revided Edition\n"
+                  << "Nonstiff Problems, 2nd Revised Edition\n"
                   << "E. Hairer, S.P. Norsett, G. Wanner\n"
                   << "Table 1.1, pg 135\n"
                   << "c = [  0  1/2  1   1  ]'\n"
@@ -497,7 +504,7 @@ class Explicit4Stage3rdOrderRunge_RKBT :
       myb(1) = twothirds;
       myb(2) = zero;
       myb(3) = onesixth;
-      
+
       // Fill myc:
       myc(0) = zero;
       myc(1) = onehalf;
@@ -519,10 +526,10 @@ class Explicit3Stage3rdOrder_RKBT :
 {
   public:
     Explicit3Stage3rdOrder_RKBT()
-    { 
+    {
 
       std::ostringstream myDescription;
-      myDescription << Explicit3Stage3rdOrder_name() << "\n" 
+      myDescription << Explicit3Stage3rdOrder_name() << "\n"
                   << "c = [  0  1/2  1  ]'\n"
                   << "A = [  0          ]\n"
                   << "    [ 1/2  0      ]\n"
@@ -558,7 +565,7 @@ class Explicit3Stage3rdOrder_RKBT :
       myb(0) = onesixth;
       myb(1) = foursixth;
       myb(2) = onesixth;
-      
+
       // fill b_c_
       myc(0) = zero;
       myc(1) = onehalf;
@@ -579,19 +586,24 @@ class Explicit3Stage3rdOrderTVD_RKBT :
 {
   public:
     Explicit3Stage3rdOrderTVD_RKBT()
-    { 
+    {
 
       std::ostringstream myDescription;
-      myDescription << Explicit3Stage3rdOrderTVD_name() << "\n" 
+      myDescription << Explicit3Stage3rdOrderTVD_name() << "\n"
                     << "Sigal Gottlieb and Chi-Wang Shu\n"
-                    << "'Total Variation Diminishing Runge-Kutta Schemes'\n"
+                    << "`Total Variation Diminishing Runge-Kutta Schemes'\n"
                     << "Mathematics of Computation\n"
                     << "Volume 67, Number 221, January 1998, pp. 73-85\n"
                     << "c = [  0   1  1/2 ]'\n"
                     << "A = [  0          ]\n"
                     << "    [  1   0      ]\n"
                     << "    [ 1/4 1/4  0  ]\n"
-                    << "b = [ 1/6 1/6 4/6 ]'" << std::endl;
+                    << "b = [ 1/6 1/6 4/6 ]'\n"
+                    << "This is also written in the following set of updates.\n"
+                    << "u1 = u^n + dt L(u^n)\n"
+                    << "u2 = 3 u^n/4 + u1/4 + dt L(u1)/4\n"
+                    << "u^(n+1) = u^n/3 + 2 u2/2 + 2 dt L(u2)/3"
+                    << std::endl;
       typedef ScalarTraits<Scalar> ST;
       Scalar one = ST::one();
       Scalar zero = ST::zero();
@@ -622,7 +634,7 @@ class Explicit3Stage3rdOrderTVD_RKBT :
       myb(0) = onesixth;
       myb(1) = onesixth;
       myb(2) = foursixth;
-      
+
       // fill b_c_
       myc(0) = zero;
       myc(1) = one;
@@ -643,11 +655,11 @@ class Explicit3Stage3rdOrderHeun_RKBT :
 {
   public:
     Explicit3Stage3rdOrderHeun_RKBT()
-    { 
+    {
       std::ostringstream myDescription;
       myDescription << Explicit3Stage3rdOrderHeun_name() << "\n"
                   << "Solving Ordinary Differential Equations I:\n"
-                  << "Nonstiff Problems, 2nd Revided Edition\n"
+                  << "Nonstiff Problems, 2nd Revised Edition\n"
                   << "E. Hairer, S.P. Norsett, G. Wanner\n"
                   << "Table 1.1, pg 135\n"
                   << "c = [  0  1/3 2/3 ]'\n"
@@ -685,7 +697,7 @@ class Explicit3Stage3rdOrderHeun_RKBT :
       myb(0) = onefourth;
       myb(1) = zero;
       myb(2) = threefourths;
-      
+
       // fill b_c_
       myc(0) = zero;
       myc(1) = onethird;
@@ -706,12 +718,12 @@ class Explicit2Stage2ndOrderRunge_RKBT :
 {
   public:
     Explicit2Stage2ndOrderRunge_RKBT()
-    { 
+    {
       std::ostringstream myDescription;
       myDescription << Explicit2Stage2ndOrderRunge_name() << "\n"
                   << "Also known as Explicit Midpoint\n"
                   << "Solving Ordinary Differential Equations I:\n"
-                  << "Nonstiff Problems, 2nd Revided Edition\n"
+                  << "Nonstiff Problems, 2nd Revised Edition\n"
                   << "E. Hairer, S.P. Norsett, G. Wanner\n"
                   << "Table 1.1, pg 135\n"
                   << "c = [  0  1/2 ]'\n"
@@ -738,7 +750,7 @@ class Explicit2Stage2ndOrderRunge_RKBT :
       // Fill myb:
       myb(0) = zero;
       myb(1) = one;
-      
+
       // fill b_c_
       myc(0) = zero;
       myc(1) = onehalf;
@@ -758,7 +770,7 @@ class ExplicitTrapezoidal_RKBT :
 {
   public:
     ExplicitTrapezoidal_RKBT()
-    { 
+    {
       std::ostringstream myDescription;
       myDescription << ExplicitTrapezoidal_name() << "\n"
                   << "c = [  0   1  ]'\n"
@@ -785,7 +797,7 @@ class ExplicitTrapezoidal_RKBT :
       // Fill myb:
       myb(0) = onehalf;
       myb(1) = onehalf;
-      
+
       // fill b_c_
       myc(0) = zero;
       myc(1) = one;
@@ -805,7 +817,7 @@ class SDIRK2Stage2ndOrder_RKBT :
 {
   public:
     SDIRK2Stage2ndOrder_RKBT()
-    { 
+    {
       std::ostringstream myDescription;
       myDescription << SDIRK2Stage2ndOrder_name() << "\n"
                   << "Computer Methods for ODEs and DAEs\n"
@@ -827,14 +839,14 @@ class SDIRK2Stage2ndOrder_RKBT :
       RCP<ParameterList> validPL = Teuchos::parameterList();
       validPL->set("Description","",this->getMyDescription());
       validPL->set<double>("gamma",gamma_default_,
-        "The default value is gamma = (2-sqrt(2))/2 = 0.29289321881345243. "
+        "The default value is gamma = (2-sqrt(2))/2. "
         "This will produce an L-stable 2nd order method with the stage "
         "times within the timestep.  Other values of gamma will still "
         "produce an L-stable scheme, but will only be 1st order accurate.");
       Teuchos::setupVerboseObjectSublist(&*validPL);
       this->setMyValidParameterList(validPL);
     }
-    void setupData() 
+    void setupData()
     {
       typedef ScalarTraits<Scalar> ST;
       int myNumStages = 2;
@@ -880,11 +892,11 @@ class SDIRK2Stage3rdOrder_RKBT :
 {
   public:
     SDIRK2Stage3rdOrder_RKBT()
-    { 
+    {
       std::ostringstream myDescription;
       myDescription << SDIRK2Stage3rdOrder_name() << "\n"
                   << "Solving Ordinary Differential Equations I:\n"
-                  << "Nonstiff Problems, 2nd Revided Edition\n"
+                  << "Nonstiff Problems, 2nd Revised Edition\n"
                   << "E. Hairer, S. P. Norsett, and G. Wanner\n"
                   << "Table 7.2, pg 207\n"
                   << "gamma = (3+-sqrt(3))/6 -> 3rd order and A-stable\n"
@@ -923,7 +935,7 @@ class SDIRK2Stage3rdOrder_RKBT :
       Teuchos::setupVerboseObjectSublist(&*validPL);
       this->setMyValidParameterList(validPL);
     }
-    void setupData() 
+    void setupData()
     {
       typedef ScalarTraits<Scalar> ST;
       int myNumStages = 2;
@@ -986,13 +998,13 @@ class DIRK2Stage3rdOrder_RKBT :
 {
   public:
     DIRK2Stage3rdOrder_RKBT()
-    { 
+    {
 
       std::ostringstream myDescription;
       myDescription << DIRK2Stage3rdOrder_name() << "\n"
                   << "Hammer & Hollingsworth method\n"
                   << "Solving Ordinary Differential Equations I:\n"
-                  << "Nonstiff Problems, 2nd Revided Edition\n"
+                  << "Nonstiff Problems, 2nd Revised Edition\n"
                   << "E. Hairer, S. P. Norsett, and G. Wanner\n"
                   << "Table 7.1, pg 205\n"
                   << "c = [  0   2/3 ]'\n"
@@ -1029,13 +1041,13 @@ class Implicit3Stage6thOrderKuntzmannButcher_RKBT :
 {
   public:
     Implicit3Stage6thOrderKuntzmannButcher_RKBT()
-    { 
+    {
 
       std::ostringstream myDescription;
       myDescription << Implicit3Stage6thOrderKuntzmannButcher_name() << "\n"
                   << "Kuntzmann & Butcher method\n"
                   << "Solving Ordinary Differential Equations I:\n"
-                  << "Nonstiff Problems, 2nd Revided Edition\n"
+                  << "Nonstiff Problems, 2nd Revised Edition\n"
                   << "E. Hairer, S. P. Norsett, and G. Wanner\n"
                   << "Table 7.4, pg 209\n"
                   << "c = [ 1/2-sqrt(15)/10   1/2              1/2-sqrt(15)/10  ]'\n"
@@ -1079,13 +1091,13 @@ class Implicit4Stage8thOrderKuntzmannButcher_RKBT :
 {
   public:
     Implicit4Stage8thOrderKuntzmannButcher_RKBT()
-    { 
+    {
 
       std::ostringstream myDescription;
       myDescription << Implicit4Stage8thOrderKuntzmannButcher_name() << "\n"
                   << "Kuntzmann & Butcher method\n"
                   << "Solving Ordinary Differential Equations I:\n"
-                  << "Nonstiff Problems, 2nd Revided Edition\n"
+                  << "Nonstiff Problems, 2nd Revised Edition\n"
                   << "E. Hairer, S. P. Norsett, and G. Wanner\n"
                   << "Table 7.5, pg 209\n"
                   << "c = [ 1/2-w2     1/2-w2p     1/2+w2p     1/2+w2    ]'\n"
@@ -1140,7 +1152,7 @@ class Implicit4Stage8thOrderKuntzmannButcher_RKBT :
       myb(0) = 2*w1;
       myb(1) = 2*w1p;
       myb(2) = 2*w1p;
-      myb(3) = 2*w1; 
+      myb(3) = 2*w1;
       myc(0) = onehalf - w2;
       myc(1) = onehalf - w2p;
       myc(2) = onehalf + w2p;
@@ -1160,13 +1172,13 @@ class Implicit2Stage4thOrderHammerHollingsworth_RKBT :
 {
   public:
     Implicit2Stage4thOrderHammerHollingsworth_RKBT()
-    { 
+    {
 
       std::ostringstream myDescription;
       myDescription << Implicit2Stage4thOrderHammerHollingsworth_name() << "\n"
                   << "Hammer & Hollingsworth method\n"
                   << "Solving Ordinary Differential Equations I:\n"
-                  << "Nonstiff Problems, 2nd Revided Edition\n"
+                  << "Nonstiff Problems, 2nd Revised Edition\n"
                   << "E. Hairer, S. P. Norsett, and G. Wanner\n"
                   << "Table 7.3, pg 207\n"
                   << "c = [ 1/2-sqrt(3)/6  1/2+sqrt(3)/6 ]'\n"
@@ -1199,12 +1211,160 @@ class Implicit2Stage4thOrderHammerHollingsworth_RKBT :
 
 
 template<class Scalar>
+class IRK1StageTheta_RKBT :
+  virtual public RKButcherTableauDefaultBase<Scalar>
+{
+  public:
+    IRK1StageTheta_RKBT()
+    {
+
+      std::ostringstream myDescription;
+      myDescription << IRK1StageTheta_name() << "\n"
+                  << "Non-standard finite-difference methods\n"
+                  << "in dynamical systems, P. Kama,\n"
+                  << "Dissertation, University of Pretoria, pg. 49.\n"
+                  << "Comment:  Generalized Implicit Midpoint Method\n"
+                  << "c = [ theta ]'\n"
+                  << "A = [ theta ]\n"
+                  << "b = [  1  ]'\n"
+                  << std::endl;
+
+      this->setMyDescription(myDescription.str());
+      typedef ScalarTraits<Scalar> ST;
+      theta_default_ = ST::one()/(2*ST::one());
+      theta_ = theta_default_;
+      this->setupData();
+
+      RCP<ParameterList> validPL = Teuchos::parameterList();
+      validPL->set("Description","",this->getMyDescription());
+      validPL->set<double>("theta",theta_default_,
+        "Valid values are 0 <= theta <= 1, where theta = 0 "
+        "implies Forward Euler, theta = 1/2 implies midpoint "
+        "method, and theta = 1 implies Backward Euler. "
+        "For theta != 1/2, this method is first-order accurate, "
+        "and with theta = 1/2, it is second-order accurate.  "
+        "This method is A-stable, but becomes L-stable with theta=1.");
+      Teuchos::setupVerboseObjectSublist(&*validPL);
+      this->setMyValidParameterList(validPL);
+    }
+
+    void setupData()
+    {
+      typedef ScalarTraits<Scalar> ST;
+      int myNumStages = 1;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
+      myA(0,0) = theta_;
+      myb(0) = ST::one();
+      myc(0) = theta_;
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
+      if (theta_ == theta_default_) this->setMy_order(2);
+      else                          this->setMy_order(1);
+    }
+
+    void setParameterList(RCP<Teuchos::ParameterList> const& paramList)
+    {
+      TEUCHOS_TEST_FOR_EXCEPT( is_null(paramList) );
+      paramList->validateParameters(*this->getValidParameters());
+      Teuchos::readVerboseObjectSublist(&*paramList,this);
+      theta_ = paramList->get<double>("theta",theta_default_);
+      this->setupData();
+      this->setMyParamList(paramList);
+    }
+  private:
+    Scalar theta_default_;
+    Scalar theta_;
+};
+
+
+template<class Scalar>
+class IRK2StageTheta_RKBT :
+  virtual public RKButcherTableauDefaultBase<Scalar>
+{
+  public:
+    IRK2StageTheta_RKBT()
+    {
+      std::ostringstream myDescription;
+      myDescription << IRK2StageTheta_name() << "\n"
+                  << "Computer Methods for ODEs and DAEs\n"
+                  << "U. M. Ascher and L. R. Petzold\n"
+                  << "p. 113\n"
+                  << "c = [  0       1     ]'\n"
+                  << "A = [  0       0     ]\n"
+                  << "    [ 1-theta  theta ]\n"
+                  << "b = [ 1-theta  theta ]'\n"
+                  << std::endl;
+
+      this->setMyDescription(myDescription.str());
+      typedef ScalarTraits<Scalar> ST;
+      theta_default_ = ST::one()/(2*ST::one());
+      theta_ = theta_default_;
+      this->setupData();
+
+      RCP<ParameterList> validPL = Teuchos::parameterList();
+      validPL->set("Description","",this->getMyDescription());
+      validPL->set<double>("theta",theta_default_,
+        "Valid values are 0 < theta <= 1, where theta = 0 "
+        "implies Forward Euler, theta = 1/2 implies trapezoidal "
+        "method, and theta = 1 implies Backward Euler. "
+        "For theta != 1/2, this method is first-order accurate, "
+        "and with theta = 1/2, it is second-order accurate.  "
+        "This method is A-stable, but becomes L-stable with theta=1.");
+      Teuchos::setupVerboseObjectSublist(&*validPL);
+      this->setMyValidParameterList(validPL);
+    }
+    void setupData()
+    {
+      typedef ScalarTraits<Scalar> ST;
+      int myNumStages = 2;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
+      Scalar one = ST::one();
+      Scalar zero = ST::zero();
+      myA(0,0) = zero;
+      myA(0,1) = zero;
+      myA(1,0) = as<Scalar>( one - theta_ );
+      myA(1,1) = theta_;
+      myb(0) = as<Scalar>( one - theta_ );
+      myb(1) = theta_;
+      myc(0) = theta_;
+      myc(1) = one;
+
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        theta_ == zero, std::logic_error,
+        "'theta' can not be zero, as it makes this IRK stepper explicit.");
+      if (theta_ == theta_default_) this->setMy_order(2);
+      else                          this->setMy_order(1);
+    }
+    void setParameterList(RCP<Teuchos::ParameterList> const& paramList)
+    {
+      TEUCHOS_TEST_FOR_EXCEPT( is_null(paramList) );
+      paramList->validateParameters(*this->getValidParameters());
+      Teuchos::readVerboseObjectSublist(&*paramList,this);
+      theta_ = paramList->get<double>("theta",theta_default_);
+      this->setupData();
+      this->setMyParamList(paramList);
+    }
+  private:
+    Scalar theta_default_;
+    Scalar theta_;
+};
+
+
+template<class Scalar>
 class Implicit1Stage2ndOrderGauss_RKBT :
   virtual public RKButcherTableauDefaultBase<Scalar>
 {
   public:
     Implicit1Stage2ndOrderGauss_RKBT()
-    { 
+    {
 
       std::ostringstream myDescription;
       myDescription << Implicit1Stage2ndOrderGauss_name() << "\n"
@@ -1216,7 +1376,7 @@ class Implicit1Stage2ndOrderGauss_RKBT :
                   << "Table 5.2, pg 72\n"
                   << "Also:  Implicit midpoint rule\n"
                   << "Solving Ordinary Differential Equations I:\n"
-                  << "Nonstiff Problems, 2nd Revided Edition\n"
+                  << "Nonstiff Problems, 2nd Revised Edition\n"
                   << "E. Hairer, S. P. Norsett, and G. Wanner\n"
                   << "Table 7.1, pg 205\n"
                   << "c = [ 1/2 ]'\n"
@@ -1247,7 +1407,7 @@ class Implicit2Stage4thOrderGauss_RKBT :
 {
   public:
     Implicit2Stage4thOrderGauss_RKBT()
-    { 
+    {
 
       std::ostringstream myDescription;
       myDescription << Implicit2Stage4thOrderGauss_name() << "\n"
@@ -1296,7 +1456,7 @@ class Implicit3Stage6thOrderGauss_RKBT :
 {
   public:
     Implicit3Stage6thOrderGauss_RKBT()
-    { 
+    {
 
       std::ostringstream myDescription;
       myDescription << Implicit3Stage6thOrderGauss_name() << "\n"
@@ -1356,7 +1516,7 @@ class Implicit1Stage1stOrderRadauA_RKBT :
 {
   public:
     Implicit1Stage1stOrderRadauA_RKBT()
-    { 
+    {
 
       std::ostringstream myDescription;
       myDescription << Implicit1Stage1stOrderRadauA_name() << "\n"
@@ -1394,7 +1554,7 @@ class Implicit2Stage3rdOrderRadauA_RKBT :
 {
   public:
     Implicit2Stage3rdOrderRadauA_RKBT()
-    { 
+    {
 
       std::ostringstream myDescription;
       myDescription << Implicit2Stage3rdOrderRadauA_name() << "\n"
@@ -1438,7 +1598,7 @@ class Implicit3Stage5thOrderRadauA_RKBT :
 {
   public:
     Implicit3Stage5thOrderRadauA_RKBT()
-    { 
+    {
 
       std::ostringstream myDescription;
       myDescription << Implicit3Stage5thOrderRadauA_name() << "\n"
@@ -1490,7 +1650,7 @@ class Implicit1Stage1stOrderRadauB_RKBT :
 {
   public:
     Implicit1Stage1stOrderRadauB_RKBT()
-    { 
+    {
 
       std::ostringstream myDescription;
       myDescription << Implicit1Stage1stOrderRadauB_name() << "\n"
@@ -1527,7 +1687,7 @@ class Implicit2Stage3rdOrderRadauB_RKBT :
 {
   public:
     Implicit2Stage3rdOrderRadauB_RKBT()
-    { 
+    {
 
       std::ostringstream myDescription;
       myDescription << Implicit2Stage3rdOrderRadauB_name() << "\n"
@@ -1570,21 +1730,29 @@ class Implicit3Stage5thOrderRadauB_RKBT :
 {
   public:
     Implicit3Stage5thOrderRadauB_RKBT()
-    { 
+    {
 
       std::ostringstream myDescription;
       myDescription << Implicit3Stage5thOrderRadauB_name() << "\n"
-                  << "A-stable\n"
-                  << "Solving Ordinary Differential Equations II:\n"
-                  << "Stiff and Differential-Algebraic Problems,\n"
-                  << "2nd Revised Edition\n"
-                  << "E. Hairer and G. Wanner\n"
-                  << "Table 5.6, pg 74\n"
-                  << "c = [ (4-sqrt(6))/10          (4+sqrt(6))/10                 1            ]'\n"
-                  << "A = [ (88-7*sqrt(6))/360      (296-169*sqrt(6))/1800  (-2+3*sqrt(6))/225  ]\n"
-                  << "    [ (296+169*sqrt(6))/1800  (88+7*sqrt(6))/360      (-2-3*sqrt(6))/225  ]\n"
-                  << "    [ (16-sqrt(6))/36         (16+sqrt(6))/36         1/9                 ]\n"
-                  << "b = [ (16-sqrt(6))/36         (16+sqrt(6))/36         1/9                 ]'" << std::endl;
+        << "A-stable\n"
+        << "Solving Ordinary Differential Equations II:\n"
+        << "Stiff and Differential-Algebraic Problems,\n"
+        << "2nd Revised Edition\n"
+        << "E. Hairer and G. Wanner\n"
+        << "Table 5.6, pg 74\n"
+        << "c = [ (4-sqrt(6))/10          (4+sqrt(6))/10          1    ]'\n"
+        << "A = [ A1 A2 A3 ]\n"
+        << "      A1 = [ (88-7*sqrt(6))/360     ]\n"
+        << "           [ (296+169*sqrt(6))/1800 ]\n"
+        << "           [ (16-sqrt(6))/36        ]\n"
+        << "      A2 = [ (296-169*sqrt(6))/1800 ]\n"
+        << "           [ (88+7*sqrt(6))/360     ]\n"
+        << "           [ (16+sqrt(6))/36        ]\n"
+        << "      A3 = [ (-2+3*sqrt(6))/225 ]\n"
+        << "           [ (-2-3*sqrt(6))/225 ]\n"
+        << "           [ 1/9                ]\n"
+        << "b = [ (16-sqrt(6))/36         (16+sqrt(6))/36         1/9 ]'"
+        << std::endl;
       typedef ScalarTraits<Scalar> ST;
       int myNumStages = 3;
       Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
@@ -1621,7 +1789,7 @@ class Implicit2Stage2ndOrderLobattoA_RKBT :
 {
   public:
     Implicit2Stage2ndOrderLobattoA_RKBT()
-    { 
+    {
 
       std::ostringstream myDescription;
       myDescription << Implicit2Stage2ndOrderLobattoA_name() << "\n"
@@ -1665,7 +1833,7 @@ class Implicit3Stage4thOrderLobattoA_RKBT :
 {
   public:
     Implicit3Stage4thOrderLobattoA_RKBT()
-    { 
+    {
 
       std::ostringstream myDescription;
       myDescription << Implicit3Stage4thOrderLobattoA_name() << "\n"
@@ -1717,25 +1885,38 @@ class Implicit4Stage6thOrderLobattoA_RKBT :
 {
   public:
     Implicit4Stage6thOrderLobattoA_RKBT()
-    { 
+    {
 
       using Teuchos::as;
       typedef Teuchos::ScalarTraits<Scalar> ST;
 
       std::ostringstream myDescription;
       myDescription << Implicit4Stage6thOrderLobattoA_name() << "\n"
-                  << "A-stable\n"
-                  << "Solving Ordinary Differential Equations II:\n"
-                  << "Stiff and Differential-Algebraic Problems,\n"
-                  << "2nd Revised Edition\n"
-                  << "E. Hairer and G. Wanner\n"
-                  << "Table 5.8, pg 75\n"
-                  << "c = [ 0               (5-sqrt(5))/10       (5+sqrt(5))/10       1                 ]'\n"
-                  << "A = [ 0               0                    0                    0                 ]\n"
-                  << "    [ (11+sqrt(5)/120 (25-sqrt(5))/120     (25-13*sqrt(5))/120  (-1+sqrt(5))/120  ]\n"
-                  << "    [ (11-sqrt(5)/120 (25+13*sqrt(5))/120  (25+sqrt(5))/120     (-1-sqrt(5))/120  ]\n"
-                  << "    [ 1/12            5/12                 5/12                 1/12              ]\n"
-                  << "b = [ 1/12            5/12                 5/12                 1/12              ]'" << std::endl;
+        << "A-stable\n"
+        << "Solving Ordinary Differential Equations II:\n"
+        << "Stiff and Differential-Algebraic Problems,\n"
+        << "2nd Revised Edition\n"
+        << "E. Hairer and G. Wanner\n"
+        << "Table 5.8, pg 75\n"
+        << "c = [ 0  (5-sqrt(5))/10  (5+sqrt(5))/10  1 ]'\n"
+        << "A = [ A1  A2  A3  A4 ]\n"
+        << "      A1 = [ 0               ]\n"
+        << "           [ (11+sqrt(5)/120 ]\n"
+        << "           [ (11-sqrt(5)/120 ]\n"
+        << "           [ 1/12            ]\n"
+        << "      A2 = [ 0                    ]\n"
+        << "           [ (25-sqrt(5))/120     ]\n"
+        << "           [ (25+13*sqrt(5))/120  ]\n"
+        << "           [ 5/12                 ]\n"
+        << "      A3 = [ 0                   ]\n"
+        << "           [ (25-13*sqrt(5))/120 ]\n"
+        << "           [ (25+sqrt(5))/120    ]\n"
+        << "           [ 5/12                ]\n"
+        << "      A4 = [ 0                ]\n"
+        << "           [ (-1+sqrt(5))/120 ]\n"
+        << "           [ (-1-sqrt(5))/120 ]\n"
+        << "           [ 1/12             ]\n"
+        << "b = [ 1/12  5/12  5/12   1/12 ]'" << std::endl;
       typedef ScalarTraits<Scalar> ST;
       int myNumStages = 4;
       Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
@@ -1782,7 +1963,7 @@ class Implicit2Stage2ndOrderLobattoB_RKBT :
 {
   public:
     Implicit2Stage2ndOrderLobattoB_RKBT()
-    { 
+    {
 
       std::ostringstream myDescription;
       myDescription << Implicit2Stage2ndOrderLobattoB_name() << "\n"
@@ -1826,7 +2007,7 @@ class Implicit3Stage4thOrderLobattoB_RKBT :
 {
   public:
     Implicit3Stage4thOrderLobattoB_RKBT()
-    { 
+    {
 
       std::ostringstream myDescription;
       myDescription << Implicit3Stage4thOrderLobattoB_name() << "\n"
@@ -1878,7 +2059,7 @@ class Implicit4Stage6thOrderLobattoB_RKBT :
 {
   public:
     Implicit4Stage6thOrderLobattoB_RKBT()
-    { 
+    {
 
       std::ostringstream myDescription;
       myDescription << Implicit4Stage6thOrderLobattoB_name() << "\n"
@@ -1940,7 +2121,7 @@ class Implicit2Stage2ndOrderLobattoC_RKBT :
 {
   public:
     Implicit2Stage2ndOrderLobattoC_RKBT()
-    { 
+    {
 
       std::ostringstream myDescription;
       myDescription << Implicit2Stage2ndOrderLobattoC_name() << "\n"
@@ -1984,7 +2165,7 @@ class Implicit3Stage4thOrderLobattoC_RKBT :
 {
   public:
     Implicit3Stage4thOrderLobattoC_RKBT()
-    { 
+    {
 
       std::ostringstream myDescription;
       myDescription << Implicit3Stage4thOrderLobattoC_name() << "\n"
@@ -2036,7 +2217,7 @@ class Implicit4Stage6thOrderLobattoC_RKBT :
 {
   public:
     Implicit4Stage6thOrderLobattoC_RKBT()
-    { 
+    {
 
       std::ostringstream myDescription;
       myDescription << Implicit4Stage6thOrderLobattoC_name() << "\n"
@@ -2099,7 +2280,7 @@ class SDIRK5Stage5thOrder_RKBT :
 {
   public:
     SDIRK5Stage5thOrder_RKBT()
-    { 
+    {
 
       std::ostringstream myDescription;
       myDescription << SDIRK5Stage5thOrder_name() << "\n"
@@ -2109,13 +2290,42 @@ class SDIRK5Stage5thOrder_RKBT :
         << "2nd Revised Edition\n"
         << "E. Hairer and G. Wanner\n"
         << "pg101 \n"
-        << "c = [ (6-sqrt(6))/10                (6+9*sqrt(6))/35             1                        (4-sqrt(6))/10         (4+sqrt(6))/10  ]'\n"
-        << "A = [ (6-sqrt(6))/10                                                                                                             ]\n"
-        << "    [ (-6+5*sqrt(6))/14             (6-sqrt(6))/10                                                                               ]\n"
-        << "    [ (888+607*sqrt(6))/2850        (126-161*sqrt(6))/1425       (6-sqrt(6))/10                                                  ]\n"
-        << "    [ (3153-3082*sqrt(6))/14250     (3213+1148*sqrt(6))/28500    (-267+88*sqrt(6))/500    (6-sqrt(6))/10                         ]\n"
-        << "    [ (-32583+14638*sqrt(6))/71250  (-17199+364*sqrt(6))/142500  (1329-544*sqrt(6))/2500  (-96+131*sqrt(6))/625  (6-sqrt(6))/10  ]\n"
-        << "b = [ 0                             0                            1/9                      (16-sqrt(6))/36        (16+sqrt(6))/36 ]'" << std::endl;
+        << "c = [ (6-sqrt(6))/10   ]\n"
+        << "    [ (6+9*sqrt(6))/35 ]\n"
+        << "    [ 1                ]\n"
+        << "    [ (4-sqrt(6))/10   ]\n"
+        << "    [ (4+sqrt(6))/10   ]\n"
+        << "A = [ A1 A2 A3 A4 A5 ]\n"
+        << "      A1 = [ (6-sqrt(6))/10               ]\n"
+        << "           [ (-6+5*sqrt(6))/14            ]\n"
+        << "           [ (888+607*sqrt(6))/2850       ]\n"
+        << "           [ (3153-3082*sqrt(6))/14250    ]\n"
+        << "           [ (-32583+14638*sqrt(6))/71250 ]\n"
+        << "      A2 = [ 0                           ]\n"
+        << "           [ (6-sqrt(6))/10              ]\n"
+        << "           [ (126-161*sqrt(6))/1425      ]\n"
+        << "           [ (3213+1148*sqrt(6))/28500   ]\n"
+        << "           [ (-17199+364*sqrt(6))/142500 ]\n"
+        << "      A3 = [ 0                       ]\n"
+        << "           [ 0                       ]\n"
+        << "           [ (6-sqrt(6))/10          ]\n"
+        << "           [ (-267+88*sqrt(6))/500   ]\n"
+        << "           [ (1329-544*sqrt(6))/2500 ]\n"
+        << "      A4 = [ 0                     ]\n"
+        << "           [ 0                     ]\n"
+        << "           [ 0                     ]\n"
+        << "           [ (6-sqrt(6))/10        ]\n"
+        << "           [ (-96+131*sqrt(6))/625 ]\n"
+        << "      A5 = [ 0              ]\n"
+        << "           [ 0              ]\n"
+        << "           [ 0              ]\n"
+        << "           [ 0              ]\n"
+        << "           [ (6-sqrt(6))/10 ]\n"
+        << "b = [               0 ]\n"
+        << "    [               0 ]\n"
+        << "    [             1/9 ]\n"
+        << "    [ (16-sqrt(6))/36 ]\n"
+        << "    [ (16+sqrt(6))/36 ]" << std::endl;
       typedef ScalarTraits<Scalar> ST;
       int myNumStages = 5;
       Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
@@ -2182,7 +2392,7 @@ class SDIRK5Stage4thOrder_RKBT :
 {
   public:
     SDIRK5Stage4thOrder_RKBT()
-    { 
+    {
 
       std::ostringstream myDescription;
       myDescription << SDIRK5Stage4thOrder_name() << "\n"
@@ -2245,7 +2455,7 @@ class SDIRK5Stage4thOrder_RKBT :
       myb(4) = onequarter;
 
       /*
-      // Alternate version 
+      // Alternate version
       myb(0) = as<Scalar>( 59*one/(48*one) );
       myb(1) = as<Scalar>( -17*one/(96*one) );
       myb(2) = as<Scalar>( 225*one/(32*one) );
@@ -2273,7 +2483,7 @@ class SDIRK3Stage4thOrder_RKBT :
 {
   public:
     SDIRK3Stage4thOrder_RKBT()
-    { 
+    {
 
       std::ostringstream myDescription;
       myDescription << SDIRK3Stage4thOrder_name() << "\n"

@@ -40,11 +40,12 @@ ImplicitBDFStepperRampingStepControl<Scalar>::
 ImplicitBDFStepperRampingStepControl() :
   stepControlState_(UNINITIALIZED)
 {
-  
+
 }
 
 template<class Scalar>
-void ImplicitBDFStepperRampingStepControl<Scalar>::setStepControlState_(StepControlStrategyState newState)
+void ImplicitBDFStepperRampingStepControl<Scalar>::setStepControlState_(
+  StepControlStrategyState newState)
 {
   if (stepControlState_ == UNINITIALIZED) {
     TEUCHOS_TEST_FOR_EXCEPT(newState != BEFORE_FIRST_STEP);
@@ -61,23 +62,28 @@ void ImplicitBDFStepperRampingStepControl<Scalar>::setStepControlState_(StepCont
 }
 
 template<class Scalar>
-StepControlStrategyState ImplicitBDFStepperRampingStepControl<Scalar>::getCurrentState()
+StepControlStrategyState
+ImplicitBDFStepperRampingStepControl<Scalar>::getCurrentState()
 {
   return(stepControlState_);
 }
 
 template<class Scalar>
-void ImplicitBDFStepperRampingStepControl<Scalar>::updateCoeffs_() 
+void ImplicitBDFStepperRampingStepControl<Scalar>::updateCoeffs_()
 {
-  TEUCHOS_TEST_FOR_EXCEPT(!((stepControlState_ == BEFORE_FIRST_STEP) || (stepControlState_ == READY_FOR_NEXT_STEP)));
+  TEUCHOS_TEST_FOR_EXCEPT(!((stepControlState_ == BEFORE_FIRST_STEP) ||
+                            (stepControlState_ == READY_FOR_NEXT_STEP)));
 
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "updateCoeffs_() is not implemented!");
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+    "updateCoeffs_() is not implemented!");
 }
 
 template<class Scalar>
-void ImplicitBDFStepperRampingStepControl<Scalar>::initialize(const StepperBase<Scalar>& stepper)
+void ImplicitBDFStepperRampingStepControl<Scalar>::initialize(
+  const StepperBase<Scalar>& stepper)
 {
-  // Initialize can be called from the stepper when setInitialCondition is called.
+  // Initialize can be called from the stepper when setInitialCondition
+  // is called.
   using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   using Thyra::createMember;
@@ -87,16 +93,18 @@ void ImplicitBDFStepperRampingStepControl<Scalar>::initialize(const StepperBase<
   TEUCHOS_TEST_FOR_EXCEPTION(
       !stepperRange.isValid(),
       std::logic_error,
-      "Error, Stepper does not have valid time range for initialization of ImplicitBDFStepperRampingStepControl!\n"
-      );
+      "Error, Stepper does not have valid time range for initialization "
+      "of ImplicitBDFStepperRampingStepControl!\n");
 
   if (is_null(parameterList_)) {
-    RCP<Teuchos::ParameterList> emptyParameterList = Teuchos::rcp(new Teuchos::ParameterList);
+    RCP<Teuchos::ParameterList> emptyParameterList =
+      Teuchos::rcp(new Teuchos::ParameterList);
     this->setParameterList(emptyParameterList);
   }
 
   if (is_null(errWtVecCalc_)) {
-    RCP<ImplicitBDFStepperErrWtVecCalc<Scalar> > IBDFErrWtVecCalc = rcp(new ImplicitBDFStepperErrWtVecCalc<Scalar>());
+    RCP<ImplicitBDFStepperErrWtVecCalc<Scalar> > IBDFErrWtVecCalc =
+      rcp(new ImplicitBDFStepperErrWtVecCalc<Scalar>());
     errWtVecCalc_ = IBDFErrWtVecCalc;
   }
 
@@ -117,7 +125,7 @@ void ImplicitBDFStepperRampingStepControl<Scalar>::initialize(const StepperBase<
   if (is_null(errWtVec_)) {
     errWtVec_ = createMember(stepper.get_x_space());
   }
-  V_S(delta_.ptr(),ST::zero()); 
+  V_S(delta_.ptr(),ST::zero());
 
   if ( doOutput_(Teuchos::VERB_HIGH) ) {
     RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -132,25 +140,24 @@ void ImplicitBDFStepperRampingStepControl<Scalar>::initialize(const StepperBase<
 
 template<class Scalar>
 void ImplicitBDFStepperRampingStepControl<Scalar>::setRequestedStepSize(
-    const StepperBase<Scalar>& stepper
-    ,const Scalar& stepSize
-    ,const StepSizeType& stepSizeType
-    )
+    const StepperBase<Scalar>& stepper,
+    const Scalar& stepSize,
+    const StepSizeType& stepSizeType)
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
   TEUCHOS_TEST_FOR_EXCEPT(!((stepControlState_ == UNINITIALIZED) ||
-			    (stepControlState_ == BEFORE_FIRST_STEP) ||
-			    (stepControlState_ == READY_FOR_NEXT_STEP) ||
-			    (stepControlState_ == MID_STEP)));
+                            (stepControlState_ == BEFORE_FIRST_STEP) ||
+                            (stepControlState_ == READY_FOR_NEXT_STEP) ||
+                            (stepControlState_ == MID_STEP)));
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-      ((stepSizeType == STEP_TYPE_FIXED) && (stepSize == ST::zero())), 
-      std::logic_error, 
-      "Error, step size type == STEP_TYPE_FIXED, but requested step size == 0!\n"
-      );
+      ((stepSizeType == STEP_TYPE_FIXED) && (stepSize == ST::zero())),
+      std::logic_error,
+      "Error, step size type == STEP_TYPE_FIXED, "
+      "but requested step size == 0!\n");
 
-  bool didInitialization = false; 
+  bool didInitialization = false;
   if (stepControlState_ == UNINITIALIZED) {
     initialize(stepper);
     didInitialization = true;
@@ -158,8 +165,10 @@ void ImplicitBDFStepperRampingStepControl<Scalar>::setRequestedStepSize(
 
   // errWtVecSet_ is called during initialize
   if (!didInitialization) {
-    const ImplicitBDFStepper<Scalar>& implicitBDFStepper = Teuchos::dyn_cast<const ImplicitBDFStepper<Scalar> >(stepper);
-    const Thyra::VectorBase<Scalar>& xHistory = implicitBDFStepper.getxHistory(0);
+    const ImplicitBDFStepper<Scalar>& implicitBDFStepper =
+      Teuchos::dyn_cast<const ImplicitBDFStepper<Scalar> >(stepper);
+    const Thyra::VectorBase<Scalar>& xHistory =
+      implicitBDFStepper.getxHistory(0);
     errWtVecCalc_->errWtVecSet(&*errWtVec_,xHistory,relErrTol_,absErrTol_);
   }
 
@@ -168,10 +177,12 @@ void ImplicitBDFStepperRampingStepControl<Scalar>::setRequestedStepSize(
 }
 
 template<class Scalar>
-void ImplicitBDFStepperRampingStepControl<Scalar>::nextStepSize(const StepperBase<Scalar>& stepper, Scalar* stepSize, StepSizeType* stepSizeType, int* order)
+void ImplicitBDFStepperRampingStepControl<Scalar>::nextStepSize(
+  const StepperBase<Scalar>& stepper, Scalar* stepSize,
+  StepSizeType* stepSizeType, int* order)
 {
-  TEUCHOS_TEST_FOR_EXCEPT(!((stepControlState_ == BEFORE_FIRST_STEP) || 
-         (stepControlState_ == MID_STEP) ||  
+  TEUCHOS_TEST_FOR_EXCEPT(!((stepControlState_ == BEFORE_FIRST_STEP) ||
+         (stepControlState_ == MID_STEP) ||
          (stepControlState_ == READY_FOR_NEXT_STEP) )
         );
 
@@ -221,7 +232,8 @@ void ImplicitBDFStepperRampingStepControl<Scalar>::setCorrection(
 {
   TEUCHOS_TEST_FOR_EXCEPT(stepControlState_ != MID_STEP);
 
-  TEUCHOS_TEST_FOR_EXCEPTION(is_null(ee), std::logic_error, "Error, ee == Teuchos::null!\n");
+  TEUCHOS_TEST_FOR_EXCEPTION(is_null(ee), std::logic_error,
+    "Error, ee == Teuchos::null!\n");
 
   ee_ = ee;
 
@@ -230,14 +242,16 @@ void ImplicitBDFStepperRampingStepControl<Scalar>::setCorrection(
   if ( doOutput_(Teuchos::VERB_MEDIUM)  && newtonConvergenceStatus_ < 0) {
     RCP<Teuchos::FancyOStream> out = this->getOStream();
     Teuchos::OSTab ostab(out,1,"setCorrection");
-    *out << "\nImplicitBDFStepperRampingStepControl::setCorrection(): Nonlinear Solver Failed!\n";
+    *out << "\nImplicitBDFStepperRampingStepControl::setCorrection(): "
+         << "Nonlinear Solver Failed!\n";
   }
-  
+
   setStepControlState_(AFTER_CORRECTION);
-} 
+}
 
 template<class Scalar>
-bool ImplicitBDFStepperRampingStepControl<Scalar>::acceptStep(const StepperBase<Scalar>& stepper, Scalar* LETValue)
+bool ImplicitBDFStepperRampingStepControl<Scalar>::acceptStep(
+  const StepperBase<Scalar>& stepper, Scalar* LETValue)
 {
   using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -276,7 +290,8 @@ bool ImplicitBDFStepperRampingStepControl<Scalar>::acceptStep(const StepperBase<
     RCP<Teuchos::FancyOStream> out = this->getOStream();
     Teuchos::OSTab ostab(out,1,"acceptStep");
     *out << "return_status = " << return_status << std::endl;
-    *out << "Local Truncation Error Check: (ck*enorm) < 1:  (" << LET << ") <?= 1" << std::endl;
+    *out << "Local Truncation Error Check: (ck*enorm) < 1:  (" << LET
+         << ") <?= 1" << std::endl;
     if ( doOutput_(Teuchos::VERB_EXTREME) ) {
       *out << "ck_ = " << ck_ << std::endl;
       *out << "enorm = " << enorm << std::endl;
@@ -287,7 +302,8 @@ bool ImplicitBDFStepperRampingStepControl<Scalar>::acceptStep(const StepperBase<
 }
 
 template<class Scalar>
-void ImplicitBDFStepperRampingStepControl<Scalar>::completeStep(const StepperBase<Scalar>& stepper)
+void ImplicitBDFStepperRampingStepControl<Scalar>::completeStep(
+  const StepperBase<Scalar>& stepper)
 {
   TEUCHOS_TEST_FOR_EXCEPT(stepControlState_ != AFTER_CORRECTION);
   using Teuchos::as;
@@ -305,8 +321,9 @@ void ImplicitBDFStepperRampingStepControl<Scalar>::completeStep(const StepperBas
     *out << "nextStepSize_ = " << nextStepSize_ << std::endl;
     *out << "currentOrder_ = " << currentOrder_ << std::endl;
     *out << "nextOrder_ = " << nextOrder_ << std::endl;
-    *out << "stepSizeIncreaseFactor_ = " << stepSizeIncreaseFactor_ << std::endl;
-    *out << "countOfConstantStepsAfterFailure_ = " << countOfConstantStepsAfterFailure_ << std::endl;
+    *out << "stepSizeIncreaseFactor_ = " << stepSizeIncreaseFactor_ <<std::endl;
+    *out << "countOfConstantStepsAfterFailure_ = "
+         << countOfConstantStepsAfterFailure_ << std::endl;
   }
 
   numberOfSteps_ ++;
@@ -322,43 +339,47 @@ void ImplicitBDFStepperRampingStepControl<Scalar>::completeStep(const StepperBas
     nextOrder_ = currentOrder_;
 
     // Decrement failure counter
-    countOfConstantStepsAfterFailure_ = 
-      std::max( (countOfConstantStepsAfterFailure_ - 1), 0); 
-    
+    countOfConstantStepsAfterFailure_ =
+      std::max( (countOfConstantStepsAfterFailure_ - 1), 0);
+
     if ( doOutput_(Teuchos::VERB_HIGH) ) {
       RCP<Teuchos::FancyOStream> out = this->getOStream();
       Teuchos::OSTab ostab(out,1,"completeStep_");
       *out << "\nNext Step Size held constant due to previous failed steps!\n";
-      *out << "countOfConstantStepsAfterFailure_ = " << countOfConstantStepsAfterFailure_ << std::endl;
+      *out << "countOfConstantStepsAfterFailure_ = "
+           << countOfConstantStepsAfterFailure_ << std::endl;
     }
-
   }
   else {
 
     // Phase 1: Constant step size at 1st order
     if (numberOfSteps_ < numConstantSteps_) {
       if (currentStepSize_ <  initialStepSize_)
-	nextStepSize_ = std::min(initialStepSize_, currentStepSize_ * stepSizeIncreaseFactor_);
-      
+        nextStepSize_ = std::min(initialStepSize_,
+                                 currentStepSize_ * stepSizeIncreaseFactor_);
       nextOrder_ = 1;
     }
     // Phase 2: Constant step size, ramping the order
     else if (currentOrder_ < maxOrder_) {
       if (currentStepSize_ <  initialStepSize_)
-	nextStepSize_ = std::min(initialStepSize_, currentStepSize_ * stepSizeIncreaseFactor_);
+        nextStepSize_ = std::min(initialStepSize_,
+                                 currentStepSize_ * stepSizeIncreaseFactor_);
       else
-	nextStepSize_ = currentStepSize_;
-      
+        nextStepSize_ = currentStepSize_;
+
       nextOrder_ = currentOrder_ + 1;
     }
     // Phase 3: Ramping dt to max step size, highest order
-    else if ((numberOfSteps_ >= numConstantSteps_) && (currentOrder_ == maxOrder_)) {
-      nextStepSize_ = std::min(maxStepSize_, currentStepSize_ * stepSizeIncreaseFactor_);
+    else if ( (numberOfSteps_ >= numConstantSteps_) &&
+              (currentOrder_ == maxOrder_)             ) {
+      nextStepSize_ = std::min(maxStepSize_,
+                               currentStepSize_ * stepSizeIncreaseFactor_);
       nextOrder_ = maxOrder_;
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-				 "RampingStepControlStrategy logic is broken. Please contact evelopers. Aborting run!");
+        "RampingStepControlStrategy logic is broken. Please contact "
+        "developers. Aborting run!");
     }
 
   } // if (countOfConstantStepsAfterFailure_ > 0)
@@ -376,13 +397,16 @@ void ImplicitBDFStepperRampingStepControl<Scalar>::completeStep(const StepperBas
     *out << "nextStepSize_ = " << nextStepSize_ << std::endl;
     *out << "currentOrder_ = " << currentOrder_ << std::endl;
     *out << "nextOrder_ = " << nextOrder_ << std::endl;
-    *out << "stepSizeIncreaseFactor_ = " << stepSizeIncreaseFactor_ << std::endl;
-    *out << "countOfConstantStepsAfterFailure_ = " << countOfConstantStepsAfterFailure_ << std::endl;
+    *out << "stepSizeIncreaseFactor_ = " << stepSizeIncreaseFactor_ <<std::endl;
+    *out << "countOfConstantStepsAfterFailure_ = "
+         << countOfConstantStepsAfterFailure_ << std::endl;
   }
 }
 
 template<class Scalar>
-AttemptedStepStatusFlag ImplicitBDFStepperRampingStepControl<Scalar>::rejectStep(const StepperBase<Scalar>& stepper)
+AttemptedStepStatusFlag
+ImplicitBDFStepperRampingStepControl<Scalar>::rejectStep(
+  const StepperBase<Scalar>& stepper)
 {
   TEUCHOS_TEST_FOR_EXCEPT(stepControlState_ != AFTER_CORRECTION);
 
@@ -392,12 +416,13 @@ AttemptedStepStatusFlag ImplicitBDFStepperRampingStepControl<Scalar>::rejectStep
   ++countOfConstantStepsAfterFailure_;
 
   // If time step size is already at the min time step, then quit
-  if (currentStepSize_ <= minStepSize_) 
+  if (currentStepSize_ <= minStepSize_)
     return (REP_ERR_FAIL);
 
   // Otherwise, cut the time step and keep order the same
-  nextStepSize_ = std::max(minStepSize_, (currentStepSize_ * stepSizeDecreaseFactor_) );
-  
+  nextStepSize_ = std::max(minStepSize_,
+                           (currentStepSize_ * stepSizeDecreaseFactor_) );
+
   setStepControlState_(READY_FOR_NEXT_STEP);
 
   return(PREDICT_AGAIN);
@@ -424,7 +449,7 @@ void ImplicitBDFStepperRampingStepControl<Scalar>::describe(
   else if (as<int>(verbLevel) >= as<int>(Teuchos::VERB_MEDIUM)) {
   }
   else if (as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH)) {
-    out << "ee_ = "; 
+    out << "ee_ = ";
     if (ee_ == Teuchos::null) {
       out << "Teuchos::null" << std::endl;
     } else {
@@ -461,7 +486,7 @@ void ImplicitBDFStepperRampingStepControl<Scalar>::setParameterList(
   parameterList_->validateParametersAndSetDefaults(*this->getValidParameters());
 
   Teuchos::ParameterList& p = *parameterList_;
-  
+
   numConstantSteps_ = p.get<int>("Number of Constant First Order Steps");
   initialStepSize_ = p.get<Scalar>("Initial Step Size");
   minStepSize_ = p.get<Scalar>("Min Step Size");
@@ -484,7 +509,7 @@ void ImplicitBDFStepperRampingStepControl<Scalar>::setParameterList(
   relErrTol_ = p.get<Scalar>("Relative Error Tolerance");
 
   {
-    std::string let_acceptance = 
+    std::string let_acceptance =
       p.get<std::string>("Use LET To Determine Step Acceptance");
     useLETToDetermineConvergence_ = (let_acceptance == "TRUE");
 
@@ -492,7 +517,9 @@ void ImplicitBDFStepperRampingStepControl<Scalar>::setParameterList(
     // since we can't calculate the LETValue. Once this is
     // implemented, delete the line below.
     TEUCHOS_TEST_FOR_EXCEPTION(useLETToDetermineConvergence_, std::logic_error,
-			       "Error - the flag \"Use LET To Determine Step Acceptance\" is set to \"TRUE\" but the local error computation is currently not supported.  Please set this flag to \"FALSE\" for now.");
+      "Error - the flag \"Use LET To Determine Step Acceptance\" is set to "
+      "\"TRUE\" but the local error computation is currently not supported.  "
+      "Please set this flag to \"FALSE\" for now.");
   }
 
   if ( doOutput_(Teuchos::VERB_HIGH) ) {
@@ -516,44 +543,43 @@ ImplicitBDFStepperRampingStepControl<Scalar>::getValidParameters() const
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::ParameterList;
-  
+
   static RCP<ParameterList> p;
-  
+
   if (is_null(p)) {
-    
+
     p = rcp(new ParameterList);
-    
-    p->set<int>("Number of Constant First Order Steps", 10, "Number of constant steps to take before handing control to variable stepper.");
-    
+
+    p->set<int>("Number of Constant First Order Steps", 10,
+      "Number of constant steps to take before handing control to "
+      "variable stepper.");
     p->set<Scalar>("Initial Step Size", Scalar(1.0e-3),
-		   "Initial time step size and target step size to take during the initial constant step phase (could be reduced due to step failures).");
-    
+      "Initial time step size and target step size to take during the "
+      "initial constant step phase (could be reduced due to step failures).");
     p->set<Scalar>("Min Step Size", Scalar(1.0e-7), "Minimum time step size.");
-
     p->set<Scalar>("Max Step Size", Scalar(1.0), "Maximum time step size.");
-
-    p->set<Scalar>("Step Size Increase Factor", Scalar(1.2), "Time step growth factor used after a successful time step. dt_{n+1} = (increase factor) * dt_n");
-    
-    p->set<Scalar>("Step Size Decrease Factor", Scalar(0.5), "Time step reduction factor used for a failed time step. dt_{n+1} = (decrease factor) * dt_n");
-    
+    p->set<Scalar>("Step Size Increase Factor", Scalar(1.2),
+      "Time step growth factor used after a successful time step. dt_{n+1} = "
+      "(increase factor) * dt_n");
+    p->set<Scalar>("Step Size Decrease Factor", Scalar(0.5),
+      "Time step reduction factor used for a failed time step. dt_{n+1} = "
+      "(decrease factor) * dt_n");
     p->set<int>("Min Order", 1, "Minimum order to run at.");
     p->set<int>("Max Order", 5, "Maximum order to run at.");
-    
-    p->set<Scalar>("Absolute Error Tolerance", Scalar(1.0e-5), "abstol value used in WRMS calculation.");
-    p->set<Scalar>("Relative Error Tolerance", Scalar(1.0e-3), "reltol value used in WRMS calculation.");
-
+    p->set<Scalar>("Absolute Error Tolerance", Scalar(1.0e-5),
+      "abstol value used in WRMS calculation.");
+    p->set<Scalar>("Relative Error Tolerance", Scalar(1.0e-3),
+      "reltol value used in WRMS calculation.");
     Teuchos::setStringToIntegralParameter<int>(
       "Use LET To Determine Step Acceptance",
       "FALSE",
-      "If set to TRUE, then acceptance of step dependes on LET in addition to Nonlinear solver converging.",
+      "If set to TRUE, then acceptance of step dependes on LET in addition "
+      "to Nonlinear solver converging.",
       Teuchos::tuple<std::string>("TRUE","FALSE"),
-      p.get()
-      );
-    
+      p.get());
   }
-  
+
   return (p);
-  
 }
 
 template<class Scalar>
@@ -573,20 +599,23 @@ ImplicitBDFStepperRampingStepControl<Scalar>::getNonconstParameterList()
 }
 
 template<class Scalar>
-void ImplicitBDFStepperRampingStepControl<Scalar>::setStepControlData(const StepperBase<Scalar>& stepper)
+void ImplicitBDFStepperRampingStepControl<Scalar>::setStepControlData(
+  const StepperBase<Scalar>& stepper)
 {
   if (stepControlState_ == UNINITIALIZED) {
     initialize(stepper);
   }
-  const ImplicitBDFStepper<Scalar>& bdfstepper = Teuchos::dyn_cast<const ImplicitBDFStepper<Scalar> >(stepper);
+  const ImplicitBDFStepper<Scalar>& bdfstepper =
+    Teuchos::dyn_cast<const ImplicitBDFStepper<Scalar> >(stepper);
   int desiredOrder = bdfstepper.getOrder();
-  TEUCHOS_TEST_FOR_EXCEPT(!((1 <= desiredOrder) && (desiredOrder <= maxOrder_)));
+  TEUCHOS_TEST_FOR_EXCEPT(!((1 <= desiredOrder) &&
+                            (desiredOrder <= maxOrder_)));
   if (stepControlState_ == BEFORE_FIRST_STEP) {
     TEUCHOS_TEST_FOR_EXCEPTION(
-        desiredOrder > 1, 
-        std::logic_error, 
-        "Error, this ImplicitBDF stepper has not taken a step yet, so it cannot take a step of order " << desiredOrder << " > 1!\n"
-        );
+        desiredOrder > 1,
+        std::logic_error,
+        "Error, this ImplicitBDF stepper has not taken a step yet, so it "
+        "cannot take a step of order " << desiredOrder << " > 1!\n");
   }
   TEUCHOS_TEST_FOR_EXCEPT(!(desiredOrder <= currentOrder_+1));
   currentOrder_ = desiredOrder;
@@ -610,7 +639,8 @@ RCP<StepControlStrategyBase<Scalar> >
 ImplicitBDFStepperRampingStepControl<Scalar>::cloneStepControlStrategyAlgorithm() const
 {
 
-  RCP<ImplicitBDFStepperRampingStepControl<Scalar> > stepControl = rcp(new ImplicitBDFStepperRampingStepControl<Scalar>());
+  RCP<ImplicitBDFStepperRampingStepControl<Scalar> > stepControl =
+    rcp(new ImplicitBDFStepperRampingStepControl<Scalar>());
 
   if (!is_null(parameterList_)) {
     stepControl->setParameterList(parameterList_);
@@ -620,21 +650,23 @@ ImplicitBDFStepperRampingStepControl<Scalar>::cloneStepControlStrategyAlgorithm(
 }
 
 template<class Scalar>
-void ImplicitBDFStepperRampingStepControl<Scalar>::setErrWtVecCalc(const RCP<ErrWtVecCalcBase<Scalar> >& errWtVecCalc)
+void ImplicitBDFStepperRampingStepControl<Scalar>::setErrWtVecCalc(
+  const RCP<ErrWtVecCalcBase<Scalar> >& errWtVecCalc)
 {
   TEUCHOS_TEST_FOR_EXCEPT(is_null(errWtVecCalc));
   errWtVecCalc_ = errWtVecCalc;
 }
 
 template<class Scalar>
-RCP<const ErrWtVecCalcBase<Scalar> > ImplicitBDFStepperRampingStepControl<Scalar>::getErrWtVecCalc() const
+RCP<const ErrWtVecCalcBase<Scalar> >
+ImplicitBDFStepperRampingStepControl<Scalar>::getErrWtVecCalc() const
 {
   return(errWtVecCalc_);
 }
 
 template<class Scalar>
 Scalar ImplicitBDFStepperRampingStepControl<Scalar>::wRMSNorm_(
-    const Thyra::VectorBase<Scalar>& weight, 
+    const Thyra::VectorBase<Scalar>& weight,
     const Thyra::VectorBase<Scalar>& vector) const
 {
   return(norm_2(weight,vector));
@@ -661,7 +693,8 @@ int ImplicitBDFStepperRampingStepControl<Scalar>::getMaxOrder() const
 }
 
 template<class Scalar>
-bool ImplicitBDFStepperRampingStepControl<Scalar>::doOutput_(Teuchos::EVerbosityLevel verbLevel)
+bool ImplicitBDFStepperRampingStepControl<Scalar>::doOutput_(
+  Teuchos::EVerbosityLevel verbLevel)
 {
   Teuchos::EVerbosityLevel currentObjectVerbLevel = this->getVerbLevel();
 
@@ -676,19 +709,19 @@ int ImplicitBDFStepperRampingStepControl<Scalar>::numberOfSteps() const
 {
   return numberOfSteps_;
 }
-    
+
 template<class Scalar>
 int ImplicitBDFStepperRampingStepControl<Scalar>::numberOfFailedSteps() const
 {
   return totalNumberOfFailedSteps_;
 }
-    
+
 template<class Scalar>
 Scalar ImplicitBDFStepperRampingStepControl<Scalar>::currentStepSize() const
 {
   return currentStepSize_;
 }
-    
+
 template<class Scalar>
 int ImplicitBDFStepperRampingStepControl<Scalar>::currentOrder() const
 {
@@ -696,14 +729,14 @@ int ImplicitBDFStepperRampingStepControl<Scalar>::currentOrder() const
 }
 
 
-// 
+//
 // Explicit Instantiation macro
 //
 // Must be expanded from within the Rythmos namespace!
 //
 
 #define RYTHMOS_IMPLICITBDF_STEPPER_RAMPING_STEPCONTROL_INSTANT(SCALAR) \
-  template class ImplicitBDFStepperRampingStepControl< SCALAR >; 
+  template class ImplicitBDFStepperRampingStepControl< SCALAR >;
 
 
 } // namespace Rythmos

@@ -539,7 +539,11 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::compute()
   Condest_ = -1.0;
 
   Inverse_->compute();
-  
+
+#if defined (HAVE_IFPACK2_TIMER_BARRIER) 
+  Matrix_->getDomainMap ()->getComm ()->barrier ();
+#endif  
+
   IsComputed_ = true; 
   ++NumCompute_;
   ComputeTime_ += Time_->stop();

@@ -92,7 +92,7 @@ namespace MueLu {
 
     Level() : levelID_(-1) { }
 
-    Level(RCP<FactoryManagerBase>& factoryManager) : levelID_(-1), factoryManager_(factoryManager) { }
+    Level(RCP<FactoryManagerBase>& factoryManager) : lib_(Xpetra::UseTpetra), levelID_(-1), factoryManager_(factoryManager) { }
 
     //! Destructor
     virtual ~Level() { }

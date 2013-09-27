@@ -109,19 +109,18 @@ int main(int argc, char *argv[])
 
 
   // query the topology of the host
-  std::pair<unsigned, unsigned> team_league(1,4);
+  unsigned team_count = 1 ;
+  unsigned threads_per_team = 4 ;
+
   if (Kokkos::hwloc::available()) {
-    const std::pair<unsigned,unsigned> core_top =  Kokkos::hwloc::get_core_topology();
-    const unsigned num_hyper_threads =  Kokkos::hwloc::get_core_capacity();
-    team_league.first  = core_top.first ;
-    team_league.second = core_top.second;
-    //team_league.second = core_top.second * num_hyper_threads;
+    team_count       = Kokkos::hwloc::get_available_numa_count();
+    threads_per_team = Kokkos::hwloc::get_available_cores_per_numa();
   }
 
-  Kokkos::Threads::initialize( team_league );
+  Kokkos::Threads::initialize( team_count , threads_per_team );
 
 #ifdef KOKKOS_HAVE_OPENMP
-  Kokkos::OpenMP::initialize( team_league.first , team_league.second );
+  Kokkos::OpenMP::initialize( team_count , threads_per_team );
 #endif
 
 #ifdef KOKKOS_HAVE_CUDA
@@ -129,7 +128,7 @@ int main(int argc, char *argv[])
 #endif
 
 
-  std::cout << "Thread groups: " << team_league.first << " Group Workers: " << team_league.second << std::endl;
+  std::cout << "Thread groups: " << team_count << " Group Workers: " << threads_per_team << std::endl;
   std::cout << "Number of ids: " << num_ids << std::endl;
   std::cout << "Number of find iterations: " << num_find_iterations << std::endl;
 

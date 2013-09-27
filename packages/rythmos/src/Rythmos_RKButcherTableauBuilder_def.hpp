@@ -129,197 +129,211 @@ void RKButcherTableauBuilder<Scalar>::initializeDefaults_()
   // RK Butcher Tableaus:
   //
 
+  // Explicit
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, ForwardEuler_RKBT<Scalar> >(),
-      RKBT_ForwardEuler_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          ForwardEuler_RKBT<Scalar> >(),
+      RKBT_ForwardEuler_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, Explicit2Stage2ndOrderRunge_RKBT<Scalar> >(),
-      Explicit2Stage2ndOrderRunge_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          Explicit2Stage2ndOrderRunge_RKBT<Scalar> >(),
+      Explicit2Stage2ndOrderRunge_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, ExplicitTrapezoidal_RKBT<Scalar> >(),
-      ExplicitTrapezoidal_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          ExplicitTrapezoidal_RKBT<Scalar> >(),
+      ExplicitTrapezoidal_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, Explicit3Stage3rdOrder_RKBT<Scalar> >(),
-      Explicit3Stage3rdOrder_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          Explicit3Stage3rdOrder_RKBT<Scalar> >(),
+      Explicit3Stage3rdOrder_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, Explicit3Stage3rdOrderHeun_RKBT<Scalar> >(),
-      Explicit3Stage3rdOrderHeun_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          Explicit3Stage3rdOrderHeun_RKBT<Scalar> >(),
+      Explicit3Stage3rdOrderHeun_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, Explicit3Stage3rdOrderTVD_RKBT<Scalar> >(),
-      Explicit3Stage3rdOrderTVD_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          Explicit3Stage3rdOrderTVD_RKBT<Scalar> >(),
+      Explicit3Stage3rdOrderTVD_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, Explicit4Stage3rdOrderRunge_RKBT<Scalar> >(),
-      Explicit4Stage3rdOrderRunge_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          Explicit4Stage3rdOrderRunge_RKBT<Scalar> >(),
+      Explicit4Stage3rdOrderRunge_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, Explicit4Stage4thOrder_RKBT<Scalar> >(),
-      Explicit4Stage_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          Explicit4Stage4thOrder_RKBT<Scalar> >(),
+      Explicit4Stage_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, Explicit3_8Rule_RKBT<Scalar> >(),
-      Explicit3_8Rule_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          Explicit3_8Rule_RKBT<Scalar> >(),
+      Explicit3_8Rule_name());
+
+  // Implicit
+  builder_.setObjectFactory(
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          BackwardEuler_RKBT<Scalar> >(),
+      RKBT_BackwardEuler_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, BackwardEuler_RKBT<Scalar> >(),
-      RKBT_BackwardEuler_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          IRK1StageTheta_RKBT<Scalar> >(),
+      IRK1StageTheta_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, SDIRK2Stage2ndOrder_RKBT<Scalar> >(),
-      SDIRK2Stage2ndOrder_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          IRK2StageTheta_RKBT<Scalar> >(),
+      IRK2StageTheta_name());
+
+  // SDIRK
+  builder_.setObjectFactory(
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          SDIRK2Stage2ndOrder_RKBT<Scalar> >(),
+      SDIRK2Stage2ndOrder_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, SDIRK2Stage3rdOrder_RKBT<Scalar> >(),
-      SDIRK2Stage3rdOrder_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          SDIRK2Stage3rdOrder_RKBT<Scalar> >(),
+      SDIRK2Stage3rdOrder_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, SDIRK3Stage4thOrder_RKBT<Scalar> >(),
-      SDIRK3Stage4thOrder_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          SDIRK3Stage4thOrder_RKBT<Scalar> >(),
+      SDIRK3Stage4thOrder_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, SDIRK5Stage4thOrder_RKBT<Scalar> >(),
-      SDIRK5Stage4thOrder_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          SDIRK5Stage4thOrder_RKBT<Scalar> >(),
+      SDIRK5Stage4thOrder_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, SDIRK5Stage5thOrder_RKBT<Scalar> >(),
-      SDIRK5Stage5thOrder_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          SDIRK5Stage5thOrder_RKBT<Scalar> >(),
+      SDIRK5Stage5thOrder_name());
+
+  // DIRK
+  builder_.setObjectFactory(
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          DIRK2Stage3rdOrder_RKBT<Scalar> >(),
+      DIRK2Stage3rdOrder_name());
+
+  // IRK
+  builder_.setObjectFactory(
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          Implicit1Stage2ndOrderGauss_RKBT<Scalar> >(),
+      Implicit1Stage2ndOrderGauss_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, DIRK2Stage3rdOrder_RKBT<Scalar> >(),
-      DIRK2Stage3rdOrder_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          Implicit2Stage4thOrderGauss_RKBT<Scalar> >(),
+      Implicit2Stage4thOrderGauss_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, Implicit1Stage2ndOrderGauss_RKBT<Scalar> >(),
-      Implicit1Stage2ndOrderGauss_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          Implicit3Stage6thOrderGauss_RKBT<Scalar> >(),
+      Implicit3Stage6thOrderGauss_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, Implicit2Stage4thOrderGauss_RKBT<Scalar> >(),
-      Implicit2Stage4thOrderGauss_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          Implicit2Stage4thOrderHammerHollingsworth_RKBT<Scalar> >(),
+      Implicit2Stage4thOrderHammerHollingsworth_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, Implicit3Stage6thOrderGauss_RKBT<Scalar> >(),
-      Implicit3Stage6thOrderGauss_name()
-      );
-
-  builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, Implicit2Stage4thOrderHammerHollingsworth_RKBT<Scalar> >(),
-      Implicit2Stage4thOrderHammerHollingsworth_name()
-      );
-
-  builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, Implicit3Stage6thOrderKuntzmannButcher_RKBT<Scalar> >(),
-      Implicit3Stage6thOrderKuntzmannButcher_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          Implicit3Stage6thOrderKuntzmannButcher_RKBT<Scalar> >(),
+      Implicit3Stage6thOrderKuntzmannButcher_name());
 
   //  This RKBT does not pass convergence testing, so we're disbaling it for now.
 //  builder_.setObjectFactory(
 //      abstractFactoryStd< RKButcherTableauBase<Scalar>, Implicit4Stage8thOrderKuntzmannButcher_RKBT<Scalar> >(),
-//      Implicit4Stage8thOrderKuntzmannButcher_name()
-//      );
+//      Implicit4Stage8thOrderKuntzmannButcher_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, Implicit1Stage1stOrderRadauA_RKBT<Scalar> >(),
-      Implicit1Stage1stOrderRadauA_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          Implicit1Stage1stOrderRadauA_RKBT<Scalar> >(),
+      Implicit1Stage1stOrderRadauA_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, Implicit2Stage3rdOrderRadauA_RKBT<Scalar> >(),
-      Implicit2Stage3rdOrderRadauA_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          Implicit2Stage3rdOrderRadauA_RKBT<Scalar> >(),
+      Implicit2Stage3rdOrderRadauA_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, Implicit3Stage5thOrderRadauA_RKBT<Scalar> >(),
-      Implicit3Stage5thOrderRadauA_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          Implicit3Stage5thOrderRadauA_RKBT<Scalar> >(),
+      Implicit3Stage5thOrderRadauA_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, Implicit1Stage1stOrderRadauB_RKBT<Scalar> >(),
-      Implicit1Stage1stOrderRadauB_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          Implicit1Stage1stOrderRadauB_RKBT<Scalar> >(),
+      Implicit1Stage1stOrderRadauB_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, Implicit2Stage3rdOrderRadauB_RKBT<Scalar> >(),
-      Implicit2Stage3rdOrderRadauB_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          Implicit2Stage3rdOrderRadauB_RKBT<Scalar> >(),
+      Implicit2Stage3rdOrderRadauB_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, Implicit3Stage5thOrderRadauB_RKBT<Scalar> >(),
-      Implicit3Stage5thOrderRadauB_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          Implicit3Stage5thOrderRadauB_RKBT<Scalar> >(),
+      Implicit3Stage5thOrderRadauB_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, Implicit2Stage2ndOrderLobattoA_RKBT<Scalar> >(),
-      Implicit2Stage2ndOrderLobattoA_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          Implicit2Stage2ndOrderLobattoA_RKBT<Scalar> >(),
+      Implicit2Stage2ndOrderLobattoA_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, Implicit3Stage4thOrderLobattoA_RKBT<Scalar> >(),
-      Implicit3Stage4thOrderLobattoA_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          Implicit3Stage4thOrderLobattoA_RKBT<Scalar> >(),
+      Implicit3Stage4thOrderLobattoA_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, Implicit4Stage6thOrderLobattoA_RKBT<Scalar> >(),
-      Implicit4Stage6thOrderLobattoA_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          Implicit4Stage6thOrderLobattoA_RKBT<Scalar> >(),
+      Implicit4Stage6thOrderLobattoA_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, Implicit2Stage2ndOrderLobattoB_RKBT<Scalar> >(),
-      Implicit2Stage2ndOrderLobattoB_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          Implicit2Stage2ndOrderLobattoB_RKBT<Scalar> >(),
+      Implicit2Stage2ndOrderLobattoB_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, Implicit3Stage4thOrderLobattoB_RKBT<Scalar> >(),
-      Implicit3Stage4thOrderLobattoB_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          Implicit3Stage4thOrderLobattoB_RKBT<Scalar> >(),
+      Implicit3Stage4thOrderLobattoB_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, Implicit4Stage6thOrderLobattoB_RKBT<Scalar> >(),
-      Implicit4Stage6thOrderLobattoB_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          Implicit4Stage6thOrderLobattoB_RKBT<Scalar> >(),
+      Implicit4Stage6thOrderLobattoB_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, Implicit2Stage2ndOrderLobattoC_RKBT<Scalar> >(),
-      Implicit2Stage2ndOrderLobattoC_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          Implicit2Stage2ndOrderLobattoC_RKBT<Scalar> >(),
+      Implicit2Stage2ndOrderLobattoC_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, Implicit3Stage4thOrderLobattoC_RKBT<Scalar> >(),
-      Implicit3Stage4thOrderLobattoC_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          Implicit3Stage4thOrderLobattoC_RKBT<Scalar> >(),
+      Implicit3Stage4thOrderLobattoC_name());
 
   builder_.setObjectFactory(
-      abstractFactoryStd< RKButcherTableauBase<Scalar>, Implicit4Stage6thOrderLobattoC_RKBT<Scalar> >(),
-      Implicit4Stage6thOrderLobattoC_name()
-      );
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                          Implicit4Stage6thOrderLobattoC_RKBT<Scalar> >(),
+      Implicit4Stage6thOrderLobattoC_name());
 
   builder_.setDefaultObject("None");
 
 }
 
-// 
+//
 // Explicit Instantiation macro
 //
 // Must be expanded from within the Rythmos namespace!
@@ -331,7 +345,7 @@ void RKButcherTableauBuilder<Scalar>::initializeDefaults_()
   \
   template RCP<RKButcherTableauBuilder< SCALAR > > rKButcherTableauBuilder(); \
   \
-  template RCP<RKButcherTableauBase< SCALAR > > createRKBT(const std::string& rkbt_name); 
+  template RCP<RKButcherTableauBase< SCALAR > > createRKBT(const std::string& rkbt_name);
 
 
 } // namespace Rythmos

@@ -327,10 +327,10 @@ operator<<(std::ostream & os, Tensor3<T, N> const & A)
 
     for (Index j = 0; j < dimension; ++j) {
 
-      os << std::scientific << A(i,j,0);
+      os << std::scientific << std::setprecision(16) << A(i,j,0);
 
       for (Index k = 1; k < dimension; ++k) {
-        os << std::scientific << "," << A(i,j,k);
+        os << "," << std::scientific  << std::setprecision(16) << A(i,j,k);
       }
 
       os << std::endl;

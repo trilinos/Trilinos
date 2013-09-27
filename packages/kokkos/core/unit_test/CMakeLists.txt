@@ -8,6 +8,7 @@ SET(SOURCES
   UnitTestMain.cpp 
   TestSerial.cpp 
   TestThreads.cpp 
+  TestHWLOC.cpp 
   ../../TPL/gtest/gtest-all.cc
   )
 
@@ -30,7 +31,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES ${SOURCES}
   COMM serial mpi
   NUM_MPI_PROCS 1
-  PASS_REGULAR_EXPRESSION "[  PASSED  ]"
+  FAIL_REGULAR_EXPRESSION "  FAILED  "
   DEPLIBS kokkoscore
   )
   

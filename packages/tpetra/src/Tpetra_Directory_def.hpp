@@ -56,18 +56,17 @@
 namespace Tpetra {
 
   template<class LO, class GO, class NT>
-  Directory<LO, GO, NT>::
-  Directory (const Teuchos::RCP<const Map<LO, GO, NT> >& map)
+  Directory<LO, GO, NT>::Directory (const Map<LO, GO, NT>& map)
   {
     // Create an implementation object of the appropriate type,
     // depending on whether the Map is distributed or replicated, and
     // contiguous or noncontiguous.
     RCP<const Details::Directory<LO, GO, NT> > dir;
-    if (map->isDistributed ()) {
-      if (map->isUniform ()) {
+    if (map.isDistributed ()) {
+      if (map.isUniform ()) {
         dir = rcp (new Details::ContiguousUniformDirectory<LO, GO, NT> (map));
       }
-      else if (map->isContiguous ()) {
+      else if (map.isContiguous ()) {
         dir = rcp (new Details::DistributedContiguousDirectory<LO, GO, NT> (map));
       }
       else {
@@ -85,32 +84,32 @@ namespace Tpetra {
 
   template<class LO, class GO, class NT>
   Directory<LO, GO, NT>::
-  Directory (const Teuchos::RCP<const Map<LO, GO, NT> >& map,
-             const Tpetra::Details::TieBreak<LO,GO> & tie_break)
+  Directory (const Map<LO, GO, NT>& map,
+             const Tpetra::Details::TieBreak<LO,GO>& tieBreak)
   {
     // Create an implementation object of the appropriate type,
     // depending on whether the Map is distributed or replicated, and
     // contiguous or noncontiguous.
     RCP<const Details::Directory<LO, GO, NT> > dir;
-    if (map->isDistributed ()) {
-      if (map->isUniform ()) {
+    if (map.isDistributed ()) {
+      if (map.isUniform ()) {
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Tpetra::"
           "Directory constructor failed to create Directory implementation.  "
-          "No implementation exists for the ContiguousUniformDirectory "
-          "using  a TieBreak object. Please report need for this use case to "
+          "No implementation exists for ContiguousUniformDirectory "
+          "using a TieBreak object.  Please report need for this use case to "
           "the Tpetra developers.");
-        // dir = rcp (new Details::ContiguousUniformDirectory<LO, GO, NT> (map));
+        // dir = rcp (new Details::ContiguousUniformDirectory<LO, GO, NT> (map, tieBreak));
       }
-      else if (map->isContiguous ()) {
+      else if (map.isContiguous ()) {
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Tpetra::"
           "Directory constructor failed to create Directory implementation.  "
-          "No implementation exists for the DistributedNoncontinguousDirectory "
-          "using  a TieBreak object. Please report need for this use case to "
+          "No implementation exists for DistributedNoncontinguousDirectory "
+          "using a TieBreak object.  Please report need for this use case to "
           "the Tpetra developers.");
-        // dir = rcp (new Details::DistributedContiguousDirectory<LO, GO, NT> (map,tie_break));
+        // dir = rcp (new Details::DistributedContiguousDirectory<LO, GO, NT> (map, tieBreak));
       }
       else {
-        dir = rcp (new Details::DistributedNoncontiguousDirectory<LO, GO, NT> (map,tie_break));
+        dir = rcp (new Details::DistributedNoncontiguousDirectory<LO, GO, NT> (map, tieBreak));
       }
     }
     else {
@@ -123,30 +122,32 @@ namespace Tpetra {
   }
 
   template<class LO, class GO, class NT>
-  Directory<LO, GO, NT>::Directory() {}
+  Directory<LO, GO, NT>::Directory () {}
 
   template<class LO, class GO, class NT>
-  Directory<LO, GO, NT>::~Directory() {}
+  Directory<LO, GO, NT>::~Directory () {}
 
   template<class LO, class GO, class NT>
   LookupStatus
   Directory<LO, GO, NT>::
-  getDirectoryEntries (const Teuchos::ArrayView<const GO>& globalIDs,
+  getDirectoryEntries (const Map<LO, GO, NT>& map,
+		       const Teuchos::ArrayView<const GO>& globalIDs,
                        const Teuchos::ArrayView<int>& nodeIDs) const
   {
     const bool computeLIDs = false;
-    return impl_->getEntries (globalIDs, nodeIDs, Teuchos::null, computeLIDs);
+    return impl_->getEntries (map, globalIDs, nodeIDs, Teuchos::null, computeLIDs);
   }
 
   template<class LO, class GO, class NT>
   LookupStatus
   Directory<LO, GO, NT>::
-  getDirectoryEntries (const Teuchos::ArrayView<const GO>& globalIDs,
+  getDirectoryEntries (const Map<LO, GO, NT>& map,
+		       const Teuchos::ArrayView<const GO>& globalIDs,
                        const Teuchos::ArrayView<int>& nodeIDs,
                        const Teuchos::ArrayView<LO>& localIDs) const
   {
     const bool computeLIDs = true;
-    return impl_->getEntries (globalIDs, nodeIDs, localIDs, computeLIDs);
+    return impl_->getEntries (map, globalIDs, nodeIDs, localIDs, computeLIDs);
   }
 
   template<class LO, class GO, class NT>

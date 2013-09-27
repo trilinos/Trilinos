@@ -129,13 +129,13 @@ namespace panzer {
     // Create the data types for each evaluation type
     
     // Residual (default scalar type is RealType)
-    typedef Sacado::mpl::vector< RealType > ResidualDataTypes;
+    typedef Sacado::mpl::vector< RealType,bool > ResidualDataTypes;
   
     // Jacobian (default scalar type is Fad<double, double>)
-    typedef Sacado::mpl::vector< FadType > JacobianDataTypes;
+    typedef Sacado::mpl::vector< FadType,bool > JacobianDataTypes;
 
     // Tangent (default scalar type is Fad<double, double>)
-    typedef Sacado::mpl::vector< FadType > TangentDataTypes;
+    typedef Sacado::mpl::vector< FadType,bool > TangentDataTypes;
 
     #ifdef HAVE_STOKHOS
        typedef Sacado::mpl::vector< SGType > SGResidualDataTypes;
@@ -226,6 +226,9 @@ namespace PHX {
      template<> struct TypeString< panzer::Traits::SGFadType> 
      { static const std::string value; };
   #endif 
+
+  template<> struct TypeString<bool> 
+  { static const std::string value; };
 
 }
 

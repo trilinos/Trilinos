@@ -138,7 +138,7 @@ int main (int argc, char *argv[]){
   io_word_size=0;
   /* QA records */
   ext=".exo";
-  line = (char *) calloc (2049,sizeof(char *));
+  line = (char *) calloc (2049,sizeof(char));
   strcpy(line,argv[1]);
   strtok(line,".");  
   strcat(line,ext);

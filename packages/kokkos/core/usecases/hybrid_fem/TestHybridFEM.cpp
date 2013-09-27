@@ -203,8 +203,9 @@ bool run_cuda( std::istream & input , comm::Machine machine )
 
 void run( const std::string & argline , comm::Machine machine )
 {
-  const std::pair<unsigned,unsigned> core_topo = Kokkos::hwloc::get_core_topology();
-  const unsigned                     core_cap  = Kokkos::hwloc::get_core_capacity();
+  const unsigned numa_count       = Kokkos::hwloc::get_available_numa_count();
+  const unsigned cores_per_numa   = Kokkos::hwloc::get_available_cores_per_numa();
+  const unsigned threads_per_core = Kokkos::hwloc::get_available_threads_per_core();
 
   std::istringstream input( argline );
 
@@ -214,9 +215,9 @@ void run( const std::string & argline , comm::Machine machine )
 
   if ( which == std::string("query") ) {
     std::cout << "P" << comm::rank( machine )
-              << ": hwloc { NUMA[" << core_topo.first << "]"
-              << " CORE[" << core_topo.second << "]"
-              << " PU[" << core_cap << "] }"
+              << ": hwloc { NUMA[" << numa_count << "]"
+              << " CORE[" << cores_per_numa << "]"
+              << " PU[" << threads_per_core << "] }"
               << std::endl ;
 #if defined( KOKKOS_HAVE_CUDA )
     test_cuda_query( machine );
@@ -238,14 +239,14 @@ void run( const std::string & argline , comm::Machine machine )
       cmd_error = run_host( input , machine , host_gang_count , host_gang_worker_count );
     }
     else if ( which == std::string("host-all") ) {
-      size_t host_gang_count        = core_topo.first ;
-      size_t host_gang_worker_count = core_topo.second * core_cap ;
+      size_t host_gang_count        = numa_count ;
+      size_t host_gang_worker_count = cores_per_numa * threads_per_core ;
 
       cmd_error = run_host( input , machine , host_gang_count , host_gang_worker_count );
     }
     else if ( which == std::string("host-most") ) {
-      size_t host_gang_count        = core_topo.first ;
-      size_t host_gang_worker_count = ( core_topo.second - 1 ) * core_cap ;
+      size_t host_gang_count        = numa_count ;
+      size_t host_gang_worker_count = ( cores_per_numa - 1 ) * threads_per_core ;
 
       cmd_error = run_host( input , machine , host_gang_count , host_gang_worker_count );
     }

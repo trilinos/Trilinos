@@ -73,14 +73,12 @@ class openmp : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
-    const std::pair<unsigned,unsigned> core_top =
-      Kokkos::hwloc::get_core_topology();
+    const unsigned numa_count       = Kokkos::hwloc::get_available_numa_count();
+    const unsigned cores_per_numa   = Kokkos::hwloc::get_available_cores_per_numa();
+    const unsigned threads_per_core = Kokkos::hwloc::get_available_threads_per_core();
 
-    const unsigned core_size =
-      Kokkos::hwloc::get_core_capacity();
-
-    const unsigned gang_count        = std::max( 1u , core_top.first );
-    const unsigned gang_worker_count = std::max( 2u , ( core_top.second * core_size ) / 2 );
+    const unsigned gang_count        = std::max( 1u , numa_count );
+    const unsigned gang_worker_count = std::max( 2u , ( cores_per_numa * threads_per_core ) / 2 );
 
     Kokkos::OpenMP::initialize( gang_count , gang_worker_count );
     // Kokkos::OpenMP::print_configuration( std::cout );

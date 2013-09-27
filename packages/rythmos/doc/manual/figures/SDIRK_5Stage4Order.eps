@@ -1,7 +1,7 @@
 %!PS-Adobe-2.0 EPSF-2.0
 %%Title: figures/SDIRK_5Stage4Order.eps
-%%Creator: gnuplot 4.6 patchlevel 0
-%%CreationDate: Tue Aug 14 13:11:39 2012
+%%Creator: gnuplot 4.6 patchlevel 3
+%%CreationDate: Sat Aug 24 11:27:11 2013
 %%DocumentFonts: (atend)
 %%BoundingBox: 50 50 230 176
 %%EndComments
@@ -47,7 +47,7 @@ gnudict begin
   } if
 } def
 %
-% Gnuplot Prolog Version 4.4 (August 2010)
+% Gnuplot Prolog Version 4.6 (September 2012)
 %
 %/SuppressPDFMark true def
 %
@@ -314,7 +314,8 @@ gnudict begin
 /PatternFill {gsave /PFa [ 9 2 roll ] def
   PFa 0 get PFa 2 get 2 div add PFa 1 get PFa 3 get 2 div add translate
   PFa 2 get -2 div PFa 3 get -2 div PFa 2 get PFa 3 get Rec
-  gsave 1 setgray fill grestore clip
+  TransparentPatterns {} {gsave 1 setgray fill grestore} ifelse
+  clip
   currentlinewidth 0.5 mul setlinewidth
   /PFs PFa 2 get dup mul PFa 3 get dup mul add sqrt def
   0 0 M PFa 5 get rotate PFs -2 div dup translate
@@ -428,11 +429,11 @@ systemdict /pdfmark known not {
 SDict begin [
   /Title (figures/SDIRK_5Stage4Order.eps)
   /Subject (gnuplot plot)
-  /Creator (gnuplot 4.6 patchlevel 0)
+  /Creator (gnuplot 4.6 patchlevel 3)
   /Author (ccober)
 %  /Producer (gnuplot)
 %  /Keywords ()
-  /CreationDate (Tue Aug 14 13:11:39 2012)
+  /CreationDate (Sat Aug 24 11:27:11 2013)
   /DOCINFO pdfmark
 end
 } ifelse
@@ -450,6 +451,7 @@ newpath
 BackgroundColor 0 lt 3 1 roll 0 lt exch 0 lt or or not {BackgroundColor C 1.000 0 0 3600.00 2520.00 BoxColFill} if
 1.000 UL
 LTb
+LCb setrgbcolor
 938 448 M
 63 0 V
 2346 0 R
@@ -458,6 +460,7 @@ LTb
 (1.0e-14) Rshow
 1.000 UL
 LTb
+LCb setrgbcolor
 938 512 M
 31 0 V
 2378 0 R
@@ -478,6 +481,7 @@ LTb
 (1.0e-13) Rshow
 1.000 UL
 LTb
+LCb setrgbcolor
 938 723 M
 31 0 V
 2378 0 R
@@ -498,6 +502,7 @@ LTb
 (1.0e-12) Rshow
 1.000 UL
 LTb
+LCb setrgbcolor
 938 935 M
 31 0 V
 2378 0 R
@@ -518,6 +523,7 @@ LTb
 (1.0e-11) Rshow
 1.000 UL
 LTb
+LCb setrgbcolor
 938 1146 M
 31 0 V
 2378 0 R
@@ -538,6 +544,7 @@ LTb
 (1.0e-10) Rshow
 1.000 UL
 LTb
+LCb setrgbcolor
 938 1358 M
 31 0 V
 2378 0 R
@@ -558,6 +565,7 @@ LTb
 (1.0e-9) Rshow
 1.000 UL
 LTb
+LCb setrgbcolor
 938 1569 M
 31 0 V
 2378 0 R
@@ -578,6 +586,7 @@ LTb
 (1.0e-8) Rshow
 1.000 UL
 LTb
+LCb setrgbcolor
 938 1781 M
 31 0 V
 2378 0 R
@@ -598,6 +607,7 @@ LTb
 (1.0e-7) Rshow
 1.000 UL
 LTb
+LCb setrgbcolor
 938 1993 M
 31 0 V
 2378 0 R
@@ -618,6 +628,7 @@ LTb
 (1.0e-6) Rshow
 1.000 UL
 LTb
+LCb setrgbcolor
 938 2204 M
 31 0 V
 2378 0 R
@@ -638,6 +649,7 @@ LTb
 (1.0e-5) Rshow
 1.000 UL
 LTb
+LCb setrgbcolor
 938 448 M
 0 31 V
 0 1873 R
@@ -674,6 +686,7 @@ LTb
 (1.0e-2) Cshow
 1.000 UL
 LTb
+LCb setrgbcolor
 2241 448 M
 0 31 V
 0 1873 R
@@ -714,8 +727,10 @@ LTb
 (1.0e-1) Cshow
 1.000 UL
 LTb
+LCb setrgbcolor
 1.000 UL
 LTb
+LCb setrgbcolor
 938 2352 N
 938 448 L
 2409 0 V
@@ -735,17 +750,19 @@ LTb
 1.000 UP
 1.000 UL
 LTb
+LCb setrgbcolor
 % Begin plot #1
 1.000 UP
 2.000 UL
 LT0
+LC0 setrgbcolor
 LCb setrgbcolor
-2539 2244 M
-(SDIRK 5 Stage 4th Order) Rshow
+2696 721 M
+(SDIRK5 4th Order) Rshow
 LT0
-2623 2244 M
+2780 721 M
 399 0 V
-325 -406 R
+168 1117 R
 2871 1583 L
 2395 1328 L
 1918 1074 L
@@ -757,18 +774,19 @@ LT0
 1918 1074 Pls
 1442 819 Pls
 966 561 Pls
-2822 2244 Pls
+2979 721 Pls
 % End plot #1
 % Begin plot #2
 2.000 UL
 LT1
+LC1 setrgbcolor
 LCb setrgbcolor
-2539 2104 M
+2696 581 M
 (Order = 4) Rshow
 LT1
-2623 2104 M
+2780 581 M
 399 0 V
-325 -175 R
+168 1348 R
 2871 1674 L
 2395 1419 L
 1918 1165 L
@@ -778,6 +796,7 @@ LT1
 stroke
 1.000 UL
 LTb
+LCb setrgbcolor
 938 2352 N
 938 448 L
 2409 0 V
@@ -787,6 +806,7 @@ Z stroke
 1.000 UP
 1.000 UL
 LTb
+LCb setrgbcolor
 stroke
 grestore
 end

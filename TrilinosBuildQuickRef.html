@@ -356,7 +356,7 @@ ul.auto-toc {
 <li><a class="reference internal" href="#generating-verbose-output" id="id24">5.14&nbsp;&nbsp;&nbsp;Generating verbose output</a></li>
 <li><a class="reference internal" href="#enabling-disabling-deprecated-warnings" id="id25">5.15&nbsp;&nbsp;&nbsp;Enabling/disabling deprecated warnings</a></li>
 <li><a class="reference internal" href="#disabling-deprecated-code" id="id26">5.16&nbsp;&nbsp;&nbsp;Disabling deprecated code</a></li>
-<li><a class="reference internal" href="#disable-update-of-package-dependency-information" id="id27">5.17&nbsp;&nbsp;&nbsp;Disable update of package dependency information</a></li>
+<li><a class="reference internal" href="#outputting-package-dependency-information" id="id27">5.17&nbsp;&nbsp;&nbsp;Outputting package dependency information</a></li>
 <li><a class="reference internal" href="#enabling-different-test-categories" id="id28">5.18&nbsp;&nbsp;&nbsp;Enabling different test categories</a></li>
 <li><a class="reference internal" href="#enabling-support-for-coverage-testing" id="id29">5.19&nbsp;&nbsp;&nbsp;Enabling support for coverage testing</a></li>
 <li><a class="reference internal" href="#viewing-configure-options-and-documentation" id="id30">5.20&nbsp;&nbsp;&nbsp;Viewing configure options and documentation</a></li>
@@ -365,36 +365,37 @@ ul.auto-toc {
 <li><a class="reference internal" href="#reconfiguring-completely-from-scratch" id="id33">5.23&nbsp;&nbsp;&nbsp;Reconfiguring completely from scratch</a></li>
 <li><a class="reference internal" href="#viewing-configure-errors" id="id34">5.24&nbsp;&nbsp;&nbsp;Viewing configure errors</a></li>
 <li><a class="reference internal" href="#adding-configure-timers" id="id35">5.25&nbsp;&nbsp;&nbsp;Adding configure timers</a></li>
+<li><a class="reference internal" href="#generating-a-project-repo-version-file" id="id36">5.26&nbsp;&nbsp;&nbsp;Generating a project repo version file</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#building-makefile-generator" id="id36">6&nbsp;&nbsp;&nbsp;Building (Makefile generator)</a><ul class="auto-toc">
-<li><a class="reference internal" href="#building-all-targets" id="id37">6.1&nbsp;&nbsp;&nbsp;Building all targets</a></li>
-<li><a class="reference internal" href="#discovering-what-targets-are-available-to-build" id="id38">6.2&nbsp;&nbsp;&nbsp;Discovering what targets are available to build</a></li>
-<li><a class="reference internal" href="#building-all-of-the-targets-for-a-package" id="id39">6.3&nbsp;&nbsp;&nbsp;Building all of the targets for a package</a></li>
-<li><a class="reference internal" href="#building-all-of-the-libraries-for-a-package" id="id40">6.4&nbsp;&nbsp;&nbsp;Building all of the libraries for a package</a></li>
-<li><a class="reference internal" href="#building-all-of-the-libraries-for-all-enabled-packages" id="id41">6.5&nbsp;&nbsp;&nbsp;Building all of the libraries for all enabled packages</a></li>
-<li><a class="reference internal" href="#building-a-single-object-file" id="id42">6.6&nbsp;&nbsp;&nbsp;Building a single object file</a></li>
-<li><a class="reference internal" href="#building-with-verbose-output-without-reconfiguring" id="id43">6.7&nbsp;&nbsp;&nbsp;Building with verbose output without reconfiguring</a></li>
-<li><a class="reference internal" href="#relink-a-target-without-considering-dependencies" id="id44">6.8&nbsp;&nbsp;&nbsp;Relink a target without considering dependencies</a></li>
+<li><a class="reference internal" href="#building-makefile-generator" id="id37">6&nbsp;&nbsp;&nbsp;Building (Makefile generator)</a><ul class="auto-toc">
+<li><a class="reference internal" href="#building-all-targets" id="id38">6.1&nbsp;&nbsp;&nbsp;Building all targets</a></li>
+<li><a class="reference internal" href="#discovering-what-targets-are-available-to-build" id="id39">6.2&nbsp;&nbsp;&nbsp;Discovering what targets are available to build</a></li>
+<li><a class="reference internal" href="#building-all-of-the-targets-for-a-package" id="id40">6.3&nbsp;&nbsp;&nbsp;Building all of the targets for a package</a></li>
+<li><a class="reference internal" href="#building-all-of-the-libraries-for-a-package" id="id41">6.4&nbsp;&nbsp;&nbsp;Building all of the libraries for a package</a></li>
+<li><a class="reference internal" href="#building-all-of-the-libraries-for-all-enabled-packages" id="id42">6.5&nbsp;&nbsp;&nbsp;Building all of the libraries for all enabled packages</a></li>
+<li><a class="reference internal" href="#building-a-single-object-file" id="id43">6.6&nbsp;&nbsp;&nbsp;Building a single object file</a></li>
+<li><a class="reference internal" href="#building-with-verbose-output-without-reconfiguring" id="id44">6.7&nbsp;&nbsp;&nbsp;Building with verbose output without reconfiguring</a></li>
+<li><a class="reference internal" href="#relink-a-target-without-considering-dependencies" id="id45">6.8&nbsp;&nbsp;&nbsp;Relink a target without considering dependencies</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#testing-with-ctest" id="id45">7&nbsp;&nbsp;&nbsp;Testing with CTest</a><ul class="auto-toc">
-<li><a class="reference internal" href="#running-all-tests" id="id46">7.1&nbsp;&nbsp;&nbsp;Running all tests</a></li>
-<li><a class="reference internal" href="#only-running-tests-for-a-single-package" id="id47">7.2&nbsp;&nbsp;&nbsp;Only running tests for a single package</a></li>
-<li><a class="reference internal" href="#running-a-single-test-with-full-output-to-the-console" id="id48">7.3&nbsp;&nbsp;&nbsp;Running a single test with full output to the console</a></li>
-<li><a class="reference internal" href="#running-memory-checking" id="id49">7.4&nbsp;&nbsp;&nbsp;Running memory checking</a></li>
+<li><a class="reference internal" href="#testing-with-ctest" id="id46">7&nbsp;&nbsp;&nbsp;Testing with CTest</a><ul class="auto-toc">
+<li><a class="reference internal" href="#running-all-tests" id="id47">7.1&nbsp;&nbsp;&nbsp;Running all tests</a></li>
+<li><a class="reference internal" href="#only-running-tests-for-a-single-package" id="id48">7.2&nbsp;&nbsp;&nbsp;Only running tests for a single package</a></li>
+<li><a class="reference internal" href="#running-a-single-test-with-full-output-to-the-console" id="id49">7.3&nbsp;&nbsp;&nbsp;Running a single test with full output to the console</a></li>
+<li><a class="reference internal" href="#running-memory-checking" id="id50">7.4&nbsp;&nbsp;&nbsp;Running memory checking</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#installing" id="id50">8&nbsp;&nbsp;&nbsp;Installing</a><ul class="auto-toc">
-<li><a class="reference internal" href="#setting-the-install-prefix-at-configure-time" id="id51">8.1&nbsp;&nbsp;&nbsp;Setting the install prefix at configure time</a></li>
-<li><a class="reference internal" href="#installing-the-software" id="id52">8.2&nbsp;&nbsp;&nbsp;Installing the software</a></li>
+<li><a class="reference internal" href="#installing" id="id51">8&nbsp;&nbsp;&nbsp;Installing</a><ul class="auto-toc">
+<li><a class="reference internal" href="#setting-the-install-prefix-at-configure-time" id="id52">8.1&nbsp;&nbsp;&nbsp;Setting the install prefix at configure time</a></li>
+<li><a class="reference internal" href="#installing-the-software" id="id53">8.2&nbsp;&nbsp;&nbsp;Installing the software</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#packaging" id="id53">9&nbsp;&nbsp;&nbsp;Packaging</a><ul class="auto-toc">
-<li><a class="reference internal" href="#creating-a-tarball-of-the-source-tree" id="id54">9.1&nbsp;&nbsp;&nbsp;Creating a tarball of the source tree</a></li>
+<li><a class="reference internal" href="#packaging" id="id54">9&nbsp;&nbsp;&nbsp;Packaging</a><ul class="auto-toc">
+<li><a class="reference internal" href="#creating-a-tarball-of-the-source-tree" id="id55">9.1&nbsp;&nbsp;&nbsp;Creating a tarball of the source tree</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#dashboard-submissions" id="id55">10&nbsp;&nbsp;&nbsp;Dashboard submissions</a></li>
+<li><a class="reference internal" href="#dashboard-submissions" id="id56">10&nbsp;&nbsp;&nbsp;Dashboard submissions</a></li>
 </ul>
 </div>
 <div class="section" id="introduction">
@@ -1242,14 +1243,36 @@ is free of calling deprecated code.</p>
 <tt class="docutils literal">Trilinos_HIDE_DEPRECATED_CODE</tt> for individual package
 <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt>.</p>
 </div>
-<div class="section" id="disable-update-of-package-dependency-information">
-<h2><a class="toc-backref" href="#id27">5.17&nbsp;&nbsp;&nbsp;Disable update of package dependency information</a></h2>
-<p>To turn off the update/generation of the various XML and HTML package
-dependency files (and speed up configuration), use the configure option:</p>
+<div class="section" id="outputting-package-dependency-information">
+<h2><a class="toc-backref" href="#id27">5.17&nbsp;&nbsp;&nbsp;Outputting package dependency information</a></h2>
+<p>To generate the various XML and HTML package dependency files, one can set the
+output directory when configuring using:</p>
 <pre class="literal-block">
--D Trilinos_DEPS_XML_OUTPUT_FILE:FILEPATH=
+-D Trilinos_DEPS_DEFAULT_OUTPUT_DIR:FILEPATH=&lt;SOME_PATH&gt;
 </pre>
-<p>NOTE: One must start with a clean CMake cache for this to work.</p>
+<p>This will generate, by default, the output files
+TrilinosPackageDependencies.xml, TrilinosPackageDependenciesTable.html, and
+CDashSubprojectDependencies.xml.</p>
+<p>The filepath for TrilinosPackageDependencies.xml can be overridden using:</p>
+<pre class="literal-block">
+-D Trilinos_DEPS_XML_OUTPUT_FILE:FILEPATH=&lt;SOME_FILE_PATH&gt;
+</pre>
+<p>The filepath for TrilinosPackageDependenciesTable.html can be overridden
+using:</p>
+<pre class="literal-block">
+-D Trilinos_DEPS_HTML_OUTPUT_FILE:FILEPATH=&lt;SOME_FILE_PATH&gt;
+</pre>
+<p>The filepath for CDashSubprojectDependencies.xml can be overridden using:</p>
+<pre class="literal-block">
+-D Trilinos_CDASH_DEPS_XML_OUTPUT_FILE:FILEPATH=&lt;SOME_FILE_PATH&gt;
+</pre>
+<p>NOTES:</p>
+<ul class="simple">
+<li>One must start with a clean CMake cache for all of these defaults to work.</li>
+<li>The files TrilinosPackageDependenciesTable.html and
+CDashSubprojectDependencies.xml will only get generated if support for
+Python is enabled.</li>
+</ul>
 </div>
 <div class="section" id="enabling-different-test-categories">
 <h2><a class="toc-backref" href="#id28">5.18&nbsp;&nbsp;&nbsp;Enabling different test categories</a></h2>
@@ -1404,15 +1427,27 @@ the time is being spent.</p>
 stanard command 'date'.  CMake does not have built-in timing functions so you
 have to query the system.</p>
 </div>
+<div class="section" id="generating-a-project-repo-version-file">
+<h2><a class="toc-backref" href="#id36">5.26&nbsp;&nbsp;&nbsp;Generating a project repo version file</a></h2>
+<p>In development mode working with local git repos for the project sources, on
+can generate a TrilinosRepoVersion.txt file which lists all of the repos and
+their current versions using:</p>
+<pre class="literal-block">
+-D &lt;PROJECT&gt;_GENERATE_REPO_VERSION_FILE:BOOL=ON
+</pre>
+<p>This will cause a TrilinosRepoVersion.txt file to get created in the binary
+directory, get installed in the install directory, and get included in the
+soruce distribution tarball.</p>
+</div>
 </div>
 <div class="section" id="building-makefile-generator">
-<h1><a class="toc-backref" href="#id36">6&nbsp;&nbsp;&nbsp;Building (Makefile generator)</a></h1>
+<h1><a class="toc-backref" href="#id37">6&nbsp;&nbsp;&nbsp;Building (Makefile generator)</a></h1>
 <p>This section described building using the default CMake Makefile generator.
 TriBITS supports other CMake generators such as Visual Studio on Windows,
 XCode on Macs, and Eclipe project files but using those build systems are not
 documented here.</p>
 <div class="section" id="building-all-targets">
-<h2><a class="toc-backref" href="#id37">6.1&nbsp;&nbsp;&nbsp;Building all targets</a></h2>
+<h2><a class="toc-backref" href="#id38">6.1&nbsp;&nbsp;&nbsp;Building all targets</a></h2>
 <p>To build all targets use:</p>
 <pre class="literal-block">
 $ make [-jN]
@@ -1420,7 +1455,7 @@ $ make [-jN]
 <p>where <tt class="docutils literal">N</tt> is the number of processes to use (i.e. 2, 4, 16, etc.) .</p>
 </div>
 <div class="section" id="discovering-what-targets-are-available-to-build">
-<h2><a class="toc-backref" href="#id38">6.2&nbsp;&nbsp;&nbsp;Discovering what targets are available to build</a></h2>
+<h2><a class="toc-backref" href="#id39">6.2&nbsp;&nbsp;&nbsp;Discovering what targets are available to build</a></h2>
 <p>CMake generates Makefiles with a 'help' target!  To see the targets at the
 current directory level type:</p>
 <pre class="literal-block">
@@ -1436,7 +1471,7 @@ be used as a target for <tt class="docutils literal">make <span class="pre">&lt;
 building a single object file, for example.</p>
 </div>
 <div class="section" id="building-all-of-the-targets-for-a-package">
-<h2><a class="toc-backref" href="#id39">6.3&nbsp;&nbsp;&nbsp;Building all of the targets for a package</a></h2>
+<h2><a class="toc-backref" href="#id40">6.3&nbsp;&nbsp;&nbsp;Building all of the targets for a package</a></h2>
 <p>To build only the targets for a given TriBITS package, one can use:</p>
 <pre class="literal-block">
 $ make &lt;TRIBITS_PACKAGE&gt;_all
@@ -1450,14 +1485,14 @@ $ make
 its required upstream targets.</p>
 </div>
 <div class="section" id="building-all-of-the-libraries-for-a-package">
-<h2><a class="toc-backref" href="#id40">6.4&nbsp;&nbsp;&nbsp;Building all of the libraries for a package</a></h2>
+<h2><a class="toc-backref" href="#id41">6.4&nbsp;&nbsp;&nbsp;Building all of the libraries for a package</a></h2>
 <p>To build only the libraries for given TriBITS package, use:</p>
 <pre class="literal-block">
 $ make &lt;TRIBITS_PACKAGE&gt;_libs
 </pre>
 </div>
 <div class="section" id="building-all-of-the-libraries-for-all-enabled-packages">
-<h2><a class="toc-backref" href="#id41">6.5&nbsp;&nbsp;&nbsp;Building all of the libraries for all enabled packages</a></h2>
+<h2><a class="toc-backref" href="#id42">6.5&nbsp;&nbsp;&nbsp;Building all of the libraries for all enabled packages</a></h2>
 <p>To build only the libraries for all enabled TriBITS packages, use:</p>
 <pre class="literal-block">
 $ make libs
@@ -1467,7 +1502,7 @@ enabled <tt class="docutils literal">Trilinos</tt> packages.  You can also use t
 <tt class="docutils literal">'Trilinos_libs</tt>.</p>
 </div>
 <div class="section" id="building-a-single-object-file">
-<h2><a class="toc-backref" href="#id42">6.6&nbsp;&nbsp;&nbsp;Building a single object file</a></h2>
+<h2><a class="toc-backref" href="#id43">6.6&nbsp;&nbsp;&nbsp;Building a single object file</a></h2>
 <p>To build just a single object file (i.e. to debug a compile problem), first,
 look for the name of the object file to build based on the source file, for
 example for the source file <tt class="docutils literal">SomeSourceFile.cpp</tt>, use:</p>
@@ -1487,7 +1522,7 @@ object files so you need to always delete the object file first to make sure
 that it gets rebuilt correctly.</p>
 </div>
 <div class="section" id="building-with-verbose-output-without-reconfiguring">
-<h2><a class="toc-backref" href="#id43">6.7&nbsp;&nbsp;&nbsp;Building with verbose output without reconfiguring</a></h2>
+<h2><a class="toc-backref" href="#id44">6.7&nbsp;&nbsp;&nbsp;Building with verbose output without reconfiguring</a></h2>
 <p>One can get CMake to generate verbose make output at build type by just
 setting the Makefile variable <tt class="docutils literal">VERBOSE=1</tt>, for example, as:</p>
 <pre class="literal-block">
@@ -1497,7 +1532,7 @@ $ make [&lt;SOME_TARGET&gt;] VERBOSE=1
 raw compile and link lines.</p>
 </div>
 <div class="section" id="relink-a-target-without-considering-dependencies">
-<h2><a class="toc-backref" href="#id44">6.8&nbsp;&nbsp;&nbsp;Relink a target without considering dependencies</a></h2>
+<h2><a class="toc-backref" href="#id45">6.8&nbsp;&nbsp;&nbsp;Relink a target without considering dependencies</a></h2>
 <p>CMake provides a way to rebuild a target without considering its dependencies
 using:</p>
 <pre class="literal-block">
@@ -1506,13 +1541,13 @@ $ make &lt;SOME_TARGET&gt;/fast
 </div>
 </div>
 <div class="section" id="testing-with-ctest">
-<h1><a class="toc-backref" href="#id45">7&nbsp;&nbsp;&nbsp;Testing with CTest</a></h1>
+<h1><a class="toc-backref" href="#id46">7&nbsp;&nbsp;&nbsp;Testing with CTest</a></h1>
 <p>This section assumes one is using the CMake Makefile generator described
 above.  Also, the <tt class="docutils literal">ctest</tt> does not consider make dependencies when running
 so the software must be completely built before running <tt class="docutils literal">ctest</tt> as described
 here.</p>
 <div class="section" id="running-all-tests">
-<h2><a class="toc-backref" href="#id46">7.1&nbsp;&nbsp;&nbsp;Running all tests</a></h2>
+<h2><a class="toc-backref" href="#id47">7.1&nbsp;&nbsp;&nbsp;Running all tests</a></h2>
 <p>To run all of the defined tests (i.e. created using <tt class="docutils literal">TRIBITS_ADD_TEST()</tt> or
 <tt class="docutils literal">TRIBITS_ADD_ADVANCED_TEST()</tt>) use:</p>
 <pre class="literal-block">
@@ -1530,7 +1565,7 @@ processes (i.e. MPI tests) and will not exceed the number of processes
 <tt class="docutils literal">&lt;N&gt;</tt>.</p>
 </div>
 <div class="section" id="only-running-tests-for-a-single-package">
-<h2><a class="toc-backref" href="#id47">7.2&nbsp;&nbsp;&nbsp;Only running tests for a single package</a></h2>
+<h2><a class="toc-backref" href="#id48">7.2&nbsp;&nbsp;&nbsp;Only running tests for a single package</a></h2>
 <p>Tests for just a single TriBITS package can be run with:</p>
 <pre class="literal-block">
 $ ctest -j4 -L &lt;TRIBITS_PACKAGE&gt;
@@ -1548,7 +1583,7 @@ other approaches as well.  See <tt class="docutils literal">ctest <span class="p
 experiment for more details.</p>
 </div>
 <div class="section" id="running-a-single-test-with-full-output-to-the-console">
-<h2><a class="toc-backref" href="#id48">7.3&nbsp;&nbsp;&nbsp;Running a single test with full output to the console</a></h2>
+<h2><a class="toc-backref" href="#id49">7.3&nbsp;&nbsp;&nbsp;Running a single test with full output to the console</a></h2>
 <p>To run just a single test and send detailed output directly to the console,
 one can run:</p>
 <pre class="literal-block">
@@ -1564,7 +1599,7 @@ working directory.  To run the test exactly as <tt class="docutils literal">ctes
 shown working directory and run the shown command.</p>
 </div>
 <div class="section" id="running-memory-checking">
-<h2><a class="toc-backref" href="#id49">7.4&nbsp;&nbsp;&nbsp;Running memory checking</a></h2>
+<h2><a class="toc-backref" href="#id50">7.4&nbsp;&nbsp;&nbsp;Running memory checking</a></h2>
 <p>To run the memory tests for just a single package, from the <em>base</em> build
 directory, run:</p>
 <pre class="literal-block">
@@ -1581,14 +1616,14 @@ work.  You have to run them from the base build directory and then use <tt class
 </div>
 </div>
 <div class="section" id="installing">
-<h1><a class="toc-backref" href="#id50">8&nbsp;&nbsp;&nbsp;Installing</a></h1>
+<h1><a class="toc-backref" href="#id51">8&nbsp;&nbsp;&nbsp;Installing</a></h1>
 <p>After a build and test of the software is complete, the software can be
 installed.  Actually, to get ready for the install, the install directory must
 be specified at configure time by setting the variable
 <tt class="docutils literal">CMAKE_INSTALL_PREFIX</tt>.  The other commands described below can all be run
 after the build and testing is complete.</p>
 <div class="section" id="setting-the-install-prefix-at-configure-time">
-<h2><a class="toc-backref" href="#id51">8.1&nbsp;&nbsp;&nbsp;Setting the install prefix at configure time</a></h2>
+<h2><a class="toc-backref" href="#id52">8.1&nbsp;&nbsp;&nbsp;Setting the install prefix at configure time</a></h2>
 <p>In order to set up for the install, the install prefix should be set up at
 configure time by setting, for example:</p>
 <pre class="literal-block">
@@ -1596,7 +1631,7 @@ configure time by setting, for example:</p>
 </pre>
 </div>
 <div class="section" id="installing-the-software">
-<h2><a class="toc-backref" href="#id52">8.2&nbsp;&nbsp;&nbsp;Installing the software</a></h2>
+<h2><a class="toc-backref" href="#id53">8.2&nbsp;&nbsp;&nbsp;Installing the software</a></h2>
 <p>To install the software, type:</p>
 <pre class="literal-block">
 $ make install
@@ -1613,27 +1648,35 @@ installing.</p>
 </div>
 </div>
 <div class="section" id="packaging">
-<h1><a class="toc-backref" href="#id53">9&nbsp;&nbsp;&nbsp;Packaging</a></h1>
+<h1><a class="toc-backref" href="#id54">9&nbsp;&nbsp;&nbsp;Packaging</a></h1>
 <p>Packaged source and binary distributions can also be created using CMake and
 CPack.</p>
 <div class="section" id="creating-a-tarball-of-the-source-tree">
-<h2><a class="toc-backref" href="#id54">9.1&nbsp;&nbsp;&nbsp;Creating a tarball of the source tree</a></h2>
-<p>To create a source tarball of the project, use:</p>
+<h2><a class="toc-backref" href="#id55">9.1&nbsp;&nbsp;&nbsp;Creating a tarball of the source tree</a></h2>
+<p>To create a source tarball of the project, first configure with the list of
+desired packages and configure with:</p>
+<pre class="literal-block">
+-D Trilinos_ENABLE_CPACK_PACKAGING:BOOL=ON
+</pre>
+<p>see <a class="reference internal" href="#selecting-the-list-of-packages-to-enable">Selecting the list of packages to enable</a>), then generate the
+distribution files using:</p>
 <pre class="literal-block">
 $ make package_source
 </pre>
 <p>The above command will tar up <em>everything</em> in the source tree (except for
-files explicitly excluded in the CMakeLists.txt files) so make sure that you
-start with a totally clean source tree before you do this.  You can also
-include generated files, such as Doxygen output files first, then run <tt class="docutils literal">make
-package_source</tt> and it will be included in the distribution.</p>
-<p>Note to developers: You can control what gets put into the tarball by setting
-the cache variable <tt class="docutils literal">CPACK_SOURCE_IGNORE_FILES</tt> when configuring with CMake.
-This variable is set internally the Trilinos CMakeLists.txt files.</p>
+files explicitly excluded in the CMakeLists.txt files and packages that are
+not enabled) so make sure that you start with a totally clean source tree
+before you do this.  You can clean the source tree first to remove all ignored
+files using:</p>
+<pre class="literal-block">
+$ git clean -fd -x
+</pre>
+<p>You can also include generated files, such as Doxygen output files first, then
+run <tt class="docutils literal">make package_source</tt> and it will be included in the distribution.</p>
 </div>
 </div>
 <div class="section" id="dashboard-submissions">
-<h1><a class="toc-backref" href="#id55">10&nbsp;&nbsp;&nbsp;Dashboard submissions</a></h1>
+<h1><a class="toc-backref" href="#id56">10&nbsp;&nbsp;&nbsp;Dashboard submissions</a></h1>
 <p>You can use the TriBITS scripting code to submit package-by-package build,
 test, coverage, memcheck results to the project's CDash dashboard.</p>
 <p>First, configure as normal but add the build and test parallel levels with:</p>

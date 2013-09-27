@@ -342,27 +342,6 @@ IF(Stokhos_ENABLE_Sacado)
       STANDARD_PASS_OUTPUT
       )
 
-    SET(CUDA_SOURCES "")
-    SET(KKUT_DEPLIBS stokhos kokkoscore)
-    IF (Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
-      # add MPI include dir to nvcc
-      IF( TPL_ENABLE_MPI )
-        CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
-      ENDIF()
-      CUDA_COMPILE(CUDA_SOURCES Stokhos_KokkosArrayKernelsUnitTestNew_Cuda.cu)
-    ENDIF()
-
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      KokkosArrayKernelsUnitTestNew
-      SOURCES Stokhos_KokkosArrayKernelsUnitTestNew.hpp
-              Stokhos_KokkosArrayKernelsUnitTestNew.cpp
-              ${CUDA_SOURCES}
-      COMM serial mpi
-      STANDARD_PASS_OUTPUT
-      NUM_MPI_PROCS 1
-      DEPLIBS ${KKUT_DEPLIBS}
-      )
-
   ENDIF()
 
 ENDIF()
@@ -440,6 +419,31 @@ IF(Stokhos_ENABLE_TriKota)
     COMM serial mpi
     STANDARD_PASS_OUTPUT
     NUM_MPI_PROCS 1
+    )
+
+ENDIF()
+
+IF (Stokhos_ENABLE_KokkosCore)
+
+  SET(CUDA_SOURCES "")
+  SET(KKUT_DEPLIBS stokhos kokkoscore)
+  IF (Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
+    # add MPI include dir to nvcc
+    IF( TPL_ENABLE_MPI )
+      CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
+    ENDIF()
+    CUDA_COMPILE(CUDA_SOURCES Stokhos_KokkosArrayKernelsUnitTestNew_Cuda.cu)
+  ENDIF()
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    KokkosArrayKernelsUnitTestNew
+    SOURCES Stokhos_KokkosArrayKernelsUnitTestNew.hpp
+    Stokhos_KokkosArrayKernelsUnitTestNew.cpp
+    ${CUDA_SOURCES}
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    DEPLIBS ${KKUT_DEPLIBS}
     )
 
 ENDIF()
