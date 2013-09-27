@@ -70,27 +70,43 @@ namespace Kokkos {
 
 /// \class Cuda
 /// \brief Kokkos device that uses CUDA to run on GPUs.
+///
+/// A "device" represents a parallel execution model.  It tells Kokkos
+/// how to parallelize the execution of kernels in a parallel_for or
+/// parallel_reduce.  For example, the Threads device uses Pthreads or
+/// C++11 threads on a CPU, the OpenMP device uses the OpenMP language
+/// extensions, and the Serial device executes "parallel" kernels
+/// sequentially.  The Cuda device uses NVIDIA's CUDA programming
+/// model to execute kernels in parallel on GPUs.
 class Cuda {
 public:
   //! \name Type declarations that all Kokkos devices must provide.
   //@{
 
+  //! The device type (same as this class).
   typedef Cuda                  device_type ;
+  //! This device's preferred memory space.
   typedef CudaSpace             memory_space ;
+  //! The size_type typedef best suited for this device.
   typedef CudaSpace::size_type  size_type ;
+  //! This device's preferred array layout.
   typedef LayoutLeft            array_layout ;
+  //! This device's host mirror type.
   typedef Kokkos::Threads       host_mirror_device_type ;
 
   //@}
-  //--------------------------------------------------------------------------
   //! \name Functions that all Kokkos devices must implement.
   //@{
 
+  /// \brief True if and only if this method is being called in a
+  ///   thread-parallel function.
+  KOKKOS_INLINE_FUNCTION static bool in_parallel() { 
 #if defined( __CUDA_ARCH__ ) 
-  KOKKOS_INLINE_FUNCTION static bool in_parallel() { return true ; }
+    return true; 
 #else
-  KOKKOS_INLINE_FUNCTION static bool in_parallel() { return false ; }
+    return false;
 #endif
+  }
 
   /** \brief  Set the device in a "sleep" state.
    *
@@ -123,7 +139,7 @@ public:
   //! Free any resources being consumed by the device.
   static void finalize();
 
-  /** \brief  Print Cuda configuation */
+  //! Print configuration information to the given output stream.
   static void print_configuration( std::ostream & );
 
   //@}
@@ -136,18 +152,17 @@ public:
     explicit SelectDevice( int id ) : cuda_device_id( id ) {}
   };
 
-  /** \brief  Initialize, telling the CUDA run-time library which device to use. */
+  //! Initialize, telling the CUDA run-time library which device to use.
   static void initialize( const SelectDevice = SelectDevice() );
 
   static int is_initialized();
 
-  /** \brief  Cuda device architecture of the selected device.
-   *          Matches the __CUDA_ARCH__ specification.
-   */
+  /// \brief Cuda device architecture of the selected device.
+  /// 
+  /// This matches the __CUDA_ARCH__ specification.
   static size_type device_arch();
 
-
-  /** \brief  Query device count. */
+  //! Query device count.
   static size_type detect_device_count();
 
   /** \brief  Detect the available devices and their architecture
@@ -156,10 +171,7 @@ public:
   static std::vector<unsigned> detect_device_arch();
 
   //@}
-  //--------------------------------------------------------------------------
-
 #if defined( __CUDA_ARCH__ )
-
   //! \name Functions for the functor device interface
   //@{
 
@@ -173,24 +185,27 @@ public:
   __device__ inline unsigned int team_barrier_count(bool value) const
              { return __syncthreads_count(value); }
 
-  /* Collectively compute the league-wide unordered exclusive prefix sum.
-   * Values are ordered within a team, but not between teams (i.e. the start
-   * values of thread 0 in each team are not ordered according to team number).
-   * This call does not use a global synchronization. Multiple unordered scans
-   * can be in-flight at the same time (using different scratch_views).
-   * The scratch-view will hold the complete sum in the end.
-   */
+  /// \brief Collectively compute the league-wide unordered exclusive prefix sum.
+  ///
+  /// Values are ordered within a team, but not between teams
+  /// (i.e. the start values of thread 0 in each team are not ordered
+  /// according to team number).  This call does not use a global
+  /// synchronization. Multiple unordered scans can be in flight at
+  /// the same time (using scratch_view arguments that point to
+  /// distinct chunks of memory).  The scratch_view output argument
+  /// will hold the complete sum in the end.
   template< class VT >
-  __device__ inline typename VT::value_type unordered_scan
-             (typename VT::value_type& value, VT& scratch_view);
+  __device__ inline typename VT::value_type 
+  unordered_scan (typename VT::value_type& value, VT& scratch_view);
 
-  /* Collectively compute the team-wide exclusive prefix sum using CUDA Unbound.
-   * Values are ordered, the last thread returns the sum of all values
-   * in the team less its own value
-   */
+  /// \brief Collectively compute the team-wide exclusive prefix sum using CUDA Unbound.
+  ///
+  /// Values are ordered.  The last thread returns the sum of all
+  /// values in the team less its own value.
   template< typename T >
   __device__ inline T team_scan(T& value);
 
+  //! Get a pointer to shared memory for this team.
   __device__ inline void * get_shmem( const int size );
 
   __device__ inline Cuda( Impl::CudaExec & exec ) : m_exec(exec) {}

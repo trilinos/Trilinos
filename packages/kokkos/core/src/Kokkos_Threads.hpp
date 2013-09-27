@@ -79,7 +79,11 @@ public:
   //! \name Static functions that all Kokkos devices must implement.
   //@{
 
-  /** \brief  Query if called within a thread-parallel function */
+  /// \brief True if and only if this method is being called in a
+  ///   thread-parallel function.
+  ///
+  /// FIXME (mfh 27 Sep 2013) Shouldn't this return \c bool, to match
+  /// Kokkos::Serial::in_parallel() and Kokkos::Cuda::in_parallel() ?
   static int in_parallel();
 
   /** \brief  Set the device in a "sleep" state.
@@ -115,13 +119,15 @@ public:
   /// For the Threads device, this terminates spawned worker threads.
   static void finalize();
 
-  /** \brief  Print configuration information */
+  /// \brief Print configuration information to the given output stream.
+  ///
+  /// FIXME (mfh 27 Sep 2013) How come this device's method takes two
+  /// arguments, and the other devices' methods only take one?
   static void print_configuration( std::ostream & , bool detail = false );
 
   //@}
-  /*------------------------------------------------------------------------*/
-  /** \name Function for the functor device interface */
-  /**@{ */
+  //! \name Function for the functor device interface */
+  //@{
 
   inline int league_rank() const ;
   inline int league_size() const ;
@@ -130,21 +136,23 @@ public:
 
   inline void team_barrier();
 
-  /* Collectively compute the league-wide unordered exclusive prefix sum.
-   * Values are ordered within a team, but not between teams (i.e. the start
-   * values of thread 0 in each team are not ordered according to team number).
-   * This call does not use a global synchronization. Multiple unordered scans
-   * can be in-flight at the same time (using different scratch_views).
-   * The scratch-view will hold the complete sum in the end.
-   */
+  /// \brief Collectively compute the league-wide unordered exclusive prefix sum.
+  ///
+  /// Values are ordered within a team, but not between teams
+  /// (i.e. the start values of thread 0 in each team are not ordered
+  /// according to team number).  This call does not use a global
+  /// synchronization. Multiple unordered scans can be in flight at
+  /// the same time (using scratch_view arguments that point to
+  /// distinct chunks of memory).  The scratch_view output argument
+  /// will hold the complete sum in the end.
   template< class VT >
   inline typename VT::value_type unordered_scan
              (typename VT::value_type& value, VT& scratch_view);
 
-  /* Collectively compute the team-wide exclusive prefix sum using CUDA Unbound.
-   * Values are ordered, the last thread returns the sum of all values
-   * in the team less its own value
-   */
+  /// \brief Collectively compute the team-wide exclusive prefix sum.
+  ///
+  /// Values are ordered.  The last thread returns the sum of all
+  /// values in the team less its own value.
   template< typename T >
   inline T team_scan(T& value);
 
