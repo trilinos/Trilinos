@@ -14,7 +14,7 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/EntityCommDatabase.hpp>
-
+#include <stk_mesh/base/CreateEdges.hpp>
 #include <stk_mesh/base/BoundaryAnalysis.hpp>
 #include <stk_mesh/base/SkinMesh.hpp>
 
@@ -133,6 +133,95 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, induced_part )
   CALLGRIND_STOP_INSTRUMENTATION;
 
   bulk.modification_end();
+
+  print_memory_sum_all_procs(pm);
+
+  print_debug_skip(pm);
+}
+
+void mesh_create_hex_with_edges_test(stk::ParallelMachine pm)
+{
+  const size_t p_size = stk::parallel_machine_size(pm);
+
+  const int x_dim = 10 * p_size;
+  const int y_dim = 10;
+  const int z_dim = 10;
+
+  // Set up dead-simple mesh, 2 quads sharing 2 nodes
+  stk::mesh::fixtures::HexFixture mesh(pm, x_dim, y_dim, z_dim);
+  MetaData & meta = mesh.m_meta;
+  BulkData & bulk = mesh.m_bulk_data;
+
+  const int num_inducable_parts = 4;
+  const int num_non_inducable_parts = 10;
+
+  PartVector node_parts;
+  PartVector elem_parts;
+  for (int i = 0; i < num_inducable_parts + num_non_inducable_parts; ++i) {
+    std::ostringstream elem_part_name, node_part_name;
+    std::string inducable_str = i < num_inducable_parts ? "Inducable" : "Non-inducable";
+    elem_part_name << inducable_str << " Elem Part " << i;
+    node_part_name << inducable_str << " Node Part " << i;
+    if (i < num_inducable_parts) {
+      elem_parts.push_back(&meta.declare_part(elem_part_name.str(), stk::topology::ELEMENT_RANK));
+      node_parts.push_back(&meta.declare_part(node_part_name.str(), stk::topology::NODE_RANK));
+    }
+    else {
+      elem_parts.push_back(&meta.declare_part(elem_part_name.str()));
+      node_parts.push_back(&meta.declare_part(node_part_name.str()));
+    }
+  }
+
+  mesh.add_elem_parts(elem_parts.begin(), elem_parts.size());
+  mesh.add_node_parts(node_parts.begin(), node_parts.size());
+
+  CALLGRIND_START_INSTRUMENTATION;
+  CALLGRIND_TOGGLE_COLLECT;
+
+  meta.commit();
+
+  mesh.generate_mesh();
+
+  bulk.modification_begin();
+
+  stk::mesh::create_edges(bulk);
+
+  bulk.modification_end();
+
+  CALLGRIND_TOGGLE_COLLECT;
+  CALLGRIND_STOP_INSTRUMENTATION;
+}
+
+STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, mesh_create_hex_with_edges_serial )
+{
+  check_valgrind_version();
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+  const size_t p_size = stk::parallel_machine_size(pm);
+
+  // serial only
+  ThrowRequire(p_size == 1);
+
+  mesh_create_hex_with_edges_test(pm);
+
+  print_memory_sum_all_procs(pm);
+
+  print_debug_skip(pm);
+}
+
+STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, mesh_create_hex_with_edges_parallel )
+{
+  check_valgrind_version();
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+  const size_t p_size = stk::parallel_machine_size(pm);
+
+  // 8-proc only only
+  ThrowRequire(p_size == 8);
+
+  mesh_create_hex_with_edges_test(pm);
 
   print_memory_sum_all_procs(pm);
 
