@@ -540,8 +540,8 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::compute()
 
   Inverse_->compute();
 
-#if defined (HAVE_MPI) && defined (HAVE_IFPACK2_TIMER_BARRIER) 
-  MPI_Barrier(MPI_COMM_WORLD);
+#if defined (HAVE_IFPACK2_TIMER_BARRIER) 
+  Matrix_->getDomainMap ()->getComm ()->barrier ();
 #endif  
 
   IsComputed_ = true; 
