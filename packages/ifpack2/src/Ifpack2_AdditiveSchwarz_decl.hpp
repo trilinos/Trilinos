@@ -67,15 +67,15 @@
 namespace Ifpack2 {
 
 /** \class AdditiveSchwarz
-\brief Additive Schwarz domain decomposition for Tpetra::RowMatrix objects.
+\brief Additive Schwarz domain decomposition for Tpetra sparse matrices.
 
 \section Ifpack2_AdditiveSchwarz_Summary Summary
 
 This class implements an Additive Schwarz (one-level overlapping
 domain decomposition) preconditioner.  It operates on a given
 Tpetra::RowMatrix.  This class implements Tpetra::Operator, like all
-other Ifpack2 Preconditioner subclasses.  Thus, the apply() method
-applies the preconditioner to a multivector.
+other subclasses of Preconditioner.  Thus, the apply() method applies
+the preconditioner to a multivector.
 
 \section Ifpack2_AdditiveSchwarz_Alg Algorithm
 
@@ -88,34 +88,36 @@ The preconditioner can be written as:
 \f[
 P_{AS}^{-1} = \sum_{i=1}^M P_i A_i^{-1} R_i,
 \f]
-where \f$M\f$ is the number of subdomains (that is, the number of
+where \f$M\f$ is the number of subdomains (in this case, the number of
 processors in the computation), \f$R_i\f$ is an operator that
 restricts the global vector to the vector lying on subdomain \f$i\f$,
 \f$P_i\f$ is the prolongator operator, and
+\f[
+A_i = R_i A P_i.
+\f]
 
-  \f[
-  A_i = R_i A P_i.
-  \f]
+Constructing a Schwarz preconditioner takes two steps:
+<ol>
+<li> Definition of the restriction and prolongation operators </li>
+<li> Definition of a solver for linear systems involving \f$A_i\f$ </li>
+</ol>
 
-  The construction of Schwarz preconditioners is mainly composed by
-  two steps:
-  - definition of the restriction and prolongation operator
-  \f$R_i\f$ and \f$R_i^T\f$. If minimal overlap is chosen, their
-  implementation is trivial, \f$R_i\f$ will return all the local
-  components. For wider overlaps, instead, Tpetra::Import and
-  Tpetra::Export will be used to import/export data. The user
-  must provide both the matrix to be preconditioned (which is suppose
-  to have minimal-overlap) and the matrix with wider overlap.
-  - definition of a technique to apply the inverse of \f$A_i\f$.
-  To solve on each subdomain, the user can adopt any class, derived
-  from Ifpack2::Preconditioner. This can be easily accomplished, as
-  Ifpack2::AdditiveSchwarz is templated with the solver for each subdomain.
+The definition of the restriction and prolongation operators \f$R_i\f$
+and \f$R_i^T\f$ depends on the level of overlap. If minimal overlap is
+chosen, their implementation is trivial; \f$R_i\f$ will return all the
+local components.  For wider overlap, Tpetra::Import and
+Tpetra::Export will be used to import resp. export data.  The user
+must provide both the matrix to be preconditioned (whose which must
+have minimal overlap) and the matrix with wider overlap.
 
-  The local matrix \f$A_i\f$ can be filtered, to eliminate singletons, and
-  reordered. At the present time, RCM and METIS can be used to reorder the
-  local matrix.
-  
-  The complete list of supported parameters is reported in page \ref ifp_params.
+To solve linear systems involving \f$A_i\f$ on each subdomain, the
+user can adopt any subclass of Ifpack2::Preconditioner. This can be
+easily accomplished, as Ifpack2::AdditiveSchwarz is templated with the
+solver for each subdomain.
+
+The local matrix \f$A_i\f$ can be filtered, to eliminate singletons,
+and reordered. At the present time, RCM and METIS can be used to
+reorder the local matrix.
 */
 template<class MatrixType,class LocalInverseType>
 class AdditiveSchwarz : 
@@ -124,65 +126,119 @@ class AdditiveSchwarz :
 					   typename MatrixType::global_ordinal_type,
 					   typename MatrixType::node_type> {
 public:
-  typedef typename MatrixType::scalar_type         Scalar;
-  typedef typename MatrixType::local_ordinal_type  LocalOrdinal;
-  typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
-  typedef typename MatrixType::node_type           Node;
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
-  typedef typename Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>  LocalMatrixType;
+  //! \name Typedefs
+  //@{ 
 
-  //@{ \name Constructors/Destructors
-  //! Ifpack2::AdditiveSchwarz constructor with given Tpetra::RowMatrix.
-  /*! Creates an Ifpack2::AdditiveSchwarz preconditioner with overlap.
-   * To use minimal-overlap, OverlappingMatrix is omitted
-   * (as defaulted to 0).
-   *
-   * \param
-   * Matrix - (In) Pointer to matrix to be preconditioned
-   *
-   * \param
-   * OverlappingMatrix - (In) Pointer to the matrix extended with the
-   *                     desired level of overlap.
-   */
-  AdditiveSchwarz(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & Matrix_in, int OverlapLevel_in = 0);
+  //! The type of the entries of the input MatrixType.
+  typedef typename MatrixType::scalar_type         scalar_type;
+
+  //! The type of local indices in the input MatrixType.
+  typedef typename MatrixType::local_ordinal_type  local_ordinal_type;
+
+  //! The type of global indices in the input MatrixType.
+  typedef typename MatrixType::global_ordinal_type global_ordinal_type;
+
+  //! The type of the Kokkos Node used by the input MatrixType.
+  typedef typename MatrixType::node_type           node_type;
+
+  //! The type of the magnitude (absolute value) of a matrix entry.
+  typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
+
+  /// \brief The Tpetra::RowMatrix specialization matching MatrixType.
+  ///
+  /// MatrixType may be either a Tpetra::CrsMatrix specialization or a
+  /// Tpetra::RowMatrix specialization.  This typedef will always be a
+  /// Tpetra::RowMatrix specialization which is either the same as
+  /// MatrixType, or the parent class of MatrixType.
+  typedef typename Tpetra::RowMatrix<scalar_type, 
+				     local_ordinal_type, 
+				     global_ordinal_type, 
+				     node_type> row_matrix_type;
+  //@}
+  // \name Deprecated typedefs
+  //@{
+
+  //! Preserved only for backwards compatibility.  Please use "scalar_type".
+  TEUCHOS_DEPRECATED typedef typename MatrixType::scalar_type         Scalar;
+
+  //! Preserved only for backwards compatibility.  Please use "local_ordinal_type".
+  TEUCHOS_DEPRECATED typedef typename MatrixType::local_ordinal_type  LocalOrdinal;
+
+  //! Preserved only for backwards compatibility.  Please use "global_ordinal_type".
+  TEUCHOS_DEPRECATED typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
+
+  //! Preserved only for backwards compatibility.  Please use "node_type".
+  TEUCHOS_DEPRECATED typedef typename MatrixType::node_type           Node;
+
+  //! Preserved only for backwards compatibility.  Please use "magnitude_type".
+  TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
+
+  //! Preserved only for backwards compatibility.  Please use "row_matrix_type".
+  TEUCHOS_DEPRECATED typedef typename Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type>  LocalMatrixType;
+
+  //@}
+  // \name Constructors and destructor
+  //@{
+
+  /// \brief Constructor that takes a matrix and the level of overlap.
+  /// 
+  /// \param Matrix [in] The matrix to be preconditioned.
+  /// \param overlapLevel [in] The level of overlap.  Must be
+  ///   nonnegative.  Zero means no overlap.
+  AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A,
+		   const int overlapLevel = 0);
   
   //! Destructor
   virtual ~AdditiveSchwarz();
-  //@}
 
-  /** \name Methods implementing Tpetra::Operator. */
+  //@}
+  //! \name Implementation of Tpetra::Operator
   //@{
   
-  //! Returns the Map associated with the domain of this operator, which must be compatible with X.getMap().
-  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
+  //! The domain Map of this operator.
+  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getDomainMap() const;
   
-  //! Returns the Map associated with the range of this operator, which must be compatible with Y.getMap().
-  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
+  //! The range Map of this operator.
+  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getRangeMap() const;
   
-  //! Returns a pointer to the input matrix.
-  virtual Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getMatrix() const;
-
-
-
-  //! Applies the effect of the preconditioner.
-  virtual void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
-		     Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
-		     Teuchos::ETransp mode = Teuchos::NO_TRANS,
-		     Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-		     Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+  //! Apply the preconditioner to X, putting the result in Y.
+  virtual void
+  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &X, 
+	 Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &Y, 
+	 Teuchos::ETransp mode = Teuchos::NO_TRANS,
+	 scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+	 scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
   
   //@}
 
-  //! Applies the effect of the preconditioner.
+  //! The input matrix.
+  virtual Teuchos::RCP<const row_matrix_type> getMatrix() const;
+
+  //! Templated version of apply().
   template <class DomainScalar, class RangeScalar>
-  void applyTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
-		  Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
-		  Teuchos::ETransp mode = Teuchos::NO_TRANS,
-		  RangeScalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-		  RangeScalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+  void applyTempl (const Tpetra::MultiVector<DomainScalar,local_ordinal_type,global_ordinal_type,node_type> &X, 
+		   Tpetra::MultiVector<RangeScalar,local_ordinal_type,global_ordinal_type,node_type> &Y, 
+		   Teuchos::ETransp mode = Teuchos::NO_TRANS,
+		   RangeScalar alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+		   RangeScalar beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
   
-  //! Sets all parameters for the preconditioner.
-  virtual void setParameters(const Teuchos::ParameterList& List);
+  /// \brief Set the preconditioner's parameters.
+  ///
+  /// Accepted parameters include the following:
+  ///   - "schwarz: compute condest" (\c bool): If true, estimate the
+  ///     condition number each time compute() is called.
+  ///   - "schwarz: combine mode" (\c std::string): The (Tpetra)
+  ///     CombineMode used for combining incoming data with existing
+  ///     data in overlap regions.  Valid values include "Add",
+  ///     "Insert", "Replace", and "AbsMax".
+  ///   - "schwarz: overlap level" (\c int): The level of overlap.
+  ///   - "schwarz: use reordering" (\c bool): Whether to use Zoltan2
+  ///     to do reordering.
+  ///   - "schwarz: subdomain id" (\c int): I don't understand what
+  ///     this does.
+  ///   - "schwarz: filter singletons" (\c bool): If true, filter
+  ///     singletons.  I don't understand what this does.
+  virtual void setParameters (const Teuchos::ParameterList& List);
   
   //! Computes all (graph-related) data necessary to initialize the preconditioner.
   virtual void initialize();
@@ -197,13 +253,14 @@ public:
   virtual bool isComputed() const;
   
   //! Computes the condition number estimate and returns its value.
-  virtual magnitudeType computeCondEst(CondestType CT = Ifpack2::Cheap,
-				       LocalOrdinal MaxIters = 1550,
-				       magnitudeType Tol = 1e-9,
-				       const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &Matrix = Teuchos::null);
+  virtual magnitude_type
+  computeCondEst (CondestType CT = Ifpack2::Cheap,
+		  local_ordinal_type MaxIters = 1550,
+		  magnitude_type Tol = 1e-9,
+		  const Teuchos::Ptr<const row_matrix_type> &Matrix = Teuchos::null);
   
   //! Returns the computed condition number estimate, or -1.0 if not computed.
-  virtual magnitudeType getCondEst() const;
+  virtual magnitude_type getCondEst() const;
   
   //! Returns the number of calls to initialize().
   virtual int getNumInitialize() const;
@@ -223,7 +280,7 @@ public:
   //! Returns the time spent in apply().
   virtual double getApplyTime() const;
 
-  //! @name Overridden from Teuchos::Describable 
+  //! \name Implementation of Teuchos::Describable
   //@{
 
   /** \brief Return a simple one-line description of this object. */
@@ -241,31 +298,23 @@ public:
   virtual int getOverlapLevel() const;
 
 protected:
+  //! Copy constructor (unimplemented; do not use)
+  AdditiveSchwarz (const AdditiveSchwarz& RHS);
 
-  // @}
-
-  // @{ Internal merhods.
+  //! Set up the localized matrix and the singleton filter.
+  void setup ();
   
-  //! Copy constructor (should never be used)
-  AdditiveSchwarz(const AdditiveSchwarz& RHS);
+  //! The matrix to be preconditioned.
+  const Teuchos::RCP<const row_matrix_type> Matrix_;
 
-  //! Sets up the localized matrix and the singleton filter.
-  void setup();
-  
-  // @}
-
-  // @{ Internal data.  
-  //! Pointers to the matrix to be preconditioned.
-  const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Matrix_;
-
-  //! Pointers to the overlapping matrix.
-  Teuchos::RCP<Ifpack2::OverlappingRowMatrix<LocalMatrixType> >OverlappingMatrix_;
+  //! The overlapping matrix.
+  Teuchos::RCP<Ifpack2::OverlappingRowMatrix<row_matrix_type> >OverlappingMatrix_;
 
   //! Localized version of Matrix_ or OverlappingMatrix_.
   // CMS: Probably not a great idea, but this will remove the Local/Subdomain conflict here
-  Teuchos::RCP<LocalMatrixType > LocalizedMatrix_;
-  //! Pointer to the reordered matrix.
-  Teuchos::RCP<Ifpack2::ReorderFilter<LocalMatrixType> > ReorderedLocalizedMatrix_;
+  Teuchos::RCP<row_matrix_type> LocalizedMatrix_;
+  //! The reordered matrix.
+  Teuchos::RCP<Ifpack2::ReorderFilter<row_matrix_type> > ReorderedLocalizedMatrix_;
 
   //! If true, the preconditioner has been successfully initialized.
   bool IsInitialized_;
@@ -275,12 +324,12 @@ protected:
   bool IsOverlapping_;
   //! Level of overlap among the processors.
   int OverlapLevel_;
-  //! Stores a copy of the list given in SetParameters()
+  //! Store a copy of the list given in setParameters()
   Teuchos::ParameterList List_;
   //! Combine mode for off-process elements (only if overlap is used)
   Tpetra::CombineMode CombineMode_;
   //! Contains the estimated condition number.
-  magnitudeType Condest_;
+  magnitude_type Condest_;
   //! If \c true, compute the condition number estimate each time Compute() is called.
   bool ComputeCondest_;
   //! If \c true, reorder the local matrix.
@@ -293,7 +342,7 @@ protected:
   //! Filter for singletons.
   bool FilterSingletons_;
   //! filtering object.
-  Teuchos::RCP<Ifpack2::SingletonFilter<LocalMatrixType> > SingletonMatrix_;
+  Teuchos::RCP<Ifpack2::SingletonFilter<row_matrix_type> > SingletonMatrix_;
   //! Contains the number of successful calls to Initialize().
   int NumInitialize_;
   //! Contains the number of successful call to Compute().
@@ -317,11 +366,11 @@ protected:
   //! Pointer to the local solver.
   Teuchos::RCP<LocalInverseType> Inverse_;
   //! SerialMap for filtering multivector with no overlap.
-  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > SerialMap_;
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > SerialMap_;
   //! Distributed map for filtering multivector with no overlap.
-  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > DistributedMap_;
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > DistributedMap_;
   //! Local distributed map for filtering multivector with no overlap.
-  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > LocalDistributedMap_;
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > LocalDistributedMap_;
 }; // class AdditiveSchwarz
 
 }// end namespace
