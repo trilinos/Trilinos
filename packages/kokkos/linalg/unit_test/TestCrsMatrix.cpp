@@ -44,13 +44,27 @@
 #include <Kokkos_Serial.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 #include <Kokkos_CrsMatrix.hpp>
+#include <stdexcept>
 
 namespace { // anonymous
 
   using std::cerr;
   using std::endl;
 
-  // Create a square 10 x 10 nonsymmetric diagonally dominant sparse matrix.
+  // Create a test sparse matrix A.
+  //
+  // Identify the matrix to create by number (whichMatrix).  The
+  // following lists the valid options for whichMatrix:
+  //
+  // 0: A square 10 x 10 nonsymmetric diagonally dominant sparse matrix.
+  //
+  // \param ptr [out] Array of row offsets, of length numRows+1.
+  // \param ind [out] Array of column indices, of length nnz.
+  // \param val [out] Array of entries (values), of length nnz.
+  // \param numRows [out] The number of rows in the matrix.
+  // \param numCols [out] The number of columns in the matrix.
+  // \param nnz [out] The number of stored entries in the matrix.
+  // \param whichMatrix [in] The index of the matrix to create.
   template<typename Device>
   void
   makeSparseMatrix (Kokkos::View<int*, Device>& ptr,
@@ -58,49 +72,53 @@ namespace { // anonymous
 		    Kokkos::View<double*, Device>& val,
 		    int& numRows,
 		    int& numCols,
-		    int& nnz)
+		    int& nnz,
+		    const int whichMatrix)
   {
-    numRows = 10;
-    numCols = 10;
-    nnz = 21;
-    const int ptrRaw[] = {0, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21};
-    const int indRaw[] = {0, 1, 9, 
-			  1, 2,
-			  2, 3,
-			  3, 4,
-			  4, 5, 
-			  5, 6, 
-			  6, 7, 
-			  7, 8,
-			  8, 9,
-                       1, 9};
-    const double valRaw[] = {1.0, 4.0, 0.5,
-			     0.5, 5.0,
-			     1.0, 6.0,
-			     1.5, 7.0,
-			     2.0, 8.0,
-			     2.5, 9.0,
-			     3.0, 10.0,
-			     3.5, 11.0,
-			     4.0, 12.0,
-			     4.5, 13.0};
-    Kokkos::View<const int*, Kokkos::Serial, Kokkos::MemoryUnmanaged> ptrIn (ptrRaw, numRows+1);
-    Kokkos::View<const int*, Kokkos::Serial, Kokkos::MemoryUnmanaged> indIn (indRaw, nnz);
-    Kokkos::View<const double*, Kokkos::Serial, Kokkos::MemoryUnmanaged> valIn (valRaw, nnz);
+    if (whichMatrix == 0) {
+      numRows = 10;
+      numCols = 10;
+      nnz = 21;
+      const int ptrRaw[] = {0, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21};
+      const int indRaw[] = {0, 1, 9, 
+			    1, 2,
+			    2, 3,
+			    3, 4,
+			    4, 5, 
+			    5, 6, 
+			    6, 7, 
+			    7, 8,
+			    8, 9,
+			    1, 9};
+      const double valRaw[] = {1.0, 4.0, 0.5,
+			       0.5, 5.0,
+			       1.0, 6.0,
+			       1.5, 7.0,
+			       2.0, 8.0,
+			       2.5, 9.0,
+			       3.0, 10.0,
+			       3.5, 11.0,
+			       4.0, 12.0,
+			       4.5, 13.0};
+      // Wrap the above three arrays in unmanaged Views, so we can use deep_copy.
+      Kokkos::View<const int*, Kokkos::Serial, Kokkos::MemoryUnmanaged> ptrIn (ptrRaw, numRows+1);
+      Kokkos::View<const int*, Kokkos::Serial, Kokkos::MemoryUnmanaged> indIn (indRaw, nnz);
+      Kokkos::View<const double*, Kokkos::Serial, Kokkos::MemoryUnmanaged> valIn (valRaw, nnz);
 
-    cerr << "Allocating target space" << endl;
-    
-    ptr = Kokkos::View<int*, Device> ("ptr", numRows + 1);
-    ind = Kokkos::View<int*, Device> ("ind", nnz);
-    val = Kokkos::View<double*, Device> ("val", nnz);
+      // Create the output Views.
+      ptr = Kokkos::View<int*, Device> ("ptr", numRows + 1);
+      ind = Kokkos::View<int*, Device> ("ind", nnz);
+      val = Kokkos::View<double*, Device> ("val", nnz);
 
-    cerr << "Copying stuff" << endl;
-
-    Kokkos::deep_copy (ptr, ptrIn);
-    Kokkos::deep_copy (ind, indIn);
-    Kokkos::deep_copy (val, valIn);
-
-    cerr << "Done copying stuff" << endl;
+      Kokkos::deep_copy (ptr, ptrIn);
+      Kokkos::deep_copy (ind, indIn);
+      Kokkos::deep_copy (val, valIn);
+    }
+    else { // whichMatrix != 0
+      std::ostringstream os;
+      os << "Invalid whichMatrix value " << whichMatrix << ".  Valid value(s) include " << 0 << ".";
+      throw std::invalid_argument (os.str ());
+    }
   }
 
   // Return the Kokkos::CrsMatrix corresponding to makeSparseMatrix().
@@ -114,13 +132,10 @@ namespace { // anonymous
     int numRows;
     int numCols;
     int nnz;
-    makeSparseMatrix<Device> (ptr, ind, val, numRows, numCols, nnz);
 
-    cerr << "Calling constructor" << endl;
-
+    const int whichMatrix = 0;
+    makeSparseMatrix<Device> (ptr, ind, val, numRows, numCols, nnz, whichMatrix);
     return Kokkos::CrsMatrix<double, int, Device> ("A", numRows, numCols, nnz, val, ptr, ind);
-
-    cerr << "Done calling constructor" << endl;
   }
 
   // Create a Kokkos::CrsMatrix.
