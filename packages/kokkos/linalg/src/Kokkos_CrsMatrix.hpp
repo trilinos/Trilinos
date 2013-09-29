@@ -242,8 +242,6 @@ public:
 /// \tparam Device The Kokkos Device type.
 /// \tparam MemoryTraits Traits describing how data are stored in
 ///   memory.  The default parameter is sufficient for most users.
-///
-///
 template<typename ScalarType,
          typename OrdinalType,
          class Device,
@@ -270,7 +268,32 @@ public:
 
   //! Type of a host-memory mirror of the sparse matrix.
   typedef CrsMatrix<ScalarType, OrdinalType, host_device_type, MemoryTraits> HostMirror;
-  //! Type of the graph structure of the sparse matrix.
+  /// \brief Type of the graph structure of the sparse matrix.
+  ///
+  /// FIXME (mfh 29 Sep 2013) It doesn't make much sense to use int
+  /// (the fourth template parameter of CrsArray below) as SizeType,
+  /// if OrdinalType is bigger than int.  We should use Kokkos::if_c
+  /// to pick the default SizeType, possibly as follows:
+  ///
+  /// \code
+  /// typedef if_c< (sizeof(OrdinalType) > sizeof(typename ViewTraits<OrdinalType*, Kokkos::LayoutLeft, Device, void>::size_type)),
+  ///               OrdinalType,
+  ///               typename ViewTraits<OrdinalType*, Kokkos::LayoutLeft, Device, void>::size_type >
+  ///         size_type;
+  /// \endcode
+  ///
+  /// The first argument of if_c is a bool condition.  If true,
+  /// OrdinalType is size_type, else CrsArray's default size_type is
+  /// size_type.  We took the ViewTraits expression from the default
+  /// value of the fourth template parameter of CrsArray.  I have
+  /// tested that the above expression compiles.
+  ///
+  /// There is also some argument to be made that size_type should be
+  /// chosen dynamically, as a function of the number of entries.
+  /// It's entirely possible that a (very large) local sparse matrix
+  /// could have dimensions (and therefore column indices) that fit in
+  /// int32_t, but more entries than can be addressed by int32_t or
+  /// even uint32_t.
   typedef Kokkos::CrsArray<OrdinalType, Kokkos::LayoutLeft, Device,int> CrsArrayType;
   //! Type of column indices in the sparse matrix.
   typedef typename CrsArrayType::entries_type index_type;
@@ -419,26 +442,54 @@ public:
       OrdinalType ncols,
       OrdinalType cols_per_row);
 
+  // FIXME (mfh 29 Sep 2013) See notes on the three-argument version
+  // of this method below.
   void
   insertInGraph(OrdinalType row, OrdinalType col)
   {
     insertInGraph(row, &col, 1);
   }
 
+  // FIXME (mfh 29 Sep 2013) There should not be an "insertInGraph"
+  // method.  If you want to insert into the graph, you should get the
+  // graph and insert into it.  If you want to change the structure of
+  // the matrix, you should be required to specify a value to put in
+  // the new spot.
+  //
+  // Furthermore, this should be a device function, by analogy with
+  // UnorderedMap.
   void
-  insertInGraph(OrdinalType row, OrdinalType *cols, size_t ncol)
+  insertInGraph (const OrdinalType row, OrdinalType *cols, const size_t ncol)
   {
-    OrdinalType *start = &h_entries_[rows_[row] ];
-    OrdinalType *end   = &h_entries_[rows_[row+1] ];
-    for (size_t i=0; i < ncol; ++i) {
+    const OrdinalType* start = &h_entries_[rows_[row]];
+    const OrdinalType* end   = &h_entries_[rows_[row+1]];
+    for (size_t i = 0; i < ncol; ++i) {
       OrdinalType *iter = start;
-      while (iter < end && *iter != -1 && *iter != cols[i])
+      while (iter < end && *iter != -1 && *iter != cols[i]) {
         ++iter;
+      }
+
+      // FIXME (mfh 29 Sep 2013) Use of assert() statements is only
+      // acceptable for debugging.  It's legitimate for insertions to
+      // fail.  We should use the techniques that Dan Sunderland uses
+      // in UnorderedMap; for example:
+      //
+      // 1. Insertion should return an indication of success or failure
+      // 2. The graph should keep track of the number of failed insertions
+
       assert (iter != end );
       *iter = cols[i];
     }
   }
 
+  // FIXME (mfh 29 Sep 2013) We need a way to disable atomic updates
+  // for ScalarType types that do not support them.  We're pretty much
+  // limited to ScalarType = float, double, and {u}int{32,64}_t.  It
+  // could make sense to do atomic add updates elementwise for complex
+  // numbers, but that's about it unless we have transactional memory
+  // extensions.  Dan Sunderland explained to me that the "array of
+  // atomic int 'locks'" approach (for ScalarType that don't directly
+  // support atomic updates) won't work on GPUs.
   KOKKOS_INLINE_FUNCTION
   void
   sumIntoValues (const OrdinalType row, 
@@ -462,6 +513,7 @@ public:
     }
   }
 
+  // FIXME (mfh 29 Sep 2013) See above notes on sumIntoValues.
   KOKKOS_INLINE_FUNCTION
   void
   replaceValues (const OrdinalType row, 
@@ -485,8 +537,12 @@ public:
     }
   }
 
-
-
+  // FIXME (mfh 29 Sep 2013) It doesn't really make sense to template
+  // on the scalar or ordinal types of the input, since direct
+  // assignment of the underlying Views (which is how this operator
+  // works) won't work if the types aren't compatible.  It would make
+  // more sense to template on things like the Device and
+  // MemoryTraits.
   template<typename aScalarType, typename aOrdinalType, class aDevice, class aMemoryTraits>
   CrsMatrix&
   operator= (const CrsMatrix<aScalarType,aOrdinalType,aDevice,aMemoryTraits>& mtx)
