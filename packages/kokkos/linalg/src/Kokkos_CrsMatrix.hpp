@@ -46,6 +46,10 @@
 /// \file Kokkos_CrsMatrix.hpp
 /// \brief Kokkos' sparse matrix interface
 
+// FIXME (mfh 29 Sep 2013) There should never be a reason for using
+// assert() in these routines.  Routines that _could_ fail should
+// either return an error code (if they are device functions) or throw
+// an exception (if they are not device functions).
 #include <assert.h>
 #include <algorithm>
 
@@ -240,8 +244,13 @@ public:
 /// \tparam ScalarType The type of entries in the sparse matrix.
 /// \tparam OrdinalType The type of column indices in the sparse matrix.
 /// \tparam Device The Kokkos Device type.
-/// \tparam MemoryTraits Traits describing how data are stored in
-///   memory.  The default parameter is sufficient for most users.
+/// \tparam MemoryTraits Traits describing how Kokkos manages and
+///   accesses data.  The default parameter suffices for most users.
+/// 
+/// "Crs" stands for "compressed row sparse."  This is the phrase
+/// Trilinos traditionally uses to describe compressed sparse row
+/// storage for sparse matrices, as described, for example, in Saad
+/// (2nd ed.).
 template<typename ScalarType,
          typename OrdinalType,
          class Device,
@@ -272,14 +281,15 @@ public:
   ///
   /// FIXME (mfh 29 Sep 2013) It doesn't make much sense to use int
   /// (the fourth template parameter of CrsArray below) as SizeType,
-  /// if OrdinalType is bigger than int.  We should use Kokkos::if_c
-  /// to pick the default SizeType, possibly as follows:
+  /// if OrdinalType is bigger than int.  We should use
+  /// Kokkos::Impl::if_c to pick the default SizeType, possibly as
+  /// follows:
   ///
   /// \code
-  /// typedef if_c< (sizeof(OrdinalType) > sizeof(typename ViewTraits<OrdinalType*, Kokkos::LayoutLeft, Device, void>::size_type)),
-  ///               OrdinalType,
-  ///               typename ViewTraits<OrdinalType*, Kokkos::LayoutLeft, Device, void>::size_type >
-  ///         size_type;
+  /// typedef Impl::if_c< (sizeof(OrdinalType) >= sizeof(typename ViewTraits<OrdinalType*, Kokkos::LayoutLeft, Device, void>::size_type)),
+  ///   OrdinalType,
+  ///   typename ViewTraits<OrdinalType*, Kokkos::LayoutLeft, Device, void>::size_type >
+  /// size_type;
   /// \endcode
   ///
   /// The first argument of if_c is a bool condition.  If true,
@@ -891,19 +901,31 @@ struct MV_MultiplyFunctor {
 
   //--------------------------------------------------------------------------
 
-
   template<int UNROLL>
   KOKKOS_INLINE_FUNCTION
-  void strip_mine(const size_type i, const size_type kk) const {
-    const size_type iRow = i/ThreadsPerRow;
-    const int lane = i%ThreadsPerRow;
+  void strip_mine (const size_type i, const size_type kk) const {
+    const size_type iRow = i / ThreadsPerRow;
+    const int lane = i % ThreadsPerRow;
     scalar_type sum[UNROLL];
+    // FIXME (mfh 29 Sep 2013) These pragmas ("ivdep", "unroll", and
+    // "loop count") should be protected by macros that identify the
+    // compilers which support them.
+    //
+    // FIXME (mfh 29 Sep 2013) Is a "loop count" of "24" a good idea
+    // when the matrix has many fewer entries per row than that?
 #pragma ivdep
 #pragma unroll
     for (size_type k = 0 ; k < UNROLL ; ++k) {
       // NOTE (mfh 09 Aug 2013) This requires that assignment from int
       // (in this case, 0) to scalar_type be defined.  It's not for
       // types like arprec and dd_real.
+      //
+      // mfh 29 Sep 2013: On the other hand, arprec and dd_real won't
+      // work on CUDA devices anyway, since their methods aren't
+      // device functions.  arprec has other issues (e.g., dynamic
+      // memory allocation, and the array-of-structs memory layout
+      // which is unfavorable to GPUs), but could be dealt with in the
+      // same way as Sacado's AD types.
       sum[k] = 0;
     }
 
@@ -1135,559 +1157,559 @@ struct MV_MultiplyFunctor {
       }
   };
 
-template<class RangeVector,
-         class CrsMatrix,
-         class DomainVector,
-         class CoeffVector1,
-         class CoeffVector2,
-         int doalpha,
-         int dobeta,
-         int ThreadsPerRow>
-struct MV_MultiplySingleFunctor {
-  typedef typename CrsMatrix::device_type                   device_type ;
-  typedef typename CrsMatrix::ordinal_type                    size_type ;
-  typedef typename CrsMatrix::non_const_scalar_type         scalar_type ;
-  typedef typename Kokkos::View<scalar_type*, typename CrsMatrix::device_type> range_values;
+  template<class RangeVector,
+	   class CrsMatrix,
+	   class DomainVector,
+	   class CoeffVector1,
+	   class CoeffVector2,
+	   int doalpha,
+	   int dobeta,
+	   int ThreadsPerRow>
+  struct MV_MultiplySingleFunctor {
+    typedef typename CrsMatrix::device_type                   device_type ;
+    typedef typename CrsMatrix::ordinal_type                    size_type ;
+    typedef typename CrsMatrix::non_const_scalar_type         scalar_type ;
+    typedef typename Kokkos::View<scalar_type*, typename CrsMatrix::device_type> range_values;
 
-  CoeffVector1 beta;
-  CoeffVector2 alpha;
-  CrsMatrix  m_A ;
-  DomainVector  m_x ;
-  RangeVector  m_y ;
-  size_type n;
+    CoeffVector1 beta;
+    CoeffVector2 alpha;
+    CrsMatrix  m_A ;
+    DomainVector  m_x ;
+    RangeVector  m_y ;
+    size_type n;
 
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const size_type i) const {
-    const size_type iRow = i/ThreadsPerRow;
-    const int lane = i%ThreadsPerRow;
-    scalar_type sum = 0;
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const size_type i) const {
+      const size_type iRow = i/ThreadsPerRow;
+      const int lane = i%ThreadsPerRow;
+      scalar_type sum = 0;
 
-    if (doalpha != -1) {
-      const SparseRowView<CrsMatrix> row = m_A.row(iRow);
-
-#pragma loop count (24)
-#pragma unroll
-      for (size_type iEntry = lane; iEntry < row.length; iEntry += ThreadsPerRow) {
-        sum += row.value(iEntry) * m_x(row.colidx(iEntry));
-      }
-    } else {
-      const SparseRowView<CrsMatrix> row = m_A.row(iRow);
+      if (doalpha != -1) {
+	const SparseRowView<CrsMatrix> row = m_A.row(iRow);
 
 #pragma loop count (24)
 #pragma unroll
-      for (size_type iEntry = lane; iEntry < row.length; iEntry += ThreadsPerRow) {
-        sum -= row.value(iEntry) * m_x(row.colidx(iEntry));
-      }
-    }
-    if (ThreadsPerRow > 1)
-      sum += shfl_down(sum, 1,ThreadsPerRow);
-    if (ThreadsPerRow > 2)
-      sum += shfl_down(sum, 2,ThreadsPerRow);
-    if (ThreadsPerRow > 4)
-      sum += shfl_down(sum, 4,ThreadsPerRow);
-    if (ThreadsPerRow > 8)
-      sum += shfl_down(sum, 8,ThreadsPerRow);
-    if (ThreadsPerRow > 16)
-      sum += shfl_down(sum, 16,ThreadsPerRow);
-
-    if (lane == 0) {
-      if (doalpha * doalpha != 1) {
-        sum *= alpha(0);
-      }
-
-      if (dobeta == 0) {
-        m_y(iRow) = sum ;
-      } else if (dobeta == 1) {
-        m_y(iRow) += sum ;
-      } else if (dobeta == -1) {
-        m_y(iRow) = -m_y(iRow) +  sum;
+	for (size_type iEntry = lane; iEntry < row.length; iEntry += ThreadsPerRow) {
+	  sum += row.value(iEntry) * m_x(row.colidx(iEntry));
+	}
       } else {
-        m_y(iRow) = beta(0) * m_y(iRow) + sum;
+	const SparseRowView<CrsMatrix> row = m_A.row(iRow);
+
+#pragma loop count (24)
+#pragma unroll
+	for (size_type iEntry = lane; iEntry < row.length; iEntry += ThreadsPerRow) {
+	  sum -= row.value(iEntry) * m_x(row.colidx(iEntry));
+	}
+      }
+      if (ThreadsPerRow > 1)
+	sum += shfl_down(sum, 1,ThreadsPerRow);
+      if (ThreadsPerRow > 2)
+	sum += shfl_down(sum, 2,ThreadsPerRow);
+      if (ThreadsPerRow > 4)
+	sum += shfl_down(sum, 4,ThreadsPerRow);
+      if (ThreadsPerRow > 8)
+	sum += shfl_down(sum, 8,ThreadsPerRow);
+      if (ThreadsPerRow > 16)
+	sum += shfl_down(sum, 16,ThreadsPerRow);
+
+      if (lane == 0) {
+	if (doalpha * doalpha != 1) {
+	  sum *= alpha(0);
+	}
+
+	if (dobeta == 0) {
+	  m_y(iRow) = sum ;
+	} else if (dobeta == 1) {
+	  m_y(iRow) += sum ;
+	} else if (dobeta == -1) {
+	  m_y(iRow) = -m_y(iRow) +  sum;
+	} else {
+	  m_y(iRow) = beta(0) * m_y(iRow) + sum;
+	}
       }
     }
-  }
-};
+  };
 
-namespace Impl {
+  namespace Impl {
 
-template <class RangeVector,
-          class CrsMatrix,
-          class DomainVector,
-          class CoeffVector1,
-          class CoeffVector2>
-void
-MV_Multiply_Check_Compatibility (const CoeffVector1 &betav,
-                                 const RangeVector &y,
-                                 const CoeffVector2 &alphav,
-                                 const CrsMatrix &A,
-                                 const DomainVector &x,
-                                 const int& doalpha,
-                                 const int& dobeta)
-{
-  typename DomainVector::size_type numVecs = x.dimension_1();
-  typename DomainVector::size_type numRows = A.numRows();
-  typename DomainVector::size_type numCols = A.numCols();
+    template <class RangeVector,
+	      class CrsMatrix,
+	      class DomainVector,
+	      class CoeffVector1,
+	      class CoeffVector2>
+    void
+    MV_Multiply_Check_Compatibility (const CoeffVector1 &betav,
+				     const RangeVector &y,
+				     const CoeffVector2 &alphav,
+				     const CrsMatrix &A,
+				     const DomainVector &x,
+				     const int& doalpha,
+				     const int& dobeta)
+    {
+      typename DomainVector::size_type numVecs = x.dimension_1();
+      typename DomainVector::size_type numRows = A.numRows();
+      typename DomainVector::size_type numCols = A.numCols();
 
-  if (y.dimension_1() != numVecs) {
-    std::ostringstream msg;
-    msg << "Error in CRSMatrix - Vector Multiply (y = by + aAx): 2nd dimensions of y and x do not match\n";
-    msg << "\t Labels are: y(" << RangeVector::memory_space::query_label(y.ptr_on_device()) << ") b("
-        << CoeffVector1::memory_space::query_label(betav.ptr_on_device()) << ") a("
-        << CoeffVector2::memory_space::query_label(alphav.ptr_on_device()) << ") x("
-        << CrsMatrix::values_type::memory_space::query_label(A.values.ptr_on_device()) << ") x("
-        << DomainVector::memory_space::query_label(x.ptr_on_device()) << ")\n";
-    msg << "\t Dimensions are: y(" << y.dimension_0() << "," << y.dimension_1() << ") x(" << x.dimension_0() << "," << x.dimension_1() << ")\n";
-    Impl::throw_runtime_exception( msg.str() );
-  }
-  if (numRows > y.dimension_0()) {
-    std::ostringstream msg;
-    msg << "Error in CRSMatrix - Vector Multiply (y = by + aAx): dimensions of y and A do not match\n";
-    msg << "\t Labels are: y(" << RangeVector::memory_space::query_label(y.ptr_on_device()) << ") b("
-        << CoeffVector1::memory_space::query_label(betav.ptr_on_device()) << ") a("
-        << CoeffVector2::memory_space::query_label(alphav.ptr_on_device()) << ") x("
-        << CrsMatrix::values_type::memory_space::query_label(A.values.ptr_on_device()) << ") x("
-        << DomainVector::memory_space::query_label(x.ptr_on_device()) << ")\n";
-    msg << "\t Dimensions are: y(" << y.dimension_0() << "," << y.dimension_1() << ") A(" << A.numCols() << "," << A.numRows() << ")\n";
-    Impl::throw_runtime_exception( msg.str() );
-  }
-  if (numCols > x.dimension_0()) {
-    std::ostringstream msg;
-    msg << "Error in CRSMatrix - Vector Multiply (y = by + aAx): dimensions of x and A do not match\n";
-    msg << "\t Labels are: y(" << RangeVector::memory_space::query_label(y.ptr_on_device()) << ") b("
-        << CoeffVector1::memory_space::query_label(betav.ptr_on_device()) << ") a("
-        << CoeffVector2::memory_space::query_label(alphav.ptr_on_device()) << ") x("
-        << CrsMatrix::values_type::memory_space::query_label(A.values.ptr_on_device()) << ") x("
-        << DomainVector::memory_space::query_label(x.ptr_on_device()) << ")\n";
-    msg << "\t Dimensions are: x(" << x.dimension_0() << "," << x.dimension_1() << ") A(" << A.numCols() << "," << A.numRows() << ")\n";
-    Impl::throw_runtime_exception( msg.str() );
-  }
-  if (dobeta==2) {
-    if (betav.dimension_0()!=numVecs) {
-      std::ostringstream msg;
-      msg << "Error in CRSMatrix - Vector Multiply (y = by + aAx): 2nd dimensions of y and b do not match\n";
-      msg << "\t Labels are: y(" << RangeVector::memory_space::query_label(y.ptr_on_device()) << ") b("
-          << CoeffVector1::memory_space::query_label(betav.ptr_on_device()) << ") a("
-          << CoeffVector2::memory_space::query_label(alphav.ptr_on_device()) << ") x("
-          << CrsMatrix::values_type::memory_space::query_label(A.values.ptr_on_device()) << ") x("
-          << DomainVector::memory_space::query_label(x.ptr_on_device()) << ")\n";
-      msg << "\t Dimensions are: y(" << y.dimension_0() << "," << y.dimension_1() << ") b(" << betav.dimension_0() << ")\n";
-      Impl::throw_runtime_exception( msg.str() );
+      if (y.dimension_1() != numVecs) {
+	std::ostringstream msg;
+	msg << "Error in CRSMatrix - Vector Multiply (y = by + aAx): 2nd dimensions of y and x do not match\n";
+	msg << "\t Labels are: y(" << RangeVector::memory_space::query_label(y.ptr_on_device()) << ") b("
+	    << CoeffVector1::memory_space::query_label(betav.ptr_on_device()) << ") a("
+	    << CoeffVector2::memory_space::query_label(alphav.ptr_on_device()) << ") x("
+	    << CrsMatrix::values_type::memory_space::query_label(A.values.ptr_on_device()) << ") x("
+	    << DomainVector::memory_space::query_label(x.ptr_on_device()) << ")\n";
+	msg << "\t Dimensions are: y(" << y.dimension_0() << "," << y.dimension_1() << ") x(" << x.dimension_0() << "," << x.dimension_1() << ")\n";
+	Impl::throw_runtime_exception( msg.str() );
+      }
+      if (numRows > y.dimension_0()) {
+	std::ostringstream msg;
+	msg << "Error in CRSMatrix - Vector Multiply (y = by + aAx): dimensions of y and A do not match\n";
+	msg << "\t Labels are: y(" << RangeVector::memory_space::query_label(y.ptr_on_device()) << ") b("
+	    << CoeffVector1::memory_space::query_label(betav.ptr_on_device()) << ") a("
+	    << CoeffVector2::memory_space::query_label(alphav.ptr_on_device()) << ") x("
+	    << CrsMatrix::values_type::memory_space::query_label(A.values.ptr_on_device()) << ") x("
+	    << DomainVector::memory_space::query_label(x.ptr_on_device()) << ")\n";
+	msg << "\t Dimensions are: y(" << y.dimension_0() << "," << y.dimension_1() << ") A(" << A.numCols() << "," << A.numRows() << ")\n";
+	Impl::throw_runtime_exception( msg.str() );
+      }
+      if (numCols > x.dimension_0()) {
+	std::ostringstream msg;
+	msg << "Error in CRSMatrix - Vector Multiply (y = by + aAx): dimensions of x and A do not match\n";
+	msg << "\t Labels are: y(" << RangeVector::memory_space::query_label(y.ptr_on_device()) << ") b("
+	    << CoeffVector1::memory_space::query_label(betav.ptr_on_device()) << ") a("
+	    << CoeffVector2::memory_space::query_label(alphav.ptr_on_device()) << ") x("
+	    << CrsMatrix::values_type::memory_space::query_label(A.values.ptr_on_device()) << ") x("
+	    << DomainVector::memory_space::query_label(x.ptr_on_device()) << ")\n";
+	msg << "\t Dimensions are: x(" << x.dimension_0() << "," << x.dimension_1() << ") A(" << A.numCols() << "," << A.numRows() << ")\n";
+	Impl::throw_runtime_exception( msg.str() );
+      }
+      if (dobeta==2) {
+	if (betav.dimension_0()!=numVecs) {
+	  std::ostringstream msg;
+	  msg << "Error in CRSMatrix - Vector Multiply (y = by + aAx): 2nd dimensions of y and b do not match\n";
+	  msg << "\t Labels are: y(" << RangeVector::memory_space::query_label(y.ptr_on_device()) << ") b("
+	      << CoeffVector1::memory_space::query_label(betav.ptr_on_device()) << ") a("
+	      << CoeffVector2::memory_space::query_label(alphav.ptr_on_device()) << ") x("
+	      << CrsMatrix::values_type::memory_space::query_label(A.values.ptr_on_device()) << ") x("
+	      << DomainVector::memory_space::query_label(x.ptr_on_device()) << ")\n";
+	  msg << "\t Dimensions are: y(" << y.dimension_0() << "," << y.dimension_1() << ") b(" << betav.dimension_0() << ")\n";
+	  Impl::throw_runtime_exception( msg.str() );
+	}
+      }
+      if(doalpha==2) {
+	if(alphav.dimension_0()!=numVecs) {
+	  std::ostringstream msg;
+	  msg << "Error in CRSMatrix - Vector Multiply (y = by + aAx): 2nd dimensions of x and b do not match\n";
+	  msg << "\t Labels are: y(" << RangeVector::memory_space::query_label(y.ptr_on_device()) << ") b("
+	      << CoeffVector1::memory_space::query_label(betav.ptr_on_device()) << ") a("
+	      << CoeffVector2::memory_space::query_label(alphav.ptr_on_device()) << ") x("
+	      << CrsMatrix::values_type::memory_space::query_label(A.values.ptr_on_device()) << ") x("
+	      << DomainVector::memory_space::query_label(x.ptr_on_device()) << ")\n";
+	  msg << "\t Dimensions are: x(" << x.dimension_0() << "," << x.dimension_1() << ") b(" << betav.dimension_0() << ")\n";
+	  Impl::throw_runtime_exception( msg.str() );
+	}
+      }
     }
-  }
-  if(doalpha==2) {
-    if(alphav.dimension_0()!=numVecs) {
-      std::ostringstream msg;
-      msg << "Error in CRSMatrix - Vector Multiply (y = by + aAx): 2nd dimensions of x and b do not match\n";
-      msg << "\t Labels are: y(" << RangeVector::memory_space::query_label(y.ptr_on_device()) << ") b("
-          << CoeffVector1::memory_space::query_label(betav.ptr_on_device()) << ") a("
-          << CoeffVector2::memory_space::query_label(alphav.ptr_on_device()) << ") x("
-          << CrsMatrix::values_type::memory_space::query_label(A.values.ptr_on_device()) << ") x("
-          << DomainVector::memory_space::query_label(x.ptr_on_device()) << ")\n";
-      msg << "\t Dimensions are: x(" << x.dimension_0() << "," << x.dimension_1() << ") b(" << betav.dimension_0() << ")\n";
-      Impl::throw_runtime_exception( msg.str() );
-    }
-  }
-}
-} // namespace Impl
+  } // namespace Impl
 
-template<class Device, class ScalarType>
-struct ThreadsPerRow {
-  static const int value = 1;
-};
+  template<class Device, class ScalarType>
+  struct ThreadsPerRow {
+    static const int value = 1;
+  };
 
 #ifdef KOKKOS_HAVE_CUDA
 
-template<>
-struct ThreadsPerRow<Kokkos::Cuda,unsigned int> {
-  static const int value = 8;
-};
+  template<>
+  struct ThreadsPerRow<Kokkos::Cuda,unsigned int> {
+    static const int value = 8;
+  };
 
-template<>
-struct ThreadsPerRow<Kokkos::Cuda,int> {
-  static const int value = 8;
-};
+  template<>
+  struct ThreadsPerRow<Kokkos::Cuda,int> {
+    static const int value = 8;
+  };
 
-template<>
-struct ThreadsPerRow<Kokkos::Cuda,float> {
-  static const int value = 8;
-};
+  template<>
+  struct ThreadsPerRow<Kokkos::Cuda,float> {
+    static const int value = 8;
+  };
 
-template<>
-struct ThreadsPerRow<Kokkos::Cuda,double> {
-  static const int value = 8;
-};
+  template<>
+  struct ThreadsPerRow<Kokkos::Cuda,double> {
+    static const int value = 8;
+  };
 
 #endif // KOKKOS_HAVE_CUDA
 
-template <class RangeVector,
-          class TCrsMatrix,
-          class DomainVector,
-          class CoeffVector1,
-          class CoeffVector2,
-          int doalpha,
-          int dobeta>
-void
-MV_Multiply (typename Kokkos::Impl::enable_if<DomainVector::Rank == 2, const CoeffVector1>::type& betav,
-             const RangeVector &y,
-             const CoeffVector2 &alphav,
-             const TCrsMatrix &A,
-             const DomainVector &x)
-{
-  if (doalpha == 0) {
-    if (dobeta==2) {
-      MV_MulScalar(y,betav,y);
-    }
-    else {
-      MV_MulScalar(y,dobeta,y);
-    }
-    return;
-  }
-  else {
-    typedef View< typename RangeVector::non_const_data_type ,
-                  typename RangeVector::array_layout ,
-                  typename RangeVector::device_type ,
-                  typename RangeVector::memory_traits >
-      RangeVectorType;
-
-    typedef View< typename DomainVector::const_data_type ,
-                  typename DomainVector::array_layout ,
-                  typename DomainVector::device_type ,
-                  Kokkos::MemoryRandomRead >
-      DomainVectorType;
-
-    typedef View< typename CoeffVector1::const_data_type ,
-                  typename CoeffVector1::array_layout ,
-                  typename CoeffVector1::device_type ,
-                  Kokkos::MemoryRandomRead >
-      CoeffVector1Type;
-
-    typedef View< typename CoeffVector2::const_data_type ,
-                  typename CoeffVector2::array_layout ,
-                  typename CoeffVector2::device_type ,
-                  Kokkos::MemoryRandomRead >
-      CoeffVector2Type;
-
-    typedef CrsMatrix<typename TCrsMatrix::const_scalar_type,
-                      typename TCrsMatrix::ordinal_type,
-                      typename TCrsMatrix::device_type> CrsMatrixType;
-
-    Impl::MV_Multiply_Check_Compatibility(betav,y,alphav,A,x,doalpha,dobeta);
-#ifndef KOKKOS_FAST_COMPILE
-    MV_MultiplyFunctor<RangeVectorType, CrsMatrixType, DomainVectorType, CoeffVector1Type, CoeffVector2Type,
-                       doalpha, dobeta,ThreadsPerRow<typename TCrsMatrix::device_type,typename TCrsMatrix::non_const_scalar_type>::value> op ;
-    const typename CrsMatrixType::ordinal_type nrow = A.numRows();
-    op.m_A = A ;
-    op.m_x = x ;
-    op.m_y = y ;
-    op.beta = betav;
-    op.alpha = alphav;
-    op.n = x.dimension(1);
-    Kokkos::parallel_for(nrow*ThreadsPerRow<typename TCrsMatrix::device_type,typename TCrsMatrix::non_const_scalar_type>::value , op);
-
-#else // NOT KOKKOS_FAST_COMPILE
-
-  MV_MultiplyFunctor<RangeVectorType, CrsMatrixType, DomainVectorType, CoeffVector1Type, CoeffVector2Type, 2, 2,
-                     ThreadsPerRow<typename TCrsMatrix::device_type, typename TCrsMatrix::non_const_scalar_type>::value> op ;
-
-  int numVecs = x.dimension_1();
-  CoeffVector1 beta = betav;
-  CoeffVector2 alpha = alphav;
-
-  if (doalpha != 2) {
-    alpha = CoeffVector2("CrsMatrix::auto_a", numVecs);
-    typename CoeffVector2::HostMirror h_a = Kokkos::create_mirror_view(alpha);
-    typename CoeffVector2::scalar_type s_a = (typename CoeffVector2::scalar_type) doalpha;
-    for (int i = 0; i < numVecs; ++i) {
-      h_a(i) = s_a;
-    }
-    Kokkos::deep_copy(alpha, h_a);
-  }
-  if (dobeta != 2) {
-    beta = CoeffVector1("CrsMatrix::auto_b", numVecs);
-    typename CoeffVector1::HostMirror h_b = Kokkos::create_mirror_view(beta);
-    typename CoeffVector1::scalar_type s_b = (typename CoeffVector1::scalar_type) dobeta;
-    for(int i = 0; i < numVecs; i++)
-      h_b(i) = s_b;
-    Kokkos::deep_copy(beta, h_b);
-  }
-  const typename CrsMatrixType::ordinal_type nrow = A.numRows();
-  op.m_A = A;
-  op.m_x = x;
-  op.m_y = y;
-  op.beta = beta;
-  op.alpha = alpha;
-  op.n = x.dimension_1();
-  Kokkos::parallel_for (nrow * ThreadsPerRow<typename TCrsMatrix::device_type, typename TCrsMatrix::non_const_scalar_type>::value, op);
-#endif // KOKKOS_FAST_COMPILE
-  }
-}
-
-template<class RangeVector,
-         class TCrsMatrix,
-         class DomainVector,
-         class CoeffVector1,
-         class CoeffVector2,
-         int doalpha,
-         int dobeta>
-void
-MV_Multiply (typename Kokkos::Impl::enable_if<DomainVector::Rank == 1, const CoeffVector1>::type& betav,
-             const RangeVector &y,
-             const CoeffVector2 &alphav,
-             const TCrsMatrix& A,
-             const DomainVector& x)
-{
-  if (doalpha == 0) {
-    if (dobeta==2) {
-      V_MulScalar(y,betav,y);
-    }
-    else {
-      V_MulScalar(y,dobeta,y);
-    }
-    return;
-  }
-  else {
-    typedef View< typename RangeVector::non_const_data_type ,
-                  typename RangeVector::array_layout ,
-                  typename RangeVector::device_type ,
-                  typename RangeVector::memory_traits >
-      RangeVectorType;
-
-    typedef View< typename DomainVector::const_data_type ,
-                  typename DomainVector::array_layout ,
-                  typename DomainVector::device_type ,
-                  Kokkos::MemoryRandomRead >
-      DomainVectorType;
-
-    typedef View< typename CoeffVector1::const_data_type ,
-                  typename CoeffVector1::array_layout ,
-                  typename CoeffVector1::device_type ,
-                  Kokkos::MemoryRandomRead >
-      CoeffVector1Type;
-
-    typedef View< typename CoeffVector2::const_data_type ,
-                  typename CoeffVector2::array_layout ,
-                  typename CoeffVector2::device_type ,
-                  Kokkos::MemoryRandomRead >
-      CoeffVector2Type;
-
-    typedef CrsMatrix<typename TCrsMatrix::const_scalar_type,
-                      typename TCrsMatrix::ordinal_type,
-                      typename TCrsMatrix::device_type> CrsMatrixType;
-
-    Impl::MV_Multiply_Check_Compatibility(betav,y,alphav,A,x,doalpha,dobeta);
-#ifndef KOKKOS_FAST_COMPILE
-    MV_MultiplySingleFunctor<RangeVectorType, CrsMatrixType, DomainVectorType, CoeffVector1Type, CoeffVector2Type, doalpha, dobeta
-                             ,ThreadsPerRow<typename CrsMatrixType::device_type,typename CrsMatrixType::non_const_scalar_type>::value> op ;
-    const typename CrsMatrixType::ordinal_type nrow = A.numRows();
-    op.m_A = A ;
-    op.m_x = x ;
-    op.m_y = y ;
-    op.beta = betav;
-    op.alpha = alphav;
-    op.n = x.dimension(1);
-    Kokkos::parallel_for (nrow * ThreadsPerRow<typename TCrsMatrix::device_type, typename TCrsMatrix::non_const_scalar_type>::value, op);
-
-#else // NOT KOKKOS_FAST_COMPILE
-
-    MV_MultiplySingleFunctor<RangeVectorType, CrsMatrixType, DomainVectorType, CoeffVector1Type, CoeffVector2Type, 2, 2,
-                             ThreadsPerRow<typename CrsMatrixType::device_type, typename CrsMatrixType::non_const_scalar_type>::value> op;
-
-    int numVecs = x.dimension_1();
-    CoeffVector1 beta = betav;
-    CoeffVector2 alpha = alphav;
-
-    if(doalpha!=2) {
-      alpha = CoeffVector2("CrsMatrix::auto_a", numVecs);
-      typename CoeffVector2::HostMirror h_a = Kokkos::create_mirror_view(alpha);
-      typename CoeffVector2::scalar_type s_a = (typename CoeffVector2::scalar_type) doalpha;
-      for(int i = 0; i < numVecs; i++)
-        h_a(i) = s_a;
-      Kokkos::deep_copy(alpha, h_a);
-    }
-    if(dobeta!=2) {
-      beta = CoeffVector1("CrsMatrix::auto_b", numVecs);
-      typename CoeffVector1::HostMirror h_b = Kokkos::create_mirror_view(beta);
-      typename CoeffVector1::scalar_type s_b = (typename CoeffVector1::scalar_type) dobeta;
-      for(int i = 0; i < numVecs; i++)
-        h_b(i) = s_b;
-      Kokkos::deep_copy(beta, h_b);
-    }
-    const typename CrsMatrixType::ordinal_type nrow = A.numRows();
-    op.m_A = A ;
-    op.m_x = x ;
-    op.m_y = y ;
-    op.beta = beta;
-    op.alpha = alpha;
-    op.n = x.dimension_1();
-    Kokkos::parallel_for (nrow * ThreadsPerRow<typename TCrsMatrix::device_type, typename TCrsMatrix::non_const_scalar_type>::value, op);
-#endif // KOKKOS_FAST_COMPILE
-  }
-}
-
-template<class RangeVector, class CrsMatrix, class DomainVector, class CoeffVector1, class CoeffVector2>
-void
-MV_Multiply (const CoeffVector1& betav,
-             const RangeVector& y,
-             const CoeffVector2& alphav,
-             const CrsMatrix& A,
-             const DomainVector& x,
-             int beta,
-             int alpha)
-{
-  if (beta == 0) {
-    if(alpha == 0)
-      MV_Multiply<RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, 0, 0>(betav, y, alphav, A ,  x);
-    else if(alpha == 1)
-      MV_Multiply<RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, 1, 0>(betav, y, alphav, A ,  x);
-    else if(alpha == -1)
-      MV_Multiply < RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, -1, 0 > (betav, y, alphav, A ,  x);
-    else
-      MV_Multiply<RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, 2, 0>(betav, y, alphav, A ,  x);
-  } else if(beta == 1) {
-    if(alpha == 0)
+  template <class RangeVector,
+	    class TCrsMatrix,
+	    class DomainVector,
+	    class CoeffVector1,
+	    class CoeffVector2,
+	    int doalpha,
+	    int dobeta>
+  void
+  MV_Multiply (typename Kokkos::Impl::enable_if<DomainVector::Rank == 2, const CoeffVector1>::type& betav,
+	       const RangeVector &y,
+	       const CoeffVector2 &alphav,
+	       const TCrsMatrix &A,
+	       const DomainVector &x)
+  {
+    if (doalpha == 0) {
+      if (dobeta==2) {
+	MV_MulScalar(y,betav,y);
+      }
+      else {
+	MV_MulScalar(y,dobeta,y);
+      }
       return;
-    else if(alpha == 1)
-      MV_Multiply<RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, 1, 1>(betav, y, alphav, A ,  x);
-    else if(alpha == -1)
-      MV_Multiply < RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, -1, 1 > (betav, y, alphav, A ,  x);
-    else
-      MV_Multiply<RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, 2, 1>(betav, y, alphav, A ,  x);
-  } else if(beta == -1) {
-    if(alpha == 0)
-      MV_Multiply<RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, 0, -1>(betav, y, alphav, A ,  x);
-    else if(alpha == 1)
-      MV_Multiply < RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, 1, -1 > (betav, y, alphav, A ,  x);
-    else if(alpha == -1)
-      MV_Multiply < RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, -1, -1 > (betav, y, alphav, A ,  x);
-    else
-      MV_Multiply < RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, 2, -1 > (betav, y, alphav, A ,  x);
-  } else {
-    if(alpha == 0)
-      MV_Multiply<RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, 0, 2>(betav, y, alphav, A ,  x);
-    else if(alpha == 1)
-      MV_Multiply<RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, 1, 2>(betav, y, alphav, A ,  x);
-    else if(alpha == -1)
-      MV_Multiply < RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, -1, 2 > (betav, y, alphav, A ,  x);
-    else
-      MV_Multiply<RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, 2, 2>(betav, y, alphav, A ,  x);
+    }
+    else {
+      typedef View< typename RangeVector::non_const_data_type ,
+	typename RangeVector::array_layout ,
+	typename RangeVector::device_type ,
+	typename RangeVector::memory_traits >
+	RangeVectorType;
+
+      typedef View< typename DomainVector::const_data_type ,
+	typename DomainVector::array_layout ,
+	typename DomainVector::device_type ,
+	Kokkos::MemoryRandomRead >
+	DomainVectorType;
+
+      typedef View< typename CoeffVector1::const_data_type ,
+	typename CoeffVector1::array_layout ,
+	typename CoeffVector1::device_type ,
+	Kokkos::MemoryRandomRead >
+	CoeffVector1Type;
+
+      typedef View< typename CoeffVector2::const_data_type ,
+	typename CoeffVector2::array_layout ,
+	typename CoeffVector2::device_type ,
+	Kokkos::MemoryRandomRead >
+	CoeffVector2Type;
+
+      typedef CrsMatrix<typename TCrsMatrix::const_scalar_type,
+	typename TCrsMatrix::ordinal_type,
+	typename TCrsMatrix::device_type> CrsMatrixType;
+
+      Impl::MV_Multiply_Check_Compatibility(betav,y,alphav,A,x,doalpha,dobeta);
+#ifndef KOKKOS_FAST_COMPILE
+      MV_MultiplyFunctor<RangeVectorType, CrsMatrixType, DomainVectorType, CoeffVector1Type, CoeffVector2Type,
+	doalpha, dobeta,ThreadsPerRow<typename TCrsMatrix::device_type,typename TCrsMatrix::non_const_scalar_type>::value> op ;
+      const typename CrsMatrixType::ordinal_type nrow = A.numRows();
+      op.m_A = A ;
+      op.m_x = x ;
+      op.m_y = y ;
+      op.beta = betav;
+      op.alpha = alphav;
+      op.n = x.dimension(1);
+      Kokkos::parallel_for(nrow*ThreadsPerRow<typename TCrsMatrix::device_type,typename TCrsMatrix::non_const_scalar_type>::value , op);
+
+#else // NOT KOKKOS_FAST_COMPILE
+
+      MV_MultiplyFunctor<RangeVectorType, CrsMatrixType, DomainVectorType, CoeffVector1Type, CoeffVector2Type, 2, 2,
+	ThreadsPerRow<typename TCrsMatrix::device_type, typename TCrsMatrix::non_const_scalar_type>::value> op ;
+
+      int numVecs = x.dimension_1();
+      CoeffVector1 beta = betav;
+      CoeffVector2 alpha = alphav;
+
+      if (doalpha != 2) {
+	alpha = CoeffVector2("CrsMatrix::auto_a", numVecs);
+	typename CoeffVector2::HostMirror h_a = Kokkos::create_mirror_view(alpha);
+	typename CoeffVector2::scalar_type s_a = (typename CoeffVector2::scalar_type) doalpha;
+	for (int i = 0; i < numVecs; ++i) {
+	  h_a(i) = s_a;
+	}
+	Kokkos::deep_copy(alpha, h_a);
+      }
+      if (dobeta != 2) {
+	beta = CoeffVector1("CrsMatrix::auto_b", numVecs);
+	typename CoeffVector1::HostMirror h_b = Kokkos::create_mirror_view(beta);
+	typename CoeffVector1::scalar_type s_b = (typename CoeffVector1::scalar_type) dobeta;
+	for(int i = 0; i < numVecs; i++)
+	  h_b(i) = s_b;
+	Kokkos::deep_copy(beta, h_b);
+      }
+      const typename CrsMatrixType::ordinal_type nrow = A.numRows();
+      op.m_A = A;
+      op.m_x = x;
+      op.m_y = y;
+      op.beta = beta;
+      op.alpha = alpha;
+      op.n = x.dimension_1();
+      Kokkos::parallel_for (nrow * ThreadsPerRow<typename TCrsMatrix::device_type, typename TCrsMatrix::non_const_scalar_type>::value, op);
+#endif // KOKKOS_FAST_COMPILE
+    }
   }
-}
 
-template <class RangeVector, class CrsMatrix, class DomainVector,
-          class Value1, class Layout1, class Device1, class MemoryManagement1,
-          class Value2, class Layout2, class Device2, class MemoryManagement2>
-void
-MV_Multiply (const Kokkos::View<Value1, Layout1, Device1, MemoryManagement1>& betav,
-             const RangeVector& y,
-             const Kokkos::View<Value2, Layout2, Device2, MemoryManagement2>& alphav,
-             const CrsMatrix& A,
-             const DomainVector& x)
-{
-  return MV_Multiply (betav, y, alphav, A, x, 2, 2);
-}
+  template<class RangeVector,
+	   class TCrsMatrix,
+	   class DomainVector,
+	   class CoeffVector1,
+	   class CoeffVector2,
+	   int doalpha,
+	   int dobeta>
+  void
+  MV_Multiply (typename Kokkos::Impl::enable_if<DomainVector::Rank == 1, const CoeffVector1>::type& betav,
+	       const RangeVector &y,
+	       const CoeffVector2 &alphav,
+	       const TCrsMatrix& A,
+	       const DomainVector& x)
+  {
+    if (doalpha == 0) {
+      if (dobeta==2) {
+	V_MulScalar(y,betav,y);
+      }
+      else {
+	V_MulScalar(y,dobeta,y);
+      }
+      return;
+    }
+    else {
+      typedef View< typename RangeVector::non_const_data_type ,
+	typename RangeVector::array_layout ,
+	typename RangeVector::device_type ,
+	typename RangeVector::memory_traits >
+	RangeVectorType;
 
-template <class RangeVector, class CrsMatrix, class DomainVector,
-          class Value1, class Layout1, class Device1, class MemoryManagement1>
-void
-MV_Multiply (const RangeVector& y,
-             const Kokkos::View<Value1, Layout1, Device1, MemoryManagement1>& alphav,
-             const CrsMatrix& A,
-             const DomainVector& x)
-{
-  return MV_Multiply (alphav, y, alphav, A, x, 0, 2);
-}
+      typedef View< typename DomainVector::const_data_type ,
+	typename DomainVector::array_layout ,
+	typename DomainVector::device_type ,
+	Kokkos::MemoryRandomRead >
+	DomainVectorType;
 
-template<class RangeVector, class CrsMatrix, class DomainVector>
-void
-MV_Multiply (const RangeVector& y,
-             const CrsMatrix& A,
-             const DomainVector& x)
-{
-  // FIXME (mfh 21 Jun 2013) The way this code is supposed to work, is
-  // that it tests at run time for each TPL in turn.  Shouldn't it
-  // rather dispatch on the Device type?  But I suppose the "try"
-  // functions do that.
-  //
-  // We want to condense this a bit: "Try TPLs" function that tests
-  // all the suitable TPLs at run time.  This would be a run-time test
-  // that compares the Scalar and Device types to those accepted by
-  // the TPL(s).
+      typedef View< typename CoeffVector1::const_data_type ,
+	typename CoeffVector1::array_layout ,
+	typename CoeffVector1::device_type ,
+	Kokkos::MemoryRandomRead >
+	CoeffVector1Type;
+
+      typedef View< typename CoeffVector2::const_data_type ,
+	typename CoeffVector2::array_layout ,
+	typename CoeffVector2::device_type ,
+	Kokkos::MemoryRandomRead >
+	CoeffVector2Type;
+
+      typedef CrsMatrix<typename TCrsMatrix::const_scalar_type,
+	typename TCrsMatrix::ordinal_type,
+	typename TCrsMatrix::device_type> CrsMatrixType;
+
+      Impl::MV_Multiply_Check_Compatibility(betav,y,alphav,A,x,doalpha,dobeta);
+#ifndef KOKKOS_FAST_COMPILE
+      MV_MultiplySingleFunctor<RangeVectorType, CrsMatrixType, DomainVectorType, CoeffVector1Type, CoeffVector2Type, doalpha, dobeta
+	,ThreadsPerRow<typename CrsMatrixType::device_type,typename CrsMatrixType::non_const_scalar_type>::value> op ;
+      const typename CrsMatrixType::ordinal_type nrow = A.numRows();
+      op.m_A = A ;
+      op.m_x = x ;
+      op.m_y = y ;
+      op.beta = betav;
+      op.alpha = alphav;
+      op.n = x.dimension(1);
+      Kokkos::parallel_for (nrow * ThreadsPerRow<typename TCrsMatrix::device_type, typename TCrsMatrix::non_const_scalar_type>::value, op);
+
+#else // NOT KOKKOS_FAST_COMPILE
+
+      MV_MultiplySingleFunctor<RangeVectorType, CrsMatrixType, DomainVectorType, CoeffVector1Type, CoeffVector2Type, 2, 2,
+	ThreadsPerRow<typename CrsMatrixType::device_type, typename CrsMatrixType::non_const_scalar_type>::value> op;
+
+      int numVecs = x.dimension_1();
+      CoeffVector1 beta = betav;
+      CoeffVector2 alpha = alphav;
+
+      if(doalpha!=2) {
+	alpha = CoeffVector2("CrsMatrix::auto_a", numVecs);
+	typename CoeffVector2::HostMirror h_a = Kokkos::create_mirror_view(alpha);
+	typename CoeffVector2::scalar_type s_a = (typename CoeffVector2::scalar_type) doalpha;
+	for(int i = 0; i < numVecs; i++)
+	  h_a(i) = s_a;
+	Kokkos::deep_copy(alpha, h_a);
+      }
+      if(dobeta!=2) {
+	beta = CoeffVector1("CrsMatrix::auto_b", numVecs);
+	typename CoeffVector1::HostMirror h_b = Kokkos::create_mirror_view(beta);
+	typename CoeffVector1::scalar_type s_b = (typename CoeffVector1::scalar_type) dobeta;
+	for(int i = 0; i < numVecs; i++)
+	  h_b(i) = s_b;
+	Kokkos::deep_copy(beta, h_b);
+      }
+      const typename CrsMatrixType::ordinal_type nrow = A.numRows();
+      op.m_A = A ;
+      op.m_x = x ;
+      op.m_y = y ;
+      op.beta = beta;
+      op.alpha = alpha;
+      op.n = x.dimension_1();
+      Kokkos::parallel_for (nrow * ThreadsPerRow<typename TCrsMatrix::device_type, typename TCrsMatrix::non_const_scalar_type>::value, op);
+#endif // KOKKOS_FAST_COMPILE
+    }
+  }
+
+  template<class RangeVector, class CrsMatrix, class DomainVector, class CoeffVector1, class CoeffVector2>
+  void
+  MV_Multiply (const CoeffVector1& betav,
+	       const RangeVector& y,
+	       const CoeffVector2& alphav,
+	       const CrsMatrix& A,
+	       const DomainVector& x,
+	       int beta,
+	       int alpha)
+  {
+    if (beta == 0) {
+      if(alpha == 0)
+	MV_Multiply<RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, 0, 0>(betav, y, alphav, A ,  x);
+      else if(alpha == 1)
+	MV_Multiply<RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, 1, 0>(betav, y, alphav, A ,  x);
+      else if(alpha == -1)
+	MV_Multiply < RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, -1, 0 > (betav, y, alphav, A ,  x);
+      else
+	MV_Multiply<RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, 2, 0>(betav, y, alphav, A ,  x);
+    } else if(beta == 1) {
+      if(alpha == 0)
+	return;
+      else if(alpha == 1)
+	MV_Multiply<RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, 1, 1>(betav, y, alphav, A ,  x);
+      else if(alpha == -1)
+	MV_Multiply < RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, -1, 1 > (betav, y, alphav, A ,  x);
+      else
+	MV_Multiply<RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, 2, 1>(betav, y, alphav, A ,  x);
+    } else if(beta == -1) {
+      if(alpha == 0)
+	MV_Multiply<RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, 0, -1>(betav, y, alphav, A ,  x);
+      else if(alpha == 1)
+	MV_Multiply < RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, 1, -1 > (betav, y, alphav, A ,  x);
+      else if(alpha == -1)
+	MV_Multiply < RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, -1, -1 > (betav, y, alphav, A ,  x);
+      else
+	MV_Multiply < RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, 2, -1 > (betav, y, alphav, A ,  x);
+    } else {
+      if(alpha == 0)
+	MV_Multiply<RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, 0, 2>(betav, y, alphav, A ,  x);
+      else if(alpha == 1)
+	MV_Multiply<RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, 1, 2>(betav, y, alphav, A ,  x);
+      else if(alpha == -1)
+	MV_Multiply < RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, -1, 2 > (betav, y, alphav, A ,  x);
+      else
+	MV_Multiply<RangeVector, CrsMatrix, DomainVector, CoeffVector1, CoeffVector2, 2, 2>(betav, y, alphav, A ,  x);
+    }
+  }
+
+  template <class RangeVector, class CrsMatrix, class DomainVector,
+	    class Value1, class Layout1, class Device1, class MemoryManagement1,
+	    class Value2, class Layout2, class Device2, class MemoryManagement2>
+  void
+  MV_Multiply (const Kokkos::View<Value1, Layout1, Device1, MemoryManagement1>& betav,
+	       const RangeVector& y,
+	       const Kokkos::View<Value2, Layout2, Device2, MemoryManagement2>& alphav,
+	       const CrsMatrix& A,
+	       const DomainVector& x)
+  {
+    return MV_Multiply (betav, y, alphav, A, x, 2, 2);
+  }
+
+  template <class RangeVector, class CrsMatrix, class DomainVector,
+	    class Value1, class Layout1, class Device1, class MemoryManagement1>
+  void
+  MV_Multiply (const RangeVector& y,
+	       const Kokkos::View<Value1, Layout1, Device1, MemoryManagement1>& alphav,
+	       const CrsMatrix& A,
+	       const DomainVector& x)
+  {
+    return MV_Multiply (alphav, y, alphav, A, x, 0, 2);
+  }
+
+  template<class RangeVector, class CrsMatrix, class DomainVector>
+  void
+  MV_Multiply (const RangeVector& y,
+	       const CrsMatrix& A,
+	       const DomainVector& x)
+  {
+    // FIXME (mfh 21 Jun 2013) The way this code is supposed to work, is
+    // that it tests at run time for each TPL in turn.  Shouldn't it
+    // rather dispatch on the Device type?  But I suppose the "try"
+    // functions do that.
+    //
+    // We want to condense this a bit: "Try TPLs" function that tests
+    // all the suitable TPLs at run time.  This would be a run-time test
+    // that compares the Scalar and Device types to those accepted by
+    // the TPL(s).
 #ifdef KOKKOS_USE_CUSPARSE
-  if (MV_Multiply_Try_CuSparse (0.0, y, 1.0, A, x)) {
-    return;
-  }
+    if (MV_Multiply_Try_CuSparse (0.0, y, 1.0, A, x)) {
+      return;
+    }
 #endif // KOKKOS_USE_CUSPARSE
 #ifdef KOKKOS_USE_MKL
-  if (MV_Multiply_Try_MKL (0.0, y, 1.0, A, x)) {
-    return;
-  }
+    if (MV_Multiply_Try_MKL (0.0, y, 1.0, A, x)) {
+      return;
+    }
 #endif // KOKKOS_USE_MKL
-  typedef Kokkos::View<typename DomainVector::scalar_type*, typename DomainVector::device_type> aVector;
-  aVector a;
+    typedef Kokkos::View<typename DomainVector::scalar_type*, typename DomainVector::device_type> aVector;
+    aVector a;
 
-  return MV_Multiply (a, y, a, A, x, 0, 1);
-}
-
-template<class RangeVector, class CrsMatrix, class DomainVector>
-void
-MV_Multiply (const RangeVector& y,
-             typename DomainVector::const_scalar_type s_a,
-             const CrsMatrix& A,
-             const DomainVector& x)
-{
-#ifdef KOKKOS_USE_CUSPARSE
-  if (MV_Multiply_Try_CuSparse (0.0, y, s_a, A, x)) {
-    return;
-  }
-#endif // KOKKOS_USE_CUSPARSE
-#ifdef KOKKOS_USE_MKL
-  if (MV_Multiply_Try_MKL (0.0, y, s_a, A, x)) {
-    return;
-  }
-#endif // KOKKOS_USE_MKL
-  typedef Kokkos::View<typename RangeVector::scalar_type*, typename RangeVector::device_type> aVector;
-  aVector a;
-  const int numVecs = x.dimension_1();
-
-  if (s_a == -1) {
-    return MV_Multiply (a, y, a, A, x, 0, -1);
-  } else if (s_a == 1) {
     return MV_Multiply (a, y, a, A, x, 0, 1);
   }
 
-  if (s_a != 0) {
-    a = aVector("a", numVecs);
-    typename aVector::HostMirror h_a = Kokkos::create_mirror_view (a);
-    for (int i = 0; i < numVecs; ++i) {
-      h_a(i) = s_a;
-    }
-    Kokkos::deep_copy(a, h_a);
-    return MV_Multiply (a, y, a, A, x, 0, 2);
-  }
-}
-
-template<class RangeVector, class CrsMatrix, class DomainVector>
-void
-MV_Multiply (typename RangeVector::const_scalar_type s_b,
-             const RangeVector& y,
-             typename DomainVector::const_scalar_type s_a,
-             const CrsMatrix& A,
-             const DomainVector& x)
-{
+  template<class RangeVector, class CrsMatrix, class DomainVector>
+  void
+  MV_Multiply (const RangeVector& y,
+	       typename DomainVector::const_scalar_type s_a,
+	       const CrsMatrix& A,
+	       const DomainVector& x)
+  {
 #ifdef KOKKOS_USE_CUSPARSE
-  if (MV_Multiply_Try_CuSparse (s_b, y, s_a, A, x)) {
-    return;
+    if (MV_Multiply_Try_CuSparse (0.0, y, s_a, A, x)) {
+      return;
+    }
+#endif // KOKKOS_USE_CUSPARSE
+#ifdef KOKKOS_USE_MKL
+    if (MV_Multiply_Try_MKL (0.0, y, s_a, A, x)) {
+      return;
+    }
+#endif // KOKKOS_USE_MKL
+    typedef Kokkos::View<typename RangeVector::scalar_type*, typename RangeVector::device_type> aVector;
+    aVector a;
+    const int numVecs = x.dimension_1();
+
+    if (s_a == -1) {
+      return MV_Multiply (a, y, a, A, x, 0, -1);
+    } else if (s_a == 1) {
+      return MV_Multiply (a, y, a, A, x, 0, 1);
+    }
+
+    if (s_a != 0) {
+      a = aVector("a", numVecs);
+      typename aVector::HostMirror h_a = Kokkos::create_mirror_view (a);
+      for (int i = 0; i < numVecs; ++i) {
+	h_a(i) = s_a;
+      }
+      Kokkos::deep_copy(a, h_a);
+      return MV_Multiply (a, y, a, A, x, 0, 2);
+    }
   }
+
+  template<class RangeVector, class CrsMatrix, class DomainVector>
+  void
+  MV_Multiply (typename RangeVector::const_scalar_type s_b,
+	       const RangeVector& y,
+	       typename DomainVector::const_scalar_type s_a,
+	       const CrsMatrix& A,
+	       const DomainVector& x)
+  {
+#ifdef KOKKOS_USE_CUSPARSE
+    if (MV_Multiply_Try_CuSparse (s_b, y, s_a, A, x)) {
+      return;
+    }
 #endif // KOKKOSE_USE_CUSPARSE
 #ifdef KOKKOS_USE_MKL
-  if (MV_Multiply_Try_MKL (s_b, y, s_a, A, x)) {
-    return;
-  }
+    if (MV_Multiply_Try_MKL (s_b, y, s_a, A, x)) {
+      return;
+    }
 #endif // KOKKOS_USE_MKL
-  typedef Kokkos::View<typename RangeVector::scalar_type*, typename RangeVector::device_type> aVector;
-  aVector a;
-  aVector b;
-  int numVecs = x.dimension_1();
+    typedef Kokkos::View<typename RangeVector::scalar_type*, typename RangeVector::device_type> aVector;
+    aVector a;
+    aVector b;
+    int numVecs = x.dimension_1();
 
     if (s_b == 0) {
       if (s_a == 0)
@@ -1761,36 +1783,37 @@ MV_Multiply (typename RangeVector::const_scalar_type s_b,
         return MV_Multiply (b, y, a, A, x, 2, 2);
       }
     }
-}
-
-namespace KokkosCrsMatrix {
-  /// \brief Copy the CrsMatrix B into the CrsMatrix A.
-  /// \tparam CrsMatrixDst CrsMatrix specialization of the destination
-  ///   (Dst) matrix A.
-  /// \tparam CrsMatrixSrc CrsMatrix specialization of the source
-  ///   (Src) matrix B.
-  ///
-  /// The two CrsMatrix specializations CrsMatrixDst and CrsMatrixSrc
-  /// need not be the same.  However, it must be possible to deep_copy
-  /// their column indices and their values.
-  ///
-  /// The target matrix must already be allocated, and must have the
-  /// same number of rows and number of entries as the source matrix.
-  /// It need not have the same row map as the source matrix.
-  template <class CrsMatrixDst, class CrsMatrixSrc>
-  void deep_copy (CrsMatrixDst A, CrsMatrixSrc B) {
-    Kokkos::deep_copy(A.graph.entries, B.graph.entries);
-    // FIXME (mfh 09 Aug 2013) This _should_ copy the row map.  We
-    // couldn't do it before because the row map was const, forbidding
-    // deep_copy.
-    //
-    //Kokkos::deep_copy(A.graph.row_map,B.graph.row_map);
-    Kokkos::deep_copy(A.values, B.values);
-
-    // FIXME (mfh 09 Aug 2013) Be sure to copy numRows, numCols, and
-    // nnz as well.
   }
-} // namespace KokkosCrsMatrix
 
-}
+  namespace KokkosCrsMatrix {
+    /// \brief Copy the CrsMatrix B into the CrsMatrix A.
+    /// \tparam CrsMatrixDst CrsMatrix specialization of the destination
+    ///   (Dst) matrix A.
+    /// \tparam CrsMatrixSrc CrsMatrix specialization of the source
+    ///   (Src) matrix B.
+    ///
+    /// The two CrsMatrix specializations CrsMatrixDst and CrsMatrixSrc
+    /// need not be the same.  However, it must be possible to deep_copy
+    /// their column indices and their values.
+    ///
+    /// The target matrix must already be allocated, and must have the
+    /// same number of rows and number of entries as the source matrix.
+    /// It need not have the same row map as the source matrix.
+    template <class CrsMatrixDst, class CrsMatrixSrc>
+    void deep_copy (CrsMatrixDst A, CrsMatrixSrc B) {
+      Kokkos::deep_copy(A.graph.entries, B.graph.entries);
+      // FIXME (mfh 09 Aug 2013) This _should_ copy the row map.  We
+      // couldn't do it before because the row map was const, forbidding
+      // deep_copy.
+      //
+      //Kokkos::deep_copy(A.graph.row_map,B.graph.row_map);
+      Kokkos::deep_copy(A.values, B.values);
+
+      // FIXME (mfh 09 Aug 2013) Be sure to copy numRows, numCols, and
+      // nnz as well.
+    }
+  } // namespace KokkosCrsMatrix
+
+} // namespace Kokkos
+
 #endif /* KOKKOS_CRSMATRIX_H_ */
