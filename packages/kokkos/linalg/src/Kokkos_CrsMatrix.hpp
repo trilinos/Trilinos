@@ -70,8 +70,7 @@
 #ifdef KOKKOS_USE_MKL
 #  include <mkl.h>
 #  include <mkl_spblas.h>
-// FIXME (mfh 09 Aug 2013) This file is missing; please check it in.
-#  include <Kokkos_CRSMatrix_MKL.hpp>
+#  include <Kokkos_CrsMatrix_MKL.hpp>
 #endif // KOKKOS_USE_MKL
 
 namespace Kokkos {
@@ -81,7 +80,10 @@ namespace Kokkos {
 /// \tparam MatrixType Sparse matrix type, such as (but not limited to) CrsMatrix.
 ///
 /// This class provides a generic view of a row of a sparse matrix.
-/// The view is suited for computational kernels like sparse
+/// We intended this class to view a row of a CrsMatrix, but
+/// MatrixType need not necessarily be CrsMatrix.
+///
+/// The row view is suited for computational kernels like sparse
 /// matrix-vector multiply, as well as for modifying entries in the
 /// sparse matrix.  Whether the view is const or not, depends on
 /// whether MatrixType is a const or nonconst view of the matrix.  If
@@ -100,6 +102,16 @@ namespace Kokkos {
 ///   // ... do something with A_ij and j ...
 /// }
 /// \endcode
+///
+/// MatrixType must provide the \c scalar_type and \c ordinal_type
+/// typedefs.  In addition, it must make sense to use SparseRowView to
+/// view a row of MatrixType.  In particular, the values and column
+/// indices of a row must be accessible using the <tt>values</tt>
+/// resp. <tt>colidx</tt> arrays given to the constructor of this
+/// class, with a constant <tt>stride</tt> between successive entries.
+/// The stride is one for the compressed sparse row storage format (as
+/// is used by CrsMatrix), but may be greater than one for other
+/// sparse matrix storage formats (e.g., ELLPACK or jagged diagonal).
 template<class MatrixType>
 struct SparseRowView {
   //! The type of the values in the row.
@@ -230,6 +242,8 @@ public:
 /// \tparam Device The Kokkos Device type.
 /// \tparam MemoryTraits Traits describing how data are stored in
 ///   memory.  The default parameter is sufficient for most users.
+///
+///
 template<typename ScalarType,
          typename OrdinalType,
          class Device,
@@ -240,6 +254,10 @@ public:
   typedef ScalarType  scalar_type;
   typedef OrdinalType ordinal_type;
 
+  // FIXME (mfh 28 Sep 2013) Cuda::host_mirror_device_type is Threads.
+  // Shouldn't CrsMatrix::host_device_type always be the same as its
+  // Device's host_mirror_device_type?
+  //
   // OpenMP is the default host type if you turned on OpenMP when
   // building.  OpenMP is not on by default, so if you specified in
   // the build that you wanted OpenMP, then we say that the default
@@ -271,6 +289,9 @@ public:
 #endif // KOKKOS_USE_CUSPARSE
   CrsArrayType graph;
   values_type values;
+
+  // FIXME (mfh 28 Sep 2013) std::vector should never appear in this
+  // class, except perhaps as an input format for compatibility.
 
   std::vector<OrdinalType> h_entries_;
   std::vector<OrdinalType> rows_;
@@ -420,33 +441,47 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   void
-  sumIntoValues(OrdinalType row, OrdinalType *cols, size_t ncol, ScalarType *vals, bool force_atomic = false) const {
+  sumIntoValues (const OrdinalType row, 
+		 const OrdinalType cols[],
+		 const size_t ncol, 
+		 ScalarType vals[], 
+		 const bool force_atomic = false) const 
+  {
     SparseRowView<CrsMatrix> row_view = this->row (row);
-    int length = row_view.length;
-    for (size_t i = 0; i<ncol; ++i) {
-      for (int j=0; j<length; ++j)
-        if (row_view.colidx(j) == cols[i] ) {
-          if ( force_atomic )
+    const int length = row_view.length;
+    for (size_t i = 0; i < ncol; ++i) {
+      for (int j = 0; j < length; ++j) {
+        if (row_view.colidx(j) == cols[i]) {
+          if (force_atomic) {
             atomic_fetch_add(&row_view.value(j), vals[i]);
-          else
+	  } else {
             row_view.value(j) += vals[i];
+	  }
         }
+      }
     }
   }
 
   KOKKOS_INLINE_FUNCTION
   void
-  replaceValues(OrdinalType row, OrdinalType *cols, size_t ncol, ScalarType *vals, bool force_atomic = false) const {
+  replaceValues (const OrdinalType row, 
+		 const OrdinalType cols[], 
+		 const size_t ncol, 
+		 ScalarType vals[], 
+		 const bool force_atomic = false) const 
+  {
     SparseRowView<CrsMatrix> row_view = this->row (row);
-    int length = row_view.length;
-    for (size_t i = 0; i<ncol; ++i) {
-      for (int j=0; j<length; ++j)
-        if (row_view.colidx(j) == cols[i] ) {
-          if ( force_atomic )
+    const int length = row_view.length;
+    for (size_t i = 0; i < ncol; ++i) {
+      for (int j = 0; j < length; ++j) {
+        if (row_view.colidx(j) == cols[i]) {
+          if (force_atomic) {
             atomic_exchange(&row_view.value(j), vals[i]);
-          else
+	  } else {
             row_view.value(j) = vals[i];
+	  }
         }
+      }
     }
   }
 
@@ -1204,6 +1239,8 @@ struct ThreadsPerRow {
   static const int value = 1;
 };
 
+#ifdef KOKKOS_HAVE_CUDA
+
 template<>
 struct ThreadsPerRow<Kokkos::Cuda,unsigned int> {
   static const int value = 8;
@@ -1223,6 +1260,8 @@ template<>
 struct ThreadsPerRow<Kokkos::Cuda,double> {
   static const int value = 8;
 };
+
+#endif // KOKKOS_HAVE_CUDA
 
 template <class RangeVector,
           class TCrsMatrix,
