@@ -248,7 +248,7 @@ public:
                   const ParallelWorkRequest & work ,
                   pointer_type                result = 0 )
   {
-    OpenMPexec::assert_ready("Kokkos::OpenMP - parallel_reduce");
+    OpenMPexec::verify_is_process("Kokkos::OpenMP - parallel_reduce");
 
     OpenMPexec::resize_reduce_scratch( Reduce::value_size( functor ) );
 

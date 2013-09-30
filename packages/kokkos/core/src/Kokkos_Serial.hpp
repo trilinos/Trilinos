@@ -97,7 +97,7 @@ public:
   /// For the Serial device, this method <i>always</i> returns false,
   /// because parallel_for or parallel_reduce with the Serial device
   /// always execute sequentially.
-  static bool in_parallel() { return false ; }
+  inline static int in_parallel() { return false ; }
 
   /** \brief  Set the device in a "sleep" state.
    *
@@ -131,7 +131,7 @@ public:
   static void finalize();
 
   //! Print configuration information to the given output stream.
-  static void print_configuration( std::ostream & );
+  static void print_configuration( std::ostream & , const bool detail = false );
 
   inline int league_rank() const { return 0 ; }
   inline int league_size() const { return 1 ; }

@@ -559,7 +559,7 @@ Cuda::size_type Cuda::device_arch()
 void Cuda::finalize()
 { Impl::CudaInternal::raw_singleton().finalize(); }
 
-void Cuda::print_configuration( std::ostream & s )
+void Cuda::print_configuration( std::ostream & s , const bool )
 { Impl::CudaInternal::raw_singleton().print_configuration( s ); }
 
 bool Cuda::sleep() { return false ; }

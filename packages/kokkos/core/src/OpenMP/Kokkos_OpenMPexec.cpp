@@ -176,6 +176,7 @@ void OpenMPexec::resize_shared_scratch( size_t size )
 
           if ( size ) {
             th.m_shared = HostSpace::allocate( "openmp_shared_scratch" , typeid(unsigned char) , 1 , size );
+            th.m_shared_end = size ;
           }
 
           kokkos_omp_in_critical_region = 0 ;
@@ -185,7 +186,8 @@ void OpenMPexec::resize_shared_scratch( size_t size )
 
         for ( int i = 0 ; i < omp_get_num_threads() ; ++i ) {
           if ( th.m_init_league_rank == m_thread[i]->m_init_league_rank ) {
-            m_thread[i]->m_shared = th.m_shared ;
+            m_thread[i]->m_shared     = th.m_shared ;
+            m_thread[i]->m_shared_end = th.m_shared_end ;
           }
         }
       }
@@ -194,6 +196,20 @@ void OpenMPexec::resize_shared_scratch( size_t size )
   }
 
   s_size = size ;
+}
+
+void * OpenMPexec::get_shmem( const int size )
+{
+  // m_shared_iter is in bytes, convert to integer offsets
+  const int offset = m_shared_iter >> power_of_two<sizeof(int)>::value ;
+
+  m_shared_iter += size ;
+
+  if ( m_shared_end < m_shared_iter ) {
+    Kokkos::Impl::throw_runtime_exception( std::string("OpenMPexec::get_shmem FAILED : exceeded shared memory size" ) );
+  }
+
+  return ((int*)m_shared) + offset ;
 }
 
 } // namespace Impl

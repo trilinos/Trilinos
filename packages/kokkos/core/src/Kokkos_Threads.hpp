@@ -81,9 +81,6 @@ public:
 
   /// \brief True if and only if this method is being called in a
   ///   thread-parallel function.
-  ///
-  /// FIXME (mfh 27 Sep 2013) Shouldn't this return \c bool, to match
-  /// Kokkos::Serial::in_parallel() and Kokkos::Cuda::in_parallel() ?
   static int in_parallel();
 
   /** \brief  Set the device in a "sleep" state.
@@ -120,10 +117,7 @@ public:
   static void finalize();
 
   /// \brief Print configuration information to the given output stream.
-  ///
-  /// FIXME (mfh 27 Sep 2013) How come this device's method takes two
-  /// arguments, and the other devices' methods only take one?
-  static void print_configuration( std::ostream & , bool detail = false );
+  static void print_configuration( std::ostream & , const bool detail = false );
 
   //@}
   //! \name Function for the functor device interface */

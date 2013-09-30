@@ -264,7 +264,7 @@ inline void Threads::finalize()
   Impl::ThreadsExec::finalize();
 }
 
-inline void Threads::print_configuration( std::ostream & s , bool detail )
+inline void Threads::print_configuration( std::ostream & s , const bool detail )
 {
   Impl::ThreadsExec::print_configuration( s , detail );
 }

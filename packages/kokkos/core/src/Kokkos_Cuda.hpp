@@ -100,7 +100,7 @@ public:
 
   /// \brief True if and only if this method is being called in a
   ///   thread-parallel function.
-  KOKKOS_INLINE_FUNCTION static bool in_parallel() { 
+  KOKKOS_INLINE_FUNCTION static int in_parallel() { 
 #if defined( __CUDA_ARCH__ ) 
     return true; 
 #else
@@ -140,7 +140,7 @@ public:
   static void finalize();
 
   //! Print configuration information to the given output stream.
-  static void print_configuration( std::ostream & );
+  static void print_configuration( std::ostream & , const bool detail = false );
 
   //@}
   //--------------------------------------------------------------------------

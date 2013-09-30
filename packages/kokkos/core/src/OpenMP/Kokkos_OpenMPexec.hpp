@@ -109,7 +109,6 @@ public:
   static void verify_is_process( const char * const );
   static void verify_initialized( const char * const );
 
-  static void assert_ready( const char * );
   static void resize_reduce_scratch( size_t );
   static void resize_shared_scratch( size_t );
 
@@ -179,6 +178,8 @@ public:
 
   //----------------------------------------------------------------------
 
+  void * get_shmem( const int );
+
   void team_barrier()
     {
       for ( int i = 0 ; i < m_fan_team_size ; ++i ) {
@@ -221,9 +222,25 @@ public:
 
 };
 
+} // namespace Impl
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-} // namespace Impl
+namespace Kokkos {
+
+inline OpenMP::OpenMP( Impl::OpenMPexec & e ) : m_exec(e) {}
+
+inline int OpenMP::league_rank() const { return m_exec.m_work_league_rank ; }
+inline int OpenMP::league_size() const { return m_exec.m_work_league_size ; }
+inline int OpenMP::team_rank() const { return m_exec.m_team_rank ; }
+inline int OpenMP::team_size() const { return m_exec.m_team_size ; }
+
+inline void OpenMP::team_barrier() { m_exec.team_barrier() ; }
+
+inline void * OpenMP::get_shmem( const int size ) { return m_exec.get_shmem(size) ; }
+
 } // namespace Kokkos
 
 #endif /* #ifndef KOKKOS_OPENMPEXEC_HPP */
