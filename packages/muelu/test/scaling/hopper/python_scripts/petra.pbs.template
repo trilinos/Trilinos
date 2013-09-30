@@ -23,7 +23,7 @@ echo "==========================================="
 for ((ii=1; ii < ${NumRuns}+1; ii++)); do
   echo "---- run ${ii} of ${NumRuns} ----"
 
-  myRunCommand="aprun -ss -cc numa_node -n _CORES_ ./binary.exe --nx=_NX_ --ny=_NX_ --nz=_NX_ --matrixType=_MTYPE_ --xml=_XMLFILE_ --precond=1 --fixPoint=0"
+  myRunCommand="aprun -ss -cc numa_node -n _CORES_ ./binary.exe --nx=_NX_ --ny=_NX_ --nz=_NX_ --matrixType=_MTYPE_ --xml=_XMLFILE_ --solver=cg"
   myRunCommandE="$myRunCommand --linAlgebra=Epetra"
   myRunCommandT="$myRunCommand --linAlgebra=Tpetra"
   #epetra
