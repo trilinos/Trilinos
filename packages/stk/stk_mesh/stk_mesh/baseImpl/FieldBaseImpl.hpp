@@ -83,6 +83,11 @@ public:
       return m_attribute.template insert_with_delete<A>(a);
     }
 
+  template<class A>
+    bool remove_attribute(const A * a) {
+      return m_attribute.template remove<A>(a);
+    }
+
   const FieldRestriction & restriction( unsigned entity_rank , const Part & part) const ;
 
   const FieldRestrictionVector &restrictions() const ;

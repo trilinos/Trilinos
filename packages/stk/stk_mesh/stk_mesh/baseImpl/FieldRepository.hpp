@@ -78,6 +78,12 @@ class FieldRepository {
         return f.m_impl.declare_attribute_no_delete(a);
       }
 
+    template<class T>
+      bool remove_attribute( FieldBase & f , const T * a )
+      {
+	return f.m_impl.remove_attribute<T>( a );
+      }
+
     void declare_field_restriction(
         const char     * arg_method,
         FieldBase      & arg_field ,

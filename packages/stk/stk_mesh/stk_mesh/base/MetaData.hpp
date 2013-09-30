@@ -327,6 +327,8 @@ public:
   const T * declare_attribute_with_delete( FieldBase & field, const T * attribute);
   template<class T>
   const T * declare_attribute_no_delete( FieldBase & field, const T * attribute);
+  template<class T>
+  bool remove_attribute( FieldBase & field, const T * attribute);
 
   /** \} */
   //------------------------------------
@@ -1154,6 +1156,14 @@ MetaData::declare_attribute_no_delete( FieldBase & field , const T * attribute )
 {
   require_not_committed();
   return m_field_repo.declare_attribute_no_delete(field, attribute);
+}
+
+template<class T>
+inline
+bool
+MetaData::remove_attribute( FieldBase & field , const T * attribute )
+{
+  return m_field_repo.remove_attribute(field, attribute);
 }
 
 //----------------------------------------------------------------------
