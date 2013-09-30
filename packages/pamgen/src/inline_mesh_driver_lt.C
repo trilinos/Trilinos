@@ -126,6 +126,10 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
 		  global_node_map,
 		  global_node_list.size());
 
+  imd->Offset_Coords(nemesis_db->Coord(),
+			global_node_list.size(),
+			dim);
+
   if(!imd->getErrorString().empty()){return NULL;}
 
   imd->Customize_Coords(nemesis_db->Coord(),

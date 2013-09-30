@@ -202,6 +202,7 @@ virtual  void Calc_Parallel_Info(
   double ** first_size;
   double ** last_size;
   long long ** interval;
+  double inline_offset[3];
   double inline_gminx;
   double inline_gminy;
   double inline_gminz;
@@ -256,6 +257,8 @@ virtual  void Calc_Parallel_Info(
 		       std::vector<long long> & global_node_vector, 
 		       std::map <long long, long long> & global_node_map,
 			       long long num_nodes){};
+
+  void Offset_Coords(double * coords,long long num_nodes,long long dim);
 
   void Customize_Coords(double * coords,long long num_nodes,long long dim);
 

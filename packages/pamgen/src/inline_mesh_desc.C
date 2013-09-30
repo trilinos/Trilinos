@@ -1124,6 +1124,9 @@ void Inline_Mesh_Desc::ZeroSet()
   inline_nx = 1;
   inline_ny = 1;
   inline_nz = 1;
+  inline_offset[0] = 0.;
+  inline_offset[1] = 0.;
+  inline_offset[2] = 0.;
   inline_gminx = 0.;
   inline_gminy = 0.;
   inline_gminz = 0.;
@@ -2078,6 +2081,17 @@ void Inline_Mesh_Desc::Customize_Coords(double * coords, long long num_nodes,lon
 {
   if(!Geometry_Transform_Function)return;
   Geometry_Transform_Function->Operate(coords,num_nodes,dim);
+}
+
+/****************************************************************************/
+void Inline_Mesh_Desc::Offset_Coords(double * coords, long long num_nodes,long long dim)
+/****************************************************************************/
+{
+  for(long long ict = 0; ict < num_nodes; ict ++){
+    for(long long idim = 0; idim < 3; idim ++){
+      coords[idim*num_nodes + ict] = coords[idim*num_nodes + ict] + inline_offset[idim];
+    }
+  }
 }
 
 }//end namespace PAMGEN_NEVADA
