@@ -262,21 +262,23 @@ request_args_t *request_args_get(const NNTI_peer_t *caller, const unsigned long 
 void request_args_del(const NNTI_peer_t *caller, const unsigned long reqid)
 {
     caller_reqid cr(caller, reqid);
+    request_args_t *request_args=NULL;
 
     log_debug(rpc_debug_level, "enter - deleting caller(%s) reqid(%lu)",
             caller->url, reqid);
 
     if (nthread_lock(&request_args_map_mutex)) log_warn(rpc_debug_level, "failed to get thread lock");
     request_args_map_iterator_t iter=request_args_map.find(cr);
-    request_args_t *request_args=iter->second;
-
-    request_args_map.erase(cr);
-    log_debug(rpc_debug_level, "request_args_map.size() == %lu", request_args_map.size());
-    nthread_unlock(&request_args_map_mutex);
-
-    if (request_args != NULL) {
-        free(request_args);
+    // it's OK if the caller/reqid is not found.  could have been an error before request args were added.
+    if (iter != request_args_map.end()) {
+        request_args=iter->second;
+        request_args_map.erase(iter);
+        log_debug(rpc_debug_level, "request_args_map.size() == %lu", request_args_map.size());
+        if (request_args != NULL) {
+            free(request_args);
+        }
     }
+    nthread_unlock(&request_args_map_mutex);
 
     log_debug(rpc_debug_level, "end");
 }
