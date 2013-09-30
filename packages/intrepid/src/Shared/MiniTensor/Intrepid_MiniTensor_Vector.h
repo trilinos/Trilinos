@@ -54,7 +54,7 @@ namespace Intrepid {
 template<typename T, Index N>
 struct vector_store
 {
-  typedef Storage<T, dimension_power<N, 1>::value> type;
+  typedef Storage<T, dimension_power<check_static<N>::value, 1>::value> type;
 };
 
 ///

@@ -183,7 +183,7 @@ test_filling(Index const dimension)
 
   // Test construct with random entries
   Tensor
-  C(dimension, RANDOM);
+  C(dimension, RANDOM_UNIFORM);
 
   error = norm_f(C);
 
@@ -192,7 +192,7 @@ test_filling(Index const dimension)
   passed = passed && random_constructed;
 
   // Test fill with random components
-  A.fill(RANDOM);
+  A.fill(RANDOM_UNIFORM);
 
   error = norm_f(A);
 
@@ -432,7 +432,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, Inverse2x2)
   std::srand(std::time(NULL));
 
   Tensor<Real, 2> const
-  A = 2.0 * eye<Real, 2>() + Tensor<Real, 2>(RANDOM);
+  A = 2.0 * eye<Real, 2>() + Tensor<Real, 2>(RANDOM_UNIFORM);
 
   Tensor<Real, 2> const
   B = inverse(A);
@@ -451,7 +451,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, Inverse3x3)
   std::srand(std::time(NULL));
 
   Tensor<Real, 3> const
-  A = 2.0 * eye<Real, 3>() + Tensor<Real, 3>(RANDOM);
+  A = 2.0 * eye<Real, 3>() + Tensor<Real, 3>(RANDOM_UNIFORM);
 
   Tensor<Real, 3> const
   B = inverse(A);
@@ -473,7 +473,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, InverseNxN)
   N = double(std::rand()) / double(RAND_MAX) * 7.0 + 4.0;
 
   Tensor<Real> const
-  A = 2.0 * eye<Real>(N) + Tensor<Real>(N, RANDOM);
+  A = 2.0 * eye<Real>(N) + Tensor<Real>(N, RANDOM_UNIFORM);
 
   Tensor<Real> const
   B = inverse(A);
@@ -495,7 +495,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, Inverse_4th_NxN)
   N = double(std::rand()) / double(RAND_MAX) * 2.0 + 2.0;
 
   Tensor4<Real> const
-  A = 2.0 * identity_1<Real>(N) + Tensor4<Real>(N, RANDOM);
+  A = 2.0 * identity_1<Real>(N) + Tensor4<Real>(N, RANDOM_UNIFORM);
 
   Tensor4<Real> const
   B = inverse(A);

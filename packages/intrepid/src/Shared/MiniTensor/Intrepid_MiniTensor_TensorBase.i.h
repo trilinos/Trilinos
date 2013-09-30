@@ -207,6 +207,8 @@ TensorBase<T, Store>::set_dimension(Index const dimension, Index const order)
 {
   if (Store::IS_STATIC == true) return;
 
+  check_dynamic<Store>(dimension);
+
   dimension_ = dimension;
 
   Index const
@@ -294,9 +296,15 @@ TensorBase<T, Store>::fill(ComponentValue const value)
       }
       break;
 
-    case RANDOM:
+    case RANDOM_UNIFORM:
       for (Index i = 0; i < number_components; ++i) {
-        (*this)[i] = random<T>();
+        (*this)[i] = random_uniform<T>();
+      }
+      break;
+
+    case RANDOM_NORMAL:
+      for (Index i = 0; i < number_components; ++i) {
+        (*this)[i] = random_normal<T>();
       }
       break;
 

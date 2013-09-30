@@ -175,6 +175,13 @@ Tensor<T, N>
 piola_inverse(Tensor<T, N> const & F, Tensor<T, N> const & P);
 
 ///
+/// Smallest eigenvalue by inverse iteration. Positive eigenvalues only.
+///
+template<typename T, Index N>
+T
+smallest_eigenvalue(Tensor<T, N> const & A);
+
+///
 /// Check strict ellipticity condition for 4th-order tensor.
 /// Assume A has major symmetries.
 /// \param A 4th-order tensor is transformed into 2nd-order

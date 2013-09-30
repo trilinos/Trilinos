@@ -99,10 +99,10 @@ inverse(Tensor<T, N> const & A)
 
   // Set 1 ... dimension bits to one.
   Index
-  intact_rows = (1 << dimension) - 1;
+  intact_rows = static_cast<Index>((1UL << dimension) - 1);
 
   Index
-  intact_cols = (1 << dimension) - 1;
+  intact_cols = static_cast<Index>((1UL << dimension) - 1);
 
   // Gauss-Jordan elimination with full pivoting
   for (Index k = 0; k < dimension; ++k) {
@@ -1890,6 +1890,7 @@ namespace {
 // R^N eigenvalue decomposition for symmetric 2nd-order tensor
 // \param A tensor
 // \return V eigenvectors, D eigenvalues in diagonal Matlab-style
+// See algorithm 8.4.2 in Matrix Computations, Golub & Van Loan 1996
 //
 template<typename T, Index N>
 std::pair<Tensor<T, N>, Tensor<T, N> >
@@ -1910,8 +1911,10 @@ eig_sym_NxN(Tensor<T, N> const & A)
   T
   tol = machine_epsilon<T>() * norm(A);
 
+  // Estimate based on random generation and linear regression.
+  // Golub & Van Loan p 429 expect ~ dimension * log(dimension)
   Index const
-  max_iter = 128;
+  max_iter = 2.25 * dimension * dimension;
 
   Index
   num_iter = 0;
@@ -1954,10 +1957,6 @@ eig_sym_NxN(Tensor<T, N> const & A)
 
     off = norm_off_diagonal(D);
     num_iter++;
-  }
-
-  if (num_iter == max_iter) {
-    std::cerr << "WARNING: EIG iteration did not converge." << std::endl;
   }
 
   Vector<T, N> d(dimension);

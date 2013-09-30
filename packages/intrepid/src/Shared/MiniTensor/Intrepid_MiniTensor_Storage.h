@@ -42,6 +42,8 @@
 #if !defined(Intrepid_MiniTensor_Storage_h)
 #define Intrepid_MiniTensor_Storage_h
 
+#include <boost/static_assert.hpp>
+
 #include "Intrepid_MiniTensor_Definitions.h"
 
 namespace Intrepid {
@@ -56,6 +58,23 @@ template <Index C>
 struct dimension_const<DYNAMIC, C> {
   static Index const value = DYNAMIC;
 };
+
+/// Validate dimension
+template <Index D>
+struct check_static {
+  static Index const maximum_dimension = std::numeric_limits<Index>::digits;
+  BOOST_STATIC_ASSERT_MSG(D < maximum_dimension, "Dimension too large.");
+  static Index const value = D;
+};
+
+template <typename Store>
+inline
+void
+check_dynamic(Index const dimension)
+{
+  assert(Store::IS_DYNAMIC == true);
+  assert(dimension <= std::numeric_limits<Index>::digits);
+}
 
 /// Integer power template restricted to orders defined below
 template <Index D, Index O>
@@ -175,7 +194,11 @@ template<typename T, Index N>
 class Storage
 {
 public:
-  typedef T type;
+  typedef T value_type;
+  typedef T * pointer_type;
+  typedef T & reference_type;
+  typedef T const * const_pointer_type;
+  typedef T const & const_reference_type;
 
   static
   bool const
@@ -209,6 +232,12 @@ public:
   void
   clear() {}
 
+  pointer_type
+  get_pointer() {return &storage_[0];}
+
+  const_pointer_type
+  get_const_pointer() const {return &storage_[0];}
+
 private:
 
   Storage(Storage<T, N> const & s);
@@ -228,7 +257,11 @@ template<typename T>
 class Storage<T, DYNAMIC>
 {
 public:
-  typedef T type;
+  typedef T value_type;
+  typedef T * pointer_type;
+  typedef T & reference_type;
+  typedef T const * const_pointer_type;
+  typedef T const & const_reference_type;
 
   static
   bool const
@@ -238,27 +271,47 @@ public:
   bool const
   IS_STATIC = false;
 
-  Storage();
+  Storage() : storage_(NULL), size_(0) {}
 
   explicit
-  Storage(Index const number_entries);
+  Storage(Index const number_entries) : storage_(NULL), size_(0)
+  {resize(number_entries);}
 
-  ~Storage();
+  ~Storage() {clear();}
 
   T const &
-  operator[](Index const i) const;
+  operator[](Index const i) const
+  {assert(i < size()); return storage_[i];}
 
   T &
-  operator[](Index const i);
+  operator[](Index const i)
+  {assert(i < size()); return storage_[i];}
 
   Index
-  size() const;
+  size() const
+  {return size_;}
 
   void
-  resize(Index const number_entries);
+  resize(Index const number_entries)
+  {
+    if (number_entries != size_) {
+      clear(); storage_ = new T[number_entries]; size_ = number_entries;
+    }
+  }
 
   void
-  clear();
+  clear()
+  {
+    if (storage_ != NULL) {
+      delete [] storage_; storage_ = NULL; size_ = 0;
+    }
+  }
+
+  pointer_type
+  get_pointer() {return storage_;}
+
+  const_pointer_type
+  get_const_pointer() const {return storage_;}
 
 private:
 
