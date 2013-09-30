@@ -105,17 +105,15 @@ int main(int argc, char *argv[]) {
   Galeri::Xpetra::Parameters<GO> matrixParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
-  std::string xmlFileName = "scalingTest.xml"; clp.setOption("xml",                   &xmlFileName,     "read parameters from a file. Otherwise, this example uses by default 'scalingTest.xml'");
-  int    amgAsPrecond      = 1;      clp.setOption("precond",               &amgAsPrecond,     "apply multigrid as preconditioner");
-  int    amgAsSolver       = 0;      clp.setOption("fixPoint",              &amgAsSolver,      "apply multigrid as solver");
-  bool   printTimings      = true;   clp.setOption("timings", "notimings",  &printTimings,     "print timings to screen");
-  int    writeMatricesOPT  = -2;     clp.setOption("write",                 &writeMatricesOPT, "write matrices to file (-1 means all; i>=0 means level i)");
-  double tol               = 1e-12;  clp.setOption("tol",                   &tol,              "solver convergence tolerance");
-  std::string krylovMethod = "cg";   clp.setOption("krylov",                &krylovMethod,     "outer Krylov method");
+  std::string xmlFileName       = "scalingTest.xml"; clp.setOption("xml",                   &xmlFileName,     "read parameters from a file [default = 'scalingTest.xml']");
+  bool        printTimings      = true;              clp.setOption("timings", "notimings",  &printTimings,     "print timings to screen");
+  int         writeMatricesOPT  = -2;                clp.setOption("write",                 &writeMatricesOPT, "write matrices to file (-1 means all; i>=0 means level i)");
+  std::string solveType         = "cg";              clp.setOption("solver",                &solveType,        "solve type: (none | cg | gmres | standalone)");
+  double      tol               = 1e-12;             clp.setOption("tol",                   &tol,              "solver convergence tolerance");
 
-  std::string mapFile;               clp.setOption("map",                   &mapFile,          "map data file");
-  std::string matrixFile;            clp.setOption("matrix",                &matrixFile,       "matrix data file");
-  std::string coordFile;             clp.setOption("coords",                &coordFile,        "coordinates data file");
+  std::string mapFile;                               clp.setOption("map",                   &mapFile,          "map data file");
+  std::string matrixFile;                            clp.setOption("matrix",                &matrixFile,       "matrix data file");
+  std::string coordFile;                             clp.setOption("coords",                &coordFile,        "coordinates data file");
 
   switch (clp.parse(argc,argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -280,23 +278,28 @@ int main(int argc, char *argv[]) {
     H->Write(writeMatricesOPT, writeMatricesOPT);
 
   comm->barrier();
-  if (amgAsSolver) {
+  if (solveType == "none") {
+    // Do not perform a solve
+
+  } else if (solveType == "standalone") {
     tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - Fixed Point Solve")));
 
     H->IsPreconditioner(false);
     H->Iterate(*B, 25, *X);
 
-  } else if (amgAsPrecond) {
+  } else if (solveType == "cg" || solveType == "gmres") {
 #ifdef HAVE_MUELU_BELOS
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 5 - Belos Solve")));
+
     // Operator and Multivector type that will be used with Belos
     typedef MultiVector          MV;
     typedef Belos::OperatorT<MV> OP;
+
     H->IsPreconditioner(true);
 
     // Define Operator and Preconditioner
     Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
-    Teuchos::RCP<OP> belosPrec = Teuchos::rcp(new Belos::MueLuOp<SC, LO, GO, NO, LMO>(H));  // Turns a MueLu::Hierarchy object into a Belos operator
+    Teuchos::RCP<OP> belosPrec = Teuchos::rcp(new Belos::MueLuOp <SC, LO, GO, NO, LMO>(H)); // Turns a MueLu::Hierarchy object into a Belos operator
 
     // Construct a Belos LinearProblem object
     RCP< Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
@@ -319,13 +322,10 @@ int main(int argc, char *argv[]) {
 
     // Create an iterative solver manager
     RCP< Belos::SolverManager<SC, MV, OP> > solver;
-    if (krylovMethod == "cg") {
-      solver = rcp(new Belos::BlockCGSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
-    } else if (krylovMethod == "gmres") {
+    if (solveType == "cg")
+      solver = rcp(new Belos::BlockCGSolMgr   <SC, MV, OP>(belosProblem, rcp(&belosList, false)));
+    else if (solveType == "gmres")
       solver = rcp(new Belos::BlockGmresSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
-    } else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Invalid Krylov method.  Options are \"cg\" or \" gmres\".");
-    }
 
     // Perform solve
     Belos::ReturnType ret = Belos::Unconverged;
@@ -345,6 +345,8 @@ int main(int argc, char *argv[]) {
     else
       fancyout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
 #endif //ifdef HAVE_MUELU_BELOS
+  } else {
+    throw MueLu::Exceptions::RuntimeError("Unknown solver type: \"" + solveType + "\"");
   }
   comm->barrier();
   tm = Teuchos::null;
