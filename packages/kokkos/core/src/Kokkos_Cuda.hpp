@@ -61,7 +61,7 @@
 namespace Kokkos {
 namespace Impl {
 class CudaExec ;
-}
+} // namespace Impl
 } // namespace Kokkos
 
 /*--------------------------------------------------------------------------*/

@@ -46,8 +46,8 @@
 #ifndef KOKKOS_VECTOR_HPP
 #define KOKKOS_VECTOR_HPP
 
-#include <Kokkos_DualView.hpp>
 #include <KokkosCore_config.h>
+#include <Kokkos_DualView.hpp>
 
 /* Drop in replacement for std::vector based on Kokkos::DualView
  * Most functions only work on the host (it will not compile if called from device kernel)

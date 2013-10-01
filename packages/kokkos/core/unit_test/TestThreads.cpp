@@ -317,5 +317,47 @@ TEST_F( threads , atomics )
 
 //----------------------------------------------------------------------------
 
-} // namespace test
+struct TestThreadsScan {
+
+  typedef  Kokkos::Threads  device_type ;
+  typedef  long int         value_type ;
+
+  void operator()( const int iwork , value_type & update , const bool final_pass ) const
+  {
+    update += iwork + 1 ;
+
+    if ( final_pass ) {
+      const value_type n = iwork + 1 ;
+      const value_type answer = n & 1 ? ( n * ( ( n + 1 ) / 2 ) ) : ( ( n / 2 ) * ( n + 1 ) );
+     
+      ASSERT_EQ( answer , update );
+    }
+  }
+
+  void init( value_type & update ) const { update = 0 ; }
+
+  void join( volatile       value_type & update ,
+             volatile const value_type & input ) const
+  { update += input ; }
+};
+
+TEST_F( threads , scan )
+{
+  typedef Kokkos::Impl::ParallelScan< TestThreadsScan , size_t , Kokkos::Threads > TestScan ;
+
+  for ( int i = 0 ; i < 100 ; ++i ) {
+    TestScan( 1000 , TestThreadsScan() );
+  }
+  TestScan( 1000000 , TestThreadsScan() );
+  TestScan( 10000000 , TestThreadsScan() );
+}
+
+//----------------------------------------------------------------------------
+
+TEST_F( threads , team_scan )
+{
+  TestScanRequest< Kokkos::Threads >( 10 );
+}
+
+} // namespace Test
 

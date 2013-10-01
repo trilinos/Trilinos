@@ -65,6 +65,8 @@ public:
 
 private:
 
+  enum { REVERSE_RANK = true };
+
   friend class Kokkos::OpenMP ;
 
   void        * m_reduce ;    ///< Reduction memory
@@ -185,7 +187,7 @@ public:
       for ( int i = 0 ; i < m_fan_team_size ; ++i ) {
         spinwait( m_fan_team[i]->m_state , OpenMPexec::Active );
       }
-      if ( m_team_rank ) {
+      if ( ( REVERSE_RANK ? m_team_rank + 1 < m_team_size : m_team_rank ) ) {
         m_state = Rendezvous ;
         spinwait( m_state , OpenMPexec::Rendezvous );
       }
@@ -219,7 +221,6 @@ public:
   inline
   void team_work_next()
     { if ( ++m_work_league_rank < m_work_league_end ) team_barrier(); }
-
 };
 
 } // namespace Impl
@@ -240,6 +241,33 @@ inline int OpenMP::team_size() const { return m_exec.m_team_size ; }
 inline void OpenMP::team_barrier() { m_exec.team_barrier() ; }
 
 inline void * OpenMP::get_shmem( const int size ) { return m_exec.get_shmem(size) ; }
+
+#if 0
+template< typename T >
+inline T OpenMP::team_scan( T & value )
+{
+  if ( team_size() == 1 ) return 0 ;
+
+  // [HCE] TODO: Need to use reduction memory instead of shared memory
+  // and the parallel algorithm which will piggyback on the barriers.
+  T* const temp = (T*) get_shmem( sizeof(T) * team_size() );
+
+  temp[team_rank()] = value ;
+
+  team_barrier();
+  if ( team_rank() == 0 ) {
+    T old = 0;
+    for( int i = 0; i < team_size(); i++ ) {
+      const T next = temp[i];
+      temp[i] = old;
+      old += next;
+    }
+  }
+  team_barrier();
+
+  return temp[team_rank()];
+}
+#endif
 
 } // namespace Kokkos
 

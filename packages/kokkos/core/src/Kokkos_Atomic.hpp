@@ -124,7 +124,7 @@ const char * atomic_query_version()
 #endif
 }
 
-}
+} // namespace Kokkos
 
 //----------------------------------------------------------------------------
 // Atomic exchange
@@ -140,7 +140,7 @@ const char * atomic_query_version()
 //
 // template<class T>
 // bool atomic_compare_exchange_strong(volatile T* const dest, const T compare, const T val)
-// { bool equal = compare == *dest ; if ( equal ) *dest = val ; return bool ; }
+// { bool equal = compare == *dest ; if ( equal ) { *dest = val ; } return equal ; }
 
 #include "impl/Kokkos_Atomic_Compare_Exchange_Strong.hpp"
 

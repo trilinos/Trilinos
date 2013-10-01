@@ -164,6 +164,99 @@ public:
 
 namespace Test {
 
+template< class DeviceType >
+class ScanRequestFunctor
+{
+public:
+  typedef DeviceType  device_type ;
+  typedef long int    value_type ;
+  Kokkos::View< value_type , device_type > accum ;
+
+  ScanRequestFunctor() : accum("accum") {}
+
+  KOKKOS_INLINE_FUNCTION
+  void init( value_type & error ) const { error = 0 ; }
+
+  KOKKOS_INLINE_FUNCTION
+  void join( value_type volatile & error ,
+             value_type volatile const & input ) const
+    { if ( input ) error = 1 ; }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( device_type dev , value_type & error ) const
+  {
+    const long int answer =
+      ( dev.league_rank() + 1 ) * dev.team_rank() +
+      ( dev.team_rank() * ( dev.team_rank() + 1 ) ) / 2 ;
+    
+    const long int result =
+      dev.team_scan( dev.league_rank() + 1 + dev.team_rank() + 1 );
+    const long int result2 =
+      dev.team_scan( dev.league_rank() + 1 + dev.team_rank() + 1 );
+
+    ASSERT_EQ( answer, result );
+    ASSERT_EQ( answer, result2 );
+
+    if ( answer != result ) error = 1 ;
+    if ( answer != result2 ) error = 1 ;
+
+    const long int thread_rank = dev.team_rank() +
+                                 dev.team_size() * dev.league_rank();
+    dev.team_scan( 1 + thread_rank , accum.ptr_on_device() );
+  }
+};
+
+template< class DeviceType >
+class TestScanRequest
+{
+public:
+  typedef DeviceType  device_type ;
+  typedef long int    value_type ;
+
+  typedef Test::ScanRequestFunctor<DeviceType> functor_type ;
+
+  //------------------------------------
+
+  TestScanRequest( const size_t nteam )
+  {
+    run_test(nteam);
+  }
+
+  void run_test( const size_t nteam )
+  {
+    enum { Repeat = 1000 };
+
+    Kokkos::ParallelWorkRequest request ; 
+
+    request.team_size   = device_type::team_max();
+    request.league_size = nteam ;
+    const long int nthread = request.team_size * request.league_size ;
+
+    const long int total_answer = nthread * ( nthread + 1 ) / 2 ;
+
+    functor_type functor ;
+
+    for ( unsigned i = 0 ; i < Repeat ; ++i ) {
+      long int total = 0 ;
+      long int error = 0 ;
+      Kokkos::deep_copy( functor.accum , total );
+      Kokkos::parallel_reduce( request , functor , error );
+      Kokkos::deep_copy( total , functor.accum );
+
+      ASSERT_EQ( error , 0 );
+      ASSERT_EQ( total , total_answer );
+    }
+
+    device_type::fence();
+  }
+};
+
+} // namespace Test
+
+/*--------------------------------------------------------------------------*/
+
+namespace Test {
+
 template< class Device >
 struct SharedRequestFunctor {
 

@@ -130,25 +130,25 @@ public:
 
   inline void team_barrier();
 
-  /// \brief Collectively compute the league-wide unordered exclusive prefix sum.
-  ///
-  /// Values are ordered within a team, but not between teams
-  /// (i.e. the start values of thread 0 in each team are not ordered
-  /// according to team number).  This call does not use a global
-  /// synchronization. Multiple unordered scans can be in flight at
-  /// the same time (using scratch_view arguments that point to
-  /// distinct chunks of memory).  The scratch_view output argument
-  /// will hold the complete sum in the end.
-  template< class VT >
-  inline typename VT::value_type unordered_scan
-             (typename VT::value_type& value, VT& scratch_view);
+  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
+   *
+   *  The highest rank thread can compute the reduction total as
+   *    reduction_total = dev.team_scan( value ) + value ;
+   */
+  template< typename Type >
+  inline Type team_scan( const Type & value );
 
-  /// \brief Collectively compute the team-wide exclusive prefix sum.
-  ///
-  /// Values are ordered.  The last thread returns the sum of all
-  /// values in the team less its own value.
-  template< typename T >
-  inline T team_scan(T& value);
+  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
+   *          with intra-team non-deterministic ordering accumulation.
+   *
+   *  The global inter-team accumulation value will, at the end of the
+   *  league's parallel execution, be the scan's total.
+   *  Parallel execution ordering of the league's teams is non-deterministic.
+   *  As such the base value for each team's scan operation is similarly
+   *  non-deterministic.
+   */
+  template< typename TypeLocal , typename TypeGlobal >
+  inline TypeGlobal team_scan( const TypeLocal & value , TypeGlobal * const global_accum );
 
   inline void * get_shmem( const int size );
 

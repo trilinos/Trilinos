@@ -222,7 +222,7 @@ struct device_shmem_constructor_requires_unmanaged {};
 
 struct scalar_operator_called_from_non_scalar_view {};
 
-}
+} /* namespace ViewError */
 
 //----------------------------------------------------------------------------
 /** \brief  Enable view parentheses operator for
@@ -265,7 +265,11 @@ struct ViewEnableArrayOper<
 
 namespace Kokkos {
 
-struct allocate_without_initializing {};
+struct AllocateWithoutInitializing {};
+
+namespace {
+const AllocateWithoutInitializing allocate_without_initializing = AllocateWithoutInitializing();
+}
 
 /** \class View
  *  \brief View to an array of data.
@@ -524,7 +528,7 @@ public:
     }
 
   explicit inline
-  View( const allocate_without_initializing & ,
+  View( const AllocateWithoutInitializing & ,
         const typename if_allocation_constructor::type & label ,
         const size_t n0 = 0 ,
         const size_t n1 = 0 ,
@@ -1331,6 +1335,16 @@ void deep_copy( const View<DT,DL,DD,DM,DS> & dst ,
                 ), typename ViewTraits<DT,DL,DD,DM>::const_scalar_type >::type & value )
 {
   Impl::ViewFill< View<DT,DL,DD,DM,DS> >( dst , value );
+}
+
+template< class ST , class SL , class SD , class SM , class SS >
+inline
+typename Impl::enable_if<( ViewTraits<ST,SL,SD,SM>::rank == 0 )>::type
+deep_copy( ST & dst , const View<ST,SL,SD,SM,SS> & src )
+{
+  typedef  ViewTraits<ST,SL,SD,SM>  src_traits ;
+  typedef typename src_traits::memory_space  src_memory_space ;
+  Impl::DeepCopy< HostSpace , src_memory_space >( & dst , src.ptr_on_device() , sizeof(ST) );
 }
 
 //----------------------------------------------------------------------------

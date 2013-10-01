@@ -49,6 +49,7 @@
 
 #include <cstddef>
 #include <Kokkos_Macros.hpp>
+#include <Kokkos_View.hpp>
 #include <impl/Kokkos_Traits.hpp>
 
 //----------------------------------------------------------------------------
@@ -256,6 +257,25 @@ class MultiFunctorParallelReduce ;
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
+namespace Impl {
+
+/// \class ParallelReduce
+/// \brief Implementation detail of parallel_reduce.
+///
+/// This is an implementation detail of parallel_reduce.  Users should
+/// skip this and go directly to the nonmember function parallel_reduce.
+template< class FunctorType ,
+          class WorkSpec ,
+          class DeviceType = typename FunctorType::device_type >
+class ParallelScan ;
+
+} // namespace Impl
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
 
 /** \brief  Parallel work request for shared memory, league size, and team size.
  *
@@ -392,6 +412,7 @@ struct ReduceAdapter
 
   typedef ScalarType & reference_type  ;
   typedef ScalarType * pointer_type  ;
+  typedef ScalarType   scalar_type  ;
 
   KOKKOS_INLINE_FUNCTION static
   reference_type reference( void * p ) { return *((ScalarType*) p); }
@@ -436,6 +457,7 @@ struct ReduceAdapter< FunctorType , ScalarType[] >
 
   typedef ScalarType * reference_type  ;
   typedef ScalarType * pointer_type  ;
+  typedef ScalarType   scalar_type  ;
 
   KOKKOS_INLINE_FUNCTION static
   ScalarType * reference( void * p ) { return (ScalarType*) p ; }

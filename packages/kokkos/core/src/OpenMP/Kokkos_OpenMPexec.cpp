@@ -41,6 +41,7 @@
 //@HEADER
 */
 
+#include <iostream>
 #include <Kokkos_OpenMP.hpp>
 #include <Kokkos_hwloc.hpp>
 
@@ -276,14 +277,23 @@ void OpenMP::initialize( const unsigned team_count ,
 
 #pragma omp parallel
   {
-    if ( thread_count != (unsigned) omp_get_num_threads() ) {
-      Kokkos::Impl::throw_runtime_exception( "Kokkos::OpenMP ERROR: thread_count != omp_get_num_threads()" );
+#pragma omp critical
+    {
+      if ( thread_count != (unsigned) omp_get_num_threads() ) {
+        Kokkos::Impl::throw_runtime_exception( "Kokkos::OpenMP ERROR: thread_count != omp_get_num_threads()" );
+      }
+      const unsigned omp_rank    = omp_get_thread_num();
+
+      // Call to 'bind_this_thread' is not thread safe
+      const unsigned thread_rank = ! hwloc_avail ? omp_rank :
+                                   ( Impl::OpenMPexec::REVERSE_RANK ? thread_count - ( 1 + Kokkos::hwloc::bind_this_thread( thread_count , threads_coord ) )
+                                                : Kokkos::hwloc::bind_this_thread( thread_count , threads_coord ) );
+
+      const unsigned league_rank = thread_rank / threads_per_team ;
+      const unsigned team_rank   = thread_rank % threads_per_team ;
+      Impl::OpenMPexec::m_thread[ omp_rank ] = new Impl::OpenMPexec( league_rank , team_count , team_rank , threads_per_team );
     }
-    const unsigned omp_rank    = omp_get_thread_num();
-    const unsigned thread_rank = hwloc_avail ? Kokkos::hwloc::bind_this_thread( thread_count , threads_coord ) : omp_rank ;
-    const unsigned league_rank = thread_rank / threads_per_team ;
-    const unsigned team_rank   = thread_rank % threads_per_team ;
-    Impl::OpenMPexec::m_thread[ omp_rank ] = new Impl::OpenMPexec( league_rank , team_count , team_rank , threads_per_team );
+/* END #pragma omp critical */
   }
 /* END #pragma omp parallel */
 
@@ -293,14 +303,17 @@ void OpenMP::initialize( const unsigned team_count ,
   {
     Impl::OpenMPexec & th = * Impl::OpenMPexec::m_thread[ omp_get_thread_num() ];
 
-    for ( int n = 1 ; ( th.m_team_rank + n < th.m_team_size ) &&
-                      ( 0 == ( n & th.m_team_rank ) ) ; n <<= 1 ) {
+    const int rank = Impl::OpenMPexec::REVERSE_RANK ? th.m_team_size - ( th.m_team_rank + 1 ) : th.m_team_rank ;
+
+    for ( int n = 1 ; ( rank + n < th.m_team_size ) && ( 0 == ( n & rank ) ) ; n <<= 1 ) {
+
+      const int fan_rank = Impl::OpenMPexec::REVERSE_RANK ? th.m_team_size - ( rank + n + 1 ) : rank + n ;
 
       // Find thread with equal league_rank and team_rank == th.m_team_rank + n
 
       for ( unsigned i = 0 ; i < thread_count ; ++i ) {
         if ( Impl::OpenMPexec::m_thread[i]->m_init_league_rank == th.m_init_league_rank &&
-             Impl::OpenMPexec::m_thread[i]->m_team_rank        == th.m_team_rank + n ) {
+             Impl::OpenMPexec::m_thread[i]->m_team_rank        == fan_rank ) {
           th.m_fan_team[ th.m_fan_team_size++ ] = Impl::OpenMPexec::m_thread[i] ;
           break ;
         }

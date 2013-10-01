@@ -76,7 +76,7 @@ public:
       self.m_func( iwork );
     }
 
-    exec.fan_in( self.m_func );
+    exec.fan_in();
   }
 
   ParallelFor( const FunctorType & functor , const size_t work )
@@ -106,7 +106,7 @@ public:
       self.m_func( Threads( exec ) );
     }
 
-    exec.fan_in( self.m_func );
+    exec.fan_in();
   }
 
   ParallelFor( const FunctorType & functor , const ParallelWorkRequest & work )
@@ -150,7 +150,7 @@ public:
       self.m_func( iwork , update );
     }
 
-    exec.fan_in( self.m_func );
+    exec.fan_in_reduce( self.m_func );
   }
 
   ParallelReduce( const FunctorType & functor ,
@@ -201,7 +201,7 @@ public:
       self.m_func( Threads( exec ) , update );
     }
 
-    exec.fan_in( self.m_func );
+    exec.fan_in_reduce( self.m_func );
   }
 
   ParallelReduce( const FunctorType & functor ,
@@ -231,6 +231,56 @@ public:
   inline ~ParallelReduce() { wait(); }
 };
 
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+template< class FunctorType , class WorkSpec >
+class ParallelScan< FunctorType , WorkSpec , Kokkos::Threads >
+{
+public:
+
+  typedef ReduceAdapter< FunctorType > Reduce ;
+
+  const FunctorType  m_func ;
+  const size_t       m_work ;
+
+  static void execute( ThreadsExec & exec , const void * arg )
+  {
+    const ParallelScan & self = * ((const ParallelScan *) arg );
+
+    const std::pair<size_t,size_t> work = exec.work_range( self.m_work );
+
+    typename Reduce::reference_type update = exec.reduce_value( self.m_func );
+
+    self.m_func.init( update );
+
+    for ( size_t iwork = work.first ; iwork < work.second ; ++iwork ) {
+      self.m_func( iwork , update , false );
+    }
+
+    exec.scan( self.m_func );
+
+    for ( size_t iwork = work.first ; iwork < work.second ; ++iwork ) {
+      self.m_func( iwork , update , true );
+    }
+
+    exec.fan_in();
+  }
+
+  ParallelScan( const size_t nwork , const FunctorType & functor )
+    : m_func( functor )
+    , m_work( nwork )
+    {
+      ThreadsExec::resize_reduce_scratch( 2 * Reduce::value_size( m_func ) );
+      ThreadsExec::start( & ParallelScan::execute , this );
+      ThreadsExec::fence();
+    }
+
+  inline void wait() {}
+
+  inline ~ParallelScan() { wait(); }
+};
+
 } // namespace Impl
 } // namespace Kokkos
 
@@ -246,7 +296,7 @@ private:
   struct MemberBase {
     virtual void init( Impl::ThreadsExec & ) const = 0 ;
     virtual void exec( Impl::ThreadsExec & ) const = 0 ;
-    virtual void fan_in( Impl::ThreadsExec & ) const = 0 ;
+    virtual void fan_in_reduce( Impl::ThreadsExec & ) const = 0 ;
     virtual void output( void * ) const = 0 ;
     virtual ~MemberBase() {}
   };
@@ -281,8 +331,8 @@ private:
         }
       }
 
-    void fan_in( Impl::ThreadsExec & exec ) const
-      { exec.fan_in( m_func ); }
+    void fan_in_reduce( Impl::ThreadsExec & exec ) const
+      { exec.fan_in_reduce( m_func ); }
 
     void output( void * ptr ) const
       {
@@ -316,7 +366,7 @@ private:
 
     // Last functor fan-in reduce:
 
-    self.m_members.back()->fan_in( exec );
+    self.m_members.back()->fan_in_reduce( exec );
   }
 
 public:
