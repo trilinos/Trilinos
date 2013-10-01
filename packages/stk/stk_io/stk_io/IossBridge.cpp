@@ -32,6 +32,12 @@
 
 namespace {
 
+struct ResultsFieldName
+{
+    ResultsFieldName(const std::string &name) : name_(name) {}
+    std::string name_;
+};
+
   const std::string internal_selector_name = "_stk_io_internal_selector";
   const std::string base_stk_part_name = "_base_stk_part_name";
   const std::string block_nodes_suffix = "_nodes";
@@ -553,6 +559,16 @@ void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &me
   }
 }
 
+std::string get_results_field_name(const stk::mesh::FieldBase &f)
+{
+  const ResultsFieldName *assignedName = f.attribute<ResultsFieldName>();
+  std::string name = f.name();
+  if(assignedName != NULL) {
+    name = assignedName->name_;
+  }
+  return name;
+}
+
 //----------------------------------------------------------------------
 /** Add all stk::Fields on the entities of the specified part_type
  *  on the specified part of the specified role * to the specified
@@ -569,18 +585,18 @@ void ioss_add_fields(const stk::mesh::Part &part,
 
   std::vector<mesh::FieldBase *>::const_iterator I = fields.begin();
   while (I != fields.end()) {
-	const stk::mesh::FieldBase *f = *I; ++I;
-	if (stk::io::is_valid_part_field(f, part_type, part, filter_role, add_all)) {
-	  const stk::mesh::FieldBase::Restriction &res = f->restriction(part_type, part);
-	  std::pair<std::string, Ioss::Field::BasicType> field_type;
-	  get_io_field_type(f, res, &field_type);
-	  if (field_type.second != Ioss::Field::INVALID) {
-	    size_t entity_size = entity->get_property("entity_count").get_int();
-	    const std::string& name = f->name();
-	    entity->field_add(Ioss::Field(name, field_type.second, field_type.first,
-                                      filter_role, entity_size));
-	  }
-	}
+    const stk::mesh::FieldBase *f = *I; ++I;
+    if (stk::io::is_valid_part_field(f, part_type, part, filter_role, add_all)) {
+      const stk::mesh::FieldBase::Restriction &res = f->restriction(part_type, part);
+      std::pair<std::string, Ioss::Field::BasicType> field_type;
+      get_io_field_type(f, res, &field_type);
+      if (field_type.second != Ioss::Field::INVALID) {
+        size_t entity_size = entity->get_property("entity_count").get_int();
+        std::string name = get_results_field_name(*f);
+        entity->field_add(Ioss::Field(name, field_type.second, field_type.first,
+                                  filter_role, entity_size));
+      }
+    }
   }
 }
 
@@ -1615,6 +1631,18 @@ void set_field_role(stk::mesh::FieldBase &f, const Ioss::Field::RoleType &role)
     }
     delete my_role;
   }
+}
+
+void set_results_field_name(mesh::FieldBase &f, const std::string &name)
+{
+  stk::mesh::MetaData &m = mesh::MetaData::get(f);
+  const ResultsFieldName *check = f.attribute<ResultsFieldName>();
+  if(check != NULL)
+  {
+    m.remove_attribute(f, check);
+  }
+  ResultsFieldName *newName = new ResultsFieldName(name);
+  m.declare_attribute_with_delete(f, newName);
 }
 
 }//namespace io

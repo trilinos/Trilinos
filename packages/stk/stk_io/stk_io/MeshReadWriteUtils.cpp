@@ -779,6 +779,21 @@ void process_sidesets_df(Ioss::Region &region, stk::mesh::BulkData &bulk)
   }
 }
 
+std::string get_field_name(const stk::mesh::FieldBase &f, Ioss::DatabaseUsage dbUsage)
+{
+  std::string name = f.name();
+  if(dbUsage == Ioss::WRITE_RESTART || dbUsage == Ioss::READ_RESTART) {
+    const RestartFieldAttribute *restartAttribute = f.attribute<RestartFieldAttribute>();
+    if(restartAttribute !=NULL) {
+      name = restartAttribute->databaseName;
+    }
+  }
+  else {
+    name = stk::io::get_results_field_name(f);
+  }
+  return name;
+}
+
 // ========================================================================
 void put_field_data(stk::mesh::BulkData &bulk, stk::mesh::Part &part,
                     stk::mesh::EntityRank part_type,
@@ -811,7 +826,8 @@ void put_field_data(stk::mesh::BulkData &bulk, stk::mesh::Part &part,
   std::vector<stk::mesh::FieldBase *>::const_iterator I = fields.begin();
   while (I != fields.end()) {
     const stk::mesh::FieldBase *f = *I; ++I;
-    stk::io::field_data_to_ioss(bulk, f, entities, io_entity, f->name(), filter_role);
+    std::string fieldName = get_field_name(*f, io_entity->get_database()->usage());
+    stk::io::field_data_to_ioss(bulk, f, entities, io_entity, fieldName, filter_role);
   }
 }
 
