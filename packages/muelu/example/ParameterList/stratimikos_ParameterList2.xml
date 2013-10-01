@@ -45,10 +45,6 @@
           <Parameter name="startLevel" type="int" value="1"/>
           <Parameter name="P"          type="string" value="SaPFactory"/>
           <Parameter name="Smoother"   type="string" value="SymGaussSeidel"/>
-        </ParameterList>
-
-        <ParameterList name="CoarsestLevel">
-          <Parameter name="startLevel"   type="int" value="-1"/>
           <Parameter name="CoarseSolver" type="string" value="DirectSolver"/>
         </ParameterList>
 

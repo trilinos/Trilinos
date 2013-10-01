@@ -106,11 +106,6 @@ namespace MueLu {
     }
 
     //!
-    void SetFactoryManagerCoarsestLevel(RCP<FactoryManagerBase>& manager) {
-      coarsestLevelManager_ = manager;
-    }
-
-    //!
     void CheckConfig() {
       for (int i = 0; i < levelManagers_.size(); i++)
         TEUCHOS_TEST_FOR_EXCEPTION(levelManagers_[i] == Teuchos::null, Exceptions::RuntimeError, "MueLu:HierarchyConfig::CheckConfig(): Undefined configuration for level:");
@@ -244,7 +239,6 @@ namespace MueLu {
 
     // Levels
     Array<RCP<FactoryManagerBase> > levelManagers_;        // one FactoryManager per level (the last levelManager is used for all the remaining levels)
-    RCP<FactoryManagerBase>         coarsestLevelManager_; // coarsest level manager
 
   }; // class HierarchyManager
 

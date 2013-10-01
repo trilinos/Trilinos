@@ -209,8 +209,6 @@ namespace MueLu {
 
           if (startLevel >= 0)
             this->AddFactoryManager(startLevel, numDesiredLevel, m);
-          else if (startLevel == -1) // -1 == coarsest level
-            this->SetFactoryManagerCoarsestLevel(m);
           else
             TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::ParameterListInterpreter():: invalid level id");
         } /* TODO: else { } */
