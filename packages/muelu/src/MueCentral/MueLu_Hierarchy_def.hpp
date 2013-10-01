@@ -255,7 +255,7 @@ namespace MueLu {
 
     if (isLastLevel == true && isOrigLastLevel == false) {
       // Earlier in the function, we constructed the next coarse level, and requested data for the that level,
-      // assuming that we are not at the coarsest level. Now, we changed our mind, so we have to relese that.
+      // assuming that we are not at the coarsest level. Now, we changed our mind, so we have to release those.
       Levels_[nextLevelID]->Release(TopRAPFactory(rcpcoarseLevelManager, rcpnextLevelManager));
       Levels_.pop_back(); // remove next level
     }
@@ -329,9 +329,8 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Clear() {
     GetOStream(Runtime0, 0) << "Clearing old data" << std::endl;
-    for (int iLevel = 0; iLevel < GetNumberOfLevels(); iLevel++) {
+    for (int iLevel = 0; iLevel < GetNumberOfLevels(); iLevel++)
       Levels_[iLevel]->Clear();
-    }
   }
 
   // ---------------------------------------- Iterate -------------------------------------------------------
