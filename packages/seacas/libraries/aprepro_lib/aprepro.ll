@@ -108,7 +108,7 @@ integer {D}+({E})?
 
 <GET_LOOP_VAR>{
   {number}")".*"\n" |
-  {integer}")}".*"\n" {
+	    {integer}")}".*"\n" {
     /* Loop control defined by integer */
     char *pt = strchr(yytext, ')');
     *pt = '\0';
@@ -139,24 +139,32 @@ integer {D}+({E})?
     symrec *s;
     char *pt = strchr(yytext, ')');
     *pt = '\0';
-    s = aprepro.getsym(yytext);
-
-    if (s == 0 || (s->type != token::SVAR && s->type != token::IMMSVAR && s->value.var == 0.)) {
+    if (!check_valid_var(yytext)) {
+      std::cerr << "Aprepro: WARN: Invalid variable name syntax '"
+		<< yytext << "' (" << aprepro.ap_file_list.top().name
+		<< ", line " << aprepro.ap_file_list.top().lineno
+		<< ")\n";
       BEGIN(LOOP_SKIP);
-    }
-    else { /* Value defined and != 0. */
-      temp_f = get_temp_filename();
-      SEAMS::file_rec new_file(temp_f, 0, true, (int)s->value.var);
-      aprepro.ap_file_list.push(new_file);
-				
-      if (aprepro.ap_options.debugging) 
-	std::cerr << "DEBUG LOOP VAR = " << aprepro.ap_file_list.top().loop_count
-		  << " in file " << aprepro.ap_file_list.top().name
-		  << " at line " << aprepro.ap_file_list.top().lineno << "\n";
+    } else {
+      s = aprepro.getsym(yytext);
 
-      tmp_file = new std::fstream(temp_f, std::ios::out);
-      loop_lvl++;
-      BEGIN(LOOP);
+      if (s == 0 || (s->type != token::SVAR && s->type != token::IMMSVAR && s->value.var == 0.)) {
+	BEGIN(LOOP_SKIP);
+      }
+      else { /* Value defined and != 0. */
+	temp_f = get_temp_filename();
+	SEAMS::file_rec new_file(temp_f, 0, true, (int)s->value.var);
+	aprepro.ap_file_list.push(new_file);
+				
+	if (aprepro.ap_options.debugging) 
+	  std::cerr << "DEBUG LOOP VAR = " << aprepro.ap_file_list.top().loop_count
+		    << " in file " << aprepro.ap_file_list.top().name
+		    << " at line " << aprepro.ap_file_list.top().lineno << "\n";
+
+	tmp_file = new std::fstream(temp_f, std::ios::out);
+	loop_lvl++;
+	BEGIN(LOOP);
+      }
     }
     aprepro.ap_file_list.top().lineno++;
   }

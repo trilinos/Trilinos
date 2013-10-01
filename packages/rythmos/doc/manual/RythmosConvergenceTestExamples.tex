@@ -64,6 +64,16 @@ determine the remaining coefficients
 \phi & = & \arctan(((f/L)/\gamma_{1})*(\gamma_{0}-a))-(f/L)*t_{0}[=0]\\
 b & = & \gamma_{1}/((f/L)*cos((f/L)*t_{0}+\phi))[=1]
 \end{eqnarray*}
+The solution is shown in Fig.~\ref{rythmos:fig:SinCos-exact}. 
+\begin{figure}
+
+
+\begin{centering}
+\includegraphics{figures/sincos}\caption{Exact solution to the Sine-Cosine problem.\label{rythmos:fig:SinCos-exact}}
+
+\par\end{centering}
+
+\end{figure}
 Therefore this model has three model parameters and two initial conditions
 which effect the exact solution as above. 
 \[
@@ -96,7 +106,7 @@ and for the default initial conditions, $\phi=0$ and $b=1$
 0 & -\frac{f}{L^{2}}
 \end{array}\right]
 \]
-The time differentiated sensivtivities, $\dot{\mathbf{s}}=\partial\mathbf{s}/\partial t=\partial/\partial t(\partial\mathbf{x}/\partial\mathbf{p})=\partial/\partial\mathbf{p}(\partial\mathbf{x}/\partial t)$
+The time differentiated sensitivities, $\dot{\mathbf{s}}=\partial\mathbf{s}/\partial t=\partial/\partial t(\partial\mathbf{x}/\partial\mathbf{p})=\partial/\partial\mathbf{p}(\partial\mathbf{x}/\partial t)$
 are
 \[
 \dot{\mathbf{s}}(t)=\left[\begin{array}{cc}
@@ -104,5 +114,40 @@ are
 \left(\frac{b}{L}\right)\cos\left(\left(\frac{f}{L}\right)t+\phi\right)-\frac{b\, f\, t}{L^{2}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right) & -\frac{2b\, f}{L^{2}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right)\left(\frac{b}{L}\right)-\frac{b\, f^{2}\, t}{L^{3}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)\\
 -\frac{b\, f}{L^{2}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)+\frac{b\, f^{2}\, t}{L^{3}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right) & \frac{2b\, f^{2}}{L^{3}}\sin\left(\left(\frac{f}{L}\right)t+\phi\right)+\frac{b\, f^{3}\, t}{L^{4}}\cos\left(\left(\frac{f}{L}\right)t+\phi\right)
 \end{array}\right]
+\]
+
+
+
+\subsection{Log-Time Problem\label{rythmos:sec:Log-Time-Problem}}
+
+This problem was generated to be similar to those seen in Charon.
+What is different about this solution is that it evolves on logarithmic
+scale. As seen in Fig.~\ref{rythmos:fig:LogTime-exact}, the solution
+has a very sharp gradient near $t=10^{-9}$ and then decays over many
+order of magnitude until near constant at $t=1$.
+\begin{figure}
+\centering{}%
+\begin{tabular}{cc}
+a)\includegraphics[width=2.75in]{figures/logtime-log} & b)\includegraphics[width=2.75in]{figures/logtime-linear}\tabularnewline
+\end{tabular}\caption{Exact solution to the Log-Time problem with a) logarithmic x-axis
+and b) linear x-axis.\label{rythmos:fig:LogTime-exact}}
+\end{figure}
+From Fig.~\ref{rythmos:fig:LogTime-exact}, one can see the challenge
+to capture the strong transient for $10^{-10}\leq t<10^{-8}$ requiring
+step sizes at least as small as $\Delta t=10^{-11}$, and then transition
+to larger and larger time steps as $t\rightarrow1$ to reduce the
+overall computational costs.
+
+The ODE for this problem is
+\[
+x(t)=\frac{a\left(bt^{4}+ct^{9/2}\right)}{\left(b+\sqrt{t}\right)\left(d+t^{4}\right)}
+\]
+where $a=1.4$, $b=0.0001$, $c=0.1$, $d=10^{-36}$, and the initial
+condition is $x(0)=0.$ The center of the rapid increase is approximately
+$d^{1/4}$, the product $ac$ sets the steady state value, and the
+center of the decay is approximately $b^{2}$. The time derivative
+is given by
+\[
+\dot{x}=\frac{at^{3}\left(8b^{2}d+b\sqrt{t}\left((9c+7)d+(c-1)t^{4}\right)+8cdt\right)}{2\left(b+\sqrt{t}\right)^{2}\left(d+t^{4}\right)^{2}}.
 \]
 

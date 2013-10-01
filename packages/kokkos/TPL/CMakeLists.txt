@@ -11,21 +11,23 @@ IF( Kokkos_ENABLE_Cuda )
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-  FILE( GLOB HEADERS_CUB        cub/*.cuh )
-  FILE( GLOB HEADERS_CUB_BLOCK  cub/block/*.cuh )
-  FILE( GLOB HEADERS_CUB_DEVICE cub/device/*.cuh )
-  FILE( GLOB HEADERS_CUB_GRID   cub/grid/*.cuh )
-  FILE( GLOB HEADERS_CUB_HOST   cub/host/*.cuh )
-  FILE( GLOB HEADERS_CUB_THREAD cub/thread/*.cuh )
-  FILE( GLOB HEADERS_CUB_WARP   cub/warp/*.cuh )
+  FOREACH( CUB_DIR
+           cub
+           cub/block
+           cub/block/specializations
+           cub/device/
+           cub/device/block
+           cub/device/block/specializations
+           cub/grid
+           cub/host
+           cub/thread
+           cub/warp
+           cub/warp/specializations )
+    SET( CUB_HEADER "" )
+    FILE( GLOB CUB_HEADER ${CUB_DIR}/*.cuh )
+    INSTALL( FILES ${CUB_HEADER} DESTINATION ${TRILINOS_INCDIR}/${CUB_DIR} )
 
-  INSTALL(FILES ${HEADERS_CUB}        DESTINATION ${TRILINOS_INCDIR}/cub/)
-  INSTALL(FILES ${HEADERS_CUB_BLOCK}  DESTINATION ${TRILINOS_INCDIR}/cub/block/)
-  INSTALL(FILES ${HEADERS_CUB_DEVICE} DESTINATION ${TRILINOS_INCDIR}/cub/device/)
-  INSTALL(FILES ${HEADERS_CUB_GRID}   DESTINATION ${TRILINOS_INCDIR}/cub/grid/)
-  INSTALL(FILES ${HEADERS_CUB_HOST}   DESTINATION ${TRILINOS_INCDIR}/cub/host/)
-  INSTALL(FILES ${HEADERS_CUB_THREAD} DESTINATION ${TRILINOS_INCDIR}/cub/thread/)
-  INSTALL(FILES ${HEADERS_CUB_WARP}   DESTINATION ${TRILINOS_INCDIR}/cub/warp/)
+  ENDFOREACH(CUB_DIR)
 
 ENDIF()
 

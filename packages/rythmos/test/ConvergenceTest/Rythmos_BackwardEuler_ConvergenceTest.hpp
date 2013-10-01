@@ -31,6 +31,7 @@
 #include "Rythmos_Types.hpp"
 #include "Rythmos_ConvergenceTestHelpers.hpp"
 #include "../SinCos/SinCosModel.hpp"
+#include "../LogTime/LogTimeModel.hpp"
 #include "Rythmos_BackwardEulerStepper.hpp"
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
 
@@ -40,13 +41,13 @@ template<class Scalar>
 class BackwardEulerStepperFactory : public virtual StepperFactoryBase<Scalar>
 {
   public:
-    BackwardEulerStepperFactory(RCP<ModelFactoryBase<Scalar> > modelFactory) 
-    { 
+    BackwardEulerStepperFactory(RCP<ModelFactoryBase<Scalar> > modelFactory)
+    {
       modelFactory_ = modelFactory;
     }
     virtual ~BackwardEulerStepperFactory() {}
-    RCP<StepperBase<Scalar> > getStepper() const 
-    { 
+    RCP<StepperBase<Scalar> > getStepper() const
+    {
       RCP<ModelEvaluator<Scalar> > model = modelFactory_->getModel();
       Thyra::ModelEvaluatorBase::InArgs<double> model_ic = model->getNominalValues();
       RCP<Rythmos::TimeStepNonlinearSolver<Scalar> >
@@ -72,7 +73,7 @@ RCP<BackwardEulerStepperFactory<Scalar> > backwardEulerStepperFactory(
   return beFactory;
 }
 
-} // namespace Rythmos 
+} // namespace Rythmos
 
 #endif // Rythmos_BACKWARD_EULER_CONVERGENCETEST_H
 

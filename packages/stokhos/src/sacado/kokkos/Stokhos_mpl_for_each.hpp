@@ -1,14 +1,12 @@
-// $Id$
-// $Source$ 
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -55,22 +53,20 @@ namespace Stokhos {
 
   namespace mpl {
 
-    template <class Seq, 
-	      class node_t, 
-	      class Iter1 = typename Sacado::mpl::begin<Seq>::type, 
-	      class Iter2 = typename Sacado::mpl::end<Seq>::type>
+    template <class Seq,
+              class Iter1 = typename Sacado::mpl::begin<Seq>::type,
+              class Iter2 = typename Sacado::mpl::end<Seq>::type>
     struct for_each {
-      typedef node_t node_type;
       template <typename Op>
       KOKKOS_INLINE_FUNCTION
       for_each(const Op& op) {
-	op(typename Sacado::mpl::deref<Iter1>::type());
-	for_each<Seq, node_type, typename Sacado::mpl::next<Iter1>::type, Iter2> f(op);
+        op(typename Sacado::mpl::deref<Iter1>::type());
+        for_each<Seq, typename Sacado::mpl::next<Iter1>::type, Iter2> f(op);
       }
     };
 
-    template <class Seq, class node_t, class Iter1>
-    struct for_each<Seq, node_t, Iter1, Iter1> {
+    template <class Seq, class Iter1>
+    struct for_each<Seq, Iter1, Iter1> {
       template <typename Op>
       KOKKOS_INLINE_FUNCTION
       for_each(const Op& op) {}

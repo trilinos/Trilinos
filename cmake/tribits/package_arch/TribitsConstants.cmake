@@ -50,6 +50,8 @@ SET(${PROJECT_NAME}_EXTRA_EXTERNAL_REPOS_FILE_NAME ExtraRepositoriesList.cmake)
 
 SET(${PROJECT_NAME}_EXTRA_PACKAGES_FILE_NAME PackagesList.cmake)
 
+SET(${PROJECT_NAME}_REPO_VERSION_FILE_NAME ${PROJECT_NAME}RepoVersion.txt)
+
 SET(${PROJECT_NAME}_EXTRA_TPLS_FILE_NAME TPLsList.cmake)
 
 # Directories relative to the TriBITS base directory

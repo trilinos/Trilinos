@@ -91,43 +91,47 @@ inverse(Tensor<T, N> const & A)
     break;
   }
 
-  Tensor<T, N> S = A;
-  Tensor<T, N> B = identity<T, N>(dimension);
+  Tensor<T, N>
+  S = A;
 
-  typedef std::set<Index> IndexSet;
-  typedef std::set<Index>::const_iterator IndexIter;
+  Tensor<T, N>
+  B = identity<T, N>(dimension);
 
-  IndexSet intact_rows;
-  IndexSet intact_cols;
+  // Set 1 ... dimension bits to one.
+  Index
+  intact_rows = static_cast<Index>((1UL << dimension) - 1);
 
-  for (Index k = 0; k < dimension; ++k) {
-    intact_rows.insert(k);
-    intact_cols.insert(k);
-  }
+  Index
+  intact_cols = static_cast<Index>((1UL << dimension) - 1);
 
   // Gauss-Jordan elimination with full pivoting
   for (Index k = 0; k < dimension; ++k) {
 
     // Determine full pivot
-    T pivot = 0.0;
+    T
+    pivot = 0.0;
 
-    IndexIter pivot_row_iter = intact_rows.begin();
-    IndexIter pivot_col_iter = intact_cols.begin();
+    Index
+    pivot_row = dimension;
 
-    for (IndexIter rows_iter = intact_rows.begin();
-        rows_iter != intact_rows.end(); ++rows_iter) {
+    Index
+    pivot_col = dimension;
 
-      for (IndexIter cols_iter = intact_cols.begin();
-          cols_iter != intact_cols.end(); ++cols_iter) {
+    for (Index row = 0; row < dimension; ++row) {
 
-        Index const row = *rows_iter;
-        Index const col = *cols_iter;
-        T s = std::abs(S(row, col));
+      if (!(intact_rows & (1 << row))) continue;
+
+      for (Index col = 0; col < dimension; ++col) {
+
+        if (!(intact_cols & (1 << col))) continue;
+
+        T
+        s = std::abs(S(row, col));
 
         if (s > pivot) {
 
-          pivot_row_iter = rows_iter;
-          pivot_col_iter = cols_iter;
+          pivot_row = row;
+          pivot_col = col;
 
           pivot = s;
 
@@ -137,19 +141,11 @@ inverse(Tensor<T, N> const & A)
 
     }
 
-    Index const pivot_row = *pivot_row_iter;
-    Index const pivot_col = *pivot_col_iter;
-
     // Gauss-Jordan elimination
-    T const t = S(pivot_row, pivot_col);
+    T const
+    t = S(pivot_row, pivot_col);
 
-    if (t == 0.0) {
-      std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
-      std::cerr << std::endl;
-      std::cerr << "Inverse of singular tensor.";
-      std::cerr << std::endl;
-      exit(1);
-    }
+    assert(t != 0.0);
 
     for (Index j = 0; j < dimension; ++j) {
       S(pivot_row, j) /= t;
@@ -159,7 +155,8 @@ inverse(Tensor<T, N> const & A)
     for (Index i = 0; i < dimension; ++i) {
       if (i == pivot_row) continue;
 
-      T const c = S(i, pivot_col);
+      T const
+      c = S(i, pivot_col);
 
       for (Index j = 0; j < dimension; ++j) {
         S(i, j) -= c * S(pivot_row, j);
@@ -168,12 +165,12 @@ inverse(Tensor<T, N> const & A)
     }
 
     // Eliminate current row and col from intact rows and cols
-    intact_rows.erase(pivot_row_iter);
-    intact_cols.erase(pivot_col_iter);
+    intact_rows &= ~(1 << pivot_row);
+    intact_cols &= ~(1 << pivot_col);
 
   }
 
-  Tensor<T, N>
+  Tensor<T, N> const
   X = t_dot(S, B);
 
   return X;
@@ -692,7 +689,7 @@ log_gregory(Tensor<T, N> const & A)
   Index
   k = 1;
 
-  while (relative_error > tol && k <= max_iter) {
+  while (relative_error > tol && k <= max_iter + 1) {
     term = static_cast<T>((2 * k - 1.0) / (2 * k + 1.0)) * term * C;
     B = B + term;
     norm_term = norm_1(term);
@@ -956,9 +953,8 @@ gaussian_elimination(Tensor<T, N> const & A)
   return U;
 }
 
+//
 // Apply Givens-Jacobi rotation on the left in place.
-// \param c and s for a rotation G in form [c, s; -s, c]
-// \param A
 //
 template<typename T, Index N>
 void
@@ -976,9 +972,8 @@ givens_left(T const & c, T const & s, Index i, Index k, Tensor<T, N> & A)
   return;
 }
 
+//
 // Apply Givens-Jacobi rotation on the right in place.
-// \param A
-// \param c and s for a rotation G in form [c, s; -s, c]
 //
 template<typename T, Index N>
 void
@@ -996,10 +991,30 @@ givens_right(T const & c, T const & s, Index i, Index k, Tensor<T, N> & A)
   return;
 }
 
+///
+/// Apply rank-one update on the left in place
+///
+template<typename T, Index N>
+void
+rank_one_left(T const & beta, Vector<T, N> const & v, Tensor<T, N> & A)
+{
+  A -= beta * dyad(v, dot(v, A));
+  return;
+}
+
+///
+/// Apply rank-one update on the right in place
+///
+template<typename T, Index N>
+void
+rank_one_right(T const & beta, Vector<T, N> const & v, Tensor<T, N> & A)
+{
+  A -= beta * dyad(dot(A, v), v);
+  return;
+}
+
 //
 // R^N exponential map of a skew-symmetric tensor.
-// \param r \f$ r \in so(N) \f$
-// \return \f$ R = \exp R \f$ with \f$ R \in SO(N) \f$
 //
 template<typename T, Index N>
 Tensor<T, N>
@@ -1875,6 +1890,7 @@ namespace {
 // R^N eigenvalue decomposition for symmetric 2nd-order tensor
 // \param A tensor
 // \return V eigenvectors, D eigenvalues in diagonal Matlab-style
+// See algorithm 8.4.2 in Matrix Computations, Golub & Van Loan 1996
 //
 template<typename T, Index N>
 std::pair<Tensor<T, N>, Tensor<T, N> >
@@ -1895,8 +1911,10 @@ eig_sym_NxN(Tensor<T, N> const & A)
   T
   tol = machine_epsilon<T>() * norm(A);
 
+  // Estimate based on random generation and linear regression.
+  // Golub & Van Loan p 429 expect ~ dimension * log(dimension)
   Index const
-  max_iter = 128;
+  max_iter = 2.25 * dimension * dimension;
 
   Index
   num_iter = 0;
@@ -1939,10 +1957,6 @@ eig_sym_NxN(Tensor<T, N> const & A)
 
     off = norm_off_diagonal(D);
     num_iter++;
-  }
-
-  if (num_iter == max_iter) {
-    std::cerr << "WARNING: EIG iteration did not converge." << std::endl;
   }
 
   Vector<T, N> d(dimension);

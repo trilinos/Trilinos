@@ -41,12 +41,15 @@
 //@HEADER
 */
 
+/// \file Kokkos_Parallel.hpp
+/// \brief Declaration of parallel operators
+
 #ifndef KOKKOS_PARALLEL_HPP
 #define KOKKOS_PARALLEL_HPP
 
 #include <cstddef>
 #include <Kokkos_Macros.hpp>
-#include <impl/Kokkos_ArrayTraits.hpp>
+#include <impl/Kokkos_Traits.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -54,14 +57,24 @@
 namespace Kokkos {
 namespace Impl {
 
-/** \brief Implementation of ParallelFor operator that has a
- *         partial specialization for the device.
- */
+/// \class ParallelFor
+/// \brief Implementation of the ParallelFor operator that has a
+///   partial specialization for the device.
+///
+/// This is an implementation detail of parallel_for.  Users should
+/// skip this and go directly to the nonmember function parallel_for.
 template< class FunctorType ,
           class WorkSpec ,
           class DeviceType = typename FunctorType::device_type >
 class ParallelFor ;
 
+} // namespace Impl
+} // namespace Kokkos
+
+namespace Kokkos {
+
+/// \class VectorParallel
+/// \brief Request for parallel_for to attempt thread+vector parallelism.
 struct VectorParallel
 {
   const size_t nwork ;
@@ -69,7 +82,6 @@ struct VectorParallel
   operator size_t () const { return nwork ; }
 };
 
-} // namespace Impl
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
@@ -77,13 +89,25 @@ struct VectorParallel
 
 namespace Kokkos {
 
-/** \brief  Execute functor 'work_count' times in parallel.
+/** \brief Execute \c functor \c work_count times in parallel.
  *
+ * A "functor" is a class containing the function to execute in
+ * parallel, any data needed for that execution, and a \c device_type
+ * typedef.  Here is an example functor for parallel_for:
+ *
+ * \code
  *  class FunctorType {
  *  public:
  *    typedef  ...  device_type ;
- *    void operator()( <intType> iwork ) const ;
+ *    void operator() (IntType iwork) const ;
  *  };
+ * \endcode
+ *
+ * In the above example, \c IntType is any integer type for which a
+ * valid conversion from \c size_t to \c IntType exists.  Its
+ * <tt>operator()</tt> method defines the operation to parallelize,
+ * over the range of integer indices <tt>iwork=[0,work_count-1]</tt>.
+ * This compares to a single iteration \c iwork of a \c for loop.
  */
 template< class FunctorType >
 inline
@@ -94,12 +118,25 @@ void parallel_for( const size_t        work_count ,
 }
 
 
+/** \brief Execute \c functor \c work_count times in parallel, with vectorization.
+ *
+ * This is like parallel_for, except that it <i>mandates</i>
+ * vectorization as well as parallelization of the given functor.  We
+ * emphasize "mandates": this means that the user asserts that
+ * vectorization is correct, and insists that the compiler vectorize.
+ * Mandating vectorization is not always desirable, for example if the
+ * body of the functor is complicated.  In some cases, users might
+ * want to parallelize over threads, and use vectorization inside the
+ * parallel operation.  Furthermore, the compiler might still be able
+ * to vectorize through a parallel_for.  Thus, users should take care
+ * not to use this execution option arbitrarily.
+ */
 template< class FunctorType >
 inline
 void vector_parallel_for( const size_t        work_count ,
                           const FunctorType & functor )
 {
-  Impl::ParallelFor< FunctorType , Impl::VectorParallel > tmp( functor , work_count );
+  Impl::ParallelFor< FunctorType , VectorParallel > tmp( functor , work_count );
 }
 
 template< class DeviceType >
@@ -113,11 +150,21 @@ class MultiFunctorParallelFor ;
 namespace Kokkos {
 namespace Impl {
 
+/// \class ParallelReduce
+/// \brief Implementation detail of parallel_reduce.
+///
+/// This is an implementation detail of parallel_reduce.  Users should
+/// skip this and go directly to the nonmember function parallel_reduce.
 template< class FunctorType ,
           class WorkSpec ,
           class DeviceType = typename FunctorType::device_type >
 class ParallelReduce ;
 
+/// \class ReduceAdapter
+/// \brief Implementation detail of parallel_reduce.
+///
+/// This is an implementation detail of parallel_reduce.  Users should
+/// skip this and go directly to the nonmember function parallel_reduce.
 template< class FunctorType ,
           class ValueType = typename FunctorType::value_type >
 struct ReduceAdapter ;
@@ -130,6 +177,8 @@ namespace Kokkos {
 
 /** \brief  Parallel reduction
  *
+ * Example of a parallel_reduce functor for a POD (plain old data) value type:
+ * \code
  *  class FunctorType { // For POD value type
  *  public:
  *    typedef    ...     device_type ;
@@ -142,7 +191,10 @@ namespace Kokkos {
  *    typedef true_type has_final ;
  *    void final( <podType> & update ) const ;
  *  };
+ * \endcode
  *
+ * Example of a parallel_reduce functor for an array of POD (plain old data) values:
+ * \code
  *  class FunctorType { // For array of POD value
  *  public:
  *    typedef    ...     device_type ;
@@ -155,6 +207,7 @@ namespace Kokkos {
  *    typedef true_type has_final ;
  *    void final( <podType> update[] ) const ;
  *  };
+ * \endcode
  */
 template< class FunctorType >
 inline
@@ -166,16 +219,29 @@ void parallel_reduce( const size_t        work_count ,
 
 /** \brief  Parallel reduction and output to host.
  *
- *  If Functor::value_type is
- *    <podType>   then reference_type is "<podType> &".
- *    <podType>[] then reference_type is "<podType> *".
+ *  If FunctorType::value_type is
+ *    - \c PodType,  then \c reference_type is <tt>PodType & </tt>.
+ *    - <tt>PodType[]</tt>, then \c reference_type is <tt>PodType * </tt>.
  */
 template< class FunctorType >
+inline
 void parallel_reduce( const size_t work_count ,
                       const FunctorType & functor ,
                       typename Kokkos::Impl::ReduceAdapter< FunctorType >::reference_type result )
 {
   Impl::ParallelReduce< FunctorType, size_t >
+    reduce( functor , work_count , Kokkos::Impl::ReduceAdapter< FunctorType >::pointer( result ) );
+
+  reduce.wait();
+}
+
+template< class FunctorType >
+inline
+void parallel_reduce( const VectorParallel & work_count ,
+                      const FunctorType & functor ,
+                      typename Kokkos::Impl::ReduceAdapter< FunctorType >::reference_type result )
+{
+  Impl::ParallelReduce< FunctorType, VectorParallel >
     reduce( functor , work_count , Kokkos::Impl::ReduceAdapter< FunctorType >::pointer( result ) );
 
   reduce.wait();
@@ -197,30 +263,14 @@ namespace Kokkos {
  *  If the league or team size are too large then they will be reduced.
  */
 struct ParallelWorkRequest {
-  enum { shared_align = sizeof(double) }; ///< Alignment for shared memory variables
-
   size_t  league_size ; ///<  Size of league (number of teams in a league)
   size_t  team_size ;   ///<  Size of team (number of threads in a team)
-  size_t  shared_size ; ///<  Size of team-shared memory (in bytes)
 
   KOKKOS_INLINE_FUNCTION
-  ParallelWorkRequest()
-    : league_size(0), team_size(0), shared_size(0) {}
+  ParallelWorkRequest() : league_size(0), team_size(0) {}
 
   KOKKOS_INLINE_FUNCTION
-  ParallelWorkRequest( size_t s0 , size_t s1 , size_t s2 = 0 )
-    : league_size(s0), team_size(s1), shared_size(s2) {}
-
-  template< typename T >
-  inline
-  ParallelWorkRequest & add_shmem( const size_t count )
-  {
-    enum { MASK = ParallelWorkRequest::shared_align - 1 };
-
-    shared_size += ( sizeof(T) * count + size_t(MASK) ) & ~size_t(MASK);
-
-    return *this ;
-  }
+  ParallelWorkRequest( size_t s0 , size_t s1 ) : league_size(s0), team_size(s1) {}
 };
 
 /** \brief  Execute functor in parallel with work request,
@@ -314,6 +364,26 @@ template< class FunctorType >
 struct FunctorHasFinal< FunctorType , typename enable_if< 0 < sizeof( & FunctorType::final ) >::type >
   : public true_type {};
 
+template< class FunctorType , class Enable = void >
+struct FunctorShmemSize
+{
+  static inline size_t value( const FunctorType & ) { return 0 ; }
+};
+
+template< class FunctorType >
+struct FunctorShmemSize< FunctorType , typename enable_if< 0 < sizeof( & FunctorType::shmem_size ) >::type >
+{
+  static inline size_t value( const FunctorType & f ) { return f.shmem_size() ; }
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace Impl {
 
 template< class FunctorType , class ScalarType >
 struct ReduceAdapter

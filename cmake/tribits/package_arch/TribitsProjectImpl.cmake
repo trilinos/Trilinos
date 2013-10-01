@@ -84,42 +84,15 @@ MACRO(TRIBITS_PROJECT_IMPL)
   MESSAGE("")
   MESSAGE("Configuring ${PROJECT_NAME} build directory")
   MESSAGE("")
-  
-  IF ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
-    MESSAGE(FATAL_ERROR "ERROR! "
-      "CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
-      " == CMAKE_CURRENT_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}"
-      "\n${PROJECT_NAME} does not support in source builds!\n"
-      "NOTE: You must now delete the CMakeCache.txt file and the CMakeFiles/ directory under"
-      " the source directory for ${PROJECT_NAME} or you will not be able to configure ${PROJECT_NAME} correctly!"
-      "\nYou must now run something like:\n"
-      "  $ rm -r CMakeCache.txt CMakeFiles/"
-      "\n"
-      "Please create a different directory and configure ${PROJECT_NAME} under that such as:\n"
-      "  $ mkdir MY_BUILD\n"
-      "  $ cd MY_BUILD\n"
-      "  $ cmake [OPTIONS] .."
-      )
-  ENDIF()
-  
-  STRING(TOUPPER ${PROJECT_NAME} PROJECT_NAME_UC)
-  SET(PROJECT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL "")
-  SET(PROJECT_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE INTERNAL "")
-  PRINT_VAR(PROJECT_SOURCE_DIR)
-  PRINT_VAR(PROJECT_BINARY_DIR)
-  # Above, we put these in the cache so we can grep them out of the cache file
-  
-  MESSAGE("-- " "CMAKE_VERSION = ${CMAKE_VERSION}")
-  
+ 
+  TRIBITS_ASSERT_AND_SETUP_PROJECT_BINARY_DIR_AND_VARS()
   TRIBITS_READ_IN_OPTIONS_FROM_FILE()
   
   #
   # A.2) Set up other stuff
   #
   
-  INCLUDE(TribitsFindPythonInterp)
-  TRIBITS_FIND_PYTHON()
-  PRINT_VAR(PYTHON_EXECUTABLE)
+  TRIBITS_FIND_PYTHON_INTERP()
   
   #
   # A.3) Read in the Project's version file
@@ -142,40 +115,17 @@ MACRO(TRIBITS_PROJECT_IMPL)
   MESSAGE("Setting up major user options ...")
   MESSAGE("")
   
-  TRIBITS_DEFINE_GLOBAL_OPTIONS()
-
-  TRIBITS_READ_IN_NATIVE_REPOSITORIES()
-
-  # Define a single variable that will loop over native and extra Repositories
-  #
-  # NOTE: ${PROJECT_NAME}_EXTRA_REPOSITORIES should be defined after the above
-  # options call.
-  #
-  ASSERT_DEFINED(${PROJECT_NAME}_NATIVE_REPOSITORIES)
-  #PRINT_VAR(${PROJECT_NAME}_NATIVE_REPOSITORIES)
-  ASSERT_DEFINED(${PROJECT_NAME}_EXTRA_REPOSITORIES)
-  #PRINT_VAR(${PROJECT_NAME}_EXTRA_REPOSITORIES)
-  SET(${PROJECT_NAME}_ALL_REPOSITORIES ${${PROJECT_NAME}_NATIVE_REPOSITORIES}
-    ${${PROJECT_NAME}_EXTRA_REPOSITORIES})
-
-  # Loop through the Repositories, set their base directories and run their
-  # options setup callback functions.
-  FOREACH(REPO ${${PROJECT_NAME}_ALL_REPOSITORIES})
-    TRIBITS_GET_REPO_NAME_DIR(${REPO}  REPO_NAME  REPO_DIR)
-    SET(${REPO_NAME}_SOURCE_DIR "${PROJECT_SOURCE_DIR}/${REPO_DIR}")
-    SET(${REPO_NAME}_BINARY_DIR "${PROJECT_BINARY_DIR}/${REPO_DIR}")
-    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE("Processing extra options call-backs for ${REPO}")
-      PRINT_VAR(${REPO_NAME}_SOURCE_DIR)
-      PRINT_VAR(${REPO_NAME}_BINARY_DIR)
-    ENDIF()
-    TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS_RUNNER(${REPO_NAME})
-  ENDFOREACH()
+  TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS()
   
+  # Have to start timing after we read in the major options.
   IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
     # Start the global timer
     TIMER_GET_RAW_SECONDS(GLOBAL_TIME_START_SECONDS)
   ENDIF()
+
+  TRIBITS_READ_IN_NATIVE_REPOSITORIES()
+
+  TRIBITS_COMBINE_NATIVE_AND_EXTRA_REPOS()
   
   ADVANCED_OPTION(${PROJECT_NAME}_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING
     "Shortcircut after dependency handling is complete"
@@ -185,25 +135,39 @@ MACRO(TRIBITS_PROJECT_IMPL)
     "Skip the Fortran/C++ compatibility test"
     OFF )
   
-  # Find an installed version of ${PROJECT_NAME} for installation testing
-  # (the check that we are in installation mode is inside the macro)
   INCLUDE(TribitsInstallationTestingMacros)
-  FIND_PROJECT_INSTALL()
+  TRIBITS_FIND_PROJECT_INSTALL()
   
   #
-  # C) Read in ${PROJECT_NAME} packages and TPLs and process dependencies
+  # C) Generate version info file and read in ${PROJECT_NAME} packages and
+  # TPLs and process dependencies
   #
   
+  TRIBITS_GENERATE_REPO_VERSION_OUTPUT_AND_FILE_AND_INSTALL()
+
+  # Read in and process all of the project's package, TPL, listss and
+  # dependency definition files.  The order these are read in are:
+  #
+  # * Read in all PackagesList.cmake and TPLsList.cmake files for all
+  #   native and extra repos in repo order.
+  # * Process each repos's cmake/RepositoryDependenciesSetup.cmake file
+  #   in repo order.
+  # * Process the project's cmake/cmake/ProjectDependenciesSetup.cmake
+  # * Process each package's Dependencies.cmake file.  If a package a subpackages,
+  #   The subpackage Dependencies.cmake files are read before setting up the
+  #   parent package's dependenices.
+  #
   TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()
   
   #
-  # D) Apply logic to enable ${PROJECT_NAME} packages and tests
+  # D) Apply dependency logic to enable and disable TriBITS packages packages
+  # and tests
   #
   
   TRIBITS_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES()
   
   #
-  # E) Stop if asked
+  # E) Stop after all dependencies handling is finished if asked.
   #
   
   IF (${PROJECT_NAME}_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING)
@@ -211,9 +175,6 @@ MACRO(TRIBITS_PROJECT_IMPL)
     MESSAGE("Shortcircuiting after dependency tracking ...")
     RETURN()
   ENDIF()
-  
-  # ToDo: rabartl: Remove the above once the unit tests have been refactored to
-  # just run macros and not the entire system.
   
   #
   # F) Set up the environment on this computer
@@ -261,7 +222,6 @@ MACRO(TRIBITS_PROJECT_IMPL)
   
   TRIBITS_ADD_DASHBOARD_TARGET()
   
-  
   #
   # J) Configure individual packages
   # 
@@ -275,67 +235,29 @@ MACRO(TRIBITS_PROJECT_IMPL)
   
   TRIBITS_CONFIGURE_ENABLED_PACKAGES()
   
-  
   #
   # K) Setup for packaging and distribution
   #
 
-  # Loop through the Repositories and run their callback functions.
-  FOREACH(REPO ${${PROJECT_NAME}_ALL_REPOSITORIES})
-    TRIBITS_GET_REPO_NAME_DIR(${REPO}  REPO_NAME  REPO_DIR)
-    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE("Processing packaging call-backs for ${REPO_NAME}")
-    ENDIF()
-    TRIBITS_REPOSITORY_DEFINE_PACKAGING_RUNNER(${REPO_NAME})
-  ENDFOREACH()
-  
-  
-  #
-  # L) Install-related commands
-  #
-
-  IF((${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES
-      OR ${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES)
-    AND NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING
-    )
-  
-    INCLUDE(TribitsWriteClientExportFiles)
-  
-    TRIBITS_WRITE_PROJECT_CLIENT_EXPORT_FILES()
-  
-    IF (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
-      # TEMPORARY: Install a compatibility copy of ${PROJECT_NAME}Config.cmake
-      # where was previously installed to warn and load the new file.
-      SET(COMPATIBILITY_CONFIG_INCLUDE ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake)
-      CONFIGURE_FILE(
-        ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsConfigInclude.cmake.in
-        ${COMPATIBILITY_CONFIG_INCLUDE}
-        @ONLY
-        )
-      INSTALL(
-        FILES ${COMPATIBILITY_CONFIG_INCLUDE}
-        DESTINATION "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}"
-        )
-    ENDIF()
-  
-  ENDIF()
-  
-  
-  #
-  # M) Export the library dependencies. This will let client projects
-  # refer to all TPLs used by ${PROJECT_NAME}. (KRL, 26 Nov 2009)
-  #
-  
-  IF (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
+  IF (${PROJECT_NAME}_ENABLE_CPACK_PACKAGING)
     MESSAGE("")
-    MESSAGE("Exporting library dependencies ...")
+    MESSAGE("Set up for creating a distribution ...")
     MESSAGE("")
-    EXPORT_LIBRARY_DEPENDENCIES( ${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}LibraryDepends.cmake )
+    TRIBITS_SETUP_PACKAGING_AND_DISTRIBUTION()
+  ELSE()
+    MESSAGE("")
+    MESSAGE("Skipping setup for distribution ...")
+    MESSAGE("")
   ENDIF()
-
+ 
+  #
+  # L) Set up for installation
+  #
+  
+  TRIBITS_SETUP_FOR_INSTALLATION()  
   
   #
-  # P) Show final timing and end
+  # M) Show final timing and end
   #
 
   MESSAGE("")
@@ -346,7 +268,5 @@ MACRO(TRIBITS_PROJECT_IMPL)
     TIMER_PRINT_REL_TIME(${GLOBAL_TIME_START_SECONDS}  ${GLOBAL_TIME_STOP_SECONDS}
       "Total time to configure ${PROJECT_NAME}")
   ENDIF()
-  
-  TRIBITS_REMIND_ABOUT_UNCOMMITTED_DEPENDENCY_FILES()
   
 ENDMACRO()

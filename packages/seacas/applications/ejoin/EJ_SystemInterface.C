@@ -13,12 +13,6 @@
 #include "EJ_Version.h"
 #include <SL_tokenize.h>
 
-#if defined(__PUMAGON__)
-#define NPOS (size_t)-1
-#else
-#define NPOS std::string::npos
-#endif
-
 namespace {
   int case_strcmp(const std::string &s1, const std::string &s2)
   {

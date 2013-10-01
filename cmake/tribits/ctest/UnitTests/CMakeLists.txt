@@ -124,18 +124,6 @@ FUNCTION(CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE TEST_NAME)
       PASS_REGULAR_EXPRESSION_ALL ${PARSE_PASS_REGULAR_EXPRESSION_ALL}
     )
 
-  IF (NOT PARSE_SKIP_STANDARD_DEPS_CHECK)
-    SET(TEST_BLOCKS ${TEST_BLOCKS}
-      "Dumping the XML dependencies file .*/${TEST_FULL_NAME}/TrilinosPackageDependencies.xml"
-      "CDASH_SUBPROJECT_XML_FILE='.*/${TEST_FULL_NAME}/CDashSubprojectDependencies.xml'"
-      )
-    IF (PYTHON_EXECUTABLE)
-      SET(TEST_BLOCKS ${TEST_BLOCKS}
-        "Dumping the CDash XML dependencies file .*/${TEST_FULL_NAME}/CDashSubprojectDependencies.xml"
-        )
-    ENDIF()
-  ENDIF()
-
   MATH(EXPR TEST_IDX "${TEST_IDX}+1")
 
   IF (PARSE_COMPARE_DEPS_FILE)

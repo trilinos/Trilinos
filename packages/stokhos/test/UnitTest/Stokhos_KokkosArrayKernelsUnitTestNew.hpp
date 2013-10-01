@@ -160,7 +160,7 @@ struct UnitTestSetup {
   typedef Stokhos::TotalOrderBasis<int,value_type,less_type> product_basis_type;
   typedef Stokhos::Sparse3Tensor<int,value_type> Cijk_type;
 
-  int p, d, nGrid, fem_length, stoch_length, fem_graph_length;
+  int p, d, nGrid, fem_length, stoch_length, stoch_length_aligned, fem_graph_length;
   double rel_tol, abs_tol;
   std::vector< std::vector<int> > fem_graph ;
   RCP< product_basis_type> basis;
@@ -175,10 +175,7 @@ struct UnitTestSetup {
 
     p = p_;
     d = d_;
-    // p = 2;
-    // d = 2;
     nGrid = 3;
-    // nGrid = 2;
     rel_tol = 1e-12;
     abs_tol = 1e-12;
 
@@ -296,6 +293,7 @@ struct UnitTestSetup {
 
     stoch_tensor_type tensor =
       Stokhos::create_stochastic_product_tensor< tensor_type >( *basis, *Cijk );
+    stoch_length_aligned = tensor.aligned_dimension();
 
     perm.resize(stoch_length);
     inv_perm.resize(stoch_length);
@@ -960,9 +958,9 @@ bool test_crs_product_tensor(
   // Generate input multivector:
 
   block_vector_type x =
-    block_vector_type( "x" , setup.stoch_length , setup.fem_length );
+    block_vector_type( "x" , setup.stoch_length_aligned , setup.fem_length );
   block_vector_type y =
-    block_vector_type( "y" , setup.stoch_length , setup.fem_length );
+    block_vector_type( "y" , setup.stoch_length_aligned , setup.fem_length );
 
   typename block_vector_type::HostMirror hx =
     Kokkos::create_mirror( x );
@@ -990,7 +988,7 @@ bool test_crs_product_tensor(
     std::string("test crs graph") , setup.fem_graph );
 
   matrix.values = block_vector_type(
-    "matrix" , setup.stoch_length , setup.fem_graph_length );
+    "matrix" , setup.stoch_length_aligned , setup.fem_graph_length );
 
   typename block_vector_type::HostMirror hM =
     Kokkos::create_mirror( matrix.values );

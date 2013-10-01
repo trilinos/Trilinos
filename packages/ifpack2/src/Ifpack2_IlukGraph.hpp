@@ -211,7 +211,7 @@ template<class GraphType>
 void IlukGraph<GraphType>::constructOverlapGraph() {
   
   if (OverlapGraph_ == Teuchos::null) {
-    OverlapGraph_ = CreateOverlapGraph<GraphType>(Graph_, LevelOverlap_);
+    OverlapGraph_ = createOverlapGraph<GraphType> (Graph_, LevelOverlap_);
   }
 }
 

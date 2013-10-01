@@ -153,7 +153,21 @@ int ML_Epetra::LevelWrap::ComputePreconditioner(const bool CheckFiltering){
   return 0;
 }
 
+// ================================================ ====== ==== ==== == = 
+// Return operator complexity and #nonzeros in fine grid matrix.
+void ML_Epetra::LevelWrap::Complexities(double &complexity, double &fineNnz){
+  fineNnz= (!A0_.is_null()) ? A0_->NumGlobalNonzeros() : 0.0;
+  complexity=1.0;
 
+  if(!A1prec_.is_null()) {
+    double coarse_oc=0.0, coarse_nnz=0.0;
+    A1prec_->Complexities(coarse_oc,coarse_nnz);
+    complexity = 1.0 + coarse_oc*coarse_nnz / fineNnz;
+  }
+}/*end Complexities */
+
+
+// ================================================ ====== ==== ==== == = 
 // Apply the preconditioner w/ RHS B and get result X
 int ML_Epetra::LevelWrap::ApplyInverse(const Epetra_MultiVector& B, Epetra_MultiVector& X_) const{
 #ifdef ML_TIMING

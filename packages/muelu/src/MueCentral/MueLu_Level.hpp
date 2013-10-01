@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -92,7 +92,7 @@ namespace MueLu {
 
     Level() : levelID_(-1) { }
 
-    Level(RCP<FactoryManagerBase>& factoryManager) : levelID_(-1), factoryManager_(factoryManager) { }
+    Level(RCP<FactoryManagerBase>& factoryManager) : lib_(Xpetra::UseTpetra), levelID_(-1), factoryManager_(factoryManager) { }
 
     //! Destructor
     virtual ~Level() { }

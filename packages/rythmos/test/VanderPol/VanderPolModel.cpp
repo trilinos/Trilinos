@@ -43,7 +43,7 @@
 #include "Thyra_DefaultLinearOpSource.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
-// Nonlinear ODE system with manufactured solution based on asymptotic solution 
+// Nonlinear ODE system with manufactured solution based on asymptotic solution
 // for small epsilon
 //
 // f[0] = x_dot[0] - x[1];
@@ -124,7 +124,7 @@ VanderPolModel::VanderPolModel()
   g_space_ = Thyra::defaultSpmdVectorSpace<double>(ng_);
 }
 
-void VanderPolModel::setImplicitFlag(bool implicit) 
+void VanderPolModel::setImplicitFlag(bool implicit)
 {
   if (isImplicit_ != implicit) {
     isInitialized_ = false;
@@ -255,7 +255,7 @@ VanderPolModel::create_W() const
       V_V(multivec->col(1).ptr(),*vec);
     }
   }
-  RCP<Thyra::LinearOpWithSolveBase<double> > W = 
+  RCP<Thyra::LinearOpWithSolveBase<double> > W =
     Thyra::linearOpWithSolve<double>(
       *W_factory,
       matrix
@@ -272,10 +272,10 @@ VanderPolModel::create_W_op() const
 }
 
 
-RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > 
+RCP<const Thyra::LinearOpWithSolveFactoryBase<double> >
 VanderPolModel::get_W_factory() const
 {
-  RCP<Thyra::LinearOpWithSolveFactoryBase<double> > W_factory = 
+  RCP<Thyra::LinearOpWithSolveFactoryBase<double> > W_factory =
     Thyra::defaultSerialDenseLinearOpWithSolveFactory<double>();
   return W_factory;
 }
@@ -348,13 +348,13 @@ void VanderPolModel::evalModelImpl(
       );
 
   const RCP<const VectorBase<double> > x_in = inArgs.get_x().assert_not_null();
-  Thyra::ConstDetachedVectorView<double> x_in_view( *x_in ); 
+  Thyra::ConstDetachedVectorView<double> x_in_view( *x_in );
 
   double t = inArgs.get_t();
   double eps = epsilon_;
   if (acceptModelParams_) {
     const RCP<const VectorBase<double> > p_in = inArgs.get_p(0).assert_not_null();
-    Thyra::ConstDetachedVectorView<double> p_in_view( *p_in ); 
+    Thyra::ConstDetachedVectorView<double> p_in_view( *p_in );
     eps = p_in_view[0];
   }
 
@@ -369,14 +369,14 @@ void VanderPolModel::evalModelImpl(
 
   const RCP<VectorBase<double> > f_out = outArgs.get_f();
   const RCP<Thyra::LinearOpBase<double> > W_out = outArgs.get_W_op();
-  RCP<Thyra::MultiVectorBase<double> > DfDp_out; 
+  RCP<Thyra::MultiVectorBase<double> > DfDp_out;
   if (acceptModelParams_) {
-    Derivative<double> DfDp = outArgs.get_DfDp(0); 
+    Derivative<double> DfDp = outArgs.get_DfDp(0);
     DfDp_out = DfDp.getMultiVector();
   }
 
   // Determine how many derivatives we will compute
-  
+
   int num_derivs = 0;
   if (nonnull(W_out)) {
     num_derivs += 2;
@@ -422,7 +422,7 @@ void VanderPolModel::evalModelImpl(
     eps_idx_offset = deriv_i;
     eps_fad = DFad<double>(num_derivs, deriv_i++, eps);
   }
-  
+
   // Compute the function
 
   Array<DFad<double> > f_fad(2);
@@ -431,7 +431,7 @@ void VanderPolModel::evalModelImpl(
   // Extract the output
 
   if (nonnull(f_out)) {
-    Thyra::DetachedVectorView<double> f_out_view( *f_out ); 
+    Thyra::DetachedVectorView<double> f_out_view( *f_out );
     for ( int i = 0; i < as<int>(f_fad.size()); ++i )
       f_out_view[i] = f_fad[i].val();
   }
@@ -485,7 +485,7 @@ RCP<const Teuchos::Array<std::string> > VanderPolModel::get_p_names(int l) const
 #ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( l, 0, Np_ );
 #endif
-  RCP<Teuchos::Array<std::string> > p_strings = 
+  RCP<Teuchos::Array<std::string> > p_strings =
     Teuchos::rcp(new Teuchos::Array<std::string>());
   p_strings->push_back("Model Coefficient:  epsilon");
   return p_strings;
@@ -501,10 +501,10 @@ RCP<const Thyra::VectorSpaceBase<double> > VanderPolModel::get_g_space(int j) co
 
 // private
 
-void VanderPolModel::setupInOutArgs_() 
+void VanderPolModel::setupInOutArgs_()
 {
   if (!isInitialized_) {
-    
+
     {
       // Set up prototypical InArgs
       ModelEvaluatorBase::InArgsSetup<double> inArgs;
@@ -536,9 +536,9 @@ void VanderPolModel::setupInOutArgs_()
       outArgs_ = outArgs;
     }
 
-    // Set up nominal values 
+    // Set up nominal values
     nominalValues_ = inArgs_;
-    if (haveIC_) 
+    if (haveIC_)
     {
       nominalValues_.set_t(t0_ic_);
       const RCP<VectorBase<double> > x_ic = createMember(x_space_);
@@ -582,7 +582,7 @@ void VanderPolModel::setParameterList(RCP<ParameterList> const& paramList)
   bool isImplicit = get<bool>(*pl,Implicit_name);
   bool acceptModelParams = get<bool>(*pl,AcceptModelParams_name);
   bool haveIC = get<bool>(*pl,HaveIC_name);
-  if ( (isImplicit != isImplicit_) || 
+  if ( (isImplicit != isImplicit_) ||
        (acceptModelParams != acceptModelParams_) ||
        (haveIC != haveIC_)
      ) {
@@ -607,20 +607,20 @@ RCP<const ParameterList> VanderPolModel::getValidParameters() const
     pl->set(AcceptModelParams_name, AcceptModelParams_default);
     pl->set(HaveIC_name, HaveIC_default);
     Teuchos::setDoubleParameter(
-        Coeff_epsilon_name, Coeff_epsilon_default, "Coefficient epsilon in model", 
-        &*pl 
+        Coeff_epsilon_name, Coeff_epsilon_default, "Coefficient epsilon in model",
+        &*pl
         );
     Teuchos::setDoubleParameter(
-        IC_x0_name, IC_x0_default, "Initial Condition for x0", 
-        &*pl 
+        IC_x0_name, IC_x0_default, "Initial Condition for x0",
+        &*pl
         );
     Teuchos::setDoubleParameter(
-        IC_x1_name, IC_x1_default, "Initial Condition for x1", 
-        &*pl 
+        IC_x1_name, IC_x1_default, "Initial Condition for x1",
+        &*pl
         );
     Teuchos::setDoubleParameter(
-        IC_t0_name, IC_t0_default, "Initial time t0", 
-        &*pl 
+        IC_t0_name, IC_t0_default, "Initial time t0",
+        &*pl
         );
     validPL = pl;
   }
@@ -637,10 +637,10 @@ void VanderPolModel::eval_f(
   const ArrayView<ScalarT> &f
   ) const
 {
-  
+
   const ScalarT x0 = 2*cos(t)+eps*(0.75*sin(t)-0.25*sin(3.0*t));
   const ScalarT x1 = -2*sin(t)+eps*(0.75*cos(t)-0.75*cos(3.0*t));
-  
+
   const ScalarT x1prime = -2*cos(t) + eps*(-0.75*sin(t)+9.0/4.0*sin(3.0*t));
   const ScalarT forcing_term = x1prime-eps*(1.0-x0*x0)*x1+x0;
 
@@ -663,7 +663,7 @@ void VanderPolModel::eval_f(
 
 
 Teuchos::RCP<Rythmos::VanderPolModel>
-Rythmos::vanderPolModel() 
+Rythmos::vanderPolModel()
 {
   RCP<VanderPolModel> model = rcp(new VanderPolModel);
   return(model);
@@ -671,7 +671,7 @@ Rythmos::vanderPolModel()
 
 
 Teuchos::RCP<Rythmos::VanderPolModel>
-Rythmos::vanderPolModel(bool implicit) 
+Rythmos::vanderPolModel(bool implicit)
 {
   RCP<VanderPolModel> model = vanderPolModel();
   model->setImplicitFlag(implicit);

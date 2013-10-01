@@ -167,4 +167,29 @@ namespace SEAMS {
     stat(filepath.c_str(), &s);
     return S_ISDIR(s.st_mode);
   }
+
+  bool check_valid_var(const char *var)
+  {
+    /* Check that 'var' meets the restriction for a variable name
+     * L(:|L|D)*
+     * D [0-9]
+     * L [A-Za-z_]
+     */
+  
+    int length = strlen(var);
+    if (length == 0)
+      return false;
+
+    if (!isalpha(var[0])) {
+      return false;
+    }
+
+    for (int i=1; i < length; i++) {
+      char c = var[i];
+      if (!isalnum(c) && c != ':' && c != '_')
+	return false;
+    }
+    return true;
+  }
+
 }

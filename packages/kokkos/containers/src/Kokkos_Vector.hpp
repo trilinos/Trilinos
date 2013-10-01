@@ -47,22 +47,50 @@
 #define KOKKOS_VECTOR_HPP
 
 #include <Kokkos_DualView.hpp>
-
+#include <KokkosCore_config.h>
 namespace Kokkos {
 
 /* Drop in replacement for std::vector based on Kokkos::DualView
  * Most functions only work on the host (it will not compile if called from device kernel)
  *
  */
+#ifndef KOKKOS_HAVE_CUDA
+  #ifdef KOKKOS_HAVE_PTHREAD
+    #include <Kokkos_Threads.hpp>
+    typedef Kokkos::Threads DefaultDeviceType;
+  #else
+    #ifdef KOKKOS_HAVE_OPENMP
+      #include <Kokkos_OpenMP.hpp>
+      typedef Kokkos::OpenMP DefaultDeviceType;
+    #else
+      #ifdef KOKKOS_HAVE_SERIAL
+        #include <Kokkos_Serial.hpp>
+        typedef Kokkos::Serial DefaultDeviceType;
+      #else
+        #error "No Kokkos Host Device defined"
+      #endif
+    #endif
+  #endif
+#else
+  #include <Kokkos_Cuda.hpp>
+  typedef Kokkos::Cuda DefaultDeviceType;
+#endif
 
-template <typename Scalar, class Device>
+
+template <typename Scalar, class Device=DefaultDeviceType>
 class vector : public DualView<Scalar*,LayoutLeft,Device> {
 public:
   typedef Device device_type;
+  typedef Scalar value_type;
+  typedef Scalar* pointer;
+  typedef const Scalar* const_pointer;
+  typedef Scalar* reference;
+  typedef const Scalar* const_reference;
+  typedef Scalar* iterator;
+  typedef const Scalar* const_iterator;
 
 private:
   size_t _size;
-  size_t _capacity;
   typedef size_t size_type;
   float _extra_storage;
   typedef DualView<Scalar*,LayoutLeft,Device> DV;
@@ -77,16 +105,14 @@ public:
 
   vector():DV() {
     _size = 0;
-    _capacity = 0;
     _extra_storage = 1.1;
     DV::modified_host = 1;
   };
 
 
-  vector(int n, Scalar val):DualView<Scalar*,LayoutLeft,Device>("Vector",size_t(n*(1.1))) {
+  vector(int n, Scalar val=Scalar()):DualView<Scalar*,LayoutLeft,Device>("Vector",size_t(n*(1.1))) {
     _size = n;
     _extra_storage = 1.1;
-    _capacity = size_t(n*_extra_storage);
     DV::modified_host = 1;
 
     assign(n,val);
@@ -94,7 +120,7 @@ public:
 
 
   void resize(size_t n) {
-    if(n>=_capacity)
+    if(n>=capacity())
       DV::resize(size_t (n*_extra_storage));
     _size = n;
   }
@@ -107,9 +133,8 @@ public:
 
     /* Resize if necessary (behavour of std:vector) */
 
-    if(n>_capacity)
+    if(n>capacity())
       DV::resize(size_t (n*_extra_storage));
-
     _size = n;
 
 	  /* Assign value either on host or on device */
@@ -133,10 +158,9 @@ public:
 
   void push_back(Scalar val) {
     DV::modified_host++;
-
-    if(_size == _capacity) {
+    if(_size == capacity()) {
       size_t new_size = _size*_extra_storage;
-      if(new_size==_size) new_size++;
+      if(new_size == _size) new_size++;
       DV::resize(new_size);
     }
 
@@ -155,12 +179,12 @@ public:
 
   size_type size() const {return _size;};
   size_type max_size() const {return 2000000000;}
-  size_type capacity() const {return _capacity;};
+  size_type capacity() const {return DV::capacity();};
   bool empty() const {return _size==0;};
 
-  size_t begin() const {return 0;};
+  iterator begin() const {return &DV::h_view(0);};
 
-  size_t end() const {return _size;};
+  iterator end() const {return &DV::h_view(_size);};
 
 
   /* std::algorithms wich work originally with iterators, here they are implemented as member functions */
@@ -198,8 +222,8 @@ public:
     return true;
   }
 
-  int find(Scalar val) const {
-    if(_size==0) return _size;
+  iterator find(Scalar val) const {
+    if(_size == 0) return end();
 
     int upper,lower,current;
     current = _size/2;
@@ -215,7 +239,7 @@ public:
       current = (upper+lower)/2;
     }
 
-    if(val==DV::h_view(current)) return current;
+    if(val==DV::h_view(current)) return &DV::h_view(current);
     else return end();
   }
 

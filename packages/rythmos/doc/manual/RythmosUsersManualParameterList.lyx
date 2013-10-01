@@ -60,7 +60,65 @@
 \begin_body
 
 \begin_layout Section
-ParameterLists Description
+ParameterList Description
+\end_layout
+
+\begin_layout Standard
+The following description of the Rythmos ParameterList was auto-generated
+ from the ParameterList itself, thus allowing easy refreshing of the input
+ description and providing up-to-date information.
+ Fig.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:ParameterList-schematic"
+
+\end_inset
+
+ is a hyperlinked, indented heirarchy of the Rythmos ParameterList, that
+ provides an overall structure of the Rythmos ParameterList.
+ The hyerlinks are connected to subsequent sections, which contain additional
+ hyperlinks to parent and children sublists, and descriptions of the sublist
+ and parameters.
+ All these hyperlinks provide an easy way to hop around the parameters in
+ order to setup the time-integrator.
+ 
+\end_layout
+
+\begin_layout Standard
+The basic structure starts with the 
+\begin_inset Quotes eld
+\end_inset
+
+Integrator Base
+\begin_inset Quotes erd
+\end_inset
+
+, and is broken down into the Integrator and the Stepper.
+ Each of these contain several sublists giving the details of the Integrator
+ and Stepper, e.g., IntegrationControlStrategy, InterpolationBuffer, StepControlSt
+rategy, and error weight vector.
+\end_layout
+
+\begin_layout Standard
+An easy way to create a Rythmos ParameterList is to get a valid ParameterList
+ from the IntegatorBuilder, and manipulate the parameters from there.
+ In this way, one able to correctly setup the Integrator and Stepper for
+ a transient soution.
+ For example, 
+\begin_inset CommandInset include
+LatexCommand input
+filename "RythmosParameterListExample.tex"
+
+\end_inset
+
+ Obviously, most software will get its input specification from the XML
+ version of the ParameterLists, and then pass them onto Rythmos.
+ The description provided here can also help in setting up those XML files.
+ 
 \end_layout
 
 \begin_layout Standard

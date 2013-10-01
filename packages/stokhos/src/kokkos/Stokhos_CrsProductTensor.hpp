@@ -77,15 +77,35 @@ template< typename ValueType, class DeviceType >
 class CrsProductTensor {
 public:
 
-  typedef DeviceType                       device_type;
-  typedef typename device_type::size_type  size_type;
-  typedef ValueType                        value_type;
+  typedef DeviceType  device_type;
+  typedef int size_type;
+  typedef ValueType   value_type;
+
+// Vectorsize used in multiply algorithm
+#if defined(__AVX__)
+  static const size_type host_vectorsize = 32/sizeof(value_type);
+  static const bool use_intrinsics = true;
+#elif defined(__MIC__)
+  static const size_type host_vectorsize = 16;
+  static const bool use_intrinsics = true;
+#else
+  static const size_type host_vectorsize = 2;
+  static const bool use_intrinsics = false;
+#endif
+  static const size_type cuda_vectorsize = 32;
+  static const bool is_cuda =
+    Kokkos::Impl::is_same<DeviceType,Kokkos::Cuda>::value;
+  static const size_type vectorsize = is_cuda ? cuda_vectorsize : host_vectorsize;
+
+  // Alignment in terms of number of entries of CRS rows
+  static const size_type tensor_align = vectorsize;
 
 private:
 
   typedef Kokkos::View< value_type[], device_type >  vec_type;
   typedef Kokkos::View< size_type[], device_type > coord_array_type;
-  typedef Kokkos::View< size_type[][2], device_type > coord2_array_type;
+  typedef Kokkos::View< size_type[][2], Kokkos::LayoutLeft, device_type > coord2_array_type;
+  //typedef Kokkos::View< size_type[][2], device_type > coord2_array_type;
   typedef Kokkos::View< value_type[], device_type > value_array_type;
   typedef Kokkos::View< size_type[], device_type > entry_array_type;
   typedef Kokkos::View< size_type[], device_type > row_map_array_type;
@@ -243,11 +263,10 @@ public:
     }
 
     // Pad each row to have size divisible by alignment size
-    enum { Align = Kokkos::Impl::is_same<DeviceType,Kokkos::Cuda>::value ? 32 : 2 };
     for ( size_type i = 0; i < dimension; ++i ) {
-      const size_t rem = coord_work[i] % Align;
+      const size_t rem = coord_work[i] % tensor_align;
       if (rem > 0) {
-        const size_t pad = Align - rem;
+        const size_t pad = tensor_align - rem;
         coord_work[i] += pad;
         entry_count += pad;
       }

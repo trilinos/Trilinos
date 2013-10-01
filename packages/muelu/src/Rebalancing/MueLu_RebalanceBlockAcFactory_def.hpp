@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -63,20 +63,14 @@
 #include <Xpetra_StridedMapFactory.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
 
+#include "MueLu_RebalanceBlockAcFactory_decl.hpp"
+
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
 
 #include "MueLu_HierarchyHelpers.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
-
-#if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MUELU_ISORROPIA)
-#include "MueLu_RepartitionFactory.hpp"
-//#include "MueLu_RebalanceTransferFactory.hpp"
-//#include "MueLu_ZoltanInterface.hpp"
-#include "MueLu_IsorropiaInterface.hpp"
-#endif
-#include "MueLu_RebalanceBlockAcFactory_decl.hpp"
 
 namespace MueLu {
 
@@ -179,8 +173,8 @@ namespace MueLu {
         // NOTE: If the communicator is restricted away, Build returns Teuchos::null.
         rebAii = MatrixFactory::Build(Aii, *rebalanceImporter, targetMap, targetMap, rcp(&XpetraList,false));
 
-        if (!rebAii.is_null())
-          rebAii->SetFixedBlockSize(Aii->GetFixedBlockSize());
+        /*if (!rebAii.is_null())
+          rebAii->SetFixedBlockSize(Aii->GetFixedBlockSize());*/
 
         if (!rebAii.is_null()) {
           RCP<ParameterList> params = rcp(new ParameterList());
@@ -188,6 +182,7 @@ namespace MueLu {
           std::stringstream ss2; ss2 << "A(" << curBlockId << "," << curBlockId << ") rebalanced:";
           GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebAii, ss2.str(), params);
         }
+
       }  // rebalance matrix block A(i,i)
       else {
         rebAii = Aii;
@@ -196,6 +191,49 @@ namespace MueLu {
         std::stringstream ss2; ss2 << "A(" << curBlockId << "," << curBlockId << ") not rebalanced:";
         GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebAii, ss2.str(), params);*/
       }
+
+      // fix striding information for rebalanced diagonal block rebAii
+      // Note: we do not care about the off-diagonal blocks. We just make sure, that the
+      // diagonal blocks have the corresponding striding information from the map extractors
+      RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rgAMapExtractor = bA->getRangeMapExtractor(); // original map extractor
+      Teuchos::RCP<const StridedMap> orig_stridedRgMap = Teuchos::rcp_dynamic_cast<const StridedMap>(rgAMapExtractor->getMap(Teuchos::as<size_t>(curBlockId)));
+      Teuchos::RCP<const Map> stridedRgMap = Teuchos::null;
+      if(orig_stridedRgMap != Teuchos::null) {
+        std::vector<size_t> stridingData = orig_stridedRgMap->getStridingData();
+        Teuchos::ArrayView< const GlobalOrdinal > nodeRangeMapii = rebAii->getRangeMap()->getNodeElementList();
+        stridedRgMap = StridedMapFactory::Build(
+            bA->getRangeMap()->lib(),
+            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+            nodeRangeMapii,
+            rebAii->getRangeMap()->getIndexBase(),
+            stridingData,
+            bA->getRangeMap()->getComm(),
+            orig_stridedRgMap->getStridedBlockId(),
+            orig_stridedRgMap->getOffset());
+      }
+      RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > doAMapExtractor = bA->getDomainMapExtractor(); // original map extractor
+      Teuchos::RCP<const StridedMap> orig_stridedDoMap = Teuchos::rcp_dynamic_cast<const StridedMap>(doAMapExtractor->getMap(Teuchos::as<size_t>(curBlockId)));
+      Teuchos::RCP<const Map> stridedDoMap = Teuchos::null;
+      if(orig_stridedDoMap != Teuchos::null) {
+        std::vector<size_t> stridingData = orig_stridedDoMap->getStridingData();
+        Teuchos::ArrayView< const GlobalOrdinal > nodeDomainMapii = rebAii->getDomainMap()->getNodeElementList();
+        stridedDoMap = StridedMapFactory::Build(
+            bA->getDomainMap()->lib(),
+            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+            nodeDomainMapii,
+            rebAii->getDomainMap()->getIndexBase(),
+            stridingData,
+            bA->getDomainMap()->getComm(),
+            orig_stridedDoMap->getStridedBlockId(),
+            orig_stridedDoMap->getOffset());
+      }
+
+      TEUCHOS_TEST_FOR_EXCEPTION(stridedRgMap == Teuchos::null,Exceptions::RuntimeError, "MueLu::RebalanceBlockAcFactory::Build: failed to generate striding information. error.");
+      TEUCHOS_TEST_FOR_EXCEPTION(stridedDoMap == Teuchos::null,Exceptions::RuntimeError, "MueLu::RebalanceBlockAcFactory::Build: failed to generate striding information. error.");
+
+      // replace stridedMaps view in diagonal sub block
+      if(rebAii->IsView("stridedMaps")) rebAii->RemoveView("stridedMaps");
+      rebAii->CreateView("stridedMaps", stridedRgMap, stridedDoMap);
 
       subBlockRebA[curBlockId*bA->Cols() + curBlockId] = rebAii;
 
@@ -280,13 +318,13 @@ namespace MueLu {
 
 
       // build full range and full domain map (strided)
-      subBlockARangeMaps.push_back(rebAii->getRangeMap());
-      Teuchos::ArrayView< const GlobalOrdinal > nodeRangeMap = subBlockARangeMaps.back()->getNodeElementList();
+      subBlockARangeMaps.push_back(rebAii->getRowMap("stridedMaps")/*rebAii->getRangeMap()*/);
+      Teuchos::ArrayView< const GlobalOrdinal > nodeRangeMap = rebAii->getRangeMap()->getNodeElementList();
       fullRangeMapVector.insert(fullRangeMapVector.end(), nodeRangeMap.begin(), nodeRangeMap.end());
       sort(fullRangeMapVector.begin(), fullRangeMapVector.end());
 
-      subBlockADomainMaps.push_back(rebAii->getDomainMap());
-      Teuchos::ArrayView< const GlobalOrdinal > nodeDomainMap = subBlockADomainMaps.back()->getNodeElementList();
+      subBlockADomainMaps.push_back(rebAii->getColMap("stridedMaps")/*rebAii->getDomainMap()*/);
+      Teuchos::ArrayView< const GlobalOrdinal > nodeDomainMap = rebAii->getDomainMap()->getNodeElementList();
       fullDomainMapVector.insert(fullDomainMapVector.end(), nodeDomainMap.begin(), nodeDomainMap.end());
       sort(fullDomainMapVector.begin(), fullDomainMapVector.end());
 
@@ -303,32 +341,56 @@ namespace MueLu {
 
     Teuchos::ArrayView<GO> fullRangeMapGIDs(&fullRangeMapVector[0],fullRangeMapVector.size());
     Teuchos::RCP<const StridedMap> stridedRgFullMap = Teuchos::rcp_dynamic_cast<const StridedMap>(rangeMapExtractor->getFullMap());
-    std::vector<size_t> stridedData = stridedRgFullMap->getStridingData();
-    Teuchos::RCP<const StridedMap > fullRangeMap =
-        StridedMapFactory::Build(
-            bA->getRangeMap()->lib(),
-            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-            fullRangeMapGIDs,
-            rangeIndexBase,
-            stridedData,
-            bA->getRangeMap()->getComm(),
-            stridedRgFullMap->getStridedBlockId(),
-            stridedRgFullMap->getOffset());
+    Teuchos::RCP<const Map > fullRangeMap = Teuchos::null;
+    if(stridedRgFullMap != Teuchos::null) {
+      std::vector<size_t> stridedData = stridedRgFullMap->getStridingData();
+      fullRangeMap =
+          StridedMapFactory::Build(
+              bA->getRangeMap()->lib(),
+              Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+              fullRangeMapGIDs,
+              rangeIndexBase,
+              stridedData,
+              bA->getRangeMap()->getComm(),
+              stridedRgFullMap->getStridedBlockId(),
+              stridedRgFullMap->getOffset());
+    } else {
+      fullRangeMap =
+          MapFactory::Build(
+              bA->getRangeMap()->lib(),
+              Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+              fullRangeMapGIDs,
+              rangeIndexBase,
+              bA->getRangeMap()->getComm());
+    }
 
     Teuchos::ArrayView<GO> fullDomainMapGIDs(&fullDomainMapVector[0],fullDomainMapVector.size());
 
     Teuchos::RCP<const StridedMap> stridedDoFullMap = Teuchos::rcp_dynamic_cast<const StridedMap>(domainMapExtractor->getFullMap());
-    std::vector<size_t> stridedData2 = stridedDoFullMap->getStridingData();
-    Teuchos::RCP<const StridedMap > fullDomainMap =
-        StridedMapFactory::Build(
-            bA->getDomainMap()->lib(),
-            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-            fullDomainMapGIDs,
-            domainIndexBase,
-            stridedData2,
-            bA->getDomainMap()->getComm(),
-            stridedDoFullMap->getStridedBlockId(),
-            stridedDoFullMap->getOffset());
+    Teuchos::RCP<const Map > fullDomainMap = Teuchos::null;
+    if(stridedDoFullMap != Teuchos::null) {
+      TEUCHOS_TEST_FOR_EXCEPTION(stridedDoFullMap==Teuchos::null, Exceptions::BadCast, "MueLu::BlockedPFactory::Build: full map in domain map extractor has no striding information! error.");
+      std::vector<size_t> stridedData2 = stridedDoFullMap->getStridingData();
+      fullDomainMap =
+          StridedMapFactory::Build(
+              bA->getDomainMap()->lib(),
+              Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+              fullDomainMapGIDs,
+              domainIndexBase,
+              stridedData2,
+              bA->getDomainMap()->getComm(),
+              stridedDoFullMap->getStridedBlockId(),
+              stridedDoFullMap->getOffset());
+    } else {
+
+      fullDomainMap =
+          MapFactory::Build(
+              bA->getDomainMap()->lib(),
+              Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+              fullDomainMapGIDs,
+              domainIndexBase,
+              bA->getDomainMap()->getComm());
+    }
 
     // build map extractors
     Teuchos::RCP<const MapExtractorClass> rebRangeMapExtractor  = MapExtractorFactoryClass::Build(fullRangeMap, subBlockARangeMaps);
@@ -346,23 +408,23 @@ namespace MueLu {
     //reb_bA->describe(*out,Teuchos::VERB_EXTREME);
     coarseLevel.Set("A", Teuchos::rcp_dynamic_cast<Matrix>(reb_bA), this);
 
-
-#if 0
+    // rebalance additional data:
+    // be aware, that we just call the rebalance factories without switching to local
+    // factory managers, i.e. the rebalance factories have to be defined with the appropriate
+    // factories by the user!
     if (rebalanceFacts_.begin() != rebalanceFacts_.end()) {
       SubFactoryMonitor m2(*this, "Rebalance additional data", coarseLevel);
 
       // call Build of all user-given transfer factories
-      for (std::vector<RCP<const FactoryBase> >::const_iterator it = rebalanceFacts_.begin(); it != rebalanceFacts_.end(); ++it) {
-        GetOStream(Runtime0, 0) << "RebalanceAc: call rebalance factory " << (*it).get() << ": " << (*it)->description() << std::endl;
-        (*it)->CallBuild(coarseLevel);
+      for (std::vector<RCP<const FactoryBase> >::const_iterator it2 = rebalanceFacts_.begin(); it2 != rebalanceFacts_.end(); ++it2) {
+        GetOStream(Runtime0, 0) << "RebalanceBlockedAc: call rebalance factory " << (*it2).get() << ": " << (*it2)->description() << std::endl;
+        (*it2)->CallBuild(coarseLevel);
       }
     }
-#endif
   } //Build()
 
-#if 0
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RebalanceBlockedAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddRebalanceFactory(const RCP<const FactoryBase>& factory) {
+  void RebalanceBlockAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddRebalanceFactory(const RCP<const FactoryBase>& factory) {
 
     /*TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const TwoLevelFactoryBase>(factory) == Teuchos::null, Exceptions::BadCast,
                                "MueLu::RAPFactory::AddTransferFactory: Transfer factory is not derived from TwoLevelFactoryBase. "
@@ -370,7 +432,7 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(hasDeclaredInput_, Exceptions::RuntimeError, "MueLu::RAPFactory::AddTransferFactory: Factory is being added after we have already declared input");*/
     rebalanceFacts_.push_back(factory);
   } //AddRebalanceFactory()
-#endif
+
 } //namespace MueLu
 
 

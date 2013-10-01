@@ -160,6 +160,12 @@ private:
   std::string globalDataKey_; // what global data does this fill?
   Teuchos::RCP<const BlockedEpetraLinearObjContainer> blockedContainer_;
 
+  //! If set to true, allows runtime disabling of dirichlet BCs on node-by-node basis
+  bool checkApplyBC_;
+
+  // Allows runtime disabling of dirichlet BCs on node-by-node basis
+  std::vector< PHX::MDField<bool,Cell,NODE> > applyBC_;
+
   ScatterDirichletResidual_BlockedEpetra() {}
 };
 
@@ -218,6 +224,12 @@ private:
   Teuchos::RCP<Thyra::ProductVectorBase<double> > dirichletCounter_;
   std::string globalDataKey_; // what global data does this fill?
   Teuchos::RCP<const BlockedEpetraLinearObjContainer> blockedContainer_;
+
+  //! If set to true, allows runtime disabling of dirichlet BCs on node-by-node basis
+  bool checkApplyBC_;
+
+  // Allows runtime disabling of dirichlet BCs on node-by-node basis
+  std::vector< PHX::MDField<bool,Cell,NODE> > applyBC_;
 
   ScatterDirichletResidual_BlockedEpetra() {}
 };
@@ -279,6 +291,12 @@ private:
   Teuchos::RCP<Thyra::ProductVectorBase<double> > dirichletCounter_;
   std::string globalDataKey_; // what global data does this fill?
   Teuchos::RCP<const BlockedEpetraLinearObjContainer> blockedContainer_;
+
+  //! If set to true, allows runtime disabling of dirichlet BCs on node-by-node basis
+  bool checkApplyBC_;
+
+  // Allows runtime disabling of dirichlet BCs on node-by-node basis
+  std::vector< PHX::MDField<bool,Cell,NODE> > applyBC_;
 
   ScatterDirichletResidual_BlockedEpetra();
 };

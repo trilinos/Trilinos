@@ -79,7 +79,8 @@ public:
   //! \name Static functions that all Kokkos devices must implement.
   //@{
 
-  /** \brief  Query if called within a thread-parallel function */
+  /// \brief True if and only if this method is being called in a
+  ///   thread-parallel function.
   static int in_parallel();
 
   /** \brief  Set the device in a "sleep" state.
@@ -115,13 +116,12 @@ public:
   /// For the Threads device, this terminates spawned worker threads.
   static void finalize();
 
-  /** \brief  Print configuration information */
-  static void print_configuration( std::ostream & , bool detail = false );
+  /// \brief Print configuration information to the given output stream.
+  static void print_configuration( std::ostream & , const bool detail = false );
 
   //@}
-  /*------------------------------------------------------------------------*/
-  /** \name Function for the functor device interface */
-  /**@{ */
+  //! \name Function for the functor device interface */
+  //@{
 
   inline int league_rank() const ;
   inline int league_size() const ;
@@ -130,26 +130,27 @@ public:
 
   inline void team_barrier();
 
-  /* Collectively compute the league-wide unordered exclusive prefix sum.
-   * Values are ordered within a team, but not between teams (i.e. the start
-   * values of thread 0 in each team are not ordered according to team number).
-   * This call does not use a global synchronization. Multiple unordered scans
-   * can be in-flight at the same time (using different scratch_views).
-   * The scratch-view will hold the complete sum in the end.
-   */
+  /// \brief Collectively compute the league-wide unordered exclusive prefix sum.
+  ///
+  /// Values are ordered within a team, but not between teams
+  /// (i.e. the start values of thread 0 in each team are not ordered
+  /// according to team number).  This call does not use a global
+  /// synchronization. Multiple unordered scans can be in flight at
+  /// the same time (using scratch_view arguments that point to
+  /// distinct chunks of memory).  The scratch_view output argument
+  /// will hold the complete sum in the end.
   template< class VT >
   inline typename VT::value_type unordered_scan
              (typename VT::value_type& value, VT& scratch_view);
 
-  /* Collectively compute the team-wide exclusive prefix sum using CUDA Unbound.
-   * Values are ordered, the last thread returns the sum of all values
-   * in the team less its own value
-   */
+  /// \brief Collectively compute the team-wide exclusive prefix sum.
+  ///
+  /// Values are ordered.  The last thread returns the sum of all
+  /// values in the team less its own value.
   template< typename T >
   inline T team_scan(T& value);
 
-  template< typename T >
-  inline T * get_shmem( const int count );
+  inline void * get_shmem( const int size );
 
   explicit inline Threads( Impl::ThreadsExec & );
 
@@ -168,27 +169,17 @@ public:
    *  resources, but it will take time (latency) to awaken the device
    *  again (via the wake()) method so that it is ready for work.
    *
-   *  The 'team_topology' argument specifies
-   *    (first) the number of teams of threads - the league_size
-   *    (second) the number of threads per team - the team_size.
+   *  Teams of threads are distributed as evenly as possible across
+   *  the requested number of numa regions and cores per numa region.
+   *  A team will not be split across a numa region.
    *
-   *  The 'use_core_topology' argument specifies the subset of available cores
-   *  to use for the device's threads.  If 'hwloc' is available then the
-   *  full core topology can be queried via 'hwloc::get_core_topology()'.
-   *  If 'use_core_topology' is not specified and 'hwloc' is available
-   *  then the full core topology is used.  If 'hwloc' in not available
-   *  then 'use_core_topology' is ignored.
-   *
-   *  Teams of threads are evenly distributed across the core topology.
-   *  If team_topology.first*team_topology.second is less than or equal to
-   *  use_core_topology.first*use_core_topology.second then each thread
-   *  is assigned its own core.  Otherwise multiple threads in a team are
-   *  assigned to a shared core (using hyperthreads).
+   *  If the 'use_' arguments are not supplied the hwloc is queried
+   *  to use all available cores.
    */
-  static void initialize( const std::pair<unsigned,unsigned> team_topology ,
-                          const std::pair<unsigned,unsigned> use_core_topology =
-                                std::make_pair (0u, 0u) );
-
+  static void initialize( unsigned team_count ,
+                          unsigned threads_per_team ,
+                          unsigned use_numa_count = 0 ,
+                          unsigned use_cores_per_numa = 0 );
 
   static int league_max();
   static int team_max();

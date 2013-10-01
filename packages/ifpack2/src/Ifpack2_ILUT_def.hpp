@@ -51,6 +51,11 @@
 #ifndef IFPACK2_ILUT_DEF_HPP
 #define IFPACK2_ILUT_DEF_HPP
 
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
+
 namespace Ifpack2 {
 
   namespace {

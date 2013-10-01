@@ -17,6 +17,7 @@ SET(HEADERS_PRIVATE "")
 SET(SOURCES "")
 
 FILE(GLOB HEADERS_PUBLIC Kokkos*.hpp)
+LIST( APPEND HEADERS_PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h )
 
 #-----------------------------------------------------------------------------
 

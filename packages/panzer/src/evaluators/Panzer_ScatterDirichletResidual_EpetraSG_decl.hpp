@@ -45,6 +45,8 @@
 #ifndef PANZER_EVALUATOR_SCATTER_DIRICHLET_RESIDUAL_EPETRA_SG_DECL_HPP
 #define PANZER_EVALUATOR_SCATTER_DIRICHLET_RESIDUAL_EPETRA_SG_DECL_HPP
 
+#include "Panzer_SGEpetraLinearObjContainer.hpp"
+
 namespace panzer {
 
 // **************************************************************
@@ -99,6 +101,10 @@ private:
   std::size_t local_side_id_;
 
   Teuchos::RCP<Epetra_Vector> dirichletCounter_;
+
+  std::string globalDataKey_; // what global data does this fill?
+
+  Teuchos::RCP<SGEpetraLinearObjContainer> sgEpetraContainer_;
 
   ScatterDirichletResidual_Epetra() {}
 };
@@ -157,6 +163,10 @@ private:
   std::size_t local_side_id_;
 
   Teuchos::RCP<Epetra_Vector> dirichletCounter_;
+
+  std::string globalDataKey_; // what global data does this fill?
+
+  Teuchos::RCP<SGEpetraLinearObjContainer> sgEpetraContainer_;
 
   ScatterDirichletResidual_Epetra();
 };

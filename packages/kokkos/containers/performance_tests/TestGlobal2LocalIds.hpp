@@ -153,7 +153,7 @@ void test_global_to_local_ids(unsigned num_ids)
   {
     generate_ids<Device> gen(local_2_global);
   }
-
+  Device::fence();
   // generate
   elasped_time = timer.seconds();
   std::cout << elasped_time << ", ";
@@ -162,6 +162,7 @@ void test_global_to_local_ids(unsigned num_ids)
   {
     fill_map<Device> fill(global_2_local, local_2_global);
   }
+  Device::fence();
 
   // fill
   elasped_time = timer.seconds();
@@ -174,6 +175,7 @@ void test_global_to_local_ids(unsigned num_ids)
   {
     find_test<Device> find(global_2_local, local_2_global,num_errors);
   }
+  Device::fence();
 
   // find
   elasped_time = timer.seconds();

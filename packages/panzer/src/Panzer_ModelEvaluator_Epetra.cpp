@@ -417,6 +417,72 @@ panzer::ModelEvaluator_Epetra::createOutArgs() const
   return outArgs;
 }
 
+void panzer::ModelEvaluator_Epetra::
+applyDirichletBCs(const Teuchos::RCP<Thyra::VectorBase<double> > & x,
+                  const Teuchos::RCP<Thyra::VectorBase<double> > & f) const
+{
+  using Teuchos::RCP;
+  using Teuchos::ArrayRCP;
+  using Teuchos::Array;
+  using Teuchos::tuple;
+  using Teuchos::rcp_dynamic_cast;
+
+  // if neccessary build a ghosted container
+  if(Teuchos::is_null(ghostedContainer_)) {
+     ghostedContainer_ = lof_->buildGhostedLinearObjContainer();
+     lof_->initializeGhostedContainer(panzer::LinearObjContainer::X |
+                                      panzer::LinearObjContainer::F,*ghostedContainer_); 
+  }
+
+  panzer::AssemblyEngineInArgs ae_inargs;
+  ae_inargs.container_ = lof_->buildLinearObjContainer(); // we use a new global container
+  ae_inargs.ghostedContainer_ = ghostedContainer_;        // we can reuse the ghosted container
+  ae_inargs.alpha = 0.0;
+  ae_inargs.beta = 1.0;
+  ae_inargs.evaluate_transient_terms = false;
+
+  // this is the tempory target
+  lof_->initializeContainer(panzer::LinearObjContainer::F,*ae_inargs.container_); 
+
+  // here we are building a container, this operation is fast, simply allocating a struct
+  const RCP<panzer::ThyraObjContainer<double> > thGlobalContainer = 
+    Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(ae_inargs.container_,true);
+
+  TEUCHOS_ASSERT(!Teuchos::is_null(thGlobalContainer));
+
+  // Ghosted container objects are zeroed out below only if needed for
+  // a particular calculation.  This makes it more efficient than
+  // zeroing out all objects in the container here.
+  const RCP<panzer::ThyraObjContainer<double> > thGhostedContainer = 
+    Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(ae_inargs.ghostedContainer_,true);
+  TEUCHOS_ASSERT(!Teuchos::is_null(thGhostedContainer));
+  Thyra::assign(thGhostedContainer->get_f_th().ptr(),0.0);
+
+  // Set the solution vector (currently all targets require solution).
+  // In the future we may move these into the individual cases below.
+  // A very subtle (and fragile) point: A non-null pointer in global
+  // container triggers export operations during fill.  Also, the
+  // introduction of the container is forcing us to cast away const on
+  // arguments that should be const.  Another reason to redesign
+  // LinearObjContainer layers.
+  thGlobalContainer->set_x_th(x);
+
+  // evaluate dirichlet boundary conditions
+  RCP<panzer::LinearObjContainer> counter = ae_tm_.getAsObject<panzer::Traits::Residual>()->evaluateOnlyDirichletBCs(ae_inargs);
+
+  // allocate the result container
+  RCP<panzer::LinearObjContainer> result = lof_->buildLinearObjContainer(); // we use a new global container
+
+  // stuff the evaluate boundary conditions into the f spot of the counter ... the x is already filled
+  Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(counter)->set_f_th(thGlobalContainer->get_f_th());
+  
+  // stuff the vector that needs applied dirichlet conditions in the the f spot of the result LOC
+  Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(result)->set_f_th(f);
+  
+  // use the linear object factory to apply the result
+  lof_->applyDirichletBCs(*counter,*result);
+}
+
 void panzer::ModelEvaluator_Epetra::evalModel( const InArgs& inArgs, 
 					       const OutArgs& outArgs ) const
 {

@@ -1,14 +1,12 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -55,41 +53,41 @@ namespace Stokhos {
   /*!
    * \brief Static array allocation class
    */
-  template <typename T, typename node, 
-	    bool isScalar = Sacado::IsScalarType<T>::value>
+  template <typename T, typename device,
+            bool isScalar = Sacado::IsScalarType<T>::value>
   struct StaticArrayTraits {};
 
   /*!
    * \brief Static array allocation class that works for any type
    */
-  template <typename T, typename N>
-  struct StaticArrayTraits<T, N, false> {
+  template <typename T, typename D>
+  struct StaticArrayTraits<T, D, false> {
 
     typedef T value_type;
-    typedef N node_type;
-    
+    typedef D device_type;
+
     //! Copy array from \c src to \c dest of length \c sz
     static
     KOKKOS_INLINE_FUNCTION
     void copy(const T* src, T*  dest, std::size_t sz) {
       for (std::size_t i=0; i<sz; ++i)
-	*(dest++) = *(src++);
+        *(dest++) = *(src++);
     }
 
     //! Zero out array \c dest of length \c sz
-    static 
+    static
     KOKKOS_INLINE_FUNCTION
     void zero(T* dest, std::size_t sz) {
       for (std::size_t i=0; i<sz; ++i)
-	*(dest++) = T(0.);
+        *(dest++) = T(0.);
     }
 
     //! Fill array \c dest of length \c sz with value \c v
-    static 
+    static
     KOKKOS_INLINE_FUNCTION
     void fill(T* dest, std::size_t sz, const T& v) {
       for (std::size_t i=0; i<sz; ++i)
-	*(dest++) = v;
+        *(dest++) = v;
     }
 
   };
@@ -98,33 +96,33 @@ namespace Stokhos {
    * \brief Static array allocation class that is specialized for scalar
    * i.e., fundamental or built-in types (float, double, etc...).
    */
-  template <typename T, typename N>
-  struct StaticArrayTraits<T,N,true> {
+  template <typename T, typename D>
+  struct StaticArrayTraits<T,D,true> {
 
     typedef T value_type;
-    typedef N node_type;
-    
+    typedef D device_type;
+
     //! Copy array from \c src to \c dest of length \c sz
-    static 
+    static
     KOKKOS_INLINE_FUNCTION
     void copy(const T* src, T* dest, std::size_t sz) {
       if (sz > 0) std::memcpy(dest,src,sz*sizeof(T));
     }
-    
+
     //! Zero out array \c dest of length \c sz
-    static 
+    static
     KOKKOS_INLINE_FUNCTION
     void zero(T* dest, std::size_t sz) {
       if (sz > 0) std::memset(dest,0,sz*sizeof(T));
     }
 
     //! Fill array \c dest of length \c sz with value \c v
-    static 
+    static
     KOKKOS_INLINE_FUNCTION
     void fill(T* dest, std::size_t sz, T v) {
       //std::memset(dest,v,sz*sizeof(T)); // memset doesn't work if v != 0?
       for (std::size_t i=0; i<sz; ++i)
-	*(dest++) = v;
+        *(dest++) = v;
     }
 
   };

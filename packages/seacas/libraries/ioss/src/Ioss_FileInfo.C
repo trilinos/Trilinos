@@ -36,10 +36,9 @@
 #include <sys/unistd.h>
 #include <string>
 
-#if defined(__PUMAGON__)
-#define NPOS (size_t)-1
-#else
-#define NPOS std::string::npos
+#ifdef HAVE_MPI
+#include <mpi.h>
+#include <numeric>
 #endif
 
 #include <sys/stat.h>
@@ -95,6 +94,42 @@ namespace Ioss {
   bool FileInfo::exists()      const
   {
     return exists_;
+  }
+
+  int  FileInfo::parallel_exists(MPI_Comm communicator, std::string &where)  const
+  {
+#ifdef HAVE_MPI
+    int my_rank = 0;
+    int my_size = 1;
+    if (communicator != MPI_COMM_NULL) {
+      MPI_Comm_rank(communicator, &my_rank);
+      MPI_Comm_size(communicator, &my_size);
+    }
+    if (my_size == 1)
+#endif
+      return exists_ ? 1 : 0;
+
+#ifdef HAVE_MPI
+    // Now handle the parallel case
+    std::vector<int> result(my_size);
+    int my_val = exists_ ? 1 : 0;
+    MPI_Allgather(&my_val, 1, MPI_INT, &result[0], 1, MPI_INT, communicator);
+
+    int sum = std::accumulate(result.begin(), result.end(), 0);
+    if (my_rank == 0 && sum > 0 && sum < my_size) {
+      bool first = true;
+      std::ostringstream errmsg;
+      for (int i=0; i < my_size; i++) {
+	if (result[i] == 0) {
+	  if (!first) errmsg << ", ";
+	  errmsg << i;
+	  first = false;
+	}
+      }
+      where = errmsg.str();
+    }
+    return sum;
+#endif
   }
 
   //: Returns TRUE if the file is readable
@@ -214,11 +249,11 @@ namespace Ioss {
   //: last period.
   const std::string FileInfo::extension() const
   {
-    size_t ind  = filename_.find_last_of(".", NPOS);
-    size_t inds = filename_.find_last_of("/", NPOS);
+    size_t ind  = filename_.find_last_of(".", std::string::npos);
+    size_t inds = filename_.find_last_of("/", std::string::npos);
 
     // Protect against './filename' returning /filename as extension
-    if (ind != NPOS && (inds == NPOS || inds < ind))
+    if (ind != std::string::npos && (inds == std::string::npos || inds < ind))
       return filename_.substr(ind+1, filename_.size());
     else
       return std::string();
@@ -227,7 +262,7 @@ namespace Ioss {
   const std::string FileInfo::pathname() const
   {
     size_t ind = filename_.find_last_of("/", filename_.size());
-    if (ind != NPOS)
+    if (ind != std::string::npos)
       return filename_.substr(0,ind);
     else
       return std::string();
@@ -236,7 +271,7 @@ namespace Ioss {
   const std::string FileInfo::tailname() const
   {
     size_t ind = filename_.find_last_of("/", filename_.size());
-    if (ind != NPOS)
+    if (ind != std::string::npos)
       return filename_.substr(ind+1, filename_.size());
     else
       return filename_; // No path, just return the filename
@@ -248,7 +283,7 @@ namespace Ioss {
 
     // Strip off the extension
     size_t ind = tail.find_last_of('.', tail.size());
-    if (ind != NPOS)
+    if (ind != std::string::npos)
       return tail.substr(0,ind);
     else
       return tail;

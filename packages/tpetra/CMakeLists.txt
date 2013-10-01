@@ -286,6 +286,25 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   OFF
   )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ENABLE_Kokkos_Refactor
+  TPETRA_ENABLE_KOKKOS_REFACTOR
+  "Enable Tpetra code for refactor to new KokkosCore interface."
+  OFF
+  )
+
+# Determine whether Kokkos refactor code is really supported
+IF (Tpetra_ENABLE_Kokkos_Refactor AND
+    Tpetra_ENABLE_KokkosCore AND
+    Tpetra_ENABLE_KokkosCompat AND
+    Tpetra_ENABLE_KokkosLinAlg AND
+    Tpetra_ENABLE_KokkosContainers)
+  SET(Tpetra_Have_Kokkos_Refactor ON CACHE INTERNAL "")
+ELSE()
+  SET(Tpetra_Have_Kokkos_Refactor OFF CACHE INTERNAL "")
+ENDIF()
+# Set corresponding value of CPP macro
+GLOBAL_SET(TPETRA_HAVE_KOKKOS_REFACTOR ${Tpetra_Have_Kokkos_Refactor})
 
 #
 # C) Add the libraries, tests, and examples

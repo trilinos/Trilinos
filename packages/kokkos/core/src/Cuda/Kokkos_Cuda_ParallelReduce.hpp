@@ -581,18 +581,20 @@ struct CudaExecAdapter< FunctorType , ParallelWorkRequest >
   const FunctorType   m_functor ;
   ReduceSharedType    m_reduce_shared ;
   ParallelWorkRequest m_work ;
+  const int           m_shmem_size ;
 
   CudaExecAdapter( const FunctorType & functor , const ParallelWorkRequest & work )
     : m_functor( functor )
-    , m_reduce_shared( Reduce::value_size( functor ) , CudaTraits::SharedMemoryUsage - work.shared_size )
+    , m_reduce_shared( Reduce::value_size( functor ) ,
+                       CudaTraits::SharedMemoryUsage - FunctorShmemSize< FunctorType >::value( functor ) )
     , m_work( std::min( work.league_size , size_t(m_reduce_shared.m_data.thread_count) ) ,
-              m_reduce_shared.m_data.thread_count ,
-              work.shared_size )
+              m_reduce_shared.m_data.thread_count )
+    , m_shmem_size( FunctorShmemSize< FunctorType >::value( functor ) )
     {}
 
   inline
   int shmem_size() const
-  { return m_reduce_shared.m_data.shmem_size + m_work.shared_size ; }
+  { return m_reduce_shared.m_data.shmem_size + m_shmem_size ; }
 
   inline
   int thread_count()
@@ -611,7 +613,7 @@ struct CudaExecAdapter< FunctorType , ParallelWorkRequest >
     reference_type update = Reduce::reference( m_reduce_shared.reduce_data( threadIdx.x ) );
 
     CudaExec exec( m_reduce_shared.m_data.shmem_size ,
-                   m_reduce_shared.m_data.shmem_size + m_work.shared_size );
+                   m_reduce_shared.m_data.shmem_size + m_shmem_size );
 
     m_functor.init( update );
 

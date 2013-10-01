@@ -89,29 +89,6 @@ struct AssertShapeBoundsAbort< CudaSpace >
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-
-template< typename ValueType , class LayoutSrc , class MemoryTraits >
-inline
-void deep_copy( ValueType & dst ,
-                const View< ValueType , LayoutSrc , Cuda , MemoryTraits , Impl::LayoutScalar > & src )
-{
-  (void)Impl::DeepCopy<HostSpace,CudaSpace>( & dst , src.ptr_on_device() , sizeof(ValueType) );
-}
-
-template< typename ValueType , class LayoutDst , class MemoryTraits >
-inline
-void deep_copy( const View< ValueType , LayoutDst , Cuda , MemoryTraits , Impl::LayoutScalar > & dst ,
-                const ValueType & src )
-{
-  (void)Impl::DeepCopy<CudaSpace,HostSpace>( dst.ptr_on_device() , & src , sizeof(ValueType) );
-}
-
-} // namespace Kokkos
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-namespace Kokkos {
 namespace Impl {
 
 // Cuda 5.0 <texture_types.h> defines 'cudaTextureObject_t'
@@ -623,8 +600,8 @@ public:
 
   template < typename iType0 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::EnableViewOper< traits , LayoutLeft , 1 , iType0 >::type operator[]
-    ( const iType0 & i0 ) const
+  typename Impl::ViewEnableArrayOper< typename traits::scalar_type , traits , LayoutLeft , 1 , iType0 >::type
+    operator[] ( const iType0 & i0 ) const
     {
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
       KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
@@ -633,8 +610,8 @@ public:
 
   template < typename iType0 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::EnableViewOper< traits , LayoutRight , 1 , iType0 >::type operator[]
-    ( const iType0 & i0 ) const
+  typename Impl::ViewEnableArrayOper< typename traits::scalar_type , traits , LayoutRight , 1 , iType0 >::type
+    operator[] ( const iType0 & i0 ) const
     {
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
       KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
@@ -643,8 +620,8 @@ public:
 
   template < typename iType0 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::EnableViewOper< traits , LayoutLeft , 1 , iType0 >::type operator()
-    ( const iType0 & i0 ) const
+  typename Impl::ViewEnableArrayOper< typename traits::scalar_type , traits , LayoutLeft , 1 , iType0 >::type
+    operator() ( const iType0 & i0 ) const
     {
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
       KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
@@ -653,8 +630,8 @@ public:
 
   template < typename iType0 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::EnableViewOper< traits , LayoutRight , 1 , iType0 >::type operator()
-    ( const iType0 & i0 ) const
+  typename Impl::ViewEnableArrayOper< typename traits::scalar_type , traits , LayoutRight , 1 , iType0 >::type
+    operator() ( const iType0 & i0 ) const
     {
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
       KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
@@ -667,10 +644,8 @@ public:
 
   template< typename iType0 , typename iType1 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::EnableViewOper<
-    traits, LayoutLeft, 2, iType0, iType1
-  >::type operator()
-    ( const iType0 & i0 , const iType1 & i1 ) const
+  typename Impl::ViewEnableArrayOper< typename traits::scalar_type , traits, LayoutLeft, 2, iType0, iType1 >::type
+    operator() ( const iType0 & i0 , const iType1 & i1 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
@@ -680,10 +655,9 @@ public:
 
   template< typename iType0 , typename iType1 , typename iType2 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::EnableViewOper<
-    traits, LayoutLeft, 3, iType0, iType1, iType2
-  >::type operator()
-    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
+  typename Impl::ViewEnableArrayOper< typename traits::scalar_type ,
+                                      traits, LayoutLeft, 3, iType0, iType1, iType2 >::type
+    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
@@ -694,10 +668,9 @@ public:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::EnableViewOper<
-    traits, LayoutLeft, 4, iType0, iType1, iType2, iType3
-  >::type operator()
-    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
+  typename Impl::ViewEnableArrayOper< typename traits::scalar_type ,
+                                      traits, LayoutLeft, 4, iType0, iType1, iType2, iType3 >::type
+    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
@@ -710,11 +683,10 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::EnableViewOper<
-    traits, LayoutLeft, 5, iType0, iType1, iType2, iType3 , iType4
-  >::type operator()
-    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-      const iType4 & i4 ) const
+  typename Impl::ViewEnableArrayOper< typename traits::scalar_type ,
+                                      traits, LayoutLeft, 5, iType0, iType1, iType2, iType3, iType4 >::type
+    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+                 const iType4 & i4 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
@@ -728,11 +700,10 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 , typename iType5 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::EnableViewOper<
-    traits, LayoutLeft, 6, iType0, iType1, iType2, iType3 , iType4, iType5
-  >::type operator()
-    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-      const iType4 & i4 , const iType5 & i5 ) const
+  typename Impl::ViewEnableArrayOper< typename traits::scalar_type ,
+                                      traits, LayoutLeft, 6, iType0, iType1, iType2, iType3, iType4, iType5 >::type
+    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+                 const iType4 & i4 , const iType5 & i5 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,i5 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
@@ -747,11 +718,10 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 , typename iType5 , typename iType6 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::EnableViewOper<
-    traits, LayoutLeft, 7, iType0, iType1, iType2, iType3 , iType4, iType5, iType6
-  >::type operator()
-    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-      const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
+  typename Impl::ViewEnableArrayOper< typename traits::scalar_type ,
+                                      traits, LayoutLeft, 7, iType0, iType1, iType2, iType3, iType4, iType5, iType6 >::type
+    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+                 const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
@@ -767,11 +737,10 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 , typename iType5 , typename iType6 , typename iType7 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::EnableViewOper<
-    traits, LayoutLeft, 8, iType0, iType1, iType2, iType3 , iType4, iType5, iType6, iType7
-  >::type operator()
-    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-      const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const iType7 & i7 ) const
+  typename Impl::ViewEnableArrayOper< typename traits::scalar_type ,
+                                      traits, LayoutLeft, 8, iType0, iType1, iType2, iType3, iType4, iType5, iType6, iType7 >::type
+    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+                 const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const iType7 & i7 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0,i1,i2,i3,i4,i5,i6,i7 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
@@ -792,10 +761,9 @@ public:
 
   template< typename iType0 , typename iType1 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::EnableViewOper<
-    traits, LayoutRight, 2, iType0, iType1
-  >::type operator()
-    ( const iType0 & i0 , const iType1 & i1 ) const
+  typename Impl::ViewEnableArrayOper< typename traits::scalar_type ,
+                                      traits, LayoutRight, 2, iType0, iType1 >::type
+    operator() ( const iType0 & i0 , const iType1 & i1 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
@@ -805,10 +773,9 @@ public:
 
   template< typename iType0 , typename iType1 , typename iType2 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::EnableViewOper<
-    traits, LayoutRight, 3, iType0, iType1, iType2
-  >::type operator()
-    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
+  typename Impl::ViewEnableArrayOper< typename traits::scalar_type ,
+                                      traits, LayoutRight, 3, iType0, iType1, iType2 >::type
+    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
@@ -818,10 +785,9 @@ public:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::EnableViewOper<
-    traits, LayoutRight, 4, iType0, iType1, iType2, iType3
-  >::type operator()
-    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
+  typename Impl::ViewEnableArrayOper< typename traits::scalar_type ,
+                                      traits, LayoutRight, 4, iType0, iType1, iType2, iType3 >::type
+    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
@@ -834,11 +800,10 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::EnableViewOper<
-    traits, LayoutRight, 5, iType0, iType1, iType2, iType3 , iType4
-  >::type operator()
-    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-      const iType4 & i4 ) const
+  typename Impl::ViewEnableArrayOper< typename traits::scalar_type ,
+                                      traits, LayoutRight, 5, iType0, iType1, iType2, iType3, iType4 >::type
+    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+                 const iType4 & i4 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
@@ -852,11 +817,10 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 , typename iType5 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::EnableViewOper<
-    traits, LayoutRight, 6, iType0, iType1, iType2, iType3 , iType4, iType5
-  >::type operator()
-    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-      const iType4 & i4 , const iType5 & i5 ) const
+  typename Impl::ViewEnableArrayOper< typename traits::scalar_type ,
+                                      traits, LayoutRight, 6, iType0, iType1, iType2, iType3, iType4, iType5 >::type
+    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+                 const iType4 & i4 , const iType5 & i5 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,i5 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
@@ -871,11 +835,10 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 , typename iType5 , typename iType6 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::EnableViewOper<
-    traits, LayoutRight, 7, iType0, iType1, iType2, iType3 , iType4, iType5, iType6
-  >::type operator()
-    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-      const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
+  typename Impl::ViewEnableArrayOper< typename traits::scalar_type ,
+                                      traits, LayoutRight, 7, iType0, iType1, iType2, iType3, iType4, iType5, iType6 >::type
+    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+                 const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
@@ -891,11 +854,10 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 , typename iType5 , typename iType6 , typename iType7 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::EnableViewOper<
-    traits, LayoutRight, 8, iType0, iType1, iType2, iType3 , iType4, iType5, iType6, iType7
-  >::type operator()
-    ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-      const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const iType7 & i7 ) const
+  typename Impl::ViewEnableArrayOper< typename traits::scalar_type ,
+                                      traits, LayoutRight, 8, iType0, iType1, iType2, iType3, iType4, iType5, iType6, iType7 >::type
+    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
+                 const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const iType7 & i7 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0,i1,i2,i3,i4,i5,i6,i7 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );

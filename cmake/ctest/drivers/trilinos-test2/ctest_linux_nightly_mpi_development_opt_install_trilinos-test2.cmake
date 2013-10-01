@@ -74,7 +74,7 @@ SET(CTEST_TEST_TYPE Nightly)
 
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 
-SET(EXTRA_EXCLUDE_PACKAGES Didasko FEApp ForTrilinos MueLu Panzer Optika PyTrilinos RBGen SEACAS TriKota TrilinosFramework)
+SET(EXTRA_EXCLUDE_PACKAGES Didasko FEApp ForTrilinos MueLu Panzer Optika PyTrilinos RBGen SEACAS STK TriKota TrilinosFramework)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_INSTALLATION_DIR=${INSTALLATION_DIR}"
@@ -92,6 +92,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_RBGen=OFF"
   "-DTrilinos_ENABLE_MueLu=OFF"
   "-DTrilinos_ENABLE_SEACAS=OFF"
+  "-DTrilinos_ENABLE_STK=OFF"
   "-DTPL_ENABLE_SuperLU:BOOL=OFF"
   )
 

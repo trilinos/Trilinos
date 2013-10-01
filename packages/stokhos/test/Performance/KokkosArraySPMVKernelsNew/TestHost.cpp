@@ -86,7 +86,11 @@ struct performance_test_driver<Scalar,Kokkos::Threads> {
 
     // Just polynomial methods compared against original
     if (test_orig) {
+#ifdef __MIC__
+      nGrid = 32 ;
+#else
       nGrid = 64 ;
+#endif
       nIter = 1 ;
       if (mkl) {
 #ifdef HAVE_STOKHOS_MKL
@@ -99,16 +103,28 @@ struct performance_test_driver<Scalar,Kokkos::Threads> {
 #endif
       }
       else {
+        // Something funny happens when we go to larger problem sizes on the
+        // MIC where it appears to slow down subsequent calculations (i.e.,
+        // the degree 5 cases will run slower).  Maybe it is getting too hot?
+#ifdef __MIC__
+        performance_test_driver_poly<Scalar,Device,Stokhos::DefaultSparseMatOps>(
+          3 , 1 , 9 , nGrid , nIter , test_block , symmetric );
+#else
         performance_test_driver_poly<Scalar,Device,Stokhos::DefaultSparseMatOps>(
           3 , 1 , 12 , nGrid , nIter , test_block , symmetric );
+#endif
         performance_test_driver_poly<Scalar,Device,Stokhos::DefaultSparseMatOps>(
-          5 , 1 ,  6 , nGrid , nIter , test_block , symmetric );
+          5 , 1,  6 , nGrid , nIter , test_block , symmetric );
       }
     }
 
     // Just polynomial methods compared against original
     if (test_deg) {
+ #ifdef __MIC__
+      nGrid = 32 ;
+#else
       nGrid = 64 ;
+#endif
       nIter = 1 ;
       if (mkl) {
 #ifdef HAVE_STOKHOS_MKL
@@ -126,7 +142,11 @@ struct performance_test_driver<Scalar,Kokkos::Threads> {
 
     // Just polynomial methods compared against original
     if (test_lin) {
+#ifdef __MIC__
+      nGrid = 32 ;
+#else
       nGrid = 64 ;
+#endif
       nIter = 10 ;
       performance_test_driver_linear<Scalar,Device,Stokhos::DefaultSparseMatOps>(
         31 ,  255 , 32 , nGrid , nIter , test_block , symmetric );
@@ -143,13 +163,11 @@ template <typename Scalar>
 int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
              bool test_block, bool symmetric, bool mkl)
 {
-  const std::pair<unsigned,unsigned> core_topo =
-    Kokkos::hwloc::get_core_topology();
-  const size_t core_capacity = Kokkos::hwloc::get_core_capacity();
-  //const size_t core_capacity = 1;
-
-  const size_t gang_count = core_topo.first ;
-  const size_t gang_worker_count = core_topo.second * core_capacity;
+  const size_t team_count =
+    Kokkos::hwloc::get_available_numa_count() *
+    Kokkos::hwloc::get_available_cores_per_numa();
+  const size_t threads_per_team =
+    Kokkos::hwloc::get_available_threads_per_core();
 
 #if defined(HAVE_STOKHOS_OPENMP) && defined(HAVE_STOKHOS_MKL)
   // Call a little OpenMP parallel region so that MKL will get the right
@@ -163,12 +181,11 @@ int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
   }
 #endif
 
-  Kokkos::Threads::initialize( std::make_pair(gang_count , gang_worker_count),
-                               core_topo );
+  Kokkos::Threads::initialize( team_count , threads_per_team );
   Kokkos::Threads::print_configuration( std::cout );
 
   std::cout << std::endl << "\"Host Performance with "
-            << gang_count * gang_worker_count << " threads\"" << std::endl ;
+            << team_count * threads_per_team << " threads\"" << std::endl ;
 
   unit_test::performance_test_driver<Scalar,Kokkos::Threads>::run(
     test_flat, test_orig, test_deg, test_lin, test_block, symmetric, mkl);

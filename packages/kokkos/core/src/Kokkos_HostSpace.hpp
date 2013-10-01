@@ -50,7 +50,7 @@
 
 #include <Kokkos_Macros.hpp>
 #include <Kokkos_MemoryTraits.hpp>
-#include <impl/Kokkos_ArrayTraits.hpp>
+#include <impl/Kokkos_Traits.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -60,8 +60,6 @@ namespace Kokkos {
 
 class HostSpace {
 public:
-
-  enum { WORK_ALIGNMENT   =  8 };
 
   typedef HostSpace  memory_space ;
   typedef size_t     size_type ;

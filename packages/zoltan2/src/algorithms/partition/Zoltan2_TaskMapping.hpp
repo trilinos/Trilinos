@@ -876,7 +876,8 @@ public:
         int myProcPerm=  myPermutation % procPerm; // the index of the proc permutation
         int myTaskPerm  = myPermutation / procPerm; // the index of the task permutation
 
-        int *permutation = allocMemory<int> (taskPerm);
+        int *permutation = allocMemory<int> ((this->proc_coord_dim > this->task_coord_dim) 
+                                                   ? this->proc_coord_dim : this->task_coord_dim);
 
         //get the permutation order from the proc permutation index.
         ithPermutation<int>(this->proc_coord_dim, myProcPerm, permutation);
@@ -1336,8 +1337,8 @@ public:
     /*! \brief Constructor
      * Constructor called for fortran interface.
      *  \param envConst_ is the environment object.
-     *  \param task_communication_xadj_ is the solution object. Holds the assignment of points.
-     *  \param task_communication_adj_ is the environment object.
+     *  \param task_communication_xadj_
+     *  \param task_communication_adj_
      */
     CoordinateTaskMapper(
             const Teuchos::Comm<int> *comm_,
@@ -1549,8 +1550,7 @@ public:
         globalCost[1] = globalCost[0] = std::numeric_limits<double>::max();
         Teuchos::Zoltan2_ReduceBestMapping<int,double> reduceBest;
         reduceAll<int, double>(*subComm, reduceBest,
-                2, localCost, globalCost
-        );
+                2, localCost, globalCost);
 
         int sender = int(globalCost[1]);
 
@@ -1927,6 +1927,7 @@ pcoord_t **shiftMachineCoordinates(int machine_dim, procId_t *machine_dimensions
             //cout << "I:" << i << "j:" << j << " coord:" << coords[j] << " now:" << result_machine_coords[i][j] << endl;
         }
         delete [] machineCounts;
+        delete [] filledCoordinates;
     }
 
     return result_machine_coords;
@@ -1962,7 +1963,7 @@ void coordinateTaskMapperInterface(
     //cout << "numProcessors:" << numProcessors << endl;
     //cout << "task_communication_xadj_[numProcessors]:" << task_communication_xadj_[numProcessors - 1] << endl;
     Teuchos::ArrayRCP<procId_t> task_communication_xadj (task_communication_xadj_, 0, numProcessors, false);
-    Teuchos::ArrayRCP<procId_t> task_communication_adj (task_communication_adj_, 0, task_communication_xadj_[numProcessors -1], false);
+    Teuchos::ArrayRCP<procId_t> task_communication_adj (task_communication_adj_, 0, task_communication_xadj_[numProcessors -1 /* KDDKDD OK for MEHMET's ODD LAYOUT; WRONG FOR TRADITIONAL */], false);
     /*
     int machine_dimensions[3];
     machine_dimensions[0] = 17;

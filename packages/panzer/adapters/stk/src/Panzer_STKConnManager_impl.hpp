@@ -77,7 +77,7 @@ private:
 
 template <typename GO>
 STKConnManager<GO>::STKConnManager(const Teuchos::RCP<STK_Interface> & stkMeshDB)
-   : stkMeshDB_(stkMeshDB)
+   : stkMeshDB_(stkMeshDB), ownedElementCount_(0)
 {
 }
 
@@ -105,8 +105,8 @@ void STKConnManager<GO>::buildLocalElementMapping()
    stkMeshDB_->getElementBlockNames(blockIds);
 
    std::size_t blockIndex=0;
-   std::vector<std::string>::const_iterator idItr;
-   for(idItr=blockIds.begin();idItr!=blockIds.end();++idItr,++blockIndex) {
+   for(std::vector<std::string>::const_iterator idItr=blockIds.begin();
+       idItr!=blockIds.end();++idItr,++blockIndex) {
       std::string blockId = *idItr;
 
       // grab elements on this block
@@ -120,6 +120,26 @@ void STKConnManager<GO>::buildLocalElementMapping()
       elementBlocks_[blockId] = Teuchos::rcp(new std::vector<LocalOrdinal>);
       for(std::size_t i=0;i<blockElmts.size();i++)
          elementBlocks_[blockId]->push_back(stkMeshDB_->elementLocalId(blockElmts[i]));
+   }
+
+   ownedElementCount_ = elements_->size(); 
+
+   blockIndex=0;
+   for(std::vector<std::string>::const_iterator idItr=blockIds.begin();
+       idItr!=blockIds.end();++idItr,++blockIndex) {
+      std::string blockId = *idItr;
+
+      // grab elements on this block
+      std::vector<stk::mesh::Entity*> blockElmts;
+      stkMeshDB_->getNeighborElements(blockId,blockElmts); 
+
+      // concatenate them into element LID lookup table
+      elements_->insert(elements_->end(),blockElmts.begin(),blockElmts.end());
+
+      // build block to LID map
+      neighborElementBlocks_[blockId] = Teuchos::rcp(new std::vector<LocalOrdinal>);
+      for(std::size_t i=0;i<blockElmts.size();i++)
+         neighborElementBlocks_[blockId]->push_back(stkMeshDB_->elementLocalId(blockElmts[i]));
    }
 
    // this expensive operation gurantees ordering of local IDs

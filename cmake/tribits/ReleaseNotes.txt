@@ -4,6 +4,14 @@ Release Notes for TriBITS
 ----------------------------------------
 
 
+Trilinos 11.6:
+--------------
+
+(*) Changed behavior of <Project>_ENABLE_<PACKAGE>=ON to enable all
+subpackages for that package including in propogating forward dependencies.
+See updated <Project>BuildQuickRef.* document.
+
+
 Trilinos 11.3:
 --------------
 

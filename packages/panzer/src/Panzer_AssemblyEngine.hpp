@@ -49,6 +49,7 @@
 #include "Panzer_BC.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_LinearObjFactory.hpp"
+#include "Panzer_LinearObjContainer.hpp"
 
 namespace panzer {
   class FieldManagerBuilder;
@@ -69,8 +70,18 @@ namespace panzer {
     void evaluate(const panzer::AssemblyEngineInArgs& input_arguments);
 
     void evaluateVolume(const panzer::AssemblyEngineInArgs& input_arguments);
+
+    /** This method returns the global counter used to indicate which rows are boundary conditions.
+      * Note that this method does all the communication neccessary to evaluate the dirichlet boundary
+      * conditions. The dirichlet values are set in the global "F" vector, and the count values are
+      * in the return linear obj containers "X" vector.
+      */
+    Teuchos::RCP<LinearObjContainer> evaluateOnlyDirichletBCs(const panzer::AssemblyEngineInArgs& input_arguments);
+
     void evaluateNeumannBCs(const panzer::AssemblyEngineInArgs& input_arguments);
-    void evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& input_arguments);
+
+    //! This method returns the global counter used to indicate which rows are boundary conditions
+    Teuchos::RCP<LinearObjContainer> evaluateDirichletBCs(const panzer::AssemblyEngineInArgs& input_arguments);
 
     Teuchos::RCP<panzer::FieldManagerBuilder> getManagerBuilder()
     { return m_field_manager_builder; }

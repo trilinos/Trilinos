@@ -186,6 +186,16 @@ a) Configuring a package(s) along with all of the packages it can use::
   only be turned on for <TRIBITS_PACKAGE> (or any other packages specifically
   enabled).
 
+  NOTE: If a TriBITS package <TRIBITS_PACKAGE> has subpackages (e.g. <A>, <B>,
+  etc.), then enabling the package is equivalent to typing::
+
+       -D <Project>_ENABLE_<TRIBITS_PACKAGE><A>:BOOL=ON \
+       -D <Project>_ENABLE_<TRIBITS_PACKAGE><B>:BOOL=ON \
+       ...
+
+  However, a TriBITS subpackage will only be enabled if it is not disabled
+  either explicitly or implicitly.
+
 b) Configuring <Project> to test all effects of changing a given package(s)::
 
     $ ./do-configure \
@@ -223,17 +233,23 @@ d) Disable a package and all its dependencies::
          -D <Project>_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
          -D <Project>_ENABLE_<PACKAGE_B>:BOOL=OFF
 
-   Above, this will enable <PACKAGE_A> and all of the packages that it
-   depends on except for <PACKAGE_B> and all of its forward dependencies.
-   For example, if you run::
+  Above, this will enable <PACKAGE_A> and all of the packages that it
+  depends on except for <PACKAGE_B> and all of its forward dependencies.
 
-     $ ./do-configure \
-        -D <Project>_ENABLE_Thyra:BOOL=ON \
-        -D <Project>_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
-        -D <Project>_ENABLE_Epetra:BOOL=OFF
+  NOTE: If a TriBITS package <TRIBITS_PACKAGE> has subpackages (e.g. <A>, <B>,
+  etc.), then disabling the package is equivalent to typing::
 
-   The packages Thyra, RTOp, and Teuchos will be enabled, but the packages
-   Epetra, EpetraExt will be disabled.
+       -D <Project>_ENABLE_<TRIBITS_PACKAGE><A>:BOOL=OFF \
+       -D <Project>_ENABLE_<TRIBITS_PACKAGE><B>:BOOL=OFF \
+       ...
+
+  The disable of the subpackage is this case will override any enables.
+
+  NOTE: If a disabled package is a required dependency of some explicitly
+  enabled downstream package, then the configure will error out if
+  <Project>_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=OFF.  Otherwise, a WARNING
+  will be printed and the downstream package will be disabled and
+  configuration will continue.
 
 e) Removing all package enables in the Cache
 
@@ -642,7 +658,7 @@ cmake version 2.8.5 or higher.  The variable will be ignored in prior releases
 of cmake.
 
 
-Enabling support for optional Third-Party Libraries (TPLs)
+Enabling support for an optional Third-Party Library (TPL)
 ----------------------------------------------------------
 
 To enable a given TPL, set::
@@ -714,6 +730,20 @@ WARNING: Do *not* try to hack the system and set::
 
 This is not compatible with proper CMake usage and it not guaranteed
 to be supported.
+
+
+Disabling support for a Third-Party Library (TPL)
+--------------------------------------------------
+
+Disabling a TPL explicitly can be done using::
+
+  -D TPL_ENABLE_<TPLNAME>:BOOL=OFF
+
+NOTE: If a disabled TPL is a required dependency of some explicitly enabled
+downstream package, then the configure will error out if
+<Project>_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=OFF.  Otherwise, a WARNING will
+be printed and the downstream package will be disabled and configuration will
+continue.
 
 
 Disabling tentatively enabled TPLs
@@ -814,15 +844,38 @@ This will override the global behavior set by
 ``<TRIBITS_PACKAGE>``.
 
 
-Disable update of package dependency information
-------------------------------------------------
+Outputting package dependency information
+-----------------------------------------
 
-To turn off the update/generation of the various XML and HTML package
-dependency files (and speed up configuration), use the configure option::
+To generate the various XML and HTML package dependency files, one can set the
+output directory when configuring using::
 
-  -D <Project>_DEPS_XML_OUTPUT_FILE:FILEPATH=
+  -D <Project>_DEPS_DEFAULT_OUTPUT_DIR:FILEPATH=<SOME_PATH>
 
-NOTE: One must start with a clean CMake cache for this to work.
+This will generate, by default, the output files
+<Project>PackageDependencies.xml, <Project>PackageDependenciesTable.html, and
+CDashSubprojectDependencies.xml.
+
+The filepath for <Project>PackageDependencies.xml can be overridden using::
+
+  -D <Project>_DEPS_XML_OUTPUT_FILE:FILEPATH=<SOME_FILE_PATH>
+
+The filepath for <Project>PackageDependenciesTable.html can be overridden
+using::
+
+  -D <Project>_DEPS_HTML_OUTPUT_FILE:FILEPATH=<SOME_FILE_PATH>
+
+The filepath for CDashSubprojectDependencies.xml can be overridden using::
+
+  -D <Project>_CDASH_DEPS_XML_OUTPUT_FILE:FILEPATH=<SOME_FILE_PATH>
+
+NOTES:
+
+* One must start with a clean CMake cache for all of these defaults to work.
+
+* The files <Project>PackageDependenciesTable.html and
+  CDashSubprojectDependencies.xml will only get generated if support for
+  Python is enabled.
 
 
 Enabling different test categories
@@ -992,6 +1045,20 @@ the time is being spent.
 NOTE: This requires that you are running on a Linux/Unix system that has the
 stanard command 'date'.  CMake does not have built-in timing functions so you
 have to query the system.
+
+
+Generating a project repo version file
+--------------------------------------
+
+In development mode working with local git repos for the project sources, on
+can generate a <Project>RepoVersion.txt file which lists all of the repos and
+their current versions using::
+
+   -D <PROJECT>_GENERATE_REPO_VERSION_FILE:BOOL=ON
+
+This will cause a <Project>RepoVersion.txt file to get created in the binary
+directory, get installed in the install directory, and get included in the
+soruce distribution tarball.
 
 
 Building (Makefile generator)
@@ -1245,19 +1312,26 @@ CPack.
 Creating a tarball of the source tree
 -------------------------------------
 
-To create a source tarball of the project, use::
+To create a source tarball of the project, first configure with the list of
+desired packages and configure with::
 
- $ make package_source
+  -D <Project>_ENABLE_CPACK_PACKAGING:BOOL=ON
+
+see `Selecting the list of packages to enable`_), then generate the
+distribution files using::
+
+  $ make package_source
 
 The above command will tar up *everything* in the source tree (except for
-files explicitly excluded in the CMakeLists.txt files) so make sure that you
-start with a totally clean source tree before you do this.  You can also
-include generated files, such as Doxygen output files first, then run ``make
-package_source`` and it will be included in the distribution.
+files explicitly excluded in the CMakeLists.txt files and packages that are
+not enabled) so make sure that you start with a totally clean source tree
+before you do this.  You can clean the source tree first to remove all ignored
+files using::
 
-Note to developers: You can control what gets put into the tarball by setting
-the cache variable ``CPACK_SOURCE_IGNORE_FILES`` when configuring with CMake.
-This variable is set internally the <Project> CMakeLists.txt files.
+  $ git clean -fd -x
+
+You can also include generated files, such as Doxygen output files first, then
+run ``make package_source`` and it will be included in the distribution.
 
 
 Dashboard submissions

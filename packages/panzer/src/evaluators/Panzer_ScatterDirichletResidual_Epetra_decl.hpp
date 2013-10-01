@@ -138,6 +138,12 @@ private:
 
   std::string globalDataKey_; // what global data does this fill?
   Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer_;
+
+  //! If set to true, allows runtime disabling of dirichlet BCs on node-by-node basis
+  bool checkApplyBC_;
+
+  // Allows runtime disabling of dirichlet BCs on node-by-node basis
+  std::vector< PHX::MDField<bool,Cell,NODE> > applyBC_;
 };
 
 // **************************************************************
@@ -199,6 +205,12 @@ private:
 
   std::string globalDataKey_; // what global data does this fill?
   Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer_;
+
+  //! If set to true, allows runtime disabling of dirichlet BCs on node-by-node basis
+  bool checkApplyBC_;
+
+  // Allows runtime disabling of dirichlet BCs on node-by-node basis
+  std::vector< PHX::MDField<bool,Cell,NODE> > applyBC_;
 };
 
 // **************************************************************
@@ -260,6 +272,12 @@ private:
   Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer_;
 
   bool preserveDiagonal_;
+
+  //! If set to true, allows runtime disabling of dirichlet BCs on node-by-node basis
+  bool checkApplyBC_;
+
+  // Allows runtime disabling of dirichlet BCs on node-by-node basis
+  std::vector< PHX::MDField<bool,Cell,NODE> > applyBC_;
 
   ScatterDirichletResidual_Epetra();
 };

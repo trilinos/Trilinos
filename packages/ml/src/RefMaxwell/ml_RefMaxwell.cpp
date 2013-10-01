@@ -146,6 +146,8 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   else if (vb_level >= 5) {very_verbose_=false;verbose_=true;}
   else very_verbose_=verbose_=false;
   aggregate_with_sigma= List_.get("refmaxwell: aggregate with sigma",false);  
+  bool disable_addon = List_.get("refmaxwell: disable addon",true);
+
   
   /* Nuke everything if we've done this already */
   if(IsComputePreconditionerOK_) DestroyPreconditioner();
@@ -188,7 +190,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
 
   /* EXPERIMENTAL - Lump M1, if requested */
   lump_m1 = List_.get("refmaxwell: lump m1",false);
-  if(lump_m1){
+  if(!disable_addon && lump_m1){
     Epetra_Vector mvec1(*RangeMap_,false), mvec2(*RangeMap_,false);
     mvec1.PutScalar(1.0);
     M1_Matrix_->Multiply(false,mvec1,mvec2);
@@ -228,11 +230,12 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
 #endif
   
   /* Boundary nuke the edge matrices */
+  if(!disable_addon) {
 #ifdef ENABLE_MS_MATRIX
-  Apply_OAZToMatrix(BCrows,numBCrows,*Ms_Matrix_);
+    Apply_OAZToMatrix(BCrows,numBCrows,*Ms_Matrix_);
 #endif
-  Apply_OAZToMatrix(BCrows,numBCrows,*M1_Matrix_);    
-
+    Apply_OAZToMatrix(BCrows,numBCrows,*M1_Matrix_);    
+  }
 
   /* DEBUG: Output matrices */
   if(print_hierarchy == -1 || print_hierarchy == 0){
@@ -258,11 +261,13 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   SM_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*SM_Matrix_,SM_Matrix_Trans_,"SM",(verbose_&&!Comm_->MyPID())));
   D0_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*D0_Matrix_,D0_Matrix_Trans_,"D0",(verbose_&&!Comm_->MyPID())));
   D0_Clean_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*D0_Clean_Matrix_,D0_Clean_Matrix_Trans_,"D0Clean",(verbose_&&!Comm_->MyPID())));
+  if(!disable_addon) {
 #ifdef ENABLE_MS_MATRIX
-  if(Ms_Matrix_!= M1_Matrix_) Ms_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*Ms_Matrix_,Ms_Matrix_Trans_,"Ms",(verbose_&&!Comm_->MyPID())));
+    if(Ms_Matrix_!= M1_Matrix_) Ms_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*Ms_Matrix_,Ms_Matrix_Trans_,"Ms",(verbose_&&!Comm_->MyPID())));
 #endif
-  M1_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*M1_Matrix_,M1_Matrix_Trans_,"M1",(verbose_&&!Comm_->MyPID())));
-  M0inv_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*M0inv_Matrix_,M0inv_Matrix_Trans_,"M0inv",(verbose_&&!Comm_->MyPID())));
+    M1_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*M1_Matrix_,M1_Matrix_Trans_,"M1",(verbose_&&!Comm_->MyPID())));
+    M0inv_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*M0inv_Matrix_,M0inv_Matrix_Trans_,"M0inv",(verbose_&&!Comm_->MyPID())));
+  }
   if(TMT_Matrix_) TMT_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*TMT_Matrix_,TMT_Matrix_Trans_,"TMT",(verbose_&&!Comm_->MyPID()))); 
   TMT_Agg_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*TMT_Agg_Matrix_,TMT_Agg_Matrix_Trans_,"TMTA",(verbose_&&!Comm_->MyPID())));
 #endif
@@ -272,7 +277,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
 #endif
   
   /* Build the (1,1) Block Operator, if needed */
-  if(List_.get("refmaxwell: disable addon",true))
+  if(disable_addon) 
     Operator11_=rcp((Epetra_CrsMatrix*)SM_Matrix_,false);
   else
     Operator11_=rcp(new ML_RefMaxwell_11_Operator(*SM_Matrix_,*D0_Matrix_,*M0inv_Matrix_,*M1_Matrix_));
@@ -367,6 +372,18 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
 }/*end ComputePreconditioner*/
 
 
+// ================================================ ====== ==== ==== == = 
+// Return operator complexity and #nonzeros in fine grid matrix.
+void ML_Epetra::RefMaxwellPreconditioner::Complexities(double &complexity, double &fineNnz) {
+  double e_cplex=0.0, e_nnz=0.0, n_cplex=0.0, n_nnz=0.0;
+
+  complexity=1.0; fineNnz=SM_Matrix_->NumGlobalNonzeros();
+
+  if(EdgePC) EdgePC->Complexities(e_cplex,e_nnz);
+  if(NodePC) NodePC->Complexities(n_cplex,n_nnz);
+
+  complexity= 1.0 + (e_cplex*e_nnz + n_cplex * n_nnz) / fineNnz;
+}
 
 
 // ================================================ ====== ==== ==== == = 

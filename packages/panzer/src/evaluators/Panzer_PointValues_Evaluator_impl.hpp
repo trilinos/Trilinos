@@ -53,13 +53,14 @@ namespace panzer {
 //**********************************************************************
 PHX_EVALUATOR_CTOR(PointValues_Evaluator,p)
 {
+  basis_index = 0;
 
   Teuchos::RCP<const panzer::PointRule> pointRule 
      = p.get< Teuchos::RCP<const panzer::PointRule> >("Point Rule");
   Teuchos::RCP<const Intrepid::FieldContainer<double> > userArray
      = p.get<Teuchos::RCP<const Intrepid::FieldContainer<double> > >("Point Array");
 
-  initialize(pointRule,*userArray);
+  initialize(pointRule,userArray.ptr(),Teuchos::null);
 }
 
 //**********************************************************************
@@ -67,23 +68,48 @@ template <typename EvalT, typename TraitsT>
 PointValues_Evaluator<EvalT,TraitsT>::PointValues_Evaluator(const Teuchos::RCP<const panzer::PointRule> & pointRule,
                                                             const Intrepid::FieldContainer<double> & userArray)
 {
-  initialize(pointRule,userArray);
+  basis_index = 0;
+
+  initialize(pointRule,Teuchos::ptrFromRef(userArray),Teuchos::null);
+}
+
+//**********************************************************************
+template <typename EvalT, typename TraitsT>
+PointValues_Evaluator<EvalT,TraitsT>::PointValues_Evaluator(const Teuchos::RCP<const panzer::PointRule> & pointRule,
+                                                            const Teuchos::RCP<const panzer::PureBasis> & pureBasis)
+{
+  basis_index = 0;
+
+  initialize(pointRule,Teuchos::null,pureBasis);
 }
 
 //**********************************************************************
 template <typename EvalT, typename TraitsT>
 void PointValues_Evaluator<EvalT,TraitsT>::initialize(const Teuchos::RCP<const panzer::PointRule> & pointRule,
-                                                      const Intrepid::FieldContainer<double> & userArray)
+                                                      const Teuchos::Ptr<const Intrepid::FieldContainer<double> > & userArray,
+                                                      const Teuchos::RCP<const panzer::PureBasis> & pureBasis)
 {
-  TEUCHOS_ASSERT(userArray.rank()==2);
+  basis = pureBasis;
+
+  if(userArray!=Teuchos::null && basis==Teuchos::null) 
+    useBasisValuesRefArray = false;
+  else if(userArray==Teuchos::null && basis!=Teuchos::null) 
+    useBasisValuesRefArray = true;
+  else {
+    // this is a conflicting request, throw an exception
+    TEUCHOS_ASSERT(false);
+  }
 
   panzer::MDFieldArrayFactory af(pointRule->getName()+"_");
        
   // copy user array data
-  refPointArray = Intrepid::FieldContainer<double>(userArray.dimension(0),userArray.dimension(1));
-  TEUCHOS_ASSERT(refPointArray.size()==userArray.size());
-  for(int i=0;i<userArray.size();i++)
-     refPointArray[i] = userArray[i]; 
+  if(userArray!=Teuchos::null) {
+    TEUCHOS_ASSERT(userArray->rank()==2);
+    refPointArray = Intrepid::FieldContainer<double>(userArray->dimension(0),userArray->dimension(1));
+    TEUCHOS_ASSERT(refPointArray.size()==userArray->size());
+    for(int i=0;i<userArray->size();i++)
+       refPointArray[i] = (*userArray)[i]; 
+  }
 
   // setup all fields to be evaluated and constructed
   pointValues.setupArrays(pointRule,af);
@@ -110,13 +136,24 @@ PHX_POST_REGISTRATION_SETUP(PointValues_Evaluator,sd,fm)
   this->utils.setFieldData(pointValues.jac_inv,fm);
   this->utils.setFieldData(pointValues.jac_det,fm);
   this->utils.setFieldData(pointValues.point_coords,fm);
+
+  if(useBasisValuesRefArray)
+    basis_index = panzer::getPureBasisIndex(basis->name(), (*sd.worksets_)[0]);
 }
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(PointValues_Evaluator,workset)
 { 
-  // evaluate the point values (construct jacobians etc...)
-  pointValues.evaluateValues(workset.cell_vertex_coordinates,refPointArray);
+  if(useBasisValuesRefArray) {
+    panzer::BasisValues<double,Intrepid::FieldContainer<double> > & basisValues = *workset.bases[basis_index];
+
+    // evaluate the point values (construct jacobians etc...)
+    pointValues.evaluateValues(workset.cell_vertex_coordinates,basisValues.basis_coordinates_ref);
+  }
+  else {
+    // evaluate the point values (construct jacobians etc...)
+    pointValues.evaluateValues(workset.cell_vertex_coordinates,refPointArray);
+  }
 }
 
 //**********************************************************************

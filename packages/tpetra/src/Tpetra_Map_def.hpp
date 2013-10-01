@@ -1115,7 +1115,7 @@ namespace Tpetra {
     // Only create the Directory if it hasn't been created yet.
     // This is a collective operation.
     if (directory_.is_null ()) {
-      directory_ = rcp (new directory_type (rcp (this, false)));
+      directory_ = rcp (new directory_type (*this));
     }
   }
 
@@ -1132,7 +1132,7 @@ namespace Tpetra {
     // creation is collective too, so it's OK to create the Directory
     // on demand.
     setupDirectory ();
-    return directory_->getDirectoryEntries (GIDList, imageIDList, LIDList);
+    return directory_->getDirectoryEntries (*this, GIDList, imageIDList, LIDList);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1147,7 +1147,7 @@ namespace Tpetra {
     // creation is collective too, so it's OK to create the Directory
     // on demand.
     setupDirectory ();
-    return directory_->getDirectoryEntries (GIDList, imageIDList);
+    return directory_->getDirectoryEntries (*this, GIDList, imageIDList);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1327,14 +1327,14 @@ Tpetra::createOneToOne (Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdina
   // FIXME (mfh 20 Feb 2013) We should have a bypass for contiguous
   // Maps (which are 1-to-1 by construction).
 
-  //Based off Epetra's one to one.
+  //Based on Epetra's one to one.
 
-  Tpetra::Directory<LO, GO, Node> directory (M);
+  Tpetra::Directory<LO, GO, Node> directory (*M);
   size_t numMyElems = M->getNodeNumElements ();
   ArrayView<const GO> myElems = M->getNodeElementList ();
   Array<int> owner_procs_vec (numMyElems);
 
-  directory.getDirectoryEntries (myElems, owner_procs_vec ());
+  directory.getDirectoryEntries (*M, myElems, owner_procs_vec ());
 
   Array<GO> myOwned_vec (numMyElems);
   size_t numMyOwnedElems = 0;
@@ -1372,12 +1372,12 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,Global
 
   //Based off Epetra's one to one.
 
-  Tpetra::Directory<LO, GO, Node> directory (M, tie_break);
+  Tpetra::Directory<LO, GO, Node> directory (*M, tie_break);
   size_t numMyElems = M->getNodeNumElements ();
   ArrayView<const GO> myElems = M->getNodeElementList ();
   Array<int> owner_procs_vec (numMyElems);
 
-  directory.getDirectoryEntries (myElems, owner_procs_vec ());
+  directory.getDirectoryEntries (*M, myElems, owner_procs_vec ());
 
   Array<GO> myOwned_vec (numMyElems);
   size_t numMyOwnedElems = 0;

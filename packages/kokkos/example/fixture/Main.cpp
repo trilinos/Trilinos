@@ -2,9 +2,14 @@
 #include <utility>
 #include <iostream>
 
-#include <Kokkos_Threads.hpp>
-#include <Kokkos_Cuda.hpp>
+#include <KokkosCore_config.h>
+
 #include <BoxElemPart.hpp>
+
+#include <Kokkos_Threads.hpp>
+#if defined( KOKKOS_HAVE_CUDA )
+#include <Kokkos_Cuda.hpp>
+#endif
 
 namespace Kokkos {
 namespace Example {
@@ -207,7 +212,7 @@ int main()
 //  test_elem();
   {
     std::cout << "test_fixture< Threads >" << std::endl ;
-    Kokkos::Threads::initialize( std::pair<unsigned,unsigned>( 1 , 1 ) );
+    Kokkos::Threads::initialize( 1 , 1 );
     Kokkos::Example::test_fixture< Kokkos::Threads >();
     Kokkos::Threads::finalize();
   }

@@ -55,17 +55,17 @@ namespace Rythmos {
  *
  * <ul>
  *
- * <li><b>Order</b>: The degree of polynomical that can be represented exactly
+ * <li><b>Order</b>: The degree of polynomial that can be represented exactly
  * by the buffer interface.  For example, a second-order
  * (i.e. <tt>order==2</tt>) interpolation buffer can exactly represent any
- * polynomical up to degree two.
+ * polynomial up to degree two.
  *
  * </ul>
  *
  * ToDo: Finish documentation!
  */
-template<class Scalar> 
-class InterpolationBufferBase 
+template<class Scalar>
+class InterpolationBufferBase
   : virtual public Teuchos::Describable
   , virtual public Teuchos::ParameterListAcceptor
   , virtual public Teuchos::VerboseObject<InterpolationBufferBase<Scalar> >
@@ -81,7 +81,7 @@ public:
    * for instance and is also useful for writing unit testing software.
    *
    * Also note that this space may not be the same as the space returned from
-   * <tt>StepperBase::getModel()->get_x_sapce()</tt> in some concrete
+   * <tt>StepperBase::getModel()->get_x_space()</tt> in some concrete
    * <tt>StepperBase</tt> subclasses.
    */
   virtual RCP<const Thyra::VectorSpaceBase<Scalar> >
@@ -151,7 +151,7 @@ public:
    * A return value of <tt>returnVal.isValid()==false</tt> means that there is
    * no time range for which interpolation can be performed.  Otherwise,
    * <tt>returnVal</tt> gives the time range for which state information can
-   * be returned. 
+   * be returned.
    */
   virtual TimeRange<Scalar> getTimeRange() const = 0;
 
@@ -216,12 +216,12 @@ public:
    */
   // 11/24/08 tscoffe:  Proposal:  get rid of "getNodes" in abstract base interface
   virtual void getNodes(Array<Scalar>* time_vec) const = 0;
-  
+
   /** \brief Remove nodes from the interpolation buffer.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>time_vec</tt> must have unique and sorted values in ascending order
-   * <li><tt>range.isInRange(time_vec[i])</tt>, for 
+   * <li><tt>range.isInRange(time_vec[i])</tt>, for
    *     <tt>i=0..n-1</tt>, where <tt>range = this->getTimeRange()</tt>.
    * <li>Each <tt>time_vec[i]</tt> must equal a node in the interpolation buffer.
    * </ul>
@@ -265,7 +265,7 @@ get_x( const InterpolationBufferBase<Scalar> &interpBuffer, const Scalar &t )
  * template<class Scalar>
  * void get_x( const InterpolationBufferBase<Scalar> &interpBuffer, const Scalar &t, const Ptr<Thyra::VectorBase<Scalar> >& x_out )
  * This will copy data into your vector and it won't be responsible for allocating new memory
- */ 
+ */
 
 
 /** \brief Get a single point <tt>xdot(t)</tt> from an interpolation buffer.
@@ -289,13 +289,13 @@ get_xdot( const InterpolationBufferBase<Scalar> &interpBuffer, const Scalar &t )
  * template<class Scalar>
  * void get_xdot( const InterpolationBufferBase<Scalar> &interpBuffer, const Scalar &t, const Ptr<Thyra::VectorBase<Scalar> >& xdot_out )
  * This will copy data into your vector and it won't be responsible for allocating new memory
- */ 
+ */
 
 /** \brief Nonmember helper function to get x and x_dot at t.
  *
  * \relates InterpolationBufferBase
  */
-template<class Scalar> 
+template<class Scalar>
 void get_x_and_x_dot(
   const InterpolationBufferBase<Scalar> &interpBuffer,
   const Scalar t,
@@ -318,7 +318,7 @@ void get_x_and_x_dot(
 }
 
 /** \brief Deprecated. */
-template<class Scalar> 
+template<class Scalar>
 void get_x_and_x_dot(
   const InterpolationBufferBase<Scalar> &interpBuffer,
   const Scalar t,
@@ -331,12 +331,12 @@ void get_x_and_x_dot(
 
 /* 11/24/08 tscoffe:  Proposed new get_x_and_xdot function:
  * template<class Scalar>
- * void get_x_and_xdot( const InterpolationBufferBase<Scalar> &interpBuffer, 
- *   const Scalar &t, 
- *   const Ptr<Thyra::VectorBase<Scalar> >& x_out, 
+ * void get_x_and_xdot( const InterpolationBufferBase<Scalar> &interpBuffer,
+ *   const Scalar &t,
+ *   const Ptr<Thyra::VectorBase<Scalar> >& x_out,
  *   const Ptr<Thyra::VectorBase<Scalar> >& xdot_out )
  * This will copy data into your vector and it won't be responsible for allocating new memory
- */ 
+ */
 
 } // namespace Rythmos
 

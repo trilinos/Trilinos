@@ -1,4 +1,5 @@
-/*@HEADER
+/*
+@HEADER
 // ***********************************************************************
 //
 //       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
@@ -40,24 +41,25 @@
 //@HEADER
 */
 
+/// \file Ifpack2_Chebyshev_decl.hpp
+/// \brief Declaration of Chebyshev interface
+///
+/// This file declares the user-facing interface.
+/// Ifpack2_Details_Chebyshev_decl.hpp declares the
+/// <i>implementation</i> of this interface.
+
 #ifndef IFPACK2_CHEBYSHEV_DECL_HPP
 #define IFPACK2_CHEBYSHEV_DECL_HPP
 
-/// \file Ifpack2_Chebyshev_decl.hpp
-/// \brief Chebyshev iteration
-
-#include "Ifpack2_ConfigDefs.hpp"
-#include "Ifpack2_Preconditioner.hpp"
-#include "Ifpack2_Condest.hpp"
-#include "Ifpack2_Parameters.hpp"
-#include "Ifpack2_Details_Chebyshev_decl.hpp"
-#include "Ifpack2_Details_Chebyshev_def.hpp"
+#include <Ifpack2_ConfigDefs.hpp>
+#include <Ifpack2_Preconditioner.hpp>
+#include <Ifpack2_Condest.hpp>
+#include <Ifpack2_Parameters.hpp>
+#include <Ifpack2_Details_Chebyshev_decl.hpp>
+#include <Ifpack2_Details_Chebyshev_def.hpp>
 
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_Vector.hpp>
 
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_Time.hpp>
 
 #include <iostream>
@@ -259,9 +261,6 @@ public:
   /// diagonal entries of the matrix, use a pointer to an object of
   /// this type.
   typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vector_type;
-
-  template <class new_matrix_type> friend class Chebyshev;
-
 
   //@}
   // \name Constructors and destructors
@@ -489,14 +488,45 @@ public:
   /// has changed, if you have called setParameters(), or if you have
   /// not yet called compute().  This method only tells you if
   /// compute() has been called at least once, not if you need to call
-  /// compute().
+  /// compute().  Ifpack2 doesn't have an efficient way to tell if the
+  /// matrix has changed, so we ask users to tell Ifpack2 if the
+  /// matrix has changed.
   inline bool isComputed() const {
     return IsComputed_;
   }
 
-  //! Clone preconditioner to a new node type
-  template <typename new_matrix_type> Teuchos::RCP< Chebyshev< new_matrix_type > > clone(const Teuchos::RCP<const new_matrix_type>& A_newnode, const Teuchos::ParameterList& params) const;
-  //
+  // This "template friend" declaration lets any Chebyshev
+  // specialization be a friend of any of its other specializations.
+  // That makes clone() easier to implement.
+  template <class NewMatrixType> friend class Chebyshev;
+
+  /// \brief Clone this object to one with a different Kokkos Node type.
+  ///
+  /// \tparam NewMatrixType The template parameter of the new
+  ///   preconditioner to return; a specialization of
+  ///   Tpetra::RowMatrix or Tpetra::CrsMatrix.  The intent is that
+  ///   this type differ from \c MatrixType only in its fourth Node
+  ///   template parameter, and/or its fifth \c LocalMatOps template
+  ///   parameter.  However, this is not strictly required.
+  ///
+  /// \param A_newnode [in] The matrix, with the new Kokkos Node type.
+  ///   This would generally be the result of cloning (calling
+  ///   <tt>Tpetra::CrsMatrix::clone()</tt> on) the original input
+  ///   matrix A, though the implementation does not require this.
+  ///
+  /// \param params [in/out] Parameters for the new preconditioner.
+  ///
+  /// \pre If \c A_newnode is a Tpetra::CrsMatrix, it must be fill
+  ///   complete.
+  ///
+  /// \post <tt>P->isInitialized() && P->isComputed()</tt>, where \c P
+  ///   is the returned object.  That is, P's apply() method is ready
+  ///   to be called; P is ready for use as a preconditioner.  This is
+  ///   true regardless of the current state of <tt>*this</tt>.
+  template <typename NewMatrixType> 
+  Teuchos::RCP<Chebyshev<NewMatrixType> > 
+  clone (const Teuchos::RCP<const NewMatrixType>& A_newnode, 
+	 const Teuchos::ParameterList& params) const;
 
   //@}
   //! @name Implementation of Tpetra::Operator
@@ -737,19 +767,25 @@ private:
   //@}
 }; // class Chebyshev
 
-template <class MatrixType>
-template <typename new_matrix_type>
-Teuchos::RCP< Chebyshev< new_matrix_type > >
-Chebyshev<MatrixType>::clone(const Teuchos::RCP< const new_matrix_type>& A_newnode,const Teuchos::ParameterList& params) const{
-    Teuchos::RCP<Ifpack2::Chebyshev<new_matrix_type> > prec = Teuchos::rcp( new Ifpack2::Chebyshev<new_matrix_type> (A_newnode));
-    prec->setParameters(params);
-    prec->initialize();
-    prec->compute();
-    return prec;
+
+template <typename MatrixType>
+template <typename NewMatrixType>
+Teuchos::RCP<Chebyshev<NewMatrixType> >
+Chebyshev<MatrixType>::
+clone (const Teuchos::RCP<const NewMatrixType>& A_newnode,
+       const Teuchos::ParameterList& params) const
+{
+  using Teuchos::RCP;
+  typedef Ifpack2::Chebyshev<NewMatrixType> new_prec_type;
+
+  RCP<new_prec_type> prec (new new_prec_type (A_newnode));
+  prec->setParameters (params);
+  prec->initialize ();
+  prec->compute ();
+  return prec;
 }
 
-
-}//namespace Ifpack2
+} // namespace Ifpack2
 
 #endif // IFPACK2_CHEBYSHEV_DECL_HPP
 

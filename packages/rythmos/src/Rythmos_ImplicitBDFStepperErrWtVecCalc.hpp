@@ -81,15 +81,16 @@ void ImplicitBDFStepperErrWtVecCalc<Scalar>::errWtVecSet(
   typedef Teuchos::ScalarTraits<Scalar> ST;
   TEUCHOS_TEST_FOR_EXCEPT(weight==NULL);
   TEUCHOS_TEST_FOR_EXCEPTION(
-      ( ( relTol == ST::zero() ) && ( absTol == ST::zero() ) ), std::logic_error,
-      "Error, relTol and absTol cannot both be zero!\n"
-      );
+      ( ( relTol == ST::zero() ) && ( absTol == ST::zero() ) ),
+      std::logic_error,
+      "Error, relTol and absTol cannot both be zero!\n");
   Thyra::VectorBase<Scalar> &w = *weight;
   Thyra::abs(vector, ptrFromRef(w));
   Vt_S(ptrFromRef(w), relTol);
   Vp_S(ptrFromRef(w), absTol);
   reciprocal(w, ptrFromRef(w));
-  Vt_StV(ptrFromRef(w), ST::one(), w); // We square w because of how weighted norm_2 is computed.
+  Vt_StV(ptrFromRef(w), ST::one(), w); // We square w because of how
+                                       // weighted norm_2 is computed.
   // divide by N to get RMS norm
   int N = vector.space()->dim();
   Vt_S(ptrFromRef(w), as<Scalar>(1.0/N));

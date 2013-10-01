@@ -68,13 +68,11 @@ class FieldManagerBuilder;
 template<typename> class LinearObjFactory;
 class GlobalData;
 
-template<typename Scalar, typename NODE>
+template<typename Scalar>
 class ModelEvaluator
   : public Thyra::StateFuncModelEvaluatorBase<Scalar>
 {
 public:
-
-//   typedef typename panzer::Traits<T>::node_type NODE;
 
 public:
 
@@ -190,6 +188,12 @@ public:
     outArgs.setSupports(MEB::OUT_ARG_W_op);
     prototypeOutArgs_ = outArgs; }
 
+  /** Apply the dirichlet boundary conditions to the vector "f" using the 
+    * "x" values as the current solution.
+    */
+  void applyDirichletBCs(const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,
+                         const Teuchos::RCP<Thyra::VectorBase<Scalar> > & f) const;
+
 private:
 
   /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
@@ -255,9 +259,9 @@ private: // data members
 };
 
 // Inline definition of the add response (its template on the builder type)
-template<typename Scalar, typename NODE>
+template<typename Scalar>
 template <typename ResponseEvaluatorFactory_BuilderT>
-int ModelEvaluator<Scalar,NODE>::
+int ModelEvaluator<Scalar>::
 addResponse(const std::string & responseName,
             const std::vector<WorksetDescriptor> & wkst_desc,
             const ResponseEvaluatorFactory_BuilderT & builder)

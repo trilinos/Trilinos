@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -70,6 +70,7 @@
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 #include "MueLu_FactoryManager_fwd.hpp"
+#include "MueLu_Types.hpp"
 
 // MPI helper
 #define sumAll(rcpComm, in, out)                                        \
@@ -118,7 +119,7 @@ namespace MueLu {
     Rebalancing factories are derived from SingleLevelFactoryBase and rebalance the underlaying object
     (e.g. map, vector,...) to fit to the rebalanced maps.
     */
-    //void AddRebalanceFactory(const RCP<const FactoryBase>& factory);
+    void AddRebalanceFactory(const RCP<const FactoryBase>& factory);
 
     //! Returns number of transfer factories.
     size_t NumRebalanceFactories() const { return rebalanceFacts_.size(); }

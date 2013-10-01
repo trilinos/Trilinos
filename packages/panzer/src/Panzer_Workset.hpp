@@ -60,14 +60,15 @@ namespace panzer {
 
   class LinearObjContainer;
 
-  struct Workset {
-    
-    std::size_t num_cells;
+  /** This is used within the workset to make edge based (DG like) assembly
+    * an easier task. This basically allows seperation of the workset abstraction
+    * from how it is accessed.
+    */
+  struct WorksetDetails {
     std::vector<std::size_t> cell_local_ids;
     Intrepid::FieldContainer<double> cell_vertex_coordinates;
     std::string block_id;
 
-    int subcell_dim; //! If workset corresponds to a sub cell, what is the dimension?
     int subcell_index; //! If workset corresponds to a sub cell, what is the index?
 
     //! Value correspondes to integration order.  Use the offest for indexing.
@@ -80,9 +81,20 @@ namespace panzer {
 
     //! Static basis function data, key is basis name, value is index in the static_bases vector
     std::vector<Teuchos::RCP< panzer::BasisValues<double,Intrepid::FieldContainer<double> > > > bases;
+  };
+
+  /** This is the main workset object. Not that it inherits from WorksetDetails, this
+    * is to maintain backwards compatibility in the use of the workset object. The addition
+    * of a details vector supports things like DG based assembly.
+    */
+  struct Workset : public WorksetDetails {
     
-    Teuchos::RCP<panzer::LinearObjContainer> ghostedLinContainer;
-    Teuchos::RCP<panzer::LinearObjContainer> linContainer;
+    std::size_t num_cells;
+    int subcell_dim; //! If workset corresponds to a sub cell, what is the dimension?
+
+    std::vector<Teuchos::RCP<WorksetDetails> > details; // note that (*this) is set to index [0]
+                                                        // when using panzers workset construction
+    
     double alpha;
     double beta;
     double time;

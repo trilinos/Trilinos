@@ -331,8 +331,37 @@ void Ioss::Map::build_reorder_map(int64_t start, int64_t count)
   //
   // start is based on a 0-based array -- start of the reorderMap to build.
       
-  if (reorder.empty())
-    reorder.resize(map.size()-1);
+  if (reorder.empty()) {
+    // See if actually need a reorder map first...
+    bool need_reorder_map = false;
+    int64_t my_end = start+count;
+    for (int64_t i=start; i < my_end; i++) {
+      int64_t global_id = map[i+1];
+      int64_t orig_local_id = global_to_local(global_id) - 1;
+	
+      // The reordering should only be a permutation of the original
+      // ordering within this entity block...
+      assert(orig_local_id >= start && orig_local_id <= my_end);
+      if (i != orig_local_id) {
+	need_reorder_map = true;
+	break;
+      }
+    }
+    if (need_reorder_map) {
+      int64_t map_size = map.size()-1;
+      reorder.resize(map_size);
+      // If building a partial reorder map, assume all entries
+      // are a direct 1-1 and then let the partial fills overwrite
+      // if needed.
+      if (start > 0 || my_end < map_size) {
+	for (size_t i=0; i < reorder.size(); i++) {
+	  reorder[i] = i;
+	}
+      }
+    } else {
+      return;
+    }
+  }
       
   int64_t my_end = start+count;
   for (int64_t i=start; i < my_end; i++) {

@@ -287,9 +287,9 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
   // set the number of blocks we need to save to compute the nev eigenvalues of interest.
   _xtra_nevBlocks = pl.get("Extra NEV Blocks",0);
   if (nev%_blockSize) {
-    _nevBlocks = nev/_blockSize + _xtra_nevBlocks + 1;
+    _nevBlocks = nev/_blockSize + 1;
   } else {
-    _nevBlocks = nev/_blockSize + _xtra_nevBlocks;
+    _nevBlocks = nev/_blockSize;
   }
 
   // determine if we should use the dynamic scheme for selecting the current number of retained eigenvalues.
@@ -454,9 +454,9 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
   // If Hermitian, this becomes _nevBlocks*_blockSize + _blockSize
   // we only need this if there is the possibility of restarting, ex situ
 
-  // Maximum allowable extra vectors that BKS can keep to accelerate convergence; only works for _blockSize=1
-  int maxXtraVecs = 0;
-  if ( _dynXtraNev && _blockSize==1 ) maxXtraVecs = ( bks_solver->getMaxSubspaceDim() - _nevBlocks ) / 2;
+  // Maximum allowable extra vectors that BKS can keep to accelerate convergence
+  int maxXtraBlocks = 0;
+  if ( _dynXtraNev ) maxXtraBlocks = ( ( bks_solver->getMaxSubspaceDim() - nev ) / _blockSize ) / 2;
 
   Teuchos::RCP<MV> workMV;
   if (_maxRestarts > 0) {
@@ -466,9 +466,10 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
     }
     else { // inSituRestart == false
       if (_problem->isHermitian()) {
-        workMV = MVT::Clone( *_problem->getInitVec(), (_nevBlocks+maxXtraVecs)*_blockSize + _blockSize );
+        workMV = MVT::Clone( *_problem->getInitVec(), (_nevBlocks+maxXtraBlocks)*_blockSize + _blockSize );
       } else {
-        workMV = MVT::Clone( *_problem->getInitVec(), (_nevBlocks+maxXtraVecs)*_blockSize + 1 + _blockSize );
+        // Increase workspace by 1 because of potential complex conjugate pairs on the Ritz vector boundary
+        workMV = MVT::Clone( *_problem->getInitVec(), (_nevBlocks+maxXtraBlocks)*_blockSize + 1 + _blockSize );
       }
     }
   } else {
@@ -541,15 +542,22 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
 
           int numConv = ordertest->howMany();
           cur_nevBlocks = _nevBlocks*_blockSize;
-          if ( _dynXtraNev && _blockSize==1 && numConv > 0 ) {
+
+          // Add in extra blocks for restarting if either static or dynamic boundaries are being used. 
+          int moreNevBlocks = std::min( maxXtraBlocks, std::max( numConv/_blockSize, _xtra_nevBlocks) );
+          if ( _dynXtraNev )
+            cur_nevBlocks += moreNevBlocks * _blockSize;
+          else if ( _xtra_nevBlocks )
+            cur_nevBlocks += _xtra_nevBlocks * _blockSize;
+/*
             int cur_numConv = numConv;
             while ( (cur_nevBlocks < (_nevBlocks + maxXtraVecs)) && cur_numConv > 0 ) {
               cur_nevBlocks++;
               cur_numConv--;
-            }
-          }
+*/
   
           printer->stream(Debug) << " Performing restart number " << numRestarts << " of " << _maxRestarts << std::endl << std::endl;
+          printer->stream(Debug) << "   - Current NEV blocks is " << cur_nevBlocks << ", the minimum is " << _nevBlocks*_blockSize << std::endl;
   
           // Get the most current Ritz values before we continue.
           _ritzValues = bks_solver->getRitzValues();
@@ -569,6 +577,17 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
             _conjSplit = false;
           }
 
+          // Print out a warning to the user if complex eigenvalues were found on the boundary of the restart subspace
+          // and the eigenproblem is Hermitian.  This solver is not prepared to handle this situation.
+          if (_problem->isHermitian() && _conjSplit) 
+          {
+            printer->stream(Warnings) 
+              << " Eigenproblem is Hermitian, complex eigenvalues have been detected, and eigenvalues of interest split a conjugate pair!!!" 
+              << std::endl
+              << " Block Krylov-Schur eigensolver cannot guarantee correct behavior in this situation, please turn Hermitian flag off!!!"
+              << std::endl;
+          }
+ 
           // Update the Krylov-Schur decomposition
 
           // Get a view of the Schur vectors of interest.

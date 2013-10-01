@@ -45,6 +45,7 @@
 #define KOKKOS_THREADSEXEC_HPP
 
 #include <utility>
+#include <impl/Kokkos_spinwait.hpp>
 
 //----------------------------------------------------------------------------
 
@@ -62,6 +63,7 @@ public:
 
   enum { MAX_FAN_COUNT    = 16 };
   enum { MAX_THREAD_COUNT = 1 << MAX_FAN_COUNT };
+  enum { VECTOR_LENGTH    = 8 };
 
   /** \brief States of a worker thread */
   enum { Terminating ///<  Termination in progress
@@ -136,7 +138,6 @@ public:
 
   //------------------------------------
 
-  static void wait( volatile int & , const int );
   static void wait_yield( volatile int & , const int );
 
   void * get_shmem( const int size );
@@ -157,7 +158,7 @@ public:
 
         ThreadsExec & fan = *m_fan[i] ;
 
-        ThreadsExec::wait( fan.m_state , ThreadsExec::Active );
+        Impl::spinwait( fan.m_state , ThreadsExec::Active );
 
         f.join( Reduce::reference( m_reduce ) ,
                 Reduce::reference( fan.m_reduce ) );
@@ -170,18 +171,18 @@ public:
   fan_in( const Functor & ) const
     {
       for ( int i = 0 ; i < m_fan_size ; ++i ) {
-        ThreadsExec::wait( m_fan[i]->m_state , ThreadsExec::Active );
+        Impl::spinwait( m_fan[i]->m_state , ThreadsExec::Active );
       }
     }
 
   void team_barrier()
     {
       for ( int i = 0 ; i < m_fan_team_size ; ++i ) {
-        ThreadsExec::wait( m_fan[i]->m_state , ThreadsExec::Active );
+        Impl::spinwait( m_fan[i]->m_state , ThreadsExec::Active );
       }
       if ( m_team_rank ) {
         m_state = Rendezvous ;
-        ThreadsExec::wait( m_state , ThreadsExec::Rendezvous );
+        Impl::spinwait( m_state , ThreadsExec::Rendezvous );
       }
       for ( int i = 0 ; i < m_fan_team_size ; ++i ) {
         m_fan[i]->m_state = ThreadsExec::Active ;
@@ -206,21 +207,18 @@ public:
   std::pair< size_t , size_t >
   work_range( const size_t work_count ) const
   {
-    enum { work_align = Kokkos::HostSpace::WORK_ALIGNMENT };
-    enum { work_shift = Kokkos::Impl::power_of_two< work_align >::value };
-    enum { work_mask  = work_align - 1 };
+    typedef integral_constant< size_t , VECTOR_LENGTH - 1 > work_mask ;
 
-    // unit_of_work_count = ( work_count + work_mask ) >> work_shift
-    // unit_of_work_per_thread = ( unit_of_work_count + thread_count - 1 ) / thread_count
-    // work_per_thread = unit_of_work_per_thread * work_align
+    // work per thread rounded up and aligned to vector length:
 
     const size_t work_per_thread =
-      ( ( ( ( work_count + work_mask ) >> work_shift ) + m_init_thread_size - 1 ) / m_init_thread_size ) << work_shift ;
+      ( ( ( work_count + m_init_thread_size - 1 ) / m_init_thread_size ) + work_mask::value ) & ~(work_mask::value);
 
-    const size_t work_begin = std::min( m_init_thread_rank * work_per_thread , work_count );
-    const size_t work_end   = std::min( work_begin + work_per_thread , work_count );
+    const size_t work_begin = std::min( work_count , work_per_thread * m_init_thread_rank );
+    const size_t work_end   = std::min( work_count , work_per_thread + work_begin );
 
     return std::pair< size_t , size_t >( work_begin , work_end );
+
   }
 
 
@@ -250,11 +248,15 @@ namespace Kokkos {
 inline int Threads::in_parallel()
 { return Impl::ThreadsExec::in_parallel(); }
 
-inline void Threads::initialize( 
-  const std::pair<unsigned,unsigned> league_team ,
-  const std::pair<unsigned,unsigned> hardware_topology )
+inline void Threads::initialize(
+  unsigned team_count ,
+  unsigned threads_per_team ,
+  unsigned use_numa_count ,
+  unsigned use_cores_per_numa )
 {
-  Impl::ThreadsExec::initialize( league_team , hardware_topology );
+  Impl::ThreadsExec::initialize(
+    std::pair<unsigned,unsigned>( team_count , threads_per_team ),
+    std::pair<unsigned,unsigned>( use_numa_count , use_cores_per_numa ) );
 }
 
 inline void Threads::finalize()
@@ -262,7 +264,7 @@ inline void Threads::finalize()
   Impl::ThreadsExec::finalize();
 }
 
-inline void Threads::print_configuration( std::ostream & s , bool detail )
+inline void Threads::print_configuration( std::ostream & s , const bool detail )
 {
   Impl::ThreadsExec::print_configuration( s , detail );
 }
@@ -300,8 +302,10 @@ inline void Threads::team_barrier()
 inline Threads::Threads( Impl::ThreadsExec & t ) : m_exec( t ) {}
 
 template< class ViewType >
-inline typename ViewType::value_type Threads::unordered_scan
-   (typename ViewType::value_type& value, ViewType& scratch_view) {
+inline typename ViewType::value_type
+Threads::unordered_scan
+   (typename ViewType::value_type& value, ViewType& scratch_view)
+{
   //gives back an ordered sum within a team, last thread has the highest value)
   typename ViewType::value_type sum = team_scan(value);
 
@@ -311,7 +315,9 @@ inline typename ViewType::value_type Threads::unordered_scan
   if(team_rank()==team_size()-1)
     global_sum = atomic_fetch_add(&scratch_view(0),sum+value);
 
-  typename ViewType::value_type* temp = get_shmem<typename ViewType::value_type>( 1 );
+  typename ViewType::value_type* temp =
+    (typename ViewType::value_type *) get_shmem( sizeof(typename ViewType::value_type) );
+
   if(team_rank()==team_size()-1)
     temp[0]=global_sum;
 
@@ -328,7 +334,7 @@ inline T Threads::team_scan( T& value ) {
 
   if( team_size() == 1 ) return 0;
 
-  T* temp = get_shmem<T>( team_size() );
+  T* temp = (T*) get_shmem( sizeof(T) * team_size() );
   temp[team_rank()] = value;
 
 
@@ -351,10 +357,8 @@ inline T Threads::team_scan( T& value ) {
   //TODO: implement team_scan with log(n) algorithm? Probably not usefull if team_size is small CRT
 }
 
-template< typename T >
 inline
-T * Threads::get_shmem( const int count )
-{ return (T*) m_exec.get_shmem( sizeof(T) * count ); }
+void * Threads::get_shmem( const int size ) { return m_exec.get_shmem( size ); }
 
 } /* namespace Kokkos */
 

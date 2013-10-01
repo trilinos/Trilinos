@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -45,6 +45,11 @@
 // @HEADER
 #ifndef MUELU_TENTATIVEPFACTORY_DEF_HPP
 #define MUELU_TENTATIVEPFACTORY_DEF_HPP
+
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
 
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_Map.hpp>
@@ -227,16 +232,9 @@ namespace MueLu {
     Teuchos::SerialQRDenseSolver<LO,SC> qrSolver;
 
     // decide whether to use ESFC or not
-    // use expert mode if aggregates do not overlap processors and there are no empty processors
-    // if there are aggregates which cross processors or if there are empty processors we have to
-    // use the expensive but very safe assembly routine for Ptentative
-    // TODO remove the global communication here to detect empty processors and fix ESFC for empty
-    // procs
+    // use expert mode if aggregates do not overlap processors
     bool bExpert = true;
-    GO gMinNumRowsForPtent = 0;
-    GO lMinNumRowsForPtent = Teuchos::as<GlobalOrdinal>(numRowsForPtent);  /* LO->GO conversion */
-    minAll(comm,lMinNumRowsForPtent,gMinNumRowsForPtent);
-    if(aggregates.AggregatesCrossProcessors() || gMinNumRowsForPtent == 0) {
+    if(aggregates.AggregatesCrossProcessors()) {
       bExpert = false;
     }
 

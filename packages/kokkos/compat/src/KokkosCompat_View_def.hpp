@@ -106,7 +106,7 @@ namespace Kokkos {
 #define COMPAT_INSTANT(T,D) \
     template Kokkos::View<T*,D> getKokkosViewDeepCopy<D,T>(const Teuchos::ArrayView<T>& a); \
     template Kokkos::View<const T*,D> getKokkosViewDeepCopy<D,T>(const Teuchos::ArrayView<const T>& a); \
-    template void realloc<T,D>(Kokkos::View<T*,D>& v, const typename D::size_type size); \
+    template void realloc<T,D>(Kokkos::View<T*,D>& v, const D::size_type size); \
     template Kokkos::View<T*,Kokkos::LayoutLeft,D,void> create_view<T,Kokkos::LayoutLeft,D,void>(const std::string& label, size_t size); \
     template Kokkos::View<T*,Kokkos::LayoutRight,D,void> create_view<T,Kokkos::LayoutRight,D,void>(const std::string& label, size_t size); \
     template Kokkos::View<T*,D,void,void> create_view<T,D,void,void>(const std::string& label, size_t size);

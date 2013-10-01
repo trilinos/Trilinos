@@ -107,7 +107,7 @@ InterpolationBuffer<Scalar>::get_x_space() const
 
 
 template<class Scalar>
-void InterpolationBuffer<Scalar>::initialize( 
+void InterpolationBuffer<Scalar>::initialize(
   const RCP<InterpolatorBase<Scalar> >& interpolator
   ,int storage
   )
@@ -194,10 +194,10 @@ RCP<InterpolatorBase<Scalar> > InterpolationBuffer<Scalar>::unSetInterpolator()
 
 
 template<class Scalar>
-void InterpolationBuffer<Scalar>::addPoints( 
+void InterpolationBuffer<Scalar>::addPoints(
   const Array<Scalar>& time_vec
   ,const Array<RCP<const Thyra::VectorBase<Scalar> > >& x_vec
-  ,const Array<RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec 
+  ,const Array<RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
   )
 {
 #ifdef HAVE_RYTHMOS_DEBUG
@@ -251,7 +251,7 @@ void InterpolationBuffer<Scalar>::addPoints(
   typename DataStore<Scalar>::DataStoreList_t input_data_list;
   vectorToDataStoreList<Scalar>(time_vec,x_vec,xdot_vec,&input_data_list);
   // Check that we're not going to exceed our storage limit:
-  if (Teuchos::as<int>(data_vec_->size()+input_data_list.size()) > storage_limit_) { 
+  if (Teuchos::as<int>(data_vec_->size()+input_data_list.size()) > storage_limit_) {
     if (policy_ == BUFFER_POLICY_STATIC) {
       TEUCHOS_TEST_FOR_EXCEPTION(
         true, std::logic_error,
@@ -263,17 +263,17 @@ void InterpolationBuffer<Scalar>::addPoints(
         // Remove points from the beginning of data_vec, then add new points
         int num_extra_points = input_data_list.size()-(storage_limit_-data_vec_->size());
 #ifdef HAVE_RYTHMOS_DEBUG
-        TEUCHOS_TEST_FOR_EXCEPTION( num_extra_points <= 0, std::logic_error, 
+        TEUCHOS_TEST_FOR_EXCEPTION( num_extra_points <= 0, std::logic_error,
             "Error!  Buffer policy is keep newest and input data size = " << input_data_list.size() << ", storage limit  = " << storage_limit_ << ", and data_vec size = " << data_vec_->size() << ".  Somehow number of points to delete = " << num_extra_points << " <= 0!"
             );
 #endif // HAVE_RYTHMOS_DEBUG
-        typename DataStore<Scalar>::DataStoreVector_t::iterator 
+        typename DataStore<Scalar>::DataStoreVector_t::iterator
           data_it = data_vec_->begin();
         for (int i=0 ; i < num_extra_points ; ++i) {
           data_it++;
         }
         if ( Teuchos::as<int>(this->getVerbLevel()) >= Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
-          *out << "Removing " << num_extra_points 
+          *out << "Removing " << num_extra_points
                << " from beginning of data_vec to make room for new points." << std::endl;
         }
         data_vec_->erase(data_vec_->begin(),data_it);
@@ -282,17 +282,17 @@ void InterpolationBuffer<Scalar>::addPoints(
         // Remove points from end of data_vec, then add new points
         int num_extra_points = input_data_list.size()-(storage_limit_-data_vec_->size());
 #ifdef HAVE_RYTHMOS_DEBUG
-        TEUCHOS_TEST_FOR_EXCEPTION( num_extra_points <= 0, std::logic_error, 
+        TEUCHOS_TEST_FOR_EXCEPTION( num_extra_points <= 0, std::logic_error,
             "Error!  Buffer policy is keep newest and input data size = " << input_data_list.size() << ", storage limit  = " << storage_limit_ << ", and data_vec size = " << data_vec_->size() << ".  Somehow number of points to delete = " << num_extra_points << " <= 0!"
             );
 #endif // HAVE_RYTHMOS_DEBUG
-        typename DataStore<Scalar>::DataStoreVector_t::iterator 
+        typename DataStore<Scalar>::DataStoreVector_t::iterator
           data_it = data_vec_->end();
         for (int i=0 ; i < num_extra_points ; ++i) {
           data_it--;
         }
         if ( Teuchos::as<int>(this->getVerbLevel()) >= Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
-          *out << "Removing " << num_extra_points 
+          *out << "Removing " << num_extra_points
                << " from end of data_vec to make room for new points." << std::endl;
         }
         data_vec_->erase(data_it,data_vec_->end());
@@ -349,7 +349,7 @@ void InterpolationBuffer<Scalar>::getPoints(
   TEUCHOS_TEST_FOR_EXCEPTION(
     (time_vec.size() != time_out_vec.size()), std::logic_error,
     "Error, number of time points returned from interpolator = " <<
-    time_out_vec.size() << " != " << time_vec.size() << 
+    time_out_vec.size() << " != " << time_vec.size() <<
     " = number of time points requested\n"
     );
   if ( Teuchos::as<int>(this->getVerbLevel()) >= Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
@@ -390,7 +390,7 @@ void InterpolationBuffer<Scalar>::getNodes( Array<Scalar>* time_vec ) const
 
 
 template<class Scalar>
-void InterpolationBuffer<Scalar>::removeNodes( Array<Scalar>& time_vec ) 
+void InterpolationBuffer<Scalar>::removeNodes( Array<Scalar>& time_vec )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   int N = time_vec.size();
@@ -401,8 +401,8 @@ void InterpolationBuffer<Scalar>::removeNodes( Array<Scalar>& time_vec )
     TEUCHOS_TEST_FOR_EXCEPTION(
       ~(range.lower() <= time_vec[i]) && (time_vec[i] <= range.upper()),
       std::logic_error,
-      "Error, time_vec[" << i << "] = " << time_vec[i] << 
-      "is not in range of this interpolation buffer = [" << 
+      "Error, time_vec[" << i << "] = " << time_vec[i] <<
+      "is not in range of this interpolation buffer = [" <<
       range.lower() << "," << range.upper() << "]!\n"
       );
   }
@@ -411,7 +411,7 @@ void InterpolationBuffer<Scalar>::removeNodes( Array<Scalar>& time_vec )
   ScalarMag z = ST::zero();
   for (int i=0; i<N ; ++i) {
     DataStore<Scalar> ds_temp(time_vec[i],vec_temp,vec_temp,z);
-    typename DataStore<Scalar>::DataStoreVector_t::iterator 
+    typename DataStore<Scalar>::DataStoreVector_t::iterator
       data_it = std::find(data_vec_->begin(),data_vec_->end(),ds_temp);
     TEUCHOS_TEST_FOR_EXCEPTION(
       data_it == data_vec_->end(), std::logic_error,
@@ -495,8 +495,8 @@ RCP<const Teuchos::ParameterList> InterpolationBuffer<Scalar>::getValidParameter
 
     Teuchos::setupVerboseObjectSublist(&*pl);
 
-    pl->set( 
-        interpolationBufferPolicySelection_name, 
+    pl->set(
+        interpolationBufferPolicySelection_name,
         interpolationBufferPolicySelection_default,
         "Interpolation Buffer Policy for when the maximum storage size is exceeded.  Static will throw an exception when the storage limit is exceeded.  Keep Newest will over-write the oldest data in the buffer when the storage limit is exceeded.",
         interpolationBufferPolicyValidator
@@ -537,7 +537,7 @@ IBPolicy InterpolationBuffer<Scalar>::getIBPolicy()
   return policy_;
 }
 
-// 
+//
 // Explicit Instantiation macro
 //
 // Must be expanded from within the Rythmos namespace!
@@ -550,7 +550,7 @@ IBPolicy InterpolationBuffer<Scalar>::getIBPolicy()
   template RCP<InterpolationBuffer< SCALAR > > interpolationBuffer(  \
     const RCP<InterpolatorBase< SCALAR > >& interpolator, \
     int storage  \
-    ); 
+    );
 
 } // namespace Rythmos
 

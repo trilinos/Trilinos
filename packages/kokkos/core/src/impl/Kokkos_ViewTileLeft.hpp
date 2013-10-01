@@ -338,9 +338,9 @@ public:
 
   template< typename iType0 , typename iType1 >
   KOKKOS_INLINE_FUNCTION
-  typename traits::value_type & operator()(
-    const iType0 & i0 , const iType1 & i1 , const int , const int = 0 ,
-    const int = 0 , const int = 0 , const int = 0 , const int = 0 ) const
+  typename traits::value_type &
+    at( const iType0 & i0 , const iType1 & i1 , const int , const int ,
+        const int , const int , const int , const int ) const
     {
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );

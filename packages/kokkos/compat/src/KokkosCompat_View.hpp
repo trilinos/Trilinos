@@ -54,7 +54,7 @@
 ///   backwards compatibility for any interface in this file, nor do
 ///   we even promise that this header file will continue to exist.
 
-#include "KokkosCompat_config.h"
+//#include "KokkosCompat_config.h"
 #include "KokkosCore_config.h"
 #include "KokkosClassic_config.h"
 
@@ -164,6 +164,7 @@ namespace Kokkos {
     class Deallocator {
     public:
       typedef ViewType view_type;
+      typedef typename ViewType::scalar_type ptr_t;
       typedef typename view_type::scalar_type scalar_type;
 
       // Constructor takes the View that owns the memory.
@@ -173,8 +174,10 @@ namespace Kokkos {
       // pointer; the View is responsible for deallocation of its
       // memory.
       void free (scalar_type*) {}
+      view_type view() { return view_;}
     private:
       view_type view_; // View that owns the memory
+
     };
 
     // Create deallocator for a given view

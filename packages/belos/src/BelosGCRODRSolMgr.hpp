@@ -312,31 +312,40 @@ namespace Belos {
  
     //! @name Solver application methods
     //@{ 
-    
-    /*! \brief This method performs possibly repeated calls to the underlying linear solver's iterate() routine
-     * until the problem has been solved (as decided by the solver manager) or the solver manager decides to quit
+
+    /*! \brief Attempt to solve the linear system.
      *
-     * This method calls GCRODRIter::iterate(), which will return either because a specially constructed status test evaluates to 
-     * ::Passed or an exception is thrown.
+     * This method performs possibly repeated calls to the underlying
+     * linear solver's iterate() routine until the problem has been
+     * solved (as decided by the solver manager) or the solver manager
+     * decides to quit.
      *
-     * A return from GCRODRIter::iterate() signifies one of the following scenarios:
-     *    - the maximum number of restarts has been exceeded. In this scenario, the current solutions to the linear system
-     *      will be placed in the linear problem and return ::Unconverged.
-     *    - global convergence has been met. In this case, the current solutions to the linear system will be placed in the linear
-     *      problem and the solver manager will return ::Converged
      *
-     * \returns ::ReturnType specifying:
-     *     - ::Converged: the linear problem was solved to the specification required by the solver manager.
-     *     - ::Unconverged: the linear problem was not solved to the specification desired by the solver manager.
+     * This method calls GCRODRIter::iterate(), which will return
+     * either because a specially constructed status test evaluates to
+     * ::Passed or an exception is thrown.  A return from
+     * GCRODRIter::iterate() signifies one of the following scenarios:
+     *    - The maximum number of restarts has been exceeded. In this
+     *      scenario, the current solutions to the linear system will
+     *      be placed in the linear problem and return ::Unconverged.
+     *    - Global convergence has been met. In this case, the current
+     *      solutions to the linear system will be placed in the
+     *      linear problem and the solver manager will return
+     *      ::Converged
+     *
+     * \return ::ReturnType specifying:
+     *   - ::Converged: the linear problem was solved to the
+     *     specification required by the solver manager.
+     *   - ::Unconverged: the linear problem was not solved to the
+     *     specification desired by the solver manager.
      */
     ReturnType solve();
     
     //@}
-    
-    /** \name Overridden from Teuchos::Describable */
+    //! \name Implementation of Teuchos::Describable
     //@{
     
-    /** \brief Method to return description of the block GMRES solver manager */
+    //! Return a one-line description of this object.
     std::string description() const;
     
     //@}

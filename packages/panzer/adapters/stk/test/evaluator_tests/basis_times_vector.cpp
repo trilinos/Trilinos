@@ -207,8 +207,6 @@ namespace panzer {
     /////////////////////////////////////////////////////////////
 
     panzer::Workset & workset = (*work_sets)[0];
-    workset.ghostedLinContainer = Teuchos::null;
-    workset.linContainer = Teuchos::null;
     workset.alpha = 0.0;
     workset.beta = 0.0;
     workset.time = 0.0;

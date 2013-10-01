@@ -49,7 +49,7 @@ namespace Intrepid {
 template<typename T, Index N>
 struct tensor4_store
 {
-  typedef Storage<T, dimension_power<N, 4>::value> type;
+  typedef Storage<T, dimension_power<check_static<N>::value, 4>::value> type;
 };
 
 ///
@@ -125,6 +125,10 @@ public:
   ///
   Tensor4(Tensor4<T, N> const & A);
 
+  ///
+  /// 4th-order tensor from 2nd-order tensor
+  ///
+  Tensor4(Tensor<T, dimension_square<N>::value> const & A);
   ///
   /// 4th-order tensor simple destructor
   ///
@@ -310,6 +314,14 @@ identity_3(Index const dimension);
 template<typename T, Index N>
 const Tensor4<T, N>
 identity_3(Index const dimension);
+
+///
+/// 4th-order inverse
+/// \return \f$ B such that B : A = A : B = I_1 \f$
+///
+template<typename T, Index N>
+Tensor4<T, N>
+inverse(Tensor4<T, N> const & A);
 
 ///
 /// 4th-order tensor vector dot product
