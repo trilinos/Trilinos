@@ -45,6 +45,7 @@
 #include <Kokkos_DefaultArithmetic.hpp>
 #include <Kokkos_NodeTrace.hpp>
 #include <Tpetra_MultiVector.hpp>
+#include <Tpetra_Vector.hpp>
 
 #ifdef DOXYGEN_USE_ONLY
   #include "Tpetra_Vector_decl.hpp"
@@ -52,68 +53,68 @@
 
 namespace Tpetra {
 
-namespace KokkosRefactor {
+//namespace KokkosRefactor {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut)
-    : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,1,zeroOut) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::Vector(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut)
+    : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>(map,1,zeroOut) {
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source)
-  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(source) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::Vector(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> &source)
+  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>(source) {
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::Vector(
                               const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
                               const ArrayRCP<Scalar> &view, EPrivateHostViewConstructor /* dummy */)
-  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,view,view.size(),1,HOST_VIEW_CONSTRUCTOR) {
+  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>(map,view,view.size(),1,HOST_VIEW_CONSTRUCTOR) {
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::Vector(
                               const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
                               const ArrayRCP<Scalar> &view, EPrivateComputeViewConstructor /* dummy */)
-  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,view,view.size(),1,COMPUTE_VIEW_CONSTRUCTOR) {
+  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>(map,view,view.size(),1,COMPUTE_VIEW_CONSTRUCTOR) {
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const ArrayView<const Scalar> &values)
-  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,values,values.size(),1) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::Vector(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const ArrayView<const Scalar> &values)
+  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>(map,values,values.size(),1) {
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::~Vector() {}
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::~Vector() {}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) {
-    this->MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceGlobalValue(globalRow,0,value);
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) {
+    this->MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::replaceGlobalValue(globalRow,0,value);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) {
-    this->MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoGlobalValue(globalRow,0,value);
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) {
+    this->MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::sumIntoGlobalValue(globalRow,0,value);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceLocalValue(LocalOrdinal myRow, const Scalar &value) {
-    this->MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceLocalValue(myRow,0,value);
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::replaceLocalValue(LocalOrdinal myRow, const Scalar &value) {
+    this->MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::replaceLocalValue(myRow,0,value);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) {
-    this->MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoLocalValue(myRow,0,value);
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) {
+    this->MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::sumIntoLocalValue(myRow,0,value);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dCopy(ArrayView<Scalar> A) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::get1dCopy(ArrayView<Scalar> A) const {
     size_t lda = this->getLocalLength();
     this->get1dCopy(A,lda);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Scalar Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  Scalar Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> &a) const {
     using Teuchos::outArg;
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(*a.getMap()), std::runtime_error,
@@ -133,8 +134,8 @@ namespace KokkosRefactor {
     return gbldot;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Scalar Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::meanValue() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  Scalar Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::meanValue() const {
     using Teuchos::as;
     using Teuchos::outArg;
     typedef Teuchos::ScalarTraits<Scalar> SCT;
@@ -150,8 +151,8 @@ namespace KokkosRefactor {
     return sum / as<typename SCT::magnitudeType> (this->getGlobalLength ());
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm1() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::norm1() const {
     using Teuchos::outArg;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
     Mag norm = MVT::Norm1(this->lclMV_);
@@ -162,8 +163,8 @@ namespace KokkosRefactor {
     return norm;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::norm2() const {
     using Teuchos::ScalarTraits;
     using Teuchos::outArg;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
@@ -175,8 +176,8 @@ namespace KokkosRefactor {
     return ScalarTraits<Mag>::squareroot(norm);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normInf() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::normInf() const {
     using Teuchos::outArg;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
     Mag norm = MVT::NormInf(this->lclMV_);
@@ -187,8 +188,8 @@ namespace KokkosRefactor {
     return norm;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::normWeighted(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> &weights) const {
     using Teuchos::ScalarTraits;
     using Teuchos::outArg;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
@@ -209,8 +210,8 @@ namespace KokkosRefactor {
     return ScalarTraits<Mag>::squareroot(norm / this->getGlobalLength());
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  std::string Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::description() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  std::string Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::description() const {
     std::ostringstream oss;
     oss << Teuchos::Describable::description();
     oss << "{length="<<this->getGlobalLength()
@@ -218,8 +219,8 @@ namespace KokkosRefactor {
     return oss.str();
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
     using std::endl;
     using std::setw;
     using Teuchos::VERB_DEFAULT;
@@ -273,7 +274,7 @@ namespace KokkosRefactor {
     }
   }
 
-} // namespace KokkosRefactor
+//} // namespace KokkosRefactor
 
 } // namespace Tpetra
 

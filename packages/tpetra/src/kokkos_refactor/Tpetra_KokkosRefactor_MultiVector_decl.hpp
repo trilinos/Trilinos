@@ -54,6 +54,10 @@
 #include <Kokkos_MultiVector.hpp>
 #include <Teuchos_BLAS_types.hpp>
 
+#include <Kokkos_DualView.hpp>
+#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+#include <Tpetra_MultiVector.hpp>
+
 namespace KokkosClassic {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration of DefaultArithmetic
@@ -75,7 +79,7 @@ namespace Tpetra {
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
   // No one but expert Tpetra/Kokkos developers should ever use this code
-  namespace KokkosRefactor {
+ // namespace KokkosRefactor {
 
   /// \class MultiVector
   /// \brief One or more distributed dense vectors.
@@ -326,16 +330,16 @@ namespace Tpetra {
   ///   process in the communicator, then inner products and norms may
   ///   be wrong.  This behavior may change in future releases.
   template<class Scalar,
-           class LocalOrdinal=int,
-           class GlobalOrdinal=LocalOrdinal,
-           class Node=KokkosClassic::DefaultNode::DefaultNodeType>
-  class MultiVector :
+           class LocalOrdinal,
+           class GlobalOrdinal>
+  class MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> :
 #if TPETRA_USE_KOKKOS_DISTOBJECT
-    public DistObjectKA<Scalar, LocalOrdinal, GlobalOrdinal, Node>
+    public DistObjectKA<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosThreadsWrapperNode>
 #else
-    public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
+    public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosThreadsWrapperNode>
 #endif
   {
+    typedef Kokkos::Compat::KokkosThreadsWrapperNode Node;
   public:
     //! @name Typedefs to facilitate template metaprogramming.
     //@{
@@ -348,6 +352,8 @@ namespace Tpetra {
     typedef GlobalOrdinal global_ordinal_type;
     //! The Kokkos Node type.
     typedef Node          node_type;
+
+    typedef Kokkos::DualView<scalar_type**,Kokkos::LayoutLeft,typename node_type::device_type> view_type;
 
 #if TPETRA_USE_KOKKOS_DISTOBJECT
     typedef DistObjectKA<Scalar, LocalOrdinal, GlobalOrdinal, Node> DO;
@@ -724,6 +730,7 @@ namespace Tpetra {
     //! Return a non-const reference to the underlying KokkosClassic::MultiVector object (advanced use only)
     KokkosClassic::MultiVector<Scalar,Node> & getLocalMVNonConst();
 
+    view_type getLocalView() const { return view_; };
     //@}
     //! @name Mathematical methods
     //@{
@@ -953,6 +960,9 @@ namespace Tpetra {
     //! The KokkosClassic::MultiVector containing the compute buffer of data.
     KMV lclMV_;
 
+
+    view_type view_;
+
     /// \brief Indices of columns this multivector is viewing.
     ///
     /// If this array has nonzero size, then this multivector is a
@@ -1138,7 +1148,7 @@ namespace Tpetra {
   ///   resulting MultiVector.
   /// \param numVectors [in] Number of columns of the resulting
   ///   MultiVector.
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  /*template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   createMultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
                      size_t numVectors)
@@ -1148,7 +1158,7 @@ namespace Tpetra {
 
     const bool initToZero = true;
     return rcp (new MV (map, numVectors, initToZero));
-  }
+  }*/
 
   /// \brief Nonmember MultiVector constructor with view semantics using user-allocated data.
   /// \relatesalso MultiVector
@@ -1175,7 +1185,7 @@ namespace Tpetra {
   ///   space, not in a different space as on a GPU), you will need to
   ///   add a specialization of Tpetra::details::ViewAccepter for your
   ///   new Node type.
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+/*  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   createMultiVectorFromView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
                              const Teuchos::ArrayRCP<Scalar>& view,
@@ -1193,9 +1203,9 @@ namespace Tpetra {
     // unsupported Kokkos Node types.
     return rcp (new MV (map, VAN::template acceptView<Scalar> (view),
                         LDA, numVectors, HOST_VIEW_CONSTRUCTOR));
-  }
+  }*/
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+/*  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   template <class Node2>
   Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::clone(const RCP<Node2> &node2) const{
@@ -1209,9 +1219,9 @@ namespace Tpetra {
                 clonedMV_view[i].deepCopy(MV_view[i]());
         clonedMV_view = Teuchos::null;
         return clonedMV;
-  }
+  }*/
 
-} // namespace KokkosRefactor
+//} // namespace KokkosRefactor
 
 } // namespace Tpetra
 

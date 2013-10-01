@@ -90,7 +90,7 @@
 
 #define KOKKOS_ATOMICS_USE_GCC
 
-#elif defined( __INTEL_COMPILER )
+#elif defined( __INTEL_COMPILER ) || defined( _CRAYC)
 
 #define KOKKOS_ATOMICS_USE_INTEL
 

@@ -67,7 +67,7 @@ namespace { // anonymous
   // \param whichMatrix [in] The index of the matrix to create.
   template<typename Device>
   void
-  makeSparseMatrix (Kokkos::View<int*, Device>& ptr,
+  makeSparseMatrix (Kokkos::View<size_t*, Device>& ptr,
 		    Kokkos::View<int*, Device>& ind,
 		    Kokkos::View<double*, Device>& val,
 		    int& numRows,
@@ -79,7 +79,7 @@ namespace { // anonymous
       numRows = 10;
       numCols = 10;
       nnz = 21;
-      const int ptrRaw[] = {0, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21};
+      const size_t ptrRaw[] = {0, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21};
       const int indRaw[] = {0, 1, 9, 
 			    1, 2,
 			    2, 3,
@@ -101,12 +101,12 @@ namespace { // anonymous
 			       4.0, 12.0,
 			       4.5, 13.0};
       // Wrap the above three arrays in unmanaged Views, so we can use deep_copy.
-      Kokkos::View<const int*, Kokkos::Serial, Kokkos::MemoryUnmanaged> ptrIn (ptrRaw, numRows+1);
+      Kokkos::View<const size_t*, Kokkos::Serial, Kokkos::MemoryUnmanaged> ptrIn (ptrRaw, numRows+1);
       Kokkos::View<const int*, Kokkos::Serial, Kokkos::MemoryUnmanaged> indIn (indRaw, nnz);
       Kokkos::View<const double*, Kokkos::Serial, Kokkos::MemoryUnmanaged> valIn (valRaw, nnz);
 
       // Create the output Views.
-      ptr = Kokkos::View<int*, Device> ("ptr", numRows + 1);
+      ptr = Kokkos::View<size_t*, Device> ("ptr", numRows + 1);
       ind = Kokkos::View<int*, Device> ("ind", nnz);
       val = Kokkos::View<double*, Device> ("val", nnz);
 
@@ -126,7 +126,7 @@ namespace { // anonymous
   Kokkos::CrsMatrix<double, int, Device>
   makeCrsMatrix ()
   {
-    Kokkos::View<int*, Device> ptr;
+    Kokkos::View<size_t*, Device> ptr;
     Kokkos::View<int*, Device> ind;
     Kokkos::View<double*, Device> val;
     int numRows;

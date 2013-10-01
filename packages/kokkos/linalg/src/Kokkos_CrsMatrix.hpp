@@ -59,7 +59,7 @@
 #  include <Kokkos_Cuda.hpp>
 #endif
 #include <Kokkos_Macros.hpp>
-#include <Kokkos_CrsArray.hpp>
+#include <Kokkos_StaticCrsGraph.hpp>
 #include <Kokkos_MV.hpp>
 
 #ifndef _OPENMP
@@ -254,12 +254,16 @@ public:
 template<typename ScalarType,
          typename OrdinalType,
          class Device,
-         class MemoryTraits = void>
+         class MemoryTraits = void,
+         typename SizeType = size_t>
+
 class CrsMatrix {
 public:
   typedef Device      device_type;
   typedef ScalarType  scalar_type;
   typedef OrdinalType ordinal_type;
+  typedef MemoryTraits memory_traits;
+  typedef SizeType size_type;
 
   // FIXME (mfh 28 Sep 2013) Cuda::host_mirror_device_type is Threads.
   // Shouldn't CrsMatrix::host_device_type always be the same as its
@@ -277,6 +281,7 @@ public:
 
   //! Type of a host-memory mirror of the sparse matrix.
   typedef CrsMatrix<ScalarType, OrdinalType, host_device_type, MemoryTraits> HostMirror;
+
   /// \brief Type of the graph structure of the sparse matrix.
   ///
   /// FIXME (mfh 29 Sep 2013) It doesn't make much sense to use int
@@ -304,11 +309,19 @@ public:
   /// could have dimensions (and therefore column indices) that fit in
   /// int32_t, but more entries than can be addressed by int32_t or
   /// even uint32_t.
-  typedef Kokkos::CrsArray<OrdinalType, Kokkos::LayoutLeft, Device,int> CrsArrayType;
+  ///
+  /// (CRT 1 Oct 2013) approached the issue above by giving the matrix a
+  /// fifth template parameter which propagates to the CrsArray (now
+  /// StaticCrsGraph). This defaults to size_t. We still might look for a
+  /// better solution though.
+
+  //! Type of the graph structure of the sparse matrix.
+  typedef Kokkos::StaticCrsGraph<OrdinalType, Kokkos::LayoutLeft, Device,SizeType> StaticCrsGraphType;
+
   //! Type of column indices in the sparse matrix.
-  typedef typename CrsArrayType::entries_type index_type;
+  typedef typename StaticCrsGraphType::entries_type index_type;
   //! Type of the "row map" (which contains the offset for each row's data).
-  typedef typename CrsArrayType::row_map_type row_map_type;
+  typedef typename StaticCrsGraphType::row_map_type row_map_type;
   //! Kokkos Array type of the entries (values) in the sparse matrix.
   typedef Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type, MemoryTraits> values_type;
   //! Const version of the type of the entries in the sparse matrix.
@@ -320,7 +333,7 @@ public:
   cusparseHandle_t cusparse_handle;
   cusparseMatDescr_t cusparse_descr;
 #endif // KOKKOS_USE_CUSPARSE
-  CrsArrayType graph;
+  StaticCrsGraphType graph;
   values_type values;
 
   // FIXME (mfh 28 Sep 2013) std::vector should never appear in this
@@ -420,6 +433,35 @@ public:
 #endif // KOKKOS_USE_CUSPARSE
   }
 
+  /// \brief Constructor that accepts a a static graph, and values.
+  ///
+  /// The matrix will store and use the row map, indices, and values
+  /// directly (by view, not by deep copy).
+  ///
+  /// \param label [in] The sparse matrix's label.
+  /// \param nrows [in] The number of rows.
+  /// \param ncols [in] The number of columns.
+  /// \param annz [in] The number of entries.
+  /// \param vals [in/out] The entries.
+  /// \param rows [in/out] The row map (containing the offsets to the
+  ///   data in each row).
+  /// \param cols [in/out] The column indices.
+  CrsMatrix (const std::string &label,
+             OrdinalType ncols,
+             values_type vals,
+             StaticCrsGraphType graph_) :
+    _numRows (graph_.row_map.dimension_0()-1),
+    _numCols (ncols),
+    _nnz (graph_.entries.dimension_0()),
+    values(vals),
+    graph(graph_)
+  {
+#ifdef KOKKOS_USE_CUSPARSE
+    cusparseCreate(&cusparse_handle);
+    cusparseCreateMatDescr(&cusparse_descr);
+#endif // KOKKOS_USE_CUSPARSE
+  }
+  
   void
   import (const std::string &label,
           OrdinalType nrows,
@@ -553,9 +595,15 @@ public:
   // works) won't work if the types aren't compatible.  It would make
   // more sense to template on things like the Device and
   // MemoryTraits.
-  template<typename aScalarType, typename aOrdinalType, class aDevice, class aMemoryTraits>
+  //
+  // COMMENT: (CRT 1 Oct 2013) the alternative it to template on the incoming type,
+  // But that way it still matches this function even if you try to assign a vector
+  // to a matrix. Using the same scalar type and ordinal type as the 'this' matrix does
+  // not necessaryily work because of things like const / non-const
+
+  template<typename aScalarType, typename aOrdinalType, class aDevice, class aMemoryTraits,typename aSizeType>
   CrsMatrix&
-  operator= (const CrsMatrix<aScalarType,aOrdinalType,aDevice,aMemoryTraits>& mtx)
+  operator= (const CrsMatrix<aScalarType,aOrdinalType,aDevice,aMemoryTraits, aSizeType>& mtx)
   {
     _numRows = mtx.numRows();
     _numCols = mtx.numCols();
@@ -605,9 +653,9 @@ private:
   ordinal_type _nnz;
 };
 
-template< typename ScalarType , typename OrdinalType, class Device, class MemoryTraits >
+template< typename ScalarType , typename OrdinalType, class Device, class MemoryTraits, typename SizeType >
 void
-CrsMatrix<ScalarType , OrdinalType, Device, MemoryTraits >::
+CrsMatrix<ScalarType , OrdinalType, Device, MemoryTraits, SizeType >::
 import (const std::string &label,
         OrdinalType nrows,
         OrdinalType ncols,
@@ -633,7 +681,7 @@ import (const std::string &label,
   }
 
   str = label;
-  graph = Kokkos::create_crsarray<CrsArrayType> (str.append (".graph"), row_lengths);
+  graph = Kokkos::create_staticcrsgraph<StaticCrsGraphType> (str.append (".graph"), row_lengths);
   typename values_type::HostMirror h_values = Kokkos::create_mirror_view (values);
   typename index_type::HostMirror h_entries = Kokkos::create_mirror_view (graph.entries);
 
@@ -651,9 +699,9 @@ import (const std::string &label,
   Kokkos::deep_copy (graph.entries, h_entries);
 }
 
-template<typename ScalarType, typename OrdinalType, class Device, class MemoryTraits>
+template<typename ScalarType, typename OrdinalType, class Device, class MemoryTraits, typename SizeType>
 void
-CrsMatrix<ScalarType, OrdinalType, Device, MemoryTraits >::
+CrsMatrix<ScalarType, OrdinalType, Device, MemoryTraits, SizeType >::
 generate (const std::string &label,
           OrdinalType nrows,
           OrdinalType ncols,
@@ -705,9 +753,9 @@ generate (const std::string &label,
 
 }
 
-template<typename ScalarType, typename OrdinalType, class Device, class MemoryTraits>
+template<typename ScalarType, typename OrdinalType, class Device, class MemoryTraits, typename SizeType>
 void
-CrsMatrix<ScalarType, OrdinalType, Device, MemoryTraits >::
+CrsMatrix<ScalarType, OrdinalType, Device, MemoryTraits, SizeType >::
 generate (const std::string &label,
     OrdinalType nrows,
     OrdinalType ncols,
@@ -729,7 +777,7 @@ generate (const std::string &label,
   }
 
   str = label;
-  graph = Kokkos::create_crsarray<CrsArrayType> (str.append (".graph"), row_lengths);
+  graph = Kokkos::create_staticcrsgraph<StaticCrsGraphType> (str.append (".graph"), row_lengths);
   typename values_type::HostMirror h_values = Kokkos::create_mirror_view (values);
   typename index_type::HostMirror h_entries = Kokkos::create_mirror_view (graph.entries);
 
@@ -744,9 +792,9 @@ generate (const std::string &label,
   Kokkos::deep_copy (values, h_values);
   Kokkos::deep_copy (graph.entries, h_entries);
 }
-template<typename ScalarType, typename OrdinalType, class Device, class MemoryTraits>
+template<typename ScalarType, typename OrdinalType, class Device, class MemoryTraits, typename SizeType>
 void
-CrsMatrix<ScalarType, OrdinalType, Device, MemoryTraits >::
+CrsMatrix<ScalarType, OrdinalType, Device, MemoryTraits, SizeType >::
 generate (const std::string &label)
 {
   // Compress the entries
@@ -778,9 +826,9 @@ generate (const std::string &label)
 }
 
 
-template<typename ScalarType, typename OrdinalType, class Device, class MemoryTraits>
+template<typename ScalarType, typename OrdinalType, class Device, class MemoryTraits, typename SizeType>
 void
-CrsMatrix<ScalarType, OrdinalType, Device, MemoryTraits >::
+CrsMatrix<ScalarType, OrdinalType, Device, MemoryTraits, SizeType >::
 generateHostGraph ( OrdinalType nrows,
     OrdinalType ncols,
     OrdinalType cols_per_row)
@@ -1357,46 +1405,48 @@ struct MV_MultiplyFunctor {
   {
     if (doalpha == 0) {
       if (dobeta==2) {
-	MV_MulScalar(y,betav,y);
-      }
-      else {
-	MV_MulScalar(y,dobeta,y);
+	      MV_MulScalar(y,betav,y);
+      } else {
+	      MV_MulScalar(y,dobeta,y);
       }
       return;
-    }
-    else {
+    } else {
       typedef View< typename RangeVector::non_const_data_type ,
-	typename RangeVector::array_layout ,
-	typename RangeVector::device_type ,
-	typename RangeVector::memory_traits >
-	RangeVectorType;
+                    typename RangeVector::array_layout ,
+                    typename RangeVector::device_type ,
+                    typename RangeVector::memory_traits >
+      RangeVectorType;
 
       typedef View< typename DomainVector::const_data_type ,
-	typename DomainVector::array_layout ,
-	typename DomainVector::device_type ,
-	Kokkos::MemoryRandomRead >
-	DomainVectorType;
+                    typename DomainVector::array_layout ,
+                    typename DomainVector::device_type ,
+                    Kokkos::MemoryRandomRead >
+      DomainVectorType;
 
       typedef View< typename CoeffVector1::const_data_type ,
-	typename CoeffVector1::array_layout ,
-	typename CoeffVector1::device_type ,
-	Kokkos::MemoryRandomRead >
-	CoeffVector1Type;
+                    typename CoeffVector1::array_layout ,
+                    typename CoeffVector1::device_type ,
+                    Kokkos::MemoryRandomRead >
+      CoeffVector1Type;
 
       typedef View< typename CoeffVector2::const_data_type ,
-	typename CoeffVector2::array_layout ,
-	typename CoeffVector2::device_type ,
-	Kokkos::MemoryRandomRead >
-	CoeffVector2Type;
+                    typename CoeffVector2::array_layout ,
+                    typename CoeffVector2::device_type ,
+                    Kokkos::MemoryRandomRead >
+      CoeffVector2Type;
 
       typedef CrsMatrix<typename TCrsMatrix::const_scalar_type,
-	typename TCrsMatrix::ordinal_type,
-	typename TCrsMatrix::device_type> CrsMatrixType;
+                        typename TCrsMatrix::ordinal_type,
+                        typename TCrsMatrix::device_type,
+                        typename TCrsMatrix::memory_traits,
+                        typename TCrsMatrix::size_type> CrsMatrixType;
 
       Impl::MV_Multiply_Check_Compatibility(betav,y,alphav,A,x,doalpha,dobeta);
-#ifndef KOKKOS_FAST_COMPILE
-      MV_MultiplyFunctor<RangeVectorType, CrsMatrixType, DomainVectorType, CoeffVector1Type, CoeffVector2Type,
-	doalpha, dobeta,ThreadsPerRow<typename TCrsMatrix::device_type,typename TCrsMatrix::non_const_scalar_type>::value> op ;
+
+      #ifndef KOKKOS_FAST_COMPILE
+      MV_MultiplyFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
+                         CoeffVector1Type, CoeffVector2Type, doalpha, dobeta,
+	          ThreadsPerRow<typename TCrsMatrix::device_type,typename TCrsMatrix::non_const_scalar_type>::value> op ;
       const typename CrsMatrixType::ordinal_type nrow = A.numRows();
       op.m_A = A ;
       op.m_x = x ;
@@ -1409,29 +1459,34 @@ struct MV_MultiplyFunctor {
 #else // NOT KOKKOS_FAST_COMPILE
 
       MV_MultiplyFunctor<RangeVectorType, CrsMatrixType, DomainVectorType, CoeffVector1Type, CoeffVector2Type, 2, 2,
-	ThreadsPerRow<typename TCrsMatrix::device_type, typename TCrsMatrix::non_const_scalar_type>::value> op ;
+	          ThreadsPerRow<typename TCrsMatrix::device_type, typename TCrsMatrix::non_const_scalar_type>::value> op ;
 
       int numVecs = x.dimension_1();
       CoeffVector1 beta = betav;
       CoeffVector2 alpha = alphav;
 
       if (doalpha != 2) {
-	alpha = CoeffVector2("CrsMatrix::auto_a", numVecs);
-	typename CoeffVector2::HostMirror h_a = Kokkos::create_mirror_view(alpha);
-	typename CoeffVector2::scalar_type s_a = (typename CoeffVector2::scalar_type) doalpha;
-	for (int i = 0; i < numVecs; ++i) {
-	  h_a(i) = s_a;
-	}
-	Kokkos::deep_copy(alpha, h_a);
+	      alpha = CoeffVector2("CrsMatrix::auto_a", numVecs);
+	      typename CoeffVector2::HostMirror h_a = Kokkos::create_mirror_view(alpha);
+	      typename CoeffVector2::scalar_type s_a = (typename CoeffVector2::scalar_type) doalpha;
+
+	      for (int i = 0; i < numVecs; ++i)
+	        h_a(i) = s_a;
+
+	      Kokkos::deep_copy(alpha, h_a);
       }
+
       if (dobeta != 2) {
-	beta = CoeffVector1("CrsMatrix::auto_b", numVecs);
-	typename CoeffVector1::HostMirror h_b = Kokkos::create_mirror_view(beta);
-	typename CoeffVector1::scalar_type s_b = (typename CoeffVector1::scalar_type) dobeta;
-	for(int i = 0; i < numVecs; i++)
-	  h_b(i) = s_b;
-	Kokkos::deep_copy(beta, h_b);
+	      beta = CoeffVector1("CrsMatrix::auto_b", numVecs);
+	      typename CoeffVector1::HostMirror h_b = Kokkos::create_mirror_view(beta);
+	      typename CoeffVector1::scalar_type s_b = (typename CoeffVector1::scalar_type) dobeta;
+
+	      for(int i = 0; i < numVecs; i++)
+	        h_b(i) = s_b;
+
+	      Kokkos::deep_copy(beta, h_b);
       }
+
       const typename CrsMatrixType::ordinal_type nrow = A.numRows();
       op.m_A = A;
       op.m_x = x;
@@ -1439,7 +1494,8 @@ struct MV_MultiplyFunctor {
       op.beta = beta;
       op.alpha = alpha;
       op.n = x.dimension_1();
-      Kokkos::parallel_for (nrow * ThreadsPerRow<typename TCrsMatrix::device_type, typename TCrsMatrix::non_const_scalar_type>::value, op);
+      Kokkos::parallel_for (nrow * ThreadsPerRow<typename TCrsMatrix::device_type,
+                            typename TCrsMatrix::non_const_scalar_type>::value, op);
 #endif // KOKKOS_FAST_COMPILE
     }
   }
@@ -1460,45 +1516,49 @@ struct MV_MultiplyFunctor {
   {
     if (doalpha == 0) {
       if (dobeta==2) {
-	V_MulScalar(y,betav,y);
+	      V_MulScalar(y,betav,y);
       }
       else {
-	V_MulScalar(y,dobeta,y);
+	      V_MulScalar(y,dobeta,y);
       }
       return;
-    }
-    else {
+    } else {
       typedef View< typename RangeVector::non_const_data_type ,
-	typename RangeVector::array_layout ,
-	typename RangeVector::device_type ,
-	typename RangeVector::memory_traits >
-	RangeVectorType;
+                    typename RangeVector::array_layout ,
+                    typename RangeVector::device_type ,
+                    typename RangeVector::memory_traits >
+      RangeVectorType;
 
       typedef View< typename DomainVector::const_data_type ,
-	typename DomainVector::array_layout ,
-	typename DomainVector::device_type ,
-	Kokkos::MemoryRandomRead >
-	DomainVectorType;
+                    typename DomainVector::array_layout ,
+                    typename DomainVector::device_type ,
+                    Kokkos::MemoryRandomRead >
+      DomainVectorType;
 
       typedef View< typename CoeffVector1::const_data_type ,
-	typename CoeffVector1::array_layout ,
-	typename CoeffVector1::device_type ,
-	Kokkos::MemoryRandomRead >
-	CoeffVector1Type;
+                    typename CoeffVector1::array_layout ,
+                    typename CoeffVector1::device_type ,
+                    Kokkos::MemoryRandomRead >
+      CoeffVector1Type;
 
       typedef View< typename CoeffVector2::const_data_type ,
-	typename CoeffVector2::array_layout ,
-	typename CoeffVector2::device_type ,
-	Kokkos::MemoryRandomRead >
-	CoeffVector2Type;
+                    typename CoeffVector2::array_layout ,
+                    typename CoeffVector2::device_type ,
+                    Kokkos::MemoryRandomRead >
+      CoeffVector2Type;
 
       typedef CrsMatrix<typename TCrsMatrix::const_scalar_type,
-	typename TCrsMatrix::ordinal_type,
-	typename TCrsMatrix::device_type> CrsMatrixType;
+                        typename TCrsMatrix::ordinal_type,
+                        typename TCrsMatrix::device_type,
+                        typename TCrsMatrix::memory_traits,
+                        typename TCrsMatrix::size_type>
+      CrsMatrixType;
 
       Impl::MV_Multiply_Check_Compatibility(betav,y,alphav,A,x,doalpha,dobeta);
+
 #ifndef KOKKOS_FAST_COMPILE
-      MV_MultiplySingleFunctor<RangeVectorType, CrsMatrixType, DomainVectorType, CoeffVector1Type, CoeffVector2Type, doalpha, dobeta
+      MV_MultiplySingleFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
+                               CoeffVector1Type, CoeffVector2Type, doalpha, dobeta
 	,ThreadsPerRow<typename CrsMatrixType::device_type,typename CrsMatrixType::non_const_scalar_type>::value> op ;
       const typename CrsMatrixType::ordinal_type nrow = A.numRows();
       op.m_A = A ;
@@ -1507,11 +1567,13 @@ struct MV_MultiplyFunctor {
       op.beta = betav;
       op.alpha = alphav;
       op.n = x.dimension(1);
-      Kokkos::parallel_for (nrow * ThreadsPerRow<typename TCrsMatrix::device_type, typename TCrsMatrix::non_const_scalar_type>::value, op);
+      Kokkos::parallel_for (nrow * ThreadsPerRow<typename TCrsMatrix::device_type,
+                            typename TCrsMatrix::non_const_scalar_type>::value, op);
 
 #else // NOT KOKKOS_FAST_COMPILE
 
-      MV_MultiplySingleFunctor<RangeVectorType, CrsMatrixType, DomainVectorType, CoeffVector1Type, CoeffVector2Type, 2, 2,
+      MV_MultiplySingleFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
+                               CoeffVector1Type, CoeffVector2Type, 2, 2,
 	ThreadsPerRow<typename CrsMatrixType::device_type, typename CrsMatrixType::non_const_scalar_type>::value> op;
 
       int numVecs = x.dimension_1();
@@ -1519,20 +1581,24 @@ struct MV_MultiplyFunctor {
       CoeffVector2 alpha = alphav;
 
       if(doalpha!=2) {
-	alpha = CoeffVector2("CrsMatrix::auto_a", numVecs);
-	typename CoeffVector2::HostMirror h_a = Kokkos::create_mirror_view(alpha);
-	typename CoeffVector2::scalar_type s_a = (typename CoeffVector2::scalar_type) doalpha;
-	for(int i = 0; i < numVecs; i++)
-	  h_a(i) = s_a;
-	Kokkos::deep_copy(alpha, h_a);
+	      alpha = CoeffVector2("CrsMatrix::auto_a", numVecs);
+	      typename CoeffVector2::HostMirror h_a = Kokkos::create_mirror_view(alpha);
+	      typename CoeffVector2::scalar_type s_a = (typename CoeffVector2::scalar_type) doalpha;
+
+	      for(int i = 0; i < numVecs; i++)
+	        h_a(i) = s_a;
+
+	      Kokkos::deep_copy(alpha, h_a);
       }
       if(dobeta!=2) {
-	beta = CoeffVector1("CrsMatrix::auto_b", numVecs);
-	typename CoeffVector1::HostMirror h_b = Kokkos::create_mirror_view(beta);
-	typename CoeffVector1::scalar_type s_b = (typename CoeffVector1::scalar_type) dobeta;
-	for(int i = 0; i < numVecs; i++)
-	  h_b(i) = s_b;
-	Kokkos::deep_copy(beta, h_b);
+	      beta = CoeffVector1("CrsMatrix::auto_b", numVecs);
+	      typename CoeffVector1::HostMirror h_b = Kokkos::create_mirror_view(beta);
+	      typename CoeffVector1::scalar_type s_b = (typename CoeffVector1::scalar_type) dobeta;
+
+	      for(int i = 0; i < numVecs; i++)
+	        h_b(i) = s_b;
+
+	      Kokkos::deep_copy(beta, h_b);
       }
       const typename CrsMatrixType::ordinal_type nrow = A.numRows();
       op.m_A = A ;
@@ -1541,7 +1607,8 @@ struct MV_MultiplyFunctor {
       op.beta = beta;
       op.alpha = alpha;
       op.n = x.dimension_1();
-      Kokkos::parallel_for (nrow * ThreadsPerRow<typename TCrsMatrix::device_type, typename TCrsMatrix::non_const_scalar_type>::value, op);
+      Kokkos::parallel_for (nrow * ThreadsPerRow<typename TCrsMatrix::device_type,
+                            typename TCrsMatrix::non_const_scalar_type>::value, op);
 #endif // KOKKOS_FAST_COMPILE
     }
   }
@@ -1811,6 +1878,8 @@ struct MV_MultiplyFunctor {
 
       // FIXME (mfh 09 Aug 2013) Be sure to copy numRows, numCols, and
       // nnz as well.
+      // (CRT 25 Sep 2013) don't copy rather check that they match.
+      // Deep_copy in Kokkos is intended for copy between compatible objects.
     }
   } // namespace KokkosCrsMatrix
 

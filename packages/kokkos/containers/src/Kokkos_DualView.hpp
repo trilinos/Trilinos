@@ -57,6 +57,7 @@
 #define KOKKOS_DUALVIEW_HPP
 
 #include <Kokkos_View.hpp>
+namespace Kokkos {
 
 template< class T , class L , class D>
 class DualView {
@@ -231,5 +232,10 @@ public:
      modified_host++;
    }
   }
+
+  size_t capacity() const {
+    return d_view.capacity();
+  }
 };
+}
 #endif

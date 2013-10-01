@@ -183,6 +183,8 @@ RVector MV_MulScalar( const RVector & r, const typename XVector::scalar_type &a,
  *-------------------------- Vector Add: r = a*x + b*y -------------------------------------
  *------------------------------------------------------------------------------------------*/
 
+/* Variants of Functors with a and b being vectors. */
+
 //Unroll for n<=16
 template<class RVector,class aVector, class XVector, class bVector, class YVector, int scalar_x, int scalar_y,int UNROLL>
 struct MV_AddUnrollFunctor
@@ -316,6 +318,144 @@ struct MV_AddVectorFunctor
       #pragma vector always
       for(size_type k=0;k<n;k++)
 	    m_r(i,k) = m_a(k)*m_x(i,k) + m_b(k)*m_y(i,k);
+
+  }
+};
+
+/* Variants of Functors with a and b being scalars. */
+
+template<class RVector, class XVector, class YVector, int scalar_x, int scalar_y,int UNROLL>
+struct MV_AddUnrollFunctor<RVector,typename XVector::scalar_type, XVector, typename YVector::scalar_type,YVector,scalar_x,scalar_y,UNROLL>
+{
+  typedef typename RVector::device_type        device_type;
+  typedef typename RVector::size_type            size_type;
+
+  RVector   m_r ;
+  XVector  m_x ;
+  YVector   m_y ;
+  typename XVector::scalar_type m_a;
+  typename YVector::scalar_type m_b;
+  size_type n;
+  size_type start;
+
+  MV_AddUnrollFunctor() {n=UNROLL;}
+  //--------------------------------------------------------------------------
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i ) const
+  {
+  if((scalar_x==1)&&(scalar_y==1)){
+  #pragma unroll
+    for(size_type k=0;k<UNROLL;k++)
+      m_r(i,k) = m_x(i,k) + m_y(i,k);
+  }
+  if((scalar_x==1)&&(scalar_y==-1)){
+    #pragma unroll
+    for(size_type k=0;k<UNROLL;k++)
+      m_r(i,k) = m_x(i,k) - m_y(i,k);
+  }
+  if((scalar_x==-1)&&(scalar_y==-1)){
+#pragma unroll
+for(size_type k=0;k<UNROLL;k++)
+      m_r(i,k) = -m_x(i,k) - m_y(i,k);
+  }
+  if((scalar_x==-1)&&(scalar_y==1)){
+#pragma unroll
+for(size_type k=0;k<UNROLL;k++)
+      m_r(i,k) = -m_x(i,k) + m_y(i,k);
+  }
+  if((scalar_x==2)&&(scalar_y==1)){
+#pragma unroll
+for(size_type k=0;k<UNROLL;k++)
+      m_r(i,k) = m_a*m_x(i,k) + m_y(i,k);
+  }
+  if((scalar_x==2)&&(scalar_y==-1)){
+#pragma unroll
+for(size_type k=0;k<UNROLL;k++)
+      m_r(i,k) = m_a*m_x(i,k) - m_y(i,k);
+  }
+  if((scalar_x==1)&&(scalar_y==2)){
+#pragma unroll
+for(size_type k=0;k<UNROLL;k++)
+      m_r(i,k) = m_x(i,k) + m_b*m_y(i,k);
+  }
+  if((scalar_x==-1)&&(scalar_y==2)){
+#pragma unroll
+for(size_type k=0;k<UNROLL;k++)
+      m_r(i,k) = -m_x(i,k) + m_b*m_y(i,k);
+  }
+  if((scalar_x==2)&&(scalar_y==2)){
+#pragma unroll
+for(size_type k=0;k<UNROLL;k++)
+      m_r(i,k) = m_a*m_x(i,k) + m_b*m_y(i,k);
+  }
+  }
+};
+
+template<class RVector, class XVector, class YVector, int scalar_x, int scalar_y>
+struct MV_AddVectorFunctor<RVector,typename XVector::scalar_type, XVector, typename YVector::scalar_type,YVector,scalar_x,scalar_y>
+{
+  typedef typename RVector::device_type        device_type;
+  typedef typename RVector::size_type            size_type;
+
+  RVector   m_r ;
+  XVector  m_x ;
+  YVector   m_y ;
+  typename XVector::scalar_type m_a;
+  typename YVector::scalar_type m_b;
+  size_type n;
+
+  MV_AddVectorFunctor() {n=1;}
+  //--------------------------------------------------------------------------
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i ) const
+  {
+  if((scalar_x==1)&&(scalar_y==1))
+      #pragma ivdep
+      #pragma vector always
+      for(size_type k=0;k<n;k++)
+      m_r(i,k) = m_x(i,k) + m_y(i,k);
+  if((scalar_x==1)&&(scalar_y==-1))
+      #pragma ivdep
+    #pragma vector always
+      for(size_type k=0;k<n;k++)
+      m_r(i,k) = m_x(i,k) - m_y(i,k);
+  if((scalar_x==-1)&&(scalar_y==-1))
+      #pragma ivdep
+      #pragma vector always
+      for(size_type k=0;k<n;k++)
+      m_r(i,k) = -m_x(i,k) - m_y(i,k);
+  if((scalar_x==-1)&&(scalar_y==1))
+      #pragma ivdep
+      #pragma vector always
+      for(size_type k=0;k<n;k++)
+      m_r(i,k) = -m_x(i,k) + m_y(i,k);
+  if((scalar_x==2)&&(scalar_y==1))
+      #pragma ivdep
+      #pragma vector always
+      for(size_type k=0;k<n;k++)
+      m_r(i,k) = m_a*m_x(i,k) + m_y(i,k);
+  if((scalar_x==2)&&(scalar_y==-1))
+      #pragma ivdep
+      #pragma vector always
+      for(size_type k=0;k<n;k++)
+      m_r(i,k) = m_a*m_x(i,k) - m_y(i,k);
+  if((scalar_x==1)&&(scalar_y==2))
+      #pragma ivdep
+      #pragma vector always
+      for(size_type k=0;k<n;k++)
+      m_r(i,k) = m_x(i,k) + m_b*m_y(i,k);
+  if((scalar_x==-1)&&(scalar_y==2))
+      #pragma ivdep
+      #pragma vector always
+      for(size_type k=0;k<n;k++)
+      m_r(i,k) = -m_x(i,k) + m_b*m_y(i,k);
+  if((scalar_x==2)&&(scalar_y==2))
+      #pragma ivdep
+      #pragma vector always
+      for(size_type k=0;k<n;k++)
+      m_r(i,k) = m_a*m_x(i,k) + m_b*m_y(i,k);
 
   }
 };
@@ -586,18 +726,14 @@ RVector MV_Add( const RVector & r,const aVector &av,const XVector & x,
 template<class RVector,class XVector,class YVector>
 RVector MV_Add( const RVector & r, const XVector & x, const YVector & y)
 {
-	Kokkos::View<typename XVector::value_type*  , Kokkos::LayoutRight, typename XVector::device_type> dummy;
-	if(x.dimension(1)>16)
-		return MV_AddVector( r,dummy,x,dummy,y,1,1);
-	return MV_AddUnroll( r,dummy,x,dummy,y,1,1);
+	typename XVector::scalar_type a = 1.0;
+  MV_Add(r,a,x,a,y,1,1);
 }
 
 template<class RVector,class XVector,class bVector, class YVector>
 RVector MV_Add( const RVector & r, const XVector & x, const bVector & bv, const YVector & y )
 {
-  if(x.dimension(1)>16)
-	return MV_AddVector(r,bv,x,bv,y,1,2);
-  return MV_AddUnroll(r,bv,x,bv,y,1,2);
+  MV_Add(r,bv,x,bv,y,1,2);
 }
 
 
@@ -1094,10 +1230,13 @@ struct V_DotFunctor
 };
 
 template<class XVector, class YVector>
-typename XVector::scalar_type V_Dot( const XVector & x, const YVector & y)
+typename XVector::scalar_type V_Dot( const XVector & x, const YVector & y, int n = -1)
 {
   V_DotFunctor<XVector,YVector> f(x,y);
-  return parallel_reduce(x.dimension_0(),f);
+  if (n<0) n = x.dimension_0();
+  typename XVector::scalar_type ret_val;
+  parallel_reduce(n,f,ret_val);
+  return ret_val;
 }
 }//end namespace Kokkos
 #endif /* KOKKOS_MULTIVECTOR_H_ */
