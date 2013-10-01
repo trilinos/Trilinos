@@ -39,23 +39,23 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_STATIC_FIXED_STORAGE_HPP
-#define STOKHOS_STATIC_FIXED_STORAGE_HPP
+#ifndef STOKHOS_VIEW_STORAGE_HPP
+#define STOKHOS_VIEW_STORAGE_HPP
 
-#include "Stokhos_StaticArrayTraits.hpp"
+#include "Stokhos_DynArrayTraits.hpp"
 
 #include "Kokkos_Macros.hpp"
 
 namespace Stokhos {
 
-  //! Statically allocated storage class
-  template <typename ordinal_t, typename value_t, int Num, typename device_t>
-  class StaticFixedStorage {
+  //! Dynamic storage with view semantics
+  template <typename ordinal_t, typename value_t, typename device_t>
+  class ViewStorage {
   public:
 
     static const bool is_static = false;
-    static const int static_size = Num;
-    static const bool supports_reset = false;
+    static const int static_size = 0;
+    static const bool supports_reset = true;
 
     typedef ordinal_t ordinal_type;
     typedef value_t value_type;
@@ -64,89 +64,109 @@ namespace Stokhos {
     typedef const value_type& const_reference;
     typedef value_type* pointer;
     typedef const value_type* const_pointer;
-    typedef Stokhos::StaticArrayTraits<value_type,device_type> ss;
+    typedef Stokhos::DynArrayTraits<value_type,device_type> ds;
 
-    //! Turn StaticFixedStorage into a meta-function class usable with mpl::apply
+    //! Turn ViewStorage into a meta-function class usable with mpl::apply
     template <typename ord_t, typename val_t>
     struct apply {
-      typedef StaticFixedStorage<ord_t,val_t,Num,device_type> type;
+      typedef ViewStorage<ord_t,val_t,device_type> type;
     };
 
     //! Constructor
     KOKKOS_INLINE_FUNCTION
-    StaticFixedStorage(const ordinal_type& sz,
-                       const value_type& x = value_type(0.0)) {
-      ss::fill(coeff_, Num, x);
-    }
+    ViewStorage(pointer v, const ordinal_type& sz, const ordinal_type& stride) :
+      coeff_(v), sz_(sz), stride_(stride) {}
 
-    //! Copy constructor
+    //! Constructor
     KOKKOS_INLINE_FUNCTION
-    StaticFixedStorage(const StaticFixedStorage& s) {
-      ss::copy(s.coeff_, coeff_, Num);
-    }
+    ViewStorage(const ViewStorage& s) :
+      coeff_(s.coeff_), sz_(s.sz_), stride_(s.stride_) {}
 
     //! Destructor
     KOKKOS_INLINE_FUNCTION
-    ~StaticFixedStorage() {}
+    ~ViewStorage() {}
 
     //! Assignment operator
     KOKKOS_INLINE_FUNCTION
-    StaticFixedStorage& operator=(const StaticFixedStorage& s) {
-      ss::copy(s.coeff_, coeff_, Num);
+    ViewStorage& operator=(const ViewStorage& s) {
+      if (&s != this) {
+        coeff_ = s.coeff_;
+        sz_ = s.sz_;
+        stride_ = s.stride_;
+      }
       return *this;
     }
 
     //! Initialize values to a constant value
     KOKKOS_INLINE_FUNCTION
     void init(const_reference v) {
-      ss::fill(coeff_, Num, v);
+      if (stride_ == 1)
+        ds::fill(coeff_, sz_, v);
+      else
+        for (ordinal_type i=0; i<sz_; ++i)
+          coeff_[i*stride_] = v;
     }
 
     //! Initialize values to an array of values
     KOKKOS_INLINE_FUNCTION
     void init(const_pointer v, const ordinal_type& sz = 0) {
+      ordinal_type my_sz = sz;
       if (sz == 0)
-        ss::copy(v, coeff_, Num);
+        my_sz = sz_;
+      if (stride_ == 1)
+        ds::copy(v, coeff_, my_sz);
       else
-        ss::copy(v, coeff_, sz);
+        for (ordinal_type i=0; i<my_sz; ++i)
+          coeff_[i*stride_] = v[i];
     }
 
     //! Load values to an array of values
     KOKKOS_INLINE_FUNCTION
     void load(pointer v) {
-      ss::copy(coeff_, v, Num);
+      if (stride_ == 1)
+        ds::copy(coeff_, v, sz_);
+      for (ordinal_type i=0; i<sz_; ++i)
+        coeff_[i*stride_] = v[i];
     }
 
     //! Resize to new size (values are preserved)
     KOKKOS_INLINE_FUNCTION
-    void resize(const ordinal_type& sz) {}
+    void resize(const ordinal_type& sz) {
+      sz_ = sz;
+    }
 
     //! Reset storage to given array, size, and stride
     KOKKOS_INLINE_FUNCTION
     void shallowReset(pointer v, const ordinal_type& sz,
-                      const ordinal_type& stride, bool owned) {}
+                      const ordinal_type& stride, bool owned) {
+      coeff_ = v;
+      sz_ = sz;
+      stride_ = stride;
+    }
 
     //! Return size
     KOKKOS_INLINE_FUNCTION
-    static ordinal_type size() { return Num; }
+    ordinal_type size() const { return sz_; }
 
     //! Coefficient access (avoid if possible)
     KOKKOS_INLINE_FUNCTION
     const_reference operator[] (const ordinal_type& i) const {
-      return coeff_[i];
+      return coeff_[i*stride_];
     }
 
     //! Coefficient access (avoid if possible)
     KOKKOS_INLINE_FUNCTION
-    reference operator[] (const ordinal_type& i) { return coeff_[i]; }
+    reference operator[] (const ordinal_type& i) {
+      return coeff_[i*stride_];
+    }
 
     template <int i>
     KOKKOS_INLINE_FUNCTION
-    reference getCoeff() { return coeff_[i]; }
+    reference getCoeff() { return coeff_[i*stride_]; }
 
     template <int i>
     KOKKOS_INLINE_FUNCTION
-    const_reference getCoeff() const { return coeff_[i]; }
+    const_reference getCoeff() const { return coeff_[i*stride_]; }
 
     //! Get coefficients
     KOKKOS_INLINE_FUNCTION
@@ -159,10 +179,16 @@ namespace Stokhos {
   private:
 
     //! Coefficient values
-    value_type coeff_[Num];
+    pointer coeff_;
+
+    //! Size of array used
+    ordinal_type sz_;
+
+    //! Stride of array
+    ordinal_type stride_;
 
   };
 
 }
 
-#endif // STOKHOS_STATIC_FIXED_STORAGE_HPP
+#endif // STOKHOS_VIEW_STORAGE_HPP
