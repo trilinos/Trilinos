@@ -67,7 +67,9 @@ STKUNIT_UNIT_TEST(StkIoTest, FieldNameWithRestart)
         stk::mesh::put_field(field0, stk::mesh::Entity::NODE, stkMeshMetaData.universal_part());
         stk::io::set_field_role(field0, Ioss::Field::TRANSIENT);
 
-        const std::string requestedFieldNameForOutput("jeSSe");
+        std::string requestedFieldNameForOutput("notjeSSe");
+        stk::io::set_results_field_name(field0, requestedFieldNameForOutput);
+        requestedFieldNameForOutput = "jeSSe";
         stk::io::set_results_field_name(field0, requestedFieldNameForOutput);
 
         stkIo.add_restart_field(field0);
@@ -85,8 +87,8 @@ STKUNIT_UNIT_TEST(StkIoTest, FieldNameWithRestart)
     }
 
     Ioss::DatabaseIO *iossDb = Ioss::IOFactory::create("exodus", restartFilename, Ioss::READ_RESTART, communicator);
-    Ioss::Region *iossRegion = new Ioss::Region(iossDb);
-    Ioss::NodeBlock *nodeBlockAssociatedWithField0 = iossRegion->get_node_blocks()[0];
+    Ioss::Region iossRegion(iossDb);
+    Ioss::NodeBlock *nodeBlockAssociatedWithField0 = iossRegion.get_node_blocks()[0];
     Ioss::NameList fieldNames;
     nodeBlockAssociatedWithField0->field_describe(Ioss::Field::TRANSIENT, &fieldNames);
 
