@@ -52,7 +52,7 @@ public:
       AABBVector side_1_vector, side_2_vector;
       stk::mesh::Selector & side1 = m_periodic_pairs[i].first;
       stk::mesh::Selector & side2 = m_periodic_pairs[i].second;
-      const CoordinatesTransform transform_method = m_transform_coords[0];
+      const CoordinatesTransform transform_method = m_transform_coords[i];
 
 
       double local_centroid[6] = {0};
@@ -149,22 +149,46 @@ private:
 
   void resolve_multi_periodicity()
   {
-    //for 2 cases, we just need one intersection
-    if (m_periodic_pairs.size() == 2)
+    switch (m_periodic_pairs.size())
     {
-      const stk::mesh::Selector & domainA = m_periodic_pairs[0].first;
-      const stk::mesh::Selector & domainB = m_periodic_pairs[1].first;
-      const stk::mesh::Selector domainIntersection = domainA & domainB;
+      case 0:
+      case 1:
+        //nothing to do here
+        break;
+      case 2:
+      {
+        const stk::mesh::Selector & domainA = m_periodic_pairs[0].first;
+        const stk::mesh::Selector & domainB = m_periodic_pairs[1].first;
+        const stk::mesh::Selector domainIntersection = domainA & domainB;
 
-      const stk::mesh::Selector & rangeA = m_periodic_pairs[0].second;
-      const stk::mesh::Selector & rangeB = m_periodic_pairs[1].second;
-      const stk::mesh::Selector rangeIntersection = rangeA & rangeB;
+        const stk::mesh::Selector & rangeA = m_periodic_pairs[0].second;
+        const stk::mesh::Selector & rangeB = m_periodic_pairs[1].second;
+        const stk::mesh::Selector rangeIntersection = rangeA & rangeB;
 
-      //now add new pair with this
-      m_periodic_pairs.push_back(std::make_pair(domainIntersection, rangeIntersection) );
+        //now add new pair with this
+        add_periodic_pair(domainIntersection, rangeIntersection);
+        break;
+      }
+      case 3:
+      {
+        const stk::mesh::Selector domainA = m_periodic_pairs[0].first;
+        const stk::mesh::Selector domainB = m_periodic_pairs[1].first;
+        const stk::mesh::Selector domainC = m_periodic_pairs[2].first;
+
+        const stk::mesh::Selector rangeA = m_periodic_pairs[0].second;
+        const stk::mesh::Selector rangeB = m_periodic_pairs[1].second;
+        const stk::mesh::Selector rangeC = m_periodic_pairs[2].second;
+
+        //edges
+        add_periodic_pair(domainA & domainB, rangeA & rangeB);
+        add_periodic_pair(domainB & domainC, rangeB & rangeC);
+        add_periodic_pair(domainA & domainC, rangeA & rangeC);
+        break;
+      }
+      default:
+        ThrowRequireMsg(false, "Cannot handle this number of periodic pairs");
+        break;
     }
-    //TODO: triply periodic case below
-
   }
 
   size_t populate_search_vector(stk::mesh::Selector side_selector
