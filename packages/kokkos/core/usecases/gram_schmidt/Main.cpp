@@ -128,7 +128,7 @@ int main( int argc , char ** argv )
                 << "cuda DEVICE# | "
                 << "test #LENGTH_BEGIN #LENGTH_END #COUNT #ITER )"
                 << std::endl
-                << "thread capacity = " << core_top.first << "x" << gang_worker_capacity
+                << "thread capacity = " << numa_count << "x" << gang_worker_capacity
                 << std::endl
                 << "cuda devices = "
                 << cuda_device_count
