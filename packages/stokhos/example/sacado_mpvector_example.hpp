@@ -156,11 +156,11 @@ template < typename Scalar,
            typename ScalarVector,
            typename Device >
 struct vector_kernel< Scalar,
-                      Sacado::MP::Vector< Stokhos::ViewStorage<Ordinal,Scalar,Device> >,
+                      Sacado::MP::Vector< Stokhos::ViewStridedStorage<Ordinal,Scalar,Device> >,
                       ScalarVector,
                       Device > {
   typedef Scalar scalar_type;
-  typedef Sacado::MP::Vector< Stokhos::ViewStorage<Ordinal,Scalar,Device> > array_vector_type;
+  typedef Sacado::MP::Vector< Stokhos::ViewStridedStorage<Ordinal,Scalar,Device> > array_vector_type;
   typedef ScalarVector scalar_vector_type;
   typedef Device device_type;
   typedef typename array_vector_type::storage_type storage_type;
@@ -389,7 +389,7 @@ struct MPVectorTypes {
   typedef Stokhos::DynamicStorage<int,scalar_type,device_type> dynamic_storage;
   typedef Stokhos::DynamicStridedStorage<int,scalar_type,device_type> dynamic_strided_storage;
   typedef Stokhos::DynamicThreadedStorage<int,scalar_type,device_type> dynamic_threaded_storage;
-  typedef Stokhos::ViewStorage<int,scalar_type,device_type> view_storage;
+  typedef Stokhos::ViewStridedStorage<int,scalar_type,device_type> view_storage;
 
   // Vector types
   typedef Sacado::MP::Vector<static_storage> static_vector;

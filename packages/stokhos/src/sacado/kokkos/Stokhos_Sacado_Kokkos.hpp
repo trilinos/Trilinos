@@ -57,6 +57,7 @@
 #include "Stokhos_DynamicThreadedStorage.hpp"
 #include "Stokhos_LocalStorage.hpp"
 #include "Stokhos_ViewStorage.hpp"
+#include "Stokhos_ViewStridedStorage.hpp"
 
 #include "Sacado_MP_ExpressionTraits.hpp"
 #include "Sacado_MP_VectorTraits.hpp"
