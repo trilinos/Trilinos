@@ -51,7 +51,6 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitBDFStepper, minOrder ) {
   std::vector<StepSizeType> stepTypeVec(2);
   stepTypeVec[0] = STEP_TYPE_VARIABLE;
   stepTypeVec[1] = STEP_TYPE_FIXED;
-  double step = -1.0;
   int maxOrder = 5;
   for (int minOrder=1 ; minOrder <= 5 ; ++minOrder ) {
     // parameter list
@@ -70,12 +69,12 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitBDFStepper, minOrder ) {
       stepper->setInitialCondition(model_ic);
 
       for (int order=1 ; order<=minOrder ; ++order) {
-        step = stepper->takeStep(1.0,stepType);
+        stepper->takeStep(1.0,stepType);
         const StepStatus<double> status = stepper->getStepStatus();
         TEST_EQUALITY_CONST( status.order, order );
       }
       for (int steps=0 ; steps<4 ; ++steps) {
-        step = stepper->takeStep(1.0,stepType);
+        stepper->takeStep(1.0,stepType);
         const StepStatus<double> status = stepper->getStepStatus();
         TEST_COMPARE( status.order, >=, minOrder );
         TEST_COMPARE( status.order, <=, maxOrder );
