@@ -40,32 +40,6 @@ void testFieldNamedCorrectly(Ioss::Region *ioRegion, MPI_Comm communicator, cons
     EXPECT_STREQ(goldFieldName.c_str(), fieldNames[0].c_str());
 }
 
-STKUNIT_UNIT_TEST(StkIoTest, FieldName)
-{
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    const std::string internalClientFieldName = "Field0";
-    stk::io::MeshData stkIo(communicator);
-    generateMetaData(stkIo);
-
-    stk::mesh::MetaData &stkMeshMetaData = stkIo.meta_data();
-    createNamedFieldOnMesh(stkMeshMetaData, internalClientFieldName);
-
-    stk::mesh::FieldBase *field0 = stkMeshMetaData.get_field(internalClientFieldName);
-    std::string requestedFieldNameForResultsOutput("jeSSe");
-    markFieldForResultsOutputWithNewName(field0, requestedFieldNameForResultsOutput);
-
-    stkIo.populate_bulk_data();
-
-    const std::string outputFileName = "ourSillyOutput.exo";
-    stkIo.create_output_mesh(outputFileName);
-    stkIo.define_output_fields();
-
-    Ioss::Region *ioRegion = stkIo.output_io_region().get();
-    testFieldNamedCorrectly(ioRegion, communicator, requestedFieldNameForResultsOutput);
-
-    unlink(outputFileName.c_str());
-}
-
 STKUNIT_UNIT_TEST(StkIoTest, FieldNameRenameTwice)
 {
     std::string restartFilename = "output.restart";

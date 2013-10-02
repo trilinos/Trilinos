@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-
 #include <string>
 #include <mpi.h>
 #include <stk_io/MeshReadWriteUtils.hpp>
