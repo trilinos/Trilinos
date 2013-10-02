@@ -183,6 +183,7 @@ private:
         add_periodic_pair(domainA & domainB, rangeA & rangeB);
         add_periodic_pair(domainB & domainC, rangeB & rangeC);
         add_periodic_pair(domainA & domainC, rangeA & rangeC);
+        add_periodic_pair(domainA & domainB & domainC, rangeA & rangeB & rangeC);
         break;
       }
       default:

@@ -199,6 +199,9 @@ void check_gold_three_way_multiperiodic( const SearchPairVector & search_results
   gold.push_back(std::make_pair(9,60));
   gold.push_back(std::make_pair(13,64));
 
+  //corners
+  gold.push_back(std::make_pair(1,64));
+
   for (size_t i=0, size=search_results.size(); i<size; ++i) {
     stk::mesh::EntityId domain_node = search_results[i].first.ident.id();
     stk::mesh::EntityId range_node = search_results[i].second.ident.id();
@@ -411,7 +414,7 @@ STKUNIT_UNIT_TEST(CoarseSearch, ThreeWayMultiPeriodicBC)
 
   if (bulk_data.parallel_size() == 1)
   {
-    EXPECT_EQ(pbc_search.get_pairs().size(), 60u);
+    EXPECT_EQ(pbc_search.get_pairs().size(), 61u);
   }
 #if 0  //do some output  const PeriodicSearch::SearchPairVector & search_results = pbc_search.get_pairs();  for (size_t i = 0; i < search_results.size(); ++i)  {    const stk::mesh::EntityId domain_node = search_results[i].first.ident.id();    const stk::mesh::EntityId range_node = search_results[i].second.ident.id();    std::cout << domain_node << " ====> "<< range_node << std::endl;  }
   //also check the number//  const int local_search_count = pbc_search.get_pairs().size();//  int global_search_count=0;//  stk::all_reduce_sum(bulk_data.parallel(), &local_search_count, &global_search_count, 1);/*
