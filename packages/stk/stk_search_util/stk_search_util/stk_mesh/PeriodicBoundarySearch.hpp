@@ -42,44 +42,51 @@ public:
 
   void find_periodic_nodes(stk::ParallelMachine parallel)
   {
-    AABBVector side_1_vector, side_2_vector;
-    stk::mesh::Selector & side1 = m_periodic_pairs[0].first;
-    stk::mesh::Selector & side2 = m_periodic_pairs[0].second;
-    const CoordinatesTransform transform_method = m_transform_coords[0];
+
+    resolve_multi_periodicity();
 
     m_search_results.clear();
-
-    double local_centroid[6] = {0};
-    size_t local_node_count[2];
-
-    local_node_count[0] =
-        populate_search_vector(  side1
-                                ,side_1_vector
-                                ,local_centroid );
-
-    local_node_count[1] =
-        populate_search_vector( side2
-                                ,side_2_vector
-                                ,local_centroid + 3 );
-
-
-    switch (transform_method)
+    for (size_t i = 0; i < m_periodic_pairs.size(); ++i)
     {
-      case LINEAR_TRANSLATION:
-        translate_coordinates(parallel, local_node_count, local_centroid, side_1_vector, side_2_vector);
-        break;
-      default:
-        ThrowRequireMsg(false, "Periodic transform method doesn't exist");
-        break;
-    }
+      SearchPairVector search_results;
+      AABBVector side_1_vector, side_2_vector;
+      stk::mesh::Selector & side1 = m_periodic_pairs[i].first;
+      stk::mesh::Selector & side2 = m_periodic_pairs[i].second;
+      const CoordinatesTransform transform_method = m_transform_coords[0];
 
-    stk::search::FactoryOrder order;
-    order.m_communicator = parallel;
-    stk::search::coarse_search( m_search_results
-        ,side_2_vector
-        ,side_1_vector
-        ,order
-    );
+
+      double local_centroid[6] = {0};
+      size_t local_node_count[2];
+
+      local_node_count[0] =
+          populate_search_vector(  side1
+                                   ,side_1_vector
+                                   ,local_centroid );
+
+      local_node_count[1] =
+          populate_search_vector( side2
+                                  ,side_2_vector
+                                  ,local_centroid + 3 );
+
+
+      switch (transform_method)
+      {
+        case LINEAR_TRANSLATION:
+          translate_coordinates(parallel, local_node_count, local_centroid, side_1_vector, side_2_vector);
+          break;
+        default:
+          ThrowRequireMsg(false, "Periodic transform method doesn't exist");
+          break;
+      }
+      stk::search::FactoryOrder order;
+      order.m_communicator = parallel;
+      stk::search::coarse_search( search_results
+          ,side_2_vector
+          ,side_1_vector
+          ,order );
+
+      m_search_results.insert(m_search_results.end(), search_results.begin(), search_results.end() );
+    }
 
   }
 
@@ -139,6 +146,26 @@ private:
   std::vector<CoordinatesTransform>  m_transform_coords;
   SearchPairVector m_search_results;
   stk::mesh::Ghosting * m_periodic_ghosts;
+
+  void resolve_multi_periodicity()
+  {
+    //for 2 cases, we just need one intersection
+    if (m_periodic_pairs.size() == 2)
+    {
+      const stk::mesh::Selector & domainA = m_periodic_pairs[0].first;
+      const stk::mesh::Selector & domainB = m_periodic_pairs[1].first;
+      const stk::mesh::Selector domainIntersection = domainA & domainB;
+
+      const stk::mesh::Selector & rangeA = m_periodic_pairs[0].second;
+      const stk::mesh::Selector & rangeB = m_periodic_pairs[1].second;
+      const stk::mesh::Selector rangeIntersection = rangeA & rangeB;
+
+      //now add new pair with this
+      m_periodic_pairs.push_back(std::make_pair(domainIntersection, rangeIntersection) );
+    }
+    //TODO: triply periodic case below
+
+  }
 
   size_t populate_search_vector(stk::mesh::Selector side_selector
                               , AABBVector & aabb_vector
