@@ -40,6 +40,26 @@ public:
 
   const SearchPairVector & get_pairs() const { return m_search_results; }
 
+  stk::mesh::Selector get_domain_selector() const
+  {
+    stk::mesh::Selector result;
+    for (SelectorPairVector::const_iterator it = m_periodic_pairs.begin(); it != m_periodic_pairs.end(); ++it)
+    {
+      result |= it->first;
+    }
+    return result;
+  }
+
+  stk::mesh::Selector get_range_selector() const
+  {
+    stk::mesh::Selector result;
+    for (SelectorPairVector::const_iterator it = m_periodic_pairs.begin(); it != m_periodic_pairs.end(); ++it)
+    {
+      result |= it->second;
+    }
+    return result;
+  }
+
   void find_periodic_nodes(stk::ParallelMachine parallel)
   {
 
@@ -93,6 +113,12 @@ public:
   size_t size() const { return m_search_results.size();}
 
   std::pair<stk::mesh::Entity, stk::mesh::Entity> operator[](size_t i) const
+  {
+    return std::make_pair(m_bulk_data.get_entity(m_search_results[i].first.ident),
+        m_bulk_data.get_entity(m_search_results[i].second.ident));
+  }
+
+  std::pair<stk::mesh::Entity, stk::mesh::Entity> get_node_pair(size_t i) const
   {
     return std::make_pair(m_bulk_data.get_entity(m_search_results[i].first.ident),
         m_bulk_data.get_entity(m_search_results[i].second.ident));
