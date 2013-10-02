@@ -19,7 +19,39 @@ namespace stk {
       int mark = 0;
       if (selected && ref_field_criterion) mark |= DO_REFINE;
       if (selected && unref_field_criterion) mark |= DO_UNREFINE;
+
+      stk::mesh::EntityRank rank = m_eMesh.entity_rank(entity);
+      if (rank < m_eMesh.element_rank())
+        {
+          if (m_will_refine[rank])
+            {
+              const percept::MyPairIterRelation elemNeighbors (m_eMesh, entity, m_eMesh.element_rank());
+              if (elemNeighbors.size())
+                {
+                  for (unsigned i=0; i < elemNeighbors.size(); ++i)
+                    {
+                      int markElemNeighbor = this->operator()(elemNeighbors[i].entity());
+                      if (markElemNeighbor & DO_UNREFINE)
+                        {
+                          mark |= DO_REFINE;
+                          //std::cout << "here 2";
+                        }
+                    }
+                }
+            }
+        }
       return mark;
+    }
+
+    void ElementRefinePredicate::set_sub_dim_refine_ranks(const bool will_refine[3])
+    {
+      for (unsigned i=0; i < 3; i++)
+        m_will_refine[i] = will_refine[i];
+    }
+    void ElementRefinePredicate::get_sub_dim_refine_ranks(bool will_refine[3])
+    {
+      for (unsigned i=0; i < 3; i++)
+        will_refine[i] = m_will_refine[i];
     }
 
     void ElementRefinePredicate::refine(IAdapter& breaker, bool enforce_what[3])

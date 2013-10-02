@@ -11,10 +11,19 @@ namespace stk {
       //PerceptMesh& m_eMesh;
 
       ElementRefinePredicate(PerceptMesh& eMesh, stk::mesh::Selector* selector=0, stk::mesh::FieldBase *field=0, double tolerance=0.0) :
-        IElementBasedAdapterPredicate(eMesh, selector, field, tolerance) {}
+        IElementBasedAdapterPredicate(eMesh, selector, field, tolerance) {
+        for (int i=0; i < 3; i++)
+          m_will_refine[i] = false;
+        m_will_refine[eMesh.side_rank()] = true;
+      }
 
       /// Return DO_REFINE, DO_UNREFINE, DO_NOTHING
       int operator()(const stk::mesh::Entity entity);
+
+      /// optionally mark sidesets/edges/faces for refinement
+      /// @param will_refine: {node-, edge-, face-} neighbors
+      void set_sub_dim_refine_ranks(const bool will_refine[3]);
+      void get_sub_dim_refine_ranks(bool will_refine[3]);
 
       /// wrappers around refine and unrefine
       /// @param enforce_2_to_1_what: {node-, edge-, face-} neighbors
@@ -49,6 +58,9 @@ namespace stk {
       bool min_max_neighbors_level(stk::mesh::Entity element, int min_max[2], ScalarIntFieldType *refine_level, bool check_what[3] );
       void get_neighbors(stk::mesh::Entity element, ScalarIntFieldType *refine_level, bool get_what[3],
                          std::set<stk::mesh::Entity>& selected_neighbors);
+
+      bool m_will_refine[3];
+
     };
 
     /** Example of how the above is used (pseudo-code):
