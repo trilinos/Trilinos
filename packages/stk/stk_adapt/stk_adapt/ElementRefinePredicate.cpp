@@ -17,6 +17,13 @@ namespace stk {
       bool ref_field_criterion = (fdata  && fdata[0] > 0);
       bool unref_field_criterion = (fdata && fdata[0] < 0);
       int mark = 0;
+      if (0)
+        {
+          const percept::MyPairIterRelation sides (m_eMesh, entity, m_eMesh.side_rank());
+          if (sides.size())
+            return mark;
+        }
+
       if (selected && ref_field_criterion) mark |= DO_REFINE;
       if (selected && unref_field_criterion) mark |= DO_UNREFINE;
 
