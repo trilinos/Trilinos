@@ -163,7 +163,7 @@ int GMRES(const Operator &A, MultiVector &x, const MultiVector &b,
             ApplyPlaneRotation(G.H[i][i], G.H[i + 1][i], G.cs[i], G.sn[i]);
             ApplyPlaneRotation(s[i], s[i + 1], G.cs[i], G.sn[i]);
 
-            if (! myPID) std::cout << "iter: " << j << ", residual: " << resid << std::endl;
+//            if (! myPID) std::cout << "iter: " << j << ", residual: " << resid << std::endl;
 
             if ((resid = abs(s[i + 1]) / normb) < tol) {
                 MultiVector y(b.Map(), 1, true);

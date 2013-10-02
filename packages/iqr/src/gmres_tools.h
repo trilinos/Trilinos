@@ -179,7 +179,7 @@ int GMRESManager< Map, MultiVector,
 
     //std::cout << "GMRES_TOOLS.solve: prec with m = " << mm << std::endl;
     int myPID = map_.Comm().MyPID();
-    if (! myPID) std::cout << "Apply inverse " << id << "\n";
+//    if (! myPID) std::cout << "Apply inverse " << id << "\n";
 
     int i;
     LocalVector bp(mm + 1, 0.0);
