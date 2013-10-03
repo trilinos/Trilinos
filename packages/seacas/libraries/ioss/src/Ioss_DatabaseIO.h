@@ -162,6 +162,9 @@ namespace Ioss {
     bool get_logging() const {return doLogging && !singleProcOnly;}
     void set_logging(bool on_off) {doLogging = on_off;}
 
+    bool is_parallel_consistent() const {return isParallelConsistent;}
+    void set_parallel_consistency(bool on_off) {isParallelConsistent = on_off;}
+
     bool get_use_generic_canonical_name() const {return useGenericCanonicalName;}
     void set_use_generic_canonical_name(bool yes_no) {useGenericCanonicalName = yes_no;}
     static bool set_use_generic_canonical_name_default(bool yes_no);
@@ -413,6 +416,10 @@ namespace Ioss {
     Ioss::ParallelUtils util_; // Encapsulate parallel and other utility functions.
     Region *region_;
     bool isInput;
+    bool isParallelConsistent; // True if application will make field data get/put calls parallel consistently.
+                               // True is default and required for parallel-io databases.
+                               // Even if false, metadata operations must be called by all processors
+    
     bool singleProcOnly; // True if history or heartbeat which is only written from proc 0...
     bool doLogging; // True if logging field input/output
     bool useGenericCanonicalName; // True if "block_id" is used as canonical name instead of the name
