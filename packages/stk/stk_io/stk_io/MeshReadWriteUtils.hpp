@@ -315,6 +315,7 @@ namespace stk {
         int process_output_request(double time);
         int process_output_request(double time, const std::set<const stk::mesh::Part*> &exclude);
         void write_results_global(const std::string &globalVarName, double dataType);
+        void write_results_global(const std::string &globalVarName, int dataType);
 
         /** RESTART **/
         /**

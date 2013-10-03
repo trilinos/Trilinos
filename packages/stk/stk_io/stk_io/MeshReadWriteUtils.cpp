@@ -1659,11 +1659,22 @@ namespace stk {
         m_output_region->field_add(Ioss::Field(globalVarName, dataType, "scalar", Ioss::Field::TRANSIENT, numberOfThingsToOutput));
     }
 
+    template <typename DataType>
+    void internal_write_results_global(Teuchos::RCP<Ioss::Region> output_region, const std::string &globalVarName, DataType globalVarData)
+    {
+        ThrowErrorMsgIf (Teuchos::is_null(output_region),
+                         "There is no Output mesh region associated with this Mesh Data.");
+        output_region->put_field_data(globalVarName, &globalVarData, sizeof(DataType));
+    }
+
     void MeshData::write_results_global(const std::string &globalVarName, double globalVarData)
     {
-        ThrowErrorMsgIf (Teuchos::is_null(m_output_region),
-                         "There is no Output mesh region associated with this Mesh Data.");
-        m_output_region->put_field_data(globalVarName, &globalVarData, sizeof(double));
+        internal_write_results_global(m_output_region, globalVarName, globalVarData);
+    }
+
+    void MeshData::write_results_global(const std::string &globalVarName, int globalVarData)
+    {
+        internal_write_results_global(m_output_region, globalVarName, globalVarData);
     }
 
     // ========================================================================
