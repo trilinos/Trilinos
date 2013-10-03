@@ -1087,7 +1087,6 @@ inline
 const T *
 MetaData::declare_attribute_with_delete( const T * a )
 {
-  require_not_committed();
   return m_attributes.insert_with_delete( a );
 }
 
@@ -1102,7 +1101,6 @@ inline
 const T *
 MetaData::declare_attribute_no_delete( const T * attribute )
 {
-  require_not_committed();
   return m_attributes.insert_no_delete( attribute );
 }
 
@@ -1119,7 +1117,6 @@ inline
 const T *
 MetaData::declare_attribute_with_delete( Part & part , const T * attribute )
 {
-  require_not_committed();
   return m_part_repo.declare_attribute_with_delete( part, attribute );
 }
 
@@ -1128,7 +1125,6 @@ inline
 const T *
 MetaData::declare_attribute_no_delete( Part & part , const T * attribute )
 {
-  require_not_committed();
   return m_part_repo.declare_attribute_no_delete( part, attribute );
 }
 
@@ -1145,7 +1141,6 @@ inline
 const T *
 MetaData::declare_attribute_with_delete( FieldBase & field , const T * attribute )
 {
-  require_not_committed();
   return m_field_repo.declare_attribute_with_delete(field, attribute);
 }
 
@@ -1154,7 +1149,6 @@ inline
 const T *
 MetaData::declare_attribute_no_delete( FieldBase & field , const T * attribute )
 {
-  require_not_committed();
   return m_field_repo.declare_attribute_no_delete(field, attribute);
 }
 
