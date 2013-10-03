@@ -126,7 +126,10 @@ STKUNIT_UNIT_TEST(StkIoTest, FieldNameWithResultsAndRestart)
         stkIo.define_restart_fields();
 
         double time = 0.0;
-        stkIo.process_output_request(time);
+        stkIo.begin_results_output_at_time(time);
+        stkIo.process_output_request();
+        stkIo.end_current_results_output();
+
         stkIo.process_restart_output(time);
 
         Ioss::Region *ioRegion = stkIo.output_io_region().get();

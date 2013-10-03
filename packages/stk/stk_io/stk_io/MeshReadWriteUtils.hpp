@@ -14,6 +14,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
 #include <Ioss_PropertyManager.h>
+#include <Ioss_Field.h>
 #include <init/Ionit_Initializer.h>
 #include <Teuchos_RCP.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
@@ -298,12 +299,22 @@ namespace stk {
 
         void add_results_field(stk::mesh::FieldBase &field, const std::string &db_name = std::string());
 
+        void add_results_global(const std::string &globalVarName, Ioss::Field::BasicType dataType);
+
+        /**
+         * Add a transient step to the mesh database at time 'time'.
+         */
+        void begin_results_output_at_time(double time);
+        void end_current_results_output();
+
         /**
          * Add a transient step to the mesh database at time 'time' and
          * output the data for all defined fields to the database.
          */
+        int process_output_request();
         int process_output_request(double time);
         int process_output_request(double time, const std::set<const stk::mesh::Part*> &exclude);
+        void write_results_global(const std::string &globalVarName, double dataType);
 
         /** RESTART **/
         /**
@@ -426,7 +437,7 @@ namespace stk {
         Ioss::PropertyManager m_property_manager;
 
       private:
-        void internal_process_output_request(int step, const std::set<const stk::mesh::Part*> &exclude);
+        void internal_process_output_request(const std::set<const stk::mesh::Part*> &exclude);
         void internal_process_restart_output(int step);
         void create_ioss_region();
         void define_output_database();
@@ -452,10 +463,11 @@ namespace stk {
         Teuchos::RCP<stk::mesh::Selector> m_anded_selector;
         stk::mesh::ConnectivityMap m_connectivity_map;
 
-      
+        int mCurrentOutputStep;
+        bool useNodesetForPartNodesFields;
+
         MeshData(const MeshData&); // Do not implement
         MeshData& operator=(const MeshData&); // Do not implement
-        bool useNodesetForPartNodesFields;
     };
   }
 }

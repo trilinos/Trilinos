@@ -836,7 +836,7 @@ namespace stk {
 
     MeshData::MeshData()
       : m_communicator_(MPI_COMM_NULL), m_anded_selector(NULL), m_connectivity_map(stk::mesh::ConnectivityMap::default_map()),
-	useNodesetForPartNodesFields(true)
+        mCurrentOutputStep(-1), useNodesetForPartNodesFields(true)
     {
       Ioss::Init::Initializer::initialize_ioss();
     }
@@ -844,7 +844,7 @@ namespace stk {
     MeshData::MeshData(MPI_Comm comm, stk::mesh::ConnectivityMap * connectivity_map)
       : m_communicator_(comm), m_anded_selector(NULL)
       , m_connectivity_map(connectivity_map != NULL ? *connectivity_map : stk::mesh::ConnectivityMap::default_map()),
-	useNodesetForPartNodesFields(true)
+        mCurrentOutputStep(-1), useNodesetForPartNodesFields(true)
     {
       Ioss::Init::Initializer::initialize_ioss();
     }
@@ -1019,6 +1019,9 @@ namespace stk {
                        "There is no Output database associated with this Mesh Data.");
       define_output_database();
       write_output_database();
+
+      //Attempt to avoid putting state change into the interface.  We'll see . . .
+      m_output_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
     }
 
     // ========================================================================
@@ -1030,7 +1033,9 @@ namespace stk {
       m_output_region->begin_mode(Ioss::STATE_TRANSIENT);
 
       int out_step = m_output_region->add_state(time);
-      internal_process_output_request(out_step,exclude);
+      m_output_region->begin_state(out_step);
+      internal_process_output_request(exclude);
+      m_output_region->end_state(out_step);
 
       m_output_region->end_mode(Ioss::STATE_TRANSIENT);
 
@@ -1038,18 +1043,49 @@ namespace stk {
     }
 
     // ========================================================================
+    int MeshData::process_output_request()
+    {
+      ThrowErrorMsgIf (Teuchos::is_null(m_output_region),
+                       "There is no Output mesh region associated with this Mesh Data.");
+      internal_process_output_request(std::set<const stk::mesh::Part*>());
+
+      return mCurrentOutputStep;
+    }
+
+    // ========================================================================
     int MeshData::process_output_request(double time)
     {
       ThrowErrorMsgIf (Teuchos::is_null(m_output_region),
-		       "There is no Output mesh region associated with this Mesh Data.");
+                       "There is no Output mesh region associated with this Mesh Data.");
       m_output_region->begin_mode(Ioss::STATE_TRANSIENT);
 
       int out_step = m_output_region->add_state(time);
-      internal_process_output_request(out_step,std::set<const stk::mesh::Part*>());
+      m_output_region->begin_state(out_step);
+      internal_process_output_request(std::set<const stk::mesh::Part*>());
+      m_output_region->end_state(out_step);
 
       m_output_region->end_mode(Ioss::STATE_TRANSIENT);
 
       return out_step;
+    }
+
+    void MeshData::begin_results_output_at_time(double time)
+    {
+        //Attempt to avoid putting state change into the interface.  We'll see . . .
+        Ioss::State currentState = m_output_region->get_state();
+        if(currentState == Ioss::STATE_DEFINE_TRANSIENT) {
+          m_output_region->end_mode(Ioss::STATE_DEFINE_TRANSIENT);
+        }
+
+        m_output_region->begin_mode(Ioss::STATE_TRANSIENT);
+        mCurrentOutputStep = m_output_region->add_state(time);
+        m_output_region->begin_state(mCurrentOutputStep);
+    }
+
+    void MeshData::end_current_results_output()
+    {
+        m_output_region->end_state(mCurrentOutputStep);
+        m_output_region->end_mode(Ioss::STATE_TRANSIENT);
     }
 
     void MeshData::populate_mesh(bool delay_field_data_allocation)
@@ -1166,7 +1202,7 @@ namespace stk {
       bulk_data().modification_end();
     }
 
-    void MeshData::internal_process_output_request(int step, const std::set<const stk::mesh::Part*> &exclude)
+    void MeshData::internal_process_output_request(const std::set<const stk::mesh::Part*> &exclude)
     {
       ThrowErrorMsgIf (Teuchos::is_null(m_output_region),
 		       "There is no Output mesh region associated with this Mesh Data.");
@@ -1174,7 +1210,6 @@ namespace stk {
       Ioss::Region *region = m_output_region.get();
       ThrowErrorMsgIf (region==NULL,
                        "INTERNAL ERROR: Mesh Output Region pointer is NULL in internal_process_output_request.");
-      region->begin_state(step);
 
       // Special processing for nodeblock (all nodes in model)...
       put_field_data(bulk_data(), meta_data().universal_part(), stk::mesh::MetaData::NODE_RANK,
@@ -1211,7 +1246,6 @@ namespace stk {
           }
         }
       }
-      region->end_state(step);
     }
 
     void MeshData::define_output_database()
@@ -1576,7 +1610,6 @@ namespace stk {
 		       "There is no Results output database associated with this Mesh Data.");
 
       Ioss::Region *region = m_output_region.get();
-      region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
 
       // Special processing for nodeblock (all nodes in model)...
       stk::io::ioss_add_fields(meta_data().universal_part(), stk::mesh::MetaData::NODE_RANK,
@@ -1616,8 +1649,23 @@ namespace stk {
 	  }
 	}
       }
-      region->end_mode(Ioss::STATE_DEFINE_TRANSIENT);
     }
+
+    // ========================================================================
+    void MeshData::add_results_global(const std::string &globalVarName, Ioss::Field::BasicType dataType)
+    {
+        //Any field put onto the region instead of a element block, etc. gets written as "global" to exodus
+        int numberOfThingsToOutput = 1;
+        m_output_region->field_add(Ioss::Field(globalVarName, dataType, "scalar", Ioss::Field::TRANSIENT, numberOfThingsToOutput));
+    }
+
+    void MeshData::write_results_global(const std::string &globalVarName, double globalVarData)
+    {
+        ThrowErrorMsgIf (Teuchos::is_null(m_output_region),
+                         "There is no Output mesh region associated with this Mesh Data.");
+        m_output_region->put_field_data(globalVarName, &globalVarData, sizeof(double));
+    }
+
     // ========================================================================
     void MeshData::process_input_request(double time)
     {
