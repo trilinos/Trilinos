@@ -167,7 +167,6 @@ namespace Ioss {
 
     bool get_use_generic_canonical_name() const {return useGenericCanonicalName;}
     void set_use_generic_canonical_name(bool yes_no) {useGenericCanonicalName = yes_no;}
-    static bool set_use_generic_canonical_name_default(bool yes_no);
 
     virtual int maximum_symbol_length() const {return 0;} // Default is unlimited...
     char get_field_separator() const;
@@ -424,8 +423,6 @@ namespace Ioss {
     bool doLogging; // True if logging field input/output
     bool useGenericCanonicalName; // True if "block_id" is used as canonical name instead of the name
                                   // given on the mesh file e.g. "fireset".  Both names are still aliases.
-    static bool useGenericCanonicalNameDefault; // Default setting for useGenericCanonicalName. 
-                                                // Typically set by app.
 
     // Keep a list of files that are currently going to be written to by the current application.
     // Throw an exception if application has multiple output requests with the same basename.

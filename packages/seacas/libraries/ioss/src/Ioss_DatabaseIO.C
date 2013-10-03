@@ -146,7 +146,6 @@ namespace {
 }
 
 namespace Ioss {
-  bool DatabaseIO::useGenericCanonicalNameDefault = false;
   std::set<std::string> DatabaseIO::outputFileList; 
   
   DatabaseIO::DatabaseIO(Region* region, const std::string& filename,
@@ -160,7 +159,7 @@ namespace Ioss {
       util_(communicator), region_(region), isInput(is_input_event(db_usage)),
       isParallelConsistent(true), 
       singleProcOnly(db_usage == WRITE_HISTORY || db_usage == WRITE_HEARTBEAT || SerializeIO::isEnabled()),
-      doLogging(false), useGenericCanonicalName(useGenericCanonicalNameDefault)
+      doLogging(false), useGenericCanonicalName(false)
   {
     isParallel  = util_.parallel_size() > 1;
     myProcessor = util_.parallel_rank();
@@ -246,13 +245,6 @@ namespace Ioss {
 		   << filename
 		   << "'.\n         This can result in a corrupted file and should be avoided.\n\n";
     }
-  }
-
-  bool DatabaseIO::set_use_generic_canonical_name_default(bool yes_no)
-  {
-    bool old_value = useGenericCanonicalNameDefault;
-    useGenericCanonicalNameDefault = yes_no;
-    return old_value;
   }
 
   int DatabaseIO::int_byte_size_api() const
