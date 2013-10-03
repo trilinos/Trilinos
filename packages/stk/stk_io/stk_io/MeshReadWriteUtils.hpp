@@ -302,10 +302,16 @@ namespace stk {
         void add_results_global(const std::string &globalVarName, Ioss::Field::BasicType dataType);
 
         /**
-         * Add a transient step to the mesh database at time 'time'.
+         * Add a transient step to the results database at time 'time'.
          */
         void begin_results_output_at_time(double time);
         void end_current_results_output();
+
+        /**
+         * Add a transient step to the restart database at time 'time'.
+         */
+        void begin_restart_output_at_time(double time);
+        void end_current_restart_output();
 
         /**
          * Add a transient step to the mesh database at time 'time' and
@@ -345,7 +351,11 @@ namespace stk {
         void create_restart_output();
 
         void add_restart_field(stk::mesh::FieldBase &field, const std::string &db_name = std::string());
+        void add_restart_global(const std::string &globalVarName, Ioss::Field::BasicType dataType);
         int  process_restart_output(double time);
+        int  process_restart_output();
+        void write_restart_global(const std::string &globalVarName, double dataType);
+        void write_restart_global(const std::string &globalVarName, int dataType);
         double process_restart_input(int step);
         double process_restart_input(double time);
 
@@ -465,6 +475,7 @@ namespace stk {
         stk::mesh::ConnectivityMap m_connectivity_map;
 
         int mCurrentOutputStep;
+        int mCurrentRestartStep;
         bool useNodesetForPartNodesFields;
 
         MeshData(const MeshData&); // Do not implement

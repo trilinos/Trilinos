@@ -40,6 +40,14 @@ namespace {
     std::string databaseName;
   };
 
+  template <typename DataType>
+  void internal_write_global(Teuchos::RCP<Ioss::Region> output_region, const std::string &globalVarName, DataType globalVarData)
+  {
+      ThrowErrorMsgIf (Teuchos::is_null(output_region),
+                       "There is no Output mesh region associated with this Mesh Data.");
+      output_region->put_field_data(globalVarName, &globalVarData, sizeof(DataType));
+  }
+
   void process_surface_entity(Ioss::SideSet *sset, stk::mesh::MetaData &meta)
   {
     assert(sset->type() == Ioss::SIDESET);
@@ -836,7 +844,7 @@ namespace stk {
 
     MeshData::MeshData()
       : m_communicator_(MPI_COMM_NULL), m_anded_selector(NULL), m_connectivity_map(stk::mesh::ConnectivityMap::default_map()),
-        mCurrentOutputStep(-1), useNodesetForPartNodesFields(true)
+        mCurrentOutputStep(-1), mCurrentRestartStep(-1), useNodesetForPartNodesFields(true)
     {
       Ioss::Init::Initializer::initialize_ioss();
     }
@@ -844,7 +852,7 @@ namespace stk {
     MeshData::MeshData(MPI_Comm comm, stk::mesh::ConnectivityMap * connectivity_map)
       : m_communicator_(comm), m_anded_selector(NULL)
       , m_connectivity_map(connectivity_map != NULL ? *connectivity_map : stk::mesh::ConnectivityMap::default_map()),
-        mCurrentOutputStep(-1), useNodesetForPartNodesFields(true)
+        mCurrentOutputStep(-1), mCurrentRestartStep(-1), useNodesetForPartNodesFields(true)
     {
       Ioss::Init::Initializer::initialize_ioss();
     }
@@ -1321,6 +1329,7 @@ namespace stk {
       stk::io::define_output_db(*m_restart_region.get(), bulk_data(), m_input_region.get(), m_anded_selector.get(),
                                 sort_stk_parts, use_nodeset_for_part_nodes_fields());
       stk::io::write_output_db(*m_restart_region.get(),  bulk_data(), m_anded_selector.get());
+      m_restart_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
     }
 
     void MeshData::define_restart_fields()
@@ -1329,7 +1338,6 @@ namespace stk {
 		       "There is no Restart database associated with this Mesh Data.");
 
       Ioss::Region *region = m_restart_region.get();
-      region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
 
       // Special processing for nodeblock (all nodes in model)...
       ioss_define_restart_fields(meta_data().universal_part(),
@@ -1368,8 +1376,53 @@ namespace stk {
 	  }
 	}
       }
-      region->end_mode(Ioss::STATE_DEFINE_TRANSIENT);
     }
+
+    void MeshData::write_restart_global(const std::string &globalVarName, double globalVarData)
+    {
+        internal_write_global(m_restart_region, globalVarName, globalVarData);
+    }
+
+    void MeshData::write_restart_global(const std::string &globalVarName, int globalVarData)
+    {
+        internal_write_global(m_restart_region, globalVarName, globalVarData);
+    }
+
+    void MeshData::add_restart_global(const std::string &globalVarName, Ioss::Field::BasicType dataType)
+    {
+        ThrowErrorMsgIf (m_restart_region->field_exists(globalVarName),
+                         "Attempt to add global variable '" << globalVarName << "' twice.");
+        //Any field put onto the region instead of a element block, etc. gets written as "global" to exodus
+        int numberOfThingsToOutput = 1;
+        m_restart_region->field_add(Ioss::Field(globalVarName, dataType, "scalar", Ioss::Field::TRANSIENT, numberOfThingsToOutput));
+    }
+
+    void MeshData::begin_restart_output_at_time(double time)
+    {
+        //Attempt to avoid putting state change into the interface.  We'll see . . .
+        Ioss::State currentState = m_restart_region->get_state();
+        if(currentState == Ioss::STATE_DEFINE_TRANSIENT) {
+          m_restart_region->end_mode(Ioss::STATE_DEFINE_TRANSIENT);
+        }
+
+        m_restart_region->begin_mode(Ioss::STATE_TRANSIENT);
+        mCurrentRestartStep = m_restart_region->add_state(time);
+        m_restart_region->begin_state(mCurrentRestartStep);
+    }
+
+    void MeshData::end_current_restart_output()
+    {
+        m_restart_region->end_state(mCurrentRestartStep);
+        m_restart_region->end_mode(Ioss::STATE_TRANSIENT);
+    }
+
+    int MeshData::process_restart_output()
+     {
+
+       internal_process_restart_output(mCurrentRestartStep);
+
+       return mCurrentRestartStep;
+     }
 
     int MeshData::process_restart_output(double time)
     {
@@ -1394,7 +1447,6 @@ namespace stk {
       Ioss::Region *region = m_restart_region.get();
       ThrowErrorMsgIf (region==NULL,
                        "INTERNAL ERROR: Restart output region pointer is NULL in internal_process_restart_output.");
-      region->begin_state(step);
 
       // Special processing for nodeblock (all nodes in model)...
       put_field_data(bulk_data(), meta_data().universal_part(), stk::mesh::MetaData::NODE_RANK,
@@ -1431,7 +1483,6 @@ namespace stk {
           }
         }
       }
-      region->end_state(step);
     }
 
     namespace {
@@ -1654,27 +1705,22 @@ namespace stk {
     // ========================================================================
     void MeshData::add_results_global(const std::string &globalVarName, Ioss::Field::BasicType dataType)
     {
+        ThrowErrorMsgIf (m_output_region->field_exists(globalVarName),
+                         "Attempt to add global variable '" << globalVarName << "' twice.");
         //Any field put onto the region instead of a element block, etc. gets written as "global" to exodus
         int numberOfThingsToOutput = 1;
         m_output_region->field_add(Ioss::Field(globalVarName, dataType, "scalar", Ioss::Field::TRANSIENT, numberOfThingsToOutput));
     }
 
-    template <typename DataType>
-    void internal_write_results_global(Teuchos::RCP<Ioss::Region> output_region, const std::string &globalVarName, DataType globalVarData)
-    {
-        ThrowErrorMsgIf (Teuchos::is_null(output_region),
-                         "There is no Output mesh region associated with this Mesh Data.");
-        output_region->put_field_data(globalVarName, &globalVarData, sizeof(DataType));
-    }
 
     void MeshData::write_results_global(const std::string &globalVarName, double globalVarData)
     {
-        internal_write_results_global(m_output_region, globalVarName, globalVarData);
+        internal_write_global(m_output_region, globalVarName, globalVarData);
     }
 
     void MeshData::write_results_global(const std::string &globalVarName, int globalVarData)
     {
-        internal_write_results_global(m_output_region, globalVarName, globalVarData);
+        internal_write_global(m_output_region, globalVarName, globalVarData);
     }
 
     // ========================================================================

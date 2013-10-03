@@ -86,7 +86,9 @@ STKUNIT_UNIT_TEST(StkIoTest, FieldNameWithRestart)
         stkIo.define_restart_fields();
 
         double time = 0.0;
-        stkIo.process_restart_output(time);
+        stkIo.begin_restart_output_at_time(time);
+        stkIo.process_restart_output();
+        stkIo.end_current_restart_output();
     }
 
     Ioss::DatabaseIO *iossDb = Ioss::IOFactory::create("exodus", restartFilename, Ioss::READ_RESTART, communicator);
@@ -130,7 +132,9 @@ STKUNIT_UNIT_TEST(StkIoTest, FieldNameWithResultsAndRestart)
         stkIo.process_output_request();
         stkIo.end_current_results_output();
 
-        stkIo.process_restart_output(time);
+        stkIo.begin_restart_output_at_time(time);
+        stkIo.process_restart_output();
+        stkIo.end_current_restart_output();
 
         Ioss::Region *ioRegion = stkIo.output_io_region().get();
         testFieldNamedCorrectly(ioRegion, communicator, requestedFieldNameForResultsOutput);

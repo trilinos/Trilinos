@@ -105,9 +105,8 @@ STKUNIT_UNIT_TEST(StkIoTest, OneGlobalDouble)
 }
 
 template <typename DataType>
-void testTwoGlobals(const std::vector<std::string> &globalVarNames)
+void testTwoGlobals(const std::string &outputFileName, const std::vector<std::string> &globalVarNames)
 {
-    const std::string outputFileName = "ourSillyOutput.exo";
     MPI_Comm communicator = MPI_COMM_WORLD;
     std::vector<DataType> globalVarValues;
     globalVarValues.push_back(13);
@@ -134,7 +133,7 @@ void testTwoGlobals(const std::vector<std::string> &globalVarNames)
 
     const int stepNumber = 1;
     testGlobalVarOnFile(outputFileName, stepNumber, globalVarNames, globalVarValues, communicator);
-//    unlink(outputFileName.c_str());
+    unlink(outputFileName.c_str());
 }
 
 STKUNIT_UNIT_TEST(StkIoTest, TwoGlobalIntegers)
@@ -142,7 +141,7 @@ STKUNIT_UNIT_TEST(StkIoTest, TwoGlobalIntegers)
     std::vector<std::string> globalVarNames;
     globalVarNames.push_back("testGlobal");
     globalVarNames.push_back("testGlobal2");
-    testTwoGlobals<int>(globalVarNames);
+    testTwoGlobals<int>("TwoGlobalIntegers.exo", globalVarNames);
 }
 
 STKUNIT_UNIT_TEST(StkIoTest, TwoGlobalDoubles)
@@ -150,15 +149,15 @@ STKUNIT_UNIT_TEST(StkIoTest, TwoGlobalDoubles)
     std::vector<std::string> globalVarNames;
     globalVarNames.push_back("testGlobal");
     globalVarNames.push_back("testGlobal2");
-    testTwoGlobals<double>(globalVarNames);
+    testTwoGlobals<double>("TwoGlobalDoubles.exo", globalVarNames);
 }
 
 STKUNIT_UNIT_TEST(StkIoTest, TwoGlobalDoublesSameName)
 {
-//    std::vector<std::string> globalVarNames;
-//    globalVarNames.push_back("testGlobal");
-//    globalVarNames.push_back("testGlobal");
-//    testTwoGlobals<double>(globalVarNames);
+    std::vector<std::string> globalVarNames;
+    globalVarNames.push_back("testGlobal");
+    globalVarNames.push_back("testGlobal");
+    EXPECT_THROW(testTwoGlobals<double>("TwoGlobalDoublesSameName.exo", globalVarNames), std::exception);
 }
 
 STKUNIT_UNIT_TEST(StkIoTest, GlobalDoubleWithFieldMultipleTimeSteps)
@@ -210,6 +209,101 @@ STKUNIT_UNIT_TEST(StkIoTest, GlobalDoubleWithFieldMultipleTimeSteps)
             stkIo.process_output_request();
 
             stkIo.end_current_results_output();
+            time += stepSize;
+        }
+    }
+
+    for(int i=0; i<numTimeSteps; i++)
+    {
+        std::vector<std::string> globalVarNames(1, globalVarName);
+        std::vector<double> globalVarValues(1,globalVarValuesOverTime[i]);
+        testGlobalVarOnFile(outputFileName, i+1, globalVarNames, globalVarValues, communicator);
+        testNodalFieldOnFile(outputFileName, i+1, fieldName, nodalFieldValues, communicator);
+    }
+    unlink(outputFileName.c_str());
+}
+
+STKUNIT_UNIT_TEST(StkIoTest, OneGlobalDoubleRestart)
+{
+    const std::string outputFileName = "OneGlobalDouble.restart";
+    const std::string globalVarName = "testGlobal";
+    const double globalVarValue = 13.0;
+    MPI_Comm communicator = MPI_COMM_WORLD;
+    {
+        stk::io::MeshData stkIo(communicator);
+        generateMetaData(stkIo);
+        stkIo.populate_bulk_data();
+
+        stkIo.create_restart_output(outputFileName);
+
+        stkIo.add_restart_global(globalVarName, Ioss::Field::REAL);
+
+        const double time = 1.0;
+        stkIo.begin_restart_output_at_time(time);
+
+        stkIo.write_restart_global(globalVarName, globalVarValue);
+
+        stkIo.end_current_restart_output();
+    }
+
+    const int stepNumber = 1;
+    std::vector<std::string> globalVarNames(1, globalVarName);
+    std::vector<double> globalVarValues(1,globalVarValue);
+    testGlobalVarOnFile(outputFileName, stepNumber, globalVarNames, globalVarValues, communicator);
+    unlink(outputFileName.c_str());
+}
+
+STKUNIT_UNIT_TEST(StkIoTest, OneGlobalDoubleWithFieldRestart)
+{
+    const std::string outputFileName = "GlobalDoubleWithFieldMultipleTimeSteps.restart";
+    const std::string fieldName = "field0";
+    std::vector<double> nodalFieldValues;
+    const std::string globalVarName = "testGlobal";
+    std::vector<double> globalVarValuesOverTime;
+    const int numTimeSteps = 5;
+    MPI_Comm communicator = MPI_COMM_WORLD;
+    {
+        stk::io::MeshData stkIo(communicator);
+        generateMetaData(stkIo);
+
+        stk::mesh::MetaData &stkMeshMetaData = stkIo.meta_data();
+        const int numberOfStates = 1;
+        stk::mesh::Field<double> &field0 = stkMeshMetaData.declare_field<stk::mesh::Field<double> >(fieldName, numberOfStates);
+        stk::mesh::put_field(field0, stk::mesh::Entity::NODE, stkMeshMetaData.universal_part());
+        stk::io::set_field_role(field0, Ioss::Field::TRANSIENT);
+
+        stkIo.add_restart_field(field0);
+
+        stkIo.populate_bulk_data();
+
+        stk::mesh::BulkData &stkMeshBulkData = stkIo.bulk_data();
+        std::vector<stk::mesh::Entity> nodes;
+        stk::mesh::get_entities(stkMeshBulkData, stk::topology::NODE_RANK, nodes);
+        for(size_t i=0; i<nodes.size(); i++)
+        {
+            double *fieldDataForNode = stkMeshBulkData.field_data(field0, nodes[i]);
+            *fieldDataForNode = static_cast<double>(stkMeshBulkData.identifier(nodes[i]));
+            nodalFieldValues.push_back(*fieldDataForNode);
+        }
+
+        stkIo.create_restart_output(outputFileName);
+
+        stkIo.add_restart_global(globalVarName, Ioss::Field::REAL);
+        stkIo.define_restart_fields();
+
+        double time = 1.0;
+        const double stepSize = 1.0;
+        for(int i=0; i<numTimeSteps; i++)
+        {
+            stkIo.begin_restart_output_at_time(time);
+
+            const double globalVarValue = time;
+            stkIo.write_restart_global(globalVarName, globalVarValue);
+            globalVarValuesOverTime.push_back(globalVarValue);
+
+            stkIo.process_restart_output();
+
+            stkIo.end_current_restart_output();
             time += stepSize;
         }
     }
