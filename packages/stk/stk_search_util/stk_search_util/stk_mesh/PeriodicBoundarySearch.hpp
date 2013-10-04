@@ -88,12 +88,6 @@ public:
 
   size_t size() const { return m_search_results.size();}
 
-  std::pair<stk::mesh::Entity, stk::mesh::Entity> operator[](size_t i) const
-  {
-    return std::make_pair(m_bulk_data.get_entity(m_search_results[i].first.ident),
-        m_bulk_data.get_entity(m_search_results[i].second.ident));
-  }
-
   std::pair<stk::mesh::Entity, stk::mesh::Entity> get_node_pair(size_t i) const
   {
     return std::make_pair(m_bulk_data.get_entity(m_search_results[i].first.ident),
