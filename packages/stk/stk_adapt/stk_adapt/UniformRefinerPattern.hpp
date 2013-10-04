@@ -288,18 +288,18 @@ namespace stk {
       /// ------------------------------------------------------------------------------------------------------------------------
 
       /// This version uses Intrepid for interpolation
-      void interpolateFields(percept::PerceptMesh& eMesh, stk::mesh::Entity element, stk::mesh::Entity newElement,  const unsigned *child_nodes,
+      void prolongateFields(percept::PerceptMesh& eMesh, stk::mesh::Entity element, stk::mesh::Entity newElement,  const unsigned *child_nodes,
                              RefTopoX_arr ref_topo_x, stk::mesh::FieldBase *field);
 
       /// do interpolation for all fields
       /// This version uses Intrepid
-      void interpolateFields(percept::PerceptMesh& eMesh, stk::mesh::Entity element, stk::mesh::Entity newElement, const unsigned *child_nodes,
+      void prolongateFields(percept::PerceptMesh& eMesh, stk::mesh::Entity element, stk::mesh::Entity newElement, const unsigned *child_nodes,
                              RefTopoX_arr ref_topo_x);
 
-      void interpolateLine3(percept::PerceptMesh& eMesh, stk::mesh::FieldBase* field,
+      void prolongateLine3(percept::PerceptMesh& eMesh, stk::mesh::FieldBase* field,
                             MDArray& output_pts, stk::mesh::Entity element, MDArray& input_param_coords, double time_val=0.0);
 
-      void interpolateIntrepid(percept::PerceptMesh& eMesh, stk::mesh::FieldBase* field, shards::CellTopology& cell_topo,
+      void prolongateIntrepid(percept::PerceptMesh& eMesh, stk::mesh::FieldBase* field, shards::CellTopology& cell_topo,
                                MDArray& output_pts, stk::mesh::Entity element, MDArray& input_param_coords, double time_val=0.0);
 
       stk::mesh::Entity createOrGetNode(NodeRegistry& nodeRegistry, PerceptMesh& eMesh, stk::mesh::EntityId eid);
@@ -345,7 +345,7 @@ namespace stk {
 
       /// if numChild is passed in as non-null, use that value, else use getNumNewElemPerElem() as size of child vector
       void set_parent_child_relations(percept::PerceptMesh& eMesh, stk::mesh::Entity old_owning_elem, stk::mesh::Entity newElement, unsigned ordinal, unsigned *numChild=0);
-      static void interpolateElementFields(percept::PerceptMesh& eMesh, std::vector<stk::mesh::Entity>& old_owning_elements, stk::mesh::Entity newElement);
+      static void prolongateElementFields(percept::PerceptMesh& eMesh, std::vector<stk::mesh::Entity>& old_owning_elements, stk::mesh::Entity newElement);
 
       /// given a new element (child) that is a child of an original element (parent), look at parent's side to elem
       ///   relations and from the children of the element, choose an element to connect the new side to (using connectSides)

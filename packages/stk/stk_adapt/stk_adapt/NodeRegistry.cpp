@@ -1,8 +1,10 @@
 #include <stk_adapt/NodeRegistry.hpp>
 #include <stk_adapt/UniformRefinerPattern.hpp>
 #include <stk_percept/mesh/mod/smoother/SpacingFieldUtil.hpp>
+#include <stk_mesh/base/DataTraits.hpp>
 
 #include <set>
+#include <typeinfo>
 
 namespace stk {
   namespace adapt {
@@ -170,8 +172,8 @@ namespace stk {
           alp1[ipts] /= sum;
         }
       if (!(alp1[0] <= 1.0)) {
-        std::cout << "alp1[0] = " << alp1[0] << " sum= " << sum << " alpsum= " << alpsum 
-                  << " alp= " << alp[0] << " " << alp[1] 
+        std::cout << "alp1[0] = " << alp1[0] << " sum= " << sum << " alpsum= " << alpsum
+                  << " alp= " << alp[0] << " " << alp[1]
                   << " alps= " << alps[0] << " " << alps[1] << std::endl;
       }
       VERIFY_OP_ON(alp1[0], <=, 1.0, "hmmm35");
@@ -387,7 +389,7 @@ namespace stk {
     }
 
     /// makes coordinates of this new node be the centroid of its sub entity - this version does it for all new nodes
-    void NodeRegistry::makeCentroid(stk::mesh::FieldBase *field, unsigned *subDimSize_in)
+    void NodeRegistry::prolongate(stk::mesh::FieldBase *field, unsigned *subDimSize_in)
     {
       EXCEPTWATCH;
       bool do_respect_spacing = m_eMesh.get_respect_spacing();
@@ -396,10 +398,10 @@ namespace stk {
         {
           // recurse to specialize to compute edges first
           unsigned subDimSize_2 = 2;
-          makeCentroid(field, &subDimSize_2);
+          prolongate(field, &subDimSize_2);
           // then signal compute all non-edges
           subDimSize_2 = 0;
-          makeCentroid(field, &subDimSize_2);
+          prolongate(field, &subDimSize_2);
           return;
         }
 
@@ -464,7 +466,7 @@ namespace stk {
 
           if (is_empty)
             {
-              throw std::runtime_error("makeCentroid(field) empty cell found");
+              throw std::runtime_error("prolongate(field) empty cell found");
             }
 
           if (nodeIds_onSE.size() != 1)
@@ -490,7 +492,7 @@ namespace stk {
 
           if (!m_eMesh.is_valid(c_node))
             {
-              throw std::runtime_error("makeCentroid(field): bad node found 0.0");
+              throw std::runtime_error("prolongate(field): bad node found 0.0");
             }
 
           std::vector<double> c_p(fieldDim,0);
@@ -508,7 +510,7 @@ namespace stk {
                 element_p = elementId;
                 if (!m_eMesh.is_valid(element_p))
                   {
-                    throw std::runtime_error("makeCentroid(field): bad elem found 2");
+                    throw std::runtime_error("prolongate(field): bad elem found 2");
                   }
               }
 
@@ -545,7 +547,7 @@ namespace stk {
                       stk::mesh::Entity node = elem_nodes[ipts].entity();
                       if (!m_eMesh.is_valid(node))
                         {
-                          throw std::runtime_error("makeCentroid(field): bad node found 1.0");
+                          throw std::runtime_error("prolongate(field): bad node found 1.0");
                         }
                       nodes[ipts] = node;
                     }
@@ -618,7 +620,7 @@ namespace stk {
                           {
                             len += (coord[1][isp] - coord[0][isp])*(coord[1][isp] - coord[0][isp]);
                           }
-                        VERIFY_OP_ON(len, >, 1.e-20, "bad len in makeCentroid");
+                        VERIFY_OP_ON(len, >, 1.e-20, "bad len in prolongate");
                         for (int isp = 0; isp < spatialDim; isp++)
                           {
                             unit_edge_vec[isp] = (coord[1][isp] - coord[0][isp]) / std::sqrt(len);
@@ -686,7 +688,7 @@ namespace stk {
                     stk::mesh::Entity node = nodes[ipts];
                     if (!m_eMesh.is_valid(node))
                       {
-                        throw std::runtime_error("makeCentroid(field): bad node found 2.0");
+                        throw std::runtime_error("prolongate(field): bad node found 2.0");
                       }
                     //double *  coord = m_eMesh.field_data(field, *node, null_u);
                     double *  field_data = m_eMesh.field_data_inlined(field, node);
@@ -696,7 +698,7 @@ namespace stk {
                         //const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
                         //CellTopology cell_topo(cell_topo_data);
 
-                        std::cout << "tmp NodeRegistry::makeCentroid(field) npts= " << subDimEntity.size() << " ipts= " << ipts
+                        std::cout << "tmp NodeRegistry::prolongate(field) npts= " << subDimEntity.size() << " ipts= " << ipts
                                   << " field_data= " << field_data[0] << " " << field_data[1] << " " << field_data[2] << std::endl;
                       }
 
@@ -710,6 +712,7 @@ namespace stk {
                   }
               }
           }
+
           // set coords
           {
             EXCEPTWATCH;
@@ -725,13 +728,12 @@ namespace stk {
                   }
 
                 if (doPrint)
-                  std::cout << "tmp NodeRegistry::makeCentroid(field) c_coord= " << c_coord[0] << " " << c_coord[1] << " " << c_coord[2] << std::endl;
-
+                  std::cout << "tmp NodeRegistry::prolongate(field) c_coord= " << c_coord[0] << " " << c_coord[1] << " " << c_coord[2] << std::endl;
 
               }
           }
         }
-    } // makeCentroid(stk::mesh::FieldBase *)
+    } // prolongate(stk::mesh::FieldBase *)
 
 
     static void get_rbar_parts(stk::percept::PerceptMesh& eMesh, std::vector<std::string>& block_names_include, std::set<stk::mesh::Part *>& rbar_parts)
@@ -1003,7 +1005,7 @@ namespace stk {
 
                   m_eMesh.get_bulk_data()->change_entity_parts( newElement, add_parts, remove_parts );
 
-                  UniformRefinerPatternBase::interpolateElementFields(m_eMesh, new_elems_attached_rbars[i], newElement);
+                  UniformRefinerPatternBase::prolongateElementFields(m_eMesh, new_elems_attached_rbars[i], newElement);
 
                   if (DEBUG_ADD_RBARS > 1 && !m_eMesh.get_rank())
                     {
@@ -1775,12 +1777,12 @@ namespace stk {
 
 
     /// makes coordinates of this new node be the centroid of its sub entity
-    void NodeRegistry::makeCentroidCoords(const stk::mesh::Entity element,  stk::mesh::EntityRank needed_entity_rank, unsigned iSubDimOrd)
+    void NodeRegistry::prolongateCoords(const stk::mesh::Entity element,  stk::mesh::EntityRank needed_entity_rank, unsigned iSubDimOrd)
     {
-      makeCentroidField(element, needed_entity_rank, iSubDimOrd, m_eMesh.get_coordinates_field());
+      prolongateField(element, needed_entity_rank, iSubDimOrd, m_eMesh.get_coordinates_field());
     }
 
-    void NodeRegistry::makeCentroidField(const stk::mesh::Entity element,  stk::mesh::EntityRank needed_entity_rank, unsigned iSubDimOrd, stk::mesh::FieldBase *field)
+    void NodeRegistry::prolongateField(const stk::mesh::Entity element,  stk::mesh::EntityRank needed_entity_rank, unsigned iSubDimOrd, stk::mesh::FieldBase *field)
     {
       //EXCEPTWATCH;
 
@@ -1819,24 +1821,24 @@ namespace stk {
           const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(*m_eMesh.get_bulk_data(), element);
           shards::CellTopology cell_topo(cell_topo_data);
 
-          std::cout << "NodeRegistry::makeCentroidField: no node found, cell_topo = " << cell_topo.getName()
+          std::cout << "NodeRegistry::prolongateField: no node found, cell_topo = " << cell_topo.getName()
                     << "\n subDimEntity= " << subDimEntity
                     << "\n element= " << element
                     << "\n m_eMesh.entity_rank(element) = " << m_eMesh.entity_rank(element)
                     << "\n needed_entity_rank= " << needed_entity_rank
                     << "\n iSubDimOrd= " << iSubDimOrd << std::endl;
-          throw std::runtime_error("makeCentroidField: no node found");
+          throw std::runtime_error("prolongateField: no node found");
         }
       NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
       if (nodeIds_onSE.size() != 1)
         {
-          throw std::logic_error("logic error: makeCentroidField not ready for multiple nodes, or there are 0 nodes on the marked quantity");
+          throw std::logic_error("logic error: prolongateField not ready for multiple nodes, or there are 0 nodes on the marked quantity");
         }
       stk::mesh::Entity c_node = nodeIds_onSE[0];
 
       if (!m_eMesh.is_valid(c_node))
         {
-          throw std::runtime_error("makeCentroidField: bad node found 0");
+          throw std::runtime_error("prolongateField: bad node found 0");
         }
 
       double c_p[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
@@ -1853,7 +1855,7 @@ namespace stk {
               stk::mesh::Entity node = elem_nodes[ipts].entity();
               if (!m_eMesh.is_valid(node))
                 {
-                  throw std::runtime_error("makeCentroidField: bad node found 1");
+                  throw std::runtime_error("prolongateField: bad node found 1");
                 }
               double *  coord = m_eMesh.field_data(field, node, null_u);
 
@@ -1862,7 +1864,7 @@ namespace stk {
                   const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
                   shards::CellTopology cell_topo(cell_topo_data);
 
-                  std::cout << "tmp NodeRegistry::makeCentroidField cell_topo = " << cell_topo.getName() << " ipts= " << ipts
+                  std::cout << "tmp NodeRegistry::prolongateField cell_topo = " << cell_topo.getName() << " ipts= " << ipts
                             << " coord= " << coord[0] << " " << coord[1] << " " << coord[2] << std::endl;
                 }
 
@@ -1886,7 +1888,7 @@ namespace stk {
               stk::mesh::Entity node = nodeId;
               if (!m_eMesh.is_valid(node))
                 {
-                  throw std::runtime_error("makeCentroidField: bad node found 2");
+                  throw std::runtime_error("prolongateField: bad node found 2");
                 }
               double *  coord = m_eMesh.field_data(field, node, null_u);
               if (coord)
@@ -1909,26 +1911,68 @@ namespace stk {
     }
 
     /// do interpolation for all fields
-    void NodeRegistry::interpolateFields(const stk::mesh::Entity element,  stk::mesh::EntityRank needed_entity_rank, unsigned iSubDimOrd)
+    void NodeRegistry::prolongateFields(const stk::mesh::Entity element,  stk::mesh::EntityRank needed_entity_rank, unsigned iSubDimOrd)
     {
       const stk::mesh::FieldVector & fields = m_eMesh.get_fem_meta_data()->get_fields();
       unsigned nfields = fields.size();
       for (unsigned ifld = 0; ifld < nfields; ifld++)
         {
           stk::mesh::FieldBase *field = fields[ifld];
-          makeCentroidField(element, needed_entity_rank, iSubDimOrd, field);
+          const stk::mesh::DataTraits & data_traits = field->data_traits();
+          if (data_traits.is_floating_point)
+            prolongateField(element, needed_entity_rank, iSubDimOrd, field);
+          else
+            {
+              std::cout << "Not prolonging possible integer Field: " << field->name() << " field= " << typeid(*field).name()
+                        <<"\n is_void = " << data_traits.is_void
+                        <<"\n is_integral = " << data_traits.is_integral
+                        <<"\n is_floating_point = " << data_traits.is_floating_point
+                        <<"\n is_array = " << data_traits.is_array
+                        <<"\n is_pointer = " << data_traits.is_pointer
+                        <<"\n is_enum = " << data_traits.is_enum
+                        <<"\n is_class = " << data_traits.is_class
+                        <<"\n is_pod = " << data_traits.is_pod
+                        <<"\n is_signed  = " << data_traits.is_signed
+                        <<"\n is_unsigned = " << data_traits.is_unsigned
+                        <<"\n alignment_of = " << data_traits.alignment_of
+                        <<"\n stride_of = " << data_traits.stride_of
+                        <<"\n name = " << data_traits.name
+                        << std::endl;
+            }
+
         }
     }
 
     /// do interpolation for all fields
-    void NodeRegistry::interpolateFields()
+    void NodeRegistry::prolongateFields()
     {
       const stk::mesh::FieldVector & fields = m_eMesh.get_fem_meta_data()->get_fields();
       unsigned nfields = fields.size();
       for (unsigned ifld = 0; ifld < nfields; ifld++)
         {
           stk::mesh::FieldBase *field = fields[ifld];
-          makeCentroid(field);
+          // only do it for reals - integers are not really defined as being able to be prolonged
+          const stk::mesh::DataTraits & data_traits = field->data_traits();
+          if (data_traits.is_floating_point)
+            prolongate(field);
+          else
+            {
+              std::cout << "Not prolonging possible integer Field: " << field->name() << " field= " << typeid(*field).name()
+                        <<"\n is_void = " << data_traits.is_void
+                        <<"\n is_integral = " << data_traits.is_integral
+                        <<"\n is_floating_point = " << data_traits.is_floating_point
+                        <<"\n is_array = " << data_traits.is_array
+                        <<"\n is_pointer = " << data_traits.is_pointer
+                        <<"\n is_enum = " << data_traits.is_enum
+                        <<"\n is_class = " << data_traits.is_class
+                        <<"\n is_pod = " << data_traits.is_pod
+                        <<"\n is_signed  = " << data_traits.is_signed
+                        <<"\n is_unsigned = " << data_traits.is_unsigned
+                        <<"\n alignment_of = " << data_traits.alignment_of
+                        <<"\n stride_of = " << data_traits.stride_of
+                        <<"\n name = " << data_traits.name
+                        << std::endl;
+            }
         }
     }
 

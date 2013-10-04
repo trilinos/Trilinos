@@ -367,7 +367,7 @@ namespace stk {
 #endif
     }
 
-    void UniformRefinerPatternBase::interpolateElementFields(percept::PerceptMesh& eMesh, std::vector<stk::mesh::Entity>& old_owning_elements, stk::mesh::Entity newElement)
+    void UniformRefinerPatternBase::prolongateElementFields(percept::PerceptMesh& eMesh, std::vector<stk::mesh::Entity>& old_owning_elements, stk::mesh::Entity newElement)
     {
       // FIXME
 //       if (m_eMesh.entity_rank(old_owning_elem) != stk::mesh::MetaData::ELEMENT_RANK)
@@ -414,17 +414,17 @@ namespace stk {
                     continue;
                   if ((int)stride_old != field_dimension)
                     {
-                      VERIFY_OP_ON((int)stride_old, ==, field_dimension, "interpolateElementFields err1");
-                      throw std::runtime_error("interpolateElementFields err1");
+                      VERIFY_OP_ON((int)stride_old, ==, field_dimension, "prolongateElementFields err1");
+                      throw std::runtime_error("prolongateElementFields err1");
                     }
                   double *fdata_new = eMesh.field_data(field, newElement,  &stride_new);
                   if (!fdata_new)
                     continue;
                   if ((int)stride_new != field_dimension || stride_new != stride_old)
                     {
-                      VERIFY_OP_ON((int)stride_new, ==, field_dimension, "interpolateElementFields err2");
-                      VERIFY_OP_ON(stride_new, ==, stride_old, "interpolateElementFields err3");
-                      throw std::runtime_error("interpolateElementFields err2");
+                      VERIFY_OP_ON((int)stride_new, ==, field_dimension, "prolongateElementFields err2");
+                      VERIFY_OP_ON(stride_new, ==, stride_old, "prolongateElementFields err3");
+                      throw std::runtime_error("prolongateElementFields err2");
                     }
                   if (iel == 0)
                     {
@@ -1023,9 +1023,9 @@ namespace stk {
 
           for (unsigned iSubDim = 0; iSubDim < nSubDimEntities; iSubDim++)
             {
-              nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity>(&element), needed_entities[i_need].first, iSubDim);
+              nodeRegistry.prolongateCoords(*const_cast<stk::mesh::Entity>(&element), needed_entities[i_need].first, iSubDim);
               nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity>(&element), needed_entities[i_need].first, iSubDim);
-              nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity>(&element), needed_entities[i_need].first, iSubDim);
+              nodeRegistry.prolongateFields(*const_cast<stk::mesh::Entity>(&element), needed_entities[i_need].first, iSubDim);
             }
         }
 #endif
@@ -1138,7 +1138,7 @@ namespace stk {
           set_parent_child_relations(eMesh, element, newElement, ielem);
 
           std::vector<stk::mesh::Entity> elements(1,element);
-          interpolateElementFields(eMesh, elements, newElement);
+          prolongateElementFields(eMesh, elements, newElement);
 
           element_pool++;
 
@@ -1225,7 +1225,7 @@ namespace stk {
               nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity>(&element), needed_entities[i_need].first, iSubDim);
               if (isLinearElement)
                 {
-                  nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity>(&element), needed_entities[i_need].first, iSubDim);
+                  nodeRegistry.prolongateFields(*const_cast<stk::mesh::Entity>(&element), needed_entities[i_need].first, iSubDim);
                 }
 #endif
 
@@ -1497,14 +1497,14 @@ namespace stk {
 
           if (!isLinearElement)
             {
-              interpolateFields(eMesh, element, newElement, ref_topo.child_node(iChildRefTopo),  &ref_topo_x[0], eMesh.get_coordinates_field() );
-              interpolateFields(eMesh, element, newElement, ref_topo.child_node(iChildRefTopo),  &ref_topo_x[0]);
+              prolongateFields(eMesh, element, newElement, ref_topo.child_node(iChildRefTopo),  &ref_topo_x[0], eMesh.get_coordinates_field() );
+              prolongateFields(eMesh, element, newElement, ref_topo.child_node(iChildRefTopo),  &ref_topo_x[0]);
             }
 
           set_parent_child_relations(eMesh, element, newElement, iChildRefTopo);
 
           std::vector<stk::mesh::Entity> elements(1,element);
-          interpolateElementFields(eMesh, elements, newElement);
+          prolongateElementFields(eMesh, elements, newElement);
 
           element_pool++;
         }
@@ -1517,7 +1517,7 @@ namespace stk {
 
     /// This version uses Intrepid for interpolation
     void UniformRefinerPatternBase::
-    interpolateFields(percept::PerceptMesh& eMesh, stk::mesh::Entity element, stk::mesh::Entity newElement,  const unsigned *child_nodes,
+    prolongateFields(percept::PerceptMesh& eMesh, stk::mesh::Entity element, stk::mesh::Entity newElement,  const unsigned *child_nodes,
                       RefTopoX_arr ref_topo_x, stk::mesh::FieldBase *field)
     {
 #if STK_PERCEPT_LITE
@@ -1650,7 +1650,7 @@ namespace stk {
               //std::cout << "tmp here 1 i_new_node= " << i_new_node << " base element= " << std::endl;
               if ( EXTRA_PRINT_URP_IF) eMesh.print_entity(std::cout, element, eMesh.get_coordinates_field() );
 
-              interpolateIntrepid(eMesh, field, cell_topo, output_pts, element, input_param_coords, time_val);
+              prolongateIntrepid(eMesh, field, cell_topo, output_pts, element, input_param_coords, time_val);
               if (0) // field == eMesh.get_coordinates_field())
                 {
                   std::cout << "tmp input_param_coords= "
@@ -1669,7 +1669,7 @@ namespace stk {
             {
               if ((cell_topo.getDimension() == 1 || cell_topo.getDimension() == 2) && cell_topo.getNodeCount() == 3)  // Line<3> || Beam<3> element
                 {
-                  interpolateLine3(eMesh, field, output_pts, element, input_param_coords, time_val);
+                  prolongateLine3(eMesh, field, output_pts, element, input_param_coords, time_val);
                 }
               else
                 {
@@ -1698,7 +1698,7 @@ namespace stk {
     /// do interpolation for all fields
     /// This version uses Intrepid
     void UniformRefinerPatternBase::
-    interpolateFields(percept::PerceptMesh& eMesh, stk::mesh::Entity element, stk::mesh::Entity newElement, const unsigned *child_nodes,
+    prolongateFields(percept::PerceptMesh& eMesh, stk::mesh::Entity element, stk::mesh::Entity newElement, const unsigned *child_nodes,
                       RefTopoX_arr ref_topo_x)
     {
       const stk::mesh::FieldVector & fields = eMesh.get_fem_meta_data()->get_fields();
@@ -1709,12 +1709,12 @@ namespace stk {
           stk::mesh::FieldBase *field = fields[ifld];
           //std::cout << "P[" << eMesh.get_rank() << "] field = " << field->name() << std::endl;
 
-          interpolateFields(eMesh, element, newElement, child_nodes, ref_topo_x, field);
+          prolongateFields(eMesh, element, newElement, child_nodes, ref_topo_x, field);
         }
     }
 
     void UniformRefinerPatternBase::
-    interpolateLine3(percept::PerceptMesh& eMesh, stk::mesh::FieldBase* field,
+    prolongateLine3(percept::PerceptMesh& eMesh, stk::mesh::FieldBase* field,
                           MDArray& output_pts, stk::mesh::Entity element, MDArray& input_param_coords, double time_val)
     {
       int fieldStride = output_pts.dimension(1);
@@ -1744,7 +1744,7 @@ namespace stk {
     }
 
     void UniformRefinerPatternBase::
-    interpolateIntrepid(percept::PerceptMesh& eMesh, stk::mesh::FieldBase* field, shards::CellTopology& cell_topo,
+    prolongateIntrepid(percept::PerceptMesh& eMesh, stk::mesh::FieldBase* field, shards::CellTopology& cell_topo,
                         MDArray& output_pts, stk::mesh::Entity element, MDArray& input_param_coords, double time_val)
     {
 #if STK_PERCEPT_LITE

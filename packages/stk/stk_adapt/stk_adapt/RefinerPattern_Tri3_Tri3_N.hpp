@@ -368,7 +368,7 @@ namespace stk {
 
         //std::cout << "tmp RefinerPattern_Tri3_Tri3_N::num_edges_marked= " << num_edges_marked << std::endl;
 
-        //nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity>(&element), stk::mesh::MetaData::ELEMENT_RANK, 0u);
+        //nodeRegistry.prolongateCoords(*const_cast<stk::mesh::Entity>(&element), stk::mesh::MetaData::ELEMENT_RANK, 0u);
 
         for (unsigned ielem=0; ielem < elems.size(); ielem++)
           {
@@ -401,7 +401,7 @@ namespace stk {
             set_parent_child_relations(eMesh, element, newElement, ielem);
 
             std::vector<stk::mesh::Entity> elements(1,element);
-            interpolateElementFields(eMesh, elements, newElement);
+            prolongateElementFields(eMesh, elements, newElement);
 
             // FIXME tmp - could be slow
 

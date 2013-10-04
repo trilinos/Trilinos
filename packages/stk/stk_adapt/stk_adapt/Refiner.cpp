@@ -1022,19 +1022,19 @@ namespace stk {
           // only need to do this once: the map is fully built and we loop over the map's faces/edges, which are fixed after the getFromRemote step
 
           m_nodeRegistry->addToExistingPartsNew();
-          //std::cout << "tmp makeCentroid... " << std::endl;
+          //std::cout << "tmp prolongate... " << std::endl;
 #if CHECK_DEBUG
           //check_db("after doBreak");
-          m_nodeRegistry->checkDB("before makeCentroid");
+          m_nodeRegistry->checkDB("before prolongate");
 #endif
 
-          m_nodeRegistry->makeCentroid(m_eMesh.get_coordinates_field());
-          //std::cout << "tmp makeCentroid...done " << std::endl;
-          //std::cout << "tmp interpolateFields... " << std::endl;
+          m_nodeRegistry->prolongate(m_eMesh.get_coordinates_field());
+          //std::cout << "tmp prolongate...done " << std::endl;
+          //std::cout << "tmp prolongateFields... " << std::endl;
 
-          m_nodeRegistry->interpolateFields();
+          m_nodeRegistry->prolongateFields();
 
-          //std::cout << "tmp interpolateFields...done " << std::endl;
+          //std::cout << "tmp prolongateFields...done " << std::endl;
 #if defined(STK_BUILT_IN_SIERRA)
           if (m_rbar_names.size())
             m_nodeRegistry->add_rbars(m_rbar_names);

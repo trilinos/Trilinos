@@ -216,8 +216,8 @@ namespace stk {
 
 
       /// makes coordinates of this new node be the centroid of its sub entity
-      void makeCentroidCoords(const stk::mesh::Entity element,  stk::mesh::EntityRank needed_entity_rank, unsigned iSubDimOrd);
-      void makeCentroidField(const stk::mesh::Entity element,  stk::mesh::EntityRank needed_entity_rank, unsigned iSubDimOrd, stk::mesh::FieldBase *field);
+      void prolongateCoords(const stk::mesh::Entity element,  stk::mesh::EntityRank needed_entity_rank, unsigned iSubDimOrd);
+      void prolongateField(const stk::mesh::Entity element,  stk::mesh::EntityRank needed_entity_rank, unsigned iSubDimOrd, stk::mesh::FieldBase *field);
 
       double spacing_edge(std::vector<stk::mesh::Entity>& nodes,
                           unsigned iv0, unsigned iv1, unsigned nsz, unsigned nsp,  double lspc[8][3], double den_xyz[3], double *coord[8]);
@@ -225,13 +225,13 @@ namespace stk {
       void normalize_spacing(stk::mesh::Entity element, std::vector<stk::mesh::Entity> &nodes,
                              unsigned nsz, unsigned nsp, double spc[8][3], double den_xyz[3], double *coord[8]);
 
-      void makeCentroid(stk::mesh::FieldBase *field, unsigned *subDimSize_in=0);
+      void prolongate(stk::mesh::FieldBase *field, unsigned *subDimSize_in=0);
 
       /// do interpolation for all fields
-      void interpolateFields(const stk::mesh::Entity element,  stk::mesh::EntityRank needed_entity_rank, unsigned iSubDimOrd);
+      void prolongateFields(const stk::mesh::Entity element,  stk::mesh::EntityRank needed_entity_rank, unsigned iSubDimOrd);
 
       /// do interpolation for all fields
-      void interpolateFields();
+      void prolongateFields();
 
       /// check for adding new nodes to existing parts based on sub-entity part ownership
       void addToExistingParts(const stk::mesh::Entity element,  stk::mesh::EntityRank needed_entity_rank, unsigned iSubDimOrd);

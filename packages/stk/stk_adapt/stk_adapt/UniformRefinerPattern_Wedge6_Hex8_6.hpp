@@ -212,7 +212,7 @@ namespace stk {
             //stk::mesh::Entity node = createOrGetNode(nodeRegistry, eMesh, EDGE_N(i_edge));
             eMesh.createOrGetNode(EDGE_N(i_edge), mp);
             nodeRegistry.addToExistingParts(element, m_eMesh.edge_rank(), i_edge);
-            nodeRegistry.interpolateFields(element, m_eMesh.edge_rank(), i_edge);
+            nodeRegistry.prolongateFields(element, m_eMesh.edge_rank(), i_edge);
           }
 
         for (unsigned i_face = 0; i_face < 3; i_face++)
@@ -238,7 +238,7 @@ namespace stk {
             //stk::mesh::Entity node = createOrGetNode(nodeRegistry, eMesh, FACE_N(i_face));
             eMesh.createOrGetNode(FACE_N(i_face), mp);
             nodeRegistry.addToExistingParts(element, m_eMesh.face_rank(), i_face);
-            nodeRegistry.interpolateFields(element, m_eMesh.face_rank(), i_face);
+            nodeRegistry.prolongateFields(element, m_eMesh.face_rank(), i_face);
           }
 
         for (unsigned j_face = 0; j_face < 2; j_face++)
@@ -265,7 +265,7 @@ namespace stk {
             //stk::mesh::Entity node = createOrGetNode(nodeRegistry, eMesh, FACE_N(i_face));
             eMesh.createOrGetNode(FACE_N(i_face), mp);
             nodeRegistry.addToExistingParts(element, m_eMesh.face_rank(), i_face);
-            nodeRegistry.interpolateFields(element, m_eMesh.face_rank(), i_face);
+            nodeRegistry.prolongateFields(element, m_eMesh.face_rank(), i_face);
           }
 
         // centroid
@@ -286,9 +286,9 @@ namespace stk {
 
         eMesh.createOrGetNode(CENTROID_N, mp);
 
-        nodeRegistry.makeCentroidCoords(element, stk::mesh::MetaData::ELEMENT_RANK, 0u);
+        nodeRegistry.prolongateCoords(element, stk::mesh::MetaData::ELEMENT_RANK, 0u);
         nodeRegistry.addToExistingParts(element, stk::mesh::MetaData::ELEMENT_RANK, 0u);
-        nodeRegistry.interpolateFields(element, stk::mesh::MetaData::ELEMENT_RANK, 0u);
+        nodeRegistry.prolongateFields(element, stk::mesh::MetaData::ELEMENT_RANK, 0u);
 
 #endif
 

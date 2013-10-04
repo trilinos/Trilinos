@@ -117,7 +117,7 @@ namespace stk {
               }
           }
 
-        //nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity>(&element), stk::mesh::MetaData::ELEMENT_RANK, 0u);
+        //nodeRegistry.prolongateCoords(*const_cast<stk::mesh::Entity>(&element), stk::mesh::MetaData::ELEMENT_RANK, 0u);
 
 
         for (unsigned ielem=0; ielem < elems.size(); ielem++)

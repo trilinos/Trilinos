@@ -590,7 +590,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
 
     for (unsigned isd = 0; isd < 12; isd++)
     {
-      nodeRegistry.makeCentroidCoords(element_local, needed_entity_rank.first, isd);
+      nodeRegistry.prolongateCoords(element_local, needed_entity_rank.first, isd);
       NodeIdsOnSubDimEntityType& nodeIds_onSE_0_loc = *( nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_rank.first, isd));
 
       stk::mesh::Entity node   = eMesh.get_bulk_data()->get_entity(stk::mesh::MetaData::NODE_RANK, eMesh.identifier(nodeIds_onSE_0_loc[0]));

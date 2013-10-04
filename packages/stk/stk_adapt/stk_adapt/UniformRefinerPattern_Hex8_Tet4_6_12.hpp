@@ -144,9 +144,9 @@ namespace stk {
 #define CENTROID_N NN(stk::mesh::MetaData::ELEMENT_RANK, 0)
 
 #if STK_ADAPT_URP_LOCAL_NODE_COMPS
-        nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity>(&element), Element, 0u);
+        nodeRegistry.prolongateCoords(*const_cast<stk::mesh::Entity>(&element), Element, 0u);
         nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity>(&element), Element, 0u);
-        nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity>(&element), Element, 0u);
+        nodeRegistry.prolongateFields(*const_cast<stk::mesh::Entity>(&element), Element, 0u);
 #endif
 
         // following code is from SweepMesher::breakElement, modified here for stk_mesh

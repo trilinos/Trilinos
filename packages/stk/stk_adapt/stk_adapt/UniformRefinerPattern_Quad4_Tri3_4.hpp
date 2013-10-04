@@ -68,9 +68,9 @@ namespace stk {
 
         stk::mesh::EntityRank my_rank = m_primaryEntityRank;
 
-        nodeRegistry.makeCentroidCoords(element, my_rank, 0u);
+        nodeRegistry.prolongateCoords(element, my_rank, 0u);
         nodeRegistry.addToExistingParts(element, my_rank, 0u);
-        nodeRegistry.interpolateFields(element, my_rank, 0u);
+        nodeRegistry.prolongateFields(element, my_rank, 0u);
 
 #define CENTROID_N NN(m_primaryEntityRank, 0)
 

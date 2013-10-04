@@ -156,13 +156,13 @@ namespace stk {
 
             eMesh.createOrGetNode(FACE_N(i_face), mp);
             nodeRegistry.addToExistingParts(element, m_eMesh.face_rank(), i_face);
-            nodeRegistry.interpolateFields(element, m_eMesh.face_rank(), i_face);
+            nodeRegistry.prolongateFields(element, m_eMesh.face_rank(), i_face);
 
           }
 
-        nodeRegistry.makeCentroidCoords(element, stk::mesh::MetaData::ELEMENT_RANK, 0u);
+        nodeRegistry.prolongateCoords(element, stk::mesh::MetaData::ELEMENT_RANK, 0u);
         nodeRegistry.addToExistingParts(element, stk::mesh::MetaData::ELEMENT_RANK, 0u);
-        nodeRegistry.interpolateFields(element, stk::mesh::MetaData::ELEMENT_RANK, 0u);
+        nodeRegistry.prolongateFields(element, stk::mesh::MetaData::ELEMENT_RANK, 0u);
 
         //#define C 14
 

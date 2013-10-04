@@ -72,7 +72,7 @@ namespace stk {
 
           }
 
-        nodeRegistry.makeCentroidCoords(element, stk::mesh::MetaData::ELEMENT_RANK, 0u);
+        nodeRegistry.prolongateCoords(element, stk::mesh::MetaData::ELEMENT_RANK, 0u);
 
 
 // new_sub_entity_nodes[i][j]

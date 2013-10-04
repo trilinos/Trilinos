@@ -70,9 +70,9 @@ namespace stk {
 
         //stk::mesh::EntityRank my_rank = m_primaryEntityRank;
 
-        //nodeRegistry.makeCentroid(*const_cast<stk::mesh::Entity>(&element), my_rank, 0u);
+        //nodeRegistry.prolongate(*const_cast<stk::mesh::Entity>(&element), my_rank, 0u);
         //nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity>(&element), my_rank, 0u);
-        //nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity>(&element), my_rank, 0u);
+        //nodeRegistry.prolongateFields(*const_cast<stk::mesh::Entity>(&element), my_rank, 0u);
 
         {
           unsigned globalIqf  = VERT_N(0);
