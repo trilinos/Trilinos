@@ -34,7 +34,7 @@ void testFieldNamedCorrectly(Ioss::Region *ioRegion, MPI_Comm communicator, cons
     EXPECT_STREQ(goldFieldName.c_str(), fieldNames[0].c_str());
 }
 
-STKUNIT_UNIT_TEST(StkIoTest, FieldNameRenameTwice)
+STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameRenameTwice)
 {
     std::string restartFilename = "output.restart";
     MPI_Comm communicator = MPI_COMM_WORLD;
@@ -64,7 +64,7 @@ STKUNIT_UNIT_TEST(StkIoTest, FieldNameRenameTwice)
     unlink(outputFileName.c_str());
 }
 
-STKUNIT_UNIT_TEST(StkIoTest, FieldNameWithRestart)
+STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameWithRestart)
 {
     std::string restartFilename = "output.restart";
     MPI_Comm communicator = MPI_COMM_WORLD;
@@ -100,10 +100,10 @@ STKUNIT_UNIT_TEST(StkIoTest, FieldNameWithRestart)
     unlink(restartFilename.c_str());
 }
 
-STKUNIT_UNIT_TEST(StkIoTest, FieldNameWithResultsAndRestart)
+STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameWithResultsAndRestart)
 {
-    const std::string restartFilename = "output2.restart";
-    const std::string outputFileName = "resultsOutput.exo";
+    const std::string restartFilename = "FieldNameWithResultsAndRestart.restart";
+    const std::string outputFileName = "FieldNameWithResultsAndRestart.exo";
     MPI_Comm communicator = MPI_COMM_WORLD;
     const std::string internalClientFieldName = "Field0";
     {

@@ -74,7 +74,7 @@ void testNodalFieldOnFile(const std::string &outputFileName, const int stepNumbe
     }
 }
 
-STKUNIT_UNIT_TEST(StkIoTest, OneGlobalDouble)
+STKUNIT_UNIT_TEST(GlobarVariablesTest, OneGlobalDouble)
 {
     const std::string outputFileName = "OneGlobalDouble.exo";
     const std::string globalVarName = "testGlobal";
@@ -136,7 +136,7 @@ void testTwoGlobals(const std::string &outputFileName, const std::vector<std::st
     unlink(outputFileName.c_str());
 }
 
-STKUNIT_UNIT_TEST(StkIoTest, TwoGlobalIntegers)
+STKUNIT_UNIT_TEST(GlobarVariablesTest, TwoGlobalIntegers)
 {
     std::vector<std::string> globalVarNames;
     globalVarNames.push_back("testGlobal");
@@ -144,7 +144,7 @@ STKUNIT_UNIT_TEST(StkIoTest, TwoGlobalIntegers)
     testTwoGlobals<int>("TwoGlobalIntegers.exo", globalVarNames);
 }
 
-STKUNIT_UNIT_TEST(StkIoTest, TwoGlobalDoubles)
+STKUNIT_UNIT_TEST(GlobarVariablesTest, TwoGlobalDoubles)
 {
     std::vector<std::string> globalVarNames;
     globalVarNames.push_back("testGlobal");
@@ -152,7 +152,7 @@ STKUNIT_UNIT_TEST(StkIoTest, TwoGlobalDoubles)
     testTwoGlobals<double>("TwoGlobalDoubles.exo", globalVarNames);
 }
 
-STKUNIT_UNIT_TEST(StkIoTest, TwoGlobalDoublesSameName)
+STKUNIT_UNIT_TEST(GlobarVariablesTest, TwoGlobalDoublesSameName)
 {
     std::vector<std::string> globalVarNames;
     globalVarNames.push_back("testGlobal");
@@ -160,7 +160,27 @@ STKUNIT_UNIT_TEST(StkIoTest, TwoGlobalDoublesSameName)
     EXPECT_THROW(testTwoGlobals<double>("TwoGlobalDoublesSameName.exo", globalVarNames), std::exception);
 }
 
-STKUNIT_UNIT_TEST(StkIoTest, GlobalDoubleWithFieldMultipleTimeSteps)
+stk::mesh::Field<double> &createNodalTestField(stk::mesh::MetaData &stkMeshMetaData, const std::string &fieldName)
+{
+    const int numberOfStates = 1;
+    stk::mesh::Field<double> &field0 = stkMeshMetaData.declare_field<stk::mesh::Field<double> >(fieldName, numberOfStates);
+    stk::mesh::put_field(field0, stk::mesh::Entity::NODE, stkMeshMetaData.universal_part());
+    stk::io::set_field_role(field0, Ioss::Field::TRANSIENT);
+    return field0;
+}
+void putDataOnTestField(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Field<double> &field0, std::vector<double> &nodalFieldValues)
+{
+    std::vector<stk::mesh::Entity> nodes;
+    stk::mesh::get_entities(stkMeshBulkData, stk::topology::NODE_RANK, nodes);
+    for(size_t i=0; i<nodes.size(); i++)
+    {
+        double *fieldDataForNode = stkMeshBulkData.field_data(field0, nodes[i]);
+        *fieldDataForNode = static_cast<double>(stkMeshBulkData.identifier(nodes[i]));
+        nodalFieldValues.push_back(*fieldDataForNode);
+    }
+}
+
+STKUNIT_UNIT_TEST(GlobarVariablesTest, GlobalDoubleWithFieldMultipleTimeSteps)
 {
     const std::string outputFileName = "GlobalDoubleWithFieldMultipleTimeSteps.exo";
     const std::string fieldName = "field0";
@@ -173,23 +193,11 @@ STKUNIT_UNIT_TEST(StkIoTest, GlobalDoubleWithFieldMultipleTimeSteps)
         stk::io::MeshData stkIo(communicator);
         generateMetaData(stkIo);
 
-        stk::mesh::MetaData &stkMeshMetaData = stkIo.meta_data();
-        const int numberOfStates = 1;
-        stk::mesh::Field<double> &field0 = stkMeshMetaData.declare_field<stk::mesh::Field<double> >(fieldName, numberOfStates);
-        stk::mesh::put_field(field0, stk::mesh::Entity::NODE, stkMeshMetaData.universal_part());
-        stk::io::set_field_role(field0, Ioss::Field::TRANSIENT);
+        stk::mesh::Field<double> &field0 = createNodalTestField(stkIo.meta_data(), fieldName);
 
         stkIo.populate_bulk_data();
 
-        stk::mesh::BulkData &stkMeshBulkData = stkIo.bulk_data();
-        std::vector<stk::mesh::Entity> nodes;
-        stk::mesh::get_entities(stkMeshBulkData, stk::topology::NODE_RANK, nodes);
-        for(size_t i=0; i<nodes.size(); i++)
-        {
-            double *fieldDataForNode = stkMeshBulkData.field_data(field0, nodes[i]);
-            *fieldDataForNode = static_cast<double>(stkMeshBulkData.identifier(nodes[i]));
-            nodalFieldValues.push_back(*fieldDataForNode);
-        }
+        putDataOnTestField(stkIo.bulk_data(), field0, nodalFieldValues);
 
         stkIo.create_output_mesh(outputFileName);
 
@@ -223,7 +231,7 @@ STKUNIT_UNIT_TEST(StkIoTest, GlobalDoubleWithFieldMultipleTimeSteps)
     unlink(outputFileName.c_str());
 }
 
-STKUNIT_UNIT_TEST(StkIoTest, OneGlobalDoubleRestart)
+STKUNIT_UNIT_TEST(GlobarVariablesTest, OneGlobalDoubleRestart)
 {
     const std::string outputFileName = "OneGlobalDouble.restart";
     const std::string globalVarName = "testGlobal";
@@ -253,7 +261,7 @@ STKUNIT_UNIT_TEST(StkIoTest, OneGlobalDoubleRestart)
     unlink(outputFileName.c_str());
 }
 
-STKUNIT_UNIT_TEST(StkIoTest, OneGlobalDoubleWithFieldRestart)
+STKUNIT_UNIT_TEST(GlobarVariablesTest, OneGlobalDoubleWithFieldRestart)
 {
     const std::string outputFileName = "GlobalDoubleWithFieldMultipleTimeSteps.restart";
     const std::string fieldName = "field0";
@@ -266,25 +274,12 @@ STKUNIT_UNIT_TEST(StkIoTest, OneGlobalDoubleWithFieldRestart)
         stk::io::MeshData stkIo(communicator);
         generateMetaData(stkIo);
 
-        stk::mesh::MetaData &stkMeshMetaData = stkIo.meta_data();
-        const int numberOfStates = 1;
-        stk::mesh::Field<double> &field0 = stkMeshMetaData.declare_field<stk::mesh::Field<double> >(fieldName, numberOfStates);
-        stk::mesh::put_field(field0, stk::mesh::Entity::NODE, stkMeshMetaData.universal_part());
-        stk::io::set_field_role(field0, Ioss::Field::TRANSIENT);
-
+        stk::mesh::Field<double> &field0 = createNodalTestField(stkIo.meta_data(), fieldName);
         stkIo.add_restart_field(field0);
 
         stkIo.populate_bulk_data();
 
-        stk::mesh::BulkData &stkMeshBulkData = stkIo.bulk_data();
-        std::vector<stk::mesh::Entity> nodes;
-        stk::mesh::get_entities(stkMeshBulkData, stk::topology::NODE_RANK, nodes);
-        for(size_t i=0; i<nodes.size(); i++)
-        {
-            double *fieldDataForNode = stkMeshBulkData.field_data(field0, nodes[i]);
-            *fieldDataForNode = static_cast<double>(stkMeshBulkData.identifier(nodes[i]));
-            nodalFieldValues.push_back(*fieldDataForNode);
-        }
+        putDataOnTestField(stkIo.bulk_data(), field0, nodalFieldValues);
 
         stkIo.create_restart_output(outputFileName);
 
