@@ -263,9 +263,13 @@ STKUNIT_UNIT_TEST(CoarseSearch, PeriodicBC)
 
 
   check_gold(pbc_search.get_pairs() );
-#if 0
   {
-  //do some output  const PeriodicSearch::SearchPairVector & search_results = pbc_search.get_pairs();  for (size_t i = 0; i < search_results.size(); ++i)  {    const stk::mesh::EntityId domain_node = search_results[i].first.ident.id();    const stk::mesh::EntityId range_node = search_results[i].second.ident.id();    std::cout << "P" << bulk_data.parallel_rank() << " " <<  domain_node << " ====> "<< range_node << std::endl;  }
+    //also check the number
+    const int local_search_count = pbc_search.get_pairs().size();
+    int global_search_count=0;
+    stk::all_reduce_sum(bulk_data.parallel(), &local_search_count, &global_search_count, 1);
+
+    EXPECT_GE(global_search_count, 16);
   }
 
   bulk_data.modification_begin();
@@ -279,14 +283,21 @@ STKUNIT_UNIT_TEST(CoarseSearch, PeriodicBC)
   ghosted_fields.push_back(&coords_field);
   stk::mesh::communicate_field_data( periodic_bc_ghosting, ghosted_fields);
 
-  pbc_search.find_periodic_nodes(MPI_COMM_SELF);
-  {
-  //do some output
-    std::cout << "POST GHOSTING RESULTS" << std::endl;  const PeriodicSearch::SearchPairVector & search_results = pbc_search.get_pairs();  for (size_t i = 0; i < search_results.size(); ++i)  {    const stk::mesh::EntityId domain_node = search_results[i].first.ident.id();    const stk::mesh::EntityId range_node = search_results[i].second.ident.id();    std::cout << "P" << bulk_data.parallel_rank() << " " <<  domain_node << " ====> "<< range_node << std::endl;  }
-  }
+  //lets do a local search to make sure the coords field and entities were properly ghosted
+  PeriodicSearch pbc_local_search(bulk_data, CoordinateFunctor(bulk_data, coords_field));
 
-  check_gold(pbc_search.get_pairs());
-#endif
+  pbc_local_search.add_periodic_pair(side_0, side_3 );
+  pbc_local_search.find_periodic_nodes(MPI_COMM_SELF);
+
+  check_gold(pbc_local_search.get_pairs());
+  {
+    //also check the number
+    const int local_search_count = pbc_local_search.get_pairs().size();
+    int global_search_count=0;
+    stk::all_reduce_sum(bulk_data.parallel(), &local_search_count, &global_search_count, 1);
+
+    EXPECT_GE(global_search_count, 16);
+  }
 }
 
 
@@ -363,19 +374,15 @@ STKUNIT_UNIT_TEST(CoarseSearch, TwoWayMultiPeriodicBC)
   {
     EXPECT_EQ(pbc_search.get_pairs().size(), 36u);
   }
-#if 0
+  else
   {
-  //do some output
-  const PeriodicSearch::SearchPairVector & search_results = pbc_search.get_pairs();
-  std::cout << "PRE GHOSTING SIZE IS " << search_results.size() << std::endl;
-  for (size_t i = 0; i < search_results.size(); ++i)
-  {
-    const stk::mesh::EntityId domain_node = search_results[i].first.ident.id();
-    const stk::mesh::EntityId range_node = search_results[i].second.ident.id();
+    const int local_search_count = pbc_search.get_pairs().size();
+    int global_search_count=0;
+    stk::all_reduce_sum(bulk_data.parallel(), &local_search_count, &global_search_count, 1);
 
-    std::cout << "P" << bulk_data.parallel_rank() << "  " << domain_node << " ====> "<< range_node << std::endl;
+    EXPECT_GE(global_search_count, 36);
   }
-  }
+
 
   //now we ghost everything to do a local search
   bulk_data.modification_begin();
@@ -388,25 +395,26 @@ STKUNIT_UNIT_TEST(CoarseSearch, TwoWayMultiPeriodicBC)
   ghosted_fields.push_back(&coords_field);
   stk::mesh::communicate_field_data( periodic_bc_ghosting, ghosted_fields);
 
-  //do a local search only to verify ghosting
-  pbc_search.find_periodic_nodes(MPI_COMM_SELF);
+  //lets do a local search to make sure the coords field and entities were properly ghosted
+  PeriodicSearch pbc_local_search(bulk_data, CoordinateFunctor(bulk_data, coords_field));
+  pbc_local_search.add_periodic_pair(side_0, side_2) ;
+  pbc_local_search.add_periodic_pair(side_1, side_3);
+  pbc_local_search.find_periodic_nodes(MPI_COMM_SELF);
 
-  check_gold_two_way_multiperiodic(pbc_search.get_pairs());
+  check_gold_two_way_multiperiodic(pbc_local_search.get_pairs());
 
+  if (bulk_data.parallel_size() == 1)
   {
-  //do some output
-  const PeriodicSearch::SearchPairVector & search_results = pbc_search.get_pairs();
-  std::cout << "POST GHOSTING SIZE IS " << search_results.size() << std::endl;
-  for (size_t i = 0; i < search_results.size(); ++i)
+    EXPECT_EQ(pbc_local_search.get_pairs().size(), 36u);
+  }
+  else
   {
-    const stk::mesh::EntityId domain_node = search_results[i].first.ident.id();
-    const stk::mesh::EntityId range_node = search_results[i].second.ident.id();
+    const int local_search_count = pbc_local_search.get_pairs().size();
+    int global_search_count=0;
+    stk::all_reduce_sum(bulk_data.parallel(), &local_search_count, &global_search_count, 1);
 
-    std::cout << "P" << bulk_data.parallel_rank() << "  " << domain_node << " ====> "<< range_node << std::endl;
+    EXPECT_GE(global_search_count, 36);
   }
-  }
-#endif
-
 }
 
 STKUNIT_UNIT_TEST(CoarseSearch, ThreeWayMultiPeriodicBC)
@@ -503,45 +511,44 @@ STKUNIT_UNIT_TEST(CoarseSearch, ThreeWayMultiPeriodicBC)
   {
     EXPECT_EQ(pbc_search.get_pairs().size(), 61u);
   }
-  #if 0
-    //do some output
-    const PeriodicSearch::SearchPairVector & search_results = pbc_search.get_pairs();
-    for (size_t i = 0; i < search_results.size(); ++i)
-    {
-      const stk::mesh::EntityId domain_node = search_results[i].first.ident.id();
-      const stk::mesh::EntityId range_node = search_results[i].second.ident.id();
+  else
+  {
+    const int local_search_count = pbc_search.get_pairs().size();
+    int global_search_count=0;
+    stk::all_reduce_sum(bulk_data.parallel(), &local_search_count, &global_search_count, 1);
 
-      std::cout << domain_node << " ====> "<< range_node << std::endl;
-    }
-    //also check the number
-  //  const int local_search_count = pbc_search.get_pairs().size();
-  //  int global_search_count=0;
-  //  stk::all_reduce_sum(bulk_data.parallel(), &local_search_count, &global_search_count, 1);
+    EXPECT_GE(global_search_count, 61);
+  }
 
-    //now we ghost everything to do a local search
-    bulk_data.modification_begin();
-    pbc_search.create_ghosting("periodic_ghosts");
-    bulk_data.modification_end();
+  //now we ghost everything to do a local search
+  bulk_data.modification_begin();
+  pbc_search.create_ghosting("periodic_ghosts");
+  bulk_data.modification_end();
 
-    const stk::mesh::Ghosting & periodic_bc_ghosting = pbc_search.get_ghosting();
+  const stk::mesh::Ghosting & periodic_bc_ghosting = pbc_search.get_ghosting();
 
-    std::vector< stk::mesh::FieldBase const * > ghosted_fields;
-    ghosted_fields.push_back(&coords_field);
-    stk::mesh::communicate_field_data( periodic_bc_ghosting, ghosted_fields);
+  std::vector< stk::mesh::FieldBase const * > ghosted_fields;
+  ghosted_fields.push_back(&coords_field);
+  stk::mesh::communicate_field_data( periodic_bc_ghosting, ghosted_fields);
 
-    //do a local search only to verify ghosting
-    pbc_search.find_periodic_nodes(MPI_COMM_SELF);
+  //lets do a local search to make sure the coords field and entities were properly ghosted
+  PeriodicSearch pbc_local_search(bulk_data, CoordinateFunctor(bulk_data, coords_field));
+  pbc_local_search.add_periodic_pair(side_0, side_2) ;
+  pbc_local_search.add_periodic_pair(side_1, side_3);
+  pbc_local_search.add_periodic_pair(side_4, side_5);
+  pbc_local_search.find_periodic_nodes(MPI_COMM_SELF);
 
-    check_gold_three_way_multiperiodic(pbc_search.get_pairs());
+  check_gold_three_way_multiperiodic(pbc_local_search.get_pairs());
+  if (bulk_data.parallel_size() == 1)
+  {
+    EXPECT_EQ(pbc_local_search.get_pairs().size(), 61u);
+  }
+  else
+  {
+    const int local_search_count = pbc_local_search.get_pairs().size();
+    int global_search_count=0;
+    stk::all_reduce_sum(bulk_data.parallel(), &local_search_count, &global_search_count, 1);
 
-    //do some output
-    const PeriodicSearch::SearchPairVector & search_results = pbc_search.get_pairs();
-    for (size_t i = 0; i < search_results.size(); ++i)
-    {
-      const stk::mesh::EntityId domain_node = search_results[i].first.ident.id();
-      const stk::mesh::EntityId range_node = search_results[i].second.ident.id();
-
-      std::cout << domain_node << " ====> "<< range_node << std::endl;
-    }
-#endif
+    EXPECT_GE(global_search_count, 61);
+  }
 }
