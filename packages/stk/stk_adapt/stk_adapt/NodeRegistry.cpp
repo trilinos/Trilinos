@@ -1923,21 +1923,7 @@ namespace stk {
             prolongateField(element, needed_entity_rank, iSubDimOrd, field);
           else
             {
-              std::cout << "Not prolonging possible integer Field: " << field->name() << " field= " << typeid(*field).name()
-                        <<"\n is_void = " << data_traits.is_void
-                        <<"\n is_integral = " << data_traits.is_integral
-                        <<"\n is_floating_point = " << data_traits.is_floating_point
-                        <<"\n is_array = " << data_traits.is_array
-                        <<"\n is_pointer = " << data_traits.is_pointer
-                        <<"\n is_enum = " << data_traits.is_enum
-                        <<"\n is_class = " << data_traits.is_class
-                        <<"\n is_pod = " << data_traits.is_pod
-                        <<"\n is_signed  = " << data_traits.is_signed
-                        <<"\n is_unsigned = " << data_traits.is_unsigned
-                        <<"\n alignment_of = " << data_traits.alignment_of
-                        <<"\n stride_of = " << data_traits.stride_of
-                        <<"\n name = " << data_traits.name
-                        << std::endl;
+              // do nothing
             }
 
         }
@@ -1957,21 +1943,7 @@ namespace stk {
             prolongate(field);
           else
             {
-              std::cout << "Not prolonging possible integer Field: " << field->name() << " field= " << typeid(*field).name()
-                        <<"\n is_void = " << data_traits.is_void
-                        <<"\n is_integral = " << data_traits.is_integral
-                        <<"\n is_floating_point = " << data_traits.is_floating_point
-                        <<"\n is_array = " << data_traits.is_array
-                        <<"\n is_pointer = " << data_traits.is_pointer
-                        <<"\n is_enum = " << data_traits.is_enum
-                        <<"\n is_class = " << data_traits.is_class
-                        <<"\n is_pod = " << data_traits.is_pod
-                        <<"\n is_signed  = " << data_traits.is_signed
-                        <<"\n is_unsigned = " << data_traits.is_unsigned
-                        <<"\n alignment_of = " << data_traits.alignment_of
-                        <<"\n stride_of = " << data_traits.stride_of
-                        <<"\n name = " << data_traits.name
-                        << std::endl;
+              // do nothing
             }
         }
     }
