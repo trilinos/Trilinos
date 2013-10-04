@@ -42,8 +42,6 @@
 #if !defined(Intrepid_MiniTensor_Storage_h)
 #define Intrepid_MiniTensor_Storage_h
 
-#include <boost/static_assert.hpp>
-
 #include "Intrepid_MiniTensor_Definitions.h"
 
 namespace Intrepid {
@@ -62,8 +60,10 @@ struct dimension_const<DYNAMIC, C> {
 /// Validate dimension
 template <Index D>
 struct check_static {
-  static Index const maximum_dimension = std::numeric_limits<Index>::digits;
-  BOOST_STATIC_ASSERT_MSG(D < maximum_dimension, "Dimension too large.");
+  static Index const
+  maximum_dimension = static_cast<Index>(std::numeric_limits<Index>::digits);
+
+  STATIC_ASSERT(D < maximum_dimension, dimension_too_large);
   static Index const value = D;
 };
 
@@ -72,8 +72,11 @@ inline
 void
 check_dynamic(Index const dimension)
 {
+  Index const
+  maximum_dimension = static_cast<Index>(std::numeric_limits<Index>::digits);
+
   assert(Store::IS_DYNAMIC == true);
-  assert(dimension <= std::numeric_limits<Index>::digits);
+  assert(dimension <= maximum_dimension);
 }
 
 /// Integer power template restricted to orders defined below

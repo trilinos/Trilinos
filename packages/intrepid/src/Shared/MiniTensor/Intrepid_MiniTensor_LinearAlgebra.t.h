@@ -1914,7 +1914,7 @@ eig_sym_NxN(Tensor<T, N> const & A)
   // Estimate based on random generation and linear regression.
   // Golub & Van Loan p 429 expect ~ dimension * log(dimension)
   Index const
-  max_iter = 2.25 * dimension * dimension;
+  max_iter = 5 * dimension * dimension / 2;
 
   Index
   num_iter = 0;

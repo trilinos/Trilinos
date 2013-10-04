@@ -470,7 +470,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, InverseNxN)
   std::srand(std::time(NULL));
 
   Index const
-  N = double(std::rand()) / double(RAND_MAX) * 7.0 + 4.0;
+  N = static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX) * 7 + 4;
 
   Tensor<Real> const
   A = 2.0 * eye<Real>(N) + Tensor<Real>(N, RANDOM_UNIFORM);
@@ -492,7 +492,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, Inverse_4th_NxN)
   std::srand(std::time(NULL));
 
   Index const
-  N = double(std::rand()) / double(RAND_MAX) * 2.0 + 2.0;
+  N = static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX) * 2 + 2;
 
   Tensor4<Real> const
   A = 2.0 * identity_1<Real>(N) + Tensor4<Real>(N, RANDOM_UNIFORM);
