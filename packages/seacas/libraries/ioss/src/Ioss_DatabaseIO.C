@@ -241,9 +241,9 @@ namespace Ioss {
  void DatabaseIO::check_for_duplicate_output_file(const std::string &filename)
   {
     if (!outputFileList.insert(filename).second) {
-      IOSS_WARNING << "WARNING: Multiple outputs from this application are attempting to write to the file\n         '"
-		   << filename
-		   << "'.\n         This can result in a corrupted file and should be avoided.\n\n";
+      IOSS_WARNING << "WARNING: Multiple outputs from this application may be attempting to write to the file\n         '"
+		   << "         " << filename
+		   << "'.\n         This can result in a corrupted file or loss of data and should be avoided.\n\n";
     }
   }
 
