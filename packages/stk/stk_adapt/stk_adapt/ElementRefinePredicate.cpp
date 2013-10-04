@@ -17,6 +17,8 @@ namespace stk {
       bool ref_field_criterion = (fdata  && fdata[0] > 0);
       bool unref_field_criterion = (fdata && fdata[0] < 0);
       int mark = 0;
+      //if (1)
+      //  return mark;
       if (0)
         {
           const percept::MyPairIterRelation sides (m_eMesh, entity, m_eMesh.side_rank());
