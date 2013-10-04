@@ -200,6 +200,13 @@ void all_reduce_max( ParallelMachine comm ,
 }
 
 void all_reduce_max( ParallelMachine comm ,
+                     const unsigned * local , unsigned * global , unsigned count )
+{
+  unsigned * tmp = const_cast<unsigned*>( local );
+  MPI_Allreduce( tmp , global , count , MPI_UNSIGNED , MPI_MAX , comm );
+}
+
+void all_reduce_max( ParallelMachine comm ,
                      const int64_t * local , int64_t * global , unsigned count )
 {
   int64_t * tmp = const_cast<int64_t*>( local );
@@ -236,6 +243,13 @@ void all_reduce_min( ParallelMachine comm ,
 {
   double * tmp = const_cast<double*>( local );
   MPI_Allreduce( tmp , global , count , MPI_DOUBLE , MPI_MIN , comm );
+}
+
+void all_reduce_min( ParallelMachine comm ,
+                     const unsigned * local , unsigned * global , unsigned count )
+{
+  unsigned * tmp = const_cast<unsigned*>( local );
+  MPI_Allreduce( tmp , global , count , MPI_UNSIGNED , MPI_MIN , comm );
 }
 
 //----------------------------------------------------------------------

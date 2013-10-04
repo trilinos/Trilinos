@@ -61,6 +61,9 @@ void all_reduce_bor( ParallelMachine ,
 void all_reduce_max( ParallelMachine ,
                      const double * local , double * global , unsigned count );
 
+void all_reduce_max( ParallelMachine ,
+                     const unsigned * local , unsigned * global , unsigned count );
+
 /** \brief  Parallel summation to all processors */
 void all_reduce_max( ParallelMachine comm ,
                      const int64_t * local , int64_t * global , unsigned count );
@@ -71,6 +74,9 @@ void all_reduce_max( ParallelMachine ,
 
 void all_reduce_min( ParallelMachine ,
                      const double * local , double * global , unsigned count );
+
+void all_reduce_min( ParallelMachine ,
+                     const unsigned * local , unsigned * global , unsigned count );
 
 /** Aggregated parallel in-place reduce-to-all-processors operations.
  *
