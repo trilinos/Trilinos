@@ -296,7 +296,7 @@ namespace stk {
          */
         void define_output_fields(bool add_all_fields = false);
 
-        void add_results_field(stk::mesh::FieldBase &f, const std::string &db_name = std::string());
+        void add_results_field(stk::mesh::FieldBase &field, const std::string &db_name = std::string());
 
         /**
          * Add a transient step to the mesh database at time 'time' and
@@ -332,7 +332,7 @@ namespace stk {
         void create_restart_output(const std::string &filename);
         void create_restart_output();
 
-        void add_restart_field(stk::mesh::FieldBase &field, std::string db_name = std::string());
+        void add_restart_field(stk::mesh::FieldBase &field, const std::string &db_name = std::string());
         int  process_restart_output(double time);
         double process_restart_input(int step);
         double process_restart_input(double time);

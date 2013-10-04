@@ -24,12 +24,6 @@ void createNamedFieldOnMesh(stk::mesh::MetaData &stkMeshMetaData, const std::str
     stk::mesh::put_field(field0, stk::mesh::Entity::NODE, stkMeshMetaData.universal_part());
 }
 
-void markFieldForResultsOutputWithNewName(stk::mesh::FieldBase *field0, const std::string &requestedFieldNameForResultsOutput)
-{
-    stk::io::set_field_role(*field0, Ioss::Field::TRANSIENT);
-    stk::io::set_results_field_name(*field0, requestedFieldNameForResultsOutput);
-}
-
 void testFieldNamedCorrectly(Ioss::Region *ioRegion, MPI_Comm communicator, const std::string &goldFieldName)
 {
     Ioss::NodeBlock *nodeBlockAssociatedWithField0 = ioRegion->get_node_blocks()[0];
@@ -50,15 +44,15 @@ STKUNIT_UNIT_TEST(StkIoTest, FieldNameRenameTwice)
 
     stk::mesh::MetaData &stkMeshMetaData = stkIo.meta_data();
     createNamedFieldOnMesh(stkMeshMetaData, internalClientFieldName);
+    stkIo.populate_bulk_data();
 
     stk::mesh::FieldBase *field0 = stkMeshMetaData.get_field(internalClientFieldName);
     std::string requestedFieldNameForResultsOutput("NotjeSSe");
-    markFieldForResultsOutputWithNewName(field0, requestedFieldNameForResultsOutput);
+    stkIo.add_results_field(*field0, requestedFieldNameForResultsOutput);
 
     requestedFieldNameForResultsOutput = "jeSSe";
-    markFieldForResultsOutputWithNewName(field0, requestedFieldNameForResultsOutput);
+    stkIo.add_results_field(*field0, requestedFieldNameForResultsOutput);
 
-    stkIo.populate_bulk_data();
 
     const std::string outputFileName = "ourSillyOwlput.exo";
     stkIo.create_output_mesh(outputFileName);
@@ -81,12 +75,12 @@ STKUNIT_UNIT_TEST(StkIoTest, FieldNameWithRestart)
         
         stk::mesh::MetaData &stkMeshMetaData = stkIo.meta_data();
         createNamedFieldOnMesh(stkMeshMetaData, internalClientFieldName);
+        stkIo.populate_bulk_data();
         
         stk::mesh::FieldBase *field0 = stkMeshMetaData.get_field(internalClientFieldName);
 
         stkIo.add_restart_field(*field0);
 
-        stkIo.populate_bulk_data();
 
         stkIo.create_restart_output(restartFilename);
         stkIo.define_restart_fields();
@@ -116,14 +110,14 @@ STKUNIT_UNIT_TEST(StkIoTest, FieldNameWithResultsAndRestart)
 
         stk::mesh::MetaData &stkMeshMetaData = stkIo.meta_data();
         createNamedFieldOnMesh(stkMeshMetaData, internalClientFieldName);
+        stkIo.populate_bulk_data();
 
         stk::mesh::FieldBase *field0 = stkMeshMetaData.get_field(internalClientFieldName);
         std::string requestedFieldNameForResultsOutput("jeSSe");
-        markFieldForResultsOutputWithNewName(field0, requestedFieldNameForResultsOutput);
+        stkIo.add_results_field(*field0, requestedFieldNameForResultsOutput);
 
         stkIo.add_restart_field(*field0);
 
-        stkIo.populate_bulk_data();
 
         stkIo.create_output_mesh(outputFileName);
         stkIo.define_output_fields();

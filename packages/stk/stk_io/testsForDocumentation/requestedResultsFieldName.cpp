@@ -23,10 +23,8 @@ TEST(StkIoTestForDocumentation, OutputtingFieldWithAlternativeName)
     stk::mesh::put_field(nodalDisplacement, stk::mesh::Entity::NODE, stkMeshMetaData.universal_part());
 
     // mark field for output
-    stk::io::set_field_role(nodalDisplacement, Ioss::Field::TRANSIENT);
-
     std::string alternateFieldName("deformation");
-    stk::io::set_results_field_name(nodalDisplacement, alternateFieldName);
+    stkIo.add_results_field(nodalDisplacement, alternateFieldName);
 
     // field descriptions done, fill field data (done with mesh input)
     stkIo.populate_bulk_data();

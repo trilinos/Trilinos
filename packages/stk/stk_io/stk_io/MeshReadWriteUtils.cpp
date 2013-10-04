@@ -1226,16 +1226,12 @@ namespace stk {
       stk::io::write_output_db(*m_output_region.get(),  bulk_data(), m_anded_selector.get());
     }
 
-    void MeshData::add_restart_field(stk::mesh::FieldBase &field, std::string db_name)
+    void MeshData::add_restart_field(stk::mesh::FieldBase &field, const std::string &db_name)
     {
       // NOTE: This could be implemented as a free function; however, I want to keep the option
       //       open of storing this data in a vector/map on the MeshData class instead of as a
       //       field attribute.  For now, use the field attribute approach.
-      if (db_name.empty()) {
-	db_name = field.name();
-      }
-
-      RestartFieldAttribute *my_field_attribute = new RestartFieldAttribute(db_name);
+      RestartFieldAttribute *my_field_attribute = new RestartFieldAttribute(db_name.empty() ? field.name() : db_name);
       stk::mesh::MetaData &m = mesh::MetaData::get(field);
       const RestartFieldAttribute *check = m.declare_attribute_with_delete(field, my_field_attribute);
       if ( check != my_field_attribute ) {
@@ -1249,6 +1245,17 @@ namespace stk {
 	  throw std::runtime_error( msg.str() );
 	}
 	delete my_field_attribute;
+      }
+    }
+
+    void MeshData::add_results_field(stk::mesh::FieldBase &field, const std::string &db_name)
+    {
+      // NOTE: This could be implemented as a free function; however, I want to keep the option
+      //       open of storing this data in a vector/map on the MeshData class instead of as a
+      //       field attribute.  For now, use the field attribute approach.
+      stk::io::set_field_role(field, Ioss::Field::TRANSIENT);
+      if (!db_name.empty()) {
+	stk::io::set_results_field_name(field, db_name);
       }
     }
 

@@ -228,8 +228,8 @@ bool use_case_24_driver(
   mesh::put_field(mass_flux_ip , element_rank , hex_io1 , SpatialDim, numElementSCSIps );
 
   // Output the pressure and velocity fields...
-  stk::io::set_field_role(pressure, Ioss::Field::TRANSIENT);
-  stk::io::set_field_role(velocity, Ioss::Field::TRANSIENT);
+  mesh_data.add_results_field(pressure);
+  mesh_data.add_results_field(velocity);
 
   // Commit (finalize) the meta data (part and field definitions).
   // Is now ready to be used in the creation and management of mesh bulk data.
