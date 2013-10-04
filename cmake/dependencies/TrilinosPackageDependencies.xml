@@ -1106,7 +1106,7 @@
     <ParentPackage value=""/>
   </Package>
   <Package name="IQR" dir="packages/iqr" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Epetra"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES value="Epetra,EpetraExt,Galeri,Teuchos,Anasazi"/>
     <TEST_OPTIONAL_DEP_PACKAGES/>

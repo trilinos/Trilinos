@@ -4,6 +4,8 @@
 #include <iostream>
 #include <gmres.h>
 
+#include <Epetra_Operator.h>
+
 /*
     This typename provides some tools to handle with gmres.
     In particular it stores informations of a computed gmres which are useful
@@ -45,6 +47,7 @@ public:
     int isFlex;
     bool doScaling;
     int id;
+    bool isFirst;
 
     // Q
     LocalVector cs;
@@ -56,6 +59,7 @@ public:
     // w basis of x = P^-1 y
     MultiVector *w;
     GMRESManager *P; // preconditioner(s)
+    Epetra_Operator* P2;
 
     // Related to parallel operation
     const Map& map_;
@@ -178,7 +182,7 @@ int GMRESManager< Map, MultiVector,
     }
 
     //std::cout << "GMRES_TOOLS.solve: prec with m = " << mm << std::endl;
-    int myPID = map_.Comm().MyPID();
+//    int myPID = map_.Comm().MyPID();
 //    if (! myPID) std::cout << "Apply inverse " << id << "\n";
 
     int i;
@@ -232,12 +236,19 @@ int GMRESManager< Map, MultiVector,
     // solving R_{n} y_{n} = bp and setting x = x + Q_{n} y_{n} 
     Update(x, mm-1, H, bp, *w); // summing to x the solution of Rx=bp
 
-    if(P != 0 && isFlex == 0) {
-        P->ApplyInverse(x, X);
+    if (isFirst) {
+    	if (P2 !=0 && isFlex == 0) {
+    		P2->ApplyInverse(x, X);
+    	} else {
+    		X = x;
+    	}
     } else {
-    X = x;
+		if (P != 0 && isFlex == 0) {
+			P->ApplyInverse(x, X);
+		} else {
+			X = x;
+		}
     }
-
     return 0;
 }
 

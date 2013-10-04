@@ -282,7 +282,7 @@
     <Dependency name="Teuchos" type="TR"/>
     <Dependency name="ThreadPool" type="ITO"/>
     <Dependency name="RTOp" type="ITO"/>
-    <Dependency name="Epetra" type="TR"/>
+    <Dependency name="Epetra" type="LR"/>
     <Dependency name="Triutils" type="ITO"/>
     <Dependency name="Tpetra" type="ITO"/>
     <Dependency name="EpetraExt" type="TR"/>

@@ -51,6 +51,8 @@
 #include "Ifpack_ShyLU.h"
 #include "Teuchos_Time.hpp"
 
+#include <gmres_tools.h>
+
 //#define DUMP_MATRICES
 
 Ifpack_ShyLU::Ifpack_ShyLU(Epetra_CrsMatrix* A):
@@ -69,6 +71,16 @@ void Ifpack_ShyLU::Destroy()
 {
     if (IsInitialized_)
     {
+    	if (slu_config_.schurApproxMethod == 4) {
+			if (slu_config_.iqrNestedLevel > 0) {
+				if ((slu_data_.savedGmresManagers)[0]->P2 != 0) {
+					delete (slu_data_.savedGmresManagers)[0]->P2;
+				}
+			} else {
+				delete slu_data_.gmresManager->P2;
+			}
+    	}
+
         //delete A_;
         //delete partitioner_;
         //delete rd_;
@@ -158,6 +170,14 @@ int Ifpack_ShyLU::Initialize()
     	slu_config_.iqrNumIter = List_.get<int>("IQR Number Iterations", 1);
         slu_config_.iqrScaling = List_.get<bool>("IQR Scaling", true);
         slu_config_.iqrNestedLevel = List_.get<int>("IQR Nested Level", 0);
+        slu_config_.iqrInitialPrec = List_.get<bool>("IQR Initial Prec", false);
+        slu_config_.iqrInitialPrecType = List_.get<string>("IQR Initial Prec Type", "Amesos stand-alone");
+        slu_config_.iqrInitialPrecAmesosType = List_.get<string>("IQR Initial Prec Amesos Type", "Amesos_Klu");
+        slu_data_.firstIteration = true;
+        slu_data_.iqrCurrentIteration = 0;
+        slu_data_.iqrApplication = 0;
+        slu_data_.savedGmresManagers.resize(slu_config_.iqrNestedLevel);
+
     }
     if (schurApproxMethod == "Projection")
     {
@@ -220,11 +240,6 @@ int Ifpack_ShyLU::Initialize()
         else
             slu_data_.innersolver = NULL;
     }
-
-    slu_data_.firstIteration = true;
-    slu_data_.iqrCurrentIteration = 0;
-    slu_data_.iqrApplication = 0;
-    slu_data_.savedGmresManagers.resize(slu_config_.iqrNestedLevel);
 
     IsInitialized_ = true;
     return 0;

@@ -127,6 +127,9 @@ typedef struct
     int iqrNumIter;
     bool iqrScaling;
     int iqrNestedLevel; // 0 == no nesting; > 0 yes, nesting!
+    bool iqrInitialPrec;
+    std::string iqrInitialPrecType;
+    std::string iqrInitialPrecAmesosType;
 
     double projectionSpaceDim;
     int projectionNumIter;
