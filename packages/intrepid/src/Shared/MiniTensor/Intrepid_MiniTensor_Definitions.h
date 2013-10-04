@@ -51,7 +51,7 @@ namespace Intrepid {
 
 /// Static assertion
 #define STATIC_ASSERT(condition, name)\
-  typedef char static_assertion_failed_ ## name [(condition) ? 1 : -1];
+  typedef char static_assertion_failed_ ## name [(condition) ? 1 : -1]
 
 /// Indexing type
 typedef unsigned int Index;
