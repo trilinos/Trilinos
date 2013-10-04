@@ -1038,16 +1038,11 @@ namespace stk {
     {
       ThrowErrorMsgIf (Teuchos::is_null(m_output_region),
 		       "There is no Output mesh region associated with this Mesh Data.");
-      m_output_region->begin_mode(Ioss::STATE_TRANSIENT);
-
-      int out_step = m_output_region->add_state(time);
-      m_output_region->begin_state(out_step);
+      this->begin_results_output_at_time(time);
       internal_process_output_request(exclude);
-      m_output_region->end_state(out_step);
+      this->end_current_results_output();
 
-      m_output_region->end_mode(Ioss::STATE_TRANSIENT);
-
-      return out_step;
+      return mCurrentOutputStep;
     }
 
     // ========================================================================
@@ -1065,16 +1060,11 @@ namespace stk {
     {
       ThrowErrorMsgIf (Teuchos::is_null(m_output_region),
                        "There is no Output mesh region associated with this Mesh Data.");
-      m_output_region->begin_mode(Ioss::STATE_TRANSIENT);
+      this->begin_results_output_at_time(time);
+      this->process_output_request();
+      this->end_current_results_output();
 
-      int out_step = m_output_region->add_state(time);
-      m_output_region->begin_state(out_step);
-      internal_process_output_request(std::set<const stk::mesh::Part*>());
-      m_output_region->end_state(out_step);
-
-      m_output_region->end_mode(Ioss::STATE_TRANSIENT);
-
-      return out_step;
+      return mCurrentOutputStep;
     }
 
     void MeshData::begin_results_output_at_time(double time)
@@ -1429,14 +1419,11 @@ namespace stk {
       ThrowErrorMsgIf (Teuchos::is_null(m_restart_region),
 		       "There is no Restart output associated with this Mesh Data.");
 
-      m_restart_region->begin_mode(Ioss::STATE_TRANSIENT);
+      this->begin_restart_output_at_time(time);
+      this->process_restart_output();
+      this->end_current_restart_output();
 
-      int out_step = m_restart_region->add_state(time);
-      internal_process_restart_output(out_step);
-
-      m_restart_region->end_mode(Ioss::STATE_TRANSIENT);
-
-      return out_step;
+      return mCurrentRestartStep;
     }
 
     void MeshData::internal_process_restart_output(int step)
