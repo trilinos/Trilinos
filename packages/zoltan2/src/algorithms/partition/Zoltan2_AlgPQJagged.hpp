@@ -2623,7 +2623,7 @@ public:
             }
         }
         //if they are totally equal.
-        return false;
+        return this->index < other.index;
     }
     bool operator>(const uMultiSortItem<IT,CT,WT>& other) const{
         assert (this->count == other.count);
@@ -2643,7 +2643,7 @@ public:
             }
         }
         //if they are totally equal.
-        return false;
+        return this->index > other.index;
     }
 };// uSortItem;
 
