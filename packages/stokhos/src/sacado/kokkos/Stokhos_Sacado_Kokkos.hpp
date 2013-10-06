@@ -46,7 +46,7 @@
 
 #ifdef HAVE_STOKHOS_KOKKOSCORE
 
-#include "KokkosClassic_config.h"
+#include "KokkosCore_config.h"
 
 #include "Stokhos_Sacado_Kokkos_MathFunctions.hpp"
 
@@ -56,6 +56,8 @@
 #include "Stokhos_DynamicStridedStorage.hpp"
 #include "Stokhos_DynamicThreadedStorage.hpp"
 #include "Stokhos_LocalStorage.hpp"
+#include "Stokhos_ViewStorage.hpp"
+#include "Stokhos_ViewStridedStorage.hpp"
 
 #include "Sacado_MP_ExpressionTraits.hpp"
 #include "Sacado_MP_VectorTraits.hpp"

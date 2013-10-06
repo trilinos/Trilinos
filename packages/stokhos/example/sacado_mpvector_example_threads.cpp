@@ -39,199 +39,144 @@
 // ***********************************************************************
 // @HEADER
 
+#include "KokkosCore_config.h"
+#ifdef KOKKOS_HAVE_PTHREAD
+
 #include "Stokhos_Sacado_Kokkos.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "sacado_mpvector_example.hpp"
 
-// The function to compute the polynomial chaos expansion of,
-// written as a template function
-template <class ScalarType>
-void simple_function(const ScalarType& x, ScalarType& y) {
-  ScalarType u = x*x;
-  ScalarType v = std::pow(std::log(u),2.0);
-  y = v/(x + 1.0);
-}
+#include "Kokkos_Threads.hpp"
+#include "Kokkos_hwloc.hpp"
 
-template <typename vector_type>
-void mpkernel(int offset, int stride, int n, int sz,
-              double *dev_x, double *dev_y,
-              bool reset, bool print)
-{
-  typedef typename vector_type::storage_type storage_type;
+// Partial specialization of vector example runner for Threads
+template <int MaxSize, typename Scalar>
+struct MPVectorExample<MaxSize, Scalar, Kokkos::Threads> {
+  typedef Kokkos::Threads Device;
 
-  // multi-point expansions
-  vector_type x(sz, 0.0), y(sz, 0.0);
+  static bool run(Storage_Method storage_method,
+                  int num_elements, int num_samples,
+                  int team_size, int league_size,
+                  bool reset, bool print) {
+    typedef MPVectorTypes<MaxSize, Scalar, Device> MPT;
 
-  // Loop over elements, propagating sz samples simultaneously
-  for (int e=0; e<n; e++) {
+    // Initialize threads
+    if (league_size == -1)
+      league_size = Kokkos::hwloc::get_available_numa_count() *
+        Kokkos::hwloc::get_available_cores_per_numa();
+    if (team_size == -1)
+      team_size = Kokkos::hwloc::get_available_threads_per_core();
+    Kokkos::Threads::initialize( league_size , team_size );
+    Kokkos::Threads::print_configuration( std::cout );
 
-    // Initialize x
-    if (reset && storage_type::supports_reset) {
-      storage_type& x_s = x.storage();
-      storage_type& y_s = y.storage();
-      x_s.shallowReset(dev_x+offset, sz, stride, false);
-      y_s.shallowReset(dev_y+offset, sz, stride, false);
-    }
-    else {
-      for (int i=0; i<sz; i++)
-        x.fastAccessCoeff(i) = dev_x[offset+i*stride];
-    }
+    // Setup work request
+    Kokkos::ParallelWorkRequest config(num_elements, team_size);
 
-    simple_function(x,y);
-
-    // Print x and y
-    if (print) {
-      std::cout << "x(0) = [ ";
-      for (int i=0; i<sz; i++)
-        std::cout << x.coeff(i) << " ";
-      std::cout << "]" << std::endl << std::endl;
-
-      std::cout << "y(0) = [ ";
-      for (int i=0; i<sz; i++)
-        std::cout << y.coeff(i) << " ";
-      std::cout << "]" << std::endl << std::endl;
-    }
-
-    // Return result
-    if (!(reset && vector_type::storage_type::supports_reset)) {
-      for (int i=0; i<sz; i++)
-        dev_y[offset+i*stride] = y.fastAccessCoeff(i);
-    }
-
-    offset += stride*sz;
-
-  }
-}
-
-void kernel(int offset, int stride, int n, int sz, double *dev_x, double *dev_y)
-{
-  // Loop over elements
-  double x, y;
-  for (int e=0; e<n; e++) {
-
-    for (int i=0; i<sz; i++) {
-
-      // Initialize x
-      x = dev_x[offset+i*stride];
-
-      // Compute function
-      simple_function(x,y);
-
-      // Return result
-      dev_y[offset+i*stride] = y;
-
-    }
-
-    offset += stride*sz;
-
-  }
-}
-
-// Partial specialization of vector example runner for CUDA
-template <int MaxSize>
-struct MPVectorExample<MaxSize,Kokkos::Threads> {
-  typedef Kokkos::Threads device_type;
-
-  static bool
-  run(Storage_Method storage_method, int n, int sz, int nblocks, int nthreads,
-      bool reset, bool print) {
-    typedef MPVectorTypes<MaxSize, device_type> MPT;
+    int local_vector_size = num_samples / team_size;
+    // TEUCHOS_TEST_FOR_EXCEPTION(
+    //   num_samples % team_size != 0, std::logic_error,
+    //   "Number of samples (" << num_samples ") is not a multiple of "
+    //   << "thread team size (" << team_size << ")!");
 
     bool status = false;
+    std::string device_name = "Threads";
     if (storage_method == STATIC)
-      status = run_impl<typename MPT::static_vector>(
-        n, sz, nblocks, nthreads, reset, print);
-    else if (storage_method == STATIC_FIXED)
-      status = run_impl<typename MPT::static_fixed_vector>(
-        n, sz, nblocks, nthreads, reset, print);
-    else if (storage_method == LOCAL)
-      status = run_impl<typename MPT::local_vector>(
-        n, sz, nblocks, nthreads, reset, print);
+      status = run_kernels<Scalar, typename MPT::static_vector, typename MPT::static_vector, Device>(
+        config, num_elements, num_samples, reset, print, device_name);
+    else if (storage_method == STATIC_FIXED) {
+      if (local_vector_size == 1)
+        status = run_kernels<Scalar, typename MPT::static_fixed_vector_1, typename MPT::static_fixed_vector_1, Device>(config, num_elements, num_samples, reset, print, device_name);
+      else if (local_vector_size == 2)
+        status = run_kernels<Scalar, typename MPT::static_fixed_vector_2, typename MPT::static_fixed_vector_2, Device>(config, num_elements, num_samples, reset, print, device_name);
+      else if (local_vector_size == 4)
+        status = run_kernels<Scalar, typename MPT::static_fixed_vector_4, typename MPT::static_fixed_vector_4, Device>(config, num_elements, num_samples, reset, print, device_name);
+      else if (local_vector_size == 8)
+        status = run_kernels<Scalar, typename MPT::static_fixed_vector_8, typename MPT::static_fixed_vector_8, Device>(config, num_elements, num_samples, reset, print, device_name);
+      else {
+        std::cout <<  "Invalid local vector size (" << local_vector_size
+                  << ")!" << std::endl;
+        status = false;
+      }
+    }
+    else if (storage_method == LOCAL) {
+      if (local_vector_size == 1)
+        status = run_kernels<Scalar, typename MPT::local_vector_1, typename MPT::local_vector_1, Device>(config, num_elements, num_samples, reset, print, device_name);
+      else if (local_vector_size == 2)
+        status = run_kernels<Scalar, typename MPT::local_vector_2, typename MPT::local_vector_2, Device>(config, num_elements, num_samples, reset, print, device_name);
+      else if (local_vector_size == 4)
+        status = run_kernels<Scalar, typename MPT::local_vector_4, typename MPT::local_vector_4, Device>(config, num_elements, num_samples, reset, print, device_name);
+      else if (local_vector_size == 8)
+        status = run_kernels<Scalar, typename MPT::local_vector_8, typename MPT::local_vector_8, Device>(config, num_elements, num_samples, reset, print, device_name);
+      else {
+        std::cout <<  "Invalid local vector size (" << local_vector_size
+                  << ")!" << std::endl;
+        status = false;
+      }
+    }
     else if (storage_method == DYNAMIC)
-      status = run_impl<typename MPT::dynamic_vector>(
-        n, sz, nblocks, nthreads, reset, print);
+      status = run_kernels<Scalar, typename MPT::dynamic_vector, typename MPT::dynamic_vector, Device>(
+        config, num_elements, num_samples, reset, print, device_name);
     else if (storage_method == DYNAMIC_STRIDED)
-      status = run_impl<typename MPT::dynamic_strided_vector>(
-        n, sz, nblocks, nthreads, reset, print);
+      status = run_kernels<Scalar, typename MPT::dynamic_strided_vector, typename MPT::dynamic_strided_vector, Device>(
+        config, num_elements, num_samples, reset, print, device_name);
     else if (storage_method == DYNAMIC_THREADED) {
       std::cout << "Threads device doesn't support dynamic-threaded storage!"
                 << std::endl;
       status = false;
     }
+    if (storage_method == VIEW_STATIC)
+      status = run_kernels<Scalar, typename MPT::view_vector, typename MPT::static_vector, Device>(
+        config, num_elements, num_samples, reset, print, device_name);
+    else if (storage_method == VIEW_STATIC_FIXED) {
+      if (local_vector_size == 1)
+        status = run_kernels<Scalar, typename MPT::view_vector, typename MPT::static_fixed_vector_1, Device>(config, num_elements, num_samples, reset, print, device_name);
+      else if (local_vector_size == 2)
+        status = run_kernels<Scalar, typename MPT::view_vector, typename MPT::static_fixed_vector_2, Device>(config, num_elements, num_samples, reset, print, device_name);
+      else if (local_vector_size == 4)
+        status = run_kernels<Scalar, typename MPT::view_vector, typename MPT::static_fixed_vector_4, Device>(config, num_elements, num_samples, reset, print, device_name);
+      else if (local_vector_size == 8)
+        status = run_kernels<Scalar, typename MPT::view_vector, typename MPT::static_fixed_vector_8, Device>(config, num_elements, num_samples, reset, print, device_name);
+      else {
+        std::cout <<  "Invalid local vector size (" << local_vector_size
+                  << ")!" << std::endl;
+        status = false;
+      }
+    }
+    else if (storage_method == VIEW_LOCAL) {
+      if (local_vector_size == 1)
+        status = run_kernels<Scalar, typename MPT::view_vector, typename MPT::local_vector_1, Device>(config, num_elements, num_samples, reset, print, device_name);
+      else if (local_vector_size == 2)
+        status = run_kernels<Scalar, typename MPT::view_vector, typename MPT::local_vector_2, Device>(config, num_elements, num_samples, reset, print, device_name);
+      else if (local_vector_size == 4)
+        status = run_kernels<Scalar, typename MPT::view_vector, typename MPT::local_vector_4, Device>(config, num_elements, num_samples, reset, print, device_name);
+      else if (local_vector_size == 8)
+        status = run_kernels<Scalar, typename MPT::view_vector, typename MPT::local_vector_8, Device>(config, num_elements, num_samples, reset, print, device_name);
+      else {
+        std::cout <<  "Invalid local vector size (" << local_vector_size
+                  << ")!" << std::endl;
+        status = false;
+      }
+    }
+    else if (storage_method == VIEW_DYNAMIC)
+      status = run_kernels<Scalar, typename MPT::view_vector, typename MPT::dynamic_vector, Device>(
+        config, num_elements, num_samples, reset, print, device_name);
+    else if (storage_method == VIEW_DYNAMIC_STRIDED)
+      status = run_kernels<Scalar, typename MPT::view_vector, typename MPT::dynamic_strided_vector, Device>(
+        config, num_elements, num_samples, reset, print, device_name);
+    else if (storage_method == VIEW_DYNAMIC_THREADED) {
+      std::cout << "Threads device doesn't support dynamic-threaded storage!"
+                << std::endl;
+      status = false;
+    }
+
+    // Finalize threads
+    Kokkos::Threads::finalize();
 
     return status;
   }
 
-private:
-
-  template <typename vector_type>
-  static bool
-  run_impl(int n, int sz, int nblocks, int nthreads, bool reset, bool print) {
-
-    // Allocate memory inputs and outpus
-    int len = nblocks*nthreads*sz*n;
-    std::cout << "total size = " << len << std::endl;
-
-    int stride = 1;
-
-    double *x = new double[len];
-    double *y = new double[len];
-    double *y_mp = new double[len];
-
-    // Initialize x
-    for (int i=0; i<len; i++)
-      x[i] = static_cast<double>(i+1)/static_cast<double>(len);
-
-    // Invoke kernel
-    {
-      TEUCHOS_FUNC_TIME_MONITOR("Threads calculation");
-      for (int offset=0; offset<len; offset += sz*n)
-        kernel(offset, stride, n, sz, x, y);
-    }
-
-    // Invoke kernel
-    {
-      TEUCHOS_FUNC_TIME_MONITOR("Threads calculation (MP)");
-      for (int offset=0; offset<len; offset += sz*n)
-        mpkernel<vector_type>(offset, stride, n, sz, x, y_mp, reset, print);
-    }
-
-    // Check results agree
-    double rtol = 1e-15;
-    double atol = 1e-15;
-    bool agree = true;
-    for (int i=0; i<len; i++) {
-      if (std::abs(y[i]-y_mp[i]) > std::abs(y[i])*rtol + atol) {
-        agree = false;
-        break;
-      }
-    }
-
-    if (print) {
-      std::cout << "x    = [ ";
-      for (int i=0; i<len; i++)
-        std::cout << x[i] << " ";
-      std::cout << "]" << std::endl;
-
-      std::cout << "y      [ ";
-      for (int i=0; i<len; i++)
-        std::cout << y[i] << " ";
-      std::cout << "]" << std::endl;
-
-      std::cout << "y_mp = [ ";
-      for (int i=0; i<len; i++)
-        std::cout << y_mp[i] << " ";
-      std::cout << "]" << std::endl;
-    }
-
-    // Clean up memory
-    delete [] x;
-    delete [] y;
-    delete [] y_mp;
-
-    return agree;
-  }
-
 };
 
-template struct MPVectorExample<MaxSize, Kokkos::Threads>;
+template struct MPVectorExample<MaxSize, Scalar, Kokkos::Threads>;
+
+#endif

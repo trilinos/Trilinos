@@ -165,13 +165,13 @@ def build(nnodes, nx, binary, petra, matrix, xmlfile):
 
     # construct PBS script from template
     os.system("cat " + TEMPLATE +
-            " | sed \"s/_NODES_/"   + str(nnodes)      + "/g\"" +
-            " | sed \"s/_CORES_/"   + str(nnodes*CPN)  + "/g\"" +
-            " | sed \"s/_MTYPE_/"   + matrix           + "/g\"" +
-            " | sed \"s/_XMLFILE_/" + xmlfile          + "/g\"" +
-            " | sed \"s/_NX_/"      + str(nx)          + "/g\"" +
-            " | sed \"s/_EPETRA_/"  + str(petra & 1)   + "/g\"" +
-            " | sed \"s/_TPETRA_/"  + str(petra & 2)   + "/g\"" +
+            " | sed \"s/_NODES_/"   + str(nnodes)               + "/g\"" +
+            " | sed \"s/_CORES_/"   + str(nnodes*CPN)           + "/g\"" +
+            " | sed \"s/_MTYPE_/"   + matrix                    + "/g\"" +
+            " | sed \"s/_XMLFILE_/" + os.path.basename(xmlfile) + "/g\"" +
+            " | sed \"s/_NX_/"      + str(nx)                   + "/g\"" +
+            " | sed \"s/_EPETRA_/"  + str(petra & 1)            + "/g\"" +
+            " | sed \"s/_TPETRA_/"  + str(petra & 2)            + "/g\"" +
             " > " + dir + "/" + PETRA_PREFIX + str(nnodes) + ".pbs")
 
 def clean():

@@ -126,6 +126,10 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
 		  global_node_map,
 		  global_node_list.size());
 
+  imd->Offset_Coords(nemesis_db->Coord(),
+			global_node_list.size(),
+			dim);
+
   if(!imd->getErrorString().empty()){return NULL;}
 
   imd->Customize_Coords(nemesis_db->Coord(),
@@ -205,15 +209,22 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
     global_node_numbers[gnv] = global_node_vector[gnv]+1;
   }
   //   Read_Global_Info();
-  nemesis_db->Global_Data_Size(
-                               nnx*nny*nnz,
+ {
+    long long telc;
+    long long tnoc;
+    long long tect;
+    imd->calculateSize(telc,
+                       tnoc,
+                       tect);
+
+  nemesis_db->Global_Data_Size(tnoc,
                                imd->GlobalNumElements(),
                                imd->numBlocks(),
                                imd->nodeset_list.size(),//num_nodesets
                                imd->sideset_list.size(),
 			       imd->num_processors,
 			       imd->my_rank);
-
+ }
 
   long long* elem_blk_ids_global =    nemesis_db->getMSP(ms_lt::Mesh_Specification::ELEM_BLK_IDS_GLOBAL);//Elem_Blk_Ids_Global();
   for(long long bct = 0; bct <  imd->numBlocks();bct++)elem_blk_ids_global[bct] = bct+1;// add 1 for block index

@@ -113,7 +113,7 @@ DEFAULT_ENABLE_DISABLE_LIST = [
   ("SEACAS", False),
   ("Shards", True),
   ("ShyLU", True),
-  ("STK", True),
+  ("STK", False),
   ("Stokhos", True),
   ("Stratimikos", True),
   ("Sundance", True),

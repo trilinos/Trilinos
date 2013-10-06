@@ -64,6 +64,7 @@
 #include <TestViewAPI.hpp>
 
 #include <TestCrsArray.hpp>
+#include <TestRequest.hpp>
 #include <TestReduce.hpp>
 #include <TestMultiReduce.hpp>
 
@@ -127,6 +128,19 @@ TEST_F( openmp, double_reduce_dynamic ) {
 TEST_F( openmp, long_reduce_dynamic_view ) {
   TestReduceDynamicView< long ,   Kokkos::OpenMP >( 1000000 );
 }
+
+TEST_F( openmp, dev_long_reduce) {
+  TestReduceRequest< long ,   Kokkos::OpenMP >( 1000000 );
+}
+
+TEST_F( openmp, dev_double_reduce) {
+  TestReduceRequest< double ,   Kokkos::OpenMP >( 1000000 );
+}
+
+TEST_F( openmp, dev_shared_request) {
+  TestSharedRequest< Kokkos::OpenMP >();
+}
+
 
 TEST_F( openmp , atomics )
 {

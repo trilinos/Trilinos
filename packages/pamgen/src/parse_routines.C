@@ -19,7 +19,8 @@
 namespace PAMGEN_NEVADA {
 
 
-    enum ParamType { P_GMIN = 0,
+    enum ParamType { P_OFFSET = 0,
+                     P_GMIN,
 		     P_GMAX ,
 		     P_NTHETA,
 		     P_NUMZ,
@@ -325,6 +326,7 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
   
 
   Keyword parameter_table[] = {
+    {"OFFSET", P_OFFSET, Get_Real_Token},
     {"GMIN", P_GMIN, Get_Real_Token},
     {"GMAX", P_GMAX, Get_Real_Token},
     {"NTHETA", P_NTHETA, Get_Real_Token},
@@ -416,6 +418,13 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
     long long param_id = match->argument;
 
     switch(param_id){
+    case P_OFFSET:{
+      Inline_Mesh_Desc::im_static_storage->inline_offset[0] = token_stream->Parse_Real();
+      Inline_Mesh_Desc::im_static_storage->inline_offset[1] = token_stream->Parse_Real();
+      if(sdimension == 3){
+	Inline_Mesh_Desc::im_static_storage->inline_offset[2] = token_stream->Parse_Real();
+      }
+      break;}
     case P_GMIN:{
       Inline_Mesh_Desc::im_static_storage->inline_gminx = token_stream->Parse_Real();
       Inline_Mesh_Desc::im_static_storage->inline_gminy = token_stream->Parse_Real();

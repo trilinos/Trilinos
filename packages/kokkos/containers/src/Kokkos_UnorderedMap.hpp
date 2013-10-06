@@ -94,8 +94,8 @@ namespace Kokkos {
 /// <li> <tt>INSERT_SUCCESS</tt>: The insert succeeded, and the key
 ///      did <i>not</i> exist in the table before. </li>
 /// <li> <tt>INSERT_EXISTING</tt>: The insert succeeded, and the key
-///      <i>did</i> exist in the table before.  The old value was
-///      replaced with the new one that you provided. </li>
+///      <i>did</i> exist in the table before.  The new value was
+///      ignored and the old value was left in place. </li>
 /// </ol>
 ///
 /// Users can access the number of failed insertions thus far by
@@ -165,8 +165,8 @@ inline void deep_copy(         UnorderedMap<DKey, DT, DDevice, Compare, Hash> & 
 /// <li> <tt>INSERT_SUCCESS</tt>: The insert succeeded, and the key
 ///      did <i>not</i> exist in the table before. </li>
 /// <li> <tt>INSERT_EXISTING</tt>: The insert succeeded, and the key
-///      <i>did</i> exist in the table before.  The old value was
-///      replaced with the new one that you provided. </li>
+///      <i>did</i> exist in the table before.  The new value was
+///      ignored and the old value was left in place. </li>
 /// </ol>
 enum UnorderedMap_insert_state
 {
@@ -175,6 +175,8 @@ enum UnorderedMap_insert_state
   , INSERT_EXISTING
 };
 
+
+// Specialization of UnorderedMap for nonconst Key and value (T).
 template <   typename Key
            , typename T
            , typename Device
@@ -183,7 +185,10 @@ template <   typename Key
         >
 class UnorderedMap
 {
-public: // public types and constants
+public:
+  //! \name Public types and constants
+  //@{
+
   typedef Impl::UnorderedMap::map_data<Key,T,Device,Compare,Hash> map_data;
   typedef Impl::UnorderedMap::node_atomic node_atomic;
 
@@ -203,6 +208,7 @@ public: // public types and constants
 
   typedef UnorderedMap<Key,T,typename Device::host_mirror_device_type,Compare,Hash> HostMirror;
 
+  //@}
 private:
 
   typedef typename Impl::if_c<  map_data::has_void_mapped_type
@@ -210,9 +216,18 @@ private:
                               , mapped_type
                              >::type insert_mapped_type;
 
+public: 
+  //! \name Public member functions
+  //@{
 
-public: //public member functions
-
+  /// \brief Constructor
+  ///
+  /// \param arg_num_nodes [in] Initial requested maximum number of
+  ///   entries in the hash table.
+  /// \param compare [in] Less-than comparison function for \c Key
+  ///   instances.  The default value usually suffices.
+  /// \param hash [in] Hash function for \c Key instances.  The
+  ///   default value usually suffices.
   UnorderedMap(  uint32_t arg_num_nodes = 0
                 , compare_type compare = compare_type()
                 , hash_type hash = hash_type()
@@ -223,14 +238,20 @@ public: //public member functions
             )
   {}
 
+  //! Clear all entries in the table.
   void clear()
   {
     m_data = map_data(0, m_data.key_compare, m_data.key_hash);
   }
 
+  //! If the table is larger than necessary, shrink it to fit.
   void shrink_to_fit()
   { reserve(0); }
 
+  /// \brief Reserve space for \c new_capacity entries.
+  ///
+  /// This is <i>not</i> a device function; it may <i>not</i> be
+  /// called in a parallel kernel.
   void reserve(unsigned new_capacity)
   {
     const uint32_t curr_size = size();
@@ -245,36 +266,91 @@ public: //public member functions
     *this = tmp;
   }
 
+  /// \brief Check sanity of the hash table.
+  ///
+  /// "Sanity" means integrity of data structures.  Checking this is
+  /// useful for debugging.
   void check_sanity() const
   { m_data.check_sanity(); }
 
+  /// \brief The number of entries in the table.
+  ///
+  /// Note that this is not a device function; it cannot be called in
+  /// a parallel kernel.  The value is not stored as a variable; it
+  /// must be computed.
   uint32_t size() const
   {  return m_data.size(); }
 
+  /// \brief The number of unused entries in the table.
+  ///
+  /// This is <i>not</i> a device function; it may <i>not</i> be
+  /// called in a parallel kernel.  The value is not stored as a
+  /// variable; it must be computed.
   uint32_t unused() const
   {  return m_data.unused(); }
 
+  /// \brief The number of entries pending deletion in the table.
+  ///
+  /// This is <i>not</i> a device function; it may <i>not</i> be
+  /// called in a parallel kernel.  The value is not stored as a
+  /// variable; it must be computed.
   uint32_t pending_delete() const
   {  return m_data.pending_delete(); }
 
+  /// \brief The current number of failed insert() calls.
+  ///
+  /// This is <i>not</i> a device function; it may <i>not</i> be
+  /// called in a parallel kernel.  The value is not stored as a
+  /// variable; it must be computed.
   uint32_t failed_inserts() const
   { return m_data.failed_inserts(); }
 
+  /// \brief The maximum number of entries that the table can hold.
+  ///
+  /// This <i>is</i> a device function; it may be called in a parallel
+  /// kernel.
   KOKKOS_INLINE_FUNCTION
   uint32_t capacity() const
   { return m_data.capacity(); }
 
+  /// \brief The number of hash table "buckets."
+  ///
+  /// This is different than the number of entries that the table can
+  /// hold.  Each key hashes to an index in [0, hash_capacity() - 1].
+  /// That index can hold zero or more entries.  This class decides
+  /// what hash_capacity() should be, given the user's upper bound on
+  /// the number of entries the table must be able to hold.
+  ///
+  /// This <i>is</i> a device function; it may be called in a parallel
+  /// kernel.
   KOKKOS_INLINE_FUNCTION
   uint32_t hash_capacity() const
   { return m_data.hash_capacity(); }
 
+  /// \brief Remove entries that are pending deletion.
+  ///
+  /// The mark_pending_delete() method marks an entry as "pending
+  /// deletion."  This method actually removes such entries from the
+  /// table.
+  ///
+  /// This is <i>not</i> a device function; it may <i>not</i> be
+  /// called in a parallel kernel.
   void remove_pending_delete() const
   {  return m_data.remove_pending_delete_keys(); }
 
   //---------------------------------------------------------------------------
   //---------------------------------------------------------------------------
 
-
+  /// \brief Attempt to insert the given (key, value) pair.
+  ///
+  /// This <i>is</i> a device function; it may be called in a parallel
+  /// kernel.  As discussed in the class documentation, it need not
+  /// succeed.  The return value tells you if it did.
+  /// 
+  /// \param k [in] The key to attempt to insert.
+  /// \param v [in] The corresponding value to attempt to insert.  If
+  ///   using this class as a set (with T = void), then you need not
+  ///   provide this value.
   KOKKOS_INLINE_FUNCTION
   insert_result insert(const key_type & k, const insert_mapped_type & v = insert_mapped_type()) const
   {
@@ -345,6 +421,13 @@ public: //public member functions
     return result;
   }
 
+  /// \brief Mark the given key for deletion.
+  ///
+  /// This does not actually free memory; it just marks the entry of
+  /// the table with the given key \c k as deleted.
+  ///
+  /// This <i>is</i> a device function; it may be called in a parallel
+  /// kernel.
   KOKKOS_INLINE_FUNCTION
   void mark_pending_delete(const key_type & k) const
   {
@@ -424,6 +507,14 @@ public: //public member functions
     if (p) mark_pending_delete(p->first);
   }
 
+
+  /// \brief Find the given key \c k, if it exists in the table.
+  ///
+  /// \return If the key exists in the table, a (raw) pointer to the
+  ///   value corresponding to that key; otherwise, \c NULL.
+  ///
+  /// This <i>is</i> a device function; it may be called in a parallel
+  /// kernel.
   KOKKOS_INLINE_FUNCTION
   pointer find( const key_type & k) const
   {
@@ -433,7 +524,17 @@ public: //public member functions
     return (node_index != node_atomic::invalid_next) ? &m_data.get_node(node_index).value : NULL;
   }
 
-
+  /// \brief Get a pointer to the value with \c i as its direct index.
+  ///
+  /// \warning This method is only for expert users.
+  ///
+  /// \param i [in] Index directly into the array of entries.
+  ///
+  /// \return If the entry exists in the table, a (raw) pointer to the
+  ///   value; otherwise, \c NULL.
+  ///
+  /// This <i>is</i> a device function; it may be called in a parallel
+  /// kernel.
   KOKKOS_INLINE_FUNCTION
   pointer get_value(uint64_t i) const
   {
@@ -534,6 +635,8 @@ private: // private members
   friend void Impl::UnorderedMap::deep_copy_impl( MapDst & dst, const MapSrc & src);
 };
 
+
+//! Specialization of UnorderedMap for const Key and nonconst value (T).
 template <   typename Key
            , typename T
            , typename Device
@@ -707,6 +810,7 @@ private: // private members
 };
 
 
+//! Specialization of UnorderedMap for const Key and const value (T).
 template <   typename Key
            , typename T
            , typename Device
@@ -820,6 +924,8 @@ private: // private members
   friend void Impl::UnorderedMap::deep_copy_impl( MapDst & dst, const MapSrc & src);
 };
 
+
+//! Specialization of UnorderedMap for const Key and T=void ("set").
 template <   typename Key
            , typename Device
            , typename Compare

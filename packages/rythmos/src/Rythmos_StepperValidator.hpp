@@ -746,8 +746,7 @@ void StepperValidator<Scalar>::validateIC_() const
   }
   RCP<StepperBase<Scalar> > stepper = this->getStepper_(model,stepper_ic,nlSolver);
   Scalar dt = Scalar(0.1);
-  Scalar dt_taken = ST::nan();
-  dt_taken = stepper->takeStep(dt,STEP_TYPE_FIXED);
+  stepper->takeStep(dt,STEP_TYPE_FIXED);
   // Verify that the parameter got set on the model by asking the model for the
   // inArgs passed to it through evalModel
   RCP<const std::vector<Thyra::ModelEvaluatorBase::InArgs<Scalar> > >
@@ -851,8 +850,7 @@ void StepperValidator<Scalar>::validateStates_() const
 //        );
   }
   Scalar dt = Scalar(0.1);
-  Scalar dt_taken = ST::nan();
-  dt_taken = stepper->takeStep(dt,STEP_TYPE_FIXED);
+  stepper->takeStep(dt,STEP_TYPE_FIXED);
   {
     // Taken Step:
     TimeRange<Scalar> tr = stepper->getTimeRange();
@@ -915,8 +913,7 @@ void StepperValidator<Scalar>::validateGetIC_() const
   // Verify we can get the IC through getPoints after taking a step:
   {
     Scalar dt = Scalar(0.1);
-    Scalar dt_taken = ST::nan();
-    dt_taken = stepper->takeStep(dt,STEP_TYPE_FIXED);
+    stepper->takeStep(dt,STEP_TYPE_FIXED);
     Array<Scalar> time_vec;
     Array<RCP<const VectorBase<Scalar> > > x_vec;
     Array<RCP<const VectorBase<Scalar> > > xdot_vec;
@@ -1013,8 +1010,7 @@ void StepperValidator<Scalar>::validateGetNodes_() const
   }
   // Take a step with the stepper and verify we get back two nodes
   Scalar dt = Scalar(0.1);
-  Scalar dt_taken = ST::nan();
-  dt_taken = stepper->takeStep(dt,STEP_TYPE_FIXED);
+  stepper->takeStep(dt,STEP_TYPE_FIXED);
   {
     Array<Scalar> nodes;
     stepper->getNodes(&nodes);

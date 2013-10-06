@@ -48,11 +48,18 @@
 
 #include <omp.h>
 #include <cstddef>
+#include <iosfwd>
 #include <Kokkos_HostSpace.hpp>
 #include <Kokkos_Parallel.hpp>
 #include <Kokkos_Layout.hpp>
 
-#include <OpenMP/Kokkos_Host_Thread.hpp>
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
+namespace Impl {
+class OpenMPexec ;
+} // namespace Impl
+} // namespace Kokkos
 
 /*--------------------------------------------------------------------------*/
 
@@ -62,6 +69,7 @@ namespace Kokkos {
 /// \brief Kokkos device for multicore processors in the host memory space.
 class OpenMP {
 public:
+  //------------------------------------
   //! \name Type declarations that all Kokkos devices must provide.
   //@{
 
@@ -72,6 +80,7 @@ public:
   typedef OpenMP                host_mirror_device_type ;
 
   //@}
+  //------------------------------------
   //! \name Functions that all Kokkos devices must implement.
   //@{
 
@@ -103,32 +112,39 @@ public:
                           const unsigned use_numa_count     = 0 ,
                           const unsigned use_cores_per_numa = 0 );
 
+  /// \brief Print configuration information to the given output stream.
+  static void print_configuration( std::ostream & , const bool detail = false );
+
+  //@}
+  //------------------------------------
+  //! \name Function for the functor device interface */
+  //@{
+
+  inline int league_rank() const ;
+  inline int league_size() const ;
+  inline int team_rank() const ;
+  inline int team_size() const ;
+
+  inline void team_barrier();
+
+  inline void * get_shmem( const int size );
+
+  explicit inline OpenMP( Impl::OpenMPexec & );
+
   //------------------------------------
 
-  static void resize_reduce_scratch( unsigned );
-
-  static void * root_reduce_scratch();
-
-  static void assert_ready( const char * const );
-
-  inline static
-  Impl::HostThread * get_host_thread()
-    { return m_host_threads[ omp_get_thread_num() ]; }
-
-  inline static
-  Impl::HostThread * get_host_thread( const unsigned i )
-    { return m_host_threads[ i ]; }
-
 private:
-  static Impl::HostThread * m_host_threads[ Impl::HostThread::max_thread_count ];
+
+  Impl::OpenMPexec & m_exec ;
+
 };
 
 /*--------------------------------------------------------------------------*/
 
 } // namespace Kokkos
 
+#include <OpenMP/Kokkos_OpenMPexec.hpp>
 #include <OpenMP/Kokkos_OpenMP_Parallel.hpp>
-#include <OpenMP/Kokkos_OpenMP_View.hpp>
 
 #endif /* #define KOKKOS_OPENMP_HPP */
 

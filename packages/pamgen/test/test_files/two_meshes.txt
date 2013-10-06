@@ -1,0 +1,37 @@
+  mesh
+   radial trisection
+    trisection blocks, 1
+    numz 1
+      zblock 1 10. interval 8
+    numr 1
+      rblock 1 1.0 interval 2
+    numa 1
+      ablock 1 90. interval 4
+    end
+   set assign
+        sideset, klo, 20
+        sideset, klo, 1
+        sideset, jlo, 30
+        sideset, jhi, 40
+    end
+  end
+
+  mesh
+   radial trisection
+    trisection blocks, 1
+    numz 1
+      zblock 1 10. interval 8
+    numr 1
+      rblock 1 1.0 interval 2
+    numa 1
+      ablock 1 90. interval 4
+   offset = 0.0 0.0 -15.0
+    end
+   set assign
+        sideset, klo, 21
+        sideset, klo, 11
+        sideset, jlo, 31
+        sideset, jhi, 41
+    end
+  end
+

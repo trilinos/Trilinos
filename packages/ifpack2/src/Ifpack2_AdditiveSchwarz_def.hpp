@@ -63,16 +63,17 @@
 
 namespace Ifpack2 {
 
-//==============================================================================
-template<class MatrixType,class LocalInverseType>
-AdditiveSchwarz<MatrixType,LocalInverseType>::AdditiveSchwarz(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & Matrix_in, int OverlapLevel_in):
-  Matrix_(Matrix_in),
+template<class MatrixType, class LocalInverseType>
+AdditiveSchwarz<MatrixType, LocalInverseType>::
+AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A,
+		 const int overlapLevel) :
+  Matrix_ (A),
   IsInitialized_(false),
   IsComputed_(false),
   IsOverlapping_(false),
-  OverlapLevel_(OverlapLevel_in),
+  OverlapLevel_ (overlapLevel),
   CombineMode_(Tpetra::ADD),
-  Condest_(-1.0),
+  Condest_ (-Teuchos::ScalarTraits<magnitude_type>::one ()),
   ComputeCondest_(true),
   UseReordering_(false),
   ReorderingAlgorithm_("none"),
@@ -85,136 +86,164 @@ AdditiveSchwarz<MatrixType,LocalInverseType>::AdditiveSchwarz(const Teuchos::RCP
   ComputeTime_(0.0),
   ApplyTime_(0.0)
 {
-  // Reset Overlap parameters
-  if (Matrix_->getComm()->getSize() == 1)
+  using Tpetra::global_size_t;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::SerialComm;
+  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+
+  RCP<const Teuchos::Comm<int> > comm = Matrix_->getComm ();
+  RCP<const map_type> rowMap = Matrix_->getRowMap ();
+  RCP<node_type> node = Matrix_->getNode ();
+  const global_size_t INVALID = 
+    Teuchos::OrdinalTraits<global_size_t>::invalid ();
+
+  // If there's only one process in the matrix's communicator,
+  // then there's no need to compute overlap.
+  if (comm->getSize () == 1) {
     OverlapLevel_ = 0;
-  
-  if ((OverlapLevel_ != 0) && (Matrix_->getComm()->getSize() > 1))
+    IsOverlapping_ = false;
+  } else if (OverlapLevel_ != 0) {
     IsOverlapping_ = true;
-
-  if (OverlapLevel_ == 0) {
-    const GlobalOrdinal indexBase = Matrix_->getRowMap()->getIndexBase();
-
-    SerialMap_= rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>
-                    (Teuchos::OrdinalTraits<global_size_t>::invalid(), 
-                     Matrix_->getRowMap()->getNodeElementList(), 
-                     indexBase, Matrix_->getComm(), Matrix_->getNode()));
-
-    DistributedMap_= rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>
-                         (Teuchos::OrdinalTraits<global_size_t>::invalid(), 
-                          Matrix_->getRowMap()->getNodeElementList(), 
-                          indexBase, Matrix_->getComm(), Matrix_->getNode()));
-
-    Teuchos::RCP<Teuchos::SerialComm<int> > LComm = Teuchos::rcp( new Teuchos::SerialComm<int> ());
-
-    LocalDistributedMap_= rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>
-                              (Teuchos::OrdinalTraits<global_size_t>::invalid(),
-                               Matrix_->getRowMap()->getNodeNumElements(),
-                               indexBase, LComm, Matrix_->getNode()));
-
   }
 
-  // Sets parameters to default values
-  Teuchos::ParameterList List_in;
-  setParameters(List_in);
+  if (OverlapLevel_ == 0) {
+    const global_ordinal_type indexBase = rowMap->getIndexBase ();
+
+    // FIXME (mfh 28 Sep 2013) I don't understand why this is called a
+    // "serial Map."  It's the same Map as the input matrix's row Map!
+    // It's also the same Map as "distributed Map"!  I would change it
+    // myself, but I don't want to break anything, so I just
+    // reformatted the code to comply better with Ifpack2 standards
+    // and left the names alone.
+    SerialMap_ = 
+      rcp (new map_type (INVALID, rowMap->getNodeElementList (), 
+			 indexBase, comm, node));
+    DistributedMap_ = 
+      rcp (new map_type (INVALID, rowMap->getNodeElementList (), 
+			 indexBase, comm, node));
+
+    RCP<const SerialComm<int> > localComm (new SerialComm<int> ());
+
+    LocalDistributedMap_ = 
+      rcp (new map_type (INVALID, rowMap->getNodeNumElements (),
+			 indexBase, localComm, node));
+  }
+
+  // Set parameters to default values
+  Teuchos::ParameterList plist;
+  setParameters (plist);
 }
 
-//==============================================================================
-// Destructor
+
 template<class MatrixType,class LocalInverseType>
-AdditiveSchwarz<MatrixType,LocalInverseType>::~AdditiveSchwarz()
-{
-}
+AdditiveSchwarz<MatrixType,LocalInverseType>::~AdditiveSchwarz () {}
 
-//==============================================================================
-// Returns the Map associated with the domain of this operator, which must be compatible with X.getMap().
+
 template<class MatrixType,class LocalInverseType>
 Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type > > 
 AdditiveSchwarz<MatrixType,LocalInverseType>::getDomainMap() const 
 { 
-  return Matrix_->getDomainMap();
+  return Matrix_->getDomainMap ();
 }
   
-//==============================================================================
-// Returns the Map associated with the range of this operator, which must be compatible with Y.getMap().
+
 template<class MatrixType,class LocalInverseType>
 Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> > 
-AdditiveSchwarz<MatrixType,LocalInverseType>::getRangeMap() const 
+AdditiveSchwarz<MatrixType,LocalInverseType>::getRangeMap () const 
 {
-  return Matrix_->getRangeMap();
+  return Matrix_->getRangeMap ();
 }
 
-//==============================================================================
+
 template<class MatrixType,class LocalInverseType>  
 Teuchos::RCP<const Tpetra::RowMatrix<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> > AdditiveSchwarz<MatrixType,LocalInverseType>::getMatrix() const
 {
   return Matrix_;
 }
   
-//==============================================================================
-// Applies the effect of the preconditione.
+
 template<class MatrixType,class LocalInverseType>
-void AdditiveSchwarz<MatrixType,LocalInverseType>::apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
-                            Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
-                            Teuchos::ETransp mode,
-                            Scalar alpha,
-                            Scalar beta) const
+void
+AdditiveSchwarz<MatrixType,LocalInverseType>::
+apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &X, 
+       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &Y, 
+       Teuchos::ETransp mode,
+       scalar_type alpha,
+       scalar_type beta) const
 {
-  // This method will not just call applyTempl() for now because that method relies on the underlying
-  // LocalInverseType having a templated applyTempl() method implemented. Currently applyTempl() methods
-  // are only implemented for ILUT and Diagonal.
+  // This method will not just call applyTempl() for now because that
+  // method relies on the underlying LocalInverseType having a
+  // templated applyTempl() method implemented. Currently applyTempl()
+  // methods are only implemented for ILUT and Diagonal.
 
-  typedef typename Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVectorType;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  typedef typename Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
+  typedef Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> import_type;
+  const scalar_type ZERO = Teuchos::ScalarTraits<scalar_type>::zero ();
 
-  TEUCHOS_TEST_FOR_EXCEPTION(IsComputed_ == false, std::runtime_error,
-     "Ifpack2::AdditiveSchwarz::apply ERROR: isComputed() must be true prior to calling apply.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ! IsComputed_, std::runtime_error,
+    "Ifpack2::AdditiveSchwarz::apply: "
+    "isComputed() must be true before you may call apply().");
 
-  TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
-     "Ifpack2::AdditiveSchwarz::apply ERROR: X.getNumVectors() != Y.getNumVectors().");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    X.getNumVectors() != Y.getNumVectors(), std::invalid_argument,
+    "Ifpack2::AdditiveSchwarz::apply: "
+    "X and Y must have the same number of columns.  X has " 
+    << X.getNumVectors() << " columns, but Y has " << Y.getNumVectors() << ".");
 
-  size_t NumVectors = X.getNumVectors();
+  const size_t numVectors = X.getNumVectors ();
 
-  Time_->reset();
-  Time_->start();
+  Time_->reset ();
+  Time_->start ();
 
-  Teuchos::RCP<MultiVectorType> OverlappingX,OverlappingY,Xtmp;
+  RCP<MV> OverlappingX,OverlappingY,Xtmp;
 
-  if(IsOverlapping_) {
+  if (IsOverlapping_) {
     // Setup if we're overlapping
-    OverlappingX = Teuchos::rcp( new MultiVectorType(OverlappingMatrix_->getRowMap(), X.getNumVectors()) );
-    OverlappingY = Teuchos::rcp( new MultiVectorType(OverlappingMatrix_->getRowMap(), X.getNumVectors()) );
-    OverlappingY->putScalar(0.0);
-    OverlappingX->putScalar(0.0);    
-    OverlappingMatrix_->importMultiVector(X,*OverlappingX,Tpetra::INSERT);
+    OverlappingX = rcp (new MV (OverlappingMatrix_->getRowMap (), numVectors));
+    OverlappingY = rcp (new MV (OverlappingMatrix_->getRowMap (), numVectors));
+    // FIXME (mfh 28 Sep 2013) MV's constructor fills with zeros by default,
+    // so there is no need to call putScalar().
+    OverlappingY->putScalar (ZERO);
+    OverlappingX->putScalar (ZERO);    
+    OverlappingMatrix_->importMultiVector (X, *OverlappingX, Tpetra::INSERT);
     // FIXME from Ifpack1: Will not work with non-zero starting solutions.
   }
   else {
-    Xtmp = Teuchos::rcp(new MultiVectorType(X));
+    Xtmp = rcp (new MV (X));
     
-    MultiVectorType Serial(SerialMap_, NumVectors);
+    MV Serial (SerialMap_, numVectors);
 
-    Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > SerialImporter_ = 
-      rcp(new Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>(SerialMap_,Xtmp->getMap()));
+    // FIXME (mfh 28 Sep 2013) Creating a new Import each time is expensive!
+    RCP<const import_type> SerialImporter_ = 
+      rcp (new import_type (SerialMap_, Xtmp->getMap()));
     
-    Serial.doImport(*Xtmp,*SerialImporter_,Tpetra::INSERT);
+    Serial.doImport (*Xtmp, *SerialImporter_, Tpetra::INSERT);
 
-    OverlappingX = Teuchos::rcp(new MultiVectorType(LocalDistributedMap_, NumVectors));
-    OverlappingY = Teuchos::rcp(new MultiVectorType(LocalDistributedMap_, NumVectors));
+    OverlappingX = rcp (new MV (LocalDistributedMap_, numVectors));
+    OverlappingY = rcp (new MV (LocalDistributedMap_, numVectors));
     
     //OverlappingX->putScalar(0.0);
     //OverlappingY->putScalar(0.0);
 
-    MultiVectorType Distributed(DistributedMap_, X.getNumVectors());
+    MV Distributed (DistributedMap_, numVectors);
 
-    Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > DistributedImporter_ =
-      rcp(new Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>(DistributedMap_,Xtmp->getMap()));
+    // FIXME (mfh 28 Sep 2013) Creating a new Import each time is expensive!
+    RCP<const import_type> DistributedImporter_ =
+      rcp (new import_type (DistributedMap_, Xtmp->getMap ()));
     
-    Distributed.doImport(*Xtmp,*DistributedImporter_,Tpetra::INSERT);
+    Distributed.doImport (*Xtmp, *DistributedImporter_, Tpetra::INSERT);
 
-    Teuchos::ArrayRCP<const Scalar> values = Distributed.get1dView();
+    // FIXME (mfh 28 Sep 2013) Please don't call replaceLocalValue()
+    // for every entry.  It's important to understand how MultiVector
+    // views work.
+    Teuchos::ArrayRCP<const scalar_type> values = Distributed.get1dView();
     size_t index = 0;
 
-    for (size_t v = 0; v < NumVectors; v++) {
+    for (size_t v = 0; v < numVectors; v++) {
       for (size_t i = 0; i < Matrix_->getRowMap()->getNodeNumElements(); i++) {
         OverlappingX->replaceLocalValue(i, v, values[index]);
         index++;
@@ -224,72 +253,76 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::apply(const Tpetra::MultiVect
 
   if (FilterSingletons_) {
     // process singleton filter
-    MultiVectorType ReducedX(SingletonMatrix_->getRowMap(),NumVectors);
-    MultiVectorType ReducedY(SingletonMatrix_->getRowMap(),NumVectors);
-    SingletonMatrix_->SolveSingletons(*OverlappingX,*OverlappingY);
-    SingletonMatrix_->CreateReducedRHS(*OverlappingY,*OverlappingX,ReducedX);
+    MV ReducedX (SingletonMatrix_->getRowMap (), numVectors);
+    MV ReducedY (SingletonMatrix_->getRowMap (), numVectors);
+    SingletonMatrix_->SolveSingletons (*OverlappingX, *OverlappingY);
+    SingletonMatrix_->CreateReducedRHS (*OverlappingY, *OverlappingX, ReducedX);
 
     // process reordering
-    if (!UseReordering_) {
-      Inverse_->apply(ReducedX,ReducedY);
+    if (! UseReordering_) {
+      Inverse_->apply (ReducedX, ReducedY);
     }
     else {
-      MultiVectorType ReorderedX(ReducedX);
-      MultiVectorType ReorderedY(ReducedY);
-      ReorderedLocalizedMatrix_->permuteOriginalToReordered(ReducedX,ReorderedX);
-      Inverse_->apply(ReorderedX,ReorderedY);
-      ReorderedLocalizedMatrix_->permuteReorderedToOriginal(ReorderedY,ReducedY);
+      MV ReorderedX (ReducedX);
+      MV ReorderedY (ReducedY);
+      ReorderedLocalizedMatrix_->permuteOriginalToReordered (ReducedX, ReorderedX);
+      Inverse_->apply (ReorderedX, ReorderedY);
+      ReorderedLocalizedMatrix_->permuteReorderedToOriginal (ReorderedY, ReducedY);
     }
 
     // finish up with singletons
-    SingletonMatrix_->UpdateLHS(ReducedY,*OverlappingY);
+    SingletonMatrix_->UpdateLHS (ReducedY, *OverlappingY);
   }
   else {
 
     // process reordering
-    if (!UseReordering_) {
-      Inverse_->apply(*OverlappingX,*OverlappingY);
+    if (! UseReordering_) {
+      Inverse_->apply (*OverlappingX, *OverlappingY);
     }
     else {
-      MultiVectorType ReorderedX(*OverlappingX);
-      MultiVectorType ReorderedY(*OverlappingY);
-      ReorderedLocalizedMatrix_->permuteOriginalToReordered(*OverlappingX,ReorderedX);
-      Inverse_->apply(ReorderedX,ReorderedY);
-      ReorderedLocalizedMatrix_->permuteReorderedToOriginal(ReorderedY,*OverlappingY);
+      MV ReorderedX (*OverlappingX);
+      MV ReorderedY (*OverlappingY);
+      ReorderedLocalizedMatrix_->permuteOriginalToReordered (*OverlappingX, ReorderedX);
+      Inverse_->apply (ReorderedX, ReorderedY);
+      ReorderedLocalizedMatrix_->permuteReorderedToOriginal (ReorderedY, *OverlappingY);
     }
   }
 
-  if(IsOverlapping_)
-    OverlappingMatrix_->exportMultiVector(*OverlappingY,Y,CombineMode_);
+  if (IsOverlapping_) {
+    OverlappingMatrix_->exportMultiVector (*OverlappingY, Y, CombineMode_);
+  }
   else {
-    Teuchos::ArrayRCP<const Scalar> values = OverlappingY->get1dView();
+    Teuchos::ArrayRCP<const scalar_type> values = OverlappingY->get1dView();
     size_t index = 0;
 
-    for (size_t v = 0; v < NumVectors; v++) {
+    // FIXME (mfh 28 Sep 2013) Please don't call replaceLocalValue()
+    // for every entry.  It's important to understand how MultiVector
+    // views work.
+    for (size_t v = 0; v < numVectors; v++) {
       for (size_t i = 0; i < Matrix_->getRowMap()->getNodeNumElements(); i++) {
         Y.replaceLocalValue(i, v, values[index]);
         index++;
       }
     }
   }
-  
 
   NumApply_++;
   ApplyTime_ += Time_->stop();
 }
 
-//==============================================================================
-// Applies the effect of the preconditione.
+
 template<class MatrixType,class LocalInverseType>
 template<class DomainScalar, class RangeScalar>
-void AdditiveSchwarz<MatrixType,LocalInverseType>::applyTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
-                            Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
-                            Teuchos::ETransp mode,
-                            RangeScalar alpha,
-                            RangeScalar beta) const
+void
+AdditiveSchwarz<MatrixType,LocalInverseType>::
+applyTempl (const Tpetra::MultiVector<DomainScalar,local_ordinal_type,global_ordinal_type,node_type> &X, 
+	    Tpetra::MultiVector<RangeScalar,local_ordinal_type,global_ordinal_type,node_type> &Y, 
+	    Teuchos::ETransp mode,
+	    RangeScalar alpha,
+	    RangeScalar beta) const
 {
-  typedef typename Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> DomainMultiVectorType;
-  typedef typename Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> RangeMultiVectorType;
+  typedef typename Tpetra::MultiVector<DomainScalar,local_ordinal_type,global_ordinal_type,node_type> DomainMultiVectorType;
+  typedef typename Tpetra::MultiVector<RangeScalar,local_ordinal_type,global_ordinal_type,node_type> RangeMultiVectorType;
 
   TEUCHOS_TEST_FOR_EXCEPTION(IsComputed_ == false, std::runtime_error,
      "Ifpack2::AdditiveSchwarz::apply ERROR: isComputed() must be true prior to calling apply.");
@@ -319,8 +352,8 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::applyTempl(const Tpetra::Mult
 
     DomainMultiVectorType Serial(SerialMap_, NumVectors);
 
-    Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > SerialImporter_ =
-      rcp(new Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>(SerialMap_,Xtmp->getMap()));
+    Teuchos::RCP<const Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> > SerialImporter_ =
+      rcp(new Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type>(SerialMap_,Xtmp->getMap()));
 
     Serial.doImport(*Xtmp,*SerialImporter_,Tpetra::INSERT);
 
@@ -332,12 +365,12 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::applyTempl(const Tpetra::Mult
 
     DomainMultiVectorType Distributed(DistributedMap_, NumVectors);
 
-    Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > DistributedImporter_ =
-      rcp(new Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>(DistributedMap_,Xtmp->getMap()));
+    Teuchos::RCP<const Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> > DistributedImporter_ =
+      rcp(new Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type>(DistributedMap_,Xtmp->getMap()));
 
     Distributed.doImport(*Xtmp,*DistributedImporter_,Tpetra::INSERT);
 
-    Teuchos::ArrayRCP<const Scalar> values = Distributed.get1dView();
+    Teuchos::ArrayRCP<const scalar_type> values = Distributed.get1dView();
     size_t index = 0;
 
     for (size_t v = 0; v < NumVectors; v++) {
@@ -388,7 +421,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::applyTempl(const Tpetra::Mult
   if(IsOverlapping_)
     OverlappingMatrix_->template exportMultiVectorTempl<RangeScalar>(*OverlappingY,Y,CombineMode_);
   else {
-    Teuchos::ArrayRCP<const Scalar> values = OverlappingY->get1dView();
+    Teuchos::ArrayRCP<const scalar_type> values = OverlappingY->get1dView();
     size_t index = 0;
 
     for (size_t v = 0; v < NumVectors; v++) {
@@ -408,9 +441,10 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::applyTempl(const Tpetra::Mult
 //==============================================================================
 // Sets all parameters for the preconditioner.
 template<class MatrixType,class LocalInverseType>
-void AdditiveSchwarz<MatrixType,LocalInverseType>::setParameters(const Teuchos::ParameterList& List_in)
+void AdditiveSchwarz<MatrixType,LocalInverseType>::
+setParameters (const Teuchos::ParameterList& plist)
 {
-  List_=List_in;
+  List_ = plist;
 
   // compute the condition number each time compute() is invoked.
   ComputeCondest_ = List_.get("schwarz: compute condest", ComputeCondest_);
@@ -460,6 +494,12 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setParameters(const Teuchos::
 
 #if !defined(HAVE_IFPACK2_XPETRA) || !defined(HAVE_IFPACK2_ZOLTAN2)
   // If we don't have Zoltan2, we just turn the reordering off completely...
+  //
+  // FIXME (mfh 27 Sep 2013) No!  If you don't have Zoltan2 and the
+  // user requests reordering, you MUST throw an exception.  No
+  // surprises, no unexpected results.  However, it is legitimate to
+  // have the default choice for this option depend on whether Zoltan2
+  // is enabled.
   UseReordering_=false;
 #endif
 
@@ -480,74 +520,79 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setParameters(const Teuchos::
 template<class MatrixType,class LocalInverseType>
 void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize()
 {
+  using Teuchos::rcp;
+
   IsInitialized_ = false;
   IsComputed_ = false; // values required
-  Condest_ = -1.0; // zero-out condest
+  Condest_ = -Teuchos::ScalarTraits<magnitude_type>::one ();
 
-  if (Time_ == Teuchos::null)
-    Time_ = Teuchos::rcp( new Teuchos::Time("Ifpack2::AdditiveSchwarz"));
+  if (Time_.is_null ()) {
+    Time_ = rcp (new Teuchos::Time ("Ifpack2::AdditiveSchwarz"));
+  }
 
-  Time_->start();
+  Time_->start ();
 
   // compute the overlapping matrix if necessary
   if (IsOverlapping_) {
-    if(UseSubdomain_) {
-      int sid = List_.get("subdomain id",-1);
-      OverlappingMatrix_ = Teuchos::rcp( new Ifpack2::OverlappingRowMatrix<LocalMatrixType>(Matrix_, OverlapLevel_, sid) );
+    if (UseSubdomain_) {
+      const int sid = List_.get ("subdomain id", -1);
+      OverlappingMatrix_ = rcp (new Ifpack2::OverlappingRowMatrix<row_matrix_type> (Matrix_, OverlapLevel_, sid));
+    } else {
+      OverlappingMatrix_ = rcp (new Ifpack2::OverlappingRowMatrix<row_matrix_type> (Matrix_, OverlapLevel_));
     }
-    else
-      OverlappingMatrix_ = Teuchos::rcp( new Ifpack2::OverlappingRowMatrix<LocalMatrixType>(Matrix_, OverlapLevel_) );
-
-    TEUCHOS_TEST_FOR_EXCEPTION(OverlappingMatrix_ == Teuchos::null, std::runtime_error,
-     "Ifpack2::AdditiveSchwarz::initialize ERROR: OverlappingRowMatrix constructor failed.");
   }
 
   // Setup
-  setup();
+  setup ();
 
-  // Sanity Checks
-  TEUCHOS_TEST_FOR_EXCEPTION(Inverse_ == Teuchos::null, std::runtime_error,
-     "Ifpack2::AdditiveSchwarz::initialize ERROR: Setup() failed.");
- 
   // Initialize inverse
-  Inverse_->setParameters(List_);
-  Inverse_->initialize();
+  //
+  // FIXME (mfh 28 Sep 2013) The "inverse" should have its own sublist
+  // in the input ParameterList.  We shouldn't pass AdditiveSchwarz's
+  // parameters directly to the "inverse."
+  //
+  // FIXME (mfh 28 Sep 2013) Why don't we call these methods in setup()?
+  Inverse_->setParameters (List_);
+  Inverse_->initialize ();
 
   IsInitialized_ = true;
   NumInitialize_++;
   InitializeTime_ += Time_->stop();
 }
   
-//==============================================================================
-// Returns true if the  preconditioner has been successfully initialized, false otherwise.
+
 template<class MatrixType,class LocalInverseType>
 bool AdditiveSchwarz<MatrixType,LocalInverseType>::isInitialized() const
 {
   return IsInitialized_;
 }
   
-//==============================================================================
-// Computes all (coefficient) data necessary to apply the preconditioner.
+
 template<class MatrixType,class LocalInverseType>
-void AdditiveSchwarz<MatrixType,LocalInverseType>::compute()
+void AdditiveSchwarz<MatrixType,LocalInverseType>::compute ()
 {
-  if (!IsInitialized_) initialize();
+  if (! IsInitialized_) {
+    initialize ();
+  }
 
   Time_->reset();
   Time_->start();
   IsComputed_ = false;
-  Condest_ = -1.0;
+  Condest_ = -Teuchos::ScalarTraits<magnitude_type>::one ();
 
-  Inverse_->compute();
+  Inverse_->compute ();
 
-#if defined (HAVE_MPI) && defined (HAVE_IFPACK2_TIMER_BARRIER) 
-  MPI_Barrier(MPI_COMM_WORLD);
+  // FIXME (mfh 28 Sep 2013) It's really a bad idea to use barriers to
+  // "make the timings consistent."  This hides load imbalance.  If
+  // you want good timing information, you should collect min and max
+  // timings from all processes and report the entire range.
+#if defined (HAVE_IFPACK2_TIMER_BARRIER) 
+  Matrix_->getDomainMap ()->getComm ()->barrier ();
 #endif  
 
   IsComputed_ = true; 
   ++NumCompute_;
   ComputeTime_ += Time_->stop();
-
 }
   
 //==============================================================================
@@ -558,26 +603,26 @@ bool AdditiveSchwarz<MatrixType,LocalInverseType>::isComputed() const
   return IsComputed_;
 }
   
-//==============================================================================
-// Computes the condition number estimate and returns its value.
+
 template<class MatrixType,class LocalInverseType>
 typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType 
-AdditiveSchwarz<MatrixType,LocalInverseType>::computeCondEst(CondestType CT,
-                                                             LocalOrdinal MaxIters,
-                                                             magnitudeType Tol,
-                                                             const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &Matrix_in)
+AdditiveSchwarz<MatrixType,LocalInverseType>::
+computeCondEst (CondestType CT,
+		local_ordinal_type MaxIters,
+		magnitude_type Tol,
+		const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &Matrix_in)
 {
-  
-  // If we haven't computed, we can't do a condest
-  if (!isComputed()) return (-Teuchos::ScalarTraits<magnitudeType>::one());
+  // The preconditioner must have been computed in order to estimate
+  // its condition number.
+  if (! isComputed ()) {
+    return -Teuchos::ScalarTraits<magnitude_type>::one ();
+  }
 
-  Condest_ = Ifpack2::Condest(*this, CT, MaxIters, Tol, Matrix_in);
-  return(Condest_);
+  Condest_ = Ifpack2::Condest (*this, CT, MaxIters, Tol, Matrix_in);
+  return Condest_;
 }
 
 
-//==============================================================================
-// Returns the computed condition number estimate, or -1.0 if not computed.
 template<class MatrixType,class LocalInverseType>
 typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType 
 AdditiveSchwarz<MatrixType,LocalInverseType>::getCondEst() const
@@ -585,55 +630,49 @@ AdditiveSchwarz<MatrixType,LocalInverseType>::getCondEst() const
   return Condest_;
 }
   
-//==============================================================================
-// Returns the number of calls to initialize().
+
 template<class MatrixType,class LocalInverseType>  
 int AdditiveSchwarz<MatrixType,LocalInverseType>::getNumInitialize() const 
 {
   return NumInitialize_;
 }
   
-//==============================================================================
-// Returns the number of calls to compute().
+
 template<class MatrixType,class LocalInverseType>
 int AdditiveSchwarz<MatrixType,LocalInverseType>::getNumCompute() const
 {
   return NumCompute_;
 }
   
-//==============================================================================
-// Returns the number of calls to apply().
+
 template<class MatrixType,class LocalInverseType>
 int AdditiveSchwarz<MatrixType,LocalInverseType>::getNumApply() const 
 {
   return NumApply_;
 }
   
-//==============================================================================
-// Returns the time spent in initialize().
+
 template<class MatrixType,class LocalInverseType>
 double AdditiveSchwarz<MatrixType,LocalInverseType>::getInitializeTime() const
 {
   return InitializeTime_;
 }
   
-//==============================================================================
-// Returns the time spent in compute().
+
 template<class MatrixType,class LocalInverseType>
 double AdditiveSchwarz<MatrixType,LocalInverseType>::getComputeTime() const
 {
   return ComputeTime_;
 }
 
-//==============================================================================
-// Returns the time spent in Apply().
+
 template<class MatrixType,class LocalInverseType>
 double AdditiveSchwarz<MatrixType,LocalInverseType>::getApplyTime() const 
 {
   return ApplyTime_;
 }
-//==============================================================================
-/* Return a simple one-line description of this object. */
+
+
 template<class MatrixType,class LocalInverseType>
 std::string AdditiveSchwarz<MatrixType,LocalInverseType>::description() const
 {
@@ -650,14 +689,13 @@ std::string AdditiveSchwarz<MatrixType,LocalInverseType>::description() const
   else {
     oss << "{status = not initialized, not computed";
   }
-  oss<<", overlap level ="<<OverlapLevel_;
-  oss<<", subdomain reordering ="<<ReorderingAlgorithm_;
+  oss << ", overlap level =" << OverlapLevel_;
+  oss << ", subdomain reordering =" << ReorderingAlgorithm_;
   oss << "}";
   return oss.str();
 }
 
-//==============================================================================
-/* Print the object with some verbosity level to an FancyOStream object. */
+
 template<class MatrixType,class LocalInverseType>
 void AdditiveSchwarz<MatrixType,LocalInverseType>::describe(Teuchos::FancyOStream &os, const Teuchos::EVerbosityLevel verbLevel) const
 {
@@ -691,8 +729,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::describe(Teuchos::FancyOStrea
   os << endl;
 }
 
-//==============================================================================
-// Prints basic information on iostream. This function is used by operator<<.
+
 template<class MatrixType,class LocalInverseType>
 std::ostream& AdditiveSchwarz<MatrixType,LocalInverseType>::print(std::ostream& os) const
 {
@@ -702,28 +739,34 @@ std::ostream& AdditiveSchwarz<MatrixType,LocalInverseType>::print(std::ostream& 
   return(os);
 }
 
-//==============================================================================
-// Returns the level of overlap.
+
 template<class MatrixType,class LocalInverseType>
 int AdditiveSchwarz<MatrixType,LocalInverseType>::getOverlapLevel() const
 {
   return OverlapLevel_;
 }
 
-//==============================================================================
-// Sets up the localized matrix and the singleton filter.
+
 template<class MatrixType,class LocalInverseType>
 void AdditiveSchwarz<MatrixType,LocalInverseType>::setup() 
-{  
+{
+#ifdef HAVE_MPI
+  using Teuchos::MpiComm;
+#endif // HAVE_MPI
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::rcpFromRef;
+
 #if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
-  typedef typename Xpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpetraMatrixType;
-  typedef typename Xpetra::TpetraRowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpetraTpetraMatrixType;
+  typedef Xpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> XpetraMatrixType;
+  typedef Xpetra::TpetraRowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> XpetraTpetraMatrixType;
 #endif
 
-  Teuchos::RCP<LocalMatrixType> ActiveMatrix;
+  RCP<row_matrix_type> ActiveMatrix;
 
   // Create Localized Matrix
-  if (OverlappingMatrix_ != Teuchos::null) {
+  if (! OverlappingMatrix_.is_null ()) {
     if (UseSubdomain_) {
       //      int sid = List_.get("subdomain id",-1);
       throw std::runtime_error("Ifpack2::AdditiveSchwarz subdomain code not yet supported.");
@@ -731,67 +774,81 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup()
       //LocalizedMatrix_ = Teuchos::rcp(tt);
     }
     else
-      LocalizedMatrix_ = Teuchos::rcp( new Ifpack2::LocalFilter<LocalMatrixType>(OverlappingMatrix_) );
+      LocalizedMatrix_ = rcp (new Ifpack2::LocalFilter<row_matrix_type> (OverlappingMatrix_));
   }
   else {
     if (UseSubdomain_) {
       //      int sid = List_.get("subdomain id",-1);
       throw std::runtime_error("Ifpack2::AdditiveSchwarz subdomain code not yet supported.");
     }
-    else
-      LocalizedMatrix_ = Teuchos::rcp( new Ifpack2::LocalFilter<LocalMatrixType>(Matrix_) );
+    else {
+      LocalizedMatrix_ = rcp (new Ifpack2::LocalFilter<row_matrix_type> (Matrix_));
+    }
   }
+ 
+  // Sanity check; I don't trust the logic above to have created LocalizedMatrix_.
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    LocalizedMatrix_.is_null (), std::logic_error, 
+    "Ifpack2::AdditiveSchwarz::setup: LocalizedMatrix_ is null, after the code "
+    "that claimed to have created it.  This should never be the case.  Please "
+    "report this bug to the Ifpack2 developers.");
 
   // Mark localized matrix as active
   ActiveMatrix = LocalizedMatrix_;
-  TEUCHOS_TEST_FOR_EXCEPTION(LocalizedMatrix_ == Teuchos::null, std::runtime_error,
-                             "Ifpack2::AdditiveSchwarz::Setup() ERROR: LocalFilter failed.");
 
   // Singleton Filtering
   if (FilterSingletons_) {
-    SingletonMatrix_ = Teuchos::rcp( new Ifpack2::SingletonFilter<LocalMatrixType>(LocalizedMatrix_) );
+    SingletonMatrix_ = rcp (new Ifpack2::SingletonFilter<row_matrix_type> (LocalizedMatrix_));
     ActiveMatrix = SingletonMatrix_;
   }
-
 
   // Do reordering
   if (UseReordering_) {
 #if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
     // Unlike Ifpack, Zoltan2 does all the dirty work here.
-    Teuchos::ParameterList zlist = List_.sublist("schwarz: reordering list");
-    ReorderingAlgorithm_ = List_.get<std::string>("order_method","rcm");
-    XpetraTpetraMatrixType XpetraMatrix(ActiveMatrix);
-    Zoltan2::XpetraRowMatrixInput<XpetraMatrixType> Zoltan2Matrix(Teuchos::rcp<XpetraMatrixType>(&XpetraMatrix,false));
+    Teuchos::ParameterList zlist = List_.sublist ("schwarz: reordering list");
+    ReorderingAlgorithm_ = List_.get<std::string> ("order_method", "rcm");
+    XpetraTpetraMatrixType XpetraMatrix (ActiveMatrix);
+    Zoltan2::XpetraRowMatrixInput<XpetraMatrixType> Zoltan2Matrix (rcpFromRef (XpetraMatrix));
 
+    typedef Zoltan2::OrderingProblem<Zoltan2::XpetraRowMatrixInput<XpetraMatrixType> > ordering_problem_type;
 #ifdef HAVE_MPI
     // Grab the MPI Communicator and build the ordering problem with that
-    MPI_Comm mycomm;
+    MPI_Comm myRawComm;
 
-    Teuchos::RCP<const Teuchos::MpiComm<int> > mpicomm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(ActiveMatrix->getComm());
-    if(mpicomm == Teuchos::null) mycomm = MPI_COMM_SELF;
-    else mycomm = *(mpicomm->getRawMpiComm());
-    Zoltan2::OrderingProblem<Zoltan2::XpetraRowMatrixInput<XpetraMatrixType> > MyOrderingProblem(&Zoltan2Matrix, &zlist,mycomm);    
+    RCP<const MpiComm<int> > mpicomm = rcp_dynamic_cast<const MpiComm<int> > (ActiveMatrix->getComm ());
+    if (mpicomm == Teuchos::null) {
+      myRawComm = MPI_COMM_SELF;
+    } else {
+      myRawComm = *(mpicomm->getRawMpiComm());
+    }
+    ordering_problem_type MyOrderingProblem (&Zoltan2Matrix, &zlist, myRawComm);
 #else
-    Zoltan2::OrderingProblem<Zoltan2::XpetraRowMatrixInput<XpetraMatrixType> > MyOrderingProblem(&Zoltan2Matrix, &zlist);    
+    ordering_problem_type MyOrderingProblem (&Zoltan2Matrix, &zlist);
 #endif
-    MyOrderingProblem.solve();
+    MyOrderingProblem.solve ();
 
     // Now create the reordered matrix & mark it as active
-    ReorderedLocalizedMatrix_ =  Teuchos::rcp(new Ifpack2::ReorderFilter<LocalMatrixType>(ActiveMatrix,Teuchos::rcp( new Zoltan2::OrderingSolution<GlobalOrdinal,LocalOrdinal>(*MyOrderingProblem.getSolution()))));
+
+    typedef Ifpack2::ReorderFilter<row_matrix_type> reorder_filter_type;
+    typedef Zoltan2::OrderingSolution<global_ordinal_type, local_ordinal_type> ordering_solution_type;
+    ReorderedLocalizedMatrix_ = rcp (new reorder_filter_type (ActiveMatrix, rcp (new ordering_solution_type (*MyOrderingProblem.getSolution ()))));
 
     ActiveMatrix = ReorderedLocalizedMatrix_;
 #else
-    throw std::runtime_error("Ifpack2::AdditiveSchwarz::Setup() You need to compile with Zoltan2 to support reordering.");
+    // This is a logic_error, not a runtime_error, because
+    // setParameters() should have excluded this case already.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Ifpack2::AdditiveSchwarz::setup: "
+      "The Zoltan2 and Xpetra packages must be enabled in order "
+      "to support reordering.");
 #endif
   }
 
   // Build the inverse
-  Inverse_ = Teuchos::rcp(new LocalInverseType(ActiveMatrix));
-  TEUCHOS_TEST_FOR_EXCEPTION(Inverse_ == Teuchos::null, std::runtime_error,
-                             "Ifpack2::AdditiveSchwarz::Setup() ERROR: Inverse constructor failed.");
+  Inverse_ = rcp (new LocalInverseType (ActiveMatrix));
 }
 
-
-}// namespace Ifpack2
+} // namespace Ifpack2
 
 #endif // IFPACK2_ADDITIVESCHWARZ_DECL_HPP

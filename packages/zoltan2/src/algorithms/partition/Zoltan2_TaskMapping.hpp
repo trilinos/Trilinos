@@ -1950,6 +1950,9 @@ pcoord_t **shiftMachineCoordinates(int machine_dim, procId_t *machine_dimensions
             procId_t gap = rightSideProcCoord - leftSideProcCoord;
             procId_t gapProc = rightSideProcCount + leftSideProcCount;
 
+            /* Pick the largest gap in this dimension. Use fewer process on either side
+               of the largest gap to break the tie. An easy addition to this would
+               be to weight the gap by the number of processes. */
             if (gap > biggestGap || (gap == biggestGap && biggestGapProc > gapProc)){
                 shiftBorderCoordinate = rightSideProcCoord;
                 biggestGapProc = gapProc;
@@ -1960,7 +1963,7 @@ pcoord_t **shiftMachineCoordinates(int machine_dim, procId_t *machine_dimensions
         }
 
 
-        if (!(biggestGap > firstLastGap || (biggestGap == firstLastGap && biggestGap < firstLastGapProc))){
+        if (!(biggestGap > firstLastGap || (biggestGap == firstLastGap && biggestGapProc < firstLastGapProc))){
             shiftBorderCoordinate = -1;
         }
 

@@ -61,8 +61,6 @@ namespace Kokkos {
 class HostSpace {
 public:
 
-  enum { WORK_ALIGNMENT   =  8 };
-
   typedef HostSpace  memory_space ;
   typedef size_t     size_type ;
 

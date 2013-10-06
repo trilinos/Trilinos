@@ -81,12 +81,33 @@ typename Sacado::ScalarType<T>::type
 machine_epsilon();
 
 ///
-/// Random number generation. Uniform distribution between 0 and RAND_MAX
-/// inclusive.
+/// The circle constant
+///
+template<typename T>
+typename Sacado::ScalarType<T>::type
+tau();
+
+///
+/// Random number generation. Uniform distribution U(-1,1)
+/// which is the Teuchos default (!).
 ///
 template<typename T>
 typename Sacado::ScalarType<T>::type
 random();
+
+///
+/// Random number generation. Uniform distribution U(0,1).
+///
+template<typename T>
+typename Sacado::ScalarType<T>::type
+random_uniform();
+
+///
+/// Random number generation. Normal distribution N(0,1).
+///
+template<typename T>
+typename Sacado::ScalarType<T>::type
+random_normal();
 
 ///
 /// Compute a non-negative integer power by binary manipulation.
