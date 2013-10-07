@@ -154,6 +154,8 @@ namespace Iovs {
     int createSideSets;
     int createNodeSets;
     int spatialDimension;
+    static int useCount;
+    static int uniqueID;
 
     int64_t nodeCount;
     int64_t elementCount;
