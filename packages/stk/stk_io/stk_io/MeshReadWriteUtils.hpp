@@ -366,6 +366,10 @@ namespace stk {
         void write_restart_global(const std::string &globalVarName, std::vector<int> &data);
         void write_restart_global(const std::string &globalVarName, std::vector<double> &data);
   
+        void get_global_variable_names(std::vector<std::string> &names);
+        double get_global(const std::string &globalVarName);
+        void get_global(const std::string &globalVarName, std::vector<double> &globalVar);
+
         double process_restart_input(int step);
         double process_restart_input(double time);
 

@@ -11,6 +11,8 @@
 
 namespace {
 
+const double tolerance = 1e-16;
+
 Ioss::Field::BasicType iossBasicType(double)
 {
     return Ioss::Field::REAL;
@@ -32,34 +34,23 @@ template <typename DataType>
 void testGlobalVarOnFile(const std::string &outputFileName, const int stepNumber, const std::vector<std::string> &goldGlobalVarName,
                          const std::vector<DataType> goldGlobalVarValue, MPI_Comm comm)
 {
-    Ioss::DatabaseIO *iossDb = Ioss::IOFactory::create("exodus", outputFileName, Ioss::READ_RESTART, comm);
-    Ioss::Region inputRegion(iossDb);
-    Ioss::NameList fieldNames;
-    //Get all the fields on the ioss region, which are the global variables
-    inputRegion.field_describe(Ioss::Field::TRANSIENT, &fieldNames);
-
-    ASSERT_EQ(goldGlobalVarName.size(), fieldNames.size());
-
-    inputRegion.begin_state(stepNumber);
-
-    const double tolerance = 1e-16;
+    stk::io::MeshData stkIo(comm);
+    stkIo.open_mesh_database(outputFileName);
+    stkIo.create_input_mesh();
+    stkIo.populate_bulk_data();
+    stkIo.process_restart_input(stepNumber);
+    std::vector<std::string> globalVarNames;
+    stkIo.get_global_variable_names(globalVarNames);
+    ASSERT_EQ(goldGlobalVarName.size(), globalVarNames.size());
     for(size_t i=0; i<goldGlobalVarName.size(); i++)
     {
-        EXPECT_STRCASEEQ(goldGlobalVarName[i].c_str(), fieldNames[i].c_str());
-	std::vector<double> doubleGlobalValue;
-        inputRegion.get_field_data(fieldNames[i], doubleGlobalValue);
-
-	Ioss::Field field = inputRegion.get_field(fieldNames[i]);
-	size_t num_components = field.transformed_storage()->component_count();
-	EXPECT_EQ(num_components, doubleGlobalValue.size());
-
-	for (size_t j=0; j < num_components; j++) {
-	  //Workaround exodus only storing doubles
-	  DataType globalValue = static_cast<DataType>(doubleGlobalValue[j]);
-	  // For a multi-component global variable, the value is 'goldGlobalVarValue' + 0.1 * the component
-	  // E.g., a vector_3d with goldGlobalVarValue 42 would have values 42.0 42.1 42.2
-	  EXPECT_NEAR(goldGlobalVarValue[i]+0.1*j, globalValue, tolerance);
-	}
+        EXPECT_STRCASEEQ(goldGlobalVarName[i].c_str(), globalVarNames[i].c_str());
+        std::vector<double> globalVar;
+        stkIo.get_global(globalVarNames[i], globalVar);
+        for(size_t j=0; j<globalVar.size(); j++)
+        {
+            EXPECT_NEAR(goldGlobalVarValue[i]+0.1*j, globalVar[j], tolerance);
+        }
     }
 }
 
@@ -76,7 +67,6 @@ void testNodalFieldOnFile(const std::string &outputFileName, const int stepNumbe
     std::vector<double> fieldValues;
     nodeBlock->get_field_data(goldNodalFieldName, fieldValues);
     ASSERT_EQ(goldNodalFieldValues.size(), fieldValues.size());
-    const double tolerance = 1e-16;
     for(size_t i=0; i<goldNodalFieldValues.size(); i++)
     {
         EXPECT_NEAR(goldNodalFieldValues[i], fieldValues[i], tolerance);
@@ -315,20 +305,20 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, GlobalDoubleWithFieldMultipleTimeSteps)
 
 STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleRestart)
 {
-    const std::string outputFileName = "OneGlobalDouble.restart";
+    const std::string restartFileName = "OneGlobalDouble.restart";
     const std::string globalVarName = "testGlobal";
     const double globalVarValue = 13.0;
+    const double time = 1.0;
     MPI_Comm communicator = MPI_COMM_WORLD;
     {
         stk::io::MeshData stkIo(communicator);
         generateMetaData(stkIo);
         stkIo.populate_bulk_data();
 
-        stkIo.create_restart_output(outputFileName);
+        stkIo.create_restart_output(restartFileName);
 
         stkIo.add_restart_global(globalVarName, Ioss::Field::REAL);
 
-        const double time = 1.0;
         stkIo.begin_restart_output_at_time(time);
 
         stkIo.write_restart_global(globalVarName, globalVarValue);
@@ -336,11 +326,24 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleRestart)
         stkIo.end_current_restart_output();
     }
 
+    {
+        stk::io::MeshData stkIo(communicator);
+        stkIo.open_mesh_database(restartFileName);
+        stkIo.create_input_mesh();
+        stkIo.populate_bulk_data();
+        stkIo.process_restart_input(time);
+        std::vector<std::string> globalVarNames;
+        stkIo.get_global_variable_names(globalVarNames);
+        ASSERT_EQ(1u, globalVarNames.size());
+        EXPECT_STRCASEEQ(globalVarName.c_str(), globalVarNames[0].c_str());
+        double globalVar = stkIo.get_global(globalVarNames[0]);
+        EXPECT_NEAR(globalVarValue, globalVar, tolerance);
+    }
     const int stepNumber = 1;
     std::vector<std::string> globalVarNames(1, globalVarName);
     std::vector<double> globalVarValues(1,globalVarValue);
-    testGlobalVarOnFile(outputFileName, stepNumber, globalVarNames, globalVarValues, communicator);
-    unlink(outputFileName.c_str());
+    testGlobalVarOnFile(restartFileName, stepNumber, globalVarNames, globalVarValues, communicator);
+    unlink(restartFileName.c_str());
 }
 
 STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleWithFieldRestart)

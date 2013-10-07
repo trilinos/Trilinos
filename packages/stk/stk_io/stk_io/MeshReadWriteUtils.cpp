@@ -1432,6 +1432,33 @@ namespace stk {
         m_restart_region->field_add(Ioss::Field(globalVarName, dataType, storage_type, Ioss::Field::TRANSIENT, numberOfThingsToOutput));
     }
 
+    void MeshData::get_global_variable_names(std::vector<std::string> &names)
+    {
+        ThrowErrorMsgIf (Teuchos::is_null(m_input_region),
+                         "Attempt to read global variables before restart initialized.");
+        m_input_region->field_describe(Ioss::Field::TRANSIENT, &names);
+    }
+
+    double MeshData::get_global(const std::string &globalVarName)
+    {
+        ThrowErrorMsgIf (Teuchos::is_null(m_input_region),
+                         "Attempt to read global variables before restart initialized.");
+        ThrowErrorMsgIf (!m_input_region->field_exists(globalVarName),
+                         "Attempt to read global variable '" << globalVarName << "' that doesn't exist.");
+        double valueToReturn = 0.0;
+        m_input_region->get_field_data(globalVarName, &valueToReturn, sizeof(double));
+        return valueToReturn;
+    }
+
+    void MeshData::get_global(const std::string &globalVarName, std::vector<double> &globalVar)
+    {
+        ThrowErrorMsgIf (Teuchos::is_null(m_input_region),
+                         "Attempt to read global variables before restart initialized.");
+        ThrowErrorMsgIf (!m_input_region->field_exists(globalVarName),
+                         "Attempt to read global variable '" << globalVarName << "' that doesn't exist.");
+        m_input_region->get_field_data(globalVarName, globalVar);
+    }
+
     void MeshData::begin_restart_output_at_time(double time)
     {
         //Attempt to avoid putting state change into the interface.  We'll see . . .
