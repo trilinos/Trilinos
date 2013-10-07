@@ -6383,12 +6383,9 @@ static int send_req_wc(
 
     print_raw_buf((void *)wr->wc_post_desc.local_addr, wr->wc_post_desc.length);
 
-//    gni_connection *conn=get_conn_peer(peer_hdl);
-//    assert(conn);
-//    ep_hdl=conn->ep_hdl;
     ep_hdl=local_req_queue_attrs->req_ep_hdl;
 
-    wr->peer_instance=conn->peer_instance;
+    wr->peer_instance=peer_hdl->peer.NNTI_remote_process_t_u.gni.inst_id;
 
     if (config.rdma_mode==RDMA_CROSSOVER) {
         if (wr->wc_post_desc.length > config.fma_bte_crossover_size) {
