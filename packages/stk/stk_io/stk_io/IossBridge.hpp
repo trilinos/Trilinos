@@ -237,6 +237,15 @@ template <typename T> void delete_selector_property(std::vector<T> &entities);
 void delete_selector_property(Ioss::Region &io_region);
 void delete_selector_property(Ioss::GroupingEntity *io_entity);
 
+const std::string get_suffix_for_field_at_state(enum stk::mesh::FieldState field_state);
+
+void multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
+                          const stk::mesh::FieldBase *field,
+                          std::vector<stk::mesh::Entity> &entity_list,
+                          Ioss::GroupingEntity *io_entity,
+                          const std::string &name,
+                          const size_t state_count);
+
 /**
  * Fill the specified 'field' with data from the Ioss field named
  * 'io_fld_name' on the Ioss entity 'io_entity'. The mapping from
@@ -249,6 +258,13 @@ void field_data_from_ioss(const stk::mesh::BulkData& mesh,
                           Ioss::GroupingEntity *io_entity,
                           const std::string &io_fld_name);
 
+void multistate_field_data_to_ioss(const stk::mesh::BulkData& mesh,
+                        const stk::mesh::FieldBase *field,
+                        std::vector<stk::mesh::Entity> &entities,
+                        Ioss::GroupingEntity *io_entity,
+                        const std::string &io_fld_name,
+                        Ioss::Field::RoleType filter_role,
+                        const size_t state_count);
 /**
  * Extract data from the specified 'field' and put it to the Ioss
  * field named 'io_fld_name' on the Ioss entity 'io_entity'. The

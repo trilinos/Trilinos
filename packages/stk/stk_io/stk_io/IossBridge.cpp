@@ -715,6 +715,51 @@ void get_entity_list(Ioss::GroupingEntity *io_entity,
   }
 }
 
+const std::string get_suffix_for_field_at_state(enum stk::mesh::FieldState field_state)
+{
+    std::string suffix = "";
+    switch(field_state)
+    {
+        case stk::mesh::StateN:
+            suffix = ".N";
+            break;
+        case stk::mesh::StateNM1:
+            suffix = ".NM1";
+            break;
+        case stk::mesh::StateNM2:
+            suffix = ".NM2";
+            break;
+        case stk::mesh::StateNM3:
+            suffix = ".NM3";
+            break;
+        case stk::mesh::StateNM4:
+            suffix = ".NM4";
+            break;
+        case stk::mesh::StateNP1:
+        default:
+            break;
+    }
+    return suffix;
+}
+
+void multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
+                          const stk::mesh::FieldBase *field,
+                          std::vector<stk::mesh::Entity> &entity_list,
+                          Ioss::GroupingEntity *io_entity,
+                          const std::string &name,
+                          const size_t state_count)
+{
+    for(size_t state = 0; state < state_count - 1; state++)
+    {
+        stk::mesh::FieldState state_identifier = static_cast<stk::mesh::FieldState>(state);
+        std::string field_name_with_suffix = name + get_suffix_for_field_at_state(state_identifier);
+        stk::mesh::FieldState rotated_state = static_cast<stk::mesh::FieldState>(state + 1);stk
+        ::mesh::FieldBase *stated_field = field->field_state(rotated_state);
+        ThrowRequire(io_entity->field_exists(field_name_with_suffix));
+        stk::io::field_data_from_ioss(mesh, stated_field, entity_list, io_entity, field_name_with_suffix);
+    }
+}
+
 void field_data_from_ioss(const stk::mesh::BulkData& mesh,
                           const stk::mesh::FieldBase *field,
                           std::vector<stk::mesh::Entity> &entities,
@@ -749,6 +794,23 @@ void field_data_from_ioss(const stk::mesh::BulkData& mesh,
 	  }
 	}
   }
+}
+
+void multistate_field_data_to_ioss(const stk::mesh::BulkData& mesh,
+                        const stk::mesh::FieldBase *field,
+                        std::vector<stk::mesh::Entity> &entities,
+                        Ioss::GroupingEntity *io_entity,
+                        const std::string &io_fld_name,
+                        Ioss::Field::RoleType filter_role,
+                        const size_t state_count)
+{
+    for(size_t state = 0; state < state_count - 1; state++)
+    {
+        stk::mesh::FieldState state_identifier = static_cast<stk::mesh::FieldState>(state);
+        std::string field_name_with_suffix = io_fld_name + stk::io::get_suffix_for_field_at_state(state_identifier);
+        stk::mesh::FieldBase *stated_field = field->field_state(state_identifier);
+        stk::io::field_data_to_ioss(mesh, stated_field, entities, io_entity, field_name_with_suffix, filter_role);
+    }
 }
 
 void field_data_to_ioss(const stk::mesh::BulkData& mesh,

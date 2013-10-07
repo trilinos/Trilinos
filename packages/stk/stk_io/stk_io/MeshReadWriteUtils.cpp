@@ -34,6 +34,7 @@
 #include <assert.h>
 
 namespace {
+
   struct RestartFieldAttribute {
     RestartFieldAttribute(const std::string &name) : databaseName(name)
     {}
@@ -158,14 +159,24 @@ namespace {
 	  stk::io::get_io_field_type(f, res, &field_type);
 	  if (field_type.second != Ioss::Field::INVALID) {
 	    size_t entity_size = entity->get_property("entity_count").get_int();
-	    const std::string& name = get_restart_field_name(f);
-	    entity->field_add(Ioss::Field(name, field_type.second, field_type.first,
+	    const std::string& field_name = get_restart_field_name(f);
+	    entity->field_add(Ioss::Field(field_name, field_type.second, field_type.first,
 					  Ioss::Field::TRANSIENT, entity_size));
+	    size_t state_count = f->number_of_states();
+	    ThrowAssert(state_count < 7);
+	    for(size_t state=1; state < state_count-1; state++) {
+	        stk::mesh::FieldState state_identifier = static_cast<stk::mesh::FieldState>(state);
+                std::string field_name_with_suffix = field_name + stk::io::get_suffix_for_field_at_state(state_identifier);
+	        entity->field_add(Ioss::Field(field_name_with_suffix, field_type.second, field_type.first,
+                                          Ioss::Field::TRANSIENT, entity_size));
+	    }
 	  }
 	}
       }
     }
   }
+
+
 
   int ioss_restore_restart_fields(stk::mesh::BulkData &bulk,
 				  const stk::mesh::Part &part,
@@ -202,7 +213,12 @@ namespace {
 		stk::io::get_entity_list(io_entity, part_type, bulk, entity_list);
 		entity_list_filled=true;
 	      }
-	      stk::io::field_data_from_ioss(bulk, f, entity_list, io_entity, name);
+	      size_t state_count = f->number_of_states();
+	      if(state_count == 1) {
+	          stk::io::field_data_from_ioss(bulk, f, entity_list, io_entity, name);
+	      } else {
+	          stk::io::multistate_field_data_from_ioss(bulk, f, entity_list, io_entity, name, state_count);
+	      }
 	    } else {
 	      std::cerr  << "ERROR: Could not find restart input field '"
 			 << name << "' on '" << io_entity->name() << "'.\n";
@@ -852,8 +868,13 @@ void put_field_data(stk::mesh::BulkData &bulk, stk::mesh::Part &part,
   std::vector<stk::mesh::FieldBase *>::const_iterator I = fields.begin();
   while (I != fields.end()) {
     const stk::mesh::FieldBase *f = *I; ++I;
-    std::string fieldName = get_field_name(*f, io_entity->get_database()->usage());
-    stk::io::field_data_to_ioss(bulk, f, entities, io_entity, fieldName, filter_role);
+    std::string field_name = get_field_name(*f, io_entity->get_database()->usage());
+    size_t state_count = f->number_of_states();
+    if(state_count == 1) {
+        stk::io::field_data_to_ioss(bulk, f, entities, io_entity, field_name, filter_role);
+    } else {
+        stk::io::multistate_field_data_to_ioss(bulk, f, entities, io_entity, field_name, filter_role, state_count);
+    }
   }
 }
 
@@ -1479,12 +1500,11 @@ namespace stk {
     }
 
     int MeshData::process_restart_output()
-     {
-
+    {
        internal_process_restart_output(mCurrentRestartStep);
 
        return mCurrentRestartStep;
-     }
+    }
 
     int MeshData::process_restart_output(double time)
     {
