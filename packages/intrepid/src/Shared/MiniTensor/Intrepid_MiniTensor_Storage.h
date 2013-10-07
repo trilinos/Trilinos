@@ -76,7 +76,15 @@ check_dynamic(Index const dimension)
   maximum_dimension = static_cast<Index>(std::numeric_limits<Index>::digits);
 
   assert(Store::IS_DYNAMIC == true);
-  assert(dimension <= maximum_dimension);
+
+  if (dimension > maximum_dimension) {
+    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
+    std::cerr << std::endl;
+    std::cerr << "Requested dimension (" << dimension;
+    std::cerr << ") exceeds maximum allowed: " << maximum_dimension;
+    std::cerr << std::endl;
+    exit(1);
+  }
 }
 
 /// Integer power template restricted to orders defined below

@@ -557,7 +557,7 @@ piola_inverse(Tensor<T, N> const & F, Tensor<T, N> const & P)
 }
 
 //
-// Smallest eigenvalue by inverse iteration. Positive eigenvalues only.
+// Smallest eigenvalue by inverse iteration.
 //
 template<typename T, Index N>
 T
