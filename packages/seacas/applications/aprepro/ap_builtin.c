@@ -127,6 +127,8 @@ double do_tanh(double x);
 double do_polarX(double rad, double ang);
 double do_polarY(double rad, double ang);
 double do_strtod(char *string);
+double do_csvrows(char *string);
+double do_csvcols(char *string);
 
 char  *do_getenv(char *string);
 char  *do_tolower(char *string);
@@ -154,6 +156,7 @@ double do_julday(double mon, double day, double year);
 double do_log1p(double mag);
 char  *do_include_path(char *newpath);
 char  *do_intout(double intval);
+char  *do_get_csv(char *filename, double i, double j);
 
 /* DO_INT:  Calculate integer nearest to zero from value */
 double do_int(double x)
@@ -729,6 +732,62 @@ double do_atanh(double x)
   x = x / (1.0 - x);
   return (z * LOG1P(x + x));
 }
+
+double do_csvrows(char * filename)
+{
+  double rows = 0;
+  char temp;
+  int good=0;
+  FILE * f;
+  f = fopen(filename,"r");
+  if(f != NULL)
+  {
+    good = 0;
+    while (!feof(f))
+    {
+      temp=fgetc(f);
+      if((temp != '\n')&&(temp >= 0))
+        good = 1;
+      if((temp == '\n')&&(good == 1))
+      {
+        rows++;
+        good = 0;
+      }
+    }
+    fclose(f);
+  }
+  return (rows+good);
+}
+
+double do_csvcols(char * filename)
+{
+  double tempCols = 0;
+  double cols = 0;
+  char temp;
+  FILE * f;
+  f = fopen(filename,"r");
+  if(f != NULL)
+  {
+    while (!feof(f))
+    {
+      temp=fgetc(f);
+      if(temp == ',')
+      {
+        tempCols++;
+      }
+      if(temp == '\n')
+      {
+        tempCols++;
+        if(tempCols > cols)
+          cols = tempCols;
+        tempCols = 0;
+      }
+    }
+    fclose(f);
+  }
+  return cols;
+}
+
 /*
   --------------------------STRING FUNCTIONS------------------------
  */
@@ -1094,5 +1153,95 @@ char *do_extract(char *string, char *begin, char *end)
     NEWSTR(tmpstr, tmp);
     free(tmpstr);
   }      
+  return tmp;
+}
+
+char *do_get_csv(char *filename, double i, double j)
+{
+  int len = 0;
+  char *tmp;
+  char *tmp2;
+  int cur = 0;
+  int k;
+  int row = 1;
+  int col = 1;
+  int ii, ij;
+  char temp;
+  int good = 0;
+  ii = (int)i;
+  ij = (int)j;
+
+  NEWSTR("0",tmp);
+
+  FILE * f;
+  f = fopen(filename,"r");
+
+  if(f != NULL)
+  {
+    good = 0;
+    while ((!feof(f))&&((row < ii)||(row > ii)||(col > ij)||(col < ij)))
+    {
+      temp=fgetc(f);
+      if(temp >= 0)
+      {
+        if((temp != '\n')&&(temp >= 0))
+        {
+          good = 1;
+        }
+        if(temp == '\n')
+        {
+          col = 1;
+          if(good == 1)
+          {
+            row ++;
+            good = 0;
+          }
+        }
+
+        if(temp == ',')
+        {
+          col++;
+        }
+      }
+    }
+    if((row == ii)&&(col == ij))
+    {
+      temp=fgetc(f);
+      len = 0;
+      cur = 0;
+      NEWSTR("0",tmp);
+      NEWSTR("0",tmp2);
+      while((!feof(f)) && (temp >= 0) && (temp != ',') && (temp != '\n'))
+      {
+        len++;
+        if(cur == 0)
+        {
+          ALLOC(tmp, len+1, char *);
+          for(k = 0; k < len; k++) 
+          {
+            tmp[k]=tmp2[k];
+          }
+          tmp[len-1] = temp;
+          tmp[len]   = '\0';
+          cur = 1;
+        }else{
+          ALLOC(tmp2, len+1, char *);
+          for(k = 0; k < len; k++)
+          {
+            tmp2[k]=tmp[k];
+          }
+          tmp2[len-1] = temp;
+          tmp2[len]   = '\0';
+          cur = 0;
+        }
+        temp=fgetc(f);
+      }
+      if(len <= 0)
+        NEWSTR("0",tmp);
+    }else{
+      NEWSTR("0",tmp);
+    }
+    fclose(f);
+  }
   return tmp;
 }
