@@ -513,8 +513,8 @@ public:
   void
   insertInGraph (const OrdinalType row, OrdinalType *cols, const size_t ncol)
   {
-    const OrdinalType* start = &h_entries_[rows_[row]];
-    const OrdinalType* end   = &h_entries_[rows_[row+1]];
+    OrdinalType* const start = &h_entries_[rows_[row]];
+    OrdinalType* const end   = &h_entries_[rows_[row+1]];
     for (size_t i = 0; i < ncol; ++i) {
       OrdinalType *iter = start;
       while (iter < end && *iter != -1 && *iter != cols[i]) {
@@ -981,7 +981,7 @@ struct MV_MultiplyFunctor {
       const SparseRowView<CrsMatrix> row = m_A.row(iRow);
 
 #pragma ivdep
-#pragma loop count (24)
+#pragma loop count (15)
 #pragma unroll
       for (size_type iEntry = lane; iEntry < row.length; iEntry += ThreadsPerRow) {
         const scalar_type val = row.value(iEntry);
@@ -996,7 +996,7 @@ struct MV_MultiplyFunctor {
       const SparseRowView<CrsMatrix> row = m_A.row(iRow);
 
 #pragma ivdep
-#pragma loop count (24)
+#pragma loop count (15)
 #pragma unroll
       for(size_type iEntry = lane ; iEntry < row.length ; iEntry+=ThreadsPerRow) {
         const scalar_type val = row.value(iEntry);
@@ -1066,14 +1066,14 @@ struct MV_MultiplyFunctor {
     if(doalpha != -1) {
       const SparseRowView<CrsMatrix> row = m_A.row(iRow);
 
-#pragma loop count (24)
+#pragma loop count (15)
       for(size_type iEntry = lane; iEntry < row.length; iEntry += ThreadsPerRow) {
         sum += row.value(iEntry) * m_x(row.colidx(iEntry),0);
       }
     } else {
       const SparseRowView<CrsMatrix> row = m_A.row(iRow);
 
-#pragma loop count (24)
+#pragma loop count (15)
       for(size_type iEntry = lane; iEntry < row.length; iEntry += ThreadsPerRow) {
         sum -= row.value(iEntry) * m_x(row.colidx(iEntry),0);
       }
@@ -1235,7 +1235,7 @@ struct MV_MultiplyFunctor {
       if (doalpha != -1) {
 	const SparseRowView<CrsMatrix> row = m_A.row(iRow);
 
-#pragma loop count (24)
+#pragma loop count (15)
 #pragma unroll
 	for (size_type iEntry = lane; iEntry < row.length; iEntry += ThreadsPerRow) {
 	  sum += row.value(iEntry) * m_x(row.colidx(iEntry));
@@ -1243,7 +1243,7 @@ struct MV_MultiplyFunctor {
       } else {
 	const SparseRowView<CrsMatrix> row = m_A.row(iRow);
 
-#pragma loop count (24)
+#pragma loop count (15)
 #pragma unroll
 	for (size_type iEntry = lane; iEntry < row.length; iEntry += ThreadsPerRow) {
 	  sum -= row.value(iEntry) * m_x(row.colidx(iEntry));
@@ -1778,6 +1778,7 @@ struct MV_MultiplyFunctor {
     aVector b;
     int numVecs = x.dimension_1();
 
+    if(numVecs==1)
     if (s_b == 0) {
       if (s_a == 0)
         return MV_Multiply (a, y, a, A, x, 0, 0);

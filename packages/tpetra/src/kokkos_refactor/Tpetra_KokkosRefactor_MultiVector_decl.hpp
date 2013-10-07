@@ -331,15 +331,16 @@ namespace Tpetra {
   ///   be wrong.  This behavior may change in future releases.
   template<class Scalar,
            class LocalOrdinal,
-           class GlobalOrdinal>
-  class MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> :
+           class GlobalOrdinal,
+           class DeviceType>
+  class MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > :
 #if TPETRA_USE_KOKKOS_DISTOBJECT
-    public DistObjectKA<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosThreadsWrapperNode>
+    public DistObjectKA<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
 #else
-    public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosThreadsWrapperNode>
+    public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
 #endif
   {
-    typedef Kokkos::Compat::KokkosThreadsWrapperNode Node;
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>  Node;
   public:
     //! @name Typedefs to facilitate template metaprogramming.
     //@{

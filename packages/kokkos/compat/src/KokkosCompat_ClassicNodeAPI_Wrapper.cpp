@@ -2,34 +2,28 @@
 
 namespace Kokkos {
   namespace Compat {
-    KokkosThreadsWrapperNode::KokkosThreadsWrapperNode(Teuchos::ParameterList &pl) {
-      ParameterList params = getDefaultParameters();
-      params.setParameters(pl);
-      const int curNumThreads = params.get<int>("Num Threads");
-      int verboseInt = params.get<int>("Verbose");
-      bool verbose = (verboseInt != 0);
-      if (verbose) {
-        std::cout << "ThreadsWrapperNode initializing with \"Num Threads\" = "
-                  << curNumThreads << std::endl;
-      }
-      init (curNumThreads);
-    }
-    KokkosThreadsWrapperNode::KokkosThreadsWrapperNode() {
-      init(1);
-    };
 
-    KokkosThreadsWrapperNode::~KokkosThreadsWrapperNode() {
-      Kokkos::Threads::finalize();
+#ifdef KOKKOS_HAVE_PTHREAD
+    template<>
+    void KokkosDeviceWrapperNode<Kokkos::Threads>::init(int NumTeams, int NumThreads, int Device) {
+      Kokkos::Threads::initialize(NumTeams,NumThreads);
     }
-    ParameterList KokkosThreadsWrapperNode::getDefaultParameters() {
-      ParameterList params;
-      params.set("Verbose",     0);
-      params.set("Num Threads", 1);
-      return params;
-    }
+#endif
 
-    void KokkosThreadsWrapperNode::init(int num_threads) {
-      Kokkos::Threads::initialize(num_threads,1);
+#ifdef KOKKOS_HAVE_OPENMP
+    template<>
+    void KokkosDeviceWrapperNode<Kokkos::OpenMP>::init(int NumTeams, int NumThreads, int Device) {
+      Kokkos::OpenMP::initialize(NumTeams,NumThreads);
     }
+#endif
+
+#ifdef KOKKOS_HAVE_CUDA
+    template<>
+    void KokkosDeviceWrapperNode<Kokkos::Cuda>::init(int NumTeams, int NumThreads, int Device) {
+      Kokkos::Cuda::SelectDevice select_device(Device);
+      Kokkos::Cuda::initialize(select_device);
+    }
+#endif
+
   }
 }

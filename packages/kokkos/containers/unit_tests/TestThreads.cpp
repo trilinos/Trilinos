@@ -57,6 +57,7 @@
 
 namespace Test {
 
+#ifdef KOKKOS_HAVE_PTHREAD
 class threads : public ::testing::Test {
 protected:
   static void SetUpTestCase()
@@ -127,6 +128,7 @@ THREADS_VECTOR_COMBINE_TEST( 3057 )
 #undef THREADS_DEEP_COPY
 #undef THREADS_VECTOR_COMBINE
 
+#endif
 } // namespace Test
 
 

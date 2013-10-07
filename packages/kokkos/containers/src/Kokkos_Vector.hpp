@@ -48,7 +48,6 @@
 
 #include <Kokkos_DualView.hpp>
 #include <KokkosCore_config.h>
-namespace Kokkos {
 
 /* Drop in replacement for std::vector based on Kokkos::DualView
  * Most functions only work on the host (it will not compile if called from device kernel)
@@ -57,15 +56,27 @@ namespace Kokkos {
 #ifndef KOKKOS_HAVE_CUDA
   #ifdef KOKKOS_HAVE_PTHREAD
     #include <Kokkos_Threads.hpp>
-    typedef Kokkos::Threads DefaultDeviceType;
+  namespace Kokkos {
+  namespace Impl {
+    typedef Threads DefaultDeviceType;
+  }
+  }
   #else
     #ifdef KOKKOS_HAVE_OPENMP
       #include <Kokkos_OpenMP.hpp>
-      typedef Kokkos::OpenMP DefaultDeviceType;
+    namespace Kokkos {
+    namespace Impl {
+      typedef OpenMP DefaultDeviceType;
+    }
+    }
     #else
       #ifdef KOKKOS_HAVE_SERIAL
         #include <Kokkos_Serial.hpp>
-        typedef Kokkos::Serial DefaultDeviceType;
+      namespace Kokkos {
+      namespace Impl {
+        typedef Serial DefaultDeviceType;
+      }
+      }
       #else
         #error "No Kokkos Host Device defined"
       #endif
@@ -73,11 +84,15 @@ namespace Kokkos {
   #endif
 #else
   #include <Kokkos_Cuda.hpp>
-  typedef Kokkos::Cuda DefaultDeviceType;
+  namespace Kokkos {
+  namespace Impl {
+    typedef Cuda DefaultDeviceType;
+  }
+  }
 #endif
+  namespace Kokkos {
 
-
-template <typename Scalar, class Device=DefaultDeviceType>
+template <typename Scalar, class Device=Impl::DefaultDeviceType>
 class vector : public DualView<Scalar*,LayoutLeft,Device> {
 public:
   typedef Device device_type;
@@ -141,12 +156,12 @@ public:
 
     if( DV::modified_host >= DV::modified_device ) {
       set_functor_host f(DV::h_view,val);
-      Kokkos::parallel_for(n,f);
+      parallel_for(n,f);
       DV::t_host::device_type::fence();
       DV::modified_host++;
     } else {
       set_functor f(DV::d_view,val);
-      Kokkos::parallel_for(n,f);
+      parallel_for(n,f);
       DV::t_dev::device_type::fence();
       DV::modified_device++;
     }

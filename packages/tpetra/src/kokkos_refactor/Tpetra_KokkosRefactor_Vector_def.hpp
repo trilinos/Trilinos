@@ -44,12 +44,14 @@
 
 #include <Kokkos_DefaultArithmetic.hpp>
 #include <Kokkos_NodeTrace.hpp>
-#include <Tpetra_MultiVector.hpp>
+#include <Tpetra_KokkosRefactor_MultiVector.hpp>
 #include <Tpetra_Vector.hpp>
 
 #ifdef DOXYGEN_USE_ONLY
   #include "Tpetra_Vector_decl.hpp"
 #endif
+#include <KokkosCompat_View.hpp>
+#include <Kokkos_MV.hpp>
 
 namespace Tpetra {
 
@@ -126,7 +128,8 @@ namespace Tpetra {
         "Tpetra::Vector::dots(): Vectors do not have the same local length.");
 #endif
     Scalar gbldot;
-    gbldot = MVT::Dot(this->lclMV_,a.lclMV_);
+    //gbldot = MVT::Dot(this->lclMV_,a.lclMV_);
+    Kokkos::MV_Dot(&gbldot,this->view_.d_view,a.view_.d_view);
     if (this->isDistributed()) {
       Scalar lcldot = gbldot;
       Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lcldot,outArg(gbldot));

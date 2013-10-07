@@ -718,21 +718,59 @@ RVector MV_Add( const RVector & r,const aVector &av,const XVector & x,
 		const bVector &bv, const YVector & y,
 		int a=2,int b=2)
 {
+
 	if(x.dimension(1)>16)
 		return MV_AddVector( r,av,x,bv,y,a,b);
+
+	if(x.dimension_1()==1) {
+    typedef View<typename RVector::scalar_type*,typename RVector::device_type> RVector1D;
+    typedef View<typename XVector::const_scalar_type*,typename XVector::device_type> XVector1D;
+    typedef View<typename YVector::const_scalar_type*,typename YVector::device_type> YVector1D;
+
+    RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
+    XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
+    YVector1D y_1d = Kokkos::subview< YVector1D >( y , ALL(),0 );
+
+    V_Add(r_1d,av,x_1d,bv,y_1d);
+    return r;
+  } else
 	return MV_AddUnroll( r,av,x,bv,y,a,b);
 }
 
 template<class RVector,class XVector,class YVector>
 RVector MV_Add( const RVector & r, const XVector & x, const YVector & y)
 {
+  if(x.dimension_1()==1) {
+    typedef View<typename RVector::scalar_type*,typename RVector::device_type> RVector1D;
+    typedef View<typename XVector::const_scalar_type*,typename XVector::device_type> XVector1D;
+    typedef View<typename YVector::const_scalar_type*,typename YVector::device_type> YVector1D;
+
+    RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
+    XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
+    YVector1D y_1d = Kokkos::subview< YVector1D >( y , ALL(),0 );
+
+    V_Add(r_1d,x_1d,y_1d);
+    return r;
+  } else
 	typename XVector::scalar_type a = 1.0;
-  MV_Add(r,a,x,a,y,1,1);
+  return MV_Add(r,a,x,a,y,1,1);
 }
 
 template<class RVector,class XVector,class bVector, class YVector>
 RVector MV_Add( const RVector & r, const XVector & x, const bVector & bv, const YVector & y )
 {
+  if(x.dimension_1()==1) {
+    typedef View<typename RVector::scalar_type*,typename RVector::device_type> RVector1D;
+    typedef View<typename XVector::const_scalar_type*,typename XVector::device_type> XVector1D;
+    typedef View<typename YVector::const_scalar_type*,typename YVector::device_type> YVector1D;
+
+    RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
+    XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
+    YVector1D y_1d = Kokkos::subview< YVector1D >( y , ALL(),0 );
+
+    V_Add(r_1d,x_1d,bv,y_1d);
+    return r;
+  } else
   MV_Add(r,bv,x,bv,y,1,2);
 }
 
@@ -763,16 +801,18 @@ struct MV_DotProduct_Right_FunctorVector
 	for(int k=0;k<numVecs;k++)
       sum[k]+=m_x(i,k)*m_y(i,k);
   }
-  static KOKKOS_INLINE_FUNCTION void init( value_type update, const size_type numVecs)
+  KOKKOS_INLINE_FUNCTION void init( value_type update) const
   {
+    const int numVecs = value_count;
     #pragma ivdep
     #pragma vector always
 	for(size_type k=0;k<numVecs;k++)
 	  update[k] = 0;
   }
-  static KOKKOS_INLINE_FUNCTION void join( volatile value_type  update ,
-                    const volatile value_type  source,const size_type numVecs )
+  KOKKOS_INLINE_FUNCTION void join( volatile value_type  update ,
+                    const volatile value_type  source ) const
   {
+    const int numVecs = value_count;
     #pragma ivdep
     #pragma vector always
 	for(size_type k=0;k<numVecs;k++){
@@ -805,14 +845,14 @@ struct MV_DotProduct_Right_FunctorUnroll
     for(size_type k=0;k<UNROLL;k++)
       sum[k]+=m_x(i,k)*m_y(i,k);
   }
-  static KOKKOS_INLINE_FUNCTION void init( volatile value_type update, const size_type numVecs)
+  KOKKOS_INLINE_FUNCTION void init( volatile value_type update) const
   {
     #pragma unroll
 	for(size_type k=0;k<UNROLL;k++)
 	  update[k] = 0;
   }
-  static KOKKOS_INLINE_FUNCTION void join( volatile value_type update ,
-                    const volatile value_type source, const size_type numVecs )
+  KOKKOS_INLINE_FUNCTION void join( volatile value_type update ,
+                    const volatile value_type source) const
   {
     #pragma unroll
 	for(size_type k=0;k<UNROLL;k++)
@@ -821,11 +861,12 @@ struct MV_DotProduct_Right_FunctorUnroll
 };
 
 template<class rVector, class XVector, class YVector>
-rVector MV_Dot(const rVector &r, const XVector & x, const YVector & y)
+rVector MV_Dot(const rVector &r, const XVector & x, const YVector & y, int n = -1)
 {
     typedef typename XVector::size_type            size_type;
-	const size_type numVecs = x.dimension(1);
+	  const size_type numVecs = x.dimension(1);
 
+	  if(n<0) n = x.dimension_0();
     if(numVecs>16){
 
         MV_DotProduct_Right_FunctorVector<XVector,YVector> op;
@@ -833,7 +874,7 @@ rVector MV_Dot(const rVector &r, const XVector & x, const YVector & y)
         op.m_y = y;
         op.value_count = numVecs;
 
-        Kokkos::parallel_reduce( x.dimension(0) , op, r );
+        Kokkos::parallel_reduce( n , op, r );
         return r;
      }
      else
@@ -843,7 +884,7 @@ rVector MV_Dot(const rVector &r, const XVector & x, const YVector & y)
            op.m_x = x;
            op.m_y = y;
            op.value_count = numVecs;
-           Kokkos::parallel_reduce( x.dimension(0) , op, r );
+           Kokkos::parallel_reduce( n , op, r );
       	   break;
        }
        case 15: {
@@ -851,7 +892,7 @@ rVector MV_Dot(const rVector &r, const XVector & x, const YVector & y)
            op.m_x = x;
            op.m_y = y;
            op.value_count = numVecs;
-           Kokkos::parallel_reduce( x.dimension(0) , op, r );
+           Kokkos::parallel_reduce( n , op, r );
       	   break;
        }
        case 14: {
@@ -859,7 +900,7 @@ rVector MV_Dot(const rVector &r, const XVector & x, const YVector & y)
            op.m_x = x;
            op.m_y = y;
            op.value_count = numVecs;
-           Kokkos::parallel_reduce( x.dimension(0) , op, r );
+           Kokkos::parallel_reduce( n , op, r );
       	   break;
        }
        case 13: {
@@ -867,7 +908,7 @@ rVector MV_Dot(const rVector &r, const XVector & x, const YVector & y)
            op.m_x = x;
            op.m_y = y;
            op.value_count = numVecs;
-           Kokkos::parallel_reduce( x.dimension(0) , op, r );
+           Kokkos::parallel_reduce( n , op, r );
       	   break;
        }
        case 12: {
@@ -875,7 +916,7 @@ rVector MV_Dot(const rVector &r, const XVector & x, const YVector & y)
            op.m_x = x;
            op.m_y = y;
            op.value_count = numVecs;
-           Kokkos::parallel_reduce( x.dimension(0) , op, r );
+           Kokkos::parallel_reduce( n , op, r );
       	   break;
        }
        case 11: {
@@ -883,7 +924,7 @@ rVector MV_Dot(const rVector &r, const XVector & x, const YVector & y)
            op.m_x = x;
            op.m_y = y;
            op.value_count = numVecs;
-           Kokkos::parallel_reduce( x.dimension(0) , op, r );
+           Kokkos::parallel_reduce( n , op, r );
       	   break;
        }
        case 10: {
@@ -891,7 +932,7 @@ rVector MV_Dot(const rVector &r, const XVector & x, const YVector & y)
            op.m_x = x;
            op.m_y = y;
            op.value_count = numVecs;
-           Kokkos::parallel_reduce( x.dimension(0) , op, r );
+           Kokkos::parallel_reduce( n , op, r );
       	   break;
        }
        case 9: {
@@ -899,7 +940,7 @@ rVector MV_Dot(const rVector &r, const XVector & x, const YVector & y)
            op.m_x = x;
            op.m_y = y;
            op.value_count = numVecs;
-           Kokkos::parallel_reduce( x.dimension(0) , op, r );
+           Kokkos::parallel_reduce( n , op, r );
       	   break;
        }
        case 8: {
@@ -907,7 +948,7 @@ rVector MV_Dot(const rVector &r, const XVector & x, const YVector & y)
            op.m_x = x;
            op.m_y = y;
            op.value_count = numVecs;
-           Kokkos::parallel_reduce( x.dimension(0) , op, r );
+           Kokkos::parallel_reduce( n , op, r );
       	   break;
        }
        case 7: {
@@ -915,7 +956,7 @@ rVector MV_Dot(const rVector &r, const XVector & x, const YVector & y)
            op.m_x = x;
            op.m_y = y;
            op.value_count = numVecs;
-           Kokkos::parallel_reduce( x.dimension(0) , op, r );
+           Kokkos::parallel_reduce( n , op, r );
       	   break;
        }
        case 6: {
@@ -923,7 +964,7 @@ rVector MV_Dot(const rVector &r, const XVector & x, const YVector & y)
            op.m_x = x;
            op.m_y = y;
            op.value_count = numVecs;
-           Kokkos::parallel_reduce( x.dimension(0) , op, r );
+           Kokkos::parallel_reduce( n , op, r );
       	   break;
        }
        case 5: {
@@ -931,7 +972,7 @@ rVector MV_Dot(const rVector &r, const XVector & x, const YVector & y)
            op.m_x = x;
            op.m_y = y;
            op.value_count = numVecs;
-           Kokkos::parallel_reduce( x.dimension(0) , op, r );
+           Kokkos::parallel_reduce( n , op, r );
       	   break;
        }
        case 4: {
@@ -939,7 +980,7 @@ rVector MV_Dot(const rVector &r, const XVector & x, const YVector & y)
            op.m_x = x;
            op.m_y = y;
            op.value_count = numVecs;
-           Kokkos::parallel_reduce( x.dimension(0) , op, r );
+           Kokkos::parallel_reduce( n , op, r );
 
       	   break;
        }
@@ -948,7 +989,7 @@ rVector MV_Dot(const rVector &r, const XVector & x, const YVector & y)
            op.m_x = x;
            op.m_y = y;
            op.value_count = numVecs;
-           Kokkos::parallel_reduce( x.dimension(0) , op, r );
+           Kokkos::parallel_reduce( n , op, r );
       	   break;
        }
        case 2: {
@@ -956,15 +997,16 @@ rVector MV_Dot(const rVector &r, const XVector & x, const YVector & y)
            op.m_x = x;
            op.m_y = y;
            op.value_count = numVecs;
-           Kokkos::parallel_reduce( x.dimension(0) , op, r );
+           Kokkos::parallel_reduce( n , op, r );
       	   break;
        }
        case 1: {
-    	   MV_DotProduct_Right_FunctorUnroll<XVector,YVector,1> op;
-           op.m_x = x;
-           op.m_y = y;
-           op.value_count = numVecs;
-           Kokkos::parallel_reduce(x.dimension(0) , op, r);
+         typedef View<typename XVector::const_scalar_type*,typename XVector::device_type> XVector1D;
+         typedef View<typename YVector::const_scalar_type*,typename YVector::device_type> YVector1D;
+
+         XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
+         YVector1D y_1d = Kokkos::subview< YVector1D >( y , ALL(),0 );
+         r[0] = V_Dot(x_1d,y_1d,n);
       	   break;
        }
      }
@@ -1069,13 +1111,11 @@ struct V_MulScalarFunctorSelf<typename XVector::scalar_type,XVector>
 template<class RVector, class XVector>
 RVector V_MulScalar( const RVector & r, const typename XVector::scalar_type &a, const XVector & x)
 {
-	printf("HUHU\n");
   if(r==x) {
     V_MulScalarFunctorSelf<typename XVector::scalar_type,XVector> op ;
 	op.m_x = x ;
 	op.m_a = a ;
 	Kokkos::parallel_for( x.dimension(0) , op );
-	printf("HUHU2\n");
 	return r;
   }
 
@@ -1084,7 +1124,6 @@ RVector V_MulScalar( const RVector & r, const typename XVector::scalar_type &a, 
   op.m_x = x ;
   op.m_a = a ;
   Kokkos::parallel_for( x.dimension(0) , op );
-	printf("HUHU2\n");
   return r;
 }
 
@@ -1134,13 +1173,13 @@ RVector V_AddVector( const RVector & r,const typename XVector::scalar_type &av,c
 		const typename XVector::scalar_type &bv, const YVector & y)
 {
   V_AddVectorFunctor<RVector,XVector,YVector,doalpha,dobeta> f(r,av,x,bv,y);
-  parallel_for(x.dimension_0(),f);
+  vector_parallel_for(x.dimension_0(),f);
   return r;
 }
 
 template<class RVector, class XVector, class YVector>
 RVector V_AddVector( const RVector & r,const typename XVector::scalar_type &av,const XVector & x,
-		const typename XVector::scalar_type &bv, const YVector & y,
+		const typename YVector::scalar_type &bv, const YVector & y,
 		int a=2,int b=2)
 {
 	if(a==-1) {
@@ -1192,7 +1231,26 @@ RVector V_Add( const RVector & r, const XVector & x, const YVector & y)
 template<class RVector,class XVector,class YVector>
 RVector V_Add( const RVector & r, const XVector & x, const typename XVector::scalar_type  & bv, const YVector & y )
 {
-  return V_AddVector(r,bv,x,bv,y,1,2);
+  int b = 2;
+ /* if(bv == 0) b = 0;
+  if(bv == 1) b = 1;
+  if(bv == -1) b = -1;*/
+  return V_AddVector(r,bv,x,bv,y,1,b);
+}
+
+template<class RVector,class XVector,class YVector>
+RVector V_Add( const RVector & r, const typename XVector::scalar_type  & av, const XVector & x, const typename XVector::scalar_type  & bv, const YVector & y )
+{
+  int a = 2;
+  int b = 2;
+  /*if(av == 0) a = 0;
+  if(av == 1) a = 1;
+  if(av == -1) a = -1;
+  if(bv == 0) b = 0;
+  if(bv == 1) b = 1;
+  if(bv == -1) b = -1;*/
+
+  return V_AddVector(r,av,x,bv,y,a,b);
 }
 
 template<class XVector, class YVector>
@@ -1200,7 +1258,7 @@ struct V_DotFunctor
 {
   typedef typename XVector::device_type        device_type;
   typedef typename XVector::size_type            size_type;
-  typedef typename XVector::scalar_type 	   value_type;
+  typedef typename XVector::non_const_scalar_type 	   value_type;
   XVector  m_x ;
   YVector   m_y ;
 
@@ -1216,14 +1274,14 @@ struct V_DotFunctor
   }
 
   KOKKOS_INLINE_FUNCTION
-  static void init( volatile value_type &update)
+  void init( volatile value_type &update) const
   {
     update = 0;
   }
 
   KOKKOS_INLINE_FUNCTION
-  static void join( volatile value_type &update ,
-                    const volatile value_type &source )
+  void join( volatile value_type &update ,
+                    const volatile value_type &source ) const
   {
 	update += source ;
   }
@@ -1234,7 +1292,7 @@ typename XVector::scalar_type V_Dot( const XVector & x, const YVector & y, int n
 {
   V_DotFunctor<XVector,YVector> f(x,y);
   if (n<0) n = x.dimension_0();
-  typename XVector::scalar_type ret_val;
+  typename XVector::non_const_scalar_type ret_val;
   parallel_reduce(n,f,ret_val);
   return ret_val;
 }

@@ -627,9 +627,25 @@ namespace Tpetra {
       // copy from 2-D storage in lclInds2D_ resp. values2D_ into 1-D
       // storage in inds resp. vals.
 
-      ptrs = sparse_ops_type::allocRowPtrs (node, numRowEntries_ ());
-      inds = sparse_ops_type::template allocStorage<LO> (node, ptrs ());
-      vals = sparse_ops_type::template allocStorage<Scalar> (node, ptrs ());
+      typename Graph::t_RowPtrs tmpk_ptrs = Graph::t_RowPtrs("Tpetra::CrsGraph::RowPtrs",numRowEntries_.size()+1);
+      ptrs = Teuchos::arcp(tmpk_ptrs.ptr_on_device(), 0, tmpk_ptrs.dimension_0(),
+                                         Kokkos::Compat::deallocator(tmpk_ptrs), false);
+      k_ptrs = tmpk_ptrs;
+      // hack until we get parallel_scan in kokkos
+      for(int i = 0; i < numRowEntries_.size(); i++) {
+        tmpk_ptrs(i+1) = k_ptrs(i)+numRowEntries_[i];
+      }
+
+      k_inds = Graph::t_LocalOrdinal_1D("Tpetra::CrsGraph::lclInds1D_",*(ptrs.end()-1));
+      inds = Teuchos::arcp(k_inds.ptr_on_device(), 0, k_inds.dimension_0(),
+                                     Kokkos::Compat::deallocator(k_inds), false);
+      k_vals = t_ValuesType("Tpetra::CrsMatrix::values1D_",*(ptrs.end()-1));
+      vals = Teuchos::arcp(k_vals.ptr_on_device(), 0, k_vals.dimension_0(),
+                                 Kokkos::Compat::deallocator(k_vals), false);
+
+//      ptrs = sparse_ops_type::allocRowPtrs (node, numRowEntries_ ());
+//      inds = sparse_ops_type::template allocStorage<LO> (node, ptrs ());
+//      vals = sparse_ops_type::template allocStorage<Scalar> (node, ptrs ());
 
       // numRowEntries_ tells the number of valid entries
       // in each row (as opposed to the allocated size)
@@ -777,7 +793,7 @@ namespace Tpetra {
     lclMatrix_ = null;
     lclMatrix_ = rcp (new local_matrix_type (staticGraph_->getLocalGraph (), lclparams));
     lclMatrix_->setValues (vals);
-    k_lclMatrix_ = k_local_matrix_type("TPetra::CrsMatrix::k_lclMatrix_",100,k_vals,staticGraph_->getLocalGraph_Kokkos());
+    k_lclMatrix_ = k_local_matrix_type("TPetra::CrsMatrix::k_lclMatrix_",getNodeNumCols(),k_vals,staticGraph_->getLocalGraph_Kokkos());
     // Now the matrix has vals, so we don't need to keep it here.
     vals = null;
     k_vals = t_ValuesType();

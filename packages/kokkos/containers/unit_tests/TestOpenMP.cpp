@@ -62,6 +62,7 @@
 
 namespace Test {
 
+#ifdef KOKKOS_HAVE_OPENMP
 class openmp : public ::testing::Test {
 protected:
   static void SetUpTestCase()
@@ -126,6 +127,6 @@ OPENMP_DEEP_COPY( 10000, 5000 )
 #undef OPENMP_FAILED_INSERT_TEST
 #undef OPENMP_ASSIGNEMENT_TEST
 #undef OPENMP_DEEP_COPY
-
+#endif
 } // namespace test
 

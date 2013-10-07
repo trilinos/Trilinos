@@ -35,7 +35,51 @@ namespace Kokkos {
       static const bool isCUDANode = false;
 #endif
 
+      KokkosDeviceWrapperNode(Teuchos::ParameterList &pl) {
+        ParameterList params = getDefaultParameters();
+        params.setParameters(pl);
+        const int curNumThreads = params.get<int>("Num Threads");
+        const int curNumTeams = params.get<int>("Num Teams");
+        const int curDevice = params.get<int>("Device");
+        int verboseInt = params.get<int>("Verbose");
+        bool verbose = (verboseInt != 0);
+        if (verbose) {
+          std::cout << "DeviceWrapperNode initializing with \"numthreads\" = "
+                    << curNumThreads << ", \"numteams\" = " << curNumTeams
+                    << " \"device\" = " << curDevice << std::endl;
+        }
+        init (curNumTeams,curNumThreads,curDevice);
+      }
 
+      KokkosDeviceWrapperNode() {
+        ParameterList params = getDefaultParameters();
+        const int curNumThreads = params.get<int>("Num Threads");
+        const int curNumTeams = params.get<int>("Num Teams");
+        const int curDevice = params.get<int>("Device");
+        int verboseInt = params.get<int>("Verbose");
+        bool verbose = (verboseInt != 0);
+        if (verbose) {
+          std::cout << "DeviceWrapperNode initializing with \"numthreads\" = "
+              << curNumThreads << ", \"numteams\" = " << curNumTeams
+              << " \"device\" = " << curDevice << std::endl;
+        }
+        init (curNumTeams,curNumThreads,curDevice);
+      };
+
+      ~KokkosDeviceWrapperNode() {
+        DeviceType::finalize();
+      }
+
+      ParameterList getDefaultParameters() {
+        ParameterList params;
+        params.set("Verbose",     0);
+        params.set("Num Threads", 1);
+        params.set("Num Teams", 1);
+        params.set("Device", 0);
+        return params;
+      }
+
+      void init(int numteams, int numthreads, int device);
 
       template <class WDP>
       struct FunctorParallelFor {
@@ -225,31 +269,17 @@ namespace Kokkos {
       //@}
   };
 
- /* class KokkosCudaWrapperNode: public KokkosDeviceWrapperNode<Kokkos::Cuda> {
-    KokkosCudaWrapperNode(Teuchos::ParameterList &pl);
-    KokkosCudaWrapperNode();
-    ~KokkosCudaWrapperNode();
-    static ParameterList getDefaultParameters();
-    void init(int device);
-  };
+  #ifdef KOKKOS_HAVE_CUDA
+    typedef  KokkosDeviceWrapperNode<Kokkos::Cuda> KokkosCudaWrapperNode;
+  #endif
 
-  class KokkosOpenMPWrapperNode: public KokkosDeviceWrapperNode<Kokkos::OpenMP> {
-    KokkosOpenMPWrapperNode(Teuchos::ParameterList &pl);
-    KokkosOpenMPWrapperNode();
-    ~KokkosOpenMPWrapperNode();
-    static ParameterList getDefaultParameters();
-    void init(int device);
-  };*/
+  #ifdef KOKKOS_HAVE_OPENMP
+    typedef  KokkosDeviceWrapperNode<Kokkos::OpenMP> KokkosOpenMPWrapperNode;
+  #endif
 
-  class KokkosThreadsWrapperNode: public KokkosDeviceWrapperNode<Kokkos::Threads> {
-  public:
-    KokkosThreadsWrapperNode(Teuchos::ParameterList &pl);
-    KokkosThreadsWrapperNode();
-    ~KokkosThreadsWrapperNode();
-    static ParameterList getDefaultParameters();
-    void init(int device);
-  };
-
+  #ifdef KOKKOS_HAVE_PTHREAD
+    typedef  KokkosDeviceWrapperNode<Kokkos::Threads> KokkosThreadsWrapperNode;
+  #endif
   }
-} // end of namespace KokkosClassic
+} // end of namespace Kokkos
 #endif
