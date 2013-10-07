@@ -300,6 +300,8 @@ namespace stk {
         void add_results_field(stk::mesh::FieldBase &field, const std::string &db_name = std::string());
 
         void add_results_global(const std::string &globalVarName, Ioss::Field::BasicType dataType);
+        void add_results_global(const std::string &globalVarName, const std::string &type, Ioss::Field::BasicType dataType);
+        void add_results_global(const std::string &globalVarName, int component_count,     Ioss::Field::BasicType dataType);
 
         /**
          * Add a transient step to the results database at time 'time'.
@@ -320,8 +322,10 @@ namespace stk {
         int process_output_request();
         int process_output_request(double time);
         int process_output_request(double time, const std::set<const stk::mesh::Part*> &exclude);
-        void write_results_global(const std::string &globalVarName, double dataType);
-        void write_results_global(const std::string &globalVarName, int dataType);
+        void write_results_global(const std::string &globalVarName, double data);
+        void write_results_global(const std::string &globalVarName, int data);
+        void write_results_global(const std::string &globalVarName, std::vector<double>& data);
+        void write_results_global(const std::string &globalVarName, std::vector<int>& data);
 
         /** RESTART **/
         /**
@@ -352,10 +356,16 @@ namespace stk {
 
         void add_restart_field(stk::mesh::FieldBase &field, const std::string &db_name = std::string());
         void add_restart_global(const std::string &globalVarName, Ioss::Field::BasicType dataType);
+        void add_restart_global(const std::string &globalVarName, const std::string &type, Ioss::Field::BasicType dataType);
+        void add_restart_global(const std::string &globalVarName, int component_count, Ioss::Field::BasicType dataType);
+
         int  process_restart_output(double time);
         int  process_restart_output();
-        void write_restart_global(const std::string &globalVarName, double dataType);
-        void write_restart_global(const std::string &globalVarName, int dataType);
+        void write_restart_global(const std::string &globalVarName, double data);
+        void write_restart_global(const std::string &globalVarName, int data);
+        void write_restart_global(const std::string &globalVarName, std::vector<int> &data);
+        void write_restart_global(const std::string &globalVarName, std::vector<double> &data);
+  
         double process_restart_input(int step);
         double process_restart_input(double time);
 

@@ -46,11 +46,20 @@ void testGlobalVarOnFile(const std::string &outputFileName, const int stepNumber
     for(size_t i=0; i<goldGlobalVarName.size(); i++)
     {
         EXPECT_STRCASEEQ(goldGlobalVarName[i].c_str(), fieldNames[i].c_str());
-        double doubleGlobalValue = -1;
-        inputRegion.get_field_data(fieldNames[i], &doubleGlobalValue, sizeof(double));
-        //Workaround exodus only storing doubles
-        DataType globalValue = static_cast<DataType>(doubleGlobalValue);
-        EXPECT_NEAR(goldGlobalVarValue[i], globalValue, tolerance);
+	std::vector<double> doubleGlobalValue;
+        inputRegion.get_field_data(fieldNames[i], doubleGlobalValue);
+
+	Ioss::Field field = inputRegion.get_field(fieldNames[i]);
+	size_t num_components = field.transformed_storage()->component_count();
+	EXPECT_EQ(num_components, doubleGlobalValue.size());
+
+	for (size_t j=0; j < num_components; j++) {
+	  //Workaround exodus only storing doubles
+	  DataType globalValue = static_cast<DataType>(doubleGlobalValue[j]);
+	  // For a multi-component global variable, the value is 'goldGlobalVarValue' + 0.1 * the component
+	  // E.g., a vector_3d with goldGlobalVarValue 42 would have values 42.0 42.1 42.2
+	  EXPECT_NEAR(goldGlobalVarValue[i]+0.1*j, globalValue, tolerance);
+	}
     }
 }
 
@@ -101,6 +110,79 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDouble)
     std::vector<std::string> globalVarNames(1, globalVarName);
     std::vector<double> globalVarValues(1,globalVarValue);
     testGlobalVarOnFile(outputFileName, stepNumber, globalVarNames, globalVarValues, communicator);
+    unlink(outputFileName.c_str());
+}
+
+STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleVector3)
+{
+    const std::string outputFileName = "OneGlobalDoubleVector3.exo";
+    const std::string globalVarName = "testGlobal";
+    std::vector<double> globalVarValue;
+    globalVarValue.push_back(13.0);
+    globalVarValue.push_back(13.1);
+    globalVarValue.push_back(13.2);
+
+    MPI_Comm communicator = MPI_COMM_WORLD;
+    {
+        stk::io::MeshData stkIo(communicator);
+        generateMetaData(stkIo);
+        stkIo.populate_bulk_data();
+
+        stkIo.create_output_mesh(outputFileName);
+
+        stkIo.add_results_global(globalVarName, "vector_3d", Ioss::Field::REAL);
+
+        const double time = 1.0;
+        stkIo.begin_results_output_at_time(time);
+
+        stkIo.write_results_global(globalVarName, globalVarValue);
+
+        stkIo.end_current_results_output();
+    }
+
+    const int stepNumber = 1;
+    std::vector<std::string> globalVarNames(1, globalVarName);
+    testGlobalVarOnFile(outputFileName, stepNumber, globalVarNames, globalVarValue, communicator);
+    unlink(outputFileName.c_str());
+}
+
+STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDouble10)
+{
+    const std::string outputFileName = "OneGlobalDouble10.exo";
+    const std::string globalVarName = "testGlobal";
+    std::vector<double> globalVarValue;
+    globalVarValue.push_back(13.0);
+    globalVarValue.push_back(13.1);
+    globalVarValue.push_back(13.2);
+    globalVarValue.push_back(13.3);
+    globalVarValue.push_back(13.4);
+    globalVarValue.push_back(13.5);
+    globalVarValue.push_back(13.6);
+    globalVarValue.push_back(13.7);
+    globalVarValue.push_back(13.8);
+    globalVarValue.push_back(13.9);
+
+    MPI_Comm communicator = MPI_COMM_WORLD;
+    {
+        stk::io::MeshData stkIo(communicator);
+        generateMetaData(stkIo);
+        stkIo.populate_bulk_data();
+
+        stkIo.create_output_mesh(outputFileName);
+
+        stkIo.add_results_global(globalVarName, globalVarValue.size(), Ioss::Field::REAL);
+
+        const double time = 1.0;
+        stkIo.begin_results_output_at_time(time);
+
+        stkIo.write_results_global(globalVarName, globalVarValue);
+
+        stkIo.end_current_results_output();
+    }
+
+    const int stepNumber = 1;
+    std::vector<std::string> globalVarNames(1, globalVarName);
+    testGlobalVarOnFile(outputFileName, stepNumber, globalVarNames, globalVarValue, communicator);
     unlink(outputFileName.c_str());
 }
 

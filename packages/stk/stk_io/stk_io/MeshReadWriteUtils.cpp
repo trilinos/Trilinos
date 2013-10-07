@@ -45,7 +45,25 @@ namespace {
   {
       ThrowErrorMsgIf (Teuchos::is_null(output_region),
                        "There is no Output mesh region associated with this Mesh Data.");
+      ThrowErrorMsgIf (!output_region->field_exists(globalVarName),
+                       "The field named '" << globalVarName << "' does not exist.");
       output_region->put_field_data(globalVarName, &globalVarData, sizeof(DataType));
+  }
+
+  template <typename DataType>
+  void internal_write_global(Teuchos::RCP<Ioss::Region> output_region, const std::string &globalVarName,
+			     std::vector<DataType> &globalVarData)
+  {
+      ThrowErrorMsgIf (Teuchos::is_null(output_region),
+                       "There is no Output mesh region associated with this Mesh Data.");
+      ThrowErrorMsgIf (!output_region->field_exists(globalVarName),
+                       "The field named '" << globalVarName << "' does not exist.");
+      ThrowErrorMsgIf ((size_t)output_region->get_fieldref(globalVarName).raw_storage()->component_count() != globalVarData.size(),
+                       "The field named '" << globalVarName << "' was registered with size "
+		       << output_region->get_fieldref(globalVarName).raw_storage()->component_count()
+		       << " but the output size is " << globalVarData.size());
+
+      output_region->put_field_data(globalVarName, globalVarData);
   }
 
   void process_surface_entity(Ioss::SideSet *sset, stk::mesh::MetaData &meta)
@@ -1378,13 +1396,40 @@ namespace stk {
         internal_write_global(m_restart_region, globalVarName, globalVarData);
     }
 
+    void MeshData::write_restart_global(const std::string &globalVarName, std::vector<double>& globalVarData)
+    {
+        internal_write_global(m_restart_region, globalVarName, globalVarData);
+    }
+
+    void MeshData::write_restart_global(const std::string &globalVarName, std::vector<int>& globalVarData)
+    {
+        internal_write_global(m_restart_region, globalVarName, globalVarData);
+    }
+
     void MeshData::add_restart_global(const std::string &globalVarName, Ioss::Field::BasicType dataType)
+    {
+      add_restart_global(globalVarName, "scalar", dataType);
+    }
+
+    void MeshData::add_restart_global(const std::string &globalVarName, int component_count, Ioss::Field::BasicType dataType)
+    {
+      if (component_count == 1) {
+	add_restart_global(globalVarName, "scalar", dataType);
+      } else {
+	std::ostringstream type;
+	type << "Real[" << component_count << "]";
+	add_restart_global(globalVarName, type.str(), dataType);
+      }
+    }
+
+    void MeshData::add_restart_global(const std::string &globalVarName, const std::string &storage_type,
+				      Ioss::Field::BasicType dataType)
     {
         ThrowErrorMsgIf (m_restart_region->field_exists(globalVarName),
                          "Attempt to add global variable '" << globalVarName << "' twice.");
         //Any field put onto the region instead of a element block, etc. gets written as "global" to exodus
         int numberOfThingsToOutput = 1;
-        m_restart_region->field_add(Ioss::Field(globalVarName, dataType, "scalar", Ioss::Field::TRANSIENT, numberOfThingsToOutput));
+        m_restart_region->field_add(Ioss::Field(globalVarName, dataType, storage_type, Ioss::Field::TRANSIENT, numberOfThingsToOutput));
     }
 
     void MeshData::begin_restart_output_at_time(double time)
@@ -1692,11 +1737,29 @@ namespace stk {
     // ========================================================================
     void MeshData::add_results_global(const std::string &globalVarName, Ioss::Field::BasicType dataType)
     {
+      add_results_global(globalVarName, "scalar", dataType);
+    }
+
+    void MeshData::add_results_global(const std::string &globalVarName, int component_count, Ioss::Field::BasicType dataType)
+    {
+      if (component_count == 1) {
+	add_restart_global(globalVarName, "scalar", dataType);
+      } else {
+	std::ostringstream type;
+	type << "Real[" << component_count << "]";
+	add_results_global(globalVarName, type.str(), dataType);
+      }
+    }
+
+    void MeshData::add_results_global(const std::string &globalVarName, const std::string &storage,
+				      Ioss::Field::BasicType dataType)
+    {
         ThrowErrorMsgIf (m_output_region->field_exists(globalVarName),
                          "Attempt to add global variable '" << globalVarName << "' twice.");
         //Any field put onto the region instead of a element block, etc. gets written as "global" to exodus
+
         int numberOfThingsToOutput = 1;
-        m_output_region->field_add(Ioss::Field(globalVarName, dataType, "scalar", Ioss::Field::TRANSIENT, numberOfThingsToOutput));
+        m_output_region->field_add(Ioss::Field(globalVarName, dataType, storage, Ioss::Field::TRANSIENT, numberOfThingsToOutput));
     }
 
 
@@ -1706,6 +1769,16 @@ namespace stk {
     }
 
     void MeshData::write_results_global(const std::string &globalVarName, int globalVarData)
+    {
+        internal_write_global(m_output_region, globalVarName, globalVarData);
+    }
+
+    void MeshData::write_results_global(const std::string &globalVarName, std::vector<double>& globalVarData)
+    {
+        internal_write_global(m_output_region, globalVarName, globalVarData);
+    }
+
+    void MeshData::write_results_global(const std::string &globalVarName, std::vector<int>& globalVarData)
     {
         internal_write_global(m_output_region, globalVarName, globalVarData);
     }
