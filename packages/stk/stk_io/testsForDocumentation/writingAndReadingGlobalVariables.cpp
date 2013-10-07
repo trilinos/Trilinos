@@ -4,6 +4,7 @@
 #include <mpi.h>
 #include <stk_io/MeshReadWriteUtils.hpp>
 #include <Ioss_SubSystem.h>
+#include <fieldNameTestUtils.hpp>
 
 namespace
 {
