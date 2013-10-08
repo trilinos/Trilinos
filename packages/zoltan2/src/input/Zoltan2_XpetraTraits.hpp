@@ -243,8 +243,7 @@ struct XpetraTraits<Epetra_CrsMatrix>
     }
 
     // target matrix
-    RCP<Epetra_CrsMatrix> M = rcp(
-      new Epetra_CrsMatrix(Copy, tmap, nnz.getRawPtr(), true));
+    RCP<Epetra_CrsMatrix> M = rcp(new Epetra_CrsMatrix(::Copy, tmap, nnz.getRawPtr(), true));
     M->Import(*from, importer, Insert);
     M->FillComplete();
 
@@ -478,8 +477,7 @@ struct XpetraTraits<Epetra_CrsGraph>
     }
 
     // target graph
-    RCP<Epetra_CrsGraph> G = rcp(
-      new Epetra_CrsGraph(Copy, tmap, nnz.getRawPtr(), true));
+    RCP<Epetra_CrsGraph> G = rcp(new Epetra_CrsGraph(::Copy, tmap, nnz.getRawPtr(), true));
     G->Import(*from, importer, Insert);
     G->FillComplete();
 
