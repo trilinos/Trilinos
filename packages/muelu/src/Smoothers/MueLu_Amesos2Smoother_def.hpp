@@ -89,6 +89,13 @@ namespace MueLu {
 #endif
     }
 
+    // Note: one could choose Umfpack for an Amesos solver. However, we check whether have Tpetra and/or Epetra
+    //       and if type_ == "Umfpack" we have to change it here. Otherwise we would run into an exception.
+    if (type_ == "Umfpack" && Amesos2::query(type_) == false) {
+      type_ = "Klu";
+      this->GetOStream(Warnings0, 0) << "Warning: MueLu::Amesos2Smoother: Umfpack not available. Try to use Klu2 instead" << std::endl;
+    }
+
     //TMP: Amesos2 KLU never available but most MueLu tests are using KLU by default
     // (ex: examples driven by ML parameter lists)
     // -> temporarily fallback to SUPERLU or SUPERLU_dist
