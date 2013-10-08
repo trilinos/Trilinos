@@ -29,7 +29,7 @@ namespace Kokkos {
 
 #ifdef KOKKOS_HAVE_CUDA
       static const bool isHostNode = !Kokkos::Impl::is_same<DeviceType,Kokkos::Cuda>::value;
-      static const bool isCUDANode = Kokkos::Impl::is_same<DeviceType,Kokkos::Cuda>::value;;
+      static const bool isCUDANode = Kokkos::Impl::is_same<DeviceType,Kokkos::Cuda>::value;
 #else
       static const bool isHostNode = true;
       static const bool isCUDANode = false;
