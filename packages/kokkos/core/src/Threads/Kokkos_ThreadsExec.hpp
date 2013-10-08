@@ -128,10 +128,14 @@ private:
 
   static void execute_serial( void (*)( ThreadsExec & , const void * ) );
 
-  inline void * reduce_base() const { return ((unsigned char *) m_reduce) + REDUCE_TEAM_BASE ; }
   inline void * reduce_team() const { return m_reduce ; }
 
 public:
+
+  static int get_thread_count();
+  static ThreadsExec * get_thread( const int init_thread_rank );
+
+  inline void * reduce_base() const { return ((unsigned char *) m_reduce) + REDUCE_TEAM_BASE ; }
 
   static void driver(void);
 
@@ -159,11 +163,6 @@ public:
   //------------------------------------
 
   static void wait_yield( volatile int & , const int );
-
-  template< class FunctorType >
-  typename ReduceAdapter< FunctorType >::reference_type
-  reduce_value( const FunctorType & ) const
-    { return ReduceAdapter< FunctorType >::reference( reduce_base() ); }
 
   //------------------------------------
   // All-thread functions:
@@ -212,7 +211,7 @@ public:
 
   template< class FunctorType >
   inline
-  void scan( const FunctorType & f )
+  void scan_large( const FunctorType & f )
     {
       // Sequence of states:
       //  0) Active             : entry and exit state
@@ -290,6 +289,55 @@ public:
 
       // Wait for scan value to be claimed before exiting.
       Impl::spinwait( m_state , ThreadsExec::ScanAvailable );
+    }
+
+  template< class FunctorType >
+  inline
+  void scan_small( const FunctorType & f )
+    {
+      typedef ReduceAdapter< FunctorType > Reduce ;
+      typedef typename Reduce::scalar_type scalar_type ;
+
+      const bool     not_root = m_init_thread_rank + 1 < m_init_thread_size ;
+      const unsigned count    = Reduce::value_count( f );
+
+      scalar_type * const work_value = (scalar_type *) reduce_base();
+
+      //--------------------------------
+      // Fan-in reduction with highest ranking thread as the root
+      for ( int i = 0 ; i < m_fan_size ; ++i ) {
+        // Wait: Active -> Rendezvous
+        Impl::spinwait( m_fan[i]->m_state , ThreadsExec::Active );
+      }
+
+      for ( unsigned i = 0 ; i < count ; ++i ) { work_value[i+count] = work_value[i]; }
+
+      if ( not_root ) {
+        m_state = ThreadsExec::Rendezvous ;
+        // Wait: Rendezvous -> Active
+        Impl::spinwait( m_state , ThreadsExec::Rendezvous );
+      }
+      else {
+        // Root thread does the thread-scan before releasing threads
+
+        scalar_type * ptr_prev = 0 ;
+
+        for ( int rank = 0 ; rank < m_init_thread_size ; ++rank ) {
+          scalar_type * const ptr = (scalar_type *) get_thread( rank )->reduce_base();
+          if ( rank ) {
+            for ( unsigned i = 0 ; i < count ; ++i ) { ptr[i] = ptr_prev[ i + count ]; }
+            f.join( Reduce::reference( ptr + count ), Reduce::reference( ptr ) );
+          }
+          else {
+            f.init( Reduce::reference( ptr ) );
+          }
+          ptr_prev = ptr ;
+        }
+      }
+
+      for ( int i = 0 ; i < m_fan_size ; ++i ) {
+        m_fan[i]->m_state = ThreadsExec::Active ;
+      }
     }
 
   //------------------------------------
@@ -455,10 +503,10 @@ inline void Threads::print_configuration( std::ostream & s , const bool detail )
   Impl::ThreadsExec::print_configuration( s , detail );
 }
 
-inline int Threads::league_max()
+inline unsigned Threads::league_max()
 { return Impl::ThreadsExec::league_max() ; }
 
-inline int Threads::team_max()
+inline unsigned Threads::team_max()
 { return Impl::ThreadsExec::team_max() ; }
 
 inline bool Threads::sleep()

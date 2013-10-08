@@ -272,6 +272,18 @@ class ParallelScan ;
 } // namespace Impl
 } // namespace Kokkos
 
+namespace Kokkos {
+
+template< class FunctorType >
+inline
+void parallel_scan( const size_t        work_count ,
+                    const FunctorType & functor )
+{
+  Impl::ParallelScan< FunctorType , size_t > scan( functor , work_count );
+}
+
+} // namespace Kokkos
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 

@@ -66,6 +66,7 @@
 #include <TestCrsArray.hpp>
 #include <TestRequest.hpp>
 #include <TestReduce.hpp>
+#include <TestScan.hpp>
 #include <TestMultiReduce.hpp>
 
 namespace Test {
@@ -217,6 +218,23 @@ TEST_F( openmp , view_remap )
 }
 
 //----------------------------------------------------------------------------
+
+TEST_F( openmp , scan )
+{
+  for ( int i = 0 ; i < 100 ; ++i ) {
+    TestScan< Kokkos::OpenMP >( 1000 );
+  }
+  TestScan< Kokkos::OpenMP >( 1000000 );
+  TestScan< Kokkos::OpenMP >( 10000000 );
+}
+
+
+TEST_F( openmp , team_scan )
+{
+  TestScanRequest< Kokkos::OpenMP >( 10 );
+  TestScanRequest< Kokkos::OpenMP >( 10000 );
+}
+
 
 } // namespace test
 

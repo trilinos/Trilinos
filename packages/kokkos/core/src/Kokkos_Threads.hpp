@@ -181,8 +181,8 @@ public:
                           unsigned use_numa_count = 0 ,
                           unsigned use_cores_per_numa = 0 );
 
-  static int league_max();
-  static int team_max();
+  static unsigned league_max();
+  static unsigned team_max();
 
   //@}
   /*------------------------------------------------------------------------*/
