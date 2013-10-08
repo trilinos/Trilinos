@@ -49,9 +49,6 @@
 
 namespace Tpetra {
 
-// No one but expert Tpetra/Kokkos developers should ever use this code
-//namespace KokkosRefactor {
-
 /// \class Vector
 /// \brief A distributed dense vector.
 ///
@@ -244,7 +241,6 @@ Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::clone(const RCP<Node2> &node2
         clonedV_view = Teuchos::null;
         return clonedV;
   }*/
-//} // namespace KokkosRefactor
 
 } // namespace Tpetra
 

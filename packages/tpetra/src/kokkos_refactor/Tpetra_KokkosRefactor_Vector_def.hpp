@@ -55,8 +55,6 @@
 
 namespace Tpetra {
 
-//namespace KokkosRefactor {
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
   Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::Vector(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut)
     : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>(map,1,zeroOut) {
@@ -276,8 +274,6 @@ namespace Tpetra {
       }
     }
   }
-
-//} // namespace KokkosRefactor
 
 } // namespace Tpetra
 

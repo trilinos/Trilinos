@@ -78,9 +78,6 @@ namespace Tpetra {
   template<class LO, class GO, class N> class Map;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
-  // No one but expert Tpetra/Kokkos developers should ever use this code
- // namespace KokkosRefactor {
-
   /// \class MultiVector
   /// \brief One or more distributed dense vectors.
   ///
@@ -1221,8 +1218,6 @@ namespace Tpetra {
         clonedMV_view = Teuchos::null;
         return clonedMV;
   }*/
-
-//} // namespace KokkosRefactor
 
 } // namespace Tpetra
 

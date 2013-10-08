@@ -1194,8 +1194,8 @@ namespace Tpetra {
   dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &A,
        const Teuchos::ArrayView<Scalar> &dots) const
   {
-    Kokkos::MV_Dot(&dots[0],view_.d_view,A.view_.d_view)
-    /*using Teuchos::Array;
+    Kokkos::MV_Dot(&dots[0],view_.d_view,A.view_.d_view);
+    using Teuchos::Array;
     using Teuchos::ArrayRCP;
     using Teuchos::as;
     using Teuchos::arcp_const_cast;
@@ -1216,6 +1216,7 @@ namespace Tpetra {
         ": MultiVectors must have the same number of vectors.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(dots.size()) != numVecs, std::runtime_error,
         ": dots.size() must be as large as the number of vectors in *this and A.");
+    /*
     if (isConstantStride() && A.isConstantStride()) {
       MVT::Dot(lclMV_,A.lclMV_,dots);
     }
@@ -1230,13 +1231,13 @@ namespace Tpetra {
         MVT::initializeValues(v,myLen, 1,  vj, myLen);
         dots[j] = MVT::Dot((const KMV&)v,(const KMV &)a);
       }
-    }*/
+    }
+    */
     if (this->isDistributed()) {
       Array<Scalar> ldots(dots);
       Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,as<int>(numVecs),ldots.getRawPtr(),dots.getRawPtr());
     }
   }
-
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
@@ -3018,8 +3019,6 @@ namespace Tpetra {
   {
     replaceMap (newMap);
   }
-
- // namespace KokkosRefactor
 
 } // namespace Tpetra
 

@@ -50,13 +50,9 @@
 
 namespace Tpetra {
 
-namespace KokkosRefactor {
-
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
   TPETRA_INSTANTIATE_VECTOR(TPETRA_VECTOR_INSTANT)
-
-} // namespace KokkosRefactor
 
 } // namespace Tpetra
 
