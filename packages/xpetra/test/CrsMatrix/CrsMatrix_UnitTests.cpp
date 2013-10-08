@@ -195,6 +195,65 @@ namespace {
 #endif
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, ReplaceLocalValues, Scalar, LO, GO, Node )
+  {
+#ifdef HAVE_XPETRA_EPETRA
+
+    typedef Xpetra::Map<LO, GO, Node> MapClass;
+    typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
+
+    // get a comm and node
+    RCP<const Comm<int> > comm = getDefaultComm();
+
+    Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
+    //Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+
+    // generate problem
+    LO nEle = 63;
+    const RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
+
+    RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > matrix =
+        Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 10);
+
+    LO NumMyElements = map->getNodeNumElements();
+    Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList();
+
+    for (LO i = 0; i < NumMyElements; ++i) {
+        matrix->insertGlobalValues(MyGlobalElements[i],
+                                Teuchos::tuple<GO>(MyGlobalElements[i]),
+                                Teuchos::tuple<Scalar>(1.0) );
+    }
+
+    matrix->fillComplete();
+
+    Teuchos::Array<GO> indout(1,0);
+    Teuchos::Array<Scalar> valout(1,5.0);
+    matrix->replaceLocalValues(0, indout.view(0,indout.size()), valout.view(0,valout.size()));
+
+    RCP<Xpetra::Vector<Scalar, LO, GO, Node> > vec =
+        Xpetra::VectorFactory<Scalar, LO, GO, Node>::Build(map);
+
+    vec->putScalar(1.0);
+
+    RCP<Xpetra::Vector<Scalar, LO, GO, Node> > vec_sol =
+        Xpetra::VectorFactory<Scalar, LO, GO, Node>::Build(matrix->getRangeMap());
+
+    vec_sol->putScalar(0.0);
+
+    matrix->apply(*vec, *vec_sol, Teuchos::NO_TRANS, 1.0, 0.0);
+
+    RCP<Xpetra::Vector<Scalar, LO, GO, Node> > vectest =
+        Xpetra::VectorFactory<Scalar, LO, GO, Node>::Build(map);
+    vectest->putScalar(1.0);
+    Teuchos::ArrayRCP<Scalar> vectestData = vectest->getDataNonConst(0);
+    vectestData[0] = 5.0;
+
+    vec_sol->update(-1.0,*vectest,1.0);
+
+    TEUCHOS_TEST_COMPARE(vec_sol->norm2(), <, 1e-16, out, success);
+#endif
+  }
+
 #ifdef HAVE_XPETRA_EXPERIMENTAL
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, TpetraDeepCopy, Scalar, LO, GO, Node )
   {
@@ -310,6 +369,8 @@ namespace {
 
 #define UNIT_TEST_GROUP_ORDINAL( SC, LO, GO, Node )                     \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Apply, SC, LO, GO, Node )
+#define UNIT_TEST_GROUP_ORDINAL( SC, LO, GO, Node )                     \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ReplaceLocalValues, SC, LO, GO, Node )
 #define UNIT_TEST_GROUP_ORDINAL1( SC, LO, GO, Node )                     \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TpetraDeepCopy, SC, LO, GO, Node )
 #define UNIT_TEST_GROUP_ORDINAL2( SC, LO, GO, Node )                     \
