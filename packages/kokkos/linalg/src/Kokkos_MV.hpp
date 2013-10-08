@@ -751,8 +751,8 @@ RVector MV_Add( const RVector & r, const XVector & x, const YVector & y)
 
     V_Add(r_1d,x_1d,y_1d);
     return r;
-  } else
-	typename XVector::scalar_type a = 1.0;
+  }
+  typename XVector::scalar_type a = 1.0;
   return MV_Add(r,a,x,a,y,1,1);
 }
 
