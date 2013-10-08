@@ -492,20 +492,23 @@ const StepStatus<Scalar> ImplicitBDFStepper<Scalar>::getStepStatus() const
     stepStatus.stepSize = Scalar(-ST::one());
     stepStatus.order = -1;
     stepStatus.time = Scalar(-ST::one());
-    return(stepStatus);
+//    return(stepStatus);
   }
-
-  if (numberOfSteps_ > 0) {
+  else if (numberOfSteps_ > 0) {
     stepStatus.stepStatus = STEP_STATUS_CONVERGED;
   } else {
     stepStatus.stepStatus = STEP_STATUS_UNKNOWN;
   }
+
   stepStatus.stepLETStatus = stepLETStatus_;
   stepStatus.stepSize = usedStep_;
   stepStatus.order = usedOrder_;
   stepStatus.time = time_;
   stepStatus.stepLETValue = LETvalue_;
-  stepStatus.solution = xHistory_[0];
+  if(xHistory_.size() > 0)
+    stepStatus.solution = xHistory_[0];
+  else
+    stepStatus.solution = Teuchos::null;
   stepStatus.solutionDot = Teuchos::null; // This is *not* free!
   stepStatus.residual = Teuchos::null; // This is *not* free!
 
