@@ -149,13 +149,6 @@ IF(Stokhos_ENABLE_TriKota)
 
   IF(Stokhos_ENABLE_AztecOO AND Stokhos_ENABLE_ML)
 
-     TRIBITS_ADD_EXECUTABLE(
-       Linear2D_Diffusion_Collocation_Example
-       SOURCES linear2d_diffusion_collocation.cpp
-       COMM serial mpi
-       DEPLIBS stokhos linear2d_diffusion
-     )
-
      IF(Stokhos_ENABLE_Stratimikos)
 
        TRIBITS_ADD_EXECUTABLE(
@@ -203,6 +196,20 @@ IF(Stokhos_ENABLE_AztecOO AND Stokhos_ENABLE_ML)
        NUM_MPI_PROCS 2
        PASS_REGULAR_EXPRESSION "Example Passed!"
       )
+
+    TRIBITS_ADD_EXECUTABLE(
+       Linear2D_Diffusion_Collocation_Example
+       SOURCES linear2d_diffusion_collocation.cpp
+       COMM serial mpi
+       DEPLIBS stokhos linear2d_diffusion
+     )
+
+     TRIBITS_ADD_EXECUTABLE(
+       Linear2D_Diffusion_Multipoint_Commuted_Example
+       SOURCES linear2d_diffusion_multipoint_commuted.cpp
+       COMM serial mpi
+       DEPLIBS stokhos linear2d_diffusion
+     )
 
     TRIBITS_COPY_FILES_TO_BINARY_DIR(copyInterlacedScripts
       DEST_FILES   check_interlaced_solution.py

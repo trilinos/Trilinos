@@ -59,20 +59,15 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-// I/O utilities
-#include "EpetraExt_VectorOut.h"
+// Block utilities
+#include "EpetraExt_BlockUtility.h"
+#include "EpetraExt_RowMatrixOut.h"
 
 // Krylov methods
 enum Krylov_Method { GMRES, CG };
 const int num_krylov_method = 2;
 const Krylov_Method krylov_method_values[] = { GMRES, CG };
 const char *krylov_method_names[] = { "GMRES", "CG" };
-
-// Collocation preconditioning strategies
-enum PrecStrategy { MEAN, REUSE, REBUILD };
-const int num_prec_strategy = 3;
-const PrecStrategy prec_strategy_values[] = { MEAN, REUSE, REBUILD };
-const char *prec_strategy_names[] = { "Mean", "Reuse", "Rebuild" };
 
 // Random field types
 enum SG_RF { UNIFORM, CC_UNIFORM, RYS, LOGNORMAL };
@@ -95,6 +90,15 @@ const char *sg_growth_names[] = {
   "Slow Restricted", "Moderate Restricted", "Unrestricted" };
 
 int main(int argc, char *argv[]) {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::Array;
+  using Teuchos::CommandLineProcessor;
+  using Teuchos::TimeMonitor;
+  using Teuchos::ParameterList;
+  using EpetraExt::BlockUtility;
+  using EpetraExt::ModelEvaluator;
 
 // Initialize MPI
 #ifdef HAVE_MPI
@@ -102,11 +106,11 @@ int main(int argc, char *argv[]) {
 #endif
 
   // Create a communicator for Epetra objects
-  Teuchos::RCP<Epetra_Comm> Comm;
+  RCP<Epetra_Comm> Comm;
 #ifdef HAVE_MPI
-  Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+  Comm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 #else
-  Comm = Teuchos::rcp(new Epetra_SerialComm);
+  Comm = rcp(new Epetra_SerialComm);
 #endif
 
   int MyPID = Comm->MyPID();
@@ -114,7 +118,7 @@ int main(int argc, char *argv[]) {
   try {
 
     // Setup command line options
-    Teuchos::CommandLineProcessor CLP;
+    CommandLineProcessor CLP;
     CLP.setDocString(
       "This example runs a stochastic collocation method.\n");
 
@@ -150,11 +154,6 @@ int main(int argc, char *argv[]) {
                   num_krylov_method, krylov_method_values, krylov_method_names,
                   "Krylov method");
 
-    PrecStrategy precStrategy = MEAN;
-    CLP.setOption("prec_strategy", &precStrategy,
-                  num_prec_strategy, prec_strategy_values, prec_strategy_names,
-                  "Preconditioner strategy");
-
     double tol = 1e-12;
     CLP.setOption("tol", &tol, "Solver tolerance");
 
@@ -185,8 +184,6 @@ int main(int argc, char *argv[]) {
                 << "\tnormalize_basis = " << normalize_basis << std::endl
                 << "\tkrylov_method   = " << krylov_method_names[krylov_method]
                 << std::endl
-                << "\tprec_strategy   = " << prec_strategy_names[precStrategy]
-                << std::endl
                 << "\ttol             = " << tol << std::endl
                 << "\tquadrature      = " << sg_quad_names[quad_method]
                 << std::endl
@@ -202,33 +199,32 @@ int main(int argc, char *argv[]) {
     TEUCHOS_FUNC_TIME_MONITOR("Total Collocation Calculation Time");
 
     // Create Stochastic Galerkin basis
-    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(num_KL);
+    Array< RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(num_KL);
     for (int i=0; i<num_KL; i++) {
-      Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<int,double> > b;
+      RCP<Stokhos::OneDOrthogPolyBasis<int,double> > b;
       if (randField == UNIFORM) {
-        b = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(
-                                  p, normalize_basis));
+        b = rcp(new Stokhos::LegendreBasis<int,double>(p, normalize_basis));
       }
       else if (randField == CC_UNIFORM) {
         b =
-          Teuchos::rcp(new Stokhos::ClenshawCurtisLegendreBasis<int,double>(
-                         p, normalize_basis, true));
+          rcp(new Stokhos::ClenshawCurtisLegendreBasis<int,double>(
+                p, normalize_basis, true));
       }
       else if (randField == RYS) {
-        b = Teuchos::rcp(new Stokhos::RysBasis<int,double>(
-                                  p, weightCut, normalize_basis));
+        b = rcp(new Stokhos::RysBasis<int,double>(
+                  p, weightCut, normalize_basis));
       }
       else if (randField == LOGNORMAL) {
-        b = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(
-                                  p, normalize_basis));
+        b = rcp(new Stokhos::HermiteBasis<int,double>(
+                  p, normalize_basis));
       }
       bases[i] = b;
     }
-    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis =
-      Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
+    RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis =
+      rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
 
     // Create sparse grid
-    Teuchos::RCP<Stokhos::Quadrature<int,double> > quad;
+    RCP<Stokhos::Quadrature<int,double> > quad;
     if (quad_method == SPARSE_GRID) {
 #ifdef HAVE_STOKHOS_DAKOTA
       int sparse_grid_growth = Pecos::MODERATE_RESTRICTED_GROWTH;
@@ -238,8 +234,8 @@ int main(int argc, char *argv[]) {
         sparse_grid_growth = Pecos::MODERATE_RESTRICTED_GROWTH;
       else if (sg_growth == UNRESTRICTED)
         sparse_grid_growth = Pecos::UNRESTRICTED_GROWTH;
-      quad = Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(
-                            basis,p,1e-12,sparse_grid_growth));
+      quad = rcp(new Stokhos::SparseGridQuadrature<int,double>(
+                   basis,p,1e-12,sparse_grid_growth));
 #else
       TEUCHOS_TEST_FOR_EXCEPTION(
         true, std::logic_error,
@@ -247,45 +243,95 @@ int main(int argc, char *argv[]) {
 #endif
     }
     else if (quad_method == TENSOR) {
-      quad =
-        Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
+      quad = rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
     }
-    const Teuchos::Array< Teuchos::Array<double> >& quad_points =
-      quad->getQuadPoints();
-    const Teuchos::Array<double>& quad_weights = quad->getQuadWeights();
+    const Array< Array<double> >& quad_points = quad->getQuadPoints();
+    const Array<double>& quad_weights = quad->getQuadWeights();
     int nqp = quad_weights.size();
 
     // Create application
     twoD_diffusion_ME model(Comm, n, num_KL, sigma, mean,
                             basis, nonlinear_expansion);
+    RCP<Epetra_Vector> p = rcp(new Epetra_Vector(*(model.get_p_map(0))));
+    RCP<Epetra_Vector> x = rcp(new Epetra_Vector(*(model.get_x_map())));
+    RCP<Epetra_Vector> f = rcp(new Epetra_Vector(*(model.get_f_map())));
+    RCP<Epetra_CrsMatrix> A =
+      rcp_dynamic_cast<Epetra_CrsMatrix>(model.create_W());
 
-    // Model data
-    Teuchos::RCP<Epetra_Vector> p =
-      Teuchos::rcp(new Epetra_Vector(*(model.get_p_map(0))));
-    Teuchos::RCP<Epetra_Vector> x =
-      Teuchos::rcp(new Epetra_Vector(*(model.get_x_map())));
-    Teuchos::RCP<Epetra_Vector> f =
-      Teuchos::rcp(new Epetra_Vector(*(model.get_f_map())));
-    Teuchos::RCP<Epetra_Vector> g =
-      Teuchos::rcp(new Epetra_Vector(*(model.get_g_map(0))));
-    Teuchos::RCP<Epetra_CrsMatrix> A =
-      Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(model.create_W());
-    EpetraExt::ModelEvaluator::InArgs inArgs = model.createInArgs();
-    EpetraExt::ModelEvaluator::OutArgs outArgs = model.createOutArgs();
-    EpetraExt::ModelEvaluator::OutArgs outArgs2 = model.createOutArgs();
+    // Build commuted multipoint map and operator
+    RCP<const Epetra_Map> spatial_map = model.get_x_map();
+    Epetra_LocalMap stochastic_map(nqp, 0, *Comm);
+    RCP<const Epetra_Map> product_map =
+      rcp(BlockUtility::GenerateBlockMap(stochastic_map, *spatial_map, *Comm),
+          false);
+    const Epetra_CrsGraph& spatial_graph = A->Graph();
+    Epetra_CrsGraph stochastic_graph(Copy, stochastic_map, 1, true);
+    for (int i=0; i<nqp; ++i)
+      stochastic_graph.InsertGlobalIndices(i, 1, &i);
+    stochastic_graph.FillComplete();
+    RCP<const Epetra_CrsGraph> product_graph =
+      rcp(BlockUtility::GenerateBlockGraph(stochastic_graph, spatial_graph, *Comm));
+    Epetra_CrsMatrix A_mp(Copy, *product_graph);
+    Epetra_Vector f_mp(*product_map);
+    Epetra_Vector x_mp(*product_map);
 
-    // Data to compute/store mean & variance
-    Epetra_Vector x2(*(model.get_x_map()));
-    Epetra_Vector x_mean(*(model.get_x_map()));
-    Epetra_Vector x_var(*(model.get_x_map()));
-    Epetra_Vector g2(*(model.get_g_map(0)));
-    Epetra_Vector g_mean(*(model.get_g_map(0)));
-    Epetra_Vector g_var(*(model.get_g_map(0)));
+    if (MyPID == 0) {
+      std::cout << "spatial size = " << spatial_map->NumGlobalElements()
+                << " quadrature size = " << nqp
+                << " multipoint size = " << product_map->NumGlobalElements()
+                << std::endl;
+    }
+
+    // Loop over colloction points and assemble global operator, RHS
+    int max_num_entries = A->MaxNumEntries();
+    Array<int> block_indices(max_num_entries);
+    double *values;
+    int *indices;
+    int num_entries;
+    for (int qp=0; qp<nqp; qp++) {
+      TEUCHOS_FUNC_TIME_MONITOR("Compute MP Matrix, RHS");
+
+      // Set parameters
+      for (int i=0; i<num_KL; i++)
+        (*p)[i] = quad_points[qp][i];
+
+      // Set in/out args
+      ModelEvaluator::InArgs inArgs = model.createInArgs();
+      ModelEvaluator::OutArgs outArgs = model.createOutArgs();
+      inArgs.set_p(0, p);
+      inArgs.set_x(x);
+      outArgs.set_f(f);
+      outArgs.set_W(A);
+
+      // Evaluate model at collocation point
+      x->PutScalar(0.0);
+      model.evalModel(inArgs, outArgs);
+
+      // Put f, A into global objects
+      const int num_rows = spatial_map->NumMyElements();
+      for (int local_row=0; local_row<num_rows; ++local_row) {
+        const int global_row = spatial_map->GID(local_row);
+        f_mp[nqp*local_row+qp] = (*f)[local_row];
+        A->ExtractMyRowView(local_row, num_entries, values, indices);
+        for (int j=0; j<num_entries; ++j) {
+          int local_col = indices[j];
+          int global_col = A->GCID(local_col);
+          block_indices[j] = nqp*global_col+qp;
+        }
+        A_mp.ReplaceGlobalValues(
+          nqp*global_row+qp, num_entries, values, &block_indices[0]);
+      }
+
+    }
+    f_mp.Scale(-1.0);
+    A_mp.FillComplete();
+
+    //EpetraExt::RowMatrixToMatrixMarketFile("A_mp.mm", A_mp);
 
     // Setup preconditioner
-    Teuchos::ParameterList precParams;
+    ParameterList precParams;
     precParams.set("default values", "SA");
-    precParams.set("ML output", 0);
+    precParams.set("ML output", 10);
     precParams.set("max levels",5);
     precParams.set("increasing or decreasing","increasing");
     precParams.set("aggregation: type", "Uncoupled");
@@ -293,23 +339,16 @@ int main(int argc, char *argv[]) {
     precParams.set("smoother: sweeps",2);
     precParams.set("smoother: pre or post", "both");
     precParams.set("coarse: max size", 200);
+    precParams.set("PDE equations",nqp);
 #ifdef HAVE_ML_AMESOS
     precParams.set("coarse: type","Amesos-KLU");
 #else
     precParams.set("coarse: type","Jacobi");
 #endif
-    bool checkFiltering = false;
-    if (precStrategy == REUSE) {
-      checkFiltering = true;
-      precParams.set("reuse: enable", true);
-    }
-    Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> M =
-      Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*A, precParams,
-                                                           false));
-    if (precStrategy == MEAN) {
-      TEUCHOS_FUNC_TIME_MONITOR("Deterministic Preconditioner Calculation");
-      *A = *(model.get_mean());
-      M->ComputePreconditioner();
+    RCP<ML_Epetra::MultiLevelPreconditioner> M_mp;
+    {
+      TEUCHOS_FUNC_TIME_MONITOR("Preconditioner Setup");
+      M_mp = rcp(new ML_Epetra::MultiLevelPreconditioner(A_mp, precParams));
     }
 
     // Setup AztecOO solver
@@ -321,69 +360,54 @@ int main(int argc, char *argv[]) {
     aztec.SetAztecOption(AZ_precond, AZ_none);
     aztec.SetAztecOption(AZ_kspace, 100);
     aztec.SetAztecOption(AZ_conv, AZ_r0);
-    aztec.SetAztecOption(AZ_output, 0);
-    aztec.SetUserOperator(A.get());
-    aztec.SetPrecOperator(M.get());
-    aztec.SetLHS(x.get());
-    aztec.SetRHS(f.get());
+    aztec.SetAztecOption(AZ_output, 10);
+    aztec.SetUserOperator(&A_mp);
+    aztec.SetPrecOperator(M_mp.get());
+    aztec.SetLHS(&x_mp);
+    aztec.SetRHS(&f_mp);
 
-    x_mean.PutScalar(0.0);
-    x_var.PutScalar(0.0);
-    // Loop over colloction points
+    // Solve linear system
+    {
+      TEUCHOS_FUNC_TIME_MONITOR("System Solve");
+      aztec.Iterate(1000, tol);
+    }
+
+    // Compute responses
+    RCP<Epetra_Vector> g = rcp(new Epetra_Vector(*(model.get_g_map(0))));
+    Epetra_Vector g2(*(model.get_g_map(0)));
+    Epetra_Vector g_mean(*(model.get_g_map(0)));
+    Epetra_Vector g_var(*(model.get_g_map(0)));
     for (int qp=0; qp<nqp; qp++) {
-      TEUCHOS_FUNC_TIME_MONITOR("Collocation Loop");
-
-      if (qp%100 == 0 || qp == nqp-1)
-        std::cout << "Collocation point " << qp+1 <<'/' << nqp << "\n";
+      TEUCHOS_FUNC_TIME_MONITOR("Compute Responses");
 
       // Set parameters
       for (int i=0; i<num_KL; i++)
         (*p)[i] = quad_points[qp][i];
 
+      // Extract x
+      const int num_rows = spatial_map->NumMyElements();
+      for (int local_row=0; local_row<num_rows; ++local_row)
+        (*x)[local_row] = x_mp[nqp*local_row+qp];
+
       // Set in/out args
+      ModelEvaluator::InArgs inArgs = model.createInArgs();
+      ModelEvaluator::OutArgs outArgs = model.createOutArgs();
       inArgs.set_p(0, p);
       inArgs.set_x(x);
-      outArgs.set_f(f);
-      outArgs.set_W(A);
+      outArgs.set_g(0,g);
 
       // Evaluate model at collocation point
-      x->PutScalar(0.0);
       model.evalModel(inArgs, outArgs);
-      f->Scale(-1.0);
-
-      // Compute preconditioner
-      if (precStrategy != MEAN) {
-        TEUCHOS_FUNC_TIME_MONITOR("Deterministic Preconditioner Calculation");
-        M->ComputePreconditioner(checkFiltering);
-      }
-
-      // Solve linear system
-      {
-        TEUCHOS_FUNC_TIME_MONITOR("Deterministic Solve");
-        aztec.Iterate(1000, tol);
-      }
-
-      // Compute responses
-      outArgs2.set_g(0, g);
-      model.evalModel(inArgs, outArgs2);
 
       // Sum contributions to mean and variance
-      x2.Multiply(1.0, *x, *x, 0.0);
       g2.Multiply(1.0, *g, *g, 0.0);
-      x_mean.Update(quad_weights[qp], *x, 1.0);
-      x_var.Update(quad_weights[qp], x2, 1.0);
       g_mean.Update(quad_weights[qp], *g, 1.0);
       g_var.Update(quad_weights[qp], g2, 1.0);
-
     }
-    x2.Multiply(1.0, x_mean, x_mean, 0.0);
     g2.Multiply(1.0, g_mean, g_mean, 0.0);
-    x_var.Update(-1.0, x2, 1.0);
     g_var.Update(-1.0, g2, 1.0);
 
     // Compute standard deviations
-    for (int i=0; i<x_var.MyLength(); i++)
-      x_var[i] = std::sqrt(x_var[i]);
     for (int i=0; i<g_var.MyLength(); i++)
       g_var[i] = std::sqrt(g_var[i]);
 
@@ -391,14 +415,10 @@ int main(int argc, char *argv[]) {
     std::cout << "\nResponse Mean =      " << std::endl << g_mean << std::endl;
     std::cout << "Response Std. Dev. = " << std::endl << g_var << std::endl;
 
-    // Save mean and variance to file
-    EpetraExt::VectorToMatrixMarketFile("mean_col.mm", x_mean);
-    EpetraExt::VectorToMatrixMarketFile("std_dev_col.mm", x_var);
-
     }
 
-    Teuchos::TimeMonitor::summarize(std::cout);
-    Teuchos::TimeMonitor::zeroOutTimers();
+    TimeMonitor::summarize(std::cout);
+    TimeMonitor::zeroOutTimers();
 
   }
 
