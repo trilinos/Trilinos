@@ -237,7 +237,7 @@ template <typename T> void delete_selector_property(std::vector<T> &entities);
 void delete_selector_property(Ioss::Region &io_region);
 void delete_selector_property(Ioss::GroupingEntity *io_entity);
 
-const std::string get_suffix_for_field_at_state(enum stk::mesh::FieldState field_state);
+std::string get_stated_field_name(const std::string &field_base_name, stk::mesh::FieldState state_identifier);
 
 void multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
                           const stk::mesh::FieldBase *field,

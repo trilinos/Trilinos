@@ -166,7 +166,7 @@ namespace {
 	    ThrowAssert(state_count < 7);
 	    for(size_t state=1; state < state_count-1; state++) {
 	        stk::mesh::FieldState state_identifier = static_cast<stk::mesh::FieldState>(state);
-                std::string field_name_with_suffix = field_name + stk::io::get_suffix_for_field_at_state(state_identifier);
+                std::string field_name_with_suffix = stk::io::get_stated_field_name(field_name, state_identifier);
 	        entity->field_add(Ioss::Field(field_name_with_suffix, field_type.second, field_type.first,
                                           Ioss::Field::TRANSIENT, entity_size));
 	    }

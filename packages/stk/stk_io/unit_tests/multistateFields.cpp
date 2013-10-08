@@ -86,10 +86,10 @@ STKUNIT_UNIT_TEST(MultistateFieldTest, SingleNodalMultistatedRestartField)
 
         stkIo.process_restart_input(time);
 
+        stk::mesh::FieldBase *statedFieldNp1 = triStateField->field_state(stk::mesh::StateNP1);
+        testDataOnField(stkIo.bulk_data(), 1.0, *statedFieldNp1);
         stk::mesh::FieldBase *statedFieldN = triStateField->field_state(stk::mesh::StateN);
-        testDataOnField(stkIo.bulk_data(), 1.0, *statedFieldN);
-        stk::mesh::FieldBase *statedFieldNm1 = triStateField->field_state(stk::mesh::StateNM1);
-        testDataOnField(stkIo.bulk_data(), 2.0, *statedFieldNm1);
+        testDataOnField(stkIo.bulk_data(), 2.0, *statedFieldN);
     }
     unlink(restartFilename.c_str());
 }

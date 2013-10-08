@@ -736,10 +736,17 @@ const std::string get_suffix_for_field_at_state(enum stk::mesh::FieldState field
             suffix = ".NM4";
             break;
         case stk::mesh::StateNP1:
-        default:
             break;
+        default:
+            ThrowRequireMsg(false, "Internal Error: Unsupported stk::mesh::FieldState: " << field_state << ".");
     }
     return suffix;
+}
+
+std::string get_stated_field_name(const std::string &field_base_name, stk::mesh::FieldState state_identifier)
+{
+    std::string field_name_with_suffix = field_base_name + get_suffix_for_field_at_state(state_identifier);
+    return field_name_with_suffix;
 }
 
 void multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
@@ -752,9 +759,8 @@ void multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
     for(size_t state = 0; state < state_count - 1; state++)
     {
         stk::mesh::FieldState state_identifier = static_cast<stk::mesh::FieldState>(state);
-        std::string field_name_with_suffix = name + get_suffix_for_field_at_state(state_identifier);
-        stk::mesh::FieldState rotated_state = static_cast<stk::mesh::FieldState>(state + 1);stk
-        ::mesh::FieldBase *stated_field = field->field_state(rotated_state);
+        std::string field_name_with_suffix = get_stated_field_name(name, state_identifier);
+        stk::mesh::FieldBase *stated_field = field->field_state(state_identifier);
         ThrowRequire(io_entity->field_exists(field_name_with_suffix));
         stk::io::field_data_from_ioss(mesh, stated_field, entity_list, io_entity, field_name_with_suffix);
     }
@@ -807,8 +813,9 @@ void multistate_field_data_to_ioss(const stk::mesh::BulkData& mesh,
     for(size_t state = 0; state < state_count - 1; state++)
     {
         stk::mesh::FieldState state_identifier = static_cast<stk::mesh::FieldState>(state);
-        std::string field_name_with_suffix = io_fld_name + stk::io::get_suffix_for_field_at_state(state_identifier);
+        std::string field_name_with_suffix = get_stated_field_name(io_fld_name, state_identifier);
         stk::mesh::FieldBase *stated_field = field->field_state(state_identifier);
+        //ThrowRequire(io_entity->field_exists(field_name_with_suffix));
         stk::io::field_data_to_ioss(mesh, stated_field, entities, io_entity, field_name_with_suffix, filter_role);
     }
 }
