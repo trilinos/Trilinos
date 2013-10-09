@@ -162,6 +162,14 @@ int Ifpack_ShyLU::Initialize()
 
     slu_config_.relative_threshold =  0.0;
     slu_config_.Sdiagfactor =  0.05;
+    if (schurApproxMethod == "G")
+    {
+    	slu_config_.schurSolver = "G";
+    	slu_config_.schurApproxMethod = 6;
+        slu_config_.iqrInitialPrecType = List_.get<string>("IQR Initial Prec Type", "Amesos stand-alone");
+        slu_config_.iqrInitialPrecAmesosType = List_.get<string>("IQR Initial Prec Amesos Type", "Amesos_Klu");
+        slu_data_.firstIteration = true;
+    }
     if (schurApproxMethod == "IQR")
     {
     	slu_config_.schurSolver = "IQR";

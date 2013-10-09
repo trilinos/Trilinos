@@ -1022,7 +1022,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
             data->innersolver = NULL;
         }
     }
-    else if ((config->schurSolver == "IQR") || (config->schurSolver == "Projection"))
+    else if ((config->schurSolver == "IQR") || (config->schurSolver == "Projection") || (config->schurSolver == "G"))
     {
     	// DO NOTHING
     } else

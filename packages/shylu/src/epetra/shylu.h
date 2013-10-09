@@ -97,6 +97,7 @@ typedef struct
     int iqrApplication;
     Teuchos::RCP<ShyLUProjectionPrec> projectionPreconditioner;
     bool firstIteration;
+    Teuchos::RCP<Ifpack_Preconditioner> gPrec;
     Teuchos::RCP<Epetra_CrsMatrix> Sbar; // Approx Schur complement
     Teuchos::RCP<Epetra_CrsGraph> localSbargraph; // graph of local Sbar
     AztecOO *innersolver;            // inner solver

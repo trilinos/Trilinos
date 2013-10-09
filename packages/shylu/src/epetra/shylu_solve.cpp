@@ -307,7 +307,25 @@ static int shylu_local_solve(
 
     AztecOO *solver;
     Epetra_LinearProblem Problem(data->Sbar.get(), &Xs, &Bs);
-    if (config->schurSolver == "IQR")
+    if (config->schurSolver == "G")
+    {
+    	if (data->firstIteration) {
+			Epetra_CrsMatrix* G = data->schur_op->G_;
+			Ifpack Factory;
+			data->gPrec = Teuchos::rcp(Factory.Create(config->iqrInitialPrecType, G, 1));
+			Teuchos::ParameterList pList;
+			pList.set("amesos: solver type", config->iqrInitialPrecAmesosType, "");
+			pList.set("Reindex", true);
+			data->gPrec->SetParameters(pList);
+
+			data->gPrec->Initialize();
+			data->gPrec->Compute();
+			data->firstIteration = false;
+    	} else {
+    		data->gPrec->ApplyInverse(Bs, Xs);
+    	}
+    }
+    else if (config->schurSolver == "IQR")
     {
         Teuchos::Time solveSbar("solve Sbar");
         solveSbar.start();
