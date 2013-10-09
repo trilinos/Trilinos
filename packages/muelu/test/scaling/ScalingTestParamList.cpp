@@ -57,6 +57,7 @@
 #include <MueLu.hpp>
 #include <MueLu_Level.hpp>
 #include <MueLu_BaseClass.hpp>
+#include <MueLu_EasyParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
 #include <MueLu_ParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
 
 #include <MueLu_Utilities.hpp>
@@ -105,7 +106,8 @@ int main(int argc, char *argv[]) {
   Galeri::Xpetra::Parameters<GO> matrixParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
-  std::string xmlFileName       = "scalingTest.xml"; clp.setOption("xml",                   &xmlFileName,     "read parameters from a file [default = 'scalingTest.xml']");
+  std::string xmlFileName       = "scalingTest.xml"; clp.setOption("xml",                   &xmlFileName,      "read parameters from a file [default = 'scalingTest.xml']");
+  bool        useEasy           = false;             clp.setOption("easy",    "noeasy",     &useEasy,          "use new parameter list interpreter [default = false]");
   bool        printTimings      = true;              clp.setOption("timings", "notimings",  &printTimings,     "print timings to screen");
   int         writeMatricesOPT  = -2;                clp.setOption("write",                 &writeMatricesOPT, "write matrices to file (-1 means all; i>=0 means level i)");
   std::string solveType         = "cg";              clp.setOption("solver",                &solveType,        "solve type: (none | cg | gmres | standalone)");
@@ -236,18 +238,22 @@ int main(int argc, char *argv[]) {
   // =========================================================================
   comm->barrier();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1.5 - MueLu read XML")));
-  ParameterListInterpreter mueLuFactory(xmlFileName, *comm);
+  RCP<HierarchyManager> mueLuFactory;
+  if (useEasy == false)
+    mueLuFactory = rcp(new ParameterListInterpreter(xmlFileName, *comm));
+  else
+    mueLuFactory = rcp(new EasyParameterListInterpreter(xmlFileName, *comm));
 
   comm->barrier();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
 
-  RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
+  RCP<Hierarchy> H = mueLuFactory->CreateHierarchy();
 
   H->GetLevel(0)->Set("A",           A);
   H->GetLevel(0)->Set("Nullspace",   nullspace);
   H->GetLevel(0)->Set("Coordinates", coordinates);
 
-  mueLuFactory.SetupHierarchy(*H);
+  mueLuFactory->SetupHierarchy(*H);
 
   comm->barrier();
   tm = Teuchos::null;

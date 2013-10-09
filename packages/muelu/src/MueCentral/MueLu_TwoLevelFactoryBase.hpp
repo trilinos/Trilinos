@@ -114,6 +114,7 @@ namespace MueLu {
                                  this->ShortClassName() << "::Build() called twice for the same level (levelID=" << requestedLevel.GetLevelID()
                                  << "). This is likely due to a configuration error.");
       if (multipleCallCheck_ == FIRSTCALL) multipleCallCheck_ = ENABLED;
+      // We cannot call Build method twice for the same level, but we can call it multiple times for different levels
       lastLevel_ = &requestedLevel;
 #endif
 

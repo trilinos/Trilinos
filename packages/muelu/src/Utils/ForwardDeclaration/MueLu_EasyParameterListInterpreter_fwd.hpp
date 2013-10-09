@@ -43,60 +43,21 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_EXCEPTIONS_HPP
-#define MUELU_EXCEPTIONS_HPP
+#ifndef MUELU_EASYPARAMETERLISTINTERPRETER_FWD_HPP
+#define MUELU_EASYPARAMETERLISTINTERPRETER_FWD_HPP
 
-#include <Teuchos_Exceptions.hpp>
 
-#include "MueLu_ConfigDefs.hpp"
+
 
 namespace MueLu {
-  namespace Exceptions {
-
-    //! Exception indicating invalid cast attempted
-    class BadCast : public Teuchos::ExceptionBase {
-    public:
-      BadCast(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
-    };
-
-    //! Exception throws when you call an unimplemented method of MueLu
-    /** Mainly use for development in progress. **/
-    class NotImplemented : public Teuchos::ExceptionBase {
-    public:
-      NotImplemented(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
-    };
-
-    //! Exception throws to report errors in the internal logical of the program.
-    class RuntimeError : public Teuchos::ExceptionBase {
-    public:
-      RuntimeError(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
-    };
-
-    //! Exception throws to report overflows.
-    class Overflow : public Teuchos::ExceptionBase {
-    public:
-      Overflow(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
-    };
-
-    //! Exception throws to report incompatible objects (like maps).
-    class Incompatible : public Teuchos::ExceptionBase {
-    public:
-      Incompatible(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
-    };
-
-    //! Exception throws to report data dependency problems between factories.
-    class DependencyError : public Teuchos::ExceptionBase {
-    public:
-      DependencyError(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
-    };
-
-    //! Exception throws to report invalid user entry
-    class InvalidArgument: public Teuchos::ExceptionBase {
-    public:
-      InvalidArgument(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) { }
-    };
-
-  }
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  class EasyParameterListInterpreter;
 }
 
-#endif //ifndef MUELU_EXCEPTIONS_HPP
+#ifndef MUELU_EASYPARAMETERLISTINTERPRETER_SHORT
+#define MUELU_EASYPARAMETERLISTINTERPRETER_SHORT
+#endif
+
+
+
+#endif // MUELU_EASYPARAMETERLISTINTERPRETER_FWD_HPP

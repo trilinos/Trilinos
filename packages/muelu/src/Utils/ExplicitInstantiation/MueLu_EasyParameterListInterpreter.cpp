@@ -43,60 +43,29 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_EXCEPTIONS_HPP
-#define MUELU_EXCEPTIONS_HPP
 
-#include <Teuchos_Exceptions.hpp>
 
-#include "MueLu_ConfigDefs.hpp"
+#include "MueLu_ExplicitInstantiation.hpp"
 
-namespace MueLu {
-  namespace Exceptions {
+#include "MueLu_EasyParameterListInterpreter_def.hpp"
 
-    //! Exception indicating invalid cast attempted
-    class BadCast : public Teuchos::ExceptionBase {
-    public:
-      BadCast(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
-    };
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
+template class MueLu::EasyParameterListInterpreter<double, int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void, int, KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>;
+#endif
 
-    //! Exception throws when you call an unimplemented method of MueLu
-    /** Mainly use for development in progress. **/
-    class NotImplemented : public Teuchos::ExceptionBase {
-    public:
-      NotImplemented(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
-    };
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT
+# ifdef HAVE_TEUCHOS_LONG_LONG_INT
+template class MueLu::EasyParameterListInterpreter<double, int, long long int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void, int, KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>;
+# else
+# warning To compile MueLu with 'long long int' support, please turn on Teuchos_ENABLE_LONG_LONG_INT
+# endif
+#endif
 
-    //! Exception throws to report errors in the internal logical of the program.
-    class RuntimeError : public Teuchos::ExceptionBase {
-    public:
-      RuntimeError(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
-    };
-
-    //! Exception throws to report overflows.
-    class Overflow : public Teuchos::ExceptionBase {
-    public:
-      Overflow(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
-    };
-
-    //! Exception throws to report incompatible objects (like maps).
-    class Incompatible : public Teuchos::ExceptionBase {
-    public:
-      Incompatible(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
-    };
-
-    //! Exception throws to report data dependency problems between factories.
-    class DependencyError : public Teuchos::ExceptionBase {
-    public:
-      DependencyError(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
-    };
-
-    //! Exception throws to report invalid user entry
-    class InvalidArgument: public Teuchos::ExceptionBase {
-    public:
-      InvalidArgument(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) { }
-    };
-
-  }
-}
-
-#endif //ifndef MUELU_EXCEPTIONS_HPP
+#ifdef HAVE_MUELU_INST_COMPLEX_INT_INT
+# ifdef HAVE_TEUCHOS_COMPLEX
+#include <complex>
+template class MueLu::EasyParameterListInterpreter<std::complex<double>, int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void, int, KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>;
+# else
+# warning To compile MueLu with 'complex' support, please turn on Teuchos_ENABLE_COMPLEX
+# endif
+#endif
