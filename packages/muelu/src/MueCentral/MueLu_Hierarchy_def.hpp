@@ -328,7 +328,9 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Clear() {
-    GetOStream(Runtime0, 0) << "Clearing old data" << std::endl;
+    if (GetNumberOfLevels())
+      GetOStream(Runtime0, 0) << "Clearing old data (if any)" << std::endl;
+
     for (int iLevel = 0; iLevel < GetNumberOfLevels(); iLevel++)
       Levels_[iLevel]->Clear();
   }
@@ -643,9 +645,9 @@ namespace MueLu {
           out << "Smoother (level " << i << ") both : " << preSmoo->description() << std::endl;
         else {
           out << "Smoother (level " << i << ") pre  : "
-              << (preSmoo != null ?  preSmoo->description() : " no smoother") << std::endl;
+              << (preSmoo != null ?  preSmoo->description() : "no smoother") << std::endl;
           out << "Smoother (level " << i << ") post : "
-              << (postSmoo != null ?  postSmoo->description() : " no smoother") << std::endl;
+              << (postSmoo != null ?  postSmoo->description() : "no smoother") << std::endl;
         }
 
         out << std::endl;
