@@ -1,0 +1,37 @@
+0. mp; mls; mlp
+1. eg switch srk-122012-tril-build
+2. eg stash apply srk-122812-tril-build-Br-srk-122012-tril-build-only-TPLs_src-2
+3. (no need) mv $CODE/TPLs_src/Trilinos/packages/stk/stk_2.0.href $CODE/TPLs_src/Trilinos/packages/stk/stk_2.0
+4a. cd /scratch/srkenno/Trilinos-BUILDS/build-PyPercept-scratch-srkenno-code
+    make; make install
+4b. or /scratch/srkenno/code/TPLs_src/Trilinos/packages/stk/stk_percept/build/build.dir
+    ../sample-Trilinos-configure-script-with-local-boost
+
+    or
+new 072413: without python/numpy, do this:
+2. git checkout 75131a1954d8
+3. eg stash apply srk-122812-tril-build-Br-srk-122012-tril-build-only-TPLs_src-2
+note: this gets back to the state of the first steps above
+alternate:
+2. only, skip #3 above (get the head of the branch)
+4c. cd /scratch/srkenno/Trilinos-BUILDS/build-stk-new-072413-scr-srk-code/
+    make; make install
+
+
+========================
+Newest: 072613:
+========================
+1. (master) eg stash apply srk-072613-trilinos-build-2-wk-sv-split-Trilinos
+2. edit stk/CMakeLists.txt and flip switch
+3. cd /scratch/srkenno/Trilinos-BUILDS/build-stk-new-072413-scr-srk-code; ./stk-srk.1.config; make
+
+or,
+replace 1 with: eg switch srk-branch-076513-trilinos-build
+(typo in branch name - should be 072513)
+
+========================
+Newest: 090313, 100913
+========================
+1. eg switch srk-branch-076513-trilinos-build
+2. ensure you are on the old commit: git checkout ae00813981902df3d39813ada07b8448b68747fe - this was before merge on 100913
+3. cd /scratch/srkenno/Trilinos-BUILDS/build-PyPercept-scratch-srkenno-code; ./srk.5.epd_srk.config; make install
