@@ -784,17 +784,11 @@ void field_data_from_ioss(const stk::mesh::BulkData& mesh,
 	  // Make sure the IO field type matches the STK field type.
 	  // By default, all IO fields are created of type 'double'
 	  if (db_api_int_size(io_entity) == 4) {
-	    if (io_field.get_type() != Ioss::Field::INTEGER) {
-	      Ioss::Field &tmp = const_cast<Ioss::Field&>(io_field);
-	      tmp.reset_type(Ioss::Field::INTEGER);
-	    }
+	    io_field.check_type(Ioss::Field::INTEGER);
 	    internal_field_data_from_ioss(mesh, io_field, field, entities, io_entity,
                                       static_cast<int>(1));
 	  } else {
-	    if (io_field.get_type() != Ioss::Field::INT64) {
-	      Ioss::Field &tmp = const_cast<Ioss::Field&>(io_field);
-	      tmp.reset_type(Ioss::Field::INT64);
-	    }
+	    io_field.check_type(Ioss::Field::INT64);
 	    internal_field_data_from_ioss(mesh, io_field, field, entities, io_entity,
                                       static_cast<int64_t>(1));
 	  }
@@ -837,13 +831,13 @@ void field_data_to_ioss(const stk::mesh::BulkData& mesh,
 	internal_field_data_to_ioss(mesh, io_field, field, entities, io_entity,
                                     static_cast<double>(1.0));
       } else if (field->type_is<int>()) {
-	if (io_field.get_type() != Ioss::Field::INTEGER) {
-	  Ioss::Field &tmp = const_cast<Ioss::Field&>(io_field);
-	  tmp.reset_type(Ioss::Field::INTEGER);
-	}
-	// FIX 64?
+	io_field.check_type(Ioss::Field::INTEGER);
 	internal_field_data_to_ioss(mesh, io_field, field, entities, io_entity,
                                     static_cast<int>(1));
+      } else if (field->type_is<int64_t>()) {
+	io_field.check_type(Ioss::Field::INT64);
+	internal_field_data_to_ioss(mesh, io_field, field, entities, io_entity,
+                                    static_cast<int64_t>(1));
       }
     }
   }
