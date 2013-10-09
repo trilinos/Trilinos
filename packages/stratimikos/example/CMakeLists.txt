@@ -200,3 +200,44 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Ifpack)
     )
 
 ENDIF()
+
+
+#
+# ForwardSolverAsPreconditioner.cpp
+#
+
+TRIBITS_ADD_EXECUTABLE(
+  ForwardSolverAsPreconditioner
+  SOURCES
+    ForwardSolverAsPreconditioner.cpp
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyForwardSolverAsPreconditionerFiles
+  DEST_FILES
+    P2.mtx
+    AztecOOPrecBelosSolver.xml
+  SOURCE_PREFIX "_"
+  EXEDEPS ForwardSolverAsPreconditioner
+  )
+
+IF (${PACKAGE_NAME}_ENABLE_AztecOO AND ${PACKAGE_NAME}_ENABLE_Belos)
+
+  TRIBITS_ADD_TEST(
+    ForwardSolverAsPreconditioner
+    POSTFIX_AND_ARGS_0 AztecOOPRecBelosSolver
+      --matrix-file=P2.mtx --param-list-file=AztecOOPrecBelosSolver.xml
+      --verb-level=medium --solve-tol=0.004
+    NUM_MPI_PROCS 1
+    )
+
+  TRIBITS_ADD_TEST(
+    ForwardSolverAsPreconditioner
+    POSTFIX_AND_ARGS_0 AztecOOPRecBelosSolver
+      --matrix-file=P2.mtx --param-list-file=AztecOOPrecBelosSolver.xml
+      --verb-level=medium --solve-tol=0.004
+    COMM mpi
+    NUM_MPI_PROCS 4
+    )
+
+ENDIF()
+
