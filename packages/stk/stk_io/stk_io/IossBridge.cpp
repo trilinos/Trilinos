@@ -19,6 +19,7 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 
+#include <stk_mesh/base/FindRestriction.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/Field.hpp>
@@ -301,7 +302,7 @@ bool is_field_on_part(const stk::mesh::FieldBase *field,
 		      const stk::mesh::Part &part)
 {
   const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(part);
-  const stk::mesh::FieldBase::Restriction &res = field->restriction(part_type, part);
+  const stk::mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*field, part_type, part);
   if (res.dimension() > 0) {
     // The field exists on the current 'part'.  Now check (for
     // node types only) whether the 'part' is *either* the
@@ -321,7 +322,7 @@ bool is_field_on_part(const stk::mesh::FieldBase *field,
       return true;
     }
 
-    const stk::mesh::FieldBase::Restriction &res_universe = field->restriction(part_type, meta.universal_part());
+    const stk::mesh::FieldBase::Restriction &res_universe = stk::mesh::find_restriction(*field, part_type, meta.universal_part());
     if (res_universe.dimension() <= 0) {
       // Field exists on current part, but not on the universal
       // set (and this part is not the universal part)
@@ -587,7 +588,7 @@ void ioss_add_fields(const stk::mesh::Part &part,
   while (I != fields.end()) {
     const stk::mesh::FieldBase *f = *I; ++I;
     if (stk::io::is_valid_part_field(f, part_type, part, filter_role, add_all)) {
-      const stk::mesh::FieldBase::Restriction &res = f->restriction(part_type, part);
+      const stk::mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*f, part_type, part);
       std::pair<std::string, Ioss::Field::BasicType> field_type;
       get_io_field_type(f, res, &field_type);
       if (field_type.second != Ioss::Field::INVALID) {
@@ -1465,7 +1466,7 @@ void output_element_block(Ioss::ElementBlock *block,
     const mesh::FieldBase *f = *I ; ++I ;
     const Ioss::Field::RoleType *role = stk::io::get_field_role(*f);
     if (role != NULL && *role == Ioss::Field::ATTRIBUTE) {
-      const mesh::FieldBase::Restriction &res = f->restriction(elem_rank, *part);
+      const mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*f, elem_rank, *part);
       if (res.dimension() > 0) {
         stk::io::field_data_to_ioss(bulk, f, elements, block, f->name(), Ioss::Field::ATTRIBUTE);
       }
@@ -1519,7 +1520,7 @@ void output_node_set(Ioss::NodeSet *ns, const stk::mesh::BulkData &bulk,
 
   stk::mesh::Field<double> *df_field = meta_data.get_field<stk::mesh::Field<double> >("distribution_factors");
   if (df_field != NULL) {
-    const stk::mesh::FieldBase::Restriction &res = df_field->restriction(stk::mesh::MetaData::NODE_RANK, *part);
+    const stk::mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*df_field, stk::mesh::MetaData::NODE_RANK, *part);
     if (res.dimension() > 0) {
       stk::io::field_data_to_ioss(bulk, df_field, nodes, ns, "distribution_factors", Ioss::Field::MESH);
     }
@@ -1531,7 +1532,7 @@ void output_node_set(Ioss::NodeSet *ns, const stk::mesh::BulkData &bulk,
     const mesh::FieldBase *f = *I ; ++I ;
     const Ioss::Field::RoleType *role = stk::io::get_field_role(*f);
     if (role != NULL && *role == Ioss::Field::ATTRIBUTE) {
-      const mesh::FieldBase::Restriction &res = f->restriction(0, *part);
+      const mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*f, 0, *part);
       if (res.dimension() > 0) {
         stk::io::field_data_to_ioss(bulk, f, nodes, ns, f->name(), Ioss::Field::ATTRIBUTE);
       }

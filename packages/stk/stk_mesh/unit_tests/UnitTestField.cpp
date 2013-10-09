@@ -233,10 +233,9 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldDataArray)
         ik = node_buckets.begin() ; ik != node_buckets.end() ; ++ik ) {
     stk::mesh::Bucket & k = **ik ;
 
-    std::vector< stk::mesh::Part * > parts ;
-    k.supersets( parts );
+    const stk::mesh::PartVector& parts = k.supersets();
 
-    for ( std::vector< stk::mesh::Part * >::iterator
+    for ( stk::mesh::PartVector::const_iterator
           ip = parts.begin() ; ip != parts.end() ; ++ip ) {
       oss << " " << (*ip)->name();
     }

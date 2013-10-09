@@ -21,6 +21,7 @@
 #include <stk_mesh/baseImpl/EntityRepository.hpp>
 #include <stk_mesh/baseImpl/FieldBaseImpl.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
+#include <stk_mesh/base/FindRestriction.hpp>
 
 #include <Shards_BasicTopologies.hpp>
 
@@ -137,11 +138,11 @@ void UnitTestFieldImpl::testFieldRestriction()
 
   STKUNIT_ASSERT( f3->restrictions().size() == 3 );
   STKUNIT_ASSERT( f3->restrictions()[0] ==
-                  FieldRestriction( 0 , pA.mesh_meta_data_ordinal() ) );
+                  FieldRestriction( 0 , pA ) );
   STKUNIT_ASSERT( f3->restrictions()[1] ==
-                  FieldRestriction( 1 , pB.mesh_meta_data_ordinal() ) );
+                  FieldRestriction( 1 , pB ) );
   STKUNIT_ASSERT( f3->restrictions()[2] ==
-                  FieldRestriction( 2 , pC.mesh_meta_data_ordinal() ) );
+                  FieldRestriction( 2 , pC ) );
 
   meta_data.declare_field_restriction(*f3, 0 , pB , stride + 1 );
 
@@ -184,10 +185,10 @@ void UnitTestFieldImpl::testFieldRestriction()
   STKUNIT_ASSERT( f2->restrictions().size() == 1 );
 
   {
-    const FieldBase::Restriction & rA = f2->restriction( 0 , pA );
-    const FieldBase::Restriction & rD = f2->restriction( 0 , pD );
+    const FieldBase::Restriction & rA = stk::mesh::find_restriction(*f2, 0, pA );
+    const FieldBase::Restriction & rD = stk::mesh::find_restriction(*f2, 0, pD );
     STKUNIT_ASSERT( & rA == & rD );
-    STKUNIT_ASSERT( rA.part_ordinal() == pD.mesh_meta_data_ordinal() );
+    STKUNIT_ASSERT( rA.selector() == pD );
   }
 
   //------------------------------
@@ -204,49 +205,6 @@ void UnitTestFieldImpl::testFieldRestriction()
     );
   }
 
-  //Test to cover print function in FieldBaseImpl.cpp and FieldBase.cpp
-  {
-    //Create a new field with MetaData m and two restrictions
-
-    FieldBase * const f4 =
-      &meta_data.declare_field<VectorField>( std::string("F4"),
-                                2         /* # states */ );
-
-    meta_data.declare_part_subset( pD, pA );
-    meta_data.declare_part_subset( pC, pB );
-
-    meta_data.declare_field_restriction(*f4, 0 , pA , stride );
-    meta_data.declare_field_restriction(*f4, 1 , pB , stride + 1 );
-    stk::mesh::impl::print(std::cout, "Field f4", *f4);
-
-    //test stride[i] / stride[i-1] section of else-if
-    stk::mesh::print(std::cout, "Field f4", *f4);
-  }
-
-  //Further tests to cover print function in FieldBase.cpp
-  {
-    //test stride[i] % stride[i-1] section of else-if
-
-    //Create a new field with MetaData m and two restrictions
-
-    FieldBase * const f5 =
-      &meta_data.declare_field<VectorField>( std::string("F5"),
-                                2         /* # states */ );
-
-    unsigned stride2[8] ;
-    stride2[0] = 10 ;
-    for ( unsigned i = 1 ; i < 3 ; ++i ) {
-      stride2[i] = stride[i-1];
-    }
-    for ( unsigned i = 3 ; i < 8 ; ++i ) {
-      stride2[i] = 0;
-    }
-    meta_data.declare_field_restriction(*f5, 0 , pA, stride2 );
-
-    stk::mesh::print(std::cout, "Field f5", *f5);
-
-  }
-
   //Coverage for error from print_restriction in FieldBaseImpl.cpp when there is no stride (!stride[i])
   //Call print_restriction from insert_restriction
   {
@@ -259,23 +217,6 @@ void UnitTestFieldImpl::testFieldRestriction()
       meta_data.declare_field_restriction(*f2, 0, pA, arg_no_stride),
       std::runtime_error
     );
-  }
-
-  //Coverage of ordinal in FieldRestriction.hpp:
-  {
-    const FieldRestrictionVector & rMap = f3->restrictions();
-    const FieldRestrictionVector::const_iterator ie = rMap.end() ;
-          FieldRestrictionVector::const_iterator i = rMap.begin();
-
-    EntityId entity_id = 0;
-    unsigned max = 0 ;
-
-    for ( ; i != ie ; ++i ) {
-      if ( i->part_ordinal() == entity_id ) {
-	const unsigned len = pA.mesh_meta_data_ordinal() ? i->stride( pA.mesh_meta_data_ordinal() - 1 ) : 1 ;
-        if ( max < len ) { max = len ; }
-      }
-    }
   }
 }
 

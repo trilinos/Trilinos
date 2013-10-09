@@ -10,12 +10,11 @@ namespace mesh {
 void FieldRestriction::print(
   std::ostream & os,
   const EntityRank & entity_rank,
-  const Part & part,
+  const Selector & selector,
   FieldArrayRank field_rank
   ) const
 {
-  MetaData const& meta = MetaData::get(part);
-  os << "FieldRestriction[ entity_rank: " << meta.entity_rank_name(entity_rank) << " part: \"" << part.name() << "\", dimensions: " ;
+  os << "FieldRestriction[ entity_rank: " << entity_rank << " selector: \"" << selector << "\", dimensions: " ;
   os << m_stride[0] ;
   for ( FieldArrayRank i = 1 ; i < field_rank ; ++i ) {
     if ( ! m_stride[i] ) {
@@ -34,12 +33,12 @@ void FieldRestriction::print(
 std::string print_restriction(
   const FieldRestriction & restr,
   const EntityRank & entity_rank,
-  const Part & part,
+  const Selector& selector,
   FieldArrayRank field_rank
                               )
 {
   std::ostringstream oss;
-  restr.print(oss, entity_rank, part, field_rank);
+  restr.print(oss, entity_rank, selector, field_rank);
   return oss.str();
 }
 

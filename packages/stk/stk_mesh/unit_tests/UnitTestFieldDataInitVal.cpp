@@ -167,9 +167,7 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_vector_field_move_bucket)
   // Create node
   Entity node = mesh.declare_entity(NODE_RANK, node_id, empty_parts);
 
-  stk::mesh::PartVector old_parts, new_parts;
-
-  mesh.bucket(node).supersets(old_parts);;
+  const stk::mesh::PartVector& old_parts = mesh.bucket(node).supersets();
 
   //Now move the node to the "node_part":
   stk::mesh::PartVector node_part_vec;
@@ -178,8 +176,9 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_vector_field_move_bucket)
 
   mesh.modification_end();
 
+  const stk::mesh::PartVector& new_parts = mesh.bucket(node).supersets();
+
   //Insist that the node is now in a different bucket:
-  mesh.bucket(node).supersets(new_parts);
   bool in_different_bucket = old_parts != new_parts;
   STKUNIT_ASSERT_TRUE(in_different_bucket);
 

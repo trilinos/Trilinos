@@ -210,13 +210,13 @@ namespace stk
       if (0)
         {
           unsigned er = mybucket(bulk, bucket_or_element).entity_rank();
-          const stk::mesh::FieldBase::Restriction & r = m_my_field->restriction(er, stk::mesh::MetaData::get(*m_my_field).universal_part());
+          const stk::mesh::FieldBase::Restriction & r = stk::mesh::find_restriction(*m_my_field, er, stk::mesh::MetaData::get(*m_my_field).universal_part());
           stride = r.dimension() ;
         }
       if (1)
         {
           unsigned er = mybucket(bulk, bucket_or_element).entity_rank();
-          const stk::mesh::FieldBase::Restriction & r = m_my_field->restriction(er, stk::mesh::MetaData::get(*m_my_field).universal_part());
+          const stk::mesh::FieldBase::Restriction & r = stk::mesh::find_restriction(*m_my_field, er, stk::mesh::MetaData::get(*m_my_field).universal_part());
           static const stk::mesh::FieldBase::Restriction empty ;
 
           if (r == empty)

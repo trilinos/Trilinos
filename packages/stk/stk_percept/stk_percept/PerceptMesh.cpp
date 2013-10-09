@@ -469,12 +469,11 @@ namespace stk {
               for (unsigned ifr = 0; ifr < nfr; ifr++)
                 {
                   const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
-                  stk::mesh::Part& frpart = metaData.get_part(fr.part_ordinal());
+                  stk::mesh::Selector frselector = fr.selector();
                   stride = fr.dimension();
                   field_rank = fr . entity_rank();
                   if (print_info) stream << "P[" << p_rank << "] info>    field restriction " << ifr << " stride[0] = " << fr.dimension() <<
-                    " type= " << fr . entity_rank() << " ord= " << fr.part_ordinal() <<
-                    " which corresponds to Part= " << frpart.name() << mendl;
+                    " type= " << fr . entity_rank() << " Selector= " << frselector << mendl;
                 }
 
               if (print_level > 4)
@@ -1760,7 +1759,7 @@ namespace stk {
       double * fdata = 0;
 
       if(stride) {
-        const stk::mesh::FieldBase::Restriction & r = field->restriction(entity_rank(entity), stk::mesh::MetaData::get(*field).universal_part());
+        const stk::mesh::FieldBase::Restriction & r = stk::mesh::find_restriction(*field, entity_rank(entity), stk::mesh::MetaData::get(*field).universal_part());
         static const stk::mesh::FieldBase::Restriction empty ;
 
         if (r == empty)
@@ -1820,7 +1819,7 @@ namespace stk {
       stk::mesh::BulkData const& bulk = stk::mesh::BulkData::get(bucket);
 
       if(stride) {
-        const stk::mesh::FieldBase::Restriction & r = field->restriction(bucket.entity_rank(), stk::mesh::MetaData::get(*field).universal_part());
+        const stk::mesh::FieldBase::Restriction & r = stk::mesh::find_restriction(*field, bucket.entity_rank(), stk::mesh::MetaData::get(*field).universal_part());
         *stride = r.dimension() ;
       }
 
@@ -2651,9 +2650,8 @@ namespace stk {
           for (unsigned ifr = 0; ifr < nfr; ifr++)
             {
               const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
-              stk::mesh::Part& frpart = metaData.get_part(fr.part_ordinal());
-              std::cout << "PerceptMesh::dump: field restriction " << ifr << " stride[0] = " << fr.dimension() << " type= " << fr . entity_rank() << " ord= " << fr.part_ordinal() <<
-                " which corresponds to Part= " << frpart.name() << std::endl;
+              stk::mesh::Selector frselector = fr.selector();
+              std::cout << "PerceptMesh::dump: field restriction " << ifr << " stride[0] = " << fr.dimension() << " type= " << fr.entity_rank() << " selector= " << frselector << std::endl;
             }
         }
 
@@ -3680,11 +3678,11 @@ namespace stk {
                 for (unsigned ifr = 0; ifr < nfr_1; ifr++)
                   {
                     const stk::mesh::FieldRestriction& fr_1 = field_1->restrictions()[ifr];
-                    stk::mesh::Part& frpart_1 = metaData_1.get_part(fr_1.part_ordinal());
+                    stk::mesh::Selector frselector_1 = fr_1.selector();
                     stride_1 = fr_1.dimension();
                     field_rank = fr_1.entity_rank();
                     const stk::mesh::FieldRestriction& fr_2 = field_2->restrictions()[ifr];
-                    stk::mesh::Part& frpart_2 = metaData_2.get_part(fr_2.part_ordinal());
+                    stk::mesh::Selector frselector_2 = fr_2.selector();
                     stride_2 = fr_2.dimension();
 
                     if (stride_1 != stride_2 || fr_1.entity_rank() != fr_2.entity_rank())
@@ -3692,16 +3690,14 @@ namespace stk {
                         if (print)
                           {
                             std::cout << "P[" << p_rank << "] info>    field restriction " << ifr << " stride[0] = " << fr_1.dimension() <<
-                              " type= " << fr_1.entity_rank() << " ord= " << fr_1.part_ordinal() <<
-                              " which corresponds to Part= " << frpart_1.name() << std::endl;
+                              " type= " << fr_1.entity_rank() << " selector= " << frselector_1 << std::endl;
                             std::cout << "P[" << p_rank << "] info>    field restriction " << ifr << " stride[0] = " << fr_2.dimension() <<
-                              " type= " << fr_2.entity_rank() << " ord= " << fr_2.part_ordinal() <<
-                              " which corresponds to Part= " << frpart_2.name() << std::endl;
+                              " type= " << fr_2.entity_rank() << " selector= " << frselector_2 << std::endl;
                           }
                         msg += "| field stride or rank diff |\n";
                         diff = true;
                         local_diff = true;
-                      }
+                     }
                   }
 
                 bool compare_detailed = true;
@@ -5009,7 +5005,6 @@ namespace stk {
       for (unsigned ifr = 0; ifr < nfr; ifr++)
         {
           const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
-          //stk::mesh::Part& frpart = metaData.get_part(fr.part_ordinal());
           stride = fr.dimension();
           field_rank = fr . entity_rank();
 
@@ -5091,7 +5086,6 @@ namespace stk {
               for (unsigned ifr = 0; ifr < nfr; ifr++)
                 {
                   const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
-                  //stk::mesh::Part& frpart = metaData.get_part(fr.part_ordinal());
                   stride = fr.dimension();
                   if (stride > 1)
                     {

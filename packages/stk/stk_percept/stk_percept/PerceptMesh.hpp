@@ -29,6 +29,7 @@
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/TopologyDimensions.hpp>
+#include <stk_mesh/base/FindRestriction.hpp>
 
 #include <init/Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
@@ -941,7 +942,7 @@ namespace stk {
       unsigned dataStride = dataStrideArg;
       if (!dataStrideArg)
         {
-          const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::MetaData::NODE_RANK, mesh::MetaData::get(*field).universal_part());
+          const stk::mesh::FieldBase::Restriction & r = stk::mesh::find_restriction(*field, stk::mesh::MetaData::NODE_RANK, mesh::MetaData::get(*field).universal_part());
           dataStride = r.dimension() ;
         }
       //std::cout << "bucket dataStride= " << dataStride << std::endl;
@@ -982,7 +983,7 @@ namespace stk {
       unsigned dataStride = dataStrideArg;
       if (!dataStrideArg)
         {
-          const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::MetaData::NODE_RANK, mesh::MetaData::get(*field).universal_part());
+          const stk::mesh::FieldBase::Restriction & r = stk::mesh::find_restriction(*field, stk::mesh::MetaData::NODE_RANK, mesh::MetaData::get(*field).universal_part());
           dataStride = r.dimension() ;
         }
       //std::cout << "element dataStride= " << dataStride << std::endl;

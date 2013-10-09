@@ -272,7 +272,9 @@ Bucket::Bucket( BulkData & arg_mesh ,
   setup_connectivity(m_topology, arg_entity_rank, stk::topology::FACE_RANK, m_face_kind, m_fixed_face_connectivity, connectivity_map);
   setup_connectivity(m_topology, arg_entity_rank, stk::topology::ELEMENT_RANK, m_element_kind, m_fixed_element_connectivity, connectivity_map);
 
-  m_mesh.new_bucket_callback(m_entity_rank, &m_key[1], &m_key[1]+(m_key[0]-1), m_capacity);
+  m_parts.reserve(m_key.size());
+  supersets(m_parts);
+  m_mesh.new_bucket_callback(m_entity_rank, m_parts, m_capacity);
 }
 
 Bucket::~Bucket()
@@ -352,23 +354,6 @@ unsigned char* Bucket::field_data_location(const FieldBase& field) const
 
 //----------------------------------------------------------------------
 
-bool has_superset( const Bucket & bucket, const unsigned & ordinal )
-{
-  std::pair<const unsigned *, const unsigned *>
-    part_ord = bucket.superset_part_ordinals();
-
-  part_ord.first =
-    std::lower_bound( part_ord.first , part_ord.second , ordinal );
-
-  return part_ord.first < part_ord.second && ordinal == *part_ord.first ;
-}
-
-bool has_superset( const Bucket & bucket , const Part & p )
-{
-  const unsigned ordinal = p.mesh_meta_data_ordinal();
-  return has_superset(bucket,ordinal);
-}
-
 bool has_superset( const Bucket & bucket , const PartVector & ps )
 {
   const std::pair<const unsigned *, const unsigned *>
@@ -444,10 +429,10 @@ std::ostream & operator << ( std::ostream & s , const Bucket & k )
   const std::string & entity_rank_name =
     mesh_meta_data.entity_rank_names()[ k.entity_rank() ];
 
-  PartVector parts ; k.supersets( parts );
+  const PartVector& parts = k.supersets();
 
   s << "Bucket( " << entity_rank_name << " : " ;
-  for ( PartVector::iterator i = parts.begin() ; i != parts.end() ; ++i ) {
+  for ( PartVector::const_iterator i = parts.begin() ; i != parts.end() ; ++i ) {
     s << (*i)->name() << " " ;
   }
   s << ")" ;

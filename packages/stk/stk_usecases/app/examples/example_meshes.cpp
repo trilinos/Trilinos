@@ -14,6 +14,7 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 
+#include <stk_mesh/base/FindRestriction.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
@@ -73,7 +74,7 @@ void use_case_5_generate_mesh_meta_data(
   stk::mesh::set_cell_topology(block_tri_shell      , stk::mesh::CellTopology(shards::getCellTopologyData<shards::ShellTriangle<3>      >()));
 
   const mesh::FieldBase::Restriction & res =
-    node_coord.restriction( mesh::MetaData::NODE_RANK , universal );
+    stk::mesh::find_restriction(node_coord, mesh::MetaData::NODE_RANK , universal );
 
   if ( res.stride(0) != 3 ) {
     std::ostringstream msg ;

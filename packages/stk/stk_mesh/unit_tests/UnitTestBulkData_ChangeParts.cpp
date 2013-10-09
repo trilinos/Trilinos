@@ -83,8 +83,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
   // will be in it's closure.
 
   Entity closure_entity = bulk.declare_entity(4 /*entity rank*/,
-                                               p_rank+1 /*id*/,
-                                               no_parts);
+                                              p_rank+1 /*id*/,
+                                              no_parts);
 
   tmp[0] = & part_A_0 ;
   Entity entity_0_1 = bulk.declare_entity(MetaData::NODE_RANK, 1 /*id*/, tmp);
@@ -105,25 +105,25 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
   // Ensure that the supersets of the buckets containing the entities we
   // just created are correct.
 
-  bulk.bucket(entity_0_1).supersets( tmp );
+  tmp = bulk.bucket(entity_0_1).supersets();
   STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
   STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_univ) );
   STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_owns) );
   STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_A_0) );
 
-  bulk.bucket(entity_1_1).supersets( tmp );
+  tmp = bulk.bucket(entity_1_1).supersets();
   STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
   STKUNIT_ASSERT( bulk.bucket(entity_1_1).member(part_univ) );
   STKUNIT_ASSERT( bulk.bucket(entity_1_1).member(part_owns) );
   STKUNIT_ASSERT( bulk.bucket(entity_1_1).member(part_A_1) );
 
-  bulk.bucket(entity_2_1).supersets( tmp );
+  tmp = bulk.bucket(entity_2_1).supersets();
   STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
   STKUNIT_ASSERT( bulk.bucket(entity_2_1).member(part_univ) );
   STKUNIT_ASSERT( bulk.bucket(entity_2_1).member(part_owns) );
   STKUNIT_ASSERT( bulk.bucket(entity_2_1).member(part_A_2) );
 
-  bulk.bucket(entity_3_1).supersets( tmp );
+  tmp = bulk.bucket(entity_3_1).supersets();
   STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
   STKUNIT_ASSERT( bulk.bucket(entity_3_1).member(part_univ) );
   STKUNIT_ASSERT( bulk.bucket(entity_3_1).member(part_owns) );
@@ -134,7 +134,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
     tmp.resize(1);
     tmp[0] = & part_A_0 ;
     bulk.change_entity_parts( entity_0_1 , tmp );
-    bulk.bucket(entity_0_1).supersets( tmp );
+    tmp =     bulk.bucket(entity_0_1).supersets();
     STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
     STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_univ) );
     STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_owns) );
@@ -146,7 +146,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
     tmp.resize(1);
     tmp[0] = & part_B_0 ;
     bulk.change_entity_parts( entity_0_1 , tmp );
-    bulk.bucket(entity_0_1).supersets( tmp );
+    tmp =     bulk.bucket(entity_0_1).supersets();
     STKUNIT_ASSERT_EQUAL( size_t(4) , tmp.size() );
     STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_univ) );
     STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_owns) );
@@ -159,7 +159,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
     tmp.resize(1);
     tmp[0] = & part_B_0 ;
     bulk.change_entity_parts( entity_0_1 , PartVector() , tmp );
-    bulk.bucket(entity_0_1).supersets( tmp );
+    tmp =     bulk.bucket(entity_0_1).supersets();
     STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
     STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_univ) );
     STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_owns) );
@@ -173,7 +173,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
   stk::mesh::RelationIdentifier test_rel_id = 0;
   {
     bulk.declare_relation( entity_1_1 , entity_0_1 , test_rel_id );
-    bulk.bucket(entity_0_1).supersets( tmp );
+    tmp =     bulk.bucket(entity_0_1).supersets();
     STKUNIT_ASSERT_EQUAL( size_t(4) , tmp.size() );
     STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_univ) );
     STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_owns) );
@@ -186,7 +186,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
   // in part_A_1 is gone
   {
     bulk.destroy_relation( entity_1_1 , entity_0_1, test_rel_id );
-    bulk.bucket(entity_0_1).supersets( tmp );
+    tmp =     bulk.bucket(entity_0_1).supersets();
     STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
     STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_univ) );
     STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_owns) );
@@ -198,7 +198,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
     tmp.resize(1);
     tmp[0] = & part_B_2 ;
     bulk.change_entity_parts( entity_2_1 , tmp );
-    bulk.bucket(entity_2_1).supersets( tmp );
+    tmp =     bulk.bucket(entity_2_1).supersets();
     STKUNIT_ASSERT_EQUAL( size_t(4) , tmp.size() );
     STKUNIT_ASSERT( bulk.bucket(entity_2_1).member(part_univ) );
     STKUNIT_ASSERT( bulk.bucket(entity_2_1).member(part_owns) );
@@ -213,7 +213,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
   // is still in the parts it was already in).
   {
     bulk.declare_relation( entity_2_1 , entity_0_1 , test_rel_id );
-    bulk.bucket(entity_0_1).supersets( tmp );
+    tmp =     bulk.bucket(entity_0_1).supersets();
     STKUNIT_ASSERT_EQUAL( size_t(5) , tmp.size() );
     STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_univ) );
     STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_owns) );
@@ -227,7 +227,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
   // in parts A_2 and B_2 is gone.
   {
     bulk.destroy_relation( entity_2_1 , entity_0_1, test_rel_id );
-    bulk.bucket(entity_0_1).supersets( tmp );
+    tmp =     bulk.bucket(entity_0_1).supersets();
     STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
     STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_univ) );
     STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_owns) );
@@ -247,7 +247,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
   // as they were before the modification end and they should
   // be in the shared part as well.
 
-  bulk.bucket(entity_0_1).supersets( tmp );
+  tmp = bulk.bucket(entity_0_1).supersets();
   if ( bulk.parallel_owner_rank(entity_0_1) == p_rank ) {
     STKUNIT_ASSERT_EQUAL( size_t(parallel ? 4 : 3) , tmp.size() );
     STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_univ) );
@@ -264,7 +264,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
     STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_A_0) );
   }
 
-  bulk.bucket(entity_2_1).supersets( tmp );
+  tmp = bulk.bucket(entity_2_1).supersets();
   if ( bulk.parallel_owner_rank(entity_2_1) == p_rank ) {
     STKUNIT_ASSERT_EQUAL( size_t(parallel ? 5 : 4) , tmp.size() );
     STKUNIT_ASSERT( bulk.bucket(entity_2_1).member(part_univ) );
@@ -309,7 +309,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
   // Check that entity_0_1 is in the new part on the owning
   // process, but not on other processes.
 
-  bulk.bucket(entity_0_1).supersets( tmp );
+  tmp = bulk.bucket(entity_0_1).supersets();
   if ( bulk.parallel_owner_rank(entity_0_1) == p_rank ) {
     STKUNIT_ASSERT_EQUAL( size_t(parallel ? 5 : 4) , tmp.size() );
     STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_univ) );
@@ -331,7 +331,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
   // Now that modification_end has been called, entity_0_1 should
   // be in the new part (B_0) on all processes.
 
-  bulk.bucket(entity_0_1).supersets( tmp );
+  tmp = bulk.bucket(entity_0_1).supersets();
   if ( bulk.parallel_owner_rank(entity_0_1) == p_rank ) {
     STKUNIT_ASSERT_EQUAL( size_t(parallel ? 5 : 4) , tmp.size() );
     STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_univ) );

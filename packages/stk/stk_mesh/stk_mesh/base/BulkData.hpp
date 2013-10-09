@@ -1245,7 +1245,7 @@ private:
 
   // Field callbacks
 
-  void new_bucket_callback(EntityRank rank, unsigned const* part_ord_begin, unsigned const* part_ord_end, size_t capacity);
+  void new_bucket_callback(EntityRank rank, const PartVector& superset_parts, size_t capacity);
 
   void copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_bucket_id, Bucket::size_type dst_bucket_ord,
                                    EntityRank src_rank, unsigned src_bucket_id, Bucket::size_type src_bucket_ord);

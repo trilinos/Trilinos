@@ -20,114 +20,356 @@
 namespace stk {
 namespace mesh {
 
-Selector::Selector( )
-  : m_mesh_meta_data(0), m_op()
+namespace {
+
+struct print_selector_impl :
+  boost::static_visitor<std::ostream &>
 {
-  compoundAll();
-}
+  std::ostream & m_out;
 
+  print_selector_impl(std::ostream & out)
+    : m_out(out)
+  {}
 
-Selector::Selector( const Part & p )
-  : m_mesh_meta_data( & MetaData::get(p) ) , m_op()
-{
-  m_op.push_back( OpType( p.mesh_meta_data_ordinal() , 0 , 0 ) );
-}
-
-void Selector::compoundAll()
-{
-  m_op.insert( m_op.begin(), OpType( 0, 0, m_op.size()+1 ) );
-}
-
-
-Selector & Selector::complement()
-{
-  bool singlePart = (m_op.size() == 1);
-  bool fullCompoundPart = (m_op[0].m_count == m_op.size());
-
-  if ( !(singlePart || fullCompoundPart) ) {
-    // Turn into a compound
-    compoundAll();
+  std::ostream& operator() (const Part * p) const
+  {
+    if (p != NULL) {
+      m_out <<  p->name();
+    } else {
+      m_out << "NOTHING";
+    }
+    return m_out;
   }
-  // Flip the bit
-  m_op[0].m_unary ^= 1;
-  return *this;
+
+  template <typename Operation>
+  std::ostream& operator() (impl::binary_op_<Operation> const& expr) const
+  {
+    m_out << "(";
+    boost::apply_visitor( print_selector_impl(m_out), expr.m_lhs );
+    m_out << Operation();
+    boost::apply_visitor( print_selector_impl(m_out), expr.m_rhs );
+    m_out << ")";
+    return m_out;
+  }
+
+  std::ostream& operator() (impl::complement_ const& expr) const
+  {
+    m_out << "!(";
+    boost::apply_visitor( print_selector_impl(m_out), expr.m_selector );
+    m_out << ")";
+    return m_out;
+  }
+};
+
+
+struct select_bucket_impl : public boost::static_visitor<bool>
+{
+  Bucket const& m_bucket;
+
+  select_bucket_impl(Bucket const& bucket)
+    : m_bucket(bucket)
+  {}
+
+  bool operator() (const Part * p) const
+  { return (p != NULL)? has_superset(m_bucket, *p) : false; }
+
+  bool operator() (impl::binary_op_<impl::union_> const& set) const
+  { return boost::apply_visitor(*this, set.m_lhs) || boost::apply_visitor(*this, set.m_rhs); }
+
+  bool operator() (impl::binary_op_<impl::intersect_> const& set) const
+  { return boost::apply_visitor(*this, set.m_lhs) && boost::apply_visitor(*this, set.m_rhs); }
+
+  bool operator() (impl::binary_op_<impl::difference_> const& set) const
+  { return boost::apply_visitor(*this, set.m_lhs) && !boost::apply_visitor(*this, set.m_rhs); }
+
+  bool operator() (impl::complement_ const& set) const
+  { return !boost::apply_visitor(*this, set.m_selector); }
+};
+
+struct select_part_impl : public boost::static_visitor<bool>
+{
+  const Part * m_part;
+
+  select_part_impl(Part const& part)
+    : m_part(&part)
+  {}
+
+  bool operator() (const Part * p) const
+  {
+    if (p == NULL) {
+      return false;
+    }
+    return p->contains(*m_part);
+  }
+
+  bool operator() (impl::binary_op_<impl::union_> const& set) const
+  { return boost::apply_visitor(*this, set.m_lhs) || boost::apply_visitor(*this, set.m_rhs); }
+
+  bool operator() (impl::binary_op_<impl::intersect_> const& set) const
+  { return boost::apply_visitor(*this, set.m_lhs) && boost::apply_visitor(*this, set.m_rhs); }
+
+  bool operator() (impl::binary_op_<impl::difference_> const& set) const
+  { return boost::apply_visitor(*this, set.m_lhs) && !boost::apply_visitor(*this, set.m_rhs); }
+
+  bool operator() (impl::complement_ const& set) const
+  { return !boost::apply_visitor(*this, set.m_selector); }
+};
+
+struct is_all_union_visitor : public boost::static_visitor<bool>
+{
+  bool operator() (const Part * p) const
+  { return p != NULL; }
+
+  bool operator() (impl::binary_op_<impl::union_> const& set) const
+  { return boost::apply_visitor(*this, set.m_lhs) && boost::apply_visitor(*this, set.m_rhs); }
+
+  bool operator() (impl::binary_op_<impl::intersect_> const& set) const
+  { return false; }
+
+  bool operator() (impl::binary_op_<impl::difference_> const& set) const
+  { return false; }
+
+  bool operator() (impl::complement_ const& set) const
+  { return false; }
+};
+
+struct gather_parts : public boost::static_visitor<void>
+{
+  PartVector& m_parts;
+
+  gather_parts(PartVector & parts)
+    : m_parts(parts)
+  {}
+
+  void operator() (const Part * p) const
+  {
+    if (p != NULL) {
+      m_parts.push_back(const_cast<Part*>(p));
+    }
+  }
+
+  void operator() (impl::binary_op_<impl::union_> const& set) const
+  { boost::apply_visitor(*this, set.m_lhs);
+    boost::apply_visitor(*this, set.m_rhs);
+  }
+
+  void operator() (impl::binary_op_<impl::intersect_> const& set) const
+  {
+    // HACK: Only first part (picks up Context part)
+    boost::apply_visitor(*this, set.m_lhs);
+  }
+
+  void operator() (impl::binary_op_<impl::difference_> const& set) const
+  {
+    ThrowRequireMsg(false, "Cannot get_parts from a selector with differences");
+  }
+
+  void operator() (impl::complement_ const& set) const
+  {
+    ThrowRequireMsg(false, "Cannot get_parts from a selector with complements");
+  }
+};
+
+struct select_part_vector_impl : public boost::static_visitor<bool>
+{
+  const PartVector& m_parts;
+
+  select_part_vector_impl(PartVector const& parts)
+    : m_parts(parts)
+  {}
+
+  bool operator() (const Part * p) const
+  {
+    if (p == NULL) {
+      return false;
+    }
+
+    for (size_t i = 0, ie = m_parts.size(); i < ie; ++i) {
+      if (m_parts[i] == p) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  bool operator() (impl::binary_op_<impl::union_> const& set) const
+  { return boost::apply_visitor(*this, set.m_lhs) || boost::apply_visitor(*this, set.m_rhs); }
+
+  bool operator() (impl::binary_op_<impl::intersect_> const& set) const
+  { return boost::apply_visitor(*this, set.m_lhs) && boost::apply_visitor(*this, set.m_rhs); }
+
+  bool operator() (impl::binary_op_<impl::difference_> const& set) const
+  { return boost::apply_visitor(*this, set.m_lhs) && !boost::apply_visitor(*this, set.m_rhs); }
+
+  bool operator() (impl::complement_ const& set) const
+  { return !boost::apply_visitor(*this, set.m_selector); }
+};
+
+struct compare_less_impl : public boost::static_visitor<bool>
+{
+  bool operator()(const Part* a, const Part* b) const
+  {
+    if (a != NULL && b != NULL) {
+      return a->mesh_meta_data_ordinal() < b->mesh_meta_data_ordinal();
+    }
+    else if (a == NULL && b != NULL) {
+      return false;
+    }
+    else if (a != NULL && b == NULL) {
+      return true;
+    }
+    return false;
+  }
+
+  template <typename Expr>
+  bool operator()(const Part*, const Expr&) const
+  {
+    return true;
+  }
+
+  template <typename Expr>
+  bool operator()(const Expr&, const Part*) const
+  {
+    return false;
+  }
+
+  bool operator()(impl::binary_op_<impl::union_> const& a, impl::binary_op_<impl::union_> const& b) const
+  {
+    return boost::apply_visitor(*this, a.m_lhs, b.m_lhs) && boost::apply_visitor(*this, a.m_rhs, b.m_rhs);
+  }
+
+  bool operator()(impl::binary_op_<impl::intersect_> const& a, impl::binary_op_<impl::intersect_> const& b) const
+  {
+    return boost::apply_visitor(*this, a.m_lhs, b.m_lhs) && boost::apply_visitor(*this, a.m_rhs, b.m_rhs);
+  }
+
+  bool operator()(impl::binary_op_<impl::difference_> const& a, impl::binary_op_<impl::difference_> const& b) const
+  {
+    return boost::apply_visitor(*this, a.m_lhs, b.m_lhs) && boost::apply_visitor(*this, a.m_rhs, b.m_rhs);
+  }
+
+  bool operator()(impl::complement_ const& a, impl::complement_ const& b) const
+  {
+    return boost::apply_visitor(*this, a.m_selector, b.m_selector);
+  }
+
+  //
+
+  bool operator()(impl::binary_op_<impl::union_> const&, impl::binary_op_<impl::intersect_> const&) const
+  {
+    return true;
+  }
+
+  bool operator()(impl::binary_op_<impl::union_> const&, impl::binary_op_<impl::difference_> const&) const
+  {
+    return true;
+  }
+
+  bool operator()(impl::binary_op_<impl::union_> const&, impl::complement_ const&) const
+  {
+    return true;
+  }
+
+
+  bool operator()(impl::binary_op_<impl::intersect_> const&, impl::binary_op_<impl::union_> const&) const
+  {
+    return false;
+  }
+
+  bool operator()(impl::binary_op_<impl::difference_> const&, impl::binary_op_<impl::union_> const&) const
+  {
+    return false;
+  }
+
+  bool operator()(impl::complement_ const&, impl::binary_op_<impl::union_> const&) const
+  {
+    return false;
+  }
+
+  //
+
+  bool operator()(impl::binary_op_<impl::intersect_> const&, impl::binary_op_<impl::difference_> const&) const
+  {
+    return true;
+  }
+
+  bool operator()(impl::binary_op_<impl::difference_> const&, impl::binary_op_<impl::intersect_> const&) const
+  {
+    return false;
+  }
+
+  bool operator()(impl::binary_op_<impl::intersect_> const&, impl::complement_ const&) const
+  {
+    return true;
+  }
+
+  bool operator()(impl::complement_ const&, impl::binary_op_<impl::intersect_> const&) const
+  {
+    return false;
+  }
+
+  bool operator()(impl::binary_op_<impl::difference_> const&, impl::complement_ const&) const
+  {
+    return true;
+  }
+
+  bool operator()(impl::complement_ const&, impl::binary_op_<impl::difference_> const&) const
+  {
+    return false;
+  }
+};
+
+}// namespace
+
+
+std::ostream & operator<<( std::ostream & out, const Selector & selector)
+{
+  return boost::apply_visitor(print_selector_impl(out),selector.m_selector);
 }
+
 
 bool Selector::operator()( const Part & part ) const
 {
-  unsigned part_ord = part.mesh_meta_data_ordinal();
-  std::pair<const unsigned *, const unsigned *> part_ords(&part_ord, &part_ord+1);
-  return apply(part_ords, PartOrdLess());
+  return boost::apply_visitor(select_part_impl(part),m_selector);
 }
 
-bool Selector::operator()( const Bucket & candidate ) const
-{ return apply( m_op.begin() , m_op.end() , candidate.superset_part_ordinals(), PartOrdLess() ); }
-
-bool Selector::operator()( const Bucket * candidate ) const{
-  return operator()(*candidate);
-}
-
-Selector & Selector::operator &= ( const Selector & B )
+bool Selector::operator()( const Part * part ) const
 {
-  if (m_mesh_meta_data == 0) {
-    m_mesh_meta_data = B.m_mesh_meta_data;
-  }
-
-  m_op.insert( m_op.end() , B.m_op.begin() , B.m_op.end() );
-  return *this;
+  if (part == NULL) return false;
+  return boost::apply_visitor(select_part_impl(*part),m_selector);
 }
 
-
-Selector & Selector::operator |= ( const Selector & B )
+bool Selector::operator()( const Bucket & bucket ) const
 {
-  if (m_mesh_meta_data == 0) {
-    m_mesh_meta_data = B.m_mesh_meta_data;
-  }
+  return boost::apply_visitor(select_bucket_impl(bucket),m_selector);
+}
 
-  Selector notB = B; notB.complement();
+bool Selector::operator()( const Bucket * bucket ) const
+{
+  if (bucket != NULL)
+    return boost::apply_visitor(select_bucket_impl(*bucket),m_selector);
+  return false;
+}
 
-  const size_t original_size = m_op.size();
+bool Selector::operator()(const PartVector& parts) const
+{
+  return boost::apply_visitor(select_part_vector_impl(parts),m_selector);
+}
 
-  if ( 1 == original_size &&
-       m_op.front().m_count == 1 &&
-       m_op.front().m_unary == 0 ) {
-    // this == empty ; therefore,
-    // this UNION B == B
-    m_op = B.m_op ;
-  }
-  else if ( m_op.front().m_count == original_size &&
-            m_op.front().m_unary != 0 ) {
-    // This is a full-compound complement.
-    // Simply add notB to the end and increase the size of the compound
+bool Selector::operator<(const Selector& rhs) const
+{
+  return boost::apply_visitor(compare_less_impl(), m_selector, rhs.m_selector);
+}
 
-    // this == ! A ; therefore,
-    // this UNION B == ! ( ! ( ! A ) & ! B )
-    // this UNION B == ! ( A & ! B )
+void Selector::get_parts(PartVector& parts) const
+{
+  boost::apply_visitor(gather_parts(parts), m_selector);
+}
 
-    m_op.insert(
-        m_op.end(),
-        notB.m_op.begin(),
-        notB.m_op.end() );
-
-    m_op.front().m_count = m_op.size();
-  }
-  else {
-    // this UNION B == ! ( ! this & ! B )
-
-    this->complement();                   //   ( ! (this) )
-
-    const unsigned finalSize = 1 + m_op.size() + notB.m_op.size();
-
-    m_op.insert(
-        m_op.end(),
-        notB.m_op.begin(),
-        notB.m_op.end() );                // ! ( ! (this) & !B )
-    m_op.insert(
-        m_op.begin(),
-        OpType( 0 , 1 , finalSize ) );    // ! ( ! (this) & ? )
-  }
-
-  return *this;
+bool Selector::is_all_unions() const
+{
+  return boost::apply_visitor(is_all_union_visitor(), m_selector);
 }
 
 Selector operator & ( const Part & A , const Part & B )
@@ -136,7 +378,6 @@ Selector operator & ( const Part & A , const Part & B )
   S &= Selector( B );
   return S;
 }
-
 
 Selector operator & ( const Part & A , const Selector & B )
 {
@@ -189,65 +430,40 @@ Selector operator | ( const Selector & A, const Selector & B  )
 }
 
 
+Selector operator - ( const Part & A , const Part & B )
+{
+  Selector S( A );
+  S -= Selector( B );
+  return S;
+}
+
+
+Selector operator - ( const Part & A , const Selector & B )
+{
+  Selector S( A );
+  S -= B;
+  return S;
+}
+
+Selector operator - ( const Selector & A, const Part & B  )
+{
+  Selector S( A );
+  S -= Selector(B);
+  return S;
+}
+
+Selector operator - ( const Selector & A, const Selector & B  )
+{
+  Selector S( A );
+  S -= Selector(B);
+  return S;
+}
 
 
 Selector operator ! ( const Part & A )
 {
   Selector S(A);
   return S.complement();
-}
-
-
-std::ostream & operator<<( std::ostream & out, const Selector & selector)
-{
-  out << selector.printExpression(selector.m_op.begin(),selector.m_op.end());
-  return out;
-}
-
-std::string Selector::printExpression(
-    const std::vector<OpType>::const_iterator start,
-    const std::vector<OpType>::const_iterator finish
-    ) const
-{
-  std::ostringstream outS;
-
-  std::vector<OpType>::const_iterator start_it = start;
-  std::vector<OpType>::const_iterator finish_it = finish;
-
-  const OpType & op = *start_it;
-  if (op.m_count > 0) { // Compound
-    if (op.m_unary != 0) { // Complement
-      outS << "!";
-    }
-    outS << "(";
-    if (op.m_count == 1) {
-      outS << ")";
-    }
-    else {
-      finish_it = start_it;
-      for (int i=0 ; i < op.m_count ; ++i) {
-        ++finish_it;
-      }
-      ++start_it;
-      outS << printExpression(start_it,finish_it) << ")";
-      start_it = finish_it;
-      --start_it; // back up one
-    }
-  }
-  else { // Part
-    if (m_mesh_meta_data != NULL) {
-      Part & part = m_mesh_meta_data->get_part(op.m_part_id);
-      if (op.m_unary != 0) { // Complement
-        outS << "!";
-      }
-      outS << part.name();
-    }
-  }
-  ++start_it;
-  if (start_it != finish) {
-    outS << " AND " << printExpression(start_it,finish);
-  }
-  return outS.str();
 }
 
 
@@ -279,14 +495,7 @@ Selector selectIntersection( const PartVector& intersection_part_vector )
 Selector selectField( const FieldBase& field )
 {
   Selector selector;
-  const MetaData& meta = MetaData::get(field);
-  const FieldRestrictionVector& rvec = field.restrictions();
-
-  for(size_t i=0; i<rvec.size(); ++i) {
-    selector |= meta.get_part(rvec[i].part_ordinal());
-  }
-
-  const FieldRestrictionVector& sel_rvec = field.selector_restrictions();
+  const FieldRestrictionVector& sel_rvec = field.restrictions();
   for(size_t i=0; i<sel_rvec.size(); ++i) {
     selector |= sel_rvec[i].selector();
   }
@@ -294,9 +503,31 @@ Selector selectField( const FieldBase& field )
   return selector;
 }
 
-
+bool is_subset(Selector const& lhs, Selector const& rhs)
+{
+  if (lhs.is_all_unions() && rhs.is_all_unions()) {
+    PartVector lhs_parts, rhs_parts;
+    lhs.get_parts(lhs_parts);
+    rhs.get_parts(rhs_parts);
+    for (size_t l = 0, le = lhs_parts.size(); l < le; ++l) {
+      Part const& lhs_part = *lhs_parts[l];
+      bool found = false;
+      for (size_t r = 0, re = rhs_parts.size(); !found && r < re; ++r) {
+        Part const& rhs_part = *rhs_parts[r];
+        found = rhs_part.contains(lhs_part);
+      }
+      if (!found) {
+        return false;
+      }
+    }
+    return true;
+  }
+  else {
+    // If either selector has complements or intersections, it becomes
+    // much harder to determine if one is a subset of the other
+    return false;
+  }
+}
 
 } // namespace mesh
 } // namespace stk
-
-

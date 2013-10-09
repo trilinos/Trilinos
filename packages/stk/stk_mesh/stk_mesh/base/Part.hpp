@@ -81,6 +81,9 @@ public:
   /** \brief  Parts that are subsets of this part. */
   const PartVector & subsets() const { return m_partImpl.subsets(); }
 
+  /** \brief  Check if argument is subset of this */
+  bool contains(const Part& part) const;
+
   /** \brief  Equality comparison */
   bool operator == ( const Part & rhs ) const { return this == & rhs ; }
 

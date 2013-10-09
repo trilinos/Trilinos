@@ -48,13 +48,12 @@ std::ostream & print_restrictions(std::ostream & s ,
                                   const char * const b ,
                                   const FieldBase & field )
 {
-  const PartVector & all_parts = MetaData::get(field).get_parts();
   const std::vector<FieldBase::Restriction> & rMap = field.restrictions();
 
   for ( std::vector<FieldBase::Restriction>::const_iterator
         i = rMap.begin() ; i != rMap.end() ; ++i ) {
     s << b;
-    i->print( s, i->entity_rank(), * all_parts[ i->part_ordinal() ], field.rank() );
+    i->print( s, i->entity_rank(), i->selector(), field.rank() );
     s << std::endl;
   }
   return s;

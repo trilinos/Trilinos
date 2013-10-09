@@ -200,15 +200,12 @@ FieldBase * FieldRepository::declare_field(
   return f[0] ;
 }
 
-void FieldRepository::verify_and_clean_restrictions(
-    const char       * arg_method ,
-    const Part& superset, const Part& subset,
-    const PartVector & arg_all_parts )
+void FieldRepository::verify_and_clean_restrictions(const Part& superset, const Part& subset)
 {
   TraceIf("stk::mesh::impl::FieldRepository::verify_and_clean_restrictions", LOG_FIELD);
 
   for ( FieldVector::iterator f = m_fields.begin() ; f != m_fields.end() ; ++f ) {
-    (*f)->m_impl.verify_and_clean_restrictions( arg_method, superset, subset, arg_all_parts );
+    (*f)->m_impl.verify_and_clean_restrictions( superset, subset );
   }
 }
 

@@ -18,103 +18,20 @@
 namespace stk {
 namespace mesh {
 
-namespace {
-
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunneeded-internal-declaration"
-#endif
-inline
-const FieldBase::Restriction & empty_field_restriction()
-{
-  //NOT THREAD SAFE
-  static const FieldBase::Restriction empty ;
-  return empty ;
-}
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-
-}//namespace anonymous
-
 //Given a field and a range of parts, determine whether the field has a restriction
 //for the part range. (Common usage is to provide the part-range from a bucket; i.e.,
 //determine whether the field should be allocated in the bucket.)
-template<typename PartIterator, class Compare>
 const FieldBase::Restriction& find_restriction(const FieldBase& field,
                                                EntityRank erank,
-                                               PartIterator pbegin,
-                                               PartIterator pend,
-                                               Compare comp)
-{
-  GetPartIterOrdinal<PartIterator> get_part_ordinal;
+                                               const PartVector& parts);
 
-  const FieldBase::Restriction & empty = empty_field_restriction();
-  const FieldBase::Restriction * restriction = & empty ;
+const FieldBase::Restriction& find_and_check_restriction(const FieldBase& field,
+                                                         EntityRank erank,
+                                                         const PartVector& parts);
 
-  const std::vector<FieldBase::Restriction> & restr_vec = field.restrictions();
-  const std::vector<FieldBase::Restriction>::const_iterator iend = restr_vec.end();
-        std::vector<FieldBase::Restriction>::const_iterator ibeg = restr_vec.begin();
-
-  //NOT THREAD SAFE
-  static FieldRestriction restr;
-
-  for ( PartIterator it = pbegin; it != pend && iend != ibeg ; ++it ) {
-
-    restr.set_entity_rank(erank);
-    restr.set_part_ordinal(get_part_ordinal(it));
-
-    //lower_bound returns an iterator to either the insertion point for the
-    //'restr' argument, or to a matching restriction.
-    //It only returns the 'end' iterator if 'restr' is past the end of the
-    //vector of restrictions being searched.
-    //This depends on the input part ordinals being sorted, and on the restriction
-    //vector being sorted by part ordinal.
-
-    ibeg = std::lower_bound( ibeg , iend , restr );
-
-    if ( (iend != ibeg) && (*ibeg == restr) ) {
-      if ( restriction == & empty ) { restriction = & *ibeg ; }
-
-      if ( ibeg->not_equal_stride(*restriction) ) {
-
-        Part & p_old = MetaData::get(field).get_part( ibeg->part_ordinal() );
-        Part & p_new = MetaData::get(field).get_part( restriction->part_ordinal() );
-
-        std::ostringstream msg ;
-        msg << " FAILED WITH INCOMPATIBLE DIMENSIONS FOR " ;
-        msg << field ;
-        msg << " Part[" << p_old.name() ;
-        msg << "] and Part[" << p_new.name() ;
-        msg << "]" ;
-
-        ThrowErrorMsg( msg.str() );
-      }
-    }
-  }
-
-  const std::vector<FieldBase::Restriction> & sel_res = field.selector_restrictions();
-  std::pair<PartIterator,PartIterator> part_range = std::make_pair(pbegin, pend);
-  for(std::vector<FieldBase::Restriction>::const_iterator it=sel_res.begin(), it_end=sel_res.end(); it != it_end; ++it) {
-    const Selector& selector = it->selector();
-    if (it->entity_rank() == erank && selector.apply(part_range, comp)) {
-      if (restriction == &empty) {
-        restriction = &*it;
-      }
-      if (it->not_equal_stride(*restriction)) {
-        std::ostringstream oss;
-        for ( PartIterator name_it = pbegin; name_it != pend ; ++name_it ) {
-          oss << MetaData::get(field).get_part( get_part_ordinal(name_it) ).name() << ", ";
-        }
-        ThrowErrorMsg("find_restriction calculation failed with different field-restriction selectors giving incompatible sizes.  Field name = "
-        		<< field.name() << "on bucket with parts = " << oss.str() << "with one selector = " << restriction->selector() << ", dimension = " << restriction->dimension()
-        		<< " and another selector = " << it->selector() << ", dimension = " << it->dimension() << "!");
-      }
-    }
-  }
-
-  return *restriction ;
-}
+const FieldBase::Restriction& find_restriction(const FieldBase& field,
+                                               EntityRank erank,
+                                               const Part & part);
 
 } // namespace mesh
 } // namespace stk

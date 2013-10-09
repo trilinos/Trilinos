@@ -46,22 +46,6 @@ print( std::ostream & , const std::string & indent , const Bucket & );
 // The part count and parts are equal
 bool raw_part_equal( const unsigned * lhs , const unsigned * rhs );
 
-//----------------------------------------------------------------------
-/** \brief  Is this bucket a subset of the given
- *          \ref stk::mesh::Part "part"
- */
-bool has_superset( const Bucket & ,  const Part & p );
-
-/** \brief  Is this bucket a subset of the given
- *          \ref stk::mesh::Part "part" by partID
- */
-bool has_superset( const Bucket & ,  const unsigned & ordinal );
-
-/** \brief  Is this bucket a subset of all of the given
- *          \ref stk::mesh::Part "parts"
- */
-bool has_superset( const Bucket & , const PartVector & );
-
 
 #define CONNECTIVITY_TYPE_SWITCH(entity_kind, fixed_func_sig, dynamic_func_sig)\
   switch(entity_kind) {\
@@ -115,6 +99,7 @@ private:
   size_type              m_size ;        // Number of entities
   Bucket               * m_bucket ;      // Pointer to head of partition, but head points to tail
   unsigned               m_bucket_id;    // Index into its BucketRepository's m_bucket[entity_rank()], these are NOT unique
+  PartVector             m_parts;
 
   //m_nodes_per_entity is how many connected-nodes (downward relations) exist
   //for each entity in this bucket.
@@ -196,7 +181,7 @@ public:
   unsigned bucket_id() const { return m_bucket_id; }
 
   /** \brief  This bucket is a subset of these \ref stk::mesh::Part "parts" */
-  void supersets( PartVector & ) const ;
+  const PartVector& supersets() const { return m_parts; }
   void supersets( OrdinalVector & ) const ;
 
   //--------------------------------
@@ -363,32 +348,34 @@ public:
   void debug_dump(std::ostream& out, unsigned ordinal = -1u) const;
 
 private:
-  
-  // The following *_other* functions should not be made available externally, in 
+
+  // The following *_other* functions should not be made available externally, in
   // order to avoid external confusion with "constraint" and "other" connectivities.
-  // They are currently used within this class to provide connectivities 
+  // They are currently used within this class to provide connectivities
   // externally through another interface.
-  Entity const* begin_others(size_type bucket_ordinal) const { 
-    return m_dynamic_other_connectivity.begin(bucket_ordinal); 
+  Entity const* begin_others(size_type bucket_ordinal) const {
+    return m_dynamic_other_connectivity.begin(bucket_ordinal);
   }
-  ConnectivityOrdinal const* begin_other_ordinals(size_type bucket_ordinal) const { 
-    return m_dynamic_other_connectivity.begin_ordinals(bucket_ordinal); 
+  ConnectivityOrdinal const* begin_other_ordinals(size_type bucket_ordinal) const {
+    return m_dynamic_other_connectivity.begin_ordinals(bucket_ordinal);
   }
-  Permutation const* begin_other_permutations(size_type bucket_ordinal) const { 
-    return m_dynamic_other_connectivity.begin_permutations(bucket_ordinal); 
+  Permutation const* begin_other_permutations(size_type bucket_ordinal) const {
+    return m_dynamic_other_connectivity.begin_permutations(bucket_ordinal);
   }
-  unsigned num_other(size_type bucket_ordinal) const { 
-    return m_dynamic_other_connectivity.num_connectivity(bucket_ordinal); 
+  unsigned num_other(size_type bucket_ordinal) const {
+    return m_dynamic_other_connectivity.num_connectivity(bucket_ordinal);
   }
-  Entity const* end_others(size_type bucket_ordinal) const { 
-    return m_dynamic_other_connectivity.end(bucket_ordinal); 
+  Entity const* end_others(size_type bucket_ordinal) const {
+    return m_dynamic_other_connectivity.end(bucket_ordinal);
   }
-  ConnectivityOrdinal const* end_other_ordinals(size_type bucket_ordinal) const { 
-    return m_dynamic_other_connectivity.end_ordinals(bucket_ordinal); 
+  ConnectivityOrdinal const* end_other_ordinals(size_type bucket_ordinal) const {
+    return m_dynamic_other_connectivity.end_ordinals(bucket_ordinal);
   }
-  Permutation const* end_other_permutations(size_type bucket_ordinal) const { 
-    return m_dynamic_other_connectivity.end_permutations(bucket_ordinal); 
+  Permutation const* end_other_permutations(size_type bucket_ordinal) const {
+    return m_dynamic_other_connectivity.end_permutations(bucket_ordinal);
   }
+
+  void supersets( PartVector & ) const ;
 
   /** \brief  The \ref stk::mesh::BulkData "bulk data manager"
    *          that owns this bucket.
@@ -452,6 +439,38 @@ private:
 };
 #undef CONNECTIVITY_TYPE_SWITCH
 #undef RANK_SWITCH
+
+/** \brief  Is this bucket a subset of the given
+ *          \ref stk::mesh::Part "part" by partID
+ */
+inline
+bool has_superset( const Bucket & bucket,  const unsigned & ordinal )
+{
+  std::pair<const unsigned *, const unsigned *>
+    part_ord = bucket.superset_part_ordinals();
+
+  part_ord.first =
+    std::lower_bound( part_ord.first , part_ord.second , ordinal );
+
+  return part_ord.first < part_ord.second && ordinal == *part_ord.first ;
+}
+
+//----------------------------------------------------------------------
+/** \brief  Is this bucket a subset of the given
+ *          \ref stk::mesh::Part "part"
+ */
+
+inline
+bool has_superset( const Bucket & bucket ,  const Part & p )
+{
+  return has_superset(bucket,p.mesh_meta_data_ordinal());
+}
+
+/** \brief  Is this bucket a subset of all of the given
+ *          \ref stk::mesh::Part "parts"
+ */
+bool has_superset( const Bucket & bucket , const PartVector & parts );
+
 
 struct BucketLess {
   bool operator()( const Bucket * lhs_bucket , const unsigned * rhs ) const ;

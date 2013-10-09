@@ -18,6 +18,7 @@
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
+#include <stk_mesh/base/FindRestriction.hpp>
 
 #include <Shards_BasicTopologies.hpp>
 
@@ -154,7 +155,7 @@ namespace {
 	const Ioss::Field::RoleType *role = stk::io::get_field_role(*f);
 
 	if (role == NULL || *role == Ioss::Field::TRANSIENT) {
-	  const stk::mesh::FieldBase::Restriction &res = f->restriction(part_type, part);
+	  const stk::mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*f, part_type, part);
 	  std::pair<std::string, Ioss::Field::BasicType> field_type;
 	  stk::io::get_io_field_type(f, res, &field_type);
 	  if (field_type.second != Ioss::Field::INVALID) {
@@ -200,7 +201,7 @@ namespace {
 	const Ioss::Field::RoleType *role = stk::io::get_field_role(*f);
 
 	if (role == NULL || *role == Ioss::Field::TRANSIENT) {
-	  const stk::mesh::FieldBase::Restriction &res = f->restriction(part_type, part);
+	  const stk::mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*f, part_type, part);
 	  std::pair<std::string, Ioss::Field::BasicType> field_type;
 	  stk::io::get_io_field_type(f, res, &field_type);
 	  if (field_type.second != Ioss::Field::INVALID) {

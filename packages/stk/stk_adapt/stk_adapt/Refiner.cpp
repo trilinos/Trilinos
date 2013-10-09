@@ -2643,8 +2643,7 @@ namespace stk {
           for ( vector<stk::mesh::Bucket*>::const_iterator it_side_bucket = side_buckets.begin() ; it_side_bucket != side_buckets.end() ; ++it_side_bucket )
             {
               stk::mesh::Bucket & side_bucket = **it_side_bucket ;
-              stk::mesh::PartVector side_parts;
-              side_bucket.supersets(side_parts);
+              stk::mesh::PartVector const& side_parts = side_bucket.supersets();
 
               if (DEBUG_GSPR)
                 {
@@ -2766,8 +2765,7 @@ namespace stk {
 
     static bool bucket_only_auto_part(stk::mesh::Bucket& bucket)
     {
-      stk::mesh::PartVector side_parts;
-      bucket.supersets(side_parts);
+      stk::mesh::PartVector const& side_parts = bucket.supersets();
       for (unsigned isp=0; isp < side_parts.size(); ++isp)
         {
           if ( !stk::mesh::is_auto_declared_part(*side_parts[isp]) )
@@ -2967,10 +2965,9 @@ namespace stk {
                       s_debugCSF = true;
                       found = connect(side, valid_side_part_map);
 
-                      stk::mesh::PartVector side_parts;
-                      m_eMesh.bucket(side).supersets(side_parts);
+                      stk::mesh::PartVector const& side_parts = m_eMesh.bucket(side).supersets();
                       for (unsigned isp = 0; isp < side_parts.size(); isp++)
-                        {
+                      {
                           std::cout << "side parts= " << side_parts[isp]->name() << std::endl;
                         }
 #if 0
@@ -3059,9 +3056,8 @@ namespace stk {
       if (m_side_part_map.size())
         {
           bool valid = false;
-          stk::mesh::PartVector side_parts, elem_parts;
-          m_eMesh.bucket(element).supersets(elem_parts);
-          m_eMesh.bucket(side_elem).supersets(side_parts);
+          stk::mesh::PartVector const& elem_parts = m_eMesh.bucket(element).supersets();
+          stk::mesh::PartVector const& side_parts = m_eMesh.bucket(side_elem).supersets();
           for (unsigned isp = 0; isp < side_parts.size(); isp++)
             {
               if ( stk::mesh::is_auto_declared_part(*side_parts[isp]) )
@@ -3206,14 +3202,13 @@ namespace stk {
               std::cout << "\n elem= " << std::endl;
               m_eMesh.print(element);
 
-              stk::mesh::PartVector side_parts;
-              m_eMesh.bucket(side_elem).supersets(side_parts);
+              stk::mesh::PartVector const& side_parts = m_eMesh.bucket(side_elem).supersets();
               for (unsigned isp = 0; isp < side_parts.size(); isp++)
                 {
                   std::cout << "side parts= " << side_parts[isp]->name() << std::endl;
                 }
-              stk::mesh::PartVector elem_parts;
-              m_eMesh.bucket(element).supersets(elem_parts);
+
+              stk::mesh::PartVector const& elem_parts = m_eMesh.bucket(element).supersets();
               for (unsigned isp = 0; isp < elem_parts.size(); isp++)
                 {
                   std::cout << "elem parts= " << elem_parts[isp]->name() << std::endl;
@@ -3510,8 +3505,7 @@ namespace stk {
               if (0)
                 {
                   std::string str;
-                  stk::mesh::PartVector pv;
-                  bucket.supersets(pv);
+                  stk::mesh::PartVector const& pv = bucket.supersets();
                   for (unsigned ip = 0; ip < pv.size(); ip++)
                     {
                       str += " "+pv[ip]->name();

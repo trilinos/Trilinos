@@ -117,17 +117,6 @@ class FieldBase
     return m_impl.restrictions();
   }
 
-  const RestrictionVector &selector_restrictions() const {
-    return m_impl.selector_restrictions();
-  }
-
-  /** \brief  Query a field restriction, result is volatile until the owning
-   *          \ref stk::mesh::MetaData "meta data manager" is committed.
-   */
-  const Restriction & restriction( unsigned entity_rank , const Part & part ) const {
-    return m_impl.restriction( entity_rank, part);
-  }
-
   //----------------------------------------
 
   FieldBase * field_state( FieldState fstate) const {

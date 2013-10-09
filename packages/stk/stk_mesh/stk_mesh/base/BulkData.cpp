@@ -836,13 +836,12 @@ void BulkData::allocate_field_data()
   for(EntityRank rank = stk::topology::NODE_RANK; rank < mesh_meta_data().entity_rank_count(); ++rank) {
     const std::vector<Bucket*>& buckets = this->buckets(rank);
     for(size_t i=0; i<buckets.size(); ++i) {
-      std::pair<const unsigned*,const unsigned*> part_ords = buckets[i]->superset_part_ordinals();
-      new_bucket_callback(rank, part_ords.first, part_ords.second, buckets[i]->capacity());
+      new_bucket_callback(rank, buckets[i]->supersets(), buckets[i]->capacity());
     }
   }
 }
 
-void BulkData::new_bucket_callback(EntityRank rank, unsigned const* part_ord_begin, unsigned const* part_ord_end, size_t capacity)
+void BulkData::new_bucket_callback(EntityRank rank, const PartVector& superset_parts, size_t capacity)
 {
   if (!m_keep_fields_updated) {
     return;
@@ -865,7 +864,7 @@ void BulkData::new_bucket_callback(EntityRank rank, unsigned const* part_ord_beg
     unsigned num_bytes_per_entity = 0;
 
     const FieldBase::Restriction & restriction =
-      find_restriction(field, rank, part_ord_begin, part_ord_end, PartOrdLess());
+      find_and_check_restriction(field, rank, superset_parts);
 
     if ( restriction.dimension() > 0 ) { // Exists
 

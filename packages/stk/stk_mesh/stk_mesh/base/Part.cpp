@@ -203,6 +203,19 @@ std::string convert_to_internal_name(const std::string& part_name)
   return out_str;
 }
 
+bool Part::contains(const Part& part) const
+{
+  if (this == &part) { // same part
+    return true;
+  }
+  const PartVector & subs = subsets();
+  for (size_t i = 0, ie = subs.size(); i < ie; ++i) {
+    if (subs[i] == &part) {
+      return true;
+    }
+  }
+  return false;
+}
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------

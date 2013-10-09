@@ -588,22 +588,19 @@ namespace stk {
                     std::cout << "\nelem= " << std::endl;
                     eMesh.print(element);
 
-                    stk::mesh::PartVector side_parts;
-                    eMesh.bucket(side_elem).supersets(side_parts);
+                    stk::mesh::PartVector const& side_parts = eMesh.bucket(side_elem).supersets();
                     for (unsigned isp = 0; isp < side_parts.size(); isp++)
                       {
                         std::cout << "side parts= " << side_parts[isp]->name() << std::endl;
                       }
 
-                    stk::mesh::PartVector existing_side_parts;
-                    eMesh.bucket(existing_side).supersets(existing_side_parts);
+                    stk::mesh::PartVector const& existing_side_parts = eMesh.bucket(existing_side).supersets();
                     for (unsigned isp = 0; isp < side_parts.size(); isp++)
                       {
                         std::cout << "existing_side parts= " << existing_side_parts[isp]->name() << std::endl;
                       }
 
-                    stk::mesh::PartVector elem_parts;
-                    eMesh.bucket(element).supersets(elem_parts);
+                    stk::mesh::PartVector const& elem_parts = eMesh.bucket(element).supersets();
                     for (unsigned isp = 0; isp < elem_parts.size(); isp++)
                       {
                         std::cout << "elem parts= " << elem_parts[isp]->name() << std::endl;
@@ -1548,14 +1545,14 @@ namespace stk {
             const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
             fr_type = fr . entity_rank();
             fieldStride = fr.dimension() ;
-            stk::mesh::Part& frpart = eMesh.get_fem_meta_data()->get_part(fr.part_ordinal());
+            stk::mesh::Selector frselect = fr.selector();
             if (EXTRA_PRINT_URP_IF && nfr != 1 ) std::cout << "tmp P[" << 0 << "] info>    number of field restrictions= " << nfr << " fr_type= " << fr_type
-                                                           << " fieldStride = " << fieldStride << " frpart= " << frpart.name()
+                                                           << " fieldStride = " << fieldStride << " frselect= " << frselect
                                                            << std::endl;
           }
         {
           const stk::mesh::FieldBase::Restriction & r =
-            field->restriction(fr_type, stk::mesh::MetaData::get(*field).universal_part());
+            stk::mesh::find_restriction(*field, fr_type, stk::mesh::MetaData::get(*field).universal_part());
           fieldStride = r.dimension();
           if (EXTRA_PRINT_URP_IF) std::cout << "tmp stride = " <<  r.dimension() << " fieldStride= " << fieldStride
                                             << " fr_type= " << fr_type << std::endl;

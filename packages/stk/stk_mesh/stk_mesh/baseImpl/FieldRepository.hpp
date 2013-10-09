@@ -55,10 +55,7 @@ class FieldRepository {
         MetaData                          * arg_meta_data
         );
 
-    void verify_and_clean_restrictions(
-        const char       * arg_method ,
-        const Part& superset, const Part& subset,
-        const PartVector & arg_all_parts );
+    void verify_and_clean_restrictions(const Part& superset, const Part& subset);
 
     const FieldVector & get_fields() const {
       return m_fields;

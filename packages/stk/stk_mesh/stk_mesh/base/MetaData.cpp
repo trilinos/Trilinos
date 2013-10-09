@@ -382,8 +382,6 @@ void MetaData::declare_part_subset( Part & superset , Part & subset )
 
 void MetaData::internal_declare_part_subset( Part & superset , Part & subset )
 {
-  static const char method[] = "stk::mesh::MetaData::declare_part_subset" ;
-
   require_not_committed();
   require_same_mesh_meta_data( MetaData::get(superset) );
   require_same_mesh_meta_data( MetaData::get(subset) );
@@ -394,7 +392,7 @@ void MetaData::internal_declare_part_subset( Part & superset , Part & subset )
 
   // The new superset / subset relationship can cause a
   // field restriction to become incompatible or redundant.
-  m_field_repo.verify_and_clean_restrictions(method, superset, subset, m_part_repo.get_all_parts());
+  m_field_repo.verify_and_clean_restrictions(superset, subset);
 }
 
 //----------------------------------------------------------------------
