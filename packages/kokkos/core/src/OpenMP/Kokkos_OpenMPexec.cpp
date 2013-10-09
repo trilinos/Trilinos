@@ -41,6 +41,7 @@
 //@HEADER
 */
 
+#include <limits>
 #include <iostream>
 #include <Kokkos_OpenMP.hpp>
 #include <Kokkos_hwloc.hpp>
@@ -110,7 +111,7 @@ void OpenMPexec::verify_is_process( const char * const label )
   if ( omp_in_parallel() ) {
     std::string msg( label );
     msg.append( " ERROR: in parallel" );
-    Kokkos::Impl::throw_runtime_exception( label );
+    Kokkos::Impl::throw_runtime_exception( msg );
   }
 }
 
@@ -119,7 +120,7 @@ void OpenMPexec::verify_initialized( const char * const label )
   if ( 1 < omp_get_max_threads() && 0 == m_thread[0] ) {
     std::string msg( label );
     msg.append( " ERROR: not initialized" );
-    Kokkos::Impl::throw_runtime_exception( label );
+    Kokkos::Impl::throw_runtime_exception( msg );
   }
 }
 
@@ -239,20 +240,18 @@ unsigned OpenMP::league_max()
 {
   Impl::OpenMPexec::verify_is_process("Kokkos::OpenMP::league_max" );
 
-  return Impl::OpenMPexec::m_thread[0] ?
-         Impl::OpenMPexec::m_thread[0]->m_init_league_size : 0 ;
+  return unsigned( std::numeric_limits<int>::max() );
 }
 
 unsigned OpenMP::team_max()
 {
   Impl::OpenMPexec::verify_is_process("Kokkos::OpenMP::team_max" );
 
-  Impl::OpenMPexec::verify_is_process("Kokkos::OpenMP::league_max" );
-
   return Impl::OpenMPexec::m_thread[0] ?
          Impl::OpenMPexec::m_thread[0]->m_team_size : 1 ;
 }
 
+//----------------------------------------------------------------------------
 
 void OpenMP::initialize( const unsigned team_count ,
                          const unsigned threads_per_team ,
@@ -267,7 +266,31 @@ void OpenMP::initialize( const unsigned team_count ,
 
   const unsigned thread_count = team_count * threads_per_team ;
 
+  //----------------------------------------
+  // Spawn threads:
+
+  omp_set_num_threads( thread_count );
+
+  // Verify OMP interaction:
+  {
+    if ( int(thread_count) != omp_get_max_threads() ) {
+      Kokkos::Impl::throw_runtime_exception("Kokkos:OpenMP::initialize ERROR : failed omp_get_max_threads()" );
+    }
+
+#pragma omp parallel
+    {
+      if ( int(thread_count) != omp_get_num_threads() ) {
+        Kokkos::Impl::throw_runtime_exception("Kokkos:OpenMP::initialize ERROR : failed omp_get_num_threads()" );
+      }
+    }
+  }
+
+  //----------------------------------------
+  // Only need inter-thread data structures if more than one thread.
+
   if ( thread_count <= 1 ) return ;
+
+  //----------------------------------------
 
   const bool hwloc_avail = Kokkos::hwloc::available();
 
@@ -288,22 +311,6 @@ void OpenMP::initialize( const unsigned team_count ,
     }
 
     Kokkos::hwloc::thread_mapping( team_topology , use_core_topology , hwloc_core_topo , master_coord , threads_coord );
-  }
-
-  // Spawn threads:
-
-  omp_set_num_threads( thread_count );
-
-  {
-    size_t count = 0 ;
-#pragma omp parallel
-    {
-      if ( 0 == omp_get_thread_num() ) { count = omp_get_num_threads(); }
-    }
-
-    if ( thread_count != count ) {
-      Kokkos::Impl::throw_runtime_exception("Kokkos:OpenMP::initialize ERROR : failed spawning count" );
-    }
   }
 
   // Bind threads and allocate thread data:
@@ -364,6 +371,8 @@ void OpenMP::initialize( const unsigned team_count ,
   Impl::OpenMPexec::resize_reduce_scratch( 4096 - Impl::OpenMPexec::REDUCE_TEAM_BASE );
   Impl::OpenMPexec::resize_shared_scratch( 4096 );
 }
+
+//----------------------------------------------------------------------------
 
 void OpenMP::finalize()
 {

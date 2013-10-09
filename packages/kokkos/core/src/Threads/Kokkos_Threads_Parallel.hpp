@@ -234,6 +234,12 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
+struct ThreadsExecUseScanSmall {
+  size_t nwork ;
+  operator size_t () const { return nwork ; }
+  ThreadsExecUseScanSmall( size_t n ) : nwork( n ) {}
+};
+
 template< class FunctorType , class WorkSpec >
 class ParallelScan< FunctorType , WorkSpec , Kokkos::Threads >
 {
@@ -259,7 +265,14 @@ public:
       self.m_func( iwork , update , false );
     }
 
-    exec.scan_large( self.m_func );
+    // Compile time selection of scan algorithm to support unit testing
+    // of both large and small thread count algorithms.
+    if ( ! is_same< WorkSpec , ThreadsExecUseScanSmall >::value ) {
+      exec.scan_large( self.m_func );
+    }
+    else {
+      exec.scan_small( self.m_func );
+    }
 
     for ( size_t iwork = work.first ; iwork < work.second ; ++iwork ) {
       self.m_func( iwork , update , true );
