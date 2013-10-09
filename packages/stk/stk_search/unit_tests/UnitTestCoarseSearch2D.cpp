@@ -1,4 +1,4 @@
-
+#if 0
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <stk_search/CoarseSearch.hpp>
 #include <stk_search/BoundingBox.hpp>
@@ -78,3 +78,4 @@ STKUNIT_UNIT_TEST(CoarseSearch, 2D)
 }
 
 } // namespace stk_search_unit
+#endif
