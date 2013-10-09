@@ -125,7 +125,6 @@ void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector co
 
             // the sides are not a match
             if (equivalent == false) continue;
-
             // if the permutation_id is to a positive permutation
             // the sides are not opposing, i.e. the elements are superimposed on each other
             ThrowErrorMsgIf( (permutation_id < side_topology.num_positive_permutations())
