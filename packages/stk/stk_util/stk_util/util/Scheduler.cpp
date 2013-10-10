@@ -1,4 +1,4 @@
-#include <stk_io/IOScheduler.hpp>
+#include <stk_util/util/Scheduler.hpp>
 #ifdef SIERRA_PARALLEL_MPI
 #include <mpi.h>
 #endif
@@ -17,9 +17,9 @@
 #endif
 
 namespace stk {
-namespace io {
+namespace util {
 
-IOScheduler::IOScheduler() :
+Scheduler::Scheduler() :
       tolerance_(1.0e-6),
       lastTime_(-Real_MAX),
       firstTime_(-Real_MAX),
@@ -29,20 +29,13 @@ IOScheduler::IOScheduler() :
       startTime_(-Real_MAX),
       terminationTime_(Real_MAX),
       restartTime_(-Real_MAX),
-      forceWrite_(false),
+      forceSchedule_(false),
       synchronize_(false),
       initialized_(false) {}
 
-// Added non-inline empty destructor to fix bug on Janus.
-// For some reason, several/many tests fail on Janus when
-// the destructor for this class is inline.
+Scheduler::~Scheduler() {}
 
-// It may be that the inline generated code for several
-// maps and sets caused bad code to get generated inline.
-// By making an explicit function call, the errors go away.
-IOScheduler::~IOScheduler() {}
-
-IOScheduler::IOScheduler(const IOScheduler &from) :
+Scheduler::Scheduler(const Scheduler &from) :
       timeIntervals_(from.timeIntervals_),
       stepIntervals_(from.stepIntervals_),
       times_(from.times_),
@@ -56,17 +49,17 @@ IOScheduler::IOScheduler(const IOScheduler &from) :
       startTime_(from.startTime_),
       terminationTime_(from.terminationTime_),
       restartTime_(from.restartTime_),
-      forceWrite_(from.forceWrite_),
+      forceSchedule_(from.forceSchedule_),
       synchronize_(from.synchronize_),
       initialized_(from.initialized_) {}
 
-void IOScheduler::reset_last_time()
+void Scheduler::reset_last_time()
 {
   lastTime_ = -Real_MAX;
   initialized_ = false;
 }
 
-bool IOScheduler::write_now(Step  step)
+bool Scheduler::write_now(Step  step)
 {
   assert(step >= 0);
 
@@ -112,7 +105,7 @@ bool IOScheduler::write_now(Step  step)
   return (step - start) % inter == 0;
 }
 
-TolerancedTime IOScheduler::get_toleranced_time_range(Time time) const
+TolerancedTime Scheduler::get_toleranced_time_range(Time time) const
 {
   TolerancedTime delta;
   if (firstTime_ > -Real_MAX) {
@@ -124,7 +117,7 @@ TolerancedTime IOScheduler::get_toleranced_time_range(Time time) const
     // (e.g., quasistatic followed by transient), the times of the
     // transient analysis can be large and we will see this
     // problem. To solve this, we save the first time that this
-    // IOScheduler performed output and calculate the tolerance bounds
+    // Scheduler performed output and calculate the tolerance bounds
     // on the delta from this first time...
     delta.min = ((1.0 - tolerance_) * (time - firstTime_)) + firstTime_;
     delta.max = ((1.0 + tolerance_) * (time - firstTime_)) + firstTime_;
@@ -140,7 +133,7 @@ TolerancedTime IOScheduler::get_toleranced_time_range(Time time) const
   return delta;
 }
 
-bool IOScheduler::write_now(Time time)
+bool Scheduler::write_now(Time time)
 {
   // Returns true if:
   // 1. Parameter 'time' matches one of the times specified in the 'times_' list
@@ -299,32 +292,32 @@ bool IOScheduler::write_now(Time time)
   }
 }
 
-void IOScheduler::set_force_write()
+void Scheduler::set_force_schedule()
 {
-  forceWrite_ = true;
+  forceSchedule_ = true;
 }
 
-bool IOScheduler::force_write()
+bool Scheduler::force_schedule()
 {
-  // It is possible that the forceWrite_flag has been set on only one
+  // It is possible that the forceSchedule_flag has been set on only one
   // processor so we need to see if it is true on any processor...
-  bool result = forceWrite_;
+  bool result = forceSchedule_;
   if (sierra::Env::parallel_size() > 1) {
     static int inbuf[1], outbuf[1];
-    inbuf[0] = forceWrite_ ? 1 : 0;
+    inbuf[0] = forceSchedule_ ? 1 : 0;
     const int success = MPI_Allreduce(inbuf, outbuf, 1,
         MPI_INT,
         MPI_MAX,
         sierra::Env::parallel_comm());
-    ThrowRequireMsg(success ==  MPI_SUCCESS, "IOScheduler::force_write - MPI_Allreduce failed");
+    ThrowRequireMsg(success ==  MPI_SUCCESS, "Scheduler::force_write - MPI_Allreduce failed");
 
     result = outbuf[0] > 0;
   }
-  forceWrite_ = false;
+  forceSchedule_ = false;
   return result;
 }
 
-bool IOScheduler::write_now(Time time, Step step, Time termination_time)
+bool Scheduler::is_it_time(Time time, Step step)
 {
   // NOTE: It is possible that this routine is called multiple times
   // at the same time and step and it needs to return the same result
@@ -333,15 +326,13 @@ bool IOScheduler::write_now(Time time, Step step, Time termination_time)
   // it is called again, it will compare time with lastTime_ and if
   // they match, return true again.
 
-  set_termination_time(termination_time);
-
   // If called multiple times, return same response...
   if (time == lastTime_)
     return true;
 
   // force_write always causes a write even if the time is outside
   // the bounds set by startTime and terminationTime...
-  if (force_write()) {
+  if (force_schedule()) {
     lastTime_ = time;
     return true;
   }
@@ -404,7 +395,7 @@ bool IOScheduler::write_now(Time time, Step step, Time termination_time)
  * \post 0.0 < returned_dt <= dt
  * ...
  */
-Time IOScheduler::adjust_dt(Time dt, Time time)
+Time Scheduler::adjust_dt(Time dt, Time time)
 {
   assert(dt > 0.0);
 
@@ -445,7 +436,7 @@ Time IOScheduler::adjust_dt(Time dt, Time time)
   return dt;
 }
 
-Time IOScheduler::next_explicit_output_time(Time time) const
+Time Scheduler::next_explicit_output_time(Time time) const
 {
   // Return next output time greater than the passed in 'time'
   // from the list of 'also output at' times.
@@ -467,7 +458,7 @@ Time IOScheduler::next_explicit_output_time(Time time) const
   return terminationTime_;
 }
 
-Time IOScheduler::next_implicit_output_time(Time time) const
+Time Scheduler::next_implicit_output_time(Time time) const
 {
   // [Very similar calculations to the 'write_now' function...Consolidate]
 
@@ -559,19 +550,19 @@ Time IOScheduler::next_implicit_output_time(Time time) const
   return next_time;
 }
 
-bool IOScheduler::add_interval(Step step, Step interval)
+bool Scheduler::add_interval(Step step, Step interval)
 {
   std::pair<StepContainer::iterator,bool> result;
   result=stepIntervals_.insert(StepContainer::value_type(step, interval));
   return result.second;
 }
 
-bool IOScheduler::add_explicit(Step step)
+bool Scheduler::add_explicit(Step step)
 {
   return steps_.insert(step).second;
 }
 
-bool IOScheduler::add_interval(Time time, Time delta)
+bool Scheduler::add_interval(Time time, Time delta)
 {
   // Adjust tolerance_ to be at least 3 orders of magnitude smaller
   // than delta... [3 orders of magnitude is arbitrary rule of thumb]
@@ -585,12 +576,12 @@ bool IOScheduler::add_interval(Time time, Time delta)
   return result.second;
 }
 
-bool IOScheduler::add_explicit(Time time)
+bool Scheduler::add_explicit(Time time)
 {
   return times_.insert(time).second;
 }
 
-bool IOScheduler::set_lookahead(int lookahead)
+bool Scheduler::set_lookahead(int lookahead)
 {
   if (lookahead >= 0) {
     lookAhead_ = lookahead;
@@ -600,7 +591,7 @@ bool IOScheduler::set_lookahead(int lookahead)
   }
 }
 
-bool IOScheduler::set_start_time(Time time)
+bool Scheduler::set_start_time(Time time)
 {
   // This is a backwards compatibility function used when there was
   // only the capability to set the time interval and a default start
@@ -613,14 +604,14 @@ bool IOScheduler::set_start_time(Time time)
   return true;
 }
 
-bool IOScheduler::set_termination_time(Time time)
+bool Scheduler::set_termination_time(Time time)
 {
   if (terminationTime_ > time && time != -Real_MAX)
     terminationTime_ = time;
   return true;
 }
 
-bool IOScheduler::set_signal(const std::string& signal)
+bool Scheduler::set_signal(const std::string& signal)
 {
   // The signal that this scheduler should handle is passed in as a
   // string. This will be a valid signal name, but may not be handled
@@ -631,7 +622,7 @@ bool IOScheduler::set_signal(const std::string& signal)
   bool success = false;
   if (sierra::SignalHandler::instance().check_signal_name(signal.c_str())) {
     sierra::SignalHandler::instance().add_handler(signal.c_str(),
-        *sierra::create_callback(*this, &IOScheduler::set_force_write));
+        *sierra::create_callback(*this, &Scheduler::set_force_schedule));
     success = true;
   } else {
   }
@@ -640,7 +631,7 @@ bool IOScheduler::set_signal(const std::string& signal)
 
 // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
-void IOScheduler::print(std::ostream &out) const
+void Scheduler::print(std::ostream &out) const
 {
   out << "\nDump of Scheduler Object:\n";
   {
@@ -710,7 +701,7 @@ void IOScheduler::print(std::ostream &out) const
   }
 }
 
-TimeContainer::const_iterator IOScheduler::get_time_interval(Time time, bool erase_old) const
+TimeContainer::const_iterator Scheduler::get_time_interval(Time time, bool erase_old) const
 {
   // Find interval containing this time....
   // Intervals are sorted by time, so search for first

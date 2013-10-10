@@ -1,5 +1,5 @@
-#ifndef STKIO_SCHEDULER_h
-#define STKIO_SCHEDULER_h
+#ifndef STKUTIL_SCHEDULER_h
+#define STKUTIL_SCHEDULER_h
 
 #include <map>
 #include <set>
@@ -8,7 +8,7 @@
 
 namespace stk
 {
-namespace io
+namespace util
 {
 
 typedef double Time;
@@ -22,20 +22,18 @@ struct TolerancedTime {
     Time max;
 };
 
-class IOScheduler
+class Scheduler
   {
   public:
-    IOScheduler();
+    Scheduler();
 
-    IOScheduler(const IOScheduler &from);
+    Scheduler(const Scheduler &from);
 
-    ~IOScheduler();
+    ~Scheduler();
 
-    void set_force_write(); //!< Force write on next call to scheduler
+    void set_force_schedule(); //!< Force true on next call to scheduler
 
-    bool write_now(Time time, Step step, Time termination_time);
-    bool write_now(Time time);
-    bool write_now(Step  step);
+    bool is_it_time(Time time, Step step);
 
     Time adjust_dt(Time dt, Time time);
 
@@ -57,9 +55,9 @@ class IOScheduler
 
     /*! Function for use by encore.  They have a use case in which
      * they reset the time of a region back to zero multiple times
-     * during an execution.  Normally, the IOScheduler requires
+     * during an execution.  Normally, the Scheduler requires
      * that time be strictly increasing; this function resets the
-     * lastTime_ value to -2.0 such that the IOScheduler does not
+     * lastTime_ value to -2.0 such that the Scheduler does not
      * throw an error about non-increasing time.
      */
     void reset_last_time();
@@ -71,7 +69,9 @@ class IOScheduler
 
   private:
 
-    bool force_write();
+    bool write_now(Time time);
+    bool write_now(Step  step);
+    bool force_schedule();
 
     Time next_implicit_output_time(Time time) const;
     Time next_explicit_output_time(Time time) const;
@@ -126,7 +126,7 @@ class IOScheduler
      */
     Time restartTime_;
 
-    bool forceWrite_; //<! Used to force a write
+    bool forceSchedule_; //<! Used to force scheduler to return true next time
     bool synchronize_; //<! Synchronize output with outputs from other regions in this procedure.
 
     mutable bool initialized_; //<! True if this scheduler has been called.
