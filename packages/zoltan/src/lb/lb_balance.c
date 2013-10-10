@@ -672,13 +672,7 @@ struct OVIS_parameters ovisParameters;
   
         /* Create a lookup table for exported IDs */
   
-        if (*num_export_objs > 16){   /* could be 0, maybe only importing */
-          ts = (*num_export_objs) / 4;   /* what's a good table size? */
-        }
-        else{
-          ts = *num_export_objs;
-        }
-  
+        ts = Zoltan_Recommended_Hash_Size(*num_export_objs);
         ht = create_hash_table(zz, *export_global_ids, *num_export_objs, ts);
   
         /* Create a list of all gids, lids and parts */
@@ -1080,6 +1074,7 @@ int i, j;
 
   return ht;
 }
+
 static int search_hash_table(ZZ *zz, ZOLTAN_ID_PTR gid,
                          struct Hash_Node **ht, int tableSize)
 {
@@ -1100,7 +1095,6 @@ struct Hash_Node *hn;
     }
     hn = hn->next;
   }
-
   return found; 
 }
 static void free_hash_table(struct Hash_Node **ht, int tableSize)
