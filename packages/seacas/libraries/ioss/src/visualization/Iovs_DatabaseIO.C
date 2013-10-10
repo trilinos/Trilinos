@@ -536,7 +536,8 @@ namespace Iovs {
               if(this->pvcsa)
                 this->pvcsa->CreateElementBlock(eb->name().c_str(),
                                                 id,
-                                                eb->topology()->name(),
+                                                eb->get_property("topology_type").get_string(),
+                                                element_nodes,
                                                 num_to_get,
                                                 &this->elemMap.map[eb_offset + 1],
                                                 static_cast<int*>(data),
