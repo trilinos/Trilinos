@@ -148,6 +148,10 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       Vector(ordinal_type sz, const value_type& x) : s(sz,x) {}
 
+      //! Constructor with supplied storage
+      KOKKOS_INLINE_FUNCTION
+      Vector(const storage_type& ss) : s(ss) {}
+
       //! Copy constructor
       KOKKOS_INLINE_FUNCTION
       Vector(const Vector& x) : s(x.s) {}

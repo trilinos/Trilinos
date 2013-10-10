@@ -44,11 +44,10 @@
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_KokkosRefactor_MultiVector_decl.hpp"
+#include "Tpetra_Vector_decl.hpp"
+#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 namespace Tpetra {
-
-// No one but expert Tpetra/Kokkos developers should ever use this code
-namespace KokkosRefactor {
 
 /// \class Vector
 /// \brief A distributed dense vector.
@@ -58,11 +57,12 @@ namespace KokkosRefactor {
 /// only one vector (column).  It may be used wherever a MultiVector
 /// may be used.
 template<class Scalar,
-         class LocalOrdinal=int,
-         class GlobalOrdinal=LocalOrdinal,
-         class Node=KokkosClassic::DefaultNode::DefaultNodeType>
-class Vector : public MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+         class LocalOrdinal,
+         class GlobalOrdinal>
+class Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> :
+   public MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> {
   // need this so that MultiVector::operator() can call Vector's private view constructor
+  typedef Kokkos::Compat::KokkosThreadsWrapperNode Node;
   friend class MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 
   
@@ -200,19 +200,19 @@ protected:
 /** \brief Non-member function to create a Vector from a specified Map.
     \relatesalso Vector
 */
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+/*template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 createVector (const RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map)
 {
   const bool DO_INIT_TO_ZERO = true;
   return rcp (new Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map, DO_INIT_TO_ZERO));
-}
+}*/
 
 //! \brief Non-member function to create a Vector with view semantics using user-allocated data.
 /*! This use case is not supported for all nodes. Specifically, it is not typically supported for accelerator-based nodes like KokkosClassic::ThrustGPUNode.
     \relatesalso Vector
  */
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+/*template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 createVectorFromView (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
                       const ArrayRCP<Scalar> &view)
@@ -225,9 +225,9 @@ createVectorFromView (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &ma
       Tpetra::details::ViewAccepter<Node>::template acceptView<Scalar>(view),
       HOST_VIEW_CONSTRUCTOR)
   );
-}
+}*/
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+/*template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 template <class Node2>
 RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
 Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::clone(const RCP<Node2> &node2){
@@ -240,9 +240,7 @@ Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::clone(const RCP<Node2> &node2
         clonedV_view.deepCopy(V_view());
         clonedV_view = Teuchos::null;
         return clonedV;
-  }
-
-} // namespace KokkosRefactor
+  }*/
 
 } // namespace Tpetra
 

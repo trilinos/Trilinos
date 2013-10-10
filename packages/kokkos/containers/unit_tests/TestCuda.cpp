@@ -51,6 +51,7 @@
 #include <iomanip>
 
 namespace Test {
+#ifdef KOKKOS_HAVE_CUDA
 
 class cuda : public ::testing::Test {
 protected:
@@ -129,4 +130,5 @@ CUDA_VECTOR_COMBINE_TEST( 3057 )
 #undef CUDA_ASSIGNEMENT_TEST
 #undef CUDA_DEEP_COPY
 #undef CUDA_VECTOR_COMBINE
+#endif
 }

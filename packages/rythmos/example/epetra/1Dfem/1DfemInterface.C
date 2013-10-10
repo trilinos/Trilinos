@@ -209,12 +209,11 @@ bool Interface::evaluate(NOX::Epetra::Interface::Required::FillType flag,
   x.Import(*xptr, *Importer, Insert);
 
   // Declare required variables
-  int ierr;
   int OverlapNumMyElements = OverlapMap->NumMyElements();
 
-  int OverlapMinMyGID;
-  if (MyPID == 0) OverlapMinMyGID = StandardMap->MinMyGID();
-  else OverlapMinMyGID = StandardMap->MinMyGID()-1;
+  //int OverlapMinMyGID;
+  //if (MyPID == 0) OverlapMinMyGID = StandardMap->MinMyGID();
+  //else OverlapMinMyGID = StandardMap->MinMyGID()-1;
 
   int row, column;
   double jac;
@@ -263,7 +262,7 @@ bool Interface::evaluate(NOX::Epetra::Interface::Required::FillType flag,
 				     basis.dphide[j]*basis.dphide[i]
 				     +2.0*factor*basis.uu*basis.phi[j]*
 				     basis.phi[i]);  
-	      ierr=jacobian->SumIntoGlobalValues(row, 1, &jac, &column);
+	      jacobian->SumIntoGlobalValues(row, 1, &jac, &column);
 	    }
 	  }
 	}
@@ -332,9 +331,9 @@ bool Interface::createGraph()
   // Declare required variables
   int row, column;
   int OverlapNumMyElements = OverlapMap->NumMyElements();
-  int OverlapMinMyGID;
-  if (MyPID==0) OverlapMinMyGID = StandardMap->MinMyGID();
-  else OverlapMinMyGID = StandardMap->MinMyGID()-1;
+  //int OverlapMinMyGID;
+  //if (MyPID==0) OverlapMinMyGID = StandardMap->MinMyGID();
+  //else OverlapMinMyGID = StandardMap->MinMyGID()-1;
   
   // Loop Over # of Finite Elements on Processor
   for (int ne=0; ne < OverlapNumMyElements-1; ne++) {

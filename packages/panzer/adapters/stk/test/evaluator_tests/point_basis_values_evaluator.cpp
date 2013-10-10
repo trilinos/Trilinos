@@ -105,16 +105,16 @@ namespace panzer {
     const int default_int_order = integration_order;
     std::string eBlockID = "eblock-0_0";    
     Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
-    panzer::CellData cellData(workset_size,mesh->getCellTopology("eblock-0_0"));
     Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
     Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = 
-      Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,default_int_order,cellData,eqset_factory,gd,false));
+      Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,default_int_order,cell_data,eqset_factory,gd,false));
 
     Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,*physicsBlock);
     TEST_EQUALITY(work_sets->size(),1);
 
     int num_points = 3;
     RCP<const panzer::PointRule> point_rule = rcp(new panzer::PointRule("RandomPoints",num_points, cell_data));
+    RCP<const panzer::PointRule> point_rule_basis = rcp(new panzer::PointRule("BasisPoints",basis_q1->cardinality(), cell_data));
 
     Teuchos::RCP<Intrepid::FieldContainer<double> > userArray 
        = Teuchos::rcp(new Intrepid::FieldContainer<double>(num_points,2));
@@ -129,14 +129,21 @@ namespace panzer {
  
     PHX::FieldManager<panzer::Traits> fm;
 
-    Teuchos::RCP<const std::vector<Teuchos::RCP<PHX::FieldTag > > > evalResFields;
-    Teuchos::RCP<const std::vector<Teuchos::RCP<PHX::FieldTag > > > evalJacFields;
     {
        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
           = Teuchos::rcp(new panzer::PointValues_Evaluator<panzer::Traits::Residual,panzer::Traits>(point_rule,*userArray));
 
        TEST_EQUALITY(evaluator->evaluatedFields().size(),6);
-       evalResFields = Teuchos::rcpFromRef(evaluator->evaluatedFields());
+
+       fm.registerEvaluator<panzer::Traits::Residual>(evaluator);
+       fm.requireField<panzer::Traits::Residual>(*evaluator->evaluatedFields()[0]);
+    }
+
+    {
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
+          = Teuchos::rcp(new panzer::PointValues_Evaluator<panzer::Traits::Residual,panzer::Traits>(point_rule_basis,basis_q1));
+
+       TEST_EQUALITY(evaluator->evaluatedFields().size(),6);
 
        fm.registerEvaluator<panzer::Traits::Residual>(evaluator);
        fm.requireField<panzer::Traits::Residual>(*evaluator->evaluatedFields()[0]);
@@ -147,16 +154,13 @@ namespace panzer {
           = Teuchos::rcp(new panzer::PointValues_Evaluator<panzer::Traits::Jacobian,panzer::Traits>(point_rule,*userArray));
 
        TEST_EQUALITY(evaluator->evaluatedFields().size(),6);
-       evalJacFields = Teuchos::rcpFromRef(evaluator->evaluatedFields());
 
        fm.registerEvaluator<panzer::Traits::Jacobian>(evaluator);
        fm.requireField<panzer::Traits::Jacobian>(*evaluator->evaluatedFields()[0]);
     }
 
     panzer::Traits::SetupData sd;
-    fm.postRegistrationSetup(sd);
-    fm.print(out);
-
+    sd.worksets_ = work_sets;
     // run tests
     /////////////////////////////////////////////////////////////
 
@@ -166,12 +170,19 @@ namespace panzer {
     workset.time = 0.0;
     workset.evaluate_transient_terms = false;
 
+    fm.postRegistrationSetup(sd);
+    fm.print(out);
+
     fm.evaluateFields<panzer::Traits::Residual>(workset);
     fm.evaluateFields<panzer::Traits::Jacobian>(workset);
 
     PHX::MDField<panzer::Traits::Residual::ScalarT> 
        point_coords(point_rule->getName()+"_"+"point_coords",point_rule->dl_vector);
     fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual>(point_coords);
+
+    PHX::MDField<panzer::Traits::Residual::ScalarT> 
+       point_coords_basis(point_rule_basis->getName()+"_"+"point_coords",point_rule_basis->dl_vector);
+    fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual>(point_coords_basis);
 
     typedef panzer::ArrayTraits<double,Intrepid::FieldContainer<double> >::size_type size_type;
 
@@ -183,6 +194,13 @@ namespace panzer {
           double y = dy*(point_coordinates(p,1)+1.0)/2.0 + workset.cell_vertex_coordinates(c,0,1);
           TEST_FLOATING_EQUALITY(point_coords(c,p,0),x,1e-10);
           TEST_FLOATING_EQUALITY(point_coords(c,p,1),y,1e-10);
+       }
+
+       for(size_type p=0;p<basis_q1->cardinality();p++) {
+          double x = dx*(workset.bases[1]->basis_coordinates_ref(p,0)+1.0)/2.0 + workset.cell_vertex_coordinates(c,0,0); 
+          double y = dy*(workset.bases[1]->basis_coordinates_ref(p,1)+1.0)/2.0 + workset.cell_vertex_coordinates(c,0,1);
+          TEST_FLOATING_EQUALITY(point_coords_basis(c,p,0),x,1e-10);
+          TEST_FLOATING_EQUALITY(point_coords_basis(c,p,1),y,1e-10);
        }
     }
   }

@@ -1,3 +1,7 @@
+Release notes for Amesos2 in Trilinos 11.6 (Sept. 2013):
+--------------------------------------------------------
+ - Added experimental support for Cholmod, a sparse Cholesky solver.
+
 Release notes for Amesos2 in Trilinos 11.0 (Sept. 2012):
 --------------------------------------------------------
  - Added support for Pardiso-MKL (multithreaded solver)

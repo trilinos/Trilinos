@@ -223,7 +223,7 @@
     <Parameter name="verbosity"                             type="string"   value="High"/>
     <!-- <Parameter name="dependencyOutputLevel"                 type="int"      value="0"/> -->
 
-    <ParameterList name="AllButCoarsestLevel">
+    <ParameterList name="All">
       <Parameter name="startLevel"                          type="int"      value="0"/>
       <Parameter name="Smoother"                            type="string"   value="Chebyshev"/>
       <!-- <Parameter name="Smoother"                            type="string"   value="SymGaussSeidel"/> -->
@@ -237,12 +237,7 @@
       <Parameter name="Coordinates"                         type="string"   value="myRebalanceRestrictionFact"/>
       <Parameter name="Importer"                            type="string"   value="myRepartitionFact"/>
       <Parameter name="Graph"                               type="string"   value="myCoalesceDropFact"/>
-    </ParameterList>
-
-    <ParameterList name="CoarsestLevel">
-      <Parameter name="startLevel"                          type="int"      value="-1"/>
       <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>
-      <!-- TODO: check how last level is built (A,P,R) fact -->
     </ParameterList>
 
   </ParameterList>

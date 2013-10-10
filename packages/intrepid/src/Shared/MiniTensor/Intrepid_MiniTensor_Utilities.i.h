@@ -100,7 +100,17 @@ machine_epsilon()
 }
 
 //
-// Random number generation.
+// The circle constant
+//
+template<typename T>
+typename Sacado::ScalarType<T>::type
+tau()
+{
+  return 6.283185307179586476925286766559005768394338798750211641949889185;
+}
+
+//
+// Random number generation. Teuchos [-1,1]
 //
 template<typename T>
 inline
@@ -108,6 +118,37 @@ typename Sacado::ScalarType<T>::type
 random()
 {
   return Teuchos::ScalarTraits<typename Sacado::ScalarType<T>::type>().random();
+}
+
+//
+// Uniform [0,1] random number generation.
+//
+template<typename T>
+inline
+typename Sacado::ScalarType<T>::type
+random_uniform()
+{
+  typedef typename Sacado::ScalarType<T>::type S;
+  return 0.5 * random<S>() + 0.5;
+}
+
+//
+// Normal N(0,1) random number generation.
+//
+template<typename T>
+inline
+typename Sacado::ScalarType<T>::type
+random_normal()
+{
+  typedef typename Sacado::ScalarType<T>::type S;
+
+  S const
+  R = random_uniform<S>();
+
+  S const
+  Theta = tau<S>() * random_uniform<S>();
+
+  return std::sqrt(-2.0 * std::log(R)) * cos(Theta);
 }
 
 //

@@ -584,6 +584,42 @@ unit(Vector<T, N> const & u)
   return u / norm(u);
 }
 
+//
+// Compute Householder vector
+//
+template<typename T, Index N>
+std::pair<Vector<T, N>, T>
+house(Vector<T, N> const & x)
+{
+  Vector<T, N>
+  v = x;
+
+  v[0] = 1.0;
+
+  Index const
+  dimension = x.get_dimension();
+
+  T
+  sigma = 0.0;
+
+  for (Index i = 1; i < dimension; ++i) {
+    sigma = v[i] * v[i];
+  }
+
+  T
+  beta = 0.0;
+
+  if (sigma > 0.0) {
+    T const
+    mu = std::sqrt(x[0] * x[0] + sigma);
+    v[0] = x[0] > 0.0 ? -sigma / (x[0] + mu) : x[0] - mu;
+    beta = 2.0 * v[0] * v[0] / (sigma + v[0] * v[0]);
+    v = v / v[0];
+  }
+
+  return std::make_pair(v, beta);
+}
+
 } // namespace Intrepid
 
 #endif // Intrepid_MiniTensor_Vector_i_h

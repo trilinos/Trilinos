@@ -79,7 +79,8 @@ public:
   //! \name Static functions that all Kokkos devices must implement.
   //@{
 
-  /** \brief  Query if called within a thread-parallel function */
+  /// \brief True if and only if this method is being called in a
+  ///   thread-parallel function.
   static int in_parallel();
 
   /** \brief  Set the device in a "sleep" state.
@@ -115,13 +116,12 @@ public:
   /// For the Threads device, this terminates spawned worker threads.
   static void finalize();
 
-  /** \brief  Print configuration information */
-  static void print_configuration( std::ostream & , bool detail = false );
+  /// \brief Print configuration information to the given output stream.
+  static void print_configuration( std::ostream & , const bool detail = false );
 
   //@}
-  /*------------------------------------------------------------------------*/
-  /** \name Function for the functor device interface */
-  /**@{ */
+  //! \name Function for the functor device interface */
+  //@{
 
   inline int league_rank() const ;
   inline int league_size() const ;
@@ -130,23 +130,25 @@ public:
 
   inline void team_barrier();
 
-  /* Collectively compute the league-wide unordered exclusive prefix sum.
-   * Values are ordered within a team, but not between teams (i.e. the start
-   * values of thread 0 in each team are not ordered according to team number).
-   * This call does not use a global synchronization. Multiple unordered scans
-   * can be in-flight at the same time (using different scratch_views).
-   * The scratch-view will hold the complete sum in the end.
+  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
+   *
+   *  The highest rank thread can compute the reduction total as
+   *    reduction_total = dev.team_scan( value ) + value ;
    */
-  template< class VT >
-  inline typename VT::value_type unordered_scan
-             (typename VT::value_type& value, VT& scratch_view);
+  template< typename Type >
+  inline Type team_scan( const Type & value );
 
-  /* Collectively compute the team-wide exclusive prefix sum using CUDA Unbound.
-   * Values are ordered, the last thread returns the sum of all values
-   * in the team less its own value
+  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
+   *          with intra-team non-deterministic ordering accumulation.
+   *
+   *  The global inter-team accumulation value will, at the end of the
+   *  league's parallel execution, be the scan's total.
+   *  Parallel execution ordering of the league's teams is non-deterministic.
+   *  As such the base value for each team's scan operation is similarly
+   *  non-deterministic.
    */
-  template< typename T >
-  inline T team_scan(T& value);
+  template< typename TypeLocal , typename TypeGlobal >
+  inline TypeGlobal team_scan( const TypeLocal & value , TypeGlobal * const global_accum );
 
   inline void * get_shmem( const int size );
 
@@ -179,8 +181,8 @@ public:
                           unsigned use_numa_count = 0 ,
                           unsigned use_cores_per_numa = 0 );
 
-  static int league_max();
-  static int team_max();
+  static unsigned league_max();
+  static unsigned team_max();
 
   //@}
   /*------------------------------------------------------------------------*/

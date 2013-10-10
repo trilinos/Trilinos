@@ -191,7 +191,7 @@
 
     <!-- Will result in a new FactoryMap for a new FactoryManager on Level 1.  Will be used as a model for FM's on later levels.
          Will refer to Factory Collection defined above. -->
-    <ParameterList name="AllButCoarsestLevel">
+    <ParameterList name="All">
       <Parameter name="startLevel"                          type="int"      value="0"/>
       <Parameter name="Smoother"                            type="string"   value="Chebyshev"/>
       <!-- <Parameter name="PreSmoother"                         type="string" value="ForwardGaussSeidel"/> -->
@@ -204,12 +204,7 @@
       <Parameter name="Coordinates"                         type="string"   value="myRebalanceRestrictionFact"/>
       <Parameter name="Importer"                            type="string"   value="myRepartitionFact"/>
       <Parameter name="Graph"                               type="string"   value="myCoalesceDropFact"/>
-    </ParameterList>
-
-    <ParameterList name="CoarsestLevel">
-      <Parameter name="startLevel"                          type="int"      value="-1"/>
       <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>
-      <!-- TODO: check how last level is built (A,P,R) fact -->
     </ParameterList>
 
   </ParameterList>

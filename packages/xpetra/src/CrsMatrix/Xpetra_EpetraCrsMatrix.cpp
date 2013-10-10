@@ -152,7 +152,7 @@ namespace Xpetra {
     XPETRA_MONITOR("EpetraCrsMatrix::replaceLocalValues");
 
     {
-      const std::string tfecfFuncName("replaceGlobalValues");
+      const std::string tfecfFuncName("replaceLocalValues");
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! isFillActive(), std::runtime_error,
                                             ": Fill must be active in order to call this method.  If you have already "
                                             "called fillComplete(), you need to call resumeFill() before you can "

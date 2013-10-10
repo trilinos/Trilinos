@@ -490,6 +490,7 @@ ml_maxwell_data_pack::~ml_maxwell_data_pack(){
   delete EdgeMatrix;
   delete NodeMatrix;
   delete GradMatrix;
+  delete DummyMatrix;
 }/*end destructor*/
 
 /* ml_epetra_data_pack_status - This function does a status query on the
@@ -551,12 +552,18 @@ int ml_maxwell_data_pack::setup_preconditioner(){
     operator_complexity=-1;
     return IS_FALSE;
   }
+
+  /* Avoid aliasing */
+  DummyMatrix = new Epetra_CrsMatrix(*EdgeMatrix);
+  DummyMatrix->OptimizeStorage();
  
   /* Build Hierarchy */
+
+  
 #ifdef ENABLE_MS_MATRIX
-  Prec=new RefMaxwellPreconditioner(*EdgeMatrix, *GradMatrix,*EdgeMatrix,*NodeMatrix,*EdgeMatrix,*List);
+  Prec=new RefMaxwellPreconditioner(*EdgeMatrix, *GradMatrix,*DummyMatrix,*NodeMatrix,*DummyMatrix,*List);
 #else
-  Prec=new RefMaxwellPreconditioner(*EdgeMatrix, *GradMatrix,*NodeMatrix,*EdgeMatrix,*List);
+  Prec=new RefMaxwellPreconditioner(*EdgeMatrix, *GradMatrix,*NodeMatrix,*DummyMatrix,*List);
 #endif
 
   /* Pull Operator Complexity */

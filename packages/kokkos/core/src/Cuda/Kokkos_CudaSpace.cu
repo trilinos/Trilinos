@@ -50,7 +50,6 @@
 #include <Kokkos_CudaSpace.hpp>
 
 #include <Cuda/Kokkos_Cuda_Internal.hpp>
-#include <Cuda/Kokkos_Cuda_Parallel.hpp>
 #include <impl/Kokkos_MemoryTracking.hpp>
 #include <impl/Kokkos_Error.hpp>
 

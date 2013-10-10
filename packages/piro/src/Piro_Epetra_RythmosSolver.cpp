@@ -117,10 +117,13 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
     {
       const std::string verbosity = rythmosPL->get("Verbosity Level", "VERB_DEFAULT");
       if      (verbosity == "VERB_NONE")    solnVerbLevel = Teuchos::VERB_NONE;
+      else if (verbosity == "VERB_DEFAULT") solnVerbLevel = Teuchos::VERB_DEFAULT;
       else if (verbosity == "VERB_LOW")     solnVerbLevel = Teuchos::VERB_LOW;
       else if (verbosity == "VERB_MEDIUM")  solnVerbLevel = Teuchos::VERB_MEDIUM;
       else if (verbosity == "VERB_HIGH")    solnVerbLevel = Teuchos::VERB_HIGH;
       else if (verbosity == "VERB_EXTREME") solnVerbLevel = Teuchos::VERB_EXTREME;
+      else TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+         "Unknown verbosity option specified in Piro_Epetra_RythmosSolver.");
     }
 
     const int numTimeSteps = rythmosPL->get("Num Time Steps", 10);
@@ -216,10 +219,13 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
     {
       const std::string verbosity = rythmosSolverPL->get("Verbosity Level", "VERB_DEFAULT");
       if      (verbosity == "VERB_NONE")    solnVerbLevel = Teuchos::VERB_NONE;
+      else if (verbosity == "VERB_DEFAULT") solnVerbLevel = Teuchos::VERB_DEFAULT;
       else if (verbosity == "VERB_LOW")     solnVerbLevel = Teuchos::VERB_LOW;
       else if (verbosity == "VERB_MEDIUM")  solnVerbLevel = Teuchos::VERB_MEDIUM;
       else if (verbosity == "VERB_HIGH")    solnVerbLevel = Teuchos::VERB_HIGH;
       else if (verbosity == "VERB_EXTREME") solnVerbLevel = Teuchos::VERB_EXTREME;
+      else TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+         "Unknown verbosity option specified in Piro_Epetra_RythmosSolver.");
     }
 
     initialTime = rythmosPL->sublist("Integrator Settings").get("Initial Time", 0.0);

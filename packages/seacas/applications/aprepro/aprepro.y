@@ -149,6 +149,8 @@ sexp:     QSTRING		{ $$ = $1;				}
 				{ $$ = (*($1->value.strfnct))($3, $5, $7); }
         | SFNCT '(' sexp ',' sexp ',' sexp  ')'
 				{ $$ = (*($1->value.strfnct))($3, $5, $7); }
+        | SFNCT '(' sexp ',' exp ',' exp  ')'
+				{ $$ = (*($1->value.strfnct))($3, $5, $7); }
         | bool '?' sexp ':' sexp  { $$ = ($1) ? ($3) : ($5);              }
 
 exp:	  NUM			{ $$ = $1; 				}

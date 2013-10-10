@@ -231,7 +231,7 @@ namespace KokkosClassic {
     typedef  Magnitude ReductionType;
     inline static Magnitude KERNEL_PREFIX identity() {return Teuchos::ScalarTraits<Magnitude>::zero();}
     inline static Magnitude KERNEL_PREFIX reduce(Magnitude x, Magnitude y) {return x+y;}
-    inline        Magnitude KERNEL_PREFIX generate(int i) {
+    inline        Magnitude KERNEL_PREFIX generate(int i) const {
       return SCT::magnitude((x[i]));
     }
   };
@@ -244,7 +244,7 @@ namespace KokkosClassic {
     typedef  Magnitude ReductionType;
     inline static Magnitude KERNEL_PREFIX identity() {return Teuchos::ScalarTraits<Magnitude>::zero();}
     inline static Magnitude KERNEL_PREFIX reduce(Magnitude x, Magnitude y) {return x+y;}
-    inline        Magnitude KERNEL_PREFIX generate(int i) {
+    inline        Magnitude KERNEL_PREFIX generate(int i) const {
       Scalar tmp = x[i] / w[i];
       return SCT::real( SCT::conjugate(tmp)*tmp );
     }
@@ -256,7 +256,7 @@ namespace KokkosClassic {
     typedef  Scalar ReductionType;
     inline static Scalar KERNEL_PREFIX identity() {return Teuchos::ScalarTraits<Scalar>::zero();}
     inline static Scalar KERNEL_PREFIX reduce(Scalar x, Scalar y) {return x+y;}
-    inline        Scalar KERNEL_PREFIX generate(int i) { return x[i]; }
+    inline        Scalar KERNEL_PREFIX generate(int i) const { return x[i]; }
   };
 
   template <typename Scalar>
@@ -267,7 +267,7 @@ namespace KokkosClassic {
     typedef  Magnitude ReductionType;
     inline static Magnitude KERNEL_PREFIX identity() {return Teuchos::ScalarTraits<Magnitude>::zero();}
     inline static Magnitude KERNEL_PREFIX reduce(Magnitude x, Magnitude y) {return TEUCHOS_MAX(x,y);}
-    inline        Magnitude KERNEL_PREFIX generate(int i) {
+    inline        Magnitude KERNEL_PREFIX generate(int i) const {
       return SCT::magnitude(x[i]);
     }
   };
@@ -280,7 +280,7 @@ namespace KokkosClassic {
     typedef  Magnitude ReductionType;
     inline static Magnitude KERNEL_PREFIX identity() {return Teuchos::ScalarTraits<Magnitude>::zero();}
     inline static Magnitude KERNEL_PREFIX reduce(Magnitude x, Magnitude y) {return x+y;}
-    inline        Magnitude KERNEL_PREFIX generate(int i) {
+    inline        Magnitude KERNEL_PREFIX generate(int i) const {
       Scalar xi = x[i];
       return SCT::real( SCT::conjugate(xi)*xi );
     }
@@ -293,7 +293,7 @@ namespace KokkosClassic {
     typedef  Scalar ReductionType;
     inline static Scalar KERNEL_PREFIX identity() {return SCT::zero();}
     inline static Scalar KERNEL_PREFIX reduce(Scalar x, Scalar y) {return x+y;}
-    inline        Scalar KERNEL_PREFIX generate(int i) {
+    inline        Scalar KERNEL_PREFIX generate(int i) const {
       Scalar xi = x[i]; Scalar yi = y[i];
       return SCT::conjugate(xi)*yi;
     }

@@ -557,6 +557,49 @@ piola_inverse(Tensor<T, N> const & F, Tensor<T, N> const & P)
 }
 
 //
+// Smallest eigenvalue by inverse iteration.
+//
+template<typename T, Index N>
+T
+smallest_eigenvalue(Tensor<T, N> const & A)
+{
+  Tensor<T, N>
+  B = inverse(A);
+
+  T const
+  tolerance = machine_epsilon<T>();
+
+  Index const
+  dimension = A.get_dimension();
+
+  Vector<T, N>
+  v(dimension, ONES);
+
+  Index const
+  maximum_iterations = 128;
+
+  T
+  relative_error = 1.0;
+
+  Index
+  k = 0;
+
+  while (relative_error > tolerance && k < maximum_iterations) {
+
+    Vector<T, N> const
+    w = v;
+
+    v = unit(B * w);
+
+    relative_error = norm(v - w) / norm(w);
+
+    ++k;
+  }
+
+  return v * A * v;
+}
+
+//
 // Check strict ellipticity condition for 4th-order tensor.
 // Assume A has major symmetries.
 //

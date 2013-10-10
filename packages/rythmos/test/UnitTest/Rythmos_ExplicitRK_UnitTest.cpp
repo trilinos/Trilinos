@@ -129,8 +129,8 @@ TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, noRKBT ) {
   RCP<ExplicitRKStepper<double> > stepper = explicitRKStepper<double>();
   stepper->setModel(model);
   double dt = 1.0;
-  double step_taken = 0.0;
-  TEST_THROW( step_taken = stepper->takeStep(dt, STEP_TYPE_FIXED), std::logic_error ); // no RKBT defined
+  //double step_taken = 0.0;
+  TEST_THROW( stepper->takeStep(dt, STEP_TYPE_FIXED), std::logic_error ); // no RKBT defined
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, invalidTakeStep ) {

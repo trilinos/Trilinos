@@ -455,6 +455,14 @@ namespace Iopx {
     m_groupCount[EX_GLOBAL]     = 1; // To make some common code work more cleanly.
     m_groupCount[EX_NODE_BLOCK] = 1; // To make some common code work more cleanly.
 
+    if (!is_parallel_consistent()) {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: Parallel IO cannot be used in an application that is not guaranteeing "
+	     << "parallel consistent calls of the get and put field data functions.\n"
+	     << "The application created this database with a 'false' setting for the isParallelConsistent property.";
+       IOSS_ERROR(errmsg);
+    }
+
     // A history file is only written on processor 0...
     if (db_usage == Ioss::WRITE_HISTORY)
       isParallel = false;

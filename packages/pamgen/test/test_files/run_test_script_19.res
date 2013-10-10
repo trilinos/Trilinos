@@ -893,7 +893,7 @@ QA Record 0
 PArallel Mesh GENerator
 Num Info Records 0
 Nemesis data
-Num nodes global 7605
+Num nodes global 9513
 Num elems global 8192
 Num elm_blks global 34
 Num node sets global 11

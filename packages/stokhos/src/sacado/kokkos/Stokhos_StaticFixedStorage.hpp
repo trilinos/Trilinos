@@ -53,7 +53,7 @@ namespace Stokhos {
   class StaticFixedStorage {
   public:
 
-    static const bool is_static = true;
+    static const bool is_static = false;
     static const int static_size = Num;
     static const bool supports_reset = false;
 

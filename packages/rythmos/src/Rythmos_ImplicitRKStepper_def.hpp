@@ -400,9 +400,9 @@ const StepStatus<Scalar> ImplicitRKStepper<Scalar>::getStepStatus() const
   if (!isInitialized_) {
     stepStatus.stepStatus = STEP_STATUS_UNINITIALIZED;
     stepStatus.message = "This stepper is uninitialized.";
-    return stepStatus;
+//    return stepStatus;
   }
-  if (numSteps_ > 0) {
+  else if (numSteps_ > 0) {
     stepStatus.stepStatus = STEP_STATUS_CONVERGED;
   }
   else {
@@ -411,7 +411,11 @@ const StepStatus<Scalar> ImplicitRKStepper<Scalar>::getStepStatus() const
   stepStatus.stepSize = timeRange_.length();
   stepStatus.order = irkButcherTableau_->order();
   stepStatus.time = timeRange_.upper();
-  stepStatus.solution = x_;
+  if(Teuchos::nonnull(x_))
+    stepStatus.solution = x_;
+  else
+    stepStatus.solution = Teuchos::null;
+  stepStatus.solutionDot = Teuchos::null;
   return(stepStatus);
 }
 

@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -207,15 +207,11 @@ namespace MueLu {
 
           RCP<FactoryManagerBase> m = rcp(new FactoryManager(levelFactoryMap));
 
-          if (startLevel >= 0) {
+          if (startLevel >= 0)
             this->AddFactoryManager(startLevel, numDesiredLevel, m);
-          } else if (startLevel == -1) { // -1 == coarsest level
-            this->SetFactoryManagerCoarsestLevel(m);
-          } else {
+          else
             TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::ParameterListInterpreter():: invalid level id");
-          }
         } /* TODO: else { } */
-
       }
     }
   }

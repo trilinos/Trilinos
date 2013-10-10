@@ -210,7 +210,7 @@ private:
   int setup(int N,int* rowind,int* colptr, double* vals){return 0;}
 
 
-  Epetra_CrsMatrix *EdgeMatrix, *GradMatrix, *NodeMatrix;
+  Epetra_CrsMatrix *EdgeMatrix, *GradMatrix, *NodeMatrix, *DummyMatrix;
   //  ML_Epetra::MultiLevelPreconditioner *Prec;
   ML_Epetra::RefMaxwellPreconditioner *Prec;
 

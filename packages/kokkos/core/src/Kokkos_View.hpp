@@ -81,6 +81,9 @@ namespace Kokkos {
 /** \class ViewTraits
  *  \brief Traits class for accessing attributes of a View.
  *
+ * This is an implementation detail of View.  It is only of interest
+ * to developers implementing a new specialization of View.
+ *
  * Template argument permutations:
  *   - View< DataType , Device , void         , void >
  *   - View< DataType , Device , MemoryTraits , void >
@@ -219,7 +222,7 @@ struct device_shmem_constructor_requires_unmanaged {};
 
 struct scalar_operator_called_from_non_scalar_view {};
 
-}
+} /* namespace ViewError */
 
 //----------------------------------------------------------------------------
 /** \brief  Enable view parentheses operator for
@@ -262,17 +265,92 @@ struct ViewEnableArrayOper<
 
 namespace Kokkos {
 
-struct allocate_without_initializing {};
+struct AllocateWithoutInitializing {};
+
+namespace {
+const AllocateWithoutInitializing allocate_without_initializing = AllocateWithoutInitializing();
+}
 
 /** \class View
- *  \brief View to array of data.
+ *  \brief View to an array of data.
  *
- * Options for template arguments:
+ * A View represents an array of one or more dimensions.
+ * For details, please refer to Kokkos' tutorial materials.
+ *
+ * \section Kokkos_View_TemplateParameters Template parameters
+ *
+ * This class has both required and optional template parameters.  The
+ * \c DataType parameter must always be provided, and must always be
+ * first. The parameters \c Arg1Type, \c Arg2Type, and \c Arg3Type are
+ * placeholders for different template parameters.  The default value
+ * of the fifth template parameter \c Specialize suffices for most use
+ * cases.  When explaining the template parameters, we won't refer to
+ * \c Arg1Type, \c Arg2Type, and \c Arg3Type; instead, we will refer
+ * to the valid categories of template parameters, in whatever order
+ * they may occur.
+ *
+ * Valid ways in which template arguments may be specified:
  *   - View< DataType , Device >
  *   - View< DataType , Device ,        MemoryTraits >
  *   - View< DataType , Device , void , MemoryTraits >
  *   - View< DataType , Layout , Device >
  *   - View< DataType , Layout , Device , MemoryTraits >
+ *
+ * \tparam DataType (required) This indicates both the type of each
+ *   entry of the array, and the combination of compile-time and
+ *   run-time array dimension(s).  For example, <tt>double*</tt>
+ *   indicates a one-dimensional array of \c double with run-time
+ *   dimension, and <tt>int*[3]</tt> a two-dimensional array of \c int
+ *   with run-time first dimension and compile-time second dimension
+ *   (of 3).  In general, the run-time dimensions (if any) must go
+ *   first, followed by zero or more compile-time dimensions.  For
+ *   more examples, please refer to the tutorial materials.
+ *
+ * \tparam Device (required) The execution model for parallel
+ *   operations.  Examples include Threads, OpenMP, Cuda, and Serial.
+ *
+ * \tparam Layout (optional) The array's layout in memory.  For
+ *   example, LayoutLeft indicates a column-major (Fortran style)
+ *   layout, and LayoutRight a row-major (C style) layout.  If not
+ *   specified, this defaults to the preferred layout for the
+ *   <tt>Device</tt>.
+ *
+ * \tparam MemoryTraits (optional) Assertion of the user's intended
+ *   access behavior.  For example, RandomRead indicates read-only
+ *   access with limited spatial locality, and Unmanaged lets users
+ *   wrap externally allocated memory in a View without automatic
+ *   deallocation.
+ *
+ * \section Kokkos_View_MT \c MemoryTraits discussion
+ *
+ * \subsection Kokkos_View_MT_Interp \c MemoryTraits interpretation depends on \c Device
+ *
+ * Some \c MemoryTraits options may have different interpretations for
+ * different \c Device types.  For example, with the Cuda device,
+ * RandomRead tells Kokkos to fetch the data through the texture
+ * cache, whereas the non-GPU devices have no such hardware construct.
+ *
+ * \subsection Kokkos_View_MT_PrefUse Preferred use of \c MemoryTraits
+ *
+ * Users should defer applying the optional \c MemoryTraits parameter
+ * until the point at which they actually plan to rely on it in a
+ * computational kernel.  This minimizes the number of template
+ * parameters exposed in their code, which reduces the cost of
+ * compilation.  Users may always assign a View without specified
+ * <tt>MemoryTraits</tt> to a compatible View with that specification.
+ * For example:
+ * \code
+ * // Pass in the simplest types of View possible.
+ * void 
+ * doSomething (View<double*, Cuda> out, 
+ *              View<const double*, Cuda> in) 
+ * {
+ *   // Assign the "generic" View in to a RandomRead View in_rr.
+ *   // Note that RandomRead View objects must have const data.
+ *   View<const double*, Cuda, RandomRead> in_rr = in;
+ *   // ... do something with in_rr and out ... 
+ * }
+ * \endcode
  */
 template< class DataType ,
           class Arg1Type ,        /* ArrayLayout or DeviceType */
@@ -450,7 +528,7 @@ public:
     }
 
   explicit inline
-  View( const allocate_without_initializing & ,
+  View( const AllocateWithoutInitializing & ,
         const typename if_allocation_constructor::type & label ,
         const size_t n0 = 0 ,
         const size_t n1 = 0 ,
@@ -1257,6 +1335,16 @@ void deep_copy( const View<DT,DL,DD,DM,DS> & dst ,
                 ), typename ViewTraits<DT,DL,DD,DM>::const_scalar_type >::type & value )
 {
   Impl::ViewFill< View<DT,DL,DD,DM,DS> >( dst , value );
+}
+
+template< class ST , class SL , class SD , class SM , class SS >
+inline
+typename Impl::enable_if<( ViewTraits<ST,SL,SD,SM>::rank == 0 )>::type
+deep_copy( ST & dst , const View<ST,SL,SD,SM,SS> & src )
+{
+  typedef  ViewTraits<ST,SL,SD,SM>  src_traits ;
+  typedef typename src_traits::memory_space  src_memory_space ;
+  Impl::DeepCopy< HostSpace , src_memory_space >( & dst , src.ptr_on_device() , sizeof(ST) );
 }
 
 //----------------------------------------------------------------------------

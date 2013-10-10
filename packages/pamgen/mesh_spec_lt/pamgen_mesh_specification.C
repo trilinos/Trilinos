@@ -6,6 +6,7 @@
 #include "pamgen_element_dictionary.h"
 #include "pamgen_mesh_specification.h"
 #include <string.h>
+#include <time.h>
 #include <map>
 #include <vector>
 

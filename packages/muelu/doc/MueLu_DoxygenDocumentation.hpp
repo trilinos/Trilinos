@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -83,7 +83,7 @@ development of new multigrid preconditioning techniques.
 
 \section muelu_questions For All Questions and Comments...
 
-   Please contact Jeremie Gaidamour (jngaida@sandia.gov), Jonathan Hu (jhu@sandia.gov),
+   Please contact Jonathan Hu       (jhu@sandia.gov), Jonathan Hu (jhu@sandia.gov),
    or Ray Tuminaro (rstumin@sandia.gov).
 
 */

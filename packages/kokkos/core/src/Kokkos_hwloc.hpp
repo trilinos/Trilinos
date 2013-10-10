@@ -110,6 +110,9 @@ unsigned get_core_capacity();
 namespace Kokkos {
 namespace hwloc {
 
+/** \brief  Determine best use of cores for a given thread count */
+std::pair<unsigned,unsigned> use_core_topology( const unsigned thread_count );
+
 /** \brief  Query core-coordinate of the current thread
  *          with respect to the core_topology.
  *
@@ -133,6 +136,17 @@ unsigned bind_this_thread( const unsigned               coordinate_count ,
 
 /** \brief  Unbind the current thread back to the original process binding */
 bool unbind_this_thread();
+
+void thread_mapping( const std::pair<unsigned,unsigned> team_topo ,
+                     const std::pair<unsigned,unsigned> core_use ,
+                     const std::pair<unsigned,unsigned> core_topo ,
+                           std::pair<unsigned,unsigned> thread_coord[] );
+
+void thread_mapping( const std::pair<unsigned,unsigned> team_topo ,
+                     const std::pair<unsigned,unsigned> core_use ,
+                     const std::pair<unsigned,unsigned> core_topo ,
+                     const std::pair<unsigned,unsigned> master_coord ,
+                           std::pair<unsigned,unsigned> thread_coord[] );
 
 } /* namespace hwloc */
 } /* namespace Kokkos */

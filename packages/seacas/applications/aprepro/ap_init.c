@@ -65,7 +65,8 @@ extern double
   do_juldayhms(double mon, double day, double year, double h, double mi, double se),
   do_log1p(double x), do_acosh(double x), do_asinh(double x), do_atanh(double x),
   do_word_count(char *string, char *delm), do_strtod(char *string),
-  do_nint(double x), do_option(char *option, double value);
+  do_nint(double x), do_option(char *option, double value),
+  do_csvrows(char *filename), do_csvcols(char *filename);
 
 struct init arith_fncts[] =
 {
@@ -124,6 +125,8 @@ struct init arith_fncts[] =
   {"word_count",     do_word_count,"word_count(svar,del)","Number of words in svar. Words are separated by one or more of the characters in the string variable del."},
   {"strtod",         do_strtod, "strtod(svar)","Returns a double-precision floating-point number equal to the value represented by the character string pointed to by svar."},
   {"option",         do_option, "option(?,?)","Internal"},
+  {"csv_rows",       do_csvrows, "csv_rows(FILE)","Returns the number of rows in a CSV file. "},
+  {"csv_cols",       do_csvcols, "csv_cols(FILE)","Returns the number of columns in a CSV file. "},
   {0, 0, 0, 0}				/* Last line must be 0, 0 */
 };
 
@@ -138,7 +141,8 @@ extern char *do_switch(double x), *do_case(double x),
   *do_exodus_info(char *filename), *do_exodus_meta(char *filename),
 #endif
   *do_include_path(char *new_path), *do_intout(double intval), *do_get_date(void), *do_get_iso_date(void), *do_get_time(void),
-  *do_extract(char *string, char *begin, char *end);
+  *do_extract(char *string, char *begin, char *end),
+  *do_get_csv(char *filename, double i, double j);
   
 
 struct str_init string_fncts[] =
@@ -176,6 +180,7 @@ struct str_init string_fncts[] =
   {"get_iso_date",   do_get_iso_date,"get_iso_date()","Returns a string representing the current date in the form YYYYMMDD."},
   {"get_time",       do_get_time,    "get_time()","Returns a string representing the current time in the form HH:MM:SS."},
   {"extract",        do_extract,     "extract(s, b, e)","Return substring [b,e). 'b' is included; 'e' is not. If 'b' not found, return empty; If 'e' not found, return rest of string. If 'b' empty, start at beginning; if 'e' empty, return rest of string."},
+  {"get_csv",        do_get_csv,      "get_csv(file,row,column)","Retrieves string from the specified column and row of the specified CSV file."},
 #if !defined(NO_EXODUSII)
   {"exodus_info",    do_exodus_info, "exodus_info(ex_fn)","Parses the info records extracted from the exodus file 'ex_fn'"},
   {"exodus_meta",    do_exodus_meta, "exodus_meta(ex_fn)","Creates several variables related to the exodusII metadata in the specified file. Experimental."},

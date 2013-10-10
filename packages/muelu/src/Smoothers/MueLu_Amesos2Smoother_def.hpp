@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -87,6 +87,13 @@ namespace MueLu {
                                      "to use one of these libraries. Amesos2 must be compiled with one of these solvers or"
                                      "a valid Amesos2 solver have to be specified explicitly.");
 #endif
+    }
+
+    // Note: one could choose Umfpack for an Amesos solver. However, we check whether have Tpetra and/or Epetra
+    //       and if type_ == "Umfpack" we have to change it here. Otherwise we would run into an exception.
+    if (type_ == "Umfpack" && Amesos2::query(type_) == false) {
+      type_ = "Klu";
+      this->GetOStream(Warnings0, 0) << "Warning: MueLu::Amesos2Smoother: Umfpack not available. Try to use Klu2 instead" << std::endl;
     }
 
     //TMP: Amesos2 KLU never available but most MueLu tests are using KLU by default
