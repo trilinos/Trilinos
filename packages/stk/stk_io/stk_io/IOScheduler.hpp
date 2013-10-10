@@ -1,3 +1,6 @@
+#ifndef STKIO_SCHEDULER_h
+#define STKIO_SCHEDULER_h
+
 #include <map>
 #include <set>
 #include <iosfwd>
@@ -131,3 +134,5 @@ class IOScheduler
   };
 }
 }
+
+#endif
