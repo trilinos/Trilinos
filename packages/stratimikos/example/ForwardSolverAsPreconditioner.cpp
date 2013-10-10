@@ -48,6 +48,7 @@
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_get_Epetra_Operator.hpp"
 #include "Thyra_TestingTools.hpp"
+#include "Thyra_LinearOpTester.hpp"
 #include "EpetraExt_CrsMatrixIn.h"
 #include "Epetra_CrsMatrix.h"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -176,6 +177,11 @@ int main(int argc, char* argv[])
       "Show the parameter list or not."
       );
 
+    bool testPrecIsLinearOp = true;
+    clp.setOption( "test-prec-is-linear-op", "test-prec-is-linear-op", &testPrecIsLinearOp,
+      "Test if the preconditioner is a linear operator or not."
+      );
+
     double solveTol = 1e-8;
     clp.setOption( "solve-tol", &solveTol,
       "Tolerance for the solution to determine success or failure!"
@@ -230,6 +236,13 @@ int main(int argc, char* argv[])
       );
     *out << "\nA_inv_prec = " << describe(*A_inv_prec, verbLevel) << "\n";
 
+    if (testPrecIsLinearOp) {
+      *out << "\nTest that the preconditioner A_inv_prec is indeed a linear operator.\n";
+      Thyra::LinearOpTester<double> linearOpTester;
+      linearOpTester.check_adjoint(false);
+      const bool linearOpCheck = linearOpTester.check(*A_inv_prec, out.ptr());
+      if (!linearOpCheck) { success = false; }
+    }
       
     //
     *out << "\nC) Create the forward solver using the created preconditioner ...\n";
@@ -285,8 +298,8 @@ int main(int argc, char* argv[])
       b_nrm = Thyra::norm(*b),
       r_nrm_over_b_nrm = r_nrm / b_nrm;
 
-    bool result = ( r_nrm_over_b_nrm <= solveTol );
-    if(!result) success = false;
+    bool resid_tol_check = ( r_nrm_over_b_nrm <= solveTol );
+    if(!resid_tol_check) success = false;
     
     *out
       << "\n||A*x|| = " << Ax_nrm << "\n";
@@ -294,7 +307,7 @@ int main(int argc, char* argv[])
     *out
       << "\n||A*x-b||/||b|| = " << r_nrm << "/" << b_nrm
       << " = " << r_nrm_over_b_nrm << " <= " << solveTol
-      << " : " << Thyra::passfail(result) << "\n";
+      << " : " << Thyra::passfail(resid_tol_check) << "\n";
     
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success)
