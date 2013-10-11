@@ -368,7 +368,10 @@ namespace stk {
   
         void get_global_variable_names(std::vector<std::string> &names);
         double get_global(const std::string &globalVarName);
+        void get_global(const std::string &globalVarName, int &globalVar);
+        void get_global(const std::string &globalVarName, double &globalVar);
         void get_global(const std::string &globalVarName, std::vector<double> &globalVar);
+        void get_global(const std::string &globalVarName, std::vector<int> &globalVar);
 
         double process_restart_input(int step);
         double process_restart_input(double time);
@@ -417,7 +420,7 @@ namespace stk {
         /*!
          * Return the coordinate field for this mesh.
          */
-        stk::mesh::FieldBase & get_coordinate_field();
+        stk::mesh::FieldBase &get_coordinate_field();
 
         /*!
          * If there are nodal fields defined on parts with higher-rank. For example, a nodal

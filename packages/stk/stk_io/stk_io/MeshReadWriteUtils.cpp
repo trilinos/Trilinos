@@ -1460,17 +1460,6 @@ namespace stk {
         m_input_region->field_describe(Ioss::Field::TRANSIENT, &names);
     }
 
-    double MeshData::get_global(const std::string &globalVarName)
-    {
-        ThrowErrorMsgIf (Teuchos::is_null(m_input_region),
-                         "Attempt to read global variables before restart initialized.");
-        ThrowErrorMsgIf (!m_input_region->field_exists(globalVarName),
-                         "Attempt to read global variable '" << globalVarName << "' that doesn't exist.");
-        double valueToReturn = 0.0;
-        m_input_region->get_field_data(globalVarName, &valueToReturn, sizeof(double));
-        return valueToReturn;
-    }
-
     void MeshData::get_global(const std::string &globalVarName, std::vector<double> &globalVar)
     {
         ThrowErrorMsgIf (Teuchos::is_null(m_input_region),
@@ -1478,6 +1467,55 @@ namespace stk {
         ThrowErrorMsgIf (!m_input_region->field_exists(globalVarName),
                          "Attempt to read global variable '" << globalVarName << "' that doesn't exist.");
         m_input_region->get_field_data(globalVarName, globalVar);
+    }
+
+    void MeshData::get_global(const std::string &globalVarName, std::vector<int> &globalVar)
+    {
+        ThrowErrorMsgIf (Teuchos::is_null(m_input_region),
+                         "Attempt to read global variables before restart initialized.");
+        ThrowErrorMsgIf (!m_input_region->field_exists(globalVarName),
+                         "Attempt to read global variable '" << globalVarName << "' that doesn't exist.");
+
+	// It is possible that the database thinks the field is a real
+	// but it is really an integer.  Make sure that the field type
+	// is correct here...
+	const Ioss::Field &field = m_input_region->get_fieldref(globalVarName);
+	field.check_type(Ioss::Field::INTEGER);
+
+        m_input_region->get_field_data(globalVarName, globalVar);
+    }
+
+    void MeshData::get_global(const std::string &globalVarName, int &globalVar)
+    {
+        ThrowErrorMsgIf (Teuchos::is_null(m_input_region),
+                         "Attempt to read global variables before restart initialized.");
+        ThrowErrorMsgIf (!m_input_region->field_exists(globalVarName),
+                         "Attempt to read global variable '" << globalVarName << "' that doesn't exist.");
+
+	// It is possible that the database thinks the field is a real
+	// but it is really an integer.  Make sure that the field type
+	// is correct here...
+	const Ioss::Field &field = m_input_region->get_fieldref(globalVarName);
+	field.check_type(Ioss::Field::INTEGER);
+
+        m_input_region->get_field_data(globalVarName, &globalVar, sizeof(globalVar));
+    }
+
+    void MeshData::get_global(const std::string &globalVarName, double &globalVar)
+    {
+      ThrowErrorMsgIf (Teuchos::is_null(m_input_region),
+		       "Attempt to read global variables before restart initialized.");
+      ThrowErrorMsgIf (!m_input_region->field_exists(globalVarName),
+		       "Attempt to read global variable '" << globalVarName << "' that doesn't exist.");
+
+        m_input_region->get_field_data(globalVarName, &globalVar, sizeof(globalVar));
+    }
+
+    double MeshData::get_global(const std::string &globalVarName)
+    {
+        double valueToReturn = 0.0;
+	get_global(globalVarName, valueToReturn);
+        return valueToReturn;
     }
 
     void MeshData::begin_restart_output_at_time(double time)

@@ -32,7 +32,7 @@ void generateMetaData(stk::io::MeshData &stkIo)
 
 template <typename DataType>
 void testGlobalVarOnFile(const std::string &outputFileName, const int stepNumber, const std::vector<std::string> &goldGlobalVarName,
-                         const std::vector<DataType> goldGlobalVarValue, MPI_Comm comm)
+                         const std::vector<DataType> goldGlobalVarValue, DataType goldGlobalScale, MPI_Comm comm)
 {
     stk::io::MeshData stkIo(comm);
     stkIo.open_mesh_database(outputFileName);
@@ -45,11 +45,11 @@ void testGlobalVarOnFile(const std::string &outputFileName, const int stepNumber
     for(size_t i=0; i<goldGlobalVarName.size(); i++)
     {
         EXPECT_STRCASEEQ(goldGlobalVarName[i].c_str(), globalVarNames[i].c_str());
-        std::vector<double> globalVar;
+        std::vector<DataType> globalVar;
         stkIo.get_global(globalVarNames[i], globalVar);
         for(size_t j=0; j<globalVar.size(); j++)
         {
-            EXPECT_NEAR(goldGlobalVarValue[i]+0.1*j, globalVar[j], tolerance);
+            EXPECT_NEAR(goldGlobalVarValue[i]+goldGlobalScale*j, globalVar[j], tolerance);
         }
     }
 }
@@ -99,7 +99,8 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDouble)
     const int stepNumber = 1;
     std::vector<std::string> globalVarNames(1, globalVarName);
     std::vector<double> globalVarValues(1,globalVarValue);
-    testGlobalVarOnFile(outputFileName, stepNumber, globalVarNames, globalVarValues, communicator);
+    double goldGlobalScaleFactor = 0.0;
+    testGlobalVarOnFile(outputFileName, stepNumber, globalVarNames, globalVarValues, goldGlobalScaleFactor, communicator);
     unlink(outputFileName.c_str());
 }
 
@@ -107,11 +108,12 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleVector3)
 {
     const std::string outputFileName = "OneGlobalDoubleVector3.exo";
     const std::string globalVarName = "testGlobal";
+    double goldGlobalScaleFactor = 0.1;
     std::vector<double> globalVarValue;
-    globalVarValue.push_back(13.0);
-    globalVarValue.push_back(13.1);
-    globalVarValue.push_back(13.2);
-
+    for (int i=0; i < 3; i++) {
+      globalVarValue.push_back(13.0 + i*goldGlobalScaleFactor);
+    }
+    
     MPI_Comm communicator = MPI_COMM_WORLD;
     {
         stk::io::MeshData stkIo(communicator);
@@ -132,7 +134,41 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleVector3)
 
     const int stepNumber = 1;
     std::vector<std::string> globalVarNames(1, globalVarName);
-    testGlobalVarOnFile(outputFileName, stepNumber, globalVarNames, globalVarValue, communicator);
+    testGlobalVarOnFile(outputFileName, stepNumber, globalVarNames, globalVarValue, goldGlobalScaleFactor, communicator);
+    unlink(outputFileName.c_str());
+}
+
+STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalIntegerVector3)
+{
+    const std::string outputFileName = "OneGlobalIntegerVector3.exo";
+    const std::string globalVarName = "testGlobal";
+    std::vector<int> globalVarValue;
+    int goldGlobalScaleFactor = 10;
+    for (int i=0; i < 3; i++) {
+      globalVarValue.push_back(13 + i*goldGlobalScaleFactor);
+    }
+
+    MPI_Comm communicator = MPI_COMM_WORLD;
+    {
+        stk::io::MeshData stkIo(communicator);
+        generateMetaData(stkIo);
+        stkIo.populate_bulk_data();
+
+        stkIo.create_output_mesh(outputFileName);
+
+        stkIo.add_results_global(globalVarName, "vector_3d", Ioss::Field::INTEGER);
+
+        const double time = 1.0;
+        stkIo.begin_results_output_at_time(time);
+
+        stkIo.write_results_global(globalVarName, globalVarValue);
+
+        stkIo.end_current_results_output();
+    }
+
+    const int stepNumber = 1;
+    std::vector<std::string> globalVarNames(1, globalVarName);
+    testGlobalVarOnFile(outputFileName, stepNumber, globalVarNames, globalVarValue, goldGlobalScaleFactor, communicator);
     unlink(outputFileName.c_str());
 }
 
@@ -141,16 +177,10 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDouble10)
     const std::string outputFileName = "OneGlobalDouble10.exo";
     const std::string globalVarName = "testGlobal";
     std::vector<double> globalVarValue;
-    globalVarValue.push_back(13.0);
-    globalVarValue.push_back(13.1);
-    globalVarValue.push_back(13.2);
-    globalVarValue.push_back(13.3);
-    globalVarValue.push_back(13.4);
-    globalVarValue.push_back(13.5);
-    globalVarValue.push_back(13.6);
-    globalVarValue.push_back(13.7);
-    globalVarValue.push_back(13.8);
-    globalVarValue.push_back(13.9);
+    double goldGlobalScaleFactor = 0.1;
+    for (int i=0; i < 10; i++) {
+      globalVarValue.push_back(3.14159 + i*goldGlobalScaleFactor);
+    }
 
     MPI_Comm communicator = MPI_COMM_WORLD;
     {
@@ -172,7 +202,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDouble10)
 
     const int stepNumber = 1;
     std::vector<std::string> globalVarNames(1, globalVarName);
-    testGlobalVarOnFile(outputFileName, stepNumber, globalVarNames, globalVarValue, communicator);
+    testGlobalVarOnFile(outputFileName, stepNumber, globalVarNames, globalVarValue, goldGlobalScaleFactor, communicator);
     unlink(outputFileName.c_str());
 }
 
@@ -204,7 +234,8 @@ void testTwoGlobals(const std::string &outputFileName, const std::vector<std::st
     }
 
     const int stepNumber = 1;
-    testGlobalVarOnFile(outputFileName, stepNumber, globalVarNames, globalVarValues, communicator);
+    DataType goldGlobalScaleFactor = 0;
+    testGlobalVarOnFile(outputFileName, stepNumber, globalVarNames, globalVarValues, goldGlobalScaleFactor, communicator);
     unlink(outputFileName.c_str());
 }
 
@@ -297,7 +328,8 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, GlobalDoubleWithFieldMultipleTimeSteps)
     {
         std::vector<std::string> globalVarNames(1, globalVarName);
         std::vector<double> globalVarValues(1,globalVarValuesOverTime[i]);
-        testGlobalVarOnFile(outputFileName, i+1, globalVarNames, globalVarValues, communicator);
+	double goldGlobalScaleFactor = 0.0;
+        testGlobalVarOnFile(outputFileName, i+1, globalVarNames, globalVarValues, goldGlobalScaleFactor, communicator);
         testNodalFieldOnFile(outputFileName, i+1, fieldName, nodalFieldValues, communicator);
     }
     unlink(outputFileName.c_str());
@@ -342,7 +374,8 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleRestart)
     const int stepNumber = 1;
     std::vector<std::string> globalVarNames(1, globalVarName);
     std::vector<double> globalVarValues(1,globalVarValue);
-    testGlobalVarOnFile(restartFileName, stepNumber, globalVarNames, globalVarValues, communicator);
+    double goldGlobalScaleFactor = 0.0;
+    testGlobalVarOnFile(restartFileName, stepNumber, globalVarNames, globalVarValues, goldGlobalScaleFactor,communicator);
     unlink(restartFileName.c_str());
 }
 
@@ -392,7 +425,8 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleWithFieldRestart)
     {
         std::vector<std::string> globalVarNames(1, globalVarName);
         std::vector<double> globalVarValues(1,globalVarValuesOverTime[i]);
-        testGlobalVarOnFile(outputFileName, i+1, globalVarNames, globalVarValues, communicator);
+	double goldGlobalScaleFactor = 0.0;
+        testGlobalVarOnFile(outputFileName, i+1, globalVarNames, globalVarValues, goldGlobalScaleFactor, communicator);
         testNodalFieldOnFile(outputFileName, i+1, fieldName, nodalFieldValues, communicator);
     }
     unlink(outputFileName.c_str());
