@@ -56,7 +56,6 @@ namespace { // Internal helper functions
 
 namespace Iovs {
   int DatabaseIO::useCount = 0;
-  int DatabaseIO::uniqueID = 0;
   int field_warning(const Ioss::GroupingEntity *ge,
                     const Ioss::Field &field, const std::string& inout);
 
@@ -247,8 +246,7 @@ namespace Iovs {
                                        restart_tag.c_str(),
                                        this->enableLogging,
                                        this->debugLevel,
-                                       this->DBFilename.c_str(),
-                                       uniqueID++);
+                                       this->DBFilename.c_str());
       std::vector<int> element_block_id_list;
       Ioss::ElementBlockContainer const & ebc = region->get_element_blocks();
       for(int i = 0;i<ebc.size();i++)
