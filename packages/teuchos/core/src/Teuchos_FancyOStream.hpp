@@ -63,17 +63,17 @@ template<typename CharT, typename Traits>
 class basic_FancyOStream_buf : public std::basic_streambuf<CharT,Traits>
 {
 public:
-  
+
   /** \brief . */
   typedef CharT char_type;
   /** \brief . */
-  typedef Traits 					 traits_type;
+  typedef Traits                                         traits_type;
   /** \brief . */
-  typedef typename traits_type::int_type 		int_type;
+  typedef typename traits_type::int_type                int_type;
   /** \brief . */
-  typedef typename traits_type::pos_type 		pos_type;
+  typedef typename traits_type::pos_type                pos_type;
   /** \brief . */
-  typedef typename traits_type::off_type 		off_type;
+  typedef typename traits_type::off_type                off_type;
 
   /** \brief . */
   basic_FancyOStream_buf(
@@ -130,28 +130,65 @@ public:
   /** \brief . */
   bool getShowProcRank() const;
 
-  /** \brief .*/
+  /// \brief Set the (MPI) process rank and the number of processes in the communicator.
+  ///
+  /// \param procRank [in] The rank of the calling process.
+  /// \param numProcs [in] The number of processes in the communicator.
+  ///
+  /// You must call this method before you may call setOutputToRootOnly().
   void setProcRankAndSize( const int procRank, const int numProcs );
 
-  /** \brief .*/
+  /// \brief Get the rank of the calling (MPI) process.
+  ///
+  /// \pre The calling process rank and the number of processes in the
+  ///   communicator were set via a call to setProcRankAndSize().
   int getProcRank() const;
 
-  /** \brief .*/
+  /// \brief Get the number of processes in the communicator.
+  ///
+  /// \pre The calling process rank and the number of processes in the
+  ///   communicator were set via a call to setProcRankAndSize().
   int getNumProcs() const;
 
-  /** \brief . */
+  /// \brief Set the stream to print only on the (MPI) process with the given rank.
+  ///
+  /// \pre The calling process rank and the number of processes in the
+  ///   communicator were set via a call to setProcRankAndSize().
+  ///
+  /// \param rootRank [in] The rank of the process on which to print.
+  ///   The convention is to use Process 0 as the "root" process, but
+  ///   this is not required.
+  ///
+  /// \warning The effect of this method is currently irreversible.
+  ///   This commits downstream users of this output stream to the
+  ///   same assignment of ranks to processes.  The result of calling
+  ///   setProcRankAndSize() after this method has been called is
+  ///   undefined.  It will likely have no effect.
   void setOutputToRootOnly( const int rootRank );
 
   /** \brief . */
   int getOutputToRootOnly() const;
 
-  /** \brief . */
+  /// \brief Push one or more tabs.
+  ///
+  /// Users should generally not call this method directly.  It is
+  /// better to use OSTab to automate the process.  OSTab's
+  /// constructor calls pushTab() for you.  It also calls popTab()
+  /// automatically on scope exit, whether the scope was exited
+  /// normally or by an exception throw.  This "puts things back how
+  /// you found them."
   void pushTab(const int tabs);
 
   /** \brief . */
   int getNumCurrTabs() const;
 
-  /** \brief . */
+  /// \brief Pop the current tab.
+  ///
+  /// Users should generally not call this method directly.  It is
+  /// better to use OSTab to automate the process.  OSTab calls
+  /// popTab() automatically on scope exit, whether the scope was
+  /// exited normally or by an exception throw.  This "puts things
+  /// back how you found them."
   void popTab();
 
   /** \brief . */
@@ -170,10 +207,10 @@ public:
 
   /** \brief . */
   void popDisableTabbing();
- 
+
 protected:
- 
-  //! @name Protected overridden functions from std::basic_streambuf 
+
+  //! @name Protected overridden functions from std::basic_streambuf
   //@{
 
   /** \brief . */
@@ -184,69 +221,69 @@ protected:
 
 #ifdef TEUCHOS_FANCY_OSTREAM_SHOW_ALL_CALLS
 
-  void imbue(const locale& l) 
+  void imbue(const locale& l)
     {
       std::cerr << "\ncalled imbue()\n";
       std::basic_streambuf<CharT,Traits>::imbue(l);
     }
- 
-  basic_streambuf<char_type,Traits>* 
+
+  basic_streambuf<char_type,Traits>*
   setbuf(char_type* s, streamsize n)
     {
       std::cerr << "\ncalled setbuf()\n";
       return std::basic_streambuf<CharT,Traits>::setbuf(s,n);
     }
- 
-  pos_type 
+
+  pos_type
   seekoff(off_type a, ios_base::seekdir b,ios_base::openmode c)
     {
       std::cerr << "\ncalled seekoff()\n";
       return std::basic_streambuf<CharT,Traits>::seekoff(a,b,c);
     }
 
-  pos_type 
+  pos_type
   seekpos(pos_type a, ios_base::openmode b)
     {
       std::cerr << "\ncalled seekpos()\n";
       return std::basic_streambuf<CharT,Traits>::seekpos(a,b);
     }
- 
-  int 
+
+  int
   sync()
     {
       std::cerr << "\ncalled sync()\n";
       return std::basic_streambuf<CharT,Traits>::sync();
     }
- 
-  streamsize 
+
+  streamsize
   showmanyc()
     {
       std::cerr << "\ncalled showmanyc()\n";
       return std::basic_streambuf<CharT,Traits>::showmanyc();
     }
- 
-  streamsize 
+
+  streamsize
   xsgetn(char_type* s, streamsize n)
     {
       std::cerr << "\ncalled xsgetn()\n";
       return std::basic_streambuf<CharT,Traits>::xsgetn(s,n);
     }
- 
-  int_type 
+
+  int_type
   underflow()
     {
       std::cerr << "\ncalled underflow()\n";
       return std::basic_streambuf<CharT,Traits>::underflow();
     }
 
-  int_type 
-  uflow() 
+  int_type
+  uflow()
     {
       std::cerr << "\ncalled uflow()\n";
       return std::basic_streambuf<CharT,Traits>::uflow();
     }
 
-  int_type 
+  int_type
   pbackfail(int_type c = traits_type::eof())
     {
       std::cerr << "\ncalled pbackfail()\n";
@@ -282,12 +319,12 @@ private:
   int rankPrintWidth_;
 
   RCP<std::ostringstream> lineOut_;
- 
+
   int tabIndent_;
   tabIndentStack_t tabIndentStack_;
   linePrefixStack_t linePrefixStack_;
   int enableTabbingStack_;
- 
+
   bool wroteNewline_;
 
   // ////////////////////////
@@ -322,7 +359,7 @@ private:
  * types of information at the beginning of each line. The type of information
  * supported is:
  * <ul>
- * <li> Processor rank: Set using <tt>setShowProcRank()</tt>.
+ * <li> (MPI) process rank: Set using <tt>setShowProcRank()</tt>.
  * <li> Line prefix name: Set using <tt>showLinePrefix()</tt> and <tt>OSTab::OSTab()</tt>.
  * <li> Tab counts (useful for debugging): Set using <tt>setShowTabCount()</tt>.
  * </ul>
@@ -335,7 +372,7 @@ class basic_FancyOStream : public std::basic_ostream<CharT, Traits>
 {
 public:
 
-  //! @name Public types 
+  //! @name Public types
   //@{
 
   /** \brief . */
@@ -357,10 +394,38 @@ public:
 
   //@}
 
-  //! @name Public client functions 
+  //! @name Public client functions
   //@{
 
-  /** \brief . */
+  /// \brief Constructor.
+  ///
+  /// \param oStream [in/out] Output stream to wrap.
+  /// \param tabIndentStr [in] String to use as a prefix for each tab
+  ///   level.  Default is a single space (per tab level).
+  /// \param startingTab [in] Starting tab level.  Default is 0.
+  /// \param showLinePrefix [in] Whether to show the line prefix.
+  ///   (This does not include the tab indent string.  Tabs will
+  ///   indent regardless.)
+  /// \param maxLenLinePrefix [in] Maximum number of characters in the
+  ///   line prefix.  (This does not include the tab indent string.)
+  /// \param showTabCount [in] Whether to show the tab count in front
+  ///   of each line of text.
+  /// \param showProcRank [in] Whether to print the rank of the
+  ///   calling (MPI) process in front of each line of text.  If you
+  ///   set this to true, you <i>must</i> call setProcRankAndSize()
+  ///   before printing to this output stream, or the process rank
+  ///   will not be defined.
+  ///
+  /// The following things are called "front matter":
+  ///   - Rank of the calling (MPI) process
+  ///   - Line prefix
+  ///   - Tab count
+  ///
+  /// This object may print any or all of these things in front of
+  /// each line.  (Delimit each line by using <tt>std::endl</tt>, not
+  /// with "\n".  The latter is not portable in any case!)  You may
+  /// control which of these get printed by the corresponding Boolean
+  /// argument of this constructor.
   explicit
   basic_FancyOStream(
     const RCP< std::basic_ostream<char_type,traits_type> > &oStream
@@ -372,7 +437,9 @@ public:
     ,const bool showProcRank = false
     );
 
-  /** \brief . */
+  /// \brief Initialize the output stream.
+  ///
+  /// This takes the same arguments as the constructor.
   void initialize(
     const RCP< std::basic_ostream<char_type,traits_type> > &oStream
     ,const std::basic_string<char_type,traits_type> &tabIndentStr = " "
@@ -383,18 +450,31 @@ public:
     ,const bool showProcRank = false
     );
 
-  /** \brief. */
+  //! Get the output stream this object wraps.
   RCP<std::basic_ostream<char_type,traits_type> > getOStream();
 
-  /** \brief . */
+  //! Set the tab indent string.
   basic_FancyOStream& setTabIndentStr(
     const std::basic_string<char_type,traits_type> &tabIndentStr
     );
 
-  /** \brief. */
+  //! Get the tab indent string.
   const std::basic_string<char_type,traits_type>& getTabIndentStr() const;
 
-  /** \brief Set if processor rank, line prefixes, and tab counts are shown or not .*/
+  /// \brief Control whether this stream prints "front matter."
+  ///
+  /// "Front matter" includes the following things:
+  ///   - Rank of the calling (MPI) process
+  ///   - Line prefix
+  ///   - Tab count
+  ///
+  /// This object may print any or all of these things in front of
+  /// each line.  (Delimit each line by using <tt>std::endl</tt>, not
+  /// with "\n".  The latter is not portable in any case!)  You may
+  /// control <i>individually</i> which of these get printed by the
+  /// corresponding Boolean argument of this object's constructor.
+  /// You may also call this method to turn on or off printing of
+  /// <i>all</i> front matter.
   basic_FancyOStream& setShowAllFrontMatter(const bool showAllFrontMatter);
 
   /** \brief .*/
@@ -409,10 +489,28 @@ public:
   /** \brief . */
   basic_FancyOStream& setShowProcRank(const bool showProcRank);
 
-  /** \brief . */
+  /// \brief Set the (MPI) process rank and the number of processes in the communicator.
+  ///
+  /// \param procRank [in] The rank of the calling process.
+  /// \param numProcs [in] The number of processes in the communicator.
+  ///
+  /// You must call this method before you may call setOutputToRootOnly().
   basic_FancyOStream& setProcRankAndSize( const int procRank, const int numProcs );
 
-  /** \brief . */
+  /// \brief Set the stream to print only on the (MPI) process with the given rank.
+  ///
+  /// \pre The calling process rank and the number of processes in the
+  ///   communicator were set via a call to setProcRankAndSize().
+  ///
+  /// \param rootRank [in] The rank of the process on which to print.
+  ///   The convention is to use Process 0 as the "root" process, but
+  ///   this is not required.
+  ///
+  /// \warning The effect of this method is currently irreversible.
+  ///   This commits downstream users of this output stream to the
+  ///   same assignment of ranks to processes.  The result of calling
+  ///   setProcRankAndSize() after this method has been called is
+  ///   undefined.  It will likely have no effect.
   basic_FancyOStream& setOutputToRootOnly( const int rootRank );
 
   /** \brief . */
@@ -423,16 +521,29 @@ public:
 
   //@}
 
-  //! @name Functions designed to be used by basic_OSTab 
+  //! @name Functions designed to be used by basic_OSTab
   //@{
 
-  /** \brief . */
+  /// \brief Push one or more tabs.
+  ///
+  /// Users should generally not call this method directly.  It is
+  /// better to use OSTab to automate the process.  OSTab's
+  /// constructor calls pushTab() for you.  It also calls popTab()
+  /// automatically on scope exit, whether the scope was exited
+  /// normally or by an exception throw.  This "puts things back how
+  /// you found them."
   void pushTab(const int tabs = 1);
 
   /** \brief . */
   int getNumCurrTabs() const;
 
-  /** \brief . */
+  /// \brief Pop the current tab.
+  ///
+  /// Users should generally not call this method directly.  It is
+  /// better to use OSTab to automate the process.  OSTab calls
+  /// popTab() automatically on scope exit, whether the scope was
+  /// exited normally or by an exception throw.  This "puts things
+  /// back how you found them."
   void popTab();
 
   /** \brief . */
@@ -451,10 +562,10 @@ public:
   void popDisableTabbing();
 
   //@}
- 
+
 private:
 
-  streambuf_t	streambuf_;
+  streambuf_t   streambuf_;
 
   // Not defined and not to be called
   basic_FancyOStream();
@@ -629,9 +740,9 @@ public:
     {
       return fancyOStream_.get();
     }
- 
+
 private:
- 
+
   RCP<basic_FancyOStream<CharT,Traits> > fancyOStream_;
   int tabs_;
   std::basic_string<CharT,Traits> linePrefix_;
@@ -646,7 +757,7 @@ private:
         if(linePrefix_.length()) fancyOStream_->pushLinePrefix(linePrefix_);
       }
     }
- 
+
 };
 
 
@@ -1017,7 +1128,7 @@ std::streamsize basic_FancyOStream_buf<CharT,Traits>::xsputn(
 
 
 template<typename CharT, typename Traits>
-typename basic_FancyOStream_buf<CharT,Traits>::int_type 
+typename basic_FancyOStream_buf<CharT,Traits>::int_type
 basic_FancyOStream_buf<CharT,Traits>::overflow(int_type c)
 {
 #ifdef TEUCHOS_FANCY_OSTREAM_SHOW_ALL_CALLS
@@ -1085,7 +1196,7 @@ void basic_FancyOStream_buf<CharT,Traits>::writeChars(
     }
     // Update for next search
     if(!done_outputting)
-      first_p = p+1; 
+      first_p = p+1;
   }
 }
 
@@ -1280,7 +1391,7 @@ void basic_FancyOStream<CharT,Traits>::copyAllOutputOptions(
   streambuf_.setMaxLenLinePrefix(oStream.streambuf_.getMaxLenLinePrefix());
   streambuf_.setShowTabCount(oStream.streambuf_.getShowTabCount());
   streambuf_.setShowProcRank(oStream.streambuf_.getShowProcRank());
-  streambuf_.setProcRankAndSize(oStream.streambuf_.getProcRank(), 
+  streambuf_.setProcRankAndSize(oStream.streambuf_.getProcRank(),
     oStream.streambuf_.getNumProcs());
   streambuf_.setOutputToRootOnly(oStream.streambuf_.getOutputToRootOnly());
 }
