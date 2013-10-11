@@ -38,37 +38,15 @@ namespace {
   {
     std::string file = working_directory;
     file += filename;
-    
+
     mesh_data.open_mesh_database(file, type);
     mesh_data.create_input_mesh();
 
-    // This is done just to defined some fields in stk
+    // This is done just to define some fields in stk
     // that can be used later for reading restart data.
     mesh_data.define_input_fields();
+    mesh_data.populate_bulk_data();
 
-    stk::mesh::MetaData &meta = mesh_data.meta_data();
-
-    ThrowRequireMsg(db_integer_size == 8 || db_integer_size == 4,
-		    "db_integer_size ("<<db_integer_size<<") is required to be either 4 or 8.");
-
-    if (db_integer_size == 8) {
-      //on the mac, sizeof(long) seems to be 8.
-      if (sizeof(long) == 8) {
-        stk::mesh::Field<long> &imp_id_field = meta.declare_field<stk::mesh::Field<long> >("implicit_ids");
-        stk::mesh::put_field(imp_id_field, stk::mesh::MetaData::NODE_RANK, meta.universal_part());
-        stk::mesh::put_field(imp_id_field, stk::mesh::MetaData::ELEMENT_RANK, meta.universal_part());
-      }
-      else {
-        stk::mesh::Field<int64_t> &imp_id_field = meta.declare_field<stk::mesh::Field<int64_t> >("implicit_ids");
-        stk::mesh::put_field(imp_id_field, stk::mesh::MetaData::NODE_RANK, meta.universal_part());
-        stk::mesh::put_field(imp_id_field, stk::mesh::MetaData::ELEMENT_RANK, meta.universal_part());
-      }
-    }
-    else {
-      stk::mesh::Field<int> &imp_id_field = meta.declare_field<stk::mesh::Field<int> >("implicit_ids");
-      stk::mesh::put_field(imp_id_field, stk::mesh::MetaData::NODE_RANK, meta.universal_part());
-      stk::mesh::put_field(imp_id_field, stk::mesh::MetaData::ELEMENT_RANK, meta.universal_part());
-    }
 
     // Iterate all fields and set them as restart fields...
     const stk::mesh::FieldVector &fields = mesh_data.meta_data().get_fields();
@@ -77,20 +55,29 @@ namespace {
       mesh_data.add_restart_field(*fields[i], name);
     }
 
-    mesh_data.populate_bulk_data();
-
     //------------------------------------------------------------------
     // Create output mesh...  ("generated_mesh.out") ("exodus_mesh.out")
     std::string output_filename = working_directory + type + "_mesh.out";
+
     mesh_data.create_output_mesh(output_filename);
     mesh_data.define_output_fields();
 
     // Create restart output ...  ("generated_mesh.restart") ("exodus_mesh.restart")
-    
     std::string restart_filename = working_directory + type + "_mesh.restart";
-    mesh_data.create_restart_output(restart_filename);
 
+    mesh_data.create_restart_output(restart_filename);
     mesh_data.define_restart_fields();
+
+    // Determine the global fields on the input mesh and define the
+    // same fields on the restart and results output databases.
+    std::vector<std::string> global_fields;
+    mesh_data.get_global_variable_names(global_fields);
+
+    for (size_t i=0; i < global_fields.size(); i++) {
+      const Ioss::Field &input_field = mesh_data.input_io_region()->get_fieldref(global_fields[i]);
+      mesh_data.add_restart_global(input_field.get_name(), input_field.raw_storage()->name(), input_field.get_type());
+      mesh_data.add_results_global(input_field.get_name(), input_field.raw_storage()->name(), input_field.get_type());
+    }
 
     // Determine number of timesteps on input database...
     int timestep_count = mesh_data.input_io_region()->get_property("state_count").get_int();
@@ -101,9 +88,25 @@ namespace {
       // then continue with execution at that point.  Here just for testing, we are
       // reading restart data at each step on the input restart file/mesh and then
       // outputting that data to the restart and results output.
+
       mesh_data.process_restart_input(step);
-      mesh_data.process_output_request(time);
-      mesh_data.process_restart_output(time);
+      mesh_data.begin_restart_output_at_time(time);
+      mesh_data.begin_results_output_at_time(time);
+
+      mesh_data.process_restart_output();
+      mesh_data.process_output_request();
+
+      // Transfer all global variables from the input mesh to the
+      // restart and results databases
+      for (size_t i=0; i < global_fields.size(); i++) {
+	std::vector<double> field_values;
+        mesh_data.get_global(global_fields[i], field_values);
+        mesh_data.write_restart_global(global_fields[i], field_values);
+        mesh_data.write_results_global(global_fields[i], field_values);
+      }
+
+      mesh_data.end_current_restart_output();
+      mesh_data.end_current_results_output();
     }
   }
 
