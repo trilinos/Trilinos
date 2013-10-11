@@ -2088,7 +2088,7 @@ void Inline_Mesh_Desc::Offset_Coords(double * coords, long long num_nodes,long l
 /****************************************************************************/
 {
   for(long long ict = 0; ict < num_nodes; ict ++){
-    for(long long idim = 0; idim < 3; idim ++){
+    for(long long idim = 0; idim < dim; idim ++){
       coords[idim*num_nodes + ict] = coords[idim*num_nodes + ict] + inline_offset[idim];
     }
   }
