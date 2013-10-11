@@ -1446,6 +1446,8 @@ namespace stk {
     void MeshData::add_restart_global(const std::string &globalVarName, const std::string &storage_type,
 				      Ioss::Field::BasicType dataType)
     {
+        ThrowErrorMsgIf (Teuchos::is_null(m_restart_region),
+                         "Attempt to define output global variables before restart initialized.");
         ThrowErrorMsgIf (m_restart_region->field_exists(globalVarName),
                          "Attempt to add global variable '" << globalVarName << "' twice.");
         //Any field put onto the region instead of a element block, etc. gets written as "global" to exodus
