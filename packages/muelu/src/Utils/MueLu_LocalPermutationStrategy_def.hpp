@@ -76,6 +76,10 @@ namespace MueLu {
     // TODO what about nOffset?
     LocalOrdinal numLocalNodes = A->getRowMap()->getNodeNumElements()/nDofsPerNode;
     for (LocalOrdinal node = 0; node < numLocalNodes; ++node) {
+
+      // zero out block matrix
+      subBlockMatrix.putScalar();
+
       // loop over all DOFs in current node
       // Note: were assuming constant number of Dofs per node here!
       // TODO This is more complicated for variable dofs per node
