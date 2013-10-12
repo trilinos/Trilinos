@@ -102,7 +102,6 @@ bool skinning_use_case_2(stk::ParallelMachine pm)
   //number of faces  and particles exist.
   try {
     stk::mesh::fixtures::HexFixture fixture( pm , nx , ny , nz );
-    const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
     const stk::mesh::EntityRank side_rank = fixture.m_meta.side_rank();
 
     const int p_rank = fixture.m_bulk_data.parallel_rank();
@@ -137,7 +136,10 @@ bool skinning_use_case_2(stk::ParallelMachine pm)
     }
     fixture.m_bulk_data.modification_end();
 
-    stk::mesh::skin_mesh(fixture.m_bulk_data, element_rank, &skin_part);
+    {
+      stk::mesh::PartVector add_parts(1,&skin_part);
+      stk::mesh::skin_mesh(fixture.m_bulk_data, add_parts);
+    }
 
     //----------------------------------------------------------------------
     //Actual usecase
@@ -166,7 +168,10 @@ bool skinning_use_case_2(stk::ParallelMachine pm)
 
     fixture.m_bulk_data.modification_end();
 
-    stk::mesh::skin_mesh( fixture.m_bulk_data, element_rank, &skin_part);
+    {
+      stk::mesh::PartVector add_parts(1,&skin_part);
+      stk::mesh::skin_mesh(fixture.m_bulk_data, add_parts);
+    }
 
     {
       int num_skin_entities = count_skin_entities( fixture.m_bulk_data, skin_part, side_rank);

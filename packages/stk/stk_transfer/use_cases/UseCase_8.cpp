@@ -1,9 +1,9 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2013 Sandia Corporation.                     */      
+/*                 Copyright 2013 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */      
-/*  United States Government.                                             */      
+/*  Export of this program may require a license from the                 */
+/*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
 #include <Intrepid_FieldContainer.hpp>
@@ -38,8 +38,8 @@ bool use_case_8_driver(stk::ParallelMachine  comm,
                       const std::string &domain_mesh,
                       const std::string &domain_filetype)
 {
-  stk::diag::Timer timer("Transfer Use Case 8", 
-                          use_case::TIMER_TRANSFER, 
+  stk::diag::Timer timer("Transfer Use Case 8",
+                          use_case::TIMER_TRANSFER,
                           use_case::timer());
   stk::diag::Timer timer_node_to_node(" Element To Point", timer);
   use_case::timerSet().setEnabledTimerMask(use_case::TIMER_ALL);
@@ -49,16 +49,16 @@ bool use_case_8_driver(stk::ParallelMachine  comm,
   enum {           DIM = 3  };
   const double TOLERANCE = 0.000001;
   const double  rand_max = RAND_MAX;
-  enum {   TONUMPOINTS = 100  };  
+  enum {   TONUMPOINTS = 100  };
 
   typedef Intrepid::FieldContainer<double>  MDArray;
- 
-  MDArray ToPoints   (  TONUMPOINTS,DIM), 
-          ToValues   (  TONUMPOINTS,  1); 
+
+  MDArray ToPoints   (  TONUMPOINTS,DIM),
+          ToValues   (  TONUMPOINTS,  1);
   for (unsigned i=0 ; i<TONUMPOINTS; ++i) {
     for (unsigned j=0 ; j<DIM; ++j) {
       ToPoints(i,j) = rand()/rand_max;
-    }   
+    }
   }
 
   const stk::mesh::EntityRank node_rank = stk::mesh::MetaData::NODE_RANK;
@@ -80,16 +80,17 @@ bool use_case_8_driver(stk::ParallelMachine  comm,
 
   stk::mesh::set_cell_topology( domain_block,  hex_top );
   stk::mesh::set_cell_topology( block_skin,    quad_top );
-  
-  ScalarField &domain_coord_sum_field = stk::mesh::put_field( 
-                        domain_meta_data.declare_field<ScalarField>(data_field_name), 
-                        node_rank , 
+
+  ScalarField &domain_coord_sum_field = stk::mesh::put_field(
+                        domain_meta_data.declare_field<ScalarField>(data_field_name),
+                        node_rank ,
                         domain_meta_data.universal_part() );
   domain_meta_data.commit();
 
   domain_mesh_data.populate_bulk_data();
   stk::mesh::BulkData &domain_bulk_data = domain_mesh_data.bulk_data();
-  stk::mesh::skin_mesh(domain_bulk_data, elem_rank, &block_skin);
+  stk::mesh::PartVector add_parts(1,&block_skin);
+  stk::mesh::skin_mesh(domain_bulk_data, add_parts);
   // For this use case, the domain consists of an axis-aligned
   // bounding box for each 'domain_entity' in the mesh.  The range is a
   // PointBoundingBox3D at the centroid of each 'range_entity'.  The id of the point
@@ -97,11 +98,11 @@ bool use_case_8_driver(stk::ParallelMachine  comm,
   // mesh contains solid elements only, and the range_mesh matches the
   // domain_mesh, then the search should return a single box for each
   // point and the id of the box should match the id of the point.
-  
+
   CartesianField &domain_coord_field = static_cast<CartesianField&>(domain_mesh_data.get_coordinate_field());
 
   stk::mesh::Selector locally_owned= domain_meta_data.locally_owned_part();
-  
+
   {
     std::vector<stk::mesh::Entity> node_entities;
     stk::mesh::get_selected_entities(locally_owned, domain_bulk_data.buckets(node_rank), node_entities);
@@ -124,15 +125,15 @@ bool use_case_8_driver(stk::ParallelMachine  comm,
   boost::shared_ptr<stk::transfer:: MDMesh<3> >
     transfer_range_mesh  (new stk::transfer:: MDMesh<3>(ToValues, ToPoints,   radius, comm));
 
-   
+
   stk::transfer::GeometricTransfer<
     class stk::transfer::FEInterpolate<
-      class stk::transfer::STKElem<3>, 
+      class stk::transfer::STKElem<3>,
       class stk::transfer::MDMesh<3>
     >
   >
   transfer(transfer_domain_mesh, transfer_range_mesh, "STK Transfer test Use case 8");
-  
+
   {
     stk::diag::TimeBlock __timer_node_to_node(timer_node_to_node);
     try {
@@ -150,7 +151,7 @@ bool use_case_8_driver(stk::ParallelMachine  comm,
                 <<" Caught an exception, rethrowing..."
                 <<std::endl;
       status = status && false;
-    } 
+    }
   }
 
   if (status) {
@@ -158,8 +159,8 @@ bool use_case_8_driver(stk::ParallelMachine  comm,
     bool success = true;
     for (unsigned i=0 ; i<TONUMPOINTS; ++i) {
       double check_l = 0;
-      for (unsigned j=0 ; j<DIM; ++j) check_l += ToPoints(i,j); 
-      if (TOLERANCE < fabs(check_l-ToValues(i,0))) { 
+      for (unsigned j=0 ; j<DIM; ++j) check_l += ToPoints(i,j);
+      if (TOLERANCE < fabs(check_l-ToValues(i,0))) {
         std::cout <<__FILE__<<":"<<__LINE__
                   <<" EntityKey:"<<i
                   <<" ToPoints:"<<ToPoints(i,0)<<" "<<ToPoints(i,1)<<" "<<ToPoints(i,2)
@@ -168,12 +169,12 @@ bool use_case_8_driver(stk::ParallelMachine  comm,
                   <<" error:"<<fabs(check_l-ToValues(i,0))
                   <<std::endl;
         success = false;
-      }   
+      }
     }
     status = status && success;
   }
   timer.stop();
-//stk::diag::printTimersTable(std::cout, timer, 
+//stk::diag::printTimersTable(std::cout, timer,
 //      stk::diag::METRICS_CPU_TIME | stk::diag::METRICS_WALL_TIME, false, comm);
 
 

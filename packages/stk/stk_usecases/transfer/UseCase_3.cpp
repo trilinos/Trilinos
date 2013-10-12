@@ -106,7 +106,10 @@ use_case_3_driver(stk::ParallelMachine  comm,
 
   domain_mesh_data.populate_bulk_data();
   stk::mesh::BulkData &domain_bulk_data = domain_mesh_data.bulk_data();
-  stk::mesh::skin_mesh(domain_bulk_data, stk::mesh::MetaData::ELEMENT_RANK, &block_skin);
+  {
+    stk::mesh::PartVector add_parts(1,&block_skin);
+    stk::mesh::skin_mesh(domain_bulk_data, add_parts);
+  }
 
   // For this use case, the domain consists of an axis-aligned
   // bounding box for each 'domain_entity' in the mesh.  The range is a

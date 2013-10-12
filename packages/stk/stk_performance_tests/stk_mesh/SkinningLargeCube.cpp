@@ -86,9 +86,8 @@ void update_skin( stk::mesh::BulkData & mesh, stk::mesh::Part *skin_part, Entity
     }
   }
 
-
-  stk::mesh::reskin_mesh(mesh, element_rank,
-                         modified_elements, skin_part);
+  stk::mesh::PartVector add_parts(1, skin_part);
+  stk::mesh::skin_mesh(mesh, add_parts);
 }
 
 void find_owned_nodes_with_relations_outside_closure(
@@ -365,7 +364,10 @@ STKUNIT_UNIT_TEST( skinning_large_cube, skinning_large_cube)
 
     //intial skin of the mesh
     start_time = stk::wall_time();
-    stk::mesh::skin_mesh(mesh, element_rank, &skin_part);
+    {
+      stk::mesh::PartVector add_parts(1,&skin_part);
+      stk::mesh::skin_mesh(mesh, add_parts);
+    }
     timings[1] = stk::wall_dtime(start_time);
 
     stk::mesh::EntityVector entities_to_separate;
@@ -415,7 +417,10 @@ STKUNIT_UNIT_TEST( skinning_large_cube, skinning_large_cube)
 
       //reskin the entire mesh
       start_time = stk::wall_time();
-      stk::mesh::skin_mesh( mesh, element_rank, &skin_part);
+      {
+        stk::mesh::PartVector add_parts(1,&skin_part);
+        stk::mesh::skin_mesh( mesh, add_parts);
+      }
       timings[4] = stk::wall_dtime(start_time);
     }
     else { //update the skin

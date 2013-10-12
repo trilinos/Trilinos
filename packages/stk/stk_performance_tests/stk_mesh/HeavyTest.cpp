@@ -120,7 +120,7 @@ STKUNIT_UNIT_TEST( heavy, heavy )
   // time skin bulk_data
   {
     double start_time = stk::wall_time();
-    stk::mesh::skin_mesh( bulk_data, meta_data.spatial_dimension());
+    stk::mesh::skin_mesh(bulk_data);
     timings[SKIN_MESH_PHASE_ID] = stk::wall_dtime(start_time);
   }
 

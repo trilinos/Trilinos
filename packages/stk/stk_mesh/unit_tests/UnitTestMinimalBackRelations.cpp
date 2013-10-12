@@ -29,7 +29,7 @@ STKUNIT_UNIT_TEST( UnitTestMinimalBackRelation, simpleHex )
   fixture.m_meta.commit();
   fixture.generate_mesh();
 
-  stk::mesh::skin_mesh(fixture.m_bulk_data, stk::topology::ELEMENT_RANK, NULL);
+  stk::mesh::skin_mesh(fixture.m_bulk_data);
   stk::mesh::create_edges(fixture.m_bulk_data);
 
   {

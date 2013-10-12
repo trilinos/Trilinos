@@ -168,7 +168,7 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
   fixture.generate_grid();
   mesh.modification_end();
 
-  stk::mesh::skin_mesh(mesh, element_rank);
+  stk::mesh::skin_mesh(mesh);
 
   // Nothing happens on iteration #0,
   // so the initial mesh should pass this validation.

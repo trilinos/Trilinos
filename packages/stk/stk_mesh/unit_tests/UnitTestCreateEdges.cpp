@@ -94,7 +94,7 @@ STKUNIT_UNIT_TEST ( UnitTestCreateEdges, Quad_2x2 )
   fixture.m_meta.commit();
   fixture.generate_mesh();
 
-  stk::mesh::skin_mesh(fixture.m_bulk_data, stk::topology::ELEMENT_RANK, NULL);
+  stk::mesh::skin_mesh(fixture.m_bulk_data);
 
   {
     std::vector<size_t> counts ;
@@ -288,7 +288,7 @@ STKUNIT_UNIT_TEST( UnitTestCreateEdges , testSkinAndCreateEdges3x3x3 )
     STKUNIT_EXPECT_EQ( counts[elem_rank] , 27u ); // elements
   }
 
-  stk::mesh::skin_mesh(fixture.m_bulk_data, MetaData::ELEMENT_RANK, NULL);
+  stk::mesh::skin_mesh(fixture.m_bulk_data);
   stk::mesh::create_edges(fixture.m_bulk_data);
 
   {

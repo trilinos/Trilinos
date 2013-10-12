@@ -57,7 +57,10 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
 
     fixture.generate_mesh();
 
-    skin_mesh(mesh, element_rank, &skin_part);
+    {
+      stk::mesh::PartVector add_parts(1,&skin_part);
+      stk::mesh::skin_mesh(mesh, add_parts);
+    }
 
     std::vector< stk::mesh::EntityId > elements_to_separate;
 
@@ -120,7 +123,10 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
 
     fixture.generate_mesh();
 
-    skin_mesh(mesh, element_rank, &skin_part);
+    {
+      stk::mesh::PartVector add_parts(1,&skin_part);
+      stk::mesh::skin_mesh(mesh, add_parts);
+    }
 
     std::vector< stk::mesh::EntityId > elements_to_separate;
 

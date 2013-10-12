@@ -101,7 +101,10 @@ void destroy_entity_and_create_particles(
 
   fixture.m_bulk_data.modification_end();
 
-  stk::mesh::skin_mesh( fixture.m_bulk_data, element_rank, &skin_part);
+  {
+    stk::mesh::PartVector add_parts(1,&skin_part);
+    stk::mesh::skin_mesh(fixture.m_bulk_data, add_parts);
+  }
 }
 
 }
@@ -135,7 +138,10 @@ bool skinning_use_case_1b(stk::ParallelMachine pm)
 
       fixture.generate_mesh();
 
-      stk::mesh::skin_mesh(fixture.m_bulk_data, element_rank, &skin_part);
+      {
+        stk::mesh::PartVector add_parts(1,&skin_part);
+        stk::mesh::skin_mesh(fixture.m_bulk_data, add_parts);
+      }
 
       stk::mesh::Entity elem = fixture.elem(ix , iy , iz);
 

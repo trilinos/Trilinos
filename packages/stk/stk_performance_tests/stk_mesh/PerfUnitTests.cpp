@@ -16,7 +16,6 @@
 #include <stk_mesh/base/EntityCommDatabase.hpp>
 #include <stk_mesh/base/CreateEdges.hpp>
 #include <stk_mesh/base/BoundaryAnalysis.hpp>
-#include <stk_mesh/base/SkinMesh.hpp>
 
 #include <sstream>
 #include <valgrind/callgrind.h>

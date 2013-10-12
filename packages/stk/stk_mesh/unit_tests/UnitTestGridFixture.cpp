@@ -21,7 +21,6 @@
 #include <stk_mesh/base/BulkModification.hpp>
 
 #include <stk_mesh/base/BoundaryAnalysis.hpp>
-#include <stk_mesh/base/SkinMesh.hpp>
 
 #include <stk_mesh/fixtures/GridFixture.hpp>
 

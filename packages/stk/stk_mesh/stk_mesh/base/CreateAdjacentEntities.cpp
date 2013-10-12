@@ -421,7 +421,7 @@ void complete_connectivity( BulkData & mesh )
 void create_adjacent_entities( BulkData & mesh, PartVector & arg_add_parts)
 {
   ThrowErrorMsgIf(mesh.synchronized_state() == BulkData::MODIFIABLE,
-                  "stk::mesh::skin_mesh is not SYNCHRONIZED");
+                  "Mesh is not SYNCHRONIZED");
 
   // to handle degenerate topologies we anticipate the following order of operations
   //

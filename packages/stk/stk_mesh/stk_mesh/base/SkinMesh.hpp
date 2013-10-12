@@ -12,32 +12,17 @@
 #include <vector>
 #include <stk_mesh/base/Types.hpp>
 
-namespace stk {
-namespace mesh {
+namespace stk { namespace mesh {
 
 class BulkData;
-class Part;
-union Entity;
-
-typedef std::vector<Entity> EntityVector;
+class Selector;
 
 /**
  * Skin the entire mesh.
  */
-void skin_mesh( BulkData & mesh,
-                EntityRank entity_rank,
-                Part * skin_part = NULL );
+void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector const& skin_parts = PartVector());
 
-/**
- * Given a vector of modified/created elements, update the skin.
- */
-void reskin_mesh( BulkData & mesh,
-                  EntityRank entity_rank,
-                  EntityVector & owned_modified_elements,
-                  Part * skin_part = NULL );
+void skin_mesh( BulkData & mesh, PartVector const& skin_parts = PartVector());
 
-
-
-}
-}
+}} // namespace stk::mesh
 #endif

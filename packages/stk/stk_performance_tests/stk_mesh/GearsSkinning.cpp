@@ -146,7 +146,8 @@ void separate_wedge(
   fixture.bulk_data.modification_end();
 
   // Parallel collective call:
-  stk::mesh::skin_mesh( fixture.bulk_data, stk::mesh::MetaData::ELEMENT_RANK, &skin_part);
+  stk::mesh::PartVector add_parts(1,&skin_part);
+  stk::mesh::skin_mesh(fixture.bulk_data, add_parts);
 
   // Parallel collective call:
   fixture.communicate_model_fields();
@@ -433,8 +434,8 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
 
   populate_processor_id_field_data(fixture,processor_field);
 
-  const size_t spatial_dim = fixture.meta_data.spatial_dimension();
-  stk::mesh::skin_mesh( fixture.bulk_data, spatial_dim, &skin_part);
+  stk::mesh::PartVector add_parts(1,&skin_part);
+  stk::mesh::skin_mesh(fixture.bulk_data, add_parts);
 
   stk::mesh::EntityVector wedges_to_separate;
 

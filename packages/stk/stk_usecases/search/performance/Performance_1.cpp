@@ -133,8 +133,10 @@ performance_driver(stk::ParallelMachine  comm,
   stk::mesh::BulkData &range_bulk_data = range_mesh_data.bulk_data();
 
   if ((range.entity == "face" && range_use_universal_set) ||
-      (same_mesh && domain.entity == "face" && domain_use_universal_set)) {
-    stk::mesh::skin_mesh( range_bulk_data, stk::mesh::MetaData::ELEMENT_RANK, range_skin_part);
+      (same_mesh && domain.entity == "face" && domain_use_universal_set))
+  {
+    stk::mesh::PartVector add_parts(1,range_skin_part);
+    stk::mesh::skin_mesh(range_bulk_data, add_parts);
   }
 
   stk::mesh::MetaData *domain_meta_data = NULL;
@@ -147,7 +149,7 @@ performance_driver(stk::ParallelMachine  comm,
     domain_mesh_data.open_mesh_database(filename, domain.mesh_type);
     domain_mesh_data.create_input_mesh();
     domain_meta_data = &domain_mesh_data.meta_data();
-    
+
     if (domain.entity == "face" && domain_use_universal_set) {
       domain_skin_part = &domain_meta_data->declare_part("skin", skin_top);
     }
@@ -156,9 +158,11 @@ performance_driver(stk::ParallelMachine  comm,
     dw() << "Build domain bulkdata...\n";
     domain_mesh_data.populate_bulk_data();
     domain_bulk_data = &domain_mesh_data.bulk_data();
-    
-    if (domain.entity == "face" && domain_use_universal_set) {
-      stk::mesh::skin_mesh(*domain_bulk_data, stk::mesh::MetaData::ELEMENT_RANK, domain_skin_part);
+
+    if (domain.entity == "face" && domain_use_universal_set)
+    {
+      stk::mesh::PartVector add_parts(1,domain_skin_part);
+      stk::mesh::skin_mesh(*domain_bulk_data, add_parts);
     }
   } else {
     dw() << "Domain shares metadata and bulkdata with range...\n";

@@ -258,7 +258,8 @@ void separate_and_skin_mesh(
 
   mesh.modification_end();
 
-  skin_mesh( mesh, rank_of_element, &skin_part);
+  stk::mesh::PartVector add_parts(1,&skin_part);
+  stk::mesh::skin_mesh(mesh, add_parts);
 
   return;
 }
