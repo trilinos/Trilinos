@@ -884,7 +884,10 @@ namespace stk {
 
     MeshData::MeshData()
       : m_communicator_(MPI_COMM_NULL), m_anded_selector(NULL), m_connectivity_map(stk::mesh::ConnectivityMap::default_map()),
-        mCurrentOutputStep(-1), mCurrentRestartStep(-1), useNodesetForPartNodesFields(true)
+        mCurrentOutputStep(-1), mCurrentRestartStep(-1), useNodesetForPartNodesFields(true),
+	m_resultsMeshDefined(false), m_resultsFieldsDefined(false),
+	m_restartMeshDefined(false), m_restartFieldsDefined(false)
+	
     {
       Ioss::Init::Initializer::initialize_ioss();
     }
@@ -892,7 +895,9 @@ namespace stk {
     MeshData::MeshData(MPI_Comm comm, stk::mesh::ConnectivityMap * connectivity_map)
       : m_communicator_(comm), m_anded_selector(NULL)
       , m_connectivity_map(connectivity_map != NULL ? *connectivity_map : stk::mesh::ConnectivityMap::default_map()),
-        mCurrentOutputStep(-1), mCurrentRestartStep(-1), useNodesetForPartNodesFields(true)
+        mCurrentOutputStep(-1), mCurrentRestartStep(-1), useNodesetForPartNodesFields(true),
+	m_resultsMeshDefined(false), m_resultsFieldsDefined(false),
+	m_restartMeshDefined(false), m_restartFieldsDefined(false)
     {
       Ioss::Init::Initializer::initialize_ioss();
     }
@@ -1078,6 +1083,7 @@ namespace stk {
     {
       ThrowErrorMsgIf (Teuchos::is_null(m_output_region),
 		       "There is no Output mesh region associated with this Mesh Data.");
+
       this->begin_results_output_at_time(time);
       internal_process_output_request(exclude);
       this->end_current_results_output();
@@ -1090,6 +1096,7 @@ namespace stk {
     {
       ThrowErrorMsgIf (Teuchos::is_null(m_output_region),
                        "There is no Output mesh region associated with this Mesh Data.");
+
       internal_process_output_request(std::set<const stk::mesh::Part*>());
 
       return mCurrentOutputStep;
@@ -1109,6 +1116,10 @@ namespace stk {
 
     void MeshData::begin_results_output_at_time(double time)
     {
+        if (!m_resultsFieldsDefined) {
+	  define_output_fields();
+	}
+
         //Attempt to avoid putting state change into the interface.  We'll see . . .
         Ioss::State currentState = m_output_region->get_state();
         if(currentState == Ioss::STATE_DEFINE_TRANSIENT) {
@@ -1291,6 +1302,7 @@ namespace stk {
       bool sort_stk_parts = false; // used in stk_adapt/stk_percept
       stk::io::define_output_db(*m_output_region.get(), bulk_data(), m_input_region.get(), m_anded_selector.get(),
                                 sort_stk_parts, use_nodeset_for_part_nodes_fields());
+      m_resultsMeshDefined = true;
     }
 
     void MeshData::write_output_database()
@@ -1303,6 +1315,20 @@ namespace stk {
       // NOTE: This could be implemented as a free function; however, I want to keep the option
       //       open of storing this data in a vector/map on the MeshData class instead of as a
       //       field attribute.  For now, use the field attribute approach.
+      if (m_restartMeshDefined && use_nodeset_for_part_nodes_fields()) {
+	std::cerr << "WARNING: adding restart fields after calling create_restart_output may cause\n"
+		  << "         problems when operating with 'use_nodeset_for_part_nodes_field()' set to true\n"
+		  << "         since the nodesets required for this option may not be created properly.\n";
+      }
+
+      if (m_restartFieldsDefined) {
+	  std::ostringstream msg ;
+	  msg << "ERROR in MeshReadWriteUtils::add_restart_field:"
+	      << " define_restart_fields() has already been called, so it is too late to add the restart field '"
+	      << field.name() << "'.";
+	  throw std::runtime_error( msg.str() );
+      }
+
       RestartFieldAttribute *my_field_attribute = new RestartFieldAttribute(db_name.empty() ? field.name() : db_name);
       stk::mesh::MetaData &m = mesh::MetaData::get(field);
       const RestartFieldAttribute *check = m.declare_attribute_with_delete(field, my_field_attribute);
@@ -1325,6 +1351,20 @@ namespace stk {
       // NOTE: This could be implemented as a free function; however, I want to keep the option
       //       open of storing this data in a vector/map on the MeshData class instead of as a
       //       field attribute.  For now, use the field attribute approach.
+      if (m_resultsMeshDefined && use_nodeset_for_part_nodes_fields()) {
+	std::cerr << "WARNING: adding results fields after calling define_output_database may cause\n"
+		  << "         problems when operating with 'use_nodeset_for_part_nodes_field()' set to true\n"
+		  << "         since the nodesets required for this option may not be created properly.\n";
+      }
+
+      if (m_resultsFieldsDefined) {
+	  std::ostringstream msg ;
+	  msg << "ERROR in MeshReadWriteUtils::add_results_field:"
+	      << " define_results_fields() has already been called, so it is too late to add the results field '"
+	      << field.name() << "'.";
+	  throw std::runtime_error( msg.str() );
+      }
+
       stk::io::set_field_role(field, Ioss::Field::TRANSIENT);
       if (!db_name.empty()) {
 	stk::io::set_results_field_name(field, db_name);
@@ -1360,10 +1400,14 @@ namespace stk {
                                 sort_stk_parts, use_nodeset_for_part_nodes_fields());
       stk::io::write_output_db(*m_restart_region.get(),  bulk_data(), m_anded_selector.get());
       m_restart_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
+      m_restartMeshDefined = true;
     }
 
     void MeshData::define_restart_fields()
     {
+      if (m_restartFieldsDefined)
+	return;
+      
       ThrowErrorMsgIf (Teuchos::is_null(m_restart_region),
 		       "There is no Restart database associated with this Mesh Data.");
 
@@ -1406,6 +1450,7 @@ namespace stk {
 	  }
 	}
       }
+      m_restartFieldsDefined = true;
     }
 
     void MeshData::write_restart_global(const std::string &globalVarName, double globalVarData)
@@ -1523,6 +1568,10 @@ namespace stk {
 
     void MeshData::begin_restart_output_at_time(double time)
     {
+        if (!m_restartFieldsDefined) {
+	  define_restart_fields();
+	}
+
         //Attempt to avoid putting state change into the interface.  We'll see . . .
         Ioss::State currentState = m_restart_region->get_state();
         if(currentState == Ioss::STATE_DEFINE_TRANSIENT) {
@@ -1777,6 +1826,10 @@ namespace stk {
 
     void MeshData::define_output_fields(bool add_all_fields)
     {
+      if (m_resultsFieldsDefined) {
+	return;
+      }
+      
       ThrowErrorMsgIf (Teuchos::is_null(m_output_region),
 		       "There is no Results output database associated with this Mesh Data.");
 
@@ -1820,6 +1873,7 @@ namespace stk {
 	  }
 	}
       }
+      m_resultsFieldsDefined = true;
     }
 
     // ========================================================================

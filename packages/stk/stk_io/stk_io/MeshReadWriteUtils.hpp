@@ -494,6 +494,10 @@ namespace stk {
         int mCurrentOutputStep;
         int mCurrentRestartStep;
         bool useNodesetForPartNodesFields;
+        bool m_resultsMeshDefined;
+        bool m_resultsFieldsDefined;
+        bool m_restartMeshDefined;
+        bool m_restartFieldsDefined;
 
         MeshData(const MeshData&); // Do not implement
         MeshData& operator=(const MeshData&); // Do not implement
