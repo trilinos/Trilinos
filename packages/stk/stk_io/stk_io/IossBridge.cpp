@@ -1704,6 +1704,7 @@ void set_results_field_name(mesh::FieldBase &f, const std::string &name)
   if(check != NULL)
   {
     m.remove_attribute(f, check);
+    delete check;
   }
   ResultsFieldName *newName = new ResultsFieldName(name);
   m.declare_attribute_with_delete(f, newName);
