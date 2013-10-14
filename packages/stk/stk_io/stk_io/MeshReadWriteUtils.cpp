@@ -1831,7 +1831,7 @@ namespace stk {
     void MeshData::add_results_global(const std::string &globalVarName, int component_count, Ioss::Field::BasicType dataType)
     {
       if (component_count == 1) {
-	add_restart_global(globalVarName, "scalar", dataType);
+	add_results_global(globalVarName, "scalar", dataType);
       } else {
 	std::ostringstream type;
 	type << "Real[" << component_count << "]";
