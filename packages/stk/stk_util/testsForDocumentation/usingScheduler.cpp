@@ -47,14 +47,15 @@ TEST(StkUtilTestForDocumentation, SchedulerWithStepInterval)
 
     stk::util::Time time = 0.0;
     const stk::util::Time dt = 0.1;
-    EXPECT_TRUE(scheduler.is_it_time(time, 0));
-    time+=dt;
-    EXPECT_FALSE(scheduler.is_it_time(time, 1));
-    time+=dt;
-    EXPECT_TRUE(scheduler.is_it_time(time, 2));
-    time+=dt;
-    EXPECT_FALSE(scheduler.is_it_time(time, 3));
-    time+=dt;
-    EXPECT_TRUE(scheduler.is_it_time(time, 4));
+    stk::util::Step timeStep = 0;
+    EXPECT_TRUE(scheduler.is_it_time(time, timeStep));
+    timeStep++; time+=dt;
+    EXPECT_FALSE(scheduler.is_it_time(time, timeStep));
+    timeStep++; time+=dt;
+    EXPECT_TRUE(scheduler.is_it_time(time, timeStep));
+    timeStep++; time+=dt;
+    EXPECT_FALSE(scheduler.is_it_time(time, timeStep));
+    timeStep++; time+=dt;
+    EXPECT_TRUE(scheduler.is_it_time(time, timeStep));
 }
 }

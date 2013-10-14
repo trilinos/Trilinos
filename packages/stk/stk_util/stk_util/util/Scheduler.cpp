@@ -59,7 +59,7 @@ void Scheduler::reset_last_time()
   initialized_ = false;
 }
 
-bool Scheduler::write_now(Step  step)
+bool Scheduler::internal_is_it_step(Step  step)
 {
   assert(step >= 0);
 
@@ -133,7 +133,7 @@ TolerancedTime Scheduler::get_toleranced_time_range(Time time) const
   return delta;
 }
 
-bool Scheduler::write_now(Time time)
+bool Scheduler::internal_is_it_time(Time time)
 {
   // Returns true if:
   // 1. Parameter 'time' matches one of the times specified in the 'times_' list
@@ -347,15 +347,15 @@ bool Scheduler::is_it_time(Time time, Step step)
 
   // See if user specified an output time via time intervals
   // or explicit times.
-  bool write = write_now(time);
+  bool write = internal_is_it_time(time);
 
   if (!write) {
     // Check whether the 'step' intervals specify a write at this time...
-    write = write_now(step);
+    write = internal_is_it_step(step);
 
     if (write) {
       // Need to update lastTime and see if past terminationTime...
-      // This is already done in the "write_now(time)" routine.
+      // This is already done in the "internal_is_it_time(time)" routine.
       if (time >= terminationTime_ && lastTime_ >= terminationTime_) {
         write = false;
       }
@@ -460,7 +460,7 @@ Time Scheduler::next_explicit_output_time(Time time) const
 
 Time Scheduler::next_implicit_output_time(Time time) const
 {
-  // [Very similar calculations to the 'write_now' function...Consolidate]
+  // [Very similar calculations to the 'is_it_time' function...Consolidate]
 
   if (!initialized_) {
     initialized_ = true;

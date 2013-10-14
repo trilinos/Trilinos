@@ -31,21 +31,23 @@ class Scheduler
 
     ~Scheduler();
 
-    void set_force_schedule(); //!< Force true on next call to scheduler
-
     bool is_it_time(Time time, Step step);
 
-    Time adjust_dt(Time dt, Time time);
-
-    bool add_interval(Step step, Step interval=1);
-    bool add_explicit(Step step);
-
     bool add_interval(Time time, Time delta=0.0);
-    bool add_explicit(Time time);
+    bool add_interval(Step step, Step interval=1);
 
+    bool set_termination_time(Time time);
+
+
+
+
+    bool add_explicit(Time time);
+    bool add_explicit(Step step);
+    void set_force_schedule(); //!< Force true on next call to scheduler
+
+    Time adjust_dt(Time dt, Time time);
     bool set_lookahead(int lookahead);
     bool set_start_time(Time time);
-    bool set_termination_time(Time time);
     void set_synchronize() {synchronize_ = true;}
     bool get_synchronize() {return synchronize_;}
 
@@ -69,8 +71,8 @@ class Scheduler
 
   private:
 
-    bool write_now(Time time);
-    bool write_now(Step  step);
+    bool internal_is_it_time(Time time);
+    bool internal_is_it_step(Step  step);
     bool force_schedule();
 
     Time next_implicit_output_time(Time time) const;
@@ -115,8 +117,8 @@ class Scheduler
     mutable Time startTime_; //<! Used for backwards compatibility.
 
     /*! Time at which this scheduler ends.  A
-     * write_now(time==terminationTime) call will return true, but
-     * write_now(time >terminationTime) call will return false.
+     * is_it_time(time==terminationTime) call will return true, but
+     * is_it_time(time >terminationTime) call will return false.
      */
     Time terminationTime_;
 
