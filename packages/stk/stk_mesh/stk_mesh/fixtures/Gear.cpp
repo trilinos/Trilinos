@@ -198,14 +198,14 @@ void Gear::generate_gear()
 
           Entity node[8] ;
 
-          node[0] = get_node(iz  , ir  , ia_1 );
-          node[1] = get_node(iz  , ir  , ia   );
-          node[2] = get_node(iz_1, ir  , ia   );
-          node[3] = get_node(iz_1, ir  , ia_1 );
-          node[4] = get_node(iz  , ir_1, ia_1 );
-          node[5] = get_node(iz  , ir_1, ia   );
-          node[6] = get_node(iz_1, ir_1, ia   );
-          node[7] = get_node(iz_1, ir_1, ia_1 );
+          node[0] = get_node(iz  , ir  , ia   );
+          node[1] = get_node(iz_1, ir  , ia   );
+          node[2] = get_node(iz_1, ir_1, ia   );
+          node[3] = get_node(iz  , ir_1, ia   );
+          node[4] = get_node(iz  , ir  , ia_1 );
+          node[5] = get_node(iz_1, ir  , ia_1 );
+          node[6] = get_node(iz_1, ir_1, ia_1 );
+          node[7] = get_node(iz  , ir_1, ia_1 );
 
           for ( size_t j = 0 ; j < 8 ; ++j ) {
             bulk_data.declare_relation( elem , node[j] , j );
