@@ -23,6 +23,9 @@ TEST(SchedulerTest, timeInterval)
     EXPECT_TRUE(scheduler.is_it_time(2.5, unusedStep));
     EXPECT_FALSE(scheduler.is_it_time(2.6, unusedStep));
     EXPECT_TRUE(scheduler.is_it_time(2.999999999, unusedStep));
+    EXPECT_FALSE(scheduler.is_it_time(3.0, unusedStep));
+    EXPECT_TRUE(scheduler.is_it_time(4.0, unusedStep));
+    EXPECT_TRUE(scheduler.is_it_time(4.0, unusedStep));
     EXPECT_TRUE(scheduler.is_it_time(5.0, unusedStep));
     EXPECT_FALSE(scheduler.is_it_time(terminationTime-0.1, unusedStep));
     EXPECT_TRUE(scheduler.is_it_time(terminationTime+0.1, unusedStep));
