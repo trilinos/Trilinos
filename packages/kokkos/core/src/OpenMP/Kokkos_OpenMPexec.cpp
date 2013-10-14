@@ -117,7 +117,7 @@ void OpenMPexec::verify_is_process( const char * const label )
 
 void OpenMPexec::verify_initialized( const char * const label )
 {
-  if ( 1 < omp_get_max_threads() && 0 == m_thread[0] ) {
+  if ( 0 == m_thread[0] ) {
     std::string msg( label );
     msg.append( " ERROR: not initialized" );
     Kokkos::Impl::throw_runtime_exception( msg );
@@ -247,8 +247,7 @@ unsigned OpenMP::team_max()
 {
   Impl::OpenMPexec::verify_is_process("Kokkos::OpenMP::team_max" );
 
-  return Impl::OpenMPexec::m_thread[0] ?
-         Impl::OpenMPexec::m_thread[0]->m_team_size : 1 ;
+  return Impl::OpenMPexec::m_thread[0]->m_team_size ;
 }
 
 //----------------------------------------------------------------------------
@@ -265,6 +264,8 @@ void OpenMP::initialize( const unsigned team_count ,
   }
 
   const unsigned thread_count = team_count * threads_per_team ;
+
+  if ( thread_count == 0 ) return ;
 
   //----------------------------------------
   // Spawn threads:
@@ -286,13 +287,8 @@ void OpenMP::initialize( const unsigned team_count ,
   }
 
   //----------------------------------------
-  // Only need inter-thread data structures if more than one thread.
 
-  if ( thread_count <= 1 ) return ;
-
-  //----------------------------------------
-
-  const bool hwloc_avail = Kokkos::hwloc::available();
+  const bool use_hwloc = ( 1 < thread_count ) && Kokkos::hwloc::available();
 
   const std::pair<unsigned,unsigned>
     hwloc_core_topo( Kokkos::hwloc::get_available_numa_count() ,
@@ -304,7 +300,7 @@ void OpenMP::initialize( const unsigned team_count ,
 
   std::pair<unsigned,unsigned> threads_coord[ Impl::OpenMPexec::MAX_THREAD_COUNT ];
 
-  if ( hwloc_avail ) {
+  if ( use_hwloc ) {
 
     if ( 0 == use_core_topology.first && 0 == use_core_topology.second ) {
       use_core_topology = Kokkos::hwloc::use_core_topology( thread_count );
@@ -329,7 +325,7 @@ void OpenMP::initialize( const unsigned team_count ,
       // Reverse the rank for threads so that the scan operation reduces to the highest rank thread.
 
       const unsigned omp_rank    = omp_get_thread_num();
-      const unsigned thread_r    = hwloc_avail ? Kokkos::hwloc::bind_this_thread( thread_count , threads_coord ) : omp_rank ;
+      const unsigned thread_r    = use_hwloc ? Kokkos::hwloc::bind_this_thread( thread_count , threads_coord ) : omp_rank ;
       const unsigned thread_rank = thread_count - ( thread_r + 1 );
       const unsigned league_rank = thread_rank / threads_per_team ;
       const unsigned team_rank   = thread_rank % threads_per_team ;
