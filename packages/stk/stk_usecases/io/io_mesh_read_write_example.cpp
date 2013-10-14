@@ -55,29 +55,39 @@ namespace {
       mesh_data.add_restart_field(*fields[i], name);
     }
 
-    //------------------------------------------------------------------
+    // ========================================================================
     // Create output mesh...  ("generated_mesh.out") ("exodus_mesh.out")
     std::string output_filename = working_directory + type + "_mesh.out";
 
+    // This outputs the "mesh" portion of the output results file.
+    // This consists of the coordinates, connectivity, nodesets and sidesets. 
+    // Basically all non-transient (time-dependent) data.
     mesh_data.create_output_mesh(output_filename);
-    mesh_data.define_output_fields();
 
     // Create restart output ...  ("generated_mesh.restart") ("exodus_mesh.restart")
     std::string restart_filename = working_directory + type + "_mesh.restart";
 
     mesh_data.create_restart_output(restart_filename);
-    mesh_data.define_restart_fields();
 
-    // Determine the global fields on the input mesh and define the
-    // same fields on the restart and results output databases.
+    // Determine the names of the global fields on the input
+    // mesh. These will be used below to define the same fields on the
+    // restart and results output databases.
     std::vector<std::string> global_fields;
     mesh_data.get_global_variable_names(global_fields);
 
+    // For each global field name on the input database, determine the type of the field
+    // and define that same global field on both the results and restart output databases.
     for (size_t i=0; i < global_fields.size(); i++) {
       const Ioss::Field &input_field = mesh_data.input_io_region()->get_fieldref(global_fields[i]);
+
+      // Define the global fields that will be written on each timestep.
       mesh_data.add_restart_global(input_field.get_name(), input_field.raw_storage()->name(), input_field.get_type());
       mesh_data.add_results_global(input_field.get_name(), input_field.raw_storage()->name(), input_field.get_type());
     }
+
+    // ========================================================================
+    // Begin the transient loop...  All timesteps on the input database are transferred
+    // to the results and restart output databases...
 
     // Determine number of timesteps on input database...
     int timestep_count = mesh_data.input_io_region()->get_property("state_count").get_int();
