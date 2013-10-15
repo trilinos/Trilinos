@@ -196,10 +196,11 @@ namespace Tpetra {
   */
   template <class Scalar,
             class LocalOrdinal  ,
-            class GlobalOrdinal >
-  class CrsMatrix<Scalar, LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps> :
-                    public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>,
-                    public DistObject<char, LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> {
+            class GlobalOrdinal ,
+            class DeviceType>
+  class CrsMatrix<Scalar, LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps> :
+                    public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >,
+                    public DistObject<char, LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > {
   public:
     //! @name Typedefs
     //@{
@@ -211,12 +212,12 @@ namespace Tpetra {
     //! This class' third template parameter; the type of global indices.
     typedef GlobalOrdinal                         global_ordinal_type;
     //! This class' fourth template parameter; the Kokkos Node type.
-    typedef Kokkos::Compat::KokkosThreadsWrapperNode Node;
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>  Node;
     typedef Node                                  node_type;
     /// \brief This class' fifth template parameter; the implementation of local sparse kernels.
     ///
     /// We define both this typedef and mat_solve_type for backwards compatibility.
-    typedef typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps LocalMatOps;
+    typedef typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps LocalMatOps;
     typedef LocalMatOps   mat_vec_type;
     /// \brief This class' fifth template parameter; the implementation of local sparse kernels.
     ///
@@ -2006,7 +2007,7 @@ namespace Tpetra {
     typedef typename LocalMatOps::template bind_scalar<Scalar>::other_type                    sparse_ops_type;
     typedef typename sparse_ops_type::template graph<LocalOrdinal,Node>::graph_type          local_graph_type;
     typedef typename sparse_ops_type::template matrix<Scalar,LocalOrdinal,Node>::matrix_type local_matrix_type;
-    typedef Kokkos::CrsMatrix<Scalar,LocalOrdinal,Node::device_type> k_local_matrix_type;
+    typedef Kokkos::CrsMatrix<Scalar,LocalOrdinal,typename Node::device_type> k_local_matrix_type;
 
     typedef Export<LocalOrdinal, GlobalOrdinal, Node> export_type;
     typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
@@ -2223,7 +2224,7 @@ namespace Tpetra {
     /// allocation for the matrix.
     //@{
     ArrayRCP<Scalar> values1D_;
-    typedef Kokkos::View<Scalar*, Node::device_type> t_ValuesType;
+    typedef Kokkos::View<Scalar*, typename Node::device_type> t_ValuesType;
     t_ValuesType k_values1D_;
     ArrayRCP<Array<Scalar> > values2D_;
     //@}
@@ -2252,6 +2253,29 @@ namespace Tpetra {
     /// the norm has not yet been computed, or that the values in the
     /// matrix may have changed and the norm must be recomputed.
     mutable Magnitude frobNorm_;
+public:
+    template<class ViewType, class OffsetViewType >
+    struct pack_functor {
+      typedef typename ViewType::device_type device_type;
+      ViewType src;
+      ViewType dest;
+      OffsetViewType src_offset;
+      OffsetViewType dest_offset;
+      typedef typename OffsetViewType::non_const_scalar_type ScalarIndx;
+
+      pack_functor(ViewType dest_, ViewType src_, OffsetViewType dest_offset_, OffsetViewType src_offset_):
+        src(src_),dest(dest_),src_offset(src_offset_),dest_offset(dest_offset_) {};
+
+      KOKKOS_INLINE_FUNCTION
+      void operator() (size_t row) const {
+        ScalarIndx i = src_offset(row);
+        ScalarIndx j = dest_offset(row);
+        const ScalarIndx k = dest_offset(row+1);
+        for(;j<k;j++,i++) {
+          dest(j) = src(i);
+        }
+      }
+    };
   }; // class CrsMatrix
 
   /** \brief Non-member function to create an empty CrsMatrix given a row map and a non-zero profile.

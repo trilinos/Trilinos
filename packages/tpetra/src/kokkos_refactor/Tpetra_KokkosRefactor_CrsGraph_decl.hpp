@@ -161,11 +161,12 @@ namespace Tpetra {
    globalAssemble() or fillComplete() (the latter calls the former).
    */
   template <class LocalOrdinal,
-            class GlobalOrdinal>
-  class CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,
-  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps> :
-    public RowGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>,
-    public DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>,
+            class GlobalOrdinal,
+            class DeviceType>
+  class CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,
+  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps> :
+    public RowGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >,
+    public DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >,
     public Teuchos::ParameterListAcceptorDefaultBase
   {
     template <class S, class LO, class GO, class N, class SpMatOps>
@@ -176,8 +177,8 @@ namespace Tpetra {
   public:
     typedef LocalOrdinal                         local_ordinal_type;
     typedef GlobalOrdinal                        global_ordinal_type;
-    typedef Kokkos::Compat::KokkosThreadsWrapperNode Node;
-    typedef typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps LocalMatOps;
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>  Node;
+    typedef typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps LocalMatOps;
     typedef Node                                 node_type;
     typedef typename node_type::device_type      device_type;
     typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
@@ -1407,7 +1408,7 @@ namespace Tpetra {
     void fillLocalGraph(const RCP<ParameterList> &params);
     const RCP<const local_graph_type> getLocalGraph() const;
 
-    Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, Kokkos::Compat::KokkosThreadsWrapperNode::device_type,size_t>
+    Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, typename Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>::device_type,size_t>
     getLocalGraph_Kokkos() const;
     const RCP<local_graph_type> getLocalGraphNonConst();
     // debugging
@@ -1510,7 +1511,9 @@ namespace Tpetra {
     ///
     /// This is deallocated in fillComplete() if fillComplete()'s
     /// "Optimize Storage" parameter is set to \c true.
-    ArrayRCP<size_t> numRowEntries_;
+    typedef Kokkos::DualView<size_t*, Kokkos::LayoutLeft, typename Node::device_type> t_numRowEntries_;
+    t_numRowEntries_ k_numRowEntries_;
+    Teuchos::ArrayRCP<size_t> numRowEntries_;
 
     bool indicesAreAllocated_;
     bool indicesAreLocal_;

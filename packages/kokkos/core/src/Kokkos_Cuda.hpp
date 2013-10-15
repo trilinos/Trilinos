@@ -50,7 +50,15 @@
 #include <vector>
 
 #include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_HAVE_OPENMP
+#include <Kokkos_OpenMP.hpp>
+#else
+#ifdef KOKKOS_HAVE_PTHREAD
 #include <Kokkos_Threads.hpp>
+#else
+#include <Kokkos_Serial.hpp>
+#endif
+#endif
 #include <Kokkos_Parallel.hpp>
 #include <Kokkos_Layout.hpp>
 #include <Kokkos_CudaSpace.hpp>
@@ -92,8 +100,15 @@ public:
   //! This device's preferred array layout.
   typedef LayoutLeft            array_layout ;
   //! This device's host mirror type.
+#ifdef KOKKOS_HAVE_OPENMP
+  typedef Kokkos::OpenMP       host_mirror_device_type ;
+#else
+#ifdef KOKKOS_HAVE_PTHREAD
   typedef Kokkos::Threads       host_mirror_device_type ;
-
+#else
+  typedef Kokkos::Serial       host_mirror_device_type ;
+#endif
+#endif
   //@}
   //! \name Functions that all Kokkos devices must implement.
   //@{
@@ -272,7 +287,7 @@ inline
 void parallel_for( const CudaWorkConfig & work_config ,
                    const FunctorType    & functor )
 {
-  Impl::ParallelFor< FunctorType , Cuda , CudaWorkConfig >
+  Impl::ParallelFor< FunctorType , CudaWorkConfig , Cuda >
     ( work_config , functor );
 }
 

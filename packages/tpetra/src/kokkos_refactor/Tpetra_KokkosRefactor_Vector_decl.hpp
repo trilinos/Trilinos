@@ -58,11 +58,12 @@ namespace Tpetra {
 /// may be used.
 template<class Scalar,
          class LocalOrdinal,
-         class GlobalOrdinal>
-class Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> :
-   public MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> {
+         class GlobalOrdinal,
+         class DeviceType>
+class Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > :
+   public MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > {
   // need this so that MultiVector::operator() can call Vector's private view constructor
-  typedef Kokkos::Compat::KokkosThreadsWrapperNode Node;
+  typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>  Node;
   friend class MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 
   

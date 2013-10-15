@@ -55,66 +55,68 @@
 
 namespace Tpetra {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::Vector(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut)
-    : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>(map,1,zeroOut) {
+//namespace KokkosRefactor {
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::Vector(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut)
+    : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >(map,1,zeroOut) {
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::Vector(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> &source)
-  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>(source) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::Vector(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &source)
+  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >(source) {
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::Vector(
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::Vector(
                               const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
                               const ArrayRCP<Scalar> &view, EPrivateHostViewConstructor /* dummy */)
-  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>(map,view,view.size(),1,HOST_VIEW_CONSTRUCTOR) {
+  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >(map,view,view.size(),1,HOST_VIEW_CONSTRUCTOR) {
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::Vector(
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::Vector(
                               const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
                               const ArrayRCP<Scalar> &view, EPrivateComputeViewConstructor /* dummy */)
-  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>(map,view,view.size(),1,COMPUTE_VIEW_CONSTRUCTOR) {
+  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >(map,view,view.size(),1,COMPUTE_VIEW_CONSTRUCTOR) {
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::Vector(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const ArrayView<const Scalar> &values)
-  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>(map,values,values.size(),1) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::Vector(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const ArrayView<const Scalar> &values)
+  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >(map,values,values.size(),1) {
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::~Vector() {}
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::~Vector() {}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) {
-    this->MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::replaceGlobalValue(globalRow,0,value);
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) {
+    this->MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::replaceGlobalValue(globalRow,0,value);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) {
-    this->MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::sumIntoGlobalValue(globalRow,0,value);
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) {
+    this->MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::sumIntoGlobalValue(globalRow,0,value);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::replaceLocalValue(LocalOrdinal myRow, const Scalar &value) {
-    this->MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::replaceLocalValue(myRow,0,value);
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::replaceLocalValue(LocalOrdinal myRow, const Scalar &value) {
+    this->MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::replaceLocalValue(myRow,0,value);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) {
-    this->MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::sumIntoLocalValue(myRow,0,value);
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) {
+    this->MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::sumIntoLocalValue(myRow,0,value);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::get1dCopy(ArrayView<Scalar> A) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::get1dCopy(ArrayView<Scalar> A) const {
     size_t lda = this->getLocalLength();
     this->get1dCopy(A,lda);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-  Scalar Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> &a) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  Scalar Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &a) const {
     using Teuchos::outArg;
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(*a.getMap()), std::runtime_error,
@@ -135,8 +137,8 @@ namespace Tpetra {
     return gbldot;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-  Scalar Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::meanValue() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  Scalar Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::meanValue() const {
     using Teuchos::as;
     using Teuchos::outArg;
     typedef Teuchos::ScalarTraits<Scalar> SCT;
@@ -152,8 +154,8 @@ namespace Tpetra {
     return sum / as<typename SCT::magnitudeType> (this->getGlobalLength ());
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::norm1() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::norm1() const {
     using Teuchos::outArg;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
     Mag norm = MVT::Norm1(this->lclMV_);
@@ -164,8 +166,8 @@ namespace Tpetra {
     return norm;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::norm2() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::norm2() const {
     using Teuchos::ScalarTraits;
     using Teuchos::outArg;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
@@ -177,8 +179,8 @@ namespace Tpetra {
     return ScalarTraits<Mag>::squareroot(norm);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::normInf() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::normInf() const {
     using Teuchos::outArg;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
     Mag norm = MVT::NormInf(this->lclMV_);
@@ -189,8 +191,8 @@ namespace Tpetra {
     return norm;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::normWeighted(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> &weights) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::normWeighted(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &weights) const {
     using Teuchos::ScalarTraits;
     using Teuchos::outArg;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
@@ -211,8 +213,8 @@ namespace Tpetra {
     return ScalarTraits<Mag>::squareroot(norm / this->getGlobalLength());
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-  std::string Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::description() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  std::string Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::description() const {
     std::ostringstream oss;
     oss << Teuchos::Describable::description();
     oss << "{length="<<this->getGlobalLength()
@@ -220,8 +222,8 @@ namespace Tpetra {
     return oss.str();
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
     using std::endl;
     using std::setw;
     using Teuchos::VERB_DEFAULT;

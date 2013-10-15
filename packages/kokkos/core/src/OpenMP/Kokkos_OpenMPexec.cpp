@@ -45,7 +45,7 @@
 #include <iostream>
 #include <Kokkos_OpenMP.hpp>
 #include <Kokkos_hwloc.hpp>
-
+#include <iostream>
 namespace Kokkos {
 namespace Impl {
 namespace {
@@ -264,6 +264,7 @@ void OpenMP::initialize( const unsigned team_count ,
   }
 
   const unsigned thread_count = team_count * threads_per_team ;
+  omp_set_num_threads( thread_count );
 
   if ( thread_count == 0 ) return ;
 
