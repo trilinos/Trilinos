@@ -119,8 +119,7 @@ public:
   static void resize_shared_scratch( size_t );
 
   inline static
-  OpenMPexec * get_thread( const unsigned entry )
-    { return m_thread[ entry ]; }
+  OpenMPexec * get_thread( const unsigned entry ) { return m_thread[ entry ] ; }
 
   static
   OpenMPexec * find_thread( const int init_league_rank ,

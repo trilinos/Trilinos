@@ -46,6 +46,7 @@
 #include <Kokkos_OpenMP.hpp>
 #include <Kokkos_hwloc.hpp>
 #include <iostream>
+
 namespace Kokkos {
 namespace Impl {
 namespace {
@@ -58,7 +59,6 @@ int kokkos_omp_in_parallel()
 {
   return omp_in_parallel() && ! kokkos_omp_in_critical_region ;
 }
-
 
 } // namespace
 } // namespace Impl
@@ -128,6 +128,7 @@ void OpenMPexec::resize_reduce_scratch( size_t size )
 {
   static size_t s_size = 0 ;
 
+  verify_initialized( "OpenMP::resize_reduce_scratch" );
   verify_is_process( "OpenMP::resize_reduce_scratch" );
 
   if ( size ) { size += REDUCE_TEAM_BASE ; }
@@ -168,6 +169,7 @@ void OpenMPexec::resize_shared_scratch( size_t size )
 {
   static size_t s_size = 0 ;
 
+  verify_initialized( "OpenMP::resize_shared_scratch" );
   verify_is_process( "OpenMP::resize_shared_scratch" );
 
   const size_t rem = size % Kokkos::Impl::MEMORY_ALIGNMENT ;
@@ -238,6 +240,7 @@ namespace Kokkos {
 
 unsigned OpenMP::league_max()
 {
+  Impl::OpenMPexec::verify_initialized("Kokkos::OpenMP::league_max" );
   Impl::OpenMPexec::verify_is_process("Kokkos::OpenMP::league_max" );
 
   return unsigned( std::numeric_limits<int>::max() );
@@ -245,6 +248,7 @@ unsigned OpenMP::league_max()
 
 unsigned OpenMP::team_max()
 {
+  Impl::OpenMPexec::verify_initialized("Kokkos::OpenMP::team_max" );
   Impl::OpenMPexec::verify_is_process("Kokkos::OpenMP::team_max" );
 
   return Impl::OpenMPexec::m_thread[0]->m_team_size ;
@@ -373,6 +377,7 @@ void OpenMP::initialize( const unsigned team_count ,
 
 void OpenMP::finalize()
 {
+  Impl::OpenMPexec::verify_initialized( "OpenMP::finalize" );
   Impl::OpenMPexec::verify_is_process( "OpenMP::finalize" );
 
   Impl::OpenMPexec::resize_reduce_scratch(0);

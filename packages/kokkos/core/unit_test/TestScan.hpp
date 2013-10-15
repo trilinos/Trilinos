@@ -43,6 +43,8 @@
 
 /*--------------------------------------------------------------------------*/
 
+#include <stdio.h>
+
 namespace Test {
 
 template< class Device , class WorkSpec = size_t >
@@ -51,20 +53,31 @@ struct TestScan {
   typedef  Device    device_type ;
   typedef  long int  value_type ;
 
+  KOKKOS_INLINE_FUNCTION
   void operator()( const int iwork , value_type & update , const bool final_pass ) const
   {
-    update += iwork + 1 ;
+    const value_type n = iwork + 1 ;
+    const value_type imbalance = ( (100 <= n) && (0 == n % 100) ) ? 100 : 0 ;
+
+    // Insert an artificial load imbalance
+
+    for ( value_type i = 0 ; i < imbalance ; ++i ) { ++update ; }
+
+    update += n - imbalance ;
 
     if ( final_pass ) {
-      const value_type n = iwork + 1 ;
       const value_type answer = n & 1 ? ( n * ( ( n + 1 ) / 2 ) ) : ( ( n / 2 ) * ( n + 1 ) );
 
-      ASSERT_EQ( answer , update );
+      if ( answer != update ) {
+        printf("TestScan(%d,%ld) != %ld\n",iwork,update,answer);
+      }
     }
   }
 
+  KOKKOS_INLINE_FUNCTION
   void init( value_type & update ) const { update = 0 ; }
 
+  KOKKOS_INLINE_FUNCTION
   void join( volatile       value_type & update ,
              volatile const value_type & input ) const
   { update += input ; }

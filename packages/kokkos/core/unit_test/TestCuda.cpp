@@ -46,6 +46,7 @@
 #include <gtest/gtest.h>
 
 #include <Kokkos_Cuda.hpp>
+#include <Kokkos_OpenMP.hpp>
 
 namespace Test {
 
@@ -55,10 +56,12 @@ protected:
   {
     Kokkos::Cuda::print_configuration( std::cout );
     Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
+    Kokkos::OpenMP::initialize( 1 , 1 );
   }
   static void TearDownTestCase()
   {
     Kokkos::Cuda::finalize();
+    Kokkos::OpenMP::finalize();
   }
 };
 
@@ -73,6 +76,7 @@ extern void test_device_cuda_reduce_dynamic_view();
 extern void test_device_cuda_multi_reduce();
 extern void test_device_cuda_shared_request();
 extern void test_device_cuda_atomic();
+extern void test_device_cuda_scan();
 
 TEST_F( cuda, view_impl )
 {
@@ -129,4 +133,10 @@ TEST_F( cuda, atomic )
   test_device_cuda_atomic();
 }
 
+TEST_F( cuda , scan )
+{
+  test_device_cuda_scan();
 }
+
+}
+

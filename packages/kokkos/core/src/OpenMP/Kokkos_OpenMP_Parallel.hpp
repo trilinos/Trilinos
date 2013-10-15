@@ -330,7 +330,8 @@ public:
   ParallelFor( const FunctorType         & functor ,
                const ParallelWorkRequest & work )
   {
-    OpenMPexec::verify_is_process("Kokkos::OpenMP - parallel_for");
+    OpenMPexec::verify_is_process("Kokkos::OpenMP parallel_for");
+    OpenMPexec::verify_initialized("Kokkos::OpenMP parallel_for");
 
     OpenMPexec::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
 
@@ -360,7 +361,7 @@ public:
                   const ParallelWorkRequest & work ,
                   pointer_type                result = 0 )
   {
-    OpenMPexec::verify_is_process("Kokkos::OpenMP - parallel_reduce");
+    OpenMPexec::verify_is_process("Kokkos::OpenMP parallel_reduce");
 
     OpenMPexec::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
     OpenMPexec::resize_reduce_scratch( Reduce::value_size( functor ) );

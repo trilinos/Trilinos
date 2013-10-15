@@ -442,6 +442,10 @@ struct ReduceAdapter
   unsigned value_size( const FunctorType & ) { return sizeof(ScalarType); }
 
   KOKKOS_INLINE_FUNCTION static
+  void copy( const FunctorType & , void * const dst , const void * const src )
+    { *((scalar_type*)dst) = *((const scalar_type*)src); }
+
+  KOKKOS_INLINE_FUNCTION static
   void join( const FunctorType & f , volatile void * update , volatile const void * input )
     { f.join( *((volatile ScalarType*)update) , *((volatile const ScalarType*)input) ); }
 
@@ -485,6 +489,14 @@ struct ReduceAdapter< FunctorType , ScalarType[] >
 
   KOKKOS_INLINE_FUNCTION static
   unsigned value_size( const FunctorType & f ) { return f.value_count * sizeof(ScalarType); }
+
+  KOKKOS_INLINE_FUNCTION static
+  void copy( const FunctorType & f , void * const dst , const void * const src )
+    {
+      for ( int i = 0 ; i < int(f.value_count) ; ++i ) {
+        ((scalar_type*)dst)[i] = ((const scalar_type*)src)[i];
+      }
+    }
 
   KOKKOS_INLINE_FUNCTION static
   void join( const FunctorType & f , volatile void * update , volatile const void * input )

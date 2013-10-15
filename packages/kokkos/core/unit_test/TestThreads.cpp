@@ -321,20 +321,25 @@ TEST_F( threads , atomics )
 TEST_F( threads , scan_small )
 {
   typedef TestScan< Kokkos::Threads , Kokkos::Impl::ThreadsExecUseScanSmall > TestScanFunctor ;
-  for ( int i = 0 ; i < 100 ; ++i ) {
-    TestScanFunctor( 1000 );
+  for ( int i = 0 ; i < 1000 ; ++i ) {
+    TestScanFunctor( 10 );
+    TestScanFunctor( 10000 );
   }
   TestScanFunctor( 1000000 );
   TestScanFunctor( 10000000 );
+
+  Kokkos::Threads::fence();
 }
 
 TEST_F( threads , scan )
 {
-  for ( int i = 0 ; i < 100 ; ++i ) {
-    TestScan< Kokkos::Threads >( 1000 );
+  for ( int i = 0 ; i < 1000 ; ++i ) {
+    TestScan< Kokkos::Threads >( 10 );
+    TestScan< Kokkos::Threads >( 10000 );
   }
   TestScan< Kokkos::Threads >( 1000000 );
   TestScan< Kokkos::Threads >( 10000000 );
+  Kokkos::Threads::fence();
 }
 
 //----------------------------------------------------------------------------
