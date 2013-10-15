@@ -37,26 +37,28 @@ TEST(StkUtilTestForDocumentation, SchedulerWithTerminationTime)
     EXPECT_FALSE(scheduler.is_it_time(terminationTime+0.2, timeStep++));
 }
 
-TEST(StkUtilTestForDocumentation, SchedulerWithStepInterval)
+TEST(StkUtilTestForDocumentation, SchedulerIntervalCheck)
 {
     stk::util::Scheduler scheduler;
 
     const stk::util::Step startStep = 0;
-    const stk::util::Step stepInterval = 2;
+    const stk::util::Step stepInterval = 4;
     scheduler.add_interval(startStep, stepInterval);
 
-    stk::util::Time time = 0.0;
     const stk::util::Time dt = 0.1;
-    stk::util::Step timeStep = 0;
-    EXPECT_TRUE(scheduler.is_it_time(time, timeStep));
-    timeStep++; time+=dt;
-    EXPECT_FALSE(scheduler.is_it_time(time, timeStep));
-    timeStep++; time+=dt;
-    EXPECT_TRUE(scheduler.is_it_time(time, timeStep));
-    timeStep++; time+=dt;
-    EXPECT_FALSE(scheduler.is_it_time(time, timeStep));
-    timeStep++; time+=dt;
-    EXPECT_TRUE(scheduler.is_it_time(time, timeStep));
+    for (stk::util::Step timeStep=0;timeStep<100;timeStep+=3)
+    {
+        stk::util::Time time = timeStep*dt;
+        bool check = scheduler.is_it_time(time, timeStep);
+        if ( timeStep % stepInterval == 0 )
+        {
+            EXPECT_TRUE(check);
+        }
+        else
+        {
+            EXPECT_FALSE(check);
+        }
+    }
 }
 
 TEST(StkUtilTestForDocumentation, SchedulerWithTwoTimeIntervals)
