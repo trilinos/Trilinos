@@ -871,7 +871,11 @@ void put_field_data(stk::mesh::BulkData &bulk, stk::mesh::Part &part,
     const stk::mesh::FieldBase *f = *I; ++I;
     std::string field_name = get_field_name(*f, io_entity->get_database()->usage());
     size_t state_count = f->number_of_states();
-    if(state_count == 1) {
+    stk::mesh::FieldState state = f->state();
+
+    // If the multi-state field is not "set" at the newest state, then the user has
+    // registered the field at a specific state and only that state should be output.
+    if(state_count == 1 || state != stk::mesh::StateNew) {
         stk::io::field_data_to_ioss(bulk, f, entities, io_entity, field_name, filter_role);
     } else {
         stk::io::multistate_field_data_to_ioss(bulk, f, entities, io_entity, field_name, filter_role, state_count);
