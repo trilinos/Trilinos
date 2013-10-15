@@ -32,8 +32,8 @@ TEST(StkUtilTestForDocumentation, SchedulerWithTerminationTime)
     EXPECT_FALSE(scheduler.is_it_time(startTime - 1.0, timeStep++));
     const stk::util::Time firstTimeAfterStartTime = terminationTime-0.1;
     EXPECT_TRUE(scheduler.is_it_time(firstTimeAfterStartTime, timeStep++));
-    const stk::util::Time firstTimeAfterTerminationTime = terminationTime+0.1;
-    EXPECT_TRUE(scheduler.is_it_time(firstTimeAfterTerminationTime, timeStep++));
+    const stk::util::Time firstAfterTermination = terminationTime+0.1;
+    EXPECT_TRUE(scheduler.is_it_time(firstAfterTermination, timeStep++));
     EXPECT_FALSE(scheduler.is_it_time(terminationTime+0.2, timeStep++));
 }
 
@@ -57,5 +57,29 @@ TEST(StkUtilTestForDocumentation, SchedulerWithStepInterval)
     EXPECT_FALSE(scheduler.is_it_time(time, timeStep));
     timeStep++; time+=dt;
     EXPECT_TRUE(scheduler.is_it_time(time, timeStep));
+}
+
+TEST(StkUtilTestForDocumentation, SchedulerWithTwoTimeIntervals)
+{
+    stk::util::Scheduler scheduler;
+    const stk::util::Time startTime1 = 0.0;
+    const stk::util::Time delta1 = 0.1;
+    scheduler.add_interval(startTime1, delta1);
+    const stk::util::Time startTime2 = 0.9;
+    const stk::util::Time delta2 = 0.3;
+    scheduler.add_interval(startTime2, delta2);
+
+    stk::util::Step timeStep = 0;
+    EXPECT_TRUE(scheduler.is_it_time(0.0, timeStep++));
+    EXPECT_FALSE(scheduler.is_it_time(0.07, timeStep++));
+    EXPECT_TRUE(scheduler.is_it_time(0.14, timeStep++));
+    EXPECT_TRUE(scheduler.is_it_time(0.62, timeStep++));
+    EXPECT_TRUE(scheduler.is_it_time(0.6999999, timeStep++));
+    EXPECT_FALSE(scheduler.is_it_time(0.77, timeStep++));
+    EXPECT_TRUE(scheduler.is_it_time(0.9, timeStep++));
+    EXPECT_FALSE(scheduler.is_it_time(0.97, timeStep++));
+    EXPECT_FALSE(scheduler.is_it_time(1.04, timeStep++));
+    EXPECT_FALSE(scheduler.is_it_time(1.11, timeStep++));
+    EXPECT_TRUE(scheduler.is_it_time(1.27, timeStep++));
 }
 }
