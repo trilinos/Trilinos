@@ -6,12 +6,18 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
+inline stk::mesh::FieldBase* declareNodalField(stk::mesh::MetaData &stkMeshMetaData, const std::string &fieldName,
+					       int numberOfStates)
+{
+    stk::mesh::Field<double> &multiStateField = stkMeshMetaData.declare_field<stk::mesh::Field<double> >(fieldName, numberOfStates);
+    stk::mesh::put_field(multiStateField, stk::mesh::Entity::NODE, stkMeshMetaData.universal_part());
+    return &multiStateField;
+}
+
 inline stk::mesh::FieldBase* declareTriStateNodalField(stk::mesh::MetaData &stkMeshMetaData, const std::string &fieldName)
 {
     const int numberOfStates = 3;
-    stk::mesh::Field<double> &triStateField = stkMeshMetaData.declare_field<stk::mesh::Field<double> >(fieldName, numberOfStates);
-    stk::mesh::put_field(triStateField, stk::mesh::Entity::NODE, stkMeshMetaData.universal_part());
-    return &triStateField;
+    return declareNodalField(stkMeshMetaData, fieldName, numberOfStates);
 }
 
 inline void putDataOnTestField(stk::mesh::BulkData &stkMeshBulkData, const double value, stk::mesh::FieldBase &field)
