@@ -15,6 +15,13 @@ IF((${PACKAGE_NAME}_ENABLE_Tpetra  AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     COMM serial mpi
     )
 
+  TRIBITS_ADD_EXECUTABLE(
+    StandardReuse
+    SOURCES StandardReuse.cpp
+    DEPLIBS muelu xpetra
+    COMM serial mpi
+    )
+
 ENDIF()
 
 #
