@@ -61,7 +61,7 @@ namespace MueLu {
 
     validParamList->set< RCP<const FactoryBase> >("A", Teuchos::null, "Generating factory for the matrix");
     validParamList->set< RCP<const FactoryBase> >("P", Teuchos::null, "Generating factory for the matrix providing nonzero graph");
-    validParamList->set<int>                     ("k",             0, "Polynomial degree: the resulting pattern is A^k*P [default = 0]");
+    validParamList->set<int>                     ("k",             1, "Polynomial degree: the resulting pattern is A^k*P [default = 1]");
 
     return validParamList;
   }
