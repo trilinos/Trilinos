@@ -60,6 +60,7 @@
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_CoupledAggregationFactory.hpp"
+#include "MueLu_DirectSolver.hpp"
 #include "MueLu_FilteredAFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
@@ -206,6 +207,13 @@ namespace MueLu {
       manager->SetFactory("Smoother", rcp(new SmootherFactory(rcp(new TrilinosSmoother(paramList.get<std::string>("smoother: type",    ""),
                                                                                        paramList.sublist         ("smoother: params",  false),
                                                                                        paramList.get<int>        ("smoother: overlap", 0))))));
+    }
+    if (paramList.isParameter("coarse: type")) {
+      // FIXME: get default values from the factory
+      // NOTE: none of the smoothers at the moment use parameter validation framework, so we
+      // cannot get the default values from it.
+      manager->SetFactory("CoarseSolver", rcp(new SmootherFactory(rcp(new DirectSolver(paramList.get<std::string>("coarse: type",      ""),
+                                                                                       paramList.sublist         ("coarse: params",    false))))));
     }
 
     // === Aggregation ===

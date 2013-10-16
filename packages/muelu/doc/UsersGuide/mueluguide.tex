@@ -194,7 +194,7 @@ Rather than implementing all possible algorithms, \muelu relies on other \trilin
 % \cbb{smoother: pre sweeps}               {int}       {}
 % \cbb{smoother: post sweeps}              {int}       {}
 
-\cbc{coarse: type}                       {string}    {"SuperLU"}     {Coarse solver. Possible values: see Table~\ref{t:coarse_solvers}.}
+\cbb{coarse: type}                       {string}    {"SuperLU"}     {Coarse solver. Possible values: see Table~\ref{t:coarse_solvers}.}
 \cba{coarse: params}                     {\parameterlist}            {Coarse solver parameters. \muelu passes them directly to coarse solver.}
 \cbb{coarse: max size}                   {int}       {2000}          {Maximum dimension of the coarse grid. \muelu will stop coarsening once it is achieved.}
 
