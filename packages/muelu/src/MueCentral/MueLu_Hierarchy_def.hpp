@@ -67,14 +67,16 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Hierarchy()
-    : maxCoarseSize_(50), implicitTranspose_(false), isPreconditioner_(true), Cycle_(VCYCLE), lib_(Xpetra::UseTpetra), isDumpingEnabled_(false), dumpLevel_(-1)
+    : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(false), isPreconditioner_(true),
+      Cycle_(GetDefaultCycle()), lib_(Xpetra::UseTpetra), isDumpingEnabled_(false), dumpLevel_(-1)
   {
     AddLevel(rcp( new Level() ));
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Hierarchy(const RCP<Matrix> & A)
-    : maxCoarseSize_(50), implicitTranspose_(false), isPreconditioner_(true), Cycle_(VCYCLE), isDumpingEnabled_(false), dumpLevel_(-1)
+    : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(false), isPreconditioner_(true),
+      Cycle_(GetDefaultCycle()), isDumpingEnabled_(false), dumpLevel_(-1)
   {
     lib_ = A->getRowMap()->lib();
 
@@ -83,18 +85,6 @@ namespace MueLu {
 
     Finest->Set("A", A);
   }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~Hierarchy() { }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetMaxCoarseSize(Xpetra::global_size_t const &maxCoarseSize) { maxCoarseSize_ = maxCoarseSize; }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Xpetra::global_size_t Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMaxCoarseSize() const { return maxCoarseSize_; }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  int Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::LastLevelID() const { return Levels_.size() - 1; }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddLevel(const RCP<Level> & level) {
@@ -276,7 +266,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(const FactoryManagerBase & manager, const int &startLevel, const int &numDesiredLevels) {
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(const FactoryManagerBase& manager, int startLevel, int numDesiredLevels) {
     PrintMonitor m0(*this, "Setup (" + this->MueLu::BaseClass::description() + ")"); // Use MueLu::BaseClass::description()to avoid printing "{numLevels = 1}" (numLevels is increasing...)
 
     RCP<const FactoryManagerBase> rcpManager = rcpFromRef(manager);
