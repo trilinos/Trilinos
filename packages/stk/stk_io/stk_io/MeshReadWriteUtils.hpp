@@ -471,7 +471,7 @@ namespace stk {
         void define_output_database();
         void write_output_database();
 
-        MPI_Comm m_communicator_;
+        MPI_Comm m_communicator;
         std::vector<std::string>       m_rank_names; // Optional rank name vector.
 
         Teuchos::RCP<Ioss::DatabaseIO> m_input_database;

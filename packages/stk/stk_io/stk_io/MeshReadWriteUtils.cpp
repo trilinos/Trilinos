@@ -887,7 +887,7 @@ namespace stk {
   namespace io {
 
     MeshData::MeshData()
-      : m_communicator_(MPI_COMM_NULL), m_anded_selector(NULL), m_connectivity_map(stk::mesh::ConnectivityMap::default_map()),
+      : m_communicator(MPI_COMM_NULL), m_anded_selector(NULL), m_connectivity_map(stk::mesh::ConnectivityMap::default_map()),
         m_currentOutputStep(-1), m_currentRestartStep(-1), m_useNodesetForPartNodesFields(true),
 	m_resultsMeshDefined(false), m_resultsFieldsDefined(false),
 	m_restartMeshDefined(false), m_restartFieldsDefined(false)
@@ -897,7 +897,7 @@ namespace stk {
     }
 
     MeshData::MeshData(MPI_Comm comm, stk::mesh::ConnectivityMap * connectivity_map)
-      : m_communicator_(comm), m_anded_selector(NULL)
+      : m_communicator(comm), m_anded_selector(NULL)
       , m_connectivity_map(connectivity_map != NULL ? *connectivity_map : stk::mesh::ConnectivityMap::default_map()),
         m_currentOutputStep(-1), m_currentRestartStep(-1), m_useNodesetForPartNodesFields(true),
 	m_resultsMeshDefined(false), m_resultsFieldsDefined(false),
@@ -951,7 +951,7 @@ namespace stk {
         set_meta_data(const_cast<stk::mesh::MetaData&>(bulk_data().mesh_meta_data()));
       }
 
-      m_communicator_ = m_bulk_data->parallel();
+      m_communicator = m_bulk_data->parallel();
     }
 
     bool MeshData::open_mesh_database(const std::string &mesh_filename)
@@ -983,7 +983,7 @@ namespace stk {
                       "This MeshData already has an Ioss::Region associated with it.");
 
       m_input_database = Teuchos::rcp(Ioss::IOFactory::create(mesh_type, mesh_filename,
-                                                              Ioss::READ_MODEL, m_communicator_,
+                                                              Ioss::READ_MODEL, m_communicator,
                                                               m_property_manager));
       if (Teuchos::is_null(m_input_database) || !m_input_database->ok(true)) {
         std::cerr  << "ERROR: Could not open database '" << mesh_filename
@@ -1054,7 +1054,7 @@ namespace stk {
 
       Ioss::DatabaseIO *dbo = Ioss::IOFactory::create("exodusII", out_filename,
                                                       Ioss::WRITE_RESULTS,
-                                                      m_communicator_,
+                                                      m_communicator,
                                                       m_property_manager);
       if (dbo == NULL || !dbo->ok()) {
         std::cerr << "ERROR: Could not open results database '" << out_filename
@@ -1379,7 +1379,7 @@ namespace stk {
     {
       Ioss::DatabaseIO *dbo = Ioss::IOFactory::create("exodusII", filename,
                                                       Ioss::WRITE_RESTART,
-                                                      m_communicator_,
+                                                      m_communicator,
                                                       m_property_manager);
       if (dbo == NULL || !dbo->ok()) {
         std::cerr << "ERROR: Could not open restart database '" << filename
