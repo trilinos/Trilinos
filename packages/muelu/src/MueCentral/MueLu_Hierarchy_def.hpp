@@ -67,14 +67,14 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Hierarchy()
-    : maxCoarseSize_(50), implicitTranspose_(false), isPreconditioner_(true), lib_(Xpetra::UseTpetra), isDumpingEnabled_(false), dumpLevel_(-1)
+    : maxCoarseSize_(50), implicitTranspose_(false), isPreconditioner_(true), Cycle_(VCYCLE), lib_(Xpetra::UseTpetra), isDumpingEnabled_(false), dumpLevel_(-1)
   {
     AddLevel(rcp( new Level() ));
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Hierarchy(const RCP<Matrix> & A)
-    : maxCoarseSize_(50), implicitTranspose_(false), isPreconditioner_(true), isDumpingEnabled_(false), dumpLevel_(-1)
+    : maxCoarseSize_(50), implicitTranspose_(false), isPreconditioner_(true), Cycle_(VCYCLE), isDumpingEnabled_(false), dumpLevel_(-1)
   {
     lib_ = A->getRowMap()->lib();
 
@@ -345,8 +345,8 @@ namespace MueLu {
   // ---------------------------------------- Iterate -------------------------------------------------------
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Iterate(MultiVector const &B, LO nIts, MultiVector &X, //TODO: move parameter nIts and default value = 1
-                                                                                  const bool &InitialGuessIsZero, const CycleType &Cycle, const LO &startLevel)
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Iterate(const MultiVector& B, LO nIts, MultiVector& X, //TODO: move parameter nIts and default value = 1
+                                                                                  bool InitialGuessIsZero, LO startLevel)
   {
 
     //These timers work as follows.  "h" records total time spent in iterate.  "hl" records time on a per level basis.  The label is crafted to mimic the per-level
@@ -457,10 +457,10 @@ namespace MueLu {
 
           {
             hl = Teuchos::null; // stop timing this level
-            Iterate(*coarseRhs, 1, *coarseX, true, Cycle, startLevel+1);
+            Iterate(*coarseRhs, 1, *coarseX, true, startLevel+1);
             // ^^ zero initial guess
             if (Cycle > 1)
-              Iterate(*coarseRhs, 1, *coarseX, false, Cycle, startLevel+1);
+              Iterate(*coarseRhs, 1, *coarseX, false, startLevel+1);
             // ^^ nonzero initial guess
             hl = rcp( new TimeMonitor(*this, thisLevelTimerLabel) );  // restart timing this level
           }

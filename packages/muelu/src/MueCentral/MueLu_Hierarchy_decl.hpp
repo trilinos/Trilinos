@@ -195,8 +195,10 @@ namespace MueLu {
 
     //! Clear impermanent data from previous setup
     void Clear();
-
     void ExpertClear();
+
+    CycleType GetCycle()                 const { return Cycle_;  }
+    void      SetCycle(CycleType Cycle)        { Cycle_ = Cycle; }
 
     /*!
       @brief Apply the multigrid preconditioner.
@@ -210,8 +212,8 @@ namespace MueLu {
       @param InitialGuessIsZero Indicates whether the initial guess is zero
       @param Cycle Supports VCYCLE and WCYCLE types.
     */
-    void Iterate(MultiVector const &B, LO nIts, MultiVector &X, //TODO: move parameter nIts and default value = 1
-                 const bool &InitialGuessIsZero = false, const CycleType &Cycle = VCYCLE, const LO &startLevel = 0);
+    void Iterate(const MultiVector& B, LO nIts, MultiVector& X, //TODO: move parameter nIts and default value = 1
+                 bool InitialGuessIsZero = false, LO startLevel = 0);
 
     /*!
       @brief Print matrices in the multigrid hierarchy to file.
@@ -295,6 +297,8 @@ namespace MueLu {
     Xpetra::global_size_t maxCoarseSize_;
     bool implicitTranspose_;
     bool isPreconditioner_;
+
+    CycleType Cycle_;
 
     Xpetra::UnderlyingLib lib_;
 
