@@ -432,7 +432,7 @@ int Epetra_Util::SortCrsEntries(int NumRows, const int *CRS_rowptr, int *CRS_col
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Epetra_Util::GetPidGidPairs(const Epetra_Import & Importer,std::vector< std::pair<int,int> > & gpids, bool use_minus_one_for_local){
   // Put the (PID,GID) pair in member of Importer.TargetMap() in gpids.  If use_minus_one_for_local==true, put in -1 instead of MyPID.
-  // This only works if we have an MpiDistributor in our Importer.  Otheriwise return an error.
+  // This only works if we have an MpiDistributor in our Importer.  Otherwise return an error.
 #ifdef HAVE_MPI
   Epetra_MpiDistributor *D=dynamic_cast<Epetra_MpiDistributor*>(&Importer.Distributor());
   if(!D) EPETRA_CHK_ERR(-2);
