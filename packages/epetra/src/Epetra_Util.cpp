@@ -563,7 +563,36 @@ int Epetra_Util::GetPids(const Epetra_Import & Importer, std::vector<int> &pids,
 #endif
 }
 
+//----------------------------------------------------------------------------
+int Epetra_Util::GetRemotePIDs(const Epetra_Import & Importer, std::vector<int> &RemotePIDs){
+#ifdef HAVE_MPI
+  Epetra_MpiDistributor *D=dynamic_cast<Epetra_MpiDistributor*>(&Importer.Distributor());
+  if(!D) EPETRA_CHK_ERR(-2);
 
+  int i,j,k;
+
+  // Get the distributor's data
+  int NumReceives        = D->NumReceives();
+  const int *ProcsFrom   = D->ProcsFrom();
+  const int *LengthsFrom = D->LengthsFrom();
+  
+  // Resize the outgoing data structure
+  RemotePIDs.resize(Importer.NumRemoteIDs());
+
+  // Now, for each remote ID, record who actually owns it.  This loop follows the operation order in the
+  // MpiDistributor so it ought to duplicate that effect.
+  for(i=0,j=0;i<NumReceives;i++){
+    int pid=ProcsFrom[i];    
+    for(k=0;k<LengthsFrom[i];k++){
+      RemotePIDs[j]=pid;
+      j++;
+    }    
+  }
+  return 0;
+#else
+  EPETRA_CHK_ERR(-10);
+#endif
+}
 
 //----------------------------------------------------------------------------
 template<typename T>
