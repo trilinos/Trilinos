@@ -3,7 +3,7 @@
 
 namespace
 {
-TEST(StkUtilTestForDocumentation, SchedulerWithTimeInterval)
+TEST(StkUtilTestForDocumentation, TimeBasedScheduling)
 {
     stk::util::Scheduler scheduler;
 
@@ -17,7 +17,7 @@ TEST(StkUtilTestForDocumentation, SchedulerWithTimeInterval)
     EXPECT_TRUE(scheduler.is_it_time(1.0, timeStep++));
 }
 
-TEST(StkUtilTestForDocumentation, SchedulerWithTerminationTime)
+TEST(StkUtilTestForDocumentation, TimeBasedSchedulingWithTerminationTime)
 {
     stk::util::Scheduler scheduler;
 
@@ -37,7 +37,7 @@ TEST(StkUtilTestForDocumentation, SchedulerWithTerminationTime)
     EXPECT_FALSE(scheduler.is_it_time(terminationTime+0.2, timeStep++));
 }
 
-TEST(StkUtilTestForDocumentation, SchedulerIntervalCheck)
+TEST(StkUtilTestForDocumentation, StepBasedScheduler)
 {
     stk::util::Scheduler scheduler;
 
@@ -61,7 +61,7 @@ TEST(StkUtilTestForDocumentation, SchedulerIntervalCheck)
     }
 }
 
-TEST(StkUtilTestForDocumentation, SchedulerWithTwoTimeIntervals)
+TEST(StkUtilTestForDocumentation, TimeBasedSchedulerWithTwoTimeIntervals)
 {
     stk::util::Scheduler scheduler;
     const stk::util::Time startTime1 = 0.0;
