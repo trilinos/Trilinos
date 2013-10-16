@@ -224,6 +224,11 @@ void Epetra_Import::Construct_Expert( const Epetra_BlockMap &  targetMap, const 
       ExportPIDs_[i] = UserExportPIDs[i];
       ExportLIDs_[i] = UserExportLIDs[i];
     }
+    
+    // Send Counts
+    for (i=0; i< NumExportIDs_; i++) {
+      NumSend_ += sourceMap.MaxElementSize(); // Count total number of entries to send (currently need max)
+    }
 
 #ifdef HAVE_MPI
     Epetra_MpiDistributor* MpiDistor = dynamic_cast< Epetra_MpiDistributor*>(Distor_);
