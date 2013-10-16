@@ -124,6 +124,7 @@ namespace Ioss {
       if (iodatabase->open_create_behavior() != Ioss::DB_APPEND)
 	Region::begin_mode(STATE_READONLY);
     }
+
     properties.add(Property(this,
 			    "node_block_count",    Property::INTEGER));
     properties.add(Property(this,
@@ -160,6 +161,10 @@ namespace Ioss {
 			    "current_state",       Property::INTEGER));
     properties.add(Property(this,
 			    "database_name",       Property::STRING));
+
+    if (iodatabase->usage() == Ioss::WRITE_HISTORY && !iodatabase->is_input()) {
+      Ioss::Utils::generate_history_mesh(this);
+    }
   }
 
   Region::~Region()
