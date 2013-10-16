@@ -492,10 +492,15 @@ namespace Ioex {
     }
 
     // Check for valid exodus_file_ptr (valid >= 0; invalid < 0)
-    int global_file_ptr = util().global_minmax(exodus_file_ptr, Ioss::ParallelUtils::DO_MIN);
+    int global_file_ptr = exodus_file_ptr;
+    if (isParallel) {
+      global_file_ptr = util().global_minmax(exodus_file_ptr, Ioss::ParallelUtils::DO_MIN);
+    }
     if (global_file_ptr < 0 && (write_message || error_msg != NULL || bad_count != NULL)) {
       Ioss::IntVector status;
-      util().all_gather(exodus_file_ptr, status);
+      if (isParallel) {
+	util().all_gather(exodus_file_ptr, status);
+      }
 
       if (write_message || error_msg != NULL) {
 	// See which processors could not open/create the file...
