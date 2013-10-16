@@ -459,7 +459,7 @@ namespace MueLu {
             hl = Teuchos::null; // stop timing this level
             Iterate(*coarseRhs, 1, *coarseX, true, startLevel+1);
             // ^^ zero initial guess
-            if (Cycle > 1)
+            if (Cycle_ == WCYCLE)
               Iterate(*coarseRhs, 1, *coarseX, false, startLevel+1);
             // ^^ nonzero initial guess
             hl = rcp( new TimeMonitor(*this, thisLevelTimerLabel) );  // restart timing this level
