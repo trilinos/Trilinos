@@ -124,6 +124,7 @@ int main(int argc, char *argv[]) {
   // Multigrid Hierarchy
   Hierarchy H(A);
   H.setVerbLevel(Teuchos::VERB_HIGH);
+  H.SetMaxCoarseSize(50);
 
   // Multigrid setup phase (using default parameters)
   FactoryManager M0; // how to build aggregates and smoother of the first level

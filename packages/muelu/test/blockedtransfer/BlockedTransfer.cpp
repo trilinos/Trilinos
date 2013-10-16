@@ -273,6 +273,7 @@ int main(int argc, char *argv[]) {
 
   // build hierarchy
   Hierarchy H;
+  H.SetMaxCoarseSize(50);
   RCP<Level> levelOne = H.GetLevel();
   levelOne->Set("A", Teuchos::rcp_dynamic_cast<Matrix>(bOp)); // set blocked operator
 
