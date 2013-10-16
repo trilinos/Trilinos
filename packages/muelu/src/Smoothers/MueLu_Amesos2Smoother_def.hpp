@@ -73,46 +73,27 @@ namespace MueLu {
     if (type_ == "Superlu_dist")
       type_ = "Superludist";
 
-    // Set default solver type
+    // Try to come up with something availble
+    // Order corresponds to our preference
     // TODO: It would be great is Amesos2 provides directly this kind of logic for us
-    if (type_ == "") {
-#if defined(HAVE_AMESOS2_SUPERLUDIST)
-      type_ = "Superludist";
+    if (type_ == "" || Amesos2::query(type_) == false) {
+      std::string oldtype = type_;
+#if defined(HAVE_AMESOS2_SUPERLU)
+      type_ = "Superlu";
 #elif defined(HAVE_AMESOS2_KLU2)
       type_ = "Klu";
-#elif defined(HAVE_AMESOS2_SUPERLU)
-      type_ = "Superlu";
+#elif defined(HAVE_AMESOS2_SUPERLUDIST)
+      type_ = "Superludist";
 #else
       throw Exceptions::RuntimeError("Amesos2 have been compiled without SuperLU_DIST, SuperLU or Klu. By default, MueLu tries"
                                      "to use one of these libraries. Amesos2 must be compiled with one of these solvers or"
                                      "a valid Amesos2 solver have to be specified explicitly.");
 #endif
+      if (oldtype != "")
+        this->GetOStream(Warnings0, 0) << "Warning: MueLu::Amesos2Smoother: \"" << oldtype << "\" is not available. Using \"" << type_ << "\" instead" << std::endl;
+      else
+        this->GetOStream(Warnings0, 0) << "MueLu::Amesos2Smoother: using \"" << type_ << "\"" << std::endl;
     }
-
-    // Note: one could choose Umfpack for an Amesos solver. However, we check whether have Tpetra and/or Epetra
-    //       and if type_ == "Umfpack" we have to change it here. Otherwise we would run into an exception.
-    if (type_ == "Umfpack" && Amesos2::query(type_) == false) {
-      type_ = "Klu";
-      this->GetOStream(Warnings0, 0) << "Warning: MueLu::Amesos2Smoother: Umfpack not available. Try to use Klu2 instead" << std::endl;
-    }
-
-    //TMP: Amesos2 KLU never available but most MueLu tests are using KLU by default
-    // (ex: examples driven by ML parameter lists)
-    // -> temporarily fallback to SUPERLU or SUPERLU_dist
-    // Remove this when KLU becomes available.
-#if defined(HAVE_AMESOS2_SUPERLU)
-    if (type_ == "Klu" && Amesos2::query(type_) == false) {
-      type_ = "Superlu";
-      this->GetOStream(Warnings0, 0) << "Warning: MueLu::Amesos2Smoother: KLU2 not available. Using SuperLu instead" << std::endl;
-    }
-#elif defined(HAVE_AMESOS2_SUPERLUDIST)// HAVE_AMESOS2_SUPERLUDIST
-    if (type_ == "Klu" && Amesos2::query(type_) == false) {
-      type_ = "Superludist";
-      this->GetOStream(Warnings0, 0) << "Warning: MueLu::Amesos2Smoother: KLU2 not available. Using SuperLu_dist instead" << std::endl;
-    }
-#endif // HAVE_AMESOS2_SUPERLU/DIST
-
-    // END OF TMP
 
     // Check the validity of the solver type parameter
     TEUCHOS_TEST_FOR_EXCEPTION(Amesos2::query(type_) == false, Exceptions::RuntimeError, "The Amesos2 library reported that the solver '" << type_ << "' is not available. "

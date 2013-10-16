@@ -70,12 +70,16 @@ namespace MueLu {
       std::transform(type_.begin(),   type_.end(),   type_.begin(), ::tolower);
       std::transform(type_.begin(), ++type_.begin(), type_.begin(), ::toupper);
     }
-    if (type_ == "Amesos_klu")     type_ = "Klu";
-    if (type_ == "Amesos_umfpack") type_ = "Umfpack";
-    if (type_ == "Superlu_dist")   type_ = "Superludist";
+    if (type_ == "Amesos_klu")      type_ = "Klu";
+    if (type_ == "Klu2")            type_ = "Klu";
+    if (type_ == "Amesos_umfpack")  type_ = "Umfpack";
+    if (type_ == "Superlu_dist")    type_ = "Superludist";
 
-    // set default solver type
-    if (type_ == "") {
+    // Try to come up with something availble
+    // Order corresponds to our preference
+    // TODO: It would be great is Amesos provides directly this kind of logic for us
+    std::string oldtype = type_;
+    if (type_ == "" || Amesos().Query(type_) == false) {
 #if defined(HAVE_AMESOS_SUPERLU)
       type_ = "Superlu";
 #elif defined(HAVE_AMESOS_KLU)
@@ -84,31 +88,15 @@ namespace MueLu {
       type_ = "Superludist";
 #elif defined(HAVE_AMESOS_UMFPACK)
       type_ = "Umfpack";
+#else
+      throw Exceptions::RuntimeError("Amesos have been compiled without SuperLU_DIST, SuperLU, Umfpack or Klu. By default, MueLu tries"
+                                     "to use one of these libraries. Amesos2 must be compiled with one of these solvers or"
+                                     "a valid Amesos solver have to be specified explicitly.");
 #endif
-    }
-
-    // check for valid direct solver type
-    TEUCHOS_TEST_FOR_EXCEPTION(type_ != "Superlu" && type_ != "Superludist" && type_ != "Klu" && type_ != "Umfpack",
-                               Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Solver '" + type_ + "' not supported");
-    if (type_ == "Superlu") {
-#if not defined(HAVE_AMESOS_SUPERLU)
-      TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without SuperLU. Cannot define a solver by default for this AmesosSmoother object");
-#endif
-    }
-    if (type_ == "Superludist") {
-#if not defined(HAVE_AMESOS_SUPERLUDIST)
-      TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without SuperLU_DIST. Cannot define a solver by default for this AmesosSmoother object");
-#endif
-    }
-    if (type_ == "Klu") {
-#if not defined(HAVE_AMESOS_KLU)
-      TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without KLU. Cannot define a solver by default for this AmesosSmoother object");
-#endif
-    }
-    if (type_ == "Umfpack") {
-#if not defined(HAVE_AMESOS_UMFPACK)
-      TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::AmesosSmoother(): Amesos compiled without Umfpack. Cannot define a solver by default for this AmesosSmoother object");
-#endif
+      if (oldtype != "")
+        this->GetOStream(Warnings0, 0) << "Warning: MueLu::AmesosSmoother: \"" << oldtype << "\" is not available. Using \"" << type_ << "\" instead" << std::endl;
+      else
+        this->GetOStream(Warnings0, 0) << "MueLu::AmesosSmoother: using \"" << type_ << "\"" << std::endl;
     }
   }
 
