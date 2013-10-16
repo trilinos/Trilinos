@@ -333,6 +333,13 @@ namespace MueLu {
       Levels_[iLevel]->Clear();
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ExpertClear() {
+    GetOStream(Runtime0, 0) << "Clearing old data (expert)" << std::endl;
+    for (int iLevel = 0; iLevel < GetNumberOfLevels(); iLevel++)
+      Levels_[iLevel]->ExpertClear();
+  }
+
   // ---------------------------------------- Iterate -------------------------------------------------------
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

@@ -319,6 +319,39 @@ namespace MueLu {
     } while (wasRemoved == true);
   }
 
+  void Level::ExpertClear() {
+    TwoKeyMap::const_iterator kt = map_.begin();
+    while (kt != map_.end()) {
+      const FactoryBase* factory = kt->first;
+
+      SubMap::const_iterator it = kt->second.begin();
+      while ( it != kt->second.end()) {
+        const std::string& ename = it->first;
+
+        // obtain variable container
+        Teuchos::RCP<MueLu::VariableContainer>& v = map_[factory][ename];
+
+        if (v->GetKeepFlag() == 0 ||
+            v->IsKept(MueLu::UserData) == true ||
+            v->IsKept(MueLu::Final) == true) {
+          it++;
+          v = Teuchos::null; // free data
+          map_[factory].erase(ename);
+          if (map_.count(factory) == 0) {
+            break; // last occurence for factory has been removed. proceed with next factory
+          }
+        }
+        else
+          it++;
+      } // end for it
+
+      if (map_.count(factory) == 0) {
+        kt++;
+        map_.erase(factory);
+      } else kt++;
+    }
+  }
+
   std::string Level::description() const {
     std::ostringstream out;
     out << BaseClass::description();

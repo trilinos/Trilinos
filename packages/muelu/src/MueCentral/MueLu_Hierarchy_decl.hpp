@@ -196,6 +196,8 @@ namespace MueLu {
     //! Clear impermanent data from previous setup
     void Clear();
 
+    void ExpertClear();
+
     /*!
       @brief Apply the multigrid preconditioner.
 
