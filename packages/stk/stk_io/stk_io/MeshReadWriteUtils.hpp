@@ -437,11 +437,11 @@ namespace stk {
          */
         bool use_nodeset_for_part_nodes_fields() const
         {
-          return useNodesetForPartNodesFields;
+          return m_useNodesetForPartNodesFields;
         }
         void use_nodeset_for_part_nodes_fields(bool true_false)
         {
-          useNodesetForPartNodesFields = true_false;
+          m_useNodesetForPartNodesFields = true_false;
         }
 
         /*!
@@ -491,9 +491,9 @@ namespace stk {
         Teuchos::RCP<stk::mesh::Selector> m_anded_selector;
         stk::mesh::ConnectivityMap m_connectivity_map;
 
-        int mCurrentOutputStep;
-        int mCurrentRestartStep;
-        bool useNodesetForPartNodesFields;
+        int m_currentOutputStep;
+        int m_currentRestartStep;
+        bool m_useNodesetForPartNodesFields;
         bool m_resultsMeshDefined;
         bool m_resultsFieldsDefined;
         bool m_restartMeshDefined;

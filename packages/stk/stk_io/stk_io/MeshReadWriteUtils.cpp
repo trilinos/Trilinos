@@ -888,7 +888,7 @@ namespace stk {
 
     MeshData::MeshData()
       : m_communicator_(MPI_COMM_NULL), m_anded_selector(NULL), m_connectivity_map(stk::mesh::ConnectivityMap::default_map()),
-        mCurrentOutputStep(-1), mCurrentRestartStep(-1), useNodesetForPartNodesFields(true),
+        m_currentOutputStep(-1), m_currentRestartStep(-1), m_useNodesetForPartNodesFields(true),
 	m_resultsMeshDefined(false), m_resultsFieldsDefined(false),
 	m_restartMeshDefined(false), m_restartFieldsDefined(false)
 	
@@ -899,7 +899,7 @@ namespace stk {
     MeshData::MeshData(MPI_Comm comm, stk::mesh::ConnectivityMap * connectivity_map)
       : m_communicator_(comm), m_anded_selector(NULL)
       , m_connectivity_map(connectivity_map != NULL ? *connectivity_map : stk::mesh::ConnectivityMap::default_map()),
-        mCurrentOutputStep(-1), mCurrentRestartStep(-1), useNodesetForPartNodesFields(true),
+        m_currentOutputStep(-1), m_currentRestartStep(-1), m_useNodesetForPartNodesFields(true),
 	m_resultsMeshDefined(false), m_resultsFieldsDefined(false),
 	m_restartMeshDefined(false), m_restartFieldsDefined(false)
     {
@@ -1092,7 +1092,7 @@ namespace stk {
       internal_process_output_request(exclude);
       this->end_current_results_output();
 
-      return mCurrentOutputStep;
+      return m_currentOutputStep;
     }
 
     // ========================================================================
@@ -1103,7 +1103,7 @@ namespace stk {
 
       internal_process_output_request(std::set<const stk::mesh::Part*>());
 
-      return mCurrentOutputStep;
+      return m_currentOutputStep;
     }
 
     // ========================================================================
@@ -1115,7 +1115,7 @@ namespace stk {
       this->process_output_request();
       this->end_current_results_output();
 
-      return mCurrentOutputStep;
+      return m_currentOutputStep;
     }
 
     void MeshData::begin_results_output_at_time(double time)
@@ -1131,13 +1131,13 @@ namespace stk {
         }
 
         m_output_region->begin_mode(Ioss::STATE_TRANSIENT);
-        mCurrentOutputStep = m_output_region->add_state(time);
-        m_output_region->begin_state(mCurrentOutputStep);
+        m_currentOutputStep = m_output_region->add_state(time);
+        m_output_region->begin_state(m_currentOutputStep);
     }
 
     void MeshData::end_current_results_output()
     {
-        m_output_region->end_state(mCurrentOutputStep);
+        m_output_region->end_state(m_currentOutputStep);
         m_output_region->end_mode(Ioss::STATE_TRANSIENT);
     }
 
@@ -1583,21 +1583,21 @@ namespace stk {
         }
 
         m_restart_region->begin_mode(Ioss::STATE_TRANSIENT);
-        mCurrentRestartStep = m_restart_region->add_state(time);
-        m_restart_region->begin_state(mCurrentRestartStep);
+        m_currentRestartStep = m_restart_region->add_state(time);
+        m_restart_region->begin_state(m_currentRestartStep);
     }
 
     void MeshData::end_current_restart_output()
     {
-        m_restart_region->end_state(mCurrentRestartStep);
+        m_restart_region->end_state(m_currentRestartStep);
         m_restart_region->end_mode(Ioss::STATE_TRANSIENT);
     }
 
     int MeshData::process_restart_output()
     {
-       internal_process_restart_output(mCurrentRestartStep);
+       internal_process_restart_output(m_currentRestartStep);
 
-       return mCurrentRestartStep;
+       return m_currentRestartStep;
     }
 
     int MeshData::process_restart_output(double time)
@@ -1609,7 +1609,7 @@ namespace stk {
       this->process_restart_output();
       this->end_current_restart_output();
 
-      return mCurrentRestartStep;
+      return m_currentRestartStep;
     }
 
     void MeshData::internal_process_restart_output(int step)
