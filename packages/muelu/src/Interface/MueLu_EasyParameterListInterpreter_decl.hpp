@@ -54,12 +54,9 @@
 
 #include "MueLu_CoalesceDropFactory_fwd.hpp"
 #include "MueLu_CoarseMapFactory_fwd.hpp"
-#include "MueLu_ConstraintFactory_fwd.hpp"
 #include "MueLu_CoordinatesTransferFactory_fwd.hpp"
 #include "MueLu_CoupledAggregationFactory_fwd.hpp"
-#include "MueLu_EminPFactory_fwd.hpp"
 #include "MueLu_FilteredAFactory_fwd.hpp"
-#include "MueLu_PatternFactory_fwd.hpp"
 #include "MueLu_PgPFactory_fwd.hpp"
 #include "MueLu_RAPFactory_fwd.hpp"
 #include "MueLu_RebalanceAcFactory_fwd.hpp"
@@ -72,6 +69,12 @@
 #include "MueLu_UncoupledAggregationFactory_fwd.hpp"
 #include "MueLu_ZoltanInterface_fwd.hpp"
 #include "MueLu_Zoltan2Interface_fwd.hpp"
+
+#ifdef HAVE_MUELU_EXPERIMENTAL
+#include "MueLu_ConstraintFactory_fwd.hpp"
+#include "MueLu_PatternFactory_fwd.hpp"
+#include "MueLu_EminPFactory_fwd.hpp"
+#endif
 
 namespace MueLu {
 
