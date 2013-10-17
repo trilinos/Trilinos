@@ -159,10 +159,8 @@ stk::mesh::Entity Gear::create_node(const std::vector<stk::mesh::Part*> & parts 
 
 void Gear::mesh( stk::mesh::BulkData & M )
 {
-  stk::mesh::EntityRank element_rank;
-  stk::mesh::EntityRank side_rank    ;
-  element_rank = stk::mesh::MetaData::ELEMENT_RANK;
-  side_rank    = m_mesh_meta_data.side_rank();
+  stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
+  stk::mesh::EntityRank side_rank = m_mesh_meta_data.side_rank();
 
   M.modification_begin();
 
