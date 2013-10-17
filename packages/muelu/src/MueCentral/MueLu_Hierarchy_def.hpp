@@ -417,7 +417,7 @@ namespace MueLu {
           RCP<SmootherBase> preSmoo = Fine->Get< RCP<SmootherBase> >("PreSmoother");
           preSmoo->Apply(X, B, zeroGuess);
         } else {
-          GetOStream(Warnings0, 0) << "Warning: Level " <<  startLevel << ": No PreSmoother!" << std::endl;
+          GetOStream(Warnings1, 0) << "Warning: Level " <<  startLevel << ": No PreSmoother!" << std::endl;
         }
 
         RCP<MultiVector> residual = Utils::Residual(*A, X, B);
@@ -470,7 +470,7 @@ namespace MueLu {
           postSmoo->Apply(X, B, false);
 
         } else {
-          GetOStream(Warnings0, 0) << "Warning: Level " <<  startLevel << ": No PostSmoother!" << std::endl;
+          GetOStream(Warnings1, 0) << "Warning: Level " <<  startLevel << ": No PostSmoother!" << std::endl;
         }
       }
       zeroGuess = false;
