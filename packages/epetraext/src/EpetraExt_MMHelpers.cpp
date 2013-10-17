@@ -63,6 +63,7 @@ namespace EpetraExt {
 //------------------------------------
 // DEBUGGING ROUTINES
 void debug_print_distor(const char * label, const Epetra_Distributor * Distor, const Epetra_Comm & Comm) {
+#ifdef HAVE_MPI
   const Epetra_MpiDistributor * MDistor = dynamic_cast<const Epetra_MpiDistributor*>(Distor);
   printf("[%d] %s\n",Comm.MyPID(),label);
   printf("[%d] NumSends = %d NumRecvs = %d\n",Comm.MyPID(),MDistor->NumSends(),MDistor->NumReceives());
@@ -74,6 +75,7 @@ void debug_print_distor(const char * label, const Epetra_Distributor * Distor, c
     printf("%d ",MDistor->ProcsFrom()[ii]);
   printf("\n");
   fflush(stdout);
+#endif
 }
 
 //------------------------------------
@@ -1302,7 +1304,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
 #endif
 
   // Fused constructor, import & FillComplete
-  int i,rv=0;
+  int rv=0;
   int N;
   if(use_lw) N = RowMapLW_->NumMyElements();
   else N = RowMapEP_->NumMyElements();
@@ -1336,9 +1338,9 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   int* RemoteLIDs            = RowImporter.RemoteLIDs();
   int* PermuteToLIDs         = RowImporter.PermuteToLIDs();
   int* PermuteFromLIDs       = RowImporter.PermuteFromLIDs();
-  Epetra_Distributor& Distor = RowImporter.Distributor();
 
 #ifdef HAVE_MPI
+  Epetra_Distributor& Distor            = RowImporter.Distributor();
   const Epetra_MpiComm * MpiComm        = dynamic_cast<const Epetra_MpiComm*>(&SourceMatrix.Comm());
   const Epetra_MpiDistributor * MDistor = dynamic_cast<Epetra_MpiDistributor*>(&Distor);
 #endif
@@ -1392,7 +1394,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   if (communication_needed) {
 #ifdef HAVE_MPI 
     // Do the exchange of remote data
-    int curr_pid;
+    int i,curr_pid;
     const int * ExportPIDs = RowImporter.ExportPIDs();
 
     // Use the fact that the export procs are sorted to avoid building a hash table.
