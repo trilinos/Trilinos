@@ -60,6 +60,57 @@
 
 namespace EpetraExt {
 
+//------------------------------------
+// DEBUGGING ROUTINES
+void debug_print_distor(const char * label, const Epetra_Distributor * Distor, const Epetra_Comm & Comm) {
+  const Epetra_MpiDistributor * MDistor = dynamic_cast<const Epetra_MpiDistributor*>(Distor);
+  printf("[%d] %s\n",Comm.MyPID(),label);
+  printf("[%d] NumSends = %d NumRecvs = %d\n",Comm.MyPID(),MDistor->NumSends(),MDistor->NumReceives());
+  printf("[%d] ProcsTo = ",Comm.MyPID());
+  for(int ii=0; ii<MDistor->NumSends(); ii++)
+    printf("%d ",MDistor->ProcsTo()[ii]);
+  printf("\n[%d] ProcsFrom = ",Comm.MyPID());
+  for(int ii=0; ii<MDistor->NumReceives(); ii++)
+    printf("%d ",MDistor->ProcsFrom()[ii]);
+  printf("\n");
+  fflush(stdout);
+}
+
+//------------------------------------
+// DEBUGGING ROUTINES
+void debug_compare_import(const Epetra_Import * Import1,const Epetra_Import * Import2) {
+  if(!Import1 && !Import2) return;
+  const Epetra_Comm & Comm = (Import1)? Import1->SourceMap().Comm() : Import2->SourceMap().Comm();
+  bool flag=true;
+  int PID=Comm.MyPID();
+  if( (!Import1 && Import2) || (Import2 && !Import1) ) {printf("[%d] DCI: One Import exists, the other does not\n",PID);return;}
+  if(!Import1->SourceMap().SameAs(Import2->SourceMap())) {printf("[%d] DCI: SourceMaps don't match\n",PID);return;}
+  if(!Import1->TargetMap().SameAs(Import2->TargetMap())) {printf("[%d] DCI: TargetMaps don't match\n",PID);return;}
+
+  if(Import1->NumSameIDs() != Import2->NumSameIDs()) {printf("[%d] DCI NumSameIDs() mismatch %d vs. %d\n",PID,Import1->NumSameIDs(),Import2->NumSameIDs());flag=false;}
+
+  if(Import1->NumPermuteIDs() != Import2->NumPermuteIDs()) {printf("[%d] DCI NumPermuteIDs() mismatch %d vs. %d\n",PID,Import1->NumPermuteIDs(),Import2->NumPermuteIDs()); flag=false;}
+
+  if(Import1->NumExportIDs() != Import2->NumExportIDs()) {printf("[%d] DCI NumExportIDs() mismatch %d vs. %d\n",PID,Import1->NumExportIDs(),Import2->NumExportIDs()); flag=false;}
+
+  if(Import1->NumRemoteIDs() != Import2->NumRemoteIDs()) {printf("[%d] DCI NumRemoteIDs() mismatch %d vs. %d\n",PID,Import1->NumRemoteIDs(),Import2->NumRemoteIDs()); flag=false;}
+
+  if(Import1->NumSend() != Import2->NumSend()) {printf("[%d] DCI NumSend() mismatch %d vs. %d\n",PID,Import1->NumSend(),Import2->NumSend()); flag=false;}
+
+  if(Import1->NumRecv() != Import2->NumRecv()) {printf("[%d] DCI NumRecv() mismatch %d vs. %d\n",PID,Import1->NumRecv(),Import2->NumRecv()); flag=false;}
+
+
+  if(flag) printf("[%d] DCI Importers compare OK\n",PID);    
+  fflush(stdout);
+  Import1->SourceMap().Comm().Barrier();
+  Import1->SourceMap().Comm().Barrier();
+  Import1->SourceMap().Comm().Barrier();
+  if(!flag) exit(1);
+}
+
+
+
+//------------------------------------
 CrsMatrixStruct::CrsMatrixStruct()
  : numRows(0), numEntriesPerRow(NULL), indices(NULL), values(NULL),
    remote(NULL), numRemote(0), importColMap(NULL), rowMap(NULL), colMap(NULL),

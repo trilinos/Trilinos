@@ -539,14 +539,19 @@ int  mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
   int NumExports=0;
   int *ExportLIDs=0, *ExportPIDs=0;
   if(Bview.importMatrix) { 
-    NumExports=Bview.importMatrix->ExportLIDs_.size();
+    NumExports = Bview.importMatrix->ExportLIDs_.size();
     ExportLIDs = Bview.importMatrix->ExportLIDs_.size()?&Bview.importMatrix->ExportLIDs_[0]:0;
     ExportPIDs = Bview.importMatrix->ExportPIDs_.size()?&Bview.importMatrix->ExportPIDs_[0]:0;
+  }
+  else if(B.Importer()) {
+    // Grab the exports from B proper
+    NumExports = B.Importer()->NumExportIDs();
+    ExportLIDs = B.Importer()->ExportLIDs();
+    ExportPIDs = B.Importer()->ExportPIDs();    
   }
 
   if(!C.ColMap().SameAs(B.DomainMap()))
     Cimport = new Epetra_Import(C.ColMap(),B.DomainMap(),Cremotepids.size(),RemotePIDs,NumExports,ExportLIDs,ExportPIDs);
-
 
 #ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
@@ -556,7 +561,6 @@ int  mult_A_B_newmatrix(const Epetra_CrsMatrix & A,
 
   // Update the CrsGraphData
   C.ExpertStaticFillComplete(B.DomainMap(),A.RangeMap(),Cimport,0,NumMyDiagonals);
-
 
 #ifdef ENABLE_MMM_TIMINGS
   mtime->stop();
@@ -956,6 +960,10 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
     else  {
       EPETRA_CHK_ERR( C.ReplaceColMap(B.ColMap()) );
       for(i=0;i<colmap_B->NumMyElements();i++) Bcol2Ccol[i]=i;
+      
+      // Copy B's remote list (if any)
+      if(B.Importer()) 
+	EPETRA_CHK_ERR( Epetra_Util::GetRemotePIDs(*B.Importer(),Cremotepids));
     }
   }
 
