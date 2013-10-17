@@ -157,13 +157,14 @@ namespace MueLu {
     for (int levelID = 0; levelID < this->numDesiredLevel_; levelID++) {
       RCP<FactoryManager> levelManager;
 
-      try {
+      if (paramList.isSublist("level " + toString(levelID))) {
         // Some level specific parameters, update default manager
         bool mustAlreadyExist = true;
         ParameterList& levelList = paramList.sublist("level " + toString(levelID), mustAlreadyExist);
+
         UpdateFactoryManager(levelList, paramList, *defaultManager, levelManager);
 
-      } catch(std::exception) {
+      } else {
         // No level specific parameter, use default manager
         levelManager = defaultManager;
       }
@@ -200,20 +201,97 @@ namespace MueLu {
     // SetParameterList sets default values for non mentioned parameters, including factories
 
     // === Smoothing ===
-    if (paramList.isParameter("smoother: type")) {
+    bool isCustomSmoother =
+        paramList.isParameter("smoother: pre or post") ||
+        paramList.isParameter("smoother: type")   || paramList.isParameter("smoother: pre type")   || paramList.isParameter("smoother: post type") ||
+        paramList.isSublist("smoother: params")   || paramList.isSublist("smoother: pre params")   || paramList.isSublist("smoother: post params") ||
+        paramList.isParameter("smoother: sweeps") || paramList.isParameter("smoother: pre sweeps") || paramList.isParameter("smoother: post sweeps");
+    MUELU_READ_2LIST_PARAM(paramList, defaultList, "smoother: pre or post", std::string, "both", PreOrPost);
+    if (isCustomSmoother && PreOrPost != "none") {
       // FIXME: get default values from the factory
       // NOTE: none of the smoothers at the moment use parameter validation framework, so we
       // cannot get the default values from it.
-      manager->SetFactory("Smoother", rcp(new SmootherFactory(rcp(new TrilinosSmoother(paramList.get<std::string>("smoother: type",    ""),
-                                                                                       paramList.sublist         ("smoother: params",  false),
-                                                                                       paramList.get<int>        ("smoother: overlap", 0))))));
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.isParameter("smoother: type") && paramList.isParameter("smoother: pre type"),
+                                 Exceptions::InvalidArgument, "You cannot specify both \"smoother: type\" and \"smoother: pre type\"");
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.isParameter("smoother: type") && paramList.isParameter("smoother: post type"),
+                                 Exceptions::InvalidArgument, "You cannot specify both \"smoother: type\" and \"smoother: post type\"");
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.isParameter("smoother: sweeps") && paramList.isParameter("smoother: pre sweeps"),
+                                 Exceptions::InvalidArgument, "You cannot specify both \"smoother: sweeps\" and \"smoother: pre sweeps\"");
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.isParameter("smoother: sweeps") && paramList.isParameter("smoother: post sweeps"),
+                                 Exceptions::InvalidArgument, "You cannot specify both \"smoother: sweeps\" and \"smoother: post sweeps\"");
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.isSublist("smoother: params") && paramList.isSublist("smoother: pre params"),
+                                 Exceptions::InvalidArgument, "You cannot specify both \"smoother: params\" and \"smoother: pre params\"");
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.isSublist("smoother: params") && paramList.isSublist("smoother: pre params"),
+                                 Exceptions::InvalidArgument, "You cannot specify both \"smoother: params\" and \"smoother: pre params\"");
+      TEUCHOS_TEST_FOR_EXCEPTION(PreOrPost == "both" && (paramList.isParameter("smoother: pre type") != paramList.isParameter("smoother: post type")),
+                                 Exceptions::InvalidArgument, "You must specify both \"smoother: pre type\" and \"smoother: post type\"");
+
+      // Default values
+      const int overlap = 0;
+      ParameterList defaultSmootherParams;
+      defaultSmootherParams.set("relaxation: type",           "Symmetric Gauss-Seidel");
+      defaultSmootherParams.set("relaxation: sweeps",         Teuchos::OrdinalTraits<LO>::one());
+      defaultSmootherParams.set("relaxation: damping factor", Teuchos::ScalarTraits<Scalar>::one());
+
+      RCP<SmootherPrototype> presmoother = Teuchos::null, postsmoother = Teuchos::null;
+      if (PreOrPost == "pre" || PreOrPost == "both") {
+        std::string presmootherType;
+        if (paramList.isParameter("smoother: pre type")) {
+          presmootherType = paramList.get<std::string>("smoother: pre type");
+        } else {
+          MUELU_READ_2LIST_PARAM(paramList, defaultList, "smoother: type", std::string, "RELAXATION", presmootherTypeTmp);
+          presmootherType = presmootherTypeTmp;
+        }
+
+        ParameterList presmootherParams;
+        if (paramList.isSublist("smoother: pre params"))
+          presmootherParams = paramList.sublist("smoother: pre params");
+        else if (paramList.isSublist("smoother: params"))
+          presmootherParams = paramList.sublist("smoother: params");
+        else if (defaultList.isSublist("smoother: params"))
+          presmootherParams = defaultList.sublist("smoother: params");
+        else
+          presmootherParams = defaultSmootherParams;
+
+        presmoother = rcp(new TrilinosSmoother(presmootherType, presmootherParams, overlap));
+      }
+
+      if (PreOrPost == "post" || PreOrPost == "both") {
+        std::string postsmootherType;
+        if (paramList.isParameter("smoother: post type"))
+          postsmootherType = paramList.get<std::string>("smoother: post type");
+        else {
+          MUELU_READ_2LIST_PARAM(paramList, defaultList, "smoother: type", std::string, "RELAXATION", postsmootherTypeTmp);
+          postsmootherType = postsmootherTypeTmp;
+        }
+
+        ParameterList postsmootherParams;
+        if (paramList.isSublist("smoother: post params"))
+          postsmootherParams = paramList.sublist("smoother: post params");
+        else if (paramList.isSublist("smoother: params"))
+          postsmootherParams = paramList.sublist("smoother: params");
+        else if (defaultList.isSublist("smoother: params"))
+          postsmootherParams = defaultList.sublist("smoother: params");
+        else
+          postsmootherParams = defaultSmootherParams;
+
+        postsmoother = rcp(new TrilinosSmoother(postsmootherType, postsmootherParams, overlap));
+      }
+
+      manager->SetFactory("Smoother", rcp(new SmootherFactory(presmoother, postsmoother)));
     }
-    if (paramList.isParameter("coarse: type")) {
+
+    // === Coarse solver ===
+    bool isCustomCoarseSolver =
+        paramList.isParameter("coarse: type")   ||
+        paramList.isParameter("coarse: params");
+    if (isCustomCoarseSolver) {
       // FIXME: get default values from the factory
       // NOTE: none of the smoothers at the moment use parameter validation framework, so we
       // cannot get the default values from it.
-      manager->SetFactory("CoarseSolver", rcp(new SmootherFactory(rcp(new DirectSolver(paramList.get<std::string>("coarse: type",      ""),
-                                                                                       paramList.sublist         ("coarse: params",    false))))));
+      MUELU_READ_2LIST_PARAM(paramList, defaultList, "coarse: type", std::string, "", coarseType);
+      manager->SetFactory("CoarseSolver", rcp(new SmootherFactory(rcp(new DirectSolver(coarseType,
+                                                                                       paramList.sublist("coarse: params",    false))))));
     }
 
     // === Aggregation ===

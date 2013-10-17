@@ -183,16 +183,16 @@ Rather than implementing all possible algorithms, \muelu relies on other \trilin
                                                                      a diagonal.}
 \cbb{aggregation: Dirichlet threshold}   {double}    {}              {}
 
+\cbb{smoother: pre or post}              {string}    {"both"}        {Smoother combination. Possible values: "pre", "post", "both", "none".}
 \cbb{smoother: type}                     {string}    {"gs"}          {Smoother type. Possible values: see Table~\ref{t:smoothers}.}
-% \cbb{smoother: pre or post}              {string}    {"both"}        {}
-% \cbb{smoother: pre type}                 {string}    {}              {}
-% \cbb{smoother: post type}                {string}    {}              {}
+\cbb{smoother: pre type}                 {string}    {}              {Pre-smoother type. Possible values: see Table~\ref{t:smoothers}.}
+\cbb{smoother: post type}                {string}    {}              {Post-smoother type. Possible values: see Table~\ref{t:smoothers}.}
 \cba{smoother: params}                   {\parameterlist}            {Smoother parameters. For standard smoothers, \muelu passes them directly to \stratimikos.}
-% \cba{smoother: pre params}               {string}                    {}
-% \cba{smoother: post params}              {string}                    {}
-\cbc{smoother: sweeps}                   {int}       {2}             {Number of smoother sweeps.}
-% \cbb{smoother: pre sweeps}               {int}       {}
-% \cbb{smoother: post sweeps}              {int}       {}
+\cba{smoother: pre params}               {\parameterlist}            {Pre-smoother parameters. For standard smoothers, \muelu passes them directly to \stratimikos.}
+\cba{smoother: post params}              {\parameterlist}            {Post-smoother parameters. For standard smoothers, \muelu passes them directly to \stratimikos.}
+\cbc{smoother: sweeps}                   {int}       {2}             {Number of smoother sweeps for relaxation methods, or the order of polynomial for Chebyshev.}
+\cbc{smoother: pre sweeps}               {int}       {2}             {Number of pre-smoother sweeps for relaxation methods, or the order of polynomial for Chebyshev.}
+\cbc{smoother: post sweeps}              {int}       {2}             {Number of post-smoother sweeps for relaxation methods, or the order of polynomial for Chebyshev.}
 
 \cbb{coarse: type}                       {string}    {"SuperLU"}     {Coarse solver. Possible values: see Table~\ref{t:coarse_solvers}.}
 \cba{coarse: params}                     {\parameterlist}            {Coarse solver parameters. \muelu passes them directly to coarse solver.}
