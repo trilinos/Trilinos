@@ -329,20 +329,29 @@ namespace MueLu {
     // === Repartitioning ===
     MUELU_READ_2LIST_PARAM(paramList, defaultList, "repartition: enable", bool, false, enableRepart);
     if (enableRepart) {
+#ifdef HAVE_MPI
       MUELU_READ_2LIST_PARAM(paramList, defaultList, "repartition: partitioner", std::string, "zoltan", partName);
       TEUCHOS_TEST_FOR_EXCEPTION(partName != "zoltan" && partName != "zoltan2", Exceptions::InvalidArgument,
                                  "Invalid partitioner name: \"" << partName << "\". Valid options: \"zoltan\", \"zoltan2\"");
       // Partitioner
       RCP<Factory> partitioner;
       if (partName == "zoltan") {
+#ifdef HAVE_MUELU_ZOLTAN
         partitioner = rcp(new ZoltanInterface());
         // NOTE: ZoltanInteface ("zoltan") does not support external parameters through ParameterList
+#else
+        throw RuntimeError("Zoltan interface is not available");
+#endif
       } else if (partName == "zoltan2") {
+#ifdef HAVE_MUELU_ZOLTAN2
         partitioner = rcp(new Zoltan2Interface());
         ParameterList partParams = *(partitioner->GetValidParameterList());
         RCP<const ParameterList> partpartParams = rcp(new ParameterList(paramList.sublist("repartition: params", false)));
         partParams.set("ParameterList", partpartParams);
         partitioner->SetParameterList(partParams);
+#else
+        throw RuntimeError("Zoltan2 interface is not available");
+#endif
       }
       partitioner->SetFactory("A",           manager->GetFactory("A"));
       partitioner->SetFactory("Coordinates", manager->GetFactory("Coordinates"));
@@ -388,6 +397,9 @@ namespace MueLu {
       manager->SetFactory("R",           newR);
       manager->SetFactory("Coordinates", newR);
       manager->SetFactory("Nullspace",   newR);
+#else
+      throw RuntimeError("No repartitioning available for a serial run");
+#endif
     }
   }
 #undef MUELU_READ_2LIST_PARAM
