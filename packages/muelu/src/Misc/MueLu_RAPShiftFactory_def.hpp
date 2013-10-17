@@ -151,7 +151,7 @@ namespace MueLu {
 
       // call Build of all user-given transfer factories
       for(std::vector<RCP<const FactoryBase> >::const_iterator it = transferFacts_.begin(); it != transferFacts_.end(); ++it) {
-        GetOStream(Runtime0, 0) << "Ac: call transfer factory " << (*it).get() << ": " << (*it)->description() << std::endl;
+        GetOStream(Runtime0, 0) << "RAPShiftFactory: call transfer factory: " << (*it)->description() << std::endl;
         (*it)->CallBuild(coarseLevel);
       }
     }
