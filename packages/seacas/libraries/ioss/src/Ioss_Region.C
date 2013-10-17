@@ -162,7 +162,8 @@ namespace Ioss {
     properties.add(Property(this,
 			    "database_name",       Property::STRING));
 
-    if (iodatabase->usage() == Ioss::WRITE_HISTORY && !iodatabase->is_input()) {
+    if (iodatabase->usage() == Ioss::WRITE_HISTORY &&
+	!(iodatabase->is_input() || iodatabase->open_create_behavior() == Ioss::DB_APPEND)) {
       Ioss::Utils::generate_history_mesh(this);
     }
   }

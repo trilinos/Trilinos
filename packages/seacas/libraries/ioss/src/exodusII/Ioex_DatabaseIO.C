@@ -501,6 +501,9 @@ namespace Ioex {
       if (isParallel) {
 	util().all_gather(exodus_file_ptr, status);
       }
+      else {
+	status.push_back(exodus_file_ptr);
+      }
 
       if (write_message || error_msg != NULL) {
 	// See which processors could not open/create the file...
