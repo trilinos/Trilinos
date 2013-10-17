@@ -590,7 +590,8 @@ int Epetra_Util::GetRemotePIDs(const Epetra_Import & Importer, std::vector<int> 
   }
   return 0;
 #else
-  EPETRA_CHK_ERR(-10);
+  RemotePIDs.resize(0);
+  return 0;
 #endif
 }
 
