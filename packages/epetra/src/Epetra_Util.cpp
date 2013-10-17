@@ -567,7 +567,10 @@ int Epetra_Util::GetPids(const Epetra_Import & Importer, std::vector<int> &pids,
 int Epetra_Util::GetRemotePIDs(const Epetra_Import & Importer, std::vector<int> &RemotePIDs){
 #ifdef HAVE_MPI
   Epetra_MpiDistributor *D=dynamic_cast<Epetra_MpiDistributor*>(&Importer.Distributor());
-  if(!D) EPETRA_CHK_ERR(-2);
+  if(!D) {
+    RemotePIDs.resize(0); 
+    return 0;
+  }
 
   int i,j,k;
 
