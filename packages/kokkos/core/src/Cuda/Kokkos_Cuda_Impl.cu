@@ -571,6 +571,11 @@ void Cuda::fence()
   CUDA_SAFE_CALL( cudaDeviceSynchronize() );
 }
 
+unsigned Cuda::team_max()
+{
+  return Impl::CudaInternal::singleton().m_maxWarpCount << Impl::CudaTraits::WarpIndexShift ;
+}
+
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------

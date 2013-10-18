@@ -77,6 +77,7 @@ extern void test_device_cuda_multi_reduce();
 extern void test_device_cuda_shared_request();
 extern void test_device_cuda_atomic();
 extern void test_device_cuda_scan();
+extern void test_device_cuda_team_scan();
 
 TEST_F( cuda, view_impl )
 {
@@ -137,6 +138,12 @@ TEST_F( cuda , scan )
 {
   test_device_cuda_scan();
 }
+
+TEST_F( cuda , team_scan )
+{
+  test_device_cuda_team_scan();
+}
+
 
 }
 

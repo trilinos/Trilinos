@@ -53,7 +53,6 @@
 /*--------------------------------------------------------------------------*/
 
 #if defined( __CUDACC__ )
-#include <cub/cub.cuh>
 
 namespace Kokkos {
 namespace Impl {
@@ -96,42 +95,6 @@ private:
 #if defined( __CUDA_ARCH__ )
 
 namespace Kokkos {
-
-template< class ViewType >
-__device__ inline typename ViewType::value_type Cuda::unordered_scan
-   (typename ViewType::value_type& value, ViewType& scratch_view) {
-
-  //gives back an ordered sum within a team (cuda-block),
-  //last thread has the highest value)
-  typename ViewType::value_type sum = team_scan(value);
-
-  //
-  typename ViewType::value_type global_sum;
-
-  if(threadIdx.x==blockDim.x-1)
-    global_sum = atomic_fetch_add(&scratch_view(0),sum+value);
-
-  __shared__ typename ViewType::value_type temp[1];
-  if(threadIdx.x==blockDim.x-1)
-    temp[0]=global_sum;
-
-  team_barrier();
-  return temp[0] + sum;
-}
-
-template< typename T >
-__device__ inline T Cuda::team_scan(T& value) {
-  T sum;
-  //TODO: what about blocks with more than 512 threads?
-  typedef cub::BlockScan<T, 512,cub::BLOCK_SCAN_WARP_SCANS> BlockScan;
-
-  // Allocate shared memory for BlockScan
-  __shared__ typename BlockScan::TempStorage temp_storage;
-
-  // Collectively compute the block-wide exclusive prefix sum
-  BlockScan(temp_storage).ExclusiveSum(value, sum);
-  return sum;
-}
 
 inline __device__ 
 void * Cuda::get_shmem( const int size ) { return m_exec.get_shmem( size ); }

@@ -240,12 +240,10 @@ void test_device_cuda_scan()
   Kokkos::Cuda::fence();
 }
 
-#if 0
 void test_device_cuda_team_scan()
 {
   TestScanRequest< Kokkos::Cuda >( 10 );
   TestScanRequest< Kokkos::Cuda >( 10000 );
 }
-#endif
 
 }

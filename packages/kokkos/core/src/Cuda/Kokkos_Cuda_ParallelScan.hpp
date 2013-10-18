@@ -52,6 +52,9 @@
 #include <Kokkos_Parallel.hpp>
 #include <impl/Kokkos_Error.hpp>
 
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
 namespace Kokkos {
 namespace Impl {
 
@@ -72,124 +75,98 @@ namespace Impl {
 //----------------------------------------------------------------------------
 /*
  *  Algorithmic constraints:
- *   (a) blockDimSize is a power of two
- *   (b) blockDim.x == BlockSize == 1 << BlockSizeShift
+ *   (a) blockDim.x is a power of two
+ *   (b) blockDim.x <= 512
  *   (c) blockDim.y == blockDim.z == 1
- *   (d) gridDim.x  <= BlockSize * BlockSize
+ *   (d) gridDim.x  <= BlockDim.x * BlockDim.x
  *   (e) gridDim.y  == gridDim.z == 1
  */
-template< class FunctorType , unsigned WarpCount >
-struct CudaReduceScan
+template< bool DoScan , class FunctorType >
+__device__
+void cuda_intra_block_reduce_scan( const FunctorType & functor ,
+                                   const typename ReduceAdapter< FunctorType >::pointer_type base_data )
 {
-  typedef Cuda::size_type               size_type ;
-  typedef ReduceAdapter< FunctorType >  Reduce ;
+  typedef ReduceAdapter< FunctorType >   Reduce ;
+  typedef typename Reduce::pointer_type  pointer_type ;
 
-  enum { BlockSize      = CudaTraits::WarpSize << power_of_two< WarpCount >::value };
-  enum { BlockSizeShift = power_of_two< BlockSize >::value };
-  enum { BlockSizeMask  = BlockSize - 1 };
+  const unsigned value_count   = Reduce::value_count( functor );
+  const unsigned BlockSizeMask = blockDim.x - 1 ;
 
-  const integral_nonzero_constant< size_type , Reduce::StaticValueSize >> power_of_two<sizeof(size_type)>::value >
-    word_count ;
+  // Must have power of two thread count
 
-  CudaReduceScan( const FunctorType & f )
-    : word_count( Reduce::value_size( f ) >> power_of_two<sizeof(size_type)>::value ) {}
+  if ( BlockSizeMask & blockDim.x ) { cuda_abort("Cuda::cuda_intra_block_scan requires power-of-two blockDim"); }
 
-  __device__ inline
-  size_type * intra_block_reduce( const FunctorType & functor , size_type * const base_data ) const
-  {
-#define BLOCK_REDUCE_STEP( S ) \
-  if ( ! ( rtid & ((1<<(S+1))-1) ) ) { Reduce::join(functor,tdata,tdata - (word_count.value << S) ); }
+#define BLOCK_REDUCE_STEP( R , TD , S )  \
+  if ( ! ( R & ((1<<(S+1))-1) ) ) \
+    { functor.join( Reduce::reference(TD) , Reduce::reference(TD - (value_count<<S))); }
 
-    { // Intra-warp reduction:
-      const unsigned rtid = threadIdx.x ^ BlockSizeMask ;
-      size_type * const tdata = base_data + word_count.value * threadIdx.x ;
-      BLOCK_REDUCE_STEP(0)
-      BLOCK_REDUCE_STEP(1)
-      BLOCK_REDUCE_STEP(2)
-      BLOCK_REDUCE_STEP(3)
-      BLOCK_REDUCE_STEP(4)
-    }
+#define BLOCK_SCAN_STEP( TD , N , S )  \
+  if ( N == (1<<S) ) \
+    { functor.join( Reduce::reference(TD) , Reduce::reference(TD - (value_count<<S))); }
 
-    __syncthreads(); // Wait for all warps to reduce
+  const unsigned     rtid_intra = threadIdx.x ^ BlockSizeMask ;
+  const pointer_type tdata_intra = base_data + value_count * threadIdx.x ;
 
-    { // Inter-warp reduction by a single warp to avoid extra synchronizations
-      const unsigned rtid = ( threadIdx.x ^ BlockSizeMask ) << CudaTraits::WarpIndexShift ;
-      if ( rtid < BlockSize ) {
-        enum { DO_5 = (1<<5) < BlockSizeMask };
-        enum { DO_6 = (1<<6) < BlockSizeMask };
-        enum { DO_7 = (1<<7) < BlockSizeMask };
-        enum { DO_8 = (1<<8) < BlockSizeMask };
-        size_type * const tdata = base_data + word_count.value * ( rtid ^ BlockSizeMask );
-        if ( DO_5 ) {                        BLOCK_REDUCE_STEP(5) }
-        if ( DO_6 ) { __threadfence_block(); BLOCK_REDUCE_STEP(6) }
-        if ( DO_7 ) { __threadfence_block(); BLOCK_REDUCE_STEP(7) }
-        if ( DO_8 ) { __threadfence_block(); BLOCK_REDUCE_STEP(8) }
-      }
-    }
-
-    __syncthreads(); // Wait for final value to be available
-
-    return base_data + word_count.value * BlockSizeMask ; // Location of grand total
-
-#undef BLOCK_REDUCE_STEP
+  { // Intra-warp reduction:
+    BLOCK_REDUCE_STEP(rtid_intra,tdata_intra,0)
+    BLOCK_REDUCE_STEP(rtid_intra,tdata_intra,1)
+    BLOCK_REDUCE_STEP(rtid_intra,tdata_intra,2)
+    BLOCK_REDUCE_STEP(rtid_intra,tdata_intra,3)
+    BLOCK_REDUCE_STEP(rtid_intra,tdata_intra,4)
   }
 
-  __device__
-  size_type * intra_block_reduce_scan( const FunctorType & functor , size_type * const data ) const
-  {
-#define BLOCK_SCAN_STEP( S ) \
-  if ( n == (1<<S) ) { Reduce::join( functor , tdata , tdata - (word_count.value << S) ); }
+  __syncthreads(); // Wait for all warps to reduce
 
-    size_type * const reduce_total = intra_block_reduce( functor , data );
+  { // Inter-warp reduce-scan by a single warp to avoid extra synchronizations
+    const unsigned rtid_inter = ( threadIdx.x ^ BlockSizeMask ) << CudaTraits::WarpIndexShift ;
 
-    { // Intra warp scan by a single warp to avoid extra synchronization:
+    if ( rtid_inter < blockDim.x ) {
 
-      const unsigned rtid = ( threadIdx.x ^ BlockSizeMask ) << CudaTraits::WarpIndexShift ;
+      const pointer_type tdata_inter = base_data + value_count * ( rtid_inter ^ BlockSizeMask );
 
-      if ( rtid < BlockSize ) {
-        size_type * const tdata = data + word_count.value * ( rtid ^ BlockSizeMask );
+      if ( (1<<5) < BlockSizeMask ) {                        BLOCK_REDUCE_STEP(rtid_inter,tdata_inter,5) }
+      if ( (1<<6) < BlockSizeMask ) { __threadfence_block(); BLOCK_REDUCE_STEP(rtid_inter,tdata_inter,6) }
+      if ( (1<<7) < BlockSizeMask ) { __threadfence_block(); BLOCK_REDUCE_STEP(rtid_inter,tdata_inter,7) }
+      if ( (1<<8) < BlockSizeMask ) { __threadfence_block(); BLOCK_REDUCE_STEP(rtid_inter,tdata_inter,8) }
 
-        int n = ( rtid &  32 ) ?  32 : (
-                ( rtid &  64 ) ?  64 : (
-                ( rtid & 128 ) ? 128 : (
-                ( rtid & 256 ) ? 256 : 0 )));
+      if ( DoScan ) {
 
-        if ( ! ( rtid + n < BlockSize ) ) n = 0 ;
+        int n = ( rtid_inter &  32 ) ?  32 : (
+                ( rtid_inter &  64 ) ?  64 : (
+                ( rtid_inter & 128 ) ? 128 : (
+                ( rtid_inter & 256 ) ? 256 : 0 )));
 
-        BLOCK_SCAN_STEP(8)
-        BLOCK_SCAN_STEP(7)
-        BLOCK_SCAN_STEP(6)
-        BLOCK_SCAN_STEP(5)
+        if ( ! ( rtid_inter + n < blockDim.x ) ) n = 0 ;
+
+        BLOCK_SCAN_STEP(tdata_inter,n,8)
+        BLOCK_SCAN_STEP(tdata_inter,n,7)
+        BLOCK_SCAN_STEP(tdata_inter,n,6)
+        BLOCK_SCAN_STEP(tdata_inter,n,5)
       }
     }
+  }
 
-    __syncthreads() ;
+  __syncthreads(); // Wait for inter-warp reduce-scan to complete
 
-    {
-      const unsigned rtid = threadIdx.x ^ BlockSizeMask ;
+  if ( DoScan ) {
+    int n = ( rtid_intra &  1 ) ?  1 : (
+            ( rtid_intra &  2 ) ?  2 : (
+            ( rtid_intra &  4 ) ?  4 : (
+            ( rtid_intra &  8 ) ?  8 : (
+            ( rtid_intra & 16 ) ? 16 : 0 ))));
 
-      size_type * const tdata = data + word_count.value * threadIdx.x ;
+    if ( ! ( rtid_intra + n < blockDim.x ) ) n = 0 ;
 
-      int n = ( rtid &  1 ) ?  1 : (
-              ( rtid &  2 ) ?  2 : (
-              ( rtid &  4 ) ?  4 : (
-              ( rtid &  8 ) ?  8 : (
-              ( rtid & 16 ) ? 16 : 0 ))));
-
-      if ( ! ( rtid + n < BlockSize ) ) n = 0 ;
-
-      BLOCK_SCAN_STEP(4) __threadfence_block();
-      BLOCK_SCAN_STEP(3) __threadfence_block();
-      BLOCK_SCAN_STEP(2) __threadfence_block();
-      BLOCK_SCAN_STEP(1) __threadfence_block();
-      BLOCK_SCAN_STEP(0)
-    }
-
-    return reduce_total ;
+    BLOCK_SCAN_STEP(tdata_intra,n,4) __threadfence_block();
+    BLOCK_SCAN_STEP(tdata_intra,n,3) __threadfence_block();
+    BLOCK_SCAN_STEP(tdata_intra,n,2) __threadfence_block();
+    BLOCK_SCAN_STEP(tdata_intra,n,1) __threadfence_block();
+    BLOCK_SCAN_STEP(tdata_intra,n,0)
+  }
 
 #undef BLOCK_SCAN_STEP
-  }
-};
+#undef BLOCK_REDUCE_STEP
+}
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -198,29 +175,31 @@ template< class FunctorType , class WorkSpec >
 class ParallelScan< FunctorType , WorkSpec , Cuda >
 {
 public:
+  typedef ReduceAdapter< FunctorType >        Reduce ;
+  typedef typename Reduce::pointer_type       pointer_type ;
+  typedef typename Reduce::reference_type     reference_type ;
+  typedef Cuda::size_type                     size_type ;
+
   // Algorithmic constraints:
-  //  (a) blockDimSize is a power of two
+  //  (a) blockSize is a power of two
   //  (b) blockDim.x == BlockSize == 1 << BlockSizeShift
   //  (b) blockDim.y == blockDim.z == 1
   //  (c) gridDim.x  <= blockDim.x * blockDim.x
   //  (d) gridDim.y  == gridDim.z == 1
 
   // blockDim.x must be power of two = 128 (4 warps) or 256 (8 warps) or 512 (16 warps)
-  // gridDim.x < blockDim.x * blockDim.x
+  // gridDim.x <= blockDim.x * blockDim.x
   //
-  // Choose 8 warps, which enables latency hiding and limits gridDim.x to 65k
+  // 4 warps was 10% faster than 8 warps and 20% faster than 16 warps in unit testing
 
-  enum { WarpCount = 8 };
-
-  typedef CudaReduceScan< FunctorType , WarpCount > ReduceScan ;
-  typedef ReduceAdapter< FunctorType >        Reduce ;
-  typedef typename Reduce::pointer_type       pointer_type ;
-  typedef typename Reduce::reference_type     reference_type ;
-  typedef Cuda::size_type                     size_type ;
+  enum { WarpCount      = 4 };
+  enum { BlockSize      = CudaTraits::WarpSize << power_of_two< WarpCount >::value };
+  enum { BlockSizeShift = power_of_two< BlockSize >::value };
+  enum { BlockSizeMask  = BlockSize - 1 };
 
   enum { GridMaxComputeCapability_2x = 0x0ffff };
-  enum { GridMax = ( ReduceScan::BlockSize * ReduceScan::BlockSize ) < GridMaxComputeCapability_2x
-                 ? ( ReduceScan::BlockSize * ReduceScan::BlockSize ) : GridMaxComputeCapability_2x };
+  enum { GridMax = ( BlockSize * BlockSize ) < GridMaxComputeCapability_2x
+                 ? ( BlockSize * BlockSize ) : GridMaxComputeCapability_2x };
 
   const FunctorType m_functor ;
   size_type *       m_scratch_space ;
@@ -228,7 +207,6 @@ public:
   const size_type   m_work ;
         size_type   m_work_per_block ;
         size_type   m_final ;
-  const ReduceScan  m_scan ;
   
   //----------------------------------------
 
@@ -237,8 +215,11 @@ public:
   {
     extern __shared__ size_type shared_data[];
 
+    const integral_nonzero_constant< size_type , Reduce::StaticValueSize / sizeof(size_type) >
+      word_count( Reduce::value_count( m_functor ) );
+
     // Use shared memory as an exclusive scan: { 0 , value[0] , value[1] , value[2] , ... }
-    size_type * const shared_value = shared_data + m_scan.word_count.value * ( threadIdx.x + 1 );
+    size_type * const shared_value = shared_data + word_count.value * ( threadIdx.x + 1 );
 
     if ( 0 == threadIdx.x ) { m_functor.init( Reduce::reference( shared_data ) ); }
 
@@ -254,20 +235,21 @@ public:
       const size_type iwork_end = iwork_beg + m_work_per_block < m_work 
                                 ? iwork_beg + m_work_per_block : m_work ;
 
-      for ( size_type iwork = threadIdx.x + iwork_beg ; iwork < iwork_end ; iwork += ReduceScan::BlockSize ) {
+      for ( size_type iwork = threadIdx.x + iwork_beg ; iwork < iwork_end ; iwork += BlockSize ) {
         m_functor( iwork , Reduce::reference( shared_value ) , false );
       }
     }
 
     {
-      // Reduction for exclusive scan startes at location[1]
-      size_type * const block_total = m_scan.intra_block_reduce( m_functor , shared_data + m_scan.word_count.value );
+      cuda_intra_block_reduce_scan<false>( m_functor , pointer_type(shared_data + word_count.value) );
+
+      size_type * const block_total = shared_data + word_count.value * BlockSize ;
 
       // Reduce the accumulation for the entire block and write to global scratch space:
-      size_type * const global = m_scratch_space + m_scan.word_count.value * blockIdx.x ;
+      size_type * const global = m_scratch_space + word_count.value * blockIdx.x ;
 
       // Write out reduction total for this block
-      for ( size_type i = threadIdx.x ; i < m_scan.word_count.value ; i += ReduceScan::BlockSize ) { global[i] = block_total[i] ; }
+      for ( size_type i = threadIdx.x ; i < word_count.value ; i += BlockSize ) { global[i] = block_total[i] ; }
     }
 
     // if gridDim.x <= BlockSize then one pass else two pass
@@ -279,15 +261,15 @@ public:
       // This block contributed to the range [ value_begin .. value_begin + value_count )
       // The last block to contribute to this range is responsible for scanning this range.
 
-      const size_type value_begin = unsigned(valueId) & ~unsigned(ReduceScan::BlockSizeMask);
-      const size_type value_count = ( ( value_begin + ReduceScan::BlockSize ) < valueTotal )
-                                  ? ReduceScan::BlockSize : valueTotal - value_begin ;
+      const size_type value_begin = unsigned(valueId) & ~unsigned(BlockSizeMask);
+      const size_type value_count = ( ( value_begin + BlockSize ) < valueTotal )
+                                  ? BlockSize : valueTotal - value_begin ;
 
       // This block is a member of a group which reduces to the following value
-      valueId >>= ReduceScan::BlockSizeShift ;
+      valueId >>= BlockSizeShift ;
 
       // How many values to reduce after this reduction pass?
-      valueTotal = ( valueTotal + ReduceScan::BlockSizeMask ) >> ReduceScan::BlockSizeShift ;
+      valueTotal = ( valueTotal + BlockSizeMask ) >> BlockSizeShift ;
 
       {
         // Contributing blocks note that their contribution has been completed via an atomic-increment flag
@@ -305,12 +287,12 @@ public:
         // First pass scans a contiguous span of global data
         // Second pass (if any) scans the last value of each block ( value_begin == 0 )
 
-        size_type * const global = m_scratch_space + m_scan.word_count.value *
+        size_type * const global = m_scratch_space + word_count.value *
           ( first_pass_contiguous ? ( value_begin + threadIdx.x )
-                                  : ( ( ( threadIdx.x + 1 ) << ReduceScan::BlockSizeShift ) - 1 ) );
+                                  : ( ( ( threadIdx.x + 1 ) << BlockSizeShift ) - 1 ) );
         Reduce::copy( m_functor , shared_value , ( threadIdx.x < value_count ? global : shared_data ) );
 
-        m_scan.intra_block_reduce_scan( m_functor , shared_data + m_scan.word_count.value );
+        cuda_intra_block_reduce_scan<true>( m_functor , pointer_type(shared_data + word_count.value) );
 
         if ( threadIdx.x < value_count ) {
           Reduce::copy( m_functor , global , shared_value );
@@ -328,59 +310,65 @@ public:
   {
     extern __shared__ size_type shared_data[];
 
+    const integral_nonzero_constant< size_type , Reduce::StaticValueSize / sizeof(size_type) >
+      word_count( Reduce::value_count( m_functor ) );
+
     // Use shared memory as an exclusive scan: { 0 , value[0] , value[1] , value[2] , ... }
-    size_type * const shared_prefix = shared_data + m_scan.word_count.value * threadIdx.x ;
-    size_type * const shared_accum  = shared_data + m_scan.word_count.value * ( ReduceScan::BlockSize + 1 );
+    size_type * const shared_prefix = shared_data + word_count.value * threadIdx.x ;
+    size_type * const shared_accum  = shared_data + word_count.value * ( BlockSize + 1 );
 
     // Starting value for this thread block:
     if ( blockIdx.x ) {
-      size_type * const block_total = m_scratch_space + m_scan.word_count.value * ( blockIdx.x - 1 );
-      for ( unsigned i = threadIdx.x ; i < m_scan.word_count.value ; ++i ) { shared_accum[i] = block_total[i] ; }
+      size_type * const block_total = m_scratch_space + word_count.value * ( blockIdx.x - 1 );
+      for ( unsigned i = threadIdx.x ; i < word_count.value ; ++i ) { shared_accum[i] = block_total[i] ; }
     }
     else if ( 0 == threadIdx.x ) {
       m_functor.init( Reduce::reference( shared_accum ) );
     }
 
     // The first pass performed an inclusive scan with each group of block
-    // and an inlusive scan across the total of each group of blocks.
+    // and an inclusive scan across the total of each group of blocks.
     // If the exclusive scan value for this block is not a group-total
     // then must sum the prior group's inclusive scan total.
 
     if ( ( 0 == threadIdx.x ) &&
-         ( ReduceScan::BlockSize < blockIdx.x ) &&
-         ( blockIdx.x & ReduceScan::BlockSizeMask ) ) {
+         ( BlockSize < blockIdx.x ) &&
+         ( blockIdx.x & BlockSizeMask ) ) {
         /* Not the first group of blocks AND Not the global reduction block */
 
       m_functor.join( Reduce::reference( shared_accum ) ,
-                      Reduce::reference( m_scratch_space + m_scan.word_count.value *
-                                         ( ( blockIdx.x & ~ReduceScan::BlockSizeMask ) - 1 ) ) );
+                      Reduce::reference( m_scratch_space + word_count.value *
+                                         ( ( blockIdx.x & ~BlockSizeMask ) - 1 ) ) );
     }
 
           unsigned iwork_beg = blockIdx.x * m_work_per_block ;
     const unsigned iwork_end = iwork_beg + m_work_per_block ;
 
-    for ( ; iwork_beg < iwork_end ; iwork_beg += ReduceScan::BlockSize ) {
+    for ( ; iwork_beg < iwork_end ; iwork_beg += BlockSize ) {
 
       const unsigned iwork = threadIdx.x + iwork_beg ;
 
       __syncthreads(); // Don't overwrite previous iteration values until they are used
 
-      m_functor.init( Reduce::reference( shared_prefix + m_scan.word_count.value ) );
+      m_functor.init( Reduce::reference( shared_prefix + word_count.value ) );
 
       // Copy previous block's accumulation total into thread[0] prefix and inclusive scan value of this block
-      for ( unsigned i = threadIdx.x ; i < m_scan.word_count.value ; ++i ) {
-        shared_data[i + m_scan.word_count.value] = shared_data[i] = shared_accum[i] ;
+      for ( unsigned i = threadIdx.x ; i < word_count.value ; ++i ) {
+        shared_data[i + word_count.value] = shared_data[i] = shared_accum[i] ;
       }
 
-      if ( CudaTraits::WarpSize < m_scan.word_count.value ) { __syncthreads(); } // Protect against large scan values.
+      if ( CudaTraits::WarpSize < word_count.value ) { __syncthreads(); } // Protect against large scan values.
 
       // Call functor to accumulate inclusive scan value for this work item
-      if ( iwork < m_work ) { m_functor( iwork , Reduce::reference( shared_prefix + m_scan.word_count.value ) , false ); }
+      if ( iwork < m_work ) { m_functor( iwork , Reduce::reference( shared_prefix + word_count.value ) , false ); }
 
-      // Scan block values into locations shared_data[1..ReduceScan::BlockSize]
-      size_type * const block_total = m_scan.intra_block_reduce_scan( m_functor , shared_data + m_scan.word_count.value );
+      // Scan block values into locations shared_data[1..BlockSize]
+      cuda_intra_block_reduce_scan<true>( m_functor , Reduce::pointer_type(shared_data+word_count.value) );
 
-      for ( unsigned i = threadIdx.x ; i < m_scan.word_count.value ; ++i ) { shared_accum[i] = block_total[i]; }
+      {
+        size_type * const block_total = shared_data + word_count.value * blockDim.x ;
+        for ( unsigned i = threadIdx.x ; i < word_count.value ; ++i ) { shared_accum[i] = block_total[i]; }
+      }
 
       // Call functor with exclusive scan value
       if ( iwork < m_work ) { m_functor( iwork , Reduce::reference( shared_prefix ) , true ); }
@@ -400,7 +388,6 @@ public:
     }
   }
 
-
   ParallelScan( const FunctorType  & functor ,
                 const size_t         nwork )
   : m_functor( functor )
@@ -409,18 +396,17 @@ public:
   , m_work( nwork )
   , m_work_per_block( 0 )
   , m_final( false )
-  , m_scan( functor )
   {
     // At most 'max_grid' blocks:
-    const int max_grid = std::min( int(GridMax) , int(( nwork + ReduceScan::BlockSizeMask ) / ReduceScan::BlockSize ));
+    const int max_grid = std::min( int(GridMax) , int(( nwork + BlockSizeMask ) / BlockSize ));
 
     // How much work per block:
     m_work_per_block = ( nwork + max_grid - 1 ) / max_grid ;
 
     // How many block are really needed for this much work:
     const dim3 grid( ( nwork + m_work_per_block - 1 ) / m_work_per_block , 1 , 1 );
-    const dim3 block( ReduceScan::BlockSize , 1 , 1 );
-    const int shmem = Reduce::value_size( functor ) * ( ReduceScan::BlockSize + 2 );
+    const dim3 block( BlockSize , 1 , 1 );
+    const int shmem = Reduce::value_size( functor ) * ( BlockSize + 2 );
 
     m_scratch_space = cuda_internal_scratch_space( Reduce::value_size( functor ) * grid.x );
     m_scratch_flags = cuda_internal_scratch_flags( sizeof(size_type) * ( 1 + grid.x ) );
@@ -437,6 +423,74 @@ public:
 
 } // namespace Impl
 } // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#if defined( __CUDA_ARCH__ )
+
+namespace Kokkos {
+namespace Impl {
+
+template< typename Type >
+struct CudaJoinFunctor {
+  typedef Type value_type ;
+
+  KOKKOS_INLINE_FUNCTION
+  static void join( volatile value_type & update ,
+                    volatile const value_type & input )
+    { update += input ; }
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
+namespace Kokkos {
+
+template< typename TypeLocal , typename TypeGlobal >
+__device__ inline TypeGlobal Cuda::team_scan( const TypeLocal & value , TypeGlobal * const global_accum )
+{
+  enum { BlockSizeMax = 512 };
+
+  __shared__ TypeGlobal base_data[ BlockSizeMax + 1 ];
+
+  __syncthreads(); // Don't write in to shared data until all threads have entered this function
+
+  if ( 0 == threadIdx.x ) { base_data[0] = 0 ; }
+
+  base_data[ threadIdx.x + 1 ] = value ;
+
+  Impl::cuda_intra_block_reduce_scan<true>( Impl::CudaJoinFunctor<TypeGlobal>() , base_data + 1 );
+
+  if ( global_accum ) {
+    if ( blockDim.x == threadIdx.x + 1 ) {
+      base_data[ blockDim.x ] = atomic_fetch_add( global_accum , base_data[ blockDim.x ] );
+    }
+    __syncthreads(); // Wait for atomic
+    base_data[ threadIdx.x ] += base_data[ blockDim.x ] ;
+  }
+
+  return base_data[ threadIdx.x ];
+}
+
+template< typename Type >
+__device__ inline Type Cuda::team_scan( const Type & value )
+{ return team_scan( value , (Type*) 0 ); }
+
+} // namespace Kokkos
+
+#else
+
+namespace Kokkos {
+
+template< typename Type > inline Type Cuda::team_scan( const Type & ) { return 0 ; }
+
+template< typename TypeLocal , typename TypeGlobal >
+inline TypeGlobal Cuda::team_scan( const TypeLocal & , TypeGlobal * const ) { return 0 ; }
+
+} // namespace Kokkos
+
+#endif
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

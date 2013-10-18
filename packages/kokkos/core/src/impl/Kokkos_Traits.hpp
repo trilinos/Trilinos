@@ -250,7 +250,7 @@ struct integral_nonzero_constant
   static const T value = v ;
   typedef T value_type ;
   typedef integral_nonzero_constant<T,v> type ;
-  integral_nonzero_constant( const T & ) {}
+  KOKKOS_INLINE_FUNCTION integral_nonzero_constant( const T & ) {}
 };
 
 template< typename T , T zero >
@@ -259,7 +259,7 @@ struct integral_nonzero_constant<T,zero,false>
   const T value ;
   typedef T value_type ;
   typedef integral_nonzero_constant<T,0> type ;
-  integral_nonzero_constant( const T & v ) : value(v) {}
+  KOKKOS_INLINE_FUNCTION integral_nonzero_constant( const T & v ) : value(v) {}
 };
 
 //----------------------------------------------------------------------------

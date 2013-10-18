@@ -204,27 +204,6 @@ public:
   __device__ inline unsigned int team_barrier_count(bool value) const
              { return __syncthreads_count(value); }
 
-  /// \brief Collectively compute the league-wide unordered exclusive prefix sum.
-  ///
-  /// Values are ordered within a team, but not between teams
-  /// (i.e. the start values of thread 0 in each team are not ordered
-  /// according to team number).  This call does not use a global
-  /// synchronization. Multiple unordered scans can be in flight at
-  /// the same time (using scratch_view arguments that point to
-  /// distinct chunks of memory).  The scratch_view output argument
-  /// will hold the complete sum in the end.
-  template< class VT >
-  __device__ inline typename VT::value_type 
-  unordered_scan (typename VT::value_type& value, VT& scratch_view);
-
-  /// \brief Collectively compute the team-wide exclusive prefix sum using CUDA Unbound.
-  ///
-  /// Values are ordered.  The last thread returns the sum of all
-  /// values in the team less its own value.
-  template< typename T >
-  __device__ inline T team_scan(T& value);
-
-
   /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
    *
    *  The highest rank thread can compute the reduction total as
@@ -271,11 +250,11 @@ private:
   void team_barrier() const ;
   unsigned int team_barrier_count(bool) const ;
 
-  template< class VT >
-    inline typename VT::value_type unordered_scan
-             (typename VT::value_type& value, VT& scratch_view);
   template< typename T >
-    inline T team_scan(T& value);
+    inline T team_scan(const T& value);
+
+  template< typename TypeLocal , typename TypeGlobal >
+    inline TypeGlobal team_scan( const TypeLocal & value , TypeGlobal * const global_accum );
 
   void * get_shmem( const int size );
 
