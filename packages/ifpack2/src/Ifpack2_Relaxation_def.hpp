@@ -295,8 +295,9 @@ void Relaxation<MatrixType>::setParametersImpl (Teuchos::ParameterList& pl)
 template<class MatrixType>
 void Relaxation<MatrixType>::setParameters (const Teuchos::ParameterList& pl)
 {
-  Teuchos::ParameterList plCopy (pl); // pl is const, so we must copy it.
-  this->setParametersImpl (plCopy);
+  // FIXME (aprokop 18 Oct 2013) Casting away const is bad here.
+  // but otherwise, we will get [unused] in pl
+  this->setParametersImpl(const_cast<Teuchos::ParameterList&>(pl));
 }
 
 //==========================================================================
