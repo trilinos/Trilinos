@@ -46,7 +46,6 @@
 #ifndef MUELU_PROJECTORSMOOTHER_DECL_HPP
 #define MUELU_PROJECTORSMOOTHER_DECL_HPP
 
-#include <Teuchos_ParameterList.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
 
