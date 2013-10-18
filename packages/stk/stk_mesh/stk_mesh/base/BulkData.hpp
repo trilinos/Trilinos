@@ -1063,8 +1063,7 @@ public:
   field_data(const FieldType & f, const Bucket& b, Bucket::size_type bucket_ord = 0) const
   {
     const EntityRank rank         = b.entity_rank();
-    // TODO - should be const ref?
-    FieldMetaData field_meta_data = m_field_meta_data[m_num_fields * rank + f.mesh_meta_data_ordinal()][b.bucket_id()];
+    const FieldMetaData &field_meta_data = m_field_meta_data[m_num_fields * rank + f.mesh_meta_data_ordinal()][b.bucket_id()];
     return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_size * bucket_ord);
   }
 
