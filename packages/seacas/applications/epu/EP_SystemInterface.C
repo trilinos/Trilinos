@@ -622,11 +622,13 @@ bool Excn::SystemInterface::decompose_filename(const std::string &cs)
   
   // Should now be an extension...
   ind = s.find_last_of(".", std::string::npos);
-  if (ind == std::string::npos)
-    return false;
-
-  inExtension_ = s.substr(ind+1);
-  s.erase(ind);
+  if (ind == std::string::npos) {
+    inExtension_ = "";
+  }
+  else {
+    inExtension_ = s.substr(ind+1);
+    s.erase(ind);
+  }
 
   // Remainder of 's' consists of the basename_ and the rootDirectory_
   // If there is no '/', then it is all basename_; otherwise the
