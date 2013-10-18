@@ -980,7 +980,8 @@ FUNCTION(TRIBITS_GENERATE_REPO_VERSION_OUTPUT_AND_FILE_AND_INSTALL)
   #
   
   IF (${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE)
-    # A) Make sure that there is a .git dir in the project.
+
+    # A) Make sure that there is a .git dir in the project before generating
     IF (EXISTS "${PROJECT_SOURCE_DIR}/.git")
       SET(PROJECT_SOURCE_IS_GIT_REPO TRUE)
     ELSE()
@@ -1000,7 +1001,19 @@ FUNCTION(TRIBITS_GENERATE_REPO_VERSION_OUTPUT_AND_FILE_AND_INSTALL)
       MESSAGE("\nNOTE: Skipping generation of ${${PROJECT_NAME}_REPO_VERSION_FILE_NAME}"
         " because project source is not a git repo!") 
     ENDIF()
+
+    # B) Install the repo version file if it is in source tree which it will
+    # be for a tarball (see TRIBITS_SETUP_PACKAGING_AND_DISTRIBUTION()).
+    SET(REPO_VERSION_FILE_IN_SOURCE_TREE
+      ${CMAKE_CURRENT_SOURCE_DIR}/${${PROJECT_NAME}_REPO_VERSION_FILE_NAME})
+    IF (EXISTS ${REPO_VERSION_FILE_IN_SOURCE_TREE})
+      INSTALL(
+        FILES "${REPO_VERSION_FILE_IN_SOURCE_TREE}"
+        DESTINATION "." )
+    ENDIF()
+
   ENDIF()
+
 
 ENDFUNCTION()
 
