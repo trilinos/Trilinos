@@ -102,6 +102,8 @@ namespace MueLu {
       lastLevel_ = &requestedLevel;
 #endif
       Build(requestedLevel);
+
+      PrintParameterList(Test);
     }
 
     //!

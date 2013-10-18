@@ -144,6 +144,7 @@ namespace MueLu {
       verbMap["medium"]  = Medium;
       verbMap["high"]    = High;
       verbMap["extreme"] = Extreme;
+      verbMap["test"]    = Test;
 
       std::string verbosityLevel = paramList.get<std::string>("verbosity");
       TEUCHOS_TEST_FOR_EXCEPTION(verbMap.count(verbosityLevel) == 0, Exceptions::RuntimeError, "Invalid verbosity level: \"" << verbosityLevel << "\"");
@@ -152,6 +153,7 @@ namespace MueLu {
 
     // Create default manager
     RCP<FactoryManager> defaultManager = rcp(new FactoryManager());
+    defaultManager->SetVerbLevel(this->verbosity_);
     UpdateFactoryManager(paramList, ParameterList(), *defaultManager, defaultManager);
     defaultManager->Print();
 
@@ -175,7 +177,7 @@ namespace MueLu {
     // FIXME: parameters passed to packages, like Ifpack2, are not touched by us, resulting in "[unused]" flag
     // being displayed. On the other hand, we don't want to simply iterate through them touching. I don't know
     // what a good solution looks like
-    this->GetOStream(Runtime1, 0) << paramList << std::endl;
+    this->GetOStream(static_cast<MsgType>(Runtime1 | Test), 0) << paramList << std::endl;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -197,6 +199,7 @@ namespace MueLu {
   void EasyParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::UpdateFactoryManager(Teuchos::ParameterList& paramList,
         const Teuchos::ParameterList& defaultList, const FactoryManager& managerIn, RCP<FactoryManager>& manager) {
     manager = rcp(new FactoryManager(managerIn));
+    manager->SetVerbLevel(managerIn.GetVerbLevel());
 
     // NOTE: Factory::SetParameterList must be called prior to Factory::SetFactory, as
     // SetParameterList sets default values for non mentioned parameters, including factories

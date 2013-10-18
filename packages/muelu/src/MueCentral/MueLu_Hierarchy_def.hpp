@@ -207,7 +207,7 @@ namespace MueLu {
       Levels_[nextLevelID]->Request(TopRAPFactory(rcpcoarseLevelManager, rcpnextLevelManager));
     }
 
-    PrintMonitor m0(*this, "Level " +  Teuchos::Utils::toString(coarseLevelID));
+    PrintMonitor m0(*this, "Level " +  Teuchos::Utils::toString(coarseLevelID), static_cast<MsgType>(GetVerbLevel()));
 
     // Build coarse level hierarchy
     if (!isFinestLevel) {
@@ -571,13 +571,6 @@ namespace MueLu {
   // NOTE: at some point this should be replaced by a friend operator <<
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(std::ostream& out, const VerbLevel verbLevel) const {
-    if (verbLevel & Statistics0) {
-      out << std::endl << "--------------------------------------------------------------------------------"
-           << std::endl << "---                            Multigrid Summary                             ---"
-           << std::endl << "--------------------------------------------------------------------------------"
-           << std::endl;
-    }
-
     Xpetra::global_size_t totalNnz = 0;
     std::vector<Xpetra::global_size_t> nnzPerLevel;
     std::vector<Xpetra::global_size_t> rowsPerLevel;
@@ -597,18 +590,17 @@ namespace MueLu {
     }
     double operatorComplexity = Teuchos::as<double>(totalNnz) / Levels_[0]->template Get< RCP<Matrix> >("A")->getGlobalNumEntries();
 
-    if (verbLevel & Statistics0)
+    if (verbLevel & (Statistics0 | Test)) {
+      out << "\n--------------------------------------------------------------------------------\n" <<
+               "---                            Multigrid Summary                             ---\n"
+               "--------------------------------------------------------------------------------" << std::endl;
       out << "Number of levels    = " << GetNumLevels() << std::endl;
-    if (verbLevel & Statistics0)
       out << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
                                       << operatorComplexity << std::endl;
-    if (verbLevel & Statistics0) {
       out << "Max Coarse Size     = " << maxCoarseSize_ << std::endl;
       out << "Implicit Transpose  = " << (implicitTranspose_ ? "true" : "false") << std::endl;
       out << std::endl;
-    }
 
-    if (verbLevel & Statistics0) {
       Xpetra::global_size_t tt = rowsPerLevel[0];
       int rowspacer = 2; while (tt != 0) { tt /= 10; rowspacer++; }
       tt = nnzPerLevel[0];
@@ -644,7 +636,6 @@ namespace MueLu {
 
       } //for (int i=0; i<GetNumLevels(); ++i)
     }
-
 
     if (verbLevel & Statistics2) {
       Teuchos::OSTab tab2(out);

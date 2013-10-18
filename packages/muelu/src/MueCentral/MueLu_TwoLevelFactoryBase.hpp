@@ -120,6 +120,8 @@ namespace MueLu {
 
       TEUCHOS_TEST_FOR_EXCEPTION(requestedLevel.GetPreviousLevel() == Teuchos::null, Exceptions::RuntimeError, "LevelID = " << requestedLevel.GetLevelID());
       Build(*requestedLevel.GetPreviousLevel(), requestedLevel);
+
+      PrintParameterList(Test);
     }
 
     //@}
