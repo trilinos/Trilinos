@@ -41,6 +41,7 @@
 //@HEADER
 */
 
+#include <stdio.h>
 #include <stdexcept>
 #include <sstream>
 #include <iostream>
@@ -194,11 +195,12 @@ public:
     const long int result2 =
       dev.team_scan( dev.league_rank() + 1 + dev.team_rank() + 1 );
 
-    ASSERT_EQ( answer, result );
-    ASSERT_EQ( answer, result2 );
-
-    if ( answer != result ) error = 1 ;
-    if ( answer != result2 ) error = 1 ;
+    if ( answer != result || answer != result2 ) {
+      printf("ScanRequestFunctor[%d.%d] %ld != %ld or %ld\n",
+             dev.league_rank(), dev.team_rank(),
+             answer,result,result2);
+      error = 1 ;
+    }
 
     const long int thread_rank = dev.team_rank() +
                                  dev.team_size() * dev.league_rank();

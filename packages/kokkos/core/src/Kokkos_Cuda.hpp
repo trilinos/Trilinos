@@ -186,7 +186,10 @@ public:
    */
   static std::vector<unsigned> detect_device_arch();
 
+  static unsigned team_max();
+
   //@}
+  //--------------------------------------------------------------------------
 #if defined( __CUDA_ARCH__ )
   //! \name Functions for the functor device interface
   //@{
@@ -221,6 +224,28 @@ public:
   template< typename T >
   __device__ inline T team_scan(T& value);
 
+
+  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
+   *
+   *  The highest rank thread can compute the reduction total as
+   *    reduction_total = dev.team_scan( value ) + value ;
+   */
+  template< typename Type >
+  __device__ inline Type team_scan( const Type & value );
+
+  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
+   *          with intra-team non-deterministic ordering accumulation.
+   *
+   *  The global inter-team accumulation value will, at the end of the
+   *  league's parallel execution, be the scan's total.
+   *  Parallel execution ordering of the league's teams is non-deterministic.
+   *  As such the base value for each team's scan operation is similarly
+   *  non-deterministic.
+   */
+  template< typename TypeLocal , typename TypeGlobal >
+  __device__ inline TypeGlobal team_scan( const TypeLocal & value , TypeGlobal * const global_accum );
+
+
   //! Get a pointer to shared memory for this team.
   __device__ inline void * get_shmem( const int size );
 
@@ -228,6 +253,7 @@ public:
   __device__ inline Cuda( const Cuda & rhs ) : m_exec(rhs.m_exec) {}
 
   //@}
+  //--------------------------------------------------------------------------
 
 private:
 
