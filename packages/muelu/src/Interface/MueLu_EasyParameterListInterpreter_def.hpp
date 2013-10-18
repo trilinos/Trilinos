@@ -61,6 +61,7 @@
 #include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
+#include "MueLu_Exceptions.hpp"
 #include "MueLu_FilteredAFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
@@ -418,7 +419,7 @@ namespace MueLu {
         partitioner = rcp(new ZoltanInterface());
         // NOTE: ZoltanInteface ("zoltan") does not support external parameters through ParameterList
 #else
-        throw RuntimeError("Zoltan interface is not available");
+        throw Exceptions::RuntimeError("Zoltan interface is not available");
 #endif
       } else if (partName == "zoltan2") {
 #ifdef HAVE_MUELU_ZOLTAN2
@@ -428,7 +429,7 @@ namespace MueLu {
         partParams.set("ParameterList", partpartParams);
         partitioner->SetParameterList(partParams);
 #else
-        throw RuntimeError("Zoltan2 interface is not available");
+        throw Exceptions::RuntimeError("Zoltan2 interface is not available");
 #endif
       }
       partitioner->SetFactory("A",           manager->GetFactory("A"));
@@ -476,7 +477,7 @@ namespace MueLu {
       manager->SetFactory("Coordinates", newR);
       manager->SetFactory("Nullspace",   newR);
 #else
-      throw RuntimeError("No repartitioning available for a serial run");
+      throw Exceptions::RuntimeError("No repartitioning available for a serial run");
 #endif
     }
   }
