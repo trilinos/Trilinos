@@ -23,7 +23,7 @@ namespace mesh {
 namespace {
 
 struct print_selector_impl :
-  boost::static_visitor<std::ostream &>
+  public boost::static_visitor<std::ostream &>
 {
   std::ostream & m_out;
 
