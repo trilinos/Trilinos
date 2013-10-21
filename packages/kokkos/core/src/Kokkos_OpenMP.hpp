@@ -111,9 +111,11 @@ public:
    *     topology and fan in/out data.
    */
   static void initialize( const unsigned team_count         = 1 ,
-                          const unsigned threads_per_team   = 0 ,
+                          const unsigned threads_per_team   = 1 ,
                           const unsigned use_numa_count     = 0 ,
                           const unsigned use_cores_per_numa = 0 );
+
+  static int is_initialized();
 
   static unsigned league_max();
   static unsigned team_max();

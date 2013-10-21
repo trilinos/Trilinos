@@ -55,13 +55,13 @@ protected:
   static void SetUpTestCase()
   {
     Kokkos::Cuda::print_configuration( std::cout );
+    Kokkos::Cuda::host_mirror_device_type::initialize();
     Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
-    Kokkos::OpenMP::initialize( 1 , 1 );
   }
   static void TearDownTestCase()
   {
     Kokkos::Cuda::finalize();
-    Kokkos::OpenMP::finalize();
+    Kokkos::Cuda::host_mirror_device_type::finalize();
   }
 };
 

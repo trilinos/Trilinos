@@ -287,6 +287,11 @@ void CudaInternal::initialize( int cuda_device_id )
 {
   enum { WordSize = sizeof(size_type) };
 
+  if ( ! Cuda::host_mirror_device_type::is_initialized() ) {
+    const std::string msg("Cuda::initialize ERROR : Cuda::host_mirror_device_type is not initialized");
+    throw_runtime_exception( msg );
+  }
+
   const CudaInternalDevices & dev_info = CudaInternalDevices::singleton();
 
   const bool ok_init = 0 == m_scratchSpace || 0 == m_scratchFlags ;

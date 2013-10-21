@@ -153,6 +153,8 @@ public:
 
   static void verify_is_process( const std::string & , const bool initialized );
 
+  static int is_initialized();
+
   static void initialize( const std::pair<unsigned,unsigned> team_topo ,
                                 std::pair<unsigned,unsigned> core_topo );
 
@@ -481,6 +483,9 @@ namespace Kokkos {
 
 inline int Threads::in_parallel()
 { return Impl::ThreadsExec::in_parallel(); }
+
+inline int Threads::is_initialized()
+{ return Impl::ThreadsExec::is_initialized(); }
 
 inline void Threads::initialize(
   unsigned team_count ,

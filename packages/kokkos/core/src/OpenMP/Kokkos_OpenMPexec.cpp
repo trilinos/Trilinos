@@ -256,6 +256,9 @@ unsigned OpenMP::team_max()
 
 //----------------------------------------------------------------------------
 
+int OpenMP::is_initialized()
+{ return 0 != Impl::OpenMPexec::m_thread[0]; }
+
 void OpenMP::initialize( const unsigned team_count ,
                          const unsigned threads_per_team ,
                          const unsigned numa_count ,
@@ -268,14 +271,13 @@ void OpenMP::initialize( const unsigned team_count ,
   }
 
   const unsigned thread_count = team_count * threads_per_team ;
+
   omp_set_num_threads( thread_count );
 
   if ( thread_count == 0 ) return ;
 
   //----------------------------------------
   // Spawn threads:
-
-  omp_set_num_threads( thread_count );
 
   // Verify OMP interaction:
   {
@@ -322,10 +324,6 @@ void OpenMP::initialize( const unsigned team_count ,
     {
       // Call to 'bind_this_thread' is not thread safe so place this whole block in a critical region.
       // Call to 'new' may not be thread safe as well.
-
-      if ( thread_count != (unsigned) omp_get_num_threads() ) {
-        Kokkos::Impl::throw_runtime_exception( "Kokkos::OpenMP ERROR: thread_count != omp_get_num_threads()" );
-      }
 
       // Reverse the rank for threads so that the scan operation reduces to the highest rank thread.
 
