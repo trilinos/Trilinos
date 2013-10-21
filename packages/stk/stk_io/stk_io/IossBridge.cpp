@@ -167,11 +167,14 @@ const stk::mesh::FieldBase *declare_ioss_field(stk::mesh::MetaData &meta,
 {
   const stk::mesh::FieldBase *field_ptr = NULL;
   if (io_field.get_type() == Ioss::Field::INTEGER) {
-    field_ptr = declare_ioss_field_internal(meta, type, part, io_field, use_cartesian_for_scalar, (int)1);
+    int dummy = 1;
+    field_ptr = declare_ioss_field_internal(meta, type, part, io_field, use_cartesian_for_scalar, dummy);
   } else if (io_field.get_type() == Ioss::Field::REAL) {
-    field_ptr = declare_ioss_field_internal(meta, type, part, io_field, use_cartesian_for_scalar, (double)1.0);
+    double dummy = 1.0;
+    field_ptr = declare_ioss_field_internal(meta, type, part, io_field, use_cartesian_for_scalar, dummy);
   } else if (io_field.get_type() == Ioss::Field::COMPLEX) {
-    field_ptr = declare_ioss_field_internal(meta, type, part, io_field, use_cartesian_for_scalar, std::complex<double>(0.0,0.0));
+    std::complex<double> dummy(0.0,0.0);
+    field_ptr = declare_ioss_field_internal(meta, type, part, io_field, use_cartesian_for_scalar, dummy);
   } else {
     std::ostringstream errmsg;
     errmsg << "ERROR: Unrecognized field type for IO field '"
@@ -703,9 +706,11 @@ void get_entity_list(Ioss::GroupingEntity *io_entity,
 {
   if (io_entity->get_database()->is_input()) {
     if (db_api_int_size(io_entity) == 4) {
-      get_entity_list(io_entity, part_type, bulk, entities, (int)0);
+      int dummy = 0;
+      get_entity_list(io_entity, part_type, bulk, entities, dummy);
     } else {
-      get_entity_list(io_entity, part_type, bulk, entities, (int64_t)0);
+      int64_t dummy = 0;
+      get_entity_list(io_entity, part_type, bulk, entities, dummy);
     }
   } else {
     // Output database...

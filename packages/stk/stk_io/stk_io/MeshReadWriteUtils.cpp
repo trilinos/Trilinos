@@ -370,18 +370,26 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
 
 void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bulk)
 {
-  if (stk::io::db_api_int_size(sset) == 4)
-    process_surface_entity(sset, bulk, (int)0);
-  else
-    process_surface_entity(sset, bulk, (int64_t)0);
+  if (stk::io::db_api_int_size(sset) == 4) {
+    int dummy = 0;
+    process_surface_entity(sset, bulk, dummy);
+  }
+  else {
+    int64_t dummy = 0;
+    process_surface_entity(sset, bulk, dummy);
+  }
 }
 
 void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & bulk)
 {
-  if (stk::io::db_api_int_size(sset) == 4)
-    process_surface_entity_df(sset, bulk, (int)0);
-  else
-    process_surface_entity_df(sset, bulk, (int64_t)0);
+  if (stk::io::db_api_int_size(sset) == 4) {
+    int dummy = 0;
+    process_surface_entity_df(sset, bulk, dummy);
+  }
+  else {
+    int64_t dummy = 0;
+    process_surface_entity_df(sset, bulk, dummy);
+  }
 }
 
 void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
