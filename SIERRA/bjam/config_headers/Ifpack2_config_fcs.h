@@ -18,3 +18,11 @@
 /* Define if explicit instantiation is enabled. */
 /* #undef HAVE_IFPACK2_EXPLICIT_INSTANTIATION */
 
+/* Define if we have Amesos2 */
+#define HAVE_IFPACK2_AMESOS2
+
+/* Define if we have experimental. */
+/* #undef HAVE_IFPACK2_EXPERIMENTAL */
+
+/* Define if we have support graph. */
+/* #undef HAVE_IFPACK2_SUPPORTGRAPH */
