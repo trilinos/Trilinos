@@ -307,6 +307,8 @@ private:
   Matrix33 & operator = ( const Matrix33 & );
 };
 
+typedef Matrix33 Matrix;
+
 //----------------------------------------------------------------------
 
 /** \} */

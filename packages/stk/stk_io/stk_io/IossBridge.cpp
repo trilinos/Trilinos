@@ -145,6 +145,20 @@ const stk::mesh::FieldBase *declare_ioss_field_internal(stk::mesh::MetaData &met
     stk::mesh::put_field(field, type, part, 9);
     field_ptr = &field;
   }
+  else if (field_type == "matrix_22") {
+    stk::mesh::Field<double, stk::mesh::Matrix> & field =
+      meta.declare_field<stk::mesh::Field<double,
+      stk::mesh::Matrix> >(name);
+    stk::mesh::put_field(field, type, part, 4);
+    field_ptr = &field;
+  }
+  else if (field_type == "matrix_33") {
+    stk::mesh::Field<double, stk::mesh::Matrix> & field =
+      meta.declare_field<stk::mesh::Field<double,
+      stk::mesh::Matrix> >(name);
+    stk::mesh::put_field(field, type, part, 9);
+    field_ptr = &field;
+  }
   else {
     // Just create a field with the correct number of components...
     stk::mesh::Field<double,shards::ArrayDimension> & field =
@@ -427,6 +441,12 @@ void get_io_field_type(const stk::mesh::FieldBase *field,
 	else if ( tags[0] == & stk::mesh::SymmetricTensor::tag() && 3 == num_comp ) {
 	  result->first = sym_tensor_21 ;
 	}
+        else if ( tags[0] == & stk::mesh::Matrix::tag() && 4 == num_comp ) {
+          result->first =  matrix_22;
+        }
+        else if ( tags[0] == & stk::mesh::Matrix::tag() && 9 == num_comp ) {
+          result->first = matrix_33 ;
+        }
   }
 
   if ( result->first.empty() ) {
