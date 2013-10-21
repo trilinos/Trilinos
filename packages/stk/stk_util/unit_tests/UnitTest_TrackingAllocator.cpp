@@ -10,6 +10,8 @@ STKUNIT_UNIT_TEST( tracking_allocator, vector )
   typedef stk::tracking_allocator<int> allocator;
   typedef stk::allocator_memory_usage<void> usage;
 
+  usage::reset();
+
   EXPECT_EQ( usage::peak_memory(), 0u);
   EXPECT_EQ( usage::current_memory(), 0u);
   EXPECT_EQ( usage::num_allocations(), 0u);

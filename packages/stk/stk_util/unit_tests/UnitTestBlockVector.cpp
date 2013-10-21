@@ -353,7 +353,7 @@ void run_performance_test(std::string const& type, size_t size, size_t stride, s
 
 } // namespace
 
-STKUNIT_UNIT_TEST( block_vector, performance_int )
+STKUNIT_UNIT_TEST( block_vector, DISABLED_performance_int )
 {
   typedef std::vector<int, stk::tracking_allocator<int, VectorTag> > Vector;
   typedef std::deque<int, stk::tracking_allocator<int, DequeTag> > Deque;
@@ -374,7 +374,7 @@ STKUNIT_UNIT_TEST( block_vector, performance_int )
   run_performance_test<Vector,VectorMemory,BlockVector,BlockVectorMemory,Deque,DequeMemory>("int", size, stride, 10, 8);
 }
 
-STKUNIT_UNIT_TEST( block_vector, performance_size_t )
+STKUNIT_UNIT_TEST( block_vector, DISABLED_performance_size_t )
 {
   typedef std::vector<size_t, stk::tracking_allocator<size_t, VectorTag> > Vector;
   typedef std::deque<size_t, stk::tracking_allocator<size_t, DequeTag> > Deque;
@@ -395,7 +395,7 @@ STKUNIT_UNIT_TEST( block_vector, performance_size_t )
   run_performance_test<Vector,VectorMemory,BlockVector,BlockVectorMemory,Deque,DequeMemory>("size_t", size, stride, 10, 8);
 }
 
-STKUNIT_UNIT_TEST( block_vector, performance_pair_double_size_t )
+STKUNIT_UNIT_TEST( block_vector, DISABLED_performance_pair_double_size_t )
 {
   typedef std::pair<double,size_t> MyPair;
   typedef std::vector<MyPair, stk::tracking_allocator<MyPair, VectorTag> > Vector;

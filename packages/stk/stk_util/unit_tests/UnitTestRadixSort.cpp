@@ -100,7 +100,7 @@ struct SortTag {};
 
 
 
-STKUNIT_UNIT_TEST( radix_sort, performance_vs_radix_sort_unsigned_vector )
+STKUNIT_UNIT_TEST( radix_sort, DISABLED_performance_vs_radix_sort_unsigned_vector )
 {
   typedef std::vector<size_t> Vector;
 
@@ -129,7 +129,7 @@ STKUNIT_UNIT_TEST( radix_sort, performance_vs_radix_sort_unsigned_vector )
   std::cout << "                 stk::radix_sort : " << radix_time << " secs, " << sort_time/radix_time << "x speedup" << std::endl;
 }
 
-STKUNIT_UNIT_TEST( radix_sort, performance_vs_std_sort_vector )
+STKUNIT_UNIT_TEST( radix_sort, DISABLED_performance_vs_std_sort_vector )
 {
   typedef std::vector<size_t> Vector;
 
@@ -157,7 +157,7 @@ STKUNIT_UNIT_TEST( radix_sort, performance_vs_std_sort_vector )
 
 }
 
-STKUNIT_UNIT_TEST( radix_sort, performance_vs_std_sort_block_vector )
+STKUNIT_UNIT_TEST( radix_sort, DISABLED_performance_vs_std_sort_block_vector )
 {
   typedef stk::block_vector<size_t> Vector;
 
@@ -185,7 +185,7 @@ STKUNIT_UNIT_TEST( radix_sort, performance_vs_std_sort_block_vector )
 
 }
 
-STKUNIT_UNIT_TEST( radix_sort, performance_vs_std_sort_deque )
+STKUNIT_UNIT_TEST( radix_sort, DISABLED_performance_vs_std_sort_deque )
 {
   typedef std::deque<size_t> Vector;
 
