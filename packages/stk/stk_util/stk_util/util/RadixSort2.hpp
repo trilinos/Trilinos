@@ -1,6 +1,7 @@
 #ifndef STK_UTIL_RADIX_SORT_2_HPP
 #define STK_UTIL_RADIX_SORT_2_HPP
 
+#include <stk_util/util/ForceInline.hpp>
 #include <boost/static_assert.hpp>
 #include <boost/type_traits.hpp>
 #include <boost/utility/enable_if.hpp>
@@ -11,13 +12,13 @@
 namespace stk { namespace details {
 
 template <typename Key>
-inline
+FORCEINLINE
 typename boost::enable_if_c< boost::is_unsigned<Key>::value, bool >::type
 is_negative(const Key &)
 { return false; }
 
 template <typename Key>
-inline
+FORCEINLINE
 typename boost::enable_if_c< !boost::is_unsigned<Key>::value, bool  >::type
 is_negative(const Key & k)
 { return (k < (Key)0); }
@@ -36,6 +37,7 @@ template <bool IsLittleEndian> struct GetRadix;
 template <> struct GetRadix<true>
 {
   template <typename Key>
+  FORCEINLINE
   unsigned operator()( Key const& key, unsigned byte ) const
   {
     return reinterpret_cast<unsigned char const * const>(&key)[byte];

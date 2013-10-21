@@ -2,6 +2,7 @@
 #define STK_UTIL_BLOCK_VECTOR_HPP
 
 #include <stk_util/util/CacheAlignedAllocator.hpp>
+#include <stk_util/util/ForceInline.hpp>
 #include <boost/static_assert.hpp>
 #include <boost/type_traits.hpp>
 #include <boost/utility/enable_if.hpp>
@@ -73,14 +74,17 @@ public:
 
 
     //operator *
+    FORCEINLINE
     const_reference operator*() const
     { return m_blocks[m_offset >> shift][m_offset & mask]; }
 
+    FORCEINLINE
     const_pointer operator->() const
     { return m_blocks[m_offset >> shift] + (m_offset & mask); }
 
     //operator[n]
     template <typename IntType>
+    FORCEINLINE
     const_reference operator[](IntType n) const
     { return m_blocks[ (m_offset + n) >> shift][ (m_offset + n) & mask]; }
 
@@ -168,14 +172,17 @@ public:
 
 
     //operator *
+    FORCEINLINE
     reference operator*() const
     { return m_blocks[m_offset >> shift][m_offset & mask]; }
 
+    FORCEINLINE
     pointer operator->() const
     { return m_blocks[m_offset >> shift] + (m_offset & mask); }
 
     //operator[n]
     template <typename IntType>
+    FORCEINLINE
     reference operator[](IntType n) const
     { return m_blocks[ (m_offset + n) >> shift][ (m_offset + n) & mask]; }
 
@@ -265,14 +272,17 @@ public:
 
 
     //operator *
+    FORCEINLINE
     const_reference operator*() const
     { return m_blocks[ (m_offset-1u) >> shift][ (m_offset-1u) & mask]; }
 
+    FORCEINLINE
     const_pointer operator->() const
     { return m_blocks[(m_offset -1u) >> shift] + ((m_offset -1u) & mask); }
 
     //operator[n]
     template <typename IntType>
+    FORCEINLINE
     const_reference operator[](IntType n) const
     { return m_blocks[ ((m_offset -1u) + n) >> shift][ ((m_offset -1u) + n) & mask]; }
 
@@ -360,14 +370,17 @@ public:
 
 
     //operator *
+    FORCEINLINE
     reference operator*() const
     { return m_blocks[(m_offset -1u) >> shift][(m_offset -1u) & mask]; }
 
+    FORCEINLINE
     pointer operator->() const
     { return m_blocks[(m_offset -1u) >> shift] + ((m_offset -1u) & mask); }
 
     //operator[n]
     template <typename IntType>
+    FORCEINLINE
     reference operator[](IntType n) const
     { return m_blocks[ ((m_offset -1u) + n) >> shift][ ((m_offset -1u) + n) & mask]; }
 
@@ -591,12 +604,12 @@ public:
   }
 
 
-  template <typename IntType>       reference operator[](IntType n)       { return m_blocks[n >> shift][n & mask]; }
-  template <typename IntType> const_reference operator[](IntType n) const { return m_blocks[n >> shift][n & mask]; }
+  template <typename IntType> FORCEINLINE       reference operator[](IntType n)       { return m_blocks[n >> shift][n & mask]; }
+  template <typename IntType> FORCEINLINE const_reference operator[](IntType n) const { return m_blocks[n >> shift][n & mask]; }
 
   // TODO: check bounds in debug
-  template <typename IntType>       reference at(IntType n)       { return m_blocks[n >> shift][n & mask]; }
-  template <typename IntType> const_reference at(IntType n) const { return m_blocks[n >> shift][n & mask]; }
+  template <typename IntType> FORCEINLINE       reference at(IntType n)       { return m_blocks[n >> shift][n & mask]; }
+  template <typename IntType> FORCEINLINE const_reference at(IntType n) const { return m_blocks[n >> shift][n & mask]; }
 
         reference front()       { return (*this)[0]; }
   const_reference front() const { return (*this)[0]; }

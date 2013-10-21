@@ -64,7 +64,11 @@ public:
     memory_usage::allocate(size);
 
     pointer ptr = NULL;
+#if defined( __INTEL_COMPILER )
+    ptr = (pointer)_mm_malloc(size, CacheSize);
+#else
     posix_memalign( (void**)&ptr, CacheSize, size );
+#endif
 
     return ptr;
   }
@@ -73,7 +77,11 @@ public:
   static void deallocate(pointer p, size_type num)
   {
     memory_usage::deallocate(num * sizeof(T));
+#if defined( __INTEL_COMPILER )
+    _mm_free(p);
+#else
     free(p);
+#endif
   }
 
   // initialize elements of allocated storage p with value value
