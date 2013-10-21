@@ -1,4 +1,0 @@
-This module of Percept reads in an OpenNURBS .3dm file and sets
-it up for use with meshes that have associated CAD geometry (e.g.,
-this is used by stk_adapt to project new points to geometry when doing
-mesh refinement.

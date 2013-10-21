@@ -1,5 +1,0 @@
-This module is a general interface to geometric data and operations.
-The first sub-module, create_ON, creates OpenNURBS representations of
-2D point sets using fitting schemes.  The resulting 3dm file can be
-written and then used with a mesh to project nodes, or perform other
-geometric operations.  It depends on the OpenNURBS library.
