@@ -737,7 +737,7 @@ namespace Tpetra {
       if (lclInds1D_ != null) {
         view = lclInds1D_ (rowinfo.offset1D, rowinfo.allocSize);
       }
-      else if (!lclInds2D_[rowinfo.localRow].empty()) {
+      else if (! lclInds2D_[rowinfo.localRow].empty ()) {
         view = lclInds2D_[rowinfo.localRow] ();
       }
     }
@@ -811,7 +811,7 @@ namespace Tpetra {
   RowInfo CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getRowInfo(size_t myRow) const
   {
 #ifdef HAVE_TPETRA_DEBUG
-    const char tfecfFuncName[] = "getRowInfo()";
+    const char tfecfFuncName[] = "getRowInfo";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         rowMap_->isNodeLocalElement (myRow) == false,
         std::logic_error,
@@ -1696,115 +1696,161 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalRowCopy(LocalOrdinal localRow, const ArrayView<LocalOrdinal> &indices, size_t &NumIndices) const
+  void
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  getLocalRowCopy (LocalOrdinal localRow,
+                   const ArrayView<LocalOrdinal>& indices,
+                   size_t& NumIndices) const
   {
-    // can only do this if
-    // * we have local indices: isLocallyIndexed()
-    // or
-    // * we are capable of producing them: isGloballyIndexed() && hasColMap()
-    // short circuit if we aren't allocated
-    const char tfecfFuncName[] = "getLocalRowCopy(localRow,...)";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isGloballyIndexed() == true && hasColMap() == false, std::runtime_error, ": local indices cannot be produced.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(rowMap_->isNodeLocalElement(localRow) == false, std::runtime_error,
-        ": localRow (== " << localRow << ") is not valid on this node.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(hasRowInfo() == false, std::runtime_error, ": graph row information was deleted at fillComplete().");
-    const RowInfo rowinfo = getRowInfo(localRow);
+    const char tfecfFuncName[] = "getLocalRowCopy";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      isGloballyIndexed () && ! hasColMap (), std::runtime_error,
+      ": The graph is globally indexed, and does not have a column Map (yet), "
+      "so it is impossible to return local indices.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ! rowMap_->isNodeLocalElement (localRow), std::runtime_error,
+      ": localRow (== " << localRow << ") is not valid on the calling process "
+      "with rank " << getComm ()->getRank () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ! hasRowInfo (), std::runtime_error,
+      ": graph row information was deleted at fillComplete().");
+
+    const RowInfo rowinfo = getRowInfo (localRow);
     NumIndices = rowinfo.numEntries;
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC((size_t)indices.size() < NumIndices, std::runtime_error,
-        ": specified storage (size==" << indices.size()
-        << ") is not large enough to hold all entries for this row (NumIndices == " << NumIndices << ").");
-    if (isLocallyIndexed()) {
-      ArrayView<const LocalOrdinal> lview = getLocalView(rowinfo);
-      std::copy( lview.begin(), lview.begin() + NumIndices, indices.begin());
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      static_cast<size_t> (indices.size ()) < NumIndices, std::runtime_error,
+      ": specified storage (size == " << indices.size () << ") does not suffice "
+      "to hold all entries for this row (NumIndices == " << NumIndices << ").");
+
+    if (isLocallyIndexed ()) {
+      ArrayView<const LocalOrdinal> lview = getLocalView (rowinfo);
+      std::copy (lview.begin (), lview.begin () + NumIndices, indices.begin ());
     }
-    else if (isGloballyIndexed()) {
-      ArrayView<const GlobalOrdinal> gview = getGlobalView(rowinfo);
-      for (size_t j=0; j < NumIndices; ++j) {
-        indices[j] = colMap_->getLocalElement(gview[j]);
+    else if (isGloballyIndexed ()) {
+      ArrayView<const GlobalOrdinal> gview = getGlobalView (rowinfo);
+      for (size_t j = 0; j < NumIndices; ++j) {
+        indices[j] = colMap_->getLocalElement (gview[j]);
       }
     }
     else {
-#ifdef HAVE_TPETRA_DEBUG
-      // should have fallen in one of the above
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( indicesAreAllocated() == true, std::logic_error, ": Internal logic error. Please contact Tpetra team.");
-#endif
+      // If the graph on the calling process is neither locally nor
+      // globally indexed, that means it owns no column indices.
+      //
+      // FIXME (mfh 21 Oct 2013) It's not entirely clear to me whether
+      // we can reach this branch, given the checks above.  However,
+      // if that is the case, it should still be correct to call this
+      // function if the calling process owns no column indices.
       NumIndices = 0;
     }
-    return;
   }
 
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getGlobalRowCopy(GlobalOrdinal globalRow, const ArrayView<GlobalOrdinal> &indices, size_t &NumIndices) const
+  void
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  getGlobalRowCopy (GlobalOrdinal globalRow,
+                    const ArrayView<GlobalOrdinal>& indices,
+                    size_t& NumIndices) const
   {
-    // we either currently store global indices, or we have a column map with which to transcribe our local indices for the user
-    const LocalOrdinal lrow = rowMap_->getLocalElement(globalRow);
-    const char tfecfFuncName[] = "getGlobalRowCopy(globalRow,...)";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(lrow == OrdinalTraits<LocalOrdinal>::invalid(), std::runtime_error,
-        ": globalRow (== " << globalRow << ") does not belong to this node.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(hasRowInfo() == false, std::runtime_error, ": graph row information was deleted at fillComplete().");
-    const RowInfo rowinfo = getRowInfo((size_t)lrow);
-    NumIndices = rowinfo.numEntries;
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC((size_t)indices.size() < NumIndices, std::runtime_error,
-        ": specified storage (size==" << indices.size()
-        << ") is not large enough to hold all entries for this row (NumIndices == " << NumIndices << ").");
-    if (isLocallyIndexed()) {
-      ArrayView<const LocalOrdinal> lview = getLocalView(rowinfo);
-      for (size_t j=0; j < NumIndices; ++j) {
-        indices[j] = colMap_->getGlobalElement(lview[j]);
-      }
-    }
-    else if (isGloballyIndexed()) {
-      ArrayView<const GlobalOrdinal> gview = getGlobalView(rowinfo);
-      std::copy(gview.begin(), gview.begin() + NumIndices, indices.begin());
-    }
-    return;
-  }
+    // One of the following is true:
+    //
+    // 1. The calling process owns no column indices.
+    // 2. The graph stores global column indices.
+    // 3. The graph has a column Map that we can use to convert any
+    //    stored local indices into global indices for output.
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalRowView(LocalOrdinal localRow, ArrayView<const LocalOrdinal> &indices) const
-  {
-    const char tfecfFuncName[] = "getLocalRowView()";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isGloballyIndexed() == true, std::runtime_error, ": local indices cannot be provided.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(hasRowInfo() == false, std::runtime_error, ": graph row information was deleted at fillComplete().");
-    indices = null;
-    if (rowMap_->isNodeLocalElement(localRow) == true) {
-      const RowInfo rowinfo = getRowInfo(localRow);
-      if (rowinfo.numEntries > 0) {
-        indices = getLocalView(rowinfo);
-        indices = indices(0,rowinfo.numEntries);
-      }
-    }
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( (size_t)indices.size() != getNumEntriesInLocalRow(localRow), std::logic_error, ": Violated stated post-conditions. Please contact Tpetra team.");
-#endif
-    return;
-  }
-
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getGlobalRowView(GlobalOrdinal globalRow, ArrayView<const GlobalOrdinal> &indices) const
-  {
-    using Teuchos::as;
-    const char tfecfFuncName[] = "getGlobalRowView()";
+    const char tfecfFuncName[] = "getGlobalRowCopy";
+    const LocalOrdinal localRow = rowMap_->getLocalElement (globalRow);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isLocallyIndexed() == true, std::runtime_error,
-      ": The graph is locally indexed, so we cannot return a view with global "
-      "column indices.  Use getGlobalRowCopy() instead.");
-
+      localRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(),
+      std::runtime_error, ": globalRow (== " << globalRow << ") is not owned "
+      "by (i.e., is not in the row Map on) the calling process with rank "
+      << getComm ()->getRank () << ".");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      hasRowInfo() == false, std::runtime_error,
+      ! hasRowInfo (), std::runtime_error,
       ": graph row information was deleted at fillComplete().");
 
-    // isNodeGlobalElement() requires a global to local lookup anyway,
-    // and getLocalElement() returns invalid() if the element wasn't found.
+    const RowInfo rowinfo = getRowInfo (static_cast<size_t> (localRow));
+    NumIndices = rowinfo.numEntries;
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      static_cast<size_t> (indices.size ()) < NumIndices, std::runtime_error,
+      ": specified storage (size == " << indices.size () << ") does not suffice "
+      "to hold all entries in this row (NumIndices == " << NumIndices << ").");
+
+    if (isLocallyIndexed ()) {
+      ArrayView<const LocalOrdinal> lview = getLocalView (rowinfo);
+      for (size_t j = 0; j < NumIndices; ++j) {
+        indices[j] = colMap_->getGlobalElement (lview[j]);
+      }
+    }
+    else if (isGloballyIndexed ()) {
+      ArrayView<const GlobalOrdinal> gview = getGlobalView (rowinfo);
+      std::copy (gview.begin (), gview.begin () + NumIndices, indices.begin ());
+    }
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  getLocalRowView (LocalOrdinal localRow, ArrayView<const LocalOrdinal> &indices) const
+  {
+    const char tfecfFuncName[] = "getLocalRowView";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      isGloballyIndexed(), std::runtime_error,
+      ": The graph is globally indexed, so we cannot return a view with local "
+      "column indices.  Use getLocalRowCopy() instead.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ! hasRowInfo (), std::runtime_error,
+      ": graph row information was deleted at fillComplete().");
+
+    indices = null;
+    if (rowMap_->isNodeLocalElement (localRow)) {
+      const RowInfo rowinfo = getRowInfo(localRow);
+      if (rowinfo.numEntries > 0) {
+        indices = getLocalView (rowinfo);
+        indices = indices (0, rowinfo.numEntries);
+      }
+#ifdef HAVE_TPETRA_DEBUG
+      const size_t numEntriesInView = static_cast<size_t> (indices.size ());
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        numEntriesInView != getNumEntriesInLocalRow (localRow),
+        std::logic_error, ": The number of entries " << numEntriesInView
+        << " in the view to return must be the same as getNumEntriesInLocalRow"
+        "(localRow=" << localRow << ") = " << getNumEntriesInLocalRow (localRow)
+        << ", but this is not the case.  "
+        "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+    }
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  getGlobalRowView (GlobalOrdinal globalRow,
+                    ArrayView<const GlobalOrdinal>& indices) const
+  {
+    using Teuchos::as;
+    const char tfecfFuncName[] = "getGlobalRowView";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      isLocallyIndexed (), std::runtime_error,
+      ": The graph is locally indexed, so we cannot return a view with global "
+      "column indices.  Use getGlobalRowCopy() instead.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ! hasRowInfo (), std::runtime_error,
+      ": graph row information was deleted at fillComplete().");
+
+    // We don't have to call isNodeGlobalElement() to test whether
+    // globalRow belongs to the calling process.  That method requires
+    // a global to local lookup anyway, and getLocalElement() returns
+    // invalid() anyway if the global index wasn't found.
     const LocalOrdinal localRow = rowMap_->getLocalElement (globalRow);
     indices = null;
     if (localRow != Teuchos::OrdinalTraits<LocalOrdinal>::invalid ()) {
@@ -3527,7 +3573,7 @@ namespace Tpetra {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  bool 
+  bool
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   checkSizes (const SrcDistObject& source)
   {
@@ -3544,9 +3590,9 @@ namespace Tpetra {
   void
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   copyAndPermute (const SrcDistObject& source,
-		  size_t numSameIDs,
-		  const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
-		  const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs)
+                  size_t numSameIDs,
+                  const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
+                  const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs)
   {
     using Teuchos::Array;
     using Teuchos::ArrayView;
@@ -3557,7 +3603,7 @@ namespace Tpetra {
     typedef RowGraph<LO, GO, Node> row_graph_type;
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      permuteToLIDs.size() != permuteFromLIDs.size(), std::runtime_error, 
+      permuteToLIDs.size() != permuteFromLIDs.size(), std::runtime_error,
       ": permuteToLIDs and permuteFromLIDs must have the same size.");
     // Make sure that the source object has the right type.  We only
     // actually need it to be a RowGraph, with matching first three
@@ -3574,7 +3620,7 @@ namespace Tpetra {
     // communication format in any case.
     const row_graph_type* srcRowGraph = dynamic_cast<const row_graph_type*> (&source);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      srcRowGraph == NULL, std::invalid_argument, 
+      srcRowGraph == NULL, std::invalid_argument,
       ": The source object must be a RowGraph with matching first three "
       "template parameters.");
 
@@ -3599,16 +3645,16 @@ namespace Tpetra {
       // source graph is not a CrsGraph, we can't use view mode,
       // because RowGraph only provides copy mode access to the data.
       for (size_t i = 0; i < numSameIDs; ++i, ++myid) {
-	const GO gid = srcRowMap.getGlobalElement (myid);
-	size_t row_length = srcRowGraph->getNumEntriesInGlobalRow (gid);
-	row_copy.resize (row_length);
-	size_t check_row_length = 0;
-	srcRowGraph->getGlobalRowCopy (gid, row_copy (), check_row_length);
-	this->insertGlobalIndices (gid, row_copy ());
+        const GO gid = srcRowMap.getGlobalElement (myid);
+        size_t row_length = srcRowGraph->getNumEntriesInGlobalRow (gid);
+        row_copy.resize (row_length);
+        size_t check_row_length = 0;
+        srcRowGraph->getGlobalRowCopy (gid, row_copy (), check_row_length);
+        this->insertGlobalIndices (gid, row_copy ());
       }
     } else {
       for (size_t i = 0; i < numSameIDs; ++i, ++myid) {
-	const GO gid = srcRowMap.getGlobalElement (myid);
+        const GO gid = srcRowMap.getGlobalElement (myid);
         ArrayView<const GO> row;
         srcCrsGraph->getGlobalRowView (gid, row);
         this->insertGlobalIndices (gid, row);
@@ -3620,21 +3666,21 @@ namespace Tpetra {
     //
     if (src_filled || srcCrsGraph == NULL) {
       for (LO i = 0; i < permuteToLIDs.size (); ++i) {
-	const GO mygid = tgtRowMap.getGlobalElement (permuteToLIDs[i]);
-	const GO srcgid = srcRowMap.getGlobalElement (permuteFromLIDs[i]);
-	size_t row_length = srcRowGraph->getNumEntriesInGlobalRow (srcgid);
-	row_copy.resize (row_length);
-	size_t check_row_length = 0;
-	srcRowGraph->getGlobalRowCopy (srcgid, row_copy (), check_row_length);
-	this->insertGlobalIndices (mygid, row_copy ());
+        const GO mygid = tgtRowMap.getGlobalElement (permuteToLIDs[i]);
+        const GO srcgid = srcRowMap.getGlobalElement (permuteFromLIDs[i]);
+        size_t row_length = srcRowGraph->getNumEntriesInGlobalRow (srcgid);
+        row_copy.resize (row_length);
+        size_t check_row_length = 0;
+        srcRowGraph->getGlobalRowCopy (srcgid, row_copy (), check_row_length);
+        this->insertGlobalIndices (mygid, row_copy ());
       }
     } else {
       for (LO i = 0; i < permuteToLIDs.size (); ++i) {
-	const GO mygid = tgtRowMap.getGlobalElement (permuteToLIDs[i]);
-	const GO srcgid = srcRowMap.getGlobalElement (permuteFromLIDs[i]);
-	ArrayView<const GO> row;
-	srcCrsGraph->getGlobalRowView (srcgid, row);
-	this->insertGlobalIndices (mygid, row);
+        const GO mygid = tgtRowMap.getGlobalElement (permuteToLIDs[i]);
+        const GO srcgid = srcRowMap.getGlobalElement (permuteFromLIDs[i]);
+        ArrayView<const GO> row;
+        srcCrsGraph->getGlobalRowView (srcgid, row);
+        this->insertGlobalIndices (mygid, row);
       }
     }
   }
@@ -3673,10 +3719,10 @@ namespace Tpetra {
   void
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-	Teuchos::Array<GlobalOrdinal>& exports,
-	const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-	size_t& constantNumPackets,
-	Distributor& distor) const
+        Teuchos::Array<GlobalOrdinal>& exports,
+        const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+        size_t& constantNumPackets,
+        Distributor& distor) const
   {
     using Teuchos::Array;
     typedef LocalOrdinal LO;
@@ -3731,11 +3777,11 @@ namespace Tpetra {
   void
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
-		    const Teuchos::ArrayView<const GlobalOrdinal> &imports,
-		    const Teuchos::ArrayView<size_t> &numPacketsPerLID,
-		    size_t constantNumPackets,
-		    Distributor& /* distor */,
-		    CombineMode /* CM */)
+                    const Teuchos::ArrayView<const GlobalOrdinal> &imports,
+                    const Teuchos::ArrayView<size_t> &numPacketsPerLID,
+                    size_t constantNumPackets,
+                    Distributor& /* distor */,
+                    CombineMode /* CM */)
   {
     // FIXME (mfh 02 Apr 2012) REPLACE combine mode has a perfectly
     // reasonable meaning, whether or not the matrix is fill complete.
