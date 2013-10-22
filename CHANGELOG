@@ -1,0 +1,11 @@
+###############################################################################
+#                                                                             #
+# Trilinos Release 11.4 Changelog                                             #
+#                                                                             #
+###############################################################################
+
+Release update 11.4.1 October 22, 2013
+
+1. Kokkos - Fix missing file in install
+
+2. Thyra  - Fix a backwards compatibility issue with a missing header file.
