@@ -52,6 +52,7 @@
 #include "Stokhos_Threads_SymmetricDiagonalSpec.hpp"
 #include "Stokhos_Threads_CrsProductTensor.hpp"
 #include "Stokhos_Threads_TiledCrsProductTensor.hpp"
+#include "Stokhos_Threads_SimpleTiledCrsProductTensor.hpp"
 #include "Stokhos_Threads_CooProductTensor.hpp"
 #include "Stokhos_Threads_FlatSparse3Tensor.hpp"
 #include "Stokhos_Threads_FlatSparse3Tensor_kji.hpp"

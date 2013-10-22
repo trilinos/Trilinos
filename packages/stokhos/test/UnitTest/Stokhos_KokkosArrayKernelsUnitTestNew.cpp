@@ -51,6 +51,7 @@
 #include "Stokhos_Threads_SymmetricDiagonalSpec.hpp"
 #include "Stokhos_Threads_CrsProductTensor.hpp"
 #include "Stokhos_Threads_TiledCrsProductTensor.hpp"
+#include "Stokhos_Threads_SimpleTiledCrsProductTensor.hpp"
 #include "Stokhos_Threads_CooProductTensor.hpp"
 #include "Stokhos_Threads_FlatSparse3Tensor.hpp"
 #include "Stokhos_Threads_FlatSparse3Tensor_kji.hpp"
@@ -128,6 +129,16 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, TiledCrsProductTensor_Threads ) {
   Teuchos::ParameterList params;
   params.set("Tile Size", 10);
   params.set("Max Tiles", 10000);
+  success = test_crs_product_tensor<Scalar,Tensor,Device>(setup, out, params);
+}
+
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, SimpleTiledCrsProductTensor_Threads ){
+  typedef double Scalar;
+  typedef Kokkos::Threads Device;
+  typedef Stokhos::SimpleTiledCrsProductTensor<Scalar,Device> Tensor;
+
+  Teuchos::ParameterList params;
+  params.set("Tile Size", 10);
   success = test_crs_product_tensor<Scalar,Tensor,Device>(setup, out, params);
 }
 
@@ -248,6 +259,66 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, TiledCrsProductTensorCijk ) {
       }
     }
   }
+}
+
+TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, SimpleTiledCrsProductTensorCijk ) {
+  success = true;
+
+  typedef double value_type;
+  typedef Kokkos::Threads Device;
+  typedef Stokhos::SimpleTiledCrsProductTensor< value_type , Device > tensor_type ;
+
+  Teuchos::ParameterList params;
+  params.set("Tile Size",10);
+
+  tensor_type tensor =
+    Stokhos::create_simple_tiled_product_tensor<Device>(
+      *setup.basis, *setup.Cijk, params);
+
+  int num_entry = 0;
+  const size_t n_i_tile = tensor.num_i_tiles();
+  for (size_t i_tile = 0; i_tile<n_i_tile; ++i_tile) {
+    const size_t i_begin = tensor.i_begin(i_tile);
+    const size_t i_size  = tensor.i_size(i_tile);
+
+    const size_t n_j_tile = tensor.num_j_tiles(i_tile);
+    for (size_t j_tile = 0; j_tile<n_j_tile; ++j_tile) {
+      const size_t j_begin = tensor.j_begin(i_tile, j_tile);
+      //const size_t j_size  = tensor.j_size(i_tile, j_tile);
+
+      const size_t n_k_tile = tensor.num_k_tiles(i_tile, j_tile);
+      for (size_t k_tile = 0; k_tile<n_k_tile; ++k_tile) {
+        const size_t k_begin = tensor.k_begin(i_tile, j_tile, k_tile);
+        //const size_t k_size  = tensor.k_size(i_tile, j_tile, k_tile);
+
+        for (size_t i=0; i<i_size; ++i) {
+          const size_t iEntryBeg = tensor.entry_begin(i_tile,j_tile,k_tile,i);
+          const size_t iEntryEnd = tensor.entry_end(i_tile,j_tile,k_tile,i);
+          for (size_t iEntry = iEntryBeg ; iEntry < iEntryEnd ; ++iEntry ) {
+            const size_t j = tensor.coord(iEntry,0);
+            const size_t k = tensor.coord(iEntry,1);
+            double c2 = tensor.value(iEntry);
+            int ii = i + i_begin;
+            int jj = j + j_begin;
+            int kk = k + k_begin;
+            ++num_entry;
+            if (jj == kk)
+              c2 *= 2.0;
+            else
+              ++num_entry;
+            double c = setup.Cijk->getValue(ii,jj,kk);
+
+            if (std::abs(c-c2) > std::abs(c)*setup.rel_tol + setup.abs_tol) {
+              out << "(" << ii << "," << jj << "," << kk << "):  " << c
+                  << " == " << c2 << " failed!" << std::endl;
+              success = false;
+            }
+          }
+        }
+      }
+    }
+  }
+  TEUCHOS_TEST_EQUALITY( num_entry, setup.Cijk->num_entries(), out, success );
 }
 
 template <bool Pack>

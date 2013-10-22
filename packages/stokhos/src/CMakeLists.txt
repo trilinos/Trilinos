@@ -401,6 +401,7 @@ IF (Stokhos_ENABLE_KokkosCore)
     kokkos/Stokhos_SymmetricDiagonalSpec.hpp
     kokkos/Stokhos_CrsProductTensor.hpp
     kokkos/Stokhos_TiledCrsProductTensor.hpp
+    kokkos/Stokhos_SimpleTiledCrsProductTensor.hpp
     kokkos/Stokhos_CooProductTensor.hpp
     kokkos/Stokhos_FlatSparse3Tensor.hpp
     kokkos/Stokhos_FlatSparse3Tensor_kji.hpp
@@ -413,6 +414,7 @@ IF (Stokhos_ENABLE_KokkosCore)
     kokkos/Threads/Stokhos_Threads_SymmetricDiagonalSpec.hpp
     kokkos/Threads/Stokhos_Threads_CrsProductTensor.hpp
     kokkos/Threads/Stokhos_Threads_TiledCrsProductTensor.hpp
+    kokkos/Threads/Stokhos_Threads_SimpleTiledCrsProductTensor.hpp
     kokkos/Threads/Stokhos_Threads_CooProductTensor.hpp
     kokkos/Threads/Stokhos_Threads_FlatSparse3Tensor.hpp
     kokkos/Threads/Stokhos_Threads_FlatSparse3Tensor_kji.hpp
@@ -422,12 +424,15 @@ IF (Stokhos_ENABLE_KokkosCore)
   IF(Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Cuda)
     SET(HEADERS ${HEADERS}
+      kokkos/Cuda/Stokhos_Cuda_DeviceProp.hpp
+      kokkos/Cuda/Stokhos_Cuda_WarpShuffle.hpp
       kokkos/Cuda/Stokhos_Cuda_CrsMatrix.hpp
       kokkos/Cuda/Stokhos_Cuda_BlockCrsMatrix.hpp
       kokkos/Cuda/Stokhos_Cuda_StochasticProductTensor.hpp
       kokkos/Cuda/Stokhos_Cuda_SymmetricDiagonalSpec.hpp
       kokkos/Cuda/Stokhos_Cuda_CrsProductTensor.hpp
       kokkos/Cuda/Stokhos_Cuda_TiledCrsProductTensor.hpp
+      kokkos/Cuda/Stokhos_Cuda_SimpleTiledCrsProductTensor.hpp
       kokkos/Cuda/Stokhos_Cuda_CooProductTensor.hpp
       kokkos/Cuda/Stokhos_Cuda_FlatSparse3Tensor.hpp
       kokkos/Cuda/Stokhos_Cuda_FlatSparse3Tensor_kji.hpp

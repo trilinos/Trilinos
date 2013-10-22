@@ -51,6 +51,7 @@
 #include "Stokhos_SymmetricDiagonalSpec.hpp"
 #include "Stokhos_CrsProductTensor.hpp"
 #include "Stokhos_TiledCrsProductTensor.hpp"
+#include "Stokhos_SimpleTiledCrsProductTensor.hpp"
 #include "Stokhos_CooProductTensor.hpp"
 #include "Stokhos_FlatSparse3Tensor.hpp"
 #include "Stokhos_FlatSparse3Tensor_kji.hpp"
@@ -704,11 +705,125 @@ test_tiled_product_tensor_matrix(
   matrix.graph = Kokkos::create_crsarray<graph_type>( std::string("test crs graph") , graph );
 
   const size_t inner_length      = matrix.block.dimension();
+  const size_t inner_length_aligned = matrix.block.aligned_dimension();
 
-  matrix.values = block_vector_type( "matrix" , inner_length , graph_length );
+  matrix.values =
+    block_vector_type( "matrix" , inner_length_aligned , graph_length );
 
-  block_vector_type x = block_vector_type( "x" , inner_length , outer_length );
-  block_vector_type y = block_vector_type( "y" , inner_length , outer_length );
+  block_vector_type x =
+    block_vector_type( "x" , inner_length_aligned , outer_length );
+  block_vector_type y =
+    block_vector_type( "y" , inner_length_aligned , outer_length );
+
+  Kokkos::deep_copy( matrix.values , ScalarType(1.0) );
+
+  //------------------------------
+  // Generate input multivector:
+
+  Kokkos::deep_copy( x , ScalarType(1.0) );
+
+  //------------------------------
+
+  Device::fence();
+  Kokkos::Impl::Timer clock ;
+  for ( int iter = 0 ; iter < iterCount ; ++iter ) {
+    Stokhos::multiply( matrix , x , y );
+  }
+  Device::fence();
+
+  const double seconds_per_iter = clock.seconds() / ((double) iterCount );
+  const double flops_per_block = matrix.block.tensor().num_flops();
+  const double flops = 1.0e-9*graph_length*flops_per_block;
+
+  // std::cout << "tensor: flops = " << flops
+  //        << " time = " << seconds_per_iter << std::endl;
+
+  std::vector<double> perf(6) ;
+
+  perf[0] = outer_length * inner_length ;
+  perf[1] = seconds_per_iter ;
+  perf[2] = flops / seconds_per_iter;
+  perf[3] = matrix.block.tensor().entry_count();
+  perf[4] = inner_length ;
+  perf[5] = flops_per_block;
+
+  return perf ;
+}
+
+template< typename ScalarType , class Device >
+std::vector<double>
+test_simple_tiled_product_tensor_matrix(
+  const std::vector<int> & var_degree ,
+  const int nGrid ,
+  const int iterCount ,
+  const bool symmetric )
+{
+  typedef ScalarType value_type ;
+  typedef Kokkos::View< value_type** ,
+                             Kokkos::LayoutLeft ,
+                             Device > block_vector_type ;
+
+  typedef Stokhos::SimpleTiledCrsProductTensor<ScalarType,Device> TensorType;
+  typedef Stokhos::StochasticProductTensor< value_type , TensorType , Device > tensor_type ;
+
+  typedef Stokhos::BlockCrsMatrix< tensor_type , value_type , Device > matrix_type ;
+  typedef typename matrix_type::graph_type graph_type ;
+
+  typedef ScalarType value_type ;
+  typedef Stokhos::OneDOrthogPolyBasis<int,value_type> abstract_basis_type;
+  typedef Stokhos::JacobiBasis<int,value_type> basis_type;
+  typedef Stokhos::LexographicLess<Stokhos::MultiIndex<int> > order_type;
+  typedef Stokhos::TotalOrderBasis<int,value_type,order_type> product_basis_type;
+  typedef Stokhos::Sparse3Tensor<int,value_type> Cijk_type;
+
+  using Teuchos::rcp;
+  using Teuchos::RCP;
+  using Teuchos::Array;
+
+  // Create Stochastic Galerkin basis and expansion
+  const size_t num_KL = var_degree.size();
+  Array< RCP<const abstract_basis_type> > bases(num_KL);
+  for (size_t i=0; i<num_KL; i++) {
+    if (symmetric)
+      bases[i] = Teuchos::rcp(new basis_type(var_degree[i],1.0,1.0,true));
+    else
+      bases[i] = Teuchos::rcp(new basis_type(var_degree[i],1.0,2.0,true));
+  }
+  RCP<const product_basis_type> basis =
+    rcp(new product_basis_type(
+          bases, ScalarTolerances<value_type>::sparse_cijk_tol()));
+  RCP<Cijk_type> Cijk = basis->computeTripleProductTensor();
+
+  //------------------------------
+  // Generate graph for "FEM" box structure:
+
+  std::vector< std::vector<size_t> > graph ;
+
+  const size_t outer_length = nGrid * nGrid * nGrid ;
+  const size_t graph_length = unit_test::generate_fem_graph( nGrid , graph );
+
+  //------------------------------
+  // Generate CRS block-tensor matrix:
+
+  matrix_type matrix ;
+
+  Teuchos::ParameterList params;
+  params.set("Tile Size", 128);
+  matrix.block =
+    Stokhos::create_stochastic_product_tensor< TensorType >( *basis, *Cijk,
+                                                             params);
+  matrix.graph = Kokkos::create_crsarray<graph_type>( std::string("test crs graph") , graph );
+
+  const size_t inner_length      = matrix.block.dimension();
+  const size_t inner_length_aligned = matrix.block.aligned_dimension();
+
+  matrix.values =
+    block_vector_type( "matrix" , inner_length_aligned , graph_length );
+
+  block_vector_type x =
+    block_vector_type( "x" , inner_length_aligned , outer_length );
+  block_vector_type y =
+    block_vector_type( "y" , inner_length_aligned , outer_length );
 
   Kokkos::deep_copy( matrix.values , ScalarType(1.0) );
 
@@ -1224,8 +1339,8 @@ void performance_test_driver_poly( const int pdeg ,
             << "\"Original-Matrix-Free-Block-MXV-GFLOPS\" , "
             << "\"Block-Crs-Tensor MXV-Speedup\" , "
             << "\"Block-Crs-Tensor MXV-GFLOPS\" , "
-            << "\"Block-Coo-Tensor MXV-Speedup\" , "
-            << "\"Block-Coo-Tensor MXV-GFLOPS\" , "
+            // << "\"Block-Coo-Tensor MXV-Speedup\" , "
+            // << "\"Block-Coo-Tensor MXV-GFLOPS\" , "
             // << "\"Block-Tiled Crs-Tensor MXV-Speedup\" , "
             // << "\"Block-Tiled Crs-3-Tensor MXV-GFLOPS\" , "
             << std::endl ;
@@ -1237,13 +1352,13 @@ void performance_test_driver_poly( const int pdeg ,
       test_product_tensor_matrix<Scalar,Stokhos::CrsProductTensor<Scalar,Device>,Device>(
         var_degree , nGrid , nIter , symmetric );
 
-    const bool Pack = Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value;
-    const std::vector<double> perf_coo_tensor =
-      test_product_tensor_matrix<Scalar,Stokhos::CooProductTensor<Scalar,Device,Pack>,Device>(
-        var_degree , nGrid , nIter , symmetric );
+    // const bool Pack = Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value;
+    // const std::vector<double> perf_coo_tensor =
+    //   test_product_tensor_matrix<Scalar,Stokhos::CooProductTensor<Scalar,Device,Pack>,Device>(
+    //     var_degree , nGrid , nIter , symmetric );
 
     // const std::vector<double> perf_tiled_crs_tensor =
-    //   test_tiled_product_tensor_matrix<Scalar,Device>(
+    //   test_simple_tiled_product_tensor_matrix<Scalar,Device>(
     //     var_degree , nGrid , nIter , symmetric );
 
     const std::vector<double> perf_original_mat_free_block =
@@ -1262,8 +1377,8 @@ void performance_test_driver_poly( const int pdeg ,
               << perf_original_mat_free_block[2] << " , "
               << perf_original_mat_free_block[1] / perf_crs_tensor[1] << " , "
               << perf_crs_tensor[2] << " , "
-              << perf_original_mat_free_block[1] / perf_coo_tensor[1] << " , "
-              << perf_coo_tensor[2] << " , "
+              // << perf_original_mat_free_block[1] / perf_coo_tensor[1] << " , "
+              // << perf_coo_tensor[2] << " , "
               // << perf_original_mat_free_block[1] / perf_tiled_crs_tensor[1] << " , "
               // << perf_tiled_crs_tensor[2]
               << std::endl ;
