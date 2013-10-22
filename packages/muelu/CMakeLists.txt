@@ -109,6 +109,17 @@ ELSE()
   SET(HAVE_${PACKAGE_NAME_UC}_COMPLEX OFF)
 ENDIF()
 
+
+# ML's MMM
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_ML_MMM
+  HAVE_${PACKAGE_NAME_UC}_ML_MMM
+  "Use ML's Matrix-Matrix-Multiply when available"
+  ON)
+IF (${PACKAGE_NAME}_ENABLE_ML_MMM AND NOT ${PACKAGE_NAME}_ENABLE_ML)
+  MESSAGE(FATAL_ERROR "Option MueLu_ENABLE_ML_MMM=ON requires MueLu_ENABLE_ML=ON.")
+ENDIF ()
+
+
 #
 # C) Add the libraries, tests, and examples
 #

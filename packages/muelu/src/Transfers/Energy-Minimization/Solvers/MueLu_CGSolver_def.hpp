@@ -95,9 +95,8 @@ namespace MueLu {
     bool doFillComplete  = true;
     // bool optimizeStorage = false;
     bool optimizeStorage = true;
-    bool allowMLMultiply = false;
 
-    tmpAP = Utils::Multiply(*A, false, *X, false, mmfancy, doFillComplete, optimizeStorage, allowMLMultiply);
+    tmpAP = Utils::Multiply(*A, false, *X, false, mmfancy, doFillComplete, optimizeStorage);
     C.Apply(*tmpAP, *T);
 
     // R_0 = -A*X_0
@@ -126,10 +125,10 @@ namespace MueLu {
         // This is done by default for Tpetra as the three argument version requires tmpAP
         // to *not* be locally indexed which defeats the purpose
         // TODO: need a three argument Tpetra version which allows reuse of already fill-completed matrix
-        tmpAP = Utils::Multiply(*A, false, *P, false,        mmfancy, doFillComplete, optimizeStorage, allowMLMultiply);
+        tmpAP = Utils::Multiply(*A, false, *P, false,        mmfancy, doFillComplete, optimizeStorage);
       } else {
         // Reuse the MxM pattern
-        tmpAP = Utils::Multiply(*A, false, *P, false, tmpAP, mmfancy, doFillComplete, optimizeStorage, allowMLMultiply);
+        tmpAP = Utils::Multiply(*A, false, *P, false, tmpAP, mmfancy, doFillComplete, optimizeStorage);
       }
       C.Apply(*tmpAP, *T);
       AP = T;

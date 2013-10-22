@@ -186,9 +186,8 @@ namespace MueLu {
                                 //Teuchos::FancyOStream &fos = *(Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout))),
                                 Teuchos::FancyOStream &fos,
                                 bool callFillCompleteOnResult = true,
-                                bool doOptimizeStorage        = true,
-                                bool allowMLMultiply          = true) {
-      return Utils<SC,LO,GO,NO,LMO>::Multiply(A, transposeA, B, transposeB, Teuchos::null, fos, callFillCompleteOnResult, doOptimizeStorage, allowMLMultiply);
+                                bool doOptimizeStorage        = true){
+      return Utils<SC,LO,GO,NO,LMO>::Multiply(A, transposeA, B, transposeB, Teuchos::null, fos, callFillCompleteOnResult, doOptimizeStorage);
     }
 
 
@@ -207,11 +206,6 @@ namespace MueLu {
            C_in is modified in place and is not valid after the call.
     @param callFillCompleteOnResult if true, the resulting matrix should be fillComplete'd
     @param doOptimizedStorage if true, optimize storage
-    @param allowMLMultiply    if true, allow usage of ML's matrix matrix multiply
-
-           ML MxM multiply does not reuse the pattern of C_in. If a C_in matrix is provided, then it is ignored.
-           This can create a memory penalty if both the useless C_in and the new C are present in memory at the same time
-           => Do not enable ML MxM at the same time as the option "reuse pattern".
     */
     static RCP<Matrix> Multiply(const Matrix& A,
                                 bool transposeA,
@@ -221,8 +215,7 @@ namespace MueLu {
                                 //Teuchos::FancyOStream &fos = *(Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)))
                                 Teuchos::FancyOStream &fos,
                                 bool callFillCompleteOnResult = true,
-                                bool doOptimizeStorage        = true,
-                                bool allowMLMultiply          = true
+                                bool doOptimizeStorage        = true
                                 );
 
 #ifdef HAVE_MUELU_EPETRAEXT

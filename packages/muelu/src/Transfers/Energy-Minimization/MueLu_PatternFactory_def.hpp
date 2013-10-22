@@ -90,10 +90,9 @@ namespace MueLu {
 
       bool doFillComplete  = true;
       bool optimizeStorage = true;
-      bool allowMLMultiply = false;
 
       for (int i = 0; i < k; i++) {
-        AP = Utils::Multiply(*A, false, *P, false, GetOStream(Statistics2, 0), doFillComplete, optimizeStorage, allowMLMultiply);
+        AP = Utils::Multiply(*A, false, *P, false, GetOStream(Statistics2, 0), doFillComplete, optimizeStorage);
         P.swap(AP);
       }
     }
