@@ -52,6 +52,7 @@
 #include "Tpetra_KokkosRefactor_CrsGraph.hpp"
 #include "Tpetra_KokkosRefactor_Vector.hpp"
 #include "Tpetra_CrsMatrix_decl.hpp"
+#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include "Kokkos_CrsMatrix.hpp"
 namespace Tpetra {

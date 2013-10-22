@@ -330,8 +330,9 @@ public:
   double operator[]( const iType & i ) const
   {
 #if defined( __CUDA_ARCH__ ) && ( 300 <= __CUDA_ARCH__ )
-    int2 v = tex1Dfetch<int2>( obj , i );
-    return __hiloint2double(v.y, v.x);
+    return _ldg(&ptr[i]);
+    //int2 v = tex1Dfetch<int2>( obj , i );
+    //return __hiloint2double(v.y, v.x);
 #else
     return ptr[ i ];
 #endif

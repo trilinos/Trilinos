@@ -55,6 +55,8 @@
 #include "Tpetra_Exceptions.hpp"
 #include "Tpetra_CrsGraph_decl.hpp"
 #include "Kokkos_StaticCrsGraph.hpp"
+#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+#include <Kokkos_DualView.hpp>
 namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
