@@ -17,6 +17,55 @@ template <typename CoordinateFunctor>
 class PeriodicBoundarySearch
 {
 public:
+  enum CoordinatesTransform {
+    TRANSLATION,
+    ROTATIONAL
+  };
+
+  struct TransformHelper {
+    TransformHelper()
+      : translation(),
+        transformType(TRANSLATION)
+    {
+      rotation[0] = 1.0;
+      rotation[1] = 0.0;
+      rotation[2] = 0.0;
+      rotation[3] = 0.0;
+      rotation[4] = 1.0;
+      rotation[5] = 0.0;
+      rotation[6] = 0.0;
+      rotation[7] = 0.0;
+      rotation[8] = 1.0;
+    }
+
+    TransformHelper(const boost::array<double, 3> & translation_arg)
+      : translation(translation_arg),
+        transformType(TRANSLATION)
+    {
+      rotation[0] = 1.0;
+      rotation[1] = 0.0;
+      rotation[2] = 0.0;
+      rotation[3] = 0.0;
+      rotation[4] = 1.0;
+      rotation[5] = 0.0;
+      rotation[6] = 0.0;
+      rotation[7] = 0.0;
+      rotation[8] = 1.0;
+    }
+
+    TransformHelper(const boost::array<double, 9> & rotation_arg)
+      : rotation(rotation_arg),
+        translation(),
+        transformType(ROTATIONAL)
+        {}
+
+    boost::array<double, 9> rotation;
+    boost::array<double, 3> translation;
+    CoordinatesTransform transformType;
+
+  };
+
+public:
   typedef double Scalar;
   typedef std::vector<std::pair<stk::mesh::Selector, stk::mesh::Selector> > SelectorPairVector;
   typedef stk::search::ident::IdentProc<stk::mesh::EntityKey,unsigned> SearchId;
@@ -24,18 +73,15 @@ public:
   typedef std::vector<AABB> AABBVector;
   typedef std::vector<std::pair<SearchId,SearchId> > SearchPairVector;
 
-  enum CoordinatesTransform {
-    LINEAR_TRANSLATION
-  };
 
   PeriodicBoundarySearch( stk::mesh::BulkData & bulk_data,
                           const CoordinateFunctor & getCoordinates )
     : m_bulk_data(bulk_data),
       m_get_coordinates(getCoordinates),
       m_periodic_pairs(),
-      m_transform_coords(),
       m_search_results(),
-      m_periodic_ghosts(NULL)
+      m_periodic_ghosts(NULL),
+      m_initMultiPeriodic(true)
   {}
 
   const SearchPairVector & get_pairs() const { return m_search_results; }
@@ -63,27 +109,22 @@ public:
   void find_periodic_nodes(stk::ParallelMachine parallel)
   {
     m_search_results.clear();
+
+    if (m_initMultiPeriodic)
+    {
+      m_initMultiPeriodic = false;
+
+      resolve_multi_periodicity();
+    }
+
     for (size_t i = 0; i < m_periodic_pairs.size(); ++i)
     {
       stk::mesh::Selector & side1 = m_periodic_pairs[i].first;
       stk::mesh::Selector & side2 = m_periodic_pairs[i].second;
-      const CoordinatesTransform transform_method = m_transform_coords[i];
+      const CoordinatesTransform transform_method = m_transforms[i].transformType;
 
-      find_periodic_nodes_for_given_pair(side1, side2, transform_method, parallel);
+      find_periodic_nodes_for_given_pair(side1, side2, transform_method, parallel, m_transforms[i]);
     }
-
-    SelectorPairVector multi_periodic_parts(m_periodic_pairs.size());
-    std::vector<CoordinatesTransform> multi_periodic_transforms(m_periodic_pairs.size());
-    resolve_multi_periodicity(multi_periodic_parts, multi_periodic_transforms);
-    for (size_t i = 0; i < multi_periodic_parts.size(); ++i)
-    {
-      stk::mesh::Selector & side1 = multi_periodic_parts[i].first;
-      stk::mesh::Selector & side2 = multi_periodic_parts[i].second;
-      const CoordinatesTransform transform_method = multi_periodic_transforms[i];
-
-      find_periodic_nodes_for_given_pair(side1, side2, transform_method, parallel);
-    }
-
   }
 
   size_t size() const { return m_search_results.size();}
@@ -94,12 +135,29 @@ public:
         m_bulk_data.get_entity(m_search_results[i].second.ident));
   }
 
-  void add_periodic_pair(const stk::mesh::Selector & domain,
-      const stk::mesh::Selector & range,
-      CoordinatesTransform transform = LINEAR_TRANSLATION)
+
+  void add_linear_periodic_pair(const stk::mesh::Selector & domain,
+      const stk::mesh::Selector & range)
   {
     m_periodic_pairs.push_back(std::make_pair(domain, range));
-    m_transform_coords.push_back(transform);
+    m_transforms.push_back( TransformHelper() );
+  }
+
+  void add_rotational_periodic_pair(const stk::mesh::Selector & domain,
+      const stk::mesh::Selector & range,
+      const double theta,
+      const double axis[],
+      const double point[])
+  {
+    m_periodic_pairs.push_back(std::make_pair(domain, range));
+
+    //create rotation matrix from domain to range
+    boost::array<double, 9> rotationMatrix;
+    rotationMatrix[0] = cos(theta);   rotationMatrix[3] = -sin(theta);    rotationMatrix[6] = 0.0;
+    rotationMatrix[1] = sin(theta);   rotationMatrix[4] = cos(theta);     rotationMatrix[7] = 0.0;
+    rotationMatrix[2] = 0.0;          rotationMatrix[5] = 0.0;            rotationMatrix[8] = 1.0;
+    m_transforms.push_back( TransformHelper(rotationMatrix) );
+
   }
 
   const stk::mesh::Ghosting & get_ghosting() const
@@ -139,14 +197,15 @@ private:
   stk::mesh::BulkData & m_bulk_data;
   CoordinateFunctor m_get_coordinates;
   SelectorPairVector m_periodic_pairs;
-  std::vector<CoordinatesTransform>  m_transform_coords;
   SearchPairVector m_search_results;
   stk::mesh::Ghosting * m_periodic_ghosts;
+  typedef std::vector<TransformHelper > TransformVector;
+  TransformVector m_transforms;
+  bool m_initMultiPeriodic;
 
-  void resolve_multi_periodicity(SelectorPairVector & selectorPairVector, std::vector<CoordinatesTransform> & transformVector)
+
+  void resolve_multi_periodicity()
   {
-    selectorPairVector.clear();
-    transformVector.clear();
     switch (m_periodic_pairs.size())
     {
       case 0:
@@ -164,9 +223,9 @@ private:
         const stk::mesh::Selector rangeIntersection = rangeA & rangeB;
 
         //now add new pair with this
-        selectorPairVector.push_back(std::make_pair(domainIntersection, rangeIntersection));
+        m_periodic_pairs.push_back(std::make_pair(domainIntersection, rangeIntersection));
         //TODO: need logic to handle various combinations of transforms
-        transformVector.push_back(LINEAR_TRANSLATION);
+        m_transforms.push_back(TransformHelper());
         break;
       }
       case 3:
@@ -180,14 +239,14 @@ private:
         const stk::mesh::Selector rangeC = m_periodic_pairs[2].second;
 
         //edges
-        selectorPairVector.push_back(std::make_pair(domainA & domainB, rangeA & rangeB));
-        transformVector.push_back(LINEAR_TRANSLATION);
-        selectorPairVector.push_back(std::make_pair(domainB & domainC, rangeB & rangeC));
-        transformVector.push_back(LINEAR_TRANSLATION);
-        selectorPairVector.push_back(std::make_pair(domainA & domainC, rangeA & rangeC));
-        transformVector.push_back(LINEAR_TRANSLATION);
-        selectorPairVector.push_back(std::make_pair(domainA & domainB & domainC, rangeA & rangeB & rangeC));
-        transformVector.push_back(LINEAR_TRANSLATION);
+        m_periodic_pairs.push_back(std::make_pair(domainA & domainB, rangeA & rangeB));
+        m_transforms.push_back(TransformHelper());
+        m_periodic_pairs.push_back(std::make_pair(domainB & domainC, rangeB & rangeC));
+        m_transforms.push_back(TransformHelper());
+        m_periodic_pairs.push_back(std::make_pair(domainA & domainC, rangeA & rangeC));
+        m_transforms.push_back(TransformHelper());
+        m_periodic_pairs.push_back(std::make_pair(domainA & domainB & domainC, rangeA & rangeB & rangeC));
+        m_transforms.push_back(TransformHelper());
         break;
       }
       default:
@@ -199,7 +258,8 @@ private:
   void find_periodic_nodes_for_given_pair(stk::mesh::Selector side1,
       stk::mesh::Selector side2,
       CoordinatesTransform transform_method,
-      stk::ParallelMachine parallel)
+      stk::ParallelMachine parallel,
+      TransformHelper & transform)
   {
     SearchPairVector search_results;
     AABBVector side_1_vector, side_2_vector;
@@ -213,8 +273,17 @@ private:
 
     switch (transform_method)
     {
-      case LINEAR_TRANSLATION:
-        translate_coordinates(parallel, local_node_count, local_centroid, side_1_vector, side_2_vector);
+      case TRANSLATION:
+        translate_coordinates(parallel,
+                              local_node_count,
+                              local_centroid,
+                              side_1_vector,
+                              side_2_vector,
+                              transform.translation);
+        break;
+      case ROTATIONAL:
+        //something
+        rotate_coordinates(parallel, local_node_count, local_centroid, side_1_vector, side_2_vector, transform.rotation);
         break;
       default:
         ThrowRequireMsg(false, "Periodic transform method doesn't exist");
@@ -265,7 +334,8 @@ private:
       size_t local_node_count[2],
       double local_centroid[6],
       AABBVector & side_1_vector,
-      AABBVector & side_2_vector) const
+      AABBVector & side_2_vector,
+      boost::array<double, 3> & translate) const
   {
     //do coordinate tranformation here
     size_t global_node_count[2] =
@@ -274,7 +344,6 @@ private:
     { };
     stk::all_reduce_sum(parallel, local_node_count, global_node_count, 2);
     stk::all_reduce_sum(parallel, local_centroid, global_centroid, 6);
-    double translate[3];
     for (int i = 0; i < 3; ++i)
     {
       translate[i] = (global_centroid[i + 3] / global_node_count[1]) - (global_centroid[i] / global_node_count[0]);
@@ -287,6 +356,36 @@ private:
         side_1_vector[i].center[j] += translate[j];
       }
     }
+  }
+
+
+  void rotate_coordinates(stk::ParallelMachine parallel,
+      size_t local_node_count[2],
+      double local_centroid[6],
+      AABBVector & side_1_vector,
+      AABBVector & side_2_vector,
+      boost::array<double, 9> & rotation) const
+  {
+    //TODO: now assuming that periodicity is around z axis
+    for (size_t iPoint = 0, size = side_1_vector.size(); iPoint < size; ++iPoint)
+    {
+      double r[3];
+      for (int i = 0; i < 3; ++i)
+      {
+        r[i] = side_1_vector[iPoint].center[i];
+        side_1_vector[iPoint].center[i] = 0.0;
+      }
+
+      for (int j = 0; j < 3; ++j)
+      {
+        for (int i = 0; i < 3; ++i)
+        {
+          side_1_vector[iPoint].center[i] += rotation[i + 3*j]*r[j];
+        }
+      }
+    }
+
+
   }
 
 };

@@ -105,7 +105,6 @@ class Gear {
 
   void move( const GearMovement & data );
 
- private:
 
   Entity get_node (
         size_t iz ,       // Thickness index
@@ -150,6 +149,7 @@ class Gear {
   CartesianField    & translation_field ;
   CylindricalField  & cylindrical_coord_field ;
 
+ private:
   EntityVector gear_entities;
 
   Gear(const Gear &);
