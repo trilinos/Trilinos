@@ -385,20 +385,17 @@ private:
 
 public:
 
-  void execute() const
+  inline
+  void execute( void * host_ptr ) const
     {
       if ( ! m_members.empty() ) {
         Impl::ThreadsExec::start( & MultiFunctorParallelReduce::execute_members , this );
+        m_members.back()->output( host_ptr );
       }
     }
 
-  void output( void * ptr ) const
-    {
-      if ( ! m_members.empty() ) {
-        Impl::ThreadsExec::fence();
-        m_members.back()->output( ptr );
-      }
-    }
+  inline
+  void wait() const {}
 
   template< class FunctorType >
   void push_back( const size_t work_count , const FunctorType & f )
