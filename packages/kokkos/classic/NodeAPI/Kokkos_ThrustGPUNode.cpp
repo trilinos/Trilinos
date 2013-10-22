@@ -96,6 +96,8 @@ namespace KokkosClassic {
     totalMem_ = deviceProp.totalGlobalMem;
 
 #if defined(HAVE_KOKKOSCLASSIC_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+    if (!Kokkos::Cuda::host_mirror_device_type::is_initialized())
+      Kokkos::Cuda::host_mirror_device_type::initialize();
     if (!Kokkos::Cuda::is_initialized())
       Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(device) );
 #endif
@@ -146,6 +148,8 @@ namespace KokkosClassic {
     totalMem_ = deviceProp.totalGlobalMem;
 
 #if defined(HAVE_KOKKOSCLASSIC_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+    if (!Kokkos::Cuda::host_mirror_device_type::is_initialized())
+      Kokkos::Cuda::host_mirror_device_type::initialize();
     if (!Kokkos::Cuda::is_initialized())
       Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(device) );
 #endif
