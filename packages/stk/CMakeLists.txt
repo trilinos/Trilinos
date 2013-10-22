@@ -45,8 +45,8 @@ ENDIF()
 # Trilinos, as usual, and configure and build.
 # Note the local .gitignore ignores the symlink.
 #################################################################################
-SET(STK_IS_V2 "ON")
-#SET(STK_IS_V2 "OFF")
+#SET(STK_IS_V2 "ON")
+SET(STK_IS_V2 "OFF")
 
 IF(${STK_IS_V2} STREQUAL "ON")
   MESSAGE("STK_IS_V2 is set")
