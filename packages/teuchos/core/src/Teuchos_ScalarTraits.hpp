@@ -108,7 +108,6 @@ bool generic_real_isnaninf(const Scalar &x)
   }
 
 
-#ifndef __CUDA_ARCH__
 template<>
 struct ScalarTraits<char>
 {
@@ -723,7 +722,6 @@ struct ScalarTraits<double>
   static inline double log(double x) { return std::log(x); }
   static inline double log10(double x) { return std::log10(x); }
 };
-#endif //__CUDA_ARCH__
 
 
 #ifdef HAVE_TEUCHOS_QD

@@ -49,7 +49,7 @@
 #include "Teuchos_ScalarTraitsDecl.hpp"
 
 namespace Teuchos {
-#ifdef __CUDA_ARCH__
+
 template<>
 struct ScalarTraits<int>
 {
@@ -141,7 +141,7 @@ struct ScalarTraits<float>
 };
 #endif // HAVE_KOKKOSCLASSIC_CUDA_FLOAT
 
-//#ifdef HAVE_KOKKOSCLASSIC_CUDA_DOUBLE
+#ifdef HAVE_KOKKOSCLASSIC_CUDA_DOUBLE
 template<>
 struct ScalarTraits<double>
 {
@@ -166,8 +166,8 @@ struct ScalarTraits<double>
   static inline __device__ __host__ double squareroot(double x) { return sqrt(x); }
   static inline __device__ __host__ double pow(double x, double y) { return pow(x,y); }
 };
-//#endif // HAVE_KOKKOSCLASSIC_CUDA_DOUBLE
-#endif //__CUDA_ARCH__
+#endif // HAVE_KOKKOSCLASSIC_CUDA_DOUBLE
+
 } // Teuchos namespace
 
 #endif // _TEUCHOS_SCALARTRAITS_CUDA_HPP_
