@@ -375,8 +375,6 @@ void get_io_field_type(const stk::mesh::FieldBase *field,
   static const std::string scalar("scalar");
   static const std::string vector_2d("vector_2d");
   static const std::string vector_3d("vector_3d");
-  static const std::string quaternion_2d("quaternion_2d");
-  static const std::string quaternion_3d("quaternion_3d");
   static const std::string full_tensor_36("full_tensor_36");
   static const std::string full_tensor_32("full_tensor_32");
   static const std::string full_tensor_22("full_tensor_22");
@@ -385,14 +383,20 @@ void get_io_field_type(const stk::mesh::FieldBase *field,
   static const std::string sym_tensor_33("sym_tensor_33");
   static const std::string sym_tensor_31("sym_tensor_31");
   static const std::string sym_tensor_21("sym_tensor_21");
+  static const std::string matrix_22("matrix_22");
+  static const std::string matrix_33("matrix_33");
+
+#if 0
+  // Not currently handled...
+  static const std::string quaternion_2d("quaternion_2d");
+  static const std::string quaternion_3d("quaternion_3d");
   static const std::string sym_tensor_13("sym_tensor_13");
   static const std::string sym_tensor_11("sym_tensor_11");
   static const std::string sym_tensor_10("sym_tensor_10");
   static const std::string asym_tensor_03("asym_tensor_03");
   static const std::string asym_tensor_02("asym_tensor_02");
   static const std::string asym_tensor_01("asym_tensor_01");
-  static const std::string matrix_22("matrix_22");
-  static const std::string matrix_33("matrix_33");
+#endif
 
   const unsigned rank = field->rank();
   const shards::ArrayDimTag * const * const tags = field->dimension_tags();
