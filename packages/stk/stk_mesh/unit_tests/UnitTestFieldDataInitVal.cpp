@@ -167,7 +167,8 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_vector_field_move_bucket)
   // Create node
   Entity node = mesh.declare_entity(NODE_RANK, node_id, empty_parts);
 
-  const stk::mesh::PartVector& old_parts = mesh.bucket(node).supersets();
+  // need to copy since bucket is going to be deleted during mesh modification
+  const stk::mesh::PartVector old_parts = mesh.bucket(node).supersets();
 
   //Now move the node to the "node_part":
   stk::mesh::PartVector node_part_vec;

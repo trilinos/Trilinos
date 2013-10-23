@@ -180,7 +180,10 @@ public:
 
   unsigned bucket_id() const { return m_bucket_id; }
 
-  /** \brief  This bucket is a subset of these \ref stk::mesh::Part "parts" */
+  /** \brief  This bucket is a subset of these \ref stk::mesh::Part "parts"
+   * WARNING: if the bucket is deleted, this reference will no longer
+   * point to valid memory.
+   */
   const PartVector& supersets() const { return m_parts; }
   void supersets( OrdinalVector & ) const ;
 
