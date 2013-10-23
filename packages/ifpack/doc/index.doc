@@ -263,6 +263,20 @@ The complete list of supported parameters is reported below.
   to be preconditioned as starting solution. Otherwise, use the zero vector
   as starting solution.
 
+- \c "relaxation: backward mode": Does Gauss-Seidel in backward order (rather than forward)
+
+- \c "relaxation: use l1": Use the "L1-Gauss-Seidel" method of Baker, Falgout, Kolev and Yang (SISC 2011).
+  This can be especially advantageous for using Gauss-Seidel and symmetric Gauss-Seidel in parallel.
+
+- \c "relaxation: l1 eta": Sets the "eta" parameter used by the L1 GS/SGS method.
+
+- \c "relaxation: number of local smoothing indices": Sets the number of
+  local unknowns over which to smooth.  This is used for selective (local) smoothing.
+
+- \c "relaxation: local smoothing indices": A list of local unknowns over which to smooth.
+  This can be used for selective (local) smoothing or to force the method to smooth unknowns
+  in a particular order (such as upwind smoothing).
+
 - \c "partitioner: type": specifies the scheme to adopt to partition
   the graph (for block relaxation methods only). Valid values: 
   - \c "linear" (uses a linear decomposition);
@@ -377,6 +391,16 @@ parameter.
 <td>\c "relaxation: min diagonal value" </td><td>\c double </td><td>\c "0.0" </td>
 </tr> <tr>
 <td>\c "relaxation: zero starting solution" </td><td>\c bool </td><td>\c "true" </td>
+</tr> <tr>
+<td>\c "relaxation: backward mode" </td><td>\c bool </td><td>\c "false" </td>
+</tr> <tr>
+<td>\c "relaxation: use l1" </td><td>\c bool </td><td>\c "false" </td>
+</tr> <tr>
+<td>\c "relaxation: l1 eta" </td><td>\c double </td><td>\c "1.5" </td>
+</tr> <tr>
+<td>\c "relaxation: number of local smoothing indices" </td><td>\c int </td><td>\c "A->NumMyRows()" </td>
+</tr> <tr>
+<td>\c "relaxation: local smoothing indices" </td><td>\c int* </td><td>\c "0" </td>
 </tr> <tr>
 <td>\c "partitioner: type"        </td><td>\c string </td><td>\c "greedy" </td>
 </tr> <tr>
