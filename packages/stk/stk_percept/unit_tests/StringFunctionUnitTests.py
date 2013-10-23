@@ -1,7 +1,6 @@
 import sys
 
 sys.path.insert(0,"../build/build.dir/packages/PyTrilinos/src/stk/PyPercept")
-sys.path.insert(0,"/projects/percept")
 
 from math import *
 from numpy import *
