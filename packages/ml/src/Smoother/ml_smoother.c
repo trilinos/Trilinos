@@ -3399,6 +3399,11 @@ int ML_Smoother_Create_BGS_Data(ML_Sm_BGS_Data **data)
    ML_memory_alloc((void**) data, sizeof(ML_Sm_BGS_Data), "BGS" );
    ml_data = (*data);
    ml_data->blockfacts = NULL;
+   ml_data->trid_dl = NULL;
+   ml_data->trid_d  = NULL;
+   ml_data->trid_du = NULL;
+   ml_data->trid_du2= NULL;
+   ml_data->trid_ipiv = NULL;
    ml_data->perms = NULL;
    ml_data->blocksize = -1;
    ml_data->blocklengths = NULL;
@@ -3427,8 +3432,23 @@ void ML_Smoother_Destroy_BGS_Data(void *data)
           (ml_data->blockfacts[i] != NULL )) ML_free(ml_data->blockfacts[i]);
      if ( (ml_data->perms         != NULL ) && 
 	  (ml_data->perms[i]      != NULL )) ML_free(ml_data->perms[i]);
+     if ( (ml_data->trid_dl != NULL ) &&
+          (ml_data->trid_dl[i] != NULL )) ML_free(ml_data->trid_dl[i]);
+     if ( (ml_data->trid_d  != NULL ) &&
+          (ml_data->trid_d [i] != NULL )) ML_free(ml_data->trid_d [i]);
+     if ( (ml_data->trid_du != NULL ) &&
+          (ml_data->trid_du[i] != NULL )) ML_free(ml_data->trid_du[i]);
+     if ( (ml_data->trid_du2 != NULL ) &&
+          (ml_data->trid_du2[i] != NULL )) ML_free(ml_data->trid_du2[i]);
+     if ( (ml_data->trid_ipiv != NULL ) &&
+          (ml_data->trid_ipiv[i] != NULL )) ML_free(ml_data->trid_ipiv[i]);
    }
    if (ml_data->blockfacts != NULL ) ML_free( ml_data->blockfacts );
+   if (ml_data->trid_dl != NULL ) ML_free( ml_data->trid_dl);
+   if (ml_data->trid_d  != NULL ) ML_free( ml_data->trid_d );
+   if (ml_data->trid_du != NULL ) ML_free( ml_data->trid_du);
+   if (ml_data->trid_du2 != NULL) ML_free( ml_data->trid_du2);
+   if (ml_data->trid_ipiv != NULL) ML_free( ml_data->trid_ipiv);
    if (ml_data->perms      != NULL ) ML_free( ml_data->perms );
 
    if ( ml_data->blocklengths != NULL ) {
@@ -3449,6 +3469,8 @@ void ML_Smoother_Clean_BGS_Data(void *data)
 {
    int            Nblocks, i, **perms;
    double         **blockfacts;
+   double **trid_dl,  **trid_d,  **trid_du,  **trid_du2; 
+   int    **trid_ipiv; 
    ML_Sm_BGS_Data *dataptr;
 
    dataptr = (ML_Sm_BGS_Data *) data;
@@ -3456,14 +3478,29 @@ void ML_Smoother_Clean_BGS_Data(void *data)
    Nblocks = dataptr->Nblocks;
    perms = dataptr->perms;
    blockfacts = dataptr->blockfacts;
+   trid_dl = dataptr->trid_dl;
+   trid_d  = dataptr->trid_d;
+   trid_du = dataptr->trid_du;
+   trid_du2= dataptr->trid_du2;
+   trid_ipiv= dataptr->trid_ipiv;
 
    for (i = Nblocks-1; i >= 0; i--) {
      if (perms[i]      != NULL) ML_free(perms[i]);
      if (blockfacts[i] != NULL)  ML_free(blockfacts[i]);
+     if ((trid_dl != NULL) && (trid_dl[i] != NULL))  ML_free(trid_dl[i]);
+     if ((trid_d  != NULL) && (trid_d[i] != NULL))  ML_free(trid_d[i]);
+     if ((trid_du != NULL) && (trid_du[i] != NULL))  ML_free(trid_du[i]);
+     if ((trid_du2!= NULL) && (trid_du2[i] != NULL))  ML_free(trid_du2[i]);
+     if ((trid_ipiv!= NULL) && (trid_ipiv[i] != NULL))  ML_free(trid_ipiv[i]);
    }
 
    ML_free(perms);
    ML_free(blockfacts);
+   if (trid_dl != NULL) ML_free(trid_dl);
+   if (trid_d  != NULL) ML_free(trid_d);
+   if (trid_du != NULL) ML_free(trid_du);
+   if (trid_du2!= NULL) ML_free(trid_du2);
+   if (trid_ipiv != NULL) ML_free(trid_ipiv);
    ML_memory_free((void **) &dataptr);
 }
 
