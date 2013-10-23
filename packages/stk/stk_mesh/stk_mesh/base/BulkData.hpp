@@ -143,13 +143,12 @@ public:
     return m_field_meta_data[m_num_fields*rank +  f.mesh_meta_data_ordinal()];
   }
 
-#ifndef SWIG
   // current memory usage of stk_mesh data structures on current processor
   void current_memory_usage(std::ostream & out);
 
   // current max memory usage of stk_mesh data structures across all processor
   void current_max_memory_usage(std::ostream & out);
-#endif
+
 
 
   enum BulkDataSyncState { MODIFIABLE = 1 , SYNCHRONIZED = 2 };
