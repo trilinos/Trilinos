@@ -183,7 +183,7 @@ namespace MueLu {
     }
 
     ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
-    if (postSmoother == preSmoother) {
+    if (postSmoother == preSmoother && !preSmoother.is_null()) {
       paramList = preSmoother->GetParameterList();
 
     } else {
