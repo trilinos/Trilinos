@@ -56,6 +56,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "Tpetra_Map.hpp"
+#include "Tpetra_MultiVector.hpp"
 
 namespace panzer {
 
@@ -247,17 +248,59 @@ public:
   void enableTieBreak(bool enable)   
   { useTieBreak_ = enable; }
 
+  /** Turn on/off the use of ghosting in the construction
+    * of the global ids. If on, then the shared GIDs
+    * will include GIDs from ghosted elements. And you will
+    * be able to call getElement(G/L)IDs for elements in the
+    * one ring of this processor.
+    */
+  void enableGhosting(bool enable)   
+  { buildGhosted_ = enable; }
+
 protected:
 
-   /** Use Zoltan2 to locally reorder with RCM.
-     */
-   Teuchos::RCP<const Tpetra::Map<LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> >
-   runLocalRCMReordering(const Teuchos::RCP<const Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,KokkosClassic::DefaultNode::DefaultNodeType> > &);
+  /** Use Zoltan2 to locally reorder with RCM.
+    */
+  Teuchos::RCP<const Tpetra::Map<LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> >
+  runLocalRCMReordering(const Teuchos::RCP<const Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,KokkosClassic::DefaultNode::DefaultNodeType> > &);
 
-   /** Using the natural ordering associated with the std::vector
-     * retrieved from the connection manager
-     */
-   std::size_t blockIdToIndex(const std::string & blockId) const;
+  /** Using the natural ordering associated with the std::vector
+    * retrieved from the connection manager
+    */
+  std::size_t blockIdToIndex(const std::string & blockId) const;
+
+  /** This small struct is a utility meant to unify access
+    * to elements and allow better code reuse. Basically
+    * it provides a switch between the neighbor element blocks
+    * and the owned element blocks.
+    */
+  class ElementBlockAccess {
+    bool useOwned_;
+    Teuchos::RCP<const ConnManager<LO,GO> > connMngr_;
+  public:
+    ElementBlockAccess(bool owned,const Teuchos::RCP<const ConnManager<LO,GO> > & connMngr) 
+      : useOwned_(true), connMngr_(connMngr) {}
+    
+    const std::vector<LO> & getElementBlock(const std::string & eBlock) const 
+    {
+      if(useOwned_==true)
+        return connMngr_->getElementBlock(eBlock);
+      else
+        return connMngr_->getNeighborElementBlock(eBlock);
+    }
+  };
+
+  /** Build the overlapped communication map given an element access object.
+    * This map is used to construct the GIDs, and also to communicate the used
+    * GIDs. (this is steps 1 and 2)
+    */
+  Teuchos::RCP<const Tpetra::Map<LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> >
+  buildOverlapMapFromElements(const ElementBlockAccess & access) const; 
+
+  void fillGIDsFromOverlappedMV(const ElementBlockAccess & access,
+                                std::vector<std::vector< GO > > & elementGIDs,
+                                const Tpetra::Map<LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> & overlapmap,
+                                const Tpetra::MultiVector<GO,LO,GO,KokkosClassic::DefaultNode::DefaultNodeType> & overlap_mv) const;
   
   Teuchos::RCP<ConnManager<LO,GO> > connMngr_;
   Teuchos::RCP<Teuchos::Comm<int> > communicator_;
@@ -296,6 +339,7 @@ protected:
   std::vector<std::vector<char> > orientation_;
 
   bool useTieBreak_;
+  bool buildGhosted_;
 };
 
 }
