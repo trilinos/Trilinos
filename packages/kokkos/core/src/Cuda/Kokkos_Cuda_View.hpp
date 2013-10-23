@@ -98,7 +98,7 @@ namespace Impl {
 
 #if defined( CUDA_VERSION ) && ( 500 <= CUDA_VERSION )
 
-typedef typename enable_if<
+typedef enable_if<
   sizeof(::cudaTextureObject_t) == sizeof(const void *) ,
   ::cudaTextureObject_t >::type cuda_texture_object_type ;
 
