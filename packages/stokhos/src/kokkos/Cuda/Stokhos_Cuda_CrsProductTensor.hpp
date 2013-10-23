@@ -87,6 +87,10 @@ public:
   typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type > matrix_type;
   typedef Kokkos::View< VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda > vector_type;
 
+#define USE_LDG 0
+
+#if USE_LDG == 0
+
   // The multiply kernel
   class MultiplyKernel {
   public:
@@ -108,6 +112,7 @@ public:
       // Number of bases in the stochastic system:
       const size_type dim = m_A.block.dimension();
 
+      // Get shared memory for loading x, A, and y
       volatile VectorScalar * const sh_x =
         kokkos_impl_cuda_shared_memory<VectorScalar>();
       volatile MatrixScalar * const sh_A = sh_x + BlockSize*dim;
@@ -119,24 +124,20 @@ public:
       const size_type nid = blockDim.x * blockDim.y;
       const size_type tid = threadIdx.x + blockDim.x * threadIdx.y;
 
-      // blockIdx.x == row in the deterministic (finite element) system
-      const size_type iBlockEntryBeg = m_A.graph.row_map[ blockIdx.x ];
-      const size_type iBlockEntryEnd = m_A.graph.row_map[ blockIdx.x + 1 ];
-      size_type numBlock = (iBlockEntryEnd-iBlockEntryBeg) / BlockSize;
-      const size_type remBlock = (iBlockEntryEnd-iBlockEntryBeg) % BlockSize;
-      if (remBlock > 0) ++numBlock;
-
       // Zero y
       for ( size_type i = tid; i < dim; i += nid ) {
         sh_y[i] = 0.0;
       }
 
       // Loop over columns in the discrete (finite element) system.
-      size_type iBlockEntry = iBlockEntryBeg;
-      for ( size_type block = 0; block < numBlock;
-            ++block, iBlockEntry += BlockSize) {
+      // blockIdx.x == row in the deterministic (finite element) system
+      const size_type iBlockEntryBeg = m_A.graph.row_map[ blockIdx.x ];
+      const size_type iBlockEntryEnd = m_A.graph.row_map[ blockIdx.x + 1 ];
+      for (size_type iBlockEntry=iBlockEntryBeg; iBlockEntry<iBlockEntryEnd;
+           iBlockEntry += BlockSize) {
         const size_type block_size =
-          (block == numBlock-1 && remBlock > 0) ? remBlock : BlockSize;
+          (iBlockEntryEnd-iBlockEntry < BlockSize) ?
+            iBlockEntryEnd-iBlockEntry : BlockSize;
 
         // Wait for X and A to be used in the previous iteration
         // before reading new values.
@@ -177,7 +178,8 @@ public:
             const size_type k    = ( kj >> 16     ) * BlockSize ;
 
             for ( size_type col = 0; col < block_size; ++col ) {
-              y += v * ( sh_A[col+j] * sh_x[col+k] + sh_A[col+k] * sh_x[col+j] );
+              y += v * ( sh_A[col+j] * sh_x[col+k] +
+                         sh_A[col+k] * sh_x[col+j] );
             }
 
           }
@@ -214,6 +216,138 @@ public:
     }
   };
 
+#elif USE_LDG == 1
+
+  // The multiply kernel -- using read-only data cache for A
+  // Currently is slower than one above
+  class MultiplyKernel {
+  public:
+
+    const matrix_type m_A;
+    const vector_type m_x;
+    const vector_type m_y;
+    const size_type BlockSize;
+
+    MultiplyKernel( const matrix_type & A,
+                    const vector_type & x,
+                    const vector_type & y,
+                    const size_type block_size )
+      : m_A( A ), m_x( x ), m_y( y ), BlockSize(block_size) {}
+
+    __device__
+    void operator()(void) const
+    {
+      // Number of bases in the stochastic system:
+      const size_type dim = m_A.block.dimension();
+
+      volatile VectorScalar * const sh_x =
+        kokkos_impl_cuda_shared_memory<VectorScalar>();
+      volatile VectorScalar * const sh_y = sh_x + BlockSize*dim;
+#if !HAVE_CUDA_SHUFFLE
+      volatile VectorScalar * const sh_t = sh_y + dim;
+#endif
+
+      const size_type nid = blockDim.x * blockDim.y;
+      const size_type tid = threadIdx.x + blockDim.x * threadIdx.y;
+
+      // Zero y
+      for ( size_type i = tid; i < dim; i += nid ) {
+        sh_y[i] = 0.0;
+      }
+
+      // Loop over columns in the discrete (finite element) system.
+      // blockIdx.x == row in the deterministic (finite element) system
+      const size_type iBlockEntryBeg = m_A.graph.row_map[ blockIdx.x ];
+      const size_type iBlockEntryEnd = m_A.graph.row_map[ blockIdx.x + 1 ];
+      for (size_type iBlockEntry=iBlockEntryBeg; iBlockEntry<iBlockEntryEnd;
+           iBlockEntry += BlockSize) {
+        const size_type block_size =
+          (iBlockEntryEnd-iBlockEntry < BlockSize) ?
+            iBlockEntryEnd-iBlockEntry  : BlockSize;
+
+        // Wait for X and A to be used in the previous iteration
+        // before reading new values.
+        __syncthreads();
+
+        // Coalesced read blocks of X into shared memory
+        for ( size_type col = 0; col < block_size; ++col ) {
+
+          const size_type iBlockColumn = m_A.graph.entries( iBlockEntry + col );
+          const VectorScalar * const x = & m_x( 0, iBlockColumn );
+
+          // Coalesced read by the whole block from global memory:
+          for ( size_type i = tid; i < dim; i += nid ) {
+            sh_x[col + i * BlockSize] = x[i]; // m_x( i, iBlockColumn );
+          }
+
+        }
+
+        __syncthreads(); // wait for X to be read before using them
+
+        // This cuda block is responsible for computing all values of 'y'
+        for ( size_type i = threadIdx.y; i < dim; i += blockDim.y ) {
+          VectorScalar y = 0;
+
+          // Product tensor entries which this warp will iterate:
+          const size_type lBeg = m_A.block.entry_begin( i );
+          const size_type lEnd = m_A.block.entry_end(   i );
+
+          // Loop through sparse tensor contributions with coalesced reads.
+          for ( size_type l = lBeg+threadIdx.x; l < lEnd; l += blockDim.x ) {
+
+            // Read 'blockDim.x' entries from the tensor (coalesced)
+            const size_type kj   = m_A.block.coord( l );
+            const TensorScalar v = m_A.block.value( l );
+            const size_type j    = ( kj & 0x0ffff ) ;
+            const size_type k    = ( kj >> 16     ) ;
+
+            for ( size_type col = 0; col < block_size; ++col ) {
+              const size_type bCol = iBlockEntry + col;
+#if (__CUDA_ARCH__ >= 350)
+              y += v * ( __ldg(&m_A.values(j,bCol)) * sh_x[col+k*BlockSize] +
+                         __ldg(&m_A.values(k,bCol)) * sh_x[col+j*BlockSize] );
+#else
+              y += v * ( m_A.values(j,bCol) * sh_x[col+k*BlockSize] +
+                         m_A.values(k,bCol) * sh_x[col+j*BlockSize] );
+#endif
+            }
+
+          }
+
+          // Reduction of 'y' within 'blockDim.x'
+#if HAVE_CUDA_SHUFFLE
+          if (blockDim.x >= 2) y += shfl_down(y, 1, blockDim.x);
+          if (blockDim.x >= 4) y += shfl_down(y, 2, blockDim.x);
+          if (blockDim.x >= 8) y += shfl_down(y, 4, blockDim.x);
+          if (blockDim.x >= 16) y += shfl_down(y, 8, blockDim.x);
+          if (blockDim.x >= 32) y += shfl_down(y, 16, blockDim.x);
+          if ( threadIdx.x == 0 ) sh_y[i] += y;
+#else
+          sh_t[ tid ] = y;
+          if (threadIdx.x+16 < blockDim.x) sh_t[tid] += sh_t[tid+16];
+          if (threadIdx.x+ 8 < blockDim.x) sh_t[tid] += sh_t[tid+ 8];
+          if (threadIdx.x+ 4 < blockDim.x) sh_t[tid] += sh_t[tid+ 4];
+          if (threadIdx.x+ 2 < blockDim.x) sh_t[tid] += sh_t[tid+ 2];
+          if (threadIdx.x+ 1 < blockDim.x) sh_t[tid] += sh_t[tid+ 1];
+          if (threadIdx.x == 0) sh_y[i] += sh_t[tid];
+#endif
+
+        }
+
+      }
+
+      // Wait for all contributions of y to be completed
+      __syncthreads();
+
+      // Store result back in global memory
+      for ( size_type i = tid; i < dim; i += nid ) {
+        m_y( i, blockIdx.x ) = sh_y[ i ];
+      }
+    }
+  };
+
+#endif
+
   //------------------------------------
 
   struct TensorReadEntry {
@@ -249,7 +383,7 @@ public:
 
     // Compute number of warps we can fit on each SM based on register limits
     // Use Cuda introspection to determine number of registers per thread
-    //const size_type regs_per_thread = 47;
+    //const size_type regs_per_thread = 46;
     const size_type regs_per_thread =
       device_prop.get_kernel_registers(
         Kokkos::Impl::cuda_parallel_launch_local_memory<MultiplyKernel>);
@@ -269,27 +403,39 @@ public:
     const size_type rows_per_warp = warp_size / threads_per_row;
 
     const size_type vec_scalar_size = sizeof(VectorScalar);
+#if USE_LDG == 0
     const size_type mat_scalar_size = sizeof(MatrixScalar);
+#endif
 
 #define USE_FIXED_BLOCKSIZE 0
 
 #if USE_FIXED_BLOCKSIZE
 
-    const size_type num_blocks = 2;
+    const size_type num_blocks = 3;
     size_type nw = warps_per_sm / num_blocks;
     while (nw > 1 && num_blocks*nw % warp_granularity) --nw;
-    const size_type num_warps = nw;
+    const size_type num_warp = nw;
     const size_type sh_per_block = shcap / num_blocks;
     const size_type sr =
-      device_prop.has_shuffle ? 0 : vec_scalar_size*warp_size*num_warps;
-    size_type bs = ((shcap - sr) / tensor_align - vec_scalar_size) /
+      device_prop.has_shuffle ? 0 : vec_scalar_size*warp_size*num_warp;
+#if USE_LDG == 1
+    size_type bs = ((sh_per_block - sr) / tensor_align - vec_scalar_size) /
+      vec_scalar_size;
+#else
+    size_type bs = ((sh_per_block - sr) / tensor_align - vec_scalar_size) /
       (vec_scalar_size+mat_scalar_size);
+#endif
     if (bs % 2 == 0) --bs;
     const size_type block_size_max = 31;
     const size_type block_size = std::min(bs, block_size_max);
     //const size_type block_size = 7;
+#if USE_LDG == 1
+    const size_type shmem =
+      ( (vec_scalar_size*block_size+vec_scalar_size)*tensor_align + sr + sh_granularity-1 ) & ~(sh_granularity-1);
+#else
     const size_type shmem =
       ( ((vec_scalar_size+mat_scalar_size)*block_size+vec_scalar_size)*tensor_align + sr + sh_granularity-1 ) & ~(sh_granularity-1);
+#endif
 
 #else
 
@@ -312,8 +458,13 @@ public:
       // sr by the maximum number possible (which is all warps in 1 block)
       const size_type sr =
         device_prop.has_shuffle ? 0 : vec_scalar_size*warp_size*warps_per_sm;
+#if USE_LDG == 1
+      size_type shmem =
+        (vec_scalar_size*bs+vec_scalar_size)*tensor_align+sr;
+#else
       size_type shmem =
         ((vec_scalar_size+mat_scalar_size)*bs+vec_scalar_size)*tensor_align+sr;
+#endif
       shmem = (shmem + sh_granularity-1) & ~(sh_granularity-1);
       size_type num_blocks = std::min(shcap / shmem, max_blocks_per_sm);
       size_type tensor_reads = (fem_nnz_per_row+bs-1) / bs;
