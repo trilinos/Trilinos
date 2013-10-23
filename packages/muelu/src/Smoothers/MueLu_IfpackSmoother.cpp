@@ -74,6 +74,17 @@ namespace MueLu {
     }
   }
 
+  void IfpackSmoother::SetPrecParameters(const Teuchos::ParameterList& list) const {
+    ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
+    paramList.setParameters(list);
+
+    RCP<ParameterList> precList = this->RemoveFactoriesFromList(this->GetParameterList());
+
+    prec_->SetParameters(*precList);
+
+    paramList.setParameters(*precList);
+  }
+
   void IfpackSmoother::DeclareInput(Level &currentLevel) const {
     this->Input(currentLevel, "A");
   }
@@ -99,9 +110,10 @@ namespace MueLu {
       }
 
     RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
+
     Ifpack factory;
     prec_ = rcp(factory.Create(type_, &(*epA), overlap_));
-    prec_->SetParameters(const_cast<ParameterList&>(this->GetParameterList()));
+    SetPrecParameters();
     prec_->Compute();
 
     SmootherPrototype::IsSetup(true);
@@ -123,7 +135,7 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Apply(): Setup() has not been called");
 
     // Forward the InitialGuessIsZero option to Ifpack
-    Teuchos::ParameterList  paramList = this->GetParameterList();
+    Teuchos::ParameterList  paramList;
     if (type_ == "Chebyshev") {
       paramList.set("chebyshev: zero starting solution", InitialGuessIsZero);
 
@@ -139,7 +151,7 @@ namespace MueLu {
       // option is supported by current ifpack2 preconditioner
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,"IfpackSmoother::Apply(): Ifpack preconditioner '"+type_+"' not supported");
     }
-    prec_->SetParameters(paramList);
+    SetPrecParameters(paramList);
 
     // Apply
     if (InitialGuessIsZero) {

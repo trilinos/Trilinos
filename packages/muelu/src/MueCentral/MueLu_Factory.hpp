@@ -99,27 +99,25 @@ namespace MueLu {
       return GetParameterList().get< RCP<const FactoryBase> >(varName);
     }
 
-    virtual void PrintParameterList(MsgType type, bool skipFactories = true) const {
-      ParameterList paramList = GetParameterList();
-      if (skipFactories) {
-        // Remove FactoryBase entries from the list
-        // The solution would be much more elegant if ParameterList support std::list like operations
-        // In that case, we could simply write:
-        //   for (ParameterList::ConstIterator it = paramList.begin(); it != paramList.end(); it++)
-        //     if (paramList.isType<RCP<const FactoryBase> >(it->first))
-        //       it = paramList.erase(it);
-        //     else
-        //       it++;
-        ParameterList::ConstIterator it;
-        while (it != paramList.end()) {
-          it = paramList.begin();
+    RCP<ParameterList> RemoveFactoriesFromList(const ParameterList& list) const {
+      RCP<ParameterList> paramList = rcp(new ParameterList(list));
+      // Remove FactoryBase entries from the list
+      // The solution would be much more elegant if ParameterList support std::list like operations
+      // In that case, we could simply write:
+      //   for (ParameterList::ConstIterator it = paramList.begin(); it != paramList.end(); it++)
+      //     if (paramList.isType<RCP<const FactoryBase> >(it->first))
+      //       it = paramList.erase(it);
+      //     else
+      //       it++;
+      ParameterList::ConstIterator it;
+      while (it != paramList->end()) {
+        it = paramList->begin();
 
-          for (; it != paramList.end(); it++)
-            if (paramList.isType<RCP<const FactoryBase> >(it->first))
-              paramList.remove(it->first);
-        }
+        for (; it != paramList->end(); it++)
+          if (paramList->isType<RCP<const FactoryBase> >(it->first))
+            paramList->remove(it->first);
       }
-      GetOStream(type,0) << paramList << std::endl;
+      return paramList;
     }
 
     // SetParameterList(...);

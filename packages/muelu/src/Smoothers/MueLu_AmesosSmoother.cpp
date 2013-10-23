@@ -129,7 +129,12 @@ namespace MueLu {
     if (A_->getRowMap()->isDistributed() == true && A_->getRowMap()->isContiguous() == false)
       const_cast<ParameterList&>(this->GetParameterList()).set("Reindex", true);
 
-    prec_->SetParameters(const_cast<ParameterList&>(this->GetParameterList()));
+    const ParameterList& paramList = this->GetParameterList();
+    RCP<ParameterList> precList = this->RemoveFactoriesFromList(paramList);
+
+    prec_->SetParameters(*precList);
+
+    const_cast<ParameterList&>(paramList).setParameters(*precList);
 
     int r = prec_->NumericFactorization();
     TEUCHOS_TEST_FOR_EXCEPTION(r != 0, Exceptions::RuntimeError, "MueLu::AmesosSmoother::Setup(): Amesos solver returns value of " +

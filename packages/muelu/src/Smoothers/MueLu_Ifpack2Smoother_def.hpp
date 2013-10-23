@@ -76,8 +76,20 @@ namespace MueLu {
     if (SmootherPrototype::IsSetup()) {
       // It might be invalid to change parameters after the setup, but it depends entirely on Ifpack implementation.
       // TODO: I don't know if Ifpack returns an error code or exception or ignore parameters modification in this case...
-      prec_->setParameters(const_cast<ParameterList&>(this->GetParameterList()));
+      SetPrecParameters();
     }
+  }
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetPrecParameters(const Teuchos::ParameterList& list) const {
+    ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
+    paramList.setParameters(list);
+
+    RCP<ParameterList> precList = this->RemoveFactoriesFromList(this->GetParameterList());
+
+    prec_->setParameters(*precList);
+
+    paramList.setParameters(*precList);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -113,7 +125,7 @@ namespace MueLu {
     RCP<const Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> > tpA = Utils::Op2NonConstTpetraCrs(A_);
     prec_ = Ifpack2::Factory::create(type_, tpA, overlap_);
 
-    prec_->setParameters(this->GetParameterList());
+    SetPrecParameters();
     prec_->initialize();
     prec_->compute();
 
@@ -144,7 +156,7 @@ namespace MueLu {
     //        initial value at the end but there is no way right now to get
     //        the current value of the "zero starting solution" in ifpack2.
     //        It's not really an issue, as prec_  can only be used by this method.
-    Teuchos::ParameterList paramList = this->GetParameterList();
+    Teuchos::ParameterList paramList;
     if (type_ == "CHEBYSHEV") {
       paramList.set("chebyshev: zero starting solution", InitialGuessIsZero);
 
@@ -169,7 +181,7 @@ namespace MueLu {
       // option is supported by current ifpack2 preconditioner
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Ifpack2Smoother::Apply(): Ifpack2 preconditioner '" + type_ + "' not supported");
     }
-    prec_->setParameters(paramList);
+    SetPrecParameters(paramList);
 
     // Apply
     if ( (type_ != "ILUT" && type_ != "SCHWARZ") || InitialGuessIsZero) {

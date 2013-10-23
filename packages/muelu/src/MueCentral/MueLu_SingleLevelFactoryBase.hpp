@@ -103,7 +103,7 @@ namespace MueLu {
 #endif
       Build(requestedLevel);
 
-      PrintParameterList(Test);
+      GetOStream(Test,0) << *RemoveFactoriesFromList(GetParameterList());
     }
 
     //!

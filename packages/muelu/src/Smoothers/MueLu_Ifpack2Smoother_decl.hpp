@@ -194,6 +194,9 @@ namespace MueLu {
     //@}
 
   private:
+    void SetPrecParameters(const Teuchos::ParameterList& list = Teuchos::ParameterList()) const;
+
+  private:
 
     //! ifpack2-specific key phrase that denote smoother type
     std::string type_;

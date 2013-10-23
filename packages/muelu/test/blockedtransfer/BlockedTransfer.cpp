@@ -348,6 +348,7 @@ int main(int argc, char *argv[]) {
   M.SetFactory("Smoother",     smootherFact); // TODO fix me
   M.SetFactory("CoarseSolver", coarseSolverFact);
 
+  H.SetVerbLevel(MueLu::Test);
   H.Setup(M);
 
   std::cout << "main AcFact = " << AcFact.get() << std::endl;
