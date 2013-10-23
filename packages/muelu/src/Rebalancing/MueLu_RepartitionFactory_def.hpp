@@ -578,7 +578,7 @@ namespace MueLu {
     // We do not store processor id in data, as we can compute that by looking on the offset in the gData.
     Array<GO> lData(dataSize, -1), gData(numProcs * dataSize);
     int numEdges = 0;
-    for (typename std::map<GO,GO>::reverse_iterator rit = revlEdges.rbegin(); rit != revlEdges.rend() && numEdges < maxLocal; rit++) {
+    for (typename std::multimap<GO,GO>::reverse_iterator rit = revlEdges.rbegin(); rit != revlEdges.rend() && numEdges < maxLocal; rit++) {
       lData[2*numEdges+0] = rit->second; // part id
       lData[2*numEdges+1] = rit->first;  // edge weight
       numEdges++;
