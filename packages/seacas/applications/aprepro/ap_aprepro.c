@@ -47,8 +47,8 @@
 static char *qainfo[] =
 {
   "Aprepro",
-  "Date: 2013/10/07",
-  "Revision: 2.35"
+  "Date: 2013/10/23",
+  "Revision: 2.36"
 };
 
 #include <stdlib.h>
@@ -340,7 +340,7 @@ usage (void)
    ECHO("      --message or -M: Print INFO messages                     \n");
    ECHO("    --nowarning or -W: Do not print WARN messages	        \n");
    ECHO("    --copyright or -C: Print copyright message                 \n");
-   ECHO("        --quiet or -q: Do not anything extra to stdout         \n");
+   ECHO("        --quiet or -q: Do not output version info to stdout    \n");
    ECHO("              var=val: Assign value 'val' to variable 'var'  \n\n");
    ECHO("\tEnter {DUMP_FUNC()} for list of functions recognized by aprepro\n");
    ECHO("\tEnter {DUMP_PREVAR()} for list of predefined variables in aprepro\n");
