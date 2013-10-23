@@ -84,6 +84,10 @@
 
 namespace MueLu {
 
+  //! Helper functions to compare two paramter lists
+  bool areSame(const ParameterList& list1, const ParameterList& list2);
+
+
   // This macro is tricky. The use case is when we do not have a level specific parameter, so we
   // need to take the default value from the general list for all levels, or set it to the default.
 #define MUELU_READ_2LIST_PARAM(paramList, defaultList, paramStr, varType, defaultValue, varName) \
@@ -237,52 +241,53 @@ namespace MueLu {
       defaultSmootherParams.set("relaxation: sweeps",         Teuchos::OrdinalTraits<LO>::one());
       defaultSmootherParams.set("relaxation: damping factor", Teuchos::ScalarTraits<Scalar>::one());
 
-      RCP<SmootherPrototype> presmoother = Teuchos::null, postsmoother = Teuchos::null;
+      RCP<SmootherPrototype> preSmoother = Teuchos::null, postSmoother = Teuchos::null;
+      std::string            preSmootherType,             postSmootherType;
+      ParameterList          preSmootherParams,           postSmootherParams;
       if (PreOrPost == "pre" || PreOrPost == "both") {
-        std::string presmootherType;
         if (paramList.isParameter("smoother: pre type")) {
-          presmootherType = paramList.get<std::string>("smoother: pre type");
+          preSmootherType = paramList.get<std::string>("smoother: pre type");
         } else {
-          MUELU_READ_2LIST_PARAM(paramList, defaultList, "smoother: type", std::string, "RELAXATION", presmootherTypeTmp);
-          presmootherType = presmootherTypeTmp;
+          MUELU_READ_2LIST_PARAM(paramList, defaultList, "smoother: type", std::string, "RELAXATION", preSmootherTypeTmp);
+          preSmootherType = preSmootherTypeTmp;
         }
 
-        ParameterList presmootherParams;
         if (paramList.isSublist("smoother: pre params"))
-          presmootherParams = paramList.sublist("smoother: pre params");
+          preSmootherParams = paramList.sublist("smoother: pre params");
         else if (paramList.isSublist("smoother: params"))
-          presmootherParams = paramList.sublist("smoother: params");
+          preSmootherParams = paramList.sublist("smoother: params");
         else if (defaultList.isSublist("smoother: params"))
-          presmootherParams = defaultList.sublist("smoother: params");
-        else
-          presmootherParams = defaultSmootherParams;
+          preSmootherParams = defaultList.sublist("smoother: params");
+        else if (preSmootherType == "RELAXATION")
+          preSmootherParams = defaultSmootherParams;
 
-        presmoother = rcp(new TrilinosSmoother(presmootherType, presmootherParams, overlap));
+        preSmoother = rcp(new TrilinosSmoother(preSmootherType, preSmootherParams, overlap));
       }
 
       if (PreOrPost == "post" || PreOrPost == "both") {
-        std::string postsmootherType;
         if (paramList.isParameter("smoother: post type"))
-          postsmootherType = paramList.get<std::string>("smoother: post type");
+          postSmootherType = paramList.get<std::string>("smoother: post type");
         else {
-          MUELU_READ_2LIST_PARAM(paramList, defaultList, "smoother: type", std::string, "RELAXATION", postsmootherTypeTmp);
-          postsmootherType = postsmootherTypeTmp;
+          MUELU_READ_2LIST_PARAM(paramList, defaultList, "smoother: type", std::string, "RELAXATION", postSmootherTypeTmp);
+          postSmootherType = postSmootherTypeTmp;
         }
 
-        ParameterList postsmootherParams;
         if (paramList.isSublist("smoother: post params"))
-          postsmootherParams = paramList.sublist("smoother: post params");
+          postSmootherParams = paramList.sublist("smoother: post params");
         else if (paramList.isSublist("smoother: params"))
-          postsmootherParams = paramList.sublist("smoother: params");
+          postSmootherParams = paramList.sublist("smoother: params");
         else if (defaultList.isSublist("smoother: params"))
-          postsmootherParams = defaultList.sublist("smoother: params");
-        else
-          postsmootherParams = defaultSmootherParams;
+          postSmootherParams = defaultList.sublist("smoother: params");
+        else if (postSmootherType == "RELAXATION")
+          postSmootherParams = defaultSmootherParams;
 
-        postsmoother = rcp(new TrilinosSmoother(postsmootherType, postsmootherParams, overlap));
+        if (postSmootherType == preSmootherType && areSame(preSmootherParams, postSmootherParams))
+          postSmoother = preSmoother;
+        else
+          postSmoother = rcp(new TrilinosSmoother(postSmootherType, postSmootherParams, overlap));
       }
 
-      manager->SetFactory("Smoother", rcp(new SmootherFactory(presmoother, postsmoother)));
+      manager->SetFactory("Smoother", rcp(new SmootherFactory(preSmoother, postSmoother)));
     }
 
     // === Coarse solver ===
@@ -486,6 +491,30 @@ namespace MueLu {
   }
 #undef MUELU_READ_2LIST_PARAM
 #undef MUELU_TEST_AND_SET_PARAM
+
+  static bool compare(const ParameterList& list1, const ParameterList& list2) {
+    // First loop through and validate the parameters at this level.
+    // In addition, we generate a list of sublists that we will search next
+    for (ParameterList::ConstIterator it = list1.begin(); it != list1.end(); it++) {
+      const std::string&             name   = it->first;
+      const Teuchos::ParameterEntry& entry1 = it->second;
+
+      const Teuchos::ParameterEntry *entry2 = list2.getEntryPtr(name);
+      if (!entry2)                                           // entry is not present in the second list
+        return false;
+      if (entry1.isList() && entry2->isList()) {             // sublist check
+        compare(Teuchos::getValue<ParameterList>(entry1), Teuchos::getValue<ParameterList>(*entry2));
+        continue;
+      }
+      if (entry1.getAny(false) != entry2->getAny(false))     // entries have different types or different values
+        return false;
+    }
+
+    return true;
+  }
+  bool areSame(const ParameterList& list1, const ParameterList& list2) {
+    return compare(list1, list2) && compare(list2, list1);
+  }
 
 } // namespace MueLu
 
