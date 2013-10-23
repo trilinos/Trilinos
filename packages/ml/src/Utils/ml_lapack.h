@@ -30,6 +30,7 @@ typedef long ftnlen;
 #define ml_fcd fcd
 #define PREFIX
 
+#define DGTTS2_F77  F77_BLAS_MANGLE(sgtts2,SGTTS2)
 #define DGETRF_F77  F77_BLAS_MANGLE(sgetrf,SGETRF)
 #define DGETRS_F77  F77_BLAS_MANGLE(sgetrs,SGETRS)
 #define DGESVD_F77  F77_BLAS_MANGLE(sgesvd,SGESVD)
@@ -65,6 +66,7 @@ typedef long ftnlen;
 #define DGEEV_F77   F77_BLAS_MANGLE(dgeev,DGEEV)
 #define DGEHRD_F77  F77_BLAS_MANGLE(dgehrd,DGEHRD)
 #define DGELS_F77   F77_BLAS_MANGLE(dgels,DGELS)
+#define DGTTS2_F77  F77_BLAS_MANGLE(dgtts2,DGTTS2)
 #define DGETRF_F77  F77_BLAS_MANGLE(dgetrf,DGETRF)
 #define DGETRS_F77  F77_BLAS_MANGLE(dgetrs,DGETRS)
 #define DGESVD_F77  F77_BLAS_MANGLE(dgesvd,DGESVD)
@@ -94,6 +96,7 @@ typedef long ftnlen;
 #define ml_fcd char *
 #define PREFIX
 
+#define DGTTS2_F77  F77_BLAS_MANGLE(dgtts2,DGTTS2)
 #define DGETRF_F77  F77_BLAS_MANGLE(dgetrf,DGETRF)
 #define DGETRS_F77  F77_BLAS_MANGLE(dgetrs,DGETRS)
 #define DGESVD_F77  F77_BLAS_MANGLE(dgesvd,DGESVD)
@@ -149,6 +152,7 @@ typedef long ftnlen;
 #endif /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE */
 #endif /* TRILINOS_NO_CONFIG_H */
 
+#define DGTTS2_F77  F77_BLAS_MANGLE(dgtts2,DGTTS2)
 #define DGETRF_F77  F77_BLAS_MANGLE(dgetrf,DGETRF)
 #define DGETRS_F77  F77_BLAS_MANGLE(dgetrs,DGETRS)
 #define DGESVD_F77  F77_BLAS_MANGLE(dgesvd,DGESVD)
@@ -191,6 +195,7 @@ typedef long ftnlen;
 #define DORGQR_F77  F77_BLAS_MANGLE(dorgqr,DORGQR)
 #define DSTEQR_F77  F77_BLAS_MANGLE(dsteqr,DSTEQR)
 
+#define SGTTS2_F77  F77_BLAS_MANGLE(sgtts2,SGTTS2)
 #define SGETRF_F77  F77_BLAS_MANGLE(sgetrf,SGETRF)
 #define SGETRS_F77  F77_BLAS_MANGLE(sgetrs,SGETRS)
 #define SGESVD_F77  F77_BLAS_MANGLE(sgesvd,SGESVD)
@@ -235,6 +240,8 @@ extern "C" {
   
   /* Double precision LAPACK linear solvers */
 void PREFIX DGETRF_F77(int* m, int* n, double* a, int* lda, int* ipiv, int* info); 
+void PREFIX DGTTS2_F77(ml_fcd, int* n, int* nrhs, double* a, double* b, 
+                       double* c,double* d,int* e,double* x, int* ldx);
 void PREFIX DGETRS_F77(ml_fcd, int* n, int* nrhs, double* a,
                        int* lda, int* ipiv, double* x , int* ldx, int* info);
 void PREFIX DGESVD_F77(ml_fcd, ml_fcd, int* m, int* n, double* a,
