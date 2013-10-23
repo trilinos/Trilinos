@@ -133,6 +133,8 @@ class MDMap
 {
 public:
 
+  /** \brief Adopt the MDArray <tt>sizetype</tt> type
+   */
   typedef typename MDArray< LocalOrd >::size_type size_type;
 
   /** \name Constructors and destructor */
@@ -534,7 +536,7 @@ public:
    * \param localIndex [in] a unique 1D local identifier
    */
   Teuchos::Array< LocalOrd >
-  getLocalAxisIndex(LocalOrd LocalIndex) const;
+  getLocalAxisIndex(LocalOrd localIndex) const;
 
   /** \brief Convert a local index to a global index
    *

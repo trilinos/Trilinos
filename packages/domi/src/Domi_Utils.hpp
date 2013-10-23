@@ -85,6 +85,8 @@ enum EStorageOrder
 template< class T >
 struct remove_const
 {
+  /** \brief Typedef for the template parameter
+   */
   typedef T type;
 };
 
@@ -94,6 +96,9 @@ struct remove_const
 template< class T >
 struct remove_const< const T >
 {
+  /** \brief Typedef for the non-const version of the template
+   *         parameter
+   */
   typedef T type;
 };
 

@@ -52,6 +52,11 @@
 namespace Domi
 {
 
+/** \brief Multi-dimensional distributed vector
+ *
+ * The <tt>MDVector</tt> class represents a multi-dimensional vector
+ * distributed according to a multi-dimensional <tt>MDMap</tt>.
+ */
 template< class Scalar,
           class LocalOrd,
           class GlobalOrd = LocalOrd,
@@ -108,6 +113,8 @@ public:
    *        derived
    *
    * \param axis [in] the axis to which this slice applies
+   *
+   * \param slice [in] the slice describing the sub-vector
    *
    * \param ghosts [in] the ghost region along the altered axis of the
    *        new sub-vector.  This may include indexes from the ghost

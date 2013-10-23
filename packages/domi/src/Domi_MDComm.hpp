@@ -104,7 +104,7 @@ typedef Teuchos::RCP< const MDComm > MDCommRCP;
  *
  *     \code
  *     bool onSubcommunicator() const;
- *     \code
+ *     \endcode
  *
  * method.
  *
@@ -114,7 +114,7 @@ typedef Teuchos::RCP< const MDComm > MDCommRCP;
  *     \code
  *     int getLowerNeighbor(int axis) const;
  *     int getUpperNeighbor(int axis) const;
- *     \code
+ *     \endcode
  *
  * This should be sufficient to provide the necessary processor ranks
  * for conducting halo updates.
@@ -161,8 +161,8 @@ public:
    *
    * \param numDims [in] The number of dimensions in the
    *        <tt>MDComm</tt>.  Currently, all of the processors are
-   *        allocated to the first axis, and the other axes are assign
-   *        a size of one.
+   *        allocated to the first axis, and the other axes are
+   *        assigned a size of one.
    */
   MDComm(const TeuchosCommRCP teuchosComm,
          int numDims);
