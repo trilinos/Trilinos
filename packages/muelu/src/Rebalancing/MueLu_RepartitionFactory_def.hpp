@@ -530,7 +530,6 @@ namespace MueLu {
   void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeterminePartitionPlacement(const Matrix& A, GOVector& decomposition,
                                                                                                                GO numPartitions, bool keepProc0) const {
     RCP<const Map>         rowMap    = A.getRowMap();
-    GO                     indexBase = rowMap->getIndexBase();
     //Xpetra::UnderlyingLib  lib       = rowMap->lib(); // unused variable
 
     RCP<const Teuchos::Comm<int> > comm = rowMap->getComm()->duplicate();
