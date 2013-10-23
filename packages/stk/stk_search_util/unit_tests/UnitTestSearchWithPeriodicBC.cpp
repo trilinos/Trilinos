@@ -62,51 +62,41 @@ void check_gold_two_way_multiperiodic( const SearchPairVector & search_results )
   gold.push_back(std::make_pair(1,4));
   gold.push_back(std::make_pair(5,8));
   gold.push_back(std::make_pair(9,12));
-  gold.push_back(std::make_pair(13,16));
 
   gold.push_back(std::make_pair(17,20));
   gold.push_back(std::make_pair(21,24));
   gold.push_back(std::make_pair(25,28));
-  gold.push_back(std::make_pair(29,32));
 
   gold.push_back(std::make_pair(33,36));
   gold.push_back(std::make_pair(37,40));
   gold.push_back(std::make_pair(41,44));
-  gold.push_back(std::make_pair(45,48));
 
   gold.push_back(std::make_pair(49,52));
   gold.push_back(std::make_pair(53,56));
   gold.push_back(std::make_pair(57,60));
-  gold.push_back(std::make_pair(61,64));
 
   //top and bottom
   gold.push_back(std::make_pair(1,13));
   gold.push_back(std::make_pair(2,14));
   gold.push_back(std::make_pair(3,15));
-  gold.push_back(std::make_pair(4,16));
 
   gold.push_back(std::make_pair(17,29));
   gold.push_back(std::make_pair(18,30));
   gold.push_back(std::make_pair(19,31));
-  gold.push_back(std::make_pair(20,32));
 
   gold.push_back(std::make_pair(33,45));
   gold.push_back(std::make_pair(34,46));
   gold.push_back(std::make_pair(35,47));
-  gold.push_back(std::make_pair(36,48));
 
   gold.push_back(std::make_pair(49,61));
   gold.push_back(std::make_pair(50,62));
   gold.push_back(std::make_pair(51,63));
-  gold.push_back(std::make_pair(52,64));
 
   //edge cases
   gold.push_back(std::make_pair(1,16));
   gold.push_back(std::make_pair(17,32));
   gold.push_back(std::make_pair(33,48));
   gold.push_back(std::make_pair(49,64));
-
-
 
   for (size_t i=0, size=search_results.size(); i<size; ++i) {
     stk::mesh::EntityId domain_node = search_results[i].first.ident.id();
@@ -122,87 +112,43 @@ void check_gold_three_way_multiperiodic( const SearchPairVector & search_results
 {
   typedef std::vector<std::pair<stk::mesh::EntityId,stk::mesh::EntityId> > GoldVector;
   GoldVector gold;
-  gold.push_back(std::make_pair(1,4));
-  gold.push_back(std::make_pair(5,8));
-  gold.push_back(std::make_pair(9,12));
-  gold.push_back(std::make_pair(13,16));
-
-  gold.push_back(std::make_pair(17,20));
-  gold.push_back(std::make_pair(21,24));
-  gold.push_back(std::make_pair(25,28));
-  gold.push_back(std::make_pair(29,32));
-
-  gold.push_back(std::make_pair(33,36));
-  gold.push_back(std::make_pair(37,40));
-  gold.push_back(std::make_pair(41,44));
-  gold.push_back(std::make_pair(45,48));
-
-  gold.push_back(std::make_pair(49,52));
-  gold.push_back(std::make_pair(53,56));
-  gold.push_back(std::make_pair(57,60));
-  gold.push_back(std::make_pair(61,64));
-
-  //top and bottom
-  gold.push_back(std::make_pair(1,13));
-  gold.push_back(std::make_pair(2,14));
-  gold.push_back(std::make_pair(3,15));
-  gold.push_back(std::make_pair(4,16));
-
-  gold.push_back(std::make_pair(17,29));
-  gold.push_back(std::make_pair(18,30));
-  gold.push_back(std::make_pair(19,31));
-  gold.push_back(std::make_pair(20,32));
-
-  gold.push_back(std::make_pair(33,45));
-  gold.push_back(std::make_pair(34,46));
-  gold.push_back(std::make_pair(35,47));
-  gold.push_back(std::make_pair(36,48));
-
-  gold.push_back(std::make_pair(49,61));
-  gold.push_back(std::make_pair(50,62));
-  gold.push_back(std::make_pair(51,63));
-  gold.push_back(std::make_pair(52,64));
-
-  //front and back
-  gold.push_back(std::make_pair(1,49));
-  gold.push_back(std::make_pair(2,50));
-  gold.push_back(std::make_pair(3,51));
-  gold.push_back(std::make_pair(4,52));
-
-  gold.push_back(std::make_pair(5,53));
-  gold.push_back(std::make_pair(6,54));
-  gold.push_back(std::make_pair(7,55));
-  gold.push_back(std::make_pair(8,56));
-
-  gold.push_back(std::make_pair(9,57));
-  gold.push_back(std::make_pair(10,58));
-  gold.push_back(std::make_pair(11,59));
-  gold.push_back(std::make_pair(12,60));
-
-  gold.push_back(std::make_pair(13,61));
-  gold.push_back(std::make_pair(14,62));
-  gold.push_back(std::make_pair(15,63));
-  gold.push_back(std::make_pair(16,64));
-
-  //edges
-  //z axis
-  gold.push_back(std::make_pair(1,16));
-  gold.push_back(std::make_pair(17,32));
-  gold.push_back(std::make_pair(33,48));
-  gold.push_back(std::make_pair(49,64));
-  //x axis
-  gold.push_back(std::make_pair(1,61));
-  gold.push_back(std::make_pair(2,62));
-  gold.push_back(std::make_pair(3,63));
-  gold.push_back(std::make_pair(4,64));
-  //y axis
-  gold.push_back(std::make_pair(1,52));
-  gold.push_back(std::make_pair(5,56));
-  gold.push_back(std::make_pair(9,60));
-  gold.push_back(std::make_pair(13,64));
-
-  //corners
-  gold.push_back(std::make_pair(1,64));
+  gold.push_back(std::make_pair(1,  4));
+  gold.push_back(std::make_pair(5,  8));
+  gold.push_back(std::make_pair(9, 12));
+  gold.push_back(std::make_pair(17, 20));
+  gold.push_back(std::make_pair(21, 24));
+  gold.push_back(std::make_pair(25, 28));
+  gold.push_back(std::make_pair(33, 36));
+  gold.push_back(std::make_pair(37, 40));
+  gold.push_back(std::make_pair(41, 44));
+  gold.push_back(std::make_pair(1, 13));
+  gold.push_back(std::make_pair(2, 14));
+  gold.push_back(std::make_pair(3, 15));
+  gold.push_back(std::make_pair(17, 29));
+  gold.push_back(std::make_pair(18, 30));
+  gold.push_back(std::make_pair(19, 31));
+  gold.push_back(std::make_pair(33, 45));
+  gold.push_back(std::make_pair(34, 46));
+  gold.push_back(std::make_pair(35, 47));
+  gold.push_back(std::make_pair(1, 49));
+  gold.push_back(std::make_pair(2, 50));
+  gold.push_back(std::make_pair(3, 51));
+  gold.push_back(std::make_pair(5, 53));
+  gold.push_back(std::make_pair(6, 54));
+  gold.push_back(std::make_pair(7, 55));
+  gold.push_back(std::make_pair(9, 57));
+  gold.push_back(std::make_pair(10, 58));
+  gold.push_back(std::make_pair(11, 59));
+  gold.push_back(std::make_pair(1, 16));
+  gold.push_back(std::make_pair(17, 32));
+  gold.push_back(std::make_pair(33, 48));
+  gold.push_back(std::make_pair(1, 61));
+  gold.push_back(std::make_pair(2, 62));
+  gold.push_back(std::make_pair(3, 63));
+  gold.push_back(std::make_pair(1, 52));
+  gold.push_back(std::make_pair(5, 56));
+  gold.push_back(std::make_pair(9, 60));
+  gold.push_back(std::make_pair(1, 64));
 
   for (size_t i=0, size=search_results.size(); i<size; ++i) {
     stk::mesh::EntityId domain_node = search_results[i].first.ident.id();
@@ -212,7 +158,27 @@ void check_gold_three_way_multiperiodic( const SearchPairVector & search_results
   }
 }
 
+typedef stk::mesh::GetCoordinates<CoordFieldType> CoordinateFunctor;
+typedef stk::mesh::PeriodicBoundarySearch<CoordinateFunctor> PeriodicSearch;
+void print_periodic_node_pairs(stk::mesh::BulkData & bulk_data,
+    PeriodicSearch & pbc_search,
+    CoordFieldType & coords_field)
+{
+  std::cout << "Periodic nodes identified:" << std::endl;
+  for (size_t i = 0; i < pbc_search.size(); ++i)
+  {
+    std::pair<stk::mesh::Entity, stk::mesh::Entity> aPair = pbc_search.get_node_pair(i);
+    stk::mesh::EntityId domainId = bulk_data.identifier(aPair.first);
+    stk::mesh::EntityId rangeId = bulk_data.identifier(aPair.second);
+    const double * const domainCoords = bulk_data.field_data(coords_field, aPair.first);
+    const double * const rangeCoords = bulk_data.field_data(coords_field, aPair.second);
+    std::cout << std::setw(12) << domainId << ": (" << std::setw(12) << domainCoords[0] << ", " << std::setw(12)
+        << domainCoords[1] << ", " << std::setw(12) << domainCoords[2] << ") == ";
+    std::cout << std::setw(12) << rangeId << ": (" << std::setw(12) << rangeCoords[0] << ", " << std::setw(12)
+        << rangeCoords[1] << ", " << std::setw(12) << rangeCoords[2] << ") " << std::endl;
 
+  }
+}
 }// namespace
 
 STKUNIT_UNIT_TEST(CoarseSearch, PeriodicBC)
@@ -377,7 +343,7 @@ STKUNIT_UNIT_TEST(CoarseSearch, TwoWayMultiPeriodicBC)
 
   if (bulk_data.parallel_size() == 1)
   {
-    EXPECT_EQ(pbc_search.get_pairs().size(), 36u);
+    EXPECT_EQ(pbc_search.get_pairs().size(), 28u);
   }
   else
   {
@@ -385,9 +351,8 @@ STKUNIT_UNIT_TEST(CoarseSearch, TwoWayMultiPeriodicBC)
     int global_search_count=0;
     stk::all_reduce_sum(bulk_data.parallel(), &local_search_count, &global_search_count, 1);
 
-    EXPECT_GE(global_search_count, 36);
+    EXPECT_GE(global_search_count, 28);
   }
-
 
   //now we ghost everything to do a local search
   bulk_data.modification_begin();
@@ -410,7 +375,7 @@ STKUNIT_UNIT_TEST(CoarseSearch, TwoWayMultiPeriodicBC)
 
   if (bulk_data.parallel_size() == 1)
   {
-    EXPECT_EQ(pbc_local_search.get_pairs().size(), 36u);
+    EXPECT_EQ(pbc_local_search.get_pairs().size(), 28u);
   }
   else
   {
@@ -418,7 +383,7 @@ STKUNIT_UNIT_TEST(CoarseSearch, TwoWayMultiPeriodicBC)
     int global_search_count=0;
     stk::all_reduce_sum(bulk_data.parallel(), &local_search_count, &global_search_count, 1);
 
-    EXPECT_GE(global_search_count, 36);
+    EXPECT_GE(global_search_count, 28);
   }
 }
 
@@ -511,10 +476,9 @@ STKUNIT_UNIT_TEST(CoarseSearch, ThreeWayMultiPeriodicBC)
 
   check_gold_three_way_multiperiodic(pbc_search.get_pairs());
 
-
   if (bulk_data.parallel_size() == 1)
   {
-    EXPECT_EQ(pbc_search.get_pairs().size(), 61u);
+    EXPECT_EQ(pbc_search.get_pairs().size(), 37u);
   }
   else
   {
@@ -522,7 +486,7 @@ STKUNIT_UNIT_TEST(CoarseSearch, ThreeWayMultiPeriodicBC)
     int global_search_count=0;
     stk::all_reduce_sum(bulk_data.parallel(), &local_search_count, &global_search_count, 1);
 
-    EXPECT_GE(global_search_count, 61);
+    EXPECT_GE(global_search_count, 37);
   }
 
   //now we ghost everything to do a local search
@@ -549,7 +513,7 @@ STKUNIT_UNIT_TEST(CoarseSearch, ThreeWayMultiPeriodicBC)
   check_gold_three_way_multiperiodic(pbc_local_search.get_pairs());
   if (bulk_data.parallel_size() == 1)
   {
-    EXPECT_EQ(pbc_local_search.get_pairs().size(), 61u);
+    EXPECT_EQ(pbc_local_search.get_pairs().size(), 37u);
   }
   else
   {
@@ -557,7 +521,7 @@ STKUNIT_UNIT_TEST(CoarseSearch, ThreeWayMultiPeriodicBC)
     int global_search_count=0;
     stk::all_reduce_sum(bulk_data.parallel(), &local_search_count, &global_search_count, 1);
 
-    EXPECT_GE(global_search_count, 61);
+    EXPECT_GE(global_search_count, 37);
   }
 }
 
@@ -726,33 +690,4 @@ STKUNIT_UNIT_TEST(CoarseSearch, RotationalPeriodicBC)
 
     EXPECT_GE(global_search_count, 36);
   }
-
-//  std::cout << "Periodic nodes identified:" << std::endl;
-//  for (size_t i = 0; i < pbc_search.size(); ++i)
-//  {
-//    std::pair<stk::mesh::Entity, stk::mesh::Entity> aPair = pbc_search.get_node_pair(i);
-//    stk::mesh::EntityId domainId = bulk_data.identifier(aPair.first);
-//    stk::mesh::EntityId rangeId = bulk_data.identifier(aPair.second);
-//    const double * const domainCoords = bulk_data.field_data(coords_field, aPair.first);
-//    const double * const rangeCoords = bulk_data.field_data(coords_field, aPair.second);
-//    std::cout << std::setw(12) << domainId << ": (" << std::setw(12) << domainCoords[0] << ", " << std::setw(12)
-//        << domainCoords[1] << ", " << std::setw(12) << domainCoords[2] << ") == ";
-//    std::cout << std::setw(12) << rangeId << ": (" << std::setw(12) << rangeCoords[0] << ", " << std::setw(12)
-//        << rangeCoords[1] << ", " << std::setw(12) << rangeCoords[2] << ") " << std::endl;
-//
-//  }
-//
-//  std::cout << "From the selector:" << std::endl;
-//  for (size_t i = 0; i < nodePairs.size(); ++i)
-//  {
-//    std::pair<stk::mesh::Entity, stk::mesh::Entity> aPair = nodePairs[i];
-//    stk::mesh::EntityId domainId = bulk_data.identifier(aPair.first);
-//    stk::mesh::EntityId rangeId = bulk_data.identifier(aPair.second);
-//    const double * const domainCoords = bulk_data.field_data(coords_field, aPair.first);
-//    const double * const rangeCoords = bulk_data.field_data(coords_field, aPair.second);
-//    std::cout << std::setw(12) << domainId << ": (" << std::setw(12) << domainCoords[0] << ", " << std::setw(12)
-//        << domainCoords[1] << ", " << std::setw(12) << domainCoords[2] << ") == ";
-//    std::cout << std::setw(12) << rangeId << ": (" << std::setw(12) << rangeCoords[0] << ", " << std::setw(12)
-//        << rangeCoords[1] << ", " << std::setw(12) << rangeCoords[2] << ") " << std::endl;
-//  }
 }
