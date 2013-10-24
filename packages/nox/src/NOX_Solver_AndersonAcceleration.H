@@ -244,6 +244,17 @@ protected:
   //! Pointer to a user defined NOX::Abstract::PrePostOperator object.
   NOX::Solver::PrePostOperator prePostOperator;
 
+  //! Scratch space for condition number estimation using LAPACK.
+  std::vector<double> WORK;
+
+  //! Scratch space for condition number estimation using LAPACK.
+  std::vector<int> IWORK;
+
+  //! If true, the QR matrix will be resized if the condiiton number is greater than the dropTolerance.
+  bool adjustForConditionNumber;
+
+  //! Value of the condition number above which the QR matrix is resized.
+  double dropTolerance;
 };
 } // namespace Solver
 } // namespace NOX
