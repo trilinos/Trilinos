@@ -379,11 +379,7 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
   stk::io::put_io_part_attribute( fixture.hex_part);
   stk::io::put_io_part_attribute( fixture.wedge_part);
   stk::io::put_io_part_attribute( skin_part);
-  stk::io::set_field_role(fixture.displacement_field.field_of_state(stk::mesh::StateNew), Ioss::Field::TRANSIENT);
-  stk::io::set_field_role(displacement,    Ioss::Field::TRANSIENT);
-  stk::io::set_field_role(processor_field, Ioss::Field::TRANSIENT);
 
-  std::set<const stk::mesh::Part*> skin_io_parts; skin_io_parts.insert(&skin_part);
   const stk::mesh::PartVector & parts = fixture.meta_data.get_parts();
   for ( stk::mesh::PartVector::const_iterator ip = parts.begin(); ip != parts.end(); ++ip ) {
     stk::mesh::Part & topo_part = **ip;
@@ -400,7 +396,6 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
         t.erase(t.find("FEM_ROOT_CELL_TOPOLOGY_PART"), sizeof("FEM_ROOT_CELL_TOPOLOGY_PART"));
       }
       stk::mesh::Part & topo_skin_part = fixture.meta_data.declare_part(t, stk::mesh::MetaData::ELEMENT_RANK-1);
-      skin_io_parts.insert(&topo_skin_part);
       stk::io::put_io_part_attribute(topo_skin_part);
       fixture.meta_data.declare_part_subset(topo_part, topo_skin_part);
       fixture.meta_data.declare_part_subset(skin_part, topo_skin_part);
@@ -408,7 +403,6 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
         if  (t == "skin_hex8_quad4_4")   t = "skin_wedge6_quad4_4";
         else                             t = "skin_wedge15_quad4_8";
         stk::mesh::Part & topo_skin_part2 = fixture.meta_data.declare_part(t, stk::mesh::MetaData::ELEMENT_RANK-1);
-        skin_io_parts.insert(&topo_skin_part2);
         stk::io::put_io_part_attribute(topo_skin_part2);
         fixture.meta_data.declare_part_subset(topo_part, topo_skin_part2);
         fixture.meta_data.declare_part_subset(skin_part, topo_skin_part2);
@@ -459,10 +453,8 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
   // writing the current mesh state to output files.
   const bool output_exodus_file = true;
 
-  stk::io::MeshData vol_mesh;
-  vol_mesh.set_bulk_data(fixture.bulk_data);
-  stk::io::MeshData surf_mesh;
-  surf_mesh.set_bulk_data(fixture.bulk_data);
+  stk::io::MeshData stkMeshIoBroker;
+  stkMeshIoBroker.set_bulk_data(fixture.bulk_data);
 
   for (size_t time_step = 0; time_step < NUM_TIME_STEPS; ++time_step) {
 
@@ -529,6 +521,8 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
     }
 
     //This section writes mesh data out to an exodus file:
+    size_t vol_mesh_index = std::numeric_limits<size_t>::max();
+    size_t surf_mesh_index = std::numeric_limits<size_t>::max();
     if (output_exodus_file) {
       // Write the output file at the first time step and every time the mesh is modified.
       const bool create_output_file = do_separate_wedge || !time_step;
@@ -536,18 +530,26 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
       if (create_output_file)  {
         std::ostringstream volume_out_filename;
         volume_out_filename << "volume_mesh_" << std::setw(7) << std::setfill('0') << time_step << ".e";
-        volume_out_region = create_output_mesh( volume_out_filename.str(), fixture.bulk_data,  false);
-	vol_mesh.set_output_io_region(volume_out_region);
-	vol_mesh.m_resultsFieldsDefined = true;
+
+//	surf_mesh.m_resultsFieldsDefined = true;
+//	vol_mesh.m_resultsFieldsDefined = true;
+        vol_mesh_index = stkMeshIoBroker.create_output_mesh(volume_out_filename.str());
+
         std::ostringstream surface_out_filename;
         surface_out_filename << "surface_mesh_" << std::setw(7) << std::setfill('0') << time_step << ".e";
-        surface_out_region = create_output_mesh( surface_out_filename.str(), fixture.bulk_data,  true);
-	surf_mesh.set_output_io_region(surface_out_region);
-	surf_mesh.m_resultsFieldsDefined = true;
+        surf_mesh_index = stkMeshIoBroker.create_output_mesh(volume_out_filename.str());
+
+        stk::io::set_field_role(fixture.displacement_field.field_of_state(stk::mesh::StateNew), Ioss::Field::TRANSIENT);
+        stk::io::set_field_role(displacement,    Ioss::Field::TRANSIENT);
+        stk::io::set_field_role(processor_field, Ioss::Field::TRANSIENT);
+
+        stkMeshIoBroker.add_results_field(vol_mesh_index, fixture.displacement_field.field_of_state(stk::mesh::StateNew));
+        stkMeshIoBroker.add_results_field(vol_mesh_index, displacement);
+        stkMeshIoBroker.add_results_field(vol_mesh_index, processor_field);
       }
 
-      vol_mesh.process_output_request(time_step/60.0, skin_io_parts);
-      surf_mesh.process_output_request(time_step/60.0);
+      stkMeshIoBroker.process_output_request(time_step/60.0);
+      stkMeshIoBroker.process_output_request(time_step/60.0);
     }
   }
 

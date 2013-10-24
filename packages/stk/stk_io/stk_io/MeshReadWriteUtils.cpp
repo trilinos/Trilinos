@@ -920,11 +920,24 @@ namespace stk {
 
     MeshData::~MeshData()
     {
-      if (!Teuchos::is_null(m_output_region))
-        stk::io::delete_selector_property(*m_output_region);
+      for (size_t i = 0; i < m_result_outputs.size(); ++i)
+      {
+          stk::io::delete_selector_property(*m_result_outputs[i].m_output_region);
+      }
+      m_result_outputs.clear();
 
       if (!Teuchos::is_null(m_restart_region))
         stk::io::delete_selector_property(*m_restart_region);
+    }
+
+    void MeshData::set_output_io_region(Teuchos::RCP<Ioss::Region> ioss_output_region)
+    {
+      m_result_outputs.clear();
+
+      ResultsOutput result;
+      result.m_output_region = ioss_output_region;
+      result.m_results_mesh_defined = true;
+      m_result_outputs.push_back(result);
     }
 
     stk::mesh::FieldBase & MeshData::get_coordinate_field()
@@ -932,11 +945,6 @@ namespace stk {
       stk::mesh::FieldBase * coord_field = meta_data().coordinate_field();
       ThrowRequire( coord_field != NULL);
       return * coord_field;
-    }
-
-    void MeshData::set_output_io_region(Teuchos::RCP<Ioss::Region> ioss_output_region)
-    {
-      m_output_region = ioss_output_region;
     }
 
     void MeshData::set_input_io_region(Teuchos::RCP<Ioss::Region> ioss_input_region)
@@ -1050,7 +1058,7 @@ namespace stk {
     }
 
 
-    void MeshData::create_output_mesh(const std::string &filename)
+    size_t MeshData::create_output_mesh(const std::string &filename)
     {
       std::string out_filename = filename;
       if (filename.empty()) {
@@ -1068,52 +1076,87 @@ namespace stk {
                                                       Ioss::WRITE_RESULTS,
                                                       m_communicator,
                                                       m_property_manager);
+
       if (dbo == NULL || !dbo->ok()) {
         std::cerr << "ERROR: Could not open results database '" << out_filename
 		  << "' of type 'exodusII'\n";
         std::exit(EXIT_FAILURE);
       }
 
-      // NOTE: 'out_region' owns 'dbo' pointer at this time...
-      if (!Teuchos::is_null(m_output_region))
-        m_output_region = Teuchos::null;
-      m_output_region = Teuchos::rcp(new Ioss::Region(dbo, "results_output"));
+      ResultsOutput result;
+      result.m_output_region = Teuchos::rcp(new Ioss::Region(dbo, "results_output"));
 
-      create_output_mesh();
+      create_output_mesh(result.m_output_region);
+
+      result.m_results_mesh_defined = true;
+
+      m_result_outputs.push_back(result);
+
+      size_t index_of_result = m_result_outputs.size()-1;
+      return index_of_result;
     }
 
-    void MeshData::create_output_mesh()
+    void MeshData::create_output_mesh(Teuchos::RCP<Ioss::Region> output_region)
     {
-      ThrowErrorMsgIf (Teuchos::is_null(m_output_region),
+      ThrowErrorMsgIf (Teuchos::is_null(output_region),
                        "There is no Output database associated with this Mesh Data.");
-      define_output_database();
-      write_output_database();
+      bool sort_stk_parts = false; // used in stk_adapt/stk_percept
+      stk::io::define_output_db(*output_region.get(), bulk_data(), m_input_region.get(), m_anded_selector.get(),
+                                sort_stk_parts, use_nodeset_for_part_nodes_fields());
+
+      stk::io::write_output_db(*output_region.get(),  bulk_data(), m_anded_selector.get());
 
       //Attempt to avoid putting state change into the interface.  We'll see . . .
-      m_output_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
-    }
-
-    // ========================================================================
-    int MeshData::process_output_request(double time,
-                                         const std::set<const stk::mesh::Part*> &exclude)
-    {
-      ThrowErrorMsgIf (Teuchos::is_null(m_output_region),
-		       "There is no Output mesh region associated with this Mesh Data.");
-
-      this->begin_results_output_at_time(time);
-      internal_process_output_request(exclude);
-      this->end_current_results_output();
-
-      return m_currentOutputStep;
+      output_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
     }
 
     // ========================================================================
     int MeshData::process_output_request()
     {
-      ThrowErrorMsgIf (Teuchos::is_null(m_output_region),
-                       "There is no Output mesh region associated with this Mesh Data.");
+      // TODO: fix me later!
+      size_t result_output_index = 0;
+      validate_result_output_index(result_output_index);
+      Teuchos::RCP<Ioss::Region> output_region = m_result_outputs[result_output_index].m_output_region;
 
-      internal_process_output_request(std::set<const stk::mesh::Part*>());
+      Ioss::Region *region = output_region.get();
+      ThrowErrorMsgIf (region==NULL,
+                       "INTERNAL ERROR: Mesh Output Region pointer is NULL in internal_process_output_request.");
+
+      // Special processing for nodeblock (all nodes in model)...
+      put_field_data(bulk_data(), meta_data().universal_part(), stk::mesh::MetaData::NODE_RANK,
+                     region->get_node_blocks()[0], Ioss::Field::Field::TRANSIENT,
+                     m_anded_selector.get());
+
+      // Now handle all non-nodeblock parts...
+      const stk::mesh::PartVector &all_parts = meta_data().get_parts();
+      for ( stk::mesh::PartVector::const_iterator
+              ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
+
+        stk::mesh::Part * const part = *ip;
+
+        // Check whether this part should be output to results database.
+        if (stk::io::is_part_io_part(*part)) {
+          stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
+          // Get Ioss::GroupingEntity corresponding to this part...
+          Ioss::GroupingEntity *entity = region->get_entity(part->name());
+          if (entity != NULL && entity->type() != Ioss::SIDESET) {
+            put_field_data(bulk_data(), *part, rank, entity,
+                           Ioss::Field::Field::TRANSIENT, m_anded_selector.get());
+          }
+
+          // If rank is != NODE_RANK, then see if any fields are defined on the nodes of this part
+          // (should probably do edges and faces also...)
+          // Get Ioss::GroupingEntity corresponding to the nodes on this part...
+          if (rank != stk::mesh::MetaData::NODE_RANK && use_nodeset_for_part_nodes_fields()) {
+            std::string nodes_name = part->name() + "_nodes";
+            Ioss::GroupingEntity *node_entity = region->get_entity(nodes_name);
+            if (node_entity != NULL) {
+              put_field_data(bulk_data(), *part, stk::mesh::MetaData::NODE_RANK, node_entity,
+                             Ioss::Field::Field::TRANSIENT, m_anded_selector.get());
+            }
+          }
+        }
+      }
 
       return m_currentOutputStep;
     }
@@ -1121,8 +1164,9 @@ namespace stk {
     // ========================================================================
     int MeshData::process_output_request(double time)
     {
-      ThrowErrorMsgIf (Teuchos::is_null(m_output_region),
-                       "There is no Output mesh region associated with this Mesh Data.");
+      // TODO: fix me later!
+      validate_result_output_index(0);
+
       this->begin_results_output_at_time(time);
       this->process_output_request();
       this->end_current_results_output();
@@ -1137,20 +1181,24 @@ namespace stk {
 	}
 
         //Attempt to avoid putting state change into the interface.  We'll see . . .
-        Ioss::State currentState = m_output_region->get_state();
+        // TODO: fix me later!
+        Teuchos::RCP<Ioss::Region> output_region = m_result_outputs[0].m_output_region;
+        Ioss::State currentState = output_region->get_state();
         if(currentState == Ioss::STATE_DEFINE_TRANSIENT) {
-          m_output_region->end_mode(Ioss::STATE_DEFINE_TRANSIENT);
+          output_region->end_mode(Ioss::STATE_DEFINE_TRANSIENT);
         }
 
-        m_output_region->begin_mode(Ioss::STATE_TRANSIENT);
-        m_currentOutputStep = m_output_region->add_state(time);
-        m_output_region->begin_state(m_currentOutputStep);
+        output_region->begin_mode(Ioss::STATE_TRANSIENT);
+        m_currentOutputStep = output_region->add_state(time);
+        output_region->begin_state(m_currentOutputStep);
     }
 
     void MeshData::end_current_results_output()
     {
-        m_output_region->end_state(m_currentOutputStep);
-        m_output_region->end_mode(Ioss::STATE_TRANSIENT);
+        // TODO: fix me later!
+        Teuchos::RCP<Ioss::Region> output_region = m_result_outputs[0].m_output_region;
+        output_region->end_state(m_currentOutputStep);
+        output_region->end_mode(Ioss::STATE_TRANSIENT);
     }
 
     void MeshData::populate_mesh(bool delay_field_data_allocation)
@@ -1267,65 +1315,6 @@ namespace stk {
       bulk_data().modification_end();
     }
 
-    void MeshData::internal_process_output_request(const std::set<const stk::mesh::Part*> &exclude)
-    {
-      ThrowErrorMsgIf (Teuchos::is_null(m_output_region),
-		       "There is no Output mesh region associated with this Mesh Data.");
-
-      Ioss::Region *region = m_output_region.get();
-      ThrowErrorMsgIf (region==NULL,
-                       "INTERNAL ERROR: Mesh Output Region pointer is NULL in internal_process_output_request.");
-
-      // Special processing for nodeblock (all nodes in model)...
-      put_field_data(bulk_data(), meta_data().universal_part(), stk::mesh::MetaData::NODE_RANK,
-                     region->get_node_blocks()[0], Ioss::Field::Field::TRANSIENT,
-                     m_anded_selector.get());
-
-      // Now handle all non-nodeblock parts...
-      const stk::mesh::PartVector &all_parts = meta_data().get_parts();
-      for ( stk::mesh::PartVector::const_iterator
-	      ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
-
-        stk::mesh::Part * const part = *ip;
-
-        // Check whether this part should be output to results database.
-        if (stk::io::is_part_io_part(*part) && !exclude.count(part)) {
-          stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
-          // Get Ioss::GroupingEntity corresponding to this part...
-          Ioss::GroupingEntity *entity = region->get_entity(part->name());
-          if (entity != NULL && entity->type() != Ioss::SIDESET) {
-            put_field_data(bulk_data(), *part, rank, entity,
-			   Ioss::Field::Field::TRANSIENT, m_anded_selector.get());
-          }
-
-          // If rank is != NODE_RANK, then see if any fields are defined on the nodes of this part
-          // (should probably do edges and faces also...)
-          // Get Ioss::GroupingEntity corresponding to the nodes on this part...
-          if (rank != stk::mesh::MetaData::NODE_RANK && use_nodeset_for_part_nodes_fields()) {
-            std::string nodes_name = part->name() + "_nodes";
-            Ioss::GroupingEntity *node_entity = region->get_entity(nodes_name);
-            if (node_entity != NULL) {
-              put_field_data(bulk_data(), *part, stk::mesh::MetaData::NODE_RANK, node_entity,
-			     Ioss::Field::Field::TRANSIENT, m_anded_selector.get());
-            }
-          }
-        }
-      }
-    }
-
-    void MeshData::define_output_database()
-    {
-      bool sort_stk_parts = false; // used in stk_adapt/stk_percept
-      stk::io::define_output_db(*m_output_region.get(), bulk_data(), m_input_region.get(), m_anded_selector.get(),
-                                sort_stk_parts, use_nodeset_for_part_nodes_fields());
-      m_resultsMeshDefined = true;
-    }
-
-    void MeshData::write_output_database()
-    {
-      stk::io::write_output_db(*m_output_region.get(),  bulk_data(), m_anded_selector.get());
-    }
-
     void MeshData::add_restart_field(stk::mesh::FieldBase &field, const std::string &db_name)
     {
       // NOTE: This could be implemented as a free function; however, I want to keep the option
@@ -1362,18 +1351,29 @@ namespace stk {
       }
     }
 
-    void MeshData::add_results_field(stk::mesh::FieldBase &field, const std::string &db_name)
+    void MeshData::validate_result_output_index(size_t result_output_index)
     {
+      ThrowErrorMsgIf(result_output_index >= m_result_outputs.size(),
+        "MeshReadWriteUtils::validate_result_output_index: invalid result output index of " << result_output_index << ".");
+      ThrowErrorMsgIf (Teuchos::is_null(m_result_outputs[result_output_index].m_output_region),
+        "MeshReadWriteUtils::validate_result_output_index: There is no Output mesh region associated with this result output index: " << result_output_index << ".");
+    }
+
+    void MeshData::add_results_field(size_t result_output_index, stk::mesh::FieldBase &field, const std::string &db_name)
+    {
+      validate_result_output_index(result_output_index);
+      ResultsOutput &result_output = m_result_outputs[result_output_index];
+
       // NOTE: This could be implemented as a free function; however, I want to keep the option
       //       open of storing this data in a vector/map on the MeshData class instead of as a
       //       field attribute.  For now, use the field attribute approach.
-      if (m_resultsMeshDefined && use_nodeset_for_part_nodes_fields()) {
+      if (result_output.m_results_mesh_defined && use_nodeset_for_part_nodes_fields()) {
 	std::cerr << "WARNING: adding results fields after calling define_output_database may cause\n"
 		  << "         problems when operating with 'use_nodeset_for_part_nodes_field()' set to true\n"
 		  << "         since the nodesets required for this option may not be created properly.\n";
       }
 
-      if (m_resultsFieldsDefined) {
+      if (result_output.m_results_fields_defined) {
 	  std::ostringstream msg ;
 	  msg << "ERROR in MeshReadWriteUtils::add_results_field:"
 	      << " define_results_fields() has already been called, so it is too late to add the results field '"
@@ -1846,10 +1846,10 @@ namespace stk {
 	return;
       }
       
-      ThrowErrorMsgIf (Teuchos::is_null(m_output_region),
-		       "There is no Results output database associated with this Mesh Data.");
-
-      Ioss::Region *region = m_output_region.get();
+      // TODO: fix me later!
+      size_t result_output_index = 0;
+      validate_result_output_index(result_output_index);
+      Ioss::Region *region = m_result_outputs[result_output_index].m_output_region.get();
 
       // Special processing for nodeblock (all nodes in model)...
       stk::io::ioss_add_fields(meta_data().universal_part(), stk::mesh::MetaData::NODE_RANK,
@@ -1912,33 +1912,58 @@ namespace stk {
     void MeshData::add_results_global(const std::string &globalVarName, const std::string &storage,
 				      Ioss::Field::BasicType dataType)
     {
-        ThrowErrorMsgIf (m_output_region->field_exists(globalVarName),
+        // TODO: fix me later!
+        size_t result_output_index = 0;
+        validate_result_output_index(result_output_index);
+        Teuchos::RCP<Ioss::Region> output_region = m_result_outputs[result_output_index].m_output_region;
+
+        ThrowErrorMsgIf (output_region->field_exists(globalVarName),
                          "Attempt to add global variable '" << globalVarName << "' twice.");
         //Any field put onto the region instead of a element block, etc. gets written as "global" to exodus
 
         int numberOfThingsToOutput = 1;
-        m_output_region->field_add(Ioss::Field(globalVarName, dataType, storage, Ioss::Field::TRANSIENT, numberOfThingsToOutput));
+        output_region->field_add(Ioss::Field(globalVarName, dataType, storage, Ioss::Field::TRANSIENT, numberOfThingsToOutput));
     }
 
 
     void MeshData::write_results_global(const std::string &globalVarName, double globalVarData)
     {
-        internal_write_global(m_output_region, globalVarName, globalVarData);
+        // TODO: fix me later!
+        size_t result_output_index = 0;
+        validate_result_output_index(result_output_index);
+        Teuchos::RCP<Ioss::Region> output_region = m_result_outputs[result_output_index].m_output_region;
+
+        internal_write_global(output_region, globalVarName, globalVarData);
     }
 
     void MeshData::write_results_global(const std::string &globalVarName, int globalVarData)
     {
-        internal_write_global(m_output_region, globalVarName, globalVarData);
+        // TODO: fix me later!
+        size_t result_output_index = 0;
+        validate_result_output_index(result_output_index);
+        Teuchos::RCP<Ioss::Region> output_region = m_result_outputs[result_output_index].m_output_region;
+
+        internal_write_global(output_region, globalVarName, globalVarData);
     }
 
     void MeshData::write_results_global(const std::string &globalVarName, std::vector<double>& globalVarData)
     {
-        internal_write_global(m_output_region, globalVarName, globalVarData);
+        // TODO: fix me later!
+        size_t result_output_index = 0;
+        validate_result_output_index(result_output_index);
+        Teuchos::RCP<Ioss::Region> output_region = m_result_outputs[result_output_index].m_output_region;
+
+        internal_write_global(output_region, globalVarName, globalVarData);
     }
 
     void MeshData::write_results_global(const std::string &globalVarName, std::vector<int>& globalVarData)
     {
-        internal_write_global(m_output_region, globalVarName, globalVarData);
+        // TODO: fix me later!
+        size_t result_output_index = 0;
+        validate_result_output_index(result_output_index);
+        Teuchos::RCP<Ioss::Region> output_region = m_result_outputs[result_output_index].m_output_region;
+
+        internal_write_global(output_region, globalVarName, globalVarData);
     }
 
     // ========================================================================

@@ -48,13 +48,13 @@ TEST(StkIoTestForDocumentation, resultsWithMultistateField)
         putDataOnTestField(stkIo.bulk_data(), stateNm1Value,
                            *statedFieldNm1);
 
-	// Output each state of the multi-state field individually to results file.
-	stkIo.add_results_field(*statedFieldNp1, np1Name);
-	stkIo.add_results_field(*statedFieldN,   nName);
-	stkIo.add_results_field(*statedFieldNm1, nm1Name);
-	
-        stkIo.create_output_mesh(resultsFilename);
+        size_t resultOuputIndex = stkIo.create_output_mesh(resultsFilename);
 
+	// Output each state of the multi-state field individually to results file.
+	stkIo.add_results_field(resultOuputIndex, *statedFieldNp1, np1Name);
+	stkIo.add_results_field(resultOuputIndex, *statedFieldN,   nName);
+	stkIo.add_results_field(resultOuputIndex, *statedFieldNm1, nm1Name);
+	
 	stkIo.begin_results_output_at_time(time);
 	stkIo.process_output_request();
         stkIo.end_current_results_output();
@@ -83,4 +83,67 @@ TEST(StkIoTestForDocumentation, resultsWithMultistateField)
     }
     unlink(resultsFilename.c_str());
 }
+
+TEST(StkIoTest, twoResultFiles)
+{
+    std::string resultsFilename1 = "output1.results";
+    std::string resultsFilename2 = "output2.results";
+    MPI_Comm communicator = MPI_COMM_WORLD;
+    const std::string displacementFieldName = "displacement";
+    const std::string velocityFieldName = "velocity";
+//    double time = 0.0;
+
+    const double displacementValue = 1.0;
+    const double velocityValue = 2.0;
+
+    stk::io::MeshData stkMeshIoBroker(communicator);
+    {
+        const std::string exodusFileName = "generated:1x1x1";
+        stkMeshIoBroker.open_mesh_database(exodusFileName);
+        stkMeshIoBroker.create_input_mesh();
+    }
+
+    stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
+    {
+        const int numberOfStates = 1;
+        stk::mesh::Field<double> &displacementField = stkMeshMetaData.declare_field<stk::mesh::Field<double> >(displacementFieldName, numberOfStates);
+        stk::mesh::put_field(displacementField, stk::mesh::Entity::NODE, stkMeshMetaData.universal_part());
+
+        stk::mesh::Field<double> &velocityField = stkMeshMetaData.declare_field<stk::mesh::Field<double> >(velocityFieldName, numberOfStates);
+        stk::mesh::put_field(velocityField, stk::mesh::Entity::NODE, stkMeshMetaData.universal_part());
+    }
+
+    stkMeshIoBroker.populate_bulk_data();
+
+    {
+        stk::mesh::FieldBase *displacementField = stkMeshMetaData.get_field(displacementFieldName);
+        putDataOnTestField(stkMeshIoBroker.bulk_data(), displacementValue, *displacementField);
+
+        stk::mesh::FieldBase *velocityField = stkMeshMetaData.get_field(velocityFieldName);
+        putDataOnTestField(stkMeshIoBroker.bulk_data(), velocityValue, *velocityField);
+    }
+
+    {
+        size_t indexOfResultsFile1 = stkMeshIoBroker.create_output_mesh(resultsFilename1);
+        stk::mesh::FieldBase *displacementField = stkMeshMetaData.get_field(displacementFieldName);
+        stkMeshIoBroker.add_results_field(indexOfResultsFile1, *displacementField);
+    }
+
+    {
+        size_t indexOfResultsFile2 = stkMeshIoBroker.create_output_mesh(resultsFilename2);
+        stk::mesh::FieldBase *velocityField = stkMeshMetaData.get_field(velocityFieldName);
+        stkMeshIoBroker.add_results_field(indexOfResultsFile2, *velocityField);
+    }
+//
+//    stkMeshIoBroker.add_results_field(*statedFieldNp1, np1Name);
+//    stkMeshIoBroker.add_results_field(*statedFieldN,   nName);
+//    stkMeshIoBroker.add_results_field(*statedFieldNm1, nm1Name);
+//
+//    stkMeshIoBroker.begin_results_output_at_time(time);
+//    stkMeshIoBroker.process_output_request();
+//    stkMeshIoBroker.end_current_results_output();
+}
+
+//TEST(StkIoTest, twoResultFilesWithTheSameFilenames) { }
+
 }

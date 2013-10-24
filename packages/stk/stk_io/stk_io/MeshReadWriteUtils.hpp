@@ -35,6 +35,19 @@ namespace stk {
   namespace io {
     static std::string CoordinateFieldName("coordinates");
 
+    struct ResultsOutput
+    {
+        int m_current_output_step;
+        bool m_use_nodeset_for_part_nodes_fields;
+        bool m_results_mesh_defined;
+        bool m_results_fields_defined;
+        Teuchos::RCP<Ioss::Region> m_output_region;
+        std::vector<stk::mesh::FieldBase*> m_output_fields;
+//        const std::string get_base_file_name() {
+//            return m_output_region->get_database()->get_filename();
+//        }
+    };
+
     class MeshData {
         // Used to maintain state between the meta data and bulk data
         // portions of the mesh generation process for use cases.
@@ -74,7 +87,9 @@ namespace stk {
           return m_input_region;
         }
 
-        Teuchos::RCP<Ioss::Region> output_io_region() { return m_output_region;  }
+        Teuchos::RCP<Ioss::Region> get_output_io_region(size_t results_output_index) {
+            return m_result_outputs[results_output_index].m_output_region;
+        }
 
         Teuchos::RCP<stk::mesh::Selector> selector()  { return m_anded_selector; }
 
@@ -281,8 +296,7 @@ namespace stk {
          * created and the mesh data written to. If the file already
          * exists, it will be overwritten.
          */
-        void create_output_mesh(const std::string &filename);
-        void create_output_mesh();
+        size_t create_output_mesh(const std::string &filename);
 
         /**
          * Iterate over all stk fields and for each transient field
@@ -297,7 +311,7 @@ namespace stk {
          */
         void define_output_fields(bool add_all_fields = false);
 
-        void add_results_field(stk::mesh::FieldBase &field, const std::string &db_name = std::string());
+        void add_results_field(size_t result_output_index, stk::mesh::FieldBase &field, const std::string &db_name = std::string());
 
         void add_results_global(const std::string &globalVarName, Ioss::Field::BasicType dataType);
         void add_results_global(const std::string &globalVarName, const std::string &type, Ioss::Field::BasicType dataType);
@@ -321,7 +335,6 @@ namespace stk {
          */
         int process_output_request();
         int process_output_request(double time);
-        int process_output_request(double time, const std::set<const stk::mesh::Part*> &exclude);
         void write_results_global(const std::string &globalVarName, double data);
         void write_results_global(const std::string &globalVarName, int data);
         void write_results_global(const std::string &globalVarName, std::vector<double>& data);
@@ -465,18 +478,16 @@ namespace stk {
         Ioss::PropertyManager m_property_manager;
 
       private:
-        void internal_process_output_request(const std::set<const stk::mesh::Part*> &exclude);
         void internal_process_restart_output(int step);
         void create_ioss_region();
-        void define_output_database();
-        void write_output_database();
+        void create_output_mesh(Teuchos::RCP<Ioss::Region> output_region);
+        void validate_result_output_index(size_t result_output_index);
 
         MPI_Comm m_communicator;
         std::vector<std::string>       m_rank_names; // Optional rank name vector.
 
         Teuchos::RCP<Ioss::DatabaseIO> m_input_database;
         Teuchos::RCP<Ioss::Region>     m_input_region;
-        Teuchos::RCP<Ioss::Region>     m_output_region;
         Teuchos::RCP<Ioss::Region>     m_restart_region;
 
         Teuchos::RCP<stk::mesh::MetaData>  m_meta_data;
@@ -491,14 +502,17 @@ namespace stk {
         Teuchos::RCP<stk::mesh::Selector> m_anded_selector;
         stk::mesh::ConnectivityMap m_connectivity_map;
 
-        int m_currentOutputStep;
+        std::vector<ResultsOutput> m_result_outputs;
+
+        int m_currentOutputStep;                     // remove us!
         int m_currentRestartStep;
     public:
         // This should be private, but needs to be public since some applications/tests are defining
         // their own fields and need to inform MeshData that they did this...
         bool m_useNodesetForPartNodesFields;
-        bool m_resultsMeshDefined;
-        bool m_resultsFieldsDefined;
+        bool m_resultsMeshDefined;                   // remove us!
+        bool m_resultsFieldsDefined;                 // remove us!
+
         bool m_restartMeshDefined;
         bool m_restartFieldsDefined;
 

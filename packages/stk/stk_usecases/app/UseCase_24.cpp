@@ -227,10 +227,6 @@ bool use_case_24_driver(
   // second on all interior element ips
   mesh::put_field(mass_flux_ip , element_rank , hex_io1 , SpatialDim, numElementSCSIps );
 
-  // Output the pressure and velocity fields...
-  mesh_data.add_results_field(pressure);
-  mesh_data.add_results_field(velocity);
-
   // Commit (finalize) the meta data (part and field definitions).
   // Is now ready to be used in the creation and management of mesh bulk data.
   fem_meta.commit();
@@ -271,7 +267,12 @@ bool use_case_24_driver(
                                   momentum_flux_bip, pressure, velocity,
                                   nodal_momentum_flux );
 
-  mesh_data.create_output_mesh(outputName);
+  size_t result_output_index = mesh_data.create_output_mesh(outputName);
+
+  // Output the pressure and velocity fields...
+  mesh_data.add_results_field(result_output_index, pressure);
+  mesh_data.add_results_field(result_output_index, velocity);
+
   mesh_data.define_output_fields();
   mesh_data.process_output_request(0.0);
 
