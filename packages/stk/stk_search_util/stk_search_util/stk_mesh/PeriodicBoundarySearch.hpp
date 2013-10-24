@@ -59,6 +59,12 @@ public:
         transformType(ROTATIONAL)
         {}
 
+    TransformHelper(const boost::array<double, 9> & rotation_arg, const boost::array<double,3> & translation_arg)
+      : rotation(rotation_arg),
+        translation(translation_arg),
+        transformType(ROTATIONAL)
+        {}
+
     boost::array<double, 9> rotation;
     boost::array<double, 3> translation;
     CoordinatesTransform transformType;
@@ -151,13 +157,18 @@ public:
   {
     m_periodic_pairs.push_back(std::make_pair(domain, range));
 
+    const double norm = sqrt(axis[0]*axis[0] + axis[1]*axis[1] + axis[2]*axis[2]);
+    const double x = axis[0]/norm, y = axis[1]/norm, z = axis[2]/norm;
+    const double c = cos(theta), s = sin(theta);
+
+
     //create rotation matrix from domain to range
     boost::array<double, 9> rotationMatrix;
-    rotationMatrix[0] = cos(theta);   rotationMatrix[3] = -sin(theta);    rotationMatrix[6] = 0.0;
-    rotationMatrix[1] = sin(theta);   rotationMatrix[4] = cos(theta);     rotationMatrix[7] = 0.0;
-    rotationMatrix[2] = 0.0;          rotationMatrix[5] = 0.0;            rotationMatrix[8] = 1.0;
-    m_transforms.push_back( TransformHelper(rotationMatrix) );
+    rotationMatrix[0] = c + x*x*(1-c);     rotationMatrix[3] = x*y*(1-c) - z*s;    rotationMatrix[6] = x*z*(1-c) + y*s;
+    rotationMatrix[1] = y*x*(1-c) + z*s;   rotationMatrix[4] = c + y*y*(1-c);      rotationMatrix[7] = y*z*(1-c) - x*s;
+    rotationMatrix[2] = z*x*(1-c) - y*s;   rotationMatrix[5] = z*y*(1-c) + x*s;    rotationMatrix[8] = c + z*z*(1-c);
 
+    m_transforms.push_back( TransformHelper(rotationMatrix) );
   }
 
   const stk::mesh::Ghosting & get_ghosting() const
