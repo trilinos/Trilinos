@@ -215,7 +215,11 @@ namespace {
 		entity_list_filled=true;
 	      }
 	      size_t state_count = f->number_of_states();
-	      if(state_count == 1) {
+	      stk::mesh::FieldState state = f->state();
+
+	      // If the multi-state field is not "set" at the newest state, then the user has
+	      // registered the field at a specific state and only that state should be input.
+	      if(state_count == 1 || state != stk::mesh::StateNew) {
 	          stk::io::field_data_from_ioss(bulk, f, entity_list, io_entity, name);
 	      } else {
 	          stk::io::multistate_field_data_from_ioss(bulk, f, entity_list, io_entity, name, state_count);
