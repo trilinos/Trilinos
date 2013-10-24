@@ -336,13 +336,6 @@ namespace MueLu {
     Ptent->SetFactory("Aggregates", manager->GetFactory("Aggregates"));
     Ptent->SetFactory("CoarseMap",  manager->GetFactory("CoarseMap"));
     manager->SetFactory("Ptent",     Ptent);
-    manager->SetFactory("Nullspace", Ptent);
-
-    // Coordinates
-    RCP<CoordinatesTransferFactory> coords = rcp(new CoordinatesTransferFactory());
-    coords->SetFactory("Aggregates", manager->GetFactory("Aggregates"));
-    coords->SetFactory("CoarseMap",  manager->GetFactory("CoarseMap"));
-    manager->SetFactory("Coordinates", coords);
 
     // === Prolongation ===
     MUELU_READ_2LIST_PARAM(paramList, defaultList, "multigrid algorithm", std::string, "sa", multigridAlgo);
@@ -410,12 +403,19 @@ namespace MueLu {
     RCP<RAPFactory> RAP = rcp(new RAPFactory());
     RAP->SetFactory("P", manager->GetFactory("P"));
     RAP->SetFactory("R", manager->GetFactory("R"));
-    RAP->AddTransferFactory(manager->GetFactory("Coordinates"));
     manager->SetFactory("A", RAP);
 
     // === Repartitioning ===
     MUELU_READ_2LIST_PARAM(paramList, defaultList, "repartition: enable", bool, false, enableRepart);
     if (enableRepart) {
+      // Coordinates
+      RCP<CoordinatesTransferFactory> coords = rcp(new CoordinatesTransferFactory());
+      coords->SetFactory("Aggregates", manager->GetFactory("Aggregates"));
+      coords->SetFactory("CoarseMap",  manager->GetFactory("CoarseMap"));
+      manager->SetFactory("Coordinates", coords);
+
+      RAP->AddTransferFactory(manager->GetFactory("Coordinates"));
+
 #ifdef HAVE_MPI
       MUELU_READ_2LIST_PARAM(paramList, defaultList, "repartition: partitioner", std::string, "zoltan", partName);
       TEUCHOS_TEST_FOR_EXCEPTION(partName != "zoltan" && partName != "zoltan2", Exceptions::InvalidArgument,

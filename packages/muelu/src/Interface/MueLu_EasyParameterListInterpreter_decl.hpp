@@ -92,11 +92,12 @@ namespace MueLu {
 
     void SetParameterList(const Teuchos::ParameterList& paramList);
 
+    void SetupHierarchy(Hierarchy& H) const;
+
   private:
     void UpdateFactoryManager(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, const FactoryManager& managerIn, RCP<FactoryManager>& manager);
 
     void SetupMatrix   (Matrix&    A) const;
-    void SetupHierarchy(Hierarchy& H) const;
 
     CycleType Cycle_;
     int       blockSize_;
