@@ -4435,6 +4435,160 @@ int ML_Smoother_Gen_VBGSFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
    return 0;
 }
 
+/* ************************************************************************* */
+/* Generate block tridiagonal factorizations needed to do things like line   */
+/* GS and line Jacobi. This primarily might arise for a structured mesh or   */
+/* if one has extruded an unstructured 2D mesh in the 3rd dimension. Right   */
+/* now the code that uses these factorizations assumes that all the          */
+/* tridiagonal matrices are of the same size. However, this factorization    */
+/* code is more general (and does not cause too much inefficiency) should we */
+/* some day want to lift that restriction. By the way, it is assumed that    */
+/* the equations are ordered so that ascending local ids within a block      */
+/* correspond to a tridiagonal matrix.                                       */
+/* ************************************************************************* */
+
+int ML_Smoother_Gen_LineSmootherFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
+                              int Nblocks, int *blockIndices)
+{
+   int            i, j, *cols, allocated_space, length, Nrows;
+   int            row_in_block, col_in_block, info, col;
+   int            *block_sizes, *block_offset, block_num;
+   double         *vals;
+   ML_Sm_BGS_Data *dataptr;
+   int Nnz;
+   double **trid_dl,  **trid_d,  **trid_du,  **trid_du2; 
+   int    **trid_ipiv; 
+
+   Nrows           = Amat->getrow->Nrows;
+   dataptr         = (*data);
+   allocated_space = Amat->max_nz_per_row+2;
+   dataptr->Nblocks= Nblocks;
+
+   if ( Nblocks < 0 || Nblocks > Nrows )
+      pr_error("Error(ML_Gen_LineSmootherFacts): invalid blocking information.\n                   Nblocks = %d.\n", Nblocks);
+   if ( blockIndices == NULL )
+      pr_error("ML_Gen_VBGSFacts : blocking information not available.\n");
+
+   dataptr->blockmap = (int *) ML_allocate( (Nrows+1) * sizeof(int));
+   if (dataptr->blockmap == NULL) 
+      pr_error("Error(ML_Smoother_Gen_LineSmootherFacts): out of space\n");
+   for (i = 0; i < Nrows; i++) dataptr->blockmap[i] = blockIndices[i];
+
+   dataptr->blocklengths = (int*) ML_allocate( (Nblocks+1) * sizeof(int));
+   if (dataptr->blocklengths == NULL) 
+      pr_error("Error(ML_Smoother_Gen_LineSmootherFacts): out of space\n");
+
+   block_sizes = dataptr->blocklengths;
+
+   /* ----------------------------------------------------------- */
+   /* search for sizes of each block                              */
+   /* ----------------------------------------------------------- */
+
+   for ( i = 0; i < Nblocks; i++ ) block_sizes[i] = 0;
+   for ( i = 0; i < Nrows; i++ ) {
+      if ( blockIndices[i] < 0 || blockIndices[i] >= Nblocks ) {
+         if ( blockIndices[i] != -1 )
+            pr_error("ML_Gen_LineSmootherFacts : block index not valid %d. %d Nblocks = %d\n",
+                                       blockIndices[i],i,Nblocks);
+      }
+      else block_sizes[blockIndices[i]]++;
+   }
+   
+   /* ----------------------------------------------------------- */
+   /* allocate memory for each block                              */
+   /* ----------------------------------------------------------- */
+
+   dataptr->trid_dl  = (double **) ML_allocate(Nblocks*sizeof(double *));
+   dataptr->trid_d   = (double **) ML_allocate(Nblocks*sizeof(double *));
+   dataptr->trid_du  = (double **) ML_allocate(Nblocks*sizeof(double *));
+   dataptr->trid_du2 = (double **) ML_allocate(Nblocks*sizeof(double *));
+   dataptr->trid_ipiv= (int    **) ML_allocate(Nblocks*sizeof(int    *));
+
+   trid_dl  = dataptr->trid_dl;
+   trid_d   = dataptr->trid_d;
+   trid_du  = dataptr->trid_du;
+   trid_du2 = dataptr->trid_du2;
+   trid_ipiv= dataptr->trid_ipiv;
+   for ( i = 0; i < Nblocks; i++) {
+      trid_dl[i]  = (double *)ML_allocate( block_sizes[i]* sizeof(double) );
+      trid_d[i]   = (double *)ML_allocate( block_sizes[i]* sizeof(double) );
+      trid_du[i]  = (double *)ML_allocate( block_sizes[i]* sizeof(double) );
+      trid_du2[i] = (double *)ML_allocate( block_sizes[i]* sizeof(double) );
+      trid_ipiv[i]= (int    *)ML_allocate( block_sizes[i]* sizeof(int   ) );
+      for ( j = 0; j < block_sizes[i] ; j++) trid_dl[i][j] = 0.0; 
+      for ( j = 0; j < block_sizes[i] ; j++) trid_d[i][j] = 0.0; 
+      for ( j = 0; j < block_sizes[i] ; j++) trid_du[i][j] = 0.0; 
+      for ( j = 0; j < block_sizes[i] ; j++) trid_du2[i][j] = 0.0; 
+      for ( j = 0; j < block_sizes[i] ; j++) trid_ipiv[i][j] = 0; 
+   }
+
+   /* ----------------------------------------------------------- */
+   /* load the block matrices                                     */
+   /* ----------------------------------------------------------- */
+
+   block_offset= (int    *) ML_allocate(Nrows*sizeof(int));
+   cols        = (int    *) ML_allocate(allocated_space*sizeof(int    ));
+   vals        = (double *) ML_allocate(allocated_space*sizeof(double ));
+   if (vals == NULL) 
+      pr_error("Error(ML_Smoother_Gen_LineSmootherFacts): out of space\n");
+
+   for ( i = 0; i < Nblocks; i++) block_sizes[i] = 0; 
+   for (i = 0; i < Nrows; i++) {
+      block_num       = blockIndices[i];
+      if ( blockIndices[i] >= 0 && blockIndices[i] < Nblocks )
+         block_offset[i] = block_sizes[block_num]++;
+   }
+
+   for (i = 0; i < Nrows; i++) {
+      block_num    = blockIndices[i];
+      if ( blockIndices[i] >= 0 && blockIndices[i] < Nblocks ) {
+         row_in_block = block_offset[i];
+         ML_get_matrix_row(Amat,1,&i,&allocated_space,&cols,&vals,&length,0);
+	 Nnz = 0;
+         for (j = 0; j < length; j++) {
+            col = cols[j];
+            if ( col < Nrows ) {
+               if ( blockIndices[col] == block_num ) {
+		 if (vals[j] != 0.) Nnz++;
+		 col_in_block = block_offset[col];
+                 if (col_in_block   == row_in_block) trid_d[block_num][row_in_block]   = vals[j];
+                 if (col_in_block+1 == row_in_block) trid_du[block_num][col_in_block]  = vals[j]; 
+                 if (col_in_block-1 == row_in_block) trid_dl[block_num][col_in_block-1]= vals[j]; 
+               }
+            }
+         }
+	 /* Handle a zero row by putting a 1 on the diagonal. */
+	 if (Nnz == 0) {
+	   trid_d[block_num][row_in_block] = 1.;
+	 }
+      }
+   }
+
+   /* ----------------------------------------------------------- */
+   /* perform factorization on each block                         */
+   /* ----------------------------------------------------------- */
+
+   for (i = 0; i < Nblocks; i++) {
+      length = block_sizes[i];
+      DGTTRF_F77(&length, trid_dl[i], trid_d[i], trid_du[i], trid_du2[i], trid_ipiv[i], &info);
+      if (info != 0) {
+         printf("Error(ML_Smoother_Gen_LineSmootherFacts: dgttrf returned %d (!=0)\n",info);
+         printf("This was caused by block %d of size %d\n",i,length);
+         exit(1);
+      }
+   }
+
+   /* ----------------------------------------------------------- */
+   /* clean up                                                    */
+   /* ----------------------------------------------------------- */
+
+   ML_free(cols);
+   ML_free(vals);
+   ML_free(block_offset);
+	
+   return 0;
+}
+
 /*****************************************************************************/
 /* needed for overlapped smoothers                                           */
 /*****************************************************************************/
