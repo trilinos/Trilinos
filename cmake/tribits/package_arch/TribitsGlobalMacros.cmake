@@ -570,7 +570,7 @@ ENDMACRO()
 
 MACRO(TRIBITS_REPOSITORY_DEFINE_PACKAGING_RUNNER  REPO_NAME)
   SET(CALLBACK_DEFINE_PACKAGING_FILE
-    "${${REPO_NAME}_SOURCE_DIR}/cmake/CallbackDefinePackaging.cmake")
+    "${${REPO_NAME}_SOURCE_DIR}/cmake/CallbackDefineRepositoryPackaging.cmake")
   #PRINT_VAR(CALLBACK_DEFINE_PACKAGING_FILE)
   IF (EXISTS ${CALLBACK_DEFINE_PACKAGING_FILE})
     IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
@@ -588,6 +588,35 @@ MACRO(TRIBITS_REPOSITORY_DEFINE_PACKAGING_RUNNER  REPO_NAME)
     CREATE_EMPTY_TRIBITS_REPOSITORY_DEFINE_PACKAGING()
   ENDIF()
 ENDMACRO()
+
+
+MACRO(CREATE_EMPTY_TRIBITS_PROJECT_DEFINE_PACKAGING)
+  MACRO(TRIBITS_PROJECT_DEFINE_PACKAGING)
+  ENDMACRO()
+ENDMACRO()
+
+
+MACRO(TRIBITS_PROJECT_DEFINE_PACKAGING_RUNNER)
+  SET(CALLBACK_DEFINE_PACKAGING_FILE
+    "${PROJECT_SOURCE_DIR}/cmake/CallbackDefineProjectPackaging.cmake")
+  #PRINT_VAR(CALLBACK_DEFINE_PACKAGING_FILE)
+  IF (EXISTS ${CALLBACK_DEFINE_PACKAGING_FILE})
+    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      MESSAGE("Processing call-back file and macros in"
+        " '${CALLBACK_DEFINE_PACKAGING_FILE}'")
+    ENDIF()
+    # Define the callback macros as empty in case it is not defined
+    # in this file.
+    CREATE_EMPTY_TRIBITS_PROJECT_DEFINE_PACKAGING()
+    # Include the file which will define the callback macros
+    INCLUDE(${CALLBACK_DEFINE_PACKAGING_FILE})
+    # Call the callback macros to inject project-specific behavir
+    TRIBITS_PROJECT_DEFINE_PACKAGING()
+    # Set back the callback macros to empty to ensure that nonone calls them
+    CREATE_EMPTY_TRIBITS_PROJECT_DEFINE_PACKAGING()
+  ENDIF()
+ENDMACRO()
+
 
 #
 # Private helper stuff
@@ -1945,8 +1974,9 @@ MACRO(TRIBITS_SETUP_PACKAGING_AND_DISTRIBUTION)
     TIMER_GET_RAW_SECONDS(CPACK_SETUP_TIME_START_SECONDS)
   ENDIF()
 
-  # K.1) Loop through the Repositories and run their callback functions.
+  # K.1) Run packaging callback functions for repos and the project
 
+  # K.1.a) Loop through the Repositories and run their callback functions.
   FOREACH(REPO ${${PROJECT_NAME}_ALL_REPOSITORIES})
     TRIBITS_GET_REPO_NAME_DIR(${REPO}  REPO_NAME  REPO_DIR)
     IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
@@ -1954,6 +1984,9 @@ MACRO(TRIBITS_SETUP_PACKAGING_AND_DISTRIBUTION)
     ENDIF()
     TRIBITS_REPOSITORY_DEFINE_PACKAGING_RUNNER(${REPO_NAME})
   ENDFOREACH()
+
+  # K.1.b) Run callback function for the base project.
+  TRIBITS_PROJECT_DEFINE_PACKAGING_RUNNER()
    
   # K.2) Removing any packages or SE packages not enabled from the tarball
 
@@ -2060,7 +2093,8 @@ MACRO(TRIBITS_SETUP_PACKAGING_AND_DISTRIBUTION)
     SET(CPACK_NSIS_MODIFY_PATH OFF)
   ENDIF()
 
-  # K.5 ) Include <Project>RepoVersion.txt if generated
+  # K.5) Include <Project>RepoVersion.txt if generated
+
   SET(PROJECT_REPO_VERSION_FILE
      "${CMAKE_CURRENT_BINARY_DIR}/${${PROJECT_NAME}_REPO_VERSION_FILE_NAME}")
   IF (EXISTS "${PROJECT_REPO_VERSION_FILE}")
@@ -2069,8 +2103,18 @@ MACRO(TRIBITS_SETUP_PACKAGING_AND_DISTRIBUTION)
         "${CMAKE_COMMAND} -E copy '${PROJECT_REPO_VERSION_FILE}' '${CMAKE_CURRENT_BINARY_DIR}/_CPack_Packages/Linux-Source/${SOURCE_GEN}/${CPACK_PACKAGE_NAME}-${${PROJECT_NAME}_VERSION}-Source/${${PROJECT_NAME}_REPO_VERSION_FILE_NAME}'")
     ENDFOREACH()
   ENDIF()
+
+  # K.6) Determine the source generator
+  IF ("${${PROJECT_NAME}_CPACK_SOURCE_GENERATOR_DEFAULT}" STREQUAL "")
+    SET(${PROJECT_NAME}_CPACK_SOURCE_GENERATOR_DEFAULT "TGZ")
+  ENDIF()
+  SET(${PROJECT_NAME}_CPACK_SOURCE_GENERATOR
+    ${${PROJECT_NAME}_CPACK_SOURCE_GENERATOR_DEFAULT}
+    CACHE STRING
+    "The types of soruce generators to use for CPACK_SOURCE_GENERATOR.")
+  SET(CPACK_SOURCE_GENERATOR ${${PROJECT_NAME}_CPACK_SOURCE_GENERATOR})
  
-  # K.6) Finally process with CPack
+  # K.7) Finally process with CPack
   INCLUDE(CPack)
 
   IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)

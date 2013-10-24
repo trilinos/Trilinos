@@ -1317,13 +1317,7 @@ desired packages and configure with::
 
   -D <Project>_ENABLE_CPACK_PACKAGING:BOOL=ON
 
-see `Selecting the list of packages to enable`_).  While the TriBITS project
-has a default, disabled subpackages can be include or excluded from the
-tarball by setting
-``<Project>_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION``.  If
-``<Project>_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION=ON`` and one wants
-to include some subpackages that are otherwise excluded, just enble them or
-their outer package so they will be included in the source tarball.
+see `Selecting the list of packages to enable`_).
 
 To actually generate the distribution files, use::
 
@@ -1339,6 +1333,22 @@ files using::
 
 You can also include generated files, such as Doxygen output files first, then
 run ``make package_source`` and it will be included in the distribution.
+
+While the TriBITS project
+has a default, disabled subpackages can be include or excluded from the
+tarball by setting
+``<Project>_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION``.  If
+``<Project>_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION=ON`` and one wants
+to include some subpackages that are otherwise excluded, just enble them or
+their outer package so they will be included in the source tarball.
+
+While a default set of defualt CPack source generator types is defined, it can
+be overridded using, for exmaple::
+
+  -D <Project>_CPACK_SOURCE_GENERATOR:STRING="TGZ;TBZ2"
+
+(see CMake documentation to find out the types of supported CPack source
+generators on your system).
 
 
 Dashboard submissions
