@@ -46,6 +46,8 @@
 
 #include "Stokhos_Sacado_Kokkos.hpp"
 
+#include <Kokkos_Threads.hpp>
+
 //
 // Currently this doesn't test:
 //   * the device

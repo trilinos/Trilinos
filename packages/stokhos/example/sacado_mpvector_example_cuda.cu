@@ -79,7 +79,7 @@ struct MPVectorExample<MaxSize, Scalar, Kokkos::Cuda> {
       else if (local_vector_size == 8)
         status = run_kernels<Scalar, typename MPT::static_fixed_vector_8, typename MPT::static_fixed_vector_8, Device>(config, num_elements, num_samples, reset, print, device_name);
       else {
-        std::cout <<  "Invalid local vector size (" << local_vector_size
+        std::cout <<  "Storage STATIC Invalid local vector size (" << local_vector_size
                   << ")!" << std::endl;
         status = false;
       }
@@ -94,7 +94,7 @@ struct MPVectorExample<MaxSize, Scalar, Kokkos::Cuda> {
       else if (local_vector_size == 8)
         status = run_kernels<Scalar, typename MPT::local_vector_8, typename MPT::local_vector_8, Device>(config, num_elements, num_samples, reset, print, device_name);
       else {
-        std::cout <<  "Invalid local vector size (" << local_vector_size
+        std::cout <<  "Storage LOCAL Invalid local vector size (" << local_vector_size
                   << ")!" << std::endl;
         status = false;
       }
@@ -121,7 +121,7 @@ struct MPVectorExample<MaxSize, Scalar, Kokkos::Cuda> {
       else if (local_vector_size == 8)
         status = run_kernels<Scalar, typename MPT::view_vector, typename MPT::static_fixed_vector_8, Device>(config, num_elements, num_samples, reset, print, device_name);
       else {
-        std::cout <<  "Invalid local vector size (" << local_vector_size
+        std::cout <<  "Storage VIEW_STATIC_FIXED Invalid local vector size (" << local_vector_size
                   << ")!" << std::endl;
         status = false;
       }
@@ -136,7 +136,7 @@ struct MPVectorExample<MaxSize, Scalar, Kokkos::Cuda> {
       else if (local_vector_size == 8)
         status = run_kernels<Scalar, typename MPT::view_vector, typename MPT::local_vector_8, Device>(config, num_elements, num_samples, reset, print, device_name);
       else {
-        std::cout <<  "Invalid local vector size (" << local_vector_size
+        std::cout <<  "Storage VIEW_LOCAL Invalid local vector size (" << local_vector_size
                   << ")!" << std::endl;
         status = false;
       }

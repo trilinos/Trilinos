@@ -46,6 +46,10 @@
 #ifndef KOKKOS_OPENMP_HPP
 #define KOKKOS_OPENMP_HPP
 
+#include <Kokkos_Macros.hpp>
+
+#if defined(KOKKOS_HAVE_OPENMP)
+
 #include <omp.h>
 #include <cstddef>
 #include <iosfwd>
@@ -164,15 +168,16 @@ private:
 
 };
 
-/*--------------------------------------------------------------------------*/
-
 } // namespace Kokkos
+
+/*--------------------------------------------------------------------------*/
 
 #include <OpenMP/Kokkos_OpenMPexec.hpp>
 #include <OpenMP/Kokkos_OpenMP_Parallel.hpp>
 
-#endif /* #define KOKKOS_OPENMP_HPP */
+/*--------------------------------------------------------------------------*/
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+#endif /* #if defined(KOKKOS_HAVE_OPENMP) */
+#endif /* #ifndef KOKKOS_OPENMP_HPP */
+
 

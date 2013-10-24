@@ -49,6 +49,7 @@
 #include "Stokhos_Sacado.hpp"
 #ifdef HAVE_STOKHOS_KOKKOSCORE
 #include "Stokhos_Sacado_Kokkos.hpp"
+#include <Kokkos_Threads.hpp>
 #endif
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Traits, ScalarType, ad_type, scalar_type )
