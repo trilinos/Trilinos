@@ -17,6 +17,7 @@
 
 #include <boost/static_assert.hpp>
 #include <boost/type_traits/is_same.hpp>
+#include <boost/functional/hash.hpp>
 
 #include <stk_util/environment/ReportHandler.hpp>
 
@@ -66,6 +67,11 @@ struct EntityKey
 };
 
 std::ostream & operator << ( std::ostream & out, EntityKey  key);
+
+inline size_t hash_value(EntityKey k)
+{
+  return boost::hash_value(static_cast<size_t>(k.m_value));
+}
 
 }} // namespace stk::mesh
 
