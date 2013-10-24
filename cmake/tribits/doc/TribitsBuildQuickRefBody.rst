@@ -1317,8 +1317,15 @@ desired packages and configure with::
 
   -D <Project>_ENABLE_CPACK_PACKAGING:BOOL=ON
 
-see `Selecting the list of packages to enable`_), then generate the
-distribution files using::
+see `Selecting the list of packages to enable`_).  While the TriBITS project
+has a default, disabled subpackages can be include or excluded from the
+tarball by setting
+``<Project>_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION``.  If
+``<Project>_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION=ON`` and one wants
+to include some subpackages that are otherwise excluded, just enble them or
+their outer package so they will be included in the source tarball.
+
+To actually generate the distribution files, use::
 
   $ make package_source
 
