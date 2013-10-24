@@ -474,6 +474,72 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
       ML_Gen_Smoother_SymBlockGaussSeidel(ml_, currentLevel, pre_or_post,
                                           Mynum_smoother_steps, Myomega, NumPDEEqns_);
 
+    } else if (( MySmoother == "line Gauss-Seidel" )||( MySmoother == "line Jacobi" )){
+
+      if( verbose_ ) std::cout << msg << MySmoother << "(sweeps="
+                          << Mynum_smoother_steps << ",omega=" << Myomega << ","
+                          << MyPreOrPostSmoother << ")" << std::endl;
+
+       int nnn = ml_->Amat[currentLevel].outvec_leng;
+       int NumVerticalEle = smList.get("line smoother: line direction nodes",-1);
+       std::string MeshNumbering = smList.get("line smoother: orientation","not specified");
+
+       if  (NumVerticalEle == -1) {
+          std::cerr << ErrorMsg_ << "must supply 'line direction nodes' with " << MySmoother << "\n";
+          exit(EXIT_FAILURE);
+       }
+       if ((MeshNumbering != "horizontal") && (MeshNumbering != "vertical")) {
+          std::cerr << ErrorMsg_ << "line smoother: orientation must be either 'horizontal' or 'vertical' not " << MeshNumbering << "\n";
+          exit(EXIT_FAILURE);
+       }
+
+       if (   (nnn%(NumVerticalEle+1) ) != 0) {
+          printf("mod(nnn = %d,NumVerticalEle+1 = %d) must be zero\n",
+                 nnn,NumVerticalEle+1);
+          exit(1);
+       }
+       int nBlocks = nnn/(NumVerticalEle+1);
+       int *blockIndices = (int *) malloc(sizeof(int)*(nnn+1));
+
+       // old vertical numbering
+       //for (int iii = 0; iii < nnn; iii+= 2) blockIndices[iii] = (iii/(2*(NumVerticalEle+1));
+       //for (int iii = 1; iii < nnn; iii+= 2) blockIndices[iii] = nBlocks/2 + (iii/(2*(NumVerticalEle+1)));
+printf("num pdes = %d\n", NumPDEEqns_);
+exit(1);
+
+       int tempi;
+
+       if ( (MeshNumbering != "horizontal") &&  (MeshNumbering != "vertical")) {
+          std::cerr << ErrorMsg_ << "Not sure if numbering scheme is vertical or horizontal?\n"
+                    << "MeshNumbering= " << MeshNumbering << "\n";
+          exit(1);
+       }
+       if (MeshNumbering == "vertical") {
+          // This is for GIS with vertical numbering scheme
+          for (int iii = 0; iii < nnn; iii+= 2) {
+             tempi = iii/(2*(NumVerticalEle+1));
+             blockIndices[iii] = 2*tempi;
+          }
+          for (int iii = 1; iii < nnn; iii+= 2) {
+             tempi = iii/(2*(NumVerticalEle+1));
+             blockIndices[iii] = 2*tempi + 1;
+          }
+       }
+
+       if (MeshNumbering == "horizontal") {
+          tempi = nnn/(NumVerticalEle+1);
+          for (int iii = 0; iii < nnn; iii++) blockIndices[iii] = (iii%tempi); 
+       }
+
+       if (MySmoother == "line Jacobi")
+           ML_Gen_Smoother_LineSmoother(ml_ , currentLevel, pre_or_post,
+                   Mynum_smoother_steps, Myomega, nBlocks, blockIndices,
+                   ML_Smoother_LineJacobi);
+       else
+           ML_Gen_Smoother_LineSmoother(ml_ , currentLevel, pre_or_post,
+                   Mynum_smoother_steps, Myomega, nBlocks, blockIndices,
+                   ML_Smoother_LineGS);
+
     } else if( ( MySmoother == "MLS" ) || ( MySmoother == "Chebyshev" )
                || (MySmoother == "Block Chebyshev") ) {
 
