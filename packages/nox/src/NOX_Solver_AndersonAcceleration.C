@@ -106,6 +106,8 @@ void NOX::Solver::AndersonAcceleration::init()
   }
 
   storeParam = paramsPtr->sublist("Anderson Parameters").get<int>("Storage Depth");
+  TEUCHOS_TEST_FOR_EXCEPTION((storeParam > solnPtr->getX().length()),std::logic_error,"Error - The \"Storage Depth\" must be less than the number of unknowns in the nonlinear problem.  The requested storage depth " << storeParam << " is greater than the problem size of " << solnPtr->getX().length() << ".");
+
   mixParam = paramsPtr->sublist("Anderson Parameters").get<double>("Mixing Parameter");
   if (storeParam <= 0){
     utilsPtr->out() << "NOX::Solver::AndersonAcceleration::init - "
