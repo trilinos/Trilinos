@@ -1658,8 +1658,8 @@ desired packages and configure with:</p>
 <pre class="literal-block">
 -D Trilinos_ENABLE_CPACK_PACKAGING:BOOL=ON
 </pre>
-<p>see <a class="reference internal" href="#selecting-the-list-of-packages-to-enable">Selecting the list of packages to enable</a>), then generate the
-distribution files using:</p>
+<p>see <a class="reference internal" href="#selecting-the-list-of-packages-to-enable">Selecting the list of packages to enable</a>).</p>
+<p>To actually generate the distribution files, use:</p>
 <pre class="literal-block">
 $ make package_source
 </pre>
@@ -1673,6 +1673,20 @@ $ git clean -fd -x
 </pre>
 <p>You can also include generated files, such as Doxygen output files first, then
 run <tt class="docutils literal">make package_source</tt> and it will be included in the distribution.</p>
+<p>While the TriBITS project
+has a default, disabled subpackages can be include or excluded from the
+tarball by setting
+<tt class="docutils literal">Trilinos_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION</tt>.  If
+<tt class="docutils literal">Trilinos_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION=ON</tt> and one wants
+to include some subpackages that are otherwise excluded, just enble them or
+their outer package so they will be included in the source tarball.</p>
+<p>While a default set of defualt CPack source generator types is defined, it can
+be overridded using, for exmaple:</p>
+<pre class="literal-block">
+-D Trilinos_CPACK_SOURCE_GENERATOR:STRING=&quot;TGZ;TBZ2&quot;
+</pre>
+<p>(see CMake documentation to find out the types of supported CPack source
+generators on your system).</p>
 </div>
 </div>
 <div class="section" id="dashboard-submissions">
