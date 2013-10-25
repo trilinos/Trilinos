@@ -1051,7 +1051,7 @@ void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
 
     if (! DoBackwardGS_) { // Forward sweep
       for (size_t ii = 0; ii < numActive; ++ii) {
-	local_ordinal_type i = as<local_ordinal_type>(do_local ? rowInd[ii] : i);
+	local_ordinal_type i = as<local_ordinal_type>(do_local ? rowInd[ii] : ii);
         size_t NumEntries;
         A_->getLocalRowCopy (i, Indices (), Values (), NumEntries);
 
@@ -1069,7 +1069,7 @@ void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
       // ptrdiff_t is the same size as size_t, but is signed.  Being
       // signed is important so that i >= 0 is not trivially true.
       for (ptrdiff_t ii = as<ptrdiff_t> (numActive) - 1; ii >= 0; --ii) {
-	local_ordinal_type i = as<local_ordinal_type>(do_local ? rowInd[ii] : i);
+	local_ordinal_type i = as<local_ordinal_type>(do_local ? rowInd[ii] : ii);
 
         size_t NumEntries;
         A_->getLocalRowCopy (i, Indices (), Values (), NumEntries);
@@ -1230,7 +1230,7 @@ ApplyInverseSGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_t
     }
 
     for (size_t ii = 0; ii < numActive; ++ii) {
-      local_ordinal_type i = as<local_ordinal_type>(do_local ? rowInd[ii] : i);
+      local_ordinal_type i = as<local_ordinal_type>(do_local ? rowInd[ii] : ii);
       const scalar_type diag = d_ptr[i];
       size_t NumEntries;
       A_->getLocalRowCopy (as<local_ordinal_type> (i), Indices (), Values (), NumEntries);
@@ -1248,7 +1248,7 @@ ApplyInverseSGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_t
     // ptrdiff_t is the same size as size_t, but is signed.  Being
     // signed is important so that i >= 0 is not trivially true.
     for (ptrdiff_t ii = as<ptrdiff_t> (numActive) - 1; ii >= 0; --ii) {
-      local_ordinal_type i = as<local_ordinal_type>(do_local ? rowInd[ii] : i);
+      local_ordinal_type i = as<local_ordinal_type>(do_local ? rowInd[ii] : ii);
       const scalar_type diag = d_ptr[i];
       size_t NumEntries;
       A_->getLocalRowCopy (as<local_ordinal_type> (i), Indices (), Values (), NumEntries);
