@@ -117,7 +117,7 @@ void NOX::Solver::AndersonAcceleration::init()
   if ((mixParam < -1.0) || (mixParam == 0) || (mixParam > 1.0)){
     utilsPtr->out() << "NOX::Solver::AndersonAcceleration::init - "
       << "Mixing parameter must be in [-1,0)U(0,1]" << std::endl;
-    throw "NOX Error"; 
+    throw "NOX Error";
   }
   precond = paramsPtr->sublist("Anderson Parameters").sublist("Preconditioning").get<bool>("Precondition");
   recomputeJacobian = paramsPtr->sublist("Anderson Parameters").sublist("Preconditioning").get<bool>("Recompute Jacobian");
@@ -301,6 +301,7 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
     
     if (adjustForConditionNumber) {
       while ( (1.0/invCondNum > dropTolerance) && (nStore > 1)  ) {
+	xMat.pop_back();
 	qrDelete();
 	--nStore;
 	lapack.GECON(normType,nStore,rMat.values(),nStore,rMat.normOne(),&invCondNum,&WORK[0],&IWORK[0],&info);
