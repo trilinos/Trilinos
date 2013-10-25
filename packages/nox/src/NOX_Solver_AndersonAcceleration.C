@@ -56,6 +56,7 @@
 #include "Teuchos_SerialDenseHelpers.hpp"
 #include "Teuchos_DataAccess.hpp"
 #include "Teuchos_LAPACK.hpp"
+#include "Teuchos_Assert.hpp"
 #include "NOX_Utils.H"
 #include "NOX_GlobalData.H"
 #include "NOX_Solver_SolverUtils.H"
@@ -90,6 +91,7 @@ void NOX::Solver::AndersonAcceleration::init()
   stepSize = 0.0;
   nIter = 0;
   tempVec->init(0.0);
+  nStore = 0;
 
   {
     Teuchos::ParameterList validParams;
@@ -99,6 +101,7 @@ void NOX::Solver::AndersonAcceleration::init()
     validParams.sublist("Preconditioning").set("Recompute Jacobian", false, "set true if preconditioner requires Jacobian");
     validParams.set("Adjust Matrix for Condition Number", false, "If true, the QR matrix will be resized if the condiiton number is greater than the dropTolerance");
     validParams.set("Condition Number Drop Tolerance", 1.0e+12, "If adjusting for condition number, this is the condition number value above which the QR matrix will be resized.");
+    validParams.set("Acceleration Start Iteration",1,"The nonlinear iteration where Anderson Acceleration will start. Normally AA starts from the first iteration, but it can be advantageous to delay the start and allow normal picard iteration to get a better initial guess for the AA history.");
     paramsPtr->sublist("Anderson Parameters").validateParametersAndSetDefaults(validParams);
   }
 
@@ -118,6 +121,10 @@ void NOX::Solver::AndersonAcceleration::init()
   recomputeJacobian = paramsPtr->sublist("Anderson Parameters").sublist("Preconditioning").get<bool>("Recompute Jacobian");
   adjustForConditionNumber = paramsPtr->sublist("Anderson Parameters").get<bool>("Adjust Matrix for Condition Number");
   dropTolerance = paramsPtr->sublist("Anderson Parameters").get<double>("Condition Number Drop Tolerance");
+  accelerationStartIteration = paramsPtr->sublist("Anderson Parameters").get<int>("Acceleration Start Iteration");
+  
+  TEUCHOS_TEST_FOR_EXCEPTION((accelerationStartIteration < 1),std::logic_error,"Error - The \"Acceleration Start Iteration\" should be greater than 0!");
+
   status = NOX::StatusTest::Unconverged;
   checkType = parseStatusTestCheckType(paramsPtr->sublist("Solver Options"));
 
@@ -246,7 +253,7 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
   }
 
   // Manage the matrices of past iterates and QR factors
-  if (nIter == 1){
+  if (nIter == accelerationStartIteration) {
     // Initialize
     nStore = 1;
     xMat.push_back(solnPtr->getX().clone(NOX::DeepCopy));
@@ -255,7 +262,7 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
     rMat.shape(0,0);
     qrAdd(*oldPrecF);
     }
-  else{
+  else if (nIter > accelerationStartIteration) {
     if (nStore < storeParam){
       xMat.push_back(solnPtr->getX().clone(NOX::ShapeCopy));
       nStore++;
@@ -282,9 +289,9 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
     char normType = '1';
     double invCondNum = 0.0;
     int info = 0;
-    if ( WORK.size() != static_cast<std::size_t>(4*nStore) )
+    if ( WORK.size() < static_cast<std::size_t>(4*nStore) )
       WORK.resize(4*nStore);
-    if (IWORK.size() != static_cast<std::size_t>(nStore))
+    if (IWORK.size() < static_cast<std::size_t>(nStore))
       IWORK.resize(nStore);
     lapack.GECON(normType,nStore,rMat.values(),nStore,rMat.normOne(),&invCondNum,&WORK[0],&IWORK[0],&info);
     if (utilsPtr->isPrintType(Utils::Details))
@@ -314,7 +321,9 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
     }
     gamma(ii,0) /= rMat(ii,ii);
   }
-  Rgamma.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,mixParam,rMat,gamma,0.0);
+
+  if (nStore > 0)
+    Rgamma.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,mixParam,rMat,gamma,0.0);
 
   // Compute the new solution.
   solnPtr->computeX(*solnPtr, *precF, mixParam);  

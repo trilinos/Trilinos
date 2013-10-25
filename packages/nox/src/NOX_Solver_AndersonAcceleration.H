@@ -255,6 +255,9 @@ protected:
 
   //! Value of the condition number above which the QR matrix is resized.
   double dropTolerance;
+
+  //! The nonlinear iteration where Anderson Acceleration will start. 
+  int accelerationStartIteration;
 };
 } // namespace Solver
 } // namespace NOX

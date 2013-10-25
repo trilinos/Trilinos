@@ -54,6 +54,13 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND
     )
    
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Thyra_Heq_DelayedStart
+    SOURCES  ModelEvaluatorHeq.hpp ModelEvaluatorHeq_def.hpp Thyra_Heq_DelayedStart.C
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "Test passed!"
+    )
+   
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Thyra_PseudoTransient
     SOURCES  ${UNIT_TEST_DRIVER} Thyra_PseudoTransient.cpp ModelEvaluatorRosenbrock.hpp ModelEvaluatorRosenbrock.cpp
     NUM_MPI_PROCS 1
