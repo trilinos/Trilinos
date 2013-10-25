@@ -83,6 +83,10 @@ INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits/package_arch/TribitsProject.cm
 
 # Make Trilinos create <Package>Config.cmake files by default
 SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT ON)
+# Make Trilinos set up CPack support by default
+SET(${PROJECT_NAME}_ENABLE_CPACK_PACKAGING_DEFAULT ON)
+# Don't allow disabled subpackages to be excluded from tarball
+SET(${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION_DEFAULT FALSE)
 
 # Do all of the processing for this Tribits project
 TRIBITS_PROJECT()

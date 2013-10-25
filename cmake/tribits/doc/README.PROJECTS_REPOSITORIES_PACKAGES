@@ -39,6 +39,7 @@ A.1) Project: a global, top-level CMake build
       NativeRepositoriesList.cmake  # [Optional] For meta-projects
       ExtraRepositoriesList.cmake   # [Optional] Lists VC URLs 
       ProjectDependenicesSetup.cmake # [Optional] Project deps overrides
+      CallbackDefineProjectPackaging.cmake # [Optioinal] Called after packages configured
       tribits/  # [Optional] Could just point to installed tribits
       ctest/
         CTestCustom.ctest.in  # [Optional] Custom ctest settings
@@ -65,7 +66,7 @@ A.2) Repository: a collection of packages and/or files
     cmake/
        RepositoryDependenciesSetup.cmake # [Optional] Read before package Dependencies.cmake
        CallbackSetupExtraOptions.cmake # [Optional] Called after tribits options
-       CallbackDefinePackaging.cmake # [Optioinal] Called after packages configured
+       CallbackDefineRepositoryPackaging.cmake # [Optioinal] Called after packages configured
 
 A.3) Package:
 * Defines a set of libraries and/or headers and/or executables and/or tests
