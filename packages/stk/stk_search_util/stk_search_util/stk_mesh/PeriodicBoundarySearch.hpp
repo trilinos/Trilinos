@@ -1,6 +1,12 @@
 #ifndef STK_SEARCH_UTIL_STK_MESH_PERIODIC_BOUNDARY_SEARCH_HPP
 #define STK_SEARCH_UTIL_STK_MESH_PERIODIC_BOUNDARY_SEARCH_HPP
 
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_precision.hpp>
+#include <glm/gtx/transform.hpp>
+
 #include <stk_search/CoarseSearch.hpp>
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search/IdentProc.hpp>
@@ -23,60 +29,38 @@ public:
   };
 
   struct TransformHelper {
-    TransformHelper()
-      : translation(),
-        transformType(TRANSLATION)
-    {
-      rotation[0] = 1.0;
-      rotation[1] = 0.0;
-      rotation[2] = 0.0;
-      rotation[3] = 0.0;
-      rotation[4] = 1.0;
-      rotation[5] = 0.0;
-      rotation[6] = 0.0;
-      rotation[7] = 0.0;
-      rotation[8] = 1.0;
-    }
 
-    TransformHelper(const boost::array<double, 3> & translation_arg)
-      : translation(translation_arg),
-        transformType(TRANSLATION)
-    {
-      rotation[0] = 1.0;
-      rotation[1] = 0.0;
-      rotation[2] = 0.0;
-      rotation[3] = 0.0;
-      rotation[4] = 1.0;
-      rotation[5] = 0.0;
-      rotation[6] = 0.0;
-      rotation[7] = 0.0;
-      rotation[8] = 1.0;
-    }
-
-    TransformHelper(const boost::array<double, 9> & rotation_arg)
-      : rotation(rotation_arg),
-        translation(),
-        transformType(ROTATIONAL)
-        {}
-
-    TransformHelper(const boost::array<double, 9> & rotation_arg, const boost::array<double,3> & translation_arg)
-      : rotation(rotation_arg),
-        translation(translation_arg),
-        transformType(ROTATIONAL)
-        {}
-
-    boost::array<double, 9> rotation;
-    boost::array<double, 3> translation;
     CoordinatesTransform transformType;
+    glm::f64mat3x3 m_rotation;
+    glm::f64vec3 m_translation;
 
-  };
+    TransformHelper()
+      : transformType(TRANSLATION)
+      , m_translation(0)
+    {
+      // Default is identity transform.
+    }
+
+    TransformHelper(const boost::array<double, 3> & trans_arg)
+      : transformType(TRANSLATION)
+      , m_translation(trans_arg[0], trans_arg[1], trans_arg[2] )
+    { }
+
+    TransformHelper(double angle, const double axis[3])
+      : transformType(ROTATIONAL)
+      , m_translation(0)
+    {
+      m_rotation = glm::f64mat3x3(glm::rotate(angle, axis[0], axis[1], axis[2]));
+    }
+
+   };
 
 public:
   typedef double Scalar;
   typedef std::vector<std::pair<stk::mesh::Selector, stk::mesh::Selector> > SelectorPairVector;
   typedef stk::search::ident::IdentProc<stk::mesh::EntityKey,unsigned> SearchId;
-  typedef stk::search::box::SphereBoundingBox<SearchId,Scalar,3> AABB;
-  typedef std::vector<AABB> AABBVector;
+  typedef stk::search::box::SphereBoundingBox<SearchId,Scalar,3> SphAABB;
+  typedef std::vector<SphAABB> SphAABBVector;
   typedef std::vector<std::pair<SearchId,SearchId> > SearchPairVector;
 
 
@@ -159,19 +143,7 @@ public:
       const double point[])
   {
     m_periodic_pairs.push_back(std::make_pair(domain, range));
-
-    const double norm = sqrt(axis[0]*axis[0] + axis[1]*axis[1] + axis[2]*axis[2]);
-    const double x = axis[0]/norm, y = axis[1]/norm, z = axis[2]/norm;
-    const double c = cos(theta), s = sin(theta);
-
-
-    //create rotation matrix from domain to range
-    boost::array<double, 9> rotationMatrix;
-    rotationMatrix[0] = c + x*x*(1-c);     rotationMatrix[3] = x*y*(1-c) - z*s;    rotationMatrix[6] = x*z*(1-c) + y*s;
-    rotationMatrix[1] = y*x*(1-c) + z*s;   rotationMatrix[4] = c + y*y*(1-c);      rotationMatrix[7] = y*z*(1-c) - x*s;
-    rotationMatrix[2] = z*x*(1-c) - y*s;   rotationMatrix[5] = z*y*(1-c) + x*s;    rotationMatrix[8] = c + z*z*(1-c);
-
-    m_transforms.push_back( TransformHelper(rotationMatrix) );
+    m_transforms.push_back( TransformHelper(theta, axis) );
   }
 
   const stk::mesh::Ghosting & get_ghosting() const
@@ -275,7 +247,7 @@ private:
       TransformHelper & transform)
   {
     SearchPairVector search_results;
-    AABBVector side_1_vector, side_2_vector;
+    SphAABBVector side_1_vector, side_2_vector;
 
     populate_search_vector(side1, side_1_vector);
 
@@ -286,11 +258,11 @@ private:
       case TRANSLATION:
         translate_coordinates(side_1_vector,
                               side_2_vector,
-                              transform.translation);
+                              transform.m_translation);
         break;
       case ROTATIONAL:
         //something
-        rotate_coordinates(side_1_vector, side_2_vector, transform.rotation);
+        rotate_coordinates(side_1_vector, side_2_vector, transform.m_rotation);
         break;
       default:
         ThrowRequireMsg(false, "Periodic transform method doesn't exist");
@@ -361,7 +333,7 @@ private:
   }
 
   void populate_search_vector(stk::mesh::Selector side_selector
-                              , AABBVector & aabb_vector
+                              , SphAABBVector & aabb_vector
                              )
   {
     const double radius = 1e-10;
@@ -383,7 +355,7 @@ private:
         ++num_nodes;
         m_get_coordinates(b[ord], coords);
         SearchId search_id( m_bulk_data.entity_key(b[ord]), parallel_rank);
-        aabb_vector.push_back(AABB( coords, radius, search_id));
+        aabb_vector.push_back(SphAABB( coords, radius, search_id));
       }
     }
   }
@@ -405,7 +377,7 @@ private:
         calc_centroid(parallel, side_1, centroid_1);
         calc_centroid(parallel, side_2, centroid_2);
         for (int i = 0; i < 3; ++i)
-          transform.translation[i] = centroid_2[i] - centroid_1[i];
+          transform.m_translation[i] = centroid_2[i] - centroid_1[i];
 
         break;
       }
@@ -456,10 +428,11 @@ private:
     }
   }
 
+
   void translate_coordinates(
-      AABBVector & side_1_vector,
-      AABBVector & side_2_vector,
-      boost::array<double, 3> & translate) const
+      SphAABBVector & side_1_vector,
+      SphAABBVector & side_2_vector,
+      const glm::f64vec3 &translate) const
   {
     // translate domain to range, i.e. master to slave
     for (size_t i = 0, size = side_1_vector.size(); i < size; ++i)
@@ -473,30 +446,19 @@ private:
 
 
   void rotate_coordinates(
-      AABBVector & side_1_vector,
-      AABBVector & side_2_vector,
-      boost::array<double, 9> & rotation) const
+      SphAABBVector & side_1_vector,
+      SphAABBVector & side_2_vector,
+      const glm::f64mat3x3 & rotation) const
   {
-    //TODO: now assuming that periodicity is around z axis
     for (size_t iPoint = 0, size = side_1_vector.size(); iPoint < size; ++iPoint)
     {
-      double r[3];
-      for (int i = 0; i < 3; ++i)
-      {
-        r[i] = side_1_vector[iPoint].center[i];
-        side_1_vector[iPoint].center[i] = 0.0;
-      }
-
-      for (int j = 0; j < 3; ++j)
-      {
-        for (int i = 0; i < 3; ++i)
-        {
-          side_1_vector[iPoint].center[i] += rotation[i + 3*j]*r[j];
-        }
+      double *center = side_1_vector[iPoint].center;
+      glm::f64vec3 ctr(center[0], center[1], center[2]);
+      ctr = rotation * ctr;
+      for (int i = 0; i < 3; ++i) {
+        center[i] = ctr[i];
       }
     }
-
-
   }
 
 };
