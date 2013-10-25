@@ -51,6 +51,7 @@
 #include <Teuchos_BLAS_types.hpp>
 #include <Kokkos_DefaultSparseOps.hpp>
 #include <Teuchos_Describable.hpp>
+#include <Teuchos_ArrayView.hpp>
 
 /// \file KokkosExamples_EmptySparseKernelClass.hpp
 /// \brief A file containing a stub for a new sparse kernel provider,
@@ -115,11 +116,11 @@ namespace KokkosExamples {
     typedef Scalar  scalar_type;
     /// \brief The type of (local) indices of the sparse matrix.
     ///
-    /// This is \c void only because this is a stub implementation.
+    /// This is \c int only because this is a stub implementation.
     /// In a real implementation, ordinal_type would normally either be
     /// a fixed type (like \c int) or a template parameter of your
     /// class.
-    typedef void ordinal_type;
+    typedef int ordinal_type;
     //! The Kokos Node type.
     typedef Node    node_type;
     //! The type of this object: <tt>typeof(*this)</tt>
@@ -446,7 +447,7 @@ namespace KokkosExamples {
     reorderedGaussSeidel (const KokkosClassic::MultiVector<DomainScalar,Node> &B,
 			  KokkosClassic::MultiVector<RangeScalar,Node> &X,
 			  const KokkosClassic::MultiVector<Scalar,Node> &D,
-			  const ArrayView<ordinal_type> & rowIndices,
+			  const Teuchos::ArrayView<ordinal_type> & rowIndices,
 			  const RangeScalar& dampingFactor,
 			  const KokkosClassic::ESweepDirection direction) const
     {
