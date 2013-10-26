@@ -98,7 +98,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsGraph : public Epetra_CrsGraph {
         bool buildNonlocalGraph=false);
 
   /** Constructor */
-  Epetra_FECrsGraph(const Epetra_FECrsGraph& Graph);
+  //  Using default copy constructor because there is no def in cpp file
+  //  Epetra_FECrsGraph(const Epetra_FECrsGraph& Graph);
 
   /** Destructor */
   virtual ~Epetra_FECrsGraph();

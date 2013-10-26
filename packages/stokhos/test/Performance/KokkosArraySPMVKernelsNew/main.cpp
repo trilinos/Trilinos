@@ -43,6 +43,14 @@
 #include <iostream>
 #include <cstdlib>
 
+#include "Kokkos_Threads.hpp"
+#include "Kokkos_hwloc.hpp"
+
+#include "Stokhos_ConfigDefs.h"
+#if defined(HAVE_STOKHOS_OPENMP) && defined(HAVE_STOKHOS_MKL)
+#include <omp.h>
+#endif
+
 template <typename scalar>
 int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
              bool test_block, bool symmetric, bool mkl);
@@ -131,6 +139,27 @@ int main(int argc, char *argv[])
     return -1;
   }
 
+  // Always initialize threads (for Cuda::device_mirror)
+  const size_t team_count =
+    Kokkos::hwloc::get_available_numa_count() *
+    Kokkos::hwloc::get_available_cores_per_numa();
+  const size_t threads_per_team =
+    Kokkos::hwloc::get_available_threads_per_core();
+
+#if defined(HAVE_STOKHOS_OPENMP) && defined(HAVE_STOKHOS_MKL)
+  // Call a little OpenMP parallel region so that MKL will get the right
+  // number of threads.  This isn't perfect in that the thread binding
+  // doesn't seem right, and only works at all when using GNU threads with MKL.
+#pragma omp parallel
+  {
+    int numThreads = omp_get_num_threads();
+#pragma omp single
+    std::cout << " num_omp_threads = " << numThreads << std::endl;
+  }
+#endif
+
+  Kokkos::Threads::initialize( team_count , threads_per_team );
+
   if (test_host) {
     if (single)
       mainHost<float>(test_flat, test_orig, test_deg, test_lin, test_block, symmetric, mkl);
@@ -143,6 +172,8 @@ int main(int argc, char *argv[])
     else
       mainCuda<double>(test_flat, test_orig, test_lin, test_block, symmetric, device);
   }
+
+  Kokkos::Threads::finalize();
 
   return 0 ;
 }

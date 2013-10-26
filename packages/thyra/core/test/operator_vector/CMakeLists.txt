@@ -200,3 +200,12 @@ FOREACH(NUM_MPI_PROCS ${NUM_MPI_PROCS_SET})
     )
 ENDFOREACH()
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  test_locally_replicated
+  SOURCES
+    test_locally_replicated.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 2
+  COMM mpi serial
+  )

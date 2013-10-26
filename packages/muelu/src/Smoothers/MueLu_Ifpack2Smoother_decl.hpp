@@ -132,20 +132,11 @@ namespace MueLu {
     Ifpack2Smoother(std::string const & type, Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0); //TODO: empty paramList valid for Ifpack??
 
     //! Destructor
-    virtual ~Ifpack2Smoother();
+    virtual ~Ifpack2Smoother() { }
 
     //@}
 
-    //! @name Set/Get methods
-    //@{
-
-    //! Set smoother parameters
-    void SetParameters(Teuchos::ParameterList const & paramList);
-
-    //! Get smoother parameters
-    Teuchos::ParameterList const & GetParameters();
-
-    //@}
+    void SetParameterList(const Teuchos::ParameterList& paramList);
 
     //! Input
     //@{
@@ -203,14 +194,12 @@ namespace MueLu {
     //@}
 
   private:
+    void SetPrecParameters(const Teuchos::ParameterList& list = Teuchos::ParameterList()) const;
 
-      
+  private:
 
     //! ifpack2-specific key phrase that denote smoother type
     std::string type_;
-
-    //! parameter list that is used by Ifpack internally
-    Teuchos::ParameterList paramList_;
 
     //! overlap when using the smoother in additive Schwarz mode
     LO overlap_;
@@ -228,17 +217,22 @@ namespace MueLu {
   RCP<MueLu::Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node2,LocalMatOps2> >
   Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::clone(const RCP<Node2>& node2, const RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2, LocalMatOps2> >& A_newnode) const {
 #ifdef HAVE_XPETRA_TPETRA
+    const ParameterList& paramList = this->GetParameterList();
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Matrix1;
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> Matrix2;
-    RCP<Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > cloneSmoother = rcp(new Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2>(type_, paramList_, overlap_));
+    RCP<Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > cloneSmoother =
+        rcp(new Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node2>(type_, paramList, overlap_));
+
     //Get Tpetra::CrsMatrix from Xpetra::Matrix
-    RCP<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> > crsOp = rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> >(A_newnode);
-    const RCP<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> > &tmp = rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> >(crsOp->getCrsMatrix());
+    RCP<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> > crsOp =
+        rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> >(A_newnode);
+    const RCP<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> >& tmp =
+        rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> >(crsOp->getCrsMatrix());
 
     Ifpack2::Factory factory;
-    cloneSmoother->prec_ = factory.clone<Matrix1, Matrix2>(prec_, tmp->getTpetra_CrsMatrix(), this->paramList_);
+    cloneSmoother->prec_ = factory.clone<Matrix1, Matrix2>(prec_, tmp->getTpetra_CrsMatrix(), paramList);
     cloneSmoother->type_ = type_;
-    cloneSmoother->paramList_ = paramList_;
+    cloneSmoother->SetParameterList(paramList);
     cloneSmoother->IsSetup(this->IsSetup());
     return cloneSmoother;
 #else

@@ -46,6 +46,8 @@
 #include "sacado_mpvector_example.hpp"
 
 #include "KokkosCore_config.h"
+#include "Kokkos_Threads.hpp"
+#include "Kokkos_hwloc.hpp"
 
 int main(int argc, char **argv)
 {
@@ -145,6 +147,13 @@ int main(int argc, char **argv)
               << std::endl;
 
 #ifdef KOKKOS_HAVE_PTHREAD
+    // Always initialize threads for Cuda::host_mirror
+    if (threads_league_size == -1)
+      threads_league_size = Kokkos::hwloc::get_available_numa_count() *
+        Kokkos::hwloc::get_available_cores_per_numa();
+    if (threads_team_size == -1)
+      threads_team_size = Kokkos::hwloc::get_available_threads_per_core();
+    Kokkos::Threads::initialize( threads_league_size , threads_team_size );
     if (test_threads) {
        bool status = MPVectorExample<MaxSize,Scalar,Kokkos::Threads>::run(
          storage_method, num_elements, num_samples,
@@ -170,6 +179,11 @@ int main(int argc, char **argv)
       else
         std::cout << "CUDA Test Failed!" << std::endl;
     }
+#endif
+
+#ifdef KOKKOS_HAVE_PTHREAD
+    // Finalize threads
+    Kokkos::Threads::finalize();
 #endif
 
     Teuchos::TimeMonitor::summarize(std::cout);

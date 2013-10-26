@@ -178,6 +178,21 @@ namespace MueLu {
     return defaultFactoryTable_[varName];
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Print() const {
+    std::map<std::string, RCP<const FactoryBase> >::const_iterator it;
+
+    Teuchos::FancyOStream& fancy = GetOStream(Debug, 0);
+
+    fancy << "Users factory table (factoryTable_):" << std::endl;
+    for (it = factoryTable_.begin(); it != factoryTable_.end(); it++)
+      fancy << "  " << it->first << " -> " << Teuchos::toString(it->second.get()) << std::endl;
+
+    fancy << "Default factory table (defaultFactoryTable_):" << std::endl;
+    for (it = defaultFactoryTable_.begin(); it != defaultFactoryTable_.end(); it++)
+      fancy << "  " << it->first << " -> " << Teuchos::toString(it->second.get()) << std::endl;
+  }
+
 } // namespace MueLu
 
 //TODO: add operator[]

@@ -41,6 +41,7 @@
 //@HEADER
 */
 
+#include <stdio.h>
 #include <stdexcept>
 #include <sstream>
 #include <iostream>
@@ -171,8 +172,9 @@ public:
   typedef DeviceType  device_type ;
   typedef long int    value_type ;
   Kokkos::View< value_type , device_type > accum ;
+  Kokkos::View< value_type , device_type > total ;
 
-  ScanRequestFunctor() : accum("accum") {}
+  ScanRequestFunctor() : accum("accum"), total("total") {}
 
   KOKKOS_INLINE_FUNCTION
   void init( value_type & error ) const { error = 0 ; }
@@ -185,20 +187,27 @@ public:
   KOKKOS_INLINE_FUNCTION
   void operator()( device_type dev , value_type & error ) const
   {
+    if ( 0 == dev.league_rank() && 0 == dev.team_rank() ) {
+      const long int thread_count = dev.league_size() * dev.team_size();
+      *total = ( thread_count * ( thread_count + 1 ) ) / 2 ;
+    }
+
     const long int answer =
       ( dev.league_rank() + 1 ) * dev.team_rank() +
       ( dev.team_rank() * ( dev.team_rank() + 1 ) ) / 2 ;
     
     const long int result =
       dev.team_scan( dev.league_rank() + 1 + dev.team_rank() + 1 );
+
     const long int result2 =
       dev.team_scan( dev.league_rank() + 1 + dev.team_rank() + 1 );
 
-    ASSERT_EQ( answer, result );
-    ASSERT_EQ( answer, result2 );
-
-    if ( answer != result ) error = 1 ;
-    if ( answer != result2 ) error = 1 ;
+    if ( answer != result || answer != result2 ) {
+      printf("ScanRequestFunctor[%d.%d] %ld != %ld or %ld\n",
+             dev.league_rank(), dev.team_rank(),
+             answer,result,result2);
+      error = 1 ;
+    }
 
     const long int thread_rank = dev.team_rank() +
                                  dev.team_size() * dev.league_rank();
@@ -224,27 +233,28 @@ public:
 
   void run_test( const size_t nteam )
   {
-    enum { Repeat = 1000 };
+    const unsigned REPEAT = 1000 ;
+    const unsigned Repeat = ( REPEAT + nteam - 1 ) / nteam ;
 
     Kokkos::ParallelWorkRequest request ; 
 
     request.team_size   = device_type::team_max();
     request.league_size = nteam ;
-    const long int nthread = request.team_size * request.league_size ;
-
-    const long int total_answer = nthread * ( nthread + 1 ) / 2 ;
 
     functor_type functor ;
 
     for ( unsigned i = 0 ; i < Repeat ; ++i ) {
+      long int accum = 0 ;
       long int total = 0 ;
       long int error = 0 ;
       Kokkos::deep_copy( functor.accum , total );
       Kokkos::parallel_reduce( request , functor , error );
-      Kokkos::deep_copy( total , functor.accum );
+      DeviceType::fence();
+      Kokkos::deep_copy( accum , functor.accum );
+      Kokkos::deep_copy( total , functor.total );
 
       ASSERT_EQ( error , 0 );
-      ASSERT_EQ( total , total_answer );
+      ASSERT_EQ( total , accum );
     }
 
     device_type::fence();

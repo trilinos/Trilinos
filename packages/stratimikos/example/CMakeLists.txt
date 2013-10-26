@@ -200,3 +200,52 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Ifpack)
     )
 
 ENDIF()
+
+
+#
+# ForwardSolverAsPreconditioner.cpp
+#
+
+TRIBITS_ADD_EXECUTABLE(
+  ForwardSolverAsPreconditioner
+  SOURCES
+    ForwardSolverAsPreconditioner.cpp
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyForwardSolverAsPreconditionerFiles
+  DEST_FILES
+    P2.mtx
+    AztecOOPrecBelosSolver.xml
+  SOURCE_PREFIX "_"
+  EXEDEPS ForwardSolverAsPreconditioner
+  )
+
+IF (${PACKAGE_NAME}_ENABLE_AztecOO AND ${PACKAGE_NAME}_ENABLE_Belos)
+
+  # NOTE: These tests really show that using AztecOO as a preconditioner
+  # (using "FixedPoint") works as a preconditioner for Belos.  It shows that
+  # the AztecOO-based LinearOp is a true linear operator and it uses regular
+  # GMRES (not Flexible GMRES).  If you turn off the AztecOO preconditioner
+  # (i.e. change from 'ilu' to 'none') the test fails.  If you switch from
+  # 'FixedPoint' to 'GMRES' as the AztecOO solver, the test fails (actually,
+  # the linear op test fails).
+
+  TRIBITS_ADD_TEST(
+    ForwardSolverAsPreconditioner
+    POSTFIX_AND_ARGS_0 AztecOOPRecBelosSolver
+      --matrix-file=P2.mtx --param-list-file=AztecOOPrecBelosSolver.xml
+      --verb-level=medium --solve-tol=1e-6
+    NUM_MPI_PROCS 1
+    )
+
+  TRIBITS_ADD_TEST(
+    ForwardSolverAsPreconditioner
+    POSTFIX_AND_ARGS_0 AztecOOPRecBelosSolver
+      --matrix-file=P2.mtx --param-list-file=AztecOOPrecBelosSolver.xml
+      --verb-level=medium --solve-tol=1e-6
+    COMM mpi
+    NUM_MPI_PROCS 4
+    )
+
+ENDIF()
+

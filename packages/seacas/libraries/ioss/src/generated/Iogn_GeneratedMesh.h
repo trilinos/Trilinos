@@ -454,6 +454,9 @@ namespace Iogn {
      * the side ordinal is 0-based.
      */
     virtual void sideset_elem_sides(int64_t nset_id, Int64Vector &elem_sides) const;
+
+    virtual std::vector<std::string> sideset_touching_blocks(int64_t set_id) const;
+
     int64_t get_num_x() const {return numX;}
     int64_t get_num_y() const {return numY;}
     int64_t get_num_z() const {return numZ;}

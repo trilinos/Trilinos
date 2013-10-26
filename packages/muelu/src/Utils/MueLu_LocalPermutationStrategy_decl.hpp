@@ -62,6 +62,11 @@ namespace MueLu {
 
   private:
 
+    void BuildPermutations(size_t nDofsPerNode) const;
+
+    mutable std::vector<std::vector<int> > result_permvecs_;
+    mutable size_t permWidth_;
+
     GlobalOrdinal getGlobalDofId(const Teuchos::RCP<Matrix> & A, LocalOrdinal localNodeId, LocalOrdinal localDof) const;
     GlobalOrdinal globalDofId2globalNodeId( const Teuchos::RCP<Matrix> & A, GlobalOrdinal grid ) const;
    };

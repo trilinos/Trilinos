@@ -50,7 +50,15 @@
 #include <vector>
 
 #include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_HAVE_OPENMP
+#include <Kokkos_OpenMP.hpp>
+#else
+#ifdef KOKKOS_HAVE_PTHREAD
 #include <Kokkos_Threads.hpp>
+#else
+#include <Kokkos_Serial.hpp>
+#endif
+#endif
 #include <Kokkos_Parallel.hpp>
 #include <Kokkos_Layout.hpp>
 #include <Kokkos_CudaSpace.hpp>
@@ -92,8 +100,15 @@ public:
   //! This device's preferred array layout.
   typedef LayoutLeft            array_layout ;
   //! This device's host mirror type.
+#ifdef KOKKOS_HAVE_OPENMP
+  typedef Kokkos::OpenMP       host_mirror_device_type ;
+#else
+#ifdef KOKKOS_HAVE_PTHREAD
   typedef Kokkos::Threads       host_mirror_device_type ;
-
+#else
+  typedef Kokkos::Serial       host_mirror_device_type ;
+#endif
+#endif
   //@}
   //! \name Functions that all Kokkos devices must implement.
   //@{
@@ -171,7 +186,10 @@ public:
    */
   static std::vector<unsigned> detect_device_arch();
 
+  static unsigned team_max();
+
   //@}
+  //--------------------------------------------------------------------------
 #if defined( __CUDA_ARCH__ )
   //! \name Functions for the functor device interface
   //@{
@@ -186,25 +204,26 @@ public:
   __device__ inline unsigned int team_barrier_count(bool value) const
              { return __syncthreads_count(value); }
 
-  /// \brief Collectively compute the league-wide unordered exclusive prefix sum.
-  ///
-  /// Values are ordered within a team, but not between teams
-  /// (i.e. the start values of thread 0 in each team are not ordered
-  /// according to team number).  This call does not use a global
-  /// synchronization. Multiple unordered scans can be in flight at
-  /// the same time (using scratch_view arguments that point to
-  /// distinct chunks of memory).  The scratch_view output argument
-  /// will hold the complete sum in the end.
-  template< class VT >
-  __device__ inline typename VT::value_type 
-  unordered_scan (typename VT::value_type& value, VT& scratch_view);
+  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
+   *
+   *  The highest rank thread can compute the reduction total as
+   *    reduction_total = dev.team_scan( value ) + value ;
+   */
+  template< typename Type >
+  __device__ inline Type team_scan( const Type & value );
 
-  /// \brief Collectively compute the team-wide exclusive prefix sum using CUDA Unbound.
-  ///
-  /// Values are ordered.  The last thread returns the sum of all
-  /// values in the team less its own value.
-  template< typename T >
-  __device__ inline T team_scan(T& value);
+  /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
+   *          with intra-team non-deterministic ordering accumulation.
+   *
+   *  The global inter-team accumulation value will, at the end of the
+   *  league's parallel execution, be the scan's total.
+   *  Parallel execution ordering of the league's teams is non-deterministic.
+   *  As such the base value for each team's scan operation is similarly
+   *  non-deterministic.
+   */
+  template< typename TypeLocal , typename TypeGlobal >
+  __device__ inline TypeGlobal team_scan( const TypeLocal & value , TypeGlobal * const global_accum );
+
 
   //! Get a pointer to shared memory for this team.
   __device__ inline void * get_shmem( const int size );
@@ -213,6 +232,7 @@ public:
   __device__ inline Cuda( const Cuda & rhs ) : m_exec(rhs.m_exec) {}
 
   //@}
+  //--------------------------------------------------------------------------
 
 private:
 
@@ -230,11 +250,11 @@ private:
   void team_barrier() const ;
   unsigned int team_barrier_count(bool) const ;
 
-  template< class VT >
-    inline typename VT::value_type unordered_scan
-             (typename VT::value_type& value, VT& scratch_view);
   template< typename T >
-    inline T team_scan(T& value);
+    inline T team_scan(const T& value);
+
+  template< typename TypeLocal , typename TypeGlobal >
+    inline TypeGlobal team_scan( const TypeLocal & value , TypeGlobal * const global_accum );
 
   void * get_shmem( const int size );
 
@@ -272,7 +292,7 @@ inline
 void parallel_for( const CudaWorkConfig & work_config ,
                    const FunctorType    & functor )
 {
-  Impl::ParallelFor< FunctorType , Cuda , CudaWorkConfig >
+  Impl::ParallelFor< FunctorType , CudaWorkConfig , Cuda >
     ( work_config , functor );
 }
 
@@ -293,10 +313,8 @@ parallel_reduce( const CudaWorkConfig & work_config ,
 /*--------------------------------------------------------------------------*/
 
 #include <Cuda/Kokkos_CudaExec.hpp>
-
 #include <Cuda/Kokkos_Cuda_View.hpp>
 #include <Cuda/Kokkos_Cuda_Parallel.hpp>
-#include <Cuda/Kokkos_Cuda_ParallelReduce.hpp>
 
 #endif /* #ifndef KOKKOS_CUDA_HPP */
 

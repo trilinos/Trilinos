@@ -176,13 +176,15 @@ public:
    *  If the 'use_' arguments are not supplied the hwloc is queried
    *  to use all available cores.
    */
-  static void initialize( unsigned team_count ,
-                          unsigned threads_per_team ,
+  static void initialize( unsigned team_count = 1 ,
+                          unsigned threads_per_team = 1 ,
                           unsigned use_numa_count = 0 ,
                           unsigned use_cores_per_numa = 0 );
 
-  static int league_max();
-  static int team_max();
+  static int is_initialized();
+
+  static unsigned league_max();
+  static unsigned team_max();
 
   //@}
   /*------------------------------------------------------------------------*/

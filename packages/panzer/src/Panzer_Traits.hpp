@@ -95,10 +95,10 @@ namespace panzer {
     
     // Scalar types we plan to use
     typedef double RealType;
-    typedef Sacado::Fad::DFad<double> FadType;
+    //typedef Sacado::Fad::DFad<double> FadType;
     //typedef Sacado::CacheFad::DFad<double> FadType;
     //typedef Sacado::ELRFad::DFad<double> FadType;
-    //typedef Sacado::ELRCacheFad::DFad<double> FadType;
+    typedef Sacado::ELRCacheFad::DFad<double> FadType;
 
     #ifdef HAVE_STOKHOS
        typedef Stokhos::StandardStorage<int,RealType> SGStorageType;

@@ -474,6 +474,8 @@ int main(int argc, char *argv[]) {
 
 #if TPETRA_USE_KOKKOS_DISTOBJECT && defined(KOKKOS_HAVE_CUDA)
         // Initialize Cuda
+        if (!Kokkos::Cuda::host_mirror_device_type::is_initialized())
+          Kokkos::Cuda::host_mirror_device_type::initialize();
         if (!Kokkos::Cuda::is_initialized())
           Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(device_id) );
 #endif
@@ -484,6 +486,7 @@ int main(int argc, char *argv[]) {
 
 #if TPETRA_USE_KOKKOS_DISTOBJECT && defined(KOKKOS_HAVE_CUDA)
         Kokkos::Cuda::finalize();
+        Kokkos::Cuda::host_mirror_device_type::finalize();
 #endif
       }
       else {
@@ -593,6 +596,8 @@ int main(int argc, char *argv[]) {
 
 #if TPETRA_USE_KOKKOS_DISTOBJECT && defined(KOKKOS_HAVE_CUDA)
         // Initialize Cuda
+        if (!Kokkos::Cuda::host_mirror_device_type::is_initialized())
+          Kokkos::Cuda::host_mirror_device_type::initialize();
         if (!Kokkos::Cuda::is_initialized())
           Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(device_id) );
 #endif
@@ -603,6 +608,7 @@ int main(int argc, char *argv[]) {
 
 #if TPETRA_USE_KOKKOS_DISTOBJECT && defined(KOKKOS_HAVE_CUDA)
         Kokkos::Cuda::finalize();
+        Kokkos::Cuda::host_mirror_device_type::finalize();
 #endif
       }
       else {

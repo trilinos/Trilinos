@@ -158,7 +158,9 @@ namespace Iohb {
     logStream(NULL), layout_(NULL), legend_(NULL),
     tsFormat("[%H:%M:%S]"), precision_(5), showLabels(true), showLegend(false), appendOutput(false),
     initialized_(false), streamNeedsDelete(false), fileFormat(DEFAULT)
-  { }
+  {
+    dbState = Ioss::STATE_UNKNOWN;
+  }
 
   DatabaseIO::~DatabaseIO()
   {

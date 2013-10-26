@@ -232,6 +232,33 @@ ThreadsExec::ThreadsExec()
   }
 }
 
+int ThreadsExec::get_thread_count()
+{
+  return s_threads_count ;
+}
+
+ThreadsExec * ThreadsExec::get_thread( const int init_thread_rank )
+{
+  ThreadsExec * const th =
+    unsigned(init_thread_rank) < s_threads_count
+    ? s_threads_exec[ s_threads_count - ( init_thread_rank + 1 ) ] : 0 ;
+
+  if ( 0 == th || th->m_init_thread_rank != init_thread_rank ) {
+    std::ostringstream msg ;
+    msg << "Kokkos::Impl::ThreadsExec::get_thread ERROR : "
+        << "thread " << init_thread_rank << " of " << s_threads_count ;
+    if ( 0 == th ) {
+      msg << " does not exist" ;
+    }
+    else {
+      msg << " has wrong thread_rank " << th->m_init_thread_rank ;
+    }
+    Kokkos::Impl::throw_runtime_exception( msg.str() );
+  }
+
+  return th ;
+}
+
 // Set threads' team and initial league sizes.
 // Set threads' global and team fan-in and scan relationsups.
 // If the process thread is used then it is 's_threads_exec[0]'
@@ -680,6 +707,9 @@ int ThreadsExec::team_max()
 
 //----------------------------------------------------------------------------
 
+int ThreadsExec::is_initialized()
+{ return 0 != s_threads_exec[0] ; }
+
 void ThreadsExec::initialize( 
   const std::pair<unsigned,unsigned> team_topology ,
         std::pair<unsigned,unsigned> use_core_topology )
@@ -718,7 +748,7 @@ void ThreadsExec::initialize(
   std::pair<unsigned,unsigned> master_coord = Kokkos::hwloc::get_this_thread_coordinate();
   bool                         asynchronous = false ;
 
-  if ( hwloc_avail ) {
+  if ( hwloc_avail && 1 < thread_count ) {
 
     if ( 0 == use_core_topology.first && 0 == use_core_topology.second ) {
       use_core_topology = Kokkos::hwloc::use_core_topology( thread_count );
@@ -826,7 +856,7 @@ void ThreadsExec::initialize(
       Kokkos::Impl::throw_runtime_exception( msg.str() );
     }
 
-    Kokkos::hwloc::bind_this_thread( master_coord );
+    if ( 1 < thread_count ) { Kokkos::hwloc::bind_this_thread( master_coord ); }
 
     // Clear master thread data.
     // The master thread will be unused or initialized

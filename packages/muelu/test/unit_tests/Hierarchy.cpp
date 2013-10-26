@@ -375,6 +375,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy2level)
   // Multigrid Hierarchy
   Hierarchy H(A);
   H.setVerbLevel(Teuchos::VERB_HIGH);
+  H.SetMaxCoarseSize(50);
 
   // Multigrid setup phase (using default parameters)
   FactoryManager M0; // how to build aggregates and smoother of the first level
@@ -440,6 +441,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3level)
   // Multigrid Hierarchy
   Hierarchy H(A);
   H.setVerbLevel(Teuchos::VERB_HIGH);
+  H.SetMaxCoarseSize(50);
 
   // Multigrid setup phase (using default parameters)
   FactoryManager M0; // how to build aggregates and smoother of the first level
@@ -458,6 +460,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3level)
 
   bool r; // cf. bug Teuchos Bug 5214
   r = H.Setup(0, Teuchos::null,  ptrInArg(M0), ptrInArg(M1)); TEST_EQUALITY(r, false);
+  std::cout << "............." << std::endl;
   r = H.Setup(1, ptrInArg(M0), ptrInArg(M1), ptrInArg(M2));   TEST_EQUALITY(r, false);
   r = H.Setup(2, ptrInArg(M1), ptrInArg(M2), Teuchos::null ); TEST_EQUALITY(r, true);
 
@@ -523,6 +526,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3levelFacManagers)
   // Multigrid Hierarchy
   Hierarchy H(A);
   H.setVerbLevel(Teuchos::VERB_HIGH);
+  H.SetMaxCoarseSize(50);
 
   // setup smoother factory
   RCP<SmootherPrototype> smooProto;

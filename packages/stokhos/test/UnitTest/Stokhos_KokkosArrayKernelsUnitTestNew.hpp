@@ -64,6 +64,7 @@
 #include "Stokhos_StochasticProductTensor.hpp"
 #include "Stokhos_CrsProductTensor.hpp"
 #include "Stokhos_TiledCrsProductTensor.hpp"
+#include "Stokhos_SimpleTiledCrsProductTensor.hpp"
 #include "Stokhos_CooProductTensor.hpp"
 #include "Stokhos_SymmetricDiagonalSpec.hpp"
 #include "Stokhos_FlatSparse3Tensor.hpp"

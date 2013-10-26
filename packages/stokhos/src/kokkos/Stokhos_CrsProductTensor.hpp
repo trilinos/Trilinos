@@ -118,6 +118,7 @@ private:
   size_type          m_entry_max;
   size_type          m_nnz;
   size_type          m_flops;
+  size_type          m_avg_entries_per_row;
 
   struct CijkRowCount {
     unsigned count;
@@ -149,7 +150,8 @@ public:
     m_row_map(),
     m_entry_max(0),
     m_nnz(0),
-    m_flops(0) {}
+    m_flops(0),
+    m_avg_entries_per_row(0) {}
 
   inline
   CrsProductTensor( const CrsProductTensor & rhs ) :
@@ -160,7 +162,8 @@ public:
     m_row_map( rhs.m_row_map ),
     m_entry_max( rhs.m_entry_max ),
     m_nnz( rhs.m_nnz ),
-    m_flops( rhs.m_flops ) {}
+    m_flops( rhs.m_flops ),
+    m_avg_entries_per_row( rhs.m_avg_entries_per_row ) {}
 
   inline
   CrsProductTensor & operator = ( const CrsProductTensor & rhs )
@@ -173,6 +176,7 @@ public:
     m_entry_max = rhs.m_entry_max;
     m_nnz = rhs.m_nnz;
     m_flops = rhs.m_flops;
+    m_avg_entries_per_row = rhs.m_avg_entries_per_row;
     return *this;
   }
 
@@ -230,6 +234,11 @@ public:
   size_type num_flops() const
   { return m_flops; }
 
+  /** \brief Number average number of entries per row */
+  KOKKOS_INLINE_FUNCTION
+  size_type avg_entries_per_row() const
+  { return m_avg_entries_per_row; }
+
   template <typename OrdinalType>
   static CrsProductTensor
   create( const Stokhos::ProductBasis<OrdinalType,ValueType>& basis,
@@ -261,6 +270,9 @@ public:
         }
       }
     }
+
+    // Compute average nonzeros per row (must be before padding)
+    size_type avg_entries_per_row = entry_count / dimension;
 
     // Pad each row to have size divisible by alignment size
     for ( size_type i = 0; i < dimension; ++i ) {
@@ -294,6 +306,7 @@ public:
     tensor.m_num_entry = entry_array_type( "tensor_num_entry", dimension );
     tensor.m_row_map = row_map_array_type( "tensor_row_map", dimension+1 );
     tensor.m_entry_max = 0;
+    tensor.m_avg_entries_per_row = avg_entries_per_row;
 
     // Create mirror, is a view if is host memory
     typename coord_array_type::HostMirror

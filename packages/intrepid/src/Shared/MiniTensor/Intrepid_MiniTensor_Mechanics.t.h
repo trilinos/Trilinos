@@ -619,12 +619,9 @@ check_strict_ellipticity(Tensor4<T, N> const & A)
     return true;
   }
 
-  // Get eigenvalues only
-  Vector<T, N> const
-  D = diag(eig_sym(B).second);
-
+  // Get eigenvalue closest to zero only
   T const
-  smallest_eigenvalue = D(B.get_dimension() - 1);
+  smallest_eigenvalue = smallest_eigenvavlue(B);
 
   if (smallest_eigenvalue > 0.0) {
     return true;
@@ -635,7 +632,7 @@ check_strict_ellipticity(Tensor4<T, N> const & A)
 
 //
 // Check strong ellipticity condition for 4th-order tensor.
-// Assume A has major symmetries.
+// Assume A has major and minor symmetries.
 //
 template<typename T, Index N>
 std::pair<bool, Vector<T, N> >

@@ -61,15 +61,35 @@ template< typename ValueType, class DeviceType >
 class TiledCrsProductTensor {
 public:
 
-  typedef DeviceType                       device_type;
-  typedef typename device_type::size_type  size_type;
-  typedef ValueType                        value_type;
+  typedef DeviceType  device_type;
+  typedef int size_type;
+  typedef ValueType   value_type;
+
+// Vectorsize used in multiply algorithm
+#if defined(__AVX__)
+  static const size_type host_vectorsize = 32/sizeof(value_type);
+  static const bool use_intrinsics = true;
+#elif defined(__MIC__)
+  static const size_type host_vectorsize = 16;
+  static const bool use_intrinsics = true;
+#else
+  static const size_type host_vectorsize = 2;
+  static const bool use_intrinsics = false;
+#endif
+  static const size_type cuda_vectorsize = 32;
+  static const bool is_cuda =
+    Kokkos::Impl::is_same<DeviceType,Kokkos::Cuda>::value;
+  static const size_type vectorsize = is_cuda ? cuda_vectorsize : host_vectorsize;
+
+  // Alignment in terms of number of entries of CRS rows
+  static const size_type tensor_align = vectorsize;
 
 private:
 
   typedef Kokkos::LayoutRight layout_type;
   typedef Kokkos::View< value_type[], device_type >  vec_type;
-  typedef Kokkos::View< size_type[][2], device_type > coord_array_type;
+  typedef Kokkos::View< size_type[], device_type > coord_array_type;
+  typedef Kokkos::View< size_type[][2], Kokkos::LayoutLeft, device_type > coord2_array_type;
   typedef Kokkos::View< size_type[][3], device_type > coord_offset_type;
   typedef Kokkos::View< size_type[][3], device_type > coord_range_type;
   typedef Kokkos::View< value_type[], device_type > value_array_type;
@@ -78,6 +98,7 @@ private:
   typedef Kokkos::View< size_type[], device_type > num_row_array_type;
 
   coord_array_type   m_coord;
+  coord2_array_type  m_coord2;
   coord_offset_type  m_coord_offset;
   coord_range_type   m_coord_range;
   value_array_type   m_value;
@@ -99,6 +120,7 @@ public:
   inline
   TiledCrsProductTensor() :
     m_coord(),
+    m_coord2(),
     m_coord_offset(),
     m_coord_range(),
     m_value(),
@@ -115,6 +137,7 @@ public:
   inline
   TiledCrsProductTensor( const TiledCrsProductTensor & rhs ) :
     m_coord( rhs.m_coord ),
+    m_coord2( rhs.m_coord2 ),
     m_coord_offset( rhs.m_coord_offset ),
     m_coord_range( rhs.m_coord_range ),
     m_value( rhs.m_value ),
@@ -132,6 +155,7 @@ public:
   TiledCrsProductTensor & operator = ( const TiledCrsProductTensor & rhs )
   {
     m_coord = rhs.m_coord;
+    m_coord2 = rhs.m_coord2;
     m_coord_offset = rhs.m_coord_offset;
     m_coord_range = rhs.m_coord_range;
     m_value = rhs.m_value;
@@ -194,7 +218,12 @@ public:
   /** \brief  Coordinates of an entry */
   KOKKOS_INLINE_FUNCTION
   const size_type& coord( const size_type entry, const size_type c ) const
-  { return m_coord( entry, c ); }
+  { return m_coord2( entry, c ); }
+
+  /** \brief  Coordinates of an entry */
+  KOKKOS_INLINE_FUNCTION
+  const size_type& coord( const size_type entry ) const
+  { return m_coord( entry ); }
 
   /** \brief  Value of an entry */
   KOKKOS_INLINE_FUNCTION
@@ -273,23 +302,25 @@ public:
       }
     }
 
-    /*
     // Pad each row to have size divisible by alignment size
-    enum { Align = Kokkos::Impl::is_same<DeviceType,Kokkos::Cuda>::value ? 32 : 2 };
-    for ( size_type i = 0; i < dimension; ++i ) {
-      const size_t rem = coord_work[i] % Align;
-      if (rem > 0) {
-        const size_t pad = Align - rem;
-        coord_work[i] += pad;
-        entry_count += pad;
+    for (size_type part=0; part<num_parts; ++part) {
+      size_type sz = coord_work[part].size();
+      for ( size_type i = 0; i < sz; ++i ) {
+        const size_t rem = coord_work[part][i] % tensor_align;
+        if (rem > 0) {
+          const size_t pad = tensor_align - rem;
+          coord_work[part][i] += pad;
+          entry_count += pad;
+        }
       }
     }
-    */
 
     // Allocate tensor data
     TiledCrsProductTensor tensor;
     tensor.m_coord =
       coord_array_type( "tensor_coord", entry_count );
+    tensor.m_coord2 =
+      coord2_array_type( "tensor_coord2", entry_count );
     tensor.m_coord_offset =
       coord_offset_type( "tensor_coord_offset", num_parts );
     tensor.m_coord_range =
@@ -309,6 +340,8 @@ public:
     // Create mirror, is a view if is host memory
     typename coord_array_type::HostMirror host_coord =
       Kokkos::create_mirror_view( tensor.m_coord );
+    typename coord2_array_type::HostMirror host_coord2 =
+      Kokkos::create_mirror_view( tensor.m_coord2 );
     typename coord_offset_type::HostMirror host_coord_offset =
       Kokkos::create_mirror_view( tensor.m_coord_offset );
     typename coord_range_type::HostMirror host_coord_range =
@@ -367,8 +400,9 @@ public:
         ++coord_work[part][row];
 
         host_value(n) = c;
-        host_coord(n,0) = j - box->ymin;
-        host_coord(n,1) = k - box->zmin;
+        host_coord2(n,0) = j - box->ymin;
+        host_coord2(n,1) = k - box->zmin;
+        host_coord(n) = ( host_coord2(n,1) << 16 ) | host_coord2(n,0);
 
         ++host_num_entry(part,row);
         ++tensor.m_nnz;
@@ -377,6 +411,7 @@ public:
 
     // Copy data to device if necessary
     Kokkos::deep_copy( tensor.m_coord, host_coord );
+    Kokkos::deep_copy( tensor.m_coord2, host_coord2 );
     Kokkos::deep_copy( tensor.m_coord_offset, host_coord_offset );
     Kokkos::deep_copy( tensor.m_coord_range, host_coord_range );
     Kokkos::deep_copy( tensor.m_value, host_value );

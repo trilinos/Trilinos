@@ -217,6 +217,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Util {
    */
   static int GetPids(const Epetra_Import & Importer, std::vector<int> &pids, bool use_minus_one_for_local);
 
+  //! Epetra_Util GetRemotePIDs
+  /*! Gets a list of remote PIDs from an importer in the order corresponding to the RemoteLIDs
+   */
+  static int GetRemotePIDs(const Epetra_Import & Importer, std::vector<int> &RemotePIDs);
+  
+
   //! Epetra_Util Chop method.  Return zero if input Value is less than ChopValue
   static double Chop(const double & Value);
 //  {

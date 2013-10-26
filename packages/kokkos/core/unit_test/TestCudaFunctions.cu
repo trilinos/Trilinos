@@ -62,6 +62,7 @@
 #include <TestTile.hpp>
 
 #include <TestReduce.hpp>
+#include <TestScan.hpp>
 #include <TestRequest.hpp>
 #include <TestMultiReduce.hpp>
 
@@ -224,3 +225,25 @@ void test_device_cuda_tile()
 
 }
 
+//----------------------------------------------------------------------------
+
+namespace Test {
+
+void test_device_cuda_scan()
+{
+  for ( int i = 0 ; i < 1000 ; ++i ) {
+    TestScan< Kokkos::Cuda >( 10 );
+    TestScan< Kokkos::Cuda >( 10000 );
+  }
+  TestScan< Kokkos::Cuda >( 1000000 );
+  TestScan< Kokkos::Cuda >( 10000000 );
+  Kokkos::Cuda::fence();
+}
+
+void test_device_cuda_team_scan()
+{
+  TestScanRequest< Kokkos::Cuda >( 10 );
+  TestScanRequest< Kokkos::Cuda >( 10000 );
+}
+
+}

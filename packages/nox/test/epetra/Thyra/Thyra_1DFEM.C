@@ -609,6 +609,9 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_1DFEM, AndersonAcceleration_IfpackPrec)
   nl_params->sublist("Anderson Parameters").set("Storage Depth", 100);
   nl_params->sublist("Anderson Parameters").set("Mixing Parameter", -0.9);
   nl_params->sublist("Anderson Parameters").sublist("Preconditioning").set("Precondition", true);
+  nl_params->sublist("Printing").sublist("Output Information").set("Details",true);
+  nl_params->sublist("Printing").sublist("Output Information").set("Outer Iteration",true);
+  //nl_params->sublist("Printing").sublist("Output Information").set("Outer Iteration StatusTest",true);
 
   // Create the solver
   Teuchos::RCP<NOX::Solver::Generic> solver = 

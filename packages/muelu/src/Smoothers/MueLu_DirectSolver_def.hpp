@@ -60,8 +60,8 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DirectSolver(const std::string& type, const Teuchos::ParameterList& paramList)
-    : type_(type), paramList_(paramList) {
+  DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DirectSolver(const std::string& type, const Teuchos::ParameterList& paramListIn)
+    : type_(type) {
     // The original idea behind all smoothers was to use prototype pattern. However, it does not fully work of the dependencies
     // calculation. Particularly, we need to propagate DeclareInput to proper prototypes. Therefore, both TrilinosSmoother and
     // DirectSolver do not follow the pattern exactly.
@@ -70,18 +70,20 @@ namespace MueLu {
     // could construct these objects is the constructor. Thus, we need to store RCPs, and both TrilinosSmoother and DirectSolver
     // obtain a state: they contain RCP to smoother prototypes.
 
+    ParameterList paramList = paramListIn;
+
     // We want DirectSolver to be able to work with both Epetra and Tpetra objects, therefore we try to construct both
     // Amesos and Amesos2 solver prototypes. The construction really depends on configuration options.
     bool triedEpetra = false, triedTpetra = false;
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
-    sTpetra_ = rcp(new Amesos2Smoother(type_, paramList_));
+    sTpetra_ = rcp(new Amesos2Smoother(type_, paramList));
     TEUCHOS_TEST_FOR_EXCEPTION(sTpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Amesos2 direct solver");
     triedTpetra = true;
 #endif
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
     try {
       // GetAmesosSmoother masks the template argument matching, and simply throws if template arguments are incompatible with Epetra
-      sEpetra_ = GetAmesosSmoother<SC,LO,GO,NO,LMO>(type_, paramList_);
+      sEpetra_ = GetAmesosSmoother<SC,LO,GO,NO,LMO>(type_, paramList);
       TEUCHOS_TEST_FOR_EXCEPTION(sEpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Amesos direct solver");
     } catch (Exceptions::RuntimeError) {
       // AmesosSmoother throws if Scalar != double, LocalOrdinal != int, GlobalOrdinal != int
@@ -93,6 +95,8 @@ namespace MueLu {
     // Check if we were able to construct at least one solver. In many cases that's all we need, for instance if a user
     // simply wants to use Tpetra only stack, never enables Amesos, and always runs Tpetra objects.
     TEUCHOS_TEST_FOR_EXCEPTION(!triedEpetra && !triedTpetra, Exceptions::RuntimeError, "Unable to construct direct solver. Plase enable (TPETRA and AMESOS2) or (EPETRA and AMESOS)");
+
+    this->SetParameterList(paramList);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -124,6 +128,8 @@ namespace MueLu {
     s_->Setup(currentLevel);
 
     SmootherPrototype::IsSetup(true);
+
+    this->SetParameterList(s_->GetParameterList());
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -146,6 +152,7 @@ namespace MueLu {
 
     // Copy the default mode
     newSmoo->s_ = (s_.get() == sTpetra_.get() ? newSmoo->sTpetra_ : newSmoo->sEpetra_);
+    newSmoo->SetParameterList(this->GetParameterList());
 
     return newSmoo;
   }
@@ -172,7 +179,7 @@ namespace MueLu {
     if (verbLevel & Parameters1) {
       out0 << "Parameter list: " << std::endl;
       Teuchos::OSTab tab3(out);
-      out << paramList_;
+      out << this->GetParameterList();
     }
 
     if (verbLevel & Debug)

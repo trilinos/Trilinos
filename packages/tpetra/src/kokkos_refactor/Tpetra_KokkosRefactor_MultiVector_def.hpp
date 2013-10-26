@@ -93,7 +93,9 @@ namespace Tpetra {
       //ArrayRCP<Scalar> data = node->template allocBuffer<Scalar>(myLen*NumVectors);
 
       // Allocate a DualView from new Kokkos, wrap its device data into an ArrayRCP
+      std::cout << "CreateView\n";
       view_ = view_type("MV::dual_view",myLen,NumVectors);
+      std::cout << "CreateViewDone\n";
       ArrayRCP<Scalar> data = Kokkos::Compat::persistingView(view_.d_view);
       MVT::initializeValues(lclMV_,myLen,NumVectors,data,myLen);
 
@@ -1195,7 +1197,7 @@ namespace Tpetra {
        const Teuchos::ArrayView<Scalar> &dots) const
   {
     Kokkos::MV_Dot(&dots[0],view_.d_view,A.view_.d_view);
-    using Teuchos::Array;
+    /*using Teuchos::Array;
     using Teuchos::ArrayRCP;
     using Teuchos::as;
     using Teuchos::arcp_const_cast;
@@ -1231,11 +1233,12 @@ namespace Tpetra {
         MVT::initializeValues(v,myLen, 1,  vj, myLen);
         dots[j] = MVT::Dot((const KMV&)v,(const KMV &)a);
       }
-    }
-    */
+    }*/
+    const size_t numVecs = getNumVectors();
+
     if (this->isDistributed()) {
       Array<Scalar> ldots(dots);
-      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,as<int>(numVecs),ldots.getRawPtr(),dots.getRawPtr());
+      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,Teuchos::as<int>(numVecs),ldots.getRawPtr(),dots.getRawPtr());
     }
   }
 

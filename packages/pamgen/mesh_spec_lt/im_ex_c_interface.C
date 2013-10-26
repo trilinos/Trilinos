@@ -582,3 +582,46 @@ int im_ex_get_info (int exoid, char **info)
   
   return 0;
 }
+/*****************************************************************************/
+int im_ex_get_elem_blk_parent_mesh (int  exoid, int *ids)
+/*****************************************************************************/
+{
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
+  if(!ms)return -1;
+
+  int nb = ms->getMSI(ms_lt::Mesh_Specification::NUM_BLOCKS);
+  const long long * bid_arr = ms->getMSP(ms_lt::Mesh_Specification::BLOCK_PARENT_MESHES);
+
+  for(int i = 0; i < nb; i ++)ids[i] = bid_arr[i];
+  
+  return 0;
+}
+
+/*****************************************************************************/
+int im_ex_get_ns_parent_mesh (int  exoid, int *ids)
+/*****************************************************************************/
+{
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
+  if(!ms)return -1;
+
+  int nb = ms->getMSI(ms_lt::Mesh_Specification::NUM_NODE_SETS);
+  const long long * bid_arr = ms->getMSP(ms_lt::Mesh_Specification::NODESET_PARENT_MESHES);
+
+  for(int i = 0; i < nb; i ++)ids[i] = bid_arr[i];
+  
+  return 0;
+}
+/*****************************************************************************/
+int im_ex_get_ss_parent_mesh (int  exoid, int *ids)
+/*****************************************************************************/
+{
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
+  if(!ms)return -1;
+
+  int nb = ms->getMSI(ms_lt::Mesh_Specification::NUM_SIDE_SETS);
+  const long long * bid_arr = ms->getMSP(ms_lt::Mesh_Specification::SIDESET_PARENT_MESHES);
+
+  for(int i = 0; i < nb; i ++)ids[i] = bid_arr[i];
+  
+  return 0;
+}

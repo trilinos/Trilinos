@@ -492,10 +492,18 @@ namespace Ioex {
     }
 
     // Check for valid exodus_file_ptr (valid >= 0; invalid < 0)
-    int global_file_ptr = util().global_minmax(exodus_file_ptr, Ioss::ParallelUtils::DO_MIN);
+    int global_file_ptr = exodus_file_ptr;
+    if (isParallel) {
+      global_file_ptr = util().global_minmax(exodus_file_ptr, Ioss::ParallelUtils::DO_MIN);
+    }
     if (global_file_ptr < 0 && (write_message || error_msg != NULL || bad_count != NULL)) {
       Ioss::IntVector status;
-      util().all_gather(exodus_file_ptr, status);
+      if (isParallel) {
+	util().all_gather(exodus_file_ptr, status);
+      }
+      else {
+	status.push_back(exodus_file_ptr);
+      }
 
       if (write_message || error_msg != NULL) {
 	// See which processors could not open/create the file...
@@ -2818,40 +2826,56 @@ namespace Ioex {
             }
 
             else if (field.get_name() == "owning_processor") {
-              Ioss::CommSet *css = get_region()->get_commset("commset_node");
-              if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
-                int64_t *idata = static_cast<int64_t*>(data);
-                for (int64_t i=0; i < nodeCount; i++) {
-                  idata[i] = myProcessor;
-                }
+	      if (isParallel) {
+		Ioss::CommSet *css = get_region()->get_commset("commset_node");
+		if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
+		  int64_t *idata = static_cast<int64_t*>(data);
+		  for (int64_t i=0; i < nodeCount; i++) {
+		    idata[i] = myProcessor;
+		  }
+		  
+		  std::vector<int64_t> ent_proc;
+		  css->get_field_data("entity_processor_raw", ent_proc);
+		  for (size_t i=0; i < ent_proc.size(); i+=2) {
+		    int64_t node = ent_proc[i+0];
+		    int64_t proc = ent_proc[i+1];
+		    if (proc < myProcessor) {
+		      idata[node-1] = proc;
+		    }
+		  }
+		}
+		else {
+		  int *idata = static_cast<int*>(data);
+		  for (int64_t i=0; i < nodeCount; i++) {
+		    idata[i] = myProcessor;
+		  }
 
-                std::vector<int64_t> ent_proc;
-                css->get_field_data("entity_processor_raw", ent_proc);
-                for (size_t i=0; i < ent_proc.size(); i+=2) {
-                  int64_t node = ent_proc[i+0];
-                  int64_t proc = ent_proc[i+1];
-                  if (proc < myProcessor) {
-                    idata[node-1] = proc;
-                  }
-                }
-              }
-              else {
-                int *idata = static_cast<int*>(data);
-                for (int64_t i=0; i < nodeCount; i++) {
-                  idata[i] = myProcessor;
-                }
-
-                std::vector<int> ent_proc;
-                css->get_field_data("entity_processor_raw", ent_proc);
-                for (size_t i=0; i < ent_proc.size(); i+=2) {
-                  int node = ent_proc[i+0];
-                  int proc = ent_proc[i+1];
-                  if (proc < myProcessor) {
-                    idata[node-1] = proc;
-                  }
-                }
-              }
-            }
+		  std::vector<int> ent_proc;
+		  css->get_field_data("entity_processor_raw", ent_proc);
+		  for (size_t i=0; i < ent_proc.size(); i+=2) {
+		    int node = ent_proc[i+0];
+		    int proc = ent_proc[i+1];
+		    if (proc < myProcessor) {
+		      idata[node-1] = proc;
+		    }
+		  }
+		}
+	      }
+	      else {
+		// Serial case...
+		if (ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) {
+		  int64_t *idata = static_cast<int64_t*>(data);
+		  for (int64_t i=0; i < nodeCount; i++) {
+		    idata[i] = 0;
+		  }
+		} else {
+		  int *idata = static_cast<int*>(data);
+		  for (int64_t i=0; i < nodeCount; i++) {
+		    idata[i] = 0;
+		  }
+		}
+	      }
+	    }
             else {
               num_to_get = Ioss::Utils::field_warning(nb, field, "input");
             }

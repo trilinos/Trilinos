@@ -23,6 +23,31 @@
 namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void LocalPermutationStrategy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildPermutations(size_t nDofsPerNode) const {
+
+    permWidth_ = nDofsPerNode;
+
+    result_permvecs_.clear();
+
+    // build permutation string
+    std::stringstream ss;
+    for(size_t t = 0; t<nDofsPerNode; t++)
+      ss << t;
+    std::string cs = ss.str();
+    //std::vector<std::string> result_perms;
+    do {
+      //result_perms.push_back(cs);
+
+      std::vector<int> newPerm(cs.length(),-1);
+      for(size_t len=0; len<cs.length(); len++) {
+        newPerm[len] = Teuchos::as<int>(cs[len]-'0');
+      }
+      result_permvecs_.push_back(newPerm);
+
+    } while (std::next_permutation(cs.begin(),cs.end()));
+  }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void LocalPermutationStrategy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildPermutation(const Teuchos::RCP<Matrix> & A, const Teuchos::RCP<const Map> permRowMap, Level & currentLevel, const FactoryBase* genFactory) const {
 #ifndef HAVE_MUELU_INST_COMPLEX_INT_INT // TODO remove this -> check scalar = std::complex
     size_t nDofsPerNode = 1;
@@ -36,34 +61,40 @@ namespace MueLu {
     //////////////////
     std::vector<std::pair<GlobalOrdinal,GlobalOrdinal> > RowColPairs;
 
+    // check whether we have to (re)build the permutation vector
+    if(permWidth_ != nDofsPerNode)
+      BuildPermutations(nDofsPerNode);
+
+    // declare local variables used inside loop
+    LocalOrdinal lonDofsPerNode = Teuchos::as<LocalOrdinal> (nDofsPerNode);
+    Teuchos::ArrayView<const LocalOrdinal> indices;
+    Teuchos::ArrayView<const Scalar> vals;
+    Teuchos::SerialDenseMatrix<LocalOrdinal,Scalar> subBlockMatrix(nDofsPerNode, nDofsPerNode, true);
+    std::vector<GlobalOrdinal> growIds(nDofsPerNode);
+
     // loop over local nodes
     // TODO what about nOffset?
-    for (LocalOrdinal node = 0; node < Teuchos::as<LocalOrdinal> (A->getRowMap()->getNodeNumElements()/nDofsPerNode); ++node) {
+    LocalOrdinal numLocalNodes = A->getRowMap()->getNodeNumElements()/nDofsPerNode;
+    for (LocalOrdinal node = 0; node < numLocalNodes; ++node) {
 
-      Teuchos::SerialDenseMatrix<LocalOrdinal,Scalar> subBlockMatrix(nDofsPerNode, nDofsPerNode, true);
+      // zero out block matrix
+      subBlockMatrix.putScalar();
 
-      std::vector<GlobalOrdinal> growIds(nDofsPerNode);
-
-      for (LocalOrdinal lrdof = 0; lrdof < Teuchos::as<LocalOrdinal> (nDofsPerNode); ++lrdof) { // TODO more complicated for variable dofs per node
+      // loop over all DOFs in current node
+      // Note: were assuming constant number of Dofs per node here!
+      // TODO This is more complicated for variable dofs per node
+      for (LocalOrdinal lrdof = 0; lrdof < lonDofsPerNode; ++lrdof) {
         GlobalOrdinal grow = getGlobalDofId(A, node, lrdof);
         growIds[lrdof] = grow;
 
-        //if(permRowMap->isNodeGlobalElement(grow) == true) continue;
-
         // extract local row information from matrix
-        Teuchos::ArrayView<const LocalOrdinal> indices;
-        Teuchos::ArrayView<const Scalar> vals;
         A->getLocalRowView(A->getRowMap()->getLocalElement(grow), indices, vals);
 
         // find column entry with max absolute value
-        //GlobalOrdinal gMaxValIdx = 0;
-        //Scalar norm1 = 0.0;
         Scalar maxVal = 0.0;
         for (size_t j = 0; j < Teuchos::as<size_t>(indices.size()); j++) {
-          //norm1 += std::abs(vals[j]);
           if(std::abs(vals[j]) > maxVal) {
             maxVal = std::abs(vals[j]);
-            //gMaxValIdx = A->getColMap()->getGlobalElement(indices[j]);
           }
         }
 
@@ -87,7 +118,7 @@ namespace MueLu {
       // now we have the sub block matrix
 
       // build permutation string
-      std::stringstream ss;
+      /*std::stringstream ss;
       for(size_t t = 0; t<nDofsPerNode; t++)
         ss << t;
       std::string cs = ss.str();
@@ -95,10 +126,18 @@ namespace MueLu {
       do {
         result_perms.push_back(cs);
         //std::cout << result_perms.back() << std::endl;
-      } while (std::next_permutation(cs.begin(),cs.end()));
+      } while (std::next_permutation(cs.begin(),cs.end()));*/
 
-      std::vector<Scalar> performance_vector = std::vector<Scalar>(result_perms.size());
-      for(size_t t = 0; t < result_perms.size(); t++) {
+      std::vector<Scalar> performance_vector = std::vector<Scalar>(result_permvecs_.size());
+      for (size_t t = 0; t < result_permvecs_.size(); t++) {
+        std::vector<int> vv = result_permvecs_[t];
+        Scalar value = 1.0;
+        for(size_t j=0; j<vv.size(); j++) {
+          value = value * subBlockMatrix(j,vv[j]);
+        }
+        performance_vector[t] = value;
+      }
+      /*for(size_t t = 0; t < result_perms.size(); t++) {
         std::string s = result_perms[t];
         Scalar value = 1.0;
         for(size_t len=0; len<s.length(); len++) {
@@ -106,7 +145,7 @@ namespace MueLu {
           value = value * subBlockMatrix(len,col);
         }
         performance_vector[t] = value;
-      }
+      }*/
 
       // find permutation with maximum performance value
       Scalar maxVal = 0.0;
@@ -118,23 +157,14 @@ namespace MueLu {
         }
       }
 
-      // the best permutation is
-      //std::cout << "The best permutation is " << result_perms[maxPerformancePermutationIdx] << std::endl;
-
-      std::string bestPerformancePermutation = result_perms[maxPerformancePermutationIdx] ;
+      // build RowColPairs for best permutation
+      std::vector<int> bestPerformancePermutation = result_permvecs_[maxPerformancePermutationIdx];
       for(size_t t = 0; t<nDofsPerNode; t++) {
-        int col = Teuchos::as<int>(bestPerformancePermutation[t]-'0');
-        RowColPairs.push_back(std::make_pair(growIds[t],growIds[col]));
+        RowColPairs.push_back(std::make_pair(growIds[t],growIds[bestPerformancePermutation[t]]));
       }
 
     } // end loop over local nodes
 
-    //
-    /*typename std::vector<std::pair<GlobalOrdinal,GlobalOrdinal> >::iterator pl = RowColPairs.begin();
-    while(pl != RowColPairs.end()) {
-      std::cout << (*pl).first << " , " << (*pl).second << std::endl;
-      pl++;
-    }*/
 
     // build Pperm and Qperm vectors
     Teuchos::RCP<Vector> Pperm = VectorFactory::Build(A->getRowMap());
@@ -182,18 +212,18 @@ namespace MueLu {
 
     Teuchos::RCP<Matrix> permPmatrix = Utils2::Transpose(*permPTmatrix,true);
 
-    for(size_t row=0; row<permPTmatrix->getNodeNumRows(); row++) {
+    /*for(size_t row=0; row<permPTmatrix->getNodeNumRows(); row++) {
       if(permPTmatrix->getNumEntriesInLocalRow(row) != 1)
         GetOStream(Warnings0,0) <<"#entries in row " << row << " of permPTmatrix is " << permPTmatrix->getNumEntriesInLocalRow(row) << std::endl;
       if(permPmatrix->getNumEntriesInLocalRow(row) != 1)
         GetOStream(Warnings0,0) <<"#entries in row " << row << " of permPmatrix is " << permPmatrix->getNumEntriesInLocalRow(row) << std::endl;
       if(permQTmatrix->getNumEntriesInLocalRow(row) != 1)
         GetOStream(Warnings0,0) <<"#entries in row " << row << " of permQmatrix is " << permQTmatrix->getNumEntriesInLocalRow(row) << std::endl;
-    }
+    }*/
 
     // build permP * A * permQT
-    Teuchos::RCP<Matrix> ApermQt = Utils::Multiply(*A, false, *permQTmatrix, false, GetOStream(Statistics2,0));
-    Teuchos::RCP<Matrix> permPApermQt = Utils::Multiply(*permPmatrix, false, *ApermQt, false, GetOStream(Statistics2,0));
+    Teuchos::RCP<Matrix> ApermQt = Utils::Multiply(*A, false, *permQTmatrix, false, GetOStream(Statistics2,0),true,true);
+    Teuchos::RCP<Matrix> permPApermQt = Utils::Multiply(*permPmatrix, false, *ApermQt, false, GetOStream(Statistics2,0),true,true);
 
     /*
     MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Write("A.mat", *A);
@@ -219,10 +249,12 @@ namespace MueLu {
       }
     }
 
+#if 0
     GO gCntZeroDiagonals  = 0;
     GO glCntZeroDiagonals = Teuchos::as<GlobalOrdinal>(lCntZeroDiagonals);  /* LO->GO conversion */
     sumAll(comm,glCntZeroDiagonals,gCntZeroDiagonals);
     GetOStream(Statistics0,0) << "MueLu::LocalPermutationStrategy: found " << gCntZeroDiagonals << " zeros on diagonal" << std::endl;
+#endif
 
     Teuchos::RCP<CrsMatrixWrap> diagScalingOp = Teuchos::rcp(new CrsMatrixWrap(permPApermQt->getRowMap(),1,Xpetra::StaticProfile));
 
@@ -233,13 +265,13 @@ namespace MueLu {
     }
     diagScalingOp->fillComplete();
 
-    Teuchos::RCP<Matrix> scaledA = Utils::Multiply(*diagScalingOp, false, *permPApermQt, false, GetOStream(Statistics2,0));
-    currentLevel.Set("A", Teuchos::rcp_dynamic_cast<Matrix>(scaledA), genFactory/*this*/);
+    Teuchos::RCP<Matrix> scaledA = Utils::Multiply(*diagScalingOp, false, *permPApermQt, false, GetOStream(Statistics2,0), true, true);
+    currentLevel.Set("A", Teuchos::rcp_dynamic_cast<Matrix>(scaledA), genFactory);
 
-    currentLevel.Set("permA", Teuchos::rcp_dynamic_cast<Matrix>(permPApermQt), genFactory/*this*/);  // TODO careful with this!!!
-    currentLevel.Set("permP", Teuchos::rcp_dynamic_cast<Matrix>(permPmatrix), genFactory/*this*/);
-    currentLevel.Set("permQT", Teuchos::rcp_dynamic_cast<Matrix>(permQTmatrix), genFactory/*this*/);
-    currentLevel.Set("permScaling", Teuchos::rcp_dynamic_cast<Matrix>(diagScalingOp), genFactory/*this*/);
+    currentLevel.Set("permA", Teuchos::rcp_dynamic_cast<Matrix>(permPApermQt), genFactory);
+    currentLevel.Set("permP", Teuchos::rcp_dynamic_cast<Matrix>(permPmatrix), genFactory);
+    currentLevel.Set("permQT", Teuchos::rcp_dynamic_cast<Matrix>(permQTmatrix), genFactory);
+    currentLevel.Set("permScaling", Teuchos::rcp_dynamic_cast<Matrix>(diagScalingOp), genFactory);
 
     //// count row permutations
     // count zeros on diagonal in P -> number of row permutations

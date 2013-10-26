@@ -56,16 +56,17 @@ namespace Impl {
 class OpenMPexec {
 public:
 
+  // Fan array has log_2(NT) reduction threads plus 2 scan threads
+  // Currently limited to 16k threads.
   enum { MAX_FAN_COUNT    = 16 };
-  enum { MAX_THREAD_COUNT = 1 << MAX_FAN_COUNT };
+  enum { MAX_THREAD_COUNT = 1 << ( MAX_FAN_COUNT - 2 ) };
   enum { VECTOR_LENGTH    = 8 };
+  enum { REDUCE_TEAM_BASE = 512 };
 
-  /** \brief  Thread states for team barrier */
-  enum { Active , Rendezvous };
+  /** \brief  Thread states for team synchronization */
+  enum { Active , Rendezvous , ReductionAvailable , ScanAvailable };
 
 private:
-
-  enum { REVERSE_RANK = true };
 
   friend class Kokkos::OpenMP ;
 
@@ -73,7 +74,7 @@ private:
   void        * m_shared ;    ///< Shared memory
   int           m_shared_end ;
   int           m_shared_iter ;
-  int volatile  m_state ;
+  int volatile  m_state_team ;
   int           m_fan_team_size ;
   int           m_team_rank ;
   int           m_team_size ;
@@ -93,6 +94,9 @@ private:
   OpenMPexec & operator = ( const OpenMPexec & );
 
 public:
+
+  void * reduce_team() const { return m_reduce ; }
+  void * reduce_base() const { return ((unsigned char *)m_reduce) + REDUCE_TEAM_BASE ; }
 
   ~OpenMPexec();
 
@@ -115,46 +119,11 @@ public:
   static void resize_shared_scratch( size_t );
 
   inline static
-  OpenMPexec * get_thread( const unsigned entry )
-    { return m_thread[ entry ]; }
+  OpenMPexec * get_thread( const unsigned entry ) { return m_thread[ entry ] ; }
 
-  template< class FunctorType >
-  inline
-  typename ReduceAdapter< FunctorType >::reference_type
-  reduce_reference( const FunctorType & ) const
-  {
-    return ReduceAdapter< FunctorType >::reference( m_reduce );
-  }
-
-  template< class FunctorType >
-  inline
-  typename ReduceAdapter< FunctorType >::reference_type
-  reduce_reference( const FunctorType & f , int i ) const
-  {
-    typedef ReduceAdapter< FunctorType > Reduce ;
-    typedef typename Reduce::pointer_type Pointer ;
-
-    return Reduce::reference( Pointer(m_reduce) + i * Reduce::value_count( f ) );
-  }
-
-  template< class FunctorType >
-  inline
-  typename ReduceAdapter< FunctorType >::pointer_type
-  reduce_pointer( const FunctorType & ) const
-  {
-    return typename ReduceAdapter< FunctorType >::pointer_type(m_reduce);
-  }
-
-  template< class FunctorType >
-  inline
-  typename ReduceAdapter< FunctorType >::pointer_type
-  reduce_pointer( const FunctorType & f , int i ) const
-  {
-    typedef ReduceAdapter< FunctorType > Reduce ;
-    typedef typename Reduce::pointer_type Pointer ;
-
-    return Pointer(m_reduce) + i * Reduce::value_count( f );
-  }
+  static
+  OpenMPexec * find_thread( const int init_league_rank ,
+                            const int team_rank );
 
   //----------------------------------------------------------------------
   /** \brief  Compute a range of work for this thread's rank */
@@ -184,17 +153,102 @@ public:
 
   void team_barrier()
     {
+      const bool not_root = m_team_rank + 1 < m_team_size ;
+
       for ( int i = 0 ; i < m_fan_team_size ; ++i ) {
-        spinwait( m_fan_team[i]->m_state , OpenMPexec::Active );
+        spinwait( m_fan_team[i]->m_state_team , OpenMPexec::Active );
       }
-      if ( ( REVERSE_RANK ? m_team_rank + 1 < m_team_size : m_team_rank ) ) {
-        m_state = Rendezvous ;
-        spinwait( m_state , OpenMPexec::Rendezvous );
+      if ( not_root ) {
+        m_state_team = Rendezvous ;
+        spinwait( m_state_team , OpenMPexec::Rendezvous );
       }
       for ( int i = 0 ; i < m_fan_team_size ; ++i ) {
-        m_fan_team[i]->m_state = OpenMPexec::Active ;
+        m_fan_team[i]->m_state_team = OpenMPexec::Active ;
       }
     }
+
+  // Called within a parallel region
+  template< class ArgType >
+  inline
+  ArgType team_scan( const ArgType & value , ArgType * const global_accum = 0 )
+    {
+      // Sequence of m_state_team states:
+      //  0) Active              : entry and exit state
+      //  1) ReductionAvailable  : reduction value available, waiting for scan value
+      //  2) ScanAvailable       : reduction value available, scan value available
+      //  3) Rendezvous          : broadcasting global iinter-team accumulation value
+
+      // Make sure there is enough scratch space:
+      typedef typename if_c< 2 * sizeof(ArgType) < REDUCE_TEAM_BASE , ArgType , void >::type type ;
+
+      const bool not_root = m_team_rank + 1 < m_team_size ;
+
+      type * const work_value = (type*) reduce_team();
+
+      // OpenMPexec::Active == m_state_team
+
+      work_value[0] = value ;
+
+      // Fan-in reduction, wait for source thread to complete it's fan-in reduction.
+      for ( int i = 0 ; i < m_fan_team_size ; ++i ) {
+        OpenMPexec & th = *m_fan_team[i];
+
+        // Wait for source thread to exit Active state.
+        Impl::spinwait( th.m_state_team , OpenMPexec::Active );
+        // Source thread is 'ReductionAvailable' or 'ScanAvailable'
+        work_value[0] += ((volatile type*)th.reduce_team())[0];
+      }
+
+      work_value[1] = work_value[0] ;
+
+      if ( not_root ) {
+
+        m_state_team = OpenMPexec::ReductionAvailable ; // Reduction value is available.
+
+        // Wait for contributing threads' scan value to be available.
+        if ( m_fan_team[ m_fan_team_size ] ) {
+          OpenMPexec & th = *m_fan_team[ m_fan_team_size ] ;
+
+          // Wait: Active -> ReductionAvailable
+          Impl::spinwait( th.m_state_team , OpenMPexec::Active );
+          // Wait: ReductionAvailable -> ScanAvailable:
+          Impl::spinwait( th.m_state_team , OpenMPexec::ReductionAvailable );
+
+          work_value[1] += ((volatile type*)th.reduce_team())[1] ;
+        }
+
+        m_state_team = OpenMPexec::ScanAvailable ; // Scan value is available.
+      }
+      else {
+         // Root thread add team's total to global inter-team accumulation
+        work_value[0] = global_accum ? atomic_fetch_add( global_accum , work_value[0] ) : 0 ;
+      }
+
+      for ( int i = 0 ; i < m_fan_team_size ; ++i ) {
+        OpenMPexec & th = *m_fan_team[i];
+        // Wait: ReductionAvailable -> ScanAvailable
+        Impl::spinwait( th.m_state_team , OpenMPexec::ReductionAvailable );
+        // Wait: ScanAvailable -> Rendezvous
+        Impl::spinwait( th.m_state_team , OpenMPexec::ScanAvailable );
+      }
+
+      // All fan-in threads are in the ScanAvailable state
+      if ( not_root ) {
+        m_state_team = OpenMPexec::Rendezvous ;
+        Impl::spinwait( m_state_team , OpenMPexec::Rendezvous );
+      }
+
+      // Broadcast global inter-team accumulation value
+      volatile type & global_val = work_value[0] ;
+      for ( int i = 0 ; i < m_fan_team_size ; ++i ) {
+        OpenMPexec & th = *m_fan_team[i];
+        ((volatile type*)th.reduce_team())[0] = global_val ;
+        th.m_state_team = OpenMPexec::Active ;
+      }
+      // Exclusive scan, subtract contributed value
+      return global_val + work_value[1] - value ;
+    }
+
 
   inline
   void team_work_init( int work_league_size )
@@ -242,32 +296,13 @@ inline void OpenMP::team_barrier() { m_exec.team_barrier() ; }
 
 inline void * OpenMP::get_shmem( const int size ) { return m_exec.get_shmem(size) ; }
 
-#if 0
-template< typename T >
-inline T OpenMP::team_scan( T & value )
-{
-  if ( team_size() == 1 ) return 0 ;
+template< typename Type >
+inline Type OpenMP::team_scan( const Type & value )
+{ return m_exec.team_scan( value ); }
 
-  // [HCE] TODO: Need to use reduction memory instead of shared memory
-  // and the parallel algorithm which will piggyback on the barriers.
-  T* const temp = (T*) get_shmem( sizeof(T) * team_size() );
-
-  temp[team_rank()] = value ;
-
-  team_barrier();
-  if ( team_rank() == 0 ) {
-    T old = 0;
-    for( int i = 0; i < team_size(); i++ ) {
-      const T next = temp[i];
-      temp[i] = old;
-      old += next;
-    }
-  }
-  team_barrier();
-
-  return temp[team_rank()];
-}
-#endif
+template< typename TypeLocal , typename TypeGlobal >
+inline TypeGlobal OpenMP::team_scan( const TypeLocal & value , TypeGlobal * const global_accum )
+{ return m_exec.template team_scan< TypeGlobal >( value , global_accum ); }
 
 } // namespace Kokkos
 

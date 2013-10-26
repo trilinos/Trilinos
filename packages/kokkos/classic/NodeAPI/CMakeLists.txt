@@ -25,6 +25,7 @@ APPEND_SET(CUDA_HEADERS
     Kokkos_CUDANodeMemoryModelImpl.hpp
     Kokkos_ThrustGPUNode.cuh
     Kokkos_ThrustGPUNode.hpp
+    Kokkos_ThrustGPUWrappers.hpp
     Kokkos_CUDANodeUtils.hpp
 )
 APPEND_SET(CUDA_SOURCES

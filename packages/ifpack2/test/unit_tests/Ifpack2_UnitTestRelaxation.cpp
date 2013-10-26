@@ -376,13 +376,98 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, SymGaussSeidelZeroRows, Sca
 }
 
 
+
+// Check that local (symmetric) Gauss-Seidel works if there are some MPI processes with zero rows of the matrix.
+// Test contributed by Jonathan Hu on 04 Jan 2013.
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, LocalSymGaussSeidelZeroRows, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  using Teuchos::Comm;
+  using Teuchos::ParameterList;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using std::endl;
+  typedef LocalOrdinal LO;
+  typedef GlobalOrdinal GO;
+  typedef Tpetra::Map<LO, GO, Node> map_type;
+  typedef Tpetra::CrsMatrix<Scalar, LO, GO, Node> crs_matrix_type;
+  typedef Tpetra::MultiVector<Scalar, LO, GO, Node> mv_type;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+
+  std::string version = Ifpack2::Version();
+  out << "Ifpack2::Version(): " << version << endl;
+
+  RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  if (comm->getSize () == 1) {
+    out << "The unit test's (MPI) communicator only contains one process."
+        << endl << "This test only makes sense if the communicator contains "
+        << "multiple processes." << endl << "I'll let the test pass trivially."
+        << endl;
+    return;
+  }
+
+  // Create the Kokkos Node instance.  This ensures that the test will
+  // work even if Node is not the default Kokkos Node type.
+  RCP<Node> node;
+  { // All Node constructors demand a ParameterList input.
+    ParameterList junk;
+    node = rcp (new Node (junk));
+  }
+
+  // The number of rows of the matrix and vectors owned by the calling
+  // process.  One process (Proc 0) owns zero rows, and the other
+  // process(es) own a nonzero amount of rows.  This is the point of
+  // the test -- to ensure that (symmetric) Gauss-Seidel works if some
+  // (but not all) processes have zero rows.
+  LO nelPerProc;
+  if (comm->getRank () == 0) {
+    nelPerProc = 0;
+  }
+  else {
+    nelPerProc = 100;
+  }
+
+  const global_size_t INVALID = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid ();
+  RCP<const map_type> rowMap (new map_type (INVALID, nelPerProc, 0, comm, node));
+  RCP<const crs_matrix_type> crsMatrix = tif_utest::create_test_matrix<Scalar,LO,GO,Node> (rowMap);
+
+  // We don't really need prec to be a pointer here, but it's
+  // convenient for putting the constructor call in a TEST_NOTHROW
+  // macro.  Otherwise the declaration of prec would be in an inner
+  // scope and we couldn't use it below.
+  RCP<Ifpack2::Relaxation<crs_matrix_type> > prec;
+  {
+    TEST_NOTHROW( prec = rcp (new Ifpack2::Relaxation<crs_matrix_type> (crsMatrix)) );
+  }
+
+  ParameterList params;
+  params.set ("relaxation: type", "Symmetric Gauss-Seidel");
+
+  Teuchos::ArrayRCP<LO> rowIndices(crsMatrix->getNodeNumRows());
+  for(size_t i=0; i < crsMatrix->getNodeNumRows(); i++)
+    rowIndices[i] = Teuchos::as<LO>(i);
+  params.set("relaxation: local smoothing indices",rowIndices);
+
+  prec->setParameters (params);
+  TEST_NOTHROW( prec->initialize () );
+  TEST_NOTHROW( prec->compute () );
+
+  mv_type X (rowMap, 2);
+  X.putScalar (STS::zero ());
+  mv_type B (rowMap, 2);
+  B.putScalar (STS::one ());
+
+  prec->apply (B, X);
+}
+
+
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test0, Scalar, LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test1, Scalar, LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test2, Scalar, LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test3, Scalar, LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test4, Scalar, LocalOrdinal,GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, SymGaussSeidelZeroRows, Scalar, LocalOrdinal, GlobalOrdinal)
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, SymGaussSeidelZeroRows, Scalar, LocalOrdinal, GlobalOrdinal) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, LocalSymGaussSeidelZeroRows, Scalar, LocalOrdinal, GlobalOrdinal) 
 
 UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
 

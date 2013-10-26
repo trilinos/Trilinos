@@ -180,8 +180,12 @@ else
   nl_params->set("Nonlinear Solver", "Anderson Accelerated Fixed-Point");
   nl_params->sublist("Anderson Parameters").set("Storage Depth", 5);
   nl_params->sublist("Anderson Parameters").set("Mixing Parameter", 1.0);
+  nl_params->sublist("Anderson Parameters").set("Acceleration Start Iteration", 1);
   nl_params->sublist("Anderson Parameters").sublist("Preconditioning").set("Precondition", false);
   nl_params->sublist("Direction").sublist("Newton").sublist("Linear Solver").set("Tolerance", 1.0e-4);
+  nl_params->sublist("Printing").sublist("Output Information").set("Details",true);
+  nl_params->sublist("Printing").sublist("Output Information").set("Outer Iteration",true);
+  //nl_params->sublist("Printing").sublist("Output Information").set("Outer Iteration StatusTest",true);
 
   // Create the solver
   Teuchos::RCP<NOX::Solver::Generic> solver = 

@@ -125,10 +125,10 @@ namespace MueLu {
     // Make sure that logical blocks in row map coincide with logical nodes in coordinates map
     ArrayView<const GO> rowElements    = rowMap->getNodeElementList();
     ArrayView<const GO> coordsElements = map   ->getNodeElementList();
-    for (LO i = 0; i < Teuchos::as<LO>(rowMap->getNodeNumElements ()); i++)
+    for (LO i = 0; i < Teuchos::as<LO>(map->getNodeNumElements()); i++)
       TEUCHOS_TEST_FOR_EXCEPTION((coordsElements[i]-indexBase)*blkSize + indexBase != rowElements[i*blkSize],
                                  Exceptions::RuntimeError, "i = " << i << ", coords GID = " << coordsElements[i]
-                                 << ", row GID = " << rowElements[i*blkSize] << std::endl);
+                                 << ", row GID = " << rowElements[i*blkSize] << ", blkSize = " << blkSize << std::endl);
 #endif
 
     if (numParts == 1) {

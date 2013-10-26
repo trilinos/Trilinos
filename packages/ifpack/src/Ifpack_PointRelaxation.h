@@ -355,6 +355,9 @@ private:
   virtual int ApplyInverseGS_FastCrsMatrix(const Epetra_CrsMatrix* A,
                                             const Epetra_MultiVector& X, 
                                             Epetra_MultiVector& Y) const;
+  virtual int ApplyInverseGS_LocalFastCrsMatrix(const Epetra_CrsMatrix* A,
+                                            const Epetra_MultiVector& X, 
+                                            Epetra_MultiVector& Y) const;
 
   //! Applies the symmetric Gauss-Seidel preconditioner to X, returns the result in Y.
   virtual int ApplyInverseSGS(const Epetra_MultiVector& X, 
@@ -370,6 +373,12 @@ private:
   virtual int ApplyInverseSGS_FastCrsMatrix(const Epetra_CrsMatrix* A,
                                             const Epetra_MultiVector& X, 
                                             Epetra_MultiVector& Y) const;
+
+  virtual int ApplyInverseSGS_LocalFastCrsMatrix(const Epetra_CrsMatrix* A,
+                                            const Epetra_MultiVector& X, 
+                                            Epetra_MultiVector& Y) const;
+
+
   //@}
 
 private:
@@ -454,6 +463,12 @@ private:
   bool DoL1Method_;
   //! Eta parameter for modified L1 method
   double L1Eta_;
+
+  //! Number of (local) unknowns for local smoothing 
+  int NumLocalSmoothingIndices_;
+  //! List of (local) unknowns for local smoothing (if any)
+  int * LocalSmoothingIndices_;
+  
   // @}
 
   

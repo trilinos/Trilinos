@@ -240,6 +240,9 @@ namespace Ioss {
     void set_time_scale_factor(double factor) {timeScaleFactor = factor;}
     
     const Ioss::ParallelUtils &util() const {return util_;}
+    
+    int parallel_rank() const {return myProcessor;} /* Return processor that this mesh db is on */
+
     protected:
 
     DatabaseIO(Region *region, const std::string& filename,

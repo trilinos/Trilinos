@@ -142,6 +142,8 @@ namespace MueLu {
 
     void Clean() const { defaultFactoryTable_.clear(); }
 
+    void Print() const;
+
   private:
 
     //! @name Helper functions

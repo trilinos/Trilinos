@@ -140,7 +140,7 @@ public:
   {
     const ParallelReduce & self = * ((const ParallelReduce *) arg );
 
-    typename Reduce::reference_type update = exec.reduce_value( self.m_func );
+    typename Reduce::reference_type update = Reduce::reference( exec.reduce_base() );
 
     self.m_func.init( update ); // Initialize thread-local value
 
@@ -193,7 +193,7 @@ public:
   {
     const ParallelReduce & self = * ((const ParallelReduce *) arg );
 
-    typename Reduce::reference_type update = exec.reduce_value( self.m_func );
+    typename Reduce::reference_type update = Reduce::reference( exec.reduce_base() );
 
     self.m_func.init( update ); // Initialize thread-local value
 
@@ -234,12 +234,19 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
+struct ThreadsExecUseScanSmall {
+  size_t nwork ;
+  operator size_t () const { return nwork ; }
+  ThreadsExecUseScanSmall( size_t n ) : nwork( n ) {}
+};
+
 template< class FunctorType , class WorkSpec >
 class ParallelScan< FunctorType , WorkSpec , Kokkos::Threads >
 {
 public:
 
   typedef ReduceAdapter< FunctorType > Reduce ;
+  typedef typename Reduce::pointer_type pointer_type ;
 
   const FunctorType  m_func ;
   const size_t       m_work ;
@@ -250,7 +257,7 @@ public:
 
     const std::pair<size_t,size_t> work = exec.work_range( self.m_work );
 
-    typename Reduce::reference_type update = exec.reduce_value( self.m_func );
+    typename Reduce::reference_type update = Reduce::reference( exec.reduce_base() );
 
     self.m_func.init( update );
 
@@ -258,7 +265,14 @@ public:
       self.m_func( iwork , update , false );
     }
 
-    exec.scan( self.m_func );
+    // Compile time selection of scan algorithm to support unit testing
+    // of both large and small thread count algorithms.
+    if ( ! is_same< WorkSpec , ThreadsExecUseScanSmall >::value ) {
+      exec.scan_large( self.m_func );
+    }
+    else {
+      exec.scan_small( self.m_func );
+    }
 
     for ( size_t iwork = work.first ; iwork < work.second ; ++iwork ) {
       self.m_func( iwork , update , true );
@@ -267,7 +281,7 @@ public:
     exec.fan_in();
   }
 
-  ParallelScan( const size_t nwork , const FunctorType & functor )
+  ParallelScan( const FunctorType & functor , const size_t nwork )
     : m_func( functor )
     , m_work( nwork )
     {
@@ -318,11 +332,11 @@ private:
       }
     
     void init( Impl::ThreadsExec & exec ) const
-      { m_func.init( exec.reduce_value( m_func ) ); }
+      { m_func.init( Reduce::reference( exec.reduce_base() ) ); }
 
     void exec( Impl::ThreadsExec & exec ) const
       {
-        typename Reduce::reference_type update = exec.reduce_value( m_func );
+        typename Reduce::reference_type update = Reduce::reference( exec.reduce_base() );
 
         const std::pair<size_t,size_t> work = exec.work_range( m_work );
 
@@ -371,20 +385,17 @@ private:
 
 public:
 
-  void execute() const
+  inline
+  void execute( void * host_ptr ) const
     {
       if ( ! m_members.empty() ) {
         Impl::ThreadsExec::start( & MultiFunctorParallelReduce::execute_members , this );
+        m_members.back()->output( host_ptr );
       }
     }
 
-  void output( void * ptr ) const
-    {
-      if ( ! m_members.empty() ) {
-        Impl::ThreadsExec::fence();
-        m_members.back()->output( ptr );
-      }
-    }
+  inline
+  void wait() const {}
 
   template< class FunctorType >
   void push_back( const size_t work_count , const FunctorType & f )

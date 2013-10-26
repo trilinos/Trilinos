@@ -310,8 +310,7 @@ namespace MueLu {
                                                                           RCP<Matrix> C_in,
                                                                           Teuchos::FancyOStream &fos,
                                                                           bool doFillComplete,
-                                                                          bool doOptimizeStorage,
-                                                                          bool allowMLMultiply) {
+                                                                          bool doOptimizeStorage) {
 
 
     // Preconditions
@@ -321,8 +320,8 @@ namespace MueLu {
       throw Exceptions::RuntimeError("B is not fill-completed");
 
     // Optimization using ML Multiply when available
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_ML)
-    if (allowMLMultiply && B.getDomainMap()->lib() == Xpetra::UseEpetra && !transposeA && !transposeB) {
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_ML_MMM)
+    if (B.getDomainMap()->lib() == Xpetra::UseEpetra && !transposeA && !transposeB) {
       RCP<const Epetra_CrsMatrix> epA = Op2EpetraCrs(rcpFromRef(A));
       RCP<const Epetra_CrsMatrix> epB = Op2EpetraCrs(rcpFromRef(B));
       RCP<Epetra_CrsMatrix>       epC = MLTwoMatrixMultiply(*epA, *epB, fos);
@@ -382,7 +381,7 @@ namespace MueLu {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<Epetra_CrsMatrix> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLTwoMatrixMultiply(const Epetra_CrsMatrix& epA, const Epetra_CrsMatrix& epB, Teuchos::FancyOStream &fos) {
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_ML)
+#if defined(HAVE_MUELU_ML_MMM)
     ML_Comm* comm;
     ML_Comm_Create(&comm);
     fos << "****** USING ML's MATRIX MATRIX MULTIPLY (LNM version) ******" << std::endl;

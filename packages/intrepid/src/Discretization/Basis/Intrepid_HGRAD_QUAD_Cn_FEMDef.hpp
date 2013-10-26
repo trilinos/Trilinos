@@ -381,8 +381,8 @@ namespace Intrepid {
       {
 	for (int i=0;i<ptsx_.dimension(0);i++)
 	  {
-	    dofCoords(cur,0) = ptsx_(i);
-	    dofCoords(cur,1) = ptsy_(j);
+	    dofCoords(cur,0) = ptsx_(i,0);
+	    dofCoords(cur,1) = ptsy_(j,0);
 	    cur++;
 	  }
       }

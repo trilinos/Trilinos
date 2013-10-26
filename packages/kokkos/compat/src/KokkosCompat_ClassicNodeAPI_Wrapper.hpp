@@ -66,9 +66,7 @@ namespace Kokkos {
         init (curNumTeams,curNumThreads,curDevice);
       };
 
-      ~KokkosDeviceWrapperNode() {
-        DeviceType::finalize();
-      }
+      ~KokkosDeviceWrapperNode();
 
       ParameterList getDefaultParameters() {
         ParameterList params;
@@ -90,6 +88,7 @@ namespace Kokkos {
 
         FunctorParallelFor(int beg, WDP wd):_beg(beg),_c(wd) {};
 
+        KOKKOS_INLINE_FUNCTION
         void operator() (const int & i) const {
           _c.execute(i+_beg);
         }

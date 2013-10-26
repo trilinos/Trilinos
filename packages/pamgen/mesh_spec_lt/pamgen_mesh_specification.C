@@ -6,6 +6,7 @@
 #include "pamgen_element_dictionary.h"
 #include "pamgen_mesh_specification.h"
 #include <string.h>
+#include <time.h>
 #include <map>
 #include <vector>
 
@@ -92,6 +93,14 @@ void Mesh_Specification::Specify_Global_Information(const std::string &titl,
   msia[NUM_SIDE_SETS]            = num_ss;
 
 
+  msia[NUM_PARENT_MESHES] = 1;
+
+  if(n_blocks)mspa[BLOCK_PARENT_MESHES]   = new long long[n_blocks];
+  if(num_ns)  mspa[NODESET_PARENT_MESHES] = new long long[num_ns];
+  if(num_ss)  mspa[SIDESET_PARENT_MESHES] = new long long[num_ss];
+
+
+
   if (msia[NUM_NODES] && msia[DIM])
     coord = new double[msia[NUM_NODES] * msia[DIM]];
   
@@ -116,6 +125,7 @@ void Mesh_Specification::Specify_Global_Information(const std::string &titl,
   for (long long b = 0; b < msia[NUM_BLOCKS]; ++b)
   {
     mspa[BLOCK_ID][b]           = 0;
+    mspa[BLOCK_PARENT_MESHES][b] = 0;
     mspa[ELEMENTS_IN_BLOCK][b]           = 0;
     mspa[NODES_PER_ELEMENT][b]  = 0;
     mspa[ELEMENT_ATTRIBUTES][b] = 0;
@@ -135,6 +145,7 @@ void Mesh_Specification::Specify_Global_Information(const std::string &titl,
     msppda[NODE_SET_DF]              = new double*[msia[NUM_NODE_SETS]];
   
     for(i = 0; i < msia[NUM_NODE_SETS]; i++) {
+      mspa[NODESET_PARENT_MESHES][i] = 0;
       mspa[NODE_SET_ID][i]           = 0;
       mspa[NUM_NODES_IN_NODE_SET][i] = 0;
       mspa[NUM_DF_IN_NODE_SET][i]    = 0;
@@ -158,6 +169,7 @@ void Mesh_Specification::Specify_Global_Information(const std::string &titl,
 
     for (i = 0; i < msia[NUM_SIDE_SETS]; ++i)
     {
+      mspa[SIDESET_PARENT_MESHES][i]    = 0;
       mspa[SIDE_SET_ID][i]              = 0;
       mspa[NUM_ELEMENTS_IN_SIDE_SET][i] = 0;
       mspa[NUM_NODES_IN_SIDE_SET][i]    = 0;
@@ -279,6 +291,11 @@ void Mesh_Specification::Free_NonTransient_Storage()
   delete[] mspa[NODES_PER_ELEMENT]; 
   delete[] mspa[ELEMENT_ATTRIBUTES];
   delete[] block_element_type;
+
+  delete[] mspa[BLOCK_PARENT_MESHES];
+  delete[] mspa[NODESET_PARENT_MESHES];
+  delete[] mspa[SIDESET_PARENT_MESHES];
+
 
   if (msppa[ELMT_NODE_LINKAGE]){
     for (b = 0; b < msia[NUM_BLOCKS]; b++) {
@@ -646,6 +663,7 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
     long long nns = 0;
     long long nss = 0;
     long long nb = 0;
+    long long submesh_count = 0;
     Mesh_Specification * ms = this;
     while(ms){
       nn += ms->getMSI(NUM_NODES);
@@ -665,8 +683,29 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
 				    1,//num qa recs
 				    0//num info recs
 				    );
+
+    long long *  bp  = ndb->getMSP(ms_lt::Mesh_Specification::BLOCK_PARENT_MESHES);
+    long long *  nsp = ndb->getMSP(ms_lt::Mesh_Specification::NODESET_PARENT_MESHES);
+    long long *  ssp = ndb->getMSP(ms_lt::Mesh_Specification::SIDESET_PARENT_MESHES);
+
+    ms = this;
+    nb = 0;
+    nns = 0;
+    nss = 0;
+    while(ms){
+      for(int nbct = nb;nbct < nb+ ms->getMSI(NUM_BLOCKS);nbct++)      bp[nbct] = submesh_count;
+      for(int nsct = nns;nsct < nns+ ms->getMSI(NUM_NODE_SETS);nsct++)nsp[nsct] = submesh_count;
+      for(int ssct = nss;ssct < nss+ ms->getMSI(NUM_SIDE_SETS);ssct++)ssp[ssct] = submesh_count;
+      nb += ms->getMSI(NUM_BLOCKS);
+      nns += ms->getMSI(NUM_NODE_SETS);
+      nss += ms->getMSI(NUM_SIDE_SETS);
+      submesh_count ++;
+      ms = ms->Next();
+    }
+    msia[ms_lt::Mesh_Specification::NUM_PARENT_MESHES] = submesh_count;
   }
   
+
   time_t tim = time(NULL);
   char * s = ctime(&tim);
   s[strlen(s)-1]=0;

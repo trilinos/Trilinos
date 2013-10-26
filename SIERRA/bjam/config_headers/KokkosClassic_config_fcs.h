@@ -44,6 +44,7 @@
 /* Other package dependencies */
 /* #undef HAVE_KOKKOSCLASSIC_TEUCHOS */
 #define HAVE_KOKKOSCLASSIC_THREADPOOL
+#define HAVE_KOKKOSCLASSIC_KOKKOSCORE
 
 /* TPL Dependencies */
 #define HAVE_KOKKOSCLASSIC_SERIAL

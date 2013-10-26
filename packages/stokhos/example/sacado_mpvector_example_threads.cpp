@@ -46,9 +46,6 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "sacado_mpvector_example.hpp"
 
-#include "Kokkos_Threads.hpp"
-#include "Kokkos_hwloc.hpp"
-
 // Partial specialization of vector example runner for Threads
 template <int MaxSize, typename Scalar>
 struct MPVectorExample<MaxSize, Scalar, Kokkos::Threads> {
@@ -60,13 +57,6 @@ struct MPVectorExample<MaxSize, Scalar, Kokkos::Threads> {
                   bool reset, bool print) {
     typedef MPVectorTypes<MaxSize, Scalar, Device> MPT;
 
-    // Initialize threads
-    if (league_size == -1)
-      league_size = Kokkos::hwloc::get_available_numa_count() *
-        Kokkos::hwloc::get_available_cores_per_numa();
-    if (team_size == -1)
-      team_size = Kokkos::hwloc::get_available_threads_per_core();
-    Kokkos::Threads::initialize( league_size , team_size );
     Kokkos::Threads::print_configuration( std::cout );
 
     // Setup work request
@@ -168,9 +158,6 @@ struct MPVectorExample<MaxSize, Scalar, Kokkos::Threads> {
                 << std::endl;
       status = false;
     }
-
-    // Finalize threads
-    Kokkos::Threads::finalize();
 
     return status;
   }

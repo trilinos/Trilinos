@@ -195,7 +195,7 @@ check_strict_ellipticity(Tensor4<T, N> const & A);
 
 ///
 /// Check strong ellipticity condition for 4th-order tensor.
-/// Assume A has major symmetries.
+/// Assume A has major and minor symmetries.
 /// \param A 4th-order tensor.
 /// \return whether \f$ (m\odot n):A:(m\odot n) > 0 \forall m,n \neq 0 \f$.
 ///

@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
+//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -50,6 +50,7 @@
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
+#include <Xpetra_TpetraMultiVector.hpp>
 
 // MueLu
 #include "MueLu.hpp"
@@ -112,6 +113,7 @@ namespace MueLu {
     // Set matrices
     void setLaplacian(RCP<Matrix>& L);
     void setProblemMatrix(RCP<Matrix>& A);
+    void setProblemMatrix(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraA);
     void setPreconditioningMatrix(RCP<Matrix>& P);
     void setstiff(RCP<Matrix>& K);
     void setmass(RCP<Matrix>& M);
@@ -121,7 +123,7 @@ namespace MueLu {
     void setcoords(RCP<MultiVector>& Coords);
     void setProblemShifts(Scalar ashift1, Scalar ashift2);
     void setPreconditioningShifts(Scalar pshift1, Scalar pshift2);
-    void setLevelShifts(std::vector<Scalar> levelshifts);
+    void setLevelShifts(vector<Scalar> levelshifts);
     void setAggregation(int stype);
     void setSmoother(int stype);
     void setSolver(int stype);
@@ -130,14 +132,17 @@ namespace MueLu {
     void setIterations(int iters);
     void setTolerance(double tol);
     void setCoarseGridSize(int coarsegridsize);
+    void setNumLevels(int numlevels);
 
     // various initialization/setup functions
     void initialize();
     void setupFastRAP();
     void setupSlowRAP();
-
+    void setupNormalRAP();
+    
     // Solve phase
     void solve(const RCP<TMV> B, RCP<TMV>& X);
+    void multigrid_apply(const RCP<MultiVector> B, RCP<MultiVector>& X);
 
   private:
 
@@ -167,7 +172,7 @@ namespace MueLu {
     double     omega_;
     SC         ashift1_, ashift2_;
     SC         pshift1_, pshift2_;
-    std::vector<SC> levelshifts_;
+    vector<SC> levelshifts_;
 
     // Krylov solver inputs
     // iters  -> max number of iterations

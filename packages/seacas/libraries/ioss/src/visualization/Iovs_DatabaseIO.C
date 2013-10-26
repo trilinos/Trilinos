@@ -15,6 +15,7 @@
 #include <cctype>
 #include <cstdlib>
 #include <iterator>
+#include <fstream>
 
 #include <Ioss_SubSystem.h>
 #include <Ioss_Utils.h>
@@ -54,6 +55,7 @@ namespace { // Internal helper functions
 } // End anonymous namespace
 
 namespace Iovs {
+  int DatabaseIO::useCount = 0;
   int field_warning(const Ioss::GroupingEntity *ge,
                     const Ioss::Field &field, const std::string& inout);
 
@@ -63,6 +65,7 @@ namespace Iovs {
                          Ioss::DatabaseIO (region, filename, db_usage, communicator, props)
 
   {
+
     std::ostringstream errmsg;
     if( (db_usage == Ioss::WRITE_RESTART)||
         (db_usage == Ioss::READ_RESTART) ){
@@ -82,6 +85,21 @@ namespace Iovs {
         IOSS_ERROR(errmsg);
     }
 
+    useCount++;
+    if(Ioss::SerializeIO::getRank() == 0) {
+        if ( !boost::filesystem::exists( filename ) ) {
+            std::ofstream output_file;
+            output_file.open(filename.c_str(), std::ios::out | std::ios::trunc );
+
+            if(!output_file) {
+                std::ostringstream errmsg;
+                errmsg << "Unable to create output file: " << filename << ".\n";
+                IOSS_ERROR(errmsg);
+                return;
+            }
+            output_file.close();
+        }
+    }
     dbState = Ioss::STATE_UNKNOWN;
     this->pvcsa = 0;
     this->globalNodeAndElementIDsCreated = false;
@@ -140,9 +158,15 @@ namespace Iovs {
 
   DatabaseIO::~DatabaseIO() 
   {
+    useCount--;
     try {
       if(this->pvcsa)
+        {
+        this->pvcsa->DeletePipeline(this->DBFilename.c_str());
+        if(useCount <= 0)
+          this->pvcsa->CleanupCatalyst();
         delete this->pvcsa;
+        }
     } catch (...) {
     }
   }
@@ -185,7 +209,7 @@ namespace Iovs {
               errmsg << "Catalyst Python module path does not exist.\n"
                      << "Python module path: " << plugin_python_module_path << "\n";
               IOSS_ERROR(errmsg);
-                return;
+              return;
           }
           this->paraview_script_filename = plugin_python_module_path;
       }
@@ -213,15 +237,16 @@ namespace Iovs {
       }
 
       if(this->pvcsa)
-        this->pvcsa->InitializeParaViewCatalyst(this->paraview_script_filename.c_str(),
-                                                this->paraview_json_parse.c_str(),
-                                                separator.c_str(),
-                                                this->sierra_input_deck_name.c_str(),
-                                                this->underscoreVectors,
-                                                this->applyDisplacements,
-                                                restart_tag.c_str(),
-                                                this->enableLogging,
-                                                this->debugLevel);
+        this->pvcsa->CreateNewPipeline(this->paraview_script_filename.c_str(),
+                                       this->paraview_json_parse.c_str(),
+                                       separator.c_str(),
+                                       this->sierra_input_deck_name.c_str(),
+                                       this->underscoreVectors,
+                                       this->applyDisplacements,
+                                       restart_tag.c_str(),
+                                       this->enableLogging,
+                                       this->debugLevel,
+                                       this->DBFilename.c_str());
       std::vector<int> element_block_id_list;
       Ioss::ElementBlockContainer const & ebc = region->get_element_blocks();
       for(int i = 0;i<ebc.size();i++)
@@ -229,7 +254,8 @@ namespace Iovs {
         element_block_id_list.push_back(get_id(ebc[i], EX_ELEM_BLOCK, &ids_));
         }
       if(this->pvcsa)
-        this->pvcsa->InitializeElementBlocks(element_block_id_list);
+        this->pvcsa->InitializeElementBlocks(element_block_id_list,
+                                             this->DBFilename.c_str());
       }
     return true;
   }
@@ -270,7 +296,9 @@ namespace Iovs {
       }
 
     if(this->pvcsa)
-      this->pvcsa->SetTimeData(time, state - 1);
+      this->pvcsa->SetTimeData(time,
+                               state - 1,
+                               this->DBFilename.c_str());
 
     return true;
   }
@@ -281,10 +309,10 @@ namespace Iovs {
 
     if(this->pvcsa)
       {
-      this->pvcsa->logMemoryUsageAndTakeTimerReading();
-      this->pvcsa->PerformCoProcessing();
-      this->pvcsa->logMemoryUsageAndTakeTimerReading();
-      this->pvcsa->ReleaseMemory();
+      this->pvcsa->logMemoryUsageAndTakeTimerReading(this->DBFilename.c_str());
+      this->pvcsa->PerformCoProcessing(this->DBFilename.c_str());
+      this->pvcsa->logMemoryUsageAndTakeTimerReading(this->DBFilename.c_str());
+      this->pvcsa->ReleaseMemory(this->DBFilename.c_str());
       }
 
     return true;
@@ -308,14 +336,16 @@ namespace Iovs {
     if(this->pvcsa)
       this->pvcsa->CreateElementVariable(component_names,
                                          bid,
-                                         &this->elemMap.map[eb_offset + 1]);
+                                         &this->elemMap.map[eb_offset + 1],
+                                         this->DBFilename.c_str());
     }
 
   component_names.clear();
   component_names.push_back("GlobalNodeId");
   if(this->pvcsa)
     this->pvcsa->CreateNodalVariable(component_names,
-                                     &this->nodeMap.map[1]);
+                                     &this->nodeMap.map[1],
+                                     this->DBFilename.c_str());
 
   this->globalNodeAndElementIDsCreated = true;
   }
@@ -371,7 +401,8 @@ namespace Iovs {
           }
           if(this->pvcsa)
             this->pvcsa->CreateGlobalVariable(component_names,
-                                              TOPTR(globalValues));
+                                              TOPTR(globalValues),
+                                              this->DBFilename.c_str());
         }
       }
       else if (num_to_get != 1) {
@@ -396,8 +427,8 @@ namespace Iovs {
                                          size_t data_size) const
   {
       Ioss::SerializeIO serializeIO__(this);
-
       size_t num_to_get = field.verify(data_size);
+
       if (num_to_get > 0) {
         Ioss::Field::RoleType role = field.get_role();
 
@@ -405,7 +436,9 @@ namespace Iovs {
           if (field.get_name() == "mesh_model_coordinates") {
             if(this->pvcsa)
               this->pvcsa->InitializeGlobalPoints(num_to_get,
-                                                  static_cast<double*>(data));
+                                                  nb->get_property("component_degree").get_int(),
+                                                  static_cast<double*>(data),
+                                                  this->DBFilename.c_str());
           } else if (field.get_name() == "ids") {
             // The ids coming in are the global ids; their position is the
             // local id -1 (That is, data[0] contains the global id of local
@@ -463,7 +496,8 @@ namespace Iovs {
 
             if(this->pvcsa)
               this->pvcsa->CreateNodalVariable(component_names,
-                                               TOPTR(interleaved_data));
+                                               TOPTR(interleaved_data),
+                                               this->DBFilename.c_str());
           }
         } else if (role == Ioss::Field::REDUCTION) {
           // TODO imesh version
@@ -502,10 +536,11 @@ namespace Iovs {
               if(this->pvcsa)
                 this->pvcsa->CreateElementBlock(eb->name().c_str(),
                                                 id,
-                                                element_nodes,
+                                                eb->topology()->name(),
                                                 num_to_get,
                                                 &this->elemMap.map[eb_offset + 1],
-                                                static_cast<int*>(data));
+                                                static_cast<int*>(data),
+                                                this->DBFilename.c_str());
             }
           } else if (field.get_name() == "ids") {
             // Another 'const-cast' since we are modifying the database just
@@ -566,7 +601,8 @@ namespace Iovs {
             if(this->pvcsa)
                this->pvcsa->CreateElementVariable(component_names,
                                                   bid,
-                                                  TOPTR(interleaved_data));
+                                                  TOPTR(interleaved_data),
+                                                  this->DBFilename.c_str());
             }
         } else if (role == Ioss::Field::REDUCTION) {
           // TODO replace with ITAPS
@@ -872,7 +908,8 @@ namespace Iovs {
         this->pvcsa->CreateNodeSet(ns->name().c_str(),
                                    id,
                                    num_to_get,
-                                   static_cast<int*>(data));
+                                   static_cast<int*>(data),
+                                   this->DBFilename.c_str());
       }
     else if (field.get_type() == Ioss::Field::INT64)
       {
@@ -881,7 +918,8 @@ namespace Iovs {
         this->pvcsa->CreateNodeSet(ns->name().c_str(),
                                    id,
                                    num_to_get,
-                                   static_cast<int64_t*>(data));
+                                   static_cast<int64_t*>(data),
+                                   this->DBFilename.c_str());
       }
 
     return num_to_get;
@@ -933,7 +971,8 @@ namespace Iovs {
                                        id,
                                        num_to_get,
                                        &element[0],
-                                       &side[0]);
+                                       &side[0],
+                                       this->DBFilename.c_str());
         }
       else
         {
@@ -955,7 +994,8 @@ namespace Iovs {
                                        id,
                                        num_to_get,
                                        &element[0],
-                                       &side[0]);
+                                       &side[0],
+                                       this->DBFilename.c_str());
         }
       }
     return num_to_get;

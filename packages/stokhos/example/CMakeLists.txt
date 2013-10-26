@@ -7,7 +7,7 @@ TRIBITS_ADD_EXECUTABLE(
   COMM serial mpi
   DEPLIBS stokhos
   )
- 
+
 TRIBITS_ADD_EXECUTABLE(
   CG_example
   SOURCES CG.cpp
@@ -124,6 +124,12 @@ TRIBITS_ADD_EXECUTABLE(
   DEPLIBS stokhos
   )
 
+TRIBITS_ADD_EXECUTABLE(
+  cijk_simple_tile
+  SOURCES cijk_simple_tile.cpp
+  DEPLIBS stokhos
+  )
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copySparsityScripts
       DEST_FILES   animate_slices.py
       )
@@ -149,13 +155,6 @@ IF(Stokhos_ENABLE_TriKota)
 
   IF(Stokhos_ENABLE_AztecOO AND Stokhos_ENABLE_ML)
 
-     TRIBITS_ADD_EXECUTABLE(
-       Linear2D_Diffusion_Collocation_Example
-       SOURCES linear2d_diffusion_collocation.cpp
-       COMM serial mpi
-       DEPLIBS stokhos linear2d_diffusion
-     )
-
      IF(Stokhos_ENABLE_Stratimikos)
 
        TRIBITS_ADD_EXECUTABLE(
@@ -171,10 +170,10 @@ IF(Stokhos_ENABLE_TriKota)
            Linear2D_Diffusion_PCE_MPNI_Example
            SOURCES linear2d_diffusion_pce_mpni.cpp
            COMM serial mpi
-	   DEPLIBS stokhos linear2d_diffusion
-	   ARGS 1
-	   NUM_MPI_PROCS 2
-	   PASS_REGULAR_EXPRESSION "Example Passed!"
+           DEPLIBS stokhos linear2d_diffusion
+           ARGS 1
+           NUM_MPI_PROCS 2
+           PASS_REGULAR_EXPRESSION "Example Passed!"
          )
 
        ENDIF()
@@ -204,6 +203,20 @@ IF(Stokhos_ENABLE_AztecOO AND Stokhos_ENABLE_ML)
        PASS_REGULAR_EXPRESSION "Example Passed!"
       )
 
+    TRIBITS_ADD_EXECUTABLE(
+       Linear2D_Diffusion_Collocation_Example
+       SOURCES linear2d_diffusion_collocation.cpp
+       COMM serial mpi
+       DEPLIBS stokhos linear2d_diffusion
+     )
+
+     TRIBITS_ADD_EXECUTABLE(
+       Linear2D_Diffusion_Multipoint_Commuted_Example
+       SOURCES linear2d_diffusion_multipoint_commuted.cpp
+       COMM serial mpi
+       DEPLIBS stokhos linear2d_diffusion
+     )
+
     TRIBITS_COPY_FILES_TO_BINARY_DIR(copyInterlacedScripts
       DEST_FILES   check_interlaced_solution.py
       )
@@ -214,10 +227,10 @@ IF(Stokhos_ENABLE_AztecOO AND Stokhos_ENABLE_ML)
           Linear2D_Diffusion_PCE_NOX_Example
           SOURCES linear2d_diffusion_pce_nox.cpp
           COMM serial mpi
-	  DEPLIBS stokhos linear2d_diffusion
-	  ARGS 1
-	  NUM_MPI_PROCS 2
-	  PASS_REGULAR_EXPRESSION "Example Passed!"
+          DEPLIBS stokhos linear2d_diffusion
+          ARGS 1
+          NUM_MPI_PROCS 2
+          PASS_REGULAR_EXPRESSION "Example Passed!"
         )
 
        IF(Stokhos_ENABLE_Stratimikos)
@@ -225,88 +238,88 @@ IF(Stokhos_ENABLE_AztecOO AND Stokhos_ENABLE_ML)
            Linear2D_Diffusion_PCE_NOX_SG_Solvers
            SOURCES linear2d_diffusion_pce_nox_sg_solvers.cpp
            COMM serial mpi
-	   DEPLIBS stokhos linear2d_diffusion
-          )
-
-	  TRIBITS_ADD_TEST(
-	    Linear2D_Diffusion_PCE_NOX_SG_Solvers
-	    NAME "Linear2D_Diffusion_GMRES_Mean_Based"
-	    ARGS "--sg_prec_method=Mean-Based --num_spatial_procs=1"
-	    COMM serial mpi
-	    NUM_MPI_PROCS 2
-	    PASS_REGULAR_EXPRESSION "Example Passed!"
+           DEPLIBS stokhos linear2d_diffusion
           )
 
           TRIBITS_ADD_TEST(
-	    Linear2D_Diffusion_PCE_NOX_SG_Solvers
-	    NAME "Linear2D_Diffusion_GMRES_AGS"
-	    ARGS "--sg_prec_method=Approx-Gauss-Seidel --num_spatial_procs=1"
-	    COMM serial mpi
-	    NUM_MPI_PROCS 2
-	    PASS_REGULAR_EXPRESSION "Example Passed!"
+            Linear2D_Diffusion_PCE_NOX_SG_Solvers
+            NAME "Linear2D_Diffusion_GMRES_Mean_Based"
+            ARGS "--sg_prec_method=Mean-Based --num_spatial_procs=1"
+            COMM serial mpi
+            NUM_MPI_PROCS 2
+            PASS_REGULAR_EXPRESSION "Example Passed!"
           )
 
-	  TRIBITS_ADD_TEST(
-	    Linear2D_Diffusion_PCE_NOX_SG_Solvers
-	    NAME "Linear2D_Diffusion_CG_AGS"
-	    ARGS "--outer_krylov_method=CG --sg_prec_method=Approx-Gauss-Seidel --num_spatial_procs=1"
-	    COMM serial mpi
-	    NUM_MPI_PROCS 2
-	    PASS_REGULAR_EXPRESSION "Example Passed!"
+          TRIBITS_ADD_TEST(
+            Linear2D_Diffusion_PCE_NOX_SG_Solvers
+            NAME "Linear2D_Diffusion_GMRES_AGS"
+            ARGS "--sg_prec_method=Approx-Gauss-Seidel --num_spatial_procs=1"
+            COMM serial mpi
+            NUM_MPI_PROCS 2
+            PASS_REGULAR_EXPRESSION "Example Passed!"
           )
 
-	  TRIBITS_ADD_TEST(
-	    Linear2D_Diffusion_PCE_NOX_SG_Solvers
-	    NAME "Linear2D_Diffusion_GMRES_GS"
-	    ARGS "--sg_prec_method=Gauss-Seidel --num_spatial_procs=1"
-	    COMM serial mpi
-	    NUM_MPI_PROCS 2
-	    PASS_REGULAR_EXPRESSION "Example Passed!"
+          TRIBITS_ADD_TEST(
+            Linear2D_Diffusion_PCE_NOX_SG_Solvers
+            NAME "Linear2D_Diffusion_CG_AGS"
+            ARGS "--outer_krylov_method=CG --sg_prec_method=Approx-Gauss-Seidel --num_spatial_procs=1"
+            COMM serial mpi
+            NUM_MPI_PROCS 2
+            PASS_REGULAR_EXPRESSION "Example Passed!"
           )
 
-	  TRIBITS_ADD_TEST(
-	    Linear2D_Diffusion_PCE_NOX_SG_Solvers
-	    NAME "Linear2D_Diffusion_GMRES_AJ"
-	    ARGS "--sg_prec_method=Approx-Jacobi --num_spatial_procs=1"
-	    COMM serial mpi
-	    NUM_MPI_PROCS 2
-	    PASS_REGULAR_EXPRESSION "Example Passed!"
+          TRIBITS_ADD_TEST(
+            Linear2D_Diffusion_PCE_NOX_SG_Solvers
+            NAME "Linear2D_Diffusion_GMRES_GS"
+            ARGS "--sg_prec_method=Gauss-Seidel --num_spatial_procs=1"
+            COMM serial mpi
+            NUM_MPI_PROCS 2
+            PASS_REGULAR_EXPRESSION "Example Passed!"
           )
 
-	  TRIBITS_ADD_TEST(
-	    Linear2D_Diffusion_PCE_NOX_SG_Solvers
-	    NAME "Linear2D_Diffusion_GMRES_KP"
-	    ARGS "--sg_prec_method=Kronecker-Product --num_spatial_procs=1"
-	    COMM serial mpi
-	    NUM_MPI_PROCS 2
-	    PASS_REGULAR_EXPRESSION "Example Passed!"
+          TRIBITS_ADD_TEST(
+            Linear2D_Diffusion_PCE_NOX_SG_Solvers
+            NAME "Linear2D_Diffusion_GMRES_AJ"
+            ARGS "--sg_prec_method=Approx-Jacobi --num_spatial_procs=1"
+            COMM serial mpi
+            NUM_MPI_PROCS 2
+            PASS_REGULAR_EXPRESSION "Example Passed!"
           )
 
-	  TRIBITS_ADD_TEST(
-	    Linear2D_Diffusion_PCE_NOX_SG_Solvers
-	    NAME "Linear2D_Diffusion_GS"
-	    ARGS "--sg_solver=Gauss-Seidel --num_spatial_procs=1"
-	    COMM serial mpi
-	    NUM_MPI_PROCS 2
-	    PASS_REGULAR_EXPRESSION "Example Passed!"
+          TRIBITS_ADD_TEST(
+            Linear2D_Diffusion_PCE_NOX_SG_Solvers
+            NAME "Linear2D_Diffusion_GMRES_KP"
+            ARGS "--sg_prec_method=Kronecker-Product --num_spatial_procs=1"
+            COMM serial mpi
+            NUM_MPI_PROCS 2
+            PASS_REGULAR_EXPRESSION "Example Passed!"
           )
 
-	  TRIBITS_ADD_TEST(
-	    Linear2D_Diffusion_PCE_NOX_SG_Solvers
-	    NAME "Linear2D_Diffusion_JA"
-	    ARGS "--sg_solver=Jacobi --num_spatial_procs=1"
-	    COMM serial mpi
-	    NUM_MPI_PROCS 2
-	    PASS_REGULAR_EXPRESSION "Example Passed!"
+          TRIBITS_ADD_TEST(
+            Linear2D_Diffusion_PCE_NOX_SG_Solvers
+            NAME "Linear2D_Diffusion_GS"
+            ARGS "--sg_solver=Gauss-Seidel --num_spatial_procs=1"
+            COMM serial mpi
+            NUM_MPI_PROCS 2
+            PASS_REGULAR_EXPRESSION "Example Passed!"
           )
 
-	  TRIBITS_ADD_TEST(
-	    Linear2D_Diffusion_PCE_NOX_SG_Solvers
-	    NAME "Linear2D_Diffusion_LN"
-	    ARGS "--rand_field=Log-Normal --num_spatial_procs=1"
-	    COMM serial mpi
-	    NUM_MPI_PROCS 2
-	    PASS_REGULAR_EXPRESSION "Example Passed!"
+          TRIBITS_ADD_TEST(
+            Linear2D_Diffusion_PCE_NOX_SG_Solvers
+            NAME "Linear2D_Diffusion_JA"
+            ARGS "--sg_solver=Jacobi --num_spatial_procs=1"
+            COMM serial mpi
+            NUM_MPI_PROCS 2
+            PASS_REGULAR_EXPRESSION "Example Passed!"
+          )
+
+          TRIBITS_ADD_TEST(
+            Linear2D_Diffusion_PCE_NOX_SG_Solvers
+            NAME "Linear2D_Diffusion_LN"
+            ARGS "--rand_field=Log-Normal --num_spatial_procs=1"
+            COMM serial mpi
+            NUM_MPI_PROCS 2
+            PASS_REGULAR_EXPRESSION "Example Passed!"
           )
 
           TRIBITS_ADD_TEST(
@@ -318,36 +331,36 @@ IF(Stokhos_ENABLE_AztecOO AND Stokhos_ENABLE_ML)
             PASS_REGULAR_EXPRESSION "Example Passed!"
           )
 
-	  TRIBITS_ADD_TEST(
-	    Linear2D_Diffusion_PCE_NOX_SG_Solvers
-	    NAME "Linear2D_Diffusion_GMRES_FA"
-	    ARGS "--sg_operator_method=Fully-Assembled --num_spatial_procs=1"
-	    COMM serial mpi
-	    NUM_MPI_PROCS 2
-	    PASS_REGULAR_EXPRESSION "Example Passed!"
+          TRIBITS_ADD_TEST(
+            Linear2D_Diffusion_PCE_NOX_SG_Solvers
+            NAME "Linear2D_Diffusion_GMRES_FA"
+            ARGS "--sg_operator_method=Fully-Assembled --num_spatial_procs=1"
+            COMM serial mpi
+            NUM_MPI_PROCS 2
+            PASS_REGULAR_EXPRESSION "Example Passed!"
           )
 
-	  TRIBITS_ADD_TEST(
-	    Linear2D_Diffusion_PCE_NOX_SG_Solvers
-	    NAME "Linear2D_Diffusion_GMRES_KL"
-	    ARGS "--sg_operator_method=KL-Matrix-Free --unnormalize --num_spatial_procs=1"
-	    COMM serial mpi
-	    NUM_MPI_PROCS 2
-	    PASS_REGULAR_EXPRESSION "Example Passed!"
+          TRIBITS_ADD_TEST(
+            Linear2D_Diffusion_PCE_NOX_SG_Solvers
+            NAME "Linear2D_Diffusion_GMRES_KL"
+            ARGS "--sg_operator_method=KL-Matrix-Free --unnormalize --num_spatial_procs=1"
+            COMM serial mpi
+            NUM_MPI_PROCS 2
+            PASS_REGULAR_EXPRESSION "Example Passed!"
           )
 
-	  TRIBITS_ADD_TEST(
-	    Linear2D_Diffusion_PCE_NOX_SG_Solvers
-	    NAME "Linear2D_Diffusion_GMRES_KLR"
-	    ARGS "--sg_operator_method=KL-Reduced-Matrix-Free --num_spatial_procs=1"
-	    COMM serial mpi
-	    NUM_MPI_PROCS 2
-	    PASS_REGULAR_EXPRESSION "Example Passed!"
+          TRIBITS_ADD_TEST(
+            Linear2D_Diffusion_PCE_NOX_SG_Solvers
+            NAME "Linear2D_Diffusion_GMRES_KLR"
+            ARGS "--sg_operator_method=KL-Reduced-Matrix-Free --num_spatial_procs=1"
+            COMM serial mpi
+            NUM_MPI_PROCS 2
+            PASS_REGULAR_EXPRESSION "Example Passed!"
           )
        ENDIF()
 
-        
-     ENDIF()  
+
+     ENDIF()
 
 ENDIF()
 
@@ -372,7 +385,7 @@ IF(Stokhos_ENABLE_Sacado)
     )
 
   IF(Stokhos_ENABLE_KokkosCore)
-    
+
     SET(CUDA_SOURCES "")
     IF (Stokhos_ENABLE_CUDA)
       # add MPI include dir to nvcc
@@ -386,7 +399,7 @@ IF(Stokhos_ENABLE_Sacado)
       sacado_mpvector_example
       SOURCES sacado_mpvector_example.cpp
               sacado_mpvector_example_threads.cpp
-	      ${CUDA_SOURCES}
+              ${CUDA_SOURCES}
       COMM serial mpi
       DEPLIBS stokhos
       )
@@ -415,7 +428,7 @@ IF(Stokhos_ENABLE_Sacado)
     DEPLIBS stokhos
     )
 
-ENDIF() 
+ENDIF()
 
 IF(Stokhos_ENABLE_NOX)
 
@@ -449,7 +462,7 @@ IF (Stokhos_ENABLE_Thrust)
       DEPLIBS stokhos
     )
 
-  ENDIF() 
+  ENDIF()
 
 ENDIF()
 
@@ -503,7 +516,7 @@ IF(Stokhos_ENABLE_Cusp)
     COMM serial mpi
     DEPLIBS stokhos
     )
-ENDIF() 
+ENDIF()
 
 IF(Stokhos_ENABLE_Experimental)
   ADD_SUBDIRECTORY(experimental)

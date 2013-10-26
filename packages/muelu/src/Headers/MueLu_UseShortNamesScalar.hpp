@@ -86,6 +86,10 @@ typedef MueLu::DirectSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> 
 typedef MueLu::DistanceLaplacianFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> DistanceLaplacianFactory;
 #endif
 
+#ifdef MUELU_EASYPARAMETERLISTINTERPRETER_SHORT
+typedef MueLu::EasyParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> EasyParameterListInterpreter;
+#endif
+
 #ifdef MUELU_EMINPFACTORY_SHORT
 typedef MueLu::EminPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> EminPFactory;
 #endif

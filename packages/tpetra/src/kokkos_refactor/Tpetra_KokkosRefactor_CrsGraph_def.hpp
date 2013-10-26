@@ -47,6 +47,7 @@
 
 #include <Tpetra_Distributor.hpp>
 #include <Teuchos_Assert.hpp>
+#include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_NullIteratorTraits.hpp>
 #include <Teuchos_as.hpp>
 #include <algorithm>
@@ -57,18 +58,19 @@
 #ifdef DOXYGEN_USE_ONLY
   #include "Tpetra_CrsGraph_decl.hpp"
 #endif
+#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
-  CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> > &rowMap,
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &rowMap,
             size_t maxNumEntriesPerRow,
             ProfileType pftype,
             const RCP<ParameterList>& params)
-  : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>(rowMap)
+  : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >(rowMap)
   , rowMap_(rowMap)
   , nodeNumEntries_(0)
   , nodeNumAllocated_(OrdinalTraits<size_t>::invalid())
@@ -96,14 +98,14 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
-  CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> > &rowMap,
-            const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> > &colMap,
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &rowMap,
+            const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &colMap,
             size_t maxNumEntriesPerRow,
             ProfileType pftype,
             const RCP<ParameterList>& params)
-  : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>(rowMap)
+  : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >(rowMap)
   , rowMap_(rowMap)
   , colMap_(colMap)
   , nodeNumEntries_(0)
@@ -132,13 +134,13 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
-  CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> > &rowMap,
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &rowMap,
             const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc,
             ProfileType pftype,
             const RCP<ParameterList>& params)
-  : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>(rowMap)
+  : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >(rowMap)
   , rowMap_(rowMap)
   , nodeNumEntries_(0)
   , nodeNumAllocated_(OrdinalTraits<size_t>::invalid())
@@ -174,14 +176,14 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
-  CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> > &rowMap,
-            const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> > &colMap,
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &rowMap,
+            const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &colMap,
             const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc,
             ProfileType pftype,
             const RCP<ParameterList>& params)
-  : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>(rowMap)
+  : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >(rowMap)
   , rowMap_(rowMap)
   , colMap_(colMap)
   , nodeNumEntries_(0)
@@ -218,14 +220,14 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
-  CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> > &rowMap,
-            const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> > &colMap,
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &rowMap,
+            const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &colMap,
             const ArrayRCP<size_t> & rowPointers,
             const ArrayRCP<LocalOrdinal> & columnIndices,
             const RCP<ParameterList>& params)
-  : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>(rowMap)
+  : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >(rowMap)
   , rowMap_(rowMap)
   , colMap_(colMap)
   , nodeNumEntries_(0)
@@ -250,13 +252,13 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::~CrsGraph()
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::~CrsGraph()
   {std::cout <<"Deallocate Graph\n";}
 
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   RCP<const ParameterList>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   getValidParameters () const
   {
     RCP<ParameterList> params = parameterList ("Tpetra::CrsGraph");
@@ -286,9 +288,9 @@ namespace Tpetra {
     return params;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   setParameterList (const RCP<ParameterList>& params)
   {
     RCP<const ParameterList> validParams = getValidParameters ();
@@ -296,14 +298,14 @@ namespace Tpetra {
     this->setMyParamList (params);
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  global_size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getGlobalNumRows() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  global_size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getGlobalNumRows() const
   {
     return rowMap_->getGlobalNumElements();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  global_size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getGlobalNumCols() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  global_size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getGlobalNumCols() const
   {
     const char tfecfFuncName[] = "getGlobalNumCols()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -313,14 +315,14 @@ namespace Tpetra {
     return getDomainMap()->getGlobalNumElements();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getNodeNumRows() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getNodeNumRows() const
   {
     return rowMap_->getNodeNumElements();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getNodeNumCols() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getNodeNumCols() const
   {
     const char tfecfFuncName[] = "getNodeNumCols()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -330,76 +332,76 @@ namespace Tpetra {
     return colMap_->getNodeNumElements();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getNodeNumDiags() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getNodeNumDiags() const
   {
     return nodeNumDiags_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  global_size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getGlobalNumDiags() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  global_size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getGlobalNumDiags() const
   {
     return globalNumDiags_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  RCP<Kokkos::Compat::KokkosThreadsWrapperNode>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getNode() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  RCP<Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getNode() const
   {
     return rowMap_->getNode();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> >
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getRowMap() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getRowMap() const
   {
     return rowMap_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> >
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getColMap() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getColMap() const
   {
     return colMap_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> >
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getDomainMap() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getDomainMap() const
   {
     std::cout << "Graph getDomainMap\n";
     return domainMap_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> >
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getRangeMap() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getRangeMap() const
   {
     return rangeMap_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> >
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getImporter() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getImporter() const
   {
     return importer_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  RCP<const Export<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> >
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getExporter() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  RCP<const Export<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getExporter() const
   {
     return exporter_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::hasColMap() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::hasColMap() const
   {
     return (colMap_ != null);
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::isStorageOptimized() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::isStorageOptimized() const
   {
     bool isOpt = indicesAreAllocated_ && (numRowEntries_ == null) && (getNodeNumRows() > 0);
 #ifdef HAVE_TPETRA_DEBUG
@@ -410,93 +412,93 @@ namespace Tpetra {
     return isOpt;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  ProfileType CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getProfileType() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  ProfileType CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getProfileType() const
   {
     return pftype_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  global_size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getGlobalNumEntries() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  global_size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getGlobalNumEntries() const
   {
     return globalNumEntries_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getNodeNumEntries() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getNodeNumEntries() const
   {
     return nodeNumEntries_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  global_size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getGlobalMaxNumRowEntries() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  global_size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getGlobalMaxNumRowEntries() const
   {
     return globalMaxNumRowEntries_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getNodeMaxNumRowEntries() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getNodeMaxNumRowEntries() const
   {
     return nodeMaxNumRowEntries_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::isFillComplete() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::isFillComplete() const
   {
     return fillComplete_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::isFillActive() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::isFillActive() const
   {
     return !fillComplete_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::isUpperTriangular() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::isUpperTriangular() const
   {
     return upperTriangular_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::isLowerTriangular() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::isLowerTriangular() const
   {
     return lowerTriangular_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::isLocallyIndexed() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::isLocallyIndexed() const
   {
     return indicesAreLocal_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::isGloballyIndexed() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::isGloballyIndexed() const
   {
     return indicesAreGlobal_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getNodeAllocationSize() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getNodeAllocationSize() const
   {
     return nodeNumAllocated_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   RCP<const Comm<int> >
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getComm() const
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getComm() const
   {
     return rowMap_->getComm();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  GlobalOrdinal CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getIndexBase() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  GlobalOrdinal CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getIndexBase() const
   {
     return rowMap_->getIndexBase();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::indicesAreAllocated() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::indicesAreAllocated() const
   {
     return indicesAreAllocated_;
   }
@@ -513,8 +515,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::isSorted() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::isSorted() const
   {
     return indicesAreSorted_;
   }
@@ -522,16 +524,16 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::isMerged() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  bool CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::isMerged() const
   {
     return noRedundancies_;
   }
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::setLocallyModified ()
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::setLocallyModified ()
   {
     // FIXME (mfh 07 May 2013) How do we know that the change
     // introduced a redundancy, or even that it invalidated the sorted
@@ -548,9 +550,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   allocateIndices (ELocalGlobal lg)
   {
     // This is a protected function, only callable by us.  If it was
@@ -646,7 +648,10 @@ namespace Tpetra {
       }
     }
     if (numRows > 0) {
-      numRowEntries_ = arcp<size_t>(numRows);
+      k_numRowEntries_ = t_numRowEntries_("Tpetra::CrsGraph::numRowEntries",numRows);
+      numRowEntries_ = Teuchos::arcp(k_numRowEntries_.h_view.ptr_on_device(), 0, numRows,
+                                     Kokkos::Compat::deallocator(k_numRowEntries_.h_view), false);
+      //numRowEntries_ = arcp<size_t>(numRows);
       std::fill( numRowEntries_.begin(), numRowEntries_.end(), 0 );
     }
     // done with these
@@ -659,9 +664,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   template <class T>
-  ArrayRCP<T> CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::allocateValues1D() const
+  ArrayRCP<T> CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::allocateValues1D() const
   {
     const char tfecfFuncName[] = "allocateValues()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -680,10 +685,10 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   template <class T>
   ArrayRCP<Array<T> >
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::allocateValues2D() const
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::allocateValues2D() const
   {
     const char tfecfFuncName[] = "allocateValues2D()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -714,10 +719,10 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   template <ELocalGlobal lg, class T>
   RowInfo
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   updateAllocAndValues (RowInfo rowinfo,
                         size_t newAllocSize,
                         Array<T>& rowVals)
@@ -746,9 +751,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   ArrayView<const LocalOrdinal>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   getLocalView (RowInfo rowinfo) const
   {
     ArrayView<const LocalOrdinal> view;
@@ -766,9 +771,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   ArrayView<LocalOrdinal>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   getLocalViewNonConst (RowInfo rowinfo)
   {
     ArrayView<LocalOrdinal> view;
@@ -786,9 +791,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   ArrayView<const GlobalOrdinal>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   getGlobalView (RowInfo rowinfo) const
   {
     ArrayView<const GlobalOrdinal> view;
@@ -806,9 +811,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   ArrayView<GlobalOrdinal>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   getGlobalViewNonConst (RowInfo rowinfo)
   {
     ArrayView<GlobalOrdinal> view;
@@ -826,8 +831,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  RowInfo CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getRowInfo(size_t myRow) const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  RowInfo CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getRowInfo(size_t myRow) const
   {
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "getRowInfo()";
@@ -898,8 +903,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::staticAssertions() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::staticAssertions() const
   {
     // Assumption: sizeof(GlobalOrdinal) >= sizeof(LocalOrdinal):
     //     This is so that we can store local indices in the memory
@@ -922,11 +927,11 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   template <ELocalGlobal lg>
-  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::filterIndices(const SLocalGlobalNCViews &inds) const
+  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::filterIndices(const SLocalGlobalNCViews &inds) const
   {
-    const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> &cmap = *colMap_;
+    const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &cmap = *colMap_;
     Teuchos::CompileTimeAssert<lg != GlobalIndices && lg != LocalIndices> cta_lg;
     (void)cta_lg;
     size_t numFiltered = 0;
@@ -972,13 +977,13 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   template <class T>
-  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   filterGlobalIndicesAndValues (const ArrayView<GlobalOrdinal>& ginds,
                                 const ArrayView<T>& vals) const
   {
-    const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>& cmap = *colMap_;
+    const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& cmap = *colMap_;
     size_t numFiltered = 0;
     typename ArrayView<T>::iterator fvalsend = vals.begin();
     typename ArrayView<T>::iterator valscptr = vals.begin();
@@ -1012,14 +1017,14 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   template <class T>
   size_t
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   filterLocalIndicesAndValues (const ArrayView<LocalOrdinal>& linds,
                                const ArrayView<T>& vals) const
   {
-    const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>& cmap = *colMap_;
+    const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& cmap = *colMap_;
     size_t numFiltered = 0;
     typename ArrayView<T>::iterator fvalsend = vals.begin();
     typename ArrayView<T>::iterator valscptr = vals.begin();
@@ -1053,9 +1058,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   size_t
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   insertIndices (const RowInfo& rowinfo,
                  const SLocalGlobalViews &newInds,
                  const ELocalGlobal lg,
@@ -1109,8 +1114,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   insertGlobalIndicesImpl (const LocalOrdinal myRow,
                            const ArrayView<const GlobalOrdinal> &indices)
   {
@@ -1155,12 +1160,12 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   insertLocalIndicesImpl (const LocalOrdinal myRow,
                           const ArrayView<const LocalOrdinal> &indices)
   {
-    const char* tfecfFuncName ("insertLocallIndicesImpl");Kokkos::Compat::KokkosThreadsWrapper
+    const char* tfecfFuncName ("insertLocallIndicesImpl");
 
     RowInfo rowInfo = getRowInfo(myRow);
     const size_t numNewInds = indices.size();
@@ -1200,9 +1205,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   template <class Scalar>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   insertIndicesAndValues (const RowInfo& rowInfo,
                           const SLocalGlobalViews& newInds,
                           const ArrayView<Scalar>& oldRowVals,
@@ -1219,10 +1224,10 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   template <class Scalar, class BinaryFunction>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   transformLocalValues (RowInfo rowInfo,
                         const Teuchos::ArrayView<Scalar>& rowVals,
                         const Teuchos::ArrayView<const LocalOrdinal>& inds,
@@ -1249,10 +1254,10 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   template <class Scalar, class BinaryFunction>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   transformGlobalValues (RowInfo rowInfo,
                          const Teuchos::ArrayView<Scalar>& rowVals,
                          const Teuchos::ArrayView<const GlobalOrdinal>& inds,
@@ -1276,8 +1281,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::sortRowIndices(RowInfo rowinfo)
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::sortRowIndices(RowInfo rowinfo)
   {
     if (rowinfo.numEntries > 0) {
       ArrayView<LocalOrdinal> inds_view = getLocalViewNonConst(rowinfo);
@@ -1289,9 +1294,9 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   // in the future, perhaps this could use std::sort with a boost::zip_iterator
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   template <class Scalar>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::sortRowIndicesAndValues(RowInfo rowinfo, ArrayView<Scalar> values)
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::sortRowIndicesAndValues(RowInfo rowinfo, ArrayView<Scalar> values)
   {
     if (rowinfo.numEntries > 0) {
       ArrayView<LocalOrdinal> inds_view = getLocalViewNonConst(rowinfo);
@@ -1302,8 +1307,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::mergeRowIndices(RowInfo rowinfo)
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::mergeRowIndices(RowInfo rowinfo)
   {
     const char tfecfFuncName[] = "mergRowIndices()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -1328,9 +1333,9 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   // in the future, this could use std::unique with a boost::zip_iterator
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   template<class Scalar>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   mergeRowIndicesAndValues (RowInfo rowinfo, const ArrayView<Scalar>& rowValues)
   {
     const char tfecfFuncName[] = "mergeRowIndicesAndValues";
@@ -1388,10 +1393,10 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
-  setDomainRangeMaps (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> >& domainMap,
-                      const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> >& rangeMap)
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  setDomainRangeMaps (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >& domainMap,
+                      const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >& rangeMap)
   {
     // simple pointer comparison for equality
     if (domainMap_ != domainMap) {
@@ -1407,9 +1412,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   size_t
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   findLocalIndex (RowInfo rowinfo, LocalOrdinal ind, size_t hint) const
   {
     ArrayView<const LocalOrdinal> colInds = getLocalView (rowinfo);
@@ -1420,9 +1425,9 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal,
-            class GlobalOrdinal>
+            class GlobalOrdinal, class DeviceType>
   size_t
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   findLocalIndex (RowInfo rowinfo,
                   LocalOrdinal ind,
                   ArrayView<const LocalOrdinal> colInds,
@@ -1473,9 +1478,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   size_t
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   findGlobalIndex (RowInfo rowinfo, GlobalOrdinal ind, size_t hint) const
   {
     typedef typename ArrayView<const GlobalOrdinal>::iterator IT;
@@ -1510,8 +1515,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::clearGlobalConstants()
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::clearGlobalConstants()
   {
     globalNumEntries_       = OrdinalTraits<global_size_t>::invalid();
     globalNumDiags_         = OrdinalTraits<global_size_t>::invalid();
@@ -1522,8 +1527,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::checkInternalState() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::checkInternalState() const
   {
 #ifdef HAVE_TPETRA_DEBUG
     const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
@@ -1634,8 +1639,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const
   {
     const LocalOrdinal lrow = rowMap_->getLocalElement(globalRow);
     size_t ret = OrdinalTraits<size_t>::invalid();
@@ -1650,8 +1655,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getNumEntriesInLocalRow(LocalOrdinal localRow) const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getNumEntriesInLocalRow(LocalOrdinal localRow) const
   {
     size_t ret = OrdinalTraits<size_t>::invalid();
     if (hasRowInfo() && rowMap_->isNodeLocalElement(localRow)) {
@@ -1664,8 +1669,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getNumAllocatedEntriesInGlobalRow(GlobalOrdinal globalRow) const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getNumAllocatedEntriesInGlobalRow(GlobalOrdinal globalRow) const
   {
     const LocalOrdinal lrow = rowMap_->getLocalElement(globalRow);
     size_t ret = OrdinalTraits<size_t>::invalid();
@@ -1680,8 +1685,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getNumAllocatedEntriesInLocalRow(LocalOrdinal localRow) const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getNumAllocatedEntriesInLocalRow(LocalOrdinal localRow) const
   {
     size_t ret = OrdinalTraits<size_t>::invalid();
     if (hasRowInfo() && rowMap_->isNodeLocalElement(localRow)) {
@@ -1694,8 +1699,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  ArrayRCP<const size_t> CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getNodeRowPtrs() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  ArrayRCP<const size_t> CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getNodeRowPtrs() const
   {
     return rowPtrs_;
   }
@@ -1703,8 +1708,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  ArrayRCP<const LocalOrdinal> CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getNodePackedIndices() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  ArrayRCP<const LocalOrdinal> CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getNodePackedIndices() const
   {
     return lclInds1D_;
   }
@@ -1712,8 +1717,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getLocalRowCopy(LocalOrdinal localRow, const ArrayView<LocalOrdinal> &indices, size_t &NumIndices) const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getLocalRowCopy(LocalOrdinal localRow, const ArrayView<LocalOrdinal> &indices, size_t &NumIndices) const
   {
     // can only do this if
     // * we have local indices: isLocallyIndexed()
@@ -1753,8 +1758,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getGlobalRowCopy(GlobalOrdinal globalRow, const ArrayView<GlobalOrdinal> &indices, size_t &NumIndices) const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getGlobalRowCopy(GlobalOrdinal globalRow, const ArrayView<GlobalOrdinal> &indices, size_t &NumIndices) const
   {
     // we either currently store global indices, or we have a column map with which to transcribe our local indices for the user
     const LocalOrdinal lrow = rowMap_->getLocalElement(globalRow);
@@ -1783,8 +1788,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getLocalRowView(LocalOrdinal localRow, ArrayView<const LocalOrdinal> &indices) const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getLocalRowView(LocalOrdinal localRow, ArrayView<const LocalOrdinal> &indices) const
   {
     const char tfecfFuncName[] = "getLocalRowView()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isGloballyIndexed() == true, std::runtime_error, ": local indices cannot be provided.");
@@ -1806,8 +1811,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getGlobalRowView(GlobalOrdinal globalRow, ArrayView<const GlobalOrdinal> &indices) const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getGlobalRowView(GlobalOrdinal globalRow, ArrayView<const GlobalOrdinal> &indices) const
   {
     using Teuchos::as;
     const char tfecfFuncName[] = "getGlobalRowView()";
@@ -1847,9 +1852,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   insertLocalIndices (const LocalOrdinal localRow,
                       const ArrayView<const LocalOrdinal> &indices)
   {
@@ -1923,9 +1928,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   insertLocalIndicesFiltered (const LocalOrdinal localRow,
                               const ArrayView<const LocalOrdinal> &indices)
   {
@@ -1976,9 +1981,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   insertGlobalIndices (const GlobalOrdinal grow,
                        const ArrayView<const GlobalOrdinal> &indices)
   {
@@ -2059,9 +2064,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   insertGlobalIndicesFiltered (const GlobalOrdinal grow,
                                const ArrayView<const GlobalOrdinal> &indices)
   {
@@ -2121,8 +2126,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::removeLocalIndices(LocalOrdinal lrow)
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::removeLocalIndices(LocalOrdinal lrow)
   {
     const char tfecfFuncName[] = "removeLocalIndices()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isFillActive() == false,                    std::runtime_error, ": requires that fill is active.");
@@ -2147,8 +2152,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::setAllIndices(const ArrayRCP<size_t> & rowPointers,const ArrayRCP<LocalOrdinal> & columnIndices)
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::setAllIndices(const ArrayRCP<size_t> & rowPointers,const ArrayRCP<LocalOrdinal> & columnIndices)
   {
     const char tfecfFuncName[] = "setAllIndices()";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( hasColMap() == false, std::runtime_error, ": requires a ColMap.");
@@ -2168,8 +2173,8 @@ namespace Tpetra {
   // TODO: in the future, globalAssemble() should use import/export functionality
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::globalAssemble()
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::globalAssemble()
   {
     using Teuchos::Array;
     using Teuchos::as;
@@ -2452,9 +2457,9 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   resumeFill (const RCP<ParameterList> &params)
   {
     const char tfecfFuncName[] = "resumeFill";
@@ -2486,8 +2491,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::fillComplete(const RCP<ParameterList> &params)
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::fillComplete(const RCP<ParameterList> &params)
   {
     fillComplete(rowMap_,rowMap_,params);
   }
@@ -2495,11 +2500,11 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
-  fillComplete (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> > &domainMap,
-                const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> > &rangeMap,
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  fillComplete (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &domainMap,
+                const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &rangeMap,
                 const RCP<ParameterList> &params)
   {
     std::cout <<  "Graph Fillcomplete\n";
@@ -2572,11 +2577,11 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> > & domainMap,
-                                                                                       const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> > & rangeMap,
-                                                                                       const RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> > &importer,
-                                                                                       const RCP<const Export<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> > &exporter,
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > & domainMap,
+                                                                                       const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > & rangeMap,
+                                                                                       const RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &importer,
+                                                                                       const RCP<const Export<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &exporter,
                                                                                        const RCP<ParameterList> &params)
   {
 #ifdef HAVE_TPETRA_DEBUG
@@ -2650,8 +2655,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::fillLocalGraph(const RCP<ParameterList> &params)
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::fillLocalGraph(const RCP<ParameterList> &params)
   {
     std::cout<<"\n--------------AllocCrsGraph-A-----------------\n";
     const size_t numRows = getNodeNumRows();
@@ -2675,10 +2680,12 @@ namespace Tpetra {
         std::cout<<"\n--------------AllocCrsGraph-C-----------------\n";
         //ptrs = LocalMatOps::allocRowPtrs( getRowMap()->getNode(), numRowEntries_() );
         //inds = LocalMatOps::template allocStorage<LocalOrdinal>( getRowMap()->getNode(), ptrs() );
-        lclInds1DView_ = typename LocalCrsArrayType::entries_type("Graph::lclInds1D",numRowEntries_->size()+1)
+        size_t nRE = numRowEntries_().size();
+        typename LocalStaticCrsGraphType::entries_type lclInds1DView_ = typename LocalStaticCrsGraphType::entries_type("Graph::lclInds1D",
+            nRE+1);
         ptrs = Kokkos::Compat::persistingView(lclInds1DView_);
         ptrs[0] = 0;
-            std::partial_sum( numRowEntries_->getRawPtr(), numRowEntries_->getRawPtr()+numRowEntries_->size(), ptrs.begin()+1 );
+        std::partial_sum( numRowEntries_().getRawPtr(), numRowEntries_().getRawPtr()+numRowEntries_().size(), ptrs.begin()+1 );
         //inds = Kokkos::Compat::persistingView(rowPtrsView_);
         inds = LocalMatOps::template allocStorage<LocalOrdinal>( getRowMap()->getNode(), ptrs() );
 
@@ -2721,15 +2728,15 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::replaceDomainMapAndImporter(const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> >& newDomainMap, Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> >  & newImporter)
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::replaceDomainMapAndImporter(const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >& newDomainMap, Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >  & newImporter)
   {
     const char tfecfFuncName[] = "replaceDomainMapAndImporter()";
 
     if( (newImporter==Teuchos::null && colMap_!=Teuchos::null && colMap_->isSameAs(*newDomainMap)) ||
         (newImporter!=Teuchos::null && colMap_!=Teuchos::null && colMap_->isSameAs(*newImporter->getTargetMap()) && newDomainMap->isSameAs(*newImporter->getSourceMap()))) {
       domainMap_ = newDomainMap;
-      importer_  = rcp_const_cast<Tpetra::Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> >(newImporter);
+      importer_  = rcp_const_cast<Tpetra::Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >(newImporter);
 
     }
     else {
@@ -2740,25 +2747,25 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  const RCP<const typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps::template graph<LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::graph_type>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getLocalGraph() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  const RCP<const typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps::template graph<LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::graph_type>
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getLocalGraph() const
   {
     return lclGraph_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, Kokkos::Compat::KokkosThreadsWrapperNode::device_type,size_t>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getLocalGraph_Kokkos() const
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, typename Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>::device_type,size_t>
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getLocalGraph_Kokkos() const
   {
     return k_lclGraph_;
   }
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  const RCP<typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps::template graph<LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::graph_type>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::getLocalGraphNonConst()
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  const RCP<typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps::template graph<LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::graph_type>
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getLocalGraphNonConst()
   {
     return lclGraph_;
   }
@@ -2766,8 +2773,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::computeGlobalConstants()
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::computeGlobalConstants()
   {
     using Teuchos::as;
     using Teuchos::outArg;
@@ -2887,8 +2894,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::makeIndicesLocal()
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::makeIndicesLocal()
   {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
@@ -2944,8 +2951,11 @@ namespace Tpetra {
         // can deallocate the global column indices (which we know are
         // in 1-D storage, because the graph has static profile).
         gblInds1D_ = null;
+        std::cout << "MakeIndiciesLocal Static Done\n";
       }
       else {  // the graph has dynamic profile (2-D index storage)
+        std::cout << "MakeIndiciesLocal Dynamic\n";
+
         lclInds2D_ = arcp<Array<LO> > (nlrs);
         for (size_t r = 0; r < getNodeNumRows (); ++r) {
           if (! gblInds2D_[r].empty ()) {
@@ -2971,9 +2981,12 @@ namespace Tpetra {
           }
         }
         gblInds2D_ = null;
+        std::cout << "MakeIndiciesLocal Done\n";
+
       }
     }
     k_lclGraph_ = LocalStaticCrsGraphType(k_lclInds1D_,k_rowPtrs_);
+    std::cout << "MakeIndiciesLocal Finished\n";
     indicesAreLocal_  = true;
     indicesAreGlobal_ = false;
     checkInternalState();
@@ -2982,8 +2995,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::computeIndexState()
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::computeIndexState()
   {
     // FIXME (mfh 03 Mar 2013) It's not clear to me that we need to do
     // an all-reduce.
@@ -3073,8 +3086,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::sortAllIndices()
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::sortAllIndices()
   {
     TEUCHOS_TEST_FOR_EXCEPT(isGloballyIndexed()==true);   // this should be called only after makeIndicesLocal()
     if (isSorted() == false) {
@@ -3090,8 +3103,8 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::makeColMap()
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::makeColMap()
   {
     using std::endl;
     using Teuchos::REDUCE_MAX;
@@ -3363,8 +3376,8 @@ namespace Tpetra {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::mergeAllIndices()
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::mergeAllIndices()
   {
     TEUCHOS_TEST_FOR_EXCEPT( isGloballyIndexed() ); // call only after makeIndicesLocal()
     TEUCHOS_TEST_FOR_EXCEPT( ! isSorted() ); // call only after sortIndices()
@@ -3379,12 +3392,12 @@ namespace Tpetra {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::makeImportExport()
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::makeImportExport()
   {
-    typedef Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> import_type;
-    typedef Export<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> export_type;
+    typedef Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > import_type;
+    typedef Export<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > export_type;
 
     TEUCHOS_TEST_FOR_EXCEPTION(! hasColMap (), std::logic_error, "Tpetra::"
       "CrsGraph: It's not allowed to call makeImportExport() unless the graph "
@@ -3427,12 +3440,12 @@ namespace Tpetra {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   std::string
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::description() const
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::description() const
   {
     std::ostringstream oss;
-    oss << DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::description();
+    oss << DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::description();
     if (isFillComplete()) {
       oss << "{status = fill complete"
           << ", global rows = " << getGlobalNumRows()
@@ -3449,9 +3462,9 @@ namespace Tpetra {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   describe (Teuchos::FancyOStream &out,
             const Teuchos::EVerbosityLevel verbLevel) const
   {
@@ -3566,9 +3579,9 @@ namespace Tpetra {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   bool 
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   checkSizes (const SrcDistObject& source)
   {
     (void) source; // forestall "unused variable" compiler warnings
@@ -3580,9 +3593,9 @@ namespace Tpetra {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   copyAndPermute (const SrcDistObject& source,
 		  size_t numSameIDs,
 		  const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
@@ -3680,9 +3693,9 @@ namespace Tpetra {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   packAndPrepare (const SrcDistObject& source,
                   const Teuchos::ArrayView<const LocalOrdinal> &exportLIDs,
                   Teuchos::Array<GlobalOrdinal> &exports,
@@ -3709,9 +3722,9 @@ namespace Tpetra {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
 	Teuchos::Array<GlobalOrdinal>& exports,
 	const Teuchos::ArrayView<size_t>& numPacketsPerLID,
@@ -3767,9 +3780,9 @@ namespace Tpetra {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
 		    const Teuchos::ArrayView<const GlobalOrdinal> &imports,
 		    const Teuchos::ArrayView<size_t> &numPacketsPerLID,
@@ -3817,17 +3830,17 @@ namespace Tpetra {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode>::SparseOps>::
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap)
   {
     using Teuchos::Comm;
     using Teuchos::null;
     using Teuchos::ParameterList;
     using Teuchos::RCP;
-    typedef Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> import_type;
-    typedef Export<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosThreadsWrapperNode> export_type;
+    typedef Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > import_type;
+    typedef Export<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > export_type;
 
     // We'll set all the state "transactionally," so that this method
     // satisfies the strong exception guarantee.  This object's state

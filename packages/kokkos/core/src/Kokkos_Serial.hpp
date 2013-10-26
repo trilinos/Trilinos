@@ -127,8 +127,12 @@ public:
   /// device have completed.
   static void fence() {}
 
+  static void initialize() {}
+
+  static int is_initialized() { return 1 ; }
+
   //! Free any resources being consumed by the device.
-  static void finalize();
+  static void finalize() {}
 
   //! Print configuration information to the given output stream.
   static void print_configuration( std::ostream & , const bool detail = false );
