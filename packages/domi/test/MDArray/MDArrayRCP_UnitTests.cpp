@@ -80,7 +80,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, arrayViewDimsConstructor, T )
   TEST_EQUALITY(mdar.strides()[0],  1);
   TEST_EQUALITY(mdar.strides()[1],  3);
   TEST_EQUALITY(mdar.strides()[2], 12);
-  TEST_EQUALITY(mdar.storage_order(), Domi::DEFAULT_ORDER);
+  TEST_EQUALITY(mdar.layout(), Domi::DEFAULT_ORDER);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, arrayViewDimsConstructorBad, T )
@@ -103,7 +103,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, arrayViewDimsOrderConstructor, T 
   TEST_EQUALITY(mdar.strides()[0], 20);
   TEST_EQUALITY(mdar.strides()[1],  5);
   TEST_EQUALITY(mdar.strides()[2],  1);
-  TEST_EQUALITY(mdar.storage_order(), Domi::C_ORDER);
+  TEST_EQUALITY(mdar.layout(), Domi::C_ORDER);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, dimsConstructor, T )
@@ -118,7 +118,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, dimsConstructor, T )
   TEST_EQUALITY(mdar.strides()[0],  1);
   TEST_EQUALITY(mdar.strides()[1],  3);
   TEST_EQUALITY(mdar.strides()[2], 12);
-  TEST_EQUALITY(mdar.storage_order(), Domi::DEFAULT_ORDER);
+  TEST_EQUALITY(mdar.layout(), Domi::DEFAULT_ORDER);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, dimsValConstructor, T )
@@ -131,7 +131,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, dimsValConstructor, T )
   TEST_EQUALITY(mdar.size(), 12);
   TEST_EQUALITY(mdar.strides()[0],  1);
   TEST_EQUALITY(mdar.strides()[1],  3);
-  TEST_EQUALITY(mdar.storage_order(), Domi::DEFAULT_ORDER);
+  TEST_EQUALITY(mdar.layout(), Domi::DEFAULT_ORDER);
   TEST_EQUALITY(mdar(0,0), 12);
   TEST_EQUALITY(mdar(1,0), 12);
   TEST_EQUALITY(mdar(2,0), 12);
@@ -157,7 +157,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, copyConstructor, T )
   TEST_EQUALITY(mdar1.size(),          mdar2.size()         );
   TEST_EQUALITY(mdar1.strides()[0],    mdar2.strides()[0]   );
   TEST_EQUALITY(mdar1.strides()[1],    mdar2.strides()[1]   );
-  TEST_EQUALITY(mdar1.storage_order(), mdar2.storage_order());
+  TEST_EQUALITY(mdar1.layout(), mdar2.layout());
   TEST_EQUALITY(mdar1(0,0),            mdar2(0,0)           );
   TEST_EQUALITY(mdar1(1,0),            mdar2(1,0)           );
   TEST_EQUALITY(mdar1(0,1),            mdar2(0,1)           );
@@ -229,7 +229,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayRCP, assignmentOperator, T )
   TEST_EQUALITY(mdar1.strides()[0],    mdar2.strides()[0]   );
   TEST_EQUALITY(mdar1.strides()[1],    mdar2.strides()[1]   );
   TEST_EQUALITY(mdar1.strides()[2],    mdar2.strides()[2]   );
-  TEST_EQUALITY(mdar1.storage_order(), mdar2.storage_order());
+  TEST_EQUALITY(mdar1.layout(), mdar2.layout());
   TEST_EQUALITY(mdar1(0,0,0),          mdar2(0,0,0)         );
   TEST_EQUALITY(mdar1(1,0,0),          mdar2(1,0,0)         );
   TEST_EQUALITY(mdar1(0,1,0),          mdar2(0,1,0)         );

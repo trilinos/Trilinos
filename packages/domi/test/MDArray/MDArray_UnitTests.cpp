@@ -73,7 +73,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, simpleConstructor, T )
   TEST_EQUALITY_CONST(a.size(), 6);
   TEST_EQUALITY_CONST(a.strides()[0], 1);
   TEST_EQUALITY_CONST(a.strides()[1], 2);
-  TEST_EQUALITY_CONST(a.storage_order(), Domi::DEFAULT_ORDER);
+  TEST_EQUALITY_CONST(a.layout(), Domi::DEFAULT_ORDER);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, dimsAndValConstructor, T )
@@ -87,7 +87,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, dimsAndValConstructor, T )
   TEST_EQUALITY_CONST(a.size(), 4);
   TEST_EQUALITY_CONST(a.strides()[0], 1);
   TEST_EQUALITY_CONST(a.strides()[1], 2);
-  TEST_EQUALITY_CONST(a.storage_order(), Domi::DEFAULT_ORDER);
+  TEST_EQUALITY_CONST(a.layout(), Domi::DEFAULT_ORDER);
   TEST_EQUALITY_CONST(a(0,0), val);
   TEST_EQUALITY_CONST(a(0,1), val);
   TEST_EQUALITY_CONST(a(1,0), val);
@@ -104,7 +104,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, dimsAndOrderConstructor, T )
   TEST_EQUALITY_CONST(a.size(), 9);
   TEST_EQUALITY_CONST(a.strides()[0], 3);
   TEST_EQUALITY_CONST(a.strides()[1], 1);
-  TEST_EQUALITY_CONST(a.storage_order(), Domi::C_ORDER);
+  TEST_EQUALITY_CONST(a.layout(), Domi::C_ORDER);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, dimsValAndOrderConstructor, T )
@@ -120,7 +120,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, dimsValAndOrderConstructor, T )
   TEST_EQUALITY_CONST(a.strides()[0], 4);
   TEST_EQUALITY_CONST(a.strides()[1], 2);
   TEST_EQUALITY_CONST(a.strides()[2], 1);
-  TEST_EQUALITY_CONST(a.storage_order(), Domi::ROW_MAJOR);
+  TEST_EQUALITY_CONST(a.layout(), Domi::ROW_MAJOR);
   TEST_EQUALITY_CONST(a(0,0,0), val);
   TEST_EQUALITY_CONST(a(0,0,1), val);
   TEST_EQUALITY_CONST(a(0,1,0), val);
@@ -159,7 +159,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, mdArrayViewConstructor1, T )
   TEUCHOS_ASSERT( c == b );
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, equalOperatorDiffStorage, T )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, equalOperatorDiffLayout, T )
 {
   MDArray< T > a = generateMDArray< T >(3,4,Domi::FORTRAN_ORDER);
   MDArray< T > b = generateMDArray< T >(3,4,Domi::C_ORDER);
@@ -519,7 +519,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, toString3D, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArray, copyConstructor, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArray, mdArrayViewConstructor0, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArray, mdArrayViewConstructor1, T ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArray, equalOperatorDiffStorage, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArray, equalOperatorDiffLayout, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArray, equalOperatorMDArrayView, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArray, inequalityOperator, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDArray, indexing4D, T ) \

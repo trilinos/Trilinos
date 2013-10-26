@@ -55,7 +55,7 @@ namespace Domi
  *  Note that there are only two orderings supported, but multiple
  *  ways to refer to them.
  */
-enum EStorageOrder
+enum ELayout
 {
   /** \brief C order, in which the last index varies fastest */
   C_ORDER             = 0,
@@ -110,12 +110,12 @@ struct remove_const< const T >
  */
 template< typename T >
 Teuchos::Array< T > computeStrides(const Teuchos::ArrayView< T > & dimensions,
-                                   const EStorageOrder storageOrder)
+                                   const ELayout layout)
 {
   typedef typename Teuchos::Array< T >::size_type size_type;
   size_type n = dimensions.size();
   Teuchos::Array< T > strides(n);
-  if (storageOrder == FIRST_INDEX_FASTEST)
+  if (layout == FIRST_INDEX_FASTEST)
   {
     strides[0] = 1;
     for (size_type axis = 1; axis < n; ++axis)
@@ -139,7 +139,7 @@ Teuchos::Array< T > computeStrides(const Teuchos::ArrayView< T > & dimensions,
 template< typename T >
 Teuchos::Array< T >
 computeStrides(const Teuchos::Array< T > & dimensions,
-               const EStorageOrder storageOrder)
+               const ELayout layout)
 {
   // In the MDArray<T>(const MDArrayView<T> &) constructor, I try to
   // pass the MDArrayView dimensions to computeStrides(), but they
@@ -152,7 +152,7 @@ computeStrides(const Teuchos::Array< T > & dimensions,
   nonConstDims.insert(nonConstDims.begin(),
                       dimensions.begin(),
                       dimensions.end());
-  return computeStrides(nonConstDims(), storageOrder);
+  return computeStrides(nonConstDims(), layout);
 }
 
 ////////////////////////////////////////////////////////////////////////

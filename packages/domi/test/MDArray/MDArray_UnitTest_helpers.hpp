@@ -59,7 +59,7 @@ extern int nlevs;
 template< class T >
 Domi::MDArray< T > generateMDArray(const int nrows_in,
                                    const int ncols_in,
-                                   Domi::EStorageOrder storageOrder =
+                                   Domi::ELayout layout =
                                      Domi::DEFAULT_ORDER)
 {
   using Teuchos::tuple;
@@ -68,7 +68,7 @@ Domi::MDArray< T > generateMDArray(const int nrows_in,
   typedef typename Domi::MDArray< T >::size_type size_type;
 
   Domi::MDArray< T > a(tuple< size_type >(nrows_in, ncols_in),
-                       storageOrder);
+                       layout);
   T value = 0;
   for( int j = 0; j < ncols_in; ++j )
     for( int i = 0; i < nrows_in; ++i )
@@ -81,7 +81,7 @@ template< class T >
 Domi::MDArray< T > generateMDArray(const int nrows_in,
                                    const int ncols_in,
                                    const int nlevs_in,
-                                   Domi::EStorageOrder storageOrder =
+                                   Domi::ELayout layout =
                                      Domi::DEFAULT_ORDER)
 {
   using Teuchos::tuple;
@@ -90,7 +90,7 @@ Domi::MDArray< T > generateMDArray(const int nrows_in,
   typedef typename Domi::MDArray< T >::size_type size_type;
 
   Domi::MDArray< T > a(tuple< size_type >(nrows_in, ncols_in, nlevs_in),
-                       storageOrder);
+                       layout);
   T value = 0;
   for( int i = 0; i < nrows_in; ++i )
     for( int j = 0; j < ncols_in; ++j )
@@ -104,7 +104,7 @@ Domi::MDArray< T > generateMDArray(const int nrows_in,
 template< class T >
 Domi::MDArrayRCP< T > generateMDArrayRCP(const int nrows_in,
                                          const int ncols_in,
-                                         Domi::EStorageOrder storageOrder =
+                                         Domi::ELayout layout =
                                            Domi::DEFAULT_ORDER)
 {
   using Teuchos::tuple;
@@ -113,7 +113,7 @@ Domi::MDArrayRCP< T > generateMDArrayRCP(const int nrows_in,
   typedef typename Domi::MDArrayRCP< T >::size_type size_type;
 
   Domi::MDArrayRCP< T > a(tuple< size_type >(nrows_in, ncols_in),
-                          storageOrder);
+                          layout);
   T value = 0;
   for( int j = 0; j < ncols_in; ++j )
     for( int i = 0; i < nrows_in; ++i )
@@ -126,7 +126,7 @@ template< class T >
 Domi::MDArrayRCP< T > generateMDArrayRCP(const int nrows_in,
                                          const int ncols_in,
                                          const int nlevs_in,
-                                         Domi::EStorageOrder storageOrder =
+                                         Domi::ELayout layout =
                                            Domi::DEFAULT_ORDER)
 {
   using Teuchos::tuple;
@@ -135,7 +135,7 @@ Domi::MDArrayRCP< T > generateMDArrayRCP(const int nrows_in,
   typedef typename Domi::MDArrayRCP< T >::size_type size_type;
 
   Domi::MDArrayRCP< T > a(tuple< size_type >(nrows_in, ncols_in, nlevs_in),
-                          storageOrder);
+                          layout);
   T value = 0;
   for( int i = 0; i < nrows_in; ++i )
     for( int j = 0; j < ncols_in; ++j )

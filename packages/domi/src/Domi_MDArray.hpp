@@ -160,9 +160,9 @@ void swap(MDArray< T > & a1, MDArray< T > & a2);
  * construct an array that points to a view of existing memory, use
  * the <tt>MDArrayView</tt> class.)  Each constructor needs to know
  * the number of dimensions and the length of each dimension.  This is
- * provided by an <tt>Teuchos::ArrayView</tt> object whose size is the
+ * provided by a <tt>Teuchos::ArrayView</tt> object whose size is the
  * number of dimensions and whose values are the lengths of each of
- * those dimensions.  A common and convenient way to provide an
+ * those dimensions.  A common and convenient way to provide a
  * <tt>Teuchos::ArrayView</tt> object to <tt>MDArray</tt> constructors
  * is with the overloaded <tt>Teuchos::tuple</tt> non-member
  * constructor functions.  For example, to construct an integer array
@@ -174,8 +174,8 @@ void swap(MDArray< T > & a1, MDArray< T > & a2);
  *
  * There are various other optional arguments that can be passed to
  * the <tt>MDArray</tt> constructors.  These include a flag for
- * storage order, of enumerated type <tt>EStorageOrder</tt>, and a
- * default fill value of type <tt>T</tt>.
+ * storage order, of enumerated type <tt>ELayout</tt>, and a default
+ * fill value of type <tt>T</tt>.
  *
  * \section Domi_MDArray_Indexing MDArray Indexing
  *
@@ -185,7 +185,7 @@ void swap(MDArray< T > & a1, MDArray< T > & a2);
  *
  * Since the compiler does not know the dimension of any given
  * <tt>MDArray</tt>, the operators to access a single element of the
- * <tt>MDArray</tt> take the following forms:
+ * <tt>MDArray</tt> originally took the following forms:
  *
  *     \code
  *     T & operator()(size_type i, ...);
@@ -195,13 +195,34 @@ void swap(MDArray< T > & a1, MDArray< T > & a2);
  * Functions and methods that take arbitrary arguments denoted by the
  * ellipsis ("...") are called "variadic", and unfortunately, they
  * reduce the amount of error checking that can be done, even with
- * <tt>DOMI_ENABLE_ABC</tt> defined.  The reason for this
- * is that the macros provided in C/C++ to handle variadic arguments
- * do not provide a way to count the number of arguments provided.  If
- * you provide too many indexes, the excess are just ignored.  If you
- * provide too few, the behavior is undefined.  The expectation is
- * that if you construct an <tt>MDArray</tt> of <tt>n</tt> dimensions,
- * then you will call operator() with <tt>n</tt> indexes.
+ * <tt>DOMI_ENABLE_ABC</tt> defined.  The reason for this is that the
+ * macros provided in C/C++ to handle variadic arguments do not
+ * provide a way to count the number of arguments provided.  If you
+ * provide too many indexes, the excess are just ignored.  If you
+ * provide too few, the behavior is undefined.  Processing the
+ * variadic arguments also introduces computational overhead, so
+ * <tt>operator()</tt> has been overloaded to accept concrete numbers
+ * of indexes:
+ *
+ *     \code
+ *     T & operator()(size_type i);
+ *     T & operator()(size_type i, size_type j);
+ *     T & operator()(size_type i, size_type j, size_type k);
+ *     //...
+ *     const T & operator()(size_type i);
+ *     const T & operator()(size_type i, size_type j);
+ *     const T & operator()(size_type i, size_type j, size_type k);
+ *     //...
+ *     \endcode
+ *
+ * These specific overloads are provided for up to five dimensions.
+ * For six dimensions and higher, a variadic argument is used.  This
+ * provides both greater efficiency and bounds checking (when
+ * enebaled) for five dimensions or less.  If bounds checking is off,
+ * or an array has more than five dimensions, the expectation is that
+ * if you construct an <tt>MDArray</tt> of <tt>n</tt> dimensions, then
+ * you will call operator() with <tt>n</tt> indexes, because no error
+ * wll be reported.
  *
  * The offset represented by a set of indexes is computed by
  * maintaining an internal array of stride lengths, called
@@ -220,7 +241,7 @@ void swap(MDArray< T > & a1, MDArray< T > & a2);
  * a reference to their values with the
  *
  *     \code
- *     const Teuchos::Array<size_type> & strides() const;
+ *     const Teuchos::Array<size_type> & strides() const
  *     \endcode
  *
  * method.
@@ -249,7 +270,7 @@ void swap(MDArray< T > & a1, MDArray< T > & a2);
  * suggested that when indexing an n-dimensional <tt>MDArray</tt> with
  * the square bracket operator, <i>always</i> chain together
  * <tt>n</tt> square brackets, which will reset the internal "next
- * axis" data member to zero.
+ * axis" data member to the expected value of zero.
  *
  * \ingroup domi_mem_mng_grp
  */
@@ -295,12 +316,12 @@ public:
    * \param value [in] The default value for filling the
    *        <tt>MDArray</tt>
    *
-   * \param storageOrder [in] An enumerated value specifying the
-   *        internal storage order of the <tt>MDArray</tt>
+   * \param layout [in] An enumerated value specifying the internal
+   *        storage order of the <tt>MDArray</tt>
    */
   inline MDArray(const Teuchos::ArrayView< size_type > & dims,
 		 const value_type & value,
-		 const EStorageOrder storageOrder = DEFAULT_ORDER);
+		 const ELayout layout = DEFAULT_ORDER);
 
   /** \brief Constructor with dimensions and storage order,
    *         with optional default value
@@ -310,14 +331,14 @@ public:
    *        is with a Teuchos::Tuple returned by the non-member
    *        <tt>Teuchos::tuple<T>()</tt> function.
    *
-   * \param storageOrder [in] An enumerated value specifying the
-   *        internal storage order of the <tt>MDArray</tt>
+   * \param layout [in] An enumerated value specifying the internal
+   *        storage order of the <tt>MDArray</tt>
    *
    * \param value [in] The default value for filling the
    *        <tt>MDArray</tt>
    */
   inline MDArray(const Teuchos::ArrayView< size_type > & dims,
-		 const EStorageOrder storageOrder,
+		 const ELayout layout,
 		 const value_type & value = value_type());
 
   /** \brief Copy constructor
@@ -370,7 +391,7 @@ public:
 
   /** \brief Return the storage order
    */
-  inline const EStorageOrder storage_order() const;
+  inline const ELayout layout() const;
 
   //@}
 
@@ -837,7 +858,7 @@ private:
   Teuchos::Array< size_type > _dimensions;
   Teuchos::Array< size_type > _strides;
   Teuchos::Array< T >         _array;
-  EStorageOrder               _storage_order;
+  ELayout                     _layout;
   T *                         _ptr;
 
   // Used for array bounds checking
@@ -853,7 +874,7 @@ MDArray< T >::MDArray() :
   _dimensions(Teuchos::tuple< size_type >(0)),
   _strides(Teuchos::tuple< size_type >(1)),
   _array(),
-  _storage_order(DEFAULT_ORDER),
+  _layout(DEFAULT_ORDER),
   _ptr()
 {
 }
@@ -865,7 +886,7 @@ MDArray< T >::MDArray(const Teuchos::ArrayView< size_type > & dims) :
   _dimensions(dims),
   _strides(computeStrides(dims, DEFAULT_ORDER)),
   _array(computeSize(dims)),
-  _storage_order(DEFAULT_ORDER),
+  _layout(DEFAULT_ORDER),
   _ptr(_array.getRawPtr())
 {
 }
@@ -875,11 +896,11 @@ MDArray< T >::MDArray(const Teuchos::ArrayView< size_type > & dims) :
 template< typename T >
 MDArray< T >::MDArray(const Teuchos::ArrayView< size_type > & dims,
 		      const value_type & value,
-		      const EStorageOrder storageOrder) :
+		      const ELayout layout) :
   _dimensions(dims),
-  _strides(computeStrides(dims, storageOrder)),
+  _strides(computeStrides(dims, layout)),
   _array(computeSize(dims), value),
-  _storage_order(storageOrder),
+  _layout(layout),
   _ptr(_array.getRawPtr())
 {
 }
@@ -888,12 +909,12 @@ MDArray< T >::MDArray(const Teuchos::ArrayView< size_type > & dims,
 
 template< typename T >
 MDArray< T >::MDArray(const Teuchos::ArrayView< size_type > & dims,
-		      const EStorageOrder storageOrder,
+		      const ELayout layout,
 		      const value_type & value) :
   _dimensions(dims),
-  _strides(computeStrides(dims, storageOrder)),
+  _strides(computeStrides(dims, layout)),
   _array(computeSize(dims), value),
-  _storage_order(storageOrder),
+  _layout(layout),
   _ptr(_array.getRawPtr())
 {
 }
@@ -905,7 +926,7 @@ MDArray< T >::MDArray(const MDArray< T > & source) :
   _dimensions(source._dimensions),
   _strides(source._strides),
   _array(source._array),
-  _storage_order(source._storage_order),
+  _layout(source._layout),
   _ptr(_array.getRawPtr())
 {
 }
@@ -915,9 +936,9 @@ MDArray< T >::MDArray(const MDArray< T > & source) :
 template< typename T >
 MDArray< T >::MDArray(const MDArrayView< T > & source) :
   _dimensions(source.dimensions()),
-  _strides(computeStrides(source.dimensions(), source.storage_order())),
+  _strides(computeStrides(source.dimensions(), source.layout())),
   _array(computeSize(source.dimensions())),
-  _storage_order(source.storage_order()),
+  _layout(source.layout()),
   _ptr(_array.getRawPtr())
 {
   // Copy the values from the MDArrayView to the MDArray
@@ -993,10 +1014,10 @@ MDArray< T >::array() const
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-const EStorageOrder
-MDArray< T >::storage_order() const
+const ELayout
+MDArray< T >::layout() const
 {
-  return _storage_order;
+  return _layout;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1100,7 +1121,7 @@ template< typename T >
 MDArrayView< T >
 MDArray< T >::mdArrayView()
 {
-  return MDArrayView< T >(_array(), _dimensions, _storage_order);
+  return MDArrayView< T >(_array(), _dimensions, _layout);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1112,7 +1133,7 @@ MDArray< T >::mdArrayView() const
   Teuchos::ArrayView< T > array(const_cast< T* >(_array.getRawPtr()),
                                 _array.size());
   Teuchos::Array< size_type > dims(_dimensions);
-  return MDArrayView< T >(array, dims(), _storage_order);
+  return MDArrayView< T >(array, dims(), _layout);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1121,7 +1142,7 @@ template< typename T >
 MDArrayView< const T >
 MDArray< T >::mdArrayViewConst()
 {
-  return MDArrayView< const T >(_array, _dimensions, _storage_order);
+  return MDArrayView< const T >(_array, _dimensions, _layout);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1130,7 +1151,7 @@ template< typename T >
 const MDArrayView< const T >
 MDArray< T >::mdArrayViewConst() const
 {
-  return MDArrayView< const T >(_array, _dimensions, _storage_order);
+  return MDArrayView< const T >(_array, _dimensions, _layout);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1591,7 +1612,7 @@ void
 MDArray< T >::resize(const Teuchos::ArrayView< size_type > & dims)
 {
   _dimensions.assign(dims.begin(), dims.end());
-  _strides = computeStrides(dims, _storage_order);
+  _strides = computeStrides(dims, _layout);
   _array.resize(computeSize(dims));
   _ptr = _array.getRawPtr();
 }
@@ -1608,9 +1629,9 @@ MDArray< T >::swap(MDArray<T> & a)
   Teuchos::swap(_strides,    a._strides   );
   Teuchos::swap(_array,      a._array     );
   // Perform a raw swap of the storage order
-  EStorageOrder tmp = _storage_order;
-  _storage_order    = a._storage_order;
-  a._storage_order  = tmp;
+  ELayout tmp = _layout;
+  _layout     = a._layout;
+  a._layout   = tmp;
   // Make sure the pointers are correct
   _ptr   = _array.getRawPtr();
   a._ptr = a._array.getRawPtr();

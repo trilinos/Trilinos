@@ -68,7 +68,7 @@ namespace Domi
  * parameter class MDARRAY, which is intended to be any one of the
  * three MDArray types.  The MDARRAY class is expected to support the
  * the typedefs size_type and value_type, the num_dims() method and
- * the _ptr, _strides, _dimensions, and _storage_order attributes.
+ * the _ptr, _strides, _dimensions, and _layout attributes.
  *
  * It is intended that the array class that will use the MDRevIterator
  * will declare the MDRevIterator to be a friend and to typedef the
@@ -217,7 +217,7 @@ private:
 
   // A copy of the storage order of the multi-dimensional array being
   // reverse iterated
-  EStorageOrder _storage_order;
+  ELayout _layout;
 
   // The multi-dimensional index of the current reverse iterate
   Teuchos::Array< size_type > _index;
@@ -255,7 +255,7 @@ MDRevIterator< MDARRAY >::MDRevIterator(const MDARRAY & mdarray,
   _dimensions(mdarray._dimensions),
   _strides(mdarray._strides),
   _ptr(mdarray._ptr),
-  _storage_order(mdarray._storage_order),
+  _layout(mdarray._layout),
   _index(mdarray.num_dims())
 {
   if (end_index)
@@ -273,7 +273,7 @@ MDRevIterator(const MDARRAY & mdarray,
   _dimensions(mdarray._dimensions),
   _strides(mdarray._strides),
   _ptr(mdarray._ptr),
-  _storage_order(mdarray._storage_order),
+  _layout(mdarray._layout),
   _index(index)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -294,7 +294,7 @@ MDRevIterator(const MDRevIterator< MDARRAY > & source) :
   _dimensions(source._dimensions),
   _strides(source._strides),
   _ptr(source._ptr),
-  _storage_order(source._storage_order),
+  _layout(source._layout),
   _index(source._index)
 {
 }
@@ -312,11 +312,11 @@ template< class MDARRAY >
 MDRevIterator< MDARRAY > &
 MDRevIterator< MDARRAY >::operator=(const MDRevIterator< MDARRAY > & source)
 {
-  _dimensions    = source._dimensions;
-  _strides       = source._strides;
-  _ptr           = source._ptr;
-  _storage_order = source._storage_order;
-  _index         = source._index;
+  _dimensions = source._dimensions;
+  _strides    = source._strides;
+  _ptr        = source._ptr;
+  _layout     = source._layout;
+  _index      = source._index;
   return *this;
 }
 
@@ -364,7 +364,7 @@ template< class MDARRAY >
 MDRevIterator< MDARRAY > &
 MDRevIterator< MDARRAY >::operator++()
 {
-  if (_storage_order == FIRST_INDEX_FASTEST)
+  if (_layout == FIRST_INDEX_FASTEST)
   {
     _axis = 0;
     _done = false;
@@ -424,7 +424,7 @@ template< class MDARRAY >
 MDRevIterator< MDARRAY > &
 MDRevIterator< MDARRAY >::operator--()
 {
-  if (_storage_order == FIRST_INDEX_FASTEST)
+  if (_layout == FIRST_INDEX_FASTEST)
   {
     _axis = 0;
     _done = false;

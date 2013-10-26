@@ -117,7 +117,7 @@ typedef Teuchos::RCP< const MDComm > MDCommRCP;
  *     \endcode
  *
  * This should be sufficient to provide the necessary processor ranks
- * for conducting halo updates.
+ * for conducting communication padding updates.
  */
 class MDComm
 {

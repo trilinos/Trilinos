@@ -177,15 +177,15 @@ public:
    *        is with a Tuple returned by the non-member
    *        <tt>Teuchos::tuple<T>()</tt> function.
    *
-   * \param storageOrder [in] Specifies the order data elements are
-   *        stored in memory (default DEFAULT_ORDER)
+   * \param layout [in] Specifies the order data elements are stored
+   *        in memory (default DEFAULT_ORDER)
    *
    * The <tt>MDArrayRCP</tt> does not take ownership of the data
    * buffer.
    */
   inline MDArrayRCP(const Teuchos::ArrayView< T > & array,
 		    const Teuchos::ArrayView< size_type > & dims,
-		    EStorageOrder storageOrder=DEFAULT_ORDER);
+		    ELayout layout = DEFAULT_ORDER);
 
   /** \brief Constructor with dimensions, default value and optional
    *  storage order flag.
@@ -197,14 +197,14 @@ public:
    *
    * \param val [in] Default array fill value
    *
-   * \param storageOrder [in] Specifies the order data elements are
-   *        stored in memory
+   * \param layout [in] Specifies the order data elements are stored
+   *        in memory
    *
    * This constructor allocates new memory and takes ownership of it.
    */
   inline explicit MDArrayRCP(const Teuchos::ArrayView< size_type > & dims,
-			     const T & val=T(),
-			     EStorageOrder storageOrder=DEFAULT_ORDER);
+			     const T & val = T(),
+			     ELayout layout = DEFAULT_ORDER);
 
   /** \brief Constructor with dimensions and storage order flag.
    *
@@ -213,13 +213,13 @@ public:
    *        is with a Tuple returned by the non-member
    *        <tt>Teuchos::tuple<T>()</tt> function.
    *
-   * \param storageOrder [in] Specifies the order data elements are
-   *        stored in memory
+   * \param layout [in] Specifies the order data elements are stored
+   *        in memory
    *
    * This constructor allocates new memory and takes ownership of it.
    */
   inline explicit MDArrayRCP(const Teuchos::ArrayView< size_type > & dims,
-			     EStorageOrder storageOrder);
+			     ELayout layout);
 
   /** \brief Shallow copy constructor
    *
@@ -279,7 +279,7 @@ public:
 
   /** \brief Return the storage order
    */
-  inline const EStorageOrder storage_order() const;
+  inline const ELayout layout() const;
 
   //@}
 
@@ -790,7 +790,7 @@ private:
   Teuchos::Array< size_type > _dimensions;
   Teuchos::Array< size_type > _strides;
   Teuchos::ArrayRCP< T >      _array;
-  EStorageOrder               _storage_order;
+  ELayout                     _layout;
   T *                         _ptr;
 
   // Used for array bounds checking
@@ -806,7 +806,7 @@ MDArrayRCP< T >::MDArrayRCP(Teuchos::ENull null_arg) :
   _dimensions(Teuchos::tuple< size_type >(0)),
   _strides(Teuchos::tuple< size_type >(1)), 
   _array(),
-  _storage_order(DEFAULT_ORDER),
+  _layout(DEFAULT_ORDER),
   _ptr()
 {
 }
@@ -816,11 +816,11 @@ MDArrayRCP< T >::MDArrayRCP(Teuchos::ENull null_arg) :
 template< typename T >
 MDArrayRCP< T >::MDArrayRCP(const Teuchos::ArrayView< T > & array,
 			    const Teuchos::ArrayView< size_type > & dims,
-			    EStorageOrder storageOrder) :
+			    ELayout layout) :
   _dimensions(dims),
-  _strides(computeStrides(dims, storageOrder)),
+  _strides(computeStrides(dims, layout)),
   _array(array.getRawPtr(), 0, array.size(), false),
-  _storage_order(storageOrder),
+  _layout(layout),
   _ptr(_array.getRawPtr())
 {
   TEUCHOS_TEST_FOR_EXCEPTION(array.size() < computeSize(dims),
@@ -834,11 +834,11 @@ MDArrayRCP< T >::MDArrayRCP(const Teuchos::ArrayView< T > & array,
 template< typename T >
 MDArrayRCP< T >::MDArrayRCP(const Teuchos::ArrayView< size_type > & dims,
 			    const T & val,
-			    EStorageOrder storageOrder) :
+			    ELayout layout) :
   _dimensions(dims),
-  _strides(computeStrides(dims, storageOrder)),
+  _strides(computeStrides(dims, layout)),
   _array(computeSize(dims), val),
-  _storage_order(storageOrder),
+  _layout(layout),
   _ptr(_array.getRawPtr())
 {
 }
@@ -847,11 +847,11 @@ MDArrayRCP< T >::MDArrayRCP(const Teuchos::ArrayView< size_type > & dims,
 
 template< typename T >
 MDArrayRCP< T >::MDArrayRCP(const Teuchos::ArrayView< size_type > & dims,
-			    EStorageOrder storageOrder) :
+			    ELayout layout) :
   _dimensions(dims),
-  _strides(computeStrides(dims, storageOrder)),
+  _strides(computeStrides(dims, layout)),
   _array(computeSize(dims)),
-  _storage_order(storageOrder),
+  _layout(layout),
   _ptr(_array.getRawPtr())
 {
 }
@@ -863,7 +863,7 @@ MDArrayRCP< T >::MDArrayRCP(const MDArrayRCP< T > & r_ptr) :
   _dimensions(r_ptr._dimensions),
   _strides(r_ptr._strides),
   _array(r_ptr._array),
-  _storage_order(r_ptr._storage_order),
+  _layout(r_ptr._layout),
   _ptr(_array.getRawPtr())
 {
 }
@@ -873,9 +873,9 @@ MDArrayRCP< T >::MDArrayRCP(const MDArrayRCP< T > & r_ptr) :
 template< typename T >
 MDArrayRCP< T >::MDArrayRCP(const MDArrayView< T > & source) :
   _dimensions(source.dimensions()),
-  _strides(computeStrides(source.dimensions(), source.storage_order())),
+  _strides(computeStrides(source.dimensions(), source.layout())),
   _array(computeSize(source.dimensions())),
-  _storage_order(source.storage_order()),
+  _layout(source.layout()),
   _ptr(_array.getRawPtr())
 {
   // Copy the values from the MDArrayView to the MDArrayRCP
@@ -900,11 +900,11 @@ template< typename T >
 MDArrayRCP< T > &
 MDArrayRCP< T >::operator=(const MDArrayRCP< T > & r_ptr)
 {
-  _dimensions    = r_ptr._dimensions;
-  _strides       = r_ptr._strides;
-  _array         = r_ptr._array;
-  _storage_order = r_ptr._storage_order;
-  _ptr           = r_ptr._ptr;
+  _dimensions = r_ptr._dimensions;
+  _strides    = r_ptr._strides;
+  _array      = r_ptr._array;
+  _layout     = r_ptr._layout;
+  _ptr        = r_ptr._ptr;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -964,10 +964,10 @@ MDArrayRCP< T >::arrayRCP() const
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-const EStorageOrder
-MDArrayRCP< T >::storage_order() const
+const ELayout
+MDArrayRCP< T >::layout() const
 {
-  return _storage_order;
+  return _layout;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1107,7 +1107,7 @@ template< typename T >
 MDArrayView< T >
 MDArrayRCP< T >::mdArrayView()
 {
-  return MDArrayView< T >(_array(), _dimensions, _storage_order);
+  return MDArrayView< T >(_array(), _dimensions, _layout);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1117,7 +1117,7 @@ const MDArrayView< T >
 MDArrayRCP< T >::mdArrayView() const
 {
   Teuchos::Array< size_type > dims(_dimensions);
-  return MDArrayView< T >(_array(), dims(), _storage_order);
+  return MDArrayView< T >(_array(), dims(), _layout);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1126,7 +1126,7 @@ template< typename T >
 MDArrayView< const T >
 MDArrayRCP< T >::mdArrayViewConst()
 {
-  return MDArrayView< const T >(_array(), _dimensions, _storage_order);
+  return MDArrayView< const T >(_array(), _dimensions, _layout);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1135,7 +1135,7 @@ template< typename T >
 const MDArrayView< const T >
 MDArrayRCP< T >::mdArrayViewConst() const
 {
-  return MDArrayView< const T >(_array(), _dimensions, _storage_order);
+  return MDArrayView< const T >(_array(), _dimensions, _layout);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1596,7 +1596,7 @@ void
 MDArrayRCP< T >::resize(const Teuchos::ArrayView< size_type > & dims)
 {
   _dimensions.assign(dims.begin(), dims.end());
-  _strides = computeStrides(dims, _storage_order);
+  _strides = computeStrides(dims, _layout);
   _array.resize(computeSize(dims));
   _ptr = _array.getRawPtr();
 }

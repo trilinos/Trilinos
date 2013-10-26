@@ -116,14 +116,15 @@ public:
    *
    * \param slice [in] the slice describing the sub-vector
    *
-   * \param ghosts [in] the ghost region along the altered axis of the
-   *        new sub-vector.  This may include indexes from the ghost
-   *        region of the parent MDVector, but it does not have to.
+   * \param bndryPad [in] the boundary padding along the altered axis
+   *        of the new sub-vector.  This may include indexes from the
+   *        boundary padding of the parent MDVector, but it does not
+   *        have to.
    */
   MDVector(const MDVector< Scalar, LocalOrd, GlobalOrd, Node > & parent,
            int axis,
            const Slice & slice,
-           int ghosts = 0);
+           int bndryPad = 0);
 
   /** \brief Create a cloned MDVector for a different node type
    *
@@ -235,60 +236,60 @@ public:
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
    *
-   * \param withGhosts [in] specify whether the dimension should
-   *        include ghost points or not
+   * \param withBndryPad [in] specify whether the dimension should
+   *        include boundary padding or not
    */
-  GlobalOrd getGlobalDim(int axis, bool withGhosts=false) const;
+  GlobalOrd getGlobalDim(int axis, bool withBndryPad=false) const;
 
   /** \brief Get the bounds of the global problem
    *
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
    *
-   * \param withGhosts [in] specify whether the bounds should include
-   *        ghost points or not
+   * \param withBndryPad [in] specify whether the bounds should
+   *        include boundary padding or not
    */
-  Slice getGlobalBounds(int axis, bool withGhosts=false) const;
+  Slice getGlobalBounds(int axis, bool withBndryPadding=false) const;
 
   /** \brief Get the global loop bounds along the specified axis
    *
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
    *
-   * \param withGhosts [in] specify whether the dimension should
-   *        include ghost points or not
+   * \param withBndryPadding [in] specify whether the dimension should
+   *        include boundary padding or not
    *
    * The loop bounds are returned in the form of a <tt>Slice</tt>, in
    * which the <tt>start()</tt> method returns the loop begin value,
    * and the <tt>stop()</tt> method returns the non-inclusive end
    * value.
    */
-  Slice getGlobalRankBounds(int axis, bool withGhosts=false) const;
+  Slice getGlobalRankBounds(int axis, bool withBndryPad=false) const;
 
   /** \brief Get the local dimension along the specified axis
    *
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
    *
-   * \param withHalos [in] specify whether the dimension should
-   *        include halos or not
+   * \param withCommPad [in] specify whether the dimension should
+   *        include communication padding or not
    */
-  LocalOrd getLocalDim(int axis, bool withHalos=false) const;
+  LocalOrd getLocalDim(int axis, bool withCommPad=false) const;
 
   /** \brief Get the local dimension along the specified axis
    *
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
    *
-   * \param withHalos [in] specify whether the dimension should
-   *        include halos or not
+   * \param withCommPad [in] specify whether the dimension should
+   *        include communication padding or not
    *
    * The loop bounds are returned in the form of a <tt>Slice</tt>, in
    * which the <tt>start()</tt> method returns the loop begin value,
    * and the <tt>stop()</tt> method returns the non-inclusive end
    * value.
    */
-  Slice getLocalBounds(int axis, bool withHalos=false) const;
+  Slice getLocalBounds(int axis, bool withCommPad=false) const;
 
   //@}
 
@@ -373,11 +374,12 @@ public:
   /// Sum values of a locally replicated multivector across all processes.
   void reduce();
 
-  /// Update the halos along the specified axis
-  void updateHalos(int axis);
+  /// Update the data in the communication padding along the specified
+  /// axis
+  void updateCommPad(int axis);
 
-  /// Update the halos along all axes
-  void updateHalos();
+  /// Update the communication padding along all axes
+  void updateCommPad();
 
   //@}
 
@@ -621,9 +623,9 @@ template< class Scalar,
           class Node >
 GlobalOrd
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
-getGlobalDim(int axis, bool withGhosts=false) const
+getGlobalDim(int axis, bool withBndryPad=false) const
 {
-  return _mdMap->getGlobalDim(axis, withGhosts);
+  return _mdMap->getGlobalDim(axis, withBndryPad);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -634,9 +636,9 @@ template< class Scalar,
           class Node >
 Slice
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
-getGlobalBounds(int axis, bool withGhosts=false) const
+getGlobalBounds(int axis, bool withBndryPad=false) const
 {
-  return _mdMap->getGlobalBounds(axis, withGhosts);
+  return _mdMap->getGlobalBounds(axis, withBndryPad);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -647,9 +649,9 @@ template< class Scalar,
           class Node >
 Slice
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
-getGlobalRankBounds(int axis, bool withGhosts=false) const
+getGlobalRankBounds(int axis, bool withBndryPad=false) const
 {
-  return _mdMap->getGlobalRankBounds(axis, withGhosts);
+  return _mdMap->getGlobalRankBounds(axis, withBndryPad);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -660,9 +662,9 @@ template< class Scalar,
           class Node >
 LocalOrd
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
-getLocalDim(int axis, bool withHalos=false) const
+getLocalDim(int axis, bool withCommPad=false) const
 {
-  return _mdMap->getLocalDim(axis, withHalos);
+  return _mdMap->getLocalDim(axis, withCommPad);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -673,9 +675,9 @@ template< class Scalar,
           class Node >
 Slice
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
-getLocalBounds(int axis, bool withHalos=false) const
+getLocalBounds(int axis, bool withCommPad=false) const
 {
-  return _mdMap->getLocalBounds(axis, withHalos);
+  return _mdMap->getLocalBounds(axis, withCommPad);
 }
 
 ////////////////////////////////////////////////////////////////////////

@@ -141,12 +141,12 @@ public:
    *        is with a Tuple returned by the non-member
    *        <tt>Teuchos::tuple<T>()</tt> function.
    *
-   * \param storageOrder [in] An enumerated value specifying the
-   *        internal storage order of the <tt>MDArrayView</tt>
+   * \param layout [in] An enumerated value specifying the internal
+   *        storage order of the <tt>MDArrayView</tt>
    */
   MDArrayView(const Teuchos::ArrayView< T > & array,
 	      const Teuchos::ArrayView< size_type > & dims,
-	      const EStorageOrder storageOrder = DEFAULT_ORDER);
+	      const ELayout layout = DEFAULT_ORDER);
 
   /** \brief Constructor with a source <tt>Teuchos::ArrayView</tt>,
    *   dimensions, strides, and optional storage order
@@ -159,20 +159,19 @@ public:
    * \param strides [in] An array that defines the strides between
    *        elements along each axis.
    *
-   * \param storageOrder [in] An enumerated value specifying the
-   *        internal storage order of the <tt>MDArrayView</tt>
+   * \param layout [in] An enumerated value specifying the internal
+   *        storage order of the <tt>MDArrayView</tt>
    *
    * Note that this constructor was introduced specifically to
    * implement the getConst() method, which converts an MDArrayView< T >
    * to an MDArrayView< const T >.  The presence of both strides and
-   * storageOrder in the input arguments makes this an easy
-   * constructor to call incorrectly, and is not advised for general
-   * use.
+   * layout in the input arguments makes this an easy constructor to
+   * call incorrectly, and is not advised for general use.
    */
   MDArrayView(const Teuchos::ArrayView< T > & array,
 	      const Teuchos::Array< size_type > & dims,
               const Teuchos::Array< size_type > & strides,
-	      const EStorageOrder storageOrder = DEFAULT_ORDER);
+	      const ELayout layout = DEFAULT_ORDER);
 
   /** \brief Copy constructor
    *
@@ -224,7 +223,7 @@ public:
 
   /** \brief Return the storage order
    */
-  inline EStorageOrder storage_order() const;
+  inline ELayout layout() const;
 
   /** \brief Return whether the MDArrayView is contiguous in memory
    */
@@ -624,7 +623,7 @@ private:
   Teuchos::Array< size_type > _dimensions;
   Teuchos::Array< size_type > _strides;
   Teuchos::ArrayView< T >     _array;
-  EStorageOrder               _storage_order;
+  ELayout                     _layout;
   T *                         _ptr;
   int                         _next_axis;
 
@@ -651,7 +650,7 @@ MDArrayView(Teuchos::ENull null_arg) :
   _dimensions(Teuchos::tuple< size_type >(0)),
   _strides(Teuchos::tuple< size_type >(1)),
   _array(),
-  _storage_order(DEFAULT_ORDER),
+  _layout(DEFAULT_ORDER),
   _ptr(),
   _next_axis(0)
 {
@@ -662,11 +661,11 @@ MDArrayView(Teuchos::ENull null_arg) :
 template< typename T >
 MDArrayView< T >::MDArrayView(const Teuchos::ArrayView< T > & array,
 			      const Teuchos::ArrayView< size_type > & dims,
-			      const EStorageOrder storageOrder) :
+			      const ELayout layout) :
   _dimensions(dims),
-  _strides(computeStrides(dims, storageOrder)),
+  _strides(computeStrides(dims, layout)),
   _array(array),
-  _storage_order(storageOrder),
+  _layout(layout),
   _ptr(_array.getRawPtr()),
   _next_axis(0)
 {
@@ -682,11 +681,11 @@ template< typename T >
 MDArrayView< T >::MDArrayView(const Teuchos::ArrayView< T > & array,
 			      const Teuchos::Array< size_type > & dims,
 			      const Teuchos::Array< size_type > & strides,
-			      const EStorageOrder storageOrder) :
+			      const ELayout layout) :
   _dimensions(dims),
   _strides(strides),
   _array(array),
-  _storage_order(storageOrder),
+  _layout(layout),
   _ptr(_array.getRawPtr()),
   _next_axis(0)
 {
@@ -703,7 +702,7 @@ MDArrayView< T >::MDArrayView(const MDArrayView< T > & array) :
   _dimensions(array._dimensions),
   _strides(array._strides),
   _array(array._array),
-  _storage_order(array._storage_order),
+  _layout(array._layout),
   _ptr(_array.getRawPtr()),
   _next_axis(0)
 {
@@ -715,12 +714,12 @@ template< typename T >
 MDArrayView< T > &
 MDArrayView< T >::operator=(const MDArrayView< T > & array)
 {
-  _dimensions    = array._dimensions;
-  _strides       = array._strides;
-  _array         = array._array;
-  _storage_order = array._storage_order;
-  _ptr           = array._ptr;
-  _next_axis     = array._next_axis;
+  _dimensions = array._dimensions;
+  _strides    = array._strides;
+  _array      = array._array;
+  _layout     = array._layout;
+  _ptr        = array._ptr;
+  _next_axis  = array._next_axis;
   return *this;
 }
 
@@ -788,10 +787,10 @@ MDArrayView< T >::arrayView() const
 ////////////////////////////////////////////////////////////////////////
 
 template< typename T >
-EStorageOrder
-MDArrayView< T >::storage_order() const
+ELayout
+MDArrayView< T >::layout() const
 {
-  return _storage_order;
+  return _layout;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -803,7 +802,7 @@ MDArrayView< T >::contiguous() const
   // Temporarily compute the strides this MDArrayView would have if
   // its memory were contiguous with no stride gaps
   Teuchos::Array< size_type > contig_strides =
-    computeStrides(_dimensions, _storage_order);
+    computeStrides(_dimensions, _layout);
   // If these strides are the same as the actual strides, then the
   // MDArrayView is contiguous
   return (contig_strides == _strides);
@@ -913,7 +912,7 @@ MDArrayView< T >::getConst() const
   return MDArrayView< const T >(_array.getConst(),
                                 _dimensions,
                                 _strides,
-                                _storage_order);
+                                _layout);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -950,7 +949,7 @@ MDArrayView< T >::operator[](MDArrayView< T >::size_type i)
   // Construct the new MDArrayView
   Teuchos::ArrayView< T > buffer = _array.view(offset, computeSize(newDims(),
                                                                  newStrides()));
-  MDArrayView< T > result(buffer, newDims, _storage_order);
+  MDArrayView< T > result(buffer, newDims, _layout);
   // Correct the strides of the new MDArrayView
   result._strides = newStrides;
   // Correct the next axis of the new MDArrayView
@@ -993,7 +992,7 @@ MDArrayView< T >::operator[](MDArrayView< T >::size_type i) const
   // Construct the new MDArrayView
   Teuchos::ArrayView< T > buffer = _array.view(offset, computeSize(newDims(),
                                                                  newStrides()));
-  MDArrayView< T > result(buffer, newDims, _storage_order);
+  MDArrayView< T > result(buffer, newDims, _layout);
   // Correct the strides of the new MDArrayView
   result._strides = newStrides;
   // Correct the next axis of the new MDArrayView
@@ -1021,7 +1020,7 @@ MDArrayView< T >::operator[](Slice s)
   // Construct the new MDArrayView
   Teuchos::ArrayView< T > buffer = _array.view(offset, computeSize(newDims(),
                                                           newStrides()));
-  MDArrayView< T > result(buffer, newDims, _storage_order);
+  MDArrayView< T > result(buffer, newDims, _layout);
   // Correct the strides of the new MDArrayView
   result._strides = newStrides;
   // Correct the next axis of the new MDArrayView
@@ -1051,7 +1050,7 @@ MDArrayView< T >::operator[](Slice s) const
   // Construct the new MDArrayView
   Teuchos::ArrayView< T > buffer = _array.view(offset, computeSize(newDims(),
                                                           newStrides()));
-  MDArrayView< T > result(buffer, newDims, _storage_order);
+  MDArrayView< T > result(buffer, newDims, _layout);
   // Correct the strides of the new MDArrayView
   result._strides = newStrides;
   // Correct the next axis of the new MDArrayView
@@ -1469,7 +1468,7 @@ template< typename T >
 bool operator==(const MDArrayView< T > & a1, const MDArrayView< T > & a2)
 {
   if (a1._dimensions != a2._dimensions) return false;
-  if (a1._storage_order != a2._storage_order) return false;
+  if (a1._layout     != a2._layout    ) return false;
   typename MDArrayView< T >::const_iterator it1 = a1.begin();
   typename MDArrayView< T >::const_iterator it2 = a2.begin();
   for ( ; it1 != a1.end() && it2 != a2.end(); ++it1, ++it2)
