@@ -159,8 +159,9 @@ class test_egdist(unittest.TestCase):
     cmndOut = getCmndOutput(egdistPath+" --help")
     cmndOutList = cmndOut.split("\n")
     cmndOutFirstLine = cmndOutList[0] 
-    cmndOutFirstLine_expected = "Usage: egdist [egdist options] [OPTIONS]"
-    self.assertEqual(cmndOutFirstLine, cmndOutFirstLine_expected)
+    cmndOutFirstLineAfterComma = cmndOutFirstLine.split(":")[1].strip() 
+    cmndOutFirstLineAfterComma_expected = "egdist [egdist options] [OPTIONS]"
+    self.assertEqual(cmndOutFirstLineAfterComma, cmndOutFirstLineAfterComma_expected)
 
 
   def test_noEgGit(self):
