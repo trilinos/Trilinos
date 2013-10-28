@@ -2920,17 +2920,6 @@ namespace Tpetra {
     typedef GlobalOrdinal GO;
     const char tfecfFuncName[] = "makeIndicesLocal";
 
-#if 0
-    // All nodes must be in the same index state.
-    // Update index state by checking isLocallyIndexed/Global on all nodes
-    computeIndexState();
-
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isLocallyIndexed() && isGloballyIndexed(), std::logic_error,
-      ": inconsistent index state. Indices must be either local on all "
-      "processes, or global on all processes.");
-#endif // 0
-
     // Transform indices to local index space
     const size_t nlrs = getNodeNumRows();
     if (isGloballyIndexed() && nlrs > 0) {
@@ -3004,118 +2993,6 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::computeIndexState()
-  {
-    const bool indicesAreLocalBefore = indicesAreLocal_;
-    const bool indicesAreGlobalBefore = indicesAreGlobal_;
-
-    // FIXME (mfh 28 Oct 2013) See added date-marked commentary in
-    // parentheses below.
-    //
-    // FIXME (mfh 03 Mar 2013) It's not clear to me that we need to do
-    // an all-reduce.
-    //
-    // This method is _only_ called in makeIndicesLocal() and
-    // makeColMap().  makeIndicesLocal() calls makeColMap(), which is
-    // collective, so both methods must be called collectively.
-    //
-    // (FIXME (mfh 28 Oct 2013) CrsMatrix::fillComplete asks (or used
-    // to ask -- I'll fix this later once I'm sure it's the problem)
-    // the graph whether it is globally indexed before calling
-    // makeIndicesLocal().  I think that's a bug, because the graph
-    // could be globally indexed on some processes but not others.)
-    //
-    // There are only two methods that modify indicesAreLocal_:
-    // allocateIndices(), and makeIndicesLocal().  makeIndicesLocal()
-    // always has the eponymous effect.  It must be called
-    // collectively, since it calls makeColMap(), which must be called
-    // collectively.
-    //
-    // allocateIndices(), on the other hand, could perhaps be called
-    // with lg=LocalIndices on one process, but with lg=GlobalIndices
-    // on another.  However, I will argue that CrsGraph cannot reach
-    // this state if used correctly.
-    //
-    // allocateIndices() specifically forbids an lg argument which
-    // does not correspond to the state of the graph.  The graph
-    // starts out locally indexed if its constructor was given a
-    // column Map; otherwise, it starts out neither locally nor
-    // globally indexed, and only gains one of these identities on the
-    // calling process ("locally") once the user inserts an entry.
-    // (This is the classic Epetra way to tell if a graph is empty.)
-    // It is an error to call different constructors for the same
-    // CrsGraph instance on different processes.  Thus, the initial
-    // local-or-global state before any insertions on any processes
-    // must be the same.
-    //
-    // Before inserting any entries, indicesAreLocal_ and
-    // indicesAreGlobal_ are both locally false.  They may be modified
-    // locally by calls to insertGlobalIndices() or
-    // insertLocalIndices().  These two methods only call
-    // allocateIndices() if no insertion method has yet been called on
-    // the graph.  Furthermore, these methods only allow indices to
-    // have the state matching their name.  insertLocalIndices()
-    // explicitly requires that the graph has a column Map.
-    // insertGlobalIndices() requires that the graph not be locally
-    // indexed, which currently means that the graph was not
-    // constructed with a column Map and that fillComplete() (which is
-    // collective) has not yet been called.
-    //
-    // Thus, before calling fillComplete() for the first time, it is
-    // possible that on some (but not necessarily all) processes,
-    // indicesAreLocal_ == false && indicesAreGlobal_ == false.
-    // However, on all processes p on which any one of these Booleans
-    // are true, the two Booleans must have the same values, for the
-    // reasons discussed in the previous paragraph.
-    //
-    // fillComplete() makes the column Map first (if it doesn't
-    // already exist) before making indices local, so there is a point
-    // in fillComplete() at which the graph has a column Map and is
-    // globally indexed.  However, makeIndicesLocal() fixes this state
-    // right away.  This intermediate state would never be exposed to
-    // users.  fillComplete() must be called collectively.
-    //
-    // resumeFill() does _not_ currently change the global vs. local
-    // indices state of the graph.  If we were to give users the
-    // option to do this in the future (e.g., they want to insert
-    // column indices not in the column Map, so that we would have to
-    // convert all the column indices back to global first and get rid
-    // of the existing column Map), then that would be a collective
-    // decision in any case.
-    //
-    // The only part of makeIndicesLocal() that is not a local
-    // operation is the call to makeColMap().  Everything else is
-    // local.  Thus, it suffices in that method to check the local
-    // state.  Furthermore, makeIndicesLocal() always makes indices
-    // local, so there is no need to check at the end of the method.
-    // One would only call makeColMap() if the graph does not have a
-    // column Map.  In that case, the graph must be globally indexed
-    // anyway.
-    int myIndices[2] = {0,0};
-    if (indicesAreLocal_)  myIndices[0] = 1;
-    if (indicesAreGlobal_) myIndices[1] = 1;
-    int allIndices[2];
-    Teuchos::reduceAll<int, int> (* (getComm()), Teuchos::REDUCE_MAX,
-                                  2, myIndices, allIndices);
-    // If indices are (local, global) on one process, they should be
-    // (local, global) on all processes.
-    indicesAreLocal_  = (allIndices[0]==1);
-    indicesAreGlobal_ = (allIndices[1]==1);
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      indicesAreLocal_ && indicesAreGlobal_, std::logic_error,
-      "Tpetra::CrsGraph::computeIndexState: On at least one process, indices "
-      " are both local and global.  On the calling Process "
-      << getComm ()->getRank () << ", indices were "
-      << (indicesAreLocalBefore ? "" : "not ") << "local and "
-      << (indicesAreGlobalBefore ? "" : "not ") << "global.  This is "
-      "impossible.  Please report this bug to the Tpetra developers.");
-  }
-
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sortAllIndices()
   {
     TEUCHOS_TEST_FOR_EXCEPT(isGloballyIndexed()==true);   // this should be called only after makeIndicesLocal()
@@ -3148,7 +3025,6 @@ namespace Tpetra {
       return;
     }
 
-    computeIndexState ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       isLocallyIndexed (), std::runtime_error,
       ": The graph is locally indexed.  Calling makeColMap() to make the "

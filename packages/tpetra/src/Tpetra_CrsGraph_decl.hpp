@@ -1186,19 +1186,6 @@ namespace Tpetra {
     //! \name Methods governing changes between global and local indices
     //@{
 
-    /// \brief Set collectively whether the graph uses global or local indices.
-    ///
-    /// If at least one process has set local indices, set all the
-    /// processes to use local indices.  Likewise, if at least one
-    /// process has set global indices, set all the processes to use
-    /// global indices.
-    ///
-    /// \warning This method must be called collectively over all
-    ///   processes in the graph's communicator.
-    ///
-    /// \note To developers: See this method's internal comments.
-    void computeIndexState ();
-
     //! Make the graph's column Map, if it does not already have one.
     void makeColMap ();
     void makeIndicesLocal ();

@@ -2604,19 +2604,8 @@ namespace Tpetra {
       //   cerr << os.str ();
       // }
 
-      // make indices local
-      //
-      // mfh 28 Oct 2013: If the graph was created with a column Map,
-      // then initially it is neither globally nor locally indexed.
-      // If some processes then insert entries using
-      // insertLocalIndices(), the graph then becomes locally indexed
-      // on only those processes.  Then, at the top of fillComplete,
-      // the processes on which no indices were inserted used to
-      // become globally indexed by default.  That was a problem,
-      // since makeIndicesLocal was a collective (it called the
-      // collective method computeIndexState).  The way to fix this is
-      // to call makeIndicesLocal unconditionally.  The method won't
-      // do anything if the graph is already locally indexed.
+      // Make indices local, if necessary.  The method won't do
+      // anything if the graph is already locally indexed.
       myGraph_->makeIndicesLocal ();
 
       // {
