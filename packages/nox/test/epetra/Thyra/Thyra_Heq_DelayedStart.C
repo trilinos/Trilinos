@@ -180,7 +180,7 @@ else
   nl_params->set("Nonlinear Solver", "Anderson Accelerated Fixed-Point");
   nl_params->sublist("Anderson Parameters").set("Storage Depth", 5);
   nl_params->sublist("Anderson Parameters").set("Mixing Parameter", 1.0);
-  nl_params->sublist("Anderson Parameters").set("Acceleration Start Iteration", 1);
+  nl_params->sublist("Anderson Parameters").set("Acceleration Start Iteration", 5);
   nl_params->sublist("Anderson Parameters").sublist("Preconditioning").set("Precondition", false);
   nl_params->sublist("Direction").sublist("Newton").sublist("Linear Solver").set("Tolerance", 1.0e-4);
   nl_params->sublist("Printing").sublist("Output Information").set("Details",true);
@@ -196,7 +196,7 @@ else
   if (solvStatus != NOX::StatusTest::Converged)
     status = 1;
   // 2. Number of iterations
-  if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Output").get("Nonlinear Iterations", 0) != 11)
+  if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Output").get("Nonlinear Iterations", 0) != 14)
     status = 2;
 
   if (status == 0)

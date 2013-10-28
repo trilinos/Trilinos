@@ -747,6 +747,11 @@ private:
   /// diagOffsets_ has size zero.  It is perfectly legitimate for the
   /// matrix to have zero rows on the calling process.
   bool savedDiagOffsets_;
+
+  /// \brief In case of local/reordered smoothing, the unknowns to use
+  Teuchos::ArrayRCP<local_ordinal_type> localSmoothingIndices_;
+
+
   //@}
 
 }; //class Relaxation

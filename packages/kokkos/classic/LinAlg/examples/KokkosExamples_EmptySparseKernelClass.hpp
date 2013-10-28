@@ -51,6 +51,7 @@
 #include <Teuchos_BLAS_types.hpp>
 #include <Kokkos_DefaultSparseOps.hpp>
 #include <Teuchos_Describable.hpp>
+#include <Teuchos_ArrayView.hpp>
 
 /// \file KokkosExamples_EmptySparseKernelClass.hpp
 /// \brief A file containing a stub for a new sparse kernel provider,
@@ -115,11 +116,11 @@ namespace KokkosExamples {
     typedef Scalar  scalar_type;
     /// \brief The type of (local) indices of the sparse matrix.
     ///
-    /// This is \c void only because this is a stub implementation.
+    /// This is \c int only because this is a stub implementation.
     /// In a real implementation, ordinal_type would normally either be
     /// a fixed type (like \c int) or a template parameter of your
     /// class.
-    typedef void ordinal_type;
+    typedef int ordinal_type;
     //! The Kokos Node type.
     typedef Node    node_type;
     //! The type of this object: <tt>typeof(*this)</tt>
@@ -397,6 +398,67 @@ namespace KokkosExamples {
       (void) dampingFactor;
       (void) direction;
     }
+
+    // \brief Reordered Gauss-Seidel or SOR on \f$B = A X\f$.
+    ///
+    /// Apply a forward or backward sweep of reordered Gauss-Seidel or
+    /// Successive Over-Relaxation (SOR) to the linear system(s) \f$B
+    /// = A X\f$.  For Gauss-Seidel, set the damping factor \c omega
+    /// to 1.  The ordering can be a partial one, in which case the Gauss-Seidel is only
+    /// executed on a local subset of unknowns.
+    ///
+    /// \tparam DomainScalar The type of entries in the input
+    ///   multivector X.  This may differ from the type of entries in
+    ///   A or in B.
+    /// \tparam RangeScalar The type of entries in the output
+    ///   multivector B.  This may differ from the type of entries in
+    ///   A or in X.
+    ///
+    /// \param B [in] Right-hand side(s).
+    /// \param X [in/out] On input: initial guess(es).  On output:
+    ///   result multivector(s).
+    /// \param D [in] Inverse of diagonal entries of the matrix A.
+    /// \param rowIndices [in] Ordered list of indices on which to execute GS.
+    /// \param omega [in] SOR damping factor.  omega = 1 results in
+    ///   Gauss-Seidel.
+    /// \param direction [in] Sweep direction: Forward or Backward.
+    ///   If you want a symmetric sweep, call this method twice, first
+    ///   with direction = Forward then with direction = Backward.
+    ///
+    /// The Gauss-Seidel kernel asks the user to precompute the
+    /// inverse diagonal entries of the matrix (here, the vector D).
+    /// The L1 variant of Gauss-Seidel modifies D in order to improve
+    /// convergence when doing Gauss-Seidel within a process (or
+    /// thread) and Jacobi between processes (or threads).  Also,
+    /// precomputing the inverse diagonal entries avoids divisions and
+    /// branches in the inner loop of Gauss-Seidel.
+    ///
+    /// We don't include a separate "Symmetric" direction mode in
+    /// order to avoid confusion when using this method to implement
+    /// "hybrid" Jacobi + symmetric (Gauss-Seidel or SOR) for a matrix
+    /// distributed over multiple processes.  ("Hybrid" means
+    /// "Gauss-Seidel or SOR within the process, Jacobi outside.")  In
+    /// that case, interprocess communication (a boundary exchange)
+    /// must occur before both the forward sweep and the backward
+    /// sweep, so we would need to invoke the kernel once per sweep
+    /// direction anyway.
+    template <class DomainScalar, class RangeScalar>
+    void
+    reorderedGaussSeidel (const KokkosClassic::MultiVector<DomainScalar,Node> &B,
+			  KokkosClassic::MultiVector<RangeScalar,Node> &X,
+			  const KokkosClassic::MultiVector<Scalar,Node> &D,
+			  const Teuchos::ArrayView<ordinal_type> & rowIndices,
+			  const RangeScalar& dampingFactor,
+			  const KokkosClassic::ESweepDirection direction) const
+    {
+      (void) B; // Silence compiler warnings for unused variables.
+      (void) X;
+      (void) D;
+      (void) rowIndices;
+      (void) dampingFactor;
+      (void) direction;
+    }
+
 
     //@}
   protected:

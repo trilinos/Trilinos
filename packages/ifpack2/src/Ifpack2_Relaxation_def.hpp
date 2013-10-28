@@ -250,6 +250,9 @@ Relaxation<MatrixType>::getValidParameters () const
     const bool checkDiagEntries = false;
     pl->set ("relaxation: check diagonal entries", checkDiagEntries);
 
+    Teuchos::ArrayRCP<local_ordinal_type> localSmoothingIndices=Teuchos::null;
+    pl->set<Teuchos::ArrayRCP<local_ordinal_type> >("relaxation: local smoothing indices",localSmoothingIndices);
+
     validParams_ = rcp_const_cast<const ParameterList> (pl);
   }
   return validParams_;
@@ -277,18 +280,21 @@ void Relaxation<MatrixType>::setParametersImpl (Teuchos::ParameterList& pl)
   const ST minDiagonalValue = pl.get<ST> ("relaxation: min diagonal value");
   const bool fixTinyDiagEntries = pl.get<bool> ("relaxation: fix tiny diagonal entries");
   const bool checkDiagEntries = pl.get<bool> ("relaxation: check diagonal entries");
+  Teuchos::ArrayRCP<local_ordinal_type> localSmoothingIndices = pl.get<Teuchos::ArrayRCP<local_ordinal_type> >("relaxation: local smoothing indices");
+  
 
   // "Commit" the changes, now that we've validated everything.
-  PrecType_ = precType;
-  NumSweeps_ = numSweeps;
-  DampingFactor_ = dampingFactor;
-  ZeroStartingSolution_ = zeroStartSol;
-  DoBackwardGS_ = doBackwardGS;
-  DoL1Method_ = doL1Method;
-  L1Eta_ = l1Eta;
-  MinDiagonalValue_ = minDiagonalValue;
-  fixTinyDiagEntries_ = fixTinyDiagEntries;
-  checkDiagEntries_ = checkDiagEntries;
+  PrecType_              = precType;
+  NumSweeps_             = numSweeps;
+  DampingFactor_         = dampingFactor;
+  ZeroStartingSolution_  = zeroStartSol;
+  DoBackwardGS_          = doBackwardGS;
+  DoL1Method_            = doL1Method;
+  L1Eta_                 = l1Eta;
+  MinDiagonalValue_      = minDiagonalValue;
+  fixTinyDiagEntries_    = fixTinyDiagEntries;
+  checkDiagEntries_      = checkDiagEntries;
+  localSmoothingIndices_ = localSmoothingIndices;
 }
 
 //==========================================================================
@@ -1001,6 +1007,16 @@ void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
   Array<local_ordinal_type> Indices (maxLength);
   Array<scalar_type> Values (maxLength);
 
+  // Local smoothing stuff
+  const size_t numMyRows             = A_->getNodeNumRows();
+  const local_ordinal_type * rowInd  = 0; 
+  size_t numActive                   = numMyRows;
+  bool do_local = localSmoothingIndices_.is_null();
+  if(!do_local) {
+    rowInd    = localSmoothingIndices_.getRawPtr();
+    numActive = localSmoothingIndices_.size();
+  }
+
   RCP<MV> Y2;
   if (IsParallel_) {
     if (Importer_.is_null ()) { // domain and column Maps are the same.
@@ -1023,7 +1039,6 @@ void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
   ArrayRCP<ArrayRCP<const scalar_type> > x_ptr =  X.get2dView();
   ArrayRCP<const scalar_type> d_ptr = Diagonal_->get1dView();
 
-  const size_t numMyRows = A_->getNodeNumRows ();
   for (int j = 0; j < NumSweeps_; j++) {
     // data exchange is here, once per sweep
     if (IsParallel_) {
@@ -1035,9 +1050,10 @@ void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
     }
 
     if (! DoBackwardGS_) { // Forward sweep
-      for (size_t i = 0; i < numMyRows; ++i) {
+      for (size_t ii = 0; ii < numActive; ++ii) {
+	local_ordinal_type i = as<local_ordinal_type>(do_local ? rowInd[ii] : ii);
         size_t NumEntries;
-        A_->getLocalRowCopy (as<local_ordinal_type> (i), Indices (), Values (), NumEntries);
+        A_->getLocalRowCopy (i, Indices (), Values (), NumEntries);
 
         for (size_t m = 0; m < NumVectors; ++m) {
           scalar_type dtemp = STS::zero ();
@@ -1052,9 +1068,11 @@ void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
     else { // Backward sweep
       // ptrdiff_t is the same size as size_t, but is signed.  Being
       // signed is important so that i >= 0 is not trivially true.
-      for (ptrdiff_t i = as<ptrdiff_t> (numMyRows) - 1; i >= 0; --i) {
+      for (ptrdiff_t ii = as<ptrdiff_t> (numActive) - 1; ii >= 0; --ii) {
+	local_ordinal_type i = as<local_ordinal_type>(do_local ? rowInd[ii] : ii);
+
         size_t NumEntries;
-        A_->getLocalRowCopy (as<local_ordinal_type> (i), Indices (), Values (), NumEntries);
+        A_->getLocalRowCopy (i, Indices (), Values (), NumEntries);
 
         for (size_t m = 0; m < NumVectors; ++m) {
           scalar_type dtemp = STS::zero ();
@@ -1093,8 +1111,12 @@ ApplyInverseGS_CrsMatrix (const crs_matrix_type& A,
   using Teuchos::as;
   const Tpetra::ESweepDirection direction =
     DoBackwardGS_ ? Tpetra::Backward : Tpetra::Forward;
-  A.gaussSeidelCopy (Y, X, *Diagonal_, DampingFactor_, direction,
-		     NumSweeps_, ZeroStartingSolution_);
+  if(!localSmoothingIndices_.is_null())
+    A.gaussSeidelCopy (Y, X, *Diagonal_, DampingFactor_, direction,
+		       NumSweeps_, ZeroStartingSolution_);
+  else
+    A.reorderedGaussSeidelCopy (Y, X, *Diagonal_, localSmoothingIndices_(), DampingFactor_, direction,
+				NumSweeps_, ZeroStartingSolution_);
 
   // For each column of output, for each sweep over the matrix:
   //
@@ -1165,6 +1187,17 @@ ApplyInverseSGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_t
   Array<local_ordinal_type> Indices (maxLength);
   Array<scalar_type> Values (maxLength);
 
+  // Local smoothing stuff
+  const size_t numMyRows             = A_->getNodeNumRows();
+  const local_ordinal_type * rowInd  = 0; 
+  size_t numActive                   = numMyRows;
+  bool do_local = localSmoothingIndices_.is_null();
+  if(!do_local) {
+    rowInd    = localSmoothingIndices_.getRawPtr();
+    numActive = localSmoothingIndices_.size();
+  }
+
+
   RCP<MV> Y2;
   if (IsParallel_) {
     if (Importer_.is_null ()) { // domain and column Maps are the same.
@@ -1186,8 +1219,6 @@ ApplyInverseSGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_t
   ArrayRCP<ArrayRCP<const scalar_type> > x_ptr =  X.get2dView ();
   ArrayRCP<const scalar_type> d_ptr = Diagonal_->get1dView ();
 
-  const size_t numMyRows = A_->getNodeNumRows ();
-
   for (int iter = 0; iter < NumSweeps_; ++iter) {
     // only one data exchange per sweep
     if (IsParallel_) {
@@ -1198,7 +1229,8 @@ ApplyInverseSGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_t
       }
     }
 
-    for (size_t i = 0; i < numMyRows; ++i) {
+    for (size_t ii = 0; ii < numActive; ++ii) {
+      local_ordinal_type i = as<local_ordinal_type>(do_local ? rowInd[ii] : ii);
       const scalar_type diag = d_ptr[i];
       size_t NumEntries;
       A_->getLocalRowCopy (as<local_ordinal_type> (i), Indices (), Values (), NumEntries);
@@ -1215,7 +1247,8 @@ ApplyInverseSGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_t
 
     // ptrdiff_t is the same size as size_t, but is signed.  Being
     // signed is important so that i >= 0 is not trivially true.
-    for (ptrdiff_t i = as<ptrdiff_t> (numMyRows)  - 1; i >= 0; --i) {
+    for (ptrdiff_t ii = as<ptrdiff_t> (numActive) - 1; ii >= 0; --ii) {
+      local_ordinal_type i = as<local_ordinal_type>(do_local ? rowInd[ii] : ii);
       const scalar_type diag = d_ptr[i];
       size_t NumEntries;
       A_->getLocalRowCopy (as<local_ordinal_type> (i), Indices (), Values (), NumEntries);
@@ -1256,8 +1289,12 @@ ApplyInverseSGS_CrsMatrix (const crs_matrix_type& A,
   using Teuchos::as;
 
   const Tpetra::ESweepDirection direction = Tpetra::Symmetric;
-  A.gaussSeidelCopy (Y, X, *Diagonal_, DampingFactor_, direction,
-                     NumSweeps_, ZeroStartingSolution_);
+  if(!localSmoothingIndices_.is_null())
+    A.gaussSeidelCopy (Y, X, *Diagonal_, DampingFactor_, direction,
+		       NumSweeps_, ZeroStartingSolution_);
+  else
+    A.reorderedGaussSeidelCopy (Y, X, *Diagonal_, localSmoothingIndices_(), DampingFactor_, direction,
+				NumSweeps_, ZeroStartingSolution_);
 
   // For each column of output, for each sweep over the matrix:
   //

@@ -124,8 +124,10 @@ TEUCHOS_UNIT_TEST(AndersonAcceleration, default)
   Teuchos::RCP<Teuchos::ParameterList> nl_params =
     Teuchos::rcp(new Teuchos::ParameterList);
   nl_params->set("Nonlinear Solver", "Anderson Accelerated Fixed-Point");
-  nl_params->sublist("Anderson Parameters").set("Storage Depth", 1);
-  nl_params->sublist("Anderson Parameters").set("Mixing Parameter", 0.05);
+  nl_params->sublist("Anderson Parameters").set("Storage Depth", 2);
+  nl_params->sublist("Anderson Parameters").set("Mixing Parameter", 1.0);
+  nl_params->sublist("Anderson Parameters").set("Acceleration Start Iteration", 1);
+  nl_params->sublist("Anderson Parameters").set("Adjust Matrix for Condition Number", false);
   nl_params->sublist("Anderson Parameters").sublist("Preconditioning").set("Precondition", false);
 
   Teuchos::ParameterList& printParams = nl_params->sublist("Printing");
@@ -207,7 +209,7 @@ TEUCHOS_UNIT_TEST(AndersonAcceleration, default)
   
   Teuchos::RCP< ::Thyra::NOXNonlinearSolver> thyra_nox_solver = 
     Teuchos::rcp_dynamic_cast< ::Thyra::NOXNonlinearSolver>(solver);
-  TEST_EQUALITY(thyra_nox_solver->getNOXSolver()->getNumIterations(), 21);
+  TEST_EQUALITY(thyra_nox_solver->getNOXSolver()->getNumIterations(), 6);
 
   Teuchos::RCP<const Epetra_Vector> x_analytic = thyraModel->get_analytic_solution();
 

@@ -481,10 +481,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
                           << MyPreOrPostSmoother << ")" << std::endl;
 
        int nnn = ml_->Amat[currentLevel].outvec_leng;
-       int NumVerticalEle = smList.get("line smoother: line direction nodes",-1);
-       std::string MeshNumbering = smList.get("line smoother: orientation","not specified");
+std::cout << smList << std::endl;
+       int NumVerticalNodes = smList.get("smoother: line direction nodes",-1);
+       std::string MeshNumbering = smList.get("smoother: line orientation","not specified");
 
-       if  (NumVerticalEle == -1) {
+       if  (NumVerticalNodes == -1) {
           std::cerr << ErrorMsg_ << "must supply 'line direction nodes' with " << MySmoother << "\n";
           exit(EXIT_FAILURE);
        }
@@ -493,19 +494,27 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
           exit(EXIT_FAILURE);
        }
 
-       if (   (nnn%(NumVerticalEle+1) ) != 0) {
-          printf("mod(nnn = %d,NumVerticalEle+1 = %d) must be zero\n",
-                 nnn,NumVerticalEle+1);
+       if (   (nnn%(NumVerticalNodes) ) != 0) {
+          printf("mod(nnn = %d,NumVerticalNodes = %d) must be zero\n",
+                 nnn,NumVerticalNodes);
           exit(1);
        }
-       int nBlocks = nnn/(NumVerticalEle+1);
+       int nBlocks = nnn/(NumVerticalNodes);
        int *blockIndices = (int *) malloc(sizeof(int)*(nnn+1));
 
        // old vertical numbering
-       //for (int iii = 0; iii < nnn; iii+= 2) blockIndices[iii] = (iii/(2*(NumVerticalEle+1));
-       //for (int iii = 1; iii < nnn; iii+= 2) blockIndices[iii] = nBlocks/2 + (iii/(2*(NumVerticalEle+1)));
-printf("num pdes = %d\n", NumPDEEqns_);
-exit(1);
+       //for (int iii = 0; iii < nnn; iii+= 2) blockIndices[iii] = (iii/(2*(NumVerticalNodes));
+       //for (int iii = 1; iii < nnn; iii+= 2) blockIndices[iii] = nBlocks/2 + (iii/(2*(NumVerticalNodes)));
+       if (NumPDEEqns_ != 2) {
+             printf("Right now the code is hardwired for 2 PDE equations. It should be easy to change to be more general ... it just has not been done.\n");
+             printf("Right now the code is hardwired for 2 PDE equations. It should be easy to change to be more general ... it just has not been done.\n");
+             printf("Right now the code is hardwired for 2 PDE equations. It should be easy to change to be more general ... it just has not been done.\n");
+             printf("Right now the code is hardwired for 2 PDE equations. It should be easy to change to be more general ... it just has not been done.\n");
+             printf("Right now the code is hardwired for 2 PDE equations. It should be easy to change to be more general ... it just has not been done.\n");
+             printf("Right now the code is hardwired for 2 PDE equations. It should be easy to change to be more general ... it just has not been done.\n");
+             printf("Right now the code is hardwired for 2 PDE equations. It should be easy to change to be more general ... it just has not been done.\n");
+             printf("Right now the code is hardwired for 2 PDE equations. It should be easy to change to be more general ... it just has not been done.\n");
+       }
 
        int tempi;
 
@@ -517,17 +526,17 @@ exit(1);
        if (MeshNumbering == "vertical") {
           // This is for GIS with vertical numbering scheme
           for (int iii = 0; iii < nnn; iii+= 2) {
-             tempi = iii/(2*(NumVerticalEle+1));
+             tempi = iii/(2*(NumVerticalNodes));
              blockIndices[iii] = 2*tempi;
           }
           for (int iii = 1; iii < nnn; iii+= 2) {
-             tempi = iii/(2*(NumVerticalEle+1));
+             tempi = iii/(2*(NumVerticalNodes));
              blockIndices[iii] = 2*tempi + 1;
           }
        }
 
        if (MeshNumbering == "horizontal") {
-          tempi = nnn/(NumVerticalEle+1);
+          tempi = nnn/(NumVerticalNodes);
           for (int iii = 0; iii < nnn; iii++) blockIndices[iii] = (iii%tempi); 
        }
 
