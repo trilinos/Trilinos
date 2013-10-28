@@ -96,6 +96,7 @@ void NOX::Solver::AndersonAcceleration::init()
   {
     Teuchos::ParameterList validParams;
     validParams.set("Storage Depth", 2, "max number of previous iterates for which data stored");
+    validParams.set("Disable Storage Depth Check for Unit Testing", false, "If set to true, the check on the storage depth size is disabled so that we can generate some corner cases for unit testing.  WARNING: users should never set this to true!");
     validParams.set("Mixing Parameter", 1.0, "damping factor applied to residuals");
     validParams.sublist("Preconditioning").set("Precondition", false, "flag for preconditioning");
     validParams.sublist("Preconditioning").set("Recompute Jacobian", false, "set true if preconditioner requires Jacobian");
@@ -106,7 +107,11 @@ void NOX::Solver::AndersonAcceleration::init()
   }
 
   storeParam = paramsPtr->sublist("Anderson Parameters").get<int>("Storage Depth");
-  TEUCHOS_TEST_FOR_EXCEPTION((storeParam > solnPtr->getX().length()),std::logic_error,"Error - The \"Storage Depth\" with a value of " << storeParam << " must be less than the number of unknowns in the nonlinear problem which is currently " << solnPtr->getX().length() << ".  This reults in an ill-conditioned F matrix.");
+  disableStorageDepthCheckForUnitTesting = paramsPtr->sublist("Anderson Parameters").get<bool>("Disable Storage Depth Check for Unit Testing");
+
+  if (!disableStorageDepthCheckForUnitTesting) {
+    TEUCHOS_TEST_FOR_EXCEPTION((storeParam > solnPtr->getX().length()),std::logic_error,"Error - The \"Storage Depth\" with a value of " << storeParam << " must be less than the number of unknowns in the nonlinear problem which is currently " << solnPtr->getX().length() << ".  This reults in an ill-conditioned F matrix.");
+  }
 
   mixParam = paramsPtr->sublist("Anderson Parameters").get<double>("Mixing Parameter");
   if (storeParam <= 0){
