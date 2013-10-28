@@ -215,7 +215,10 @@ namespace MueLu {
         paramList.isSublist("smoother: params")   || paramList.isSublist("smoother: pre params")   || paramList.isSublist("smoother: post params") ||
         paramList.isParameter("smoother: sweeps") || paramList.isParameter("smoother: pre sweeps") || paramList.isParameter("smoother: post sweeps");
     MUELU_READ_2LIST_PARAM(paramList, defaultList, "smoother: pre or post", std::string, "both", PreOrPost);
-    if (isCustomSmoother && PreOrPost != "none") {
+    if (PreOrPost == "none") {
+      manager->SetFactory("Smoother", Teuchos::null);
+
+    } else if (isCustomSmoother) {
       // FIXME: get default values from the factory
       // NOTE: none of the smoothers at the moment use parameter validation framework, so we
       // cannot get the default values from it.
@@ -294,7 +297,10 @@ namespace MueLu {
     bool isCustomCoarseSolver =
         paramList.isParameter("coarse: type")   ||
         paramList.isParameter("coarse: params");
-    if (isCustomCoarseSolver) {
+    if (paramList.isParameter("coarse: type") && paramList.get<std::string>("coarse: type") == "none") {
+      manager->SetFactory("CoarseSolver", Teuchos::null);
+
+    } else if (isCustomCoarseSolver) {
       // FIXME: get default values from the factory
       // NOTE: none of the smoothers at the moment use parameter validation framework, so we
       // cannot get the default values from it.
@@ -309,6 +315,9 @@ namespace MueLu {
     ParameterList dropParams = *(dropFactory->GetValidParameterList());
     dropParams.set                      ("lightweight wrap", true);
     MUELU_TEST_AND_SET_PARAM(dropParams, "algorithm",                     paramList, defaultList, "aggregation: drop scheme",         std::string);
+    // Rename classical to original
+    if (dropParams.isParameter("algorithm") && dropParams.get<std::string>("algorithm") == "classical")
+      dropParams.set("algorithm", "original");
     MUELU_TEST_AND_SET_PARAM(dropParams, "aggregation threshold",         paramList, defaultList, "aggregation: drop tol",            double);
     MUELU_TEST_AND_SET_PARAM(dropParams, "Dirichlet detection threshold", paramList, defaultList, "aggregation: Dirichlet threshold", double);
     if (paramList.isParameter("aggregation: Dirichlet detection"))

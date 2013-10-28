@@ -102,14 +102,7 @@ int main(int argc, char *argv[]) {
   bool failed = false;
   for (int i = 0; i < fileList.size(); i++) {
     std::string xmlFile = "EasyParameterListInterpreter/" + fileList[i];
-    const char* ptr0 = xmlFile.c_str();
-    char buf[1024], *ptr;
-    ptr = strstr(ptr0, ".xml");
-    strncpy(buf, ptr0, ptr-ptr0);
-    buf[ptr-ptr0] = '\0';
-
-    std::string baseFile(buf);
-    baseFile = baseFile + (lib == Xpetra::UseEpetra ? "_epetra" : "_tpetra");
+    std::string baseFile = xmlFile.substr(0, xmlFile.find_last_of('.')) + (lib == Xpetra::UseEpetra ? "_epetra" : "_tpetra");
 
     // Redirect output
     std::filebuf buffer;
@@ -122,20 +115,23 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFile, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
     paramList.set("verbosity", "test");
 
-    EasyParameterListInterpreter mueluFactory(paramList);
-
-    RCP<Hierarchy> H = mueluFactory.CreateHierarchy();
-
-    H->GetLevel(0)->Set<RCP<Matrix> >("A", A);
-    // H->GetLevel(0)->Set("Nullspace",   nullspace);
-    // H->GetLevel(0)->Set("Coordinates", coordinates);
-
     try {
+      EasyParameterListInterpreter mueluFactory(paramList);
+
+      RCP<Hierarchy> H = mueluFactory.CreateHierarchy();
+
+      H->GetLevel(0)->Set<RCP<Matrix> >("A", A);
+      // H->GetLevel(0)->Set("Nullspace",   nullspace);
+      // H->GetLevel(0)->Set("Coordinates", coordinates);
+
       mueluFactory.SetupHierarchy(*H);
 
     } catch (Teuchos::ExceptionBase& e) {
-      if (!comm->getRank())
-        std::cout << "Caught exception: " << e.what() << std::endl;
+      if (!myRank) {
+        std::string msg = e.what();
+        msg = msg.substr(msg.find_last_of('\n')+1);
+        std::cout << "Caught exception: " << msg << std::endl;
+      }
     }
 
     // Redirect output back
@@ -147,7 +143,7 @@ int main(int argc, char *argv[]) {
     int ret = system(cmd.c_str());
     if (ret)
       failed = true;
-    if (comm->getRank() == 0)
+    if (!myRank)
       std::cout << xmlFile << ": " << (ret ? "failed" : "passed") << std::endl;
   }
 
