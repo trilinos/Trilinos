@@ -258,6 +258,9 @@ protected:
 
   //! The nonlinear iteration where Anderson Acceleration will start. 
   int accelerationStartIteration;
+
+  //! Disables the storage depth size check - used for unit testing corner cases only.
+  bool disableStorageDepthCheckForUnitTesting;
 };
 } // namespace Solver
 } // namespace NOX

@@ -444,11 +444,11 @@ AC_CONFIG_FILES([
 		example/Makefile
 		example/C/Makefile
 		example/CPP/Makefile
-		test/Large_Data/Makefile
 		siMPI/Makefile
 		siMPI/pyMPI/Makefile
 		siMPI/pyMPI/siMPI/Makefile
 		])
+#		test/Large_Data/Makefile
 #		example/lib/Makefile
 #		example/C/Makefile
 #		example/C/sparse_matrix/Makefile

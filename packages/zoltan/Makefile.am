@@ -303,7 +303,7 @@ else
 SIMPI_SUBDIR=siMPI
 endif
 
-SUBDIRS = $(SIMPI_SUBDIR) src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) test/Large_Data
+SUBDIRS = $(SIMPI_SUBDIR) src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) 
 
 ## #######################################################################
 ## The below targets allow you to use the new
