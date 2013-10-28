@@ -19,34 +19,34 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters)
 SET(SOURCES "")
 
 APPEND_SET(SOURCES
+  Aggregates.cpp
+  BlockedPFactory.cpp
+  CoalesceDropFactory.cpp
+# CoupledAggregationFactory.cpp
+  DistanceLaplacian.cpp
+  GenericRFactory.cpp
+  Hierarchy.cpp
+  Level.cpp
+  Memory.cpp
   MueLu_UnitTests.cpp
   MueLu_TestHelpers.cpp
-  Level.cpp
-  Hierarchy.cpp
+  MultiVectorTransferFactory.cpp
+  ParameterList/CreateSublists.cpp
+  ParameterList/FactoryFactory.cpp
+# ParameterList/MLParameterListInterpreter.cpp
+  ParameterList/ParameterListInterpreter.cpp
+  PermutedTransferFactory.cpp
+  PgPFactory.cpp
   RAPFactory.cpp
   SaPFactory.cpp
-  PgPFactory.cpp
-  TransPFactory.cpp
-  TentativePFactory.cpp
-  Aggregates.cpp
-  CoalesceDropFactory.cpp
-  Memory.cpp
-  #CoupledAggregationFactory.cpp
-  GenericRFactory.cpp
-  ThresholdAFilterFactory.cpp
   Smoothers/SmootherFactory.cpp
   Smoothers/MueLu_TestHelpersSmoothers.cpp
+  SubBlockAFactory.cpp
+  TentativePFactory.cpp
+  ThresholdAFilterFactory.cpp
+  TransPFactory.cpp
   Utilities
   VariableContainer.cpp
-  SubBlockAFactory.cpp
-  ParameterList/FactoryFactory.cpp
-  ParameterList/ParameterListInterpreter.cpp
-# ParameterList/MLParameterListInterpreter.cpp
-  ParameterList/CreateSublists.cpp
-  MultiVectorTransferFactory.cpp
-  PermutedTransferFactory.cpp
-  DistanceLaplacian.cpp
-  BlockedPFactory.cpp
 )
 
 ### Tests that require other Trilinos packages
@@ -156,6 +156,6 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
 ENDIF() # Galeri TMP
 
 ADD_SUBDIRECTORY(ParameterList/FactoryFactory/)
-ADD_SUBDIRECTORY(ParameterList/ParameterListInterpreter/)
 ADD_SUBDIRECTORY(ParameterList/MLParameterListInterpreter/)
+ADD_SUBDIRECTORY(ParameterList/ParameterListInterpreter/)
 ADD_SUBDIRECTORY(ParameterList/CreateSublists/)
