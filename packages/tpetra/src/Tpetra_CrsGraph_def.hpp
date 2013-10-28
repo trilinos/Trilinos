@@ -2918,7 +2918,9 @@ namespace Tpetra {
   {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
+#ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "makeIndicesLocal";
+#endif
 
     // Transform indices to local index space
     const size_t nlrs = getNodeNumRows();
