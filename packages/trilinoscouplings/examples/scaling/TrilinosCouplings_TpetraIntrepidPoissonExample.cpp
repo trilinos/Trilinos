@@ -607,9 +607,9 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
     // Define desired workset size and count how many worksets
     // there are on this process's mesh block.
-    int desiredWorksetSize = numElems; // change to desired workset size!
-    //int desiredWorksetSize = 100;    // change to desired workset size!
-    int numWorksets        = numElems/desiredWorksetSize;
+    //int desiredWorksetSize = numElems; // change to desired workset size!
+    int desiredWorksetSize = 100;    // change to desired workset size!
+    int numWorksets        = (numElems+desiredWorksetSize-1)/desiredWorksetSize;
 
     for (int workset = 0; workset < numWorksets; ++workset) {
       // Compute cell numbers where the workset starts and ends
@@ -767,15 +767,9 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
   // Define desired workset size and count how many worksets there are
   // on this processor's mesh block
-  int desiredWorksetSize = numElems; // change to desired workset size!
-  //int desiredWorksetSize = 100;    // change to desired workset size!
-  int numWorksets        = numElems/desiredWorksetSize;
-
-  // When numElems is not divisible by desiredWorksetSize, increase
-  // workset count by 1
-  if (numWorksets*desiredWorksetSize < numElems) {
-    numWorksets += 1;
-  }
+  //int desiredWorksetSize = numElems; // change to desired workset size!
+  int desiredWorksetSize = 100;    // change to desired workset size!
+  int numWorksets        = (numElems+desiredWorksetSize-1)/desiredWorksetSize;
 
   {
     Teuchos::OSTab tab2 (out);
