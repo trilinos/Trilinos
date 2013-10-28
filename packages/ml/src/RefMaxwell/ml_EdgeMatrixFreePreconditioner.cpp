@@ -414,6 +414,10 @@ void ML_Epetra::EdgeMatrixFreePreconditioner::Print(int whichHierarchy)
 {
   /*ofstream ofs("Pmat.edge.m");
     if(Prolongator_) Prolongator_->Print(ofs);*/
+  if(Prolongator_) EpetraExt::RowMatrixToMatlabFile("prolongator.dat",*Prolongator_);   
+  if(CoarseMatrix) EpetraExt::RowMatrixToMatlabFile("coarsemat.dat",*CoarseMatrix);
+
+
   if(CoarsePC) CoarsePC->Print();
 }/*end Print*/
 

@@ -145,7 +145,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   if(vb_level >= 15) {very_verbose_=true;verbose_=true;}
   else if (vb_level >= 5) {very_verbose_=false;verbose_=true;}
   else very_verbose_=verbose_=false;
-  aggregate_with_sigma= List_.get("refmaxwell: aggregate with sigma",false);  
+  aggregate_with_sigma= List_.get("refmaxwell: aggregate with sigma",true);  
   bool disable_addon = List_.get("refmaxwell: disable addon",true);
 
   
@@ -216,13 +216,18 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   }/*end if */
   
   /* Build the TMT-Agg Matrix */
-  if(aggregate_with_sigma)
+  if(aggregate_with_sigma) {
 #ifdef ENABLE_MS_MATRIX
     ML_Epetra_PtAP(*Ms_Matrix_,*D0_Clean_Matrix_,TMT_Agg_Matrix_,verbose_);
 #else
-  ML_Epetra_PtAP(*SM_Matrix_,*D0_Clean_Matrix_,TMT_Agg_Matrix_,verbose_);
+    ML_Epetra_PtAP(*SM_Matrix_,*D0_Clean_Matrix_,TMT_Agg_Matrix_,verbose_);
 #endif
-  else ML_Epetra_PtAP(*M1_Matrix_,*D0_Clean_Matrix_,TMT_Agg_Matrix_,verbose_);
+    if(verbose_ && !Comm_->MyPID()) printf("EMFP: Aggregating with SM or Ms\n");
+  }
+  else {
+    ML_Epetra_PtAP(*M1_Matrix_,*D0_Clean_Matrix_,TMT_Agg_Matrix_,verbose_);
+    if(verbose_ && !Comm_->MyPID()) printf("EMFP: Aggregating with M1\n");    
+  }
   Remove_Zeroed_Rows(*TMT_Agg_Matrix_);
   
 #ifdef ML_TIMING
