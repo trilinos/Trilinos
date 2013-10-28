@@ -1,0 +1,3 @@
+<ParameterList name="MueLu">
+  <Parameter name="aggregation: type" type="string" value="coupled"/>
+</ParameterList>
