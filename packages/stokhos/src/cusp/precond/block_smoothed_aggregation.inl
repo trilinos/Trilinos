@@ -24,6 +24,21 @@
 #include <cusp/precond/diagonal.h>
 #include <cusp/krylov/arnoldi.h>
 
+namespace cusp
+{
+namespace precond
+{
+namespace aggregation
+{
+namespace detail
+{
+template <typename MatrixType>
+double estimate_rho_Dinv_A(const MatrixType& A);
+}
+}
+}
+}
+
 #include <cusp/graph/maximal_independent_set.h>
 #include <cusp/precond/aggregation/aggregate.h>
 #include <cusp/precond/aggregation/smooth.h>
