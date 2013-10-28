@@ -1193,9 +1193,14 @@ namespace Tpetra {
     /// process has set global indices, set all the processes to use
     /// global indices.
     ///
+    /// \warning This method must be called collectively over all
+    ///   processes in the graph's communicator.
+    ///
     /// \note To developers: See this method's internal comments.
-    void computeIndexState();
-    void makeColMap (); //!< Make the column Map.
+    void computeIndexState ();
+
+    //! Make the graph's column Map, if it does not already have one.
+    void makeColMap ();
     void makeIndicesLocal ();
     void makeImportExport ();
 
@@ -1585,7 +1590,14 @@ namespace Tpetra {
 
     //@}
 
-    //! Check whether the graph's state is valid.  This is useful for debugging.
+    /// \brief Check whether the graph's state is valid.
+    ///
+    /// This method is useful for debugging.  It gets called often in
+    /// a debug build.
+    ///
+    /// \note This method is <i>not</i> a collective.  It does not
+    ///   communicate (between MPI processes).  Developers: Please do
+    ///   not invoke communication in this method!
     void checkInternalState() const;
 
     //! The Map describing the distribution of rows of the graph.

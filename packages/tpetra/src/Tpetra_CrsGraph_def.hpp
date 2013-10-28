@@ -1506,7 +1506,8 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::checkInternalState() const
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  checkInternalState () const
   {
 #ifdef HAVE_TPETRA_DEBUG
     const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
@@ -2531,10 +2532,12 @@ namespace Tpetra {
                 const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap,
                 const RCP<ParameterList> &params)
   {
+    const char tfecfFuncName[] = "fillComplete";
+
 #ifdef HAVE_TPETRA_DEBUG
     rowMap_->getComm ()->barrier ();
 #endif // HAVE_TPETRA_DEBUG
-    const char tfecfFuncName[] = "fillComplete()";
+
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! isFillActive() || isFillComplete(),
       std::runtime_error, ": Graph fill state must be active (isFillActive() "
       "must be true) before calling fillComplete().");
@@ -2543,8 +2546,13 @@ namespace Tpetra {
 
     // allocate if unallocated
     if (! indicesAreAllocated()) {
-      // allocate global, in case we do not have a column map
-      allocateIndices( GlobalIndices );
+      if (hasColMap ()) {
+        // We have a column Map, so use local indices.
+        allocateIndices (LocalIndices);
+      } else {
+        // We don't have a column Map, so use global indices.
+        allocateIndices (GlobalIndices);
+      }
     }
 
     // If true, the caller promises that no process did nonlocal
@@ -2571,13 +2579,19 @@ namespace Tpetra {
     }
     // set domain/range map: may clear the import/export objects
     setDomainRangeMaps(domainMap,rangeMap);
-    // make column map
-    if (! hasColMap()) {
-      makeColMap();
+
+    // If the graph does not already have a column Map (either from
+    // the user constructor calling the version of the constructor
+    // that takes a column Map, or from a previous fillComplete call),
+    // then create it.
+    if (! hasColMap ()) {
+      makeColMap ();
     }
-    if (isGloballyIndexed()) {
-      makeIndicesLocal();
-    }
+
+    // Make indices local, if they aren't already.
+    // The method doesn't do any work if the indices are already local.
+    makeIndicesLocal ();
+
     if (! isSorted()) {
       sortAllIndices();
     }
@@ -2904,18 +2918,19 @@ namespace Tpetra {
   {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
+    const char tfecfFuncName[] = "makeIndicesLocal";
 
+#if 0
     // All nodes must be in the same index state.
     // Update index state by checking isLocallyIndexed/Global on all nodes
     computeIndexState();
-    const char tfecfFuncName[] = "makeIndicesLocal()";
+
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       isLocallyIndexed() && isGloballyIndexed(), std::logic_error,
       ": inconsistent index state. Indices must be either local on all "
       "processes, or global on all processes.");
-    // If user has not prescribed a column Map, create one from indices.
-    // If we already have a column Map, this call won't do anything.
-    makeColMap ();
+#endif // 0
+
     // Transform indices to local index space
     const size_t nlrs = getNodeNumRows();
     if (isGloballyIndexed() && nlrs > 0) {
@@ -2979,7 +2994,7 @@ namespace Tpetra {
         }
         gblInds2D_ = null;
       }
-    }
+    } // globallyIndexed() && nlrs > 0
     indicesAreLocal_  = true;
     indicesAreGlobal_ = false;
     checkInternalState();
@@ -2991,12 +3006,24 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::computeIndexState()
   {
+    const bool indicesAreLocalBefore = indicesAreLocal_;
+    const bool indicesAreGlobalBefore = indicesAreGlobal_;
+
+    // FIXME (mfh 28 Oct 2013) See added date-marked commentary in
+    // parentheses below.
+    //
     // FIXME (mfh 03 Mar 2013) It's not clear to me that we need to do
     // an all-reduce.
     //
     // This method is _only_ called in makeIndicesLocal() and
     // makeColMap().  makeIndicesLocal() calls makeColMap(), which is
     // collective, so both methods must be called collectively.
+    //
+    // (FIXME (mfh 28 Oct 2013) CrsMatrix::fillComplete asks (or used
+    // to ask -- I'll fix this later once I'm sure it's the problem)
+    // the graph whether it is globally indexed before calling
+    // makeIndicesLocal().  I think that's a bug, because the graph
+    // could be globally indexed on some processes but not others.)
     //
     // There are only two methods that modify indicesAreLocal_:
     // allocateIndices(), and makeIndicesLocal().  makeIndicesLocal()
@@ -3074,6 +3101,15 @@ namespace Tpetra {
     // (local, global) on all processes.
     indicesAreLocal_  = (allIndices[0]==1);
     indicesAreGlobal_ = (allIndices[1]==1);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      indicesAreLocal_ && indicesAreGlobal_, std::logic_error,
+      "Tpetra::CrsGraph::computeIndexState: On at least one process, indices "
+      " are both local and global.  On the calling Process "
+      << getComm ()->getRank () << ", indices were "
+      << (indicesAreLocalBefore ? "" : "not ") << "local and "
+      << (indicesAreGlobalBefore ? "" : "not ") << "global.  This is "
+      "impossible.  Please report this bug to the Tpetra developers.");
   }
 
 
