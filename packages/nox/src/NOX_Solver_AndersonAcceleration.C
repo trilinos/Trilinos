@@ -106,7 +106,7 @@ void NOX::Solver::AndersonAcceleration::init()
   }
 
   storeParam = paramsPtr->sublist("Anderson Parameters").get<int>("Storage Depth");
-  TEUCHOS_TEST_FOR_EXCEPTION((storeParam > solnPtr->getX().length()),std::logic_error,"Error - The \"Storage Depth\" must be less than the number of unknowns in the nonlinear problem.  The requested storage depth " << storeParam << " is greater than the problem size of " << solnPtr->getX().length() << ".");
+  TEUCHOS_TEST_FOR_EXCEPTION((storeParam > solnPtr->getX().length()),std::logic_error,"Error - The \"Storage Depth\" with a value of " << storeParam << " must be less than the number of unknowns in the nonlinear problem which is currently " << solnPtr->getX().length() << ".  This reults in an ill-conditioned F matrix.");
 
   mixParam = paramsPtr->sublist("Anderson Parameters").get<double>("Mixing Parameter");
   if (storeParam <= 0){
@@ -301,6 +301,8 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
     
     if (adjustForConditionNumber) {
       while ( (1.0/invCondNum > dropTolerance) && (nStore > 1)  ) {
+	for (int ii = 0; ii<nStore-1; ii++)
+	  *(xMat[ii]) = *(xMat[ii+1]);
 	xMat.pop_back();
 	qrDelete();
 	--nStore;
