@@ -7,6 +7,7 @@
 /*------------------------------------------------------------------------*/
 
 #include <cstdio>
+#include <cstring>
 #include <stdexcept>
 #include <stk_util/parallel/ParallelInputStream.hpp>
 
@@ -62,6 +63,7 @@ private:
 ParInBuf::ParInBuf( ParallelMachine comm , const char * const file_name )
   : m_comm( comm ), m_root_fp( NULL )
 {
+  std::memset(m_buffer, BUFFER_LENGTH, sizeof(char));
   int result = 1 ;
 
   if ( 0 == parallel_machine_rank( comm ) && NULL != file_name ) {

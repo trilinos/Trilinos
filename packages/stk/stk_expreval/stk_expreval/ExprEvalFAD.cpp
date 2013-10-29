@@ -83,7 +83,9 @@ public:
       m_left(0),
       m_right(0),
       m_other(0)
-  {}
+  {
+      m_data.variable.variable = 0;
+  }
 
 private:
   explicit Node(const Node &);

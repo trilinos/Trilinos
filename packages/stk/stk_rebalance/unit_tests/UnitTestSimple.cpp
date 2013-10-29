@@ -46,6 +46,7 @@ public:
 
   MockPartition( stk::mesh::MetaData & fmd, stk::mesh::BulkData & bd ) :
     stk::rebalance::Partition(bd.parallel()),
+    total_number_entities_(0),
     m_bulk_data(bd),
     m_step(FIRST)
   {  }

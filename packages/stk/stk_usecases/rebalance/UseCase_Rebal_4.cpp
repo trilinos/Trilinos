@@ -84,6 +84,7 @@ GreedySideset::GreedySideset(ParallelMachine pm,
                              mesh::BulkData   & bulk_data) :
   stk::rebalance::Partition(pm),
   mesh_information_(),
+  total_number_entities_(0),
   surfaces_(surfaces),
   bulk_data_(bulk_data) {}
 GreedySideset::~GreedySideset() {}
