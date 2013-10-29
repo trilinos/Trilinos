@@ -735,56 +735,40 @@ double do_atanh(double x)
 
 double do_csvrows(char * filename)
 {
+  size_t len = 0;
+  char *line = NULL;
   double rows = 0;
-  char temp;
-  int good=0;
-  FILE * f;
-  f = fopen(filename,"r");
-  if(f != NULL)
-  {
-    good = 0;
-    while (!feof(f))
-    {
-      temp=fgetc(f);
-      if((temp != '\n')&&(temp >= 0))
-        good = 1;
-      if((temp == '\n')&&(good == 1))
-      {
-        rows++;
-        good = 0;
-      }
-    }
-    fclose(f);
+
+  FILE *fp = open_file(filename, "r");
+
+  while (getline(&line, &len, fp) != -1) {
+    rows++;
   }
-  return (rows+good);
+  fclose(fp);
+  if (line) free(line);
+
+  return (rows);
 }
 
 double do_csvcols(char * filename)
 {
+  const char *delim = ",";
+  size_t len = 0;
+  char *line = NULL;
+
   double tempCols = 0;
   double cols = 0;
-  char temp;
-  FILE * f;
-  f = fopen(filename,"r");
-  if(f != NULL)
-  {
-    while (!feof(f))
-    {
-      temp=fgetc(f);
-      if(temp == ',')
-      {
-        tempCols++;
-      }
-      if(temp == '\n')
-      {
-        tempCols++;
-        if(tempCols > cols)
-          cols = tempCols;
-        tempCols = 0;
-      }
+  FILE *fp = open_file(filename, "r");
+
+  while (getline(&line, &len, fp) != -1) {
+    double tempCols = do_word_count(line,   delim);
+    if (tempCols > cols) {
+      cols = tempCols;
     }
-    fclose(f);
   }
+  fclose(fp);
+  if (line) free(line);
+
   return cols;
 }
 
@@ -1156,92 +1140,32 @@ char *do_extract(char *string, char *begin, char *end)
   return tmp;
 }
 
-char *do_get_csv(char *filename, double i, double j)
+char *do_get_csv(char *filename, double row, double col)
 {
-  int len = 0;
-  char *tmp;
-  char *tmp2;
-  int cur = 0;
-  int k;
-  int row = 1;
-  int col = 1;
-  int ii, ij;
-  char temp;
-  int good = 0;
-  ii = (int)i;
-  ij = (int)j;
+  const char *delim = ",";
 
-  NEWSTR("0",tmp);
+  size_t len = 0;
+  char *line = NULL;
 
-  FILE * f;
-  f = fopen(filename,"r");
+  double rows = 0;
+  char *value = NULL;
 
-  if(f != NULL)
-  {
-    good = 0;
-    while ((!feof(f))&&((row < ii)||(row > ii)||(col > ij)||(col < ij)))
-    {
-      temp=fgetc(f);
-      if(temp >= 0)
-      {
-        if((temp != '\n')&&(temp >= 0))
-        {
-          good = 1;
-        }
-        if(temp == '\n')
-        {
-          col = 1;
-          if(good == 1)
-          {
-            row ++;
-            good = 0;
-          }
-        }
+  FILE *fp = open_file(filename, "r");
 
-        if(temp == ',')
-        {
-          col++;
-        }
+  while (getline(&line, &len, fp) != -1) {
+    rows++;
+    if (rows == row) {
+      /* Found the correct row, now get the value at the specified
+	 column */
+      double num_cols = do_word_count(line, delim);
+      if (num_cols  > col) {
+	value = do_get_word(col, line, delim);
       }
+      break;
     }
-    if((row == ii)&&(col == ij))
-    {
-      temp=fgetc(f);
-      len = 0;
-      cur = 0;
-      NEWSTR("0",tmp);
-      NEWSTR("0",tmp2);
-      while((!feof(f)) && (temp >= 0) && (temp != ',') && (temp != '\n'))
-      {
-        len++;
-        if(cur == 0)
-        {
-          ALLOC(tmp, len+1, char *);
-          for(k = 0; k < len; k++) 
-          {
-            tmp[k]=tmp2[k];
-          }
-          tmp[len-1] = temp;
-          tmp[len]   = '\0';
-          cur = 1;
-        }else{
-          ALLOC(tmp2, len+1, char *);
-          for(k = 0; k < len; k++)
-          {
-            tmp2[k]=tmp[k];
-          }
-          tmp2[len-1] = temp;
-          tmp2[len]   = '\0';
-          cur = 0;
-        }
-        temp=fgetc(f);
-      }
-      if(len <= 0)
-        NEWSTR("0",tmp);
-    }else{
-      NEWSTR("0",tmp);
-    }
-    fclose(f);
   }
-  return tmp;
+  fclose(fp);
+  if (line) free(line);
+
+  return value;
 }
