@@ -95,7 +95,7 @@ namespace MueLu {
     void SetupHierarchy(Hierarchy& H) const;
 
   private:
-    void UpdateFactoryManager(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, const FactoryManager& managerIn, RCP<FactoryManager>& manager);
+    void UpdateFactoryManager(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager);
 
     void SetupMatrix   (Matrix&    A) const;
 

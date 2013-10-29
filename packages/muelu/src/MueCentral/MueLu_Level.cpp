@@ -282,7 +282,9 @@ namespace MueLu {
         const FactoryBase* factory = kt->first;
 
         for (SubMap::const_iterator it = kt->second.begin(); it != kt->second.end(); it++) {
-          const std::string& ename = it->first;
+          // We really want a reference here, but because later we'll need to check whether the
+          // key was removed, we should copy the value
+          const std::string ename = it->first;
 
           // We clear all the data that
           //   a) has not been requested

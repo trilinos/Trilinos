@@ -115,7 +115,7 @@ namespace MueLu {
     // Theoretically, we could make this decision in the constructor, and create only
     // one of the smoothers. But we want to be able to reuse, so one can imagine a scenario
     // where one first runs hierarchy with tpetra matrix, and then with epetra.
-    bool useTpetra = currentLevel.lib() == Xpetra::UseTpetra;
+    bool useTpetra = (currentLevel.lib() == Xpetra::UseTpetra);
     s_ = (useTpetra ? sTpetra_ : sEpetra_);
     TEUCHOS_TEST_FOR_EXCEPTION(s_.is_null(), Exceptions::RuntimeError, "Smoother for " << (useTpetra ? "Tpetra" : "Epetra") << " was not constructed");
 

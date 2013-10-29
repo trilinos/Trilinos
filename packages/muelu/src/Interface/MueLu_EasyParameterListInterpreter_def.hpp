@@ -158,7 +158,7 @@ namespace MueLu {
     // Create default manager
     RCP<FactoryManager> defaultManager = rcp(new FactoryManager());
     defaultManager->SetVerbLevel(this->verbosity_);
-    UpdateFactoryManager(paramList, ParameterList(), *defaultManager, defaultManager);
+    UpdateFactoryManager(paramList, ParameterList(), *defaultManager);
     defaultManager->Print();
 
     for (int levelID = 0; levelID < this->numDesiredLevel_; levelID++) {
@@ -169,7 +169,10 @@ namespace MueLu {
         bool mustAlreadyExist = true;
         ParameterList& levelList = paramList.sublist("level " + toString(levelID), mustAlreadyExist);
 
-        UpdateFactoryManager(levelList, paramList, *defaultManager, levelManager);
+        RCP<FactoryManager> levelManager = rcp(new FactoryManager(*defaultManager));
+        levelManager->SetVerbLevel(defaultManager->GetVerbLevel());
+
+        UpdateFactoryManager(levelList, paramList, *levelManager);
 
       } else {
         // No level specific parameter, use default manager
@@ -201,10 +204,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void EasyParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::UpdateFactoryManager(Teuchos::ParameterList& paramList,
-        const Teuchos::ParameterList& defaultList, const FactoryManager& managerIn, RCP<FactoryManager>& manager) {
-    manager = rcp(new FactoryManager(managerIn));
-    manager->SetVerbLevel(managerIn.GetVerbLevel());
-
+        const Teuchos::ParameterList& defaultList, FactoryManager& manager) {
     // NOTE: Factory::SetParameterList must be called prior to Factory::SetFactory, as
     // SetParameterList sets default values for non mentioned parameters, including factories
 
@@ -216,7 +216,7 @@ namespace MueLu {
         paramList.isParameter("smoother: sweeps") || paramList.isParameter("smoother: pre sweeps") || paramList.isParameter("smoother: post sweeps");
     MUELU_READ_2LIST_PARAM(paramList, defaultList, "smoother: pre or post", std::string, "both", PreOrPost);
     if (PreOrPost == "none") {
-      manager->SetFactory("Smoother", Teuchos::null);
+      manager.SetFactory("Smoother", Teuchos::null);
 
     } else if (isCustomSmoother) {
       // FIXME: get default values from the factory
@@ -290,7 +290,7 @@ namespace MueLu {
           postSmoother = rcp(new TrilinosSmoother(postSmootherType, postSmootherParams, overlap));
       }
 
-      manager->SetFactory("Smoother", rcp(new SmootherFactory(preSmoother, postSmoother)));
+      manager.SetFactory("Smoother", rcp(new SmootherFactory(preSmoother, postSmoother)));
     }
 
     // === Coarse solver ===
@@ -298,14 +298,14 @@ namespace MueLu {
         paramList.isParameter("coarse: type")   ||
         paramList.isParameter("coarse: params");
     if (paramList.isParameter("coarse: type") && paramList.get<std::string>("coarse: type") == "none") {
-      manager->SetFactory("CoarseSolver", Teuchos::null);
+      manager.SetFactory("CoarseSolver", Teuchos::null);
 
     } else if (isCustomCoarseSolver) {
       // FIXME: get default values from the factory
       // NOTE: none of the smoothers at the moment use parameter validation framework, so we
       // cannot get the default values from it.
       MUELU_READ_2LIST_PARAM(paramList, defaultList, "coarse: type", std::string, "", coarseType);
-      manager->SetFactory("CoarseSolver", rcp(new SmootherFactory(rcp(new DirectSolver(coarseType,
+      manager.SetFactory("CoarseSolver", rcp(new SmootherFactory(rcp(new DirectSolver(coarseType,
                                                                                        paramList.sublist("coarse: params",    false))))));
     }
 
@@ -324,27 +324,27 @@ namespace MueLu {
       dropParams.set("disable Dirichlet detection", !paramList.get<bool>("aggregation: Dirichlet detection"));
 
     dropFactory->SetParameterList(dropParams);
-    manager->SetFactory("Graph", dropFactory);
+    manager.SetFactory("Graph", dropFactory);
 
     // Aggregation sheme
     MUELU_READ_2LIST_PARAM(paramList, defaultList, "aggregation: type", std::string, "uncoupled", aggType);
     RCP<Factory> aggFactory;
     if      (aggType == "uncoupled") aggFactory = rcp(new UncoupledAggregationFactory());
     else if (aggType == "coupled")   aggFactory = rcp(new CoupledAggregationFactory());
-    aggFactory->SetFactory("Graph",       manager->GetFactory("Graph"));
-    aggFactory->SetFactory("DofsPerNode", manager->GetFactory("Graph"));
-    manager->SetFactory("Aggregates", aggFactory);
+    aggFactory->SetFactory("Graph",       manager.GetFactory("Graph"));
+    aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
+    manager.SetFactory("Aggregates", aggFactory);
 
     // Coarse map
     RCP<CoarseMapFactory> coarseMap = rcp(new CoarseMapFactory());
-    coarseMap->SetFactory("Aggregates", manager->GetFactory("Aggregates"));
-    manager->SetFactory("CoarseMap", coarseMap);
+    coarseMap->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
+    manager.SetFactory("CoarseMap", coarseMap);
 
     // Tentative P
     RCP<TentativePFactory> Ptent = rcp(new TentativePFactory());
-    Ptent->SetFactory("Aggregates", manager->GetFactory("Aggregates"));
-    Ptent->SetFactory("CoarseMap",  manager->GetFactory("CoarseMap"));
-    manager->SetFactory("Ptent",     Ptent);
+    Ptent->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
+    Ptent->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
+    manager.SetFactory("Ptent",     Ptent);
 
     // === Prolongation ===
     MUELU_READ_2LIST_PARAM(paramList, defaultList, "multigrid algorithm", std::string, "sa", multigridAlgo);
@@ -358,12 +358,12 @@ namespace MueLu {
       if (paramList.isParameter("sa: use filtered matrix") && paramList.get<bool>("sa: use filtered matrix")) {
         // Filtering
         RCP<FilteredAFactory> filterFactory = rcp(new FilteredAFactory());
-        filterFactory->SetFactory("Graph", manager->GetFactory("Graph"));
+        filterFactory->SetFactory("Graph", manager.GetFactory("Graph"));
         P->SetFactory("A", filterFactory);
       }
 
-      P->SetFactory("P", manager->GetFactory("Ptent"));
-      manager->SetFactory("P", P);
+      P->SetFactory("P", manager.GetFactory("Ptent"));
+      manager.SetFactory("P", P);
 
     } else if (multigridAlgo == "emin") {
 #ifdef HAVE_MUELU_EXPERIMENTAL
@@ -375,23 +375,23 @@ namespace MueLu {
       ParameterList patternParams = *(patternFactory->GetValidParameterList());
       MUELU_TEST_AND_SET_PARAM(patternParams, "k", paramList, defaultList, "emin: pattern order", int);
       patternFactory->SetParameterList(patternParams);
-      patternFactory->SetFactory("P", manager->GetFactory("Ptent"));
-      manager->SetFactory("Ppattern", patternFactory);
+      patternFactory->SetFactory("P", manager.GetFactory("Ptent"));
+      manager.SetFactory("Ppattern", patternFactory);
 
       // Constraint
       RCP<ConstraintFactory> constraintFactory = rcp(new ConstraintFactory());
-      constraintFactory->SetFactory("Ppattern",        manager->GetFactory("Ppattern"));
-      constraintFactory->SetFactory("CoarseNullspace", manager->GetFactory("Ptent"));
-      manager->SetFactory("Constraint", constraintFactory);
+      constraintFactory->SetFactory("Ppattern",        manager.GetFactory("Ppattern"));
+      constraintFactory->SetFactory("CoarseNullspace", manager.GetFactory("Ptent"));
+      manager.SetFactory("Constraint", constraintFactory);
 
       // Energy minimization
       RCP<EminPFactory> P = rcp(new EminPFactory());
       ParameterList Pparams = *(P->GetValidParameterList());
       MUELU_TEST_AND_SET_PARAM(Pparams, "Niterations", paramList, defaultList, "emin: num iterations", int);
       P->SetParameterList(Pparams);
-      P->SetFactory("P",          manager->GetFactory("Ptent"));
-      P->SetFactory("Constraint", manager->GetFactory("Constraint"));
-      manager->SetFactory("P", P);
+      P->SetFactory("P",          manager.GetFactory("Ptent"));
+      P->SetFactory("Constraint", manager.GetFactory("Constraint"));
+      manager.SetFactory("P", P);
 #else
       throw Exceptions::RuntimeError("Please enable Experimental options in MueLu to use \"emin\"");
 #endif
@@ -399,31 +399,31 @@ namespace MueLu {
     } else if (multigridAlgo == "pg") {
       // Petrov-Galerkin
       RCP<PgPFactory> P = rcp(new PgPFactory());
-      P->SetFactory("P", manager->GetFactory("Ptent"));
-      manager->SetFactory("P", P);
+      P->SetFactory("P", manager.GetFactory("Ptent"));
+      manager.SetFactory("P", P);
     }
 
     // === Restriction ===
     RCP<TransPFactory> R = rcp(new TransPFactory());
-    R->SetFactory("P", manager->GetFactory("P"));
-    manager->SetFactory("R", R);
+    R->SetFactory("P", manager.GetFactory("P"));
+    manager.SetFactory("R", R);
 
     // === RAP ===
     RCP<RAPFactory> RAP = rcp(new RAPFactory());
-    RAP->SetFactory("P", manager->GetFactory("P"));
-    RAP->SetFactory("R", manager->GetFactory("R"));
-    manager->SetFactory("A", RAP);
+    RAP->SetFactory("P", manager.GetFactory("P"));
+    RAP->SetFactory("R", manager.GetFactory("R"));
+    manager.SetFactory("A", RAP);
 
     // === Repartitioning ===
     MUELU_READ_2LIST_PARAM(paramList, defaultList, "repartition: enable", bool, false, enableRepart);
     if (enableRepart) {
       // Coordinates
       RCP<CoordinatesTransferFactory> coords = rcp(new CoordinatesTransferFactory());
-      coords->SetFactory("Aggregates", manager->GetFactory("Aggregates"));
-      coords->SetFactory("CoarseMap",  manager->GetFactory("CoarseMap"));
-      manager->SetFactory("Coordinates", coords);
+      coords->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
+      coords->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
+      manager.SetFactory("Coordinates", coords);
 
-      RAP->AddTransferFactory(manager->GetFactory("Coordinates"));
+      RAP->AddTransferFactory(manager.GetFactory("Coordinates"));
 
 #ifdef HAVE_MPI
       MUELU_READ_2LIST_PARAM(paramList, defaultList, "repartition: partitioner", std::string, "zoltan", partName);
@@ -449,9 +449,9 @@ namespace MueLu {
         throw Exceptions::RuntimeError("Zoltan2 interface is not available");
 #endif
       }
-      partitioner->SetFactory("A",           manager->GetFactory("A"));
-      partitioner->SetFactory("Coordinates", manager->GetFactory("Coordinates"));
-      manager->SetFactory("Partition", partitioner);
+      partitioner->SetFactory("A",           manager.GetFactory("A"));
+      partitioner->SetFactory("Coordinates", manager.GetFactory("Coordinates"));
+      manager.SetFactory("Partition", partitioner);
 
       // Repartitioner
       RCP<RepartitionFactory> repartFactory = rcp(new RepartitionFactory());
@@ -462,37 +462,37 @@ namespace MueLu {
       MUELU_TEST_AND_SET_PARAM(repartParams, "nonzeroImbalance",    paramList, defaultList, "repartition: max imbalance",     double);
       MUELU_TEST_AND_SET_PARAM(repartParams, "remapPartitions",     paramList, defaultList, "repartition: remap parts",       bool);
       repartFactory->SetParameterList(repartParams);
-      repartFactory->SetFactory("A",         manager->GetFactory("A"));
-      repartFactory->SetFactory("Partition", manager->GetFactory("Partition"));
-      manager->SetFactory("Importer", repartFactory);
+      repartFactory->SetFactory("A",         manager.GetFactory("A"));
+      repartFactory->SetFactory("Partition", manager.GetFactory("Partition"));
+      manager.SetFactory("Importer", repartFactory);
 
       // Rebalanced A
       RCP<RebalanceAcFactory>       newA = rcp(new RebalanceAcFactory());
-      newA->SetFactory("A",         manager->GetFactory("A"));
-      newA->SetFactory("Importer",  manager->GetFactory("Importer"));
-      manager->SetFactory("A", newA);
+      newA->SetFactory("A",         manager.GetFactory("A"));
+      newA->SetFactory("Importer",  manager.GetFactory("Importer"));
+      manager.SetFactory("A", newA);
 
       // Rebalanced P
       RCP<RebalanceTransferFactory> newP = rcp(new RebalanceTransferFactory());
       ParameterList newPparams;
       newPparams.set("type", "Interpolation");
       newP->SetParameterList(newPparams);
-      newP->SetFactory("Importer",    manager->GetFactory("Importer"));
-      newP->SetFactory("P",           manager->GetFactory("P"));
-      manager->SetFactory("P", newP);
+      newP->SetFactory("Importer",    manager.GetFactory("Importer"));
+      newP->SetFactory("P",           manager.GetFactory("P"));
+      manager.SetFactory("P", newP);
 
       // Rebalanced R
       RCP<RebalanceTransferFactory> newR = rcp(new RebalanceTransferFactory());
       ParameterList newRparams;
       newRparams.set("type", "Restriction");
       newR->SetParameterList(newRparams);
-      newR->SetFactory("Importer",    manager->GetFactory("Importer"));
-      newR->SetFactory("R",           manager->GetFactory("R"));
-      newR->SetFactory("Nullspace",   manager->GetFactory("Nullspace"));
-      newR->SetFactory("Coordinates", manager->GetFactory("Coordinates"));
-      manager->SetFactory("R",           newR);
-      manager->SetFactory("Coordinates", newR);
-      manager->SetFactory("Nullspace",   newR);
+      newR->SetFactory("Importer",    manager.GetFactory("Importer"));
+      newR->SetFactory("R",           manager.GetFactory("R"));
+      newR->SetFactory("Nullspace",   manager.GetFactory("Nullspace"));
+      newR->SetFactory("Coordinates", manager.GetFactory("Coordinates"));
+      manager.SetFactory("R",           newR);
+      manager.SetFactory("Coordinates", newR);
+      manager.SetFactory("Nullspace",   newR);
 #else
       throw Exceptions::RuntimeError("No repartitioning available for a serial run");
 #endif
