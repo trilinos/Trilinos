@@ -169,7 +169,7 @@ namespace MueLu {
         bool mustAlreadyExist = true;
         ParameterList& levelList = paramList.sublist("level " + toString(levelID), mustAlreadyExist);
 
-        RCP<FactoryManager> levelManager = rcp(new FactoryManager(*defaultManager));
+        levelManager = rcp(new FactoryManager(*defaultManager));
         levelManager->SetVerbLevel(defaultManager->GetVerbLevel());
 
         UpdateFactoryManager(levelList, paramList, *levelManager);
@@ -488,7 +488,7 @@ namespace MueLu {
       newR->SetParameterList(newRparams);
       newR->SetFactory("Importer",    manager.GetFactory("Importer"));
       newR->SetFactory("R",           manager.GetFactory("R"));
-      newR->SetFactory("Nullspace",   manager.GetFactory("Nullspace"));
+      newR->SetFactory("Nullspace",   manager.GetFactory("Ptent"));
       newR->SetFactory("Coordinates", manager.GetFactory("Coordinates"));
       manager.SetFactory("R",           newR);
       manager.SetFactory("Coordinates", newR);
