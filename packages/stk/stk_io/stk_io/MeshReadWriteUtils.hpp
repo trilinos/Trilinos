@@ -43,6 +43,8 @@ namespace stk {
         bool m_results_fields_defined;
         Teuchos::RCP<Ioss::Region> m_output_region;
         std::vector<stk::mesh::FieldBase*> m_output_fields;
+        ResultsOutput() : m_current_output_step(-1), m_use_nodeset_for_part_nodes_fields(true),
+                m_results_mesh_defined(false), m_results_fields_defined(false){}
 //        const std::string get_base_file_name() {
 //            return m_output_region->get_database()->get_filename();
 //        }
@@ -480,7 +482,7 @@ namespace stk {
       private:
         void internal_process_restart_output(int step);
         void create_ioss_region();
-        void create_output_mesh(Teuchos::RCP<Ioss::Region> output_region);
+        void create_output_mesh(size_t results_output_index);
         void validate_result_output_index(size_t result_output_index);
 
         MPI_Comm m_communicator;
@@ -510,8 +512,6 @@ namespace stk {
         // This should be private, but needs to be public since some applications/tests are defining
         // their own fields and need to inform MeshData that they did this...
         bool m_useNodesetForPartNodesFields;
-        bool m_resultsMeshDefined;                   // remove us!
-        bool m_resultsFieldsDefined;                 // remove us!
 
         bool m_restartMeshDefined;
         bool m_restartFieldsDefined;

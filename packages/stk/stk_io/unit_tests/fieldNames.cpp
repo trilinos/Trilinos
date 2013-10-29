@@ -31,7 +31,7 @@ void testFieldNamedCorrectly(Ioss::Region &ioRegion, MPI_Comm communicator, cons
     nodeBlockAssociatedWithField0->field_describe(Ioss::Field::TRANSIENT, &fieldNames);
 
     ASSERT_EQ(1u, fieldNames.size());
-    EXPECT_STREQ(goldFieldName.c_str(), fieldNames[0].c_str());
+    EXPECT_STRCASEEQ(goldFieldName.c_str(), fieldNames[0].c_str());
 }
 
 STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameRenameTwice)
@@ -56,7 +56,8 @@ STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameRenameTwice)
         requestedFieldNameForResultsOutput = "jeSSe";
         stkIo.add_results_field(results_output_index, *field0, requestedFieldNameForResultsOutput);
 
-        stkIo.define_output_fields();
+        //stkIo.define_output_fields();
+        stkIo.process_output_request(0.0);
     }
 
     Ioss::DatabaseIO *iossDb = Ioss::IOFactory::create("exodus", outputFilename, Ioss::READ_MODEL, communicator);

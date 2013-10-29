@@ -901,7 +901,6 @@ namespace stk {
     MeshData::MeshData()
       : m_communicator(MPI_COMM_NULL), m_anded_selector(NULL), m_connectivity_map(stk::mesh::ConnectivityMap::default_map()),
         m_currentOutputStep(-1), m_currentRestartStep(-1), m_useNodesetForPartNodesFields(true),
-	m_resultsMeshDefined(false), m_resultsFieldsDefined(false),
 	m_restartMeshDefined(false), m_restartFieldsDefined(false)
 	
     {
@@ -912,7 +911,6 @@ namespace stk {
       : m_communicator(comm), m_anded_selector(NULL)
       , m_connectivity_map(connectivity_map != NULL ? *connectivity_map : stk::mesh::ConnectivityMap::default_map()),
         m_currentOutputStep(-1), m_currentRestartStep(-1), m_useNodesetForPartNodesFields(true),
-	m_resultsMeshDefined(false), m_resultsFieldsDefined(false),
 	m_restartMeshDefined(false), m_restartFieldsDefined(false)
     {
       Ioss::Init::Initializer::initialize_ioss();
@@ -922,8 +920,15 @@ namespace stk {
     {
       for (size_t i = 0; i < m_result_outputs.size(); ++i)
       {
+        // FIX ME LATER:
+        create_output_mesh(i);
+      }
+
+      for (size_t i = 0; i < m_result_outputs.size(); ++i)
+      {
           stk::io::delete_selector_property(*m_result_outputs[i].m_output_region);
       }
+
       m_result_outputs.clear();
 
       if (!Teuchos::is_null(m_restart_region))
@@ -1086,28 +1091,28 @@ namespace stk {
       ResultsOutput result;
       result.m_output_region = Teuchos::rcp(new Ioss::Region(dbo, "results_output"));
 
-      create_output_mesh(result.m_output_region);
-
-      result.m_results_mesh_defined = true;
-
       m_result_outputs.push_back(result);
 
       size_t index_of_result = m_result_outputs.size()-1;
       return index_of_result;
     }
 
-    void MeshData::create_output_mesh(Teuchos::RCP<Ioss::Region> output_region)
+    void MeshData::create_output_mesh(size_t results_output_index)
     {
-      ThrowErrorMsgIf (Teuchos::is_null(output_region),
-                       "There is no Output database associated with this Mesh Data.");
-      bool sort_stk_parts = false; // used in stk_adapt/stk_percept
-      stk::io::define_output_db(*output_region.get(), bulk_data(), m_input_region.get(), m_anded_selector.get(),
-                                sort_stk_parts, use_nodeset_for_part_nodes_fields());
+      if ( m_result_outputs[results_output_index].m_results_mesh_defined == false )
+      {
+        m_result_outputs[results_output_index].m_results_mesh_defined = true;
 
-      stk::io::write_output_db(*output_region.get(),  bulk_data(), m_anded_selector.get());
+        Ioss::Region *output_region = m_result_outputs[results_output_index].m_output_region.get();
+        bool sort_stk_parts = false; // used in stk_adapt/stk_percept
+        stk::io::define_output_db(*output_region, bulk_data(), m_input_region.get(), m_anded_selector.get(),
+                                  sort_stk_parts, use_nodeset_for_part_nodes_fields());
 
-      //Attempt to avoid putting state change into the interface.  We'll see . . .
-      output_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
+        stk::io::write_output_db(*output_region,  bulk_data(), m_anded_selector.get());
+
+        //Attempt to avoid putting state change into the interface.  We'll see . . .
+        output_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
+      }
     }
 
     // ========================================================================
@@ -1176,7 +1181,7 @@ namespace stk {
 
     void MeshData::begin_results_output_at_time(double time)
     {
-        if (!m_resultsFieldsDefined) {
+        if (!m_result_outputs[0].m_results_fields_defined) {
 	  define_output_fields();
 	}
 
@@ -1353,7 +1358,7 @@ namespace stk {
 
     void MeshData::validate_result_output_index(size_t result_output_index)
     {
-      ThrowErrorMsgIf(result_output_index >= m_result_outputs.size(),
+      ThrowErrorMsgIf(m_result_outputs.empty() || result_output_index >= m_result_outputs.size(),
         "MeshReadWriteUtils::validate_result_output_index: invalid result output index of " << result_output_index << ".");
       ThrowErrorMsgIf (Teuchos::is_null(m_result_outputs[result_output_index].m_output_region),
         "MeshReadWriteUtils::validate_result_output_index: There is no Output mesh region associated with this result output index: " << result_output_index << ".");
@@ -1842,14 +1847,18 @@ namespace stk {
 
     void MeshData::define_output_fields(bool add_all_fields)
     {
-      if (m_resultsFieldsDefined) {
-	return;
-      }
-      
       // TODO: fix me later!
       size_t result_output_index = 0;
       validate_result_output_index(result_output_index);
-      Ioss::Region *region = m_result_outputs[result_output_index].m_output_region.get();
+
+      ResultsOutput &results = m_result_outputs[result_output_index];
+      if (results.m_results_fields_defined) {
+	return;
+      }
+      
+      create_output_mesh(result_output_index);
+
+      Ioss::Region *region = results.m_output_region.get();
 
       // Special processing for nodeblock (all nodes in model)...
       stk::io::ioss_add_fields(meta_data().universal_part(), stk::mesh::MetaData::NODE_RANK,
@@ -1889,7 +1898,7 @@ namespace stk {
 	  }
 	}
       }
-      m_resultsFieldsDefined = true;
+      results.m_results_fields_defined = true;
     }
 
     // ========================================================================

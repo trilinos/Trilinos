@@ -91,7 +91,6 @@ TEST(StkIoTest, twoResultFiles)
     MPI_Comm communicator = MPI_COMM_WORLD;
     const std::string displacementFieldName = "displacement";
     const std::string velocityFieldName = "velocity";
-//    double time = 0.0;
 
     const double displacementValue = 1.0;
     const double velocityValue = 2.0;
@@ -139,7 +138,8 @@ TEST(StkIoTest, twoResultFiles)
 //    stkMeshIoBroker.add_results_field(*statedFieldN,   nName);
 //    stkMeshIoBroker.add_results_field(*statedFieldNm1, nm1Name);
 //
-//    stkMeshIoBroker.begin_results_output_at_time(time);
+    double time = 0.0;
+    stkMeshIoBroker.begin_results_output_at_time(time);
 //    stkMeshIoBroker.process_output_request();
 //    stkMeshIoBroker.end_current_results_output();
 }
