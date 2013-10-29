@@ -538,10 +538,12 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
         volume_out_filename << "volume_mesh_" << std::setw(7) << std::setfill('0') << time_step << ".e";
         volume_out_region = create_output_mesh( volume_out_filename.str(), fixture.bulk_data,  false);
 	vol_mesh.set_output_io_region(volume_out_region);
+	vol_mesh.m_resultsFieldsDefined = true;
         std::ostringstream surface_out_filename;
         surface_out_filename << "surface_mesh_" << std::setw(7) << std::setfill('0') << time_step << ".e";
         surface_out_region = create_output_mesh( surface_out_filename.str(), fixture.bulk_data,  true);
 	surf_mesh.set_output_io_region(surface_out_region);
+	surf_mesh.m_resultsFieldsDefined = true;
       }
 
       vol_mesh.process_output_request(time_step/60.0, skin_io_parts);

@@ -486,19 +486,23 @@ namespace stk {
          * An optional selector used for filtering entities on the
          * output database. This can be used for specifying
          * active/inactive entities.  If present, then this selector is
-         * *anded* with the normal selectors use for output
+         * *anded* with the normal selectors used for output
          */
         Teuchos::RCP<stk::mesh::Selector> m_anded_selector;
         stk::mesh::ConnectivityMap m_connectivity_map;
 
         int m_currentOutputStep;
         int m_currentRestartStep;
+    public:
+        // This should be private, but needs to be public since some applications/tests are defining
+        // their own fields and need to inform MeshData that they did this...
         bool m_useNodesetForPartNodesFields;
         bool m_resultsMeshDefined;
         bool m_resultsFieldsDefined;
         bool m_restartMeshDefined;
         bool m_restartFieldsDefined;
 
+    private:
         MeshData(const MeshData&); // Do not implement
         MeshData& operator=(const MeshData&); // Do not implement
     };
