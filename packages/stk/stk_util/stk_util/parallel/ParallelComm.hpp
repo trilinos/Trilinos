@@ -91,6 +91,7 @@ public:
    */
   size_t capacity() const ;
 
+  // TODO - terribly misinforming when used on recv buffer, returns 0!
   /** Size, in bytes, of the buffer that has been processed.
    *  If the buffer is not yet allocated then this is the
    *  number of bytes that has been attempted to pack.
