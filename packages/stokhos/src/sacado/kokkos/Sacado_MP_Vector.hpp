@@ -118,10 +118,9 @@ namespace Sacado {
       typedef typename ScalarType<value_type>::type scalar_type;
 
       //! Turn Vector into a meta-function class usable with mpl::apply
-      template <typename S>
+      template < class NewStorageType >
       struct apply {
-        typedef typename Sacado::mpl::apply<Storage,ordinal_type,S>::type new_storage_type;
-        typedef Vector<new_storage_type> type;
+        typedef Vector< NewStorageType > type;
       };
 
       //! Number of arguments
@@ -289,6 +288,21 @@ namespace Sacado {
             s[i] = x.coeff(i);
         }
         return *this;
+      }
+
+      //! Assignment operator only valid for view storage
+      template< typename S >
+      KOKKOS_INLINE_FUNCTION
+      typename Kokkos::Impl::enable_if<( ! Kokkos::Impl::is_same<S,void>::value &&
+                                         Stokhos::is_ViewStorage<Storage>::value
+                                       ), Vector >
+        ::type const & operator = ( const Expr<S> & xx ) const
+      {
+        const typename Expr<S>::derived_type & x = xx.derived();
+
+        for ( ordinal_type i = 0 ; i < s.size() ; ++i ) { s[i] = x.coeff(i); }
+
+        return *this ;
       }
 
       //@}

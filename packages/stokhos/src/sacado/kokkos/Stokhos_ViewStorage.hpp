@@ -49,7 +49,7 @@
 
 namespace Stokhos {
 
-  struct error_storage_type_is_not_allocatable {};
+  struct error_storage_type_is_not_allocateable {};
   struct error_storage_type_is_not_resizeable {};
 
   //! Dynamic storage with view semantics and contiguous access
@@ -68,6 +68,7 @@ namespace Stokhos {
     static const int  static_size     = static_length ;
     static const bool supports_reset  = false ;
     static const bool supports_resize = ! is_static ;
+    static const bool supports_view   = true ;
 
     typedef ordinal_t          ordinal_type;
     typedef value_t            value_type;
@@ -79,14 +80,14 @@ namespace Stokhos {
     // typedef Stokhos::DynArrayTraits<value_type,device_type> ds;
 
     //! Turn ViewStorage into a meta-function class usable with mpl::apply
-    template <typename ord_t, typename val_t>
+    template <typename ord_t, typename val_t = value_t , typename dev_t = device_t >
     struct apply {
-      typedef ViewStorage<ord_t,val_t,static_length,static_stride,device_t> type;
+      typedef ViewStorage<ord_t,val_t,static_length,static_stride,dev_t> type;
     };
 
     //! Constructor to satisfy Sacado::MP::Vector, disabled via error type.
     KOKKOS_INLINE_FUNCTION
-    ViewStorage( const error_storage_type_is_not_allocatable & ,
+    ViewStorage( const error_storage_type_is_not_allocateable & ,
                  const value_type& x = value_type(0) );
 
     //! Constructor
@@ -100,6 +101,13 @@ namespace Stokhos {
     KOKKOS_INLINE_FUNCTION
     ViewStorage(const ViewStorage& s) :
       coeff_(s.coeff_), size_(s.size_), stride_(s.stride_) {}
+
+    KOKKOS_INLINE_FUNCTION
+    ViewStorage( const ViewStorage& s , const ordinal_type & arg_begin , const ordinal_type & arg_end )
+      : coeff_( ( ordinal_type(size_.value) < arg_end ) ? pointer(0) : s.coeff_ + arg_begin * ordinal_type(s.stride_.value) )
+      , size_(  ( ordinal_type(size_.value) < arg_end ) ? ordinal_type(0) : arg_end - arg_begin )
+      , stride_( s.stride_ )
+      {}
 
     //! Destructor
     KOKKOS_INLINE_FUNCTION
@@ -164,13 +172,8 @@ public:
 
     //! Coefficient access (avoid if possible)
     KOKKOS_INLINE_FUNCTION
-    const_reference operator[] (const ordinal_type& i) const {
-      return coeff_[ stride_one ? i : i * size_.value ];
-    }
-
-    //! Coefficient access (avoid if possible)
-    KOKKOS_INLINE_FUNCTION
-    reference operator[] (const ordinal_type& i) {
+    reference operator[] (const ordinal_type& i) const
+    {
       return coeff_[ stride_one ? i : i * size_.value ];
     }
 
@@ -201,6 +204,18 @@ public:
     //! Stride of array
     const Kokkos::Impl::integral_nonzero_constant< ordinal_t , static_stride > stride_ ;
   };
+
+  template< class Storage >
+  struct is_ViewStorage { enum { value = false }; };
+
+  template < typename ordinal_t ,
+             typename value_t ,
+             unsigned static_length ,
+             unsigned static_stride ,
+             typename device_t >
+  struct is_ViewStorage< ViewStorage< ordinal_t , value_t , static_length , static_stride , device_t > >
+    { enum { value = true }; };
+
 
 } /* namespace Stokhos */
 

@@ -52,6 +52,15 @@ void simple_function(const InputScalarType& x, OutputScalarType& y) {
   y = v/(x + 1.0);
 }
 
+template <typename ScalarType, typename ScalarView >
+KOKKOS_INLINE_FUNCTION
+void simple_function(const ScalarView & x, const ScalarView & y)
+{
+  ScalarType u = x*x;
+  ScalarType v = std::pow(std::log(u),2.0);
+  y = v/(x + 1.0);
+}
+
 template < typename Scalar,
            typename ArrayVector,
            typename ScalarVector,
@@ -229,6 +238,62 @@ struct vector_kernel< Scalar,
 
 };
 
+
+template < typename ViewType >
+struct view_kernel
+{
+  typedef ViewType view_type ;
+  typedef typename view_type::value_type   value_type ;  ///<  == Sacado::MP::Vector< Storage >
+  typedef typename view_type::scalar_type  scalar_type ; ///<  == Storage::value_type
+  typedef typename view_type::device_type  device_type ; ///<  == Storage::device_type
+
+  view_type dev_x, dev_y;
+  bool reset, print;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (device_type device) const
+  {
+    const int element = device.league_rank();
+
+    // Apply evaluation function to this thread's fix-sized UQ sample set.
+    simple_function< value_type >(
+      dev_x(element,device) ,
+      dev_y(element,device) );
+
+    // Print x and y
+    if (print) {
+      device.team_barrier();
+      if ( ! device.team_rank() ) {
+        printf("x(%i) = { ",element);
+        for (int sample=0; sample< int(dev_x.dimension_1()); ++sample) {
+          printf("%g ", dev_x(element,sample));
+        }
+        printf("}\n\n");
+        printf("y(%i) = { ",element);
+        for (int sample=0; sample< int(dev_y.dimension_1()); ++sample) {
+          printf("%g ", dev_y(element,sample));
+        }
+        printf("}\n\n");
+      }
+      device.team_barrier();
+    }
+  }
+
+  static void run(Kokkos::ParallelWorkRequest config,
+                  const view_type& x, const view_type& y,
+                  bool reset, bool print) {
+    view_kernel kernel;
+    kernel.dev_x = x;
+    kernel.dev_y = y;
+    kernel.reset = reset;
+    kernel.print = print;
+
+    Kokkos::parallel_for(config, kernel);
+    device_type::fence();
+  }
+
+};
+
 template <typename Scalar, typename Device>
 struct scalar_kernel {
   typedef Scalar scalar_type;
@@ -284,9 +349,11 @@ bool run_kernels(Kokkos::ParallelWorkRequest config,
   typedef scalar_kernel<Scalar,Device> sca_kernel;
   typedef typename vec_kernel::view_type view_type;
   typedef typename view_type::HostMirror host_view_type;
-  view_type x = view_type("x", num_elements, num_samples);
+
+  view_type x     = view_type("x", num_elements, num_samples);
   view_type y_vec = view_type("y", num_elements, num_samples);
   view_type y_sca = view_type("y", num_elements, num_samples);
+
   host_view_type hx = Kokkos::create_mirror(x);
 
   // Initialize x
@@ -309,6 +376,93 @@ bool run_kernels(Kokkos::ParallelWorkRequest config,
   {
     TEUCHOS_FUNC_TIME_MONITOR(device_name + " calculation (MP)");
     vec_kernel::run(config, x, y_vec, reset, print);
+  }
+
+  // Copy results back to host
+  host_view_type hy_vec = Kokkos::create_mirror(y_vec);
+  host_view_type hy_sca = Kokkos::create_mirror(y_sca);
+  Kokkos::deep_copy(hy_vec, y_vec);
+  Kokkos::deep_copy(hy_sca, y_sca);
+
+  // Check results agree
+  double rtol = 1e-15;
+  double atol = 1e-15;
+  bool agree = true;
+  for (int e=0; e<num_elements; e++) {
+    for (int s=0; s<num_samples; s++) {
+      if (std::abs(hy_vec(e,s)-hy_sca(e,s)) > std::abs(hy_sca(e,s))*rtol+atol) {
+        agree = false;
+        break;
+      }
+    }
+  }
+
+  // Print results if requested
+  if (print) {
+    std::cout << "x    = [ ";
+    for (int e=0; e<num_elements; e++) {
+      for (int s=0; s<num_samples; s++)
+        std::cout << hx(e,s) << " ";
+      std::cout << ";" << std::endl;
+    }
+    std::cout << "]" << std::endl;
+
+    std::cout << "y      [ ";
+    for (int e=0; e<num_elements; e++) {
+      for (int s=0; s<num_samples; s++)
+        std::cout << hy_sca(e,s) << " ";
+      std::cout << ";" << std::endl;
+    }
+    std::cout << "]" << std::endl;
+
+    std::cout << "y_mp = [ ";
+    for (int e=0; e<num_elements; e++) {
+      for (int s=0; s<num_samples; s++)
+        std::cout << hy_vec(e,s) << " ";
+      std::cout << ";" << std::endl;
+    }
+    std::cout << "]" << std::endl;
+  }
+
+  return agree;
+}
+
+template < typename Scalar , unsigned SamplesPerThread , typename Device >
+bool run_view_kernel( Kokkos::ParallelWorkRequest config,
+                      int num_elements,
+                      bool reset, bool print,
+                      const std::string& device_name )
+{
+  typedef Stokhos::StaticFixedStorage< int , Scalar , SamplesPerThread , Device > storage_type ;
+  typedef Kokkos::View< Sacado::MP::Vector< storage_type > * , Device > view_type ;
+
+  typedef view_kernel< view_type > kernel;
+  typedef typename view_type::HostMirror host_view_type;
+
+  const int num_samples = config.team_size * SamplesPerThread ;
+
+  view_type x     = view_type("x", num_elements, num_samples);
+  view_type y_vec = view_type("y", num_elements, num_samples);
+  view_type y_sca = view_type("y", num_elements, num_samples);
+
+  host_view_type hx = Kokkos::create_mirror(x);
+
+  // Initialize x
+  for (int element=0; element<num_elements; element++) {
+    for (int sample=0; sample<num_samples; sample++) {
+      hx(element,sample) =
+        static_cast<Scalar>(element+sample+1) /
+        static_cast<Scalar>(num_elements*num_samples);
+    }
+  }
+
+  // Copy x to device
+  Kokkos::deep_copy(x, hx);
+
+  // Run vector and scalar kernels
+  {
+    TEUCHOS_FUNC_TIME_MONITOR(device_name + " calculation");
+    kernel::run(config, x, y_sca, reset, print);
   }
 
   // Copy results back to host
@@ -405,6 +559,17 @@ struct MPVectorTypes {
   typedef Sacado::MP::Vector<dynamic_strided_storage> dynamic_strided_vector;
   typedef Sacado::MP::Vector<dynamic_threaded_storage> dynamic_threaded_vector;
   typedef Sacado::MP::Vector<view_storage> view_vector;
+
+  // View to array of vector types
+  typedef Kokkos::View< static_fixed_vector_1 * , Kokkos::LayoutLeft , device_type > static_fixed_view_left_1 ;
+  typedef Kokkos::View< static_fixed_vector_2 * , Kokkos::LayoutLeft , device_type > static_fixed_view_left_2 ;
+  typedef Kokkos::View< static_fixed_vector_4 * , Kokkos::LayoutLeft , device_type > static_fixed_view_left_4 ;
+  typedef Kokkos::View< static_fixed_vector_8 * , Kokkos::LayoutLeft , device_type > static_fixed_view_left_8 ;
+
+  typedef Kokkos::View< static_fixed_vector_1 * , Kokkos::LayoutRight , device_type > static_fixed_view_right_1 ;
+  typedef Kokkos::View< static_fixed_vector_2 * , Kokkos::LayoutRight , device_type > static_fixed_view_right_2 ;
+  typedef Kokkos::View< static_fixed_vector_4 * , Kokkos::LayoutRight , device_type > static_fixed_view_right_4 ;
+  typedef Kokkos::View< static_fixed_vector_8 * , Kokkos::LayoutRight , device_type > static_fixed_view_right_8 ;
 };
 
 template <int MaxSize, typename Scalar, typename Device>
@@ -419,3 +584,4 @@ const int MaxSize = 8;
 
 // Scalar type used in kernels
 typedef double Scalar;
+

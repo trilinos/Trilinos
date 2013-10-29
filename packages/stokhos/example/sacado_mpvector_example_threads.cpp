@@ -63,14 +63,29 @@ struct MPVectorExample<MaxSize, Scalar, Kokkos::Threads> {
     // Setup work request
     Kokkos::ParallelWorkRequest config(num_elements, team_size);
 
-    int local_vector_size = num_samples / team_size;
-    // TEUCHOS_TEST_FOR_EXCEPTION(
-    //   num_samples % team_size != 0, std::logic_error,
-    //   "Number of samples (" << num_samples ") is not a multiple of "
-    //   << "thread team size (" << team_size << ")!");
+    if ( num_samples % team_size ) {
+      std::cout << "Number of samples (" << num_samples
+                << ") must be a multiple of thread team size (" << team_size
+                << ")" << std::endl ;
+      return false ;
+    }
 
+    const int local_vector_size = num_samples / team_size ;
     bool status = false;
     std::string device_name = "Threads";
+
+    switch ( local_vector_size ) {
+    case  1 : run_view_kernel<Scalar, 1,Device>( config, num_elements, reset, print, device_name); break ;
+    case  2 : run_view_kernel<Scalar, 2,Device>( config, num_elements, reset, print, device_name); break ;
+    case  4 : run_view_kernel<Scalar, 4,Device>( config, num_elements, reset, print, device_name); break ;
+    case  8 : run_view_kernel<Scalar, 8,Device>( config, num_elements, reset, print, device_name); break ;
+    case 16 : run_view_kernel<Scalar,16,Device>( config, num_elements, reset, print, device_name); break ;
+    default :
+      std::cout << "Local_vector_size (" << local_vector_size << ") NOT IMPLEMENTED" << std::endl ;
+      return false ;
+    }
+
+
     if (storage_method == STATIC)
       status = run_kernels<Scalar, typename MPT::static_vector, typename MPT::static_vector, Device>(
         config, num_elements, num_samples, reset, print, device_name);
