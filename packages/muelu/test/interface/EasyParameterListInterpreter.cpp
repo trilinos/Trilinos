@@ -44,6 +44,8 @@
 //
 // @HEADER
 
+#include <cstdlib>
+
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
@@ -61,6 +63,9 @@ int main(int argc, char *argv[]) {
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::TimeMonitor;
+
+  // Set seed
+  std::srand(12345);
 
   // =========================================================================
   // MPI initialization using Teuchos
