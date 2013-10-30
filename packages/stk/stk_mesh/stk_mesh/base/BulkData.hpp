@@ -648,9 +648,10 @@ public:
 
   bool in_ghost( const Ghosting & ghost , EntityKey key , int proc ) const;
 
-  void comm_procs( EntityKey key, std::vector<int> & procs ) const;
+  void comm_procs( EntityKey key, std::vector<int> & procs ) const; //shared and ghosted entities
+  void comm_shared_procs( EntityKey key, std::vector<int> & procs ) const; // shared entities
 
-  void comm_procs( std::vector<EntityKey> & keys, std::vector<int> & procs ) const;
+  void shared_procs_intersection( std::vector<EntityKey> & keys, std::vector<int> & procs ) const;
 
   void comm_procs( const Ghosting & ghost ,
                    EntityKey key, std::vector<int> & procs ) const;

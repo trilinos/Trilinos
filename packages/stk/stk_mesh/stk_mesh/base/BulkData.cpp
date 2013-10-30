@@ -741,20 +741,31 @@ void BulkData::comm_procs( EntityKey key, std::vector<int> & procs ) const
     i = std::unique( procs.begin() , procs.end() );
   procs.erase( i , procs.end() );
 }
-
-void BulkData::comm_procs( std::vector<EntityKey> & keys, std::vector<int> & procs ) const
+void BulkData::comm_shared_procs( EntityKey key, std::vector<int> & procs ) const
 {
   procs.clear();
+  for ( PairIterEntityComm ec = entity_comm_sharing(key); ! ec.empty() ; ++ec ) {
+    procs.push_back( ec->proc );
+  }
+  std::sort( procs.begin() , procs.end() );
+  std::vector<int>::iterator
+    i = std::unique( procs.begin() , procs.end() );
+  procs.erase( i , procs.end() );
+}
 
+void BulkData::shared_procs_intersection( std::vector<EntityKey> & keys, std::vector<int> & procs ) const
+{
+
+  procs.clear();
   int num = keys.size();
   std::vector<int> procs_tmp;
   for (int i = 0; i < num; ++i)
   {
-    comm_procs(keys[i], procs_tmp);
-    std::sort(procs_tmp.begin(), procs_tmp.end(), std::less<int>());
+
+    comm_shared_procs(keys[i], procs_tmp);
 
     if (i == 0)
-      procs.swap(procs_tmp);  // first loop, just collect procs for this object
+      procs.swap(procs_tmp);
     else
     {
       // subsequent loops keep the intersection
