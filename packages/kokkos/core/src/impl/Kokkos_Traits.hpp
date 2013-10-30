@@ -59,7 +59,9 @@ namespace Impl {
 template < class T , T v >
 struct integral_constant
 {
-  static const T value = v ;
+  // Declaration of 'static const' causes an unresolved linker symbol in debug
+  // static const T value = v ;
+  enum { value = T(v) };
   typedef T value_type;
   typedef integral_constant<T,v> type;
   KOKKOS_INLINE_FUNCTION operator T() { return v ; }
@@ -247,7 +249,9 @@ struct power_of_two<1,true>
 template< typename T , T v , bool NonZero = ( v != T(0) ) >
 struct integral_nonzero_constant
 {
-  static const T value = v ;
+  // Declaration of 'static const' causes an unresolved linker symbol in debug
+  // static const T value = v ;
+  enum { value = T(v) };
   typedef T value_type ;
   typedef integral_nonzero_constant<T,v> type ;
   KOKKOS_INLINE_FUNCTION integral_nonzero_constant( const T & ) {}
