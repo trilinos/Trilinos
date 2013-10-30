@@ -278,13 +278,7 @@ STKUNIT_UNIT_TEST(UnitTestMalloc, DISABLED_Performance)
   void *pointers[MAXP];
   int size[MAXP];
 
-  int i, r, loop, pass, subpass;
-  double start_time, end_time;
-  ptrdiff_t start_mem, end_mem;
-#if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
-  ptrdiff_t start_footprint, end_footprint;
-#endif
-  double elapsed;
+  int i = 0, r = 0, loop = 0, pass = 0, subpass = 0;
   size_t absmax=0, curmax=0;
   int realloc_mask = -1;
   size_t allocations = 0;
@@ -293,14 +287,14 @@ STKUNIT_UNIT_TEST(UnitTestMalloc, DISABLED_Performance)
 
   memset(pointers, 0, MAXP*sizeof(pointers[0]));
 
-  start_time = stk::cpu_time();
+  double start_time = stk::cpu_time();
 #if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
   free(malloc(1));
 
-  start_mem = malloc_used();
-  start_footprint = malloc_footprint();
+  ptrdiff_t start_mem = malloc_used();
+  ptrdiff_t start_footprint = malloc_footprint();
 #else
-  start_mem = (ptrdiff_t) sbrk(0);
+  ptrdiff_t start_mem = (ptrdiff_t) sbrk(0);
 #endif
 
 #if defined SIERRA_PTMALLOC3_ALLOCATOR
@@ -368,15 +362,15 @@ STKUNIT_UNIT_TEST(UnitTestMalloc, DISABLED_Performance)
       }
     }
 
-    end_time = stk::cpu_time();
+    double end_time = stk::cpu_time();
 #if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
-    end_mem = malloc_used();
-    end_footprint = malloc_footprint();
+    ptrdiff_t end_mem = malloc_used();
+    ptrdiff_t end_footprint = malloc_footprint();
 #else
-    end_mem = (ptrdiff_t) sbrk(0);
+    ptrdiff_t end_mem = (ptrdiff_t) sbrk(0);
 #endif
 
-    elapsed = end_time - start_time;
+    double elapsed = end_time - start_time;
     std::cout << std::setw(14) << elapsed << " ticks "
 #if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
               << std::setw(14) << (end_footprint - start_footprint)/1024 << " K "

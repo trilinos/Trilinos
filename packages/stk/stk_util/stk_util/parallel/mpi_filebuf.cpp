@@ -76,9 +76,9 @@ mpi_filebuf * mpi_filebuf::open(
     ( std::ios::out == file_mode ) ? 'w' : (
     ( std::ios::app == file_mode ) ? 'a' : -1 ) );
 
-  int err ;
-  int rank ;
-  int local, global ;
+  int err = 0 ;
+  int rank = 0 ;
+  int local = 0, global = 0 ;
   int data[3] ;
 
   // Broadcast the selected root processor and 'C' file mode
@@ -350,7 +350,7 @@ mpi_filebuf * mpi_filebuf::flush()
 
   if ( NULL != comm_buffer && comm_output ) { // Open for write
 
-    int err ;
+    int err = 0 ;
 
     result = 0 ;
 
@@ -398,8 +398,6 @@ mpi_filebuf * mpi_filebuf::flush()
 
       recv_len[ comm_root ] = 0 ; // Don't send to self
 
-      int i ;
-
       if ( NULL == ( recv_disp = (int*) std::malloc( sizeof(int) * (nproc + 1) ) ) )
 	result = -1 ;
 
@@ -407,7 +405,7 @@ mpi_filebuf * mpi_filebuf::flush()
 
 	recv_disp[0] = 0 ;
 
-	for ( i = 0 ; i < nproc ; ++i )
+	for (int i = 0 ; i < nproc ; ++i )
 	  recv_disp[i+1] = recv_disp[i] + recv_len[i] ;
 
 	if ( 0 < recv_disp[nproc] ) {
@@ -452,9 +450,7 @@ mpi_filebuf * mpi_filebuf::flush()
 
       if ( NULL != comm_root_fp ) {
 
-	int i ;
-
-	for ( i = 1 ; i < nproc && 0 == result ; ++i ) {
+	for (int i = 1 ; i < nproc && 0 == result ; ++i ) {
 	  const int j   = ( i + comm_root ) % nproc ;
 	  const unsigned int len = recv_len[j] ;
 

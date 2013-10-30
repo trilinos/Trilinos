@@ -114,7 +114,7 @@ STKUNIT_UNIT_TEST(UnitTestMarshal, UnitTest)
 
     stk::Marshal min(mout.str());
     std::string s_in;
-    int i_in;
+    int i_in = 0;
 
     min >> s_in >> i_in;
 
@@ -168,7 +168,7 @@ STKUNIT_UNIT_TEST(UnitTestMarshal, UnitTest)
 
     stk::Marshal min(mout.str());
     std::string s_in;
-    double x_in;
+    double x_in = 0.0;
 
     STKUNIT_ASSERT_THROW(min >> s_in >> x_in, std::runtime_error);
   }

@@ -30,7 +30,7 @@ void all_write_string( ParallelMachine arg_comm ,
   const unsigned p_size = parallel_machine_size( arg_comm );
   const unsigned p_rank = parallel_machine_rank( arg_comm );
 
-  int result ;
+  int result = MPI_SUCCESS ;
 
   // Gather the send counts on root processor
 

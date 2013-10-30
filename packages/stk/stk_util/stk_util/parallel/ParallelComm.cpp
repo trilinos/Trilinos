@@ -37,7 +37,7 @@ bool all_to_all_dense( ParallelMachine p_comm ,
 
   static const char method[] = "stk::CommAll::communicate" ;
 
-  int result ;
+  int result = MPI_SUCCESS ;
 
   {
     const int p_size = parallel_machine_size( p_comm );
@@ -519,10 +519,8 @@ bool CommAll::allocate_buffers( ParallelMachine comm ,
     std::copy(local_result, local_result+Length, global_result);
   }
 
-  bool global_flag ;
-
   error_alloc   = global_result[ Length - 2 ] ;
-  global_flag   = global_result[ Length - 1 ] ;
+  bool global_flag   = global_result[ Length - 1 ] ;
 
   bool ok = true ;
 
@@ -564,7 +562,7 @@ void CommAll::communicate()
   }
 
   if ( 1 < m_size ) {
-    bool ok ;
+    bool ok = false;
 
     if ( m_bound < m_max ) {
       ok = all_to_all_dense( m_comm , m_send , m_recv , msg );
@@ -863,7 +861,7 @@ bool comm_sizes( ParallelMachine comm ,
   const int p_size = parallel_machine_size( comm );
   const int p_rank = parallel_machine_rank( comm );
 
-  int result ;
+  int result = MPI_SUCCESS ;
 
   std::ostringstream msg ;
 

@@ -95,9 +95,9 @@ STKUNIT_UNIT_TEST( UnitTestCSet, UnitTest)
 {
 //This unit-test imported from its previous home in the bottom of
 //the CSet implementation file.
-  const A * sa ;
-  const B * sb ;
-  bool flag ;
+  const A * sa = 0 ;
+  const B * sb = 0 ;
+  bool flag = false ;
 
   U  u;
   V  v;
