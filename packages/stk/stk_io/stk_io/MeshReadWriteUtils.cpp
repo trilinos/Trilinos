@@ -849,6 +849,57 @@ std::string get_field_name(const stk::mesh::FieldBase &f, Ioss::DatabaseUsage db
   return name;
 }
 
+void put_field_data(stk::mesh::BulkData &bulk, stk::mesh::Part &part,
+        stk::mesh::EntityRank part_type,
+        Ioss::GroupingEntity *io_entity,
+        const std::vector<stk::mesh::FieldBase*> &fields,
+        Ioss::Field::RoleType filter_role,
+        const stk::mesh::Selector *anded_selector)
+{
+    std::vector<stk::mesh::Entity> entities;
+    if(io_entity->type() == Ioss::SIDEBLOCK)
+    {
+        // Temporary Kluge to handle sideblocks which contain internally generated sides
+        // where the "ids" field on the io_entity doesn't work to get the correct side...
+        // NOTE: Could use this method for all entity types, but then need to correctly
+        // specify whether shared entities are included/excluded (See IossBridge version).
+        size_t num_sides = get_entities(part, bulk, entities, anded_selector);
+        if(num_sides != (size_t) io_entity->get_property("entity_count").get_int())
+        {
+            std::ostringstream msg;
+            msg << " INTERNAL_ERROR: Number of sides on part " << part.name() << " (" << num_sides
+                    << ") does not match number of sides in the associated Ioss SideBlock named "
+                    << io_entity->name() << " (" << io_entity->get_property("entity_count").get_int()
+                    << ").";
+            throw std::runtime_error(msg.str());
+        }
+    }
+    else
+    {
+        stk::io::get_entity_list(io_entity, part_type, bulk, entities);
+    }
+
+    std::vector<stk::mesh::FieldBase *>::const_iterator I = fields.begin();
+    while(I != fields.end())
+    {
+        const stk::mesh::FieldBase *f = *I;
+        ++I;
+        std::string field_name = get_field_name(*f, io_entity->get_database()->usage());
+        size_t state_count = f->number_of_states();
+        stk::mesh::FieldState state = f->state();
+
+        // If the multi-state field is not "set" at the newest state, then the user has
+        // registered the field at a specific state and only that state should be output.
+        if(state_count == 1 || state != stk::mesh::StateNew)
+        {
+            stk::io::field_data_to_ioss(bulk, f, entities, io_entity, field_name, filter_role);
+        }
+        else
+        {
+            stk::io::multistate_field_data_to_ioss(bulk, f, entities, io_entity, field_name, filter_role, state_count);
+        }
+    }
+}
 // ========================================================================
 void put_field_data(stk::mesh::BulkData &bulk, stk::mesh::Part &part,
                     stk::mesh::EntityRank part_type,
@@ -856,43 +907,19 @@ void put_field_data(stk::mesh::BulkData &bulk, stk::mesh::Part &part,
                     Ioss::Field::RoleType filter_role,
                     const stk::mesh::Selector *anded_selector=NULL)
 {
-  std::vector<stk::mesh::Entity> entities;
-  if (io_entity->type() == Ioss::SIDEBLOCK) {
-    // Temporary Kluge to handle sideblocks which contain internally generated sides
-    // where the "ids" field on the io_entity doesn't work to get the correct side...
-    // NOTE: Could use this method for all entity types, but then need to correctly
-    // specify whether shared entities are included/excluded (See IossBridge version).
-    size_t num_sides = get_entities(part, bulk, entities, anded_selector);
-    if (num_sides != (size_t)io_entity->get_property("entity_count").get_int()) {
-      std::ostringstream msg ;
-      msg << " INTERNAL_ERROR: Number of sides on part " << part.name() << " (" << num_sides
-          << ") does not match number of sides in the associated Ioss SideBlock named "
-          << io_entity->name() << " (" << io_entity->get_property("entity_count").get_int()
-          << ").";
-      throw std::runtime_error( msg.str() );
-    }
-  } else {
-    stk::io::get_entity_list(io_entity, part_type, bulk, entities);
-  }
-
   const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
   const std::vector<stk::mesh::FieldBase*> &fields = meta.get_fields();
 
-  std::vector<stk::mesh::FieldBase *>::const_iterator I = fields.begin();
-  while (I != fields.end()) {
-    const stk::mesh::FieldBase *f = *I; ++I;
-    std::string field_name = get_field_name(*f, io_entity->get_database()->usage());
-    size_t state_count = f->number_of_states();
-    stk::mesh::FieldState state = f->state();
+  put_field_data(bulk, part, part_type, io_entity, fields, filter_role, anded_selector);
+}
 
-    // If the multi-state field is not "set" at the newest state, then the user has
-    // registered the field at a specific state and only that state should be output.
-    if(state_count == 1 || state != stk::mesh::StateNew) {
-        stk::io::field_data_to_ioss(bulk, f, entities, io_entity, field_name, filter_role);
-    } else {
-        stk::io::multistate_field_data_to_ioss(bulk, f, entities, io_entity, field_name, filter_role, state_count);
-    }
-  }
+void put_field_data(stk::mesh::BulkData &bulk, stk::mesh::Part &part,
+                    stk::mesh::EntityRank part_type,
+                    Ioss::GroupingEntity *io_entity,
+                    const std::vector<stk::mesh::FieldBase*> &fields,
+                    const stk::mesh::Selector *anded_selector=NULL)
+{
+  put_field_data(bulk, part, part_type, io_entity, fields, Ioss::Field::Field::TRANSIENT, anded_selector);
 }
 
 namespace stk {
@@ -900,7 +927,7 @@ namespace stk {
 
     MeshData::MeshData()
       : m_communicator(MPI_COMM_NULL), m_anded_selector(NULL), m_connectivity_map(stk::mesh::ConnectivityMap::default_map()),
-        m_currentOutputStep(-1), m_currentRestartStep(-1), m_useNodesetForPartNodesFields(true),
+        m_currentRestartStep(-1), m_useNodesetForPartNodesFields(true),
 	m_restartMeshDefined(false), m_restartFieldsDefined(false)
 	
     {
@@ -910,7 +937,7 @@ namespace stk {
     MeshData::MeshData(MPI_Comm comm, stk::mesh::ConnectivityMap * connectivity_map)
       : m_communicator(comm), m_anded_selector(NULL)
       , m_connectivity_map(connectivity_map != NULL ? *connectivity_map : stk::mesh::ConnectivityMap::default_map()),
-        m_currentOutputStep(-1), m_currentRestartStep(-1), m_useNodesetForPartNodesFields(true),
+        m_currentRestartStep(-1), m_useNodesetForPartNodesFields(true),
 	m_restartMeshDefined(false), m_restartFieldsDefined(false)
     {
       Ioss::Init::Initializer::initialize_ioss();
@@ -920,8 +947,8 @@ namespace stk {
     {
       for (size_t i = 0; i < m_result_outputs.size(); ++i)
       {
-        // FIX ME LATER:
-        create_output_mesh(i);
+        // TODO: FIX ME LATER:
+          write_output_mesh(i);
       }
 
       for (size_t i = 0; i < m_result_outputs.size(); ++i)
@@ -935,7 +962,7 @@ namespace stk {
         stk::io::delete_selector_property(*m_restart_region);
     }
 
-    void MeshData::set_output_io_region(Teuchos::RCP<Ioss::Region> ioss_output_region)
+    size_t MeshData::set_output_io_region(Teuchos::RCP<Ioss::Region> ioss_output_region)
     {
       m_result_outputs.clear();
 
@@ -943,6 +970,7 @@ namespace stk {
       result.m_output_region = ioss_output_region;
       result.m_results_mesh_defined = true;
       m_result_outputs.push_back(result);
+      return m_result_outputs.size()-1;
     }
 
     stk::mesh::FieldBase & MeshData::get_coordinate_field()
@@ -1097,7 +1125,7 @@ namespace stk {
       return index_of_result;
     }
 
-    void MeshData::create_output_mesh(size_t results_output_index)
+    void MeshData::write_output_mesh(size_t results_output_index)
     {
       if ( m_result_outputs[results_output_index].m_results_mesh_defined == false )
       {
@@ -1116,10 +1144,8 @@ namespace stk {
     }
 
     // ========================================================================
-    int MeshData::process_output_request()
+    int MeshData::process_output_request(size_t result_output_index)
     {
-      // TODO: fix me later!
-      size_t result_output_index = 0;
       validate_result_output_index(result_output_index);
       Teuchos::RCP<Ioss::Region> output_region = m_result_outputs[result_output_index].m_output_region;
 
@@ -1129,7 +1155,7 @@ namespace stk {
 
       // Special processing for nodeblock (all nodes in model)...
       put_field_data(bulk_data(), meta_data().universal_part(), stk::mesh::MetaData::NODE_RANK,
-                     region->get_node_blocks()[0], Ioss::Field::Field::TRANSIENT,
+                     region->get_node_blocks()[0], m_result_outputs[result_output_index].m_output_fields,
                      m_anded_selector.get());
 
       // Now handle all non-nodeblock parts...
@@ -1146,7 +1172,7 @@ namespace stk {
           Ioss::GroupingEntity *entity = region->get_entity(part->name());
           if (entity != NULL && entity->type() != Ioss::SIDESET) {
             put_field_data(bulk_data(), *part, rank, entity,
-                           Ioss::Field::Field::TRANSIENT, m_anded_selector.get());
+                    m_result_outputs[result_output_index].m_output_fields, m_anded_selector.get());
           }
 
           // If rank is != NODE_RANK, then see if any fields are defined on the nodes of this part
@@ -1157,52 +1183,49 @@ namespace stk {
             Ioss::GroupingEntity *node_entity = region->get_entity(nodes_name);
             if (node_entity != NULL) {
               put_field_data(bulk_data(), *part, stk::mesh::MetaData::NODE_RANK, node_entity,
-                             Ioss::Field::Field::TRANSIENT, m_anded_selector.get());
+                      m_result_outputs[result_output_index].m_output_fields, m_anded_selector.get());
             }
           }
         }
       }
 
-      return m_currentOutputStep;
+      return m_result_outputs[result_output_index].m_current_output_step;
     }
 
     // ========================================================================
-    int MeshData::process_output_request(double time)
+    int MeshData::process_output_request(double time, size_t result_file_index)
     {
-      // TODO: fix me later!
-      validate_result_output_index(0);
+      validate_result_output_index(result_file_index);
 
-      this->begin_results_output_at_time(time);
-      this->process_output_request();
-      this->end_current_results_output();
+      this->begin_results_output_at_time(time, result_file_index);
+      this->process_output_request(result_file_index);
+      this->end_current_results_output(result_file_index);
 
-      return m_currentOutputStep;
+      return m_result_outputs[result_file_index].m_current_output_step;
     }
 
-    void MeshData::begin_results_output_at_time(double time)
+    void MeshData::begin_results_output_at_time(double time, size_t result_file_index)
     {
-        if (!m_result_outputs[0].m_results_fields_defined) {
-	  define_output_fields();
+        if (!m_result_outputs[result_file_index].m_results_fields_defined) {
+	  define_output_fields(false, result_file_index);
 	}
 
         //Attempt to avoid putting state change into the interface.  We'll see . . .
-        // TODO: fix me later!
-        Teuchos::RCP<Ioss::Region> output_region = m_result_outputs[0].m_output_region;
+        Teuchos::RCP<Ioss::Region> output_region = m_result_outputs[result_file_index].m_output_region;
         Ioss::State currentState = output_region->get_state();
         if(currentState == Ioss::STATE_DEFINE_TRANSIENT) {
           output_region->end_mode(Ioss::STATE_DEFINE_TRANSIENT);
         }
 
         output_region->begin_mode(Ioss::STATE_TRANSIENT);
-        m_currentOutputStep = output_region->add_state(time);
-        output_region->begin_state(m_currentOutputStep);
+        m_result_outputs[result_file_index].m_current_output_step = output_region->add_state(time);
+        output_region->begin_state(m_result_outputs[result_file_index].m_current_output_step);
     }
 
-    void MeshData::end_current_results_output()
+    void MeshData::end_current_results_output(size_t result_file_index)
     {
-        // TODO: fix me later!
-        Teuchos::RCP<Ioss::Region> output_region = m_result_outputs[0].m_output_region;
-        output_region->end_state(m_currentOutputStep);
+        Teuchos::RCP<Ioss::Region> output_region = m_result_outputs[result_file_index].m_output_region;
+        output_region->end_state(m_result_outputs[result_file_index].m_current_output_step);
         output_region->end_mode(Ioss::STATE_TRANSIENT);
     }
 
@@ -1368,6 +1391,7 @@ namespace stk {
     {
       validate_result_output_index(result_output_index);
       ResultsOutput &result_output = m_result_outputs[result_output_index];
+      m_result_outputs[result_output_index].m_output_fields.push_back(&field);
 
       // NOTE: This could be implemented as a free function; however, I want to keep the option
       //       open of storing this data in a vector/map on the MeshData class instead of as a
@@ -1845,10 +1869,8 @@ namespace stk {
     // To export the data to the database, call
     // process_output_request().
 
-    void MeshData::define_output_fields(bool add_all_fields)
+    void MeshData::define_output_fields(bool add_all_fields, size_t result_output_index)
     {
-      // TODO: fix me later!
-      size_t result_output_index = 0;
       validate_result_output_index(result_output_index);
 
       ResultsOutput &results = m_result_outputs[result_output_index];
@@ -1856,14 +1878,14 @@ namespace stk {
 	return;
       }
       
-      create_output_mesh(result_output_index);
+      write_output_mesh(result_output_index);
 
       Ioss::Region *region = results.m_output_region.get();
 
       // Special processing for nodeblock (all nodes in model)...
       stk::io::ioss_add_fields(meta_data().universal_part(), stk::mesh::MetaData::NODE_RANK,
 			       region->get_node_blocks()[0],
-			       Ioss::Field::TRANSIENT, add_all_fields);
+			       results.m_output_fields, add_all_fields);
 
       const stk::mesh::PartVector &all_parts = meta_data().get_parts();
       for ( stk::mesh::PartVector::const_iterator
@@ -1877,7 +1899,7 @@ namespace stk {
 	  // Get Ioss::GroupingEntity corresponding to this part...
 	  Ioss::GroupingEntity *entity = region->get_entity(part->name());
 	  if (entity != NULL) {
-	    stk::io::ioss_add_fields(*part, rank, entity, Ioss::Field::TRANSIENT, add_all_fields);
+	    stk::io::ioss_add_fields(*part, rank, entity, results.m_output_fields, add_all_fields);
 	  }
 
 	  // If rank is != NODE_RANK, then see if any fields are defined on the nodes of this part
@@ -1893,7 +1915,7 @@ namespace stk {
 	    }
 	    if (node_entity != NULL) {
 	      stk::io::ioss_add_fields(*part, stk::mesh::MetaData::NODE_RANK,
-				       node_entity, Ioss::Field::TRANSIENT, add_all_fields);
+				       node_entity, results.m_output_fields, add_all_fields);
 	    }
 	  }
 	}

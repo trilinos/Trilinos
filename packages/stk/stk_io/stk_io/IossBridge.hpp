@@ -182,6 +182,12 @@ void ioss_add_fields(const stk::mesh::Part &part,
                      const Ioss::Field::RoleType filter_role,
                      const bool add_all = false);
 
+void ioss_add_fields(const stk::mesh::Part &part,
+                     const stk::mesh::EntityRank part_type,
+                     Ioss::GroupingEntity *entity,
+                     const std::vector<stk::mesh::FieldBase*> &output_fields,
+                     const bool add_all = false);
+
 /**
  * For the given Ioss::GroupingEntity "entity", find all fields that
  * exist on the input database of type "role" and declare them on

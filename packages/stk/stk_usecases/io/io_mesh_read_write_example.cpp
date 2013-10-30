@@ -47,14 +47,6 @@ namespace {
     mesh_data.define_input_fields();
     mesh_data.populate_bulk_data();
 
-
-    // Iterate all fields and set them as restart fields...
-    const stk::mesh::FieldVector &fields = mesh_data.meta_data().get_fields();
-    for (size_t i=0; i < fields.size(); i++) {
-      std::string name = fields[i]->name();
-      mesh_data.add_restart_field(*fields[i], name);
-    }
-
     // ========================================================================
     // Create output mesh...  ("generated_mesh.out") ("exodus_mesh.out")
     std::string output_filename = working_directory + type + "_mesh.out";
@@ -62,7 +54,19 @@ namespace {
     // This outputs the "mesh" portion of the output results file.
     // This consists of the coordinates, connectivity, nodesets and sidesets. 
     // Basically all non-transient (time-dependent) data.
-    mesh_data.create_output_mesh(output_filename);
+    size_t result_file_index = mesh_data.create_output_mesh(output_filename);
+
+    // Iterate all fields and set them as restart fields...
+    const stk::mesh::FieldVector &fields = mesh_data.meta_data().get_fields();
+    for (size_t i=0; i < fields.size(); i++) {
+      std::string name = fields[i]->name();
+      mesh_data.add_restart_field(*fields[i], name);
+      const Ioss::Field::RoleType* role = stk::io::get_field_role(*fields[i]);
+       if ( role && *role == Ioss::Field::TRANSIENT )
+       {
+           mesh_data.add_results_field(result_file_index, *fields[i]);
+       }
+    }
 
     // Create restart output ...  ("generated_mesh.restart") ("exodus_mesh.restart")
     std::string restart_filename = working_directory + type + "_mesh.restart";
@@ -101,10 +105,10 @@ namespace {
 
       mesh_data.process_restart_input(step);
       mesh_data.begin_restart_output_at_time(time);
-      mesh_data.begin_results_output_at_time(time);
+      mesh_data.begin_results_output_at_time(time, result_file_index);
 
       mesh_data.process_restart_output();
-      mesh_data.process_output_request();
+      mesh_data.process_output_request(result_file_index);
 
       // Transfer all global variables from the input mesh to the
       // restart and results databases
@@ -116,7 +120,7 @@ namespace {
       }
 
       mesh_data.end_current_restart_output();
-      mesh_data.end_current_results_output();
+      mesh_data.end_current_results_output(result_file_index);
     }
   }
 

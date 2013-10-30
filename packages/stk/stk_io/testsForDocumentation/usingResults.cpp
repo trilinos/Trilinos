@@ -55,9 +55,9 @@ TEST(StkIoTestForDocumentation, resultsWithMultistateField)
 	stkIo.add_results_field(resultOuputIndex, *statedFieldN,   nName);
 	stkIo.add_results_field(resultOuputIndex, *statedFieldNm1, nm1Name);
 	
-	stkIo.begin_results_output_at_time(time);
-	stkIo.process_output_request();
-        stkIo.end_current_results_output();
+	stkIo.begin_results_output_at_time(time, resultOuputIndex);
+	stkIo.process_output_request(resultOuputIndex);
+        stkIo.end_current_results_output(resultOuputIndex);
     }
 
     {
@@ -122,26 +122,28 @@ TEST(StkIoTest, twoResultFiles)
         putDataOnTestField(stkMeshIoBroker.bulk_data(), velocityValue, *velocityField);
     }
 
+    size_t indexOfResultsFile1 = std::numeric_limits<size_t>::max();
+    size_t indexOfResultsFile2 = indexOfResultsFile1;
+
     {
-        size_t indexOfResultsFile1 = stkMeshIoBroker.create_output_mesh(resultsFilename1);
+        indexOfResultsFile1 = stkMeshIoBroker.create_output_mesh(resultsFilename1);
         stk::mesh::FieldBase *displacementField = stkMeshMetaData.get_field(displacementFieldName);
         stkMeshIoBroker.add_results_field(indexOfResultsFile1, *displacementField);
     }
 
     {
-        size_t indexOfResultsFile2 = stkMeshIoBroker.create_output_mesh(resultsFilename2);
+        indexOfResultsFile2 = stkMeshIoBroker.create_output_mesh(resultsFilename2);
         stk::mesh::FieldBase *velocityField = stkMeshMetaData.get_field(velocityFieldName);
         stkMeshIoBroker.add_results_field(indexOfResultsFile2, *velocityField);
     }
-//
-//    stkMeshIoBroker.add_results_field(*statedFieldNp1, np1Name);
-//    stkMeshIoBroker.add_results_field(*statedFieldN,   nName);
-//    stkMeshIoBroker.add_results_field(*statedFieldNm1, nm1Name);
-//
+
     double time = 0.0;
-    stkMeshIoBroker.begin_results_output_at_time(time);
-//    stkMeshIoBroker.process_output_request();
-//    stkMeshIoBroker.end_current_results_output();
+    stkMeshIoBroker.begin_results_output_at_time(time, indexOfResultsFile1);
+    stkMeshIoBroker.begin_results_output_at_time(time, indexOfResultsFile2);
+    stkMeshIoBroker.process_output_request(indexOfResultsFile1);
+    stkMeshIoBroker.process_output_request(indexOfResultsFile2);
+    stkMeshIoBroker.end_current_results_output(indexOfResultsFile1);
+    stkMeshIoBroker.end_current_results_output(indexOfResultsFile2);
 }
 
 //TEST(StkIoTest, twoResultFilesWithTheSameFilenames) { }

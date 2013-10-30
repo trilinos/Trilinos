@@ -603,6 +603,31 @@ std::string get_results_field_name(const stk::mesh::FieldBase &f)
  *  on the specified part of the specified role * to the specified
  *  Ioss::GroupingEntity
  */
+
+void ioss_add_fields(const stk::mesh::Part &part,
+                     const stk::mesh::EntityRank part_type,
+                     Ioss::GroupingEntity *entity,
+                     const std::vector<stk::mesh::FieldBase*> &fields,
+                     const Ioss::Field::RoleType filter_role,
+                     const bool add_all)
+{
+    std::vector<mesh::FieldBase *>::const_iterator I = fields.begin();
+    while (I != fields.end()) {
+        const stk::mesh::FieldBase *f = *I; ++I;
+        if (stk::io::is_valid_part_field(f, part_type, part, filter_role, add_all)) {
+            const stk::mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*f, part_type, part);
+            std::pair<std::string, Ioss::Field::BasicType> field_type;
+            get_io_field_type(f, res, &field_type);
+            if (field_type.second != Ioss::Field::INVALID) {
+            size_t entity_size = entity->get_property("entity_count").get_int();
+            std::string name = get_results_field_name(*f);
+            entity->field_add(Ioss::Field(name, field_type.second, field_type.first,
+                                      filter_role, entity_size));
+            }
+        }
+    }
+}
+
 void ioss_add_fields(const stk::mesh::Part &part,
                      const stk::mesh::EntityRank part_type,
                      Ioss::GroupingEntity *entity,
@@ -612,21 +637,16 @@ void ioss_add_fields(const stk::mesh::Part &part,
   const stk::mesh::MetaData & meta = mesh::MetaData::get(part);
   const std::vector<mesh::FieldBase*> &fields = meta.get_fields();
 
-  std::vector<mesh::FieldBase *>::const_iterator I = fields.begin();
-  while (I != fields.end()) {
-    const stk::mesh::FieldBase *f = *I; ++I;
-    if (stk::io::is_valid_part_field(f, part_type, part, filter_role, add_all)) {
-      const stk::mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*f, part_type, part);
-      std::pair<std::string, Ioss::Field::BasicType> field_type;
-      get_io_field_type(f, res, &field_type);
-      if (field_type.second != Ioss::Field::INVALID) {
-        size_t entity_size = entity->get_property("entity_count").get_int();
-        std::string name = get_results_field_name(*f);
-        entity->field_add(Ioss::Field(name, field_type.second, field_type.first,
-                                  filter_role, entity_size));
-      }
-    }
-  }
+  ioss_add_fields(part, part_type, entity, fields, filter_role, add_all);
+}
+
+void ioss_add_fields(const stk::mesh::Part &part,
+                     const stk::mesh::EntityRank part_type,
+                     Ioss::GroupingEntity *entity,
+                     const std::vector<stk::mesh::FieldBase*> &output_fields,
+                     const bool add_all)
+{
+  ioss_add_fields(part, part_type, entity, output_fields, Ioss::Field::Field::TRANSIENT, add_all);
 }
 
 

@@ -84,16 +84,16 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDouble)
         generateMetaData(stkIo);
         stkIo.populate_bulk_data();
 
-        stkIo.create_output_mesh(outputFileName);
+        size_t result_file_index = stkIo.create_output_mesh(outputFileName);
 
         stkIo.add_results_global(globalVarName, Ioss::Field::REAL);
 
         const double time = 1.0;
-        stkIo.begin_results_output_at_time(time);
+        stkIo.begin_results_output_at_time(time, result_file_index);
 
         stkIo.write_results_global(globalVarName, globalVarValue);
 
-        stkIo.end_current_results_output();
+        stkIo.end_current_results_output(result_file_index);
     }
 
     const int stepNumber = 1;
@@ -120,16 +120,16 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleVector3)
         generateMetaData(stkIo);
         stkIo.populate_bulk_data();
 
-        stkIo.create_output_mesh(outputFileName);
+        size_t result_file_index = stkIo.create_output_mesh(outputFileName);
 
         stkIo.add_results_global(globalVarName, "vector_3d", Ioss::Field::REAL);
 
         const double time = 1.0;
-        stkIo.begin_results_output_at_time(time);
+        stkIo.begin_results_output_at_time(time, result_file_index);
 
         stkIo.write_results_global(globalVarName, globalVarValue);
 
-        stkIo.end_current_results_output();
+        stkIo.end_current_results_output(result_file_index);
     }
 
     const int stepNumber = 1;
@@ -154,16 +154,16 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalIntegerVector3)
         generateMetaData(stkIo);
         stkIo.populate_bulk_data();
 
-        stkIo.create_output_mesh(outputFileName);
+        size_t result_file_index = stkIo.create_output_mesh(outputFileName);
 
         stkIo.add_results_global(globalVarName, "vector_3d", Ioss::Field::INTEGER);
 
         const double time = 1.0;
-        stkIo.begin_results_output_at_time(time);
+        stkIo.begin_results_output_at_time(time, result_file_index);
 
         stkIo.write_results_global(globalVarName, globalVarValue);
 
-        stkIo.end_current_results_output();
+        stkIo.end_current_results_output(result_file_index);
     }
 
     const int stepNumber = 1;
@@ -188,16 +188,16 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDouble10)
         generateMetaData(stkIo);
         stkIo.populate_bulk_data();
 
-        stkIo.create_output_mesh(outputFileName);
+        size_t result_file_index = stkIo.create_output_mesh(outputFileName);
 
         stkIo.add_results_global(globalVarName, globalVarValue.size(), Ioss::Field::REAL);
 
         const double time = 1.0;
-        stkIo.begin_results_output_at_time(time);
+        stkIo.begin_results_output_at_time(time, result_file_index);
 
         stkIo.write_results_global(globalVarName, globalVarValue);
 
-        stkIo.end_current_results_output();
+        stkIo.end_current_results_output(result_file_index);
     }
 
     const int stepNumber = 1;
@@ -218,19 +218,19 @@ void testTwoGlobals(const std::string &outputFileName, const std::vector<std::st
         generateMetaData(stkIo);
         stkIo.populate_bulk_data();
 
-        stkIo.create_output_mesh(outputFileName);
+        size_t resultOuputIndex = stkIo.create_output_mesh(outputFileName);
 
         Ioss::Field::BasicType iossDataType = iossBasicType(DataType());
         stkIo.add_results_global(globalVarNames[0], iossDataType);
         stkIo.add_results_global(globalVarNames[1], iossDataType);
 
         const double time = 1.0;
-        stkIo.begin_results_output_at_time(time);
+        stkIo.begin_results_output_at_time(time, resultOuputIndex);
 
         stkIo.write_results_global(globalVarNames[0], globalVarValues[0]);
         stkIo.write_results_global(globalVarNames[1], globalVarValues[1]);
 
-        stkIo.end_current_results_output();
+        stkIo.end_current_results_output(resultOuputIndex);
     }
 
     const int stepNumber = 1;
@@ -302,24 +302,23 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, GlobalDoubleWithFieldMultipleTimeSteps)
 
         putDataOnTestField(stkIo.bulk_data(), field0, nodalFieldValues);
 
-        stkIo.create_output_mesh(outputFileName);
-
+        size_t result_file_index = stkIo.create_output_mesh(outputFileName);
+        stkIo.add_results_field(result_file_index, field0);
         stkIo.add_results_global(globalVarName, Ioss::Field::REAL);
-        stkIo.define_output_fields();
 
         double time = 1.0;
         const double stepSize = 1.0;
         for(int i=0; i<numTimeSteps; i++)
         {
-            stkIo.begin_results_output_at_time(time);
+            stkIo.begin_results_output_at_time(time, result_file_index);
 
             const double globalVarValue = time;
             stkIo.write_results_global(globalVarName, globalVarValue);
             globalVarValuesOverTime.push_back(globalVarValue);
 
-            stkIo.process_output_request();
+            stkIo.process_output_request(result_file_index);
 
-            stkIo.end_current_results_output();
+            stkIo.end_current_results_output(result_file_index);
             time += stepSize;
         }
     }

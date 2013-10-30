@@ -145,9 +145,6 @@ bool use_case_5_driver( MPI_Comm comm ,
 
     stk::mesh::Part& bcpart = fem_meta.declare_part("bcpart");
 
-    // Define the transient fields that will be output.
-    stk::io::set_field_role(displacements_field, Ioss::Field::TRANSIENT);
-
     //--------------------------------
     // Commit (finalize) the meta data.  Is now ready to be used
     // in the creation and management of mesh bulk data.
@@ -333,11 +330,11 @@ bool use_case_5_driver( MPI_Comm comm ,
 
       stk::io::MeshData mesh;
       mesh.set_bulk_data(mesh_bulk_data);
-      mesh.create_output_mesh(out_filename);
-      mesh.define_output_fields();
+      size_t result_file_index = mesh.create_output_mesh(out_filename);
+      mesh.add_results_field(result_file_index, displacements_field);
 
       // Write the model to the mesh file (topology, coordinates, attributes, etc)
-      mesh.process_output_request(0.0);
+      mesh.process_output_request(0.0, result_file_index);
     }
 
     //Write out our assembled linear-system to files:

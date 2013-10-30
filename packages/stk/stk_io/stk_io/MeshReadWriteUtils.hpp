@@ -67,7 +67,7 @@ namespace stk {
          * Set the output Ioss::Region directly instead of letting it be
          * created by MeshData during the create_output_mesh() call.
          */
-        void set_output_io_region(Teuchos::RCP<Ioss::Region> ioss_output_region);
+        size_t set_output_io_region(Teuchos::RCP<Ioss::Region> ioss_output_region);
 
         /**
          * Set the input Ioss::Region directly instead of letting it be
@@ -299,19 +299,7 @@ namespace stk {
          * exists, it will be overwritten.
          */
         size_t create_output_mesh(const std::string &filename);
-
-        /**
-         * Iterate over all stk fields and for each transient field
-         * defined on a part that is output to the mesh file, define a
-         * corresponding database field. The database field will have the
-         * same name as the stk field.  A transient field will be defined
-         * if the stk::io::is_valid_part_field() returns true.  This can
-         * be set via a call to stk::io::set_field_role().
-         *
-         * If the 'add_all_fields' param is true, then all transient
-         * stk fields will have a corresponding database field defined.
-         */
-        void define_output_fields(bool add_all_fields = false);
+        void write_output_mesh(size_t results_output_index);
 
         void add_results_field(size_t result_output_index, stk::mesh::FieldBase &field, const std::string &db_name = std::string());
 
@@ -322,8 +310,8 @@ namespace stk {
         /**
          * Add a transient step to the results database at time 'time'.
          */
-        void begin_results_output_at_time(double time);
-        void end_current_results_output();
+        void begin_results_output_at_time(double time, size_t result_file_index = 0);
+        void end_current_results_output(size_t result_file_index = 0);
 
         /**
          * Add a transient step to the restart database at time 'time'.
@@ -335,8 +323,8 @@ namespace stk {
          * Add a transient step to the mesh database at time 'time' and
          * output the data for all defined fields to the database.
          */
-        int process_output_request();
-        int process_output_request(double time);
+        int process_output_request(size_t result_output_index=0);
+        int process_output_request(double time, size_t result_file_index = 0);
         void write_results_global(const std::string &globalVarName, double data);
         void write_results_global(const std::string &globalVarName, int data);
         void write_results_global(const std::string &globalVarName, std::vector<double>& data);
@@ -482,8 +470,19 @@ namespace stk {
       private:
         void internal_process_restart_output(int step);
         void create_ioss_region();
-        void create_output_mesh(size_t results_output_index);
         void validate_result_output_index(size_t result_output_index);
+        /**
+         * Iterate over all stk fields and for each transient field
+         * defined on a part that is output to the mesh file, define a
+         * corresponding database field. The database field will have the
+         * same name as the stk field.  A transient field will be defined
+         * if the stk::io::is_valid_part_field() returns true.  This can
+         * be set via a call to stk::io::set_field_role().
+         *
+         * If the 'add_all_fields' param is true, then all transient
+         * stk fields will have a corresponding database field defined.
+         */
+        void define_output_fields(bool add_all_fields = false, size_t result_output_index = 0);
 
         MPI_Comm m_communicator;
         std::vector<std::string>       m_rank_names; // Optional rank name vector.
@@ -506,7 +505,6 @@ namespace stk {
 
         std::vector<ResultsOutput> m_result_outputs;
 
-        int m_currentOutputStep;                     // remove us!
         int m_currentRestartStep;
     public:
         // This should be private, but needs to be public since some applications/tests are defining

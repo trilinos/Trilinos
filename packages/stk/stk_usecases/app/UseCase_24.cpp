@@ -273,8 +273,7 @@ bool use_case_24_driver(
   mesh_data.add_results_field(result_output_index, pressure);
   mesh_data.add_results_field(result_output_index, velocity);
 
-  mesh_data.define_output_fields();
-  mesh_data.process_output_request(0.0);
+  mesh_data.process_output_request(0.0, result_output_index);
 
   return true;
 }
