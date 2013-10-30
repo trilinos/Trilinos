@@ -69,9 +69,13 @@ namespace MueLu {
     // constructed object (or objects, as we have two different code branches for Epetra and Tpetra). The only place where we
     // could construct these objects is the constructor. Thus, we need to store RCPs, and both TrilinosSmoother and DirectSolver
     // obtain a state: they contain RCP to smoother prototypes.
+    sEpetra_ = Teuchos::null;
+    sTpetra_ = Teuchos::null;
+
     TEUCHOS_TEST_FOR_EXCEPTION(overlap_ < 0, Exceptions::RuntimeError, "Overlap parameter is negative (" << overlap << ")");
 
     ParameterList paramList = paramListIn;
+
 
     // We want TrilinosSmoother to be able to work with both Epetra and Tpetra objects, therefore we try to construct both
     // Ifpack and Ifpack2 smoother prototypes. The construction really depends on configuration options.
