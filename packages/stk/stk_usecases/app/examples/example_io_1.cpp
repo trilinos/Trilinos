@@ -106,7 +106,8 @@ void example_io_1( stk::ParallelMachine comm,
   // Create a mesh writer that will simply write out what was read.
   // the parts, attributes, and transient arguments can be different
   // that what was read.
-  mesh_data.create_output_mesh(out_filename);
+  size_t resultFileIndex = mesh_data.create_output_mesh(out_filename);
+  mesh_data.write_output_mesh(resultFileIndex);
 }
 
 //----------------------------------------------------------------------

@@ -947,12 +947,6 @@ namespace stk {
     {
       for (size_t i = 0; i < m_result_outputs.size(); ++i)
       {
-        // TODO: FIX ME LATER:
-          write_output_mesh(i);
-      }
-
-      for (size_t i = 0; i < m_result_outputs.size(); ++i)
-      {
           stk::io::delete_selector_property(*m_result_outputs[i].m_output_region);
       }
 

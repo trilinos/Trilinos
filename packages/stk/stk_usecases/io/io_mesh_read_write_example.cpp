@@ -95,32 +95,40 @@ namespace {
 
     // Determine number of timesteps on input database...
     int timestep_count = mesh_data.input_io_region()->get_property("state_count").get_int();
-    for (int step=1; step <= timestep_count; step++) {
-      double time = mesh_data.input_io_region()->get_state_time(step);
 
-      // Normally, an app would only process the restart input at a single step and
-      // then continue with execution at that point.  Here just for testing, we are
-      // reading restart data at each step on the input restart file/mesh and then
-      // outputting that data to the restart and results output.
+    if (timestep_count == 0 )
+    {
+        mesh_data.write_output_mesh(result_file_index);
+    }
+    else
+    {
+      for (int step=1; step <= timestep_count; step++) {
+        double time = mesh_data.input_io_region()->get_state_time(step);
 
-      mesh_data.process_restart_input(step);
-      mesh_data.begin_restart_output_at_time(time);
-      mesh_data.begin_results_output_at_time(time, result_file_index);
+        // Normally, an app would only process the restart input at a single step and
+        // then continue with execution at that point.  Here just for testing, we are
+        // reading restart data at each step on the input restart file/mesh and then
+        // outputting that data to the restart and results output.
 
-      mesh_data.process_restart_output();
-      mesh_data.process_output_request(result_file_index);
+        mesh_data.process_restart_input(step);
+        mesh_data.begin_restart_output_at_time(time);
+        mesh_data.begin_results_output_at_time(time, result_file_index);
 
-      // Transfer all global variables from the input mesh to the
-      // restart and results databases
-      for (size_t i=0; i < global_fields.size(); i++) {
-	std::vector<double> field_values;
-        mesh_data.get_global(global_fields[i], field_values);
-        mesh_data.write_restart_global(global_fields[i], field_values);
-        mesh_data.write_results_global(global_fields[i], field_values);
+        mesh_data.process_restart_output();
+        mesh_data.process_output_request(result_file_index);
+
+        // Transfer all global variables from the input mesh to the
+        // restart and results databases
+        for (size_t i=0; i < global_fields.size(); i++) {
+	  std::vector<double> field_values;
+          mesh_data.get_global(global_fields[i], field_values);
+          mesh_data.write_restart_global(global_fields[i], field_values);
+          mesh_data.write_results_global(global_fields[i], field_values);
+        }
+
+        mesh_data.end_current_restart_output();
+        mesh_data.end_current_results_output(result_file_index);
       }
-
-      mesh_data.end_current_restart_output();
-      mesh_data.end_current_results_output(result_file_index);
     }
   }
 
