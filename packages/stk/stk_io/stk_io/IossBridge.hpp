@@ -176,6 +176,22 @@ bool is_field_on_part(const stk::mesh::FieldBase *field,
  * all fields; calls 'is_valid_part_field'; and adds those that
  * return true.
  */
+struct FieldAndName
+{
+    FieldAndName(stk::mesh::FieldBase *field, std::string& db_name) : m_field(field), m_db_name(db_name) {}
+    stk::mesh::FieldBase *m_field;
+    std::string m_db_name;
+};
+
+struct RestartFieldAttribute {
+  RestartFieldAttribute(const std::string &name) : databaseName(name)
+  {}
+  std::string databaseName;
+};
+
+std::string get_field_name(const stk::mesh::FieldBase &f, Ioss::DatabaseUsage dbUsage);
+void getNamedFields(stk::mesh::MetaData &meta, Ioss::GroupingEntity *io_entity, std::vector<FieldAndName> &namedFields);
+
 void ioss_add_fields(const stk::mesh::Part &part,
                      const stk::mesh::EntityRank part_type,
                      Ioss::GroupingEntity *entity,
@@ -185,7 +201,7 @@ void ioss_add_fields(const stk::mesh::Part &part,
 void ioss_add_fields(const stk::mesh::Part &part,
                      const stk::mesh::EntityRank part_type,
                      Ioss::GroupingEntity *entity,
-                     const std::vector<stk::mesh::FieldBase*> &output_fields,
+                     const std::vector<FieldAndName> &namedFields,
                      const bool add_all = false);
 
 /**

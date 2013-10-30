@@ -84,6 +84,21 @@ TEST(StkIoTestForDocumentation, resultsWithMultistateField)
     unlink(resultsFilename.c_str());
 }
 
+void checkFileForNodalVarNames(const std::string &exodusFilename, const std::vector<std::string>& nodalVarNames)
+{
+   Ioss::DatabaseIO *iossDb = Ioss::IOFactory::create("exodus", exodusFilename, Ioss::READ_MODEL, MPI_COMM_WORLD);
+   Ioss::Region ioRegion(iossDb);
+   Ioss::NodeBlock *nodeBlockAssociatedWithField0 = ioRegion.get_node_blocks()[0];
+   Ioss::NameList fieldNames;
+   nodeBlockAssociatedWithField0->field_describe(Ioss::Field::TRANSIENT, &fieldNames);
+
+   ASSERT_EQ(nodalVarNames.size(), fieldNames.size());
+   for (size_t i=0;i<nodalVarNames.size();i++)
+   {
+       EXPECT_TRUE(nodeBlockAssociatedWithField0->field_exists(nodalVarNames[i])) << nodalVarNames[i];
+   }
+}
+
 TEST(StkIoTest, twoResultFiles)
 {
     std::string resultsFilename1 = "output1.results";
@@ -131,8 +146,11 @@ TEST(StkIoTest, twoResultFiles)
         stkMeshIoBroker.add_results_field(indexOfResultsFile1, *displacementField);
     }
 
+    std::string altNameForDisp("greg");
     {
         indexOfResultsFile2 = stkMeshIoBroker.create_output_mesh(resultsFilename2);
+        stk::mesh::FieldBase *displacementField = stkMeshMetaData.get_field(displacementFieldName);
+        stkMeshIoBroker.add_results_field(indexOfResultsFile2, *displacementField, altNameForDisp);
         stk::mesh::FieldBase *velocityField = stkMeshMetaData.get_field(velocityFieldName);
         stkMeshIoBroker.add_results_field(indexOfResultsFile2, *velocityField);
     }
@@ -144,6 +162,17 @@ TEST(StkIoTest, twoResultFiles)
     stkMeshIoBroker.process_output_request(indexOfResultsFile2);
     stkMeshIoBroker.end_current_results_output(indexOfResultsFile1);
     stkMeshIoBroker.end_current_results_output(indexOfResultsFile2);
+
+    std::vector<std::string> goldNodalVarNamesInFile1;
+    goldNodalVarNamesInFile1.push_back(displacementFieldName);
+    checkFileForNodalVarNames(resultsFilename1, goldNodalVarNamesInFile1);
+
+    std::vector<std::string> goldNodalVarNamesInFile2;
+    goldNodalVarNamesInFile2.push_back(altNameForDisp);
+    goldNodalVarNamesInFile2.push_back(velocityFieldName);
+    checkFileForNodalVarNames(resultsFilename2, goldNodalVarNamesInFile2);
+
+    // TODO: Unlink the files
 }
 
 //TEST(StkIoTest, twoResultFilesWithTheSameFilenames) { }

@@ -21,6 +21,8 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/ConnectivityMap.hpp>
 
+#include <stk_io/IossBridge.hpp>
+
 namespace Ioss {
   class DatabaseIO;
   class Region;
@@ -42,7 +44,7 @@ namespace stk {
         bool m_results_mesh_defined;
         bool m_results_fields_defined;
         Teuchos::RCP<Ioss::Region> m_output_region;
-        std::vector<stk::mesh::FieldBase*> m_output_fields;
+        std::vector<stk::io::FieldAndName> m_named_fields;
         ResultsOutput() : m_current_output_step(-1), m_use_nodeset_for_part_nodes_fields(true),
                 m_results_mesh_defined(false), m_results_fields_defined(false){}
 //        const std::string get_base_file_name() {

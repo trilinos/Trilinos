@@ -607,24 +607,51 @@ std::string get_results_field_name(const stk::mesh::FieldBase &f)
 void ioss_add_fields(const stk::mesh::Part &part,
                      const stk::mesh::EntityRank part_type,
                      Ioss::GroupingEntity *entity,
-                     const std::vector<stk::mesh::FieldBase*> &fields,
+                     const std::vector<FieldAndName> &namedFields,
                      const Ioss::Field::RoleType filter_role,
                      const bool add_all)
 {
-    std::vector<mesh::FieldBase *>::const_iterator I = fields.begin();
-    while (I != fields.end()) {
-        const stk::mesh::FieldBase *f = *I; ++I;
+    for (size_t i=0;i<namedFields.size();i++)
+    {
+        const stk::mesh::FieldBase *f = namedFields[i].m_field;
         if (stk::io::is_valid_part_field(f, part_type, part, filter_role, add_all)) {
             const stk::mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*f, part_type, part);
             std::pair<std::string, Ioss::Field::BasicType> field_type;
             get_io_field_type(f, res, &field_type);
             if (field_type.second != Ioss::Field::INVALID) {
             size_t entity_size = entity->get_property("entity_count").get_int();
-            std::string name = get_results_field_name(*f);
+            std::string name = namedFields[i].m_db_name;
             entity->field_add(Ioss::Field(name, field_type.second, field_type.first,
                                       filter_role, entity_size));
             }
         }
+    }
+}
+
+std::string get_field_name(const stk::mesh::FieldBase &f, Ioss::DatabaseUsage dbUsage)
+{
+  std::string name = f.name();
+  if(dbUsage == Ioss::WRITE_RESTART || dbUsage == Ioss::READ_RESTART) {
+    const RestartFieldAttribute *restartAttribute = f.attribute<RestartFieldAttribute>();
+    if(restartAttribute !=NULL) {
+      name = restartAttribute->databaseName;
+    }
+  }
+  else {
+    name = stk::io::get_results_field_name(f);
+  }
+  return name;
+}
+
+void getNamedFields(stk::mesh::MetaData &meta, Ioss::GroupingEntity *io_entity, std::vector<FieldAndName> &namedFields)
+{
+    const std::vector<stk::mesh::FieldBase*> &fields = meta.get_fields();
+    namedFields.reserve(fields.size());
+    std::vector<stk::mesh::FieldBase *>::const_iterator fieldIterator = fields.begin();
+    for(;fieldIterator != fields.end();++fieldIterator)
+    {
+      std::string field_name = stk::io::get_field_name(**fieldIterator, io_entity->get_database()->usage());
+      namedFields.push_back(FieldAndName(*fieldIterator, field_name));
     }
 }
 
@@ -634,19 +661,19 @@ void ioss_add_fields(const stk::mesh::Part &part,
                      const Ioss::Field::RoleType filter_role,
                      const bool add_all)
 {
-  const stk::mesh::MetaData & meta = mesh::MetaData::get(part);
-  const std::vector<mesh::FieldBase*> &fields = meta.get_fields();
+  std::vector<FieldAndName> namedFields;
+  stk::io::getNamedFields(mesh::MetaData::get(part), entity, namedFields);
 
-  ioss_add_fields(part, part_type, entity, fields, filter_role, add_all);
+  ioss_add_fields(part, part_type, entity, namedFields, filter_role, add_all);
 }
 
 void ioss_add_fields(const stk::mesh::Part &part,
                      const stk::mesh::EntityRank part_type,
                      Ioss::GroupingEntity *entity,
-                     const std::vector<stk::mesh::FieldBase*> &output_fields,
+                     const std::vector<FieldAndName> &namedFields,
                      const bool add_all)
 {
-  ioss_add_fields(part, part_type, entity, output_fields, Ioss::Field::Field::TRANSIENT, add_all);
+  ioss_add_fields(part, part_type, entity, namedFields, Ioss::Field::Field::TRANSIENT, add_all);
 }
 
 
