@@ -207,7 +207,11 @@ public:
   int operator[]( const iType & i ) const
   {
 #if defined( __CUDA_ARCH__ ) && ( 300 <= __CUDA_ARCH__ )
+#ifdef KOKKOS_USE_LDG_INTRINSIC
+    return _ldg(&ptr[i]);
+#else
     return tex1Dfetch<int>( obj , i );
+#endif
 #else
     return ptr[ i ];
 #endif
@@ -248,7 +252,11 @@ public:
   unsigned int operator[]( const iType & i ) const
   {
 #if defined( __CUDA_ARCH__ ) && ( 300 <= __CUDA_ARCH__ )
+#ifdef KOKKOS_USE_LDG_INTRINSIC
+    return _ldg(&ptr[i]);
+#else
     return tex1Dfetch<unsigned int>( obj , i );
+#endif
 #else
     return ptr[ i ];
 #endif
@@ -289,7 +297,11 @@ public:
   float operator[]( const iType & i ) const
   {
 #if defined( __CUDA_ARCH__ ) && ( 300 <= __CUDA_ARCH__ )
+#ifdef KOKKOS_USE_LDG_INTRINSIC
+    return _ldg(&ptr[i]);
+#else
     return tex1Dfetch<float>( obj , i );
+#endif
 #else
     return ptr[ i ];
 #endif
@@ -330,9 +342,12 @@ public:
   double operator[]( const iType & i ) const
   {
 #if defined( __CUDA_ARCH__ ) && ( 300 <= __CUDA_ARCH__ )
+#ifdef KOKKOS_USE_LDG_INTRINSIC
     return _ldg(&ptr[i]);
-    //int2 v = tex1Dfetch<int2>( obj , i );
-    //return __hiloint2double(v.y, v.x);
+#else
+    int2 v = tex1Dfetch<int2>( obj , i );
+    return __hiloint2double(v.y, v.x);
+#endif
 #else
     return ptr[ i ];
 #endif
@@ -373,9 +388,13 @@ public:
   double2 operator[]( const iType & i ) const
   {
 #if defined( __CUDA_ARCH__ ) && ( 300 <= __CUDA_ARCH__ )
+#ifdef KOKKOS_USE_LDG_INTRINSIC
+    return _ldg(&ptr[i]);
+#else
     int4 v = tex1Dfetch<int4>(tex_obj , idx);
     double2 retval = { __hiloint2double(v.y, v.x) , __hiloint2double(v.w, v.z) };
     return retval ;
+#endif
 #else
     return ptr[ i ];
 #endif
