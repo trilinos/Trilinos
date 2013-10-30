@@ -588,16 +588,6 @@ void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &me
   }
 }
 
-std::string get_results_field_name(const stk::mesh::FieldBase &f)
-{
-  const ResultsFieldName *assignedName = f.attribute<ResultsFieldName>();
-  std::string name = f.name();
-  if(assignedName != NULL) {
-    name = assignedName->name_;
-  }
-  return name;
-}
-
 //----------------------------------------------------------------------
 /** Add all stk::Fields on the entities of the specified part_type
  *  on the specified part of the specified role * to the specified
@@ -637,9 +627,7 @@ std::string get_field_name(const stk::mesh::FieldBase &f, Ioss::DatabaseUsage db
       name = restartAttribute->databaseName;
     }
   }
-  else {
-    name = stk::io::get_results_field_name(f);
-  }
+
   return name;
 }
 
@@ -1772,19 +1760,6 @@ void set_field_role(stk::mesh::FieldBase &f, const Ioss::Field::RoleType &role)
     }
     delete my_role;
   }
-}
-
-void set_results_field_name(mesh::FieldBase &f, const std::string &name)
-{
-  stk::mesh::MetaData &m = mesh::MetaData::get(f);
-  const ResultsFieldName *check = f.attribute<ResultsFieldName>();
-  if(check != NULL)
-  {
-    m.remove_attribute(f, check);
-    delete check;
-  }
-  ResultsFieldName *newName = new ResultsFieldName(name);
-  m.declare_attribute_with_delete(f, newName);
 }
 
 }//namespace io

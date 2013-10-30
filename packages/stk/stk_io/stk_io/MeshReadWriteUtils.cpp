@@ -1360,51 +1360,40 @@ namespace stk {
         "MeshReadWriteUtils::validate_result_output_index: There is no Output mesh region associated with this result output index: " << result_output_index << ".");
     }
 
+    void addOrRenameFieldName(stk::mesh::FieldBase &field, const std::string &db_name, ResultsOutput &result_output)
+    {
+        std::string dbName(db_name);
+        if ( db_name.empty() )
+        {
+            dbName = field.name();
+        }
+
+        bool fieldAlreadyExists=false;
+        for (size_t i=0;i<result_output.m_named_fields.size();i++)
+        {
+            if ( &field == result_output.m_named_fields[i].m_field )
+            {
+                result_output.m_named_fields[i].m_db_name = dbName;
+                fieldAlreadyExists = true;
+                break;
+            }
+        }
+
+        if ( fieldAlreadyExists == false )
+        {
+            stk::io::FieldAndName namedField(&field, dbName);
+            result_output.m_named_fields.push_back(namedField);
+        }
+    }
+
     void MeshData::add_results_field(size_t result_output_index, stk::mesh::FieldBase &field, const std::string &db_name)
     {
       validate_result_output_index(result_output_index);
       ResultsOutput &result_output = m_result_outputs[result_output_index];
-      std::string dbName(db_name);
-      if ( db_name.empty() )
-      {
-          dbName = field.name();
-      }
+      addOrRenameFieldName(field, db_name, result_output);
 
-      bool fieldAlreadyExists=false;
-      for (size_t i=0;i<result_output.m_named_fields.size();i++)
-      {
-          if ( &field == result_output.m_named_fields[i].m_field )
-          {
-              result_output.m_named_fields[i].m_db_name = dbName;
-              fieldAlreadyExists = true;
-              break;
-          }
-      }
-
-      if ( fieldAlreadyExists == false )
-      {
-          stk::io::FieldAndName namedField(&field, dbName);
-          result_output.m_named_fields.push_back(namedField);
-      }
-
-      if (result_output.m_results_mesh_defined && use_nodeset_for_part_nodes_fields()) {
-	std::cerr << "WARNING: adding results fields after calling define_output_database may cause\n"
-		  << "         problems when operating with 'use_nodeset_for_part_nodes_field()' set to true\n"
-		  << "         since the nodesets required for this option may not be created properly.\n";
-      }
-
-      if (result_output.m_results_fields_defined) {
-	  std::ostringstream msg ;
-	  msg << "ERROR in MeshReadWriteUtils::add_results_field:"
-	      << " define_results_fields() has already been called, so it is too late to add the results field '"
-	      << field.name() << "'.";
-	  throw std::runtime_error( msg.str() );
-      }
-
+      // TODO: code under here still needs this. Fix me.
       stk::io::set_field_role(field, Ioss::Field::TRANSIENT);
-      if (!db_name.empty()) {
-	stk::io::set_results_field_name(field, db_name);
-      }
     }
 
     void MeshData::create_restart_output(const std::string &filename)

@@ -325,16 +325,6 @@ const Ioss::Field::RoleType* get_field_role(const mesh::FieldBase &f);
  */
 void set_field_role(mesh::FieldBase &f, const Ioss::Field::RoleType &role);
 
-/** Returns the name of the mesh::Field 'f' to be
- *  written to the database file.
- *  This can be different from the field name if
- *  assigned a different name by the app.
- */
-std::string get_results_field_name(const stk::mesh::FieldBase &f);
-
-/** Defines the name of the mesh::Field 'f'.
- */
-void set_results_field_name(mesh::FieldBase &f, const std::string &name);
 
 /** Returns whether the mesh::Part 'p' should be output to a
  *	results or restart database. Or, in other words, whether the
