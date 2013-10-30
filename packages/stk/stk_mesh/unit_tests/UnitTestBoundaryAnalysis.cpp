@@ -146,7 +146,7 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   for (unsigned i = 0;
        i < sizeof(ids_of_entities_in_closure)/sizeof(stk::mesh::EntityId);
        ++i) {
-    stk::mesh::EntityRank rank_of_entity;
+    stk::mesh::EntityRank rank_of_entity=0;
     if (i < num_elems_in_closure) {
       rank_of_entity = element_rank;
     }

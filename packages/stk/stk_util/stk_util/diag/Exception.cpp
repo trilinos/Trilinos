@@ -180,7 +180,7 @@ void
 parallel_throw(
   MPI_Comm		mpi_comm)
 {
-  int nprocs;
+  int nprocs = -1;
   MPI_Comm_size(mpi_comm, &nprocs);
 
   ExParallel **handles = new ExParallel* [nprocs];

@@ -106,9 +106,8 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, testEntityRepository )
   std::vector<stk::mesh::Part *>  add_part;
   add_part.push_back ( &part );
 
-  int  size , rank;
-  rank = stk::parallel_machine_rank( MPI_COMM_WORLD );
-  size = stk::parallel_machine_size( MPI_COMM_WORLD );
+  int rank = stk::parallel_machine_rank( MPI_COMM_WORLD );
+  int size = stk::parallel_machine_size( MPI_COMM_WORLD );
   PartVector tmp(1);
 
   bulk.modification_begin();

@@ -43,11 +43,10 @@ void
 test_error_messages_to_file_report_handler(const char *		message,  int			type) {
 
   std::string new_message(message);
-  std::string::size_type start_pos;
   //
   // Strip out platform dependent exception related messages.
   //
-  start_pos = new_message.find("exception thrown from");
+  std::string::size_type start_pos = new_message.find("exception thrown from");
   if(start_pos != std::string::npos) {
     int end_pos = new_message.find('\n');
     new_message.erase(start_pos, (end_pos - start_pos) + 1);

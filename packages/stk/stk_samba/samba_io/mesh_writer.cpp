@@ -207,7 +207,7 @@ void mesh_writer::write_node_block(entity_block_key node_block_key,  Ioss::NodeB
 
   // Because there is only one node block, the local id for a node will be the same
   // as its index into its node block
-  int new_local_id;
+  int new_local_id = -1;
   std::map<entity_block_key, int>::iterator new_idx_probe =
     mapper.m_new_idx_in_block.find(node_block_key);
   if (new_idx_probe != mapper.m_new_idx_in_block.end())
@@ -257,7 +257,7 @@ void mesh_writer::write_element_block(entity_block_key element_block_key,  Ioss:
 {
   ioss_mapper &mapper = *m_ioss_mapper_ptr;
 
-  int new_idx_in_block;
+  int new_idx_in_block = -1;
   std::map<entity_block_key, int>::iterator new_idx_probe =
     mapper.m_new_idx_in_block.find(element_block_key);
   if (new_idx_probe != mapper.m_new_idx_in_block.end())

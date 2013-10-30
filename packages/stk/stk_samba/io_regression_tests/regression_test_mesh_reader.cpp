@@ -117,8 +117,7 @@ bool check_cobound_count(std::map<samba::entity_key, size_t> &cobound_counter,
                          const size_t edge_elt_count_arg,
                          const size_t corner_elt_count_arg)
 {
-  size_t single_side_elt_count, edge_elt_count, corner_elt_count;
-  single_side_elt_count = edge_elt_count = corner_elt_count = 0;
+  size_t single_side_elt_count =0, edge_elt_count =0, corner_elt_count =0;
   for (std::map<samba::entity_key, size_t>::iterator cbc_i = cobound_counter.begin();
        cbc_i != cobound_counter.end();
        ++cbc_i)

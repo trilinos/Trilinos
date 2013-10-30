@@ -1132,7 +1132,7 @@ bool
 is_shutdown_requested()
 {
   int shutdown_requested_in = EnvData::instance().m_shutdownRequested || Env::HUP_received();
-  int shutdown_requested;
+  int shutdown_requested = -1;
 
   MPI_Allreduce(&shutdown_requested_in, &shutdown_requested, 1, MPI_INT, MPI_SUM, Env::parallel_comm());
 

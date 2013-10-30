@@ -182,10 +182,10 @@ void copy_vector_to_mesh( fei::Vector & vec,
   std::vector<double> values(num_values);
   vec.copyOut(num_values,&shared_and_owned_indices[0],&values[0]);
 
-  stk::mesh::EntityRank ent_type;
-  stk::mesh::EntityId ent_id;
-  const stk::mesh::FieldBase * field;
-  int offset_into_field;
+  stk::mesh::EntityRank ent_type=0;
+  stk::mesh::EntityId ent_id=0;
+  const stk::mesh::FieldBase * field = 0;
+  int offset_into_field = 0;
 
   for(size_t i = 0; i < num_values; ++i)
   {

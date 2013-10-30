@@ -68,10 +68,10 @@ void testDofMapper( MPI_Comm comm )
   dof_mapper.add_dof_mappings(bulk_data, select_used,
                               NODE_RANK, *temperature_field);
 
-  stk::mesh::EntityRank ent_type;
-  stk::mesh::EntityId ent_id;
+  stk::mesh::EntityRank ent_type=0;
+  stk::mesh::EntityId ent_id=0;
   const stk::mesh::FieldBase* field = NULL;
-  int offset_into_field;
+  int offset_into_field=0;
   int index = 0;
   //DofMapper::get_dof can't be called until after DofMapper::finalize() has
   //been called.

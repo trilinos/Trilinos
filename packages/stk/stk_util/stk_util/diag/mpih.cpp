@@ -376,7 +376,7 @@ void
 Activate_Handles()
 {
   /* %TRACE[TRACEBACK]% */ Traceback trace__("sierra::mpih::Activate_Handles()"); /* %TRACE% */
-  int result;
+  int result=-1;
   if (MPI_SUCCESS !=
       (result = MPIH_Comm_activate_handles(Env::parallel_comm()))) {
     Env::output()
@@ -391,7 +391,7 @@ void
 Deactivate_Handles()
 {
   /* %TRACE[TRACEBACK]% */ Traceback trace__("sierra::mpih::Deactivate_Handles()"); /* %TRACE% */
-  int result;
+  int result=-1;
   if (MPI_SUCCESS !=
       (result = MPIH_Comm_deactivate_handles(Env::parallel_comm()))) {
     throw RuntimeError()
@@ -425,7 +425,7 @@ Set_Local_Handle(
   ExParallel &handle)
 {
   /* %TRACE[TRACEBACK]% */ Traceback trace__("sierra::mpih::Set_Local_Handle(ExParallel &handle)"); /* %TRACE% */
-  int result;
+  int result=-1;
   if (MPI_SUCCESS !=
       (result = MPIH_Comm_set_local_handle(Env::parallel_comm(),
 					   static_cast<void *>(&handle)))) {
@@ -440,7 +440,7 @@ void
 Reset_Local_Handle()
 {
   /* %TRACE[TRACEBACK]% */ Traceback trace__("sierra::mpih::Reset_Local_Handle()"); /* %TRACE% */
-  int result;
+  int result=-1;
   if (MPI_SUCCESS !=
       (result = MPIH_Comm_reset_status(Env::parallel_comm()))) {
     throw RuntimeError()
@@ -454,7 +454,7 @@ int
 Get_Global_Status()
 {
   /* %TRACE[TRACEBACK]% */ Traceback trace__("sierra::mpih::Get_Global_Status()"); /* %TRACE% */
-  int result, status;
+  int result=-1, status=-1;
   if (MPI_SUCCESS !=
       (result = MPIH_Comm_get_global_status(Env::parallel_comm(), &status))) {
     throw RuntimeError()
@@ -469,7 +469,7 @@ void
 Set_Status_Check()
 {
   /* %TRACE[TRACEBACK]% */ Traceback trace__("sierra::mpih::Set_Status_Check()"); /* %TRACE% */
-  int result;
+  int result=-1;
   if (MPI_SUCCESS !=
       (result = MPIH_Comm_set_status_check(Env::parallel_comm()))) {
     throw RuntimeError()
@@ -483,7 +483,7 @@ void
 Reset_Status_Check()
 {
   /* %TRACE[TRACEBACK]% */ Traceback trace__("sierra::mpih::Reset_Status_Check()"); /* %TRACE% */
-  int result;
+  int result=-1;
   if (MPI_SUCCESS !=
       (result = MPIH_Comm_reset_status_check(Env::parallel_comm()))) {
     throw RuntimeError()
@@ -497,7 +497,7 @@ int
 Get_Status_Check()
 {
   /* %TRACE[TRACEBACK]% */ Traceback trace__("sierra::mpih::Get_Status_Check()"); /* %TRACE% */
-  int result, status;
+  int result=-1, status=-1;
   if (MPI_SUCCESS !=
       (result = MPIH_Comm_get_status_check(Env::parallel_comm(),
 					   &status))) {
@@ -513,7 +513,7 @@ int
 Get_Nhandles()
 {
   /* %TRACE[TRACEBACK]% */ Traceback trace__("sierra::mpih::Get_Nhandles()"); /* %TRACE% */
-  int result, nhandles;
+  int result=-1, nhandles=-1;
   if (MPI_SUCCESS !=
       (result = MPIH_Comm_get_nhandles(Env::parallel_comm(),
 				       &nhandles))) {
@@ -530,7 +530,7 @@ Get_Handles(
   ExParallel **handles)
 {
   /* %TRACE[TRACEBACK]% */ Traceback trace__("sierra::mpih::Get_Handles(ExParallel **handles)"); /* %TRACE% */
-  int result;
+  int result=-1;
   if (MPI_SUCCESS !=
       (result = MPIH_Comm_get_handles(Env::parallel_comm(),
 				      reinterpret_cast<void **>(handles)))) {
@@ -549,7 +549,7 @@ Get_Tags(
   int *			tag_message)
 {
   /* %TRACE[TRACEBACK]% */ Traceback trace__("sierra::mpih::Get_Tags(int *active, int *tag_sparse, int *tag_nominal, int *tag_message)"); /* %TRACE% */
-  int result;
+  int result=-1;
   if (MPI_SUCCESS !=
       (result = MPIH_Comm_get_tags(Env::parallel_comm(),
 				   active,
@@ -569,7 +569,7 @@ Get_Functions(
   MPIH_Handler_execute *	handler_execute_fn)
 {
   /* %TRACE[TRACEBACK]% */ Traceback trace__("sierra::mpih::Get_Functions(MPIH_Handler_compete *handler_compete_fn , MPIH_Handler_execute *handler_execute_fn)"); /* %TRACE% */
-  int result;
+  int result=-1;
   if (MPI_SUCCESS !=
       (result = MPIH_Comm_get_functions(Env::parallel_comm(),
 					handler_compete_fn ,
@@ -594,7 +594,7 @@ Get_Global_Handles(
   ExParallel **		handles)
 {
   /* %TRACE[TRACEBACK]% */ Traceback trace__("sierra::mpih::Get_Global_Handles(ExParallel **handles)"); /* %TRACE% */
-  int result;
+  int result=-1;
   if (MPI_SUCCESS !=
       (result = MPIH_Comm_get_global_handles(Env::parallel_comm(),
 					     reinterpret_cast<void **>(handles)))) {

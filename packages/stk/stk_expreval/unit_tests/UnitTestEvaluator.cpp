@@ -162,7 +162,7 @@ evaluate_range(
   stk::expreval::Eval expr_eval(stk::expreval::VariableMap::getDefaultResolver(), by_expr.c_str());
   expr_eval.parse();
 
-  double x, y, by, v[2];
+  double x=0, y=0, by=0, v[2]={0,0};
   expr_eval.bindVariable("x", x);
   expr_eval.bindVariable("by", by);
   expr_eval.bindVariable("v", *v);
@@ -215,7 +215,7 @@ test(
   stk::expreval::Eval expr_eval(stk::expreval::VariableMap::getDefaultResolver(), by_expr.c_str());
   expr_eval.parse();
 
-  double x, y, by, result = 0.0;
+  double x=0, y=0, by=0, result = 0.0;
   double v[2];
 
   expr_eval.bindVariable("x", x);

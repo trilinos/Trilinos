@@ -169,9 +169,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testGetInvolvedParts)
   add_part4.push_back ( &partLeft_1 );
 
   bulk.modification_begin();
-  int  size , rank;
-  rank = stk::parallel_machine_rank( pm );
-  size = stk::parallel_machine_size( pm );
+  int rank = stk::parallel_machine_rank( pm );
+  int size = stk::parallel_machine_size( pm );
 
   for ( int id_base = 0 ; id_base < 99 ; ++id_base )
   {
@@ -251,9 +250,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket2)
   add_part4.push_back ( &partLeft_1 );
 
   bulk.modification_begin();
-  int  size , rank;
-  rank = stk::parallel_machine_rank( pm );
-  size = stk::parallel_machine_size( pm );
+  int rank = stk::parallel_machine_rank( pm );
+  int size = stk::parallel_machine_size( pm );
 
   for ( int id_base = 0 ; id_base < 99 ; ++id_base )
   {

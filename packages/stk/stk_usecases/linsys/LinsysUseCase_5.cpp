@@ -313,8 +313,8 @@ bool use_case_5_driver( MPI_Comm comm ,
       }
 
       //Launch the linear-solver:
-      int status = 0, ret;
-      ret = ls.solve(status, params);
+      int status = 0;
+      int ret = ls.solve(status, params);
 
       if (ret != 0) {
         throw std::runtime_error("Error in the linear solver.");

@@ -214,10 +214,10 @@ bool use_case_2_driver( MPI_Comm comm ,
       global_index = dof_mapper.get_global_index(stk::mesh::MetaData::NODE_RANK, mesh_bulk_data.identifier(nodes[i]), displacements_field);
       std::cout << "Proc " << myProc << ", global index for node " << mesh_bulk_data.identifier(nodes[i])
                 << ", field '"<<displacements_field.name()<<"' is: " << global_index << std::endl;
-      stk::mesh::EntityRank ent_type;
-      stk::mesh::EntityId ent_id;
+      stk::mesh::EntityRank ent_type=0;
+      stk::mesh::EntityId ent_id=0;
       const stk::mesh::FieldBase* field = NULL;
-      int offset_into_field;
+      int offset_into_field=-1;
       dof_mapper.get_dof(global_index, ent_type, ent_id, field, offset_into_field);
       if (ent_type != stk::mesh::MetaData::NODE_RANK || ent_id != mesh_bulk_data.identifier(nodes[i]) ||
           field->name() != displacements_field.name()) {
@@ -232,10 +232,10 @@ bool use_case_2_driver( MPI_Comm comm ,
       global_index = dof_mapper.get_global_index(element_rank, mesh_bulk_data.identifier(elems[i]), pressure_field);
       std::cout << "Proc " << myProc << ", global index for element " << mesh_bulk_data.identifier(elems[i])
                 << ", field '"<<pressure_field.name()<<"' is: " << global_index << std::endl;
-      stk::mesh::EntityRank ent_type;
-      stk::mesh::EntityId ent_id;
+      stk::mesh::EntityRank ent_type=0;
+      stk::mesh::EntityId ent_id=0;
       const stk::mesh::FieldBase* field = NULL;
-      int offset_into_field;
+      int offset_into_field=-1;
       dof_mapper.get_dof(global_index, ent_type, ent_id, field, offset_into_field);
       if (ent_type != element_rank || ent_id != mesh_bulk_data.identifier(elems[i]) ||
           field->name() != pressure_field.name()) {

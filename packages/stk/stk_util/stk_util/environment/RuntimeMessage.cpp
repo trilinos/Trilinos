@@ -412,7 +412,7 @@ aggregate_messages(
   int p_rank = 0;
   MPI_Comm_rank(comm, &p_rank);
   
-  int result ;
+  int result =-1;
 
   // Gather the send counts on root processor
 

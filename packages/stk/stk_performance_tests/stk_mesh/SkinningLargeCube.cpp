@@ -489,7 +489,7 @@ STKUNIT_UNIT_TEST( skinning_large_cube, skinning_large_cube)
 
     stk::all_reduce(pm, stk::ReduceSum<1>(&num_skin_entities));
 
-    size_t expected_num_skin;
+    size_t expected_num_skin = 0;
 
     if ( test_run < 2) {
       expected_num_skin = 2*(NX*NY + NX*NZ + 3*NY*NZ);

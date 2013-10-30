@@ -52,9 +52,8 @@ STKUNIT_UNIT_TEST( UnitTestGridFixture, test_gridfixture )
   stk::mesh::MetaData& fem_meta = grid_mesh.fem_meta();
   const stk::mesh::EntityRank elem_rank = MetaData::ELEMENT_RANK;
 
-  int  size , rank;
-  rank = stk::parallel_machine_rank( MPI_COMM_WORLD );
-  size = stk::parallel_machine_size( MPI_COMM_WORLD );
+  int rank = stk::parallel_machine_rank( MPI_COMM_WORLD );
+  int size = stk::parallel_machine_size( MPI_COMM_WORLD );
 
   // Create a part for the shells
   stk::mesh::CellTopology line_top(shards::getCellTopologyData<shards::ShellLine<2> >());

@@ -173,9 +173,9 @@ demangle(
 #ifdef PURIFY_BUILD
   return symbol;
 #else
-  std::string   s;
+  std::string   s("");
 
-  int		status;
+  int		status=-1;
 
   // GR: PathScale versions 4.x.x attempt to write the length of the demangled
   //     string to the third argument of __cxa_demangle even if a NULL value is
@@ -396,8 +396,8 @@ get_memory_info(
   std::ifstream proc("/proc/self/stat", std::ios_base::in|std::ios_base::binary);
   if (proc) {
 
-    std::string s;
-    int i;
+    std::string s("");
+    int i=-1;
     for (i = 0; i < 11; ++i)
       proc >> s;
 
@@ -439,8 +439,8 @@ get_memory_info(
 double
 vm_now()
 {
-  size_t	memory_usage;
-  size_t	faults;
+  size_t	memory_usage=0;
+  size_t	faults=0;
 
   get_memory_info(memory_usage, faults);
 

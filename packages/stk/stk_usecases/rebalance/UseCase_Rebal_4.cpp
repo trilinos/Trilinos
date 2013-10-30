@@ -193,7 +193,7 @@ void GreedySideset::determine_new_partition(bool &RebalancingNeeded) {
     stk::mesh::Entity const * eElem = bulk_data_.end(side, elem_rank);
     for ( ; iElem != eElem; ++iElem ) {
       const mesh::Entity elem = *iElem;
-      unsigned moid;
+      unsigned moid=0;
       const bool mesh_entity_found = find_mesh_entity(elem, moid);
       if (mesh_entity_found) {
         const int elemProc = bulk_data_.parallel_owner_rank(elem);

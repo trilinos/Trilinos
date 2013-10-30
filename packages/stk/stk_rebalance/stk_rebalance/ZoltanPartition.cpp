@@ -845,16 +845,16 @@ void Zoltan::determine_new_partition (bool &RebalancingNeeded)
    * the entities.
    */
 
-  int length_gid, length_lid;
+  int length_gid=0, length_lid=0;
 
-  int           new_decomp;
-  int           num_imported;
-  ZOLTAN_ID_PTR import_gids;
-  ZOLTAN_ID_PTR import_lids;
+  int           new_decomp=0;
+  int           num_imported=0;
+  ZOLTAN_ID_PTR import_gids=0;
+  ZOLTAN_ID_PTR import_lids=0;
   int          *import_procs=NULL;
-  int           num_exported;
-  ZOLTAN_ID_PTR export_gids;
-  ZOLTAN_ID_PTR export_lids;
+  int           num_exported=0;
+  ZOLTAN_ID_PTR export_gids=0;
+  ZOLTAN_ID_PTR export_lids=0;
   int          *export_procs=NULL;
 
 

@@ -191,7 +191,7 @@ format_memory(
 
   int s = size/10240;
 
-  unsigned int i;
+  unsigned int i = 0;
   for (i = 0; i < sizeof(suffix); i++) {
     if (s == 0)
       break;

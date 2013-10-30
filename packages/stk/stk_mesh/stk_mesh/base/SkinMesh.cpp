@@ -168,7 +168,7 @@ void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector co
       )
   {
     Entity elem;
-    unsigned side_ordinal;
+    unsigned side_ordinal=0;
 
     boost::tie(elem,side_ordinal) = *itr;
 
