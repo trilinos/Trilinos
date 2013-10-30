@@ -28,34 +28,6 @@ public:
     ROTATIONAL
   };
 
-  struct TransformHelper {
-
-    CoordinatesTransform transformType;
-    glm::f64mat3x3 m_rotation;
-    glm::f64vec3 m_translation;
-
-    TransformHelper()
-      : transformType(TRANSLATION)
-      , m_translation(0)
-    {
-      // Default is identity transform.
-    }
-
-    TransformHelper(const boost::array<double, 3> & trans_arg)
-      : transformType(TRANSLATION)
-      , m_translation(trans_arg[0], trans_arg[1], trans_arg[2] )
-    { }
-
-    TransformHelper(double angle, const double axis[3])
-      : transformType(ROTATIONAL)
-      , m_translation(0)
-    {
-      m_rotation = glm::f64mat3x3(glm::rotate(angle, axis[0], axis[1], axis[2]));
-    }
-
-   };
-
-public:
   typedef double Scalar;
   typedef std::vector<std::pair<stk::mesh::Selector, stk::mesh::Selector> > SelectorPairVector;
   typedef stk::search::ident::IdentProc<stk::mesh::EntityKey,unsigned> SearchId;
@@ -63,6 +35,61 @@ public:
   typedef std::vector<SphAABB> SphAABBVector;
   typedef std::vector<std::pair<SearchId,SearchId> > SearchPairVector;
 
+private:
+  struct TransformHelper {
+
+    CoordinatesTransform m_transform_type;
+    glm::f64mat3x3 m_rotation;
+    glm::f64vec3 m_translation;
+
+    TransformHelper()
+      : m_transform_type(TRANSLATION)
+      , m_translation(0)
+    {
+      // Default is identity transform.
+    }
+
+    TransformHelper(const boost::array<double, 3> & trans_arg)
+      : m_transform_type(TRANSLATION)
+      , m_translation(trans_arg[0], trans_arg[1], trans_arg[2] )
+    { }
+
+    TransformHelper(double angle, const double axis[3])
+      : m_transform_type(ROTATIONAL)
+      , m_translation(0)
+    {
+      m_rotation = glm::f64mat3x3(glm::rotate(angle, axis[0], axis[1], axis[2]));
+    }
+
+    template<typename RealType>
+    bool getRowMajorRotation(std::vector<RealType> &buff) const
+    {
+      if (m_transform_type == TRANSLATION) {
+        return false;
+      }
+      size_t dim = ((buff.size() == 4) ? 2 : 3);
+      for (size_t col = 0; col < dim; ++col) {
+        for (size_t row = 0; row < dim; ++row) {
+          buff[dim * row + col] = m_rotation[col][row];
+        }
+      }
+      return true;
+    }
+  };
+
+  struct SearchSummary
+  {
+    TransformHelper m_transform;
+    size_t m_begin_idx, m_num_found;
+
+    SearchSummary(const TransformHelper &transform, int begin_idx, int num_found)
+      : m_transform(transform), m_begin_idx(begin_idx), m_num_found(num_found) { }
+  };
+
+  typedef std::vector<SearchSummary> SearchResultsIndex;
+
+
+public:
 
   PeriodicBoundarySearch( stk::mesh::BulkData & bulk_data,
                           const CoordinateFunctor & getCoordinates )
@@ -99,6 +126,7 @@ public:
   void find_periodic_nodes(stk::ParallelMachine parallel)
   {
     m_search_results.clear();
+    m_search_results_index.clear();
 
     //resolve multiple periodicity once
     if (m_firstCallToFindPeriodicNodes)
@@ -123,10 +151,28 @@ public:
 
   size_t size() const { return m_search_results.size();}
 
+  size_t index_size() const {return m_search_results_index.size(); }
+
   std::pair<stk::mesh::Entity, stk::mesh::Entity> get_node_pair(size_t i) const
   {
     return std::make_pair(m_bulk_data.get_entity(m_search_results[i].first.ident),
         m_bulk_data.get_entity(m_search_results[i].second.ident));
+  }
+
+  template<typename RealType>
+  bool get_search_row_major_rotation(size_t i, std::vector<RealType> buff) const
+  {
+    return m_search_results_index[i].m_transform.getRowMajorRotation(buff);
+  }
+
+  size_t get_search_results_begin_idx(size_t i) const
+  {
+    return m_search_results_index[i].m_begin_idx;
+  }
+
+  size_t get_search_results_size(size_t i) const
+  {
+    return m_search_results_index[i].m_num_found;
   }
 
   void add_linear_periodic_pair(const stk::mesh::Selector & domain,
@@ -184,6 +230,7 @@ private:
   CoordinateFunctor m_get_coordinates;
   SelectorPairVector m_periodic_pairs;
   SearchPairVector m_search_results;
+  SearchResultsIndex m_search_results_index;
   stk::mesh::Ghosting * m_periodic_ghosts;
   typedef std::vector<TransformHelper > TransformVector;
   TransformVector m_transforms;
@@ -253,7 +300,7 @@ private:
 
     populate_search_vector(side2, side_2_vector);
 
-    switch (transform.transformType)
+    switch (transform.m_transform_type)
     {
       case TRANSLATION:
         translate_coordinates(side_1_vector,
@@ -273,6 +320,9 @@ private:
     stk::search::coarse_search(search_results, side_2_vector, side_1_vector, order);
 
     m_search_results.insert(m_search_results.end(), search_results.begin(), search_results.end());
+    m_search_results_index.push_back(SearchSummary(transform,
+                                                   m_search_results.size() - search_results.size(),
+                                                   search_results.size()));
   }
 
   void remove_redundant_nodes()
@@ -366,7 +416,7 @@ private:
       TransformHelper & transform)
   {
 
-    switch(transform.transformType )
+    switch(transform.m_transform_type )
     {
       case TRANSLATION:
       {
