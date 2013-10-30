@@ -25,7 +25,8 @@ class PeriodicBoundarySearch
 public:
   enum CoordinatesTransform {
     TRANSLATION,
-    ROTATIONAL
+    ROTATIONAL,
+    PROPER_RIGID
   };
 
   typedef double Scalar;
@@ -59,6 +60,14 @@ private:
       , m_translation(0)
     {
       m_rotation = glm::f64mat3x3(glm::rotate(angle, axis[0], axis[1], axis[2]));
+    }
+
+    TransformHelper(double angle, const double axis[3], const double point[3])
+      : m_transform_type(PROPER_RIGID)
+      , m_translation(point[0], point[1], point[2])
+    {
+      m_rotation = glm::f64mat3x3(glm::rotate(angle, axis[0], axis[1], axis[2]));
+      m_translation -= m_rotation*m_translation;
     }
 
     template<typename RealType>
@@ -189,7 +198,12 @@ public:
       const double point[])
   {
     m_periodic_pairs.push_back(std::make_pair(domain, range));
-    m_transforms.push_back( TransformHelper(theta, axis) );
+
+    if (point[0]*point[0] + point[1]*point[1] + point[2]*point[2] == 0) {
+      m_transforms.push_back( TransformHelper(theta, axis) );
+    }
+    else
+      m_transforms.push_back(TransformHelper(theta, axis, point));
   }
 
   const stk::mesh::Ghosting & get_ghosting() const
@@ -310,6 +324,10 @@ private:
       case ROTATIONAL:
         //something
         rotate_coordinates(side_1_vector, side_2_vector, transform.m_rotation);
+        break;
+      case PROPER_RIGID:
+        apply_affine_to_coordinates(side_1_vector, side_2_vector,
+                                    transform.m_rotation, transform.m_translation);
         break;
       default:
         ThrowRequireMsg(false, "Periodic transform method doesn't exist");
@@ -432,6 +450,7 @@ private:
         break;
       }
       case ROTATIONAL:
+      case PROPER_RIGID:
       {
         //do nothing
         break;
@@ -478,7 +497,6 @@ private:
     }
   }
 
-
   void translate_coordinates(
       SphAABBVector & side_1_vector,
       SphAABBVector & side_2_vector,
@@ -494,7 +512,6 @@ private:
     }
   }
 
-
   void rotate_coordinates(
       SphAABBVector & side_1_vector,
       SphAABBVector & side_2_vector,
@@ -505,6 +522,24 @@ private:
       double *center = side_1_vector[iPoint].center;
       glm::f64vec3 ctr(center[0], center[1], center[2]);
       ctr = rotation * ctr;
+      for (int i = 0; i < 3; ++i) {
+        center[i] = ctr[i];
+      }
+    }
+  }
+
+  void apply_affine_to_coordinates(
+      SphAABBVector & side_1_vector,
+      SphAABBVector & side_2_vector,
+      const glm::f64mat3x3 & rotation,
+      const glm::f64vec3 & translation) const
+  {
+    for (size_t iPoint = 0, size = side_1_vector.size(); iPoint < size; ++iPoint)
+    {
+      double *center = side_1_vector[iPoint].center;
+      glm::f64vec3 ctr(center[0], center[1], center[2]);
+      glm::f64vec3 old_ctr(ctr);
+      ctr = rotation * ctr + translation;
       for (int i = 0; i < 3; ++i) {
         center[i] = ctr[i];
       }

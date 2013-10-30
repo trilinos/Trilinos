@@ -627,7 +627,6 @@ STKUNIT_UNIT_TEST(CoarseSearch, RotationalPeriodicBC)
 
   //element_size is in radians
   const double rotationAngle = double(rangeAngleIndex - domainAngleIndex)*TWO_PI/aGear.angle_num;
-  //TODO: the search is hardcoded to a z-aligned rotation
   const double rotationAxis[3] = {0.0, 0.0, 1.0};
   const double axisLocation[3] = {0.0, 0.0, 0.0};
 
@@ -666,6 +665,126 @@ STKUNIT_UNIT_TEST(CoarseSearch, RotationalPeriodicBC)
 
   //lets do a local search to make sure the coords field and entities were properly ghosted
   PeriodicSearch pbc_local_search(bulk_data, CoordinateFunctor(bulk_data, coords_field));
+  pbc_local_search.add_rotational_periodic_pair(side_0 & meta_data.locally_owned_part(),
+                                          side_1 & meta_data.locally_owned_part(),
+                                          rotationAngle,
+                                          rotationAxis,
+                                          axisLocation);
+
+  pbc_local_search.find_periodic_nodes(MPI_COMM_SELF);
+
+  //test to make sure it is re-entrant
+  pbc_local_search.find_periodic_nodes(MPI_COMM_SELF);
+
+  check_gold_rotational_multiperiodic(pbc_local_search.get_pairs());
+  if (bulk_data.parallel_size() == 1)
+  {
+    EXPECT_EQ(pbc_local_search.get_pairs().size(), 36u);
+  }
+  else
+  {
+    const int local_search_count = pbc_local_search.get_pairs().size();
+    int global_search_count=0;
+    stk::all_reduce_sum(bulk_data.parallel(), &local_search_count, &global_search_count, 1);
+
+    EXPECT_GE(global_search_count, 36);
+  }
+}
+
+
+STKUNIT_UNIT_TEST(CoarseSearch, OffsetRotationalPeriodicBC)
+{
+  const double axisLocation[3] = {1.0, 0.0, 0.0};
+  const stk::mesh::fixtures::GearMovement
+      gear_movement_data(0.0, axisLocation[0], axisLocation[1], axisLocation[2]);
+
+  stk::mesh::fixtures::GearsFixture fixture(MPI_COMM_SELF, 1);
+  stk::mesh::BulkData & bulk_data = fixture.bulk_data;
+  stk::mesh::MetaData & meta_data = fixture.meta_data;
+  CoordFieldType & coords_field = fixture.cartesian_coord_field;
+  CoordFieldType & disps_field = fixture.displacement_field;
+
+  stk::mesh::Part & side_0 = meta_data.declare_part("side_0", stk::topology::NODE_RANK);
+  stk::mesh::Part & side_1 = meta_data.declare_part("side_1", stk::topology::NODE_RANK);
+  stk::mesh::PartVector side_0_vector(1, & side_0);
+  stk::mesh::PartVector side_1_vector(1, & side_1);
+
+  meta_data.commit();
+  fixture.generate_mesh();
+
+  //loop mesh entities and flag a wedge domain for putting in another part
+  stk::mesh::fixtures::Gear & aGear = fixture.get_gear(0);
+  aGear.move(gear_movement_data);
+
+  typedef std::pair<stk::mesh::Entity,stk::mesh::Entity> NodePairType;
+  std::vector<NodePairType> nodePairs;
+
+  bulk_data.modification_begin();
+  //side_0 at angle 0
+  const size_t domainAngleIndex = 0;
+  const size_t rangeAngleIndex = 3;
+
+  for ( size_t ir = 0 ; ir < aGear.rad_num -2 ; ++ir ) {
+    for ( size_t iz = 0 ; iz < aGear.height_num -1 ; ++iz ) {
+      stk::mesh::Entity domainNode = aGear.get_node(iz, ir, domainAngleIndex);
+      if ( bulk_data.is_valid(domainNode) && bulk_data.bucket(domainNode).owned() )
+      {
+        bulk_data.change_entity_parts(domainNode, side_0_vector);
+      }
+      stk::mesh::Entity rangeNode = aGear.get_node(iz, ir, rangeAngleIndex);
+      if ( bulk_data.is_valid(rangeNode) && bulk_data.bucket(rangeNode).owned() )
+      {
+        bulk_data.change_entity_parts(rangeNode, side_1_vector);
+      }
+      nodePairs.push_back(std::make_pair(domainNode, rangeNode));
+    }
+  }
+  bulk_data.modification_end();
+
+  //do periodic search
+  typedef stk::mesh::GetDisplacedCoordinates<CoordFieldType, CoordFieldType> CoordinateFunctor;
+  typedef stk::mesh::PeriodicBoundarySearch<CoordinateFunctor> PeriodicSearch;
+  PeriodicSearch pbc_search(bulk_data, CoordinateFunctor(bulk_data, coords_field, disps_field));
+
+  //element_size is in radians
+  const double rotationAngle = double(rangeAngleIndex - domainAngleIndex)*TWO_PI/aGear.angle_num;
+  const double rotationAxis[3] = {0.0, 0.0, 1.0};
+
+  pbc_search.add_rotational_periodic_pair(side_0 & meta_data.locally_owned_part(),
+                                          side_1 & meta_data.locally_owned_part(),
+                                          rotationAngle,
+                                          rotationAxis,
+                                          axisLocation);
+
+  pbc_search.find_periodic_nodes(MPI_COMM_SELF);
+
+  check_gold_rotational_multiperiodic(pbc_search.get_pairs());
+  if (bulk_data.parallel_size() == 1)
+  {
+    EXPECT_EQ(pbc_search.get_pairs().size(), 36u);
+  }
+  else
+  {
+    const int local_search_count = pbc_search.get_pairs().size();
+    int global_search_count=0;
+    stk::all_reduce_sum(bulk_data.parallel(), &local_search_count, &global_search_count, 1);
+
+    EXPECT_GE(global_search_count, 36);
+  }
+
+  //now we ghost everything to do a local search
+  bulk_data.modification_begin();
+  pbc_search.create_ghosting("periodic_ghosts");
+  bulk_data.modification_end();
+
+  const stk::mesh::Ghosting & periodic_bc_ghosting = pbc_search.get_ghosting();
+
+  std::vector< stk::mesh::FieldBase const * > ghosted_fields;
+  ghosted_fields.push_back(&coords_field);
+  stk::mesh::communicate_field_data( periodic_bc_ghosting, ghosted_fields);
+
+  //lets do a local search to make sure the coords field and entities were properly ghosted
+  PeriodicSearch pbc_local_search(bulk_data, CoordinateFunctor(bulk_data, coords_field, disps_field));
   pbc_local_search.add_rotational_periodic_pair(side_0 & meta_data.locally_owned_part(),
                                           side_1 & meta_data.locally_owned_part(),
                                           rotationAngle,
