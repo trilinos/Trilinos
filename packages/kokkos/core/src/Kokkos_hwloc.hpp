@@ -80,26 +80,6 @@ unsigned get_available_cores_per_numa();
 /** \brief  Query number of available "hard" threads per core; i.e., hyperthreads */
 unsigned get_available_threads_per_core();
 
-
-/** \brief  Query the core topology of ( NUMA x Core/NUMA ).
- *
- *  The topology is limited by the process binding,
- *  which may have been set by MPI.  NUMA rank #0
- *  contains the core on which the process / master thread
- *  is running.  The master thread should only be bound
- *  to its original NUMA rank - because moving it to
- *  a different NUMA rank will displace it from all of
- *  the memory which it has already touched.
- */
-std::pair<unsigned,unsigned> get_core_topology();
-
-/** \brief  Number of concurrent threads per core.
- *
- *  This typically reflects the number of hyperthreads
- *  the core can support.
- */
-unsigned get_core_capacity();
-
 } /* namespace hwloc */
 } /* namespace Kokkos */
 

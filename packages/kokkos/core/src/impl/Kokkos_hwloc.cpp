@@ -673,15 +673,6 @@ unsigned get_available_cores_per_numa()
 unsigned get_available_threads_per_core()
 { sentinel(); return s_core_capacity ; }
 
-
-std::pair<unsigned,unsigned>
-get_core_topology()
-{ sentinel(); return s_core_topology ; }
-
-unsigned
-get_core_capacity()
-{ sentinel(); return s_core_capacity ; }
-
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
@@ -879,12 +870,6 @@ bool unbind_this_thread()
 
 std::pair<unsigned,unsigned> get_this_thread_coordinate()
 { return std::pair<unsigned,unsigned>(0,0); }
-
-std::pair<unsigned,unsigned> get_core_topology()
-{ return std::pair<unsigned,unsigned>(1,1); }
-
-unsigned get_core_capacity()
-{ return 1 ; }
 
 } // namespace hwloc
 } // namespace Kokkos
