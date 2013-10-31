@@ -906,9 +906,7 @@ namespace stk {
 
     MeshData::MeshData()
       : m_communicator(MPI_COMM_NULL), m_anded_selector(NULL), m_connectivity_map(stk::mesh::ConnectivityMap::default_map()),
-        m_currentRestartStep(-1), m_useNodesetForPartNodesFields(true),
-	m_restartMeshDefined(false), m_restartFieldsDefined(false)
-	
+        m_useNodesetForPartNodesFields(true)
     {
       Ioss::Init::Initializer::initialize_ioss();
     }
@@ -916,8 +914,7 @@ namespace stk {
     MeshData::MeshData(MPI_Comm comm, stk::mesh::ConnectivityMap * connectivity_map)
       : m_communicator(comm), m_anded_selector(NULL)
       , m_connectivity_map(connectivity_map != NULL ? *connectivity_map : stk::mesh::ConnectivityMap::default_map()),
-        m_currentRestartStep(-1), m_useNodesetForPartNodesFields(true),
-	m_restartMeshDefined(false), m_restartFieldsDefined(false)
+        m_useNodesetForPartNodesFields(true)
     {
       Ioss::Init::Initializer::initialize_ioss();
     }
@@ -930,9 +927,6 @@ namespace stk {
       }
 
       m_result_outputs.clear();
-
-      if (!Teuchos::is_null(m_restart_region))
-        stk::io::delete_selector_property(*m_restart_region);
     }
 
     size_t MeshData::set_output_io_region(Teuchos::RCP<Ioss::Region> ioss_output_region)
@@ -1342,23 +1336,6 @@ namespace stk {
 
     void MeshData::add_restart_field(stk::mesh::FieldBase &field, const std::string &db_name)
     {
-      // NOTE: This could be implemented as a free function; however, I want to keep the option
-      //       open of storing this data in a vector/map on the MeshData class instead of as a
-      //       field attribute.  For now, use the field attribute approach.
-      if (m_restartMeshDefined && use_nodeset_for_part_nodes_fields()) {
-	std::cerr << "WARNING: adding restart fields after calling create_restart_output may cause\n"
-		  << "         problems when operating with 'use_nodeset_for_part_nodes_field()' set to true\n"
-		  << "         since the nodesets required for this option may not be created properly.\n";
-      }
-
-      if (m_restartFieldsDefined) {
-	  std::ostringstream msg ;
-	  msg << "ERROR in MeshReadWriteUtils::add_restart_field:"
-	      << " define_restart_fields() has already been called, so it is too late to add the restart field '"
-	      << field.name() << "'.";
-	  throw std::runtime_error( msg.str() );
-      }
-
       stk::io::RestartFieldAttribute *my_field_attribute = new stk::io::RestartFieldAttribute(db_name.empty() ? field.name() : db_name);
       stk::mesh::MetaData &m = mesh::MetaData::get(field);
       const stk::io::RestartFieldAttribute *check = m.declare_attribute_with_delete(field, my_field_attribute);
@@ -1414,136 +1391,6 @@ namespace stk {
 
       // TODO: code under here still needs this. Fix me.
       stk::io::set_field_role(field, Ioss::Field::TRANSIENT);
-    }
-
-    void MeshData::create_restart_output(const std::string &filename)
-    {
-      Ioss::DatabaseIO *dbo = Ioss::IOFactory::create("exodusII", filename,
-                                                      Ioss::WRITE_RESTART,
-                                                      m_communicator,
-                                                      m_property_manager);
-      if (dbo == NULL || !dbo->ok()) {
-        std::cerr << "ERROR: Could not open restart database '" << filename
-		  << "' of type 'exodusII'\n";
-        std::exit(EXIT_FAILURE);
-      }
-
-      // NOTE: 'out_region' owns 'dbo' pointer at this time...
-      if (!Teuchos::is_null(m_restart_region))
-        m_restart_region = Teuchos::null;
-      m_restart_region = Teuchos::rcp(new Ioss::Region(dbo, "restart_output"));
-      create_restart_output();
-    }
-
-    void MeshData::create_restart_output()
-    {
-      ThrowErrorMsgIf (Teuchos::is_null(m_restart_region),
-		       "There is no Restart database associated with this Mesh Data.");
-
-      bool sort_stk_parts = false; // used in stk_adapt/stk_percept
-      stk::io::define_output_db(*m_restart_region.get(), bulk_data(), m_input_region.get(), m_anded_selector.get(),
-                                sort_stk_parts, use_nodeset_for_part_nodes_fields());
-      stk::io::write_output_db(*m_restart_region.get(),  bulk_data(), m_anded_selector.get());
-      m_restart_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
-      m_restartMeshDefined = true;
-    }
-
-    void MeshData::define_restart_fields()
-    {
-      if (m_restartFieldsDefined)
-	return;
-      
-      ThrowErrorMsgIf (Teuchos::is_null(m_restart_region),
-		       "There is no Restart database associated with this Mesh Data.");
-
-      Ioss::Region *region = m_restart_region.get();
-
-      // Special processing for nodeblock (all nodes in model)...
-      ioss_define_restart_fields(meta_data().universal_part(),
-				 stk::mesh::MetaData::NODE_RANK,
-				 region->get_node_blocks()[0]);
-
-      const stk::mesh::PartVector &all_parts = meta_data().get_parts();
-      for ( stk::mesh::PartVector::const_iterator
-	      ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
-
-	stk::mesh::Part * const part = *ip;
-
-	// Check whether this part should be output to restart database.
-	if (stk::io::is_part_io_part(*part)) {
-	  stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
-	  // Get Ioss::GroupingEntity corresponding to this part...
-	  Ioss::GroupingEntity *entity = region->get_entity(part->name());
-	  if (entity != NULL) {
-	    ioss_define_restart_fields(*part, rank, entity);
-	  }
-
-	  // If rank is != NODE_RANK, then see if any fields are defined on the nodes of this part
-	  // (should probably do edges and faces also...)
-	  // Get Ioss::GroupingEntity corresponding to the nodes on this part...
-	  if (rank != stk::mesh::MetaData::NODE_RANK) {
-	    Ioss::GroupingEntity *node_entity = NULL;
-	    if (use_nodeset_for_part_nodes_fields()) {
-	      std::string nodes_name = part->name() + "_nodes";
-	      node_entity = region->get_entity(nodes_name);
-	    } else {
-	      node_entity = region->get_entity("nodeblock_1");
-	    }
-	    if (node_entity != NULL) {
-	      ioss_define_restart_fields(*part, stk::mesh::MetaData::NODE_RANK, node_entity);
-	    }
-	  }
-	}
-      }
-      m_restartFieldsDefined = true;
-    }
-
-    void MeshData::write_restart_global(const std::string &globalVarName, double globalVarData)
-    {
-        internal_write_global(m_restart_region, globalVarName, globalVarData);
-    }
-
-    void MeshData::write_restart_global(const std::string &globalVarName, int globalVarData)
-    {
-        internal_write_global(m_restart_region, globalVarName, globalVarData);
-    }
-
-    void MeshData::write_restart_global(const std::string &globalVarName, std::vector<double>& globalVarData)
-    {
-        internal_write_global(m_restart_region, globalVarName, globalVarData);
-    }
-
-    void MeshData::write_restart_global(const std::string &globalVarName, std::vector<int>& globalVarData)
-    {
-        internal_write_global(m_restart_region, globalVarName, globalVarData);
-    }
-
-    void MeshData::add_restart_global(const std::string &globalVarName, Ioss::Field::BasicType dataType)
-    {
-      add_restart_global(globalVarName, "scalar", dataType);
-    }
-
-    void MeshData::add_restart_global(const std::string &globalVarName, int component_count, Ioss::Field::BasicType dataType)
-    {
-      if (component_count == 1) {
-	add_restart_global(globalVarName, "scalar", dataType);
-      } else {
-	std::ostringstream type;
-	type << "Real[" << component_count << "]";
-	add_restart_global(globalVarName, type.str(), dataType);
-      }
-    }
-
-    void MeshData::add_restart_global(const std::string &globalVarName, const std::string &storage_type,
-				      Ioss::Field::BasicType dataType)
-    {
-        ThrowErrorMsgIf (Teuchos::is_null(m_restart_region),
-                         "Attempt to define output global variables before restart initialized.");
-        ThrowErrorMsgIf (m_restart_region->field_exists(globalVarName),
-                         "Attempt to add global variable '" << globalVarName << "' twice.");
-        //Any field put onto the region instead of a element block, etc. gets written as "global" to exodus
-        int numberOfThingsToOutput = 1;
-        m_restart_region->field_add(Ioss::Field(globalVarName, dataType, storage_type, Ioss::Field::TRANSIENT, numberOfThingsToOutput));
     }
 
     void MeshData::get_global_variable_names(std::vector<std::string> &names)
@@ -1609,94 +1456,6 @@ namespace stk {
         double valueToReturn = 0.0;
 	get_global(globalVarName, valueToReturn);
         return valueToReturn;
-    }
-
-    void MeshData::begin_restart_output_at_time(double time)
-    {
-        if (!m_restartFieldsDefined) {
-	  define_restart_fields();
-	}
-
-        //Attempt to avoid putting state change into the interface.  We'll see . . .
-        Ioss::State currentState = m_restart_region->get_state();
-        if(currentState == Ioss::STATE_DEFINE_TRANSIENT) {
-          m_restart_region->end_mode(Ioss::STATE_DEFINE_TRANSIENT);
-        }
-
-        m_restart_region->begin_mode(Ioss::STATE_TRANSIENT);
-        m_currentRestartStep = m_restart_region->add_state(time);
-        m_restart_region->begin_state(m_currentRestartStep);
-    }
-
-    void MeshData::end_current_restart_output()
-    {
-        m_restart_region->end_state(m_currentRestartStep);
-        m_restart_region->end_mode(Ioss::STATE_TRANSIENT);
-    }
-
-    int MeshData::process_restart_output()
-    {
-       internal_process_restart_output(m_currentRestartStep);
-
-       return m_currentRestartStep;
-    }
-
-    int MeshData::process_restart_output(double time)
-    {
-      ThrowErrorMsgIf (Teuchos::is_null(m_restart_region),
-		       "There is no Restart output associated with this Mesh Data.");
-
-      this->begin_restart_output_at_time(time);
-      this->process_restart_output();
-      this->end_current_restart_output();
-
-      return m_currentRestartStep;
-    }
-
-    void MeshData::internal_process_restart_output(int step)
-    {
-      ThrowErrorMsgIf (Teuchos::is_null(m_restart_region),
-		       "There is no Restart output region associated with this Mesh Data.");
-
-      Ioss::Region *region = m_restart_region.get();
-      ThrowErrorMsgIf (region==NULL,
-                       "INTERNAL ERROR: Restart output region pointer is NULL in internal_process_restart_output.");
-
-      // Special processing for nodeblock (all nodes in model)...
-      put_field_data(bulk_data(), meta_data().universal_part(), stk::mesh::MetaData::NODE_RANK,
-                     region->get_node_blocks()[0], Ioss::Field::Field::TRANSIENT,
-                     m_anded_selector.get());
-
-      // Now handle all non-nodeblock parts...
-      const stk::mesh::PartVector &all_parts = meta_data().get_parts();
-      for ( stk::mesh::PartVector::const_iterator
-	      ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
-
-        stk::mesh::Part * const part = *ip;
-
-        // Check whether this part should be output to results database.
-        if (stk::io::is_part_io_part(*part)) {
-          stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
-          // Get Ioss::GroupingEntity corresponding to this part...
-          Ioss::GroupingEntity *entity = region->get_entity(part->name());
-          if (entity != NULL && entity->type() != Ioss::SIDESET) {
-            put_field_data(bulk_data(), *part, rank, entity,
-			   Ioss::Field::Field::TRANSIENT, m_anded_selector.get());
-          }
-
-          // If rank is != NODE_RANK, then see if any fields are defined on the nodes of this part
-          // (should probably do edges and faces also...)
-          // Get Ioss::GroupingEntity corresponding to the nodes on this part...
-          if (rank != stk::mesh::MetaData::NODE_RANK && use_nodeset_for_part_nodes_fields()) {
-            std::string nodes_name = part->name() + "_nodes";
-            Ioss::GroupingEntity *node_entity = region->get_entity(nodes_name);
-            if (node_entity != NULL) {
-              put_field_data(bulk_data(), *part, stk::mesh::MetaData::NODE_RANK, node_entity,
-			     Ioss::Field::Field::TRANSIENT, m_anded_selector.get());
-            }
-          }
-        }
-      }
     }
 
     namespace {

@@ -316,12 +316,6 @@ namespace stk {
         void end_current_output(size_t result_file_index = 0);
 
         /**
-         * Add a transient step to the restart database at time 'time'.
-         */
-        void begin_restart_output_at_time(double time);
-        void end_current_restart_output();
-
-        /**
          * Add a transient step to the mesh database at time 'time' and
          * output the data for all defined fields to the database.
          */
@@ -332,46 +326,9 @@ namespace stk {
         void write_global(size_t result_output_index, const std::string &globalVarName, std::vector<double>& data);
         void write_global(size_t result_output_index, const std::string &globalVarName, std::vector<int>& data);
 
-        /** RESTART **/
-        /**
-         * Create an exodus restart database with the specified
-         * filename. This function creates the exodus metadata which
-         * is the number and type of element blocks, nodesets, and
-         * sidesets; and then outputs the mesh bulk data such as the
-         * node coordinates, id maps, element connectivity.  
-	 * 
-         * It then defines an output field for all stk fields that were
-	 * defined as restart fields via the 'add_restart_field()' function.
-	 *
-         * A stk part will have a corresponding exodus entity (element
-         * block, nodeset, sideset) defined if the "is_io_part()" function
-         * returns true.  By default, all parts read from the mesh
-         * database in the create_input_mesh() function will return true
-         * as will all stk parts on which the function
-         * stk::io::put_io_part_attribute() was called.  The function
-         * stk::io::remove_io_part_attribute(part) can be called to omit a
-         * part from being output.
-         *
-         * \param[in] filename The full pathname to the file which will be
-         * created and the mesh data written to. If the file already
-         * exists, it will be overwritten.
-         */
-        void create_restart_output(const std::string &filename);
-        void create_restart_output();
-
         void add_restart_field(size_t file_index, stk::mesh::FieldBase &field, const std::string &db_name = std::string());
         void add_restart_field(stk::mesh::FieldBase &field, const std::string &db_name = std::string());
-        void add_restart_global(const std::string &globalVarName, Ioss::Field::BasicType dataType);
-        void add_restart_global(const std::string &globalVarName, const std::string &type, Ioss::Field::BasicType dataType);
-        void add_restart_global(const std::string &globalVarName, int component_count, Ioss::Field::BasicType dataType);
 
-        int  process_restart_output(double time);
-        int  process_restart_output();
-        void write_restart_global(const std::string &globalVarName, double data);
-        void write_restart_global(const std::string &globalVarName, int data);
-        void write_restart_global(const std::string &globalVarName, std::vector<int> &data);
-        void write_restart_global(const std::string &globalVarName, std::vector<double> &data);
-  
         void get_global_variable_names(std::vector<std::string> &names);
         double get_global(const std::string &globalVarName);
         void get_global(const std::string &globalVarName, int &globalVar);
@@ -382,7 +339,6 @@ namespace stk {
         double process_restart_input(int step);
         double process_restart_input(double time);
 
-        void define_restart_fields(); // Add all fields flagged as restart fields to restart database.
         // QUESTIONS: 
         // * Is there a separate input restart file, or is it just the mesh?
         //   -- If reading data from the mesh also, then may need both.
@@ -471,7 +427,6 @@ namespace stk {
         Ioss::PropertyManager m_property_manager;
 
       private:
-        void internal_process_restart_output(int step);
         void create_ioss_region();
         void validate_result_output_index(size_t result_output_index);
         /**
@@ -492,7 +447,6 @@ namespace stk {
 
         Teuchos::RCP<Ioss::DatabaseIO> m_input_database;
         Teuchos::RCP<Ioss::Region>     m_input_region;
-        Teuchos::RCP<Ioss::Region>     m_restart_region;
 
         Teuchos::RCP<stk::mesh::MetaData>  m_meta_data;
         Teuchos::RCP<stk::mesh::BulkData>  m_bulk_data;
@@ -508,14 +462,10 @@ namespace stk {
 
         std::vector<ResultsOutput> m_result_outputs;
 
-        int m_currentRestartStep;
     public:
         // This should be private, but needs to be public since some applications/tests are defining
         // their own fields and need to inform MeshData that they did this...
         bool m_useNodesetForPartNodesFields;
-
-        bool m_restartMeshDefined;
-        bool m_restartFieldsDefined;
 
     private:
         MeshData(const MeshData&); // Do not implement

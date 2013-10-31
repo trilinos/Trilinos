@@ -64,13 +64,12 @@ namespace {
     // Iterate all fields and set them as restart fields...
     const stk::mesh::FieldVector &fields = mesh_data.meta_data().get_fields();
     for (size_t i=0; i < fields.size(); i++) {
-      std::string name = fields[i]->name();
-      mesh_data.add_restart_field(*fields[i], name); // for input
-      mesh_data.add_restart_field(restartFileIndex, *fields[i], name); // for output
+      mesh_data.add_restart_field(*fields[i]); // for input
       const Ioss::Field::RoleType* role = stk::io::get_field_role(*fields[i]);
        if ( role && *role == Ioss::Field::TRANSIENT )
        {
-           mesh_data.add_results_field(result_file_index, *fields[i]);
+         mesh_data.add_restart_field(restartFileIndex, *fields[i]); // for output
+         mesh_data.add_results_field(result_file_index, *fields[i]);
        }
     }
 
