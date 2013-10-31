@@ -346,15 +346,15 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleRestart)
         generateMetaData(stkIo);
         stkIo.populate_bulk_data();
 
-        stkIo.create_restart_output(restartFileName);
+        size_t fileIndex = stkIo.create_output_mesh(restartFileName);
 
-        stkIo.add_restart_global(globalVarName, Ioss::Field::REAL);
+        stkIo.add_global(fileIndex, globalVarName, Ioss::Field::REAL);
 
-        stkIo.begin_restart_output_at_time(time);
+        stkIo.begin_output_at_time(time, fileIndex);
 
-        stkIo.write_restart_global(globalVarName, globalVarValue);
+        stkIo.write_global(fileIndex, globalVarName, globalVarValue);
 
-        stkIo.end_current_restart_output();
+        stkIo.end_current_output(fileIndex);
     }
 
     {
@@ -392,30 +392,29 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleWithFieldRestart)
         generateMetaData(stkIo);
 
         stk::mesh::Field<double> &field0 = createNodalTestField(stkIo.meta_data(), fieldName);
-        stkIo.add_restart_field(field0);
 
         stkIo.populate_bulk_data();
 
         putDataOnTestField(stkIo.bulk_data(), field0, nodalFieldValues);
 
-        stkIo.create_restart_output(outputFileName);
+        size_t fileIndex = stkIo.create_output_mesh(outputFileName);
+        stkIo.add_restart_field(fileIndex, field0);
 
-        stkIo.add_restart_global(globalVarName, Ioss::Field::REAL);
-        stkIo.define_restart_fields();
+        stkIo.add_global(fileIndex, globalVarName, Ioss::Field::REAL);
 
         double time = 1.0;
         const double stepSize = 1.0;
         for(int i=0; i<numTimeSteps; i++)
         {
-            stkIo.begin_restart_output_at_time(time);
+            stkIo.begin_output_at_time(time, fileIndex);
 
             const double globalVarValue = time;
-            stkIo.write_restart_global(globalVarName, globalVarValue);
+            stkIo.write_global(fileIndex, globalVarName, globalVarValue);
             globalVarValuesOverTime.push_back(globalVarValue);
 
-            stkIo.process_restart_output();
+            stkIo.process_output_request(fileIndex);
 
-            stkIo.end_current_restart_output();
+            stkIo.end_current_output(fileIndex);
             time += stepSize;
         }
     }

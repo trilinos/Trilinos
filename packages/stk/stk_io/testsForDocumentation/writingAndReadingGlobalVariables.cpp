@@ -22,11 +22,11 @@ TEST(StkIoTestForDocumentation, WriteAndReadGlobalVariables)
         generateMetaData(stkIo);
         stkIo.populate_bulk_data();
 
-        stkIo.create_restart_output(restartFileName);
-        stkIo.add_restart_global(timeStepVarName, Ioss::Field::REAL);
-        stkIo.begin_restart_output_at_time(currentTime);
-        stkIo.write_restart_global(timeStepVarName, timeStepSize);
-        stkIo.end_current_restart_output();
+        size_t fileIndex = stkIo.create_output_mesh(restartFileName);
+        stkIo.add_global(fileIndex, timeStepVarName, Ioss::Field::REAL);
+        stkIo.begin_output_at_time(currentTime, fileIndex);
+        stkIo.write_global(fileIndex, timeStepVarName, timeStepSize);
+        stkIo.end_current_output(fileIndex);
     }
 
     //Read restart file with time step size as a global variable

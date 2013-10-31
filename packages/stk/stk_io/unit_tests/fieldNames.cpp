@@ -82,16 +82,13 @@ STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameWithRestart)
         
         stk::mesh::FieldBase *field0 = stkMeshMetaData.get_field(internalClientFieldName);
 
-        stkIo.add_restart_field(*field0);
-
-
-        stkIo.create_restart_output(restartFilename);
-        stkIo.define_restart_fields();
+        size_t fileIndex = stkIo.create_output_mesh(restartFilename);
+        stkIo.add_restart_field(fileIndex, *field0);
 
         double time = 0.0;
-        stkIo.begin_restart_output_at_time(time);
-        stkIo.process_restart_output();
-        stkIo.end_current_restart_output();
+        stkIo.begin_output_at_time(time, fileIndex);
+        stkIo.process_output_request(fileIndex);
+        stkIo.end_current_output(fileIndex);
     }
 
     Ioss::DatabaseIO *iossDb = Ioss::IOFactory::create("exodus", restartFilename, Ioss::READ_RESTART, communicator);
@@ -100,7 +97,7 @@ STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameWithRestart)
     sierra::make_lower(goldFieldName);
     testFieldNamedCorrectly(iossRegion, communicator, goldFieldName);
 
-    unlink(restartFilename.c_str());
+//    unlink(restartFilename.c_str());
 }
 
 STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameWithResultsAndRestart)
@@ -122,19 +119,17 @@ STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameWithResultsAndRestart)
         std::string requestedFieldNameForResultsOutput("jeSSe");
         stkIo.add_results_field(results_output_index, *field0, requestedFieldNameForResultsOutput);
 
-        stkIo.add_restart_field(*field0);
-
-        stkIo.create_restart_output(restartFilename);
-        stkIo.define_restart_fields();
+        size_t restartFileIndex = stkIo.create_output_mesh(restartFilename);
+        stkIo.add_restart_field(restartFileIndex, *field0);
 
         double time = 0.0;
         stkIo.begin_output_at_time(time, results_output_index);
         stkIo.process_output_request(results_output_index);
         stkIo.end_current_output(results_output_index);
 
-        stkIo.begin_restart_output_at_time(time);
-        stkIo.process_restart_output();
-        stkIo.end_current_restart_output();
+        stkIo.begin_output_at_time(time, restartFileIndex);
+        stkIo.process_output_request(restartFileIndex);
+        stkIo.end_current_output(restartFileIndex);
     }
     Ioss::DatabaseIO *iossResultDb = Ioss::IOFactory::create("exodus", restartFilename, Ioss::READ_MODEL, communicator);
     Ioss::Region resultRegion(iossResultDb);

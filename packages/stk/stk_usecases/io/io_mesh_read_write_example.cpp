@@ -56,22 +56,23 @@ namespace {
     // Basically all non-transient (time-dependent) data.
     size_t result_file_index = mesh_data.create_output_mesh(output_filename);
 
+    // Create restart output ...  ("generated_mesh.restart") ("exodus_mesh.restart")
+    std::string restart_filename = working_directory + type + "_mesh.restart";
+
+    size_t restartFileIndex = mesh_data.create_output_mesh(restart_filename);
+
     // Iterate all fields and set them as restart fields...
     const stk::mesh::FieldVector &fields = mesh_data.meta_data().get_fields();
     for (size_t i=0; i < fields.size(); i++) {
       std::string name = fields[i]->name();
-      mesh_data.add_restart_field(*fields[i], name);
+      mesh_data.add_restart_field(*fields[i], name); // for input
+      mesh_data.add_restart_field(restartFileIndex, *fields[i], name); // for output
       const Ioss::Field::RoleType* role = stk::io::get_field_role(*fields[i]);
        if ( role && *role == Ioss::Field::TRANSIENT )
        {
            mesh_data.add_results_field(result_file_index, *fields[i]);
        }
     }
-
-    // Create restart output ...  ("generated_mesh.restart") ("exodus_mesh.restart")
-    std::string restart_filename = working_directory + type + "_mesh.restart";
-
-    mesh_data.create_restart_output(restart_filename);
 
     // Determine the names of the global fields on the input
     // mesh. These will be used below to define the same fields on the
@@ -85,7 +86,7 @@ namespace {
       const Ioss::Field &input_field = mesh_data.input_io_region()->get_fieldref(global_fields[i]);
 
       // Define the global fields that will be written on each timestep.
-      mesh_data.add_restart_global(input_field.get_name(), input_field.raw_storage()->name(), input_field.get_type());
+      mesh_data.add_global(restartFileIndex, input_field.get_name(), input_field.raw_storage()->name(), input_field.get_type());
       mesh_data.add_global(result_file_index, input_field.get_name(), input_field.raw_storage()->name(), input_field.get_type());
     }
 
@@ -111,10 +112,10 @@ namespace {
         // outputting that data to the restart and results output.
 
         mesh_data.process_restart_input(step);
-        mesh_data.begin_restart_output_at_time(time);
+        mesh_data.begin_output_at_time(time, restartFileIndex);
         mesh_data.begin_output_at_time(time, result_file_index);
 
-        mesh_data.process_restart_output();
+        mesh_data.process_output_request(restartFileIndex);
         mesh_data.process_output_request(result_file_index);
 
         // Transfer all global variables from the input mesh to the
@@ -122,11 +123,11 @@ namespace {
         for (size_t i=0; i < global_fields.size(); i++) {
 	  std::vector<double> field_values;
           mesh_data.get_global(global_fields[i], field_values);
-          mesh_data.write_restart_global(global_fields[i], field_values);
+          mesh_data.write_global(restartFileIndex, global_fields[i], field_values);
           mesh_data.write_global(result_file_index, global_fields[i], field_values);
         }
 
-        mesh_data.end_current_restart_output();
+        mesh_data.end_current_output(restartFileIndex);
         mesh_data.end_current_output(result_file_index);
       }
     }

@@ -193,8 +193,8 @@ TEST(StkIoTest, twoResultFiles)
     checkFileForNodalVarNames(resultsFilename2, goldNodalVarNamesInFile2);
     checkFileForGlobal(resultsFilename2, globalVarNameFile2, globalVarValue2);
 
-//    unlink(resultsFilename1.c_str());
-//    unlink(resultsFilename2.c_str());
+    unlink(resultsFilename1.c_str());
+    unlink(resultsFilename2.c_str());
 }
 
 //TEST(StkIoTest, twoResultFilesWithTheSameFilenames) { }

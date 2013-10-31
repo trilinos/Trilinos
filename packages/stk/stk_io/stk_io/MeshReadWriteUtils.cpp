@@ -1329,9 +1329,10 @@ namespace stk {
     void MeshData::add_restart_field(size_t file_index, stk::mesh::FieldBase &field, const std::string &db_name)
     {
         std::string name_for_output = pickFieldName(field, db_name);
-        size_t state_count = field.number_of_states();
+        int state_count = field.number_of_states();
         ThrowAssert(state_count < 7);
-        for(size_t state=0; state < state_count-1; state++) {
+        int num_states_to_write = std::max(state_count-1, 1);
+        for(int state=0; state < num_states_to_write; state++) {
             stk::mesh::FieldState state_identifier = static_cast<stk::mesh::FieldState>(state);
             stk::mesh::FieldBase *statedField = field.field_state(state_identifier);
             std::string field_name_with_suffix = stk::io::get_stated_field_name(name_for_output, state_identifier);
