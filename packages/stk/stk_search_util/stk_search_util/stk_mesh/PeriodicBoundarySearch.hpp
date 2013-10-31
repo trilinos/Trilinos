@@ -36,7 +36,6 @@ public:
   typedef std::vector<SphAABB> SphAABBVector;
   typedef std::vector<std::pair<SearchId,SearchId> > SearchPairVector;
 
-private:
   struct TransformHelper {
 
     CoordinatesTransform m_transform_type;
@@ -67,7 +66,7 @@ private:
       , m_translation(point[0], point[1], point[2])
     {
       m_rotation = glm::f64mat3x3(glm::rotate(angle, axis[0], axis[1], axis[2]));
-      m_translation -= m_rotation*m_translation;
+      m_translation = m_translation - m_rotation*m_translation;  // Can't safely use -=.
     }
 
     template<typename RealType>
@@ -84,7 +83,27 @@ private:
       }
       return true;
     }
+
+    void streamit(std::ostream &os)
+    {
+      os << "Rot: {";
+      for (int col = 0; col < 3 ; ++col) {
+        os << "{ ";
+        glm::f64vec3 mat_col = m_rotation[col];
+        for (int row = 0; row < 3; ++row ) {
+          os << mat_col[row] << " ";
+        }
+        os << "}";
+      }
+      os << "}  trans: {";
+      for (int row = 0; row < 3; ++row ) {
+        os << m_translation[row] << " ";
+      }
+      os << "}";
+    }
   };
+
+private:
 
   struct SearchSummary
   {
@@ -261,6 +280,11 @@ private:
         break;
       case 2:
       {
+        if ((m_transforms[0].m_transform_type != TRANSLATION)
+            || (m_transforms[1].m_transform_type != TRANSLATION)) {
+          ThrowRequireMsg(false,
+                          "Rotation not supported when there are 2 periodic conditions.");
+        }
         const stk::mesh::Selector & domainA = m_periodic_pairs[0].first;
         const stk::mesh::Selector & domainB = m_periodic_pairs[1].first;
         const stk::mesh::Selector domainIntersection = domainA & domainB;
@@ -271,12 +295,18 @@ private:
 
         //now add new pair with this
         m_periodic_pairs.push_back(std::make_pair(domainIntersection, rangeIntersection));
-        //TODO: need logic to handle various combinations of transforms
         m_transforms.push_back(TransformHelper());
         break;
       }
       case 3:
       {
+        if ((m_transforms[0].m_transform_type != TRANSLATION)
+            || (m_transforms[1].m_transform_type != TRANSLATION)
+            || (m_transforms[2].m_transform_type != TRANSLATION)
+            ) {
+          ThrowRequireMsg(false,
+                          "Rotation not supported when there are 3 periodic conditions.");
+        }
         const stk::mesh::Selector domainA = m_periodic_pairs[0].first;
         const stk::mesh::Selector domainB = m_periodic_pairs[1].first;
         const stk::mesh::Selector domainC = m_periodic_pairs[2].first;
@@ -456,7 +486,7 @@ private:
         break;
       }
       default:
-        //TODO: throw
+        ThrowRequireMsg(false, "Unknown transform type.");
         break;
     }
 
@@ -538,8 +568,7 @@ private:
     {
       double *center = side_1_vector[iPoint].center;
       glm::f64vec3 ctr(center[0], center[1], center[2]);
-      glm::f64vec3 old_ctr(ctr);
-      ctr = rotation * ctr + translation;
+      ctr = rotation * ctr + translation; // Can't safely use LHS in RHS.
       for (int i = 0; i < 3; ++i) {
         center[i] = ctr[i];
       }
