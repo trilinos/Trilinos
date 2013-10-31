@@ -128,9 +128,9 @@ STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameWithResultsAndRestart)
         stkIo.define_restart_fields();
 
         double time = 0.0;
-        stkIo.begin_results_output_at_time(time, results_output_index);
+        stkIo.begin_output_at_time(time, results_output_index);
         stkIo.process_output_request(results_output_index);
-        stkIo.end_current_results_output(results_output_index);
+        stkIo.end_current_output(results_output_index);
 
         stkIo.begin_restart_output_at_time(time);
         stkIo.process_restart_output();

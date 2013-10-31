@@ -1170,14 +1170,14 @@ namespace stk {
     {
       validate_result_output_index(result_file_index);
 
-      this->begin_results_output_at_time(time, result_file_index);
+      this->begin_output_at_time(time, result_file_index);
       this->process_output_request(result_file_index);
-      this->end_current_results_output(result_file_index);
+      this->end_current_output(result_file_index);
 
       return m_result_outputs[result_file_index].m_current_output_step;
     }
 
-    void MeshData::begin_results_output_at_time(double time, size_t result_file_index)
+    void MeshData::begin_output_at_time(double time, size_t result_file_index)
     {
         if (!m_result_outputs[result_file_index].m_results_fields_defined) {
 	  define_output_fields(false, result_file_index);
@@ -1195,7 +1195,7 @@ namespace stk {
         output_region->begin_state(m_result_outputs[result_file_index].m_current_output_step);
     }
 
-    void MeshData::end_current_results_output(size_t result_file_index)
+    void MeshData::end_current_output(size_t result_file_index)
     {
         Teuchos::RCP<Ioss::Region> output_region = m_result_outputs[result_file_index].m_output_region;
         output_region->end_state(m_result_outputs[result_file_index].m_current_output_step);
@@ -1923,23 +1923,23 @@ namespace stk {
     }
 
     // ========================================================================
-    void MeshData::add_results_global(size_t result_output_index, const std::string &globalVarName, Ioss::Field::BasicType dataType)
+    void MeshData::add_global(size_t result_output_index, const std::string &globalVarName, Ioss::Field::BasicType dataType)
     {
-      add_results_global(result_output_index, globalVarName, "scalar", dataType);
+      add_global(result_output_index, globalVarName, "scalar", dataType);
     }
 
-    void MeshData::add_results_global(size_t result_output_index, const std::string &globalVarName, int component_count, Ioss::Field::BasicType dataType)
+    void MeshData::add_global(size_t result_output_index, const std::string &globalVarName, int component_count, Ioss::Field::BasicType dataType)
     {
       if (component_count == 1) {
-	add_results_global(result_output_index, globalVarName, "scalar", dataType);
+	add_global(result_output_index, globalVarName, "scalar", dataType);
       } else {
 	std::ostringstream type;
 	type << "Real[" << component_count << "]";
-	add_results_global(result_output_index, globalVarName, type.str(), dataType);
+	add_global(result_output_index, globalVarName, type.str(), dataType);
       }
     }
 
-    void MeshData::add_results_global(size_t result_output_index, const std::string &globalVarName, const std::string &storage,
+    void MeshData::add_global(size_t result_output_index, const std::string &globalVarName, const std::string &storage,
 				      Ioss::Field::BasicType dataType)
     {
         validate_result_output_index(result_output_index);
@@ -1954,7 +1954,7 @@ namespace stk {
     }
 
 
-    void MeshData::write_results_global(size_t result_output_index, const std::string &globalVarName, double globalVarData)
+    void MeshData::write_global(size_t result_output_index, const std::string &globalVarName, double globalVarData)
     {
         validate_result_output_index(result_output_index);
         Teuchos::RCP<Ioss::Region> output_region = m_result_outputs[result_output_index].m_output_region;
@@ -1962,7 +1962,7 @@ namespace stk {
         internal_write_global(output_region, globalVarName, globalVarData);
     }
 
-    void MeshData::write_results_global(size_t result_output_index, const std::string &globalVarName, int globalVarData)
+    void MeshData::write_global(size_t result_output_index, const std::string &globalVarName, int globalVarData)
     {
         validate_result_output_index(result_output_index);
         Teuchos::RCP<Ioss::Region> output_region = m_result_outputs[result_output_index].m_output_region;
@@ -1970,7 +1970,7 @@ namespace stk {
         internal_write_global(output_region, globalVarName, globalVarData);
     }
 
-    void MeshData::write_results_global(size_t result_output_index, const std::string &globalVarName, std::vector<double>& globalVarData)
+    void MeshData::write_global(size_t result_output_index, const std::string &globalVarName, std::vector<double>& globalVarData)
     {
         validate_result_output_index(result_output_index);
         Teuchos::RCP<Ioss::Region> output_region = m_result_outputs[result_output_index].m_output_region;
@@ -1978,7 +1978,7 @@ namespace stk {
         internal_write_global(output_region, globalVarName, globalVarData);
     }
 
-    void MeshData::write_results_global(size_t result_output_index, const std::string &globalVarName, std::vector<int>& globalVarData)
+    void MeshData::write_global(size_t result_output_index, const std::string &globalVarName, std::vector<int>& globalVarData)
     {
         validate_result_output_index(result_output_index);
         Teuchos::RCP<Ioss::Region> output_region = m_result_outputs[result_output_index].m_output_region;

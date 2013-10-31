@@ -305,15 +305,15 @@ namespace stk {
 
         void add_results_field(size_t result_output_index, stk::mesh::FieldBase &field, const std::string &db_name = std::string());
 
-        void add_results_global(size_t result_output_index, const std::string &globalVarName, Ioss::Field::BasicType dataType);
-        void add_results_global(size_t result_output_index, const std::string &globalVarName, const std::string &type, Ioss::Field::BasicType dataType);
-        void add_results_global(size_t result_output_index, const std::string &globalVarName, int component_count,     Ioss::Field::BasicType dataType);
+        void add_global(size_t result_output_index, const std::string &globalVarName, Ioss::Field::BasicType dataType);
+        void add_global(size_t result_output_index, const std::string &globalVarName, const std::string &type, Ioss::Field::BasicType dataType);
+        void add_global(size_t result_output_index, const std::string &globalVarName, int component_count,     Ioss::Field::BasicType dataType);
 
         /**
          * Add a transient step to the results database at time 'time'.
          */
-        void begin_results_output_at_time(double time, size_t result_file_index = 0);
-        void end_current_results_output(size_t result_file_index = 0);
+        void begin_output_at_time(double time, size_t result_file_index = 0);
+        void end_current_output(size_t result_file_index = 0);
 
         /**
          * Add a transient step to the restart database at time 'time'.
@@ -327,10 +327,10 @@ namespace stk {
          */
         int process_output_request(size_t result_output_index=0);
         int process_output_request(double time, size_t result_file_index = 0);
-        void write_results_global(size_t result_output_index, const std::string &globalVarName, double data);
-        void write_results_global(size_t result_output_index, const std::string &globalVarName, int data);
-        void write_results_global(size_t result_output_index, const std::string &globalVarName, std::vector<double>& data);
-        void write_results_global(size_t result_output_index, const std::string &globalVarName, std::vector<int>& data);
+        void write_global(size_t result_output_index, const std::string &globalVarName, double data);
+        void write_global(size_t result_output_index, const std::string &globalVarName, int data);
+        void write_global(size_t result_output_index, const std::string &globalVarName, std::vector<double>& data);
+        void write_global(size_t result_output_index, const std::string &globalVarName, std::vector<int>& data);
 
         /** RESTART **/
         /**

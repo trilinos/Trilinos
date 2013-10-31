@@ -55,9 +55,9 @@ TEST(StkIoTestForDocumentation, resultsWithMultistateField)
 	stkIo.add_results_field(resultOuputIndex, *statedFieldN,   nName);
 	stkIo.add_results_field(resultOuputIndex, *statedFieldNm1, nm1Name);
 	
-	stkIo.begin_results_output_at_time(time, resultOuputIndex);
+	stkIo.begin_output_at_time(time, resultOuputIndex);
 	stkIo.process_output_request(resultOuputIndex);
-        stkIo.end_current_results_output(resultOuputIndex);
+        stkIo.end_current_output(resultOuputIndex);
     }
 
     {
@@ -158,7 +158,7 @@ TEST(StkIoTest, twoResultFiles)
         indexOfResultsFile1 = stkMeshIoBroker.create_output_mesh(resultsFilename1);
         stk::mesh::FieldBase *displacementField = stkMeshMetaData.get_field(displacementFieldName);
         stkMeshIoBroker.add_results_field(indexOfResultsFile1, *displacementField);
-        stkMeshIoBroker.add_results_global(indexOfResultsFile1, globalVarNameFile1, Ioss::Field::REAL);
+        stkMeshIoBroker.add_global(indexOfResultsFile1, globalVarNameFile1, Ioss::Field::REAL);
     }
 
     std::string altNameForDisp("greg");
@@ -169,18 +169,18 @@ TEST(StkIoTest, twoResultFiles)
         stkMeshIoBroker.add_results_field(indexOfResultsFile2, *displacementField, altNameForDisp);
         stk::mesh::FieldBase *velocityField = stkMeshMetaData.get_field(velocityFieldName);
         stkMeshIoBroker.add_results_field(indexOfResultsFile2, *velocityField);
-        stkMeshIoBroker.add_results_global(indexOfResultsFile2, globalVarNameFile2, Ioss::Field::REAL);
+        stkMeshIoBroker.add_global(indexOfResultsFile2, globalVarNameFile2, Ioss::Field::REAL);
     }
 
     double time = 0.0;
-    stkMeshIoBroker.begin_results_output_at_time(time, indexOfResultsFile1);
-    stkMeshIoBroker.begin_results_output_at_time(time, indexOfResultsFile2);
+    stkMeshIoBroker.begin_output_at_time(time, indexOfResultsFile1);
+    stkMeshIoBroker.begin_output_at_time(time, indexOfResultsFile2);
     stkMeshIoBroker.process_output_request(indexOfResultsFile1);
     stkMeshIoBroker.process_output_request(indexOfResultsFile2);
-    stkMeshIoBroker.write_results_global(indexOfResultsFile1, globalVarNameFile1, globalVarValue1);
-    stkMeshIoBroker.write_results_global(indexOfResultsFile2, globalVarNameFile2, globalVarValue2);
-    stkMeshIoBroker.end_current_results_output(indexOfResultsFile1);
-    stkMeshIoBroker.end_current_results_output(indexOfResultsFile2);
+    stkMeshIoBroker.write_global(indexOfResultsFile1, globalVarNameFile1, globalVarValue1);
+    stkMeshIoBroker.write_global(indexOfResultsFile2, globalVarNameFile2, globalVarValue2);
+    stkMeshIoBroker.end_current_output(indexOfResultsFile1);
+    stkMeshIoBroker.end_current_output(indexOfResultsFile2);
 
     std::vector<std::string> goldNodalVarNamesInFile1;
     goldNodalVarNamesInFile1.push_back(displacementFieldName);

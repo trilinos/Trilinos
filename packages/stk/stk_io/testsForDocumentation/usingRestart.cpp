@@ -44,9 +44,9 @@ TEST(StkIoTestForDocumentation, restartingWithMultistateField)
         size_t fileIndex = stkIo.create_output_mesh(restartFilename);
         stkIo.add_restart_field(fileIndex, *triStateField);
 
-        stkIo.begin_results_output_at_time(time, fileIndex);
+        stkIo.begin_output_at_time(time, fileIndex);
         stkIo.process_output_request(fileIndex);
-        stkIo.end_current_results_output(fileIndex);
+        stkIo.end_current_output(fileIndex);
     }
 
     {
