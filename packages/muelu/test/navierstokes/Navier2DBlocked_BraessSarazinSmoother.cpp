@@ -505,6 +505,7 @@ int main(int argc, char *argv[]) {
   RCP<MueLu::Level> Finest = rcp(new Level());
   Finest->setDefaultVerbLevel(Teuchos::VERB_NONE);
   Finest->Set("A",Teuchos::rcp_dynamic_cast<Matrix>(bOp));
+  Finest->setlib(Xpetra::UseEpetra);
 
 
   ///////////////////////////////////
