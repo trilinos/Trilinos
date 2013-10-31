@@ -86,12 +86,12 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDouble)
 
         size_t result_file_index = stkIo.create_output_mesh(outputFileName);
 
-        stkIo.add_results_global(globalVarName, Ioss::Field::REAL);
+        stkIo.add_results_global(result_file_index, globalVarName, Ioss::Field::REAL);
 
         const double time = 1.0;
         stkIo.begin_results_output_at_time(time, result_file_index);
 
-        stkIo.write_results_global(globalVarName, globalVarValue);
+        stkIo.write_results_global(result_file_index, globalVarName, globalVarValue);
 
         stkIo.end_current_results_output(result_file_index);
     }
@@ -122,12 +122,12 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleVector3)
 
         size_t result_file_index = stkIo.create_output_mesh(outputFileName);
 
-        stkIo.add_results_global(globalVarName, "vector_3d", Ioss::Field::REAL);
+        stkIo.add_results_global(result_file_index, globalVarName, "vector_3d", Ioss::Field::REAL);
 
         const double time = 1.0;
         stkIo.begin_results_output_at_time(time, result_file_index);
 
-        stkIo.write_results_global(globalVarName, globalVarValue);
+        stkIo.write_results_global(result_file_index, globalVarName, globalVarValue);
 
         stkIo.end_current_results_output(result_file_index);
     }
@@ -156,12 +156,12 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalIntegerVector3)
 
         size_t result_file_index = stkIo.create_output_mesh(outputFileName);
 
-        stkIo.add_results_global(globalVarName, "vector_3d", Ioss::Field::INTEGER);
+        stkIo.add_results_global(result_file_index, globalVarName, "vector_3d", Ioss::Field::INTEGER);
 
         const double time = 1.0;
         stkIo.begin_results_output_at_time(time, result_file_index);
 
-        stkIo.write_results_global(globalVarName, globalVarValue);
+        stkIo.write_results_global(result_file_index, globalVarName, globalVarValue);
 
         stkIo.end_current_results_output(result_file_index);
     }
@@ -190,12 +190,12 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDouble10)
 
         size_t result_file_index = stkIo.create_output_mesh(outputFileName);
 
-        stkIo.add_results_global(globalVarName, globalVarValue.size(), Ioss::Field::REAL);
+        stkIo.add_results_global(result_file_index, globalVarName, globalVarValue.size(), Ioss::Field::REAL);
 
         const double time = 1.0;
         stkIo.begin_results_output_at_time(time, result_file_index);
 
-        stkIo.write_results_global(globalVarName, globalVarValue);
+        stkIo.write_results_global(result_file_index, globalVarName, globalVarValue);
 
         stkIo.end_current_results_output(result_file_index);
     }
@@ -221,14 +221,14 @@ void testTwoGlobals(const std::string &outputFileName, const std::vector<std::st
         size_t resultOuputIndex = stkIo.create_output_mesh(outputFileName);
 
         Ioss::Field::BasicType iossDataType = iossBasicType(DataType());
-        stkIo.add_results_global(globalVarNames[0], iossDataType);
-        stkIo.add_results_global(globalVarNames[1], iossDataType);
+        stkIo.add_results_global(resultOuputIndex, globalVarNames[0], iossDataType);
+        stkIo.add_results_global(resultOuputIndex, globalVarNames[1], iossDataType);
 
         const double time = 1.0;
         stkIo.begin_results_output_at_time(time, resultOuputIndex);
 
-        stkIo.write_results_global(globalVarNames[0], globalVarValues[0]);
-        stkIo.write_results_global(globalVarNames[1], globalVarValues[1]);
+        stkIo.write_results_global(resultOuputIndex, globalVarNames[0], globalVarValues[0]);
+        stkIo.write_results_global(resultOuputIndex, globalVarNames[1], globalVarValues[1]);
 
         stkIo.end_current_results_output(resultOuputIndex);
     }
@@ -304,7 +304,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, GlobalDoubleWithFieldMultipleTimeSteps)
 
         size_t result_file_index = stkIo.create_output_mesh(outputFileName);
         stkIo.add_results_field(result_file_index, field0);
-        stkIo.add_results_global(globalVarName, Ioss::Field::REAL);
+        stkIo.add_results_global(result_file_index, globalVarName, Ioss::Field::REAL);
 
         double time = 1.0;
         const double stepSize = 1.0;
@@ -313,7 +313,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, GlobalDoubleWithFieldMultipleTimeSteps)
             stkIo.begin_results_output_at_time(time, result_file_index);
 
             const double globalVarValue = time;
-            stkIo.write_results_global(globalVarName, globalVarValue);
+            stkIo.write_results_global(result_file_index, globalVarName, globalVarValue);
             globalVarValuesOverTime.push_back(globalVarValue);
 
             stkIo.process_output_request(result_file_index);

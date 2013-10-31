@@ -99,6 +99,17 @@ void checkFileForNodalVarNames(const std::string &exodusFilename, const std::vec
    }
 }
 
+void checkFileForGlobal(const std::string &exodusFilename, const std::string &globalVarName, const double value)
+{
+    Ioss::DatabaseIO *iossDb = Ioss::IOFactory::create("exodus", exodusFilename, Ioss::READ_MODEL, MPI_COMM_WORLD);
+    Ioss::Region ioRegion(iossDb);
+    ioRegion.begin_state(1);
+    ASSERT_TRUE(ioRegion.field_exists(globalVarName));
+    double valueOnFile = 0.0;
+    ioRegion.get_field_data(globalVarName, &valueOnFile, sizeof(double));
+    EXPECT_EQ(value, valueOnFile);
+}
+
 TEST(StkIoTest, twoResultFiles)
 {
     std::string resultsFilename1 = "output1.results";
@@ -136,23 +147,29 @@ TEST(StkIoTest, twoResultFiles)
         stk::mesh::FieldBase *velocityField = stkMeshMetaData.get_field(velocityFieldName);
         putDataOnTestField(stkMeshIoBroker.bulk_data(), velocityValue, *velocityField);
     }
+    const double globalVarValue1 = 13.0;
+    const double globalVarValue2 = 14.0;
 
     size_t indexOfResultsFile1 = std::numeric_limits<size_t>::max();
     size_t indexOfResultsFile2 = indexOfResultsFile1;
 
+    std::string globalVarNameFile1 = "myGlobal";
     {
         indexOfResultsFile1 = stkMeshIoBroker.create_output_mesh(resultsFilename1);
         stk::mesh::FieldBase *displacementField = stkMeshMetaData.get_field(displacementFieldName);
         stkMeshIoBroker.add_results_field(indexOfResultsFile1, *displacementField);
+        stkMeshIoBroker.add_results_global(indexOfResultsFile1, globalVarNameFile1, Ioss::Field::REAL);
     }
 
     std::string altNameForDisp("greg");
+    std::string globalVarNameFile2 = "otherGlobal";
     {
         indexOfResultsFile2 = stkMeshIoBroker.create_output_mesh(resultsFilename2);
         stk::mesh::FieldBase *displacementField = stkMeshMetaData.get_field(displacementFieldName);
         stkMeshIoBroker.add_results_field(indexOfResultsFile2, *displacementField, altNameForDisp);
         stk::mesh::FieldBase *velocityField = stkMeshMetaData.get_field(velocityFieldName);
         stkMeshIoBroker.add_results_field(indexOfResultsFile2, *velocityField);
+        stkMeshIoBroker.add_results_global(indexOfResultsFile2, globalVarNameFile2, Ioss::Field::REAL);
     }
 
     double time = 0.0;
@@ -160,21 +177,24 @@ TEST(StkIoTest, twoResultFiles)
     stkMeshIoBroker.begin_results_output_at_time(time, indexOfResultsFile2);
     stkMeshIoBroker.process_output_request(indexOfResultsFile1);
     stkMeshIoBroker.process_output_request(indexOfResultsFile2);
+    stkMeshIoBroker.write_results_global(indexOfResultsFile1, globalVarNameFile1, globalVarValue1);
+    stkMeshIoBroker.write_results_global(indexOfResultsFile2, globalVarNameFile2, globalVarValue2);
     stkMeshIoBroker.end_current_results_output(indexOfResultsFile1);
     stkMeshIoBroker.end_current_results_output(indexOfResultsFile2);
 
     std::vector<std::string> goldNodalVarNamesInFile1;
     goldNodalVarNamesInFile1.push_back(displacementFieldName);
     checkFileForNodalVarNames(resultsFilename1, goldNodalVarNamesInFile1);
+    checkFileForGlobal(resultsFilename1, globalVarNameFile1, globalVarValue1);
 
     std::vector<std::string> goldNodalVarNamesInFile2;
     goldNodalVarNamesInFile2.push_back(altNameForDisp);
     goldNodalVarNamesInFile2.push_back(velocityFieldName);
     checkFileForNodalVarNames(resultsFilename2, goldNodalVarNamesInFile2);
+    checkFileForGlobal(resultsFilename2, globalVarNameFile2, globalVarValue2);
 
-    // TODO: Unlink the files
-    unlink(resultsFilename1.c_str());
-    unlink(resultsFilename2.c_str());
+//    unlink(resultsFilename1.c_str());
+//    unlink(resultsFilename2.c_str());
 }
 
 //TEST(StkIoTest, twoResultFilesWithTheSameFilenames) { }

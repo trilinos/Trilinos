@@ -86,7 +86,7 @@ namespace {
 
       // Define the global fields that will be written on each timestep.
       mesh_data.add_restart_global(input_field.get_name(), input_field.raw_storage()->name(), input_field.get_type());
-      mesh_data.add_results_global(input_field.get_name(), input_field.raw_storage()->name(), input_field.get_type());
+      mesh_data.add_results_global(result_file_index, input_field.get_name(), input_field.raw_storage()->name(), input_field.get_type());
     }
 
     // ========================================================================
@@ -123,7 +123,7 @@ namespace {
 	  std::vector<double> field_values;
           mesh_data.get_global(global_fields[i], field_values);
           mesh_data.write_restart_global(global_fields[i], field_values);
-          mesh_data.write_results_global(global_fields[i], field_values);
+          mesh_data.write_results_global(result_file_index, global_fields[i], field_values);
         }
 
         mesh_data.end_current_restart_output();
