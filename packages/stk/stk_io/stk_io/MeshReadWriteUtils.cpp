@@ -1316,6 +1316,29 @@ namespace stk {
       bulk_data().modification_end();
     }
 
+    std::string pickFieldName(stk::mesh::FieldBase &field, const std::string &db_name)
+    {
+        std::string dbName(db_name);
+        if ( db_name.empty() )
+        {
+            dbName = field.name();
+        }
+        return dbName;
+    }
+
+    void MeshData::add_restart_field(size_t file_index, stk::mesh::FieldBase &field, const std::string &db_name)
+    {
+        std::string name_for_output = pickFieldName(field, db_name);
+        size_t state_count = field.number_of_states();
+        ThrowAssert(state_count < 7);
+        for(size_t state=0; state < state_count-1; state++) {
+            stk::mesh::FieldState state_identifier = static_cast<stk::mesh::FieldState>(state);
+            stk::mesh::FieldBase *statedField = field.field_state(state_identifier);
+            std::string field_name_with_suffix = stk::io::get_stated_field_name(name_for_output, state_identifier);
+            add_results_field(file_index, *statedField, field_name_with_suffix);
+        }
+    }
+
     void MeshData::add_restart_field(stk::mesh::FieldBase &field, const std::string &db_name)
     {
       // NOTE: This could be implemented as a free function; however, I want to keep the option
@@ -1362,11 +1385,7 @@ namespace stk {
 
     void addOrRenameFieldName(stk::mesh::FieldBase &field, const std::string &db_name, ResultsOutput &result_output)
     {
-        std::string dbName(db_name);
-        if ( db_name.empty() )
-        {
-            dbName = field.name();
-        }
+        std::string dbName = pickFieldName(field, db_name);
 
         bool fieldAlreadyExists=false;
         for (size_t i=0;i<result_output.m_named_fields.size();i++)

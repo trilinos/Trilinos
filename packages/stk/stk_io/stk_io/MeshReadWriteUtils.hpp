@@ -359,6 +359,7 @@ namespace stk {
         void create_restart_output(const std::string &filename);
         void create_restart_output();
 
+        void add_restart_field(size_t file_index, stk::mesh::FieldBase &field, const std::string &db_name = std::string());
         void add_restart_field(stk::mesh::FieldBase &field, const std::string &db_name = std::string());
         void add_restart_global(const std::string &globalVarName, Ioss::Field::BasicType dataType);
         void add_restart_global(const std::string &globalVarName, const std::string &type, Ioss::Field::BasicType dataType);

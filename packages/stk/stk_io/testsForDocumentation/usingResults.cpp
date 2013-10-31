@@ -173,6 +173,8 @@ TEST(StkIoTest, twoResultFiles)
     checkFileForNodalVarNames(resultsFilename2, goldNodalVarNamesInFile2);
 
     // TODO: Unlink the files
+    unlink(resultsFilename1.c_str());
+    unlink(resultsFilename2.c_str());
 }
 
 //TEST(StkIoTest, twoResultFilesWithTheSameFilenames) { }

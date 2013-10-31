@@ -41,14 +41,12 @@ TEST(StkIoTestForDocumentation, restartingWithMultistateField)
         putDataOnTestField(stkIo.bulk_data(), stateNm1Value,
                            *statedFieldNm1);
 
-        stkIo.add_restart_field(*triStateField);
+        size_t fileIndex = stkIo.create_output_mesh(restartFilename);
+        stkIo.add_restart_field(fileIndex, *triStateField);
 
-        stkIo.create_restart_output(restartFilename);
-        stkIo.define_restart_fields();
-
-        stkIo.begin_restart_output_at_time(time);
-        stkIo.process_restart_output();
-        stkIo.end_current_restart_output();
+        stkIo.begin_results_output_at_time(time, fileIndex);
+        stkIo.process_output_request(fileIndex);
+        stkIo.end_current_results_output(fileIndex);
     }
 
     {
@@ -71,6 +69,6 @@ TEST(StkIoTestForDocumentation, restartingWithMultistateField)
                 triStateField->field_state(stk::mesh::StateN);
         testDataOnField(stkIo.bulk_data(), stateNValue, *statedFieldN);
     }
-    unlink(restartFilename.c_str());
+//    unlink(restartFilename.c_str());
 }
 }
