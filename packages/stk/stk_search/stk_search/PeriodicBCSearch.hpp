@@ -112,17 +112,42 @@ set_box(Box & box, Iterator itr)
   set_point(box.max_corner(), itr + bg::dimension<typename bg::point_type<Box>::type>::value);
 }
 
+inline
 MPI_Datatype get_mpi_type(double)
 {
   return MPI_DOUBLE;
 }
 
+inline
 MPI_Datatype get_mpi_type(float)
 {
   return MPI_FLOAT;
 }
 
+template <typename Ident>
+struct get_proc;
+
+template <typename T>
+struct get_proc<std::pair<T, int> >
+{
+  int operator()(std::pair<T, int> const& id) const
+  {
+    return id.second;
+  }
+};
+
 }
+
+template <typename CoordType, int Dimension>
+inline
+bool invalid_box(CoordType *raw_box)
+{
+  bool retval = false;
+  for (int i = 0; i < Dimension; ++i)  {
+    retval |= ((raw_box[i + Dimension] - raw_box[i]) < 0);
+  }
+  return retval;
+};
 
 template <typename Box, typename SpatialIndex>
 void // TODO: enable if box matches spatialindex
@@ -148,6 +173,10 @@ create_global_spatial_index(SpatialIndex& index, Box const& local_bounding_box, 
                 &*recv.begin(), data_per_proc, impl::get_mpi_type(coordinate_t()), comm);
 
   for (int p = 0; p < size; ++p) {
+    coordinate_t *raw_box = &*(recv.begin() + p * data_per_proc);
+    if (invalid_box<coordinate_t, bg::dimension<point_t>::value>(raw_box)) {
+      continue;
+    }
     Box temp;
     impl::set_box(temp, recv.begin() + p * data_per_proc);
     index.insert(std::make_pair(temp, p));
@@ -307,8 +336,8 @@ void periodic_search(std::vector<std::pair<DomainBox, DomainIdent> > const& loca
         Output temp(domain_id, range_id);
         output.push_back(temp);
 
-        if (domain_id.second != rank || range_id.second != rank) {
-          int other_proc = domain_id.second == rank ? range_id.second : domain_id.second;
+        if (impl::get_proc<DomainIdent>()(domain_id) != rank || impl::get_proc<RangeIdent>()(range_id) != rank) {
+          int other_proc = impl::get_proc<DomainIdent>()(domain_id) == rank ? impl::get_proc<RangeIdent>()(range_id) : impl::get_proc<DomainIdent>()(domain_id);
           send_matches[other_proc].push_back(temp);
         }
       }

@@ -15,6 +15,24 @@
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 
+// #define USE_STK_COARSE_SEARCH
+
+#ifndef USE_STK_COARSE_SEARCH
+#include <stk_search/PeriodicBCSearch.hpp>
+
+namespace stk { namespace search { namespace impl {
+
+template <>
+struct get_proc<stk::search::ident::IdentProc<stk::mesh::EntityKey,unsigned> > {
+  int operator()(stk::search::ident::IdentProc<stk::mesh::EntityKey,unsigned> const& id) {
+    return id.proc;
+  }
+};
+
+}}}
+#endif
+
+
 namespace stk { namespace mesh {
 
 struct GetCoordiantes;
@@ -362,7 +380,41 @@ private:
     }
     stk::search::FactoryOrder order;
     order.m_communicator = parallel;
+
+#ifndef USE_STK_COARSE_SEARCH
+    //// Jim's changes start here...
+
+    namespace bg = boost::geometry;
+    namespace bgi = boost::geometry::index;
+
+    typedef bg::model::point<double, 3, bg::cs::cartesian> Point;
+    typedef bg::model::box<Point> Box;
+
+    std::vector<std::pair<Box, SearchId> > local_domain;
+    local_domain.reserve(side_1_vector.size());
+    for (int i = 0, ie = side_1_vector.size(); i < ie; ++i) {
+      stk::search::box::SphereBoundingBox<SearchId,Scalar,3> old_box = side_1_vector[i];
+      Box new_box(Point(old_box.lower(0), old_box.lower(1), old_box.lower(2)),
+                  Point(old_box.upper(0), old_box.upper(1), old_box.upper(2)));
+      local_domain.push_back(std::make_pair(new_box, old_box.key));
+    }
+
+    std::vector<std::pair<Box, SearchId> > local_range;
+    local_domain.reserve(side_2_vector.size());
+    for (int i = 0, ie = side_2_vector.size(); i < ie; ++i) {
+      stk::search::box::SphereBoundingBox<SearchId,Scalar,3> old_box = side_2_vector[i];
+      Box new_box(Point(old_box.lower(0), old_box.lower(1), old_box.lower(2)),
+                  Point(old_box.upper(0), old_box.upper(1), old_box.upper(2)));
+      local_range.push_back(std::make_pair(new_box, old_box.key));
+    }
+
+
+    stk::search::periodic_search(local_domain, local_range, parallel, search_results);
+
+    //// ... and end HERE.
+#else
     stk::search::coarse_search(search_results, side_2_vector, side_1_vector, order);
+#endif
 
     m_search_results.insert(m_search_results.end(), search_results.begin(), search_results.end());
     m_search_results_index.push_back(SearchSummary(transform,
