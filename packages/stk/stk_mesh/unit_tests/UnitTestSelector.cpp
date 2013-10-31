@@ -915,6 +915,68 @@ STKUNIT_UNIT_TEST( UnitTestSelector, select_part )
 
 }
 
+/** \brief Verify operator<(const Selector&) enforces strict weak ordering
+ *  This is not an exhaustive test of all possible combinations, but does test
+ *  some specific cases that were previously incorrect as well as some simple
+ *  combinations of operators.
+ */
+STKUNIT_UNIT_TEST( UnitTestSelector, less_than_operator )
+{
+  SelectorFixture fix ;
+  initialize(fix);
+
+  stk::mesh::Part & partA = fix.m_partA ;
+  stk::mesh::Part & partB = fix.m_partB ;
+  stk::mesh::Part & partC = fix.m_partC ;
+  stk::mesh::Part & partD = fix.m_partD ;
+
+  const unsigned ordA = partA.mesh_meta_data_ordinal();
+  const unsigned ordB = partB.mesh_meta_data_ordinal();
+  const unsigned ordC = partC.mesh_meta_data_ordinal();
+  const unsigned ordD = partD.mesh_meta_data_ordinal();
+
+  STKUNIT_ASSERT_TRUE( ordA < ordB && ordB < ordC && ordC < ordD );
+
+  stk::mesh::Selector lhs, rhs;
+  lhs |= partA;
+  rhs |= partB;
+  STKUNIT_EXPECT_FALSE( !(lhs < rhs) && !(rhs < lhs) );
+  lhs &= partD;
+  rhs &= partC;
+  STKUNIT_EXPECT_FALSE( !(lhs < rhs) && !(rhs < lhs) );
+
+  stk::mesh::Selector lhs2, rhs2;
+  lhs2 &= partA;
+  rhs2 &= partB;
+  STKUNIT_EXPECT_FALSE( !(lhs2 < rhs2) && !(rhs2 < lhs2) );
+  lhs2 &= partD;
+  rhs2 &= partC;
+  STKUNIT_EXPECT_FALSE( !(lhs2 < rhs2) && !(rhs2 < lhs2) );
+
+  stk::mesh::Selector lhs3, rhs3;
+  lhs3 -= partA;
+  rhs3 -= partB;
+  STKUNIT_EXPECT_FALSE( !(lhs3 < rhs3) && !(rhs3 < lhs3) );
+  lhs3 -= partD;
+  rhs3 -= partC;
+  STKUNIT_EXPECT_FALSE( !(lhs3 < rhs3) && !(rhs3 < lhs3) );
+
+  stk::mesh::Selector lhs4(partA), rhs4(partB);
+  STKUNIT_EXPECT_FALSE( !(lhs4 < rhs4) && !(rhs4 < lhs4) );
+
+  stk::mesh::Selector same(partA);
+  STKUNIT_EXPECT_TRUE( !(same < same) && !(same < same) );
+
+  same |= partB;
+  STKUNIT_EXPECT_TRUE( !(same < same) && !(same < same) );
+
+  same &= partC;
+  STKUNIT_EXPECT_TRUE( !(same < same) && !(same < same) );
+
+  same -= partD;
+  STKUNIT_EXPECT_TRUE( !(same < same) && !(same < same) );
+}
+
 /** \} */
 
 

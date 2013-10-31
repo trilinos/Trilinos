@@ -236,17 +236,47 @@ struct compare_less_impl : public boost::static_visitor<bool>
 
   bool operator()(impl::binary_op_<impl::union_> const& a, impl::binary_op_<impl::union_> const& b) const
   {
-    return boost::apply_visitor(*this, a.m_lhs, b.m_lhs) && boost::apply_visitor(*this, a.m_rhs, b.m_rhs);
+    if(boost::apply_visitor(*this, a.m_lhs, b.m_lhs))
+      return true;
+    if (boost::apply_visitor(*this, b.m_lhs, a.m_lhs))
+      return false;
+
+    if(boost::apply_visitor(*this, a.m_rhs, b.m_rhs))
+      return true;
+    if (boost::apply_visitor(*this, b.m_rhs, a.m_rhs))
+      return false;
+
+    return false;
   }
 
   bool operator()(impl::binary_op_<impl::intersect_> const& a, impl::binary_op_<impl::intersect_> const& b) const
   {
-    return boost::apply_visitor(*this, a.m_lhs, b.m_lhs) && boost::apply_visitor(*this, a.m_rhs, b.m_rhs);
+    if(boost::apply_visitor(*this, a.m_lhs, b.m_lhs))
+      return true;
+    if (boost::apply_visitor(*this, b.m_lhs, a.m_lhs))
+      return false;
+
+    if(boost::apply_visitor(*this, a.m_rhs, b.m_rhs))
+      return true;
+    if (boost::apply_visitor(*this, b.m_rhs, a.m_rhs))
+      return false;
+
+    return false;
   }
 
   bool operator()(impl::binary_op_<impl::difference_> const& a, impl::binary_op_<impl::difference_> const& b) const
   {
-    return boost::apply_visitor(*this, a.m_lhs, b.m_lhs) && boost::apply_visitor(*this, a.m_rhs, b.m_rhs);
+    if(boost::apply_visitor(*this, a.m_lhs, b.m_lhs))
+      return true;
+    if (boost::apply_visitor(*this, b.m_lhs, a.m_lhs))
+      return false;
+
+    if(boost::apply_visitor(*this, a.m_rhs, b.m_rhs))
+      return true;
+    if (boost::apply_visitor(*this, b.m_rhs, a.m_rhs))
+      return false;
+
+    return false;
   }
 
   bool operator()(impl::complement_ const& a, impl::complement_ const& b) const
