@@ -262,7 +262,15 @@ struct view_kernel
 
     // Print x and y
     if (print) {
+
       device.team_barrier();
+
+      if ( ! device.league_rank() && ! device.team_rank() ) {
+        printf("view_kernel threads(%d %d) dim(%d) size(%d)\n",
+               device.league_size(),device.team_size(),
+               int(dev_x.dimension_1()), int(dev_x(element,device).size()) );
+      }
+
       if ( ! device.team_rank() ) {
         printf("x(%i) = { ",element);
         for (int sample=0; sample< int(dev_x.dimension_1()); ++sample) {
@@ -275,6 +283,7 @@ struct view_kernel
         }
         printf("}\n\n");
       }
+
       device.team_barrier();
     }
   }
@@ -433,7 +442,12 @@ bool run_view_kernel( Kokkos::ParallelWorkRequest config,
                       bool reset, bool print,
                       const std::string& device_name )
 {
-  typedef Stokhos::StaticFixedStorage< int , Scalar , SamplesPerThread , Device > storage_type ;
+  typedef typename
+    Kokkos::Impl::if_c< SamplesPerThread ,
+                        Stokhos::StaticFixedStorage< int , Scalar , SamplesPerThread , Device > ,
+                        Stokhos::DynamicStorage<     int , Scalar , Device > >::type
+      storage_type ;
+
   typedef Kokkos::View< Sacado::MP::Vector< storage_type > * , Device > view_type ;
 
   typedef view_kernel< view_type > kernel;
@@ -441,9 +455,10 @@ bool run_view_kernel( Kokkos::ParallelWorkRequest config,
 
   const int num_samples = config.team_size * SamplesPerThread ;
 
-  view_type x     = view_type("x", num_elements, num_samples);
-  view_type y_vec = view_type("y", num_elements, num_samples);
-  view_type y_sca = view_type("y", num_elements, num_samples);
+  view_type x( "x", num_elements, num_samples);
+  view_type y( "y", num_elements, num_samples);
+
+  host_view_type hy_ans("y_ans", num_elements, num_samples);
 
   host_view_type hx = Kokkos::create_mirror(x);
 
@@ -453,6 +468,7 @@ bool run_view_kernel( Kokkos::ParallelWorkRequest config,
       hx(element,sample) =
         static_cast<Scalar>(element+sample+1) /
         static_cast<Scalar>(num_elements*num_samples);
+      simple_function<Scalar>( hx(element,sample) , hy_ans(element,sample) );
     }
   }
 
@@ -462,14 +478,13 @@ bool run_view_kernel( Kokkos::ParallelWorkRequest config,
   // Run vector and scalar kernels
   {
     TEUCHOS_FUNC_TIME_MONITOR(device_name + " calculation");
-    kernel::run(config, x, y_sca, reset, print);
+    kernel::run(config, x, y, reset, print);
   }
 
   // Copy results back to host
-  host_view_type hy_vec = Kokkos::create_mirror(y_vec);
-  host_view_type hy_sca = Kokkos::create_mirror(y_sca);
-  Kokkos::deep_copy(hy_vec, y_vec);
-  Kokkos::deep_copy(hy_sca, y_sca);
+  host_view_type hy = Kokkos::create_mirror(y);
+
+  Kokkos::deep_copy(hy, y);
 
   // Check results agree
   double rtol = 1e-15;
@@ -477,7 +492,7 @@ bool run_view_kernel( Kokkos::ParallelWorkRequest config,
   bool agree = true;
   for (int e=0; e<num_elements; e++) {
     for (int s=0; s<num_samples; s++) {
-      if (std::abs(hy_vec(e,s)-hy_sca(e,s)) > std::abs(hy_sca(e,s))*rtol+atol) {
+      if (std::abs(hy(e,s)-hy_ans(e,s)) > std::abs(hy_ans(e,s))*rtol+atol) {
         agree = false;
         break;
       }
@@ -486,7 +501,7 @@ bool run_view_kernel( Kokkos::ParallelWorkRequest config,
 
   // Print results if requested
   if (print) {
-    std::cout << "x    = [ ";
+    std::cout << "x = [ ";
     for (int e=0; e<num_elements; e++) {
       for (int s=0; s<num_samples; s++)
         std::cout << hx(e,s) << " ";
@@ -494,18 +509,10 @@ bool run_view_kernel( Kokkos::ParallelWorkRequest config,
     }
     std::cout << "]" << std::endl;
 
-    std::cout << "y      [ ";
+    std::cout << "y = [ ";
     for (int e=0; e<num_elements; e++) {
       for (int s=0; s<num_samples; s++)
-        std::cout << hy_sca(e,s) << " ";
-      std::cout << ";" << std::endl;
-    }
-    std::cout << "]" << std::endl;
-
-    std::cout << "y_mp = [ ";
-    for (int e=0; e<num_elements; e++) {
-      for (int s=0; s<num_samples; s++)
-        std::cout << hy_vec(e,s) << " ";
+        std::cout << hy(e,s) << " ";
       std::cout << ";" << std::endl;
     }
     std::cout << "]" << std::endl;

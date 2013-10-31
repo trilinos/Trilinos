@@ -53,7 +53,11 @@
 /// details) defines a human-readable ASCII text file format ("Matrix
 /// Market format") for interchange of sparse and dense matrices.
 ///
+#if TPETRA_HAVE_KOKKOS_REFACTOR
+#include "Tpetra_KokkosRefactor_CrsMatrix.hpp"
+#else
 #include "Tpetra_CrsMatrix.hpp"
+#endif
 #include "Tpetra_Vector.hpp"
 #include "Teuchos_MatrixMarket_Raw_Adder.hpp"
 #include "Teuchos_MatrixMarket_SymmetrizingAdder.hpp"

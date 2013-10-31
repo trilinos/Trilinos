@@ -54,6 +54,14 @@
 #  include "Kokkos_CuspOps.hpp"
 #endif
 
+namespace Kokkos {
+namespace Compat {
+  template<class DeviceType>
+  class KokkosDeviceWrapperNode;
+}
+class Cuda;
+}
+
 namespace KokkosClassic {
 
   /// \brief Traits class providing default kernel types for CRS,
@@ -157,6 +165,7 @@ namespace KokkosClassic {
   //
 
   class ThrustGPUNode;
+
 #if defined(HAVE_KOKKOSCLASSIC_CUSP)
   template <class Scalar, class Ordinal>
   struct DefaultKernels<Scalar,Ordinal,ThrustGPUNode> {
@@ -188,6 +197,18 @@ namespace KokkosClassic {
   template <>
   struct DefaultKernels<double,int,ThrustGPUNode> {
     typedef CUSPARSEOps<void,ThrustGPUNode> SparseOps;
+  };
+  template <>
+  struct DefaultKernels<void,int,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > {
+    typedef CUSPARSEOps<void,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > SparseOps;
+  };
+  template <>
+  struct DefaultKernels<float,int,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > {
+    typedef CUSPARSEOps<void,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > SparseOps;
+  };
+  template <>
+  struct DefaultKernels<double,int,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > {
+    typedef CUSPARSEOps<void,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > SparseOps;
   };
 #endif
 
