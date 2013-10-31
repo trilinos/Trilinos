@@ -129,6 +129,10 @@ namespace stk {
         return (*it).second;
       }
 
+      ParameterMapType::iterator find(const std::string & name) {
+        return parameterData.find(name);
+      }
+
       template <typename T> T get_value (const std::string name)
       {
         Parameter p = get_param(name);
