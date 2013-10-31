@@ -201,9 +201,7 @@ STKUNIT_UNIT_TEST(CoarseSearch, PeriodicBC)
 
   // side 0 (master) is periodic with side 3 (slave)
 
-
   // add nodes to side 0 and 3
-
   stk::mesh::PartVector side_0_parts(1,&side_0);
   stk::mesh::PartVector side_3_parts(1,&side_3);
 
@@ -246,7 +244,6 @@ STKUNIT_UNIT_TEST(CoarseSearch, PeriodicBC)
 
   const stk::mesh::Ghosting & periodic_bc_ghosting = pbc_search.get_ghosting();
 
-
   std::vector< stk::mesh::FieldBase const * > ghosted_fields;
   ghosted_fields.push_back(&coords_field);
   stk::mesh::communicate_field_data( periodic_bc_ghosting, ghosted_fields);
@@ -268,34 +265,14 @@ STKUNIT_UNIT_TEST(CoarseSearch, PeriodicBC)
   }
 }
 
-
-
-STKUNIT_UNIT_TEST(CoarseSearch, TwoWayMultiPeriodicBC)
+void assign_to_parts_for_two_way(const unsigned x, const unsigned y, const unsigned z,
+                                   stk::mesh::fixtures::HexFixture &fixture,
+                                   stk::mesh::BulkData &bulk_data,
+                                   stk::mesh::PartVector &side_0_parts,
+                                   stk::mesh::PartVector &side_1_parts,
+                                   stk::mesh::PartVector &side_2_parts,
+                                   stk::mesh::PartVector &side_3_parts)
 {
-  const unsigned x = 3, y = 3, z = 3;
-
-
-  stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, x, y, z);
-
-  stk::mesh::BulkData & bulk_data = fixture.m_bulk_data;
-  stk::mesh::MetaData & meta_data = fixture.m_meta;
-  CoordFieldType & coords_field = fixture.m_coord_field;
-
-  stk::mesh::Part & side_0 = meta_data.declare_part("side_0", stk::topology::NODE_RANK);
-  stk::mesh::Part & side_2 = meta_data.declare_part("side_2", stk::topology::NODE_RANK);
-
-  stk::mesh::Part & side_1 = meta_data.declare_part("side_1", stk::topology::NODE_RANK);
-  stk::mesh::Part & side_3 = meta_data.declare_part("side_3", stk::topology::NODE_RANK);
-
-  meta_data.commit();
-
-  fixture.generate_mesh();
-
-  stk::mesh::PartVector side_0_parts(1,&side_0);
-  stk::mesh::PartVector side_2_parts(1,&side_2);
-
-  stk::mesh::PartVector side_1_parts(1,&side_1);
-  stk::mesh::PartVector side_3_parts(1,&side_3);
 
   //add periodic pair for side 0 and side 2
   bulk_data.modification_begin();
@@ -326,6 +303,37 @@ STKUNIT_UNIT_TEST(CoarseSearch, TwoWayMultiPeriodicBC)
     }
   }}
   bulk_data.modification_end();
+}
+
+STKUNIT_UNIT_TEST(CoarseSearch, TwoWayMultiPeriodicBC)
+{
+  const unsigned x = 3, y = 3, z = 3;
+
+
+  stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, x, y, z);
+
+  stk::mesh::BulkData & bulk_data = fixture.m_bulk_data;
+  stk::mesh::MetaData & meta_data = fixture.m_meta;
+  CoordFieldType & coords_field = fixture.m_coord_field;
+
+  stk::mesh::Part & side_0 = meta_data.declare_part("side_0", stk::topology::NODE_RANK);
+  stk::mesh::Part & side_2 = meta_data.declare_part("side_2", stk::topology::NODE_RANK);
+
+  stk::mesh::Part & side_1 = meta_data.declare_part("side_1", stk::topology::NODE_RANK);
+  stk::mesh::Part & side_3 = meta_data.declare_part("side_3", stk::topology::NODE_RANK);
+
+  meta_data.commit();
+
+  fixture.generate_mesh();
+
+  stk::mesh::PartVector side_0_parts(1,&side_0);
+  stk::mesh::PartVector side_2_parts(1,&side_2);
+
+  stk::mesh::PartVector side_1_parts(1,&side_1);
+  stk::mesh::PartVector side_3_parts(1,&side_3);
+
+  assign_to_parts_for_two_way(x, y, z, fixture, bulk_data,
+                                side_0_parts, side_1_parts, side_2_parts, side_3_parts);
 
   //do periodic search
   typedef stk::mesh::GetCoordinates<CoordFieldType> CoordinateFunctor;
@@ -387,6 +395,35 @@ STKUNIT_UNIT_TEST(CoarseSearch, TwoWayMultiPeriodicBC)
   }
 }
 
+void assign_to_parts_for_three_way(const unsigned x, const unsigned y, const unsigned z,
+                                     stk::mesh::fixtures::HexFixture &fixture,
+                                     stk::mesh::BulkData &bulk_data,
+                                     stk::mesh::PartVector &side_0_parts,
+                                     stk::mesh::PartVector &side_1_parts,
+                                     stk::mesh::PartVector &side_2_parts,
+                                     stk::mesh::PartVector &side_3_parts,
+                                     stk::mesh::PartVector &side_4_parts,
+                                     stk::mesh::PartVector &side_5_parts)
+{
+  assign_to_parts_for_two_way(x, y, z, fixture, bulk_data,
+                                side_0_parts, side_1_parts, side_2_parts, side_3_parts);
+
+  //add periodic pair for side 4 and side 5
+  bulk_data.modification_begin();
+  for (unsigned i=0; i<y+1u; ++i) {
+  for (unsigned j=0; j<z+1u; ++j) {
+    stk::mesh::Entity node_4 = fixture.node(i,j,0);
+    if (bulk_data.is_valid(node_4)  && bulk_data.bucket(node_4).owned()) {
+      bulk_data.change_entity_parts( fixture.node(i,j,0), side_4_parts);
+    }
+    stk::mesh::Entity node_5 = fixture.node(i,j,3);
+    if (bulk_data.is_valid(node_5)  && bulk_data.bucket(node_5).owned()) {
+      bulk_data.change_entity_parts( fixture.node(i,j,3), side_5_parts);
+    }
+  }}
+  bulk_data.modification_end();
+}
+
 STKUNIT_UNIT_TEST(CoarseSearch, ThreeWayMultiPeriodicBC)
 {
   const unsigned x = 3, y = 3, z = 3;
@@ -419,50 +456,10 @@ STKUNIT_UNIT_TEST(CoarseSearch, ThreeWayMultiPeriodicBC)
   stk::mesh::PartVector side_4_parts(1, &side_4);
   stk::mesh::PartVector side_5_parts(1, &side_5);
 
-  //add periodic pair for side 0 and side 2
-  bulk_data.modification_begin();
-  for (unsigned i=0; i<y+1u; ++i) {
-  for (unsigned j=0; j<z+1u; ++j) {
-    stk::mesh::Entity node_0 = fixture.node(0,i,j);
-    if (bulk_data.is_valid(node_0)  && bulk_data.bucket(node_0).owned()) {
-      bulk_data.change_entity_parts( fixture.node(0,i,j), side_0_parts);
-    }
-    stk::mesh::Entity node_2 = fixture.node(3,i,j);
-    if (bulk_data.is_valid(node_2)  && bulk_data.bucket(node_2).owned()) {
-      bulk_data.change_entity_parts( fixture.node(3,i,j), side_2_parts);
-    }
-  }}
-  bulk_data.modification_end();
-
-  //add periodic pair for side 1 and side 3
-  bulk_data.modification_begin();
-  for (unsigned i=0; i<y+1u; ++i) {
-  for (unsigned j=0; j<z+1u; ++j) {
-    stk::mesh::Entity node_1 = fixture.node(i,0,j);
-    if (bulk_data.is_valid(node_1)  && bulk_data.bucket(node_1).owned()) {
-      bulk_data.change_entity_parts( fixture.node(i,0,j), side_1_parts);
-    }
-    stk::mesh::Entity node_3 = fixture.node(i,3,j);
-    if (bulk_data.is_valid(node_3)  && bulk_data.bucket(node_3).owned()) {
-      bulk_data.change_entity_parts( fixture.node(i,3,j), side_3_parts);
-    }
-  }}
-  bulk_data.modification_end();
-
-  //add periodic pair for side 4 and side 5
-  bulk_data.modification_begin();
-  for (unsigned i=0; i<y+1u; ++i) {
-  for (unsigned j=0; j<z+1u; ++j) {
-    stk::mesh::Entity node_4 = fixture.node(i,j,0);
-    if (bulk_data.is_valid(node_4)  && bulk_data.bucket(node_4).owned()) {
-      bulk_data.change_entity_parts( fixture.node(i,j,0), side_4_parts);
-    }
-    stk::mesh::Entity node_5 = fixture.node(i,j,3);
-    if (bulk_data.is_valid(node_5)  && bulk_data.bucket(node_5).owned()) {
-      bulk_data.change_entity_parts( fixture.node(i,j,3), side_5_parts);
-    }
-  }}
-  bulk_data.modification_end();
+  assign_to_parts_for_three_way(x, y, z, fixture, bulk_data,
+                                  side_0_parts, side_1_parts,
+                                  side_2_parts, side_3_parts,
+                                  side_4_parts, side_5_parts);
 
   //do periodic search
   typedef stk::mesh::GetCoordinates<CoordFieldType> CoordinateFunctor;
@@ -523,6 +520,77 @@ STKUNIT_UNIT_TEST(CoarseSearch, ThreeWayMultiPeriodicBC)
 
     EXPECT_GE(global_search_count, 37);
   }
+}
+
+
+
+STKUNIT_UNIT_TEST(CoarseSearch, MultiPeriodicBCDisallowRotational)
+{
+  const unsigned x = 3, y = 3, z = 3;
+
+  stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, x, y, z);
+
+  stk::mesh::BulkData & bulk_data = fixture.m_bulk_data;
+  stk::mesh::MetaData & meta_data = fixture.m_meta;
+  CoordFieldType & coords_field = fixture.m_coord_field;
+
+  stk::mesh::Part & side_0 = meta_data.declare_part("side_0", stk::topology::NODE_RANK);
+  stk::mesh::Part & side_2 = meta_data.declare_part("side_2", stk::topology::NODE_RANK);
+
+  stk::mesh::Part & side_1 = meta_data.declare_part("side_1", stk::topology::NODE_RANK);
+  stk::mesh::Part & side_3 = meta_data.declare_part("side_3", stk::topology::NODE_RANK);
+
+  stk::mesh::Part & side_4 = meta_data.declare_part("side_4", stk::topology::NODE_RANK);
+  stk::mesh::Part & side_5 = meta_data.declare_part("side_5", stk::topology::NODE_RANK);
+
+  meta_data.commit();
+
+  fixture.generate_mesh();
+
+  stk::mesh::PartVector side_0_parts(1, &side_0);
+  stk::mesh::PartVector side_2_parts(1, &side_2);
+
+  stk::mesh::PartVector side_1_parts(1, &side_1);
+  stk::mesh::PartVector side_3_parts(1, &side_3);
+
+  stk::mesh::PartVector side_4_parts(1, &side_4);
+  stk::mesh::PartVector side_5_parts(1, &side_5);
+
+  // Any assignment is okay, since we don't care about the search results.
+  assign_to_parts_for_three_way(x, y, z, fixture, bulk_data,
+                                  side_0_parts, side_1_parts,
+                                  side_2_parts, side_3_parts,
+                                  side_4_parts, side_5_parts);
+
+  const double rotationAngle = TWO_PI/2.0;
+  const double rotationAxis[3] = {0.0, 0.0, 1.0};
+  const double axisLocation[3] = {0.0, 0.0, 0.0};
+
+  typedef stk::mesh::GetCoordinates<CoordFieldType> CoordinateFunctor;
+  typedef stk::mesh::PeriodicBoundarySearch<CoordinateFunctor> PeriodicSearch;
+
+  PeriodicSearch pbc_search_caseA(bulk_data, CoordinateFunctor(bulk_data, coords_field));
+  pbc_search_caseA.add_rotational_periodic_pair(side_0 & meta_data.locally_owned_part(),
+                                                side_2 & meta_data.locally_owned_part(),
+                                                rotationAngle, rotationAxis, axisLocation);
+  pbc_search_caseA.add_rotational_periodic_pair(side_1 & meta_data.locally_owned_part(),
+                                                side_3 & meta_data.locally_owned_part(),
+                                                rotationAngle, rotationAxis, axisLocation);
+  EXPECT_THROW(pbc_search_caseA.find_periodic_nodes(bulk_data.parallel()),
+               std::exception);
+
+  PeriodicSearch pbc_search_caseB(bulk_data, CoordinateFunctor(bulk_data, coords_field));
+  pbc_search_caseB.add_rotational_periodic_pair(side_0 & meta_data.locally_owned_part(),
+                                                side_2 & meta_data.locally_owned_part(),
+                                                rotationAngle, rotationAxis, axisLocation);
+  pbc_search_caseB.add_rotational_periodic_pair(side_1 & meta_data.locally_owned_part(),
+                                                side_3 & meta_data.locally_owned_part(),
+                                                rotationAngle, rotationAxis, axisLocation);
+  pbc_search_caseB.add_rotational_periodic_pair(side_4 & meta_data.locally_owned_part(),
+                                                side_5 & meta_data.locally_owned_part(),
+                                                rotationAngle, rotationAxis, axisLocation );
+  EXPECT_THROW(pbc_search_caseB.find_periodic_nodes(bulk_data.parallel()),
+                std::exception);
 }
 
 
@@ -742,9 +810,9 @@ STKUNIT_UNIT_TEST(CoarseSearch, OffsetRotationalPeriodicBC)
   bulk_data.modification_end();
 
   //do periodic search
-  typedef stk::mesh::GetDisplacedCoordinates<CoordFieldType, CoordFieldType> CoordinateFunctor;
-  typedef stk::mesh::PeriodicBoundarySearch<CoordinateFunctor> PeriodicSearch;
-  PeriodicSearch pbc_search(bulk_data, CoordinateFunctor(bulk_data, coords_field, disps_field));
+  typedef stk::mesh::GetDisplacedCoordinates<CoordFieldType, CoordFieldType> DisplCoordsFunctor;
+  typedef stk::mesh::PeriodicBoundarySearch<DisplCoordsFunctor> PeriodicSearch;
+  PeriodicSearch pbc_search(bulk_data, DisplCoordsFunctor(bulk_data, coords_field, disps_field));
 
   //element_size is in radians
   const double rotationAngle = double(rangeAngleIndex - domainAngleIndex)*TWO_PI/aGear.angle_num;
@@ -784,7 +852,7 @@ STKUNIT_UNIT_TEST(CoarseSearch, OffsetRotationalPeriodicBC)
   stk::mesh::communicate_field_data( periodic_bc_ghosting, ghosted_fields);
 
   //lets do a local search to make sure the coords field and entities were properly ghosted
-  PeriodicSearch pbc_local_search(bulk_data, CoordinateFunctor(bulk_data, coords_field, disps_field));
+  PeriodicSearch pbc_local_search(bulk_data, DisplCoordsFunctor(bulk_data, coords_field, disps_field));
   pbc_local_search.add_rotational_periodic_pair(side_0 & meta_data.locally_owned_part(),
                                           side_1 & meta_data.locally_owned_part(),
                                           rotationAngle,

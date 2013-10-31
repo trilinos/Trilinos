@@ -269,7 +269,6 @@ private:
   TransformVector m_transforms;
   bool m_firstCallToFindPeriodicNodes;
 
-
   void resolve_multi_periodicity()
   {
     switch (m_periodic_pairs.size())
@@ -282,8 +281,7 @@ private:
       {
         if ((m_transforms[0].m_transform_type != TRANSLATION)
             || (m_transforms[1].m_transform_type != TRANSLATION)) {
-          ThrowRequireMsg(false,
-                          "Rotation not supported when there are 2 periodic conditions.");
+          ThrowErrorMsg("Rotation not supported when there are 2 periodic conditions.");
         }
         const stk::mesh::Selector & domainA = m_periodic_pairs[0].first;
         const stk::mesh::Selector & domainB = m_periodic_pairs[1].first;
@@ -304,8 +302,7 @@ private:
             || (m_transforms[1].m_transform_type != TRANSLATION)
             || (m_transforms[2].m_transform_type != TRANSLATION)
             ) {
-          ThrowRequireMsg(false,
-                          "Rotation not supported when there are 3 periodic conditions.");
+          ThrowErrorMsg("Rotation not supported when there are 3 periodic conditions.");
         }
         const stk::mesh::Selector domainA = m_periodic_pairs[0].first;
         const stk::mesh::Selector domainB = m_periodic_pairs[1].first;
@@ -327,7 +324,7 @@ private:
         break;
       }
       default:
-        ThrowRequireMsg(false, "Cannot handle this number of periodic pairs");
+        ThrowErrorMsg("Cannot handle more than 3 periodic pairs");
         break;
     }
   }
@@ -360,7 +357,7 @@ private:
                                     transform.m_rotation, transform.m_translation);
         break;
       default:
-        ThrowRequireMsg(false, "Periodic transform method doesn't exist");
+        ThrowErrorMsg("Periodic transform method doesn't exist");
         break;
     }
     stk::search::FactoryOrder order;
@@ -424,7 +421,7 @@ private:
         break;
       }
       default:
-        ThrowRequireMsg(false, "Cannot handle this number of periodic pairs");
+        ThrowErrorMsg("Cannot handle this number of periodic pairs");
         break;
     }
 
@@ -486,7 +483,7 @@ private:
         break;
       }
       default:
-        ThrowRequireMsg(false, "Unknown transform type.");
+        ThrowErrorMsg("Unknown transform type.");
         break;
     }
 
