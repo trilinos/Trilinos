@@ -1574,6 +1574,11 @@ namespace stk {
         m_input_region->field_describe(Ioss::Field::TRANSIENT, &names);
     }
 
+    void MeshData::get_global(const std::string &globalVarName, stk::util::Parameter &param)
+    {
+         internal_read_parameter(m_input_region, globalVarName, param);
+    }
+
     void MeshData::get_global(const std::string &globalVarName, std::vector<double> &globalVar)
     {
         ThrowErrorMsgIf (Teuchos::is_null(m_input_region),
