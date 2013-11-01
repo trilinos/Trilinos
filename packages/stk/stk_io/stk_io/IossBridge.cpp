@@ -15,6 +15,7 @@
 #include <Ioss_NullEntity.h>
 
 #include <stk_util/util/tokenize.hpp>
+#include <stk_util/util/ParameterList.hpp>
 #include <stk_io/IossBridge.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
@@ -368,6 +369,48 @@ bool is_valid_part_field(const stk::mesh::FieldBase *field,
   return is_field_on_part(field, part_type, part);
 }
 
+std::pair<size_t, Ioss::Field::BasicType> get_io_parameter_type(const stk::util::Parameter &parameter)
+{
+  switch(parameter.type)  {
+  case stk::util::ParameterType::INTEGER: {
+    return std::make_pair(1, Ioss::Field::INTEGER);
+    break;
+  }
+      
+  case stk::util::ParameterType::INT64: {
+    return std::make_pair(1, Ioss::Field::INT64);
+    break;
+  }
+    
+  case stk::util::ParameterType::DOUBLE: {
+    return std::make_pair(1, Ioss::Field::REAL);
+    break;
+  }
+    
+  case stk::util::ParameterType::DOUBLEVECTOR: {
+    std::vector<double> vec = boost::any_cast<std::vector<double> >(parameter.value);
+    return std::make_pair(vec.size(), Ioss::Field::REAL);
+    break;
+  }
+
+  case stk::util::ParameterType::INTEGERVECTOR: {
+    std::vector<int> vec = boost::any_cast<std::vector<int> >(parameter.value);
+    return std::make_pair(vec.size(), Ioss::Field::INTEGER);
+    break;
+  }
+
+  case stk::util::ParameterType::INT64VECTOR: {
+    std::vector<int64_t> vec = boost::any_cast<std::vector<int64_t> >(parameter.value);
+    return std::make_pair(vec.size(), Ioss::Field::INT64);
+    break;
+  }
+    
+  default: {
+    return std::make_pair(0, Ioss::Field::INVALID);
+  }
+  }
+}
+
 void get_io_field_type(const stk::mesh::FieldBase *field,
                        const stk::mesh::FieldRestriction &res,
                        std::pair<std::string, Ioss::Field::BasicType> *result)
@@ -559,11 +602,11 @@ void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &me
     stk::io::put_io_part_attribute(*part, entity);
 
     const Ioss::ElementTopology *topology = entity->topology();
-    // Check spatial dimension of the element topology here so we
-    // can issue a more meaningful error message.  If the
-    // dimension is bad and we continue to the following calls,
-    // there is an exception and we get unintelligible (to the
-    // user) error messages.  Could also do a catch...
+    // Check spatial dimension of the element topology here so we can
+    // issue a more meaningful error message.  If the dimension is bad
+    // and we continue to the following calls, there is an exception
+    // and we get unintelligible (to the user) error messages.  Could
+    // also do a catch...
 
     if (entity->type() == Ioss::ELEMENTBLOCK) {
       assert(topology != NULL);
