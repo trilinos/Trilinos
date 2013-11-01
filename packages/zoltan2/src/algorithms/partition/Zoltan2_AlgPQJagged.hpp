@@ -6523,7 +6523,7 @@ void AlgPQJagged(
     //cout << "enable_rcb:" << enable_rcb << " recursion_depth:" << recursion_depth << endl;
     //cout << "partArraySize:" << partArraySize << " recursion_depth:" << recursion_depth << endl;
     if (enable_rcb){
-        recursion_depth = ceil(log ((numGlobalParts)) / log (2.0));
+        recursion_depth = (int)(ceil(log ((numGlobalParts)) / log (2.0)));
     }
     if (partArraySize < 1){
         if (recursion_depth > 0){
