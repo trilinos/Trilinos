@@ -168,6 +168,8 @@ namespace Impl {
 
 ThreadsExec::~ThreadsExec()
 {
+  m_base        = 0 ;
+  m_team_base   = 0 ;
   m_reduce      = 0 ;
   m_shared      = 0 ;
   m_shared_end  = 0 ;
@@ -193,7 +195,9 @@ ThreadsExec::~ThreadsExec()
 }
 
 ThreadsExec::ThreadsExec()
-  : m_reduce(0)
+  : m_base(0)
+  , m_team_base(0)
+  , m_reduce(0)
   , m_shared(0)
   , m_shared_end(0)
   , m_shared_iter(0)
@@ -259,6 +263,65 @@ ThreadsExec * ThreadsExec::get_thread( const int init_thread_rank )
   return th ;
 }
 
+#if 0
+
+void ThreadsExec::set_team_relationships( const unsigned work_team_size ,
+                                          const unsigned work_league_size )
+{
+  const unsigned use_team_merge  = ( work_team_size + m_init_team_size - 1 ) / m_init_team_size ;
+  const unsigned use_league_size = m_init_league_size / use_team_merge ;
+  const unsigned use_league_rank = m_init_league_rank / use_team_merge ;
+
+  if ( ( m_init_team_size < work_team_size ) && ( work_team_size != use_team_merge * m_init_team_size ) ) {
+    // Error: work_team_size must be smaller than or multiple of init_team_size
+  }
+
+  m_work_league_rank = 0 ;
+  m_work_league_end  = 0 ;
+  m_work_league_size = 0 ;
+
+  if ( work_team_size != m_work_team_size ) { // Changing team size
+
+    const unsigned work_team_rank =
+      m_init_team_rank + work_team_size * ( m_init_league_rank % use_team_merge );
+
+    m_fan_team_size    = 0 ;
+    m_work_team_rank   = 0 ;
+    m_work_team_size   = 0 ;
+    m_work_team_shared = 0 ;
+
+    if ( work_team_rank < work_team_size ) {
+
+      ThreadsExec * const * const team_begin =
+        s_threads_exec + m_init_team_size * use_team_merge * ( use_league_size - ( use_league_rank + 1 ) );
+
+      const unsigned team_r = work_team_size - ( work_team_rank + 1 );
+
+      // Intra-team reduce input:
+      int rn = work_team_size ;
+
+      for ( int n = 1 ; ( rn = team_r + n ) < work_team_size && ! ( n & team_r ) ; n <<= 1 ) {
+        m_fan_team[ m_fan_team_size++ ] = team_begin[rn];
+      }
+
+      // Intra-team scan input:
+      m_fan_team[ m_fan_team_size ] = ( rn < m_work_team_size ) ? team_begin[rn] : (ThreadsExec *) 0 ;
+
+      m_work_team_size   = work_team_size ;
+      m_work_team_rank   = work_team_rank ;
+      m_work_team_shared = (**team_begin).m_shared ;
+    }
+  }
+
+  if ( m_work_team_size ) {
+    m_work_league_rank = ( size_t(use_league_rank)     * size_t(work_league_size) ) / use_league_size ;
+    m_work_league_end  = ( size_t(use_league_rank + 1) * size_t(work_league_size) ) / use_league_size ;
+    m_work_league_size = work_league_size ;
+  }
+}
+
+#endif
+
 // Set threads' team and initial league sizes.
 // Set threads' global and team fan-in and scan relationsups.
 // If the process thread is used then it is 's_threads_exec[0]'
@@ -281,6 +344,8 @@ void ThreadsExec::set_threads_relationships( const std::pair<unsigned,unsigned> 
 
     ThreadsExec & th = * s_threads_exec[th_r] ;
 
+    th.m_base             = s_threads_exec ;
+    th.m_team_base        = s_threads_exec + league_r * team_size ;
     th.m_team_rank        = team_size - ( team_r + 1 );
     th.m_team_size        = team_size ;
     th.m_init_league_rank = league_size - ( league_r + 1 );
@@ -471,7 +536,9 @@ void ThreadsExec::fence()
 }
 
 /** \brief  Begin execution of the asynchronous functor */
-void ThreadsExec::start( void (*func)( ThreadsExec & , const void * ) , const void * arg , int work_league_size )
+void ThreadsExec::start( void (*func)( ThreadsExec & , const void * ) , const void * arg ,
+                         int work_league_size ,
+                         int work_team_size )
 {
   verify_is_process("ThreadsExec::start" , false );
 
@@ -483,6 +550,10 @@ void ThreadsExec::start( void (*func)( ThreadsExec & , const void * ) , const vo
 
   s_current_function     = func ;
   s_current_function_arg = arg ;
+
+  if ( work_team_size ) {
+    // less than or multiple of init_team_size AND less than total thread count
+  }
 
   if ( work_league_size ) {
     const int work_per_team = ( work_league_size + s_threads_process.m_init_league_size - 1 )

@@ -233,7 +233,7 @@ public:
 
   void run_test( const size_t nteam )
   {
-    const unsigned REPEAT = 1000 ;
+    const unsigned REPEAT = 10000 ;
     const unsigned Repeat = ( REPEAT + nteam - 1 ) / nteam ;
 
     Kokkos::ParallelWorkRequest request ; 
