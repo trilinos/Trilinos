@@ -644,6 +644,10 @@ void ioss_add_fields(const stk::mesh::Part &part,
                      const Ioss::Field::RoleType filter_role,
                      const bool add_all)
 {
+    stk::mesh::EntityRank part_rank = part_primary_entity_rank(part);
+    const stk::mesh::PartVector &blocks = part.subsets();
+    bool check_subparts = (part_rank == 1 || part_rank == 2) && (blocks.size() > 0);
+
     for (size_t i=0;i<namedFields.size();i++)
     {
         const stk::mesh::FieldBase *f = namedFields[i].m_field;
@@ -658,6 +662,23 @@ void ioss_add_fields(const stk::mesh::Part &part,
                                       filter_role, entity_size));
             }
         }
+	// If this is a sideset, check the subset parts for the field also...
+	if (check_subparts) {
+	  for (size_t j = 0; j < blocks.size(); j++) {
+	    mesh::Part & side_block_part = *blocks[j];
+	    if (stk::io::is_valid_part_field(f, part_type, side_block_part, filter_role, add_all)) {
+	      const stk::mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*f, part_type, side_block_part);
+	      std::pair<std::string, Ioss::Field::BasicType> field_type;
+	      get_io_field_type(f, res, &field_type);
+	      if (field_type.second != Ioss::Field::INVALID) {
+		size_t entity_size = entity->get_property("entity_count").get_int();
+		std::string name = namedFields[i].m_db_name;
+		entity->field_add(Ioss::Field(name, field_type.second, field_type.first,
+					      filter_role, entity_size));
+            }
+	    }
+	  }
+	}
     }
 }
 
@@ -1260,10 +1281,20 @@ void define_side_set(stk::mesh::Part &part,
     int spatial_dim = io_region.get_property("spatial_dimension").get_int();
     define_side_blocks(part, bulk, ss, si_rank, spatial_dim, anded_selector);
 
-    if (use_nodeset_for_nodal_fields &&
-        will_output_lower_rank_fields(part, stk::mesh::MetaData::NODE_RANK)) {
-      std::string nodes_name = part.name() + block_nodes_suffix;
-      define_node_set(part, nodes_name, bulk, io_region, anded_selector);
+    if (use_nodeset_for_nodal_fields) {
+      bool lower_rank_fields = will_output_lower_rank_fields(part, stk::mesh::MetaData::NODE_RANK);
+      if (!lower_rank_fields) {
+	// See if lower rank fields are defined on sideblock parts of this sideset...
+	const stk::mesh::PartVector &blocks = part.subsets();
+	for (size_t j = 0; j < blocks.size() && !lower_rank_fields; j++) {
+	  mesh::Part & side_block_part = *blocks[j];
+	  lower_rank_fields = will_output_lower_rank_fields(side_block_part, stk::mesh::MetaData::NODE_RANK);
+	}
+      }
+      if (lower_rank_fields) {
+	std::string nodes_name = part.name() + block_nodes_suffix;
+	define_node_set(part, nodes_name, bulk, io_region, anded_selector);
+      }
     }
   }
 }
