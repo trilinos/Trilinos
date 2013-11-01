@@ -81,9 +81,9 @@ TEST(StkIoTestForDocumentation, WriteAndReadGlobalParameters)
 	  param_count++;
 	  const std::string parameterName = (*i).first;
 	  stk::util::Parameter &parameter = parameters.get_param(parameterName);
-	  //	  stk::util::Parameter &gold_parameter = gold_parameters.get_param(parameterName);
+	  stk::util::Parameter &gold_parameter = gold_parameters.get_param(parameterName);
 	  stkIo.get_global(parameterName, parameter);
-	  //	  EXPECT_EQ(parameter, gold_parameter);
+	  validate_parameters_equal_value(parameter, gold_parameter);
 	}
 
         std::vector<std::string> globalNamesOnFile;
