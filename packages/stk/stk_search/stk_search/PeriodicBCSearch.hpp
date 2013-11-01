@@ -164,9 +164,13 @@ create_global_spatial_index(SpatialIndex& index, Box const& local_bounding_box, 
   coordinate_t local_box[data_per_proc];
   impl::fill_array(local_bounding_box, local_box);
 
+#if 0
   int size, rank;
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#else
+  int size = stk::parallel_machine_size(comm);
+#endif
   std::vector<coordinate_t> recv(data_per_proc * size, 0);
 
   MPI_Allgather(local_box, data_per_proc, impl::get_mpi_type(coordinate_t()),
@@ -336,34 +340,38 @@ void periodic_search(std::vector<std::pair<DomainBox, DomainIdent> > const& loca
         Output temp(domain_id, range_id);
         output.push_back(temp);
 
-        if (impl::get_proc<DomainIdent>()(domain_id) != rank || impl::get_proc<RangeIdent>()(range_id) != rank) {
+        if ((size > 1)
+            && (impl::get_proc<DomainIdent>()(domain_id) != rank || impl::get_proc<RangeIdent>()(range_id) != rank)) {
           int other_proc = impl::get_proc<DomainIdent>()(domain_id) == rank ? impl::get_proc<RangeIdent>()(range_id) : impl::get_proc<DomainIdent>()(domain_id);
           send_matches[other_proc].push_back(temp);
         }
       }
     }
 
-    for (int phase = 0; phase < 2; ++phase) {
-      for (int p = 0; p < size; ++p) {
-        comm_all.send_buffer(p).pack<Output>(&*send_matches[p].begin(), send_matches[p].size());
+    if (size > 1)
+    {
+      for (int phase = 0; phase < 2; ++phase) {
+        for (int p = 0; p < size; ++p) {
+          comm_all.send_buffer(p).pack<Output>(&*send_matches[p].begin(), send_matches[p].size());
+        }
+        if (phase == 0) {
+          comm_all.allocate_buffers( size / 4, false /*not symmetric*/ );
+        }
       }
-      if (phase == 0) {
-        comm_all.allocate_buffers( size / 4, false /*not symmetric*/ );
+
+      comm_all.communicate();
+
+      for ( int p = 0 ; p < size ; ++p ) {
+        stk::CommBuffer & buf = comm_all.recv_buffer( p );
+
+        const int num_recv = buf.remaining() / sizeof(Output);
+        std::vector<Output> values(num_recv);
+        buf.unpack<Output>( &*values.begin(), num_recv );
+
+        ThrowRequireMsg(buf.remaining() == 0, buf.remaining());
+
+        output.insert(output.end(), values.begin(), values.end());
       }
-    }
-
-    comm_all.communicate();
-
-    for ( int p = 0 ; p < size ; ++p ) {
-      stk::CommBuffer & buf = comm_all.recv_buffer( p );
-
-      const int num_recv = buf.remaining() / sizeof(Output);
-      std::vector<Output> values(num_recv);
-      buf.unpack<Output>( &*values.begin(), num_recv );
-
-      ThrowRequireMsg(buf.remaining() == 0, buf.remaining());
-
-      output.insert(output.end(), values.begin(), values.end());
     }
   }
 }
