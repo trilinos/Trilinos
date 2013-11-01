@@ -123,7 +123,6 @@ namespace MueLu {
 
     const ParameterList  & pL = GetParameterList();
     bool doExperimentalWrap = pL.get<bool>("lightweight wrap");
-    bool disableDirichletDetection = pL.get<bool>("disable Dirichlet detection");
 
     GetOStream(Parameters0, 0) << "lightweight wrap = " << doExperimentalWrap << std::endl;
 
@@ -169,10 +168,7 @@ namespace MueLu {
 
           // Detect and record rows that correspond to Dirichlet boundary conditions
           ArrayRCP<const bool > boundaryNodes;
-          if (!disableDirichletDetection)
-            boundaryNodes = MueLu::Utils<SC,LO,GO,NO,LMO>::DetectDirichletRows(*A, dirichletThreshold);
-          else
-            boundaryNodes = ArrayRCP<const bool>(A->getNodeNumRows(),false);
+          boundaryNodes = MueLu::Utils<SC,LO,GO,NO,LMO>::DetectDirichletRows(*A, dirichletThreshold);
           graph->SetBoundaryNodeMap(boundaryNodes);
           numTotal = A->getNodeNumEntries();
 
@@ -230,7 +226,7 @@ namespace MueLu {
               } else
                 numDropped++;
             }
-            if (rownnz == 1 && !disableDirichletDetection) {
+            if (rownnz == 1) {
               // If the only element remaining after filtering is diagonal, mark node as boundary
               // FIXME: this should really be replaced by the following
               //    if (indices.size() == 1 && indices[0] == row)
@@ -282,11 +278,7 @@ namespace MueLu {
           // TODO the array one bigger than the number of local rows, and the last entry can
           // TODO hold the actual number of boundary nodes.  Clever, huh?
           ArrayRCP<const bool > pointBoundaryNodes;
-          if (!disableDirichletDetection)
-            pointBoundaryNodes = MueLu::Utils<SC,LO,GO,NO,LMO>::DetectDirichletRows(*A, dirichletThreshold);
-          else {
-            pointBoundaryNodes = ArrayRCP<const bool>(A->getNodeNumRows(),false);
-          }
+          pointBoundaryNodes = MueLu::Utils<SC,LO,GO,NO,LMO>::DetectDirichletRows(*A, dirichletThreshold);
 
           LO blkSize = A->GetFixedBlockSize();
           GO indexBase = A->getRowMap()->getIndexBase();
@@ -297,16 +289,15 @@ namespace MueLu {
             ArrayView<const LO> indices;
             Array<LO>           indicesExtra;
 
-            // FIXME: for now, if any of the rows in the row block is Dirichlet, we
-            // assume that all are
-            // This may not be true in general, for instance we might have mixed b.c.
-            // where pressure is Dirichlet and velocities are not
+            // The amalgamated row is marked as Dirichlet iff all point rows are Dirichlet
             bool isBoundary = false;
-            if (!disableDirichletDetection)
-              for (LO j = 0; j < blkSize; j++)
-                if (pointBoundaryNodes[row*blkSize+j])
-                  isBoundary = true;
-
+            isBoundary = true;
+            for (LO j = 0; j < blkSize; j++) {
+              if (!pointBoundaryNodes[row*blkSize+j]) {
+                isBoundary = false;
+                break;
+              }
+            }
             // Merge rows of A
             std::set<LO> cols;
             if (!isBoundary) {
@@ -383,11 +374,7 @@ namespace MueLu {
         // TODO the array one bigger than the number of local rows, and the last entry can
         // TODO hold the actual number of boundary nodes.  Clever, huh?
         ArrayRCP<const bool > pointBoundaryNodes;
-        if (!disableDirichletDetection)
-          pointBoundaryNodes = MueLu::Utils<SC,LO,GO,NO,LMO>::DetectDirichletRows(*A, dirichletThreshold);
-        else {
-          pointBoundaryNodes = ArrayRCP<const bool>(A->getNodeNumRows(),false);
-        }
+        pointBoundaryNodes = MueLu::Utils<SC,LO,GO,NO,LMO>::DetectDirichletRows(*A, dirichletThreshold);
 
         if ( (blkSize == 1) && (threshold == STS::zero()) ) {
           // Trivial case: scalar problem, no dropping. Can return original graph
@@ -508,15 +495,15 @@ namespace MueLu {
               A->getLocalRowView(row, indices, vals);
 
             } else {
-              // FIXME: for now, if any of the rows in the row block is Dirichlet, we
-              // assume that all are
-              // This may not be true in general, for instance we might have mixed b.c.
-              // where pressure is Dirichlet and velocities are not
+              // The amalgamated row is marked as Dirichlet iff all point rows are Dirichlet
               bool isBoundary = false;
-              if (!disableDirichletDetection)
-                for (LO j = 0; j < blkSize; j++)
-                  if (pointBoundaryNodes[row*blkSize+j])
-                    isBoundary = true;
+              isBoundary = true;
+              for (LO j = 0; j < blkSize; j++) {
+                if (!pointBoundaryNodes[row*blkSize+j]) {
+                  isBoundary = false;
+                  break;
+                }
+              }
 
               // Merge rows of A
               std::set<LO> cols;
