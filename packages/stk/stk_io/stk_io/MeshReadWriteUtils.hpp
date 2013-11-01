@@ -13,6 +13,7 @@
 #include <set>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ParameterList.hpp>
 #include <Ioss_PropertyManager.h>
 #include <Ioss_Field.h>
 #include <init/Ionit_Initializer.h>
@@ -305,6 +306,7 @@ namespace stk {
 
         void add_results_field(size_t result_output_index, stk::mesh::FieldBase &field, const std::string &db_name = std::string());
 
+        void add_global(size_t result_output_index, const std::string &globalVarName, const stk::util::Parameter &param);
         void add_global(size_t result_output_index, const std::string &globalVarName, Ioss::Field::BasicType dataType);
         void add_global(size_t result_output_index, const std::string &globalVarName, const std::string &type, Ioss::Field::BasicType dataType);
         void add_global(size_t result_output_index, const std::string &globalVarName, int component_count,     Ioss::Field::BasicType dataType);
@@ -321,6 +323,8 @@ namespace stk {
          */
         int process_output_request(size_t result_output_index=0);
         int process_output_request(double time, size_t result_file_index = 0);
+
+        void write_global(size_t result_output_index, const std::string &globalVarName, const stk::util::Parameter &param);
         void write_global(size_t result_output_index, const std::string &globalVarName, double data);
         void write_global(size_t result_output_index, const std::string &globalVarName, int data);
         void write_global(size_t result_output_index, const std::string &globalVarName, std::vector<double>& data);
@@ -331,6 +335,7 @@ namespace stk {
 
         void get_global_variable_names(std::vector<std::string> &names);
         double get_global(const std::string &globalVarName);
+        void get_global(const std::string &globalVarName, stk::util::Parameter &param);
         void get_global(const std::string &globalVarName, int &globalVar);
         void get_global(const std::string &globalVarName, double &globalVar);
         void get_global(const std::string &globalVarName, std::vector<double> &globalVar);

@@ -120,7 +120,7 @@ namespace stk {
 	p.value = value;
       }
 
-      Parameter get_param (const std::string name)
+      Parameter& get_param (const std::string name)
       {
         ParameterMapType::iterator it = parameterData.find(name);
         if(it == parameterData.end() ) {
