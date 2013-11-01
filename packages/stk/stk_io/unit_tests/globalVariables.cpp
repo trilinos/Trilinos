@@ -89,11 +89,11 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDouble)
         stkIo.add_global(result_file_index, globalVarName, Ioss::Field::REAL);
 
         const double time = 1.0;
-        stkIo.begin_output_at_time(time, result_file_index);
+        stkIo.begin_output_step(time, result_file_index);
 
         stkIo.write_global(result_file_index, globalVarName, globalVarValue);
 
-        stkIo.end_current_output(result_file_index);
+        stkIo.end_output_step(result_file_index);
     }
 
     const int stepNumber = 1;
@@ -125,11 +125,11 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleVector3)
         stkIo.add_global(result_file_index, globalVarName, "vector_3d", Ioss::Field::REAL);
 
         const double time = 1.0;
-        stkIo.begin_output_at_time(time, result_file_index);
+        stkIo.begin_output_step(time, result_file_index);
 
         stkIo.write_global(result_file_index, globalVarName, globalVarValue);
 
-        stkIo.end_current_output(result_file_index);
+        stkIo.end_output_step(result_file_index);
     }
 
     const int stepNumber = 1;
@@ -159,11 +159,11 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalIntegerVector3)
         stkIo.add_global(result_file_index, globalVarName, "vector_3d", Ioss::Field::INTEGER);
 
         const double time = 1.0;
-        stkIo.begin_output_at_time(time, result_file_index);
+        stkIo.begin_output_step(time, result_file_index);
 
         stkIo.write_global(result_file_index, globalVarName, globalVarValue);
 
-        stkIo.end_current_output(result_file_index);
+        stkIo.end_output_step(result_file_index);
     }
 
     const int stepNumber = 1;
@@ -193,11 +193,11 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDouble10)
         stkIo.add_global(result_file_index, globalVarName, globalVarValue.size(), Ioss::Field::REAL);
 
         const double time = 1.0;
-        stkIo.begin_output_at_time(time, result_file_index);
+        stkIo.begin_output_step(time, result_file_index);
 
         stkIo.write_global(result_file_index, globalVarName, globalVarValue);
 
-        stkIo.end_current_output(result_file_index);
+        stkIo.end_output_step(result_file_index);
     }
 
     const int stepNumber = 1;
@@ -225,12 +225,12 @@ void testTwoGlobals(const std::string &outputFileName, const std::vector<std::st
         stkIo.add_global(resultOuputIndex, globalVarNames[1], iossDataType);
 
         const double time = 1.0;
-        stkIo.begin_output_at_time(time, resultOuputIndex);
+        stkIo.begin_output_step(time, resultOuputIndex);
 
         stkIo.write_global(resultOuputIndex, globalVarNames[0], globalVarValues[0]);
         stkIo.write_global(resultOuputIndex, globalVarNames[1], globalVarValues[1]);
 
-        stkIo.end_current_output(resultOuputIndex);
+        stkIo.end_output_step(resultOuputIndex);
     }
 
     const int stepNumber = 1;
@@ -309,7 +309,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, GlobalDoubleWithFieldMultipleTimeSteps)
         const double stepSize = 1.0;
         for(int i=0; i<numTimeSteps; i++)
         {
-            stkIo.begin_output_at_time(time, result_file_index);
+            stkIo.begin_output_step(time, result_file_index);
 
             const double globalVarValue = time;
             stkIo.write_global(result_file_index, globalVarName, globalVarValue);
@@ -317,7 +317,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, GlobalDoubleWithFieldMultipleTimeSteps)
 
             stkIo.process_output_request(result_file_index);
 
-            stkIo.end_current_output(result_file_index);
+            stkIo.end_output_step(result_file_index);
             time += stepSize;
         }
     }
@@ -349,11 +349,11 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleRestart)
 
         stkIo.add_global(fileIndex, globalVarName, Ioss::Field::REAL);
 
-        stkIo.begin_output_at_time(time, fileIndex);
+        stkIo.begin_output_step(time, fileIndex);
 
         stkIo.write_global(fileIndex, globalVarName, globalVarValue);
 
-        stkIo.end_current_output(fileIndex);
+        stkIo.end_output_step(fileIndex);
     }
 
     {
@@ -405,7 +405,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleWithFieldRestart)
         const double stepSize = 1.0;
         for(int i=0; i<numTimeSteps; i++)
         {
-            stkIo.begin_output_at_time(time, fileIndex);
+            stkIo.begin_output_step(time, fileIndex);
 
             const double globalVarValue = time;
             stkIo.write_global(fileIndex, globalVarName, globalVarValue);
@@ -413,7 +413,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleWithFieldRestart)
 
             stkIo.process_output_request(fileIndex);
 
-            stkIo.end_current_output(fileIndex);
+            stkIo.end_output_step(fileIndex);
             time += stepSize;
         }
     }

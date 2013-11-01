@@ -10,7 +10,7 @@
 
 namespace
 {
-TEST(StkIoTestForDocumentation, OutputtingFieldWithAlternativeName)
+TEST(StkMeshIoBrokerHowTo, writeFieldWithAlternativeName)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
     stk::io::StkMeshIoBroker stkIo(communicator);
@@ -27,7 +27,7 @@ TEST(StkIoTestForDocumentation, OutputtingFieldWithAlternativeName)
 
     // mark field for output
     std::string alternateFieldName("deformation");
-    stkIo.add_results_field(resultsOutputIndex, nodalDisplacement, alternateFieldName);
+    stkIo.add_results_field_with_alternate_name(resultsOutputIndex, nodalDisplacement, alternateFieldName);
 
     // field descriptions done, fill field data (done with mesh input)
     stkIo.populate_bulk_data();

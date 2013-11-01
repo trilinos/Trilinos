@@ -8,7 +8,7 @@
 
 namespace
 {
-TEST(StkIoTestForDocumentation, WriteAndReadGlobalVariables)
+TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalVariables)
 {
     const std::string restartFileName = "OneGlobalDouble.restart";
     const std::string timeStepVarName = "timeStep";
@@ -24,9 +24,9 @@ TEST(StkIoTestForDocumentation, WriteAndReadGlobalVariables)
 
         size_t fileIndex = stkIo.create_output_mesh(restartFileName);
         stkIo.add_global(fileIndex, timeStepVarName, Ioss::Field::REAL);
-        stkIo.begin_output_at_time(currentTime, fileIndex);
+        stkIo.begin_output_step(currentTime, fileIndex);
         stkIo.write_global(fileIndex, timeStepVarName, timeStepSize);
-        stkIo.end_current_output(fileIndex);
+        stkIo.end_output_step(fileIndex);
     }
 
     //Read restart file with time step size as a global variable

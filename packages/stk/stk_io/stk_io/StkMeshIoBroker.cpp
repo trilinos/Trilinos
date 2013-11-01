@@ -1321,14 +1321,14 @@ namespace stk {
     {
       validate_output_file_index(output_file_index);
 
-      this->begin_output_at_time(time, output_file_index);
+      this->begin_output_step(time, output_file_index);
       this->process_output_request(output_file_index);
-      this->end_current_output(output_file_index);
+      this->end_output_step(output_file_index);
 
       return m_output_files[output_file_index].m_current_output_step;
     }
 
-    void StkMeshIoBroker::begin_output_at_time(double time, size_t output_file_index)
+    void StkMeshIoBroker::begin_output_step(double time, size_t output_file_index)
     {
         if (!m_output_files[output_file_index].m_fields_defined) {
 	  define_output_fields(false, output_file_index);
@@ -1346,7 +1346,7 @@ namespace stk {
         output_region->begin_state(m_output_files[output_file_index].m_current_output_step);
     }
 
-    void StkMeshIoBroker::end_current_output(size_t output_file_index)
+    void StkMeshIoBroker::end_output_step(size_t output_file_index)
     {
         Teuchos::RCP<Ioss::Region> output_region = m_output_files[output_file_index].m_output_region;
         output_region->end_state(m_output_files[output_file_index].m_current_output_step);
@@ -1487,7 +1487,7 @@ namespace stk {
             stk::mesh::FieldState state_identifier = static_cast<stk::mesh::FieldState>(state);
             stk::mesh::FieldBase *statedField = field.field_state(state_identifier);
             std::string field_name_with_suffix = stk::io::get_stated_field_name(name_for_output, state_identifier);
-            add_results_field(file_index, *statedField, field_name_with_suffix);
+            add_results_field_with_alternate_name(file_index, *statedField, field_name_with_suffix);
         }
     }
 
@@ -1540,31 +1540,35 @@ namespace stk {
         }
     }
 
-    void StkMeshIoBroker::add_results_field(size_t output_file_index, stk::mesh::FieldBase &field, const std::string &db_name)
+    void StkMeshIoBroker::add_results_field(size_t output_file_index, stk::mesh::FieldBase &field)
     {
-      validate_output_file_index(output_file_index);
-      OutputFile &output_file = m_output_files[output_file_index];
-      std::string dbName(db_name);
-      if ( db_name.empty() ) {
-	dbName = field.name();
-      }
+        add_results_field_with_alternate_name(output_file_index, field, field.name());
+    }
 
-      bool fieldAlreadyExists=false;
-      for (size_t i=0;i<output_file.m_named_fields.size();i++) {
-	if ( &field == output_file.m_named_fields[i].m_field ) {
-	  output_file.m_named_fields[i].m_db_name = dbName;
-	  fieldAlreadyExists = true;
-	  break;
-	}
-      }
+    void StkMeshIoBroker::add_results_field_with_alternate_name(size_t output_file_index, stk::mesh::FieldBase &field, const std::string &db_name)
+    {
+        ThrowErrorMsgIf (db_name.empty(),
+                         "Attempting to output results field " << field.name() << " with no name.");
 
-      if ( fieldAlreadyExists == false ) {
-	stk::io::FieldAndName namedField(&field, dbName);
-	output_file.m_named_fields.push_back(namedField);
-      }
+        validate_output_file_index(output_file_index);
+        OutputFile &output_file = m_output_files[output_file_index];
 
-      // TODO: code under here still needs this. Fix me.
-      stk::io::set_field_role(field, Ioss::Field::TRANSIENT);
+        bool fieldAlreadyExists=false;
+        for (size_t i=0;i<output_file.m_named_fields.size();i++) {
+          if ( &field == output_file.m_named_fields[i].m_field ) {
+            output_file.m_named_fields[i].m_db_name = db_name;
+            fieldAlreadyExists = true;
+            break;
+          }
+        }
+
+        if ( fieldAlreadyExists == false ) {
+          stk::io::FieldAndName namedField(&field, db_name);
+          output_file.m_named_fields.push_back(namedField);
+        }
+
+        // TODO: code under here still needs this. Fix me.
+        stk::io::set_field_role(field, Ioss::Field::TRANSIENT);
     }
 
     void StkMeshIoBroker::get_global_variable_names(std::vector<std::string> &names)

@@ -111,8 +111,8 @@ namespace {
         // outputting that data to the restart and results output.
 
         mesh_data.process_restart_input(step);
-        mesh_data.begin_output_at_time(time, restartFileIndex);
-        mesh_data.begin_output_at_time(time, result_file_index);
+        mesh_data.begin_output_step(time, restartFileIndex);
+        mesh_data.begin_output_step(time, result_file_index);
 
         mesh_data.process_output_request(restartFileIndex);
         mesh_data.process_output_request(result_file_index);
@@ -126,8 +126,8 @@ namespace {
           mesh_data.write_global(result_file_index, global_fields[i], field_values);
         }
 
-        mesh_data.end_current_output(restartFileIndex);
-        mesh_data.end_current_output(result_file_index);
+        mesh_data.end_output_step(restartFileIndex);
+        mesh_data.end_output_step(result_file_index);
       }
     }
   }

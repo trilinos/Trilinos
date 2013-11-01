@@ -181,7 +181,7 @@ bool is_field_on_part(const stk::mesh::FieldBase *field,
  */
 struct FieldAndName
 {
-    FieldAndName(stk::mesh::FieldBase *field, std::string& db_name) : m_field(field), m_db_name(db_name) {}
+    FieldAndName(stk::mesh::FieldBase *field, const std::string& db_name) : m_field(field), m_db_name(db_name) {}
     stk::mesh::FieldBase *m_field;
     std::string m_db_name;
 };

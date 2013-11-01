@@ -12,7 +12,7 @@
 
 namespace {
 
-TEST(StkIoTestForDocumentation, restartingWithMultistateField)
+TEST(StkMeshIoBrokerHowTo, restartWithMultistateField)
 {
     std::string restartFilename = "output.restart";
     MPI_Comm communicator = MPI_COMM_WORLD;
@@ -28,47 +28,20 @@ TEST(StkIoTestForDocumentation, restartingWithMultistateField)
                 declareTriStateNodalField(stkMeshMetaData, fieldName);
         stkIo.populate_bulk_data();
 
-        stk::mesh::FieldBase *statedFieldNp1 =
-                triStateField->field_state(stk::mesh::StateNP1);
-        putDataOnTestField(stkIo.bulk_data(), stateNp1Value,
-                           *statedFieldNp1);
-        stk::mesh::FieldBase *statedFieldN =
-                triStateField->field_state(stk::mesh::StateN);
-        putDataOnTestField(stkIo.bulk_data(), stateNValue,
-                           *statedFieldN);
-        stk::mesh::FieldBase *statedFieldNm1 =
-                triStateField->field_state(stk::mesh::StateNM1);
-        putDataOnTestField(stkIo.bulk_data(), stateNm1Value,
-                           *statedFieldNm1);
+        putDataOnTriStateField(stkIo.bulk_data(), triStateField,
+                stateNp1Value, stateNValue, stateNm1Value);
 
-        size_t fileIndex = stkIo.create_output_mesh(restartFilename);
-        stkIo.add_restart_field(fileIndex, *triStateField);
+        size_t fileHandle = stkIo.create_output_mesh(restartFilename);
+        stkIo.add_restart_field(fileHandle, *triStateField);
 
-        stkIo.begin_output_at_time(time, fileIndex);
-        stkIo.process_output_request(fileIndex);
-        stkIo.end_current_output(fileIndex);
+        stkIo.begin_output_step(time, fileHandle);
+        stkIo.process_output_request(fileHandle);
+        stkIo.end_output_step(fileHandle);
     }
 
-    {
-        stk::io::StkMeshIoBroker stkIo(communicator);
-        stkIo.open_mesh_database(restartFilename);
-        stkIo.create_input_mesh();
-
-        stk::mesh::MetaData &restartedMetaData = stkIo.meta_data();
-        stk::mesh::FieldBase *triStateField =
-                declareTriStateNodalField(restartedMetaData, fieldName);
-
-        stkIo.add_restart_field(*triStateField);
-        stkIo.populate_bulk_data();
-        stkIo.process_restart_input(time);
-
-        stk::mesh::FieldBase *statedFieldNp1 =
-                triStateField->field_state(stk::mesh::StateNP1);
-        testDataOnField(stkIo.bulk_data(), stateNp1Value, *statedFieldNp1);
-        stk::mesh::FieldBase *statedFieldN =
-                triStateField->field_state(stk::mesh::StateN);
-        testDataOnField(stkIo.bulk_data(), stateNValue, *statedFieldN);
-    }
-//    unlink(restartFilename.c_str());
+    //code to test that the field wrote correctly
+    testMultistateFieldWroteCorrectlyToRestart(restartFilename, time,
+            fieldName, stateNp1Value, stateNValue);
+    unlink(restartFilename.c_str());
 }
 }

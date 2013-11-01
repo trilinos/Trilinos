@@ -304,7 +304,8 @@ namespace stk {
         size_t create_output_mesh(const std::string &filename);
         void write_output_mesh(size_t output_file_index);
 
-        void add_results_field(size_t output_file_index, stk::mesh::FieldBase &field, const std::string &db_name = std::string());
+        void add_results_field(size_t output_file_index, stk::mesh::FieldBase &field);
+        void add_results_field_with_alternate_name(size_t output_file_index, stk::mesh::FieldBase &field, const std::string &db_name);
 
         void add_global(size_t output_file_index, const std::string &globalVarName, const stk::util::Parameter &param);
         void add_global(size_t output_file_index, const std::string &globalVarName, Ioss::Field::BasicType dataType);
@@ -314,8 +315,8 @@ namespace stk {
         /**
          * Add a transient step to the database at time 'time'.
          */
-        void begin_output_at_time(double time, size_t output_file_index = 0);
-        void end_current_output(size_t output_file_index = 0);
+        void begin_output_step(double time, size_t output_file_index = 0);
+        void end_output_step(size_t output_file_index = 0);
 
         /**
          * Add a transient step to the mesh database at time 'time' and

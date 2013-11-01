@@ -8,7 +8,7 @@
 
 namespace
 {
-TEST(StkIoTestForDocumentation, WriteAndReadGlobalParameters)
+TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalParameters)
 {
     const std::string file_name = "GlobalParameters.e";
     MPI_Comm communicator = MPI_COMM_WORLD;
@@ -54,7 +54,7 @@ TEST(StkIoTestForDocumentation, WriteAndReadGlobalParameters)
 	  stkIo.add_global(fileIndex, parameterName, parameter);
 	}
 
-        stkIo.begin_output_at_time(0.0, fileIndex);
+        stkIo.begin_output_step(0.0, fileIndex);
 
 	for (i = parameters.begin(); i != iend; ++i) {
 	  const std::string parameterName = (*i).first;
@@ -62,7 +62,7 @@ TEST(StkIoTestForDocumentation, WriteAndReadGlobalParameters)
 	  stkIo.write_global(fileIndex, parameterName, parameter);
 	}
 
-        stkIo.end_current_output(fileIndex);
+        stkIo.end_output_step(fileIndex);
     }
 
     // Read parameters from file...
