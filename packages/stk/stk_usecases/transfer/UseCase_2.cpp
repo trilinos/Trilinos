@@ -185,7 +185,7 @@ use_case_2_driver(stk::ParallelMachine  comm,
   stk::mesh::Part *domain_skin_part = NULL;
   stk::mesh::CellTopology skin_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
 
-  stk::io::MeshData range_mesh_data(comm);
+  stk::io::StkMeshIoBroker range_mesh_data(comm);
   std::string filename = working_directory + range_mesh_filename;
   range_mesh_data.open_mesh_database(filename, range_mesh_type);
   range_mesh_data.create_input_mesh();
@@ -201,7 +201,7 @@ use_case_2_driver(stk::ParallelMachine  comm,
     stk::mesh::skin_mesh(range_bulk_data, add_parts);
   }
 
-  stk::io::MeshData domain_mesh_data(comm);
+  stk::io::StkMeshIoBroker domain_mesh_data(comm);
 
   filename = working_directory + domain_mesh_filename;
   domain_mesh_data.open_mesh_database(filename, domain_mesh_type);

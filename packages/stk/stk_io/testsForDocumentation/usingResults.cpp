@@ -26,7 +26,7 @@ TEST(StkIoTestForDocumentation, resultsWithMultistateField)
     const std::string nName   = fieldName+"N";
     const std::string nm1Name = fieldName+"Nm1";
     {
-        stk::io::MeshData stkIo(communicator);
+        stk::io::StkMeshIoBroker stkIo(communicator);
 
         stk::mesh::MetaData &stkMeshMetaData = generateMetaData(stkIo);
 	// Declare a multi-state field
@@ -61,7 +61,7 @@ TEST(StkIoTestForDocumentation, resultsWithMultistateField)
     }
 
     {
-        stk::io::MeshData stkIo(communicator);
+        stk::io::StkMeshIoBroker stkIo(communicator);
         stkIo.open_mesh_database(resultsFilename);
         stkIo.create_input_mesh();
 
@@ -121,7 +121,7 @@ TEST(StkIoTest, twoResultFiles)
     const double displacementValue = 1.0;
     const double velocityValue = 2.0;
 
-    stk::io::MeshData stkMeshIoBroker(communicator);
+    stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
     {
         const std::string exodusFileName = "generated:1x1x1";
         stkMeshIoBroker.open_mesh_database(exodusFileName);

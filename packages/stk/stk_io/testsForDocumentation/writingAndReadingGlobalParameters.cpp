@@ -40,7 +40,7 @@ TEST(StkIoTestForDocumentation, WriteAndReadGlobalParameters)
     
     // Write output file with all parameters in parameters list...
     {
-        stk::io::MeshData stkIo(communicator);
+        stk::io::StkMeshIoBroker stkIo(communicator);
         generateMetaData(stkIo);
         stkIo.populate_bulk_data();
 
@@ -67,7 +67,7 @@ TEST(StkIoTestForDocumentation, WriteAndReadGlobalParameters)
 
     // Read parameters from file...
     {
-        stk::io::MeshData stkIo(communicator);
+        stk::io::StkMeshIoBroker stkIo(communicator);
         stkIo.open_mesh_database(file_name);
         stkIo.create_input_mesh();
         stkIo.populate_bulk_data();

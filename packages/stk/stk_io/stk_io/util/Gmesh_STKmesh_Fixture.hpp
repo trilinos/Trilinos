@@ -79,7 +79,7 @@ class Gmesh_STKmesh_Fixture
    * state between the meta data and bulk data portions of the mesh generation
    * process for use cases.
    */
-  stk::io::MeshData m_mesh_data;
+  stk::io::StkMeshIoBroker m_mesh_data;
 
   ///> The names of all the side parts
   std::vector<std::string> m_sideset_names;

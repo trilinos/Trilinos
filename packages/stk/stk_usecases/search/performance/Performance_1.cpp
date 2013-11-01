@@ -112,7 +112,7 @@ performance_driver(stk::ParallelMachine  comm,
 
   dw() << "Build range metadata...\n";
   std::string filename = working_directory + range.mesh_filename;
-  stk::io::MeshData range_mesh_data(comm);
+  stk::io::StkMeshIoBroker range_mesh_data(comm);
   range_mesh_data.open_mesh_database(filename, range.mesh_type);
   range_mesh_data.create_input_mesh();
   stk::mesh::MetaData &range_meta_data = range_mesh_data.meta_data();
@@ -142,7 +142,7 @@ performance_driver(stk::ParallelMachine  comm,
   stk::mesh::MetaData *domain_meta_data = NULL;
   stk::mesh::BulkData *domain_bulk_data = NULL;
 
-  stk::io::MeshData domain_mesh_data(comm);
+  stk::io::StkMeshIoBroker domain_mesh_data(comm);
   if (!same_mesh) {
     dw() << "Build domain metadata...\n";
     filename = working_directory + domain.mesh_filename;

@@ -453,7 +453,7 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
   // writing the current mesh state to output files.
   const bool output_exodus_file = true;
 
-  stk::io::MeshData stkMeshIoBroker;
+  stk::io::StkMeshIoBroker stkMeshIoBroker;
   stkMeshIoBroker.set_bulk_data(fixture.bulk_data);
 
   for (size_t time_step = 0; time_step < NUM_TIME_STEPS; ++time_step) {

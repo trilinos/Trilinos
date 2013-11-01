@@ -11,7 +11,7 @@
 
 namespace {
 
-void activate_entities(stk::io::MeshData &fixture,
+void activate_entities(stk::io::StkMeshIoBroker &fixture,
                        stk::mesh::Part &active_part)
 {
   // Seed generator so multiple calls produce same result
@@ -45,13 +45,13 @@ void activate_entities(stk::io::MeshData &fixture,
 
 }
 
-STKUNIT_UNIT_TEST( MeshData, iofixture )
+STKUNIT_UNIT_TEST( StkMeshIoBroker, iofixture )
 {
-  // A simple test for reading and writing an exodus file using the MeshData
+  // A simple test for reading and writing an exodus file using the StkMeshIoBroker
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 
-  stk::io::MeshData fixture(pm);
+  stk::io::StkMeshIoBroker fixture(pm);
 
   std::string input_base_filename = "unit_test.g";
 
@@ -79,12 +79,12 @@ STKUNIT_UNIT_TEST( MeshData, iofixture )
   // checking is left to the test XML.
 }
 
-STKUNIT_UNIT_TEST( MeshData, active_only )
+STKUNIT_UNIT_TEST( StkMeshIoBroker, active_only )
 {
-  // A simple test for reading and writing an exodus file using the MeshData.
+  // A simple test for reading and writing an exodus file using the StkMeshIoBroker.
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
-  stk::io::MeshData fixture(pm);
+  stk::io::StkMeshIoBroker fixture(pm);
 
   std::string input_base_filename = "unit_test.g";
 
@@ -121,11 +121,11 @@ STKUNIT_UNIT_TEST( MeshData, active_only )
   // checking is left to the test XML.
 }
 
-STKUNIT_UNIT_TEST( MeshData, active_and_all )
+STKUNIT_UNIT_TEST( StkMeshIoBroker, active_and_all )
 {
-  // A simple test for reading and writing two exodus files using the MeshData.
+  // A simple test for reading and writing two exodus files using the StkMeshIoBroker.
   stk::ParallelMachine pm = MPI_COMM_WORLD;
-  stk::io::MeshData filtered_fixture(pm);
+  stk::io::StkMeshIoBroker filtered_fixture(pm);
 
   std::string input_base_filename = "unit_test.g";
 
@@ -148,7 +148,7 @@ STKUNIT_UNIT_TEST( MeshData, active_and_all )
   // Create a second fixture which will output unfiltered results
   // It shares the meta_data, bulk_data, and input_io_region with
   // the "filtered_fixture".
-  stk::io::MeshData universal_fixture(pm);
+  stk::io::StkMeshIoBroker universal_fixture(pm);
   universal_fixture.set_bulk_data(filtered_fixture.bulk_data());
   universal_fixture.set_input_io_region(filtered_fixture.input_io_region());
 
@@ -182,11 +182,11 @@ STKUNIT_UNIT_TEST( MeshData, active_and_all )
   // checking is left to the test XML.
  }
 
-STKUNIT_UNIT_TEST( MeshData, large_mesh_test )
+STKUNIT_UNIT_TEST( StkMeshIoBroker, large_mesh_test )
 {
-  // A simple test for reading and writing two exodus files using the MeshData.
+  // A simple test for reading and writing two exodus files using the StkMeshIoBroker.
   stk::ParallelMachine pm = MPI_COMM_WORLD;
-  stk::io::MeshData fixture(pm);
+  stk::io::StkMeshIoBroker fixture(pm);
 
   std::string input_base_filename = "1mCube_20x20x20.g";
 

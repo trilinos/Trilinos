@@ -66,7 +66,7 @@ bool use_case_8_driver(stk::ParallelMachine  comm,
 
   const std::string data_field_name = "Sum_Of_Coordinates";
 
-  stk::io::MeshData domain_mesh_data(comm);
+  stk::io::StkMeshIoBroker domain_mesh_data(comm);
   const std::string filename = working_directory + domain_mesh;
   domain_mesh_data.open_mesh_database(filename, domain_filetype);
   domain_mesh_data.create_input_mesh();

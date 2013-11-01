@@ -35,7 +35,7 @@ STKUNIT_UNIT_TEST( heavy, heavy )
 
   const size_t p_rank = stk::parallel_machine_rank(pm);
 
-  stk::io::MeshData fixture(pm);
+  stk::io::StkMeshIoBroker fixture(pm);
 
   // Test constants:
 

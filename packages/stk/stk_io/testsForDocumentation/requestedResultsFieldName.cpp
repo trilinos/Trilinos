@@ -13,7 +13,7 @@ namespace
 TEST(StkIoTestForDocumentation, OutputtingFieldWithAlternativeName)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
-    stk::io::MeshData stkIo(communicator);
+    stk::io::StkMeshIoBroker stkIo(communicator);
     stk::mesh::MetaData &stkMeshMetaData = generateMetaData(stkIo);
 
     // describe nodal 'displacement' field

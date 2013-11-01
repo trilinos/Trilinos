@@ -38,22 +38,22 @@ namespace stk {
   namespace io {
     static std::string CoordinateFieldName("coordinates");
 
-    struct ResultsOutput
+    struct OutputFile
     {
         int m_current_output_step;
         bool m_use_nodeset_for_part_nodes_fields;
-        bool m_results_mesh_defined;
-        bool m_results_fields_defined;
+        bool m_mesh_defined;
+        bool m_fields_defined;
         Teuchos::RCP<Ioss::Region> m_output_region;
         std::vector<stk::io::FieldAndName> m_named_fields;
-        ResultsOutput() : m_current_output_step(-1), m_use_nodeset_for_part_nodes_fields(true),
-                m_results_mesh_defined(false), m_results_fields_defined(false){}
+        OutputFile() : m_current_output_step(-1), m_use_nodeset_for_part_nodes_fields(true),
+                m_mesh_defined(false), m_fields_defined(false){}
 //        const std::string get_base_file_name() {
 //            return m_output_region->get_database()->get_filename();
 //        }
     };
 
-    class MeshData {
+    class StkMeshIoBroker {
         // Used to maintain state between the meta data and bulk data
         // portions of the mesh generation process for use cases.
       public:
@@ -61,20 +61,20 @@ namespace stk {
          * \param[in] comm  MPI Communicator to be used for all parallel
          * communication needed to generate the mesh.
          */
-        MeshData(MPI_Comm comm, stk::mesh::ConnectivityMap * connectivity_map = NULL);
-        MeshData();
+        StkMeshIoBroker(MPI_Comm comm, stk::mesh::ConnectivityMap * connectivity_map = NULL);
+        StkMeshIoBroker();
 
-        ~MeshData();
+        ~StkMeshIoBroker();
 
         /**
          * Set the output Ioss::Region directly instead of letting it be
-         * created by MeshData during the create_output_mesh() call.
+         * created by StkMeshIoBroker during the create_output_mesh() call.
          */
         size_t set_output_io_region(Teuchos::RCP<Ioss::Region> ioss_output_region);
 
         /**
          * Set the input Ioss::Region directly instead of letting it be
-         * created by MeshData during the create_input_mesh(type,
+         * created by StkMeshIoBroker during the create_input_mesh(type,
          * filename) call. After setting the input io region, you would
          * then either set the metadata manually using the
          * set_meta_data() call, or call the no-argument
@@ -92,8 +92,8 @@ namespace stk {
           return m_input_region;
         }
 
-        Teuchos::RCP<Ioss::Region> get_output_io_region(size_t results_output_index) {
-            return m_result_outputs[results_output_index].m_output_region;
+        Teuchos::RCP<Ioss::Region> get_output_io_region(size_t output_file_index) {
+            return m_output_files[output_file_index].m_output_region;
         }
 
         Teuchos::RCP<stk::mesh::Selector> selector()  { return m_anded_selector; }
@@ -302,33 +302,33 @@ namespace stk {
          * exists, it will be overwritten.
          */
         size_t create_output_mesh(const std::string &filename);
-        void write_output_mesh(size_t results_output_index);
+        void write_output_mesh(size_t output_file_index);
 
-        void add_results_field(size_t result_output_index, stk::mesh::FieldBase &field, const std::string &db_name = std::string());
+        void add_results_field(size_t output_file_index, stk::mesh::FieldBase &field, const std::string &db_name = std::string());
 
-        void add_global(size_t result_output_index, const std::string &globalVarName, const stk::util::Parameter &param);
-        void add_global(size_t result_output_index, const std::string &globalVarName, Ioss::Field::BasicType dataType);
-        void add_global(size_t result_output_index, const std::string &globalVarName, const std::string &type, Ioss::Field::BasicType dataType);
-        void add_global(size_t result_output_index, const std::string &globalVarName, int component_count,     Ioss::Field::BasicType dataType);
+        void add_global(size_t output_file_index, const std::string &globalVarName, const stk::util::Parameter &param);
+        void add_global(size_t output_file_index, const std::string &globalVarName, Ioss::Field::BasicType dataType);
+        void add_global(size_t output_file_index, const std::string &globalVarName, const std::string &type, Ioss::Field::BasicType dataType);
+        void add_global(size_t output_file_index, const std::string &globalVarName, int component_count,     Ioss::Field::BasicType dataType);
 
         /**
-         * Add a transient step to the results database at time 'time'.
+         * Add a transient step to the database at time 'time'.
          */
-        void begin_output_at_time(double time, size_t result_file_index = 0);
-        void end_current_output(size_t result_file_index = 0);
+        void begin_output_at_time(double time, size_t output_file_index = 0);
+        void end_current_output(size_t output_file_index = 0);
 
         /**
          * Add a transient step to the mesh database at time 'time' and
          * output the data for all defined fields to the database.
          */
-        int process_output_request(size_t result_output_index=0);
-        int process_output_request(double time, size_t result_file_index = 0);
+        int process_output_request(size_t output_file_index=0);
+        int process_output_request(double time, size_t output_file_index = 0);
 
-        void write_global(size_t result_output_index, const std::string &globalVarName, const stk::util::Parameter &param);
-        void write_global(size_t result_output_index, const std::string &globalVarName, double data);
-        void write_global(size_t result_output_index, const std::string &globalVarName, int data);
-        void write_global(size_t result_output_index, const std::string &globalVarName, std::vector<double>& data);
-        void write_global(size_t result_output_index, const std::string &globalVarName, std::vector<int>& data);
+        void write_global(size_t output_file_index, const std::string &globalVarName, const stk::util::Parameter &param);
+        void write_global(size_t output_file_index, const std::string &globalVarName, double data);
+        void write_global(size_t output_file_index, const std::string &globalVarName, int data);
+        void write_global(size_t output_file_index, const std::string &globalVarName, std::vector<double>& data);
+        void write_global(size_t output_file_index, const std::string &globalVarName, std::vector<int>& data);
 
         void add_restart_field(size_t file_index, stk::mesh::FieldBase &field, const std::string &db_name = std::string());
         void add_restart_field(stk::mesh::FieldBase &field, const std::string &db_name = std::string());
@@ -433,7 +433,7 @@ namespace stk {
 
       private:
         void create_ioss_region();
-        void validate_result_output_index(size_t result_output_index);
+        void validate_output_file_index(size_t output_file_index);
         /**
          * Iterate over all stk fields and for each transient field
          * defined on a part that is output to the mesh file, define a
@@ -445,7 +445,7 @@ namespace stk {
          * If the 'add_all_fields' param is true, then all transient
          * stk fields will have a corresponding database field defined.
          */
-        void define_output_fields(bool add_all_fields = false, size_t result_output_index = 0);
+        void define_output_fields(bool add_all_fields = false, size_t output_file_index = 0);
 
         MPI_Comm m_communicator;
         std::vector<std::string>       m_rank_names; // Optional rank name vector.
@@ -465,16 +465,16 @@ namespace stk {
         Teuchos::RCP<stk::mesh::Selector> m_anded_selector;
         stk::mesh::ConnectivityMap m_connectivity_map;
 
-        std::vector<ResultsOutput> m_result_outputs;
+        std::vector<OutputFile> m_output_files;
 
     public:
         // This should be private, but needs to be public since some applications/tests are defining
-        // their own fields and need to inform MeshData that they did this...
+        // their own fields and need to inform StkMeshIoBroker that they did this...
         bool m_useNodesetForPartNodesFields;
 
     private:
-        MeshData(const MeshData&); // Do not implement
-        MeshData& operator=(const MeshData&); // Do not implement
+        StkMeshIoBroker(const StkMeshIoBroker&); // Do not implement
+        StkMeshIoBroker& operator=(const StkMeshIoBroker&); // Do not implement
     };
   }
 }

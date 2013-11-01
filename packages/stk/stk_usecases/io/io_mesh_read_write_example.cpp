@@ -33,7 +33,7 @@ namespace {
   void mesh_read_write(const std::string &type,
 		       const std::string &working_directory,
 		       const std::string &filename,
-		       stk::io::MeshData &mesh_data,
+		       stk::io::StkMeshIoBroker &mesh_data,
 		       int db_integer_size)
   {
     std::string file = working_directory;
@@ -143,7 +143,7 @@ namespace {
 	      bool compression_shuffle,
 	      int  db_integer_size)
   {
-    stk::io::MeshData mesh_data(comm);
+    stk::io::StkMeshIoBroker mesh_data(comm);
 
     bool use_netcdf4 = false;
     if (!decomp_method.empty()) {

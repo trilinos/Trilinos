@@ -26,7 +26,7 @@ TEST(StkMesh, CreateStkMesh)
     // It is used here to read the mesh data from the Exodus file and populate an STK Mesh.
     // The order of the following lines in {} are important
     {
-        stk::io::MeshData exodusFileReader(communicator);
+        stk::io::StkMeshIoBroker exodusFileReader(communicator);
 
         // Inform STK IO which STK Mesh objects to populate later
         exodusFileReader.set_bulk_data(stkMeshBulkData);

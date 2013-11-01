@@ -10,7 +10,7 @@
 
 namespace {
 
-void generateMetaData(stk::io::MeshData &stkIo)
+void generateMetaData(stk::io::StkMeshIoBroker &stkIo)
 {
     const std::string exodusFileName = "generated:1x1x1";
     stkIo.open_mesh_database(exodusFileName);
@@ -41,7 +41,7 @@ STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameRenameTwice)
     const std::string internalClientFieldName = "Field0";
     std::string requestedFieldNameForResultsOutput("NotjeSSe");
     {
-        stk::io::MeshData stkIo(communicator);
+        stk::io::StkMeshIoBroker stkIo(communicator);
         generateMetaData(stkIo);
 
         stk::mesh::MetaData &stkMeshMetaData = stkIo.meta_data();
@@ -73,7 +73,7 @@ STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameWithRestart)
     MPI_Comm communicator = MPI_COMM_WORLD;
     const std::string internalClientFieldName = "Field0";
     {
-        stk::io::MeshData stkIo(communicator);
+        stk::io::StkMeshIoBroker stkIo(communicator);
         generateMetaData(stkIo);
         
         stk::mesh::MetaData &stkMeshMetaData = stkIo.meta_data();
@@ -107,7 +107,7 @@ STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameWithResultsAndRestart)
     MPI_Comm communicator = MPI_COMM_WORLD;
     const std::string internalClientFieldName = "Field0";
     {
-        stk::io::MeshData stkIo(communicator);
+        stk::io::StkMeshIoBroker stkIo(communicator);
         generateMetaData(stkIo);
 
         stk::mesh::MetaData &stkMeshMetaData = stkIo.meta_data();

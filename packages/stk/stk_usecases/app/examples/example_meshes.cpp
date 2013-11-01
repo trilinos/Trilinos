@@ -257,7 +257,7 @@ void use_case_5_write_mesh( stk::ParallelMachine comm ,
 
   use_case_5_generate_mesh_bulk_data( bulk_data , node_coord );
 
-  stk::io::MeshData stkIoMeshBroker;
+  stk::io::StkMeshIoBroker stkIoMeshBroker;
   stkIoMeshBroker.set_bulk_data(bulk_data);
   size_t resultFileIndex = stkIoMeshBroker.create_output_mesh(filename);
   stkIoMeshBroker.write_output_mesh(resultFileIndex);

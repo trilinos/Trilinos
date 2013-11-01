@@ -53,8 +53,8 @@ bool use_case_6_driver(stk::ParallelMachine  comm,
   //const double  rand_max = RAND_MAX;
   enum {           DIM = 3  };
 
-  stk::io::MeshData range_mesh_data(comm);
-  stk::io::MeshData domain_mesh_data(comm);
+  stk::io::StkMeshIoBroker range_mesh_data(comm);
+  stk::io::StkMeshIoBroker domain_mesh_data(comm);
 
   std::string filename = working_directory + range_mesh;
   range_mesh_data.open_mesh_database(filename, range_filetype);

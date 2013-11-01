@@ -23,7 +23,7 @@ Ioss::Field::BasicType iossBasicType(int)
     return Ioss::Field::INTEGER;
 }
 
-void generateMetaData(stk::io::MeshData &stkIo)
+void generateMetaData(stk::io::StkMeshIoBroker &stkIo)
 {
     const std::string exodusFileName = "generated:1x1x1";
     stkIo.open_mesh_database(exodusFileName);
@@ -34,7 +34,7 @@ template <typename DataType>
 void testGlobalVarOnFile(const std::string &outputFileName, const int stepNumber, const std::vector<std::string> &goldGlobalVarName,
                          const std::vector<DataType> goldGlobalVarValue, DataType goldGlobalScale, MPI_Comm comm)
 {
-    stk::io::MeshData stkIo(comm);
+    stk::io::StkMeshIoBroker stkIo(comm);
     stkIo.open_mesh_database(outputFileName);
     stkIo.create_input_mesh();
     stkIo.populate_bulk_data();
@@ -80,7 +80,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDouble)
     const double globalVarValue = 13.0;
     MPI_Comm communicator = MPI_COMM_WORLD;
     {
-        stk::io::MeshData stkIo(communicator);
+        stk::io::StkMeshIoBroker stkIo(communicator);
         generateMetaData(stkIo);
         stkIo.populate_bulk_data();
 
@@ -116,7 +116,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleVector3)
     
     MPI_Comm communicator = MPI_COMM_WORLD;
     {
-        stk::io::MeshData stkIo(communicator);
+        stk::io::StkMeshIoBroker stkIo(communicator);
         generateMetaData(stkIo);
         stkIo.populate_bulk_data();
 
@@ -150,7 +150,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalIntegerVector3)
 
     MPI_Comm communicator = MPI_COMM_WORLD;
     {
-        stk::io::MeshData stkIo(communicator);
+        stk::io::StkMeshIoBroker stkIo(communicator);
         generateMetaData(stkIo);
         stkIo.populate_bulk_data();
 
@@ -184,7 +184,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDouble10)
 
     MPI_Comm communicator = MPI_COMM_WORLD;
     {
-        stk::io::MeshData stkIo(communicator);
+        stk::io::StkMeshIoBroker stkIo(communicator);
         generateMetaData(stkIo);
         stkIo.populate_bulk_data();
 
@@ -214,7 +214,7 @@ void testTwoGlobals(const std::string &outputFileName, const std::vector<std::st
     globalVarValues.push_back(13);
     globalVarValues.push_back(14);
     {
-        stk::io::MeshData stkIo(communicator);
+        stk::io::StkMeshIoBroker stkIo(communicator);
         generateMetaData(stkIo);
         stkIo.populate_bulk_data();
 
@@ -268,7 +268,6 @@ stk::mesh::Field<double> &createNodalTestField(stk::mesh::MetaData &stkMeshMetaD
     const int numberOfStates = 1;
     stk::mesh::Field<double> &field0 = stkMeshMetaData.declare_field<stk::mesh::Field<double> >(fieldName, numberOfStates);
     stk::mesh::put_field(field0, stk::mesh::Entity::NODE, stkMeshMetaData.universal_part());
-    stk::io::set_field_role(field0, Ioss::Field::TRANSIENT);
     return field0;
 }
 void putDataOnTestField(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Field<double> &field0, std::vector<double> &nodalFieldValues)
@@ -293,7 +292,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, GlobalDoubleWithFieldMultipleTimeSteps)
     const int numTimeSteps = 5;
     MPI_Comm communicator = MPI_COMM_WORLD;
     {
-        stk::io::MeshData stkIo(communicator);
+        stk::io::StkMeshIoBroker stkIo(communicator);
         generateMetaData(stkIo);
 
         stk::mesh::Field<double> &field0 = createNodalTestField(stkIo.meta_data(), fieldName);
@@ -342,7 +341,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleRestart)
     const double time = 1.0;
     MPI_Comm communicator = MPI_COMM_WORLD;
     {
-        stk::io::MeshData stkIo(communicator);
+        stk::io::StkMeshIoBroker stkIo(communicator);
         generateMetaData(stkIo);
         stkIo.populate_bulk_data();
 
@@ -358,7 +357,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleRestart)
     }
 
     {
-        stk::io::MeshData stkIo(communicator);
+        stk::io::StkMeshIoBroker stkIo(communicator);
         stkIo.open_mesh_database(restartFileName);
         stkIo.create_input_mesh();
         stkIo.populate_bulk_data();
@@ -388,7 +387,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleWithFieldRestart)
     const int numTimeSteps = 5;
     MPI_Comm communicator = MPI_COMM_WORLD;
     {
-        stk::io::MeshData stkIo(communicator);
+        stk::io::StkMeshIoBroker stkIo(communicator);
         generateMetaData(stkIo);
 
         stk::mesh::Field<double> &field0 = createNodalTestField(stkIo.meta_data(), fieldName);

@@ -18,7 +18,7 @@ TEST(StkIoTestForDocumentation, WriteAndReadGlobalVariables)
 
     //Write restart file with time step size as a global variable
     {
-        stk::io::MeshData stkIo(communicator);
+        stk::io::StkMeshIoBroker stkIo(communicator);
         generateMetaData(stkIo);
         stkIo.populate_bulk_data();
 
@@ -31,7 +31,7 @@ TEST(StkIoTestForDocumentation, WriteAndReadGlobalVariables)
 
     //Read restart file with time step size as a global variable
     {
-        stk::io::MeshData stkIo(communicator);
+        stk::io::StkMeshIoBroker stkIo(communicator);
         stkIo.open_mesh_database(restartFileName);
         stkIo.create_input_mesh();
         stkIo.populate_bulk_data();

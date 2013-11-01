@@ -223,7 +223,7 @@ use_case_4_driver(stk::ParallelMachine  comm,
   dw().m(LOG_TRANSFER) << "Range  Entity Type = " << range_entity  << stk::diag::dendl;
   dw().m(LOG_TRANSFER) << "Domain Entity Type = " << domain_entity << stk::diag::dendl;
 
-  stk::io::MeshData range_mesh_data(comm);
+  stk::io::StkMeshIoBroker range_mesh_data(comm);
   std::string filename = working_directory + range_mesh_filename;
   range_mesh_data.open_mesh_database(filename, range_mesh_type);
   range_mesh_data.create_input_mesh();
@@ -236,7 +236,7 @@ use_case_4_driver(stk::ParallelMachine  comm,
   range_mesh_data.populate_bulk_data();
   stk::mesh::BulkData &range_bulk_data = range_mesh_data.bulk_data();
 
-  stk::io::MeshData domain_mesh_data(comm);
+  stk::io::StkMeshIoBroker domain_mesh_data(comm);
   filename = working_directory + domain_mesh_filename;
   domain_mesh_data.open_mesh_database(filename, domain_mesh_type);
   domain_mesh_data.create_input_mesh();

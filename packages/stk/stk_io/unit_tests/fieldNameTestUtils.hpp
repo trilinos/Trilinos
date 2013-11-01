@@ -4,7 +4,7 @@
 #include <Ioss_SubSystem.h>
 #include <stk_util/util/ParameterList.hpp>
 
-inline stk::mesh::MetaData& generateMetaData(stk::io::MeshData &stkIo)
+inline stk::mesh::MetaData& generateMetaData(stk::io::StkMeshIoBroker &stkIo)
 {
     const std::string exodusFileName = "generated:1x1x1";
     stkIo.open_mesh_database(exodusFileName);
@@ -12,7 +12,7 @@ inline stk::mesh::MetaData& generateMetaData(stk::io::MeshData &stkIo)
     return stkIo.meta_data();
 }
 
-inline bool fieldWithNameChangedIsOutput(stk::io::MeshData &stkIo, MPI_Comm communicator, const size_t resultsOutputIndex, const std::string &goldFieldName)
+inline bool fieldWithNameChangedIsOutput(stk::io::StkMeshIoBroker &stkIo, MPI_Comm communicator, const size_t resultsOutputIndex, const std::string &goldFieldName)
 {
     double dummyTime = 0;
     stkIo.process_output_request(dummyTime, resultsOutputIndex);

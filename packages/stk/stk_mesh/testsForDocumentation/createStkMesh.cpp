@@ -17,7 +17,7 @@ TEST(StkMesh, UsingStkIO)
     const std::string exodusFileName = "example.exo";
 
     // Use STK IO to populate a STK Mesh
-    stk::io::MeshData exodusFileReader(communicator);
+    stk::io::StkMeshIoBroker exodusFileReader(communicator);
     exodusFileReader.open_mesh_database(exodusFileName);
     // Create MetaData in STK IO
     exodusFileReader.create_input_mesh();

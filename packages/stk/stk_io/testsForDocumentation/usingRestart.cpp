@@ -22,7 +22,7 @@ TEST(StkIoTestForDocumentation, restartingWithMultistateField)
     const double stateNm1Value = 3.0;
     double time = 0.0;
     {
-        stk::io::MeshData stkIo(communicator);
+        stk::io::StkMeshIoBroker stkIo(communicator);
         stk::mesh::MetaData &stkMeshMetaData = generateMetaData(stkIo);
         stk::mesh::FieldBase *triStateField =
                 declareTriStateNodalField(stkMeshMetaData, fieldName);
@@ -50,7 +50,7 @@ TEST(StkIoTestForDocumentation, restartingWithMultistateField)
     }
 
     {
-        stk::io::MeshData stkIo(communicator);
+        stk::io::StkMeshIoBroker stkIo(communicator);
         stkIo.open_mesh_database(restartFilename);
         stkIo.create_input_mesh();
 

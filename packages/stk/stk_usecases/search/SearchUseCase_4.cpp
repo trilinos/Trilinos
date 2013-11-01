@@ -54,14 +54,14 @@ use_case_4_driver(stk::ParallelMachine  comm,
 
   // ========================================================================
   // Define range mesh...
-  stk::io::MeshData range_mesh_data(comm);
+  stk::io::StkMeshIoBroker range_mesh_data(comm);
   std::string filename = working_directory + range_mesh_filename;
   range_mesh_data.open_mesh_database(filename, range_mesh_type);
   range_mesh_data.create_input_mesh();
   range_mesh_data.populate_bulk_data();
 
   // Define domain mesh...
-  stk::io::MeshData domain_mesh_data(comm);
+  stk::io::StkMeshIoBroker domain_mesh_data(comm);
   filename = working_directory + domain_mesh_filename;
   domain_mesh_data.open_mesh_database(domain_mesh_filename, domain_mesh_type);
   domain_mesh_data.create_input_mesh();
