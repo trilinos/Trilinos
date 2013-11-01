@@ -88,9 +88,11 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DSuperLU_LIBRARY_NAMES=superlu_4.3"
 
     "-DTPL_ENABLE_BLAS:BOOL=ON"
-    "-DTPL_BLAS_LIBRARIES=/usr/lib64/libblas.so.3.2.1"
+    "-DBLAS_LIBRARY_DIRS=/usr/local/lapack/rhel6"
+    "-DBLAS_LIBRARY_NAMES=blas"
     "-DTPL_ENABLE_LAPACK:BOOL=ON"
-    "-DTPL_LAPACK_LIBRARIES=/usr/lib64/liblapack.so.3.2.1"
+    "-DLAPACK_LIBRARY_DIRS=/usr/local/lapack/rhel6"
+    "-DLAPACK_LIBRARY_NAMES=lapack"
     )
 
   SET_DEFAULT(COMPILER_VERSION "GCC-4.4.7")
