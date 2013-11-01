@@ -31,60 +31,62 @@ namespace cusp
 {
 
 template <typename MatrixType, typename SmootherType, typename SolverType>
-class block_multilevel : public cusp::linear_operator<typename MatrixType::value_type,
-    						typename MatrixType::memory_space>
+class block_multilevel :
+  public cusp::linear_operator<typename MatrixType::value_type,
+                               typename MatrixType::memory_space>
 {
 public:
 
-    typedef typename MatrixType::index_type IndexType;
-    typedef typename MatrixType::value_type ValueType;
-    typedef typename MatrixType::memory_space MemorySpace;
+  typedef typename MatrixType::index_type IndexType;
+  typedef typename MatrixType::value_type ValueType;
+  typedef typename MatrixType::memory_space MemorySpace;
+  typedef typename SmootherType::orientation Orientation;
 
-    struct level
-    {
-        MatrixType R;  // restriction operator
-        MatrixType A;  // matrix
-        MatrixType P;  // prolongation operator
-        cusp::array2d<ValueType,MemorySpace> x;               // per-level solution
-        cusp::array2d<ValueType,MemorySpace> b;               // per-level rhs
-        cusp::array2d<ValueType,MemorySpace> residual;        // per-level residual
+  struct level
+  {
+    MatrixType R;  // restriction operator
+    MatrixType A;  // matrix
+    MatrixType P;  // prolongation operator
+    cusp::array2d<ValueType,MemorySpace,Orientation> x;   // per-level solution
+    cusp::array2d<ValueType,MemorySpace,Orientation> b;   // per-level rhs
+    cusp::array2d<ValueType,MemorySpace,Orientation> residual;  // per-level residual
 
-        SmootherType smoother;
+    SmootherType smoother;
 
-	level(){}
+    level(){}
 
-	template<typename Level_Type>
-	level(const Level_Type& level) : R(level.R), A(level.A), P(level.P), x(level.x), b(level.b), residual(level.residual), smoother(level.smoother){}
-    };
+    template<typename Level_Type>
+    level(const Level_Type& level) : R(level.R), A(level.A), P(level.P), x(level.x), b(level.b), residual(level.residual), smoother(level.smoother){}
+  };
 
-    SolverType solver;
+  SolverType solver;
 
-    std::vector<level> levels;
+  std::vector<level> levels;
 
-    block_multilevel(){};
+  block_multilevel(){};
 
-    template <typename MatrixType2, typename SmootherType2, typename SolverType2>
-    block_multilevel(const block_multilevel<MatrixType2, SmootherType2, SolverType2>& M);
+  template <typename MatrixType2, typename SmootherType2, typename SolverType2>
+  block_multilevel(const block_multilevel<MatrixType2, SmootherType2, SolverType2>& M);
 
-    template <typename Array1, typename Array2>
-    void operator()(const Array1& x, Array2& y);
+  template <typename Array1, typename Array2>
+  void operator()(const Array1& x, Array2& y);
 
-    template <typename Array1, typename Array2>
-    void solve(const Array1& b, Array2& x);
+  template <typename Array1, typename Array2>
+  void solve(const Array1& b, Array2& x);
 
-    template <typename Array1, typename Array2, typename Monitor>
-    void solve(const Array1& b, Array2& x, Monitor& monitor);
+  template <typename Array1, typename Array2, typename Monitor>
+  void solve(const Array1& b, Array2& x, Monitor& monitor);
 
-    void print( void );
+  void print( void );
 
-    double operator_complexity( void );
+  double operator_complexity( void );
 
-    double grid_complexity( void );
+  double grid_complexity( void );
 
 protected:
 
-    template <typename Array1, typename Array2>
-    void _solve(const Array1& b, Array2& x, const size_t i);
+  template <typename Array1, typename Array2>
+  void _solve(const Array1& b, Array2& x, const size_t i);
 };
 /*! \}
  */
@@ -92,4 +94,3 @@ protected:
 } // end namespace cusp
 
 #include <cusp/block_multilevel.inl>
-
