@@ -13,7 +13,6 @@
 
 #include <Ioss_PropertyManager.h>
 #include <Ioss_Field.h>
-
 #include <Teuchos_RCP.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
@@ -37,6 +36,11 @@ namespace stk {
     class Selector;
   }
   namespace io {
+    enum DatabaseType {
+      HISTORY   = 1,
+      HEARTBEAT = 2
+    };
+
     static std::string CoordinateFieldName("coordinates");
 
     class OutputFile
@@ -119,7 +123,31 @@ namespace stk {
         const OutputFile & operator=(const OutputFile &);
     };
 
-    // ========================================================================
+    // ========================================================================    
+    class History {
+    public:
+      History(const std::string &filename, DatabaseType db_type, const Ioss::PropertyManager &properties, MPI_Comm comm);
+      ~History() {};
+      
+      Teuchos::RCP<Ioss::Region> io_region();
+
+      void add_global(const std::string &globalVarName, stk::util::Parameter &param);
+      void process_output(int step, double time);
+
+    private:
+      void write_global(const std::string &globalVarName, const stk::util::Parameter &param);
+
+      std::vector<std::pair<std::string,stk::util::Parameter*> > m_fields;
+      Teuchos::RCP<Ioss::Region> m_region;
+      
+      int m_current_step;
+      int m_processor;
+      bool m_fields_defined;
+
+    };
+
+    // ========================================================================    
+>>>>>>> STK_IO: Concept for history/heartbeat files
     class StkMeshIoBroker {
       public:
         /**
@@ -446,7 +474,22 @@ namespace stk {
         //   -- If reading data from the mesh also, then may need both.
         // * What state used for input/output -- pass as argument to process_restart?
 
+<<<<<<< HEAD
         bool is_meta_data_null() const
+=======
+        /** RESTART **/
+
+        size_t add_output(const std::string &filename, DatabaseType db_type,
+			  const Ioss::PropertyManager &properties = Ioss::PropertyManager());
+  
+        History &output(size_t index=0)
+        {
+	  ThrowRequire(index < m_history.size());
+	  return m_history[index];
+        }
+  
+        bool meta_data_is_set() const
+>>>>>>> STK_IO: Concept for history/heartbeat files
         {
           return Teuchos::is_null(m_meta_data);
         }
@@ -551,7 +594,20 @@ namespace stk {
         Teuchos::RCP<stk::mesh::MetaData>  m_meta_data;
         Teuchos::RCP<stk::mesh::BulkData>  m_bulk_data;
 
+<<<<<<< HEAD
         Teuchos::RCP<stk::mesh::Selector> m_deprecated_selector;
+=======
+        std::vector<History> m_history;
+
+        /*!
+         * An optional selector used for filtering entities on the
+         * output database. This can be used for specifying
+         * active/inactive entities.  If present, then this selector is
+         * *anded* with the normal selectors used for output
+         */
+        Teuchos::RCP<stk::mesh::Selector> m_anded_selector;
+        stk::mesh::ConnectivityMap m_connectivity_map;
+>>>>>>> STK_IO: Concept for history/heartbeat files
 
         stk::mesh::ConnectivityMap* m_connectivity_map;
 

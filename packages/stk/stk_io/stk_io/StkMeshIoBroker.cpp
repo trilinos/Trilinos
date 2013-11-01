@@ -1937,6 +1937,123 @@ namespace stk {
     void OutputFile::set_subset_selector(Teuchos::RCP<stk::mesh::Selector> my_selector)
     {
       m_subset_selector = my_selector;
+    
+    size_t StkMeshIoBroker::add_output(const std::string &filename, DatabaseType db_type,
+				       const Ioss::PropertyManager &properties)
+    {
+      History history(filename, db_type, properties, m_communicator);
+      m_history.push_back(history);
+      return m_history.size()-1;
+    }
+
+    History::History(const std::string &filename, DatabaseType db_type,
+                     const Ioss::PropertyManager &properties, MPI_Comm comm)
+      : m_current_step(0), m_processor(0), m_fields_defined(false)
+    {
+      if (comm != MPI_COMM_NULL) {
+        MPI_Comm_rank(comm, &m_processor);
+      }
+
+      if (m_processor == 0) {
+        std::string db_io_type = db_type == HISTORY ? "exodus" : "heartbeat";
+        Ioss::DatabaseUsage db_usage = db_type == HISTORY ? Ioss::WRITE_HISTORY : Ioss::WRITE_HEARTBEAT;
+        Ioss::DatabaseIO *db = Ioss::IOFactory::create(db_io_type, filename,
+                                                       db_usage, comm, properties);
+        if (db == NULL || !db->ok()) {
+          std::cerr << "ERROR: Could not open history/heartbeat database '" << filename
+                    << "'\n";
+          return;
+        }
+
+        // NOTE: 'region' owns 'db' pointer at this time...
+        m_region = Teuchos::rcp(new Ioss::Region(db, "heartbeat_output"));
+      }
+    }
+
+    void History::add_global(const std::string &name, stk::util::Parameter &param)
+    {
+      if (m_processor == 0) {
+        // Determine name and type of parameter...
+        std::pair<size_t, Ioss::Field::BasicType> parameter_type = stk::io::get_io_parameter_type(param);
+        internal_add_global(m_region, name, parameter_type.first, parameter_type.second);
+        std::pair<std::string,stk::util::Parameter*> name_param(name, &param);
+        m_fields.push_back(name_param);
+      }
+    }
+
+    void History::write_global(const std::string &globalVarName, const stk::util::Parameter &parameter)
+    {
+      if (m_processor == 0) {
+        switch(parameter.type)
+          {
+          case stk::util::ParameterType::INTEGER: {
+            int value = boost::any_cast<int>(parameter.value);
+            internal_write_global(m_region, globalVarName, value);
+            break;
+          }
+
+          case stk::util::ParameterType::INT64: {
+            int64_t value = boost::any_cast<int64_t>(parameter.value);
+            internal_write_global(m_region, globalVarName, value);
+            break;
+          }
+            
+          case stk::util::ParameterType::DOUBLE: {
+            double value = boost::any_cast<double>(parameter.value);
+            internal_write_global(m_region, globalVarName, value);
+            break;
+          }
+            
+          case stk::util::ParameterType::DOUBLEVECTOR: {
+            std::vector<double> vec = boost::any_cast<std::vector<double> >(parameter.value);
+            internal_write_global(m_region, globalVarName, vec);
+            break;
+          }
+            
+          case stk::util::ParameterType::INTEGERVECTOR: {
+            std::vector<int> vec = boost::any_cast<std::vector<int> >(parameter.value);
+            internal_write_global(m_region, globalVarName, vec);
+            break;
+          }
+              
+          case stk::util::ParameterType::INT64VECTOR: {
+            std::vector<int64_t> vec = boost::any_cast<std::vector<int64_t> >(parameter.value);
+            internal_write_global(m_region, globalVarName, vec);
+            break;
+          }
+            
+          default: {
+            std::cerr << "WARNING: '" << globalVarName
+                      << "' is not a supported type. It's value cannot be output."
+                      << std::endl;
+            break;
+          }
+          }
+      }
+    }
+
+    void History::process_output(int step, double time)
+    {
+      // TODO: Add a scheduler...
+      
+      if (m_processor == 0) {
+        //Attempt to avoid putting state change into the interface.  We'll see . . .
+        Ioss::State currentState = m_region->get_state();
+        if(currentState == Ioss::STATE_DEFINE_TRANSIENT) {
+          m_region->end_mode(Ioss::STATE_DEFINE_TRANSIENT);
+        }
+
+        m_region->begin_mode(Ioss::STATE_TRANSIENT);
+        m_current_step = m_region->add_state(time);
+        m_region->begin_state(m_current_step);
+        
+        for (size_t i=0; i < m_fields.size(); i++) {
+          write_global(m_fields[i].first, *m_fields[i].second);
+        }
+
+        m_region->end_state(m_current_step);
+        m_region->end_mode(Ioss::STATE_TRANSIENT);
+      }
     }
   } // namespace io
 } // namespace stk

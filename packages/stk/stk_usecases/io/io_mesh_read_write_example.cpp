@@ -12,6 +12,7 @@
 #include <boost/program_options.hpp>
 #include <boost/program_options/cmdline.hpp>
 
+#include <stk_util/util/ParameterList.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/BroadcastArg.hpp>
 #include <stk_util/environment/ProgramOptions.hpp>
@@ -63,6 +64,17 @@ namespace {
 
     size_t restart_index = mesh_data.create_output_mesh(restart_filename);
 
+    // Create history and heartbeat files...
+    std::string history_filename = working_directory + type + ".history";
+    size_t hist = mesh_data.add_output(history_filename, stk::io::HISTORY);
+
+    std::string heartbeat_filename = working_directory + type + ".heartbeat";
+    Ioss::PropertyManager hb_props;
+    hb_props.add(Ioss::Property("SHOW_LABELS",       false));
+    hb_props.add(Ioss::Property("SHOW_LEGEND",       true));
+
+    size_t heart = mesh_data.add_output(heartbeat_filename, stk::io::HEARTBEAT, hb_props);
+    
     // Iterate all fields and set them as restart fields...
     const stk::mesh::FieldVector &fields = mesh_data.meta_data().get_fields();
     for (size_t i=0; i < fields.size(); i++) {
@@ -81,14 +93,32 @@ namespace {
     std::vector<std::string> global_fields;
     mesh_data.get_global_variable_names(global_fields);
 
+    stk::util::ParameterList parameters;
+    
     // For each global field name on the input database, determine the type of the field
-    // and define that same global field on both the results and restart output databases.
+    // and define that same global field on the results, restart, history, and heartbeat outputs.
+    if (!global_fields.empty()) {
+      std::cout << "Adding " << global_fields.size() << " global fields:\n";
+    }
+
     for (size_t i=0; i < global_fields.size(); i++) {
-      const Ioss::Field &input_field = mesh_data.get_input_io_region()->get_fieldref(global_fields[i]);
+      const Ioss::Field &input_field = mesh_data.input_io_region()->get_fieldref(global_fields[i]);
+      std::cout << "\t" << input_field.get_name() << " of type " << input_field.raw_storage()->name() << "\n";
+
+      if (input_field.raw_storage()->component_count() == 1) {
+	double val = 0.0;
+	parameters.set_param(input_field.get_name(), val);
+      }
+      else {
+	std::vector<double> vals(input_field.raw_storage()->component_count());
+	parameters.set_param(input_field.get_name(), vals);
+      }
 
       // Define the global fields that will be written on each timestep.
       mesh_data.add_global(restart_index, input_field.get_name(), input_field.raw_storage()->name(), input_field.get_type());
       mesh_data.add_global(results_index, input_field.get_name(), input_field.raw_storage()->name(), input_field.get_type());
+      mesh_data.output(hist).add_global(input_field.get_name(), parameters.get_param(input_field.get_name()));
+      mesh_data.output(heart).add_global(input_field.get_name(), parameters.get_param(input_field.get_name()));
     }
 
     // ========================================================================
@@ -99,39 +129,51 @@ namespace {
     int timestep_count = mesh_data.get_input_io_region()->get_property("state_count").get_int();
 
     if (timestep_count == 0 )
-    {
-        mesh_data.write_output_mesh(results_index);
-    }
-    else
-    {
-      for (int step=1; step <= timestep_count; step++) {
-        double time = mesh_data.get_input_io_region()->get_state_time(step);
-
-        // Normally, an app would only process the restart input at a single step and
-        // then continue with execution at that point.  Here just for testing, we are
-        // reading restart data at each step on the input restart file/mesh and then
-        // outputting that data to the restart and results output.
-
-        mesh_data.process_restart_input(step);
-        mesh_data.begin_output_step(restart_index, time);
-        mesh_data.begin_output_step(results_index, time);
-
-        mesh_data.write_defined_output_fields(restart_index);
-        mesh_data.write_defined_output_fields(results_index);
-
-        // Transfer all global variables from the input mesh to the
-        // restart and results databases
-        for (size_t i=0; i < global_fields.size(); i++) {
-	  std::vector<double> field_values;
-          mesh_data.get_global(global_fields[i], field_values);
-          mesh_data.write_global(restart_index, global_fields[i], field_values);
-          mesh_data.write_global(results_index, global_fields[i], field_values);
-        }
-
-        mesh_data.end_output_step(restart_index);
-        mesh_data.end_output_step(results_index);
+      {
+        mesh_data.write_output_mesh(result_index);
       }
-    }
+    else
+      {
+	for (int step=1; step <= timestep_count; step++) {
+	  double time = mesh_data.input_io_region()->get_state_time(step);
+
+	  // Normally, an app would only process the restart input at a single step and
+	  // then continue with execution at that point.  Here just for testing, we are
+	  // reading restart data at each step on the input restart file/mesh and then
+	  // outputting that data to the restart and results output.
+
+	  mesh_data.process_restart_input(step);
+	  mesh_data.begin_output_step(time, restart_index);
+	  mesh_data.begin_output_step(time, results_index);
+
+	  mesh_data.process_output_request(restart_index);
+	  mesh_data.process_output_request(results_index);
+
+	  // Transfer all global variables from the input mesh to the
+	  // restart and results databases
+	  stk::util::ParameterMapType::const_iterator i = parameters.begin();
+	  stk::util::ParameterMapType::const_iterator iend = parameters.end();
+	  for (; i != iend; ++i) {
+	    const std::string parameterName = (*i).first;
+	    stk::util::Parameter &parameter = parameters.get_param(parameterName);
+	    mesh_data.get_global(parameterName, parameter);
+	  }
+
+	  parameters.write_parameter_list(std::cerr);
+	  for (i=parameters.begin(); i != iend; ++i) {
+	    const std::string parameterName = (*i).first;
+	    stk::util::Parameter parameter = (*i).second;
+	    mesh_data.write_global(restart_index,  parameterName, parameter);
+	    mesh_data.write_global(results_index, parameterName, parameter);
+	  }
+
+          mesh_data.end_output_step(restart_index);
+          mesh_data.end_output_step(results_index);
+
+	  mesh_data.output(hist).process_output(step, time);
+	  mesh_data.output(heart).process_output(step, time);
+	}
+      }
   }
 
   void driver(stk::ParallelMachine  comm,
