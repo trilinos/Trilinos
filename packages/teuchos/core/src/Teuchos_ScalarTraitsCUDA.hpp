@@ -47,7 +47,6 @@
 */
  
 #include "Teuchos_ScalarTraitsDecl.hpp"
-#include "Teuchos_ScalarTraits.hpp"
 
 namespace Teuchos {
 
