@@ -110,10 +110,11 @@ namespace Tpetra {
       // out the right MPI_Datatype for IntType.  Usually it
       // is int or long, so these are good enough for now.
       template<class IntType> MPI_Datatype getMpiDatatype () {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented for IntType != int or long");
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented for IntType != int, long, or long long");
       }
       template<> MPI_Datatype getMpiDatatype<int> () { return MPI_INT; }
       template<> MPI_Datatype getMpiDatatype<long> () { return MPI_LONG; }
+      template<> MPI_Datatype getMpiDatatype<long long> () { return MPI_LONG_LONG; }
 #endif // HAVE_MPI
 
       template<class IntType>
