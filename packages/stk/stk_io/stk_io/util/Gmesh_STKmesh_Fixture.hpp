@@ -5,7 +5,7 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_io/MeshReadWriteUtils.hpp>
+#include <stk_io/StkMeshIoBroker.hpp>
 
 #include <vector>
 #include <string>

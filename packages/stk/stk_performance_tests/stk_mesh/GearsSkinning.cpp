@@ -18,7 +18,7 @@
 #include <stk_mesh/base/SkinMesh.hpp>
 
 #include <stk_io/IossBridge.hpp>
-#include <stk_io/MeshReadWriteUtils.hpp>
+#include <stk_io/StkMeshIoBroker.hpp>
 
 #include <Teuchos_RCP.hpp>
 #include <init/Ionit_Initializer.h>

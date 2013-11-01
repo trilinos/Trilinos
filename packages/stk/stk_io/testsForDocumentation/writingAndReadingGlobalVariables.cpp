@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 #include <mpi.h>
-#include <stk_io/MeshReadWriteUtils.hpp>
+#include <stk_io/StkMeshIoBroker.hpp>
 #include <Ioss_SubSystem.h>
 #include <fieldNameTestUtils.hpp>
 

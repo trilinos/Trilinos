@@ -2,7 +2,7 @@
 
 #include <string>
 #include <mpi.h>
-#include <stk_io/MeshReadWriteUtils.hpp>
+#include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Selector.hpp>

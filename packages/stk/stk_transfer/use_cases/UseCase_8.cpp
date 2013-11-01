@@ -16,7 +16,7 @@
 #include <stk_mesh/base/SkinMesh.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
-#include <stk_io/MeshReadWriteUtils.hpp>
+#include <stk_io/StkMeshIoBroker.hpp>
 #include <init/Ionit_Initializer.h>
 
 #include <stk_util/use_cases/UseCaseEnvironment.hpp>

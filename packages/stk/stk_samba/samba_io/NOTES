@@ -19,7 +19,7 @@ Needed to add our version or stk::io::put_io_part_attribute(.) for adding I/O
     used for I/O.
 
 Actually used from namespace stk::io from outside itself
-    USED, FROM MeshReadWriteUtils.hpp
+    USED, FROM StkMeshIoBroker.hpp
     create_input_mesh       used by use cases
     create_output_mesh      used by use cases
     define_input_fields     used by use cases
@@ -49,5 +49,5 @@ Actually used from namespace stk::io from outside itself
     map_topology_cell_to_ioss        NOT USED by use cases
     set_cell_topology                NOT USED by use cases
 
-    NOT USED AT ALL, from MeshReadWriteUtils.hpp
+    NOT USED AT ALL, from StkMeshIoBroker.hpp
     get_element_block_sizes

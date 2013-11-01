@@ -22,7 +22,7 @@
 #include <stk_mesh/base/CoordinateSystems.hpp>
 
 #include <stk_io/IossBridge.hpp>
-#include <stk_io/MeshReadWriteUtils.hpp>
+#include <stk_io/StkMeshIoBroker.hpp>
 
 #include <init/Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>

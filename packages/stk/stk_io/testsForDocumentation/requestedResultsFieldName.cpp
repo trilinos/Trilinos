@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <string>
 #include <mpi.h>
-#include <stk_io/MeshReadWriteUtils.hpp>
+#include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_io/IossBridge.hpp>
 #include <fieldNameTestUtils.hpp>
 #include <stk_mesh/base/MetaData.hpp>

@@ -12,7 +12,7 @@
 #include <assert.h>
 
 #include <search/performance/Performance.hpp>
-#include <stk_io/MeshReadWriteUtils.hpp>
+#include <stk_io/StkMeshIoBroker.hpp>
 
 #include <init/Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>

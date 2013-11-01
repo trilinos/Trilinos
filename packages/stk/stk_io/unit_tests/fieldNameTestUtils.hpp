@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <mpi.h>
-#include <stk_io/MeshReadWriteUtils.hpp>
+#include <stk_io/StkMeshIoBroker.hpp>
 #include <Ioss_SubSystem.h>
 #include <stk_util/util/ParameterList.hpp>
 

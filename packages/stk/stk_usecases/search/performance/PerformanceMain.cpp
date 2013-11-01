@@ -18,7 +18,7 @@
 #include <stk_util/parallel/BroadcastArg.hpp>
 #include <stk_util/environment/ProgramOptions.hpp>
 #include <stk_util/use_cases/UseCaseEnvironment.hpp>
-#include <stk_io/MeshReadWriteUtils.hpp>
+#include <stk_io/StkMeshIoBroker.hpp>
 
 namespace bopt = boost::program_options;
 
