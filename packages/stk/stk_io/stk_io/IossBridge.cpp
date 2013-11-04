@@ -374,35 +374,29 @@ std::pair<size_t, Ioss::Field::BasicType> get_io_parameter_type(const stk::util:
   switch(parameter.type)  {
   case stk::util::ParameterType::INTEGER: {
     return std::make_pair(1, Ioss::Field::INTEGER);
-    break;
   }
       
   case stk::util::ParameterType::INT64: {
     return std::make_pair(1, Ioss::Field::INT64);
-    break;
   }
     
   case stk::util::ParameterType::DOUBLE: {
     return std::make_pair(1, Ioss::Field::REAL);
-    break;
   }
     
   case stk::util::ParameterType::DOUBLEVECTOR: {
     std::vector<double> vec = boost::any_cast<std::vector<double> >(parameter.value);
     return std::make_pair(vec.size(), Ioss::Field::REAL);
-    break;
   }
 
   case stk::util::ParameterType::INTEGERVECTOR: {
     std::vector<int> vec = boost::any_cast<std::vector<int> >(parameter.value);
     return std::make_pair(vec.size(), Ioss::Field::INTEGER);
-    break;
   }
 
   case stk::util::ParameterType::INT64VECTOR: {
     std::vector<int64_t> vec = boost::any_cast<std::vector<int64_t> >(parameter.value);
     return std::make_pair(vec.size(), Ioss::Field::INT64);
-    break;
   }
     
   default: {
