@@ -92,7 +92,6 @@ namespace MueLu {
     validParamList->set< SC >                    ("Dirichlet detection threshold", TST::zero(), "Threshold for determining whether entries are zero during Dirichlet row detection");
     validParamList->set< SC >                    ("aggregation threshold", TST::zero(), "Aggregation dropping threshold");
     validParamList->set< std::string >           ("algorithm",          "original",    "Dropping algorithm");
-    validParamList->set< bool >                  ("disable Dirichlet detection",   false, "Experimental option");
 
     return validParamList;
   }

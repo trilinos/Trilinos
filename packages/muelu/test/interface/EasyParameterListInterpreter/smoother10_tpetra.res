@@ -34,7 +34,6 @@ Level 1
     Dirichlet detection threshold = 0
     aggregation threshold = 0
     algorithm = original
-    disable Dirichlet detection = 0
     
    Ordering = 0   [default]
    MaxNeighAlreadySelected = 0   [default]
@@ -90,7 +89,6 @@ Level 2
     Dirichlet detection threshold = 0
     aggregation threshold = 0
     algorithm = original
-    disable Dirichlet detection = 0
     
    Ordering = 0   [default]
    MaxNeighAlreadySelected = 0   [default]
