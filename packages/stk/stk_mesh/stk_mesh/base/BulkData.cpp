@@ -929,6 +929,11 @@ void BulkData::new_bucket_callback(EntityRank rank, const PartVector& superset_p
   }
 }
 
+//
+//  Copy fields from src to dst entity.  If the field size of either entity is zero, do nothing.  If the field
+//  size of of both entities are non-zero, then the sizes must match
+//
+
 void BulkData::copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_bucket_id, Bucket::size_type dst_bucket_ord,
                                            EntityRank src_rank, unsigned src_bucket_id, Bucket::size_type src_bucket_ord)
 {
@@ -936,11 +941,13 @@ void BulkData::copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_buc
     return;
   }
 
+
   for (int i = 0; i < m_num_fields; ++i) {
     const int src_size        = m_field_meta_data[m_num_fields * src_rank + i][src_bucket_id].m_size;
     if (src_size == 0) {
       continue;
     }
+
 
     unsigned char * const src = m_field_meta_data[m_num_fields * src_rank + i][src_bucket_id].m_data;
     const int dst_size        = m_field_meta_data[m_num_fields * dst_rank + i][dst_bucket_id].m_size;
@@ -956,6 +963,48 @@ void BulkData::copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_buc
     }
   }
 }
+
+// More specific version, of copy_entity_fields, here assume know entities are of the same rank
+
+void BulkData::copy_entity_fields_callback_same_rank(EntityRank rank, 
+                                                     unsigned dst_bucket_id, Bucket::size_type dst_bucket_ord,
+                                                     unsigned src_bucket_id, Bucket::size_type src_bucket_ord)
+{
+  if (!m_keep_fields_updated || m_num_fields == 0) {
+    return;
+  }
+
+
+  const FieldMetaDataVector* firstMetaVec = &m_field_meta_data[m_num_fields * rank];
+
+  for (int i = 0; i < m_num_fields; ++i) {
+    const FieldMetaDataVector& metaVec = firstMetaVec[i];
+    const FieldMetaData& srcMeta = metaVec[src_bucket_id];
+
+    const int src_size        = srcMeta.m_size;
+    if (src_size == 0) {
+      continue;
+    }
+
+
+
+    const FieldMetaData& dstMeta = metaVec[dst_bucket_id];
+
+    const int dst_size = dstMeta.m_size;
+
+    ThrowAssertMsg( dst_size == src_size || dst_size == 0, "Incompatible field sizes: " << dst_size << " != " << src_size );
+
+
+
+    std::memcpy( dstMeta.m_data + dst_size * dst_bucket_ord,
+		 srcMeta.m_data + src_size * src_bucket_ord,
+		 dst_size );
+  }
+}
+
+
+
+
 
 
 void BulkData::remove_entity_callback(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord)

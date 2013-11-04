@@ -1250,6 +1250,11 @@ private:
   void copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_bucket_id, Bucket::size_type dst_bucket_ord,
                                    EntityRank src_rank, unsigned src_bucket_id, Bucket::size_type src_bucket_ord);
 
+  void copy_entity_fields_callback_same_rank(EntityRank rank, unsigned dst_bucket_id, Bucket::size_type dst_bucket_ord,
+                                              unsigned src_bucket_id, Bucket::size_type src_bucket_ord);
+
+
+
   void destroy_bucket_callback(EntityRank rank, unsigned bucket_id, unsigned capacity);
 
   // id_map, indexed by new id, maps to old id
