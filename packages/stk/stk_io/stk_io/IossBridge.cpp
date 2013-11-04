@@ -689,7 +689,7 @@ std::string get_field_name(const stk::mesh::FieldBase &f, Ioss::DatabaseUsage db
   return name;
 }
 
-void getNamedFields(stk::mesh::MetaData &meta, Ioss::GroupingEntity *io_entity, std::vector<FieldAndName> &namedFields)
+void getNamedFields(const stk::mesh::MetaData &meta, Ioss::GroupingEntity *io_entity, std::vector<FieldAndName> &namedFields)
 {
     const std::vector<stk::mesh::FieldBase*> &fields = meta.get_fields();
     namedFields.reserve(fields.size());

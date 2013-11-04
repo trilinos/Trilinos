@@ -38,19 +38,70 @@ namespace stk {
   namespace io {
     static std::string CoordinateFieldName("coordinates");
 
-    struct OutputFile
+    class OutputFile
     {
+    public:
+//        OutputFile(const std::string &filename, MPI_Comm communicator, const Ioss::Region *input_region, const stk::mesh::Selector *anded_selector)
+//        : m_current_output_step(-1), m_use_nodeset_for_part_nodes_fields(true),
+//          m_mesh_defined(false), m_fields_defined(false), m_input_region(input_region),
+//          m_anded_selector(anded_selector)
+//        {
+//            Ioss::PropertyManager property_manager;
+//            setup_output_file(filename, communicator, property_manager);
+//        }
+        OutputFile(const std::string &filename, MPI_Comm communicator, Ioss::PropertyManager& property_manager, const Ioss::Region *input_region, const stk::mesh::Selector *anded_selector)
+        : m_current_output_step(-1), m_use_nodeset_for_part_nodes_fields(true),
+          m_mesh_defined(false), m_fields_defined(false), m_input_region(input_region),
+          m_anded_selector(anded_selector)
+        {
+          setup_output_file(filename, communicator, property_manager);
+        }
+        OutputFile(Teuchos::RCP<Ioss::Region> ioss_output_region, MPI_Comm communicator, const Ioss::Region *input_region, const stk::mesh::Selector *anded_selector)
+        : m_current_output_step(-1), m_use_nodeset_for_part_nodes_fields(true),
+          m_mesh_defined(false), m_fields_defined(false), m_input_region(input_region),
+          m_anded_selector(anded_selector)
+        {
+            m_output_region = ioss_output_region;
+            m_mesh_defined = true;
+        }
+        Teuchos::RCP<Ioss::Region> get_output_io_region() {
+            return m_output_region;
+        }
+        ~OutputFile() { }
+    public:
+        void write_output_mesh(const stk::mesh::BulkData& bulk_data, const stk::mesh::Selector *anded_selector, bool use_nodeset_for_part_nodes_fields);
+        void add_results_field(stk::mesh::FieldBase &field, const std::string &alternate_name);
+        void add_global(const std::string &globalVarName, const stk::util::Parameter &param);
+        void add_global(const std::string &globalVarName, Ioss::Field::BasicType dataType);
+        void add_global(const std::string &globalVarName, const std::string &type, Ioss::Field::BasicType dataType);
+        void add_global(const std::string &globalVarName, int component_count,     Ioss::Field::BasicType dataType);
+        void write_global(const std::string &globalVarName, const stk::util::Parameter &param);
+        void write_global(const std::string &globalVarName, double globalVarData);
+        void write_global(const std::string &globalVarName, int globalVarData);
+        void write_global(const std::string &globalVarName, std::vector<double>& globalVarData);
+        void write_global(const std::string &globalVarName, std::vector<int>& globalVarData);
+        void begin_output_step(double time, const stk::mesh::BulkData& bulk_data, const stk::mesh::Selector *anded_selector, bool use_nodeset_for_part_nodes_fields);
+        void end_output_step();
+        int process_output_request(const stk::mesh::BulkData& bulk_data, const stk::mesh::Selector* anded_selector, bool use_nodeset_for_part_nodes_fields);
+        int process_output_request(double time, const stk::mesh::BulkData& bulk_data, const stk::mesh::Selector *anded_selector, bool use_nodeset_for_part_nodes_fields);
+        void set_output_io_region(Teuchos::RCP<Ioss::Region> ioss_output_region);
+        // TODO: make this private again...
+        void define_output_fields(const stk::mesh::BulkData& bulk_data, const stk::mesh::Selector *anded_selector, bool add_all_fields, bool use_nodeset_for_part_nodes_fields);
+    private:
+        // TODO: get_output_region (returned and set in ctor)
+        void setup_output_file(const std::string &filename, MPI_Comm communicator, Ioss::PropertyManager &property_manager);
+    public:
         int m_current_output_step;
         bool m_use_nodeset_for_part_nodes_fields;
         bool m_mesh_defined;
         bool m_fields_defined;
+        const Ioss::Region* m_input_region;
+        const stk::mesh::Selector* m_anded_selector;
         Teuchos::RCP<Ioss::Region> m_output_region;
         std::vector<stk::io::FieldAndName> m_named_fields;
-        OutputFile() : m_current_output_step(-1), m_use_nodeset_for_part_nodes_fields(true),
-                m_mesh_defined(false), m_fields_defined(false){}
-//        const std::string get_base_file_name() {
-//            return m_output_region->get_database()->get_filename();
-//        }
+//    private:
+//      OutputFile(const OutputFile &);
+//      const OutputFile & operator=(const OutputFile &);
     };
 
     class StkMeshIoBroker {
@@ -93,7 +144,8 @@ namespace stk {
         }
 
         Teuchos::RCP<Ioss::Region> get_output_io_region(size_t output_file_index) {
-            return m_output_files[output_file_index].m_output_region;
+            validate_output_file_index(output_file_index);
+            return m_output_files[output_file_index].get_output_io_region();
         }
 
         Teuchos::RCP<stk::mesh::Selector> selector()  { return m_anded_selector; }
