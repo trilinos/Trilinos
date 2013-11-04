@@ -56,6 +56,8 @@ void print_debug_skip(stk::ParallelMachine pm)
 
 STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, induced_part )
 {
+  CALLGRIND_START_INSTRUMENTATION;
+
   check_valgrind_version();
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
@@ -113,11 +115,10 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, induced_part )
     nodes_to_chg.push_back(bulk.begin_nodes(elem)[0]);
   }
 
-  const int num_iterations = 20;
+  const int num_iterations = 40;
 
   bulk.modification_begin();
 
-  CALLGRIND_START_INSTRUMENTATION;
   CALLGRIND_TOGGLE_COLLECT;
   // Remove and reattach the shared nodes from/to element1 over and over.
   // We don't want the node to change parts because we don't want to measure
