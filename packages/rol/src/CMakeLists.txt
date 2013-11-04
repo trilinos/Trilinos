@@ -46,6 +46,45 @@ APPEND_SET(HEADERS
   )
 
 #
+# vector headers
+#
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/vector)
+APPEND_SET(HEADERS
+  vector/ROL_Vector.hpp
+  vector/ROL_StdVector.hpp
+  )
+
+#
+# function headers
+#
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/function)
+APPEND_SET(HEADERS
+  function/ROL_Objective.hpp
+  )
+
+#
+# step headers
+#
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/step)
+APPEND_SET(HEADERS
+  step/ROL_Step.hpp
+  step/ROL_LineSearchStep.hpp
+  )
+
+#
+# algorithm headers
+#
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/algorithm)
+APPEND_SET(HEADERS
+  algorithm/ROL_Algorithm.hpp
+  )
+
+
+#
 # All sources
 #
 
