@@ -94,7 +94,10 @@ using Teuchos::ParameterList;
  *
  * <b>\anchor HumanReadableWithDocumentation Human readable format (with documentation) for valid parameters accepted by this class</b>
  *
- * \verbinclude simple_stratimikos_example.options.readablewithdoc.out
+ * \htmlonly
+ * <iframe src="simple_stratimikos_example.options.xml" width="90%"height="400px"></iframe>
+ * <hr />
+ * \endhtmlonly
  *
  * <b>\anchor HumanReadableWithoutDocumentation Human readable format (without documentation) for valid parameters accepted by this class</b>
  *
