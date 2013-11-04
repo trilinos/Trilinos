@@ -138,8 +138,8 @@ namespace panzer {
     typedef Sacado::mpl::vector< FadType,bool > TangentDataTypes;
 
     #ifdef HAVE_STOKHOS
-       typedef Sacado::mpl::vector< SGType > SGResidualDataTypes;
-       typedef Sacado::mpl::vector< SGFadType > SGJacobianDataTypes;
+       typedef Sacado::mpl::vector< SGType,bool > SGResidualDataTypes;
+       typedef Sacado::mpl::vector< SGFadType,bool > SGJacobianDataTypes;
     #endif
 
     // Maps the key EvalType a vector of DataTypes
