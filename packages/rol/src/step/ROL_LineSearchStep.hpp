@@ -32,6 +32,7 @@ public:
   */
   void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj ) {
     obj.gradient(s, x);
+    // s.set(*state_.gradientVec);
     s.scale(-1.0);
 
     // Perform backtracking line search from Nocedal/Wright.
