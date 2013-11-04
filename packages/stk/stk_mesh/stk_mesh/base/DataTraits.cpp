@@ -271,7 +271,7 @@ public:
 template< typename T >
 class DataTraitsIntegral : public DataTraitsNumeric<T> {
 public:
-  DataTraitsIntegral( const char * name ) : DataTraitsNumeric<T>( name ) {}
+  DataTraitsIntegral( const char * name_ ) : DataTraitsNumeric<T>( name_ ) {}
 
   virtual void bit_and( void * vx , const void * vy , std::size_t n ) const
   {

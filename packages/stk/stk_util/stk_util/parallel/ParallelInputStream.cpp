@@ -93,7 +93,16 @@ void ParInBuf::close()
 }
 
 ParInBuf::~ParInBuf()
-{ close(); }
+{
+    try
+    {
+        close();
+    }
+    catch(...)
+    {
+        std::cerr << "Caught exception when trying to close file at " << __FILE__ ":" << __LINE__ << std::endl;
+    }
+}
 
 int ParInBuf::underflow()
 {

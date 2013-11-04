@@ -31,8 +31,6 @@ static const size_t NODE_RANK = stk::mesh::MetaData::NODE_RANK;
 typedef stk::mesh::Field<double> ScalarField ;
 typedef stk::mesh::Field<double, stk::mesh::Cartesian> VectorField ;
 
-static const int spatial_dimension = 2;
-
 enum { nx = 2, ny = 2 };
 
 class MockPartition : public stk::rebalance::Partition
