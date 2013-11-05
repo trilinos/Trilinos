@@ -74,7 +74,6 @@ Level 2
     Dirichlet detection threshold = 0
     aggregation threshold = 0
     algorithm = original
-    disable Dirichlet detection = 0   [unused]
     
    [empty list]
    
