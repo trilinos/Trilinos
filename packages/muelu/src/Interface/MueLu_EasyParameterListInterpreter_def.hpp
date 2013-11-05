@@ -320,8 +320,6 @@ namespace MueLu {
       dropParams.set("algorithm", "original");
     MUELU_TEST_AND_SET_PARAM(dropParams, "aggregation threshold",         paramList, defaultList, "aggregation: drop tol",            double);
     MUELU_TEST_AND_SET_PARAM(dropParams, "Dirichlet detection threshold", paramList, defaultList, "aggregation: Dirichlet threshold", double);
-    if (paramList.isParameter("aggregation: Dirichlet detection"))
-      dropParams.set("disable Dirichlet detection", !paramList.get<bool>("aggregation: Dirichlet detection"));
 
     dropFactory->SetParameterList(dropParams);
     manager.SetFactory("Graph", dropFactory);
