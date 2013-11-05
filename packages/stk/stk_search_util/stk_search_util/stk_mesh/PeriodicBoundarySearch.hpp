@@ -207,7 +207,7 @@ public:
   }
 
   template<typename RealType>
-  bool get_search_row_major_rotation(size_t i, std::vector<RealType> buff) const
+  bool get_search_row_major_rotation(size_t i, std::vector<RealType> & buff) const
   {
     return m_search_results_index[i].m_transform.getRowMajorRotation(buff);
   }
