@@ -129,7 +129,7 @@ public:
   std::string print( AlgorithmState<Real> & algo_state, bool printHeader = false ) const  {
     std::stringstream hist;
     if ( algo_state.iter == 0 ) {
-      hist << "LineSearchStep\n"; 
+      hist << "LineSearchStep"; 
       hist << "  ";
       hist << std::setw(15) << std::left << "iter";  
       hist << std::setw(15) << std::left << "value";

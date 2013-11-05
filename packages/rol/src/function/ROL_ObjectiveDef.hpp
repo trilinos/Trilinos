@@ -53,7 +53,7 @@ void Objective<Real>::hessVec( Vector<Real> &hv, const Vector<Real> &v, const Ve
   xnew->axpy(h,v);
   
   // Compute Gradient at x
-  Teuchos::RCP<Vector<Rea> > g = x.clone();
+  Teuchos::RCP<Vector<Real> > g = x.clone();
   gradient(*g,x);
 
   // Compute Gradient at x + h*v

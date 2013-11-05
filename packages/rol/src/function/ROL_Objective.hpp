@@ -41,7 +41,7 @@ public:
 
   /** \brief Apply Hessian approximation to vector.
   */
-  virtual void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x ) {}
+  virtual void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x );
 
   /** \brief Apply inverse Hessian approximation to vector.
   */
