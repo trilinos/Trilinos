@@ -22,37 +22,58 @@
 namespace ROL {
 
 template<class Real>
-struct State {
+struct AlgorithmState {
+  int  iter;
   Real value;
-  Teuchos::RCP<Vector<Real> > gradientVec;
   Real gnorm;
-  Teuchos::RCP<Vector<Real> > descentVec;
-  Real dnorm;
+  Real snorm;
   Teuchos::RCP<Vector<Real> > iterateVec;
-  Real inorm;
+};
+
+template<class Real>
+struct StepState {
+  Teuchos::RCP<Vector<Real> > gradientVec;
+  Teuchos::RCP<Vector<Real> > descentVec;
 };
 
 
 template <class Real>
 class Step {
 private:
-  State<Real> state_;
 
 public:
+  Teuchos::RCP<StepState<Real> > state_;
 
   virtual ~Step() {}
 
+  Step(void) { 
+    state_ = Teuchos::rcp( new StepState<Real> );
+  }
+
+  /** \brief Initialize step.
+  */
+  virtual void initialize( const Vector<Real> &x, Objective<Real> &obj, AlgorithmState<Real> &algo_state ) {
+    state_->descentVec  = x.clone();
+    state_->gradientVec = x.clone();
+    obj.gradient(*(state_->gradientVec),x);
+    algo_state.gnorm = (state_->gradientVec)->norm();
+    algo_state.snorm = 1.e10;
+    algo_state.value = obj.value(x);
+  }
+
   /** \brief Compute step.
   */
-  virtual void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj ) = 0;
+  virtual void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, 
+                        AlgorithmState<Real> &algo_state ) = 0;
 
   /** \brief Update step, if successful.
   */
-  virtual void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj ) = 0;
+  virtual void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, 
+                       AlgorithmState<Real> &algo_state ) = 0;
 
   /** \brief Print iterate status.
   */
-  virtual std::string print( bool printHeader = false ) const = 0;
+  virtual std::string print( AlgorithmState<Real> &algo_state, bool printHeader = false ) const = 0;
 
   // struct StepState (scalars, vectors) map?
 

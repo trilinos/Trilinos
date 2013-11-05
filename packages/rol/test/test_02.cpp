@@ -128,9 +128,13 @@ int main(int argc, char *argv[]) {
       (*x_rcp)[i] = 1.01;
     }
 
-    ROL::LineSearchStep<RealT> step;    
+    //ROL::LineSearchStep<RealT> step(20,0.5,1,1.e-4,false);                            // Gradient Descent    
+    //ROL::LineSearchStep<RealT> step(20,0.5,1,1.e-4,true,ROL::Secant_lBFGS,10);        // lBFGS    
+    ROL::LineSearchStep<RealT> step(20,0.5,1,1.e-4,true,ROL::Secant_lDFP,10);         // lDFP    
+    //ROL::LineSearchStep<RealT> step(20,0.5,1,1.e-4,true,ROL::Secant_BarzilaiBorwein); // Barzilai-Borwein    
+    ROL::StatusTest<RealT> status(1.e-6,1.e-12,100000);    
 
-    ROL::DefaultAlgorithm<RealT> algo(step);
+    ROL::DefaultAlgorithm<RealT> algo(step,status);
 
     //Teuchos::RCP<ROL::Algorithm<RealT> > algo;
     //ROL::DefaultAlgorithmFactory<RealT> algoFactory.getAlgo(algo, parlist);

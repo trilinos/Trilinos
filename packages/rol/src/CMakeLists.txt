@@ -72,6 +72,10 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/step)
 APPEND_SET(HEADERS
   step/ROL_Step.hpp
   step/ROL_LineSearchStep.hpp
+  step/ROL_Secant.hpp
+  step/ROL_lBFGS.hpp
+  step/ROL_lDFP.hpp
+  step/ROL_BarzilaiBorwein.hpp
   )
 
 #
@@ -81,6 +85,15 @@ APPEND_SET(HEADERS
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/algorithm)
 APPEND_SET(HEADERS
   algorithm/ROL_Algorithm.hpp
+  )
+
+#
+# status test headers
+#
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/status)
+APPEND_SET(HEADERS
+  status/ROL_StatusTest.hpp
   )
 
 
