@@ -119,8 +119,10 @@ void ThreadsExec::set_team_relations()
   m_team_base        = 0 ;
   m_team_shared      = 0 ;
   m_team_shared_end  = 0 ;
+  m_team_size        = 0 ;
   m_team_rank        = 0 ;
   m_team_fan_size    = 0 ;
+  m_league_size      = 0 ;
   m_league_rank      = 0 ;
   m_league_end       = 0 ;
 
@@ -134,7 +136,7 @@ void ThreadsExec::set_team_relations()
     const unsigned pool_rank_rev = m_pool_size - ( m_pool_rank + 1 );
     const unsigned team_rank_rev = pool_rank_rev % team_alloc ;
 
-    // May be using fewer threads per team than threads per core,
+    // May be using fewer threads per team than a multiple of threads per core,
     // some threads will idle.
 
     if ( team_rank_rev < team_size ) {

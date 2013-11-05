@@ -405,7 +405,7 @@ public:
       //  0) Inactive            : entry and exit state
       //  1) ReductionAvailable  : reduction value available, waiting for scan value
       //  2) ScanAvailable       : reduction value available, scan value available
-      //  3) Rendezvous          : broadcasting global iinter-team accumulation value
+      //  3) Rendezvous          : broadcasting global inter-team accumulation value
 
       // Make sure there is enough scratch space:
       typedef typename if_c< 2 * sizeof(ArgType) < REDUCE_TEAM_BASE , ArgType , void >::type type ;

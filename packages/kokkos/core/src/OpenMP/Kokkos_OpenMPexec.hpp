@@ -70,24 +70,27 @@ private:
 
   friend class Kokkos::OpenMP ;
 
-  void        * m_reduce ;    ///< Reduction memory
-  void        * m_shared ;    ///< Shared memory
-  int           m_shared_end ;
-  int           m_shared_iter ;
-  int volatile  m_state_team ;
-  int           m_fan_team_size ;
+  OpenMPexec * const * m_team_base ;
+
+  void        * m_alloc_reduce ;    ///< Reduction memory
+  void        * m_alloc_shared ;    ///< Shared memory
+  void        * m_team_shared ;     ///< Shared memory
+  int           m_alloc_shared_size ;
+  int const     m_pool_rank ;
+  int           m_team_shared_end ;
+  int           m_team_shared_iter ;
   int           m_team_rank ;
   int           m_team_size ;
-  int           m_init_league_rank ;
-  int           m_init_league_size ;
+  int           m_team_fan_size ;
+  int           m_league_rank ;
+  int           m_league_end ;
+  int           m_league_size ;
 
-  int           m_work_league_rank ;
-  int           m_work_league_end ;
-  int           m_work_league_size ;
+  int volatile  m_barrier_state ;
+  int volatile  m_scan_state ;
 
-  OpenMPexec  * m_fan_team[ MAX_FAN_COUNT ];
-
-  static OpenMPexec * m_thread[ MAX_THREAD_COUNT ];
+  static OpenMPexec * m_thread[ MAX_THREAD_COUNT ]; // Indexed by 'omp_get_thread_num()'
+  static OpenMPexec * m_pool[   MAX_THREAD_COUNT ]; // Indexed by 'm_pool_rank'
 
   OpenMPexec();
   OpenMPexec( const OpenMPexec & );
@@ -95,15 +98,13 @@ private:
 
 public:
 
-  void * reduce_team() const { return m_reduce ; }
-  void * reduce_base() const { return ((unsigned char *)m_reduce) + REDUCE_TEAM_BASE ; }
+  void * reduce_team() const { return m_alloc_reduce ; }
+  void * reduce_base() const { return ((unsigned char *)m_alloc_reduce) + REDUCE_TEAM_BASE ; }
 
   ~OpenMPexec();
 
-  OpenMPexec( const unsigned league_rank ,
-              const unsigned league_size ,
-              const unsigned team_rank ,
-              const unsigned team_size );
+  explicit
+  OpenMPexec( const unsigned pool_rank );
 
   static void finalize();
 
@@ -119,11 +120,10 @@ public:
   static void resize_shared_scratch( size_t );
 
   inline static
-  OpenMPexec * get_thread( const unsigned entry ) { return m_thread[ entry ] ; }
+  OpenMPexec * get_thread_omp() { return m_thread[ omp_get_thread_num() ]; }
 
-  static
-  OpenMPexec * find_thread( const int init_league_rank ,
-                            const int team_rank );
+  inline static
+  OpenMPexec * get_thread_rank_rev( const int rank_rev ) { return m_pool[ rank_rev ]; }
 
   //----------------------------------------------------------------------
   /** \brief  Compute a range of work for this thread's rank */
@@ -134,14 +134,14 @@ public:
   {
     typedef integral_constant< size_t , VECTOR_LENGTH - 1 > work_mask ;
 
-    const size_t thread_size = m_team_size * m_work_league_size ;
+    const size_t thread_size = omp_get_num_threads();
 
     // work per thread rounded up and aligned to vector length:
 
     const size_t work_per_thread =
       ( ( ( work_count + thread_size - 1 ) / thread_size ) + work_mask::value ) & ~(work_mask::value);
 
-    const size_t work_begin = std::min( work_count , work_per_thread * ( m_team_rank + m_team_size * m_work_league_rank ) );
+    const size_t work_begin = std::min( work_count , work_per_thread * m_pool_rank );
     const size_t work_end   = std::min( work_count , work_per_thread + work_begin );
 
     return std::pair< size_t , size_t >( work_begin , work_end );
@@ -153,128 +153,110 @@ public:
 
   void team_barrier()
     {
-      const bool not_root = m_team_rank + 1 < m_team_size ;
+     const int rank_rev = m_team_size - ( m_team_rank + 1 );
 
-      for ( int i = 0 ; i < m_fan_team_size ; ++i ) {
-        spinwait( m_fan_team[i]->m_state_team , OpenMPexec::Active );
+      for ( int i = 0 ; i < m_team_fan_size ; ++i ) {
+        Impl::spinwait( m_team_base[ rank_rev + (1<<i) ]->m_barrier_state , OpenMPexec::Active );
       }
-      if ( not_root ) {
-        m_state_team = Rendezvous ;
-        spinwait( m_state_team , OpenMPexec::Rendezvous );
+      if ( rank_rev ) {
+        m_barrier_state = Rendezvous ;
+        Impl::spinwait( m_barrier_state , OpenMPexec::Rendezvous );
       }
-      for ( int i = 0 ; i < m_fan_team_size ; ++i ) {
-        m_fan_team[i]->m_state_team = OpenMPexec::Active ;
+      for ( int i = 0 ; i < m_team_fan_size ; ++i ) {
+        m_team_base[ rank_rev + (1<<i) ]->m_barrier_state = OpenMPexec::Active ;
       }
     }
 
-  // Called within a parallel region
   template< class ArgType >
   inline
   ArgType team_scan( const ArgType & value , ArgType * const global_accum = 0 )
     {
-      // Sequence of m_state_team states:
+      // Sequence of m_scan_state states:
       //  0) Active              : entry and exit state
       //  1) ReductionAvailable  : reduction value available, waiting for scan value
       //  2) ScanAvailable       : reduction value available, scan value available
-      //  3) Rendezvous          : broadcasting global iinter-team accumulation value
+      //  3) Rendezvous          : broadcasting global inter-team accumulation value
 
       // Make sure there is enough scratch space:
       typedef typename if_c< 2 * sizeof(ArgType) < REDUCE_TEAM_BASE , ArgType , void >::type type ;
 
-      const bool not_root = m_team_rank + 1 < m_team_size ;
+      const int rank_rev = m_team_size - ( m_team_rank + 1 );
 
       type * const work_value = (type*) reduce_team();
 
-      // OpenMPexec::Active == m_state_team
+      // OpenMPexec::Active == m_scan_state
 
       work_value[0] = value ;
 
       // Fan-in reduction, wait for source thread to complete it's fan-in reduction.
-      for ( int i = 0 ; i < m_fan_team_size ; ++i ) {
-        OpenMPexec & th = *m_fan_team[i];
+      for ( int i = 0 ; i < m_team_fan_size ; ++i ) {
+        OpenMPexec & th = *m_team_base[ rank_rev + (1<<i) ];
 
         // Wait for source thread to exit Active state.
-        Impl::spinwait( th.m_state_team , OpenMPexec::Active );
+        Impl::spinwait( th.m_scan_state , OpenMPexec::Active );
         // Source thread is 'ReductionAvailable' or 'ScanAvailable'
         work_value[0] += ((volatile type*)th.reduce_team())[0];
       }
 
       work_value[1] = work_value[0] ;
 
-      if ( not_root ) {
+      if ( rank_rev ) {
 
-        m_state_team = OpenMPexec::ReductionAvailable ; // Reduction value is available.
+        m_scan_state = OpenMPexec::ReductionAvailable ; // Reduction value is available.
 
         // Wait for contributing threads' scan value to be available.
-        if ( m_fan_team[ m_fan_team_size ] ) {
-          OpenMPexec & th = *m_fan_team[ m_fan_team_size ] ;
+        if ( ( 1 << m_team_fan_size ) < ( m_team_rank + 1 ) ) {
+          OpenMPexec & th = *m_team_base[ rank_rev + ( 1 << m_team_fan_size ) ];
 
           // Wait: Active -> ReductionAvailable
-          Impl::spinwait( th.m_state_team , OpenMPexec::Active );
+          Impl::spinwait( th.m_scan_state , OpenMPexec::Active );
           // Wait: ReductionAvailable -> ScanAvailable:
-          Impl::spinwait( th.m_state_team , OpenMPexec::ReductionAvailable );
+          Impl::spinwait( th.m_scan_state , OpenMPexec::ReductionAvailable );
 
           work_value[1] += ((volatile type*)th.reduce_team())[1] ;
         }
 
-        m_state_team = OpenMPexec::ScanAvailable ; // Scan value is available.
+        m_scan_state = OpenMPexec::ScanAvailable ; // Scan value is available.
       }
       else {
          // Root thread add team's total to global inter-team accumulation
         work_value[0] = global_accum ? atomic_fetch_add( global_accum , work_value[0] ) : 0 ;
       }
 
-      for ( int i = 0 ; i < m_fan_team_size ; ++i ) {
-        OpenMPexec & th = *m_fan_team[i];
+      for ( int i = 0 ; i < m_team_fan_size ; ++i ) {
+        OpenMPexec & th = *m_team_base[ rank_rev + (1<<i) ];
         // Wait: ReductionAvailable -> ScanAvailable
-        Impl::spinwait( th.m_state_team , OpenMPexec::ReductionAvailable );
+        Impl::spinwait( th.m_scan_state , OpenMPexec::ReductionAvailable );
         // Wait: ScanAvailable -> Rendezvous
-        Impl::spinwait( th.m_state_team , OpenMPexec::ScanAvailable );
+        Impl::spinwait( th.m_scan_state , OpenMPexec::ScanAvailable );
       }
 
       // All fan-in threads are in the ScanAvailable state
-      if ( not_root ) {
-        m_state_team = OpenMPexec::Rendezvous ;
-        Impl::spinwait( m_state_team , OpenMPexec::Rendezvous );
+      if ( rank_rev ) {
+        m_scan_state = OpenMPexec::Rendezvous ;
+        Impl::spinwait( m_scan_state , OpenMPexec::Rendezvous );
       }
 
       // Broadcast global inter-team accumulation value
       volatile type & global_val = work_value[0] ;
-      for ( int i = 0 ; i < m_fan_team_size ; ++i ) {
-        OpenMPexec & th = *m_fan_team[i];
+      for ( int i = 0 ; i < m_team_fan_size ; ++i ) {
+        OpenMPexec & th = *m_team_base[ rank_rev + (1<<i) ];
         ((volatile type*)th.reduce_team())[0] = global_val ;
-        th.m_state_team = OpenMPexec::Active ;
+        th.m_scan_state = OpenMPexec::Active ;
       }
       // Exclusive scan, subtract contributed value
       return global_val + work_value[1] - value ;
     }
 
-
-  inline
-  void team_work_init( int work_league_size )
-    {
-      const int work_per_team = ( work_league_size + m_init_league_size - 1 ) / m_init_league_size ;
-      m_work_league_rank = std::min( work_league_size , work_per_team * m_init_league_rank );
-      m_work_league_end  = std::min( work_league_size , work_per_team + m_work_league_rank );
-      m_work_league_size = work_league_size ;
-    }
+  void team_work_init( size_t league_size , size_t team_size );
 
   inline
   bool team_work_avail()
-    {
-      m_shared_iter = 0 ;
-      const bool avail = m_work_league_rank < m_work_league_end ;
-      if ( ! avail ) {
-        m_work_league_rank = m_init_league_rank ;
-        m_work_league_end  = m_init_league_rank + 1 ;
-        m_work_league_size = m_init_league_size ;
-      }
-      return avail ;
-    }
+    { m_team_shared_iter = 0 ; return m_league_rank < m_league_end ; }
 
   inline
   void team_work_next()
-    { if ( ++m_work_league_rank < m_work_league_end ) team_barrier(); }
+    { if ( ++m_league_rank < m_league_end ) team_barrier(); }
 };
 
 } // namespace Impl
@@ -287,8 +269,8 @@ namespace Kokkos {
 
 inline OpenMP::OpenMP( Impl::OpenMPexec & e ) : m_exec(e) {}
 
-inline int OpenMP::league_rank() const { return m_exec.m_work_league_rank ; }
-inline int OpenMP::league_size() const { return m_exec.m_work_league_size ; }
+inline int OpenMP::league_rank() const { return m_exec.m_league_rank ; }
+inline int OpenMP::league_size() const { return m_exec.m_league_size ; }
 inline int OpenMP::team_rank() const { return m_exec.m_team_rank ; }
 inline int OpenMP::team_size() const { return m_exec.m_team_size ; }
 

@@ -183,8 +183,15 @@ public:
 
   static int is_initialized();
 
-  static unsigned league_max();
+  /** \brief  Maximum size of a single thread team.
+   *
+   *  If a parallel_{for,reduce,scan} operation requests a team_size that 
+   *  does not satisfy the condition: 0 == team_max() % team_size
+   *  then some threads will idle.
+   */
   static unsigned team_max();
+
+  static unsigned league_max();
 
   //@}
   /*------------------------------------------------------------------------*/
