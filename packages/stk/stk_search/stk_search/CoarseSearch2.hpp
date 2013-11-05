@@ -6,8 +6,8 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#ifndef stk_search_PeriodicBCSearch_hpp
-#define stk_search_PeriodicBCSearch_hpp
+#ifndef STK_SEARCH_COARSE_SEARCH_2_HPP
+#define STK_SEARCH_COARSE_SEARCH_2_HPP
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
@@ -164,13 +164,7 @@ create_global_spatial_index(SpatialIndex& index, Box const& local_bounding_box, 
   coordinate_t local_box[data_per_proc];
   impl::fill_array(local_bounding_box, local_box);
 
-#if 0
-  int size, rank;
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#else
   int size = stk::parallel_machine_size(comm);
-#endif
   std::vector<coordinate_t> recv(data_per_proc * size, 0);
 
   MPI_Allgather(local_box, data_per_proc, impl::get_mpi_type(coordinate_t()),
@@ -251,7 +245,7 @@ void create_parallel_domain(SpatialIndex& local_domain, stk::ParallelMachine com
 }
 
 template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
-void periodic_search(std::vector<std::pair<DomainBox, DomainIdent> > const& local_domain,
+void coarse_search2( std::vector<std::pair<DomainBox, DomainIdent> > const& local_domain,
                      std::vector<std::pair<RangeBox, RangeIdent> > const& local_range,
                      stk::ParallelMachine comm,
                      std::vector<std::pair<DomainIdent, RangeIdent> >& output)
@@ -331,9 +325,8 @@ void periodic_search(std::vector<std::pair<DomainBox, DomainIdent> > const& loca
       bg::add_point(center, range.max_corner());
       bg::divide_value(center, 2);
       std::vector<DomainValue> domain_intersections;
-      bgi::query(local_domain_tree, bgi::intersects(range) && bgi::nearest(center, 1), std::back_inserter(domain_intersections));
+      bgi::query(local_domain_tree, bgi::intersects(range), std::back_inserter(domain_intersections));
 
-      ThrowRequire(domain_intersections.size() <= 1u);
       if (!domain_intersections.empty()) {
         DomainIdent domain_id = domain_intersections[0].second;
         RangeIdent  range_id  = gather_range[r].second;
@@ -379,4 +372,4 @@ void periodic_search(std::vector<std::pair<DomainBox, DomainIdent> > const& loca
 } // namespace search
 } // namespace stk
 
-#endif // stk_search_PeriodicBCSearch_hpp
+#endif // STK_SEARCH_COARSE_SEARCH_2_HPP

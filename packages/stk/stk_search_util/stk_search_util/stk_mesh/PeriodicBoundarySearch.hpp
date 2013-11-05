@@ -18,7 +18,7 @@
 // #define USE_STK_COARSE_SEARCH
 
 #ifndef USE_STK_COARSE_SEARCH
-#include <stk_search/PeriodicBCSearch.hpp>
+#include <stk_search/CoarseSearch2.hpp>
 
 namespace stk { namespace search { namespace impl {
 
@@ -409,7 +409,7 @@ private:
     }
 
 
-    stk::search::periodic_search(local_domain, local_range, parallel, search_results);
+    stk::search::coarse_search2(local_domain, local_range, parallel, search_results);
 
     //// ... and end HERE.
 #else
