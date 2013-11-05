@@ -147,6 +147,7 @@ namespace Iovs {
     std::string paraview_script_filename;
     std::string paraview_json_parse;
     std::string sierra_input_deck_name;
+    std::string catalyst_output_directory;
     int enableLogging;
     int debugLevel;
     int underscoreVectors;
