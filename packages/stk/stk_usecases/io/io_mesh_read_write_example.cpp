@@ -51,15 +51,15 @@ namespace {
     // Create output mesh...  ("generated_mesh.out") ("exodus_mesh.out")
     std::string output_filename = working_directory + type + "_mesh.out";
 
-    // This outputs the "mesh" portion of the output results file.
-    // This consists of the coordinates, connectivity, nodesets and sidesets. 
-    // Basically all non-transient (time-dependent) data.
-    size_t result_file_index = mesh_data.create_output_mesh(output_filename);
+    // This call adds an output database for results data to mesh_data.
+    // No data is written at this time other than verifying that the
+    // file can be created on the disk.
+    size_t results_index = mesh_data.create_output_mesh(output_filename);
 
     // Create restart output ...  ("generated_mesh.restart") ("exodus_mesh.restart")
     std::string restart_filename = working_directory + type + "_mesh.restart";
 
-    size_t restartFileIndex = mesh_data.create_output_mesh(restart_filename);
+    size_t restart_index = mesh_data.create_output_mesh(restart_filename);
 
     // Iterate all fields and set them as restart fields...
     const stk::mesh::FieldVector &fields = mesh_data.meta_data().get_fields();
@@ -68,8 +68,8 @@ namespace {
       const Ioss::Field::RoleType* role = stk::io::get_field_role(*fields[i]);
        if ( role && *role == Ioss::Field::TRANSIENT )
        {
-         mesh_data.add_restart_field(restartFileIndex, *fields[i]); // for output
-         mesh_data.add_results_field(result_file_index, *fields[i]);
+         mesh_data.add_restart_field(restart_index, *fields[i]); // for output
+         mesh_data.add_results_field(results_index, *fields[i]);
        }
     }
 
@@ -85,8 +85,8 @@ namespace {
       const Ioss::Field &input_field = mesh_data.input_io_region()->get_fieldref(global_fields[i]);
 
       // Define the global fields that will be written on each timestep.
-      mesh_data.add_global(restartFileIndex, input_field.get_name(), input_field.raw_storage()->name(), input_field.get_type());
-      mesh_data.add_global(result_file_index, input_field.get_name(), input_field.raw_storage()->name(), input_field.get_type());
+      mesh_data.add_global(restart_index, input_field.get_name(), input_field.raw_storage()->name(), input_field.get_type());
+      mesh_data.add_global(results_index, input_field.get_name(), input_field.raw_storage()->name(), input_field.get_type());
     }
 
     // ========================================================================
@@ -98,7 +98,7 @@ namespace {
 
     if (timestep_count == 0 )
     {
-        mesh_data.write_output_mesh(result_file_index);
+        mesh_data.write_output_mesh(results_index);
     }
     else
     {
@@ -111,23 +111,23 @@ namespace {
         // outputting that data to the restart and results output.
 
         mesh_data.process_restart_input(step);
-        mesh_data.begin_output_step(time, restartFileIndex);
-        mesh_data.begin_output_step(time, result_file_index);
+        mesh_data.begin_output_step(time, restart_index);
+        mesh_data.begin_output_step(time, results_index);
 
-        mesh_data.process_output_request(restartFileIndex);
-        mesh_data.process_output_request(result_file_index);
+        mesh_data.process_output_request(restart_index);
+        mesh_data.process_output_request(results_index);
 
         // Transfer all global variables from the input mesh to the
         // restart and results databases
         for (size_t i=0; i < global_fields.size(); i++) {
 	  std::vector<double> field_values;
           mesh_data.get_global(global_fields[i], field_values);
-          mesh_data.write_global(restartFileIndex, global_fields[i], field_values);
-          mesh_data.write_global(result_file_index, global_fields[i], field_values);
+          mesh_data.write_global(restart_index, global_fields[i], field_values);
+          mesh_data.write_global(results_index, global_fields[i], field_values);
         }
 
-        mesh_data.end_output_step(restartFileIndex);
-        mesh_data.end_output_step(result_file_index);
+        mesh_data.end_output_step(restart_index);
+        mesh_data.end_output_step(results_index);
       }
     }
   }
