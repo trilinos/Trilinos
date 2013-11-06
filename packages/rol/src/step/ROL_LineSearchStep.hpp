@@ -38,30 +38,39 @@ private:
   Real alpha0_;
   Real c_;
 
+  std::string step_;
+
 public:
 
   virtual ~LineSearchStep() {}
 
   LineSearchStep(int maxit = 20, Real rho = 0.5, Real alpha0 = 1.0, Real c = 1.e-4, 
-                 bool useSecant = true, SecantType type = Secant_lBFGS, int L = 10) 
+                 bool useSecant = true, SecantType type = Secant_lBFGS, int L = 10, int BBtype = 1 ) 
     : useSecant_(useSecant), maxit_(maxit), rho_(rho), alpha0_(alpha0), c_(c) {
+     
     if ( useSecant_ ) {
       if ( type == Secant_lBFGS ) {
         secant_ = Teuchos::rcp( new lBFGS<Real>(L) );
+        step_   = "Limited-Memory BFGS";
       }
       else if ( type == Secant_lDFP ) {
         secant_ = Teuchos::rcp( new lDFP<Real>(L) );
+        step_   = "Limited-Memory DFP";
       }
       else if ( type == Secant_BarzilaiBorwein ) {
-        secant_ = Teuchos::rcp( new BarzilaiBorwein<Real> );
+        secant_ = Teuchos::rcp( new BarzilaiBorwein<Real>(BBtype) );
+        step_   = "Barzilai-Borwein";
+        //maxit_  = 0;
       } 
+    }
+    else {
+      step_ = "Gradient Descent";
     }
   }
 
   /** \brief Compute step.
   */
   void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, AlgorithmState<Real> &algo_state ) {
-    // obj.gradient(s, x);
     if ( useSecant_ ) {
       secant_->applyH(s,*(Step<Real>::state_->gradientVec),x,algo_state.iter);
       //secant_->test(s,x,algo_state.iter);
@@ -129,7 +138,7 @@ public:
   std::string print( AlgorithmState<Real> & algo_state, bool printHeader = false ) const  {
     std::stringstream hist;
     if ( algo_state.iter == 0 ) {
-      hist << "LineSearchStep"; 
+      hist << "\n" << step_ << " with Backtracking Linesearch\n"; 
       hist << "  ";
       hist << std::setw(15) << std::left << "iter";  
       hist << std::setw(15) << std::left << "value";

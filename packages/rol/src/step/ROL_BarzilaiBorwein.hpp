@@ -20,8 +20,12 @@ namespace ROL {
 
 template<class Real>
 class BarzilaiBorwein : public Secant<Real> {
+private:
+
+  int type_;
+
 public:
-  BarzilaiBorwein(void) : Secant<Real>(1) {}
+  BarzilaiBorwein(int type = 1) : Secant<Real>(1), type_(type) {}
 
   // Apply lBFGS Approximate Inverse Hessian
   void applyH( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x, const int iter ) {
@@ -30,8 +34,14 @@ public:
 
     Hv.set(v);
     if ( iter != 0 && state->current != -1 ) {
-      Real ss = state->iterDiff[state->current]->dot(*(state->iterDiff[state->current]));
-      Hv.scale(state->product[state->current]/ss);
+      if ( type_ == 1 ) {
+        Real yy = state->gradDiff[state->current]->dot(*(state->gradDiff[state->current]));
+        Hv.scale(state->product[state->current]/yy);
+      }
+      else if ( type_ == 2 ) {
+        Real ss = state->iterDiff[state->current]->dot(*(state->iterDiff[state->current]));
+        Hv.scale(ss/state->product[state->current]);
+      }
     }
   }
 
@@ -42,8 +52,14 @@ public:
 
     Bv.set(v);
     if ( iter != 0 && state->current != -1 ) {
-      Real ss = state->iterDiff[state->current]->dot(*(state->iterDiff[state->current]));
-      Bv.scale(ss/state->product[state->current]);
+      if ( type_ == 1 ) {
+        Real yy = state->gradDiff[state->current]->dot(*(state->gradDiff[state->current]));
+        Bv.scale(yy/state->product[state->current]);
+      }
+      else if ( type_ == 2 ) {
+        Real ss = state->iterDiff[state->current]->dot(*(state->iterDiff[state->current]));
+        Bv.scale(state->product[state->current]/ss);
+      }
     }
   }
 

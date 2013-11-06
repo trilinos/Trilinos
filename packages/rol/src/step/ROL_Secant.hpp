@@ -81,10 +81,10 @@ public:
     }
   }
 
-  // Apply Secant Approximate Hessian
+  // Apply Secant Approximate Inverse Hessian
   virtual void applyH( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x, const int iter ) = 0;
 
-  // Apply Initial Secant Approximate Hessian
+  // Apply Initial Secant Approximate Inverse Hessian
   virtual void applyH0( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x, const int iter ) {
     Hv.set(v);
     if (iter != 0 && this->state_->current != -1) {
@@ -93,7 +93,7 @@ public:
     }
   }
 
-  // Apply Secant Approximate Inverse Hessian
+  // Apply Secant Approximate Hessian
   virtual void applyB( Vector<Real> &Bv, const Vector<Real> &v, const Vector<Real> &x, const int iter ) = 0;
 
   // Apply Initial Secant Approximate Hessian 
