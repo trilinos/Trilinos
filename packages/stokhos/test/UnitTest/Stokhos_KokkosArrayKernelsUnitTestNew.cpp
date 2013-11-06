@@ -556,7 +556,6 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosKernels, LinearTensorAsymmetric_Threads ) {
 
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  setup.setup();
 
   // Initialize threads
   const size_t team_count =
@@ -574,6 +573,9 @@ int main( int argc, char* argv[] ) {
   Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
   Kokkos::Cuda::print_configuration( std::cout );
 #endif
+
+  // Setup (has to happen after initialization)
+  setup.setup();
 
   // Run tests
   int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
