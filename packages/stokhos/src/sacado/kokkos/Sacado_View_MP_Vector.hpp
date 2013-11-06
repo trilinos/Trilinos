@@ -1387,6 +1387,11 @@ public:
   KOKKOS_INLINE_FUNCTION
   typename traits::size_type capacity() const
   { return Impl::capacity( m_shape , m_stride ); }
+
+  // Static storage size
+  KOKKOS_INLINE_FUNCTION
+  typename traits::size_type static_storage_size() const
+  { return StokhosStorageStaticDimension; }
 };
 
 
@@ -1435,6 +1440,12 @@ public:
 
 template< class T , class Device >
 struct RebindStokhosStorageDevice< T * , Device >
+{
+  typedef typename RebindStokhosStorageDevice< T , Device >::type * type ;
+};
+
+template< class T , class Device >
+struct RebindStokhosStorageDevice< T [] , Device >
 {
   typedef typename RebindStokhosStorageDevice< T , Device >::type * type ;
 };

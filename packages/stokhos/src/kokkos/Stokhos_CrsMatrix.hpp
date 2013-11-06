@@ -47,6 +47,7 @@
 
 #include "Kokkos_View.hpp"
 #include "Kokkos_CrsArray.hpp"
+#include "Kokkos_Parallel.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_MatrixMarket.hpp"

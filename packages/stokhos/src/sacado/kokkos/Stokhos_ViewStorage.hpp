@@ -126,7 +126,7 @@ public:
         for ( ordinal_type i = 0 ; i < size_.value ; ++i ) { coeff_[i] = v ; }
       }
       else {
-        for ( ordinal_type i = 0 ; i < size_.value * stride_.value ; i += stride_.value ) { 
+        for ( ordinal_type i = 0 ; i < size_.value * stride_.value ; i += stride_.value ) {
           coeff_[i] = v ;
         }
       }
@@ -157,7 +157,8 @@ public:
 
     //! Resize function disabled.
     KOKKOS_INLINE_FUNCTION
-    void resize( const error_storage_type_is_not_resizeable & );
+    void resize( ordinal_type s ) {}
+    //void resize( const error_storage_type_is_not_resizeable & );
 
     //! Reset function disabled.
     KOKKOS_INLINE_FUNCTION
@@ -174,16 +175,16 @@ public:
     KOKKOS_INLINE_FUNCTION
     reference operator[] (const ordinal_type& i) const
     {
-      return coeff_[ stride_one ? i : i * size_.value ];
+      return coeff_[ stride_one ? i : i * stride_.value ];
     }
 
     template <int i>
     KOKKOS_INLINE_FUNCTION
-    reference getCoeff() { return coeff_[ stride_one ? i : i * size_.value ]; }
+    reference getCoeff() { return coeff_[ stride_one ? i : i * stride_.value ]; }
 
     template <int i>
     KOKKOS_INLINE_FUNCTION
-    const_reference getCoeff() const { return coeff_[ stride_one ? i : i * size_.value ]; }
+    const_reference getCoeff() const { return coeff_[ stride_one ? i : i * stride_.value ]; }
 
     //! Get coefficients
     KOKKOS_INLINE_FUNCTION
@@ -220,4 +221,3 @@ public:
 } /* namespace Stokhos */
 
 #endif /* #ifndef STOKHOS_VIEW_STORAGE_HPP */
-

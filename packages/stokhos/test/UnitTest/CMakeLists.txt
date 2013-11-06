@@ -342,6 +342,34 @@ IF(Stokhos_ENABLE_Sacado)
       STANDARD_PASS_OUTPUT
       )
 
+    IF (Kokkos_ENABLE_Pthread)
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        KokkosMPVectorKernelsUnitTest_Threads
+        SOURCES Stokhos_KokkosMPVectorKernelsUnitTest.hpp
+                Stokhos_KokkosMPVectorKernelsUnitTest_Threads.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        DEPLIBS stokhos kokkoscore
+        )
+    ENDIF()
+
+    IF (Kokkos_ENABLE_Cuda)
+      IF( TPL_ENABLE_MPI )
+        CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
+      ENDIF()
+      CUDA_COMPILE(CUDA_SOURCES Stokhos_KokkosMPVectorKernelsUnitTest_Cuda.cu)
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        KokkosMPVectorKernelsUnitTest_Cuda
+        SOURCES Stokhos_KokkosMPVectorKernelsUnitTest.hpp
+                ${CUDA_SOURCES}
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        DEPLIBS ${KKUT_DEPLIBS}
+        )
+    ENDIF()
+
   ENDIF()
 
 ENDIF()
