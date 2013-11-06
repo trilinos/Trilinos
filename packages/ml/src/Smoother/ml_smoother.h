@@ -95,6 +95,7 @@ struct ML_Sm_BGS_Data_Struct
    int    blocksize;
    int    *blocklengths;
    int    *blockmap;
+   int    *blockOffset;
    int    Nblocks;
   int    optimized;
    double **trid_dl;
@@ -328,7 +329,7 @@ extern  int ML_Smoother_Create_ILUT_Data(ML_Sm_ILUT_Data **data);
 extern void ML_Smoother_Destroy_ILUT_Data(void *data);
 extern  int ML_Smoother_Gen_BGSFacts(ML_Sm_BGS_Data **, ML_Operator *,int); 
 extern  int ML_Smoother_Gen_VBGSFacts(ML_Sm_BGS_Data**,ML_Operator*,int,int*); 
-extern  int ML_Smoother_Gen_LineSmootherFacts(ML_Sm_BGS_Data**, ML_Operator*, int, int*);
+extern  int ML_Smoother_Gen_LineSmootherFacts(ML_Sm_BGS_Data**, ML_Operator*, int, int*, int*);
 extern void ML_Smoother_Destroy_Schwarz_Data(void *data);
 extern void ML_Smoother_Clean_ParaSails(void *data);
 extern struct MLSthing *ML_Smoother_Create_MLS(void);

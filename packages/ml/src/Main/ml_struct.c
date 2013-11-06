@@ -1501,7 +1501,7 @@ int ML_Gen_Smoother_VBlockJacobi( ML *ml , int nl, int pre_or_post,
 /* ------------------------------------------------------------------------- */
 
 int ML_Gen_Smoother_LineSmoother( ML *ml , int nl, int pre_or_post,
-       int ntimes, double omega, int nBlocks, int *blockIndices,
+       int ntimes, double omega, int nBlocks, int *blockIndices, int *blockOffset,
        int  (*fun)(ML_Smoother *, int, double *, int, double *))
 {
    double         myomega;
@@ -1533,7 +1533,7 @@ int ML_Gen_Smoother_LineSmoother( ML *ml , int nl, int pre_or_post,
 
    ML_Smoother_Create_BGS_Data(&data);
 
-   ML_Smoother_Gen_LineSmootherFacts(&data, &(ml->Amat[nl]), nBlocks, blockIndices);
+   ML_Smoother_Gen_LineSmootherFacts(&data, &(ml->Amat[nl]), nBlocks, blockIndices, blockOffset);
 
    if (pre_or_post == ML_PRESMOOTHER) {
       sprintf(str,"%s_pre%d",prestr,nl);

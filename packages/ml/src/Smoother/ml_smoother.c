@@ -3408,6 +3408,7 @@ int ML_Smoother_Create_BGS_Data(ML_Sm_BGS_Data **data)
    ml_data->blocksize = -1;
    ml_data->blocklengths = NULL;
    ml_data->blockmap = NULL;
+   ml_data->blockOffset = NULL;
    ml_data->optimized = 0;
    return 0;
 }
@@ -3457,6 +3458,7 @@ void ML_Smoother_Destroy_BGS_Data(void *data)
    if (ml_data->blockmap != NULL) {
      ML_free(ml_data->blockmap);
    }
+   if (ml_data->blockOffset != NULL) ML_free(ml_data->blockOffset);
 
    ML_memory_free((void**) &ml_data);
 }
@@ -4444,11 +4446,16 @@ int ML_Smoother_Gen_VBGSFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
 /* code is more general (and does not cause too much inefficiency) should we */
 /* some day want to lift that restriction. By the way, it is assumed that    */
 /* the equations are ordered so that ascending local ids within a block      */
-/* correspond to a tridiagonal matrix.                                       */
+/* correspond to a tridiagonal matrix OR THAT an offset is provide (called   */
+/* ExternalBlkOffset) indicating where within the tridiagonal each equation  */
+/* is located.                                                               */
+/* Note: Not providing this offset is allowed primarily for the case of      */
+/* serial computations where equations are ordered in somme type of          */
+/* lexicographic fashion.                                                    */
 /* ************************************************************************* */
 
 int ML_Smoother_Gen_LineSmootherFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
-                              int Nblocks, int *blockIndices)
+                              int Nblocks, int *blockIndices, int *ExternalBlkOffset)
 {
    int            i, j, *cols, allocated_space, length, Nrows;
    int            row_in_block, col_in_block, info, col;
@@ -4473,6 +4480,12 @@ int ML_Smoother_Gen_LineSmootherFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
    if (dataptr->blockmap == NULL) 
       pr_error("Error(ML_Smoother_Gen_LineSmootherFacts): out of space\n");
    for (i = 0; i < Nrows; i++) dataptr->blockmap[i] = blockIndices[i];
+   if (ExternalBlkOffset != NULL) {
+      dataptr->blockOffset = (int *) ML_allocate( (Nrows+1) * sizeof(int));
+      if (dataptr->blockOffset == NULL) 
+         pr_error("Error(ML_Smoother_Gen_LineSmootherFacts): out of space\n");
+      for (i = 0; i < Nrows; i++) dataptr->blockOffset[i] = ExternalBlkOffset[i];
+   }
 
    dataptr->blocklengths = (int*) ML_allocate( (Nblocks+1) * sizeof(int));
    if (dataptr->blocklengths == NULL) 
@@ -4526,17 +4539,22 @@ int ML_Smoother_Gen_LineSmootherFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
    /* load the block matrices                                     */
    /* ----------------------------------------------------------- */
 
-   block_offset= (int    *) ML_allocate(Nrows*sizeof(int));
+   if (ExternalBlkOffset == NULL)
+      block_offset= (int    *) ML_allocate(Nrows*sizeof(int));
+   else block_offset= ExternalBlkOffset;
+
    cols        = (int    *) ML_allocate(allocated_space*sizeof(int    ));
    vals        = (double *) ML_allocate(allocated_space*sizeof(double ));
    if (vals == NULL) 
       pr_error("Error(ML_Smoother_Gen_LineSmootherFacts): out of space\n");
 
-   for ( i = 0; i < Nblocks; i++) block_sizes[i] = 0; 
-   for (i = 0; i < Nrows; i++) {
-      block_num       = blockIndices[i];
-      if ( blockIndices[i] >= 0 && blockIndices[i] < Nblocks )
-         block_offset[i] = block_sizes[block_num]++;
+   if (ExternalBlkOffset == NULL) {
+      for ( i = 0; i < Nblocks; i++) block_sizes[i] = 0; 
+      for (i = 0; i < Nrows; i++) {
+         block_num       = blockIndices[i];
+         if ( blockIndices[i] >= 0 && blockIndices[i] < Nblocks )
+            block_offset[i] = block_sizes[block_num]++;
+      }
    }
 
    for (i = 0; i < Nrows; i++) {
@@ -4552,8 +4570,8 @@ int ML_Smoother_Gen_LineSmootherFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
 		 if (vals[j] != 0.) Nnz++;
 		 col_in_block = block_offset[col];
                  if (col_in_block   == row_in_block) trid_d[block_num][row_in_block]   = vals[j];
-                 if (col_in_block+1 == row_in_block) trid_du[block_num][col_in_block]  = vals[j]; 
-                 if (col_in_block-1 == row_in_block) trid_dl[block_num][col_in_block-1]= vals[j]; 
+                 if (col_in_block+1 == row_in_block) trid_du[block_num][col_in_block]  = vals[j];
+                 if (col_in_block-1 == row_in_block) trid_dl[block_num][col_in_block-1]= vals[j];
                }
             }
          }
@@ -4584,7 +4602,7 @@ int ML_Smoother_Gen_LineSmootherFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
 
    ML_free(cols);
    ML_free(vals);
-   ML_free(block_offset);
+   if (ExternalBlkOffset == NULL) ML_free(block_offset);
 	
    return 0;
 }
@@ -8312,7 +8330,7 @@ void ML_Smoother_DestroySubdomainOverlap(void *data)
 int ML_Smoother_LineJacobi(ML_Smoother *sm, int inlen, double x[], int outlen, 
                              double rhs[])
 {
-   int            i, k, iter, one=1, *BlkPtr, *block_indices;
+   int            i, k, iter, one=1, *BlkPtr, *block_indices, *blkOffset;
    int            Nrows, NBlks;
    int            *RowsInBlk;
    double         omega;
@@ -8334,6 +8352,7 @@ int ML_Smoother_LineJacobi(ML_Smoother *sm, int inlen, double x[], int outlen,
    dataptr      = (ML_Sm_BGS_Data *)smooth_ptr->smoother->data;
    NBlks        = dataptr->Nblocks;
    block_indices= dataptr->blockmap;
+   blkOffset    = dataptr->blockOffset;
    trid_dl      = dataptr->trid_dl;
    trid_d       = dataptr->trid_d;
    trid_du      = dataptr->trid_du;
@@ -8346,16 +8365,19 @@ int ML_Smoother_LineJacobi(ML_Smoother *sm, int inlen, double x[], int outlen,
    }
    Bsize = inlen/NBlks;
 
-   BlkPtr    = (int    *) ML_allocate((NBlks+1)*sizeof(int) );
+   if (blkOffset == NULL) BlkPtr    = (int    *) ML_allocate((NBlks+1)*sizeof(int) );
    RowsInBlk = (int    *) ML_allocate((Nrows+1)*sizeof(int) );
    dtemp     = (double *) ML_allocate((Bsize+1)*sizeof(double));
    res       = (double *) ML_allocate((inlen+1)*sizeof(double));
    if (res == NULL) 
       pr_error("Error(ML_LineJacobi): Not enough space\n");
 
-   for (i = 0; i < NBlks; i++) BlkPtr[i] = i*Bsize;
-   for (i = 0; i < Nrows; i++) RowsInBlk[BlkPtr[block_indices[i]]++]= i;
-   ML_free( BlkPtr );
+   if (blkOffset == NULL) {
+      for (i = 0; i < NBlks; i++) BlkPtr[i] = i*Bsize;
+      for (i = 0; i < Nrows; i++) RowsInBlk[BlkPtr[block_indices[i]]++]= i;
+      ML_free( BlkPtr );
+   }
+   else for (i = 0; i < Nrows; i++) RowsInBlk[Bsize*block_indices[i] + blkOffset[i]] = i;
 
    strcpy(N,"N");
    for (iter = 0; iter < smooth_ptr->ntimes; iter++) {
@@ -8381,7 +8403,7 @@ int ML_Smoother_LineJacobi(ML_Smoother *sm, int inlen, double x[], int outlen,
    ML_free(RowsInBlk);
    ML_free(res);
    ML_free(dtemp);
-	 
+
    return 0;
 }
 /* ************************************************************************* */
@@ -8407,7 +8429,7 @@ int ML_Smoother_LineJacobi(ML_Smoother *sm, int inlen, double x[], int outlen,
 int ML_Smoother_LineGS(ML_Smoother *sm, int inlen, double x[], 
                           int outlen, double rhs[])
 {
-   int            i, j, k, iter, one=1, *BlkPtr, *block_indices;
+   int            i, j, k, iter, one=1, *BlkPtr, *block_indices, *blkOffset;
    int            Nrows, NBlks, row;
    int            *RowsInBlk;
    ML_CommInfoOP  *getrow_comm;
@@ -8427,6 +8449,7 @@ int ML_Smoother_LineGS(ML_Smoother *sm, int inlen, double x[],
    dataptr      = (ML_Sm_BGS_Data *)smooth_ptr->smoother->data;
    NBlks        = dataptr->Nblocks;
    block_indices= dataptr->blockmap;
+   blkOffset    = dataptr->blockOffset;
    trid_dl      = dataptr->trid_dl;
    trid_d       = dataptr->trid_d;
    trid_du      = dataptr->trid_du;
@@ -8452,7 +8475,7 @@ int ML_Smoother_LineGS(ML_Smoother *sm, int inlen, double x[],
       x_ext = (double *) ML_allocate((inlen+getrow_comm->total_rcv_length+1)*
                                  sizeof(double));
    }
-   BlkPtr    = (int    *) ML_allocate((NBlks+1)*sizeof(int) );
+   if (blkOffset == NULL) BlkPtr    = (int    *) ML_allocate((NBlks+1)*sizeof(int) );
    res       = (double *) ML_allocate((Bsize+1)*sizeof(double) );
    RowsInBlk = (int    *) ML_allocate((Nrows+1)*sizeof(int) );
    if (RowsInBlk == NULL)
@@ -8461,9 +8484,12 @@ int ML_Smoother_LineGS(ML_Smoother *sm, int inlen, double x[],
    if (getrow_comm != NULL) for (i = 0; i < inlen; i++) x_ext[i] = x[i];
    else x_ext = x;
 
-   for (i = 0; i < NBlks; i++) BlkPtr[i] = i*Bsize;
-   for (i = 0; i < Nrows; i++) RowsInBlk[BlkPtr[block_indices[i]]++]= i;
-   ML_free( BlkPtr );
+   if (blkOffset == NULL) {
+      for (i = 0; i < NBlks; i++) BlkPtr[i] = i*Bsize;
+      for (i = 0; i < Nrows; i++) RowsInBlk[BlkPtr[block_indices[i]]++]= i;
+      ML_free( BlkPtr );
+   }
+   else for (i = 0; i < Nrows; i++) RowsInBlk[Bsize*block_indices[i] + blkOffset[i]] = i;
 
    strcpy(N,"N");
    for (iter = 0; iter < smooth_ptr->ntimes; iter++) {

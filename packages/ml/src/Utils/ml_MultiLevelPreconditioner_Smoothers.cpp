@@ -490,7 +490,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
           std::cerr << ErrorMsg_ << "must supply 'line direction nodes' with " << MySmoother << "\n";
           exit(EXIT_FAILURE);
        }
-       double *xvals= NULL, *yvals = NULL;
+       double *xvals= NULL, *yvals = NULL, *zvals = NULL;
        ML_Aggregate_Viz_Stats *grid_info = NULL;
 
 
@@ -499,8 +499,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
           grid_info = (ML_Aggregate_Viz_Stats *) ml_->Grid[currentLevel].Grid;
           if (grid_info != NULL) xvals = grid_info->x;
           if (grid_info != NULL) yvals = grid_info->y;
+          if (grid_info != NULL) zvals = grid_info->z;
 
-          if ( (xvals == NULL) || (yvals == NULL)) {
+          if ( (xvals == NULL) || (yvals == NULL) || (zvals == NULL)) {
              std::cerr << ErrorMsg_ << "line smoother: must supply either coordinates or orientation should be either 'horizontal' or 'vertical' " << MeshNumbering << "\n";
              exit(EXIT_FAILURE);
           }
@@ -512,6 +513,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
           exit(1);
        }
        int nBlocks = nnn/(NumVerticalNodes);
+       int *blockOffset  = NULL;
        int *blockIndices = (int *) ML_allocate(sizeof(int)*(nnn+1));
 
        for (int i = 0; i < nnn;  i++) blockIndices[i] = -1; 
@@ -549,21 +551,25 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
        }
        else {
 
-          int    NumCoords, NumBlocks, index, next;
+          blockOffset = (int *) ML_allocate(sizeof(int)*(nnn+1));
+          for (int i = 0; i < nnn;  i++) blockOffset[i] = 0; 
+
+          int    NumCoords, NumBlocks, index, next, subindex, subnext;
           double xfirst, yfirst;
 
           NumCoords = nnn/NumPDEEqns_;
 
           /* sort coordinates so that we can order things according to lines */
 
-          double *xtemp, *ytemp;
+          double *xtemp, *ytemp, *ztemp;
           int    *OrigLoc;
 
           OrigLoc = (int    *) ML_allocate(sizeof(int   )*(NumCoords+1));
           xtemp   = (double *) ML_allocate(sizeof(double)*(NumCoords+1));
           ytemp   = (double *) ML_allocate(sizeof(double)*(NumCoords+1));
+          ztemp   = (double *) ML_allocate(sizeof(double)*(NumCoords+1));
 
-          if (ytemp == NULL) { 
+          if (ztemp == NULL) { 
              printf("Not enough memory for line smoothers\n");
              exit(EXIT_FAILURE);
           }
@@ -581,6 +587,15 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
              while ( (next != NumCoords) && (xtemp[next] == xfirst))
              next++;
              ML_az_dsort2(&(ytemp[index]),next-index,&(OrigLoc[index]));
+             for (int i = index; i < next; i++) ztemp[i]= zvals[OrigLoc[i]];
+             /* One final sort so that the ztemps are in order */
+             subindex = index; 
+             while (subindex != next) {
+                yfirst = ytemp[subindex]; subnext = subindex+1;
+                while ( (subnext != next) && (ytemp[subnext] == yfirst)) subnext++;
+                ML_az_dsort2(&(ztemp[subindex]),subnext-subindex,&(OrigLoc[subindex]));
+                subindex = subnext;
+             }
              index = next;
           }
 
@@ -597,17 +612,21 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
                     (ytemp[next] == yfirst))
                next++;
             if (next-index != NumVerticalNodes) {
-               printf("Error code only works for constant block size now!!!\n");
+               printf("Error code only works for constant block size now!!! A size of %d found instead of %d\n",next-index,NumVerticalNodes);
                exit(EXIT_FAILURE);
             }
+            int count;
             for (int i = 0; i < NumPDEEqns_; i++) {
+               count = 0;
                for (int j= index; j < next; j++) {
                   blockIndices[NumPDEEqns_*OrigLoc[j]+i] = NumBlocks;
+                  blockOffset[NumPDEEqns_*OrigLoc[j]+i] = count++;
                }
                NumBlocks++;
             }
             index = next;
          }
+         ML_free(ztemp);
          ML_free(ytemp);
          ML_free(xtemp);
          ML_free(OrigLoc);
@@ -626,14 +645,15 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
 
        if (MySmoother == "line Jacobi")
            ML_Gen_Smoother_LineSmoother(ml_ , currentLevel, pre_or_post,
-                   Mynum_smoother_steps, Myomega, nBlocks, blockIndices,
+                   Mynum_smoother_steps, Myomega, nBlocks, blockIndices, blockOffset,
                    ML_Smoother_LineJacobi);
        else
            ML_Gen_Smoother_LineSmoother(ml_ , currentLevel, pre_or_post,
-                   Mynum_smoother_steps, Myomega, nBlocks, blockIndices,
+                   Mynum_smoother_steps, Myomega, nBlocks, blockIndices, blockOffset,
                    ML_Smoother_LineGS);
 
        ML_free(blockIndices);
+       if (blockOffset != NULL) ML_free(blockOffset);
     } else if( ( MySmoother == "MLS" ) || ( MySmoother == "Chebyshev" )
                || (MySmoother == "Block Chebyshev") ) {
 

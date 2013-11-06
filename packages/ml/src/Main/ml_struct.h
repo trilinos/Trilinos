@@ -297,7 +297,7 @@ extern int ML_Gen_Smoother_VBlockJacobi(ML*,int nl,int pre_post, int ntimes,
 extern int ML_Gen_Smoother_VBlockSymGaussSeidel(ML*,int nl,int pre_post,
                      int ntimes, double omega, int Nblocks, int *blockList);
 extern int ML_Gen_Smoother_LineSmoother( ML *ml , int nl, int pre_or_post,
-       int ntimes, double omega, int nBlocks, int *blockIndices,
+       int ntimes, double omega, int nBlocks, int *blockIndices, int *blockOffset,
        int  (*fun)(ML_Smoother *, int, double *, int, double *));
 extern int ML_Gen_Smoother_VBlockSymGaussSeidelSequential(ML*,int nl, int,
                      int ntimes,double omega,int Nblocks,int *blockList);
