@@ -6,6 +6,7 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <iostream>
 #include <cstdio>
 #include <cstring>
 #include <stdexcept>
