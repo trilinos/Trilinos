@@ -72,17 +72,9 @@
 #include "MueLu_Exceptions.hpp"
 
 
-typedef double Scalar;
-typedef int    LocalOrdinal;
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-//typedef long long int    GlobalOrdinal;
-typedef int    GlobalOrdinal;
-#else
-typedef int GlobalOrdinal;
-#  ifdef __GNUC__
-#    warning Teuchos support for long long not enabled.
-#  endif
-#endif
+typedef double  Scalar;
+typedef int     LocalOrdinal;
+typedef int     GlobalOrdinal;
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 
