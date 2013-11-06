@@ -1962,18 +1962,28 @@ namespace stk {
         internal_write_global(m_output_region, globalVarName, globalVarData);
     }
 
-    void OutputFile::setup_output_file(const std::string &filename, MPI_Comm communicator, Ioss::PropertyManager &property_manager)
+    const std::string getDefaultMeshName()
     {
-      std::string out_filename = filename;
-      if (filename.empty()) {
-        out_filename = "default_output_mesh";
-      } else {
+        return std::string("default_output_mesh");
+    }
+
+    const std::string tokenizeFilenameIfFromGeneratedMesh(const std::string& out_filename)
+    {
         // These filenames may be coming from the generated options which
         // may have forms similar to: "2x2x1|size:.05|height:-0.1,1"
         // Strip the name at the first "+:|," character:
         std::vector<std::string> tokens;
         stk::util::tokenize(out_filename, "+|:,", tokens);
-        out_filename = tokens[0];
+        return tokens[0];
+    }
+
+    void OutputFile::setup_output_file(const std::string &filename, MPI_Comm communicator, Ioss::PropertyManager &property_manager)
+    {
+      std::string out_filename;
+      if (filename.empty()) {
+        out_filename = getDefaultMeshName();
+      } else {
+        out_filename = tokenizeFilenameIfFromGeneratedMesh(filename);
       }
 
       Ioss::DatabaseIO *dbo = Ioss::IOFactory::create("exodusII", out_filename,

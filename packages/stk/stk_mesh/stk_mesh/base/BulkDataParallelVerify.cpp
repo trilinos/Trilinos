@@ -32,10 +32,10 @@ namespace mesh {
 
 namespace {
 
-#define DEBUG_PRINT_COMM_LIST 0
-#define DEBUG_PRINT_COMM_LIST_UNPACK 0
+//#define DEBUG_PRINT_COMM_LIST
+//#define DEBUG_PRINT_COMM_LIST_UNPACK
 
-#if DEBUG_PRINT_COMM_LIST
+#ifdef DEBUG_PRINT_COMM_LIST
 
 // Very, very handy for debugging parallel resolution...
 static int s_step = 0;
@@ -464,7 +464,7 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
   const EntityCommListInfoVector & entity_comm = mesh.comm_list();
   const EntityRank      end_rank = meta.entity_rank_count();
 
-#if DEBUG_PRINT_COMM_LIST && DEBUG_PRINT_COMM_LIST_UNPACK
+#if (defined(DEBUG_PRINT_COMM_LIST)  && defined(DEBUG_PRINT_COMM_LIST_UNPACK))
   par_verify_print_comm_list(mesh, true, "unpack_not_owned_verify");
 #endif
 

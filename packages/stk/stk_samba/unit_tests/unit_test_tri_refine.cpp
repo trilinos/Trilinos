@@ -14,9 +14,9 @@
 
 typedef uint64_t MemorySizeType;
 
-#define DO_MEMORY_ACCOUNTING 0
+// #define DO_MEMORY_ACCOUNTING
 
-#if DO_MEMORY_ACCOUNTING
+#ifdef DO_MEMORY_ACCOUNTING
 struct MemoryInfo
 {
   MemorySizeType malloc_used;

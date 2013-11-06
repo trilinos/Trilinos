@@ -254,10 +254,10 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_100_1M)
 #endif
 }
 
-#define MAXP	4000
-#define SUBP	200
-#define NPASS	25
-#define NLOOP	12
+const int MAXP = 4000;
+const int SUBP = 200;
+const int NPASS = 25;
+const int NLOOP = 12;
 
 int lrand()
 {

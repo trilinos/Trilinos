@@ -21,7 +21,7 @@ using namespace std;
 using namespace stk;
 using namespace stk::rebalance;
 
-#define STK_GEOMDECOMP_DEBUG 0
+// #define STK_GEOMDECOMP_DEBUG
 
 namespace {
 
@@ -150,7 +150,7 @@ void fill_default_values( Parameters & values )
 
 
 
-#if STK_GEOMDECOMP_DEBUG>=2
+#ifdef STK_GEOMDECOMP_DEBUG
 void debug_print_decomp_export(Zoltan   *zoltan,
                                Zoltan *zoltan_id )
 {
@@ -633,7 +633,7 @@ void Zoltan::init( const vector< pair<std::string,std::string> >
   if ( ZOLTAN_OK != register_callbacks() )
     throw runtime_error ("zoltan->Register_Callbacks error. ");
 
-#if STK_GEOMDECOMP_DEBUG>=2
+#ifdef STK_GEOMDECOMP_DEBUG
   {
     debug_print_decomp_export( zoltan, m_zoltan_id_ );
   }

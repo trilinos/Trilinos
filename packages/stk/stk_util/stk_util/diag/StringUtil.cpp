@@ -21,9 +21,6 @@
 
 #include <stk_util/diag/StringUtil.hpp>
 
-// Set for unit testing
-
-#define SIERRA_STRING_UNIT_TEST 0
 
 //----------------------------------------------------------------------
 

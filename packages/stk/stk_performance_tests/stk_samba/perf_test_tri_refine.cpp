@@ -34,7 +34,7 @@ namespace {
   //static const uint32_t NZ = 20;
 #endif
 
-#define DO_MEMORY_ACCOUNTING 1
+#define DO_MEMORY_ACCOUNTING
 
 typedef size_t MemorySizeType;
 

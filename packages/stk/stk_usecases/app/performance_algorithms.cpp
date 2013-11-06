@@ -22,14 +22,14 @@
 
 #include <app/performance_algorithms.hpp>
 
-#define USE_HARDWIRED_NUMBER_NODES 1
+#define USE_HARDWIRED_NUMBER_NODES
 
 namespace stk {
 namespace app {
 
 //----------------------------------------------------------------------
 
-#if USE_HARDWIRED_NUMBER_NODES
+#ifdef USE_HARDWIRED_NUMBER_NODES
 
 void element_mean_value_8x3( const unsigned num_elems ,
                              const double * const * node_values ,
@@ -358,7 +358,7 @@ void ElementMeanValue::apply( const stk::mesh::BulkData &mesh,
 
     double * const elem_data = mesh.field_data( elem_field , *ibegin );
 
-#if USE_HARDWIRED_NUMBER_NODES
+#ifdef USE_HARDWIRED_NUMBER_NODES
     switch( nodes_per_elem ) {
     case 8 :
       element_mean_value_8x3( number_elem, node_ptr, elem_data );
@@ -393,7 +393,7 @@ void ElementMeanValue_Gather::apply( const stk::mesh::BulkData &mesh,
 
     double * const elem_data = mesh.field_data( elem_field , *ibegin );
 
-#if USE_HARDWIRED_NUMBER_NODES
+#ifdef USE_HARDWIRED_NUMBER_NODES
     switch( nodes_per_elem ) {
     case 8 :
       for ( unsigned i = 0 ; i < number_elem ; ) {
