@@ -144,6 +144,8 @@ bool invalid_box(CoordType *raw_box)
 {
   bool retval = false;
   for (int i = 0; i < Dimension; ++i)  {
+    retval |= isnan(raw_box[i]);
+    retval |= isnan(raw_box[i + Dimension]);
     retval |= ((raw_box[i + Dimension] - raw_box[i]) < 0);
   }
   return retval;

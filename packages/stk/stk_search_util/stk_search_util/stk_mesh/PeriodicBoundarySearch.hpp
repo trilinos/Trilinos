@@ -169,7 +169,7 @@ public:
     return result;
   }
 
-  void find_periodic_nodes(stk::ParallelMachine parallel)
+  void find_periodic_nodes(stk::ParallelMachine parallel, bool include_non_locally_owned = false)
   {
     m_search_results.clear();
     m_search_results_index.clear();
@@ -191,7 +191,8 @@ public:
 
     for (size_t i = 0; i < m_periodic_pairs.size(); ++i)
     {
-      find_periodic_nodes_for_given_pair(m_periodic_pairs[i].first, m_periodic_pairs[i].second, parallel, m_transforms[i]);
+      find_periodic_nodes_for_given_pair(m_periodic_pairs[i].first, m_periodic_pairs[i].second, parallel,
+                                         m_transforms[i], include_non_locally_owned);
     }
   }
 
@@ -348,16 +349,17 @@ private:
   }
 
   void find_periodic_nodes_for_given_pair(stk::mesh::Selector side1,
-      stk::mesh::Selector side2,
-      stk::ParallelMachine parallel,
-      TransformHelper & transform)
+                                          stk::mesh::Selector side2,
+                                          stk::ParallelMachine parallel,
+                                          TransformHelper & transform,
+                                          bool include_non_locally_owned)
   {
     SearchPairVector search_results;
     SphAABBVector side_1_vector, side_2_vector;
 
-    populate_search_vector(side1, side_1_vector);
+    populate_search_vector(side1, side_1_vector, include_non_locally_owned);
 
-    populate_search_vector(side2, side_2_vector);
+    populate_search_vector(side2, side_2_vector, include_non_locally_owned);
 
     switch (transform.m_transform_type)
     {
@@ -481,6 +483,7 @@ private:
 
   void populate_search_vector(stk::mesh::Selector side_selector
                               , SphAABBVector & aabb_vector
+                              , bool include_non_locally_owned
                              )
   {
     const double radius = 1e-10;
@@ -488,7 +491,11 @@ private:
 
     stk::mesh::BucketVector buckets;
 
-    stk::mesh::get_buckets( side_selector
+    stk::mesh::Selector locally_owned_side_selector =
+        include_non_locally_owned ? side_selector
+                                  : side_selector & m_bulk_data.mesh_meta_data().locally_owned_part();
+
+    stk::mesh::get_buckets( locally_owned_side_selector
                             ,m_bulk_data.buckets(stk::topology::NODE_RANK)
                             ,buckets
                             );

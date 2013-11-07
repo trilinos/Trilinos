@@ -254,7 +254,7 @@ STKUNIT_UNIT_TEST(CoarseSearch, PeriodicBC)
 
   pbc_local_search.add_linear_periodic_pair(side_0, side_3 );
 
-  pbc_local_search.find_periodic_nodes(MPI_COMM_SELF);
+  pbc_local_search.find_periodic_nodes(MPI_COMM_SELF, true);
 
   check_gold(pbc_local_search.get_pairs());
   {
@@ -379,7 +379,7 @@ STKUNIT_UNIT_TEST(CoarseSearch, TwoWayMultiPeriodicBC)
   PeriodicSearch pbc_local_search(bulk_data, CoordinateFunctor(bulk_data, coords_field));
   pbc_local_search.add_linear_periodic_pair(side_0, side_2) ;
   pbc_local_search.add_linear_periodic_pair(side_1, side_3);
-  pbc_local_search.find_periodic_nodes(MPI_COMM_SELF);
+  pbc_local_search.find_periodic_nodes(MPI_COMM_SELF, true);
 
   check_gold_two_way_multiperiodic(pbc_local_search.get_pairs());
 
@@ -504,10 +504,10 @@ STKUNIT_UNIT_TEST(CoarseSearch, ThreeWayMultiPeriodicBC)
   pbc_local_search.add_linear_periodic_pair(side_0, side_2) ;
   pbc_local_search.add_linear_periodic_pair(side_1, side_3);
   pbc_local_search.add_linear_periodic_pair(side_4, side_5);
-  pbc_local_search.find_periodic_nodes(MPI_COMM_SELF);
+  pbc_local_search.find_periodic_nodes(MPI_COMM_SELF, true);
 
   //test to make sure it is re-entrant
-  pbc_local_search.find_periodic_nodes(MPI_COMM_SELF);
+  pbc_local_search.find_periodic_nodes(MPI_COMM_SELF, true);
 
   check_gold_three_way_multiperiodic(pbc_local_search.get_pairs());
   if (bulk_data.parallel_size() == 1)
@@ -741,10 +741,10 @@ STKUNIT_UNIT_TEST(CoarseSearch, RotationalPeriodicBC)
                                           rotationAxis,
                                           axisLocation);
 
-  pbc_local_search.find_periodic_nodes(MPI_COMM_SELF);
+  pbc_local_search.find_periodic_nodes(MPI_COMM_SELF, true);
 
   //test to make sure it is re-entrant
-  pbc_local_search.find_periodic_nodes(MPI_COMM_SELF);
+  pbc_local_search.find_periodic_nodes(MPI_COMM_SELF, true);
 
   check_gold_rotational_multiperiodic(pbc_local_search.get_pairs());
   if (bulk_data.parallel_size() == 1)
@@ -861,10 +861,10 @@ STKUNIT_UNIT_TEST(CoarseSearch, OffsetRotationalPeriodicBC)
                                           rotationAxis,
                                           axisLocation);
 
-  pbc_local_search.find_periodic_nodes(MPI_COMM_SELF);
+  pbc_local_search.find_periodic_nodes(MPI_COMM_SELF, true);
 
   //test to make sure it is re-entrant
-  pbc_local_search.find_periodic_nodes(MPI_COMM_SELF);
+  pbc_local_search.find_periodic_nodes(MPI_COMM_SELF, true);
 
   check_gold_rotational_multiperiodic(pbc_local_search.get_pairs());
   if (bulk_data.parallel_size() == 1)
