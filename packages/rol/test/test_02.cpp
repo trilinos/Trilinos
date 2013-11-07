@@ -57,6 +57,26 @@ public:
     }
   }
 
+  void hessVec( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &x ) {
+
+    Teuchos::RCP<const std::vector<Real> > xp =
+      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(x))).getVector();
+    Teuchos::RCP<const std::vector<Real> > vp =
+      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
+    Teuchos::RCP<std::vector<Real> > hvp =
+      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(hv)).getVector());
+
+    int n = xp->size();
+
+    for( int i=0; i<n/2; i++ ) { 
+      Real h11 = 4.0*alpha_*(3.0*pow((*xp)[2*i],2)-(*xp)[2*i+1]) + 2.0;
+      Real h12 = -4.0*alpha_*(*xp)[2*i];
+      Real h22 = 2.0*alpha_;
+
+      (*hvp)[2*i]   = h11*(*vp)[2*i] + h12*(*vp)[2*i+1]; 
+      (*hvp)[2*i+1] = h12*(*vp)[2*i] + h22*(*vp)[2*i+1];
+    }
+  }
 };
 
 template<class Real>
@@ -98,7 +118,7 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    int dim = 2;
+    int dim = 100;
     Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
     Teuchos::RCP<std::vector<RealT> > y_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
     ROL::StdVector<RealT> x(x_rcp);
@@ -129,10 +149,36 @@ int main(int argc, char *argv[]) {
       (*x_rcp)[2*i+1] =  1.0;
     }
 
-    //ROL::LineSearchStep<RealT> step(20,0.5,1,1.e-4,false);                            // Gradient Descent    
-    //ROL::LineSearchStep<RealT> step(20,0.5,1,1.e-4,true,ROL::Secant_lBFGS,10);        // lBFGS    
-    ROL::LineSearchStep<RealT> step(20,0.5,1,1.e-4,true,ROL::Secant_lDFP,10);         // lDFP    
-    //ROL::LineSearchStep<RealT> step(20,0.5,1,1.e-4,true,ROL::Secant_BarzilaiBorwein,10,2); // Barzilai-Borwein    
+    ROL::LineSearchStepType LSStype = ROL::LineSearchStep_NewtonKrylov;
+    //ROL::LineSearchStepType LSStype = ROL::LineSearchStep_Secant;
+    //ROL::LineSearchStepType LSStype = ROL::LineSearchStep_Gradient;
+
+    ROL::SecantType Stype = ROL::Secant_lDFP;
+    //ROL::SecantType Stype = ROL::Secant_lBFGS;
+    //ROL::SecantType Stype = ROL::Secant_BarzilaiBorwein;
+
+    ROL::LineSearchType LStype = ROL::LineSearchType_Backtracking;
+    //ROL::LineSearchType LStype = ROL::LineSearchType_Brents;
+    //ROL::LineSearchType LStype = ROL::LineSearchType_Bisection;
+
+    //ROL::LineSearchCondition LScond = ROL::LineSearchCondition_Wolfe;
+    ROL::LineSearchCondition LScond = ROL::LineSearchCondition_StrongWolfe;
+    //ROL::LineSearchCondition LScond = ROL::LineSearchCondition_Goldstein;
+ 
+    int maxit    = 20;
+    RealT rho    = 0.5;
+    RealT c1     = 1.e-4;
+    RealT c2     = 0.9;
+    RealT tol    = 1.e-8;
+
+    int L        = 10;
+    int BBtype   = 1;
+
+    RealT CGtol1 = 1.e-4;
+    RealT CGtol2 = 1.e-2;
+    int maxitCG  = 100;
+
+    ROL::LineSearchStep<RealT> step(LStype,LScond,LSStype,maxit,c1,c2,tol,rho,Stype,L,BBtype,CGtol1,CGtol2,maxitCG);
     ROL::StatusTest<RealT> status(1.e-6,1.e-12,100000);    
 
     ROL::DefaultAlgorithm<RealT> algo(step,status);

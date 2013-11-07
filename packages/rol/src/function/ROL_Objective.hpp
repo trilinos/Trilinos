@@ -47,6 +47,12 @@ public:
   */
   virtual void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x ) {}
 
+  /** \brief Apply preconditioner to vector.
+  */
+  virtual void precond( Vector<Real> &Pv, const Vector<Real> &v, const Vector<Real> &x ) {
+    Pv.set(v);
+  }
+  
   // struct StepState (scalars, vectors) map?
 
   // getState
