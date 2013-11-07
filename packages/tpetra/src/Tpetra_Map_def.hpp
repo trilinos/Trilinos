@@ -1312,46 +1312,75 @@ Tpetra::createWeightedContigMapWithNode(int myWeight, Tpetra::global_size_t numE
 
 }
 
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
-Tpetra::createOneToOne (Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > &M)
+
+template<class LO, class GO, class NT>
+Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >
+Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& M)
 {
   using Teuchos::Array;
   using Teuchos::ArrayView;
+  using Teuchos::as;
   using Teuchos::rcp;
-  typedef LocalOrdinal LO;
-  typedef GlobalOrdinal GO;
-  typedef Tpetra::Map<LO,GO,Node> map_type;
-  int myID = M->getComm()->getRank();
+  typedef Tpetra::Map<LO, GO, NT> map_type;
+  typedef global_size_t GST;
+  const GST GINV = Teuchos::OrdinalTraits<GST>::invalid ();
+  const int myRank = M->getComm ()->getRank ();
 
-  // FIXME (mfh 20 Feb 2013) We should have a bypass for contiguous
-  // Maps (which are 1-to-1 by construction).
+  // Bypasses for special cases where either M is known to be
+  // one-to-one, or the one-to-one version of M is easy to compute.
+  // This is why we take M as an RCP, not as a const reference -- so
+  // that we can return M itself if it is 1-to-1.
+  if (! M->isDistributed ()) {
+    // For a locally replicated Map, we assume that users want to push
+    // all the GIDs to Process 0.
 
-  //Based on Epetra's one to one.
+    // mfh 05 Nov 2013: getGlobalNumElements() does indeed return what
+    // you think it should return, in this special case of a locally
+    // replicated contiguous Map.
+    const GST numGlobalEntries = M->getGlobalNumElements ();
+    if (M->isContiguous ()) {
+      const size_t numLocalEntries =
+        (myRank == 0) ? as<size_t> (numGlobalEntries) : static_cast<size_t> (0);
+      return rcp (new map_type (numGlobalEntries, numLocalEntries,
+                                M->getIndexBase (), M->getComm (),
+                                M->getNode ()));
+    }
+    else {
+      ArrayView<const GO> myGids =
+        (myRank == 0) ? M->getNodeElementList () : Teuchos::null;
+      return rcp (new map_type (GINV, myGids (), M->getIndexBase (),
+                                M->getComm (), M->getNode ()));
 
-  Tpetra::Directory<LO, GO, Node> directory (*M);
-  size_t numMyElems = M->getNodeNumElements ();
-  ArrayView<const GO> myElems = M->getNodeElementList ();
-  Array<int> owner_procs_vec (numMyElems);
-
-  directory.getDirectoryEntries (*M, myElems, owner_procs_vec ());
-
-  Array<GO> myOwned_vec (numMyElems);
-  size_t numMyOwnedElems = 0;
-  for (size_t i = 0; i < numMyElems; ++i) {
-    GO GID = myElems[i];
-    int owner = owner_procs_vec[i];
-
-    if (myID == owner) {
-      myOwned_vec[numMyOwnedElems++] = GID;
     }
   }
-  myOwned_vec.resize (numMyOwnedElems);
+  else if (M->isContiguous ()) {
+    // Contiguous, distributed Maps are one-to-one by construction.
+    // (Locally replicated Maps can be contiguous.)
+    return M;
+  }
+  else {
+    Tpetra::Directory<LO, GO, NT> directory (*M);
+    const size_t numMyElems = M->getNodeNumElements ();
+    ArrayView<const GO> myElems = M->getNodeElementList ();
+    Array<int> owner_procs_vec (numMyElems);
 
-  const global_size_t GINV =
-    Teuchos::OrdinalTraits<global_size_t>::invalid ();
-  return rcp (new map_type (GINV, myOwned_vec (), M->getIndexBase (),
-                            M->getComm (), M->getNode ()));
+    directory.getDirectoryEntries (*M, myElems, owner_procs_vec ());
+
+    Array<GO> myOwned_vec (numMyElems);
+    size_t numMyOwnedElems = 0;
+    for (size_t i = 0; i < numMyElems; ++i) {
+      const GO GID = myElems[i];
+      const int owner = owner_procs_vec[i];
+
+      if (myRank == owner) {
+        myOwned_vec[numMyOwnedElems++] = GID;
+      }
+    }
+    myOwned_vec.resize (numMyOwnedElems);
+
+    return rcp (new map_type (GINV, myOwned_vec (), M->getIndexBase (),
+                              M->getComm (), M->getNode ()));
+  }
 }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1428,7 +1457,7 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,Global
                                               const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< NODE > &node); \
   \
   template Teuchos::RCP<const Map<LO,GO,NODE> > \
-  createOneToOne (Teuchos::RCP<const Map<LO,GO,NODE> > &M); \
+  createOneToOne (const Teuchos::RCP<const Map<LO,GO,NODE> > &M); \
   \
   template Teuchos::RCP<const Map<LO,GO,NODE> > \
   createOneToOne (const Teuchos::RCP<const Map<LO,GO,NODE> > &M, \
