@@ -110,42 +110,37 @@ int main(int argc, char *argv[])
 
   // query the topology of the host
   unsigned team_count = 1 ;
-  unsigned threads_per_team = 4 ;
+  unsigned threads_count = 4 ;
 
   if (Kokkos::hwloc::available()) {
-    team_count       = Kokkos::hwloc::get_available_numa_count();
-    threads_per_team = Kokkos::hwloc::get_available_cores_per_numa();
+    threads_count = Kokkos::hwloc::get_available_numa_count() *
+                    Kokkos::hwloc::get_available_cores_per_numa();
   }
 
-  Kokkos::Threads::initialize( team_count , threads_per_team );
-
-#ifdef KOKKOS_HAVE_OPENMP
-  Kokkos::OpenMP::initialize( team_count , threads_per_team );
-#endif
-
-#ifdef KOKKOS_HAVE_CUDA
-  Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
-#endif
-
-
-  std::cout << "Thread groups: " << team_count << " Group Workers: " << threads_per_team << std::endl;
+  std::cout << "Threads: " << threads_count << std::endl;
   std::cout << "Number of ids: " << num_ids << std::endl;
   std::cout << "Number of find iterations: " << num_find_iterations << std::endl;
 
   size_t num_errors = 0;
 
   num_errors += G2L::run_serial(num_ids,num_find_iterations);
-  num_errors += G2L::run_threads(num_ids,num_find_iterations);
-  num_errors += G2L::run_openmp(num_ids,num_find_iterations);
-  num_errors += G2L::run_cuda(num_ids,num_find_iterations);
 
+#ifdef KOKKOS_HAVE_PTHREAD
+  Kokkos::Threads::initialize( threads_count );
+  num_errors += G2L::run_threads(num_ids,num_find_iterations);
   Kokkos::Threads::finalize();
+#endif
 
 #ifdef KOKKOS_HAVE_OPENMP
+  Kokkos::OpenMP::initialize( threads_count );
+  num_errors += G2L::run_openmp(num_ids,num_find_iterations);
   Kokkos::OpenMP::finalize();
 #endif
 
 #ifdef KOKKOS_HAVE_CUDA
+  Kokkos::Cuda::host_mirror_device_type::initialize(1);
+  Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
+  num_errors += G2L::run_cuda(num_ids,num_find_iterations);
   Kokkos::Cuda::finalize();
 #endif
 

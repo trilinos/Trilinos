@@ -158,8 +158,9 @@ public:
 
   static int is_initialized();
 
-  static void initialize( const std::pair<unsigned,unsigned> team_topo ,
-                                std::pair<unsigned,unsigned> core_topo );
+  static void initialize( unsigned thread_count ,
+                          unsigned use_numa_count ,
+                          unsigned use_cores_per_numa );
 
   static void finalize();
 
@@ -522,14 +523,11 @@ inline int Threads::is_initialized()
 { return Impl::ThreadsExec::is_initialized(); }
 
 inline void Threads::initialize(
-  unsigned team_count ,
-  unsigned threads_per_team ,
+  unsigned threads_count ,
   unsigned use_numa_count ,
   unsigned use_cores_per_numa )
 {
-  Impl::ThreadsExec::initialize(
-    std::pair<unsigned,unsigned>( team_count , threads_per_team ),
-    std::pair<unsigned,unsigned>( use_numa_count , use_cores_per_numa ) );
+  Impl::ThreadsExec::initialize( threads_count , use_numa_count , use_cores_per_numa );
 }
 
 inline void Threads::finalize()

@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
   }
 #endif
 
-  Kokkos::Threads::initialize( team_count , threads_per_team );
+  Kokkos::Threads::initialize( team_count * threads_per_team );
 
   if (test_host) {
     if (single)

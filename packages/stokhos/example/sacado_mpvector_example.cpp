@@ -160,7 +160,7 @@ int main(int argc, char **argv)
           Kokkos::hwloc::get_available_threads_per_core() ) / threads_team_size ;
     }
 
-    Kokkos::Threads::initialize( threads_league_size , threads_team_size );
+    Kokkos::Threads::initialize( threads_league_size * threads_team_size );
 
     if (test_threads) {
        bool status = MPVectorExample<MaxSize,Scalar,Kokkos::Threads>::run(

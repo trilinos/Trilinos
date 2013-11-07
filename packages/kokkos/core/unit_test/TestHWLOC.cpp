@@ -65,53 +65,5 @@ TEST_F( hwloc, query)
             << std::endl ;
 }
 
-TEST_F( hwloc , mapping )
-{
-  enum { TOTAL = 30 };
-  std::pair<unsigned,unsigned> thread_coord[TOTAL];
-  std::pair<unsigned,unsigned> core_topo(1,16);
-  std::pair<unsigned,unsigned> use_core_topo(1,15);
-  std::pair<unsigned,unsigned> team_topo ;
-
-  //----------------------------------------
-
-  team_topo.first  = 1 ;
-  team_topo.second = TOTAL ;
-
-  Kokkos::Impl::host_thread_mapping( team_topo ,
-                                     use_core_topo ,
-                                     core_topo ,
-                                     thread_coord );
-
-  std::cout << "team(" << team_topo.first
-            << "," << team_topo.second
-            << ") {" ;
-  for ( unsigned i = 0 ; i < TOTAL ; ++i ) {
-    std::cout << " " << thread_coord[i].first
-              << "." << thread_coord[i].second ;
-  }
-  std::cout << " }" << std::endl ;
-
-  //----------------------------------------
-
-  team_topo.first = 5 ;
-  team_topo.second = TOTAL / 5 ;
-
-  Kokkos::Impl::host_thread_mapping( team_topo ,
-                                     use_core_topo ,
-                                     core_topo ,
-                                     thread_coord );
-
-  std::cout << "team(" << team_topo.first
-            << "," << team_topo.second
-            << ") {" ;
-  for ( unsigned i = 0 ; i < TOTAL ; ++i ) {
-    std::cout << " " << thread_coord[i].first
-              << "." << thread_coord[i].second ;
-  }
-  std::cout << " }" << std::endl ;
-
-}
-
 }
 

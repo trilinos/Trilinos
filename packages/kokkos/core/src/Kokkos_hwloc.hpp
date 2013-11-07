@@ -90,8 +90,21 @@ unsigned get_available_threads_per_core();
 namespace Kokkos {
 namespace hwloc {
 
-/** \brief  Determine best use of cores for a given thread count */
-std::pair<unsigned,unsigned> use_core_topology( const unsigned thread_count );
+/** \brief  Recommend mapping of threads onto cores.
+ *
+ * If thread_count == 0 then choose and set a value.
+ * If use_numa_count == 0 then choose and set a value.
+ * If use_cores_per_numa == 0 then choose and set a value.
+ *
+ * Return 0 if asynchronous,
+ * Return 1 if synchronous and threads_coord[0] is process core
+ */
+unsigned thread_mapping( const char * const label ,
+                         const bool allow_async ,
+                         unsigned & thread_count ,
+                         unsigned & use_numa_count ,
+                         unsigned & use_cores_per_numa ,
+                         std::pair<unsigned,unsigned> threads_coord[] );
 
 /** \brief  Query core-coordinate of the current thread
  *          with respect to the core_topology.
@@ -117,39 +130,11 @@ unsigned bind_this_thread( const unsigned               coordinate_count ,
 /** \brief  Unbind the current thread back to the original process binding */
 bool unbind_this_thread();
 
-void thread_mapping( const std::pair<unsigned,unsigned> team_topo ,
-                     const std::pair<unsigned,unsigned> core_use ,
-                     const std::pair<unsigned,unsigned> core_topo ,
-                           std::pair<unsigned,unsigned> thread_coord[] );
-
-void thread_mapping( const std::pair<unsigned,unsigned> team_topo ,
-                     const std::pair<unsigned,unsigned> core_use ,
-                     const std::pair<unsigned,unsigned> core_topo ,
-                     const std::pair<unsigned,unsigned> master_coord ,
-                           std::pair<unsigned,unsigned> thread_coord[] );
-
 } /* namespace hwloc */
 } /* namespace Kokkos */
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-
-namespace Kokkos {
-namespace Impl {
-
-void host_thread_mapping( const std::pair<unsigned,unsigned> team_topo ,
-                          const std::pair<unsigned,unsigned> core_use ,
-                          const std::pair<unsigned,unsigned> core_topo ,
-                                std::pair<unsigned,unsigned> thread_coord[] );
-
-void host_thread_mapping( const std::pair<unsigned,unsigned> team_topo ,
-                          const std::pair<unsigned,unsigned> core_use ,
-                          const std::pair<unsigned,unsigned> core_topo ,
-                          const std::pair<unsigned,unsigned> master_coord ,
-                                std::pair<unsigned,unsigned> thread_coord[] );
-
-}
-}
 
 #endif /* #define KOKKOS_HWLOC_HPP */
 

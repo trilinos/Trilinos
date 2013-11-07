@@ -69,17 +69,14 @@ protected:
   {
     std::cout << std::setprecision(5) << std::scientific;
 
-    unsigned team_count = 1 ;
-    unsigned threads_per_team = 4 ;
+    unsigned threads_count = 4 ;
 
     if ( Kokkos::hwloc::available() ) {
-      team_count       = Kokkos::hwloc::get_available_numa_count();
-      threads_per_team = Kokkos::hwloc::get_available_cores_per_numa();
+      threads_count = Kokkos::hwloc::get_available_numa_count() *
+                      Kokkos::hwloc::get_available_cores_per_numa();
     }
 
-    std::cout << "Threads: " << team_count << "x" << threads_per_team << std::endl;
-
-    Kokkos::OpenMP::initialize( team_count , threads_per_team );
+    Kokkos::OpenMP::initialize( threads_count );
   }
 
   static void TearDownTestCase()

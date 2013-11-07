@@ -41,7 +41,9 @@
 //@HEADER
 */
 
+#include <cstdlib>
 #include <string>
+#include <iostream>
 #include <stdexcept>
 
 #include <KokkosCore_config.h>
@@ -68,12 +70,26 @@ namespace {
 
 pthread_mutex_t host_internal_pthread_mutex = PTHREAD_MUTEX_INITIALIZER ;
 
-// Pthreads compatible driver:
+// Pthreads compatible driver.
+// Recovery from an exception would require constant intra-thread health
+// verification; which would negatively impact runtime.  As such simply
+// abort the process.
 
 void * internal_pthread_driver( void * )
 {
-  ThreadsExec::driver();
-
+  try {
+    ThreadsExec::driver();
+  }
+  catch( const std::exception & x ) {
+    std::cerr << "Exception thrown from worker thread: " << x.what() << std::endl ;
+    std::cerr.flush();
+    std::abort();
+  }
+  catch( ... ) {
+    std::cerr << "Exception thrown from worker thread" << std::endl ;
+    std::cerr.flush();
+    std::abort();
+  }
   return NULL ;
 }
 

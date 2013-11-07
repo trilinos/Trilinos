@@ -565,7 +565,7 @@ int main( int argc, char* argv[] ) {
     Kokkos::hwloc::get_available_threads_per_core();
   // const size_t team_count       = 1 ;
   // const size_t threads_per_team = 1 ;
-  Kokkos::Threads::initialize( team_count , threads_per_team );
+  Kokkos::Threads::initialize( team_count * threads_per_team );
   Kokkos::Threads::print_configuration( std::cout );
 
 #ifdef KOKKOS_HAVE_CUDA

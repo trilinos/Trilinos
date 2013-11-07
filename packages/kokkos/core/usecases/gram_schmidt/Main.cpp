@@ -157,7 +157,7 @@ int main( int argc , char ** argv )
   if ( 0 == error ) {
 
     if ( gang_count && gang_worker ) {
-      Kokkos::Threads::initialize( gang_count , gang_worker );
+      Kokkos::Threads::initialize( gang_count * gang_worker );
 
       if ( test_iter ) {
         Test::driver_modified_gram_schmidt<Kokkos::Threads>

@@ -128,7 +128,7 @@ Machine::Machine( int * argc , char *** argv )
         threads_per_team = atoi( (*argv)[i+2] );
       }
 
-      Kokkos::Threads::initialize( team_count , threads_per_team );
+      Kokkos::Threads::initialize( team_count * threads_per_team );
     }
   }
 

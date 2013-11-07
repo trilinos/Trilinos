@@ -10,7 +10,7 @@ namespace Kokkos {
     }
     template<>
     void KokkosDeviceWrapperNode<Kokkos::Threads>::init(int NumTeams, int NumThreads, int Device) {
-      Kokkos::Threads::initialize(NumTeams,NumThreads);
+      Kokkos::Threads::initialize(NumTeams*NumThreads);
     }
 #endif
 
@@ -21,7 +21,7 @@ namespace Kokkos {
     }
     template<>
     void KokkosDeviceWrapperNode<Kokkos::OpenMP>::init(int NumTeams, int NumThreads, int Device) {
-      Kokkos::OpenMP::initialize(NumTeams,NumThreads);
+      Kokkos::OpenMP::initialize(NumTeams*NumThreads);
     }
 #endif
 
@@ -35,8 +35,7 @@ namespace Kokkos {
     void KokkosDeviceWrapperNode<Kokkos::Cuda>::init(int NumTeams, int NumThreads, int Device) {
       Kokkos::Cuda::SelectDevice select_device(Device);
       Kokkos::Cuda::initialize(select_device);
-      Kokkos::Cuda::host_mirror_device_type::initialize(NumTeams,NumThreads);
-      //Kokkos::OpenMP::initialize(NumTeams,NumThreads);
+      Kokkos::Cuda::host_mirror_device_type::initialize(NumTeams*NumThreads);
       std::cout<<"Init Devices "<<NumTeams<<" "<<NumThreads<<"\n";
     }
 #endif

@@ -66,14 +66,13 @@ void test_Host( int beg, int end, int runs, int threads)
   if ( 0 < threads ) {
     const size_t node_thread_count = ( threads + numa_count - 1 ) / numa_count ;
 
-    Kokkos::Threads::initialize( numa_count /* one team per numa */ , 
-                                 node_thread_count /* team size */ );
+    Kokkos::Threads::initialize( numa_count * node_thread_count , numa_count );
 
     std::cout << std::endl << "\"Threads with manually set threads = \" , "
               << numa_count * node_thread_count << std::endl ;
   }
   else {
-    Kokkos::Threads::initialize( numa_count , core_numa * thread_core );
+    Kokkos::Threads::initialize( numa_count * core_numa * thread_core , numa_count );
 
     std::cout << std::endl << "\"Threads with detected sequential threads = \" , "
               << numa_count * node_thread_count << std::endl ;
