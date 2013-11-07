@@ -1,5 +1,5 @@
-INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE(AddSubdirectories)
 
+ADD_SUBDIRECTORY(Lesson01-Init)
 ADD_SUBDIRECTORY(PowerMethod)
 ADD_SUBDIRECTORY(advanced)
