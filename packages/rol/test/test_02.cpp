@@ -157,12 +157,14 @@ int main(int argc, char *argv[]) {
     //ROL::SecantType Stype = ROL::Secant_lBFGS;
     //ROL::SecantType Stype = ROL::Secant_BarzilaiBorwein;
 
-    ROL::LineSearchType LStype = ROL::LineSearchType_Backtracking;
-    //ROL::LineSearchType LStype = ROL::LineSearchType_Brents;
+    //ROL::LineSearchType LStype = ROL::LineSearchType_Backtracking;
+    //ROL::LineSearchType LStype = ROL::LineSearchType_SimpleBacktracking;
+    ROL::LineSearchType LStype = ROL::LineSearchType_Brents;
     //ROL::LineSearchType LStype = ROL::LineSearchType_Bisection;
+    //ROL::LineSearchType LStype = ROL::LineSearchType_GoldenSection;
 
-    //ROL::LineSearchCondition LScond = ROL::LineSearchCondition_Wolfe;
-    ROL::LineSearchCondition LScond = ROL::LineSearchCondition_StrongWolfe;
+    ROL::LineSearchCondition LScond = ROL::LineSearchCondition_Wolfe;
+    //ROL::LineSearchCondition LScond = ROL::LineSearchCondition_StrongWolfe;
     //ROL::LineSearchCondition LScond = ROL::LineSearchCondition_Goldstein;
  
     int maxit    = 20;

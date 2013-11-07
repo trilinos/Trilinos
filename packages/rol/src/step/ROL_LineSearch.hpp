@@ -28,9 +28,11 @@ enum LineSearchStepType {
 };
 
 enum LineSearchType {
-  LineSearchType_Backtracking = 0, // Backtracking
-  LineSearchType_Brents,           // Brents
-  LineSearchType_Bisection         // Bisection
+  LineSearchType_Backtracking = 0,   // Backtracking
+  LineSearchType_SimpleBacktracking, // Simple Backtracking
+  LineSearchType_Brents,             // Brents
+  LineSearchType_Bisection,          // Bisection
+  LineSearchType_GoldenSection       // GoldenSection
 };
 
 enum LineSearchCondition {
@@ -78,22 +80,38 @@ public:
     firstIt_   = true;
   }
 
-  bool status( const LineSearchType type, const int it, const Real alpha, const Real fold, const Real sgold, const Real fnew, const Real sgnew = 0.0 ) { 
+  bool status( const LineSearchType type, const int it, const Real alpha, 
+               const Real fold, const Real sgold, const Real fnew, 
+               const Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj ) { 
     if ( it >= maxit_ ) { 
       return true;
     }
-    if ( type == LineSearchType_Backtracking ) {
+    if ( type == LineSearchType_SimpleBacktracking || type == LineSearchType_Backtracking ) {
       if ( fnew <= fold + c1_*alpha*sgold ) {
         return true;
       }
     }
     else {
       if ( cond_ == LineSearchCondition_Wolfe ) {
+        Teuchos::RCP<Vector<Real> > xnew = x.clone();
+        xnew->set(x);
+        xnew->axpy(alpha,s);   
+        Teuchos::RCP<Vector<Real> > grad = x.clone();
+        obj.gradient(*grad,*xnew);
+        Real sgnew = grad->dot(s);
+
         if ( (fnew <= fold + c1_*alpha*sgold) && (sgnew >= c2_*sgold) ) {
           return true;
         }
       }
       else if ( cond_ == LineSearchCondition_StrongWolfe ) {
+        Teuchos::RCP<Vector<Real> > xnew = x.clone();
+        xnew->set(x);
+        xnew->axpy(alpha,s);   
+        Teuchos::RCP<Vector<Real> > grad = x.clone();
+        obj.gradient(*grad,*xnew);
+        Real sgnew = grad->dot(s);
+
         if ( (fnew <= fold + c1_*alpha*sgold) && (std::abs(sgnew) <= c2_*std::abs(sgold)) ) {
           return true;
         }
@@ -115,13 +133,16 @@ public:
       firstIt_ = false;
     }
     else {
-      if ( step_ == LineSearchStep_Gradient ) {
+      if ( step_ == LineSearchStep_Gradient || step_ == LineSearchStep_NonlinearCG ) {
         alpha0_ = alpha_old_*gs_old_/gs;      
       }
     }
 
     // Run Linesearch
-    if ( type_ == LineSearchType_Backtracking ) {
+    if ( type_ == LineSearchType_SimpleBacktracking ) {
+      simplebacktracking( alpha, fval, it, gs, s, x, obj ); 
+    }
+    else if ( type_ == LineSearchType_Backtracking ) {
       backtracking( alpha, fval, it, gs, s, x, obj ); 
     }
     else if ( type_ == LineSearchType_Brents ) {
@@ -130,10 +151,34 @@ public:
     else if ( type_ == LineSearchType_Bisection ) {
       bisection( alpha, fval, it, gs, s, x, obj ); 
     }
+    else if ( type_ == LineSearchType_GoldenSection ) {
+      goldensection( alpha, fval, it, gs, s, x, obj ); 
+    }
 
     // Update Storage
     gs_old_    = gs;
     alpha_old_ = alpha;
+  }
+
+  void simplebacktracking( Real &alpha, Real &fval, int &it, 
+                           const Real &gs, const Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj ) {
+    it    = 0;
+    alpha = alpha0_;
+
+    Teuchos::RCP<Vector<Real> > xnew = x.clone();
+    xnew->set(x);
+    xnew->axpy(alpha, s);
+
+    Real fold = fval;
+    fval = obj.value(*xnew);
+
+    while ( !status(LineSearchType_SimpleBacktracking,it,alpha,fold,gs,fval,*xnew,s,obj) ) {
+      alpha *= rho_;
+      xnew->set(x);
+      xnew->axpy(alpha, s);
+      fval = obj.value(*xnew);
+      it++;
+    }
   }
 
   void backtracking( Real &alpha, Real &fval, int &it, 
@@ -147,12 +192,49 @@ public:
 
     Real fold = fval;
     fval = obj.value(*xnew);
+    Real fvalp = 0.0;
 
-    while ( !status(LineSearchType_Backtracking,it,alpha,fold,gs,fval) ) {
-      alpha *= rho_;
+    Real alpha1 = 0.0;
+    Real alpha2 = 0.0;
+    Real a      = 0.0;
+    Real b      = 0.0;
+    Real x1     = 0.0;
+    Real x2     = 0.0;
+
+    while ( !status(LineSearchType_Backtracking,it,alpha,fold,gs,fval,x,s,obj) ) {
+      if ( alpha == alpha0_ ) {
+        alpha1 = -gs*alpha*alpha/(2.0*(fval-fold-gs*alpha));
+      }
+      else {
+        x1 = fval-fold-alpha*gs;
+        x2 = fvalp-fval-alpha2*gs;
+        a = (1.0/(alpha - alpha2))*( x1/(alpha*alpha) - x2/(alpha2*alpha2));
+        b = (1.0/(alpha - alpha2))*(-x1*alpha2/(alpha*alpha) + x2*alpha/(alpha2*alpha2));
+        if ( std::abs(a) < Teuchos::ScalarTraits<Real>::eps() ) {
+          alpha1 = -gs/(2.0*b);
+        }
+        else {
+          alpha1 = (-b+sqrt(b*b-3.0*a*gs))/(3.0*a);
+        }
+        if ( alpha1 > 0.5*alpha ) {
+          alpha1 = 0.5*alpha;
+        }
+      }
+
+      alpha2 = alpha;
+      fvalp  = fval;
+
+      if ( alpha1 <= 0.1*alpha ) {
+        alpha = 0.1*alpha;
+      }
+      else {
+        alpha = alpha1;
+      }
+
       xnew->set(x);
       xnew->axpy(alpha, s);
       fval = obj.value(*xnew);
+
       it++;
     }
   }
@@ -168,125 +250,159 @@ public:
     xnew->set(x);
     xnew->axpy(tr,s);
 
-    Teuchos::RCP<Vector<Real> > grad = x.clone();
-    obj.gradient(*grad,*xnew);
-    Real fnew = obj.value(*xnew); 
+    Real val_tr = obj.value(*xnew); 
+    Real val_tl = fval;
 
-    Real val_tl = gs;
-    Real val_tr = grad->dot(s);
-
-    if ( val_tl*val_tr >= Teuchos::ScalarTraits<Real>::eps() ) {
-      if ( status(LineSearchType_Bisection,it,tr,fval,gs,fnew,val_tr) ) {
-        alpha = tr;
-        fval  = fnew;
-        return;
-      }
-      else {
-        backtracking(alpha,fval,it,gs,s,x,obj);
-        //alpha = tl; 
-        return;
-      }
+    if ( status(LineSearchType_Bisection,it,tr,fval,gs,val_tr,x,s,obj) ) {
+      alpha = tr;
+      fval  = val_tr;
+      return;
     }
 
     Real tc = (tl+tr)/2.0;
     xnew->set(x);
     xnew->axpy(tc,s);
-    obj.gradient(*grad,*xnew);
-    Real val_tc = grad->dot(s);
-    fnew        = obj.value(*xnew);
-    it++;
+    Real val_tc = obj.value(*xnew);
 
-    while (    !status(LineSearchType_Bisection,it,tc,fval,gs,fnew,val_tc)  
-            && std::abs(val_tc) > Teuchos::ScalarTraits<Real>::eps()
-            && std::abs(tr - tl)/2.0 > tol_ ) {
-      if (    (val_tc < 0.0  && val_tl < 0.0) 
-           || (val_tc > 0.0  && val_tl > 0.0) 
-           || (val_tc == 0.0 && val_tl == 0.0) ) {
-        tl = tc;
-      }
-      else {
-        tr = tc;
-      }
+    Real t1     = 0.0;
+    Real val_t1 = 0.0;
+    Real t2     = 0.0;
+    Real val_t2 = 0.0;
 
-      tc = (tl + tr)/2.0;
-     
+    while (    !status(LineSearchType_Bisection,it,tr,fval,gs,val_tr,x,s,obj)  
+            && std::abs(tr - tl) > tol_ ) {
+      t1 = (tl+tc)/2.0;
       xnew->set(x);
-      xnew->axpy(tc,s);
-      obj.gradient(*grad,*xnew);
-      val_tc = grad->dot(s);
-      fnew   = obj.value(*xnew);
+      xnew->axpy(t1,s);
+      val_t1 = obj.value(*xnew);
+
+      t2 = (tr+tc)/2.0;
+      xnew->set(x);
+      xnew->axpy(t2,s);
+      val_t2 = obj.value(*xnew);
+
+      if (    ( (val_tl <= val_tr) && (val_tl <= val_t1) && (val_tl <= val_t2) && (val_tl <= val_tc) ) 
+           || ( (val_t1 <= val_tr) && (val_t1 <= val_tl) && (val_t1 <= val_t2) && (val_t1 <= val_tc) ) ) {
+        tr     = tc;
+        val_tr = val_tc;
+        tc     = t1;
+        val_tc = val_t1;
+      }
+      else if ( ( (val_tc <= val_tr) && (val_tc <= val_tl) && (val_tc <= val_t1) && (val_tc <= val_t2) ) ) { 
+        tl     = t1;
+        val_tl = val_t1;
+        tr     = t2;
+        val_tr = val_t2;
+      }
+      else if (    ( (val_t2 <= val_tr) && (val_t2 <= val_tl) && (val_t2 <= val_t1) && (val_t2 <= val_tc) ) 
+                || ( (val_tr <= val_tl) && (val_tr <= val_t1) && (val_tr <= val_t2) && (val_tr <= val_tc) ) ) {
+        tl     = tc;
+        val_tl = val_tc;
+        tc     = t2;
+        val_tc = val_t2;
+      }
       it++;
     }
 
-    fval  = obj.value(*xnew);
-    alpha = tc;
+    fval  = val_tr;
+    alpha = tr;
   }
 
   void goldensection( Real &alpha, Real &fval, int &it,
                       const Real &gs, const Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj ) {
     Teuchos::RCP<Vector<Real> > xnew = x.clone();
+    Teuchos::RCP<Vector<Real> > grad = x.clone();
     Real c   = (-1.0+sqrt(5.0))/2.0;
     Real tl  = 0.0;
     Real tr  = alpha0_;
 
+    it = 0;
+    xnew->set(x);
+    xnew->axpy(tr,s);
+    Real val_tr = obj.value(*xnew);
+    Real val_tl = fval;
+
+    if ( status(LineSearchType_GoldenSection,it,tr,fval,gs,val_tr,x,s,obj) ) {
+      alpha = tr;
+      fval  = val_tr;
+      return;
+    }
+
     Real tc1 = c*tl + (1.0-c)*tr;
     Real tc2 = (1.0-c)*tl + c*tr;
-    
+   
+    xnew->set(x);
+    xnew->axpy(tc1,s);
+    Real val_tc1 = obj.value(*xnew);
+
+    xnew->set(x);
+    xnew->axpy(tc2,s);
+    Real val_tc2 = obj.value(*xnew);
+
+    while (    !status(LineSearchType_GoldenSection,it,tr,fval,gs,val_tr,x,s,obj) 
+            && (std::abs(tl-tr) >= tol_) ) {
+      if ( val_tc1 > val_tc2 ) {
+        tl      = tc1;
+        val_tl  = val_tc1;
+        tc1     = tc2;
+        val_tc1 = val_tc2;
+ 
+        tc2     = (1.0-c)*tl + c*tr;     
+        xnew->set(x);
+        xnew->axpy(tc2,s);
+        val_tc2 = obj.value(*xnew);
+      }
+      else {
+        tr      = tc2;
+        val_tr  = val_tc2;
+        tc2     = tc1;
+        val_tc2 = val_tc1;
+
+        tc1     = c*tl + (1.0-c)*tr;
+        xnew->set(x);
+        xnew->axpy(tc1,s);
+        val_tc1 = obj.value(*xnew);
+      }
+      it++;
+    }
+    alpha = tr;
+    fval  = val_tr;  
   }
 
 
   void brents( Real &alpha, Real &fval, int &it, 
                const Real &gs, const Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj ) {
-    Real tl = 0.0;     // Left interval point
-    Real tr = alpha0_; // Right interval point
-    Real tc = 0.0;     // Center invertval point
-    Real t0 = Teuchos::ScalarTraits<Real>::rmax();
+/*
+    Real tl = 0.0;         // Left interval point
+    Real tr = alpha0_;     // Right interval point
 
     Teuchos::RCP<Vector<Real> > xnew = x.clone();
     xnew->set(x);
     xnew->axpy(tr, s);
  
-    Real val_tl = gs;
-    Teuchos::RCP<Vector<Real> > grad = x.clone();
-    obj.gradient(*grad,*xnew);
-    Real val_tr = grad->dot(s);
-    Real fnew = obj.value(*xnew);
- 
-    Real val_tc = 0.0;
-    Real t      = tr;
-    Real val_t  = val_tr;
+    Real val_tl = fval;
+    Real val_tr = obj.value(*xnew);
  
     it = 0;
   
-    if ( val_tl*val_tr >= Teuchos::ScalarTraits<Real>::eps() ) {
-      if ( status(LineSearchType_Brents,it,tr,fval,gs,fnew,val_tr) ) {
-        alpha = tr;
-        fval  = fnew;
-        return;
-      }
-      else {
-        backtracking(alpha,fval,it,gs,s,x,obj);
-        //alpha = tl; 
-        return;
-      }
+    if ( status(LineSearchType_Brents,it,tr,fval,gs,val_tr,x,s,obj) ) {
+      alpha = tr;
+      fval  = fnew;
+      return;
     }
 
-    if ( std::abs(val_tl) < std::abs(val_tr) ) {
-      Real tmp = tl;
-      tl       = tr;
-      tr       = tmp;
-      tmp      = val_tl;
-      val_tl   = val_tr;
-      val_tr   = tmp;
-    }
+    Real tc = (tl+tr)/2.0; // Center invertval point
+    xnew->set(x);
+    xnew->axpy(tc, s);
+    Real val_tc = obj.value(*xnew);
 
-    tc     = tl;
-    val_tc = val_tl;
-    bool mflag = true;
+    Real t      = tr;
+    Real val_t  = val_tr;
  
-    while (    !status(LineSearchType_Brents,it,t,fval,gs,fnew,val_t)
-            && std::abs(val_tr)  > Teuchos::ScalarTraits<Real>::eps() 
+    while (    !status(LineSearchType_Brents,it,t,fval,gs,fnew,x,s,obj)
             && std::abs(tl - tr) > tol_ ) {
+
+      
 
       if (    std::abs(val_tr - val_tc) > Teuchos::ScalarTraits<Real>::eps() 
            && std::abs(val_tl - val_tc) > Teuchos::ScalarTraits<Real>::eps() ) {
@@ -346,6 +462,7 @@ public:
     } 
     alpha = t;
     fval  = obj.value(*xnew);
+*/
   }
 
 };

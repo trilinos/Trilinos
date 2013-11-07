@@ -61,11 +61,17 @@ public:
     if ( LStype == LineSearchType_Backtracking ) {
       LS_ = "Backtracking";
     }
+    else if ( LStype == LineSearchType_SimpleBacktracking ) {
+      LS_ = "Simple Backtracking";
+    }
     else if ( LStype == LineSearchType_Brents ) {
       LS_ = "Brent's";
     }
     else if ( LStype == LineSearchType_Bisection ) {
       LS_ = "Bisection";
+    }
+    else if ( LStype == LineSearchType_GoldenSection ) {
+      LS_ = "Golden Section";
     }
 
     if ( LSStype_ == LineSearchStep_NewtonKrylov ) {
