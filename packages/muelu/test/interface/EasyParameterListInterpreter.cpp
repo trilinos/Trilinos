@@ -151,11 +151,11 @@ int main(int argc, char *argv[]) {
       // This leads to us always failing this test.
       // NOTE: Epetra, on the other hand, rolls out its out random number
       // generator, which always produces same results
-      std::string sed_cmd = "sed -i 's/lambdaMax\ =\ [0-9]*\.[0-9]*/lambdaMax\ =\ <ignored>/' ";
+      std::string sed_cmd = "sed -i 's/lambdaMax\\ =\\ [0-9]*\\.[0-9]*/lambdaMax\\ =\\ <ignored>/' ";
       system((sed_cmd + baseFile + ".res").c_str());
       system((sed_cmd + baseFile + ".out").c_str());
 
-      sed_cmd = "sed -i 's/lambdaMin\ =\ [0-9]*\.[0-9]*/lambdaMin\ =\ <ignored>/' ";
+      sed_cmd = "sed -i 's/lambdaMin\\ =\\ [0-9]*\\.[0-9]*/lambdaMin\\ =\\ <ignored>/' ";
       system((sed_cmd + baseFile + ".res").c_str());
       system((sed_cmd + baseFile + ".out").c_str());
     }
