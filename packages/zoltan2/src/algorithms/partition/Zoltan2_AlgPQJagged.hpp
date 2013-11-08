@@ -6352,11 +6352,6 @@ void AlgPQJagged(
     env->timerStart(MACRO_TIMERS, "PQJagged - Total");
     env->timerStart(MACRO_TIMERS, "PQJagged - Total2");
 
-    // 0 - for decision
-    // > 0 - for force migration
-    // < 0 - for avoid migration
-
-
     typedef typename Adapter::scalar_t pq_scalar_t;
     typedef typename Adapter::gno_t pq_gno_t;
     typedef typename Adapter::lno_t pq_lno_t;
