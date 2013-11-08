@@ -114,7 +114,7 @@ public:
       if (rho < 0.0) {  
         Real gs = g.dot(s);
         Teuchos::RCP<Vector<Real> > Hs = x.clone();
-        if ( secant != Teuchos::null ) {
+        if ( secant != Teuchos::null && step_ == TrustRegionStep_Secant ) {
           secant->applyB(*Hs,s,x);
         } 
         else {

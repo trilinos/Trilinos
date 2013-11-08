@@ -73,24 +73,30 @@ public:
     }
     else if ( TRStype == TrustRegionStep_NewtonKrylovSecantPreconditioning ) {
       if ( Stype == Secant_lBFGS ) {
-        step_  = "Newton-CG with Limited-Memory BFGS Preconditioning";
+        secant_ = Teuchos::rcp( new lBFGS<Real>(L) );
+        step_   = "Newton-CG with Limited-Memory BFGS Preconditioning";
       }
       else if ( Stype == Secant_lDFP ) {
-        step_  = "Newton-CG with Limited-Memory DFP Preconditioning";
+        secant_ = Teuchos::rcp( new lDFP<Real>(L) );
+        step_   = "Newton-CG with Limited-Memory DFP Preconditioning";
       }
       else if ( Stype == Secant_BarzilaiBorwein ) {
-        step_  = "Newton-CG with Barzilai-Borwein Preconditioning";
+        secant_ = Teuchos::rcp( new BarzilaiBorwein<Real>(BBtype) );
+        step_   = "Newton-CG with Barzilai-Borwein Preconditioning";
       }
     }
     else if ( TRStype == TrustRegionStep_Secant ) {
       if ( Stype == Secant_lBFGS ) {
-        step_  = "Limited-Memory BFGS";
+        secant_ = Teuchos::rcp( new lBFGS<Real>(L) );
+        step_   = "Limited-Memory BFGS";
       }
       else if ( Stype == Secant_lDFP ) {
-        step_  = "Limited-Memory DFP";
+        secant_ = Teuchos::rcp( new lDFP<Real>(L) );
+        step_   = "Limited-Memory DFP";
       }
       else if ( Stype == Secant_BarzilaiBorwein ) {
-        step_  = "Barzilai-Borwein";
+        secant_ = Teuchos::rcp( new BarzilaiBorwein<Real>(BBtype) );
+        step_   = "Barzilai-Borwein";
       }
     }
 
