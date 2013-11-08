@@ -143,6 +143,23 @@ int main(int argc, char *argv[]) {
     std::cout.rdbuf(oldbuffer);
     buffer.close();
 
+    {
+      // Tpetra produces different eigenvalues in Chebyshev due to using
+      // std::rand() for generating random vectors, which may be initialized
+      // using different seed, and may have different algorithm from one
+      // gcc version to another, or to anogther compiler (like clang)
+      // This leads to us always failing this test.
+      // NOTE: Epetra, on the other hand, rolls out its out random number
+      // generator, which always produces same results
+      std::string sed_cmd = "sed -i 's/lambdaMax\ =\ [0-9]*\.[0-9]*/lambdaMax\ =\ <ignored>/' ";
+      system((sed_cmd + baseFile + ".res").c_str());
+      system((sed_cmd + baseFile + ".out").c_str());
+
+      sed_cmd = "sed -i 's/lambdaMin\ =\ [0-9]*\.[0-9]*/lambdaMin\ =\ <ignored>/' ";
+      system((sed_cmd + baseFile + ".res").c_str());
+      system((sed_cmd + baseFile + ".out").c_str());
+    }
+
     // Run comparison
     std::string cmd = "diff -w " + baseFile + ".res " + baseFile + ".out";
     int ret = system(cmd.c_str());
