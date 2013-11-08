@@ -64,7 +64,6 @@ public:
     for (iter = 0; iter < maxit_; iter++) {
       kappa = p->dot(*Hp);
       if ( kappa <= eps_ ) { 
-        std::cout << kappa << "\n";
         flag = 2;
         break;
       }

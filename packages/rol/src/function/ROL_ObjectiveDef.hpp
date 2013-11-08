@@ -44,7 +44,7 @@ void Objective<Real>::gradient( Vector<Real> &g, const Vector<Real> &x ) {
 template <class Real>
 void Objective<Real>::hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x ) {
   // Get Step Length
-  Real eta = 1e-2*sqrt(Teuchos::ScalarTraits<Real>::eps());
+  Real eta = 1e-4*sqrt(Teuchos::ScalarTraits<Real>::eps());
   Real h   = x.dot(v)*eta;
 
   // Compute New Step x + h*v
