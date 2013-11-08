@@ -10,6 +10,7 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_LineSearchStep.hpp"
+#include "ROL_TrustRegionStep.hpp"
 #include "ROL_Algorithm.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -210,23 +211,24 @@ int main(int argc, char *argv[]) {
     x.zero();
     y.zero();
 
-    for (int i=0; i<dim/2; i++) {
-      (*x_rcp)[2*i]   = -1.2;
-      (*x_rcp)[2*i+1] =  1.0;
-    }
+    /* BEGIN SECANT DEFINITION */
+    ROL::SecantType Stype = ROL::Secant_lDFP;
+    //ROL::SecantType Stype = ROL::Secant_lBFGS;
+    //ROL::SecantType Stype = ROL::Secant_BarzilaiBorwein;
 
-    //ROL::LineSearchStepType LSStype = ROL::LineSearchStep_Newton;
+    int L        = 10;
+    int BBtype   = 1;
+    /* END SECANT DEFINTION */
+
+    /* BEGIN LINE SEARCH STEP DEFINTION */
+    ROL::LineSearchStepType LSStype = ROL::LineSearchStep_Newton;
     //ROL::LineSearchStepType LSStype = ROL::LineSearchStep_NewtonKrylov;
-    ROL::LineSearchStepType LSStype = ROL::LineSearchStep_NewtonKrylovSecantPreconditioning;
+    //ROL::LineSearchStepType LSStype = ROL::LineSearchStep_NewtonKrylovSecantPreconditioning;
     //ROL::LineSearchStepType LSStype = ROL::LineSearchStep_Secant;
     //ROL::LineSearchStepType LSStype = ROL::LineSearchStep_Gradient;
 
-    //ROL::SecantType Stype = ROL::Secant_lDFP;
-    ROL::SecantType Stype = ROL::Secant_lBFGS;
-    //ROL::SecantType Stype = ROL::Secant_BarzilaiBorwein;
-
-    ROL::LineSearchType LStype = ROL::LineSearchType_Backtracking;
-    //ROL::LineSearchType LStype = ROL::LineSearchType_SimpleBacktracking;
+    //ROL::LineSearchType LStype = ROL::LineSearchType_Backtracking;
+    ROL::LineSearchType LStype = ROL::LineSearchType_SimpleBacktracking;
     //ROL::LineSearchType LStype = ROL::LineSearchType_Brents;
     //ROL::LineSearchType LStype = ROL::LineSearchType_Bisection;
     //ROL::LineSearchType LStype = ROL::LineSearchType_GoldenSection;
@@ -241,23 +243,65 @@ int main(int argc, char *argv[]) {
     RealT c2     = 0.9;
     RealT tol    = 1.e-8;
 
-    int L        = 10;
-    int BBtype   = 1;
-
     RealT CGtol1 = 1.e-4;
     RealT CGtol2 = 1.e-2;
     int maxitCG  = 100;
 
-    ROL::LineSearchStep<RealT> step(LStype,LScond,LSStype,maxit,c1,c2,tol,rho,Stype,L,BBtype,CGtol1,CGtol2,maxitCG);
+    ROL::LineSearchStep<RealT> LS_step(LStype,LScond,LSStype,maxit,c1,c2,tol,rho,
+                                       Stype,L,BBtype,CGtol1,CGtol2,maxitCG);
+    /* END LINE SEARCH STEP DEFINITION */
+
+    /* BEGIN TRUST REGION STEP DEFINTION */
+    ROL::TrustRegionStepType TRStype = ROL::TrustRegionStep_NewtonKrylov;
+    //ROL::TrustRegionStepType TRStype = ROL::TrustRegionStep_Secant;
+    //ROL::TrustRegionStepType TRStype = ROL::TrustRegionStep_Newton;
+    //ROL::TrustRegionStepType TRStype = ROL::TrustRegionStep_NewtonKrylovSecantPreconditioning;
+
+    ROL::TrustRegionType TRtype = ROL::TrustRegionType_TruncatedCG;
+    //ROL::TrustRegionType TRtype = ROL::TrustRegionType_Dogleg;
+    //ROL::TrustRegionType TRtype = ROL::TrustRegionType_DoubleDogleg;  
+
+    maxit        = 100;
+    RealT tol1   = 1.e-4;
+    RealT tol2   = 1.e-2;
+    RealT del    = 100.0;
+    RealT delmin = 1.e-8;
+    RealT delmax = 5000.0;
+    RealT eta0   = 0.05;
+    RealT eta1   = 0.05;
+    RealT eta2   = 0.9;
+    RealT gamma0 = 0.0625;
+    RealT gamma1 = 0.25;
+    RealT gamma2 = 2.50;
+    RealT TRsafe = 1.0;
+
+    ROL::TrustRegionStep<RealT> TR_step(TRtype,TRStype,maxit,tol1,tol2,del,delmin,delmax,
+                                        eta0,eta1,eta2,gamma0,gamma1,gamma2,TRsafe,
+                                        Stype,L,BBtype);
+    /* END TRUST REGION STEP DEFINTION */ 
+
+    /* END TRUST REGION STEP DEFINITION */
+
+
     ROL::StatusTest<RealT> status(1.e-6,1.e-12,100000);    
 
-    ROL::DefaultAlgorithm<RealT> algo(step,status);
+    for (int i=0; i<dim/2; i++) {
+      (*x_rcp)[2*i]   = -1.2;
+      (*x_rcp)[2*i+1] =  1.0;
+    }
+    ROL::DefaultAlgorithm<RealT> LS_algo(LS_step,status);
+    LS_algo.run(x, obj);
+
+    for (int i=0; i<dim/2; i++) {
+      (*x_rcp)[2*i]   = -1.2;
+      (*x_rcp)[2*i+1] =  1.0;
+    }
+    ROL::DefaultAlgorithm<RealT> TR_algo(TR_step,status);
+    TR_algo.run(x, obj);
 
     //Teuchos::RCP<ROL::Algorithm<RealT> > algo;
     //ROL::DefaultAlgorithmFactory<RealT> algoFactory.getAlgo(algo, parlist);
     
-    algo.run(x, obj);
-
     obj.gradient(y,x);
 
     *outStream << "\nNorm of finite-difference gradient: " << y.norm() << "\n";

@@ -71,6 +71,8 @@ APPEND_SET(HEADERS
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/step)
 APPEND_SET(HEADERS
   step/ROL_Step.hpp
+  step/ROL_TrustRegionStep.hpp
+  step/ROL_TrustRegion.hpp
   step/ROL_LineSearchStep.hpp
   step/ROL_LineSearch.hpp
   step/ROL_Secant.hpp
