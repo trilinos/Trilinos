@@ -47,15 +47,6 @@
 
 namespace panzer_stk {
 
-/** Build sets of volume worksets
-  */ 
-Teuchos::RCP<std::vector<panzer::Workset> > WorksetFactory::
-getVolumeWorksets(const std::string & eBlock,
-                  const panzer::PhysicsBlock & pb) const
-{
-   return panzer_stk::buildWorksets(*mesh_, pb);
-}
-
 /** Build sets of boundary condition worksets
   */
 Teuchos::RCP<std::map<unsigned,panzer::Workset> > WorksetFactory::
@@ -70,7 +61,7 @@ getWorksets(const panzer::WorksetDescriptor & worksetDesc,
             const panzer::PhysicsBlock & pb) const
 {
   if(!worksetDesc.useSideset()) {
-    return getVolumeWorksets(worksetDesc.getElementBlock(),pb);
+    return panzer_stk::buildWorksets(*mesh_, pb);
   }
   else if(worksetDesc.useSideset() && worksetDesc.sideAssembly()) {
     // uses cascade by default, each subcell has its own workset
