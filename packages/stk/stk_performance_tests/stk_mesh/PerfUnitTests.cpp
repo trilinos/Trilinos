@@ -71,7 +71,6 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, induced_part )
   const int y_dim = 3;
   const int z_dim = 3;
 
-  // Set up dead-simple mesh, 2 quads sharing 2 nodes
   stk::mesh::fixtures::HexFixture mesh(pm, x_dim, y_dim, z_dim);
   MetaData & meta = mesh.m_meta;
   BulkData & bulk = mesh.m_bulk_data;
@@ -222,6 +221,96 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, mesh_create_hex_with_edges_parallel 
   ThrowRequire(p_size == 8);
 
   mesh_create_hex_with_edges_test(pm);
+
+  print_memory_sum_all_procs(pm);
+
+  print_debug_skip(pm);
+}
+
+STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, selector_get_buckets )
+{
+  CALLGRIND_START_INSTRUMENTATION;
+
+  check_valgrind_version();
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+  const size_t p_size = stk::parallel_machine_size(pm);
+
+  // serial only
+  ThrowRequire(p_size == 1);
+
+  const int x_dim = 10;
+  const int y_dim = 10;
+  const int z_dim = 10;
+
+  // Set up dead-simple mesh, 2 quads sharing 2 nodes
+  stk::mesh::fixtures::HexFixture mesh(pm, x_dim, y_dim, z_dim);
+  MetaData & meta = mesh.m_meta;
+  BulkData & bulk = mesh.m_bulk_data;
+
+  std::vector<std::vector<PartVector> > parts;
+
+  parts.resize(x_dim);
+
+  for (int x = 0; x < x_dim; ++x) {
+    parts[x].resize(y_dim);
+    for (int y = 0; y < y_dim; ++y) {
+      parts[x][y].resize(z_dim);
+      for (int z = 0; z < z_dim; ++z) {
+        std::ostringstream out;
+        out << "part_" << x << "_" << y << "_" << z;
+        parts[x][y][z] = &meta.declare_part(out.str());
+      }
+    }
+  }
+
+  meta.commit();
+
+  mesh.generate_mesh();
+
+  bulk.modification_begin();
+
+  for (int x = 0; x < x_dim; ++x) {
+    for (int y = 0; y < y_dim; ++y) {
+      for (int z = 0; z < z_dim; ++z) {
+        PartVector add(1, parts[x][y][z]);
+        Entity elem = mesh.elem(x, y, z);
+        bulk.change_entity_parts(elem, add);
+      }
+    }
+  }
+
+  bulk.modification_end();
+
+  const int num_iterations = 5;
+
+  bulk.modification_begin();
+
+  CALLGRIND_TOGGLE_COLLECT;
+  std::cout << "HERE" << std::endl;
+  for (int i = 0; i < num_iterations; ++i) {
+    for (int x = 0; x < x_dim; ++x) {
+      for (int y = 0; y < y_dim; ++y) {
+        size_t size_sum = 0;
+        Selector sel;
+        for (int z = 0; z < z_dim; ++z) {
+          sel |= *parts[x][y][z];
+        }
+        BucketVector output_buckets;
+        get_buckets(sel, bulk.buckets(stk::topology::ELEMENT_RANK), output_buckets);
+        for (int j = 0, je = output_buckets.size(); j < je; ++j) {
+          size_sum += output_buckets[j]->size();
+        }
+        STKUNIT_EXPECT_EQ(size_sum, 10u);
+      }
+    }
+  }
+  std::cout << "HERE" << std::endl;
+  CALLGRIND_TOGGLE_COLLECT;
+  CALLGRIND_STOP_INSTRUMENTATION;
+
+  bulk.modification_end();
 
   print_memory_sum_all_procs(pm);
 
