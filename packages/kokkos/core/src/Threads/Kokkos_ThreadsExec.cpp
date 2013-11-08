@@ -46,6 +46,7 @@
 #include <iostream>
 #include <Kokkos_Threads.hpp>
 #include <Kokkos_hwloc.hpp>
+#include <Kokkos_Atomic.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -57,12 +58,10 @@ namespace {
 ThreadsExec                  s_threads_process ;
 ThreadsExec                * s_threads_exec[  ThreadsExec::MAX_THREAD_COUNT ];
 std::pair<unsigned,unsigned> s_threads_coord[ ThreadsExec::MAX_THREAD_COUNT ];
-std::string                  s_exception_msg ;
 
 unsigned s_threads_count       = 0 ;
 unsigned s_threads_per_numa    = 0 ;
 unsigned s_threads_per_core    = 0 ;
-unsigned s_threads_per_team_default = 0 ;
 
 unsigned s_current_reduce_size = 0 ;
 unsigned s_current_shared_size = 0 ;
@@ -113,7 +112,25 @@ unsigned fan_size( const unsigned rank , const unsigned size )
 namespace Kokkos {
 namespace Impl {
 
-inline
+void execute_function_noop( ThreadsExec & , const void * ) {}
+
+void ThreadsExec::driver(void)
+{
+  ThreadsExec this_thread ;
+
+  while ( ThreadsExec::Active == this_thread.m_pool_state ) {
+
+    this_thread.set_team_relations();
+
+    (*s_current_function)( this_thread , s_current_function_arg );
+
+    // Deactivate thread and wait for reactivation
+    this_thread.m_pool_state = ThreadsExec::Inactive ;
+
+    wait_yield( this_thread.m_pool_state , ThreadsExec::Inactive );
+  }
+}
+
 void ThreadsExec::set_team_relations()
 {
   m_team_base        = 0 ;
@@ -157,107 +174,6 @@ void ThreadsExec::set_team_relations()
   }
 }
 
-void ThreadsExec::driver(void)
-{
-  // If hardware locality library unavailable then pass in the rank.
-
-  size_t thread_rank = (size_t) s_current_function_arg ;
-
-  if ( s_threads_count <= thread_rank ) {
-    thread_rank = Kokkos::hwloc::bind_this_thread( s_threads_count , s_threads_coord );
-  }
-
-  if ( s_threads_count <= thread_rank || 0 != ((ThreadsExec * volatile *)s_threads_exec)[ thread_rank ] ) {
-
-    // An error occured. Inform process that thread is terminating
-    s_threads_process.m_pool_state = ThreadsExec::Terminating ;
-
-    return ;
-  }
-
-  {
-    ThreadsExec this_thread ;
-
-    this_thread.m_pool_state = ThreadsExec::Active ;
-
-    // Try to protect against cache coherency failure by casting to volatile.
-    ((ThreadsExec * volatile *)s_threads_exec)[ thread_rank ] = & this_thread ;
-    // Really need a memory fence here.
-
-    // Inform spawning process that the threads_exec entry has been set.
-    s_threads_process.m_pool_state = ThreadsExec::Active ;
-
-    while ( ThreadsExec::Active == this_thread.m_pool_state ) {
-
-#if 0
-      try {
-        // Call work function
-        (*s_current_function)( this_thread , s_current_function_arg );
-      }
-      catch( const std::exception & x ) {
-        std::ostringstream msg ;
-        msg << "Kokkos::Threads[" << thread_rank << "] Uncaught exeception : " << x.what() << std::endl ;
-        s_exception_msg.append( msg.str() );
-      }
-      catch( ... ) {
-        std::ostringstream msg ;
-        msg << "Kokkos::Threads[" << thread_rank << "] Uncaught exeception"  << std::endl ;
-        s_exception_msg.append( msg.str() );
-      }
-#else
-        this_thread.set_team_relations();
-
-        (*s_current_function)( this_thread , s_current_function_arg );
-#endif
-
-      // Deactivate thread and wait for reactivation
-      this_thread.m_pool_state = ThreadsExec::Inactive ;
-      wait_yield( this_thread.m_pool_state , ThreadsExec::Inactive );
-    }
-
-    s_threads_process.m_pool_state = ThreadsExec::Terminating ;
-
-    ((ThreadsExec * volatile * )s_threads_exec)[ thread_rank ] = 0 ;
-  }
-}
-
-void execute_function_noop( ThreadsExec & , const void * ) {}
-
-} // namespace Impl
-} // namespace Kokkos
-
-//----------------------------------------------------------------------------
-
-namespace Kokkos {
-namespace Impl {
-
-ThreadsExec::~ThreadsExec()
-{
-  m_pool_base   = 0 ;
-  m_team_base   = 0 ;
-
-  m_alloc_reduce     = 0 ;
-  m_alloc_shared     = 0 ;
-  m_team_shared      = 0 ;
-  m_team_shared_end  = 0 ;
-  m_team_shared_iter = 0 ;
-
-  m_pool_rank     = 0 ;
-  m_pool_size     = 0 ;
-  m_pool_fan_size = 0 ;
-
-  m_team_rank     = 0 ;
-  m_team_size     = 0 ;
-  m_team_fan_size = 0 ;
-
-  m_league_rank = 0 ;
-  m_league_end  = 0 ;
-  m_league_size = 0 ;
-
-  m_pool_state  = ThreadsExec::Terminating ;
-  m_team_state  = ThreadsExec::Inactive ;
-}
-
 ThreadsExec::ThreadsExec()
   : m_pool_base(0)
   , m_team_base(0)
@@ -282,13 +198,78 @@ ThreadsExec::ThreadsExec()
   , m_pool_state( ThreadsExec::Terminating )
   , m_team_state( ThreadsExec::Inactive )
 {
-  if ( & s_threads_process == this ) {
+  if ( & s_threads_process != this ) {
+
+    // A spawned thread
+
+    ThreadsExec * const nil = 0 ;
+
+    // Which entry in 's_threads_exec', possibly determined from hwloc binding
+    const unsigned entry = ((size_t)s_current_function_arg) < s_threads_count
+                         ? ((size_t)s_current_function_arg)
+                         : size_t(Kokkos::hwloc::bind_this_thread( s_threads_count , s_threads_coord ));
+
+    // Given a good entry set this thread in the 's_threads_exec' array
+    if ( entry < s_threads_count && 
+         nil == atomic_compare_exchange( s_threads_exec + entry , nil , this ) ) {
+
+      m_pool_base     = s_threads_exec ;
+      m_pool_rank     = s_threads_count - ( entry + 1 );
+      m_pool_size     = s_threads_count ;
+      m_pool_fan_size = fan_size( m_pool_rank , m_pool_size );
+      m_pool_state    = ThreadsExec::Active ;
+
+      // Inform spawning process that the threads_exec entry has been set.
+      s_threads_process.m_pool_state = ThreadsExec::Active ;
+    }
+    else {
+      // Inform spawning process that the threads_exec entry could not be set.
+      s_threads_process.m_pool_state = ThreadsExec::Terminating ;
+    }
+  }
+  else {
     // Enables 'parallel_for' to execute on unitialized Threads device
-    m_pool_state = ThreadsExec::Inactive ;
     m_pool_rank  = 0 ;
     m_pool_size  = 1 ;
+    m_pool_state = ThreadsExec::Inactive ;
   }
 }
+
+ThreadsExec::~ThreadsExec()
+{
+  const unsigned entry = m_pool_size - ( m_pool_rank + 1 );
+
+  m_pool_base   = 0 ;
+  m_team_base   = 0 ;
+
+  m_alloc_reduce     = 0 ;
+  m_alloc_shared     = 0 ;
+  m_team_shared      = 0 ;
+  m_team_shared_end  = 0 ;
+  m_team_shared_iter = 0 ;
+
+  m_pool_rank     = 0 ;
+  m_pool_size     = 0 ;
+  m_pool_fan_size = 0 ;
+  m_team_rank     = 0 ;
+  m_team_size     = 0 ;
+  m_team_fan_size = 0 ;
+  m_league_rank   = 0 ;
+  m_league_end    = 0 ;
+  m_league_size   = 0 ;
+
+  m_pool_state  = ThreadsExec::Terminating ;
+  m_team_state  = ThreadsExec::Inactive ;
+
+  if ( & s_threads_process != this && entry < MAX_THREAD_COUNT ) {
+    ThreadsExec * const nil = 0 ;
+
+    atomic_compare_exchange( s_threads_exec + entry , this , nil );
+
+    s_threads_process.m_pool_state = ThreadsExec::Terminating ;
+  }
+}
+
 
 int ThreadsExec::get_thread_count()
 {
@@ -444,10 +425,6 @@ void ThreadsExec::fence()
   if ( s_threads_count ) {
     // Wait for the root thread to complete:
     Impl::spinwait( s_threads_exec[0]->m_pool_state , ThreadsExec::Active );
-
-    if ( s_exception_msg.size() ) {
-      Kokkos::Impl::throw_runtime_exception( s_exception_msg );
-    }
   }
 
   s_current_function     = 0 ;
@@ -468,12 +445,9 @@ void ThreadsExec::start( void (*func)( ThreadsExec & , const void * ) , const vo
     Kokkos::Impl::throw_runtime_exception( std::string( "ThreadsExec::start() FAILED : already executing" ) );
   }
 
-  s_exception_msg.clear();
-
   s_current_function     = func ;
   s_current_function_arg = arg ;
-  s_current_team_size    = std::min( s_threads_per_numa ,
-                                     unsigned( work_team_size ? work_team_size : s_threads_per_team_default ) );
+  s_current_team_size    = work_team_size ? std::min( s_threads_per_numa , unsigned(work_team_size) ) : s_threads_per_numa ;
   s_current_team_alloc   = s_threads_per_core * ( ( s_current_team_size + s_threads_per_core - 1 ) / s_threads_per_core );
   s_current_league_size  = work_league_size ;
 
@@ -501,8 +475,6 @@ bool ThreadsExec::sleep()
   fence();
 
   ThreadsExec::global_lock();
-
-  s_exception_msg.clear();
 
   s_current_function = & execute_sleep ;
 
@@ -536,8 +508,6 @@ bool ThreadsExec::wake()
 
 void ThreadsExec::execute_serial( void (*func)( ThreadsExec & , const void * ) )
 {
-  s_exception_msg.clear();
-
   s_current_function = func ;
   s_current_function_arg = & s_threads_process ;
 
@@ -621,14 +591,14 @@ void ThreadsExec::print_configuration( std::ostream & s , const bool detail )
   const unsigned cores_per_numa   = Kokkos::hwloc::get_available_cores_per_numa();
   const unsigned threads_per_core = Kokkos::hwloc::get_available_threads_per_core();
 
-#if defined( KOKKOS_HAVE_HWLOC )
-  s << "macro  KOKKOS_HAVE_HWLOC   : defined" << std::endl ;
-#endif
-#if defined( KOKKOS_HAVE_PTHREAD )
-  s << "macro  KOKKOS_HAVE_PTHREAD : defined" << std::endl ;
-#endif
+  s << "Kokkos::Threads" ;
 
-  s << "Kokkos::Threads hwloc[" << numa_count << "x" << cores_per_numa << "x" << threads_per_core << "]" ;
+#if defined( KOKKOS_HAVE_PTHREAD )
+  s << " KOKKOS_HAVE_PTHREAD" ;
+#endif
+#if defined( KOKKOS_HAVE_HWLOC )
+  s << " hwloc[" << numa_count << "x" << cores_per_numa << "x" << threads_per_core << "]" ;
+#endif
 
   if ( s_threads_count ) {
     s << " threads[" << s_threads_count << "]"
@@ -640,14 +610,14 @@ void ThreadsExec::print_configuration( std::ostream & s , const bool detail )
       << " SharedScratch[" << s_current_shared_size << "]" ;
     s << std::endl ;
 
-    if ( detail || 1 ) {
+    if ( detail ) {
 
       execute_serial( & execute_get_binding );
 
       for ( unsigned i = 0 ; i < s_threads_count ; ++i ) {
         ThreadsExec * const th = s_threads_exec[i] ;
         s << "  Thread hwloc("
-          << s_threads_coord[i].first << ","
+          << s_threads_coord[i].first << "."
           << s_threads_coord[i].second << ")" ;
 
         s_threads_coord[i].first  = ~0u ;
@@ -698,122 +668,53 @@ int ThreadsExec::team_max()
 int ThreadsExec::is_initialized()
 { return 0 != s_threads_exec[0] ; }
 
-void ThreadsExec::initialize( 
-  const std::pair<unsigned,unsigned> team_topology ,
-        std::pair<unsigned,unsigned> use_core_topology )
+void ThreadsExec::initialize( unsigned thread_count ,
+                              unsigned use_numa_count ,
+                              unsigned use_cores_per_numa )
 {
   static const Sentinel sentinel ;
 
-  verify_is_process("ThreadsExec::initialize",false);
+  const bool is_initialized = 0 != s_threads_count ;
 
-  std::ostringstream msg ;
+  unsigned thread_spawn_failed = 0 ;
 
-  msg << "Kokkos::Threads::initialize("
-      << " team_topology(" << team_topology.first << "," << team_topology.second << ")"
-      << ", use_core_topology(" << use_core_topology.first << "," << use_core_topology.second << ")"
-      << " )" ;
+  if ( ! is_initialized ) {
 
-  if ( s_threads_count ) {
-    msg << " FAILED : Already initialized" ;
-    Kokkos::Impl::throw_runtime_exception( msg.str() );
-  }
+    // If thread_count, use_numa_count, or use_cores_per_numa are zero
+    // then they will be given default values based upon hwloc detection
+    // and allowed asynchronous execution.
 
-  const unsigned thread_count = team_topology.first * team_topology.second ;
+    const bool hwloc_avail = hwloc::available();
 
-  if ( 0 == thread_count ) {
-    msg << " FAILED : zero thread count" ;
-    Kokkos::Impl::throw_runtime_exception( msg.str() );
-  }
-  //------------------------------------
-  // Query hardware topology and capacity, if available.
+    const unsigned thread_spawn_begin =
+      hwloc::thread_mapping( "Kokkos::Threads::initialize" ,
+                             true /* allow asynchronous */ ,
+                             thread_count ,
+                             use_numa_count ,
+                             use_cores_per_numa ,
+                             s_threads_coord );
 
-  const bool hwloc_avail = Kokkos::hwloc::available();
+    const std::pair<unsigned,unsigned> proc_coord = s_threads_coord[0] ;
 
-  const std::pair<unsigned,unsigned>
-    hwloc_core_topo( Kokkos::hwloc::get_available_numa_count() ,
-                     Kokkos::hwloc::get_available_cores_per_numa() );
-
-  std::pair<unsigned,unsigned> master_coord = Kokkos::hwloc::get_this_thread_coordinate();
-  bool                         asynchronous = false ;
-
-  if ( hwloc_avail && 1 < thread_count ) {
-
-    if ( 0 == use_core_topology.first || 0 == use_core_topology.second ) {
-      use_core_topology = Kokkos::hwloc::use_core_topology( thread_count );
+    if ( thread_spawn_begin ) {
+      // Synchronous with s_threads_coord[0] as the process core
+      // Claim entry #0 for binding the process core.
+      s_threads_coord[0] = std::pair<unsigned,unsigned>(~0u,~0u);
     }
-
-    if ( use_core_topology.first < hwloc_core_topo.first ) {
-      // Can omit a (NUMA) group of cores and execute work asynchronously
-      // on the other groups.
-
-      Kokkos::hwloc::thread_mapping( team_topology , use_core_topology , hwloc_core_topo , s_threads_coord );
-
-      // Don't use master thread's first core coordinate (NUMA region).
-      // Originally mapped:
-      //   begin = hwloc_core_topo.first - use_core_topology.first ;
-      //   end   = hwloc_core_topo.first ;
-      // So can decrement.
-
-      for ( unsigned i = 0 ; i < thread_count ; ++i ) {
-        if ( s_threads_coord[i].first <= master_coord.first ) {
-          --( s_threads_coord[i].first );
-        }
-      }
-
-      asynchronous = true ;
-    }
-    else if ( use_core_topology.second < hwloc_core_topo.second ) {
-      // Can omit a core from each group and execute work asynchronously
-
-      Kokkos::hwloc::thread_mapping( team_topology , use_core_topology , hwloc_core_topo , s_threads_coord );
-
-      // Threads' coordinates are in the range
-      //   0 <= numa_begin = hwloc_core_topo.first - use_core_topology.first
-      //   1 <= numa_end   = hwloc_core_topo.first
-      //   1 <= core_begin = hwloc_core_topo.second - use_core_topology.second
-      //   1 <= core_end   = hwloc_core_topo.second
-      //
-      //   range: ( [numa_begin,numa_end) , [core_begin,core_end) )
-      //
-      // Force master thread onto the highest rank unused core of its current numa region.
-      //
-      master_coord.second = ( hwloc_core_topo.second - use_core_topology.second ) - 1 ;
-
-      asynchronous = true ;
-    }
-    else {
-      // Spawn threads with root thread on the master process' core
-
-      Kokkos::hwloc::thread_mapping( team_topology , use_core_topology , hwloc_core_topo , master_coord , s_threads_coord );
-
-      s_threads_coord[0] = std::pair<unsigned,unsigned>( ~0u , ~0u );
-    }
-  }
-  else {
-    // Not applicable so ignore it.
-    use_core_topology.first  = 0 ;
-    use_core_topology.second = 0 ;
-  }
-
-  //------------------------------------
-  // Spawn threads
-
-  {
-    const unsigned thread_spawn_begin  = asynchronous ? 0 : 1 ;
-    unsigned       thread_spawn_failed = 0 ;
 
     s_threads_count    = thread_count ;
+    s_threads_per_numa = s_threads_count / use_numa_count ;
+    s_threads_per_core = s_threads_per_numa / use_cores_per_numa ;
     s_current_function = & execute_function_noop ; // Initialization work function
 
-    // If not fully utilizing the capacity then spawn threads for asynchronous execution.
-
-    for ( unsigned i = thread_spawn_begin ; i < thread_count ; ++i ) {
+    for ( unsigned ith = thread_spawn_begin ; ith < thread_count ; ++ith ) {
 
       s_threads_process.m_pool_state = ThreadsExec::Inactive ;
 
-      // If hwloc available then spawned thread will choose its own rank,
-      // otherwise specify the rank.
-      s_current_function_arg = (void*)( hwloc_avail ? ~0u : i );
+      // If hwloc available then spawned thread will
+      // choose its own entry in 's_threads_coord'
+      // otherwise specify the entry.
+      s_current_function_arg = (void*)( hwloc_avail ? ~0u : ith );
 
       // Spawn thread executing the 'driver()' function.
       // Wait until spawned thread has attempted to initialize.
@@ -822,13 +723,14 @@ void ThreadsExec::initialize(
       if ( ThreadsExec::spawn() ) {
         wait_yield( s_threads_process.m_pool_state , ThreadsExec::Inactive );
       }
+      if ( s_threads_process.m_pool_state == ThreadsExec::Terminating ) break ;
     }
 
     // Wait for all spawned threads to deactivate before zeroing the function.
 
-    for ( unsigned i = thread_spawn_begin ; i < thread_count ; ++i ) {
+    for ( unsigned ith = thread_spawn_begin ; ith < thread_count ; ++ith ) {
       // Try to protect against cache coherency failure by casting to volatile.
-      ThreadsExec * const th = ((ThreadsExec * volatile *)s_threads_exec)[i] ;
+      ThreadsExec * const th = ((ThreadsExec * volatile *)s_threads_exec)[ith] ;
       if ( th ) {
         wait_yield( th->m_pool_state , ThreadsExec::Active );
       }
@@ -839,62 +741,52 @@ void ThreadsExec::initialize(
 
     s_current_function     = 0 ;
     s_current_function_arg = 0 ;
-
-    if ( thread_spawn_failed ) {
-
-      s_threads_count = 0 ;
-
-      msg << " FAILED " << thread_spawn_failed << " attempts to spawn threads" ;
-
-      Kokkos::Impl::throw_runtime_exception( msg.str() );
-    }
-
-    if ( 1 < thread_count ) { Kokkos::hwloc::bind_this_thread( master_coord ); }
-
-    // Clear master thread data.
-    // The master thread will be unused or initialized
-    // as part of the thread pool.
-
-    s_threads_process.m_pool_base = 0 ;
-    s_threads_process.m_pool_rank = 0 ;
-    s_threads_process.m_pool_size = 0 ;
-    s_threads_process.m_pool_fan_size = 0 ;
-
-    s_threads_process.m_team_base = 0 ;
-    s_threads_process.m_team_rank = 0 ;
-    s_threads_process.m_team_size = 0 ;
-
-    s_threads_process.m_league_rank = 0 ;
-    s_threads_process.m_league_end  = 0 ;
-    s_threads_process.m_league_size = 0 ;
-
     s_threads_process.m_pool_state = ThreadsExec::Inactive ;
 
-    if ( thread_spawn_begin ) {
-      s_threads_exec[0] = & s_threads_process ; // Include the master thread in pool.
+    if ( ! thread_spawn_failed ) {
+      // Bind process to the core on which it was located before spawning occured
+      Kokkos::hwloc::bind_this_thread( proc_coord );
+
+      if ( thread_spawn_begin ) { // Include process in pool.
+        s_threads_exec[0]                 = & s_threads_process ;
+        s_threads_process.m_pool_base     = s_threads_exec ;
+        s_threads_process.m_pool_rank     = thread_count - 1 ; // Reversed for scan-compatible reductions
+        s_threads_process.m_pool_size     = thread_count ;
+        s_threads_process.m_pool_fan_size = fan_size( s_threads_process.m_pool_rank , s_threads_process.m_pool_size );
+      }
+      else {
+        s_threads_process.m_pool_base = 0 ;
+        s_threads_process.m_pool_rank = 0 ;
+        s_threads_process.m_pool_size = 0 ;
+        s_threads_process.m_pool_fan_size = 0 ;
+      }
+
+      // Initial allocations:
+      ThreadsExec::resize_reduce_scratch( 4096 - REDUCE_TEAM_BASE );
+      ThreadsExec::resize_shared_scratch( 4096 );
+    }
+    else {
+      s_threads_count    = 0 ;
+      s_threads_per_numa = 0 ;
+      s_threads_per_core = 0 ;
     }
   }
 
-  //------------------------------------
-  // Initialize team topology and fan-in/out relationships:
+  if ( is_initialized || thread_spawn_failed ) {
 
-  s_threads_per_numa = use_core_topology.first ? thread_count / use_core_topology.first : thread_count ;
-  s_threads_per_core = use_core_topology.first ? thread_count / ( use_core_topology.first * use_core_topology.second ) : 1 ;
-  s_threads_per_team_default = team_topology.second ;
+    std::ostringstream msg ;
 
-  // Set threads' pool size, rank, and fan-in counts.
-  for ( unsigned i = 0 ; i < thread_count ; ++i ) {
-    ThreadsExec & th = * s_threads_exec[i] ;
+    msg << "Kokkos::Threads::initialize ERROR" ;
 
-    th.m_pool_base     = s_threads_exec ;
-    th.m_pool_rank     = thread_count - ( i + 1 ); // Reversed for scan-compatible reductions
-    th.m_pool_size     = thread_count ;
-    th.m_pool_fan_size = fan_size( th.m_pool_rank , th.m_pool_size );
+    if ( is_initialized ) {
+      msg << " : already initialized" ;
+    }
+    if ( thread_spawn_failed ) {
+      msg << " : failed to spawn " << thread_spawn_failed << " threads" ;
+    }
+
+    Kokkos::Impl::throw_runtime_exception( msg.str() );
   }
-
-  // Initial allocations:
-  ThreadsExec::resize_reduce_scratch( 4096 - REDUCE_TEAM_BASE );
-  ThreadsExec::resize_shared_scratch( 4096 );
 }
 
 //----------------------------------------------------------------------------
@@ -932,12 +824,11 @@ void ThreadsExec::finalize()
   s_threads_count    = 0 ;
   s_threads_per_numa = 0 ;
   s_threads_per_core = 0 ;
-  s_threads_per_team_default = 0 ;
 
   // Reset master thread to run solo.
-  s_threads_process.m_pool_base = 0 ;
-  s_threads_process.m_pool_rank = 0 ;
-  s_threads_process.m_pool_size = 1 ;
+  s_threads_process.m_pool_base     = 0 ;
+  s_threads_process.m_pool_rank     = 0 ;
+  s_threads_process.m_pool_size     = 1 ;
   s_threads_process.m_pool_fan_size = 0 ;
   s_threads_process.m_pool_state = ThreadsExec::Inactive ;
 }

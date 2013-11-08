@@ -256,7 +256,7 @@ private:
     const int length = dimension( Rank - 1 );
 
     const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-      per_thread( StokhosStorageStaticDimension ? length / dev.team_size() : 0 );
+      per_thread( ! StokhosStorageStaticDimension ? length / dev.team_size() : 0 );
 
     if ( per_thread.value * dev.team_size() != length ) {
       const char msg[] = "Kokkos::View< Sacado::MP::Vector ... > incompatible vector-size : team-size" ;
@@ -424,7 +424,7 @@ public:
       verify_dimension_storage_size( dev );
 
       const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( StokhosStorageStaticDimension ? m_shape.N0 / dev.team_size() : 0 );
+        per_thread( ! StokhosStorageStaticDimension ? m_shape.N0 / dev.team_size() : 0 );
 
       KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, dev.team_rank() * per_thread.value );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
@@ -480,7 +480,7 @@ public:
       verify_dimension_storage_size( dev );
 
       const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( StokhosStorageStaticDimension ? m_shape.N1 / dev.team_size() : 0 );
+        per_thread( ! StokhosStorageStaticDimension ? m_shape.N1 / dev.team_size() : 0 );
 
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0, dev.team_rank() * per_thread.value );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
@@ -529,7 +529,7 @@ public:
       verify_dimension_storage_size( dev );
 
       const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( StokhosStorageStaticDimension ? m_shape.N2 / dev.team_size() : 0 );
+        per_thread( ! StokhosStorageStaticDimension ? m_shape.N2 / dev.team_size() : 0 );
 
       KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0, i1, dev.team_rank() * per_thread.value );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
@@ -583,7 +583,7 @@ public:
       verify_dimension_storage_size( dev );
 
       const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( StokhosStorageStaticDimension ? m_shape.N3 / dev.team_size() : 0 );
+        per_thread( ! StokhosStorageStaticDimension ? m_shape.N3 / dev.team_size() : 0 );
 
       KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0, i1, i2, dev.team_rank() * per_thread.value );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
@@ -641,7 +641,7 @@ public:
       verify_dimension_storage_size( dev );
 
       const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( StokhosStorageStaticDimension ? m_shape.N4 / dev.team_size() : 0 );
+        per_thread( ! StokhosStorageStaticDimension ? m_shape.N4 / dev.team_size() : 0 );
 
       KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0, i1, i2, i3, dev.team_rank() * per_thread.value );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
@@ -705,7 +705,7 @@ public:
       verify_dimension_storage_size( dev );
 
       const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( StokhosStorageStaticDimension ? m_shape.N5 / dev.team_size() : 0 );
+        per_thread( ! StokhosStorageStaticDimension ? m_shape.N5 / dev.team_size() : 0 );
 
       KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0, i1, i2, i3, i4, dev.team_rank() * per_thread.value );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
@@ -773,7 +773,7 @@ public:
       verify_dimension_storage_size( dev );
 
       const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( StokhosStorageStaticDimension ? m_shape.N6 / dev.team_size() : 0 );
+        per_thread( ! StokhosStorageStaticDimension ? m_shape.N6 / dev.team_size() : 0 );
 
       KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0, i1, i2, i3, i4, i5, dev.team_rank() * per_thread.value );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
@@ -845,7 +845,7 @@ public:
       verify_dimension_storage_size( dev );
 
       const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( StokhosStorageStaticDimension ? m_shape.N7 / dev.team_size() : 0 );
+        per_thread( ! StokhosStorageStaticDimension ? m_shape.N7 / dev.team_size() : 0 );
 
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
       KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0, i1, i2, i3, i4, i5, i6, dev.team_rank() * per_thread.value );
@@ -918,7 +918,7 @@ public:
       verify_dimension_storage_size( dev );
 
       const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( StokhosStorageStaticDimension ? m_shape.N0 / dev.team_size() : 0 );
+        per_thread( ! StokhosStorageStaticDimension ? m_shape.N0 / dev.team_size() : 0 );
 
       KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, dev.team_rank() * per_thread.value );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
@@ -976,7 +976,7 @@ public:
       verify_dimension_storage_size( dev );
 
       const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( StokhosStorageStaticDimension ? m_shape.N1 / dev.team_size() : 0 );
+        per_thread( ! StokhosStorageStaticDimension ? m_shape.N1 / dev.team_size() : 0 );
 
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0, dev.team_rank() * per_thread.value );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
@@ -1026,7 +1026,7 @@ public:
       verify_dimension_storage_size( dev );
 
       const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( StokhosStorageStaticDimension ? m_shape.N2 / dev.team_size() : 0 );
+        per_thread( ! StokhosStorageStaticDimension ? m_shape.N2 / dev.team_size() : 0 );
 
       KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0, i1, dev.team_rank() * per_thread.value );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
@@ -1077,7 +1077,7 @@ public:
       verify_dimension_storage_size( dev );
 
       const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( StokhosStorageStaticDimension ? m_shape.N3 / dev.team_size() : 0 );
+        per_thread( ! StokhosStorageStaticDimension ? m_shape.N3 / dev.team_size() : 0 );
 
       KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0, i1, i2, dev.team_rank() * per_thread.value );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
@@ -1134,7 +1134,7 @@ public:
       verify_dimension_storage_size( dev );
 
       const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( StokhosStorageStaticDimension ? m_shape.N4 / dev.team_size() : 0 );
+        per_thread( ! StokhosStorageStaticDimension ? m_shape.N4 / dev.team_size() : 0 );
 
       KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0, i1, i2, i3, dev.team_rank() * per_thread.value );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
@@ -1198,7 +1198,7 @@ public:
       verify_dimension_storage_size( dev );
 
       const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( StokhosStorageStaticDimension ? m_shape.N5 / dev.team_size() : 0 );
+        per_thread( ! StokhosStorageStaticDimension ? m_shape.N5 / dev.team_size() : 0 );
 
       KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0, i1, i2, i3, i4, dev.team_rank() * per_thread.value );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
@@ -1266,7 +1266,7 @@ public:
       verify_dimension_storage_size( dev );
 
       const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( StokhosStorageStaticDimension ? m_shape.N6 / dev.team_size() : 0 );
+        per_thread( ! StokhosStorageStaticDimension ? m_shape.N6 / dev.team_size() : 0 );
 
       KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0, i1, i2, i3, i4, i5, dev.team_rank() * per_thread.value );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
@@ -1337,7 +1337,7 @@ public:
       verify_dimension_storage_size( dev );
 
       const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( StokhosStorageStaticDimension ? m_shape.N7 / dev.team_size() : 0 );
+        per_thread( ! StokhosStorageStaticDimension ? m_shape.N7 / dev.team_size() : 0 );
 
       KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0, i1, i2, i3, i4, i5, i6, dev.team_rank() * per_thread.value );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );

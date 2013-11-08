@@ -69,7 +69,7 @@ protected:
 
     std::cout << "Threads: " << team_count << "x" << threads_per_team << std::endl;
 
-    Kokkos::Threads::initialize( team_count , threads_per_team );
+    Kokkos::Threads::initialize( team_count * threads_per_team );
   }
 
   static void TearDownTestCase()

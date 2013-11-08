@@ -72,7 +72,7 @@ run_test(const size_t num_cpu, const size_t num_core_per_cpu,
   typedef Kokkos::Threads Device;
   const size_t team_count = num_cpu * num_core_per_cpu;
   const size_t threads_per_team = num_threads_per_core;
-  Kokkos::Threads::initialize( team_count , threads_per_team );
+  Kokkos::Threads::initialize( team_count * threads_per_team );
 
   std::vector<int> var_degree( d , p );
 

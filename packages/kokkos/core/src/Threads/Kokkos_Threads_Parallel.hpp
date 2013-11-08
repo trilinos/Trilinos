@@ -113,7 +113,7 @@ public:
     : m_func( functor )
     {
       ThreadsExec::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
-      ThreadsExec::start( & ParallelFor::execute , this , work.league_size );
+      ThreadsExec::start( & ParallelFor::execute , this , work.league_size , work.team_size );
       ThreadsExec::fence();
     }
 
@@ -212,7 +212,7 @@ public:
       ThreadsExec::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
       ThreadsExec::resize_reduce_scratch( Reduce::value_size( m_func ) );
 
-      ThreadsExec::start( & ParallelReduce::execute , this , work.league_size );
+      ThreadsExec::start( & ParallelReduce::execute , this , work.league_size , work.team_size );
 
       const pointer_type data = (pointer_type) ThreadsExec::root_reduce_scratch();
 

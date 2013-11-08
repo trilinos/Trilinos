@@ -53,7 +53,7 @@ int test_host( comm::Machine machine , std::istream & input )
               << " ]\"" << std::endl ;
   }
 
-  Kokkos::Threads::initialize( team_count , threads_per_team );
+  Kokkos::Threads::initialize( team_count * threads_per_team , numa_count );
 
   {
     std::ostringstream label ;

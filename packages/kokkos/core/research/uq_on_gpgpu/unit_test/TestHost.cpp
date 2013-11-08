@@ -133,7 +133,7 @@ int mainHost(bool test_flat, bool test_orig, bool test_block, bool check)
   const unsigned team_count = Kokkos::hwloc::get_available_numa_count();
   const unsigned threads_per_team = ( Kokkos::hwloc::get_available_cores_per_numa() + 1 ) / 2 ;
 
-  Kokkos::Threads::initialize( team_count , threads_per_team );
+  Kokkos::Threads::initialize( team_count * threads_per_team );
 
   typedef Kokkos::Threads device ;
 

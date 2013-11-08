@@ -221,6 +221,159 @@ void host_thread_mapping( const std::pair<unsigned,unsigned> team_topo ,
 namespace Kokkos {
 namespace hwloc {
 
+/* Return 0 if asynchronous, 1 if synchronous and include process. */
+unsigned thread_mapping( const char * const label ,
+                         const bool allow_async ,
+                         unsigned & thread_count ,
+                         unsigned & use_numa_count ,
+                         unsigned & use_cores_per_numa ,
+                         std::pair<unsigned,unsigned> threads_coord[] )
+{
+  const bool     hwloc_avail            = Kokkos::hwloc::available();
+  const unsigned avail_numa_count       = hwloc_avail ? hwloc::get_available_numa_count() : 1 ;
+  const unsigned avail_cores_per_numa   = hwloc_avail ? hwloc::get_available_cores_per_numa() : thread_count ;
+  const unsigned avail_threads_per_core = hwloc_avail ? hwloc::get_available_threads_per_core() : 1 ;
+
+  // (numa,core) coordinate of the process:
+  const std::pair<unsigned,unsigned> proc_coord = Kokkos::hwloc::get_this_thread_coordinate();
+
+  //------------------------------------------------------------------------
+  // Defaults for unspecified inputs:
+
+  if ( ! use_numa_count ) {
+    // Default to use all NUMA regions
+    use_numa_count = ! thread_count ? avail_numa_count : (
+                       thread_count < avail_numa_count ? thread_count : avail_numa_count );
+  }
+
+  if ( ! use_cores_per_numa ) {
+    // Default to use all but one core if asynchronous, all cores if synchronous.
+    const unsigned threads_per_numa = thread_count / use_numa_count ;
+
+    use_cores_per_numa = ! threads_per_numa ? avail_cores_per_numa - ( allow_async ? 1 : 0 ) : (
+                           threads_per_numa < avail_cores_per_numa ? threads_per_numa : avail_cores_per_numa );
+  }
+
+  if ( ! thread_count ) {
+    thread_count = use_numa_count * use_cores_per_numa * avail_threads_per_core ;
+  }
+
+  //------------------------------------------------------------------------
+  // Input verification:
+
+  const bool valid_numa      = use_numa_count <= avail_numa_count ;
+  const bool valid_cores     = use_cores_per_numa &&
+                               use_cores_per_numa <= avail_cores_per_numa ;
+  const bool valid_threads   = thread_count &&
+                               thread_count <= use_numa_count * use_cores_per_numa * avail_threads_per_core ;
+  const bool balanced_numa   = ! ( thread_count % use_numa_count );
+  const bool balanced_cores  = ! ( thread_count % ( use_numa_count * use_cores_per_numa ) );
+
+  const bool valid_input = valid_numa && valid_cores && valid_threads && balanced_numa && balanced_cores ;
+
+  if ( ! valid_input ) {
+
+    std::ostringstream msg ;
+
+    msg << label << " HWLOC ERROR(s)" ;
+
+    if ( ! valid_threads ) {
+      msg << " : thread_count(" << thread_count
+          << ") exceeds capacity("
+          << use_numa_count * use_cores_per_numa * avail_threads_per_core
+          << ")" ;
+    }
+    if ( ! valid_numa ) {
+      msg << " : use_numa_count(" << use_numa_count
+          << ") exceeds capacity(" << avail_numa_count << ")" ;
+    }
+    if ( ! valid_cores ) {
+      msg << " : use_cores_per_numa(" << use_cores_per_numa
+          << ") exceeds capacity(" << avail_cores_per_numa << ")" ;
+    }
+    if ( ! balanced_numa ) {
+      msg << " : thread_count(" << thread_count
+          << ") imbalanced among numa(" << use_numa_count << ")" ;
+    }
+    if ( ! balanced_cores ) {
+      msg << " : thread_count(" << thread_count
+          << ") imbalanced among cores(" << use_numa_count * use_cores_per_numa << ")" ;
+    }
+
+    Kokkos::Impl::throw_runtime_exception( msg.str() );
+  }
+
+  const unsigned thread_spawn_synchronous =
+    ( allow_async &&
+      1 < thread_count &&
+      ( use_numa_count     < avail_numa_count ||
+        use_cores_per_numa < avail_cores_per_numa ) )
+     ? 0 /* asyncronous */
+     : 1 /* synchronous, threads_coord[0] is process core */ ;
+
+  // Determine binding coordinates for to-be-spawned threads so that
+  // threads may be bound to cores as they are spawned.
+
+  const unsigned threads_per_core = thread_count / ( use_numa_count * use_cores_per_numa );
+
+  if ( thread_spawn_synchronous ) {
+    // Working synchronously and include process core as threads_coord[0].
+    // Swap the NUMA coordinate of the process core with 0
+    // Swap the CORE coordinate of the process core with 0
+    for ( unsigned i = 0 , inuma = avail_numa_count - use_numa_count ; inuma < avail_numa_count ; ++inuma ) {
+      const unsigned numa_coord = 0 == inuma ? proc_coord.first : ( proc_coord.first == inuma ? 0 : inuma );
+      for ( unsigned icore = avail_cores_per_numa - use_cores_per_numa ; icore < avail_cores_per_numa ; ++icore ) {
+        const unsigned core_coord = 0 == icore ? proc_coord.second : ( proc_coord.second == icore ? 0 : icore );
+        for ( unsigned ith = 0 ; ith < threads_per_core ; ++ith , ++i ) {
+          threads_coord[i].first  = numa_coord ;
+          threads_coord[i].second = core_coord ;
+        }
+      }
+    }
+  }
+  else if ( use_numa_count < avail_numa_count ) {
+    // Working asynchronously and omit the process' NUMA region from the pool.
+    // Swap the NUMA coordinate of the process core with ( ( avail_numa_count - use_numa_count ) - 1 )
+    const unsigned numa_coord_swap = ( avail_numa_count - use_numa_count ) - 1 ;
+    for ( unsigned i = 0 , inuma = avail_numa_count - use_numa_count ; inuma < avail_numa_count ; ++inuma ) {
+      const unsigned numa_coord = proc_coord.first == inuma ? numa_coord_swap : inuma ;
+      for ( unsigned icore = avail_cores_per_numa - use_cores_per_numa ; icore < avail_cores_per_numa ; ++icore ) {
+        const unsigned core_coord = icore ;
+        for ( unsigned ith = 0 ; ith < threads_per_core ; ++ith , ++i ) {
+          threads_coord[i].first  = numa_coord ;
+          threads_coord[i].second = core_coord ;
+        }
+      }
+    }
+  }
+  else if ( use_cores_per_numa < avail_cores_per_numa ) {
+    // Working asynchronously and omit the process' core from the pool.
+    // Swap the CORE coordinate of the process core with ( ( avail_cores_per_numa - use_cores_per_numa ) - 1 )
+    const unsigned core_coord_swap = ( avail_cores_per_numa - use_cores_per_numa ) - 1 ;
+    for ( unsigned i = 0 , inuma = avail_numa_count - use_numa_count ; inuma < avail_numa_count ; ++inuma ) {
+      const unsigned numa_coord = inuma ;
+      for ( unsigned icore = avail_cores_per_numa - use_cores_per_numa ; icore < avail_cores_per_numa ; ++icore ) {
+        const unsigned core_coord = proc_coord.second == icore ? core_coord_swap : icore ;
+        for ( unsigned ith = 0 ; ith < threads_per_core ; ++ith , ++i ) {
+          threads_coord[i].first  = numa_coord ;
+          threads_coord[i].second = core_coord ;
+        }
+      }
+    }
+  }
+
+  return thread_spawn_synchronous ;
+}
+
+} /* namespace hwloc */
+} /* namespace Kokkos */
+
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
+namespace hwloc {
+
 std::pair<unsigned,unsigned> use_core_topology( const unsigned thread_count )
 {
   const unsigned hwloc_numa_count       = Kokkos::hwloc::get_available_numa_count();

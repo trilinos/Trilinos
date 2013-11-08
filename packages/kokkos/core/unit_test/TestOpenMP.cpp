@@ -79,10 +79,10 @@ protected:
     const unsigned cores_per_numa   = Kokkos::hwloc::get_available_cores_per_numa();
     const unsigned threads_per_core = Kokkos::hwloc::get_available_threads_per_core();
 
-    const unsigned gang_count        = std::max( 1u , numa_count );
-    const unsigned gang_worker_count = std::max( 2u , ( cores_per_numa * threads_per_core ) / 2 );
+    const unsigned threads_count = std::max( 1u , numa_count ) *
+                                   std::max( 2u , ( cores_per_numa * threads_per_core ) / 2 );
 
-    Kokkos::OpenMP::initialize( gang_count , gang_worker_count );
+    Kokkos::OpenMP::initialize( threads_count );
     // Kokkos::OpenMP::print_configuration( std::cout );
   }
 

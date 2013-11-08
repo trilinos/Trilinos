@@ -48,8 +48,9 @@ struct MPVectorExample<MaxSize, Scalar, Kokkos::Cuda> {
     typedef MPVectorTypes<MaxSize, Scalar, Device> MPT;
 
     // Initialize Cuda
-    if (!Kokkos::Cuda::host_mirror_device_type::is_initialized())
-      Kokkos::Cuda::host_mirror_device_type::initialize();
+    const bool init_cuda_mirror = ! Kokkos::Cuda::host_mirror_device_type::is_initialized();
+
+   if ( init_cuda_mirror ) { Kokkos::Cuda::host_mirror_device_type::initialize(1); }
     Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
     Kokkos::Cuda::print_configuration( std::cout );
 
@@ -173,6 +174,7 @@ struct MPVectorExample<MaxSize, Scalar, Kokkos::Cuda> {
 
     // Finalize Cuda
     Kokkos::Cuda::finalize();
+    if ( init_cuda_mirror ) { Kokkos::Cuda::host_mirror_device_type::finalize(); }
 
     return status;
   }

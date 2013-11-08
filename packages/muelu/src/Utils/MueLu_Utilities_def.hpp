@@ -1271,11 +1271,14 @@ namespace MueLu {
 
       double avgNumRows = sumNumRows / numProcessesWithData;
       double avgNnz     = sumNnz     / numProcessesWithData;
-      // NOTE: division by zero is proper here, it produces reasonable nans
-      double devNumRows = sqrt((sum2NumRows - sumNumRows*sumNumRows/numProcessesWithData)/(numProcessesWithData-1));
-      double devNnz     = sqrt((sum2Nnz     -         sumNnz*sumNnz/numProcessesWithData)/(numProcessesWithData-1));
-      if (numProcessesWithData == 1)
+      double devNumRows = 0;
+      double devNnz     = 0;
+      if (numProcessesWithData != 1) {
+        devNumRows = sqrt((sum2NumRows - sumNumRows*sumNumRows/numProcessesWithData)/(numProcessesWithData-1));
+        devNnz = sqrt((sum2Nnz     -         sumNnz*sumNnz/numProcessesWithData)/(numProcessesWithData-1));
+      } else {
         devNumRows = devNnz = 0;
+      }
 
       char buf[256];
       ss << msgTag << " Load balancing info:" << std::endl;

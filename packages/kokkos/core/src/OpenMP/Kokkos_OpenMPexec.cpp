@@ -298,6 +298,83 @@ unsigned OpenMP::team_max()
 int OpenMP::is_initialized()
 { return 0 != Impl::OpenMPexec::m_thread[0]; }
 
+void OpenMP::initialize( unsigned thread_count ,
+                         unsigned use_numa_count ,
+                         unsigned use_cores_per_numa )
+{
+  const bool is_initialized = 0 != Impl::OpenMPexec::m_thread[0] ;
+
+  bool thread_spawn_failed = false ;
+
+  if ( ! is_initialized ) {
+
+    const bool hwloc_avail = hwloc::available();
+
+    std::pair<unsigned,unsigned> threads_coord[ Impl::OpenMPexec::MAX_THREAD_COUNT ];
+
+    hwloc::thread_mapping( "Kokkos::OpenMP::initialize" ,
+                           false /* do not allow asynchronous */ ,
+                           thread_count ,
+                           use_numa_count ,
+                           use_cores_per_numa ,
+                           threads_coord );
+
+    // Spawn threads:
+
+    omp_set_num_threads( thread_count );
+
+    // Verify OMP interaction:
+    if ( int(thread_count) != omp_get_max_threads() ) {
+      thread_spawn_failed = true ;
+    }
+
+    // Verify spawning and bind threads:
+#pragma omp parallel
+    {
+#pragma omp critical
+      {
+        if ( int(thread_count) != omp_get_num_threads() ) {
+          thread_spawn_failed = true ;
+        }
+
+        // Call to 'bind_this_thread' is not thread safe so place this whole block in a critical region.
+        // Call to 'new' may not be thread safe as well.
+
+        // Reverse the rank for threads so that the scan operation reduces to the highest rank thread.
+
+        const unsigned omp_rank    = omp_get_thread_num();
+        const unsigned thread_r    = hwloc_avail ? Kokkos::hwloc::bind_this_thread( thread_count , threads_coord ) : omp_rank ;
+        const unsigned thread_rank = thread_count - ( thread_r + 1 );
+
+        Impl::OpenMPexec::m_thread[ omp_rank ] = new Impl::OpenMPexec( thread_rank );
+
+        Impl::OpenMPexec::m_pool[ thread_r ] = Impl::OpenMPexec::m_thread[ omp_rank ] ;
+      }
+/* END #pragma omp critical */
+    }
+/* END #pragma omp parallel */
+
+    if ( ! thread_spawn_failed ) {
+      Impl::s_threads_per_numa = thread_count / use_numa_count ;
+      Impl::s_threads_per_core = thread_count / ( use_numa_count * use_cores_per_numa );
+
+      Impl::OpenMPexec::resize_reduce_scratch( 4096 - Impl::OpenMPexec::REDUCE_TEAM_BASE );
+      Impl::OpenMPexec::resize_shared_scratch( 4096 );
+    }
+  }
+
+  if ( is_initialized || thread_spawn_failed ) {
+    std::string msg("Kokkos::OpenMP::initialize ERROR");
+
+    if ( is_initialized ) { msg.append(" : already initialized"); }
+    if ( thread_spawn_failed ) { msg.append(" : failed spawning threads"); }
+
+    Kokkos::Impl::throw_runtime_exception(msg);
+  }
+}
+
+#if 0
+
 void OpenMP::initialize( const unsigned team_count ,
                          const unsigned threads_per_team ,
                          const unsigned numa_count ,
@@ -384,6 +461,8 @@ void OpenMP::initialize( const unsigned team_count ,
   Impl::OpenMPexec::resize_reduce_scratch( 4096 - Impl::OpenMPexec::REDUCE_TEAM_BASE );
   Impl::OpenMPexec::resize_shared_scratch( 4096 );
 }
+
+#endif
 
 //----------------------------------------------------------------------------
 
