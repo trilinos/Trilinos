@@ -136,13 +136,15 @@ public:
 
     // Compute new gradient
     Teuchos::RCP<Vector<Real> > gp;
-    if ( secant_ != Teuchos::null ) {
-      gp = x.clone();
-      gp->set(*(Step<Real>::state_->gradientVec));
-    }
-    obj.gradient(*(Step<Real>::state_->gradientVec),x);
-    algo_state.ngrad++;
-    
+    if ( !TRflag_ ) {  
+      if ( secant_ != Teuchos::null ) {
+        gp = x.clone();
+        gp->set(*(Step<Real>::state_->gradientVec));
+      }
+      obj.gradient(*(Step<Real>::state_->gradientVec),x);
+      algo_state.ngrad++;
+    }    
+
     // Update Secant Information
     if ( secant_ != Teuchos::null ) {
       secant_->update(*(Step<Real>::state_->gradientVec),*gp,s,algo_state.snorm,algo_state.iter+1);

@@ -221,8 +221,8 @@ int main(int argc, char *argv[]) {
     /* END SECANT DEFINTION */
 
     /* BEGIN LINE SEARCH STEP DEFINTION */
-    ROL::LineSearchStepType LSStype = ROL::LineSearchStep_Newton;
-    //ROL::LineSearchStepType LSStype = ROL::LineSearchStep_NewtonKrylov;
+    //ROL::LineSearchStepType LSStype = ROL::LineSearchStep_Newton;
+    ROL::LineSearchStepType LSStype = ROL::LineSearchStep_NewtonKrylov;
     //ROL::LineSearchStepType LSStype = ROL::LineSearchStep_NewtonKrylovSecantPreconditioning;
     //ROL::LineSearchStepType LSStype = ROL::LineSearchStep_Secant;
     //ROL::LineSearchStepType LSStype = ROL::LineSearchStep_Gradient;

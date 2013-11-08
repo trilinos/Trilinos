@@ -276,6 +276,11 @@ public:
     snorm = s.norm();
   }
 
+  void doubledogleg( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
+                     const Vector<Real> &grad, const Real &gnorm, Objective<Real> &obj,
+                     Teuchos::RCP<Secant<Real> > &secant = Teuchos::null ) {
+
+  }
 };
 
 }
