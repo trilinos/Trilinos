@@ -77,6 +77,27 @@ public:
       (*hvp)[2*i+1] = h12*(*vp)[2*i] + h22*(*vp)[2*i+1];
     }
   }
+
+  void invHessVec( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &x ) {
+
+    Teuchos::RCP<const std::vector<Real> > xp =
+      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(x))).getVector();
+    Teuchos::RCP<const std::vector<Real> > vp =
+      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
+    Teuchos::RCP<std::vector<Real> > hvp =
+      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(hv)).getVector());
+
+    int n = xp->size();
+
+    for( int i=0; i<n/2; i++ ) { 
+      Real h11 = 4.0*alpha_*(3.0*pow((*xp)[2*i],2)-(*xp)[2*i+1]) + 2.0;
+      Real h12 = -4.0*alpha_*(*xp)[2*i];
+      Real h22 = 2.0*alpha_;
+
+      (*hvp)[2*i]   = (1.0/(h11*h22-h12*h12))*( h22*(*vp)[2*i] - h12*(*vp)[2*i+1]); 
+      (*hvp)[2*i+1] = (1.0/(h11*h22-h12*h12))*(-h12*(*vp)[2*i] + h11*(*vp)[2*i+1]);
+    }
+  }
 };
 
 template<class Real>
@@ -96,6 +117,51 @@ public:
     return val;
  }
 
+  void gradient( ROL::Vector<Real> &g, const ROL::Vector<Real> &x ) {
+
+    Teuchos::RCP<const std::vector<Real> > xp =
+      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(x))).getVector();
+    Teuchos::RCP<std::vector<Real> > gp =
+      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(g)).getVector());
+
+    int n = xp->size();
+
+    for( int i=0; i<n; i++ ) {
+      (*gp)[i] = 2.0*(*xp)[i]; 
+    }
+  }
+
+  void hessVec( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &x ) {
+
+    Teuchos::RCP<const std::vector<Real> > xp =
+      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(x))).getVector();
+    Teuchos::RCP<const std::vector<Real> > vp =
+      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
+    Teuchos::RCP<std::vector<Real> > hvp =
+      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(hv)).getVector());
+
+    int n = xp->size();
+
+    for( int i=0; i<n; i++ ) { 
+      (*hvp)[i] = 2.0*(*vp)[i]; 
+    }
+  }
+
+  void invHessVec( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &x ) {
+
+    Teuchos::RCP<const std::vector<Real> > xp =
+      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(x))).getVector();
+    Teuchos::RCP<const std::vector<Real> > vp =
+      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
+    Teuchos::RCP<std::vector<Real> > hvp =
+      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(hv)).getVector());
+
+    int n = xp->size();
+
+    for( int i=0; i<n; i++ ) { 
+      (*hvp)[i] = 0.5*(*vp)[i]; 
+    }
+  }
 };
 
 
@@ -149,7 +215,9 @@ int main(int argc, char *argv[]) {
       (*x_rcp)[2*i+1] =  1.0;
     }
 
-    ROL::LineSearchStepType LSStype = ROL::LineSearchStep_NewtonKrylov;
+    //ROL::LineSearchStepType LSStype = ROL::LineSearchStep_Newton;
+    //ROL::LineSearchStepType LSStype = ROL::LineSearchStep_NewtonKrylov;
+    ROL::LineSearchStepType LSStype = ROL::LineSearchStep_NewtonKrylovSecantPreconditioning;
     //ROL::LineSearchStepType LSStype = ROL::LineSearchStep_Secant;
     //ROL::LineSearchStepType LSStype = ROL::LineSearchStep_Gradient;
 
@@ -158,8 +226,8 @@ int main(int argc, char *argv[]) {
     //ROL::SecantType Stype = ROL::Secant_BarzilaiBorwein;
 
     //ROL::LineSearchType LStype = ROL::LineSearchType_Backtracking;
-    //ROL::LineSearchType LStype = ROL::LineSearchType_SimpleBacktracking;
-    ROL::LineSearchType LStype = ROL::LineSearchType_Brents;
+    ROL::LineSearchType LStype = ROL::LineSearchType_SimpleBacktracking;
+    //ROL::LineSearchType LStype = ROL::LineSearchType_Brents;
     //ROL::LineSearchType LStype = ROL::LineSearchType_Bisection;
     //ROL::LineSearchType LStype = ROL::LineSearchType_GoldenSection;
 

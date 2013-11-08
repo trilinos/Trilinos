@@ -24,6 +24,8 @@ namespace ROL {
 template<class Real>
 struct AlgorithmState {
   int  iter;
+  int  nfval;
+  int  ngrad;
   Real value;
   Real gnorm;
   Real snorm;
@@ -56,9 +58,11 @@ public:
     state_->descentVec  = x.clone();
     state_->gradientVec = x.clone();
     obj.gradient(*(state_->gradientVec),x);
+    algo_state.ngrad = 1;
     algo_state.gnorm = (state_->gradientVec)->norm();
     algo_state.snorm = 1.e10;
     algo_state.value = obj.value(x);
+    algo_state.nfval = 1;
   }
 
   /** \brief Compute step.

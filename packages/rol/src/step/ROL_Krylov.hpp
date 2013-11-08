@@ -23,6 +23,9 @@ namespace ROL {
 template<class Real>
 class Krylov {
 
+  bool useSecant_;
+  Teuchos::RCP<Secant<Real> > secant_;
+
   Real eps_;
   Real tol1_;
   Real tol2_;
@@ -31,10 +34,26 @@ class Krylov {
 public:
   Krylov( Real tol1 = 1.e-4, Real tol2 = 1.e-2, int maxit = 100 ) : tol1_(tol1), tol2_(tol2), maxit_(maxit) {
     eps_ = Teuchos::ScalarTraits<Real>::eps();
+    useSecant_ = false;
+  }
+  Krylov( SecantType type, Real tol1 = 1.e-4, Real tol2 = 1.e-2, int maxit = 100, int L = 10, int BBtype = 1 ) 
+    : tol1_(tol1), tol2_(tol2), maxit_(maxit) {
+    eps_ = Teuchos::ScalarTraits<Real>::eps();
+
+    useSecant_ = true;
+    if ( type == Secant_lBFGS ) {
+      secant_ = Teuchos::rcp( new lBFGS<Real>(L) );
+    }
+    else if ( type == Secant_lDFP ) {
+      secant_ = Teuchos::rcp( new lDFP<Real>(L) );
+    }
+    else if ( type == Secant_BarzilaiBorwein ) {
+      secant_ = Teuchos::rcp( new BarzilaiBorwein<Real>(BBtype) );
+    }
   }
 
   // Use CG to solve Newton system
-  void CG( Vector<Real> &s, int &iter, int &flag, const Vector<Real> &g, const Vector<Real> &x, Objective<Real> &obj ) {
+  void CG( Vector<Real> &s, int &iter, int &flag, const Vector<Real> &g, const Vector<Real> &x, Objective<Real> &obj, int it = 0 ) {
     Real gtol = std::min(tol1_,tol2_*g.norm());
 
     s.zero(); 
@@ -43,7 +62,12 @@ public:
     gnew->set(g); 
 
     Teuchos::RCP<Vector<Real> > v = x.clone();  
-    obj.precond( *v, *gnew, x );  
+    if ( useSecant_ ) {
+      secant_->applyB( *v, *gnew, x, it );
+    }
+    else {
+      obj.precond( *v, *gnew, x );  
+    }
 
     Teuchos::RCP<Vector<Real> > p = x.clone(); 
     p->set(*v); 
@@ -77,7 +101,12 @@ public:
         break;
       }
 
-      obj.precond( *v, *gnew, x );  
+      if ( useSecant_ ) {
+        secant_->applyB( *v, *gnew, x, it );
+      }
+      else {
+        obj.precond( *v, *gnew, x );  
+      }
       tmp  = gv;         
       gv   = v->dot(*gnew); 
       beta = gv/tmp;  
