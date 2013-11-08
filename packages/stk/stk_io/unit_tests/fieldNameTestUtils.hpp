@@ -15,7 +15,7 @@ inline stk::mesh::MetaData& generateMetaData(stk::io::StkMeshIoBroker &stkIo)
 inline bool fieldWithNameChangedIsOutput(stk::io::StkMeshIoBroker &stkIo, MPI_Comm communicator, const size_t resultsOutputIndex, const std::string &goldFieldName)
 {
     double dummyTime = 0;
-    stkIo.process_output_request(dummyTime, resultsOutputIndex);
+    stkIo.process_output_request(resultsOutputIndex, dummyTime);
     Ioss::Region *outputRegion = stkIo.get_output_io_region(resultsOutputIndex).get();
     Ioss::NodeBlock *nodeBlockAssociatedWithDisplacementField = outputRegion->get_node_blocks()[0];
     Ioss::NameList fieldNames;

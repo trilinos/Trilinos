@@ -334,7 +334,7 @@ bool use_case_5_driver( MPI_Comm comm ,
       mesh.add_results_field(result_file_index, displacements_field);
 
       // Write the model to the mesh file (topology, coordinates, attributes, etc)
-      mesh.process_output_request(0.0, result_file_index);
+      mesh.process_output_request(result_file_index, 0.0);
     }
 
     //Write out our assembled linear-system to files:

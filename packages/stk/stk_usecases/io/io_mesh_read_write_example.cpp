@@ -111,8 +111,8 @@ namespace {
         // outputting that data to the restart and results output.
 
         mesh_data.process_restart_input(step);
-        mesh_data.begin_output_step(time, restart_index);
-        mesh_data.begin_output_step(time, results_index);
+        mesh_data.begin_output_step(restart_index, time);
+        mesh_data.begin_output_step(results_index, time);
 
         mesh_data.process_output_request(restart_index);
         mesh_data.process_output_request(results_index);

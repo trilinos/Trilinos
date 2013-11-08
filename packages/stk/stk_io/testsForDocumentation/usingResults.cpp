@@ -50,7 +50,7 @@ TEST(StkMeshIoBrokerHowTo, writeResultsWithMultistateField)
 	stkIo.add_results_field_with_alternate_name(fileHandle,
 	        *triStateField->field_state(stk::mesh::StateNM1), nm1Name);
 	
-	stkIo.begin_output_step(time, fileHandle);
+	stkIo.begin_output_step(fileHandle, time);
 	stkIo.process_output_request(fileHandle);
         stkIo.end_output_step(fileHandle);
     }

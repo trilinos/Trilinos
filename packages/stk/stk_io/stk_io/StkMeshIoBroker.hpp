@@ -41,25 +41,20 @@ namespace stk {
     class OutputFile
     {
     public:
-//        OutputFile(const std::string &filename, MPI_Comm communicator, const Ioss::Region *input_region, const stk::mesh::Selector *anded_selector)
-//        : m_current_output_step(-1), m_use_nodeset_for_part_nodes_fields(true),
-//          m_mesh_defined(false), m_fields_defined(false), m_input_region(input_region),
-//          m_anded_selector(anded_selector)
-//        {
-//            Ioss::PropertyManager property_manager;
-//            setup_output_file(filename, communicator, property_manager);
-//        }
-        OutputFile(const std::string &filename, MPI_Comm communicator, Ioss::PropertyManager& property_manager, const Ioss::Region *input_region, const stk::mesh::Selector *anded_selector)
-        : m_current_output_step(-1), m_use_nodeset_for_part_nodes_fields(true),
+        OutputFile(const std::string &filename, MPI_Comm communicator, Ioss::PropertyManager& property_manager,
+		   const Ioss::Region *input_region)
+        : m_current_output_step(-1), m_use_nodeset_for_part_nodes_fields(false),
           m_mesh_defined(false), m_fields_defined(false), m_input_region(input_region),
-          m_anded_selector(anded_selector)
+	  m_subset_selector(NULL)
         {
           setup_output_file(filename, communicator, property_manager);
         }
-        OutputFile(Teuchos::RCP<Ioss::Region> ioss_output_region, MPI_Comm communicator, const Ioss::Region *input_region, const stk::mesh::Selector *anded_selector)
-        : m_current_output_step(-1), m_use_nodeset_for_part_nodes_fields(true),
+
+        OutputFile(Teuchos::RCP<Ioss::Region> ioss_output_region, MPI_Comm communicator,
+		   const Ioss::Region *input_region)
+        : m_current_output_step(-1), m_use_nodeset_for_part_nodes_fields(false),
           m_mesh_defined(false), m_fields_defined(false), m_input_region(input_region),
-          m_anded_selector(anded_selector)
+	  m_subset_selector(NULL)
         {
             m_output_region = ioss_output_region;
             m_mesh_defined = true;
@@ -69,26 +64,43 @@ namespace stk {
         }
         ~OutputFile() { }
     public:
-        void write_output_mesh(const stk::mesh::BulkData& bulk_data, const stk::mesh::Selector *anded_selector, bool use_nodeset_for_part_nodes_fields);
+        void write_output_mesh(const stk::mesh::BulkData& bulk_data);
         void add_results_field(stk::mesh::FieldBase &field, const std::string &alternate_name);
+
         void add_global(const std::string &globalVarName, const stk::util::Parameter &param);
         void add_global(const std::string &globalVarName, Ioss::Field::BasicType dataType);
         void add_global(const std::string &globalVarName, const std::string &type, Ioss::Field::BasicType dataType);
         void add_global(const std::string &globalVarName, int component_count,     Ioss::Field::BasicType dataType);
+
         void write_global(const std::string &globalVarName, const stk::util::Parameter &param);
         void write_global(const std::string &globalVarName, double globalVarData);
         void write_global(const std::string &globalVarName, int globalVarData);
         void write_global(const std::string &globalVarName, std::vector<double>& globalVarData);
         void write_global(const std::string &globalVarName, std::vector<int>& globalVarData);
-        void begin_output_step(double time, const stk::mesh::BulkData& bulk_data, const stk::mesh::Selector *anded_selector, bool use_nodeset_for_part_nodes_fields);
+
+        void begin_output_step(double time, const stk::mesh::BulkData& bulk_data);
         void end_output_step();
-        int process_output_request(const stk::mesh::BulkData& bulk_data, const stk::mesh::Selector* anded_selector, bool use_nodeset_for_part_nodes_fields);
-        int process_output_request(double time, const stk::mesh::BulkData& bulk_data, const stk::mesh::Selector *anded_selector, bool use_nodeset_for_part_nodes_fields);
+
+        int process_output_request(const stk::mesh::BulkData& bulk_data);
+        int process_output_request(double time, const stk::mesh::BulkData& bulk_data);
+
         void set_output_io_region(Teuchos::RCP<Ioss::Region> ioss_output_region);
-        // TODO: make this private again...
-        void define_output_fields(const stk::mesh::BulkData& bulk_data, const stk::mesh::Selector *anded_selector, bool add_all_fields, bool use_nodeset_for_part_nodes_fields);
+
+        void set_subset_selector(Teuchos::RCP<stk::mesh::Selector> my_selector);
+
+        bool use_nodeset_for_part_nodes_fields() const
+        {
+	  return m_use_nodeset_for_part_nodes_fields;
+        }
+
+        void use_nodeset_for_part_nodes_fields(bool true_false)
+        {
+	  m_use_nodeset_for_part_nodes_fields = true_false;
+        }
+
     private:
         // TODO: get_output_region (returned and set in ctor)
+        void define_output_fields(const stk::mesh::BulkData& bulk_data, bool add_all_fields);
         void setup_output_file(const std::string &filename, MPI_Comm communicator, Ioss::PropertyManager &property_manager);
     public:
         int m_current_output_step;
@@ -96,7 +108,7 @@ namespace stk {
         bool m_mesh_defined;
         bool m_fields_defined;
         const Ioss::Region* m_input_region;
-        const stk::mesh::Selector* m_anded_selector;
+        Teuchos::RCP<stk::mesh::Selector> m_subset_selector;
         Teuchos::RCP<Ioss::Region> m_output_region;
         std::vector<stk::io::FieldAndName> m_named_fields;
 //    private:
@@ -148,8 +160,6 @@ namespace stk {
             return m_output_files[output_file_index].get_output_io_region();
         }
 
-        Teuchos::RCP<stk::mesh::Selector> selector()  { return m_anded_selector; }
-
         /**
          * The default entity rank names are "NODE", "EDGE", "FACE", "ELEMENT"
          * If an application wants to change these names and/or add additional
@@ -175,10 +185,22 @@ namespace stk {
          * (typically locally owned part) used to associate entities
          * when generating the output database.
          */
-        void set_selector(Teuchos::RCP<stk::mesh::Selector> my_selector)
-        {	m_anded_selector = my_selector; }
-        void set_selector(stk::mesh::Selector &my_selector)
-        { set_selector(Teuchos::rcpFromRef(my_selector));}
+        void set_subset_selector(size_t output_file_index, Teuchos::RCP<stk::mesh::Selector> my_selector) {
+	    validate_output_file_index(output_file_index);
+            m_output_files[output_file_index].set_subset_selector(my_selector);
+	}
+
+        void set_subset_selector(size_t output_file_index, stk::mesh::Selector &my_selector) {
+	  validate_output_file_index(output_file_index);
+	  m_output_files[output_file_index].set_subset_selector(Teuchos::rcpFromRef(my_selector));
+	}
+
+        Teuchos::RCP<stk::mesh::Selector> deprecated_selector() {
+           return m_deprecated_selector;
+	}
+        void deprecated_set_selector(Teuchos::RCP<stk::mesh::Selector> my_selector) {
+	  m_deprecated_selector = my_selector;
+	}
 
         /**
          * Set meta data directly with your own meta data. If this is
@@ -367,15 +389,21 @@ namespace stk {
         /**
          * Add a transient step to the database at time 'time'.
          */
-        void begin_output_step(double time, size_t output_file_index = 0);
-        void end_output_step(size_t output_file_index = 0);
+        void begin_output_step(size_t output_file_index, double time);
+        void end_output_step(size_t output_file_index);
 
         /**
          * Add a transient step to the mesh database at time 'time' and
          * output the data for all defined fields to the database.
          */
-        int process_output_request(size_t output_file_index=0);
-        int process_output_request(double time, size_t output_file_index = 0);
+        int process_output_request(size_t output_file_index, double time);
+
+        /**
+         * Output the data for all defined fields to the database for
+	 * the step added by "begin_output_step".  End step with a call
+	 * to "end_output_step"
+         */
+        int process_output_request(size_t output_file_index);
 
         void write_global(size_t output_file_index, const std::string &globalVarName, const stk::util::Parameter &param);
         void write_global(size_t output_file_index, const std::string &globalVarName, double data);
@@ -455,13 +483,24 @@ namespace stk {
          * to use_nodeset_for_part_nodes_fields(true_false);
          * @return
          */
-        bool use_nodeset_for_part_nodes_fields() const
+        bool use_nodeset_for_part_nodes_fields(size_t output_file_index) const
         {
-          return m_useNodesetForPartNodesFields;
+	  validate_output_file_index(output_file_index);
+	  return m_output_files[output_file_index].use_nodeset_for_part_nodes_fields();
         }
-        void use_nodeset_for_part_nodes_fields(bool true_false)
+        void use_nodeset_for_part_nodes_fields(size_t output_file_index, bool true_false)
         {
-          m_useNodesetForPartNodesFields = true_false;
+	  validate_output_file_index(output_file_index);
+	  m_output_files[output_file_index].use_nodeset_for_part_nodes_fields(true_false);
+        }
+
+        bool use_nodeset_for_part_nodes_fields_input() const
+        {
+	  return m_useNodesetForPartNodesFields;
+        }
+        void use_nodeset_for_part_nodes_fields_input(bool true_false)
+        {
+	  m_useNodesetForPartNodesFields = true_false;
         }
 
         /*!
@@ -486,19 +525,7 @@ namespace stk {
 
       private:
         void create_ioss_region();
-        void validate_output_file_index(size_t output_file_index);
-        /**
-         * Iterate over all stk fields and for each transient field
-         * defined on a part that is output to the mesh file, define a
-         * corresponding database field. The database field will have the
-         * same name as the stk field.  A transient field will be defined
-         * if the stk::io::is_valid_part_field() returns true.  This can
-         * be set via a call to stk::io::set_field_role().
-         *
-         * If the 'add_all_fields' param is true, then all transient
-         * stk fields will have a corresponding database field defined.
-         */
-        void define_output_fields(bool add_all_fields = false, size_t output_file_index = 0);
+        void validate_output_file_index(size_t output_file_index) const;
 
         MPI_Comm m_communicator;
         std::vector<std::string>       m_rank_names; // Optional rank name vector.
@@ -509,23 +536,16 @@ namespace stk {
         Teuchos::RCP<stk::mesh::MetaData>  m_meta_data;
         Teuchos::RCP<stk::mesh::BulkData>  m_bulk_data;
 
-        /*!
-         * An optional selector used for filtering entities on the
-         * output database. This can be used for specifying
-         * active/inactive entities.  If present, then this selector is
-         * *anded* with the normal selectors used for output
-         */
-        Teuchos::RCP<stk::mesh::Selector> m_anded_selector;
+        Teuchos::RCP<stk::mesh::Selector> m_deprecated_selector;
+
         stk::mesh::ConnectivityMap* m_connectivity_map;
 
         std::vector<OutputFile> m_output_files;
 
-    public:
         // This should be private, but needs to be public since some applications/tests are defining
         // their own fields and need to inform StkMeshIoBroker that they did this...
         bool m_useNodesetForPartNodesFields;
 
-    private:
         StkMeshIoBroker(const StkMeshIoBroker&); // Do not implement
         StkMeshIoBroker& operator=(const StkMeshIoBroker&); // Do not implement
     };

@@ -56,7 +56,12 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, iofixture )
   std::string input_base_filename = "unit_test.g";
 
   // Initialize meta data from exodus file
-  fixture.open_mesh_database(input_base_filename);
+  bool success = fixture.open_mesh_database(input_base_filename);
+  EXPECT_TRUE(success);
+
+  if (!success)
+    return;
+ 
   fixture.create_input_mesh();
 
   stk::mesh::MetaData & meta_data = fixture.meta_data();
@@ -69,11 +74,11 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, iofixture )
 
   // exodus file creation
   std::string output_base_filename = "unit_test_output.e";
-  fixture.create_output_mesh(output_base_filename);
+  size_t output_index = fixture.create_output_mesh(output_base_filename);
 
   // process output
   const double time_step = 0;
-  fixture.process_output_request( time_step );
+  fixture.process_output_request(output_index, time_step);
 
   // Since correctness can only be established by running SEACAS tools, correctness
   // checking is left to the test XML.
@@ -89,7 +94,12 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, active_only )
   std::string input_base_filename = "unit_test.g";
 
   // Initialize meta data from exodus file
-  fixture.open_mesh_database(input_base_filename);
+  bool success = fixture.open_mesh_database(input_base_filename);
+  EXPECT_TRUE(success);
+
+  if (!success)
+    return;
+
   fixture.create_input_mesh();
   stk::mesh::MetaData & meta_data = fixture.meta_data();
 
@@ -104,17 +114,17 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, active_only )
   // This will be used to test the I/O filtering via a selector...
   activate_entities(fixture, active);
 
-  // Set the output filter on the mesh_data...
-  stk::mesh::Selector active_selector(active);
-  fixture.set_selector(active_selector);
-
   // exodus file creation
   std::string output_base_filename = "unit_test_output_filtered.e";
-  fixture.create_output_mesh( output_base_filename );
+  size_t index = fixture.create_output_mesh( output_base_filename );
+
+  // Set the output filter on the mesh_data...
+  stk::mesh::Selector active_selector(active);
+  fixture.set_subset_selector(index, active_selector);
 
   // process output
   const double time_step = 0;
-  fixture.process_output_request( time_step );
+  fixture.process_output_request(index, time_step);
 
 
   // Since correctness can only be established by running SEACAS tools, correctness
@@ -125,58 +135,55 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, active_and_all )
 {
   // A simple test for reading and writing two exodus files using the StkMeshIoBroker.
   stk::ParallelMachine pm = MPI_COMM_WORLD;
-  stk::io::StkMeshIoBroker filtered_fixture(pm);
+  stk::io::StkMeshIoBroker fixture(pm);
 
   std::string input_base_filename = "unit_test.g";
 
-  // Initialize meta data from exodus file
-  filtered_fixture.open_mesh_database(input_base_filename);
-  filtered_fixture.create_input_mesh();
-  stk::mesh::MetaData & meta_data = filtered_fixture.meta_data();
+  bool success = fixture.open_mesh_database(input_base_filename);
+  EXPECT_TRUE(success);
+
+  if (!success)
+    return;
+  
+  fixture.create_input_mesh();
+  stk::mesh::MetaData & meta_data = fixture.meta_data();
 
   // Add an "active" part...
   stk::mesh::Part &active = meta_data.declare_part("active", stk::mesh::MetaData::ELEMENT_RANK);
   meta_data.commit();
 
   // bulk_data initialize (from exodus file)
-  filtered_fixture.populate_bulk_data();
+  fixture.populate_bulk_data();
 
   // Put some entities into the "active" part...
   // This will be used to test the I/O filtering via a selector...
-  activate_entities(filtered_fixture, active);
-
-  // Create a second fixture which will output unfiltered results
-  // It shares the meta_data, bulk_data, and input_io_region with
-  // the "filtered_fixture".
-  stk::io::StkMeshIoBroker universal_fixture(pm);
-  universal_fixture.set_bulk_data(filtered_fixture.bulk_data());
-  universal_fixture.set_input_io_region(filtered_fixture.input_io_region());
-
-  // Set the output filter on the mesh_data...
-  // Only output the part declared above as "active"
-  stk::mesh::Selector active_selector(active);
-  filtered_fixture.set_selector(active_selector);
+  activate_entities(fixture, active);
 
   // exodus file creation
   std::string filtered_output_base_filename = "unit_test_output_first_of_two.e";
   std::string unfiltered_output_base_filename = "unit_test_output_second_of_two.e";
-  filtered_fixture.create_output_mesh( filtered_output_base_filename );
-  universal_fixture.create_output_mesh( unfiltered_output_base_filename );
+  size_t filtered_index =  fixture.create_output_mesh( filtered_output_base_filename );
+  size_t universal_index = fixture.create_output_mesh( unfiltered_output_base_filename );
+
+  // Set the output filter on the mesh_data...
+  // Only output the part declared above as "active"
+  stk::mesh::Selector active_selector(active);
+  fixture.set_subset_selector(filtered_index, active_selector);
 
   // process output
   double time_step = 0;
-  filtered_fixture.process_output_request( time_step );
-  universal_fixture.process_output_request( time_step );
+  fixture.process_output_request(filtered_index,  time_step);
+  fixture.process_output_request(universal_index, time_step);
 
   ++time_step;
 
-  filtered_fixture.process_output_request( time_step );
-  universal_fixture.process_output_request( time_step );
+  fixture.process_output_request(filtered_index,  time_step);
+  fixture.process_output_request(universal_index, time_step);
 
   ++time_step;
 
-  filtered_fixture.process_output_request( time_step );
-  universal_fixture.process_output_request( time_step );
+  fixture.process_output_request(filtered_index,  time_step);
+  fixture.process_output_request(universal_index, time_step);
 
   // Since correctness can only be established by running SEACAS tools, correctness
   // checking is left to the test XML.
@@ -191,7 +198,12 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, large_mesh_test )
   std::string input_base_filename = "1mCube_20x20x20.g";
 
   // Initialize meta data from exodus file
-  fixture.open_mesh_database(input_base_filename);
+  bool success = fixture.open_mesh_database(input_base_filename);
+  EXPECT_TRUE(success);
+
+  if (!success)
+    return;
+
   fixture.create_input_mesh();
   stk::mesh::MetaData & meta_data = fixture.meta_data();
 

@@ -26,7 +26,7 @@ class ElementTopology;
 
 namespace stk {
   namespace util {
-    class Parameter;
+    struct Parameter;
   }
   namespace mesh {
     class Part;
