@@ -6,7 +6,6 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-
 #include <stdexcept>
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 

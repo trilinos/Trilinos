@@ -6,9 +6,10 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-
 #ifndef stk_mesh_Selector_hpp
 #define stk_mesh_Selector_hpp
+
+#include <stk_util/environment/ReportHandler.hpp>
 
 #include <stk_mesh/base/Types.hpp>
 
@@ -19,153 +20,150 @@
 
 namespace stk { namespace mesh {
 
+// Specify what can be in the expression tree of a selector
+struct SelectorNodeType
+{
+  enum node_type {
+    PART,
+    UNION,
+    INTERSECTION,
+    DIFFERENCE,
+    COMPLEMENT
+  };
+};
+
 namespace impl {
 
-struct union_
+// A node in the expression tree of a selector
+struct SelectorNode
 {
-  friend inline std::ostream& operator<<(std::ostream& out, union_)
-  { return out << " | "; }
-};
-
-struct intersect_
-{
-  friend inline std::ostream& operator<<(std::ostream& out, intersect_)
-  { return out << " & "; }
-};
-
-struct difference_
-{
-  friend inline std::ostream& operator<<(std::ostream& out, difference_)
-  { return out << " - "; }
-};
-
-template <typename Op>
-struct binary_op_;
-
-struct complement_;
-
-
-typedef
-  boost::variant<
-     const Part *
-   , boost::recursive_wrapper< binary_op_<union_> >
-   , boost::recursive_wrapper< binary_op_<intersect_> >
-   , boost::recursive_wrapper< binary_op_<difference_> >
-   , boost::recursive_wrapper< complement_ >
-  > selector_impl_;
-
-template <typename Op>
-struct binary_op_
-{
-  typedef Op op_type;
-
-  selector_impl_ m_lhs;
-  selector_impl_ m_rhs;
-
-  binary_op_()
-    : m_lhs()
-    , m_rhs()
-  {}
-
-  binary_op_(selector_impl_ const& lhs, selector_impl_ const& rhs)
-    : m_lhs(lhs)
-    , m_rhs(rhs)
-  {}
-
-  bool operator==(const binary_op_<Op> & b) const
-  { return (m_lhs == b.m_lhs) && (m_rhs == b.m_rhs); }
-
-  bool operator!=(const binary_op_<Op> & b) const
-  { return !(*this == b); }
-};
-
-struct complement_
-{
-  selector_impl_ m_selector;
-
-  complement_()
-    : m_selector()
-  {}
-
-  complement_(selector_impl_ const& select)
-    : m_selector(select)
-  {}
-
-  bool operator==(const complement_ & b) const
-  { return m_selector == b.m_selector; }
-
-  bool operator!=(const complement_ & b) const
-  { return !(*this == b); }
-};
-
-struct is_empty_selector : public boost::static_visitor<bool>
-{
-  bool operator() (const Part * p) const
+  SelectorNode(Part const* arg_part = NULL) : m_type(SelectorNodeType::PART)
   {
-    return (p == NULL);
+    m_value.part_ptr = arg_part;
   }
 
-  template <typename Op>
-  bool operator() (Op const& expr) const
-  { return false; }
+  // Either leaf (part_ptr) or unary (no data) or binary (offset from current pos to rhs)
+  union value_type
+  {
+    enum { left_offset = 1 };
+    enum { unary_offset = 1 };
+
+    Part const* part_ptr;
+    unsigned right_offset; // for binary op
+    // no storage required for unary op
+  };
+
+  SelectorNode const* lhs() const
+  {
+    ThrowAssert(m_type == SelectorNodeType::UNION || m_type == SelectorNodeType::INTERSECTION || m_type == SelectorNodeType::DIFFERENCE);
+    return this + m_value.left_offset;
+  }
+
+  SelectorNode const* rhs() const
+  {
+    ThrowAssert(m_type == SelectorNodeType::UNION || m_type == SelectorNodeType::INTERSECTION || m_type == SelectorNodeType::DIFFERENCE);
+    return this + m_value.right_offset;
+  }
+
+  SelectorNode const* unary() const
+  {
+    ThrowAssert(m_type == SelectorNodeType::COMPLEMENT);
+    return this + m_value.unary_offset;
+  }
+
+  Part const* part() const
+  {
+    ThrowAssert(m_type == SelectorNodeType::PART);
+    return m_value.part_ptr;
+  }
+
+  bool operator==(SelectorNode const& arg_rhs) const
+  {
+    if (m_type != arg_rhs.m_type) {
+      return false;
+    }
+    else if (m_type == SelectorNodeType::COMPLEMENT) {
+      return true;
+    }
+    else if (m_type == SelectorNodeType::PART) {
+      return m_value.part_ptr == arg_rhs.m_value.part_ptr;
+    }
+    else {
+      return m_value.right_offset == arg_rhs.m_value.right_offset;
+    }
+  }
+
+  SelectorNodeType::node_type  m_type;
+  value_type                   m_value;
 };
 
 } // namespace impl
 
-
+/**
+ * Selects subsets of the mesh. Allows for creating set expressions from
+ * parts and set operators (union |, intersection &, difference -, complement !).
+ */
 class Selector {
 public:
 
   Selector()
-    : m_selector((Part*)NULL)
+    : m_expr(1) // default Selector is null part (selects nothing)
   {}
 
   /** \brief  A part that is required */
   Selector(const Part & part)
-    : m_selector(&part)
+    : m_expr(1, impl::SelectorNode(&part))
   {}
 
   bool operator == (const Selector & rhs) const
-  { return m_selector == rhs.m_selector; }
+  { return m_expr == rhs.m_expr; }
 
   bool operator != (const Selector & rhs) const
-  { return !(m_selector == rhs.m_selector); }
-
+  { return m_expr != rhs.m_expr; }
 
   /** \brief  Intersection: this = this INTERSECT ( expression ) */
   Selector & operator &= ( const Selector & selector)
-  {
-    m_selector = impl::binary_op_<impl::intersect_>(m_selector,selector.m_selector);
-    return *this;
-  }
+  { return add_binary_op(SelectorNodeType::INTERSECTION, selector); }
 
   /** \brief  Union: this = this UNION ( expression ) */
   Selector & operator |= ( const Selector & selector)
   {
-    if (boost::apply_visitor(impl::is_empty_selector(),m_selector)) {
-      m_selector = selector.m_selector;
+    if (is_null()) {
+      m_expr = selector.m_expr;
     }
     else {
-      m_selector = impl::binary_op_<impl::union_>(m_selector,selector.m_selector);
+      add_binary_op(SelectorNodeType::UNION, selector);
     }
     return *this;
   }
 
   /** \brief  Difference: this = this - ( expression ) */
   Selector & operator -= ( const Selector & selector)
-  {
-    m_selector = impl::binary_op_<impl::difference_>(m_selector,selector.m_selector);
-    return *this;
-  }
+  { return add_binary_op(SelectorNodeType::DIFFERENCE, selector); }
 
   bool operator<(const Selector& rhs) const;
 
+  bool operator<=(const Selector& rhs) const {
+    return *this < rhs || *this == rhs;
+  }
+
+  bool operator>(const Selector& rhs) const {
+    return rhs < *this;
+  }
+
+  bool operator>=(const Selector& rhs) const {
+    return *this > rhs || *this == rhs;
+  }
+
   /** \brief  Complement: this = !(this)
-   * Postcondition:  this is a compound expression
+   * Complements this selector in-place
    * */
   Selector & complement()
   {
-    m_selector = impl::complement_(m_selector);
+    impl::SelectorNode root;
+    root.m_type = SelectorNodeType::COMPLEMENT;
+
+    m_expr.insert(m_expr.begin(), root);
     return *this;
   }
 
@@ -207,42 +205,127 @@ public:
 
 private:
 
-  impl::selector_impl_ m_selector;
+  bool is_null() const {
+    return m_expr.size() == 1 && m_expr[0].m_type == SelectorNodeType::PART && m_expr[0].m_value.part_ptr == NULL;
+  }
 
+  Selector& add_binary_op(SelectorNodeType::node_type type, const Selector& rhs)
+  {
+    impl::SelectorNode root;
+    root.m_type = type;
+    root.m_value.right_offset = 1 + m_expr.size();
+
+    m_expr.insert(m_expr.begin(), root);
+    m_expr.insert(m_expr.end(), rhs.m_expr.begin(), rhs.m_expr.end());
+
+    return *this;
+  }
+
+  std::vector<impl::SelectorNode> m_expr;
 };
 
+inline
+Selector operator & ( const Part & A , const Part & B )
+{
+  Selector S( A );
+  S &= Selector( B );
+  return S;
+}
 
-std::ostream & operator<<( std::ostream & out, const Selector & selector);
+inline
+Selector operator & ( const Part & A , const Selector & B )
+{
+  Selector S( A );
+  S &= B;
+  return S;
+}
 
-/** \brief .
- * \relates Selector
- * */
-Selector operator & ( const Part & A , const Part & B );
-Selector operator & ( const Part & A , const Selector & B );
-Selector operator & ( const Selector & A, const Part & B );
-Selector operator & ( const Selector & A, const Selector & B );
+inline
+Selector operator & ( const Selector & A, const Part & B )
+{
+  Selector S( A );
+  S &= Selector(B);
+  return S;
+}
 
-/** \brief .
- * \relates Selector
- * */
-Selector operator | ( const Part & A , const Part & B );
-Selector operator | ( const Part & A , const Selector & B );
-Selector operator | ( const Selector & A, const Part & B  );
-Selector operator | ( const Selector & A , const Selector & B );
+inline
+Selector operator & ( const Selector & A, const Selector & B )
+{
+  Selector S( A );
+  S &= Selector(B);
+  return S;
+}
 
-/** \brief .
- * \relates Selector
- * */
-Selector operator - ( const Part & A , const Part & B );
-Selector operator - ( const Part & A , const Selector & B );
-Selector operator - ( const Selector & A, const Part & B  );
-Selector operator - ( const Selector & A , const Selector & B );
+inline
+Selector operator | ( const Part & A , const Part & B )
+{
+  Selector S( A );
+  S |= Selector( B );
+  return S;
+}
 
-/** \brief .
- * \relates Selector
- * */
-Selector operator ! ( const Part & A );
+inline
+Selector operator | ( const Part & A , const Selector & B )
+{
+  Selector S( A );
+  S |= B;
+  return S;
+}
 
+inline
+Selector operator | ( const Selector & A, const Part & B  )
+{
+  Selector S( A );
+  S |= Selector(B);
+  return S;
+}
+
+inline
+Selector operator | ( const Selector & A, const Selector & B  )
+{
+  Selector S( A );
+  S |= Selector(B);
+  return S;
+}
+
+inline
+Selector operator - ( const Part & A , const Part & B )
+{
+  Selector S( A );
+  S -= Selector( B );
+  return S;
+}
+
+inline
+Selector operator - ( const Part & A , const Selector & B )
+{
+  Selector S( A );
+  S -= B;
+  return S;
+}
+
+inline
+Selector operator - ( const Selector & A, const Part & B  )
+{
+  Selector S( A );
+  S -= Selector(B);
+  return S;
+}
+
+inline
+Selector operator - ( const Selector & A, const Selector & B  )
+{
+  Selector S( A );
+  S -= Selector(B);
+  return S;
+}
+
+inline
+Selector operator ! ( const Part & A )
+{
+  Selector S(A);
+  return S.complement();
+}
 
 /** \brief .
  * \relates Selector
@@ -259,6 +342,8 @@ Selector selectIntersection( const PartVector& intersection_part_vector );
  * */
 Selector selectField( const FieldBase& field );
 
+/** \brief Is lhs a subset of rhs, only works for simple selectors (parts and unions)
+ */
 bool is_subset(Selector const& lhs, Selector const& rhs);
 
 /** \} */
