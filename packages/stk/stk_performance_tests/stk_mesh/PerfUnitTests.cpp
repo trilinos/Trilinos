@@ -227,7 +227,7 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, mesh_create_hex_with_edges_parallel 
   print_debug_skip(pm);
 }
 
-STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, selector_get_buckets )
+STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_selector )
 {
   CALLGRIND_START_INSTRUMENTATION;
 
