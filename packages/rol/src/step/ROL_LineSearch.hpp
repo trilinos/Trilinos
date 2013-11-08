@@ -243,7 +243,7 @@ public:
   }
 
   void bisection( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
-               const Real &gs, const Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj ) {
+                  const Real &gs, const Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj ) {
     Real tl = 0.0;
     Real tr = alpha0_;
  
@@ -255,9 +255,20 @@ public:
     ls_neval++;
     Real val_tl = fval;
 
-    if ( status(LineSearchType_Bisection,ls_neval,ls_ngrad,tr,fval,gs,val_tr,x,s,obj) ) {
-      alpha = tr;
-      fval  = val_tr;
+    Real t     = 0.0;
+    Real val_t = 0.0;
+    if ( val_tl < val_tr ) {
+      t     = tl;
+      val_t = val_tl;
+    }
+    else {
+      t     = tr;
+      val_t = val_tr;
+    }
+
+    if ( status(LineSearchType_Bisection,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj) ) {
+      alpha = t;
+      fval  = val_t;
       return;
     }
 
@@ -267,12 +278,17 @@ public:
     Real val_tc = obj.value(*xnew);
     ls_neval++;
 
+    if ( val_tc < val_t ) {
+      t     = tc;
+      val_t = val_tc;
+    }
+
     Real t1     = 0.0;
     Real val_t1 = 0.0;
     Real t2     = 0.0;
     Real val_t2 = 0.0;
 
-    while (    !status(LineSearchType_Bisection,ls_neval,ls_ngrad,tr,fval,gs,val_tr,x,s,obj)  
+    while (    !status(LineSearchType_Bisection,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj)  
             && std::abs(tr - tl) > tol_ ) {
       t1 = (tl+tc)/2.0;
       xnew->set(x);
@@ -288,12 +304,24 @@ public:
 
       if (    ( (val_tl <= val_tr) && (val_tl <= val_t1) && (val_tl <= val_t2) && (val_tl <= val_tc) ) 
            || ( (val_t1 <= val_tr) && (val_t1 <= val_tl) && (val_t1 <= val_t2) && (val_t1 <= val_tc) ) ) {
+        if ( val_tl < val_t1 ) {
+          t     = tl;
+          val_t = val_tl;
+        }
+        else {
+          t     = t1;
+          val_t = val_t1;
+        }
+
         tr     = tc;
         val_tr = val_tc;
         tc     = t1;
         val_tc = val_t1;
       }
       else if ( ( (val_tc <= val_tr) && (val_tc <= val_tl) && (val_tc <= val_t1) && (val_tc <= val_t2) ) ) { 
+        t     = tc;
+        val_t = val_tc;
+
         tl     = t1;
         val_tl = val_t1;
         tr     = t2;
@@ -301,6 +329,15 @@ public:
       }
       else if (    ( (val_t2 <= val_tr) && (val_t2 <= val_tl) && (val_t2 <= val_t1) && (val_t2 <= val_tc) ) 
                 || ( (val_tr <= val_tl) && (val_tr <= val_t1) && (val_tr <= val_t2) && (val_tr <= val_tc) ) ) {
+        if ( val_tr < val_t2 ) {
+          t     = tr;
+          val_t = val_tr;
+        }
+        else {
+          t     = t2;
+          val_t = val_t2;
+        }
+
         tl     = tc;
         val_tl = val_tc;
         tc     = t2;
@@ -308,8 +345,8 @@ public:
       }
     }
 
-    fval  = val_tr;
-    alpha = tr;
+    fval  = val_t;
+    alpha = t;
   }
 
   void goldensection( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
@@ -326,9 +363,20 @@ public:
     ls_neval++;
     Real val_tl = fval;
 
-    if ( status(LineSearchType_GoldenSection,ls_neval,ls_ngrad,tr,fval,gs,val_tr,x,s,obj) ) {
-      alpha = tr;
-      fval  = val_tr;
+    Real t     = 0.0;
+    Real val_t = 0.0;
+    if ( val_tl < val_tr ) {
+      t     = tl;
+      val_t = val_tl;
+    }
+    else {
+      t     = tr;
+      val_t = val_tr;
+    }
+
+    if ( status(LineSearchType_GoldenSection,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj) ) {
+      alpha = t;
+      fval  = val_t;
       return;
     }
 
@@ -345,7 +393,24 @@ public:
     Real val_tc2 = obj.value(*xnew);
     ls_neval++;
 
-    while (    !status(LineSearchType_GoldenSection,ls_neval,ls_ngrad,tr,fval,gs,val_tr,x,s,obj) 
+    if ( val_tl <= val_tc1 && val_tl <= val_tc2 && val_tl <= val_tr ) {
+      val_t = val_tl;
+      t     = tl;
+    }
+    else if ( val_tc1 <= val_tl && val_tc1 <= val_tc2 && val_tc1 <= val_tr ) {
+      val_t = val_tc1;
+      t     = tc1;
+    }
+    else if ( val_tc2 <= val_tl && val_tc2 <= val_tc1 && val_tc2 <= val_tr ) {
+      val_t = val_tc2;
+      t     = tc2;
+    }
+    else {
+      val_t = val_tr;
+      t     = tr;
+    }
+
+    while (    !status(LineSearchType_GoldenSection,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj) 
             && (std::abs(tl-tr) >= tol_) ) {
       if ( val_tc1 > val_tc2 ) {
         tl      = tc1;
@@ -371,9 +436,26 @@ public:
         val_tc1 = obj.value(*xnew);
         ls_neval++;
       }
+
+      if ( val_tl <= val_tc1 && val_tl <= val_tc2 && val_tl <= val_tr ) {
+        val_t = val_tl;
+        t     = tl;
+      }
+      else if ( val_tc1 <= val_tl && val_tc1 <= val_tc2 && val_tc1 <= val_tr ) {
+        val_t = val_tc1;
+        t     = tc1;
+      }
+      else if ( val_tc2 <= val_tl && val_tc2 <= val_tc1 && val_tc2 <= val_tr ) {
+        val_t = val_tc2;
+        t     = tc2;
+      }
+      else {
+        val_t = val_tr;
+        t     = tr;
+      }
     }
-    alpha = tr;
-    fval  = val_tr;  
+    alpha = t;
+    fval  = val_t;  
   }
 
 
@@ -392,9 +474,20 @@ public:
     Real val_tc = 0.0;
     ls_neval++;
 
-    if ( status(LineSearchType_Brents,ls_neval,ls_ngrad,tr,fval,gs,val_tr,x,s,obj) ) {
-      alpha = tr;
-      fval  = val_tr;
+    Real t     = 0.0;
+    Real val_t = 0.0;
+    if ( val_tl < val_tr ) {
+      t     = tl;
+      val_t = val_tl;
+    }
+    else {
+      t     = tr;
+      val_t = val_tr;
+    }
+
+    if ( status(LineSearchType_Brents,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj) ) {
+      alpha = t;
+      fval  = val_t;
       return;
     }
 
@@ -404,7 +497,6 @@ public:
     const Real goldinv           = 1.0/(1.0+gr);
     const Real tiny              = sqrt(Teuchos::ScalarTraits<Real>::eps());
     const Real max_extrap_factor = 100.0;
-    const int max_backtrack      = 8;
     Real tmp    = 0.0;
     Real q      = 0.0;
     Real r      = 0.0; 
@@ -413,38 +505,57 @@ public:
     Real val_tm = 0.0;
 
     int itbt = 0;
-    while ( val_tr > val_tl ) {
-      if ( itbt <= max_backtrack ) {
-        tc     = tr;
-        val_tc = val_tr;
+    while ( val_tr > val_tl && itbt < 8 ) {
+      tc     = tr;
+      val_tc = val_tr;
 
-        tr     = goldinv * (tc + gr*tl);
-        xnew->set(x);
-        xnew->axpy(tr,s);
-        val_tr = obj.value(*xnew);
-        ls_neval++;
-      }
-      else {
-        tmp    = tl;
-        tl     = tr;
-        tr     = tmp;
-        tmp    = val_tr;
-        val_tr = val_tl;
-        val_tl = tmp;
-        tc     = 0.0;
-      }
+      tr     = goldinv * (tc + gr*tl);
+      xnew->set(x);
+      xnew->axpy(tr,s);
+      val_tr = obj.value(*xnew);
+      ls_neval++;
+
       itbt++;
     }
+    if ( val_tr > val_tl ) {
+      tmp    = tl;
+      tl     = tr;
+      tr     = tmp;
+      tmp    = val_tr;
+      val_tr = val_tl;
+      val_tl = tmp;
+      tc     = 0.0;
+    }
+
     if ( std::abs(tc) < Teuchos::ScalarTraits<Real>::eps() ) {
-      tc = tr + (gr-1.0)*(tr-tl);
+      tc = tl + (gr-1.0)*(tr-tl);
       xnew->set(x);
       xnew->axpy(tc,s);
       val_tc = obj.value(*xnew);
       ls_neval++;
     }
 
+    if ( val_tl <= val_tr && val_tl <= val_tc ) {
+      t     = tl;
+      val_t = val_tl;
+    }
+    else if ( val_tc <= val_tr && val_tc <= val_tl ) {
+      t     = tc;
+      val_t = val_tc;
+    }
+    else {
+      t     = tr;
+      val_t = val_tr;
+    }
+
+    if ( status(LineSearchType_Bisection,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj) ) {
+      alpha = t;
+      fval  = val_t;
+      return;
+    }
+    
     int itb = 0;
-    while ( val_tr >= val_tc ) {
+    while ( val_tr >= val_tc && itb < 8 ) {
       q = ( val_tr-val_tl ) * (tr - tc);
       r = ( val_tr-val_tc ) * (tr - tl);
       tmp = fabs(q-r);
@@ -515,7 +626,25 @@ public:
       val_tc = val_tm;
       itb++;
     }
-    
+     
+    if ( val_tl <= val_tr && val_tl <= val_tc ) {
+      t     = tl;
+      val_t = val_tl;
+    }
+    else if ( val_tc <= val_tr && val_tc <= val_tl ) {
+      t     = tc;
+      val_t = val_tc;
+    }
+    else {
+      t     = tr;
+      val_t = val_tr;
+    }
+
+    if ( status(LineSearchType_Bisection,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj) ) {
+      alpha = t;
+      fval  = val_t;
+      return;
+    }
  
     // Run Brent's using the triple (tl,tr,tc)
     Real a     = 0.0;
@@ -531,7 +660,6 @@ public:
     Real u     = 0.0;
     Real v     = 0.0;
     Real w     = 0.0;
-    Real t     = 0.0;
     int it     = 0;
  
     fw = (val_tl<val_tc ? val_tl : val_tc);

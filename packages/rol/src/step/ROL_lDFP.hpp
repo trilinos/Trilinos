@@ -24,12 +24,12 @@ public:
   lDFP(int M) : Secant<Real>(M) {}
 
   // Apply lBFGS Approximate Inverse Hessian
-  void applyH( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x, const int iter ) { 
+  void applyH( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x ) { 
     // Get Generic Secant State
     Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
 
     // Apply initial Hessian approximation to v   
-    applyH0(Hv,v,x,iter);
+    applyH0(Hv,v,x);
 
     std::vector<Teuchos::RCP<Vector<Real> > > a(state->current+1);
     std::vector<Teuchos::RCP<Vector<Real> > > b(state->current+1);
@@ -42,7 +42,7 @@ public:
       Hv.axpy(bv,*b[i]);
 
       a[i] = v.clone();
-      applyH0(*a[i],*(state->gradDiff[i]),x,iter);
+      applyH0(*a[i],*(state->gradDiff[i]),x);
 
       for (int j = 0; j < i; j++) {
         bs = b[j]->dot(*(state->gradDiff[i]));
@@ -58,12 +58,12 @@ public:
   }
 
   // Apply Initial Secant Approximate Hessian
-  void applyH0( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x, const int iter ) {
+  void applyH0( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x ) {
     // Get Generic Secant State
     Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
 
     Hv.set(v);
-    if (iter != 0 && state->current != -1) {
+    if (state->iter != 0 && state->current != -1) {
       Real ss = state->iterDiff[state->current]->dot(*(state->iterDiff[state->current]));
       Hv.scale(state->product[state->current]/ss);
     }
@@ -71,7 +71,7 @@ public:
 
 
   // Apply lBFGS Approximate Hessian
-  void applyB( Vector<Real> &Bv, const Vector<Real> &v, const Vector<Real> &x, const int iter ) {
+  void applyB( Vector<Real> &Bv, const Vector<Real> &v, const Vector<Real> &x ) {
     // Get Generic Secant State
     Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
 
@@ -85,7 +85,7 @@ public:
 
     // Apply initial inverse Hessian approximation to v   
     Teuchos::RCP<Vector<Real> > tmp = Bv.clone();
-    applyB0(*tmp,Bv,x,iter);
+    applyB0(*tmp,Bv,x);
     Bv.set(*tmp);
 
     Real beta = 0.0;
@@ -97,12 +97,12 @@ public:
   }
 
   // Apply Initial Secant Approximate Hessian 
-  void applyB0( Vector<Real> &Bv, const Vector<Real> &v, const Vector<Real> &x, const int iter ) {
+  void applyB0( Vector<Real> &Bv, const Vector<Real> &v, const Vector<Real> &x ) {
     // Get Generic Secant State
     Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
 
     Bv.set(v);
-    if (iter != 0 && state->current != -1) {
+    if (state->iter != 0 && state->current != -1) {
       Real ss = state->iterDiff[state->current]->dot(*(state->iterDiff[state->current]));
       Bv.scale(ss/state->product[state->current]);
     }

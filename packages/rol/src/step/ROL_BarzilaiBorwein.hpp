@@ -28,12 +28,12 @@ public:
   BarzilaiBorwein(int type = 1) : Secant<Real>(1), type_(type) {}
 
   // Apply lBFGS Approximate Inverse Hessian
-  void applyH( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x, const int iter ) {
+  void applyH( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x ) {
     // Get Generic Secant State
     Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
 
     Hv.set(v);
-    if ( iter != 0 && state->current != -1 ) {
+    if ( state->iter != 0 && state->current != -1 ) {
       if ( type_ == 1 ) {
         Real yy = state->gradDiff[state->current]->dot(*(state->gradDiff[state->current]));
         Hv.scale(state->product[state->current]/yy);
@@ -46,12 +46,12 @@ public:
   }
 
   // Apply lBFGS Approximate Hessian
-  void applyB( Vector<Real> &Bv, const Vector<Real> &v, const Vector<Real> &x, const int iter ) { 
+  void applyB( Vector<Real> &Bv, const Vector<Real> &v, const Vector<Real> &x ) { 
     // Get Generic Secant State
     Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
 
     Bv.set(v);
-    if ( iter != 0 && state->current != -1 ) {
+    if ( state->iter != 0 && state->current != -1 ) {
       if ( type_ == 1 ) {
         Real yy = state->gradDiff[state->current]->dot(*(state->gradDiff[state->current]));
         Bv.scale(yy/state->product[state->current]);

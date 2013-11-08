@@ -221,12 +221,12 @@ int main(int argc, char *argv[]) {
     //ROL::LineSearchStepType LSStype = ROL::LineSearchStep_Secant;
     //ROL::LineSearchStepType LSStype = ROL::LineSearchStep_Gradient;
 
-    ROL::SecantType Stype = ROL::Secant_lDFP;
-    //ROL::SecantType Stype = ROL::Secant_lBFGS;
+    //ROL::SecantType Stype = ROL::Secant_lDFP;
+    ROL::SecantType Stype = ROL::Secant_lBFGS;
     //ROL::SecantType Stype = ROL::Secant_BarzilaiBorwein;
 
-    //ROL::LineSearchType LStype = ROL::LineSearchType_Backtracking;
-    ROL::LineSearchType LStype = ROL::LineSearchType_SimpleBacktracking;
+    ROL::LineSearchType LStype = ROL::LineSearchType_Backtracking;
+    //ROL::LineSearchType LStype = ROL::LineSearchType_SimpleBacktracking;
     //ROL::LineSearchType LStype = ROL::LineSearchType_Brents;
     //ROL::LineSearchType LStype = ROL::LineSearchType_Bisection;
     //ROL::LineSearchType LStype = ROL::LineSearchType_GoldenSection;

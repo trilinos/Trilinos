@@ -33,6 +33,7 @@ struct SecantState {
   std::vector<Real>                         product;  // Step-Gradient Inner Product Storage
   int storage;                                        // Storage Size
   int current;                                        // Current Storage Size
+  int iter;                                           // Current Optimization Iteration
 };
 
 template<class Real>
@@ -53,12 +54,15 @@ public:
     state_ = Teuchos::rcp( new SecantState<Real> ); 
     state_->storage = M;
     state_->current = -1;
+    state_->iter    = 0;
   }
 
   Teuchos::RCP<SecantState<Real> >& get_state() { return this->state_; }
 
   // Update Secant Approximation
-  void update( const Vector<Real> &grad, const Vector<Real> &gp, const Vector<Real> &s, const Real snorm ) {
+  void update( const Vector<Real> &grad, const Vector<Real> &gp, const Vector<Real> &s, 
+               const Real snorm, const int iter ) {
+    this->state_->iter = iter;
     Teuchos::RCP<Vector<Real> > gradDiff = grad.clone();
     gradDiff->set(grad);
     gradDiff->axpy(-1.0,gp);
@@ -82,46 +86,46 @@ public:
   }
 
   // Apply Secant Approximate Inverse Hessian
-  virtual void applyH( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x, const int iter ) = 0;
+  virtual void applyH( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x ) = 0;
 
   // Apply Initial Secant Approximate Inverse Hessian
-  virtual void applyH0( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x, const int iter ) {
+  virtual void applyH0( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x ) {
     Hv.set(v);
-    if (iter != 0 && this->state_->current != -1) {
+    if (this->state_->iter != 0 && this->state_->current != -1) {
       Real yy = this->state_->gradDiff[this->state_->current]->dot(*(this->state_->gradDiff[this->state_->current]));
       Hv.scale(this->state_->product[this->state_->current]/yy);
     }
   }
 
   // Apply Secant Approximate Hessian
-  virtual void applyB( Vector<Real> &Bv, const Vector<Real> &v, const Vector<Real> &x, const int iter ) = 0;
+  virtual void applyB( Vector<Real> &Bv, const Vector<Real> &v, const Vector<Real> &x ) = 0;
 
   // Apply Initial Secant Approximate Hessian 
-  virtual void applyB0( Vector<Real> &Bv, const Vector<Real> &v, const Vector<Real> &x, const int iter ) {
+  virtual void applyB0( Vector<Real> &Bv, const Vector<Real> &v, const Vector<Real> &x ) {
     Bv.set(v);
-    if (iter != 0 && this->state_->current != -1) {
+    if (this->state_->iter != 0 && this->state_->current != -1) {
       Real yy = this->state_->gradDiff[this->state_->current]->dot(*(this->state_->gradDiff[this->state_->current]));
       Bv.scale(yy/this->state_->product[this->state_->current]);
     }
   }
 
   // Test Secant Approximations 
-  void test( const Vector<Real> &x, const Vector<Real> &s, int iter ) {
+  void test( const Vector<Real> &x, const Vector<Real> &s ) {
     Teuchos::RCP<Vector<Real> > vec  = x.clone();
     Teuchos::RCP<Vector<Real> > Hvec = x.clone();
     Teuchos::RCP<Vector<Real> > Bvec = x.clone();
   
     // Print BHv -> Should be v
     vec->set(s);
-    this->applyH(*vec,x,*Hvec,iter);
-    this->applyB(*Hvec,x,*Bvec,iter);
+    this->applyH(*Hvec,*vec,x);
+    this->applyB(*Bvec,*Hvec,x);
     vec->axpy(-1.0,*Bvec);
     std::cout << " ||BHv-v|| = " << vec->norm() << "\n";
   
     // Print HBv -> Should be v
     vec->set(s);
-    this->applyB(*vec,x,*Bvec,iter);
-    this->applyH(*Bvec,x,*Hvec,iter);
+    this->applyB(*Bvec,*vec,x);
+    this->applyH(*Hvec,*Bvec,x);
     vec->axpy(-1.0,*Hvec);
     std::cout << " ||HBv-v|| = " << vec->norm() << "\n";
   }

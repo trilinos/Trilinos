@@ -24,7 +24,7 @@ public:
   lBFGS(int M) : Secant<Real>(M) {}
 
   // Apply lBFGS Approximate Inverse Hessian
-  void applyH( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x, const int iter ) {
+  void applyH( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x ) {
     // Get Generic Secant State
     Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
 
@@ -38,7 +38,7 @@ public:
 
     // Apply initial inverse Hessian approximation to v   
     Teuchos::RCP<Vector<Real> > tmp = Hv.clone();
-    applyH0(*tmp,Hv,x,iter);
+    applyH0(*tmp,Hv,x);
     Hv.set(*tmp);
 
     Real beta = 0.0;
@@ -50,12 +50,12 @@ public:
   }
 
   // Apply lBFGS Approximate Hessian
-  void applyB( Vector<Real> &Bv, const Vector<Real> &v, const Vector<Real> &x, const int iter ) { 
+  void applyB( Vector<Real> &Bv, const Vector<Real> &v, const Vector<Real> &x ) { 
     // Get Generic Secant State
     Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
 
     // Apply initial Hessian approximation to v   
-    applyB0(Bv,v,x,iter);
+    applyB0(Bv,v,x);
 
     std::vector<Teuchos::RCP<Vector<Real> > > a(state->current+1);
     std::vector<Teuchos::RCP<Vector<Real> > > b(state->current+1);
@@ -68,7 +68,7 @@ public:
       Bv.axpy(bv,*b[i]);
 
       a[i] = v.clone();
-      applyB0(*a[i],*(state->iterDiff[i]),x,iter);
+      applyB0(*a[i],*(state->iterDiff[i]),x);
 
       for (int j = 0; j < i; j++) {
         bs = b[j]->dot(*(state->iterDiff[i]));

@@ -31,8 +31,8 @@ template <class Real>
 class LineSearchStep : public Step<Real> {
 private:
 
-  Teuchos::RCP<Secant<Real> > secant_;
-  Teuchos::RCP<Krylov<Real> > krylov_;
+  Teuchos::RCP<Secant<Real> >     secant_;
+  Teuchos::RCP<Krylov<Real> >     krylov_;
   Teuchos::RCP<LineSearch<Real> > lineSearch_;
 
   int iterKrylov_;
@@ -75,6 +75,7 @@ public:
       LS_ = "Golden Section";
     }
 
+    secant_ = Teuchos::null;
     if ( LSStype_ == LineSearchStep_NewtonKrylov ) {
       krylov_ = Teuchos::rcp( new Krylov<Real>(CGtol1,CGtol2,maxitCG) );
       step_   = "Newton-CG";
@@ -82,14 +83,17 @@ public:
       flagKrylov_ = 0;
     }
     else if ( LSStype_ == LineSearchStep_NewtonKrylovSecantPreconditioning ) {
-      krylov_ = Teuchos::rcp( new Krylov<Real>(type,CGtol1,CGtol2,maxitCG,L,BBtype) );
+      krylov_ = Teuchos::rcp( new Krylov<Real>(CGtol1,CGtol2,maxitCG) );
       if ( type == Secant_lBFGS ) {
+        secant_ = Teuchos::rcp( new lBFGS<Real>(L) );
         step_ = "Newton-CG with lBFGS Preconditioning";
       }
       else if ( type == Secant_lDFP ) {
+        secant_ = Teuchos::rcp( new lDFP<Real>(L) );
         step_ = "Newton-CG with lDFP Preconditioning";
       }
       else if ( type == Secant_BarzilaiBorwein ) {
+        secant_ = Teuchos::rcp( new BarzilaiBorwein<Real>(BBtype) );
         step_ = "Newton-CG with Barzilai-Borwein Preconditioning";
       }
       iterKrylov_ = 0;
@@ -122,7 +126,7 @@ public:
   */
   void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, AlgorithmState<Real> &algo_state ) {
     if ( LSStype_ == LineSearchStep_NewtonKrylov || LSStype_ == LineSearchStep_NewtonKrylovSecantPreconditioning ) {
-      krylov_->CG(s,iterKrylov_,flagKrylov_,*(Step<Real>::state_->gradientVec),x,obj,algo_state.iter);
+      krylov_->CG(s,iterKrylov_,flagKrylov_,*(Step<Real>::state_->gradientVec),x,obj,secant_);
       if ( flagKrylov_ == 2 ) {
         s.set(*(Step<Real>::state_->gradientVec));
       }
@@ -131,7 +135,7 @@ public:
       obj.invHessVec(s,*(Step<Real>::state_->gradientVec),x);
     }
     else if ( LSStype_ == LineSearchStep_Secant ) {
-      secant_->applyH(s,*(Step<Real>::state_->gradientVec),x,algo_state.iter);
+      secant_->applyH(s,*(Step<Real>::state_->gradientVec),x);
       //secant_->test(s,x,algo_state.iter);
     }
     else if ( LSStype_ == LineSearchStep_Gradient ) {
@@ -166,7 +170,7 @@ public:
 
     // Compute new gradient
     Teuchos::RCP<Vector<Real> > gp;
-    if ( LSStype_ == LineSearchStep_Secant ) {
+    if ( LSStype_ == LineSearchStep_Secant || LSStype_ == LineSearchStep_NewtonKrylovSecantPreconditioning ) {
       gp = x.clone();
       gp->set(*(Step<Real>::state_->gradientVec));
     }
@@ -174,8 +178,8 @@ public:
     algo_state.ngrad++;
 
     // Update Secant Information
-    if ( LSStype_ == LineSearchStep_Secant ) {
-      secant_->update(*(Step<Real>::state_->gradientVec),*gp,s,algo_state.snorm);
+    if ( LSStype_ == LineSearchStep_Secant || LSStype_ == LineSearchStep_NewtonKrylovSecantPreconditioning ) {
+      secant_->update(*(Step<Real>::state_->gradientVec),*gp,s,algo_state.snorm,algo_state.iter+1);
     }
 
     // Update algorithm state
