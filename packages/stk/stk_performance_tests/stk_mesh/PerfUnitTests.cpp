@@ -288,7 +288,6 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_selector )
   bulk.modification_begin();
 
   CALLGRIND_TOGGLE_COLLECT;
-  std::cout << "HERE" << std::endl;
   for (int i = 0; i < num_iterations; ++i) {
     for (int x = 0; x < x_dim; ++x) {
       for (int y = 0; y < y_dim; ++y) {
@@ -306,7 +305,6 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_selector )
       }
     }
   }
-  std::cout << "HERE" << std::endl;
   CALLGRIND_TOGGLE_COLLECT;
   CALLGRIND_STOP_INSTRUMENTATION;
 
