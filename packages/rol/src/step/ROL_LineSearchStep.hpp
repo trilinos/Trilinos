@@ -177,6 +177,11 @@ public:
       }
       hist << "\n";
       hist << std::setfill('-') << std::setw(100) << "-" << "\n";
+      hist << std::setfill(' ') << "  ";
+      hist << std::setw(15) << std::left << algo_state.iter;
+      hist << std::setw(15) << std::left << algo_state.value;
+      hist << std::setw(15) << std::left << algo_state.gnorm;
+      hist << "\n";
     }
     else {
       hist << "  "; 

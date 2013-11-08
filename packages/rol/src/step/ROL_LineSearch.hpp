@@ -611,6 +611,11 @@ public:
     alpha = t;
     fval  = ft;
     it   += itbt + itb;
+
+    // Safeguard if Brent's does not find a minimizer
+    if ( std::abs(alpha) < Teuchos::ScalarTraits<Real>::eps() ) {
+      simplebacktracking( alpha, fval, it, gs, s, x, obj ); 
+    }
   }
 
 };
