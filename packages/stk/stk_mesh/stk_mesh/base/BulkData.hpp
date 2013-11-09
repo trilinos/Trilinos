@@ -708,14 +708,18 @@ public:
 
   inline const MeshIndex& mesh_index(Entity entity) const
   {
+#ifndef NDEBUG
     entity_getter_debug_check(entity);
+#endif
 
     return m_mesh_indexes[entity.local_offset()];
   }
 
   inline MeshIndex& mesh_index(Entity entity)
   {
+#ifndef NDEBUG
     entity_setter_debug_check(entity); // setter check due to non-const
+#endif
 
     return m_mesh_indexes[entity.local_offset()];
   }
@@ -1065,14 +1069,40 @@ public:
 
   size_t total_field_data_footprint(EntityRank rank) const;
 
+  template<class FieldType>
+  typename FieldTraits<FieldType>::data_type*
+  field_data(const FieldType & f, const Bucket& b) const
+  {
+    const EntityRank rank         = b.entity_rank();
+    const FieldMetaData &field_meta_data = m_field_meta_data[m_num_fields * rank + f.mesh_meta_data_ordinal()][b.bucket_id()];
+    return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data);
+  }
 
   template<class FieldType>
   typename FieldTraits<FieldType>::data_type*
-  field_data(const FieldType & f, const Bucket& b, Bucket::size_type bucket_ord = 0) const
+  field_data(const FieldType & f, const Bucket& b, Bucket::size_type bucket_ord) const
   {
     const EntityRank rank         = b.entity_rank();
     const FieldMetaData &field_meta_data = m_field_meta_data[m_num_fields * rank + f.mesh_meta_data_ordinal()][b.bucket_id()];
     return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_size * bucket_ord);
+  }
+
+  template<class FieldType>
+  typename FieldTraits<FieldType>::data_type*
+  nodal_field_data(const FieldType & f, const Bucket& b, Bucket::size_type bucket_ord) const
+  {
+    ThrowAssert(b.entity_rank() == stk::topology::NODE_RANK);
+    const FieldMetaData &field_meta_data = m_field_meta_data[f.mesh_meta_data_ordinal()][b.bucket_id()];
+    return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_size * bucket_ord);
+  }
+
+  template<class FieldType>
+  typename FieldTraits<FieldType>::data_type*
+  nodal_field_data(const FieldType & f, const Bucket& b ) const
+  {
+    ThrowAssert(b.entity_rank() == stk::topology::NODE_RANK);
+    const FieldMetaData &field_meta_data = m_field_meta_data[f.mesh_meta_data_ordinal()][b.bucket_id()];
+    return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data);
   }
 
   template<class FieldType>
@@ -1084,6 +1114,17 @@ public:
 #endif
     const MeshIndex& mi           = mesh_index(e);
     return field_data(f, *mi.bucket, mi.bucket_ordinal);
+  }
+
+  template<class FieldType>
+  typename FieldTraits<FieldType>::data_type*
+  nodal_field_data(const FieldType & f, Entity e) const
+  {
+#ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
+    ThrowAssert(&f.get_mesh() == &stk::mesh::BulkData::get(e));
+#endif
+    const MeshIndex& mi           = mesh_index(e);
+    return nodal_field_data(f, *mi.bucket, mi.bucket_ordinal);
   }
 
   const FieldBase::Restriction::size_type * field_data_stride( const FieldBase & field, const Bucket& b ) const
