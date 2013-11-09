@@ -252,14 +252,14 @@ int main(int argc, char *argv[]) {
     /* END LINE SEARCH STEP DEFINITION */
 
     /* BEGIN TRUST REGION STEP DEFINTION */
-    ROL::TrustRegionStepType TRStype = ROL::TrustRegionStep_NewtonKrylov;
+    //ROL::TrustRegionStepType TRStype = ROL::TrustRegionStep_NewtonKrylov;
     //ROL::TrustRegionStepType TRStype = ROL::TrustRegionStep_NewtonKrylovSecantPreconditioning;
     //ROL::TrustRegionStepType TRStype = ROL::TrustRegionStep_Secant;
-    //ROL::TrustRegionStepType TRStype = ROL::TrustRegionStep_Newton;
+    ROL::TrustRegionStepType TRStype = ROL::TrustRegionStep_Newton;
 
-    ROL::TrustRegionType TRtype = ROL::TrustRegionType_TruncatedCG;
+    //ROL::TrustRegionType TRtype = ROL::TrustRegionType_TruncatedCG;
+    ROL::TrustRegionType TRtype = ROL::TrustRegionType_DoubleDogleg;  
     //ROL::TrustRegionType TRtype = ROL::TrustRegionType_Dogleg;
-    //ROL::TrustRegionType TRtype = ROL::TrustRegionType_DoubleDogleg;  
 
     maxit        = 100;
     RealT tol1   = 1.e-4;
