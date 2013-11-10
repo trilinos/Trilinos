@@ -41,8 +41,13 @@
 //@HEADER
 */
 
+#include "Ifpack2_Factory_decl.hpp"
 
-#include "Ifpack2_Factory.hpp"
+#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
+#  include "Ifpack2_Factory_def.hpp"
+#  include "Ifpack2_ExplicitInstantiationHelpers.hpp"
+#  include "Ifpack2_ETIHelperMacros.h"
+#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
 namespace Ifpack2 {
 
@@ -60,11 +65,61 @@ bool supportsUnsymmetric(const std::string& prec_type)
     result = true;
   }
   else {
-    throw std::runtime_error("Ifpack2::supportsUnsymmetric ERROR, unrecognized prec_type");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::invalid_argument, "Ifpack2::supportsUnsymmetric: "
+      "Unrecognized preconditioner type prec_type = \"" << prec_type
+      << "\"");
   }
-
   return result;
 }
 
-}//namespace Ifpack2
+#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
+
+  // mfh 09 Nov 2013: We can't use the usual IFPACK2_* class macro
+  // here because Factory is not a templated class; its methods are.
+#define LCLINST(S,LO,GO) \
+  template<> \
+  Teuchos::RCP<Preconditioner<S, LO, GO, Tpetra::CrsMatrix<S, LO, GO>::node_type> > \
+  Factory::create<Tpetra::CrsMatrix<S, LO, GO> > (const std::string& precType, \
+                                                  const Teuchos::RCP<const Tpetra::CrsMatrix<S, LO, GO> >& matrix); \
+  \
+  template<> \
+  Teuchos::RCP<Preconditioner<S, LO, GO, Tpetra::CrsMatrix<S, LO, GO>::node_type> > \
+  Factory::create<Tpetra::CrsMatrix<S, LO, GO> > (const std::string& precType, \
+                                                  const Teuchos::RCP<const Tpetra::CrsMatrix<S, LO, GO> >& matrix, \
+                                                  const int overlap);
+
+#if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
+  template<>
+  Teuchos::RCP<Preconditioner<double, int, int, KokkosClassic::ThrustGPUNode> >
+  Factory::create<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> > (const std::string& prec_type,
+                                                                                       const Teuchos::RCP<const Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >& matrix);
+
+  template<>
+  Teuchos::RCP<Preconditioner<double, int, int, KokkosClassic::ThrustGPUNode> >
+  Factory::create<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> > (const std::string& prec_type,
+                                                                                       const Teuchos::RCP<const Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >& matrix,
+                                                                                       const int overlap);
+#endif
+
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
+  template<>
+  Teuchos::RCP<Preconditioner<double, int, int, KokkosClassic::TPINode> >
+  Factory::create<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> > (const std::string& prec_type,
+                                                                                 const Teuchos::RCP<const Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >& matrix);
+
+  template<>
+  Teuchos::RCP<Preconditioner<double, int, int, KokkosClassic::TPINode> >
+  Factory::create<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> > (const std::string& prec_type,
+                   const Teuchos::RCP<const Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >& matrix,
+                   const int overlap);
+#endif
+
+  IFPACK2_ETI_MANGLING_TYPEDEFS()
+
+  IFPACK2_INSTANTIATE_SLG( LCLINST )
+
+#endif
+
+} // namespace Ifpack2
 
