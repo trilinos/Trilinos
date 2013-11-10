@@ -194,13 +194,23 @@ public:
   // \name Constructors and destructor
   //@{
 
+  /// \brief Constructor that takes a matrix.
+  ///
+  /// \param A [in] The matrix to be preconditioned.
+  AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A);
+
   /// \brief Constructor that takes a matrix and the level of overlap.
   ///
-  /// \param Matrix [in] The matrix to be preconditioned.
+  /// \warning This version of the constructor is DEPRECATED, because
+  ///   the single-argument version suffices; users may specify the
+  ///   overlap level via the "schwarz: overlap level" parameter.
+  ///
+  /// \param A [in] The matrix to be preconditioned.
   /// \param overlapLevel [in] The level of overlap.  Must be
   ///   nonnegative.  Zero means no overlap.
+  TEUCHOS_DEPRECATED
   AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A,
-                   const int overlapLevel = 0);
+                   const int overlapLevel);
 
   //! Destructor
   virtual ~AdditiveSchwarz();

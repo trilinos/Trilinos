@@ -126,7 +126,6 @@ public:
    *
    * \param PrecType [in] Name of preconditioner type to be created.
    * \param Matrix [in] Matrix used to define the preconditioner
-   * \param overlap (in) Specified overlap; defaults to 0.
    *
    * Throw an exception if the preconditioner with that input name
    * does not exist.  Otherwise, return a newly created preconditioner
@@ -139,8 +138,33 @@ public:
                                        typename MatrixType::global_ordinal_type,
                                        typename MatrixType::node_type> >
   create (const std::string& prec_type,
+          const Teuchos::RCP<const MatrixType>& matrix);
+
+  /** \brief Create an instance of Ifpack2_Preconditioner given the string
+   * name of the preconditioner type.
+   *
+   * \warning This version of the constructor is DEPRECATED, because
+   *   the single-argument version suffices; users may specify the
+   *   overlap level via the "schwarz: overlap level" parameter.
+   *
+   * \param PrecType [in] Name of preconditioner type to be created.
+   * \param Matrix [in] Matrix used to define the preconditioner
+   * \param overlap (in) Specified overlap; defaults to 0.
+   *
+   * Throw an exception if the preconditioner with that input name
+   * does not exist.  Otherwise, return a newly created preconditioner
+   * object.
+   */
+  template<class MatrixType>
+  static
+  TEUCHOS_DEPRECATED
+  Teuchos::RCP<Ifpack2::Preconditioner<typename MatrixType::scalar_type,
+                                       typename MatrixType::local_ordinal_type,
+                                       typename MatrixType::global_ordinal_type,
+                                       typename MatrixType::node_type> >
+  create (const std::string& prec_type,
           const Teuchos::RCP<const MatrixType>& matrix,
-          const int overlap = 0);
+          const int overlap);
 
   //! Clones a preconditioner for a different node type from an Ifpack2 RILUK or Chebyshev preconditioner
   template<class MatrixType, class M2>
@@ -222,6 +246,81 @@ Factory::create (const std::string& precType,
     }
     else {
       prec = rcp (new Ifpack2::AdditiveSchwarz<MatrixType, Ifpack2::SupportGraph<MatrixType> > (matrix, overlap));
+    }
+  }
+#endif
+  else {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::invalid_argument, "Ifpack2::Factory::create: "
+      "Invalid preconditioner type \"" << precType << "\".");
+  }
+  return prec;
+}
+
+
+template<class MatrixType>
+Teuchos::RCP<Ifpack2::Preconditioner<typename MatrixType::scalar_type,
+                                     typename MatrixType::local_ordinal_type,
+                                     typename MatrixType::global_ordinal_type,
+                                     typename MatrixType::node_type> >
+Factory::create (const std::string& precType,
+                 const Teuchos::RCP<const MatrixType>& matrix)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  typedef typename MatrixType::scalar_type scalar_type;
+  typedef typename MatrixType::local_ordinal_type local_ordinal_type;
+  typedef typename MatrixType::global_ordinal_type global_ordinal_type;
+  typedef typename MatrixType::node_type node_type;
+  typedef Ifpack2::Preconditioner<scalar_type, local_ordinal_type, global_ordinal_type, node_type> prec_base_type;
+
+  RCP<prec_base_type> prec;
+
+  // precTypeUpper is the upper-case version of precType.
+  std::string precTypeUpper (precType);
+  if (precTypeUpper.size () > 0) {
+    std::locale locale;
+    for (size_t k = 0; k < precTypeUpper.size (); ++k) {
+      precTypeUpper[k] = std::toupper<char> (precTypeUpper[k], locale);
+    }
+  }
+
+  const bool one_mpi_rank = (matrix->getComm ()->getSize () == 1);
+
+  if (precTypeUpper == "ILUT") {
+    // Note: ILUT doesn't work for multiple MPI ranks... you have to use AdditiveSchwarz.
+    if (one_mpi_rank) {
+      prec = rcp (new Ifpack2::ILUT<MatrixType> (matrix));
+    }
+    else {
+      prec = rcp (new Ifpack2::AdditiveSchwarz<MatrixType, Ifpack2::ILUT<MatrixType> > (matrix));
+    }
+  }
+  else if (precTypeUpper == "RILUK") {
+    prec = rcp (new Ifpack2::RILUK<MatrixType> (matrix));
+  }
+  else if (precTypeUpper == "RELAXATION") {
+    prec = rcp (new Ifpack2::Relaxation<MatrixType> (matrix));
+  }
+  else if (precTypeUpper == "CHEBYSHEV") {
+    prec = rcp (new Ifpack2::Chebyshev<MatrixType> (matrix));
+  }
+  else if (precTypeUpper == "DIAGONAL") {
+    prec = rcp (new Ifpack2::Diagonal<MatrixType> (matrix));
+  }
+  else if (precTypeUpper == "SCHWARZ") {
+    prec = rcp (new Ifpack2::AdditiveSchwarz<MatrixType, Ifpack2::ILUT<MatrixType> > (matrix));
+  }
+  else if (precTypeUpper == "KRYLOV") {
+    prec = rcp (new Ifpack2::Krylov<MatrixType, prec_base_type> (matrix));
+  }
+#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
+  else if (precTypeUpper == "SUPPORTGRAPH") {
+    if (one_mpi_rank) {
+      prec = rcp (new Ifpack2::SupportGraph<MatrixType> (matrix));
+    }
+    else {
+      prec = rcp (new Ifpack2::AdditiveSchwarz<MatrixType, Ifpack2::SupportGraph<MatrixType> > (matrix));
     }
   }
 #endif
