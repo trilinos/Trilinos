@@ -118,6 +118,20 @@ solver for each subdomain.
 The local matrix \f$A_i\f$ can be filtered, to eliminate singletons,
 and reordered. At the present time, RCM and METIS can be used to
 reorder the local matrix.
+
+\section Ifpack2_AdditiveSchwarz_DevNotes Notes to Ifpack2 developers
+
+The second template parameter (\c LocalInverseType) is being
+DEPRECATED.  It causes a lot of trouble for explicit template
+instantiation, and we can perfectly well support an arbitrary
+subdomain solver type by run-time polymorphism.  For example, a
+subclass of Ifpack2::Preconditioner could expose a scalar_type (of the
+input and output vectors of apply()) different than its internal
+storage type, via a mechanism like that of Tpetra::ApplyOp.  The only
+issue is that the preconditioner would need to be creatable by
+Factory, but we could get around that by adding a method to
+AdditiveSchwarz that lets the user supply an arbitrary
+Ifpack2::Preconditioner subclass instance for the subdomain solver.
 */
 template<class MatrixType,class LocalInverseType>
 class AdditiveSchwarz :
