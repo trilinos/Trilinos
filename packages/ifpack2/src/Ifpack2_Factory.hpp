@@ -63,65 +63,68 @@ namespace Ifpack2 {
 //! \c true if the specified preconditioner type supports nonsymmetric matrices, else false.
 bool supportsUnsymmetric (const std::string& prec_type);
 
-//! A factory class to create Ifpack2 preconditioners.
 /*!
-Ifpack2::Factory contains just one method: create().
-Using Ifpack2::Factory::create(), users can easily create a variety of
-Ifpack2 preconditioners. 
+\class Factory
+\brief "Factory" for creating Ifpack2 preconditioners.
+
+This class' create() method lets users create an instance of any Ifpack2 preconditioner.
 
 The create() method has three arguments:
-- a string, indicating the type of preconditioner to compute;
-- a pointer to a Tpetra::RowMatrix, representing the matrix
-  to be used to define the preconditioner;
-- an optional integer (defaults to 0), that specifies the amount of
-  overlap between processes (if the input matrix is distributed
-  over multiple processes).
+  - a string, indicating the type of preconditioner to compute;
+  - a pointer to a Tpetra::RowMatrix, representing the matrix to be
+    used to define the preconditioner;
+  - an optional integer (defaults to 0), that specifies the amount of
+    overlap between processes (if the input matrix is distributed over
+    multiple processes).
 
 The first argument can assume the following values:
-- "DIAGONAL": returns an instance of Ifpack2::Diagonal.
-- "RELAXATION": returns an instance of Ifpack2::Relaxation.
-- "CHEBYSHEV": returns an instance of Ifpack2::Chebyshev (overlap is ignored).
-- "ILUT": returns an instance of Ifpack2::ILUT.
-- "RILUK": returns an instance of Ifpack2::RILUK.
-- "KRYLOV": returns an instance of Ifpack2::Krylov.
+  - "DIAGONAL": returns an instance of Ifpack2::Diagonal.
+  - "RELAXATION": returns an instance of Ifpack2::Relaxation.
+  - "CHEBYSHEV": returns an instance of Ifpack2::Chebyshev (overlap is ignored).
+  - "ILUT": returns an instance of Ifpack2::ILUT.
+  - "RILUK": returns an instance of Ifpack2::RILUK.
+  - "KRYLOV": returns an instance of Ifpack2::Krylov.
 
-<P> The following fragment of code shows the
-basic usage of this class.
+The following fragment of code shows the basic usage of this class.
 \code
 #include "Ifpack2_Factory.hpp"
+// ...
 
-...
+using Teuchos::ParameterList;
+using Teuchos::RCP;
 typedef double Scalar;
 typedef int    LocalOrdinal;
 typedef int    GlobalOrdinal;
 typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
-typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> TCrsMatrix;
-typedef Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> TPrecond;
-...
+typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
+typedef Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> prec_type;
+// ...
+
 Ifpack2::Factory factory;
 
-Teuchos::RCP<TCrsMatrix> A; // A is fillComplete()'d.
-std::string PrecType = "ILUT"; // use incomplete LU on each process
-Teuchos::RCP<TPrecond> prec = factory.create(PrecType, A);
+RCP<crs_matrix_type> A;
+// ... fill A and call fillComplete() ...
 
-Teuchos::ParameterList params;
-params.set("fact: ilut level-of-fill", 5.0); // use ILUT(fill=5, drop=0)
+// Use ILUT (incomplete LU with thresholding) on each process.
+const std::string precType = "ILUT";
+RCP<prec_type> prec = factory.create (precType, A);
 
-prec->setParameters(List);
-prec->initialize();
-prec->compute();
+ParameterList params;
+params.set ("fact: ilut level-of-fill", 5.0); // ILUT(fill=5, drop=0)
+
+prec->setParameters (params);
+prec->initialize ();
+prec->compute ();
 
 // now prec can be used as a preconditioner
-
 \endcode
-
 */
 class Factory {
 public:
   /** \brief Create an instance of Ifpack2_Preconditioner given the string
    * name of the preconditioner type.
    *
-   * \param PrecType [in] Name of preconditioner type to be created. 
+   * \param PrecType [in] Name of preconditioner type to be created.
    * \param Matrix [in] Matrix used to define the preconditioner
    * \param overlap (in) Specified overlap; defaults to 0.
    *
@@ -135,10 +138,9 @@ public:
                                        typename MatrixType::local_ordinal_type,
                                        typename MatrixType::global_ordinal_type,
                                        typename MatrixType::node_type> >
-  create(const std::string& prec_type,
-         const Teuchos::RCP<const MatrixType>& matrix,
-         const int overlap = 0);
-
+  create (const std::string& prec_type,
+          const Teuchos::RCP<const MatrixType>& matrix,
+          const int overlap = 0);
 
   //! Clones a preconditioner for a different node type from an Ifpack2 RILUK or Chebyshev preconditioner
   template<class MatrixType, class M2>
@@ -147,33 +149,36 @@ public:
                                        typename M2::local_ordinal_type,
                                        typename M2::global_ordinal_type,
                                        typename M2::node_type> >
-  clone(const Teuchos::RCP<Ifpack2::Preconditioner<typename MatrixType::scalar_type,
-                                       typename MatrixType::local_ordinal_type,
-                                       typename MatrixType::global_ordinal_type,
-                                       typename MatrixType::node_type> >& prec,
-		const Teuchos::RCP<const M2>& matrix, const Teuchos::ParameterList& params = Teuchos::ParameterList());
-
+  clone (const Teuchos::RCP<Ifpack2::Preconditioner<typename MatrixType::scalar_type,
+                                                    typename MatrixType::local_ordinal_type,
+                                                    typename MatrixType::global_ordinal_type,
+                                                    typename MatrixType::node_type> >& prec,
+         const Teuchos::RCP<const M2>& matrix,
+         const Teuchos::ParameterList& params = Teuchos::ParameterList ());
 };
 
-/////////////////////////////////////////////
-/////////////////////////////////////////////
 
 template<class MatrixType>
-Teuchos::RCP<Ifpack2::Preconditioner<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >
-Factory::create(const std::string& prec_type,
-                const Teuchos::RCP<const MatrixType>& matrix,
-                const int overlap)
+Teuchos::RCP<Ifpack2::Preconditioner<typename MatrixType::scalar_type,
+                                     typename MatrixType::local_ordinal_type,
+                                     typename MatrixType::global_ordinal_type,
+                                     typename MatrixType::node_type> >
+Factory::create (const std::string& precType,
+                 const Teuchos::RCP<const MatrixType>& matrix,
+                 const int overlap)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
-  typedef typename MatrixType::scalar_type Scalar;
-  typedef typename MatrixType::local_ordinal_type LocalOrdinal;
-  typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
-  typedef typename MatrixType::node_type Node;
-  RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec;
+  typedef typename MatrixType::scalar_type scalar_type;
+  typedef typename MatrixType::local_ordinal_type local_ordinal_type;
+  typedef typename MatrixType::global_ordinal_type global_ordinal_type;
+  typedef typename MatrixType::node_type node_type;
+  typedef Ifpack2::Preconditioner<scalar_type, local_ordinal_type, global_ordinal_type, node_type> prec_base_type;
 
-  // precTypeUpper is the upper-case version of prec_type.
-  std::string precTypeUpper (prec_type);
+  RCP<prec_base_type> prec;
+
+  // precTypeUpper is the upper-case version of precType.
+  std::string precTypeUpper (precType);
   if (precTypeUpper.size () > 0) {
     std::locale locale;
     for (size_t k = 0; k < precTypeUpper.size (); ++k) {
@@ -208,7 +213,7 @@ Factory::create(const std::string& prec_type,
     prec = rcp (new Ifpack2::AdditiveSchwarz<MatrixType,Ifpack2::ILUT<MatrixType> > (matrix, overlap));
   }
   else if (precTypeUpper == "KRYLOV") {
-    prec = rcp (new Ifpack2::Krylov<MatrixType, Ifpack2::Preconditioner<Scalar, LocalOrdinal, GlobalOrdinal, Node> > (matrix));
+    prec = rcp (new Ifpack2::Krylov<MatrixType, prec_base_type> (matrix));
   }
 #if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
   else if (precTypeUpper == "SUPPORTGRAPH") {
@@ -223,39 +228,55 @@ Factory::create(const std::string& prec_type,
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::invalid_argument, "Ifpack2::Factory::create: "
-      "Invalid preconditioner type \"" << prec_type << "\".");
+      "Invalid preconditioner type \"" << precType << "\".");
   }
   return prec;
 }
 
 template<class MatrixType, class M2>
-Teuchos::RCP<Ifpack2::Preconditioner<typename M2::scalar_type, typename M2::local_ordinal_type,typename M2::global_ordinal_type,typename M2::node_type> >
-Factory::clone(const Teuchos::RCP<Ifpack2::Preconditioner<typename MatrixType::scalar_type,
-                typename MatrixType::local_ordinal_type,
-                typename MatrixType::global_ordinal_type,
-                typename MatrixType::node_type> >& prec,
-                const Teuchos::RCP<const M2>& matrix, const Teuchos::ParameterList& params) {
+Teuchos::RCP<Ifpack2::Preconditioner<typename M2::scalar_type,
+                                     typename M2::local_ordinal_type,
+                                     typename M2::global_ordinal_type,
+                                     typename M2::node_type> >
+Factory::clone (const Teuchos::RCP<Ifpack2::Preconditioner<typename MatrixType::scalar_type,
+                                                           typename MatrixType::local_ordinal_type,
+                                                           typename MatrixType::global_ordinal_type,
+                                                           typename MatrixType::node_type> >& prec,
+                const Teuchos::RCP<const M2>& matrix, const Teuchos::ParameterList& params)
+{
+  using Teuchos::null;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
+
+  // FIXME (mfh 09 Nov 2013) The code below assumes that the old and
+  // new scalar, local ordinal, and global ordinal types are the same.
+
   typedef typename M2::scalar_type scalar_type;
   typedef typename M2::local_ordinal_type local_ordinal_type;
   typedef typename M2::global_ordinal_type global_ordinal_type;
   typedef typename M2::node_type new_node_type;
 
-  Teuchos::RCP<Ifpack2::Preconditioner<scalar_type, local_ordinal_type,global_ordinal_type, new_node_type> > new_prec;
-  Teuchos::RCP<Ifpack2::Chebyshev<MatrixType> > chebyPrec;
-  chebyPrec = Teuchos::rcp_dynamic_cast<Ifpack2::Chebyshev<MatrixType> >(prec);
-  if (chebyPrec != Teuchos::null){
-	new_prec = chebyPrec->clone(matrix, params);
-	return new_prec;
+  // FIXME (mfh 09 Nov 2013) The code below only knows how to clone
+  // two different kinds of preconditioners!
+
+  RCP<Ifpack2::Preconditioner<scalar_type, local_ordinal_type,global_ordinal_type, new_node_type> > new_prec;
+  RCP<Ifpack2::Chebyshev<MatrixType> > chebyPrec;
+  chebyPrec = rcp_dynamic_cast<Ifpack2::Chebyshev<MatrixType> >(prec);
+  if (chebyPrec != null){
+        new_prec = chebyPrec->clone(matrix, params);
+        return new_prec;
   }
-  Teuchos::RCP<Ifpack2::RILUK<MatrixType> > luPrec;
-  luPrec = Teuchos::rcp_dynamic_cast<Ifpack2::RILUK<MatrixType> >(prec);
-  if (luPrec != Teuchos::null){	
-	new_prec = luPrec->clone(matrix);
-	return new_prec;
+  RCP<Ifpack2::RILUK<MatrixType> > luPrec;
+  luPrec = rcp_dynamic_cast<Ifpack2::RILUK<MatrixType> >(prec);
+  if (luPrec != null){
+        new_prec = luPrec->clone(matrix);
+        return new_prec;
   }
   TEUCHOS_TEST_FOR_EXCEPTION(
-    true, std::invalid_argument, "Ifpack2::Factory::clone: "
-    "Invalid preconditioner type to clone \"");	
+    true, std::logic_error, "Ifpack2::Factory::clone: Not implemented for the "
+    "current preconditioner type.  The only supported types thus far are "
+    "Chebyshev and RILUK.");
 }
 
 } //namespace Ifpack2
