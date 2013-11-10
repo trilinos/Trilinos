@@ -60,7 +60,7 @@ namespace Ifpack2 {
   Ifpack2::Preconditioner is a pure virtual class, and it defines
   the structure of all Ifpack2 preconditioners.
 
-  This class is a simple extension to Tpetra::Operator. It provides 
+  This class is a simple extension to Tpetra::Operator. It provides
   the following additional methods:
   - initialize() performs all operations based on the graph
     of the matrix (without considering the numerical values);
@@ -78,7 +78,7 @@ namespace Ifpack2 {
 It is required that compute() internally call initialize() if isInitialized()
 returns false. The preconditioner is applied by apply()
 (which returns if isComputed() is false). Every time that initialize()
-is called, the object destroys all the previously allocated 
+is called, the object destroys all the previously allocated
 information, and re-initializes the preconditioner. Every time
 compute() is called, the object re-computes the actual values of
 the preconditioner.
@@ -101,10 +101,10 @@ Ifpack2::GMRES).
 
 While Ifpack2::CG and Ifpack2::GMRES construct a solver, and
 use methods AZ_cg_condnum and AZ_gmres_condnum to evaluate an
-accurate (but very expensive) estimate of the condition number, 
+accurate (but very expensive) estimate of the condition number,
 Ifpack2::Cheap computes \f$\|(P)^{-1}e\|_\infty\f$, which is
 only a very crude estimation of the actual condition number. Note that
-this estimated number can be less than 1.0. 
+this estimated number can be less than 1.0.
 However, this approach has the following advantages:
 - since finding \f$z\f$ such that \f$P z = y\f$
 is a basic kernel for applying the preconditioner, computing this
@@ -113,21 +113,21 @@ the solve kernel to compute \f$z\f$ and then
 computing \f$\|z\|_\infty\f$;
 - the only cost is one application of the preconditioner.
 
-If this estimate is very large, the application of the computed 
+If this estimate is very large, the application of the computed
 preconditioner may generate large numerical errors. Hence, the user
 may check this number, and decide to recompute the preconditioner is
-the computed estimate is larger than a given threshold. This is particularly useful in ICT and RILUK factorizations, as for 
+the computed estimate is larger than a given threshold. This is particularly useful in ICT and RILUK factorizations, as for
 ill-conditioned matrices, we often have difficulty computing usable incomplete
 factorizations.  The most common source of problems is that the factorization may encounter a small or zero pivot,
 in which case the factorization can fail, or even if the factorization
 succeeds, the factors may be so poorly conditioned that use of them in
 the iterative phase produces meaningless results.  Before we can fix
-this problem, we must be able to detect it.  
+this problem, we must be able to detect it.
 
 */
 
 template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
-class Preconditioner : 
+class Preconditioner :
     virtual public Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 public:
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
@@ -138,67 +138,93 @@ public:
   /** \name Methods implementing Tpetra::Operator. */
   //@{
 
-  //! Returns the Map associated with the domain of this operator, which must be compatible with X.getMap().
-  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > 
+  /// \brief The domain Map of this operator.
+  ///
+  /// The domain Map describes the distribution of valid input vectors
+  /// X to the apply() method.
+  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
   getDomainMap () const = 0;
 
-  //! Returns the Map associated with the range of this operator, which must be compatible with Y.getMap().
-  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > 
+  /// \brief The range Map of this operator.
+  ///
+  /// The range Map describes the distribution of valid output vectors
+  /// Y to the apply() method.
+  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
   getRangeMap () const = 0;
 
-  //! Applies the effect of the preconditioner.
+  /// \brief Apply the preconditioner to X, putting the result in Y.
+  ///
+  /// If the result of applying this preconditioner to a vector X is
+  /// \f$F \cdot X$, then this method computes \f$\beta Y + \alpha F \cdot X\f$.
+  /// The typical case is \f$\beta = 0\f$ and \f$\alpha = 1\f$.
   virtual void
-  apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
-	 Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
-	 Teuchos::ETransp mode = Teuchos::NO_TRANS,
-	 Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-	 Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const = 0;
+  apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+         Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
+         Teuchos::ETransp mode = Teuchos::NO_TRANS,
+         Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+         Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const = 0;
   //@}
 
-  //! Sets all parameters for the preconditioner.
+  //! Set this preconditioner's parameters.
   virtual void setParameters (const Teuchos::ParameterList& List) = 0;
 
-  //! Computes all (graph-related) data necessary to initialize the preconditioner.
+  /// \brief Set up the graph structure of this preconditioner.
+  ///
+  /// If the graph structure of the constructor's input matrix has
+  /// changed, or if you have not yet called initialize(), you must
+  /// call initialize() before you may call compute() or apply().
+  ///
+  /// Thus, initialize() corresponds to the "symbolic factorization"
+  /// step of a sparse factorization, whether or not the specific
+  /// preconditioner actually does a sparse factorization.
   virtual void initialize() = 0;
 
-  //! Returns true if the  preconditioner has been successfully initialized, false otherwise.
+  //! True if the preconditioner has been successfully initialized, else false.
   virtual bool isInitialized() const = 0;
 
-  //! Computes all (coefficient) data necessary to apply the preconditioner.
+  /// \brief Set up the numerical values in this preconditioner.
+  ///
+  /// If the values of the constructor's input matrix have changed, or
+  /// if you have not yet called compute(), you must call compute()
+  /// before you may call apply().
+  ///
+  /// Thus, compute() corresponds to the "numeric factorization"
+  /// step of a sparse factorization, whether or not the specific
+  /// preconditioner actually does a sparse factorization.
   virtual void compute() = 0;
 
-  //! Returns true if the  preconditioner has been successfully computed, false otherwise.
+  //! True if the preconditioner has been successfully computed, else false.
   virtual bool isComputed() const = 0;
 
-  //! Computes the condition number estimate and returns its value.
-  virtual magnitudeType 
+  //! Compute the condition number estimate and return its value.
+  virtual magnitudeType
   computeCondEst (CondestType CT = Ifpack2::Cheap,
-		  LocalOrdinal MaxIters = 1550,
-		  magnitudeType Tol = 1e-9,
-		  const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &Matrix = Teuchos::null) = 0;
+                  LocalOrdinal MaxIters = 1550,
+                  magnitudeType Tol = 1e-9,
+                  const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &Matrix = Teuchos::null) = 0;
 
-  //! Returns the computed condition number estimate, or -1.0 if not computed.
+  //! Return the computed condition number estimate, or -1.0 if not computed.
   virtual magnitudeType getCondEst() const = 0;
 
-  //! Returns a pointer to the input matrix.
+  //! The input matrix given to the constructor.
   virtual Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getMatrix() const = 0;
 
-  //! Returns the number of calls to initialize().
+  //! The number of calls to initialize().
   virtual int getNumInitialize() const = 0;
 
-  //! Returns the number of calls to compute().
+  //! The number of calls to compute().
   virtual int getNumCompute() const = 0;
 
-  //! Returns the number of calls to apply().
+  //! The number of calls to apply().
   virtual int getNumApply() const = 0;
 
-  //! Returns the time spent in initialize().
+  //! The time (in seconds) spent in initialize().
   virtual double getInitializeTime() const = 0;
 
-  //! Returns the time spent in compute().
+  //! The time (in seconds) spent in compute().
   virtual double getComputeTime() const = 0;
 
-  //! Returns the time spent in apply().
+  //! The time (in seconds) spent in apply().
   virtual double getApplyTime() const = 0;
 };
 
