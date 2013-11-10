@@ -57,11 +57,11 @@
 
 
 namespace Ifpack2 {
-  
+
 
 
 template <class MatrixType>
-SupportGraph<MatrixType>::SupportGraph(const Teuchos::RCP<const Tpetra::RowMatrix 
+SupportGraph<MatrixType>::SupportGraph(const Teuchos::RCP<const Tpetra::RowMatrix
                                        <scalar_type,local_ordinal_type,
                                        global_ordinal_type,node_type> >& A) :
   A_(A),
@@ -78,7 +78,7 @@ SupportGraph<MatrixType>::SupportGraph(const Teuchos::RCP<const Tpetra::RowMatri
   NumCompute_(0),
   NumApply_(0),
   IsInitialized_(false),
-  IsComputed_(false) 
+  IsComputed_(false)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     A_.is_null (), std::runtime_error, "Ifpack2::SupportGraph: Input matrix is null.");
@@ -129,7 +129,7 @@ void SupportGraph<MatrixType>::setParameters(const Teuchos::ParameterList& param
   }
   catch (InvalidParameterName&) {
   }
-  
+
   if (absThresh != -STM::one ()) {
     Athresh_ = absThresh;
   }
@@ -159,7 +159,7 @@ Teuchos::RCP<const Teuchos::Comm<int> > SupportGraph<MatrixType>::getComm() cons
 
 
 template <class MatrixType>
-Teuchos::RCP<const Tpetra::RowMatrix<typename MatrixType::scalar_type, 
+Teuchos::RCP<const Tpetra::RowMatrix<typename MatrixType::scalar_type,
                                      typename MatrixType::local_ordinal_type,
                                      typename MatrixType::global_ordinal_type,
                                      typename MatrixType::node_type> >
@@ -193,7 +193,7 @@ bool SupportGraph<MatrixType>::hasTransposeApply() const {
 
 
 template <class MatrixType>
-int SupportGraph<MatrixType>::getNumInitialize() const 
+int SupportGraph<MatrixType>::getNumInitialize() const
 {
   return(NumInitialize_);
 }
@@ -232,13 +232,13 @@ double SupportGraph<MatrixType>::getApplyTime() const {
 
 
 template<class MatrixType>
-typename SupportGraph<MatrixType>::magnitude_type 
-SupportGraph<MatrixType>::computeCondEst(CondestType CT, local_ordinal_type MaxIters, 
+typename SupportGraph<MatrixType>::magnitude_type
+SupportGraph<MatrixType>::computeCondEst(CondestType CT, local_ordinal_type MaxIters,
                                          magnitude_type Tol,
                                          const Teuchos::Ptr<const Tpetra::RowMatrix
-                                         <scalar_type,local_ordinal_type,global_ordinal_type,node_type> 
+                                         <scalar_type,local_ordinal_type,global_ordinal_type,node_type>
                                          > &matrix) {
-  
+
   if (! isComputed()) {
     return -STM::one();
   }
@@ -252,13 +252,13 @@ SupportGraph<MatrixType>::computeCondEst(CondestType CT, local_ordinal_type MaxI
 
 template<class MatrixType>
 void SupportGraph<MatrixType>::findSupport() {
-  
+
   const scalar_type zero = STS::zero ();
   const scalar_type one = STS::one ();
 
   typedef std::pair<int, int> E;
   using namespace boost;
-  typedef adjacency_list < vecS, vecS, undirectedS, no_property, 
+  typedef adjacency_list < vecS, vecS, undirectedS, no_property,
     property < edge_weight_t, magnitude_type > > Graph;
   typedef typename graph_traits < Graph >::edge_descriptor Edge;
   typedef typename graph_traits < Graph >::vertex_descriptor Vertex;
@@ -268,37 +268,37 @@ void SupportGraph<MatrixType>::findSupport() {
   size_t num_verts = A_->getNodeNumRows();
   int num_edges  = (A_->getNodeNumEntries() - A_->getNodeNumDiags())/2;
 
-  // Create data structures for the BGL code 
+  // Create data structures for the BGL code
   // and temp data structures for extraction
   E *edge_array = new E[num_edges];
   magnitude_type *weights = new magnitude_type[num_edges];
-  
+
   size_t num_entries;
   size_t max_num_entries = A_->getNodeMaxNumRowEntries();
 
   scalar_type *valuestemp = new scalar_type[max_num_entries];
-  
+
   local_ordinal_type *indicestemp = new local_ordinal_type[max_num_entries];
   magnitude_type * diagonal = new magnitude_type[num_verts];
 
   for(size_t i = 0; i < max_num_entries; i++) {
-    
+
     valuestemp[i] = zero;
     indicestemp[i] = 0;
   }
 
   Tpetra::ArrayView<scalar_type> values(valuestemp, sizeof(scalar_type)*max_num_entries);
-  Tpetra::ArrayView<local_ordinal_type> 
-    indices(indicestemp, sizeof(local_ordinal_type)*max_num_entries); 
+  Tpetra::ArrayView<local_ordinal_type>
+    indices(indicestemp, sizeof(local_ordinal_type)*max_num_entries);
 
-  // Extract from the tpetra matrix keeping only one edge per pair (assume symmetric) 
+  // Extract from the tpetra matrix keeping only one edge per pair (assume symmetric)
   int k = 0;
   for(size_t i = 0; i < num_verts; i++) {
 
     A_->getLocalRowCopy(i, indices, values, num_entries);
-      
+
     for(size_t j = 0; j < num_entries; j++) {
-     
+
       if(i == Teuchos::as<size_t>(indices[j])) {
         diagonal[i] = values[j];
       }
@@ -306,12 +306,12 @@ void SupportGraph<MatrixType>::findSupport() {
       if((i < Teuchos::as<size_t>(indices[j])) && (values[j] < 0)) {
         edge_array[k] = E(i,indices[j]);
         weights[k] = values[j];
-             
+
         if (Randomize_) {
           // Add small random pertubation.
           weights[k] *= (1.0 + 1e-8 * drand48());
         }
-        
+
         k++;
       }
     }
@@ -320,7 +320,7 @@ void SupportGraph<MatrixType>::findSupport() {
   // Create BGL graph
   Graph g(edge_array, edge_array + num_edges, weights, num_verts);
   typedef typename property_map < Graph, edge_weight_t >::type type;
-  type weight = get(edge_weight, g);  
+  type weight = get(edge_weight, g);
   std::vector < Edge > spanning_tree;
 
   // Run Kruskal, actually maximal weight ST since edges are negative
@@ -328,12 +328,12 @@ void SupportGraph<MatrixType>::findSupport() {
 
   // Create array to store the exact number of non-zeros per row
   Teuchos::ArrayRCP<size_t> NumNz(num_verts, 1);
-  
+
   typedef typename std::vector < Edge >::iterator edge_iterator;
 
   //Find the degree of all the vertices
   for (edge_iterator ei = spanning_tree.begin(); ei != spanning_tree.end(); ++ei) {
-    
+
     LocalOrdinal localsource = source(*ei,g);
     LocalOrdinal localtarget = target(*ei,g);
 
@@ -347,62 +347,62 @@ void SupportGraph<MatrixType>::findSupport() {
   }
 
 
-  // Create an stl vector of stl vectors to hold indices and values 
+  // Create an stl vector of stl vectors to hold indices and values
   std::vector<local_ordinal_type> **Indices = new std::vector<local_ordinal_type>*[num_verts];
   std::vector<magnitude_type> **Values = new std::vector<magnitude_type>*[num_verts];
 
   for(size_t i = 0; i < num_verts; i++) {
-   
+
     std::vector<local_ordinal_type> *temp = new std::vector<local_ordinal_type>(NumNz[i],0);
     std::vector<magnitude_type> *temp2 = new std::vector<scalar_type>(NumNz[i],0);
-      
+
     Indices[i] = temp;
     Values[i] = temp2;
   }
 
   // The local ordering might be different from the global
-  // ordering and we need the local number of non-zeros per row 
+  // ordering and we need the local number of non-zeros per row
   // to correctly allocate the preconditioner matrix memory
   Teuchos::ArrayRCP<size_t> localnumnz(num_verts, 1);
-  
+
   for(size_t i = 0; i < num_verts; i++) {
-    
+
     Indices[i]->at(0) = i;
   }
-  
+
 
   // Add each spanning forest (tree) to the support graph and
   // remove it from original graph
   for(int i = 0; i < NumForests_; i++) {
 
-    // If a tree has already been added then we need to rerun Kruskall and 
+    // If a tree has already been added then we need to rerun Kruskall and
     // update the arrays containing size information
     if(i > 0) {
       spanning_tree.clear();
       kruskal_minimum_spanning_tree(g,std::back_inserter(spanning_tree));
-      
+
       for(edge_iterator ei = spanning_tree.begin(); ei != spanning_tree.end(); ++ei) {
-    
+
         NumNz[source(*ei,g)] = NumNz[source(*ei,g)] + 1;
       }
 
       for(size_t i = 0; i < num_verts; i++) {
-        
+
         Indices[i]->resize(NumNz[i]);
         Values[i]->resize(NumNz[i]);
       }
     }
 
     for (edge_iterator ei = spanning_tree.begin(); ei != spanning_tree.end(); ++ei) {
-	  
-	  LocalOrdinal localsource = source(*ei,g);
-	  LocalOrdinal localtarget = target(*ei,g);
 
-	  if(localsource > localtarget) {
+          LocalOrdinal localsource = source(*ei,g);
+          LocalOrdinal localtarget = target(*ei,g);
+
+          if(localsource > localtarget) {
             localsource = target(*ei,g);
             localtarget = source(*ei,g);
           }
-	 
+
           // Assume standard Laplacian with constant row-sum.
           // Edge weights are negative, so subtract to make diagonal positive
           Values[localtarget]->at(0) = Values[localtarget]->at(0) - weight[*ei];
@@ -421,9 +421,9 @@ void SupportGraph<MatrixType>::findSupport() {
 
   // First compute the "diagonal surplus" (in the original input matrix)
   // If input is a (pure, Dirichlet) graph Laplacian , this will be 0
-  Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> 
+  Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>
     ones(A_->getDomainMap());
-  Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> 
+  Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>
     surplus(A_->getRangeMap());
 
   ones.putScalar(one);
@@ -455,13 +455,13 @@ void SupportGraph<MatrixType>::findSupport() {
   Support_ = rcp(new Tpetra::CrsMatrix
                  <scalar_type, local_ordinal_type, global_ordinal_type, node_type>
                  (A_->getRowMap(), A_->getColMap(), localnumnz, Tpetra::StaticProfile));
-  
+
   // Fill in the matrix with the stl vectors for each row
   for(size_t i = 0; i < num_verts; i++) {
 
-    Teuchos::ArrayView<local_ordinal_type> 
+    Teuchos::ArrayView<local_ordinal_type>
       IndicesInsert(*Indices[Teuchos::as<local_ordinal_type>(i)]);
-    Teuchos::ArrayView<scalar_type> 
+    Teuchos::ArrayView<scalar_type>
       ValuesInsert(*Values[Teuchos::as<local_ordinal_type>(i)]);
     Support_->insertLocalValues(i,IndicesInsert,ValuesInsert);
   }
@@ -479,7 +479,7 @@ void SupportGraph<MatrixType>::findSupport() {
 
 template<class MatrixType>
 void SupportGraph<MatrixType>::initialize() {
-  
+
   Teuchos::Time timer ("SupportGraph::initialize");
   {
     Teuchos::TimeMonitor timeMon (timer);
@@ -490,18 +490,18 @@ void SupportGraph<MatrixType>::initialize() {
 
 
     // check only in serial if the matrix is square
-    TEUCHOS_TEST_FOR_EXCEPTION( getComm()->getSize() == 1 && 
+    TEUCHOS_TEST_FOR_EXCEPTION( getComm()->getSize() == 1 &&
                                 A_->getNodeNumRows() != A_->getNodeNumCols(),
-                                std::runtime_error, 
+                                std::runtime_error,
                                 "Ifpack2::SuppotGraph::initialize: In serial or one-process "
                                 "mode, the input matrix must be square.");
 
     findSupport();
-   
+
     solver = Amesos2::create<MatrixType, Tpetra::MultiVector
       <scalar_type, local_ordinal_type,global_ordinal_type,node_type> >
       ("amesos2_cholmod", Support_);
-    
+
     solver->symbolicFactorization();
   }
 
@@ -533,11 +533,11 @@ void SupportGraph<MatrixType>::compute() {
   Teuchos::Time timer ("SupportGraph::compute");
   { // Timer scope for timing compute()
     Teuchos::TimeMonitor timeMon (timer, true);
-        
+
     // =================== //
     // start factorization //
     // =================== //
-    
+
     solver->numericFactorization();
 
   }
@@ -550,43 +550,27 @@ void SupportGraph<MatrixType>::compute() {
 
 template <class MatrixType>
 void SupportGraph<MatrixType>::apply(
-           const Tpetra::MultiVector<typename MatrixType::scalar_type, 
-           typename MatrixType::local_ordinal_type, 
-           typename MatrixType::global_ordinal_type, 
+           const Tpetra::MultiVector<typename MatrixType::scalar_type,
+           typename MatrixType::local_ordinal_type,
+           typename MatrixType::global_ordinal_type,
            typename MatrixType::node_type>& X,
-                 Tpetra::MultiVector<typename MatrixType::scalar_type, 
-           typename MatrixType::local_ordinal_type, 
-           typename MatrixType::global_ordinal_type, 
+                 Tpetra::MultiVector<typename MatrixType::scalar_type,
+           typename MatrixType::local_ordinal_type,
+           typename MatrixType::global_ordinal_type,
            typename MatrixType::node_type>& Y,
            Teuchos::ETransp mode,
            typename MatrixType::scalar_type alpha,
            typename MatrixType::scalar_type beta) const
 {
-  this->template applyTempl<scalar_type,scalar_type>(X, Y, mode, alpha, beta);
-}
+  typedef scalar_type DomainScalar;
+  typedef scalar_type RangeScalar;
 
-
-template <class MatrixType>
-template <class DomainScalar, class RangeScalar>
-void SupportGraph<MatrixType>::applyTempl(
-           const Tpetra::MultiVector<DomainScalar, 
-           typename MatrixType::local_ordinal_type, 
-           typename MatrixType::global_ordinal_type, 
-           typename MatrixType::node_type>& X,
-           Tpetra::MultiVector<RangeScalar, 
-           typename MatrixType::local_ordinal_type, 
-           typename MatrixType::global_ordinal_type, 
-           typename MatrixType::node_type>& Y,
-           Teuchos::ETransp mode,
-           RangeScalar alpha,
-           RangeScalar beta) const
-{
-  Teuchos::RCP<Teuchos::FancyOStream> out 
+  Teuchos::RCP<Teuchos::FancyOStream> out
     = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
 
   using Teuchos::RCP;
   using Teuchos::rcp;
-  typedef Tpetra::MultiVector<DomainScalar, local_ordinal_type, 
+  typedef Tpetra::MultiVector<DomainScalar, local_ordinal_type,
     global_ordinal_type, node_type> MV;
 
   Teuchos::Time timer ("SupportGraph::apply");
@@ -617,11 +601,11 @@ void SupportGraph<MatrixType>::applyTempl(
     else {
       Xcopy = rcpFromRef (X);
     }
-    
+
     if (alpha != STS::one ()) {
       Y.scale (alpha);
     }
-  
+
     RCP<MV> Ycopy = rcpFromRef(Y);
 
     solver->setB(Xcopy);
@@ -658,7 +642,7 @@ std::string SupportGraph<MatrixType>::description() const {
 
 
 template <class MatrixType>
-void SupportGraph<MatrixType>::describe(Teuchos::FancyOStream &out, 
+void SupportGraph<MatrixType>::describe(Teuchos::FancyOStream &out,
                                         const Teuchos::EVerbosityLevel verbLevel
                                         ) const {
   using std::endl;
@@ -680,40 +664,40 @@ void SupportGraph<MatrixType>::describe(Teuchos::FancyOStream &out,
   if(vl != VERB_NONE && getComm()->getRank() == 0) {
     out << this->description() << endl;
     out << endl;
-    out << "===============================================================================" 
+    out << "==============================================================================="
         << endl;
     out << "Absolute threshold = " << getAbsoluteThreshold() << endl;
     out << "Relative threshold = " << getRelativeThreshold() << endl;
 
-    if(Condest_ == -1.0) { 
+    if(Condest_ == -1.0) {
       out << "Condition number estimate       = N/A" << endl;
     }
-    else { 
+    else {
       out << "Condition number estimate       = " << Condest_ << endl;
     }
 
     if (isComputed()) {
       out << "Number of nonzeros in A         = " << A_->getGlobalNumEntries() << endl;
-      out << "Number of edges in support graph     = " 
+      out << "Number of edges in support graph     = "
           << Support_->getGlobalNumEntries()-Support_->getGlobalNumDiags() << std::endl;
-      out << "Fraction of off diagonals of supportgraph/off diagonals of original      = " 
+      out << "Fraction of off diagonals of supportgraph/off diagonals of original      = "
           << (double)(Support_->getGlobalNumEntries()-Support_->getGlobalNumDiags())/
         ((A_->getGlobalNumEntries()-A_->getGlobalNumDiags())/2) << std::endl;
     }
     out << endl;
     out << "Phase           # calls    Total Time (s) " << endl;
     out << "------------    -------    ---------------" << endl;
-    out << "initialize()    " << setw(7) << getNumInitialize() << "    " 
+    out << "initialize()    " << setw(7) << getNumInitialize() << "    "
         << setw(15) << getInitializeTime() << endl;
-    out << "compute()       " << setw(7) << getNumCompute()    << "    " 
+    out << "compute()       " << setw(7) << getNumCompute()    << "    "
         << setw(15) << getComputeTime()    << endl;
-    out << "apply()         " << setw(7) << getNumApply()      << "    " 
+    out << "apply()         " << setw(7) << getNumApply()      << "    "
         << setw(15) << getApplyTime()      << endl;
-    out << "===============================================================================" 
+    out << "==============================================================================="
         << endl;
     out << endl;
 
-    solver->printTiming(out,verbLevel); 
+    solver->printTiming(out,verbLevel);
   }
 }
 
