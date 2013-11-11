@@ -118,33 +118,35 @@ public:
       } 
     }
     else {
-      step_ = "Gradient Descent";
+      step_ = "Steepest Descent";
     }
   }
 
   /** \brief Compute step.
   */
   void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, AlgorithmState<Real> &algo_state ) {
+    // Compute step s
+    flagKrylov_ = 0;
     if ( LSStype_ == LineSearchStep_NewtonKrylov || LSStype_ == LineSearchStep_NewtonKrylovSecantPreconditioning ) {
       krylov_->CG(s,iterKrylov_,flagKrylov_,*(Step<Real>::state_->gradientVec),x,obj,secant_);
-      if ( flagKrylov_ == 2 ) {
-        s.set(*(Step<Real>::state_->gradientVec));
-      }
     }
     else if ( LSStype_ == LineSearchStep_Newton ) {
       obj.invHessVec(s,*(Step<Real>::state_->gradientVec),x);
     }
     else if ( LSStype_ == LineSearchStep_Secant ) {
       secant_->applyH(s,*(Step<Real>::state_->gradientVec),x);
-      //secant_->test(s,x,algo_state.iter);
     }
-    else if ( LSStype_ == LineSearchStep_Gradient ) {
+
+    // Check if s is a descent direction
+    Real gs = (Step<Real>::state_->gradientVec)->dot(s);
+    if ( gs <= 0.0 || flagKrylov_ == 2 || LSStype_ == LineSearchStep_Gradient ) {
       s.set(*(Step<Real>::state_->gradientVec));
+      gs = (Step<Real>::state_->gradientVec)->dot(s);
     }
     s.scale(-1.0);
-    Real gs = (Step<Real>::state_->gradientVec)->dot(s);
+    gs *= -1.0;
 
-    // Perform backtracking line search from Nocedal/Wright.
+    // Perform line search
     Real alpha = 0.0;
     Real fnew  = algo_state.value;
     ls_nfval_  = 0;

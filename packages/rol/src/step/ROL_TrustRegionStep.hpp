@@ -99,6 +99,9 @@ public:
         step_   = "Barzilai-Borwein";
       }
     }
+    else if ( TRStype == TrustRegionStep_Gradient ) {
+      step_ = "Cauchy Point";
+    }
 
     if ( TRtype == TrustRegionType_Dogleg ) {
       TR_ = "Dogleg";

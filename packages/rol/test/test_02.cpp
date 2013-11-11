@@ -221,8 +221,8 @@ int main(int argc, char *argv[]) {
     /* END SECANT DEFINTION */
 
     /* BEGIN LINE SEARCH STEP DEFINTION */
-    //ROL::LineSearchStepType LSStype = ROL::LineSearchStep_Newton;
-    ROL::LineSearchStepType LSStype = ROL::LineSearchStep_NewtonKrylov;
+    ROL::LineSearchStepType LSStype = ROL::LineSearchStep_Newton;
+    //ROL::LineSearchStepType LSStype = ROL::LineSearchStep_NewtonKrylov;
     //ROL::LineSearchStepType LSStype = ROL::LineSearchStep_NewtonKrylovSecantPreconditioning;
     //ROL::LineSearchStepType LSStype = ROL::LineSearchStep_Secant;
     //ROL::LineSearchStepType LSStype = ROL::LineSearchStep_Gradient;
@@ -256,10 +256,12 @@ int main(int argc, char *argv[]) {
     //ROL::TrustRegionStepType TRStype = ROL::TrustRegionStep_NewtonKrylovSecantPreconditioning;
     //ROL::TrustRegionStepType TRStype = ROL::TrustRegionStep_Secant;
     ROL::TrustRegionStepType TRStype = ROL::TrustRegionStep_Newton;
+    //ROL::TrustRegionStepType TRStype = ROL::TrustRegionStep_Gradient;
 
+    //ROL::TrustRegionType TRtype = ROL::TrustRegionType_CauchyPoint;
     //ROL::TrustRegionType TRtype = ROL::TrustRegionType_TruncatedCG;
-    ROL::TrustRegionType TRtype = ROL::TrustRegionType_DoubleDogleg;  
-    //ROL::TrustRegionType TRtype = ROL::TrustRegionType_Dogleg;
+    //ROL::TrustRegionType TRtype = ROL::TrustRegionType_DoubleDogleg;  
+    ROL::TrustRegionType TRtype = ROL::TrustRegionType_Dogleg;
 
     maxit        = 100;
     RealT tol1   = 1.e-4;

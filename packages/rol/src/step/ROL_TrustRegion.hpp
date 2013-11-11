@@ -21,14 +21,16 @@
 namespace ROL { 
 
 enum TrustRegionStepType {
-  TrustRegionStep_Secant = 0,
+  TrustRegionStep_Gradient = 0,
+  TrustRegionStep_Secant,
   TrustRegionStep_Newton,
   TrustRegionStep_NewtonKrylov,
   TrustRegionStep_NewtonKrylovSecantPreconditioning
 };
 
 enum TrustRegionType {
-  TrustRegionType_TruncatedCG = 0,    // TruncatedCG
+  TrustRegionType_CauchyPoint = 0,    // Cauchy Point
+  TrustRegionType_TruncatedCG,        // TruncatedCG
   TrustRegionType_Dogleg,             // Single Dogleg
   TrustRegionType_DoubleDogleg        // Double Dogleg
 };
@@ -144,15 +146,44 @@ public:
             const Vector<Real> &grad, const Real &gnorm, Objective<Real> &obj, 
             Teuchos::RCP<Secant<Real> > &secant = Teuchos::null ) { 
     // Run Trust Region
-    if ( type_ == TrustRegionType_TruncatedCG ) {
-      truncatedCG(s,snorm,del,iflag,iter,x,grad,gnorm,obj,secant);
+    if ( step_ == TrustRegionStep_Gradient || type_ == TrustRegionType_CauchyPoint ) {
+      cauchypoint(s,snorm,del,iflag,iter,x,grad,gnorm,obj,secant);
     }
-    else if ( type_ == TrustRegionType_DoubleDogleg ) {
-      doubledogleg(s,snorm,del,iflag,iter,x,grad,gnorm,obj,secant);
+    else {
+      if ( type_ == TrustRegionType_TruncatedCG ) {
+        truncatedCG(s,snorm,del,iflag,iter,x,grad,gnorm,obj,secant);
+      }
+      else if ( type_ == TrustRegionType_Dogleg ) {
+        dogleg(s,snorm,del,iflag,iter,x,grad,gnorm,obj,secant);
+      }
+      else if ( type_ == TrustRegionType_DoubleDogleg ) {
+        doubledogleg(s,snorm,del,iflag,iter,x,grad,gnorm,obj,secant);
+      }
     }
-    //else if ( type_ == TrustRegionType_Dogleg ) {
-    //  dogleg(s,snorm,iflag,iter,x,iterTR,grad,gnorm,obj);
-    //}
+  }
+
+  void cauchypoint( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
+                    const Vector<Real> &grad, const Real &gnorm, Objective<Real> &obj,
+                    Teuchos::RCP<Secant<Real> > &secant = Teuchos::null ) {
+    Teuchos::RCP<Vector<Real> > Bg = x.clone();
+    if ( secant != Teuchos::null ) {
+      secant->applyB(*Bg,grad,x);
+    }
+    else {
+      obj.hessVec(*Bg,grad,x);
+    }
+    Real gBg = Bg->dot(grad);
+    Real tau = 1.0;
+    if ( gBg > 0.0 ) {
+      tau = std::min(1.0, gnorm*gnorm*gnorm/gBg);
+    }
+
+    s.set(grad);
+    s.scale(-tau*del/gnorm);
+    snorm = tau*del;
+    iflag = 0;
+    iter  = 0;
+    pRed_ = tau*del/gnorm * pow(gnorm,2.0) - 0.5*pow(tau*del/gnorm,2.0)*gBg;
   }
 
   void truncatedCG( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
@@ -276,6 +307,75 @@ public:
     snorm = s.norm();
   }
 
+  void dogleg( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
+               const Vector<Real> &grad, const Real &gnorm, Objective<Real> &obj,
+               Teuchos::RCP<Secant<Real> > &secant = Teuchos::null ) {
+    // Compute quasi-Newton step
+    Teuchos::RCP<Vector<Real> > sN = x.clone();
+    if ( secant != Teuchos::null && step_ == TrustRegionStep_Secant ) {
+      secant->applyH(*sN,grad,x); 
+    }
+    else {
+      obj.invHessVec(*sN,grad,x);
+    }
+    sN->scale(-1.0);
+    Real sNnorm = sN->norm();
+    Real tmp    = grad.dot(*sN);
+    bool negCurv = false;
+    if ( tmp >= 0.0 ) {
+      negCurv = true;
+    }
+    Real gsN = std::abs(tmp);
+
+    if ( negCurv ) {
+      cauchypoint(s,snorm,del,iflag,iter,x,grad,gnorm,obj,secant);
+    }  
+    else {
+      // Approximately solve trust region subproblem using double dogleg curve
+      if (sNnorm <= del) {        // Use the quasi-Newton step
+        s.set(*sN); 
+        snorm = sNnorm;
+        pRed_ = 0.5*gsN;
+        iflag = 0;
+      }
+      else {                      // quasi-Newton step is outside of trust region
+        Teuchos::RCP<Vector<Real> > Bg = x.clone(); 
+        if ( secant != Teuchos::null && step_ == TrustRegionStep_Secant ) {
+          secant->applyB(*Bg,grad,x);
+        }
+        else {
+          obj.hessVec(*Bg,grad,x);
+        }
+        Real alpha  = 0.0;
+        Real beta   = 0.0;
+        Real gnorm2 = gnorm*gnorm;
+        Real gBg    = grad.dot(*Bg);
+        Real gamma  = gnorm2/gBg;
+        if ( gamma*gnorm >= del ) {
+          alpha = 0.0;
+          beta  = -del/gnorm;
+          s.set(grad); 
+          s.scale(beta); 
+          snorm = del;
+          iflag = 2;
+        }
+        else {
+          Real a = sNnorm*sNnorm + 2.0*gamma*gsN + gamma*gamma*gnorm2;
+          Real b = -gamma*gsN - gamma*gamma*gnorm2;
+          Real c = gamma*gamma*gnorm2 - del*del;
+          alpha  = (-b + sqrt(b*b - a*c))/a;
+          beta   = gamma*(1.0-alpha);
+          s.set(grad);
+          s.scale(-beta);
+          s.axpy(alpha,*sN);
+          snorm = del;
+          iflag = 1;
+        }
+        pRed_ = -(alpha*(0.5*alpha-1)*gsN + 0.5*beta*beta*gBg + beta*(1-alpha)*gnorm2);
+      }
+    }
+  }
+
   void doubledogleg( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
                      const Vector<Real> &grad, const Real &gnorm, Objective<Real> &obj,
                      Teuchos::RCP<Secant<Real> > &secant = Teuchos::null ) {
@@ -295,67 +395,73 @@ public:
       negCurv = true;
     }
     Real gsN = std::abs(tmp);
-  
-    // Approximately solve trust region subproblem using double dogleg curve
-    if (sNnorm <= del && !negCurv) {        // Use the quasi-Newton step
-      s.set(*sN); 
-      snorm = sNnorm;
-      pRed_ = 0.5*gsN;
-      iflag = 0;
-    }
-    else {                      // quasi-Newton step is outside of trust region
-      Teuchos::RCP<Vector<Real> > Bg = x.clone(); 
-      if ( secant != Teuchos::null && step_ == TrustRegionStep_Secant ) {
-        secant->applyB(*Bg,grad,x);
+
+    if ( negCurv ) {
+      cauchypoint(s,snorm,del,iflag,iter,x,grad,gnorm,obj,secant);
+    }  
+    else {
+      // Approximately solve trust region subproblem using double dogleg curve
+      if (sNnorm <= del) {        // Use the quasi-Newton step
+        s.set(*sN); 
+        snorm = sNnorm;
+        pRed_ = 0.5*gsN;
+        iflag = 0;
       }
-      else {
-        obj.hessVec(*Bg,grad,x);
-      }
-      Real alpha  = 0.0;
-      Real beta   = 0.0;
-      Real gnorm2 = gnorm*gnorm;
-      Real gBg    = grad.dot(*Bg);
-      Real gamma1 = gnorm/gBg;
-      Real gamma2 = gnorm/gsN;
-      Real eta    = 0.8*gamma1*gamma2 + 0.2;
-      if (eta*sNnorm <= del && !negCurv) {        // Dogleg Point is inside trust region
-        alpha = del/sNnorm;
-        beta  = 0.0;
-        s.set(*sN);
-        s.scale(alpha);
-        snorm = del;
-        iflag = 1;
-      }
-      else {
-        if (gnorm2*gamma1 >= del || negCurv) { // Cauchy Point is outside trust region
-          alpha = 0.0;
-          beta  = -del/gnorm;
-          s.set(grad); 
-          s.scale(beta); 
-          snorm = del;
-          iflag = 2;
+      else {                      // quasi-Newton step is outside of trust region
+        Teuchos::RCP<Vector<Real> > Bg = x.clone(); 
+        if ( secant != Teuchos::null && step_ == TrustRegionStep_Secant ) {
+          secant->applyB(*Bg,grad,x);
         }
-        else {              // Find convex combination of Cauchy and Dogleg point
-          s.set(grad);
-          s.scale(-gamma1*gnorm);
-          Teuchos::RCP<Vector<Real> > w = x.clone(); 
-          w->set(s);
-          w->scale(-1.0);
-          w->axpy(eta,*sN);
-          Real wNorm = w->dot(*w);
-          Real sigma = del*del-std::pow(gamma1*gnorm,2.0);
-          Real phi   = s.dot(*w);
-          Real theta = (-phi + std::sqrt(phi*phi+wNorm*sigma))/wNorm;
-          s.axpy(theta,*w); 
-          snorm = del;
-          alpha = theta*eta;
-          beta  = (1.0-theta)*(-gamma1*gnorm);
-          iflag = 3;
+        else {
+          obj.hessVec(*Bg,grad,x);
         }
+        Real alpha  = 0.0;
+        Real beta   = 0.0;
+        Real gnorm2 = gnorm*gnorm;
+        Real gBg    = grad.dot(*Bg);
+        Real gamma1 = gnorm/gBg;
+        Real gamma2 = gnorm/gsN;
+        Real eta    = 0.8*gamma1*gamma2 + 0.2;
+        if (eta*sNnorm <= del) {        // Dogleg Point is inside trust region
+          alpha = del/sNnorm;
+          beta  = 0.0;
+          s.set(*sN);
+          s.scale(alpha);
+          snorm = del;
+          iflag = 1;
+        }
+        else {
+          if (gnorm2*gamma1 >= del) { // Cauchy Point is outside trust region
+            alpha = 0.0;
+            beta  = -del/gnorm;
+            s.set(grad); 
+            s.scale(beta); 
+            snorm = del;
+            iflag = 2;
+          }
+          else {              // Find convex combination of Cauchy and Dogleg point
+            s.set(grad);
+            s.scale(-gamma1*gnorm);
+            Teuchos::RCP<Vector<Real> > w = x.clone(); 
+            w->set(s);
+            w->scale(-1.0);
+            w->axpy(eta,*sN);
+            Real wNorm = w->dot(*w);
+            Real sigma = del*del-std::pow(gamma1*gnorm,2.0);
+            Real phi   = s.dot(*w);
+            Real theta = (-phi + std::sqrt(phi*phi+wNorm*sigma))/wNorm;
+            s.axpy(theta,*w); 
+            snorm = del;
+            alpha = theta*eta;
+            beta  = (1.0-theta)*(-gamma1*gnorm);
+            iflag = 3;
+          }
+        }
+        pRed_ = -(alpha*(0.5*alpha-1)*gsN + 0.5*beta*beta*gBg + beta*(1-alpha)*gnorm2);
       }
-      pRed_ = -(alpha*(0.5*alpha-1)*gsN + 0.5*beta*beta*gBg + beta*(1-alpha)*gnorm2);
     }
   }
+
 };
 
 }
