@@ -240,7 +240,7 @@ bool use_case_5_driver( MPI_Comm comm ,
       std::vector<stk::mesh::Bucket*> part_buckets;
       stk::mesh::get_buckets(select_owned, mesh_buckets, part_buckets);
 
-      stk::linsys::DofMapper& dof_mapper = ls.get_DofMapper();
+      stk::linsys::DofMapper const& dof_mapper = ls.get_DofMapper();
 
       int field_id = dof_mapper.get_field_id(displacements_field);
 

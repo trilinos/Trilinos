@@ -30,9 +30,6 @@ class LinearSystemInterface {
   /** Return DOF-mapping object */
   virtual const DofMapper& get_DofMapper() const = 0;
 
-  /** Return DOF-mapping object */
-  virtual DofMapper& get_DofMapper() = 0;
-
   /** set all matrix/vector coefficients to zero (if allocated) */
   virtual void reset_to_zero() = 0;
 

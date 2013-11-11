@@ -78,12 +78,6 @@ LinearSystem::get_DofMapper() const
   return m_dof_mapper;
 }
 
-DofMapper&
-LinearSystem::get_DofMapper()
-{
-  return m_dof_mapper;
-}
-
 void
 LinearSystem::reset_to_zero()
 {

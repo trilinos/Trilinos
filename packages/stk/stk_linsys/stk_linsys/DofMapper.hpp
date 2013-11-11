@@ -103,7 +103,7 @@ class DofMapper {
   int get_global_index(stk::mesh::EntityRank ent_type,
                        stk::mesh::EntityId ent_id,
                        stk::mesh::FieldBase& field,
-                       int offset_into_field=0);
+                       int offset_into_field=0) const;
 
   /** Given a global_index, return the specification for the DOF that it corresponds to.
    * Throw an exception if the global_index is not found, or if DofMapper::finalize() has

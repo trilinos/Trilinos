@@ -76,7 +76,7 @@ void use_case_7_initialize_data(
 
 void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh,
                                         stk::mesh::FieldBase& field,
-                                        stk::linsys::DofMapper& dof_mapper,
+                                        stk::linsys::DofMapper const& dof_mapper,
                                         fei::Matrix& matrix,
                                         fei::Vector& rhs);
 
@@ -234,7 +234,7 @@ bool use_case_7_driver( MPI_Comm comm ,
     ls.synchronize_mappings_and_structure();
 
     ls.create_fei_LinearSystem();
-    stk::linsys::DofMapper& dof_mapper = ls.get_DofMapper();
+    stk::linsys::DofMapper const& dof_mapper = ls.get_DofMapper();
 
     for(size_t i=0; i<num_matrices; ++i) {
       fei::SharedPtr<fei::Matrix> matrix = ls.get_matrix(i);
@@ -520,7 +520,7 @@ void use_case_7_generate_mesh(
 
 void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh,
                                         stk::mesh::FieldBase& field,
-                                        stk::linsys::DofMapper& dof_mapper,
+                                        stk::linsys::DofMapper const& dof_mapper,
                                         fei::Matrix& matrix,
                                         fei::Vector& rhs)
 {

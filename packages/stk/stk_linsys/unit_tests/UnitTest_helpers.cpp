@@ -138,7 +138,7 @@ void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& 
   stk::mesh::Selector select_owned(stk::mesh::MetaData::get(mesh).locally_owned_part());
   stk::mesh::get_buckets(select_owned, mesh_buckets, part_buckets);
 
-  stk::linsys::DofMapper& dof_mapper = ls.get_DofMapper();
+  stk::linsys::DofMapper const& dof_mapper = ls.get_DofMapper();
 
   int field_id = dof_mapper.get_field_id(field);
   int num_nodes_per_elem = part_buckets[0]->num_nodes(0);
@@ -196,7 +196,7 @@ void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& 
   }
 }
 
-void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& field, stk::linsys::DofMapper& dof_mapper, fei::Matrix& matrix, fei::Vector& rhs)
+void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& field, stk::linsys::DofMapper const& dof_mapper, fei::Matrix& matrix, fei::Vector& rhs)
 {
   const stk::mesh::EntityRank element_rank = stk::mesh::MetaData::ELEMENT_RANK;
 

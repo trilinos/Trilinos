@@ -128,12 +128,6 @@ AggregateLinearSystem::get_DofMapper() const
   return m_linear_system.get_DofMapper();
 }
 
-DofMapper&
-AggregateLinearSystem::get_DofMapper()
-{
-  return m_linear_system.get_DofMapper();
-}
-
 void
 AggregateLinearSystem::reset_to_zero()
 {

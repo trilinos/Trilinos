@@ -19,7 +19,7 @@ void fill_utest_mesh_bulk_data(stk::mesh::BulkData& bulk_data);
 
 void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& field, stk::linsys::LinearSystemInterface& ls);
 
-void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& field, stk::linsys::DofMapper& dof_mapper, fei::Matrix& matrix, fei::Vector& rhs);
+void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& field, stk::linsys::DofMapper const& dof_mapper, fei::Matrix& matrix, fei::Vector& rhs);
 
 #endif
 

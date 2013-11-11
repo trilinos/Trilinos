@@ -56,9 +56,6 @@ class LinearSystem : public LinearSystemInterface {
   /** Return DOF-mapping object */
   const DofMapper& get_DofMapper() const;
 
-  /** Return DOF-mapping object */
-  DofMapper& get_DofMapper();
-
   void reset_to_zero();
 
   /** Return fei::MatrixGraph object */

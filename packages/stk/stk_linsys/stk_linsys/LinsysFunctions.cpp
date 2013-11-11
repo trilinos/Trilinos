@@ -6,7 +6,6 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-
 #include <stk_linsys/FeiBaseIncludes.hpp>
 #include <stk_linsys/LinsysFunctions.hpp>
 #include <stk_linsys/ImplDetails.hpp>
@@ -17,7 +16,6 @@
 #include <fei_trilinos_macros.hpp>
 #include <fei_Solver_AztecOO.hpp>
 #include <fei_Trilinos_Helpers.hpp>
-
 
 namespace stk {
 namespace linsys {
@@ -35,7 +33,9 @@ void add_connectivities(stk::linsys::LinearSystemInterface& ls,
 
   if (part_buckets.empty()) return;
 
-  DofMapper& dof_mapper = ls.get_DofMapper();
+  // TODO: Add API to lin sys interface to avoid having to return reference
+  // to non-const?
+  DofMapper& dof_mapper = const_cast<DofMapper&>(ls.get_DofMapper());
 
   dof_mapper.add_dof_mappings(mesh_bulk, selector, connected_entity_rank, field);
 

@@ -159,7 +159,7 @@ STKUNIT_UNIT_TEST(UnitTestLinearSystem, test1)
 
   STKUNIT_ASSERT_EQUAL( num_local_rows, expected_num_local_rows );
 
-  stk::linsys::DofMapper& dof_mapper = ls.get_DofMapper();
+  stk::linsys::DofMapper const& dof_mapper = ls.get_DofMapper();
 
   const stk::linsys::DofMapper& const_dof_mapper = const_ls.get_DofMapper();
 
@@ -270,7 +270,7 @@ STKUNIT_UNIT_TEST(UnitTestAggregateLinearSystem, test1)
 
   STKUNIT_ASSERT_EQUAL( num_local_rows, expected_num_local_rows );
 
-  stk::linsys::DofMapper& dof_mapper = ls.get_DofMapper();
+  stk::linsys::DofMapper const& dof_mapper = ls.get_DofMapper();
 
   const stk::linsys::DofMapper& const_dof_mapper = const_ls.get_DofMapper();
 

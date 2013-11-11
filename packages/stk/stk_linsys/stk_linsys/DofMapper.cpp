@@ -141,7 +141,7 @@ int
 DofMapper::get_global_index(stk::mesh::EntityRank ent_type,
                             stk::mesh::EntityId ent_id,
                             stk::mesh::FieldBase& field,
-                            int offset_into_field)
+                            int offset_into_field) const
 {
   int err = 0, index = 0;
   int field_id = get_field_id(field);
