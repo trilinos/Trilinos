@@ -228,7 +228,7 @@ use_case_4_driver(stk::ParallelMachine  comm,
   range_mesh_data.open_mesh_database(filename, range_mesh_type);
   range_mesh_data.create_input_mesh();
   stk::mesh::MetaData &range_meta_data = range_mesh_data.meta_data();
-  CartesianField &range_coordinates_field = static_cast<CartesianField&>(range_mesh_data.get_coordinate_field());
+  CartesianField const& range_coordinates_field = static_cast<CartesianField const&>(range_mesh_data.get_coordinate_field());
   ScalarField &range_coord_sum_field = declare_scalar_field_on_all_nodes( range_meta_data, "coord_sum" );
 
   range_meta_data.commit();
@@ -241,7 +241,7 @@ use_case_4_driver(stk::ParallelMachine  comm,
   domain_mesh_data.open_mesh_database(filename, domain_mesh_type);
   domain_mesh_data.create_input_mesh();
   stk::mesh::MetaData &domain_meta_data = domain_mesh_data.meta_data();
-  CartesianField &domain_coordinates_field = static_cast<CartesianField&>(domain_mesh_data.get_coordinate_field());
+  CartesianField const& domain_coordinates_field = static_cast<CartesianField const&>(domain_mesh_data.get_coordinate_field());
 
   domain_meta_data.commit();
 
@@ -373,7 +373,7 @@ use_case_4_driver(stk::ParallelMachine  comm,
 
           stk::mesh::Entity entity = range_bulk_data.get_entity(entity_key.rank(), entity_key.id());
 
-          double *entity_coordinates = range_bulk_data.field_data(range_coordinates_field, entity);
+          double const* entity_coordinates = range_bulk_data.field_data(range_coordinates_field, entity);
 
           if (coord_sum != entity_coordinates[0] + entity_coordinates[1] + entity_coordinates[2]) {
             static stk::MessageCode x;
@@ -405,8 +405,8 @@ use_case_4_driver(stk::ParallelMachine  comm,
     for (size_t i = 0; i < num_entities; ++i) {
       const stk::mesh::Entity entity = entities[i];
 
-      double *entity_coordinates = range_bulk_data.field_data(range_coordinates_field, entity);
-      double *entity_coord_sum = range_bulk_data.field_data(range_coord_sum_field, entity);
+      double const* entity_coordinates = range_bulk_data.field_data(range_coordinates_field, entity);
+      double const* entity_coord_sum = range_bulk_data.field_data(range_coord_sum_field, entity);
       if (*entity_coord_sum != entity_coordinates[0] + entity_coordinates[1] + entity_coordinates[2]) {
         static stk::MessageCode x;
 

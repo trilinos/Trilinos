@@ -297,7 +297,7 @@ public:
   FieldBase* get_field( const std::string& name ) const;
 
   /** \brief  Get/Set the coordinate field */
-  FieldBase* coordinate_field() const;
+  FieldBase const* coordinate_field() const;
   void set_coordinate_field(FieldBase* coord_field) { m_coord_field = coord_field; }
 
   /** \brief  Get all defined fields */
@@ -492,7 +492,7 @@ private:
 
   impl::FieldRepository        m_field_repo ;
   mutable FieldBase* m_coord_field;
-  
+
   std::vector< PropertyBase* > m_properties ;
   std::vector< std::string >   m_entity_rank_names ;
   std::vector<shards::CellTopologyManagedData*> m_created_topologies;

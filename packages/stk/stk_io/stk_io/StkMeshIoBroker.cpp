@@ -637,7 +637,7 @@ void process_node_coords_and_attributes(stk::io::StkMeshIoBroker &mesh, INT /*du
   }
 
 
-  stk::mesh::FieldBase *coord_field = &mesh.get_coordinate_field();
+  stk::mesh::FieldBase const*coord_field = &mesh.get_coordinate_field();
   stk::io::field_data_from_ioss(bulk, coord_field, nodes, nb, "mesh_model_coordinates");
 
   // Add all attributes as fields.
@@ -1094,9 +1094,9 @@ namespace stk {
       return m_output_files.size()-1;
     }
 
-    stk::mesh::FieldBase & StkMeshIoBroker::get_coordinate_field()
+    stk::mesh::FieldBase const& StkMeshIoBroker::get_coordinate_field()
     {
-      stk::mesh::FieldBase * coord_field = meta_data().coordinate_field();
+      stk::mesh::FieldBase const* coord_field = meta_data().coordinate_field();
       ThrowRequire( coord_field != NULL);
       return * coord_field;
     }

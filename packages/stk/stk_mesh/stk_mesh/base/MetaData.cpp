@@ -275,7 +275,7 @@ EntityRank MetaData::entity_rank( const std::string &name ) const
   return entity_rank;
 }
 
-FieldBase* MetaData::coordinate_field() const
+FieldBase const* MetaData::coordinate_field() const
 {
   if (m_coord_field == NULL) {
     m_coord_field = try_to_find_coord_field(*this);

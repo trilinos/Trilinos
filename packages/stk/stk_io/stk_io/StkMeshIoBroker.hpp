@@ -440,7 +440,7 @@ namespace stk {
         /*!
          * Return the coordinate field for this mesh.
          */
-        stk::mesh::FieldBase &get_coordinate_field();
+        stk::mesh::FieldBase const& get_coordinate_field();
 
         /*!
          * If there are nodal fields defined on parts with higher-rank. For example, a nodal

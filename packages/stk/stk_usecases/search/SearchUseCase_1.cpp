@@ -84,13 +84,13 @@ use_case_1_driver(
   stk::mesh::MetaData &domain_meta_data = domain_mesh_data.meta_data();
   stk::mesh::BulkData &domain_bulk_data = domain_mesh_data.bulk_data();
 
-  CartesianField *range_coord_field = static_cast<CartesianField*>(&range_mesh_data.get_coordinate_field());
+  CartesianField const& range_coord_field = static_cast<CartesianField const&>(range_mesh_data.get_coordinate_field());
   std::vector<PointBoundingBox3D> range_vector;
   stk::search_util::build_centroid_bbox(range_bulk_data,
                                         range_meta_data.entity_rank(range_entity),
                                         range_coord_field, range_vector);
 
-  CartesianField *domain_coord_field = static_cast<CartesianField*>(&domain_mesh_data.get_coordinate_field());
+  CartesianField const& domain_coord_field = static_cast<CartesianField const&>(domain_mesh_data.get_coordinate_field());
   std::vector<AxisAlignedBoundingBox3D> domain_vector;
   stk::search_util::build_axis_aligned_bbox(domain_bulk_data,
                                             domain_meta_data.entity_rank(domain_entity),

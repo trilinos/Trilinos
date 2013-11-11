@@ -104,7 +104,7 @@ use_case_1_driver(
   // domain_mesh, then the search should return a single box for each
   // point and the id of the box should match the id of the point.
 
-  CartesianField *range_coord_field = static_cast<CartesianField*>(&range_mesh_data.get_coordinate_field());
+  CartesianField const& range_coord_field = static_cast<CartesianField const&>(range_mesh_data.get_coordinate_field());
   std::vector<PointBoundingBox3D> range_vector;
 
   {
@@ -119,7 +119,7 @@ use_case_1_driver(
                                           node_use_universal_set);
   }
 
-  CartesianField *domain_coord_field = static_cast<CartesianField*>(&domain_mesh_data.get_coordinate_field());
+  CartesianField const& domain_coord_field = static_cast<CartesianField const&>(domain_mesh_data.get_coordinate_field());
   std::vector<AxisAlignedBoundingBox3D> domain_vector;
 
   {
@@ -208,7 +208,7 @@ use_case_1_driver(
     // Copy coordinates to the newly ghosted nodes
 
     std::vector<const stk::mesh::FieldBase *> fields ;
-    fields.push_back(range_coord_field);
+    fields.push_back(&range_coord_field);
 
     stk::mesh::communicate_field_data( transfer_range_ghosting , fields);
   }

@@ -33,27 +33,27 @@ namespace {
 void build_node_axis_bbox(stk::mesh::Part &part,
                           stk::mesh::BulkData &bulk_data,
                           stk::mesh::EntityRank type,
-                          CartesianField *coordinates,
+                          CartesianField const& coordinates,
                           std::vector<AxisAlignedBoundingBox3D> &box_vector,
                           const stk::search_util::Op &op);
 
 void build_axis_bbox(stk::mesh::Part &part,
                      stk::mesh::BulkData &bulk_data,
                      stk::mesh::EntityRank type,
-                     CartesianField *coordinates,
+                     CartesianField const& coordinates,
                      std::vector<AxisAlignedBoundingBox3D> &box_vector,
                      const stk::search_util::Op &op);
 
 void build_node_cent_bbox(stk::mesh::Part &part,
                           stk::mesh::BulkData &bulk_data,
                           stk::mesh::EntityRank type,
-                          CartesianField *coordinates,
+                          CartesianField const& coordinates,
                           std::vector<PointBoundingBox3D> &box_vector);
 
 void build_cent_bbox(stk::mesh::Part &part,
                      stk::mesh::BulkData &bulk_data,
                      stk::mesh::EntityRank type,
-                     CartesianField *coordinates,
+                     CartesianField const& coordinates,
                      std::vector<PointBoundingBox3D> &box_vector);
 }
 
@@ -62,7 +62,7 @@ namespace search_util {
 
 // The adjust_box should be implemented as an Op rather than a scale and offset parameter.
 void build_axis_aligned_bbox(stk::mesh::BulkData &bulk_data, stk::mesh::EntityRank type,
-                             CartesianField *coordinates,
+                             CartesianField const& coordinates,
                              std::vector<AxisAlignedBoundingBox3D> &box_vector,
                              bool use_universal_part,
                              const stk::search_util::Op &op)
@@ -101,7 +101,7 @@ void build_axis_aligned_bbox(stk::mesh::BulkData &bulk_data, stk::mesh::EntityRa
 }
 
 void build_centroid_bbox(stk::mesh::BulkData &bulk_data,  stk::mesh::EntityRank type,
-                         CartesianField *coordinates,
+                         CartesianField const& coordinates,
                          std::vector<PointBoundingBox3D> &box_vector,
                          bool use_universal_part)
 {
@@ -188,7 +188,7 @@ namespace {
 void build_node_axis_bbox(stk::mesh::Part &part,
                           stk::mesh::BulkData &bulk_data,
                           stk::mesh::EntityRank type,
-                          CartesianField *coordinates,
+                          CartesianField const& coordinates,
                           std::vector<AxisAlignedBoundingBox3D> &box_vector,
                           const stk::search_util::Op &op)
 {
@@ -204,7 +204,7 @@ void build_node_axis_bbox(stk::mesh::Part &part,
     BOOST_STATIC_ASSERT(sizeof(domain.key.ident) >= sizeof(stk::mesh::EntityKey));
     domain.key.ident = bulk_data.entity_key(entities[i]);
 
-    double *fld_data = (double*)bulk_data.field_data(*coordinates, entities[i]);
+    double const* fld_data = (double const*)bulk_data.field_data(coordinates, entities[i]);
     assert(fld_data != NULL);
 
     domain.set_box(fld_data);
@@ -216,7 +216,7 @@ void build_node_axis_bbox(stk::mesh::Part &part,
 void build_axis_bbox(stk::mesh::Part &part,
                      stk::mesh::BulkData &bulk_data,
                      stk::mesh::EntityRank type,
-                     CartesianField *coordinates,
+                     CartesianField const& coordinates,
                      std::vector<AxisAlignedBoundingBox3D> &box_vector,
                      const stk::search_util::Op &op)
 {
@@ -242,7 +242,7 @@ void build_axis_bbox(stk::mesh::Part &part,
     stk::mesh::Entity const * entity_nodes = bulk_data.begin_nodes(entities[i]);
     assert(static_cast<int>(bulk_data.num_nodes(entities[i])) == nodes_per_entity);
 
-    double *fld_data = (double*)bulk_data.field_data(*coordinates, entity_nodes[0]);
+    double const* fld_data = (double const*)bulk_data.field_data(coordinates, entity_nodes[0]);
     assert(fld_data != NULL);
 
     AxisAlignedBoundingBox3D::Data bbox[6];
@@ -255,7 +255,7 @@ void build_axis_bbox(stk::mesh::Part &part,
     bbox[5] = fld_data[2];
 
     for (int j = 1; j < nodes_per_entity; ++j) {
-      fld_data = (double*)bulk_data.field_data(*coordinates, entity_nodes[j]);
+      fld_data = (double const*)bulk_data.field_data(coordinates, entity_nodes[j]);
       assert(fld_data != NULL);
       bbox[0] = fld_data[0] < bbox[0] ? fld_data[0] : bbox[0];
       bbox[1] = fld_data[1] < bbox[1] ? fld_data[1] : bbox[1];
@@ -275,7 +275,7 @@ void build_axis_bbox(stk::mesh::Part &part,
 void build_node_cent_bbox(stk::mesh::Part &part,
                           stk::mesh::BulkData &bulk_data,
                           stk::mesh::EntityRank type,
-                          CartesianField *coordinates,
+                          CartesianField const& coordinates,
                           std::vector<PointBoundingBox3D> &box_vector)
 {
   const stk::mesh::MetaData& meta_data = stk::mesh::MetaData::get(bulk_data);
@@ -290,7 +290,7 @@ void build_node_cent_bbox(stk::mesh::Part &part,
     BOOST_STATIC_ASSERT(sizeof(p.key.ident) >= sizeof(stk::mesh::EntityKey));
     p.key.ident = bulk_data.entity_key(entities[i]);
 
-    double *fld_data = (double*)bulk_data.field_data(*coordinates, entities[i]);
+    double const* fld_data = (double const*)bulk_data.field_data(coordinates, entities[i]);
     assert(fld_data != NULL);
 
     p.set_center(fld_data);
@@ -301,7 +301,7 @@ void build_node_cent_bbox(stk::mesh::Part &part,
 void build_cent_bbox(stk::mesh::Part &part,
                      stk::mesh::BulkData &bulk_data,
                      stk::mesh::EntityRank type,
-                     CartesianField *coordinates,
+                     CartesianField const& coordinates,
                      std::vector<PointBoundingBox3D> &box_vector)
 {
   const stk::mesh::MetaData& meta_data = stk::mesh::MetaData::get(bulk_data);
@@ -323,7 +323,7 @@ void build_cent_bbox(stk::mesh::Part &part,
     stk::mesh::Entity const *entity_nodes = bulk_data.begin_nodes(entities[i]);
     const size_t nodes_per_entity = bulk_data.num_nodes(entities[i]);
     for (size_t j = 0; j < nodes_per_entity; ++j) {
-      double *fld_data = (double*)bulk_data.field_data(*coordinates, entity_nodes[j]);
+      double const* fld_data = (double const*)bulk_data.field_data(coordinates, entity_nodes[j]);
       assert(fld_data != NULL);
       p.center[0] += fld_data[0];
       p.center[1] += fld_data[1];

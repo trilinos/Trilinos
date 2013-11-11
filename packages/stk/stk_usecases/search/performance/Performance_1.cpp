@@ -180,12 +180,12 @@ performance_driver(stk::ParallelMachine  comm,
   stk::search::FactoryOrder order;
   order.m_communicator = comm;
 
-  CartesianField *range_coord_field  = static_cast<CartesianField*>(&range_mesh_data.get_coordinate_field());
-  CartesianField *domain_coord_field = NULL;
+  CartesianField const* range_coord_field  = static_cast<CartesianField const*>(&range_mesh_data.get_coordinate_field());
+  CartesianField const* domain_coord_field = NULL;
   if (same_mesh)
     domain_coord_field = range_coord_field;
   else
-    domain_coord_field = static_cast<CartesianField*>(&domain_mesh_data.get_coordinate_field());
+    domain_coord_field = static_cast<CartesianField const*>(&domain_mesh_data.get_coordinate_field());
 
   IdentProcRelation relation;
   size_t domain_vector_size = 0;
@@ -203,7 +203,7 @@ performance_driver(stk::ParallelMachine  comm,
       stk::diag::TimeBlock __timer_range_bb(timer_range_bb);
       stk::search_util::build_centroid_bbox(range_bulk_data,
 					    range_meta_data.entity_rank(range.entity),
-					    range_coord_field, range_vector,
+					    *range_coord_field, range_vector,
 					    range_use_universal_set);
     }
 
@@ -213,7 +213,7 @@ performance_driver(stk::ParallelMachine  comm,
       stk::diag::TimeBlock __timer_domain_bb(timer_domain_bb);
       stk::search_util::build_axis_aligned_bbox(*domain_bulk_data,
 						domain_meta_data->entity_rank(domain.entity),
-						domain_coord_field, domain_vector,
+						*domain_coord_field, domain_vector,
 						domain_use_universal_set,
 						stk::search_util::OffsetScaleOp(domain.scale,
 										domain.offset));
@@ -247,7 +247,7 @@ performance_driver(stk::ParallelMachine  comm,
       stk::diag::TimeBlock __timer_range_bb(timer_range_bb);
       stk::search_util::build_axis_aligned_bbox(range_bulk_data,
 						range_meta_data.entity_rank(range.entity),
-						range_coord_field, range_vector,
+						*range_coord_field, range_vector,
 						range_use_universal_set,
 						stk::search_util::OffsetScaleOp(range.scale,
 										range.offset));
@@ -258,7 +258,7 @@ performance_driver(stk::ParallelMachine  comm,
       stk::diag::TimeBlock __timer_domain_bb(timer_domain_bb);
       stk::search_util::build_axis_aligned_bbox(*domain_bulk_data,
 						domain_meta_data->entity_rank(domain.entity),
-						domain_coord_field, domain_vector,
+						*domain_coord_field, domain_vector,
 						domain_use_universal_set,
 						stk::search_util::OffsetScaleOp(domain.scale,
 										domain.offset));

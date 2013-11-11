@@ -109,8 +109,8 @@ bool use_case_6_driver(stk::ParallelMachine  comm,
   // domain_mesh, then the search should return a single box for each
   // point and the id of the box should match the id of the point.
 
-  CartesianField &range_coord_field  = static_cast<CartesianField&>( range_mesh_data.get_coordinate_field());
-  CartesianField &domain_coord_field = static_cast<CartesianField&>(domain_mesh_data.get_coordinate_field());
+  CartesianField const& range_coord_field  = static_cast<CartesianField const&>( range_mesh_data.get_coordinate_field());
+  CartesianField const& domain_coord_field = static_cast<CartesianField const&>(domain_mesh_data.get_coordinate_field());
 
   stk::mesh::Selector range_nodes = range_meta_data.locally_owned_part();
   stk::mesh::Selector domain_nodes= domain_meta_data.locally_owned_part();
