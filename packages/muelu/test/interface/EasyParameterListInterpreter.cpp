@@ -149,13 +149,20 @@ int main(int argc, char *argv[]) {
       // using different seed, and may have different algorithm from one
       // gcc version to another, or to anogther compiler (like clang)
       // This leads to us always failing this test.
-      // NOTE: Epetra, on the other hand, rolls out its out random number
+      // NOTE1 : Epetra, on the other hand, rolls out its out random number
       // generator, which always produces same results
-      std::string sed_cmd = "sed -i 's/lambdaMax\\ =\\ [0-9]*\\.[0-9]*/lambdaMax\\ =\\ <ignored>/' ";
+      // NOTE2 : sed behaviour differs between Mac and Linux
+      // You can run "sed -i 's//' " in Linux, but you always have to specify
+      // "sed -i "<smth,could be empty>" 's//'" in Mac. Both, however, take '-i<extension>'
+      std::string sed_cmd = "sed -iorig 's/lambdaMax\\ =\\ [0-9]*\\.[0-9]*/lambdaMax\\ =\\ <ignored>/' ";
       system((sed_cmd + baseFile + ".res").c_str());
       system((sed_cmd + baseFile + ".out").c_str());
 
-      sed_cmd = "sed -i 's/lambdaMin\\ =\\ [0-9]*\\.[0-9]*/lambdaMin\\ =\\ <ignored>/' ";
+#ifndef __APPLE__
+      sed_cmd = "sed -i      's/lambdaMin\\ =\\ [0-9]*\\.[0-9]*/lambdaMin\\ =\\ <ignored>/' ";
+#else
+      sed_cmd = "sed -i \"\" 's/lambdaMin\\ =\\ [0-9]*\\.[0-9]*/lambdaMin\\ =\\ <ignored>/' ";
+#endif
       system((sed_cmd + baseFile + ".res").c_str());
       system((sed_cmd + baseFile + ".out").c_str());
     }
