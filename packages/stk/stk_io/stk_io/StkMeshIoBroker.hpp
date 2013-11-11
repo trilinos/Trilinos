@@ -474,14 +474,13 @@ namespace stk {
         //   -- If reading data from the mesh also, then may need both.
         // * What state used for input/output -- pass as argument to process_restart?
 
-<<<<<<< HEAD
         bool is_meta_data_null() const
-=======
-        /** RESTART **/
 
+        // Add a history or heartbeat output...
         size_t add_output(const std::string &filename, DatabaseType db_type,
 			  const Ioss::PropertyManager &properties = Ioss::PropertyManager());
   
+        // Access a defined history or heartbeat output...
         History &output(size_t index=0)
         {
 	  ThrowRequire(index < m_history.size());
@@ -489,7 +488,6 @@ namespace stk {
         }
   
         bool meta_data_is_set() const
->>>>>>> STK_IO: Concept for history/heartbeat files
         {
           return Teuchos::is_null(m_meta_data);
         }
@@ -594,9 +592,7 @@ namespace stk {
         Teuchos::RCP<stk::mesh::MetaData>  m_meta_data;
         Teuchos::RCP<stk::mesh::BulkData>  m_bulk_data;
 
-<<<<<<< HEAD
         Teuchos::RCP<stk::mesh::Selector> m_deprecated_selector;
-=======
         std::vector<History> m_history;
 
         /*!
@@ -607,7 +603,6 @@ namespace stk {
          */
         Teuchos::RCP<stk::mesh::Selector> m_anded_selector;
         stk::mesh::ConnectivityMap m_connectivity_map;
->>>>>>> STK_IO: Concept for history/heartbeat files
 
         stk::mesh::ConnectivityMap* m_connectivity_map;
 

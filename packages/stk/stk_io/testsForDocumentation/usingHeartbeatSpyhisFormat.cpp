@@ -8,10 +8,10 @@
 
 namespace
 {
-  TEST(StkMeshIoBrokerHowTo, writeHeartbeatNoLabels)
+  TEST(StkMeshIoBrokerHowTo, writeHeartbeatSpyhisFormat)
   {
 
-    const std::string file_name = "Heartbeat.txt";
+    const std::string file_name = "Heartbeat-Spyhis.txt";
     MPI_Comm communicator = MPI_COMM_WORLD;
 
     stk::util::ParameterList parameters;
@@ -42,12 +42,9 @@ namespace
 
     // ========================================================================
     // Define the heartbeat output.
-
     Ioss::PropertyManager hb_props;
-    hb_props.add(Ioss::Property("SHOW_LABELS",       false));
-    hb_props.add(Ioss::Property("SHOW_LEGEND",       true));
-    hb_props.add(Ioss::Property("TIME_STAMP_FORMAT",       ""));
-    hb_props.add(Ioss::Property("PRECISION", 10));
+    hb_props.add(Ioss::Property("FILE_FORMAT", "spyhis"));
+
     size_t heartbeat_index = stkIo.add_output(file_name, stk::io::HEARTBEAT, hb_props);
 
     stk::util::ParameterMapType::const_iterator i = parameters.begin();
@@ -57,7 +54,6 @@ namespace
       stk::util::Parameter &parameter = parameters.get_param(parameterName);
 
       // Tell heartbeat database which global variables should be output at each step...
-      // Example just does all parameters that exist...
       stkIo.output(heartbeat_index).add_global(parameterName, parameter);
     }
 
