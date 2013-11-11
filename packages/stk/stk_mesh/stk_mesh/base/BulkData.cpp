@@ -311,8 +311,8 @@ void BulkData::modified(Entity entity)
   // recurse on related entities w/ higher rank
   // outer loop iterates backwards as an optimization to reduce function call depth.
   EntityVector temp_entities;
-  Entity const* rels_i;
-  int num_rels;
+  Entity const* rels_i = NULL;
+  int num_rels = 0;
   EntityRank rank_of_original_entity = entity_rank(entity);
   for (EntityRank irank = m_mesh_meta_data.entity_rank_count() - 1;
         irank > rank_of_original_entity;
@@ -604,8 +604,8 @@ bool BulkData::destroy_entity( Entity entity )
   // that the back relations are destroyed first.
   EntityVector temp_entities;
   std::vector<ConnectivityOrdinal> temp_ordinals;
-  Entity const* rel_entities;
-  int num_conn;
+  Entity const* rel_entities = NULL;
+  int num_conn = 0;
   ConnectivityOrdinal const* rel_ordinals;
   for (EntityRank irank = end_rank; irank != stk::topology::BEGIN_RANK; )
   {

@@ -678,8 +678,8 @@ void insert_upward_relations(const BulkData& bulk_data, Entity rel_entity,
     // There may be even higher-ranking entities that need to be ghosted, so we must recurse
     const EntityRank end_rank = bulk_data.mesh_meta_data().entity_rank_count();
     EntityVector temp_entities;
-    Entity const* rels;
-    int num_rels;
+    Entity const* rels = NULL;
+    int num_rels = 0;
     for (EntityRank irank = rel_entity_rank + 1; irank < end_rank; ++irank)
     {
       if (bulk_data.connectivity_map().valid(rel_entity_rank, irank)) {
@@ -721,8 +721,8 @@ void BulkData::internal_regenerate_shared_aura()
   // comm info for each entity, and ensure that upwardly related
   // entities to the shared entity are ghosted on the sharing proc.
   EntityVector temp_entities;
-  Entity const* rels;
-  int num_rels;
+  Entity const* rels = NULL;
+  int num_rels = 0;
   for ( EntityCommListInfoVector::const_iterator
       i = comm_list().begin() ; i != comm_list().end() ; ++i ) {
 

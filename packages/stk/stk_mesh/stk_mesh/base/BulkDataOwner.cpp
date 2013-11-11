@@ -81,8 +81,8 @@ void insert_transitive_ghost(const BulkData& mesh, Entity const entity ,
   // Recurse over upward relations
   const EntityRank end_rank = mesh.mesh_meta_data().entity_rank_count();
   EntityVector temp_entities;
-  Entity const* rels;
-  int num_rels;
+  Entity const* rels = NULL;
+  int num_rels = 0;
   for (EntityRank irank = erank + 1; irank < end_rank; ++irank)
   {
     if (mesh.connectivity_map().valid(erank, irank)) {
@@ -151,8 +151,8 @@ bool member_of_owned_closure(const BulkData& mesh, const Entity e , const int p_
 
   // Any higher ranking entities locally owned?
   EntityVector temp_entities;
-  Entity const* rels;
-  int num_rels;
+  Entity const* rels = NULL;
+  int num_rels = 0;
   for (EntityRank irank = end_rank - 1; irank > erank; --irank)
   {
     if (mesh.connectivity_map().valid(erank, irank)) {

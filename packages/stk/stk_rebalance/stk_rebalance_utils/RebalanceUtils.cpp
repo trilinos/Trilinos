@@ -71,7 +71,7 @@ bool stk::rebalance::verify_dependent_ownership( const mesh::BulkData & bulk_dat
                                                  stk::mesh::EntityVector & entities )
 {
   stk::mesh::EntityVector temp_entities;
-  stk::mesh::Entity const* rels;
+  stk::mesh::Entity const* rels = NULL;
 
   bool is_with_elem = true;
   for( size_t i = 0; i < entities.size(); ++i )
@@ -81,7 +81,7 @@ bool stk::rebalance::verify_dependent_ownership( const mesh::BulkData & bulk_dat
     stk::mesh::Entity entity = entities[i];
     int owner_proc = bulk_data.parallel_owner_rank(entity);
 
-    int num_rels;
+    int num_rels = 0;
     if (bulk_data.connectivity_map().valid(bulk_data.entity_rank(entity), parent_rank)) {
       num_rels = bulk_data.num_connectivity(entity, parent_rank);
       rels     = bulk_data.begin(entity, parent_rank);

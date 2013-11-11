@@ -272,8 +272,8 @@ void destroy_dependent_ghosts( BulkData & mesh , Entity entity )
 
   const EntityRank end_rank = mesh.mesh_meta_data().entity_rank_count();
   EntityVector temp_entities;
-  Entity const* rels;
-  int num_rels;
+  Entity const* rels = NULL;
+  int num_rels = 0;
   for (EntityRank irank = end_rank - 1; irank > entity_rank; --irank)
   {
     if (mesh.connectivity_map().valid(entity_rank, irank)) {

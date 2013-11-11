@@ -48,8 +48,8 @@ void check_equiv_conn(Bucket const& bucket_full_conn, Bucket const& bucket_min_c
 
   EntityVector temp_entities;
   std::vector<ConnectivityOrdinal> temp_ordinals;
-  Entity const* rel_entities_min;
-  ConnectivityOrdinal const* rel_ordinals_min;
+  Entity const* rel_entities_min = NULL;
+  ConnectivityOrdinal const* rel_ordinals_min = NULL;
   size_t num_min_upward = get_connectivity(mesh_min_conn,
                                            bucket_min_conn[ord],
                                            rank,

@@ -359,8 +359,8 @@ void getNeighbors( const mesh::BulkData& mesh, const mesh::Entity entity,
   nodes_out.clear();
 
   stk::mesh::EntityVector temp_entities;
-  stk::mesh::Entity const* elems;
-  int num_elems;
+  stk::mesh::Entity const* elems = NULL;
+  int num_elems = 0;
   if (mesh.connectivity_map().valid(mesh.entity_rank(entity), stk::topology::ELEMENT_RANK)) {
     num_elems = mesh.num_connectivity(entity, stk::topology::ELEMENT_RANK);
     elems     = mesh.begin(entity, stk::topology::ELEMENT_RANK);

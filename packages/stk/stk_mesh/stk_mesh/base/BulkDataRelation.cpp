@@ -203,9 +203,9 @@ bool BulkData::destroy_relation( Entity e_from ,
     // these relations to the 'keep' vector
     EntityVector temp_entities;
     std::vector<ConnectivityOrdinal> temp_ordinals;
-    Entity const* rel_entities;
-    ConnectivityOrdinal const* rel_ordinals;
-    int num_rels;
+    Entity const* rel_entities = NULL;
+    ConnectivityOrdinal const* rel_ordinals = NULL;
+    int num_rels = 0;
     for (EntityRank irank = e_to_entity_rank + 1; irank < end_rank; ++irank)
     {
       if (connectivity_map().valid(e_to_entity_rank, irank)) {

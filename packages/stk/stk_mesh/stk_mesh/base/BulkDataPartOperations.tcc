@@ -401,8 +401,8 @@ void BulkData::internal_propagate_part_changes(
 
           EntityRank e_to_rank = entity_rank(e_to);
 
-          Entity const* back_rel_entities;
-          int num_back_rels;
+          Entity const* back_rel_entities = NULL;
+          int num_back_rels = 0;
           for (EntityRank to_rel_rank_i = e_to_rank + 1; to_rel_rank_i < end_rank; ++to_rel_rank_i)
           {
             if (connectivity_map().valid(e_to_rank, to_rel_rank_i)) {

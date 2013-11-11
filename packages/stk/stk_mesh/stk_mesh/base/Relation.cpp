@@ -45,8 +45,8 @@ void get_entities_through_relations(
   std::vector<Entity> & entities_related )
 {
   EntityVector temp_entities;
-  Entity const* irels_j;
-  int num_conn;
+  Entity const* irels_j = NULL;
+  int num_conn = 0;
   for (Entity const *rels_left = rels_begin ; rels_left != rels_end ; ++rels_left )
   {
     // Do all input entities have a relation to this entity ?
@@ -121,8 +121,8 @@ void get_entities_through_relations(
 
     std::vector<Entity>::const_iterator next_i = i + 1;
     EntityVector temp_entities;
-    Entity const* rels_begin;
-    int num_conn;
+    Entity const* rels_begin = NULL;
+    int num_conn = 0;
     for (EntityRank rank = stk::topology::BEGIN_RANK; rank < end_rank; ++rank)
     {
       if (mesh.connectivity_map().valid(ibucket.entity_rank(), rank)) {
@@ -154,8 +154,8 @@ void get_entities_through_relations(
     const std::vector<Entity>::const_iterator j = entities.end();
 
     EntityVector temp_entities;
-    Entity const* rel_entities;
-    int num_rels;
+    Entity const* rel_entities = NULL;
+    int num_rels = 0;
     if (mesh.connectivity_map().valid(mesh.entity_rank(*i), entities_related_rank)) {
       num_rels     = mesh.num_connectivity(*i, entities_related_rank);
       rel_entities = mesh.begin(*i, entities_related_rank);
@@ -265,8 +265,8 @@ void induced_part_membership(const BulkData& mesh, const Entity entity ,
   const EntityRank end_rank = mesh.mesh_meta_data().entity_rank_count();
 
   EntityVector temp_entities;
-  Entity const* rels;
-  int num_rels;
+  Entity const* rels = NULL;
+  int num_rels = 0;
   for (EntityRank irank = e_rank + 1; irank < end_rank; ++irank)
   {
     if (mesh.connectivity_map().valid(e_rank, irank)) {
