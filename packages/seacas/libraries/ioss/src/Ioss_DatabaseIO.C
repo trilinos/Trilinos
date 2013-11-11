@@ -242,7 +242,7 @@ namespace Ioss {
   {
     if (!outputFileList.insert(filename).second) {
       IOSS_WARNING << "WARNING: Multiple outputs from this application may be attempting to write to the file\n         '"
-		   << "         " << filename
+		   << filename
 		   << "'.\n         This can result in a corrupted file or loss of data and should be avoided.\n\n";
     }
   }
