@@ -17,6 +17,7 @@ TEST(StkMeshIoBrokerHowTo, subsetOutputDatabase)
     std::string resultsFilename = "subsetted.results";
     MPI_Comm communicator = MPI_COMM_WORLD;
 
+    size_t num_elems_per_edge = 9;  // If change this, also change input_filename below.
     {
       std::string input_filename = "9x9x9|shell:xyzXYZ|sideset:xX|nodeset:yY";
       stk::io::StkMeshIoBroker mesh_data(communicator);
@@ -47,7 +48,29 @@ TEST(StkMeshIoBrokerHowTo, subsetOutputDatabase)
       mesh_data.write_output_mesh(fileHandle);
     }
 
-    // unlink(resultsFilename.c_str());
+    // ========================================================================
+    // Verify output mesh has correct number of nodes and elements.
+    // Note that the output mesh will contain all element blocks; however,
+    // the non-shell element block will have zero elements.
+    // This is due to the subset_selector subsetting the entities and not the parts...
+    Ioss::DatabaseIO *iossDb = Ioss::IOFactory::create("exodus", resultsFilename, Ioss::READ_MODEL, communicator);
+    Ioss::Region ioRegion(iossDb);
+
+    // The output model should consist of the elements and nodes in the 6 shell blocks.
+    size_t num_elements = ioRegion.get_property("element_count").get_int();
+    size_t num_nodes    = ioRegion.get_property("node_count").get_int();
+
+    size_t expected_elements = 6 * num_elems_per_edge * num_elems_per_edge ;
+
+    size_t num_nodes_per_edge = num_elems_per_edge+1;
+    size_t expected_nodes = 6 * num_nodes_per_edge*num_nodes_per_edge;
+    expected_nodes -= 12 * num_nodes_per_edge; // Nodes on each edge were double-counted in previous calculation.
+    expected_nodes += 8; // Nodes on each corner were removed in previous calculation; add them back.
+
+    ASSERT_EQ(num_elements, expected_elements);
+    ASSERT_EQ(num_nodes, expected_nodes);
+
+    unlink(resultsFilename.c_str());
 }
 
 }
