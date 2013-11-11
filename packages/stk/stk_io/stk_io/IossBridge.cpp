@@ -1052,7 +1052,7 @@ void define_side_blocks(stk::mesh::Part &part,
                         Ioss::SideSet *sset,
                         stk::mesh::EntityRank type,
                         int spatial_dimension,
-                        const stk::mesh::Selector *anded_selector)
+                        const stk::mesh::Selector *subset_selector)
 {
   mesh::MetaData & meta = mesh::MetaData::get(part);
   ThrowRequire(type == stk::mesh::MetaData::FACE_RANK || stk::mesh::MetaData::EDGE_RANK);
@@ -1062,14 +1062,14 @@ void define_side_blocks(stk::mesh::Part &part,
     for (size_t j = 0; j < blocks.size(); j++) {
       mesh::Part & side_block_part = *blocks[j];
       mesh::Selector selector = meta.locally_owned_part() & side_block_part;
-      if (anded_selector) selector &= *anded_selector;
+      if (subset_selector) selector &= *subset_selector;
 
       define_side_block(bulk_data, selector, side_block_part,
 			sset, spatial_dimension);
     }
   } else {
     mesh::Selector selector = meta.locally_owned_part() & part;
-    if (anded_selector) selector &= *anded_selector;
+    if (subset_selector) selector &= *subset_selector;
     define_side_block(bulk_data, selector, part, sset, spatial_dimension);
   }
 }
@@ -1096,7 +1096,7 @@ bool field_has_expected_size(const stk::mesh::FieldBase* field, unsigned expecte
 void define_node_block(stk::mesh::Part &part,
                        const stk::mesh::BulkData &bulk,
                        Ioss::Region &io_region,
-                       const stk::mesh::Selector *anded_selector)
+                       const stk::mesh::Selector *subset_selector)
 {
   //--------------------------------
   // Set the spatial dimension:
@@ -1117,10 +1117,10 @@ void define_node_block(stk::mesh::Part &part,
   // Create the special universal node block:
 
   mesh::Selector all_selector = meta.globally_shared_part() | meta.locally_owned_part();
-  if (anded_selector) all_selector &= *anded_selector;
+  if (subset_selector) all_selector &= *subset_selector;
 
   mesh::Selector own_selector = meta.locally_owned_part();
-  if (anded_selector) own_selector &= *anded_selector;
+  if (subset_selector) own_selector &= *subset_selector;
 
   int64_t all_nodes = count_selected_entities(all_selector, bulk.buckets(stk::mesh::MetaData::NODE_RANK));
   int64_t own_nodes = count_selected_entities(own_selector, bulk.buckets(stk::mesh::MetaData::NODE_RANK));
@@ -1145,15 +1145,15 @@ void define_node_set(stk::mesh::Part &part,
                      const std::string &name,
                      const stk::mesh::BulkData &bulk,
                      Ioss::Region &io_region,
-                     const stk::mesh::Selector *anded_selector)
+                     const stk::mesh::Selector *subset_selector)
 {
   mesh::MetaData & meta = mesh::MetaData::get(part);
 
   mesh::Selector all_selector = (meta.globally_shared_part() | meta.locally_owned_part()) & part;
-  if (anded_selector) all_selector &= *anded_selector;
+  if (subset_selector) all_selector &= *subset_selector;
 
   mesh::Selector own_selector = meta.locally_owned_part() & part;
-  if (anded_selector) own_selector &= *anded_selector;
+  if (subset_selector) own_selector &= *subset_selector;
 
   int64_t all_nodes = count_selected_entities(all_selector, bulk.buckets(stk::mesh::MetaData::NODE_RANK));
   int64_t own_nodes = count_selected_entities(own_selector, bulk.buckets(stk::mesh::MetaData::NODE_RANK));
@@ -1174,7 +1174,7 @@ void define_node_set(stk::mesh::Part &part,
 void define_element_block(stk::mesh::Part &part,
                           const stk::mesh::BulkData &bulk,
                           Ioss::Region &io_region,
-                          const stk::mesh::Selector *anded_selector,
+                          const stk::mesh::Selector *subset_selector,
                           bool use_nodeset_for_nodal_fields)
 {
   mesh::MetaData & meta = mesh::MetaData::get(part);
@@ -1187,7 +1187,7 @@ void define_element_block(stk::mesh::Part &part,
   }
 
   mesh::Selector selector = meta.locally_owned_part() & part;
-  if (anded_selector) selector &= *anded_selector;
+  if (subset_selector) selector &= *subset_selector;
 
   const size_t num_elems = count_selected_entities( selector, bulk.buckets(stk::mesh::MetaData::ELEMENT_RANK));
 
@@ -1213,20 +1213,20 @@ void define_element_block(stk::mesh::Part &part,
   if (use_nodeset_for_nodal_fields &&
       will_output_lower_rank_fields(part, stk::mesh::MetaData::NODE_RANK)) {
     std::string nodes_name = part.name() + block_nodes_suffix;
-    define_node_set(part, nodes_name, bulk, io_region, anded_selector);
+    define_node_set(part, nodes_name, bulk, io_region, subset_selector);
   }
 }
 
 void define_communication_maps(const stk::mesh::BulkData &bulk,
                                Ioss::Region &io_region,
-                               const stk::mesh::Selector *anded_selector)
+                               const stk::mesh::Selector *subset_selector)
 {
   if (bulk.parallel_size() > 1) {
     const stk::mesh::MetaData & meta = mesh::MetaData::get(bulk);
     const std::string cs_name("node_symm_comm_spec");
 
     mesh::Selector selector = meta.globally_shared_part();
-    if (anded_selector) selector &= *anded_selector;
+    if (subset_selector) selector &= *subset_selector;
 
     std::vector<mesh::Entity> entities;
     get_selected_entities(selector, bulk.buckets(stk::mesh::MetaData::NODE_RANK), entities);
@@ -1252,7 +1252,7 @@ void define_communication_maps(const stk::mesh::BulkData &bulk,
 void define_side_set(stk::mesh::Part &part,
                      const stk::mesh::BulkData &bulk,
                      Ioss::Region &io_region,
-                     const stk::mesh::Selector *anded_selector,
+                     const stk::mesh::Selector *subset_selector,
                      bool use_nodeset_for_nodal_fields)
 {
   const stk::mesh::EntityRank si_rank = mesh::MetaData::get(part).side_rank();
@@ -1278,7 +1278,7 @@ void define_side_set(stk::mesh::Part &part,
 
     io_region.add(ss);
     int spatial_dim = io_region.get_property("spatial_dimension").get_int();
-    define_side_blocks(part, bulk, ss, si_rank, spatial_dim, anded_selector);
+    define_side_blocks(part, bulk, ss, si_rank, spatial_dim, subset_selector);
 
     if (use_nodeset_for_nodal_fields) {
       bool lower_rank_fields = will_output_lower_rank_fields(part, stk::mesh::MetaData::NODE_RANK);
@@ -1292,7 +1292,7 @@ void define_side_set(stk::mesh::Part &part,
       }
       if (lower_rank_fields) {
 	std::string nodes_name = part.name() + block_nodes_suffix;
-	define_node_set(part, nodes_name, bulk, io_region, anded_selector);
+	define_node_set(part, nodes_name, bulk, io_region, subset_selector);
       }
     }
   }
@@ -1307,14 +1307,14 @@ struct part_compare {
 void define_output_db(Ioss::Region & io_region ,
                       const mesh::BulkData &bulk_data,
                       const Ioss::Region *input_region,
-                      const stk::mesh::Selector *anded_selector,
+                      const stk::mesh::Selector *subset_selector,
                       const bool sort_stk_parts,
                       const bool use_nodeset_for_part_node_fields)
 {
   io_region.begin_mode( Ioss::STATE_DEFINE_MODEL );
 
   const mesh::MetaData & meta_data = mesh::MetaData::get(bulk_data);
-  define_node_block(meta_data.universal_part(), bulk_data, io_region, anded_selector);
+  define_node_block(meta_data.universal_part(), bulk_data, io_region, subset_selector);
 
   // All parts of the meta data:
   const mesh::PartVector *parts = NULL;
@@ -1337,20 +1337,20 @@ void define_output_db(Ioss::Region & io_region ,
       if (part->primary_entity_rank() == mesh::InvalidEntityRank)
         continue;
       else if (part->primary_entity_rank() == stk::mesh::MetaData::NODE_RANK)
-        define_node_set(*part, part->name(), bulk_data, io_region, anded_selector);
+        define_node_set(*part, part->name(), bulk_data, io_region, subset_selector);
       else if (part->primary_entity_rank() == stk::mesh::MetaData::ELEMENT_RANK)
-        define_element_block(*part, bulk_data, io_region, anded_selector,
+        define_element_block(*part, bulk_data, io_region, subset_selector,
             use_nodeset_for_part_node_fields);
       else if (part->primary_entity_rank() == stk::mesh::MetaData::FACE_RANK)
-        define_side_set(*part, bulk_data, io_region, anded_selector,
+        define_side_set(*part, bulk_data, io_region, subset_selector,
             use_nodeset_for_part_node_fields);
       else if (part->primary_entity_rank() == stk::mesh::MetaData::EDGE_RANK)
-        define_side_set(*part, bulk_data, io_region, anded_selector,
+        define_side_set(*part, bulk_data, io_region, subset_selector,
             use_nodeset_for_part_node_fields);
     }
   }
 
-  define_communication_maps(bulk_data, io_region, anded_selector);
+  define_communication_maps(bulk_data, io_region, subset_selector);
 
   if (input_region != NULL)
     io_region.synchronize_id_and_name(input_region, true);
@@ -1392,7 +1392,7 @@ size_t get_entities(stk::mesh::Part &part, stk::mesh::EntityRank type,
                     const stk::mesh::BulkData &bulk,
                     std::vector<mesh::Entity> &entities,
                     bool include_shared,
-                    const stk::mesh::Selector *anded_selector)
+                    const stk::mesh::Selector *subset_selector)
 {
   mesh::MetaData & meta = mesh::MetaData::get(part);
 
@@ -1401,7 +1401,7 @@ size_t get_entities(stk::mesh::Part &part, stk::mesh::EntityRank type,
     own_share |= meta.globally_shared_part();
 
   mesh::Selector selector = part & own_share;
-  if (anded_selector) selector &= *anded_selector;
+  if (subset_selector) selector &= *subset_selector;
 
   get_selected_entities(selector, bulk.buckets(type), entities);
   return entities.size();
@@ -1412,13 +1412,13 @@ template <typename INT>
 void write_side_data_to_ioss( Ioss::GroupingEntity & io ,
                               mesh::Part * const part ,
                               const mesh::BulkData & bulk_data,
-                              const stk::mesh::Selector *anded_selector, INT /*dummy*/ )
+                              const stk::mesh::Selector *subset_selector, INT /*dummy*/ )
 {
   const mesh::MetaData & meta_data = mesh::MetaData::get(*part);
 
   std::vector<mesh::Entity> sides ;
   stk::mesh::EntityRank type = part_primary_entity_rank(*part);
-  size_t num_sides = get_entities(*part, type, bulk_data, sides, false, anded_selector);
+  size_t num_sides = get_entities(*part, type, bulk_data, sides, false, subset_selector);
 
   stk::mesh::EntityRank elem_rank = stk::mesh::MetaData::ELEMENT_RANK;
 
@@ -1497,7 +1497,7 @@ template <typename INT>
 void output_node_block(Ioss::NodeBlock &nb,
                        stk::mesh::Part &part,
                        const stk::mesh::BulkData &bulk,
-                       const stk::mesh::Selector *anded_selector, INT /*dummy*/)
+                       const stk::mesh::Selector *subset_selector, INT /*dummy*/)
 {
   //----------------------------------
   // Exactly one node block to obtain the nodal coordinates and ids:
@@ -1508,7 +1508,7 @@ void output_node_block(Ioss::NodeBlock &nb,
   // using element ids.
   std::vector<mesh::Entity> nodes ;
   size_t num_nodes = get_entities(part, stk::mesh::MetaData::NODE_RANK,
-				  bulk, nodes, true, anded_selector);
+				  bulk, nodes, true, subset_selector);
 
   std::vector<INT> node_ids; node_ids.reserve(num_nodes);
   for(size_t i=0; i<num_nodes; ++i) {
@@ -1552,7 +1552,7 @@ void output_node_block(Ioss::NodeBlock &nb,
 template <typename INT>
 void output_element_block(Ioss::ElementBlock *block,
                           const stk::mesh::BulkData &bulk,
-                          const stk::mesh::Selector *anded_selector, INT /*dummy*/)
+                          const stk::mesh::Selector *subset_selector, INT /*dummy*/)
 {
   const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
   const std::string& name = block->name();
@@ -1561,7 +1561,7 @@ void output_element_block(Ioss::ElementBlock *block,
   assert(part != NULL);
   std::vector<mesh::Entity> elements;
   stk::mesh::EntityRank type = part_primary_entity_rank(*part);
-  size_t num_elems = get_entities(*part, type, bulk, elements, false, anded_selector);
+  size_t num_elems = get_entities(*part, type, bulk, elements, false, subset_selector);
 
   stk::topology topo = part->topology();
   if (topo == stk::topology::INVALID_TOPOLOGY) {
@@ -1614,7 +1614,7 @@ void output_element_block(Ioss::ElementBlock *block,
 
 template <typename INT>
 void output_node_set(Ioss::NodeSet *ns, const stk::mesh::BulkData &bulk,
-                     const stk::mesh::Selector *anded_selector, INT /*dummy*/)
+                     const stk::mesh::Selector *subset_selector, INT /*dummy*/)
 {
   const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
   const std::string& name = ns->name();
@@ -1639,7 +1639,7 @@ void output_node_set(Ioss::NodeSet *ns, const stk::mesh::BulkData &bulk,
   }
 
   std::vector<stk::mesh::Entity> nodes ;
-  size_t num_nodes = get_entities(*part, stk::mesh::MetaData::NODE_RANK, bulk, nodes, true, anded_selector);
+  size_t num_nodes = get_entities(*part, stk::mesh::MetaData::NODE_RANK, bulk, nodes, true, subset_selector);
 
   std::vector<INT> node_ids; node_ids.reserve(num_nodes);
   for(size_t i=0; i<num_nodes; ++i) {
@@ -1681,13 +1681,13 @@ void output_node_set(Ioss::NodeSet *ns, const stk::mesh::BulkData &bulk,
 template <typename INT>
 void output_communication_maps(Ioss::Region &io_region,
                                const stk::mesh::BulkData &bulk,
-                               const stk::mesh::Selector *anded_selector,
+                               const stk::mesh::Selector *subset_selector,
                                INT /*dummy*/)
 {
   if (bulk.parallel_size() > 1) {
     const stk::mesh::MetaData & meta = mesh::MetaData::get(bulk);
     mesh::Selector selector = meta.globally_shared_part();
-    if (anded_selector) selector &= *anded_selector;
+    if (subset_selector) selector &= *subset_selector;
 
     std::vector<mesh::Entity> entities;
     get_selected_entities(selector, bulk.buckets(stk::mesh::MetaData::NODE_RANK), entities);
@@ -1718,7 +1718,7 @@ void output_communication_maps(Ioss::Region &io_region,
 template <typename INT>
 void output_side_set(Ioss::SideSet *ss,
                      const stk::mesh::BulkData &bulk,
-                     const stk::mesh::Selector *anded_selector, INT dummy)
+                     const stk::mesh::Selector *subset_selector, INT dummy)
 {
   const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
   size_t block_count = ss->block_count();
@@ -1726,7 +1726,7 @@ void output_side_set(Ioss::SideSet *ss,
     Ioss::SideBlock *block = ss->get_block(i);
     if (stk::io::include_entity(block)) {
       stk::mesh::Part * const part = meta_data.get_part(block->name());
-      stk::io::write_side_data_to_ioss(*block, part, bulk, anded_selector, dummy);
+      stk::io::write_side_data_to_ioss(*block, part, bulk, subset_selector, dummy);
     }
   }
 }
@@ -1735,7 +1735,7 @@ void output_side_set(Ioss::SideSet *ss,
 
 void write_output_db(Ioss::Region& io_region,
                      const stk::mesh::BulkData& bulk,
-                     const stk::mesh::Selector *anded_selector)
+                     const stk::mesh::Selector *subset_selector)
 {
   const stk::mesh::MetaData & meta = mesh::MetaData::get(bulk);
 
@@ -1749,18 +1749,18 @@ void write_output_db(Ioss::Region& io_region,
   Ioss::NodeBlock & nb = *io_region.get_node_blocks()[0];
 
   if (ints64bit)
-	output_node_block(nb, meta.universal_part(), bulk, anded_selector, z64);
+	output_node_block(nb, meta.universal_part(), bulk, subset_selector, z64);
   else
-	output_node_block(nb, meta.universal_part(), bulk, anded_selector, z32);
+	output_node_block(nb, meta.universal_part(), bulk, subset_selector, z32);
 
   //----------------------------------
   const Ioss::ElementBlockContainer& elem_blocks = io_region.get_element_blocks();
   for(Ioss::ElementBlockContainer::const_iterator it = elem_blocks.begin();
 	  it != elem_blocks.end(); ++it) {
 	if (ints64bit)
-	  output_element_block(*it, bulk, anded_selector, z64);
+	  output_element_block(*it, bulk, subset_selector, z64);
 	else
-	  output_element_block(*it, bulk, anded_selector, z32);
+	  output_element_block(*it, bulk, subset_selector, z32);
   }
 
   //----------------------------------
@@ -1768,9 +1768,9 @@ void write_output_db(Ioss::Region& io_region,
   for(Ioss::NodeSetContainer::const_iterator it = node_sets.begin();
 	  it != node_sets.end(); ++it) {
 	if (ints64bit)
-	  output_node_set(*it, bulk, anded_selector, z64);
+	  output_node_set(*it, bulk, subset_selector, z64);
 	else
-	  output_node_set(*it, bulk, anded_selector, z32);
+	  output_node_set(*it, bulk, subset_selector, z32);
   }
 
   //----------------------------------
@@ -1778,15 +1778,15 @@ void write_output_db(Ioss::Region& io_region,
   for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
 	  it != side_sets.end(); ++it) {
 	if (ints64bit)
-	  output_side_set(*it, bulk, anded_selector, z64);
+	  output_side_set(*it, bulk, subset_selector, z64);
 	else
-	  output_side_set(*it, bulk, anded_selector, z32);
+	  output_side_set(*it, bulk, subset_selector, z32);
   }
 
   if (ints64bit)
-    output_communication_maps(io_region, bulk, anded_selector, z64);
+    output_communication_maps(io_region, bulk, subset_selector, z64);
   else
-    output_communication_maps(io_region, bulk, anded_selector, z32);
+    output_communication_maps(io_region, bulk, subset_selector, z32);
 
   io_region.end_mode( Ioss::STATE_MODEL );
 }

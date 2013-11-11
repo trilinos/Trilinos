@@ -125,7 +125,7 @@ void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaDat
 void define_output_db( Ioss::Region & io_region,
                        const mesh::BulkData& bulk_data,
                        const Ioss::Region *input_region = NULL,
-                       const stk::mesh::Selector *anded_selector = NULL,
+                       const stk::mesh::Selector *subset_selector = NULL,
                        bool sort_stk_parts = false,
                        bool use_nodeset_for_part_node_fields = true);
 
@@ -139,7 +139,7 @@ void define_output_db( Ioss::Region & io_region,
  */
 void write_output_db( Ioss::Region & io_region ,
                       const mesh::BulkData& bulk,
-                      const stk::mesh::Selector *anded_selector = NULL);
+                      const stk::mesh::Selector *subset_selector = NULL);
 
 
 //----------------------------------------------------------------------
