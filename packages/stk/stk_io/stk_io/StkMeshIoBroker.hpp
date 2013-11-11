@@ -100,7 +100,7 @@ namespace stk {
 
     private:
         // TODO: get_output_region (returned and set in ctor)
-        void define_output_fields(const stk::mesh::BulkData& bulk_data, bool add_all_fields);
+        void define_output_fields(const stk::mesh::BulkData& bulk_data);
         void setup_output_file(const std::string &filename, MPI_Comm communicator, Ioss::PropertyManager &property_manager);
     public:
         int m_current_output_step;
@@ -319,22 +319,6 @@ namespace stk {
          * the above-declared populate_mesh() method.
          */
         void populate_field_data();
-
-        /**
-         * Iterate over all Ioss entities in the input mesh database and
-         * define a stk field for each transient field found.  The stk
-         * field will have the same name as the field on the database.
-         *
-         * Note that all transient fields found on the mesh database will
-         * have a corresponding stk field defined.  If you want just a
-         * selected subset of the database fields defined in the stk mesh,
-         * you need to define the fields manually.
-         *
-         * To populate the stk field with data from the database, call
-         * process_input_request().
-         *
-         */
-        void define_input_fields();
 
         /**
          * For all transient input fields defined either manually or via

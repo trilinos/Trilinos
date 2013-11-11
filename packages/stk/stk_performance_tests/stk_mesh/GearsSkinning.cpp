@@ -277,7 +277,6 @@ Teuchos::RCP<Ioss::Region> create_output_mesh(
     stk::mesh::BulkData &bulk_data,
     const bool skin = false)
 {
-  const bool add_all_fields = false;
   Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(
       "exodusII",
       mesh_filename,
@@ -303,7 +302,7 @@ Teuchos::RCP<Ioss::Region> create_output_mesh(
   // Special processing for nodeblock (all nodes in model)...
   const Ioss::Field::RoleType role_type = skin ? Ioss::Field::ATTRIBUTE : Ioss::Field::TRANSIENT;
   stk::io::ioss_add_fields(stk::mesh::MetaData::get(bulk_data).universal_part(), NODE_RANK,
-                           out_region->get_node_blocks()[0], role_type, add_all_fields);
+                           out_region->get_node_blocks()[0], role_type);
 
   const stk::mesh::PartVector & all_parts = stk::mesh::MetaData::get(bulk_data).get_parts();
   for ( stk::mesh::PartVector::const_iterator ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
@@ -330,7 +329,7 @@ Teuchos::RCP<Ioss::Region> create_output_mesh(
           }
         } else if (entity->type() == Ioss::ELEMENTBLOCK) {
           stk::io::ioss_add_fields(*part, part->primary_entity_rank(),
-                                    entity, Ioss::Field::TRANSIENT, add_all_fields);
+                                    entity, Ioss::Field::TRANSIENT);
         }
       }
     }

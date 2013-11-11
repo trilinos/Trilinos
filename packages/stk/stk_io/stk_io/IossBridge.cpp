@@ -282,7 +282,7 @@ bool will_output_lower_rank_fields(const stk::mesh::Part &part, stk::mesh::Entit
   std::vector<stk::mesh::FieldBase *>::const_iterator I = fields.begin();
   while (I != fields.end()) {
     const stk::mesh::FieldBase *f = *I ; ++I ;
-    if (stk::io::is_valid_part_field(f, rank, part, Ioss::Field::TRANSIENT, false)) {
+    if (stk::io::is_valid_part_field(f, rank, part, Ioss::Field::TRANSIENT)) {
       return true;
     }
   }
@@ -354,12 +354,11 @@ bool is_field_on_part(const stk::mesh::FieldBase *field,
 bool is_valid_part_field(const stk::mesh::FieldBase *field,
                          const stk::mesh::EntityRank part_type,
                          const stk::mesh::Part &part,
-                         const Ioss::Field::RoleType filter_role,
-                         bool add_all)
+                         const Ioss::Field::RoleType filter_role)
 {
   const Ioss::Field::RoleType *role = stk::io::get_field_role(*field);
 
-  if (!add_all && role == NULL) {
+  if (role == NULL) {
 	return false;
   }
 
@@ -643,8 +642,7 @@ void ioss_add_fields(const stk::mesh::Part &part,
                      const stk::mesh::EntityRank part_type,
                      Ioss::GroupingEntity *entity,
                      const std::vector<FieldAndName> &namedFields,
-                     const Ioss::Field::RoleType filter_role,
-                     const bool add_all)
+                     const Ioss::Field::RoleType filter_role)
 {
     stk::mesh::EntityRank part_rank = part_primary_entity_rank(part);
     const stk::mesh::PartVector &blocks = part.subsets();
@@ -653,7 +651,7 @@ void ioss_add_fields(const stk::mesh::Part &part,
     for (size_t i=0;i<namedFields.size();i++)
     {
         const stk::mesh::FieldBase *f = namedFields[i].m_field;
-        if (stk::io::is_valid_part_field(f, part_type, part, filter_role, add_all)) {
+        if (stk::io::is_valid_part_field(f, part_type, part, filter_role)) {
             const stk::mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*f, part_type, part);
             std::pair<std::string, Ioss::Field::BasicType> field_type;
             get_io_field_type(f, res, &field_type);
@@ -668,7 +666,7 @@ void ioss_add_fields(const stk::mesh::Part &part,
 	if (check_subparts) {
 	  for (size_t j = 0; j < blocks.size(); j++) {
 	    mesh::Part & side_block_part = *blocks[j];
-	    if (stk::io::is_valid_part_field(f, part_type, side_block_part, filter_role, add_all)) {
+	    if (stk::io::is_valid_part_field(f, part_type, side_block_part, filter_role)) {
 	      const stk::mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*f, part_type, side_block_part);
 	      std::pair<std::string, Ioss::Field::BasicType> field_type;
 	      get_io_field_type(f, res, &field_type);
@@ -712,22 +710,20 @@ void getNamedFields(const stk::mesh::MetaData &meta, Ioss::GroupingEntity *io_en
 void ioss_add_fields(const stk::mesh::Part &part,
                      const stk::mesh::EntityRank part_type,
                      Ioss::GroupingEntity *entity,
-                     const Ioss::Field::RoleType filter_role,
-                     const bool add_all)
+                     const Ioss::Field::RoleType filter_role)
 {
   std::vector<FieldAndName> namedFields;
   stk::io::getNamedFields(mesh::MetaData::get(part), entity, namedFields);
 
-  ioss_add_fields(part, part_type, entity, namedFields, filter_role, add_all);
+  ioss_add_fields(part, part_type, entity, namedFields, filter_role);
 }
 
 void ioss_add_fields(const stk::mesh::Part &part,
                      const stk::mesh::EntityRank part_type,
                      Ioss::GroupingEntity *entity,
-                     const std::vector<FieldAndName> &namedFields,
-                     const bool add_all)
+                     const std::vector<FieldAndName> &namedFields)
 {
-  ioss_add_fields(part, part_type, entity, namedFields, Ioss::Field::Field::TRANSIENT, add_all);
+  ioss_add_fields(part, part_type, entity, namedFields, Ioss::Field::Field::TRANSIENT);
 }
 
 
@@ -1192,15 +1188,16 @@ void define_element_block(stk::mesh::Part &part,
 
   mesh::Selector selector = meta.locally_owned_part() & part;
   if (anded_selector) selector &= *anded_selector;
+
   const size_t num_elems = count_selected_entities( selector, bulk.buckets(stk::mesh::MetaData::ELEMENT_RANK));
 
   // Defer the counting of attributes until after we define the
   // element block so we can count them as we add them as fields to
   // the element block
   Ioss::ElementBlock *eb = new Ioss::ElementBlock(io_region.get_database() ,
-                                                  part.name() ,
-                                                  map_stk_topology_to_ioss(part.topology()),
-                                                  num_elems);
+						  part.name() ,
+						  map_stk_topology_to_ioss(part.topology()),
+						  num_elems);
   io_region.add(eb);
 
   mesh::Selector *select = new mesh::Selector(selector);
@@ -1546,7 +1543,7 @@ void output_node_block(Ioss::NodeBlock &nb,
   while (I != fields.end()) {
     const mesh::FieldBase *f = *I ; ++I ;
     if (stk::io::is_valid_part_field(f, part_primary_entity_rank(part), part,
-				     Ioss::Field::ATTRIBUTE, false)) {
+				     Ioss::Field::ATTRIBUTE)) {
       stk::io::field_data_to_ioss(bulk, f, nodes, &nb, f->name(), Ioss::Field::ATTRIBUTE);
     }
   }
@@ -1836,6 +1833,87 @@ void set_field_role(stk::mesh::FieldBase &f, const Ioss::Field::RoleType &role)
     }
     delete my_role;
   }
+}
+
+namespace {
+void define_input_nodeblock_fields(Ioss::Region &region, stk::mesh::MetaData &meta)
+{
+  const Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();
+  assert(node_blocks.size() == 1);
+
+  Ioss::NodeBlock *nb = node_blocks[0];
+  stk::io::define_io_fields(nb, Ioss::Field::TRANSIENT,
+			    meta.universal_part(), stk::mesh::MetaData::NODE_RANK);
+}
+
+void define_input_elementblock_fields(Ioss::Region &region, stk::mesh::MetaData &meta)
+{
+  const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
+  for(size_t i=0; i < elem_blocks.size(); i++) {
+    if (stk::io::include_entity(elem_blocks[i])) {
+      stk::mesh::Part* const part = meta.get_part(elem_blocks[i]->name());
+      assert(part != NULL);
+      stk::io::define_io_fields(elem_blocks[i], Ioss::Field::TRANSIENT,
+				*part, part_primary_entity_rank(*part));
+    }
+  }
+}
+
+void define_input_nodeset_fields(Ioss::Region &region, stk::mesh::MetaData &meta)
+{
+  const Ioss::NodeSetContainer& nodesets = region.get_nodesets();
+  for(size_t i=0; i < nodesets.size(); i++) {
+    if (stk::io::include_entity(nodesets[i])) {
+      stk::mesh::Part* const part = meta.get_part(nodesets[i]->name());
+      assert(part != NULL);
+      stk::io::define_io_fields(nodesets[i], Ioss::Field::TRANSIENT,
+				*part, part_primary_entity_rank(*part));
+    }
+  }
+}
+
+void define_input_sideset_fields(Ioss::Region &region, stk::mesh::MetaData &meta)
+{
+  if (meta.spatial_dimension() <= meta.side_rank())
+    return;
+
+  const Ioss::SideSetContainer& side_sets = region.get_sidesets();
+  for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
+      it != side_sets.end(); ++it) {
+    Ioss::SideSet *entity = *it;
+    if (stk::io::include_entity(entity)) {
+      const Ioss::SideBlockContainer& blocks = entity->get_side_blocks();
+      for(size_t i=0; i < blocks.size(); i++) {
+	if (stk::io::include_entity(blocks[i])) {
+	  stk::mesh::Part* const part = meta.get_part(blocks[i]->name());
+	  assert(part != NULL);
+	  stk::io::define_io_fields(blocks[i], Ioss::Field::TRANSIENT,
+				    *part, part_primary_entity_rank(*part));
+	}
+      }
+    }
+  }
+}
+}
+
+// ========================================================================
+// Iterate over all Ioss entities in the input mesh Ioss region and
+// define a stk_field for all transient fields found.  The stk field
+// will have the same name as the field on the database.
+//
+// Note that all fields found on the database will have a
+// corresponding stk field defined.  If you want just a selected
+// subset of the defined fields, you will need to define the fields
+// manually.
+//
+// To populate the stk field with data from the database, call
+// process_input_request().
+void define_input_fields(Ioss::Region &region,  stk::mesh::MetaData &meta)
+{
+  define_input_nodeblock_fields(region, meta);
+  define_input_elementblock_fields(region, meta);
+  define_input_nodeset_fields(region, meta);
+  define_input_sideset_fields(region, meta);
 }
 
 }//namespace io

@@ -44,7 +44,9 @@ namespace {
 
     // This is done just to define some fields in stk
     // that can be used later for reading restart data.
-    mesh_data.define_input_fields();
+    Ioss::Region *io_region = mesh_data.input_io_region().get();
+    stk::io::define_input_fields(*io_region, mesh_data.meta_data());
+
     mesh_data.populate_bulk_data();
 
     // ========================================================================

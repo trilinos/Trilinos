@@ -159,7 +159,7 @@ void write_output_db( Ioss::Region & io_region ,
  *
  * The 'filter_role' only selects fields with the specified role
  * (e.g., TRANSIENT, ATTRIBUTE, ..., see Ioss documentation for
- * valid roles) unless 'add_all == true' is specified.
+ * valid roles)
  *
  * The field's role is defined via a call to
  * 'stk::io::set_field_role'
@@ -167,8 +167,7 @@ void write_output_db( Ioss::Region & io_region ,
 bool is_valid_part_field(const stk::mesh::FieldBase *field,
                          const stk::mesh::EntityRank part_type,
                          const stk::mesh::Part &part,
-                         const Ioss::Field::RoleType filter_role,
-                         const bool add_all = false);
+                         const Ioss::Field::RoleType filter_role);
 
 bool is_field_on_part(const stk::mesh::FieldBase *field,
 		      const stk::mesh::EntityRank part_type,
@@ -198,14 +197,28 @@ void getNamedFields(const stk::mesh::MetaData &meta, Ioss::GroupingEntity *io_en
 void ioss_add_fields(const stk::mesh::Part &part,
                      const stk::mesh::EntityRank part_type,
                      Ioss::GroupingEntity *entity,
-                     const Ioss::Field::RoleType filter_role,
-                     const bool add_all = false);
+                     const Ioss::Field::RoleType filter_role);
 
 void ioss_add_fields(const stk::mesh::Part &part,
                      const stk::mesh::EntityRank part_type,
                      Ioss::GroupingEntity *entity,
-                     const std::vector<FieldAndName> &namedFields,
-                     const bool add_all = false);
+                     const std::vector<FieldAndName> &namedFields);
+
+/**
+ * Iterate over all Ioss entities in the input mesh Ioss Region and
+ * define a stk field for each transient field found.  The stk field
+ * will have the same name as the field on the database.
+ *
+ * Note that all transient fields found on the mesh database will
+ * have a corresponding stk field defined.  If you want just a
+ * selected subset of the database fields defined in the stk mesh,
+ * you need to define the fields manually.
+ *
+ * To populate the stk field with data from the database, call
+ * StkMeshIoBroker::process_input_request().
+ *
+ */
+void define_input_fields(Ioss::Region &region,  stk::mesh::MetaData &meta);
 
 /**
  * For the given Ioss::GroupingEntity "entity", find all fields that

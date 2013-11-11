@@ -1504,91 +1504,8 @@ namespace stk {
           }
         }
       }
-
-      void define_input_nodeblock_fields(Ioss::Region &region, stk::mesh::MetaData &meta)
-      {
-        const Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();
-        assert(node_blocks.size() == 1);
-
-        Ioss::NodeBlock *nb = node_blocks[0];
-        stk::io::define_io_fields(nb, Ioss::Field::TRANSIENT,
-                                  meta.universal_part(), stk::mesh::MetaData::NODE_RANK);
-      }
-
-      void define_input_elementblock_fields(Ioss::Region &region, stk::mesh::MetaData &meta)
-      {
-        const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
-        for(size_t i=0; i < elem_blocks.size(); i++) {
-          if (stk::io::include_entity(elem_blocks[i])) {
-            stk::mesh::Part* const part = meta.get_part(elem_blocks[i]->name());
-            assert(part != NULL);
-            stk::io::define_io_fields(elem_blocks[i], Ioss::Field::TRANSIENT,
-				      *part, part_primary_entity_rank(*part));
-          }
-        }
-      }
-
-      void define_input_nodeset_fields(Ioss::Region &region, stk::mesh::MetaData &meta)
-      {
-        const Ioss::NodeSetContainer& nodesets = region.get_nodesets();
-        for(size_t i=0; i < nodesets.size(); i++) {
-          if (stk::io::include_entity(nodesets[i])) {
-            stk::mesh::Part* const part = meta.get_part(nodesets[i]->name());
-            assert(part != NULL);
-            stk::io::define_io_fields(nodesets[i], Ioss::Field::TRANSIENT,
-				      *part, part_primary_entity_rank(*part));
-          }
-        }
-      }
-
-      void define_input_sideset_fields(Ioss::Region &region, stk::mesh::MetaData &meta)
-      {
-        if (meta.spatial_dimension() <= meta.side_rank())
-          return;
-
-        const Ioss::SideSetContainer& side_sets = region.get_sidesets();
-        for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
-            it != side_sets.end(); ++it) {
-          Ioss::SideSet *entity = *it;
-          if (stk::io::include_entity(entity)) {
-            const Ioss::SideBlockContainer& blocks = entity->get_side_blocks();
-            for(size_t i=0; i < blocks.size(); i++) {
-              if (stk::io::include_entity(blocks[i])) {
-                stk::mesh::Part* const part = meta.get_part(blocks[i]->name());
-                assert(part != NULL);
-                stk::io::define_io_fields(blocks[i], Ioss::Field::TRANSIENT,
-					  *part, part_primary_entity_rank(*part));
-              }
-            }
-          }
-        }
-      }
-
     }
-
-    // ========================================================================
-    // Iterate over all Ioss entities in the input mesh database and
-    // define a stk_field for all transient fields found.  The stk
-    // field will have the same name as the field on the database.
-    //
-    // Note that all fields found on the database will have a
-    // corresponding stk field defined.  If you want just a selected
-    // subset of the defined fields, you will need to define the
-    // fields manually.
-    //
-    // To populate the stk field with data from the database, call
-    // process_input_request().
-    void StkMeshIoBroker::define_input_fields()
-    {
-      ThrowErrorMsgIf (Teuchos::is_null(m_input_region),
-		       "There is no Mesh Input Region associated with this Mesh Data.");
-      Ioss::Region *region = m_input_region.get();
-      define_input_nodeblock_fields(*region, meta_data());
-      define_input_elementblock_fields(*region, meta_data());
-      define_input_nodeset_fields(*region, meta_data());
-      define_input_sideset_fields(*region, meta_data());
-    }
-
+    
     // ========================================================================
     void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &name, const stk::util::Parameter &param)
     {
@@ -1903,8 +1820,7 @@ namespace stk {
     void OutputFile::begin_output_step(double time, const stk::mesh::BulkData& bulk_data)
     {
         if (!m_fields_defined) {
-            bool output_all_fields = false;
-            define_output_fields(bulk_data, output_all_fields);
+	    define_output_fields(bulk_data);
         }
 
         //Attempt to avoid putting state change into the interface.  We'll see . . .
@@ -1932,7 +1848,7 @@ namespace stk {
     //
     // To export the data to the database, call
     // process_output_request().
-    void OutputFile::define_output_fields(const stk::mesh::BulkData& bulk_data, bool add_all_fields)
+    void OutputFile::define_output_fields(const stk::mesh::BulkData& bulk_data)
     {
         if(m_fields_defined) {
             return;
@@ -1951,7 +1867,7 @@ namespace stk {
         const stk::mesh::MetaData &meta_data = bulk_data.mesh_meta_data();
         // Special processing for nodeblock (all nodes in model)...
         stk::io::ioss_add_fields(meta_data.universal_part(), stk::mesh::MetaData::NODE_RANK, region->get_node_blocks()[0],
-                m_named_fields, add_all_fields);
+                m_named_fields);
 
         const stk::mesh::PartVector &all_parts = meta_data.get_parts();
         for(stk::mesh::PartVector::const_iterator ip = all_parts.begin(); ip != all_parts.end(); ++ip) {
@@ -1963,7 +1879,7 @@ namespace stk {
                 // Get Ioss::GroupingEntity corresponding to this part...
                 Ioss::GroupingEntity *entity = region->get_entity(part->name());
                 if(entity != NULL) {
-                    stk::io::ioss_add_fields(*part, rank, entity, m_named_fields, add_all_fields);
+                    stk::io::ioss_add_fields(*part, rank, entity, m_named_fields);
                 }
 
                 // If rank is != NODE_RANK, then see if any fields are defined on the nodes of this part
@@ -1978,8 +1894,7 @@ namespace stk {
                         node_entity = region->get_entity("nodeblock_1");
                     }
                     if(node_entity != NULL) {
-                        stk::io::ioss_add_fields(*part, stk::mesh::MetaData::NODE_RANK, node_entity, m_named_fields,
-                                add_all_fields);
+		        stk::io::ioss_add_fields(*part, stk::mesh::MetaData::NODE_RANK, node_entity, m_named_fields);
                     }
                 }
             }
