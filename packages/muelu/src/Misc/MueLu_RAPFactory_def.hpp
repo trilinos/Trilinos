@@ -174,8 +174,38 @@ namespace MueLu {
 
       // call Build of all user-given transfer factories
       for (std::vector<RCP<const FactoryBase> >::const_iterator it = transferFacts_.begin(); it != transferFacts_.end(); ++it) {
-        GetOStream(Runtime0, 0) << "RAPFactory: call transfer factory: " << (*it)->description() << std::endl;
-        (*it)->CallBuild(coarseLevel);
+        RCP<const FactoryBase> fac = *it;
+        GetOStream(Runtime0, 0) << "RAPFactory: call transfer factory: " << fac->description() << std::endl;
+        fac->CallBuild(coarseLevel);
+        // Coordinates transfer is marginally different from all other operations
+        // because it is *optional*, and not required. For instance, we may need
+        // coordinates only on level 4 if we start repartitioning from that level,
+        // but we don't need them on level 1,2,3. As our current Hierarchy setup
+        // assumes propagation of dependencies only through three levels, this
+        // means that we need to rely on other methods to propagate optional data.
+        //
+        // The method currently used is through RAP transfer factories, which are
+        // simply factories which are called at the end of RAP with a single goal:
+        // transfer some fine data to coarser level. Because these factories are
+        // kind of outside of the mainline factories, they behave different. In
+        // particular, we call their Build method explicitly, rather than through
+        // Get calls. This difference is significant, as the Get call is smart
+        // enough to know when to release all factory dependencies, and Build is
+        // dumb. This led to the following CoordinatesTransferFactory sequence:
+        // 1. Request level 0
+        // 2. Request level 1
+        // 3. Request level 0
+        // 4. Release level 0
+        // 5. Release level 1
+        //
+        // The problem is missing "6. Release level 0". Because it was missing,
+        // we had outstanding request on "Coordinates", "Aggregates" and
+        // "CoarseMap" on level 0.
+        //
+        // This was fixed by explicitly calling Release on transfer factories in
+        // RAPFactory. I am still unsure how exactly it works, but now we have
+        // clear data requests for all levels.
+        coarseLevel.Release(*fac);
       }
     }
 
