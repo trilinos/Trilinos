@@ -662,7 +662,7 @@ namespace MueLu {
     GetOStream(Statistics0, 0) << "Number of unassigned paritions before cleanup stage: " << (numPartitions - numMatched) << " / " << numPartitions << std::endl;
 
     // Step 4 [optional]: Keep processor 0
-    if (keepProc0)
+    if (keepProc0) {
       if (matchedRanks[0] == 0) {
         // Reassign partition to processor 0
         // The hope is that partition which we mapped last has few elements in it
@@ -675,6 +675,7 @@ namespace MueLu {
         GetOStream(Statistics0, 0) << "No remapping is necessary despite that \"alwaysKeepProc0\" option is on,"
             " as processor 0 already receives some data" << std::endl;
       }
+    }
 
     // Step 5: Assign unassigned partitions
     // We do that through random matching for remaining partitions. Not all part numbers are valid, but valid parts are a subset of [0, numProcs).
