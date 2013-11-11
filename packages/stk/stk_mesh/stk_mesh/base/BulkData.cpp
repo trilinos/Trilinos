@@ -1221,24 +1221,6 @@ RelationIterator BulkData::find_aux_relation(Entity entity, const Relation& rela
   return sierra::Fmwk::INVALID_RELATION_ITR;
 }
 
-void BulkData::set_relation_orientation(Entity from, RelationIterator rel, unsigned orientation)
-{
-  ThrowAssert(!impl::internal_is_handled_generically(rel->getRelationType()));
-
-  const RelationType backRelType = back_relation_type(rel->getRelationType());
-
-  Entity meshObj = rel->entity();
-  Relation backRel_obj(entity_rank(from), from, backRelType, rel->getOrdinal(), rel->getOrientation());
-  RelationIterator backRel_itr = find_aux_relation(meshObj, backRel_obj);
-
-  ThrowRequire(backRel_itr != sierra::Fmwk::INVALID_RELATION_ITR);
-
-  // Allow clients to make changes to orientation
-  // Orientations do not affect Relation ordering, so this is safe.
-  const_cast<Relation*>(&*rel)->setOrientation(orientation);
-  const_cast<Relation*>(&*backRel_itr)->setOrientation(orientation);
-}
-
 void BulkData::set_relation_orientation(Entity from, Entity to, ConnectivityOrdinal to_ord, unsigned to_orientation)
 {
   const EntityRank from_rank = entity_rank(from);

@@ -925,8 +925,6 @@ public:
     m_fmwk_connect_counts[entity.local_offset()] = count;
   }
 
-  void set_relation_orientation(Entity from, RelationIterator rel, unsigned orientation);
-
   void set_relation_orientation(Entity from, Entity to, ConnectivityOrdinal to_ord, unsigned to_orientation);
 
   void reserve_relation(Entity entity, const unsigned num);
