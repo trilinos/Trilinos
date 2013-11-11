@@ -46,28 +46,14 @@
 /// \file Ifpack2_BlockRelaxation_decl.hpp
 /// \brief Ifpack2::BlockRelaxation class declaration
 
-#include "Ifpack2_ConfigDefs.hpp"
-#include "Ifpack2_Preconditioner.hpp"
-#include "Ifpack2_Condest.hpp"
-#include "Ifpack2_Parameters.hpp"
-#include "Ifpack2_Partitioner.hpp"
-
-#include <Tpetra_Vector.hpp>
-
-#include <Teuchos_Assert.hpp>
-#include <Teuchos_RCP.hpp>
+#include <Ifpack2_ConfigDefs.hpp>
+#include <Ifpack2_Preconditioner.hpp>
+#include <Ifpack2_Partitioner.hpp>
 #include <Teuchos_Time.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-
 #include <string>
 #include <iostream>
 #include <sstream>
 
-namespace Teuchos {
-  // forward declaration
-  class ParameterList;
-}
 
 namespace Ifpack2 {
 

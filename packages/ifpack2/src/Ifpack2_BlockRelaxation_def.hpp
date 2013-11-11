@@ -45,10 +45,11 @@
 
 #include "Ifpack2_BlockRelaxation_decl.hpp"
 #include "Ifpack2_LinearPartitioner_decl.hpp"
+#include <Ifpack2_Condest.hpp>
+#include <Ifpack2_Parameters.hpp>
 
 namespace Ifpack2 {
 
-//==========================================================================
 template<class MatrixType,class ContainerType>
 BlockRelaxation<MatrixType,ContainerType>::
 BlockRelaxation (const Teuchos::RCP<const row_matrix_type>& A)
