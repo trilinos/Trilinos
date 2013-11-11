@@ -65,6 +65,69 @@ void Objective<Real>::hessVec( Vector<Real> &hv, const Vector<Real> &v, const Ve
   hv.scale(1.0/h);
 } 
 
+template <class Real>
+std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Real> &x,
+                                                                const Vector<Real> &d,
+                                                                const bool printToScreen ) {
+  int numSteps = 13;
+  int numVals = 4;
+  std::vector<Real> tmp(numVals);
+  std::vector<std::vector<Real> > gCheck(numSteps, tmp);
+  Real eta_factor = 1e-1;
+  Real eta = 1.0;
+
+  std::ios::fmtflags f( std::cout.flags() );
+
+  // Compute gradient at x.
+  Teuchos::RCP<Vector<Real> > g = x.clone();
+  this->gradient(*g, x);
+
+  // Temporary vectors.
+  Teuchos::RCP<Vector<Real> > xnew = x.clone();
+
+  // Evaluate objective value at x.
+  Real fval_at_x = this->value(x);
+
+  Real fval_at_xnew = 0;
+  for (int i=0; i<numSteps; i++) {
+    // Evaluate objective value at x+eta*d.
+    xnew->set(x);
+    xnew->axpy(eta, d);
+    fval_at_xnew = this->value(*xnew);
+
+    // Compute gradient, finite-difference gradient, and absolute error.
+    gCheck[i][0] = eta;
+    gCheck[i][1] = d.dot(*g);
+    gCheck[i][2] = (fval_at_xnew - fval_at_x) / eta;
+    gCheck[i][3] = gCheck[i][2] - gCheck[i][1];
+
+    if (printToScreen) {
+      if (i==0) {
+      std::cout << std::right
+                << std::setw(20) << "Step size"
+                << std::setw(20) << "grad'*dir"
+                << std::setw(20) << "FD approx"
+                << std::setw(20) << "abs error"
+                << "\n";
+      }
+      std::cout << std::scientific << std::setprecision(8) << std::right
+                << std::setw(20) << gCheck[i][0]
+                << std::setw(20) << gCheck[i][1]
+                << std::setw(20) << gCheck[i][2]
+                << std::setw(20) << gCheck[i][3]
+                << "\n";
+    }
+
+    // Update eta.
+    eta = eta*eta_factor;
+  }
+
+  std::cout.flags( f );
+
+  return gCheck;
+} // checkGradient
+
+
 } // namespace ROL
 
 #endif

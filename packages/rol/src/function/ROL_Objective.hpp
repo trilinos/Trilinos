@@ -13,6 +13,7 @@
 #define ROL_OBJECTIVE_H
 
 #include "ROL_Vector.hpp"
+#include <iostream>
 
 /** \class ROL::Objective
     \brief Provides the interface to evaluate objective functions.
@@ -52,6 +53,10 @@ public:
   virtual void precond( Vector<Real> &Pv, const Vector<Real> &v, const Vector<Real> &x ) {
     Pv.set(v);
   }
+
+  /** \brief Finite-difference gradient check.
+  */
+  virtual std::vector<std::vector<Real> > checkGradient( const Vector<Real> &x, const Vector<Real> &d, const bool printToScreen = true ) ;
   
   // struct StepState (scalars, vectors) map?
 

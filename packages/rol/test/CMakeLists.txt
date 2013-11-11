@@ -1,5 +1,7 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
+ADD_SUBDIRECTORY(function)
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   VersionCheck
   SOURCES ROL_VersionCheck.cpp
