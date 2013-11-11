@@ -105,7 +105,7 @@ void Krylov<MatrixType,PrecType>::setParameters(const Teuchos::ParameterList& pa
 
 //==========================================================================
 template <class MatrixType, class PrecType>
-Teuchos::RCP<const Teuchos::Comm<int> > 
+Teuchos::RCP<const Teuchos::Comm<int> >
 Krylov<MatrixType,PrecType>::getComm () const {
   return Comm_;
 }
@@ -210,16 +210,14 @@ void Krylov<MatrixType,PrecType>::initialize() {
   if(PreconditionerType_==0) {
     // no preconditioner
   }
-  else if(PreconditionerType_==1) { 
+  else if(PreconditionerType_==1) {
     ifpack2_prec_=Teuchos::rcp( new Relaxation<MatrixType>(A_) );
   }
   else if(PreconditionerType_==2) {
     ifpack2_prec_=Teuchos::rcp( new ILUT<MatrixType>(A_) );
   }
   else if(PreconditionerType_==3) {
-    int overlaplevel=0;
-    Ifpack2::getParameter(params_, "schwarz: overlap level",overlaplevel);
-    ifpack2_prec_=Teuchos::rcp( new AdditiveSchwarz< MatrixType,ILUT<MatrixType> >(A_,overlaplevel) );
+    ifpack2_prec_ = Teuchos::rcp (new AdditiveSchwarz<MatrixType, ILUT<MatrixType> > (A_));
   }
   else if(PreconditionerType_==4) {
     ifpack2_prec_=Teuchos::rcp( new Chebyshev<MatrixType>(A_) );
@@ -231,11 +229,11 @@ void Krylov<MatrixType,PrecType>::initialize() {
   belosProblem_ = Teuchos::rcp( new Belos::LinearProblem<scalar_type,TMV,TOP> );
   belosProblem_ -> setOperator(A_);
   if(IterationType_==1) {
-    belosSolver_ = 
+    belosSolver_ =
       Teuchos::rcp( new Belos::BlockGmresSolMgr<scalar_type,TMV,TOP> (belosProblem_, belosList_) );
   }
   else {
-    belosSolver_ = 
+    belosSolver_ =
       Teuchos::rcp( new Belos::BlockCGSolMgr<scalar_type,TMV,TOP> (belosProblem_, belosList_) );
   }
   IsInitialized_ = true;
@@ -269,16 +267,16 @@ void Krylov<MatrixType,PrecType>::compute() {
 //==========================================================================
 template <class MatrixType, class PrecType>
 void Krylov<MatrixType,PrecType>::apply(const Tpetra::MultiVector<typename MatrixType::scalar_type,
-			      typename MatrixType::local_ordinal_type,
-			      typename MatrixType::global_ordinal_type,
-			      typename MatrixType::node_type>& X,
-			      Tpetra::MultiVector<typename MatrixType::scalar_type,
-			      typename MatrixType::local_ordinal_type,
-			      typename MatrixType::global_ordinal_type,
-			      typename MatrixType::node_type>& Y,
-			      Teuchos::ETransp mode,
-			      typename MatrixType::scalar_type alpha,
-			      typename MatrixType::scalar_type beta) const
+                              typename MatrixType::local_ordinal_type,
+                              typename MatrixType::global_ordinal_type,
+                              typename MatrixType::node_type>& X,
+                              Tpetra::MultiVector<typename MatrixType::scalar_type,
+                              typename MatrixType::local_ordinal_type,
+                              typename MatrixType::global_ordinal_type,
+                              typename MatrixType::node_type>& Y,
+                              Teuchos::ETransp mode,
+                              typename MatrixType::scalar_type alpha,
+                              typename MatrixType::scalar_type beta) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(!isComputed(), std::runtime_error,
     "Ifpack2::Krylov::apply() ERROR, compute() hasn't been called yet.");
@@ -298,7 +296,7 @@ void Krylov<MatrixType,PrecType>::apply(const Tpetra::MultiVector<typename Matri
     Xcopy = Teuchos::rcp( &X, false );
   }
 
-  const Teuchos::RCP< Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Zeros = 
+  const Teuchos::RCP< Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Zeros =
     Teuchos::rcp( new Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> (Y) );
   if(ZeroStartingSolution_==true) {
     Zeros->putScalar((scalar_type) 0.0);

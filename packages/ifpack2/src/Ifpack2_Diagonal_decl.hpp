@@ -65,11 +65,11 @@ When Ifpack2::Diagonal is constructed with a vector, \f$D\f$ is the caller-suppl
 \date Ifpack2 conversion (from Ifpack code) 31-Mar-2010
  */
 template<class MatrixType>
-class Diagonal : 
+class Diagonal :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
-					   typename MatrixType::local_ordinal_type,
-					   typename MatrixType::global_ordinal_type,
-					   typename MatrixType::node_type> {
+                                           typename MatrixType::local_ordinal_type,
+                                           typename MatrixType::global_ordinal_type,
+                                           typename MatrixType::node_type> {
 public:
   typedef typename MatrixType::scalar_type Scalar;
   typedef typename MatrixType::local_ordinal_type LocalOrdinal;
@@ -117,10 +117,10 @@ public:
   }
 
   //! @name Methods implementing a Tpetra::Operator interface.
-  //@{ 
+  //@{
 
   //! Applies the preconditioner to X, returns the result in Y.
-  /*! 
+  /*!
     \param
     X - (In) A Tpetra::MultiVector of dimension NumVectors to be preconditioned.
     \param
@@ -130,30 +130,30 @@ public:
 
     \warning This routine is NOT AztecOO compliant.
   */
-  void 
+  void
   apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-	 Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-	 Teuchos::ETransp mode = Teuchos::NO_TRANS,
-	 Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-	 Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+         Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+         Teuchos::ETransp mode = Teuchos::NO_TRANS,
+         Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+         Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
 
   //! Returns the Tpetra::Map object associated with the domain of this operator.
-  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > 
-  getDomainMap () const { 
-    return domainMap_; 
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
+  getDomainMap () const {
+    return domainMap_;
   }
 
   //! Returns the Tpetra::Map object associated with the range of this operator.
-  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > 
-  getRangeMap() const { 
-    return rangeMap_; 
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
+  getRangeMap() const {
+    return rangeMap_;
   }
 
   //! Applies the matrix to a Tpetra::MultiVector.
-  /*! 
-    \param 
+  /*!
+    \param
     X - (In) A Tpetra::MultiVector of dimension NumVectors to multiply with matrix.
-    \param 
+    \param
     Y - (Out) A Tpetra::MultiVector of dimension NumVectors containing the result.
     */
   void applyMat(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
@@ -164,35 +164,16 @@ public:
   //! \name Mathematical functions.
   //@{
 
-  //! Applies the preconditioner to X, returns the result in Y.
-  /*! 
-    \param
-    X - (In) A Tpetra::MultiVector of dimension NumVectors to be preconditioned.
-    \param
-    Y - (InOut) A Tpetra::MultiVector of dimension NumVectors containing result.
-
-    \return Integer error code, set to 0 if successful.
-
-    \warning This routine is NOT AztecOO compliant.
-  */
-  template <class DomainScalar, class RangeScalar>
-  void
-  applyTempl (const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-	      Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-	      Teuchos::ETransp mode = Teuchos::NO_TRANS,
-	      RangeScalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-	      RangeScalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
-
   //! Computes the estimated condition number and returns the value.
   magnitudeType
   computeCondEst (CondestType CT = Cheap,
-		  LocalOrdinal MaxIters = 1550,
-		  magnitudeType Tol = 1e-9,
-		  const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &matrix = Teuchos::null);
+                  LocalOrdinal MaxIters = 1550,
+                  magnitudeType Tol = 1e-9,
+                  const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &matrix = Teuchos::null);
 
   //@}
   //! \name Attribute accessor methods
-  //@{ 
+  //@{
 
   //! Return the computed estimated condition number, or -1.0 if no computed.
   magnitudeType getCondEst() const
@@ -202,9 +183,9 @@ public:
   Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
   //! Return a reference to the matrix to be preconditioned.
-  Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
-  getMatrix () const { 
-    return matrix_; 
+  Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  getMatrix () const {
+    return matrix_;
   }
 
   //! Return the number of flops in the computation phase.
@@ -232,7 +213,7 @@ public:
   double getApplyTime() const;
 
   //@}
-  //! @name Implementation of Teuchos::Describable 
+  //! @name Implementation of Teuchos::Describable
   //@{
 
   /** \brief Return a simple one-line description of this object. */

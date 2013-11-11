@@ -739,30 +739,17 @@ void ILUT<MatrixType>::compute() {
 
 
 template <class MatrixType>
-void ILUT<MatrixType>::apply(
-           const Tpetra::MultiVector<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& X,
-                 Tpetra::MultiVector<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& Y,
-                 Teuchos::ETransp mode,
-               typename MatrixType::scalar_type alpha,
-               typename MatrixType::scalar_type beta) const
-{
-  this->template applyTempl<scalar_type,scalar_type>(X, Y, mode, alpha, beta);
-}
-
-
-template <class MatrixType>
-template <class DomainScalar, class RangeScalar>
-void ILUT<MatrixType>::applyTempl(
-           const Tpetra::MultiVector<DomainScalar, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& X,
-                 Tpetra::MultiVector<RangeScalar, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& Y,
-                 Teuchos::ETransp mode,
-               RangeScalar alpha,
-               RangeScalar beta) const
+void ILUT<MatrixType>::
+apply (const Tpetra::MultiVector<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& X,
+       Tpetra::MultiVector<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& Y,
+       Teuchos::ETransp mode,
+       typename MatrixType::scalar_type alpha,
+       typename MatrixType::scalar_type beta) const
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
-  typedef Tpetra::MultiVector<DomainScalar, local_ordinal_type, global_ordinal_type, node_type> MV;
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
 
   Teuchos::Time timer ("ILUT::apply");
   { // Timer scope for timing apply()
@@ -779,13 +766,13 @@ void ILUT<MatrixType>::applyTempl(
       "X has " << X.getNumVectors () << " columns, but Y has "
       << Y.getNumVectors () << " columns.");
 
-    if (alpha == Teuchos::ScalarTraits<RangeScalar>::zero ()) {
+    if (alpha == Teuchos::ScalarTraits<scalar_type>::zero ()) {
       // alpha == 0, so we don't need to apply the operator.
       //
       // The special case for beta == 0 ensures that if Y contains Inf
       // or NaN values, we replace them with 0 (following BLAS
       // convention), rather than multiplying them by 0 to get NaN.
-      if (beta == Teuchos::ScalarTraits<RangeScalar>::zero ()) {
+      if (beta == Teuchos::ScalarTraits<scalar_type>::zero ()) {
         Y.putScalar (beta);
       } else {
         Y.scale (beta);
@@ -796,7 +783,7 @@ void ILUT<MatrixType>::applyTempl(
     // If beta != 0, create a temporary multivector Y_temp to hold the
     // contents of alpha*M^{-1}*X.  Otherwise, alias Y_temp to Y.
     RCP<MV> Y_temp;
-    if (beta == Teuchos::ScalarTraits<RangeScalar>::zero ()) {
+    if (beta == Teuchos::ScalarTraits<scalar_type>::zero ()) {
       Y_temp = rcpFromRef (Y);
     } else {
       Y_temp = rcp (new MV (Y.getMap (), Y.getNumVectors ()));
@@ -818,19 +805,19 @@ void ILUT<MatrixType>::applyTempl(
     RCP<MV> Y_mid = rcp (new MV (Y.getMap (), Y.getNumVectors ()));
 
     if (mode == Teuchos::NO_TRANS) { // Solve L U Y = X
-      L_->template localSolve<RangeScalar,DomainScalar> (*X_temp, *Y_mid, mode);
+      L_->template localSolve<scalar_type, scalar_type> (*X_temp, *Y_mid, mode);
       // FIXME (mfh 20 Aug 2013) Is it OK to use Y_temp for both the
       // input and the output?
-      U_->template localSolve<RangeScalar,RangeScalar> (*Y_mid, *Y_temp, mode);
+      U_->template localSolve<scalar_type, scalar_type> (*Y_mid, *Y_temp, mode);
     }
     else { // Solve U^* L^* Y = X
-      U_->template localSolve<RangeScalar,DomainScalar> (*X_temp, *Y_mid, mode);
+      U_->template localSolve<scalar_type, scalar_type> (*X_temp, *Y_mid, mode);
       // FIXME (mfh 20 Aug 2013) Is it OK to use Y_temp for both the
       // input and the output?
-      L_->template localSolve<RangeScalar,RangeScalar> (*Y_mid, *Y_temp, mode);
+      L_->template localSolve<scalar_type, scalar_type> (*Y_mid, *Y_temp, mode);
     }
 
-    if (beta == Teuchos::ScalarTraits<RangeScalar>::zero ()) {
+    if (beta == Teuchos::ScalarTraits<scalar_type>::zero ()) {
       Y.scale (alpha);
     } else { // beta != 0
       Y.update (alpha, *Y_temp, beta);

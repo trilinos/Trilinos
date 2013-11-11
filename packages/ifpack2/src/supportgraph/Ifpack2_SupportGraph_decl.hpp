@@ -140,7 +140,7 @@ public:
   typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
   //! Preserved only for backwards compatibility.  Please use "magnitude_type".
-  TEUCHOS_DEPRECATED typedef typename 
+  TEUCHOS_DEPRECATED typedef typename
   Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
 
   //@}
@@ -178,7 +178,7 @@ public:
   void setParameters (const Teuchos::ParameterList& params);
 
 
-  
+
 
 
   /// \brief Clear any previously computed support graph.
@@ -213,7 +213,7 @@ public:
   //! @name Methods implementing Tpetra::Operator.
   //@{
 
-  //! Returns the result of a SupportGraph forward/back solve on a 
+  //! Returns the result of a SupportGraph forward/back solve on a
   //! Tpetra::MultiVector X in Y.
   /*!
     \param
@@ -231,14 +231,14 @@ public:
              scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! Tpetra::Map representing the domain of this operator.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> > 
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> >
   getDomainMap() const;
 
   //! Tpetra::Map representing the range of this operator.
   Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type,
                                  node_type> > getRangeMap() const;
 
-  //! Whether this object's apply() method can apply the transpose 
+  //! Whether this object's apply() method can apply the transpose
   //! (or conjugate transpose, if applicable).
   bool hasTransposeApply() const;
 
@@ -247,29 +247,12 @@ public:
   //@{
   //! \name Mathematical functions.
 
-  //! Returns the result of a SupportGraph forward/back solve on a Tpetra::MultiVector X in Y.
-  /*!
-    \param
-    X - (In) A Tpetra::MultiVector of dimension NumVectors to solve for.
-    \param
-    Y - (Out) A Tpetra::MultiVector of dimension NumVectors containing result.
-  */
-  template<class DomainScalar, class RangeScalar>
-  void applyTempl(
-                  const Tpetra::MultiVector
-                  <DomainScalar, local_ordinal_type, global_ordinal_type, node_type>& X,
-                  Tpetra::MultiVector
-                  <RangeScalar, local_ordinal_type, global_ordinal_type, node_type>& Y,
-                  Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                  RangeScalar alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-                  RangeScalar beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
-
   //! Computes the estimated condition number and returns the value.
   magnitude_type computeCondEst(CondestType CT = Cheap, local_ordinal_type MaxIters = 1550,
-                                magnitude_type Tol = 1e-9, 
+                                magnitude_type Tol = 1e-9,
                                 const Teuchos::Ptr<const Tpetra::RowMatrix
-                                <scalar_type, local_ordinal_type, 
-                                global_ordinal_type, node_type> > &Matrix_in 
+                                <scalar_type, local_ordinal_type,
+                                global_ordinal_type, node_type> > &Matrix_in
                                 = Teuchos::null);
 
   //! Returns the computed estimated condition number, or -1.0 if no computed.
@@ -280,7 +263,7 @@ public:
 
   //! Returns a reference to the matrix to be preconditioned.
   Teuchos::RCP<const Tpetra::RowMatrix
-               <scalar_type, local_ordinal_type, global_ordinal_type, node_type> > 
+               <scalar_type, local_ordinal_type, global_ordinal_type, node_type> >
   getMatrix() const;
 
 
@@ -302,7 +285,7 @@ public:
   //! Returns the time spent in apply().
   double getApplyTime() const;
 
-  
+
   //! Get absolute threshold value
   inline magnitude_type getAbsoluteThreshold() const {
     return(Athresh_);
@@ -313,8 +296,8 @@ public:
     return(Rthresh_);
   }
 
-  
-  
+
+
   // @}
 
   //! @name Overridden from Teuchos::Describable
@@ -323,9 +306,9 @@ public:
   /** \brief Return a simple one-line description of this object. */
   std::string description() const;
 
-  /** \brief Print the object with some verbosity level to an 
+  /** \brief Print the object with some verbosity level to an
       FancyOStream object. */
-  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel 
+  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel
                 = Teuchos::Describable::verbLevel_default) const;
 
   //@}
@@ -339,7 +322,7 @@ private:
 
   //! Find the maximum weight spanning tree and construct a CrsMatrix with it
   void findSupport ();
-  
+
   //! Copy constructor (declared private and undefined; may not be used)
   SupportGraph(const SupportGraph<MatrixType>& RHS);
 
@@ -353,7 +336,7 @@ private:
   //! reference to the matrix to be preconditioned.
   const Teuchos::RCP<const Tpetra::RowMatrix
                      <scalar_type,local_ordinal_type,global_ordinal_type,node_type> > A_;
-  
+
   Teuchos::RCP<MatrixType> Support_;
 
   Teuchos::RCP<Amesos2::Solver
@@ -375,7 +358,7 @@ private:
   // \name Other internal data
   //@{
 
-  
+
   //! Total time in seconds for all successful calls to initialize().
   double InitializeTime_;
   //! Total time in seconds for all successful calls to compute().

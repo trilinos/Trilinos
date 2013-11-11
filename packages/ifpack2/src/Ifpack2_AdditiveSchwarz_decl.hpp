@@ -118,16 +118,30 @@ solver for each subdomain.
 The local matrix \f$A_i\f$ can be filtered, to eliminate singletons,
 and reordered. At the present time, RCM and METIS can be used to
 reorder the local matrix.
+
+\section Ifpack2_AdditiveSchwarz_DevNotes Notes to Ifpack2 developers
+
+The second template parameter (\c LocalInverseType) is being
+DEPRECATED.  It causes a lot of trouble for explicit template
+instantiation, and we can perfectly well support an arbitrary
+subdomain solver type by run-time polymorphism.  For example, a
+subclass of Ifpack2::Preconditioner could expose a scalar_type (of the
+input and output vectors of apply()) different than its internal
+storage type, via a mechanism like that of Tpetra::ApplyOp.  The only
+issue is that the preconditioner would need to be creatable by
+Factory, but we could get around that by adding a method to
+AdditiveSchwarz that lets the user supply an arbitrary
+Ifpack2::Preconditioner subclass instance for the subdomain solver.
 */
 template<class MatrixType,class LocalInverseType>
-class AdditiveSchwarz : 
+class AdditiveSchwarz :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
-					   typename MatrixType::local_ordinal_type,
-					   typename MatrixType::global_ordinal_type,
-					   typename MatrixType::node_type> {
+                                           typename MatrixType::local_ordinal_type,
+                                           typename MatrixType::global_ordinal_type,
+                                           typename MatrixType::node_type> {
 public:
   //! \name Typedefs
-  //@{ 
+  //@{
 
   //! The type of the entries of the input MatrixType.
   typedef typename MatrixType::scalar_type         scalar_type;
@@ -150,10 +164,10 @@ public:
   /// Tpetra::RowMatrix specialization.  This typedef will always be a
   /// Tpetra::RowMatrix specialization which is either the same as
   /// MatrixType, or the parent class of MatrixType.
-  typedef typename Tpetra::RowMatrix<scalar_type, 
-				     local_ordinal_type, 
-				     global_ordinal_type, 
-				     node_type> row_matrix_type;
+  typedef typename Tpetra::RowMatrix<scalar_type,
+                                     local_ordinal_type,
+                                     global_ordinal_type,
+                                     node_type> row_matrix_type;
   //@}
   // \name Deprecated typedefs
   //@{
@@ -180,48 +194,50 @@ public:
   // \name Constructors and destructor
   //@{
 
+  /// \brief Constructor that takes a matrix.
+  ///
+  /// \param A [in] The matrix to be preconditioned.
+  AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A);
+
   /// \brief Constructor that takes a matrix and the level of overlap.
-  /// 
-  /// \param Matrix [in] The matrix to be preconditioned.
+  ///
+  /// \warning This version of the constructor is DEPRECATED, because
+  ///   the single-argument version suffices; users may specify the
+  ///   overlap level via the "schwarz: overlap level" parameter.
+  ///
+  /// \param A [in] The matrix to be preconditioned.
   /// \param overlapLevel [in] The level of overlap.  Must be
   ///   nonnegative.  Zero means no overlap.
+  TEUCHOS_DEPRECATED
   AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A,
-		   const int overlapLevel = 0);
-  
+                   const int overlapLevel);
+
   //! Destructor
   virtual ~AdditiveSchwarz();
 
   //@}
   //! \name Implementation of Tpetra::Operator
   //@{
-  
+
   //! The domain Map of this operator.
   virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getDomainMap() const;
-  
+
   //! The range Map of this operator.
   virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getRangeMap() const;
-  
+
   //! Apply the preconditioner to X, putting the result in Y.
   virtual void
-  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &X, 
-	 Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &Y, 
-	 Teuchos::ETransp mode = Teuchos::NO_TRANS,
-	 scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-	 scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
-  
+  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &X,
+         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &Y,
+         Teuchos::ETransp mode = Teuchos::NO_TRANS,
+         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+
   //@}
 
   //! The input matrix.
   virtual Teuchos::RCP<const row_matrix_type> getMatrix() const;
 
-  //! Templated version of apply().
-  template <class DomainScalar, class RangeScalar>
-  void applyTempl (const Tpetra::MultiVector<DomainScalar,local_ordinal_type,global_ordinal_type,node_type> &X, 
-		   Tpetra::MultiVector<RangeScalar,local_ordinal_type,global_ordinal_type,node_type> &Y, 
-		   Teuchos::ETransp mode = Teuchos::NO_TRANS,
-		   RangeScalar alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-		   RangeScalar beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
-  
   /// \brief Set the preconditioner's parameters.
   ///
   /// Accepted parameters include the following:
@@ -239,41 +255,41 @@ public:
   ///   - "schwarz: filter singletons" (\c bool): If true, filter
   ///     singletons.  I don't understand what this does.
   virtual void setParameters (const Teuchos::ParameterList& List);
-  
+
   //! Computes all (graph-related) data necessary to initialize the preconditioner.
   virtual void initialize();
-  
+
   //! Returns true if the  preconditioner has been successfully initialized, false otherwise.
   virtual bool isInitialized() const;
-  
+
   //! Computes all (coefficient) data necessary to apply the preconditioner.
   virtual void compute();
-  
+
   //! Returns true if the  preconditioner has been successfully computed, false otherwise.
   virtual bool isComputed() const;
-  
+
   //! Computes the condition number estimate and returns its value.
   virtual magnitude_type
   computeCondEst (CondestType CT = Ifpack2::Cheap,
-		  local_ordinal_type MaxIters = 1550,
-		  magnitude_type Tol = 1e-9,
-		  const Teuchos::Ptr<const row_matrix_type> &Matrix = Teuchos::null);
-  
+                  local_ordinal_type MaxIters = 1550,
+                  magnitude_type Tol = 1e-9,
+                  const Teuchos::Ptr<const row_matrix_type> &Matrix = Teuchos::null);
+
   //! Returns the computed condition number estimate, or -1.0 if not computed.
   virtual magnitude_type getCondEst() const;
-  
+
   //! Returns the number of calls to initialize().
   virtual int getNumInitialize() const;
-  
+
   //! Returns the number of calls to compute().
   virtual int getNumCompute() const;
-  
+
   //! Returns the number of calls to apply().
   virtual int getNumApply() const;
-  
+
   //! Returns the time spent in initialize().
   virtual double getInitializeTime() const;
-  
+
   //! Returns the time spent in compute().
   virtual double getComputeTime() const;
 
@@ -303,7 +319,7 @@ protected:
 
   //! Set up the localized matrix and the singleton filter.
   void setup ();
-  
+
   //! The matrix to be preconditioned.
   const Teuchos::RCP<const row_matrix_type> Matrix_;
 

@@ -47,7 +47,13 @@ QUIET                  = NO
 WARNINGS               = YES
 WARN_IF_UNDOCUMENTED   = YES
 WARN_FORMAT            = "$file:$line: $text"
-INPUT                  = index.doc groups.doc ../src ../rti ../ext ../example ../example/Lesson01-Init/index.doc ../example/Lesson02-Map-Vector/index.doc ../inout
+INPUT                  = index.doc groups.doc \
+                         ../src ../ext ../inout ../rti ../example \
+                         ../example/Lesson01-Init/index.doc \
+                         ../example/Lesson02-Map-Vector/index.doc \
+                         ../example/Lesson03-Power-Method/index.doc \
+                         ../example/Lesson04-Sparse-Matrix-Fill/index.doc \
+                         ../example/Lesson05-Redistribution/index.doc
 FILE_PATTERNS          = *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = ../src/Tpetra_ImportExportData.hpp \

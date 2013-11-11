@@ -48,7 +48,10 @@
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Thyra_TpetraThyraWrappers.hpp"
 
-#include "Ifpack2_Factory.hpp"
+// FIXME (mfh 10 Nov 2013): Should only need to include
+// "Ifpack2_Factory.hpp", but that causes linker errors.
+#include "Ifpack2_Factory_decl.hpp"
+#include "Ifpack2_Factory_def.hpp"
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Parameters.hpp"
 
@@ -163,8 +166,19 @@ void Ifpack2PreconditionerFactory<MatrixType>::initializePrec(
 
   const Teuchos::RCP<const Teuchos::ParameterList> constParamList = paramList_;
   const std::string preconditionerType = Teuchos::getParameter<std::string>(*constParamList, "Prec Type");
-  const int overlap = Teuchos::getParameter<int>(*constParamList, "Overlap");
   const Teuchos::RCP<const Teuchos::ParameterList> packageParamList = Teuchos::sublist(constParamList, "Ifpack2 Settings");
+
+  // mfh 09 Nov 2013: If the Ifpack2 list doesn't already have the
+  // "schwarz: overlap level" parameter, then override it with the
+  // value of "Overlap".  This avoids use of the newly deprecated
+  // three-argument version of Ifpack2::Factory::create() that takes
+  // the overlap as an integer.
+  if (constParamList->isType<int> ("Overlap") && ! packageParamList.is_null () && ! packageParamList->isType<int> ("schwarz: overlap level")) {
+    const int overlap = constParamList->get<int> ("Overlap");
+    Teuchos::RCP<Teuchos::ParameterList> nonconstPackageParamList =
+      Teuchos::sublist (paramList_, "Ifpack2 Settings");
+    nonconstPackageParamList->set ("schwarz: overlap level", overlap);
+  }
 
   // Create the initial preconditioner
 
@@ -174,7 +188,7 @@ void Ifpack2PreconditionerFactory<MatrixType>::initializePrec(
   timer.start(true);
 
   typedef Ifpack2::Preconditioner<scalar_type, local_ordinal_type, global_ordinal_type, node_type> Ifpack2Prec;
-  const Teuchos::RCP<Ifpack2Prec> concretePrecOp = Ifpack2::Factory::create(preconditionerType, tpetraFwdMatrix, overlap);
+  const Teuchos::RCP<Ifpack2Prec> concretePrecOp = Ifpack2::Factory::create (preconditionerType, tpetraFwdMatrix);
 
   timer.stop();
   if (Teuchos::nonnull(out) && Teuchos::includesVerbLevel(verbLevel, Teuchos::VERB_LOW)) {
