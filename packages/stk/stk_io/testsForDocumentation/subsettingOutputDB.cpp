@@ -24,7 +24,6 @@ TEST(StkMeshIoBrokerHowTo, subsetOutputDatabase)
       mesh_data.open_mesh_database(input_filename, "generated");
       mesh_data.create_input_mesh();
 
-      // This is done just to define some fields in stk
       mesh_data.populate_bulk_data();
 
       // Create a selector containing just the shell parts.
