@@ -20,76 +20,98 @@ std::ostream & operator<<(std::ostream & out, std::pair<stk::search::ident::Iden
 
 namespace {
 
-// For testing purposes
-
+//  axis aligned bounding box search
 
 STKUNIT_UNIT_TEST(stk_search, coarse_search_3D)
 {
   typedef stk::search::ident::IdentProc<uint64_t, unsigned> Ident;
   typedef stk::search::box::AxisAlignedBoundingBox<Ident, double, 3> Box;
   typedef std::vector<Box> BoxVector;
-  typedef std::vector<std::pair<Ident,Ident> > Output;
+  typedef std::vector<std::pair<Ident,Ident> > SearchResults;
 
   stk::ParallelMachine comm = MPI_COMM_WORLD;
-  int size = stk::parallel_machine_size(comm);
-  int rank = stk::parallel_machine_rank(comm);
+  int num_procs = stk::parallel_machine_size(comm);
+  int proc_id   = stk::parallel_machine_rank(comm);
 
   double data[6];
 
   BoxVector local_domain, local_range;
-  data[0] = rank + 0.1; data[1] = 0.0; data[2] = 0.0;
-  data[3] = rank + 0.9; data[4] = 1.0; data[5] = 1.0;
-  local_domain.push_back(Box(data, Ident(rank*4, rank)));
+  // what if identifier is NOT unique
+  // x_min <= x_max
+  // y_min <= y_max
+  // z_min <= z_max
+  
+  data[0] = proc_id + 0.1; data[1] = 0.0; data[2] = 0.0;
+  data[3] = proc_id + 0.9; data[4] = 1.0; data[5] = 1.0;
 
-  data[0] = rank + 0.1; data[1] = 2.0; data[2] = 0.0;
-  data[3] = rank + 0.9; data[4] = 3.0; data[5] = 1.0;
-  local_domain.push_back(Box(data, Ident(rank*4+1, rank)));
+  Ident domainBox1(proc_id*4, proc_id);
+  local_domain.push_back(Box(data, domainBox1));
 
-  data[0] = rank + 0.6; data[1] = 0.5; data[2] = 0.0;
-  data[3] = rank + 1.4; data[4] = 1.5; data[5] = 1.0;
-  local_range.push_back(Box(data, Ident(rank*4+2, rank)));
+  data[0] = proc_id + 0.1; data[1] = 2.0; data[2] = 0.0;
+  data[3] = proc_id + 0.9; data[4] = 3.0; data[5] = 1.0;
 
-  data[0] = rank + 0.6; data[1] = 2.5; data[2] = 0.0;
-  data[3] = rank + 1.4; data[4] = 3.5; data[5] = 1.0;
-  local_range.push_back(Box(data, Ident(rank*4+3, rank)));
+  Ident domainBox2(proc_id*4+1, proc_id);
+  local_domain.push_back(Box(data, domainBox2));
 
-  Output output;
-  stk::search::FactoryOrder order;
-  order.m_communicator = comm;
-  stk::search::coarse_search(output, local_range, local_domain, order);
+  data[0] = proc_id + 0.6; data[1] = 0.5; data[2] = 0.0;
+  data[3] = proc_id + 1.4; data[4] = 1.5; data[5] = 1.0;
 
-  if (size == 1) {
-    STKUNIT_EXPECT_EQ(output.size(), 2u);
+  Ident rangeBox1(proc_id*4+2, proc_id);
+  local_range.push_back(Box(data, rangeBox1));
 
-    STKUNIT_EXPECT_EQ(output[0], std::make_pair(Ident(0, 0), Ident(2, 0)));
-    STKUNIT_EXPECT_EQ(output[1], std::make_pair(Ident(1, 0), Ident(3, 0)));
+  data[0] = proc_id + 0.6; data[1] = 2.5; data[2] = 0.0;
+  data[3] = proc_id + 1.4; data[4] = 3.5; data[5] = 1.0;
+
+  Ident rangeBox2(proc_id*4+3, proc_id);
+  local_range.push_back(Box(data, rangeBox2));
+
+  SearchResults searchResults;
+
+  stk::search::FactoryOrder searchParameters;
+  searchParameters.m_communicator = comm;
+  stk::search::coarse_search(searchResults, local_range, local_domain, searchParameters);
+
+  if (num_procs == 1) {
+    STKUNIT_ASSERT_EQ(searchResults.size(), 2u);
+
+    STKUNIT_EXPECT_EQ(searchResults[0], std::make_pair(domainBox1, rangeBox1));
+    STKUNIT_EXPECT_EQ(searchResults[1], std::make_pair(domainBox2, rangeBox2));
   }
   else {
-    if (rank == 0) {
-      STKUNIT_EXPECT_EQ(output.size(), 4u);
+    if (proc_id == 0) {
+      STKUNIT_ASSERT_EQ(searchResults.size(), 4u);
 
-      STKUNIT_EXPECT_EQ(output[0], std::make_pair(Ident(0, 0), Ident(2, 0)));
-      STKUNIT_EXPECT_EQ(output[1], std::make_pair(Ident(1, 0), Ident(3, 0)));
-      STKUNIT_EXPECT_EQ(output[2], std::make_pair(Ident(4, 1), Ident(2, 0)));
-      STKUNIT_EXPECT_EQ(output[3], std::make_pair(Ident(5, 1), Ident(3, 0)));
+      Ident domainBox1OnProcessor1(4,1);
+      Ident domainBox2OnProcessor1(5,1);
+      STKUNIT_EXPECT_EQ(searchResults[0], std::make_pair(domainBox1, rangeBox1));
+      STKUNIT_EXPECT_EQ(searchResults[1], std::make_pair(domainBox2, rangeBox2));
+      STKUNIT_EXPECT_EQ(searchResults[2], std::make_pair(domainBox1OnProcessor1, rangeBox1));
+      STKUNIT_EXPECT_EQ(searchResults[3], std::make_pair(domainBox2OnProcessor1, rangeBox2));
     }
-    else if (rank == size - 1) {
-      STKUNIT_EXPECT_EQ(output.size(), 4u);
+    else if (proc_id == num_procs - 1) {
+      STKUNIT_ASSERT_EQ(searchResults.size(), 4u);
 
-      STKUNIT_EXPECT_EQ(output[0], std::make_pair(Ident(rank*4,     rank), Ident(rank*4 - 2, rank - 1)));
-      STKUNIT_EXPECT_EQ(output[1], std::make_pair(Ident(rank*4,     rank), Ident(rank*4 + 2, rank   )));
-      STKUNIT_EXPECT_EQ(output[2], std::make_pair(Ident(rank*4 + 1, rank), Ident(rank*4 - 1, rank - 1)));
-      STKUNIT_EXPECT_EQ(output[3], std::make_pair(Ident(rank*4 + 1, rank), Ident(rank*4 + 3, rank   )));
+      Ident rangeBox1OnPreviousProcessor1((proc_id-1)*4 + 2, proc_id - 1);
+      Ident rangeBox2OnPreviousProcessor1((proc_id-1)*4 + 3, proc_id - 1);
+      STKUNIT_EXPECT_EQ(searchResults[0], std::make_pair(domainBox1, rangeBox1OnPreviousProcessor1));
+      STKUNIT_EXPECT_EQ(searchResults[1], std::make_pair(domainBox1, rangeBox1));
+      STKUNIT_EXPECT_EQ(searchResults[2], std::make_pair(domainBox2, rangeBox2OnPreviousProcessor1));
+      STKUNIT_EXPECT_EQ(searchResults[3], std::make_pair(domainBox2, rangeBox2));
     }
     else {
-      STKUNIT_EXPECT_EQ(output.size(), 6u);
+      STKUNIT_ASSERT_EQ(searchResults.size(), 6u);
 
-      STKUNIT_EXPECT_EQ(output[0], std::make_pair(Ident(rank*4,         rank    ), Ident(rank*4 - 2, rank - 1)));
-      STKUNIT_EXPECT_EQ(output[1], std::make_pair(Ident(rank*4,         rank    ), Ident(rank*4 + 2, rank   )));
-      STKUNIT_EXPECT_EQ(output[2], std::make_pair(Ident(rank*4 + 1,     rank    ), Ident(rank*4 - 1, rank - 1)));
-      STKUNIT_EXPECT_EQ(output[3], std::make_pair(Ident(rank*4 + 1,     rank    ), Ident(rank*4 + 3, rank   )));
-      STKUNIT_EXPECT_EQ(output[4], std::make_pair(Ident((rank+1)*4,     rank + 1), Ident(rank*4 + 2, rank   )));
-      STKUNIT_EXPECT_EQ(output[5], std::make_pair(Ident((rank+1)*4 + 1, rank + 1), Ident(rank*4 + 3, rank   )));
+      Ident rangeBox1OnPreviousProcessor((proc_id-1)*4 + 2, proc_id - 1);
+      Ident rangeBox2OnPreviousProcessor((proc_id-1)*4 + 3, proc_id - 1);
+      Ident domainBox1OnNextProcessor((proc_id+1)*4,     proc_id + 1);
+      Ident domainBox2OnNextProcessor((proc_id+1)*4 + 1, proc_id + 1);
+
+      STKUNIT_EXPECT_EQ(searchResults[0], std::make_pair(domainBox1, rangeBox1OnPreviousProcessor));
+      STKUNIT_EXPECT_EQ(searchResults[1], std::make_pair(domainBox1, rangeBox1));
+      STKUNIT_EXPECT_EQ(searchResults[2], std::make_pair(domainBox2, rangeBox2OnPreviousProcessor));
+      STKUNIT_EXPECT_EQ(searchResults[3], std::make_pair(domainBox2, rangeBox2));
+      STKUNIT_EXPECT_EQ(searchResults[4], std::make_pair(domainBox1OnNextProcessor, rangeBox1));
+      STKUNIT_EXPECT_EQ(searchResults[5], std::make_pair(domainBox2OnNextProcessor, rangeBox2));
     }
   }
 }
