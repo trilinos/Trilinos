@@ -53,6 +53,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/vector)
 APPEND_SET(HEADERS
   vector/ROL_Vector.hpp
   vector/ROL_StdVector.hpp
+  vector/ROL_EpetraMultiVector.hpp
   )
 
 #
@@ -62,7 +63,8 @@ APPEND_SET(HEADERS
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/function)
 APPEND_SET(HEADERS
   function/ROL_Objective.hpp
-  )
+  function/ROL_ObjectiveDef.hpp
+)
 
 #
 # step headers

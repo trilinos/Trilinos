@@ -12,7 +12,8 @@
 #ifndef ROL_EPETRAVECTOR_H
 #define ROL_EPETRAVECTOR_H
 
-#include "Epetra_MultiVector.hpp"
+#include "Epetra_MultiVector.h"
+#include "ROL_Vector.hpp"
 
 /** \class ROL::EpetraMultiVector
 */
@@ -28,11 +29,11 @@ private:
 public:
   virtual ~EpetraMultiVector() {}
 
-  EpetraMultiVector(const Teuchos::RCP<Epetra_MutliVector> & epetra_vec) : epetra_vec_(epetra_vec) {}
+  EpetraMultiVector(const Teuchos::RCP<Epetra_MultiVector> & epetra_vec) : epetra_vec_(epetra_vec) {}
 
   /** \brief Compute \f$y \leftarrow x + y\f$ where \f$y = \mbox{*this}\f$.
   */
-  void plus( const Vector &x ) {
+  void plus( const Vector<Real> &x ) {
     EpetraMultiVector &ex = Teuchos::dyn_cast<EpetraMultiVector>(const_cast <Vector<Real>&>(x));
     Teuchos::RCP<const Epetra_MultiVector> xvalptr = ex.getVector();
     epetra_vec_->Update( 1.0, *xvalptr, 1.0 );
@@ -46,7 +47,7 @@ public:
 
   /** \brief Returns \f$ \langle y,x \rangle \f$ where \f$y = \mbox{*this}\f$.
   */
-  Real dot( const Vector &x ) {
+  Real dot( const Vector<Real> &x ) {
     double val[1];
     EpetraMultiVector &ex = Teuchos::dyn_cast<EpetraMultiVector>(const_cast <Vector<Real>&>(x));
     Teuchos::RCP<const Epetra_MultiVector> xvalptr = ex.getVector();
@@ -64,14 +65,14 @@ public:
 
   /** \brief Clone to make a new (uninitialized) vector.
   */
-  Teuchos::RCP<Vector> clone() {
+  Teuchos::RCP<Vector<Real> > clone() {
     return Teuchos::rcp(new EpetraMultiVector( 
   	   Teuchos::rcp(new Epetra_MultiVector(epetra_vec_->Map(),false)) ));
   }
 
   /** \brief Compute \f$y \leftarrow \alpha x + y\f$ where \f$y = \mbox{*this}\f$.
   */
-  virtual void axpy( const Real alpha, const Vector &x ) {
+  virtual void axpy( const Real alpha, const Vector<Real> &x ) {
     EpetraMultiVector &ex = Teuchos::dyn_cast<EpetraMultiVector>(const_cast <Vector<Real>&>(x));
     Teuchos::RCP<const Epetra_MultiVector> xvalptr = ex.getVector();
     epetra_vec_->Update( alpha, *xvalptr, 1.0 );
@@ -85,7 +86,7 @@ public:
 
   /**  \brief Set \f$y \leftarrow x\f$ where \f$y = \mbox{*this}\f$.
   */
-  virtual void set( const Vector &x ) {
+  virtual void set( const Vector<Real> &x ) {
     EpetraMultiVector &ex = Teuchos::dyn_cast<EpetraMultiVector>(const_cast <Vector<Real>&>(x));
     Teuchos::RCP<const Epetra_MultiVector> xvalptr = ex.getVector();
     epetra_vec_->Scale(1.0,*xvalptr);
