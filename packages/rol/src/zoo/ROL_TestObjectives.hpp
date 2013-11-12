@@ -276,6 +276,10 @@ namespace ROL {
     int n = xp->size();
 
     if ( test == TESTOBJECTIVES_ROSENBROCK ) {
+      // Resize Vectors
+      n = 100;
+      x0p->resize(n);
+      xp->resize(n);
       // Instantiate Objective Function
       obj = Teuchos::rcp( new Objective_Rosenbrock<Real> );
       // Get Initial Guess
@@ -289,6 +293,10 @@ namespace ROL {
       }
     }
     else if ( test == TESTOBJECTIVES_SUMOFSQUARES ) {
+      // Resize Vectors
+      n = 100;
+      x0p->resize(n);
+      xp->resize(n);
       // Instantiate Objective Function
       obj = Teuchos::rcp( new Objective_SumOfSquares<Real> );
       // Get Initial Guess
@@ -301,6 +309,10 @@ namespace ROL {
       }
     }
     else if ( test == TESTOBJECTIVES_LEASTSQUARES ) {
+      // Resize Vectors
+      n = 64;
+      x0p->resize(n);
+      xp->resize(n);
       // Instantiate Objective Function
       obj = Teuchos::rcp( new Objective_LeastSquares<Real> );
       // Get Initial Guess

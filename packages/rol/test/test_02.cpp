@@ -37,16 +37,24 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    // Dimension of Problem
-    int dim = 64;
-
     // Initial Guess Vector 
-    Teuchos::RCP<std::vector<RealT> > x0_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+    Teuchos::RCP<std::vector<RealT> > x0_rcp = Teuchos::rcp( new std::vector<RealT> );
     ROL::StdVector<RealT> x0(x0_rcp);
 
     // Exact Solution Vector
-    Teuchos::RCP<std::vector<RealT> > z_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+    Teuchos::RCP<std::vector<RealT> > z_rcp = Teuchos::rcp( new std::vector<RealT> );
     ROL::StdVector<RealT> z(z_rcp);
+
+    // Get Objective Function
+    ROL::ETestObjectives objFunc = ROL::TESTOBJECTIVES_ROSENBROCK;
+    //ROL::ETestObjectives objFunc = ROL::TESTOBJECTIVES_SUMOFSQUARES;
+    //ROL::ETestObjectives objFunc = ROL::TESTOBJECTIVES_LEASTSQUARES;
+    Teuchos::RCP<ROL::Objective<RealT> > obj = Teuchos::null;
+    ROL::getTestObjectives<RealT>(obj,x0,z,objFunc);
+
+    // Get Dimension of Problem
+    int dim = 
+      Teuchos::rcp_const_cast<std::vector<RealT> >((Teuchos::dyn_cast<ROL::StdVector<RealT> >(x0)).getVector())->size();
 
     // Iteration Vector
     Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
@@ -65,12 +73,7 @@ int main(int argc, char *argv[]) {
     ROL::StdVector<RealT> e(e_rcp);
     e.zero();
 
-    // Get Objective Function
-    //ROL::ETestObjectives objFunc = ROL::TESTOBJECTIVES_ROSENBROCK;
-    //ROL::ETestObjectives objFunc = ROL::TESTOBJECTIVES_SUMOFSQUARES;
-    ROL::ETestObjectives objFunc = ROL::TESTOBJECTIVES_LEASTSQUARES;
-    Teuchos::RCP<ROL::Objective<RealT> > obj = Teuchos::null;
-    ROL::getTestObjectives<RealT>(obj,x0,z,objFunc);
+    // Run Finite Difference Checks
     obj->checkGradient(x,y,true);
 
     /* BEGIN SECANT DEFINITION */
