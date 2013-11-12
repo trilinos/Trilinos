@@ -14,6 +14,14 @@
 #include <cmath>
 #include <stdint.h>
 
+#include <boost/concept/assert.hpp>
+#include <boost/geometry/algorithms/convert.hpp>
+#include <boost/geometry/geometries/concepts/point_concept.hpp>
+
+#include <boost/geometry/geometries/adapted/c_array.hpp>
+
+BOOST_GEOMETRY_REGISTER_C_ARRAY_CS(boost::geometry::cs::cartesian)
+
 namespace stk {
 namespace search {
 namespace box {
@@ -32,6 +40,8 @@ struct PointBoundingBox
 {
   typedef K Key;
   typedef T Data;
+
+  typedef PointBoundingBox<K,T,Dim> self_type;
 
   const static int DIMENSION = Dim;
 
@@ -101,6 +111,18 @@ struct PointBoundingBox
     return true;
   }
 
+  bool operator==(const self_type & rhs) const
+  {
+    bool result = key == rhs.key;
+    for (int i=0; result && i<Dim; ++i) {
+      result = center[i] == rhs.center[i];
+    }
+    return result;
+  }
+
+  bool operator!=(const self_type & rhs) const
+  { return !(*this == rhs); }
+
   Data center[DIMENSION];
   Key  key;
 
@@ -123,6 +145,7 @@ struct SphereBoundingBox
   inline void expand(const Data delta) { radius += delta; }
   inline void scale (const Data delta) { radius *= delta; }
 
+  typedef SphereBoundingBox<K,T,Dim> self_type;
 
   SphereBoundingBox()
     : center(), radius(0), key()
@@ -163,7 +186,7 @@ struct SphereBoundingBox
   }
 
   SphereBoundingBox(const Data center_[], const Data radius_, const Key & key_)
-    : center(), radius(radius_), key(key_)
+    : center(), radius(std::abs(radius_)), key(key_)
   {
     set_center(center_);
   }
@@ -213,6 +236,21 @@ struct SphereBoundingBox
 
     return dist <= radius*radius;;
   }
+
+  bool operator==(const self_type & rhs) const
+  {
+    bool result = key == rhs.key;
+    result = result && (radius == rhs.radius);
+    for (int i=0; result && i<Dim; ++i) {
+      result = center[i] == rhs.center[i];
+    }
+    return result;
+  }
+
+  bool operator!=(const self_type & rhs) const
+  { return !(*this == rhs); }
+
+
   Data center[DIMENSION];
   Data radius;
   Key  key;
@@ -227,6 +265,8 @@ struct AxisAlignedBoundingBox
   typedef T Data;
 
   const static int DIMENSION = Dim;
+
+  typedef AxisAlignedBoundingBox<K,T,Dim> self_type;
 
   inline Data lower(int axis)  const { return box[axis]; }
   inline Data middle(int axis) const { return lower(axis) + length(axis)/2; }
@@ -315,15 +355,160 @@ struct AxisAlignedBoundingBox
     return true;
   }
 
+  bool operator==(const self_type & rhs) const
+  {
+    bool result = key == rhs.key;
+    for (int i=0; result && i<2*Dim; ++i) {
+      result = box[i] == rhs.box[i];
+    }
+    return result;
+  }
+
+  bool operator!=(const self_type & rhs) const
+  { return !(*this == rhs); }
+
   Data box[2*DIMENSION];
   Key  key;
-
 };
-
-
 
 } // namespace box
 } // namespace search
 } // namespace stk
+
+namespace boost { namespace geometry { namespace traits {
+
+// PointBoundingBox
+template <class K, class T, int Dim>
+struct tag< stk::search::box::PointBoundingBox<K,T,Dim> >
+{
+    typedef box_tag type;
+};
+
+template <class K, class T, int Dim>
+struct point_type< stk::search::box::PointBoundingBox<K,T,Dim> >
+{
+    typedef T type[Dim];
+};
+
+template <class K, class T, int Dim, size_t IndexDimension>
+struct indexed_access< stk::search::box::PointBoundingBox<K,T,Dim>, min_corner, IndexDimension>
+{
+    typedef T coordinate_type;
+    typedef stk::search::box::PointBoundingBox<K,T,Dim> box_type;
+
+    static inline coordinate_type get(box_type const& b)
+    {
+        return b.center[IndexDimension];
+    }
+
+    static inline void set(box_type & b, coordinate_type const& value)
+    {
+        b.center[IndexDimension] = value;
+    }
+};
+
+template <class K, class T, int Dim, size_t IndexDimension>
+struct indexed_access< stk::search::box::PointBoundingBox<K,T,Dim>, max_corner, IndexDimension>
+{
+    typedef T coordinate_type;
+    typedef stk::search::box::PointBoundingBox<K,T,Dim> box_type;
+
+    static inline coordinate_type get(box_type const& b)
+    {
+        return b.center[IndexDimension];
+    }
+
+    static inline void set(box_type & b, coordinate_type const& value)
+    {
+        b.center[IndexDimension] = value;
+    }
+};
+
+
+// SphereBoundingBox
+template <class K, class T, int Dim>
+struct tag< stk::search::box::SphereBoundingBox<K,T,Dim> >
+{
+    typedef box_tag type;
+};
+
+template <class K, class T, int Dim>
+struct point_type< stk::search::box::SphereBoundingBox<K,T,Dim> >
+{
+    typedef T type[Dim];
+};
+
+template <class K, class T, int Dim, size_t IndexDimension>
+struct indexed_access< stk::search::box::SphereBoundingBox<K,T,Dim>, min_corner, IndexDimension>
+{
+    typedef T coordinate_type;
+    typedef stk::search::box::SphereBoundingBox<K,T,Dim> box_type;
+
+    static inline coordinate_type get(box_type const& b)
+    {
+        return b.center[IndexDimension] - b.radius;
+    }
+};
+
+template <class K, class T, int Dim, size_t IndexDimension>
+struct indexed_access< stk::search::box::SphereBoundingBox<K,T,Dim>, max_corner, IndexDimension>
+{
+    typedef T coordinate_type;
+    typedef stk::search::box::SphereBoundingBox<K,T,Dim> box_type;
+
+    static inline coordinate_type get(box_type const& b)
+    {
+        return b.center[IndexDimension] + b.radius;
+    }
+};
+
+// AxisAlignedBoundingBox
+template <class K, class T, int Dim>
+struct tag< stk::search::box::AxisAlignedBoundingBox<K,T,Dim> >
+{
+    typedef box_tag type;
+};
+
+template <class K, class T, int Dim>
+struct point_type< stk::search::box::AxisAlignedBoundingBox<K,T,Dim> >
+{
+    typedef T type[Dim];
+};
+
+template <class K, class T, int Dim, size_t IndexDimension>
+struct indexed_access< stk::search::box::AxisAlignedBoundingBox<K,T,Dim>, min_corner, IndexDimension>
+{
+    typedef T coordinate_type;
+    typedef stk::search::box::AxisAlignedBoundingBox<K,T,Dim> box_type;
+
+    static inline coordinate_type get(box_type const& b)
+    {
+        return b.box[IndexDimension];
+    }
+
+    static inline void set(box_type & b, coordinate_type const& value)
+    {
+        b.box[IndexDimension] = value;
+    }
+};
+
+template <class K, class T, int Dim, size_t IndexDimension>
+struct indexed_access< stk::search::box::AxisAlignedBoundingBox<K,T,Dim>, max_corner, IndexDimension>
+{
+    typedef T coordinate_type;
+    typedef stk::search::box::AxisAlignedBoundingBox<K,T,Dim> box_type;
+
+    static inline coordinate_type get(box_type const& b)
+    {
+        return b.box[Dim + IndexDimension];
+    }
+
+    static inline void set(box_type & b, coordinate_type const& value)
+    {
+        b.box[Dim + IndexDimension] = value;
+    }
+};
+
+}}} // namespace boost::geometry::traits
 
 #endif // stk_search_BoundingBox_hpp

@@ -21,11 +21,11 @@ std::ostream & operator<<(std::ostream & out, PointBoundingBox<Key,Data,Dim> con
   for (int i=0; i<Dim; ++i) {
     out << box.lower(i) << ", ";
   }
-  out << "\b\b )  max: ( "; 
+  out << "\b\b )  max: ( ";
   for (int i=0; i<Dim; ++i) {
     out << box.upper(i) << ", ";
   }
-  out << "\b\b )"; 
+  out << "\b\b )";
 
   return out;
 }
@@ -37,11 +37,11 @@ std::ostream & operator<<(std::ostream & out, SphereBoundingBox<Key,Data,Dim> co
   for (int i=0; i<Dim; ++i) {
     out << box.lower(i) << ", ";
   }
-  out << "\b\b )  max: ( "; 
+  out << "\b\b )  max: ( ";
   for (int i=0; i<Dim; ++i) {
     out << box.upper(i) << ", ";
   }
-  out << "\b\b )"; 
+  out << "\b\b )";
 
   return out;
 }
@@ -53,11 +53,11 @@ std::ostream & operator<<(std::ostream & out, AxisAlignedBoundingBox<Key,Data,Di
   for (int i=0; i<Dim; ++i) {
     out << box.lower(i) << ", ";
   }
-  out << "\b\b )  max: ( "; 
+  out << "\b\b )  max: ( ";
   for (int i=0; i<Dim; ++i) {
     out << box.upper(i) << ", ";
   }
-  out << "\b\b )"; 
+  out << "\b\b )";
 
   return out;
 }

@@ -9,6 +9,9 @@
 #ifndef STK_SEARCH_COARSE_SEARCH_2_HPP
 #define STK_SEARCH_COARSE_SEARCH_2_HPP
 
+#include <stk_search/BoundingBox.hpp>
+#include <stk_search/IdentProc.hpp>
+
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
@@ -136,7 +139,43 @@ struct get_proc<std::pair<T, int> >
   }
 };
 
-}
+template <typename Key, typename Proc>
+struct get_proc< stk::search::ident::IdentProc<Key,Proc> >
+{
+  int operator()(stk::search::ident::IdentProc<Key,Proc> const& id) const
+  {
+    return id.proc;
+  }
+};
+
+template <typename RangeBox>
+struct IntersectPredicate
+{
+  IntersectPredicate(const RangeBox&) {}
+
+  // For PointBoundingBox and AxisAlignedBoundingBox, normal boost::intersects is fine
+  template <typename DomainBox>
+  bool operator()(DomainBox const&) const { return true; }
+};
+
+template <class K, class T, int Dim>
+struct IntersectPredicate<box::SphereBoundingBox<K, T, Dim> >
+{
+  typedef box::SphereBoundingBox<K, T, Dim> RangeBox;
+
+  RangeBox const& m_range;
+
+  IntersectPredicate(const RangeBox& range) : m_range(range) {}
+
+  // For spheres, use true sphere intersection, not bbox
+  template <typename DomainBox>
+  bool operator()(DomainBox const& domain) const
+  {
+    return domain.intersect(m_range);
+  }
+};
+
+} // namespace impl
 
 #if defined(__APPLE__) && !defined(isnan)
   /* for Mac OSX 10, this isnan function may need to be manually declared;
@@ -254,24 +293,25 @@ void create_parallel_domain(SpatialIndex& local_domain, stk::ParallelMachine com
   }
 }
 
-template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
-void coarse_search2( std::vector<std::pair<DomainBox, DomainIdent> > const& local_domain,
-                     std::vector<std::pair<RangeBox, RangeIdent> > const& local_range,
+template <typename DomainBox, typename RangeBox>
+void coarse_search2( std::vector<DomainBox> const& local_domain,
+                     std::vector<RangeBox> const& local_range,
                      stk::ParallelMachine comm,
-                     std::vector<std::pair<DomainIdent, RangeIdent> >& output)
+                     std::vector<std::pair<typename DomainBox::Key, typename RangeBox::Key> >& output)
 {
   namespace bg = boost::geometry;
   namespace bgi = boost::geometry::index;
 
   const unsigned MaxVolumesPerNode = 16;
-  typedef std::pair<DomainBox, DomainIdent> DomainValue;
-  typedef std::pair<RangeBox, RangeIdent> RangeValue;
+  typedef DomainBox DomainValue;
+  typedef RangeBox  RangeValue;
+  typedef typename DomainBox::Key DomainIdent;
+  typedef typename RangeBox::Key RangeIdent;
   typedef bgi::rtree< DomainValue, bgi::quadratic<MaxVolumesPerNode> > LocalDomainTree;
   typedef typename LocalDomainTree::bounds_type GlobalBox;
   typedef std::pair<GlobalBox,int> GlobalBoxProc;
   typedef bgi::rtree< GlobalBoxProc, bgi::quadratic<MaxVolumesPerNode> > GlobalDomainTree;
-  typedef typename bg::point_type<RangeBox>::type Point;
-  typedef std::pair<DomainIdent, RangeIdent> Output;
+  typedef std::pair<typename DomainBox::Key, typename RangeBox::Key> Output;
   typedef std::vector<Output> OutputVector;
 
   LocalDomainTree local_domain_tree(local_domain.begin(), local_domain.end());
@@ -280,16 +320,16 @@ void coarse_search2( std::vector<std::pair<DomainBox, DomainIdent> > const& loca
   create_global_spatial_index(global_domain_tree, local_domain_tree.bounds(), comm);
 
   // outer index is proc
-  int size = stk::parallel_machine_size(comm);
-  int rank = stk::parallel_machine_rank(comm);
-  std::vector<std::vector<RangeValue> > range_send(size);
+  int p_size = stk::parallel_machine_size(comm);
+  int p_rank = stk::parallel_machine_rank(comm);
+  std::vector<std::vector<RangeValue> > range_send(p_size);
 
   // compute what part of range to send to each process
   {
     std::vector<GlobalBoxProc> potential_process_intersections;
     for (size_t i = 0, ie = local_range.size(); i < ie; ++i) {
       potential_process_intersections.clear();
-      bgi::query(global_domain_tree, bgi::intersects(local_range[i].first), std::back_inserter(potential_process_intersections));
+      bgi::query(global_domain_tree, bgi::intersects(local_range[i]), std::back_inserter(potential_process_intersections));
 
       for (size_t j = 0, je = potential_process_intersections.size(); j < je; ++j) {
         int proc = potential_process_intersections[j].second;
@@ -304,17 +344,17 @@ void coarse_search2( std::vector<std::pair<DomainBox, DomainIdent> > const& loca
   {
     stk::CommAll comm_all( comm );
     for (int phase = 0; phase < 2; ++phase) {
-      for (int p = 0; p < size; ++p) {
+      for (int p = 0; p < p_size; ++p) {
         comm_all.send_buffer(p).pack<RangeValue>(&*range_send[p].begin(), range_send[p].size());
       }
       if (phase == 0) {
-        comm_all.allocate_buffers( size / 4, false /*not symmetric*/ );
+        comm_all.allocate_buffers( p_size / 4, false /*not symmetric*/ );
       }
     }
 
     comm_all.communicate();
 
-    for ( int p = 0 ; p < size ; ++p ) {
+    for ( int p = 0 ; p < p_size ; ++p ) {
       stk::CommBuffer & buf = comm_all.recv_buffer( p );
 
       const int num_recv = buf.remaining() / sizeof(RangeValue);
@@ -329,43 +369,40 @@ void coarse_search2( std::vector<std::pair<DomainBox, DomainIdent> > const& loca
   // Gather results into output
   {
     stk::CommAll comm_all( comm );
-    std::vector<OutputVector> send_matches(size);
+    std::vector<OutputVector> send_matches(p_size);
     for (size_t r = 0, re = gather_range.size(); r < re; ++r) {
-      RangeBox const& range = gather_range[r].first;
-      Point center = range.min_corner();
-      bg::add_point(center, range.max_corner());
-      bg::divide_value(center, 2);
+      RangeBox const& range = gather_range[r];
       std::vector<DomainValue> domain_intersections;
-      bgi::query(local_domain_tree, bgi::intersects(range), std::back_inserter(domain_intersections));
+      bgi::query(local_domain_tree, bgi::intersects(range) && bgi::satisfies(impl::IntersectPredicate<RangeBox>(range)), std::back_inserter(domain_intersections));
 
-      if (!domain_intersections.empty()) {
-        DomainIdent domain_id = domain_intersections[0].second;
-        RangeIdent  range_id  = gather_range[r].second;
+      for (int i = 0, ie = domain_intersections.size(); i < ie; ++i) {
+        DomainIdent domain_id = domain_intersections[i].key;
+        RangeIdent  range_id  = gather_range[r].key;
         Output temp(domain_id, range_id);
         output.push_back(temp);
 
-        if ((size > 1)
-            && (impl::get_proc<DomainIdent>()(domain_id) != rank || impl::get_proc<RangeIdent>()(range_id) != rank)) {
-          int other_proc = impl::get_proc<DomainIdent>()(domain_id) == rank ? impl::get_proc<RangeIdent>()(range_id) : impl::get_proc<DomainIdent>()(domain_id);
+        if ((p_size > 1)
+            && (impl::get_proc<DomainIdent>()(domain_id) != p_rank || impl::get_proc<RangeIdent>()(range_id) != p_rank)) {
+          int other_proc = impl::get_proc<DomainIdent>()(domain_id) == p_rank ? impl::get_proc<RangeIdent>()(range_id) : impl::get_proc<DomainIdent>()(domain_id);
           send_matches[other_proc].push_back(temp);
         }
       }
     }
 
-    if (size > 1)
+    if (p_size > 1)
     {
       for (int phase = 0; phase < 2; ++phase) {
-        for (int p = 0; p < size; ++p) {
+        for (int p = 0; p < p_size; ++p) {
           comm_all.send_buffer(p).pack<Output>(&*send_matches[p].begin(), send_matches[p].size());
         }
         if (phase == 0) {
-          comm_all.allocate_buffers( size / 4, false /*not symmetric*/ );
+          comm_all.allocate_buffers( p_size / 4, false /*not symmetric*/ );
         }
       }
 
       comm_all.communicate();
 
-      for ( int p = 0 ; p < size ; ++p ) {
+      for ( int p = 0 ; p < p_size ; ++p ) {
         stk::CommBuffer & buf = comm_all.recv_buffer( p );
 
         const int num_recv = buf.remaining() / sizeof(Output);

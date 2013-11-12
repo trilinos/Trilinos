@@ -384,36 +384,7 @@ private:
     order.m_communicator = parallel;
 
 #ifndef USE_STK_COARSE_SEARCH
-    //// Jim's changes start here...
-
-    namespace bg = boost::geometry;
-    namespace bgi = boost::geometry::index;
-
-    typedef bg::model::point<double, 3, bg::cs::cartesian> Point;
-    typedef bg::model::box<Point> Box;
-
-    std::vector<std::pair<Box, SearchId> > local_domain;
-    local_domain.reserve(side_1_vector.size());
-    for (int i = 0, ie = side_1_vector.size(); i < ie; ++i) {
-      stk::search::box::SphereBoundingBox<SearchId,Scalar,3> old_box = side_1_vector[i];
-      Box new_box(Point(old_box.lower(0), old_box.lower(1), old_box.lower(2)),
-                  Point(old_box.upper(0), old_box.upper(1), old_box.upper(2)));
-      local_domain.push_back(std::make_pair(new_box, old_box.key));
-    }
-
-    std::vector<std::pair<Box, SearchId> > local_range;
-    local_domain.reserve(side_2_vector.size());
-    for (int i = 0, ie = side_2_vector.size(); i < ie; ++i) {
-      stk::search::box::SphereBoundingBox<SearchId,Scalar,3> old_box = side_2_vector[i];
-      Box new_box(Point(old_box.lower(0), old_box.lower(1), old_box.lower(2)),
-                  Point(old_box.upper(0), old_box.upper(1), old_box.upper(2)));
-      local_range.push_back(std::make_pair(new_box, old_box.key));
-    }
-
-
-    stk::search::coarse_search2(local_domain, local_range, parallel, search_results);
-
-    //// ... and end HERE.
+    stk::search::coarse_search2(side_1_vector, side_2_vector, parallel, search_results);
 #else
     stk::search::coarse_search(search_results, side_2_vector, side_1_vector, order);
 #endif
