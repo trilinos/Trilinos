@@ -168,4 +168,60 @@ STKUNIT_UNIT_TEST(stk_search_not_boost, coarse_search_3D_bih_tree)
   testCoarseSearchAABBForAlgorithm(searchParameters, comm);
 }
 
+
+STKUNIT_UNIT_TEST(stk_search, coarse_search_3D_one_point)
+{
+  typedef stk::search::ident::IdentProc<uint64_t, unsigned> Ident;
+  typedef stk::search::box::AxisAlignedBoundingBox<Ident, double, 3> Box;
+  typedef std::vector<Box> BoxVector;
+  typedef std::vector<std::pair<Ident,Ident> > SearchResults;
+
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
+  //int num_procs = stk::parallel_machine_size(comm);
+  int proc_id   = stk::parallel_machine_rank(comm);
+
+  double data[6];
+
+  BoxVector local_domain, local_range;
+  // what if identifier is NOT unique
+  // x_min <= x_max
+  // y_min <= y_max
+  // z_min <= z_max
+
+  data[0] = 0.0; data[1] = 0.0; data[2] = 0.0;
+  data[3] = 1.0; data[4] = 1.0; data[5] = 1.0;
+
+  // One bounding box on processor 0 with the label:  0
+  // All other processors have empty domain.
+  Ident domainBox1(0, 0);
+  if (proc_id == 0) {
+    local_domain.push_back(Box(data, domainBox1));
+  }
+
+  data[0] = 0.5; data[1] = 0.5; data[2] = 0.5;
+  data[3] = 0.5; data[4] = 0.5; data[5] = 0.5;
+
+  // One range target on processor 0 with the label:  1
+  // All other processors have empty range.
+  Ident rangeBox1(1, 0);
+  if (proc_id == 0) {
+    local_range.push_back(Box(data, rangeBox1));
+  }
+
+  SearchResults searchResults;
+
+  stk::search::FactoryOrder searchParameters;
+  searchParameters.m_algorithm = stk::search::FactoryOrder::OCTREE;
+  searchParameters.m_communicator = comm;
+  stk::search::coarse_search(searchResults, local_range, local_domain, searchParameters);
+
+  if (proc_id == 0) {
+    STKUNIT_ASSERT_EQ(searchResults.size(), 1u);
+    STKUNIT_EXPECT_EQ(searchResults[0], std::make_pair(domainBox1, rangeBox1));
+  } else {
+    STKUNIT_ASSERT_EQ(searchResults.size(), 0u);
+  }
+}
+
+
 } //namespace
