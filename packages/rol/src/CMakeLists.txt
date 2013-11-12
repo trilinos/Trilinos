@@ -63,7 +63,8 @@ APPEND_SET(HEADERS
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/function)
 APPEND_SET(HEADERS
   function/ROL_Objective.hpp
-  )
+  function/ROL_ObjectiveDef.hpp
+)
 
 #
 # step headers
