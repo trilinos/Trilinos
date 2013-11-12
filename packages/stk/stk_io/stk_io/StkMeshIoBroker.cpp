@@ -193,6 +193,31 @@ namespace {
       }
     }
 
+  int find_closest_step(Ioss::Region *region, double time)
+  {
+    int step_count = region->get_property("state_count").get_int();
+    if (step_count == 0) {
+      std::ostringstream msg ;
+      msg << " ERROR: Input database '" << region->get_database()->get_filename()
+	  << " has no transient data.";
+      throw std::runtime_error( msg.str() );
+    }
+
+    double delta_min = 1.0e30;
+    int    step_min  = 0;
+    for (int istep = 0; istep < step_count; istep++) {
+      double state_time = region->get_state_time(istep+1);
+      double delta = state_time - time;
+      if (delta < 0.0) delta = -delta;
+      if (delta < delta_min) {
+	delta_min = delta;
+	step_min  = istep;
+	if (delta == 0.0) break;
+      }
+    }
+    return step_min+1;
+  }
+
   void process_surface_entity(Ioss::SideSet *sset, stk::mesh::MetaData &meta)
   {
     assert(sset->type() == Ioss::SIDESET);
@@ -1533,21 +1558,9 @@ namespace stk {
     {
       // Find the step on the database with time closest to the requested time...
       Ioss::Region *region = m_input_region.get();
-      int step_count = region->get_property("state_count").get_int();
-      double delta_min = 1.0e30;
-      int    step_min  = 0;
-      for (int istep = 0; istep < step_count; istep++) {
-        double state_time = region->get_state_time(istep+1);
-        double delta = state_time - time;
-        if (delta < 0.0) delta = -delta;
-        if (delta < delta_min) {
-          delta_min = delta;
-          step_min  = istep;
-          if (delta == 0.0) break;
-        }
-      }
-      // Exodus steps are 1-based;
-      process_input_request(step_min+1);
+
+      int step = find_closest_step(region, time);
+      process_input_request(step);
     }
 
     void StkMeshIoBroker::process_input_request(int step)
@@ -1555,50 +1568,29 @@ namespace stk {
       if (step <= 0)
         return;
 
+      ThrowErrorMsgIf (Teuchos::is_null(m_input_region),
+                       "There is no Input mesh/restart region associated with this Mesh Data.");
+
       Ioss::Region *region = m_input_region.get();
-      if (region) {
-        // Pick which time index to read into solution field.
-        region->begin_state(step);
 
-        input_nodeblock_fields(*region, bulk_data());
-        input_elementblock_fields(*region, bulk_data());
-        input_nodeset_fields(*region, bulk_data());
-        input_sideset_fields(*region, bulk_data());
+      // Pick which time index to read into solution field.
+      region->begin_state(step);
 
-        region->end_state(step);
+      input_nodeblock_fields(*region, bulk_data());
+      input_elementblock_fields(*region, bulk_data());
+      input_nodeset_fields(*region, bulk_data());
+      input_sideset_fields(*region, bulk_data());
 
-      } else {
-        std::cerr << "INTERNAL ERROR: Mesh Input Region pointer is NULL in process_input_request.\n";
-        std::exit(EXIT_FAILURE);
-      }
+      region->end_state(step);
     }
 
     double StkMeshIoBroker::process_restart_input(double time)
     {
       // Find the step on the database with time closest to the requested time...
       Ioss::Region *region = m_input_region.get();
-      int step_count = region->get_property("state_count").get_int();
-      if (step_count == 0) {
-        std::ostringstream msg ;
-        msg << " ERROR: Restart database '" << region->get_database()->get_filename()
-	    << " has no transient data.";
-        throw std::runtime_error( msg.str() );
-      }
       
-      double delta_min = 1.0e30;
-      int    step_min  = 0;
-      for (int istep = 0; istep < step_count; istep++) {
-        double state_time = region->get_state_time(istep+1);
-        double delta = state_time - time;
-        if (delta < 0.0) delta = -delta;
-        if (delta < delta_min) {
-          delta_min = delta;
-          step_min  = istep;
-          if (delta == 0.0) break;
-        }
-      }
-      // Exodus steps are 1-based;
-      return process_restart_input(step_min+1);
+      int step = find_closest_step(region, time);
+      return process_restart_input(step);
     }
 
     double StkMeshIoBroker::process_restart_input(int step)
