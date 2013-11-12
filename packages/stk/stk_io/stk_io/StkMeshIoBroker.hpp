@@ -10,14 +10,15 @@
 #define STK_IO_MESHREADWRITEUTILS_HPP
 #include <string>
 #include <vector>
-#include <set>
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
-#include <stk_util/util/ParameterList.hpp>
+
 #include <Ioss_PropertyManager.h>
 #include <Ioss_Field.h>
-#include <init/Ionit_Initializer.h>
+
 #include <Teuchos_RCP.hpp>
+
+#include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/util/ParameterList.hpp>
+
 #include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/ConnectivityMap.hpp>

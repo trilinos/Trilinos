@@ -25,6 +25,7 @@
 #include <stk_io/IossBridge.hpp>
 
 #include <Ioss_SubSystem.h>
+#include <init/Ionit_Initializer.h>
 
 #include <iostream>
 #include <sstream>
