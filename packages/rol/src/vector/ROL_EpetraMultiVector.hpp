@@ -47,7 +47,7 @@ public:
 
   /** \brief Returns \f$ \langle y,x \rangle \f$ where \f$y = \mbox{*this}\f$.
   */
-  Real dot( const Vector<Real> &x ) {
+  Real dot( const Vector<Real> &x ) const {
     double val[1];
     EpetraMultiVector &ex = Teuchos::dyn_cast<EpetraMultiVector>(const_cast <Vector<Real>&>(x));
     Teuchos::RCP<const Epetra_MultiVector> xvalptr = ex.getVector();
@@ -57,7 +57,7 @@ public:
 
   /** \brief Returns \f$ \| y \| \f$ where \f$y = \mbox{*this}\f$.
   */
-  Real norm() {
+  Real norm() const {
     double val[1];
     epetra_vec_->Dot( *epetra_vec_, val );
     return (Real)sqrt(val[0]);
@@ -65,7 +65,7 @@ public:
 
   /** \brief Clone to make a new (uninitialized) vector.
   */
-  Teuchos::RCP<Vector<Real> > clone() {
+  Teuchos::RCP<Vector<Real> > clone() const{
     return Teuchos::rcp(new EpetraMultiVector( 
   	   Teuchos::rcp(new Epetra_MultiVector(epetra_vec_->Map(),false)) ));
   }
