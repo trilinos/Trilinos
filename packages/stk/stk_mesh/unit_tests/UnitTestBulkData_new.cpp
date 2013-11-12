@@ -46,9 +46,8 @@ void new_comm_recv_to_send(
  * is similar to the BoxFixture it inherits from, with the only difference
  * being the extra parts that this fixture declares for testing purposes.
  */
-class TestBoxFixture : public stk::mesh::fixtures::BoxFixture
+struct TestBoxFixture : public stk::mesh::fixtures::BoxFixture
 {
- public:
   TestBoxFixture(stk::ParallelMachine pm = MPI_COMM_WORLD,
                  unsigned block_size = 1000) :
     BoxFixture(pm, block_size),
@@ -81,24 +80,6 @@ class TestBoxFixture : public stk::mesh::fixtures::BoxFixture
     m_fem_meta.commit();
   }
 
-  Part & get_test_part () { return m_test_part; }
-  Part & get_cell_part () { return m_cell_part; }
-
-  Part & get_part_a_0 () { return m_part_A_0; }
-  Part & get_part_a_1 () { return m_part_A_1; }
-  Part & get_part_a_2 () { return m_part_A_2; }
-  Part & get_part_a_3 () { return m_part_A_3; }
-
-  Part & get_part_a_superset () { return m_part_A_superset; }
-
-  Part & get_part_b_0 () { return m_part_B_0; }
-  Part & get_part_b_1 () { return m_part_B_1; }
-  Part & get_part_b_2 () { return m_part_B_2; }
-  Part & get_part_b_3 () { return m_part_B_3; }
-
-  Part & get_part_b_superset () { return m_part_B_superset; }
-
- private:
   Part     & m_test_part;   // A simple part
   Part     & m_cell_part;   // A part to put cells in
 
@@ -124,7 +105,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyAssertOwnerDeletedEntity )
   TestBoxFixture fixture;
 
   stk::mesh::BulkData         &bulk = fixture.bulk_data();
-  stk::mesh::Part             &new_part = fixture.get_test_part ();
+  stk::mesh::Part             &new_part = fixture.m_test_part;
   stk::mesh::PartVector        add_part;
   add_part.push_back ( &new_part );
 
@@ -165,7 +146,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyDetectsBadKey )
   TestBoxFixture fixture;
 
   stk::mesh::BulkData         &bulk = fixture.bulk_data();
-  stk::mesh::Part             &new_part = fixture.get_test_part ();
+  stk::mesh::Part             &new_part = fixture.m_test_part;
   stk::mesh::PartVector        add_part, empty_vector;
   add_part.push_back ( &new_part );
 
@@ -233,7 +214,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyExplicitAddInducedPart )
 
   bulk.declare_relation ( new_cell , new_node , 1 );
 
-  cell_part_vector.push_back ( &fixture.get_cell_part () );
+  cell_part_vector.push_back ( &fixture.m_cell_part );
   bulk.change_entity_parts ( new_cell , cell_part_vector );
 #ifdef SIERRA_MIGRATION
   bulk.change_entity_parts ( new_node , cell_part_vector );
@@ -286,39 +267,39 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyChangePartsSerial )
   stk::mesh::BulkData            &bulk = fixture.bulk_data ();
   stk::mesh::PartVector           create_parts , remove_parts , add_parts, empty_parts;
 
-  create_parts.push_back ( &fixture.get_test_part() );
-  create_parts.push_back ( &fixture.get_part_a_3() );
-  remove_parts.push_back ( &fixture.get_part_a_3() );
-  add_parts.push_back ( &fixture.get_part_b_superset() );
-  add_parts.push_back ( &fixture.get_cell_part() );
+  create_parts.push_back ( &fixture.m_test_part );
+  create_parts.push_back ( &fixture.m_part_A_3 );
+  remove_parts.push_back ( &fixture.m_part_A_3 );
+  add_parts.push_back ( &fixture.m_part_B_superset );
+  add_parts.push_back ( &fixture.m_cell_part );
 
   bulk.modification_begin();
   stk::mesh::Entity new_cell = fixture.get_new_entity ( 3 , 1 );
   bulk.change_entity_parts ( new_cell , create_parts , empty_parts );
   bulk.modification_end();
-  STKUNIT_ASSERT ( bulk.bucket(new_cell).member ( fixture.get_test_part() ) );
-  STKUNIT_ASSERT ( bulk.bucket(new_cell).member ( fixture.get_part_a_3() ) );
-  STKUNIT_ASSERT ( bulk.bucket(new_cell).member ( fixture.get_part_a_superset() ) );
-  STKUNIT_ASSERT ( !bulk.bucket(new_cell).member ( fixture.get_part_b_superset() ) );
-  STKUNIT_ASSERT ( !bulk.bucket(new_cell).member ( fixture.get_cell_part() ) );
+  STKUNIT_ASSERT ( bulk.bucket(new_cell).member ( fixture.m_test_part ) );
+  STKUNIT_ASSERT ( bulk.bucket(new_cell).member ( fixture.m_part_A_3 ) );
+  STKUNIT_ASSERT ( bulk.bucket(new_cell).member ( fixture.m_part_A_superset ) );
+  STKUNIT_ASSERT ( !bulk.bucket(new_cell).member ( fixture.m_part_B_superset ) );
+  STKUNIT_ASSERT ( !bulk.bucket(new_cell).member ( fixture.m_cell_part ) );
 
   bulk.modification_begin();
   bulk.change_entity_parts ( new_cell , add_parts , remove_parts );
   bulk.modification_end();
-  STKUNIT_ASSERT ( bulk.bucket(new_cell).member ( fixture.get_test_part() ) );
-  STKUNIT_ASSERT ( !bulk.bucket(new_cell).member ( fixture.get_part_a_3() ) );
-  STKUNIT_ASSERT ( bulk.bucket(new_cell).member ( fixture.get_part_a_superset() ) );
-  STKUNIT_ASSERT ( bulk.bucket(new_cell).member ( fixture.get_part_b_superset() ) );
-  STKUNIT_ASSERT ( bulk.bucket(new_cell).member ( fixture.get_cell_part() ) );
+  STKUNIT_ASSERT ( bulk.bucket(new_cell).member ( fixture.m_test_part ) );
+  STKUNIT_ASSERT ( !bulk.bucket(new_cell).member ( fixture.m_part_A_3 ) );
+  STKUNIT_ASSERT ( bulk.bucket(new_cell).member ( fixture.m_part_A_superset ) );
+  STKUNIT_ASSERT ( bulk.bucket(new_cell).member ( fixture.m_part_B_superset ) );
+  STKUNIT_ASSERT ( bulk.bucket(new_cell).member ( fixture.m_cell_part ) );
 
   bulk.modification_begin();
   bulk.change_entity_parts ( new_cell , empty_parts , add_parts );
   bulk.modification_end();
-  STKUNIT_ASSERT ( bulk.bucket(new_cell).member ( fixture.get_test_part() ) );
-  STKUNIT_ASSERT ( !bulk.bucket(new_cell).member ( fixture.get_part_a_3() ) );
-  STKUNIT_ASSERT ( bulk.bucket(new_cell).member ( fixture.get_part_a_superset() ) );
-  STKUNIT_ASSERT ( !bulk.bucket(new_cell).member ( fixture.get_part_b_superset() ) );
-  STKUNIT_ASSERT ( !bulk.bucket(new_cell).member ( fixture.get_cell_part() ) );
+  STKUNIT_ASSERT ( bulk.bucket(new_cell).member ( fixture.m_test_part ) );
+  STKUNIT_ASSERT ( !bulk.bucket(new_cell).member ( fixture.m_part_A_3 ) );
+  STKUNIT_ASSERT ( bulk.bucket(new_cell).member ( fixture.m_part_A_superset ) );
+  STKUNIT_ASSERT ( !bulk.bucket(new_cell).member ( fixture.m_part_B_superset ) );
+  STKUNIT_ASSERT ( !bulk.bucket(new_cell).member ( fixture.m_cell_part ) );
 
   //Verify still a member of default parts
   STKUNIT_ASSERT ( bulk.bucket(new_cell).member ( fixture.fem_meta().universal_part() ) );
@@ -334,7 +315,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyParallelAddParts )
   const int root_box[3][2] = { { 0 , 4 } , { 0 , 5 } , { 0 , 6 } };
   int local_box[3][2] = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
 
-  add_part.push_back ( &fixture.get_part_a_0() );
+  add_part.push_back ( &fixture.m_part_A_0 );
 
   bulk.modification_begin();
   fixture.generate_boxes( root_box, local_box );
@@ -358,7 +339,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyParallelAddParts )
         i =  bulk.comm_list().begin();
         i != bulk.comm_list().end() ; ++i ) {
     if ( i->key.rank() == 0 ) {
-      STKUNIT_ASSERT ( bulk.bucket(i->entity).member ( fixture.get_part_a_0 () ) );
+      STKUNIT_ASSERT ( bulk.bucket(i->entity).member ( fixture.m_part_A_0 ) );
     }
   }
 }
@@ -369,8 +350,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyInducedMembership )
   stk::mesh::BulkData             &bulk = fixture.bulk_data ();
   stk::mesh::PartVector            create_node_parts , create_cell_parts , empty_parts;
 
-  create_node_parts.push_back ( &fixture.get_part_a_0() );
-  create_cell_parts.push_back ( &fixture.get_cell_part() );
+  create_node_parts.push_back ( &fixture.m_part_A_0 );
+  create_cell_parts.push_back ( &fixture.m_cell_part );
 
   bulk.modification_begin();
 
@@ -386,13 +367,13 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyInducedMembership )
   bulk.declare_relation ( cell , node , cell_node_rel_id );
   bulk.modification_end();
 
-  STKUNIT_ASSERT ( bulk.bucket(node).member ( fixture.get_cell_part() ) );
+  STKUNIT_ASSERT ( bulk.bucket(node).member ( fixture.m_cell_part ) );
 
   bulk.modification_begin();
   bulk.destroy_relation ( cell , node, cell_node_rel_id );
   bulk.modification_end();
 
-  STKUNIT_ASSERT ( !bulk.bucket(node).member ( fixture.get_cell_part() ) );
+  STKUNIT_ASSERT ( !bulk.bucket(node).member ( fixture.m_cell_part ) );
 }
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyCanRemoveFromSetWithDifferentRankSubset )
@@ -401,10 +382,10 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyCanRemoveFromSetWithDifferentRa
   stk::mesh::BulkData           &bulk = fixture.bulk_data ();
   stk::mesh::PartVector          add_parts , remove_parts, empty_parts;
 
-  add_parts.push_back ( &fixture.get_part_b_3() );
-  add_parts.push_back ( &fixture.get_part_a_superset() );
+  add_parts.push_back ( &fixture.m_part_B_3 );
+  add_parts.push_back ( &fixture.m_part_A_superset );
 
-  remove_parts.push_back ( &fixture.get_part_a_superset() );
+  remove_parts.push_back ( &fixture.m_part_A_superset );
 
   bulk.modification_begin();
 
@@ -415,8 +396,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyCanRemoveFromSetWithDifferentRa
   bulk.change_entity_parts ( e , empty_parts , remove_parts );
   bulk.modification_end();
 
-  STKUNIT_ASSERT ( bulk.bucket(e).member ( fixture.get_part_b_3() ) );
-  STKUNIT_ASSERT ( !bulk.bucket(e).member ( fixture.get_part_a_superset() ) );
+  STKUNIT_ASSERT ( bulk.bucket(e).member ( fixture.m_part_B_3 ) );
+  STKUNIT_ASSERT ( !bulk.bucket(e).member ( fixture.m_part_A_superset ) );
 }
 
 
@@ -636,8 +617,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyPartsOnCreate )
 {
    TestBoxFixture fixture;
    stk::mesh::BulkData           & bulk = fixture.bulk_data ();
-   stk::mesh::Part               & part_a = fixture.get_part_a_0 ();
-   stk::mesh::Part               & part_b = fixture.get_part_b_0 ();
+   stk::mesh::Part               & part_a = fixture.m_part_A_0;
+   stk::mesh::Part               & part_b = fixture.m_part_B_0;
 
    stk::mesh::PartVector           create_vector;
    create_vector.push_back ( &part_a );
