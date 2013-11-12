@@ -386,7 +386,8 @@ void ImplicitBDFStepperRampingStepControl<Scalar>::completeStep(
       const Rythmos::ImplicitBDFStepper<Scalar>* ibdfStepper =
 	dynamic_cast<const Rythmos::ImplicitBDFStepper<Scalar>* >(&stepper);
       TEUCHOS_ASSERT(ibdfStepper != NULL);
-      int numberOfNonlinearIterations = ibdfStepper->getStepStatus().extraParameters->template get<int>("Number of Iterations");
+      TEUCHOS_ASSERT(nonnull(ibdfStepper->getNonlinearSolveStatus().extraParameters));
+      int numberOfNonlinearIterations = ibdfStepper->getNonlinearSolveStatus().extraParameters->template get<int>("Number of Iterations");
       if (numberOfNonlinearIterations >= numberOfNonlinearIterationsForStepSizeRestriction_) {
 	nextStepSize_ = currentStepSize_;
       }
