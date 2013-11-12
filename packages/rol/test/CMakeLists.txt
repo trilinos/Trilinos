@@ -1,6 +1,7 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
 ADD_SUBDIRECTORY(function)
+ADD_SUBDIRECTORY(vector)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   VersionCheck

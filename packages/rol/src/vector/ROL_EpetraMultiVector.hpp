@@ -9,8 +9,8 @@
 // ***********************************************************************
 //@HEADER
 
-#ifndef ROL_EPETRAVECTOR_H
-#define ROL_EPETRAVECTOR_H
+#ifndef ROL_EPETRAMULTIVECTOR_H
+#define ROL_EPETRAMULTIVECTOR_H
 
 #include "Epetra_MultiVector.h"
 #include "ROL_Vector.hpp"
@@ -67,7 +67,7 @@ public:
   */
   Teuchos::RCP<Vector<Real> > clone() const{
     return Teuchos::rcp(new EpetraMultiVector( 
-  	   Teuchos::rcp(new Epetra_MultiVector(epetra_vec_->Map(),false)) ));
+  	     Teuchos::rcp(new Epetra_MultiVector(epetra_vec_->Map(),epetra_vec_->NumVectors(),false)) ));
   }
 
   /** \brief Compute \f$y \leftarrow \alpha x + y\f$ where \f$y = \mbox{*this}\f$.
