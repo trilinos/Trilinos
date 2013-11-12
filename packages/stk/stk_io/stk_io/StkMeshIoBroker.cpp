@@ -1355,28 +1355,6 @@ namespace stk {
         "MeshReadWriteUtils::validate_output_file_index: There is no Output mesh region associated with this output file index: " << output_file_index << ".");
     }
 
-    void addOrRenameFieldName(stk::mesh::FieldBase &field, const std::string &db_name, OutputFile &output_file)
-    {
-        std::string dbName = pickFieldName(field, db_name);
-
-        bool fieldAlreadyExists=false;
-        for (size_t i=0;i<output_file.m_named_fields.size();i++)
-        {
-            if ( &field == output_file.m_named_fields[i].m_field )
-            {
-                output_file.m_named_fields[i].m_db_name = dbName;
-                fieldAlreadyExists = true;
-                break;
-            }
-        }
-
-        if ( fieldAlreadyExists == false )
-        {
-            stk::io::FieldAndName namedField(&field, dbName);
-            output_file.m_named_fields.push_back(namedField);
-        }
-    }
-
     void StkMeshIoBroker::add_results_field(size_t output_file_index, stk::mesh::FieldBase &field)
     {
         validate_output_file_index(output_file_index);
