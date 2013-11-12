@@ -1012,19 +1012,12 @@ namespace stk {
     }
 
     StkMeshIoBroker::~StkMeshIoBroker()
-    {
-      for (size_t i = 0; i < m_output_files.size(); ++i)
-      {
-          stk::io::delete_selector_property(*m_output_files[i].m_output_region);
-      }
-
-      m_output_files.clear();
-    }
+    { }
 
     size_t StkMeshIoBroker::set_output_io_region(Teuchos::RCP<Ioss::Region> ioss_output_region)
     {
       m_output_files.clear();
-      OutputFile output_file(ioss_output_region, m_communicator, m_input_region.get());
+      Teuchos::RCP<OutputFile> output_file = Teuchos::rcp(new OutputFile(ioss_output_region, m_communicator, m_input_region.get()));
       m_output_files.push_back(output_file);
       return m_output_files.size()-1;
     }
@@ -1149,8 +1142,7 @@ namespace stk {
 
     size_t StkMeshIoBroker::create_output_mesh(const std::string &filename)
     {
-      OutputFile output_file(filename, m_communicator, m_property_manager, m_input_region.get());
-
+      Teuchos::RCP<OutputFile> output_file = Teuchos::rcp(new OutputFile(filename, m_communicator, m_property_manager, m_input_region.get()));
       m_output_files.push_back(output_file);
 
       size_t index_of_output_file = m_output_files.size()-1;
@@ -1161,14 +1153,14 @@ namespace stk {
     void StkMeshIoBroker::write_output_mesh(size_t output_file_index)
     {
       validate_output_file_index(output_file_index);
-      m_output_files[output_file_index].write_output_mesh(*m_bulk_data);
+      m_output_files[output_file_index]->write_output_mesh(*m_bulk_data);
     }
 
     // ========================================================================
     int StkMeshIoBroker::process_output_request(size_t output_file_index)
     {
       validate_output_file_index(output_file_index);
-      int current_output_step = m_output_files[output_file_index].process_output_request(*m_bulk_data);
+      int current_output_step = m_output_files[output_file_index]->process_output_request(*m_bulk_data);
       return current_output_step;
     }
 
@@ -1176,19 +1168,19 @@ namespace stk {
     int StkMeshIoBroker::process_output_request(size_t output_file_index, double time)
     {
       validate_output_file_index(output_file_index);
-      int current_output_step = m_output_files[output_file_index].process_output_request(time, *m_bulk_data);
+      int current_output_step = m_output_files[output_file_index]->process_output_request(time, *m_bulk_data);
       return current_output_step;
     }
 
     void StkMeshIoBroker::begin_output_step(size_t output_file_index, double time)
     {
         validate_output_file_index(output_file_index);
-        m_output_files[output_file_index].begin_output_step(time, *m_bulk_data);
+        m_output_files[output_file_index]->begin_output_step(time, *m_bulk_data);
     }
 
     void StkMeshIoBroker::end_output_step(size_t output_file_index)
     {
-        m_output_files[output_file_index].end_output_step();
+        m_output_files[output_file_index]->end_output_step();
     }
 
     void StkMeshIoBroker::populate_mesh(bool delay_field_data_allocation)
@@ -1352,20 +1344,21 @@ namespace stk {
     {
       ThrowErrorMsgIf(m_output_files.empty() || output_file_index >= m_output_files.size(),
         "MeshReadWriteUtils::validate_output_file_index: invalid output file index of " << output_file_index << ".");
-      ThrowErrorMsgIf (Teuchos::is_null(m_output_files[output_file_index].m_output_region),
+      
+      ThrowErrorMsgIf (Teuchos::is_null(m_output_files[output_file_index]->get_output_io_region()),
         "MeshReadWriteUtils::validate_output_file_index: There is no Output mesh region associated with this output file index: " << output_file_index << ".");
     }
 
     void StkMeshIoBroker::add_results_field(size_t output_file_index, stk::mesh::FieldBase &field)
     {
         validate_output_file_index(output_file_index);
-        m_output_files[output_file_index].add_results_field(field, field.name());
+        m_output_files[output_file_index]->add_results_field(field, field.name());
     }
 
     void StkMeshIoBroker::add_results_field_with_alternate_name(size_t output_file_index, stk::mesh::FieldBase &field, const std::string &alternate_name)
     {
         validate_output_file_index(output_file_index);
-        m_output_files[output_file_index].add_results_field(field, alternate_name);
+        m_output_files[output_file_index]->add_results_field(field, alternate_name);
     }
 
     void StkMeshIoBroker::get_global_variable_names(std::vector<std::string> &names)
@@ -1489,55 +1482,55 @@ namespace stk {
     void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &name, const stk::util::Parameter &param)
     {
       validate_output_file_index(output_file_index);
-      m_output_files[output_file_index].add_global(name, param);
+      m_output_files[output_file_index]->add_global(name, param);
     }
 
     void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &globalVarName, Ioss::Field::BasicType dataType)
     {
       validate_output_file_index(output_file_index);
-      m_output_files[output_file_index].add_global(globalVarName, dataType);
+      m_output_files[output_file_index]->add_global(globalVarName, dataType);
     }
 
     void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &globalVarName, int component_count, Ioss::Field::BasicType dataType)
     {
       validate_output_file_index(output_file_index);
-      m_output_files[output_file_index].add_global(globalVarName, component_count, dataType);
+      m_output_files[output_file_index]->add_global(globalVarName, component_count, dataType);
     }
 
     void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &globalVarName, const std::string &storage, Ioss::Field::BasicType dataType)
     {
       validate_output_file_index(output_file_index);
-      m_output_files[output_file_index].add_global(globalVarName, storage, dataType);
+      m_output_files[output_file_index]->add_global(globalVarName, storage, dataType);
     }
 
     void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName, const stk::util::Parameter &param)
     {
         validate_output_file_index(output_file_index);
-        m_output_files[output_file_index].write_global(globalVarName, param);
+        m_output_files[output_file_index]->write_global(globalVarName, param);
     }
 
     void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName, double globalVarData)
     {
         validate_output_file_index(output_file_index);
-        m_output_files[output_file_index].write_global(globalVarName, globalVarData);
+        m_output_files[output_file_index]->write_global(globalVarName, globalVarData);
     }
 
     void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName, int globalVarData)
     {
         validate_output_file_index(output_file_index);
-        m_output_files[output_file_index].write_global(globalVarName, globalVarData);
+        m_output_files[output_file_index]->write_global(globalVarName, globalVarData);
     }
 
     void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName, std::vector<double>& globalVarData)
     {
         validate_output_file_index(output_file_index);
-        m_output_files[output_file_index].write_global(globalVarName, globalVarData);
+        m_output_files[output_file_index]->write_global(globalVarName, globalVarData);
     }
 
     void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName, std::vector<int>& globalVarData)
     {
         validate_output_file_index(output_file_index);
-        m_output_files[output_file_index].write_global(globalVarName, globalVarData);
+        m_output_files[output_file_index]->write_global(globalVarName, globalVarData);
     }
 
 

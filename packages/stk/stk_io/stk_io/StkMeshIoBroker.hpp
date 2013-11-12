@@ -63,8 +63,11 @@ namespace stk {
         Teuchos::RCP<Ioss::Region> get_output_io_region() {
             return m_output_region;
         }
-        ~OutputFile() { }
-    public:
+        ~OutputFile()
+        {
+          stk::io::delete_selector_property(*m_output_region);
+	}
+
         void write_output_mesh(const stk::mesh::BulkData& bulk_data);
         void add_results_field(stk::mesh::FieldBase &field, const std::string &alternate_name);
 
@@ -100,10 +103,9 @@ namespace stk {
         }
 
     private:
-        // TODO: get_output_region (returned and set in ctor)
         void define_output_fields(const stk::mesh::BulkData& bulk_data);
         void setup_output_file(const std::string &filename, MPI_Comm communicator, Ioss::PropertyManager &property_manager);
-    public:
+
         int m_current_output_step;
         bool m_use_nodeset_for_part_nodes_fields;
         bool m_mesh_defined;
@@ -112,9 +114,9 @@ namespace stk {
         Teuchos::RCP<stk::mesh::Selector> m_subset_selector;
         Teuchos::RCP<Ioss::Region> m_output_region;
         std::vector<stk::io::FieldAndName> m_named_fields;
-//    private:
-//      OutputFile(const OutputFile &);
-//      const OutputFile & operator=(const OutputFile &);
+
+        OutputFile(const OutputFile &);
+        const OutputFile & operator=(const OutputFile &);
     };
 
     class StkMeshIoBroker {
@@ -158,7 +160,7 @@ namespace stk {
 
         Teuchos::RCP<Ioss::Region> get_output_io_region(size_t output_file_index) {
             validate_output_file_index(output_file_index);
-            return m_output_files[output_file_index].get_output_io_region();
+            return m_output_files[output_file_index]->get_output_io_region();
         }
 
         /**
@@ -188,12 +190,12 @@ namespace stk {
          */
         void set_subset_selector(size_t output_file_index, Teuchos::RCP<stk::mesh::Selector> my_selector) {
 	    validate_output_file_index(output_file_index);
-            m_output_files[output_file_index].set_subset_selector(my_selector);
+            m_output_files[output_file_index]->set_subset_selector(my_selector);
 	}
 
         void set_subset_selector(size_t output_file_index, stk::mesh::Selector &my_selector) {
 	  validate_output_file_index(output_file_index);
-	  m_output_files[output_file_index].set_subset_selector(Teuchos::rcpFromRef(my_selector));
+	  m_output_files[output_file_index]->set_subset_selector(Teuchos::rcpFromRef(my_selector));
 	}
 
         Teuchos::RCP<stk::mesh::Selector> deprecated_selector() {
@@ -230,7 +232,7 @@ namespace stk {
          * No meta_data or bulk_data is created at this time, but the
          * input_io_database() will be valid.
          *
-         * The Ioss::DatabaseIO can be accessed vi the input_io_database()
+         * The Ioss::DatabaseIO can be accessed via the input_io_database()
          * method if you need to set some options on the database prior
          * to it being read.
          *
@@ -240,8 +242,8 @@ namespace stk {
          * this parameter contains data used by the generation routines.
          * See the GeneratedMesh documentation.
          *
-         *          * \param[in] type   The format of the mesh that will be
-         * "read".  Valid types are "exodus", "generated", "pamgen".
+         * \param[in] type The format of the mesh that will be "read".
+         * Valid types are "exodus", "generated", "pamgen".
          *
          */
         bool open_mesh_database(const std::string &filename,
@@ -254,7 +256,7 @@ namespace stk {
          * then use that type.  Valid input types are:
          *   exodus, dof, pamgen, and possibly others.
          *
-         * @param filename If the mesh type is file based ("exodus"),
+         * \param[in] filename If the mesh type is file based ("exodus"),
          * then this contains the full pathname to the file containing the
          * mesh information.  If the mesh type is a generated type, then
          * this parameter contains data used by the generation routines.
@@ -366,6 +368,9 @@ namespace stk {
         void add_results_field(size_t output_file_index, stk::mesh::FieldBase &field);
         void add_results_field_with_alternate_name(size_t output_file_index, stk::mesh::FieldBase &field, const std::string &db_name);
 
+        void add_restart_field(size_t file_index, stk::mesh::FieldBase &field, const std::string &db_name = std::string());
+        void add_restart_field(stk::mesh::FieldBase &field, const std::string &db_name = std::string());
+
         void add_global(size_t output_file_index, const std::string &globalVarName, const stk::util::Parameter &param);
         void add_global(size_t output_file_index, const std::string &globalVarName, Ioss::Field::BasicType dataType);
         void add_global(size_t output_file_index, const std::string &globalVarName, const std::string &type, Ioss::Field::BasicType dataType);
@@ -378,26 +383,32 @@ namespace stk {
         void end_output_step(size_t output_file_index);
 
         /**
-         * Add a transient step to the mesh database at time 'time' and
-         * output the data for all defined fields to the database.
-         */
-        int process_output_request(size_t output_file_index, double time);
-
-        /**
          * Output the data for all defined fields to the database for
 	 * the step added by "begin_output_step".  End step with a call
 	 * to "end_output_step"
          */
         int process_output_request(size_t output_file_index);
 
+        /**
+         * Add a transient step to the mesh database at time 'time' and
+         * output the data for all defined fields to the database.
+	 * Performs the same functions as:
+	 *
+	 * 	begin_output_step(output_file_index, time);
+	 * 	process_output_request(output_file_index);
+	 * 	end_output_step(output_file_index);
+	 *
+	 * Note that if there are any global varibles defined, they
+	 * will *not* be output with this function and will be
+	 * zero-filled on the database.
+         */
+        int process_output_request(size_t output_file_index, double time);
+
         void write_global(size_t output_file_index, const std::string &globalVarName, const stk::util::Parameter &param);
         void write_global(size_t output_file_index, const std::string &globalVarName, double data);
         void write_global(size_t output_file_index, const std::string &globalVarName, int data);
         void write_global(size_t output_file_index, const std::string &globalVarName, std::vector<double>& data);
         void write_global(size_t output_file_index, const std::string &globalVarName, std::vector<int>& data);
-
-        void add_restart_field(size_t file_index, stk::mesh::FieldBase &field, const std::string &db_name = std::string());
-        void add_restart_field(stk::mesh::FieldBase &field, const std::string &db_name = std::string());
 
         void get_global_variable_names(std::vector<std::string> &names);
         double get_global(const std::string &globalVarName);
@@ -414,8 +425,6 @@ namespace stk {
         // * Is there a separate input restart file, or is it just the mesh?
         //   -- If reading data from the mesh also, then may need both.
         // * What state used for input/output -- pass as argument to process_restart?
-
-        /** RESTART **/
 
         bool meta_data_is_set() const
         {
@@ -471,12 +480,12 @@ namespace stk {
         bool use_nodeset_for_part_nodes_fields(size_t output_file_index) const
         {
 	  validate_output_file_index(output_file_index);
-	  return m_output_files[output_file_index].use_nodeset_for_part_nodes_fields();
+	  return m_output_files[output_file_index]->use_nodeset_for_part_nodes_fields();
         }
         void use_nodeset_for_part_nodes_fields(size_t output_file_index, bool true_false)
         {
 	  validate_output_file_index(output_file_index);
-	  m_output_files[output_file_index].use_nodeset_for_part_nodes_fields(true_false);
+	  m_output_files[output_file_index]->use_nodeset_for_part_nodes_fields(true_false);
         }
 
         bool use_nodeset_for_part_nodes_fields_input() const
@@ -525,10 +534,8 @@ namespace stk {
 
         stk::mesh::ConnectivityMap* m_connectivity_map;
 
-        std::vector<OutputFile> m_output_files;
+        std::vector<Teuchos::RCP<OutputFile> > m_output_files;
 
-        // This should be private, but needs to be public since some applications/tests are defining
-        // their own fields and need to inform StkMeshIoBroker that they did this...
         bool m_useNodesetForPartNodesFields;
 
         StkMeshIoBroker(const StkMeshIoBroker&); // Do not implement
