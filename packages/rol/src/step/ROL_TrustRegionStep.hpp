@@ -80,6 +80,10 @@ public:
         secant_ = Teuchos::rcp( new lDFP<Real>(L) );
         step_   = "Newton-CG with Limited-Memory DFP Preconditioning";
       }
+      else if ( Stype == Secant_lSR1 ) {
+        secant_ = Teuchos::rcp( new lSR1<Real>(L) );
+        step_   = "Newton-CG with Limited-Memory SR1 Preconditioning";
+      }
       else if ( Stype == Secant_BarzilaiBorwein ) {
         secant_ = Teuchos::rcp( new BarzilaiBorwein<Real>(BBtype) );
         step_   = "Newton-CG with Barzilai-Borwein Preconditioning";
@@ -93,6 +97,10 @@ public:
       else if ( Stype == Secant_lDFP ) {
         secant_ = Teuchos::rcp( new lDFP<Real>(L) );
         step_   = "Limited-Memory DFP";
+      }
+      else if ( Stype == Secant_lSR1 ) {
+        secant_ = Teuchos::rcp( new lSR1<Real>(L) );
+        step_   = "Limited-Memory SR1";
       }
       else if ( Stype == Secant_BarzilaiBorwein ) {
         secant_ = Teuchos::rcp( new BarzilaiBorwein<Real>(BBtype) );
@@ -121,6 +129,9 @@ public:
     CGiter_ = 0;
     trustRegion_->run(s,algo_state.snorm,del_,CGflag_,CGiter_,
                       x,*(Step<Real>::state_->gradientVec),algo_state.gnorm,obj,secant_);
+    //if ( secant_ != Teuchos::null ) {
+    //  secant_->test(s,x);
+    //}
   }
 
   /** \brief Update step, if successful.

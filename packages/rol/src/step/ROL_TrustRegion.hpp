@@ -99,10 +99,10 @@ public:
       if (pRed_ < 0 && aRed > 0) { 
         flagTR = 1;
       }
-      else if (aRed < 0 && pRed_ > 0) {
+      else if (aRed <= 0 && pRed_ > 0) {
         flagTR = 2;
       }
-      else if (aRed < 0 && pRed_ < 0) { 
+      else if (aRed <= 0 && pRed_ < 0) { 
         flagTR = 3;
       }
       else {
@@ -320,22 +320,22 @@ public:
     }
     sN->scale(-1.0);
     Real sNnorm = sN->norm();
-    Real tmp    = grad.dot(*sN);
+    Real gsN    = grad.dot(*sN);
     bool negCurv = false;
-    if ( tmp >= 0.0 ) {
+    if ( gsN >= 0.0 ) {
       negCurv = true;
     }
-    Real gsN = std::abs(tmp);
 
     if ( negCurv ) {
       cauchypoint(s,snorm,del,iflag,iter,x,grad,gnorm,obj,secant);
+      iflag = 2;
     }  
     else {
       // Approximately solve trust region subproblem using double dogleg curve
       if (sNnorm <= del) {        // Use the quasi-Newton step
         s.set(*sN); 
         snorm = sNnorm;
-        pRed_ = 0.5*gsN;
+        pRed_ = -0.5*gsN;
         iflag = 0;
       }
       else {                      // quasi-Newton step is outside of trust region
@@ -351,13 +351,13 @@ public:
         Real gnorm2 = gnorm*gnorm;
         Real gBg    = grad.dot(*Bg);
         Real gamma  = gnorm2/gBg;
-        if ( gamma*gnorm >= del ) {
-          alpha = 0.0;
-          beta  = -del/gnorm;
-          s.set(grad); 
-          s.scale(beta); 
-          snorm = del;
-          iflag = 2;
+        if ( gamma*gnorm >= del || gBg <= 0.0 ) {
+            alpha = 0.0;
+            beta  = del/gnorm;
+            s.set(grad); 
+            s.scale(-beta); 
+            snorm = del;
+            iflag = 2;
         }
         else {
           Real a = sNnorm*sNnorm + 2.0*gamma*gsN + gamma*gamma*gnorm2;
@@ -371,7 +371,7 @@ public:
           snorm = del;
           iflag = 1;
         }
-        pRed_ = -(alpha*(0.5*alpha-1)*gsN + 0.5*beta*beta*gBg + beta*(1-alpha)*gnorm2);
+        pRed_ = (alpha*(0.5*alpha-1)*gsN - 0.5*beta*beta*gBg + beta*(1-alpha)*gnorm2);
       }
     }
   }
@@ -422,7 +422,7 @@ public:
         Real gamma1 = gnorm/gBg;
         Real gamma2 = gnorm/gsN;
         Real eta    = 0.8*gamma1*gamma2 + 0.2;
-        if (eta*sNnorm <= del) {        // Dogleg Point is inside trust region
+        if (eta*sNnorm <= del || gBg <= 0.0) {        // Dogleg Point is inside trust region
           alpha = del/sNnorm;
           beta  = 0.0;
           s.set(*sN);

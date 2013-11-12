@@ -165,6 +165,113 @@ public:
   }
 };
 
+template<class Real>
+class Objective_LeastSquares : public ROL::Objective<Real> {
+public:
+  Real value( const ROL::Vector<Real> &x ) {
+    ROL::StdVector<Real> & ex =
+      Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast <ROL::Vector<Real> &>(x));
+    Teuchos::RCP<const std::vector<Real> > xp = ex.getVector();
+    int n = xp->size();
+
+    Real h = 1.0/((Real)n+1.0);
+
+    Real val = 0.0;
+    Real res = 0.0;
+    for (int i=0; i<n; i++) {
+      if ( i == 0 ) {
+        res = 2.0*h*(5.0/6.0) + 1.0/h*((*xp)[i+1]-2.0*(*xp)[i]);
+      }  
+      else if ( i == n-1 ) {
+        res = 2.0*h*(5.0/6.0) + 1.0/h*((*xp)[i-1]-2.0*(*xp)[i]);
+      }
+      else {
+        res = 2.0*h + 1.0/h*((*xp)[i-1]-2.0*(*xp)[i]+(*xp)[i+1]);  
+      } 
+      val += 0.5*res*res; 
+    }
+
+    return val;
+ }
+
+  void gradient( ROL::Vector<Real> &g, const ROL::Vector<Real> &x ) {
+
+    Teuchos::RCP<const std::vector<Real> > xp =
+      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(x))).getVector();
+    Teuchos::RCP<std::vector<Real> > gp =
+      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(g)).getVector());
+
+    int n = xp->size();
+
+    std::vector<Real> res(n,0.0);
+
+    Real h = 1.0/((Real)n+1.0);
+
+    for (int i=0; i<n; i++) {
+      if ( i == 0 ) {
+        res[i] = 2.0*h*(5.0/6.0) + 1.0/h*((*xp)[i+1]-2.0*(*xp)[i]);
+      }  
+      else if ( i == n-1 ) {
+        res[i] = 2.0*h*(5.0/6.0) + 1.0/h*((*xp)[i-1]-2.0*(*xp)[i]);
+      }
+      else {
+        res[i] = 2.0*h + 1.0/h*((*xp)[i-1]-2.0*(*xp)[i]+(*xp)[i+1]);  
+      } 
+    }
+
+    for (int i=0; i<n; i++) {
+      if ( i == 0 ) {
+        (*gp)[i] = 1.0/h*(res[i+1]-2.0*res[i]);
+      }  
+      else if ( i == n-1 ) {
+        (*gp)[i] = 1.0/h*(res[i-1]-2.0*res[i]);
+      }
+      else {
+        (*gp)[i] = 1.0/h*(res[i-1]-2.0*res[i]+res[i+1]);  
+      } 
+    }
+  }
+
+  void hessVec( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &x ) {
+
+    Teuchos::RCP<const std::vector<Real> > xp =
+      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(x))).getVector();
+    Teuchos::RCP<const std::vector<Real> > vp =
+      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
+    Teuchos::RCP<std::vector<Real> > hvp =
+      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(hv)).getVector());
+
+    int n = xp->size();
+
+    std::vector<Real> res(n,0.0);
+
+    Real h = 1.0/((Real)n+1.0);
+
+    for (int i=0; i<n; i++) {
+      if ( i == 0 ) {
+        res[i] = 1.0/h*((*vp)[i+1]-2.0*(*vp)[i]);
+      }  
+      else if ( i == n-1 ) {
+        res[i] = 1.0/h*((*vp)[i-1]-2.0*(*vp)[i]);
+      }
+      else {
+        res[i] = 1.0/h*((*vp)[i-1]-2.0*(*vp)[i]+(*vp)[i+1]);  
+      } 
+    }
+
+    for (int i=0; i<n; i++) {
+      if ( i == 0 ) {
+        (*hvp)[i] = 1.0/h*(res[i+1]-2.0*res[i]);
+      }  
+      else if ( i == n-1 ) {
+        (*hvp)[i] = 1.0/h*(res[i-1]-2.0*res[i]);
+      }
+      else {
+        (*hvp)[i] = 1.0/h*(res[i-1]-2.0*res[i]+res[i+1]);  
+      } 
+    }
+  }
+};
 
 int main(int argc, char *argv[]) {
 
@@ -185,34 +292,53 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    int dim = 100;
+    int objFunc = 3;
+
+    int dim = 64;
     Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
     Teuchos::RCP<std::vector<RealT> > y_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+    Teuchos::RCP<std::vector<RealT> > z_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+    Teuchos::RCP<std::vector<RealT> > e_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
     ROL::StdVector<RealT> x(x_rcp);
     ROL::StdVector<RealT> y(y_rcp);
+    ROL::StdVector<RealT> z(z_rcp);
+    ROL::StdVector<RealT> e(e_rcp);
 
     // set x,y
     for (int i=0; i<dim; i++) {
       (*x_rcp)[i] = 1.0;
       (*y_rcp)[i] = i;
+      if ( objFunc == 1 ) {
+        (*z_rcp)[i] = 1.0;
+      }
+      else if ( objFunc == 2 ) {
+        (*z_rcp)[i] = 0.0;
+      }
+      else if ( objFunc == 3 ) {
+        RealT h  = 1.0/((RealT)dim+1.0);
+        RealT pt = (RealT)(i+1)*h;
+        (*z_rcp)[i] = pt*(1.0-pt);
+      }
     }
 
-    Objective_Rosenbrock<RealT> obj;
-    //Objective_SumSquares<RealT> obj;
-  
-    *outStream << "\nObjective value: " << obj.value(x) << "\n";
-
-    *outStream << "\nDirectional derivative: " << obj.dirDeriv(x,y,1e-2*Teuchos::ScalarTraits<RealT>::eps()) << "\n";
-
-    obj.gradient(y,x);
-
-    *outStream << "\nNorm of finite-difference gradient: " << y.norm() << "\n";
-
-    x.zero();
-    y.zero();
+    Teuchos::RCP<ROL::Objective<RealT> > obj;
+    if ( objFunc == 1 ) {
+      *outStream << "\nROSENBROCK'S FUNCTION\n";
+      obj = Teuchos::rcp(new Objective_Rosenbrock<RealT>);
+    }
+    else if ( objFunc == 2 ) {
+      *outStream << "\nSUM OF SQUARES OBJECTIVE\n";
+      obj = Teuchos::rcp(new Objective_SumSquares<RealT>);
+    }
+    else if ( objFunc == 3 ) {
+      *outStream << "\nLEAST SQUARES OBJECTIVE\n";
+      obj = Teuchos::rcp(new Objective_LeastSquares<RealT>);
+    }
+    obj->checkGradient(x,y,true);
 
     /* BEGIN SECANT DEFINITION */
     ROL::SecantType Stype = ROL::Secant_lDFP;
+    //ROL::SecantType Stype = ROL::Secant_lSR1;
     //ROL::SecantType Stype = ROL::Secant_lBFGS;
     //ROL::SecantType Stype = ROL::Secant_BarzilaiBorwein;
 
@@ -221,14 +347,14 @@ int main(int argc, char *argv[]) {
     /* END SECANT DEFINTION */
 
     /* BEGIN LINE SEARCH STEP DEFINTION */
-    ROL::LineSearchStepType LSStype = ROL::LineSearchStep_Newton;
-    //ROL::LineSearchStepType LSStype = ROL::LineSearchStep_NewtonKrylov;
+    //ROL::LineSearchStepType LSStype = ROL::LineSearchStep_Newton;
+    ROL::LineSearchStepType LSStype = ROL::LineSearchStep_NewtonKrylov;
     //ROL::LineSearchStepType LSStype = ROL::LineSearchStep_NewtonKrylovSecantPreconditioning;
     //ROL::LineSearchStepType LSStype = ROL::LineSearchStep_Secant;
     //ROL::LineSearchStepType LSStype = ROL::LineSearchStep_Gradient;
 
-    //ROL::LineSearchType LStype = ROL::LineSearchType_Backtracking;
-    ROL::LineSearchType LStype = ROL::LineSearchType_SimpleBacktracking;
+    ROL::LineSearchType LStype = ROL::LineSearchType_Backtracking;
+    //ROL::LineSearchType LStype = ROL::LineSearchType_SimpleBacktracking;
     //ROL::LineSearchType LStype = ROL::LineSearchType_Brents;
     //ROL::LineSearchType LStype = ROL::LineSearchType_Bisection;
     //ROL::LineSearchType LStype = ROL::LineSearchType_GoldenSection;
@@ -245,25 +371,25 @@ int main(int argc, char *argv[]) {
 
     RealT CGtol1 = 1.e-4;
     RealT CGtol2 = 1.e-2;
-    int maxitCG  = 100;
+    int maxitCG  = 200;
 
     ROL::LineSearchStep<RealT> LS_step(LStype,LScond,LSStype,maxit,c1,c2,tol,rho,
                                        Stype,L,BBtype,CGtol1,CGtol2,maxitCG);
     /* END LINE SEARCH STEP DEFINITION */
 
     /* BEGIN TRUST REGION STEP DEFINTION */
-    //ROL::TrustRegionStepType TRStype = ROL::TrustRegionStep_NewtonKrylov;
+    //ROL::TrustRegionStepType TRStype = ROL::TrustRegionStep_Newton;
+    ROL::TrustRegionStepType TRStype = ROL::TrustRegionStep_NewtonKrylov;
     //ROL::TrustRegionStepType TRStype = ROL::TrustRegionStep_NewtonKrylovSecantPreconditioning;
     //ROL::TrustRegionStepType TRStype = ROL::TrustRegionStep_Secant;
-    ROL::TrustRegionStepType TRStype = ROL::TrustRegionStep_Newton;
     //ROL::TrustRegionStepType TRStype = ROL::TrustRegionStep_Gradient;
 
     //ROL::TrustRegionType TRtype = ROL::TrustRegionType_CauchyPoint;
-    //ROL::TrustRegionType TRtype = ROL::TrustRegionType_TruncatedCG;
+    ROL::TrustRegionType TRtype = ROL::TrustRegionType_TruncatedCG;
     //ROL::TrustRegionType TRtype = ROL::TrustRegionType_DoubleDogleg;  
-    ROL::TrustRegionType TRtype = ROL::TrustRegionType_Dogleg;
+    //ROL::TrustRegionType TRtype = ROL::TrustRegionType_Dogleg;
 
-    maxit        = 100;
+    maxit        = 200;
     RealT tol1   = 1.e-4;
     RealT tol2   = 1.e-2;
     RealT del    = 100.0;
@@ -280,31 +406,34 @@ int main(int argc, char *argv[]) {
     ROL::TrustRegionStep<RealT> TR_step(TRtype,TRStype,maxit,tol1,tol2,del,delmin,delmax,
                                         eta0,eta1,eta2,gamma0,gamma1,gamma2,TRsafe,
                                         Stype,L,BBtype);
-    /* END TRUST REGION STEP DEFINTION */ 
+    /* END TRUST REGION STEP DEFINITION */ 
 
-    /* END TRUST REGION STEP DEFINITION */
-
-
-    ROL::StatusTest<RealT> status(1.e-6,1.e-12,100000);    
+    ROL::StatusTest<RealT> status(1.e-8,1.e-16,100);    
 
     for (int i=0; i<dim/2; i++) {
       (*x_rcp)[2*i]   = -1.2;
       (*x_rcp)[2*i+1] =  1.0;
     }
     ROL::DefaultAlgorithm<RealT> LS_algo(LS_step,status);
-    LS_algo.run(x, obj);
+    LS_algo.run(x, *obj);
+    e.set(x);
+    e.axpy(-1.0,z);
+    *outStream << "\nNorm of Error: " << e.norm() << "\n";
 
     for (int i=0; i<dim/2; i++) {
       (*x_rcp)[2*i]   = -1.2;
       (*x_rcp)[2*i+1] =  1.0;
     }
     ROL::DefaultAlgorithm<RealT> TR_algo(TR_step,status);
-    TR_algo.run(x, obj);
+    TR_algo.run(x, *obj);
+    e.set(x);
+    e.axpy(-1.0,z);
+    *outStream << "\nNorm of Error: " << e.norm() << "\n";
 
     //Teuchos::RCP<ROL::Algorithm<RealT> > algo;
     //ROL::DefaultAlgorithmFactory<RealT> algoFactory.getAlgo(algo, parlist);
     
-    obj.gradient(y,x);
+    obj->gradient(y,x);
 
     *outStream << "\nNorm of finite-difference gradient: " << y.norm() << "\n";
 

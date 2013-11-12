@@ -80,6 +80,7 @@ APPEND_SET(HEADERS
   step/ROL_Secant.hpp
   step/ROL_lBFGS.hpp
   step/ROL_lDFP.hpp
+  step/ROL_lSR1.hpp
   step/ROL_BarzilaiBorwein.hpp
   step/ROL_Krylov.hpp
   )
