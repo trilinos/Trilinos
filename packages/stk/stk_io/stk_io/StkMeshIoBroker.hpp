@@ -133,6 +133,26 @@ namespace stk {
         ~StkMeshIoBroker();
 
         /**
+	 * Add the specified 'new_property' to the default property
+	 * manager for this StkMeshIoBroker object.  The property
+	 * manager is (currently) used for the input mesh region and
+	 * the output mesh regions if no output property manager is
+	 * specified in the create_output_mesh() call.
+	 *
+	 * If the property already exists, it is overwritten by the
+	 * current value.
+	 */	 
+        void property_add(const Ioss::Property &property);
+
+        /**
+	 * If a property with the specified name exists, remove it.
+	 * (Function provided for backward compatibility with existing
+	 * use in Percept following change to make m_property_manger
+	 * private)
+	 */
+        void remove_property_if_exists(const std::string &property_name);
+
+        /**
          * Set the output Ioss::Region directly instead of letting it be
          * created by StkMeshIoBroker during the create_output_mesh() call.
          */
@@ -354,6 +374,7 @@ namespace stk {
          * exists, it will be overwritten.
          */
         size_t create_output_mesh(const std::string &filename);
+        size_t create_output_mesh(const std::string &filename, Ioss::PropertyManager &properties);
         void write_output_mesh(size_t output_file_index);
 
         void add_results_field(size_t output_file_index, stk::mesh::FieldBase &field);
@@ -488,6 +509,11 @@ namespace stk {
 	  m_useNodesetForPartNodesFields = true_false;
         }
 
+
+      private:
+        void create_ioss_region();
+        void validate_output_file_index(size_t output_file_index) const;
+
         /*!
          * The `m_property_manager` member data contains properties that
          * can be used to set database-specific options in the
@@ -507,10 +533,6 @@ namespace stk {
          * | LOGGING               | (true/false) to enable/disable logging of field input/output
          */
         Ioss::PropertyManager m_property_manager;
-
-      private:
-        void create_ioss_region();
-        void validate_output_file_index(size_t output_file_index) const;
 
         MPI_Comm m_communicator;
         std::vector<std::string>       m_rank_names; // Optional rank name vector.

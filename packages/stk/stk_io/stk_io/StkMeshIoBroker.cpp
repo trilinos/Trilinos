@@ -1039,6 +1039,16 @@ namespace stk {
     StkMeshIoBroker::~StkMeshIoBroker()
     { }
 
+    void StkMeshIoBroker::property_add(const Ioss::Property &property)
+    {
+      m_property_manager.add(property);
+    }
+
+    void StkMeshIoBroker::remove_property_if_exists(const std::string &property_name)
+    {
+      m_property_manager.erase(property_name);
+    }
+
     size_t StkMeshIoBroker::set_output_io_region(Teuchos::RCP<Ioss::Region> ioss_output_region)
     {
       m_output_files.clear();
@@ -1161,6 +1171,16 @@ namespace stk {
     size_t StkMeshIoBroker::create_output_mesh(const std::string &filename)
     {
       Teuchos::RCP<OutputFile> output_file = Teuchos::rcp(new OutputFile(filename, m_communicator, m_property_manager, m_input_region.get()));
+      m_output_files.push_back(output_file);
+
+      size_t index_of_output_file = m_output_files.size()-1;
+      return index_of_output_file;
+    }
+
+
+    size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, Ioss::PropertyManager &properties)
+    {
+      Teuchos::RCP<OutputFile> output_file = Teuchos::rcp(new OutputFile(filename, m_communicator, properties, m_input_region.get()));
       m_output_files.push_back(output_file);
 
       size_t index_of_output_file = m_output_files.size()-1;

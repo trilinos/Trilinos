@@ -149,30 +149,30 @@ namespace {
 
     bool use_netcdf4 = false;
     if (!decomp_method.empty()) {
-      mesh_data.m_property_manager.add(Ioss::Property("DECOMPOSITION_METHOD", decomp_method));
+      mesh_data.property_add(Ioss::Property("DECOMPOSITION_METHOD", decomp_method));
     }
 
     if (compose_output) {
-      mesh_data.m_property_manager.add(Ioss::Property("COMPOSE_RESULTS", true));
-      mesh_data.m_property_manager.add(Ioss::Property("COMPOSE_RESTART", true));
+      mesh_data.property_add(Ioss::Property("COMPOSE_RESULTS", true));
+      mesh_data.property_add(Ioss::Property("COMPOSE_RESTART", true));
     }
     if (!parallel_io.empty()) {
-      mesh_data.m_property_manager.add(Ioss::Property("PARALLEL_IO_MODE", parallel_io));
+      mesh_data.property_add(Ioss::Property("PARALLEL_IO_MODE", parallel_io));
     }
     if (compression_level > 0) {
-      mesh_data.m_property_manager.add(Ioss::Property("COMPRESSION_LEVEL", compression_level));
+      mesh_data.property_add(Ioss::Property("COMPRESSION_LEVEL", compression_level));
       use_netcdf4 = true;
     }
     if (compression_shuffle) {
-      mesh_data.m_property_manager.add(Ioss::Property("COMPRESSION_SHUFFLE", 1));
+      mesh_data.property_add(Ioss::Property("COMPRESSION_SHUFFLE", 1));
       use_netcdf4 = true;
     }
     if (use_netcdf4) {
-      mesh_data.m_property_manager.add(Ioss::Property("FILE_TYPE", "netcdf4"));
+      mesh_data.property_add(Ioss::Property("FILE_TYPE", "netcdf4"));
     }
     if (db_integer_size == 8) {
-      mesh_data.m_property_manager.add(Ioss::Property("INTEGER_SIZE_DB", db_integer_size));
-      mesh_data.m_property_manager.add(Ioss::Property("INTEGER_SIZE_API", db_integer_size));
+      mesh_data.property_add(Ioss::Property("INTEGER_SIZE_DB", db_integer_size));
+      mesh_data.property_add(Ioss::Property("INTEGER_SIZE_API", db_integer_size));
     }
 
     mesh_read_write(type, working_directory, filename, mesh_data, db_integer_size);
