@@ -66,8 +66,7 @@ class Multiply<
   BlockCrsMatrix< TiledCrsProductTensor< TensorScalar, Kokkos::Cuda >,
                   MatrixScalar, Kokkos::Cuda >,
   Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
-  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
-  DefaultSparseMatOps >
+  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda> >
 {
 public:
 
@@ -309,8 +308,7 @@ class Multiply<
   BlockCrsMatrix< TiledCrsProductTensor< TensorScalar, Kokkos::Cuda >,
                   MatrixScalar, Kokkos::Cuda >,
   Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
-  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
-  DefaultSparseMatOps >
+  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda> >
 {
 public:
 
@@ -540,8 +538,7 @@ class Multiply<
   BlockCrsMatrix< TiledCrsProductTensor< TensorScalar, Kokkos::Cuda >,
                   MatrixScalar, Kokkos::Cuda >,
   Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
-  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
-  DefaultSparseMatOps >
+  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda> >
 {
 public:
 

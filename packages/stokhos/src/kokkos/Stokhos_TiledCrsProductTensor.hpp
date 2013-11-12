@@ -49,6 +49,7 @@
 #include "Stokhos_Sparse3Tensor.hpp"
 #include "Stokhos_Sparse3TensorPartition.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Stokhos_TinyVec.hpp"
 
 #include "Kokkos_Cuda.hpp"
 
@@ -443,6 +444,97 @@ create_tiled_product_tensor(
   return TiledCrsProductTensor<ValueType, Device>::create(
     basis, Cijk, params );
 }
+
+template < typename ValueType, typename Device >
+class BlockMultiply< TiledCrsProductTensor< ValueType , Device > >
+{
+public:
+
+  typedef typename Device::size_type size_type ;
+  typedef TiledCrsProductTensor< ValueType , Device > tensor_type ;
+
+  template< typename MatrixValue , typename VectorValue >
+  KOKKOS_INLINE_FUNCTION
+  static void apply( const tensor_type & tensor ,
+                     const MatrixValue * const a ,
+                     const VectorValue * const x ,
+                           VectorValue * const y )
+  {
+    const size_type block_size = 2;
+    typedef TinyVec<ValueType,block_size,false> TV;
+
+    const size_type n_tile = tensor.num_tiles();
+
+    for ( size_type tile = 0 ; tile < n_tile ; ++tile ) {
+
+      const size_type i_offset = tensor.offset(tile, 0);
+      const size_type j_offset = tensor.offset(tile, 1);
+      const size_type k_offset = tensor.offset(tile, 2);
+
+      const size_type n_row = tensor.num_rows(tile);
+
+      for ( size_type i = 0 ; i < n_row ; ++i ) {
+
+        const size_type nEntry = tensor.num_entry(tile,i);
+        const size_type iEntryBeg = tensor.entry_begin(tile,i);
+        const size_type iEntryEnd = iEntryBeg + nEntry;
+              size_type iEntry    = iEntryBeg;
+
+        VectorValue ytmp = 0 ;
+
+        // Do entries with a blocked loop of size block_size
+        if (block_size > 1) {
+          const size_type nBlock = nEntry / block_size;
+          const size_type nEntryB = nBlock * block_size;
+          const size_type iEnd = iEntryBeg + nEntryB;
+
+          TV vy;
+          vy.zero();
+          int j[block_size], k[block_size];
+
+          for ( ; iEntry < iEnd ; iEntry += block_size ) {
+
+            for (size_type ii=0; ii<block_size; ++ii) {
+              j[ii] = tensor.coord(iEntry+ii,0) + j_offset;
+              k[ii] = tensor.coord(iEntry+ii,1) + k_offset;
+            }
+            TV aj(a, j), ak(a, k), xj(x, j), xk(x, k),
+              c(&(tensor.value(iEntry)));
+
+            // vy += c * ( aj * xk + ak * xj)
+            aj.times_equal(xk);
+            ak.times_equal(xj);
+            aj.plus_equal(ak);
+            c.times_equal(aj);
+            vy.plus_equal(c);
+
+          }
+
+          ytmp += vy.sum();
+        }
+
+        // Do remaining entries with a scalar loop
+        for ( ; iEntry<iEntryEnd; ++iEntry) {
+          const size_type j = tensor.coord(iEntry,0) + j_offset;
+          const size_type k = tensor.coord(iEntry,1) + k_offset;
+
+          ytmp += tensor.value(iEntry) * ( a[j] * x[k] + a[k] * x[j] );
+        }
+
+        y[i+i_offset] += ytmp ;
+        //y[i] += ytmp ;
+      }
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  static size_type matrix_size( const tensor_type & tensor )
+  { return tensor.dimension(); }
+
+  KOKKOS_INLINE_FUNCTION
+  static size_type vector_size( const tensor_type & tensor )
+  { return tensor.dimension(); }
+};
 
 } /* namespace Stokhos */
 

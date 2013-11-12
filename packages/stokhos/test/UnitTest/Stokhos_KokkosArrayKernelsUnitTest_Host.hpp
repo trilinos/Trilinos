@@ -39,43 +39,7 @@
 // ***********************************************************************
 // @HEADER
 
-// Utilities
-#include "Teuchos_UnitTestHarness.hpp"
-#include "Teuchos_UnitTestRepository.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-
-#include "KokkosCore_config.h"
-#include "Stokhos_ConfigDefs.h"
-
-// Devices
-#include "Kokkos_Threads.hpp"
-#include "Kokkos_OpenMP.hpp"
-#include "Kokkos_Cuda.hpp"
-#include "Kokkos_Serial.hpp"
-#include "Kokkos_hwloc.hpp"
-
-// Threads kernels
-#ifdef KOKKOS_HAVE_PTHREAD
-#include "Stokhos_Threads_CrsProductTensor.hpp"
-#endif
-
-// OpenMP kernels
-#if defined(KOKKOS_HAVE_OPENMP) && defined(HAVE_STOKHOS_MKL)
-#include "Stokhos_OpenMP_MKL_CrsMatrix.hpp"
-#endif
-
-// Tests
-#include "Stokhos_KokkosArrayKernelsUnitTestNew.hpp"
-
-using namespace KokkosKernelsUnitTest;
-
-UnitTestSetup setup;
-
-// Test declarations
-#include "Stokhos_KokkosArrayKernelsUnitTestNewDecl.hpp"
-
 // Host-specific tests
-
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_SG_SpMv, CrsProductTensorCijk, Scalar, Device ) {
   success = true;
 
@@ -221,8 +185,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_SG_SpMv, SimpleTiledCrsProductTensorCi
 }
 
 template <typename Scalar, typename Device, bool Pack>
-bool test_coo_product_tensor_cijk(const UnitTestSetup& setup,
-                                  Teuchos::FancyOStream& out) {
+bool test_coo_product_tensor_cijk(
+  const KokkosKernelsUnitTest::UnitTestSetup<Device>& setup,
+  Teuchos::FancyOStream& out) {
   bool success = true;
 
   typedef Scalar value_type;
@@ -335,79 +300,3 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_SG_SpMv, FlatSparseCijk_kji, Scalar, D
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, CooProductTensorCijk_Unpacked, SCALAR, DEVICE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, FlatSparseCijk, SCALAR, DEVICE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, FlatSparseCijk_kji, SCALAR, DEVICE )
-
-#ifdef KOKKOS_HAVE_PTHREAD
-using Kokkos::Threads;
-UNIT_TEST_GROUP_SCALAR_DEVICE( double, Threads )
-UNIT_TEST_GROUP_SCALAR_HOST_DEVICE( double, Threads )
-#endif
-
-#ifdef KOKKOS_HAVE_OPENMP
-using Kokkos::OpenMP;
-UNIT_TEST_GROUP_SCALAR_DEVICE( double, OpenMP )
-UNIT_TEST_GROUP_SCALAR_HOST_DEVICE( double, OpenMP )
-
-#ifdef HAVE_STOKHOS_MKL
-TEUCHOS_UNIT_TEST( Kokkos_SG_SpMv, double_OpenMP_CrsMatrixFree_MKL ) {
-  typedef double Scalar;
-  typedef Kokkos::OpenMP Device;
-  typedef Stokhos::MKLMultiply SparseMatOps;
-  success = test_crs_matrix_free<Scalar,Device,SparseMatOps>(
-    setup, out);
-}
-#endif
-
-#endif
-
-using Kokkos::Serial;
-UNIT_TEST_GROUP_SCALAR_DEVICE( double, Serial )
-UNIT_TEST_GROUP_SCALAR_HOST_DEVICE( double, Serial )
-
-int main( int argc, char* argv[] ) {
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
-  const size_t team_count =
-  Kokkos::hwloc::get_available_numa_count() *
-    Kokkos::hwloc::get_available_cores_per_numa();
-  const size_t threads_per_team =
-    Kokkos::hwloc::get_available_threads_per_core();
-  // const size_t team_count       = 1 ;
-  // const size_t threads_per_team = 1 ;
-
-// #ifdef KOKKOS_HAVE_PTHREAD
-//   // Initialize threads
-//   Kokkos::Threads::initialize( team_count * threads_per_team );
-//   Kokkos::Threads::print_configuration( std::cout );
-// #endif
-
-#ifdef KOKKOS_HAVE_OPENMP
-  // Initialize openmp
-  Kokkos::OpenMP::initialize( team_count * threads_per_team );
-  //Kokkos::OpenMP::print_configuration( std::cout );
-#endif
-
-#ifdef KOKKOS_HAVE_CUDA
-  // Initialize Cuda
-  Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
-  Kokkos::Cuda::print_configuration( std::cout );
-#endif
-
-  // Setup (has to happen after initialization)
-  setup.setup();
-
-  // Run tests
-  int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
-
-  // Finish up
-#ifdef KOKKOS_HAVE_PTHREAD
-  Kokkos::Threads::finalize();
-#endif
-#ifdef KOKKOS_HAVE_OPENMP
-  Kokkos::OpenMP::finalize();
-#endif
-#ifdef KOKKOS_HAVE_CUDA
-  Kokkos::Cuda::finalize();
-#endif
-
-  return ret;
-}

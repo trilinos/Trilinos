@@ -39,58 +39,44 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_CUDA_FLAT_SPARSE_3_TENSOR_HPP
-#define STOKHOS_CUDA_FLAT_SPARSE_3_TENSOR_HPP
+// Utilities
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_UnitTestRepository.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
-#include <iostream>
+// Device
+#include "Kokkos_Serial.hpp"
 
-#include "Kokkos_Cuda.hpp"
-#include "Cuda/Kokkos_Cuda_Parallel.hpp"
+// Tests
+#include "Stokhos_KokkosArrayKernelsUnitTest.hpp"
 
-#include "Stokhos_Multiply.hpp"
-#include "Stokhos_BlockCrsMatrix.hpp"
-#include "Stokhos_FlatSparse3Tensor.hpp"
+using namespace KokkosKernelsUnitTest;
 
-#include "cuda_profiler_api.h"
+UnitTestSetup<Kokkos::Serial> setup;
 
-namespace Stokhos {
+// Test declarations
+#include "Stokhos_KokkosArrayKernelsUnitTestDecl.hpp"
+#include "Stokhos_KokkosArrayKernelsUnitTest_Host.hpp"
 
-//----------------------------------------------------------------------------
+// Tests using Serial device
+using Kokkos::Serial;
+UNIT_TEST_GROUP_SCALAR_DEVICE( double, Serial )
+UNIT_TEST_GROUP_SCALAR_HOST_DEVICE( double, Serial )
 
-template< typename TensorScalar ,
-          typename MatrixScalar ,
-          typename VectorScalar >
-class Multiply<
-  BlockCrsMatrix< FlatSparse3Tensor< TensorScalar, Kokkos::Cuda >,
-                  MatrixScalar, Kokkos::Cuda >,
-  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
-  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda> >
-{
-public:
+int main( int argc, char* argv[] ) {
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-  typedef Kokkos::Cuda device_type ;
-  typedef device_type::size_type size_type ;
+  // Initialize threads
+  Kokkos::Serial::initialize();
 
-  typedef FlatSparse3Tensor< TensorScalar , device_type > tensor_type ;
-  typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type > matrix_type ;
-  typedef Kokkos::View< VectorScalar** ,
-                             Kokkos::LayoutLeft ,
-                             Kokkos::Cuda > vector_type ;
+  // Setup (has to happen after initialization)
+  setup.setup();
 
+  // Run tests
+  int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
+  // Finish up
+  Kokkos::Serial::finalize();
 
-  //------------------------------------
-
-  static void apply( const matrix_type & A ,
-                     const vector_type & x ,
-                     const vector_type & y )
-  {
-  }
-};
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-} // namespace Stokhos
-
-#endif /* #ifndef STOKHOS_CUDA_FLAT_SPARSE_3_TENSOR_HPP */
+  return ret;
+}

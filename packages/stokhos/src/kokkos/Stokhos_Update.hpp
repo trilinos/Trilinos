@@ -39,57 +39,57 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_THREADS_COO_PRODUCT_TENSOR_HPP
-#define STOKHOS_THREADS_COO_PRODUCT_TENSOR_HPP
-
-#include "Kokkos_Threads.hpp"
-
-#include "Stokhos_Multiply.hpp"
-#include "Stokhos_CooProductTensor.hpp"
+#ifndef STOKHOS_UPDATE_HPP
+#define STOKHOS_UPDATE_HPP
 
 namespace Stokhos {
 
-template< typename ValueType, bool Pack >
-class Multiply< CooProductTensor< ValueType, Kokkos::Threads, Pack >,
-                void, void, DefaultSparseMatOps >
+template< typename ValueType, typename VectorType >
+class Update
 {
 public:
+  typedef VectorType                        vector_type;
+  typedef ValueType                         value_type;
+  typedef typename vector_type::device_type device_type;
+  typedef typename device_type::size_type   size_type;
 
-  typedef Kokkos::Threads::size_type size_type ;
-  typedef CooProductTensor< ValueType , Kokkos::Threads, Pack > tensor_type ;
 
-  template< typename MatrixValue , typename VectorValue >
-  static void apply( const tensor_type & tensor ,
-                     const MatrixValue * const a ,
-                     const VectorValue * const x ,
-                           VectorValue * const y )
+        vector_type  m_x;
+  const vector_type  m_y;
+  const value_type   m_alpha;
+  const value_type   m_beta;
+
+  Update(const value_type& alpha, vector_type& x,
+         const value_type& beta,  const vector_type& y)
+  : m_x( x )
+  , m_y( y )
+  , m_alpha( alpha )
+  , m_beta( beta )
+  {}
+
+  //--------------------------------------------------------------------------
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type iRow ) const
   {
-    const size_type nEntry = tensor.entry_count();
-    size_type i = 0, j = 0, k = 0, i_prev = -1;
-    VectorValue val = 0.0, carry_val = 0.0;
-    for ( size_type entry = 0 ; entry < nEntry ; ++entry ) {
-      tensor.coord(entry, i, j, k);
-      val = tensor.value(entry) * ( a[j] * x[k] + a[k] * x[j] );
-      if (i == i_prev)
-        carry_val += val;
-      else {
-        y[i_prev] += carry_val;
-        carry_val = val;
-      }
-      i_prev = i;
-    }
-    y[i] += carry_val;
+    m_x(iRow) = m_alpha * m_x(iRow) + m_beta * m_y(iRow) ;
   }
 
-  static size_type matrix_size( const tensor_type & tensor )
-  { return tensor.dimension(); }
-
-  static size_type vector_size( const tensor_type & tensor )
-  { return tensor.dimension(); }
+  static void apply(const value_type& alpha, vector_type& x,
+                    const value_type& beta,  const vector_type& y)
+  {
+    const size_t row_count = x.dimension_0();
+    Kokkos::parallel_for( row_count , Update(alpha,x,beta,y) );
+  }
 };
 
-//----------------------------------------------------------------------------
+template <typename ValueType, typename VectorType>
+void update(const ValueType& alpha, VectorType& x,
+            const ValueType& beta,  const VectorType& y)
+{
+  Update<ValueType,VectorType>::apply( alpha , x , beta, y );
+}
 
 } // namespace Stokhos
 
-#endif /* #ifndef STOKHOS_THREADS_CRS_PRODUCT_TENSOR_HPP */
+#endif

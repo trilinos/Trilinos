@@ -50,9 +50,6 @@
 
 #include "TestStochastic.hpp"
 
-#include "Stokhos_Threads_CrsMatrix.hpp"
-#include "Stokhos_Threads_BlockCrsMatrix.hpp"
-#include "Stokhos_Threads_StochasticProductTensor.hpp"
 #include "Stokhos_Threads_CrsProductTensor.hpp"
 
 // Algorithms
@@ -82,7 +79,7 @@ run_test(const size_t num_cpu, const size_t num_core_per_cpu,
       unit_test::test_product_tensor_matrix<Scalar,Stokhos::CrsProductTensor<Scalar,Device>,Device>(var_degree , nGrid , nIter , symmetric );
   else if (sg_alg == ORIG_MAT_FREE)
     perf =
-      unit_test::test_original_matrix_free_vec<Scalar,Device,Stokhos::DefaultSparseMatOps>(
+      unit_test::test_original_matrix_free_vec<Scalar,Device,Stokhos::DefaultMultiply>(
         var_degree , nGrid , nIter , true , symmetric );
 
   Kokkos::Threads::finalize();
@@ -181,4 +178,3 @@ int main(int argc, char *argv[])
     return -1;
   return 0 ;
 }
-

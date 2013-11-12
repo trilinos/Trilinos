@@ -1,4 +1,3 @@
-
 INCLUDE(TribitsAddExecutableAndTest)
 
 ASSERT_DEFINED(PACKAGE_SOURCE_DIR CMAKE_CURRENT_SOURCE_DIR)
@@ -18,21 +17,19 @@ IF (Stokhos_ENABLE_KokkosCore)
       CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
     ENDIF()
     CUDA_COMPILE(CUDA_SOURCES TestCuda.cu)
-  ELSE()
-    SET(CUDA_SOURCES TestCudaStub.cpp)
   ENDIF()
   TRIBITS_ADD_EXECUTABLE(
-    SPMVTestNew
+    SPMVTest
     SOURCES TestStochastic.hpp
             TestHost.cpp
-	    main.cpp
+            main.cpp
             ${CUDA_SOURCES}
     COMM serial mpi
     DEPLIBS ${DEPLIBS}
     )
 
   TRIBITS_ADD_EXECUTABLE(
-    SPMVHostScalingNew
+    SPMVHostScaling
     SOURCES TestStochastic.hpp
             HostScaling.cpp
     COMM serial mpi
@@ -40,3 +37,10 @@ IF (Stokhos_ENABLE_KokkosCore)
     )
 
 ENDIF()
+
+TRIBITS_ADD_EXECUTABLE(
+  SPMVEpetra
+  SOURCES TestEpetra.cpp
+  COMM serial mpi
+  DEPLIBS stokhos
+  )

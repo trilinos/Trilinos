@@ -392,7 +392,6 @@ ENDIF()
 
 IF (Stokhos_ENABLE_KokkosCore)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Threads)
   SET(HEADERS ${HEADERS}
     kokkos/Stokhos_Multiply.hpp
     kokkos/Stokhos_CrsMatrix.hpp
@@ -407,20 +406,23 @@ IF (Stokhos_ENABLE_KokkosCore)
     kokkos/Stokhos_FlatSparse3Tensor_kji.hpp
     kokkos/Stokhos_LinearSparse3Tensor.hpp
     kokkos/Stokhos_LexicographicBlockSparse3Tensor.hpp
-    kokkos/Threads/Stokhos_Threads_TinyVec.hpp
-    kokkos/Threads/Stokhos_Threads_CrsMatrix.hpp
-    kokkos/Threads/Stokhos_Threads_BlockCrsMatrix.hpp
-    kokkos/Threads/Stokhos_Threads_StochasticProductTensor.hpp
-    kokkos/Threads/Stokhos_Threads_SymmetricDiagonalSpec.hpp
-    kokkos/Threads/Stokhos_Threads_CrsProductTensor.hpp
-    kokkos/Threads/Stokhos_Threads_TiledCrsProductTensor.hpp
-    kokkos/Threads/Stokhos_Threads_SimpleTiledCrsProductTensor.hpp
-    kokkos/Threads/Stokhos_Threads_CooProductTensor.hpp
-    kokkos/Threads/Stokhos_Threads_FlatSparse3Tensor.hpp
-    kokkos/Threads/Stokhos_Threads_FlatSparse3Tensor_kji.hpp
-    kokkos/Threads/Stokhos_Threads_LinearSparse3Tensor.hpp
-    kokkos/Threads/Stokhos_Threads_LexicographicBlockSparse3Tensor.hpp
+    kokkos/Stokhos_TinyVec.hpp
+    kokkos/Stokhos_Update.hpp
+    kokkos/Stokhos_MatrixMarket.hpp
     )
+  IF(Kokkos_ENABLE_Pthread)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Threads)
+    SET(HEADERS ${HEADERS}
+      kokkos/Threads/Stokhos_Threads_CrsProductTensor.hpp
+      )
+  ENDIF()
+  IF(Kokkos_ENABLE_OpenMP)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/OpenMP)
+    SET(HEADERS ${HEADERS}
+      kokkos/OpenMP/Stokhos_OpenMP_CrsProductTensor.hpp
+      kokkos/OpenMP/Stokhos_OpenMP_MKL_CrsMatrix.hpp
+      )
+  ENDIF()
   IF(Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Cuda)
     SET(HEADERS ${HEADERS}

@@ -425,25 +425,61 @@ ENDIF()
 
 IF (Stokhos_ENABLE_KokkosCore)
 
-  SET(CUDA_SOURCES "")
-  SET(KKUT_DEPLIBS stokhos kokkoscore)
-  IF (Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
-    # add MPI include dir to nvcc
-    IF( TPL_ENABLE_MPI )
-      CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
-    ENDIF()
-    CUDA_COMPILE(CUDA_SOURCES Stokhos_KokkosArrayKernelsUnitTestNew_Cuda.cu)
-  ENDIF()
-
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    KokkosArrayKernelsUnitTestNew
-    SOURCES Stokhos_KokkosArrayKernelsUnitTestNew.hpp
-    Stokhos_KokkosArrayKernelsUnitTestNew.cpp
-    ${CUDA_SOURCES}
+    KokkosArrayKernelsUnitTest_Serial
+    SOURCES Stokhos_KokkosArrayKernelsUnitTest.hpp
+            Stokhos_KokkosArrayKernelsUnitTestDecl.hpp
+            Stokhos_KokkosArrayKernelsUnitTest_Host.hpp
+            Stokhos_KokkosArrayKernelsUnitTest_Serial.cpp
     COMM serial mpi
     STANDARD_PASS_OUTPUT
     NUM_MPI_PROCS 1
-    DEPLIBS ${KKUT_DEPLIBS}
+    DEPLIBS stokhos kokkoscore
     )
+
+  IF (Kokkos_ENABLE_Pthread)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      KokkosArrayKernelsUnitTest_Threads
+      SOURCES Stokhos_KokkosArrayKernelsUnitTest.hpp
+              Stokhos_KokkosArrayKernelsUnitTestDecl.hpp
+              Stokhos_KokkosArrayKernelsUnitTest_Host.hpp
+              Stokhos_KokkosArrayKernelsUnitTest_Threads.cpp
+      COMM serial mpi
+      STANDARD_PASS_OUTPUT
+      NUM_MPI_PROCS 1
+      DEPLIBS stokhos kokkoscore
+      )
+  ENDIF()
+
+  IF (Kokkos_ENABLE_OpenMP)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      KokkosArrayKernelsUnitTest_OpenMP
+      SOURCES Stokhos_KokkosArrayKernelsUnitTest.hpp
+              Stokhos_KokkosArrayKernelsUnitTestDecl.hpp
+              Stokhos_KokkosArrayKernelsUnitTest_Host.hpp
+              Stokhos_KokkosArrayKernelsUnitTest_OpenMP.cpp
+      COMM serial mpi
+      STANDARD_PASS_OUTPUT
+      NUM_MPI_PROCS 1
+      DEPLIBS stokhos kokkoscore
+      )
+  ENDIF()
+
+  IF (Kokkos_ENABLE_Cuda)
+    IF( TPL_ENABLE_MPI )
+      CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
+    ENDIF()
+    CUDA_COMPILE(CUDA_SOURCES Stokhos_KokkosArrayKernelsUnitTest_Cuda.cu)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      KokkosArrayKernelsUnitTest_Cuda
+      SOURCES Stokhos_KokkosArrayKernelsUnitTest.hpp
+              Stokhos_KokkosArrayKernelsUnitTestDecl.hpp
+              ${CUDA_SOURCES}
+      COMM serial mpi
+      STANDARD_PASS_OUTPUT
+      NUM_MPI_PROCS 1
+      DEPLIBS stokhos kokkoscore
+      )
+  ENDIF()
 
 ENDIF()

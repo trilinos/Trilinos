@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -64,8 +64,7 @@ class Multiply<
   BlockCrsMatrix< LexicographicBlockSparse3Tensor< TensorScalar, Kokkos::Cuda >,
                   MatrixScalar, Kokkos::Cuda >,
   Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
-  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
-  DefaultSparseMatOps >
+  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda> >
 {
 public:
 
@@ -95,4 +94,3 @@ public:
 } // namespace Stokhos
 
 #endif /* #ifndef STOKHOS_CUDA_FLAT_SPARSE_3_TENSOR_HPP */
-

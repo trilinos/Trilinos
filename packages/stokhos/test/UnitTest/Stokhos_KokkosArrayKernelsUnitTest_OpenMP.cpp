@@ -39,58 +39,69 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_CUDA_FLAT_SPARSE_3_TENSOR_HPP
-#define STOKHOS_CUDA_FLAT_SPARSE_3_TENSOR_HPP
+// Utilities
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_UnitTestRepository.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
-#include <iostream>
+// Device
+#include "Kokkos_OpenMP.hpp"
+#include "Kokkos_hwloc.hpp"
 
-#include "Kokkos_Cuda.hpp"
-#include "Cuda/Kokkos_Cuda_Parallel.hpp"
+// Kernels
+#include "Stokhos_ConfigDefs.h"
+#include "Stokhos_OpenMP_CrsProductTensor.hpp"
+#ifdef HAVE_STOKHOS_MKL
+#include "Stokhos_OpenMP_MKL_CrsMatrix.hpp"
+#endif
 
-#include "Stokhos_Multiply.hpp"
-#include "Stokhos_BlockCrsMatrix.hpp"
-#include "Stokhos_FlatSparse3Tensor.hpp"
+// Tests
+#include "Stokhos_KokkosArrayKernelsUnitTest.hpp"
 
-#include "cuda_profiler_api.h"
+using namespace KokkosKernelsUnitTest;
 
-namespace Stokhos {
+UnitTestSetup<Kokkos::OpenMP> setup;
 
-//----------------------------------------------------------------------------
+// Test declarations
+#include "Stokhos_KokkosArrayKernelsUnitTestDecl.hpp"
+#include "Stokhos_KokkosArrayKernelsUnitTest_Host.hpp"
 
-template< typename TensorScalar ,
-          typename MatrixScalar ,
-          typename VectorScalar >
-class Multiply<
-  BlockCrsMatrix< FlatSparse3Tensor< TensorScalar, Kokkos::Cuda >,
-                  MatrixScalar, Kokkos::Cuda >,
-  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
-  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda> >
-{
-public:
+// Tests using OpenMP device
+using Kokkos::OpenMP;
+UNIT_TEST_GROUP_SCALAR_DEVICE( double, OpenMP )
+UNIT_TEST_GROUP_SCALAR_HOST_DEVICE( double, OpenMP )
 
-  typedef Kokkos::Cuda device_type ;
-  typedef device_type::size_type size_type ;
+#ifdef HAVE_STOKHOS_MKL
+TEUCHOS_UNIT_TEST( Kokkos_SG_SpMv, double_OpenMP_CrsMatrixFree_MKL ) {
+  typedef double Scalar;
+  typedef Kokkos::OpenMP Device;
+  typedef Stokhos::MKLMultiply SparseMatOps;
+  success = test_crs_matrix_free<Scalar,Device,SparseMatOps>(
+    setup, out);
+}
+#endif
 
-  typedef FlatSparse3Tensor< TensorScalar , device_type > tensor_type ;
-  typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type > matrix_type ;
-  typedef Kokkos::View< VectorScalar** ,
-                             Kokkos::LayoutLeft ,
-                             Kokkos::Cuda > vector_type ;
+int main( int argc, char* argv[] ) {
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
+  const size_t team_count =
+  Kokkos::hwloc::get_available_numa_count() *
+    Kokkos::hwloc::get_available_cores_per_numa();
+  const size_t threads_per_team =
+    Kokkos::hwloc::get_available_threads_per_core();
 
+  // Initialize openmp
+  Kokkos::OpenMP::initialize( team_count * threads_per_team );
+  //Kokkos::OpenMP::print_configuration( std::cout );
 
-  //------------------------------------
+  // Setup (has to happen after initialization)
+  setup.setup();
 
-  static void apply( const matrix_type & A ,
-                     const vector_type & x ,
-                     const vector_type & y )
-  {
-  }
-};
+  // Run tests
+  int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+  // Finish up
+  Kokkos::OpenMP::finalize();
 
-} // namespace Stokhos
-
-#endif /* #ifndef STOKHOS_CUDA_FLAT_SPARSE_3_TENSOR_HPP */
+  return ret;
+}
