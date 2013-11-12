@@ -8,6 +8,7 @@
 */
 
 #include "ROL_EpetraMultiVector.hpp"
+#include "ROL_Types.hpp"
 #include "Epetra_SerialComm.h"
 #include "Epetra_Map.h"
 #include "Teuchos_oblackholestream.hpp"
@@ -32,6 +33,8 @@ int main(int argc, char *argv[]) {
     outStream = Teuchos::rcp(&bhs, false);
 
   int errorFlag  = 0;
+
+  double errtol = ROL::ROL_THRESHOLD;
 
   // *** Test body.
 
@@ -62,14 +65,22 @@ int main(int argc, char *argv[]) {
 
     // scale x
     x.scale(0.5);
-    xnorm = x.norm();
-    *outStream << "\nNorm of half of x: " << xnorm << "\n";
+    RealT xnorm2 = x.norm();
+    *outStream << "\nNorm of half of x: " << xnorm2 << "\n";
+    if ( std::abs(xnorm/xnorm2 - 2.0) > errtol ) {
+      *outStream << "---> POSSIBLE ERROR ABOVE!\n";
+      errorFlag++;
+    };
 
     // clone z from x, deep copy x into z, norm of z
     Teuchos::RCP<ROL::Vector<RealT> > z = x.clone();
     z->set(x);
     RealT znorm = z->norm();
     *outStream << "\nNorm of ROL::Vector z (clone of x): " << znorm << "\n";
+    if ( std::abs(xnorm2 - znorm) > errtol ) {
+      *outStream << "---> POSSIBLE ERROR ABOVE!\n";
+      errorFlag++;
+    };
 
     // compute norm of x - x - 0
     z->set(x);
@@ -79,6 +90,10 @@ int main(int argc, char *argv[]) {
     z->axpy(-1.0, y);
     znorm = z->norm();
     *outStream << "\nNorm of (x - x) - 0: " << znorm << "\n";
+    if ( std::abs(znorm) > errtol ) {
+      *outStream << "---> POSSIBLE ERROR ABOVE!\n";
+      errorFlag++;
+    };
 
     // set x to dim/2-th basis vector
     //z = x.basis(dim/2);

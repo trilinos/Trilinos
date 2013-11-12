@@ -102,6 +102,15 @@ APPEND_SET(HEADERS
   status/ROL_StatusTest.hpp
   )
 
+#
+# zoo headers
+#
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/zoo)
+APPEND_SET(HEADERS
+  zoo/ROL_Types.hpp
+  )
+
 
 #
 # All sources
