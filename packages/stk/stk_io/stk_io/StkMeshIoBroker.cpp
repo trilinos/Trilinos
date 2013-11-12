@@ -1036,13 +1036,6 @@ namespace stk {
       m_input_region = ioss_input_region;
     }
 
-    void StkMeshIoBroker::set_meta_data( Teuchos::RCP<stk::mesh::MetaData> arg_meta_data )
-    {
-      ThrowErrorMsgIf( !Teuchos::is_null(m_meta_data),
-		       "Meta data already initialized" );
-      m_meta_data = arg_meta_data;
-    }
-
     void StkMeshIoBroker::set_bulk_data( Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data )
     {
       ThrowErrorMsgIf( !Teuchos::is_null(m_bulk_data),
@@ -1050,7 +1043,7 @@ namespace stk {
       m_bulk_data = arg_bulk_data;
 
       if (Teuchos::is_null(m_meta_data)) {
-        set_meta_data(const_cast<stk::mesh::MetaData&>(bulk_data().mesh_meta_data()));
+        m_meta_data = Teuchos::rcpFromRef(bulk_data().mesh_meta_data());
       }
 
       m_communicator = m_bulk_data->parallel();
@@ -1123,7 +1116,7 @@ namespace stk {
 
       // See if meta data is null, if so, create a new one...
       if (Teuchos::is_null(m_meta_data)) {
-        set_meta_data(Teuchos::rcp( new stk::mesh::MetaData()));
+        m_meta_data = Teuchos::rcp(new stk::mesh::MetaData());
       }
 
       size_t spatial_dimension = m_input_region->get_property("spatial_dimension").get_int();

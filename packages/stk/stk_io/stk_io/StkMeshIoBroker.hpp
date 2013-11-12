@@ -206,15 +206,6 @@ namespace stk {
 	}
 
         /**
-         * Set meta data directly with your own meta data. If this is
-         * not called, a meta data will be created during the
-         * create_input_mesh() call.
-         */
-        void set_meta_data(Teuchos::RCP<stk::mesh::MetaData> arg_meta_data);
-        void set_meta_data(stk::mesh::MetaData &arg_meta_data)
-        { set_meta_data(Teuchos::rcpFromRef(arg_meta_data));}
-
-        /**
          * Set bulk data directly with your own bulk data. If this is
          * not called prior to the populate_bulk_data() call, it will be
          * created automatically using the communicator of the m_input_region.
