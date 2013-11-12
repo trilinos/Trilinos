@@ -53,6 +53,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/vector)
 APPEND_SET(HEADERS
   vector/ROL_Vector.hpp
   vector/ROL_StdVector.hpp
+  vector/ROL_EpetraMultiVector.hpp
   )
 
 #
@@ -78,6 +79,7 @@ APPEND_SET(HEADERS
   step/ROL_Secant.hpp
   step/ROL_lBFGS.hpp
   step/ROL_lDFP.hpp
+  step/ROL_lSR1.hpp
   step/ROL_BarzilaiBorwein.hpp
   step/ROL_Krylov.hpp
   )

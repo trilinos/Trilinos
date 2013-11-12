@@ -92,6 +92,10 @@ public:
         secant_ = Teuchos::rcp( new lDFP<Real>(L) );
         step_ = "Newton-CG with lDFP Preconditioning";
       }
+      else if ( type == Secant_lSR1 ) {
+        secant_ = Teuchos::rcp( new lSR1<Real>(L) );
+        step_ = "Newton-CG with lSR1 Preconditioning";
+      }
       else if ( type == Secant_BarzilaiBorwein ) {
         secant_ = Teuchos::rcp( new BarzilaiBorwein<Real>(BBtype) );
         step_ = "Newton-CG with Barzilai-Borwein Preconditioning";
@@ -110,6 +114,10 @@ public:
       else if ( type == Secant_lDFP ) {
         secant_ = Teuchos::rcp( new lDFP<Real>(L) );
         step_   = "Limited-Memory DFP";
+      }
+      else if ( type == Secant_lSR1 ) {
+        secant_ = Teuchos::rcp( new lSR1<Real>(L) );
+        step_   = "Limited-Memory SR1";
       }
       else if ( type == Secant_BarzilaiBorwein ) {
         secant_ = Teuchos::rcp( new BarzilaiBorwein<Real>(BBtype) );
@@ -135,6 +143,7 @@ public:
     }
     else if ( LSStype_ == LineSearchStep_Secant ) {
       secant_->applyH(s,*(Step<Real>::state_->gradientVec),x);
+      //secant_->test(s,x);
     }
 
     // Check if s is a descent direction

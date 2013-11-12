@@ -23,6 +23,7 @@ namespace ROL {
 enum SecantType {
   Secant_lBFGS = 0,      // Limited Memory BFGS
   Secant_lDFP,           // Limited Memory DFP
+  Secant_lSR1,           // Limited Memory SR1
   Secant_BarzilaiBorwein // Barzilai-Borwein Gradient Descent
 };
 
@@ -31,6 +32,7 @@ struct SecantState {
   std::vector<Teuchos::RCP<Vector<Real> > > iterDiff; // Step Storage
   std::vector<Teuchos::RCP<Vector<Real> > > gradDiff; // Gradient Storage
   std::vector<Real>                         product;  // Step-Gradient Inner Product Storage
+  std::vector<Real>                         product2; // Step-Gradient Inner Product Storage
   int storage;                                        // Storage Size
   int current;                                        // Current Storage Size
   int iter;                                           // Current Optimization Iteration
@@ -60,8 +62,8 @@ public:
   Teuchos::RCP<SecantState<Real> >& get_state() { return this->state_; }
 
   // Update Secant Approximation
-  void update( const Vector<Real> &grad, const Vector<Real> &gp, const Vector<Real> &s, 
-               const Real snorm, const int iter ) {
+  virtual void update( const Vector<Real> &grad, const Vector<Real> &gp, const Vector<Real> &s, 
+                       const Real snorm, const int iter ) {
     this->state_->iter = iter;
     Teuchos::RCP<Vector<Real> > gradDiff = grad.clone();
     gradDiff->set(grad);
@@ -136,6 +138,7 @@ public:
 
 #include "ROL_lBFGS.hpp"
 #include "ROL_lDFP.hpp"
+#include "ROL_lSR1.hpp"
 #include "ROL_BarzilaiBorwein.hpp"
 
 #endif
