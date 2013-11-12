@@ -201,32 +201,32 @@ bool BulkData::destroy_relation( Entity e_from ,
 
     // For all relations that are *not* being deleted, add induced parts for
     // these relations to the 'keep' vector
-    EntityVector temp_entities;
-    std::vector<ConnectivityOrdinal> temp_ordinals;
-    Entity const* rel_entities = NULL;
-    ConnectivityOrdinal const* rel_ordinals = NULL;
-    int num_rels = 0;
-    for (EntityRank irank = e_to_entity_rank + 1; irank < end_rank; ++irank)
     {
-      if (connectivity_map().valid(e_to_entity_rank, irank)) {
-        num_rels     = num_connectivity(e_to, irank);
-        rel_entities = begin(e_to, irank);
-        rel_ordinals = begin_ordinals(e_to, irank);
-      }
-      else {
-        num_rels     = get_connectivity(*this, e_to, irank, temp_entities, temp_ordinals);
-        rel_entities = &*temp_entities.begin();
-        rel_ordinals = &*temp_ordinals.begin();
-      }
+      EntityVector temp_entities;
+      std::vector<ConnectivityOrdinal> temp_ordinals;
+      Entity const* rel_entities = NULL;
+      ConnectivityOrdinal const* rel_ordinals = NULL;
+      int num_rels = 0;
+      for (EntityRank irank = e_to_entity_rank + 1; irank < end_rank; ++irank) {
+        if (connectivity_map().valid(e_to_entity_rank, irank)) {
+          num_rels     = num_connectivity(e_to, irank);
+          rel_entities = begin(e_to, irank);
+          rel_ordinals = begin_ordinals(e_to, irank);
+        }
+        else {
+          num_rels     = get_connectivity(*this, e_to, irank, temp_entities, temp_ordinals);
+          rel_entities = &*temp_entities.begin();
+          rel_ordinals = &*temp_ordinals.begin();
+        }
 
-      for (int j = 0; j < num_rels; ++j)
-      {
-        ThrowAssertMsg(is_valid(rel_entities[j]), "Error, entity " << e_to.local_offset() << " has invalid back-relation for ordinal: "
-                       << rel_ordinals[j] << " to rank: " << irank << ", target entity is: " << rel_entities[j].local_offset());
-        if ( !(rel_entities[j] == e_from && rel_ordinals[j] == static_cast<ConnectivityOrdinal>(local_id) ) )
-        {
-          induced_part_membership(*this, rel_entities[j], empty, e_to_entity_rank, keep,
-                                  false /*Do not look at supersets*/);
+        for (int j = 0; j < num_rels; ++j) {
+          ThrowAssertMsg(is_valid(rel_entities[j]), "Error, entity " << e_to.local_offset() << " has invalid back-relation for ordinal: "
+                         << rel_ordinals[j] << " to rank: " << irank << ", target entity is: " << rel_entities[j].local_offset());
+          if ( !(rel_entities[j] == e_from && rel_ordinals[j] == static_cast<ConnectivityOrdinal>(local_id) ) )
+          {
+            induced_part_membership(*this, rel_entities[j], empty, e_to_entity_rank, keep,
+                                    false /*Do not look at supersets*/);
+          }
         }
       }
     }
