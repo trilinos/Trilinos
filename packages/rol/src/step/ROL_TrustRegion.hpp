@@ -422,7 +422,7 @@ public:
         Real gamma1 = gnorm/gBg;
         Real gamma2 = gnorm/gsN;
         Real eta    = 0.8*gamma1*gamma2 + 0.2;
-        if (eta*sNnorm <= del || gBg <= 0.0) {        // Dogleg Point is inside trust region
+        if (eta*sNnorm <= del || gBg <= 0.0) { // Dogleg Point is inside trust region
           alpha = del/sNnorm;
           beta  = 0.0;
           s.set(*sN);
