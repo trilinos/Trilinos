@@ -126,7 +126,7 @@ LocalOrdinal PreserveDirichletAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, 
   aggregates.SetNumAggregates(nLocalAggregates);
 
   // print aggregation information
-  this->PrintAggregationInformation("Phase 1 (Keep Dirichlet nodes):", graph, aggregates, aggStat);
+  this->PrintAggregationInformation("Phase 3 (Keep Dirichlet nodes):", graph, aggregates, aggStat);
 
   // collect some local information
   LO nLocalAggregated    = 0;
