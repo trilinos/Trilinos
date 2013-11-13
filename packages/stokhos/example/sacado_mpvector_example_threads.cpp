@@ -75,11 +75,11 @@ struct MPVectorExample<MaxSize, Scalar, Kokkos::Threads> {
     std::string device_name = "Threads";
 
     switch ( local_vector_size ) {
-    case  1 : status = run_view_kernel<Scalar, 1,Device>( config, num_elements, reset, print, device_name); break ;
-    case  2 : status = run_view_kernel<Scalar, 2,Device>( config, num_elements, reset, print, device_name); break ;
-    case  4 : status = run_view_kernel<Scalar, 4,Device>( config, num_elements, reset, print, device_name); break ;
-    case  8 : status = run_view_kernel<Scalar, 8,Device>( config, num_elements, reset, print, device_name); break ;
-    case 16 : status = run_view_kernel<Scalar,16,Device>( config, num_elements, reset, print, device_name); break ;
+    case  1 : status = run_view_kernel<Scalar, 1,Device>( config, num_elements, num_samples, reset, print, device_name); break ;
+    case  2 : status = run_view_kernel<Scalar, 2,Device>( config, num_elements, num_samples, reset, print, device_name); break ;
+    case  4 : status = run_view_kernel<Scalar, 4,Device>( config, num_elements, num_samples, reset, print, device_name); break ;
+    case  8 : status = run_view_kernel<Scalar, 8,Device>( config, num_elements, num_samples, reset, print, device_name); break ;
+    case 16 : status = run_view_kernel<Scalar,16,Device>( config, num_elements, num_samples, reset, print, device_name); break ;
     default :
       std::cout << "Local_vector_size (" << local_vector_size << ") NOT IMPLEMENTED" << std::endl ;
       return false ;
@@ -87,7 +87,7 @@ struct MPVectorExample<MaxSize, Scalar, Kokkos::Threads> {
 
     if ( ! status ) return status ;
 
-    status = run_view_kernel<Scalar, 0,Device>( config, num_elements, reset, print, device_name);
+    status = run_view_kernel<Scalar, 0,Device>( config, num_elements, num_samples, reset, print, device_name);
 
     if ( ! status ) return status ;
 

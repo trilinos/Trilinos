@@ -120,9 +120,22 @@ template< class T , class Device > struct RebindStokhosStorageDevice ;
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
+namespace Impl {
+namespace ViewError {
 
-/**\brief  View::value_type  == Sacado::MP::Vector< StorageType >
- *         View::scalar_type == StorageType::value_type
+struct sacado_mp_vector_partition_constructor_requires_unmanaged_view {};
+
+} // namespace ViewError
+} // namespace Impl
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+
+/**\brief  View::value_type  == Sacado::MP::Vector< Stokhos::StorageType<...> >
+ *         View::scalar_type == StorageType<...>::value_type
  */
 template< class DataType ,
           class Arg1Type ,
@@ -143,17 +156,18 @@ private:
   // Assignment of compatible subview requirement:
   template< class , class , class > friend struct Impl::ViewAssignment ;
 
-  typedef Impl::LayoutStride< typename traits::shape_type ,
-                              typename traits::array_layout > stride_type ;
-
-  typename traits::scalar_type * m_ptr_on_device ;
-  typename traits::shape_type    m_shape ;
-  stride_type                    m_stride ;
-
   typedef typename traits::value_type                   sacado_mp_vector_type ;
   typedef typename sacado_mp_vector_type::storage_type  stokhos_storage_type ;
 
   enum { StokhosStorageStaticDimension = stokhos_storage_type::is_static ? stokhos_storage_type::static_size : 0 };
+
+  typedef Impl::LayoutStride< typename traits::shape_type ,
+                              typename traits::array_layout > stride_type ;
+
+  typename traits::scalar_type  * m_ptr_on_device ;
+  typename traits::shape_type     m_shape ;
+  stride_type                     m_stride ;
+  typename traits::device_type::size_type m_storage_size ;
 
   typedef Stokhos::ViewStorage<
     typename stokhos_storage_type::ordinal_type ,
@@ -234,6 +248,7 @@ private:
 
     stride_type::assign( m_stride , rhs.m_stride.value );
 
+    m_storage_size  = rhs.m_storage_size ;
     m_ptr_on_device = rhs.m_ptr_on_device ;
 
     Impl::ViewTracking< traits >::increment( m_ptr_on_device );
@@ -299,12 +314,79 @@ public:
   template< class RT , class RL , class RD , class RM >
   KOKKOS_INLINE_FUNCTION
   View( const View<RT,RL,RD,RM,typename traits::specialize> & rhs )
-    : m_ptr_on_device(0) { assign_compatible_view( rhs ); }
+    : m_ptr_on_device(0)
+    { assign_compatible_view( rhs ); }
 
   template< class RT , class RL , class RD , class RM >
   KOKKOS_INLINE_FUNCTION
   View & operator = ( const View<RT,RL,RD,RM,typename traits::specialize> & rhs )
     { assign_compatible_view( rhs ); return *this ; }
+
+  //------------------------------------
+
+  struct Partition {
+    typename traits::size_type rank ;
+    typename traits::size_type size ;
+    KOKKOS_INLINE_FUNCTION
+    Partition( typename traits::size_type r ,
+               typename traits::size_type s )
+      : rank( r ), size( s ) {}
+  };
+
+  template< class ViewRHS >
+  KOKKOS_INLINE_FUNCTION
+  View( const ViewRHS & rhs ,
+        typename Impl::enable_if< is_view< ViewRHS >::value &&
+                                  Impl::is_same< typename ViewRHS::specialize ,
+                                                 typename traits::specialize >::value &&
+                                  Impl::is_same< typename ViewRHS::data_type ,
+                                                 typename traits::data_type >::value &&
+                                  Impl::is_same< typename ViewRHS::device_type ,
+                                                 typename traits::device_type >::value &&
+                                  ( ! traits::is_managed ) , Partition >::type & part )
+    : m_ptr_on_device(0)
+    {
+      typedef typename traits::shape_type   shape_type ;
+      typedef typename traits::scalar_type  scalar_type ;
+
+      if ( rhs.m_storage_size % part.size ) {
+        const char msg[] = "Kokkos::View< Sacado::MP::Vector ... > unbalanced partitioning" ;
+#if defined(__CUDACC__) && defined(__CUDA_ARCH__)
+        cuda_abort(msg);
+#else
+        throw std::runtime_error(msg);
+#endif
+      }
+
+      shape_type::assign( m_shape ,
+                          ( Rank == 1 ? rhs.m_shape.N0 / part.size : rhs.m_shape.N0 ) ,
+                          ( Rank == 2 ? rhs.m_shape.N1 / part.size : rhs.m_shape.N1 ) ,
+                          ( Rank == 3 ? rhs.m_shape.N2 / part.size : rhs.m_shape.N2 ) ,
+                          ( Rank == 4 ? rhs.m_shape.N3 / part.size : rhs.m_shape.N3 ) ,
+                          ( Rank == 5 ? rhs.m_shape.N4 / part.size : rhs.m_shape.N4 ) ,
+                          ( Rank == 6 ? rhs.m_shape.N5 / part.size : rhs.m_shape.N5 ) ,
+                          ( Rank == 7 ? rhs.m_shape.N6 / part.size : rhs.m_shape.N6 ) ,
+                          ( Rank == 8 ? rhs.m_shape.N7 / part.size : rhs.m_shape.N7 ) );
+
+      stride_type::assign( m_stride , rhs.m_stride.value );
+
+      // Original Sacado::MP::Vector length
+      m_storage_size = rhs.m_storage_size ;
+
+      if ( Impl::is_same< typename traits::array_layout , LayoutLeft >::value ) {
+        m_ptr_on_device = rhs.m_ptr_on_device + part.rank *
+                        ( 1 == Rank ? m_shape.N0 : m_stride.value * m_shape.N1 * (
+                        ( 2 == Rank ? 1 : m_shape.N2 * (
+                        ( 3 == Rank ? 1 : m_shape.N3 * (
+                        ( 4 == Rank ? 1 : m_shape.N4 * (
+                        ( 5 == Rank ? 1 : m_shape.N5 * (
+                        ( 6 == Rank ? 1 : m_shape.N6 * (
+                        ( 7 == Rank ? 1 : m_shape.N7 )))))))))))));
+      }
+      else { // if ( Impl::is_same< typename traits::array_layout , LayoutRight >::value )
+        m_ptr_on_device = rhs.m_ptr_on_device + part.rank * Impl::dimension( m_shape , Rank - 1 );
+      }
+    }
 
   //------------------------------------
   // Allocation of a managed view with possible alignment padding.
@@ -335,6 +417,7 @@ public:
 
       verify_dimension_storage_static_size();
 
+      m_storage_size  = Impl::dimension( m_shape , Rank - 1 );
       m_ptr_on_device = (scalar_type *)
         memory_space::allocate( if_allocation_constructor::select( label ) ,
                                 typeid(scalar_type) ,
@@ -366,6 +449,7 @@ public:
 
       verify_dimension_storage_static_size();
 
+      m_storage_size  = Impl::dimension( m_shape , Rank - 1 );
       m_ptr_on_device = (scalar_type *)
         memory_space::allocate( if_allocation_constructor::select( label ) ,
                                 typeid(scalar_type) ,
@@ -401,8 +485,10 @@ public:
 
       verify_dimension_storage_static_size();
 
+      m_storage_size  = Impl::dimension( m_shape , Rank - 1 );
       m_ptr_on_device = if_user_pointer_constructor::select( ptr );
     }
+
 
   //------------------------------------
   // Is not allocated
@@ -412,27 +498,27 @@ public:
 
   //------------------------------------
   //------------------------------------
-  // LayoutLeft, array operators, rank 1:
+  // Scalar operator
 
-  template< typename T >
+  typedef Impl::if_c< ( traits::rank == 1 ),
+                      sacado_mp_vector_view_type ,
+                      Impl::ViewError::scalar_operator_called_from_non_scalar_view >
+    if_scalar_operator ;
+
   KOKKOS_INLINE_FUNCTION
-  typename Impl::enable_if<( Impl::is_same< T , typename traits::device_type >::value &&
-                             Impl::is_same< LayoutLeft, typename traits::array_layout >::value 
-                           ), sacado_mp_vector_view_type >::type
-    operator() ( const T & dev ) const
+  typename if_scalar_operator::type
+    operator()() const
     {
-      verify_dimension_storage_size( dev );
-
-      const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( ! StokhosStorageStaticDimension ? m_shape.N0 / dev.team_size() : 0 );
-
-      KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, dev.team_rank() * per_thread.value );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + dev.team_rank() * per_thread.value ,
-        per_thread.value , 1 ) );
+        m_ptr_on_device ,
+        m_shape.N0 , 1 ) );
     }
+
+  //------------------------------------
+  //------------------------------------
+  // LayoutLeft, array operators, rank 1:
 
   template< typename iType0 >
   KOKKOS_INLINE_FUNCTION
@@ -475,20 +561,16 @@ public:
   template< typename iType0 >
   KOKKOS_INLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type , traits, LayoutLeft, 2, iType0 >::type
-    operator() ( const iType0 & i0 , const typename traits::device_type & dev ) const
+    operator() ( const iType0 & i0 ) const
     {
-      verify_dimension_storage_size( dev );
-
-      const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( ! StokhosStorageStaticDimension ? m_shape.N1 / dev.team_size() : 0 );
-
-      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0, dev.team_rank() * per_thread.value );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Strided storage
       return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + i0 + m_stride.value * ( dev.team_rank() * per_thread.value ) ,
-        per_thread.value , m_stride.value ) );
+        m_ptr_on_device + i0 ,
+        m_shape.N1 ,
+        m_stride.value ) );
     }
 
   template< typename iType0 , typename iType1 >
@@ -524,22 +606,15 @@ public:
   KOKKOS_INLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
                                       traits, LayoutLeft, 3, iType0, iType1 >::type
-    operator() ( const iType0 & i0 , const iType1 & i1 , const typename traits::device_type & dev ) const
+    operator() ( const iType0 & i0 , const iType1 & i1 ) const
     {
-      verify_dimension_storage_size( dev );
-
-      const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( ! StokhosStorageStaticDimension ? m_shape.N2 / dev.team_size() : 0 );
-
-      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0, i1, dev.team_rank() * per_thread.value );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0, i1, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Strided storage with right-most index as the stokhos dimension
       return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + ( i0 + m_stride.value * (
-                            i1 + m_stride.N1 * (
-                            dev.team_rank() * per_thread.value ) ) ),
-        per_thread.value ,
+        m_ptr_on_device + ( i0 + m_stride.value * ( i1 )),
+        m_shape.N2 ,
         m_stride.value * m_shape.N1 ) );
     }
 
@@ -578,23 +653,17 @@ public:
   KOKKOS_INLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
                                       traits, LayoutLeft, 4, iType0, iType1, iType2 >::type
-    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const typename traits::device_type & dev ) const
+    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
     {
-      verify_dimension_storage_size( dev );
-
-      const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( ! StokhosStorageStaticDimension ? m_shape.N3 / dev.team_size() : 0 );
-
-      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0, i1, i2, dev.team_rank() * per_thread.value );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0, i1, i2, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Strided storage with right-most index as the stokhos dimension
       return sacado_mp_vector_view_type( stokhos_view_storage_type(
         m_ptr_on_device + ( i0 + m_stride.value * (
                             i1 + m_shape.N1 * (
-                            i2 + m_shape.N2 * (
-                            dev.team_rank() * per_thread.value ) ) ) ),
-        per_thread.value ,
+                            i2 ))),
+        m_shape.N3 ,
         m_stride.value * m_shape.N1 * m_shape.N2 ) );
     }
 
@@ -635,15 +704,9 @@ public:
   KOKKOS_INLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
                                       traits, LayoutLeft, 5, iType0, iType1, iType2, iType3 >::type
-    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-                 const typename traits::device_type & dev ) const
+    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
     {
-      verify_dimension_storage_size( dev );
-
-      const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( ! StokhosStorageStaticDimension ? m_shape.N4 / dev.team_size() : 0 );
-
-      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0, i1, i2, i3, dev.team_rank() * per_thread.value );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0, i1, i2, i3, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Strided storage with right-most index as the stokhos dimension
@@ -651,9 +714,8 @@ public:
         m_ptr_on_device + ( i0 + m_stride.value * (
                             i1 + m_shape.N1 * (
                             i2 + m_shape.N2 * (
-                            i3 + m_shape.N3 * (
-                            dev.team_rank() * per_thread.value ) ) ) ) ),
-        per_thread.value ,
+                            i3 )))),
+        m_shape.N4 ,
         m_stride.value * m_shape.N1 * m_shape.N2 * m_shape.N3 ) );
     }
 
@@ -699,15 +761,9 @@ public:
   KOKKOS_INLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
                                       traits, LayoutLeft, 6, iType0, iType1, iType2, iType3, iType4 >::type
-    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 , const iType4 & i4 ,
-                 const typename traits::device_type & dev ) const
+    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 , const iType4 & i4 ) const
     {
-      verify_dimension_storage_size( dev );
-
-      const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( ! StokhosStorageStaticDimension ? m_shape.N5 / dev.team_size() : 0 );
-
-      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0, i1, i2, i3, i4, dev.team_rank() * per_thread.value );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0, i1, i2, i3, i4, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Strided storage with right-most index as the stokhos dimension
@@ -716,9 +772,8 @@ public:
                             i1 + m_shape.N1 * (
                             i2 + m_shape.N2 * (
                             i3 + m_shape.N3 * (
-                            i4 + m_shape.N4 * (
-                            dev.team_rank() * per_thread.value ) ) ) ) ) ),
-        per_thread.value ,
+                            i4 ))))),
+        m_shape.N5 ,
         m_stride.value * m_shape.N1 * m_shape.N2 * m_shape.N3 * m_shape.N4 ) );
     }
 
@@ -767,15 +822,9 @@ public:
   typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
                                       traits, LayoutLeft, 7, iType0, iType1, iType2, iType3, iType4, iType5 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ,
-                 const iType3 & i3 , const iType4 & i4 , const iType5 & i5 ,
-                 const typename traits::device_type & dev ) const
+                 const iType3 & i3 , const iType4 & i4 , const iType5 & i5 ) const
     {
-      verify_dimension_storage_size( dev );
-
-      const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( ! StokhosStorageStaticDimension ? m_shape.N6 / dev.team_size() : 0 );
-
-      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0, i1, i2, i3, i4, i5, dev.team_rank() * per_thread.value );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0, i1, i2, i3, i4, i5, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Strided storage with right-most index as the stokhos dimension
@@ -785,9 +834,8 @@ public:
                             i2 + m_shape.N2 * (
                             i3 + m_shape.N3 * (
                             i4 + m_shape.N4 * (
-                            i5 + m_shape.N5 * (
-                            dev.team_rank() * per_thread.value ) ) ) ) ) ) ),
-        per_thread.value ,
+                            i5 )))))),
+        m_shape.N6 ,
         m_stride.value * m_shape.N1 * m_shape.N2 * m_shape.N3 * m_shape.N4 * m_shape.N5 ) );
     }
 
@@ -839,16 +887,10 @@ public:
   typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
                                       traits, LayoutLeft, 8, iType0, iType1, iType2, iType3, iType4, iType5, iType6 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-                 const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ,
-                 const typename traits::device_type & dev ) const
+                 const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
     {
-      verify_dimension_storage_size( dev );
-
-      const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( ! StokhosStorageStaticDimension ? m_shape.N7 / dev.team_size() : 0 );
-
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0, i1, i2, i3, i4, i5, i6, dev.team_rank() * per_thread.value );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0, i1, i2, i3, i4, i5, i6, 0 );
 
       // Strided storage with right-most index as the stokhos dimension
       return sacado_mp_vector_view_type( stokhos_view_storage_type(
@@ -858,9 +900,8 @@ public:
                             i3 + m_shape.N3 * (
                             i4 + m_shape.N4 * (
                             i5 + m_shape.N5 * (
-                            i6 + m_shape.N6 * (
-                            dev.team_rank() * per_thread.value ) ) ) ) ) ) ) ),
-        per_thread.value ,
+                            i6 ))))))),
+        m_shape.N7 ,
         m_stride.value * m_shape.N1 * m_shape.N2 * m_shape.N3 * m_shape.N4 * m_shape.N5 * m_shape.N6 ) );
     }
 
@@ -908,27 +949,6 @@ public:
   //------------------------------------
   // LayoutRight, array operators, rank 1:
 
-  template< typename T >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::enable_if<( Impl::is_same< T , typename traits::device_type >::value &&
-                             Impl::is_same< LayoutRight , typename traits::array_layout >::value 
-                           ), sacado_mp_vector_view_type >::type
-    operator() ( const T & dev ) const
-    {
-      verify_dimension_storage_size( dev );
-
-      const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( ! StokhosStorageStaticDimension ? m_shape.N0 / dev.team_size() : 0 );
-
-      KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, dev.team_rank() * per_thread.value );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      // Contiguous storage with right-most index as the stokhos dimension
-      return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + ( dev.team_rank() * per_thread.value ) ,
-        per_thread.value , 1 ) );
-    }
-
   template< typename iType0 >
   KOKKOS_INLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< typename traits::scalar_type & , traits, LayoutRight, 1, iType0 >::type
@@ -971,20 +991,15 @@ public:
   KOKKOS_INLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
                                       traits, LayoutRight, 2, iType0 >::type
-    operator() ( const iType0 & i0 , const typename traits::device_type & dev ) const
+    operator() ( const iType0 & i0 ) const
     {
-      verify_dimension_storage_size( dev );
-
-      const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( ! StokhosStorageStaticDimension ? m_shape.N1 / dev.team_size() : 0 );
-
-      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0, dev.team_rank() * per_thread.value );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Contiguous storage with right-most index as the stokhos dimension
       return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + ( dev.team_rank() * per_thread.value + m_stride.value * i0 ) ,
-        per_thread.value , 1 ) );
+        m_ptr_on_device + ( m_stride.value * i0 ) ,
+        m_shape.N1 , 1 ) );
     }
 
   template< typename iType0 , typename iType1 >
@@ -1020,22 +1035,15 @@ public:
   KOKKOS_INLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
                                       traits, LayoutRight, 3, iType0, iType1 >::type
-    operator() ( const iType0 & i0 , const iType1 & i1 ,
-                 const typename traits::device_type & dev ) const
+    operator() ( const iType0 & i0 , const iType1 & i1 ) const
     {
-      verify_dimension_storage_size( dev );
-
-      const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( ! StokhosStorageStaticDimension ? m_shape.N2 / dev.team_size() : 0 );
-
-      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0, i1, dev.team_rank() * per_thread.value );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0, i1, 0);
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Contiguous storage with right-most index as the stokhos dimension
       return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + ( dev.team_rank() * per_thread.value + 
-                            m_shape.N2 * ( i1 ) + m_stride.value * i0 ) ,
-        per_thread.value , 1 ) );
+        m_ptr_on_device + ( m_storage_size * ( i1 ) + m_stride.value * i0 ) ,
+        m_shape.N2 , 1 ) );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 >
@@ -1071,24 +1079,17 @@ public:
   KOKKOS_INLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
                                       traits, LayoutRight, 4, iType0, iType1, iType2 >::type
-    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ,
-                 const typename traits::device_type & dev ) const
+    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
     {
-      verify_dimension_storage_size( dev );
-
-      const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( ! StokhosStorageStaticDimension ? m_shape.N3 / dev.team_size() : 0 );
-
-      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0, i1, i2, dev.team_rank() * per_thread.value );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0, i1, i2, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Contiguous storage with right-most index as the stokhos dimension
       return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + ( dev.team_rank() * per_thread.value +
-                            m_shape.N3 * ( i2 +
+        m_ptr_on_device + ( m_storage_size * ( i2 +
                             m_shape.N2 * ( i1 )) +
                             m_stride.value * i0 ) ,
-        per_thread.value , 1 ) );
+        m_shape.N3 , 1 ) );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
@@ -1131,22 +1132,16 @@ public:
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const typename traits::device_type & dev ) const
     {
-      verify_dimension_storage_size( dev );
-
-      const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( ! StokhosStorageStaticDimension ? m_shape.N4 / dev.team_size() : 0 );
-
       KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0, i1, i2, i3, dev.team_rank() * per_thread.value );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Contiguous storage with right-most index as the stokhos dimension
       return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + ( dev.team_rank() * per_thread.value +
-                            m_shape.N4 * ( i3 +
+        m_ptr_on_device + ( m_storage_size * ( i3 +
                             m_shape.N3 * ( i2 +
                             m_shape.N2 * ( i1 ))) +
                             m_stride.value * i0 ) ,
-        per_thread.value , 1 ) );
+        m_shape.N4 , 1 ) );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -1193,25 +1188,19 @@ public:
   typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
                                       traits, LayoutRight, 6, iType0, iType1, iType2, iType3, iType4 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-                 const iType4 & i4 , const typename traits::device_type & dev ) const
+                 const iType4 & i4 ) const
     {
-      verify_dimension_storage_size( dev );
-
-      const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( ! StokhosStorageStaticDimension ? m_shape.N5 / dev.team_size() : 0 );
-
       KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0, i1, i2, i3, i4, dev.team_rank() * per_thread.value );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Contiguous storage with right-most index as the stokhos dimension
       return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + ( dev.team_rank() * per_thread.value +
-                            m_shape.N5 * ( i4 +
+        m_ptr_on_device + ( m_storage_size * ( i4 +
                             m_shape.N4 * ( i3 +
                             m_shape.N3 * ( i2 +
                             m_shape.N2 * ( i1 )))) +
                             m_stride.value * i0 ) ,
-        per_thread.value , 1 ) );
+        m_shape.N5 , 1 ) );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -1260,27 +1249,20 @@ public:
   typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
                                       traits, LayoutRight, 7, iType0, iType1, iType2, iType3, iType4, iType5 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-                 const iType4 & i4 , const iType5 & i5 ,
-                 const typename traits::device_type & dev ) const
+                 const iType4 & i4 , const iType5 & i5 ) const
     {
-      verify_dimension_storage_size( dev );
-
-      const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( ! StokhosStorageStaticDimension ? m_shape.N6 / dev.team_size() : 0 );
-
-      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0, i1, i2, i3, i4, i5, dev.team_rank() * per_thread.value );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0, i1, i2, i3, i4, i5, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Contiguous storage with right-most index as the stokhos dimension
       return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + ( dev.team_rank() * per_thread.value +
-                            m_shape.N6 * ( i5 +
+        m_ptr_on_device + ( m_storage_size * ( i5 +
                             m_shape.N5 * ( i4 +
                             m_shape.N4 * ( i3 +
                             m_shape.N3 * ( i2 +
                             m_shape.N2 * ( i1 ))))) +
                             m_stride.value * i0 ) ,
-        per_thread.value , 1 ) );
+        m_shape.N6 , 1 ) );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -1331,28 +1313,21 @@ public:
   typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
                                       traits, LayoutRight, 8, iType0, iType1, iType2, iType3, iType4, iType5, iType6 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-                 const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ,
-                 const typename traits::device_type & dev ) const
+                 const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
     {
-      verify_dimension_storage_size( dev );
-
-      const Impl::integral_nonzero_constant< int , StokhosStorageStaticDimension >
-        per_thread( ! StokhosStorageStaticDimension ? m_shape.N7 / dev.team_size() : 0 );
-
-      KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0, i1, i2, i3, i4, i5, i6, dev.team_rank() * per_thread.value );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0, i1, i2, i3, i4, i5, i6, 0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
       // Contiguous storage with right-most index as the stokhos dimension
       return sacado_mp_vector_view_type( stokhos_view_storage_type(
-        m_ptr_on_device + ( dev.team_rank() * per_thread.value +
-                            m_shape.N7 * ( i6 +
+        m_ptr_on_device + ( m_storage_size * ( i6 +
                             m_shape.N6 * ( i5 +
                             m_shape.N5 * ( i4 +
                             m_shape.N4 * ( i3 +
                             m_shape.N3 * ( i2 +
                             m_shape.N2 * ( i1 )))))) +
                             m_stride.value * i0 ) ,
-        per_thread.value , 1 ) );
+        m_shape.N7 , 1 ) );
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,

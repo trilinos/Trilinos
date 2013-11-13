@@ -360,6 +360,21 @@ template< class DataType ,
             typename ViewTraits<DataType,Arg1Type,Arg2Type,Arg3Type>::specialize >
 class View ;
 
+//----------------------------------------------------------------------------
+
+template< class V >
+struct is_view : public Impl::false_type {};
+
+template< class DataType ,
+          class Arg1 ,
+          class Arg2 ,
+          class Arg3 ,
+          class Spec >
+struct is_view< View< DataType , Arg1 , Arg2 , Arg3 , Spec > >
+  : public Impl::true_type {};
+
+//----------------------------------------------------------------------------
+
 template< class DataType ,
           class Arg1Type ,
           class Arg2Type ,

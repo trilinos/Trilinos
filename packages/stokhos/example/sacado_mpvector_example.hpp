@@ -242,10 +242,15 @@ struct vector_kernel< Scalar,
 template < typename ViewType >
 struct view_kernel
 {
-  typedef ViewType view_type ;
+  typedef typename Kokkos::Impl::if_c< Kokkos::is_view< ViewType >::value , ViewType , void >::type view_type ;
   typedef typename view_type::value_type   value_type ;  ///<  == Sacado::MP::Vector< Storage >
   typedef typename view_type::scalar_type  scalar_type ; ///<  == Storage::value_type
   typedef typename view_type::device_type  device_type ; ///<  == Storage::device_type
+
+  typedef Kokkos::View< typename view_type::data_type ,
+                        typename view_type::array_layout ,
+                        device_type ,
+                        Kokkos::MemoryUnmanaged > local_view_type ;
 
   view_type dev_x, dev_y;
   bool reset, print;
@@ -253,12 +258,13 @@ struct view_kernel
   KOKKOS_INLINE_FUNCTION
   void operator() (device_type device) const
   {
+    typename local_view_type::Partition part( device.team_rank() , device.team_size() );
+    const local_view_type local_x( dev_x , part );
+    const local_view_type local_y( dev_y , part );
     const int element = device.league_rank();
 
     // Apply evaluation function to this thread's fix-sized UQ sample set.
-    simple_function< value_type >(
-      dev_x(element,device) ,
-      dev_y(element,device) );
+    simple_function< value_type >( local_x(element) , local_y(element) );
 
     // Print x and y
     if (print) {
@@ -266,9 +272,9 @@ struct view_kernel
       device.team_barrier();
 
       if ( ! device.league_rank() && ! device.team_rank() ) {
-        printf("view_kernel threads(%d %d) dim(%d) size(%d)\n",
-               device.league_size(),device.team_size(),
-               int(dev_x.dimension_1()), int(dev_x(element,device).size()) );
+        printf("view_kernel league(%d:%d) team_size(%d) dim(%d) size(%d)\n",
+               device.league_rank(), device.league_size(),device.team_size(),
+               int(dev_x.dimension_1()), int(local_x(element).size()) );
       }
 
       if ( ! device.team_rank() ) {
@@ -438,7 +444,8 @@ bool run_kernels(Kokkos::ParallelWorkRequest config,
 
 template < typename Scalar , unsigned SamplesPerThread , typename Device >
 bool run_view_kernel( Kokkos::ParallelWorkRequest config,
-                      int num_elements,
+                      int num_elements ,
+                      int num_samples ,
                       bool reset, bool print,
                       const std::string& device_name )
 {
@@ -453,7 +460,23 @@ bool run_view_kernel( Kokkos::ParallelWorkRequest config,
   typedef view_kernel< view_type > kernel;
   typedef typename view_type::HostMirror host_view_type;
 
-  const int num_samples = config.team_size * SamplesPerThread ;
+  const bool input_error = SamplesPerThread && ( num_samples != int(config.team_size * SamplesPerThread) );
+
+  if ( print || input_error ) {
+    std::cout << "run_view_kernel" ;
+    if ( input_error ) {
+      std::cout << " : ERROR num_samples != static(SamplesPerThread) * team_size : " ;
+    }
+    std::cout << " num_elements(" << num_elements << ")"
+              << " num_samples(" << num_samples << ")"
+              << " league_size(" << config.league_size << ")"
+              << " team_size(" << config.team_size << ")" ;
+    if ( SamplesPerThread ) { std::cout << " static(" << SamplesPerThread << ")" ; }
+    else { std::cout << " dynamic" ; }
+    std::cout << std::endl ;
+
+    if ( input_error ) { return false ; }
+  }
 
   view_type x( "x", num_elements, num_samples);
   view_type y( "y", num_elements, num_samples);
@@ -513,6 +536,14 @@ bool run_view_kernel( Kokkos::ParallelWorkRequest config,
     for (int e=0; e<num_elements; e++) {
       for (int s=0; s<num_samples; s++)
         std::cout << hy(e,s) << " ";
+      std::cout << ";" << std::endl;
+    }
+    std::cout << "]" << std::endl;
+
+    std::cout << "hy_ans = [ ";
+    for (int e=0; e<num_elements; e++) {
+      for (int s=0; s<num_samples; s++)
+        std::cout << hy_ans(e,s) << " ";
       std::cout << ";" << std::endl;
     }
     std::cout << "]" << std::endl;
