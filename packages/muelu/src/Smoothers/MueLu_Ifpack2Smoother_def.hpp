@@ -52,8 +52,11 @@
 
 #include <Teuchos_ParameterList.hpp>
 
-#include "Ifpack2_Factory.hpp"
-#include "Xpetra_MultiVectorFactory.hpp"
+#include <Ifpack2_Chebyshev.hpp>
+#include <Ifpack2_Factory.hpp>
+#include <Ifpack2_Parameters.hpp>
+
+#include <Xpetra_MultiVectorFactory.hpp>
 
 #include "MueLu_Ifpack2Smoother_decl.hpp"
 #include "MueLu_Level.hpp"

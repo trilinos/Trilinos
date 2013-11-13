@@ -195,7 +195,7 @@ int ex_put_block_param( int         exoid,
   if (block.num_entry == 0) /* Is this a NULL element block? */
     blk_stat = 0; /* change element block status to NULL */
   else
-    blk_stat = 1; /* change element block status to TRUE */
+    blk_stat = 1; /* change element block status to EX_TRUE */
 
   if ((status = nc_inq_varid (exoid, vblksta, &varid)) != NC_NOERR) {
     exerrval = status;

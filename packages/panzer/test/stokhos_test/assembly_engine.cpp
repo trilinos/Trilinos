@@ -107,11 +107,6 @@ public:
                const panzer::PhysicsBlock & pb) const
    { return volume_worksets[wd.getElementBlock()]; } // lazy
 
-   Teuchos::RCP<std::vector<panzer::Workset> >
-   getVolumeWorksets(const std::string & eBlock,
-                     const panzer::PhysicsBlock & pb) const
-   { return volume_worksets[eBlock]; }
-
    Teuchos::RCP<std::map<unsigned,panzer::Workset> > 
    getSideWorksets(const panzer::BC & bc,
 		   const panzer::PhysicsBlock & pb) const

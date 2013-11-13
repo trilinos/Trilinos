@@ -410,8 +410,7 @@ Scalar ImplicitBDFStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepType)
       *out << "ee = " << std::endl;
       ee_->describe(*out,verbLevel);
     }
-    Thyra::SolveStatus<Scalar> nonlinearSolveStatus =
-      solver_->solve( &*xn0_, NULL, &*ee_ );
+    nonlinearSolveStatus_ = solver_->solve( &*xn0_, NULL, &*ee_ );
     if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_EXTREME) ) {
       *out << "xn0 = " << std::endl;
       xn0_->describe(*out,verbLevel);
@@ -422,7 +421,7 @@ Scalar ImplicitBDFStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepType)
     // the predictor.  On output, *xn0_ is the solved for solution and *ee_ is
     // the difference computed from the intial guess in *xn0_ to the final
     // solved value of *xn0_.  This is needed for basic numerical stability.
-    if (nonlinearSolveStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED)  {
+    if (nonlinearSolveStatus_.solveStatus == Thyra::SOLVE_STATUS_CONVERGED)  {
       newtonConvergenceStatus_ = 0;
     }
     else {
@@ -1168,6 +1167,12 @@ void ImplicitBDFStepper<Scalar>::setStepControlData(
     initialize_();
   }
   stepControl_->setStepControlData(stepper);
+}
+
+template<class Scalar>
+const Thyra::SolveStatus<Scalar>& ImplicitBDFStepper<Scalar>::getNonlinearSolveStatus() const
+{
+  return nonlinearSolveStatus_;
 }
 
 //

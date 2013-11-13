@@ -1224,8 +1224,18 @@ namespace panzer_stk {
 
                // no coords vector has been build yet, build one
                if(coords==Teuchos::null) {
-                 Teuchos::RCP<Map> coords_map = Teuchos::rcp(new Map(-1,coord.size(),0,mpi_comm));
-                 coords = Teuchos::rcp(new MV(coords_map,dim));
+                 if(globalIndexer->getNumFields()==1) {
+                   Teuchos::RCP<const panzer::UniqueGlobalIndexer<int,GO> > ugi
+                       = Teuchos::rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<int,GO> >(globalIndexer);
+                   std::vector<GO> ownedIndices;
+                   ugi->getOwnedIndices(ownedIndices);
+                   Teuchos::RCP<Map> coords_map = Teuchos::rcp(new Map(-1,ownedIndices,0,mpi_comm));
+                   coords = Teuchos::rcp(new MV(coords_map,dim));
+                 }
+                 else {
+                   Teuchos::RCP<Map> coords_map = Teuchos::rcp(new Map(-1,coord.size(),0,mpi_comm));
+                   coords = Teuchos::rcp(new MV(coords_map,dim));
+                 }
                }
 
                // sanity check the size

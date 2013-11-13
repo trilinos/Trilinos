@@ -139,6 +139,7 @@ namespace MueLu {
     MUELU_READ_PARAM(paramList, "aggregation: damping factor",           double, (double)4/(double)3,       agg_damping);
     //MUELU_READ_PARAM(paramList, "aggregation: smoothing sweeps",            int,                   1,       agg_smoothingsweeps);
     MUELU_READ_PARAM(paramList, "aggregation: nodes per aggregate",         int,                   1,       minPerAgg);
+    MUELU_READ_PARAM(paramList, "aggregation: keep Dirichlet bcs",         bool,               false,       bKeepDirichletBcs); // This is a MueLu specific extension that does not exist in ML
 
     MUELU_READ_PARAM(paramList, "null space: type",                 std::string,   "default vectors",       nullspaceType);
     MUELU_READ_PARAM(paramList, "null space: dimension",                    int,                  -1,       nullspaceDim); // TODO: ML default not in documentation
@@ -149,6 +150,8 @@ namespace MueLu {
     MUELU_READ_PARAM(paramList, "repartition: enable",                      int,                   0,       bDoRepartition);
     MUELU_READ_PARAM(paramList, "repartition: max min ratio",            double,                 1.3,       maxminratio);
     MUELU_READ_PARAM(paramList, "repartition: min per proc",                int,                 512,       minperproc);
+
+    MUELU_READ_PARAM(paramList, "RAP: fix diagonal",                       bool,               false,       bFixDiagonal); // This is a MueLu specific extension that does not exist in ML
 
     //
     // Move smoothers/aggregation/coarse parameters to sublists
@@ -213,11 +216,16 @@ namespace MueLu {
     if(agg_type == "Uncoupled") {
       // Uncoupled aggregation
       RCP<UncoupledAggregationFactory> CoupledAggFact2 = rcp(new UncoupledAggregationFactory());
-      CoupledAggFact2->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
+      /*CoupledAggFact2->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
       CoupledAggFact2->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
-      CoupledAggFact2->SetOrdering(MueLu::AggOptions::NATURAL);
+      CoupledAggFact2->SetOrdering(MueLu::AggOptions::NATURAL);*/
       CoupledAggFact2->SetFactory("Graph", dropFact);
       CoupledAggFact2->SetFactory("DofsPerNode", dropFact);
+      CoupledAggFact2->SetParameter("UsePreserveDirichletAggregationAlgorithm", Teuchos::ParameterEntry(bKeepDirichletBcs));
+      CoupledAggFact2->SetParameter("Ordering", Teuchos::ParameterEntry(MueLu::AggOptions::NATURAL));
+      CoupledAggFact2->SetParameter("MaxNeighAlreadySelected", Teuchos::ParameterEntry(maxNbrAlreadySelected));
+      CoupledAggFact2->SetParameter("MinNodesPerAggregate", Teuchos::ParameterEntry(minPerAgg));
+
       CoupledAggFact = CoupledAggFact2;
     } else {
       // Coupled Aggregation (default)
@@ -258,6 +266,7 @@ namespace MueLu {
     }
 
     RCP<RAPFactory> AcFact = rcp( new RAPFactory() );
+    AcFact->SetParameter("RepairMainDiagonal", Teuchos::ParameterEntry(bFixDiagonal));
     for (size_t i = 0; i<TransferFacts_.size(); i++) {
       AcFact->AddTransferFactory(TransferFacts_[i]);
     }

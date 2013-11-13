@@ -224,6 +224,8 @@ namespace Rythmos {
     int minOrder_;
     int maxOrder_;
     bool useLETToDetermineConvergence_;
+    bool restrictStepSizeByNumberOfNonlinearIterations_;
+    int numberOfNonlinearIterationsForStepSizeRestriction_;
 
     // Garbage to clean up for LET
 

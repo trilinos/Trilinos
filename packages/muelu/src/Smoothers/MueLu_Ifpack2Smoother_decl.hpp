@@ -48,11 +48,11 @@
 
 #include <Teuchos_ParameterList.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
-#include "Xpetra_Matrix.hpp"
-#include "Xpetra_CrsMatrixWrap.hpp"
+#include <Xpetra_Matrix.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
 #ifdef HAVE_XPETRA_TPETRA // needed for clone()
-#include "Xpetra_TpetraCrsMatrix.hpp"
+#include <Xpetra_TpetraCrsMatrix.hpp>
 #endif
 
 #include "MueLu_ConfigDefs.hpp"
@@ -60,12 +60,11 @@
 
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 
-// Ifpack2 forward declaration
-namespace Ifpack2 {
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> class Preconditioner;
-}
-#include "Tpetra_CrsMatrix.hpp"
-#include "Ifpack2_Factory.hpp"
+#include <Ifpack2_Preconditioner.hpp>
+#include <Ifpack2_Factory_decl.hpp>
+#include <Ifpack2_Factory_def.hpp>
+#include <Tpetra_CrsMatrix.hpp>
+
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"

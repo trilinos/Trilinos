@@ -80,6 +80,11 @@
 #include <Ifpack2_Version.hpp>
 #include <iostream>
 
+#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_MatrixIO.hpp"
+#include "MatrixMarket_Tpetra.hpp"
+#include "TpetraExt_MatrixMatrix.hpp"
+
 #if defined(HAVE_IFPACK2_QD) && !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
 #include <qd/dd_real.h>
 #endif
@@ -190,9 +195,107 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, Test1, Scalar, LocalOrdinal, Glo
   TEST_COMPARE_FLOATING_ARRAYS(xview, ones(), 2*Teuchos::ScalarTraits<Scalar>::eps());
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, FillLevel, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  // Test that ILU(k) computes correct factors in serial for fill levels 0 to 5.
+  // This test does nothing in parallel.
+  // 1) Create a banded matrix A with bandwidth equal to lof+2.
+  //    Nonzero off-diagonals are subdiagonals +/-1 and +/-(lof+2).
+  //    The matrix has 4's on the main diagonal, -1's on off-diagonals.
+  // 2) Compute ILU(lof) of A.
+  // 3) The incomplete factors should be equal to those of an exact LU decomposition without pivoting.
+  //    Note that Ifpack2 stores the inverse of the diagonal separately and scales U.
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> multivector_type;
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
+  typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                map_type;
+  typedef Teuchos::ScalarTraits<Scalar>                               TST;
+
+  using Teuchos::RCP;
+
+  Tpetra::DefaultPlatform::DefaultPlatformType& platform = Tpetra::DefaultPlatform::getDefaultPlatform();
+  RCP<const Teuchos::Comm<int> > comm = platform.getComm();
+
+  if (comm->getSize() > 1) {
+    out << std::endl;
+    out << "This test is only meaningful in serial." << std::endl;
+    return;
+  }
+
+  std::string version = Ifpack2::Version();
+  out << "Ifpack2::Version(): " << version << std::endl;
+
+  global_size_t num_rows_per_proc = 10;
+
+  const RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+
+  for (GlobalOrdinal lof=0; lof<6; ++lof) {
+
+    RCP<const crs_matrix_type > crsmatrix = tif_utest::create_banded_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap,lof+2);
+    //std::string aFile = "A_bw=" + Teuchos::toString(lof+2) + ".mm";
+    //RCP<crs_matrix_type> crsmatrix = reader_type::readSparseFile (aFile, comm, platform.getNode());
+    //crsmatrix->describe(out,Teuchos::VERB_EXTREME);
+    Ifpack2::RILUK<crs_matrix_type> prec(crsmatrix);
+
+    Teuchos::ParameterList params;
+    params.set("fact: iluk level-of-fill", lof);
+    params.set("fact: iluk level-of-overlap", 0);
+
+    prec.setParameters(params);
+    prec.initialize();
+    prec.compute();
+    //extract incomplete factors
+    const crs_matrix_type &iL = prec.getL();
+    const crs_matrix_type &iU = prec.getU();
+    const multivector_type &iD = prec.getD();
+
+    ////if (lof==0)
+    //{
+    //  Tpetra::MatrixMarket::Writer<crs_matrix_type>::writeSparseFile("check_A.mm",crsmatrix);
+    //  std::string outfile = "check_iL_bw=" + Teuchos::toString(lof+2) + ".mm";
+    //  Tpetra::MatrixMarket::Writer<crs_matrix_type>::writeSparseFile(outfile,rcpFromRef(iL));
+    //  outfile = "check_iU_bw=" + Teuchos::toString(lof+2) + ".mm";
+    //  Tpetra::MatrixMarket::Writer<crs_matrix_type>::writeSparseFile(outfile,rcpFromRef(iU));
+    //  outfile = "check_iD_bw=" + Teuchos::toString(lof+2) + ".mm";
+    //  Tpetra::MatrixMarket::Writer<crs_matrix_type>::writeDenseFile(outfile,rcpFromRef(iD));
+    //}
+
+    //read L,U, and D factors from file
+    std::string lFile = "Lfactor_bw=" + Teuchos::toString(lof+2) + ".mm";
+    std::string uFile = "Ufactor_bw=" + Teuchos::toString(lof+2) + ".mm";
+    std::string dFile = "Dfactor_bw=" + Teuchos::toString(lof+2) + ".mm";
+    out << "reading " << lFile << ", " << uFile << ", " << dFile << std::endl;
+    RCP<crs_matrix_type> L = reader_type::readSparseFile (lFile, comm, platform.getNode());
+    RCP<crs_matrix_type> U = reader_type::readSparseFile (uFile, comm, platform.getNode());
+    RCP<const map_type> rm = U->getRowMap();
+    RCP<multivector_type> D = reader_type::readVectorFile (dFile, comm, platform.getNode(), rm);
+
+    //compare factors
+    out << "bandwidth = " << lof+2 << ", lof = " << lof << std::endl;
+    D->update(TST::one(),iD,-TST::one());
+    RCP<crs_matrix_type> matdiff = Tpetra::MatrixMatrix::add(1.,false,*L,-1.,false,iL);
+    magnitudeType mag = matdiff->getFrobeniusNorm();
+    TEST_EQUALITY(mag < 1e-12, true);
+    out << "||L - iL||_fro = " << mag << std::endl;
+    matdiff = Tpetra::MatrixMatrix::add(1.,false,*U,-1.,false,iU);
+    mag = matdiff->getFrobeniusNorm();
+    TEST_EQUALITY(mag < 1e-12, true);
+    out << "||U - iU||_fro = " << mag << std::endl;
+    Teuchos::Array<magnitudeType> norms(1);
+    D->norm2(norms);
+    TEST_EQUALITY(norms[0] < 1e-12, true);
+    out << "||inverse(D) - inverse(iD)||_2 = " << norms[0] << std::endl;
+
+  } //for (GlobalOrdinal lof=0; lof<6; ++lof)
+
+} //unit test FillLevel()
+
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RILUK, Test0, Scalar, LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RILUK, Test1, Scalar, LocalOrdinal,GlobalOrdinal)
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RILUK, FillLevel, double, int, int)
 
 UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
 #ifndef HAVE_IFPACK2_EXPLICIT_INSTANTIATION

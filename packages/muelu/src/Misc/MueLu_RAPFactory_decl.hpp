@@ -144,11 +144,13 @@ namespace MueLu {
 
     //! If true, perform a basic plausibility check on Ac (default = false)
     //! note, that the repairZeroDiagonals_ flag is only valid for checkAc_ == true
+    mutable
     bool checkAc_;
 
     //! If true, the CheckMainDiagonal routine automatically repairs zero entries on main diagonal (default = false)
     //! i.e. if A(i,i) == 0.0 set A(i,i) = 1.0
     //! note, that the repairZeroDiagonals_ flag is only valid for checkAc_ == true
+    mutable
     bool repairZeroDiagonals_;
 
     mutable

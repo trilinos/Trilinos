@@ -240,6 +240,9 @@ public:
 
   //@}
 
+  //! Returns the Thyra::SolveStatus object from the last nonlinear solve.
+  const Thyra::SolveStatus<Scalar>& getNonlinearSolveStatus() const;
+
 private:
 
   //
@@ -283,7 +286,8 @@ private:
   int nscsco_;
   bool haveInitialCondition_;
   bool isInitialized_;
-
+  
+  Thyra::SolveStatus<Scalar> nonlinearSolveStatus_;
   int newtonConvergenceStatus_;
 
   RCP<Teuchos::ParameterList> parameterList_;

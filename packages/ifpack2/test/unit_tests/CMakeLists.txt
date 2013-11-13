@@ -41,6 +41,11 @@ Ifpack2_UnitTestAdditiveSchwarz.cpp
 
   )
 
+TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsIfpack2_cp
+  SOURCE_DIR ${Ifpack2_SOURCE_DIR}/test/data
+  SOURCE_FILES Dfactor_bw=2.mm Dfactor_bw=3.mm Dfactor_bw=4.mm Dfactor_bw=5.mm Dfactor_bw=6.mm Dfactor_bw=7.mm Dfactor_bw=8.mm Lfactor_bw=2.mm Lfactor_bw=3.mm Lfactor_bw=4.mm Lfactor_bw=5.mm Lfactor_bw=6.mm Lfactor_bw=7.mm Lfactor_bw=8.mm Ufactor_bw=2.mm Ufactor_bw=3.mm Ufactor_bw=4.mm Ufactor_bw=5.mm Ufactor_bw=6.mm Ufactor_bw=7.mm Ufactor_bw=8.mm 
+  )
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     unit_tests
     SOURCES ${SOURCES}

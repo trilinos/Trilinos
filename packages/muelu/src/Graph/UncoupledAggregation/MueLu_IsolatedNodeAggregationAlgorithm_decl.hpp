@@ -55,7 +55,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_AggregationAlgorithmBase.hpp"
-#include "MueLu_EmergencyAggregationAlgorithm_fwd.hpp"
+#include "MueLu_IsolatedNodeAggregationAlgorithm_fwd.hpp"
 
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"

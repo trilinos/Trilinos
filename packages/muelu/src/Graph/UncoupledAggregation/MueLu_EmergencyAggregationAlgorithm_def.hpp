@@ -119,7 +119,7 @@ LocalOrdinal EmergencyAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, Lo
   aggregates.SetNumAggregates(nLocalAggregates);
 
   // print aggregation information
-  this->PrintAggregationInformation("Phase 3 (emergency aggregation):", graph, aggregates, aggStat);
+  this->PrintAggregationInformation("Phase 5 (emergency aggregation):", graph, aggregates, aggStat);
 
   // collect some local information
   LO nLocalAggregated    = 0;

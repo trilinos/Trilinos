@@ -610,7 +610,7 @@ int ex_cvt_nodes_to_sides(int exoid,
     }
 
 
-  same_elem_type[0] = TRUE;
+  same_elem_type[0] = EX_TRUE;
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
     elem_ctr = ((int64_t*)num_elem_per_set)[0];
     for (i=0,k=0;i<tot_num_ss_elem;i++) {
@@ -628,10 +628,10 @@ int ex_cvt_nodes_to_sides(int exoid,
 	elem_ctr += ((int64_t*)num_elem_per_set)[++k];
 
 	el_type = elem_blk_parms[j].elem_type_val;
-	same_elem_type[k] = TRUE;
+	same_elem_type[k] = EX_TRUE;
       }
 
-      if (el_type != elem_blk_parms[j].elem_type_val) same_elem_type[k] = FALSE;
+      if (el_type != elem_blk_parms[j].elem_type_val) same_elem_type[k] = EX_FALSE;
     }
 
     /* Build side set element to node list index and side set element
@@ -684,10 +684,10 @@ int ex_cvt_nodes_to_sides(int exoid,
 	elem_ctr += ((int*)num_elem_per_set)[++k];
 
 	el_type = elem_blk_parms[j].elem_type_val;
-	same_elem_type[k] = TRUE;
+	same_elem_type[k] = EX_TRUE;
       }
 
-      if (el_type != elem_blk_parms[j].elem_type_val) same_elem_type[k] = FALSE;
+      if (el_type != elem_blk_parms[j].elem_type_val) same_elem_type[k] = EX_FALSE;
     }
 
     /* Build side set element to node list index and side set element
