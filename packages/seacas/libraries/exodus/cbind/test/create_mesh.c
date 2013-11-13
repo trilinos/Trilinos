@@ -202,11 +202,11 @@ INT bin_search2 (INT value, INT num, INT List[]);
 int
 main( int argc, char *argv[] ) {
   INT   *connect;
-  int   debug =         FALSE;                  /* TRUE, display debug information; FALSE       */
+  int   debug =         EX_FALSE;                  /* EX_TRUE, display debug information; EX_FALSE       */
   /* otherwise.                                 */
   static char device_name[MAX_STRING_LEN];
   static char file_name[MAX_STRING_LEN] =       DEFAULT_FILE_NAME;
-  int   exodus =                TRUE;
+  int   exodus =                EX_TRUE;
   INT   map_origin =            DEFAULT_MAP_ORIGIN;     
   INT   num_domains =           DEFAULT_NUM_DOMAINS;
   INT   num_elements_1d;
@@ -334,7 +334,7 @@ void parse_input(
       if ( ++arg < argc ) *num_timesteps = atoi( argv[arg] );
     }
     else if ( strcmp( "-d", argv[arg] ) == 0 ) {
-      *debug = TRUE;
+      *debug = EX_TRUE;
     }
     else if ( strcmp( "-f", argv[arg] ) == 0 ) { 
       if ( ++arg < argc ) strcpy( file_name, argv[arg] );
@@ -349,7 +349,7 @@ void parse_input(
       if ( ++arg < argc ) *num_domains = atoi( argv[arg] );
     }
     else if ( strcmp( "-x", argv[arg] ) == 0 ) {
-      *exodus = TRUE;
+      *exodus = EX_TRUE;
     }
     else if ( (strcmp( "-h", argv[arg] ) == 0) || (strcmp( "-u", argv[arg] ) == 0) ) {
       printf( "                                                                \n" );
@@ -640,8 +640,8 @@ void write_exo_mesh(
       char *names[1] = {"hex"};
       INT num_node_per_elem[1];
       INT num_attr_per_block[1];
-      int write_map = num_domains > 1 ? TRUE : FALSE;
-      write_map = TRUE;
+      int write_map = num_domains > 1 ? EX_TRUE : EX_FALSE;
+      write_map = EX_TRUE;
       num_elem_per_block[0] = loc_num_elements;
       num_node_per_elem[0]  = NUM_NODES_PER_ELEM;
       num_attr_per_block[0] = 0;
