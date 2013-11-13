@@ -777,6 +777,7 @@ namespace Ioex {
         Ioss::ElementBlock *eb = new Ioss::ElementBlock(this, "e1", "sphere", 1);
         eb->property_add(Ioss::Property("id", 1));
         get_region()->add(eb);
+        get_step_times();
         add_region_fields();
       }
       return;
@@ -958,56 +959,79 @@ namespace Ioex {
     int timestep_count = 0;
     std::vector<double> tsteps(0);
 
-    {
-      Ioss::SerializeIO	serializeIO__(this);
-      timestep_count = ex_inquire_int(get_file_pointer(), EX_INQ_TIME);
-      if (timestep_count <= 0)
-        return;
+    if (dbUsage == Ioss::WRITE_HISTORY) {
+      if (myProcessor == 0) {
+	timestep_count = ex_inquire_int(get_file_pointer(), EX_INQ_TIME);
+	if (timestep_count <= 0)
+	  return;
+	
+	// For an exodusII file, timesteps are global and are stored in the region.
+	// A history file only stores that last time / step
+	// Read the timesteps and add them to the region.
+	// Since we can't access the Region's stateCount directly, we just add
+	// all of the steps and assume the Region is dealing with them directly...
+	tsteps.resize(timestep_count);
+	int error = ex_get_all_times(get_file_pointer(), TOPTR(tsteps));
+	if (error < 0)
+	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
-      // For an exodusII file, timesteps are global and are stored in the region.
-      // Read the timesteps and add to the region
-      tsteps.resize(timestep_count);
-      int error = ex_get_all_times(get_file_pointer(), TOPTR(tsteps));
-      if (error < 0)
-        exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	Ioss::Region *this_region = get_region();
+	for (int i=0; i < timestep_count; i++) {
+	  this_region->add_state(tsteps[i]*timeScaleFactor);
+	}
+      }
+    } else {
+      {
+	Ioss::SerializeIO	serializeIO__(this);
+	timestep_count = ex_inquire_int(get_file_pointer(), EX_INQ_TIME);
+	if (timestep_count <= 0)
+	  return;
+	
+	// For an exodusII file, timesteps are global and are stored in the region.
+	// Read the timesteps and add to the region
+	tsteps.resize(timestep_count);
+	int error = ex_get_all_times(get_file_pointer(), TOPTR(tsteps));
+	if (error < 0)
+	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
-      // See if the "last_written_time" attribute exists and if it
-      // does, check that it matches the largest time in 'tsteps'.
-      Ioex::Internals data(get_file_pointer(), maximumNameLength);
-      exists = data.read_last_time_attribute(&last_time);
-    }
+	// See if the "last_written_time" attribute exists and if it
+	// does, check that it matches the largest time in 'tsteps'.
+	Ioex::Internals data(get_file_pointer(), maximumNameLength);
+	exists = data.read_last_time_attribute(&last_time);
+      }
 
-    if (exists) {
-      // Assume that if it exists on 1 processor, it exists on
-      // all... Sync value among processors since could have a
-      // corrupt step on only a single database.
-      last_time = util().global_minmax(last_time, Ioss::ParallelUtils::DO_MIN);
-    }
+      if (exists && isParallel) {
+	// Assume that if it exists on 1 processor, it exists on
+	// all... Sync value among processors since could have a
+	// corrupt step on only a single database.
+	last_time = util().global_minmax(last_time, Ioss::ParallelUtils::DO_MIN);
+      }
 
-    // Only add states that are less than or equal to the
-    // 'last_time' value which is either DBL_MAX or the value of
-    // the last time successfully written to the database and
-    // flushed to disk.  This is used to avoid corrupt data arising
-    // from a job that crashed during the writing of the last step
-    // on the database.  Output a warning message if there is
-    // potentially corrupt data on the database...
+      // Only add states that are less than or equal to the
+      // 'last_time' value which is either DBL_MAX or the value of
+      // the last time successfully written to the database and
+      // flushed to disk.  This is used to avoid corrupt data arising
+      // from a job that crashed during the writing of the last step
+      // on the database.  Output a warning message if there is
+      // potentially corrupt data on the database...
 
-    Ioss::Region *this_region = get_region();
-    for (int i=0; i < timestep_count; i++) {
-      if (tsteps[i] <= last_time) {
-        this_region->add_state(tsteps[i]*timeScaleFactor);
-      } else {
-        if (myProcessor == 0) {
-          // NOTE: Don't want to warn on all processors if there are
-          // corrupt steps on all databases, but this will only print
-          // a warning if there is a corrupt step on processor
-          // 0... Need better warnings which won't overload in the
-          // worst case...
-          IOSS_WARNING << "Skipping step " << i+1 << " at time " << tsteps[i]
-		       << " in database file\n\t" << get_filename()
-		       << ".\n\tThe data for that step is possibly corrupt since the last time written successfully was "
-		       << last_time << ".\n";
-        }
+      Ioss::Region *this_region = get_region();
+      for (int i=0; i < timestep_count; i++) {
+	if (tsteps[i] <= last_time) {
+	  this_region->add_state(tsteps[i]*timeScaleFactor);
+	} else {
+	  if (myProcessor == 0) {
+	    // NOTE: Don't want to warn on all processors if there are
+	    // corrupt steps on all databases, but this will only print
+	    // a warning if there is a corrupt step on processor
+	    // 0... Need better warnings which won't overload in the
+	    // worst case...
+	    IOSS_WARNING << "Skipping step " << i+1 << " at time " << tsteps[i]
+			 << " in database file\n\t" << get_filename()
+			 << ".\n\tThe data for that step is possibly corrupt since the last time written successfully was "
+			 << last_time << ".\n";
+	  }
+	}
       }
     }
   }
