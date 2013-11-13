@@ -264,6 +264,7 @@ void coarse_search2( std::vector<std::pair<DomainBox, DomainIdent> > const& loca
   typedef bgi::rtree< GlobalBoxProc, bgi::quadratic<MaxVolumesPerNode> > GlobalDomainTree;
   typedef typename bg::point_type<RangeBox>::type Point;
   typedef std::pair<DomainIdent, RangeIdent> Output;
+  typedef std::vector<Output> OutputVector;
 
   LocalDomainTree local_domain_tree(local_domain.begin(), local_domain.end());
 
@@ -320,7 +321,7 @@ void coarse_search2( std::vector<std::pair<DomainBox, DomainIdent> > const& loca
   // Gather results into output
   {
     stk::CommAll comm_all( comm );
-    std::vector<std::vector<Output> > send_matches(size);
+    std::vector<OutputVector> send_matches(size);
     for (size_t r = 0, re = gather_range.size(); r < re; ++r) {
       RangeBox const& range = gather_range[r].first;
       Point center = range.min_corner();
@@ -360,7 +361,7 @@ void coarse_search2( std::vector<std::pair<DomainBox, DomainIdent> > const& loca
         stk::CommBuffer & buf = comm_all.recv_buffer( p );
 
         const int num_recv = buf.remaining() / sizeof(Output);
-        std::vector<Output> values(num_recv);
+        OutputVector values(num_recv);
         buf.unpack<Output>( &*values.begin(), num_recv );
 
         ThrowRequireMsg(buf.remaining() == 0, buf.remaining());
@@ -369,6 +370,10 @@ void coarse_search2( std::vector<std::pair<DomainBox, DomainIdent> > const& loca
       }
     }
   }
+
+  std::sort(output.begin(), output.end());
+  typename OutputVector::iterator eitr = std::unique(output.begin(), output.end());
+  output.erase(eitr, output.end());
 }
 
 } // namespace search

@@ -9,6 +9,16 @@
 #include <iterator>
 #include <cstdlib>
 
+namespace std {
+
+template <typename First, typename Second>
+std::ostream & operator<<(std::ostream & out, std::pair<std::pair<First, Second>, std::pair<First, Second> > const& p)
+{
+  return out << "[" << p.first.first << ", " << p.first.second << ":" << p.second.first << ", " << p.second.second << "]";
+}
+
+}
+
 namespace {
 
 struct CompareSecond
@@ -103,16 +113,6 @@ STKUNIT_UNIT_TEST(stk_search, global_spatial_index)
   }
 }
 
-// For testing purposes
-void check_equal(std::pair<std::pair<int, int>, std::pair<int, int> > const& lhs,
-                 std::pair<std::pair<int, int>, std::pair<int, int> > const& rhs)
-{
-  STKUNIT_EXPECT_EQ(lhs.first.first,   rhs.first.first);
-  STKUNIT_EXPECT_EQ(lhs.first.second,  rhs.first.second);
-  STKUNIT_EXPECT_EQ(lhs.second.first,  rhs.second.first);
-  STKUNIT_EXPECT_EQ(lhs.second.second, rhs.second.second);
-}
-
 STKUNIT_UNIT_TEST(stk_search, coarse_search2_2D)
 {
   namespace bg = boost::geometry;
@@ -146,35 +146,35 @@ STKUNIT_UNIT_TEST(stk_search, coarse_search2_2D)
   if (size == 1) {
     STKUNIT_EXPECT_EQ(output.size(), 2u);
 
-    check_equal(output[0], std::make_pair(std::make_pair(0, 0), std::make_pair(2, 0)));
-    check_equal(output[1], std::make_pair(std::make_pair(1, 0), std::make_pair(3, 0)));
+    STKUNIT_EXPECT_EQ(output[0], std::make_pair(std::make_pair(0, 0), std::make_pair(2, 0)));
+    STKUNIT_EXPECT_EQ(output[1], std::make_pair(std::make_pair(1, 0), std::make_pair(3, 0)));
   }
   else {
     if (rank == 0) {
       STKUNIT_EXPECT_EQ(output.size(), 4u);
 
-      check_equal(output[0], std::make_pair(std::make_pair(0, 0), std::make_pair(2, 0)));
-      check_equal(output[1], std::make_pair(std::make_pair(1, 0), std::make_pair(3, 0)));
-      check_equal(output[2], std::make_pair(std::make_pair(4, 1), std::make_pair(2, 0)));
-      check_equal(output[3], std::make_pair(std::make_pair(5, 1), std::make_pair(3, 0)));
+      STKUNIT_EXPECT_EQ(output[0], std::make_pair(std::make_pair(0, 0), std::make_pair(2, 0)));
+      STKUNIT_EXPECT_EQ(output[1], std::make_pair(std::make_pair(1, 0), std::make_pair(3, 0)));
+      STKUNIT_EXPECT_EQ(output[2], std::make_pair(std::make_pair(4, 1), std::make_pair(2, 0)));
+      STKUNIT_EXPECT_EQ(output[3], std::make_pair(std::make_pair(5, 1), std::make_pair(3, 0)));
     }
     else if (rank == size - 1) {
       STKUNIT_EXPECT_EQ(output.size(), 4u);
 
-      check_equal(output[0], std::make_pair(std::make_pair(rank*4,     rank), std::make_pair(rank*4 - 2, rank - 1)));
-      check_equal(output[1], std::make_pair(std::make_pair(rank*4 + 1, rank), std::make_pair(rank*4 - 1, rank - 1)));
-      check_equal(output[2], std::make_pair(std::make_pair(rank*4,     rank), std::make_pair(rank*4 + 2, rank   )));
-      check_equal(output[3], std::make_pair(std::make_pair(rank*4 + 1, rank), std::make_pair(rank*4 + 3, rank   )));
+      STKUNIT_EXPECT_EQ(output[0], std::make_pair(std::make_pair(rank*4,     rank), std::make_pair(rank*4 - 2, rank - 1)));
+      STKUNIT_EXPECT_EQ(output[1], std::make_pair(std::make_pair(rank*4,     rank), std::make_pair(rank*4 + 2, rank   )));
+      STKUNIT_EXPECT_EQ(output[2], std::make_pair(std::make_pair(rank*4 + 1, rank), std::make_pair(rank*4 - 1, rank - 1)));
+      STKUNIT_EXPECT_EQ(output[3], std::make_pair(std::make_pair(rank*4 + 1, rank), std::make_pair(rank*4 + 3, rank   )));
     }
     else {
       STKUNIT_EXPECT_EQ(output.size(), 6u);
 
-      check_equal(output[0], std::make_pair(std::make_pair(rank*4,         rank    ), std::make_pair(rank*4 - 2, rank - 1)));
-      check_equal(output[1], std::make_pair(std::make_pair(rank*4 + 1,     rank    ), std::make_pair(rank*4 - 1, rank - 1)));
-      check_equal(output[2], std::make_pair(std::make_pair(rank*4,         rank    ), std::make_pair(rank*4 + 2, rank   )));
-      check_equal(output[3], std::make_pair(std::make_pair(rank*4 + 1,     rank    ), std::make_pair(rank*4 + 3, rank   )));
-      check_equal(output[4], std::make_pair(std::make_pair((rank+1)*4,     rank + 1), std::make_pair(rank*4 + 2, rank   )));
-      check_equal(output[5], std::make_pair(std::make_pair((rank+1)*4 + 1, rank + 1), std::make_pair(rank*4 + 3, rank   )));
+      STKUNIT_EXPECT_EQ(output[0], std::make_pair(std::make_pair(rank*4,         rank    ), std::make_pair(rank*4 - 2, rank - 1)));
+      STKUNIT_EXPECT_EQ(output[1], std::make_pair(std::make_pair(rank*4,         rank    ), std::make_pair(rank*4 + 2, rank   )));
+      STKUNIT_EXPECT_EQ(output[2], std::make_pair(std::make_pair(rank*4 + 1,     rank    ), std::make_pair(rank*4 - 1, rank - 1)));
+      STKUNIT_EXPECT_EQ(output[3], std::make_pair(std::make_pair(rank*4 + 1,     rank    ), std::make_pair(rank*4 + 3, rank   )));
+      STKUNIT_EXPECT_EQ(output[4], std::make_pair(std::make_pair((rank+1)*4,     rank + 1), std::make_pair(rank*4 + 2, rank   )));
+      STKUNIT_EXPECT_EQ(output[5], std::make_pair(std::make_pair((rank+1)*4 + 1, rank + 1), std::make_pair(rank*4 + 3, rank   )));
     }
   }
 }
@@ -212,35 +212,35 @@ STKUNIT_UNIT_TEST(stk_search, coarse_search2_3D)
   if (size == 1) {
     STKUNIT_EXPECT_EQ(output.size(), 2u);
 
-    check_equal(output[0], std::make_pair(std::make_pair(0, 0), std::make_pair(2, 0)));
-    check_equal(output[1], std::make_pair(std::make_pair(1, 0), std::make_pair(3, 0)));
+    STKUNIT_EXPECT_EQ(output[0], std::make_pair(std::make_pair(0, 0), std::make_pair(2, 0)));
+    STKUNIT_EXPECT_EQ(output[1], std::make_pair(std::make_pair(1, 0), std::make_pair(3, 0)));
   }
   else {
     if (rank == 0) {
       STKUNIT_EXPECT_EQ(output.size(), 4u);
 
-      check_equal(output[0], std::make_pair(std::make_pair(0, 0), std::make_pair(2, 0)));
-      check_equal(output[1], std::make_pair(std::make_pair(1, 0), std::make_pair(3, 0)));
-      check_equal(output[2], std::make_pair(std::make_pair(4, 1), std::make_pair(2, 0)));
-      check_equal(output[3], std::make_pair(std::make_pair(5, 1), std::make_pair(3, 0)));
+      STKUNIT_EXPECT_EQ(output[0], std::make_pair(std::make_pair(0, 0), std::make_pair(2, 0)));
+      STKUNIT_EXPECT_EQ(output[1], std::make_pair(std::make_pair(1, 0), std::make_pair(3, 0)));
+      STKUNIT_EXPECT_EQ(output[2], std::make_pair(std::make_pair(4, 1), std::make_pair(2, 0)));
+      STKUNIT_EXPECT_EQ(output[3], std::make_pair(std::make_pair(5, 1), std::make_pair(3, 0)));
     }
     else if (rank == size - 1) {
       STKUNIT_EXPECT_EQ(output.size(), 4u);
 
-      check_equal(output[0], std::make_pair(std::make_pair(rank*4,     rank), std::make_pair(rank*4 - 2, rank - 1)));
-      check_equal(output[1], std::make_pair(std::make_pair(rank*4 + 1, rank), std::make_pair(rank*4 - 1, rank - 1)));
-      check_equal(output[2], std::make_pair(std::make_pair(rank*4,     rank), std::make_pair(rank*4 + 2, rank   )));
-      check_equal(output[3], std::make_pair(std::make_pair(rank*4 + 1, rank), std::make_pair(rank*4 + 3, rank   )));
+      STKUNIT_EXPECT_EQ(output[0], std::make_pair(std::make_pair(rank*4,     rank), std::make_pair(rank*4 - 2, rank - 1)));
+      STKUNIT_EXPECT_EQ(output[1], std::make_pair(std::make_pair(rank*4,     rank), std::make_pair(rank*4 + 2, rank   )));
+      STKUNIT_EXPECT_EQ(output[2], std::make_pair(std::make_pair(rank*4 + 1, rank), std::make_pair(rank*4 - 1, rank - 1)));
+      STKUNIT_EXPECT_EQ(output[3], std::make_pair(std::make_pair(rank*4 + 1, rank), std::make_pair(rank*4 + 3, rank   )));
     }
     else {
       STKUNIT_EXPECT_EQ(output.size(), 6u);
 
-      check_equal(output[0], std::make_pair(std::make_pair(rank*4,         rank    ), std::make_pair(rank*4 - 2, rank - 1)));
-      check_equal(output[1], std::make_pair(std::make_pair(rank*4 + 1,     rank    ), std::make_pair(rank*4 - 1, rank - 1)));
-      check_equal(output[2], std::make_pair(std::make_pair(rank*4,         rank    ), std::make_pair(rank*4 + 2, rank   )));
-      check_equal(output[3], std::make_pair(std::make_pair(rank*4 + 1,     rank    ), std::make_pair(rank*4 + 3, rank   )));
-      check_equal(output[4], std::make_pair(std::make_pair((rank+1)*4,     rank + 1), std::make_pair(rank*4 + 2, rank   )));
-      check_equal(output[5], std::make_pair(std::make_pair((rank+1)*4 + 1, rank + 1), std::make_pair(rank*4 + 3, rank   )));
+      STKUNIT_EXPECT_EQ(output[0], std::make_pair(std::make_pair(rank*4,         rank    ), std::make_pair(rank*4 - 2, rank - 1)));
+      STKUNIT_EXPECT_EQ(output[1], std::make_pair(std::make_pair(rank*4,         rank    ), std::make_pair(rank*4 + 2, rank   )));
+      STKUNIT_EXPECT_EQ(output[2], std::make_pair(std::make_pair(rank*4 + 1,     rank    ), std::make_pair(rank*4 - 1, rank - 1)));
+      STKUNIT_EXPECT_EQ(output[3], std::make_pair(std::make_pair(rank*4 + 1,     rank    ), std::make_pair(rank*4 + 3, rank   )));
+      STKUNIT_EXPECT_EQ(output[4], std::make_pair(std::make_pair((rank+1)*4,     rank + 1), std::make_pair(rank*4 + 2, rank   )));
+      STKUNIT_EXPECT_EQ(output[5], std::make_pair(std::make_pair((rank+1)*4 + 1, rank + 1), std::make_pair(rank*4 + 3, rank   )));
     }
   }
 }
