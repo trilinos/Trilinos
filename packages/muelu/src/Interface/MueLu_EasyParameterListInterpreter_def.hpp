@@ -388,6 +388,9 @@ namespace MueLu {
       if (paramList.isParameter("sa: use filtered matrix") && paramList.get<bool>("sa: use filtered matrix")) {
         // Filtering
         RCP<FilteredAFactory> filterFactory = rcp(new FilteredAFactory());
+        ParameterList fParams = *(filterFactory->GetValidParameterList());
+        MUELU_TEST_AND_SET_PARAM(fParams, "lumping", paramList, defaultList, "filtered matrix: use lumping", bool);
+        filterFactory->SetParameterList(fParams);
         filterFactory->SetFactory("Graph", manager.GetFactory("Graph"));
         P->SetFactory("A", filterFactory);
       }
