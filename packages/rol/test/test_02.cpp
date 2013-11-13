@@ -46,7 +46,8 @@ int main(int argc, char *argv[]) {
     ROL::StdVector<RealT> z(z_rcp);
 
     // Get Objective Function
-    ROL::ETestObjectives objFunc = ROL::TESTOBJECTIVES_ROSENBROCK;
+    //ROL::ETestObjectives objFunc = ROL::TESTOBJECTIVES_ROSENBROCK;
+    ROL::ETestObjectives objFunc = ROL::TESTOBJECTIVES_FREUDENSTEINANDROTH;
     //ROL::ETestObjectives objFunc = ROL::TESTOBJECTIVES_SUMOFSQUARES;
     //ROL::ETestObjectives objFunc = ROL::TESTOBJECTIVES_LEASTSQUARES;
     Teuchos::RCP<ROL::Objective<RealT> > obj = Teuchos::null;
@@ -75,6 +76,7 @@ int main(int argc, char *argv[]) {
 
     // Run Finite Difference Checks
     obj->checkGradient(x,y,true);
+    obj->checkHessVec(x,y,true);
 
     /* BEGIN SECANT DEFINITION */
     ROL::SecantType Stype = ROL::Secant_lDFP;
