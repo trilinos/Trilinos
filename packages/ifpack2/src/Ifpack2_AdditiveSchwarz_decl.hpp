@@ -209,7 +209,6 @@ public:
   /// \param A [in] The matrix to be preconditioned.
   /// \param overlapLevel [in] The level of overlap.  Must be
   ///   nonnegative.  Zero means no overlap.
-  TEUCHOS_DEPRECATED
   AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A,
                    const int overlapLevel);
 

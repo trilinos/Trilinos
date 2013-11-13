@@ -145,7 +145,6 @@ public:
    */
   template<class MatrixType>
   static
-  TEUCHOS_DEPRECATED
   Teuchos::RCP<Preconditioner<typename MatrixType::scalar_type,
                               typename MatrixType::local_ordinal_type,
                               typename MatrixType::global_ordinal_type,

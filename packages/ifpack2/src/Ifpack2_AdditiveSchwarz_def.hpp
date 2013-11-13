@@ -135,7 +135,6 @@ AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A) :
 }
 
 template<class MatrixType, class LocalInverseType>
-TEUCHOS_DEPRECATED
 AdditiveSchwarz<MatrixType, LocalInverseType>::
 AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A,
                  const int overlapLevel) :
