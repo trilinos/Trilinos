@@ -167,9 +167,9 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
   algos_.clear();  // TODO can we keep different aggregation algorithms over more Build calls?
   if (bUseOnePtAggregationAlgorithm)             algos_.push_back(Teuchos::rcp(new MueLu::OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
   if (bUseSmallAggregationAlgorithm)             algos_.push_back(Teuchos::rcp(new MueLu::SmallAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
-  if (bUsePreserveDirichletAggregationAlgorithm) algos_.push_back(Teuchos::rcp(new MueLu::PreserveDirichletAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
   if (bUseUncoupledAggregationAglorithm)         algos_.push_back(Teuchos::rcp(new MueLu::UncoupledAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
   if (bUseMaxLinkAggregationAlgorithm)           algos_.push_back(Teuchos::rcp(new MueLu::MaxLinkAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
+  if (bUsePreserveDirichletAggregationAlgorithm) algos_.push_back(Teuchos::rcp(new MueLu::PreserveDirichletAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
   if (bUseIsolatedNodeAggregationAglorithm)      algos_.push_back(Teuchos::rcp(new MueLu::IsolatedNodeAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
   if (bUseEmergencyAggregationAlgorithm)         algos_.push_back(Teuchos::rcp(new MueLu::EmergencyAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
 
