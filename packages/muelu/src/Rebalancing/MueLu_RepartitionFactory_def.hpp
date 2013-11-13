@@ -85,12 +85,12 @@ namespace MueLu {
  RCP<const ParameterList> RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set<int>        ("startLevel",                  1, "First level at which repartitioning can possibly occur. Repartitioning at finer levels is suppressed");
-    validParamList->set<LO>         ("minRowsPerProcessor",      1000, "Minimum number of rows over all processes. If any process falls below this, repartitioning is initiated");
+    validParamList->set<int>        ("startLevel",                  2, "First level at which repartitioning can possibly occur. Repartitioning at finer levels is suppressed");
+    validParamList->set<LO>         ("minRowsPerProcessor",       800, "Minimum number of rows over all processes. If any process falls below this, repartitioning is initiated");
     validParamList->set<double>     ("nonzeroImbalance",          1.2, "Imbalance threshold, below which repartitioning is initiated. Imbalance is measured by "
                                                                        "ratio of maximum nonzeros over all processes to minimum number of nonzeros over all processes");
 
-    validParamList->set<bool>       ("remapPartitions",         false, "Perform partition remapping to minimize data movement");
+    validParamList->set<bool>       ("remapPartitions",          true, "Perform partition remapping to minimize data movement");
     validParamList->set<bool>       ("alwaysKeepProc0",          true, "Always keep processor 0 in subcommunicator");
 
     validParamList->set< RCP<const FactoryBase> >("A",         Teuchos::null, "Factory of the matrix A");
