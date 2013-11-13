@@ -138,6 +138,14 @@ struct get_proc<std::pair<T, int> >
 
 }
 
+#if defined(__APPLE__) && !defined(isnan)
+  /* for Mac OSX 10, this isnan function may need to be manually declared;
+   * however, on some g++ versions, isnan is a macro so it doesn't need
+   * to be manually declared...
+   */
+  extern "C" int isnan(double value);
+#endif
+
 template <typename CoordType, int Dimension>
 inline
 bool invalid_box(CoordType *raw_box)
