@@ -61,7 +61,9 @@
 
 
 
-//#define enable_migration2
+#ifdef HAVE_ZOLTAN2_ZOLTAN
+#define enable_migration2
+#endif
 
 #ifdef enable_migration2
 #include "zoltan_comm_cpp.h"
@@ -6565,6 +6567,7 @@ void AlgPQJagged(
                         maxTotalPartCount
     );
 
+
     if (concurrentPartCount == 0)
     {
         if(problemComm->getSize() == 1){
@@ -6897,6 +6900,7 @@ void AlgPQJagged(
                 inPartBoxes,
                 outPartBoxes
                 );
+
 
 
 
@@ -7581,6 +7585,8 @@ void AlgPQJagged(
     env->timerStop(MACRO_TIMERS, "PQJagged - Solution_Part_Assignment");
 
     env->timerStart(MACRO_TIMERS, "PQJagged - Problem_Free");
+
+
     /*
     if(comm->getRank() == 0){
     for(partId_t i = 0; i < totalPartCount - 1;++i){
@@ -7680,7 +7686,6 @@ void AlgPQJagged(
 
     env->timerStop(MACRO_TIMERS, "PQJagged - Problem_Free");
     env->timerStop(MACRO_TIMERS, "PQJagged - Total");
-
 
 
 #endif // INCLUDE_ZOLTAN2_EXPERIMENTAL
