@@ -85,7 +85,7 @@ namespace stk {
         void begin_output_step(double time, const stk::mesh::BulkData& bulk_data);
         void end_output_step();
 
-        int process_output_request(const stk::mesh::BulkData& bulk_data);
+        int write_defined_output_fields(const stk::mesh::BulkData& bulk_data);
         int process_output_request(double time, const stk::mesh::BulkData& bulk_data);
 
         void set_output_io_region(Teuchos::RCP<Ioss::Region> ioss_output_region);
@@ -119,13 +119,12 @@ namespace stk {
         const OutputFile & operator=(const OutputFile &);
     };
 
+    // ========================================================================
     class StkMeshIoBroker {
-        // Used to maintain state between the meta data and bulk data
-        // portions of the mesh generation process for use cases.
       public:
         /**
-         * \param[in] comm  MPI Communicator to be used for all parallel
-         * communication needed to generate the mesh.
+         * \param[in] comm MPI Communicator to be used for all
+         * parallel communication needed to generate the mesh.
          */
         StkMeshIoBroker(MPI_Comm comm, stk::mesh::ConnectivityMap * connectivity_map = NULL);
         StkMeshIoBroker();
@@ -399,7 +398,7 @@ namespace stk {
 	 * the step added by "begin_output_step".  End step with a call
 	 * to "end_output_step"
          */
-        int process_output_request(size_t output_file_index);
+        int write_defined_output_fields(size_t output_file_index);
 
         /**
          * Add a transient step to the mesh database at time 'time' and
@@ -407,7 +406,7 @@ namespace stk {
 	 * Performs the same functions as:
 	 *
 	 * 	begin_output_step(output_file_index, time);
-	 * 	process_output_request(output_file_index);
+	 * 	write_defined_output_fields(output_file_index);
 	 * 	end_output_step(output_file_index);
 	 *
 	 * Note that if there are any global varibles defined, they

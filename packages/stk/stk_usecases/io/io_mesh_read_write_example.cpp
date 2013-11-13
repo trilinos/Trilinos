@@ -116,8 +116,8 @@ namespace {
         mesh_data.begin_output_step(restart_index, time);
         mesh_data.begin_output_step(results_index, time);
 
-        mesh_data.process_output_request(restart_index);
-        mesh_data.process_output_request(results_index);
+        mesh_data.write_defined_output_fields(restart_index);
+        mesh_data.write_defined_output_fields(results_index);
 
         // Transfer all global variables from the input mesh to the
         // restart and results databases

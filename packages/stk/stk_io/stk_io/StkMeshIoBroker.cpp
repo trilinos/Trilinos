@@ -1195,10 +1195,10 @@ namespace stk {
     }
 
     // ========================================================================
-    int StkMeshIoBroker::process_output_request(size_t output_file_index)
+    int StkMeshIoBroker::write_defined_output_fields(size_t output_file_index)
     {
       validate_output_file_index(output_file_index);
-      int current_output_step = m_output_files[output_file_index]->process_output_request(*m_bulk_data);
+      int current_output_step = m_output_files[output_file_index]->write_defined_output_fields(*m_bulk_data);
       return current_output_step;
     }
 
@@ -1882,16 +1882,16 @@ namespace stk {
     int OutputFile::process_output_request(double time, const stk::mesh::BulkData& bulk_data)
     {
       begin_output_step(time, bulk_data);
-      process_output_request(bulk_data);
+      write_defined_output_fields(bulk_data);
       end_output_step();
 
       return m_current_output_step;
     }
 
-    int OutputFile::process_output_request(const stk::mesh::BulkData& bulk_data)
+    int OutputFile::write_defined_output_fields(const stk::mesh::BulkData& bulk_data)
     {
       Ioss::Region *region = m_output_region.get();
-      ThrowErrorMsgIf (region==NULL, "INTERNAL ERROR: Mesh Output Region pointer is NULL in internal_process_output_request.");
+      ThrowErrorMsgIf (region==NULL, "INTERNAL ERROR: Mesh Output Region pointer is NULL in write_defined_output_fields.");
 
       const stk::mesh::MetaData& meta_data = bulk_data.mesh_meta_data();
       // Special processing for nodeblock (all nodes in model)...

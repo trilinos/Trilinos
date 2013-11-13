@@ -315,7 +315,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, GlobalDoubleWithFieldMultipleTimeSteps)
             stkIo.write_global(result_file_index, globalVarName, globalVarValue);
             globalVarValuesOverTime.push_back(globalVarValue);
 
-            stkIo.process_output_request(result_file_index);
+            stkIo.write_defined_output_fields(result_file_index);
 
             stkIo.end_output_step(result_file_index);
             time += stepSize;
@@ -411,7 +411,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleWithFieldRestart)
             stkIo.write_global(fileIndex, globalVarName, globalVarValue);
             globalVarValuesOverTime.push_back(globalVarValue);
 
-            stkIo.process_output_request(fileIndex);
+            stkIo.write_defined_output_fields(fileIndex);
 
             stkIo.end_output_step(fileIndex);
             time += stepSize;

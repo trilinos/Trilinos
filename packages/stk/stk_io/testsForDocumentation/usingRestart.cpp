@@ -35,7 +35,7 @@ TEST(StkMeshIoBrokerHowTo, restartWithMultistateField)
         stkIo.add_restart_field(fileHandle, *triStateField);
 
         stkIo.begin_output_step(fileHandle, time);
-        stkIo.process_output_request(fileHandle);
+        stkIo.write_defined_output_fields(fileHandle);
         stkIo.end_output_step(fileHandle);
     }
 

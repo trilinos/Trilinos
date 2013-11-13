@@ -46,13 +46,13 @@ TEST(StkMeshIoBrokerHowTo, writeTwoResultFiles)
     // Write output
     double time = 0.0;
     stkMeshIoBroker.begin_output_step(file1Handle, time);
-    stkMeshIoBroker.process_output_request(file1Handle);
+    stkMeshIoBroker.write_defined_output_fields(file1Handle);
     const double globalVarValue1 = 13.0;
     stkMeshIoBroker.write_global(file1Handle, globalVarNameFile1, globalVarValue1);
     stkMeshIoBroker.end_output_step(file1Handle);
 
     stkMeshIoBroker.begin_output_step(file2Handle, time);
-    stkMeshIoBroker.process_output_request(file2Handle);
+    stkMeshIoBroker.write_defined_output_fields(file2Handle);
     const double globalVarValue2 = 14.0;
     stkMeshIoBroker.write_global(file2Handle, globalVarNameFile2, globalVarValue2);
     stkMeshIoBroker.end_output_step(file2Handle);

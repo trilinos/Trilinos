@@ -547,8 +547,8 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
         stkMeshIoBroker.add_results_field(vol_mesh_index, processor_field);
       }
 
-      stkMeshIoBroker.process_output_request(time_step/60.0, vol_mesh_index);
-      stkMeshIoBroker.process_output_request(time_step/60.0, surf_mesh_index);
+      stkMeshIoBroker.process_output_request(vol_mesh_index, time_step/60.0);
+      stkMeshIoBroker.process_output_request(surf_mesh_index, time_step/60.0);
     }
   }
 

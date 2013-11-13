@@ -125,9 +125,10 @@ STKUNIT_UNIT_TEST( heavy, heavy )
   }
 
   // time exodus file creation
+  size_t index = 0;
   {
     double start_time = stk::wall_time();
-    fixture.create_output_mesh( output_base_filename );
+    index = fixture.create_output_mesh( output_base_filename );
     timings[EXODUS_CREATE_PHASE_ID] = stk::wall_dtime(start_time);
   }
 
@@ -135,7 +136,7 @@ STKUNIT_UNIT_TEST( heavy, heavy )
   {
     double time_step = 0;
     double start_time = stk::wall_time();
-    fixture.process_output_request( time_step );
+    fixture.process_output_request(index, time_step);
     timings[PROCESS_OUTPUT_PHASE_ID] = stk::wall_dtime(start_time);
   }
 
