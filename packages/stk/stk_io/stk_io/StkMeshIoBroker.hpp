@@ -437,11 +437,11 @@ namespace stk {
         //   -- If reading data from the mesh also, then may need both.
         // * What state used for input/output -- pass as argument to process_restart?
 
-        bool meta_data_is_set() const
+        bool is_meta_data_non_null() const
         {
           return !Teuchos::is_null(m_meta_data);
         }
-        bool bulk_data_is_set() const
+        bool is_bulk_data_non_null() const
         {
           return !Teuchos::is_null(m_bulk_data);
         }
