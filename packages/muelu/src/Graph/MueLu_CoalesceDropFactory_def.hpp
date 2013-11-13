@@ -648,8 +648,12 @@ namespace MueLu {
       // 4) create graph of amalgamated matrix
       RCP<CrsGraph> crsGraph = CrsGraphFactory::Build(nodeMap, 10, Xpetra::DynamicProfile);
 
+      LO numRows = A->getRowMap()->getNodeNumElements();
+      LO numNodes = nodeMap->getNodeNumElements();
+      const ArrayRCP<bool> amalgBoundaryNodes(numNodes, false);
+
       // 5) do amalgamation. generate graph of amalgamated matrix
-      for(LO row=0; row<Teuchos::as<LO>(A->getRowMap()->getNodeNumElements()); row++) {
+      for(LO row=0; row<numRows; row++) {
         // get global DOF id
         GO grid = rowMap->getGlobalElement(row);
 
@@ -681,8 +685,11 @@ namespace MueLu {
         ////////////////// experimental
         //if(gBoundaryNodes->count(nodeId) == 0)
         //  (*gBoundaryNodes)[nodeId] = false;  // new node GID (probably no Dirichlet bdry node)
-        //if(realnnz == 1)
-        //  (*gBoundaryNodes)[nodeId] = true; // if there's only one nnz entry the node has some Dirichlet bdry dofs
+        if(realnnz == 1) {
+          LO lNodeId = nodeMap->getLocalElement(nodeId);
+          amalgBoundaryNodes[lNodeId] = true; // if there's only one nnz entry the node has some Dirichlet bdry dofs
+        }
+        //  (*gBoundaryNodes)[nodeId] = true;
         ///////////////////////////////
 
         Teuchos::ArrayRCP<GO> arr_cnodeIds = Teuchos::arcp( cnodeIds );
@@ -716,7 +723,22 @@ namespace MueLu {
       // 6) create MueLu Graph object
       RCP<GraphBase> graph = rcp(new Graph(crsGraph, "amalgamated graph of A"));
 
-      // 7) store results in Level
+      // Detect and record rows that correspond to Dirichlet boundary conditions
+      graph->SetBoundaryNodeMap(amalgBoundaryNodes);
+
+      if (GetVerbLevel() & Statistics0) {
+        GO numLocalBoundaryNodes  = 0;
+        GO numGlobalBoundaryNodes = 0;
+        for (LO i = 0; i < amalgBoundaryNodes.size(); ++i)
+          if (amalgBoundaryNodes[i])
+            numLocalBoundaryNodes++;
+        RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+        sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+        GetOStream(Statistics0, 0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
+      }
+
+
+      // 8) store results in Level
       //graph->SetBoundaryNodeMap(gBoundaryNodeMap);
       Set(currentLevel, "DofsPerNode", blockdim);
       Set(currentLevel, "Graph", graph);
