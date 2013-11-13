@@ -452,43 +452,51 @@ void get_io_field_type(const stk::mesh::FieldBase *field,
 	result->first = scalar ;
   }
   else if ( 1 == rank ) {
-	size_t num_comp = res.stride(0);
-	if ( tags[0] == & stk::mesh::Cartesian::tag() && 1 == num_comp ) {
-	  result->first = scalar ;
-	}
-	else if ( tags[0] == & stk::mesh::Cartesian::tag() && 2 == num_comp ) {
-	  result->first = vector_2d ;
-	}
-	else if ( tags[0] == & stk::mesh::Cartesian::tag() && 3 == num_comp ) {
-	  result->first = vector_3d ;
-	}
-	else if ( tags[0] == & stk::mesh::FullTensor::tag() && 9 == num_comp ) {
-	  result->first = full_tensor_36 ;
-	}
-	else if ( tags[0] == & stk::mesh::FullTensor::tag() && 5 == num_comp ) {
-	  result->first = full_tensor_32 ;
-	}
-	else if ( tags[0] == & stk::mesh::FullTensor::tag() && 4 == num_comp ) {
-	  result->first = full_tensor_22 ;
-	}
-	else if ( tags[0] == & stk::mesh::FullTensor::tag() && 3 == num_comp ) {
-	  result->first = full_tensor_12 ;
-	}
-	else if ( tags[0] == & stk::mesh::SymmetricTensor::tag() && 6 == num_comp ) {
-	  result->first = sym_tensor_33 ;
-	}
-	else if ( tags[0] == & stk::mesh::SymmetricTensor::tag() && 4 == num_comp ) {
-	  result->first = sym_tensor_31 ;
-	}
-	else if ( tags[0] == & stk::mesh::SymmetricTensor::tag() && 3 == num_comp ) {
-	  result->first = sym_tensor_21 ;
-	}
-        else if ( tags[0] == & stk::mesh::Matrix::tag() && 4 == num_comp ) {
-          result->first =  matrix_22;
-        }
-        else if ( tags[0] == & stk::mesh::Matrix::tag() && 9 == num_comp ) {
-          result->first = matrix_33 ;
-        }
+    size_t num_comp = res.stride(0);
+    if ( tags[0] == & stk::mesh::Cartesian::tag() ) {
+      if (1 == num_comp ) {
+	result->first = scalar ;
+      }
+      else if ( 2 == num_comp ) {
+	result->first = vector_2d ;
+      }
+      else if ( 3 == num_comp ) {
+	result->first = vector_3d ;
+      }
+    }
+    else if ( tags[0] == & stk::mesh::FullTensor::tag() ) {
+      if ( 9 == num_comp ) {
+	result->first = full_tensor_36 ;
+      }
+      else if ( 5 == num_comp ) {
+	result->first = full_tensor_32 ;
+      }
+      else if ( 4 == num_comp ) {
+	result->first = full_tensor_22 ;
+      }
+      else if ( 3 == num_comp ) {
+	result->first = full_tensor_12 ;
+      }
+    }
+    else if ( tags[0] == & stk::mesh::SymmetricTensor::tag() ) {
+      if ( 6 == num_comp ) {
+	result->first = sym_tensor_33 ;
+      }
+      else if ( 4 == num_comp ) {
+	result->first = sym_tensor_31 ;
+      }
+      else if ( 3 == num_comp ) {
+	result->first = sym_tensor_21 ;
+      }
+    }
+    else if ( tags[0] == & stk::mesh::Matrix::tag() ) {
+      if (4 == num_comp ) {
+	result->first =  matrix_22;
+      }
+      else if ( 9 == num_comp ) {
+	result->first = matrix_33 ;
+      }
+    }
   }
 
   if ( result->first.empty() ) {
