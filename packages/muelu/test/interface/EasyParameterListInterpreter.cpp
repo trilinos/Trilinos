@@ -158,14 +158,27 @@ int main(int argc, char *argv[]) {
       // NOTE2 : sed behaviour differs between Mac and Linux
       // You can run "sed -i 's//' " in Linux, but you always have to specify
       // "sed -i "<smth,could be empty>" 's//'" in Mac. Both, however, take '-i<extension>'
+
+      // Ignore the value of "lambdaMax"
       std::string sed_cmd = "sed -iorig 's/lambdaMax\\ =\\ [0-9]*\\.[0-9]*/lambdaMax\\ =\\ <ignored>/' ";
       system((sed_cmd + baseFile + ".res").c_str());
       system((sed_cmd + baseFile + ".out").c_str());
 
+      // Ignore the value of "lambdaMin"
 #ifndef __APPLE__
       sed_cmd = "sed -i      's/lambdaMin\\ =\\ [0-9]*\\.[0-9]*/lambdaMin\\ =\\ <ignored>/' ";
 #else
       sed_cmd = "sed -i \"\" 's/lambdaMin\\ =\\ [0-9]*\\.[0-9]*/lambdaMin\\ =\\ <ignored>/' ";
+#endif
+      system((sed_cmd + baseFile + ".res").c_str());
+      system((sed_cmd + baseFile + ".out").c_str());
+
+      // Ignore the value of "chebyshev: max eigenvalue"
+      // NOTE: we skip lines with default value ([default])
+#ifndef __APPLE__
+      sed_cmd = "sed -i      '/[default]/! s/chebyshev:\\ max\\ eigenvalue\\ =\\ [0-9]*\\.[0-9]*/chebyshev:\\ max\\ eigenvalue\\ =\\ <ignored>/' ";
+#else
+      sed_cmd = "sed -i \"\" '/[default]/! s/chebyshev:\\ max\\ eigenvalue\\ =\\ [0-9]*\\.[0-9]*/chebyshev:\\ max\\ eigenvalue\\ =\\ <ignored>/' ";
 #endif
       system((sed_cmd + baseFile + ".res").c_str());
       system((sed_cmd + baseFile + ".out").c_str());
