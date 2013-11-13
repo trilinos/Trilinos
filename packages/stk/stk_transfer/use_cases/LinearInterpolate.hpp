@@ -181,10 +181,7 @@ template <class MESHA, class MESHB> void LinearInterpolate<MESHA,MESHB>::post_co
   typedef typename EntityProcRelationVec::iterator iterator;
   iterator k=BtoA.begin();
   for (iterator i=BtoA.begin(),j=BtoA.begin(); j!=BtoA.end();) {
-    ThrowRequire(i != BtoA.end());
-    ThrowRequire(j != BtoA.end());
-
-    while (i->first == j->first && j!=BtoA.end()) {
+    while (j!=BtoA.end() && i->first == j->first) {
       ++j;
     }
     const unsigned num = j-i;
