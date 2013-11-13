@@ -190,6 +190,7 @@ int main(int argc, char *argv[]) {
     shifts.push_back(-curshift);
   }
   SLSolver -> setLevelShifts(shifts);
+  SLSolver -> initialize();
   SLSolver -> setupSlowRAP();
 
   tm = Teuchos::null;
