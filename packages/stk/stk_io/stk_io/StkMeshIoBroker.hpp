@@ -178,7 +178,6 @@ namespace stk {
          */
         void set_input_io_region(Teuchos::RCP<Ioss::Region> ioss_input_region);
 
-        Teuchos::RCP<Ioss::DatabaseIO> get_input_io_database()  { return m_input_database;   }
         Teuchos::RCP<Ioss::Region> get_input_io_region()
         {
           if (Teuchos::is_null(m_input_region) && !Teuchos::is_null(m_input_database)) {
