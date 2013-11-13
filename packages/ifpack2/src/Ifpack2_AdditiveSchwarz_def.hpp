@@ -418,7 +418,7 @@ setParameters (const Teuchos::ParameterList& plist)
     List_.get("schwarz: combine mode","Add");
   }
 
-  Ifpack2::getParameter(List_, "schwarz: overlap level",OverlapLevel_);
+  Ifpack2::getParameter (List_, "schwarz: overlap level", OverlapLevel_);
   if ((OverlapLevel_ != 0) && (Matrix_->getComm()->getSize() > 1)) {
     IsOverlapping_=true;
   }
@@ -474,9 +474,9 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize()
   if (IsOverlapping_) {
     if (UseSubdomain_) {
       const int sid = List_.get ("subdomain id", -1);
-      OverlappingMatrix_ = rcp (new Ifpack2::OverlappingRowMatrix<row_matrix_type> (Matrix_, OverlapLevel_, sid));
+      OverlappingMatrix_ = rcp (new OverlappingRowMatrix<row_matrix_type> (Matrix_, OverlapLevel_, sid));
     } else {
-      OverlappingMatrix_ = rcp (new Ifpack2::OverlappingRowMatrix<row_matrix_type> (Matrix_, OverlapLevel_));
+      OverlappingMatrix_ = rcp (new OverlappingRowMatrix<row_matrix_type> (Matrix_, OverlapLevel_));
     }
   }
 
@@ -712,7 +712,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup()
       //LocalizedMatrix_ = Teuchos::rcp(tt);
     }
     else
-      LocalizedMatrix_ = rcp (new Ifpack2::LocalFilter<row_matrix_type> (OverlappingMatrix_));
+      LocalizedMatrix_ = rcp (new LocalFilter<row_matrix_type> (OverlappingMatrix_));
   }
   else {
     if (UseSubdomain_) {
@@ -720,7 +720,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup()
       throw std::runtime_error("Ifpack2::AdditiveSchwarz subdomain code not yet supported.");
     }
     else {
-      LocalizedMatrix_ = rcp (new Ifpack2::LocalFilter<row_matrix_type> (Matrix_));
+      LocalizedMatrix_ = rcp (new LocalFilter<row_matrix_type> (Matrix_));
     }
   }
 
@@ -736,7 +736,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup()
 
   // Singleton Filtering
   if (FilterSingletons_) {
-    SingletonMatrix_ = rcp (new Ifpack2::SingletonFilter<row_matrix_type> (LocalizedMatrix_));
+    SingletonMatrix_ = rcp (new SingletonFilter<row_matrix_type> (LocalizedMatrix_));
     ActiveMatrix = SingletonMatrix_;
   }
 
@@ -768,7 +768,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup()
 
     // Now create the reordered matrix & mark it as active
 
-    typedef Ifpack2::ReorderFilter<row_matrix_type> reorder_filter_type;
+    typedef ReorderFilter<row_matrix_type> reorder_filter_type;
     typedef Zoltan2::OrderingSolution<global_ordinal_type, local_ordinal_type> ordering_solution_type;
     ReorderedLocalizedMatrix_ = rcp (new reorder_filter_type (ActiveMatrix, rcp (new ordering_solution_type (*MyOrderingProblem.getSolution ()))));
 

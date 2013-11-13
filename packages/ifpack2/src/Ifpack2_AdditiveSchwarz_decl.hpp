@@ -111,9 +111,9 @@ must provide both the matrix to be preconditioned (whose which must
 have minimal overlap) and the matrix with wider overlap.
 
 To solve linear systems involving \f$A_i\f$ on each subdomain, the
-user can adopt any subclass of Ifpack2::Preconditioner. This can be
-easily accomplished, as Ifpack2::AdditiveSchwarz is templated with the
-solver for each subdomain.
+user can adopt any subclass of Preconditioner. This can be easily
+accomplished, as AdditiveSchwarz is templated with the solver for each
+subdomain.
 
 The local matrix \f$A_i\f$ can be filtered, to eliminate singletons,
 and reordered. At the present time, RCM and METIS can be used to
@@ -125,20 +125,20 @@ The second template parameter (\c LocalInverseType) is being
 DEPRECATED.  It causes a lot of trouble for explicit template
 instantiation, and we can perfectly well support an arbitrary
 subdomain solver type by run-time polymorphism.  For example, a
-subclass of Ifpack2::Preconditioner could expose a scalar_type (of the
-input and output vectors of apply()) different than its internal
-storage type, via a mechanism like that of Tpetra::ApplyOp.  The only
-issue is that the preconditioner would need to be creatable by
-Factory, but we could get around that by adding a method to
-AdditiveSchwarz that lets the user supply an arbitrary
-Ifpack2::Preconditioner subclass instance for the subdomain solver.
+subclass of Preconditioner could expose a scalar_type (of the input
+and output vectors of apply()) different than its internal storage
+type, via a mechanism like that of Tpetra::ApplyOp.  The only issue is
+that the preconditioner would need to be creatable by Factory, but we
+could get around that by adding a method to AdditiveSchwarz that lets
+the user supply an arbitrary Preconditioner subclass instance for the
+subdomain solver.
 */
 template<class MatrixType,class LocalInverseType>
 class AdditiveSchwarz :
-    virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
-                                           typename MatrixType::local_ordinal_type,
-                                           typename MatrixType::global_ordinal_type,
-                                           typename MatrixType::node_type> {
+    virtual public Preconditioner<typename MatrixType::scalar_type,
+                                  typename MatrixType::local_ordinal_type,
+                                  typename MatrixType::global_ordinal_type,
+                                  typename MatrixType::node_type> {
 public:
   //! \name Typedefs
   //@{
@@ -168,6 +168,7 @@ public:
                                      local_ordinal_type,
                                      global_ordinal_type,
                                      node_type> row_matrix_type;
+
   //@}
   // \name Deprecated typedefs
   //@{
@@ -249,11 +250,12 @@ public:
   ///     "Insert", "Replace", and "AbsMax".
   ///   - "schwarz: overlap level" (\c int): The level of overlap.
   ///   - "schwarz: use reordering" (\c bool): Whether to use Zoltan2
-  ///     to do reordering.
-  ///   - "schwarz: subdomain id" (\c int): I don't understand what
-  ///     this does.
-  ///   - "schwarz: filter singletons" (\c bool): If true, filter
-  ///     singletons.  I don't understand what this does.
+  ///     to do reordering.  If true, then Trilinos must have been
+  ///     built with Zoltan2 and Xpetra enabled.
+  ///   - "schwarz: subdomain id" (\c int): This option does not
+  ///     currently work.
+  ///   - "schwarz: filter singletons" (\c bool): If true, exclude
+  ///     rows with just a single entry on the calling process.
   virtual void setParameters (const Teuchos::ParameterList& List);
 
   //! Computes all (graph-related) data necessary to initialize the preconditioner.
@@ -313,6 +315,11 @@ public:
   //! Returns the level of overlap.
   virtual int getOverlapLevel() const;
 
+
+private:
+  //! Specialization of Tpetra::Map.
+  typedef Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> map_type;
+
 protected:
   //! Copy constructor (unimplemented; do not use)
   AdditiveSchwarz (const AdditiveSchwarz& RHS);
@@ -320,17 +327,19 @@ protected:
   //! Set up the localized matrix and the singleton filter.
   void setup ();
 
-  //! The matrix to be preconditioned.
-  const Teuchos::RCP<const row_matrix_type> Matrix_;
+  /// \brief The matrix to be preconditioned.
+  ///
+  /// This is the same matrix as the input argument to this class' constructor.
+  Teuchos::RCP<const row_matrix_type> Matrix_;
 
   //! The overlapping matrix.
-  Teuchos::RCP<Ifpack2::OverlappingRowMatrix<row_matrix_type> >OverlappingMatrix_;
+  Teuchos::RCP<OverlappingRowMatrix<row_matrix_type> > OverlappingMatrix_;
 
   //! Localized version of Matrix_ or OverlappingMatrix_.
   // CMS: Probably not a great idea, but this will remove the Local/Subdomain conflict here
   Teuchos::RCP<row_matrix_type> LocalizedMatrix_;
   //! The reordered matrix.
-  Teuchos::RCP<Ifpack2::ReorderFilter<row_matrix_type> > ReorderedLocalizedMatrix_;
+  Teuchos::RCP<ReorderFilter<row_matrix_type> > ReorderedLocalizedMatrix_;
 
   //! If true, the preconditioner has been successfully initialized.
   bool IsInitialized_;
@@ -355,10 +364,10 @@ protected:
   //! If true, subdomain filtering is used
   bool UseSubdomain_;
 
-  //! Filter for singletons.
+  //! Whether to filter singleton rows.
   bool FilterSingletons_;
-  //! filtering object.
-  Teuchos::RCP<Ifpack2::SingletonFilter<row_matrix_type> > SingletonMatrix_;
+  //! Matrix from which singleton rows have been filtered.
+  Teuchos::RCP<SingletonFilter<row_matrix_type> > SingletonMatrix_;
   //! Contains the number of successful calls to Initialize().
   int NumInitialize_;
   //! Contains the number of successful call to Compute().
@@ -382,11 +391,11 @@ protected:
   //! Pointer to the local solver.
   Teuchos::RCP<LocalInverseType> Inverse_;
   //! SerialMap for filtering multivector with no overlap.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > SerialMap_;
+  Teuchos::RCP<const map_type> SerialMap_;
   //! Distributed map for filtering multivector with no overlap.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > DistributedMap_;
+  Teuchos::RCP<const map_type> DistributedMap_;
   //! Local distributed map for filtering multivector with no overlap.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > LocalDistributedMap_;
+  Teuchos::RCP<const map_type> LocalDistributedMap_;
 }; // class AdditiveSchwarz
 
 }// end namespace
