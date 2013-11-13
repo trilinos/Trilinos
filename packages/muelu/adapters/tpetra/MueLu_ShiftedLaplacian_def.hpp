@@ -372,7 +372,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
   BelosList_ -> set("Output Style",Belos::Brief);
 
   // Belos Linear Problem and Solver Manager
-  TpetraA_ = Utils::Op2NonConstTpetraCrs(A_);
+  if(A_!=Teuchos::null)
+    TpetraA_ = Utils::Op2NonConstTpetraCrs(A_);
   BelosLinearProblem_ = rcp( new BelosLinearProblem );
   BelosLinearProblem_ -> setOperator (  TpetraA_  );
   if(solverType_==0) {
@@ -519,7 +520,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
 
   // Define Operator and Preconditioner
   MueLuOp_ = rcp( new MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO>(Hierarchy_, A_, ncycles_, subiters_, option_, tol_) );
-  TpetraA_ = Utils::Op2NonConstTpetraCrs(A_);
+  if(A_!=Teuchos::null)
+    TpetraA_ = Utils::Op2NonConstTpetraCrs(A_);
 
   // Belos Linear Problem and Solver Manager
   BelosList_ = rcp( new Teuchos::ParameterList("GMRES") );
