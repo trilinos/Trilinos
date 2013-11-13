@@ -272,6 +272,18 @@ namespace MueLu {
       if (repairZeroDiagonals_) GetOStream(Warnings0,0) << "RAPFactory (WARNING): repaired " << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
       else                      GetOStream(Warnings0,0) << "RAPFactory (WARNING): found "    << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
     }
+
+#if 0 // only for debugging
+    // check whether Ac has been repaired...
+    Ac->getLocalDiagCopy(*diagVec);
+    Teuchos::ArrayRCP< Scalar > diagVal2 = diagVec->getDataNonConst(0);
+    for (size_t r = 0; r < Ac->getRowMap()->getNodeNumElements(); r++) {
+      if (diagVal2[r] == zero) {
+        std::cout << "Error: there are zeros left on diagonal after repair..." << std::endl;
+      }
+    }
+#endif
+
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
