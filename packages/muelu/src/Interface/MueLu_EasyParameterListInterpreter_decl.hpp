@@ -101,6 +101,7 @@ namespace MueLu {
 
     CycleType Cycle_;
     int       blockSize_;
+    bool      useCoordinates_;
 
   }; // class EasyParameterListInterpreter
 

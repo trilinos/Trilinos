@@ -93,7 +93,11 @@ int main(int argc, char *argv[]) {
   // =========================================================================
   // Problem construction
   // =========================================================================
-  RCP<Matrix> A = MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(9999, lib);
+  ParameterList matrixParameters;
+  matrixParameters.set("nx",         9999);
+  matrixParameters.set("matrixType", "Laplace1D");
+  RCP<Matrix>      A           = MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(matrixParameters.get<int>("nx"), lib);
+  RCP<MultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", A->getRowMap(), matrixParameters);
 
   Teuchos::ArrayRCP<std::string> fileList;
   if (numProc == 1) {
@@ -127,7 +131,7 @@ int main(int argc, char *argv[]) {
 
       H->GetLevel(0)->Set<RCP<Matrix> >("A", A);
       // H->GetLevel(0)->Set("Nullspace",   nullspace);
-      // H->GetLevel(0)->Set("Coordinates", coordinates);
+      H->GetLevel(0)->Set("Coordinates", coordinates);
 
       mueluFactory.SetupHierarchy(*H);
 

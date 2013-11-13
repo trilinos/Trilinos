@@ -155,6 +155,32 @@ namespace MueLu {
       this->verbosity_ = verbMap[verbosityLevel];
     }
 
+    // Detect if we need to transfer coordinates to coarse levels. We do that iff
+    //  - we use "laplacian" dropping on some level, or
+    //  - we use repartitioning on some level
+    // This is not ideal, as we may have "repartition: enable" turned on by default
+    // and not present in the list, but it is better than nothing.
+    useCoordinates_ = false;
+    if ((paramList.isParameter("repartition: enable")      && paramList.get<bool>("repartition: enable")             == true) ||
+        (paramList.isParameter("aggregation: drop scheme") && paramList.get<std::string>("aggregation: drop scheme") == "laplacian")) {
+      useCoordinates_ = true;
+
+    } else {
+      for (int levelID = 0; levelID < this->numDesiredLevel_; levelID++) {
+        std::string levelStr = "level" + toString(levelID);
+
+        if (paramList.isSublist(levelStr)) {
+          const ParameterList& levelList = paramList.sublist(levelStr);
+
+          if ((levelList.isParameter("repartition: enable")      && levelList.get<bool>("repartition: enable")             == true) ||
+              (levelList.isParameter("aggregation: drop scheme") && levelList.get<std::string>("aggregation: drop scheme") == "laplacian")) {
+            useCoordinates_ = true;
+            break;
+          }
+        }
+      }
+    }
+
     // Create default manager
     RCP<FactoryManager> defaultManager = rcp(new FactoryManager());
     defaultManager->SetVerbLevel(this->verbosity_);
@@ -412,17 +438,19 @@ namespace MueLu {
     RAP->SetFactory("R", manager.GetFactory("R"));
     manager.SetFactory("A", RAP);
 
-    // === Repartitioning ===
-    MUELU_READ_2LIST_PARAM(paramList, defaultList, "repartition: enable", bool, false, enableRepart);
-    if (enableRepart) {
-      // Coordinates
+    // === Coordinates ===
+    if (useCoordinates_) {
       RCP<CoordinatesTransferFactory> coords = rcp(new CoordinatesTransferFactory());
       coords->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
       coords->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
       manager.SetFactory("Coordinates", coords);
 
       RAP->AddTransferFactory(manager.GetFactory("Coordinates"));
+    }
 
+    // === Repartitioning ===
+    MUELU_READ_2LIST_PARAM(paramList, defaultList, "repartition: enable", bool, false, enableRepart);
+    if (enableRepart) {
 #ifdef HAVE_MPI
       MUELU_READ_2LIST_PARAM(paramList, defaultList, "repartition: partitioner", std::string, "zoltan", partName);
       TEUCHOS_TEST_FOR_EXCEPTION(partName != "zoltan" && partName != "zoltan2", Exceptions::InvalidArgument,
