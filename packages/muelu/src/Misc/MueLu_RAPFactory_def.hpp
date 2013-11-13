@@ -255,6 +255,9 @@ namespace MueLu {
     if (repairZeroDiagonals_) {
       Ac->fillComplete(p);
       MueLu::Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd(*Ac, false, 1.0, *fixDiagMatrix, 1.0);
+
+      if (Ac->IsView("stridedMaps")) fixDiagMatrix->CreateView("stridedMaps", Ac);
+
       Ac = Teuchos::null;     // free singular coarse level matrix
       Ac = fixDiagMatrix;     // set fixed non-singular coarse level matrix
     }
