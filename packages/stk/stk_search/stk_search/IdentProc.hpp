@@ -90,8 +90,7 @@ struct IdentProc {
   * @return			a <b>bool</b> ...
   */
   inline bool operator==( const IdentProc<K, P> & rhs ) const {
-    return !( (ident < rhs.ident || rhs.ident < ident) ||
-              (proc  < rhs.proc  || rhs.proc  < proc ) );
+    return ident == rhs.ident && proc == rhs.proc;
   }
 
   /**
@@ -113,8 +112,7 @@ struct IdentProc {
   * @return			a <b>bool</b> ...
   */
   inline bool operator!=( const IdentProc<K, P> &rhs ) const {
-    return  ( (ident < rhs.ident || rhs.ident < ident) ||
-              (proc  < rhs.proc  || rhs.proc  < proc ) );
+    return  !(*this == rhs);
   }
 
   /**
