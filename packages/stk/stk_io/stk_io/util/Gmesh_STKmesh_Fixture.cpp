@@ -36,7 +36,7 @@ Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(   stk::ParallelMachine comm
   m_mesh_data.create_input_mesh();
 
   const Iogn::DatabaseIO* database =
-    dynamic_cast<const Iogn::DatabaseIO*>(m_mesh_data.input_io_region()->get_database());
+    dynamic_cast<const Iogn::DatabaseIO*>(m_mesh_data.get_input_io_region()->get_database());
 //  database->set_int_byte_size_api(Ioss::USE_INT64_API);
 
   // get face parts names; need to convert these to strings

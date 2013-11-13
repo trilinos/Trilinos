@@ -44,7 +44,7 @@ namespace {
 
     // This is done just to define some fields in stk
     // that can be used later for reading restart data.
-    Ioss::Region *io_region = mesh_data.input_io_region().get();
+    Ioss::Region *io_region = mesh_data.get_input_io_region().get();
     stk::io::define_input_fields(*io_region, mesh_data.meta_data());
 
     mesh_data.populate_bulk_data();
@@ -84,7 +84,7 @@ namespace {
     // For each global field name on the input database, determine the type of the field
     // and define that same global field on both the results and restart output databases.
     for (size_t i=0; i < global_fields.size(); i++) {
-      const Ioss::Field &input_field = mesh_data.input_io_region()->get_fieldref(global_fields[i]);
+      const Ioss::Field &input_field = mesh_data.get_input_io_region()->get_fieldref(global_fields[i]);
 
       // Define the global fields that will be written on each timestep.
       mesh_data.add_global(restart_index, input_field.get_name(), input_field.raw_storage()->name(), input_field.get_type());
@@ -96,7 +96,7 @@ namespace {
     // to the results and restart output databases...
 
     // Determine number of timesteps on input database...
-    int timestep_count = mesh_data.input_io_region()->get_property("state_count").get_int();
+    int timestep_count = mesh_data.get_input_io_region()->get_property("state_count").get_int();
 
     if (timestep_count == 0 )
     {
@@ -105,7 +105,7 @@ namespace {
     else
     {
       for (int step=1; step <= timestep_count; step++) {
-        double time = mesh_data.input_io_region()->get_state_time(step);
+        double time = mesh_data.get_input_io_region()->get_state_time(step);
 
         // Normally, an app would only process the restart input at a single step and
         // then continue with execution at that point.  Here just for testing, we are

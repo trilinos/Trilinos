@@ -539,7 +539,7 @@ void process_nodeblocks(stk::io::StkMeshIoBroker &mesh, INT /*dummy*/)
   // However, if we only define nodes that are connected to elements,
   // then we risk missing "free" nodes that the user may want to have
   // existing in the model.
-  const Ioss::NodeBlockContainer& node_blocks = mesh.input_io_region()->get_node_blocks();
+  const Ioss::NodeBlockContainer& node_blocks = mesh.get_input_io_region()->get_node_blocks();
   assert(node_blocks.size() == 1);
 
   Ioss::NodeBlock *nb = node_blocks[0];
@@ -568,7 +568,7 @@ void process_node_coords_and_attributes(stk::io::StkMeshIoBroker &mesh, INT /*du
   // However, if we only define nodes that are connected to elements,
   // then we risk missing "free" nodes that the user may want to have
   // existing in the model.
-  const Ioss::NodeBlockContainer& node_blocks = mesh.input_io_region()->get_node_blocks();
+  const Ioss::NodeBlockContainer& node_blocks = mesh.get_input_io_region()->get_node_blocks();
   assert(node_blocks.size() == 1);
 
   Ioss::NodeBlock *nb = node_blocks[0];

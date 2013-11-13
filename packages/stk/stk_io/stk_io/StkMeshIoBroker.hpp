@@ -168,8 +168,8 @@ namespace stk {
          */
         void set_input_io_region(Teuchos::RCP<Ioss::Region> ioss_input_region);
 
-        Teuchos::RCP<Ioss::DatabaseIO> input_io_database()  { return m_input_database;   }
-        Teuchos::RCP<Ioss::Region> input_io_region()
+        Teuchos::RCP<Ioss::DatabaseIO> get_input_io_database()  { return m_input_database;   }
+        Teuchos::RCP<Ioss::Region> get_input_io_region()
         {
           if (Teuchos::is_null(m_input_region) && !Teuchos::is_null(m_input_database)) {
             create_ioss_region();
@@ -240,9 +240,9 @@ namespace stk {
          * and type (exodus by default). The routine checks that the
          * file exists and is readable and will return false if not.
          * No meta_data or bulk_data is created at this time, but the
-         * input_io_database() will be valid.
+         * get_input_io_database() will be valid.
          *
-         * The Ioss::DatabaseIO can be accessed via the input_io_database()
+         * The Ioss::DatabaseIO can be accessed via the get_input_io_database()
          * method if you need to set some options on the database prior
          * to it being read.
          *
