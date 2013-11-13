@@ -39,7 +39,7 @@ public :
   typedef std::multimap<EntityKeyB, EntityKeyA> EntityKeyMap;
 
   enum { Dimension = MeshA::Dimension };
-  
+
   static void post_coarse_search_filter(EntityProcRelationVec &range_to_domain,
                                         const MeshA     &mesha,
                                         const MeshB     &meshb);
@@ -47,20 +47,20 @@ public :
   static void filter_to_nearest(EntityKeyMap    &BtoA,
                                 const MeshA     &FromPoints,
                                 const MeshB     &ToPoints);
-  
+
   static void apply (MeshB               &meshb,
                      const MeshA         &mesha,
                      const EntityKeyMap &RangeToDomain);
-  
+
   static std::vector<double> solve_3_by_3_with_LU(const MDArray &M, const std::vector<double> &x);
 private :
-  
+
   static int LU_decomp(double A[9], int piv[3], int* sign);
   static int LU_solve(const double A[9], const int piv[3], double b[3]);
-  
+
   enum { dim_eq = StaticAssert<static_cast<unsigned>(MeshB::Dimension)==static_cast<unsigned>(MeshA::Dimension)>::OK };
   enum { dim_3  = StaticAssert<               3==MeshA::Dimension>::OK };
-  
+
   static double distance_squared(const double *x, const double *y) ;
   static EntityKeyMap determine_best_fit(const typename EntityKeyMap::const_iterator begin,
                                          const typename EntityKeyMap::const_iterator end,
@@ -73,7 +73,7 @@ private :
   static bool co_planer(const typename EntityKeyMap::value_type &e,
                         const EntityKeyMap &first_three,
                         const MeshA        &FromPoints);
-  
+
 };
 
 template <class MESHA, class MESHB> double LinearInterpolate<MESHA,MESHB>::distance_squared(const double *x, const double *y) {
@@ -93,15 +93,15 @@ template <class MESHA, class MESHB> bool LinearInterpolate<MESHA,MESHB>::co_line
     unsigned n=0;
     for (typename EntityKeyMap::const_iterator j=first_two.begin(); j != first_two.end(); ++j,++n) {
       const EntityKeyA from_key = j->second;
-      Corners[n] = FromPoints.coord(from_key); 
-    } 
-    Corners[n] = FromPoints.coord(e.second); 
+      Corners[n] = FromPoints.coord(from_key);
+    }
+    Corners[n] = FromPoints.coord(e.second);
   }
   double S[span][Dimension];
-  for (unsigned j=1; j<Dimension; ++j) 
-    for (unsigned k=0; k<Dimension; ++k) 
+  for (unsigned j=1; j<Dimension; ++j)
+    for (unsigned k=0; k<Dimension; ++k)
       S[j-1][k] = Corners[j][k] - Corners[0][k];
-   
+
   const double a_cross_b[Dimension] = { S[0][1]*S[1][2] - S[0][2]*S[1][1] ,
                                      -( S[0][0]*S[1][2] - S[0][2]*S[1][0]),
                                         S[0][0]*S[1][1] - S[0][1]*S[1][0]};
@@ -122,15 +122,15 @@ template <class MESHA, class MESHB> bool LinearInterpolate<MESHA,MESHB>::co_plan
     unsigned n=0;
     for (typename EntityKeyMap::const_iterator j=first_three.begin(); j != first_three.end(); ++j,++n) {
       const EntityKeyA from_key = j->second;
-      Corners[n] = FromPoints.coord(from_key); 
-    } 
-    Corners[n] = FromPoints.coord(e.second); 
+      Corners[n] = FromPoints.coord(from_key);
+    }
+    Corners[n] = FromPoints.coord(e.second);
   }
   double S[Dimension][Dimension];
-  for (unsigned j=1; j<span; ++j) 
-    for (unsigned k=0; k<Dimension; ++k) 
+  for (unsigned j=1; j<span; ++j)
+    for (unsigned k=0; k<Dimension; ++k)
       S[j-1][k] = Corners[j][k] - Corners[0][k];
-   
+
   const double a_cross_b[Dimension] = { S[0][1]*S[1][2] - S[0][2]*S[1][1] ,
                                      -( S[0][0]*S[1][2] - S[0][2]*S[1][0]),
                                         S[0][0]*S[1][1] - S[0][1]*S[1][0]};
@@ -181,10 +181,21 @@ template <class MESHA, class MESHB> void LinearInterpolate<MESHA,MESHB>::post_co
   typedef typename EntityProcRelationVec::iterator iterator;
   iterator k=BtoA.begin();
   for (iterator i=BtoA.begin(),j=BtoA.begin(); j!=BtoA.end();) {
-    while (i->first == j->first && j!=BtoA.end()) ++j;
+    ThrowRequire(i != BtoA.end());
+    ThrowRequire(j != BtoA.end());
+
+    while (i->first == j->first && j!=BtoA.end()) {
+      ++j;
+    }
     const unsigned num = j-i;
-    if (Dimension+2 < num || p_rank != i->first.proc) while (i!=j) *k++ = *i++;
-    else i=j;
+    if (Dimension+2 < num || p_rank != i->first.proc) {
+      while (i!=j && i != BtoA.end()) {
+        *k++ = *i++;
+      }
+    }
+    else {
+      i=j;
+    }
   }
   BtoA.resize(k-BtoA.begin());
 }
@@ -197,11 +208,11 @@ template <class MESHA, class MESHB> void LinearInterpolate<MESHA,MESHB>::filter_
   for (iterator j=BtoA.begin(); j!=BtoA.end(); ) {
     std::pair<iterator, iterator> keys=BtoA.equal_range(j->first);
     const unsigned num = distance(keys.first, keys.second);
-    ThrowRequireMsg (Dimension <  num,  
+    ThrowRequireMsg (Dimension <  num,
       __FILE__<<":"<<__LINE__<<" Expected "<<Dimension+1<<" relations."<<" Found:"<<num<<" for Key:"<<j->first);
     EntityKeyMap n = determine_best_fit(keys.first, keys.second, j->first, meshb, mesha);
     BtoA.erase(keys.first, keys.second);
-    BtoA.insert(n.begin(), n.end()); 
+    BtoA.insert(n.begin(), n.end());
     j = keys.second;
   }
 }
@@ -217,7 +228,7 @@ template <class MESHA, class MESHB>  void LinearInterpolate<MESHA,MESHB>::apply 
 
   const unsigned numValsa = mesha.num_values();
   const unsigned numValsb = meshb.num_values();
-    ThrowRequireMsg (numValsb == numValsa,  
+    ThrowRequireMsg (numValsb == numValsa,
       __FILE__<<":"<<__LINE__<<" Found "<<numValsa<<" values for mesh a and "<<numValsb<<" for mesh b."
       <<" These should be the same.");
 
@@ -228,7 +239,7 @@ template <class MESHA, class MESHB>  void LinearInterpolate<MESHA,MESHB>::apply 
     const unsigned num_relations = distance(i, j);
 
     const EntityKeyB to_key = i->first;
-    ThrowRequireMsg (span == num_relations,  
+    ThrowRequireMsg (span == num_relations,
       __FILE__<<":"<<__LINE__<<" Expected "<<span<<" relations."<<" Found:"<<num_relations<<" for Key:"<<to_key);
 
     MDArray Corners(span,Dimension);
@@ -236,14 +247,14 @@ template <class MESHA, class MESHB>  void LinearInterpolate<MESHA,MESHB>::apply 
       unsigned n=0;
       for (map_const_iterator k=i; k!=j; ++k,++n) {
         const EntityKeyA from_key = k->second;
-        const double *c = mesha.coord(from_key); 
+        const double *c = mesha.coord(from_key);
         for (unsigned kk=0; kk<Dimension; ++kk) Corners(n,kk) = c[kk];
-      } 
+      }
     }
 
     MDArray SpanVectors(Dimension,Dimension);
-    for (unsigned l=1; l<span; ++l) 
-      for (unsigned k=0; k<Dimension; ++k) 
+    for (unsigned l=1; l<span; ++l)
+      for (unsigned k=0; k<Dimension; ++k)
         SpanVectors(k,l-1) = Corners(l,k) - Corners(0,k);
     std::vector<double> point(Dimension);
     {
@@ -272,15 +283,15 @@ template <class MESHA, class MESHB>  void LinearInterpolate<MESHA,MESHB>::apply 
         // coordinates of the target point in the span vector
         // coordinate system.  These are stored in S. S is
         // dimension Dimension and there are Dimension+1 corner values.
-        // The scalar used to scale the value at corner 0 
+        // The scalar used to scale the value at corner 0
         // is 1-sum(S).
         double T=1;
         for (unsigned k=0; k<Dimension; ++k) T -= S[k];
         double interpolated_value = T * Values[0];
         for (unsigned k=0; k<Dimension; ++k)
-          interpolated_value += S[k] * Values[k+1]; 
+          interpolated_value += S[k] * Values[k+1];
         double  *c = meshb.value(to_key, f);
-        c[n] = interpolated_value; 
+        c[n] = interpolated_value;
       }
     }
   }
@@ -291,58 +302,58 @@ template <class MESHA, class MESHB>  void LinearInterpolate<MESHA,MESHB>::apply 
  *
  *     Decompose matrix A into the product of a unit lower triangular matrix, L,
  *     and an upper triangular matrix, U, with column pivoting.
- *             
+ *
  *     The matrix A is assumed to be stored in an array like this:
- *                     
+ *
  *                                    A[0]  A[1]  A[2]
  *                                    A[3]  A[4]  A[5]
  *                                    A[6]  A[7]  A[8]
- *     
+ *
  *     Upon completion, the entries A[3], A[6], A[7] of A are overwritten by
  *     the strictly lower portion of L.  And the rest of A is overwritten by
  *     the upper portion of U.  The pivots are stored in piv.  A plus one or
  *     minus one is returned in "sign" to allow computation of the determinant
  *     .. just multiply the trace times this value.
- *    
+ *
  *     A value of 0 (zero) is returned if the matrix is singular (assuming NDEBUG
  *     is not defined.)
- *                                                                                                          
+ *
  *     There are 3 divisions, 5 multiplications, and 5 add/sub
  *     plus pivoting compares and swaps.
- *                                                                                                                      
+ *
  *
  *                                             Drake 9-98
  */
 template <class MESHA, class MESHB> int LinearInterpolate<MESHA,MESHB>::LU_decomp(double A[9], int piv[3], int* sign)
 {
   piv[0] = 0; piv[1] = 1; piv[2] = 2;
-  
+
   register double m;
-  
+
 #ifndef NDEBUG
   if ( A[0] == 0.0 && A[3] == 0.0 && A[6] == 0.0 ) return 0;
 #endif
-  
+
   (*sign) = 1;
-  if ( (m = fabs(A[0])) < fabs(A[3]) ) { 
+  if ( (m = fabs(A[0])) < fabs(A[3]) ) {
     if (fabs(A[3]) < fabs(A[6]))
-    {   
+    {
       piv[0] = 2; piv[2] = 0;             // Switch rows 0 and 2.
       m = A[0]; A[0] = A[6]; A[6] = m;
       m = A[1]; A[1] = A[7]; A[7] = m;
       m = A[2]; A[2] = A[8]; A[8] = m;
-    }   
+    }
     else
-    {   
+    {
       piv[0] = 1; piv[1] = 0;             // Switch rows 0 and 1.
       m = A[0]; A[0] = A[3]; A[3] = m;
       m = A[1]; A[1] = A[4]; A[4] = m;
       m = A[2]; A[2] = A[5]; A[5] = m;
-    }   
-    (*sign) = -1; 
+    }
+    (*sign) = -1;
   }
   else if (m < fabs(A[6]))
-    {   
+    {
       piv[0] = 2; piv[2] = 0;             // Switch rows 0 and 2.
       m = A[0]; A[0] = A[6]; A[6] = m;
       m = A[1]; A[1] = A[7]; A[7] = m;
@@ -383,23 +394,23 @@ template <class MESHA, class MESHB> int LinearInterpolate<MESHA,MESHB>::LU_decom
 
 /*********************   LU_solve()   *******************************
  *     Uses a precomputed LU decomposition to find the solution to Ax = b for
- *         
+ *
  *     a length 3 vector b.
- *                 
+ *
  *     It solves Ly = b for vector y, then Ux = y for x.
- *                         
+ *
  *     The matrix A is assumed to be of the same form as the output from
  *     LU_decomp().
- *                                     
+ *
  *     The vector b is overwritten with the solution.
- *                                             
+ *
  *     The diagonals are checked for zeros if NDEBUG is not defined.
- *                                                     
+ *
  *     There are 3 div, 6 mult, and 6 add/sub plus compares and swaps to undo
  *     the pivoting.
- *                                                                 
+ *
  *     Drake 9/98
- *     
+ *
  */
 template <class MESHA, class MESHB> int LinearInterpolate<MESHA,MESHB>::LU_solve(const double A[9], const int piv[3], double b[3])
 {
@@ -437,8 +448,8 @@ template <class MESHA, class MESHB> std::vector<double> LinearInterpolate<MESHA,
   double b[3];
   int piv[3];
   int sign;
-  for (unsigned i=0,k=0; i<3; ++i) 
-    for (unsigned j=0; j<3; ++j) 
+  for (unsigned i=0,k=0; i<3; ++i)
+    for (unsigned j=0; j<3; ++j)
       A[k++] = M(i,j);
   for (unsigned i=0; i<3; ++i) b[i] = x[i];
   LU_decomp(A, piv, &sign);
