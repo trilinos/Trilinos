@@ -63,6 +63,7 @@
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_FilteredAFactory.hpp"
+#include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_RebalanceAcFactory.hpp"
@@ -370,6 +371,11 @@ namespace MueLu {
     Ptent->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
     manager.SetFactory("Ptent",     Ptent);
 
+    // Nullspace
+    RCP<NullspaceFactory> nullSpace = rcp(new NullspaceFactory());
+    nullSpace->SetFactory("Nullspace", manager.GetFactory("Ptent"));
+    manager.SetFactory("Nullspace", nullSpace);
+
     // === Prolongation ===
     MUELU_READ_2LIST_PARAM(paramList, defaultList, "multigrid algorithm", std::string, "sa", multigridAlgo);
     if (multigridAlgo == "sa") {
@@ -494,32 +500,39 @@ namespace MueLu {
       manager.SetFactory("Importer", repartFactory);
 
       // Rebalanced A
-      RCP<RebalanceAcFactory>       newA = rcp(new RebalanceAcFactory());
-      newA->SetFactory("A",         manager.GetFactory("A"));
-      newA->SetFactory("Importer",  manager.GetFactory("Importer"));
-      manager.SetFactory("A", newA);
+      RCP<RebalanceAcFactory> newA = rcp(new RebalanceAcFactory());
+      newA->  SetFactory("A",         manager.GetFactory("A"));
+      newA->  SetFactory("Importer",  manager.GetFactory("Importer"));
+      manager.SetFactory("A",         newA);
 
       // Rebalanced P
       RCP<RebalanceTransferFactory> newP = rcp(new RebalanceTransferFactory());
       ParameterList newPparams;
       newPparams.set("type", "Interpolation");
-      newP->SetParameterList(newPparams);
-      newP->SetFactory("Importer",    manager.GetFactory("Importer"));
-      newP->SetFactory("P",           manager.GetFactory("P"));
-      manager.SetFactory("P", newP);
+      newP->  SetParameterList(newPparams);
+      newP->  SetFactory("Importer",    manager.GetFactory("Importer"));
+      newP->  SetFactory("P",           manager.GetFactory("P"));
+      manager.SetFactory("P",           newP);
 
       // Rebalanced R
       RCP<RebalanceTransferFactory> newR = rcp(new RebalanceTransferFactory());
       ParameterList newRparams;
       newRparams.set("type", "Restriction");
-      newR->SetParameterList(newRparams);
-      newR->SetFactory("Importer",    manager.GetFactory("Importer"));
-      newR->SetFactory("R",           manager.GetFactory("R"));
-      newR->SetFactory("Nullspace",   manager.GetFactory("Ptent"));
-      newR->SetFactory("Coordinates", manager.GetFactory("Coordinates"));
+      newR->  SetParameterList(newRparams);
+      newR->  SetFactory("Importer",    manager.GetFactory("Importer"));
+      newR->  SetFactory("R",           manager.GetFactory("R"));
+      newR->  SetFactory("Nullspace",   manager.GetFactory("Ptent"));
+      newR->  SetFactory("Coordinates", manager.GetFactory("Coordinates"));
       manager.SetFactory("R",           newR);
       manager.SetFactory("Coordinates", newR);
-      manager.SetFactory("Nullspace",   newR);
+
+      // NOTE: the role of NullspaceFactory is to provide nullspace on the finest
+      // level if a user does not do that. For all other levels it simply passes
+      // nullspace from a real factory to whoever needs it. If we don't use
+      // repartitioning, that factory is "TentativePFactory"; if we do, it is
+      // "RebalanceTransferFactory". But we still have to have NullspaceFactory as
+      // the "Nullspace" of the manager
+      nullSpace->SetFactory("Nullspace", newR);
 #else
       throw Exceptions::RuntimeError("No repartitioning available for a serial run");
 #endif

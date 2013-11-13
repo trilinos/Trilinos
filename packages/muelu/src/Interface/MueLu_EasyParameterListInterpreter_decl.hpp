@@ -58,6 +58,7 @@
 #include "MueLu_CoupledAggregationFactory_fwd.hpp"
 #include "MueLu_DirectSolver_fwd.hpp"
 #include "MueLu_FilteredAFactory_fwd.hpp"
+#include "MueLu_NullspaceFactory_fwd.hpp"
 #include "MueLu_PgPFactory_fwd.hpp"
 #include "MueLu_RAPFactory_fwd.hpp"
 #include "MueLu_RebalanceAcFactory_fwd.hpp"
