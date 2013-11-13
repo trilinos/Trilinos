@@ -13,6 +13,7 @@
 #define ROL_OBJECTIVE_H
 
 #include "ROL_Vector.hpp"
+#include "ROL_Types.hpp"
 #include <iostream>
 
 /** \class ROL::Objective
@@ -56,7 +57,17 @@ public:
 
   /** \brief Finite-difference gradient check.
   */
-  virtual std::vector<std::vector<Real> > checkGradient( const Vector<Real> &x, const Vector<Real> &d, const bool printToScreen = true ) ;
+  virtual std::vector<std::vector<Real> > checkGradient( const Vector<Real> &x,
+                                                         const Vector<Real> &d,
+                                                         const bool printToScreen = true,
+                                                         const int numSteps = ROL_NUM_CHECKDERIV_STEPS ) ;
+
+  /** \brief Finite-difference Hessian-applied-to-vector check.
+  */
+  virtual std::vector<std::vector<Real> > checkHessVec( const Vector<Real> &x,
+                                                        const Vector<Real> &v,
+                                                        const bool printToScreen = true,
+                                                        const int numSteps = ROL_NUM_CHECKDERIV_STEPS ) ;
   
   // struct StepState (scalars, vectors) map?
 

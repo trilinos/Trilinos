@@ -68,8 +68,8 @@ void Objective<Real>::hessVec( Vector<Real> &hv, const Vector<Real> &v, const Ve
 template <class Real>
 std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Real> &x,
                                                                 const Vector<Real> &d,
-                                                                const bool printToScreen ) {
-  int numSteps = 13;
+                                                                const bool printToScreen,
+                                                                const int numSteps ) {
   int numVals = 4;
   std::vector<Real> tmp(numVals);
   std::vector<std::vector<Real> > gCheck(numSteps, tmp);
@@ -81,6 +81,7 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
   // Compute gradient at x.
   Teuchos::RCP<Vector<Real> > g = x.clone();
   this->gradient(*g, x);
+  Real dtg = d.dot(*g);
 
   // Temporary vectors.
   Teuchos::RCP<Vector<Real> > xnew = x.clone();
@@ -97,9 +98,9 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
 
     // Compute gradient, finite-difference gradient, and absolute error.
     gCheck[i][0] = eta;
-    gCheck[i][1] = d.dot(*g);
+    gCheck[i][1] = dtg;
     gCheck[i][2] = (fval_at_xnew - fval_at_x) / eta;
-    gCheck[i][3] = gCheck[i][2] - gCheck[i][1];
+    gCheck[i][3] = std::abs(gCheck[i][2] - gCheck[i][1]);
 
     if (printToScreen) {
       if (i==0) {
@@ -126,6 +127,73 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
 
   return gCheck;
 } // checkGradient
+
+template <class Real>
+std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real> &x,
+                                                               const Vector<Real> &v,
+                                                               const bool printToScreen,
+                                                               const int numSteps ) {
+  int numVals = 4;
+  std::vector<Real> tmp(numVals);
+  std::vector<std::vector<Real> > hvCheck(numSteps, tmp);
+  Real eta_factor = 1e-1;
+  Real eta = 1.0;
+
+  std::ios::fmtflags f( std::cout.flags() );
+
+  // Compute gradient at x.
+  Teuchos::RCP<Vector<Real> > g = x.clone();
+  this->gradient(*g, x);
+
+  // Compute (Hessian at x) times (vector v).
+  Teuchos::RCP<Vector<Real> > Hv = x.clone();
+  this->hessVec(*Hv, v, x);
+  Real normHv = Hv->norm();
+
+  // Temporary vectors.
+  Teuchos::RCP<Vector<Real> > gnew = x.clone();
+  Teuchos::RCP<Vector<Real> > xnew = x.clone();
+
+  for (int i=0; i<numSteps; i++) {
+    // Evaluate objective value at x+eta*d.
+    xnew->set(x);
+    xnew->axpy(eta, v);
+    this->gradient(*gnew, *xnew);
+    gnew->axpy(-1.0, *g);
+    gnew->scale(1.0/eta);
+
+    // Compute norms of hessvec, finite-difference hessvec, and error.
+    hvCheck[i][0] = eta;
+    hvCheck[i][1] = normHv;
+    hvCheck[i][2] = gnew->norm();
+    gnew->axpy(-1.0, *Hv);
+    hvCheck[i][3] = gnew->norm();
+
+    if (printToScreen) {
+      if (i==0) {
+      std::cout << std::right
+                << std::setw(20) << "Step size"
+                << std::setw(20) << "norm(Hess*vec)"
+                << std::setw(20) << "norm(FD approx)"
+                << std::setw(20) << "norm(abs error)"
+                << "\n";
+      }
+      std::cout << std::scientific << std::setprecision(8) << std::right
+                << std::setw(20) << hvCheck[i][0]
+                << std::setw(20) << hvCheck[i][1]
+                << std::setw(20) << hvCheck[i][2]
+                << std::setw(20) << hvCheck[i][3]
+                << "\n";
+    }
+
+    // Update eta.
+    eta = eta*eta_factor;
+  }
+
+  std::cout.flags( f );
+
+  return hvCheck;
+} // checkHessVec
 
 
 } // namespace ROL
