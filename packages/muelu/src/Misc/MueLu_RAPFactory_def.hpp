@@ -55,6 +55,7 @@
 #include <sstream>
 
 #include <Xpetra_Matrix.hpp>
+#include <Xpetra_MatrixFactory.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
@@ -230,6 +231,12 @@ namespace MueLu {
 
     SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
 
+    Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList());
+    p->set("DoOptimizeStorage",true);
+
+    RCP<Matrix> fixDiagMatrix = Teuchos::null;
+    if (repairZeroDiagonals_) fixDiagMatrix = MatrixFactory::Build(Ac->getRowMap(), 1);
+
     LO lZeroDiags = 0;
     Teuchos::ArrayRCP< Scalar > diagVal = diagVec->getDataNonConst(0);
     for (size_t r = 0; r < Ac->getRowMap()->getNodeNumElements(); r++) {
@@ -238,15 +245,25 @@ namespace MueLu {
 
         if (repairZeroDiagonals_) {
           GO grid = Ac->getRowMap()->getGlobalElement(r);
-          LO lcid = Ac->getColMap()->getLocalElement(grid);
-          Teuchos::ArrayRCP<LO> indout(1, lcid);
+          Teuchos::ArrayRCP<GO> indout(1,grid);
           Teuchos::ArrayRCP<SC> valout(1, one);
-
-          Ac->insertLocalValues(r, indout.view(0, indout.size()), valout.view(0, valout.size()));
+          fixDiagMatrix->insertGlobalValues(grid,indout.view(0, 1), valout.view(0, 1));
         }
       }
     }
 
+    if (repairZeroDiagonals_) {
+      Ac->fillComplete(p);
+      MueLu::Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd(*Ac, false, 1.0, *fixDiagMatrix, 1.0);
+      Ac = Teuchos::null;     // free singular coarse level matrix
+      Ac = fixDiagMatrix;     // set fixed non-singular coarse level matrix
+    }
+
+    // call fillComplete with optimized storage option set to true
+    // This is necessary for new faster Epetra MM kernels.
+    Ac->fillComplete(p);
+
+    // print some output
     if (IsPrint(Warnings0)) {
       const RCP<const Teuchos::Comm<int> > & comm = Ac->getRowMap()->getComm();
       GO lZeroDiagsGO = Teuchos::as<GO>(lZeroDiags); /* LO->GO conversion */
@@ -255,12 +272,6 @@ namespace MueLu {
       if (repairZeroDiagonals_) GetOStream(Warnings0,0) << "RAPFactory (WARNING): repaired " << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
       else                      GetOStream(Warnings0,0) << "RAPFactory (WARNING): found "    << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
     }
-
-    // call fillComplete with optimized storage option set to true
-    // This is necessary for new faster Epetra MM kernels.
-    Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList());
-    p->set("DoOptimizeStorage",true);
-    Ac->fillComplete(p);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
