@@ -152,8 +152,14 @@ namespace stk {
         void remove_property_if_exists(const std::string &property_name);
 
         /**
-         * Set the output Ioss::Region directly instead of letting it be
-         * created by StkMeshIoBroker during the create_output_mesh() call.
+         * Set the output Ioss::Region directly instead of letting it
+         * be created by StkMeshIoBroker during the
+         * create_output_mesh() call.  
+	 *
+	 * [2013-11-13: GDS: Currently used in
+	 * percept/stk_percept/stk_percept/PerceptMesh.cpp:
+	 * The use-case seems to be outputting a set of parallel files from
+	 * a serial application]
          */
         size_t set_output_io_region(Teuchos::RCP<Ioss::Region> ioss_output_region);
 
@@ -165,6 +171,10 @@ namespace stk {
          * set_meta_data() call, or call the no-argument
          * create_input_mesh() function which will then create a meta
          * data corresponding to the data in the Ioss::Region.
+	 *
+	 * [2013-11-13: GDS: Currently
+         * only used in Salinas/tools/superelem/MkSuperStkMesh.C:
+         * The use-case is adding new parts to a mesh]
          */
         void set_input_io_region(Teuchos::RCP<Ioss::Region> ioss_input_region);
 
