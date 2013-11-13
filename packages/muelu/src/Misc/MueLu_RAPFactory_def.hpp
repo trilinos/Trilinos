@@ -80,6 +80,9 @@ namespace MueLu {
     validParamList->set< bool >(                  "Keep AP Pattern",  false,         "Keep the AP pattern (for reuse)");
     validParamList->set< bool >(                  "Keep RAP Pattern", false,         "Keep the RAP pattern (for reuse)");
 
+    validParamList->set< bool >(                  "CheckMainDiagonal", false,        "Check main diagonal for zeros (default = false).");
+    validParamList->set< bool >(                  "RepairMainDiagonal", false,       "Repair zeros on main diagonal (default = false).");
+
     return validParamList;
   }
 
@@ -107,6 +110,14 @@ namespace MueLu {
         coarseLevel.Keep("AP Pattern",  this);
       if (pL.isParameter("Keep RAP Pattern") && pL.get<bool>("Keep RAP Pattern"))
         coarseLevel.Keep("RAP Pattern", this);
+
+      // Extract parameters
+      if (pL.isParameter("CheckMainDiagonal") && pL.get<bool>("CheckMainDiagonal"))
+        checkAc_ = true;
+      if (pL.isParameter("RepairMainDiagonal") && pL.get<bool>("RepairMainDiagonal")) {
+        repairZeroDiagonals_ = true;
+        checkAc_ = true;
+      }
 
       //
       // Inputs: A, P
