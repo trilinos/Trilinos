@@ -80,14 +80,14 @@ namespace MueLu {
     //! Configuration
 
     //! SetFactory is for expert users only. To change configuration of the preconditioner, use a factory manager.
-    virtual void SetFactory(const std::string & varName, const RCP<const FactoryBase> & factory) {
+    virtual void SetFactory(const std::string& varName, const RCP<const FactoryBase>& factory) {
       RCP<const FactoryBase> f = factory;
       SetParameter(varName, ParameterEntry(f)); // parameter validation done in ParameterListAcceptorImpl
     }
 
     //! Default implementation of FactoryAcceptor::GetFactory()
-    const RCP<const FactoryBase> GetFactory(const std::string & varName) const {
-      if (!GetParameterList().isParameter(varName) && GetValidParameterList() == Teuchos::null) {
+    const RCP<const FactoryBase> GetFactory(const std::string& varName) const {
+      if (!GetParameterList().isParameter(varName)&& GetValidParameterList() == Teuchos::null) {
         // If the parameter is not on the list and there is not validator, the defaults values for 'varName' is not set.
         // Failback by using directly the FactoryManager
         // NOTE: call to GetValidParameterList() can be costly for classes that validate parameters.
@@ -144,30 +144,30 @@ namespace MueLu {
 
   protected:
 
-    void Input(Level & level, const std::string & varName) const {
+    void Input(Level& level, const std::string& varName) const {
       level.DeclareInput(varName, GetFactory(varName).get(), this);
     }
     // Similar to Input, but we have an alias (varParamName) to the generated data name (varName)
-    void Input(Level & level, const std::string& varName, const std::string& varParamName) const {
+    void Input(Level& level, const std::string& varName, const std::string& varParamName) const {
       level.DeclareInput(varName, GetFactory(varParamName).get(), this);
     }
 
     template <class T>
-    T Get(Level & level, const std::string & varName) const {
+    T Get(Level& level, const std::string& varName) const {
       return level.Get<T>(varName, GetFactory(varName).get());
     }
     // Similar to Input, but we have an alias (varParamName) to the generated data name (varName)
     template <class T>
-    T Get(Level & level, const std::string & varName, const std::string& varParamName) const {
+    T Get(Level& level, const std::string& varName, const std::string& varParamName) const {
       return level.Get<T>(varName, GetFactory(varParamName).get());
     }
 
     template <class T>
-    void Set(Level & level, const std::string & varName, const T & data) const {
+    void Set(Level& level, const std::string& varName, const T& data) const {
       return level.Set<T>(varName, data, this);
     }
 
-    bool IsAvailable(Level & level, const std::string & varName) const {
+    bool IsAvailable(Level& level, const std::string& varName) const {
       return level.IsAvailable(varName, GetFactory(varName).get());
     }
 

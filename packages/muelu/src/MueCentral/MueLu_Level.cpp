@@ -151,25 +151,24 @@ namespace MueLu {
     if (requestMode_ == REQUEST) {
       try {
         Request(ename, factory, requestedBy);
+
+      } catch (Exceptions::DependencyError& e) {
+        std::ostringstream msg;
+        msg << requestedBy->ShortClassName() << "::DeclareInput: (" << e.what() << ") unable to find or generate requested data \""
+            << ename << "\" with generating factory \"" << ((factory != NULL) ? factory->ShortClassName() : "null") << "\"";
+        msg << "\n    during request for data \"" << std::setw(15) << ename << "\" on level " << GetLevelID() << " by factory " << requestedBy->ShortClassName();
+        throw Exceptions::RuntimeError(msg.str());
+
+      } catch (Exceptions::RuntimeError &e) {
+        std::ostringstream msg;
+        msg << e.what() << "\n    during request for data \"" << std::setw(15) << ename << "\" on level " << GetLevelID() << " by factory " << requestedBy->ShortClassName();
+        throw Exceptions::RuntimeError(msg.str());
       }
-      catch(Exceptions::DependencyError &de) {
-        std::string previousMsg(de.what());
-        std::string msg = requestedBy->ShortClassName() + "::DeclareInput : (" + previousMsg + ") unable to find or generate requested data \""
-                          + ename + "\"" + ((factory != NULL) ? " with generating factory " + factory->ShortClassName() + "." : ".");
-        TEUCHOS_TEST_FOR_EXCEPTION(true,Exceptions::RuntimeError,msg);
-        throw Exceptions::RuntimeError(msg);
-      }
-      catch(Exceptions::RuntimeError &rte) {
-        std::string previousMsg(rte.what());
-        std::string msg = previousMsg + "\n    during request for data \"" + ename + "\" by factory " + requestedBy->ShortClassName();
-        TEUCHOS_TEST_FOR_EXCEPTION(true,Exceptions::RuntimeError,msg);
-        throw Exceptions::RuntimeError(msg);
-      }
-    }
-    else if (requestMode_ == RELEASE) {
+
+    } else if (requestMode_ == RELEASE) {
       Release(ename, factory, requestedBy);
-    }
-    else
+
+    } else
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::Level::DeclareInput(): requestMode_ undefined.");
   }
 
