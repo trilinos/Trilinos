@@ -16,31 +16,16 @@
     \brief Provides interfrace for different trust-region subproblem solvers.
 */
 
-#include <Teuchos_ScalarTraits.hpp>
+#include "ROL_Types.hpp"
 
 namespace ROL { 
-
-enum TrustRegionStepType {
-  TrustRegionStep_Gradient = 0,
-  TrustRegionStep_Secant,
-  TrustRegionStep_Newton,
-  TrustRegionStep_NewtonKrylov,
-  TrustRegionStep_NewtonKrylovSecantPreconditioning
-};
-
-enum TrustRegionType {
-  TrustRegionType_CauchyPoint = 0,    // Cauchy Point
-  TrustRegionType_TruncatedCG,        // TruncatedCG
-  TrustRegionType_Dogleg,             // Single Dogleg
-  TrustRegionType_DoubleDogleg        // Double Dogleg
-};
 
 template<class Real>
 class TrustRegion {
 private:
 
-  TrustRegionType      type_;
-  TrustRegionStepType  step_;
+  ETrustRegion etr_;
+  EDescent     edesc_;
 
   int maxit_;
   Real tol1_;
@@ -64,15 +49,15 @@ public:
   virtual ~TrustRegion() {}
 
   // Constructor
-  TrustRegion( TrustRegionType type, TrustRegionStepType step,  
+  TrustRegion( ETrustRegion etr, EDescent edesc,  
               int maxit = 20, Real tol1 = 1.e-4, Real tol2 = 1.e-2, 
               Real delmin = 1.e-8, Real delmax = 5000.0,
               Real eta0 = 0.05, Real eta1 = 0.05, Real eta2 = 0.9,
               Real gamma0 = 0.0625, Real gamma1 = 0.25, Real gamma2 = 2.5, Real TRsafe = 1.0 ) : 
-    type_(type), step_(step), maxit_(maxit), tol1_(tol1), tol2_(tol2), 
+    etr_(etr), edesc_(edesc), maxit_(maxit), tol1_(tol1), tol2_(tol2), 
     delmin_(delmin), delmax_(delmax), eta0_(eta0), eta1_(eta1), eta2_(eta2),
     gamma0_(gamma0), gamma1_(gamma1), gamma2_(gamma2), TRsafe_(TRsafe) {
-    eps_ = TRsafe_*Teuchos::ScalarTraits<Real>::eps();
+    eps_ = TRsafe_*ROL_EPSILON;
   }
 
   void update( Vector<Real> &x, Real &fnew, Real &del, 
@@ -116,7 +101,7 @@ public:
       if (rho < 0.0) {  
         Real gs = g.dot(s);
         Teuchos::RCP<Vector<Real> > Hs = x.clone();
-        if ( secant != Teuchos::null && step_ == TrustRegionStep_Secant ) {
+        if ( secant != Teuchos::null && edesc_ == DESCENT_SECANT ) {
           secant->applyB(*Hs,s,x);
         } 
         else {
@@ -146,17 +131,17 @@ public:
             const Vector<Real> &grad, const Real &gnorm, Objective<Real> &obj, 
             Teuchos::RCP<Secant<Real> > &secant = Teuchos::null ) { 
     // Run Trust Region
-    if ( step_ == TrustRegionStep_Gradient || type_ == TrustRegionType_CauchyPoint ) {
+    if ( edesc_ == DESCENT_STEEPEST || etr_ == TRUSTREGION_CAUCHYPOINT ) {
       cauchypoint(s,snorm,del,iflag,iter,x,grad,gnorm,obj,secant);
     }
     else {
-      if ( type_ == TrustRegionType_TruncatedCG ) {
+      if ( etr_ == TRUSTREGION_TRUNCATEDCG ) {
         truncatedCG(s,snorm,del,iflag,iter,x,grad,gnorm,obj,secant);
       }
-      else if ( type_ == TrustRegionType_Dogleg ) {
+      else if ( etr_ == TRUSTREGION_DOGLEG ) {
         dogleg(s,snorm,del,iflag,iter,x,grad,gnorm,obj,secant);
       }
-      else if ( type_ == TrustRegionType_DoubleDogleg ) {
+      else if ( etr_ == TRUSTREGION_DOUBLEDOGLEG ) {
         doubledogleg(s,snorm,del,iflag,iter,x,grad,gnorm,obj,secant);
       }
     }
@@ -207,7 +192,7 @@ public:
 
     // Preconditioned Gradient Vector
     Teuchos::RCP<Vector<Real> > v  = x.clone();
-    if ( secant != Teuchos::null && step_ == TrustRegionStep_NewtonKrylovSecantPreconditioning ) { 
+    if ( secant != Teuchos::null && edesc_ == DESCENT_SECANTPRECOND ) { 
       secant->applyH(*v,*g,x); 
     }
     else { 
@@ -222,7 +207,7 @@ public:
 
     // Hessian Times Basis Vector
     Teuchos::RCP<Vector<Real> > Hp = x.clone();
-    if ( secant != Teuchos::null && step_ == TrustRegionStep_Secant ) { 
+    if ( secant != Teuchos::null && edesc_ == DESCENT_SECANT ) { 
       secant->applyB(*Hp,*p,x); 
     }
     else { 
@@ -272,7 +257,7 @@ public:
         break;
       }
 
-      if ( secant != Teuchos::null && step_ == TrustRegionStep_NewtonKrylovSecantPreconditioning ) { 
+      if ( secant != Teuchos::null && edesc_ == DESCENT_SECANTPRECOND ) { 
         secant->applyH(*v,*g,x); 
       }
       else { 
@@ -286,7 +271,7 @@ public:
       p->axpy(-1.0,*v);
       sMp    = beta*(sMp+alpha*pnorm2);
       pnorm2 = gv + beta*beta*pnorm2; 
-      if ( secant != Teuchos::null && step_ == TrustRegionStep_Secant ) { 
+      if ( secant != Teuchos::null && edesc_ == DESCENT_SECANT ) { 
         secant->applyB(*Hp,*p,x); 
       }
       else { 
@@ -312,7 +297,7 @@ public:
                Teuchos::RCP<Secant<Real> > &secant = Teuchos::null ) {
     // Compute quasi-Newton step
     Teuchos::RCP<Vector<Real> > sN = x.clone();
-    if ( secant != Teuchos::null && step_ == TrustRegionStep_Secant ) {
+    if ( secant != Teuchos::null && edesc_ == DESCENT_SECANT ) {
       secant->applyH(*sN,grad,x); 
     }
     else {
@@ -340,7 +325,7 @@ public:
       }
       else {                      // quasi-Newton step is outside of trust region
         Teuchos::RCP<Vector<Real> > Bg = x.clone(); 
-        if ( secant != Teuchos::null && step_ == TrustRegionStep_Secant ) {
+        if ( secant != Teuchos::null && edesc_ == DESCENT_SECANT ) {
           secant->applyB(*Bg,grad,x);
         }
         else {
@@ -381,7 +366,7 @@ public:
                      Teuchos::RCP<Secant<Real> > &secant = Teuchos::null ) {
     // Compute quasi-Newton step
     Teuchos::RCP<Vector<Real> > sN = x.clone();
-    if ( secant != Teuchos::null && step_ == TrustRegionStep_Secant ) {
+    if ( secant != Teuchos::null && edesc_ == DESCENT_SECANT ) {
       secant->applyH(*sN,grad,x); 
     }
     else {
@@ -409,7 +394,7 @@ public:
       }
       else {                      // quasi-Newton step is outside of trust region
         Teuchos::RCP<Vector<Real> > Bg = x.clone(); 
-        if ( secant != Teuchos::null && step_ == TrustRegionStep_Secant ) {
+        if ( secant != Teuchos::null && edesc_ == DESCENT_SECANT ) {
           secant->applyB(*Bg,grad,x);
         }
         else {

@@ -12,6 +12,7 @@
 #ifndef ROL_LINESEARCHSTEP_H
 #define ROL_LINESEARCHSTEP_H
 
+#include "ROL_Types.hpp"
 #include "ROL_Step.hpp"
 #include "ROL_Secant.hpp"
 #include "ROL_Krylov.hpp"
@@ -37,96 +38,50 @@ private:
 
   int iterKrylov_;
   int flagKrylov_;
- 
-  LineSearchStepType LSStype_;
+
+  ELineSearch         els_; 
+  ECurvatureCondition econd_;
+  EDescent            edesc_;
+  ESecant             esec_;
  
   int ls_nfval_;
   int ls_ngrad_;
-
-  std::string step_;
-  std::string LS_;
 
 public:
 
   virtual ~LineSearchStep() {}
 
-  LineSearchStep( LineSearchType      LStype  = LineSearchType_Backtracking,
-                  LineSearchCondition LScond  = LineSearchCondition_Wolfe,
-                  LineSearchStepType  LSStype = LineSearchStep_Secant,              
+  LineSearchStep( ELineSearch          els   = LINESEARCH_BACKTRACKING,
+                  ECurvatureCondition  econd = CURVATURECONDITION_WOLFE,
+                  EDescent             edesc = DESCENT_SECANT,              
                   int maxit = 20, Real c1 = 1.e-4, Real c2 = 0.9, Real LStol = 1.e-8, Real rho = 0.5,
-                  SecantType type = Secant_lBFGS, int L = 10, int BBtype = 1,        // Secant Parameters
+                  ESecant esec = SECANT_LBFGS, int L = 10, int BBtype = 1,        // Secant Parameters
                   Real CGtol1 = 1.e-4, Real CGtol2 = 1.e-2, int maxitCG = 100 )
-    : LSStype_(LSStype) {
+    : els_(els), econd_(econd), edesc_(edesc), esec_(esec) {
 
-    lineSearch_ = Teuchos::rcp( new LineSearch<Real>( LStype, LScond, LSStype, maxit, c1, c2, LStol, rho ) );
-    if ( LStype == LineSearchType_Backtracking ) {
-      LS_ = "Backtracking";
-    }
-    else if ( LStype == LineSearchType_SimpleBacktracking ) {
-      LS_ = "Simple Backtracking";
-    }
-    else if ( LStype == LineSearchType_Brents ) {
-      LS_ = "Brent's";
-    }
-    else if ( LStype == LineSearchType_Bisection ) {
-      LS_ = "Bisection";
-    }
-    else if ( LStype == LineSearchType_GoldenSection ) {
-      LS_ = "Golden Section";
+    lineSearch_ = Teuchos::rcp( new LineSearch<Real>( els_, econd_, edesc_, maxit, c1, c2, LStol, rho ) );
+
+    krylov_ = Teuchos::null;
+    if ( edesc_ == DESCENT_NEWTONKRYLOV || edesc_ == DESCENT_SECANTPRECOND ) {
+      krylov_ = Teuchos::rcp( new Krylov<Real>(CGtol1,CGtol2,maxitCG) );
+      iterKrylov_ = 0;
+      flagKrylov_ = 0;
     }
 
     secant_ = Teuchos::null;
-    if ( LSStype_ == LineSearchStep_NewtonKrylov ) {
-      krylov_ = Teuchos::rcp( new Krylov<Real>(CGtol1,CGtol2,maxitCG) );
-      step_   = "Newton-CG";
-      iterKrylov_ = 0;
-      flagKrylov_ = 0;
-    }
-    else if ( LSStype_ == LineSearchStep_NewtonKrylovSecantPreconditioning ) {
-      krylov_ = Teuchos::rcp( new Krylov<Real>(CGtol1,CGtol2,maxitCG) );
-      if ( type == Secant_lBFGS ) {
+    if ( edesc_ == DESCENT_SECANT || edesc_ == DESCENT_SECANTPRECOND ) {
+      if ( esec_ == SECANT_LBFGS ) {
         secant_ = Teuchos::rcp( new lBFGS<Real>(L) );
-        step_ = "Newton-CG with lBFGS Preconditioning";
       }
-      else if ( type == Secant_lDFP ) {
+      else if ( esec_ == SECANT_LDFP ) {
         secant_ = Teuchos::rcp( new lDFP<Real>(L) );
-        step_ = "Newton-CG with lDFP Preconditioning";
       }
-      else if ( type == Secant_lSR1 ) {
+      else if ( esec_ == SECANT_LSR1 ) {
         secant_ = Teuchos::rcp( new lSR1<Real>(L) );
-        step_ = "Newton-CG with lSR1 Preconditioning";
       }
-      else if ( type == Secant_BarzilaiBorwein ) {
+      else if ( esec_ == SECANT_BARZILAIBORWEIN ) {
         secant_ = Teuchos::rcp( new BarzilaiBorwein<Real>(BBtype) );
-        step_ = "Newton-CG with Barzilai-Borwein Preconditioning";
       }
-      iterKrylov_ = 0;
-      flagKrylov_ = 0;
-    }
-    else if ( LSStype_ == LineSearchStep_Newton ) {
-      step_   = "Newton's Method";
-    }
-    else if ( LSStype_ == LineSearchStep_Secant ) {
-      if ( type == Secant_lBFGS ) {
-        secant_ = Teuchos::rcp( new lBFGS<Real>(L) );
-        step_   = "Limited-Memory BFGS";
-      }
-      else if ( type == Secant_lDFP ) {
-        secant_ = Teuchos::rcp( new lDFP<Real>(L) );
-        step_   = "Limited-Memory DFP";
-      }
-      else if ( type == Secant_lSR1 ) {
-        secant_ = Teuchos::rcp( new lSR1<Real>(L) );
-        step_   = "Limited-Memory SR1";
-      }
-      else if ( type == Secant_BarzilaiBorwein ) {
-        secant_ = Teuchos::rcp( new BarzilaiBorwein<Real>(BBtype) );
-        step_   = "Barzilai-Borwein";
-        //maxit_  = 0;
-      } 
-    }
-    else {
-      step_ = "Steepest Descent";
     }
   }
 
@@ -134,21 +89,20 @@ public:
   */
   void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, AlgorithmState<Real> &algo_state ) {
     // Compute step s
-    flagKrylov_ = 0;
-    if ( LSStype_ == LineSearchStep_NewtonKrylov || LSStype_ == LineSearchStep_NewtonKrylovSecantPreconditioning ) {
+    if ( edesc_ == DESCENT_NEWTONKRYLOV || edesc_ == DESCENT_SECANTPRECOND ) {
+      flagKrylov_ = 0;
       krylov_->CG(s,iterKrylov_,flagKrylov_,*(Step<Real>::state_->gradientVec),x,obj,secant_);
     }
-    else if ( LSStype_ == LineSearchStep_Newton ) {
+    else if ( edesc_ == DESCENT_NEWTON ) {
       obj.invHessVec(s,*(Step<Real>::state_->gradientVec),x);
     }
-    else if ( LSStype_ == LineSearchStep_Secant ) {
+    else if ( edesc_ == DESCENT_SECANT ) {
       secant_->applyH(s,*(Step<Real>::state_->gradientVec),x);
-      //secant_->test(s,x);
     }
 
     // Check if s is a descent direction
     Real gs = (Step<Real>::state_->gradientVec)->dot(s);
-    if ( gs <= 0.0 || flagKrylov_ == 2 || LSStype_ == LineSearchStep_Gradient ) {
+    if ( gs <= 0.0 || flagKrylov_ == 2 || edesc_ == DESCENT_STEEPEST ) {
       s.set(*(Step<Real>::state_->gradientVec));
       gs = (Step<Real>::state_->gradientVec)->dot(s);
     }
@@ -181,7 +135,7 @@ public:
 
     // Compute new gradient
     Teuchos::RCP<Vector<Real> > gp;
-    if ( LSStype_ == LineSearchStep_Secant || LSStype_ == LineSearchStep_NewtonKrylovSecantPreconditioning ) {
+    if ( edesc_ == DESCENT_SECANT || edesc_ == DESCENT_SECANTPRECOND ) {
       gp = x.clone();
       gp->set(*(Step<Real>::state_->gradientVec));
     }
@@ -189,7 +143,7 @@ public:
     algo_state.ngrad++;
 
     // Update Secant Information
-    if ( LSStype_ == LineSearchStep_Secant || LSStype_ == LineSearchStep_NewtonKrylovSecantPreconditioning ) {
+    if ( edesc_ == DESCENT_SECANT || edesc_ == DESCENT_SECANTPRECOND ) {
       secant_->update(*(Step<Real>::state_->gradientVec),*gp,s,algo_state.snorm,algo_state.iter+1);
     }
 
@@ -204,7 +158,13 @@ public:
   std::string print( AlgorithmState<Real> & algo_state, bool printHeader = false ) const  {
     std::stringstream hist;
     if ( algo_state.iter == 0 ) {
-      hist << "\n" << step_ << " with " << LS_ << " Linesearch\n"; 
+      hist << "\n" << EDescentToString(edesc_) 
+           << " with " << ELineSearchToString(els_) 
+           << " Linesearch satisfying " 
+           << ECurvatureConditionToString(econd_) << "\n";
+      if ( edesc_ == DESCENT_SECANT || edesc_ == DESCENT_SECANTPRECOND ) {
+        hist << "Secant Type: " << ESecantToString(esec_) << "\n";
+      }
       hist << "  ";
       hist << std::setw(6) << std::left << "iter";  
       hist << std::setw(15) << std::left << "value";
@@ -214,8 +174,8 @@ public:
       hist << std::setw(10) << std::left << "#grad";
       hist << std::setw(10) << std::left << "ls_#fval";
       hist << std::setw(10) << std::left << "ls_#grad";
-      if (    LSStype_ == LineSearchStep_NewtonKrylov 
-           || LSStype_ == LineSearchStep_NewtonKrylovSecantPreconditioning ) {
+      if (    edesc_ == DESCENT_NEWTONKRYLOV 
+           || edesc_ == DESCENT_SECANTPRECOND ) {
         hist << std::setw(10) << std::left << "iterCG";
         hist << std::setw(10) << std::left << "flagCG";
       }
@@ -237,8 +197,8 @@ public:
       hist << std::setw(10) << std::left << algo_state.ngrad;              
       hist << std::setw(10) << std::left << ls_nfval_;              
       hist << std::setw(10) << std::left << ls_ngrad_;              
-      if (    LSStype_ == LineSearchStep_NewtonKrylov 
-           || LSStype_ == LineSearchStep_NewtonKrylovSecantPreconditioning ) {
+      if (    edesc_ == DESCENT_NEWTONKRYLOV 
+           || edesc_ == DESCENT_SECANTPRECOND ) {
         hist << std::setw(10) << std::left << iterKrylov_;
         hist << std::setw(10) << std::left << flagKrylov_;
       }

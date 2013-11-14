@@ -53,6 +53,7 @@ public:
     Teuchos::RCP<const std::vector<Element> > xvalptr = ex.getVector();
     int dimension  = (int)(this->std_vec_->size());
     Real val = 0;
+
     for (int i=0; i<dimension; i++) {
       val += (*this->std_vec_)[i]*(*xvalptr)[i];
     }
