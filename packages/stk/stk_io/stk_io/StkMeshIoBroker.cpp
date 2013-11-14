@@ -2018,6 +2018,12 @@ namespace stk {
         m_output_region->begin_state(m_current_output_step);
     }
 
+    namespace {
+      bool fieldOrdinalSort(const stk::io::FieldAndName& f1, const stk::io::FieldAndName &f2) {
+	return f1.m_field->mesh_meta_data_ordinal() < f2.m_field->mesh_meta_data_ordinal();
+      }
+    }
+
     void OutputFile::define_output_fields(const stk::mesh::BulkData& bulk_data, const stk::mesh::Selector *anded_selector, bool add_all_fields, bool use_nodeset_for_part_nodes_fields)
     {
         if(m_fields_defined) {
@@ -2027,6 +2033,12 @@ namespace stk {
         write_output_mesh(bulk_data, anded_selector, use_nodeset_for_part_nodes_fields);
 
         Ioss::Region *region = m_output_region.get();
+
+	// Sort the fields in m_named_fields based on the field ordinal.
+	// This is needed so all processors will process the fields in the same order
+	// Not guaranteed that the application has added the fields in order, so make
+	// the guarantee here...
+	std::sort(m_named_fields.begin(), m_named_fields.end(), fieldOrdinalSort);
 
         const stk::mesh::MetaData &meta_data = bulk_data.mesh_meta_data();
         // Special processing for nodeblock (all nodes in model)...
