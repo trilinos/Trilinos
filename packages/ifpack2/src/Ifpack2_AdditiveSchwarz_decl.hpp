@@ -67,29 +67,37 @@
 namespace Ifpack2 {
 
 /** \class AdditiveSchwarz
-\brief Additive Schwarz domain decomposition for Tpetra sparse matrices.
+\brief Additive Schwarz domain decomposition for Tpetra sparse matrices
+\tparam MatrixType A specialization of Tpetra::RowMatrix
+\tparam LocalInverseType The type of the solver for the local
+  (subdomain) problem.  This must be a specialization of a concrete
+  subclass of Ifpack2::Preconditioner.  (This template parameter will
+  be DEPRECATED soon; refer to discussion below.)
 
 \section Ifpack2_AdditiveSchwarz_Summary Summary
 
-This class implements an Additive Schwarz (one-level overlapping
-domain decomposition) preconditioner.  It operates on a given
-Tpetra::RowMatrix.  This class implements Tpetra::Operator, like all
-other subclasses of Preconditioner.  Thus, the apply() method applies
-the preconditioner to a multivector.
+This class implements Additive Schwarz domain decomposition, with
+optional overlap.  It operates on a given Tpetra::RowMatrix.  Each
+subdomain corresponds to exactly one MPI process in the given matrix's
+MPI communicator.
+
+This class implements Tpetra::Operator, like all other subclasses of
+Preconditioner.  Thus, the apply() method applies the preconditioner
+to a multivector.
 
 \section Ifpack2_AdditiveSchwarz_Alg Algorithm
 
 One-level overlapping domain decomposition preconditioners use local
 solvers of Dirichlet type. This means that the inverse of the local
-matrix (with minimal or wider overlap) is applied to the residual to
-be preconditioned.
+matrix (possibly with overlap) is applied to the residual to be
+preconditioned.
 
 The preconditioner can be written as:
 \f[
 P_{AS}^{-1} = \sum_{i=1}^M P_i A_i^{-1} R_i,
 \f]
 where \f$M\f$ is the number of subdomains (in this case, the number of
-processors in the computation), \f$R_i\f$ is an operator that
+(MPI) processes in the computation), \f$R_i\f$ is an operator that
 restricts the global vector to the vector lying on subdomain \f$i\f$,
 \f$P_i\f$ is the prolongator operator, and
 \f[
@@ -103,17 +111,18 @@ Constructing a Schwarz preconditioner takes two steps:
 </ol>
 
 The definition of the restriction and prolongation operators \f$R_i\f$
-and \f$R_i^T\f$ depends on the level of overlap. If minimal overlap is
-chosen, their implementation is trivial; \f$R_i\f$ will return all the
-local components.  For wider overlap, Tpetra::Import and
-Tpetra::Export will be used to import resp. export data.  The user
-must provide both the matrix to be preconditioned (whose which must
-have minimal overlap) and the matrix with wider overlap.
+and \f$R_i^T\f$ depends on the level of overlap.  If the overlap level
+is zero (no overlap), their implementation is trivial; \f$R_i\f$ will
+return all the local components.  For nonzero overlap, Tpetra's data
+redistribution facilities (Tpetra::Import) will be used to bring in
+the required data.  Users may control how these data are combined with
+existing data, by setting the combine mode parameter.
 
 To solve linear systems involving \f$A_i\f$ on each subdomain, the
-user can adopt any subclass of Preconditioner. This can be easily
-accomplished, as AdditiveSchwarz is templated with the solver for each
-subdomain.
+user can adopt any subclass of Preconditioner.  Currently, users
+control this at compile time by setting the second template parameter
+\c LocalInverseType.  Soon, this option will be removed in favor of
+run-time control of the subdomain solver.
 
 The local matrix \f$A_i\f$ can be filtered, to eliminate singletons,
 and reordered. At the present time, RCM and METIS can be used to
