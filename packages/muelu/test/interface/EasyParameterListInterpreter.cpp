@@ -116,8 +116,14 @@ int main(int argc, char *argv[]) {
     std::string xmlFile = "EasyParameterListInterpreter/" + fileList[i];
     std::string baseFile = xmlFile.substr(0, xmlFile.find_last_of('.'));
     std::size_t found = baseFile.find("_np");
-    if (numProc == 1 && found != std::string::npos)
+    if (numProc == 1 && found != std::string::npos) {
+#ifdef HAVE_MPI
       baseFile = baseFile.substr(0, found);
+#else
+      std::cout << "Skipping \"" << xmlFile << "\" as MPI is not enabled" << std::endl;
+      continue;
+#endif
+    }
     baseFile = baseFile + (lib == Xpetra::UseEpetra ? "_epetra" : "_tpetra");
 
     std::filebuf buffer;
