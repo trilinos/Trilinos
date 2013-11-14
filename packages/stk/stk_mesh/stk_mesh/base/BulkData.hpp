@@ -139,9 +139,18 @@ public:
 #endif
 
 
-  inline const FieldMetaDataVector & get_meta_data_for_field(const FieldBase & f, const stk::mesh::EntityRank rank) const {
+  inline const FieldMetaDataVector& get_meta_data_for_field(const FieldBase & f, const stk::mesh::EntityRank rank) const {
     return m_field_meta_data[m_num_fields*rank +  f.mesh_meta_data_ordinal()];
   }
+
+  //  Optimized version making use of zero value enum
+  inline const FieldMetaDataVector& get_meta_data_for_nodal_field(const FieldBase & f) const {
+    ThrowAssert(f.rank() == stk::mesh::MetaData::NODE_RANK);
+    ThrowAssert(stk::mesh::MetaData::NODE_RANK == 0);
+    return m_field_meta_data[f.mesh_meta_data_ordinal()];
+  }
+
+
 
   // current memory usage of stk_mesh data structures on current processor
   void current_memory_usage(std::ostream & out);
