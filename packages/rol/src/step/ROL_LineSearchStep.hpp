@@ -70,18 +70,7 @@ public:
 
     secant_ = Teuchos::null;
     if ( edesc_ == DESCENT_SECANT || edesc_ == DESCENT_SECANTPRECOND ) {
-      if ( esec_ == SECANT_LBFGS ) {
-        secant_ = Teuchos::rcp( new lBFGS<Real>(L) );
-      }
-      else if ( esec_ == SECANT_LDFP ) {
-        secant_ = Teuchos::rcp( new lDFP<Real>(L) );
-      }
-      else if ( esec_ == SECANT_LSR1 ) {
-        secant_ = Teuchos::rcp( new lSR1<Real>(L) );
-      }
-      else if ( esec_ == SECANT_BARZILAIBORWEIN ) {
-        secant_ = Teuchos::rcp( new BarzilaiBorwein<Real>(BBtype) );
-      }
+      secant_ = getSecant<Real>(esec_,L,BBtype);
     }
   }
 
