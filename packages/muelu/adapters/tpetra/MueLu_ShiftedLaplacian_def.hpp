@@ -371,18 +371,6 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
   BelosList_ -> set("Output Frequency",1);
   BelosList_ -> set("Output Style",Belos::Brief);
 
-  // Belos Linear Problem and Solver Manager
-  if(A_!=Teuchos::null)
-    TpetraA_ = Utils::Op2NonConstTpetraCrs(A_);
-  BelosLinearProblem_ = rcp( new BelosLinearProblem );
-  BelosLinearProblem_ -> setOperator (  TpetraA_  );
-  if(solverType_==0) {
-    BelosSolverManager_ = rcp( new BelosCG(BelosLinearProblem_, BelosList_) );
-  }
-  else {
-    BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
-  }
-
 }
 
 // setup coarse grids for new frequency
@@ -397,9 +385,19 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   Hierarchy_ -> Setup(*Manager_, 0, numLevels);
 
   // Define Preconditioner and Operator
+  if(A_!=Teuchos::null)
+    TpetraA_ = Utils::Op2NonConstTpetraCrs(A_);  
   MueLuOp_ = rcp( new MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO>(Hierarchy_, A_, ncycles_, subiters_, option_, tol_) );
   // Belos Linear Problem
+  BelosLinearProblem_ = rcp( new BelosLinearProblem );
+  BelosLinearProblem_ -> setOperator (  TpetraA_  );
   BelosLinearProblem_ -> setRightPrec(  MueLuOp_  );
+  if(solverType_==0) {
+    BelosSolverManager_ = rcp( new BelosCG(BelosLinearProblem_, BelosList_) );
+  }
+  else {
+    BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
+  }
 
 }
 
@@ -420,11 +418,21 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   Hierarchy_ -> GetLevel(0) -> Set("K", K_);
   Hierarchy_ -> GetLevel(0) -> Set("M", M_);
   Hierarchy_ -> Setup(*Manager_, 0, numLevels);
-  
+
   // Define Preconditioner and Operator
+  if(A_!=Teuchos::null)
+    TpetraA_ = Utils::Op2NonConstTpetraCrs(A_);  
   MueLuOp_ = rcp( new MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO>(Hierarchy_, A_, ncycles_, subiters_, option_, tol_) );
   // Belos Linear Problem
+  BelosLinearProblem_ = rcp( new BelosLinearProblem );
+  BelosLinearProblem_ -> setOperator (  TpetraA_  );
   BelosLinearProblem_ -> setRightPrec(  MueLuOp_  );
+  if(solverType_==0) {
+    BelosSolverManager_ = rcp( new BelosCG(BelosLinearProblem_, BelosList_) );
+  }
+  else {
+    BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
+  }
 
 }
 
