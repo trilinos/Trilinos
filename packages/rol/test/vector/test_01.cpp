@@ -90,10 +90,26 @@ int main(int argc, char *argv[]) {
       errorFlag++;
     };
 
-    // set x to dim/2-th basis vector
+    // set x to first basis vector
+    z = x.basis(0);
+    znorm = z->norm();
+    *outStream << "\nNorm of ROL::Vector z (first basis vector): " << znorm << "\n";
+    if ( std::abs(znorm-1.0) > errtol ) {
+      *outStream << "---> POSSIBLE ERROR ABOVE!\n";
+      errorFlag++;
+    };
+    // set x to middle basis vector
     z = x.basis(dim/2);
     znorm = z->norm();
-    *outStream << "\nNorm of ROL::Vector z (basis vector): " << znorm << "\n";
+    *outStream << "\nNorm of ROL::Vector z ('middle' basis vector): " << znorm << "\n";
+    if ( std::abs(znorm-1.0) > errtol ) {
+      *outStream << "---> POSSIBLE ERROR ABOVE!\n";
+      errorFlag++;
+    };
+    // set x to last basis vector
+    z = x.basis(dim-1);
+    znorm = z->norm();
+    *outStream << "\nNorm of ROL::Vector z (last basis vector): " << znorm << "\n";
     if ( std::abs(znorm-1.0) > errtol ) {
       *outStream << "---> POSSIBLE ERROR ABOVE!\n";
       errorFlag++;

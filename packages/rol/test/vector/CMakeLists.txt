@@ -1,7 +1,7 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Test_01
+  Test_StdVector
   SOURCES test_01.cpp
   ARGS PrintItAll
   NUM_MPI_PROCS 1
@@ -11,11 +11,11 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 IF(${PROJECT_NAME}_ENABLE_Epetra)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    Test_02
+    Test_EpetraMultiVector
     SOURCES test_02.cpp
     DEPLIBS epetra
     ARGS PrintItAll
-    NUM_MPI_PROCS 1
+    NUM_MPI_PROCS 4
     PASS_REGULAR_EXPRESSION "TEST PASSED"
     ADD_DIR_TO_NAME
     )
