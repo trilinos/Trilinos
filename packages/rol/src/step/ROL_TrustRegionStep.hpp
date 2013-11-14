@@ -185,6 +185,8 @@ public:
       hist << std::setw(6)  << std::left << algo_state.iter;
       hist << std::setw(15) << std::left << algo_state.value;
       hist << std::setw(15) << std::left << algo_state.gnorm;
+      hist << std::setw(15) << std::left << " "; 
+      hist << std::setw(15) << std::left << del_; 
       hist << "\n";
     }
     else {
