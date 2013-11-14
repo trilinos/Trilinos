@@ -41,6 +41,8 @@ long long Create_Pamgen_Mesh(const char * file_char_array,
   PAMGEN_NEVADA::Inline_Mesh_Desc * fimd = NULL;
   std::string fn("PAMGEN LIBRARY");
 
+  PAMGEN_NEVADA::Partition::partition_count = 0;
+
   // copy input into stream, no file operations in library.
   std::stringstream input_stream;
   long long sfca = strlen(file_char_array);
