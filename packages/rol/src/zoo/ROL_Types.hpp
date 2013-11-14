@@ -105,6 +105,72 @@ namespace ROL {
     return oldval;
   }
 
+  /** \enum   ROL::ETestObjectives
+      \brief  Enumeration of test objective functions.
+
+      \arg    ROSENBROCK           describe
+      \arg    FREUDENSTEINANDROTH  describe
+      \arg    POWELL               describe
+      \arg    SUMOFSQUARES         describe
+      \arg    LEASTSQUARES         describe
+   */
+  enum ETestObjectives {
+    TESTOBJECTIVES_ROSENBROCK = 0,
+    TESTOBJECTIVES_FREUDENSTEINANDROTH,
+    TESTOBJECTIVES_POWELL,
+    TESTOBJECTIVES_SUMOFSQUARES,
+    TESTOBJECTIVES_LEASTSQUARES,
+    TESTOBJECTIVES_LAST
+  };
+
+  inline std::string ETestObjectivesToString(ETestObjectives to) {
+    std::string retString;
+    switch(to) {
+      case TESTOBJECTIVES_ROSENBROCK:          retString = "Rosenbrock's Function";            break;
+      case TESTOBJECTIVES_FREUDENSTEINANDROTH: retString = "Freudenstein and Roth's Function"; break;
+      case TESTOBJECTIVES_POWELL:              retString = "Powell's Badly Scaled Function";   break;
+      case TESTOBJECTIVES_SUMOFSQUARES:        retString = "Sum of Squares Function";          break;
+      case TESTOBJECTIVES_LEASTSQUARES:        retString = "Least Squares Function";           break;
+      case TESTOBJECTIVES_LAST:                retString = "Last Type (Dummy)";                break;
+      default:                                 retString = "INVALID ETestObjectives";
+    }
+    return retString;
+  }
+  
+  /** \brief  Verifies validity of a LineSearch enum.
+    
+      \param  ls  [in]  - enum of the linesearch
+      \return 1 if the argument is a valid linesearch; 0 otherwise.
+    */
+  inline int isValidTestObjectives(ETestObjectives to){
+    return( (to == TESTOBJECTIVES_ROSENBROCK)          ||
+            (to == TESTOBJECTIVES_FREUDENSTEINANDROTH) ||
+            (to == TESTOBJECTIVES_POWELL)              ||
+            (to == TESTOBJECTIVES_SUMOFSQUARES)        ||
+            (to == TESTOBJECTIVES_LEASTSQUARES)
+          );
+  }
+
+  inline ETestObjectives & operator++(ETestObjectives &type) {
+    return type = static_cast<ETestObjectives>(type+1);
+  }
+
+  inline ETestObjectives operator++(ETestObjectives &type, int) {
+    ETestObjectives oldval = type;
+    ++type;
+    return oldval;
+  }
+
+  inline ETestObjectives & operator--(ETestObjectives &type) {
+    return type = static_cast<ETestObjectives>(type-1);
+  }
+
+  inline ETestObjectives operator--(ETestObjectives &type, int) {
+    ETestObjectives oldval = type;
+    --type;
+    return oldval;
+  }
+
 } // namespace ROL
 
 
