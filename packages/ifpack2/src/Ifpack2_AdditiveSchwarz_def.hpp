@@ -89,7 +89,6 @@ AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A) :
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::SerialComm;
-  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
 
   RCP<const Teuchos::Comm<int> > comm = Matrix_->getComm ();
   RCP<const map_type> rowMap = Matrix_->getRowMap ();
@@ -161,7 +160,6 @@ AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A,
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::SerialComm;
-  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
 
   RCP<const Teuchos::Comm<int> > comm = Matrix_->getComm ();
   RCP<const map_type> rowMap = Matrix_->getRowMap ();
@@ -245,8 +243,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
-  typedef typename Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
-  typedef Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> import_type;
+
   const scalar_type ZERO = Teuchos::ScalarTraits<scalar_type>::zero ();
 
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -282,11 +279,11 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     Xtmp = rcp (new MV (X));
 
     MV Serial (SerialMap_, numVectors);
-
-    // FIXME (mfh 28 Sep 2013) Creating a new Import each time is expensive!
-    RCP<const import_type> SerialImporter_ =
-      rcp (new import_type (SerialMap_, Xtmp->getMap()));
-
+    // Create Import object on demand, if necessary.
+    if (SerialImporter_.is_null ()) {
+      SerialImporter_ =
+        rcp (new import_type (SerialMap_, Matrix_->getDomainMap ()));
+    }
     Serial.doImport (*Xtmp, *SerialImporter_, Tpetra::INSERT);
 
     OverlappingX = rcp (new MV (LocalDistributedMap_, numVectors));
@@ -296,11 +293,11 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     //OverlappingY->putScalar(0.0);
 
     MV Distributed (DistributedMap_, numVectors);
-
-    // FIXME (mfh 28 Sep 2013) Creating a new Import each time is expensive!
-    RCP<const import_type> DistributedImporter_ =
-      rcp (new import_type (DistributedMap_, Xtmp->getMap ()));
-
+    // Create Import object on demand, if necessary.
+    if (DistributedImporter_.is_null ()) {
+      DistributedImporter_ =
+        rcp (new import_type (DistributedMap_, Matrix_->getDomainMap ()));
+    }
     Distributed.doImport (*Xtmp, *DistributedImporter_, Tpetra::INSERT);
 
     // FIXME (mfh 28 Sep 2013) Please don't call replaceLocalValue()

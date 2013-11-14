@@ -317,7 +317,18 @@ public:
 
 private:
   //! Specialization of Tpetra::Map.
-  typedef Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> map_type;
+  typedef Tpetra::Map<local_ordinal_type,
+                      global_ordinal_type,
+                      node_type> map_type;
+  //! Specialization of Tpetra::Import.
+  typedef Tpetra::Import<local_ordinal_type,
+                         global_ordinal_type,
+                         node_type> import_type;
+  //! Specialization of Tpetra::MultiVector.
+  typedef Tpetra::MultiVector<scalar_type,
+                              local_ordinal_type,
+                              global_ordinal_type,
+                              node_type> MV;
 
 protected:
   //! Copy constructor (unimplemented; do not use)
@@ -395,6 +406,25 @@ protected:
   Teuchos::RCP<const map_type> DistributedMap_;
   //! Local distributed map for filtering multivector with no overlap.
   Teuchos::RCP<const map_type> LocalDistributedMap_;
+
+  /// \brief Import object used in apply().
+  ///
+  /// If the domain decomposition is <i>not</i> overlapping, then
+  /// apply() needs to redistribute the X input vector from the domain
+  /// Map of this operator to SerialMap_ (see above).  Computing the
+  /// Import is expensive, and the Import does not change as long as
+  /// the overlap level does not change, so it makes sense to keep the
+  /// Import object around.  apply() creates this on demand if
+  /// necessary, which explains why this is marked \c mutable.
+  mutable Teuchos::RCP<const import_type> SerialImporter_;
+
+  /// \brief Import object used in apply().
+  ///
+  /// Import object from the domain Map of this operator to
+  /// DistributedMap_ (see above).  This is used in apply(), where it
+  /// is created on demand if necessary.  This explains why this is
+  /// marked \c mutable.
+  mutable Teuchos::RCP<const import_type> DistributedImporter_;
 }; // class AdditiveSchwarz
 
 }// end namespace
