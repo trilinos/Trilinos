@@ -72,7 +72,8 @@ Factory::create (const std::string& precType,
   typedef typename MatrixType::local_ordinal_type local_ordinal_type;
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
   typedef typename MatrixType::node_type node_type;
-  typedef Preconditioner<scalar_type, local_ordinal_type, global_ordinal_type, node_type> prec_base_type;
+  typedef Preconditioner<scalar_type, local_ordinal_type,
+                         global_ordinal_type, node_type> prec_base_type;
 
   RCP<prec_base_type> prec;
 
@@ -93,7 +94,13 @@ Factory::create (const std::string& precType,
       prec = rcp (new ILUT<MatrixType> (matrix));
     }
     else {
-      prec = rcp (new AdditiveSchwarz<MatrixType, ILUT<MatrixType> > (matrix, overlap));
+      typedef ILUT<MatrixType> inner_solver_type;
+      typedef Details::NestedPreconditioner<prec_base_type> outer_solver_type;
+
+      prec = rcp (new AdditiveSchwarz<MatrixType, inner_solver_type> (matrix, overlap));
+      // Create the inner solver, and pass it down into the "outer" solver.
+      RCP<prec_base_type> innerPrec = rcp (new inner_solver_type (Teuchos::null));
+      dynamic_cast<outer_solver_type*> (&*prec)->setInnerPreconditioner (innerPrec);
     }
   }
   else if (precTypeUpper == "RILUK") {
@@ -110,7 +117,12 @@ Factory::create (const std::string& precType,
   }
   else if (precTypeUpper == "SCHWARZ") {
     typedef ILUT<MatrixType> inner_solver_type;
+    typedef Details::NestedPreconditioner<prec_base_type> outer_solver_type;
+
     prec = rcp (new AdditiveSchwarz<MatrixType, inner_solver_type> (matrix, overlap));
+    // Create the inner solver, and pass it down into the "outer" solver.
+    RCP<prec_base_type> innerPrec = rcp (new inner_solver_type (Teuchos::null));
+    dynamic_cast<outer_solver_type*> (&*prec)->setInnerPreconditioner (innerPrec);
   }
   else if (precTypeUpper == "KRYLOV") {
     prec = rcp (new Krylov<MatrixType, prec_base_type> (matrix));
@@ -121,7 +133,13 @@ Factory::create (const std::string& precType,
       prec = rcp (new SupportGraph<MatrixType> (matrix));
     }
     else {
-      prec = rcp (new AdditiveSchwarz<MatrixType, SupportGraph<MatrixType> > (matrix, overlap));
+      typedef SupportGraph<MatrixType> inner_solver_type;
+      typedef Details::NestedPreconditioner<prec_base_type> outer_solver_type;
+
+      prec = rcp (new AdditiveSchwarz<MatrixType, inner_solver_type> (matrix, overlap));
+      // Create the inner solver, and pass it down into the "outer" solver.
+      RCP<prec_base_type> innerPrec = rcp (new inner_solver_type (Teuchos::null));
+      dynamic_cast<outer_solver_type*> (&*prec)->setInnerPreconditioner (innerPrec);
     }
   }
 #endif
@@ -148,7 +166,10 @@ Factory::create (const std::string& precType,
   typedef typename MatrixType::local_ordinal_type local_ordinal_type;
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
   typedef typename MatrixType::node_type node_type;
-  typedef Preconditioner<scalar_type, local_ordinal_type, global_ordinal_type, node_type> prec_base_type;
+  typedef Preconditioner<scalar_type,
+                         local_ordinal_type,
+                         global_ordinal_type,
+                         node_type> prec_base_type;
 
   RCP<prec_base_type> prec;
 
@@ -169,7 +190,13 @@ Factory::create (const std::string& precType,
       prec = rcp (new ILUT<MatrixType> (matrix));
     }
     else {
-      prec = rcp (new AdditiveSchwarz<MatrixType, ILUT<MatrixType> > (matrix));
+      typedef ILUT<MatrixType> inner_solver_type;
+      typedef Details::NestedPreconditioner<prec_base_type> outer_solver_type;
+
+      prec = rcp (new AdditiveSchwarz<MatrixType, inner_solver_type> (matrix));
+      // Create the inner solver, and pass it down into the "outer" solver.
+      RCP<prec_base_type> innerPrec = rcp (new inner_solver_type (Teuchos::null));
+      dynamic_cast<outer_solver_type*> (&*prec)->setInnerPreconditioner (innerPrec);
     }
   }
   else if (precTypeUpper == "RILUK") {
@@ -185,7 +212,13 @@ Factory::create (const std::string& precType,
     prec = rcp (new Diagonal<MatrixType> (matrix));
   }
   else if (precTypeUpper == "SCHWARZ") {
-    prec = rcp (new AdditiveSchwarz<MatrixType, ILUT<MatrixType> > (matrix));
+    typedef ILUT<MatrixType> inner_solver_type;
+    typedef Details::NestedPreconditioner<prec_base_type> outer_solver_type;
+
+    prec = rcp (new AdditiveSchwarz<MatrixType, inner_solver_type> (matrix));
+    // Create the inner solver, and pass it down into the "outer" solver.
+    RCP<prec_base_type> innerPrec = rcp (new inner_solver_type (Teuchos::null));
+    dynamic_cast<outer_solver_type*> (&*prec)->setInnerPreconditioner (innerPrec);
   }
   else if (precTypeUpper == "KRYLOV") {
     prec = rcp (new Krylov<MatrixType, prec_base_type> (matrix));
@@ -196,7 +229,13 @@ Factory::create (const std::string& precType,
       prec = rcp (new SupportGraph<MatrixType> (matrix));
     }
     else {
-      prec = rcp (new AdditiveSchwarz<MatrixType, SupportGraph<MatrixType> > (matrix));
+      typedef SupportGraph<MatrixType> inner_solver_type;
+      typedef Details::NestedPreconditioner<prec_base_type> outer_solver_type;
+
+      prec = rcp (new AdditiveSchwarz<MatrixType, inner_solver_type> (matrix));
+      // Create the inner solver, and pass it down into the "outer" solver.
+      RCP<prec_base_type> innerPrec = rcp (new inner_solver_type (Teuchos::null));
+      dynamic_cast<outer_solver_type*> (&*prec)->setInnerPreconditioner (innerPrec);
     }
   }
 #endif
@@ -233,20 +272,21 @@ Factory::clone (const Teuchos::RCP<Preconditioner<typename MatrixType::scalar_ty
   typedef typename M2::node_type new_node_type;
 
   // FIXME (mfh 09 Nov 2013) The code below only knows how to clone
-  // two different kinds of preconditioners!
+  // two different kinds of preconditioners.  This is probably because
+  // only two subclasses of Preconditioner implement a clone() method.
 
-  RCP<Preconditioner<scalar_type, local_ordinal_type,global_ordinal_type, new_node_type> > new_prec;
+  RCP<Preconditioner<scalar_type, local_ordinal_type, global_ordinal_type, new_node_type> > new_prec;
   RCP<Chebyshev<MatrixType> > chebyPrec;
-  chebyPrec = rcp_dynamic_cast<Chebyshev<MatrixType> >(prec);
-  if (chebyPrec != null){
-        new_prec = chebyPrec->clone(matrix, params);
-        return new_prec;
+  chebyPrec = rcp_dynamic_cast<Chebyshev<MatrixType> > (prec);
+  if (chebyPrec != null) {
+    new_prec = chebyPrec->clone (matrix, params);
+    return new_prec;
   }
   RCP<RILUK<MatrixType> > luPrec;
-  luPrec = rcp_dynamic_cast<RILUK<MatrixType> >(prec);
-  if (luPrec != null){
-        new_prec = luPrec->clone(matrix);
-        return new_prec;
+  luPrec = rcp_dynamic_cast<RILUK<MatrixType> > (prec);
+  if (luPrec != null) {
+    new_prec = luPrec->clone (matrix);
+    return new_prec;
   }
   TEUCHOS_TEST_FOR_EXCEPTION(
     true, std::logic_error, "Ifpack2::Factory::clone: Not implemented for the "

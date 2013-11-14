@@ -46,24 +46,15 @@
 #ifndef IFPACK2_ILUT_DECL_HPP
 #define IFPACK2_ILUT_DECL_HPP
 
-#include "Ifpack2_ConfigDefs.hpp"
-#include "Ifpack2_Preconditioner.hpp"
-#include "Ifpack2_Condest.hpp"
-#include "Ifpack2_Heap.hpp"
-#include "Ifpack2_Parameters.hpp"
-
-#include "Ifpack2_Details_CanChangeMatrix.hpp"
-
-#include <Teuchos_Assert.hpp>
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Time.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
-#include <Teuchos_ScalarTraits.hpp>
+#include <Ifpack2_ConfigDefs.hpp>
+#include <Ifpack2_Preconditioner.hpp>
+#include <Ifpack2_Details_CanChangeMatrix.hpp>
 
 #include <string>
 #include <sstream>
 #include <iostream>
 #include <cmath>
+
 
 namespace Teuchos {
   // forward declaration

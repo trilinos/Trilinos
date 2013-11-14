@@ -450,6 +450,8 @@ setParameters (const Teuchos::ParameterList& plist)
   // the lower node, I still get a matrix with a singleton! However, filter
   // singletons should help for PDE problems with Dirichlet BCs.
   FilterSingletons_ = List_.get("schwarz: filter singletons", FilterSingletons_);
+
+  // FIXME (mfh 13 Nov 2013) Need to pass parameters to inner solver!
 }
 
 
@@ -796,10 +798,14 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
     "setup: Inner matrix is null right before constructing inner solver.  "
     "Please report this bug to the Ifpack2 developers.");
 
-  // Construct the inner solver.  We go through a bit more trouble
-  // than usual to do so, because we want to exercise the new
-  // setInnerPreconditioner feature.
-  setInnerPreconditioner (rcp (new LocalInverseType (Teuchos::null)));
+  // Construct the inner solver if necessary.  We go through a bit
+  // more trouble than usual to do so, because we want to exercise the
+  // new setInnerPreconditioner feature.
+  if (Inverse_.is_null ()) {
+    setInnerPreconditioner (rcp (new LocalInverseType (Teuchos::null)));
+  } else {
+    setInnerPreconditioner (Inverse_);
+  }
 }
 
 

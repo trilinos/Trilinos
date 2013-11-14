@@ -48,6 +48,14 @@
 #pragma clang system_header
 #endif
 
+#include <Ifpack2_Heap.hpp>
+#include <Ifpack2_Condest.hpp>
+#include <Ifpack2_Parameters.hpp>
+
+#include <Teuchos_Time.hpp>
+#include <Teuchos_TypeNameTraits.hpp>
+
+
 namespace Ifpack2 {
 
   namespace {
@@ -279,6 +287,10 @@ Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
                                typename MatrixType::node_type> >
 ILUT<MatrixType>::getDomainMap () const
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (), std::runtime_error, "Ifpack2::ILUT::getDomainMap: "
+    "The matrix is null.  Please call setMatrix() with a nonnull input "
+    "before calling this method.");
   return A_->getDomainMap ();
 }
 
@@ -289,6 +301,10 @@ Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
                                typename MatrixType::node_type> >
 ILUT<MatrixType>::getRangeMap () const
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (), std::runtime_error, "Ifpack2::ILUT::getRangeMap: "
+    "The matrix is null.  Please call setMatrix() with a nonnull input "
+    "before calling this method.");
   return A_->getRangeMap ();
 }
 
