@@ -119,18 +119,7 @@ Factory::create (const std::string& precType,
   }
 #if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
   else if (precTypeUpper == "SUPPORTGRAPH") {
-    if (one_mpi_rank) {
-      prec = rcp (new SupportGraph<MatrixType> (matrix));
-    }
-    else {
-      typedef SupportGraph<MatrixType> inner_solver_type;
-      typedef Details::NestedPreconditioner<prec_base_type> outer_solver_type;
-
-      prec = rcp (new AdditiveSchwarz<MatrixType, inner_solver_type> (matrix, overlap));
-      // Create the inner solver, and pass it down into the "outer" solver.
-      RCP<prec_base_type> innerPrec = rcp (new inner_solver_type (Teuchos::null));
-      dynamic_cast<outer_solver_type*> (&*prec)->setInnerPreconditioner (innerPrec);
-    }
+    prec = rcp (new SupportGraph<MatrixType> (matrix));
   }
 #endif
   else {
@@ -205,18 +194,7 @@ Factory::create (const std::string& precType,
   }
 #if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
   else if (precTypeUpper == "SUPPORTGRAPH") {
-    if (one_mpi_rank) {
-      prec = rcp (new SupportGraph<MatrixType> (matrix));
-    }
-    else {
-      typedef SupportGraph<MatrixType> inner_solver_type;
-      typedef Details::NestedPreconditioner<prec_base_type> outer_solver_type;
-
-      prec = rcp (new AdditiveSchwarz<MatrixType, inner_solver_type> (matrix));
-      // Create the inner solver, and pass it down into the "outer" solver.
-      RCP<prec_base_type> innerPrec = rcp (new inner_solver_type (Teuchos::null));
-      dynamic_cast<outer_solver_type*> (&*prec)->setInnerPreconditioner (innerPrec);
-    }
+    prec = rcp (new SupportGraph<MatrixType> (matrix));
   }
 #endif
   else {
@@ -227,16 +205,17 @@ Factory::create (const std::string& precType,
   return prec;
 }
 
-template<class MatrixType, class M2>
-Teuchos::RCP<Preconditioner<typename M2::scalar_type,
-                                     typename M2::local_ordinal_type,
-                                     typename M2::global_ordinal_type,
-                                     typename M2::node_type> >
-Factory::clone (const Teuchos::RCP<Preconditioner<typename MatrixType::scalar_type,
-                                                           typename MatrixType::local_ordinal_type,
-                                                           typename MatrixType::global_ordinal_type,
-                                                           typename MatrixType::node_type> >& prec,
-                const Teuchos::RCP<const M2>& matrix, const Teuchos::ParameterList& params)
+template<class InputMatrixType, class OutputMatrixType>
+Teuchos::RCP<Preconditioner<typename OutputMatrixType::scalar_type,
+                            typename OutputMatrixType::local_ordinal_type,
+                            typename OutputMatrixType::global_ordinal_type,
+                            typename OutputMatrixType::node_type> >
+Factory::clone (const Teuchos::RCP<Preconditioner<typename InputMatrixType::scalar_type,
+                                                  typename InputMatrixType::local_ordinal_type,
+                                                  typename InputMatrixType::global_ordinal_type,
+                                                  typename InputMatrixType::node_type> >& prec,
+                const Teuchos::RCP<const OutputMatrixType>& matrix,
+                const Teuchos::ParameterList& params)
 {
   using Teuchos::null;
   using Teuchos::RCP;
@@ -246,24 +225,26 @@ Factory::clone (const Teuchos::RCP<Preconditioner<typename MatrixType::scalar_ty
   // FIXME (mfh 09 Nov 2013) The code below assumes that the old and
   // new scalar, local ordinal, and global ordinal types are the same.
 
-  typedef typename M2::scalar_type scalar_type;
-  typedef typename M2::local_ordinal_type local_ordinal_type;
-  typedef typename M2::global_ordinal_type global_ordinal_type;
-  typedef typename M2::node_type new_node_type;
+  typedef typename OutputMatrixType::scalar_type scalar_type;
+  typedef typename OutputMatrixType::local_ordinal_type local_ordinal_type;
+  typedef typename OutputMatrixType::global_ordinal_type global_ordinal_type;
+  typedef typename OutputMatrixType::node_type new_node_type;
+  typedef Preconditioner<scalar_type, local_ordinal_type,
+                         global_ordinal_type, new_node_type> output_prec_type;
 
   // FIXME (mfh 09 Nov 2013) The code below only knows how to clone
   // two different kinds of preconditioners.  This is probably because
   // only two subclasses of Preconditioner implement a clone() method.
 
-  RCP<Preconditioner<scalar_type, local_ordinal_type, global_ordinal_type, new_node_type> > new_prec;
-  RCP<Chebyshev<MatrixType> > chebyPrec;
-  chebyPrec = rcp_dynamic_cast<Chebyshev<MatrixType> > (prec);
+  RCP<output_prec_type> new_prec;
+  RCP<Chebyshev<InputMatrixType> > chebyPrec;
+  chebyPrec = rcp_dynamic_cast<Chebyshev<InputMatrixType> > (prec);
   if (chebyPrec != null) {
     new_prec = chebyPrec->clone (matrix, params);
     return new_prec;
   }
-  RCP<RILUK<MatrixType> > luPrec;
-  luPrec = rcp_dynamic_cast<RILUK<MatrixType> > (prec);
+  RCP<RILUK<InputMatrixType> > luPrec;
+  luPrec = rcp_dynamic_cast<RILUK<InputMatrixType> > (prec);
   if (luPrec != null) {
     new_prec = luPrec->clone (matrix);
     return new_prec;
