@@ -120,6 +120,7 @@
 #ifdef HAVE_MUELU
 #include <Thyra_MueLuPreconditionerFactory.hpp>
 #include "Stratimikos_MueluTpetraHelpers.hpp"
+#include "MatrixMarket_Tpetra.hpp"
 #endif
 
 #ifdef HAVE_IFPACK2
@@ -1208,32 +1209,32 @@ namespace panzer_stk {
           }
 
           #ifdef HAVE_MUELU
-          {
+          if(Teuchos::rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> >(globalIndexer)!=Teuchos::null) {
              if(!writeCoordinates)
                 callback->preRequest(Teko::RequestMesg(Teuchos::rcp(new Teuchos::ParameterList())));
 
-
              typedef Tpetra::Map<int,panzer::Ordinal64,KokkosClassic::DefaultNode::DefaultNodeType> Map;
              typedef Tpetra::MultiVector<double,int,panzer::Ordinal64,KokkosClassic::DefaultNode::DefaultNodeType> MV;
+             typedef Tpetra::CrsMatrix<double,int,panzer::Ordinal64,KokkosClassic::DefaultNode::DefaultNodeType> CrsMatrix;
 
              // extract coordinate vectors and modify strat_params to include coordinate vectors
              unsigned dim = mesh->getDimension();
              Teuchos::RCP<MV> coords;
              for(unsigned d=0;d<dim;d++) {
-               const std::vector<double> & coord = callback->getCoordsVector(0);
+               const std::vector<double> & coord = callback->getCoordsVector(d);
 
                // no coords vector has been build yet, build one
                if(coords==Teuchos::null) {
                  if(globalIndexer->getNumFields()==1) {
-                   Teuchos::RCP<const panzer::UniqueGlobalIndexer<int,GO> > ugi
-                       = Teuchos::rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<int,GO> >(globalIndexer);
-                   std::vector<GO> ownedIndices;
+                   Teuchos::RCP<const panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > ugi
+                       = Teuchos::rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> >(globalIndexer);
+                   std::vector<panzer::Ordinal64> ownedIndices;
                    ugi->getOwnedIndices(ownedIndices);
-                   Teuchos::RCP<Map> coords_map = Teuchos::rcp(new Map(-1,ownedIndices,0,mpi_comm));
+                   Teuchos::RCP<Map> coords_map = Teuchos::rcp(new Map(Teuchos::OrdinalTraits<panzer::Ordinal64>::invalid(),ownedIndices,0,mpi_comm));
                    coords = Teuchos::rcp(new MV(coords_map,dim));
                  }
                  else {
-                   Teuchos::RCP<Map> coords_map = Teuchos::rcp(new Map(-1,coord.size(),0,mpi_comm));
+                   Teuchos::RCP<Map> coords_map = Teuchos::rcp(new Map(Teuchos::OrdinalTraits<panzer::Ordinal64>::invalid(),coord.size(),0,mpi_comm));
                    coords = Teuchos::rcp(new MV(coords_map,dim));
                  }
                }
