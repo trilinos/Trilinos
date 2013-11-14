@@ -62,6 +62,10 @@ typedef MueLu::MaxLinkAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,Local
 typedef MueLu::OnePtAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> OnePtAggregationAlgorithm;
 #endif
 
+#ifdef MUELU_PRESERVEDIRICHLETAGGREGATIONALGORITHM_SHORT
+typedef MueLu::PreserveDirichletAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PreserveDirichletAggregationAlgorithm;
+#endif
+
 #ifdef MUELU_PRFACTORY_SHORT
 typedef MueLu::PRFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PRFactory;
 #endif
