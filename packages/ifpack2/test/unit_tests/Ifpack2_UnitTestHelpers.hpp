@@ -211,7 +211,7 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
 
   for(LocalOrdinal l_row = 0; (size_t) l_row<rowmap->getNodeNumElements(); l_row++) {
     GlobalOrdinal g_row = rowmap->getGlobalElement(l_row);
-    if (g_row == rowmap->getMinGlobalIndex()) {
+    if (g_row == rowmap->getMinAllGlobalIndex()) {
       col.resize(2);
       coef.resize(2);
       col[0] = g_row;
@@ -219,7 +219,7 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
       coef[0] = two;
       coef[1] = onetenth;
     }
-    else if (g_row == rowmap->getMaxGlobalIndex()) {
+    else if (g_row == rowmap->getMaxAllGlobalIndex()) {
       col.resize(2);
       coef.resize(2);
       col[0] = g_row-1;
