@@ -91,6 +91,7 @@ namespace MueLu {
                                                                        "ratio of maximum nonzeros over all processes to minimum number of nonzeros over all processes");
 
     validParamList->set<bool>       ("remapPartitions",          true, "Perform partition remapping to minimize data movement");
+    validParamList->set<int>        ("numRemapValues",              4, "Number of maximum components from each processor used to construct partial bipartite graph");
     validParamList->set<bool>       ("alwaysKeepProc0",          true, "Always keep processor 0 in subcommunicator");
 
     validParamList->set< RCP<const FactoryBase> >("A",         Teuchos::null, "Factory of the matrix A");
@@ -575,11 +576,13 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(tmpic == Teuchos::null, Exceptions::RuntimeError, "Cannot cast base Teuchos::Comm to Teuchos::MpiComm object.");
     RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawMpiComm = tmpic->getRawMpiComm();
 
+    const Teuchos::ParameterList& pL = GetParameterList();
+
     // maxLocal is a constant which determins the number of largest edges which are being exchanged
     // The idea is that we do not want to construct the full bipartite graph, but simply a subset of
     // it, which requires less communication. By selecting largest local edges we hope to achieve
     // similar results but at a lower cost.
-    const int maxLocal = 4;
+    const int maxLocal = pL.get<int>("numRemapValues");
     const int dataSize = 2*maxLocal;
 
     ArrayRCP<GO> decompEntries;
