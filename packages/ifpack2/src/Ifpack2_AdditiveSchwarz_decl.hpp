@@ -109,7 +109,9 @@ is zero (no overlap), their implementation is trivial; \f$R_i\f$ will
 return all the local components.  For nonzero overlap, Tpetra's data
 redistribution facilities (Tpetra::Import) will be used to bring in
 the required data.  Users may control how these data are combined with
-existing data, by setting the combine mode parameter.
+existing data, by setting the combine mode parameter.  Valid combine
+modes include "ADD", "INSERT", "REPLACE", "ABSMAX", and "ZERO".  These
+correspond to the valid values of Tpetra::CombineMode.
 
 To solve linear systems involving \f$A_i\f$ on each subdomain, the
 user can adopt any subclass of Preconditioner.  Currently, users
@@ -274,10 +276,11 @@ public:
   /// Accepted parameters include the following:
   ///   - "schwarz: compute condest" (\c bool): If true, estimate the
   ///     condition number each time compute() is called.
-  ///   - "schwarz: combine mode" (\c std::string): The (Tpetra)
-  ///     CombineMode used for combining incoming data with existing
-  ///     data in overlap regions.  Valid values include "Add",
-  ///     "Insert", "Replace", and "AbsMax".
+  ///   - "schwarz: combine mode" (\c std::string): The rule for
+  ///     combining incoming data with existing data in overlap
+  ///     regions.  Valid values include "ADD", "INSERT", "REPLACE",
+  ///     "ABSMAX", and "ZERO".  These correspond to the valid values
+  ///     of Tpetra::CombineMode.
   ///   - "schwarz: overlap level" (\c int): The level of overlap.
   ///   - "schwarz: use reordering" (\c bool): Whether to use Zoltan2
   ///     to do reordering.  If true, then Trilinos must have been

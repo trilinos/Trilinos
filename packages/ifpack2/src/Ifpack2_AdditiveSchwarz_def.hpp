@@ -65,6 +65,8 @@
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
 
+#include <locale> // std::ctype::toupper
+
 namespace Ifpack2 {
 
 template<class MatrixType, class LocalInverseType>
@@ -389,20 +391,35 @@ setParameters (const Teuchos::ParameterList& plist)
   // combine mode
   if( Teuchos::ParameterEntry *combineModeEntry = List_.getEntryPtr("schwarz: combine mode") ) {
     if( typeid(std::string) == combineModeEntry->getAny().type() ) {
-      std::string mode = List_.get("schwarz: combine mode", "Add");
-      if (mode == "Add")
+      std::string mode = List_.get ("schwarz: combine mode", "Add");
+
+      // Convert the mode to upper case, so users don't have to worry
+      // about case sensitivity.
+      if (mode.size () > 0) {
+        std::locale loc;
+        std::use_facet<std::ctype<char> > (loc).toupper (&mode[0], &mode[mode.size () - 1]);
+      }
+      if (mode == "ADD") {
         CombineMode_ = Tpetra::ADD;
-      else if (mode == "Insert")
+      }
+      else if (mode == "INSERT") {
         CombineMode_ = Tpetra::INSERT;
-      else if (mode == "Replace")
+      }
+      else if (mode == "REPLACE") {
         CombineMode_ = Tpetra::REPLACE;
-      else if (mode == "AbsMax")
+      }
+      else if (mode == "ABSMAX") {
         CombineMode_ = Tpetra::ABSMAX;
+      }
+      else if (mode == "ZERO") {
+        CombineMode_ = Tpetra::ZERO;
+      }
       else {
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error
-                                   ,"Error, The Tpetra combine mode of \""<<mode<<"\" is not valid!  Only the values"
-                                   " \"Add\", \"Insert\", \"Replace\", and \"AbsMax\" are accepted!"
-                                   );
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          true, std::invalid_argument, "Ifpack2::AdditiveSchwarz::setParameters"
+          ": The given Tpetra combine mode \"" << mode << "\" is not valid.  "
+          "Valid combine modes include \"Add\", \"Insert\", \"Replace\", "
+          "\"AbsMax\", and \"Zero\".");
       }
     }
     else if ( typeid(Tpetra::CombineMode) == combineModeEntry->getAny().type() ) {
