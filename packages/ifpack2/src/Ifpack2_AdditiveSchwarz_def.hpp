@@ -50,13 +50,16 @@
 #include "Xpetra_TpetraRowMatrix.hpp"
 #include "Zoltan2_XpetraRowMatrixInput.hpp"
 #include "Zoltan2_OrderingProblem.hpp"
+#include "Zoltan2_OrderingSolution.hpp"
 #endif
 
 #include "Ifpack2_Condest.hpp"
-#include "Ifpack2_OverlappingRowMatrix_def.hpp"
+
 #include "Ifpack2_LocalFilter_def.hpp"
+#include "Ifpack2_OverlappingRowMatrix_def.hpp"
 #include "Ifpack2_ReorderFilter_def.hpp"
 #include "Ifpack2_SingletonFilter_def.hpp"
+
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif

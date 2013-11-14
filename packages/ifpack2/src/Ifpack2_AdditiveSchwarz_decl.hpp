@@ -44,24 +44,17 @@
 #define IFPACK2_ADDITIVESCHWARZ_DECL_HPP
 
 #include "Ifpack2_ConfigDefs.hpp"
-#include "Tpetra_ConfigDefs.hpp"
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Parameters.hpp"
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RefCountPtr.hpp"
-#include "Teuchos_Time.hpp"
 
+#include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Map.hpp"
-#include "Tpetra_CrsMatrix.hpp"
 
-#include "Ifpack2_ReorderFilter.hpp"
-#include "Ifpack2_SingletonFilter.hpp"
-#include "Ifpack2_OverlappingRowMatrix.hpp"
-
-#ifdef HAVE_IFPACK2_ZOLTAN2
-#include "Zoltan2_OrderingSolution.hpp"
-#endif
+#include "Ifpack2_LocalFilter_decl.hpp"
+#include "Ifpack2_OverlappingRowMatrix_decl.hpp"
+#include "Ifpack2_ReorderFilter_decl.hpp"
+#include "Ifpack2_SingletonFilter_decl.hpp"
 
 
 namespace Ifpack2 {
