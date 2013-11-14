@@ -213,53 +213,72 @@ namespace MueLu {
     if (!checkAc && !repairZeroDiagonals)
       return;
 
-    RCP<const Map> rowMap = Ac->getRowMap();
+    SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
 
+    Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList());
+    p->set("DoOptimizeStorage",true);
+
+    RCP<const Map> rowMap = Ac->getRowMap();
     RCP<Vector> diagVec = VectorFactory::Build(rowMap);
     Ac->getLocalDiagCopy(*diagVec);
 
-    SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
-
-    Teuchos::RCP<Teuchos::ParameterList> optParams = Teuchos::rcp(new Teuchos::ParameterList());
-    optParams->set("DoOptimizeStorage", true);
-
     LO lZeroDiags = 0;
-    Teuchos::ArrayRCP<Scalar> diagVal = diagVec->getDataNonConst(0);
-    for (size_t i = 0; i < rowMap->getNodeNumElements(); i++)
-      if (diagVal[i] == zero)
-        lZeroDiags++;
+    Teuchos::ArrayRCP< Scalar > diagVal = diagVec->getDataNonConst(0);
 
+    for (size_t i = 0; i < rowMap->getNodeNumElements(); i++) {
+      if (diagVal[i] == zero) {
+        lZeroDiags++;
+      }
+    }
     GO gZeroDiags;
     sumAll(rowMap->getComm(), Teuchos::as<GO>(lZeroDiags), gZeroDiags);
 
-    if (repairZeroDiagonals && gZeroDiags) {
-      RCP<Matrix> fixDiagMatrix = MatrixFactory::Build(Ac->getRowMap(), 1);
-
-      Teuchos::Array<GO> inds(1);
-      Teuchos::Array<SC> vals(1);
-      for (size_t i = 0; i < rowMap->getNodeNumElements(); i++) {
-        inds[1] = rowMap->getGlobalElement(i);
-        vals[1] = one;
-
-        Ac->insertGlobalValues(inds[0], inds, vals);
+    if (repairZeroDiagonals && gZeroDiags > 0) {
+      // TAW: If Ac has empty rows, put a 1 on the diagonal of Ac. Be aware that Ac might have empty rows AND columns.
+      // The columns might not exist in the column map at all.
+      //
+      // It would be nice to add the entries to the original matrix Ac. But then we would have to use
+      // insertLocalValues. However we cannot add new entries for local column indices that do not exist in the column map
+      // of Ac (at least Epetra is not able to do this).
+      //
+      // Here we build a diagonal matrix with zeros on the diagonal and ones on the diagonal for the rows where Ac has empty rows
+      // We have to build a new matrix to be able to use insertGlobalValues. Then we add the original matrix Ac to our new block
+      // diagonal matrix and use the result as new (non-singular) matrix Ac.
+      // This is very inefficient.
+      //
+      // If you know something better, please let me know.
+      RCP<Matrix> fixDiagMatrix = Teuchos::null;
+      fixDiagMatrix = MatrixFactory::Build(rowMap, 1);
+      for (size_t r = 0; r < rowMap->getNodeNumElements(); r++) {
+        if (diagVal[r] == zero) {
+          GO grid = rowMap->getGlobalElement(r);
+          Teuchos::ArrayRCP<GO> indout(1,grid);
+          Teuchos::ArrayRCP<SC> valout(1, one);
+          fixDiagMatrix->insertGlobalValues(grid,indout.view(0, 1), valout.view(0, 1));
+        }
       }
+      Ac->fillComplete(p);
+      MueLu::Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd(*Ac, false, 1.0, *fixDiagMatrix, 1.0);
+      if (Ac->IsView("stridedMaps")) fixDiagMatrix->CreateView("stridedMaps", Ac);
+      Ac = Teuchos::null;     // free singular coarse level matrix
+      Ac = fixDiagMatrix;     // set fixed non-singular coarse level matrix
     }
 
-    // We do not modify matrix later, allow optimization of storage.
+    // call fillComplete with optimized storage option set to true
     // This is necessary for new faster Epetra MM kernels.
-    Ac->fillComplete(optParams);
+    Ac->fillComplete(p);
 
     // print some output
     if (IsPrint(Warnings0))
       GetOStream(Warnings0,0) << "RAPFactory (WARNING): " << (repairZeroDiagonals ? "repaired " : "found ")
           << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
 
-#ifdef HAVE_MUELU_DEBUG
-    // Check that Ac has been repaired
+#ifdef HAVE_MUELU_DEBUG // only for debugging
+    // check whether Ac has been repaired...
     Ac->getLocalDiagCopy(*diagVec);
-    diagVal = diagVec->getDataNonConst(0);
-    for (size_t i = 0; i < rowMap->getNodeNumElements(); i++) {
-      if (diagVal[i] == zero) {
+    Teuchos::ArrayRCP< Scalar > diagVal2 = diagVec->getDataNonConst(0);
+    for (size_t r = 0; r < Ac->getRowMap()->getNodeNumElements(); r++) {
+      if (diagVal2[r] == zero) {
         std::cout << "Error: there are zeros left on diagonal after repair..." << std::endl;
         break;
       }
