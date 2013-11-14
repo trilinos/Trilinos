@@ -25,9 +25,6 @@ class ElementTopology;
 }
 
 namespace stk {
-  namespace util {
-    struct Parameter;
-  }
   namespace mesh {
     class Part;
     class BulkData;
@@ -369,8 +366,6 @@ size_t db_api_int_size(const Ioss::GroupingEntity *entity);
 mesh::EntityRank part_primary_entity_rank(const mesh::Part &part);
 
 void initialize_spatial_dimension(mesh::MetaData &meta, size_t spatial_dimension, const std::vector<std::string> &entity_rank_names);
-
-std::pair<size_t, Ioss::Field::BasicType> get_io_parameter_type(const stk::util::Parameter &parameter);
 
 void get_io_field_type(const stk::mesh::FieldBase *field,
                        const stk::mesh::FieldRestriction &res,

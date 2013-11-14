@@ -45,7 +45,7 @@ namespace
     Ioss::PropertyManager hb_props;
     hb_props.add(Ioss::Property("FILE_FORMAT", "spyhis"));
 
-    size_t heartbeat_index = stkIo.add_output(file_name, stk::io::HEARTBEAT, hb_props);
+    size_t heartbeat_index = stkIo.add_heartbeat_output(file_name, stk::io::TEXT, hb_props);
 
     stk::util::ParameterMapType::const_iterator i = parameters.begin();
     stk::util::ParameterMapType::const_iterator iend = parameters.end();
@@ -54,7 +54,7 @@ namespace
       stk::util::Parameter &parameter = parameters.get_param(parameterName);
 
       // Tell heartbeat database which global variables should be output at each step...
-      stkIo.output(heartbeat_index).add_global(parameterName, parameter);
+      stkIo.add_heartbeat_global(heartbeat_index, parameterName, parameter.value, parameter.type);
     }
 
     // ========================================================================
@@ -62,7 +62,7 @@ namespace
     int timestep_count = 1;
     double time = 0.0;
     for (int step=1; step <= timestep_count; step++) {
-      stkIo.output(heartbeat_index).process_output(step, time);
+      stkIo.process_heartbeat_output(heartbeat_index, step, time);
     }
 
     //    unlink(file_name.c_str());

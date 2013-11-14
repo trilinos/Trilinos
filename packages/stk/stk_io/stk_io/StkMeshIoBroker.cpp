@@ -36,6 +36,43 @@
 
 namespace {
 
+  std::pair<size_t, Ioss::Field::BasicType> get_io_parameter_size_and_type(const stk::util::ParameterType::Type type,
+									   const boost::any &value)
+  {
+    switch(type)  {
+    case stk::util::ParameterType::INTEGER: {
+      return std::make_pair(1, Ioss::Field::INTEGER);
+    }
+
+    case stk::util::ParameterType::INT64: {
+      return std::make_pair(1, Ioss::Field::INT64);
+    }
+    
+    case stk::util::ParameterType::DOUBLE: {
+      return std::make_pair(1, Ioss::Field::REAL);
+    }
+    
+    case stk::util::ParameterType::DOUBLEVECTOR: {
+      std::vector<double> vec = boost::any_cast<std::vector<double> >(value);
+      return std::make_pair(vec.size(), Ioss::Field::REAL);
+    }
+
+    case stk::util::ParameterType::INTEGERVECTOR: {
+      std::vector<int> vec = boost::any_cast<std::vector<int> >(value);
+      return std::make_pair(vec.size(), Ioss::Field::INTEGER);
+    }
+
+    case stk::util::ParameterType::INT64VECTOR: {
+      std::vector<int64_t> vec = boost::any_cast<std::vector<int64_t> >(value);
+      return std::make_pair(vec.size(), Ioss::Field::INT64);
+    }
+    
+    default: {
+      return std::make_pair(0, Ioss::Field::INVALID);
+    }
+    }
+  }
+
   template <typename DataType>
   void internal_write_global(Teuchos::RCP<Ioss::Region> output_region, const std::string &globalVarName, DataType globalVarData)
   {
@@ -88,48 +125,49 @@ namespace {
   }
 
   void internal_write_parameter(Teuchos::RCP<Ioss::Region> output_region,
-				const std::string &globalVarName, const stk::util::Parameter &parameter)
+				const std::string &name, const boost::any &any_value,
+				stk::util::ParameterType::Type type)
     {
-      switch(parameter.type)
+      switch(type)
 	{
 	case stk::util::ParameterType::INTEGER: {
-	  int value = boost::any_cast<int>(parameter.value);
-	  internal_write_global(output_region, globalVarName, value);
+	  int value = boost::any_cast<int>(any_value);
+	  internal_write_global(output_region, name, value);
 	  break;
 	}
 
 	case stk::util::ParameterType::INT64: {
-	  int64_t value = boost::any_cast<int64_t>(parameter.value);
-	  internal_write_global(output_region, globalVarName, value);
+	  int64_t value = boost::any_cast<int64_t>(any_value);
+	  internal_write_global(output_region, name, value);
 	  break;
 	}
   
 	case stk::util::ParameterType::DOUBLE: {
-	  double value = boost::any_cast<double>(parameter.value);
-	  internal_write_global(output_region, globalVarName, value);
+	  double value = boost::any_cast<double>(any_value);
+	  internal_write_global(output_region, name, value);
 	  break;
 	}
     
 	case stk::util::ParameterType::DOUBLEVECTOR: {
-	  std::vector<double> vec = boost::any_cast<std::vector<double> >(parameter.value);
-	  internal_write_global(output_region, globalVarName, vec);
+	  std::vector<double> vec = boost::any_cast<std::vector<double> >(any_value);
+	  internal_write_global(output_region, name, vec);
 	  break;
 	}
 
 	case stk::util::ParameterType::INTEGERVECTOR: {
-	  std::vector<int> vec = boost::any_cast<std::vector<int> >(parameter.value);
-	  internal_write_global(output_region, globalVarName, vec);
+	  std::vector<int> vec = boost::any_cast<std::vector<int> >(any_value);
+	  internal_write_global(output_region, name, vec);
 	  break;
 	}
 
 	case stk::util::ParameterType::INT64VECTOR: {
-	  std::vector<int64_t> vec = boost::any_cast<std::vector<int64_t> >(parameter.value);
-	  internal_write_global(output_region, globalVarName, vec);
+	  std::vector<int64_t> vec = boost::any_cast<std::vector<int64_t> >(any_value);
+	  internal_write_global(output_region, name, vec);
 	  break;
 	}
 
 	default: {
-	  std::cerr << "WARNING: '" << globalVarName
+	  std::cerr << "WARNING: '" << name
 		    << "' is not a supported type. It's value cannot be output."
 		    << std::endl;
 	  break;
@@ -1679,6 +1717,73 @@ namespace stk {
       return region->get_state_time(step);
     }
 
+    
+    size_t StkMeshIoBroker::add_heartbeat_output(const std::string &filename, HeartbeatType hb_type,
+						 const Ioss::PropertyManager &properties)
+    {
+      Heartbeat heartbeat(filename, hb_type, properties, m_communicator);
+      m_heartbeat.push_back(heartbeat);
+      return m_heartbeat.size()-1;
+    }
+
+    Heartbeat::Heartbeat(const std::string &filename, HeartbeatType hb_type,
+                     const Ioss::PropertyManager &properties, MPI_Comm comm)
+      : m_current_step(0), m_processor(0)
+    {
+      if (comm != MPI_COMM_NULL) {
+        MPI_Comm_rank(comm, &m_processor);
+      }
+
+      if (m_processor == 0) {
+        std::string db_io_type = hb_type == BINARY ? "exodus" : "heartbeat";
+        Ioss::DatabaseUsage db_usage = hb_type == BINARY ? Ioss::WRITE_HISTORY : Ioss::WRITE_HEARTBEAT;
+        Ioss::DatabaseIO *db = Ioss::IOFactory::create(db_io_type, filename,
+                                                       db_usage, comm, properties);
+        if (db == NULL || !db->ok()) {
+          std::cerr << "ERROR: Could not open history/heartbeat database '" << filename
+                    << "'\n";
+          return;
+        }
+
+        // NOTE: 'region' owns 'db' pointer at this time...
+        m_region = Teuchos::rcp(new Ioss::Region(db, filename));
+      }
+    }
+
+    void Heartbeat::add_global(const std::string &name, boost::any &value, stk::util::ParameterType::Type type)
+    {
+      if (m_processor == 0) {
+        // Determine name and type of parameter...
+        std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(type, value);
+        internal_add_global(m_region, name, parameter_type.first, parameter_type.second);
+        m_fields.push_back(HeartbeatVariable(name, &value, type));
+      }
+    }
+
+    void Heartbeat::process_output(int step, double time)
+    {
+      if (m_processor == 0) {
+        Ioss::State currentState = m_region->get_state();
+        if(currentState == Ioss::STATE_DEFINE_TRANSIENT) {
+          m_region->end_mode(Ioss::STATE_DEFINE_TRANSIENT);
+        }
+
+        m_region->begin_mode(Ioss::STATE_TRANSIENT);
+        m_current_step = m_region->add_state(time);
+        m_region->begin_state(m_current_step);
+        
+        for (size_t i=0; i < m_fields.size(); i++) {
+	  const std::string &name = m_fields[i].m_name;
+	  boost::any *value = m_fields[i].m_value;
+	  stk::util::ParameterType::Type type = m_fields[i].m_type;
+          internal_write_parameter(m_region, name, *value, type);
+        }
+
+        m_region->end_state(m_current_step);
+        m_region->end_mode(Ioss::STATE_TRANSIENT);
+      }
+    }
+
     void OutputFile::write_output_mesh(const stk::mesh::BulkData& bulk_data)
     {
       if ( m_mesh_defined == false )
@@ -1720,7 +1825,7 @@ namespace stk {
 
     void OutputFile::add_global(const std::string &name, const stk::util::Parameter &param)
     {
-      std::pair<size_t, Ioss::Field::BasicType> parameter_type = stk::io::get_io_parameter_type(param);
+      std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(param.type, param.value);
       this->add_global(name, parameter_type.first, parameter_type.second);
     }
 
@@ -1751,7 +1856,7 @@ namespace stk {
 
     void OutputFile::write_global(const std::string &globalVarName, const stk::util::Parameter &param)
     {
-        internal_write_parameter(m_output_region, globalVarName, param);
+        internal_write_parameter(m_output_region, globalVarName, param.value, param.type);
     }
 
     void OutputFile::write_global(const std::string &globalVarName, std::vector<double>& globalVarData)

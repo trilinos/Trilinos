@@ -66,14 +66,14 @@ namespace {
 
     // Create history and heartbeat files...
     std::string history_filename = working_directory + type + ".history";
-    size_t hist = mesh_data.add_output(history_filename, stk::io::HISTORY);
+    size_t hist = mesh_data.add_heartbeat_output(history_filename, stk::io::BINARY);
 
     std::string heartbeat_filename = working_directory + type + ".heartbeat";
     Ioss::PropertyManager hb_props;
     hb_props.add(Ioss::Property("SHOW_LABELS",       false));
     hb_props.add(Ioss::Property("SHOW_LEGEND",       true));
 
-    size_t heart = mesh_data.add_output(heartbeat_filename, stk::io::HEARTBEAT, hb_props);
+    size_t heart = mesh_data.add_heartbeat_output(heartbeat_filename, stk::io::TEXT, hb_props);
     
     // Iterate all fields and set them as restart fields...
     const stk::mesh::FieldVector &fields = mesh_data.meta_data().get_fields();
@@ -117,8 +117,9 @@ namespace {
       // Define the global fields that will be written on each timestep.
       mesh_data.add_global(restart_index, input_field.get_name(), input_field.raw_storage()->name(), input_field.get_type());
       mesh_data.add_global(results_index, input_field.get_name(), input_field.raw_storage()->name(), input_field.get_type());
-      mesh_data.output(hist).add_global(input_field.get_name(), parameters.get_param(input_field.get_name()));
-      mesh_data.output(heart).add_global(input_field.get_name(), parameters.get_param(input_field.get_name()));
+      stk::util::Parameter &param = parameters.get_param(input_field.get_name());
+      mesh_data.add_heartbeat_global(hist,  input_field.get_name(), param.value, param.type);
+      mesh_data.add_heartbeat_global(heart, input_field.get_name(), param.value, param.type);
     }
 
     // ========================================================================
@@ -170,8 +171,8 @@ namespace {
           mesh_data.end_output_step(restart_index);
           mesh_data.end_output_step(results_index);
 
-	  mesh_data.output(hist).process_output(step, time);
-	  mesh_data.output(heart).process_output(step, time);
+	  mesh_data.process_heartbeat_output(hist,  step, time);
+	  mesh_data.process_heartbeat_output(heart, step, time);
 	}
       }
   }

@@ -36,11 +36,6 @@ namespace stk {
     class Selector;
   }
   namespace io {
-    enum DatabaseType {
-      HISTORY   = 1,
-      HEARTBEAT = 2
-    };
-
     static std::string CoordinateFieldName("coordinates");
 
     class OutputFile
@@ -124,30 +119,39 @@ namespace stk {
     };
 
     // ========================================================================    
-    class History {
-    public:
-      History(const std::string &filename, DatabaseType db_type, const Ioss::PropertyManager &properties, MPI_Comm comm);
-      ~History() {};
-      
-      Teuchos::RCP<Ioss::Region> io_region();
+    enum HeartbeatType {
+      TEXT = 1,
+      BINARY = 2
+    };
 
-      void add_global(const std::string &globalVarName, stk::util::Parameter &param);
+    struct HeartbeatVariable {
+      HeartbeatVariable(const std::string &name, boost::any *value, stk::util::ParameterType::Type type)
+	: m_name(name), m_value(value), m_type(type)
+      {}
+
+      std::string m_name;
+      boost::any *m_value;
+      stk::util::ParameterType::Type m_type;
+    };
+
+    class Heartbeat {
+    public:
+      Heartbeat(const std::string &filename, HeartbeatType db_type, const Ioss::PropertyManager &properties, MPI_Comm comm);
+      ~Heartbeat() {};
+      
+      void add_global(const std::string &globalVarName, boost::any &value, stk::util::ParameterType::Type type);
       void process_output(int step, double time);
 
     private:
-      void write_global(const std::string &globalVarName, const stk::util::Parameter &param);
-
-      std::vector<std::pair<std::string,stk::util::Parameter*> > m_fields;
+      std::vector<HeartbeatVariable> m_fields;
       Teuchos::RCP<Ioss::Region> m_region;
       
       int m_current_step;
       int m_processor;
-      bool m_fields_defined;
-
     };
 
     // ========================================================================    
->>>>>>> STK_IO: Concept for history/heartbeat files
+
     class StkMeshIoBroker {
       public:
         /**
@@ -477,14 +481,22 @@ namespace stk {
         bool is_meta_data_null() const
 
         // Add a history or heartbeat output...
-        size_t add_output(const std::string &filename, DatabaseType db_type,
-			  const Ioss::PropertyManager &properties = Ioss::PropertyManager());
+        size_t add_heartbeat_output(const std::string &filename, HeartbeatType db_type,
+				    const Ioss::PropertyManager &properties = Ioss::PropertyManager());
   
         // Access a defined history or heartbeat output...
-        History &output(size_t index=0)
+        void add_heartbeat_global(size_t index, const std::string &name,
+				  boost::any &value, stk::util::ParameterType::Type type)
         {
-	  ThrowRequire(index < m_history.size());
-	  return m_history[index];
+	  ThrowRequire(index < m_heartbeat.size());
+	  m_heartbeat[index].add_global(name, value, type);
+        }
+  
+        // Access a defined history or heartbeat output...
+        void process_heartbeat_output(size_t index, int step, double time)
+        {
+	  ThrowRequire(index < m_heartbeat.size());
+	  m_heartbeat[index].process_output(step, time);
         }
   
         bool meta_data_is_set() const
@@ -593,7 +605,7 @@ namespace stk {
         Teuchos::RCP<stk::mesh::BulkData>  m_bulk_data;
 
         Teuchos::RCP<stk::mesh::Selector> m_deprecated_selector;
-        std::vector<History> m_history;
+        std::vector<Heartbeat> m_heartbeat;
 
         /*!
          * An optional selector used for filtering entities on the
