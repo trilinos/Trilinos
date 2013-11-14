@@ -58,6 +58,7 @@
 #include <Zoltan2_CoordinatePartitioningGraph.hpp>
 #include <new>          // ::operator new[]
 #include <algorithm>    // std::sort
+#include <Zoltan2_Util.hpp>
 
 
 
