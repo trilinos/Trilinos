@@ -52,6 +52,8 @@ Level 1
  Computing Ac (MueLu::RAPFactory)
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
+ CheckMainDiagonal = 0   [default]
+ RepairMainDiagonal = 0   [default]
  
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
  relaxation: sweeps = 1
@@ -96,6 +98,8 @@ Level 2
  Computing Ac (MueLu::RAPFactory)
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
+ CheckMainDiagonal = 0   [default]
+ RepairMainDiagonal = 0   [default]
  
  Setup Smoother (MueLu::AmesosSmoother{type = Superlu})
  presmoother -> 

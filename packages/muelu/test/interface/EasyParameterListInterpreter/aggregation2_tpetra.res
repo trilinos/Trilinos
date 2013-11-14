@@ -53,6 +53,8 @@ Level 1
  Computing Ac (MueLu::RAPFactory)
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
+ CheckMainDiagonal = 0   [default]
+ RepairMainDiagonal = 0   [default]
  
  Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
  relaxation: type = Symmetric Gauss-Seidel
@@ -98,6 +100,8 @@ Level 2
  Computing Ac (MueLu::RAPFactory)
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
+ CheckMainDiagonal = 0   [default]
+ RepairMainDiagonal = 0   [default]
  
  Setup Smoother (MueLu::Amesos2Smoother{type = Superlu})
  presmoother -> 

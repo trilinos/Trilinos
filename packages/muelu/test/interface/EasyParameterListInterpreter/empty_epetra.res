@@ -36,6 +36,7 @@ Level 1
    MinNodesPerAggregate = 2   [default]
    UseOnePtAggregationAlgorithm = 1   [default]
    UseSmallAggregatesAggregationAlgorithm = 0   [default]
+   UsePreserveDirichletAggregationAlgorithm = 0   [default]
    UseUncoupledAggregationAlgorithm = 1   [default]
    UseMaxLinkAggregationAlgorithm = 1   [default]
    UseIsolatedNodeAggregationAlgorithm = 1   [default]
@@ -62,6 +63,8 @@ Level 1
  Computing Ac (MueLu::RAPFactory)
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
+ CheckMainDiagonal = 0   [default]
+ RepairMainDiagonal = 0   [default]
  
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
  relaxation: sweeps = 1
@@ -90,6 +93,7 @@ Level 2
    MinNodesPerAggregate = 2   [default]
    UseOnePtAggregationAlgorithm = 1   [default]
    UseSmallAggregatesAggregationAlgorithm = 0   [default]
+   UsePreserveDirichletAggregationAlgorithm = 0   [default]
    UseUncoupledAggregationAlgorithm = 1   [default]
    UseMaxLinkAggregationAlgorithm = 1   [default]
    UseIsolatedNodeAggregationAlgorithm = 1   [default]
@@ -116,6 +120,8 @@ Level 2
  Computing Ac (MueLu::RAPFactory)
  Keep AP Pattern = 0   [default]
  Keep RAP Pattern = 0   [default]
+ CheckMainDiagonal = 0   [default]
+ RepairMainDiagonal = 0   [default]
  
  Setup Smoother (MueLu::AmesosSmoother{type = Superlu})
  presmoother -> 

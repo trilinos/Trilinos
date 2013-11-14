@@ -57,6 +57,7 @@ Level 1
       MinNodesPerAggregate = 2   [default]
       UseOnePtAggregationAlgorithm = 1   [default]
       UseSmallAggregatesAggregationAlgorithm = 0   [default]
+      UsePreserveDirichletAggregationAlgorithm = 0   [default]
       UseUncoupledAggregationAlgorithm = 1   [default]
       UseMaxLinkAggregationAlgorithm = 1   [default]
       UseIsolatedNodeAggregationAlgorithm = 1   [default]
@@ -86,6 +87,8 @@ Level 1
 
    Keep AP Pattern = 0   [default]
    Keep RAP Pattern = 0   [default]
+   CheckMainDiagonal = 0   [default]
+   RepairMainDiagonal = 0   [default]
 
   startLevel = 1
   minRowsPerProcessor = 2000
@@ -137,6 +140,7 @@ Level 2
       MinNodesPerAggregate = 2   [default]
       UseOnePtAggregationAlgorithm = 1   [default]
       UseSmallAggregatesAggregationAlgorithm = 0   [default]
+      UsePreserveDirichletAggregationAlgorithm = 0   [default]
       UseUncoupledAggregationAlgorithm = 1   [default]
       UseMaxLinkAggregationAlgorithm = 1   [default]
       UseIsolatedNodeAggregationAlgorithm = 1   [default]
@@ -166,6 +170,8 @@ Level 2
 
    Keep AP Pattern = 0   [default]
    Keep RAP Pattern = 0   [default]
+   CheckMainDiagonal = 0   [default]
+   RepairMainDiagonal = 0   [default]
 
   startLevel = 1
   minRowsPerProcessor = 2000
@@ -217,6 +223,7 @@ Level 3
       MinNodesPerAggregate = 2   [default]
       UseOnePtAggregationAlgorithm = 1   [default]
       UseSmallAggregatesAggregationAlgorithm = 0   [default]
+      UsePreserveDirichletAggregationAlgorithm = 0   [default]
       UseUncoupledAggregationAlgorithm = 1   [default]
       UseMaxLinkAggregationAlgorithm = 1   [default]
       UseIsolatedNodeAggregationAlgorithm = 1   [default]
@@ -246,6 +253,8 @@ Level 3
 
    Keep AP Pattern = 0   [default]
    Keep RAP Pattern = 0   [default]
+   CheckMainDiagonal = 0   [default]
+   RepairMainDiagonal = 0   [default]
 
   startLevel = 1
   minRowsPerProcessor = 2000
@@ -294,3 +303,4 @@ Level 3
 
  Smoother (level 3) pre  : SuperLU solver interface
  Smoother (level 3) post : no smoother
+
