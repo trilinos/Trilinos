@@ -40,14 +40,6 @@
 //@HEADER
 */
 
-//-----------------------------------------------------
-// Ifpack2::ILUT is a translation of the Aztec ILUT
-// implementation. The Aztec ILUT implementation was
-// written by Ray Tuminaro.
-// See notes below, in the Ifpack2::ILUT::Compute method.
-// ABW.
-//------------------------------------------------------
-
 #ifndef IFPACK2_ILUT_DEF_HPP
 #define IFPACK2_ILUT_DEF_HPP
 
@@ -113,7 +105,7 @@ namespace Ifpack2 {
 
 
 template <class MatrixType>
-ILUT<MatrixType>::ILUT(const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& A) :
+ILUT<MatrixType>::ILUT (const Teuchos::RCP<const row_matrix_type>& A) :
   A_ (A),
   Athresh_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
   Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ()),
@@ -121,28 +113,23 @@ ILUT<MatrixType>::ILUT(const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,lo
   LevelOfFill_ (1),
   DropTolerance_ (ilutDefaultDropTolerance<scalar_type> ()),
   Condest_ (-Teuchos::ScalarTraits<magnitude_type>::one ()),
-  InitializeTime_(0.0),
-  ComputeTime_(0.0),
-  ApplyTime_(0.0),
-  NumInitialize_(0),
-  NumCompute_(0),
-  NumApply_(0),
+  InitializeTime_ (0.0),
+  ComputeTime_ (0.0),
+  ApplyTime_ (0.0),
+  NumInitialize_ (0),
+  NumCompute_ (0),
+  NumApply_ (0),
   IsInitialized_ (false),
   IsComputed_ (false)
+{}
+
+template <class MatrixType>
+ILUT<MatrixType>::~ILUT()
+{}
+
+template <class MatrixType>
+void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    A_.is_null (), std::runtime_error,
-    "Ifpack2::ILUT: Input matrix is null.");
-}
-
-
-template <class MatrixType>
-ILUT<MatrixType>::~ILUT() {
-}
-
-
-template <class MatrixType>
-void ILUT<MatrixType>::setParameters(const Teuchos::ParameterList& params) {
   using Teuchos::as;
   using Teuchos::Exceptions::InvalidParameterName;
   using Teuchos::Exceptions::InvalidParameterType;
@@ -156,6 +143,7 @@ void ILUT<MatrixType>::setParameters(const Teuchos::ParameterList& params) {
 
   bool gotFillLevel = false;
   try {
+    // Try getting the fill level as an int.
     fillLevel = params.get<int> ("fact: ilut level-of-fill");
     gotFillLevel = true;
   }
@@ -269,7 +257,11 @@ void ILUT<MatrixType>::setParameters(const Teuchos::ParameterList& params) {
 
 template <class MatrixType>
 Teuchos::RCP<const Teuchos::Comm<int> >
-ILUT<MatrixType>::getComm() const{
+ILUT<MatrixType>::getComm () const {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (), std::runtime_error, "Ifpack2::ILUT::getComm: "
+    "The matrix is null.  Please call setMatrix() with a nonnull input "
+    "before calling this method.");
   return A_->getComm ();
 }
 
@@ -282,72 +274,76 @@ ILUT<MatrixType>::getMatrix() const {
 
 
 template <class MatrixType>
-Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >
-ILUT<MatrixType>::getDomainMap() const
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
+                               typename MatrixType::global_ordinal_type,
+                               typename MatrixType::node_type> >
+ILUT<MatrixType>::getDomainMap () const
 {
-  return A_->getDomainMap();
+  return A_->getDomainMap ();
 }
 
 
 template <class MatrixType>
-Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >
-ILUT<MatrixType>::getRangeMap() const
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
+                               typename MatrixType::global_ordinal_type,
+                               typename MatrixType::node_type> >
+ILUT<MatrixType>::getRangeMap () const
 {
-  return A_->getRangeMap();
+  return A_->getRangeMap ();
 }
 
 
 template <class MatrixType>
-bool ILUT<MatrixType>::hasTransposeApply() const {
+bool ILUT<MatrixType>::hasTransposeApply () const {
   return true;
 }
 
 
 template <class MatrixType>
-int ILUT<MatrixType>::getNumInitialize() const {
-  return(NumInitialize_);
+int ILUT<MatrixType>::getNumInitialize () const {
+  return NumInitialize_;
 }
 
 
 template <class MatrixType>
-int ILUT<MatrixType>::getNumCompute() const {
-  return(NumCompute_);
+int ILUT<MatrixType>::getNumCompute () const {
+  return NumCompute_;
 }
 
 
 template <class MatrixType>
-int ILUT<MatrixType>::getNumApply() const {
-  return(NumApply_);
+int ILUT<MatrixType>::getNumApply () const {
+  return NumApply_;
 }
 
 
 template <class MatrixType>
-double ILUT<MatrixType>::getInitializeTime() const {
-  return(InitializeTime_);
+double ILUT<MatrixType>::getInitializeTime () const {
+  return InitializeTime_;
 }
 
 
 template<class MatrixType>
-double ILUT<MatrixType>::getComputeTime() const {
-  return(ComputeTime_);
+double ILUT<MatrixType>::getComputeTime () const {
+  return ComputeTime_;
 }
 
 
 template<class MatrixType>
-double ILUT<MatrixType>::getApplyTime() const {
-  return(ApplyTime_);
+double ILUT<MatrixType>::getApplyTime () const {
+  return ApplyTime_;
 }
 
 
 template<class MatrixType>
-global_size_t ILUT<MatrixType>::getGlobalNumEntries() const {
-  return(L_->getGlobalNumEntries() + U_->getGlobalNumEntries());
+global_size_t ILUT<MatrixType>::getGlobalNumEntries () const {
+  return L_->getGlobalNumEntries () + U_->getGlobalNumEntries ();
 }
 
 
 template<class MatrixType>
-size_t ILUT<MatrixType>::getNodeNumEntries() const {
-  return(L_->getNodeNumEntries() + U_->getNodeNumEntries());
+size_t ILUT<MatrixType>::getNodeNumEntries () const {
+  return L_->getNodeNumEntries () + U_->getNodeNumEntries ();
 }
 
 
@@ -357,8 +353,8 @@ ILUT<MatrixType>::
 computeCondEst (CondestType CT,
                 local_ordinal_type MaxIters,
                 magnitude_type Tol,
-                const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &matrix) {
-
+                const Teuchos::Ptr<const row_matrix_type>& matrix)
+{
   if (! isComputed ()) {
     return -STM::one ();
   }
@@ -366,15 +362,43 @@ computeCondEst (CondestType CT,
   if (Condest_ == -STM::one ()) {
     Condest_ = Ifpack2::Condest(*this, CT, MaxIters, Tol, matrix);
   }
-  return(Condest_);
+  return Condest_;
 }
 
 
 template<class MatrixType>
-void ILUT<MatrixType>::initialize() {
+void ILUT<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
+{
+  // It's legal for A to be null; in that case, you may not call
+  // initialize() until calling setMatrix() with a nonnull input.
+  // Regardless, setting the matrix invalidates any previous
+  // factorization.
+  IsInitialized_ = false;
+  IsComputed_ = false;
+  L_ = Teuchos::null;
+  U_ = Teuchos::null;
+  A_ = A;
+}
+
+
+template<class MatrixType>
+void ILUT<MatrixType>::initialize ()
+{
   Teuchos::Time timer ("ILUT::initialize");
   {
     Teuchos::TimeMonitor timeMon (timer);
+
+    // Check that the matrix is nonnull.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      A_.is_null (), std::runtime_error, "Ifpack2::ILUT::initialize: "
+      "You must call setMatrix() with a nonnull input in order to call "
+      "initialize().");
+
+    // Check in serial or one-process mode if the matrix is square.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      A_->getComm ()->getSize () == 1 && A_->getNodeNumRows() != A_->getNodeNumCols(),
+      std::runtime_error, "Ifpack2::ILUT::initialize: In serial or one-process "
+      "mode, the input matrix must be square.");
 
     // clear any previous allocation
     IsInitialized_ = false;
@@ -382,14 +406,9 @@ void ILUT<MatrixType>::initialize() {
     L_ = Teuchos::null;
     U_ = Teuchos::null;
 
-    // check only in serial if the matrix is square
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      getComm ()->getSize () == 1 && A_->getNodeNumRows() != A_->getNodeNumCols(),
-      std::runtime_error, "Ifpack2::ILUT::initialize: In serial or one-process "
-      "mode, the input matrix must be square.");
+    IsInitialized_ = true;
+    ++NumInitialize_;
   }
-  IsInitialized_ = true;
-  ++NumInitialize_;
   InitializeTime_ += timer.totalElapsedTime ();
 }
 
@@ -403,7 +422,8 @@ scalar_mag (const ScalarType& s)
 
 
 template<class MatrixType>
-void ILUT<MatrixType>::compute() {
+void ILUT<MatrixType>::compute ()
+{
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
@@ -740,11 +760,11 @@ void ILUT<MatrixType>::compute() {
 
 template <class MatrixType>
 void ILUT<MatrixType>::
-apply (const Tpetra::MultiVector<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& X,
-       Tpetra::MultiVector<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& Y,
+apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
+       Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
        Teuchos::ETransp mode,
-       typename MatrixType::scalar_type alpha,
-       typename MatrixType::scalar_type beta) const
+       scalar_type alpha,
+       scalar_type beta) const
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
