@@ -16,7 +16,7 @@
     \brief Provides interfrace for limited-memory secant operators.
 */
 
-#include <Teuchos_ScalarTraits.hpp>
+#include "ROL_Types.hpp"
 
 namespace ROL {
 
@@ -36,7 +36,6 @@ class Secant {
 private:
 
   Teuchos::RCP<SecantState<Real> > state_; // Secant State
-  Real eps_;                               // Numerical Tolerance
 
 public:
 
@@ -44,8 +43,6 @@ public:
 
   // Constructor
   Secant( int M = 10 ) {
-    eps_ = Teuchos::ScalarTraits<Real>::eps();
-
     state_ = Teuchos::rcp( new SecantState<Real> ); 
     state_->storage = M;
     state_->current = -1;
@@ -63,7 +60,7 @@ public:
     gradDiff->axpy(-1.0,gp);
 
     Real sy = s.dot(*gradDiff);
-    if (sy > this->eps_*snorm*snorm) {
+    if (sy > ROL_EPSILON*snorm*snorm) {
       if (this->state_->current < this->state_->storage-1) {
         this->state_->current++;                                      // Increment Storage
       }

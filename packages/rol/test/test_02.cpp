@@ -45,10 +45,10 @@ int main(int argc, char *argv[]) {
     //ROL::EDescent edesc = ROL::DESCENT_SECANTPRECOND;
 
     // Define Secant Type
-    ROL::ESecant esec = ROL::SECANT_LBFGS;
-    //ROL::ESecant esec = ROL::SECANT_LDFP;
+    //ROL::ESecant esec = ROL::SECANT_LBFGS;
+    ROL::ESecant esec = ROL::SECANT_LDFP;
     //ROL::ESecant esec = ROL::SECANT_LSR1;
-    //ROL::ESecant esec = ROL::SECANT_LBARZILAIBORWEIN;
+    //ROL::ESecant esec = ROL::SECANT_BARZILAIBORWEIN;
     int L        = 10;
     int BBtype   = 1;
 
@@ -62,19 +62,6 @@ int main(int argc, char *argv[]) {
     ROL::ECurvatureCondition econd = ROL::CURVATURECONDITION_WOLFE;
     //ROL::ECurvatureCondition econd = ROL::CURVATURECONDITION_STRONGWOLFE;
     //ROL::ECurvatureCondition econd = ROL::CURVATURECONDITION_GOLDSTEIN;
-
-    int maxit    = 20;
-    RealT rho    = 0.5;
-    RealT c1     = 1.e-4;
-    RealT c2     = 0.9;
-    RealT tol    = 1.e-8;
-
-    RealT CGtol1 = 1.e-4;
-    RealT CGtol2 = 1.e-2;
-    int maxitCG  = 200;
-
-    ROL::LineSearchStep<RealT> LS_step(els,econd,edesc,maxit,c1,c2,tol,rho,
-                                       esec,L,BBtype,CGtol1,CGtol2,maxitCG);
     /* END LINE SEARCH STEP DEFINITION */
 
     /* BEGIN TRUST REGION STEP DEFINTION */
@@ -82,28 +69,10 @@ int main(int argc, char *argv[]) {
     ROL::ETrustRegion etr = ROL::TRUSTREGION_TRUNCATEDCG;
     //ROL::ETrustRegion etr = ROL::TRUSTREGION_DOGLEG;
     //ROL::ETrustRegion etr = ROL::TRUSTREGION_DOUBLEDOGLEG;
-
-    maxit        = 200;
-    RealT tol1   = 1.e-4;
-    RealT tol2   = 1.e-2;
-    RealT del    = -1.0;
-    RealT delmin = 1.e-8;
-    RealT delmax = 5000.0;
-    RealT eta0   = 0.05;
-    RealT eta1   = 0.05;
-    RealT eta2   = 0.9;
-    RealT gamma0 = 0.0625;
-    RealT gamma1 = 0.25;
-    RealT gamma2 = 2.50;
-    RealT TRsafe = 1.0;
-
-    ROL::TrustRegionStep<RealT> TR_step(etr,edesc,maxit,tol1,tol2,del,delmin,delmax,
-                                        eta0,eta1,eta2,gamma0,gamma1,gamma2,TRsafe,
-                                        esec,L,BBtype);
     /* END TRUST REGION STEP DEFINITION */ 
 
     // Define Status Test
-    ROL::StatusTest<RealT> status(1.e-8,1.e-16,100);    
+    ROL::StatusTest<RealT> status(1.e-6,1.e-12,100);    
 
     for ( ROL::ETestObjectives objFunc = ROL::TESTOBJECTIVES_ROSENBROCK; objFunc < ROL::TESTOBJECTIVES_LAST; objFunc++ ) {
       *outStream << "\n\n" << ROL::ETestObjectivesToString(objFunc) << "\n\n";
@@ -146,6 +115,17 @@ int main(int argc, char *argv[]) {
       obj->checkHessVec(x,y,true);
 
       // RUN LINE SEARCH
+      int maxit    = 20;
+      RealT rho    = 0.5;
+      RealT c1     = 1.e-4;
+      RealT c2     = 0.9;
+      RealT tol    = 1.e-8;
+      RealT CGtol1 = 1.e-4;
+      RealT CGtol2 = 1.e-2;
+      int maxitCG  = 200;
+
+      ROL::LineSearchStep<RealT> LS_step(els,econd,edesc,maxit,c1,c2,tol,rho,
+                                         esec,L,BBtype,CGtol1,CGtol2,maxitCG);
       x.set(x0);
       ROL::DefaultAlgorithm<RealT> LS_algo(LS_step,status);
       LS_algo.run(x, *obj);
@@ -154,6 +134,23 @@ int main(int argc, char *argv[]) {
       *outStream << "\nNorm of Error: " << e.norm() << "\n";
 
       // RUN TRUST REGION
+      maxit        = 200;
+      RealT tol1   = 1.e-4;
+      RealT tol2   = 1.e-2;
+      RealT del    = -1.0;
+      RealT delmin = 1.e-8;
+      RealT delmax = 5000.0;
+      RealT eta0   = 0.05;
+      RealT eta1   = 0.05;
+      RealT eta2   = 0.9;
+      RealT gamma0 = 0.0625;
+      RealT gamma1 = 0.25;
+      RealT gamma2 = 2.50;
+      RealT TRsafe = 1.0;
+
+      ROL::TrustRegionStep<RealT> TR_step(etr,edesc,maxit,tol1,tol2,del,delmin,delmax,
+                                          eta0,eta1,eta2,gamma0,gamma1,gamma2,TRsafe,
+                                          esec,L,BBtype);
       x.set(x0);
       ROL::DefaultAlgorithm<RealT> TR_algo(TR_step,status);
       TR_algo.run(x, *obj);
