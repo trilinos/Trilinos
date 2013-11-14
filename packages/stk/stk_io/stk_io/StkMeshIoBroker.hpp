@@ -474,7 +474,8 @@ namespace stk {
 
         void get_global_variable_names(std::vector<std::string> &names);
         double get_global(const std::string &globalVarName);
-        void get_global(const std::string &globalVarName, stk::util::Parameter &param);
+        void get_global(const std::string &globalVarName,
+			const boost::any &value, stk::util::ParameterType::Type type);
         void get_global(const std::string &globalVarName, int &globalVar);
         void get_global(const std::string &globalVarName, double &globalVar);
         void get_global(const std::string &globalVarName, std::vector<double> &globalVar);
@@ -483,18 +484,11 @@ namespace stk {
         double process_restart_input(int step);
         double process_restart_input(double time);
 
-        // QUESTIONS: 
-        // * Is there a separate input restart file, or is it just the mesh?
-        //   -- If reading data from the mesh also, then may need both.
-        // * What state used for input/output -- pass as argument to process_restart?
-
-        bool is_meta_data_null() const
-
+        // ========================================================================
         // Add a history or heartbeat output...
         size_t add_heartbeat_output(const std::string &filename, HeartbeatType db_type,
 				    const Ioss::PropertyManager &properties = Ioss::PropertyManager());
   
-        // Access a defined history or heartbeat output...
         void add_heartbeat_global(size_t index, const std::string &name,
 				  boost::any &value, stk::util::ParameterType::Type type)
         {
@@ -502,17 +496,18 @@ namespace stk {
 	  m_heartbeat[index]->add_global(name, value, type);
         }
   
-        // Access a defined history or heartbeat output...
         void process_heartbeat_output(size_t index, int step, double time)
         {
 	  ThrowRequire(index < m_heartbeat.size());
 	  m_heartbeat[index]->process_output(step, time);
         }
   
-        bool meta_data_is_set() const
+        // ========================================================================
+        bool is_meta_data_null() const
         {
           return Teuchos::is_null(m_meta_data);
         }
+
         bool is_bulk_data_null() const
         {
           return Teuchos::is_null(m_bulk_data);

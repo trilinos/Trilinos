@@ -177,49 +177,50 @@ namespace {
     }
 
   void internal_read_parameter(Teuchos::RCP<Ioss::Region> input_region,
-			       const std::string &globalVarName, stk::util::Parameter &parameter)
+			       const std::string &globalVarName,
+			       const boost::any &any_value, stk::util::ParameterType::Type type)
     {
-      switch(parameter.type)
+      switch(type)
 	{
 	case stk::util::ParameterType::INTEGER: {
 	  int value = 0;
 	  internal_read_global(input_region, globalVarName, value, Ioss::Field::INTEGER);
-	  parameter.value = value;
+	  any_value = value;
 	  break;
 	}
 
 	case stk::util::ParameterType::INT64: {
 	  int64_t value = 0;
 	  internal_read_global(input_region, globalVarName, value, Ioss::Field::INT64);
-	  parameter.value = value;
+	  any_value = value;
 	  break;
 	}
 
 	case stk::util::ParameterType::DOUBLE: {
 	  double value = 0;
 	  internal_read_global(input_region, globalVarName, value, Ioss::Field::REAL);
-	  parameter.value = value;
+	  any_value = value;
 	  break;
 	}
 
 	case stk::util::ParameterType::DOUBLEVECTOR: {
 	  std::vector<double> vec;
 	  internal_read_global(input_region, globalVarName, vec, Ioss::Field::REAL);
-	  parameter.value = vec;
+	  any_value = vec;
 	  break;
 	}
 
 	case stk::util::ParameterType::INTEGERVECTOR: {
 	  std::vector<int> vec;
 	  internal_read_global(input_region, globalVarName, vec, Ioss::Field::INTEGER);
-	  parameter.value = vec;
+	  any_value = vec;
 	  break;
 	}
 
 	case stk::util::ParameterType::INT64VECTOR: {
 	  std::vector<int64_t> vec;
 	  internal_read_global(input_region, globalVarName, vec, Ioss::Field::INT64);
-	  parameter.value = vec;
+	  any_value = vec;
 	  break;
 	}
 
@@ -1471,9 +1472,10 @@ namespace stk {
         m_input_region->field_describe(Ioss::Field::TRANSIENT, &names);
     }
 
-    void StkMeshIoBroker::get_global(const std::string &globalVarName, stk::util::Parameter &param)
+    void StkMeshIoBroker::get_global(const std::string &globalVarName,
+				     const boost::any &value, stk::util::ParameterType::Type type)
     {
-         internal_read_parameter(m_input_region, globalVarName, param);
+        internal_read_parameter(m_input_region, globalVarName, value, type);
     }
 
     void StkMeshIoBroker::get_global(const std::string &globalVarName, std::vector<double> &globalVar)
@@ -2105,65 +2107,23 @@ namespace stk {
       }
     }
 
-    void History::add_global(const std::string &name, stk::util::Parameter &param)
+    void History::add_global(const std::string &name, const boost::any &value, stk::util::ParameterType::Type type)
     {
       if (m_processor == 0) {
         // Determine name and type of parameter...
-        std::pair<size_t, Ioss::Field::BasicType> parameter_type = stk::io::get_io_parameter_type(param);
+        std::pair<size_t, Ioss::Field::BasicType> parameter_type =
+	  stk::io::get_io_parameter_size_and_type(type, value);
         internal_add_global(m_region, name, parameter_type.first, parameter_type.second);
         std::pair<std::string,stk::util::Parameter*> name_param(name, &param);
         m_fields.push_back(name_param);
       }
     }
 
-    void History::write_global(const std::string &globalVarName, const stk::util::Parameter &parameter)
+    void History::write_global(const std::string &globalVarName,
+			       const boost::any &any_value, stk::util::ParameterType::Type type)
     {
       if (m_processor == 0) {
-        switch(parameter.type)
-          {
-          case stk::util::ParameterType::INTEGER: {
-            int value = boost::any_cast<int>(parameter.value);
-            internal_write_global(m_region, globalVarName, value);
-            break;
-          }
-
-          case stk::util::ParameterType::INT64: {
-            int64_t value = boost::any_cast<int64_t>(parameter.value);
-            internal_write_global(m_region, globalVarName, value);
-            break;
-          }
-            
-          case stk::util::ParameterType::DOUBLE: {
-            double value = boost::any_cast<double>(parameter.value);
-            internal_write_global(m_region, globalVarName, value);
-            break;
-          }
-            
-          case stk::util::ParameterType::DOUBLEVECTOR: {
-            std::vector<double> vec = boost::any_cast<std::vector<double> >(parameter.value);
-            internal_write_global(m_region, globalVarName, vec);
-            break;
-          }
-            
-          case stk::util::ParameterType::INTEGERVECTOR: {
-            std::vector<int> vec = boost::any_cast<std::vector<int> >(parameter.value);
-            internal_write_global(m_region, globalVarName, vec);
-            break;
-          }
-              
-          case stk::util::ParameterType::INT64VECTOR: {
-            std::vector<int64_t> vec = boost::any_cast<std::vector<int64_t> >(parameter.value);
-            internal_write_global(m_region, globalVarName, vec);
-            break;
-          }
-            
-          default: {
-            std::cerr << "WARNING: '" << globalVarName
-                      << "' is not a supported type. It's value cannot be output."
-                      << std::endl;
-            break;
-          }
-          }
+	internal_write_parameter(m_region, globalVarName, any_value, type);
       }
     }
 
