@@ -93,7 +93,7 @@ namespace MueLu {
 
     //! @name Build methods.
     //@{
-    void Build(Level &fineLevel, Level &coarseLevel) const;
+    void Build(Level& fineLevel, Level& coarseLevel) const;
     //@}
 
     //! @name Handling of user-defined transfer factories
@@ -102,17 +102,6 @@ namespace MueLu {
     //! Indicate that the restriction operator action should be implicitly defined by the transpose of the prolongator.
     void SetImplicitTranspose(bool const &implicit) {
       implicitTranspose_ = implicit;
-    }
-
-    //! Indicate that zero entries on the diagonal of Ac shall be repaired (i.e. if A(i,i) == 0.0 set A(i,i) = 1.0)
-    void SetRepairZeroDiagonal(bool const &repairZeroDiagonals) {
-      repairZeroDiagonals_ = repairZeroDiagonals;
-      if (repairZeroDiagonals_) checkAc_ = true; // make sure that plausibility check is performed. Otherwise SetRepairZeroDiagonal(true) has no effect.
-    }
-
-    //! Indicate that a simple plausibility check shall be done for Ac after building RAP
-    void SetPlausibilityCheck(bool const &checkAc) {
-      checkAc_ = checkAc;
     }
 
     //@}
@@ -135,23 +124,12 @@ namespace MueLu {
   private:
 
     //! @name internal plausibility check methods
-    void CheckMainDiagonal(RCP<Matrix> & Ac) const;
+    void CheckRepairMainDiagonal(RCP<Matrix>& Ac) const;
 
     //@{
 
     //! If true, the action of the restriction operator action is implicitly defined by the transpose of the prolongator.
     bool implicitTranspose_;
-
-    //! If true, perform a basic plausibility check on Ac (default = false)
-    //! note, that the repairZeroDiagonals_ flag is only valid for checkAc_ == true
-    mutable
-    bool checkAc_;
-
-    //! If true, the CheckMainDiagonal routine automatically repairs zero entries on main diagonal (default = false)
-    //! i.e. if A(i,i) == 0.0 set A(i,i) = 1.0
-    //! note, that the repairZeroDiagonals_ flag is only valid for checkAc_ == true
-    mutable
-    bool repairZeroDiagonals_;
 
     mutable
     bool hasDeclaredInput_;

@@ -67,22 +67,22 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RAPFactory()
-    : implicitTranspose_(false), checkAc_(false), repairZeroDiagonals_(false), hasDeclaredInput_(false) { }
+    : implicitTranspose_(false), hasDeclaredInput_(false) { }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<const ParameterList> RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< RCP<const FactoryBase> >("A",                Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
-    validParamList->set< RCP<const FactoryBase> >("P",                Teuchos::null, "Prolongator factory");
-    validParamList->set< RCP<const FactoryBase> >("R",                Teuchos::null, "Restrictor factory");
-    validParamList->set< RCP<const FactoryBase> >("AP Pattern",       Teuchos::null, "AP pattern factory");
-    validParamList->set< RCP<const FactoryBase> >("RAP Pattern",      Teuchos::null, "RAP pattern factory");
-    validParamList->set< bool >(                  "Keep AP Pattern",  false,         "Keep the AP pattern (for reuse)");
-    validParamList->set< bool >(                  "Keep RAP Pattern", false,         "Keep the RAP pattern (for reuse)");
+    validParamList->set< RCP<const FactoryBase> >("A",                 Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
+    validParamList->set< RCP<const FactoryBase> >("P",                 Teuchos::null, "Prolongator factory");
+    validParamList->set< RCP<const FactoryBase> >("R",                 Teuchos::null, "Restrictor factory");
+    validParamList->set< RCP<const FactoryBase> >("AP Pattern",        Teuchos::null, "AP pattern factory");
+    validParamList->set< RCP<const FactoryBase> >("RAP Pattern",       Teuchos::null, "RAP pattern factory");
+    validParamList->set< bool >                  ("Keep AP Pattern",   false,         "Keep the AP pattern (for reuse)");
+    validParamList->set< bool >                  ("Keep RAP Pattern",  false,         "Keep the RAP pattern (for reuse)");
 
-    validParamList->set< bool >(                  "CheckMainDiagonal", false,        "Check main diagonal for zeros (default = false).");
-    validParamList->set< bool >(                  "RepairMainDiagonal", false,       "Repair zeros on main diagonal (default = false).");
+    validParamList->set< bool >                  ("CheckMainDiagonal",  false,        "Check main diagonal for zeros (default = false).");
+    validParamList->set< bool >                  ("RepairMainDiagonal", false,       "Repair zeros on main diagonal (default = false).");
 
     return validParamList;
   }
@@ -101,41 +101,24 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const { // FIXME make fineLevel const
+  void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& fineLevel, Level& coarseLevel) const {
     {
       FactoryMonitor m(*this, "Computing Ac", coarseLevel);
 
       // Set "Keeps" from params
       const Teuchos::ParameterList& pL = GetParameterList();
-      if (pL.isParameter("Keep AP Pattern")  && pL.get<bool>("Keep AP Pattern"))
+      if (pL.get<bool>("Keep AP Pattern"))
         coarseLevel.Keep("AP Pattern",  this);
-      if (pL.isParameter("Keep RAP Pattern") && pL.get<bool>("Keep RAP Pattern"))
+      if (pL.get<bool>("Keep RAP Pattern"))
         coarseLevel.Keep("RAP Pattern", this);
-
-      // Extract parameters
-      if (pL.isParameter("CheckMainDiagonal") && pL.get<bool>("CheckMainDiagonal"))
-        checkAc_ = true;
-      if (pL.isParameter("RepairMainDiagonal") && pL.get<bool>("RepairMainDiagonal")) {
-        repairZeroDiagonals_ = true;
-        checkAc_ = true;
-      }
-
-      //
-      // Inputs: A, P
-      //
 
       RCP<Matrix> A = Get< RCP<Matrix> >(fineLevel,   "A");
       RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P");
-
-      //
-      // Build Ac = RAP
-      //
-
-      RCP<Matrix> AP;
+      RCP<Matrix> AP, Ac;
 
       // Reuse pattern if available (multiple solve)
-      if (coarseLevel.IsAvailable("AP Pattern", this)){
-        GetOStream(Runtime0, 0) << "Ac: Using previous AP pattern"<<std::endl;
+      if (coarseLevel.IsAvailable("AP Pattern", this)) {
+        GetOStream(Runtime0, 0) << "Ac: Using previous AP pattern" << std::endl;
         AP = Get< RCP<Matrix> >(coarseLevel, "AP Pattern");
       }
 
@@ -145,16 +128,15 @@ namespace MueLu {
         Set(coarseLevel, "AP Pattern", AP);
       }
 
-      bool doOptimizedStorage = !checkAc_; // Optimization storage option. If not modifying matrix later (inserting local values), allow optimization of storage.
-                                           // This is necessary for new faster Epetra MM kernels.
-
-      RCP<Matrix> Ac;
-
       // Reuse coarse matrix memory if available (multiple solve)
       if (coarseLevel.IsAvailable("RAP Pattern", this)) {
         GetOStream(Runtime0, 0) << "Ac: Using previous RAP pattern" << std::endl;
         Ac = Get< RCP<Matrix> >(coarseLevel, "RAP Pattern");
       }
+
+      // If we do not modify matrix later, allow optimization of storage.
+      // This is necessary for new faster Epetra MM kernels.
+      bool doOptimizedStorage = !pL.get<bool>("RepairMainDiagonal");
 
       if (implicitTranspose_) {
         SubFactoryMonitor m2(*this, "MxM: P' x (AP) (implicit)", coarseLevel);
@@ -162,7 +144,6 @@ namespace MueLu {
         Ac = Utils::Multiply(*P, true, *AP, false, Ac, GetOStream(Statistics2,0), true, doOptimizedStorage);
 
       } else {
-
         SubFactoryMonitor m2(*this, "MxM: R x (AP) (explicit)", coarseLevel);
 
         RCP<Matrix> R = Get< RCP<Matrix> >(coarseLevel, "R");
@@ -170,8 +151,7 @@ namespace MueLu {
 
       }
 
-      if (checkAc_)
-        CheckMainDiagonal(Ac);
+      CheckRepairMainDiagonal(Ac);
 
       RCP<ParameterList> params = rcp(new ParameterList());;
       params->set("printLoadBalancingInfo", true);
@@ -223,70 +203,68 @@ namespace MueLu {
 
   }
 
+  // Plausibility check: no zeros on diagonal
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CheckMainDiagonal(RCP<Matrix> & Ac) const {
-    // plausibility check: no zeros on diagonal
-    RCP<Vector> diagVec = VectorFactory::Build(Ac->getRowMap());
+  void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CheckRepairMainDiagonal(RCP<Matrix>& Ac) const {
+    const Teuchos::ParameterList& pL = GetParameterList();
+    bool repairZeroDiagonals = pL.get<bool>("RepairMainDiagonal");
+    bool checkAc             = pL.get<bool>("CheckMainDiagonal");
+
+    if (!checkAc && !repairZeroDiagonals)
+      return;
+
+    RCP<const Map> rowMap = Ac->getRowMap();
+
+    RCP<Vector> diagVec = VectorFactory::Build(rowMap);
     Ac->getLocalDiagCopy(*diagVec);
 
     SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
 
-    Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList());
-    p->set("DoOptimizeStorage",true);
-
-    RCP<Matrix> fixDiagMatrix = Teuchos::null;
-    if (repairZeroDiagonals_) fixDiagMatrix = MatrixFactory::Build(Ac->getRowMap(), 1);
+    Teuchos::RCP<Teuchos::ParameterList> optParams = Teuchos::rcp(new Teuchos::ParameterList());
+    optParams->set("DoOptimizeStorage", true);
 
     LO lZeroDiags = 0;
-    Teuchos::ArrayRCP< Scalar > diagVal = diagVec->getDataNonConst(0);
-    for (size_t r = 0; r < Ac->getRowMap()->getNodeNumElements(); r++) {
-      if (diagVal[r] == zero) {
+    Teuchos::ArrayRCP<Scalar> diagVal = diagVec->getDataNonConst(0);
+    for (size_t i = 0; i < rowMap->getNodeNumElements(); i++)
+      if (diagVal[i] == zero)
         lZeroDiags++;
 
-        if (repairZeroDiagonals_) {
-          GO grid = Ac->getRowMap()->getGlobalElement(r);
-          Teuchos::ArrayRCP<GO> indout(1,grid);
-          Teuchos::ArrayRCP<SC> valout(1, one);
-          fixDiagMatrix->insertGlobalValues(grid,indout.view(0, 1), valout.view(0, 1));
-        }
+    GO gZeroDiags;
+    sumAll(rowMap->getComm(), Teuchos::as<GO>(lZeroDiags), gZeroDiags);
+
+    if (repairZeroDiagonals && gZeroDiags) {
+      RCP<Matrix> fixDiagMatrix = MatrixFactory::Build(Ac->getRowMap(), 1);
+
+      Teuchos::Array<GO> inds(1);
+      Teuchos::Array<SC> vals(1);
+      for (size_t i = 0; i < rowMap->getNodeNumElements(); i++) {
+        inds[1] = rowMap->getGlobalElement(i);
+        vals[1] = one;
+
+        Ac->insertGlobalValues(inds[0], inds, vals);
       }
     }
 
-    if (repairZeroDiagonals_) {
-      Ac->fillComplete(p);
-      MueLu::Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd(*Ac, false, 1.0, *fixDiagMatrix, 1.0);
-
-      if (Ac->IsView("stridedMaps")) fixDiagMatrix->CreateView("stridedMaps", Ac);
-
-      Ac = Teuchos::null;     // free singular coarse level matrix
-      Ac = fixDiagMatrix;     // set fixed non-singular coarse level matrix
-    }
-
-    // call fillComplete with optimized storage option set to true
+    // We do not modify matrix later, allow optimization of storage.
     // This is necessary for new faster Epetra MM kernels.
-    Ac->fillComplete(p);
+    Ac->fillComplete(optParams);
 
     // print some output
-    if (IsPrint(Warnings0)) {
-      const RCP<const Teuchos::Comm<int> > & comm = Ac->getRowMap()->getComm();
-      GO lZeroDiagsGO = Teuchos::as<GO>(lZeroDiags); /* LO->GO conversion */
-      GO gZeroDiags   = 0;
-      sumAll(comm, lZeroDiagsGO, gZeroDiags);
-      if (repairZeroDiagonals_) GetOStream(Warnings0,0) << "RAPFactory (WARNING): repaired " << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
-      else                      GetOStream(Warnings0,0) << "RAPFactory (WARNING): found "    << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
-    }
+    if (IsPrint(Warnings0))
+      GetOStream(Warnings0,0) << "RAPFactory (WARNING): " << (repairZeroDiagonals ? "repaired " : "found ")
+          << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
 
-#if 0 // only for debugging
-    // check whether Ac has been repaired...
+#ifdef HAVE_MUELU_DEBUG
+    // Check that Ac has been repaired
     Ac->getLocalDiagCopy(*diagVec);
-    Teuchos::ArrayRCP< Scalar > diagVal2 = diagVec->getDataNonConst(0);
-    for (size_t r = 0; r < Ac->getRowMap()->getNodeNumElements(); r++) {
-      if (diagVal2[r] == zero) {
+    diagVal = diagVec->getDataNonConst(0);
+    for (size_t i = 0; i < rowMap->getNodeNumElements(); i++) {
+      if (diagVal[i] == zero) {
         std::cout << "Error: there are zeros left on diagonal after repair..." << std::endl;
+        break;
       }
     }
 #endif
-
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
