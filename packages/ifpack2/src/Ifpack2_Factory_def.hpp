@@ -109,7 +109,8 @@ Factory::create (const std::string& precType,
     prec = rcp (new Diagonal<MatrixType> (matrix));
   }
   else if (precTypeUpper == "SCHWARZ") {
-    prec = rcp (new AdditiveSchwarz<MatrixType,ILUT<MatrixType> > (matrix, overlap));
+    typedef ILUT<MatrixType> inner_solver_type;
+    prec = rcp (new AdditiveSchwarz<MatrixType, inner_solver_type> (matrix, overlap));
   }
   else if (precTypeUpper == "KRYLOV") {
     prec = rcp (new Krylov<MatrixType, prec_base_type> (matrix));

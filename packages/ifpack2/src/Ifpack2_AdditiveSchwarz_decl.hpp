@@ -45,8 +45,6 @@
 
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_Preconditioner.hpp"
-#include "Ifpack2_Parameters.hpp"
-
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Map.hpp"
@@ -55,6 +53,8 @@
 #include "Ifpack2_OverlappingRowMatrix_decl.hpp"
 #include "Ifpack2_ReorderFilter_decl.hpp"
 #include "Ifpack2_SingletonFilter_decl.hpp"
+
+#include "Ifpack2_Details_NestedPreconditioner.hpp"
 
 
 namespace Ifpack2 {
@@ -135,27 +135,32 @@ could get around that by adding a method to AdditiveSchwarz that lets
 the user supply an arbitrary Preconditioner subclass instance for the
 subdomain solver.
 */
-template<class MatrixType,class LocalInverseType>
+template<class MatrixType, class LocalInverseType>
 class AdditiveSchwarz :
     virtual public Preconditioner<typename MatrixType::scalar_type,
                                   typename MatrixType::local_ordinal_type,
                                   typename MatrixType::global_ordinal_type,
-                                  typename MatrixType::node_type> {
+                                  typename MatrixType::node_type>,
+    virtual public Details::NestedPreconditioner<Preconditioner<typename MatrixType::scalar_type,
+                                                                typename MatrixType::local_ordinal_type,
+                                                                typename MatrixType::global_ordinal_type,
+                                                                typename MatrixType::node_type> >
+{
 public:
   //! \name Typedefs
   //@{
 
   //! The type of the entries of the input MatrixType.
-  typedef typename MatrixType::scalar_type         scalar_type;
+  typedef typename MatrixType::scalar_type scalar_type;
 
   //! The type of local indices in the input MatrixType.
-  typedef typename MatrixType::local_ordinal_type  local_ordinal_type;
+  typedef typename MatrixType::local_ordinal_type local_ordinal_type;
 
   //! The type of global indices in the input MatrixType.
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
 
   //! The type of the Kokkos Node used by the input MatrixType.
-  typedef typename MatrixType::node_type           node_type;
+  typedef typename MatrixType::node_type node_type;
 
   //! The type of the magnitude (absolute value) of a matrix entry.
   typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
@@ -170,7 +175,6 @@ public:
                                      local_ordinal_type,
                                      global_ordinal_type,
                                      node_type> row_matrix_type;
-
   //@}
   // \name Deprecated typedefs
   //@{
@@ -236,6 +240,31 @@ public:
          scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //@}
+
+  /// \brief Set the inner preconditioner.
+  ///
+  /// Most users do not need to call this method.  Factory will handle
+  /// calling this method if necessary.  One case in which users might
+  /// need to call this method, is if they implement their own
+  /// subdomain solver as a subclass of Preconditioner, and want to
+  /// use that subdomain solver in this class.
+  ///
+  /// \param innerPrec [in/out] The inner preconditioner.  Its matrix
+  ///   (if it has one) may be replaced by a matrix specified by the
+  ///   outer (this) preconditioner.
+  ///
+  /// \warning CIRCULAR DEPENDENCIES ARE FORBIDDEN.  You may NOT give
+  ///   this object (<tt>*this</tt>) to itself as an inner solver.
+  ///   You MAY use an inner solver of the same TYPE as this object
+  ///   (as long as this makes sense mathematically), but it must be a
+  ///   different instance.
+  ///
+  /// \pre <tt>&*innerPrec != this</tt>.
+  virtual void
+  setInnerPreconditioner (const Teuchos::RCP<Preconditioner<scalar_type,
+                                                            local_ordinal_type,
+                                                            global_ordinal_type,
+                                                            node_type> >& innerPrec);
 
   //! The input matrix.
   virtual Teuchos::RCP<const row_matrix_type> getMatrix() const;
@@ -331,7 +360,11 @@ private:
                               local_ordinal_type,
                               global_ordinal_type,
                               node_type> MV;
-
+  //! Specialization of Preconditioner.
+  typedef Preconditioner<scalar_type,
+                         local_ordinal_type,
+                         global_ordinal_type,
+                         node_type> prec_type;
 protected:
   //! Copy constructor (unimplemented; do not use)
   AdditiveSchwarz (const AdditiveSchwarz& RHS);
@@ -347,11 +380,11 @@ protected:
   //! The overlapping matrix.
   Teuchos::RCP<OverlappingRowMatrix<row_matrix_type> > OverlappingMatrix_;
 
-  //! Localized version of Matrix_ or OverlappingMatrix_.
-  // CMS: Probably not a great idea, but this will remove the Local/Subdomain conflict here
-  Teuchos::RCP<row_matrix_type> LocalizedMatrix_;
   //! The reordered matrix.
   Teuchos::RCP<ReorderFilter<row_matrix_type> > ReorderedLocalizedMatrix_;
+
+  //! The "inner matrix" given to the inner (subdomain) solver.
+  Teuchos::RCP<row_matrix_type> innerMatrix_;
 
   //! If true, the preconditioner has been successfully initialized.
   bool IsInitialized_;
@@ -375,33 +408,33 @@ protected:
   std::string ReorderingAlgorithm_;
   //! If true, subdomain filtering is used
   bool UseSubdomain_;
-
   //! Whether to filter singleton rows.
   bool FilterSingletons_;
   //! Matrix from which singleton rows have been filtered.
   Teuchos::RCP<SingletonFilter<row_matrix_type> > SingletonMatrix_;
-  //! Contains the number of successful calls to Initialize().
+
+  //! The total number of successful calls to initialize().
   int NumInitialize_;
-  //! Contains the number of successful call to Compute().
+  //! The total number of successful calls to compute().
   int NumCompute_;
-  //! Contains the number of successful call to apply().
+  //! The total number of successful calls to apply().
   mutable int NumApply_;
-  //! Contains the time for all successful calls to initialize().
+  //! The total time in seconds of all successful calls to initialize().
   double InitializeTime_;
-  //! Contains the time for all successful calls to compute().
+  //! The total time in seconds of all successful calls to compute().
   double ComputeTime_;
-  //! Contains the time for all successful calls to apply().
+  //! The total time in seconds of all successful calls to apply().
   mutable double ApplyTime_;
-  //! Contains the number of flops for Initialize().
+  //! The total number of floating-point operations over all initialize() calls.
   double InitializeFlops_;
-  //! Contains the number of flops for Compute().
+  //! The total number of floating-point operations over all compute() calls.
   double ComputeFlops_;
-  //! Contain sthe number of flops for ApplyInverse().
+  //! The total number of floating-point operations over all apply() calls.
   mutable double ApplyFlops_;
   //! Object used for timing purposes.
   Teuchos::RCP<Teuchos::Time> Time_;
-  //! Pointer to the local solver.
-  Teuchos::RCP<LocalInverseType> Inverse_;
+  //! The inner (that is, per subdomain local) solver.
+  Teuchos::RCP<prec_type> Inverse_;
   //! SerialMap for filtering multivector with no overlap.
   Teuchos::RCP<const map_type> SerialMap_;
   //! Distributed map for filtering multivector with no overlap.

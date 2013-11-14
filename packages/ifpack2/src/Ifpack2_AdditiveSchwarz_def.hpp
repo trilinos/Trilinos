@@ -54,9 +54,10 @@
 #endif
 
 #include "Ifpack2_Condest.hpp"
-
+#include "Ifpack2_Details_CanChangeMatrix.hpp"
 #include "Ifpack2_LocalFilter_def.hpp"
 #include "Ifpack2_OverlappingRowMatrix_def.hpp"
+#include "Ifpack2_Parameters.hpp"
 #include "Ifpack2_ReorderFilter_def.hpp"
 #include "Ifpack2_SingletonFilter_def.hpp"
 
@@ -685,7 +686,7 @@ int AdditiveSchwarz<MatrixType,LocalInverseType>::getOverlapLevel() const
 
 
 template<class MatrixType,class LocalInverseType>
-void AdditiveSchwarz<MatrixType,LocalInverseType>::setup()
+void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
 {
 #ifdef HAVE_MPI
   using Teuchos::MpiComm;
@@ -700,18 +701,23 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup()
   typedef Xpetra::TpetraRowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> XpetraTpetraMatrixType;
 #endif
 
+  // Localized version of Matrix_ or OverlappingMatrix_.
+  RCP<row_matrix_type> LocalizedMatrix;
+
+  // The "most current local matrix."  At the end of this method, this
+  // will be handed off to the inner solver.
   RCP<row_matrix_type> ActiveMatrix;
 
-  // Create Localized Matrix
+  // Create localized matrix.
   if (! OverlappingMatrix_.is_null ()) {
     if (UseSubdomain_) {
       //      int sid = List_.get("subdomain id",-1);
       throw std::runtime_error("Ifpack2::AdditiveSchwarz subdomain code not yet supported.");
       //Ifpack2_NodeFilter *tt = new Ifpack2_NodeFilter(OverlappingMatrix_,nodeID); //FIXME
-      //LocalizedMatrix_ = Teuchos::rcp(tt);
+      //LocalizedMatrix = Teuchos::rcp(tt);
     }
     else
-      LocalizedMatrix_ = rcp (new LocalFilter<row_matrix_type> (OverlappingMatrix_));
+      LocalizedMatrix = rcp (new LocalFilter<row_matrix_type> (OverlappingMatrix_));
   }
   else {
     if (UseSubdomain_) {
@@ -719,23 +725,23 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup()
       throw std::runtime_error("Ifpack2::AdditiveSchwarz subdomain code not yet supported.");
     }
     else {
-      LocalizedMatrix_ = rcp (new LocalFilter<row_matrix_type> (Matrix_));
+      LocalizedMatrix = rcp (new LocalFilter<row_matrix_type> (Matrix_));
     }
   }
 
-  // Sanity check; I don't trust the logic above to have created LocalizedMatrix_.
+  // Sanity check; I don't trust the logic above to have created LocalizedMatrix.
   TEUCHOS_TEST_FOR_EXCEPTION(
-    LocalizedMatrix_.is_null (), std::logic_error,
-    "Ifpack2::AdditiveSchwarz::setup: LocalizedMatrix_ is null, after the code "
+    LocalizedMatrix.is_null (), std::logic_error,
+    "Ifpack2::AdditiveSchwarz::setup: LocalizedMatrix is null, after the code "
     "that claimed to have created it.  This should never be the case.  Please "
     "report this bug to the Ifpack2 developers.");
 
   // Mark localized matrix as active
-  ActiveMatrix = LocalizedMatrix_;
+  ActiveMatrix = LocalizedMatrix;
 
   // Singleton Filtering
   if (FilterSingletons_) {
-    SingletonMatrix_ = rcp (new SingletonFilter<row_matrix_type> (LocalizedMatrix_));
+    SingletonMatrix_ = rcp (new SingletonFilter<row_matrix_type> (LocalizedMatrix));
     ActiveMatrix = SingletonMatrix_;
   }
 
@@ -753,11 +759,12 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup()
     // Grab the MPI Communicator and build the ordering problem with that
     MPI_Comm myRawComm;
 
-    RCP<const MpiComm<int> > mpicomm = rcp_dynamic_cast<const MpiComm<int> > (ActiveMatrix->getComm ());
+    RCP<const MpiComm<int> > mpicomm =
+      rcp_dynamic_cast<const MpiComm<int> > (ActiveMatrix->getComm ());
     if (mpicomm == Teuchos::null) {
       myRawComm = MPI_COMM_SELF;
     } else {
-      myRawComm = *(mpicomm->getRawMpiComm());
+      myRawComm = * (mpicomm->getRawMpiComm ());
     }
     ordering_problem_type MyOrderingProblem (&Zoltan2Matrix, &zlist, myRawComm);
 #else
@@ -782,9 +789,48 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup()
 #endif
   }
 
-  // Build the inverse
-  Inverse_ = rcp (new LocalInverseType (ActiveMatrix));
+  innerMatrix_ = ActiveMatrix;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    innerMatrix_.is_null (), std::logic_error, "Ifpack2::AdditiveSchwarz::"
+    "setup: Inner matrix is null right before constructing inner solver.  "
+    "Please report this bug to the Ifpack2 developers.");
+
+  // Construct the inner solver.  We go through a bit more trouble
+  // than usual to do so, because we want to exercise the new
+  // setInnerPreconditioner feature.
+  setInnerPreconditioner (rcp (new LocalInverseType (Teuchos::null)));
 }
+
+
+template<class MatrixType, class LocalInverseType>
+void AdditiveSchwarz<MatrixType, LocalInverseType>::
+setInnerPreconditioner (const Teuchos::RCP<Preconditioner<scalar_type,
+                                                          local_ordinal_type,
+                                                          global_ordinal_type,
+                                                          node_type> >& innerPrec)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    innerPrec.is_null (), std::invalid_argument, "Ifpack2::AdditiveSchwarz::"
+    "setInnerPreconditioner: Inner preconditioner must be nonnull.");
+
+  // Make sure that the new inner solver knows how to have its matrix changed.
+  typedef Details::CanChangeMatrix<row_matrix_type> can_change_type;
+  can_change_type* innerSolver = dynamic_cast<can_change_type*> (&*innerPrec);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    innerSolver == NULL, std::invalid_argument, "Ifpack2::AdditiveSchwarz::"
+    "setInnerPreconditioner: The input preconditioner does not implement the "
+    "setMatrix() feature.  Only input preconditioners that inherit from "
+    "Ifpack2::Details::CanChangeMatrix implement this feature.");
+
+  // Give the local matrix to the new inner solver.
+  innerSolver->setMatrix (innerMatrix_);
+
+  // Set the new inner solver.
+  Inverse_ = innerPrec;
+}
+
+
 
 } // namespace Ifpack2
 
