@@ -9,10 +9,14 @@
 
 #include "ROL_EpetraMultiVector.hpp"
 #include "ROL_Types.hpp"
-#include "Epetra_SerialComm.h"
 #include "Epetra_Map.h"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#else
+#include "Epetra_SerialComm.h"
+#endif
 
 #include <iostream>
 
@@ -21,7 +25,12 @@ typedef double ElementT;
 
 int main(int argc, char *argv[]) {
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+#ifdef HAVE_MPI
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
+  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm Comm;
+#endif
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -41,7 +50,6 @@ int main(int argc, char *argv[]) {
   try {
 
     int dim = 100;
-    Epetra_SerialComm Comm;
     Epetra_Map Map(dim, 0, Comm);
 
     Teuchos::RCP<Epetra_MultiVector> x_rcp = Teuchos::rcp( new Epetra_MultiVector(Map, 1) );
@@ -51,8 +59,8 @@ int main(int argc, char *argv[]) {
 
     // set x,y
     for (int i=0; i<dim; i++) {
-      ((*x_rcp)[0])[i] = i;
-      ((*y_rcp)[0])[i] = 2.0;
+      x_rcp->Random();
+      y_rcp->PutScalar(2.0);
     }
 
     // norm of x
@@ -95,10 +103,30 @@ int main(int argc, char *argv[]) {
       errorFlag++;
     };
 
-    // set x to dim/2-th basis vector
-    //z = x.basis(dim/2);
-    //znorm = z->norm();
-    //*outStream << "\nNorm of ROL::Vector z (basis vector): " << znorm << "\n";
+    // set x to first basis vector
+    z = x.basis(0);
+    znorm = z->norm();
+    *outStream << "\nNorm of ROL::Vector z (first basis vector): " << znorm << "\n";
+    if ( std::abs(znorm-1.0) > errtol ) {
+      *outStream << "---> POSSIBLE ERROR ABOVE!\n";
+      errorFlag++;
+    };
+    // set x to middle basis vector
+    z = x.basis(dim/2);
+    znorm = z->norm();
+    *outStream << "\nNorm of ROL::Vector z ('middle' basis vector): " << znorm << "\n";
+    if ( std::abs(znorm-1.0) > errtol ) {
+      *outStream << "---> POSSIBLE ERROR ABOVE!\n";
+      errorFlag++;
+    };
+    // set x to last basis vector
+    z = x.basis(dim-1);
+    znorm = z->norm();
+    *outStream << "\nNorm of ROL::Vector z (last basis vector): " << znorm << "\n";
+    if ( std::abs(znorm-1.0) > errtol ) {
+      *outStream << "---> POSSIBLE ERROR ABOVE!\n";
+      errorFlag++;
+    };
 
   }
   catch (std::logic_error err) {

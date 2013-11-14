@@ -13,6 +13,10 @@
 #define ROL_EPETRAMULTIVECTOR_H
 
 #include "Epetra_MultiVector.h"
+#include "Epetra_Map.h"
+#include "Epetra_LocalMap.h"
+#include "Epetra_IntVector.h"
+#include "Epetra_Import.h"
 #include "ROL_Vector.hpp"
 
 /** \class ROL::EpetraMultiVector
@@ -92,9 +96,43 @@ public:
     epetra_vec_->Scale(1.0,*xvalptr);
   }
 
-  Teuchos::RCP<const Epetra_MultiVector > getVector() const {
+  Teuchos::RCP<const Epetra_MultiVector> getVector() const {
     return this->epetra_vec_;
   }
+
+  Teuchos::RCP<Vector<Real> > basis( const int i ) const {
+    Teuchos::RCP<EpetraMultiVector> e = Teuchos::rcp( new EpetraMultiVector( Teuchos::rcp(new Epetra_MultiVector(epetra_vec_->Map(),epetra_vec_->NumVectors(),true)) ));
+    const Epetra_BlockMap & domainMap = const_cast <Epetra_BlockMap &> (const_cast <Epetra_MultiVector &> ((*e->getVector())).Map());
+
+    // Build IntVector of GIDs on all processors.
+    const Epetra_Comm & comm = domainMap.Comm();
+    int numMyElements = domainMap.NumMyElements();
+    Epetra_BlockMap allGidsMap(-1, numMyElements, 1, 0, comm);
+    Epetra_IntVector allGids(allGidsMap);
+    for (int j=0; j<numMyElements; j++) {allGids[j] = domainMap.GID64(j);}
+
+    // Import my GIDs into an all-inclusive map. 
+    int numGlobalElements = domainMap.NumGlobalElements64();
+    Epetra_LocalMap allGidsOnRootMap(numGlobalElements, 0, comm);
+    Epetra_Import importer(allGidsOnRootMap, allGidsMap);
+    Epetra_IntVector allGidsOnRoot(allGidsOnRootMap);
+    allGidsOnRoot.Import(allGids, importer, Insert);
+    Epetra_Map rootDomainMap(-1, allGidsOnRoot.MyLength(), allGidsOnRoot.Values(), domainMap.IndexBase(), comm);
+
+    for (int j = 0; j < this->dimension(); j++) {
+      // Put 1's in slots
+      int curGlobalCol = rootDomainMap.GID(i); // Should return same value on all processors
+      if (domainMap.MyGID(curGlobalCol)){
+        int curCol = domainMap.LID(curGlobalCol);
+        (const_cast <Epetra_MultiVector &> (*e->getVector()))[0][curCol]= 1.0;
+      }
+    }
+
+    return e;
+  }
+
+  int dimension() const {return epetra_vec_->GlobalLength();}
+
 
 }; // class EpetraMultiVector
 
