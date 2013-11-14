@@ -122,6 +122,43 @@ public:
     }
   }
 
+  /** \brief Initialize step.
+  */
+  void initialize( const Vector<Real> &x, Objective<Real> &obj, AlgorithmState<Real> &algo_state ) {
+    Teuchos::RCP<StepState<Real> >& state = Step<Real>::get_state();
+
+    state->descentVec  = x.clone();
+    state->gradientVec = x.clone();
+    obj.gradient(*(state->gradientVec),x);
+    algo_state.ngrad = 1;
+    algo_state.gnorm = (state->gradientVec)->norm();
+    algo_state.snorm = 1.e10;
+    algo_state.value = obj.value(x);
+    algo_state.nfval = 1;
+
+    // Evaluate Objective Function at Cauchy Point
+    Teuchos::RCP<Vector<Real> > Bg = x.clone();
+    if ( secant_ != Teuchos::null && TRStype_ != TrustRegionStep_NewtonKrylovSecantPreconditioning ) {
+      secant_->applyB(*Bg,*(state->gradientVec),x);
+    }
+    else {
+      obj.hessVec(*Bg,*(state->gradientVec),x);
+    }
+    Real gBg = Bg->dot(*(state->gradientVec));
+    Real gg  = algo_state.gnorm*algo_state.gnorm;
+    Teuchos::RCP<Vector<Real> > cp = x.clone();
+    cp->set(*(state->gradientVec)); 
+    cp->scale(-gg/gBg);
+    Real fnew = obj.value(*cp);
+    algo_state.nfval++;
+
+    // Perform Quadratic Interpolation to Determine Initial Trust Region Radius
+    Real gs = (state->gradientVec)->dot(*cp);
+    del_ = -gs/(fnew - algo_state.value - gs)*gg*algo_state.gnorm/gBg;
+  
+    std::cout << del_ << "\n";
+  }
+
   /** \brief Compute step.
   */
   void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, AlgorithmState<Real> &algo_state ) {

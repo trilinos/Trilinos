@@ -189,7 +189,7 @@ namespace ROL {
     }
   };
 
-  /** \brief Powell's function.
+  /** \brief Powell's badly scaled function.
    */
   template<class Real>
   class Objective_Powell : public ROL::Objective<Real> {
