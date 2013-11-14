@@ -16,40 +16,15 @@
     \brief Provides interfrace for different line-searches.
 */
 
-#include <Teuchos_ScalarTraits.hpp>
-
 namespace ROL { 
-
-enum LineSearchStepType {
-  LineSearchStep_Gradient = 0,
-  LineSearchStep_NonlinearCG,
-  LineSearchStep_Secant,
-  LineSearchStep_Newton,
-  LineSearchStep_NewtonKrylov,
-  LineSearchStep_NewtonKrylovSecantPreconditioning
-};
-
-enum LineSearchType {
-  LineSearchType_Backtracking = 0,   // Backtracking
-  LineSearchType_SimpleBacktracking, // Simple Backtracking
-  LineSearchType_Brents,             // Brents
-  LineSearchType_Bisection,          // Bisection
-  LineSearchType_GoldenSection       // GoldenSection
-};
-
-enum LineSearchCondition {
-  LineSearchCondition_Wolfe = 0,   // Wolfe
-  LineSearchCondition_StrongWolfe, // Strong Wolfe
-  LineSearchCondition_Goldstein    // Goldstein
-};
 
 template<class Real>
 class LineSearch {
 private:
 
-  LineSearchType      type_;
-  LineSearchCondition cond_;
-  LineSearchStepType  step_;
+  ELineSearch         els_;
+  ECurvatureCondition econd_;
+  EDescent            edesc_;
 
   int maxit_;
   Real c1_;
@@ -66,13 +41,13 @@ public:
   virtual ~LineSearch() {}
 
   // Constructor
-  LineSearch( LineSearchType type, LineSearchCondition cond, LineSearchStepType step,  
+  LineSearch( ELineSearch els, ECurvatureCondition econd, EDescent edesc,  
               int maxit = 20, Real c1 = 1.e-4, Real c2 = 0.9, Real tol = 1.e-8, Real rho = 0.5 ) : 
-    type_(type), cond_(cond), step_(step), maxit_(maxit), c1_(c1), c2_(c2), tol_(tol), rho_(rho) {
+    els_(els), econd_(econd), edesc_(edesc), maxit_(maxit), c1_(c1), c2_(c2), tol_(tol), rho_(rho) {
     if ( c2_ <= c1_ ) {
       c1_ = 1.e-4;
       c2_ = 0.9;
-      if ( step_ == LineSearchStep_NonlinearCG ) {
+      if ( edesc_ == DESCENT_NONLINEARCG ) {
         c2_ = 0.1;
       }
     }
@@ -82,7 +57,7 @@ public:
     firstIt_   = true;
   }
 
-  bool status( const LineSearchType type, int &ls_neval, int &ls_ngrad, const Real alpha, 
+  bool status( const ELineSearch type, int &ls_neval, int &ls_ngrad, const Real alpha, 
                const Real fold, const Real sgold, const Real fnew, 
                const Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj ) { 
     // Check Armijo Condition
@@ -99,8 +74,8 @@ public:
 
     // Check Curvature Condition
     bool curvcond = false;
-    if ( armijo && (type != LineSearchType_Backtracking && type != LineSearchType_SimpleBacktracking) ) {
-      if ( (cond_ == LineSearchCondition_Goldstein) && (fnew >= fold + (1.0-c1_)*alpha*sgold) ) {
+    if ( armijo && (type != LINESEARCH_BACKTRACKING && type != LINESEARCH_CUBICINTERP) ) {
+      if ( (econd_ == CURVATURECONDITION_GOLDSTEIN) && (fnew >= fold + (1.0-c1_)*alpha*sgold) ) {
         curvcond = true;
       }
       else { 
@@ -112,14 +87,14 @@ public:
         Real sgnew = grad->dot(s);
         ls_ngrad++;
    
-        if (    ((cond_ == LineSearchCondition_Wolfe)       && (sgnew >= c2_*sgold))
-             || ((cond_ == LineSearchCondition_StrongWolfe) && (std::abs(sgnew) <= c2_*std::abs(sgold))) ) {
+        if (    ((econd_ == CURVATURECONDITION_WOLFE)       && (sgnew >= c2_*sgold))
+             || ((econd_ == CURVATURECONDITION_STRONGWOLFE) && (std::abs(sgnew) <= c2_*std::abs(sgold))) ) {
           curvcond = true;
         }
       }
     }
 
-    if (type == LineSearchType_Backtracking || type == LineSearchType_SimpleBacktracking) {
+    if (type == LINESEARCH_BACKTRACKING || type == LINESEARCH_CUBICINTERP) {
       return armijo;
     }
     else {
@@ -135,7 +110,7 @@ public:
       firstIt_ = false;
     }
     else {
-      if ( step_ == LineSearchStep_Gradient || step_ == LineSearchStep_NonlinearCG ) {
+      if ( edesc_ == DESCENT_STEEPEST || edesc_ == DESCENT_NONLINEARCG ) {
         alpha0_ = alpha_old_*gs_old_/gs;      
       }
     }
@@ -143,19 +118,19 @@ public:
     // Run Linesearch
     ls_neval = 0;
     ls_ngrad = 0;
-    if ( type_ == LineSearchType_SimpleBacktracking ) {
+    if ( els_ == LINESEARCH_BACKTRACKING ) {
       simplebacktracking( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj ); 
     }
-    else if ( type_ == LineSearchType_Backtracking ) {
+    else if ( els_ == LINESEARCH_CUBICINTERP ) {
       backtracking( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj ); 
     }
-    else if ( type_ == LineSearchType_Brents ) {
+    else if ( els_ == LINESEARCH_BRENTS ) {
       brents( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj ); 
     }
-    else if ( type_ == LineSearchType_Bisection ) {
+    else if ( els_ == LINESEARCH_BISECTION ) {
       bisection( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj ); 
     }
-    else if ( type_ == LineSearchType_GoldenSection ) {
+    else if ( els_ == LINESEARCH_GOLDENSECTION ) {
       goldensection( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj ); 
     }
 
@@ -176,7 +151,7 @@ public:
     fval = obj.value(*xnew);
     ls_neval++;
 
-    while ( !status(LineSearchType_SimpleBacktracking,ls_neval,ls_ngrad,alpha,fold,gs,fval,*xnew,s,obj) ) {
+    while ( !status(LINESEARCH_BACKTRACKING,ls_neval,ls_ngrad,alpha,fold,gs,fval,*xnew,s,obj) ) {
       alpha *= rho_;
       xnew->set(x);
       xnew->axpy(alpha, s);
@@ -205,7 +180,7 @@ public:
     Real x1     = 0.0;
     Real x2     = 0.0;
 
-    while ( !status(LineSearchType_Backtracking,ls_neval,ls_ngrad,alpha,fold,gs,fval,x,s,obj) ) {
+    while ( !status(LINESEARCH_CUBICINTERP,ls_neval,ls_ngrad,alpha,fold,gs,fval,x,s,obj) ) {
       if ( alpha == alpha0_ ) {
         alpha1 = -gs*alpha*alpha/(2.0*(fval-fold-gs*alpha));
       }
@@ -214,7 +189,7 @@ public:
         x2 = fvalp-fval-alpha2*gs;
         a = (1.0/(alpha - alpha2))*( x1/(alpha*alpha) - x2/(alpha2*alpha2));
         b = (1.0/(alpha - alpha2))*(-x1*alpha2/(alpha*alpha) + x2*alpha/(alpha2*alpha2));
-        if ( std::abs(a) < Teuchos::ScalarTraits<Real>::eps() ) {
+        if ( std::abs(a) < ROL_EPSILON ) {
           alpha1 = -gs/(2.0*b);
         }
         else {
@@ -266,7 +241,7 @@ public:
       val_t = val_tr;
     }
 
-    if ( status(LineSearchType_Bisection,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj) ) {
+    if ( status(LINESEARCH_BISECTION,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj) ) {
       alpha = t;
       fval  = val_t;
       return;
@@ -288,7 +263,7 @@ public:
     Real t2     = 0.0;
     Real val_t2 = 0.0;
 
-    while (    !status(LineSearchType_Bisection,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj)  
+    while (    !status(LINESEARCH_BISECTION,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj)  
             && std::abs(tr - tl) > tol_ ) {
       t1 = (tl+tc)/2.0;
       xnew->set(x);
@@ -374,7 +349,7 @@ public:
       val_t = val_tr;
     }
 
-    if ( status(LineSearchType_GoldenSection,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj) ) {
+    if ( status(LINESEARCH_GOLDENSECTION,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj) ) {
       alpha = t;
       fval  = val_t;
       return;
@@ -410,7 +385,7 @@ public:
       t     = tr;
     }
 
-    while (    !status(LineSearchType_GoldenSection,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj) 
+    while (    !status(LINESEARCH_GOLDENSECTION,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj) 
             && (std::abs(tl-tr) >= tol_) ) {
       if ( val_tc1 > val_tc2 ) {
         tl      = tc1;
@@ -485,7 +460,7 @@ public:
       val_t = val_tr;
     }
 
-    if ( status(LineSearchType_Brents,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj) ) {
+    if ( status(LINESEARCH_BRENTS,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj) ) {
       alpha = t;
       fval  = val_t;
       return;
@@ -495,7 +470,7 @@ public:
     const Real gr                = (1.0+sqrt(5.0))/2.0;
     const Real inv_gr2           = 1.0/(gr*gr);
     const Real goldinv           = 1.0/(1.0+gr);
-    const Real tiny              = sqrt(Teuchos::ScalarTraits<Real>::eps());
+    const Real tiny              = sqrt(ROL_EPSILON);
     const Real max_extrap_factor = 100.0;
     Real tmp    = 0.0;
     Real q      = 0.0;
@@ -527,7 +502,7 @@ public:
       tc     = 0.0;
     }
 
-    if ( std::abs(tc) < Teuchos::ScalarTraits<Real>::eps() ) {
+    if ( std::abs(tc) < ROL_EPSILON ) {
       tc = tl + (gr-1.0)*(tr-tl);
       xnew->set(x);
       xnew->axpy(tc,s);
@@ -548,7 +523,7 @@ public:
       val_t = val_tr;
     }
 
-    if ( status(LineSearchType_Bisection,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj) ) {
+    if ( status(LINESEARCH_BISECTION,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj) ) {
       alpha = t;
       fval  = val_t;
       return;
@@ -640,7 +615,7 @@ public:
       val_t = val_tr;
     }
 
-    if ( status(LineSearchType_Bisection,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj) ) {
+    if ( status(LINESEARCH_BISECTION,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj) ) {
       alpha = t;
       fval  = val_t;
       return;
@@ -678,7 +653,7 @@ public:
     a  = (tr < tc ? tr : tc);
     b  = (tr > tc ? tr : tc);
 
-    while (    !status(LineSearchType_Brents,ls_neval,ls_ngrad,t,fval,gs,ft,x,s,obj)
+    while (    !status(LINESEARCH_BRENTS,ls_neval,ls_ngrad,t,fval,gs,ft,x,s,obj)
             && std::abs(t - tm) > tol_*(b-a) ) {
       if ( it < 2 ) {
         e = 2.0*(b-a);
@@ -757,7 +732,7 @@ public:
     fval  = ft;
 
     // Safeguard if Brent's does not find a minimizer
-    if ( std::abs(alpha) < Teuchos::ScalarTraits<Real>::eps() ) {
+    if ( std::abs(alpha) < ROL_EPSILON ) {
       simplebacktracking( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj ); 
     }
   }

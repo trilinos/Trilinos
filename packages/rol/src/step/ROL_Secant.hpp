@@ -20,13 +20,6 @@
 
 namespace ROL {
 
-enum SecantType {
-  Secant_lBFGS = 0,      // Limited Memory BFGS
-  Secant_lDFP,           // Limited Memory DFP
-  Secant_lSR1,           // Limited Memory SR1
-  Secant_BarzilaiBorwein // Barzilai-Borwein Gradient Descent
-};
-
 template<class Real>
 struct SecantState {
   std::vector<Teuchos::RCP<Vector<Real> > > iterDiff; // Step Storage
@@ -140,5 +133,18 @@ public:
 #include "ROL_lDFP.hpp"
 #include "ROL_lSR1.hpp"
 #include "ROL_BarzilaiBorwein.hpp"
+
+namespace ROL {
+  template<class Real>
+  inline Teuchos::RCP<Secant<Real> > getSecant( ESecant esec = SECANT_LBFGS, int L = 10, int BBtype = 1 ) {
+    switch (esec) {
+      case SECANT_LBFGS:           return Teuchos::rcp( new lBFGS<Real>(L) );
+      case SECANT_LDFP:            return Teuchos::rcp( new lDFP<Real>(L) );
+      case SECANT_LSR1:            return Teuchos::rcp( new lSR1<Real>(L) );
+      case SECANT_BARZILAIBORWEIN: return Teuchos::rcp( new BarzilaiBorwein<Real>(BBtype) );
+      default:                     return Teuchos::null; 
+    }
+  }
+}
 
 #endif

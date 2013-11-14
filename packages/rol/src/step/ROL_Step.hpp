@@ -52,6 +52,8 @@ public:
     state_ = Teuchos::rcp( new StepState<Real> );
   }
 
+  Teuchos::RCP<StepState<Real> >& get_state() { return this->state_; }
+
   /** \brief Initialize step.
   */
   virtual void initialize( const Vector<Real> &x, Objective<Real> &obj, AlgorithmState<Real> &algo_state ) {
