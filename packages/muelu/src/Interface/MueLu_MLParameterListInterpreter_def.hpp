@@ -199,18 +199,22 @@ namespace MueLu {
     blksize_ = nDofsPerNode;
 
     // Translate verbosity parameter
-    Teuchos::EVerbosityLevel eVerbLevel = Teuchos::VERB_NONE;
-    if (verbosityLevel == 0) eVerbLevel = Teuchos::VERB_NONE;
-    if (verbosityLevel >  0) eVerbLevel = Teuchos::VERB_LOW;
-    if (verbosityLevel >  4) eVerbLevel = Teuchos::VERB_MEDIUM;
-    if (verbosityLevel >  7) eVerbLevel = Teuchos::VERB_HIGH;
-    if (verbosityLevel >  9) eVerbLevel = Teuchos::VERB_EXTREME;
+
+    // Translate verbosity parameter
+    MsgType eVerbLevel = None;
+    if (verbosityLevel == 0) eVerbLevel = None;
+    if (verbosityLevel >  0) eVerbLevel = Low;
+    if (verbosityLevel >  4) eVerbLevel = Medium;
+    if (verbosityLevel >  7) eVerbLevel = High;
+    if (verbosityLevel >  9) eVerbLevel = Extreme;
+    if (verbosityLevel >  9) eVerbLevel = Test;
+    this->verbosity_ = eVerbLevel;
+
 
     TEUCHOS_TEST_FOR_EXCEPTION(agg_type != "Uncoupled" && agg_type != "Coupled", Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter::Setup(): parameter \"aggregation: type\": only 'Uncoupled' or 'Coupled' aggregation is supported.");
 
     // Create MueLu factories
     RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
-    //dropFact->SetVerbLevel(toMueLuVerbLevel(eVerbLevel));
 
     RCP<FactoryBase> CoupledAggFact = Teuchos::null;
     if(agg_type == "Uncoupled") {
@@ -342,7 +346,6 @@ namespace MueLu {
     //
 
     // Hierarchy options
-    this->SetVerbLevel(toMueLuVerbLevel(eVerbLevel));
     this->numDesiredLevel_ = maxLevels;
     this->maxCoarseSize_   = maxCoarseSize;
 
