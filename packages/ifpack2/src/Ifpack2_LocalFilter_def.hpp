@@ -59,8 +59,8 @@ namespace Ifpack2 {
 //==========================================================================
 template<class MatrixType>
 LocalFilter<MatrixType>::
-LocalFilter (const Teuchos::RCP<const row_matrix_type>& matrix) :
-  A_ (matrix),
+LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
+  A_ (A),
   NumRows_ (0),
   NumNonzeros_ (0),
   MaxNumEntries_ (0),
@@ -93,7 +93,7 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& matrix) :
   MaxNumEntries_  = A_->getNodeMaxNumRowEntries ();
   MaxNumEntriesA_ = A_->getNodeMaxNumRowEntries ();
 
-  // ExtractMyRowCopy() will use these vectors
+  // Allocate temporary arrays for getLocalRowCopy().
   Indices_.resize (MaxNumEntries_);
   Values_.resize (MaxNumEntries_);
 
@@ -123,7 +123,7 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& matrix) :
       //    less-than test, which if true, means that Indices_[j]
       //    belongs to the row Map.)
       if (Teuchos::as<size_t> (Indices_[j]) < NumRows_) {
-	++NewNnz;
+        ++NewNnz;
       }
     }
 
@@ -151,7 +151,7 @@ Teuchos::RCP<const Teuchos::Comm<int> > LocalFilter<MatrixType>::getComm() const
 
 //==========================================================================
 template<class MatrixType>
-Teuchos::RCP<typename MatrixType::node_type> 
+Teuchos::RCP<typename MatrixType::node_type>
 LocalFilter<MatrixType>::getNode() const
 {
   return A_->getNode();
@@ -160,8 +160,8 @@ LocalFilter<MatrixType>::getNode() const
 //==========================================================================
 template<class MatrixType>
 Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-			       typename MatrixType::global_ordinal_type,
-			       typename MatrixType::node_type> >
+                               typename MatrixType::global_ordinal_type,
+                               typename MatrixType::node_type> >
 LocalFilter<MatrixType>::getRowMap() const
 {
   return localMap_;
@@ -170,8 +170,8 @@ LocalFilter<MatrixType>::getRowMap() const
 //==========================================================================
 template<class MatrixType>
 Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-			       typename MatrixType::global_ordinal_type,
-			       typename MatrixType::node_type> >
+                               typename MatrixType::global_ordinal_type,
+                               typename MatrixType::node_type> >
 LocalFilter<MatrixType>::getColMap() const
 {
   return localMap_;
@@ -180,8 +180,8 @@ LocalFilter<MatrixType>::getColMap() const
 //==========================================================================
 template<class MatrixType>
 Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-			       typename MatrixType::global_ordinal_type,
-			       typename MatrixType::node_type> >
+                               typename MatrixType::global_ordinal_type,
+                               typename MatrixType::node_type> >
 LocalFilter<MatrixType>::getDomainMap() const
 {
   return localMap_;
@@ -190,8 +190,8 @@ LocalFilter<MatrixType>::getDomainMap() const
 //==========================================================================
 template<class MatrixType>
 Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-			       typename MatrixType::global_ordinal_type,
-			       typename MatrixType::node_type> >
+                               typename MatrixType::global_ordinal_type,
+                               typename MatrixType::node_type> >
 LocalFilter<MatrixType>::getRangeMap() const
 {
   return localMap_;
@@ -350,9 +350,9 @@ template<class MatrixType>
 void
 LocalFilter<MatrixType>::
 getGlobalRowCopy (global_ordinal_type GlobalRow,
-		  const Teuchos::ArrayView<global_ordinal_type> &Indices,
-		  const Teuchos::ArrayView<scalar_type> &Values,
-		  size_t &NumEntries) const
+                  const Teuchos::ArrayView<global_ordinal_type> &Indices,
+                  const Teuchos::ArrayView<scalar_type> &Values,
+                  size_t &NumEntries) const
 {
   throw std::runtime_error("Ifpack2::LocalFilter does not implement getGlobalRowCopy.");
 }
@@ -362,9 +362,9 @@ template<class MatrixType>
 void
 LocalFilter<MatrixType>::
 getLocalRowCopy (local_ordinal_type LocalRow,
-		 const Teuchos::ArrayView<local_ordinal_type> &Indices,
-		 const Teuchos::ArrayView<scalar_type> &Values,
-		 size_t &NumEntries) const
+                 const Teuchos::ArrayView<local_ordinal_type> &Indices,
+                 const Teuchos::ArrayView<scalar_type> &Values,
+                 size_t &NumEntries) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     NumRows_ == 0, std::invalid_argument,
@@ -410,8 +410,8 @@ template<class MatrixType>
 void
 LocalFilter<MatrixType>::
 getGlobalRowView (global_ordinal_type GlobalRow,
-		  Teuchos::ArrayView<const global_ordinal_type> &indices,
-		  Teuchos::ArrayView<const scalar_type> &values) const
+                  Teuchos::ArrayView<const global_ordinal_type> &indices,
+                  Teuchos::ArrayView<const scalar_type> &values) const
 {
   throw std::runtime_error("Ifpack2::LocalFilter: does not support getGlobalRowView.");
 }
@@ -421,8 +421,8 @@ template<class MatrixType>
 void
 LocalFilter<MatrixType>::
 getLocalRowView (local_ordinal_type LocalRow,
-		 Teuchos::ArrayView<const local_ordinal_type> &indices,
-		 Teuchos::ArrayView<const scalar_type> &values) const
+                 Teuchos::ArrayView<const local_ordinal_type> &indices,
+                 Teuchos::ArrayView<const scalar_type> &values) const
 {
   throw std::runtime_error("Ifpack2::LocalFilter: does not support getLocalRowView.");
 }
@@ -434,8 +434,8 @@ LocalFilter<MatrixType>::
 getLocalDiagCopy (Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& diag) const
 {
   using Teuchos::ArrayRCP;
-  typedef Tpetra::Vector<scalar_type, local_ordinal_type, 
-			 global_ordinal_type, node_type> vector_type;
+  typedef Tpetra::Vector<scalar_type, local_ordinal_type,
+                         global_ordinal_type, node_type> vector_type;
 
   vector_type temp (A_->getRowMap ());
   A_->getLocalDiagCopy (temp);
@@ -443,7 +443,7 @@ getLocalDiagCopy (Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_t
   // FIXME (mfh 12 July 2013) WHY DO WE NEED ANYTHING MORE AFTER THE
   // ABOVE???  AND WHY CAN'T WE USE Vector::operator= INSTEAD OF
   // COPYING ALL THE DATA BY HAND???
-  
+
   ArrayRCP<ArrayRCP<scalar_type> >       d_ptr = diag.get2dViewNonConst();
   ArrayRCP<ArrayRCP<const scalar_type> > t_ptr = temp.get2dView();
 
@@ -472,7 +472,7 @@ rightScale (const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal
 
 //==========================================================================
 template<class MatrixType>
-void 
+void
 LocalFilter<MatrixType>::
 apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &X,
        Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &Y,
@@ -557,7 +557,7 @@ bool LocalFilter<MatrixType>::supportsRowViews() const
 //==========================================================================
 template<class MatrixType>
 typename
-Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType 
+Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
 LocalFilter<MatrixType>::getFrobeniusNorm () const
 {
   typedef Teuchos::ScalarTraits<scalar_type> STS;

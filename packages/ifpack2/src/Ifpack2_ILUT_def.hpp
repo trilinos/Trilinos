@@ -50,6 +50,7 @@
 
 #include <Ifpack2_Heap.hpp>
 #include <Ifpack2_Condest.hpp>
+#include <Ifpack2_LocalFilter.hpp>
 #include <Ifpack2_Parameters.hpp>
 
 #include <Teuchos_Time.hpp>
@@ -275,16 +276,14 @@ ILUT<MatrixType>::getComm () const {
 
 
 template <class MatrixType>
-Teuchos::RCP<const Tpetra::RowMatrix<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >
-ILUT<MatrixType>::getMatrix() const {
+Teuchos::RCP<const typename ILUT<MatrixType>::row_matrix_type>
+ILUT<MatrixType>::getMatrix () const {
   return A_;
 }
 
 
 template <class MatrixType>
-Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-                               typename MatrixType::global_ordinal_type,
-                               typename MatrixType::node_type> >
+Teuchos::RCP<const typename ILUT<MatrixType>::map_type>
 ILUT<MatrixType>::getDomainMap () const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -296,9 +295,7 @@ ILUT<MatrixType>::getDomainMap () const
 
 
 template <class MatrixType>
-Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
-                               typename MatrixType::global_ordinal_type,
-                               typename MatrixType::node_type> >
+Teuchos::RCP<const typename ILUT<MatrixType>::map_type>
 ILUT<MatrixType>::getRangeMap () const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -385,12 +382,22 @@ computeCondEst (CondestType CT,
 template<class MatrixType>
 void ILUT<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
 {
+    // Check in serial or one-process mode if the matrix is square.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! A.is_null () && A->getComm ()->getSize () == 1 &&
+      A->getNodeNumRows () != A->getNodeNumCols (),
+      std::runtime_error, "Ifpack2::ILUT::setMatrix: If A's communicator only "
+      "contains one process, then A must be square.  Instead, you provided a "
+      "matrix A with " << A->getNodeNumRows () << " rows and "
+      << A->getNodeNumCols () << " columns.");
+
   // It's legal for A to be null; in that case, you may not call
   // initialize() until calling setMatrix() with a nonnull input.
   // Regardless, setting the matrix invalidates any previous
   // factorization.
   IsInitialized_ = false;
   IsComputed_ = false;
+  A_local_ = Teuchos::null;
   L_ = Teuchos::null;
   U_ = Teuchos::null;
   A_ = A;
@@ -410,17 +417,15 @@ void ILUT<MatrixType>::initialize ()
       "You must call setMatrix() with a nonnull input in order to call "
       "initialize().");
 
-    // Check in serial or one-process mode if the matrix is square.
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      A_->getComm ()->getSize () == 1 && A_->getNodeNumRows() != A_->getNodeNumCols(),
-      std::runtime_error, "Ifpack2::ILUT::initialize: In serial or one-process "
-      "mode, the input matrix must be square.");
-
-    // clear any previous allocation
+    // Clear any previous computations.
     IsInitialized_ = false;
     IsComputed_ = false;
+    A_local_ = Teuchos::null;
     L_ = Teuchos::null;
     U_ = Teuchos::null;
+
+    // Compute the local filter.
+    A_local_ = makeLocalFilter (A_);
 
     IsInitialized_ = true;
     ++NumInitialize_;
@@ -481,9 +486,9 @@ void ILUT<MatrixType>::compute ()
     const scalar_type zero = STS::zero ();
     const scalar_type one  = STS::one ();
 
-    const local_ordinal_type myNumRows = A_->getNodeNumRows ();
-    L_ = rcp (new MatrixType (A_->getRowMap (), A_->getColMap (), 0));
-    U_ = rcp (new MatrixType (A_->getRowMap (), A_->getColMap (), 0));
+    const local_ordinal_type myNumRows = A_local_->getNodeNumRows ();
+    L_ = rcp (new MatrixType (A_local_->getRowMap (), A_local_->getColMap (), 0));
+    U_ = rcp (new MatrixType (A_local_->getRowMap (), A_local_->getColMap (), 0));
 
     // CGB: note, this caching approach may not be necessary anymore
     // We will store ArrayView objects that are views of the rows of U, so that
@@ -508,7 +513,7 @@ void ILUT<MatrixType>::compute ()
 
     // Calculate how much fill will be allowed in addition to the
     // space that corresponds to the input matrix entries.
-    double local_nnz = static_cast<double> (A_->getNodeNumEntries ());
+    double local_nnz = static_cast<double> (A_local_->getNodeNumEntries ());
     double fill;
     {
       const double fillLevel = as<double> (getLevelOfFill ());
@@ -553,8 +558,8 @@ void ILUT<MatrixType>::compute ()
 
     ArrayRCP<local_ordinal_type> ColIndicesARCP;
     ArrayRCP<scalar_type>       ColValuesARCP;
-    if (! A_->supportsRowViews ()) {
-      const size_t maxnz = A_->getNodeMaxNumRowEntries ();
+    if (! A_local_->supportsRowViews ()) {
+      const size_t maxnz = A_local_->getNodeMaxNumRowEntries ();
       ColIndicesARCP.resize (maxnz);
       ColValuesARCP.resize (maxnz);
     }
@@ -564,12 +569,12 @@ void ILUT<MatrixType>::compute ()
       ArrayView<const scalar_type> ColValuesA;
       size_t RowNnz;
 
-      if (A_->supportsRowViews ()) {
-        A_->getLocalRowView (row_i, ColIndicesA, ColValuesA);
+      if (A_local_->supportsRowViews ()) {
+        A_local_->getLocalRowView (row_i, ColIndicesA, ColValuesA);
         RowNnz = ColIndicesA.size ();
       }
       else {
-        A_->getLocalRowCopy (row_i, ColIndicesARCP (), ColValuesARCP (), RowNnz);
+        A_local_->getLocalRowCopy (row_i, ColIndicesARCP (), ColValuesARCP (), RowNnz);
         ColIndicesA = ColIndicesARCP (0, RowNnz);
         ColValuesA = ColValuesARCP (0, RowNnz);
       }
@@ -931,6 +936,16 @@ void ILUT<MatrixType>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerb
   }
 }
 
+template <class MatrixType>
+Teuchos::RCP<const typename ILUT<MatrixType>::row_matrix_type>
+ILUT<MatrixType>::makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A)
+{
+  if (A->getComm ()->getSize () > 1) {
+    return Teuchos::rcp (new LocalFilter<MatrixType> (A));
+  } else {
+    return A;
+  }
+}
 
 }//namespace Ifpack2
 

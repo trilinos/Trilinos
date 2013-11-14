@@ -52,15 +52,9 @@ namespace Ifpack2 {
 
 /// \class LocalFilter
 /// \brief Access only local rows and columns of a sparse matrix.
-/// \tparam MatrixType A specialization of either Tpetra::RowMatrix,
-///   or Tpetra::CrsMatrix (which is a subclass of Tpetra::CrsMatrix).
-///
-/// For the template parameter of this class, it is better to use the
-/// most specific type you can, as long as that type is the same as
-/// the type of the object you plan to give to LocalFilter's
-/// constructor.  "Most specific" means, for example,
-/// Tpetra::CrsMatrix instead of Tpetra::RowMatrix, if you plan to
-/// give a Tpetra::CrsMatrix to this object's constructor.
+/// \tparam MatrixType A specialization of either Tpetra::RowMatrix
+///   (preferred) or Tpetra::CrsMatrix (which is a subclass of
+///   Tpetra::RowMatrix).
 ///
 /// This class provides a view of only the local rows and columns of
 /// an existing sparse matrix.  "Local rows" are those owned by the
@@ -76,18 +70,20 @@ namespace Ifpack2 {
 /// #include "Ifpack2_LocalFilter.hpp"
 /// // ...
 /// using Teuchos::RCP;
-/// typedef Tpetra::RowMatrix<double> crs_matrix_type;
+/// typedef Tpetra::RowMatrix<double> row_matrix_type;
 /// typedef Tpetra::CrsMatrix<double> crs_matrix_type;
 ///
 /// RCP<crs_matrix_type> A = ...;
 /// // ... fill the entries of A ...
 /// A->FillComplete ();
 ///
-/// Ifpack2::LocalFilter<crs_matrix_type> A_local (A);
+/// Ifpack2::LocalFilter<row_matrix_type> A_local (A);
 /// \endcode
 ///
 /// This class does not necessarily copy the entire sparse matrix; it
-/// may choose instead just to "filter out" the nonlocal entries.
+/// may choose instead just to "filter out" the nonlocal entries.  The
+/// effect on the LocalFilter of changing the entries or structure of
+/// the original matrix is undefined.
 ///
 /// The intended use case of this class is to use Ifpack2 incomplete
 /// factorizations as subdomain solvers, where each process has
@@ -139,18 +135,26 @@ public:
   //! Preserved only for backwards compatibility.  Please use "magnitude_type".
   TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
 
+  //! Type of the Tpetra::RowMatrix specialization that this class uses.
+  typedef Tpetra::RowMatrix<scalar_type,
+                            local_ordinal_type,
+                            global_ordinal_type,
+                            node_type> row_matrix_type;
+
+  //! Type of the Tpetra::Map specialization that this class uses.
+  typedef Tpetra::Map<local_ordinal_type,
+                      global_ordinal_type,
+                      node_type> map_type;
   //@}
   //! \name Constructor and destructor
   //@{
 
   /// \brief Constructor
   ///
-  /// \param A [in] The sparse matrix to which to apply the local
-  ///   filter, as a Tpetra::RowMatrix.  (Tpetra::CrsMatrix inherits
-  ///   from this, so you may use a Tpetra::CrsMatrix here instead.)
+  /// \param A [in] The sparse matrix to which to apply the local filter.
   ///
   /// This class will <i>not</i> modify the input matrix.
-  explicit LocalFilter (const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> >& Matrix);
+  explicit LocalFilter (const Teuchos::RCP<const row_matrix_type>& A);
 
   //! Destructor
   virtual ~LocalFilter();
@@ -166,19 +170,20 @@ public:
   virtual Teuchos::RCP<node_type> getNode() const;
 
   //! Returns the Map that describes the row distribution in this matrix.
-  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getRowMap() const;
+  virtual Teuchos::RCP<const map_type> getRowMap() const;
 
   //! Returns the Map that describes the column distribution in this matrix.
-  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getColMap() const;
+  virtual Teuchos::RCP<const map_type> getColMap() const;
 
   //! Returns the Map that describes the domain distribution in this matrix.
-  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getDomainMap() const;
+  virtual Teuchos::RCP<const map_type> getDomainMap() const;
 
   //! Returns the Map that describes the range distribution in this matrix.
-  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getRangeMap() const;
+  virtual Teuchos::RCP<const map_type> getRangeMap() const;
 
   //! The (locally filtered) matrix's graph.
-  virtual Teuchos::RCP<const Tpetra::RowGraph<local_ordinal_type,global_ordinal_type,node_type> > getGraph() const;
+  virtual Teuchos::RCP<const Tpetra::RowGraph<local_ordinal_type,global_ordinal_type,node_type> >
+  getGraph () const;
 
   //! The number of global rows in this matrix.
   virtual global_size_t getGlobalNumRows() const;
@@ -249,38 +254,41 @@ public:
   virtual bool supportsRowViews() const;
 
   //@}
-
-  //! @name Extraction Methods
+  //! \name Methods for getting the entries in a row.
   //@{
 
-  //! Extract a list of entries in a specified global row of this matrix. Put into pre-allocated storage.
-  /*!
-    \param LocalRow - (In) Global row number for which indices are desired.
-    \param Indices - (Out) Global column indices corresponding to values.
-    \param Values - (Out) Matrix values.
-    \param NumEntries - (Out) Number of indices.
-
-    Note: A std::runtime_error exception is thrown if either \c Indices or \c Values is not large enough to hold the data associated
-    with row \c GlobalRow. If \c GlobalRow does not belong to this node, then \c Indices and \c Values are unchanged and \c NumIndices is
-    returned as Teuchos::OrdinalTraits<size_t>::invalid().
-  */
+  /// \brief Get the entries in the given row, using global indices.
+  ///
+  /// \param GlobalRow [i] Global index of the row for which indices are desired.
+  /// \param Indices [out] Global indices of the entries in the given row.
+  /// \param Values [out] Values of the entries in the given row.
+  /// \param NumEntries [out] Number of entries in the row.
+  ///
+  /// This method throws an exception if either output array is not
+  /// large enough to hold the data associated with row \c
+  /// GlobalRow. If \c GlobalRow does not belong to the calling
+  /// process, then \c Indices and \c Values are unchanged and
+  /// \c NumIndices is <tt>Teuchos::OrdinalTraits<size_t>::invalid()</tt>
+  /// on output.
   virtual void
   getGlobalRowCopy (global_ordinal_type GlobalRow,
                     const Teuchos::ArrayView<global_ordinal_type> &Indices,
                     const Teuchos::ArrayView<scalar_type> &Values,
                     size_t &NumEntries) const;
 
-  //! Extract a list of entries in a specified local row of the graph. Put into storage allocated by calling routine.
-  /*!
-    \param LocalRow - (In) Local row number for which indices are desired.
-    \param Indices - (Out) Local column indices corresponding to values.
-    \param Values - (Out) Matrix values.
-    \param NumIndices - (Out) Number of indices.
-
-    Note: A std::runtime_error exception is thrown if either \c Indices or \c Values is not large enough to hold the data associated
-    with row \c LocalRow. If \c LocalRow is not valid for this node, then \c Indices and \c Values are unchanged and \c NumIndices is
-    returned as Teuchos::OrdinalTraits<size_t>::invalid().
-  */
+  /// \brief Get the entries in the given row, using local indices.
+  ///
+  /// \param LocalRow [i] Local index of the row for which indices are desired.
+  /// \param Indices [out] Local indices of the entries in the given row.
+  /// \param Values [out] Values of the entries in the given row.
+  /// \param NumEntries [out] Number of entries in the row.
+  ///
+  /// This method throws an exception if either output array is not
+  /// large enough to hold the data associated with row \c
+  /// LocalRow. If \c LocalRow does not belong to the calling
+  /// process, then \c Indices and \c Values are unchanged and
+  /// \c NumIndices is <tt>Teuchos::OrdinalTraits<size_t>::invalid()</tt>
+  /// on output.
   virtual void
   getLocalRowCopy (local_ordinal_type LocalRow,
                    const Teuchos::ArrayView<local_ordinal_type> &Indices,
@@ -390,9 +398,10 @@ public:
 
     \pre isLocallyIndexed()==false
   */
-  TPETRA_DEPRECATED virtual void getGlobalRowView(global_ordinal_type GlobalRow,
-                                                  Teuchos::ArrayRCP<const global_ordinal_type> &indices,
-                                                  Teuchos::ArrayRCP<const scalar_type>        &values) const;
+  TPETRA_DEPRECATED
+  virtual void getGlobalRowView(global_ordinal_type GlobalRow,
+                                Teuchos::ArrayRCP<const global_ordinal_type> &indices,
+                                Teuchos::ArrayRCP<const scalar_type>        &values) const;
 
   //! Deprecated. Get a persisting const view of the entries in a specified local row of this matrix.
   /*!
@@ -404,28 +413,18 @@ public:
 
     \pre isGloballyIndexed()==false
   */
-  TPETRA_DEPRECATED virtual void getLocalRowView(local_ordinal_type LocalRow,
-                                                 Teuchos::ArrayRCP<const local_ordinal_type> &indices,
-                                                 Teuchos::ArrayRCP<const scalar_type>       &values) const;
+  TPETRA_DEPRECATED
+  virtual void getLocalRowView(local_ordinal_type LocalRow,
+                               Teuchos::ArrayRCP<const local_ordinal_type> &indices,
+                               Teuchos::ArrayRCP<const scalar_type>       &values) const;
   //@}
 
 
 private:
   //! Type of a read-only interface to a graph.
   typedef Tpetra::RowGraph<local_ordinal_type,
-			   global_ordinal_type,
-			   node_type> row_graph_type;
-
-  //! Type of a read-only interface to a sparse matrix.
-  typedef Tpetra::RowMatrix<scalar_type,
-			    local_ordinal_type,
-			    global_ordinal_type,
-			    node_type> row_matrix_type;
-
-  //! Tpetra::Map specialization corresponding to MatrixType.
-  typedef Tpetra::Map<local_ordinal_type,
-		      global_ordinal_type,
-		      node_type> map_type;
+                           global_ordinal_type,
+                           node_type> row_graph_type;
 
   //! Pointer to the matrix to be preconditioned.
   Teuchos::RCP<const row_matrix_type> A_;
@@ -441,11 +440,12 @@ private:
   size_t MaxNumEntriesA_;
   //! NumEntries_[i] contains the nonzero entries in row `i'.
   std::vector<size_t> NumEntries_;
-  //! Used in ExtractMyRowCopy, to avoid allocation each time.
-  mutable Teuchos::Array<local_ordinal_type> Indices_;
-  //! Used in ExtractMyRowCopy, to avoid allocation each time.
-  mutable Teuchos::Array<scalar_type> Values_;
 
+  //! Temporary array used in getLocalRowCopy().
+  mutable Teuchos::Array<local_ordinal_type> Indices_;
+
+  //! Temporary array used in getLocalRowCopy().
+  mutable Teuchos::Array<scalar_type> Values_;
 };// class LocalFilter
 
 }// namespace Ifpack2

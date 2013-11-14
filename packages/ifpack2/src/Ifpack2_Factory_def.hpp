@@ -87,21 +87,11 @@ Factory::create (const std::string& precType,
   }
 
   const bool one_mpi_rank = (matrix->getComm ()->getSize () == 1);
+  // Forestall "unused variable" warnings.
+  (void) one_mpi_rank;
 
   if (precTypeUpper == "ILUT") {
-    // Note: ILUT doesn't work for multiple MPI ranks... you have to use AdditiveSchwarz.
-    if (one_mpi_rank) {
-      prec = rcp (new ILUT<MatrixType> (matrix));
-    }
-    else {
-      typedef ILUT<MatrixType> inner_solver_type;
-      typedef Details::NestedPreconditioner<prec_base_type> outer_solver_type;
-
-      prec = rcp (new AdditiveSchwarz<MatrixType, inner_solver_type> (matrix, overlap));
-      // Create the inner solver, and pass it down into the "outer" solver.
-      RCP<prec_base_type> innerPrec = rcp (new inner_solver_type (Teuchos::null));
-      dynamic_cast<outer_solver_type*> (&*prec)->setInnerPreconditioner (innerPrec);
-    }
+    prec = rcp (new ILUT<MatrixType> (matrix));
   }
   else if (precTypeUpper == "RILUK") {
     prec = rcp (new RILUK<MatrixType> (matrix));
@@ -183,21 +173,11 @@ Factory::create (const std::string& precType,
   }
 
   const bool one_mpi_rank = (matrix->getComm ()->getSize () == 1);
+  // Forestall "unused variable" warnings.
+  (void) one_mpi_rank;
 
   if (precTypeUpper == "ILUT") {
-    // Note: ILUT doesn't work for multiple MPI ranks... you have to use AdditiveSchwarz.
-    if (one_mpi_rank) {
-      prec = rcp (new ILUT<MatrixType> (matrix));
-    }
-    else {
-      typedef ILUT<MatrixType> inner_solver_type;
-      typedef Details::NestedPreconditioner<prec_base_type> outer_solver_type;
-
-      prec = rcp (new AdditiveSchwarz<MatrixType, inner_solver_type> (matrix));
-      // Create the inner solver, and pass it down into the "outer" solver.
-      RCP<prec_base_type> innerPrec = rcp (new inner_solver_type (Teuchos::null));
-      dynamic_cast<outer_solver_type*> (&*prec)->setInnerPreconditioner (innerPrec);
-    }
+    prec = rcp (new ILUT<MatrixType> (matrix));
   }
   else if (precTypeUpper == "RILUK") {
     prec = rcp (new RILUK<MatrixType> (matrix));

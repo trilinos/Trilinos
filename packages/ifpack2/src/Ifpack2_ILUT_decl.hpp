@@ -70,16 +70,14 @@ namespace Ifpack2 {
 ///   Tpetra::CrsMatrix
 ///
 /// This class computes a sparse ILUT (incomplete LU) factorization
-/// with specified fill and drop tolerance, of a given sparse matrix
-/// represented as a Tpetra::RowMatrix or Tpetra::CrsMatrix.
-///
-/// \warning If the matrix is distributed over multiple MPI processes,
-///   this class will not work correctly by itself.  You must use it
-///   as a subdomain solver inside of a domain decomposition method
-///   like AdditiveSchwarz (which see).  If you use Factory to create
-///   an ILUT preconditioner, the Factory will automatically wrap ILUT
-///   in AdditiveSchwarz for you, if the matrix's communicator
-///   contains multiple processes.
+/// with specified fill and drop tolerance, of the local part of a
+/// given sparse matrix represented as a Tpetra::RowMatrix or
+/// Tpetra::CrsMatrix.  The "local part" is the square diagonal block
+/// of the matrix owned by the calling process.  Thus, if the input
+/// matrix is distributed over multiple MPI processes, this
+/// preconditioner is equivalent to nonoverlapping additive Schwarz
+/// domain decomposition over the MPI processes, with ILUT as the
+/// subdomain solver on each process.
 ///
 /// See the documentation of setParameters() for a list of valid
 /// parameters.
@@ -140,6 +138,11 @@ public:
                             local_ordinal_type,
                             global_ordinal_type,
                             node_type> row_matrix_type;
+
+  //! Type of the Tpetra::Map specialization that this class uses.
+  typedef Tpetra::Map<local_ordinal_type,
+                      global_ordinal_type,
+                      node_type> map_type;
   //@}
   //! \name Constructors and Destructors
   //@{
@@ -153,7 +156,7 @@ public:
   /// The factorization will <i>not</i> modify the input matrix.  It
   /// stores the L and U factors in the incomplete factorization
   /// separately.
-  explicit ILUT(const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &A);
+  explicit ILUT (const Teuchos::RCP<const row_matrix_type>& A);
 
   //! Destructor
   virtual ~ILUT();
@@ -200,7 +203,7 @@ public:
 
   //! Returns \c true if the preconditioner has been successfully initialized.
   inline bool isInitialized() const {
-    return(IsInitialized_);
+    return IsInitialized_;
   }
 
   //! Compute factors L and U using the specified diagonal perturbation thresholds and relaxation parameters.
@@ -215,7 +218,7 @@ public:
 
   //! If compute() is completed, this query returns true, otherwise it returns false.
   inline bool isComputed() const {
-    return(IsComputed_);
+    return IsComputed_;
   }
 
   //@}
@@ -263,10 +266,10 @@ public:
          scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! Tpetra::Map representing the domain of this operator.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getDomainMap() const;
+  Teuchos::RCP<const map_type> getDomainMap() const;
 
   //! Tpetra::Map representing the range of this operator.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getRangeMap() const;
+  Teuchos::RCP<const map_type> getRangeMap() const;
 
   //! Whether this object's apply() method can apply the transpose (or conjugate transpose, if applicable).
   bool hasTransposeApply() const;
@@ -374,14 +377,29 @@ private:
   //! operator= (declared private and undefined; may not be used)
   ILUT<MatrixType>& operator= (const ILUT<MatrixType>& RHS);
 
+  /// \brief Wrap the given matrix in a "local filter," if necessary.
+  ///
+  /// A "local filter" excludes rows and columns that do not belong to
+  /// the calling process.  It also uses a "serial" communicator
+  /// (equivalent to MPI_COMM_SELF) rather than the matrix's original
+  /// communicator.
+  ///
+  /// If the matrix's communicator only contains one process, then the
+  /// matrix is already "local," so this function just returns the
+  /// original input.
+  static Teuchos::RCP<const row_matrix_type>
+  makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A);
+
   // \name The matrix and its incomplete LU factors
   //@{
 
   //! The matrix to be preconditioned.
   Teuchos::RCP<const row_matrix_type> A_;
-  //! L factor of the incomplete LU factorization
+  //! "Local filter" version of A_.
+  Teuchos::RCP<const row_matrix_type> A_local_;
+  //! L factor of the incomplete LU factorization of A_local_.
   Teuchos::RCP<MatrixType> L_;
-  //! U factor of the incomplete LU factorization
+  //! U factor of the incomplete LU factorization of A_local_.
   Teuchos::RCP<MatrixType> U_;
 
   //@}
