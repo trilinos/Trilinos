@@ -102,7 +102,7 @@ namespace {
     }
 
     for (size_t i=0; i < global_fields.size(); i++) {
-      const Ioss::Field &input_field = mesh_data.input_io_region()->get_fieldref(global_fields[i]);
+      const Ioss::Field &input_field = mesh_data.get_input_io_region()->get_fieldref(global_fields[i]);
       std::cout << "\t" << input_field.get_name() << " of type " << input_field.raw_storage()->name() << "\n";
 
       if (input_field.raw_storage()->component_count() == 1) {
@@ -136,7 +136,7 @@ namespace {
     else
       {
 	for (int step=1; step <= timestep_count; step++) {
-	  double time = mesh_data.input_io_region()->get_state_time(step);
+	  double time = mesh_data.get_input_io_region()->get_state_time(step);
 
 	  // Normally, an app would only process the restart input at a single step and
 	  // then continue with execution at that point.  Here just for testing, we are
@@ -144,11 +144,11 @@ namespace {
 	  // outputting that data to the restart and results output.
 
 	  mesh_data.process_restart_input(step);
-	  mesh_data.begin_output_step(time, restart_index);
-	  mesh_data.begin_output_step(time, results_index);
+	  mesh_data.begin_output_step(restart_index, time);
+	  mesh_data.begin_output_step(results_index, time);
 
-	  mesh_data.process_output_request(restart_index);
-	  mesh_data.process_output_request(results_index);
+	  mesh_data.write_defined_output_fields(restart_index);
+	  mesh_data.write_defined_output_fields(results_index);
 
 	  // Transfer all global variables from the input mesh to the
 	  // restart and results databases
@@ -164,8 +164,8 @@ namespace {
 	  for (i=parameters.begin(); i != iend; ++i) {
 	    const std::string parameterName = (*i).first;
 	    stk::util::Parameter parameter = (*i).second;
-	    mesh_data.write_global(restart_index,  parameterName, parameter);
-	    mesh_data.write_global(results_index, parameterName, parameter);
+	    mesh_data.write_global(restart_index,  parameterName, parameter.value, parameter.type);
+	    mesh_data.write_global(results_index, parameterName, parameter.value, parameter.type);
 	  }
 
           mesh_data.end_output_step(restart_index);

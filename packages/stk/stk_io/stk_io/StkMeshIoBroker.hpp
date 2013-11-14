@@ -70,12 +70,13 @@ namespace stk {
         void write_output_mesh(const stk::mesh::BulkData& bulk_data);
         void add_results_field(stk::mesh::FieldBase &field, const std::string &alternate_name);
 
-        void add_global(const std::string &globalVarName, const stk::util::Parameter &param);
+        void add_global(const std::string &globalVarName, const boost::any &value, stk::util::ParameterType::Type type);
         void add_global(const std::string &globalVarName, Ioss::Field::BasicType dataType);
         void add_global(const std::string &globalVarName, const std::string &type, Ioss::Field::BasicType dataType);
         void add_global(const std::string &globalVarName, int component_count,     Ioss::Field::BasicType dataType);
 
-        void write_global(const std::string &globalVarName, const stk::util::Parameter &param);
+        void write_global(const std::string &globalVarName,
+			  const boost::any &value, stk::util::ParameterType::Type type);
         void write_global(const std::string &globalVarName, double globalVarData);
         void write_global(const std::string &globalVarName, int globalVarData);
         void write_global(const std::string &globalVarName, std::vector<double>& globalVarData);
@@ -103,7 +104,8 @@ namespace stk {
 
     private:
         void define_output_fields(const stk::mesh::BulkData& bulk_data);
-        void setup_output_file(const std::string &filename, MPI_Comm communicator, Ioss::PropertyManager &property_manager);
+        void setup_output_file(const std::string &filename, MPI_Comm communicator,
+			       Ioss::PropertyManager &property_manager);
 
         int m_current_output_step;
         bool m_use_nodeset_for_part_nodes_fields;
@@ -124,6 +126,7 @@ namespace stk {
       BINARY = 2
     };
 
+    // ------------------------------------------------------------------------
     struct HeartbeatVariable {
       HeartbeatVariable(const std::string &name, boost::any *value, stk::util::ParameterType::Type type)
 	: m_name(name), m_value(value), m_type(type)
@@ -134,9 +137,11 @@ namespace stk {
       stk::util::ParameterType::Type m_type;
     };
 
+    // ------------------------------------------------------------------------
     class Heartbeat {
     public:
-      Heartbeat(const std::string &filename, HeartbeatType db_type, const Ioss::PropertyManager &properties, MPI_Comm comm);
+      Heartbeat(const std::string &filename, HeartbeatType db_type,
+		const Ioss::PropertyManager &properties, MPI_Comm comm);
       ~Heartbeat() {};
       
       void add_global(const std::string &globalVarName, boost::any &value, stk::util::ParameterType::Type type);
@@ -423,10 +428,14 @@ namespace stk {
         void add_restart_field(size_t file_index, stk::mesh::FieldBase &field, const std::string &db_name = std::string());
         void add_restart_field(stk::mesh::FieldBase &field, const std::string &db_name = std::string());
 
-        void add_global(size_t output_file_index, const std::string &globalVarName, const stk::util::Parameter &param);
-        void add_global(size_t output_file_index, const std::string &globalVarName, Ioss::Field::BasicType dataType);
-        void add_global(size_t output_file_index, const std::string &globalVarName, const std::string &type, Ioss::Field::BasicType dataType);
-        void add_global(size_t output_file_index, const std::string &globalVarName, int component_count,     Ioss::Field::BasicType dataType);
+        void add_global(size_t output_file_index, const std::string &globalVarName,
+			const boost::any &value, stk::util::ParameterType::Type type);
+        void add_global(size_t output_file_index, const std::string &globalVarName,
+			Ioss::Field::BasicType dataType);
+        void add_global(size_t output_file_index, const std::string &globalVarName,
+			const std::string &type, Ioss::Field::BasicType dataType);
+        void add_global(size_t output_file_index, const std::string &globalVarName,
+			int component_count,     Ioss::Field::BasicType dataType);
 
         /**
          * Add a transient step to the database at time 'time'.
@@ -456,7 +465,8 @@ namespace stk {
          */
         int process_output_request(size_t output_file_index, double time);
 
-        void write_global(size_t output_file_index, const std::string &globalVarName, const stk::util::Parameter &param);
+        void write_global(size_t output_file_index, const std::string &globalVarName,
+			  const boost::any &value, stk::util::ParameterType::Type type);
         void write_global(size_t output_file_index, const std::string &globalVarName, double data);
         void write_global(size_t output_file_index, const std::string &globalVarName, int data);
         void write_global(size_t output_file_index, const std::string &globalVarName, std::vector<double>& data);
@@ -489,14 +499,14 @@ namespace stk {
 				  boost::any &value, stk::util::ParameterType::Type type)
         {
 	  ThrowRequire(index < m_heartbeat.size());
-	  m_heartbeat[index].add_global(name, value, type);
+	  m_heartbeat[index]->add_global(name, value, type);
         }
   
         // Access a defined history or heartbeat output...
         void process_heartbeat_output(size_t index, int step, double time)
         {
 	  ThrowRequire(index < m_heartbeat.size());
-	  m_heartbeat[index].process_output(step, time);
+	  m_heartbeat[index]->process_output(step, time);
         }
   
         bool meta_data_is_set() const
@@ -605,20 +615,11 @@ namespace stk {
         Teuchos::RCP<stk::mesh::BulkData>  m_bulk_data;
 
         Teuchos::RCP<stk::mesh::Selector> m_deprecated_selector;
-        std::vector<Heartbeat> m_heartbeat;
-
-        /*!
-         * An optional selector used for filtering entities on the
-         * output database. This can be used for specifying
-         * active/inactive entities.  If present, then this selector is
-         * *anded* with the normal selectors used for output
-         */
-        Teuchos::RCP<stk::mesh::Selector> m_anded_selector;
-        stk::mesh::ConnectivityMap m_connectivity_map;
 
         stk::mesh::ConnectivityMap* m_connectivity_map;
 
         std::vector<Teuchos::RCP<OutputFile> > m_output_files;
+        std::vector<Teuchos::RCP<Heartbeat> > m_heartbeat;
 
         bool m_useNodesetForPartNodesFields;
 

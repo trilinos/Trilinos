@@ -74,7 +74,8 @@ namespace {
   }
 
   template <typename DataType>
-  void internal_write_global(Teuchos::RCP<Ioss::Region> output_region, const std::string &globalVarName, DataType globalVarData)
+  void internal_write_global(Teuchos::RCP<Ioss::Region> output_region, const std::string &globalVarName,
+			     DataType globalVarData)
   {
       ThrowErrorMsgIf (Teuchos::is_null(output_region),
                        "There is no Output mesh region associated with this Mesh Data.");
@@ -100,8 +101,8 @@ namespace {
   }
 
   template <typename DataType>
-  void internal_read_global(Teuchos::RCP<Ioss::Region> input_region, const std::string &globalVarName, DataType &globalVarData,
-			    Ioss::Field::BasicType iossType)
+  void internal_read_global(Teuchos::RCP<Ioss::Region> input_region, const std::string &globalVarName,
+			    DataType &globalVarData, Ioss::Field::BasicType iossType)
   {
       ThrowErrorMsgIf (Teuchos::is_null(input_region),
                        "There is no Input mesh region associated with this Mesh Data.");
@@ -228,6 +229,32 @@ namespace {
 		    << std::endl;
 	  break;
 	}
+      }
+    }
+
+    void internal_add_global(Teuchos::RCP<Ioss::Region> region,
+			     const std::string &globalVarName, const std::string &storage,
+			     Ioss::Field::BasicType dataType)
+    {
+      Ioss::State currentState = region->get_state();
+      if(currentState != Ioss::STATE_DEFINE_TRANSIENT) {
+	region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
+      }
+      ThrowErrorMsgIf (region->field_exists(globalVarName),
+		       "Attempt to add global variable '" << globalVarName << "' twice.");
+
+      region->field_add(Ioss::Field(globalVarName, dataType, storage, Ioss::Field::TRANSIENT, 1));
+    }
+  
+    void internal_add_global(Teuchos::RCP<Ioss::Region> region,
+			     const std::string &globalVarName, int component_count, Ioss::Field::BasicType dataType)
+    {
+      if (component_count == 1) {
+	internal_add_global(region, globalVarName, "scalar", dataType);
+      } else {
+	std::ostringstream type;
+	type << "Real[" << component_count << "]";
+	internal_add_global(region, globalVarName, type.str(), dataType);
       }
     }
 
@@ -1555,10 +1582,11 @@ namespace stk {
     }
     
     // ========================================================================
-    void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &name, const stk::util::Parameter &param)
+    void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &name,
+				     const boost::any &value, stk::util::ParameterType::Type type)
     {
       validate_output_file_index(output_file_index);
-      m_output_files[output_file_index]->add_global(name, param);
+      m_output_files[output_file_index]->add_global(name, value, type);
     }
 
     void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &globalVarName, Ioss::Field::BasicType dataType)
@@ -1579,10 +1607,11 @@ namespace stk {
       m_output_files[output_file_index]->add_global(globalVarName, storage, dataType);
     }
 
-    void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName, const stk::util::Parameter &param)
+    void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName,
+				       const boost::any &value, stk::util::ParameterType::Type type)
     {
         validate_output_file_index(output_file_index);
-        m_output_files[output_file_index]->write_global(globalVarName, param);
+        m_output_files[output_file_index]->write_global(globalVarName, value, type);
     }
 
     void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName, double globalVarData)
@@ -1721,7 +1750,7 @@ namespace stk {
     size_t StkMeshIoBroker::add_heartbeat_output(const std::string &filename, HeartbeatType hb_type,
 						 const Ioss::PropertyManager &properties)
     {
-      Heartbeat heartbeat(filename, hb_type, properties, m_communicator);
+      Teuchos::RCP<Heartbeat> heartbeat = Teuchos::rcp(new Heartbeat(filename, hb_type, properties, m_communicator));
       m_heartbeat.push_back(heartbeat);
       return m_heartbeat.size()-1;
     }
@@ -1823,9 +1852,9 @@ namespace stk {
         stk::io::set_field_role(field, Ioss::Field::TRANSIENT);
     }
 
-    void OutputFile::add_global(const std::string &name, const stk::util::Parameter &param)
+    void OutputFile::add_global(const std::string &name, const boost::any &value, stk::util::ParameterType::Type type)
     {
-      std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(param.type, param.value);
+      std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(type, value);
       this->add_global(name, parameter_type.first, parameter_type.second);
     }
 
@@ -1854,9 +1883,10 @@ namespace stk {
         m_output_region->field_add(Ioss::Field(globalVarName, dataType, storage, Ioss::Field::TRANSIENT, numberOfThingsToOutput));
     }
 
-    void OutputFile::write_global(const std::string &globalVarName, const stk::util::Parameter &param)
+    void OutputFile::write_global(const std::string &globalVarName,
+				  const boost::any &value, stk::util::ParameterType::Type type)
     {
-        internal_write_parameter(m_output_region, globalVarName, param.value, param.type);
+        internal_write_parameter(m_output_region, globalVarName, value, type);
     }
 
     void OutputFile::write_global(const std::string &globalVarName, std::vector<double>& globalVarData)
