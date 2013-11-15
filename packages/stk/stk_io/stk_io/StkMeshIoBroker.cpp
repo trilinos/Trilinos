@@ -1751,7 +1751,7 @@ namespace stk {
     }
 
     Heartbeat::Heartbeat(const std::string &filename, HeartbeatType hb_type,
-                     const Ioss::PropertyManager &properties, MPI_Comm comm)
+			 Ioss::PropertyManager properties, MPI_Comm comm)
       : m_current_step(0), m_processor(0)
     {
       if (comm != MPI_COMM_NULL) {
@@ -1897,7 +1897,8 @@ namespace stk {
                          "Attempt to add global variable '" << globalVarName << "' twice.");
         //Any field put onto the region instead of a element block, etc. gets written as "global" to exodus
         int numberOfThingsToOutput = 1;
-        m_output_region->field_add(Ioss::Field(globalVarName, dataType, storage, Ioss::Field::TRANSIENT, numberOfThingsToOutput));
+        m_output_region->field_add(Ioss::Field(globalVarName, dataType, storage,
+					       Ioss::Field::TRANSIENT, numberOfThingsToOutput));
     }
 
     void OutputFile::write_global(const std::string &globalVarName,

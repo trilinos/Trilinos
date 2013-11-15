@@ -71,17 +71,17 @@ namespace stk {
         void write_output_mesh(const stk::mesh::BulkData& bulk_data);
         void add_results_field(stk::mesh::FieldBase &field, const std::string &alternate_name);
 
-        void add_global(const std::string &globalVarName, const boost::any &value, stk::util::ParameterType::Type type);
-        void add_global(const std::string &globalVarName, Ioss::Field::BasicType dataType);
-        void add_global(const std::string &globalVarName, const std::string &type, Ioss::Field::BasicType dataType);
-        void add_global(const std::string &globalVarName, int component_count,     Ioss::Field::BasicType dataType);
+        void add_global(const std::string &variableName, const boost::any &value, stk::util::ParameterType::Type type);
+        void add_global(const std::string &variableName, Ioss::Field::BasicType dataType);
+        void add_global(const std::string &variableName, const std::string &type, Ioss::Field::BasicType dataType);
+        void add_global(const std::string &variableName, int component_count,     Ioss::Field::BasicType dataType);
 
-        void write_global(const std::string &globalVarName,
+        void write_global(const std::string &variableName,
 			  const boost::any &value, stk::util::ParameterType::Type type);
-        void write_global(const std::string &globalVarName, double globalVarData);
-        void write_global(const std::string &globalVarName, int globalVarData);
-        void write_global(const std::string &globalVarName, std::vector<double>& globalVarData);
-        void write_global(const std::string &globalVarName, std::vector<int>& globalVarData);
+        void write_global(const std::string &variableName, double globalVarData);
+        void write_global(const std::string &variableName, int globalVarData);
+        void write_global(const std::string &variableName, std::vector<double>& globalVarData);
+        void write_global(const std::string &variableName, std::vector<int>& globalVarData);
 
         void begin_output_step(double time, const stk::mesh::BulkData& bulk_data);
         void end_output_step();
@@ -145,10 +145,10 @@ namespace stk {
     class Heartbeat {
     public:
       Heartbeat(const std::string &filename, HeartbeatType db_type,
-		const Ioss::PropertyManager &properties, MPI_Comm comm);
+		Ioss::PropertyManager properties, MPI_Comm comm);
       ~Heartbeat() {};
       
-      void add_global(const std::string &globalVarName, boost::any &value, stk::util::ParameterType::Type type);
+      void add_global(const std::string &variableName, boost::any &value, stk::util::ParameterType::Type type);
       void process_output(int step, double time);
 
     private:
@@ -432,13 +432,13 @@ namespace stk {
         void add_restart_field(size_t file_index, stk::mesh::FieldBase &field, const std::string &db_name = std::string());
         void add_restart_field(stk::mesh::FieldBase &field, const std::string &db_name = std::string());
 
-        void add_global(size_t output_file_index, const std::string &globalVarName,
+        void add_global(size_t output_file_index, const std::string &variableName,
 			const boost::any &value, stk::util::ParameterType::Type type);
-        void add_global(size_t output_file_index, const std::string &globalVarName,
+        void add_global(size_t output_file_index, const std::string &variableName,
 			Ioss::Field::BasicType dataType);
-        void add_global(size_t output_file_index, const std::string &globalVarName,
+        void add_global(size_t output_file_index, const std::string &variableName,
 			const std::string &type, Ioss::Field::BasicType dataType);
-        void add_global(size_t output_file_index, const std::string &globalVarName,
+        void add_global(size_t output_file_index, const std::string &variableName,
 			int component_count,     Ioss::Field::BasicType dataType);
 
         /**
@@ -469,21 +469,20 @@ namespace stk {
          */
         int process_output_request(size_t output_file_index, double time);
 
-        void write_global(size_t output_file_index, const std::string &globalVarName,
+        void write_global(size_t output_file_index, const std::string &variableName,
 			  const boost::any &value, stk::util::ParameterType::Type type);
-        void write_global(size_t output_file_index, const std::string &globalVarName, double data);
-        void write_global(size_t output_file_index, const std::string &globalVarName, int data);
-        void write_global(size_t output_file_index, const std::string &globalVarName, std::vector<double>& data);
-        void write_global(size_t output_file_index, const std::string &globalVarName, std::vector<int>& data);
+        void write_global(size_t output_file_index, const std::string &variableName, double data);
+        void write_global(size_t output_file_index, const std::string &variableName, int data);
+        void write_global(size_t output_file_index, const std::string &variableName, std::vector<double>& data);
+        void write_global(size_t output_file_index, const std::string &variableName, std::vector<int>& data);
 
         void get_global_variable_names(std::vector<std::string> &names);
-        double get_global(const std::string &globalVarName);
-        void get_global(const std::string &globalVarName,
-			const boost::any &value, stk::util::ParameterType::Type type);
-        void get_global(const std::string &globalVarName, int &globalVar);
-        void get_global(const std::string &globalVarName, double &globalVar);
-        void get_global(const std::string &globalVarName, std::vector<double> &globalVar);
-        void get_global(const std::string &globalVarName, std::vector<int> &globalVar);
+        void get_global(const std::string &variableName,
+			boost::any &value, stk::util::ParameterType::Type type);
+        void get_global(const std::string &variableName, int &globalVar);
+        void get_global(const std::string &variableName, double &globalVar);
+        void get_global(const std::string &variableName, std::vector<double> &globalVar);
+        void get_global(const std::string &variableName, std::vector<int> &globalVar);
 
         double process_restart_input(int step);
         double process_restart_input(double time);
