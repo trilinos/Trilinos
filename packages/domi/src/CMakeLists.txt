@@ -45,6 +45,8 @@ APPEND_SET(HEADERS
   Domi_MDArrayView.hpp
   Domi_MDArrayRCP.hpp
   Domi_MDComm.hpp
+  Domi_MDMap.hpp
+  Domi_MDVector.hpp
   )
 
 APPEND_SET(SOURCES
