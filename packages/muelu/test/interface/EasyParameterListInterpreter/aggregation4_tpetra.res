@@ -159,4 +159,3 @@ Level 2
 
  Smoother (level 2) pre  : SuperLU solver interface
  Smoother (level 2) post : no smoother
-

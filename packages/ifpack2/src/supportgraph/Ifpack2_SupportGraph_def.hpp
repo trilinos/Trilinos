@@ -266,12 +266,22 @@ template<class MatrixType>
 void SupportGraph<MatrixType>::
 setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
 {
+  // Check in serial or one-process mode if the matrix is square.
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ! A.is_null () && A->getComm ()->getSize () == 1 &&
+    A->getNodeNumRows () != A->getNodeNumCols (),
+    std::runtime_error, "Ifpack2::ILUT::setMatrix: If A's communicator only "
+    "contains one process, then A must be square.  Instead, you provided a "
+    "matrix A with " << A->getNodeNumRows () << " rows and "
+    << A->getNodeNumCols () << " columns.");
+
   // It's legal for A to be null; in that case, you may not call
   // initialize() until calling setMatrix() with a nonnull input.
   // Regardless, setting the matrix invalidates any previous support
   // graph computation.
   IsInitialized_ = false;
   IsComputed_ = false;
+  A_local_ = Teuchos::null;
   Support_ = Teuchos::null;
   solver_ = Teuchos::null;
   A_ = A;
@@ -283,15 +293,15 @@ template<class MatrixType>
 void
 SupportGraph<MatrixType>::findSupport ()
 {
-  const scalar_type zero = STS::zero ();
-  const scalar_type one = STS::one ();
-
-  typedef std::pair<int, int> E;
-
   // FIXME (mfh 14 Nov 2013) Please don't bring in all of Boost.  Only
   // add "using" declarations for the things you need.  That avoids
   // possible collisions and also improves compilation time.
   using namespace boost;
+  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
+                            global_ordinal_type, node_type> crs_matrix_type;
+  typedef Tpetra::Vector<scalar_type, local_ordinal_type,
+                         global_ordinal_type, node_type> vec_type;
+  typedef std::pair<int, int> E;
 
   // FIXME (mfh 14 Nov 2013) The convention for typedefs is lower case
   // with words separated by underscores, followed by "type".  Hence,
@@ -301,13 +311,16 @@ SupportGraph<MatrixType>::findSupport ()
   typedef typename graph_traits<Graph>::edge_descriptor Edge;
   typedef typename graph_traits<Graph>::vertex_descriptor Vertex;
 
+  const scalar_type zero = STS::zero ();
+  const scalar_type one = STS::one ();
+
   //Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
 
-  size_t num_verts = A_->getNodeNumRows();
+  size_t num_verts = A_local_->getNodeNumRows();
   // FIXME (mfh 14 Nov 2013) Don't use int.  getNodeNumEntries()
   // returns size_t, which could be larger than int.  This could cause
   // overflow.
-  int num_edges  = (A_->getNodeNumEntries() - A_->getNodeNumDiags())/2;
+  int num_edges  = (A_local_->getNodeNumEntries() - A_local_->getNodeNumDiags())/2;
 
   // Create data structures for the BGL code
   // and temp data structures for extraction
@@ -315,7 +328,7 @@ SupportGraph<MatrixType>::findSupport ()
   magnitude_type *weights = new magnitude_type[num_edges];
 
   size_t num_entries;
-  size_t max_num_entries = A_->getNodeMaxNumRowEntries();
+  size_t max_num_entries = A_local_->getNodeMaxNumRowEntries();
 
   // FIXME (mfh 14 Nov 2013) Use std::vector or Teuchos::Array, not raw pointers.
   scalar_type *valuestemp = new scalar_type[max_num_entries];
@@ -343,7 +356,7 @@ SupportGraph<MatrixType>::findSupport ()
   // indicates its purpose, e.g., "numNegEntries" (?).
   int k = 0;
   for (size_t i = 0; i < num_verts; ++i) {
-    A_->getLocalRowCopy (i, indices, values, num_entries);
+    A_local_->getLocalRowCopy (i, indices, values, num_entries);
     for (size_t j = 0; j < num_entries; ++j) {
 
       if(i == Teuchos::as<size_t>(indices[j])) {
@@ -480,13 +493,11 @@ SupportGraph<MatrixType>::findSupport ()
 
   // First compute the "diagonal surplus" (in the original input matrix)
   // If input is a (pure, Dirichlet) graph Laplacian , this will be 0
-  Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>
-    ones(A_->getDomainMap());
-  Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>
-    surplus(A_->getRangeMap());
+  vec_type ones (A_local_->getDomainMap ());
+  vec_type surplus (A_local_->getRangeMap ());
 
-  ones.putScalar(one);
-  A_->apply(ones, surplus);
+  ones.putScalar (one);
+  A_local_->apply (ones, surplus);
 
   Teuchos::ArrayRCP<const scalar_type> surplusaccess = surplus.getData(0);
 
@@ -527,9 +538,9 @@ SupportGraph<MatrixType>::findSupport ()
   }
 
   // Create the CrsMatrix for the support graph
-  Support_ = rcp(new Tpetra::CrsMatrix
-                 <scalar_type, local_ordinal_type, global_ordinal_type, node_type>
-                 (A_->getRowMap(), A_->getColMap(), localnumnz, Tpetra::StaticProfile));
+  Support_ = rcp (new crs_matrix_type (A_local_->getRowMap (),
+                                       A_local_->getColMap (),
+                                       localnumnz, Tpetra::StaticProfile));
 
   // Fill in the matrix with the stl vectors for each row
   for (size_t i = 0; i < num_verts; ++i) {
@@ -563,23 +574,18 @@ void SupportGraph<MatrixType>::initialize ()
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       A_.is_null (), std::runtime_error, "Ifpack2::SupportGraph::initialize: "
-      "The matrix to preconditioner is null.  Please call setMatrix() with a "
+      "The matrix to precondition is null.  Please call setMatrix() with a "
       "nonnull input before calling this method.");
 
-    // check only in serial if the matrix is square
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      getComm()->getSize() == 1 && A_->getNodeNumRows() != A_->getNodeNumCols(),
-      std::runtime_error,
-      "Ifpack2::SupportGraph::initialize: In serial or one-process "
-      "mode, the input matrix must be square.");
-
-    // Clear any previous allocation
+    // Clear any previous computations.
     IsInitialized_ = false;
     IsComputed_ = false;
+    A_local_ = Teuchos::null;
     Support_ = Teuchos::null;
     solver_ = Teuchos::null;
 
-    findSupport (); // Compute the support
+    A_local_ = makeLocalFilter (A_); // Compute the local filter.
+    findSupport (); // Compute the support.
 
     // Set up the solver and compute the symbolic factorization.
     solver_ = Amesos2::create<MatrixType, MV> ("amesos2_cholmod", Support_);
@@ -706,17 +712,25 @@ std::string SupportGraph<MatrixType>::description() const {
   else {
     oss << "{status: [not initialized, not computed]";
   }
-  oss << ", global number of rows: " << A_->getGlobalNumRows()
-      << ", global number of columns: " << A_->getGlobalNumCols()
-      << "}";
+
+  if (A_.is_null ()) {
+    oss << ", A_: null";
+  }
+  else {
+    oss << ", A_: nonnull, "
+        << ", global number of rows: " << A_->getGlobalNumRows ()
+        << ", global number of columns: " << A_->getGlobalNumCols ()
+        << "}";
+  }
   return oss.str();
 }
 
 
 template <class MatrixType>
-void SupportGraph<MatrixType>::describe(Teuchos::FancyOStream &out,
-                                        const Teuchos::EVerbosityLevel verbLevel
-                                        ) const {
+void SupportGraph<MatrixType>::
+describe (Teuchos::FancyOStream &out,
+          const Teuchos::EVerbosityLevel verbLevel) const
+{
   using std::endl;
   using std::setw;
   using Teuchos::VERB_DEFAULT;
@@ -738,23 +752,23 @@ void SupportGraph<MatrixType>::describe(Teuchos::FancyOStream &out,
     out << endl;
     out << "==============================================================================="
         << endl;
-    out << "Absolute threshold = " << getAbsoluteThreshold() << endl;
-    out << "Relative threshold = " << getRelativeThreshold() << endl;
+    out << "Absolute threshold: " << getAbsoluteThreshold () << endl;
+    out << "Relative threshold: " << getRelativeThreshold () << endl;
 
-    if(Condest_ == -1.0) {
-      out << "Condition number estimate       = N/A" << endl;
-    }
-    else {
-      out << "Condition number estimate       = " << Condest_ << endl;
-    }
+    out << "Condition number estimate: " << Condest_ << endl;
 
-    if (isComputed()) {
-      out << "Number of nonzeros in A         = " << A_->getGlobalNumEntries() << endl;
-      out << "Number of edges in support graph     = "
-          << Support_->getGlobalNumEntries()-Support_->getGlobalNumDiags() << std::endl;
-      out << "Fraction of off diagonals of supportgraph/off diagonals of original      = "
-          << (double)(Support_->getGlobalNumEntries()-Support_->getGlobalNumDiags())/
-        ((A_->getGlobalNumEntries()-A_->getGlobalNumDiags())/2) << std::endl;
+    if (isComputed ()) {
+      out << "Number of nonzeros in A: " << A_->getGlobalNumEntries() << endl;
+      out << "Number of nonzeros in A_local: " << A_local->getGlobalNumEntries() << endl;
+      out << "Number of edges in support graph: "
+          << Support_->getGlobalNumEntries () - Support_->getGlobalNumDiags () << endl;
+
+      const double popFrac =
+        static_cast<double> (Support_->getGlobalNumEntries () - Support_->getGlobalNumDiags ()) /
+        ((A_->getGlobalNumEntries () - A_->getGlobalNumDiags ()) / 2.0);
+
+      out << "Fraction of off diagonals of supportgraph/off diagonals of original: "
+          << popFrac << endl;
     }
     out << endl;
     out << "Phase           # calls    Total Time (s) " << endl;

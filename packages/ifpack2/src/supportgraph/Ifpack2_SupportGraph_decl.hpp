@@ -330,12 +330,34 @@ private:
   //! operator= (declared private and undefined; may not be used)
   SupportGraph<MatrixType>& operator= (const SupportGraph<MatrixType>& RHS);
 
+  /// \brief Wrap the given matrix in a "local filter," if necessary.
+  ///
+  /// A "local filter" excludes rows and columns that do not belong to
+  /// the calling process.  It also uses a "serial" communicator
+  /// (equivalent to MPI_COMM_SELF) rather than the matrix's original
+  /// communicator.
+  ///
+  /// If the matrix's communicator only contains one process, then the
+  /// matrix is already "local," so this function just returns the
+  /// original input.
+  static Teuchos::RCP<const row_matrix_type>
+  makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A);
+
   //@}
-  // \name Internal data
+  // \name The matrix, its support graph, and the (local) solver
   //@{
 
-  //! reference to the matrix to be preconditioned.
+  //! The matrix to be preconditioned; input to the constructor or setMatrix().
   Teuchos::RCP<const row_matrix_type> A_;
+
+  /// \brief "Local filter" version of A_.
+  ///
+  /// SupportGraph only knows how to precondition a square matrix on a
+  /// single process.  Thus, if A_ has multiple processes in its
+  /// communicator, we instead apply the preconditioner to the "local
+  /// filter" version of A.  See the documentation of LocalFilter for
+  /// an explanation.
+  Teuchos::RCP<const row_matrix_type> A_local_;
 
   Teuchos::RCP<MatrixType> Support_;
 

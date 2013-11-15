@@ -382,14 +382,14 @@ computeCondEst (CondestType CT,
 template<class MatrixType>
 void ILUT<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
 {
-    // Check in serial or one-process mode if the matrix is square.
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! A.is_null () && A->getComm ()->getSize () == 1 &&
-      A->getNodeNumRows () != A->getNodeNumCols (),
-      std::runtime_error, "Ifpack2::ILUT::setMatrix: If A's communicator only "
-      "contains one process, then A must be square.  Instead, you provided a "
-      "matrix A with " << A->getNodeNumRows () << " rows and "
-      << A->getNodeNumCols () << " columns.");
+  // Check in serial or one-process mode if the matrix is square.
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ! A.is_null () && A->getComm ()->getSize () == 1 &&
+    A->getNodeNumRows () != A->getNodeNumCols (),
+    std::runtime_error, "Ifpack2::ILUT::setMatrix: If A's communicator only "
+    "contains one process, then A must be square.  Instead, you provided a "
+    "matrix A with " << A->getNodeNumRows () << " rows and "
+    << A->getNodeNumCols () << " columns.");
 
   // It's legal for A to be null; in that case, you may not call
   // initialize() until calling setMatrix() with a nonnull input.
@@ -414,8 +414,8 @@ void ILUT<MatrixType>::initialize ()
     // Check that the matrix is nonnull.
     TEUCHOS_TEST_FOR_EXCEPTION(
       A_.is_null (), std::runtime_error, "Ifpack2::ILUT::initialize: "
-      "You must call setMatrix() with a nonnull input in order to call "
-      "initialize().");
+      "The matrix to precondition is null.  Please call setMatrix() with a "
+      "nonnull input before calling this method.");
 
     // Clear any previous computations.
     IsInitialized_ = false;
@@ -424,8 +424,7 @@ void ILUT<MatrixType>::initialize ()
     L_ = Teuchos::null;
     U_ = Teuchos::null;
 
-    // Compute the local filter.
-    A_local_ = makeLocalFilter (A_);
+    A_local_ = makeLocalFilter (A_); // Compute the local filter.
 
     IsInitialized_ = true;
     ++NumInitialize_;

@@ -157,4 +157,3 @@ Level 2
 
  Smoother (level 2) pre  : MueLu::AmesosSmoother{type = Superlu}
  Smoother (level 2) post : no smoother
-

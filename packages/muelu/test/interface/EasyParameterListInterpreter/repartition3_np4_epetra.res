@@ -78,6 +78,7 @@ Level 1
   minRowsPerProcessor = 800
   nonzeroImbalance = 1.2
   remapPartitions = 0
+  numRemapValues = 4   [unused]
   alwaysKeepProc0 = 1
 
  type = Interpolation
@@ -161,6 +162,7 @@ Level 2
   minRowsPerProcessor = 800
   nonzeroImbalance = 1.2
   remapPartitions = 0
+  numRemapValues = 4   [unused]
   alwaysKeepProc0 = 1
 
  type = Interpolation
@@ -201,4 +203,3 @@ Level 2
 
  Smoother (level 2) pre  : MueLu::AmesosSmoother{type = Superlu}
  Smoother (level 2) post : no smoother
-
