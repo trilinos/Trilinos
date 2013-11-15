@@ -42,10 +42,7 @@ namespace
 
     // ========================================================================
     // Define the heartbeat output.
-    Ioss::PropertyManager hb_props;
-    hb_props.add(Ioss::Property("FILE_FORMAT", "spyhis"));
-
-    size_t heartbeat_index = stkIo.add_heartbeat_output(file_name, stk::io::TEXT, hb_props);
+    size_t heartbeat_index = stkIo.add_heartbeat_output(file_name, stk::io::SPYHIS);
 
     stk::util::ParameterMapType::const_iterator i = parameters.begin();
     stk::util::ParameterMapType::const_iterator iend = parameters.end();

@@ -69,11 +69,8 @@ namespace {
     size_t hist = mesh_data.add_heartbeat_output(history_filename, stk::io::BINARY);
 
     std::string heartbeat_filename = working_directory + type + ".heartbeat";
-    Ioss::PropertyManager hb_props;
-    hb_props.add(Ioss::Property("SHOW_LABELS",       false));
-    hb_props.add(Ioss::Property("SHOW_LEGEND",       true));
 
-    size_t heart = mesh_data.add_heartbeat_output(heartbeat_filename, stk::io::TEXT, hb_props);
+    size_t heart = mesh_data.add_heartbeat_output(heartbeat_filename, stk::io::TEXT);
     
     // Iterate all fields and set them as restart fields...
     const stk::mesh::FieldVector &fields = mesh_data.meta_data().get_fields();
@@ -131,7 +128,7 @@ namespace {
 
     if (timestep_count == 0 )
       {
-        mesh_data.write_output_mesh(result_index);
+        mesh_data.write_output_mesh(results_index);
       }
     else
       {

@@ -1766,8 +1766,30 @@ namespace stk {
       }
 
       if (m_processor == 0) {
-        std::string db_io_type = hb_type == BINARY ? "exodus" : "heartbeat";
-        Ioss::DatabaseUsage db_usage = hb_type == BINARY ? Ioss::WRITE_HISTORY : Ioss::WRITE_HEARTBEAT;
+        std::string db_io_type = "exodus";
+        Ioss::DatabaseUsage db_usage = Ioss::WRITE_HISTORY;
+
+	if (hb_type != BINARY) {
+	  db_io_type = "heartbeat";
+	  db_usage = Ioss::WRITE_HEARTBEAT;
+
+	  if (hb_type == SPYHIS) {
+	    properties.add(Ioss::Property("FILE_FORMAT", "spyhis"));
+	  }
+	  else if (hb_type == CSV) {
+	    properties.add(Ioss::Property("SHOW_TIME_STAMP", false));
+	    properties.add(Ioss::Property("FIELD_SEPARATOR", ", "));
+	  }
+	  else if (hb_type == TEXT) {
+	    properties.add(Ioss::Property("SHOW_TIME_STAMP", false));
+	    properties.add(Ioss::Property("FIELD_SEPARATOR", "\t"));
+	  }
+	  else if (hb_type == TS_TEXT) {
+	    properties.add(Ioss::Property("SHOW_TIME_STAMP", true));
+	    properties.add(Ioss::Property("FIELD_SEPARATOR", "\t"));
+	  }
+	}
+
         Ioss::DatabaseIO *db = Ioss::IOFactory::create(db_io_type, filename,
                                                        db_usage, comm, properties);
         if (db == NULL || !db->ok()) {

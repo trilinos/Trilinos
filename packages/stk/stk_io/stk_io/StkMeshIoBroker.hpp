@@ -122,8 +122,11 @@ namespace stk {
 
     // ========================================================================    
     enum HeartbeatType {
-      TEXT = 1,
-      BINARY = 2
+      BINARY = 1, /* Exodus (history file) */
+      CSV,        /* Comma-seperated values */
+      TEXT,       /* Same as CSV except fields separated by tab (by default) */
+      TS_TEXT,    /* same as TEXT except lines preceded by timestamp*/
+      SPYHIS
     };
 
     // ------------------------------------------------------------------------
