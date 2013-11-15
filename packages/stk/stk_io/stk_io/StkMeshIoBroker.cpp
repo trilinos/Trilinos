@@ -1766,6 +1766,9 @@ namespace stk {
 	  db_io_type = "heartbeat";
 	  db_usage = Ioss::WRITE_HEARTBEAT;
 
+	  // Always add the "time" field to all heartbeat outputs...
+	  properties.add(Ioss::Property("SHOW_TIME_FIELD", true));
+
 	  if (hb_type == SPYHIS) {
 	    properties.add(Ioss::Property("FILE_FORMAT", "spyhis"));
 	  }
