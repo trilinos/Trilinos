@@ -117,6 +117,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test0, Scalar, LocalOr
   params.set ("fact: ilut level-of-fill", 1.0);
   params.set ("fact: drop tolerance", 0.0);
   params.set ("schwarz: overlap level", static_cast<int> (0));
+  params.set ("schwarz: combine mode", "Zero");
 
 #if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
   params.set ("schwarz: use reordering",true);
@@ -152,8 +153,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test0, Scalar, LocalOr
   TEST_COMPARE_FLOATING_ARRAYS(yview, zview, 4*Teuchos::ScalarTraits<Scalar>::eps());
 }
 
+// ///////////////////////////////////////////////////////////////////// //
 
-//this macro declares the unit-test-class:
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test1, Scalar, LocalOrdinal, GlobalOrdinal)
 {
 //we are now in a class method declared by the above macro, and
@@ -180,6 +181,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test1, Scalar, LocalOr
 
   const int overlapLevel=3;
   params.set ("schwarz: overlap level", overlapLevel);
+  params.set ("schwarz: combine mode", "Add");
   params.set ("fact: ilut level-of-fill", 1.0);
   params.set ("fact: drop tolerance", 0.0);
 #if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
@@ -208,8 +210,28 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test1, Scalar, LocalOr
   x.putScalar(1);
   prec.apply(x, y);
 
-  // The solution should now be full of 1/2s
+  // The solution should now be full of 1/2s, except at processor boundaries.  If z[i] is on a processor
+  // boundary, the solution will be 0.5 * K, where K is the number of processors that include i in their
+  // subdomain. The matrix is a 1D operator and we know the amount of overlap, so this is easy to calculate.
   z.putScalar(0.5);
+  Teuchos::ArrayRCP<Scalar> zdata = z.getDataNonConst(0);
+  int mypid = rowmap->getComm()->getRank();
+  if ( mypid == 0 ) {
+    for (size_t i=0; i<overlapLevel; ++i)
+      zdata[num_rows_per_proc-i-1] += 0.5;
+  }
+  else if (mypid == rowmap->getComm()->getSize()-1) {
+    for (size_t i=0; i<overlapLevel; ++i)
+      zdata[i] += 0.5;
+  }
+  else {
+    for (size_t i=0; i<overlapLevel; ++i)
+      zdata[i] += 0.5;
+    for (size_t i=0; i<overlapLevel; ++i)
+      zdata[num_rows_per_proc-i-1] += 0.5;
+  }
+  zdata = Teuchos::null;
+
 
   Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
   Teuchos::ArrayRCP<const Scalar> zview = z.get1dView();
@@ -217,9 +239,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test1, Scalar, LocalOr
   TEST_COMPARE_FLOATING_ARRAYS(yview, zview, 4*Teuchos::ScalarTraits<Scalar>::eps());
 }
 
+// ///////////////////////////////////////////////////////////////////// //
 
-
-//this macro declares the unit-test-class:
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test2, Scalar, LocalOrdinal, GlobalOrdinal)
 {
 
@@ -233,9 +254,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test2, Scalar, LocalOr
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
 
   // Don't run in serial.
-  if(rowmap->getComm()->getSize()==1) return;
+  if(rowmap->getComm()->getSize()==1) {
+    out << std::endl << "This test must be run on more than one process." << std::endl << std::endl;
+    return;
+  }
 
-  Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = tif_utest::create_test_matrix2<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
+  Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = tif_utest::create_test_matrix3<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
 
   Ifpack2::AdditiveSchwarz<CrsType,Ifpack2::ILUT<CrsType > > prec (crsmatrix);
   Teuchos::ParameterList params, zlist;
@@ -269,7 +293,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test2, Scalar, LocalOr
 
 }
 
-#ifdef HAVE_IFPACK2_XPETRA
+// ///////////////////////////////////////////////////////////////////// //
+
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, TestGIDs, Scalar, LocalOrdinal, GlobalOrdinal)
 {
   // Test that AdditiveSchwarz doesn't munge GIDs.
@@ -331,7 +356,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, TestGIDs, Scalar, Loca
   }
 
 }
-#endif //ifdef HAVE_IFPACK2_XPETRA
 
 
 
@@ -340,9 +364,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, TestGIDs, Scalar, Loca
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, Test1, Scalar, LocalOrdinal,GlobalOrdinal)  \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, Test2, Scalar, LocalOrdinal,GlobalOrdinal)
 
-#ifdef HAVE_IFPACK2_XPETRA
 TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, TestGIDs, double, int, int)
-#endif
 
 UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
 #ifndef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
