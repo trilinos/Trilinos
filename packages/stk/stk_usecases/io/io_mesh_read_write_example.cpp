@@ -35,7 +35,8 @@ namespace {
 		       const std::string &working_directory,
 		       const std::string &filename,
 		       stk::io::StkMeshIoBroker &mesh_data,
-		       int db_integer_size)
+		       int db_integer_size,
+		       stk::io::HeartbeatType hb_type)
   {
     std::string file = working_directory;
     file += filename;
@@ -64,13 +65,9 @@ namespace {
 
     size_t restart_index = mesh_data.create_output_mesh(restart_filename);
 
-    // Create history and heartbeat files...
-    std::string history_filename = working_directory + type + ".history";
-    size_t hist = mesh_data.add_heartbeat_output(history_filename, stk::io::BINARY);
-
-    std::string heartbeat_filename = working_directory + type + ".heartbeat";
-
-    size_t heart = mesh_data.add_heartbeat_output(heartbeat_filename, stk::io::TEXT);
+    // Create heartbeat file of the specified format...
+    std::string heartbeat_filename = working_directory + type + ".hrt";
+    size_t heart = mesh_data.add_heartbeat_output(heartbeat_filename, hb_type);
     
     // Iterate all fields and set them as restart fields...
     const stk::mesh::FieldVector &fields = mesh_data.meta_data().get_fields();
@@ -115,7 +112,6 @@ namespace {
       mesh_data.add_global(restart_index, input_field.get_name(), input_field.raw_storage()->name(), input_field.get_type());
       mesh_data.add_global(results_index, input_field.get_name(), input_field.raw_storage()->name(), input_field.get_type());
       stk::util::Parameter &param = parameters.get_param(input_field.get_name());
-      mesh_data.add_heartbeat_global(hist,  input_field.get_name(), param.value, param.type);
       mesh_data.add_heartbeat_global(heart, input_field.get_name(), param.value, param.type);
     }
 
@@ -157,7 +153,6 @@ namespace {
 	    mesh_data.get_global(parameterName, parameter.value, parameter.type);
 	  }
 
-	  parameters.write_parameter_list(std::cerr);
 	  for (i=parameters.begin(); i != iend; ++i) {
 	    const std::string parameterName = (*i).first;
 	    stk::util::Parameter parameter = (*i).second;
@@ -168,7 +163,6 @@ namespace {
           mesh_data.end_output_step(restart_index);
           mesh_data.end_output_step(results_index);
 
-	  mesh_data.process_heartbeat_output(hist,  step, time);
 	  mesh_data.process_heartbeat_output(heart, step, time);
 	}
       }
@@ -183,7 +177,8 @@ namespace {
 	      bool compose_output,
 	      int  compression_level,
 	      bool compression_shuffle,
-	      int  db_integer_size)
+	      int  db_integer_size,
+	      stk::io::HeartbeatType hb_type)
   {
     stk::io::StkMeshIoBroker mesh_data(comm);
 
@@ -215,7 +210,7 @@ namespace {
       mesh_data.property_add(Ioss::Property("INTEGER_SIZE_API", db_integer_size));
     }
 
-    mesh_read_write(type, working_directory, filename, mesh_data, db_integer_size);
+    mesh_read_write(type, working_directory, filename, mesh_data, db_integer_size, hb_type);
   }
 }
 
@@ -232,7 +227,7 @@ int main(int argc, char** argv)
   int db_integer_size = 4;
   bool compose_output = false;
   std::string parallel_io = "";
-
+  std::string heartbeat_format = "binary";
   //----------------------------------
   // Process the broadcast command line arguments
   bopt::options_description desc("options");
@@ -250,6 +245,8 @@ int main(int argc, char** argv)
     ("compose_output", bopt::value<bool>(&compose_output), "create a single output file: true|false" )
     ("parallel_io_method", bopt::value<std::string>(&parallel_io),
      "Method to use for parallel io. One of mpiio, mpiposix, or pnetcdf")
+    ("heartbeat_format", bopt::value<std::string>(&heartbeat_format),
+     "Format of heartbeat output. One of binary, csv, text, ts_text, spyhis")
     ("db_integer_size", bopt::value<int>(&db_integer_size), "use 4 or 8-byte integers on output database" );
 
 
@@ -272,9 +269,20 @@ int main(int argc, char** argv)
     mesh = mesh.substr(4, mesh.size());
     type = "dof";
   }
+
+  stk::io::HeartbeatType hb_type = stk::io::BINARY; // Default is binary.
+  if (heartbeat_format == "csv")
+    hb_type = stk::io::CSV;
+  else if (heartbeat_format == "text")
+    hb_type = stk::io::TEXT;
+  else if (heartbeat_format == "ts_text")
+    hb_type = stk::io::TS_TEXT;
+  else if (heartbeat_format == "spyhis")
+    hb_type = stk::io::SPYHIS;
+
   driver(use_case_environment.m_comm, parallel_io,
 	 working_directory, mesh, type, decomp_method, compose_output, 
-	 compression_level, compression_shuffle, db_integer_size);
+	 compression_level, compression_shuffle, db_integer_size, hb_type);
 
   return 0;
 }
