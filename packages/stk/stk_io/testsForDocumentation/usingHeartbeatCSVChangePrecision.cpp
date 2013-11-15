@@ -8,10 +8,10 @@
 
 namespace
 {
-  TEST(StkMeshIoBrokerHowTo, writeHeartbeat)
+  TEST(StkMeshIoBrokerHowTo, writeHeartbeatCSVChangePrecision)
   {
 
-    const std::string file_name = "Heartbeat.txt";
+    const std::string file_name = "Heartbeat-CSV.txt";
     MPI_Comm communicator = MPI_COMM_WORLD;
 
     stk::util::ParameterList parameters;
@@ -45,7 +45,9 @@ namespace
       stk::io::StkMeshIoBroker stkIo(communicator);
 
       // Define the heartbeat output...
-      size_t heartbeat_index = stkIo.add_heartbeat_output(file_name, stk::io::TEXT);
+      Ioss::PropertyManager hb_props;
+      hb_props.add(Ioss::Property("PRECISION", 10));
+      size_t heartbeat_index = stkIo.add_heartbeat_output(file_name, stk::io::CSV, hb_props);
 
       stk::util::ParameterMapType::const_iterator i = parameters.begin();
       stk::util::ParameterMapType::const_iterator iend = parameters.end();
@@ -73,8 +75,8 @@ namespace
       std::string header_line;
       std::string data_line;
 
-      std::string expected_header_line = "        Time	      Ages_1	      Ages_2	      Ages_3	      Ages_4	      Answer	          PI	some_doubles_1	some_doubles_2	some_doubles_3";
-      std::string expected_data_line = " 0.00000e+00	          55	          49	          21	          19	          42	-3.14159e+00	 2.78000e+00	 5.30000e+00	 6.21000e+00";
+      std::string expected_header_line = "             Time,            Ages_1,            Ages_2,            Ages_3,            Ages_4,            Answer,                PI,    some_doubles_1,    some_doubles_2,    some_doubles_3";
+      std::string expected_data_line = " 0.0000000000e+00,                55,                49,                21,                19,                42, -3.1415900000e+00,  2.7800000000e+00,  5.3000000000e+00,  6.2100000000e+00";
 
       EXPECT_TRUE(!std::getline(heartbeat, header_line).fail());
       EXPECT_STREQ(header_line.c_str(), expected_header_line.c_str());

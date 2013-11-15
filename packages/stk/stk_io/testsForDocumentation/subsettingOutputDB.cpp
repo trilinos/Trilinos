@@ -27,8 +27,6 @@ TEST(StkMeshIoBrokerHowTo, subsetOutputDatabase)
       mesh_data.populate_bulk_data();
 
       // Create a selector containing just the shell parts.
-      // Due to intimate knowledge of the workings of the generated mesh,
-      // these parts will be named "block_2", ... "block_7"
       stk::mesh::MetaData &meta_data = mesh_data.meta_data();
       stk::mesh::Selector shell_subset;
       const stk::mesh::PartVector &all_parts = meta_data.get_mesh_parts();
