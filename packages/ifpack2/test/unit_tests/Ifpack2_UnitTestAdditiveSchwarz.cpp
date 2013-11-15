@@ -68,17 +68,17 @@
 // ***********************************************************************
 
 
-/*! \file Ifpack2_UnitTestILUT.cpp
+/*! \file Ifpack2_UnitTestAdditiveSchwarz.cpp
 
-\brief Ifpack2 Unit test for the ILUT template.
+\brief Ifpack2 Unit test for AdditiveSchwarz.
 */
 
-
+#include <iostream>
 #include <Teuchos_ConfigDefs.hpp>
+
 #include <Ifpack2_ConfigDefs.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Ifpack2_Version.hpp>
-#include <iostream>
 
 #if defined(HAVE_IFPACK2_QD) && !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
 #include <qd/dd_real.h>
@@ -87,6 +87,7 @@
 #include <Ifpack2_UnitTestHelpers.hpp>
 #include <Ifpack2_AdditiveSchwarz.hpp>
 #include <Ifpack2_ILUT.hpp>
+#include <Ifpack2_SolverForTesting.hpp>
 
 namespace {
 using Tpetra::global_size_t;
@@ -268,6 +269,70 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test2, Scalar, LocalOr
 
 }
 
+#ifdef HAVE_IFPACK2_XPETRA
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, TestGIDs, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  // Test that AdditiveSchwarz doesn't munge GIDs.
+
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CrsType;
+
+  std::string version = Ifpack2::Version();
+  out << "Ifpack2::Version(): " << version << std::endl;
+
+  global_size_t num_rows_per_proc = 10;
+  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+
+  // Don't run in serial.
+  if(rowmap->getComm()->getSize()==1) {
+    out << std::endl << "This test must be run on more than one process." << std::endl << std::endl;
+    return;
+  }
+
+  Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = tif_utest::create_test_matrix2<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
+
+
+  for (int i=0; i<2; ++i) {
+    bool reorderSubdomains;
+    if (i==0) reorderSubdomains=false;
+    else      reorderSubdomains=true;
+      
+    for (int overlapLevel=0; overlapLevel<4; ++overlapLevel) {
+
+      Ifpack2::AdditiveSchwarz<CrsType,Ifpack2::SolverForTesting<CrsType > > prec (crsmatrix);
+
+      Teuchos::ParameterList params, zlist;
+      params.set ("schwarz: overlap level", overlapLevel);
+      params.set ("schwarz: use reordering",reorderSubdomains);
+      zlist.set ("order_method", "rcm");
+      params.set ("schwarz: reordering list", zlist);
+      params.set("schwarz: combine mode", "Zero");
+
+      prec.setParameters(params);
+
+      prec.initialize();
+      prec.compute();
+
+
+      Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,1), y(rowmap,1);
+      Teuchos::ArrayRCP<Scalar> xData = x.getDataNonConst(0);
+      for (size_t i=0; i<xData.size(); ++i)
+        xData[i] = rowmap->getGlobalElement(i);
+      xData = Teuchos::null;
+      prec.apply(x, y);
+
+      out << prec.description() << std::endl;
+
+      // The solution should now be full of GIDs.
+      Teuchos::ArrayRCP<const Scalar> xview = x.get1dView();
+      Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
+
+      TEST_COMPARE_FLOATING_ARRAYS(xview, yview, 4*Teuchos::ScalarTraits<Scalar>::eps());
+    }
+  }
+
+}
+#endif //ifdef HAVE_IFPACK2_XPETRA
+
 
 
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
@@ -275,6 +340,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test2, Scalar, LocalOr
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, Test1, Scalar, LocalOrdinal,GlobalOrdinal)  \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, Test2, Scalar, LocalOrdinal,GlobalOrdinal)
 
+#ifdef HAVE_IFPACK2_XPETRA
+TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, TestGIDs, double, int, int)
+#endif
 
 UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
 #ifndef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
