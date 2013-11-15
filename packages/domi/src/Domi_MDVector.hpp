@@ -75,7 +75,8 @@ public:
    *
    * \param zeroOut [in] flag to initialize all data to zero
    */
-  MDVector(const Teuchos::RCP< const MDMap< LocalOrd, GlobalOrd, Node > > & mdMap,
+  MDVector(const Teuchos::RCP<
+             const MDMap< LocalOrd, GlobalOrd, Node > > & mdMap,
            bool zeroOut = true);
 
   /** \brief Constructor with initialization values (copy)
@@ -85,14 +86,15 @@ public:
    *
    * \param source [in] initialization values
    */
-  MDVector(const Teuchos::RCP< const MDMap< LocalOrd, GlobalOrd, Node > > & mdMap,
+  MDVector(const Teuchos::RCP<
+             const MDMap< LocalOrd, GlobalOrd, Node > > & mdMap,
            const MDArrayView< const Scalar > & source);
 
   /** \brief Copy constructor
    *
    * \param source [in] source MDVector
    */
-  MDVector(const MDVector<Scalar, LocalOrd, GlobalOrd, Node > & source);
+  MDVector(const MDVector< Scalar, LocalOrd, GlobalOrd, Node > & source);
 
   /** \brief Parent/single global ordinal sub-vector constructor
    *
@@ -131,7 +133,7 @@ public:
    * \param node2 [in] the new node
    */
   template< class Node2 >
-  Teuchos::RCP< MDVector< Scalar, LocalOrd, GlobalOrd, Node2 >
+  Teuchos::RCP< MDVector< Scalar, LocalOrd, GlobalOrd, Node2 > >
   clone(const Teuchos::RCP< Node2 > & node2) const;
 
   /** \brief Destructor 
@@ -146,7 +148,7 @@ public:
   /** \brief MDMap accessor method
    */
   const Teuchos::RCP< const MDMap< LocalOrd, GlobalOrd, Node > >
-  getMdMap() const;
+  getMDMap() const;
 
   /** \brief Query whether this processor is on the sub-communicator
    *
@@ -427,6 +429,8 @@ private:
 // Implementations //
 /////////////////////
 
+////////////////////////////////////////////////////////////////////////
+
 template< class Scalar,
           class LocalOrd,
           class GlobalOrd,
@@ -434,15 +438,17 @@ template< class Scalar,
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
 MDVector(const Teuchos::RCP< const MDMap< LocalOrd, GlobalOrd, Node > > & mdMap,
          bool zeroOut) :
-  Teuchos::Describable("Domi::MDVector"),
   _mdMap(mdMap),
   _mdArray()
 {
   typedef Teuchos::ArrayView< Scalar >::size_type size_type;
+  setObjectLabel("Domi::MDVector");
+  // Obtain the array of dimensions
   int numDims = _mdMap->getNumDims();
   Teuchos::Array< size_type > dims(numDims);
   for (int axis = 0; axis < numDims; ++axis)
     dims[axis] = _mdMap->getLocalDim(axis);
+  // Resize the MDArayRCP
   _mdArray.resize(dims);
 }
 
@@ -453,12 +459,13 @@ template< class Scalar,
           class GlobalOrd,
           class Node >
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
-MDVector(const Teuchos::RCP< const MDMap< LocalOrd, GlobalOrd, Node > > & mdMap,
+MDVector(const Teuchos::RCP<
+           const MDMap< LocalOrd, GlobalOrd, Node > > & mdMap,
          const MDArrayView< const Scalar > & source) :
-  Teuchos::Describable("Domi::MDVector"),
   _mdMap(mdMap),
   _mdArray(source)
 {
+  setObjectLabel("Domi::MDVector");
   int numDims = _mdMap->getNumDims();
   TEUCHOS_TEST_FOR_EXCEPTION(
     numDims != _mdArray.getNumDims(),
@@ -482,11 +489,57 @@ template< class Scalar,
           class GlobalOrd,
           class Node >
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
-MDVector(const MDVector<Scalar, LocalOrd, GlobalOrd, Node > & source) :
-  Teuchos::Describable("Domi::MDVector"),
-  _mdMap(source.getMdMap()),
+MDVector(const MDVector< Scalar, LocalOrd, GlobalOrd, Node > & source) :
+  _mdMap(source.getMDMap()),
   _mdArray(source.getDataNonConst())
 {
+  setObjectLabel("Domi::MDVector");
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+MDVector(const MDVector< Scalar, LocalOrd, GlobalOrd, Node > & parent,
+         int axis,
+         GlobalOrd index) :
+  _mdMap(),
+  _mdArray()
+{
+  setObjectLabel("Domi::MDVector");
+  _mdMap = Teuchos::rcp(new MDMap(*(parent->getMDMap()),
+                                  axis,
+                                  index));
+  MDArrayView< Scalar > view = parent->getDataNonConst()();
+  int numDims = parent->getNumDims();
+  for (int myAxis=0; myAxis < numDims; ++myAxis)
+  {
+    if (myAxis == axis) view = view[myAxis];
+    else                view = view[Slice()];
+  }
+  // Must be careful here to obtain an MDArrayRCP of sub-view of the
+  // original MDArrayRCP.
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class LocalOrd,
+          class GlobalOrd,
+          class Node >
+MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
+MDVector(const MDVector< Scalar, LocalOrd, GlobalOrd, Node > & parent,
+         int axis,
+         const Slice & slice,
+         int bndryPad) :
+  _mdMap(),
+  _mdArray()
+{
+  setObjectLabel("Domi::MDVector");
+  /// \todo Implement parent/single slice constructor
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -506,7 +559,7 @@ template< class Scalar,
           class Node >
 const Teuchos::RCP< const MDMap< LocalOrd, GlobalOrd, Node > >
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
-getMdMap() const
+getMDMap() const
 {
   return _mdMap;
 }
@@ -706,6 +759,6 @@ getData() const
   return _mdArray;
 }
 
-}
+}  // Namespace Domi
 
 #endif
