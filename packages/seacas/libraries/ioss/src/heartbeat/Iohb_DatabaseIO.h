@@ -164,6 +164,7 @@ namespace Iohb {
     std::string tsFormat;
     std::string separator_;
     int precision_;
+    int fieldWidth_;
     bool showLabels;
     bool showLegend;
     bool appendOutput;
