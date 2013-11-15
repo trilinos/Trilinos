@@ -366,7 +366,8 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleRestart)
         stkIo.get_global_variable_names(globalVarNames);
         ASSERT_EQ(1u, globalVarNames.size());
         EXPECT_STRCASEEQ(globalVarName.c_str(), globalVarNames[0].c_str());
-        double globalVar = stkIo.get_global(globalVarNames[0]);
+        double globalVar = 0.0;
+	stkIo.get_global(globalVarNames[0], globalVar);
         EXPECT_NEAR(globalVarValue, globalVar, tolerance);
     }
     const int stepNumber = 1;

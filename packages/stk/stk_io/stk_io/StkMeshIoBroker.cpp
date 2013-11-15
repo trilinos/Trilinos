@@ -178,7 +178,7 @@ namespace {
 
   void internal_read_parameter(Teuchos::RCP<Ioss::Region> input_region,
 			       const std::string &globalVarName,
-			       const boost::any &any_value, stk::util::ParameterType::Type type)
+			       boost::any &any_value, stk::util::ParameterType::Type type)
     {
       switch(type)
 	{
@@ -1473,7 +1473,7 @@ namespace stk {
     }
 
     void StkMeshIoBroker::get_global(const std::string &globalVarName,
-				     const boost::any &value, stk::util::ParameterType::Type type)
+				     boost::any &value, stk::util::ParameterType::Type type)
     {
         internal_read_parameter(m_input_region, globalVarName, value, type);
     }
@@ -1496,13 +1496,6 @@ namespace stk {
     void StkMeshIoBroker::get_global(const std::string &globalVarName, double &globalVar)
     {
         internal_read_global(m_input_region, globalVarName, globalVar, Ioss::Field::REAL);
-    }
-
-    double StkMeshIoBroker::get_global(const std::string &globalVarName)
-    {
-        double valueToReturn = 0.0;
-	get_global(globalVarName, valueToReturn);
-        return valueToReturn;
     }
 
     namespace {

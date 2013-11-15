@@ -42,8 +42,8 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalVariables)
         ASSERT_EQ(1u, globalNamesOnFile.size());
         EXPECT_STRCASEEQ(timeStepVarName.c_str(),
                          globalNamesOnFile[0].c_str());
-        double timeStepSizeReadFromFile =
-                stkIo.get_global(globalNamesOnFile[0]);
+        double timeStepSizeReadFromFile = 0.0;
+	stkIo.get_global(globalNamesOnFile[0], timeStepSizeReadFromFile);
         const double tolerance = 1e-16;
         EXPECT_NEAR(timeStepSize, timeStepSizeReadFromFile, tolerance);
     }

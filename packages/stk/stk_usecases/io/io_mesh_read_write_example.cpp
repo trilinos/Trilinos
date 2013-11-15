@@ -154,7 +154,7 @@ namespace {
 	  for (; i != iend; ++i) {
 	    const std::string parameterName = (*i).first;
 	    stk::util::Parameter &parameter = parameters.get_param(parameterName);
-	    mesh_data.get_global(parameterName, parameter);
+	    mesh_data.get_global(parameterName, parameter.value, parameter.type);
 	  }
 
 	  parameters.write_parameter_list(std::cerr);

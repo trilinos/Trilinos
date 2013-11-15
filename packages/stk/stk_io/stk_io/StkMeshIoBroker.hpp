@@ -10,6 +10,7 @@
 #define STK_IO_MESHREADWRITEUTILS_HPP
 #include <string>
 #include <vector>
+#include <boost/any.hpp>
 
 #include <Ioss_PropertyManager.h>
 #include <Ioss_Field.h>
