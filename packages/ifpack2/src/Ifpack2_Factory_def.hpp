@@ -50,6 +50,7 @@
 #include "Ifpack2_ILUT.hpp"
 #include "Ifpack2_Krylov.hpp"
 #include "Ifpack2_AdditiveSchwarz.hpp"
+#include "Ifpack2_SolverForTesting.hpp"
 #if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
 #  include "Ifpack2_SupportGraph.hpp"
 #endif
@@ -116,6 +117,9 @@ Factory::create (const std::string& precType,
   }
   else if (precTypeUpper == "KRYLOV") {
     prec = rcp (new Krylov<MatrixType, prec_base_type> (matrix));
+  }
+  else if (precTypeUpper == "SUBDOMAIN_SOLVER_FOR_TESTING") {
+    prec = rcp (new SolverForTesting<MatrixType> (matrix));
   }
 #if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
   else if (precTypeUpper == "SUPPORTGRAPH") {
