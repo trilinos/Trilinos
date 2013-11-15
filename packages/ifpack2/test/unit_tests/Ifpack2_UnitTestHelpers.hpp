@@ -145,6 +145,8 @@ Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > create_test_gra
   return crsgraph;
 }
 
+// ///////////////////////////////////////////////////////////////////////
+
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
 Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > create_test_matrix(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& rowmap)
 {
@@ -162,14 +164,14 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
   for(LocalOrdinal l_row = 0; (size_t) l_row<rowmap->getNodeNumElements(); l_row++) {
     GlobalOrdinal g_row = rowmap->getGlobalElement(l_row);
 
-    if (g_row == rowmap->getMinGlobalIndex()) {
+    if (g_row == rowmap->getMinAllGlobalIndex()) {
       upper_limit=2;
       col[0] = g_row;
       col[1] = g_row+1;
       coef[0] = two;
       coef[1] = zero;
     }
-    else if (g_row == rowmap->getMaxGlobalIndex()) {
+    else if (g_row == rowmap->getMaxAllGlobalIndex()) {
       upper_limit=2;
       col[0] = g_row-1;
       col[1] = g_row;
@@ -191,7 +193,9 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
 
   crsmatrix->fillComplete();
   return crsmatrix;
-}
+} //create_test_matrix
+
+// ///////////////////////////////////////////////////////////////////////
 
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
 Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > create_test_matrix2(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& rowmap)
@@ -244,7 +248,9 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
   crsmatrix->fillComplete();
 
   return crsmatrix;
-}
+} //create_test_matrix2
+
+// ///////////////////////////////////////////////////////////////////////
 
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
 Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > create_banded_matrix(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& rowmap, const GlobalOrdinal bw)
@@ -318,6 +324,7 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
 
   return crsmatrix;
 } //create_banded_matrix
+
 
 }//namespace tif_utest
 
