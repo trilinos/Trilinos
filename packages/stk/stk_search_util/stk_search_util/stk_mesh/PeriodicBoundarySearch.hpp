@@ -53,6 +53,7 @@ public:
   typedef stk::search::box::SphereBoundingBox<SearchId,Scalar,3> SphAABB;
   typedef std::vector<SphAABB> SphAABBVector;
   typedef std::vector<std::pair<SearchId,SearchId> > SearchPairVector;
+  typedef std::vector<std::pair<stk::mesh::EntityKey,stk::mesh::EntityKey> > SearchPairSet;
 
   struct TransformHelper {
 
@@ -194,16 +195,25 @@ public:
       find_periodic_nodes_for_given_pair(m_periodic_pairs[i].first, m_periodic_pairs[i].second, parallel,
                                          m_transforms[i], include_non_locally_owned);
     }
+
+    for (size_t i = 0; i < m_search_results.size(); ++i)
+    {
+      m_unique_search_results.push_back(std::make_pair(m_search_results[i].first.ident, m_search_results[i].second.ident));
+    }
+
+    std::sort(m_unique_search_results.begin(), m_unique_search_results.end());
+    SearchPairSet::iterator itor = std::unique(m_unique_search_results.begin(), m_unique_search_results.end());
+    m_unique_search_results.erase(itor, m_unique_search_results.end());
   }
 
-  size_t size() const { return m_search_results.size();}
+  size_t size() const { return m_unique_search_results.size();}
 
   size_t index_size() const {return m_search_results_index.size(); }
 
   std::pair<stk::mesh::Entity, stk::mesh::Entity> get_node_pair(size_t i) const
   {
-    return std::make_pair(m_bulk_data.get_entity(m_search_results[i].first.ident),
-        m_bulk_data.get_entity(m_search_results[i].second.ident));
+    return std::make_pair(m_bulk_data.get_entity(m_unique_search_results[i].first),
+                          m_bulk_data.get_entity(m_unique_search_results[i].second));
   }
 
   template<typename RealType>
@@ -250,27 +260,53 @@ public:
     return *m_periodic_ghosts;
   }
 
+  /* Ghost the search results as appropriate. The search results include results on all procs including
+   * locally_owned OR globally_shared. We need to ghost the locally owned node (domain or range)
+   * to the processor pointed to by the other node in the periodic pair
+   */
   void create_ghosting(const std::string & name)
   {
     ThrowRequire(m_bulk_data.synchronized_state() == m_bulk_data.MODIFIABLE);
     const int parallel_rank = m_bulk_data.parallel_rank();
-    size_t num_constraints = 0;
     std::vector<stk::mesh::EntityProc> send_nodes;
     for (size_t i=0, size=m_search_results.size(); i<size; ++i) {
         stk::mesh::Entity domain_node = m_bulk_data.get_entity(m_search_results[i].first.ident);
-        int domain_proc = m_search_results[i].first.proc;
         stk::mesh::Entity range_node = m_bulk_data.get_entity(m_search_results[i].second.ident);
+//        std::cout << "P: " << parallel_rank << " d:r " << m_search_results[i].first.ident.id() << ":" << m_search_results[i].second.ident.id() << " procs " << m_search_results[i].first.proc << ":" << m_search_results[i].second.proc << std::endl;
+
+        bool isOwnedDomain = m_bulk_data.is_valid(domain_node) ? m_bulk_data.bucket(domain_node).owned() : false;
+        bool isOwnedRange = m_bulk_data.is_valid(range_node) ? m_bulk_data.bucket(range_node).owned() : false;
+        int domain_proc = m_search_results[i].first.proc;
         int range_proc = m_search_results[i].second.proc;
 
-        if (parallel_rank == domain_proc) ++num_constraints;
+        //Shouldn't happen since one needs to be shared or owned (it was used in the search)
 
-        if ((parallel_rank != domain_proc) && (parallel_rank == range_proc)) {
-          send_nodes.push_back(stk::mesh::EntityProc(range_node, domain_proc));
-        }
-        else if ((parallel_rank == domain_proc) && (parallel_rank != range_proc)) {
+        if (isOwnedDomain && domain_proc == parallel_rank)
+        {
+          if (range_proc == parallel_rank) continue;
+
+          ThrowRequire(m_bulk_data.parallel_owner_rank(domain_node) == domain_proc);
+
           send_nodes.push_back(stk::mesh::EntityProc(domain_node, range_proc));
+//          std::cout << "On proc " << m_bulk_data.parallel_rank() << " we are sending domain node to range node "
+//              << m_bulk_data.identifier(domain_node) << ":" << m_bulk_data.identifier(range_node)
+//              << " since we own the domain and the range resides on proc " << range_proc << std::endl;
         }
-        ThrowAssert((parallel_rank == domain_proc) || (parallel_rank == range_proc));
+        else if (isOwnedRange && range_proc == parallel_rank)
+        {
+          if (domain_proc == parallel_rank) continue;
+
+          ThrowRequire(m_bulk_data.parallel_owner_rank(range_node) == range_proc);
+
+          send_nodes.push_back(stk::mesh::EntityProc(range_node, domain_proc));
+//          std::cout << "On proc " << m_bulk_data.parallel_rank() << " we are sending range node to domain node "
+//              << m_bulk_data.identifier(domain_node) << ":" << m_bulk_data.identifier(range_node)
+//              << " since we own the range and the domain resides on proc " << domain_proc << std::endl;
+        }
+//        else
+//        {
+//          std::cout << "On proc " << m_bulk_data.parallel_rank() << " we have both nodes unowned between procs: " << domain_proc << "," << range_proc << std::endl;
+//        }
     }
 
     m_periodic_ghosts = &m_bulk_data.create_ghosting(name);
@@ -282,6 +318,8 @@ private:
   CoordinateFunctor m_get_coordinates;
   SelectorPairVector m_periodic_pairs;
   SearchPairVector m_search_results;
+  SearchPairSet m_unique_search_results;
+
   SearchResultsIndex m_search_results_index;
   stk::mesh::Ghosting * m_periodic_ghosts;
   typedef std::vector<TransformHelper > TransformVector;
@@ -380,12 +418,13 @@ private:
         ThrowErrorMsg("Periodic transform method doesn't exist");
         break;
     }
-    stk::search::FactoryOrder order;
-    order.m_communicator = parallel;
 
 #ifndef USE_STK_COARSE_SEARCH
     stk::search::coarse_search2(side_1_vector, side_2_vector, parallel, search_results);
 #else
+    stk::search::FactoryOrder order;
+    order.m_communicator = parallel;
+
     stk::search::coarse_search(search_results, side_2_vector, side_1_vector, order);
 #endif
 
@@ -499,8 +538,8 @@ private:
         double centroid_1[3];
         double centroid_2[3];
 
-        calc_centroid(parallel, side_1, centroid_1);
-        calc_centroid(parallel, side_2, centroid_2);
+        calc_centroid(parallel, side_1 & m_bulk_data.mesh_meta_data().locally_owned_part(), centroid_1);
+        calc_centroid(parallel, side_2 & m_bulk_data.mesh_meta_data().locally_owned_part(), centroid_2);
         for (int i = 0; i < 3; ++i)
           transform.m_translation[i] = centroid_2[i] - centroid_1[i];
 
@@ -524,7 +563,7 @@ private:
     const int spatial_dimension = m_bulk_data.mesh_meta_data().spatial_dimension();
     stk::mesh::BucketVector buckets;
 
-    stk::mesh::get_buckets( side_selector
+    stk::mesh::get_buckets( side_selector & m_bulk_data.mesh_meta_data().locally_owned_part()
                             ,m_bulk_data.buckets(stk::topology::NODE_RANK)
                             ,buckets
                             );

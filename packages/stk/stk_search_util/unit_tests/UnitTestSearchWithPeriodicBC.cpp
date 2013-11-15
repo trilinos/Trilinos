@@ -6,11 +6,74 @@
 #include <sstream>
 #include <stk_mesh/fixtures/GearsFixture.hpp>
 #include <stk_mesh/fixtures/Gear.hpp>
+#include <stk_mesh/base/Field.hpp>
 
 
 typedef stk::mesh::fixtures::HexFixture::CoordFieldType CoordFieldType;
+typedef stk::mesh::GetCoordinates<CoordFieldType> CoordinateFunctor;
+typedef stk::mesh::PeriodicBoundarySearch<CoordinateFunctor> PeriodicSearch;
 
 namespace {
+
+void expect_eq_for_shared_or_owned_node(stk::mesh::BulkData & bulk_data, stk::mesh::Entity node, const stk::mesh::Field<double> & theField, double expected_value )
+{
+  if (bulk_data.is_valid(node) && (bulk_data.bucket(node).owned() || bulk_data.bucket(node).shared() ) )
+  {
+    const double * const vol = bulk_data.field_data(theField, node);
+    EXPECT_EQ(*vol, expected_value);
+  }
+}
+
+void do_periodic_assembly(stk::mesh::BulkData & bulk_data, PeriodicSearch & pbc_search, stk::mesh::Field<double> & volField)
+{
+  //gather to domain node from possibly multiple ranges
+  for (size_t i = 0; i < pbc_search.size(); ++i)
+  {
+    std::pair<stk::mesh::Entity, stk::mesh::Entity> entityPair = pbc_search.get_node_pair(i);
+    ThrowRequire(bulk_data.is_valid(entityPair.first));
+    ThrowRequire(bulk_data.is_valid(entityPair.second));
+    double * domainField = bulk_data.field_data(volField, entityPair.first);
+    double * rangeField = bulk_data.field_data(volField, entityPair.second);
+    *domainField += *rangeField;
+  }
+
+  std::vector< stk::mesh::FieldBase const * > ghosted_fields;
+  ghosted_fields.push_back(&volField);
+  stk::mesh::communicate_field_data( pbc_search.get_ghosting(), ghosted_fields);
+
+  //set ranges equal to domain value
+  for (size_t i = 0; i < pbc_search.size(); ++i)
+  {
+    std::pair<stk::mesh::Entity, stk::mesh::Entity> entityPair = pbc_search.get_node_pair(i);
+    ThrowRequire(bulk_data.is_valid(entityPair.first));
+    ThrowRequire(bulk_data.is_valid(entityPair.second));
+    double * domainField = bulk_data.field_data(volField, entityPair.first);
+    double * rangeField = bulk_data.field_data(volField, entityPair.second);
+    *rangeField = *domainField;
+  }
+}
+
+void do_volume_assembly(stk::mesh::BulkData & bulk_data, stk::mesh::Field<double> & volField)
+{
+  const stk::mesh::BucketVector & elemBuckets = bulk_data.buckets(stk::topology::ELEMENT_RANK);
+  for (size_t elemBucket = 0; elemBucket < elemBuckets.size(); ++elemBucket)
+  {
+    const stk::mesh::Bucket & bucket = *elemBuckets[elemBucket];
+    for (size_t i = 0; i < bucket.size(); ++i)
+    {
+      stk::mesh::Entity elem = bucket[i];
+
+      const stk::mesh::Entity * aNode = bulk_data.begin_nodes(elem);
+      const size_t numNodes = bulk_data.num_nodes(elem);
+      for (size_t in = 0; in < numNodes; ++in)
+      {
+        double * vol = bulk_data.field_data(volField, aNode[in]);
+        *vol += 0.125;
+      }
+    }
+  }
+
+}
 
 template<typename SearchPairVector>
 void check_gold( const SearchPairVector & search_results )
@@ -159,8 +222,6 @@ void check_gold_three_way_multiperiodic( const SearchPairVector & search_results
   }
 }
 
-typedef stk::mesh::GetCoordinates<CoordFieldType> CoordinateFunctor;
-typedef stk::mesh::PeriodicBoundarySearch<CoordinateFunctor> PeriodicSearch;
 void print_periodic_node_pairs(stk::mesh::BulkData & bulk_data,
     PeriodicSearch & pbc_search,
     CoordFieldType & coords_field)
@@ -171,13 +232,8 @@ void print_periodic_node_pairs(stk::mesh::BulkData & bulk_data,
     std::pair<stk::mesh::Entity, stk::mesh::Entity> aPair = pbc_search.get_node_pair(i);
     stk::mesh::EntityId domainId = bulk_data.identifier(aPair.first);
     stk::mesh::EntityId rangeId = bulk_data.identifier(aPair.second);
-    const double * const domainCoords = bulk_data.field_data(coords_field, aPair.first);
-    const double * const rangeCoords = bulk_data.field_data(coords_field, aPair.second);
-    std::cout << std::setw(12) << domainId << ": (" << std::setw(12) << domainCoords[0] << ", " << std::setw(12)
-        << domainCoords[1] << ", " << std::setw(12) << domainCoords[2] << ") == ";
-    std::cout << std::setw(12) << rangeId << ": (" << std::setw(12) << rangeCoords[0] << ", " << std::setw(12)
-        << rangeCoords[1] << ", " << std::setw(12) << rangeCoords[2] << ") " << std::endl;
-
+    std::cout << "My Proc: " << std::setw(6) << bulk_data.parallel_rank() << std::setw(12) << domainId << ":";
+    std::cout << std::setw(12) << rangeId << std::endl;
   }
 }
 }// namespace
@@ -195,6 +251,9 @@ STKUNIT_UNIT_TEST(CoarseSearch, PeriodicBC)
 
   stk::mesh::Part & side_0 = meta_data.declare_part("side_0", stk::topology::NODE_RANK);
   stk::mesh::Part & side_3 = meta_data.declare_part("side_3", stk::topology::NODE_RANK);
+
+  stk::mesh::Field<double> & volField = meta_data.declare_field<stk::mesh::Field<double> >("volume");
+  stk::mesh::put_field(volField, stk::topology::NODE_RANK, meta_data.universal_part());
 
   meta_data.commit();
 
@@ -225,47 +284,71 @@ STKUNIT_UNIT_TEST(CoarseSearch, PeriodicBC)
   typedef stk::mesh::PeriodicBoundarySearch<CoordinateFunctor> PeriodicSearch;
   PeriodicSearch pbc_search(bulk_data, CoordinateFunctor(bulk_data, coords_field));
 
-  pbc_search.add_linear_periodic_pair(side_0 & meta_data.locally_owned_part(), side_3 & meta_data.locally_owned_part() );
-  pbc_search.find_periodic_nodes(bulk_data.parallel());
+  const stk::mesh::Selector side_0_selector = side_0 & (meta_data.locally_owned_part() | meta_data.globally_shared_part());
+  const stk::mesh::Selector side_3_selector = side_3 & (meta_data.locally_owned_part() | meta_data.globally_shared_part());
+
+  pbc_search.add_linear_periodic_pair(side_0_selector, side_3_selector);
+  pbc_search.find_periodic_nodes(bulk_data.parallel(), true);
 
 
   check_gold(pbc_search.get_pairs() );
-  {
-    //also check the number
-    const int local_search_count = pbc_search.get_pairs().size();
-    int global_search_count=0;
-    stk::all_reduce_sum(bulk_data.parallel(), &local_search_count, &global_search_count, 1);
-
-    EXPECT_GE(global_search_count, 16);
-  }
 
   bulk_data.modification_begin();
   pbc_search.create_ghosting("periodic_ghosts");
   bulk_data.modification_end();
 
-  const stk::mesh::Ghosting & periodic_bc_ghosting = pbc_search.get_ghosting();
+  do_volume_assembly(bulk_data, volField);
 
   std::vector< stk::mesh::FieldBase const * > ghosted_fields;
-  ghosted_fields.push_back(&coords_field);
-  stk::mesh::communicate_field_data( periodic_bc_ghosting, ghosted_fields);
+  ghosted_fields.push_back(&volField);
+  stk::mesh::communicate_field_data( pbc_search.get_ghosting(), ghosted_fields);
 
-  //lets do a local search to make sure the coords field and entities were properly ghosted
-  PeriodicSearch pbc_local_search(bulk_data, CoordinateFunctor(bulk_data, coords_field));
+  do_periodic_assembly(bulk_data, pbc_search, volField);
 
-  pbc_local_search.add_linear_periodic_pair(side_0, side_3 );
+  //interior of domain should be 1.0
+  for (unsigned i=0; i<x+1u; ++i) {
+    for (unsigned j=1; j<y; ++j) {
+      for (unsigned k=1; k<z; ++k) {
+        stk::mesh::Entity node = fixture.node(i,j,k);
+        expect_eq_for_shared_or_owned_node(bulk_data, node, volField, 1.0);
+      }
+    }
+  }
 
-  pbc_local_search.find_periodic_nodes(MPI_COMM_SELF, true);
-
-  check_gold(pbc_local_search.get_pairs());
-  {
-    //also check the number
-    const int local_search_count = pbc_local_search.get_pairs().size();
-    int global_search_count=0;
-    stk::all_reduce_sum(bulk_data.parallel(), &local_search_count, &global_search_count, 1);
-
-    EXPECT_GE(global_search_count, 16);
+  //faces (not edges) should be 0.5
+  //edges should be 0.25
+  //there are no "corners" since it is periodic in the x direction
+  for (unsigned i=0; i<x+1u; ++i) {
+    //top and bottom
+    for (unsigned k=1; k<z; ++k) {
+      const unsigned jTop = 3;
+      const unsigned jBot = 0;
+      stk::mesh::Entity node = fixture.node(i,jTop,k);
+      expect_eq_for_shared_or_owned_node(bulk_data, node, volField, 0.5);
+      node = fixture.node(i,jBot,k);
+      expect_eq_for_shared_or_owned_node(bulk_data, node, volField, 0.5);
+    }
+    //front and back
+    for (unsigned j=1; j<y; ++j) {
+      const unsigned kFront = 0;
+      const unsigned kBack = 3;
+      stk::mesh::Entity node = fixture.node(i,j,kFront);
+      expect_eq_for_shared_or_owned_node(bulk_data, node, volField, 0.5);
+      node = fixture.node(i,j,kBack);
+      expect_eq_for_shared_or_owned_node(bulk_data, node, volField, 0.5);
+    }
+    //edges
+    stk::mesh::Entity node = fixture.node(i, 0, 0);
+    expect_eq_for_shared_or_owned_node(bulk_data, node, volField, 0.25);
+    node = fixture.node(i, 0, 3);
+    expect_eq_for_shared_or_owned_node(bulk_data, node, volField, 0.25);
+    node = fixture.node(i, 3, 0);
+    expect_eq_for_shared_or_owned_node(bulk_data, node, volField, 0.25);
+    node = fixture.node(i, 3, 3);
+    expect_eq_for_shared_or_owned_node(bulk_data, node, volField, 0.25);
   }
 }
+
 
 void assign_to_parts_for_two_way(const unsigned x, const unsigned y, const unsigned z,
                                    stk::mesh::fixtures::HexFixture &fixture,
@@ -324,6 +407,9 @@ STKUNIT_UNIT_TEST(CoarseSearch, TwoWayMultiPeriodicBC)
   stk::mesh::Part & side_1 = meta_data.declare_part("side_1", stk::topology::NODE_RANK);
   stk::mesh::Part & side_3 = meta_data.declare_part("side_3", stk::topology::NODE_RANK);
 
+  stk::mesh::Field<double> & volField = meta_data.declare_field<stk::mesh::Field<double> >("volume");
+  stk::mesh::put_field(volField, stk::topology::NODE_RANK, meta_data.universal_part());
+
   meta_data.commit();
 
   fixture.generate_mesh();
@@ -342,58 +428,54 @@ STKUNIT_UNIT_TEST(CoarseSearch, TwoWayMultiPeriodicBC)
   typedef stk::mesh::PeriodicBoundarySearch<CoordinateFunctor> PeriodicSearch;
   PeriodicSearch pbc_search(bulk_data, CoordinateFunctor(bulk_data, coords_field));
 
-  pbc_search.add_linear_periodic_pair(side_0 & meta_data.locally_owned_part(), side_2 & meta_data.locally_owned_part() );
-  pbc_search.add_linear_periodic_pair(side_1 & meta_data.locally_owned_part(), side_3 & meta_data.locally_owned_part() );
-  pbc_search.find_periodic_nodes(bulk_data.parallel());
+  const stk::mesh::Selector side_0_selector = side_0 & (meta_data.locally_owned_part() | meta_data.globally_shared_part());
+  const stk::mesh::Selector side_1_selector = side_1 & (meta_data.locally_owned_part() | meta_data.globally_shared_part());
+  const stk::mesh::Selector side_2_selector = side_2 & (meta_data.locally_owned_part() | meta_data.globally_shared_part());
+  const stk::mesh::Selector side_3_selector = side_3 & (meta_data.locally_owned_part() | meta_data.globally_shared_part());
+
+  pbc_search.add_linear_periodic_pair(side_0_selector, side_2_selector );
+  pbc_search.add_linear_periodic_pair(side_1_selector, side_3_selector );
+  pbc_search.find_periodic_nodes(bulk_data.parallel(), true);
 
   //check to see if re-entrant
-  pbc_search.find_periodic_nodes(bulk_data.parallel());
+//  pbc_search.find_periodic_nodes(bulk_data.parallel());
 
   check_gold_two_way_multiperiodic(pbc_search.get_pairs());
-
-  if (bulk_data.parallel_size() == 1)
-  {
-    EXPECT_EQ(pbc_search.get_pairs().size(), 28u);
-  }
-  else
-  {
-    const int local_search_count = pbc_search.get_pairs().size();
-    int global_search_count=0;
-    stk::all_reduce_sum(bulk_data.parallel(), &local_search_count, &global_search_count, 1);
-
-    EXPECT_GE(global_search_count, 28);
-  }
 
   //now we ghost everything to do a local search
   bulk_data.modification_begin();
   pbc_search.create_ghosting("periodic_ghosts");
   bulk_data.modification_end();
 
-  const stk::mesh::Ghosting & periodic_bc_ghosting = pbc_search.get_ghosting();
+  do_volume_assembly(bulk_data, volField);
 
   std::vector< stk::mesh::FieldBase const * > ghosted_fields;
-  ghosted_fields.push_back(&coords_field);
-  stk::mesh::communicate_field_data( periodic_bc_ghosting, ghosted_fields);
+  ghosted_fields.push_back(&volField);
+  stk::mesh::communicate_field_data( pbc_search.get_ghosting(), ghosted_fields);
 
-  //lets do a local search to make sure the coords field and entities were properly ghosted
-  PeriodicSearch pbc_local_search(bulk_data, CoordinateFunctor(bulk_data, coords_field));
-  pbc_local_search.add_linear_periodic_pair(side_0, side_2) ;
-  pbc_local_search.add_linear_periodic_pair(side_1, side_3);
-  pbc_local_search.find_periodic_nodes(MPI_COMM_SELF, true);
+  do_periodic_assembly(bulk_data, pbc_search, volField);
 
-  check_gold_two_way_multiperiodic(pbc_local_search.get_pairs());
-
-  if (bulk_data.parallel_size() == 1)
-  {
-    EXPECT_EQ(pbc_local_search.get_pairs().size(), 28u);
+  //interior of domain should be 1.0
+  for (unsigned i=0; i<x+1u; ++i) {
+    for (unsigned j=0; j<y+1u; ++j) {
+      for (unsigned k=1; k<z; ++k) {
+        stk::mesh::Entity node = fixture.node(i,j,k);
+        expect_eq_for_shared_or_owned_node(bulk_data, node, volField, 1.0);
+      }
+    }
   }
-  else
-  {
-    const int local_search_count = pbc_local_search.get_pairs().size();
-    int global_search_count=0;
-    stk::all_reduce_sum(bulk_data.parallel(), &local_search_count, &global_search_count, 1);
-
-    EXPECT_GE(global_search_count, 28);
+  //faces (not edges) should be 0.5
+  //there are no corners or edges since this is two way periodic
+  for (unsigned i=0; i<x+1u; ++i) {
+    //front and back
+    for (unsigned j=0; j<y+1u; ++j) {
+      const unsigned kFront = 0;
+      const unsigned kBack = 3;
+      stk::mesh::Entity node = fixture.node(i,j,kFront);
+      expect_eq_for_shared_or_owned_node(bulk_data, node, volField, 0.5);
+      node = fixture.node(i,j,kBack);
+      expect_eq_for_shared_or_owned_node(bulk_data, node, volField, 0.5);
+    }
   }
 }
 
@@ -445,6 +527,9 @@ STKUNIT_UNIT_TEST(CoarseSearch, ThreeWayMultiPeriodicBC)
   stk::mesh::Part & side_4 = meta_data.declare_part("side_4", stk::topology::NODE_RANK);
   stk::mesh::Part & side_5 = meta_data.declare_part("side_5", stk::topology::NODE_RANK);
 
+  stk::mesh::Field<double> & volField = meta_data.declare_field<stk::mesh::Field<double> >("volume");
+  stk::mesh::put_field(volField, stk::topology::NODE_RANK, meta_data.universal_part());
+
   meta_data.commit();
 
   fixture.generate_mesh();
@@ -468,59 +553,41 @@ STKUNIT_UNIT_TEST(CoarseSearch, ThreeWayMultiPeriodicBC)
   typedef stk::mesh::PeriodicBoundarySearch<CoordinateFunctor> PeriodicSearch;
   PeriodicSearch pbc_search(bulk_data, CoordinateFunctor(bulk_data, coords_field));
 
-  pbc_search.add_linear_periodic_pair(side_0 & meta_data.locally_owned_part(), side_2 & meta_data.locally_owned_part() );
-  pbc_search.add_linear_periodic_pair(side_1 & meta_data.locally_owned_part(), side_3 & meta_data.locally_owned_part() );
-  pbc_search.add_linear_periodic_pair(side_4 & meta_data.locally_owned_part(), side_5 & meta_data.locally_owned_part() );
-  pbc_search.find_periodic_nodes(bulk_data.parallel());
+  const stk::mesh::Selector side_0_selector = side_0 & (meta_data.locally_owned_part() | meta_data.globally_shared_part());
+  const stk::mesh::Selector side_1_selector = side_1 & (meta_data.locally_owned_part() | meta_data.globally_shared_part());
+  const stk::mesh::Selector side_2_selector = side_2 & (meta_data.locally_owned_part() | meta_data.globally_shared_part());
+  const stk::mesh::Selector side_3_selector = side_3 & (meta_data.locally_owned_part() | meta_data.globally_shared_part());
+  const stk::mesh::Selector side_4_selector = side_4 & (meta_data.locally_owned_part() | meta_data.globally_shared_part());
+  const stk::mesh::Selector side_5_selector = side_5 & (meta_data.locally_owned_part() | meta_data.globally_shared_part());
+
+  pbc_search.add_linear_periodic_pair(side_0_selector, side_2_selector);
+  pbc_search.add_linear_periodic_pair(side_1_selector, side_3_selector);
+  pbc_search.add_linear_periodic_pair(side_4_selector, side_5_selector);
+  pbc_search.find_periodic_nodes(bulk_data.parallel(), true);
 
   check_gold_three_way_multiperiodic(pbc_search.get_pairs());
-
-  if (bulk_data.parallel_size() == 1)
-  {
-    EXPECT_EQ(pbc_search.get_pairs().size(), 37u);
-  }
-  else
-  {
-    const int local_search_count = pbc_search.get_pairs().size();
-    int global_search_count=0;
-    stk::all_reduce_sum(bulk_data.parallel(), &local_search_count, &global_search_count, 1);
-
-    EXPECT_GE(global_search_count, 37);
-  }
 
   //now we ghost everything to do a local search
   bulk_data.modification_begin();
   pbc_search.create_ghosting("periodic_ghosts");
   bulk_data.modification_end();
 
-  const stk::mesh::Ghosting & periodic_bc_ghosting = pbc_search.get_ghosting();
+  do_volume_assembly(bulk_data, volField);
 
   std::vector< stk::mesh::FieldBase const * > ghosted_fields;
-  ghosted_fields.push_back(&coords_field);
-  stk::mesh::communicate_field_data( periodic_bc_ghosting, ghosted_fields);
+  ghosted_fields.push_back(&volField);
+  stk::mesh::communicate_field_data( pbc_search.get_ghosting(), ghosted_fields);
 
-  //lets do a local search to make sure the coords field and entities were properly ghosted
-  PeriodicSearch pbc_local_search(bulk_data, CoordinateFunctor(bulk_data, coords_field));
-  pbc_local_search.add_linear_periodic_pair(side_0, side_2) ;
-  pbc_local_search.add_linear_periodic_pair(side_1, side_3);
-  pbc_local_search.add_linear_periodic_pair(side_4, side_5);
-  pbc_local_search.find_periodic_nodes(MPI_COMM_SELF, true);
+  do_periodic_assembly(bulk_data, pbc_search, volField);
 
-  //test to make sure it is re-entrant
-  pbc_local_search.find_periodic_nodes(MPI_COMM_SELF, true);
-
-  check_gold_three_way_multiperiodic(pbc_local_search.get_pairs());
-  if (bulk_data.parallel_size() == 1)
-  {
-    EXPECT_EQ(pbc_local_search.get_pairs().size(), 37u);
-  }
-  else
-  {
-    const int local_search_count = pbc_local_search.get_pairs().size();
-    int global_search_count=0;
-    stk::all_reduce_sum(bulk_data.parallel(), &local_search_count, &global_search_count, 1);
-
-    EXPECT_GE(global_search_count, 37);
+  //interior of domain should be 1.0
+  for (unsigned i=0; i<x+1u; ++i) {
+    for (unsigned j=0; j<y+1u; ++j) {
+      for (unsigned k=0; k<z+1u; ++k) {
+        stk::mesh::Entity node = fixture.node(i,j,k);
+        expect_eq_for_shared_or_owned_node(bulk_data, node, volField, 1.0);
+      }
+    }
   }
 }
 
