@@ -147,12 +147,13 @@ namespace Iohb {
       if (showLabels && !name.empty()) {
         layout_ << name;
         layout_ << "=";
-      } else if (fieldWidth_) {
-	layout_ << std::setw(fieldWidth_);
       }
       layout_.setf(std::ios::scientific);
       layout_.setf(std::ios::showpoint);
       for (std::vector<double>::size_type i=0; i < value.size(); i++) {
+	if (!showLabels && fieldWidth_) {
+	  layout_ << std::setw(fieldWidth_);
+	}
         layout_ << std::setprecision(precision_) << value[i];
         if (i < value.size()-1 && !separator_.empty()) {
 	  layout_ << separator_;
@@ -173,10 +174,11 @@ namespace Iohb {
       if (showLabels && name != "") {
 	layout_ << name;
 	layout_ << "=";
-      } else if (fieldWidth_) {
-	layout_ << std::setw(fieldWidth_);
       }
       for (std::vector<int>::size_type i=0; i < value.size(); i++) {
+	if (!showLabels && fieldWidth_) {
+	  layout_ << std::setw(fieldWidth_);
+	}
 	layout_ << value[i];
 	if (i < value.size()-1 && !separator_.empty()) {
 	  layout_ << separator_;
@@ -197,10 +199,11 @@ namespace Iohb {
       if (showLabels && name != "") {
 	layout_ << name;
 	layout_ << "=";
-      } else if (fieldWidth_) {
-	layout_ << std::setw(fieldWidth_);
       }
       for (std::vector<long>::size_type i=0; i < value.size(); i++) {
+	if (!showLabels && fieldWidth_) {
+	  layout_ << std::setw(fieldWidth_);
+	}
 	layout_ << value[i];
 	if (i < value.size()-1 && !separator_.empty()) {
 	  layout_ << separator_;
