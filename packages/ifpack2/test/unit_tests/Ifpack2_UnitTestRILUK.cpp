@@ -110,6 +110,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, Test0, Scalar, LocalOrdinal, Glo
 
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
 
+  if (rowmap->getComm()->getSize() > 1) {
+    out << std::endl;
+    out << "This test may only be run in serial." << std::endl;
+    return;
+  }
+
   Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
 
   Ifpack2::RILUK<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec(crsmatrix);
@@ -163,6 +169,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, Test1, Scalar, LocalOrdinal, Glo
   global_size_t num_rows_per_proc = 5;
 
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+
+  if (rowmap->getComm()->getSize() > 1) {
+    out << std::endl;
+    out << "This test may only be run in serial." << std::endl;
+    return;
+  }
 
   Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = tif_utest::create_test_matrix2<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
 
