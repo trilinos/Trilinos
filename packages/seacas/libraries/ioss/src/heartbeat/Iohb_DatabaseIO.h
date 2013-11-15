@@ -162,11 +162,13 @@ namespace Iohb {
     Layout *legend_;
 
     std::string tsFormat;
+    std::string separator_;
     int precision_;
     bool showLabels;
     bool showLegend;
     bool appendOutput;
-
+    bool addTimeField;
+    
     bool initialized_;
     bool streamNeedsDelete;
     enum Format fileFormat;

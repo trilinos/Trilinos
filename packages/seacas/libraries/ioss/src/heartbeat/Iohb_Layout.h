@@ -42,7 +42,7 @@ namespace Iohb {
   class Layout
     {
     public:
-      explicit Layout(bool show_labels=true, int precision=5);
+      Layout(bool show_labels, int precision, const std::string &field_separator);
       ~Layout();
 
       friend std::ostream& operator<<(std::ostream&, Layout&);
@@ -62,11 +62,12 @@ namespace Iohb {
       Layout(const Layout&); // do not implement
       Layout& operator=(const Layout&); // do not implement
 
-      bool showLabels;
-      int precision_;
-
-      int count_; // Number of fields on current line...
       std::ostringstream layout_;
+      std::string separator_;
+
+      int precision_;
+      int count_; // Number of fields on current line...
+      bool showLabels;
     };
 }
 

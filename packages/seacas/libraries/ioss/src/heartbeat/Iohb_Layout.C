@@ -37,8 +37,8 @@
 #include <vector>
 
 namespace Iohb {
-  Layout::Layout(bool show_labels, int precision)
-    : showLabels(show_labels), precision_(precision), count_(0), layout_()
+  Layout::Layout(bool show_labels, int precision, const std::string &separator)
+    : layout_(), separator_(separator), precision_(precision), count_(0), showLabels(show_labels)
   {}
 
   Layout::~Layout()
@@ -58,7 +58,7 @@ namespace Iohb {
   void Layout::add(const std::string& name, double value)
   {
     if (count_++ > 0) {
-      layout_ << ", ";
+      layout_ << separator_;
     }
 
     if (showLabels && name != "") {
@@ -73,7 +73,7 @@ namespace Iohb {
   void Layout::add(const std::string& name, int value)
   {
     if (count_++ > 0) {
-      layout_ << ", ";
+      layout_ << separator_;
     }
 
     if (showLabels && name != "") {
@@ -86,7 +86,7 @@ namespace Iohb {
   void Layout::add(const std::string& name, long value)
   {
     if (count_++ > 0) {
-      layout_ << ", ";
+      layout_ << separator_;
     }
 
     if (showLabels && name != "") {
@@ -99,7 +99,7 @@ namespace Iohb {
   void Layout::add(const std::string& name, const std::string &value)
   {
     if (count_++ > 0) {
-      layout_ << ", ";
+      layout_ << separator_;
     }
 
     if (showLabels && name != "") {
@@ -115,7 +115,7 @@ namespace Iohb {
       add(name, value[0]);
     } else {
       if (count_++ > 0) {
-        layout_ << ", ";
+	layout_ << separator_;
       }
 
       if (showLabels && !name.empty()) {
@@ -127,7 +127,7 @@ namespace Iohb {
       for (std::vector<double>::size_type i=0; i < value.size(); i++) {
         layout_ << std::setprecision(precision_) << value[i];
         if (i < value.size()-1)
-          layout_ << ", ";
+	  layout_ << separator_;
       }
     }
   }
@@ -138,7 +138,7 @@ namespace Iohb {
       add(name, value[0]);
     } else {
       if (count_++ > 0) {
-	layout_ << ", ";
+	layout_ << separator_;
       }
 
       if (showLabels && name != "") {
@@ -148,7 +148,7 @@ namespace Iohb {
       for (std::vector<int>::size_type i=0; i < value.size(); i++) {
 	layout_ << value[i];
 	if (i < value.size()-1)
-	  layout_ << ", ";
+	  layout_ << separator_;
       }
     }
   }
@@ -159,7 +159,7 @@ namespace Iohb {
       add(name, value[0]);
     } else {
       if (count_++ > 0) {
-	layout_ << ", ";
+	layout_ << separator_;
       }
 
       if (showLabels && name != "") {
@@ -169,7 +169,7 @@ namespace Iohb {
       for (std::vector<long>::size_type i=0; i < value.size(); i++) {
 	layout_ << value[i];
 	if (i < value.size()-1)
-	  layout_ << ", ";
+	  layout_ << separator_;
       }
     }
   }

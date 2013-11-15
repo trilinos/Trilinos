@@ -156,8 +156,9 @@ namespace Iohb {
 			 const Ioss::PropertyManager &props) :
     Ioss::DatabaseIO(region, filename, db_usage, communicator, props),
     logStream(NULL), layout_(NULL), legend_(NULL),
-    tsFormat("[%H:%M:%S]"), precision_(5), showLabels(true), showLegend(false), appendOutput(false),
-    initialized_(false), streamNeedsDelete(false), fileFormat(DEFAULT)
+    tsFormat("[%H:%M:%S]"), separator_(", "), precision_(5),
+    showLabels(false), showLegend(true), appendOutput(false),
+    addTimeField(true), initialized_(false), streamNeedsDelete(false), fileFormat(DEFAULT)
   {
     dbState = Ioss::STATE_UNKNOWN;
   }
@@ -178,6 +179,10 @@ namespace Iohb {
       assert(legend_ == NULL);
 
       DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
+
+      if (properties.exists("FIELD_SEPARATOR")) {
+	new_this->separator_ = properties.get("FIELD_SEPARATOR").get_string();
+      }
 
       if (properties.exists("FILE_FORMAT")) {
 	std::string format = properties.get("FILE_FORMAT").get_string();
@@ -201,6 +206,13 @@ namespace Iohb {
 	new_this->tsFormat = properties.get("TIME_STAMP_FORMAT").get_string();
       }
 
+      if (properties.exists("SHOW_TIME_STAMP")) {
+	bool show_time_stamp = properties.get("SHOW_TIME_STAMP").get_int() == 1;
+	if (!show_time_stamp) {
+	  new_this->tsFormat="";
+	}
+      }
+
       if (properties.exists("PRECISION")) {
 	new_this->precision_ = properties.get("PRECISION").get_int();
       }
@@ -213,6 +225,10 @@ namespace Iohb {
 	new_this->showLegend = (properties.get("SHOW_LEGEND").get_int() == 1 && !new_this->appendOutput);
       }
 
+      if (properties.exists("OMIT_TIME_FIELD")) {
+	new_this->addTimeField = (properties.get("OMIT_TIME_FIELD").get_int() != 1);
+      }
+
       if (fileFormat == SPYHIS) {
 	new_this->showLegend = true;
 	new_this->showLabels = false;
@@ -220,21 +236,22 @@ namespace Iohb {
       }
       
       if (showLegend) {
-	new_this->legend_ = new Layout(false, precision_);
+	new_this->legend_ = new Layout(false, precision_, separator_);
 	if (!tsFormat.empty()) {
 	  new_this->legend_->add_literal("+");
 	  new_this->legend_->add_literal(time_stamp(tsFormat));
 	  new_this->legend_->add_literal(" ");
 	}
-	if (!fileFormat == SPYHIS)
-	  new_this->legend_->add_literal("Legend: ");
 
 	if (!tsFormat.empty()) {
-	  new_this->legend_->add_literal("WallTime, ");
+	  new_this->legend_->add_literal("WallTime");
+	  new_this->legend_->add_literal(separator_);
 	}
 
-	if (fileFormat == SPYHIS)
-	  new_this->legend_->add_literal("Time, ");
+	if (addTimeField) {
+	  new_this->legend_->add_literal("Time");
+	  new_this->legend_->add_literal(separator_);
+	}
       }
       new_this->initialized_ = true;
     }
@@ -255,14 +272,14 @@ namespace Iohb {
     // If this is the first time, open the output stream and see if user wants a legend
     initialize(region);
 
-    layout_ = new Layout(showLabels, precision_);
+    layout_ = new Layout(showLabels, precision_, separator_);
     if (tsFormat != "") {
       layout_->add_literal("+");
       layout_->add_literal(time_stamp(tsFormat));
       layout_->add_literal(" ");
     }
 
-    if (fileFormat == SPYHIS) {
+    if (addTimeField) {
       layout_->add("TIME", time/timeScaleFactor);
     }
 
@@ -375,7 +392,7 @@ namespace Iohb {
       if (field.get_type() == Ioss::Field::STRING) {
 	// Assume that if layout_ is NULL, then we want special one-line output.
 	if (layout_ == NULL) {
-	  Layout layout(false, 0);
+	  Layout layout(false, 0, separator_);
 	  layout.add_literal("-");
 	  layout.add_literal(time_stamp(tsFormat));
 	  layout.add_literal(" ");
