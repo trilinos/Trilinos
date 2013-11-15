@@ -88,6 +88,8 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, clas
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setProblemMatrix(RCP<Matrix>& A) {
 
   A_=A;
+  if(A_!=Teuchos::null)
+    TpetraA_ = Utils::Op2NonConstTpetraCrs(A_);  
   ProblemMatrixSet_=true;
   GridTransfersExist_=false;
 
@@ -385,8 +387,6 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   Hierarchy_ -> Setup(*Manager_, 0, numLevels);
 
   // Define Preconditioner and Operator
-  if(A_!=Teuchos::null)
-    TpetraA_ = Utils::Op2NonConstTpetraCrs(A_);  
   MueLuOp_ = rcp( new MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO>(Hierarchy_, A_, ncycles_, subiters_, option_, tol_) );
   // Belos Linear Problem
   BelosLinearProblem_ = rcp( new BelosLinearProblem );
@@ -420,8 +420,6 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   Hierarchy_ -> Setup(*Manager_, 0, numLevels);
 
   // Define Preconditioner and Operator
-  if(A_!=Teuchos::null)
-    TpetraA_ = Utils::Op2NonConstTpetraCrs(A_);  
   MueLuOp_ = rcp( new MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO>(Hierarchy_, A_, ncycles_, subiters_, option_, tol_) );
   // Belos Linear Problem
   BelosLinearProblem_ = rcp( new BelosLinearProblem );
@@ -528,8 +526,6 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
 
   // Define Operator and Preconditioner
   MueLuOp_ = rcp( new MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO>(Hierarchy_, A_, ncycles_, subiters_, option_, tol_) );
-  if(A_!=Teuchos::null)
-    TpetraA_ = Utils::Op2NonConstTpetraCrs(A_);
 
   // Belos Linear Problem and Solver Manager
   BelosList_ = rcp( new Teuchos::ParameterList("GMRES") );
