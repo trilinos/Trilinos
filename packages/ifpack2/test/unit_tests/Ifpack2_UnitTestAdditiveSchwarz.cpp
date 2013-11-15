@@ -87,7 +87,7 @@
 #include <Ifpack2_UnitTestHelpers.hpp>
 #include <Ifpack2_AdditiveSchwarz.hpp>
 #include <Ifpack2_ILUT.hpp>
-#include <Ifpack2_SolverForTesting.hpp>
+#include <Ifpack2_IdentitySolver.hpp>
 
 namespace {
 using Tpetra::global_size_t;
@@ -297,7 +297,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test2, Scalar, LocalOr
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, TestGIDs, Scalar, LocalOrdinal, GlobalOrdinal)
 {
-  // Test that AdditiveSchwarz doesn't munge GIDs.
+  // Test that AdditiveSchwarz transfer patterns are correct.
+  // A vector v such that v(i) = GID(i) is passed in to AS.  Using the IdentitySolver with any amount
+  // of overlap, any subdomain reordering, and combine mode Zero, the solution should be v.
 
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CrsType;
 
@@ -323,7 +325,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, TestGIDs, Scalar, Loca
       
     for (int overlapLevel=0; overlapLevel<4; ++overlapLevel) {
 
-      Ifpack2::AdditiveSchwarz<CrsType,Ifpack2::SolverForTesting<CrsType > > prec (crsmatrix);
+      Ifpack2::AdditiveSchwarz<CrsType,Ifpack2::IdentitySolver<CrsType > > prec (crsmatrix);
 
       Teuchos::ParameterList params, zlist;
       params.set ("schwarz: overlap level", overlapLevel);

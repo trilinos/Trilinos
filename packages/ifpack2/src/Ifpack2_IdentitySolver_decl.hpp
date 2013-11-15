@@ -40,8 +40,8 @@
 //@HEADER
 */
 
-#ifndef IFPACK2_SOLVER_FOR_TESTING_DECL_HPP
-#define IFPACK2_SOLVER_FOR_TESTING_DECL_HPP
+#ifndef IFPACK2_IDENTITY_SOLVER_DECL_HPP
+#define IFPACK2_IDENTITY_SOLVER_DECL_HPP
 
 #include "Ifpack2_Preconditioner.hpp"
 
@@ -49,7 +49,7 @@ namespace Ifpack2 {
 
 //! A class that does nothing.
 template<class MatrixType>
-class SolverForTesting :
+class IdentitySolver :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
                                            typename MatrixType::local_ordinal_type,
                                            typename MatrixType::global_ordinal_type,
@@ -61,10 +61,10 @@ public:
   typedef typename MatrixType::node_type Node;
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
 
-  SolverForTesting (const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A);
+  IdentitySolver (const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A);
 
   //! Destructor
-  virtual ~SolverForTesting();
+  virtual ~IdentitySolver();
 
   //! Sets parameters on this object.
   /**

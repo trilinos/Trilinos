@@ -40,16 +40,16 @@
 //@HEADER
 */
 
-#ifndef IFPACK2_SOLVER_FOR_TESTING_DEF_HPP
-#define IFPACK2_SOLVER_FOR_TESTING_DEF_HPP
+#ifndef IFPACK2_IDENTITY_SOLVER_DEF_HPP
+#define IFPACK2_IDENTITY_SOLVER_DEF_HPP
 
-#include "Ifpack2_SolverForTesting_decl.hpp"
+#include "Ifpack2_IdentitySolver_decl.hpp"
 #include "Ifpack2_Condest.hpp"
 
 namespace Ifpack2 {
 
 template<class MatrixType>
-SolverForTesting<MatrixType>::SolverForTesting(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A)
+IdentitySolver<MatrixType>::IdentitySolver(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A)
  : isInitialized_(false),
    isComputed_(false),
    domainMap_(A->getDomainMap()),
@@ -63,17 +63,17 @@ SolverForTesting<MatrixType>::SolverForTesting(const Teuchos::RCP<const Tpetra::
 }
 
 template<class MatrixType>
-SolverForTesting<MatrixType>::~SolverForTesting()
+IdentitySolver<MatrixType>::~IdentitySolver()
 {
 }
 
 template<class MatrixType>
-void SolverForTesting<MatrixType>::setParameters(const Teuchos::ParameterList& /*params*/)
+void IdentitySolver<MatrixType>::setParameters(const Teuchos::ParameterList& /*params*/)
 {
 }
 
 template<class MatrixType>
-void SolverForTesting<MatrixType>::initialize()
+void IdentitySolver<MatrixType>::initialize()
 {
   if (isInitialized_) return;
 
@@ -82,7 +82,7 @@ void SolverForTesting<MatrixType>::initialize()
 }
 
 template<class MatrixType>
-void SolverForTesting<MatrixType>::compute()
+void IdentitySolver<MatrixType>::compute()
 {
   if (! isInitialized_) {
     initialize ();
@@ -98,7 +98,7 @@ void SolverForTesting<MatrixType>::compute()
 }
 
 template<class MatrixType>
-void SolverForTesting<MatrixType>::
+void IdentitySolver<MatrixType>::
 apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
        Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
        Teuchos::ETransp /*mode*/,
@@ -108,7 +108,7 @@ apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
   using Teuchos::ArrayRCP;
 
   TEUCHOS_TEST_FOR_EXCEPTION(!isComputed(), std::runtime_error,
-    "Ifpack2::SolverForTesting::apply() ERROR, compute() hasn't been called yet.");
+    "Ifpack2::IdentitySolver::apply() ERROR, compute() hasn't been called yet.");
 
   ++numApply_;
   //copy X in to Y
@@ -120,7 +120,7 @@ apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
 
 template<class MatrixType>
 typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
-SolverForTesting<MatrixType>::
+IdentitySolver<MatrixType>::
 computeCondEst (CondestType CT,
                 LocalOrdinal MaxIters,
                 magnitudeType Tol,
@@ -132,43 +132,43 @@ computeCondEst (CondestType CT,
 }
 
 template <class MatrixType>
-int SolverForTesting<MatrixType>::getNumInitialize() const {
+int IdentitySolver<MatrixType>::getNumInitialize() const {
   return(numInitialize_);
 }
 
 template <class MatrixType>
-int SolverForTesting<MatrixType>::getNumCompute() const {
+int IdentitySolver<MatrixType>::getNumCompute() const {
   return(numCompute_);
 }
 
 template <class MatrixType>
-int SolverForTesting<MatrixType>::getNumApply() const {
+int IdentitySolver<MatrixType>::getNumApply() const {
   return(numApply_);
 }
 
 template <class MatrixType>
-double SolverForTesting<MatrixType>::getInitializeTime() const {
+double IdentitySolver<MatrixType>::getInitializeTime() const {
   return(initializeTime_);
 }
 
 template<class MatrixType>
-double SolverForTesting<MatrixType>::getComputeTime() const {
+double IdentitySolver<MatrixType>::getComputeTime() const {
   return(computeTime_);
 }
 
 template<class MatrixType>
-double SolverForTesting<MatrixType>::getApplyTime() const {
+double IdentitySolver<MatrixType>::getApplyTime() const {
   return(applyTime_);
 }
 
 template <class MatrixType>
-std::string SolverForTesting<MatrixType>::description() const
+std::string IdentitySolver<MatrixType>::description() const
 {
-  return std::string("Ifpack2::SolverForTesting");
+  return std::string("Ifpack2::IdentitySolver");
 }
 
 template <class MatrixType>
-void SolverForTesting<MatrixType>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const
+void IdentitySolver<MatrixType>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const
 {
   if (verbLevel != Teuchos::VERB_NONE) {
     out << this->description() << std::endl;

@@ -42,7 +42,7 @@
 
 #include "Ifpack2_AdditiveSchwarz_decl.hpp"
 #include "Ifpack2_ILUT_decl.hpp"
-#include "Ifpack2_SolverForTesting_decl.hpp"
+#include "Ifpack2_IdentitySolver_decl.hpp"
 
 #if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
 #include "Ifpack2_SupportGraph_decl.hpp"
@@ -52,7 +52,7 @@
 
 #include "Ifpack2_AdditiveSchwarz_def.hpp"
 #include "Ifpack2_ILUT_def.hpp"
-#include "Ifpack2_SolverForTesting_def.hpp"
+#include "Ifpack2_IdentitySolver_def.hpp"
 #if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
 #include "Ifpack2_SupportGraph_def.hpp"
 #endif
@@ -65,15 +65,15 @@
 #define IFPACK2_INST_SPARSE_ILUT(S,LO,GO) \
   template class AdditiveSchwarz<Tpetra::CrsMatrix< S, LO, GO >, \
 				 Ifpack2::ILUT<Tpetra::CrsMatrix< S, LO, GO > > >;
-#define IFPACK2_INST_SOLVERFORTESTING(S,LO,GO) \
+#define IFPACK2_INST_IDENTITYSOLVER(S,LO,GO) \
   template class AdditiveSchwarz<Tpetra::CrsMatrix< S, LO, GO >, \
-				 Ifpack2::SolverForTesting<Tpetra::CrsMatrix< S, LO, GO > > >;
+				 Ifpack2::IdentitySolver<Tpetra::CrsMatrix< S, LO, GO > > >;
 namespace Ifpack2 {
   
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 
   IFPACK2_INSTANTIATE_SLG( IFPACK2_INST_SPARSE_ILUT )
-  IFPACK2_INSTANTIATE_SLG( IFPACK2_INST_SOLVERFORTESTING )
+  IFPACK2_INSTANTIATE_SLG( IFPACK2_INST_IDENTITYSOLVER )
 
    #if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
 //  template class AdditiveSchwarz<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode>, Ifpack2::Preconditioner<double, int, int, KokkosClassic::ThrustGPUNode> >;
