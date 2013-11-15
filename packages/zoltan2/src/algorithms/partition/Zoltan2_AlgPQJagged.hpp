@@ -63,7 +63,9 @@
 
 
 #ifdef HAVE_ZOLTAN2_ZOLTAN
+#ifdef HAVE_ZOLTAN2_MPI
 #define enable_migration2
+#endif
 #endif
 
 #ifdef enable_migration2
