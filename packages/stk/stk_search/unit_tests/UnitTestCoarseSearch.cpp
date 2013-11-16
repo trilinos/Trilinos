@@ -370,5 +370,154 @@ STKUNIT_UNIT_TEST(stk_search, coarse_search_3D_one_point)
   }
 }
 
+void printToCubit(std::ostream& out, const double* data)
+{
+    std::vector < geometry::Vec3d > corners;
+    corners.push_back(geometry::Vec3d(data[0], data[1], data[2]));
+    corners.push_back(geometry::Vec3d(data[3], data[1], data[2]));
+    corners.push_back(geometry::Vec3d(data[3], data[4], data[2]));
+    corners.push_back(geometry::Vec3d(data[0], data[4], data[2]));
+    corners.push_back(geometry::Vec3d(data[0], data[1], data[5]));
+    corners.push_back(geometry::Vec3d(data[3], data[1], data[5]));
+    corners.push_back(geometry::Vec3d(data[3], data[4], data[5]));
+    corners.push_back(geometry::Vec3d(data[0], data[4], data[5]));
+
+    corners[0].PrintToCubit(out);
+    out << "# {v0 = Id(\"vertex\")}" << std::endl;
+    corners[1].PrintToCubit(out);
+    out << "# {v1 = Id(\"vertex\")}" << std::endl;
+    corners[2].PrintToCubit(out);
+    out << "# {v2 = Id(\"vertex\")}" << std::endl;
+    corners[3].PrintToCubit(out);
+    out << "# {v3 = Id(\"vertex\")}" << std::endl;
+    corners[4].PrintToCubit(out);
+    out << "# {v4 = Id(\"vertex\")}" << std::endl;
+    corners[5].PrintToCubit(out);
+    out << "# {v5 = Id(\"vertex\")}" << std::endl;
+    corners[6].PrintToCubit(out);
+    out << "# {v6 = Id(\"vertex\")}" << std::endl;
+    corners[7].PrintToCubit(out);
+    out << "# {v7 = Id(\"vertex\")}" << std::endl;
+
+    out << "create surface vertex {v0} {v1} {v2} {v3}" << std::endl;
+    out << "create surface vertex {v0} {v4} {v5} {v1}" << std::endl;
+    out << "create surface vertex {v1} {v5} {v6} {v2}" << std::endl;
+    out << "create surface vertex {v3} {v2} {v6} {v7}" << std::endl;
+    out << "create surface vertex {v0} {v3} {v7} {v4}" << std::endl;
+    out << "create surface vertex {v4} {v7} {v6} {v5}" << std::endl;
+}
+
+STKUNIT_UNIT_TEST(stk_search_not_boost, checkCuts)
+{
+    typedef stk::search::box::AxisAlignedBoundingBox<Ident, double, 3> Box;
+    typedef std::vector<Box> BoxVector;
+
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int proc_id = -1;
+    int num_procs = -1;
+    MPI_Comm_rank(comm, &proc_id);
+    MPI_Comm_size(comm, &num_procs);
+
+    double offset=0.1;
+    double size=1.0;
+    double boxSize=0.1;
+    ASSERT_TRUE(offset<=size-offset);
+    double min=offset;
+    double max=boxSize+offset+1;
+
+    if(num_procs == 4)
+    {
+        double data[6];
+        data[0] = offset;
+        data[1] = offset;
+        data[2] = offset;
+        data[3] = boxSize+offset;
+        data[4] = boxSize+offset;
+        data[5] = boxSize+offset;
+        if (proc_id == 1)
+        {
+            data[0] += 1.0;
+            data[3] += 1.0;
+        }
+        else if (proc_id == 2)
+        {
+            data[1] += 1.0;
+            data[4] += 1.0;
+        }
+        else if (proc_id == 3)
+        {
+            data[0] += 1.0;
+            data[1] += 1.0;
+            data[3] += 1.0;
+            data[4] += 1.0;
+        }
+
+        std::stringstream os;
+        os << "cubitFile_" << proc_id << ".jou";
+        std::ofstream file(os.str().c_str());
+        printToCubit(file, data);
+
+        BoxVector local_domain;
+        Ident domainBox(proc_id, proc_id);
+        local_domain.push_back(Box(data, domainBox));
+
+        BoxVector local_range;
+        local_range = local_domain;
+
+        std::vector<float> global_box(6);
+        stk::search::box_global_bounds(comm,
+            local_domain.size(),
+            &local_domain[0] ,
+            local_range.size(),
+            &local_range[0],
+            &global_box[0]);
+
+        std::vector<double> globalBoxDouble(global_box.begin(), global_box.end());
+        printToCubit(file, &globalBoxDouble[0]);
+
+        float tolerance = 2*std::numeric_limits<float>::epsilon();
+        EXPECT_NEAR(float(min), global_box[0], tolerance);
+        EXPECT_NEAR(float(min), global_box[1], tolerance);
+        EXPECT_NEAR(float(min), global_box[2], tolerance);
+        EXPECT_NEAR(float(max), global_box[3], tolerance);
+        EXPECT_NEAR(float(max), global_box[4], tolerance);
+        EXPECT_NEAR(float(boxSize+offset), global_box[5], tolerance);
+
+        typedef std::map< stk::OctTreeKey, std::pair< std::list< Box >, std::list< Box > > > SearchTree ;
+
+        SearchTree searchTree;
+
+        bool local_violations = true;
+        unsigned Dim = 3;
+        stk::search::createSearchTree(&global_box[0], local_domain.size(), &local_domain[0],
+                local_range.size(), &local_range[0], Dim, proc_id, local_violations,
+                searchTree);
+
+        const int tree_depth = 4;
+        for (int procCounter = 0; procCounter < 4; procCounter++)
+        {
+            if(proc_id == procCounter)
+            {
+                for(typename SearchTree::const_iterator i = searchTree.begin();
+                        i != searchTree.end(); ++i)
+                {
+                    const stk::OctTreeKey & key = (*i).first;
+
+                    const std::list<Box> & domain = (*i).second.first;
+                    const std::list<Box> & range = (*i).second.second;
+
+                    std::cerr << "\t depth = " << key.depth() << std::endl;
+                    std::cerr << "\t ordinal = " << oct_tree_offset(tree_depth, key) << std::endl;
+                    std::cerr << "\t num_d = " << domain.size() << std::endl;
+                    std::cerr << "\t num_r = " << range.size() << std::endl;
+                }
+            }
+            MPI_Barrier(MPI_COMM_WORLD);
+        }
+        file.close();
+        unlink(os.str().c_str()); // comment this out to view Cubit files for bounding boxes
+    }
+}
+
 
 } //namespace

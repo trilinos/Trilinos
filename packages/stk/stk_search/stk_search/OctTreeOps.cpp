@@ -59,7 +59,6 @@ inline unsigned int log2(unsigned int x)
 
 }
 
-
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
@@ -309,56 +308,39 @@ void partition(
   const unsigned ord_node = oct_tree_offset( depth , key );
   const float * const w_node = weights + ord_node * 2 ;
 
-  const unsigned d1 = key.depth() + 1 ;
-
-  // Add weights from nested nodes and their descendents
-  // Try to achieve the ratio.
-
-  const unsigned i_first = k_first.index( d1 );
-
-  unsigned i = ( i_first ) ? i_first : 1 ;
-  unsigned j = 8 ;
+  // Check apparent pre-condition for this function, try work-around if failure. --pgx
+  bool k_first_i_end_precondition_violated = (oct_tree_offset(depth, k_first) >= i_end);
+  if (k_first_i_end_precondition_violated)
   {
-    stk::OctTreeKey k_upp = key ;
-    k_upp.set_index( d1 , j );
-    while ( i_end <= oct_tree_offset( depth , k_upp ) ) {
-      k_upp.set_index( d1 , --j );
-    }
+    k_upper = k_first;
   }
+  else if ( key.depth() == depth )
+  {
+    k_upper = key;
+  }
+  else
+  {
+    const unsigned d1 = key.depth() + 1 ;
 
-  w_lower += w_node[0] ;
-  w_upper += w_node[0] ;
+    // Add weights from nested nodes and their descendents
+    // Try to achieve the ratio.
+
+    const unsigned i_first = k_first.index( d1 );
+
+    unsigned i = ( i_first ) ? i_first : 1 ;
+    unsigned j = 8 ;
+    {
+      stk::OctTreeKey k_upp = key ;
+      k_upp.set_index( d1 , j );
+      while (i_end <= oct_tree_offset( depth , k_upp )) {
+        k_upp.set_index( d1 , --j );
+      }
+    }
+
+    w_lower += w_node[0] ;
+    w_upper += w_node[0] ;
 
   // At the maximum depth?
-
-  if ( key.depth() == depth ) {
-    // Assume weight from unrepresented nested nodes is
-    // evenly distributed among the nodes in the span [i,j]
-
-    const unsigned n = 1 + j - i ;
-
-    const double val = static_cast<double>(w_node[1]) / static_cast<double>(n);
-
-    // val = val_lower + val_upper
-    // ( w_lower + val_lower ) / ( w_upper + val_upper ) == target_ratio
-
-    const double val_lower =
-      ( target_ratio * ( w_upper + val ) - w_lower ) /
-      ( target_ratio + 1 ) ;
-
-    if ( 0 < val_lower ) {
-      // How much of the range does the lower portion get?
-      // Roundoff instead of merely truncating:
-      i += static_cast<unsigned>( 0.5 + ( n * val_lower ) / val );
-
-      // Can only get up to the maximum
-      if ( j < i ) { i = j ; }
-    }
-    oct_key_split( key , i , k_upper );
-  }
-  else {
-
-//    while ( i != j ) {
     while ( i < j ) {
       stk::OctTreeKey ki = key ; ki.set_index( d1 , i );
       stk::OctTreeKey kj = key ; kj.set_index( d1 , j );
@@ -416,8 +398,16 @@ void partition(
       diff = static_cast<double>(w_lower) / static_cast<double>(w_upper + vali) - target_ratio ;
     }
 
-    if ( - tolerance < diff && diff < tolerance ) {
+    if ( -tolerance < diff && diff < tolerance ) {
       oct_key_split( key , i , k_upper );
+
+      // If needed, enforce apparent post-condition. --pgx
+      bool k_first_k_upper_postcondition_violated = (k_upper < k_first);
+      if (k_first_k_upper_postcondition_violated)
+      {
+        k_upper = k_first;
+      }
+
     }
     else {
       partition( nested_k_first , i_end , ki ,
@@ -507,6 +497,7 @@ void oct_tree_partition_private(
     oct_tree_partition_private( p_upper, p_end, depth,
                                 tolerance, weights, cuts_length, cuts );
   }
+
 }
 
 } // namespace search

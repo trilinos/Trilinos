@@ -23,8 +23,10 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_util/environment/ReportHandler.hpp>
 #include <stk_search/IdentProc.hpp>
 #include <stk_search/OctTree.hpp>
+
 
 namespace stk {
 namespace search {
@@ -700,6 +702,26 @@ void oct_tree_partition(
   oct_tree_partition_private( 0, p_size, tree_depth,
                               arg_tolerance, global_count,
                               p_size, & arg_cuts[0]);
+
+  OctTreeKey lb = arg_cuts[0];
+  for (unsigned p = 0; p < p_size; ++p)
+  {
+    if (arg_cuts[p] < lb)
+    {
+      int myrank = parallel_machine_rank(arg_comm);
+      if (myrank == 0)
+      {
+        std::cerr << "proc " << myrank << "  WARNING returning from oct_tree_partition(..) with arg_cuts NON-MONOTONIC { ";
+        for (unsigned p_inner = 0; p_inner < p_size; ++p_inner)
+        {
+          std::cerr << arg_cuts[p_inner] << " ";
+        }
+        std::cerr << "}\n" << std::endl;
+      }
+      ThrowErrorMsg("stk::search::oct_tree_partition(..) arg_cuts is not monotonic at return.");
+    }
+    lb   = arg_cuts[p];
+  }
 }
 
 template <class DomainBoundingBox, class RangeBoundingBox>
@@ -831,6 +853,101 @@ ProximitySearch<DomainBoundingBox, RangeBoundingBox>::ProximitySearch(
 }
 
 
+template <class DomainBoundingBox, class RangeBoundingBox>
+void createSearchTree(
+        const float * const arg_global_box ,
+        const size_t arg_domain_boxes_number,
+        const DomainBoundingBox * const arg_domain_boxes,
+        const size_t arg_range_boxes_number,
+        const RangeBoundingBox * const arg_range_boxes,
+        unsigned Dim,
+        const unsigned p_rank,
+        bool local_violations,
+        std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > &search_tree)
+{
+    typedef std::map<stk::OctTreeKey, std::pair<std::list<DomainBoundingBox>, std::list<RangeBoundingBox> > > SearchTree;
+
+    stk::OctTreeKey covering[8];
+    unsigned number = 0u;
+
+    double scale = arg_global_box[0 + Dim] - arg_global_box[0];
+    for(unsigned i = 1; i < Dim; ++i)
+    {
+        double tst_scale = arg_global_box[i + Dim] - arg_global_box[i];
+        if(tst_scale > scale)
+            scale = tst_scale;
+    }
+    if(scale > 0.0) // Not an error. Could arise with a point bounding box in the range/domain...
+        scale = 1.0 / scale;
+    else
+        scale = 1.0;
+
+    for(size_t i = 0; i < arg_domain_boxes_number; ++i)
+    {
+
+        DomainBoundingBox tmp(arg_domain_boxes[i]);
+
+        tmp.key.proc = p_rank;
+
+        float box[6];
+
+        for(unsigned x = 0u; x < Dim; ++x)
+        {
+            box[x] = tmp.lower(x);
+            box[x + Dim] = tmp.upper(x);
+        }
+
+        const bool valid =
+                hsfc_box_covering(arg_global_box, box, covering, number, scale);
+
+        if(!valid)
+        {
+            local_violations = true;
+        }
+
+        for(unsigned k = 0u; k < number; ++k)
+        {
+            const stk::OctTreeKey key = covering[k];
+            search_tree[key].first.push_back(tmp);
+        }
+    }
+
+    const bool symmetric = false;
+    if(!symmetric)
+    {
+        for(size_t i = 0; i < arg_range_boxes_number; ++i)
+        {
+
+            RangeBoundingBox tmp(arg_range_boxes[i]);
+
+            tmp.key.proc = p_rank;
+            float box[6];
+
+            for(unsigned x = 0u; x < Dim; ++x)
+            {
+                box[x] = tmp.lower(x);
+                box[x + Dim] = tmp.upper(x);
+            }
+
+            const bool valid =
+                    hsfc_box_covering(arg_global_box, box, covering, number, scale);
+
+            if(!valid)
+            {
+                local_violations = true;
+            }
+
+            for(unsigned k = 0; k < number; ++k)
+            {
+                const stk::OctTreeKey key = covering[k];
+                search_tree[key].second.push_back(tmp);
+            }
+        }
+    }
+}
+
+
+
 //----------------------------------------------------------------------
 /** Search for intersection of domain boxes with range boxes
  *  within a given global bounding box.
@@ -882,75 +999,11 @@ bool oct_tree_proximity_search(
 
   //----------------------------------------------------------------------
   // Search tree defined by oct-tree covering for boxes
-
   bool local_violations = false ;
   bool global_violations = false ;
 
   SearchTree search_tree ;
-
-  {
-    stk::OctTreeKey covering[8] ;
-    unsigned   number = 0 ;
-
-    double scale = arg_global_box[0+Dim] - arg_global_box[0];
-    for ( unsigned i = 1 ; i < Dim ; ++i ) {
-      double tst_scale = arg_global_box[i+Dim] - arg_global_box[i];
-      if (tst_scale > scale) scale = tst_scale;
-    }
-    if (scale > 0.0) // Not an error. Could arise with a point bounding box in the range/domain...
-      scale = 1.0 / scale;
-    else
-      scale = 1.0;
-
-    for ( size_t i = 0 ; i < arg_domain_boxes_number ; ++i ) {
-
-      DomainBoundingBox tmp( arg_domain_boxes[i] );
-
-      tmp.key.proc = p_rank ;
-
-      float box[6];
-
-      for (int x=0; x<Dim; ++x) {
-        box[x] = tmp.lower(x);
-        box[x+Dim] = tmp.upper(x);
-      }
-
-      const bool valid =
-        hsfc_box_covering( arg_global_box, box, covering, number, scale );
-
-      if ( ! valid ) { local_violations = true ; }
-
-      for ( unsigned k = 0 ; k < number ; ++k ) {
-        const stk::OctTreeKey key = covering[k] ;
-        search_tree[key].first.push_back(tmp);
-      }
-    }
-
-    if ( ! symmetric ) {
-      for ( size_t i = 0 ; i < arg_range_boxes_number ; ++i ) {
-
-        RangeBoundingBox tmp( arg_range_boxes[i] );
-
-        tmp.key.proc = p_rank ;
-        float box[6];
-
-        for (int x=0; x<Dim; ++x) {
-          box[x] = tmp.lower(x);
-          box[x+Dim] = tmp.upper(x);
-        }
-
-        const bool valid =
-          hsfc_box_covering( arg_global_box, box, covering, number, scale );
-
-        if ( ! valid ) { local_violations = true ; }
-
-        for ( unsigned k = 0 ; k < number ; ++k ) {
-          const stk::OctTreeKey key = covering[k] ;
-          search_tree[key].second.push_back(tmp);
-        }
-      }
-    }
-  }
+  createSearchTree(arg_global_box, arg_domain_boxes_number, arg_domain_boxes, arg_range_boxes_number, arg_range_boxes, Dim, p_rank, local_violations, search_tree);
 
   //----------------------------------------------------------------------
   // Use a set to provide a unique and sorted result.
