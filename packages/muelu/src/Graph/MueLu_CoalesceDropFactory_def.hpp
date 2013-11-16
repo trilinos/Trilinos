@@ -93,7 +93,7 @@ namespace MueLu {
     validParamList->set< SC >                    ("Dirichlet detection threshold", zero, "Threshold for determining whether entries are zero during Dirichlet row detection");
     {
       typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
-      RCP<validatorType> typeValidator = rcp(new validatorType(Teuchos::tuple<std::string>("original", "laplacian"), "algorithm"));
+      RCP<validatorType> typeValidator = rcp(new validatorType(Teuchos::tuple<std::string>("original", "laplacian", "classical"), "algorithm"));
       validParamList->set< std::string >         ("algorithm",             "original", "Dropping algorithm", typeValidator);
     }
 
@@ -131,8 +131,10 @@ namespace MueLu {
 
     if (doExperimentalWrap) {
       std::string algo = pL.get<std::string>("algorithm");
+      if (algo == "classical")
+        algo = "original";
 
-      TEUCHOS_TEST_FOR_EXCEPTION(predrop_ != null    && algo != "original", Exceptions::RuntimeError, "Dropping function must not be provided for \"" << algo << "\" algorithm");
+      TEUCHOS_TEST_FOR_EXCEPTION(predrop_ != null   && algo != "original", Exceptions::RuntimeError, "Dropping function must not be provided for \"" << algo << "\" algorithm");
       TEUCHOS_TEST_FOR_EXCEPTION(algo != "original" && algo != "laplacian", Exceptions::RuntimeError, "\"algorithm\" must be one of (original|laplacian)");
 
       SC threshold = Teuchos::as<SC>(pL.get<double>("aggregation threshold"));
