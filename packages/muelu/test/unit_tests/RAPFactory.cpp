@@ -132,7 +132,7 @@ namespace MueLuTests {
     RCP<MultiVector> result2 = MultiVectorFactory::Build(R->getRangeMap(),1);
     coarseOp->apply(*X,*result2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
-    Teuchos::Array<ST::magnitudeType> normX(1), normResult1(1),normResult2(1);
+    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> normX(1), normResult1(1),normResult2(1);
     X->norm2(normX);
     out << "This test checks the correctness of the Galerkin triple "
         << "matrix product by comparing (RAP)*X to R(A(P*X))." << std::endl;
@@ -221,7 +221,7 @@ namespace MueLuTests {
     RCP<MultiVector> result2 = MultiVectorFactory::Build(P->getDomainMap(),1);
     coarseOp->apply(*X,*result2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
-    Teuchos::Array<ST::magnitudeType> normX(1), normResult1(1),normResult2(1);
+    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> normX(1), normResult1(1),normResult2(1);
     X->norm2(normX);
     out << "This test checks the correctness of the Galerkin triple "
         << "matrix product by comparing (RAP)*X to R(A(P*X)), where R is the implicit tranpose of P." << std::endl;

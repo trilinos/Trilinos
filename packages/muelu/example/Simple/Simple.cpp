@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
   H.Iterate(*B, nIts, *X);
 
   // Print relative residual norm
-  ST::magnitudeType residualNorms = Utils::ResidualNorm(*A, *X, *B)[0];
+  Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utils::ResidualNorm(*A, *X, *B)[0];
   if (comm->getRank() == 0)
     std::cout << "||Residual|| = " << residualNorms << std::endl;
 

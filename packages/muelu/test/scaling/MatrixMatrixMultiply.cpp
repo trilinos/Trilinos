@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
   TimeMonitor globalTimeMonitor(*TimeMonitor::getNewTimer("MatrixMatrixMultiplyTest: S - Global Time"));
 
   unsigned int seed = generateSeed(*comm, optSeed);
-  ST::seedrandom(seed);
+  Teuchos::ScalarTraits<SC>::seedrandom(seed);
 
   for (int jj=0; jj<optNmults; ++jj) {
 
@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
 template <class T>
 size_t generateRandomNumber(T a, T b)
 {
-    Scalar rv = (ST::random()+1)*0.5; //shift "random" value from interval [-1,1] to [0,1]
+    Scalar rv = (Teuchos::ScalarTraits<SC>::random()+1)*0.5; //shift "random" value from interval [-1,1] to [0,1]
     size_t numMyElements = Teuchos::as<size_t>(a + rv * (b - a));
     return numMyElements;
 }
@@ -270,7 +270,7 @@ Teuchos::RCP<Matrix> generateRandomMatrix(LO const &minEntriesPerRow, LO const &
 
     Array<Scalar> vals(realMaxEntriesPerRow);
     //stick in ones for values
-    for (LO j=0; j< realMaxEntriesPerRow; ++j) vals[j] = ST::one();
+    for (LO j=0; j< realMaxEntriesPerRow; ++j) vals[j] = Teuchos::ScalarTraits<SC>::one();
     Array<GO> cols(realMaxEntriesPerRow);
     for (size_t i = 0; i < numLocalRowsInA; ++i) {
       ArrayView<SC> av(&vals[0],eprData[i]);

@@ -47,7 +47,7 @@
 #include <iostream>
 
 // Teuchos
-#include "Teuchos_ConfigDefs.hpp"
+#include <Teuchos_ConfigDefs.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
@@ -278,7 +278,7 @@ int main(int argc, char *argv[]) {
   // Define X, B
   RCP<MultiVector> X = MultiVectorFactory::Build(map, 1);
   RCP<MultiVector> B = MultiVectorFactory::Build(map, 1);
-  Teuchos::Array<ST::magnitudeType> norms(1);
+  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
 
   X->setSeed(846930886);
   X->randomize();

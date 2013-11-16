@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
       X->setSeed(846930886);
       X->randomize();
       A->apply(*X, *RHS, Teuchos::NO_TRANS, (SC)1.0, (SC)0.0);
-      Teuchos::Array<ST::magnitudeType> norms(1);
+      Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
       RHS->norm2(norms);
       RHS->scale(1.0/norms[0]);
 

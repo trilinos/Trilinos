@@ -146,7 +146,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, Iterate)
 
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map, 1);
   nullSpace->putScalar( (SC) 1.0);
-  Teuchos::Array<ST::magnitudeType> norms(1);
+  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
   nullSpace->norm1(norms);
 
   MueLu::Hierarchy<SC, LO, GO, NO, LMO> H;
@@ -238,7 +238,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, IterateWithImplicitRestriction)
 
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map, 1);
   nullSpace->putScalar( (SC) 1.0);
-  Teuchos::Array<ST::magnitudeType> norms(1);
+  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
   nullSpace->norm1(norms);
 
   MueLu::Hierarchy<SC, LO, GO, NO, LMO> H;
@@ -697,7 +697,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, Write)
   //diff = A_v + (-1.0)*(Ain_v) + 0*diff
   diff->update(1.0,*A_v,-1.0,*Ain_v,0.0);
 
-  Teuchos::Array<ST::magnitudeType> norms(1);
+  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
   diff->norm2(norms);
   out << "||diff|| = " << norms[0] << std::endl;
   TEST_EQUALITY(norms[0]<1e-15, true);
