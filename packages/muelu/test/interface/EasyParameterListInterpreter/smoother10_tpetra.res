@@ -31,8 +31,8 @@ Level 1
    Build (MueLu::UncoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
     lightweight wrap = 1
-    Dirichlet detection threshold = 0
     aggregation threshold = 0
+    Dirichlet detection threshold = 0
     algorithm = original
     
    Ordering = 0   [default]
@@ -89,8 +89,8 @@ Level 2
    Build (MueLu::UncoupledAggregationFactory)
     Build (MueLu::CoalesceDropFactory)
     lightweight wrap = 1
-    Dirichlet detection threshold = 0
     aggregation threshold = 0
+    Dirichlet detection threshold = 0
     algorithm = original
     
    Ordering = 0   [default]
