@@ -147,10 +147,6 @@ namespace MueLu {
 
     MUELU_READ_PARAM(paramList, "energy minimization: enable",             bool,               false,       bEnergyMinimization);
 
-    MUELU_READ_PARAM(paramList, "repartition: enable",                      int,                   0,       bDoRepartition);
-    MUELU_READ_PARAM(paramList, "repartition: max min ratio",            double,                 1.3,       maxminratio);
-    MUELU_READ_PARAM(paramList, "repartition: min per proc",                int,                 512,       minperproc);
-
     MUELU_READ_PARAM(paramList, "RAP: fix diagonal",                       bool,               false,       bFixDiagonal); // This is a MueLu specific extension that does not exist in ML
 
     //
@@ -279,17 +275,22 @@ namespace MueLu {
     // introduce rebalancing
     //
 #if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
-    Teuchos::RCP<Factory> RebalancedPFact = Teuchos::null;
-    Teuchos::RCP<Factory> RebalancedRFact = Teuchos::null;
-    Teuchos::RCP<Factory> RepartitionFact = Teuchos::null;
+    Teuchos::RCP<Factory>            RebalancedPFact = Teuchos::null;
+    Teuchos::RCP<Factory>            RebalancedRFact = Teuchos::null;
+    Teuchos::RCP<Factory>            RepartitionFact = Teuchos::null;
     Teuchos::RCP<RebalanceAcFactory> RebalancedAFact = Teuchos::null;
-    if(bDoRepartition == 1) {
+
+    MUELU_READ_PARAM(paramList, "repartition: enable",                      int,                   0,       bDoRepartition);
+    if (bDoRepartition == 1) {
       // The Factory Manager will be configured to return the rebalanced versions of P, R, A by default.
       // Everytime we want to use the non-rebalanced versions, we need to explicitly define the generating factory.
       RFact->SetFactory("P", PFact);
       //
       AcFact->SetFactory("P", PFact);
       AcFact->SetFactory("R", RFact);
+
+      MUELU_READ_PARAM(paramList, "repartition: max min ratio",            double,                 1.3,       maxminratio);
+      MUELU_READ_PARAM(paramList, "repartition: min per proc",                int,                 512,       minperproc);
 
       // create "Partition"
       Teuchos::RCP<MueLu::IsorropiaInterface<LO, GO, NO, LMO> > isoInterface = Teuchos::rcp(new MueLu::IsorropiaInterface<LO, GO, NO, LMO>());
@@ -320,7 +321,10 @@ namespace MueLu {
       RebalancedAFact = Teuchos::rcp(new RebalanceAcFactory());
       RebalancedAFact->SetFactory("A", AcFact);
     }
-#endif // #ifdef HAVE_MUELU_ISORROPIA
+#else // #ifdef HAVE_MUELU_ISORROPIA
+    // Get rid of [-Wunused] warnings
+    (void)
+#endif
 
     //
     // Nullspace factory
