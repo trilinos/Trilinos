@@ -44,7 +44,6 @@
 #ifndef IFPACK2_UNITTESTHELPERS_HPP
 #define IFPACK2_UNITTESTHELPERS_HPP
 
-#include <Teuchos_RefCountPtr.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
@@ -157,7 +156,7 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
   const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
   const Scalar two = one + one;
   const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
-  
+
   size_t upper_limit;
 
   for(LocalOrdinal l_row = 0; (size_t) l_row<rowmap->getNodeNumElements(); l_row++) {

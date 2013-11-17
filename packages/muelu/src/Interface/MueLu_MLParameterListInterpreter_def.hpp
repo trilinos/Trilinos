@@ -323,7 +323,9 @@ namespace MueLu {
     }
 #else // #ifdef HAVE_MUELU_ISORROPIA
     // Get rid of [-Wunused] warnings
-    (void)
+    //(void)
+    //
+    // ^^^ FIXME (mfh 17 Nov 2013) That definitely doesn't compile.
 #endif
 
     //
