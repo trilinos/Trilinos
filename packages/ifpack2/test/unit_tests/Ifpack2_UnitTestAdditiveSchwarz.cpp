@@ -353,6 +353,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, TestGIDs, Scalar, Loca
       Teuchos::ArrayRCP<const Scalar> xview = x.get1dView();
       Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
 
+      //out.setOutputToRootOnly(-1);
+      //x.describe(out,Teuchos::VERB_EXTREME);
+      //y.describe(out,Teuchos::VERB_EXTREME);
+
+
       TEST_COMPARE_FLOATING_ARRAYS(xview, yview, 4*Teuchos::ScalarTraits<Scalar>::eps());
     }
   }
