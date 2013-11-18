@@ -642,24 +642,11 @@ STKUNIT_UNIT_TEST(CoarseSearch, MultiPeriodicBCDisallowRotational)
   pbc_search_caseA.add_rotational_periodic_pair(side_0 & meta_data.locally_owned_part(),
                                                 side_2 & meta_data.locally_owned_part(),
                                                 rotationAngle, rotationAxis, axisLocation);
-  pbc_search_caseA.add_rotational_periodic_pair(side_1 & meta_data.locally_owned_part(),
-                                                side_3 & meta_data.locally_owned_part(),
-                                                rotationAngle, rotationAxis, axisLocation);
-  EXPECT_THROW(pbc_search_caseA.find_periodic_nodes(bulk_data.parallel()),
-               std::exception);
 
-  PeriodicSearch pbc_search_caseB(bulk_data, CoordinateFunctor(bulk_data, coords_field));
-  pbc_search_caseB.add_rotational_periodic_pair(side_0 & meta_data.locally_owned_part(),
-                                                side_2 & meta_data.locally_owned_part(),
-                                                rotationAngle, rotationAxis, axisLocation);
-  pbc_search_caseB.add_rotational_periodic_pair(side_1 & meta_data.locally_owned_part(),
+  EXPECT_THROW( pbc_search_caseA.add_rotational_periodic_pair(side_1 & meta_data.locally_owned_part(),
                                                 side_3 & meta_data.locally_owned_part(),
-                                                rotationAngle, rotationAxis, axisLocation);
-  pbc_search_caseB.add_rotational_periodic_pair(side_4 & meta_data.locally_owned_part(),
-                                                side_5 & meta_data.locally_owned_part(),
-                                                rotationAngle, rotationAxis, axisLocation );
-  EXPECT_THROW(pbc_search_caseB.find_periodic_nodes(bulk_data.parallel()),
-                std::exception);
+                                                rotationAngle, rotationAxis, axisLocation),
+                                                std::exception);
 }
 
 

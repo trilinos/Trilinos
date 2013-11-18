@@ -122,20 +122,6 @@ public:
     }
   };
 
-private:
-
-  struct SearchSummary
-  {
-    TransformHelper m_transform;
-    size_t m_begin_idx, m_num_found;
-
-    SearchSummary(const TransformHelper &transform, int begin_idx, int num_found)
-      : m_transform(transform), m_begin_idx(begin_idx), m_num_found(num_found) { }
-  };
-
-  typedef std::vector<SearchSummary> SearchResultsIndex;
-
-
 public:
 
   PeriodicBoundarySearch( stk::mesh::BulkData & bulk_data,
@@ -145,7 +131,8 @@ public:
       m_periodic_pairs(),
       m_search_results(),
       m_periodic_ghosts(NULL),
-      m_firstCallToFindPeriodicNodes(true)
+      m_firstCallToFindPeriodicNodes(true),
+      m_hasRotationalPeriodicity(false)
   {}
 
   const SearchPairVector & get_pairs() const { return m_search_results; }
@@ -173,7 +160,6 @@ public:
   void find_periodic_nodes(stk::ParallelMachine parallel, bool include_non_locally_owned = false)
   {
     m_search_results.clear();
-    m_search_results_index.clear();
 
     //resolve multiple periodicity once
     if (m_firstCallToFindPeriodicNodes)
@@ -208,8 +194,6 @@ public:
 
   size_t size() const { return m_unique_search_results.size();}
 
-  size_t index_size() const {return m_search_results_index.size(); }
-
   std::pair<stk::mesh::Entity, stk::mesh::Entity> get_node_pair(size_t i) const
   {
     return std::make_pair(m_bulk_data.get_entity(m_unique_search_results[i].first),
@@ -217,24 +201,18 @@ public:
   }
 
   template<typename RealType>
-  bool get_search_row_major_rotation(size_t i, std::vector<RealType> & buff) const
+  bool get_search_row_major_rotation(std::vector<RealType> & buff) const
   {
-    return m_search_results_index[i].m_transform.getRowMajorRotation(buff);
-  }
+    ThrowAssert(m_transforms.size() == 1);    //if we have a rotation, it can be the only periodic bc
+    ThrowRequire(m_hasRotationalPeriodicity);
 
-  size_t get_search_results_begin_idx(size_t i) const
-  {
-    return m_search_results_index[i].m_begin_idx;
-  }
-
-  size_t get_search_results_size(size_t i) const
-  {
-    return m_search_results_index[i].m_num_found;
+    return m_transforms[0].getRowMajorRotation(buff);
   }
 
   void add_linear_periodic_pair(const stk::mesh::Selector & domain,
       const stk::mesh::Selector & range)
   {
+    ThrowErrorIf(m_hasRotationalPeriodicity);
     m_periodic_pairs.push_back(std::make_pair(domain, range));
     m_transforms.push_back( TransformHelper() );
   }
@@ -246,6 +224,10 @@ public:
       const double point[])
   {
     m_periodic_pairs.push_back(std::make_pair(domain, range));
+    //only one periodic BC can exist with rotational periodicity
+    ThrowRequire(m_periodic_pairs.size() == 1);
+
+    m_hasRotationalPeriodicity = true;
 
     if (point[0]*point[0] + point[1]*point[1] + point[2]*point[2] == 0) {
       m_transforms.push_back( TransformHelper(theta, axis) );
@@ -320,11 +302,11 @@ private:
   SearchPairVector m_search_results;
   SearchPairSet m_unique_search_results;
 
-  SearchResultsIndex m_search_results_index;
   stk::mesh::Ghosting * m_periodic_ghosts;
   typedef std::vector<TransformHelper > TransformVector;
   TransformVector m_transforms;
   bool m_firstCallToFindPeriodicNodes;
+  bool m_hasRotationalPeriodicity;
 
   void resolve_multi_periodicity()
   {
@@ -429,9 +411,6 @@ private:
 #endif
 
     m_search_results.insert(m_search_results.end(), search_results.begin(), search_results.end());
-    m_search_results_index.push_back(SearchSummary(transform,
-                                                   m_search_results.size() - search_results.size(),
-                                                   search_results.size()));
   }
 
   void remove_redundant_nodes()
