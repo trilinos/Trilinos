@@ -539,7 +539,7 @@ namespace MueLu {
       std::vector<char> areActive(numProcs, 0);
       MPI_Gather(&amActive, 1, MPI_CHAR, &areActive[0], 1, MPI_CHAR, 0, *rawMpiComm);
 
-      int rowWidth = Teuchos::as<int>(ceil(sqrt(numProcs)));
+      int rowWidth = std::min(Teuchos::as<int>(ceil(sqrt(numProcs))), 100);
       for (int proc = 0; proc < numProcs; proc += rowWidth) {
         for (int j = 0; j < rowWidth; j++)
           if (proc + j < numProcs)
