@@ -145,11 +145,11 @@ public:
 
   //  Optimized version making use of zero value enum
   inline const FieldMetaDataVector& get_meta_data_for_nodal_field(const FieldBase & f) const {
-#ifdef NDEBUG
+#ifndef NDEBUG
     ThrowAssert(stk::mesh::MetaData::NODE_RANK == 0);
     //  Check if field is a nodal field
-    const RestrictionVector& restrictions = f.restrictions();
-    for(UInt ir=0; ir<restrictions.size(); ++ir) {
+    const FieldRestrictionVector& restrictions = f.restrictions();
+    for(unsigned ir=0; ir<restrictions.size(); ++ir) {
       ThrowAssert(restrictions[ir].entity_rank() == stk::mesh::MetaData::NODE_RANK);
     }
 #endif
