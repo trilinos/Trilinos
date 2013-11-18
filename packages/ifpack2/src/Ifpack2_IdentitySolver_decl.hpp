@@ -53,15 +53,21 @@ class IdentitySolver :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
                                            typename MatrixType::local_ordinal_type,
                                            typename MatrixType::global_ordinal_type,
-                                           typename MatrixType::node_type> {
+                                           typename MatrixType::node_type>,
+    virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                                                       typename MatrixType::local_ordinal_type,
+                                                                       typename MatrixType::global_ordinal_type,
+                                                                       typename MatrixType::node_type> >
+                                           {
 public:
-  typedef typename MatrixType::scalar_type Scalar;
-  typedef typename MatrixType::local_ordinal_type LocalOrdinal;
-  typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
-  typedef typename MatrixType::node_type Node;
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+  typedef typename MatrixType::scalar_type                                scalar_type;
+  typedef typename MatrixType::local_ordinal_type                         local_ordinal_type;
+  typedef typename MatrixType::global_ordinal_type                        global_ordinal_type;
+  typedef typename MatrixType::node_type                                  node_type;
+  typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType      magnitude_type;
+  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
 
-  IdentitySolver (const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A);
+  IdentitySolver (const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& A);
 
   //! Destructor
   virtual ~IdentitySolver();
@@ -103,23 +109,17 @@ public:
     \warning This routine is NOT AztecOO compliant.
   */
   void
-  apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-         Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
          Teuchos::ETransp mode = Teuchos::NO_TRANS,
-         Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-         Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! Returns the Tpetra::Map object associated with the domain of this operator.
-  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
-  getDomainMap () const {
-    return domainMap_;
-  }
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getDomainMap () const;
 
   //! Returns the Tpetra::Map object associated with the range of this operator.
-  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
-  getRangeMap() const {
-    return rangeMap_;
-  }
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getRangeMap() const;
 
   //! Applies the matrix to a Tpetra::MultiVector.
   /*!
@@ -128,8 +128,8 @@ public:
     \param
     Y - (Out) A Tpetra::MultiVector of dimension NumVectors containing the result.
     */
-  void applyMat(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-                Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+  void applyMat(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
                 Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
   //@}
@@ -137,25 +137,25 @@ public:
   //@{
 
   //! Computes the estimated condition number and returns the value.
-  magnitudeType
+  magnitude_type
   computeCondEst (CondestType CT = Cheap,
-                  LocalOrdinal MaxIters = 1550,
-                  magnitudeType Tol = 1e-9,
-                  const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &matrix = Teuchos::null);
+                  local_ordinal_type MaxIters = 1550,
+                  magnitude_type Tol = 1e-9,
+                  const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &matrix = Teuchos::null);
 
   //@}
   //! \name Attribute accessor methods
   //@{
 
   //! Return the computed estimated condition number, or -1.0 if no computed.
-  magnitudeType getCondEst() const
+  magnitude_type getCondEst() const
   { return condEst_; }
 
   //! Return the communicator associated with this matrix operator.
   Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
   //! Return a reference to the matrix to be preconditioned.
-  Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >
   getMatrix () const {
     return matrix_;
   }
@@ -194,15 +194,14 @@ public:
   /** \brief Print the object with some verbosity level to an FancyOStream object. */
   void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
+  virtual void setMatrix (const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& A);
+
   //@}
 
   private:
     bool isInitialized_;
     bool isComputed_;
-    Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > domainMap_;
-    Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rangeMap_;
-    //Teuchos::RCP<const MatrixType> matrix_;
-    const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > matrix_;
+    Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > matrix_;
 
     mutable int numInitialize_;
     mutable int numCompute_;
@@ -212,7 +211,7 @@ public:
     double computeTime_;
     double applyTime_;
 
-    magnitudeType condEst_;
+    magnitude_type condEst_;
 };
 
 }//namespace Ifpack2
