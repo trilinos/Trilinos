@@ -97,7 +97,7 @@ STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameWithRestart)
     sierra::make_lower(goldFieldName);
     testFieldNamedCorrectly(iossRegion, communicator, goldFieldName);
 
-//    unlink(restartFilename.c_str());
+    unlink(restartFilename.c_str());
 }
 
 STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameWithResultsAndRestart)

@@ -261,6 +261,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, TwoGlobalDoublesSameName)
     globalVarNames.push_back("testGlobal");
     globalVarNames.push_back("testGlobal");
     EXPECT_THROW(testTwoGlobals<double>("TwoGlobalDoublesSameName.exo", globalVarNames), std::exception);
+    unlink("TwoGlobalDoublesSameName.exo");
 }
 
 stk::mesh::Field<double> &createNodalTestField(stk::mesh::MetaData &stkMeshMetaData, const std::string &fieldName)
