@@ -145,8 +145,14 @@ public:
 
   //  Optimized version making use of zero value enum
   inline const FieldMetaDataVector& get_meta_data_for_nodal_field(const FieldBase & f) const {
-    ThrowAssert(f.rank() == stk::mesh::MetaData::NODE_RANK);
+#ifdef NDEBUG
     ThrowAssert(stk::mesh::MetaData::NODE_RANK == 0);
+    //  Check if field is a nodal field
+    const RestrictionVector& restrictions = f.restrictions();
+    for(UInt ir=0; ir<restrictions.size(); ++ir) {
+      ThrowAssert(restrictions[ir].entity_rank() == stk::mesh::MetaData::NODE_RANK);
+    }
+#endif
     return m_field_meta_data[f.mesh_meta_data_ordinal()];
   }
 
