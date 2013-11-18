@@ -1767,22 +1767,38 @@ namespace stk {
 	  db_usage = Ioss::WRITE_HEARTBEAT;
 
 	  // Always add the "time" field to all heartbeat outputs...
-	  properties.add(Ioss::Property("SHOW_TIME_FIELD", true));
+	  if (!properties.exists("SHOW_TIME_FIELD")) {
+	    properties.add(Ioss::Property("SHOW_TIME_FIELD", true));
+	  }
 
 	  if (hb_type == SPYHIS) {
-	    properties.add(Ioss::Property("FILE_FORMAT", "spyhis"));
+	    if (!properties.exists("FILE_FORMAT")) {
+	      properties.add(Ioss::Property("FILE_FORMAT", "spyhis"));
+	    }
 	  }
 	  else if (hb_type == CSV) {
-	    properties.add(Ioss::Property("SHOW_TIME_STAMP", false));
-	    properties.add(Ioss::Property("FIELD_SEPARATOR", ", "));
+	    if (!properties.exists("SHOW_TIME_STAMP")) {
+	      properties.add(Ioss::Property("SHOW_TIME_STAMP", false));
+	    }
+	    if (!properties.exists("FIELD_SEPARATOR")) {
+	      properties.add(Ioss::Property("FIELD_SEPARATOR", ", "));
+	    }
 	  }
 	  else if (hb_type == TEXT) {
-	    properties.add(Ioss::Property("SHOW_TIME_STAMP", false));
-	    properties.add(Ioss::Property("FIELD_SEPARATOR", "\t"));
+	    if (!properties.exists("SHOW_TIME_STAMP")) {
+	      properties.add(Ioss::Property("SHOW_TIME_STAMP", false));
+	    }
+	    if (!properties.exists("FIELD_SEPARATOR")) {
+	      properties.add(Ioss::Property("FIELD_SEPARATOR", "\t"));
+	    }
 	  }
 	  else if (hb_type == TS_TEXT) {
-	    properties.add(Ioss::Property("SHOW_TIME_STAMP", true));
-	    properties.add(Ioss::Property("FIELD_SEPARATOR", "\t"));
+	    if (!properties.exists("SHOW_TIME_STAMP")) {
+	      properties.add(Ioss::Property("SHOW_TIME_STAMP", true));
+	    }
+	    if (!properties.exists("FIELD_SEPARATOR")) {
+	      properties.add(Ioss::Property("FIELD_SEPARATOR", "\t"));
+	    }
 	  }
 	}
 
