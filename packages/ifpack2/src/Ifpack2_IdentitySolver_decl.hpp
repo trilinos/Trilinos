@@ -43,11 +43,13 @@
 #ifndef IFPACK2_IDENTITY_SOLVER_DECL_HPP
 #define IFPACK2_IDENTITY_SOLVER_DECL_HPP
 
-#include "Ifpack2_Preconditioner.hpp"
+#include <Ifpack2_Preconditioner.hpp>
+#include <Ifpack2_Details_CanChangeMatrix.hpp>
+
 
 namespace Ifpack2 {
 
-//! A class that does nothing.
+//! Solver class for testing purposes.
 template<class MatrixType>
 class IdentitySolver :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
