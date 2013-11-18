@@ -128,7 +128,7 @@ STKUNIT_UNIT_TEST( heavy, heavy )
   size_t index = 0;
   {
     double start_time = stk::wall_time();
-    index = fixture.create_output_mesh( output_base_filename );
+    index = fixture.create_output_mesh( output_base_filename, stk::io::WRITE_RESULTS);
     timings[EXODUS_CREATE_PHASE_ID] = stk::wall_dtime(start_time);
   }
 

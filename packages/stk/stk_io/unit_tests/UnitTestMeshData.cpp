@@ -74,7 +74,7 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, iofixture )
 
   // exodus file creation
   std::string output_base_filename = "unit_test_output.e";
-  size_t output_index = fixture.create_output_mesh(output_base_filename);
+  size_t output_index = fixture.create_output_mesh(output_base_filename, stk::io::WRITE_RESULTS);
 
   // process output
   const double time_step = 0;
@@ -116,7 +116,7 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, active_only )
 
   // exodus file creation
   std::string output_base_filename = "unit_test_output_filtered.e";
-  size_t index = fixture.create_output_mesh( output_base_filename );
+  size_t index = fixture.create_output_mesh( output_base_filename, stk::io::WRITE_RESULTS );
 
   // Set the output filter on the mesh_data...
   stk::mesh::Selector active_selector(active);
@@ -162,8 +162,8 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, active_and_all )
   // exodus file creation
   std::string filtered_output_base_filename = "unit_test_output_first_of_two.e";
   std::string unfiltered_output_base_filename = "unit_test_output_second_of_two.e";
-  size_t filtered_index =  fixture.create_output_mesh( filtered_output_base_filename );
-  size_t universal_index = fixture.create_output_mesh( unfiltered_output_base_filename );
+  size_t filtered_index =  fixture.create_output_mesh( filtered_output_base_filename, stk::io::WRITE_RESULTS );
+  size_t universal_index = fixture.create_output_mesh( unfiltered_output_base_filename, stk::io::WRITE_RESULTS );
 
   // Set the output filter on the mesh_data...
   // Only output the part declared above as "active"

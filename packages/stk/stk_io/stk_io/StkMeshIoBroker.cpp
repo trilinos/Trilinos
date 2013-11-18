@@ -1118,7 +1118,8 @@ namespace stk {
     size_t StkMeshIoBroker::set_output_io_region(Teuchos::RCP<Ioss::Region> ioss_output_region)
     {
       m_output_files.clear();
-      Teuchos::RCP<OutputFile> output_file = Teuchos::rcp(new OutputFile(ioss_output_region, m_communicator, m_input_region.get()));
+      Teuchos::RCP<OutputFile> output_file = Teuchos::rcp(new OutputFile(ioss_output_region, m_communicator,
+									 stk::io::WRITE_RESULTS, m_input_region.get()));
       m_output_files.push_back(output_file);
       return m_output_files.size()-1;
     }
@@ -1234,9 +1235,10 @@ namespace stk {
     }
 
 
-    size_t StkMeshIoBroker::create_output_mesh(const std::string &filename)
+    size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, DatabasePurpose db_type)
     {
-      Teuchos::RCP<OutputFile> output_file = Teuchos::rcp(new OutputFile(filename, m_communicator, m_property_manager, m_input_region.get()));
+      Teuchos::RCP<OutputFile> output_file = Teuchos::rcp(new OutputFile(filename, m_communicator, db_type,
+									 m_property_manager, m_input_region.get()));
       m_output_files.push_back(output_file);
 
       size_t index_of_output_file = m_output_files.size()-1;
@@ -1244,9 +1246,11 @@ namespace stk {
     }
 
 
-    size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, Ioss::PropertyManager &properties)
+    size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, DatabasePurpose db_type,
+					       Ioss::PropertyManager &properties)
     {
-      Teuchos::RCP<OutputFile> output_file = Teuchos::rcp(new OutputFile(filename, m_communicator, properties, m_input_region.get()));
+      Teuchos::RCP<OutputFile> output_file = Teuchos::rcp(new OutputFile(filename, m_communicator, db_type,
+									 properties, m_input_region.get()));
       m_output_files.push_back(output_file);
 
       size_t index_of_output_file = m_output_files.size()-1;
@@ -1411,20 +1415,7 @@ namespace stk {
         return dbName;
     }
 
-    void StkMeshIoBroker::add_restart_field(size_t file_index, stk::mesh::FieldBase &field, const std::string &db_name)
-    {
-        std::string name_for_output = pickFieldName(field, db_name);
-        int state_count = field.number_of_states();
-        ThrowAssert(state_count < 7);
-        int num_states_to_write = std::max(state_count-1, 1);
-        for(int state=0; state < num_states_to_write; state++) {
-            stk::mesh::FieldState state_identifier = static_cast<stk::mesh::FieldState>(state);
-            stk::mesh::FieldBase *statedField = field.field_state(state_identifier);
-            std::string field_name_with_suffix = stk::io::get_stated_field_name(name_for_output, state_identifier);
-            add_results_field(file_index, *statedField, field_name_with_suffix);
-        }
-    }
-
+    // This is for restart input...
     void StkMeshIoBroker::add_restart_field(stk::mesh::FieldBase &field, const std::string &db_name)
     {
       stk::io::RestartFieldAttribute *my_field_attribute = new stk::io::RestartFieldAttribute(db_name.empty() ? field.name() : db_name);
@@ -1453,13 +1444,13 @@ namespace stk {
         "MeshReadWriteUtils::validate_output_file_index: There is no Output mesh region associated with this output file index: " << output_file_index << ".");
     }
 
-    void StkMeshIoBroker::add_results_field(size_t output_file_index, stk::mesh::FieldBase &field)
+    void StkMeshIoBroker::add_field(size_t output_file_index, stk::mesh::FieldBase &field)
     {
         validate_output_file_index(output_file_index);
         m_output_files[output_file_index]->add_field(field, field.name());
     }
 
-    void StkMeshIoBroker::add_results_field(size_t output_file_index, stk::mesh::FieldBase &field, const std::string &alternate_name)
+    void StkMeshIoBroker::add_field(size_t output_file_index, stk::mesh::FieldBase &field, const std::string &alternate_name)
     {
         validate_output_file_index(output_file_index);
         m_output_files[output_file_index]->add_field(field, alternate_name);
@@ -1868,7 +1859,10 @@ namespace stk {
 
     void OutputFile::add_field(stk::mesh::FieldBase &field, const std::string &alternate_name)
     {
-        ThrowErrorMsgIf (alternate_name.empty(), "Attempting to output results field " << field.name() << " with no name.");
+        ThrowErrorMsgIf (m_fields_defined,
+			 "Attempting to add fields after fields have already been written to the database.");
+        ThrowErrorMsgIf (alternate_name.empty(),
+			 "Attempting to output results field " << field.name() << " with no name.");
 
         bool fieldAlreadyExists=false;
         for (size_t i=0;i<m_named_fields.size();i++) {
@@ -1879,13 +1873,24 @@ namespace stk {
           }
         }
 
-        if ( fieldAlreadyExists == false ) {
-          stk::io::FieldAndName namedField(&field, alternate_name);
-          m_named_fields.push_back(namedField);
+        if (!fieldAlreadyExists) {
+	  if (m_db_purpose == stk::io::WRITE_RESTART) {
+	    int state_count = field.number_of_states();
+	    ThrowAssert(state_count < 7);
+	    int num_states_to_write = std::max(state_count-1, 1);
+	    for(int state=0; state < num_states_to_write; state++) {
+	      stk::mesh::FieldState state_identifier = static_cast<stk::mesh::FieldState>(state);
+	      stk::mesh::FieldBase *statedField = field.field_state(state_identifier);
+	      std::string field_name_with_suffix = stk::io::get_stated_field_name(alternate_name, state_identifier);
+	      stk::io::FieldAndName namedField(statedField, field_name_with_suffix);
+	      m_named_fields.push_back(namedField);
+	    }
+	  } else {
+	    stk::io::FieldAndName namedField(&field, alternate_name);
+	    m_named_fields.push_back(namedField);
+	  }
+	  stk::io::set_field_role(field, Ioss::Field::TRANSIENT);
         }
-
-        // TODO: code under here still needs this. Fix me.
-        stk::io::set_field_role(field, Ioss::Field::TRANSIENT);
     }
 
     void OutputFile::add_global(const std::string &name, const boost::any &value, stk::util::ParameterType::Type type)
@@ -2108,6 +2113,8 @@ namespace stk {
 
     void OutputFile::set_subset_selector(Teuchos::RCP<stk::mesh::Selector> my_selector)
     {
+      ThrowErrorMsgIf(m_mesh_defined,
+		      "ERROR: The subset_selector cannot be changed after the mesh has already been written.");
       m_subset_selector = my_selector;
     }    
   } // namespace io

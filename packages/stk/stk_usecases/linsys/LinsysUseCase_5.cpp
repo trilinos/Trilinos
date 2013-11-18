@@ -330,8 +330,8 @@ bool use_case_5_driver( MPI_Comm comm ,
 
       stk::io::StkMeshIoBroker mesh;
       mesh.set_bulk_data(mesh_bulk_data);
-      size_t result_file_index = mesh.create_output_mesh(out_filename);
-      mesh.add_results_field(result_file_index, displacements_field);
+      size_t result_file_index = mesh.create_output_mesh(out_filename, stk::io::WRITE_RESULTS);
+      mesh.add_field(result_file_index, displacements_field);
 
       // Write the model to the mesh file (topology, coordinates, attributes, etc)
       mesh.process_output_request(result_file_index, 0.0);

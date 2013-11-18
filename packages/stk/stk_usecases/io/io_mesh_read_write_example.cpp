@@ -58,12 +58,12 @@ namespace {
     // This call adds an output database for results data to mesh_data.
     // No data is written at this time other than verifying that the
     // file can be created on the disk.
-    size_t results_index = mesh_data.create_output_mesh(output_filename);
+    size_t results_index = mesh_data.create_output_mesh(output_filename, stk::io::WRITE_RESULTS);
 
     // Create restart output ...  ("generated_mesh.restart") ("exodus_mesh.restart")
     std::string restart_filename = working_directory + type + "_mesh.restart";
 
-    size_t restart_index = mesh_data.create_output_mesh(restart_filename);
+    size_t restart_index = mesh_data.create_output_mesh(restart_filename, stk::io::WRITE_RESTART);
 
     // Create heartbeat file of the specified format...
     std::string heartbeat_filename = working_directory + type + ".hrt";
@@ -76,8 +76,8 @@ namespace {
       const Ioss::Field::RoleType* role = stk::io::get_field_role(*fields[i]);
        if ( role && *role == Ioss::Field::TRANSIENT )
        {
-         mesh_data.add_restart_field(restart_index, *fields[i]); // for output
-         mesh_data.add_results_field(results_index, *fields[i]);
+         mesh_data.add_field(restart_index, *fields[i]); // for output
+         mesh_data.add_field(results_index, *fields[i]);
        }
     }
 

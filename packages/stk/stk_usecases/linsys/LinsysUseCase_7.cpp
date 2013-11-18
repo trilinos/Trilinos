@@ -305,11 +305,11 @@ bool use_case_7_driver( MPI_Comm comm ,
 
       stk::io::StkMeshIoBroker mesh;
       mesh.set_bulk_data(mesh_bulk_data);
-      size_t result_file_index = mesh.create_output_mesh(out_filename);
+      size_t result_file_index = mesh.create_output_mesh(out_filename, stk::io::WRITE_RESULTS);
       mesh.use_nodeset_for_part_nodes_fields(result_file_index, true);
 
-      mesh.add_results_field(result_file_index, displacements_field);
-      mesh.add_results_field(result_file_index, rotation_field);
+      mesh.add_field(result_file_index, displacements_field);
+      mesh.add_field(result_file_index, rotation_field);
 
       mesh.process_output_request(result_file_index, 0.0);
     }

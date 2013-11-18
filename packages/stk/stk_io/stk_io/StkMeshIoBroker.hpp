@@ -39,23 +39,30 @@ namespace stk {
   namespace io {
     static std::string CoordinateFieldName("coordinates");
 
+    enum DatabasePurpose {
+      WRITE_RESULTS = 1,
+      WRITE_RESTART,
+      READ_MESH,
+      READ_RESTART
+    };
+
     class OutputFile
     {
     public:
-        OutputFile(const std::string &filename, MPI_Comm communicator, Ioss::PropertyManager& property_manager,
-		   const Ioss::Region *input_region)
+        OutputFile(const std::string &filename, MPI_Comm communicator, DatabasePurpose db_type,
+		   Ioss::PropertyManager& property_manager, const Ioss::Region *input_region)
         : m_current_output_step(-1), m_use_nodeset_for_part_nodes_fields(false),
-          m_mesh_defined(false), m_fields_defined(false), m_input_region(input_region),
-	  m_subset_selector(NULL)
+          m_mesh_defined(false), m_fields_defined(false), m_db_purpose(db_type),
+	  m_input_region(input_region), m_subset_selector(NULL)
         {
           setup_output_file(filename, communicator, property_manager);
         }
 
         OutputFile(Teuchos::RCP<Ioss::Region> ioss_output_region, MPI_Comm communicator,
-		   const Ioss::Region *input_region)
+		   DatabasePurpose db_type, const Ioss::Region *input_region)
         : m_current_output_step(-1), m_use_nodeset_for_part_nodes_fields(false),
-          m_mesh_defined(false), m_fields_defined(false), m_input_region(input_region),
-	  m_subset_selector(NULL)
+          m_mesh_defined(false), m_fields_defined(false), m_db_purpose(db_type),
+	  m_input_region(input_region), m_subset_selector(NULL)
         {
             m_output_region = ioss_output_region;
             m_mesh_defined = true;
@@ -100,6 +107,9 @@ namespace stk {
 
         void use_nodeset_for_part_nodes_fields(bool true_false)
         {
+	  ThrowErrorMsgIf(m_mesh_defined,
+			  "ERROR: The use_nodeset_for_part_nodes_fields setting cannot be changed after "
+			  "the mesh has already been written.");
 	  m_use_nodeset_for_part_nodes_fields = true_false;
         }
 
@@ -112,6 +122,7 @@ namespace stk {
         bool m_use_nodeset_for_part_nodes_fields;
         bool m_mesh_defined;
         bool m_fields_defined;
+        DatabasePurpose m_db_purpose;
         const Ioss::Region* m_input_region;
         Teuchos::RCP<stk::mesh::Selector> m_subset_selector;
         Teuchos::RCP<Ioss::Region> m_output_region;
@@ -163,6 +174,7 @@ namespace stk {
 
     class StkMeshIoBroker {
       public:
+
         /**
          * \param[in] comm MPI Communicator to be used for all
          * parallel communication needed to generate the mesh.
@@ -400,6 +412,8 @@ namespace stk {
          */
         void process_input_request(double time);
 
+        void add_restart_field(stk::mesh::FieldBase &field, const std::string &db_name = std::string());
+
         /**
          * Create an exodus mesh database with the specified
          * filename. This function creates the exodus metadata which
@@ -421,16 +435,19 @@ namespace stk {
          * \param[in] filename The full pathname to the file which will be
          * created and the mesh data written to. If the file already
          * exists, it will be overwritten.
+	 *
+         * \param[in] db_type The type (RESULTS or RESTART) of the output mesh.
+	 * An output of type RESTART will write all-but-one of the states of a multi-state field,
+	 * an output of type RESULTS will only write the newest state of a multi-state field.
+	 * Other behavioral differences may be added in the future (e.g., dealing with adaptivity...)
          */
-        size_t create_output_mesh(const std::string &filename);
-        size_t create_output_mesh(const std::string &filename, Ioss::PropertyManager &properties);
+        size_t create_output_mesh(const std::string &filename, DatabasePurpose db_type);
+        size_t create_output_mesh(const std::string &filename, DatabasePurpose db_type, Ioss::PropertyManager &properties);
+
         void write_output_mesh(size_t output_file_index);
 
-        void add_results_field(size_t output_file_index, stk::mesh::FieldBase &field);
-        void add_results_field(size_t output_file_index, stk::mesh::FieldBase &field, const std::string &db_name);
-
-        void add_restart_field(size_t file_index, stk::mesh::FieldBase &field, const std::string &db_name = std::string());
-        void add_restart_field(stk::mesh::FieldBase &field, const std::string &db_name = std::string());
+        void add_field(size_t output_file_index, stk::mesh::FieldBase &field);
+        void add_field(size_t output_file_index, stk::mesh::FieldBase &field, const std::string &db_name);
 
         void add_global(size_t output_file_index, const std::string &variableName,
 			const boost::any &value, stk::util::ParameterType::Type type);

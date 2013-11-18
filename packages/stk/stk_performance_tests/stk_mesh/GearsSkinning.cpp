@@ -532,19 +532,19 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
 
 //	surf_mesh.m_resultsFieldsDefined = true;
 //	vol_mesh.m_resultsFieldsDefined = true;
-        vol_mesh_index = stkMeshIoBroker.create_output_mesh(volume_out_filename.str());
+        vol_mesh_index = stkMeshIoBroker.create_output_mesh(volume_out_filename.str(), stk::io::WRITE_RESULTS);
 
         std::ostringstream surface_out_filename;
         surface_out_filename << "surface_mesh_" << std::setw(7) << std::setfill('0') << time_step << ".e";
-        surf_mesh_index = stkMeshIoBroker.create_output_mesh(volume_out_filename.str());
+        surf_mesh_index = stkMeshIoBroker.create_output_mesh(volume_out_filename.str(), stk::io::WRITE_RESULTS);
 
         stk::io::set_field_role(fixture.displacement_field.field_of_state(stk::mesh::StateNew), Ioss::Field::TRANSIENT);
         stk::io::set_field_role(displacement,    Ioss::Field::TRANSIENT);
         stk::io::set_field_role(processor_field, Ioss::Field::TRANSIENT);
 
-        stkMeshIoBroker.add_results_field(vol_mesh_index, fixture.displacement_field.field_of_state(stk::mesh::StateNew));
-        stkMeshIoBroker.add_results_field(vol_mesh_index, displacement);
-        stkMeshIoBroker.add_results_field(vol_mesh_index, processor_field);
+        stkMeshIoBroker.add_field(vol_mesh_index, fixture.displacement_field.field_of_state(stk::mesh::StateNew));
+        stkMeshIoBroker.add_field(vol_mesh_index, displacement);
+        stkMeshIoBroker.add_field(vol_mesh_index, processor_field);
       }
 
       stkMeshIoBroker.process_output_request(vol_mesh_index, time_step/60.0);

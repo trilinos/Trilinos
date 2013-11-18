@@ -22,7 +22,7 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalVariables)
         generateMetaData(stkIo);
         stkIo.populate_bulk_data();
 
-        size_t fileIndex = stkIo.create_output_mesh(restartFileName);
+        size_t fileIndex = stkIo.create_output_mesh(restartFileName, stk::io::WRITE_RESTART);
         stkIo.add_global(fileIndex, timeStepVarName, Ioss::Field::REAL);
         stkIo.begin_output_step(fileIndex, currentTime);
         stkIo.write_global(fileIndex, timeStepVarName, timeStepSize);

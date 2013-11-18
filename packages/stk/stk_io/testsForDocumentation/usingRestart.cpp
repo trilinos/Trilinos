@@ -31,8 +31,8 @@ TEST(StkMeshIoBrokerHowTo, restartWithMultistateField)
         putDataOnTriStateField(stkIo.bulk_data(), triStateField,
                 stateNp1Value, stateNValue, stateNm1Value);
 
-        size_t fileHandle = stkIo.create_output_mesh(restartFilename);
-        stkIo.add_restart_field(fileHandle, *triStateField);
+        size_t fileHandle = stkIo.create_output_mesh(restartFilename, stk::io::WRITE_RESTART);
+        stkIo.add_field(fileHandle, *triStateField);
 
         stkIo.begin_output_step(fileHandle, time);
         stkIo.write_defined_output_fields(fileHandle);

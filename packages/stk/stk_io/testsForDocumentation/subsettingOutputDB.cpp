@@ -40,7 +40,7 @@ TEST(StkMeshIoBrokerHowTo, subsetOutputDatabase)
       }
 
       // Output...
-      size_t fileHandle = mesh_data.create_output_mesh(resultsFilename);
+      size_t fileHandle = mesh_data.create_output_mesh(resultsFilename, stk::io::WRITE_RESULTS);
       mesh_data.set_subset_selector(fileHandle, shell_subset);
       mesh_data.write_output_mesh(fileHandle);
     }

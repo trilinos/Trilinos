@@ -45,7 +45,7 @@ TEST(StkMeshIoBrokerHowTo, addFileContentsToOutputDatabase)
       mesh_data.populate_bulk_data();
 
       // Output...
-      size_t fileHandle = mesh_data.create_output_mesh(resultsFilename);
+      size_t fileHandle = mesh_data.create_output_mesh(resultsFilename, stk::io::WRITE_RESULTS);
 
       // Add the data from the file "application_input_file.i" as information records on this file.
       Ioss::Region *io_region = mesh_data.get_output_io_region(fileHandle).get();

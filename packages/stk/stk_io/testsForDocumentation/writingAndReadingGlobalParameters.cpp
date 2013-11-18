@@ -44,7 +44,7 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalParameters)
         generateMetaData(stkIo);
         stkIo.populate_bulk_data();
 
-        size_t fileIndex = stkIo.create_output_mesh(file_name);
+        size_t fileIndex = stkIo.create_output_mesh(file_name, stk::io::WRITE_RESTART);
 
 	stk::util::ParameterMapType::const_iterator i = parameters.begin();
 	stk::util::ParameterMapType::const_iterator iend = parameters.end();

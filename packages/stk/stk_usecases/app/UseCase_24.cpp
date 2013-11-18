@@ -267,11 +267,11 @@ bool use_case_24_driver(
                                   momentum_flux_bip, pressure, velocity,
                                   nodal_momentum_flux );
 
-  size_t result_output_index = mesh_data.create_output_mesh(outputName);
+  size_t result_output_index = mesh_data.create_output_mesh(outputName, stk::io::WRITE_RESULTS);
 
   // Output the pressure and velocity fields...
-  mesh_data.add_results_field(result_output_index, pressure);
-  mesh_data.add_results_field(result_output_index, velocity);
+  mesh_data.add_field(result_output_index, pressure);
+  mesh_data.add_field(result_output_index, velocity);
 
   mesh_data.process_output_request(result_output_index,0.0);
 

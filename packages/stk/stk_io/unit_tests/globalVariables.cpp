@@ -84,7 +84,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDouble)
         generateMetaData(stkIo);
         stkIo.populate_bulk_data();
 
-        size_t result_file_index = stkIo.create_output_mesh(outputFileName);
+        size_t result_file_index = stkIo.create_output_mesh(outputFileName, stk::io::WRITE_RESULTS);
 
         stkIo.add_global(result_file_index, globalVarName, Ioss::Field::REAL);
 
@@ -120,7 +120,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleVector3)
         generateMetaData(stkIo);
         stkIo.populate_bulk_data();
 
-        size_t result_file_index = stkIo.create_output_mesh(outputFileName);
+        size_t result_file_index = stkIo.create_output_mesh(outputFileName, stk::io::WRITE_RESULTS);
 
         stkIo.add_global(result_file_index, globalVarName, "vector_3d", Ioss::Field::REAL);
 
@@ -154,7 +154,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalIntegerVector3)
         generateMetaData(stkIo);
         stkIo.populate_bulk_data();
 
-        size_t result_file_index = stkIo.create_output_mesh(outputFileName);
+        size_t result_file_index = stkIo.create_output_mesh(outputFileName, stk::io::WRITE_RESULTS);
 
         stkIo.add_global(result_file_index, globalVarName, "vector_3d", Ioss::Field::INTEGER);
 
@@ -188,7 +188,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDouble10)
         generateMetaData(stkIo);
         stkIo.populate_bulk_data();
 
-        size_t result_file_index = stkIo.create_output_mesh(outputFileName);
+        size_t result_file_index = stkIo.create_output_mesh(outputFileName, stk::io::WRITE_RESULTS);
 
         stkIo.add_global(result_file_index, globalVarName, globalVarValue.size(), Ioss::Field::REAL);
 
@@ -218,7 +218,7 @@ void testTwoGlobals(const std::string &outputFileName, const std::vector<std::st
         generateMetaData(stkIo);
         stkIo.populate_bulk_data();
 
-        size_t resultOuputIndex = stkIo.create_output_mesh(outputFileName);
+        size_t resultOuputIndex = stkIo.create_output_mesh(outputFileName, stk::io::WRITE_RESULTS);
 
         Ioss::Field::BasicType iossDataType = iossBasicType(DataType());
         stkIo.add_global(resultOuputIndex, globalVarNames[0], iossDataType);
@@ -302,8 +302,8 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, GlobalDoubleWithFieldMultipleTimeSteps)
 
         putDataOnTestField(stkIo.bulk_data(), field0, nodalFieldValues);
 
-        size_t result_file_index = stkIo.create_output_mesh(outputFileName);
-        stkIo.add_results_field(result_file_index, field0);
+        size_t result_file_index = stkIo.create_output_mesh(outputFileName, stk::io::WRITE_RESULTS);
+        stkIo.add_field(result_file_index, field0);
         stkIo.add_global(result_file_index, globalVarName, Ioss::Field::REAL);
 
         double time = 1.0;
@@ -346,7 +346,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleRestart)
         generateMetaData(stkIo);
         stkIo.populate_bulk_data();
 
-        size_t fileIndex = stkIo.create_output_mesh(restartFileName);
+        size_t fileIndex = stkIo.create_output_mesh(restartFileName, stk::io::WRITE_RESTART);
 
         stkIo.add_global(fileIndex, globalVarName, Ioss::Field::REAL);
 
@@ -398,8 +398,8 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleWithFieldRestart)
 
         putDataOnTestField(stkIo.bulk_data(), field0, nodalFieldValues);
 
-        size_t fileIndex = stkIo.create_output_mesh(outputFileName);
-        stkIo.add_restart_field(fileIndex, field0);
+        size_t fileIndex = stkIo.create_output_mesh(outputFileName, stk::io::WRITE_RESTART);
+        stkIo.add_field(fileIndex, field0);
 
         stkIo.add_global(fileIndex, globalVarName, Ioss::Field::REAL);
 

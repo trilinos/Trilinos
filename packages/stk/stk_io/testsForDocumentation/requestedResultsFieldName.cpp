@@ -23,11 +23,11 @@ TEST(StkMeshIoBrokerHowTo, writeFieldWithAlternativeName)
     stk::mesh::put_field(nodalDisplacement, stk::mesh::Entity::NODE, stkMeshMetaData.universal_part());
 
     const std::string outputFileName = "resultsOutput.exo";
-    size_t resultsOutputIndex = stkIo.create_output_mesh(outputFileName);
+    size_t resultsOutputIndex = stkIo.create_output_mesh(outputFileName, stk::io::WRITE_RESULTS);
 
     // mark field for output
     std::string alternateFieldName("deformation");
-    stkIo.add_results_field(resultsOutputIndex, nodalDisplacement, alternateFieldName);
+    stkIo.add_field(resultsOutputIndex, nodalDisplacement, alternateFieldName);
 
     // field descriptions done, fill field data (done with mesh input)
     stkIo.populate_bulk_data();

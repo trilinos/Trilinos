@@ -29,17 +29,17 @@ TEST(StkMeshIoBrokerHowTo, writeTwoResultFiles)
     stk::mesh::FieldBase *displacementField = stkMeshMetaData.get_field(displacementFieldName);
 
     // For file one, set up results and global variables
-    size_t file1Handle = stkMeshIoBroker.create_output_mesh(resultsFilename1);
-    stkMeshIoBroker.add_results_field(file1Handle, *displacementField);
+    size_t file1Handle = stkMeshIoBroker.create_output_mesh(resultsFilename1, stk::io::WRITE_RESULTS);
+    stkMeshIoBroker.add_field(file1Handle, *displacementField);
     std::string globalVarNameFile1 = "eigenValue";
     stkMeshIoBroker.add_global(file1Handle, globalVarNameFile1, Ioss::Field::REAL);
 
     // For file two, set up results and global variables
-    size_t file2Handle = stkMeshIoBroker.create_output_mesh(resultsFilename2);
+    size_t file2Handle = stkMeshIoBroker.create_output_mesh(resultsFilename2, stk::io::WRITE_RESULTS);
     std::string nameOnOutputFile("deformations");
-    stkMeshIoBroker.add_results_field(file2Handle, *displacementField, nameOnOutputFile);
+    stkMeshIoBroker.add_field(file2Handle, *displacementField, nameOnOutputFile);
     stk::mesh::FieldBase *velocityField = stkMeshMetaData.get_field(velocityFieldName);
-    stkMeshIoBroker.add_results_field(file2Handle, *velocityField);
+    stkMeshIoBroker.add_field(file2Handle, *velocityField);
     std::string globalVarNameFile2 = "kineticEnergy";
     stkMeshIoBroker.add_global(file2Handle, globalVarNameFile2, Ioss::Field::REAL);
 
