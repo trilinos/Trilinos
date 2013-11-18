@@ -123,6 +123,115 @@ The local matrix \f$A_i\f$ can be filtered, to eliminate singletons,
 and reordered. At the present time, RCM and METIS can be used to
 reorder the local matrix.
 
+\section Ifpack2_AdditiveSchwarz_CombineMode Combine modes
+
+AdditiveSchwarz supports different <i>combine modes</i>.  These are
+rules for combining overlapping entries from the subdomain solves'
+results, to form the final additive Schwarz result.  The two modes
+that users will likely find most useful are "Add" and "Zero".  "Add"
+sums overlapping results, and "Zero" ignores them.
+
+The Zero combine mode can be a bit confusing.  It helps to compare the
+Add combine mode without overlap, to the Zero combine mode with overlap.
+Consider the following 4 x 4 linear system \f$Ax = b\f$, where
+\f[
+A =
+\left(
+\begin{array}{rrrr}
+  2 & -1 &  0 &  0 \\
+ -1 &  2 & -1 &  0 \\
+  0 & -1 &  2 & -1 \\
+  0 &  0 & -1 &  2
+\end{array} \right)
+\f]
+and
+\f[
+b =
+\left(
+\begin{array}{rrrr}
+  1 \\
+  4 \\
+  9 \\
+ 16
+\end{array} \right)
+Suppose that we give the first two rows of A and b to Process 0, and
+the last two rows of A and b to Process 1.
+
+If we use additive Schwarz without overlap, and use the (default) Add
+combine mode, then each process must solve a linear system with the
+following 2 x 2 matrix:
+\f[
+A_{local} =
+\begin{array}{rr}
+  2 & -1 \\
+ -1 &  2
+\end{array} \right).
+\f]
+The inverse of this matrix is
+\f[
+A_{local}^{-1} =
+\frac{1}{3} \cdot
+\begin{array}{rr}
+  2 &  1 \\
+  1 &  2
+\end{array} \right).
+\f]
+
+Process 0 gets the right-hand side \f$(1, 4)^T\f$ and thus the local
+solution \f$(2, 3)^T\f$.  Process 1 gets the right-hand side \f$(9,
+16)^T\f$ and thus the local solution \f$(34/3, 41/3)^T\f$.  The Add
+combine mode sums entries corresponding to overlap, but in this case
+there is no overlap, so we just concatenate the local results.  Thus,
+the result of applying additive Schwarz once is
+\f[
+x_{Add} =
+\begin{array}{r}
+   2 \\
+   3 \\
+34/3 \\
+41/3
+\end{array}.
+\f]
+
+If we introduce one level of overlap on each of these processes, and
+use the Zero combine mode with additive Schwarz, then each process has
+to solve a linear system with the following 3 x 3 matrix:
+\f[
+A_{local} =
+\begin{array}{rrr}
+  2 & -1 &  0 \\
+ -1 &  2 & -1 \\
+  0 & -1 &  2
+\end{array} \right).
+The inverse of this matrix is
+\f[
+A_{local}^{-1} =
+\frac{1}{4} \cdot
+\begin{array}{rrr}
+  3 &  2 &  1 \\
+  2 &  4 &  2 \\
+  1 &  2 &  3
+\end{array} \right).
+\f]
+Process 0 gets the right-hand side \f$(1, 4, 9)^T\f$ and thus the
+local solution \f$(5, 9, 9)^T\f$.  Process 1 gets the right-hand side
+\f$(4, 9, 16)^T\f$ and thus the local solution \f$(23/2, 19,
+35/2)^T\f$.  The Zero combine mode ignores "remote entries," so that
+the result of applying additive Schwarz once is
+\f[
+x_{Zero} =
+\begin{array}{r}
+   5 \\
+   9 \\
+  19 \\
+35/2
+\end{array}.
+\f]
+
+Even though both of the above examples combine the local results in
+the same way, Zero produces a different final result than Add, because
+the Zero example uses overlap 1, whereas the Add example uses overlap 0.
+
 \section Ifpack2_AdditiveSchwarz_DevNotes Notes to Ifpack2 developers
 
 The second template parameter (\c LocalInverseType) is being
