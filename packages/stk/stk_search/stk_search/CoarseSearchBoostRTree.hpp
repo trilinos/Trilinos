@@ -6,8 +6,8 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#ifndef STK_SEARCH_COARSE_SEARCH_2_HPP
-#define STK_SEARCH_COARSE_SEARCH_2_HPP
+#ifndef STK_SEARCH_COARSE_SEARCH_BOOST_RTREE_HPP
+#define STK_SEARCH_COARSE_SEARCH_BOOST_RTREE_HPP
 
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search/IdentProc.hpp>
@@ -294,10 +294,11 @@ void create_parallel_domain(SpatialIndex& local_domain, stk::ParallelMachine com
 }
 
 template <typename DomainBox, typename RangeBox>
-void coarse_search2( std::vector<DomainBox> const& local_domain,
-                     std::vector<RangeBox> const& local_range,
-                     stk::ParallelMachine comm,
-                     std::vector<std::pair<typename DomainBox::Key, typename RangeBox::Key> >& output)
+void coarse_search_boost_rtree( std::vector<DomainBox> const& local_domain,
+                                std::vector<RangeBox> const& local_range,
+                                stk::ParallelMachine comm,
+                                std::vector<std::pair<typename DomainBox::Key, typename RangeBox::Key> >& output
+                              )
 {
   namespace bg = boost::geometry;
   namespace bgi = boost::geometry::index;
@@ -424,4 +425,4 @@ void coarse_search2( std::vector<DomainBox> const& local_domain,
 } // namespace search
 } // namespace stk
 
-#endif // STK_SEARCH_COARSE_SEARCH_2_HPP
+#endif // STK_SEARCH_COARSE_SEARCH_BOOST_RTREE_HPP

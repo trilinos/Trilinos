@@ -21,137 +21,164 @@
 #include <stk_search/BihTree.hpp>
 #include <stk_search/BihTreeParallelOps.hpp>
 #include <stk_search/OctTreeOps.hpp>
+#include <stk_search/CoarseSearchBoostRTree.hpp>
 
 namespace stk {
 namespace search {
 
-// Structure to hold factory specification
-struct FactoryOrder {
-  // Enumerate search algorithms
-  enum Algorithm {OCTREE, BIHTREE};
-
-  // Define virtual base class to derive holder for input processor cuts.
-  class Cuts {
-    Cuts(){}
-    // assignment operator not needed
-    // copy constructor not needed
-    virtual ~Cuts();
-  };
-
-  Algorithm             m_algorithm;
-  stk::ParallelMachine  m_communicator;
-  Cuts *                m_cuts;
-  unsigned *            m_search_tree_stats;
-  unsigned              m_debug_level;
-  FactoryOrder() :
-    m_algorithm        (OCTREE),
-    m_communicator     (MPI_COMM_SELF),
-    m_cuts             (NULL),
-    m_search_tree_stats(NULL),
-    m_debug_level      (0)
-  {}
-};
-
-template <class RangeBoundingVolume,class DomainBoundingVolume>
-bool parallel_bihtree_search(
-    std::vector<std::pair<typename DomainBoundingVolume::Key,typename RangeBoundingVolume::Key> > & domain_to_range_keys,
-    const std::vector<RangeBoundingVolume> &range,
-    const std::vector<DomainBoundingVolume> &domain,
-    const FactoryOrder & order)
+template <typename DomainBox, typename RangeBox>
+void coarse_search_bihtree( std::vector<DomainBox> const& domain,
+                            std::vector<RangeBox>  const& range,
+                            stk::ParallelMachine   comm,
+                            std::vector< std::pair< typename DomainBox::Key, typename RangeBox::Key> > & intersections
+                          )
 {
-
+  const unsigned p_size = parallel_machine_size( comm );
   //find the global box
-  std::vector<float> global_box(6);
-  stk::search::box_global_bounds(order.m_communicator,
-      domain.size() ,
-      &domain[0] ,
-      range.size(),
-      &range[0],
-      &global_box[0]);
-
-  //
-  stk::search::oct_tree_bih_tree_proximity_search(order.m_communicator,
-      &global_box[0],
-      domain.size() ,
-      &domain[0] ,
-      range.size(),
-      &range[0],
-      NULL,
-      domain_to_range_keys ,
-      order.m_search_tree_stats);
-
-  return true;
-}
-
-
-template <class RangeBoundingVolume,class DomainBoundingVolume>
-bool coarse_search_bihtree(
-    std::vector<std::pair<typename DomainBoundingVolume::Key,typename RangeBoundingVolume::Key> > & domain_to_range_keys,
-    const std::vector<RangeBoundingVolume> &range,
-    const std::vector<DomainBoundingVolume> &domain,
-    const FactoryOrder & order)
-{
-  const unsigned p_size = parallel_machine_size( order.m_communicator );
-  //const unsigned p_rank = parallel_machine_rank( order.m_communicator );
-
   if (p_size == 1) {
-    bih::BihTree<RangeBoundingVolume> tree(range.begin(),range.end());
-    unsigned size = domain.size();
-    for (unsigned i = 0; i < size ; ++i) {
-      tree.intersect(domain[i],domain_to_range_keys);
+    bih::BihTree<RangeBox> tree(range.begin(), range.end());
+    for (unsigned i = 0, ie = domain.size(); i < ie ; ++i) {
+      tree.intersect(domain[i], intersections);
     }
   }
   else {
-    parallel_bihtree_search(domain_to_range_keys,range,domain,order);
+    std::vector<float> global_box(6);
+    stk::search::box_global_bounds( comm, domain.size(), &*domain.begin(), range.size(), &*range.begin(), &*global_box.begin() );
+
+    stk::search::oct_tree_bih_tree_proximity_search(
+        comm,
+        &*global_box.begin(),
+        domain.size(),
+        &*domain.begin(),
+        range.size(),
+        &*range.begin(),
+        intersections
+        );
   }
-  return true;
 }
 
-template <class RangeBoundingVolume,class DomainBoundingVolume>
-bool coarse_search_octree(
-    std::vector<std::pair<typename DomainBoundingVolume::Key,typename RangeBoundingVolume::Key> > & domain_to_range_keys,
-    const std::vector<RangeBoundingVolume> &range,
-    const std::vector<DomainBoundingVolume> &domain,
-    const FactoryOrder & order)
+template <typename DomainBox, typename RangeBox>
+void coarse_search_octree( std::vector<DomainBox> const& domain,
+                           std::vector<RangeBox>  const& range,
+                           stk::ParallelMachine   comm,
+                           std::vector< std::pair< typename DomainBox::Key, typename RangeBox::Key> > & intersections
+                         )
 {
 
   std::vector<float> global_box(6);
-  stk::search::box_global_bounds(order.m_communicator,
-      domain.size() ,
-      &domain[0] ,
-      range.size(),
-      &range[0],
-      &global_box[0]);
+  stk::search::box_global_bounds( comm, domain.size(), &*domain.begin(), range.size(), &*range.begin(), &*global_box.begin() );
 
-  stk::search::oct_tree_proximity_search(order.m_communicator,
-      &global_box[0],
-      domain.size() ,
-      &domain[0] ,
+  stk::search::oct_tree_proximity_search(
+      comm,
+      &*global_box.begin(),
+      domain.size(),
+      &*domain.begin(),
       range.size(),
-      &range[0],
-      NULL,
-      domain_to_range_keys ,
-      order.m_search_tree_stats);
-  return true;
+      &*range.begin(),
+      intersections
+      );
 }
 
-template <class RangeBoundingVolume,class DomainBoundingVolume>
-bool coarse_search(
-    std::vector<std::pair<typename DomainBoundingVolume::Key,typename RangeBoundingVolume::Key> > & domain_to_range_keys,
-    const  std::vector<RangeBoundingVolume> &range,
-    const std::vector<DomainBoundingVolume> &domain,
-    const FactoryOrder & order)
+
+enum SearchMethod {
+  BOOST_RTREE,
+  OCTREE,
+  BIHTREE
+};
+
+inline
+std::ostream& operator<<(std::ostream &out, SearchMethod method)
 {
-  switch (order.m_algorithm) {
-    case FactoryOrder::BIHTREE:
-      return coarse_search_bihtree(domain_to_range_keys,range,domain,order);
-    case FactoryOrder::OCTREE:
-      return coarse_search_octree(domain_to_range_keys,range,domain,order);
-   break;
+  switch( method )   {
+  case BOOST_RTREE: out << "BOOST_RTREE"; break;
+  case OCTREE:      out << "OCTREE"; break;
+  case BIHTREE:     out << "BIHTREE"; break;
   }
-  return false;
+  return out;
 }
 
+
+namespace impl {
+
+template <typename DomainBox, typename RangeBox, SearchMethod Method, size_t Dimension = DomainBox::DIMENSION>
+struct coarse_search_impl
+{
+  typedef std::vector<DomainBox> DomainVector;
+  typedef std::vector<DomainBox> RangeVector;
+  typedef std::vector< std::pair< typename DomainBox::Key, typename RangeBox::Key> >  IntersectionVector;
+
+  void operator()(DomainVector const&, std::vector<RangeBox> const&, stk::ParallelMachine , IntersectionVector &) const
+  {
+    ThrowRequireMsg(false, "Coarse search with " << Method << " not implemented for " << Dimension << "D");
+  }
+};
+
+template <typename DomainBox, typename RangeBox, size_t Dimension>
+struct coarse_search_impl<DomainBox,RangeBox,BOOST_RTREE,Dimension>
+{
+  typedef std::vector<DomainBox> DomainVector;
+  typedef std::vector<DomainBox> RangeVector;
+  typedef std::vector< std::pair< typename DomainBox::Key, typename RangeBox::Key> >  IntersectionVector;
+
+  void operator()(DomainVector const& domain, std::vector<RangeBox> const& range, stk::ParallelMachine comm, IntersectionVector & intersections) const
+  {
+    coarse_search_boost_rtree(domain,range,comm,intersections);
+  }
+};
+
+// currently Octree only supports 3D searches
+template <typename DomainBox, typename RangeBox>
+struct coarse_search_impl<DomainBox,RangeBox,OCTREE,3>
+{
+  typedef std::vector<DomainBox> DomainVector;
+  typedef std::vector<DomainBox> RangeVector;
+  typedef std::vector< std::pair< typename DomainBox::Key, typename RangeBox::Key> >  IntersectionVector;
+
+  void operator()(DomainVector const& domain, std::vector<RangeBox> const& range, stk::ParallelMachine comm, IntersectionVector & intersections) const
+  {
+    coarse_search_octree(domain,range,comm,intersections);
+  }
+};
+
+// currently Octree only supports 3D searches
+template <typename DomainBox, typename RangeBox>
+struct coarse_search_impl<DomainBox,RangeBox,BIHTREE,3>
+{
+  typedef std::vector<DomainBox> DomainVector;
+  typedef std::vector<DomainBox> RangeVector;
+  typedef std::vector< std::pair< typename DomainBox::Key, typename RangeBox::Key> >  IntersectionVector;
+
+  void operator()(DomainVector const& domain, std::vector<RangeBox> const& range, stk::ParallelMachine comm, IntersectionVector & intersections) const
+  {
+    coarse_search_bihtree(domain,range,comm,intersections);
+  }
+};
+
+} // namespace impl
+
+
+
+template <typename DomainBox, typename RangeBox>
+void coarse_search( std::vector<DomainBox> const& domain,
+                    std::vector<RangeBox>  const& range,
+                    SearchMethod                  method,
+                    stk::ParallelMachine          comm,
+                    std::vector< std::pair< typename DomainBox::Key, typename RangeBox::Key> > & intersections
+                  )
+{
+  switch( method )
+  {
+  case BOOST_RTREE:
+    impl::coarse_search_impl<DomainBox,RangeBox,BOOST_RTREE>()(domain,range,comm,intersections);
+    break;
+  case OCTREE:
+    impl::coarse_search_impl<DomainBox,RangeBox,OCTREE>()(domain,range,comm,intersections);
+    break;
+  case BIHTREE:
+    impl::coarse_search_impl<DomainBox,RangeBox,BIHTREE>()(domain,range,comm,intersections);
+    break;
+  }
+}
 
 } // namespace search
 } // namespace stk

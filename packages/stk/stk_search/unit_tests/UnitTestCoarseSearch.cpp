@@ -4,6 +4,8 @@
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
+#include <stk_util/util/TrackingAllocator.hpp>
+
 #include <algorithm>
 #include <vector>
 #include <iterator>
@@ -26,6 +28,13 @@ std::ostream & operator<<(std::ostream & out, std::pair<stk::search::ident::Iden
 
 
 namespace {
+
+struct CompareSecond
+{
+  template <typename First, typename Second>
+  bool operator()( std::pair<First,Second> const& a, std::pair<First,Second> const& b) const
+  { return a.second < b.second; }
+};
 
 typedef stk::search::ident::IdentProc<uint64_t, unsigned> Ident;
 typedef std::vector<std::pair<Ident,Ident> > SearchResults;
@@ -56,12 +65,8 @@ void checkSearchResults(const int proc_id, SearchResults &goldResults, SearchRes
     EXPECT_EQ(goldResults.size(), numResultsMatchingGoldResults) << "proc id = " << proc_id << std::endl;
 }
 
-void testCoarseSearchAABBForAlgorithm(stk::search::FactoryOrder::Algorithm algorithm, MPI_Comm comm)
+void testCoarseSearchAABBForAlgorithm(stk::search::SearchMethod algorithm, MPI_Comm comm)
 {
-    stk::search::FactoryOrder searchParameters;
-    searchParameters.m_communicator = comm;
-    searchParameters.m_algorithm = algorithm;
-
     typedef stk::search::box::AxisAlignedBoundingBox<Ident, double, 3> Box;
     typedef std::vector<Box> BoxVector;
 
@@ -102,7 +107,7 @@ void testCoarseSearchAABBForAlgorithm(stk::search::FactoryOrder::Algorithm algor
 
     SearchResults searchResults;
 
-    stk::search::coarse_search(searchResults, local_range, local_domain, searchParameters);
+    stk::search::coarse_search(local_domain, local_range, algorithm, comm, searchResults);
     SearchResults goldResults;
 
     if (num_procs == 1) {
@@ -298,6 +303,90 @@ void testCoarseSearchUsingGeometryToolkit(MPI_Comm comm)
     unlink(os.str().c_str()); // comment this out to view Cubit files for bounding boxes
 }
 
+STKUNIT_UNIT_TEST(stk_search, bounding_box)
+{
+  namespace bg = boost::geometry;
+  namespace bgi = boost::geometry::index;
+
+  typedef bg::model::point<double, 3, bg::cs::cartesian> Point;
+  typedef bg::model::box<Point> Box;
+  typedef std::pair<Box,int> BoxProc;
+
+  Point min_corner(-1,-2,-3);
+  Point max_corner(1,2,3);
+  Box box(min_corner, max_corner);
+
+  double coords[6] = {};
+  stk::search::impl::fill_array(box, coords);
+
+  STKUNIT_EXPECT_EQ(coords[0], -1.0);
+  STKUNIT_EXPECT_EQ(coords[1], -2.0);
+  STKUNIT_EXPECT_EQ(coords[2], -3.0);
+  STKUNIT_EXPECT_EQ(coords[3], 1.0);
+  STKUNIT_EXPECT_EQ(coords[4], 2.0);
+  STKUNIT_EXPECT_EQ(coords[5], 3.0);
+
+  Box temp;
+  stk::search::impl::set_box(temp, coords);
+
+  STKUNIT_EXPECT_EQ(bg::distance(temp.min_corner(), min_corner), 0.0);
+  STKUNIT_EXPECT_EQ(bg::distance(temp.max_corner(), max_corner), 0.0);
+}
+
+STKUNIT_UNIT_TEST(stk_search, global_spatial_index)
+{
+  int parallel_size = stk::parallel_machine_size(MPI_COMM_WORLD);
+  if (parallel_size == 1) return;
+
+  namespace bg = boost::geometry;
+  namespace bgi = boost::geometry::index;
+
+  typedef bg::model::point<double, 3, bg::cs::cartesian> Point;
+  typedef bg::model::box<Point> Box;
+  typedef std::pair<Box,int> BoxProc;
+  const unsigned MaxVolumesPerNode = 16;
+  typedef bgi::rtree< BoxProc, bgi::quadratic<MaxVolumesPerNode>, bgi::indexable<BoxProc>, bgi::equal_to<BoxProc>, stk::tracking_allocator<BoxProc, BoxProc> > Rtree;
+
+  int rank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+  Point min_corner(rank - 0.2, 0, 0);
+  Point max_corner(rank + 1.2, 1, 1);
+  Box box(min_corner, max_corner);
+
+  Rtree tree;
+  stk::search::create_global_spatial_index(tree, box, MPI_COMM_WORLD);
+
+  STKUNIT_EXPECT_EQ(tree.size(), size_t(size));
+
+  Box global_bounds = tree.bounds();
+  STKUNIT_EXPECT_EQ(bg::distance(global_bounds.min_corner(), Point(-0.2,0,0)), 0.0);
+  STKUNIT_EXPECT_EQ(bg::distance(global_bounds.max_corner(), Point(size + 0.2, 1, 1)), 0.0);
+
+  std::vector<BoxProc> intersections;
+  bgi::query(tree, bgi::intersects(box), std::back_inserter(intersections));
+
+  std::sort(intersections.begin(), intersections.end(), CompareSecond());
+
+  if (rank > 0 && rank < size-1) {
+    STKUNIT_EXPECT_EQ(intersections.size(), 3u);
+    STKUNIT_EXPECT_EQ(intersections[0].second, rank-1);
+    STKUNIT_EXPECT_EQ(intersections[1].second, rank);
+    STKUNIT_EXPECT_EQ(intersections[2].second, rank+1);
+  }
+  else if (size > 1) {
+    STKUNIT_EXPECT_EQ(intersections.size(), 2u);
+    if (rank == 0) {
+      STKUNIT_EXPECT_EQ(intersections[0].second, rank);
+      STKUNIT_EXPECT_EQ(intersections[1].second, rank+1);
+    }
+    else {
+      STKUNIT_EXPECT_EQ(intersections[0].second, rank-1);
+      STKUNIT_EXPECT_EQ(intersections[1].second, rank);
+    }
+  }
+}
 //  axis aligned bounding box search
 
 STKUNIT_UNIT_TEST(stk_search_not_boost, coarse_search_geometry_toolkit)
@@ -307,12 +396,17 @@ STKUNIT_UNIT_TEST(stk_search_not_boost, coarse_search_geometry_toolkit)
 
 STKUNIT_UNIT_TEST(stk_search_not_boost, coarse_search_3D_oct_tree)
 {
-  testCoarseSearchAABBForAlgorithm(stk::search::FactoryOrder::OCTREE, MPI_COMM_WORLD);
+  testCoarseSearchAABBForAlgorithm(stk::search::OCTREE, MPI_COMM_WORLD);
 }
 
 STKUNIT_UNIT_TEST(stk_search_not_boost, coarse_search_3D_bih_tree)
 {
-  testCoarseSearchAABBForAlgorithm(stk::search::FactoryOrder::BIHTREE, MPI_COMM_WORLD);
+  testCoarseSearchAABBForAlgorithm(stk::search::BIHTREE, MPI_COMM_WORLD);
+}
+
+STKUNIT_UNIT_TEST(stk_search, coarse_search_boost_rtree)
+{
+  testCoarseSearchAABBForAlgorithm(stk::search::BOOST_RTREE, MPI_COMM_WORLD);
 }
 
 
@@ -357,10 +451,7 @@ STKUNIT_UNIT_TEST(stk_search, coarse_search_3D_one_point)
 
   SearchResults searchResults;
 
-  stk::search::FactoryOrder searchParameters;
-  searchParameters.m_algorithm = stk::search::FactoryOrder::OCTREE;
-  searchParameters.m_communicator = comm;
-  stk::search::coarse_search(searchResults, local_range, local_domain, searchParameters);
+  stk::search::coarse_search(local_domain, local_range, stk::search::OCTREE, comm, searchResults);
 
   if (proc_id == 0) {
     STKUNIT_ASSERT_EQ(searchResults.size(), 1u);
@@ -498,7 +589,7 @@ STKUNIT_UNIT_TEST(stk_search_not_boost, checkCuts)
         {
             if(proc_id == procCounter)
             {
-                for(typename SearchTree::const_iterator i = searchTree.begin();
+                for(SearchTree::const_iterator i = searchTree.begin();
                         i != searchTree.end(); ++i)
                 {
                     const stk::OctTreeKey & key = (*i).first;

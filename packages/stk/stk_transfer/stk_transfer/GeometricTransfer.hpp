@@ -22,7 +22,6 @@
 #include <stk_util/parallel/ParallelReduce.hpp>
 
 #include <stk_search/CoarseSearch.hpp>
-#include <stk_search/CoarseSearch2.hpp>
 #include <stk_transfer/TransferBase.hpp>
 
 namespace stk {
@@ -301,9 +300,6 @@ template <class INTERPOLATE>  void GeometricTransfer<INTERPOLATE>::coarse_search
   mesha.bounding_boxes(domain_vector);
   meshb.bounding_boxes(range_vector);
 
-  //search::FactoryOrder order;
-  //order.m_communicator = mesha.comm();
-
   unsigned range_vector_not_empty = !range_vector.empty();
   stk::all_reduce( mesha.comm(), stk::ReduceSum<1>(&range_vector_not_empty));
   while (range_vector_not_empty) { // Keep going until all range points are processed.
@@ -312,8 +308,7 @@ template <class INTERPOLATE>  void GeometricTransfer<INTERPOLATE>::coarse_search
     // sorted on range key. It might appear we have the arguments revered
     // in coarse_search call, but really, this is what we want.
     EntityProcRelationVec rng_to_dom;
-    //search::coarse_search(rng_to_dom, domain_vector, range_vector, order);
-    search::coarse_search2(range_vector, domain_vector, mesha.comm(), rng_to_dom);
+    search::coarse_search(range_vector, domain_vector, stk::search::BOOST_RTREE, mesha.comm(), rng_to_dom);
 
     if (optional_functions<InterpolateClass>::post_coarse_search_filter) {
       post_coarse_search_filter<InterpolateClass>(rng_to_dom, mesha, meshb);

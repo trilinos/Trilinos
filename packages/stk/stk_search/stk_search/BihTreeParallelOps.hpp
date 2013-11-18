@@ -25,9 +25,8 @@ bool oct_tree_bih_tree_proximity_search(
   const DomainBoundingBox * const arg_domain_boxes ,
   const size_t               arg_range_boxes_number ,
   const RangeBoundingBox * const arg_range_boxes ,
-  const OctTreeKey   * const arg_cuts ,
-  std::vector< std::pair< typename DomainBoundingBox::Key,  typename RangeBoundingBox::Key > > & arg_relation ,
-  unsigned * const arg_search_tree_stats = NULL )
+  std::vector< std::pair< typename DomainBoundingBox::Key,  typename RangeBoundingBox::Key > > & intersections
+  )
 {
   typedef typename DomainBoundingBox::Key DomainKey;
   typedef typename RangeBoundingBox::Key RangeKey;
@@ -95,7 +94,7 @@ bool oct_tree_bih_tree_proximity_search(
         box[x] = tmp.lower(x);
         box[x+Dim] = tmp.upper(x);
       }
-      
+
       const bool valid =
         hsfc_box_covering( arg_global_box, box, covering, number, scale );
 
@@ -120,12 +119,7 @@ bool oct_tree_bih_tree_proximity_search(
 
     std::set< std::pair<DomainKey, RangeKey> > local_relation ;
 
-    if ( arg_cuts ) {
-      global_violations =
-        communicate<DomainBoundingBox, RangeBoundingBox>( arg_comm , arg_cuts , search_tree , local_tree ,
-                           local_violations );
-    }
-    else {
+    {
       const double tolerance = 0.001 ;
 
       std::vector< stk::OctTreeKey > cuts ;
@@ -138,12 +132,6 @@ bool oct_tree_bih_tree_proximity_search(
     }
 
     // Local proximity search with received members
-
-    if ( arg_search_tree_stats ) {
-      search_tree_statistics( arg_comm , local_tree ,
-          arg_search_tree_stats );
-    }
-
     std::set<DomainBoundingBox, stk::search::box::compare::Compare< DomainBoundingBox, box::compare::KEY> > domain;
     std::set<RangeBoundingBox,  stk::search::box::compare::Compare< RangeBoundingBox , box::compare::KEY> > range;
 
@@ -166,21 +154,13 @@ bool oct_tree_bih_tree_proximity_search(
       tree.intersect(*i,local_relation);
     }
 
-
-
-
     // Communicate relations back to domain and range processors
 
     communicate<DomainBoundingBox,RangeBoundingBox>( arg_comm , local_relation , tmp_relation );
   }
 
-  arg_relation.clear();
-  arg_relation.reserve( tmp_relation.size() );
-
-  typename std::set< std::pair<DomainKey,RangeKey> >::iterator ir ;
-  for ( ir = tmp_relation.begin() ; ir != tmp_relation.end() ; ++ir ) {
-    arg_relation.push_back( *ir );
-  }
+  intersections.clear();
+  intersections.assign(tmp_relation.begin(), tmp_relation.end());
   return global_violations ;
 }
 

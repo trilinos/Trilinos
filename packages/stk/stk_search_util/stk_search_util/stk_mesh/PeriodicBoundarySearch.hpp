@@ -15,24 +15,6 @@
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 
-// #define USE_STK_COARSE_SEARCH
-
-#ifndef USE_STK_COARSE_SEARCH
-#include <stk_search/CoarseSearch2.hpp>
-
-namespace stk { namespace search { namespace impl {
-
-template <>
-struct get_proc<stk::search::ident::IdentProc<stk::mesh::EntityKey,unsigned> > {
-  int operator()(stk::search::ident::IdentProc<stk::mesh::EntityKey,unsigned> const& id) {
-    return id.proc;
-  }
-};
-
-}}}
-#endif
-
-
 namespace stk { namespace mesh {
 
 struct GetCoordiantes;
@@ -401,14 +383,7 @@ private:
         break;
     }
 
-#ifndef USE_STK_COARSE_SEARCH
-    stk::search::coarse_search2(side_1_vector, side_2_vector, parallel, search_results);
-#else
-    stk::search::FactoryOrder order;
-    order.m_communicator = parallel;
-
-    stk::search::coarse_search(search_results, side_2_vector, side_1_vector, order);
-#endif
+    stk::search::coarse_search(side_1_vector, side_2_vector, stk::search::BOOST_RTREE, parallel, search_results);
 
     m_search_results.insert(m_search_results.end(), search_results.begin(), search_results.end());
   }

@@ -980,9 +980,7 @@ bool oct_tree_proximity_search(
   const DomainBoundingBox * const arg_domain_boxes ,
   const size_t               arg_range_boxes_number ,
   const RangeBoundingBox * const arg_range_boxes ,
-  const OctTreeKey   * const arg_cuts ,
-  std::vector< std::pair< typename DomainBoundingBox::Key,  typename RangeBoundingBox::Key > > & arg_relation ,
-  unsigned * const arg_search_tree_stats = NULL )
+  std::vector< std::pair< typename DomainBoundingBox::Key,  typename RangeBoundingBox::Key > > & arg_relation )
 {
   typedef typename DomainBoundingBox::Key DomainKey;
   typedef typename RangeBoundingBox::Key RangeKey;
@@ -1014,10 +1012,6 @@ bool oct_tree_proximity_search(
 
     global_violations = local_violations ;
 
-    if ( arg_search_tree_stats ) {
-      search_tree_statistics( arg_comm , search_tree ,
-                              arg_search_tree_stats );
-    }
     ProximitySearch<DomainBoundingBox, RangeBoundingBox>( symmetric, search_tree, tmp_relation);
   }
   else {
@@ -1027,12 +1021,7 @@ bool oct_tree_proximity_search(
 
     std::set< std::pair<DomainKey, RangeKey> > local_relation ;
 
-    if ( arg_cuts ) {
-      global_violations =
-        communicate<DomainBoundingBox, RangeBoundingBox>( arg_comm , arg_cuts , search_tree , local_tree ,
-                           local_violations );
-    }
-    else {
+    {
       const double tolerance = 0.001 ;
 
       std::vector< stk::OctTreeKey > cuts ;
@@ -1045,11 +1034,6 @@ bool oct_tree_proximity_search(
     }
 
     // Local proximity search with received members
-
-    if ( arg_search_tree_stats ) {
-      search_tree_statistics( arg_comm , local_tree ,
-                              arg_search_tree_stats );
-    }
 
     ProximitySearch<DomainBoundingBox, RangeBoundingBox>( symmetric, local_tree, local_relation);
 

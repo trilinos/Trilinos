@@ -100,16 +100,11 @@ use_case_4_driver(stk::ParallelMachine  comm,
   else
     dw().m(LOG_SEARCH) << "domain vector size = " << domain_vector.size() << dendl;
 
-  FactoryOrder order;
-  order.m_communicator = comm;
-  //order.m_algorithm = FactoryOrder::BIHTREE;
-
-  dw() << "Search algorithm " << order.m_algorithm << dendl;
 //  dw().m(LOG_SEARCH) << "Search tree " << *range_search << dendl;
 
   IdentProcRelation relation;
 
-  stk::search::coarse_search(relation, range_vector, domain_vector,order);
+  stk::search::coarse_search(domain_vector, range_vector, stk::search::OCTREE, comm, relation);
 
   if (relation.size() <= 100)
     dw().m(LOG_SEARCH) << "relation " << relation << dendl;

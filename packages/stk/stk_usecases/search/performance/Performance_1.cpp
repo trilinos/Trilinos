@@ -177,9 +177,6 @@ performance_driver(stk::ParallelMachine  comm,
   // ========================================================================
 
 
-  stk::search::FactoryOrder order;
-  order.m_communicator = comm;
-
   CartesianField const* range_coord_field  = static_cast<CartesianField const*>(&range_mesh_data.get_coordinate_field());
   CartesianField const* domain_coord_field = NULL;
   if (same_mesh)
@@ -224,11 +221,10 @@ performance_driver(stk::ParallelMachine  comm,
       dw() << "Build search object...\n";
 
       dw() << "Perform search...\n";
-      stk::search::coarse_search(relation, range_vector, domain_vector,order);
+      stk::search::coarse_search(domain_vector, range_vector, stk::search::OCTREE, comm, relation);
     }
 
     if (do_output) {
-      dw() << "Search algorithm " << order.m_algorithm << dendl;
       dw() << "range  " << range_vector  << stk::diag::dendl;
       dw() << "domain " << domain_vector << stk::diag::dendl;
       stk::search_util::print_stk_mesh_relation_map(dw(), stk::mesh::entity_rank_names(), relation);
@@ -266,11 +262,10 @@ performance_driver(stk::ParallelMachine  comm,
 
     {
       stk::diag::TimeBlock __timer_range_search(timer_range_search);
-      stk::search::coarse_search(relation, range_vector, domain_vector, order);
+      stk::search::coarse_search(domain_vector, range_vector, stk::search::OCTREE, comm, relation);
     }
 
     if (do_output) {
-      dw() << "Search algorithm " << order.m_algorithm << dendl;
       dw() << "range  " << range_vector  << stk::diag::dendl;
       dw() << "domain " << domain_vector << stk::diag::dendl;
       stk::search_util::print_stk_mesh_relation_map(dw(), stk::mesh::entity_rank_names(), relation);

@@ -151,18 +151,11 @@ use_case_3_driver(stk::ParallelMachine  comm,
   dw().m(LOG_TRANSFER) << "range  " << range_vector  << stk::diag::dendl;
   dw().m(LOG_TRANSFER) << "domain " << domain_vector << stk::diag::dendl;
 
-  FactoryOrder order;
-  order.m_communicator = comm;
-
-
-
-  dw().m(LOG_TRANSFER) << "Search algorithm " << order.m_algorithm << dendl;
-
   IdentProcRelation relation;
 
   {
     stk::diag::TimeBlock __timer_range_search(timer_range_search);
-    stk::search::coarse_search(relation, range_vector, domain_vector, order);
+    stk::search::coarse_search(domain_vector, range_vector, stk::search::OCTREE, comm, relation);
   }
 
   dw().m(LOG_TRANSFER) << "relation :" << relation;

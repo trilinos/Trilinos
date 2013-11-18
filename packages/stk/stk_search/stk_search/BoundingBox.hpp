@@ -381,27 +381,36 @@ namespace boost { namespace geometry { namespace traits {
 template <class K, class T, int Dim>
 struct tag< stk::search::box::PointBoundingBox<K,T,Dim> >
 {
-    typedef box_tag type;
+    typedef point_tag type;
 };
 
 template <class K, class T, int Dim>
-struct point_type< stk::search::box::PointBoundingBox<K,T,Dim> >
+struct coordinate_type< stk::search::box::PointBoundingBox<K,T,Dim> >
 {
-    typedef T type[Dim];
+    typedef T type;
 };
 
+template <class K, class T, int Dim>
+struct coordinate_system< stk::search::box::PointBoundingBox<K,T,Dim> >
+{
+    typedef boost::geometry::cs::cartesian type;
+};
+
+template <class K, class T, int Dim>
+struct dimension< stk::search::box::PointBoundingBox<K,T,Dim> > : public boost::mpl::int_<Dim> {};
+
 template <class K, class T, int Dim, size_t IndexDimension>
-struct indexed_access< stk::search::box::PointBoundingBox<K,T,Dim>, min_corner, IndexDimension>
+struct access< stk::search::box::PointBoundingBox<K,T,Dim>, IndexDimension>
 {
     typedef T coordinate_type;
-    typedef stk::search::box::PointBoundingBox<K,T,Dim> box_type;
+    typedef stk::search::box::PointBoundingBox<K,T,Dim> point_type;
 
-    static inline coordinate_type get(box_type const& b)
+    static inline coordinate_type get(point_type const& b)
     {
         return b.center[IndexDimension];
     }
 
-    static inline void set(box_type & b, coordinate_type const& value)
+    static inline void set(point_type & b, coordinate_type const& value)
     {
         b.center[IndexDimension] = value;
     }
