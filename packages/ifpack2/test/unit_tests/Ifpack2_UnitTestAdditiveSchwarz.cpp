@@ -288,9 +288,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test2, Scalar, LocalOr
   Teuchos::ArrayRCP<const Scalar> zview = z.get1dView();
 
   TEST_COMPARE_FLOATING_ARRAYS(yview, zview, 4*Teuchos::ScalarTraits<Scalar>::eps());
-
-
-
 }
 
 // ///////////////////////////////////////////////////////////////////// //

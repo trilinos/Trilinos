@@ -65,5 +65,20 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+# This example exercises the fix for Bug 5963.  It illustrates the
+# "Zero" combine mode.  This example only works with exactly 2 MPI
+# processes.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  AdditiveSchwarzBug5963
+  SOURCES 
+    Ifpack2_UnitTestAdditiveSchwarzBug5963.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM mpi
+  NUM_MPI_PROCS 2
+  DEPLIBS ifpack2 tpetra ifpack2_tpetra_testinst
+  STANDARD_PASS_OUTPUT
+  )
+
 
 
