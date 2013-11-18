@@ -54,18 +54,23 @@
 
 namespace Teuchos {
 
-
-/** \brief Standard implementation of a ParameterEntryValidator that maps from
- * a list of strings to some integral type value.
+/**
+ * \class StringToIntegralParameterEntryValidator
+ * \brief Standard implementation of a ParameterEntryValidator that maps from
+ *   a list of strings to an enum or integer value.
+ * \tparam IntegralType The enum or integer type of the result.
  *
- * Objects of this type are meant to be used as both abstract objects passed
- * to <tt>Teuchos::ParameterList</tt> objects to be used to validate parameter
- * types and values, and to be used by the code that reads parameter values.
- * Having a single definition for the types of valids input and outputs for a
- * parameter value makes it easier to write error free validated code.
+ * This class is useful for developers who are defining parameters in
+ * a ParameterList.  Suppose that you want to define a parameter in a
+ * ParameterList with an enum value.  Enum values do not come with a
+ * standard string representation.  This makes it hard to read a
+ * ParameterList.  Users would rather see the enum names, not
+ * integers.  If you instead set a parameter with this validator,
+ * users can provide string names for the enum values, and the
+ * validator will automatically convert them to their enum values.
  *
- * Please see <tt>StringToIntegralValidatorXMLConverter</tt> for documentation
- * regarding the XML representation of this validator.
+ * Please see <tt>StringToIntegralValidatorXMLConverter</tt> for
+ * documentation regarding the XML representation of this validator.
  */
 template<class IntegralType>
 class StringToIntegralParameterEntryValidator : public ParameterEntryValidator {
@@ -73,33 +78,38 @@ public:
   /** \name Constructors */
   //@{
 
-  /** \brief Construct with a mapping from strings to ordinals <tt>0</tt> to
-   * </tt>n-1</tt>.
+  /** \brief Construct with a mapping from strings to the enum or
+   *   integer values \f$0, 1, \dots, n-1\f$.
    *
-   * \param strings [in] Array of unique std::string names.
+   * \param strings [in] Array of unique names for the enum or integer
+   *   values.  These are the strings which users will see and use
+   *   when setting parameters.  <tt>strings[i]</tt> will be
+   *   associated with the enum or integer value <tt>i</tt>.
    *
-   * \param defaultParameterName [in] The default name of the parameter (used
-   * in error messages)
+   * \param defaultParameterName [in] The default name of the
+   *   parameter (used in error messages).
    */
   StringToIntegralParameterEntryValidator(
     ArrayView<const std::string> const& strings,
     std::string const& defaultParameterName
     );
 
-  /** \brief Construct with a mapping from strings to aribitrary typed
-   * integral values.
+  /** \brief Construct with a mapping from strings to specified enum
+   *   or integer values.
    *
-   * \param strings [in] Array of unique std::string names.
+   * \param strings [in] Array of unique names for the enum or integer
+   *   values.  These are the strings which users will see and use
+   *   when setting parameters.  <tt>strings[i]</tt> will be
+   *   associated with the enum or integer value
+   *   <tt>integralValues[i]</tt>.
    *
-   * \param integralValues [in] Array that gives the integral values
-   * associated with <tt>strings[]</tt>
+   * \param integralValues [in] Array of the enum or integer values
+   *   associated with <tt>strings[]</tt>.
    *
-   * \param defaultParameterName [in] The default name of the parameter (used
-   * in error messages)
+   * \param defaultParameterName [in] The default name of the
+   *   parameter (used in error messages).
    *
-   * <b>Preconditions:</b><ul>
-   * <li> <tt>strings.size() == integralValues.size()</tt>
-   * </ul>
+   * \pre <tt>strings.size() == integralValues.size()</tt>
    */
   StringToIntegralParameterEntryValidator(
     ArrayView<const std::string> const& strings,
@@ -107,24 +117,28 @@ public:
     std::string const& defaultParameterName
     );
 
-  /** \brief Construct with a mapping from strings (with documentation) to
-   * aribitrary typed integral values.
+  /** \brief Construct with a mapping from strings (with
+   *   documentation) to specified enum or integer values, and include
+   *   documentation.
    *
-   * \param strings [in] Array of unique std::string names.
+   * \param strings [in] Array of unique names for the enum or integer
+   *   values.  These are the strings which users will see and use
+   *   when setting parameters.  <tt>strings[i]</tt> will be
+   *   associated with the enum or integer value
+   *   <tt>integralValues[i]</tt>.
    *
    * \param stringsDocs [in] Array of documentation strings for each
-   * std::string value.
+   *   string value above.  <tt>stringsDocs[i]</tt> is the documentation
+   *   for <tt>strings[i]</tt>.
    *
-   * \param integralValues [in] Array that gives the integral values
-   * associated with <tt>strings[]</tt>
+   * \param integralValues [in] Array of the enum or integer values
+   *   associated with <tt>strings[]</tt>.
    *
-   * \param defaultParameterName [in] The default name of the parameter (used
-   * in error messages)
+   * \param defaultParameterName [in] The default name of the
+   *   parameter (used in error messages).
    *
-   * <b>Preconditions:</b><ul>
-   * <li> <tt>strings.size() == stringDocs.size()</tt>
-   * <li> <tt>strings.size() == integralValues.size()</tt>
-   * </ul>
+   * \pre <tt>strings.size() == stringDocs.size()</tt>
+   * \pre <tt>strings.size() == integralValues.size()</tt>
    */
   StringToIntegralParameterEntryValidator(
     ArrayView<const std::string> const& strings,
@@ -134,62 +148,65 @@ public:
     );
 
   //@}
-
-  /** \name Local non-virtual validated lookup functions */
+  /** \name Validated lookup functions */
   //@{
 
-  /** \brief Perform a mapping from a std::string value to its integral value.
+  /** \brief For a string value, find its corresponding enum or integer value.
    *
-   * \param str [in] String that is being used to lookup the corresponding
-   * integral value.
+   * \param str [in] String value to look up.
    *
-   * \param paramName [in] Optional name that will be used to generate error
-   * messages.
+   * \param paramName [in] Optional parameter name; used to generate
+   *   error messages.
    *
-   * If the std::string name <tt>str</tt> does not exist, the an std::exception will be
-   * thrown with a very descriptive error message.
+   * If the std::string name <tt>str</tt> is invalid, this method will
+   * throw std::exception with a descriptive error message.
    */
   IntegralType getIntegralValue(
     const std::string &str, const std::string &paramName = "",
     const std::string &sublistName = ""
     ) const;
 
-  /** \brief Perform a mapping from a std::string value embedded in a
-   * <tt>ParameterEntry</tt> object and return its associated integral value.
+  /** \brief Find the enum or integer value for the given ParameterEntry.
    *
-   * \param entry [in] The std::string entry.
+   * \param entry [in] Entry in the ParameterList.  This results from
+   *   calling the ParameterList's getEntry() method, using the
+   *   parameter's name.
    *
-   * \param paramName [in] Optional name that will be used to generate error
-   * messages.
+   * \param paramName [in] Optional parameter name; used to generate
+   *   error messages.
    *
    * \param sublistName [in] The name of the sublist.
    *
-   * \param activeQuery [in] If true, then this lookup will be recored as an
-   * active query which will turn the <tt>isUsed</tt> bool to <tt>true</tt>.
+   * \param activeQuery [in] If true, then this lookup will be
+   *   recorded as an active query, which will set the parameter's
+   *   <tt>isUsed</tt> flag to <tt>true</tt>.
    */
-  IntegralType getIntegralValue(
-    const ParameterEntry &entry, const std::string &paramName = "",
-    const std::string &sublistName = "", const bool activeQuery = true
-    ) const;
+  IntegralType
+  getIntegralValue (const ParameterEntry &entry,
+                    const std::string &paramName = "",
+                    const std::string &sublistName = "",
+                    const bool activeQuery = true) const;
 
-  /** \brief Get and validate a std::string value embedded in a
-   * <tt>ParameterEntry</tt> object.
+  /** \brief Find the string value for the given ParameterEntry.
    *
+   * \param entry [in] Entry in the ParameterList.  This results from
+   *   calling the ParameterList's getEntry() method, using the
+   *   parameter's name.
    *
-   * \param entry [in] The std::string entry.
-   *
-   * \param paramName [in] Optional name that will be used to generate error
-   * messages.
+   * \param paramName [in] Optional parameter name; used to generate
+   *   error messages.
    *
    * \param sublistName [in] The name of the sublist.
    *
-   * \param activeQuery [in] If true, then this lookup will be recorded as an
-   * active query which will turn the <tt>isUsed</tt> bool to <tt>true</tt>.
+   * \param activeQuery [in] If true, then this lookup will be
+   *   recorded as an active query, which will set the parameter's
+   *   <tt>isUsed</tt> flag to <tt>true</tt>.
    */
-  std::string getStringValue(
-    const ParameterEntry &entry, const std::string &paramName = "",
-    const std::string &sublistName = "", const bool activeQuery = true
-    ) const;
+  std::string
+  getStringValue (const ParameterEntry &entry,
+                  const std::string &paramName = "",
+                  const std::string &sublistName = "",
+                  const bool activeQuery = true) const;
 
   /// \brief Get the integer enum value for the given parameter.
   ///
@@ -197,10 +214,10 @@ public:
   /// std::string value in the <tt>ParameterEntry</tt> object to its
   /// corresponding integer enum value, and return the integer enum
   /// value.
-  IntegralType getIntegralValue(
-    ParameterList &paramList, const std::string &paramName,
-    const std::string &defaultValue
-    ) const;
+  IntegralType
+  getIntegralValue (ParameterList& paramList,
+                    const std::string& paramName,
+                    const std::string& defaultValue) const;
 
   /** \brief Lookup a parameter from a parameter list, validate the std::string
    * value, and return the std::string value.
@@ -240,14 +257,13 @@ public:
     ) const;
 
   //@}
-
-  /** \name Overridden from ParameterEntryValidator */
+  /** \name Implementation of ParameterEntryValidator */
   //@{
 
   /** \brief . */
   const std::string getXMLTypeName() const;
 
-  /** \brief . */
+  //! Print documentation to the given output string.
   void printDoc(
     std::string const& docString,
     std::ostream & out
@@ -257,7 +273,7 @@ public:
   ValidStringsList
   validStringValues() const;
 
-  /** \brief . */
+  //! Validate the given ParameterEntry.
   void validate(
     ParameterEntry const& entry,
     std::string const& paramName,
