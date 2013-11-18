@@ -27,7 +27,7 @@ TEST(StkMeshIoBrokerHowTo, writeFieldWithAlternativeName)
 
     // mark field for output
     std::string alternateFieldName("deformation");
-    stkIo.add_results_field_with_alternate_name(resultsOutputIndex, nodalDisplacement, alternateFieldName);
+    stkIo.add_results_field(resultsOutputIndex, nodalDisplacement, alternateFieldName);
 
     // field descriptions done, fill field data (done with mesh input)
     stkIo.populate_bulk_data();

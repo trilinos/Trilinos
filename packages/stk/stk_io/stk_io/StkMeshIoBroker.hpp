@@ -69,7 +69,7 @@ namespace stk {
 	}
 
         void write_output_mesh(const stk::mesh::BulkData& bulk_data);
-        void add_results_field(stk::mesh::FieldBase &field, const std::string &alternate_name);
+        void add_field(stk::mesh::FieldBase &field, const std::string &alternate_name);
 
         void add_global(const std::string &variableName, const boost::any &value, stk::util::ParameterType::Type type);
         void add_global(const std::string &variableName, Ioss::Field::BasicType dataType);
@@ -427,7 +427,7 @@ namespace stk {
         void write_output_mesh(size_t output_file_index);
 
         void add_results_field(size_t output_file_index, stk::mesh::FieldBase &field);
-        void add_results_field_with_alternate_name(size_t output_file_index, stk::mesh::FieldBase &field, const std::string &db_name);
+        void add_results_field(size_t output_file_index, stk::mesh::FieldBase &field, const std::string &db_name);
 
         void add_restart_field(size_t file_index, stk::mesh::FieldBase &field, const std::string &db_name = std::string());
         void add_restart_field(stk::mesh::FieldBase &field, const std::string &db_name = std::string());

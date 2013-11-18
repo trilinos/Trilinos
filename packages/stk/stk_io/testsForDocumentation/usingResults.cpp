@@ -41,13 +41,13 @@ TEST(StkMeshIoBrokerHowTo, writeResultsWithMultistateField)
         size_t fileHandle = stkIo.create_output_mesh(resultsFilename);
 
 	// Output each state of the multi-state field individually
-	stkIo.add_results_field_with_alternate_name(fileHandle,
+	stkIo.add_results_field(fileHandle,
 	        *triStateField->field_state(stk::mesh::StateNP1), np1Name);
 
-	stkIo.add_results_field_with_alternate_name(fileHandle,
+	stkIo.add_results_field(fileHandle,
 	        *triStateField->field_state(stk::mesh::StateN), nName);
 
-	stkIo.add_results_field_with_alternate_name(fileHandle,
+	stkIo.add_results_field(fileHandle,
 	        *triStateField->field_state(stk::mesh::StateNM1), nm1Name);
 	
 	stkIo.begin_output_step(fileHandle, time);

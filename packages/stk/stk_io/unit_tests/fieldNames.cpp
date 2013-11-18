@@ -51,10 +51,10 @@ STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameRenameTwice)
         size_t results_output_index = stkIo.create_output_mesh(outputFilename);
 
         stk::mesh::FieldBase *field0 = stkMeshMetaData.get_field(internalClientFieldName);
-        stkIo.add_results_field_with_alternate_name(results_output_index, *field0, requestedFieldNameForResultsOutput);
+        stkIo.add_results_field(results_output_index, *field0, requestedFieldNameForResultsOutput);
 
         requestedFieldNameForResultsOutput = "jeSSe";
-        stkIo.add_results_field_with_alternate_name(results_output_index, *field0, requestedFieldNameForResultsOutput);
+        stkIo.add_results_field(results_output_index, *field0, requestedFieldNameForResultsOutput);
 
         //stkIo.define_output_fields();
         stkIo.process_output_request(results_output_index, 0.0);
@@ -117,7 +117,7 @@ STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameWithResultsAndRestart)
         size_t results_output_index = stkIo.create_output_mesh(outputFileName);
         stk::mesh::FieldBase *field0 = stkMeshMetaData.get_field(internalClientFieldName);
         std::string requestedFieldNameForResultsOutput("jeSSe");
-        stkIo.add_results_field_with_alternate_name(results_output_index, *field0, requestedFieldNameForResultsOutput);
+        stkIo.add_results_field(results_output_index, *field0, requestedFieldNameForResultsOutput);
 
         size_t restartFileIndex = stkIo.create_output_mesh(restartFilename);
         stkIo.add_restart_field(restartFileIndex, *field0);

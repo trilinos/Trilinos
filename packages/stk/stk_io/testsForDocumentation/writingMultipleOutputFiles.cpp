@@ -37,7 +37,7 @@ TEST(StkMeshIoBrokerHowTo, writeTwoResultFiles)
     // For file two, set up results and global variables
     size_t file2Handle = stkMeshIoBroker.create_output_mesh(resultsFilename2);
     std::string nameOnOutputFile("deformations");
-    stkMeshIoBroker.add_results_field_with_alternate_name(file2Handle, *displacementField, nameOnOutputFile);
+    stkMeshIoBroker.add_results_field(file2Handle, *displacementField, nameOnOutputFile);
     stk::mesh::FieldBase *velocityField = stkMeshMetaData.get_field(velocityFieldName);
     stkMeshIoBroker.add_results_field(file2Handle, *velocityField);
     std::string globalVarNameFile2 = "kineticEnergy";

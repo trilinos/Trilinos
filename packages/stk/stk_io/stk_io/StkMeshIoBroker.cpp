@@ -1421,7 +1421,7 @@ namespace stk {
             stk::mesh::FieldState state_identifier = static_cast<stk::mesh::FieldState>(state);
             stk::mesh::FieldBase *statedField = field.field_state(state_identifier);
             std::string field_name_with_suffix = stk::io::get_stated_field_name(name_for_output, state_identifier);
-            add_results_field_with_alternate_name(file_index, *statedField, field_name_with_suffix);
+            add_results_field(file_index, *statedField, field_name_with_suffix);
         }
     }
 
@@ -1456,13 +1456,13 @@ namespace stk {
     void StkMeshIoBroker::add_results_field(size_t output_file_index, stk::mesh::FieldBase &field)
     {
         validate_output_file_index(output_file_index);
-        m_output_files[output_file_index]->add_results_field(field, field.name());
+        m_output_files[output_file_index]->add_field(field, field.name());
     }
 
-    void StkMeshIoBroker::add_results_field_with_alternate_name(size_t output_file_index, stk::mesh::FieldBase &field, const std::string &alternate_name)
+    void StkMeshIoBroker::add_results_field(size_t output_file_index, stk::mesh::FieldBase &field, const std::string &alternate_name)
     {
         validate_output_file_index(output_file_index);
-        m_output_files[output_file_index]->add_results_field(field, alternate_name);
+        m_output_files[output_file_index]->add_field(field, alternate_name);
     }
 
     void StkMeshIoBroker::get_global_variable_names(std::vector<std::string> &names)
@@ -1866,7 +1866,7 @@ namespace stk {
       }
     }
 
-    void OutputFile::add_results_field(stk::mesh::FieldBase &field, const std::string &alternate_name)
+    void OutputFile::add_field(stk::mesh::FieldBase &field, const std::string &alternate_name)
     {
         ThrowErrorMsgIf (alternate_name.empty(), "Attempting to output results field " << field.name() << " with no name.");
 
