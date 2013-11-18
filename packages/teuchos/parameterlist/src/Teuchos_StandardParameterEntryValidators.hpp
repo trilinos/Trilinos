@@ -52,6 +52,9 @@
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Teuchos_DummyObjectGetter.hpp"
 
+#include <locale>
+
+
 namespace Teuchos {
 
 /**
@@ -69,8 +72,17 @@ namespace Teuchos {
  * users can provide string names for the enum values, and the
  * validator will automatically convert them to their enum values.
  *
- * Please see <tt>StringToIntegralValidatorXMLConverter</tt> for
- * documentation regarding the XML representation of this validator.
+ * All constructors and nonmember "constructors" have the option make
+ * validation case insensitive.  Validation is case sensitive by
+ * default.  Case sensitivity applies <i>only</i> to the string values
+ * of the parameter, not the parameter's name.  We implement case
+ * insensitivity by converting all strings to uppercase using the
+ * prevailing locale.
+ *
+ * Teuchos uses StringToIntegralValidatorXMLConverter to convert this
+ * validator to and from an XML representation.  Please see the
+ * documentation of that class to learn about the XML representation
+ * of this validator.
  */
 template<class IntegralType>
 class StringToIntegralParameterEntryValidator : public ParameterEntryValidator {
@@ -81,6 +93,8 @@ public:
   /** \brief Construct with a mapping from strings to the enum or
    *   integer values \f$0, 1, \dots, n-1\f$.
    *
+   * All input arrays (one array, in this case) are copied.
+   *
    * \param strings [in] Array of unique names for the enum or integer
    *   values.  These are the strings which users will see and use
    *   when setting parameters.  <tt>strings[i]</tt> will be
@@ -88,14 +102,19 @@ public:
    *
    * \param defaultParameterName [in] The default name of the
    *   parameter (used in error messages).
+   *
+   * \param caseSensitive [in] Whether validation will be case
+   *   sensitive.  The default is true (case sensitive) Case will be
+   *   determined based on the prevailing locale.
    */
-  StringToIntegralParameterEntryValidator(
-    ArrayView<const std::string> const& strings,
-    std::string const& defaultParameterName
-    );
+  StringToIntegralParameterEntryValidator (const ArrayView<const std::string>& strings,
+                                           const std::string& defaultParameterName,
+                                           const bool caseSensitive = true);
 
   /** \brief Construct with a mapping from strings to specified enum
    *   or integer values.
+   *
+   * All input arrays are copied.
    *
    * \param strings [in] Array of unique names for the enum or integer
    *   values.  These are the strings which users will see and use
@@ -109,17 +128,22 @@ public:
    * \param defaultParameterName [in] The default name of the
    *   parameter (used in error messages).
    *
+   * \param caseSensitive [in] Whether validation will be case
+   *   sensitive.  The default is true (case sensitive).  Case will be
+   *   determined based on the prevailing locale.
+   *
    * \pre <tt>strings.size() == integralValues.size()</tt>
    */
-  StringToIntegralParameterEntryValidator(
-    ArrayView<const std::string> const& strings,
-    ArrayView<const IntegralType> const& integralValues,
-    std::string const& defaultParameterName
-    );
+  StringToIntegralParameterEntryValidator (const ArrayView<const std::string>& strings,
+                                           const ArrayView<const IntegralType>& integralValues,
+                                           std::string const& defaultParameterName,
+                                           const bool caseSensitive = true);
 
   /** \brief Construct with a mapping from strings (with
    *   documentation) to specified enum or integer values, and include
    *   documentation.
+   *
+   * All input arrays are copied.
    *
    * \param strings [in] Array of unique names for the enum or integer
    *   values.  These are the strings which users will see and use
@@ -137,16 +161,18 @@ public:
    * \param defaultParameterName [in] The default name of the
    *   parameter (used in error messages).
    *
+   * \param caseSensitive [in] Whether validation will be case
+   *   sensitive.  The default is true (case sensitive).  Case will be
+   *   determined based on the prevailing locale.
+   *
    * \pre <tt>strings.size() == stringDocs.size()</tt>
    * \pre <tt>strings.size() == integralValues.size()</tt>
    */
-  StringToIntegralParameterEntryValidator(
-    ArrayView<const std::string> const& strings,
-    ArrayView<const std::string> const& stringsDocs,
-    ArrayView<const IntegralType> const& integralValues,
-    std::string const& defaultParameterName
-    );
-
+  StringToIntegralParameterEntryValidator (const ArrayView<const std::string>& strings,
+                                           const ArrayView<const std::string>& stringsDocs,
+                                           const ArrayView<const IntegralType>& integralValues,
+                                           const std::string& defaultParameterName,
+                                           const bool caseSensitive = true);
   //@}
   /** \name Validated lookup functions */
   //@{
@@ -256,6 +282,14 @@ public:
     const std::string &sublistName = ""
     ) const;
 
+  /// \brief Whether this validator is case sensitive.
+  ///
+  /// Case sensitivity is with respect to the string names, not the
+  /// parameter name.
+  bool isCaseSensitive () const {
+    return caseSensitive_;
+  }
+
   //@}
   /** \name Implementation of ParameterEntryValidator */
   //@{
@@ -283,13 +317,15 @@ public:
   //@}
 
 private:
-
-  typedef std::map<std::string,IntegralType> map_t;
   std::string defaultParameterName_;
   std::string validValues_;
   ValidStringsList validStringValues_;
   ValidStringsList validStringValuesDocs_;
+
+  typedef std::map<std::string,IntegralType> map_t;
   map_t map_;
+
+  const bool caseSensitive_;
 
   void setValidValues(
     ArrayView<const std::string> const& strings,
@@ -299,6 +335,12 @@ private:
   // Not defined and not to be called.
   StringToIntegralParameterEntryValidator();
 
+  //! Return an upper-case copy of the string s.
+  static std::string upperCase (const std::string s) {
+    std::string s_upper = s;
+    std::transform (s_upper.begin (), s_upper.end (), s_upper.begin (), ::toupper);
+    return s_upper;
+  }
 };
 
 
@@ -322,8 +364,35 @@ template<class IntegralType>
 RCP<StringToIntegralParameterEntryValidator<IntegralType> >
 stringToIntegralParameterEntryValidator(
   ArrayView<const std::string> const& strings,
+  std::string const& defaultParameterName,
+  const bool caseSensitive
+  );
+
+
+/** \brief Nonmember constructor (see implementation).
+ *
+ * \relates StringToIntegralParameterEntryValidator
+ */
+template<class IntegralType>
+RCP<StringToIntegralParameterEntryValidator<IntegralType> >
+stringToIntegralParameterEntryValidator(
+  ArrayView<const std::string> const& strings,
   ArrayView<const IntegralType> const& integralValues,
   std::string const& defaultParameterName
+  );
+
+
+/** \brief Nonmember constructor (see implementation).
+ *
+ * \relates StringToIntegralParameterEntryValidator
+ */
+template<class IntegralType>
+RCP<StringToIntegralParameterEntryValidator<IntegralType> >
+stringToIntegralParameterEntryValidator(
+  ArrayView<const std::string> const& strings,
+  ArrayView<const IntegralType> const& integralValues,
+  std::string const& defaultParameterName,
+  const bool caseSensitive
   );
 
 
@@ -339,6 +408,22 @@ stringToIntegralParameterEntryValidator(
   ArrayView<const IntegralType> const& integralValues,
   std::string const& defaultParameterName
   );
+
+
+/** \brief Nonmember constructor (see implementation).
+ *
+ * \relates StringToIntegralParameterEntryValidator
+ */
+template<class IntegralType>
+RCP<StringToIntegralParameterEntryValidator<IntegralType> >
+stringToIntegralParameterEntryValidator(
+  ArrayView<const std::string> const& strings,
+  ArrayView<const std::string> const& stringsDocs,
+  ArrayView<const IntegralType> const& integralValues,
+  std::string const& defaultParameterName,
+  const bool caseSensitive
+  );
+
 
 /** \brief Set up a std::string parameter that will use an embedded validator
  * to allow the extraction of an integral value.
@@ -2036,85 +2121,95 @@ public:
 
 
 template<class IntegralType>
-StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameterEntryValidator(
-  ArrayView<const std::string> const& strings, std::string const& defaultParameterName
-  ):
-  ParameterEntryValidator(),
-  defaultParameterName_(defaultParameterName)
+StringToIntegralParameterEntryValidator<IntegralType>::
+StringToIntegralParameterEntryValidator (ArrayView<const std::string> const& strings,
+                                         std::string const& defaultParameterName,
+                                         const bool caseSensitive) :
+  ParameterEntryValidator (),
+  defaultParameterName_ (defaultParameterName),
+  caseSensitive_ (caseSensitive)
 {
   typedef typename map_t::value_type val_t;
-  for( int i = 0; i < static_cast<int>(strings.size()); ++i ) {
-    const bool unique = map_.insert( val_t( strings[i], (IntegralType)i ) ).second;
+  for (int i = 0; i < static_cast<int> (strings.size ()); ++i) {
+    const bool unique = caseSensitive_ ?
+      map_.insert (val_t (strings[i], static_cast<IntegralType> (i))).second :
+      map_.insert (val_t (upperCase (strings[i]), static_cast<IntegralType> (i))).second;
     TEUCHOS_TEST_FOR_EXCEPTION(
-      !unique, std::logic_error
-      ,"Error, the std::string \"" << strings[i] << "\" is a duplicate for parameter \""
-      << defaultParameterName_ << "\"."
-      );
+      ! unique, std::logic_error,
+      "For parameter \"" << defaultParameterName_ << "\": "
+      "strings[" << i << "] = \"" << strings[i] << "\" is a duplicate.");
   }
-  setValidValues(strings);
+  setValidValues (strings);
 }
 
 
 template<class IntegralType>
-StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameterEntryValidator(
-  ArrayView<const std::string> const& strings, ArrayView<const IntegralType> const& integralValues
-  ,std::string const& defaultParameterName
-  ):
-  ParameterEntryValidator(),
-  defaultParameterName_(defaultParameterName)
+StringToIntegralParameterEntryValidator<IntegralType>::
+StringToIntegralParameterEntryValidator (ArrayView<const std::string> const& strings,
+                                         ArrayView<const IntegralType> const& integralValues,
+                                         std::string const& defaultParameterName,
+                                         const bool caseSensitive) :
+  ParameterEntryValidator (),
+  defaultParameterName_ (defaultParameterName),
+  caseSensitive_ (caseSensitive)
 {
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_ASSERT_EQUALITY( strings.size(), integralValues.size() );
 #endif
   TEUCHOS_TEST_FOR_EXCEPTION(
     strings.size() != integralValues.size(),
-  std::logic_error,
-  "Error, strings and integraValues must be of the same length."
-  );
+    std::logic_error,
+    "The input arrays strings and integralValues must have the same length.");
+
   typedef typename map_t::value_type val_t;
-  for( int i = 0; i < static_cast<int>(strings.size()); ++i ) {
-    const bool unique = map_.insert( val_t( strings[i], integralValues[i] ) ).second;
+  for (int i = 0; i < static_cast<int> (strings.size ()); ++i) {
+    const bool unique = caseSensitive_ ?
+      map_.insert (val_t (strings[i], integralValues[i])).second :
+      map_.insert (val_t (upperCase (strings[i]), integralValues[i])).second;
+
     TEUCHOS_TEST_FOR_EXCEPTION(
-      !unique, std::logic_error
-      ,"Error, the std::string \"" << strings[i] << "\" is a duplicate for parameter \""
-      << defaultParameterName_ << "\""
-      );
+      ! unique, std::logic_error,
+      "For parameter \"" << defaultParameterName_ << "\": "
+      "strings[" << i << "] = \"" << strings[i] << "\" is a duplicate.");
   }
-  setValidValues(strings);
+  setValidValues (strings);
 }
 
 template<class IntegralType>
-StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameterEntryValidator(
-  ArrayView<const std::string>    const& strings
-  ,ArrayView<const std::string>   const& stringsDocs
-  ,ArrayView<const IntegralType>  const& integralValues
-  ,std::string          const& defaultParameterName
-  ):
-  ParameterEntryValidator(),
-  defaultParameterName_(defaultParameterName)
+StringToIntegralParameterEntryValidator<IntegralType>::
+StringToIntegralParameterEntryValidator (ArrayView<const std::string>    const& strings,
+                                         ArrayView<const std::string>   const& stringsDocs,
+                                         ArrayView<const IntegralType>  const& integralValues,
+                                         std::string          const& defaultParameterName,
+                                         const bool caseSensitive) :
+  ParameterEntryValidator (),
+  defaultParameterName_ (defaultParameterName),
+  caseSensitive_ (caseSensitive)
 {
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_ASSERT_EQUALITY( strings.size(), stringsDocs.size() );
   TEUCHOS_ASSERT_EQUALITY( strings.size(), integralValues.size() );
 #endif
+
   TEUCHOS_TEST_FOR_EXCEPTION(
     strings.size() != integralValues.size(),
-  std::logic_error,
-  "Error, strings and integraValues must be of the same length."
-  );
+    std::logic_error,
+    "The input arrays strings and integralValues must have the same length.");
+
   TEUCHOS_TEST_FOR_EXCEPTION(
     strings.size() != stringsDocs.size(),
-  std::logic_error,
-  "Error, strings and stringsDocs must be of the same length."
-  );
+    std::logic_error,
+    "The input arrays strings and stringsDocs must have the same length.");
+
   typedef typename map_t::value_type val_t;
-  for( int i = 0; i < static_cast<int>(strings.size()); ++i ) {
-    const bool unique = map_.insert( val_t( strings[i], integralValues[i] ) ).second;
+  for (int i = 0; i < static_cast<int> (strings.size ()); ++i) {
+    const bool unique = caseSensitive_ ?
+      map_.insert (val_t (strings[i], integralValues[i])).second :
+      map_.insert (val_t (upperCase (strings[i]), integralValues[i])).second;
     TEUCHOS_TEST_FOR_EXCEPTION(
-      !unique, std::logic_error
-      ,"Error, the std::string \"" << strings[i] << "\" is a duplicate for parameter \""
-      << defaultParameterName_ << "\""
-      );
+      ! unique, std::logic_error,
+      "For parameter \"" << defaultParameterName_ << "\": "
+      "strings[" << i << "] = \"" << strings[i] << "\" is a duplicate.");
   }
   setValidValues(strings,&stringsDocs);
 }
@@ -2129,7 +2224,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::getIntegralValue(
   ,const std::string &sublistName
   ) const
 {
-  typename map_t::const_iterator itr = map_.find(str);
+  typename map_t::const_iterator itr = map_.find (caseSensitive_ ? str : upperCase (str));
   TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
     itr == map_.end(), Exceptions::InvalidParameterValue
     ,"Error, the value \"" << str << "\" is not recognized for the parameter \""
@@ -2187,9 +2282,10 @@ StringToIntegralParameterEntryValidator<IntegralType>::getIntegralValue(
   ,const std::string &defaultValue
   ) const
 {
-  const std::string
-    &strValue = paramList.get(paramName,defaultValue);
-  return getIntegralValue(strValue,paramName,paramList.name());
+  const std::string& strValue =
+    paramList.get (paramName,
+                   caseSensitive_ ? defaultValue : upperCase (defaultValue));
+  return getIntegralValue (strValue, paramName, paramList.name ());
 }
 
 
@@ -2200,8 +2296,9 @@ StringToIntegralParameterEntryValidator<IntegralType>::getStringValue(
   ,const std::string &defaultValue
   ) const
 {
-  const std::string
-    &strValue = paramList.get(paramName,defaultValue);
+  const std::string& strValue =
+    paramList.get (paramName,
+                   caseSensitive_ ? defaultValue : upperCase (defaultValue));
   getIntegralValue(strValue,paramName,paramList.name()); // Validate!
   return strValue;
 }
@@ -2227,7 +2324,9 @@ StringToIntegralParameterEntryValidator<IntegralType>::validateString(
   ,const std::string &sublistName
   ) const
 {
-  getIntegralValue(str,paramName,sublistName); // Validate!
+  getIntegralValue (caseSensitive_ ? str : upperCase (str),
+                    paramName,
+                    sublistName); // Validate!
   return str;
 }
 
@@ -2237,9 +2336,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::validateString(
 template<class IntegralType>
 const std::string
 StringToIntegralParameterEntryValidator<IntegralType>::getXMLTypeName() const{
-  return "StringIntegralValidator(" +
-    TypeNameTraits<IntegralType>::name() +
-    ")";
+  return "StringIntegralValidator(" + TypeNameTraits<IntegralType>::name () + ")";
 }
 
 template<class IntegralType>
@@ -2281,7 +2378,7 @@ void StringToIntegralParameterEntryValidator<IntegralType>::validate(
   ,std::string    const& sublistName
   ) const
 {
-  this->getIntegralValue(entry,paramName,sublistName,false);
+  this->getIntegralValue (entry, paramName, sublistName, false);
 }
 
 
@@ -2293,14 +2390,24 @@ void StringToIntegralParameterEntryValidator<IntegralType>::setValidValues(
   ,ArrayView<const std::string>  const* stringsDocs
   )
 {
-  validStringValues_ = rcp(new Array<std::string>(strings));
-  if(stringsDocs)
-    validStringValuesDocs_ = rcp(new Array<std::string>(*stringsDocs));
-  // Here I build the list of valid values in the same order as passed in by
-  // the client!
+  if (caseSensitive_) {
+    validStringValues_ = rcp (new Array<std::string> (strings));
+  }
+  else {
+    RCP<Array<std::string> > vals (new Array<std::string> (strings.size ()));
+    for (Array<std::string>::size_type i = 0; i < strings.size (); ++i) {
+      (*vals)[i] = upperCase (strings[i]);
+    }
+    validStringValues_ = rcp_const_cast<const Array<std::string> > (vals);
+  }
+
+  if (stringsDocs) {
+    validStringValuesDocs_ = rcp (new Array<std::string> (*stringsDocs));
+  }
+  // Build the list of valid values in the same order as passed in by the client.
   std::ostringstream oss;
-  for( int i = 0; i < static_cast<int>(strings.size()); ++i ) {
-    oss << "    \""<<strings[i]<<"\"\n";
+  for (int i = 0; i < static_cast<int> (strings.size()); ++i) {
+    oss << "    \"" << strings[i] << "\"\n";
   }
   // Note: Above four spaces is designed for the error output above.
   validValues_ = oss.str();
@@ -2336,6 +2443,21 @@ inline
 Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<IntegralType> >
 Teuchos::stringToIntegralParameterEntryValidator(
   ArrayView<const std::string> const& strings,
+  std::string const& defaultParameterName,
+  const bool caseSensitive
+  )
+{
+  typedef StringToIntegralParameterEntryValidator<IntegralType> ret_type;
+  return rcp (new ret_type (strings, defaultParameterName, caseSensitive));
+}
+
+
+
+template<class IntegralType>
+inline
+Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<IntegralType> >
+Teuchos::stringToIntegralParameterEntryValidator(
+  ArrayView<const std::string> const& strings,
   ArrayView<const IntegralType> const& integralValues,
   std::string const& defaultParameterName
   )
@@ -2345,6 +2467,21 @@ Teuchos::stringToIntegralParameterEntryValidator(
       strings, integralValues, defaultParameterName
       )
     );
+}
+
+
+template<class IntegralType>
+inline
+Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<IntegralType> >
+Teuchos::stringToIntegralParameterEntryValidator(
+  ArrayView<const std::string> const& strings,
+  ArrayView<const IntegralType> const& integralValues,
+  std::string const& defaultParameterName,
+  const bool caseSensitive)
+{
+  typedef StringToIntegralParameterEntryValidator<IntegralType> ret_type;
+  return rcp (new ret_type (strings, integralValues,
+                            defaultParameterName, caseSensitive));
 }
 
 
@@ -2364,6 +2501,23 @@ Teuchos::stringToIntegralParameterEntryValidator(
       )
     );
 }
+
+
+template<class IntegralType>
+inline
+Teuchos::RCP< Teuchos::StringToIntegralParameterEntryValidator<IntegralType> >
+Teuchos::stringToIntegralParameterEntryValidator(
+  ArrayView<const std::string> const& strings,
+  ArrayView<const std::string> const& stringsDocs,
+  ArrayView<const IntegralType> const& integralValues,
+  std::string const& defaultParameterName,
+  const bool caseSensitive)
+{
+  typedef StringToIntegralParameterEntryValidator<IntegralType> ret_type;
+  return rcp (new ret_type (strings, stringsDocs, integralValues,
+                            defaultParameterName, caseSensitive));
+}
+
 
 template<class IntegralType>
 void Teuchos::setStringToIntegralParameter(
