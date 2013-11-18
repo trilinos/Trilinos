@@ -175,49 +175,6 @@ namespace Tpetra {
     DoNotOptimizeStorage /*!< Indicates that storage should not be optimized */
   };
 
-  /// \enum CombineMode
-  /// \brief Rule for combining data in an Import or Export
-  ///
-  /// Import or Export (data redistribution) operations might need to
-  /// combine data received from other processes with existing data on
-  /// the calling process.  This enum tells Tpetra how to do that for
-  /// a specific Import or Export operation.  Each Tpetra object may
-  /// interpret the CombineMode in a different way, so you should
-  /// check the Tpetra object's documentation for details.
-  ///
-  /// Here is the list of supported combine modes:
-  ///   - ADD: Sum new values into existing values
-  ///   - INSERT: Insert new values that don't currently exist
-  ///   - REPLACE: Replace existing values with new values
-  ///   - ABSMAX: If \f$x_{old}\f$ is the old value and \f$x_{new}\f$
-  ///     the incoming new value, replace \f$x_{old}\f$ with
-  ///     \f$\max\{ x_{old}, x_{new} \}\f$.
-  ///   - ZERO: Replace old values with zero
-  ///
-  /// ADD and REPLACE are intended for modifying values that already
-  /// exist.  Tpetra objects will generally work correctly if those
-  /// values don't already exist.  (For example, ADD will behave like
-  /// INSERT if the entry does not yet exist on the calling process.)
-  /// However, performance may suffer.
-  ///
-  /// The ZERO combine mode is a special case that bypasses
-  /// communication.  It may seem odd to include a "combine mode" that
-  /// doesn't actually combine.  However, this is useful for
-  /// computations like domain decomposition with overlap.  A ZERO
-  /// combine mode with overlap is different than an ADD combine mode
-  /// without overlap.  (See Ifpack2::AdditiveSchwarz, which inspired
-  /// inclusion of this combine mode.)  Furthermore, Import and Export
-  /// also encapsulate a local permutation; if you want only to
-  /// execute the local permutation without communication, you may use
-  /// the ZERO combine mode.
-  enum CombineMode {
-    ADD,     //!< Sum new values into existing values
-    INSERT,  //!< Insert new values that don't currently exist
-    REPLACE, //!< Replace existing values with new values
-    ABSMAX,  //!< Replace old value with maximum of magnitudes of old and new values
-    ZERO     //!< Replace old values with zero
-  };
-
   enum EPrivateComputeViewConstructor {
     COMPUTE_VIEW_CONSTRUCTOR
   };
@@ -330,6 +287,12 @@ namespace Tpetra {
   };
 
 } // end of Tpetra namespace
+
+
+// We include this after the above Tpetra namespace declaration,
+// so that we don't interfere with Doxygen's ability to find the
+// Tpetra namespace declaration.
+#include <Tpetra_CombineMode.hpp>
 
 
 //! Namespace for %Tpetra example classes and methods
