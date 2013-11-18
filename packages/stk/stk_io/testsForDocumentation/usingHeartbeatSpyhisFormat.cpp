@@ -16,8 +16,9 @@ namespace
 
     stk::util::ParameterList parameters;
     
-    // Initialization...
     {
+      // ========================================================================
+      // INITIALIZATION...
       // Add some parameters to write and read...
       parameters.set_param("PI", 3.14159);  // Double 
       parameters.set_param("Answer", 42);   // Integer
@@ -37,31 +38,58 @@ namespace
       parameters.set_param("Ages", ages);   // Vector of integers...
     }
 
-    // Begin use of stk io heartbeat file...
-    stk::io::StkMeshIoBroker stkIo(communicator);
+    {
+      // ========================================================================
+      // EXAMPLE USAGE...
+      // Begin use of stk io heartbeat file...
+      stk::io::StkMeshIoBroker stkIo(communicator);
 
-    // ========================================================================
-    // Define the heartbeat output.
-    size_t heartbeat_index = stkIo.add_heartbeat_output(file_name, stk::io::SPYHIS);
+      // Define the heartbeat output.
+      size_t heartbeat_index = stkIo.add_heartbeat_output(file_name, stk::io::SPYHIS);
 
-    stk::util::ParameterMapType::const_iterator i = parameters.begin();
-    stk::util::ParameterMapType::const_iterator iend = parameters.end();
-    for (; i != iend; ++i) {
-      const std::string parameterName = (*i).first;
-      stk::util::Parameter &parameter = parameters.get_param(parameterName);
+      stk::util::ParameterMapType::const_iterator i = parameters.begin();
+      stk::util::ParameterMapType::const_iterator iend = parameters.end();
+      for (; i != iend; ++i) {
+	const std::string parameterName = (*i).first;
+	stk::util::Parameter &parameter = parameters.get_param(parameterName);
 
-      // Tell heartbeat database which global variables should be output at each step...
-      stkIo.add_heartbeat_global(heartbeat_index, parameterName, parameter.value, parameter.type);
+	// Tell heartbeat database which global variables should be output at each step...
+	stkIo.add_heartbeat_global(heartbeat_index, parameterName, parameter.value, parameter.type);
+      }
+
+      // Now output the global variables...
+      int timestep_count = 1;
+      double time = 0.0;
+      for (int step=1; step <= timestep_count; step++) {
+	stkIo.process_heartbeat_output(heartbeat_index, step, time);
+      }
+    }
+
+    {
+      // ========================================================================
+      // VERIFICATION:
+      // open the heartbeat file...
+      std::ifstream heartbeat(file_name.c_str());
+      std::string format_line;
+      std::string header_line;
+      std::string data_line;
+
+      std::string expected_format_line = "% Sierra SPYHIS Output";
+      std::string expected_header_line = "        Time,       Ages_1,       Ages_2,       Ages_3,       Ages_4,       Answer,           PI, some_doubles_1, some_doubles_2, some_doubles_3";
+      std::string expected_data_line = " 0.00000e+00,           55,           49,           21,           19,           42,  3.14159e+00,  2.78000e+00,  5.30000e+00,  6.21000e+00";
+
+      EXPECT_TRUE(!std::getline(heartbeat, format_line).fail());
+      // Remove current date from format line...
+      format_line = format_line.substr(0, expected_format_line.size());
+      EXPECT_STREQ(format_line.c_str(), expected_format_line.c_str());
+      EXPECT_TRUE(!std::getline(heartbeat, header_line).fail());
+      EXPECT_STREQ(header_line.c_str(), expected_header_line.c_str());
+      EXPECT_TRUE(!std::getline(heartbeat, data_line).fail());
+      EXPECT_STREQ(data_line.c_str(), expected_data_line.c_str());
     }
 
     // ========================================================================
-    // Now output the global variables...
-    int timestep_count = 1;
-    double time = 0.0;
-    for (int step=1; step <= timestep_count; step++) {
-      stkIo.process_heartbeat_output(heartbeat_index, step, time);
-    }
-
-    //    unlink(file_name.c_str());
+    // CLEANUP:
+    unlink(file_name.c_str());
   }
 }
