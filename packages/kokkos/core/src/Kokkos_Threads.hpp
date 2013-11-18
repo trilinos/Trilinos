@@ -178,7 +178,8 @@ public:
    */
   static void initialize( unsigned threads_count = 1 ,
                           unsigned use_numa_count = 0 ,
-                          unsigned use_cores_per_numa = 0 );
+                          unsigned use_cores_per_numa = 0 ,
+                          bool allow_asynchronous_threadpool = false );
 
   static int is_initialized();
 
