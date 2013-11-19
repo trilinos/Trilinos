@@ -400,6 +400,12 @@ public:
   ///     rows with just a single entry on the calling process.
   virtual void setParameters (const Teuchos::ParameterList& List);
 
+  /// \brief Get a list of the preconditioner's default parameters.
+  ///
+  /// See the documentation of setParameters() for a list of the
+  /// parameters that AdditiveSchwarz accepts.
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters () const;
+
   //! Computes all (graph-related) data necessary to initialize the preconditioner.
   virtual void initialize();
 
@@ -506,8 +512,12 @@ protected:
   bool IsOverlapping_;
   //! Level of overlap among the processors.
   int OverlapLevel_;
+
   //! Store a copy of the list given in setParameters()
   Teuchos::ParameterList List_;
+  //! Valid (default) parameters; computed and cached in getValidParameters().
+  mutable Teuchos::RCP<const Teuchos::ParameterList> validParams_;
+
   //! Combine mode for off-process elements (only if overlap is used)
   Tpetra::CombineMode CombineMode_;
   //! Contains the estimated condition number.

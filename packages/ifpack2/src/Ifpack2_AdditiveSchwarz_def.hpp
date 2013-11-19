@@ -384,93 +384,122 @@ template<class MatrixType,class LocalInverseType>
 void AdditiveSchwarz<MatrixType,LocalInverseType>::
 setParameters (const Teuchos::ParameterList& plist)
 {
+  using Teuchos::getIntegralValue;
+
+  // mfh 18 Nov 2013: Ifpack2's setParameters() method annoyingly
+  // passes in the input list as const.  This means that we have to
+  // copy it before validation.
   List_ = plist;
+  List_.validateParameters (* getValidParameters ());
 
-  // compute the condition number each time compute() is invoked.
-  ComputeCondest_ = List_.get("schwarz: compute condest", ComputeCondest_);
-  // combine mode
-  if( Teuchos::ParameterEntry *combineModeEntry = List_.getEntryPtr("schwarz: combine mode") ) {
-    if( typeid(std::string) == combineModeEntry->getAny().type() ) {
-      std::string mode = List_.get ("schwarz: combine mode", "Add");
+  // mfh 18 Nov 2013: Supplying the current value as the default value
+  // ensures "delta" behavior when users pass in new parameters: any
+  // unspecified parameters in the new list retain their values in the
+  // old list.  This preserves backwards compatiblity with this class'
+  // previous behavior.  Note that validateParametersAndSetDefaults()
+  // would have different behavior: any parameters not in the new list
+  // would get default values, which could be different than their
+  // values in the original list.
 
-      // Convert the mode to upper case, so users don't have to worry
-      // about case sensitivity.
-      std::transform(mode.begin(), mode.end(),mode.begin(), ::toupper);
-      if (mode == "ADD") {
-        CombineMode_ = Tpetra::ADD;
-      }
-      else if (mode == "INSERT") {
-        CombineMode_ = Tpetra::INSERT;
-      }
-      else if (mode == "REPLACE") {
-        CombineMode_ = Tpetra::REPLACE;
-      }
-      else if (mode == "ABSMAX") {
-        CombineMode_ = Tpetra::ABSMAX;
-      }
-      else if (mode == "ZERO") {
-        CombineMode_ = Tpetra::ZERO;
-      }
-      else {
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          true, std::invalid_argument, "Ifpack2::AdditiveSchwarz::setParameters"
-          ": The given Tpetra combine mode \"" << mode << "\" is not valid.  "
-          "Valid combine modes include \"Add\", \"Insert\", \"Replace\", "
-          "\"AbsMax\", and \"Zero\".");
-      }
-    }
-    else if ( typeid(Tpetra::CombineMode) == combineModeEntry->getAny().type() ) {
-      CombineMode_ = Teuchos::any_cast<Tpetra::CombineMode>(combineModeEntry->getAny());
-    }
-    else {
-      // Throw exception with good error message!
-      Teuchos::getParameter<std::string>(List_,"schwarz: combine mode");
-    }
+  ComputeCondest_ = List_.get ("schwarz: compute condest", ComputeCondest_);
+
+  bool gotCombineMode = false;
+  try {
+    CombineMode_ = Teuchos::getIntegralValue<Tpetra::CombineMode> (List_, "schwarz: combine mode");
+    gotCombineMode = true;
   }
-  else {
-    // Make the default be a string to be consistent with the valid parameters!
-    List_.get("schwarz: combine mode","Add");
+  catch (Teuchos::Exceptions::InvalidParameterName&) {
+    // The caller didn't provide that parameter.  Just keep the
+    // existing value of CombineMode_.
+    gotCombineMode = true;
+  }
+  catch (Teuchos::Exceptions::InvalidParameterType&) {
+    // The user perhaps supplied it as an Tpetra::CombineMode enum
+    // value.  Let's try again (below).  If it doesn't succeed, we
+    // know that the type is wrong, so we can let it throw whatever
+    // exception it would throw.
+  }
+  if (! gotCombineMode) {
+    CombineMode_ = List_.get ("schwarz: combine mode", CombineMode_);
   }
 
-  Ifpack2::getParameter (List_, "schwarz: overlap level", OverlapLevel_);
-  if ((OverlapLevel_ != 0) && (Matrix_->getComm()->getSize() > 1)) {
-    IsOverlapping_=true;
+  OverlapLevel_ = List_.get ("schwarz: overlap level", OverlapLevel_);
+  if (OverlapLevel_ != 0 && Matrix_->getComm ()->getSize () > 1) {
+    IsOverlapping_ = true;
   }
 
-  // Will we be doing reordering?
-  // Note: Unlike Ifpack we'll use a "schwarz: reordering list" to give to Zoltan2...
-  if (List_.get("schwarz: use reordering",false) == false)
-    UseReordering_ = false;
-  else
-    UseReordering_ = true;
+  // Will we be doing reordering?  Unlike Ifpack, we'll use a
+  // "schwarz: reordering list" to give to Zoltan2.
+  UseReordering_ = List_.get ("schwarz: use reordering", UseReordering_);
 
 #if !defined(HAVE_IFPACK2_XPETRA) || !defined(HAVE_IFPACK2_ZOLTAN2)
-  // If we don't have Zoltan2, we just turn the reordering off completely...
-  //
-  // FIXME (mfh 27 Sep 2013) No!  If you don't have Zoltan2 and the
-  // user requests reordering, you MUST throw an exception.  No
-  // surprises, no unexpected results.  However, it is legitimate to
-  // have the default choice for this option depend on whether Zoltan2
-  // is enabled.
-  UseReordering_=false;
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    UseReordering_, std::invalid_argument, "Ifpack2::AdditiveSchwarz::"
+    "setParameters: You specified \"schwarz: use reordering\" = true.  "
+    "This is only valid when Trilinos was built with Ifpack2, Xpetra, and "
+    "Zoltan2 enabled.  Either Xpetra or Zoltan2 was not enabled in your build "
+    "of Trilinos.");
 #endif
 
+  // FIXME (mfh 18 Nov 2013) Now would be a good time to validate the
+  // "schwarz: reordering list" parameter list.  Currently, that list
+  // gets extracted in setup().
+
   // Subdomain check
-  if (List_.isParameter("schwarz: subdomain id") && List_.get("schwarz: subdomain id",-1) >  0)
-    UseSubdomain_=true;
+  if (List_.isParameter ("schwarz: subdomain id") && List_.get ("schwarz: subdomain id", -1) > 0) {
+    UseSubdomain_ = true;
+  }
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    UseSubdomain_, std::logic_error, "Ifpack2::AdditiveSchwarz::"
+    "setParameters: You specified the \"schwarz: subdomain id\" parameter, "
+    "with a value other than -1.  This parameter is not yet supported.");
 
   // if true, filter singletons. NOTE: the filtered matrix can still have
   // singletons! A simple example: upper triangular matrix, if I remove
   // the lower node, I still get a matrix with a singleton! However, filter
   // singletons should help for PDE problems with Dirichlet BCs.
-  FilterSingletons_ = List_.get("schwarz: filter singletons", FilterSingletons_);
+  FilterSingletons_ = List_.get ("schwarz: filter singletons", FilterSingletons_);
 
-  // FIXME (mfh 13 Nov 2013) Need to pass parameters to inner solver!
+  // FIXME (mfh 18 Nov 2013) If the inner solver exists, now might be
+  // a good time to validate its parameters.
 }
 
 
-//==============================================================================
-// Computes all (graph-related) data necessary to initialize the preconditioner.
+template<class MatrixType,class LocalInverseType>
+Teuchos::RCP<const Teuchos::ParameterList>
+AdditiveSchwarz<MatrixType,LocalInverseType>::
+getValidParameters () const
+{
+  using Teuchos::ParameterList;
+  using Teuchos::parameterList;
+  using Teuchos::RCP;
+  using Teuchos::rcp_const_cast;
+
+  if (validParams_.is_null ()) {
+    const int overlapLevel = 0;
+    const bool useReordering = false;
+    const bool computeCondest = false;
+    const bool filterSingletons = false;
+
+    RCP<ParameterList> plist = parameterList ("Ifpack2::AdditiveSchwarz");
+
+    Tpetra::setCombineModeParameter (*plist, "schwarz: combine mode");
+    plist->set ("schwarz: overlap level", overlapLevel);
+    plist->set ("schwarz: use reordering", useReordering);
+    plist->set ("schwarz: compute condest", computeCondest);
+    plist->set ("schwarz: filter singletons", filterSingletons);
+
+    // FIXME (mfh 18 Nov 2013) Get valid parameters from inner solver.
+    //
+    // FIXME (mfh 18 Nov 2013) Get valid parameters from Zoltan2, if
+    // Zoltan2 was enabled in the build.
+
+    validParams_ = rcp_const_cast<const ParameterList> (plist);
+  }
+  return validParams_;
+}
+
+
 template<class MatrixType,class LocalInverseType>
 void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize()
 {
@@ -728,7 +757,14 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
   if (! OverlappingMatrix_.is_null ()) {
     if (UseSubdomain_) {
       //      int sid = List_.get("subdomain id",-1);
-      throw std::runtime_error("Ifpack2::AdditiveSchwarz subdomain code not yet supported.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        "Ifpack2::AdditiveSchwarz::setup: subdomain code not yet supported.");
+      //
+      // FIXME (mfh 18 Nov 2013) btw what's the difference between
+      // Ifpack_NodeFilter and Ifpack_LocalFilter?  The former's
+      // documentation sounds a lot like what Ifpack2::LocalFilter
+      // does.
+      //
       //Ifpack2_NodeFilter *tt = new Ifpack2_NodeFilter(OverlappingMatrix_,nodeID); //FIXME
       //LocalizedMatrix = Teuchos::rcp(tt);
     }
@@ -738,7 +774,8 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
   else {
     if (UseSubdomain_) {
       //      int sid = List_.get("subdomain id",-1);
-      throw std::runtime_error("Ifpack2::AdditiveSchwarz subdomain code not yet supported.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        "Ifpack2::AdditiveSchwarz::setup: subdomain code not yet supported.");
     }
     else {
       LocalizedMatrix = rcp (new LocalFilter<row_matrix_type> (Matrix_));
