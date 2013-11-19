@@ -25,7 +25,7 @@ template <typename T>
 class Point3
 {
 public:
-  static const int Dim = 3;
+  static const size_t Dim = 3;
   typedef T value_type;
 
   Point3(value_type x = value_type(), value_type y = value_type(), value_type z = value_type())
@@ -112,16 +112,23 @@ public:
   typedef T value_type;
   typedef Point3<value_type> point_type;
 
-  AABox( point_type const& x_min_corner =point_type(1,1,1), point_type const& x_max_corner = point_type(0,0,0))
+  AABox( point_type const& x_min_corner = point_type(1,1,1), point_type const& x_max_corner = point_type(0,0,0))
     : m_min_corner(x_min_corner)
     , m_max_corner(x_max_corner)
   {}
 
   point_type const& min_corner() const { return m_min_corner; }
-  point_type const& max_corner() const { return m_min_corner; }
+  point_type const& max_corner() const { return m_max_corner; }
 
   void set_min_corner(point_type const& x_min_corner) { m_min_corner = x_min_corner; }
   void set_max_corner(point_type const& x_max_corner) { m_max_corner = x_max_corner; }
+
+  bool operator==(AABox<value_type> const& b) const
+  { return m_min_corner == b.m_min_corner && m_max_corner == b.m_max_corner; }
+
+  bool operator!=(AABox<value_type> const& b) const
+  { return !(*this == b); }
+
 
   bool is_valid() const
   {
@@ -130,10 +137,121 @@ public:
            && m_min_corner[2] <= m_max_corner[2];
   }
 
+  friend std::ostream& operator<<(std::ostream & out, AABox<value_type> const& b)
+  {
+    out << "{" << b.min_corner() << "->" << b.max_corner() << "}";
+    return out;
+  }
+
 private:
   point_type m_min_corner;
   point_type m_max_corner;
 };
+
+
+template <typename T>
+inline Point3<T> const& min_corner(Point3<T> const& p)
+{
+  return p;
+}
+
+template <typename T>
+inline Point3<T> const& max_corner(Point3<T> const& p)
+{
+  return p;
+}
+
+template <typename T>
+inline Point3<T> const& center(Point3<T> const& p)
+{
+  return p;
+}
+
+template <typename T>
+inline Point3<T> min_corner(Sphere<T> const& s)
+{
+  Point3<T> p(s.center());
+  p[0] -= s.radius();
+  p[1] -= s.radius();
+  p[2] -= s.radius();
+  return p;
+}
+
+template <typename T>
+inline Point3<T> max_corner(Sphere<T> const& s)
+{
+  Point3<T> p(s.center());
+  p[0] += s.radius();
+  p[1] += s.radius();
+  p[2] += s.radius();
+  return p;
+}
+
+template <typename T>
+inline Point3<T> const& center(Sphere<T> const& s)
+{
+  return s.center();
+}
+
+template <typename T>
+inline Point3<T> const& min_corner(AABox<T> const& b)
+{
+  return b.min_corner();
+}
+
+template <typename T>
+inline Point3<T> const& max_corner(AABox<T> const& b)
+{
+  return b.max_corner();
+}
+
+template <typename T>
+inline Point3<T> center(AABox<T> const& b)
+{
+  Point3<T> p;
+  p[0] = (b.min_corner()[0] + b.max_corner()[0])/2;
+  p[1] = (b.min_corner()[1] + b.max_corner()[1])/2;
+  p[2] = (b.min_corner()[2] + b.max_corner()[2])/2;
+  return p;
+}
+
+
+template <typename T>
+inline bool intersects(Point3<T> const& a, Point3<T> const& b)
+{
+  return (a==b);
+}
+
+
+template <typename T>
+inline bool intersects(Point3<T> const& a, Sphere<T> const& b)
+{
+  T dst2 = (a[0]-b.center()[0])*(a[0]-b.center()[0]);
+  dst2 += (a[1]-b.center()[1])*(a[1]-b.center()[1]);
+  dst2 += (a[2]-b.center()[2])*(a[2]-b.center()[2]);
+
+  return (dst2 <= b.radius()*b.radius());
+}
+
+template <typename T>
+inline bool intersects(Sphere<T> const& a, Point3<T> const& b)
+{
+  return intersects(b,a);
+}
+
+template <typename T>
+inline bool intersects(Point3<T> const& a, AABox<T> const& b)
+{
+  return b.min_corner()[0] <= a[0] && a[0] <= b.max_corner()[0]
+      && b.min_corner()[1] <= a[1] && a[1] <= b.max_corner()[1]
+      && b.min_corner()[2] <= a[2] && a[2] <= b.max_corner()[2];
+}
+
+template <typename T>
+inline bool intersects(AABox<T> const& a, Point3<T> const& b)
+{
+  return intersects(b,a);
+}
 
 }} //namespace stk::search
 
