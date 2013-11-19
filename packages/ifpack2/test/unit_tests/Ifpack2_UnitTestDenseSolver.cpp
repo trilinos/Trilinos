@@ -254,26 +254,35 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(DenseSolver, LapackComparison, ScalarType, Loc
   const magnitude_type relResNorm = absResNorm / normB;
   out << "\\| b - A*x_computed \\|_2 / \\|b\\|_2 = " << relResNorm << endl;
 
-  // 'out' only prints on Proc 0.
-  RCP<Teuchos::FancyOStream> errPtr = Teuchos::getFancyOStream (rcpFromRef (std::cerr));
-  Teuchos::FancyOStream& err = *errPtr;
-  err << "A->describe() result:" << endl;
-  A->describe (err, Teuchos::VERB_EXTREME);
+  out << "A->describe() result:" << endl;
+  out.setOutputToRootOnly(-1);
+  A->describe (out, Teuchos::VERB_EXTREME);
 
-  err << "x_exact.describe() result:" << endl;
-  x_exact.describe (err, Teuchos::VERB_EXTREME);
+  out.setOutputToRootOnly(0);
+  out << "x_exact.describe() result:" << endl;
+  out.setOutputToRootOnly(-1);
+  x_exact.describe (out, Teuchos::VERB_EXTREME);
+  out.setOutputToRootOnly(0);
 
-  err << "b.describe() result:" << endl;
-  b.describe (err, Teuchos::VERB_EXTREME);
+  out << "b.describe() result:" << endl;
+  out.setOutputToRootOnly(-1);
+  b.describe (out, Teuchos::VERB_EXTREME);
+  out.setOutputToRootOnly(0);
 
-  err << "x_computed.describe() result:" << endl;
-  x_computed.describe (err, Teuchos::VERB_EXTREME);
+  out << "x_computed.describe() result:" << endl;
+  out.setOutputToRootOnly(-1);
+  x_computed.describe (out, Teuchos::VERB_EXTREME);
+  out.setOutputToRootOnly(0);
 
-  err << "r.describe() result:" << endl;
-  r.describe (err, Teuchos::VERB_EXTREME);
+  out << "r.describe() result:" << endl;
+  out.setOutputToRootOnly(-1);
+  r.describe (out, Teuchos::VERB_EXTREME);
+  out.setOutputToRootOnly(0);
 
-  err << "solver.describe() result:" << endl;
-  solver.describe (err, Teuchos::VERB_EXTREME);
+  out << "solver.describe() result:" << endl;
+  out.setOutputToRootOnly(-1);
+  solver.describe (out, Teuchos::VERB_EXTREME);
+  out.setOutputToRootOnly(0);
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     relResNorm > 10*STS::eps (), std::logic_error,
