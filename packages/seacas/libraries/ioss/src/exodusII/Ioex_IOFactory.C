@@ -121,9 +121,15 @@ namespace {
     std::string decomp_method;
     std::string decomp_property;
     if (db_usage == Ioss::READ_MODEL) {
-      decomp_property = "DECOMPOSITION_METHOD";
+      decomp_property = "MODEL_DECOMPOSITION_METHOD";
     } else if (db_usage == Ioss::READ_RESTART) {
       decomp_property = "RESTART_DECOMPOSITION_METHOD";
+    }
+
+    // Applies to either read_model or read_restart
+    if (properties.exists("DECOMPOSITION_METHOD")) {
+      std::string method = properties.get("DECOMPOSITION_METHOD").get_string();
+      return Ioss::Utils::uppercase(method);
     }
 
     // Check for property...
@@ -155,6 +161,12 @@ namespace {
         if (prop == decomp_property) {
           std::string value = property[1];
           decomp_method = Ioss::Utils::uppercase(value);
+	  break;
+        }
+	else if (prop == "DECOMPOSITION_METHOD") {
+          std::string value = property[1];
+          decomp_method = Ioss::Utils::uppercase(value);
+	  break;
         }
       }
     }
