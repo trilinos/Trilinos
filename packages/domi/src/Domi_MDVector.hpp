@@ -48,7 +48,7 @@
 
 // Teuchos includes
 #include "Teuchos_Describable.hpp"
-#include <Teuchos_ScalarTraitsDecl.hpp>
+#include "Teuchos_ScalarTraitsDecl.hpp"
 
 namespace Domi
 {
@@ -444,11 +444,13 @@ MDVector(const Teuchos::RCP< const MDMap< LocalOrd, GlobalOrd, Node > > & mdMap,
 {
   typedef typename Teuchos::ArrayView< Scalar >::size_type size_type;
   setObjectLabel("Domi::MDVector");
+
   // Obtain the array of dimensions
   int numDims = _mdMap->getNumDims();
   Teuchos::Array< size_type > dims(numDims);
   for (int axis = 0; axis < numDims; ++axis)
     dims[axis] = _mdMap->getLocalDim(axis);
+
   // Resize the MDArayRCP
   _mdArray.resize(dims);
 }
@@ -550,7 +552,9 @@ template< class Scalar,
           class GlobalOrd,
           class Node >
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
-~MDVector() {}
+~MDVector()
+{
+}
 
 ////////////////////////////////////////////////////////////////////////
 
