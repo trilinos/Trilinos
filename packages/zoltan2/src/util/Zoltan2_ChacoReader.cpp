@@ -304,9 +304,6 @@ float   **eweights 		/* edge weight list data */
   float     weight;		/* weight being read */
   float     eweight;		/* edge weight being read */
   int       neighbor;		/* neighbor of current vertex */
-  int       self_edge;	/* is a self edge encountered? */
-  int       ignore_me;	/* is this edge being ignored? */
-  int       ignored;		/* how many edges are ignored? */
   int       error_flag;	/* error reading input? */
   int       j;		/* loop counters */
 
@@ -392,8 +389,6 @@ float   **eweights 		/* edge weight list data */
 
   adjptr = *adjacency;
   ewptr = *eweights;
-  self_edge = 0;
-  ignored = 0;
 
   sum_edges = 0;
   nedges = 0;
@@ -455,7 +450,6 @@ float   **eweights 		/* edge weight list data */
 
 	while (!end_flag) {
 	  skip_flag = 0;
-	  ignore_me = 0;
 
 	  if (using_ewgts) {	/* Read edge weight if it's being input. */
               for (j=0; j<(*ewgt_dim); j++){
