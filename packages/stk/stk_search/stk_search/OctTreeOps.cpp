@@ -293,7 +293,31 @@ void oct_key_split(
 
 //----------------------------------------------------------------------
 
-void partition( 
+
+void calculate_key_using_offset(unsigned depth, unsigned offset, stk::OctTreeKey &kUpper)
+{
+    stk::OctTreeKey localKey;
+    for (int depthLevel = depth-1; depthLevel>=0; depthLevel--)
+    {
+        unsigned max = oct_tree_size(depthLevel);
+        unsigned index = (offset-1)/max;
+        if ( index > 0 && offset > 0)
+        {
+            offset -= (max*index + 1);
+            unsigned bitToSetIndexOn = depth-depthLevel;
+            index++;
+            localKey.set_index(bitToSetIndexOn, index);
+        }
+        else if ( offset > 0 )
+        {
+            offset--;
+            localKey.set_index(depth-depthLevel, 1);
+        }
+    }
+    kUpper = localKey;
+}
+
+void partition(
   const stk::OctTreeKey & k_first ,
   const unsigned     i_end ,
   const stk::OctTreeKey & key ,
@@ -305,42 +329,49 @@ void partition(
   double w_upper ,
   stk::OctTreeKey & k_upper )
 {
+  if(i_end == 1 || i_end == oct_tree_offset(depth, k_first))
+  {
+      k_upper = k_first;
+      return;
+  }
+
   const unsigned ord_node = oct_tree_offset( depth , key );
   const float * const w_node = weights + ord_node * 2 ;
 
-  // Check apparent pre-condition for this function, try work-around if failure. --pgx
-  bool k_first_i_end_precondition_violated = (oct_tree_offset(depth, k_first) >= i_end);
-  if (k_first_i_end_precondition_violated)
-  {
-    k_upper = k_first;
-  }
-  else if ( key.depth() == depth )
-  {
-    k_upper = key;
-  }
-  else
-  {
-    const unsigned d1 = key.depth() + 1 ;
+  const unsigned d1 = key.depth() + 1 ;
 
-    // Add weights from nested nodes and their descendents
-    // Try to achieve the ratio.
+  // Add weights from nested nodes and their descendants
+  // Try to achieve the ratio.
+  const unsigned i_first = k_first.index( d1 );
 
-    const unsigned i_first = k_first.index( d1 );
-
-    unsigned i = ( i_first ) ? i_first : 1 ;
-    unsigned j = 8 ;
-    {
-      stk::OctTreeKey k_upp = key ;
-      k_upp.set_index( d1 , j );
-      while (i_end <= oct_tree_offset( depth , k_upp )) {
-        k_upp.set_index( d1 , --j );
-      }
+  unsigned i = ( i_first ) ? i_first : 1 ;
+  unsigned j = 8 ;
+  {
+    stk::OctTreeKey k_upp = key ;
+    k_upp.set_index( d1 , j );
+    while ( i_end <= oct_tree_offset( depth , k_upp ) ) {
+      k_upp.set_index( d1 , --j );
     }
+  }
 
-    w_lower += w_node[0] ;
-    w_upper += w_node[0] ;
+  if ( key != stk::OctTreeKey())
+  {
+      w_lower += w_node[0] ;
+      w_upper += w_node[0] ;
+  }
 
   // At the maximum depth?
+  if ( key.depth() == depth ) {
+     k_upper = key;
+     unsigned keyOffset = oct_tree_offset(key.depth(), key);
+     bool notAtLastLeaf = (keyOffset+1) != oct_tree_size(depth);
+     if(k_first == key && notAtLastLeaf)
+     {
+         unsigned keyOffsetIncrementedByOne = oct_tree_offset(key.depth(), key) + 1;
+         calculate_key_using_offset(key.depth(), keyOffsetIncrementedByOne, k_upper);
+     }
+  }
+  else {
     while ( i < j ) {
       stk::OctTreeKey ki = key ; ki.set_index( d1 , i );
       stk::OctTreeKey kj = key ; kj.set_index( d1 , j );
@@ -355,7 +386,6 @@ void partition(
 
         // Choose between ( w_lower += vali ) vs. ( w_upper += valj )
         // Knowing that the skipped value will be revisited.
-
         if ( ( w_lower + vali ) < target_ratio * ( w_upper + valj ) ) {
           // Add to 'w_lower' and will still need more later
           w_lower += vali ;
@@ -385,8 +415,13 @@ void partition(
 
     double diff = 0.0 ;
 
-    if ( vali <= 0.0 ) {
-      diff = 0.0 ; // Nothing can be done.  Give 'i' to the upper range
+    if ( vali <= 0.0 )
+    {
+        unsigned leftSide = oct_tree_offset(depth, k_first);
+        unsigned rightSide = i_end;
+        unsigned middle = (rightSide+leftSide)/2;
+        calculate_key_using_offset(depth, middle, k_upper);
+        return;
     }
     else if ( w_lower < w_upper * target_ratio ) {
       // Try adding to w_lower
@@ -398,16 +433,8 @@ void partition(
       diff = static_cast<double>(w_lower) / static_cast<double>(w_upper + vali) - target_ratio ;
     }
 
-    if ( -tolerance < diff && diff < tolerance ) {
+    if ( - tolerance < diff && diff < tolerance ) {
       oct_key_split( key , i , k_upper );
-
-      // If needed, enforce apparent post-condition. --pgx
-      bool k_first_k_upper_postcondition_violated = (k_upper < k_first);
-      if (k_first_k_upper_postcondition_violated)
-      {
-        k_upper = k_first;
-      }
-
     }
     else {
       partition( nested_k_first , i_end , ki ,

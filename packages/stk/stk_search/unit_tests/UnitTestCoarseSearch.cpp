@@ -509,38 +509,38 @@ STKUNIT_UNIT_TEST(stk_search_not_boost, checkCuts)
     MPI_Comm_rank(comm, &proc_id);
     MPI_Comm_size(comm, &num_procs);
 
-    double offset=0.1;
-    double size=1.0;
-    double boxSize=0.1;
-    ASSERT_TRUE(offset<=size-offset);
-    double min=offset;
-    double max=boxSize+offset+1;
+    double offsetFromEdgeOfProcessorBoundary=0.1;
+    double sizeOfDomainPerProcessor=1.0;
+    double boxSize=0.8;
+    ASSERT_TRUE(offsetFromEdgeOfProcessorBoundary<=sizeOfDomainPerProcessor-offsetFromEdgeOfProcessorBoundary);
+    double min=offsetFromEdgeOfProcessorBoundary;
+    double max=boxSize+offsetFromEdgeOfProcessorBoundary+1;
 
-    if(num_procs == 4)
+    if(num_procs >= 4)
     {
         double data[6];
-        data[0] = offset;
-        data[1] = offset;
-        data[2] = offset;
-        data[3] = boxSize+offset;
-        data[4] = boxSize+offset;
-        data[5] = boxSize+offset;
+        data[0] = offsetFromEdgeOfProcessorBoundary;
+        data[1] = offsetFromEdgeOfProcessorBoundary;
+        data[2] = offsetFromEdgeOfProcessorBoundary;
+        data[3] = boxSize+offsetFromEdgeOfProcessorBoundary;
+        data[4] = boxSize+offsetFromEdgeOfProcessorBoundary;
+        data[5] = boxSize+offsetFromEdgeOfProcessorBoundary;
         if (proc_id == 1)
         {
-            data[0] += 1.0;
-            data[3] += 1.0;
-        }
-        else if (proc_id == 2)
-        {
-            data[1] += 1.0;
-            data[4] += 1.0;
+            data[0] += sizeOfDomainPerProcessor;
+            data[3] += sizeOfDomainPerProcessor;
         }
         else if (proc_id == 3)
         {
-            data[0] += 1.0;
-            data[1] += 1.0;
-            data[3] += 1.0;
-            data[4] += 1.0;
+            data[1] += sizeOfDomainPerProcessor;
+            data[4] += sizeOfDomainPerProcessor;
+        }
+        else if (proc_id == 2)
+        {
+            data[0] += sizeOfDomainPerProcessor;
+            data[1] += sizeOfDomainPerProcessor;
+            data[3] += sizeOfDomainPerProcessor;
+            data[4] += sizeOfDomainPerProcessor;
         }
 
         std::stringstream os;
@@ -550,7 +550,10 @@ STKUNIT_UNIT_TEST(stk_search_not_boost, checkCuts)
 
         BoxVector local_domain;
         Ident domainBox(proc_id, proc_id);
-        local_domain.push_back(Box(data, domainBox));
+        if ( proc_id < 4 )
+        {
+            local_domain.push_back(Box(data, domainBox));
+        }
 
         BoxVector local_range;
         local_range = local_domain;
@@ -572,7 +575,7 @@ STKUNIT_UNIT_TEST(stk_search_not_boost, checkCuts)
         EXPECT_NEAR(float(min), global_box[2], tolerance);
         EXPECT_NEAR(float(max), global_box[3], tolerance);
         EXPECT_NEAR(float(max), global_box[4], tolerance);
-        EXPECT_NEAR(float(boxSize+offset), global_box[5], tolerance);
+        EXPECT_NEAR(float(boxSize+offsetFromEdgeOfProcessorBoundary), global_box[5], tolerance);
 
         typedef std::map< stk::OctTreeKey, std::pair< std::list< Box >, std::list< Box > > > SearchTree ;
 
@@ -585,28 +588,54 @@ STKUNIT_UNIT_TEST(stk_search_not_boost, checkCuts)
                 searchTree);
 
         const int tree_depth = 4;
-        for (int procCounter = 0; procCounter < 4; procCounter++)
+        // unsigned maxOffsetForTreeDepthThree = stk::oct_tree_size(tree_depth-1);
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        for (int procCounter = 0; procCounter < num_procs; procCounter++)
         {
             if(proc_id == procCounter)
             {
-                for(SearchTree::const_iterator i = searchTree.begin();
-                        i != searchTree.end(); ++i)
+                std::cerr << "\t Nate:=====================================\n";
+                std::cerr << "\t Nate: proc_id = " << procCounter << std::endl;
+                for(typename SearchTree::const_iterator i = searchTree.begin(); i != searchTree.end(); ++i)
                 {
                     const stk::OctTreeKey & key = (*i).first;
 
+                    // EXPECT_EQ(0u, (stk::oct_tree_offset(tree_depth, key) - 1) % maxOffsetForTreeDepthThree);
+
                     const std::list<Box> & domain = (*i).second.first;
                     const std::list<Box> & range = (*i).second.second;
-
-                    std::cerr << "\t depth = " << key.depth() << std::endl;
-                    std::cerr << "\t ordinal = " << oct_tree_offset(tree_depth, key) << std::endl;
-                    std::cerr << "\t num_d = " << domain.size() << std::endl;
-                    std::cerr << "\t num_r = " << range.size() << std::endl;
+                    std::cerr << "\t Nate: depth = " << key.depth() << std::endl;
+                    std::cerr << "\t Nate: ordinal = " << stk::oct_tree_offset(tree_depth, key) << std::endl;
+                    std::cerr << "\t Nate: num_d = " << domain.size() << std::endl;
+                    std::cerr << "\t Nate: num_r = " << range.size() << std::endl;
+                    std::cerr << "\t Nate: key = " << key << std::endl;
                 }
+                std::cerr << "\t Nate:=====================================\n";
             }
             MPI_Barrier(MPI_COMM_WORLD);
         }
         file.close();
         unlink(os.str().c_str()); // comment this out to view Cubit files for bounding boxes
+
+        const double tol = 0.001 ;
+
+        std::vector< stk::OctTreeKey > cuts ;
+
+        stk::search::oct_tree_partition( comm , searchTree , tol , cuts );
+
+        if ( proc_id == 0 )
+        {
+            std::cerr << "Nate: For proc size of " << num_procs << std::endl;
+            for (int i=0;i<num_procs;i++)
+            {
+              std::cerr << "Nate: cuts[" << i << "] = " << cuts[i] <<"\t with ordinal = " << stk::oct_tree_offset(tree_depth, cuts[i]) << std::endl;
+            }
+        }
+    }
+    else
+    {
+        std::cerr << "WARNING: Test not setup for anything other than 4 processors; ran with " << num_procs << "." << std::endl;
     }
 }
 
