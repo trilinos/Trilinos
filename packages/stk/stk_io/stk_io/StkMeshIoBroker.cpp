@@ -1114,15 +1114,6 @@ namespace stk {
       m_property_manager.erase(property_name);
     }
 
-    size_t StkMeshIoBroker::set_output_io_region(Teuchos::RCP<Ioss::Region> ioss_output_region)
-    {
-      m_output_files.clear();
-      Teuchos::RCP<OutputFile> output_file = Teuchos::rcp(new OutputFile(ioss_output_region, m_communicator,
-									 stk::io::WRITE_RESULTS, m_input_region.get()));
-      m_output_files.push_back(output_file);
-      return m_output_files.size()-1;
-    }
-
     stk::mesh::FieldBase const& StkMeshIoBroker::get_coordinate_field()
     {
       stk::mesh::FieldBase const* coord_field = meta_data().coordinate_field();
@@ -1739,7 +1730,9 @@ namespace stk {
       {
         m_mesh_defined = true;
 
-        bool sort_stk_parts = false; // used in stk_adapt/stk_percept
+	 // used in stk_adapt/stk_percept
+        bool sort_stk_parts = m_output_region->property_exists("sort_stk_parts");
+
         stk::io::define_output_db(*m_output_region, bulk_data, m_input_region, m_subset_selector.get(),
                                   sort_stk_parts, m_use_nodeset_for_part_nodes_fields);
 

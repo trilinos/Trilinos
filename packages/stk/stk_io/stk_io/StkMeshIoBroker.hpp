@@ -97,8 +97,6 @@ namespace stk {
         int write_defined_output_fields(const stk::mesh::BulkData& bulk_data);
         int process_output_request(double time, const stk::mesh::BulkData& bulk_data);
 
-        void set_output_io_region(Teuchos::RCP<Ioss::Region> ioss_output_region);
-
         void set_subset_selector(Teuchos::RCP<stk::mesh::Selector> my_selector);
 
         bool use_nodeset_for_part_nodes_fields() const
@@ -204,18 +202,6 @@ namespace stk {
 	 * private)
 	 */
         void remove_property_if_exists(const std::string &property_name);
-
-        /**
-         * Set the output Ioss::Region directly instead of letting it
-         * be created by StkMeshIoBroker during the
-         * create_output_mesh() call.  
-	 *
-	 * [2013-11-13: GDS: Currently used in
-	 * percept/stk_percept/stk_percept/PerceptMesh.cpp:
-	 * The use-case seems to be outputting a set of parallel files from
-	 * a serial application]
-         */
-        size_t set_output_io_region(Teuchos::RCP<Ioss::Region> ioss_output_region);
 
         /**
          * Set the input Ioss::Region directly instead of letting it be
