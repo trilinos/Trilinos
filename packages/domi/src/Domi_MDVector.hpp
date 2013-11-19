@@ -48,6 +48,7 @@
 
 // Teuchos includes
 #include "Teuchos_Describable.hpp"
+#include <Teuchos_ScalarTraitsDecl.hpp>
 
 namespace Domi
 {
@@ -314,26 +315,26 @@ public:
   /** \brief Compute the dot product of this MDVector and MDVector a
    */
   Scalar
-  dot(const MDVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & a) const;
+  dot(const MDVector< Scalar, LocalOrd, GlobalOrd, Node > & a) const;
 
   /** \brief Compute the 1-norm of this MDVector
    */
-  Teuchos::ScalarTraits< Scalar >::magnitudeType norm1() const;
+  typename Teuchos::ScalarTraits< Scalar >::magnitudeType norm1() const;
 
   /** \brief Compute the 2-norm of this MDVector
    */
-  Teuchos::ScalarTraits< Scalar >::magnitudeType norm2() const;
+  typename Teuchos::ScalarTraits< Scalar >::magnitudeType norm2() const;
 
   /** \brief Compute the infinity-norm of this MDVector
    */
-  Teuchos::ScalarTraits< Scalar >::magnitudeType normInf() const;
+  typename Teuchos::ScalarTraits< Scalar >::magnitudeType normInf() const;
 
   /** \brief Compute the weighted norm of this 
    */
-  Teuchos::ScalarTraits< Scalar >::magnitudeType
+  typename Teuchos::ScalarTraits< Scalar >::magnitudeType
   normWeighted(const MDVector< Scalar,
-                               LocalOrdinal,
-                               GlobalOrdinal,
+                               LocalOrd,
+                               GlobalOrd,
                                Node > & weights) const;
 
   /** \brief Compute the mean (average) value of this MDVector
@@ -418,7 +419,7 @@ private:
 
   // The MDMap that describes the domain decomposition of this
   // MDVector
-  const RCP< const MDMap< LocalOrd, GlobalOrd, Node > > _mdMap;
+  const Teuchos::RCP< const MDMap< LocalOrd, GlobalOrd, Node > > _mdMap;
 
   // The MDArrayRCP that stores the data of this MDVector
   const MDArrayRCP< Scalar > _mdArray;
@@ -441,7 +442,7 @@ MDVector(const Teuchos::RCP< const MDMap< LocalOrd, GlobalOrd, Node > > & mdMap,
   _mdMap(mdMap),
   _mdArray()
 {
-  typedef Teuchos::ArrayView< Scalar >::size_type size_type;
+  typedef typename Teuchos::ArrayView< Scalar >::size_type size_type;
   setObjectLabel("Domi::MDVector");
   // Obtain the array of dimensions
   int numDims = _mdMap->getNumDims();
@@ -510,7 +511,7 @@ MDVector(const MDVector< Scalar, LocalOrd, GlobalOrd, Node > & parent,
   _mdArray()
 {
   setObjectLabel("Domi::MDVector");
-  _mdMap = Teuchos::rcp(new MDMap(*(parent->getMDMap()),
+  _mdMap = Teuchos::rcp(new MDMap< LocalOrd, GlobalOrd, Node >(*(parent->getMDMap()),
                                   axis,
                                   index));
   MDArrayView< Scalar > view = parent->getDataNonConst()();
@@ -549,7 +550,7 @@ template< class Scalar,
           class GlobalOrd,
           class Node >
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
-~MDVector();
+~MDVector() {}
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -676,7 +677,7 @@ template< class Scalar,
           class Node >
 GlobalOrd
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
-getGlobalDim(int axis, bool withBndryPad=false) const
+getGlobalDim(int axis, bool withBndryPad) const
 {
   return _mdMap->getGlobalDim(axis, withBndryPad);
 }
@@ -689,7 +690,7 @@ template< class Scalar,
           class Node >
 Slice
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
-getGlobalBounds(int axis, bool withBndryPad=false) const
+getGlobalBounds(int axis, bool withBndryPad) const
 {
   return _mdMap->getGlobalBounds(axis, withBndryPad);
 }
@@ -702,7 +703,7 @@ template< class Scalar,
           class Node >
 Slice
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
-getGlobalRankBounds(int axis, bool withBndryPad=false) const
+getGlobalRankBounds(int axis, bool withBndryPad) const
 {
   return _mdMap->getGlobalRankBounds(axis, withBndryPad);
 }
@@ -715,7 +716,7 @@ template< class Scalar,
           class Node >
 LocalOrd
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
-getLocalDim(int axis, bool withCommPad=false) const
+getLocalDim(int axis, bool withCommPad) const
 {
   return _mdMap->getLocalDim(axis, withCommPad);
 }
@@ -728,7 +729,7 @@ template< class Scalar,
           class Node >
 Slice
 MDVector< Scalar, LocalOrd, GlobalOrd, Node >::
-getLocalBounds(int axis, bool withCommPad=false) const
+getLocalBounds(int axis, bool withCommPad) const
 {
   return _mdMap->getLocalBounds(axis, withCommPad);
 }
