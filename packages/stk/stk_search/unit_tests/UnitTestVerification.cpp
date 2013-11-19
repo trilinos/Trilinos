@@ -28,7 +28,7 @@ My3dSphereBoundingBox generate3dSphereBoundingBox(const double centerX,
     return My3dSphereBoundingBox(center, radius, id);
 }
 
-void runTwoSpheresTest(const double distanceBetweenSphereCenters, const double radius, std::vector< std::pair<MyBoxId, MyBoxId> > &boxIdPairResults)
+void runTwoSpheresTest(stk::search::SearchMethod searchMethod, const double distanceBetweenSphereCenters, const double radius, std::vector< std::pair<MyBoxId, MyBoxId> > &boxIdPairResults)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
     int procId = -1;
@@ -40,49 +40,114 @@ void runTwoSpheresTest(const double distanceBetweenSphereCenters, const double r
     std::vector<My3dSphereBoundingBox> boxVector2;
     boxVector2.push_back(generate3dSphereBoundingBox(distanceBetweenSphereCenters, 0, 0, radius, 2, procId));
 
-    stk::search::coarse_search(boxVector1, boxVector2, stk::search::BOOST_RTREE, comm, boxIdPairResults);
+    stk::search::coarse_search(boxVector1, boxVector2, searchMethod, comm, boxIdPairResults);
 }
 
 const double radiusOfOneHalf = 0.5;
 
-TEST(Verification, OverlappingSpheres)
+int numProcessors()
 {
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int numProcs = 1;
+    MPI_Comm_size(comm, &numProcs);
+    return numProcs;
+}
+
+TEST(Verification, OverlappingSpheres_BOOST_RTREE)
+{
+    if (numProcessors() > 1) {
+        return;
+    }
+
     double distanceBetweenSphereCenters = 0.5;
     std::vector< std::pair<MyBoxId, MyBoxId> > boxIdPairResults;
-    runTwoSpheresTest(distanceBetweenSphereCenters, radiusOfOneHalf, boxIdPairResults);
+    runTwoSpheresTest(stk::search::BOOST_RTREE, distanceBetweenSphereCenters, radiusOfOneHalf, boxIdPairResults);
 
     ASSERT_EQ(1u, boxIdPairResults.size());
 }
 
-TEST(Verification, NonOverlappingSpheres)
+TEST(Verification, OverlappingSpheres_OCTREE)
+{
+    if (numProcessors() > 1) {
+        return;
+    }
+
+    double distanceBetweenSphereCenters = 0.5;
+    std::vector< std::pair<MyBoxId, MyBoxId> > boxIdPairResults;
+    runTwoSpheresTest(stk::search::OCTREE, distanceBetweenSphereCenters, radiusOfOneHalf, boxIdPairResults);
+
+    ASSERT_EQ(1u, boxIdPairResults.size());
+}
+
+TEST(Verification, NonOverlappingSpheres_BOOST_RTREE)
 {
     double distanceBetweenSphereCenters = 2.0;
     std::vector< std::pair<MyBoxId, MyBoxId> > boxIdPairResults;
-    runTwoSpheresTest(distanceBetweenSphereCenters, radiusOfOneHalf, boxIdPairResults);
+    runTwoSpheresTest(stk::search::BOOST_RTREE, distanceBetweenSphereCenters, radiusOfOneHalf, boxIdPairResults);
 
     ASSERT_EQ(0u, boxIdPairResults.size());
 }
 
-TEST(Verification, JustEdgeOverlappingSpheres)
+TEST(Verification, NonOverlappingSpheres_OCTREE)
 {
+    double distanceBetweenSphereCenters = 2.0;
+    std::vector< std::pair<MyBoxId, MyBoxId> > boxIdPairResults;
+    runTwoSpheresTest(stk::search::OCTREE, distanceBetweenSphereCenters, radiusOfOneHalf, boxIdPairResults);
+
+    ASSERT_EQ(0u, boxIdPairResults.size());
+}
+
+TEST(Verification, JustEdgeOverlappingSpheres_BOOST_RTREE)
+{
+    if (numProcessors() > 1) {
+        return;
+    }
+
     double distanceBetweenSphereCenters = 0.999999999;
     std::vector< std::pair<MyBoxId, MyBoxId> > boxIdPairResults;
-    runTwoSpheresTest(distanceBetweenSphereCenters, radiusOfOneHalf, boxIdPairResults);
+    runTwoSpheresTest(stk::search::BOOST_RTREE, distanceBetweenSphereCenters, radiusOfOneHalf, boxIdPairResults);
 
     ASSERT_EQ(1u, boxIdPairResults.size());
 }
 
-TEST(Verification, NotQuiteEdgeOverlappingSpheres)
+TEST(Verification, JustEdgeOverlappingSpheres_OCTREE)
+{
+    if (numProcessors() > 1) {
+        return;
+    }
+
+    double distanceBetweenSphereCenters = 0.999999999;
+    std::vector< std::pair<MyBoxId, MyBoxId> > boxIdPairResults;
+    runTwoSpheresTest(stk::search::OCTREE, distanceBetweenSphereCenters, radiusOfOneHalf, boxIdPairResults);
+
+    ASSERT_EQ(1u, boxIdPairResults.size());
+}
+
+TEST(Verification, NotQuiteEdgeOverlappingSpheres_BOOST_RTREE)
 {
     double distanceBetweenSphereCenters = 1.0000000001;
     std::vector< std::pair<MyBoxId, MyBoxId> > boxIdPairResults;
-    runTwoSpheresTest(distanceBetweenSphereCenters, radiusOfOneHalf, boxIdPairResults);
+    runTwoSpheresTest(stk::search::BOOST_RTREE, distanceBetweenSphereCenters, radiusOfOneHalf, boxIdPairResults);
+
+    ASSERT_EQ(0u, boxIdPairResults.size());
+}
+
+TEST(Verification, NotQuiteEdgeOverlappingSpheres_OCTREE)
+{
+    double distanceBetweenSphereCenters = 1.0000000001;
+    std::vector< std::pair<MyBoxId, MyBoxId> > boxIdPairResults;
+    runTwoSpheresTest(stk::search::OCTREE, distanceBetweenSphereCenters, radiusOfOneHalf, boxIdPairResults);
 
     ASSERT_EQ(0u, boxIdPairResults.size());
 }
 
 void runSphereOverlappingEightSurroundingSpheres(const double radius, const unsigned numExpectedResults)
 {
+    if (numProcessors() > 1)
+    {
+        return;
+    }
+
     MPI_Comm comm = MPI_COMM_WORLD;
     int procId = -1;
     MPI_Comm_rank(comm, &procId);
