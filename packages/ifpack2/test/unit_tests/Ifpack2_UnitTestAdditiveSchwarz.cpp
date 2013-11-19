@@ -217,17 +217,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test1, Scalar, LocalOr
   Teuchos::ArrayRCP<Scalar> zdata = z.getDataNonConst(0);
   int mypid = rowmap->getComm()->getRank();
   if ( mypid == 0 ) {
-    for (size_t i=0; i<overlapLevel; ++i)
+    for (int i=0; i<overlapLevel; ++i)
       zdata[num_rows_per_proc-i-1] += 0.5;
   }
   else if (mypid == rowmap->getComm()->getSize()-1) {
-    for (size_t i=0; i<overlapLevel; ++i)
+    for (GlobalOrdinal i=0; i<overlapLevel; ++i)
       zdata[i] += 0.5;
   }
   else {
-    for (size_t i=0; i<overlapLevel; ++i)
+    for (GlobalOrdinal i=0; i<overlapLevel; ++i)
       zdata[i] += 0.5;
-    for (size_t i=0; i<overlapLevel; ++i)
+    for (GlobalOrdinal i=0; i<overlapLevel; ++i)
       zdata[num_rows_per_proc-i-1] += 0.5;
   }
   zdata = Teuchos::null;
@@ -352,8 +352,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, TestGIDs, Scalar, Loca
 
       Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,1), y(rowmap,1);
       Teuchos::ArrayRCP<Scalar> xData = x.getDataNonConst(0);
-      for (size_t i=0; i<xData.size(); ++i)
-        xData[i] = rowmap->getGlobalElement(i);
+      for (GlobalOrdinal j=0; j<xData.size(); ++j)
+        xData[j] = rowmap->getGlobalElement(j);
       xData = Teuchos::null;
       prec.apply(x, y);
 
