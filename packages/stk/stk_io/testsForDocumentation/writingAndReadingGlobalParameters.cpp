@@ -72,7 +72,7 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalParameters)
         stkIo.create_input_mesh();
         stkIo.populate_bulk_data();
 
-        stkIo.process_restart_input(0.0);
+        stkIo.read_defined_input_fields(0.0);
 
 	size_t param_count = 0;
 	stk::util::ParameterMapType::const_iterator i = parameters.begin();

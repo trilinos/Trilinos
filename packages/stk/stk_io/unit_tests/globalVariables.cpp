@@ -38,7 +38,7 @@ void testGlobalVarOnFile(const std::string &outputFileName, const int stepNumber
     stkIo.open_mesh_database(outputFileName, stk::io::READ_MESH);
     stkIo.create_input_mesh();
     stkIo.populate_bulk_data();
-    stkIo.process_restart_input(stepNumber);
+    stkIo.read_defined_input_fields(stepNumber);
     std::vector<std::string> globalVarNames;
     stkIo.get_global_variable_names(globalVarNames);
     ASSERT_EQ(goldGlobalVarName.size(), globalVarNames.size());
@@ -362,7 +362,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleRestart)
         stkIo.open_mesh_database(restartFileName, stk::io::READ_RESTART);
         stkIo.create_input_mesh();
         stkIo.populate_bulk_data();
-        stkIo.process_restart_input(time);
+        stkIo.read_defined_input_fields(time);
         std::vector<std::string> globalVarNames;
         stkIo.get_global_variable_names(globalVarNames);
         ASSERT_EQ(1u, globalVarNames.size());

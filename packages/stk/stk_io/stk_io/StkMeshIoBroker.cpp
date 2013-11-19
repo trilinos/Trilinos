@@ -36,6 +36,16 @@
 
 namespace {
 
+    std::string pickFieldName(stk::mesh::FieldBase &field, const std::string &db_name)
+    {
+        std::string dbName(db_name);
+        if ( db_name.empty() )
+        {
+            dbName = field.name();
+        }
+        return dbName;
+    }
+
   std::pair<size_t, Ioss::Field::BasicType> get_io_parameter_size_and_type(const stk::util::ParameterType::Type type,
 									   const boost::any &value)
   {
@@ -356,24 +366,25 @@ namespace {
     return attr->databaseName;
   }
 
-  int ioss_restore_restart_fields(stk::mesh::BulkData &bulk,
-				  const stk::mesh::Part &part,
-				  const stk::mesh::EntityRank part_type,
-				  Ioss::GroupingEntity *io_entity)
+  int ioss_restore_input_fields(std::vector<stk::io::FieldAndName> &fields,
+				stk::mesh::BulkData &bulk,
+				const stk::mesh::Part &part,
+				const stk::mesh::EntityRank part_type,
+				Ioss::GroupingEntity *io_entity,
+				stk::io::DatabasePurpose purpose)
   {
     int missing_fields = 0;
-
-    const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(part);
-    const std::vector<stk::mesh::FieldBase*> &fields = meta.get_fields();
 
     assert(io_entity != NULL);
     std::vector<stk::mesh::Entity> entity_list;
     bool entity_list_filled=false;
 
-    std::vector<stk::mesh::FieldBase *>::const_iterator I = fields.begin();
+    std::vector<stk::io::FieldAndName>::const_iterator I = fields.begin();
     while (I != fields.end()) {
-      const stk::mesh::FieldBase *f = *I; ++I;
-      if (is_restart_field_on_part(f, part_type, part)) {
+      const std::string db_name = (*I).m_db_name;
+      const stk::mesh::FieldBase *f = (*I).m_field; ++I;
+
+      if (stk::io::is_field_on_part(f,part_type,part)) {
 	// Only add TRANSIENT Fields -- check role; if not present assume transient...
 	const Ioss::Field::RoleType *role = stk::io::get_field_role(*f);
 
@@ -382,10 +393,9 @@ namespace {
 	  std::pair<std::string, Ioss::Field::BasicType> field_type;
 	  stk::io::get_io_field_type(f, res, &field_type);
 	  if (field_type.second != Ioss::Field::INVALID) {
-	    const std::string& name = get_restart_field_name(f);
 
 	    // See if field with that name exists on io_entity...
-	    if (io_entity->field_exists(name)) {
+	    if (io_entity->field_exists(db_name)) {
 	      // Restore data...
 	      if (!entity_list_filled) {
 		stk::io::get_entity_list(io_entity, part_type, bulk, entity_list);
@@ -396,14 +406,14 @@ namespace {
 
 	      // If the multi-state field is not "set" at the newest state, then the user has
 	      // registered the field at a specific state and only that state should be input.
-	      if(state_count == 1 || state != stk::mesh::StateNew) {
-	          stk::io::field_data_from_ioss(bulk, f, entity_list, io_entity, name);
+	      if(purpose == stk::io::READ_MESH || state_count == 1 || state != stk::mesh::StateNew) {
+	          stk::io::field_data_from_ioss(bulk, f, entity_list, io_entity, db_name);
 	      } else {
-	          stk::io::multistate_field_data_from_ioss(bulk, f, entity_list, io_entity, name, state_count);
+	          stk::io::multistate_field_data_from_ioss(bulk, f, entity_list, io_entity, db_name, state_count);
 	      }
 	    } else {
-	      std::cerr  << "ERROR: Could not find restart input field '"
-			 << name << "' on '" << io_entity->name() << "'.\n";
+	      std::cerr  << "ERROR: Could not find input field '"
+			 << db_name << "' on '" << io_entity->name() << "'.\n";
 
 	      missing_fields++;
 	    }
@@ -1045,19 +1055,8 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
     {
         const stk::mesh::FieldBase *f = namedFields[i].m_field;
         std::string field_name = namedFields[i].m_db_name;
-        size_t state_count = f->number_of_states();
-        stk::mesh::FieldState state = f->state();
-
-        // If the multi-state field is not "set" at the newest state, then the user has
-        // registered the field at a specific state and only that state should be output.
-        if(state_count == 1 || state != stk::mesh::StateNew)
-        {
-            stk::io::field_data_to_ioss(bulk, f, entities, io_entity, field_name, filter_role);
-        }
-        else
-        {
-            stk::io::multistate_field_data_to_ioss(bulk, f, entities, io_entity, field_name, filter_role, state_count);
-        }
+	// NOTE: Multi-state issues are currently handled at field_add time
+	stk::io::field_data_to_ioss(bulk, f, entities, io_entity, field_name, filter_role);
     }
 }
 
@@ -1406,33 +1405,23 @@ namespace stk {
       bulk_data().modification_end();
     }
 
-    std::string pickFieldName(stk::mesh::FieldBase &field, const std::string &db_name)
+    void StkMeshIoBroker::add_input_field(stk::mesh::FieldBase &field, const std::string &db_name)
     {
-        std::string dbName(db_name);
-        if ( db_name.empty() )
-        {
-            dbName = field.name();
-        }
-        return dbName;
-    }
-
-    // This is for restart input...
-    void StkMeshIoBroker::add_restart_field(stk::mesh::FieldBase &field, const std::string &db_name)
-    {
-      stk::io::RestartFieldAttribute *my_field_attribute = new stk::io::RestartFieldAttribute(db_name.empty() ? field.name() : db_name);
-      stk::mesh::MetaData &m = mesh::MetaData::get(field);
-      const stk::io::RestartFieldAttribute *check = m.declare_attribute_with_delete(field, my_field_attribute);
-      if ( check != my_field_attribute ) {
-	if (check->databaseName != my_field_attribute->databaseName) {
-	  std::ostringstream msg ;
-	  msg << "ERROR in MeshReadWriteUtils::add_restart_field:"
-	      << " Conflicting restart file names for restart field '"
-	      << field.name() << "'. Name was previously specified as '"
-	      << check->databaseName << "', but is now being specified as '"
-	      << my_field_attribute->databaseName << "'.";
-	  throw std::runtime_error( msg.str() );
+      std::string name = pickFieldName(field, db_name);
+      
+      bool fieldAlreadyExists=false;
+      for (size_t i=0; i <m_input_fields.size(); i++) {
+	if (&field == m_input_fields[i].m_field) {
+	  m_input_fields[i].m_db_name = name;
+	  fieldAlreadyExists = true;
+	  break;
 	}
-	delete my_field_attribute;
+      }
+
+      if (!fieldAlreadyExists) {
+	stk::io::FieldAndName inputField(&field, name);
+	m_input_fields.push_back(inputField);
+	stk::io::set_field_role(field, Ioss::Field::TRANSIENT);
       }
     }
 
@@ -1447,8 +1436,7 @@ namespace stk {
 
     void StkMeshIoBroker::add_field(size_t output_file_index, stk::mesh::FieldBase &field)
     {
-        validate_output_file_index(output_file_index);
-        m_output_files[output_file_index]->add_field(field, field.name());
+        add_field(output_file_index, field, field.name());
     }
 
     void StkMeshIoBroker::add_field(size_t output_file_index, stk::mesh::FieldBase &field, const std::string &alternate_name)
@@ -1490,85 +1478,6 @@ namespace stk {
         internal_read_global(m_input_region, globalVarName, globalVar, Ioss::Field::REAL);
     }
 
-    namespace {
-      // ========================================================================
-      // Transfer transient field data from mesh file for io_entity to
-      // the corresponding stk_mesh entities If there is a stk_mesh
-      // field with the same name as the database field.
-      // Assumes that mesh is positioned at the correct state for reading.
-      void internal_process_input_request(Ioss::GroupingEntity *io_entity,
-                                          stk::mesh::EntityRank entity_rank,
-                                          stk::mesh::BulkData &bulk)
-      {
-
-        assert(io_entity != NULL);
-        std::vector<stk::mesh::Entity> entity_list;
-        stk::io::get_entity_list(io_entity, entity_rank, bulk, entity_list);
-
-        const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
-
-        Ioss::NameList names;
-        io_entity->field_describe(Ioss::Field::TRANSIENT, &names);
-        for (Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
-          stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase>(*I);
-          if (field) {
-            stk::io::field_data_from_ioss(bulk, field, entity_list, io_entity, *I);
-          }
-        }
-      }
-
-      void input_nodeblock_fields(Ioss::Region &region, stk::mesh::BulkData &bulk)
-      {
-        const Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();
-        assert(node_blocks.size() == 1);
-
-        Ioss::NodeBlock *nb = node_blocks[0];
-        internal_process_input_request(nb, stk::mesh::MetaData::NODE_RANK, bulk);
-      }
-
-      void input_elementblock_fields(Ioss::Region &region, stk::mesh::BulkData &bulk)
-      {
-        const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
-        for(size_t i=0; i < elem_blocks.size(); i++) {
-          if (stk::io::include_entity(elem_blocks[i])) {
-            internal_process_input_request(elem_blocks[i], stk::mesh::MetaData::ELEMENT_RANK, bulk);
-          }
-        }
-      }
-
-      void input_nodeset_fields(Ioss::Region &region, stk::mesh::BulkData &bulk)
-      {
-        const Ioss::NodeSetContainer& nodesets = region.get_nodesets();
-        for(size_t i=0; i < nodesets.size(); i++) {
-          if (stk::io::include_entity(nodesets[i])) {
-            internal_process_input_request(nodesets[i], stk::mesh::MetaData::NODE_RANK, bulk);
-          }
-        }
-      }
-
-      void input_sideset_fields(Ioss::Region &region, stk::mesh::BulkData &bulk)
-      {
-        const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
-        if (meta.spatial_dimension() <= meta.side_rank())
-          return;
-
-        const Ioss::SideSetContainer& side_sets = region.get_sidesets();
-        for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
-            it != side_sets.end(); ++it) {
-          Ioss::SideSet *entity = *it;
-          if (stk::io::include_entity(entity)) {
-            const Ioss::SideBlockContainer& blocks = entity->get_side_blocks();
-            for(size_t i=0; i < blocks.size(); i++) {
-              if (stk::io::include_entity(blocks[i])) {
-                internal_process_input_request(blocks[i], meta.side_rank(), bulk);
-              }
-            }
-          }
-        }
-      }
-    }
-    
-    // ========================================================================
     void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &name,
 				     const boost::any &value, stk::util::ParameterType::Type type)
     {
@@ -1626,48 +1535,30 @@ namespace stk {
     }
 
 
-
-    // ========================================================================
-    void StkMeshIoBroker::process_input_request(double time)
+    void StkMeshIoBroker::add_all_mesh_fields_as_input_fields()
     {
-      // Find the step on the database with time closest to the requested time...
-      Ioss::Region *region = m_input_region.get();
+      stk::io::define_input_fields(*m_input_region.get(),  meta_data());
 
-      int step = find_closest_step(region, time);
-      process_input_request(step);
+      // Iterate all fields and set them as input fields...
+      const stk::mesh::FieldVector &fields = meta_data().get_fields();
+      for (size_t i=0; i < fields.size(); i++) {
+	const Ioss::Field::RoleType* role = stk::io::get_field_role(*fields[i]);
+	if ( role && *role == Ioss::Field::TRANSIENT ) {
+	    add_input_field(*fields[i]); // input
+	  }
+      }
     }
 
-    void StkMeshIoBroker::process_input_request(int step)
-    {
-      if (step <= 0)
-        return;
-
-      ThrowErrorMsgIf (Teuchos::is_null(m_input_region),
-                       "There is no Input mesh/restart region associated with this Mesh Data.");
-
-      Ioss::Region *region = m_input_region.get();
-
-      // Pick which time index to read into solution field.
-      region->begin_state(step);
-
-      input_nodeblock_fields(*region, bulk_data());
-      input_elementblock_fields(*region, bulk_data());
-      input_nodeset_fields(*region, bulk_data());
-      input_sideset_fields(*region, bulk_data());
-
-      region->end_state(step);
-    }
-
-    double StkMeshIoBroker::process_restart_input(double time)
+    double StkMeshIoBroker::read_defined_input_fields(double time)
     {
       // Find the step on the database with time closest to the requested time...
       Ioss::Region *region = m_input_region.get();
       
       int step = find_closest_step(region, time);
-      return process_restart_input(step);
+      return read_defined_input_fields(step);
     }
 
-    double StkMeshIoBroker::process_restart_input(int step)
+    double StkMeshIoBroker::read_defined_input_fields(int step)
     {
       if (step <= 0)
         return 0;
@@ -1682,9 +1573,9 @@ namespace stk {
       region->begin_state(step);
 
       // Special processing for nodeblock (all nodes in model)...
-      missing_fields += ioss_restore_restart_fields(bulk_data(), meta_data().universal_part(),
-						    stk::mesh::MetaData::NODE_RANK,
-						    region->get_node_blocks()[0]);
+      missing_fields += ioss_restore_input_fields(m_input_fields, bulk_data(), meta_data().universal_part(),
+						  stk::mesh::MetaData::NODE_RANK,
+						  region->get_node_blocks()[0], m_db_purpose);
 
       // Now handle all non-nodeblock parts...
       const stk::mesh::PartVector &all_parts = meta_data().get_parts();
@@ -1693,13 +1584,14 @@ namespace stk {
 
         stk::mesh::Part * const part = *ip;
 
-        // Check whether this part should be output to database.
+        // Check whether this part is an input part...
         if (stk::io::is_part_io_part(*part)) {
           stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
           // Get Ioss::GroupingEntity corresponding to this part...
           Ioss::GroupingEntity *entity = region->get_entity(part->name());
           if (entity != NULL && entity->type() != Ioss::SIDESET) {
-            missing_fields += ioss_restore_restart_fields(bulk_data(), *part, rank, entity);
+            missing_fields += ioss_restore_input_fields(m_input_fields, bulk_data(), *part, rank, entity,
+							m_db_purpose);
           }
 
           // If rank is != NODE_RANK, then see if any fields are defined on the nodes of this part
@@ -1707,15 +1599,15 @@ namespace stk {
           // Get Ioss::GroupingEntity corresponding to the nodes on this part...
           if (rank != stk::mesh::MetaData::NODE_RANK) {
 	    Ioss::GroupingEntity *node_entity = NULL;
-	    if (use_nodeset_for_part_nodes_fields_input()) {
-	      std::string nodes_name = part->name() + "_nodes";
-	      node_entity = region->get_entity(nodes_name);
-	    } else {
+	    std::string nodes_name = part->name() + "_nodes";
+	    node_entity = region->get_entity(nodes_name);
+	    if (node_entity == NULL) {
 	      node_entity = region->get_entity("nodeblock_1");
 	    }
 	    if (node_entity != NULL) {
-	      missing_fields += ioss_restore_restart_fields(bulk_data(), *part,
-							    stk::mesh::MetaData::NODE_RANK, node_entity);
+	      missing_fields += ioss_restore_input_fields(m_input_fields, bulk_data(), *part,
+							  stk::mesh::MetaData::NODE_RANK, node_entity,
+							  m_db_purpose);
             }
           }
         }
@@ -1723,7 +1615,7 @@ namespace stk {
 
       if (missing_fields > 0) {
         std::ostringstream msg ;
-        msg << "ERROR: Restart read at step " << step << " could not find " << missing_fields << " fields.\n";
+        msg << "ERROR: Input processing at step " << step << " could not find " << missing_fields << " fields.\n";
         throw std::runtime_error( msg.str() );
       }
 
@@ -1885,12 +1777,13 @@ namespace stk {
 	      std::string field_name_with_suffix = stk::io::get_stated_field_name(alternate_name, state_identifier);
 	      stk::io::FieldAndName namedField(statedField, field_name_with_suffix);
 	      m_named_fields.push_back(namedField);
+	      stk::io::set_field_role(*statedField, Ioss::Field::TRANSIENT);
 	    }
 	  } else {
 	    stk::io::FieldAndName namedField(&field, alternate_name);
 	    m_named_fields.push_back(namedField);
+	    stk::io::set_field_role(field, Ioss::Field::TRANSIENT);
 	  }
-	  stk::io::set_field_role(field, Ioss::Field::TRANSIENT);
         }
     }
 
@@ -2021,8 +1914,8 @@ namespace stk {
 
         const stk::mesh::MetaData &meta_data = bulk_data.mesh_meta_data();
         // Special processing for nodeblock (all nodes in model)...
-        stk::io::ioss_add_fields(meta_data.universal_part(), stk::mesh::MetaData::NODE_RANK, region->get_node_blocks()[0],
-                m_named_fields);
+        stk::io::ioss_add_fields(meta_data.universal_part(), stk::mesh::MetaData::NODE_RANK,
+				 region->get_node_blocks()[0], m_named_fields);
 
         const stk::mesh::PartVector &all_parts = meta_data.get_parts();
         for(stk::mesh::PartVector::const_iterator ip = all_parts.begin(); ip != all_parts.end(); ++ip) {

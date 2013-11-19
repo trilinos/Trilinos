@@ -35,7 +35,7 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalVariables)
         stkIo.open_mesh_database(restartFileName, stk::io::READ_RESTART);
         stkIo.create_input_mesh();
         stkIo.populate_bulk_data();
-        stkIo.process_restart_input(currentTime);
+        stkIo.read_defined_input_fields(currentTime);
         std::vector<std::string> globalNamesOnFile;
         stkIo.get_global_variable_names(globalNamesOnFile);
 

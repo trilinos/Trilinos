@@ -360,11 +360,6 @@ namespace stk {
          * be called to read the bulk data from the mesh and generate the
          * corresponding stk mesh entities (nodes, elements, faces, ...)
          *
-         * Only the non-transient data stored in the mesh database will be
-         * accessed in this function.  To access any transient field data
-         * that may be on the mesh database, use the
-         * 'define_input_fields()' function.
-         *
          * The meta_data will not be committed by this function, so the
          * caller will need to call meta_data.commit() after the
          * function returns.
@@ -404,23 +399,42 @@ namespace stk {
         void populate_field_data();
 
         /**
-         * For all transient input fields defined either manually or via
-         * the define_input_fields() function, read the data at the
+         * For all transient fields on the mesh database:
+	 * - declare a stk_field of the same name,
+	 * - add the field as in input field for the mesh (call add_input_field()).
+	 *
+	 * Then, when read_defined_input_fields() is called, the data on the mesh will
+	 * be read and populate the corresponding stk field.
+	 *
+	 * NOTE: This should only be called if you want *ALL* transient
+	 * fields on the input mesh to be defined as stk fields and read.
+         */
+        void add_all_mesh_fields_as_input_fields();
+
+        /**
+         * For all transient input fields defined, read the data at the
          * specified database step 'step' (1-based) and populate the stk
          * data structures with those values.
          */
-        void process_input_request(int step);
+        double read_defined_input_fields(int step);
 
         /**
-         * For all transient input fields defined either manually or via
-         * the define_input_fields() function, read the data at the
+         * For all transient input fields defined, read the data at the
          * specified database time 'time' and populate the stk
          * data structures with those values.  The database time closest
          * to the specified time will be used with no interpolation (yet).
          */
-        void process_input_request(double time);
+        double read_defined_input_fields(double time);
 
-        void add_restart_field(stk::mesh::FieldBase &field, const std::string &db_name = std::string());
+        void get_global_variable_names(std::vector<std::string> &names);
+        void get_global(const std::string &variableName,
+			boost::any &value, stk::util::ParameterType::Type type);
+        void get_global(const std::string &variableName, int &globalVar);
+        void get_global(const std::string &variableName, double &globalVar);
+        void get_global(const std::string &variableName, std::vector<double> &globalVar);
+        void get_global(const std::string &variableName, std::vector<int> &globalVar);
+
+        void add_input_field(stk::mesh::FieldBase &field, const std::string &db_name = std::string());
 
         /**
          * Create an exodus mesh database with the specified
@@ -500,17 +514,6 @@ namespace stk {
         void write_global(size_t output_file_index, const std::string &variableName, int data);
         void write_global(size_t output_file_index, const std::string &variableName, std::vector<double>& data);
         void write_global(size_t output_file_index, const std::string &variableName, std::vector<int>& data);
-
-        void get_global_variable_names(std::vector<std::string> &names);
-        void get_global(const std::string &variableName,
-			boost::any &value, stk::util::ParameterType::Type type);
-        void get_global(const std::string &variableName, int &globalVar);
-        void get_global(const std::string &variableName, double &globalVar);
-        void get_global(const std::string &variableName, std::vector<double> &globalVar);
-        void get_global(const std::string &variableName, std::vector<int> &globalVar);
-
-        double process_restart_input(int step);
-        double process_restart_input(double time);
 
         // ========================================================================
         // Add a history or heartbeat output...

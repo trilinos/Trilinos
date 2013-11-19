@@ -46,8 +46,7 @@ namespace {
 
     // This is done just to define some fields in stk
     // that can be used later for reading restart data.
-    Ioss::Region *io_region = mesh_data.get_input_io_region().get();
-    stk::io::define_input_fields(*io_region, mesh_data.meta_data());
+    mesh_data.add_all_mesh_fields_as_input_fields();
 
     mesh_data.populate_bulk_data();
 
@@ -72,12 +71,10 @@ namespace {
     // Iterate all fields and set them as restart fields...
     const stk::mesh::FieldVector &fields = mesh_data.meta_data().get_fields();
     for (size_t i=0; i < fields.size(); i++) {
-      mesh_data.add_restart_field(*fields[i]); // for input
       const Ioss::Field::RoleType* role = stk::io::get_field_role(*fields[i]);
-       if ( role && *role == Ioss::Field::TRANSIENT )
-       {
-         mesh_data.add_field(restart_index, *fields[i]); // for output
-         mesh_data.add_field(results_index, *fields[i]);
+       if ( role && *role == Ioss::Field::TRANSIENT ) {
+         mesh_data.add_field(restart_index, *fields[i]); // restart output
+         mesh_data.add_field(results_index, *fields[i]); // results output
        }
     }
 
@@ -136,7 +133,7 @@ namespace {
 	  // reading restart data at each step on the input restart file/mesh and then
 	  // outputting that data to the restart and results output.
 
-	  mesh_data.process_restart_input(step);
+	  mesh_data.read_defined_input_fields(step);
 	  mesh_data.begin_output_step(restart_index, time);
 	  mesh_data.begin_output_step(results_index, time);
 
