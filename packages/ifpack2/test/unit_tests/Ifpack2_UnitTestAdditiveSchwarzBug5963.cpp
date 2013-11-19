@@ -79,21 +79,209 @@
 #include <Ifpack2_AdditiveSchwarz.hpp>
 #include <Ifpack2_Details_DenseSolver.hpp>
 #include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_RowMatrix.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
 
 
-template<>
-Ifpack2::Details::DenseSolver<Tpetra::RowMatrix<double, int, int>, false>;
-template<>
-Ifpack2::AdditiveSchwarz<Tpetra::RowMatrix<double, int, int>,
-                         Ifpack2::Details::DenseSolver<Tpetra::RowMatrix<double, int, int>, false> >;
+// namespace Ifpack2 {
+//   namespace Details {
+//     template <>
+//     class DenseSolver<
+//       Tpetra::RowMatrix<double,
+//                         int,
+//                         int,
+//                         Tpetra::DefaultPlatform::DefaultPlatformType::NodeType>,
+//       false>;
+//   } // namespace Details
+
+//   template <>
+//   class AdditiveSchwarz<
+//     Tpetra::RowMatrix<double,
+//                       int,
+//                       int,
+//                       Tpetra::DefaultPlatform::DefaultPlatformType::NodeType>,
+//     Ifpack2::Details::DenseSolver<
+//       Tpetra::RowMatrix<double,
+//                         int,
+//                         int,
+//                         Tpetra::DefaultPlatform::DefaultPlatformType::NodeType>,
+//       false>
+//     >;
+// } // namespace Ifpack2
 
 
 namespace {
 
 // This example exercises the fix for Bug 5963.  It illustrates the
-// "Zero" combine mode.  This example only works with exactly 2 MPI
-// processes.
+// "Add" combine mode with overlap 0.  This example only works with
+// exactly 2 MPI processes.
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(AdditiveSchwarz, AddCombineMode, ScalarType, LocalOrdinalType, GlobalOrdinalType)
+{
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+  using Teuchos::as;
+  using Teuchos::OSTab;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcpFromRef;
+  using Teuchos::toString;
+  using std::endl;
+
+  typedef ScalarType scalar_type;
+  typedef LocalOrdinalType local_ordinal_type;
+  typedef GlobalOrdinalType global_ordinal_type;
+  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType node_type;
+
+  typedef Tpetra::global_size_t GST;
+  typedef Teuchos::ScalarTraits<scalar_type> STS;
+  typedef typename STS::magnitudeType magnitude_type;
+  typedef Tpetra::CrsMatrix<scalar_type,
+                            local_ordinal_type,
+                            global_ordinal_type,
+                            node_type> crs_matrix_type;
+  typedef Tpetra::RowMatrix<scalar_type,
+                            local_ordinal_type,
+                            global_ordinal_type,
+                            node_type> row_matrix_type;
+  typedef Tpetra::Vector<scalar_type,
+                         local_ordinal_type,
+                         global_ordinal_type,
+                         node_type> vec_type;
+  typedef Tpetra::Map<local_ordinal_type,
+                      global_ordinal_type,
+                      node_type> map_type;
+  typedef Ifpack2::Details::DenseSolver<row_matrix_type> local_solver_type;
+  typedef Ifpack2::AdditiveSchwarz<row_matrix_type, local_solver_type> global_solver_type;
+
+  RCP<const Teuchos::Comm<int> > comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<node_type> node =
+    Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
+  const int myRank = comm->getRank ();
+  const int numProcs = comm->getSize ();
+
+  // We are now in a class method declared by the above macro.
+  // The method has these input arguments:
+  // (Teuchos::FancyOStream& out, bool& success)
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    numProcs != 2, std::logic_error, "This test must run with exactly two MPI "
+    "processes.  Please fix by changing CMakeLists.txt in this directory.");
+
+  out << "Creating Maps" << endl;
+
+  //
+  // Each of the two processes gets two rows.
+  //
+  const size_t localNumRows = 2;
+  const GST globalNumRows = comm->getSize () * localNumRows;
+  const global_ordinal_type indexBase = 0;
+
+  RCP<const map_type> rowMap (new map_type (globalNumRows, localNumRows, indexBase, comm, node));
+  RCP<const map_type> domMap = rowMap;
+  RCP<const map_type> ranMap = rowMap;
+
+  out << "Creating and filling matrix A" << endl;
+
+  RCP<crs_matrix_type> A (new crs_matrix_type (rowMap, 3));
+
+  Array<scalar_type> val (3);
+  Array<global_ordinal_type> ind (3);
+  val[0] = as<scalar_type> (-1);
+  val[1] = as<scalar_type> (2);
+  val[2] = as<scalar_type> (-1);
+
+  if (myRank == 0) {
+    // Row GID 0: Insert [2 -1] into column GIDs [0 1]
+    ind[1] = indexBase;
+    ind[2] = indexBase + 1;
+    A->insertGlobalValues (indexBase, ind.view (1, 2), val.view (1, 2));
+
+    // Row GID 1: Insert [-1 2 -1] into column GIDs [0 1 2]
+    ind[0] = indexBase;
+    ind[1] = indexBase + 1;
+    ind[2] = indexBase + 2;
+    A->insertGlobalValues (indexBase+1, ind.view (0, 3), val.view (0, 3));
+  }
+  else if (myRank == 1) {
+    // Row GID 2: Insert [-1 2 -1] into column GIDs [1 2 3]
+    ind[0] = indexBase + 1;
+    ind[1] = indexBase + 2;
+    ind[2] = indexBase + 3;
+    A->insertGlobalValues (indexBase+2, ind.view (0, 3), val.view (0, 3));
+
+    // Row GID 3: Insert [-1 2] into column GIDs [2 3]
+    ind[0] = indexBase + 2;
+    ind[1] = indexBase + 3;
+    A->insertGlobalValues (indexBase+3, ind.view (0, 2), val.view (0, 2));
+  }
+
+  out << "Calling fillComplete on A" << endl;
+  A->fillComplete (domMap, ranMap);
+
+  out << "Creating b for the test problem" << endl;
+  vec_type b (ranMap);
+  {
+    ArrayRCP<scalar_type> b_view = b.get1dViewNonConst ();
+    if (myRank == 0) {
+      b_view[0] = as<scalar_type> (1);
+      b_view[1] = as<scalar_type> (4);
+    }
+    else if (myRank == 1) {
+      b_view[0] = as<scalar_type> (9);
+      b_view[1] = as<scalar_type> (16);
+    }
+  }
+
+  out << "Creating solver" << endl;
+  global_solver_type solver (A);
+
+  out << "Setting parameters: ADD combine mode, overlap 0" << endl;
+  {
+    Teuchos::ParameterList pl;
+    pl.set ("schwarz: combine mode", "ADD");
+    pl.set ("schwarz: overlap level", 0);
+    solver.setParameters (pl);
+  }
+  out << "Calling initialize" << endl;
+  solver.initialize ();
+
+  out << "Calling compute" << endl;
+  solver.compute ();
+
+  out << "Calling apply" << endl;
+  vec_type x_add (ranMap);
+  solver.apply (b, x_add);
+
+  // Solution should be [2 3 34/3 41/3] to within a very small tolerance.
+  vec_type x_add_expected (ranMap);
+  {
+    ArrayRCP<scalar_type> view = x_add_expected.get1dViewNonConst ();
+    if (myRank == 0) {
+      view[0] = as<scalar_type> (2);
+      view[1] = as<scalar_type> (3);
+    }
+    else if (myRank == 1) {
+      view[0] = as<scalar_type> (34) / as<scalar_type> (3);
+      view[1] = as<scalar_type> (41) / as<scalar_type> (3);
+    }
+  }
+  // Check computed solution against expected solution.
+  {
+    const magnitude_type denom = x_add_expected.norm2 ();
+    x_add.update (STS::one (), x_add_expected, -STS::one ());
+    const magnitude_type numer = x_add.norm2 ();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (numer/denom > 10 * STS::eps ()), std::runtime_error,
+      "Relative error is " << numer/denom
+      << " > 10*eps = " << 10*STS::eps() << ".");
+  }
+}
+
+
+// This example exercises the fix for Bug 5963.  It illustrates the
+// "Zero" combine mode with overlap 1.  This example only works with
+// exactly 2 MPI processes.
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(AdditiveSchwarz, ZeroCombineMode, ScalarType, LocalOrdinalType, GlobalOrdinalType)
 {
   using Teuchos::Array;
@@ -143,7 +331,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(AdditiveSchwarz, ZeroCombineMode, ScalarType, 
   // The method has these input arguments:
   // (Teuchos::FancyOStream& out, bool& success)
 
-  out << "Ifpack2::Version(): " << Ifpack2::Version () << endl;
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    numProcs != 2, std::logic_error, "This test must run with exactly two MPI "
+    "processes.  Please fix by changing CMakeLists.txt in this directory.");
 
   out << "Creating Maps" << endl;
 
@@ -169,104 +359,140 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(AdditiveSchwarz, ZeroCombineMode, ScalarType, 
   val[2] = as<scalar_type> (-1);
 
   if (myRank == 0) {
+    // Row GID 0: Insert [2 -1] into column GIDs [0 1]
     ind[1] = indexBase;
     ind[2] = indexBase + 1;
     A->insertGlobalValues (indexBase, ind.view (1, 2), val.view (1, 2));
 
+    // Row GID 1: Insert [-1 2 -1] into column GIDs [0 1 2]
     ind[0] = indexBase;
     ind[1] = indexBase + 1;
     ind[2] = indexBase + 2;
-    A->insertGlobalValues (indexBase, ind.view (0, 3), val.view (0, 3));
+    A->insertGlobalValues (indexBase+1, ind.view (0, 3), val.view (0, 3));
   }
   else if (myRank == 1) {
+    // Row GID 2: Insert [-1 2 -1] into column GIDs [1 2 3]
     ind[0] = indexBase + 1;
     ind[1] = indexBase + 2;
     ind[2] = indexBase + 3;
-    A->insertGlobalValues (indexBase, ind.view (0, 3), val.view (0, 3));
+    A->insertGlobalValues (indexBase+2, ind.view (0, 3), val.view (0, 3));
 
+    // Row GID 3: Insert [-1 2] into column GIDs [2 3]
     ind[0] = indexBase + 2;
     ind[1] = indexBase + 3;
-    A->insertGlobalValues (indexBase, ind.view (0, 2), val.view (0, 2));
+    A->insertGlobalValues (indexBase+3, ind.view (0, 2), val.view (0, 2));
   }
 
   out << "Calling fillComplete on A" << endl;
   A->fillComplete (domMap, ranMap);
 
-  out << "Creating x_exact and b for the test problem" << endl;
-  // FIXME (mfh 17 Nov 2013) Insert actual x_exact and b.
-  vec_type x_exact (domMap);
-  {
-    ArrayRCP<scalar_type> x_exact_view = x_exact.get1dViewNonConst ();
-    x_exact_view[0] = 1;
-    x_exact_view[1] = 4;
-  }
-  out << "x_exact: " << toString ((x_exact.get1dView ()) ()) << endl;
-
+  out << "Creating b for the test problem" << endl;
   vec_type b (ranMap);
-  A->apply (x_exact, b); // b := A*x_exact
-  out << "b: " << toString ((b.get1dView ()) ()) << endl;
+  {
+    ArrayRCP<scalar_type> b_view = b.get1dViewNonConst ();
+    if (myRank == 0) {
+      b_view[0] = as<scalar_type> (1);
+      b_view[1] = as<scalar_type> (4);
+    }
+    else if (myRank == 1) {
+      b_view[0] = as<scalar_type> (9);
+      b_view[1] = as<scalar_type> (16);
+    }
+  }
 
   out << "Creating solver" << endl;
   global_solver_type solver (A);
 
+  out << "Setting parameters: ADD combine mode, overlap 0" << endl;
+  {
+    Teuchos::ParameterList pl;
+    pl.set ("schwarz: combine mode", "ADD");
+    pl.set ("schwarz: overlap level", 0);
+    solver.setParameters (pl);
+  }
   out << "Calling initialize" << endl;
   solver.initialize ();
 
   out << "Calling compute" << endl;
   solver.compute ();
 
-  out << "Calling solver's describe() method" << endl;
-  solver.describe (out, Teuchos::VERB_EXTREME);
+  out << "Calling apply" << endl;
+  vec_type x_add (ranMap);
+  solver.apply (b, x_add);
+
+  // Solution should be [2 3 34/3 41/3] to within a very small tolerance.
+  vec_type x_add_expected (ranMap);
+  {
+    ArrayRCP<scalar_type> view = x_add_expected.get1dViewNonConst ();
+    if (myRank == 0) {
+      view[0] = as<scalar_type> (2);
+      view[1] = as<scalar_type> (3);
+    }
+    else if (myRank == 1) {
+      view[0] = as<scalar_type> (34) / as<scalar_type> (3);
+      view[1] = as<scalar_type> (41) / as<scalar_type> (3);
+    }
+  }
+  // Check computed solution against expected solution.
+  {
+    const magnitude_type denom = x_add_expected.norm2 ();
+    x_add.update (STS::one (), x_add_expected, -STS::one ());
+    const magnitude_type numer = x_add.norm2 ();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (numer/denom > 10 * STS::eps ()), std::runtime_error,
+      "Relative error is " << numer/denom
+      << " > 10*eps = " << 10*STS::eps() << ".");
+  }
+
+  out << "Setting parameters: ZERO combine mode, overlap 1" << endl;
+  {
+    Teuchos::ParameterList pl;
+    pl.set ("schwarz: combine mode", "ZERO");
+    pl.set ("schwarz: overlap level", 1);
+    solver.setParameters (pl);
+  }
+  out << "Calling initialize" << endl;
+  solver.initialize ();
+
+  out << "Calling compute" << endl;
+  solver.compute ();
 
   out << "Calling apply" << endl;
-  vec_type x_computed (ranMap);
-  solver.apply (b, x_computed); // solve A*x_computed=b for x_computed
+  vec_type x_zero (ranMap);
+  solver.apply (b, x_zero);
 
-  out << "x_computed: " << toString ((x_computed.get1dView ()) ()) << endl;
 
-  // Compute the residual.
-  vec_type r (ranMap);
-  A->apply (x_computed, r); // r := A*x_computed
-  r.update (STS::one (), b, -STS::one ()); // r := b - A*x_computed
-  const magnitude_type absResNorm = r.norm2 ();
-  out << "\\| b - A*x_computed \\|_2 = " << absResNorm << endl;
-  const magnitude_type normB = b.norm2 ();
-  const magnitude_type relResNorm = absResNorm / normB;
-  out << "\\| b - A*x_computed \\|_2 / \\|b\\|_2 = " << relResNorm << endl;
-
-  // // 'out' only prints on Proc 0.
-  // RCP<Teuchos::FancyOStream> errPtr = Teuchos::getFancyOStream (rcpFromRef (std::cerr));
-  // Teuchos::FancyOStream& err = *errPtr;
-  // err << "A->describe() result:" << endl;
-  // A->describe (err, Teuchos::VERB_EXTREME);
-
-  // err << "x_exact.describe() result:" << endl;
-  // x_exact.describe (err, Teuchos::VERB_EXTREME);
-
-  // err << "b.describe() result:" << endl;
-  // b.describe (err, Teuchos::VERB_EXTREME);
-
-  // err << "x_computed.describe() result:" << endl;
-  // x_computed.describe (err, Teuchos::VERB_EXTREME);
-
-  // err << "r.describe() result:" << endl;
-  // r.describe (err, Teuchos::VERB_EXTREME);
-
-  // err << "solver.describe() result:" << endl;
-  // solver.describe (err, Teuchos::VERB_EXTREME);
-
-  // TEUCHOS_TEST_FOR_EXCEPTION(
-  //   relResNorm > 10*STS::eps (), std::logic_error,
-  //   "DenseSolver failed to solve the problem to within a small tolerance "
-  //   << 10*STS::eps () << ".  Relative residual norm: " << relResNorm << ".");
+  // Solution should be [5 9 19 35/2] to within a very small tolerance.
+  vec_type x_zero_expected (ranMap);
+  {
+    ArrayRCP<scalar_type> view = x_zero_expected.get1dViewNonConst ();
+    if (myRank == 0) {
+      view[0] = as<scalar_type> (5);
+      view[1] = as<scalar_type> (9);
+    }
+    else if (myRank == 1) {
+      view[0] = as<scalar_type> (19);
+      view[1] = as<scalar_type> (35) / as<scalar_type> (2);
+    }
+  }
+  // Check computed solution against expected solution.
+  {
+    const magnitude_type denom = x_zero_expected.norm2 ();
+    x_zero.update (STS::one (), x_zero_expected, -STS::one ());
+    const magnitude_type numer = x_zero.norm2 ();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (numer/denom > 10 * STS::eps ()), std::runtime_error,
+      "Relative error is " << numer/denom
+      << " > 10*eps = " << 10*STS::eps() << ".");
+  }
 }
+
 
 // Define the set of unit tests to instantiate in this file.
 // AdditiveSchwarz with a DenseSolver subdomain solver is not
 // explicitly instantiated by default, so do that here.
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AdditiveSchwarz, ZeroCombineMode, Scalar, LocalOrdinal, GlobalOrdinal)
-
 
 // Instantiate the unit tests for Scalar=double, LO=int, and GO=int.
 // It's not necessary to exercise other Scalar types, as that would
