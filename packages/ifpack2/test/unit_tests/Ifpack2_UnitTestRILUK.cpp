@@ -274,9 +274,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, FillLevel, Scalar, LocalOrdinal,
     //}
 
     //read L,U, and D factors from file
-    std::string lFile = "Lfactor_bw=" + Teuchos::toString(lof+2) + ".mm";
-    std::string uFile = "Ufactor_bw=" + Teuchos::toString(lof+2) + ".mm";
-    std::string dFile = "Dfactor_bw=" + Teuchos::toString(lof+2) + ".mm";
+    std::string lFile = "Lfactor_bw" + Teuchos::toString(lof+2) + ".mm";
+    std::string uFile = "Ufactor_bw" + Teuchos::toString(lof+2) + ".mm";
+    std::string dFile = "Dfactor_bw" + Teuchos::toString(lof+2) + ".mm";
     out << "reading " << lFile << ", " << uFile << ", " << dFile << std::endl;
     RCP<crs_matrix_type> L = reader_type::readSparseFile (lFile, comm, platform.getNode());
     RCP<crs_matrix_type> U = reader_type::readSparseFile (uFile, comm, platform.getNode());

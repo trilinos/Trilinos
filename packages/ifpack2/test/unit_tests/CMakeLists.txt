@@ -43,7 +43,7 @@ Ifpack2_UnitTestRILUK.cpp
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsIfpack2_cp
   SOURCE_DIR ${Ifpack2_SOURCE_DIR}/test/data
-  SOURCE_FILES Dfactor_bw=2.mm Dfactor_bw=3.mm Dfactor_bw=4.mm Dfactor_bw=5.mm Dfactor_bw=6.mm Dfactor_bw=7.mm Dfactor_bw=8.mm Lfactor_bw=2.mm Lfactor_bw=3.mm Lfactor_bw=4.mm Lfactor_bw=5.mm Lfactor_bw=6.mm Lfactor_bw=7.mm Lfactor_bw=8.mm Ufactor_bw=2.mm Ufactor_bw=3.mm Ufactor_bw=4.mm Ufactor_bw=5.mm Ufactor_bw=6.mm Ufactor_bw=7.mm Ufactor_bw=8.mm 
+  SOURCE_FILES Dfactor_bw2.mm Dfactor_bw3.mm Dfactor_bw4.mm Dfactor_bw5.mm Dfactor_bw6.mm Dfactor_bw7.mm Dfactor_bw8.mm Lfactor_bw2.mm Lfactor_bw3.mm Lfactor_bw4.mm Lfactor_bw5.mm Lfactor_bw6.mm Lfactor_bw7.mm Lfactor_bw8.mm Ufactor_bw2.mm Ufactor_bw3.mm Ufactor_bw4.mm Ufactor_bw5.mm Ufactor_bw6.mm Ufactor_bw7.mm Ufactor_bw8.mm 
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
