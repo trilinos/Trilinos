@@ -112,7 +112,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   //copy X in to Y
   ArrayRCP<const scalar_type> const xData = X.getData(0);
   ArrayRCP<scalar_type> yData = Y.getDataNonConst(0);
-  for (size_t i=0; i< xData.size(); ++i)
+  for (typename ArrayRCP<const scalar_type>::size_type i = 0; i < xData.size(); ++i)
     yData[i] = xData[i];
 }
 
