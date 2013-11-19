@@ -70,6 +70,7 @@
 
 #ifdef enable_migration2
 #include "zoltan_comm_cpp.h"
+#include "zoltan_types.h" // for error codes
 #endif
 //#define FIRST_TOUCH
 //#define BINARYCUTSEARCH
@@ -4111,24 +4112,28 @@ void doAll2All(
 
             for (int i = 0; i < nprocs; ++i){
                 pq_lno_t sendC = sendCount[i];
-                //cout << "me:" << comm->getRank() << " to:" << i << " sending:" << sendC << endl;
+                //cout << "me:" << comm->getRank() << " to:" << i <<
+                //" sending:" << sendC << endl;
                 for (int ii = 0; ii < sendC; ++ii){
                     *(p++) = i;
                 }
             }
 
 
-            ZOLTAN_COMM_OBJ *plan = NULL;     /* pointer for communication object */
+            ZOLTAN_COMM_OBJ *plan = NULL; /* pointer for communication object */
 
 
             MPI_Comm mpi_comm = Teuchos2MPI (comm);
             pq_lno_t incoming = 0;
             int message_tag = 7859;
 
-            env->timerStart(MACRO_TIMERS, "PQJagged - Migration Z1PlanCreating-" + iteration);
-            int ierr = Zoltan_Comm_Create(&plan, nLocal, partIds, mpi_comm, message_tag,
-                    &incoming);
-            env->timerStop(MACRO_TIMERS, "PQJagged - Migration Z1PlanCreating-" + iteration);
+            env->timerStart(MACRO_TIMERS, "PQJagged - Migration Z1PlanCreating-"
+                 + iteration);
+            int ierr = Zoltan_Comm_Create(&plan, nLocal, partIds, mpi_comm,
+                message_tag, &incoming);
+            Z2_ASSERT_VALUE(ierr, ZOLTAN_OK);
+            env->timerStop(MACRO_TIMERS, "PQJagged - Migration Z1PlanCreating-"
+                + iteration);
 
 
             ArrayRCP<pq_gno_t> recvBuf2(incoming);
@@ -4136,13 +4141,16 @@ void doAll2All(
 
 
             message_tag++;
-            env->timerStart(MACRO_TIMERS, "PQJagged - Migration Z1PlanComm-" + iteration);
+            env->timerStart(MACRO_TIMERS, "PQJagged - Migration Z1PlanComm-" +
+                iteration);
             ierr = Zoltan_Comm_Do(plan, message_tag, (char *) sendBuf,
-                    sizeof(pq_gno_t),
-                    (char *) recieves);
-            env->timerStop(MACRO_TIMERS, "PQJagged - Migration Z1PlanComm-" + iteration);
+                    sizeof(pq_gno_t), (char *) recieves);
+            Z2_ASSERT_VALUE(ierr, ZOLTAN_OK);
+            env->timerStop(MACRO_TIMERS, "PQJagged - Migration Z1PlanComm-" +
+                iteration);
 
             ierr = Zoltan_Comm_Destroy(&plan);
+            Z2_ASSERT_VALUE(ierr, ZOLTAN_OK);
             numMyNewGnos = incoming;
             recvBuf = recvBuf2;
             freeArray<partId_t>(partIds);
@@ -4193,12 +4201,13 @@ void doAll2All(
         */
 
 
-        env->timerStart(MACRO_TIMERS, "PQJagged - Migration Z1PlanCreating-" + iteration);
-        int ierr = Zoltan_Comm_Create(
-                &plan, nLocal,
-                coordinate_destionations, mpi_comm,
-                message_tag, &incoming);
-        env->timerStop(MACRO_TIMERS, "PQJagged - Migration Z1PlanCreating-" + iteration);
+        env->timerStart(MACRO_TIMERS, "PQJagged - Migration Z1PlanCreating-" +
+            iteration);
+        int ierr = Zoltan_Comm_Create( &plan, nLocal, coordinate_destionations,
+            mpi_comm, message_tag, &incoming);
+        Z2_ASSERT_VALUE(ierr, ZOLTAN_OK);
+        env->timerStop(MACRO_TIMERS, "PQJagged - Migration Z1PlanCreating-" +
+            iteration);
 
 
 
@@ -4221,27 +4230,28 @@ void doAll2All(
         pq_gno_t *incoming_gnos = allocMemory< pq_gno_t>(incoming);
 
         message_tag++;
-        env->timerStart(MACRO_TIMERS, "PQJagged - Migration Z1PlanComm-" + iteration);
-        ierr = Zoltan_Comm_Do(
-                plan, message_tag,
-                (char *) coordinate_gnos,
+        env->timerStart(MACRO_TIMERS, "PQJagged - Migration Z1PlanComm-" +
+            iteration);
+        ierr = Zoltan_Comm_Do( plan, message_tag, (char *) coordinate_gnos,
                 sizeof(pq_gno_t), (char *) incoming_gnos);
-        env->timerStop(MACRO_TIMERS, "PQJagged - Migration Z1PlanComm-" + iteration);
+        Z2_ASSERT_VALUE(ierr, ZOLTAN_OK);
+        env->timerStop(MACRO_TIMERS, "PQJagged - Migration Z1PlanComm-" +
+            iteration);
         freeArray<pq_gno_t>(coordinate_gnos);
         coordinate_gnos = incoming_gnos;
 
 
 
-        env->timerStart(MACRO_TIMERS, "PQJagged - Migration Z1Migration-" + iteration);
+        env->timerStart(MACRO_TIMERS, "PQJagged - Migration Z1Migration-" +
+            iteration);
         for (int i = 0; i < coord_dim; ++i){
             message_tag++;
             pq_scalar_t *coord = coords[i];
 
             coords[i] = allocMemory<pq_scalar_t>(incoming);
-            ierr = Zoltan_Comm_Do(
-                    plan, message_tag,
-                    (char *) coord,
+            ierr = Zoltan_Comm_Do( plan, message_tag, (char *) coord,
                     sizeof(pq_scalar_t), (char *) coords[i]);
+            Z2_ASSERT_VALUE(ierr, ZOLTAN_OK);
             freeArray<pq_scalar_t>(coord);
         }
 
@@ -4250,20 +4260,18 @@ void doAll2All(
             pq_scalar_t *weight = weights[i];
 
             weights[i] = allocMemory<pq_scalar_t>(incoming);
-            ierr = Zoltan_Comm_Do(
-                    plan, message_tag,
-                    (char *) weight,
+            ierr = Zoltan_Comm_Do( plan, message_tag, (char *) weight,
                     sizeof(pq_scalar_t), (char *) weights[i]);
+            Z2_ASSERT_VALUE(ierr, ZOLTAN_OK);
             freeArray<pq_scalar_t>(weight);
         }
 
 
         int *coord_own = allocMemory<int>(incoming);
         message_tag++;
-        ierr = Zoltan_Comm_Do(
-                plan, message_tag,
-                (char *) coordinate_owners,
+        ierr = Zoltan_Comm_Do( plan, message_tag, (char *) coordinate_owners,
                 sizeof(int), (char *) coord_own);
+        Z2_ASSERT_VALUE(ierr, ZOLTAN_OK);
         freeArray<int>(coordinate_owners);
         coordinate_owners = coord_own;
 
@@ -4284,16 +4292,17 @@ void doAll2All(
 
         if(nprocs < num_parts){
             message_tag++;
-            ierr = Zoltan_Comm_Do(
-                    plan, message_tag,
-                    (char *) assigned_parts,
+            ierr = Zoltan_Comm_Do( plan, message_tag, (char *) assigned_parts,
                     sizeof(partId_t), (char *) new_parts);
+            Z2_ASSERT_VALUE(ierr, ZOLTAN_OK);
         }
 
         freeArray<partId_t>(assigned_parts);
         assigned_parts = new_parts;
         ierr = Zoltan_Comm_Destroy(&plan);
-        env->timerStop(MACRO_TIMERS, "PQJagged - Migration Z1Migration-" + iteration);
+        Z2_ASSERT_VALUE(ierr, ZOLTAN_OK);
+        env->timerStop(MACRO_TIMERS, "PQJagged - Migration Z1Migration-" +
+            iteration);
         numMyNewGnos = incoming;
     }
 }
@@ -7525,10 +7534,10 @@ void AlgPQJagged(
 
 
             env->timerStart(MACRO_TIMERS, "PQJagged - Final Z1PlanCreating");
-            int ierr = Zoltan_Comm_Create(
-                    &plan, numLocalCoords,
-                    actual_owner_of_coordinate, mpi_comm,
-                    message_tag, &incoming);
+            int ierr = Zoltan_Comm_Create( &plan, numLocalCoords,
+                    actual_owner_of_coordinate, mpi_comm, message_tag,
+                    &incoming);
+            Z2_ASSERT_VALUE(ierr, ZOLTAN_OK);
             env->timerStop(MACRO_TIMERS, "PQJagged - Final Z1PlanCreating" );
 
 
@@ -7536,11 +7545,9 @@ void AlgPQJagged(
 
             message_tag++;
             env->timerStart(MACRO_TIMERS, "PQJagged - Final Z1PlanComm");
-            ierr = Zoltan_Comm_Do(
-                    plan, message_tag,
-                    (char *) pq_gnos,
-                    sizeof(pq_gno_t),
-                    (char *) incoming_gnos);
+            ierr = Zoltan_Comm_Do( plan, message_tag, (char *) pq_gnos,
+                    sizeof(pq_gno_t), (char *) incoming_gnos);
+            Z2_ASSERT_VALUE(ierr, ZOLTAN_OK);
 
             freeArray<pq_gno_t>(pq_gnos);
             pq_gnos = incoming_gnos;
@@ -7548,16 +7555,15 @@ void AlgPQJagged(
             partId_t *incoming_partIds = allocMemory< partId_t>(incoming);
 
             message_tag++;
-            ierr = Zoltan_Comm_Do(
-                    plan, message_tag,
-                    (char *) partIds,
-                    sizeof(partId_t),
-                    (char *) incoming_partIds);
+            ierr = Zoltan_Comm_Do( plan, message_tag, (char *) partIds,
+                    sizeof(partId_t), (char *) incoming_partIds);
+            Z2_ASSERT_VALUE(ierr, ZOLTAN_OK);
             freeArray<partId_t>(partIds);
             partIds = incoming_partIds;
 
             env->timerStop(MACRO_TIMERS, "PQJagged - Final Z1PlanComm");
             ierr = Zoltan_Comm_Destroy(&plan);
+            Z2_ASSERT_VALUE(ierr, ZOLTAN_OK);
 
             numLocalCoords = incoming;
             is_data_ever_migrated = false;
