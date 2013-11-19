@@ -66,7 +66,7 @@ bool use_case_7_driver(stk::ParallelMachine  comm,
 
   stk::io::StkMeshIoBroker domain_mesh_data(comm);
   const std::string filename = working_directory + domain_mesh;
-  domain_mesh_data.open_mesh_database(filename, domain_filetype);
+  domain_mesh_data.open_mesh_database(filename, domain_filetype, stk::io::READ_MESH);
   domain_mesh_data.create_input_mesh();
 
   stk::mesh::MetaData &domain_meta_data = domain_mesh_data.meta_data();

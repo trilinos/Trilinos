@@ -90,7 +90,7 @@ inline void testDataOnField(stk::mesh::BulkData &stkMeshBulkData, const double g
 inline void createExampleInputFile(stk::io::StkMeshIoBroker& stkMeshIoBroker)
 {
     const std::string exodusFileName = "generated:1x1x1";
-    stkMeshIoBroker.open_mesh_database(exodusFileName);
+    stkMeshIoBroker.open_mesh_database(exodusFileName, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
 }
 
@@ -121,7 +121,7 @@ inline void testMultistateFieldWroteCorrectlyToRestart(const std::string &restar
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.open_mesh_database(restartFilename);
+    stkIo.open_mesh_database(restartFilename, stk::io::READ_RESTART);
     stkIo.create_input_mesh();
 
     stk::mesh::MetaData &restartedMetaData = stkIo.meta_data();
@@ -151,7 +151,7 @@ inline void testMultistateFieldWroteCorrectly(const std::string &resultsFilename
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.open_mesh_database(resultsFilename);
+    stkIo.open_mesh_database(resultsFilename, stk::io::READ_RESTART);
     stkIo.create_input_mesh();
 
     stk::mesh::MetaData &resultsedMetaData = stkIo.meta_data();

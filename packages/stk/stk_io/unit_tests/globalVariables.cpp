@@ -26,7 +26,7 @@ Ioss::Field::BasicType iossBasicType(int)
 void generateMetaData(stk::io::StkMeshIoBroker &stkIo)
 {
     const std::string exodusFileName = "generated:1x1x1";
-    stkIo.open_mesh_database(exodusFileName);
+    stkIo.open_mesh_database(exodusFileName, stk::io::READ_MESH);
     stkIo.create_input_mesh();
 }
 
@@ -35,7 +35,7 @@ void testGlobalVarOnFile(const std::string &outputFileName, const int stepNumber
                          const std::vector<DataType> goldGlobalVarValue, DataType goldGlobalScale, MPI_Comm comm)
 {
     stk::io::StkMeshIoBroker stkIo(comm);
-    stkIo.open_mesh_database(outputFileName);
+    stkIo.open_mesh_database(outputFileName, stk::io::READ_MESH);
     stkIo.create_input_mesh();
     stkIo.populate_bulk_data();
     stkIo.process_restart_input(stepNumber);
@@ -359,7 +359,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleRestart)
 
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
-        stkIo.open_mesh_database(restartFileName);
+        stkIo.open_mesh_database(restartFileName, stk::io::READ_RESTART);
         stkIo.create_input_mesh();
         stkIo.populate_bulk_data();
         stkIo.process_restart_input(time);

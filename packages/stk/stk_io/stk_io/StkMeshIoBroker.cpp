@@ -1089,7 +1089,7 @@ namespace stk {
 
     StkMeshIoBroker::StkMeshIoBroker()
       : m_communicator(MPI_COMM_NULL), m_connectivity_map(NULL),
-        m_useNodesetForPartNodesFields(false)
+	m_db_purpose(stk::io::PURPOSE_UNKNOWN)
     {
       Ioss::Init::Initializer::initialize_ioss();
     }
@@ -1097,7 +1097,7 @@ namespace stk {
     StkMeshIoBroker::StkMeshIoBroker(MPI_Comm comm, stk::mesh::ConnectivityMap * connectivity_map)
       : m_communicator(comm),
         m_connectivity_map(connectivity_map),
-        m_useNodesetForPartNodesFields(false)
+	m_db_purpose(stk::io::PURPOSE_UNKNOWN)
     {
       Ioss::Init::Initializer::initialize_ioss();
     }
@@ -1151,7 +1151,8 @@ namespace stk {
       m_communicator = m_bulk_data->parallel();
     }
 
-    bool StkMeshIoBroker::open_mesh_database(const std::string &mesh_filename)
+    bool StkMeshIoBroker::open_mesh_database(const std::string &mesh_filename,
+					     DatabasePurpose purpose)
     {
       std::string type = "exodus";
       std::string filename = mesh_filename;
@@ -1167,20 +1168,27 @@ namespace stk {
         type = mesh_filename.substr(0, colon);
         filename = mesh_filename.substr(colon+1);
       }
-      return open_mesh_database(filename, type);
+      return open_mesh_database(filename, type, purpose);
     }
 
 
     bool StkMeshIoBroker::open_mesh_database(const std::string &mesh_filename,
-                                      const std::string &mesh_type)
+					     const std::string &mesh_type,
+					     DatabasePurpose purpose)
     {
       ThrowErrorMsgIf(!Teuchos::is_null(m_input_database),
 		      "This StkMeshIoBroker already has an Ioss::DatabaseIO associated with it.");
       ThrowErrorMsgIf(!Teuchos::is_null(m_input_region),
                       "This StkMeshIoBroker already has an Ioss::Region associated with it.");
 
+      m_db_purpose = purpose;
+      
+      Ioss::DatabaseUsage db_usage = Ioss::READ_MODEL;
+      if (m_db_purpose == stk::io::READ_RESTART)
+	db_usage = Ioss::READ_RESTART;
+	
       m_input_database = Teuchos::rcp(Ioss::IOFactory::create(mesh_type, mesh_filename,
-                                                              Ioss::READ_MODEL, m_communicator,
+                                                              db_usage, m_communicator,
                                                               m_property_manager));
       if (Teuchos::is_null(m_input_database) || !m_input_database->ok(true)) {
         std::cerr  << "ERROR: Could not open database '" << mesh_filename
@@ -1237,12 +1245,7 @@ namespace stk {
 
     size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, DatabasePurpose db_type)
     {
-      Teuchos::RCP<OutputFile> output_file = Teuchos::rcp(new OutputFile(filename, m_communicator, db_type,
-									 m_property_manager, m_input_region.get()));
-      m_output_files.push_back(output_file);
-
-      size_t index_of_output_file = m_output_files.size()-1;
-      return index_of_output_file;
+      return create_output_mesh(filename, db_type, m_property_manager);
     }
 
 
@@ -1264,7 +1267,6 @@ namespace stk {
       m_output_files[output_file_index]->write_output_mesh(*m_bulk_data);
     }
 
-    // ========================================================================
     int StkMeshIoBroker::write_defined_output_fields(size_t output_file_index)
     {
       validate_output_file_index(output_file_index);
@@ -1272,7 +1274,6 @@ namespace stk {
       return current_output_step;
     }
 
-    // ========================================================================
     int StkMeshIoBroker::process_output_request(size_t output_file_index, double time)
     {
       validate_output_file_index(output_file_index);

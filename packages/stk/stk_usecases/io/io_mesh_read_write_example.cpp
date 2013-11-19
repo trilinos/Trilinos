@@ -41,7 +41,7 @@ namespace {
     std::string file = working_directory;
     file += filename;
 
-    mesh_data.open_mesh_database(file, type);
+    mesh_data.open_mesh_database(file, type, stk::io::READ_MESH);
     mesh_data.create_input_mesh();
 
     // This is done just to define some fields in stk

@@ -97,7 +97,7 @@ bool use_case_24_driver(
   const std::string dbtype("exodusii");
   std::string filename = working_directory + meshName;
   stk::io::StkMeshIoBroker mesh_data(comm);
-  mesh_data.open_mesh_database(filename, dbtype);
+  mesh_data.open_mesh_database(filename, dbtype, stk::io::READ_MESH);
   mesh_data.create_input_mesh();
 
   //------------------------------------------------------------------

@@ -40,7 +40,8 @@ namespace stk {
     static std::string CoordinateFieldName("coordinates");
 
     enum DatabasePurpose {
-      WRITE_RESULTS = 1,
+      PURPOSE_UNKNOWN=1,
+      WRITE_RESULTS,
       WRITE_RESTART,
       READ_MESH,
       READ_RESTART
@@ -317,9 +318,16 @@ namespace stk {
          * \param[in] type The format of the mesh that will be "read".
          * Valid types are "exodus", "generated", "pamgen".
          *
-         */
+         * \param[in] type The format of the mesh that will be "read".
+         * Valid types are "exodus", "generated", "pamgen".
+         *
+         * \param[in] purpose The purpose (READ_MESH or READ_RESTART) of the mesh database.
+	 * An input of type READ_RESTART will read all-but-one of the states of a multi-state field,
+	 * an input of type READ_MESH will only read the newest state of a multi-state field.
+	 * Other behavioral differences may be added in the future (e.g., dealing with adaptivity...)
+	 */
         bool open_mesh_database(const std::string &filename,
-                                const std::string &type);
+                                const std::string &type, DatabasePurpose purpose);
 
         /**
          * Create Ioss::DatabaseIO associated with the specified filename using
@@ -334,7 +342,7 @@ namespace stk {
          * this parameter contains data used by the generation routines.
          * Optionally prepended by a filetype and a colon.
          */
-        bool open_mesh_database(const std::string &filename);
+        bool open_mesh_database(const std::string &filename, DatabasePurpose db_type);
 
         /**
          * Read/Generate the metadata for mesh of the specified type. By
@@ -436,13 +444,13 @@ namespace stk {
          * created and the mesh data written to. If the file already
          * exists, it will be overwritten.
 	 *
-         * \param[in] db_type The type (RESULTS or RESTART) of the output mesh.
-	 * An output of type RESTART will write all-but-one of the states of a multi-state field,
-	 * an output of type RESULTS will only write the newest state of a multi-state field.
+         * \param[in] purpose The purpose (WRITE_RESULTS or WRITE_RESTART) of the output mesh.
+	 * An output of type WRITE_RESTART will write all-but-one of the states of a multi-state field,
+	 * an output of type WRITE_RESULTS will only write the newest state of a multi-state field.
 	 * Other behavioral differences may be added in the future (e.g., dealing with adaptivity...)
          */
-        size_t create_output_mesh(const std::string &filename, DatabasePurpose db_type);
-        size_t create_output_mesh(const std::string &filename, DatabasePurpose db_type, Ioss::PropertyManager &properties);
+        size_t create_output_mesh(const std::string &filename, DatabasePurpose purpose);
+        size_t create_output_mesh(const std::string &filename, DatabasePurpose purpose, Ioss::PropertyManager &properties);
 
         void write_output_mesh(size_t output_file_index);
 
@@ -586,16 +594,6 @@ namespace stk {
 	  m_output_files[output_file_index]->use_nodeset_for_part_nodes_fields(true_false);
         }
 
-        bool use_nodeset_for_part_nodes_fields_input() const
-        {
-	  return m_useNodesetForPartNodesFields;
-        }
-        void use_nodeset_for_part_nodes_fields_input(bool true_false)
-        {
-	  m_useNodesetForPartNodesFields = true_false;
-        }
-
-
       private:
         void create_ioss_region();
         void validate_output_file_index(size_t output_file_index) const;
@@ -636,7 +634,9 @@ namespace stk {
         std::vector<Teuchos::RCP<OutputFile> > m_output_files;
         std::vector<Teuchos::RCP<Heartbeat> > m_heartbeat;
 
-        bool m_useNodesetForPartNodesFields;
+        std::vector<stk::io::FieldAndName> m_input_fields;
+
+        DatabasePurpose m_db_purpose;
 
         StkMeshIoBroker(const StkMeshIoBroker&); // Do not implement
         StkMeshIoBroker& operator=(const StkMeshIoBroker&); // Do not implement

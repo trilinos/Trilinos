@@ -57,7 +57,7 @@ bool use_case_6_driver(stk::ParallelMachine  comm,
   stk::io::StkMeshIoBroker domain_mesh_data(comm);
 
   std::string filename = working_directory + range_mesh;
-  range_mesh_data.open_mesh_database(filename, range_filetype);
+  range_mesh_data.open_mesh_database(filename, range_filetype, stk::io::READ_MESH);
   range_mesh_data.create_input_mesh();
 
   stk::mesh::MetaData &range_meta_data = range_mesh_data.meta_data();
@@ -78,7 +78,7 @@ bool use_case_6_driver(stk::ParallelMachine  comm,
   stk::mesh::BulkData &range_bulk_data = range_mesh_data.bulk_data();
 
   filename = working_directory + domain_mesh;
-  domain_mesh_data.open_mesh_database(filename, domain_filetype);
+  domain_mesh_data.open_mesh_database(filename, domain_filetype, stk::io::READ_MESH);
   domain_mesh_data.create_input_mesh();
 
   stk::mesh::MetaData &domain_meta_data = domain_mesh_data.meta_data();

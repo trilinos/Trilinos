@@ -68,7 +68,7 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalParameters)
     // Read parameters from file...
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
-        stkIo.open_mesh_database(file_name);
+        stkIo.open_mesh_database(file_name, stk::io::READ_MESH);
         stkIo.create_input_mesh();
         stkIo.populate_bulk_data();
 

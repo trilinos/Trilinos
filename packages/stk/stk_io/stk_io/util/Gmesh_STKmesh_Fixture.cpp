@@ -32,7 +32,7 @@ Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(   stk::ParallelMachine comm
   if (use_64bit_int_IO_api) {
     m_mesh_data.property_add(Ioss::Property("INTEGER_SIZE_API", 8));
   }
-  m_mesh_data.open_mesh_database(gmesh_spec, "generated");
+  m_mesh_data.open_mesh_database(gmesh_spec, "generated", stk::io::READ_MESH);
   m_mesh_data.create_input_mesh();
 
   const Iogn::DatabaseIO* database =

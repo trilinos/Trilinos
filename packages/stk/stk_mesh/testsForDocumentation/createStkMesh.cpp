@@ -18,7 +18,7 @@ TEST(StkMesh, UsingStkIO)
 
     // Use STK IO to populate a STK Mesh
     stk::io::StkMeshIoBroker exodusFileReader(communicator);
-    exodusFileReader.open_mesh_database(exodusFileName);
+    exodusFileReader.open_mesh_database(exodusFileName, stk::io::READ_MESH);
     // Create MetaData in STK IO
     exodusFileReader.create_input_mesh();
     // Create BulkData in STK IO

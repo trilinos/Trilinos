@@ -56,7 +56,7 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, iofixture )
   std::string input_base_filename = "unit_test.g";
 
   // Initialize meta data from exodus file
-  bool success = fixture.open_mesh_database(input_base_filename);
+  bool success = fixture.open_mesh_database(input_base_filename, stk::io::READ_MESH);
   EXPECT_TRUE(success);
 
   if (!success)
@@ -94,7 +94,7 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, active_only )
   std::string input_base_filename = "unit_test.g";
 
   // Initialize meta data from exodus file
-  bool success = fixture.open_mesh_database(input_base_filename);
+  bool success = fixture.open_mesh_database(input_base_filename, stk::io::READ_MESH);
   EXPECT_TRUE(success);
 
   if (!success)
@@ -139,7 +139,7 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, active_and_all )
 
   std::string input_base_filename = "unit_test.g";
 
-  bool success = fixture.open_mesh_database(input_base_filename);
+  bool success = fixture.open_mesh_database(input_base_filename, stk::io::READ_MESH);
   EXPECT_TRUE(success);
 
   if (!success)
@@ -198,7 +198,7 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, large_mesh_test )
   std::string input_base_filename = "1mCube_20x20x20.g";
 
   // Initialize meta data from exodus file
-  bool success = fixture.open_mesh_database(input_base_filename);
+  bool success = fixture.open_mesh_database(input_base_filename, stk::io::READ_MESH);
   EXPECT_TRUE(success);
 
   if (!success)

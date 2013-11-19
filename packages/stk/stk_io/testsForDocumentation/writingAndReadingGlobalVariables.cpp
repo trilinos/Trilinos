@@ -32,7 +32,7 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalVariables)
     //Read restart file with time step size as a global variable
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
-        stkIo.open_mesh_database(restartFileName);
+        stkIo.open_mesh_database(restartFileName, stk::io::READ_RESTART);
         stkIo.create_input_mesh();
         stkIo.populate_bulk_data();
         stkIo.process_restart_input(currentTime);

@@ -81,7 +81,7 @@ STKUNIT_UNIT_TEST( heavy, heavy )
   // time meta_data initialize
   {
     double start_time = stk::wall_time();
-    fixture.open_mesh_database(input_base_filename);
+    fixture.open_mesh_database(input_base_filename, stk::io::READ_MESH);
     fixture.create_input_mesh();
     timings[INIT_META_DATA_PHASE_ID] = stk::wall_dtime(start_time);
   }

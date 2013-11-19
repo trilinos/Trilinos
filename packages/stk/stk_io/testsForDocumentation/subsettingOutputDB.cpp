@@ -21,7 +21,7 @@ TEST(StkMeshIoBrokerHowTo, subsetOutputDatabase)
     {
       std::string input_filename = "9x9x9|shell:xyzXYZ|sideset:xX|nodeset:yY";
       stk::io::StkMeshIoBroker mesh_data(communicator);
-      mesh_data.open_mesh_database(input_filename, "generated");
+      mesh_data.open_mesh_database(input_filename, "generated", stk::io::READ_MESH);
       mesh_data.create_input_mesh();
 
       mesh_data.populate_bulk_data();
