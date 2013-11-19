@@ -49,46 +49,69 @@
 namespace Ifpack2 {
 
 template<class MatrixType>
-IdentitySolver<MatrixType>::IdentitySolver(const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& A)
- : isInitialized_(false),
-   isComputed_(false),
-   matrix_(A),
-   numInitialize_(0),
-   numCompute_(0),
-   numApply_(0),
-   condEst_ (-Teuchos::ScalarTraits<magnitude_type>::one ())
+IdentitySolver<MatrixType>::
+IdentitySolver (const Teuchos::RCP<const row_matrix_type>& A)
+  : matrix_ (A),
+    isInitialized_ (false),
+    isComputed_ (false),
+    numInitialize_ (0),
+    numCompute_ (0),
+    numApply_ (0),
+    condEst_ (-Teuchos::ScalarTraits<magnitude_type>::one ())
 {
 }
 
 template<class MatrixType>
-IdentitySolver<MatrixType>::~IdentitySolver()
+IdentitySolver<MatrixType>::~IdentitySolver ()
 {
 }
 
 template<class MatrixType>
-void IdentitySolver<MatrixType>::setParameters(const Teuchos::ParameterList& /*params*/)
+void IdentitySolver<MatrixType>::setParameters (const Teuchos::ParameterList& /*params*/)
 {
 }
 
 template<class MatrixType>
-void IdentitySolver<MatrixType>::initialize()
+void IdentitySolver<MatrixType>::initialize ()
 {
-  if (isInitialized_) return;
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    matrix_.is_null (), std::runtime_error, "Ifpack2::IdentitySolver: "
+    "You must call setMatrix() with a nonnull input matrix "
+    "before you may call initialize() or compute().");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ! matrix_->getDomainMap ()->isCompatible (* (matrix_->getRangeMap ())),
+    std::invalid_argument,
+    "Ifpack2::IdentitySolver: The domain and range Maps "
+    "of the input matrix must be compatible.");
+
+  // If the domain and range Maps are not the same, then we need to
+  // construct an Export from the domain Map to the range Map, so that
+  // this operator is really the identity and not a permutation.
+  if (! matrix_->getDomainMap ()->isSameAs (* (matrix_->getRangeMap ()))) {
+    export_ = Teuchos::rcp (new export_type (matrix_->getDomainMap (),
+                                             matrix_->getRangeMap ()));
+  }
+  else {
+    // If the Export is null, we won't do the Export in apply().
+    // Thus, we need to set it to null here as a flag.
+    export_ = Teuchos::null;
+  }
 
   isInitialized_ = true;
   ++numInitialize_;
 }
 
 template<class MatrixType>
-void IdentitySolver<MatrixType>::compute()
+void IdentitySolver<MatrixType>::compute ()
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    matrix_.is_null (), std::runtime_error, "Ifpack2::IdentitySolver: "
+    "You must call setMatrix() with a nonnull input matrix "
+    "before you may call initialize() or compute().");
+
   if (! isInitialized_) {
     initialize ();
-  }
-  isComputed_ = false;
-  if (matrix_.is_null ()) {
-    isComputed_ = true;
-    return;
   }
 
   isComputed_ = true;
@@ -103,28 +126,54 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
        scalar_type alpha,
        scalar_type beta) const
 {
-  using Teuchos::ArrayRCP;
+  using Teuchos::RCP;
+  typedef Teuchos::ScalarTraits<scalar_type> STS;
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
+                              global_ordinal_type, node_type> MV;
 
-  TEUCHOS_TEST_FOR_EXCEPTION(!isComputed(), std::runtime_error,
-    "Ifpack2::IdentitySolver::apply() ERROR, compute() hasn't been called yet.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ! isComputed (), std::runtime_error,
+    "Ifpack2::IdentitySolver::apply: If compute() has not yet been called, "
+    "or if you have changed the matrix via setMatrix(), "
+    "you must call compute() before you may call this method.");
 
+  // "Identity solver" does what it says: it's the identity operator.
+  // We have to Export if the domain and range Maps are not the same.
+  // Otherwise, this operator would be a permutation, not the identity.
+  if (export_.is_null ()) {
+    Y.update (alpha, X, beta);
+  }
+  else {
+    if (alpha == STS::one () && beta == STS::zero ()) { // the common case
+      Y.doExport (X, *export_, Tpetra::REPLACE);
+    }
+    else {
+      // We know that the domain and range Maps are compatible.  First
+      // bring X into the range Map via Export.  Then compute in place
+      // in Y.
+      MV X_tmp (Y.getMap (), Y.getNumVectors ());
+      X_tmp.doExport (X, *export_, Tpetra::REPLACE);
+      Y.update (alpha, X_tmp, beta);
+    }
+  }
   ++numApply_;
-  //copy X in to Y
-  ArrayRCP<const scalar_type> const xData = X.getData(0);
-  ArrayRCP<scalar_type> yData = Y.getDataNonConst(0);
-  for (typename ArrayRCP<const scalar_type>::size_type i = 0; i < xData.size(); ++i)
-    yData[i] = xData[i];
 }
 
 template<class MatrixType>
-typename IdentitySolver<MatrixType>::magnitude_type IdentitySolver<MatrixType>::computeCondEst(CondestType CT,
+typename IdentitySolver<MatrixType>::magnitude_type
+IdentitySolver<MatrixType>::
+computeCondEst (CondestType CT,
                 local_ordinal_type MaxIters,
                 magnitude_type Tol,
-                const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &matrix)
+                const Teuchos::Ptr<const row_matrix_type>& matrix)
 {
-  const magnitude_type minusOne = Teuchos::ScalarTraits<magnitude_type>::one ();
+  // Forestall compiler warnings for unused variables.
+  (void) CT;
+  (void) MaxIters;
+  (void) Tol;
+  (void) matrix;
 
-  return minusOne;
+  return -Teuchos::ScalarTraits<magnitude_type>::one ();
 }
 
 template <class MatrixType>
@@ -164,11 +213,27 @@ std::string IdentitySolver<MatrixType>::description() const
 }
 
 template <class MatrixType>
-void IdentitySolver<MatrixType>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const
+void IdentitySolver<MatrixType>::
+describe (Teuchos::FancyOStream& out,
+          const Teuchos::EVerbosityLevel verbLevel) const
 {
+  using Teuchos::FancyOStream;
+  using Teuchos::OSTab;
+  using Teuchos::RCP;
+  using Teuchos::rcpFromRef;
+  using std::endl;
+
   if (verbLevel != Teuchos::VERB_NONE) {
-    out << this->description() << std::endl;
-    out << "  numApply: " << numApply_ << std::endl;
+    RCP<FancyOStream> outPtr = rcpFromRef (out);
+
+    // By convention, describe() should always begin with a tab.
+    OSTab tab0 (outPtr);
+    out << "Ifpack2::IdentitySolver:" << endl;
+    OSTab tab1 (outPtr);
+    out << "MatrixType: " << Teuchos::TypeNameTraits<MatrixType>::name () << endl;
+    out << "numInitialize: " << numInitialize_ << endl;
+    out << "numCompute: " << numCompute_ << endl;
+    out << "numApply: " << numApply_ << endl;
   }
 }
 
@@ -193,7 +258,8 @@ Teuchos::RCP<const typename IdentitySolver<MatrixType>::map_type> IdentitySolver
 }
 
 template<class MatrixType>
-void IdentitySolver<MatrixType>::setMatrix (const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& A)
+void IdentitySolver<MatrixType>::
+setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
 {
   // Check in serial or one-process mode if the matrix is square.
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -206,13 +272,15 @@ void IdentitySolver<MatrixType>::setMatrix (const Teuchos::RCP<const Tpetra::Row
 
   // It's legal for A to be null; in that case, you may not call
   // initialize() until calling setMatrix() with a nonnull input.
-  // Regardless, setting the matrix invalidates any previous
-  // factorization.
+  // Regardless, setting the matrix invalidates the preconditioner.
   isInitialized_ = false;
   isComputed_ = false;
+  export_ = Teuchos::null;
+
   matrix_ = A;
 }
 
-}//namespace Ifpack2
+} // namespace Ifpack2
 
-#endif
+#endif // IFPACK2_IDENTITY_SOLVER_DEF_HPP
+

@@ -49,7 +49,12 @@
 
 namespace Ifpack2 {
 
-//! Solver class for testing purposes.
+/// \brief "Identity" preconditioner.
+/// \tparam MatrixType Specialization of Tpetra::RowMatrix.
+///
+/// This class is mainly useful for testing.  It implements the
+/// identity operator; its apply() method just copies the input to the
+/// output.
 template<class MatrixType>
 class IdentitySolver :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
@@ -60,35 +65,45 @@ class IdentitySolver :
                                                                        typename MatrixType::local_ordinal_type,
                                                                        typename MatrixType::global_ordinal_type,
                                                                        typename MatrixType::node_type> >
-                                           {
+{
 public:
+  //! Type of the entries of the input matrix.
   typedef typename MatrixType::scalar_type                                scalar_type;
+  //! Type of the local indices of the input matrix.
   typedef typename MatrixType::local_ordinal_type                         local_ordinal_type;
+  //! Type of the global indices of the input matrix.
   typedef typename MatrixType::global_ordinal_type                        global_ordinal_type;
+  //! Kokkos Node type of the input matrix.
   typedef typename MatrixType::node_type                                  node_type;
+
+  //! Type of the absolute value (magnitude) of a \c scalar_type value.
   typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType      magnitude_type;
+  //! Specialization of Tpetra::Map used by this class.
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+  //! Specialization of Tpetra::RowMatrix used by this class.
+  typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type,
+                            global_ordinal_type, node_type> row_matrix_type;
 
-  IdentitySolver (const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& A);
+  //! Constructor: Takes the matrix to precondition.
+  IdentitySolver (const Teuchos::RCP<const row_matrix_type>& A);
 
-  //! Destructor
+  //! Destructor.
   virtual ~IdentitySolver();
 
-  //! Sets parameters on this object.
-  /**
-    Currently doesn't need any parameters.
-  */
+  /// \brief Set this object's parameters.
+  ///
+  /// This object does not currently take any parameters.
   void setParameters (const Teuchos::ParameterList& params);
 
   //! Initialize
   void initialize();
 
-  //! Returns \c true if the preconditioner has been successfully initialized.
+  //! Return \c true if the preconditioner has been successfully initialized.
   inline bool isInitialized() const {
     return(isInitialized_);
   }
 
-  //! compute the preconditioner
+  //! Compute the preconditioner
   void compute();
 
   //! Return true if compute() has been called.
@@ -96,20 +111,15 @@ public:
     return(isComputed_);
   }
 
-  //! @name Methods implementing a Tpetra::Operator interface.
+  //! @name Implementation of Tpetra::Operator
   //@{
 
-  //! Applies the preconditioner to X, returns the result in Y.
-  /*!
-    \param
-    X - (In) A Tpetra::MultiVector of dimension NumVectors to be preconditioned.
-    \param
-    Y - (InOut) A Tpetra::MultiVector of dimension NumVectors containing result.
-
-    \return Integer error code, set to 0 if successful.
-
-    \warning This routine is NOT AztecOO compliant.
-  */
+  /// \brief Apply the preconditioner to X, and put the result in Y.
+  ///
+  /// \param X [in] MultiVector to which to apply the preconditioner.
+  ///
+  /// \param Y [in/out] On input: Initial guess, if applicable.
+  ///   On poutput: Result of applying the preconditioner.
   void
   apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
          Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
@@ -117,22 +127,20 @@ public:
          scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
          scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
-  //! Returns the Tpetra::Map object associated with the domain of this operator.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getDomainMap () const;
+  //! Return the Tpetra::Map object associated with the domain of this operator.
+  Teuchos::RCP<const map_type> getDomainMap () const;
 
-  //! Returns the Tpetra::Map object associated with the range of this operator.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getRangeMap() const;
+  //! Return the Tpetra::Map object associated with the range of this operator.
+  Teuchos::RCP<const map_type> getRangeMap () const;
 
-  //! Applies the matrix to a Tpetra::MultiVector.
-  /*!
-    \param
-    X - (In) A Tpetra::MultiVector of dimension NumVectors to multiply with matrix.
-    \param
-    Y - (Out) A Tpetra::MultiVector of dimension NumVectors containing the result.
-    */
-  void applyMat(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-                Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-                Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
+  /// \brief Apply the original input matrix.
+  ///
+  /// \param X [in] MultiVector input.
+  /// \param Y [in/out] Result of applying the matrix A to X.
+  void
+  applyMat (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+            Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
   //@}
   //! \name Mathematical functions.
@@ -144,21 +152,18 @@ public:
                   local_ordinal_type MaxIters = 1550,
                   magnitude_type Tol = 1e-9,
                   const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &matrix = Teuchos::null);
-
   //@}
   //! \name Attribute accessor methods
   //@{
 
-  //! Return the computed estimated condition number, or -1.0 if no computed.
-  magnitude_type getCondEst() const
-  { return condEst_; }
+  //! Return the computed estimated condition number, or -1.0 if not computed.
+  magnitude_type getCondEst() const { return condEst_; }
 
   //! Return the communicator associated with this matrix operator.
-  Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
+  Teuchos::RCP<const Teuchos::Comm<int> > getComm () const;
 
   //! Return a reference to the matrix to be preconditioned.
-  Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >
-  getMatrix () const {
+  Teuchos::RCP<const row_matrix_type> getMatrix () const {
     return matrix_;
   }
 
@@ -196,24 +201,41 @@ public:
   /** \brief Print the object with some verbosity level to an FancyOStream object. */
   void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
-  virtual void setMatrix (const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& A);
+  /// \brief Set this preconditioner's matrix.
+  ///
+  /// After calling this method, you must call first initialize(),
+  /// then compute(), before you may call apply().
+  virtual void setMatrix (const Teuchos::RCP<const row_matrix_type>& A);
 
   //@}
 
-  private:
-    bool isInitialized_;
-    bool isComputed_;
-    Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > matrix_;
+private:
+  //! Specialization of Tpetra::Export used by this preconditioner.
+  typedef Tpetra::Export<local_ordinal_type, global_ordinal_type, node_type> export_type;
 
-    mutable int numInitialize_;
-    mutable int numCompute_;
-    mutable int numApply_;
+  Teuchos::RCP<const row_matrix_type> matrix_;
 
-    double initializeTime_;
-    double computeTime_;
-    double applyTime_;
+  /// \brief Cached communication pattern from domain to range Map of \c matrix_.
+  ///
+  /// This is only nonnull, and is only used, when the domain and
+  /// range Maps are not the same.  They must be compatible, but they
+  /// need not necessarily be the same.  We need this because if the
+  /// Maps are compatible but not the same, just copying X to Y in
+  /// apply() would be a permutation, not the identity operation.
+  Teuchos::RCP<const export_type> export_;
 
-    magnitude_type condEst_;
+  bool isInitialized_;
+  bool isComputed_;
+
+  mutable int numInitialize_;
+  mutable int numCompute_;
+  mutable int numApply_;
+
+  double initializeTime_;
+  double computeTime_;
+  double applyTime_;
+
+  magnitude_type condEst_;
 };
 
 }//namespace Ifpack2
