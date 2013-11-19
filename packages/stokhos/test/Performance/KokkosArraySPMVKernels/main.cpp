@@ -43,15 +43,13 @@
 #include <iostream>
 #include <cstdlib>
 
+#include "KokkosCore_config.h"
 #include "Kokkos_Threads.hpp"
-#include "Kokkos_hwloc.hpp"
+#include "Kokkos_OpenMP.hpp"
 
 #include "Stokhos_ConfigDefs.h"
-#if defined(HAVE_STOKHOS_OPENMP) && defined(HAVE_STOKHOS_MKL)
-#include <omp.h>
-#endif
 
-template <typename scalar>
+template <typename scalar, typename device>
 int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
              bool test_block, bool symmetric, bool mkl);
 
@@ -72,6 +70,16 @@ int main(int argc, char *argv[])
   bool symmetric = true;
   bool single = false;
   bool mkl = false;
+#ifdef KOKKOS_HAVE_OPENMP
+  bool omp = true;
+#else
+  bool omp = false;
+#endif
+#ifdef KOKKOS_HAVE_PTHREAD
+  bool threads = true;
+#else
+  bool threads = false;
+#endif
   int device = 0;
 
   // Parse command line arguments
@@ -123,6 +131,18 @@ int main(int argc, char *argv[])
       ++i;
       device = std::atoi(argv[i]);
     }
+#ifdef KOKKOS_HAVE_OPENMP
+    else if (s == "omp")
+      omp = true;
+    else if (s == "no-omp")
+      omp = false;
+#endif
+#ifdef KOKKOS_HAVE_PTHREAD
+    else if (s == "threads")
+      threads = true;
+    else if (s == "no-threads")
+      threads = false;
+#endif
     else if (s == "-h" || s == "--help")
       print_usage = true;
     else {
@@ -134,46 +154,45 @@ int main(int argc, char *argv[])
   if (print_usage) {
     std::cout << "Usage:" << std::endl
               << "\t" << argv[0]
-              << " [no-][cuda|host|block|flat|orig|deg|linear|symmetric] [single|double] [device device_id]"
+              << " [no-][cuda|host|omp|threads|block|flat|orig|deg|linear|symmetric] [single|double] [device device_id]"
               << std::endl << "Defaults are all enabled." << std::endl;
     return -1;
   }
 
-  // Always initialize threads (for Cuda::device_mirror)
-  const size_t team_count =
-    Kokkos::hwloc::get_available_numa_count() *
-    Kokkos::hwloc::get_available_cores_per_numa();
-  const size_t threads_per_team =
-    Kokkos::hwloc::get_available_threads_per_core();
+  if (test_host) {
 
-#if defined(HAVE_STOKHOS_OPENMP) && defined(HAVE_STOKHOS_MKL)
-  // Call a little OpenMP parallel region so that MKL will get the right
-  // number of threads.  This isn't perfect in that the thread binding
-  // doesn't seem right, and only works at all when using GNU threads with MKL.
-#pragma omp parallel
-  {
-    int numThreads = omp_get_num_threads();
-#pragma omp single
-    std::cout << " num_omp_threads = " << numThreads << std::endl;
-  }
+#ifdef KOKKOS_HAVE_PTHREAD
+    if (threads) {
+      if (single)
+        mainHost<float,Kokkos::Threads>(
+          test_flat, test_orig, test_deg, test_lin, test_block, symmetric, mkl);
+      else
+        mainHost<double,Kokkos::Threads>(
+          test_flat, test_orig, test_deg, test_lin, test_block, symmetric, mkl);
+    }
 #endif
 
-  Kokkos::Threads::initialize( team_count * threads_per_team );
+#ifdef KOKKOS_HAVE_OPENMP
+    if (omp) {
+      if (single)
+        mainHost<float,Kokkos::OpenMP>(
+          test_flat, test_orig, test_deg, test_lin, test_block, symmetric, mkl);
+      else
+        mainHost<double,Kokkos::OpenMP>(
+          test_flat, test_orig, test_deg, test_lin, test_block, symmetric, mkl);
+    }
+#endif
 
-  if (test_host) {
-    if (single)
-      mainHost<float>(test_flat, test_orig, test_deg, test_lin, test_block, symmetric, mkl);
-    else
-      mainHost<double>(test_flat, test_orig, test_deg, test_lin, test_block, symmetric, mkl);
   }
+
+#ifdef KOKKOS_HAVE_CUDA
   if (test_cuda) {
     if (single)
       mainCuda<float>(test_flat, test_orig, test_lin, test_block, symmetric, device);
     else
       mainCuda<double>(test_flat, test_orig, test_lin, test_block, symmetric, device);
   }
-
-  Kokkos::Threads::finalize();
+#endif
 
   return 0 ;
 }

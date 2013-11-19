@@ -670,7 +670,8 @@ int ThreadsExec::is_initialized()
 
 void ThreadsExec::initialize( unsigned thread_count ,
                               unsigned use_numa_count ,
-                              unsigned use_cores_per_numa )
+                              unsigned use_cores_per_numa ,
+                              bool allow_asynchronous_threadpool )
 {
   static const Sentinel sentinel ;
 
@@ -688,7 +689,7 @@ void ThreadsExec::initialize( unsigned thread_count ,
 
     const unsigned thread_spawn_begin =
       hwloc::thread_mapping( "Kokkos::Threads::initialize" ,
-                             true /* allow asynchronous */ ,
+                             allow_asynchronous_threadpool ,
                              thread_count ,
                              use_numa_count ,
                              use_cores_per_numa ,

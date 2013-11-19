@@ -76,6 +76,7 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
   RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
+  typedef Teuchos::ScalarTraits<SC> ST;
   //
   // Parameters
   //

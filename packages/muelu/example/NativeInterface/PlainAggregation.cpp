@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
   // Print relative residual norm
   //
 
-  ST::magnitudeType residualNorms = Utils::ResidualNorm(*A, *X, *B)[0];
+  Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utils::ResidualNorm(*A, *X, *B)[0];
   if (comm->getRank() == 0)
     std::cout << "||Residual|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorms << std::endl;
 

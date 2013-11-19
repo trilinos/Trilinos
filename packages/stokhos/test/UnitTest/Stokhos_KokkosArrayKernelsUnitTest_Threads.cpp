@@ -39,37 +39,55 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_THREADS_STOCHASTICPRODUCTTENSOR_HPP
-#define STOKHOS_THREADS_STOCHASTICPRODUCTTENSOR_HPP
+// Utilities
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_UnitTestRepository.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
+// Device
 #include "Kokkos_Threads.hpp"
+#include "Kokkos_hwloc.hpp"
 
-#include "Stokhos_Multiply.hpp"
-#include "Stokhos_StochasticProductTensor.hpp"
+// Kernels
+#include "Stokhos_Threads_CrsProductTensor.hpp"
 
-namespace Stokhos {
+// Tests
+#include "Stokhos_KokkosArrayKernelsUnitTest.hpp"
 
-template< typename ValueType , class TensorType >
-class Multiply< StochasticProductTensor< ValueType, TensorType,
-                                         Kokkos::Threads > >
-{
-public:
-  typedef Kokkos::Threads                    device_type ;
-  typedef device_type::size_type  size_type ;
-  typedef StochasticProductTensor< ValueType, TensorType, device_type > block_type ;
+using namespace KokkosKernelsUnitTest;
 
-  template< typename MatrixValue , typename VectorValue >
-  static void apply( const block_type  & block ,
-                     const MatrixValue *       a ,
-                     const VectorValue * const x ,
-                           VectorValue * const y )
-  {
-    typedef Multiply< typename block_type::tensor_type > tensor_multiply ;
+UnitTestSetup<Kokkos::Threads> setup;
 
-    tensor_multiply::apply( block.tensor() , a , x , y );
-  }
-};
+// Test declarations
+#include "Stokhos_KokkosArrayKernelsUnitTestDecl.hpp"
+#include "Stokhos_KokkosArrayKernelsUnitTest_Host.hpp"
 
-} // namespace Stokhos
+// Tests using Threads device
+using Kokkos::Threads;
+UNIT_TEST_GROUP_SCALAR_DEVICE( double, Threads )
+UNIT_TEST_GROUP_SCALAR_HOST_DEVICE( double, Threads )
 
-#endif /* #ifndef STOKHOS_THREADS_STOCHASTICPRODUCTTENSOR_HPP */
+int main( int argc, char* argv[] ) {
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+
+  const size_t team_count =
+  Kokkos::hwloc::get_available_numa_count() *
+    Kokkos::hwloc::get_available_cores_per_numa();
+  const size_t threads_per_team =
+    Kokkos::hwloc::get_available_threads_per_core();
+
+  // Initialize threads
+  Kokkos::Threads::initialize( team_count * threads_per_team );
+  Kokkos::Threads::print_configuration( std::cout );
+
+  // Setup (has to happen after initialization)
+  setup.setup();
+
+  // Run tests
+  int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+
+  // Finish up
+  Kokkos::Threads::finalize();
+
+  return ret;
+}

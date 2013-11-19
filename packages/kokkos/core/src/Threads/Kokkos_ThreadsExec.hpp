@@ -160,7 +160,8 @@ public:
 
   static void initialize( unsigned thread_count ,
                           unsigned use_numa_count ,
-                          unsigned use_cores_per_numa );
+                          unsigned use_cores_per_numa ,
+                          bool allow_asynchronous_threadpool );
 
   static void finalize();
 
@@ -525,9 +526,10 @@ inline int Threads::is_initialized()
 inline void Threads::initialize(
   unsigned threads_count ,
   unsigned use_numa_count ,
-  unsigned use_cores_per_numa )
+  unsigned use_cores_per_numa ,
+  bool allow_asynchronous_threadpool )
 {
-  Impl::ThreadsExec::initialize( threads_count , use_numa_count , use_cores_per_numa );
+  Impl::ThreadsExec::initialize( threads_count , use_numa_count , use_cores_per_numa , allow_asynchronous_threadpool );
 }
 
 inline void Threads::finalize()

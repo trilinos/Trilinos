@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
     baseFile = baseFile + (lib == Xpetra::UseEpetra ? "_epetra" : "_tpetra");
 
     std::filebuf buffer;
-    std::streambuf* oldbuffer;
+    std::streambuf* oldbuffer = NULL;
     if (myRank == 0) {
       // Redirect output
       buffer.open((baseFile + ".out").c_str(), std::ios::out);

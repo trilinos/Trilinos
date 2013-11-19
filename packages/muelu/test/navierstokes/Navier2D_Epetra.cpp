@@ -410,7 +410,7 @@ int main(int argc, char *argv[]) {
     xLsg->putScalar( (SC) 0.0);
 
     // calculate initial (absolute) residual
-    Teuchos::Array<ST::magnitudeType> norms(1);
+    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
     xRhs->norm2(norms);
     *out << "||x_0|| = " << norms[0] << std::endl;
 

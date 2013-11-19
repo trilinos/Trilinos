@@ -39,69 +39,20 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_THREADS_FLAT_SPARSE_3_TENSOR_HPP
-#define STOKHOS_THREADS_FLAT_SPARSE_3_TENSOR_HPP
-
-#include "Kokkos_Threads.hpp"
-
-#include "Stokhos_Multiply.hpp"
-#include "Stokhos_FlatSparse3Tensor.hpp"
+#ifndef STOKHOS_MATRIX_MARKET_HPP
+#define STOKHOS_MATRIX_MARKET_HPP
 
 namespace Stokhos {
 
-template< typename ValueType >
-class Multiply< FlatSparse3Tensor< ValueType , Kokkos::Threads > , void , void , DefaultSparseMatOps >
+template < typename MatrixType > class MatrixMarketWriter;
+
+template < typename MatrixType >
+void write_matrix_market(const MatrixType& A ,
+                         const std::string& filename)
 {
-public:
-
-  typedef Kokkos::Threads::size_type size_type ;
-  typedef FlatSparse3Tensor< ValueType , Kokkos::Threads > tensor_type ;
-
-  template< typename MatrixValue , typename VectorValue >
-  static void apply( const tensor_type & tensor ,
-                     const MatrixValue * const a ,
-                     const VectorValue * const x ,
-                           VectorValue * const y )
-  {
-
-    const size_type nDim = tensor.dimension();
-
-    // Loop over i
-    for ( size_type i = 0; i < nDim; ++i) {
-      VectorValue ytmp = 0;
-
-      // Loop over k for this i
-      const size_type nk = tensor.num_k(i);
-      const size_type kBeg = tensor.k_begin(i);
-      const size_type kEnd = kBeg + nk;
-      for (size_type kEntry = kBeg; kEntry < kEnd; ++kEntry) {
-        const size_type k = tensor.k_coord(kEntry);
-        const MatrixValue ak = a[k];
-        const VectorValue xk = x[k];
-
-        // Loop over j for this i,k
-        const size_type nj = tensor.num_j(kEntry);
-        const size_type jBeg = tensor.j_begin(kEntry);
-        const size_type jEnd = jBeg + nj;
-        for (size_type jEntry = jBeg; jEntry < jEnd; ++jEntry) {
-          const size_type j = tensor.j_coord(jEntry);
-          ytmp += tensor.value(jEntry) * ( a[j] * xk + ak * x[j] );
-        }
-      }
-
-      y[i] += ytmp ;
-    }
-  }
-
-  static size_type matrix_size( const tensor_type & tensor )
-  { return tensor.dimension(); }
-
-  static size_type vector_size( const tensor_type & tensor )
-  { return tensor.dimension(); }
-};
-
-//----------------------------------------------------------------------------
+  MatrixMarketWriter<MatrixType>::write(A, filename);
+}
 
 } // namespace Stokhos
 
-#endif /* #ifndef STOKHOS_THREADS_SPARSEPRODUCTTENSOR_HPP */
+#endif

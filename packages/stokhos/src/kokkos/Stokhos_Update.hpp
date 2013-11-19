@@ -39,66 +39,57 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_THREADS_FLAT_SPARSE_3_TENSOR_KJI_HPP
-#define STOKHOS_THREADS_FLAT_SPARSE_3_TENSOR_KJI_HPP
-
-#include "Kokkos_Threads.hpp"
-
-#include "Stokhos_Multiply.hpp"
-#include "Stokhos_FlatSparse3Tensor_kji.hpp"
+#ifndef STOKHOS_UPDATE_HPP
+#define STOKHOS_UPDATE_HPP
 
 namespace Stokhos {
 
-template< typename ValueType >
-class Multiply< FlatSparse3Tensor_kji< ValueType , Kokkos::Threads > , void , void , DefaultSparseMatOps >
+template< typename ValueType, typename VectorType >
+class Update
 {
 public:
+  typedef VectorType                        vector_type;
+  typedef ValueType                         value_type;
+  typedef typename vector_type::device_type device_type;
+  typedef typename device_type::size_type   size_type;
 
-  typedef Kokkos::Threads::size_type size_type ;
-  typedef FlatSparse3Tensor_kji< ValueType , Kokkos::Threads > tensor_type ;
 
-  template< typename MatrixValue , typename VectorValue >
-  static void apply( const tensor_type & tensor ,
-                     const MatrixValue * const a ,
-                     const VectorValue * const x ,
-                           VectorValue * const y )
+        vector_type  m_x;
+  const vector_type  m_y;
+  const value_type   m_alpha;
+  const value_type   m_beta;
+
+  Update(const value_type& alpha, vector_type& x,
+         const value_type& beta,  const vector_type& y)
+  : m_x( x )
+  , m_y( y )
+  , m_alpha( alpha )
+  , m_beta( beta )
+  {}
+
+  //--------------------------------------------------------------------------
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type iRow ) const
   {
-    const size_type nk = tensor.num_k();
-
-    // Loop over k
-    for ( size_type k = 0; k < nk; ++k) {
-      const MatrixValue ak = a[k];
-      const VectorValue xk = x[k];
-
-      // Loop over j for this k
-      const size_type nj = tensor.num_j(k);
-      const size_type jBeg = tensor.j_begin(k);
-      const size_type jEnd = jBeg + nj;
-      for (size_type jEntry = jBeg; jEntry < jEnd; ++jEntry) {
-        const size_type j = tensor.j_coord(jEntry);
-        VectorValue tmp = a[j] * xk + ak * x[j];
-
-        // Loop over i for this k,j
-        const size_type ni = tensor.num_i(jEntry);
-        const size_type iBeg = tensor.i_begin(jEntry);
-        const size_type iEnd = iBeg + ni;
-        for (size_type iEntry = iBeg; iEntry < iEnd; ++iEntry) {
-          const size_type i = tensor.i_coord(iEntry);
-          y[i] += tensor.value(iEntry) * tmp;
-        }
-      }
-    }
+    m_x(iRow) = m_alpha * m_x(iRow) + m_beta * m_y(iRow) ;
   }
 
-  static size_type matrix_size( const tensor_type & tensor )
-  { return tensor.dimension(); }
-
-  static size_type vector_size( const tensor_type & tensor )
-  { return tensor.dimension(); }
+  static void apply(const value_type& alpha, vector_type& x,
+                    const value_type& beta,  const vector_type& y)
+  {
+    const size_t row_count = x.dimension_0();
+    Kokkos::parallel_for( row_count , Update(alpha,x,beta,y) );
+  }
 };
 
-//----------------------------------------------------------------------------
+template <typename ValueType, typename VectorType>
+void update(const ValueType& alpha, VectorType& x,
+            const ValueType& beta,  const VectorType& y)
+{
+  Update<ValueType,VectorType>::apply( alpha , x , beta, y );
+}
 
 } // namespace Stokhos
 
-#endif /* #ifndef STOKHOS_THREADS_SPARSEPRODUCTTENSOR_KJI_HPP */
+#endif

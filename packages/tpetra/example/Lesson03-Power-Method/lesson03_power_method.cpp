@@ -171,8 +171,9 @@ main (int argc, char *argv[])
   // Desired (absolute) residual tolerance
   const magnitude_type tolerance = 1.0e-2;
 
-  // Run the power method.
+  // Run the power method and report the result.
   scalar_type lambda = powerMethod<mat_type> (*A, niters, tolerance, out);
+  out << endl << "Estimated max eigenvalue: " << lambda << endl;
 
   //
   // Now we're going to change values in the sparse matrix and run the
@@ -184,7 +185,7 @@ main (int argc, char *argv[])
   //
   // Increase diagonal dominance
   //
-  out << endl << "Increasing magnitude of A(0,0), solving again" << endl << endl;
+  out << endl << "Increasing magnitude of A(0,0), solving again" << endl;
 
   // Must call resumeFill() before changing the matrix, even its values.
   A->resumeFill();
@@ -235,6 +236,7 @@ main (int argc, char *argv[])
 
   // Run the power method again.
   lambda = powerMethod<mat_type> (*A, niters, tolerance, out);
+  out << endl << "Estimated max eigenvalue: " << lambda << endl;
 
   // This tells the Trilinos test framework that the test passed.
   if (myRank == 0) {

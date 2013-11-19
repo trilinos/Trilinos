@@ -1906,38 +1906,62 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   operator= (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source)
   {
-    const char tfecfFuncName[] = "operator=()";
+#ifdef HAVE_TPETRA_DEBUG
+    using Teuchos::outArg;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+    using std::endl;
+#endif // HAVE_TPETRA_DEBUG
+
+    const char tfecfFuncName[] = "operator=";
     // Check for special case of this=Source, in which case we do nothing.
     if (this != &source) {
+      // Whether the input and *this are compatible on the calling process.
+      const int locallyCompat =
+        (this->getLocalLength () == source.getLocalLength ()) ? 1 : 0;
 #ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*source.getMap()), std::invalid_argument,
-          ": MultiVectors do not have compatible Maps:" << std::endl
-          << "this->getMap(): " << std::endl << *this->getMap()
-          << "source.getMap(): " << std::endl << *source.getMap() << std::endl);
+      int globallyCompat = 1; // innocent until proven guilty
+      reduceAll<int, int> (* (this->getMap ()->getComm ()), REDUCE_MIN,
+                           locallyCompat, outArg (globallyCompat));
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        globallyCompat == 0, std::invalid_argument,
+        ": MultiVectors do not have the same local length on all processes.");
 #else
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( getLocalLength() != source.getLocalLength(), std::invalid_argument,
-          ": MultiVectors do not have the same local length.");
-#endif
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(source.getNumVectors() != getNumVectors(), std::invalid_argument,
-          ": MultiVectors must have the same number of vectors.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        locallyCompat == 0, std::invalid_argument,
+        ": MultiVectors do not have the same local length on the calling "
+        "process " << this->getMap ()->getComm ()->getSize () << ".  *this "
+        "has " << this->getLocalLength () << " local rows, and source has "
+        << source.getLocalLength () << " rows.");
+#endif // HAVE_TPETRA_DEBUG
+
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        source.getNumVectors() != getNumVectors(), std::invalid_argument,
+        ": MultiVectors must have the same number of vectors.");
+
       Teuchos::RCP<Node> node = MVT::getNode (lclMV_);
       const size_t numVecs = getNumVectors();
-      if (isConstantStride() && source.isConstantStride() && getLocalLength()==getStride() && source.getLocalLength()==source.getStride()) {
+      if (isConstantStride () && source.isConstantStride () &&
+          getLocalLength () == getStride () &&
+          source.getLocalLength ()== source.getStride ()) {
         // Both multivectors' data are stored contiguously, so we can
         // copy in one call.
         KOKKOS_NODE_TRACE("MultiVector::operator=()")
-        node->template copyBuffers<Scalar>(getLocalLength()*numVecs, MVT::getValues(source.lclMV_), MVT::getValuesNonConst(lclMV_) );
+        node->template copyBuffers<Scalar> (getLocalLength () * numVecs,
+                                            MVT::getValues (source.lclMV_),
+                                            MVT::getValuesNonConst (lclMV_));
       }
       else {
         // We have to copy the columns one at a time.
         for (size_t j=0; j < numVecs; ++j) {
           KOKKOS_NODE_TRACE("MultiVector::operator=()")
-          node->template copyBuffers<Scalar>(getLocalLength(), source.getSubArrayRCP(MVT::getValues(source.lclMV_),j),
-                                                                      getSubArrayRCP(MVT::getValuesNonConst(lclMV_),j) );
+          node->template copyBuffers<Scalar> (getLocalLength (),
+                                              source.getSubArrayRCP (MVT::getValues (source.lclMV_), j),
+                                              getSubArrayRCP (MVT::getValuesNonConst(lclMV_), j));
         }
       }
     }
-    return(*this);
+    return *this;
   }
 
 

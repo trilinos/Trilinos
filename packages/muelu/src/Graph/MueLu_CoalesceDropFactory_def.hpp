@@ -81,17 +81,21 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<const ParameterList> CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
-
-    typedef  Teuchos::ScalarTraits<SC> TST;
     RCP<ParameterList> validParamList = rcp(new ParameterList());
+
+    Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
 
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory for UnAmalgamationInfo");
     validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory for Coordinates");
-    validParamList->set< bool >                  ("lightweight wrap",   false,         "Experimental option for lightweight graph access");
-    validParamList->set< SC >                    ("Dirichlet detection threshold", TST::zero(), "Threshold for determining whether entries are zero during Dirichlet row detection");
-    validParamList->set< SC >                    ("aggregation threshold", TST::zero(), "Aggregation dropping threshold");
-    validParamList->set< std::string >           ("algorithm",          "original",    "Dropping algorithm");
+    validParamList->set< bool >                  ("lightweight wrap",           false, "Experimental option for lightweight graph access");
+    validParamList->set< SC >                    ("aggregation threshold",       zero, "Aggregation dropping threshold");
+    validParamList->set< SC >                    ("Dirichlet detection threshold", zero, "Threshold for determining whether entries are zero during Dirichlet row detection");
+    {
+      typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
+      RCP<validatorType> typeValidator = rcp(new validatorType(Teuchos::tuple<std::string>("original", "laplacian", "classical"), "algorithm"));
+      validParamList->set< std::string >         ("algorithm",             "original", "Dropping algorithm", typeValidator);
+    }
 
     return validParamList;
   }
@@ -127,8 +131,10 @@ namespace MueLu {
 
     if (doExperimentalWrap) {
       std::string algo = pL.get<std::string>("algorithm");
+      if (algo == "classical")
+        algo = "original";
 
-      TEUCHOS_TEST_FOR_EXCEPTION(predrop_ != null    && algo != "original", Exceptions::RuntimeError, "Dropping function must not be provided for \"" << algo << "\" algorithm");
+      TEUCHOS_TEST_FOR_EXCEPTION(predrop_ != null   && algo != "original", Exceptions::RuntimeError, "Dropping function must not be provided for \"" << algo << "\" algorithm");
       TEUCHOS_TEST_FOR_EXCEPTION(algo != "original" && algo != "laplacian", Exceptions::RuntimeError, "\"algorithm\" must be one of (original|laplacian)");
 
       SC threshold = Teuchos::as<SC>(pL.get<double>("aggregation threshold"));

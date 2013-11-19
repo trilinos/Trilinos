@@ -106,7 +106,7 @@ namespace MueLuTests {
     RCP<MultiVector> result = MultiVectorFactory::Build(A->getRangeMap(),1,false);
     onesVector->putScalar(Teuchos::ScalarTraits<SC>::one());
     DL->apply(*onesVector,*result,Teuchos::NO_TRANS,1.0,0.0);
-    Teuchos::Array<ST::magnitudeType> norms(1);
+    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
     result->norm2(norms);
     TEST_EQUALITY(norms[0]<1e-12, true);
 

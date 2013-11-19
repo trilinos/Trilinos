@@ -602,7 +602,7 @@ int main(int argc, char *argv[]) {
 
   RCP<Vector> xR = Teuchos::rcp(new Xpetra::EpetraVector(epv));
   // calculate initial (absolute) residual
-  Teuchos::Array<ST::magnitudeType> norms(1);
+  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
 
   xR->norm2(norms);
   *out << "Test: ||x_0|| = " << norms[0] << std::endl;

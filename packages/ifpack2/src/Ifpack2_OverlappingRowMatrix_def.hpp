@@ -687,6 +687,212 @@ bool OverlappingRowMatrix<MatrixType>::supportsRowViews () const
   return false;
 }
 
+template<class MatrixType>
+std::string OverlappingRowMatrix<MatrixType>::description() const
+{
+  std::ostringstream oss;
+  if (isFillComplete()) {
+    oss << "{ isFillComplete: true"
+        << ", global rows: " << getGlobalNumRows()
+        << ", global columns: " << getGlobalNumCols()
+        << ", global entries: " << getGlobalNumEntries()
+        << " }";
+  }
+  else {
+    oss << "{ isFillComplete: false"
+        << ", global rows: " << getGlobalNumRows()
+        << " }";
+  }
+  return oss.str();
+}
+
+template<class MatrixType>
+void OverlappingRowMatrix<MatrixType>::describe(Teuchos::FancyOStream &out,
+            const Teuchos::EVerbosityLevel verbLevel) const
+{
+    using std::endl;
+    using std::setw;
+    using Teuchos::as;
+    using Teuchos::VERB_DEFAULT;
+    using Teuchos::VERB_NONE;
+    using Teuchos::VERB_LOW;
+    using Teuchos::VERB_MEDIUM;
+    using Teuchos::VERB_HIGH;
+    using Teuchos::VERB_EXTREME;
+    using Teuchos::RCP;
+    using Teuchos::null;
+    using Teuchos::ArrayView;
+
+    Teuchos::EVerbosityLevel vl = verbLevel;
+    if (vl == VERB_DEFAULT) {
+      vl = VERB_LOW;
+    }
+    RCP<const Teuchos::Comm<int> > comm = this->getComm();
+    const int myRank = comm->getRank();
+    const int numProcs = comm->getSize();
+    size_t width = 1;
+    for (size_t dec=10; dec<getGlobalNumRows(); dec *= 10) {
+      ++width;
+    }
+    width = std::max<size_t> (width, as<size_t> (11)) + 2;
+    Teuchos::OSTab tab(out);
+    //    none: print nothing
+    //     low: print O(1) info from node 0
+    //  medium: print O(P) info, num entries per process
+    //    high: print O(N) info, num entries per row
+    // extreme: print O(NNZ) info: print indices and values
+    //
+    // for medium and higher, print constituent objects at specified verbLevel
+    if (vl != VERB_NONE) {
+      if (myRank == 0) {
+        out << this->description() << std::endl;
+      }
+      // O(1) globals, minus what was already printed by description()
+      //if (isFillComplete() && myRank == 0) {
+      //  out << "Global number of diagonal entries: " << getGlobalNumDiags() << std::endl;
+      //  out << "Global max number of entries in a row: " << getGlobalMaxNumRowEntries() << std::endl;
+      //}
+      // constituent objects
+      if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME) {
+        if (myRank == 0) {
+          out << endl << "Row map:" << endl;
+        }
+        getRowMap()->describe(out,vl);
+        //
+        if (getColMap() != null) {
+          if (getColMap() == getRowMap()) {
+            if (myRank == 0) {
+              out << endl << "Column map is row map.";
+            }
+          }
+          else {
+            if (myRank == 0) {
+              out << endl << "Column map:" << endl;
+            }
+            getColMap()->describe(out,vl);
+          }
+        }
+        if (getDomainMap() != null) {
+          if (getDomainMap() == getRowMap()) {
+            if (myRank == 0) {
+              out << endl << "Domain map is row map.";
+            }
+          }
+          else if (getDomainMap() == getColMap()) {
+            if (myRank == 0) {
+              out << endl << "Domain map is column map.";
+            }
+          }
+          else {
+            if (myRank == 0) {
+              out << endl << "Domain map:" << endl;
+            }
+            getDomainMap()->describe(out,vl);
+          }
+        }
+        if (getRangeMap() != null) {
+          if (getRangeMap() == getDomainMap()) {
+            if (myRank == 0) {
+              out << endl << "Range map is domain map." << endl;
+            }
+          }
+          else if (getRangeMap() == getRowMap()) {
+            if (myRank == 0) {
+              out << endl << "Range map is row map." << endl;
+            }
+          }
+          else {
+            if (myRank == 0) {
+              out << endl << "Range map: " << endl;
+            }
+            getRangeMap()->describe(out,vl);
+          }
+        }
+        if (myRank == 0) {
+          out << endl;
+        }
+      }
+      // O(P) data
+      if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME) {
+        for (int curRank = 0; curRank < numProcs; ++curRank) {
+          if (myRank == curRank) {
+            out << "Process rank: " << curRank << std::endl;
+            out << "  Number of entries: " << getNodeNumEntries() << std::endl;
+            if (isFillComplete()) {
+              out << "  Number of diagonal entries: " << getNodeNumDiags() << std::endl;
+            }
+            out << "  Max number of entries per row: " << getNodeMaxNumRowEntries() << std::endl;
+          }
+          comm->barrier();
+          comm->barrier();
+          comm->barrier();
+        }
+      }
+      // O(N) and O(NNZ) data
+      if (vl == VERB_HIGH || vl == VERB_EXTREME) {
+        for (int curRank = 0; curRank < numProcs; ++curRank) {
+          if (myRank == curRank) {
+            out << std::setw(width) << "Proc Rank"
+                << std::setw(width) << "Global Row"
+                << std::setw(width) << "Num Entries";
+            if (vl == VERB_EXTREME) {
+              out << std::setw(width) << "(Index,Value)";
+            }
+            out << endl;
+            for (size_t r = 0; r < getNodeNumRows (); ++r) {
+              const size_t nE = getNumEntriesInLocalRow(r);
+              typename MatrixType::global_ordinal_type gid = getRowMap()->getGlobalElement(r);
+              out << std::setw(width) << myRank
+                  << std::setw(width) << gid
+                  << std::setw(width) << nE;
+              if (vl == VERB_EXTREME) {
+                if (isGloballyIndexed()) {
+                  ArrayView<const typename MatrixType::global_ordinal_type> rowinds;
+                  ArrayView<const typename MatrixType::scalar_type> rowvals;
+                  getGlobalRowView (gid, rowinds, rowvals);
+                  for (size_t j = 0; j < nE; ++j) {
+                    out << " (" << rowinds[j]
+                        << ", " << rowvals[j]
+                        << ") ";
+                  }
+                }
+                else if (isLocallyIndexed()) {
+                  ArrayView<const typename MatrixType::local_ordinal_type> rowinds;
+                  ArrayView<const typename MatrixType::scalar_type> rowvals;
+                  getLocalRowView (r, rowinds, rowvals);
+                  for (size_t j=0; j < nE; ++j) {
+                    out << " (" << getColMap()->getGlobalElement(rowinds[j])
+                        << ", " << rowvals[j]
+                        << ") ";
+                  }
+                } // globally or locally indexed
+              } // vl == VERB_EXTREME
+              out << endl;
+            } // for each row r on this process
+
+          } // if (myRank == curRank)
+          comm->barrier();
+          comm->barrier();
+          comm->barrier();
+        }
+
+        out.setOutputToRootOnly(0);
+        out << "===========\nlocal matrix\n=================" << std::endl;
+        out.setOutputToRootOnly(-1);
+        A_->describe(out,Teuchos::VERB_EXTREME);
+        out.setOutputToRootOnly(0);
+        out << "===========\nend of local matrix\n=================" << std::endl;
+        comm->barrier();
+        out.setOutputToRootOnly(0);
+        out << "=================\nghost matrix\n=================" << std::endl;
+        out.setOutputToRootOnly(-1);
+        ExtMatrix_->describe(out,Teuchos::VERB_EXTREME);
+        out.setOutputToRootOnly(0);
+        out << "===========\nend of ghost matrix\n=================" << std::endl;
+      }
+    }
+}
+
 
 } // namespace Ifpack2
 

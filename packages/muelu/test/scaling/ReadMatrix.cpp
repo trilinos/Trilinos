@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
     X->randomize(useSameRandomGen);
     A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
 
-    Teuchos::Array<ST::magnitudeType> norms(1);
+    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
     B->norm2(norms);
     //B->scale(1.0/norms[0]);
   }
@@ -223,7 +223,7 @@ int main(int argc, char *argv[]) {
     tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - Fixed Point Solve")));
 
     H->IsPreconditioner(false);
-    Teuchos::Array<ST::magnitudeType> norms(1);
+    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
     norms = Utils::ResidualNorm(*A,*X,*B);
     std::cout << "                iter:    0           residual = " << norms[0] << std::endl;
     for (int i=0; i< maxIts; ++i) {

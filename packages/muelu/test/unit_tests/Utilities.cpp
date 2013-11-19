@@ -69,6 +69,8 @@ namespace MueLuTests {
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
+    typedef Teuchos::ScalarTraits<SC> ST;
+
     //Calculate result = (Op*Op)*X for Epetra
     int nx = 37*comm->getSize();
     int ny=nx;

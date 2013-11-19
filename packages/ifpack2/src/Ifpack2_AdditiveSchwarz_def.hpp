@@ -395,10 +395,7 @@ setParameters (const Teuchos::ParameterList& plist)
 
       // Convert the mode to upper case, so users don't have to worry
       // about case sensitivity.
-      if (mode.size () > 0) {
-        std::locale loc;
-        std::use_facet<std::ctype<char> > (loc).toupper (&mode[0], &mode[mode.size () - 1]);
-      }
+      std::transform(mode.begin(), mode.end(),mode.begin(), ::toupper);
       if (mode == "ADD") {
         CombineMode_ = Tpetra::ADD;
       }

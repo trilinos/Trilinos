@@ -65,8 +65,7 @@ class Multiply<
   BlockCrsMatrix< CooProductTensor< TensorScalar, Kokkos::Cuda, Pack >,
                   MatrixScalar, Kokkos::Cuda >,
   Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
-  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
-  DefaultSparseMatOps >
+  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda> >
 {
 public:
 

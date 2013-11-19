@@ -18,13 +18,13 @@ debug: graph level = -1   [default]
 smoother: pre or post = both   [default]
 aggregation: type = uncoupled   [default]
 multigrid algorithm = sa   [default]
-smoother: params ->
+smoother: params -> 
  chebyshev: degree = 2   [unused]
  chebyshev: ratio eigenvalue = 20   [unused]
  chebyshev: min eigenvalue = 1   [unused]
  chebyshev: zero starting solution = 1   [unused]
  chebyshev: eigenvalue max iterations = 10   [unused]
-repartition: params ->
+repartition: params -> 
  algorithm = multijagged   [unused]
 
 Level 0
@@ -36,7 +36,7 @@ Level 0
  chebyshev: eigenvalue max iterations = 10
  chebyshev: min diagonal value = 2.22045e-16   [default]
  chebyshev: assume matrix does not change = 0   [default]
-
+ 
 Level 1
  Build (MueLu::RebalanceTransferFactory)
   Build (MueLu::RepartitionFactory)
@@ -45,12 +45,12 @@ Level 1
      Matrix filtering (MueLu::FilteredAFactory)
       Build (MueLu::CoalesceDropFactory)
       lightweight wrap = 1
-      Dirichlet detection threshold = 0
       aggregation threshold = 0.02
+      Dirichlet detection threshold = 0
       algorithm = laplacian
-
+      
      lumping = 1
-
+     
      Build (MueLu::TentativePFactory)
       Build (MueLu::UncoupledAggregationFactory)
       Ordering = 0   [default]
@@ -65,53 +65,53 @@ Level 1
       UseEmergencyAggregationAlgorithm = 1   [default]
       OnePt aggregate map name =    [default]
       SmallAgg aggregate map name =    [default]
-
+      
       Build (MueLu::AmalgamationFactory)
       [empty list]
-
+      
       Nullspace factory (MueLu::NullspaceFactory)
       [empty list]
-
+      
       Build (MueLu::CoarseMapFactory)
       [empty list]
-
+      
      [empty list]
-
+     
     Damping factor = 1.33333
-
+    
     Transpose P (MueLu::TransPFactory)
     [empty list]
-
+    
    Build (MueLu::CoordinatesTransferFactory)
    write start = -1   [default]
    write end = -1   [default]
-
+   
    Keep AP Pattern = 0   [default]
    Keep RAP Pattern = 0   [default]
    CheckMainDiagonal = 0   [default]
    RepairMainDiagonal = 0   [default]
-
+   
   startLevel = 1
   minRowsPerProcessor = 2000
   nonzeroImbalance = 1.327
   remapPartitions = 1
   numRemapValues = 4
   alwaysKeepProc0 = 1
-
+  
  type = Interpolation
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
-
+ 
  Build (MueLu::RebalanceTransferFactory)
  type = Restriction
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
-
+ 
  Computing Ac (MueLu::RebalanceAcFactory)
  useSubcomm = 1   [default]
-
+ 
  Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
  chebyshev: degree = 2
  chebyshev: ratio eigenvalue = 20
@@ -120,7 +120,7 @@ Level 1
  chebyshev: eigenvalue max iterations = 10
  chebyshev: min diagonal value = 2.22045e-16   [default]
  chebyshev: assume matrix does not change = 0   [default]
-
+ 
 Level 2
  Build (MueLu::RebalanceTransferFactory)
   Build (MueLu::RepartitionFactory)
@@ -129,12 +129,12 @@ Level 2
      Matrix filtering (MueLu::FilteredAFactory)
       Build (MueLu::CoalesceDropFactory)
       lightweight wrap = 1
-      Dirichlet detection threshold = 0
       aggregation threshold = 0.02
+      Dirichlet detection threshold = 0
       algorithm = laplacian
-
+      
      lumping = 1
-
+     
      Build (MueLu::TentativePFactory)
       Build (MueLu::UncoupledAggregationFactory)
       Ordering = 0   [default]
@@ -149,53 +149,53 @@ Level 2
       UseEmergencyAggregationAlgorithm = 1   [default]
       OnePt aggregate map name =    [default]
       SmallAgg aggregate map name =    [default]
-
+      
       Build (MueLu::AmalgamationFactory)
       [empty list]
-
+      
       Nullspace factory (MueLu::NullspaceFactory)
       [empty list]
-
+      
       Build (MueLu::CoarseMapFactory)
       [empty list]
-
+      
      [empty list]
-
+     
     Damping factor = 1.33333
-
+    
     Transpose P (MueLu::TransPFactory)
     [empty list]
-
+    
    Build (MueLu::CoordinatesTransferFactory)
    write start = -1   [default]
    write end = -1   [default]
-
+   
    Keep AP Pattern = 0   [default]
    Keep RAP Pattern = 0   [default]
    CheckMainDiagonal = 0   [default]
    RepairMainDiagonal = 0   [default]
-
+   
   startLevel = 1
   minRowsPerProcessor = 2000
   nonzeroImbalance = 1.327
   remapPartitions = 1
   numRemapValues = 4
   alwaysKeepProc0 = 1
-
+  
  type = Interpolation
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
-
+ 
  Build (MueLu::RebalanceTransferFactory)
  type = Restriction
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
-
+ 
  Computing Ac (MueLu::RebalanceAcFactory)
  useSubcomm = 1   [default]
-
+ 
  Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
  chebyshev: degree = 2
  chebyshev: ratio eigenvalue = 20
@@ -204,7 +204,7 @@ Level 2
  chebyshev: eigenvalue max iterations = 10
  chebyshev: min diagonal value = 2.22045e-16   [default]
  chebyshev: assume matrix does not change = 0   [default]
-
+ 
 Level 3
  Build (MueLu::RebalanceTransferFactory)
   Build (MueLu::RepartitionFactory)
@@ -213,12 +213,12 @@ Level 3
      Matrix filtering (MueLu::FilteredAFactory)
       Build (MueLu::CoalesceDropFactory)
       lightweight wrap = 1
-      Dirichlet detection threshold = 0
       aggregation threshold = 0.02
+      Dirichlet detection threshold = 0
       algorithm = laplacian
-
+      
      lumping = 1
-
+     
      Build (MueLu::TentativePFactory)
       Build (MueLu::UncoupledAggregationFactory)
       Ordering = 0   [default]
@@ -233,58 +233,58 @@ Level 3
       UseEmergencyAggregationAlgorithm = 1   [default]
       OnePt aggregate map name =    [default]
       SmallAgg aggregate map name =    [default]
-
+      
       Build (MueLu::AmalgamationFactory)
       [empty list]
-
+      
       Nullspace factory (MueLu::NullspaceFactory)
       [empty list]
-
+      
       Build (MueLu::CoarseMapFactory)
       [empty list]
-
+      
      [empty list]
-
+     
     Damping factor = 1.33333
-
+    
     Transpose P (MueLu::TransPFactory)
     [empty list]
-
+    
    Build (MueLu::CoordinatesTransferFactory)
    write start = -1   [default]
    write end = -1   [default]
-
+   
    Keep AP Pattern = 0   [default]
    Keep RAP Pattern = 0   [default]
    CheckMainDiagonal = 0   [default]
    RepairMainDiagonal = 0   [default]
-
+   
   startLevel = 1
   minRowsPerProcessor = 2000
   nonzeroImbalance = 1.327
   remapPartitions = 1
   numRemapValues = 4
   alwaysKeepProc0 = 1
-
+  
  type = Interpolation
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
-
+ 
  Build (MueLu::RebalanceTransferFactory)
  type = Restriction
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
-
+ 
  Computing Ac (MueLu::RebalanceAcFactory)
  useSubcomm = 1   [default]
-
+ 
  Setup Smoother (MueLu::Amesos2Smoother{type = Superlu})
- presmoother ->
+ presmoother -> 
   [empty list]
-
-
+ 
+ 
  --------------------------------------------------------------------------------
  ---                            Multigrid Summary                             ---
  --------------------------------------------------------------------------------
@@ -292,18 +292,19 @@ Level 3
  Operator complexity = 1.48
  Max Coarse Size     = 1000
  Implicit Transpose  = false
-
+ 
  matrix rows    nnz  nnz/row procs
  A 0    9999  29995     3.00  4
  A 1    3335  10015     3.00  1
  A 2    1111   3331     3.00  1
  A 3     371   1111     2.99  1
-
+ 
  Smoother (level 0) both : Ifpack2::Chebyshev{status = initialized, computed, Ifpack2::Details::Chebyshev : degree = 2, lambdaMax = 1.9477, alpha = 20, lambdaMin = 0.097385, global rows = 9999, global cols = 9999, global nnz  = 29995}
-
+ 
  Smoother (level 1) both : Ifpack2::Chebyshev{status = initialized, computed, Ifpack2::Details::Chebyshev : degree = 2, lambdaMax = 1.94999, alpha = 20, lambdaMin = 0.0974995, global rows = 3335, global cols = 3335, global nnz  = 10015}
-
+ 
  Smoother (level 2) both : Ifpack2::Chebyshev{status = initialized, computed, Ifpack2::Details::Chebyshev : degree = 2, lambdaMax = 1.94941, alpha = 20, lambdaMin = 0.0974703, global rows = 1111, global cols = 1111, global nnz  = 3331}
-
+ 
  Smoother (level 3) pre  : SuperLU solver interface
  Smoother (level 3) post : no smoother
+ 

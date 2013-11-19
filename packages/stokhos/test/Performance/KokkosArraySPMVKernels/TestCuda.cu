@@ -68,9 +68,9 @@ struct performance_test_driver<Scalar,Kokkos::Cuda> {
     if (test_orig) {
       nGrid = 32 ;
       nIter = 1 ;
-      performance_test_driver_poly<Scalar,Device,Stokhos::DefaultSparseMatOps>(
+      performance_test_driver_poly<Scalar,Device,Stokhos::DefaultMultiply>(
         3 , 1 , 12 , nGrid , nIter , test_block , symmetric );
-      performance_test_driver_poly<Scalar,Device,Stokhos::DefaultSparseMatOps>(
+      performance_test_driver_poly<Scalar,Device,Stokhos::DefaultMultiply>(
         5 , 1 ,  6 , nGrid , nIter , test_block , symmetric );
     }
 
@@ -78,7 +78,7 @@ struct performance_test_driver<Scalar,Kokkos::Cuda> {
     if (test_lin) {
       nGrid = 32 ;
       nIter = 10 ;
-      performance_test_driver_linear<Scalar,Device,Stokhos::DefaultSparseMatOps>(
+      performance_test_driver_linear<Scalar,Device,Stokhos::DefaultMultiply>(
         31 ,  255 , 32 , nGrid , nIter , test_block , symmetric );
     }
 
@@ -94,6 +94,7 @@ int mainCuda(bool test_flat, bool test_orig, bool test_lin, bool test_block,
 {
   typedef unsigned long long int IntType ;
 
+  Kokkos::Cuda::host_mirror_device_type::initialize();
   Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(device_id) );
   Kokkos::Cuda::print_configuration( std::cout );
 
@@ -109,6 +110,7 @@ int mainCuda(bool test_flat, bool test_orig, bool test_lin, bool test_block,
   unit_test::performance_test_driver<Scalar,Kokkos::Cuda>::run(
     test_flat, test_orig, test_lin, test_block, symmetric);
 
+  Kokkos::Cuda::host_mirror_device_type::finalize();
   Kokkos::Cuda::finalize();
 
   cudaDeviceReset();

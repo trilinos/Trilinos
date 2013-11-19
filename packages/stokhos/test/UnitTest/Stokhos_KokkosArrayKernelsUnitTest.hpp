@@ -43,6 +43,7 @@
 #define STOKHOS_KOKKOS_CORE_KERNELS_UNIT_TEST_HPP
 
 #include "Teuchos_TestingHelpers.hpp"
+#include "Teuchos_UnitTestHelpers.hpp"
 #include "Teuchos_TestForException.hpp"
 
 #include "Stokhos_Epetra.hpp"
@@ -57,8 +58,8 @@
 #endif
 
 #include "KokkosCore_config.h"
-#include "Kokkos_Threads.hpp"
 
+#include "Stokhos_Update.hpp"
 #include "Stokhos_CrsMatrix.hpp"
 #include "Stokhos_BlockCrsMatrix.hpp"
 #include "Stokhos_StochasticProductTensor.hpp"
@@ -70,6 +71,7 @@
 #include "Stokhos_FlatSparse3Tensor.hpp"
 #include "Stokhos_FlatSparse3Tensor_kji.hpp"
 #include "Stokhos_LinearSparse3Tensor.hpp"
+#include "Stokhos_LexicographicBlockSparse3Tensor.hpp"
 
 namespace KokkosKernelsUnitTest {
 
@@ -152,6 +154,7 @@ scalar generate_vector_coefficient( const ordinal nFEM ,
   //return 1.0;
 }
 
+template <typename Device>
 struct UnitTestSetup {
   typedef double value_type ;
   typedef Stokhos::OneDOrthogPolyBasis<int,value_type> abstract_basis_type;
@@ -288,9 +291,10 @@ struct UnitTestSetup {
         (*sg_y_commuted)[i][block] = (*sg_y)[block][i];
     }
 
-    typedef Stokhos::CrsProductTensor< value_type , Kokkos::Threads > tensor_type;
+    typedef typename Device::host_mirror_device_type host_device;
+    typedef Stokhos::CrsProductTensor< value_type , host_device > tensor_type;
     typedef Stokhos::StochasticProductTensor< value_type , tensor_type ,
-      Kokkos::Threads > stoch_tensor_type ;
+      host_device > stoch_tensor_type ;
 
     stoch_tensor_type tensor =
       Stokhos::create_stochastic_product_tensor< tensor_type >( *basis, *Cijk );
@@ -321,6 +325,29 @@ struct UnitTestSetup {
           out << "y_expected[" << block << "][" << i << "] - "
               << "y[" << block << "][" << i << "] = " << (*sg_y)[block][i]
               << " - " << y[block][i] << " == "
+              << diff << " < " << tol << " : failed"
+              << std::endl;
+        }
+        success = success && s;
+      }
+    }
+
+    return success;
+  }
+
+  template <typename multi_vec_type>
+  bool test_original(const multi_vec_type& y,
+                     Teuchos::FancyOStream& out) const {
+    bool success = true;
+    for (int block=0; block<stoch_length; ++block) {
+      for (int i=0; i<fem_length; ++i) {
+        double diff = std::abs( (*sg_y)[block][i] - y(i,block) );
+        double tol = rel_tol*std::abs((*sg_y)[block][i]) + abs_tol;
+        bool s = diff < tol;
+        if (!s) {
+          out << "y_expected[" << block << "][" << i << "] - "
+              << "y(" << i << "," << block << ") = " << (*sg_y)[block][i]
+              << " - " << y(i,block) << " == "
               << diff << " < " << tol << " : failed"
               << std::endl;
         }
@@ -428,12 +455,11 @@ struct UnitTestSetup {
 };
 
 template <typename value_type, typename Device, typename SparseMatOps>
-bool test_crs_matrix_free(const UnitTestSetup& setup,
-                          bool test_block,
+bool test_crs_matrix_free(const UnitTestSetup<Device>& setup,
                           Teuchos::FancyOStream& out) {
   typedef Stokhos::CrsMatrix<value_type,Device> matrix_type ;
   typedef Kokkos::CrsArray<int,Device,void,int> crsarray_type ;
-  typedef Kokkos::View<value_type[],Device> vec_type ;
+  typedef Kokkos::View<value_type*,Device> vec_type ;
 
   //------------------------------
 
@@ -483,22 +509,22 @@ bool test_crs_matrix_free(const UnitTestSetup& setup,
 
   // Original matrix-free multiply algorithm using a block apply
   SparseMatOps smo;
-  typename UnitTestSetup::Cijk_type::k_iterator k_begin =
+  typename UnitTestSetup<Device>::Cijk_type::k_iterator k_begin =
     setup.Cijk->k_begin();
-  typename UnitTestSetup::Cijk_type::k_iterator k_end =
+  typename UnitTestSetup<Device>::Cijk_type::k_iterator k_end =
     setup.Cijk->k_end();
-  for (typename UnitTestSetup::Cijk_type::k_iterator k_it=k_begin;
+  for (typename UnitTestSetup<Device>::Cijk_type::k_iterator k_it=k_begin;
        k_it!=k_end; ++k_it) {
     int nj = setup.Cijk->num_j(k_it);
     if (nj > 0) {
       int k = index(k_it);
-      typename UnitTestSetup::Cijk_type::kj_iterator j_begin =
+      typename UnitTestSetup<Device>::Cijk_type::kj_iterator j_begin =
         setup.Cijk->j_begin(k_it);
-      typename UnitTestSetup::Cijk_type::kj_iterator j_end =
+      typename UnitTestSetup<Device>::Cijk_type::kj_iterator j_end =
         setup.Cijk->j_end(k_it);
       std::vector<vec_type> xx(nj), yy(nj);
       int jdx = 0;
-      for (typename UnitTestSetup::Cijk_type::kj_iterator j_it = j_begin;
+      for (typename UnitTestSetup<Device>::Cijk_type::kj_iterator j_it = j_begin;
            j_it != j_end;
            ++j_it) {
         int j = index(j_it);
@@ -506,15 +532,15 @@ bool test_crs_matrix_free(const UnitTestSetup& setup,
         yy[jdx] = tmp[j];
         jdx++;
       }
-      Stokhos::multiply( matrix[k] , xx , yy, test_block, smo );
+      Stokhos::multiply( matrix[k] , xx , yy, smo );
       jdx = 0;
-      for (typename UnitTestSetup::Cijk_type::kj_iterator j_it = j_begin;
+      for (typename UnitTestSetup<Device>::Cijk_type::kj_iterator j_it = j_begin;
            j_it != j_end; ++j_it) {
-        typename UnitTestSetup::Cijk_type::kji_iterator i_begin =
+        typename UnitTestSetup<Device>::Cijk_type::kji_iterator i_begin =
           setup.Cijk->i_begin(j_it);
-        typename UnitTestSetup::Cijk_type::kji_iterator i_end =
+        typename UnitTestSetup<Device>::Cijk_type::kji_iterator i_end =
           setup.Cijk->i_end(j_it);
-        for (typename UnitTestSetup::Cijk_type::kji_iterator i_it = i_begin;
+        for (typename UnitTestSetup<Device>::Cijk_type::kji_iterator i_it = i_begin;
              i_it != i_end;
              ++i_it) {
           int i = index(i_it);
@@ -536,9 +562,108 @@ bool test_crs_matrix_free(const UnitTestSetup& setup,
   return success;
 }
 
+template <typename value_type, typename Device, typename SparseMatOps>
+bool test_crs_matrix_free_view(const UnitTestSetup<Device>& setup,
+                               Teuchos::FancyOStream& out) {
+  typedef Stokhos::CrsMatrix<value_type,Device> matrix_type ;
+  typedef Kokkos::CrsArray<int,Device,void,int> crsarray_type ;
+  typedef Kokkos::View<value_type*, Device> matrix_values_type ;
+  typedef Kokkos::View<value_type*, Kokkos::LayoutLeft, Device, Kokkos::MemoryUnmanaged> vec_type ;
+  typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, Device> multi_vec_type ;
+
+  //------------------------------
+
+  std::vector<matrix_type> matrix( setup.stoch_length ) ;
+  multi_vec_type x( "x", setup.fem_length, setup.stoch_length  ) ;
+  multi_vec_type y( "y", setup.fem_length, setup.stoch_length ) ;
+  multi_vec_type tmp( "tmp", setup.fem_length, setup.stoch_length ) ;
+
+  typename multi_vec_type::HostMirror hx = Kokkos::create_mirror( x );
+  typename multi_vec_type::HostMirror hy = Kokkos::create_mirror( y );
+
+  for (int block=0; block<setup.stoch_length; ++block) {
+    matrix[block].graph = Kokkos::create_crsarray<crsarray_type>(
+      std::string("testing") , setup.fem_graph );
+
+    matrix[block].values =
+      matrix_values_type( "matrix" , setup.fem_graph_length );
+
+    typename matrix_values_type::HostMirror hM =
+      Kokkos::create_mirror( matrix[block].values );
+
+    for ( int iRowFEM = 0 , iEntryFEM = 0 ; iRowFEM < setup.fem_length ; ++iRowFEM ) {
+      for ( size_t iRowEntryFEM = 0 ; iRowEntryFEM < setup.fem_graph[iRowFEM].size() ; ++iRowEntryFEM , ++iEntryFEM ) {
+        const int iColFEM = setup.fem_graph[iRowFEM][iRowEntryFEM] ;
+
+        hM(iEntryFEM) = generate_matrix_coefficient<value_type>(
+          setup.fem_length , setup.stoch_length , iRowFEM , iColFEM , block );
+      }
+    }
+
+    Kokkos::deep_copy( matrix[block].values , hM );
+
+    for ( int i = 0 ; i < setup.fem_length ; ++i ) {
+      hx(i, block) = generate_vector_coefficient<value_type>(
+        setup.fem_length , setup.stoch_length , i , block );
+      hy(i, block) = 0.0;
+    }
+
+  }
+
+  Kokkos::deep_copy( x , hx );
+  Kokkos::deep_copy( y , hy );
+
+  // Original matrix-free multiply algorithm using a block apply
+  SparseMatOps smo;
+  typename UnitTestSetup<Device>::Cijk_type::k_iterator k_begin =
+    setup.Cijk->k_begin();
+  typename UnitTestSetup<Device>::Cijk_type::k_iterator k_end =
+    setup.Cijk->k_end();
+  for (typename UnitTestSetup<Device>::Cijk_type::k_iterator k_it=k_begin;
+       k_it!=k_end; ++k_it) {
+    int nj = setup.Cijk->num_j(k_it);
+    if (nj > 0) {
+      int k = index(k_it);
+      typename UnitTestSetup<Device>::Cijk_type::kj_iterator j_begin =
+        setup.Cijk->j_begin(k_it);
+      typename UnitTestSetup<Device>::Cijk_type::kj_iterator j_end =
+        setup.Cijk->j_end(k_it);
+      std::vector<int> j_indices(nj);
+      int jdx = 0;
+      for (typename UnitTestSetup<Device>::Cijk_type::kj_iterator j_it = j_begin;
+           j_it != j_end; ++j_it) {
+        j_indices[jdx++] = index(j_it);
+      }
+      Stokhos::multiply( matrix[k] , x , tmp, j_indices, smo );
+      jdx = 0;
+      for (typename UnitTestSetup<Device>::Cijk_type::kj_iterator j_it = j_begin;
+           j_it != j_end; ++j_it) {
+        int j = index(j_it);
+        vec_type tmp_view = Kokkos::subview<vec_type>( tmp, Kokkos::ALL(), j );
+        typename UnitTestSetup<Device>::Cijk_type::kji_iterator i_begin =
+          setup.Cijk->i_begin(j_it);
+        typename UnitTestSetup<Device>::Cijk_type::kji_iterator i_end =
+          setup.Cijk->i_end(j_it);
+        for (typename UnitTestSetup<Device>::Cijk_type::kji_iterator i_it = i_begin;
+             i_it != i_end; ++i_it) {
+          int i = index(i_it);
+          value_type c = value(i_it);
+          vec_type y_view = Kokkos::subview<vec_type>( y, Kokkos::ALL(), i );
+          Stokhos::update( value_type(1.0) , y_view , c , tmp_view );
+        }
+      }
+    }
+  }
+
+  Kokkos::deep_copy( hy , y );
+  bool success = setup.test_original(hy, out);
+
+  return success;
+}
+
 template< typename ScalarType , class Device >
 bool
-test_crs_dense_block(const UnitTestSetup& setup,
+test_crs_dense_block(const UnitTestSetup<Device>& setup,
                      Teuchos::FancyOStream& out)
 {
   typedef ScalarType value_type ;
@@ -551,9 +676,9 @@ test_crs_dense_block(const UnitTestSetup& setup,
   typedef typename matrix_type::graph_type  graph_type ;
 
   // Convert sparse Cijk to dense for faster assembly
-  typedef typename UnitTestSetup::Cijk_type::k_iterator k_iterator;
-  typedef typename UnitTestSetup::Cijk_type::kj_iterator kj_iterator;
-  typedef typename UnitTestSetup::Cijk_type::kji_iterator kji_iterator;
+  typedef typename UnitTestSetup<Device>::Cijk_type::k_iterator k_iterator;
+  typedef typename UnitTestSetup<Device>::Cijk_type::kj_iterator kj_iterator;
+  typedef typename UnitTestSetup<Device>::Cijk_type::kji_iterator kji_iterator;
   Stokhos::Dense3Tensor<int,double> dense_cijk(setup.stoch_length);
   for (k_iterator k_it=setup.Cijk->k_begin();
        k_it!=setup.Cijk->k_end(); ++k_it) {
@@ -649,11 +774,11 @@ test_crs_dense_block(const UnitTestSetup& setup,
 
 template< typename ScalarType , class Device >
 bool
-test_crs_flat_commuted(const UnitTestSetup& setup,
+test_crs_flat_commuted(const UnitTestSetup<Device>& setup,
                        Teuchos::FancyOStream& out)
 {
   typedef ScalarType value_type ;
-  typedef Kokkos::View< value_type[] , Device > vector_type ;
+  typedef Kokkos::View< value_type* , Device > vector_type ;
 
   //------------------------------
 
@@ -672,9 +797,9 @@ test_crs_flat_commuted(const UnitTestSetup& setup,
   }
 
   // Convert sparse Cijk to dense for faster assembly in debug builds
-  typedef typename UnitTestSetup::Cijk_type::k_iterator k_iterator;
-  typedef typename UnitTestSetup::Cijk_type::kj_iterator kj_iterator;
-  typedef typename UnitTestSetup::Cijk_type::kji_iterator kji_iterator;
+  typedef typename UnitTestSetup<Device>::Cijk_type::k_iterator k_iterator;
+  typedef typename UnitTestSetup<Device>::Cijk_type::kj_iterator kj_iterator;
+  typedef typename UnitTestSetup<Device>::Cijk_type::kji_iterator kji_iterator;
   Stokhos::Dense3Tensor<int,double> dense_cijk(setup.stoch_length);
   for (k_iterator k_it=setup.Cijk->k_begin();
        k_it!=setup.Cijk->k_end(); ++k_it) {
@@ -797,11 +922,11 @@ test_crs_flat_commuted(const UnitTestSetup& setup,
 
 template< typename ScalarType , class Device >
 bool
-test_crs_flat_original(const UnitTestSetup& setup,
+test_crs_flat_original(const UnitTestSetup<Device>& setup,
                        Teuchos::FancyOStream& out)
 {
   typedef ScalarType value_type ;
-  typedef Kokkos::View< value_type[] , Device > vector_type ;
+  typedef Kokkos::View< value_type* , Device > vector_type ;
 
   //------------------------------
 
@@ -820,9 +945,9 @@ test_crs_flat_original(const UnitTestSetup& setup,
   }
 
   // Convert sparse Cijk to dense for faster assembly in debug builds
-  typedef typename UnitTestSetup::Cijk_type::k_iterator k_iterator;
-  typedef typename UnitTestSetup::Cijk_type::kj_iterator kj_iterator;
-  typedef typename UnitTestSetup::Cijk_type::kji_iterator kji_iterator;
+  typedef typename UnitTestSetup<Device>::Cijk_type::k_iterator k_iterator;
+  typedef typename UnitTestSetup<Device>::Cijk_type::kj_iterator kj_iterator;
+  typedef typename UnitTestSetup<Device>::Cijk_type::kji_iterator kji_iterator;
   Stokhos::Dense3Tensor<int,double> dense_cijk(setup.stoch_length);
   for (k_iterator k_it=setup.Cijk->k_begin();
        k_it!=setup.Cijk->k_end(); ++k_it) {
@@ -943,7 +1068,7 @@ test_crs_flat_original(const UnitTestSetup& setup,
 
 template< typename ScalarType , typename TensorType, class Device >
 bool test_crs_product_tensor(
-  const UnitTestSetup& setup,
+  const UnitTestSetup<Device>& setup,
   Teuchos::FancyOStream& out,
   const Teuchos::ParameterList& params = Teuchos::ParameterList()) {
   typedef ScalarType value_type ;
@@ -1022,7 +1147,7 @@ bool test_crs_product_tensor(
 }
 
 template< typename ScalarType , class Device , int BlockSize >
-bool test_linear_tensor(const UnitTestSetup& setup,
+bool test_linear_tensor(const UnitTestSetup<Device>& setup,
                         Teuchos::FancyOStream& out,
                         const bool symmetric) {
   typedef ScalarType value_type ;
@@ -1103,6 +1228,96 @@ bool test_linear_tensor(const UnitTestSetup& setup,
 
   bool success = setup.test_commuted(hy, out);
   //bool success = true;
+  return success;
+}
+
+template< typename ScalarType , class Device >
+bool test_lexo_block_tensor(const UnitTestSetup<Device>& setup,
+                            Teuchos::FancyOStream& out) {
+  typedef ScalarType value_type ;
+  typedef int ordinal_type;
+  typedef Kokkos::View< value_type** , Kokkos::LayoutLeft ,
+    Device > block_vector_type ;
+  typedef Stokhos::LexicographicBlockSparse3Tensor<value_type,Device> TensorType;
+  typedef Stokhos::StochasticProductTensor< value_type , TensorType , Device > tensor_type ;
+
+  typedef Stokhos::BlockCrsMatrix< tensor_type , value_type , Device > matrix_type ;
+  typedef typename matrix_type::graph_type graph_type ;
+
+  //------------------------------
+  // Generate input multivector:
+
+  block_vector_type x =
+    block_vector_type( "x" , setup.stoch_length , setup.fem_length );
+  block_vector_type y =
+    block_vector_type( "y" , setup.stoch_length , setup.fem_length );
+
+  typename block_vector_type::HostMirror hx =
+    Kokkos::create_mirror( x );
+
+  for ( int iColFEM = 0 ;   iColFEM < setup.fem_length ;   ++iColFEM ) {
+    for ( int iColStoch = 0 ; iColStoch < setup.stoch_length ; ++iColStoch ) {
+      hx(iColStoch,iColFEM) =
+        generate_vector_coefficient<ScalarType>(
+          setup.fem_length , setup.stoch_length , iColFEM , iColStoch );
+    }
+  }
+
+  Kokkos::deep_copy( x , hx );
+
+  //------------------------------
+
+  matrix_type matrix ;
+
+  /*
+    typedef UnitTestSetup<Device>::abstract_basis_type abstract_basis_type;
+    typedef UnitTestSetup<Device>::basis_type basis_type;
+    typedef Stokhos::LexographicLess< Stokhos::MultiIndex<int> > less_type;
+    typedef Stokhos::TotalOrderBasis<ordinal_type,value_type,less_type> product_basis_type;
+    Teuchos::Array< Teuchos::RCP<const abstract_basis_type> > bases(setup.d);
+    for (int i=0; i<setup.d; i++)
+      bases[i] = rcp(new basis_type(setup.p,true));
+    product_basis_type basis(bases, 1e-12);
+  */
+  const bool symmetric = true;
+  Teuchos::RCP< Stokhos::LTBSparse3Tensor<ordinal_type, value_type> > Cijk =
+    Stokhos::computeTripleProductTensorLTBBlockLeaf(*setup.basis, symmetric);
+
+  matrix.block =
+    Stokhos::create_stochastic_product_tensor< TensorType >( *setup.basis,
+                                                             *Cijk );
+
+  matrix.graph = Kokkos::create_crsarray<graph_type>(
+    std::string("test crs graph") , setup.fem_graph );
+
+  matrix.values = block_vector_type(
+    "matrix" , setup.stoch_length , setup.fem_graph_length );
+
+  typename block_vector_type::HostMirror hM =
+    Kokkos::create_mirror( matrix.values );
+
+  for ( int iRowFEM = 0 , iEntryFEM = 0 ; iRowFEM < setup.fem_length ; ++iRowFEM ) {
+    for ( size_t iRowEntryFEM = 0 ; iRowEntryFEM < setup.fem_graph[iRowFEM].size() ; ++iRowEntryFEM , ++iEntryFEM ) {
+      const int iColFEM = setup.fem_graph[iRowFEM][iRowEntryFEM] ;
+
+      for ( int k = 0 ; k < setup.stoch_length ; ++k ) {
+        hM(k,iEntryFEM) =
+          generate_matrix_coefficient<ScalarType>(
+            setup.fem_length , setup.stoch_length , iRowFEM , iColFEM , k );
+      }
+    }
+  }
+
+  Kokkos::deep_copy( matrix.values , hM );
+
+  //------------------------------
+
+  Stokhos::multiply( matrix , x , y );
+
+  typename block_vector_type::HostMirror hy = Kokkos::create_mirror( y );
+  Kokkos::deep_copy( hy , y );
+
+  bool success = setup.test_commuted(hy, out);
   return success;
 }
 

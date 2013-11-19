@@ -57,51 +57,85 @@ namespace Stokhos {
  *  Vectors are conformally stored as
  *    View( block.dimension() , m_graph.row_map.length() )
  */
-template< class BlockSpec , typename ValueType , class Device >
+template <typename BlockSpec, typename ValueType, class Device>
 class BlockCrsMatrix {
 public:
 
-  typedef Device                              device_type ;
-  typedef typename device_type::size_type     size_type ;
-  typedef ValueType                           value_type ;
-  typedef BlockSpec                           block_spec ;
-  typedef Kokkos::CrsArray< size_type , device_type > graph_type ;
-  typedef Kokkos::View< value_type**, Kokkos::LayoutLeft, device_type >  block_vector_type ;
+  typedef Device device_type;
+  typedef typename device_type::size_type size_type;
+  typedef ValueType value_type;
+  typedef BlockSpec block_spec;
+  typedef Kokkos::CrsArray< size_type , device_type > graph_type;
+  typedef Kokkos::View< value_type**, Kokkos::LayoutLeft, device_type > block_vector_type ;
 
-  block_vector_type  values ;
-  graph_type         graph ;
-  block_spec         block ;
+  block_vector_type  values;
+  graph_type         graph;
+  block_spec         block;
 };
 
-template< class BlockSpec ,
-          typename MatrixValueType ,
-          typename VectorValueType ,
-          class Device >
-void multiply(const BlockCrsMatrix<BlockSpec,MatrixValueType,Device> & A ,
-              const Kokkos::View<VectorValueType**,Kokkos::LayoutLeft,Device> & x ,
-              const Kokkos::View<VectorValueType**,Kokkos::LayoutLeft,Device> & y )
+template <typename BlockSpec,
+          typename MatrixValue,
+          typename VectorValue,
+          typename Device>
+class Multiply< BlockCrsMatrix< BlockSpec, MatrixValue, Device >,
+                Kokkos::View< VectorValue**, Kokkos::LayoutLeft, Device >,
+                Kokkos::View< VectorValue**, Kokkos::LayoutLeft, Device > >
 {
-  typedef BlockCrsMatrix<BlockSpec,MatrixValueType,Device>  matrix_type ;
-  typedef Kokkos::View<VectorValueType**,Kokkos::LayoutLeft,Device> block_vector_type ;
+public:
 
-  Multiply<matrix_type,block_vector_type,block_vector_type,DefaultSparseMatOps>::apply( A , x , y );
-}
+  typedef Device device_type ;
+  typedef typename BlockSpec::size_type size_type ;
+  typedef Kokkos::View< VectorValue**, Kokkos::LayoutLeft, Device > block_vector_type ;
+  typedef BlockCrsMatrix< BlockSpec, MatrixValue, Device >  matrix_type ;
 
-template< class BlockSpec ,
-          typename MatrixValueType ,
-          typename VectorValueType ,
-          class Device ,
-          class SparseMatOps >
-void multiply(const BlockCrsMatrix<BlockSpec,MatrixValueType,Device> & A ,
-              const Kokkos::View<VectorValueType**,Kokkos::LayoutLeft,Device> & x ,
-              const Kokkos::View<VectorValueType**,Kokkos::LayoutLeft,Device> & y ,
-              const SparseMatOps& smo = SparseMatOps() )
-{
-  typedef BlockCrsMatrix<BlockSpec,MatrixValueType,Device>  matrix_type ;
-  typedef Kokkos::View<VectorValueType**,Kokkos::LayoutLeft,Device> block_vector_type ;
+  const matrix_type m_A;
+  const block_vector_type m_x;
+  block_vector_type m_y;
 
-  Multiply<matrix_type,block_vector_type,block_vector_type,SparseMatOps>::apply( A , x , y );
-}
+  Multiply( const matrix_type& A,
+            const block_vector_type& x,
+            block_vector_type& y )
+  : m_A( A )
+  , m_x( x )
+  , m_y( y )
+  {}
+
+  //--------------------------------------------------------------------------
+  //  A( storage_size( m_A.block.size() ) , m_A.graph.row_map.size() );
+  //  x( m_A.block.dimension() , m_A.graph.row_map.first_count() );
+  //  y( m_A.block.dimension() , m_A.graph.row_map.first_count() );
+  //
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type iBlockRow ) const
+  {
+    // Prefer that y[ m_A.block.dimension() ] be scratch space
+    // on the local thread, but cannot dynamically allocate
+    VectorValue * const y = & m_y(0,iBlockRow);
+
+    const size_type iEntryBegin = m_A.graph.row_map[ iBlockRow ];
+    const size_type iEntryEnd   = m_A.graph.row_map[ iBlockRow + 1 ];
+
+    // Leading dimension guaranteed contiguous for LayoutLeft
+    for ( size_type j = 0 ; j < m_A.block.dimension() ; ++j ) { y[j] = 0 ; }
+
+    for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
+      const VectorValue * const x = & m_x( 0 , m_A.graph.entries(iEntry) );
+      const MatrixValue * const a = & m_A.values( 0 , iEntry );
+
+      BlockMultiply< BlockSpec >::apply( m_A.block , a , x , y );
+    }
+
+  }
+
+  static void apply( const matrix_type& A,
+                     const block_vector_type& x,
+                     block_vector_type& y )
+  {
+    const size_t row_count = A.graph.row_map.dimension_0() - 1;
+    Kokkos::parallel_for( row_count , Multiply(A,x,y) );
+  }
+};
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

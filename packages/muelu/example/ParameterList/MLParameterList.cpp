@@ -211,7 +211,7 @@ int main(int argc, char *argv[]) {
     H->Iterate(*B, nIts, *X);
 
     // Print relative residual norm
-    ST::magnitudeType residualNorms = Utils::ResidualNorm(*A, *X, *B)[0];
+    Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utils::ResidualNorm(*A, *X, *B)[0];
     if (comm->getRank() == 0)
       std::cout << "||Residual|| = " << residualNorms << std::endl;
 
@@ -256,7 +256,7 @@ int main(int argc, char *argv[]) {
         RCP<Vector> mueluX = rcp(new Xpetra::EpetraVector(eX));
         RCP<Vector> mueluB = rcp(new Xpetra::EpetraVector(eB));
         // Print relative residual norm
-        ST::magnitudeType residualNorms2 = Utils::ResidualNorm(*A, *mueluX, *mueluB)[0];
+        Teuchos::ScalarTraits<SC>::magnitudeType residualNorms2 = Utils::ResidualNorm(*A, *mueluX, *mueluB)[0];
         if (comm->getRank() == 0)
           std::cout << "||Residual|| = " << residualNorms2 << std::endl;
       }
@@ -318,7 +318,7 @@ int main(int argc, char *argv[]) {
       RCP<Vector> mueluX = rcp(new Xpetra::EpetraVector(eX));
       RCP<Vector> mueluB = rcp(new Xpetra::EpetraVector(eB));
       // Print relative residual norm
-      ST::magnitudeType residualNorms = Utils::ResidualNorm(*A, *mueluX, *mueluB)[0];
+      Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utils::ResidualNorm(*A, *mueluX, *mueluB)[0];
       if (comm->getRank() == 0)
         std::cout << "||Residual|| = " << residualNorms << std::endl;
     }

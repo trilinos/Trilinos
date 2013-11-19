@@ -234,7 +234,7 @@ int main(int argc, char *argv[]) {
 
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
   nullSpace->putScalar( (SC) 1.0);
-  Teuchos::Array<ST::magnitudeType> norms(1);
+  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
   nullSpace->norm1(norms);
   if (comm->getRank() == 0)
     std::cout << "||NS|| = " << norms[0] << std::endl;

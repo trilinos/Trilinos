@@ -186,7 +186,7 @@ static int get_config_from_env(struct netcdf_config *netcdf_cfg)
 
         struct stat sbuf;
 
-        while (stat(env_contact_file, &sbuf)) { perror(env_contact_file); sleep(1); }
+        while (stat(env_contact_file, &sbuf)) { log_debug(netcdf_debug_level, "%s: %s", env_contact_file, strerror(errno)); usleep(500); }
 
         f=fopen(env_contact_file, "r");
         if (!f) {
