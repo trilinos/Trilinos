@@ -142,7 +142,6 @@ OverlapGraph (const OverlapGraph<LocalOrdinal,GlobalOrdinal,Node>& Source)
     IsOverlapped_ (Source.IsOverlapped_)
 {
   using Teuchos::rcp;
-  typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> graph_type;
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
   if (IsOverlapped_) {

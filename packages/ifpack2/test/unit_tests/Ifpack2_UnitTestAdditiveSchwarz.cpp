@@ -120,7 +120,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test0, Scalar, LocalOr
   params.set ("schwarz: combine mode", "Zero");
 
 #if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
-  params.set ("schwarz: use reordering",true);
+  params.set ("schwarz: use reordering", true);
   params.set ("schwarz: reordering list", zlist);
 #else
   params.set ("schwarz: use reordering", false);
@@ -217,17 +217,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test1, Scalar, LocalOr
   Teuchos::ArrayRCP<Scalar> zdata = z.getDataNonConst(0);
   int mypid = rowmap->getComm()->getRank();
   if ( mypid == 0 ) {
-    for (size_t i=0; i<overlapLevel; ++i)
+    for (int i=0; i<overlapLevel; ++i)
       zdata[num_rows_per_proc-i-1] += 0.5;
   }
   else if (mypid == rowmap->getComm()->getSize()-1) {
-    for (size_t i=0; i<overlapLevel; ++i)
+    for (GlobalOrdinal i=0; i<overlapLevel; ++i)
       zdata[i] += 0.5;
   }
   else {
-    for (size_t i=0; i<overlapLevel; ++i)
+    for (GlobalOrdinal i=0; i<overlapLevel; ++i)
       zdata[i] += 0.5;
-    for (size_t i=0; i<overlapLevel; ++i)
+    for (GlobalOrdinal i=0; i<overlapLevel; ++i)
       zdata[num_rows_per_proc-i-1] += 0.5;
   }
   zdata = Teuchos::null;
@@ -322,7 +322,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, TestGIDs, Scalar, Loca
     bool reorderSubdomains;
     if (i==0) reorderSubdomains=false;
     else      reorderSubdomains=true;
-      
+
+#if ! defined(HAVE_IFPACK2_XPETRA) || ! defined(HAVE_IFPACK2_ZOLTAN2)
+    // mfh 19 Nov 2013: Reordering won't work (will throw an exception
+    // in Ifpack2::AdditiveSchwarz) if Trilinos was not built with
+    // Xpetra and Zoltan2 enabled.  Don't even bother running the test
+    // in that case.
+    if (reorderSubdomains) {
+      continue;
+    }
+#endif
+
     for (int overlapLevel=0; overlapLevel<4; ++overlapLevel) {
 
       Ifpack2::AdditiveSchwarz<CrsType,Ifpack2::IdentitySolver<CrsType > > prec (crsmatrix);
@@ -342,8 +352,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, TestGIDs, Scalar, Loca
 
       Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,1), y(rowmap,1);
       Teuchos::ArrayRCP<Scalar> xData = x.getDataNonConst(0);
-      for (size_t i=0; i<xData.size(); ++i)
-        xData[i] = rowmap->getGlobalElement(i);
+      for (GlobalOrdinal j=0; j<xData.size(); ++j)
+        xData[j] = rowmap->getGlobalElement(j);
       xData = Teuchos::null;
       prec.apply(x, y);
 
@@ -369,9 +379,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, TestGIDs, Scalar, Loca
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, Test0, Scalar, LocalOrdinal,GlobalOrdinal)  \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, Test1, Scalar, LocalOrdinal,GlobalOrdinal)  \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, Test2, Scalar, LocalOrdinal,GlobalOrdinal)
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, Test2, Scalar, LocalOrdinal,GlobalOrdinal) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, TestGIDs, Scalar, LocalOrdinal, GlobalOrdinal)
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, TestGIDs, double, int, int)
+//TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, TestGIDs, double, int, int)
 
 UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
 #ifndef HAVE_IFPACK2_EXPLICIT_INSTANTIATION

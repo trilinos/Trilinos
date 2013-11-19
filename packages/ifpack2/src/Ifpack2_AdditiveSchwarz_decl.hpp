@@ -382,6 +382,11 @@ public:
 
   /// \brief Set the preconditioner's parameters.
   ///
+  /// This version of the method takes a const list, as required by
+  /// the Preconditioner interface.  setParameterList() takes a
+  /// nonconst pointer to a list, in order to match the
+  /// Teuchos::ParameterListAcceptor interface.
+  ///
   /// Accepted parameters include the following:
   ///   - "schwarz: compute condest" (\c bool): If true, estimate the
   ///     condition number each time compute() is called.
@@ -399,6 +404,38 @@ public:
   ///   - "schwarz: filter singletons" (\c bool): If true, exclude
   ///     rows with just a single entry on the calling process.
   virtual void setParameters (const Teuchos::ParameterList& List);
+
+  /// \brief Set the preconditioner's parameters.
+  ///
+  /// This version of the method takes a nonconst pointer to a list,
+  /// in order to match the Teuchos::ParameterListAcceptor interface.
+  /// setParameters() takes a const list, as required by the
+  /// Preconditioner interface.
+  ///
+  /// Accepted parameters include the following:
+  ///   - "schwarz: compute condest" (\c bool): If true, estimate the
+  ///     condition number each time compute() is called.
+  ///   - "schwarz: combine mode" (\c std::string): The rule for
+  ///     combining incoming data with existing data in overlap
+  ///     regions.  Valid values include "ADD", "INSERT", "REPLACE",
+  ///     "ABSMAX", and "ZERO".  These correspond to the valid values
+  ///     of Tpetra::CombineMode.
+  ///   - "schwarz: overlap level" (\c int): The level of overlap.
+  ///   - "schwarz: use reordering" (\c bool): Whether to use Zoltan2
+  ///     to do reordering.  If true, then Trilinos must have been
+  ///     built with Zoltan2 and Xpetra enabled.
+  ///   - "schwarz: subdomain id" (\c int): This option does not
+  ///     currently work.
+  ///   - "schwarz: filter singletons" (\c bool): If true, exclude
+  ///     rows with just a single entry on the calling process.
+  void
+  setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist);
+
+  /// \brief Get a list of the preconditioner's default parameters.
+  ///
+  /// See the documentation of setParameters() for a list of the
+  /// parameters that AdditiveSchwarz accepts.
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters () const;
 
   //! Computes all (graph-related) data necessary to initialize the preconditioner.
   virtual void initialize();
@@ -506,8 +543,12 @@ protected:
   bool IsOverlapping_;
   //! Level of overlap among the processors.
   int OverlapLevel_;
+
   //! Store a copy of the list given in setParameters()
   Teuchos::ParameterList List_;
+  //! Valid (default) parameters; computed and cached in getValidParameters().
+  mutable Teuchos::RCP<const Teuchos::ParameterList> validParams_;
+
   //! Combine mode for off-process elements (only if overlap is used)
   Tpetra::CombineMode CombineMode_;
   //! Contains the estimated condition number.
