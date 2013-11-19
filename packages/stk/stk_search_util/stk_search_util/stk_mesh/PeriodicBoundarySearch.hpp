@@ -185,9 +185,6 @@ public:
   template<typename RealType>
   bool get_search_row_major_rotation(std::vector<RealType> & buff) const
   {
-    ThrowAssert(m_transforms.size() == 1);    //if we have a rotation, it can be the only periodic bc
-    ThrowRequire(m_hasRotationalPeriodicity);
-
     return m_transforms[0].getRowMajorRotation(buff);
   }
 
