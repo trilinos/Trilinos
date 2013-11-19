@@ -134,6 +134,7 @@ AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A) :
                          indexBase, localComm, node));
   }
 
+
   // Set parameters to default values
   Teuchos::ParameterList plist;
   setParameters (plist);
@@ -384,28 +385,62 @@ template<class MatrixType,class LocalInverseType>
 void AdditiveSchwarz<MatrixType,LocalInverseType>::
 setParameters (const Teuchos::ParameterList& plist)
 {
-  using Teuchos::getIntegralValue;
-
-  // mfh 18 Nov 2013: Ifpack2's setParameters() method annoyingly
-  // passes in the input list as const.  This means that we have to
-  // copy it before validation.
+  // mfh 18 Nov 2013: Ifpack2's setParameters() method passes in the
+  // input list as const.  This means that we have to copy it before
+  // validation or passing into setParameterList().
   List_ = plist;
-  List_.validateParameters (* getValidParameters ());
+  this->setParameterList (Teuchos::rcpFromRef (List_));
+}
+
+
+
+template<class MatrixType,class LocalInverseType>
+void AdditiveSchwarz<MatrixType,LocalInverseType>::
+setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
+{
+  using Tpetra::CombineMode;
+  using Teuchos::getIntegralValue;
+  using Teuchos::ParameterEntry;
+  using Teuchos::ParameterEntryValidator;
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::StringToIntegralParameterEntryValidator;
+
+  if (plist.is_null ()) {
+    // Assume that the user meant to set default parameters by passing
+    // in an empty list.
+    this->setParameterList (Teuchos::parameterList ());
+  }
+  // At this point, plist should be nonnull.
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    plist.is_null (), std::logic_error, "Ifpack2::AdditiveSchwarz::"
+    "setParameterList: plist is null.  This should never happen, since the "
+    "method should have replaced a null input list with a nonnull empty list "
+    "by this point.  Please report this bug to the Ifpack2 developers.");
+
+  // try {
+  //   List_.validateParameters (* getValidParameters ());
+  // }
+  // catch (std::exception& e) {
+  //   std::cerr << "Ifpack2::AdditiveSchwarz::setParameterList: Validation failed with the following error message: " << e.what () << std::endl;
+  //   throw e;
+  // }
 
   // mfh 18 Nov 2013: Supplying the current value as the default value
-  // ensures "delta" behavior when users pass in new parameters: any
-  // unspecified parameters in the new list retain their values in the
-  // old list.  This preserves backwards compatiblity with this class'
-  // previous behavior.  Note that validateParametersAndSetDefaults()
-  // would have different behavior: any parameters not in the new list
-  // would get default values, which could be different than their
-  // values in the original list.
+  // when calling ParameterList::get() ensures "delta" behavior when
+  // users pass in new parameters: any unspecified parameters in the
+  // new list retain their values in the old list.  This preserves
+  // backwards compatiblity with this class' previous behavior.  Note
+  // that validateParametersAndSetDefaults() would have different
+  // behavior: any parameters not in the new list would get default
+  // values, which could be different than their values in the
+  // original list.
 
-  ComputeCondest_ = List_.get ("schwarz: compute condest", ComputeCondest_);
+  ComputeCondest_ = plist->get ("schwarz: compute condest", ComputeCondest_);
 
   bool gotCombineMode = false;
   try {
-    CombineMode_ = Teuchos::getIntegralValue<Tpetra::CombineMode> (List_, "schwarz: combine mode");
+    CombineMode_ = getIntegralValue<Tpetra::CombineMode> (List_, "schwarz: combine mode");
     gotCombineMode = true;
   }
   catch (Teuchos::Exceptions::InvalidParameterName&) {
@@ -419,18 +454,39 @@ setParameters (const Teuchos::ParameterList& plist)
     // know that the type is wrong, so we can let it throw whatever
     // exception it would throw.
   }
+  // Try to get the combine mode as an integer.
   if (! gotCombineMode) {
-    CombineMode_ = List_.get ("schwarz: combine mode", CombineMode_);
+    try {
+      CombineMode_ = plist->get ("schwarz: combine mode", CombineMode_);
+      gotCombineMode = true;
+    }
+    catch (Teuchos::Exceptions::InvalidParameterType&) {}
   }
+  // Try to get the combine mode as a string.  If this works, use the
+  // validator to convert to int.  This is painful, but necessary in
+  // order to do validation, since the input list doesn't come with a
+  // validator.
+  if (! gotCombineMode) {
+    const ParameterEntry& validEntry =
+      getValidParameters ()->getEntry ("schwarz: combine mode");
+    RCP<const ParameterEntryValidator> v = validEntry.validator ();
+    typedef StringToIntegralParameterEntryValidator<CombineMode> vs2e_type;
+    RCP<const vs2e_type> vs2e = rcp_dynamic_cast<const vs2e_type> (v, true);
 
-  OverlapLevel_ = List_.get ("schwarz: overlap level", OverlapLevel_);
+    const ParameterEntry& inputEntry = plist->getEntry ("schwarz: combine mode");
+    CombineMode_ = vs2e->getIntegralValue (inputEntry, "schwarz: combine mode");
+    gotCombineMode = true;
+  }
+  (void) gotCombineMode; // forestall "set but not used" compiler warning
+
+  OverlapLevel_ = plist->get ("schwarz: overlap level", OverlapLevel_);
   if (OverlapLevel_ != 0 && Matrix_->getComm ()->getSize () > 1) {
     IsOverlapping_ = true;
   }
 
   // Will we be doing reordering?  Unlike Ifpack, we'll use a
   // "schwarz: reordering list" to give to Zoltan2.
-  UseReordering_ = List_.get ("schwarz: use reordering", UseReordering_);
+  UseReordering_ = plist->get ("schwarz: use reordering", UseReordering_);
 
 #if !defined(HAVE_IFPACK2_XPETRA) || !defined(HAVE_IFPACK2_ZOLTAN2)
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -446,7 +502,7 @@ setParameters (const Teuchos::ParameterList& plist)
   // gets extracted in setup().
 
   // Subdomain check
-  if (List_.isParameter ("schwarz: subdomain id") && List_.get ("schwarz: subdomain id", -1) > 0) {
+  if (plist->isParameter ("schwarz: subdomain id") && plist->get ("schwarz: subdomain id", -1) > 0) {
     UseSubdomain_ = true;
   }
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -458,11 +514,12 @@ setParameters (const Teuchos::ParameterList& plist)
   // singletons! A simple example: upper triangular matrix, if I remove
   // the lower node, I still get a matrix with a singleton! However, filter
   // singletons should help for PDE problems with Dirichlet BCs.
-  FilterSingletons_ = List_.get ("schwarz: filter singletons", FilterSingletons_);
+  FilterSingletons_ = plist->get ("schwarz: filter singletons", FilterSingletons_);
 
   // FIXME (mfh 18 Nov 2013) If the inner solver exists, now might be
   // a good time to validate its parameters.
 }
+
 
 
 template<class MatrixType,class LocalInverseType>
@@ -480,12 +537,15 @@ getValidParameters () const
     const bool useReordering = false;
     const bool computeCondest = false;
     const bool filterSingletons = false;
+    ParameterList reorderingSublist;
+    reorderingSublist.set ("order_method", std::string ("rcm"));
 
     RCP<ParameterList> plist = parameterList ("Ifpack2::AdditiveSchwarz");
 
     Tpetra::setCombineModeParameter (*plist, "schwarz: combine mode");
     plist->set ("schwarz: overlap level", overlapLevel);
     plist->set ("schwarz: use reordering", useReordering);
+    plist->set ("schwarz: reordering list", reorderingSublist);
     plist->set ("schwarz: compute condest", computeCondest);
     plist->set ("schwarz: filter singletons", filterSingletons);
 
@@ -803,6 +863,8 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
 #if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
     // Unlike Ifpack, Zoltan2 does all the dirty work here.
     Teuchos::ParameterList zlist = List_.sublist ("schwarz: reordering list");
+
+    // FIXME (mfh 18 Nov 2013) Shouldn't this come from the Zoltan2 sublist?
     ReorderingAlgorithm_ = List_.get<std::string> ("order_method", "rcm");
     XpetraTpetraMatrixType XpetraMatrix (ActiveMatrix);
     Zoltan2::XpetraRowMatrixInput<XpetraMatrixType> Zoltan2Matrix (rcpFromRef (XpetraMatrix));
