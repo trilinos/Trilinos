@@ -100,6 +100,9 @@ namespace Details {
     ///   Ifpack2 preconditioner's constructor is always const.
     virtual void
     setMatrix (const Teuchos::RCP<const RowMatrixType>& A) = 0;
+
+    //! Destructor
+    virtual ~CanChangeMatrix () {}
   };
 
 } // namespace Details
