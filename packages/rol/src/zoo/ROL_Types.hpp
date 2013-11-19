@@ -367,6 +367,7 @@ namespace ROL {
   enum ETestObjectives {
     TESTOBJECTIVES_ROSENBROCK = 0,
     TESTOBJECTIVES_FREUDENSTEINANDROTH,
+    TESTOBJECTIVES_BEALE,
     TESTOBJECTIVES_POWELL,
     TESTOBJECTIVES_SUMOFSQUARES,
     TESTOBJECTIVES_LEASTSQUARES,
@@ -378,6 +379,7 @@ namespace ROL {
     switch(to) {
       case TESTOBJECTIVES_ROSENBROCK:          retString = "Rosenbrock's Function";            break;
       case TESTOBJECTIVES_FREUDENSTEINANDROTH: retString = "Freudenstein and Roth's Function"; break;
+      case TESTOBJECTIVES_BEALE:               retString = "Beale's Function";                 break;
       case TESTOBJECTIVES_POWELL:              retString = "Powell's Badly Scaled Function";   break;
       case TESTOBJECTIVES_SUMOFSQUARES:        retString = "Sum of Squares Function";          break;
       case TESTOBJECTIVES_LEASTSQUARES:        retString = "Least Squares Function";           break;
@@ -395,6 +397,7 @@ namespace ROL {
   inline int isValidTestObjectives(ETestObjectives to){
     return( (to == TESTOBJECTIVES_ROSENBROCK)          ||
             (to == TESTOBJECTIVES_FREUDENSTEINANDROTH) ||
+            (to == TESTOBJECTIVES_BEALE)               ||
             (to == TESTOBJECTIVES_POWELL)              ||
             (to == TESTOBJECTIVES_SUMOFSQUARES)        ||
             (to == TESTOBJECTIVES_LEASTSQUARES)

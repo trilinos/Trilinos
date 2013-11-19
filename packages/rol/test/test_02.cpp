@@ -158,7 +158,6 @@ int main(int argc, char *argv[]) {
       e.axpy(-1.0,z);
       *outStream << "\nNorm of Error: " << e.norm() << "\n";
     }
-
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
