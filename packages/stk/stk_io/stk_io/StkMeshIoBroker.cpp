@@ -1659,6 +1659,14 @@ namespace stk {
 	      properties.add(Ioss::Property("FIELD_SEPARATOR", ", "));
 	    }
 	  }
+	  else if (hb_type == TS_CSV) {
+	    if (!properties.exists("SHOW_TIME_STAMP")) {
+	      properties.add(Ioss::Property("SHOW_TIME_STAMP", true));
+	    }
+	    if (!properties.exists("FIELD_SEPARATOR")) {
+	      properties.add(Ioss::Property("FIELD_SEPARATOR", ", "));
+	    }
+	  }
 	  else if (hb_type == TEXT) {
 	    if (!properties.exists("SHOW_TIME_STAMP")) {
 	      properties.add(Ioss::Property("SHOW_TIME_STAMP", false));
