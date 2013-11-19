@@ -36,11 +36,10 @@ IF (Stokhos_ENABLE_KokkosCore)
     DEPLIBS stokhos kokkoscore
     )
 
+  TRIBITS_ADD_EXECUTABLE(
+    SPMVEpetra
+    SOURCES TestEpetra.cpp
+    COMM serial mpi
+    DEPLIBS stokhos
+    )
 ENDIF()
-
-TRIBITS_ADD_EXECUTABLE(
-  SPMVEpetra
-  SOURCES TestEpetra.cpp
-  COMM serial mpi
-  DEPLIBS stokhos
-  )
