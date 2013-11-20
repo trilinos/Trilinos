@@ -417,8 +417,8 @@ applyImpl (const MV& X,
 
 template<class MatrixType>
 void DenseSolver<MatrixType, false>::
-apply (const MV& X,
-       MV& Y,
+apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
        Teuchos::ETransp mode,
        scalar_type alpha,
        scalar_type beta) const
@@ -806,8 +806,8 @@ void DenseSolver<MatrixType, true>::compute ()
 
 template<class MatrixType>
 void DenseSolver<MatrixType, true>::
-apply (const MV& X,
-       MV& Y,
+apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
        Teuchos::ETransp mode,
        scalar_type alpha,
        scalar_type beta) const
