@@ -481,30 +481,29 @@ public:
   //! @name Mathematical functions
   //@{
 
-  /// \brief Computes and returns the estimated condition number.
+  /// \brief Compute the condition number estimate and return its value.
   ///
-  /// We use an iterative process to estimate the condition number.
-  /// You can control the number of iterations we use, the iteration
-  /// tolerance, and how hard to work at estimating.
-  ///
-  /// \param CondestType [in] How hard to work at estimating the
-  ///   condition number.  \c Cheap means not very hard.
-  /// \param MaxIters [in] Maximum number of iterations for estimating
-  ///   the condition number.
-  /// \param Tol [in] Iteration tolerance.
-  magnitude_type computeCondEst(CondestType CT = Cheap,
-                               local_ordinal_type MaxIters = 1550,
-                               magnitude_type Tol = 1e-9,
-                               const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &matrix = Teuchos::null);
+  /// \warning This method is DEPRECATED.  It was inherited from
+  ///   Ifpack, and Ifpack never clearly stated what this method
+  ///   computes.  Furthermore, Ifpack's method just estimates the
+  ///   condition number of the matrix A, and ignores the
+  ///   preconditioner -- which is probably not what users thought it
+  ///   did.  If there is sufficient interest, we might reintroduce
+  ///   this method with a different meaning and a better algorithm.
+  virtual magnitude_type TEUCHOS_DEPRECATED
+  computeCondEst (CondestType CT = Cheap,
+                  local_ordinal_type MaxIters = 1550,
+                  magnitude_type Tol = 1e-9,
+                  const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &matrix = Teuchos::null);
 
   //@}
   //! @name Attribute accessor methods
   //@{
 
-  /// \brief The computed estimated condition number, or -1 if not previously computed.
+  /// \brief Return the computed condition number estimate, or -1 if not computed.
   ///
-  /// If you haven't yet called computeCondEst(), then this method returns -1.
-  magnitude_type getCondEst() const;
+  /// \warning This method is DEPRECATED.  See warning for computeCondEst().
+  virtual magnitude_type TEUCHOS_DEPRECATED getCondEst() const;
 
   //! The communicator over which the matrix and vectors are distributed.
   Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
@@ -593,8 +592,8 @@ private:
   // kernels (like Gauss-Seidel) to the RowMatrix interface, so that
   // RowMatrix's polymorphism can dispatch to the most efficient
   // implementation.
-  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, 
-			    global_ordinal_type, node_type> crs_matrix_type;
+  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
+                            global_ordinal_type, node_type> crs_matrix_type;
 
   //! @name Unimplemented methods that you are syntactically forbidden to call.
   //@{
@@ -631,10 +630,10 @@ private:
               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
   //! Apply Gauss-Seidel for a Tpetra::CrsMatrix specialization.
-  void 
+  void
   ApplyInverseGS_CrsMatrix (const crs_matrix_type& A,
-			    const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-			    Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
+                            const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
   //! Apply symmetric Gauss-Seidel to X, returning the result in Y.
   void ApplyInverseSGS(
@@ -647,10 +646,10 @@ private:
               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
   //! Apply symmetric Gauss-Seidel for a Tpetra::CrsMatrix specialization.
-  void 
+  void
   ApplyInverseSGS_CrsMatrix (const crs_matrix_type& A,
-			     const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-			     Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
+                             const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                             Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
   //@}
   //! @name Internal data and parameters

@@ -57,6 +57,14 @@ namespace Ifpack2 {
 /// the same order as the template parameters for the Preconditioner
 /// class.
 ///
+/// \warning This method is DEPRECATED.  It was inherited from Ifpack,
+///   and Ifpack never clearly stated what this method computes.
+///   Furthermore, Ifpack's method just estimates the condition number
+///   of the matrix A, and ignores the preconditioner -- which is
+///   probably not what users thought it did.  If there is sufficient
+///   interest, we might reintroduce this method with a different
+///   meaning and a better algorithm.
+///
 /// \param TIFP [in] The Ifpack2 preconditioner.  We need this if
 ///   <tt>matrix_in</tt> is null.
 ///
@@ -84,10 +92,10 @@ namespace Ifpack2 {
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 Condest (const Ifpack2::Preconditioner<Scalar, LocalOrdinal, GlobalOrdinal, Node>& TIFP,
-	 const Ifpack2::CondestType CT,
-	 const int MaxIters = 1550,
-	 const typename Teuchos::ScalarTraits<Scalar>::magnitudeType& Tol = Teuchos::as<Scalar> (1e-9),
-	 const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& matrix_in = Teuchos::null)
+         const Ifpack2::CondestType CT,
+         const int MaxIters = 1550,
+         const typename Teuchos::ScalarTraits<Scalar>::magnitudeType& Tol = Teuchos::as<Scalar> (1e-9),
+         const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& matrix_in = Teuchos::null)
 {
   using Teuchos::Ptr;
   typedef Teuchos::ScalarTraits<Scalar> STS;
@@ -126,11 +134,11 @@ Condest (const Ifpack2::Preconditioner<Scalar, LocalOrdinal, GlobalOrdinal, Node
       "Ifpack2::Condest: $\\|A*[1, ..., 1]^T\\|_{\\infty}$ = " << condNumEst << " is NaN or Inf.");
   } else if (CT == Ifpack2::CG) {
     TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, 
+      true, std::logic_error,
       "Ifpack2::Condest: Condition number estimation using CG is not currently supported.");
   } else if (CT == Ifpack2::GMRES) {
     TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, 
+      true, std::logic_error,
       "Ifpack2::Condest: Condition number estimation using GMRES is not currently supported.");
   }
   return condNumEst;

@@ -59,12 +59,12 @@ Diagonal<MatrixType>::Diagonal(const Teuchos::RCP<const MatrixType>& A)
    numInitialize_(0),
    numCompute_(0),
    numApply_(0),
-   condEst_ (-Teuchos::ScalarTraits<magnitudeType>::one ())
+   condEst_ (-Teuchos::ScalarTraits<magnitude_type>::one ())
 {
 }
 
 template<class MatrixType>
-Diagonal<MatrixType>::Diagonal(const Teuchos::RCP<const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& diag)
+Diagonal<MatrixType>::Diagonal(const Teuchos::RCP<const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& diag)
  : isInitialized_(false),
    isComputed_(false),
    domainMap_(),
@@ -74,7 +74,7 @@ Diagonal<MatrixType>::Diagonal(const Teuchos::RCP<const Tpetra::Vector<Scalar,Lo
    numInitialize_(0),
    numCompute_(0),
    numApply_(0),
-   condEst_ (-Teuchos::ScalarTraits<magnitudeType>::one ())
+   condEst_ (-Teuchos::ScalarTraits<magnitude_type>::one ())
 {
 }
 
@@ -115,7 +115,7 @@ void Diagonal<MatrixType>::compute()
   }
 
   // Get the diagonal entries using the precomputed offsets and invert them.
-  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vector_type;
+  typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vector_type;
   Teuchos::RCP<vector_type> tmp_vec =
     Teuchos::rcp (new vector_type (matrix_->getRowMap ()));
   matrix_->getLocalDiagCopy (*tmp_vec, offsets_ ());
@@ -129,11 +129,11 @@ void Diagonal<MatrixType>::compute()
 
 template<class MatrixType>
 void Diagonal<MatrixType>::
-apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-       Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
        Teuchos::ETransp /*mode*/,
-       Scalar alpha,
-       Scalar beta) const
+       scalar_type alpha,
+       scalar_type beta) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(!isComputed(), std::runtime_error,
     "Ifpack2::Diagonal::apply() ERROR, compute() hasn't been called yet.");
@@ -146,20 +146,20 @@ template<class MatrixType>
 typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
 Diagonal<MatrixType>::
 computeCondEst (CondestType CT,
-                LocalOrdinal MaxIters,
-                magnitudeType Tol,
-                const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &matrix)
+                local_ordinal_type MaxIters,
+                magnitude_type Tol,
+                const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &matrix)
 {
-  const magnitudeType minusOne = Teuchos::ScalarTraits<magnitudeType>::one ();
+  const magnitude_type minusOne = -Teuchos::ScalarTraits<magnitude_type>::one ();
 
-  if (!isComputed()) { // cannot compute right now
+  if (! isComputed ()) { // cannot compute right now
     return minusOne;
   }
   // NOTE: this is computing the *local* condest
   if (condEst_ == minusOne) {
-    condEst_ = Ifpack2::Condest(*this, CT, MaxIters, Tol, matrix);
+    condEst_ = Ifpack2::Condest (*this, CT, MaxIters, Tol, matrix);
   }
-  return(condEst_);
+  return condEst_;
 }
 
 template <class MatrixType>

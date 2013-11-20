@@ -146,18 +146,31 @@ public:
   //! \name Mathematical functions.
   //@{
 
-  //! Computes the estimated condition number and returns the value.
-  magnitude_type
+  /// \brief Compute the condition number estimate and return its value.
+  ///
+  /// \warning This method is DEPRECATED.  It was inherited from
+  ///   Ifpack, and Ifpack never clearly stated what this method
+  ///   computes.  Furthermore, Ifpack's method just estimates the
+  ///   condition number of the matrix A, and ignores the
+  ///   preconditioner -- which is probably not what users thought it
+  ///   did.  If there is sufficient interest, we might reintroduce
+  ///   this method with a different meaning and a better algorithm.
+  virtual magnitude_type TEUCHOS_DEPRECATED
   computeCondEst (CondestType CT = Cheap,
                   local_ordinal_type MaxIters = 1550,
                   magnitude_type Tol = 1e-9,
                   const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &matrix = Teuchos::null);
+
   //@}
   //! \name Attribute accessor methods
   //@{
 
-  //! Return the computed estimated condition number, or -1.0 if not computed.
-  magnitude_type getCondEst() const { return condEst_; }
+  /// \brief Return the computed condition number estimate, or -1 if not computed.
+  ///
+  /// \warning This method is DEPRECATED.  See warning for computeCondEst().
+  virtual magnitude_type TEUCHOS_DEPRECATED getCondEst() const {
+    return condEst_;
+  }
 
   //! Return the communicator associated with this matrix operator.
   Teuchos::RCP<const Teuchos::Comm<int> > getComm () const;

@@ -449,15 +449,25 @@ public:
   //! Returns true if the  preconditioner has been successfully computed, false otherwise.
   virtual bool isComputed() const;
 
-  //! Computes the condition number estimate and returns its value.
-  virtual magnitude_type
+  /// \brief Compute the condition number estimate and return its value.
+  ///
+  /// \warning This method is DEPRECATED.  It was inherited from
+  ///   Ifpack, and Ifpack never clearly stated what this method
+  ///   computes.  Furthermore, Ifpack's method just estimates the
+  ///   condition number of the matrix A, and ignores the
+  ///   preconditioner -- which is probably not what users thought it
+  ///   did.  If there is sufficient interest, we might reintroduce
+  ///   this method with a different meaning and a better algorithm.
+  virtual magnitude_type TEUCHOS_DEPRECATED
   computeCondEst (CondestType CT = Ifpack2::Cheap,
                   local_ordinal_type MaxIters = 1550,
                   magnitude_type Tol = 1e-9,
                   const Teuchos::Ptr<const row_matrix_type> &Matrix = Teuchos::null);
 
-  //! Returns the computed condition number estimate, or -1.0 if not computed.
-  virtual magnitude_type getCondEst() const;
+  /// \brief Return the computed condition number estimate, or -1 if not computed.
+  ///
+  /// \warning This method is DEPRECATED.  See warning for computeCondEst().
+  virtual magnitude_type TEUCHOS_DEPRECATED getCondEst() const;
 
   //! Returns the number of calls to initialize().
   virtual int getNumInitialize() const;

@@ -208,7 +208,7 @@ was called.  The <tt>get*Time</tt> methods return the number of
 seconds spent in <i>all</i> invocations of that operation.  For
 example, getApplyTime() returns the number of seconds spent in all
 apply() calls.  For an average time per apply() call, divide by
-getNumApply(), the total number of calls to apply().  
+getNumApply(), the total number of calls to apply().
 */
 template<class MatrixType>
 class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> {
@@ -340,8 +340,8 @@ class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_
 
   /// \brief Apply the (inverse of the) incomplete factorization to X, resulting in Y.
   ///
-  /// In Matlab(tm) notation, if the incomplete factorization is \f$A \approx LDU\f$, 
-  /// this method computes <tt>Y = beta*Y + alpha*(U \ (D \ (L \ X)))</tt> if mode=Teuchos::NO_TRANS, or 
+  /// In Matlab(tm) notation, if the incomplete factorization is \f$A \approx LDU\f$,
+  /// this method computes <tt>Y = beta*Y + alpha*(U \ (D \ (L \ X)))</tt> if mode=Teuchos::NO_TRANS, or
   /// <tt>Y = beta*Y + alpha*(L^T \ (D^T \ (U^T \ X)))</tt> if mode=Teuchos::TRANS, or
   /// <tt>Y = beta*Y + alpha*(L^* \ (D^* \ (U^* \ X)))</tt> if mode=Teuchos::CONJ_TRANS.
   ///
@@ -366,11 +366,11 @@ class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_
 
   /// \brief Apply the incomplete factorization (as a product) to X, resulting in Y.
   ///
-  /// In Matlab(tm) notation, if the incomplete factorization is \f$A \approx LDU\f$, 
-  /// this method computes <tt>Y = beta*Y + alpha*(L \ (D \ (U \ X)))</tt> mode=Teuchos::NO_TRANS, or 
+  /// In Matlab(tm) notation, if the incomplete factorization is \f$A \approx LDU\f$,
+  /// this method computes <tt>Y = beta*Y + alpha*(L \ (D \ (U \ X)))</tt> mode=Teuchos::NO_TRANS, or
   /// <tt>Y = beta*Y + alpha*(U^T \ (D^T \ (L^T \ X)))</tt> if mode=Teuchos::TRANS, or
   /// <tt>Y = beta*Y + alpha*(U^* \ (D^* \ (L^* \ X)))</tt> if mode=Teuchos::CONJ_TRANS.
-  /// 
+  ///
   /// \param X [in] The input multivector.
   ///
   /// \param Y [in/out] The output multivector.
@@ -382,24 +382,39 @@ class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_
                      Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
                Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
-  //! Returns the maximum over all the condition number estimate for each local ILU set of factors.
-  /*! This functions computes a local condition number estimate on each processor and return the
-      maximum over all processors of the estimate.
-   \param In
-    Trans -If true, solve transpose problem.
-    \param Out
-    ConditionNumberEstimate - The maximum across all processors of
-    the infinity-norm estimate of the condition number of the inverse of LDU.
-  */
+  /// \brief Compute the condition number estimate and return its value.
+  ///
+  /// \warning This method is DEPRECATED.  It was inherited from
+  ///   Ifpack, and Ifpack never clearly stated what this method
+  ///   computes.  Furthermore, Ifpack's method just estimates the
+  ///   condition number of the matrix A, and ignores the
+  ///   preconditioner -- which is probably not what users thought it
+  ///   did.  If there is sufficient interest, we might reintroduce
+  ///   this method with a different meaning and a better algorithm.
+  magnitude_type TEUCHOS_DEPRECATED computeCondEst (Teuchos::ETransp mode) const;
 
-  magnitude_type computeCondEst(Teuchos::ETransp mode) const;
-  magnitude_type computeCondEst(CondestType CT = Ifpack2::Cheap,
-                               local_ordinal_type MaxIters = 1550,
-                               magnitude_type Tol = 1e-9,
-                               const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &Matrix = Teuchos::null)
+  /// \brief Compute the condition number estimate and return its value.
+  ///
+  /// \warning This method is DEPRECATED.  It was inherited from
+  ///   Ifpack, and Ifpack never clearly stated what this method
+  ///   computes.  Furthermore, Ifpack's method just estimates the
+  ///   condition number of the matrix A, and ignores the
+  ///   preconditioner -- which is probably not what users thought it
+  ///   did.  If there is sufficient interest, we might reintroduce
+  ///   this method with a different meaning and a better algorithm.
+  virtual magnitude_type TEUCHOS_DEPRECATED
+  computeCondEst (CondestType CT = Ifpack2::Cheap,
+                  local_ordinal_type MaxIters = 1550,
+                  magnitude_type Tol = 1e-9,
+                  const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &Matrix = Teuchos::null)
   {
-    std::cerr << "Warning, Ifpack2::RILUK::computeCondEst currently does not use MaxIters/Tol/etc arguments..." << std::endl;
-    return computeCondEst(Teuchos::NO_TRANS);
+    // Forestall "unused variable" compiler warnings.
+    (void) CT;
+    (void) MaxIters;
+    (void) Tol;
+    (void) Matrix;
+
+    return computeCondEst (Teuchos::NO_TRANS);
   }
 
   magnitude_type getCondEst() const {return Condest_;}
@@ -449,15 +464,15 @@ class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_
   //@{ \name Additional methods required to support the Tpetra::Operator interface.
 
   //! Returns the Tpetra::Map object associated with the domain of this operator.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > 
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >
   getDomainMap () const {
-    return Graph_->getL_Graph ()->getDomainMap (); 
+    return Graph_->getL_Graph ()->getDomainMap ();
   }
 
   //! Returns the Tpetra::Map object associated with the range of this operator.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > 
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >
   getRangeMap () const {
-    return Graph_->getU_Graph ()->getRangeMap (); 
+    return Graph_->getU_Graph ()->getRangeMap ();
   }
 
   //@}
@@ -510,24 +525,24 @@ class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_
 namespace detail{
    template<class MatrixType, class NodeType, class MatSolveType>
    struct setLocalSolveParams{
-	static Teuchos::RCP<Teuchos::ParameterList> setParams (const Teuchos::RCP<Teuchos::ParameterList>& param){
-		return param;
-	}
+        static Teuchos::RCP<Teuchos::ParameterList> setParams (const Teuchos::RCP<Teuchos::ParameterList>& param){
+                return param;
+        }
     };
 #if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUSPARSE)
    template<class MatrixType, class Scalar>
    struct setLocalSolveParams<MatrixType, KokkosClassic::ThrustGPUNode, KokkosClassic::CUSPARSEOps<Scalar, KokkosClassic::ThrustGPUNode> >{
-	static Teuchos::RCP<Teuchos::ParameterList> setParams (const Teuchos::RCP<Teuchos::ParameterList>& param){
-	 	 param->sublist("fillComplete").sublist("Local Sparse Ops").set("Prepare Solve",true);
-		 return param;
-	}
+        static Teuchos::RCP<Teuchos::ParameterList> setParams (const Teuchos::RCP<Teuchos::ParameterList>& param){
+                 param->sublist("fillComplete").sublist("Local Sparse Ops").set("Prepare Solve",true);
+                 return param;
+        }
     };
 #endif
 } //end namespace detail
 
-template <class MatrixType> 
+template <class MatrixType>
 template <typename new_matrix_type>
-Teuchos::RCP< RILUK< new_matrix_type > >  
+Teuchos::RCP< RILUK< new_matrix_type > >
 RILUK<MatrixType>::clone(const Teuchos::RCP< const new_matrix_type>& A_newnode) const{
   typedef typename new_matrix_type::node_type new_node_type;
   typedef typename new_matrix_type::mat_solve_type mat_solve_type;
@@ -536,7 +551,7 @@ RILUK<MatrixType>::clone(const Teuchos::RCP< const new_matrix_type>& A_newnode) 
 
   Teuchos::RCP<Teuchos::ParameterList> plClone = Teuchos::parameterList();
   plClone = detail::setLocalSolveParams<new_matrix_type, new_node_type, mat_solve_type>::setParams(plClone);
-  
+
   Teuchos::RCP<new_node_type> new_node = A_newnode->getNode();
   new_riluk->L_ = L_->clone(new_node, plClone);
   new_riluk->U_ = U_->clone(new_node, plClone);

@@ -71,11 +71,17 @@ class Diagonal :
                                            typename MatrixType::global_ordinal_type,
                                            typename MatrixType::node_type> {
 public:
-  typedef typename MatrixType::scalar_type Scalar;
-  typedef typename MatrixType::local_ordinal_type LocalOrdinal;
-  typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
-  typedef typename MatrixType::node_type Node;
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+  typedef TEUCHOS_DEPRECATED typename MatrixType::scalar_type Scalar;
+  typedef TEUCHOS_DEPRECATED typename MatrixType::local_ordinal_type LocalOrdinal;
+  typedef TEUCHOS_DEPRECATED typename MatrixType::global_ordinal_type GlobalOrdinal;
+  typedef TEUCHOS_DEPRECATED typename MatrixType::node_type Node;
+  typedef TEUCHOS_DEPRECATED typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType magnitudeType;
+
+  typedef typename MatrixType::scalar_type scalar_type;
+  typedef typename MatrixType::local_ordinal_type local_ordinal_type;
+  typedef typename MatrixType::global_ordinal_type global_ordinal_type;
+  typedef typename MatrixType::node_type node_type;
+  typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
   //! Constructor to create a Diagonal preconditioner using a Tpetra::CrsMatrix.
   Diagonal (const Teuchos::RCP<const MatrixType>& A);
@@ -89,7 +95,7 @@ public:
   * (This issue arises if this constructor is called with a RCP<Tpetra::Vector>
   * that isn't const-qualified exactly as declared here.)
   */
-  Diagonal (const Teuchos::RCP<const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& diag);
+  Diagonal (const Teuchos::RCP<const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& diag);
 
   //! Destructor
   virtual ~Diagonal();
@@ -131,20 +137,20 @@ public:
     \warning This routine is NOT AztecOO compliant.
   */
   void
-  apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-         Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
          Teuchos::ETransp mode = Teuchos::NO_TRANS,
-         Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-         Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! Returns the Tpetra::Map object associated with the domain of this operator.
-  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >
   getDomainMap () const {
     return domainMap_;
   }
 
   //! Returns the Tpetra::Map object associated with the range of this operator.
-  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >
   getRangeMap() const {
     return rangeMap_;
   }
@@ -156,34 +162,45 @@ public:
     \param
     Y - (Out) A Tpetra::MultiVector of dimension NumVectors containing the result.
     */
-  void applyMat(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-                Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+  void applyMat(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
                 Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
   //@}
   //! \name Mathematical functions.
   //@{
 
-  //! Computes the estimated condition number and returns the value.
-  magnitudeType
+  /// \brief Compute the condition number estimate and return its value.
+  ///
+  /// \warning This method is DEPRECATED.  It was inherited from
+  ///   Ifpack, and Ifpack never clearly stated what this method
+  ///   computes.  Furthermore, Ifpack's method just estimates the
+  ///   condition number of the matrix A, and ignores the
+  ///   preconditioner -- which is probably not what users thought it
+  ///   did.  If there is sufficient interest, we might reintroduce
+  ///   this method with a different meaning and a better algorithm.
+  magnitude_type TEUCHOS_DEPRECATED
   computeCondEst (CondestType CT = Cheap,
-                  LocalOrdinal MaxIters = 1550,
-                  magnitudeType Tol = 1e-9,
-                  const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &matrix = Teuchos::null);
+                  local_ordinal_type MaxIters = 1550,
+                  magnitude_type Tol = 1e-9,
+                  const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &matrix = Teuchos::null);
 
   //@}
   //! \name Attribute accessor methods
   //@{
 
-  //! Return the computed estimated condition number, or -1.0 if no computed.
-  magnitudeType getCondEst() const
-  { return condEst_; }
+  /// \brief Return the computed condition number estimate, or -1 if not computed.
+  ///
+  /// \warning This method is DEPRECATED.  See warning for computeCondEst().
+  magnitude_type TEUCHOS_DEPRECATED getCondEst() const {
+    return condEst_;
+  }
 
   //! Return the communicator associated with this matrix operator.
   Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
   //! Return a reference to the matrix to be preconditioned.
-  Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >
   getMatrix () const {
     return matrix_;
   }
@@ -227,10 +244,10 @@ public:
   private:
     bool isInitialized_;
     bool isComputed_;
-    Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > domainMap_;
-    Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rangeMap_;
+    Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > domainMap_;
+    Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > rangeMap_;
     Teuchos::RCP<const MatrixType> matrix_;
-    Teuchos::RCP<const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > inversediag_;
+    Teuchos::RCP<const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > inversediag_;
     Teuchos::ArrayRCP<size_t> offsets_;
 
     mutable int numInitialize_;
@@ -241,7 +258,7 @@ public:
     double computeTime_;
     double applyTime_;
 
-    magnitudeType condEst_;
+    magnitude_type condEst_;
 };
 
 /** Function to construct a Diagonal preconditioner with vector input.
@@ -249,9 +266,9 @@ public:
 * diagonal of a matrix.
 *
 * Example usage:<br>
-* typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> TCrsMatrix;<br>
-* typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TVector;<br>
-* typedef Tpetra::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> TPrec;
+* typedef Tpetra::CrsMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> TCrsMatrix;<br>
+* typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> TVector;<br>
+* typedef Tpetra::Preconditioner<scalar_type,local_ordinal_type,global_ordinal_type,node_type> TPrec;
 *
 * Teuchos::RCP<TVector> myvec = ...
 *
