@@ -78,6 +78,7 @@
 
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_ExodusReaderFactory.hpp"
+#include "Panzer_STK_PamgenReaderFactory.hpp"
 #include "Panzer_STK_LineMeshFactory.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SquareTriMeshFactory.hpp"
@@ -670,6 +671,10 @@ namespace panzer_stk {
     if (mesh_params.get<std::string>("Source") ==  "Exodus File") {
       mesh_factory = Teuchos::rcp(new panzer_stk::STK_ExodusReaderFactory());
       mesh_factory->setParameterList(Teuchos::rcp(new Teuchos::ParameterList(mesh_params.sublist("Exodus File"))));
+    }
+    else if (mesh_params.get<std::string>("Source") ==  "Pamgen Mesh") {
+      mesh_factory = Teuchos::rcp(new panzer_stk::STK_PamgenReaderFactory());
+      mesh_factory->setParameterList(Teuchos::rcp(new Teuchos::ParameterList(mesh_params.sublist("Pamgen Mesh"))));
     }
     else if (mesh_params.get<std::string>("Source") ==  "Inline Mesh") {
 
