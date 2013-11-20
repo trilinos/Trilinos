@@ -297,9 +297,10 @@ public:
 
   //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
   /*!
-    \param GlobalRow - (In) Global row number for which indices are desired.
-    \param Indices   - (Out) Global column indices corresponding to values.
-    \param Values    - (Out) Row values
+    \param GlobalRow [in] Global row number for which indices are desired.
+    \param Indices [out] Global column indices corresponding to values.
+    \param Values [out] Row values
+
     \pre <tt>isLocallyIndexed() == false</tt>
     \post <tt>indices.size() == getNumEntriesInGlobalRow(GlobalRow)</tt>
 
@@ -312,9 +313,10 @@ public:
 
   //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
   /*!
-    \param LocalRow - (In) Local row number for which indices are desired.
-    \param Indices  - (Out) Global column indices corresponding to values.
-    \param Values   - (Out) Row values
+    \param LocalRow [in] Local row number for which indices are desired.
+    \param Indices [out] Local column indices corresponding to values.
+    \param Values [out] Row values
+
     \pre <tt>isGloballyIndexed() == false</tt>
     \post <tt>indices.size() == getNumEntriesInLocalRow(LocalRow)</tt>
 
@@ -325,14 +327,17 @@ public:
                    Teuchos::ArrayView<const local_ordinal_type> &indices,
                    Teuchos::ArrayView<const scalar_type> &values) const;
 
-  //! \brief Get a copy of the diagonal entries owned by this node, with local row indices.
-  /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the
-    the zero and non-zero diagonals owned by this node. */
+  /// \brief Get the diagonal entries of the (locally filtered) matrix.
+  ///
+  /// \param diag [in/out] On input: a Tpetra::Vector whose Map is the
+  ///   same as the local filter's row Map, which in turn is the same
+  ///   as the original matrix's row Map.  On output: filled with the
+  ///   diagonal entries owned by the calling process.
   virtual void
   getLocalDiagCopy (Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> &diag) const;
 
   //@}
-  //! \name Mathematical Methods
+  //! \name Mathematical methods
   //@{
 
   /**
@@ -367,12 +372,12 @@ public:
   /// \f$\|A\|_F = \sqrt{\sum_{i,j} \|A_{ij}\|^2}\f$.
   virtual magnitude_type getFrobeniusNorm() const;
 
-  //! \brief Computes the operator-multivector application.
-  /*! Loosely, performs \f$Y = \alpha \cdot A^{\textrm{mode}} \cdot X + \beta \cdot Y\f$. However, the details of operation
-    vary according to the values of \c alpha and \c beta. Specifically
-    - if <tt>beta == 0</tt>, apply() <b>must</b> overwrite \c Y, so that any values in \c Y (including NaNs) are ignored.
-    - if <tt>alpha == 0</tt>, apply() <b>may</b> short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
-  */
+  /// \brief Compute Y = beta*Y + alpha*A_local*X.
+  ///
+  /// If <tt>beta == 0</tt>, apply() <b>must</b> overwrite \c Y, so
+  /// that any values in \c Y (including NaNs) are ignored.  If
+  /// <tt>alpha == 0</tt>, apply() must short-circuit the operator, so
+  /// that any values in \c X (including NaNs) are ignored.
   virtual void
   apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> &X,
          Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> &Y,
@@ -380,11 +385,10 @@ public:
          scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
          scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
-  //! Indicates whether this operator supports applying the adjoint operator.
+  //! Whether this operator supports applying the transpose or conjugate transpose.
   virtual bool hasTransposeApply() const;
 
   //@}
-
   //! \name Deprecated routines to be removed at some point in the future.
   //@{
 
