@@ -31,23 +31,23 @@ public:
 
   /** \brief Compute value.
   */
-  virtual Real value( const Vector<Real> &x ) = 0;
+  virtual Real value( const Vector<Real> &x, Real &tol ) = 0;
 
   /** \brief Compute gradient.
   */
-  virtual void gradient( Vector<Real> &g, const Vector<Real> &x ) ;
+  virtual void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) ;
 
   /** \brief Compute directional derivative.
   */
-  virtual Real dirDeriv( const Vector<Real> &x, const Vector<Real> &d, const Real eta = 1.0 ) ;
+  virtual Real dirDeriv( const Vector<Real> &x, const Vector<Real> &d, Real &tol ) ;
 
   /** \brief Apply Hessian approximation to vector.
   */
-  virtual void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x );
+  virtual void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol );
 
   /** \brief Apply inverse Hessian approximation to vector.
   */
-  virtual void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x ) {}
+  virtual void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {}
 
   /** \brief Apply preconditioner to vector.
   */

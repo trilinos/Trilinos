@@ -47,23 +47,26 @@ private:
   int ls_nfval_;
   int ls_ngrad_;
 
+  bool useInexact_;
+
 public:
 
   virtual ~LineSearchStep() {}
 
   LineSearchStep( ELineSearch          els   = LINESEARCH_BACKTRACKING,
                   ECurvatureCondition  econd = CURVATURECONDITION_WOLFE,
-                  EDescent             edesc = DESCENT_SECANT,              
+                  EDescent             edesc = DESCENT_SECANT,             
+                  bool useInexact = false,    
                   int maxit = 20, Real c1 = 1.e-4, Real c2 = 0.9, Real LStol = 1.e-8, Real rho = 0.5,
                   ESecant esec = SECANT_LBFGS, int L = 10, int BBtype = 1,        // Secant Parameters
                   Real CGtol1 = 1.e-4, Real CGtol2 = 1.e-2, int maxitCG = 100 )
-    : els_(els), econd_(econd), edesc_(edesc), esec_(esec) {
+    : els_(els), econd_(econd), edesc_(edesc), esec_(esec), useInexact_(useInexact) {
 
     lineSearch_ = Teuchos::rcp( new LineSearch<Real>( els_, econd_, edesc_, maxit, c1, c2, LStol, rho ) );
 
     krylov_ = Teuchos::null;
     if ( edesc_ == DESCENT_NEWTONKRYLOV || edesc_ == DESCENT_SECANTPRECOND ) {
-      krylov_ = Teuchos::rcp( new Krylov<Real>(CGtol1,CGtol2,maxitCG) );
+      krylov_ = Teuchos::rcp( new Krylov<Real>(CGtol1,CGtol2,maxitCG,useInexact_) );
       iterKrylov_ = 0;
       flagKrylov_ = 0;
     }
@@ -83,7 +86,8 @@ public:
       krylov_->CG(s,iterKrylov_,flagKrylov_,*(Step<Real>::state_->gradientVec),x,obj,secant_);
     }
     else if ( edesc_ == DESCENT_NEWTON ) {
-      obj.invHessVec(s,*(Step<Real>::state_->gradientVec),x);
+      Real tol = std::sqrt(ROL_EPSILON);
+      obj.invHessVec(s,*(Step<Real>::state_->gradientVec),x,tol);
     }
     else if ( edesc_ == DESCENT_SECANT ) {
       secant_->applyH(s,*(Step<Real>::state_->gradientVec),x);
@@ -119,6 +123,8 @@ public:
   /** \brief Update step, if successful.
   */
   void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, AlgorithmState<Real> &algo_state ) {
+    Real tol = std::sqrt(ROL_EPSILON);
+
     // Update iterate
     x.axpy(1.0, s);
 
@@ -128,7 +134,7 @@ public:
       gp = x.clone();
       gp->set(*(Step<Real>::state_->gradientVec));
     }
-    obj.gradient(*(Step<Real>::state_->gradientVec),x);
+    obj.gradient(*(Step<Real>::state_->gradientVec),x,tol);
     algo_state.ngrad++;
 
     // Update Secant Information

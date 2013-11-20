@@ -371,6 +371,7 @@ namespace ROL {
     TESTOBJECTIVES_POWELL,
     TESTOBJECTIVES_SUMOFSQUARES,
     TESTOBJECTIVES_LEASTSQUARES,
+    TESTOBJECTIVES_POISSONCONTROL,
     TESTOBJECTIVES_LAST
   };
 
@@ -383,6 +384,7 @@ namespace ROL {
       case TESTOBJECTIVES_POWELL:              retString = "Powell's Badly Scaled Function";   break;
       case TESTOBJECTIVES_SUMOFSQUARES:        retString = "Sum of Squares Function";          break;
       case TESTOBJECTIVES_LEASTSQUARES:        retString = "Least Squares Function";           break;
+      case TESTOBJECTIVES_POISSONCONTROL:      retString = "Poisson Optimal Control";          break;
       case TESTOBJECTIVES_LAST:                retString = "Last Type (Dummy)";                break;
       default:                                 retString = "INVALID ETestObjectives";
     }
@@ -400,7 +402,8 @@ namespace ROL {
             (to == TESTOBJECTIVES_BEALE)               ||
             (to == TESTOBJECTIVES_POWELL)              ||
             (to == TESTOBJECTIVES_SUMOFSQUARES)        ||
-            (to == TESTOBJECTIVES_LEASTSQUARES)
+            (to == TESTOBJECTIVES_LEASTSQUARES)        ||
+            (to == TESTOBJECTIVES_POISSONCONTROL)
           );
   }
 

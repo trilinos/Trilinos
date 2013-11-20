@@ -74,15 +74,17 @@ public:
   /** \brief Initialize step.
   */
   void initialize( const Vector<Real> &x, Objective<Real> &obj, AlgorithmState<Real> &algo_state ) {
+    Real tol = std::sqrt(ROL_EPSILON);
+
     Teuchos::RCP<StepState<Real> >& state = Step<Real>::get_state();
 
     state->descentVec  = x.clone();
     state->gradientVec = x.clone();
-    obj.gradient(*(state->gradientVec),x);
+    obj.gradient(*(state->gradientVec),x,tol);
     algo_state.ngrad = 1;
     algo_state.gnorm = (state->gradientVec)->norm();
     algo_state.snorm = 1.e10;
-    algo_state.value = obj.value(x);
+    algo_state.value = obj.value(x,tol);
     algo_state.nfval = 1;
 
     // Evaluate Objective Function at Cauchy Point
@@ -92,7 +94,7 @@ public:
         secant_->applyB(*Bg,*(state->gradientVec),x);
       }
       else {
-        obj.hessVec(*Bg,*(state->gradientVec),x);
+        obj.hessVec(*Bg,*(state->gradientVec),x,tol);
       }
       Real gBg   = Bg->dot(*(state->gradientVec));
       Real alpha = 1.0;
@@ -102,7 +104,7 @@ public:
       Teuchos::RCP<Vector<Real> > cp = x.clone();
       cp->set(*(state->gradientVec)); 
       cp->scale(-alpha);
-      Real fnew = obj.value(*cp);
+      Real fnew = obj.value(*cp,tol);
       algo_state.nfval++;
       // Perform Quadratic Interpolation to Determine Initial Trust Region Radius
       Real gs = (state->gradientVec)->dot(*cp);
@@ -122,6 +124,8 @@ public:
   /** \brief Update step, if successful.
   */
   void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, AlgorithmState<Real> &algo_state ) {
+    Real tol = std::sqrt(ROL_EPSILON);
+
     TRflag_   = 0;
     TR_nfval_ = 0;
     TR_ngrad_ = 0;
@@ -140,7 +144,7 @@ public:
         gp = x.clone();
         gp->set(*(Step<Real>::state_->gradientVec));
       }
-      obj.gradient(*(Step<Real>::state_->gradientVec),x);
+      obj.gradient(*(Step<Real>::state_->gradientVec),x,tol);
       algo_state.ngrad++;
       if ( secant_ != Teuchos::null ) {
         secant_->update(*(Step<Real>::state_->gradientVec),*gp,s,algo_state.snorm,algo_state.iter+1);

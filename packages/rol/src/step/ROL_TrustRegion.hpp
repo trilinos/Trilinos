@@ -65,11 +65,13 @@ public:
                const Vector<Real> &s, const Real snorm, 
                const Real fold, const Vector<Real> &g, Objective<Real> &obj,
                Teuchos::RCP<Secant<Real> > &secant = Teuchos::null ) { 
+    Real tol = std::sqrt(ROL_EPSILON);
+
     // Compute New Function Value
     Teuchos::RCP<Vector<Real> > xnew = x.clone();
     xnew->set(x);
     xnew->axpy(1.0,s);
-    fnew = obj.value(*xnew);
+    fnew = obj.value(*xnew,tol);
     nfval = 1;   
 
     // Compute Ratio of Actual and Predicted Reduction
@@ -105,7 +107,7 @@ public:
           secant->applyB(*Hs,s,x);
         } 
         else {
-          obj.hessVec(*Hs,s,x);
+          obj.hessVec(*Hs,s,x,tol);
         }
         Real modelVal = Hs->dot(s);
         modelVal *= 0.5;
@@ -150,12 +152,14 @@ public:
   void cauchypoint( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
                     const Vector<Real> &grad, const Real &gnorm, Objective<Real> &obj,
                     Teuchos::RCP<Secant<Real> > &secant = Teuchos::null ) {
+    Real tol = std::sqrt(ROL_EPSILON);
+
     Teuchos::RCP<Vector<Real> > Bg = x.clone();
     if ( secant != Teuchos::null ) {
       secant->applyB(*Bg,grad,x);
     }
     else {
-      obj.hessVec(*Bg,grad,x);
+      obj.hessVec(*Bg,grad,x,tol);
     }
     Real gBg = Bg->dot(grad);
     Real tau = 1.0;
@@ -174,6 +178,7 @@ public:
   void truncatedCG( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
                     const Vector<Real> &grad, const Real &gnorm, Objective<Real> &obj,
                     Teuchos::RCP<Secant<Real> > &secant = Teuchos::null ) {
+    Real tol = std::sqrt(ROL_EPSILON);
 
     const Real gtol = std::min(tol2_,tol1_*gnorm);
 
@@ -211,7 +216,7 @@ public:
       secant->applyB(*Hp,*p,x); 
     }
     else { 
-      obj.hessVec( *Hp, *p, x );
+      obj.hessVec( *Hp, *p, x, tol );
     } 
 
     iter       = 0; 
@@ -275,7 +280,7 @@ public:
         secant->applyB(*Hp,*p,x); 
       }
       else { 
-        obj.hessVec( *Hp, *p, x );         
+        obj.hessVec( *Hp, *p, x, tol );         
       }
     }
     if (iflag > 0) {
@@ -295,13 +300,15 @@ public:
   void dogleg( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
                const Vector<Real> &grad, const Real &gnorm, Objective<Real> &obj,
                Teuchos::RCP<Secant<Real> > &secant = Teuchos::null ) {
+    Real tol = std::sqrt(ROL_EPSILON);
+
     // Compute quasi-Newton step
     Teuchos::RCP<Vector<Real> > sN = x.clone();
     if ( secant != Teuchos::null && edesc_ == DESCENT_SECANT ) {
       secant->applyH(*sN,grad,x); 
     }
     else {
-      obj.invHessVec(*sN,grad,x);
+      obj.invHessVec(*sN,grad,x,tol);
     }
     sN->scale(-1.0);
     Real sNnorm = sN->norm();
@@ -329,7 +336,7 @@ public:
           secant->applyB(*Bg,grad,x);
         }
         else {
-          obj.hessVec(*Bg,grad,x);
+          obj.hessVec(*Bg,grad,x,tol);
         }
         Real alpha  = 0.0;
         Real beta   = 0.0;
@@ -364,13 +371,15 @@ public:
   void doubledogleg( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
                      const Vector<Real> &grad, const Real &gnorm, Objective<Real> &obj,
                      Teuchos::RCP<Secant<Real> > &secant = Teuchos::null ) {
+    Real tol = std::sqrt(ROL_EPSILON);
+
     // Compute quasi-Newton step
     Teuchos::RCP<Vector<Real> > sN = x.clone();
     if ( secant != Teuchos::null && edesc_ == DESCENT_SECANT ) {
       secant->applyH(*sN,grad,x); 
     }
     else {
-      obj.invHessVec(*sN,grad,x);
+      obj.invHessVec(*sN,grad,x,tol);
     }
     sN->scale(-1.0);
     Real sNnorm = sN->norm();
@@ -398,7 +407,7 @@ public:
           secant->applyB(*Bg,grad,x);
         }
         else {
-          obj.hessVec(*Bg,grad,x);
+          obj.hessVec(*Bg,grad,x,tol);
         }
         Real alpha  = 0.0;
         Real beta   = 0.0;

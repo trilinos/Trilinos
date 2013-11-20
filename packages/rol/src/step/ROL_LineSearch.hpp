@@ -60,6 +60,8 @@ public:
   bool status( const ELineSearch type, int &ls_neval, int &ls_ngrad, const Real alpha, 
                const Real fold, const Real sgold, const Real fnew, 
                const Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj ) { 
+    Real tol = std::sqrt(ROL_EPSILON);
+
     // Check Armijo Condition
     bool armijo = false;
     if ( fnew <= fold + c1_*alpha*sgold ) {
@@ -83,7 +85,7 @@ public:
         xnew->set(x);
         xnew->axpy(alpha,s);   
         Teuchos::RCP<Vector<Real> > grad = x.clone();
-        obj.gradient(*grad,*xnew);
+        obj.gradient(*grad,*xnew,tol);
         Real sgnew = grad->dot(s);
         ls_ngrad++;
    
@@ -141,6 +143,8 @@ public:
 
   void simplebacktracking( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
                            const Real &gs, const Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj ) {
+    Real tol = std::sqrt(ROL_EPSILON);
+
     alpha = alpha0_;
 
     Teuchos::RCP<Vector<Real> > xnew = x.clone();
@@ -148,20 +152,22 @@ public:
     xnew->axpy(alpha, s);
 
     Real fold = fval;
-    fval = obj.value(*xnew);
+    fval = obj.value(*xnew,tol);
     ls_neval++;
 
     while ( !status(LINESEARCH_BACKTRACKING,ls_neval,ls_ngrad,alpha,fold,gs,fval,*xnew,s,obj) ) {
       alpha *= rho_;
       xnew->set(x);
       xnew->axpy(alpha, s);
-      fval = obj.value(*xnew);
+      fval = obj.value(*xnew,tol);
       ls_neval++;
     }
   }
 
   void backtracking( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
                      const Real &gs, const Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj ) {
+    Real tol = std::sqrt(ROL_EPSILON);
+
     alpha = alpha0_;
 
     Teuchos::RCP<Vector<Real> > xnew = x.clone();
@@ -169,7 +175,7 @@ public:
     xnew->axpy(alpha, s);
 
     Real fold = fval;
-    fval = obj.value(*xnew);
+    fval = obj.value(*xnew,tol);
     ls_neval++;
     Real fvalp = 0.0;
 
@@ -212,13 +218,15 @@ public:
 
       xnew->set(x);
       xnew->axpy(alpha, s);
-      fval = obj.value(*xnew);
+      fval = obj.value(*xnew,tol);
       ls_neval++;
     }
   }
 
   void bisection( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
                   const Real &gs, const Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj ) {
+    Real tol = std::sqrt(ROL_EPSILON);
+
     Real tl = 0.0;
     Real tr = alpha0_;
  
@@ -226,7 +234,7 @@ public:
     xnew->set(x);
     xnew->axpy(tr,s);
 
-    Real val_tr = obj.value(*xnew); 
+    Real val_tr = obj.value(*xnew,tol); 
     ls_neval++;
     Real val_tl = fval;
 
@@ -250,7 +258,7 @@ public:
     Real tc = (tl+tr)/2.0;
     xnew->set(x);
     xnew->axpy(tc,s);
-    Real val_tc = obj.value(*xnew);
+    Real val_tc = obj.value(*xnew,tol);
     ls_neval++;
 
     if ( val_tc < val_t ) {
@@ -268,13 +276,13 @@ public:
       t1 = (tl+tc)/2.0;
       xnew->set(x);
       xnew->axpy(t1,s);
-      val_t1 = obj.value(*xnew);
+      val_t1 = obj.value(*xnew,tol);
       ls_neval++;
 
       t2 = (tr+tc)/2.0;
       xnew->set(x);
       xnew->axpy(t2,s);
-      val_t2 = obj.value(*xnew);
+      val_t2 = obj.value(*xnew,tol);
       ls_neval++;
 
       if (    ( (val_tl <= val_tr) && (val_tl <= val_t1) && (val_tl <= val_t2) && (val_tl <= val_tc) ) 
@@ -326,6 +334,8 @@ public:
 
   void goldensection( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
                       const Real &gs, const Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj ) {
+    Real tol = std::sqrt(ROL_EPSILON);
+
     Teuchos::RCP<Vector<Real> > xnew = x.clone();
     Teuchos::RCP<Vector<Real> > grad = x.clone();
     Real c   = (-1.0+sqrt(5.0))/2.0;
@@ -334,7 +344,7 @@ public:
 
     xnew->set(x);
     xnew->axpy(tr,s);
-    Real val_tr = obj.value(*xnew);
+    Real val_tr = obj.value(*xnew,tol);
     ls_neval++;
     Real val_tl = fval;
 
@@ -360,12 +370,12 @@ public:
    
     xnew->set(x);
     xnew->axpy(tc1,s);
-    Real val_tc1 = obj.value(*xnew);
+    Real val_tc1 = obj.value(*xnew,tol);
     ls_neval++;
 
     xnew->set(x);
     xnew->axpy(tc2,s);
-    Real val_tc2 = obj.value(*xnew);
+    Real val_tc2 = obj.value(*xnew,tol);
     ls_neval++;
 
     if ( val_tl <= val_tc1 && val_tl <= val_tc2 && val_tl <= val_tr ) {
@@ -396,7 +406,7 @@ public:
         tc2     = (1.0-c)*tl + c*tr;     
         xnew->set(x);
         xnew->axpy(tc2,s);
-        val_tc2 = obj.value(*xnew);
+        val_tc2 = obj.value(*xnew,tol);
         ls_neval++;
       }
       else {
@@ -408,7 +418,7 @@ public:
         tc1     = c*tl + (1.0-c)*tr;
         xnew->set(x);
         xnew->axpy(tc1,s);
-        val_tc1 = obj.value(*xnew);
+        val_tc1 = obj.value(*xnew,tol);
         ls_neval++;
       }
 
@@ -436,6 +446,8 @@ public:
 
   void brents( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
                const Real &gs, const Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj ) {
+    Real tol = std::sqrt(ROL_EPSILON);
+
     Teuchos::RCP<Vector<Real> > xnew = x.clone();
     Real tl = 0.0;         // Left interval point
     Real tr = alpha0_;     // Right interval point
@@ -445,7 +457,7 @@ public:
     xnew->axpy(tr, s);
  
     Real val_tl = fval;
-    Real val_tr = obj.value(*xnew);
+    Real val_tr = obj.value(*xnew,tol);
     Real val_tc = 0.0;
     ls_neval++;
 
@@ -487,7 +499,7 @@ public:
       tr     = goldinv * (tc + gr*tl);
       xnew->set(x);
       xnew->axpy(tr,s);
-      val_tr = obj.value(*xnew);
+      val_tr = obj.value(*xnew,tol);
       ls_neval++;
 
       itbt++;
@@ -506,7 +518,7 @@ public:
       tc = tl + (gr-1.0)*(tr-tl);
       xnew->set(x);
       xnew->axpy(tc,s);
-      val_tc = obj.value(*xnew);
+      val_tc = obj.value(*xnew,tol);
       ls_neval++;
     }
 
@@ -542,7 +554,7 @@ public:
       if ( (tr-tm)*(tm-tc) > 0.0 ) {
         xnew->set(x);
         xnew->axpy(tm,s);
-        val_tm = obj.value(*xnew);
+        val_tm = obj.value(*xnew,tol);
         ls_neval++;
         if ( val_tm < val_tc ) {
           tl     = tr;
@@ -557,13 +569,13 @@ public:
         tm = tc + gr*(tc-tr);
         xnew->set(x);
         xnew->axpy(tm,s);
-        val_tm = obj.value(*xnew);
+        val_tm = obj.value(*xnew,tol);
         ls_neval++;
       }
       else if ( (tc - tm)*(tm -tlim) > 0.0 ) {
         xnew->set(x);
         xnew->axpy(tm,s);
-        val_tm = obj.value(*xnew);
+        val_tm = obj.value(*xnew,tol);
         ls_neval++;
         if ( val_tm < val_tc ) {
           tr     = tc;
@@ -575,7 +587,7 @@ public:
           tm     = tc + gr*(tc-tr);
           xnew->set(x);
           xnew->axpy(tm,s);
-          val_tm = obj.value(*xnew);
+          val_tm = obj.value(*xnew,tol);
           ls_neval++;
         }
       }
@@ -583,14 +595,14 @@ public:
         tm = tlim;
         xnew->set(x);
         xnew->axpy(tm,s);
-        val_tm = obj.value(*xnew);
+        val_tm = obj.value(*xnew,tol);
         ls_neval++;
       }
       else {
         tm = tc + gr*(tc-tr);
         xnew->set(x);
         xnew->axpy(tm,s);
-        val_tm = obj.value(*xnew);
+        val_tm = obj.value(*xnew,tol);
         ls_neval++;
       }
       tl     = tr;
@@ -691,7 +703,7 @@ public:
       u = (std::abs(d)>=tol1 ? t+d : t+(d>=0.0 ? std::abs(tol1) : -std::abs(tol1)));
       xnew->set(x);
       xnew->axpy(u,s);
-      fu = obj.value(*xnew);
+      fu = obj.value(*xnew,tol);
       ls_neval++;
 
       if ( fu <= ft ) {

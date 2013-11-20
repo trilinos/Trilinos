@@ -16,27 +16,26 @@
     \brief Provides defintions for Krylov solvers.
 */
 
-#include <Teuchos_ScalarTraits.hpp>
-
 namespace ROL {
 
 template<class Real>
 class Krylov {
 
-  Real eps_;
   Real tol1_;
   Real tol2_;
   int  maxit_;
+  bool useInexact_;
 
 public:
-  Krylov( Real tol1 = 1.e-4, Real tol2 = 1.e-2, int maxit = 100 ) : tol1_(tol1), tol2_(tol2), maxit_(maxit) {
-    eps_ = Teuchos::ScalarTraits<Real>::eps();
-  }
+  Krylov( Real tol1 = 1.e-4, Real tol2 = 1.e-2, int maxit = 100, bool useInexact = false ) 
+    : tol1_(tol1), tol2_(tol2), maxit_(maxit), useInexact_(useInexact) {}
 
-  // Use CG to solve Newton system
+  // Use (inexact) CG to solve Newton system 
   void CG( Vector<Real> &s, int &iter, int &flag, const Vector<Real> &g, const Vector<Real> &x, 
            Objective<Real> &obj, Teuchos::RCP<Secant<Real> > secant = Teuchos::null ) {
-    Real gtol = std::min(tol1_,tol2_*g.norm());
+    Real gnorm = g.norm(); 
+    Real gtol = std::min(tol1_,tol2_*gnorm);
+    Real itol = 0.0;
 
     s.zero(); 
 
@@ -55,12 +54,15 @@ public:
     p->set(*v); 
 
     Teuchos::RCP<Vector<Real> > Hp = x.clone();
-    obj.hessVec( *Hp, *p, x );  
+    itol = 0.0;
+    if ( useInexact_ ) {
+      itol = gtol/(maxit_ * gnorm); 
+    }
+    obj.hessVec( *Hp, *p, x, itol );  
 
     iter = 0; 
     flag = 0;
 
-    Real gnorm = 0;
     Real kappa = 0.0; 
     Real beta  = 0.0; 
     Real alpha = 0.0; 
@@ -69,7 +71,7 @@ public:
 
     for (iter = 0; iter < maxit_; iter++) {
       kappa = p->dot(*Hp);
-      if ( kappa <= eps_ ) { 
+      if ( kappa <= 0.0 ) { 
         flag = 2;
         break;
       }
@@ -96,14 +98,17 @@ public:
       p->scale(beta);
       p->axpy(1.0,*v);
 
-      obj.hessVec( *Hp, *p, x );
+      itol = 0.0;
+      if ( useInexact_ ) {
+        itol = gtol/(maxit_ * gnorm); 
+      }
+      obj.hessVec( *Hp, *p, x, itol );
     }
     iter++;
     if ( iter == maxit_ ) {
       flag = 1;
     }    
   }
-
 };
 
 }

@@ -2,10 +2,11 @@
 // ************************************************************************
 // @HEADER
 
-
 /*! \file  test_02.cpp
     \brief Test Rosenbrock.
 */
+
+#define USE_HESSVEC 1
 
 #include "ROL_TestObjectives.hpp"
 #include "ROL_LineSearchStep.hpp"
@@ -72,7 +73,7 @@ int main(int argc, char *argv[]) {
     /* END TRUST REGION STEP DEFINITION */ 
 
     // Define Status Test
-    ROL::StatusTest<RealT> status(1.e-6,1.e-12,100);    
+    ROL::StatusTest<RealT> status(1.e-10,1.e-12,100);    
 
     for ( ROL::ETestObjectives objFunc = ROL::TESTOBJECTIVES_ROSENBROCK; objFunc < ROL::TESTOBJECTIVES_LAST; objFunc++ ) {
       *outStream << "\n\n" << ROL::ETestObjectivesToString(objFunc) << "\n\n";
@@ -115,17 +116,18 @@ int main(int argc, char *argv[]) {
       obj->checkHessVec(x,y,true);
 
       // RUN LINE SEARCH
-      int maxit    = 20;
-      RealT rho    = 0.5;
-      RealT c1     = 1.e-4;
-      RealT c2     = 0.9;
-      RealT tol    = 1.e-8;
-      RealT CGtol1 = 1.e-4;
-      RealT CGtol2 = 1.e-2;
-      int maxitCG  = 200;
+      int maxit       = 20;
+      RealT rho       = 0.5;
+      RealT c1        = 1.e-4;
+      RealT c2        = 0.9;
+      RealT tol       = 1.e-8;
+      RealT CGtol1    = 1.e-4;
+      RealT CGtol2    = 1.e-2;
+      int maxitCG     = 2*dim;
+      bool useInexact = true;
 
-      ROL::LineSearchStep<RealT> LS_step(els,econd,edesc,maxit,c1,c2,tol,rho,
-                                         esec,L,BBtype,CGtol1,CGtol2,maxitCG);
+      ROL::LineSearchStep<RealT> LS_step(els,econd,edesc,useInexact,maxit,c1,c2,tol,
+                                         rho,esec,L,BBtype,CGtol1,CGtol2,maxitCG);
       x.set(x0);
       ROL::DefaultAlgorithm<RealT> LS_algo(LS_step,status);
       LS_algo.run(x, *obj);
@@ -134,7 +136,7 @@ int main(int argc, char *argv[]) {
       *outStream << "\nNorm of Error: " << e.norm() << "\n";
 
       // RUN TRUST REGION
-      maxit        = 200;
+      maxit        = 2*dim;
       RealT tol1   = 1.e-4;
       RealT tol2   = 1.e-2;
       RealT del    = -1.0;

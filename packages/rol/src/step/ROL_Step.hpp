@@ -57,13 +57,14 @@ public:
   /** \brief Initialize step.
   */
   virtual void initialize( const Vector<Real> &x, Objective<Real> &obj, AlgorithmState<Real> &algo_state ) {
+    Real tol = std::sqrt(ROL_EPSILON);
     state_->descentVec  = x.clone();
     state_->gradientVec = x.clone();
-    obj.gradient(*(state_->gradientVec),x);
+    obj.gradient(*(state_->gradientVec),x,tol);
     algo_state.ngrad = 1;
     algo_state.gnorm = (state_->gradientVec)->norm();
     algo_state.snorm = 1.e10;
-    algo_state.value = obj.value(x);
+    algo_state.value = obj.value(x,tol);
     algo_state.nfval = 1;
   }
 
