@@ -1,6 +1,6 @@
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <stk_mesh/fixtures/HexFixture.hpp>
-#include <stk_search_util/stk_mesh/PeriodicBoundarySearch.hpp>
+#include <stk_search_util/PeriodicBoundarySearch.hpp>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -111,8 +111,8 @@ void check_gold( const SearchPairVector & search_results )
 
   //make sure search result shows up in gold
   for (size_t i=0, size=search_results.size(); i<size; ++i) {
-    stk::mesh::EntityId domain_node = search_results[i].first.ident.id();
-    stk::mesh::EntityId range_node = search_results[i].second.ident.id();
+    stk::mesh::EntityId domain_node = search_results[i].first.id().id();
+    stk::mesh::EntityId range_node = search_results[i].second.id().id();
 
     //entry in search is found in gold
 
@@ -171,8 +171,8 @@ void check_gold_two_way_multiperiodic( const SearchPairVector & search_results )
   gold.push_back(std::make_pair(49,64));
 
   for (size_t i=0, size=search_results.size(); i<size; ++i) {
-    stk::mesh::EntityId domain_node = search_results[i].first.ident.id();
-    stk::mesh::EntityId range_node = search_results[i].second.ident.id();
+    stk::mesh::EntityId domain_node = search_results[i].first.id().id();
+    stk::mesh::EntityId range_node = search_results[i].second.id().id();
 
     EXPECT_TRUE((std::find(gold.begin(), gold.end(), std::make_pair(domain_node,range_node) ) ) != gold.end());
   }
@@ -223,8 +223,8 @@ void check_gold_three_way_multiperiodic( const SearchPairVector & search_results
   gold.push_back(std::make_pair(1, 64));
 
   for (size_t i=0, size=search_results.size(); i<size; ++i) {
-    stk::mesh::EntityId domain_node = search_results[i].first.ident.id();
-    stk::mesh::EntityId range_node = search_results[i].second.ident.id();
+    stk::mesh::EntityId domain_node = search_results[i].first.id().id();
+    stk::mesh::EntityId range_node = search_results[i].second.id().id();
 
     EXPECT_TRUE((std::find(gold.begin(), gold.end(), std::make_pair(domain_node,range_node) ) ) != gold.end());
   }

@@ -16,39 +16,80 @@
 namespace stk {
 namespace transfer {
 
-template <unsigned DIM> class MDMesh {
+class MDMesh {
 public :
-  typedef Intrepid::FieldContainer<double> MDArray;
-  typedef unsigned                                           Entity;
-  typedef std::vector<Entity>                                EntityVec;
-  typedef unsigned                                           EntityKey;
-  typedef std::set   <EntityKey>                             EntityKeySet;
-  typedef search::ident::IdentProc<EntityKey, unsigned>      EntityProc;
-  typedef std::vector<EntityProc>                            EntityProcVec;
+  typedef Intrepid::FieldContainer<double>        MDArray;
+  typedef unsigned                                Entity;
+  typedef std::vector<Entity>                     EntityVec;
+  typedef unsigned                                EntityKey;
+  typedef std::set   <EntityKey>                  EntityKeySet;
+  typedef search::IdentProc<EntityKey, unsigned>  EntityProc;
+  typedef std::vector<EntityProc>                 EntityProcVec;
 
-  typedef search::box::SphereBoundingBox<EntityProc,float,DIM> BoundingBox;
+  typedef search::Point<float>   Point;
+  typedef search::Sphere<float>  Sphere;
 
-  enum {Dimension = DIM};
+  typedef std::pair<Sphere,EntityProc> BoundingBox;
 
-  MDMesh(MDArray                     &val,
-         const MDArray               &coord,
-         const double                 initial_radius,
-         const stk::ParallelMachine   comm);
-  ~MDMesh();
+  MDMesh(
+      MDArray               &val,
+      const MDArray               &coord,
+      const double                 initial_radius,
+      const stk::ParallelMachine   comm) :
+    m_num_nodes         (coord.dimension(0)),
+    m_spatial_dim       (coord.dimension(1)),
+    m_num_values        (val  .dimension(1)),
+    m_sphere_rad        (initial_radius    ),
+    m_coordinates_field (coord),
+    m_values_field      (val)  ,
+    m_comm              (comm)
+  {}
 
   // Needed for STK Transfer
   ParallelMachine comm() const {return m_comm;}
 
-  void bounding_boxes (std::vector<BoundingBox> &v) const;
+  void bounding_boxes (std::vector< std::pair<Sphere,EntityProc> > &v) const
+  {
+    const float r = m_sphere_rad;
 
-  void update_values();
+    v.clear();
+
+    const int proc_id = parallel_machine_rank(comm());
+
+    for (unsigned i=0; i!=m_num_nodes; ++i) {
+
+      Point center;
+      const double *c = &m_coordinates_field(i,0);
+      for (unsigned j=0; j<m_spatial_dim; ++j) {
+        center[j] = c[j];
+      }
+      v.push_back( std::make_pair( Sphere( center, r), EntityProc(i,proc_id)));
+    }
+  }
+
+  void update_values() {}
 
   // Needed for LinearInterpoate
-  const double *coord(const EntityKey k) const;
-  const double *value(const EntityKey k, const unsigned i=0) const;
-        double *value(const EntityKey k, const unsigned i=0);
-  unsigned      value_size(const EntityKey e, const unsigned i=0) const;
-  unsigned      num_values() const;
+  const double *coord(const EntityKey k) const
+  {
+    return &m_coordinates_field(k,0);
+  }
+
+  const double *value(const EntityKey k, const unsigned i=0) const
+  {
+     return &m_values_field(k, i);
+  }
+
+  double *value(const EntityKey k, const unsigned i=0)
+  {
+     return &m_values_field(k, i);
+  }
+
+  unsigned      value_size(const EntityKey e, const unsigned i=0) const
+  { return 1; }
+
+  unsigned      num_values() const
+  {  return m_num_values;  }
 
   struct Record { virtual ~Record(){} };
   template <class T> T* database(const EntityKey k) {
@@ -62,10 +103,10 @@ public :
     ThrowRequireMsg (record,__FILE__<<":"<<__LINE__<<" Dynamic Cast failed in MDMesh::database ");
     return record;
   }
-  
+
 
 private :
-  MDMesh (); 
+  MDMesh ();
   MDMesh(const MDMesh &M);
   MDMesh &operator=(const MDMesh&);
 
@@ -74,7 +115,7 @@ private :
   const unsigned                        m_num_values;
   const double                          m_sphere_rad;
   const MDArray                 &m_coordinates_field;
-        MDArray                      &m_values_field;
+  MDArray                      &m_values_field;
   const ParallelMachine                       m_comm;
 
   typedef boost::shared_ptr<Record>         RecordPtr;
@@ -82,65 +123,5 @@ private :
   RecordMap                                 m_record_map;
 };
 
-template<unsigned DIM> MDMesh<DIM>::MDMesh(
-                MDArray               &val,
-          const MDArray               &coord,
-          const double                 initial_radius,
-          const stk::ParallelMachine   comm) :
-    m_num_nodes         (coord.dimension(0)),
-    m_spatial_dim       (coord.dimension(1)),
-    m_num_values        (val  .dimension(1)), 
-    m_sphere_rad        (initial_radius    ), 
-    m_coordinates_field (coord), 
-    m_values_field      (val)  ,
-    m_comm              (comm)
-{}
-
-template<unsigned DIM> MDMesh<DIM>::~MDMesh(){}
-
-template<unsigned DIM> void MDMesh<DIM>::bounding_boxes (std::vector<BoundingBox> &v) const {
-
-  typedef typename BoundingBox::Data Data;
-  typedef typename BoundingBox::Key  Key;
-  const Data r=m_sphere_rad;
-
-  v.clear();
-
-  for (unsigned Id=0; Id!=m_num_nodes; ++Id) {
-
-    Data center[Dimension];
-    const double *c = &m_coordinates_field(Id,0);
-    for (unsigned j=0; j<Dimension; ++j) center[j] = c[j];
-    const Key key(Id, parallel_machine_rank(comm()));
-    BoundingBox B(center, r, key);
-    v.push_back(B);
-  }
-}
-
-template<unsigned DIM> void MDMesh<DIM>::update_values () {}
-  
-template<unsigned DIM> const double *MDMesh<DIM>::coord(const EntityKey k) const {
-  const double *c = &m_coordinates_field(k,0);
-  return  c;
-}
-
-template<unsigned DIM> unsigned  MDMesh<DIM>::num_values() const {
- return m_num_values;
-}
-
-template<unsigned DIM> unsigned  MDMesh<DIM>::value_size(const EntityKey k, const unsigned i) const {
-  return  1;
-}
-
-template<unsigned DIM> const double *MDMesh<DIM>::value(const EntityKey k, const unsigned i) const {
-  const double *value = &m_values_field(k, i);
-  return  value;
-}
-
-template<unsigned DIM> double *MDMesh<DIM>::value(const EntityKey k, const unsigned i) {
-  double *value = &m_values_field(k, i);
-  return  value;
-}
-
-}
-}
+} // transfer
+} // stk

@@ -31,9 +31,10 @@ public:
 
   typedef double Scalar;
   typedef std::vector<std::pair<stk::mesh::Selector, stk::mesh::Selector> > SelectorPairVector;
-  typedef stk::search::ident::IdentProc<stk::mesh::EntityKey,unsigned> SearchId;
-  typedef stk::search::box::SphereBoundingBox<SearchId,Scalar,3> SphAABB;
-  typedef std::vector<SphAABB> SphAABBVector;
+  typedef stk::search::IdentProc<stk::mesh::EntityKey> SearchId;
+  typedef stk::search::Point<Scalar> Point;
+  typedef stk::search::Sphere<Scalar> Sphere;
+  typedef std::vector< std::pair<Sphere,SearchId> > SphereIdVector;
   typedef std::vector<std::pair<SearchId,SearchId> > SearchPairVector;
   typedef std::vector<std::pair<stk::mesh::EntityKey,stk::mesh::EntityKey> > SearchPairSet;
 
@@ -149,7 +150,7 @@ public:
 
     for (size_t i = 0; i < m_search_results.size(); ++i)
     {
-      m_unique_search_results.push_back(std::make_pair(m_search_results[i].first.ident, m_search_results[i].second.ident));
+      m_unique_search_results.push_back(std::make_pair(m_search_results[i].first.id(), m_search_results[i].second.id()));
     }
 
     std::sort(m_unique_search_results.begin(), m_unique_search_results.end());
@@ -214,14 +215,13 @@ public:
     const int parallel_rank = m_bulk_data.parallel_rank();
     std::vector<stk::mesh::EntityProc> send_nodes;
     for (size_t i=0, size=m_search_results.size(); i<size; ++i) {
-        stk::mesh::Entity domain_node = m_bulk_data.get_entity(m_search_results[i].first.ident);
-        stk::mesh::Entity range_node = m_bulk_data.get_entity(m_search_results[i].second.ident);
-//        std::cout << "P: " << parallel_rank << " d:r " << m_search_results[i].first.ident.id() << ":" << m_search_results[i].second.ident.id() << " procs " << m_search_results[i].first.proc << ":" << m_search_results[i].second.proc << std::endl;
+        stk::mesh::Entity domain_node = m_bulk_data.get_entity(m_search_results[i].first.id());
+        stk::mesh::Entity range_node = m_bulk_data.get_entity(m_search_results[i].second.id());
 
         bool isOwnedDomain = m_bulk_data.is_valid(domain_node) ? m_bulk_data.bucket(domain_node).owned() : false;
         bool isOwnedRange = m_bulk_data.is_valid(range_node) ? m_bulk_data.bucket(range_node).owned() : false;
-        int domain_proc = m_search_results[i].first.proc;
-        int range_proc = m_search_results[i].second.proc;
+        int domain_proc = m_search_results[i].first.proc();
+        int range_proc = m_search_results[i].second.proc();
 
         //Shouldn't happen since one needs to be shared or owned (it was used in the search)
 
@@ -337,7 +337,7 @@ private:
                                           )
   {
     SearchPairVector search_results;
-    SphAABBVector side_1_vector, side_2_vector;
+    SphereIdVector side_1_vector, side_2_vector;
 
     populate_search_vector(side1, side_1_vector);
 
@@ -426,7 +426,7 @@ private:
   }
 
   void populate_search_vector(stk::mesh::Selector side_selector
-                              , SphAABBVector & aabb_vector
+                              , SphereIdVector & aabb_vector
                              )
   {
     const double radius = 1e-10;
@@ -443,12 +443,12 @@ private:
 
     for (size_t bindex = 0, num_buckets = buckets.size(); bindex < num_buckets; ++bindex) {
       stk::mesh::Bucket & b = *buckets[bindex];
-      double coords[3];
+      Point center;
       for (size_t ord =0, num_entities = b.size(); ord < num_entities; ++ord) {
         ++num_nodes;
-        m_get_coordinates(b[ord], coords);
+        m_get_coordinates(b[ord], &center[0]);
         SearchId search_id( m_bulk_data.entity_key(b[ord]), parallel_rank);
-        aabb_vector.push_back(SphAABB( coords, radius, search_id));
+        aabb_vector.push_back( std::make_pair( Sphere(center, radius), search_id));
       }
     }
   }
@@ -523,8 +523,8 @@ private:
   }
 
   void translate_coordinates(
-      SphAABBVector & side_1_vector,
-      SphAABBVector & side_2_vector,
+      SphereIdVector & side_1_vector,
+      SphereIdVector & side_2_vector,
       const glm::f64vec3 &translate) const
   {
     // translate domain to range, i.e. master to slave
@@ -532,19 +532,19 @@ private:
     {
       for (int j = 0; j < 3; ++j)
       {
-        side_1_vector[i].center[j] += translate[j];
+        side_1_vector[i].first.center()[j] += translate[j];
       }
     }
   }
 
   void rotate_coordinates(
-      SphAABBVector & side_1_vector,
-      SphAABBVector & side_2_vector,
+      SphereIdVector & side_1_vector,
+      SphereIdVector & side_2_vector,
       const glm::f64mat3x3 & rotation) const
   {
     for (size_t iPoint = 0, size = side_1_vector.size(); iPoint < size; ++iPoint)
     {
-      double *center = side_1_vector[iPoint].center;
+      double *center = &side_1_vector[iPoint].first.center()[0];
       glm::f64vec3 ctr(center[0], center[1], center[2]);
       ctr = rotation * ctr;
       for (int i = 0; i < 3; ++i) {
@@ -554,14 +554,14 @@ private:
   }
 
   void apply_affine_to_coordinates(
-      SphAABBVector & side_1_vector,
-      SphAABBVector & side_2_vector,
+      SphereIdVector & side_1_vector,
+      SphereIdVector & side_2_vector,
       const glm::f64mat3x3 & rotation,
       const glm::f64vec3 & translation) const
   {
     for (size_t iPoint = 0, size = side_1_vector.size(); iPoint < size; ++iPoint)
     {
-      double *center = side_1_vector[iPoint].center;
+      double *center = &side_1_vector[iPoint].first.center()[0];
       glm::f64vec3 ctr(center[0], center[1], center[2]);
       ctr = rotation * ctr + translation; // Can't safely use LHS in RHS.
       for (int i = 0; i < 3; ++i) {
@@ -619,10 +619,13 @@ struct GetDisplacedCoordinates
   DispCoordFieldType & m_disp_coord_field;
 };
 
+}} //namespace stk::mesh
 
+namespace impl_hack {
 
+void really_dumb_func();
 
-}}//namespace stk::mesh
+} //namespace impl_hack
 
 #endif /*STK_SEARCH_UTIL_STK_MESH_PERIODIC_BOUNDARY_SEARCH_HPP*/
 

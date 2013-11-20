@@ -24,21 +24,22 @@ namespace bopt = boost::program_options;
 
 int main(int argc, char** argv)
 {
+#if 0
   stk::search::Options range;
   stk::search::Options domain;
 
   std::string working_directory = "";
   bool performance              = false;
-  
+
   /** \todo IMPLEMENT -- what should the syntax and options for this look like? */
   std::string search_type       = "";
 
-  
+
   //----------------------------------
   // Process the broadcast command line arguments
-  
+
   bopt::options_description desc("options");
-    
+
   // NOTE: Options --directory --output-log --runtest are handled/defined in UseCaseEnvironment
   desc.add_options()
     ("directory,d",   bopt::value<std::string>(&working_directory),
@@ -87,13 +88,13 @@ int main(int argc, char** argv)
 
   use_case::UseCaseEnvironment use_case_environment(&argc, &argv);
 
-  bopt::variables_map &vm = stk::get_variables_map();  
+  bopt::variables_map &vm = stk::get_variables_map();
 
   //----------------------------------
 
   if (vm.count("performance"))
     performance = true;
-  
+
   if (search_type.empty()) {
     std::cerr << "\nOPTION ERROR: A --search_type must be specified.\n\n";
     std::cerr << stk::get_options_description() << "\n";
@@ -125,10 +126,11 @@ int main(int argc, char** argv)
 
   performance_driver(use_case_environment.m_comm,
 				  working_directory,
-				  search_type, 
+				  search_type,
 				  range,
 				  domain,
 				  performance);
-  
+#endif
+
   return 0;
 }

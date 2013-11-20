@@ -60,7 +60,7 @@ public :
   typedef typename MeshB::BoundingBox                     BoundingBoxB;
 
 
-  enum {Dimension = MeshA::Dimension};
+  enum {Dimension = 3};
 
   GeometricTransfer(boost::shared_ptr<MeshA> &mesha,
                     boost::shared_ptr<MeshB> &meshb,
@@ -155,14 +155,19 @@ private :
                      const double             expansion_factor) const ;
 
   struct compare {
-    bool operator()(const BoundingBoxB &a, const EntityProcB  &b) const;
-    bool operator()(const EntityProcB  &a, const BoundingBoxB &b) const;
+    bool operator()(const BoundingBoxB &a, const EntityProcB  &b) const
+    {
+      return a.second < b;
+    }
+
+    bool operator()(const EntityProcB  &a, const BoundingBoxB &b) const
+    {
+      return a < b.second;
+    }
   };
 
   void delete_range_points_found(std::vector<BoundingBoxB>            &range_vector,
                                  const EntityProcRelationVec          &del) const ;
-
-  enum { dim_eq = StaticAssert<static_cast<unsigned>(MeshB::Dimension)==static_cast<unsigned>(MeshA::Dimension)>::OK };
 
 };
 
@@ -218,10 +223,10 @@ template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::determine_enti
 
   const typename EntityProcRelationVec::const_iterator end=m_global_range_to_domain.end();
   for (typename EntityProcRelationVec::const_iterator i=m_global_range_to_domain.begin(); i!=end; ++i) {
-    const unsigned            domain_owning_rank = i->second.proc;
-    const unsigned             range_owning_rank = i->first.proc;
+    const unsigned            domain_owning_rank = i->second.proc();
+    const unsigned             range_owning_rank = i->first.proc();
     if (domain_owning_rank == my_rank && range_owning_rank != my_rank) {
-      const EntityKeyA entity = i->second.ident;
+      const EntityKeyA entity = i->second.id();
       const typename MeshA::EntityProc ep(entity, range_owning_rank);
       entities_to_copy.push_back(ep);
     }
@@ -240,8 +245,8 @@ GeometricTransfer<INTERPOLATE>::localize_entity_key_map()  {
 
   m_local_range_to_domain.clear();
   for (typename EntityProcRelationVec::const_iterator i=m_global_range_to_domain.begin(); i!=m_global_range_to_domain.end(); ++i) {
-    const unsigned range_owning_rank = i->first.proc;
-    if (range_owning_rank == my_rank) insert<INTERPOLATE>(m_local_range_to_domain, i->first.ident, i->second.ident);
+    const unsigned range_owning_rank = i->first.proc();
+    if (range_owning_rank == my_rank) insert<INTERPOLATE>(m_local_range_to_domain, i->first.id(), i->second.id());
   }
 }
 
@@ -252,13 +257,6 @@ GeometricTransfer<INTERPOLATE>::copy_domain_to_range_processors()  {
 
   determine_entities_to_copy(entities_to_copy);
   copy_entities(*m_mesha, entities_to_copy, m_name);
-}
-
-template <class INTERPOLATE> bool GeometricTransfer<INTERPOLATE>::compare::operator()(const BoundingBoxB &a, const EntityProcB &b) const {
-  return a.key < b;
-}
-template <class INTERPOLATE> bool GeometricTransfer<INTERPOLATE>::compare::operator()(const EntityProcB &a, const BoundingBoxB &b) const {
-  return a < b.key;
 }
 
 template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::delete_range_points_found(
@@ -319,12 +317,12 @@ template <class INTERPOLATE>  void GeometricTransfer<INTERPOLATE>::coarse_search
 
     for (typename std::vector<BoundingBoxB>::iterator i=range_vector.begin(); i!=range_vector.end(); ++i) {
       // If points were missed, increase search radius.
-      i->scale(expansion_factor);
+      search::scale_by(i->first, expansion_factor);
     }
     if (!range_vector.empty()) {
       // If points were missed, increase search radius.
       for (typename std::vector<BoundingBoxA>::iterator i=domain_vector.begin(); i!=domain_vector.end(); ++i) {
-        i->scale(expansion_factor);
+        search::scale_by(i->first, expansion_factor);
       }
     }
     range_vector_not_empty = !range_vector.empty();

@@ -11,17 +11,17 @@ namespace
 {
 
 
-void runTwoSpheresTest(stk::search::SearchMethod searchMethod, const double distanceBetweenSphereCenters, const double radius, std::vector< std::pair<MyBoxId, MyBoxId> > &boxIdPairResults)
+void runTwoSpheresTest(stk::search::SearchMethod searchMethod, const double distanceBetweenSphereCenters, const double radius, std::vector< std::pair<Ident, Ident> > &boxIdPairResults)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
     int procId = -1;
     MPI_Comm_rank(comm, &procId);
 
-    std::vector<My3dSphereBoundingBox> boxVector1;
-    boxVector1.push_back(generate3dBoundingBox<My3dSphereBoundingBox>(0, 0, 0, radius, 1, procId));
+    std::vector< std::pair<Sphere,Ident> > boxVector1;
+    boxVector1.push_back(generateBoundingVolume<Sphere>(0, 0, 0, radius, 1, procId));
 
-    std::vector<My3dSphereBoundingBox> boxVector2;
-    boxVector2.push_back(generate3dBoundingBox<My3dSphereBoundingBox>(distanceBetweenSphereCenters, 0, 0, radius, 2, procId));
+    std::vector< std::pair<Sphere,Ident> > boxVector2;
+    boxVector2.push_back(generateBoundingVolume<Sphere>(distanceBetweenSphereCenters, 0, 0, radius, 2, procId));
 
     stk::search::coarse_search(boxVector1, boxVector2, searchMethod, comm, boxIdPairResults);
 }
@@ -43,7 +43,7 @@ TEST(Verification, OverlappingSpheres_BOOST_RTREE)
     }
 
     double distanceBetweenSphereCenters = 0.5;
-    std::vector< std::pair<MyBoxId, MyBoxId> > boxIdPairResults;
+    std::vector< std::pair<Ident, Ident> > boxIdPairResults;
     runTwoSpheresTest(stk::search::BOOST_RTREE, distanceBetweenSphereCenters, radiusOfOneHalf, boxIdPairResults);
 
     ASSERT_EQ(1u, boxIdPairResults.size());
@@ -56,7 +56,7 @@ TEST(Verification, OverlappingSpheres_OCTREE)
     }
 
     double distanceBetweenSphereCenters = 0.5;
-    std::vector< std::pair<MyBoxId, MyBoxId> > boxIdPairResults;
+    std::vector< std::pair<Ident, Ident> > boxIdPairResults;
     runTwoSpheresTest(stk::search::OCTREE, distanceBetweenSphereCenters, radiusOfOneHalf, boxIdPairResults);
 
     ASSERT_EQ(1u, boxIdPairResults.size());
@@ -65,7 +65,7 @@ TEST(Verification, OverlappingSpheres_OCTREE)
 TEST(Verification, NonOverlappingSpheres_BOOST_RTREE)
 {
     double distanceBetweenSphereCenters = 2.0;
-    std::vector< std::pair<MyBoxId, MyBoxId> > boxIdPairResults;
+    std::vector< std::pair<Ident, Ident> > boxIdPairResults;
     runTwoSpheresTest(stk::search::BOOST_RTREE, distanceBetweenSphereCenters, radiusOfOneHalf, boxIdPairResults);
 
     ASSERT_EQ(0u, boxIdPairResults.size());
@@ -74,7 +74,7 @@ TEST(Verification, NonOverlappingSpheres_BOOST_RTREE)
 TEST(Verification, NonOverlappingSpheres_OCTREE)
 {
     double distanceBetweenSphereCenters = 2.0;
-    std::vector< std::pair<MyBoxId, MyBoxId> > boxIdPairResults;
+    std::vector< std::pair<Ident, Ident> > boxIdPairResults;
     runTwoSpheresTest(stk::search::OCTREE, distanceBetweenSphereCenters, radiusOfOneHalf, boxIdPairResults);
 
     ASSERT_EQ(0u, boxIdPairResults.size());
@@ -87,7 +87,7 @@ TEST(Verification, JustEdgeOverlappingSpheres_BOOST_RTREE)
     }
 
     double distanceBetweenSphereCenters = 0.999999999;
-    std::vector< std::pair<MyBoxId, MyBoxId> > boxIdPairResults;
+    std::vector< std::pair<Ident, Ident> > boxIdPairResults;
     runTwoSpheresTest(stk::search::BOOST_RTREE, distanceBetweenSphereCenters, radiusOfOneHalf, boxIdPairResults);
 
     ASSERT_EQ(1u, boxIdPairResults.size());
@@ -100,7 +100,7 @@ TEST(Verification, JustEdgeOverlappingSpheres_OCTREE)
     }
 
     double distanceBetweenSphereCenters = 0.999999999;
-    std::vector< std::pair<MyBoxId, MyBoxId> > boxIdPairResults;
+    std::vector< std::pair<Ident, Ident> > boxIdPairResults;
     runTwoSpheresTest(stk::search::OCTREE, distanceBetweenSphereCenters, radiusOfOneHalf, boxIdPairResults);
 
     ASSERT_EQ(1u, boxIdPairResults.size());
@@ -109,7 +109,7 @@ TEST(Verification, JustEdgeOverlappingSpheres_OCTREE)
 TEST(Verification, NotQuiteEdgeOverlappingSpheres_BOOST_RTREE)
 {
     double distanceBetweenSphereCenters = 1.0000000001;
-    std::vector< std::pair<MyBoxId, MyBoxId> > boxIdPairResults;
+    std::vector< std::pair<Ident, Ident> > boxIdPairResults;
     runTwoSpheresTest(stk::search::BOOST_RTREE, distanceBetweenSphereCenters, radiusOfOneHalf, boxIdPairResults);
 
     ASSERT_EQ(0u, boxIdPairResults.size());
@@ -118,7 +118,7 @@ TEST(Verification, NotQuiteEdgeOverlappingSpheres_BOOST_RTREE)
 TEST(Verification, NotQuiteEdgeOverlappingSpheres_OCTREE)
 {
     double distanceBetweenSphereCenters = 1.0000000001;
-    std::vector< std::pair<MyBoxId, MyBoxId> > boxIdPairResults;
+    std::vector< std::pair<Ident, Ident> > boxIdPairResults;
     runTwoSpheresTest(stk::search::OCTREE, distanceBetweenSphereCenters, radiusOfOneHalf, boxIdPairResults);
 
     ASSERT_EQ(0u, boxIdPairResults.size());
@@ -132,27 +132,27 @@ void runBoxOverlappingEightSurroundingBoxes(stk::search::SearchMethod searchMeth
     int procId = -1;
     MPI_Comm_rank(comm, &procId);
 
-    std::vector<OuterBoundingBoxType> boxVector1;
+    std::vector< std::pair<OuterBoundingBoxType,Ident> > boxVector1;
     if(procId == 0)
     {
-        boxVector1.push_back(generate3dBoundingBox<OuterBoundingBoxType>(0, 0, 0, radius, 1, procId));
-        boxVector1.push_back(generate3dBoundingBox<OuterBoundingBoxType>(1, 0, 0, radius, 2, procId));
-        boxVector1.push_back(generate3dBoundingBox<OuterBoundingBoxType>(2, 0, 0, radius, 3, procId));
-        boxVector1.push_back(generate3dBoundingBox<OuterBoundingBoxType>(0, 1, 0, radius, 4, procId));
+        boxVector1.push_back(generateBoundingVolume<OuterBoundingBoxType>(0, 0, 0, radius, 1, procId));
+        boxVector1.push_back(generateBoundingVolume<OuterBoundingBoxType>(1, 0, 0, radius, 2, procId));
+        boxVector1.push_back(generateBoundingVolume<OuterBoundingBoxType>(2, 0, 0, radius, 3, procId));
+        boxVector1.push_back(generateBoundingVolume<OuterBoundingBoxType>(0, 1, 0, radius, 4, procId));
         //skip middle one
-        boxVector1.push_back(generate3dBoundingBox<OuterBoundingBoxType>(2, 1, 0, radius, 6, procId));
-        boxVector1.push_back(generate3dBoundingBox<OuterBoundingBoxType>(0, 2, 0, radius, 7, procId));
-        boxVector1.push_back(generate3dBoundingBox<OuterBoundingBoxType>(1, 2, 0, radius, 8, procId));
-        boxVector1.push_back(generate3dBoundingBox<OuterBoundingBoxType>(2, 2, 0, radius, 9, procId));
+        boxVector1.push_back(generateBoundingVolume<OuterBoundingBoxType>(2, 1, 0, radius, 6, procId));
+        boxVector1.push_back(generateBoundingVolume<OuterBoundingBoxType>(0, 2, 0, radius, 7, procId));
+        boxVector1.push_back(generateBoundingVolume<OuterBoundingBoxType>(1, 2, 0, radius, 8, procId));
+        boxVector1.push_back(generateBoundingVolume<OuterBoundingBoxType>(2, 2, 0, radius, 9, procId));
     }
 
-    std::vector<InnerBoundingBoxType> boxVector2;
+    std::vector< std::pair<InnerBoundingBoxType,Ident> > boxVector2;
     if(procId == numProc-1)
     {
-        boxVector2.push_back(generate3dBoundingBox<InnerBoundingBoxType>(1, 1, 0, radius, 5, procId));
+        boxVector2.push_back(generateBoundingVolume<InnerBoundingBoxType>(1, 1, 0, radius, 5, procId));
     }
 
-    std::vector< std::pair<MyBoxId, MyBoxId> > boxIdPairResults;
+    std::vector< std::pair<Ident, Ident> > boxIdPairResults;
     stk::search::coarse_search(boxVector1, boxVector2, searchMethod, comm, boxIdPairResults);
 
     if(!boxVector1.empty() || !boxVector2.empty())
@@ -172,126 +172,126 @@ TEST(Verification, SphereOverlappingEightSurroundingSpheres_BOOST_RTREE)
 {
     const double radius = 0.708;
     const unsigned numExpectedResults = 8;
-    runBoxOverlappingEightSurroundingBoxes<My3dSphereBoundingBox,My3dSphereBoundingBox>(stk::search::BOOST_RTREE, radius, numExpectedResults);
+    runBoxOverlappingEightSurroundingBoxes<Sphere,Sphere>(stk::search::BOOST_RTREE, radius, numExpectedResults);
 }
 
 TEST(Verification, SphereOverlappingEightSurroundingSpheres_OCTREE)
 {
     const double radius = 0.708;
     const unsigned numExpectedResults = 8;
-    runBoxOverlappingEightSurroundingBoxes<My3dSphereBoundingBox,My3dSphereBoundingBox>(stk::search::OCTREE, radius, numExpectedResults);
+    runBoxOverlappingEightSurroundingBoxes<Sphere,Sphere>(stk::search::OCTREE, radius, numExpectedResults);
 }
 
 TEST(Verification, SphereOverlappingNoSurroundingPoints_BOOST_RTREE)
 {
     const double radius = 0.99;
     const unsigned numExpectedResults = 0;
-    runBoxOverlappingEightSurroundingBoxes<My3dSphereBoundingBox,My3dPointBoundingBox>(stk::search::BOOST_RTREE, radius, numExpectedResults);
+    runBoxOverlappingEightSurroundingBoxes<Sphere,Point>(stk::search::BOOST_RTREE, radius, numExpectedResults);
 }
 
 TEST(Verification, SphereOverlappingFourSurroundingPoints_BOOST_RTREE)
 {
     const double radius = 1.41;
     const unsigned numExpectedResults = 4;
-    runBoxOverlappingEightSurroundingBoxes<My3dSphereBoundingBox,My3dPointBoundingBox>(stk::search::BOOST_RTREE, radius, numExpectedResults);
+    runBoxOverlappingEightSurroundingBoxes<Sphere,Point>(stk::search::BOOST_RTREE, radius, numExpectedResults);
 }
 
 TEST(Verification, SphereOverlappingEightSurroundingPoints_BOOST_RTREE)
 {
     const double radius = 1.42;
     const unsigned numExpectedResults = 8;
-    runBoxOverlappingEightSurroundingBoxes<My3dSphereBoundingBox,My3dPointBoundingBox>(stk::search::BOOST_RTREE, radius, numExpectedResults);
+    runBoxOverlappingEightSurroundingBoxes<Sphere,Point>(stk::search::BOOST_RTREE, radius, numExpectedResults);
 }
 
 TEST(Verification, SphereOverlappingNoSurroundingPoints_OCTREE)
 {
     const double radius = 0.99;
     const unsigned numExpectedResults = 0;
-    runBoxOverlappingEightSurroundingBoxes<My3dSphereBoundingBox,My3dPointBoundingBox>(stk::search::OCTREE, radius, numExpectedResults);
+    runBoxOverlappingEightSurroundingBoxes<Sphere,Point>(stk::search::OCTREE, radius, numExpectedResults);
 }
 
 TEST(Verification, SphereOverlappingFourSurroundingPoints_OCTREE)
 {
     const double radius = 1.41;
     const unsigned numExpectedResults = 4;
-    runBoxOverlappingEightSurroundingBoxes<My3dSphereBoundingBox,My3dPointBoundingBox>(stk::search::OCTREE, radius, numExpectedResults);
+    runBoxOverlappingEightSurroundingBoxes<Sphere,Point>(stk::search::OCTREE, radius, numExpectedResults);
 }
 
 TEST(Verification, SphereOverlappingEightSurroundingPoints_OCTREE)
 {
     const double radius = 1.42;
     const unsigned numExpectedResults = 8;
-    runBoxOverlappingEightSurroundingBoxes<My3dSphereBoundingBox,My3dPointBoundingBox>(stk::search::OCTREE, radius, numExpectedResults);
+    runBoxOverlappingEightSurroundingBoxes<Sphere,Point>(stk::search::OCTREE, radius, numExpectedResults);
 }
 
 TEST(Verification, SphereOverlappingFourOfEightSurroundingSpheres_BOOST_RTREE)
 {
     const double radius = 0.706;
     const unsigned numExpectedResults = 4;
-    runBoxOverlappingEightSurroundingBoxes<My3dSphereBoundingBox,My3dSphereBoundingBox>(stk::search::BOOST_RTREE, radius, numExpectedResults);
+    runBoxOverlappingEightSurroundingBoxes<Sphere,Sphere>(stk::search::BOOST_RTREE, radius, numExpectedResults);
 }
 
 TEST(Verification, SphereOverlappingFourOfEightSurroundingSpheres_OCTREE)
 {
     const double radius = 0.706;
     const unsigned numExpectedResults = 4;
-    runBoxOverlappingEightSurroundingBoxes<My3dSphereBoundingBox,My3dSphereBoundingBox>(stk::search::OCTREE, radius, numExpectedResults);
+    runBoxOverlappingEightSurroundingBoxes<Sphere,Sphere>(stk::search::OCTREE, radius, numExpectedResults);
 }
 
 TEST(Verification, BoxOverlappingNoSurroundingPoints_BOOST_RTREE)
 {
     const double radius = 0.99;
     const unsigned numExpectedResults = 0;
-    runBoxOverlappingEightSurroundingBoxes<My3dAxisAlignedBoundingBox,My3dPointBoundingBox>(stk::search::BOOST_RTREE, radius, numExpectedResults);
+    runBoxOverlappingEightSurroundingBoxes<Box,Point>(stk::search::BOOST_RTREE, radius, numExpectedResults);
 }
 
 TEST(Verification, BoxOverlappingNoSurroundingPoints_OCTREE)
 {
     const double radius = 0.99;
     const unsigned numExpectedResults = 0;
-    runBoxOverlappingEightSurroundingBoxes<My3dAxisAlignedBoundingBox,My3dPointBoundingBox>(stk::search::OCTREE, radius, numExpectedResults);
+    runBoxOverlappingEightSurroundingBoxes<Box,Point>(stk::search::OCTREE, radius, numExpectedResults);
 }
 
 TEST(Verification, BoxOverlappingEightSurroundingPoints_BOOST_RTREE)
 {
     const double radius = 1.01;
     const unsigned numExpectedResults = 8;
-    runBoxOverlappingEightSurroundingBoxes<My3dAxisAlignedBoundingBox,My3dPointBoundingBox>(stk::search::BOOST_RTREE, radius, numExpectedResults);
+    runBoxOverlappingEightSurroundingBoxes<Box,Point>(stk::search::BOOST_RTREE, radius, numExpectedResults);
 }
 
 TEST(Verification, BoxOverlappingEightSurroundingPoints_OCTREE)
 {
     const double radius = 1.01;
     const unsigned numExpectedResults = 8;
-    runBoxOverlappingEightSurroundingBoxes<My3dAxisAlignedBoundingBox,My3dPointBoundingBox>(stk::search::OCTREE, radius, numExpectedResults);
+    runBoxOverlappingEightSurroundingBoxes<Box,Point>(stk::search::OCTREE, radius, numExpectedResults);
 }
 
 TEST(Verification, PointOverlappingNoSurroundingBoxes_BOOST_RTREE)
 {
     const double radius = 0.99;
     const unsigned numExpectedResults = 0;
-    runBoxOverlappingEightSurroundingBoxes<My3dPointBoundingBox,My3dAxisAlignedBoundingBox>(stk::search::BOOST_RTREE, radius, numExpectedResults);
+    runBoxOverlappingEightSurroundingBoxes<Point,Box>(stk::search::BOOST_RTREE, radius, numExpectedResults);
 }
 
 TEST(Verification, PointOverlappingEightSurroundingBoxes_BOOST_RTREE)
 {
     const double radius = 1.01;
     const unsigned numExpectedResults = 8;
-    runBoxOverlappingEightSurroundingBoxes<My3dPointBoundingBox,My3dAxisAlignedBoundingBox>(stk::search::BOOST_RTREE, radius, numExpectedResults);
+    runBoxOverlappingEightSurroundingBoxes<Point,Box>(stk::search::BOOST_RTREE, radius, numExpectedResults);
 }
 
 TEST(Verification, PointOverlappingNoSurroundingBoxes_OCTREE)
 {
     const double radius = 0.99;
     const unsigned numExpectedResults = 0;
-    runBoxOverlappingEightSurroundingBoxes<My3dPointBoundingBox,My3dAxisAlignedBoundingBox>(stk::search::OCTREE, radius, numExpectedResults);
+    runBoxOverlappingEightSurroundingBoxes<Point,Box>(stk::search::OCTREE, radius, numExpectedResults);
 }
 
 TEST(Verification, PointOverlappingEightSurroundingBoxes_OCTREE)
 {
     const double radius = 1.01;
     const unsigned numExpectedResults = 8;
-    runBoxOverlappingEightSurroundingBoxes<My3dPointBoundingBox,My3dAxisAlignedBoundingBox>(stk::search::OCTREE, radius, numExpectedResults);
+    runBoxOverlappingEightSurroundingBoxes<Point,Box>(stk::search::OCTREE, radius, numExpectedResults);
 }
 
 enum Axis
@@ -310,20 +310,20 @@ void runLineOfBoundingBoxes(stk::search::SearchMethod searchMethod, enum Axis ax
 
     const double paramCoord = procId * distanceBetweenCenters;
 
-    std::vector<BoundingBoxType> boxVector1;
-    std::vector<BoundingBoxType> boxVector2;
+    std::vector< std::pair<BoundingBoxType, Ident> > boxVector1;
+    std::vector< std::pair<BoundingBoxType, Ident> > boxVector2;
     if(procId % 2 == 0)
     {
         switch(axis)
         {
             case xDim:
-                boxVector1.push_back(generate3dBoundingBox<BoundingBoxType>(paramCoord, 0, 0, radius, 1, procId));
+                boxVector1.push_back(generateBoundingVolume<BoundingBoxType>(paramCoord, 0, 0, radius, 1, procId));
                 break;
             case yDim:
-                boxVector1.push_back(generate3dBoundingBox<BoundingBoxType>(0, paramCoord, 0, radius, 1, procId));
+                boxVector1.push_back(generateBoundingVolume<BoundingBoxType>(0, paramCoord, 0, radius, 1, procId));
                 break;
             case zDim:
-                boxVector1.push_back(generate3dBoundingBox<BoundingBoxType>(0, 0, paramCoord, radius, 1, procId));
+                boxVector1.push_back(generateBoundingVolume<BoundingBoxType>(0, 0, paramCoord, radius, 1, procId));
                 break;
         }
     }
@@ -332,18 +332,18 @@ void runLineOfBoundingBoxes(stk::search::SearchMethod searchMethod, enum Axis ax
         switch(axis)
         {
             case xDim:
-                boxVector2.push_back(generate3dBoundingBox<BoundingBoxType>(paramCoord, 0, 0, radius, 1, procId));
+                boxVector2.push_back(generateBoundingVolume<BoundingBoxType>(paramCoord, 0, 0, radius, 1, procId));
                 break;
             case yDim:
-                boxVector2.push_back(generate3dBoundingBox<BoundingBoxType>(0, paramCoord, 0, radius, 1, procId));
+                boxVector2.push_back(generateBoundingVolume<BoundingBoxType>(0, paramCoord, 0, radius, 1, procId));
                 break;
             case zDim:
-                boxVector2.push_back(generate3dBoundingBox<BoundingBoxType>(0, 0, paramCoord, radius, 1, procId));
+                boxVector2.push_back(generateBoundingVolume<BoundingBoxType>(0, 0, paramCoord, radius, 1, procId));
                 break;
         }
     }
 
-    std::vector< std::pair<MyBoxId, MyBoxId> > boxIdPairResults;
+    std::vector< std::pair<Ident, Ident> > boxIdPairResults;
     stk::search::coarse_search(boxVector1, boxVector2, searchMethod, comm, boxIdPairResults);
 
     int numProcs = -1;
@@ -364,32 +364,32 @@ void runLineOfBoundingBoxes(stk::search::SearchMethod searchMethod, enum Axis ax
 
 TEST(Verification, LineOfSpheres_BOOST_RTREE)
 {
-    runLineOfBoundingBoxes<My3dSphereBoundingBox>(stk::search::BOOST_RTREE, xDim);
+    runLineOfBoundingBoxes<Sphere>(stk::search::BOOST_RTREE, xDim);
 }
 
 TEST(Verification, LineOfSpheres_OCTREE)
 {
-    runLineOfBoundingBoxes<My3dSphereBoundingBox>(stk::search::OCTREE, xDim);
+    runLineOfBoundingBoxes<Sphere>(stk::search::OCTREE, xDim);
 }
 
 TEST(Verification, LineOfBoxes_BOOST_RTREE)
 {
-    runLineOfBoundingBoxes<My3dAxisAlignedBoundingBox>(stk::search::BOOST_RTREE, yDim);
+    runLineOfBoundingBoxes<Box>(stk::search::BOOST_RTREE, yDim);
 }
 
 TEST(Verification, LineOfBoxes_OCTREE)
 {
-    runLineOfBoundingBoxes<My3dAxisAlignedBoundingBox>(stk::search::OCTREE, yDim);
+    runLineOfBoundingBoxes<Box>(stk::search::OCTREE, yDim);
 }
 
 TEST(Verification, LineOfSpheresZDimension_BOOST_RTREE)
 {
-    runLineOfBoundingBoxes<My3dSphereBoundingBox>(stk::search::BOOST_RTREE, zDim);
+    runLineOfBoundingBoxes<Sphere>(stk::search::BOOST_RTREE, zDim);
 }
 
 TEST(Verification, LineOfSpheresZDimension_OCTREE)
 {
-    runLineOfBoundingBoxes<My3dSphereBoundingBox>(stk::search::OCTREE, zDim);
+    runLineOfBoundingBoxes<Sphere>(stk::search::OCTREE, zDim);
 }
 
 }

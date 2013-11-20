@@ -110,17 +110,21 @@ int main(int argc, char** argv)
   }
 
   if (vm.count("use_case_1")) {
+#if 0
     use_case_1_driver(use_case_environment.m_comm,
 		      working_directory,
 		      range_mesh,  range_filetype,  range_entity,
 		      domain_mesh, domain_filetype, domain_entity);
+#endif
   }
   
   if (vm.count("use_case_4")) {
+#if 0
     use_case_4_driver(use_case_environment.m_comm,
 		      working_directory,
 		      range_mesh,  range_filetype,  range_entity,
 		      domain_mesh, domain_filetype, domain_entity);
+#endif
   }
 
   // if we've made it this far, the use case has passed

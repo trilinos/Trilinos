@@ -34,7 +34,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
 BihTree.hpp
-BoundingBoxCompare.hpp
 CoarseSearch.hpp
 OctTree.hpp
 SearchTypes.hpp

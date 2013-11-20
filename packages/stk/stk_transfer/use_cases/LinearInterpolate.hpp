@@ -38,7 +38,7 @@ public :
 
   typedef std::multimap<EntityKeyB, EntityKeyA> EntityKeyMap;
 
-  enum { Dimension = MeshA::Dimension };
+  enum { Dimension = 3 };
 
   static void post_coarse_search_filter(EntityProcRelationVec &range_to_domain,
                                         const MeshA     &mesha,
@@ -57,9 +57,6 @@ private :
 
   static int LU_decomp(double A[9], int piv[3], int* sign);
   static int LU_solve(const double A[9], const int piv[3], double b[3]);
-
-  enum { dim_eq = StaticAssert<static_cast<unsigned>(MeshB::Dimension)==static_cast<unsigned>(MeshA::Dimension)>::OK };
-  enum { dim_3  = StaticAssert<               3==MeshA::Dimension>::OK };
 
   static double distance_squared(const double *x, const double *y) ;
   static EntityKeyMap determine_best_fit(const typename EntityKeyMap::const_iterator begin,
@@ -185,7 +182,7 @@ template <class MESHA, class MESHB> void LinearInterpolate<MESHA,MESHB>::post_co
       ++j;
     }
     const unsigned num = j-i;
-    if (Dimension+2 < num || p_rank != i->first.proc) {
+    if (Dimension+2 < num || p_rank != i->first.proc()) {
       while (i!=j && i != BtoA.end()) {
         *k++ = *i++;
       }

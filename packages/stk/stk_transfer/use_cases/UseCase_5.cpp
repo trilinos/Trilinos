@@ -1,9 +1,9 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2013 Sandia Corporation.                     */      
+/*                 Copyright 2013 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */      
-/*  United States Government.                                             */      
+/*  Export of this program may require a license from the                 */
+/*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
 #include <Intrepid_FieldContainer.hpp>
@@ -24,8 +24,8 @@
 
 bool use_case_5_driver(stk::ParallelMachine  comm)
 {
-  stk::diag::Timer timer("Transfer Use Case 5", 
-                          use_case::TIMER_TRANSFER, 
+  stk::diag::Timer timer("Transfer Use Case 5",
+                          use_case::TIMER_TRANSFER,
                           use_case::timer());
   stk::diag::Timer timer_point_to_point(" Point To Point", timer);
   use_case::timerSet().setEnabledTimerMask(use_case::TIMER_ALL);
@@ -40,12 +40,12 @@ bool use_case_5_driver(stk::ParallelMachine  comm)
 
   typedef Intrepid::FieldContainer<double>  MDArray;
 
-  MDArray FromPoints (FROMNUMPOINTS,DIM), 
-          ToPoints   (  TONUMPOINTS,DIM), 
-          FromValues (FROMNUMPOINTS,  2), 
+  MDArray FromPoints (FROMNUMPOINTS,DIM),
+          ToPoints   (  TONUMPOINTS,DIM),
+          FromValues (FROMNUMPOINTS,  2),
           ToValues   (  TONUMPOINTS,  2);
   for (unsigned i=0 ; i<FROMNUMPOINTS; ++i) {
-    double l=0, q=0; 
+    double l=0, q=0;
     for (unsigned j=0 ; j<DIM; ++j) {
       FromPoints(i,j) = rand()/rand_max;
       l +=   FromPoints(i,j);
@@ -61,15 +61,15 @@ bool use_case_5_driver(stk::ParallelMachine  comm)
   }
 
   const double initial_radius   = .05;
-  boost::shared_ptr<stk::transfer::MDMesh<3> >
-    transfer_domain_mesh (new stk::transfer::MDMesh<3>(FromValues, FromPoints, initial_radius, comm));
-  boost::shared_ptr<stk::transfer::MDMesh<3> >
-    transfer_range_mesh  (new stk::transfer::MDMesh<3>(  ToValues, ToPoints,   initial_radius, comm));
-  
+  boost::shared_ptr<stk::transfer::MDMesh >
+    transfer_domain_mesh (new stk::transfer::MDMesh(FromValues, FromPoints, initial_radius, comm));
+  boost::shared_ptr<stk::transfer::MDMesh >
+    transfer_range_mesh  (new stk::transfer::MDMesh(  ToValues, ToPoints,   initial_radius, comm));
+
   stk::transfer::GeometricTransfer<
     class stk::transfer::LinearInterpolate<
-      class stk::transfer::MDMesh<3>, 
-      class stk::transfer::MDMesh<3> 
+      class stk::transfer::MDMesh,
+      class stk::transfer::MDMesh
     >
   >
   transfer(transfer_domain_mesh, transfer_range_mesh, "STK Transfer test Use case 5");
@@ -90,7 +90,7 @@ bool use_case_5_driver(stk::ParallelMachine  comm)
                 <<" Caught an exception, rethrowing..."
                 <<std::endl;
       status = status && false;
-    } 
+    }
   }
 
   if (status) {

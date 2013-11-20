@@ -1,3 +1,4 @@
+#if 0
 /*------------------------------------------------------------------------*/
 /*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
@@ -249,3 +250,4 @@ use_case_2_driver(stk::ParallelMachine  comm,
     dw().m(LOG_TRANSFER)<<" contains "<<" "<<entity_rank_name<<"["<<entity_id<<"] Proc:"<<i->second<<stk::diag::dendl;
   }
 }
+#endif

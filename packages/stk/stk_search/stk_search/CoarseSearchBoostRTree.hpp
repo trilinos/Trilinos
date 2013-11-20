@@ -26,8 +26,7 @@
 #include <vector>
 #include <utility>
 
-namespace stk {
-namespace search {
+namespace stk { namespace search {
 
 namespace impl {
 
@@ -139,40 +138,25 @@ struct get_proc<std::pair<T, int> >
   }
 };
 
-template <typename Key, typename Proc>
-struct get_proc< stk::search::ident::IdentProc<Key,Proc> >
+template <typename Ident, typename Proc>
+struct get_proc< stk::search::IdentProc<Ident,Proc> >
 {
-  int operator()(stk::search::ident::IdentProc<Key,Proc> const& id) const
+  int operator()(stk::search::IdentProc<Ident,Proc> const& id) const
   {
-    return id.proc;
+    return id.proc();
   }
 };
 
 template <typename RangeBox>
 struct IntersectPredicate
 {
-  IntersectPredicate(const RangeBox&) {}
+  RangeBox const& range;
+
+  IntersectPredicate(const RangeBox& x_range) : range(x_range) {}
 
   // For PointBoundingBox and AxisAlignedBoundingBox, normal boost::intersects is fine
-  template <typename DomainBox>
-  bool operator()(DomainBox const&) const { return true; }
-};
-
-template <class K, class T, int Dim>
-struct IntersectPredicate<box::SphereBoundingBox<K, T, Dim> >
-{
-  typedef box::SphereBoundingBox<K, T, Dim> RangeBox;
-
-  RangeBox const& m_range;
-
-  IntersectPredicate(const RangeBox& range) : m_range(range) {}
-
-  // For spheres, use true sphere intersection, not bbox
-  template <typename DomainBox>
-  bool operator()(DomainBox const& domain) const
-  {
-    return domain.intersect(m_range);
-  }
+  template <typename DomainBox, typename DomainIdent>
+  bool operator()(std::pair<DomainBox,DomainIdent> const& domain) const { return intersects(domain.first,range); }
 };
 
 } // namespace impl
@@ -293,26 +277,24 @@ void create_parallel_domain(SpatialIndex& local_domain, stk::ParallelMachine com
   }
 }
 
-template <typename DomainBox, typename RangeBox>
-void coarse_search_boost_rtree( std::vector<DomainBox> const& local_domain,
-                                std::vector<RangeBox> const& local_range,
+template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
+void coarse_search_boost_rtree( std::vector< std::pair<DomainBox,DomainIdent> > const& local_domain,
+                                std::vector< std::pair<RangeBox,RangeIdent> > const& local_range,
                                 stk::ParallelMachine comm,
-                                std::vector<std::pair<typename DomainBox::Key, typename RangeBox::Key> >& output
+                                std::vector<std::pair<DomainIdent, RangeIdent> >& output
                               )
 {
   namespace bg = boost::geometry;
   namespace bgi = boost::geometry::index;
 
   const unsigned MaxVolumesPerNode = 16;
-  typedef DomainBox DomainValue;
-  typedef RangeBox  RangeValue;
-  typedef typename DomainBox::Key DomainIdent;
-  typedef typename RangeBox::Key RangeIdent;
+  typedef std::pair<DomainBox,DomainIdent> DomainValue;
+  typedef std::pair<RangeBox,RangeIdent>  RangeValue;
   typedef bgi::rtree< DomainValue, bgi::quadratic<MaxVolumesPerNode> > LocalDomainTree;
   typedef typename LocalDomainTree::bounds_type GlobalBox;
   typedef std::pair<GlobalBox,int> GlobalBoxProc;
   typedef bgi::rtree< GlobalBoxProc, bgi::quadratic<MaxVolumesPerNode> > GlobalDomainTree;
-  typedef std::pair<typename DomainBox::Key, typename RangeBox::Key> Output;
+  typedef std::pair<DomainIdent, RangeIdent> Output;
   typedef std::vector<Output> OutputVector;
 
   LocalDomainTree local_domain_tree(local_domain.begin(), local_domain.end());
@@ -330,7 +312,7 @@ void coarse_search_boost_rtree( std::vector<DomainBox> const& local_domain,
     std::vector<GlobalBoxProc> potential_process_intersections;
     for (size_t i = 0, ie = local_range.size(); i < ie; ++i) {
       potential_process_intersections.clear();
-      bgi::query(global_domain_tree, bgi::intersects(local_range[i]), std::back_inserter(potential_process_intersections));
+      bgi::query(global_domain_tree, bgi::intersects(local_range[i].first), std::back_inserter(potential_process_intersections));
 
       for (size_t j = 0, je = potential_process_intersections.size(); j < je; ++j) {
         int proc = potential_process_intersections[j].second;
@@ -372,13 +354,13 @@ void coarse_search_boost_rtree( std::vector<DomainBox> const& local_domain,
     stk::CommAll comm_all( comm );
     std::vector<OutputVector> send_matches(p_size);
     for (size_t r = 0, re = gather_range.size(); r < re; ++r) {
-      RangeBox const& range = gather_range[r];
+      RangeBox const& range = gather_range[r].first;
       std::vector<DomainValue> domain_intersections;
       bgi::query(local_domain_tree, bgi::intersects(range) && bgi::satisfies(impl::IntersectPredicate<RangeBox>(range)), std::back_inserter(domain_intersections));
 
       for (int i = 0, ie = domain_intersections.size(); i < ie; ++i) {
-        DomainIdent domain_id = domain_intersections[i].key;
-        RangeIdent  range_id  = gather_range[r].key;
+        DomainIdent domain_id = domain_intersections[i].second;
+        RangeIdent  range_id  = gather_range[r].second;
         Output temp(domain_id, range_id);
         output.push_back(temp);
 
@@ -422,7 +404,6 @@ void coarse_search_boost_rtree( std::vector<DomainBox> const& local_domain,
   output.erase(eitr, output.end());
 }
 
-} // namespace search
-} // namespace stk
+}} // namespace stk::search
 
 #endif // STK_SEARCH_COARSE_SEARCH_BOOST_RTREE_HPP

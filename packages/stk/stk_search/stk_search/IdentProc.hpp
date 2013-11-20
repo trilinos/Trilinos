@@ -6,163 +6,55 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#ifndef stk_search_IdentProc_hpp
-#define stk_search_IdentProc_hpp
+#ifndef STK_SEARCH_IDENTPROC_HPP
+#define STK_SEARCH_IDENTPROC_HPP
 
-#include <ostream>
-#include <iomanip>
+#include <iostream>
+#include <utility>
 
-#include <stk_search/SearchTypes.hpp>
-#include <stk_util/util/SimpleArrayOps.hpp>
+namespace stk { namespace search {
 
-namespace stk {
-namespace search {
-namespace ident {
+template <typename Ident, typename Proc = int>
+class IdentProc
+{
+public:
+  typedef Ident ident_type;
+  typedef Proc proc_type;
 
-/**
- * @brief Class <b>template <class K, class P> IdentProc<K,P></b>.  Template parallel identification used for search, sorts first by identifier and then processor.
- *
- * K and P need to provide a default constructor, copy constructor, assignment operator, less than operator (<), and stream insertion operator (<<).
- */
-template <class K = uint64_t, class P = unsigned>
-struct IdentProc {
+  typedef IdentProc<ident_type,proc_type> self_type;
 
-  typedef K Key;
-  typedef P Proc;
-
-  /**
-   * Creates a new <b>IdentProc</b> instance.
-   *
-   */
   IdentProc()
-    : ident(),
-      proc()
+    : m_value()
   {}
 
-  /**
-   * Destroys a <b>IdentProc</b> instance.
-   *
-   */
-  ~IdentProc()
+  IdentProc( ident_type const& i , proc_type const& p )
+    : m_value(p,i)
   {}
 
-  /**
-   * Creates a new <b>IdentProc</b> instance.
-   *
-   * @param rhs			an <b>IdentProc</b> const ...
-   *
-   */
-  IdentProc( const IdentProc & rhs )
-    : ident(rhs.ident),
-      proc(rhs.proc)
-  {}
 
-  /**
-   * Creates a new <b>IdentProc</b> instance.
-   *
-   * @param i			an <b>unsigned int</b> ...
-   *
-   * @param p			an <b>unsigned int</b> ...
-   *
-   */
-  IdentProc( Key i , Proc p )
-    : ident(i),
-      proc(p)
-  {}
+  ident_type const& id() const {return m_value.second; }
+  proc_type const& proc() const {return m_value.first; }
 
-  /**
-   * @brief Member function <b>=</b> ...
-   *
-   * @param rhs			an <b>IdentProc</b> const ...
-   *
-   * @return			an <b>IdentProc</b> ...
-   */
-  IdentProc & operator = ( const IdentProc & rhs ) {
-    ident = rhs.ident ;
-    proc = rhs.proc ;
-    return *this ;
-  }
-  /**
-  * @brief Member function <b>==</b> ...
-  *
-  * @param rhs			an <b>IdentProc</b> const ...
-  *
-  * @return			a <b>bool</b> ...
-  */
-  inline bool operator==( const IdentProc<K, P> & rhs ) const {
-    return ident == rhs.ident && proc == rhs.proc;
+  void set_id(ident_type const& x_id) { m_value.second = x_id; }
+  void set_proc(proc_type const& x_proc) { m_value.first = x_proc; }
+
+  bool operator==(self_type const& rhs) const { return m_value == rhs.m_value; }
+  bool operator!=(self_type const& rhs) const { return m_value != rhs.m_value; }
+  bool operator< (self_type const& rhs) const { return m_value < rhs.m_value; }
+  bool operator> (self_type const& rhs) const { return m_value > rhs.m_value; }
+  bool operator<=(self_type const& rhs) const { return m_value <= rhs.m_value; }
+  bool operator>=(self_type const& rhs) const { return m_value >= rhs.m_value; }
+
+  friend std::ostream& operator<<(std::ostream& out, IdentProc<ident_type,proc_type> const& ip)
+  {
+    out << "{id:" << ip.id() << ",proc:" << ip.proc() << "}";
+    return out;
   }
 
-  /**
-  * @brief Member function <b><</b> ...
-  *
-  * @param rhs			an <b>IdentProc</b> const ...
-  *
-  * @return			a <b>bool</b> ...
-  */
-  inline bool operator<( const IdentProc<K, P> & rhs ) const {
-    return ident < rhs.ident || (!(rhs.ident < ident) && proc < rhs.proc);
-  }
-
-  /**
-  * @brief Member function <b>!=</b> ...
-  *
-  * @param rhs			an <b>IdentProc</b> const ...
-  *
-  * @return			a <b>bool</b> ...
-  */
-  inline bool operator!=( const IdentProc<K, P> &rhs ) const {
-    return  !(*this == rhs);
-  }
-
-  /**
-  * @brief Member function <b>></b> ...
-  *
-  * @param rhs			an <b>IdentProc</b> const ...
-  *
-  * @return			a <b>bool</b> ...
-  */
-  inline bool operator>( const IdentProc<K, P> &rhs ) const{
-    return rhs < *this;
-  }
-
-  /**
-  * @brief Member function <b><=</b> ...
-  *
-  * @param rhs			an <b>IdentProc</b> const ...
-  *
-  * @return			a <b>bool</b> ...
-  */
-  inline bool operator<=( const IdentProc<K, P> &rhs ) const {
-    return !(rhs < *this);
-  }
-
-  /**
-  * @brief Member function <b>>=</b> ...
-  *
-  * @param rhs			an <b>IdentProc</b> const ...
-  *
-  * @return			a <b>bool</b> ...
-  */
-  inline bool operator>=(const IdentProc<K, P> &rhs ) const {
-    return !(*this < rhs);
-  }
-
-
-  Key           ident;          ///< Identifier
-  Proc          proc;           ///< Processor
+private:
+  std::pair<proc_type,ident_type> m_value;
 };
 
-
-template <class K, class P>
-std::ostream& operator<<(std::ostream &dout, const IdentProc<K, P> &ident_proc){
-  dout << "id " << ident_proc.ident << ", proc " << ident_proc.proc;
-  return dout;
-}
-
-
-} // namespace ident
-} // namespace search
-} // namespace stk
+}} // namespace stk::search
 
 #endif

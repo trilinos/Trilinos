@@ -164,6 +164,39 @@ bool oct_tree_bih_tree_proximity_search(
   return global_violations ;
 }
 
+//-----------------------------------------------------------------------------
+template <typename DomainBox, typename RangeBox>
+void coarse_search_bihtree( std::vector<DomainBox> const& domain,
+                            std::vector<RangeBox>  const& range,
+                            stk::ParallelMachine   comm,
+                            std::vector< std::pair< typename DomainBox::Key, typename RangeBox::Key> > & intersections
+                          )
+{
+  const unsigned p_size = parallel_machine_size( comm );
+  //find the global box
+  if (p_size == 1) {
+    bih::BihTree<RangeBox> tree(range.begin(), range.end());
+    for (unsigned i = 0, ie = domain.size(); i < ie ; ++i) {
+      tree.intersect(domain[i], intersections);
+    }
+  }
+  else {
+    std::vector<float> global_box(6);
+    stk::search::box_global_bounds( comm, domain.size(), &*domain.begin(), range.size(), &*range.begin(), &*global_box.begin() );
+
+    stk::search::oct_tree_bih_tree_proximity_search(
+        comm,
+        &*global_box.begin(),
+        domain.size(),
+        &*domain.begin(),
+        range.size(),
+        &*range.begin(),
+        intersections
+        );
+  }
+}
+
+
 } //namespace search
 } //namespace stk
 #endif //stk_search_BihTreeParallelOps_hpp

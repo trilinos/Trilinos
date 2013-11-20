@@ -1,3 +1,4 @@
+#if 0
 /*------------------------------------------------------------------------*/
 /*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
@@ -265,3 +266,4 @@ use_case_3_driver(stk::ParallelMachine  comm,
   stk::search_util::print_entity_map(dw().m(LOG_TRANSFER), domain_bulk_data, range_bulk_data,
                                      entity_map, " contains ");
 }
+#endif

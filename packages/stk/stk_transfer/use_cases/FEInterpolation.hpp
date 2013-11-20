@@ -35,7 +35,7 @@ public :
 
   typedef std::multimap<EntityKeyB, EntityKeyA>        EntityKeyMap;
 
-  enum { Dimension = MeshA::Dimension };
+  enum { Dimension = 3 };
   
   static void filter_to_nearest(EntityKeyMap    &BtoA,
                                 const MeshA     &FromElem,
@@ -62,9 +62,6 @@ protected :
   
 private :
 
-  enum { dim_eq = StaticAssert<static_cast<unsigned>(MeshB::Dimension)==static_cast<unsigned>(MeshA::Dimension)>::OK };
-  enum { dim_3  = StaticAssert<               3==MeshA::Dimension>::OK };
-  
 };
 
 template <class MESHA, class MESHB> typename FEInterpolate<MESHA,MESHB>::EntityKeyMap::iterator 

@@ -4,50 +4,26 @@
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search/IdentProc.hpp>
 
-const int spatialDim = 3;
-typedef stk::search::ident::IdentProc<unsigned, unsigned> MyBoxId;
-typedef stk::search::box::SphereBoundingBox<MyBoxId, double, spatialDim> My3dSphereBoundingBox;
-typedef stk::search::box::PointBoundingBox<MyBoxId, double, spatialDim> My3dPointBoundingBox;
-typedef stk::search::box::AxisAlignedBoundingBox<MyBoxId, double, spatialDim> My3dAxisAlignedBoundingBox;
+typedef stk::search::IdentProc<int,int> Ident;
+typedef stk::search::Point<double> Point;
+typedef stk::search::Sphere<double> Sphere;
+typedef stk::search::Box<double> Box;
 
-template<class BoundingBoxType>
-BoundingBoxType generate3dBoundingBox(const double centerX,
-                                                  const double centerY,
-                                                  const double centerZ,
-                                                  const double radius,
-                                                  const int entityId,
-                                                  const int procId);
+template<class VolumeType>
+VolumeType generateBoundingVolume(double x, double y, double z, double radius);
 
 template<>
-inline My3dPointBoundingBox generate3dBoundingBox<My3dPointBoundingBox>(const double centerX,
-                                                  const double centerY,
-                                                  const double centerZ,
-                                                  const double radius,
-                                                  const int entityId,
-                                                  const int procId)
+inline
+Point generateBoundingVolume<Point>(double x, double y, double z, double /*radius*/)
 {
-    MyBoxId id(entityId, procId);
-    double center[spatialDim];
-    center[0] = centerX;
-    center[1] = centerY;
-    center[2] = centerZ;
-    return My3dPointBoundingBox(center, id);
+  return Point(x,y,z);
 }
 
 template<>
-inline My3dSphereBoundingBox generate3dBoundingBox<My3dSphereBoundingBox>(const double centerX,
-                                                  const double centerY,
-                                                  const double centerZ,
-                                                  const double radius,
-                                                  const int entityId,
-                                                  const int procId)
+inline
+Sphere generateBoundingVolume<Sphere>(double x, double y, double z, double radius)
 {
-    MyBoxId id(entityId, procId);
-    double center[spatialDim];
-    center[0] = centerX;
-    center[1] = centerY;
-    center[2] = centerZ;
-    return My3dSphereBoundingBox(center, radius, id);
+  return Sphere(Point(x,y,z),radius);
 }
 
 //       ------------
@@ -59,22 +35,19 @@ inline My3dSphereBoundingBox generate3dBoundingBox<My3dSphereBoundingBox>(const 
 //       ------------
 // width = 2*radius
 template<>
-inline My3dAxisAlignedBoundingBox generate3dBoundingBox<My3dAxisAlignedBoundingBox>(const double centerX,
-                                                  const double centerY,
-                                                  const double centerZ,
-                                                  const double radius,
-                                                  const int entityId,
-                                                  const int procId)
+inline
+Box generateBoundingVolume<Box>(double x, double y, double z, double radius)
 {
-    MyBoxId id(entityId, procId);
-    double corners[2*spatialDim];
-    corners[0] = centerX-radius;
-    corners[1] = centerY-radius;
-    corners[2] = centerZ-radius;
-    corners[3] = centerX+radius;
-    corners[4] = centerY+radius;
-    corners[5] = centerZ+radius;
-    return My3dAxisAlignedBoundingBox(corners, id);
+  Point min_corner(x-radius,y-radius,z-radius);
+  Point max_corner(x+radius,y+radius,z+radius);
+  return Box(min_corner,max_corner);
 }
+
+template <typename VolumeType>
+std::pair<VolumeType, Ident> generateBoundingVolume(double x, double y, double z, double radius, int id, int proc)
+{
+  return std::make_pair(generateBoundingVolume<VolumeType>(x,y,z,radius), Ident(id,proc));
+}
+
 
 #endif

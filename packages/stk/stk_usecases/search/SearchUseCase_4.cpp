@@ -1,3 +1,4 @@
+#if 0
 /*------------------------------------------------------------------------*/
 /*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
@@ -114,3 +115,4 @@ use_case_4_driver(stk::ParallelMachine  comm,
   dw().m(LOG_SEARCH) << stk::diag::pop;
 }
 
+#endif

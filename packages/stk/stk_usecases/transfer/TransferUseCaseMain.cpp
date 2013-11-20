@@ -69,9 +69,9 @@ int main(int argc, char** argv)
 
   //----------------------------------
   // Process the broadcast command line arguments
-  
+
   bopt::options_description desc("Transfer use case options");
-    
+
   // NOTE: Options --directory --output-log --runtest are handled/defined in UseCaseEnvironment
   desc.add_options()
     ("range_mesh",    bopt::value<std::string>(&range_mesh),
@@ -79,8 +79,8 @@ int main(int argc, char** argv)
     ("domain_mesh",   bopt::value<std::string>(&domain_mesh),
      "domain mesh file. Use name of form 'gen:NxMxL' to internally generate a hex mesh of size N by M by L intervals. See GeneratedMesh documentation for more options. Use 'gears' to generate the gears mesh." )
     ("use_case_0",   "transfer use case 0 -- node (range) to node    (domain) copy     search." )
-    ("use_case_1",   "transfer use case 1 -- node (range) in element (domain) detailed search." ) 
-    ("use_case_2",   "transfer use case 2 -- node (range) to node    (domain) copy     search." ) 
+    ("use_case_1",   "transfer use case 1 -- node (range) in element (domain) detailed search." )
+    ("use_case_2",   "transfer use case 2 -- node (range) to node    (domain) copy     search." )
     ("use_case_3",   "transfer use case 3 -- node (range) in face    (domain) detailed search." )
     ("use_case_4",   "transfer use case 4 -- node (range) in node    (domain) copy     transfer." )
     ("offset",       bopt::value<double>()->default_value(0.1), "transfer use case 3 offset" )
@@ -91,7 +91,7 @@ int main(int argc, char** argv)
 
   use_case::UseCaseEnvironment use_case_environment(&argc, &argv);
 
-  bopt::variables_map &vm = stk::get_variables_map();  
+  bopt::variables_map &vm = stk::get_variables_map();
 
   //----------------------------------
 
@@ -136,15 +136,17 @@ int main(int argc, char** argv)
   }
 
   if (vm.count("use_case_0")) {
+#if 0
     domain_entity = "node";
     range_entity  = "node";
-
     use_case_0_driver(use_case_environment.m_comm,
                       use_case_environment.m_workingDirectory,
                       range_mesh,  range_filetype,  range_entity,
                       domain_mesh, domain_filetype, domain_entity);
+#endif
   }
   if (vm.count("use_case_1")) {
+#if 0
     domain_entity = "element";
     range_entity = "node";
 
@@ -152,8 +154,10 @@ int main(int argc, char** argv)
                       use_case_environment.m_workingDirectory,
                       range_mesh,  range_filetype,  range_entity,
                       domain_mesh, domain_filetype, domain_entity);
+#endif
   }
   if (vm.count("use_case_2")) {
+#if 0
     domain_entity = "face";
     range_entity = "node";
 
@@ -161,32 +165,37 @@ int main(int argc, char** argv)
                       use_case_environment.m_workingDirectory,
                       range_mesh,  range_filetype,  range_entity,
                       domain_mesh, domain_filetype, domain_entity);
+#endif
   }
   if (vm.count("use_case_3")) {
+#if 0
     domain_entity = "face";
     range_entity = "node";
     double offset = vm["offset"].as<double>();
     double scale = vm["scale"].as<double>();
-    
+
     use_case_3_driver(use_case_environment.m_comm,
                       use_case_environment.m_workingDirectory,
                       range_mesh,  range_filetype,  range_entity,
                       domain_mesh, domain_filetype, domain_entity,
                       offset, scale);
+#endif
   }
-  
+
   if (vm.count("use_case_4")) {
+#if 0
     domain_entity = "node";
     range_entity = "node";
-    
+
     use_case_4_driver(use_case_environment.m_comm,
                       use_case_environment.m_workingDirectory,
                       range_mesh,  range_filetype,  range_entity,
                       domain_mesh, domain_filetype, domain_entity);
+#endif
   }
 
   // if we've made it this far, the use case has passed
   use_case::print_status(use_case_environment.m_comm, true);
-  
+
   return 0;
 }

@@ -120,16 +120,16 @@ bool use_case_8_driver(stk::ParallelMachine  comm,
 
   const double radius=.25;
   const std::vector<stk::mesh::FieldBase*> from_fields(1, &domain_coord_sum_field);
-  boost::shared_ptr<stk::transfer::STKElem<3> >
-    transfer_domain_mesh (new stk::transfer::STKElem<3>(domain_entities, domain_coord_field, from_fields));
-  boost::shared_ptr<stk::transfer:: MDMesh<3> >
-    transfer_range_mesh  (new stk::transfer:: MDMesh<3>(ToValues, ToPoints,   radius, comm));
+  boost::shared_ptr<stk::transfer::STKElem >
+    transfer_domain_mesh (new stk::transfer::STKElem(domain_entities, domain_coord_field, from_fields));
+  boost::shared_ptr<stk::transfer:: MDMesh >
+    transfer_range_mesh  (new stk::transfer:: MDMesh(ToValues, ToPoints,   radius, comm));
 
 
   stk::transfer::GeometricTransfer<
     class stk::transfer::FEInterpolate<
-      class stk::transfer::STKElem<3>,
-      class stk::transfer::MDMesh<3>
+      class stk::transfer::STKElem,
+      class stk::transfer::MDMesh
     >
   >
   transfer(transfer_domain_mesh, transfer_range_mesh, "STK Transfer test Use case 8");

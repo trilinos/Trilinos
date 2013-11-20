@@ -1,10 +1,9 @@
+#include <stk_search/Box.hpp>
 #include <stk_search/CoarseSearch.hpp>
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search/IdentProc.hpp>
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
-
-#include <stk_util/util/TrackingAllocator.hpp>
 
 #include <algorithm>
 #include <vector>
@@ -13,256 +12,105 @@
 #include <sstream>
 #include <fstream>
 
-#include <Geom_AxisAlignedBB.h>
-#include <Geom_Search.h>
-#include <search/ContactRangeSearch.h>
-#include <search/ContactCommunication.h>
-
 namespace std {
-template <typename Key, typename Proc>
-std::ostream & operator<<(std::ostream & out, std::pair<stk::search::ident::IdentProc<Key,Proc>,stk::search::ident::IdentProc<Key,Proc> > const& ident)
+template <typename Ident, typename Proc>
+std::ostream & operator<<(std::ostream & out, std::pair<stk::search::IdentProc<Ident,Proc>,stk::search::IdentProc<Ident,Proc> > const& ip)
 {
-  return out << "[" << ident.first << ":" << ident.second << "]";
+  return out << "[" << ip.first << ":" << ip.second << "]";
 }
 } // namespace std
 
 
 namespace {
 
-struct CompareSecond
+void testCoarseSearchForAlgorithm(stk::search::SearchMethod algorithm, MPI_Comm comm)
 {
-  template <typename First, typename Second>
-  bool operator()( std::pair<First,Second> const& a, std::pair<First,Second> const& b) const
-  { return a.second < b.second; }
-};
+  typedef stk::search::Point<double> Point;
+  typedef stk::search::Box<double> Box;
+  typedef stk::search::IdentProc<int,int> Ident;
+  typedef std::vector<std::pair<Ident,Ident> > SearchResults;
+  typedef std::vector< std::pair<Box,Ident> > BoxVector;
 
-typedef stk::search::ident::IdentProc<uint64_t, unsigned> Ident;
-typedef std::vector<std::pair<Ident,Ident> > SearchResults;
+  int num_procs = stk::parallel_machine_size(comm);
+  int proc_id   = stk::parallel_machine_rank(comm);
 
-void checkSearchResults(const int proc_id, SearchResults &goldResults, SearchResults& searchResults);
-void testCoarseSearchAABBForAlgorithm(stk::search::SearchMethod algorithm, MPI_Comm comm);
-bool compare(const std::pair<geometry::AxisAlignedBB, geometry::AxisAlignedBB> &gold,
-             const std::pair<geometry::AxisAlignedBB, geometry::AxisAlignedBB> &result);
-void checkSearchResults(const int proc_id, const std::vector<std::pair<geometry::AxisAlignedBB, geometry::AxisAlignedBB> > &goldResults,
-        const std::vector<std::pair<geometry::AxisAlignedBB, geometry::AxisAlignedBB> > &searchResults);
+  BoxVector local_domain, local_range;
+  // what if identifier is NOT unique
 
-void testCoarseSearchUsingGeometryToolkit(MPI_Comm comm);
+  Box box;
+  Ident id;
 
-//  axis aligned bounding box search
+  box = Box( Point(proc_id + 0.1, 0.0, 0.0), Point(proc_id + 0.9, 1.0, 1.0));
+  id = Ident(proc_id * 4, proc_id);
+  local_domain.push_back(std::make_pair(box,id));
 
-STKUNIT_UNIT_TEST(stk_search_not_boost, coarse_search_geometry_toolkit)
-{
-  testCoarseSearchUsingGeometryToolkit(MPI_COMM_WORLD);
-}
+  box = Box( Point(proc_id + 0.1, 2.0, 0.0), Point(proc_id + 0.9, 3.0, 1.0));
+  id = Ident(proc_id * 4+1, proc_id);
+  local_domain.push_back(std::make_pair(box,id));
 
-STKUNIT_UNIT_TEST(stk_search_not_boost, coarse_search_3D_oct_tree)
-{
-  testCoarseSearchAABBForAlgorithm(stk::search::OCTREE, MPI_COMM_WORLD);
-}
+  box = Box( Point(proc_id + 0.6, 0.5, 0.0), Point(proc_id + 1.4, 1.5, 1.0));
+  id = Ident(proc_id * 4+2, proc_id);
+  local_range.push_back(std::make_pair(box,id));
 
-STKUNIT_UNIT_TEST(stk_search_not_boost, coarse_search_3D_bih_tree)
-{
-  testCoarseSearchAABBForAlgorithm(stk::search::BIHTREE, MPI_COMM_WORLD);
-}
+  box = Box( Point(proc_id + 0.6, 2.5, 0.0), Point(proc_id + 1.4, 3.5, 1.0));
+  id = Ident(proc_id * 4+3, proc_id);
+  local_range.push_back(std::make_pair(box,id));
 
-STKUNIT_UNIT_TEST(stk_search_boost, coarse_search_boost_rtree)
-{
-  testCoarseSearchAABBForAlgorithm(stk::search::BOOST_RTREE, MPI_COMM_WORLD);
-}
+  SearchResults searchResults;
 
-void testCoarseSearchUsingGeometryToolkit(MPI_Comm comm)
-{
-    int num_procs = -1;
-    int proc_id   = -1;
-    MPI_Comm_rank(comm, &proc_id);
-    MPI_Comm_size(comm, &num_procs);
+  stk::search::coarse_search(local_domain, local_range, algorithm, comm, searchResults);
 
-    double data[6];
-
-    std::vector<geometry::AxisAlignedBB> domainBoxes;
-    data[0] = proc_id + 0.1; data[1] = 0.0; data[2] = 0.0;
-    data[3] = proc_id + 0.9; data[4] = 1.0; data[5] = 1.0;
-    domainBoxes.push_back(geometry::AxisAlignedBB(data[0], data[1], data[2], data[3], data[4], data[5]));
-
-    data[0] = proc_id + 0.1; data[1] = 2.0; data[2] = 0.0;
-    data[3] = proc_id + 0.9; data[4] = 3.0; data[5] = 1.0;
-    domainBoxes.push_back(geometry::AxisAlignedBB(data[0], data[1], data[2], data[3], data[4], data[5]));
-
-    std::vector<geometry::AxisAlignedBB> rangeBoxes;
-    std::vector<int> procThatOwnsBox;
-
-    data[0] = proc_id + 0.6; data[1] = 0.5; data[2] = 0.0;
-    data[3] = proc_id + 1.4; data[4] = 1.5; data[5] = 1.0;
-    rangeBoxes.push_back(geometry::AxisAlignedBB(data[0], data[1], data[2], data[3], data[4], data[5]));
-    procThatOwnsBox.push_back(proc_id);
-
-    data[0] = proc_id + 0.6; data[1] = 2.5; data[2] = 0.0;
-    data[3] = proc_id + 1.4; data[4] = 3.5; data[5] = 1.0;
-    rangeBoxes.push_back(geometry::AxisAlignedBB(data[0], data[1], data[2], data[3], data[4], data[5]));
-    procThatOwnsBox.push_back(proc_id);
-
-    std::vector<int> ghost_indices;
-    std::vector<int> ghost_procs;
-    ACME::BoxA_BoxB_Ghost(domainBoxes, rangeBoxes, comm, ghost_indices, ghost_procs);
-
-    std::vector< std::vector<geometry::AxisAlignedBB> > send_list(num_procs);
-    std::vector< std::vector<geometry::AxisAlignedBB> > recv_list(num_procs);
-
-    for (size_t i=0;i<ghost_indices.size();i++)
-    {
-        send_list[ghost_procs[i]].push_back(rangeBoxes[ghost_indices[i]]);
-    }
-
-    ACME::Parallel_Data_Exchange(send_list, recv_list, comm);
-
-    ASSERT_EQ((size_t)num_procs, recv_list.size());
-    for (size_t i=0;i<recv_list.size();i++)
-    {
-        for (size_t j=0;j<recv_list[i].size();j++)
-        {
-            rangeBoxes.push_back(recv_list[i][j]);
-            procThatOwnsBox.push_back(i);
-        }
-    }
-    std::vector<int> interaction_list;
-    std::vector<int> first_interaction;
-    std::vector<int> last_interaction;
-
-    geometry::BoxA_BoxB_Search(domainBoxes, rangeBoxes, interaction_list, first_interaction, last_interaction);
-
-    EXPECT_EQ(domainBoxes.size(), first_interaction.size());
-    EXPECT_EQ(domainBoxes.size(), last_interaction.size());
-
-    std::vector<std::pair<geometry::AxisAlignedBB, geometry::AxisAlignedBB> > searchResults;
-
-    std::stringstream os;
-    os << "cubitFile_" << proc_id << ".jou";
-    std::ofstream file(os.str().c_str());
-
-    for (size_t i=0;i<domainBoxes.size();i++)
-    {
-        domainBoxes[i].PrintToCubit(file);
-        for (int j=first_interaction[i];j<last_interaction[i];j++)
-        {
-            searchResults.push_back(std::make_pair(domainBoxes[i], rangeBoxes[interaction_list[j]]));
-            rangeBoxes[interaction_list[j]].PrintToCubit(file);
-        }
-    }
-
-    file.close();
-
-    std::vector<std::pair<geometry::AxisAlignedBB, geometry::AxisAlignedBB> > goldResults;
-
-    if ( proc_id == 0 )
-    {
-        goldResults.push_back(std::make_pair(domainBoxes[0], rangeBoxes[0]));
-        goldResults.push_back(std::make_pair(domainBoxes[1], rangeBoxes[1]));
-        checkSearchResults(proc_id, goldResults, searchResults);
-    }
-    else
-    {
-        goldResults.push_back(std::make_pair(domainBoxes[0], rangeBoxes[0]));
-        goldResults.push_back(std::make_pair(domainBoxes[0], rangeBoxes[2]));
-        goldResults.push_back(std::make_pair(domainBoxes[1], rangeBoxes[1]));
-        goldResults.push_back(std::make_pair(domainBoxes[1], rangeBoxes[3]));
-        checkSearchResults(proc_id, goldResults, searchResults);
-    }
-
-    unlink(os.str().c_str()); // comment this out to view Cubit files for bounding boxes
-}
-
-STKUNIT_UNIT_TEST(stk_search, bounding_box)
-{
-  namespace bg = boost::geometry;
-  namespace bgi = boost::geometry::index;
-
-  typedef bg::model::point<double, 3, bg::cs::cartesian> Point;
-  typedef bg::model::box<Point> Box;
-  typedef std::pair<Box,int> BoxProc;
-
-  Point min_corner(-1,-2,-3);
-  Point max_corner(1,2,3);
-  Box box(min_corner, max_corner);
-
-  double coords[6] = {};
-  stk::search::impl::fill_array(box, coords);
-
-  STKUNIT_EXPECT_EQ(coords[0], -1.0);
-  STKUNIT_EXPECT_EQ(coords[1], -2.0);
-  STKUNIT_EXPECT_EQ(coords[2], -3.0);
-  STKUNIT_EXPECT_EQ(coords[3], 1.0);
-  STKUNIT_EXPECT_EQ(coords[4], 2.0);
-  STKUNIT_EXPECT_EQ(coords[5], 3.0);
-
-  Box temp;
-  stk::search::impl::set_box(temp, coords);
-
-  STKUNIT_EXPECT_EQ(bg::distance(temp.min_corner(), min_corner), 0.0);
-  STKUNIT_EXPECT_EQ(bg::distance(temp.max_corner(), max_corner), 0.0);
-}
-
-STKUNIT_UNIT_TEST(stk_search, global_spatial_index)
-{
-  int parallel_size = stk::parallel_machine_size(MPI_COMM_WORLD);
-  if (parallel_size == 1) return;
-
-  namespace bg = boost::geometry;
-  namespace bgi = boost::geometry::index;
-
-  typedef bg::model::point<double, 3, bg::cs::cartesian> Point;
-  typedef bg::model::box<Point> Box;
-  typedef std::pair<Box,int> BoxProc;
-  const unsigned MaxVolumesPerNode = 16;
-  typedef bgi::rtree< BoxProc, bgi::quadratic<MaxVolumesPerNode>, bgi::indexable<BoxProc>, bgi::equal_to<BoxProc>, stk::tracking_allocator<BoxProc, BoxProc> > Rtree;
-
-  int rank, size;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-
-  Point min_corner(rank - 0.2, 0, 0);
-  Point max_corner(rank + 1.2, 1, 1);
-  Box box(min_corner, max_corner);
-
-  Rtree tree;
-  stk::search::create_global_spatial_index(tree, box, MPI_COMM_WORLD);
-
-  STKUNIT_EXPECT_EQ(tree.size(), size_t(size));
-
-  Box global_bounds = tree.bounds();
-  STKUNIT_EXPECT_EQ(bg::distance(global_bounds.min_corner(), Point(-0.2,0,0)), 0.0);
-  STKUNIT_EXPECT_EQ(bg::distance(global_bounds.max_corner(), Point(size + 0.2, 1, 1)), 0.0);
-
-  std::vector<BoxProc> intersections;
-  bgi::query(tree, bgi::intersects(box), std::back_inserter(intersections));
-
-  std::sort(intersections.begin(), intersections.end(), CompareSecond());
-
-  if (rank > 0 && rank < size-1) {
-    STKUNIT_EXPECT_EQ(intersections.size(), 3u);
-    STKUNIT_EXPECT_EQ(intersections[0].second, rank-1);
-    STKUNIT_EXPECT_EQ(intersections[1].second, rank);
-    STKUNIT_EXPECT_EQ(intersections[2].second, rank+1);
+  if (num_procs == 1) {
+    STKUNIT_ASSERT_EQ( searchResults.size(), 2u);
+    STKUNIT_EXPECT_EQ( searchResults[0], std::make_pair( Ident(0,0), Ident(2,0)) );
+    STKUNIT_EXPECT_EQ( searchResults[1], std::make_pair( Ident(1,0), Ident(3,0)) );
   }
-  else if (size > 1) {
-    STKUNIT_EXPECT_EQ(intersections.size(), 2u);
-    if (rank == 0) {
-      STKUNIT_EXPECT_EQ(intersections[0].second, rank);
-      STKUNIT_EXPECT_EQ(intersections[1].second, rank+1);
+  else {
+    if (proc_id == 0) {
+      STKUNIT_ASSERT_EQ( searchResults.size(), 4u);
+      STKUNIT_EXPECT_EQ( searchResults[0], std::make_pair( Ident(0,0), Ident(2,0)) );
+      STKUNIT_EXPECT_EQ( searchResults[1], std::make_pair( Ident(1,0), Ident(3,0)) );
+      STKUNIT_EXPECT_EQ( searchResults[2], std::make_pair( Ident(4,1), Ident(2,0)) );
+      STKUNIT_EXPECT_EQ( searchResults[3], std::make_pair( Ident(5,1), Ident(3,0)) );
+    }
+    else if (proc_id == num_procs - 1) {
+      STKUNIT_ASSERT_EQ( searchResults.size(), 4u);
+      int prev = proc_id -1;
+      STKUNIT_EXPECT_EQ( searchResults[0], std::make_pair( Ident(proc_id*4,proc_id), Ident(prev*4+2,prev)) );
+      STKUNIT_EXPECT_EQ( searchResults[1], std::make_pair( Ident(proc_id*4,proc_id), Ident(proc_id*4+2,proc_id)) );
+      STKUNIT_EXPECT_EQ( searchResults[2], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(prev*4+3,prev)) );
+      STKUNIT_EXPECT_EQ( searchResults[3], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(proc_id*4+3,proc_id)) );
     }
     else {
-      STKUNIT_EXPECT_EQ(intersections[0].second, rank-1);
-      STKUNIT_EXPECT_EQ(intersections[1].second, rank);
+      STKUNIT_ASSERT_EQ( searchResults.size(), 6u);
+      int prev = proc_id -1;
+      int next = proc_id + 1;
+      STKUNIT_EXPECT_EQ( searchResults[0], std::make_pair( Ident(proc_id*4,proc_id), Ident(prev*4+2,prev)) );
+      STKUNIT_EXPECT_EQ( searchResults[1], std::make_pair( Ident(proc_id*4,proc_id), Ident(proc_id*4+2,proc_id)) );
+      STKUNIT_EXPECT_EQ( searchResults[2], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(prev*4+3,prev)) );
+      STKUNIT_EXPECT_EQ( searchResults[3], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(proc_id*4+3,proc_id)) );
+      STKUNIT_EXPECT_EQ( searchResults[4], std::make_pair( Ident(next*4,next), Ident(proc_id*4+2,proc_id)) );
+      STKUNIT_EXPECT_EQ( searchResults[5], std::make_pair( Ident(next*4+1,next), Ident(proc_id*4+3,proc_id)) );
     }
   }
 }
 
-
-
-STKUNIT_UNIT_TEST(stk_search, coarse_search_3D_one_point)
+STKUNIT_UNIT_TEST(stk_search, coarse_search_boost_rtree)
 {
-  typedef stk::search::ident::IdentProc<uint64_t, unsigned> Ident;
-  typedef stk::search::box::AxisAlignedBoundingBox<Ident, double, 3> Box;
-  typedef std::vector<Box> BoxVector;
+  testCoarseSearchForAlgorithm(stk::search::BOOST_RTREE, MPI_COMM_WORLD);
+}
+
+STKUNIT_UNIT_TEST(stk_search, coarse_search_octree)
+{
+  testCoarseSearchForAlgorithm(stk::search::OCTREE, MPI_COMM_WORLD);
+}
+
+#if 0
+STKUNIT_UNIT_TEST(stk_search, coarse_search_one_point)
+{
+  typedef stk::search::IdentProc<uint64_t, unsigned> Ident;
+  typedef stk::search::box::AxisAlignedBoundingBox<double> Box;
+  typedef std::vector<std::pair<Box,Ident> > BoxVector;
   typedef std::vector<std::pair<Ident,Ident> > SearchResults;
 
   stk::ParallelMachine comm = MPI_COMM_WORLD;
@@ -445,7 +293,7 @@ STKUNIT_UNIT_TEST(stk_search_not_boost, checkCuts)
             {
                 std::cerr << "\t Nate:=====================================\n";
                 std::cerr << "\t Nate: proc_id = " << procCounter << std::endl;
-                for(typename SearchTree::const_iterator i = searchTree.begin(); i != searchTree.end(); ++i)
+                for(SearchTree::const_iterator i = searchTree.begin(); i != searchTree.end(); ++i)
                 {
                     const stk::OctTreeKey & key = (*i).first;
 
@@ -632,5 +480,5 @@ void checkSearchResults(const int proc_id, const std::vector<std::pair<geometry:
         EXPECT_TRUE(compare(goldResults[i], searchResults[i])) << " failed for processor " << proc_id << " for interaction " << i << std::endl;
     }
 }
-
+#endif
 } //namespace
