@@ -189,7 +189,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PAC
   TRIBITS_ADD_TEST(
     ProlongatorScalingTest
     NAME "ProlongatorScalingTestEpetra"
-    ARGS "--linAlgebra=Epetra xml=pfact.xml"
+    ARGS "--linAlgebra=Epetra --xml=pfact.xml"
     NUM_MPI_PROCS 4
     COMM serial mpi
     )
