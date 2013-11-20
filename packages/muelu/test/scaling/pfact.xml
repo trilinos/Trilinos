@@ -1,0 +1,3 @@
+<ParameterList name="SaPFactory">
+  <Parameter name="Damping factor" type="double" value="1.3333"/>
+</ParameterList>
