@@ -525,7 +525,7 @@ namespace Ioss {
     } else if (state <= 0 || state > stateCount) {
       std::ostringstream errmsg;
       errmsg << "ERROR: Requested state (" << state << ") is invalid.\n"
-	     << "       State must be between 0 and " << stateCount << ".\n"
+	     << "       State must be between 1 and " << stateCount << ".\n"
 	     << "       [" << get_database()->get_filename() << "]\n";
       IOSS_ERROR(errmsg);
     } else {
