@@ -214,7 +214,7 @@ void getNonZeroWeightsAndOffsets( float const * const weights, unsigned tree_siz
     }
 }
 
-void partition_oct_tree(unsigned numProcsLocal, unsigned depth, float *weights, unsigned cuts_length, stk::OctTreeKey *cuts)
+void partition_oct_tree(unsigned numProcsLocal, unsigned depth, const float * const weights, unsigned cuts_length, stk::OctTreeKey *cuts)
 {
     std::vector<float> nonZeroWeights;
     std::vector<unsigned> offsetsOfNonZeroWeights;
@@ -232,14 +232,14 @@ void partition_oct_tree(unsigned numProcsLocal, unsigned depth, float *weights, 
 
     float targetWeightPerProc = totalWeight/numProcsLocal;
     unsigned indexOfLastNodeInTree = tree_size - 1;
-    float totalAccumulatedWeight = totalWeight;
+    float totalAccumulatedWeight = 0;
 
     unsigned procCounter = 0;
     cuts[procCounter] = stk::OctTreeKey();
     procCounter++;
 
     unsigned weightIndex = 0;
-    while ( totalAccumulatedWeight < totalWeight )
+    while ( totalAccumulatedWeight < totalWeight && procCounter < numProcsLocal)
     {
         float accumulatedWeightForProc = 0;
         unsigned offset = 0;
@@ -247,6 +247,10 @@ void partition_oct_tree(unsigned numProcsLocal, unsigned depth, float *weights, 
         {
             accumulatedWeightForProc += nonZeroWeights[weightIndex];
             offset = offsetsOfNonZeroWeights[weightIndex] + 1;
+            if ( offset >= tree_size )
+            {
+                offset = tree_size-1;
+            }
             weightIndex++;
         }
         stk::search::calculate_key_using_offset(depth, offset, cuts[procCounter]);

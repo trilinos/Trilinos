@@ -38,7 +38,7 @@ void calculate_key_using_offset(unsigned depth, unsigned offset, stk::OctTreeKey
  *   Exposed to support unit testing.
  */
 
-void partition_oct_tree(unsigned numProcsLocal, unsigned depth, float *weights, unsigned cuts_length, stk::OctTreeKey *cuts);
+void partition_oct_tree(unsigned numProcsLocal, unsigned depth, const float * const weights, unsigned cuts_length, stk::OctTreeKey *cuts);
 
 
 //----------------------------------------------------------------------
