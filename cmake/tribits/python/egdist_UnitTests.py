@@ -189,7 +189,7 @@ class test_egdist(unittest.TestCase):
     self.assertEqual(cmndOut, cmndOut_expected)
 
 
-  def test_log_args_extra_repo_2_ignore_first(self):
+  def test_log_args_extra_repo_2_not_first(self):
     cmndOut = getCmndOutputInMockProjectDir(
       egdistPathMock+\
         " --dist-extra-repos=extraTrilinosRepo,extraRepoOnePackage "+\
@@ -204,7 +204,7 @@ class test_egdist(unittest.TestCase):
     self.assertEqual(cmndOut, cmndOut_expected)
 
 
-  def test_log_args_extra_repo_2_ignore_second(self):
+  def test_log_args_extra_repo_2_not_second(self):
     cmndOut = getCmndOutputInMockProjectDir(
       egdistPathMock+\
         " --dist-extra-repos=extraTrilinosRepo,extraRepoOnePackage "+\
@@ -215,6 +215,19 @@ class test_egdist(unittest.TestCase):
       "\n*** Base Git Repo: MockTrilinos\n" \
       "['mockeg', 'log', 'HEAD', '-1']\n\n" \
       "*** Git Repo: extraRepoOnePackage\n" \
+      "['mockeg', 'log', 'HEAD', '-1']\n"
+    self.assertEqual(cmndOut, cmndOut_expected)
+
+
+  def test_log_args_extra_repo_1_not_base(self):
+    cmndOut = getCmndOutputInMockProjectDir(
+      egdistPathMock+\
+        " --dist-extra-repos=extraTrilinosRepo "+\
+        " --dist-not-base-repo "+\
+        " log HEAD -1"
+      )
+    cmndOut_expected = \
+      "\n*** Git Repo: extraTrilinosRepo\n" \
       "['mockeg', 'log', 'HEAD', '-1']\n"
     self.assertEqual(cmndOut, cmndOut_expected)
 
