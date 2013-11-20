@@ -462,6 +462,21 @@ h) Removing warnings as errors for CLEANED packages:
     -D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=""
 
 
+Enabling support for C++11
+--------------------------
+
+To enable support for C++11 in packages that support C++11 (either optionally
+or required), configure with::
+
+  -D Trilinos_ENABLE_CXX11:BOOL=ON \
+  -D CMAKE_CXX_FLAGS:STRING=-std=c++11
+
+where the C++ flags passed in may depend on the compiler you are using.  This
+will be followed by a set of configure-time tests to see if several C++11
+features are actually supported by the configured C++ compiler and support
+will be disabled if all of these features are not supported.
+
+
 Disabling the Fortran compiler and all Fortran code
 ---------------------------------------------------
 
