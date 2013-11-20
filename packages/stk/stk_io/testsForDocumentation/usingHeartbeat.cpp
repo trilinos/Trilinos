@@ -13,6 +13,8 @@ namespace
 
     const std::string file_name = "Heartbeat.txt";
     MPI_Comm communicator = MPI_COMM_WORLD;
+    int my_processor = 0;
+    MPI_Comm_rank(communicator, &my_processor);
 
     stk::util::ParameterList parameters;
     
@@ -65,7 +67,7 @@ namespace
       }
     }
 
-    {
+    if (my_processor == 0) {
       // ========================================================================
       // VERIFICATION:
       // open the heartbeat file...
@@ -80,10 +82,10 @@ namespace
       EXPECT_STREQ(header_line.c_str(), expected_header_line.c_str());
       EXPECT_TRUE(!std::getline(heartbeat, data_line).fail());
       EXPECT_STREQ(data_line.c_str(), expected_data_line.c_str());
-    }
 
-    // ========================================================================
-    // CLEANUP:
-    unlink(file_name.c_str());
+      // ========================================================================
+      // CLEANUP:
+      unlink(file_name.c_str());
+    }
   }
 }
