@@ -585,6 +585,8 @@ compute () {
     // Ifpack has a special-case modification of the eigenvalue bounds
     // for the case where the max eigenvalue estimate is close to one.
     const ST one = Teuchos::as<ST> (1);
+    // FIXME (mfh 20 Nov 2013) Should scale this 1.0e-6 term
+    // appropriately for MT's machine precision.
     if (STS::magnitude (lambdaMaxForApply_ - one) < Teuchos::as<MT> (1.0e-6)) {
       lambdaMinForApply_ = one;
       lambdaMaxForApply_ = lambdaMinForApply_;

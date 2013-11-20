@@ -48,24 +48,24 @@ namespace Ifpack2 {
 //==============================================================================
 template<class MatrixType>
 RILUK<MatrixType>::RILUK(const Teuchos::RCP<const MatrixType>& Matrix_in)
-  : isOverlapped_(false),
-    Graph_(),
+  : isOverlapped_ (false),
+    Graph_ (),
     A_(Matrix_in),
-    UseTranspose_(false),
-    LevelOfFill_(0),
-    LevelOfOverlap_(0),
-    NumMyDiagonals_(0),
-    isAllocated_(false),
-    isInitialized_(false),
-    numInitialize_(0),
-    numCompute_(0),
-    numApply_(0),
-    Factored_(false),
-    RelaxValue_(0.0),
-    Athresh_(0.0),
-    Rthresh_(1.0),
-    Condest_(-1.0),
-    OverlapMode_(Tpetra::REPLACE)
+    UseTranspose_ (false),
+    LevelOfFill_ (0),
+    LevelOfOverlap_ (0),
+    NumMyDiagonals_ (0),
+    isAllocated_ (false),
+    isInitialized_ (false),
+    numInitialize_ (0),
+    numCompute_ (0),
+    numApply_ (0),
+    Factored_ (false),
+    RelaxValue_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
+    Athresh_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
+    Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ()),
+    Condest_ (-Teuchos::ScalarTraits<magnitude_type>::one ()),
+    OverlapMode_ (Tpetra::REPLACE)
 {
 }
 
@@ -673,15 +673,18 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 template<class MatrixType>
 int RILUK<MatrixType>::Multiply(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
                               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-            Teuchos::ETransp mode) const {
+            Teuchos::ETransp mode) const
+{
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
+
 //
 // This function finds X such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
 //
 
   // First generate X and Y as needed for this function
-  Teuchos::RCP<const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > X1;
-  Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Y1;
-  generateXY(mode, X, Y, X1, Y1);
+  Teuchos::RCP<const MV> X1;
+  Teuchos::RCP<MV> Y1;
+  generateXY (mode, X, Y, X1, Y1);
 
 //  Epetra_Flops * counter = this->GetFlopCounter();
 //  if (counter!=0) {
@@ -690,45 +693,53 @@ int RILUK<MatrixType>::Multiply(const Tpetra::MultiVector<scalar_type,local_ordi
 //    U_->SetFlopCounter(*counter);
 //  }
 
+  const scalar_type zero = Teuchos::ScalarTraits<scalar_type>::zero ();
+  const scalar_type one = Teuchos::ScalarTraits<scalar_type>::one ();
+
   if (!mode == Teuchos::NO_TRANS) {
-    U_->apply(*X1, *Y1,mode); //
-    Y1->update(1.0, *X1, 1.0); // Y1 = Y1 + X1 (account for implicit unit diagonal)
-    Y1->elementWiseMultiply(1.0, *D_, *Y1, 0.0); // y = D*y (D_ has inverse of diagonal)
-    Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> Y1temp(*Y1); // Need a temp copy of Y1
-    L_->apply(Y1temp, *Y1,mode);
-    Y1->update(1.0, Y1temp, 1.0); // (account for implicit unit diagonal)
-    if (isOverlapped_) {Y.doExport(*Y1,*L_->getGraph()->getExporter(), OverlapMode_);} // Export computed Y values if needed
+    U_->apply (*X1, *Y1,mode); //
+    Y1->update (one, *X1, one); // Y1 = Y1 + X1 (account for implicit unit diagonal)
+    Y1->elementWiseMultiply (one, *D_, *Y1, zero); // y = D*y (D_ has inverse of diagonal)
+    MV Y1temp (*Y1); // Need a temp copy of Y1
+    L_->apply (Y1temp, *Y1,mode);
+    Y1->update (one, Y1temp, one); // (account for implicit unit diagonal)
+    if (isOverlapped_) {
+      Y.doExport (*Y1, *L_->getGraph ()->getExporter (), OverlapMode_);
+    } // Export computed Y values if needed
   }
   else {
-
-    L_->apply(*X1, *Y1,mode);
-    Y1->update(1.0, *X1, 1.0); // Y1 = Y1 + X1 (account for implicit unit diagonal)
-    Y1->elementWiseMultiply(1, *D_, *Y1, 0); // y = D*y (D_ has inverse of diagonal)
-    Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> Y1temp(*Y1); // Need a temp copy of Y1
-    U_->apply(Y1temp, *Y1,mode);
-    Y1->update(1.0, Y1temp, 1.0); // (account for implicit unit diagonal)
-    if (isOverlapped_) {Y.doExport(*Y1,*L_->getGraph()->getExporter(), OverlapMode_);}
+    L_->apply (*X1, *Y1,mode);
+    Y1->update (one, *X1, one); // Y1 = Y1 + X1 (account for implicit unit diagonal)
+    Y1->elementWiseMultiply (one, *D_, *Y1, zero); // y = D*y (D_ has inverse of diagonal)
+    MV Y1temp (*Y1); // Need a temp copy of Y1
+    U_->apply (Y1temp, *Y1,mode);
+    Y1->update (one, Y1temp, one); // (account for implicit unit diagonal)
+    if (isOverlapped_) {
+      Y.doExport(*Y1, *L_->getGraph ()->getExporter (), OverlapMode_);
+    }
   }
-  return(0);
+  return 0;
 }
 
 //=============================================================================
 template<class MatrixType>
 typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
-RILUK<MatrixType>::computeCondEst(Teuchos::ETransp mode) const {
+RILUK<MatrixType>::computeCondEst(Teuchos::ETransp mode) const
+{
+  typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vec_type;
 
-  if (Condest_>=0.0) {
+  if (Condest_ != -Teuchos::ScalarTraits<scalar_type>::one ()) {
     return Condest_;
   }
   // Create a vector with all values equal to one
-  Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> Ones(U_->getDomainMap());
-  Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> OnesResult(L_->getRangeMap());
-  Ones.putScalar(1.0);
+  vec_type Ones (U_->getDomainMap ());
+  vec_type OnesResult (L_->getRangeMap ());
+  Ones.putScalar (Teuchos::ScalarTraits<scalar_type>::one ());
 
-  apply(Ones, OnesResult,mode); // Compute the effect of the solve on the vector of ones
-  OnesResult.abs(OnesResult); // Make all values non-negative
-  Teuchos::Array<magnitude_type> norms(1);
-  OnesResult.normInf(norms());
+  apply (Ones, OnesResult,mode); // Compute the effect of the solve on the vector of ones
+  OnesResult.abs (OnesResult); // Make all values non-negative
+  Teuchos::Array<magnitude_type> norms (1);
+  OnesResult.normInf (norms ());
   Condest_ = norms[0];
   return Condest_;
 }

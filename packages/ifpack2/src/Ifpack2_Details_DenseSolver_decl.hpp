@@ -510,14 +510,14 @@ public:
   bool isComputed () const;
 
   //! Compute the condition number estimate and return its value.
-  magnitude_type
+  magnitude_type TEUCHOS_DEPRECATED
   computeCondEst (CondestType CT = Ifpack2::Cheap,
                   local_ordinal_type MaxIters = 1550,
                   magnitude_type Tol = 1e-9,
                   const Teuchos::Ptr<const row_matrix_type>& Matrix = Teuchos::null);
 
-  //! Return the computed condition number estimate, or -1.0 if not computed.
-  magnitude_type getCondEst () const;
+  //! Return the computed condition number estimate, or -0 if not computed.
+  magnitude_type TEUCHOS_DEPRECATED getCondEst () const;
 
   //! The input matrix given to the constructor.
   Teuchos::RCP<const row_matrix_type> getMatrix () const;
