@@ -75,6 +75,7 @@
 #include "Panzer_WorksetContainer.hpp"
 #include "Panzer_String_Utilities.hpp"
 #include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
+#include "Panzer_ExplicitModelEvaluator.hpp"
 
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_ExodusReaderFactory.hpp"
@@ -876,7 +877,12 @@ namespace panzer_stk {
       else
         piro_rythmos = rythmosSolver;
 
-      piro_rythmos->initialize(piro_params, thyra_me_db, m_rythmos_observer_factory->buildRythmosObserver(m_mesh,m_global_indexer,m_lin_obj_factory));
+      // if you are using explicit RK, make sure to wrap the ME in an explicit model evaluator decorator
+      Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > rythmos_me = thyra_me;
+      if(piro_params->sublist("Rythmos").get<std::string>("Stepper Type")=="Explicit RK")
+        rythmos_me = Teuchos::rcp(new panzer::ExplicitModelEvaluator<ScalarT>(thyra_me,true,false)); 
+
+      piro_rythmos->initialize(piro_params, rythmos_me, m_rythmos_observer_factory->buildRythmosObserver(m_mesh,m_global_indexer,m_lin_obj_factory));
 
       piro = piro_rythmos;
     }
