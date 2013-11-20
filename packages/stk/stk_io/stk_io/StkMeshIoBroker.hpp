@@ -6,8 +6,8 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#ifndef STK_IO_MESHREADWRITEUTILS_HPP
-#define STK_IO_MESHREADWRITEUTILS_HPP
+#ifndef STK_IO_STKMESHIOBROKER_HPP
+#define STK_IO_STKMESHIOBROKER_HPP
 #include <string>
 #include <vector>
 #include <boost/any.hpp>
@@ -24,6 +24,7 @@
 #include <stk_mesh/base/ConnectivityMap.hpp>
 
 #include <stk_io/IossBridge.hpp>
+#include <stk_io/DatabasePurpose.hpp>
 
 namespace Ioss {
   class DatabaseIO;
@@ -38,14 +39,6 @@ namespace stk {
   }
   namespace io {
     static std::string CoordinateFieldName("coordinates");
-
-    enum DatabasePurpose {
-      PURPOSE_UNKNOWN=1,
-      WRITE_RESULTS,
-      WRITE_RESTART,
-      READ_MESH,
-      READ_RESTART
-    };
 
     class OutputFile
     {
@@ -313,7 +306,7 @@ namespace stk {
 	 * an input of type READ_MESH will only read the newest state of a multi-state field.
 	 * Other behavioral differences may be added in the future (e.g., dealing with adaptivity...)
 	 */
-        bool open_mesh_database(const std::string &filename,
+        bool open_mesh_database(std::string filename,
                                 const std::string &type, DatabasePurpose purpose);
 
         /**
@@ -329,7 +322,7 @@ namespace stk {
          * this parameter contains data used by the generation routines.
          * Optionally prepended by a filetype and a colon.
          */
-        bool open_mesh_database(const std::string &filename, DatabasePurpose db_type);
+        bool open_mesh_database(std::string filename, DatabasePurpose db_type);
 
         /**
          * Read/Generate the metadata for mesh of the specified type. By

@@ -23,6 +23,7 @@
 #include <Shards_BasicTopologies.hpp>
 
 #include <stk_io/IossBridge.hpp>
+#include <stk_io/Utils.hpp>
 
 #include <Ioss_SubSystem.h>
 #include <init/Ionit_Initializer.h>
@@ -1141,11 +1142,9 @@ namespace stk {
       m_communicator = m_bulk_data->parallel();
     }
 
-    bool StkMeshIoBroker::open_mesh_database(const std::string &mesh_filename,
-					     DatabasePurpose purpose)
+    bool StkMeshIoBroker::open_mesh_database(std::string filename, DatabasePurpose purpose)
     {
       std::string type = "exodus";
-      std::string filename = mesh_filename;
 
       // See if filename contains a ":" at the beginning of the filename
       // and if the text preceding that filename specifies a valid
@@ -1153,16 +1152,16 @@ namespace stk {
       // the portion following the colon as the filename.
       // If no colon in name, use default type.
 
-      size_t colon = mesh_filename.find(':');
+      size_t colon = filename.find(':');
       if (colon != std::string::npos && colon > 0) {
-        type = mesh_filename.substr(0, colon);
-        filename = mesh_filename.substr(colon+1);
+        type = filename.substr(0, colon);
+        filename = filename.substr(colon+1);
       }
       return open_mesh_database(filename, type, purpose);
     }
 
 
-    bool StkMeshIoBroker::open_mesh_database(const std::string &mesh_filename,
+    bool StkMeshIoBroker::open_mesh_database(std::string mesh_filename,
 					     const std::string &mesh_type,
 					     DatabasePurpose purpose)
     {
@@ -1177,6 +1176,7 @@ namespace stk {
       if (m_db_purpose == stk::io::READ_RESTART)
 	db_usage = Ioss::READ_RESTART;
 	
+      stk::io::Utils::filename_substitution(mesh_filename);
       m_input_database = Teuchos::rcp(Ioss::IOFactory::create(mesh_type, mesh_filename,
                                                               db_usage, m_communicator,
                                                               m_property_manager));
@@ -1242,7 +1242,9 @@ namespace stk {
     size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, DatabasePurpose db_type,
 					       Ioss::PropertyManager &properties)
     {
-      Teuchos::RCP<OutputFile> output_file = Teuchos::rcp(new OutputFile(filename, m_communicator, db_type,
+      std::string out_filename = filename;
+      stk::io::Utils::filename_substitution(out_filename);
+      Teuchos::RCP<OutputFile> output_file = Teuchos::rcp(new OutputFile(out_filename, m_communicator, db_type,
 									 properties, m_input_region.get()));
       m_output_files.push_back(output_file);
 
@@ -1620,7 +1622,10 @@ namespace stk {
     size_t StkMeshIoBroker::add_heartbeat_output(const std::string &filename, HeartbeatType hb_type,
 						 const Ioss::PropertyManager &properties)
     {
-      Teuchos::RCP<Heartbeat> heartbeat = Teuchos::rcp(new Heartbeat(filename, hb_type, properties, m_communicator));
+      std::string out_filename = filename;
+      stk::io::Utils::filename_substitution(out_filename);
+      Teuchos::RCP<Heartbeat> heartbeat = Teuchos::rcp(new Heartbeat(out_filename, hb_type,
+								     properties, m_communicator));
       m_heartbeat.push_back(heartbeat);
       return m_heartbeat.size()-1;
     }
