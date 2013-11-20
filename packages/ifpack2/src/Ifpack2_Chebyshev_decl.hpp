@@ -53,14 +53,12 @@
 
 #include <Ifpack2_ConfigDefs.hpp>
 #include <Ifpack2_Preconditioner.hpp>
-#include <Ifpack2_Condest.hpp>
-#include <Ifpack2_Parameters.hpp>
+// FIXME (mfh 20 Nov 2013) We really shouldn't have to include both of
+// these, if we were to handle the implementation by pointer instead
+// of by value.
 #include <Ifpack2_Details_Chebyshev_decl.hpp>
 #include <Ifpack2_Details_Chebyshev_def.hpp>
-
 #include <Tpetra_CrsMatrix.hpp>
-
-#include <Teuchos_Time.hpp>
 
 #include <iostream>
 #include <string>
@@ -740,8 +738,6 @@ private:
   /// whole thing mutable here.
   mutable Details::Chebyshev<scalar_type, MV, row_matrix_type> impl_;
 
-  //! Time object to track timing.
-  Teuchos::RCP<Teuchos::Time> Time_;
   //! The estimated condition number.
   magnitude_type Condest_;
   //! If \c true, initialize() has completed successfully.

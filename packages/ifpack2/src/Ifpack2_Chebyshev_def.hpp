@@ -43,6 +43,9 @@
 #ifndef IFPACK2_CHEBYSHEV_DEF_HPP
 #define IFPACK2_CHEBYSHEV_DEF_HPP
 
+#include <Ifpack2_Condest.hpp>
+#include <Ifpack2_Parameters.hpp>
+#include <Teuchos_TimeMonitor.hpp>
 
 namespace Ifpack2 {
 
@@ -50,7 +53,6 @@ template<class MatrixType>
 Chebyshev<MatrixType>::
 Chebyshev (const Teuchos::RCP<const row_matrix_type>& A)
   : impl_ (A),
-    Time_ (Teuchos::rcp (new Teuchos::Time ("Ifpack2::Chebyshev"))),
     Condest_ (-Teuchos::ScalarTraits<scalar_type>::one ()),
     IsInitialized_ (false),
     IsComputed_ (false),
@@ -62,7 +64,9 @@ Chebyshev (const Teuchos::RCP<const row_matrix_type>& A)
     ApplyTime_ (0.0),
     ComputeFlops_ (0.0),
     ApplyFlops_ (0.0)
-{this->setObjectLabel("Ifpack2::Chebyshev");}
+{
+  this->setObjectLabel ("Ifpack2::Chebyshev");
+}
 
 //==========================================================================
 template<class MatrixType>
@@ -144,19 +148,19 @@ int Chebyshev<MatrixType>::getNumApply() const {
 //==========================================================================
 template<class MatrixType>
 double Chebyshev<MatrixType>::getInitializeTime() const {
-  return(InitializeTime_);
+  return InitializeTime_;
 }
 
 //==========================================================================
 template<class MatrixType>
 double Chebyshev<MatrixType>::getComputeTime() const {
-  return(ComputeTime_);
+  return ComputeTime_;
 }
 
 //==========================================================================
 template<class MatrixType>
 double Chebyshev<MatrixType>::getApplyTime() const {
-  return(ApplyTime_);
+  return ApplyTime_;
 }
 
 //==========================================================================
@@ -209,8 +213,15 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
        scalar_type alpha,
        scalar_type beta) const
 {
+  const std::string timerName ("Ifpack2::Chebyshev::apply");
+  Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
+  if (timer.is_null ()) {
+    timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+  }
+
+  // Start timing here.
   {
-    Teuchos::TimeMonitor timeMon (*Time_);
+    Teuchos::TimeMonitor timeMon (*timer);
 
     // compute() calls initialize() if it hasn't already been called.
     // Thus, we only need to check isComputed().
@@ -243,7 +254,10 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
     applyImpl (X, Y, mode, alpha, beta);
   }
   ++NumApply_;
-  ApplyTime_ += Time_->totalElapsedTime ();
+
+  // timer->totalElapsedTime() returns the total time over all timer
+  // calls.  Thus, we use = instead of +=.
+  ApplyTime_ = timer->totalElapsedTime ();
 }
 
 
@@ -261,23 +275,32 @@ applyMat (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordi
 
 
 template<class MatrixType>
-void Chebyshev<MatrixType>::initialize() {
-  // This method doesn't do anything anymore, so there's no need to time it.
+void Chebyshev<MatrixType>::initialize () {
+  // We create the timer, but this method doesn't do anything, so
+  // there is no need to start the timer.  The resulting total time
+  // will always be zero.
+  const std::string timerName ("Ifpack2::Chebyshev::initialize");
+  Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
+  if (timer.is_null ()) {
+    timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+  }
   IsInitialized_ = true;
   ++NumInitialize_;
-  // Note to developers: Defer fetching any data that relate to the
-  // structure of the matrix until compute().  That way, it will
-  // always be correct to omit calling initialize(), even if the
-  // number of entries in the sparse matrix has changed since the last
-  // call to compute().
 }
 
 
 template<class MatrixType>
 void Chebyshev<MatrixType>::compute ()
 {
+  const std::string timerName ("Ifpack2::Chebyshev::compute");
+  Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
+  if (timer.is_null ()) {
+    timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+  }
+
+  // Start timing here.
   {
-    Teuchos::TimeMonitor timeMon (*Time_);
+    Teuchos::TimeMonitor timeMon (*timer);
     if (! isInitialized ()) {
       initialize ();
     }
@@ -287,7 +310,10 @@ void Chebyshev<MatrixType>::compute ()
   }
   IsComputed_ = true;
   ++NumCompute_;
-  ComputeTime_ += Time_->totalElapsedTime();
+
+  // timer->totalElapsedTime() returns the total time over all timer
+  // calls.  Thus, we use = instead of +=.
+  ComputeTime_ = timer->totalElapsedTime();
 }
 
 
