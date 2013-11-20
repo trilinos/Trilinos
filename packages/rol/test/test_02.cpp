@@ -6,7 +6,7 @@
     \brief Test Rosenbrock.
 */
 
-#define USE_HESSVEC 1
+#define USE_HESSVEC 0
 
 #include "ROL_TestObjectives.hpp"
 #include "ROL_LineSearchStep.hpp"

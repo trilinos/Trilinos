@@ -12,6 +12,10 @@
     \author Created by D. Ridzal and D. Kouri.
  */
 
+#ifndef USE_HESSVEC 
+#define USE_HESSVEC 1
+#endif
+
 #ifndef ROL_TESTOBJECTIVES_HPP
 #define ROL_TESTOBJECTIVES_HPP
 
