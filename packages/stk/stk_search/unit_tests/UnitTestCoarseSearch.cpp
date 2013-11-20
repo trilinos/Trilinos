@@ -404,7 +404,7 @@ STKUNIT_UNIT_TEST(stk_search_not_boost, coarse_search_3D_bih_tree)
   testCoarseSearchAABBForAlgorithm(stk::search::BIHTREE, MPI_COMM_WORLD);
 }
 
-STKUNIT_UNIT_TEST(stk_search, coarse_search_boost_rtree)
+STKUNIT_UNIT_TEST(stk_search_boost, coarse_search_boost_rtree)
 {
   testCoarseSearchAABBForAlgorithm(stk::search::BOOST_RTREE, MPI_COMM_WORLD);
 }
