@@ -90,6 +90,9 @@ namespace {
   {
       ThrowErrorMsgIf (Teuchos::is_null(output_region),
                        "There is no Output mesh region associated with this Mesh Data.");
+      ThrowErrorMsgIf (output_region->get_state() != Ioss::STATE_TRANSIENT,
+		       "The output region " << output_region->name() <<
+		       " is not in the correct state for outputting data at this time.");
       ThrowErrorMsgIf (!output_region->field_exists(globalVarName),
                        "The field named '" << globalVarName << "' does not exist.");
       output_region->put_field_data(globalVarName, &globalVarData, sizeof(DataType));
@@ -101,6 +104,9 @@ namespace {
   {
       ThrowErrorMsgIf (Teuchos::is_null(output_region),
                        "There is no Output mesh region associated with this Mesh Data.");
+      ThrowErrorMsgIf (output_region->get_state() != Ioss::STATE_TRANSIENT,
+		       "The output region " << output_region->name() <<
+		       " is not in the correct state for outputting data at this time.");
       ThrowErrorMsgIf (!output_region->field_exists(globalVarName),
                        "The field named '" << globalVarName << "' does not exist.");
       ThrowErrorMsgIf ((size_t)output_region->get_fieldref(globalVarName).raw_storage()->component_count() != globalVarData.size(),
@@ -1204,6 +1210,10 @@ namespace stk {
 
     void StkMeshIoBroker::set_rank_name_vector(const std::vector<std::string> &rank_names)
     {
+      ThrowErrorMsgIf(!Teuchos::is_null(m_meta_data),
+		      "There meta data associated with this StkMeshIoBroker has already been created. "
+		      "It is not permissible to set the rank_name_vector() at this time.");
+
       m_rank_names.clear();
       std::copy(rank_names.begin(), rank_names.end(), std::back_inserter(m_rank_names));
     }
@@ -1706,6 +1716,10 @@ namespace stk {
     void Heartbeat::add_global(const std::string &name, boost::any &value, stk::util::ParameterType::Type type)
     {
       if (m_processor == 0) {
+	ThrowErrorMsgIf (m_current_step != 0, 
+			 "At least one output step has been written to the history/heartbeat file. "
+			 "Variables cannot be added anymore.");
+
         // Determine name and type of parameter...
         std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(type, value);
         internal_add_global(m_region, name, parameter_type.first, parameter_type.second);
@@ -1817,8 +1831,13 @@ namespace stk {
 
     void OutputFile::add_global(const std::string &globalVarName, const std::string &storage, Ioss::Field::BasicType dataType)
     {
+        ThrowErrorMsgIf (m_fields_defined,
+			 "Attempting to add global variable after data has already been written to the database.");
         ThrowErrorMsgIf (m_output_region->field_exists(globalVarName),
                          "Attempt to add global variable '" << globalVarName << "' twice.");
+
+	m_global_variables_defined = true;  // This output file has at least 1 global variable.
+
         //Any field put onto the region instead of a element block, etc. gets written as "global" to exodus
         int numberOfThingsToOutput = 1;
         m_output_region->field_add(Ioss::Field(globalVarName, dataType, storage,
@@ -1958,6 +1977,11 @@ namespace stk {
 
     int OutputFile::process_output_request(double time, const stk::mesh::BulkData& bulk_data)
     {
+      ThrowErrorMsgIf(m_global_variables_defined,
+		      "The output database " << m_output_region->name() << " has defined global variables, "
+		      "but is calling the process_output_request() function which does not output global "
+		      "variables.  Call begin_output_step() instead.");
+      
       begin_output_step(time, bulk_data);
       write_defined_output_fields(bulk_data);
       end_output_step();
