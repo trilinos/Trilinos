@@ -23,7 +23,7 @@
 #include <Shards_BasicTopologies.hpp>
 
 #include <stk_io/IossBridge.hpp>
-#include <stk_io/Utils.hpp>
+#include <stk_util/util/FileUtils.hpp>
 
 #include <Ioss_SubSystem.h>
 #include <init/Ionit_Initializer.h>
@@ -1176,7 +1176,7 @@ namespace stk {
       if (m_db_purpose == stk::io::READ_RESTART)
 	db_usage = Ioss::READ_RESTART;
 	
-      stk::io::Utils::filename_substitution(mesh_filename);
+      stk::util::filename_substitution(mesh_filename);
       m_input_database = Teuchos::rcp(Ioss::IOFactory::create(mesh_type, mesh_filename,
                                                               db_usage, m_communicator,
                                                               m_property_manager));
@@ -1243,7 +1243,7 @@ namespace stk {
 					       Ioss::PropertyManager &properties)
     {
       std::string out_filename = filename;
-      stk::io::Utils::filename_substitution(out_filename);
+      stk::util::filename_substitution(out_filename);
       Teuchos::RCP<OutputFile> output_file = Teuchos::rcp(new OutputFile(out_filename, m_communicator, db_type,
 									 properties, m_input_region.get()));
       m_output_files.push_back(output_file);
@@ -1623,7 +1623,7 @@ namespace stk {
 						 const Ioss::PropertyManager &properties)
     {
       std::string out_filename = filename;
-      stk::io::Utils::filename_substitution(out_filename);
+      stk::util::filename_substitution(out_filename);
       Teuchos::RCP<Heartbeat> heartbeat = Teuchos::rcp(new Heartbeat(out_filename, hb_type,
 								     properties, m_communicator));
       m_heartbeat.push_back(heartbeat);
