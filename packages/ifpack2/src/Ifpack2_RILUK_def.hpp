@@ -610,60 +610,63 @@ void RILUK<MatrixType>::compute() {
   ++numCompute_;
 }
 
-//=============================================================================
+
 template<class MatrixType>
-void RILUK<MatrixType>::apply(
-       const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-             Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-             Teuchos::ETransp mode, scalar_type alpha, scalar_type beta) const
+void
+RILUK<MatrixType>::
+apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+       Teuchos::ETransp mode,
+       scalar_type alpha,
+       scalar_type beta) const
 {
   typedef Teuchos::ScalarTraits<scalar_type> STS;
-
-  TEUCHOS_TEST_FOR_EXCEPTION(!isComputed(), std::runtime_error,
-    "Ifpack2::RILUK::apply() ERROR, compute() hasn't been called yet.");
+  typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    alpha != STS::one (), 
-    std::logic_error,
-    "Ifpack2::RILUK::apply() does not currently allow alpha != 1.");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    beta != STS::zero (), 
-    std::logic_error,
-    "Ifpack2::RILUK::apply() does not currently allow zero != 0.");
+    ! isComputed (), std::runtime_error,
+    "Ifpack2::RILUK::apply: If you have not yet called compute(), "
+    "you must call compute() before calling this method.");
 
-//
-// This function finds Y such that
-// LDU Y = X, or
-// U(trans) D L(trans) Y = X
-// for multiple RHS
-//
+  if (alpha == STS::one () && beta == STS::zero ()) {
+    //
+    // This function finds Y such that
+    // LDU Y = X, or
+    // U(trans) D L(trans) Y = X
+    // for multiple RHS
+    //
+    // First generate X and Y as needed for this function
+    Teuchos::RCP<const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > X1;
+    Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Y1;
+    generateXY (mode, X, Y, X1, Y1);
 
-  // First generate X and Y as needed for this function
-  Teuchos::RCP<const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > X1;
-  Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Y1;
-  generateXY(mode, X, Y, X1, Y1);
-
-  scalar_type one = Teuchos::ScalarTraits<scalar_type>::one();
-  scalar_type zero = Teuchos::ScalarTraits<scalar_type>::zero();
-
-  if (mode == Teuchos::NO_TRANS) {
-
-    L_->localSolve(*X1, *Y1,mode);
-    Y1->elementWiseMultiply(one, *D_, *Y1, zero); // y = D*y (D_ has inverse of diagonal)
-    U_->localSolve(*Y1, *Y1,mode); // Solve Uy = y
-    if (isOverlapped_) {
-      // Export computed Y values if needed
-      Y.doExport(*Y1,*L_->getGraph()->getExporter(), OverlapMode_);
+    const scalar_type one = Teuchos::ScalarTraits<scalar_type>::one();
+    const scalar_type zero = Teuchos::ScalarTraits<scalar_type>::zero();
+    if (mode == Teuchos::NO_TRANS) {
+      L_->localSolve (*X1, *Y1,mode);
+      Y1->elementWiseMultiply (one, *D_, *Y1, zero); // y = D*y (D_ has inverse of diagonal)
+      U_->localSolve (*Y1, *Y1, mode); // Solve Uy = y
+      if (isOverlapped_) {
+        // Export computed Y values if needed
+        Y.doExport (*Y1, *L_->getGraph ()->getExporter (), OverlapMode_);
+      }
     }
+    else {
+      U_->localSolve (*X1, *Y1, mode); // Solve Uy = y
+      Y1->elementWiseMultiply (one, *D_, *Y1, zero); // y = D*y (D_ has inverse of diagonal)
+      L_->localSolve (*Y1, *Y1,mode);
+      if (isOverlapped_) {
+        // Export computed Y values if needed
+        Y.doExport (*Y1, *U_->getGraph ()->getImporter (), OverlapMode_);
+      }
+    }
+    ++numApply_; // inside the 'if', so it's not called twice
   }
-  else {
-    U_->localSolve(*X1, *Y1,mode); // Solve Uy = y
-    Y1->elementWiseMultiply(one, *D_, *Y1, zero); // y = D*y (D_ has inverse of diagonal)
-    L_->localSolve(*Y1, *Y1,mode);
-    if (isOverlapped_) {Y.doExport(*Y1,*U_->getGraph()->getImporter(), OverlapMode_);} // Export computed Y values if needed
+  else { // alpha != 1 or beta != 0
+    MV Y_tmp (Y.getMap (), Y.getNumVectors ());
+    apply (X, Y_tmp, mode);
+    Y.update (alpha, Y_tmp, beta);
   }
-
-  ++numApply_;
 }
 
 //=============================================================================
