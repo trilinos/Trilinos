@@ -180,7 +180,8 @@ int main(int argc, char *argv[]) {
       TimeMonitor tm(*TimeMonitor::getNewTimer(timerName));
 
       Teuchos::ParameterList paramList;
-      Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
+      if (!xmlFileName.empty())
+        Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
 
       MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel); // set a default FactoryManager
       fineLevel.Set("A", A);
