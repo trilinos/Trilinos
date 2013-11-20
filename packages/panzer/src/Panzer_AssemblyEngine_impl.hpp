@@ -267,6 +267,15 @@ evaluateBCs(const panzer::BCType bc_type,
   gedc.addDataObject("Residual Scatter Container",in.ghostedContainer_);
   in.fillGlobalEvaluationDataContainer(gedc);
 
+  // this helps work around issues when constructing a mass
+  // matrix using an evaluation of only the transient terms.
+  // In particular, the terms associated with the dirichlet
+  // conditions.
+  double betaValue = in.beta; // default to the passed in beta
+  if(bc_type==panzer::BCT_Dirichlet && in.apply_dirichlet_beta) {
+    betaValue = in.dirichlet_beta;
+  }
+
   {
     const std::map<panzer::BC, 
       std::map<unsigned,PHX::FieldManager<panzer::Traits> >,
@@ -318,7 +327,7 @@ evaluateBCs(const panzer::BCType bc_type,
 
           // build and evaluate fields for the workset: only one workset per face
 	  workset.alpha = in.alpha;
-	  workset.beta = in.beta;
+	  workset.beta = betaValue;
 	  workset.time = in.time;
           workset.evaluate_transient_terms = in.evaluate_transient_terms;
 	  

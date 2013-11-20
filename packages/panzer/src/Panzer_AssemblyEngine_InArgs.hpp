@@ -64,6 +64,8 @@ namespace panzer {
        , beta(Teuchos::ScalarTraits<double>::nan())    // hopefully loud initial values
        , time(Teuchos::ScalarTraits<double>::nan())
        , evaluate_transient_terms(false)
+       , apply_dirichlet_beta(false)
+       , dirichlet_beta(0.0)
     { }
 
     AssemblyEngineInArgs()
@@ -72,6 +74,8 @@ namespace panzer {
        , beta(Teuchos::ScalarTraits<double>::nan())    // hopefully loud initial values
        , time(Teuchos::ScalarTraits<double>::nan())
        , evaluate_transient_terms(false)
+       , apply_dirichlet_beta(false)
+       , dirichlet_beta(0.0)
     { }
 
     Teuchos::RCP<panzer::LinearObjContainer> ghostedContainer_;
@@ -81,6 +85,9 @@ namespace panzer {
     double beta;
     double time;
     bool evaluate_transient_terms;
+
+    bool apply_dirichlet_beta;
+    double dirichlet_beta;
 
     /** Add a global evaluation data object to be used in all FieldManager
       * evaluate calls.
