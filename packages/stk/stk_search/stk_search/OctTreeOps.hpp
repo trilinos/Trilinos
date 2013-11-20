@@ -31,19 +31,15 @@
 namespace stk {
 namespace search {
 
+void calculate_key_using_offset(unsigned depth, unsigned offset, stk::OctTreeKey &kUpper);
+
 //----------------------------------------------------------------------
 /**  A recursive kernel used within the oct_tree_partitioning algorithms.
  *   Exposed to support unit testing.
  */
 
-void oct_tree_partition_private(
-  const unsigned p_first ,
-  const unsigned p_end ,
-  const unsigned depth ,
-  const double   tolerance ,
-  float * const weights ,
-  const unsigned cuts_length ,
-  OctTreeKey * const cuts );
+void partition_oct_tree(unsigned numProcsLocal, unsigned depth, float *weights, unsigned cuts_length, stk::OctTreeKey *cuts);
+
 
 //----------------------------------------------------------------------
 /** Generate an oct-tree covering of a small box within a global box.
@@ -699,9 +695,7 @@ void oct_tree_partition(
 
   all_reduce_sum( arg_comm , local_count , global_count , tree_size_2 );
 
-  oct_tree_partition_private( 0, p_size, tree_depth,
-                              arg_tolerance, global_count,
-                              p_size, & arg_cuts[0]);
+  stk::search::partition_oct_tree(p_size, tree_depth, global_count, p_size, &(*arg_cuts.begin()));
 
   OctTreeKey lb = arg_cuts[0];
   for (unsigned p = 0; p < p_size; ++p)
