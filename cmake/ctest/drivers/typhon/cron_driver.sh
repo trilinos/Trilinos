@@ -4,8 +4,7 @@ echo
 echo "Starting nightly Trilinos development testing on typhon: `date`"
 echo
 
-export PATH=/usr/local/mpich2/1.4.1p1_gcc_4.4.7/bin:${PATH}
-
+#
 # TrilinosDriver settings:
 #
 

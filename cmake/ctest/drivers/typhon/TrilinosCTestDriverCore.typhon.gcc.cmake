@@ -99,7 +99,11 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   #Ensuring that MPI is on for all parallel builds that might be run.
   IF(COMM_TYPE STREQUAL MPI)
-    SET(TPL_ENABLE_MPI ON)
+    SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
+         ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
+         "-DTPL_ENABLE_MPI:BOOL=ON"
+         "-DMPI_BASE_DIR:PATH=/usr/local/mpich2/1.4.1p1_gcc_4.4.7"
+       )
   ENDIF()
 
   TRILINOS_CTEST_DRIVER()
