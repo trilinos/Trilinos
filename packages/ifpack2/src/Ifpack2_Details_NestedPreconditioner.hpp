@@ -96,6 +96,8 @@ namespace Details {
   template<class PrecType>
   class NestedPreconditioner {
   public:
+    virtual ~NestedPreconditioner() { }
+
     /// \brief Set the inner preconditioner.
     ///
     /// \param innerPrec [in/out] The inner preconditioner.  Its
