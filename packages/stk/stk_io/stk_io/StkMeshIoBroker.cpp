@@ -108,9 +108,11 @@ namespace {
 		       "The output region " << output_region->name() <<
 		       " is not in the correct state for outputting data at this time.");
       ThrowErrorMsgIf (!output_region->field_exists(globalVarName),
-                       "The field named '" << globalVarName << "' does not exist.");
+                       "The field named '" << globalVarName << "' does not exist "
+		       "on output region "  << output_region->name());
       ThrowErrorMsgIf ((size_t)output_region->get_fieldref(globalVarName).raw_storage()->component_count() != globalVarData.size(),
-                       "The field named '" << globalVarName << "' was registered with size "
+		       "On output region "  << output_region->name() <<
+                       ", the field named '" << globalVarName << "' was registered with size "
 		       << output_region->get_fieldref(globalVarName).raw_storage()->component_count()
 		       << " but the output size is " << globalVarData.size());
 
@@ -124,7 +126,8 @@ namespace {
       ThrowErrorMsgIf (Teuchos::is_null(input_region),
                        "There is no Input mesh region associated with this Mesh Data.");
       ThrowErrorMsgIf (!input_region->field_exists(globalVarName),
-                       "The field named '" << globalVarName << "' does not exist.");
+                       "The field named '" << globalVarName << "' does not exist "
+		       "on input region "  << input_region->name());
 
       input_region->get_fieldref(globalVarName).check_type(iossType);
       input_region->get_field_data(globalVarName, &globalVarData, sizeof(DataType));
@@ -137,7 +140,8 @@ namespace {
       ThrowErrorMsgIf (Teuchos::is_null(input_region),
                        "There is no Input mesh region associated with this Mesh Data.");
       ThrowErrorMsgIf (!input_region->field_exists(globalVarName),
-                       "The field named '" << globalVarName << "' does not exist.");
+                       "The field named '" << globalVarName << "' does not exist "
+		       "on input region "  << input_region->name());
       input_region->get_fieldref(globalVarName).check_type(iossType);
       input_region->get_field_data(globalVarName, globalVarData);
   }
@@ -259,7 +263,8 @@ namespace {
 	region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
       }
       ThrowErrorMsgIf (region->field_exists(globalVarName),
-		       "Attempt to add global variable '" << globalVarName << "' twice.");
+		       "On region named " << region->name() << 
+		       " Attempt to add global variable '" << globalVarName << "' twice.");
 
       region->field_add(Ioss::Field(globalVarName, dataType, storage, Ioss::Field::TRANSIENT, 1));
     }
@@ -1832,9 +1837,11 @@ namespace stk {
     void OutputFile::add_global(const std::string &globalVarName, const std::string &storage, Ioss::Field::BasicType dataType)
     {
         ThrowErrorMsgIf (m_fields_defined,
-			 "Attempting to add global variable after data has already been written to the database.");
+			 "On region named " << m_output_region->name() << 
+			 " Attempting to add global variable after data has already been written to the database.");
         ThrowErrorMsgIf (m_output_region->field_exists(globalVarName),
-                         "Attempt to add global variable '" << globalVarName << "' twice.");
+			 "On region named " << m_output_region->name() << 
+                         " Attempt to add global variable '" << globalVarName << "' twice.");
 
 	m_global_variables_defined = true;  // This output file has at least 1 global variable.
 
@@ -2038,7 +2045,8 @@ namespace stk {
     void OutputFile::set_subset_selector(Teuchos::RCP<stk::mesh::Selector> my_selector)
     {
       ThrowErrorMsgIf(m_mesh_defined,
-		      "ERROR: The subset_selector cannot be changed after the mesh has already been written.");
+		      "ERROR: On region named " << m_output_region->name() << 
+		      " the subset_selector cannot be changed after the mesh has already been written.");
       m_subset_selector = my_selector;
     }    
   } // namespace io
