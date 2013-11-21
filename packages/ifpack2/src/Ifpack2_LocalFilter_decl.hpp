@@ -162,7 +162,8 @@ class LocalFilter :
     virtual public Tpetra::RowMatrix<typename MatrixType::scalar_type,
                                      typename MatrixType::local_ordinal_type,
                                      typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type>
+                                     typename MatrixType::node_type>,
+    virtual public Teuchos::Describable
 {
 public:
   //! \name Typedefs
@@ -212,6 +213,19 @@ public:
   typedef Tpetra::Map<local_ordinal_type,
                       global_ordinal_type,
                       node_type> map_type;
+  //@}
+  //! @name Implementation of Teuchos::Describable
+  //@{
+
+  //! A one-line description of this object.
+  virtual std::string description () const;
+
+  //! Print the object to the given output stream.
+  virtual void
+  describe (Teuchos::FancyOStream &out,
+            const Teuchos::EVerbosityLevel verbLevel =
+            Teuchos::Describable::verbLevel_default) const;
+
   //@}
   //! \name Constructor and destructor
   //@{

@@ -183,51 +183,38 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
   // It's even OK if signedness of local_ordinal_type and
   // global_ordinal_type are different.  (That would be a BAD IDEA but
   // some users seem to enjoy making trouble for themselves and us.)
+  //
+  // Both the local row and local range Maps must have the same number
+  // of entries, namely, that of the local number of entries of A's
+  // range Map.
+
+  const size_t numRows = A_->getRangeMap ()->getNodeNumElements ();
+  const global_ordinal_type indexBase = as<global_ordinal_type> (0);
 
   localRowMap_ =
-    rcp (new map_type (A_->getRowMap ()->getNodeNumElements (),
-                       as<global_ordinal_type> (0),
-                       localComm, Tpetra::GloballyDistributed,
-                       A_->getNode ()));
-  // If the original matrix's row Map is fitted to its range Map, just
-  // use the same object for the local row and range Maps.  In that
-  // case, the locally filtered matrix will have row Map == range Map.
+    rcp (new map_type (numRows, indexBase, localComm,
+                       Tpetra::GloballyDistributed, A_->getNode ()));
+  // If the original matrix's range Map is not fitted to its row Map,
+  // we'll have to do an Export when applying the matrix.
+  localRangeMap_ = localRowMap_;
 
-  if (mapPairIsFitted (* (A_->getRowMap ()), * (A_->getRangeMap ()))) {
-    localRangeMap_ = localRowMap_;
-  }
-  else {
-    localRangeMap_ =
-      rcp (new map_type (A_->getRangeMap ()->getNodeNumElements (),
-                         as<global_ordinal_type> (0),
-                         localComm, Tpetra::GloballyDistributed,
-                         A_->getNode ()));
-  }
-  // If the original matrix's row and domain Maps are the same, just
-  // use the same object for the local row and domain Maps.  Unlike
-  // above, we don't check whether the domain Map is fitted to the row
-  // Map, since the proper check is for whether the domain Map is
-  // fitted to the column Map.  (The domain and range Maps could have
-  // a different order of global indices, and need not even have the
-  // same number of entries on this process.)  We'll construct the
-  // local column Map separately later.
-  if (A_->getRowMap ().getRawPtr () == A_->getDomainMap ().getRawPtr ()) {
-    localDomainMap_ = localRowMap_;
+  // If the original matrix's domain Map is not fitted to its column
+  // Map, we'll have to do an Import when applying the matrix.
+  const size_t numCols = A_->getDomainMap ()->getNodeNumElements ();
+  if (A_->getRangeMap ().getRawPtr () == A_->getDomainMap ().getRawPtr ()) {
+    // The input matrix's domain and range Maps are identical, so the
+    // locally filtered matrix's domain and range Maps can be also.
+    localDomainMap_ = localRangeMap_;
   }
   else {
     localDomainMap_ =
-      rcp (new map_type (A_->getDomainMap ()->getNodeNumElements (),
-                         as<global_ordinal_type> (0),
-                         localComm, Tpetra::GloballyDistributed,
-                         A_->getNode ()));
+      rcp (new map_type (numCols, indexBase, localComm,
+                         Tpetra::GloballyDistributed, A_->getNode ()));
   }
 
-  // localized matrix has all the local rows of Matrix
-  const size_t numRows = as<size_t> (localRowMap_->getNodeNumElements ());
-
-  // NodeNumEntries_ will contain the actual number of nonzeros
-  // for each localized row (that is, without external nodes,
-  // and always with the diagonal entry)
+  // NodeNumEntries_ will contain the actual number of nonzeros for
+  // each localized row (that is, without external nodes, and always
+  // with the diagonal entry)
   NumEntries_.resize (numRows);
 
   // tentative value for MaxNumEntries. This is the number of
@@ -766,6 +753,65 @@ getLocalRowView (local_ordinal_type LocalRow,
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
     "Ifpack2::LocalFilter does not implement getLocalRowView.");
 }
+
+
+template<class MatrixType>
+std::string
+LocalFilter<MatrixType>::description () const
+{
+  using Teuchos::TypeNameTraits;
+  std::ostringstream os;
+
+  os << "Ifpack2::LocalFilter: {";
+  os << "MatrixType: " << TypeNameTraits<MatrixType>::name ();
+  if (this->getObjectLabel () != "") {
+    os << ", Label: \"" << this->getObjectLabel () << "\"";
+  }
+  os << ", Number of rows: " << getGlobalNumRows ()
+     << ", Number of columns: " << getGlobalNumCols ()
+     << "}";
+  return os.str ();
+}
+
+
+template<class MatrixType>
+void
+LocalFilter<MatrixType>::
+describe (Teuchos::FancyOStream &out,
+          const Teuchos::EVerbosityLevel verbLevel) const
+{
+  using Teuchos::OSTab;
+  using Teuchos::TypeNameTraits;
+  using std::endl;
+
+  const Teuchos::EVerbosityLevel vl =
+    (verbLevel == Teuchos::VERB_DEFAULT) ? Teuchos::VERB_LOW : verbLevel;
+
+  if (vl > Teuchos::VERB_NONE) {
+    // describe() starts with a tab, by convention.
+    OSTab tab0 (out);
+
+    out << "Ifpack2::LocalFilter:" << endl;
+    OSTab tab1 (out);
+    out << "MatrixType: " << TypeNameTraits<MatrixType>::name () << endl;
+    if (this->getObjectLabel () != "") {
+      out << "Label: \"" << this->getObjectLabel () << "\"" << endl;
+    }
+    out << "Number of rows: " << getGlobalNumRows () << endl
+        << "Number of columns: " << getGlobalNumCols () << endl
+        << "Number of nonzeros: " << NumNonzeros_ << endl;
+
+    if (vl > Teuchos::VERB_LOW) {
+      out << "Row Map:" << endl;
+      localRowMap_->describe (out, vl);
+      out << "Domain Map:" << endl;
+      localDomainMap_->describe (out, vl);
+      out << "Range Map:" << endl;
+      localRangeMap_->describe (out, vl);
+    }
+  }
+}
+
 
 } // namespace Ifpack2
 
