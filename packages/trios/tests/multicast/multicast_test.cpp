@@ -148,6 +148,7 @@ int main(int argc, char *argv[])
             NSSI_RPC_IB,
             NSSI_RPC_GEMINI,
             NSSI_RPC_BGPDCMF,
+            NSSI_RPC_BGQPAMI,
             NSSI_RPC_MPI};
     const char * nssi_transport_names[] = {
             "ptl",

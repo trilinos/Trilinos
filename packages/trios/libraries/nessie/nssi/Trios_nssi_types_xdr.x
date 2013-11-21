@@ -163,6 +163,8 @@ enum nssi_rpc_transport {
 
    /** @brief Use  Blue Gene/P DCMF Lib to transfer rpc requests. */
     NSSI_RPC_BGPDCMF,
+    
+    NSSI_RPC_BGQPAMI,
 
     /** @brief Use MPI to transfer rpc requests. */
     NSSI_RPC_MPI,
@@ -194,7 +196,7 @@ enum nssi_rpc_encode {
 /**
  * @brief Default timeout for rpc calls (in ms).
  */
-const DEFAULT_RPC_TIMEOUT = 10000;
+const DEFAULT_RPC_TIMEOUT = 10000000;
 
 
 /**
