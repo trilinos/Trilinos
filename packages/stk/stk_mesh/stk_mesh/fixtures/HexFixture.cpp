@@ -58,7 +58,7 @@ namespace fixtures {
 
 }
 
-void HexFixture::generate_mesh()
+void HexFixture::generate_mesh(const CoordinateMapping & coordMap)
 {
   std::vector<EntityId> element_ids_on_this_processor;
 
@@ -73,7 +73,7 @@ void HexFixture::generate_mesh()
     element_ids_on_this_processor.push_back(i);
   }
 
-  generate_mesh(element_ids_on_this_processor);
+  generate_mesh(element_ids_on_this_processor, coordMap);
 }
 
 void HexFixture::node_x_y_z( EntityId entity_id, unsigned &x , unsigned &y , unsigned &z ) const
@@ -102,7 +102,7 @@ void HexFixture::elem_x_y_z( EntityId entity_id, unsigned &x , unsigned &y , uns
   z = entity_id;
 }
 
-void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_processor)
+void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_processor, const CoordinateMapping & coordMap)
 {
   {
     //sort and unique the input elements
@@ -152,9 +152,7 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
 
         Scalar * data = m_bulk_data.field_data( m_coord_field , node );
 
-        data[0] = nx ;
-        data[1] = ny ;
-        data[2] = nz ;
+        coordMap.getNodeCoordinates(data, nx, ny, nz);
       }
     }
   }

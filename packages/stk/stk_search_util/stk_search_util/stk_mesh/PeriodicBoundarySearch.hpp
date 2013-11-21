@@ -79,28 +79,10 @@ public:
       size_t dim = ((buff.size() == 4) ? 2 : 3);
       for (size_t col = 0; col < dim; ++col) {
         for (size_t row = 0; row < dim; ++row) {
-          buff[dim * row + col] = m_rotation[col][row];
+          buff[dim * col + row] = m_rotation[row][col];
         }
       }
       return true;
-    }
-
-    void streamit(std::ostream &os)
-    {
-      os << "Rot: {";
-      for (int col = 0; col < 3 ; ++col) {
-        os << "{ ";
-        glm::f64vec3 mat_col = m_rotation[col];
-        for (int row = 0; row < 3; ++row ) {
-          os << mat_col[row] << " ";
-        }
-        os << "}";
-      }
-      os << "}  trans: {";
-      for (int row = 0; row < 3; ++row ) {
-        os << m_translation[row] << " ";
-      }
-      os << "}";
     }
   };
 
@@ -139,9 +121,10 @@ public:
     return result;
   }
 
-  void find_periodic_nodes(stk::ParallelMachine parallel, bool include_non_locally_owned = false)
+  void find_periodic_nodes(stk::ParallelMachine parallel)
   {
     m_search_results.clear();
+    m_unique_search_results.clear();
 
     //resolve multiple periodicity once
     if (m_firstCallToFindPeriodicNodes)
@@ -161,7 +144,7 @@ public:
     for (size_t i = 0; i < m_periodic_pairs.size(); ++i)
     {
       find_periodic_nodes_for_given_pair(m_periodic_pairs[i].first, m_periodic_pairs[i].second, parallel,
-                                         m_transforms[i], include_non_locally_owned);
+                                         m_transforms[i]);
     }
 
     for (size_t i = 0; i < m_search_results.size(); ++i)
@@ -350,15 +333,15 @@ private:
   void find_periodic_nodes_for_given_pair(stk::mesh::Selector side1,
                                           stk::mesh::Selector side2,
                                           stk::ParallelMachine parallel,
-                                          TransformHelper & transform,
-                                          bool include_non_locally_owned)
+                                          TransformHelper & transform
+                                          )
   {
     SearchPairVector search_results;
     SphAABBVector side_1_vector, side_2_vector;
 
-    populate_search_vector(side1, side_1_vector, include_non_locally_owned);
+    populate_search_vector(side1, side_1_vector);
 
-    populate_search_vector(side2, side_2_vector, include_non_locally_owned);
+    populate_search_vector(side2, side_2_vector);
 
     switch (transform.m_transform_type)
     {
@@ -444,7 +427,6 @@ private:
 
   void populate_search_vector(stk::mesh::Selector side_selector
                               , SphAABBVector & aabb_vector
-                              , bool include_non_locally_owned
                              )
   {
     const double radius = 1e-10;
@@ -452,11 +434,7 @@ private:
 
     stk::mesh::BucketVector buckets;
 
-    stk::mesh::Selector locally_owned_side_selector =
-        include_non_locally_owned ? side_selector
-                                  : side_selector & m_bulk_data.mesh_meta_data().locally_owned_part();
-
-    stk::mesh::get_buckets( locally_owned_side_selector
+    stk::mesh::get_buckets( side_selector
                             ,m_bulk_data.buckets(stk::topology::NODE_RANK)
                             ,buckets
                             );
