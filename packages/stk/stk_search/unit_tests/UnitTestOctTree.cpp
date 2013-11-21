@@ -8,26 +8,29 @@
 namespace
 {
 
+void checkKeyAgainstOffset(const int key[], const int offset_key_1);
+void getCutsForProcessorCount(unsigned numProcsLocal, const float * const weights, stk::OctTreeKey *cuts);
+
 STKUNIT_UNIT_TEST(stk_search_not_boost, testCalculationOfKeyUsingOffset)
 {
     int procId=-1;
     MPI_Comm_rank(MPI_COMM_WORLD, &procId);
     if ( procId == 0 )
     {
-        unsigned depth = 4;
-        unsigned offset = 4;
-        stk::OctTreeKey key;
-        stk::search::calculate_key_using_offset(depth, offset, key);
-        std::cerr << "key = " << key << std::endl;
+        int key_1[4] = { 1, 1, 1, 1 };
+        int offset_key_1 = 4;
+        checkKeyAgainstOffset(key_1, offset_key_1);
+        int key_2[4] = { 8, 8, 8, 8 };
+        int offset_key_2 = 4680;
+        checkKeyAgainstOffset(key_2, offset_key_2);
+        int key_3[4] = {1, 0, 0, 0 };
+        int offset_key_3 = 1;
+        checkKeyAgainstOffset(key_3, offset_key_3);
+        int key_4[4] = { 1, 1, 1, 2 };
+        int offset_key_4 = 5;
+        checkKeyAgainstOffset(key_4, offset_key_4);
     }
 }
-
-void getCutsForProcessorCount(unsigned numProcsLocal, const float * const weights, stk::OctTreeKey *cuts)
-{
-        unsigned depth = 4;
-        stk::search::partition_oct_tree(numProcsLocal, depth, weights, numProcsLocal, cuts);
-}
-
 
 STKUNIT_UNIT_TEST(stk_search_not_boost, testPartitioningOfPhysicalTreeForVaryingNumberOfProcsAndWeights)
 {
@@ -128,6 +131,34 @@ STKUNIT_UNIT_TEST(stk_search_not_boost, stressTestPartitioningUpToOneMillionProc
     }
 
     delete [] weights;
+}
+
+void getCutsForProcessorCount(unsigned numProcsLocal, const float * const weights, stk::OctTreeKey *cuts)
+{
+        unsigned depth = 4;
+        stk::search::partition_oct_tree(numProcsLocal, depth, weights, numProcsLocal, cuts);
+}
+
+void setKeyUsingIntArray(const unsigned depth, const int key[], stk::OctTreeKey &goldKey)
+{
+    for (unsigned int i=0;i<depth;i++)
+    {
+        bool isLeadingBitIndexZero = ( key[i] == 0 );
+        if ( isLeadingBitIndexZero ) break;
+        goldKey.set_index(i+1, key[i]);
+    }
+}
+
+void checkKeyAgainstOffset(const int key[], const int offset_key_1)
+{
+    unsigned depth = 4;
+    stk::OctTreeKey octTreeKey;
+    stk::search::calculate_key_using_offset(depth, offset_key_1, octTreeKey);
+
+    stk::OctTreeKey goldKey;
+    setKeyUsingIntArray(depth, key, goldKey);
+
+    EXPECT_EQ( goldKey, octTreeKey);
 }
 
 } // end namespace
