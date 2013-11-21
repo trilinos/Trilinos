@@ -101,11 +101,6 @@ build_precond(Teuchos::ParameterList& test_params,
     prec->describe (*out, Teuchos::VERB_LOW);
   }
 
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
-  const magnitudeType condest = prec->computeCondEst (Ifpack2::Cheap);
-  if (myRank == 0) {
-    *out << "Condition number estimate (cheap): " << condest << endl;
-  }
   return prec;
 }
 
