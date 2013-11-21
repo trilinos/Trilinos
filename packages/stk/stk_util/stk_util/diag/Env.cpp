@@ -408,7 +408,6 @@ bool StartupSierra(int *			  argc,
   ExecType                mpi_key,
   const std::vector<int> *peer_sizes) {
 
-  cout<<"start 1"<<endl;
 
   bool returnValue = false;
 
@@ -420,7 +419,6 @@ bool StartupSierra(int *			  argc,
   env_data.m_executablePath = get_program_path(*argv[0]);
   env_data.m_productName = product_name;
 
-  cout<<"start 2"<<endl;
 
   ProductRegistry::instance().setProductName(product_name);
 
@@ -434,7 +432,6 @@ bool StartupSierra(int *			  argc,
   // Add mpih to the product registry
   sierra::mpih::register_product();
 
-  cout<<"start 3"<<endl;
 
   // Add operating system information to the product registry.
   ProductRegistry::AttributeMap &attr_map = ProductRegistry::instance().addProduct(osname().c_str());
@@ -443,7 +440,6 @@ bool StartupSierra(int *			  argc,
   // Process the broadcast command line arguments
   namespace opt = boost::program_options;
 
-  cout<<"start 4"<<endl;
 
   opt::variables_map &vm = stk::get_variables_map();
   opt::options_description &od = stk::get_options_description();
@@ -465,7 +461,6 @@ bool StartupSierra(int *			  argc,
     od.add(desc);
   }
 
-  cout<<"start 5"<<endl;
 
   for (int i = 0; i < *argc; ++i) {
     const std::string s((*argv)[i]);
@@ -495,7 +490,6 @@ bool StartupSierra(int *			  argc,
   }
 
 
-  cout<<"start 6"<<endl;
 
   for (int i = 0; i < *argc; ++i) {
     const std::string s((*argv)[i]);
@@ -511,29 +505,14 @@ bool StartupSierra(int *			  argc,
     }
   }
 
-  cout<<"start 7"<<endl;
-
   try {
-
-    cout<<"start 7.1"<<endl;
-
     startup_preparallel_platform();
-
-    cout<<"start 7.2"<<endl;
-
     // Communicator has not been set, initialize MPI if not already initialized
     int mpi_init_val = 0 ;
 
-    cout<<"start 7.3"<<endl;
-
     if ( MPI_SUCCESS != MPI_Initialized( &mpi_init_val ) ) {
-
-      cout<<"start 7.4"<<endl;
-
       throw RuntimeError() << "MPI_Initialized failed";
     }
-
-    cout<<"start 7.5"<<endl;
 
     // Default startup communicator
     MPI_Comm startup_mpi_comm = MPI_COMM_WORLD;
@@ -542,28 +521,12 @@ bool StartupSierra(int *			  argc,
     // executables running.  If there are, find our partition and the
     // leads of the other partitions.
 
-    cout<<"start 7.6"<<endl;
-
     if ( mpi_init_val == 0 ) {
-      cout<<"start 7.7"<<endl;
-
       if ( MPI_SUCCESS != MPI_Init( argc , argv ) ) {
-
-        cout<<"start 7.8"<<endl;
-
 	throw RuntimeError() << "MPI_Init failed";
       }
-
-      cout<<"start 7.9"<<endl;
-
       returnValue = true ;
-
-      cout<<"start 7.9.1"<<endl;
-
       if (mpi_key != EXEC_TYPE_WORLD) startup_multi_exec(startup_mpi_comm, mpi_key, peer_sizes);
-
-      cout<<"start 7.9.2"<<endl;
-
     }
 
     // Ready to reset the environment from NULL, we are the Lagrangian application at this point.
@@ -581,10 +544,6 @@ bool StartupSierra(int *			  argc,
 
     MPI_Abort(env_data.m_parallelComm, MPI_ERR_OTHER);
   }
-
-  cout<<"start 8"<<endl;
-
-
 
   parse_options(env_data.m_parallelComm, argc, argv);
 
@@ -870,8 +829,6 @@ void ShutDownSierra(bool mpiInitFlag) {
   if (mpiInitFlag)
     MPI_Finalize();
 
-  cout<<"start 9"<<endl;
-
 }
 
 
@@ -943,15 +900,11 @@ startup_multi_exec(MPI_Comm                world_comm,
                    const std::vector<int> *peer_sizes)  // can be NULL.
 {
 
-  cout<<"multi 1"<<endl;
-
   EnvData &env_data = EnvData::instance();
 
   // MPI interface construction
   int world_size = -1 ;
   int world_rank = -1 ;
-
-  cout<<"multi 2"<<endl;
 
   if ( MPI_Comm_size(world_comm, &world_size) != MPI_SUCCESS)
     throw RuntimeError() << "MPI_Comm_size failed";
@@ -959,8 +912,6 @@ startup_multi_exec(MPI_Comm                world_comm,
   if ( MPI_Comm_rank(world_comm, &world_rank) != MPI_SUCCESS || -1 == world_rank )
     throw RuntimeError() << "MPI_Comm_rank failed";
 
-
-  cout<<"multi 3"<<endl;
 
   if (my_executable_type == EXEC_TYPE_FLUID || my_executable_type == EXEC_TYPE_LAG) {
     // This is specific for gemini.  Gemini performs three broadcasts, one for the
@@ -971,8 +922,6 @@ startup_multi_exec(MPI_Comm                world_comm,
     int lag_rank_size = -1;
     int fluid_master = 0;
 
-    cout<<"  world_rank: "<<world_rank<<endl;
-
     if (world_rank == 0) {
       typedef std::map<ExecType, std::vector<int> > ExecTypeRanks;
 
@@ -980,29 +929,19 @@ startup_multi_exec(MPI_Comm                world_comm,
 
       exec_type_ranks[my_executable_type].push_back(0);
 
-      cout<<"  world_size: "<<world_size<<endl;
-
       for (int i = 1; i < world_size; ++i) {
         MPI_Status status;
         int proc_stat[2];         // rank, ExecType
 
-	cout<<"  Try to recive: "<<i<<endl;
-
         if (MPI_Recv(proc_stat, 2, MPI_INTEGER, i, MPI_ANY_TAG, world_comm, &status) != MPI_SUCCESS)
           throw RuntimeError() << "MPI_Recv failed";
-
-	cout<<"  Got procstat: "<<proc_stat[0]<<" "<<proc_stat[1]<<endl;
 
         exec_type_ranks[(ExecType) proc_stat[1]].push_back(proc_stat[0]);
       }
 
-      cout<<"  multi 3.1"<<endl;
-
       std::vector<int> &fluid_ranks = exec_type_ranks[EXEC_TYPE_FLUID];
       if (fluid_ranks.size())
         fluid_master = fluid_ranks.front();
-
-      cout<<"  fluid master: "<<fluid_master<<endl;
 
       if (MPI_Bcast(&fluid_master, 1, MPI_INTEGER, 0, world_comm) != MPI_SUCCESS)
         throw RuntimeError() << "MPI_Bcast failed";
@@ -1011,23 +950,12 @@ startup_multi_exec(MPI_Comm                world_comm,
       if (lag_ranks.size())
         lag_master = lag_ranks.front();
 
-      cout<<"  multi 3.2"<<endl;
-
-      cout<<"  lag master: "<<lag_master<<endl;
-
       if (MPI_Bcast(&lag_master, 1, MPI_INTEGER, 0, world_comm) != MPI_SUCCESS)
         throw RuntimeError() << "MPI_Bcast failed";
 
       lag_rank_size = lag_ranks.size();
       if (MPI_Bcast(&lag_rank_size, 1, MPI_INTEGER, 0, world_comm) != MPI_SUCCESS)
         throw RuntimeError() << "MPI_Bcast failed";
-
-      cout<<"  lag size: "<<lag_rank_size<<endl;
-
- 
-
-
-      cout<<"  multi 3.3"<<endl;
 
     }
     else {
@@ -1048,80 +976,51 @@ startup_multi_exec(MPI_Comm                world_comm,
         throw RuntimeError() << "MPI_Bcast failed";
     }
 
-      cout<<"  multi 3.4"<<endl;
-
     MPI_Comm lag_comm   = world_comm;
     MPI_Comm fluid_comm = MPI_COMM_NULL;
     const int fluid_rank_size = world_size - lag_rank_size;
 
-    cout<<"  fluid_rank_size: "<<fluid_rank_size<<endl;
-
     if (fluid_rank_size) {
 
-     
-      int eul_rank_size = fluid_rank_size;
-      if (MPI_Bcast(&eul_rank_size, 1, MPI_INTEGER, 0, world_comm) != MPI_SUCCESS)
-        throw RuntimeError() << "MPI_Bcast failed";
+      if( sierra::Env::get_param("gemini") == "6.5") {
+        int eul_rank_size = fluid_rank_size;
+        if (MPI_Bcast(&eul_rank_size, 1, MPI_INTEGER, 0, world_comm) != MPI_SUCCESS) {
+          throw RuntimeError() << "MPI_Bcast failed";
+	}
+      }
 
-      cout<<"  eul size check: "<<eul_rank_size<<endl;
      
-      /*
-      if (MPI_Bcast(&eul_rank_size, 1, MPI_INTEGER, 0, world_comm) != MPI_SUCCESS)
-        throw RuntimeError() << "MPI_Bcast failed";
-      cout<<"TEST?"<<endl;
-      */
 
 
       MPI_Group world_group;
       MPI_Group lag_group;
       MPI_Group fluid_group;
 
-      cout<<"    multi 3.4.1"<<endl;
-
       if (MPI_Comm_group(world_comm, &world_group) != MPI_SUCCESS)
         throw RuntimeError() << "MPI_Comm_group failed";
-
-      cout<<"    multi 3.4.2"<<endl;
 
       std::vector<int> lag_ranks;
       for (int i = 0; i < lag_rank_size; ++i) {
         lag_ranks.push_back(lag_master + i);
-	cout<<"Add lag ranks: "<<lag_master + i<<endl;
-
       }
-
-      cout<<"    multi 3.4.3"<<endl;
 
       if (MPI_Group_incl(world_group, lag_ranks.size(), &lag_ranks[0], &lag_group) != MPI_SUCCESS)
         throw RuntimeError() << "MPI_Group_incl failed";
 
-      cout<<"    multi 3.4.4"<<endl;
-
       if (MPI_Comm_create(world_comm, lag_group, &lag_comm) != MPI_SUCCESS) {   //HANGS!!!!
-
-        cout<<"    multi 3.4.4 FAILED"<<endl;
         throw RuntimeError() << "MPI_Comm_create failed";
       }
-
-      cout<<"    multi 3.4.5"<<endl;
 
       std::vector<int> fluid_ranks;
       for (int i = 0; i < fluid_rank_size; ++i) {
         fluid_ranks.push_back(fluid_master + i);
-	cout<<"add fluid ranks: "<<fluid_master + i<<endl;
       }
-
-      cout<<"    multi 3.4.6"<<endl;
 
       if (MPI_Group_incl(world_group, fluid_ranks.size(), &fluid_ranks[0], &fluid_group) != MPI_SUCCESS)
         throw RuntimeError() << "MPI_Group_incl failed";
 
-      cout<<"    multi 3.4.7"<<endl;
-
       if (MPI_Comm_create(world_comm, fluid_group, &fluid_comm) != MPI_SUCCESS)
         throw RuntimeError() << "MPI_Comm_create failed";
-
-      cout<<"    multi 3.4.8"<<endl;
 
     }
 
@@ -1132,8 +1031,6 @@ startup_multi_exec(MPI_Comm                world_comm,
     env_data.m_execMap[EXEC_TYPE_FLUID].m_groupComm = fluid_comm;
   }
   else if (my_executable_type == EXEC_TYPE_PEER) {
-
-    cout<<"  multi 3.5"<<endl;
 
     // This executable will run on 2 or more communicators.
 
@@ -1188,8 +1085,6 @@ startup_multi_exec(MPI_Comm                world_comm,
       }
     }
 
-    cout<<"  multi 3.6"<<endl;
-
     MPI_Comm peer_comm;
     if (MPI_Comm_split(world_comm, my_peer_group, world_rank, &peer_comm) != MPI_SUCCESS) {
       throw RuntimeError() << "MPI_Comm_split failed";
@@ -1198,8 +1093,6 @@ startup_multi_exec(MPI_Comm                world_comm,
     env_data.m_execMap[EXEC_TYPE_PEER].m_groupComm = peer_comm;
     env_data.m_execMap[EXEC_TYPE_PEER].m_master    = my_peer_group; // Overloading meaning to peer group.
   }
-
-  cout<<"multi 4"<<endl;
 
 }
 
