@@ -439,17 +439,22 @@ void ThreadsExec::start( void (*func)( ThreadsExec & , const void * ) , const vo
                          int work_league_size ,
                          int work_team_size )
 {
-  verify_is_process("ThreadsExec::start" , false );
+  const bool work_spec = work_league_size || work_team_size ;
+
+  verify_is_process("ThreadsExec::start" , work_spec );
 
   if ( s_current_function || s_current_function_arg ) {
     Kokkos::Impl::throw_runtime_exception( std::string( "ThreadsExec::start() FAILED : already executing" ) );
   }
 
+  if ( work_spec ) {
+    s_current_team_size    = work_team_size ? std::min( s_threads_per_numa , unsigned(work_team_size) ) : s_threads_per_numa ;
+    s_current_team_alloc   = s_threads_per_core * ( ( s_current_team_size + s_threads_per_core - 1 ) / s_threads_per_core );
+    s_current_league_size  = work_league_size ;
+  }
+
   s_current_function     = func ;
   s_current_function_arg = arg ;
-  s_current_team_size    = work_team_size ? std::min( s_threads_per_numa , unsigned(work_team_size) ) : s_threads_per_numa ;
-  s_current_team_alloc   = s_threads_per_core * ( ( s_current_team_size + s_threads_per_core - 1 ) / s_threads_per_core );
-  s_current_league_size  = work_league_size ;
 
   // Activate threads:
   for ( int i = s_threads_count ; 0 < i-- ; ) {
