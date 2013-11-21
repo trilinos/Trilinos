@@ -59,9 +59,9 @@
 #include "MueLu.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_TestHelpers.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
+#include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
-#include "MueLu_TransPFactory.hpp"
-#include "MueLu_RAPFactory.hpp"
 
 #include <MueLu_UseDefaultTypes.hpp>
 #include <MueLu_UseShortNames.hpp>
@@ -173,8 +173,7 @@ int main(int argc, char *argv[]) {
     } //matrix creation
 
     Level fineLevel, coarseLevel;
-    RAPFactory AcFact;
-    AcFact.DisableMultipleCallCheck();
+
     {
       timerName = testName + ": 2 - Setup";
       TimeMonitor tm(*TimeMonitor::getNewTimer(timerName));
@@ -183,21 +182,33 @@ int main(int argc, char *argv[]) {
       if (!xmlFileName.empty())
         Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
 
-      MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel); // set a default FactoryManager
+      MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+
       fineLevel.Set("A", A);
 
-      RCP<SaPFactory>    PFact = rcp(new SaPFactory());
-      PFact->SetParameterList(paramList);
-      //RCP<TransPFactory> RFact = rcp(new TransPFactory());
-      //RFact->SetFactory("P", PFact);
+      RCP<CoalesceDropFactory>         cdFact    = rcp( new CoalesceDropFactory());
+      RCP<UncoupledAggregationFactory> aggFact   = rcp( new UncoupledAggregationFactory());
+      RCP<SaPFactory>                  PFact     = rcp( new SaPFactory());
 
+      // set factory options according to the XML input file
+      Teuchos::ParameterList cdList = paramList.sublist("CoalesceDrop");
+      cdFact->SetParameterList(cdList);
+      Teuchos::ParameterList aggregationList = paramList.sublist("Aggregates");
+      aggFact->SetParameterList(aggregationList);
+      Teuchos::ParameterList prolongatorList = paramList.sublist("Prolongator");
+      PFact->SetParameterList(prolongatorList);
+
+      // overwrite default FactoryManager
+      RCP<FactoryManager> M = rcp(new FactoryManager());
+      M->SetFactory("Graph",cdFact);
+      M->SetFactory("Aggregates",aggFact);
+      fineLevel.SetFactoryManager(M);
+      coarseLevel.SetFactoryManager(M);
+
+      // IMPORTANT:  The request for P must occur *after* setting the coarse level's FactoryManager.
       coarseLevel.Request("P", PFact.get());
-
       PFact->Build(fineLevel, coarseLevel);
-      //RFact->Build(fineLevel, coarseLevel);
 
-      AcFact.SetFactory("P", PFact);
-      //AcFact.SetFactory("R", RFact);
     } //setup
 
 #ifdef NOT_YET_IMPLEMENTED
