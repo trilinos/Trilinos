@@ -39,150 +39,35 @@ struct CompareSecond
 typedef stk::search::ident::IdentProc<uint64_t, unsigned> Ident;
 typedef std::vector<std::pair<Ident,Ident> > SearchResults;
 
-void checkSearchResults(const int proc_id, SearchResults &goldResults, SearchResults& searchResults)
-{
-    ASSERT_TRUE(searchResults.size() >= goldResults.size());
-
-    Ident unUsedBox1(987654321, 1000000);
-    Ident unUsedBox2(987654322, 1000000);
-    size_t numResultsMatchingGoldResults = 0;
-
-    for (size_t i = 0; i < searchResults.size(); i++ )
-    {
-//        if ( proc_id == 0 )
-//        {
-//            std::cerr << searchResults[i].first << "\t" << searchResults[i].second << std::endl;
-//        }
-        for (size_t j = 0; j < goldResults.size(); j++)
-        {
-            if ( searchResults[i] == goldResults[j] )
-            {
-                goldResults[j] = std::make_pair(unUsedBox1, unUsedBox2);
-                numResultsMatchingGoldResults++;
-            }
-        }
-    }
-    EXPECT_EQ(goldResults.size(), numResultsMatchingGoldResults) << "proc id = " << proc_id << std::endl;
-}
-
-void testCoarseSearchAABBForAlgorithm(stk::search::SearchMethod algorithm, MPI_Comm comm)
-{
-    typedef stk::search::box::AxisAlignedBoundingBox<Ident, double, 3> Box;
-    typedef std::vector<Box> BoxVector;
-
-    int num_procs = stk::parallel_machine_size(comm);
-    int proc_id   = stk::parallel_machine_rank(comm);
-
-    double data[6];
-
-    BoxVector local_domain, local_range;
-    // what if identifier is NOT unique
-    // x_min <= x_max
-    // y_min <= y_max
-    // z_min <= z_max
-
-    data[0] = proc_id + 0.1; data[1] = 0.0; data[2] = 0.0;
-    data[3] = proc_id + 0.9; data[4] = 1.0; data[5] = 1.0;
-
-    Ident domainBox1(proc_id*4, proc_id);
-    local_domain.push_back(Box(data, domainBox1));
-
-    data[0] = proc_id + 0.1; data[1] = 2.0; data[2] = 0.0;
-    data[3] = proc_id + 0.9; data[4] = 3.0; data[5] = 1.0;
-
-    Ident domainBox2(proc_id*4+1, proc_id);
-    local_domain.push_back(Box(data, domainBox2));
-
-    data[0] = proc_id + 0.6; data[1] = 0.5; data[2] = 0.0;
-    data[3] = proc_id + 1.4; data[4] = 1.5; data[5] = 1.0;
-
-    Ident rangeBox1(proc_id*4+2, proc_id);
-    local_range.push_back(Box(data, rangeBox1));
-
-    data[0] = proc_id + 0.6; data[1] = 2.5; data[2] = 0.0;
-    data[3] = proc_id + 1.4; data[4] = 3.5; data[5] = 1.0;
-
-    Ident rangeBox2(proc_id*4+3, proc_id);
-    local_range.push_back(Box(data, rangeBox2));
-
-    SearchResults searchResults;
-
-    stk::search::coarse_search(local_domain, local_range, algorithm, comm, searchResults);
-    SearchResults goldResults;
-
-    if (num_procs == 1) {
-        goldResults.push_back(std::make_pair(domainBox1, rangeBox1));
-        goldResults.push_back(std::make_pair(domainBox2, rangeBox2));
-
-        checkSearchResults(proc_id, goldResults, searchResults);
-    }
-    else {
-        if (proc_id == 0) {
-            Ident domainBox1OnProcessor1(4,1);
-            Ident domainBox2OnProcessor1(5,1);
-            goldResults.push_back(std::make_pair(domainBox1, rangeBox1));
-            goldResults.push_back(std::make_pair(domainBox1OnProcessor1, rangeBox1));
-            goldResults.push_back(std::make_pair(domainBox2, rangeBox2));
-            goldResults.push_back(std::make_pair(domainBox2OnProcessor1, rangeBox2));
-
-            checkSearchResults(proc_id, goldResults, searchResults);
-        }
-        else if (proc_id == num_procs - 1) {
-            Ident rangeBox1OnPreviousProcessor1((proc_id-1)*4 + 2, proc_id - 1);
-            Ident rangeBox2OnPreviousProcessor1((proc_id-1)*4 + 3, proc_id - 1);
-
-            goldResults.push_back(std::make_pair(domainBox1, rangeBox1OnPreviousProcessor1));
-            goldResults.push_back(std::make_pair(domainBox1, rangeBox1));
-            goldResults.push_back(std::make_pair(domainBox2, rangeBox2OnPreviousProcessor1));
-            goldResults.push_back(std::make_pair(domainBox2, rangeBox2));
-
-            checkSearchResults(proc_id, goldResults, searchResults);
-        }
-        else {
-            Ident rangeBox1OnPreviousProcessor((proc_id-1)*4 + 2, proc_id - 1);
-            Ident rangeBox2OnPreviousProcessor((proc_id-1)*4 + 3, proc_id - 1);
-            Ident domainBox1OnNextProcessor((proc_id+1)*4,     proc_id + 1);
-            Ident domainBox2OnNextProcessor((proc_id+1)*4 + 1, proc_id + 1);
-
-            goldResults.push_back(std::make_pair(domainBox1, rangeBox1OnPreviousProcessor));
-            goldResults.push_back(std::make_pair(domainBox1, rangeBox1));
-            goldResults.push_back(std::make_pair(domainBox2, rangeBox2OnPreviousProcessor));
-            goldResults.push_back(std::make_pair(domainBox2, rangeBox2));
-            goldResults.push_back(std::make_pair(domainBox1OnNextProcessor, rangeBox1));
-            goldResults.push_back(std::make_pair(domainBox2OnNextProcessor, rangeBox2));
-
-            checkSearchResults(proc_id, goldResults, searchResults);
-        }
-    }
-}
-
+void checkSearchResults(const int proc_id, SearchResults &goldResults, SearchResults& searchResults);
+void testCoarseSearchAABBForAlgorithm(stk::search::SearchMethod algorithm, MPI_Comm comm);
 bool compare(const std::pair<geometry::AxisAlignedBB, geometry::AxisAlignedBB> &gold,
-             const std::pair<geometry::AxisAlignedBB, geometry::AxisAlignedBB> &result)
+             const std::pair<geometry::AxisAlignedBB, geometry::AxisAlignedBB> &result);
+void checkSearchResults(const int proc_id, const std::vector<std::pair<geometry::AxisAlignedBB, geometry::AxisAlignedBB> > &goldResults,
+        const std::vector<std::pair<geometry::AxisAlignedBB, geometry::AxisAlignedBB> > &searchResults);
+
+void testCoarseSearchUsingGeometryToolkit(MPI_Comm comm);
+
+//  axis aligned bounding box search
+
+STKUNIT_UNIT_TEST(stk_search_not_boost, coarse_search_geometry_toolkit)
 {
-    bool retVal = false;
-    if ( gold.first.get_x_min() == result.first.get_x_min() &&
-         gold.first.get_y_min() == result.first.get_y_min() &&
-         gold.first.get_z_min() == result.first.get_z_min() )
-    {
-         if (gold.second.get_x_min() == result.second.get_x_min() &&
-             gold.second.get_y_min() == result.second.get_y_min() &&
-             gold.second.get_z_min() == result.second.get_z_min() )
-        {
-            retVal = true;
-        }
-    }
-    return retVal;
+  testCoarseSearchUsingGeometryToolkit(MPI_COMM_WORLD);
 }
 
-
-void checkSearchResults(const int proc_id, const std::vector<std::pair<geometry::AxisAlignedBB, geometry::AxisAlignedBB> > &goldResults,
-        const std::vector<std::pair<geometry::AxisAlignedBB, geometry::AxisAlignedBB> > &searchResults)
+STKUNIT_UNIT_TEST(stk_search_not_boost, coarse_search_3D_oct_tree)
 {
-    ASSERT_EQ(goldResults.size(), searchResults.size());
-    for (size_t i=0; i<goldResults.size();i++)
-    {
-        EXPECT_TRUE(compare(goldResults[i], searchResults[i])) << " failed for processor " << proc_id << " for interaction " << i << std::endl;
-    }
+  testCoarseSearchAABBForAlgorithm(stk::search::OCTREE, MPI_COMM_WORLD);
+}
+
+STKUNIT_UNIT_TEST(stk_search_not_boost, coarse_search_3D_bih_tree)
+{
+  testCoarseSearchAABBForAlgorithm(stk::search::BIHTREE, MPI_COMM_WORLD);
+}
+
+STKUNIT_UNIT_TEST(stk_search_boost, coarse_search_boost_rtree)
+{
+  testCoarseSearchAABBForAlgorithm(stk::search::BOOST_RTREE, MPI_COMM_WORLD);
 }
 
 void testCoarseSearchUsingGeometryToolkit(MPI_Comm comm)
@@ -268,7 +153,7 @@ void testCoarseSearchUsingGeometryToolkit(MPI_Comm comm)
 
     std::vector<std::pair<geometry::AxisAlignedBB, geometry::AxisAlignedBB> > goldResults;
 
-    if (num_procs == 1)
+    if ( proc_id == 0 )
     {
         goldResults.push_back(std::make_pair(domainBoxes[0], rangeBoxes[0]));
         goldResults.push_back(std::make_pair(domainBoxes[1], rangeBoxes[1]));
@@ -276,30 +161,13 @@ void testCoarseSearchUsingGeometryToolkit(MPI_Comm comm)
     }
     else
     {
-        if ( proc_id == 0 )
-        {
-            goldResults.push_back(std::make_pair(domainBoxes[0], rangeBoxes[0]));
-            goldResults.push_back(std::make_pair(domainBoxes[1], rangeBoxes[1]));
-            checkSearchResults(proc_id, goldResults, searchResults);
-        }
-        else if ( proc_id == num_procs - 1)
-        {
-            // Ordering is unfortunately important: for each domain box start with range box on this proc then the other procs
-            goldResults.push_back(std::make_pair(domainBoxes[0], rangeBoxes[0]));
-            goldResults.push_back(std::make_pair(domainBoxes[0], rangeBoxes[2]));
-            goldResults.push_back(std::make_pair(domainBoxes[1], rangeBoxes[1]));
-            goldResults.push_back(std::make_pair(domainBoxes[1], rangeBoxes[3]));
-            checkSearchResults(proc_id, goldResults, searchResults);
-        }
-        else
-        {
-            goldResults.push_back(std::make_pair(domainBoxes[0], rangeBoxes[0]));
-            goldResults.push_back(std::make_pair(domainBoxes[0], rangeBoxes[2]));
-            goldResults.push_back(std::make_pair(domainBoxes[1], rangeBoxes[1]));
-            goldResults.push_back(std::make_pair(domainBoxes[1], rangeBoxes[3]));
-            checkSearchResults(proc_id, goldResults, searchResults);
-        }
+        goldResults.push_back(std::make_pair(domainBoxes[0], rangeBoxes[0]));
+        goldResults.push_back(std::make_pair(domainBoxes[0], rangeBoxes[2]));
+        goldResults.push_back(std::make_pair(domainBoxes[1], rangeBoxes[1]));
+        goldResults.push_back(std::make_pair(domainBoxes[1], rangeBoxes[3]));
+        checkSearchResults(proc_id, goldResults, searchResults);
     }
+
     unlink(os.str().c_str()); // comment this out to view Cubit files for bounding boxes
 }
 
@@ -387,27 +255,7 @@ STKUNIT_UNIT_TEST(stk_search, global_spatial_index)
     }
   }
 }
-//  axis aligned bounding box search
 
-STKUNIT_UNIT_TEST(stk_search_not_boost, coarse_search_geometry_toolkit)
-{
-  testCoarseSearchUsingGeometryToolkit(MPI_COMM_WORLD);
-}
-
-STKUNIT_UNIT_TEST(stk_search_not_boost, coarse_search_3D_oct_tree)
-{
-  testCoarseSearchAABBForAlgorithm(stk::search::OCTREE, MPI_COMM_WORLD);
-}
-
-STKUNIT_UNIT_TEST(stk_search_not_boost, coarse_search_3D_bih_tree)
-{
-  testCoarseSearchAABBForAlgorithm(stk::search::BIHTREE, MPI_COMM_WORLD);
-}
-
-STKUNIT_UNIT_TEST(stk_search_boost, coarse_search_boost_rtree)
-{
-  testCoarseSearchAABBForAlgorithm(stk::search::BOOST_RTREE, MPI_COMM_WORLD);
-}
 
 
 STKUNIT_UNIT_TEST(stk_search, coarse_search_3D_one_point)
@@ -639,5 +487,150 @@ STKUNIT_UNIT_TEST(stk_search_not_boost, checkCuts)
     }
 }
 
+void checkSearchResults(const int proc_id, SearchResults &goldResults, SearchResults& searchResults)
+{
+    ASSERT_TRUE(searchResults.size() >= goldResults.size());
+
+    Ident unUsedBox1(987654321, 1000000);
+    Ident unUsedBox2(987654322, 1000000);
+    size_t numResultsMatchingGoldResults = 0;
+
+    for (size_t i = 0; i < searchResults.size(); i++ )
+    {
+//        if ( proc_id == 0 )
+//        {
+//            std::cerr << searchResults[i].first << "\t" << searchResults[i].second << std::endl;
+//        }
+        for (size_t j = 0; j < goldResults.size(); j++)
+        {
+            if ( searchResults[i] == goldResults[j] )
+            {
+                goldResults[j] = std::make_pair(unUsedBox1, unUsedBox2);
+                numResultsMatchingGoldResults++;
+            }
+        }
+    }
+    EXPECT_EQ(goldResults.size(), numResultsMatchingGoldResults) << "proc id = " << proc_id << std::endl;
+}
+
+void testCoarseSearchAABBForAlgorithm(stk::search::SearchMethod algorithm, MPI_Comm comm)
+{
+    typedef stk::search::box::AxisAlignedBoundingBox<Ident, double, 3> Box;
+    typedef std::vector<Box> BoxVector;
+
+    int num_procs = stk::parallel_machine_size(comm);
+    int proc_id   = stk::parallel_machine_rank(comm);
+
+    double data[6];
+
+    BoxVector local_domain, local_range;
+    // what if identifier is NOT unique
+    // x_min <= x_max
+    // y_min <= y_max
+    // z_min <= z_max
+
+    data[0] = proc_id + 0.1; data[1] = 0.0; data[2] = 0.0;
+    data[3] = proc_id + 0.9; data[4] = 1.0; data[5] = 1.0;
+
+    Ident domainBox1(proc_id*4, proc_id);
+    local_domain.push_back(Box(data, domainBox1));
+
+    data[0] = proc_id + 0.1; data[1] = 2.0; data[2] = 0.0;
+    data[3] = proc_id + 0.9; data[4] = 3.0; data[5] = 1.0;
+
+    Ident domainBox2(proc_id*4+1, proc_id);
+    local_domain.push_back(Box(data, domainBox2));
+
+    data[0] = proc_id + 0.6; data[1] = 0.5; data[2] = 0.0;
+    data[3] = proc_id + 1.4; data[4] = 1.5; data[5] = 1.0;
+
+    Ident rangeBox1(proc_id*4+2, proc_id);
+    local_range.push_back(Box(data, rangeBox1));
+
+    data[0] = proc_id + 0.6; data[1] = 2.5; data[2] = 0.0;
+    data[3] = proc_id + 1.4; data[4] = 3.5; data[5] = 1.0;
+
+    Ident rangeBox2(proc_id*4+3, proc_id);
+    local_range.push_back(Box(data, rangeBox2));
+
+    SearchResults searchResults;
+
+    stk::search::coarse_search(local_domain, local_range, algorithm, comm, searchResults);
+    SearchResults goldResults;
+
+    if (num_procs == 1) {
+        goldResults.push_back(std::make_pair(domainBox1, rangeBox1));
+        goldResults.push_back(std::make_pair(domainBox2, rangeBox2));
+
+        checkSearchResults(proc_id, goldResults, searchResults);
+    }
+    else {
+        if (proc_id == 0) {
+            Ident domainBox1OnProcessor1(4,1);
+            Ident domainBox2OnProcessor1(5,1);
+            goldResults.push_back(std::make_pair(domainBox1, rangeBox1));
+            goldResults.push_back(std::make_pair(domainBox1OnProcessor1, rangeBox1));
+            goldResults.push_back(std::make_pair(domainBox2, rangeBox2));
+            goldResults.push_back(std::make_pair(domainBox2OnProcessor1, rangeBox2));
+
+            checkSearchResults(proc_id, goldResults, searchResults);
+        }
+        else if (proc_id == num_procs - 1) {
+            Ident rangeBox1OnPreviousProcessor1((proc_id-1)*4 + 2, proc_id - 1);
+            Ident rangeBox2OnPreviousProcessor1((proc_id-1)*4 + 3, proc_id - 1);
+
+            goldResults.push_back(std::make_pair(domainBox1, rangeBox1OnPreviousProcessor1));
+            goldResults.push_back(std::make_pair(domainBox1, rangeBox1));
+            goldResults.push_back(std::make_pair(domainBox2, rangeBox2OnPreviousProcessor1));
+            goldResults.push_back(std::make_pair(domainBox2, rangeBox2));
+
+            checkSearchResults(proc_id, goldResults, searchResults);
+        }
+        else {
+            Ident rangeBox1OnPreviousProcessor((proc_id-1)*4 + 2, proc_id - 1);
+            Ident rangeBox2OnPreviousProcessor((proc_id-1)*4 + 3, proc_id - 1);
+            Ident domainBox1OnNextProcessor((proc_id+1)*4,     proc_id + 1);
+            Ident domainBox2OnNextProcessor((proc_id+1)*4 + 1, proc_id + 1);
+
+            goldResults.push_back(std::make_pair(domainBox1, rangeBox1OnPreviousProcessor));
+            goldResults.push_back(std::make_pair(domainBox1, rangeBox1));
+            goldResults.push_back(std::make_pair(domainBox2, rangeBox2OnPreviousProcessor));
+            goldResults.push_back(std::make_pair(domainBox2, rangeBox2));
+            goldResults.push_back(std::make_pair(domainBox1OnNextProcessor, rangeBox1));
+            goldResults.push_back(std::make_pair(domainBox2OnNextProcessor, rangeBox2));
+
+            checkSearchResults(proc_id, goldResults, searchResults);
+        }
+    }
+}
+
+bool compare(const std::pair<geometry::AxisAlignedBB, geometry::AxisAlignedBB> &gold,
+             const std::pair<geometry::AxisAlignedBB, geometry::AxisAlignedBB> &result)
+{
+    bool retVal = false;
+    if ( gold.first.get_x_min() == result.first.get_x_min() &&
+         gold.first.get_y_min() == result.first.get_y_min() &&
+         gold.first.get_z_min() == result.first.get_z_min() )
+    {
+         if (gold.second.get_x_min() == result.second.get_x_min() &&
+             gold.second.get_y_min() == result.second.get_y_min() &&
+             gold.second.get_z_min() == result.second.get_z_min() )
+        {
+            retVal = true;
+        }
+    }
+    return retVal;
+}
+
+
+void checkSearchResults(const int proc_id, const std::vector<std::pair<geometry::AxisAlignedBB, geometry::AxisAlignedBB> > &goldResults,
+        const std::vector<std::pair<geometry::AxisAlignedBB, geometry::AxisAlignedBB> > &searchResults)
+{
+    ASSERT_EQ(goldResults.size(), searchResults.size());
+    for (size_t i=0; i<goldResults.size();i++)
+    {
+        EXPECT_TRUE(compare(goldResults[i], searchResults[i])) << " failed for processor " << proc_id << " for interaction " << i << std::endl;
+    }
+}
 
 } //namespace
