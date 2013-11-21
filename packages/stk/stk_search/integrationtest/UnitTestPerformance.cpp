@@ -1,6 +1,8 @@
 #include <stk_search/CoarseSearch.hpp>
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search/IdentProc.hpp>
+#include <stk_util/util/memory_util.hpp>
+#include <stk_util/environment/WallTime.hpp>
 
 #include <mpi.h>
 #include <gtest/gtest.h>
@@ -11,9 +13,24 @@
 namespace
 {
 
-TEST(Performance, Spheres)
+void testPerformanceOfAxisAlignedBoundingBoxes(stk::search::SearchMethod searchMethod, MPI_Comm comm);
+
+TEST(Performance, ofAxisAlignedBoundingBoxesUsingOctTree)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
+    stk::search::SearchMethod searchMethod = stk::search::OCTREE;
+    testPerformanceOfAxisAlignedBoundingBoxes(searchMethod, comm);
+}
+
+TEST(Performance, ofAxisAlignedBoundingBoxesUsingBoostRtree)
+{
+    MPI_Comm comm = MPI_COMM_WORLD;
+    stk::search::SearchMethod searchMethod = stk::search::BOOST_RTREE;
+    testPerformanceOfAxisAlignedBoundingBoxes(searchMethod, comm);
+}
+
+void testPerformanceOfAxisAlignedBoundingBoxes(stk::search::SearchMethod searchMethod, MPI_Comm comm)
+{
     int proc = 0;
     MPI_Comm_rank(comm, &proc);
     int numProcs = 1;
@@ -21,6 +38,8 @@ TEST(Performance, Spheres)
 
     size_t numColumnsPerProcessor = 1000;
     double boxSize = 1.0;
+
+    double startTime = stk::wall_time();
 
     std::vector<My3dAxisAlignedBoundingBox> smallBoxVector;
     std::vector<My3dAxisAlignedBoundingBox> bigBoxVector;
@@ -66,8 +85,7 @@ TEST(Performance, Spheres)
                                                                                  id,
                                                                                  proc));
     }
-
-    stk::search::coarse_search(smallBoxVector, bigBoxVector, stk::search::OCTREE, comm, boxIdPairResults);
+    stk::search::coarse_search(smallBoxVector, bigBoxVector, searchMethod, comm, boxIdPairResults);
 
     size_t numExpectedResults = numColumnsPerProcessor * numColumnsPerProcessor;
     bool lastProcessorWithOddNumberOfProcs = numProcs % 2 != 0 && proc == numProcs - 1;
@@ -77,6 +95,28 @@ TEST(Performance, Spheres)
     }
 
     EXPECT_EQ(numExpectedResults, boxIdPairResults.size());
+
+    long int maxHwm = 0, minHwm = 0;
+    double avgHwm = 0;
+    stk::get_memory_high_water_mark_across_processors(comm, maxHwm, minHwm, avgHwm);
+
+    double elapsedTime = stk::wall_time() - startTime;
+
+    double minTime = 0, maxTime = 0, avgTime = 0;
+    MPI_Allreduce(&elapsedTime, &maxTime, 1, MPI_DOUBLE, MPI_MAX, comm);
+    MPI_Allreduce(&elapsedTime, &minTime, 1, MPI_DOUBLE, MPI_MIN, comm);
+    double elapsedTimeDivided = elapsedTime/numProcs;
+    MPI_Allreduce(&elapsedTimeDivided, &avgTime, 1, MPI_DOUBLE, MPI_SUM, comm);
+
+    if (proc == 0)
+    {
+        double bytesInMegabyte = 1024*1024;
+        std::cout << "Max time: "  << maxTime << ", Min time: " << minTime << ", Avg time: " << avgTime << std::endl;
+        std::cout << std::setw(6) << std::fixed << std::setprecision(1) << "Max HWM: "<<double(maxHwm)/double(bytesInMegabyte)
+                <<", Min HWM: "<<double(minHwm)/double(bytesInMegabyte)<<", Avg HWM: "<<avgHwm/bytesInMegabyte<<std::endl;
+        std::cout<<"### Total Number of Steps Taken ###: 1"<<std::endl;
+        std::cout<<"### Total Wall Clock Run Time Used ###: "<< maxTime <<std::endl;
+    }
 }
 
 }

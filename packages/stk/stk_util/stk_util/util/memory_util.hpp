@@ -2,7 +2,7 @@
 #define STK_MEMORY_UTIL_H
 
 #include <string>
-
+#include <mpi.h>
 
 namespace stk {
 
@@ -25,6 +25,7 @@ std::string human_bytes(size_t bytes);
  */
 void get_memory_usage(size_t & now, size_t & hwm);
 
+void get_memory_high_water_mark_across_processors(MPI_Comm comm, long int & hwm_max, long int & hwm_min, double & hwm_average);
 
 }
 
