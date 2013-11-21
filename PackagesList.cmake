@@ -127,7 +127,6 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   AztecOO               packages/aztecoo                  PS
   Galeri                packages/galeri                   PS
   Amesos2               packages/amesos2                  SS
-  IQR                   packages/iqr                      EX
   Amesos                packages/amesos                   PS
   Pamgen                packages/pamgen                   PS
   SEACAS                packages/seacas                   SS # Depends on netcdf, optionally hdf5, xdmf, pamgen
