@@ -594,7 +594,7 @@ private:
 
 };
 
-template <class CoordFieldType, typename Scalar = double, unsigned SpatialDimension = 3>
+template <class CoordFieldType, typename Scalar = double>
 struct GetCoordinates
 {
   typedef void result_type;
@@ -605,8 +605,9 @@ struct GetCoordinates
 
   void operator()(stk::mesh::Entity e, Scalar * coords) const
   {
+    const unsigned nDim = m_bulk_data.mesh_meta_data().spatial_dimension();
     const double * const temp_coords = m_bulk_data.field_data(m_coords_field, e);
-    for (unsigned i = 0; i < SpatialDimension; ++i) {
+    for (unsigned i = 0; i < nDim; ++i) {
       coords[i] = temp_coords[i];
     }
   }
@@ -615,7 +616,7 @@ struct GetCoordinates
   CoordFieldType & m_coords_field;
 };
 
-template <class ModelCoordFieldType, class DispCoordFieldType, typename Scalar = double, unsigned SpatialDimension = 3>
+template <class ModelCoordFieldType, class DispCoordFieldType, typename Scalar = double>
 struct GetDisplacedCoordinates
 {
   typedef void result_type;
@@ -627,9 +628,10 @@ struct GetDisplacedCoordinates
 
   void operator()(stk::mesh::Entity e, Scalar * coords) const
   {
+    const unsigned nDim = m_bulk_data.mesh_meta_data().spatial_dimension();
     const double * const temp_model_coords = m_bulk_data.field_data(m_model_coord_field, e);
     const double * const temp_disp_coords = m_bulk_data.field_data(m_disp_coord_field, e);
-    for (unsigned i = 0; i < SpatialDimension; ++i) {
+    for (unsigned i = 0; i < nDim; ++i) {
       coords[i] = temp_model_coords[i] + temp_disp_coords[i];
     }
   }
