@@ -64,7 +64,7 @@ RILUK<MatrixType>::RILUK(const Teuchos::RCP<const MatrixType>& Matrix_in)
     RelaxValue_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
     Athresh_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
     Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ()),
-    Condest_ (-Teuchos::ScalarTraits<magnitude_type>::one ()),
+    Condest_ (- Teuchos::ScalarTraits<magnitude_type>::one () ),
     OverlapMode_ (Tpetra::REPLACE)
 {
 }
@@ -728,7 +728,7 @@ RILUK<MatrixType>::computeCondEst(Teuchos::ETransp mode) const
 {
   typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vec_type;
 
-  if (Condest_ != -Teuchos::ScalarTraits<scalar_type>::one ()) {
+  if (Condest_ != - Teuchos::ScalarTraits<magnitude_type>::one() ) {
     return Condest_;
   }
   // Create a vector with all values equal to one

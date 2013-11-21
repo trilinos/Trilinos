@@ -65,7 +65,7 @@ Krylov<MatrixType,PrecType>::Krylov(const Teuchos::RCP<const Tpetra::RowMatrix<s
   ZeroStartingSolution_(true),
   PreconditionerType_(1),
   // General
-  Condest_ (-Teuchos::ScalarTraits<scalar_type>::one ()),
+  Condest_ (- Teuchos::ScalarTraits<magnitude_type>::one()),
   IsInitialized_(false),
   IsComputed_(false),
   NumInitialize_(0),
@@ -184,10 +184,10 @@ computeCondEst (CondestType CT,
                 magnitude_type Tol,
                 const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &matrix) {
   if (! isComputed ()) { // cannot compute right now
-    return -Teuchos::ScalarTraits<scalar_type>::one ();
+    return -Teuchos::ScalarTraits<magnitude_type>::one ();
   }
   // NOTE: this is computing the *local* condest
-  if (Condest_ == -Teuchos::ScalarTraits<scalar_type>::one ()) {
+  if (Condest_ == -Teuchos::ScalarTraits<magnitude_type>::one()) {
     Condest_ = Ifpack2::Condest(*this, CT, MaxIters, Tol, matrix);
   }
   return Condest_;

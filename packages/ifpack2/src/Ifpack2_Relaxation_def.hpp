@@ -416,7 +416,7 @@ computeCondEst (CondestType CT,
                                                            typename MatrixType::node_type> > &matrix)
 {
   if (! isComputed ()) { // cannot compute right now
-    return -Teuchos::ScalarTraits<scalar_type>::one ();
+    return -Teuchos::ScalarTraits<magnitude_type>::one ();
   }
   // always compute it. Call Condest() with no parameters to get
   // the previous estimate.

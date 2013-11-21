@@ -53,7 +53,7 @@ template<class MatrixType>
 Chebyshev<MatrixType>::
 Chebyshev (const Teuchos::RCP<const row_matrix_type>& A)
   : impl_ (A),
-    Condest_ (-Teuchos::ScalarTraits<scalar_type>::one ()),
+    Condest_ ( -Teuchos::ScalarTraits<magnitude_type>::one() ),
     IsInitialized_ (false),
     IsComputed_ (false),
     NumInitialize_ (0),
@@ -305,7 +305,7 @@ void Chebyshev<MatrixType>::compute ()
       initialize ();
     }
     IsComputed_ = false;
-    Condest_ = -Teuchos::ScalarTraits<scalar_type>::one ();
+    Condest_ = - Teuchos::ScalarTraits<magnitude_type>::one();
     impl_.compute ();
   }
   IsComputed_ = true;
@@ -442,7 +442,7 @@ void Chebyshev<MatrixType>::describe(Teuchos::FancyOStream &out, const Teuchos::
     out << "Degree of polynomial      = " << PolyDegree_ << std::endl;
     if   (ZeroStartingSolution_) { out << "Using zero starting solution" << endl; }
     else                         { out << "Using input starting solution" << endl; }
-    if   (Condest_ == -Teuchos::ScalarTraits<scalar_type>::one ()) {
+    if   (Condest_ == - Teuchos::ScalarTraits<magnitude_type>::one()) {
       out << "Condition number estimate       = N/A" << endl;
     }
     else                    { out << "Condition number estimate       = " << Condest_ << endl; }
