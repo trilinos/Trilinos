@@ -1467,11 +1467,11 @@ namespace KokkosClassic {
     template <class DomainScalar, class RangeScalar>
     void
     reorderedGaussSeidel (const MultiVector<DomainScalar,Node> &B,
-			  MultiVector<RangeScalar,Node> &X,
-			  const MultiVector<Scalar,Node> &D,
-			  const ArrayView<Ordinal> & rowIndices,
-			  const RangeScalar& omega = Teuchos::ScalarTraits<RangeScalar>::one(),
-			  const enum ESweepDirection direction = Forward) const;
+                          MultiVector<RangeScalar,Node> &X,
+                          const MultiVector<Scalar,Node> &D,
+                          const ArrayView<Ordinal> & rowIndices,
+                          const RangeScalar& omega = Teuchos::ScalarTraits<RangeScalar>::one(),
+                          const enum ESweepDirection direction = Forward) const;
 
     /// \brief "Add in place": compute <tt>*this = alpha*A + beta*(*this)</tt>.
     ///
@@ -1521,11 +1521,11 @@ namespace KokkosClassic {
     template <class DomainScalar, class RangeScalar>
     void
     reorderedGaussSeidelPrivate (MultiVector<RangeScalar,Node> &X,
-				 const MultiVector<DomainScalar,Node> &B,
-				 const MultiVector<Scalar,Node> &D,
-				 const ArrayView<Ordinal> & rowIndices,
-				 const RangeScalar& omega = Teuchos::ScalarTraits<RangeScalar>::one(),
-				 const ESweepDirection direction = Forward) const;
+                                 const MultiVector<DomainScalar,Node> &B,
+                                 const MultiVector<Scalar,Node> &D,
+                                 const ArrayView<Ordinal> & rowIndices,
+                                 const RangeScalar& omega = Teuchos::ScalarTraits<RangeScalar>::one(),
+                                 const ESweepDirection direction = Forward) const;
 
 
     //! Fill the given ParameterList with defaults and validators.
@@ -2069,11 +2069,11 @@ namespace KokkosClassic {
   void
   AltSparseOps<Scalar,Ordinal,Node,Allocator>::
   reorderedGaussSeidel (const MultiVector<DomainScalar,Node> &B,
-			MultiVector< RangeScalar,Node> &X,
-			const MultiVector<Scalar,Node> &D,
-			const ArrayView<Ordinal> & rowIndices,
-			const RangeScalar& dampingFactor,
-			const ESweepDirection direction) const
+                        MultiVector< RangeScalar,Node> &X,
+                        const MultiVector<Scalar,Node> &D,
+                        const ArrayView<Ordinal> & rowIndices,
+                        const RangeScalar& dampingFactor,
+                        const ESweepDirection direction) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       isInitialized_ == false,
@@ -2235,11 +2235,11 @@ namespace KokkosClassic {
   template <class DomainScalar, class RangeScalar>
   void AltSparseOps<Scalar,Ordinal,Node,Allocator>::
   reorderedGaussSeidelPrivate (MultiVector<RangeScalar,Node> &X,
-			       const MultiVector<DomainScalar,Node> &B,
-			       const MultiVector<Scalar,Node> &D,
-			       const ArrayView<Ordinal> & rowIndices,
-			       const RangeScalar& omega,
-			       const ESweepDirection direction) const
+                               const MultiVector<DomainScalar,Node> &B,
+                               const MultiVector<Scalar,Node> &D,
+                               const ArrayView<Ordinal> & rowIndices,
+                               const RangeScalar& omega,
+                               const ESweepDirection direction) const
   {
     typedef size_t OffsetType;
     typedef Teuchos::ScalarTraits<RangeScalar> STS;
@@ -2269,7 +2269,7 @@ namespace KokkosClassic {
 
       if (direction == Forward) {
         for (Ordinal ii = 0; ii < numActive; ++ii) {
-	  Ordinal i = rowInd[ii];
+          Ordinal i = rowInd[ii];
           x_temp = Teuchos::ScalarTraits<RangeScalar>::zero ();
           for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
             const Ordinal j = ind[k];
@@ -2280,7 +2280,7 @@ namespace KokkosClassic {
         }
       } else if (direction == Backward) {
         for (Ordinal ii = numActive - 1; ii >= 0; --ii) {
-	  Ordinal i = rowInd[ii];
+          Ordinal i = rowInd[ii];
           x_temp = Teuchos::ScalarTraits<RangeScalar>::zero ();
           for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
             const Ordinal j = ind[k];
@@ -2303,7 +2303,7 @@ namespace KokkosClassic {
 
       if (direction == Forward) {
         for (Ordinal ii = 0; ii < numActive; ++ii) {
-	  Ordinal i = rowInd[ii];
+          Ordinal i = rowInd[ii];
           for (size_t c = 0; c < numCols; ++c) {
             x_temp[c] = Teuchos::ScalarTraits<RangeScalar>::zero ();
           }
@@ -2319,8 +2319,8 @@ namespace KokkosClassic {
           }
         }
       } else if (direction == Backward) { // backward mode
-	for (Ordinal ii = numActive - 1; ii >= 0; --ii) {
-	  Ordinal i = rowInd[ii];
+        for (Ordinal ii = numActive - 1; ii >= 0; --ii) {
+          Ordinal i = rowInd[ii];
           for (size_t c = 0; c < numCols; ++c) {
             x_temp[c] = Teuchos::ScalarTraits<RangeScalar>::zero ();
           }
@@ -2349,42 +2349,73 @@ namespace KokkosClassic {
          MultiVector<RangeScalar, Node>& X) const
   {
     using Teuchos::as;
-    const char tfecfFuncName[] = "solve";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    using Teuchos::TypeNameTraits;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
       ! isInitialized_,
       std::runtime_error,
-      ": The solve was not fully initialized."
+      "Kokkos::AltSparseOps<"
+      << TypeNameTraits<Scalar>::name ()
+      << ", " << TypeNameTraits<Ordinal>::name ()
+      << ", " << TypeNameTraits<Node>::name ()
+      << ", " << TypeNameTraits<Allocator>::name ()
+      << ">: The solve was not fully initialized."
     );
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       X.getNumCols() != Y.getNumCols(),
       std::runtime_error,
-      ": Input and output multivectors have different numbers of vectors (columns)."
+      "Kokkos::AltSparseOps<"
+      << TypeNameTraits<Scalar>::name ()
+      << ", " << TypeNameTraits<Ordinal>::name ()
+      << ", " << TypeNameTraits<Node>::name ()
+      << ", " << TypeNameTraits<Allocator>::name ()
+      << ">: Input and output multivectors have different numbers of vectors (columns)."
     );
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       trans == Teuchos::NO_TRANS && as<size_t> (X.getNumRows()) != as<size_t> (numRows_),
       std::runtime_error,
-      ": Dimensions of the matrix and the output multivector X do not match.  "
+      "Kokkos::AltSparseOps<"
+      << TypeNameTraits<Scalar>::name ()
+      << ", " << TypeNameTraits<Ordinal>::name ()
+      << ", " << TypeNameTraits<Node>::name ()
+      << ", " << TypeNameTraits<Allocator>::name ()
+      << ">: Dimensions of the matrix and the output multivector X do not match.  "
       "X.getNumRows() == " << X.getNumRows() << ", but the matrix has "
       << numRows_ << " rows."
     );
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       trans != Teuchos::NO_TRANS && as<size_t> (X.getNumRows()) != as<size_t> (numCols_),
       std::runtime_error,
-      ": Dimensions of the matrix and the output multivector X do not match.  "
+      "Kokkos::AltSparseOps<"
+      << TypeNameTraits<Scalar>::name ()
+      << ", " << TypeNameTraits<Ordinal>::name ()
+      << ", " << TypeNameTraits<Node>::name ()
+      << ", " << TypeNameTraits<Allocator>::name ()
+      << ">: Dimensions of the matrix and the output multivector X do not match.  "
       "X.getNumRows() == " << X.getNumRows() << ", but the transposed matrix has "
       << numCols_ << " rows."
     );
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       trans == Teuchos::NO_TRANS && as<size_t> (Y.getNumRows()) != as<size_t> (numCols_),
       std::runtime_error,
-      ": Dimensions of the matrix and the input multivector Y do not match.  "
+      "Kokkos::AltSparseOps<"
+      << TypeNameTraits<Scalar>::name ()
+      << ", " << TypeNameTraits<Ordinal>::name ()
+      << ", " << TypeNameTraits<Node>::name ()
+      << ", " << TypeNameTraits<Allocator>::name ()
+      << ">: Dimensions of the matrix and the input multivector Y do not match.  "
       "Y.getNumRows() == " << Y.getNumRows() << ", but the matrix has "
       << numCols_ << " columns."
     );
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       trans != Teuchos::NO_TRANS && as<size_t> (Y.getNumRows()) != as<size_t> (numRows_),
       std::runtime_error,
-      ": Dimensions of the matrix and the input multivector Y do not match.  "
+      "Kokkos::AltSparseOps<"
+      << TypeNameTraits<Scalar>::name ()
+      << ", " << TypeNameTraits<Ordinal>::name ()
+      << ", " << TypeNameTraits<Node>::name ()
+      << ", " << TypeNameTraits<Allocator>::name ()
+      << ">: Dimensions of the matrix and the input multivector Y do not match.  "
       "Y.getNumRows() == " << Y.getNumRows() << ", but the transposed matrix has "
       << numRows_ << " columns."
     );
@@ -2393,10 +2424,15 @@ namespace KokkosClassic {
       return; // Nothing to do
     }
     else if (isEmpty_) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      TEUCHOS_TEST_FOR_EXCEPTION(
         unit_diag_ != Teuchos::UNIT_DIAG,
         std::runtime_error,
-        ": Solve with empty matrix is only valid for an implicit unit diagonal.");
+        "Kokkos::AltSparseOps<"
+        << TypeNameTraits<Scalar>::name ()
+        << ", " << TypeNameTraits<Ordinal>::name ()
+        << ", " << TypeNameTraits<Node>::name ()
+        << ", " << TypeNameTraits<Allocator>::name ()
+        << ">: Solve with empty matrix is only valid for an implicit unit diagonal.");
       // solve I * X = Y for X = Y
       DefaultArithmetic<MultiVector<RangeScalar,Node> >::Assign (X, Y);
     }
