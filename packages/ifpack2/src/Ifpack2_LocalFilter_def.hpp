@@ -205,6 +205,9 @@ Teuchos::RCP<const Tpetra::RowGraph<typename MatrixType::local_ordinal_type,
                                      typename MatrixType::node_type> >
 LocalFilter<MatrixType>::getGraph () const
 {
+  // FIXME (mfh 20 Nov 2013) This is not what the documentation says
+  // this method should do!  It should return the graph of the locally
+  // filtered matrix, not the original matrix's graph.
   return A_->getGraph ();
 }
 

@@ -56,13 +56,65 @@ namespace Ifpack2 {
 ///   (preferred) or Tpetra::CrsMatrix (which is a subclass of
 ///   Tpetra::RowMatrix).
 ///
-/// This class provides a view of only the local rows and columns of
-/// an existing sparse matrix.  "Local rows" are those owned by the
-/// row Map on the calling process; "local columns" are owned by both
-/// the column Map and the domain Map on the calling process.  The
-/// view's communicator contains only the local process (in MPI terms,
-/// <tt>MPI_COMM_SELF</tt>), and each process will have its own
-/// distinct view of its local part of the matrix.
+/// \section Ifpack2_LocalFilter_Summary Summary
+///
+/// LocalFilter makes a global matrix "appear" local.  Solving a
+/// linear system with the LocalFilter of a matrix A, if possible, is
+/// equivalent to applying one step of nonoverlapping additive Schwarz
+/// to A.  This class is an implementation detail of Ifpack2.  It is
+/// not meant for users.  It may be useful to Ifpack2 developers who
+/// want to implement a "local" preconditioner (i.e., that only works
+/// within a single MPI process), and would like the preconditioner to
+/// work for a global matrix.  For example, ILUT uses LocalFilter to
+/// extract and compute the incomplete factorizaton of the "local
+/// matrix."  This makes the input to ILUT appear like a square
+/// matrix, assuming that the domain and range Maps have the same
+/// number of entries on each process.  This in turn makes the result
+/// of ILUT suitable for solving linear systems.
+///
+/// \section Ifpack2_LocalFilter_How How does it work?
+///
+/// \subsection Ifpack2_LocalFilter_How_Local View of the local rows and columns
+///
+/// LocalFilter provides a view of only the local rows and columns of
+/// an existing sparse matrix.  "Local rows" are those rows in the row
+/// Map that are owned by the range Map on the calling process.
+/// "Local columns" are those columns in the column Map that are owned
+/// by the domain Map on the calling process.  The view's communicator
+/// contains only the local process (in MPI terms,
+/// <tt>MPI_COMM_SELF</tt>), so each process will have its own
+/// distinct view of its local part of the matrix.  The global indices
+/// of the view's domain and range Maps will be different than those
+/// in the original matrix's domain and range Maps.  The global
+/// indices will be remapped to a consecutive sequence, starting from
+/// the index base of the original Map.
+///
+/// If the following conditions hold on the Maps of a matrix A, then
+/// the view resulting from a LocalFilter of A will be that of a
+/// diagonal block of A:
+///   - Domain and range Maps are the same
+///   - On every process, the row Map's entries are the same as the
+///     range Map's entries, possibly followed by additional remote
+///     entries
+///   - On every process, the column Map's entries are the same as the
+///     domain Map's entries, possibly followed by additional remote
+///     entries
+///
+/// These conditions commonly hold for a Tpetra::CrsMatrix constructed
+/// without a column Map, after fillComplete() has been called on it,
+/// with default domain and range Maps.
+///
+/// \subsection Ifpack2_LocalFilter_How_Copy Not necessarily a copy
+///
+/// This class does not necessarily copy the entire sparse matrix.  It
+/// may choose instead just to "filter out" the nonlocal entries.  The
+/// effect on the LocalFilter of changing the entries or structure of
+/// the original matrix is undefined.  LocalFilter may even make
+/// different implementation choices on different MPI processes.  It
+/// may do so because it does not invoke MPI communication outside of
+/// the calling process.
+///
+/// \section Ifpack2_LocalFilter_Examples Examples
 ///
 /// Here is an example of how to apply a LocalFilter to an existing
 /// Tpetra sparse matrix:
@@ -80,16 +132,24 @@ namespace Ifpack2 {
 /// Ifpack2::LocalFilter<row_matrix_type> A_local (A);
 /// \endcode
 ///
-/// This class does not necessarily copy the entire sparse matrix; it
-/// may choose instead just to "filter out" the nonlocal entries.  The
-/// effect on the LocalFilter of changing the entries or structure of
-/// the original matrix is undefined.
+/// Here is an example of how to apply a LocalFilter, using \c A and
+/// \c A_local from the example above.
+/// \code
+/// typedef Tpetra::Vector<double> vec_type;
 ///
-/// The intended use case of this class is to use Ifpack2 incomplete
-/// factorizations as subdomain solvers, where each process has
-/// exactly one subdomain.  LocalFilter "hides" the remote columns of
-/// the matrix, making it square and thus a suitable input for local
-/// linear solvers.
+/// // Make vectors x and y suitable for A->apply()
+/// vec_type x (A.domainMap ());
+/// vec_type y (A.rangeMap ());
+/// // ... fill x ...
+/// A->apply (x, y);
+///
+/// // Reinterpret x and y as local views suitable for A_local->apply()
+/// RCP<const vec_type> x_local = x.offsetView (A_local.getDomainMap (), 0);
+/// RCP<vec_type> y_local = y.offsetViewNonConst (A_local.getRangeMap (), 0);
+///
+/// // Apply the locally filtered version of A
+/// A_local.apply (*x_local, *y_local);
+/// \endcode
 template<class MatrixType>
 class LocalFilter :
     virtual public Tpetra::RowMatrix<typename MatrixType::scalar_type,
