@@ -175,6 +175,16 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
   localComm = rcp (new Teuchos::SerialComm<int> ());
 #endif // HAVE_MPI
 
+
+  // FIXME (mfh 21 Nov 2013) Currently, the implementation implicitly
+  // assumes that the range Map is fitted to the row Map.  Otherwise,
+  // it won't work at all.
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    mapPairIsFitted (* (A_->getRangeMap ()), * (A_->getRowMap ())),
+    std::logic_error, "Ifpack2::LocalFilter: Range Map of the input matrix "
+    "is not fitted to its row Map.  LocalFilter does not currently work in "
+    "this case.  See Bug 5992.");
+
   // Build the local row, domain, and range Maps.  They both use the
   // local communicator built above.  The global indices of each are
   // different than those of the corresponding original Map; they
@@ -188,7 +198,19 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
   // of entries, namely, that of the local number of entries of A's
   // range Map.
 
-  const size_t numRows = A_->getRangeMap ()->getNodeNumElements ();
+  // FIXME (mfh 21 Nov 2013) For some reason, we have to use this,
+  // even if it differs from the number of entries in the range Map.
+  // Otherwise, AdditiveSchwarz Test1 fails, down in the local solve,
+  // where the matrix has 8 columns but the local part of the vector
+  // only has five rows.
+  const size_t numRows = A_->getNodeNumRows ();
+
+  // using std::cerr;
+  // using std::endl;
+  // cerr << "A_ has " << A_->getNodeNumRows () << " rows." << endl
+  //      << "Range Map has " << A_->getRangeMap ()->getNodeNumElements () << " entries." << endl
+  //      << "Row Map has " << A_->getRowMap ()->getNodeNumElements () << " entries." << endl;
+
   const global_ordinal_type indexBase = as<global_ordinal_type> (0);
 
   localRowMap_ =
