@@ -56,6 +56,95 @@
 
 namespace Ifpack2 {
 
+
+template<class MatrixType>
+bool
+LocalFilter<MatrixType>::
+mapPairsAreFitted (const row_matrix_type& A)
+{
+  const map_type& rangeMap = * (A.getRangeMap ());
+  const map_type& rowMap = * (A.getRowMap ());
+  const bool rangeAndRowFitted = mapPairIsFitted (rangeMap, rowMap);
+
+  const map_type& domainMap = * (A.getDomainMap ());
+  const map_type& columnMap = * (A.getColMap ());
+  const bool domainAndColumnFitted = mapPairIsFitted (domainMap, columnMap);
+
+  return rangeAndRowFitted && domainAndColumnFitted;
+}
+
+
+template<class MatrixType>
+bool
+LocalFilter<MatrixType>::
+mapPairIsFitted (const map_type& map1, const map_type& map2)
+{
+  using Teuchos::ArrayView;
+  using Teuchos::as;
+  typedef global_ordinal_type GO; // a handy abbreviation
+  typedef typename ArrayView<const GO>::size_type size_type;
+
+  bool locallyFitted = true;
+  if (&map1 == &map2) {
+    locallyFitted = true;
+  }
+  else if (map1.isContiguous () && map2.isContiguous () &&
+           map1.getMinGlobalIndex () == map2.getMinGlobalIndex () &&
+           map1.getMaxGlobalIndex () <= map2.getMaxGlobalIndex ()) {
+    // Special case where both Maps are contiguous.
+    locallyFitted = true;
+  }
+  else {
+    ArrayView<const GO> inds_map2 = map2.getNodeElementList ();
+    const size_type numInds_map1 = as<size_type> (map1.getNodeNumElements ());
+
+    if (map1.isContiguous ()) {
+      // Avoid calling getNodeElementList() on the always one-to-one
+      // Map, if it is contiguous (a common case).  When called on a
+      // contiguous Map, getNodeElementList() causes allocation of an
+      // array that sticks around, even though the array isn't needed.
+      // (The Map is contiguous, so you can compute the entries; you
+      // don't need to store them.)
+      if (numInds_map1 > inds_map2.size ()) {
+        // There are fewer indices in map1 on this process than in
+        // map2.  This case might be impossible.
+        locallyFitted = false;
+      }
+      else {
+        // Do all the map1 indices match the initial map2 indices?
+        const GO minInd_map1 = map1.getMinGlobalIndex ();
+        for (size_type k = 0; k < numInds_map1; ++k) {
+          const GO inds_map1_k = as<GO> (k) + minInd_map1;
+          if (inds_map1_k != inds_map2[k]) {
+            locallyFitted = false;
+            break;
+          }
+        }
+      }
+    }
+    else { // map1 is not contiguous.
+      // Get index lists from both Maps, and compare their indices.
+      ArrayView<const GO> inds_map1 = map1.getNodeElementList ();
+      if (numInds_map1 > inds_map2.size ()) {
+        // There are fewer indices in map1 on this process than in
+        // map2.  This case might be impossible.
+        locallyFitted = false;
+      }
+      else {
+        // Do all the map1 indices match those in map2?
+        for (size_type k = 0; k < numInds_map1; ++k) {
+          if (inds_map1[k] != inds_map2[k]) {
+            locallyFitted = false;
+            break;
+          }
+        }
+      }
+    }
+  }
+  return locallyFitted;
+}
+
+
 template<class MatrixType>
 LocalFilter<MatrixType>::
 LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
@@ -67,6 +156,16 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
+
+#ifdef HAVE_IFPACK2_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ! mapPairsAreFitted (*A), std::invalid_argument, "Ifpack2::LocalFilter: "
+    "A's Map pairs are not fitted to each other on Process "
+    << A_->getRowMap ()->getComm ()->getRank () << " of the input matrix's "
+    "communicator.  "
+    "This means that LocalFilter does not currently know how to work with A.  "
+    "This will change soon.  Please see discussion of Bug 5992.");
+#endif // HAVE_IFPACK2_DEBUG
 
   // Communicator containing this process only.
   RCP<const Teuchos::Comm<int> > localComm;
