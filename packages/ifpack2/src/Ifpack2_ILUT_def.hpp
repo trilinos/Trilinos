@@ -870,30 +870,37 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
 
 template <class MatrixType>
 std::string ILUT<MatrixType>::description() const {
-  std::ostringstream oss;
-  oss << Teuchos::Describable::description();
-  if (isInitialized()) {
-    if (isComputed()) {
-      oss << "{status: [initialized, computed]";
-    }
-    else {
-      oss << "{status: [initialized, not computed]";
-    }
+  using Teuchos::TypeNameTraits;
+  std::ostringstream os;
+
+  os << "Ifpack2::ILUT<" << TypeNameTraits<MatrixType>::name ()
+     << ">: {";
+  if (this->getObjectLabel () != "") {
+    os << "Label: \"" << this->getObjectLabel () << "\", ";
   }
-  else {
-    oss << "{status: [not initialized, not computed]";
-  }
-  oss << ", global number of rows: " << A_->getGlobalNumRows()
-      << ", global number of columns: " << A_->getGlobalNumCols()
-      << "}";
-  return oss.str();
+  os << "Initialized: " << (isInitialized () ? "true" : "false")
+     << ", "
+     << "Computed: " << (isComputed () ? "true" : "false")
+     << ", "
+     << "Number of rows: " << A_->getGlobalNumRows ()
+     << ", "
+     << "Number of columns: " << A_->getGlobalNumCols ()
+     << "}";
+  return os.str();
 }
 
 
 template <class MatrixType>
-void ILUT<MatrixType>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
+void
+ILUT<MatrixType>::
+describe (Teuchos::FancyOStream& out,
+          const Teuchos::EVerbosityLevel verbLevel) const
+{
+  using Teuchos::Comm;
+  using Teuchos::OSTab;
+  using Teuchos::RCP;
+  using Teuchos::TypeNameTraits;
   using std::endl;
-  using std::setw;
   using Teuchos::VERB_DEFAULT;
   using Teuchos::VERB_NONE;
   using Teuchos::VERB_LOW;
@@ -902,38 +909,46 @@ void ILUT<MatrixType>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerb
   using Teuchos::VERB_EXTREME;
 
   const Teuchos::EVerbosityLevel vl = (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
-  Teuchos::OSTab tab (out);
-  //    none: print nothing
-  //     low: print O(1) info from node 0
-  //  medium:
-  //    high:
-  // extreme:
-  if (vl != VERB_NONE && getComm ()->getRank () == 0) {
-    out << this->description() << endl;
-    out << endl;
-    out << "===============================================================================" << endl;
-    out << "Level-of-fill      = " << getLevelOfFill()       << endl;
-    out << "Absolute threshold = " << getAbsoluteThreshold() << endl;
-    out << "Relative threshold = " << getRelativeThreshold() << endl;
-    out << "Relax value        = " << getRelaxValue()        << endl;
-    if   (Condest_ == -Teuchos::ScalarTraits<scalar_type>::one ()) {
-      out << "Condition number estimate       = N/A" << endl;
+  OSTab tab0 (out);
+
+  if (vl > VERB_NONE) {
+    out << "Ifpack2::ILUT:" << endl;
+    OSTab tab1 (out);
+    out << "MatrixType: " << TypeNameTraits<MatrixType>::name () << endl;
+    if (this->getObjectLabel () != "") {
+      out << "Label: \"" << this->getObjectLabel () << "\"" << endl;
     }
-    else                    { out << "Condition number estimate       = " << Condest_ << endl; }
-    if (isComputed()) {
-      out << "Number of nonzeros in A         = " << A_->getGlobalNumEntries() << endl;
-      out << "Number of nonzeros in L + U     = " << getGlobalNumEntries()
-          << " ( = " << 100.0 * (double)getGlobalNumEntries() / (double)A_->getGlobalNumEntries() << " % of A)" << endl;
-      out << "nonzeros / rows                 = " << 1.0 * getGlobalNumEntries() / U_->getGlobalNumRows() << endl;
+    out << "Initialized: " << (isInitialized () ? "true" : "false")
+        << endl
+        << "Computed: " << (isComputed () ? "true" : "false")
+        << endl
+        << "Level of fill: " << getLevelOfFill () << endl
+        << "Absolute threshold: " << getAbsoluteThreshold () << endl
+        << "Relative threshold: " << getRelativeThreshold () << endl
+        << "Relax value: " << getRelaxValue () << endl;
+
+    if (isComputed () && vl >= VERB_HIGH) {
+      const double fillFraction =
+        (double) getGlobalNumEntries () / (double) A_->getGlobalNumEntries ();
+      const double nnzToRows =
+        (double) getGlobalNumEntries () / (double) U_->getGlobalNumRows ();
+
+      out << "Dimensions of L: (" << L_->getGlobalNumRows () << "," << L_->getGlobalNumRows () << ")" << endl
+          << "Dimensions of U: (" << U_->getGlobalNumRows () << "," << U_->getGlobalNumRows () << ")" << endl
+          << "Number of nonzeros in factors: " << getGlobalNumEntries () << endl
+          << "Fill fraction of factors over A: " << fillFraction << endl
+          << "Ratio of nonzeros to rows: " << nnzToRows << endl;
     }
-    out << endl;
-    out << "Phase           # calls    Total Time (s) " << endl;
-    out << "------------    -------    ---------------" << endl;
-    out << "initialize()    " << setw(7) << getNumInitialize() << "    " << setw(15) << getInitializeTime() << endl;
-    out << "compute()       " << setw(7) << getNumCompute()    << "    " << setw(15) << getComputeTime()    << endl;
-    out << "apply()         " << setw(7) << getNumApply()      << "    " << setw(15) << getApplyTime()      << endl;
-    out << "==============================================================================="                << endl;
-    out << endl;
+
+    out << "Number of initialize calls: " << getNumInitialize () << endl
+        << "Number of compute calls: " << getNumCompute () << endl
+        << "Number of apply calls: " << getNumApply () << endl
+        << "Total time in seconds for initialize: " << getInitializeTime () << endl
+        << "Total time in seconds for compute: " << getComputeTime () << endl
+        << "Total time in seconds for apply: " << getApplyTime () << endl;
+
+    out << "Local matrix:" << endl;
+    A_local_->describe (out, vl);
   }
 }
 

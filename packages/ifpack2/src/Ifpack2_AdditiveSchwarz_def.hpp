@@ -719,57 +719,117 @@ double AdditiveSchwarz<MatrixType,LocalInverseType>::getApplyTime() const
 template<class MatrixType,class LocalInverseType>
 std::string AdditiveSchwarz<MatrixType,LocalInverseType>::description() const
 {
-  std::ostringstream oss;
-  oss << Teuchos::Describable::description();
-  if (isInitialized()) {
-    if (isComputed()) {
-      oss << "{status = initialized, computed";
-    }
-    else {
-      oss << "{status = initialized, not computed";
-    }
+  using Teuchos::TypeNameTraits;
+
+  std::ostringstream out;
+  out << "Ifpack2::AdditiveSchwarz: {";
+  out << "MatrixType: " << TypeNameTraits<MatrixType>::name ()
+      << ", LocalInverseType: " << TypeNameTraits<LocalInverseType>::name ();
+  if (this->getObjectLabel () != "") {
+    out << ", Label: \"" << this->getObjectLabel () << "\"";
   }
-  else {
-    oss << "{status = not initialized, not computed";
-  }
-  oss << ", overlap level =" << OverlapLevel_;
-  oss << ", subdomain reordering =" << ReorderingAlgorithm_;
-  oss << "}";
-  return oss.str();
+  out << ", Initialized: " << (isInitialized () ? "true" : "false")
+      << ", Computed: " << (isComputed () ? "true" : "false")
+      << ", Overlap level: " << OverlapLevel_
+      << ", Subdomain reordering: \"" << ReorderingAlgorithm_ << "\""
+      << "}";
+  return out.str ();
 }
 
 
 template<class MatrixType,class LocalInverseType>
-void AdditiveSchwarz<MatrixType,LocalInverseType>::describe(Teuchos::FancyOStream &os, const Teuchos::EVerbosityLevel verbLevel) const
+void
+AdditiveSchwarz<MatrixType,LocalInverseType>::
+describe (Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const
 {
+  using Teuchos::OSTab;
+  using Teuchos::TypeNameTraits;
   using std::endl;
 
-  os << endl;
-  os << "================================================================================" << endl;
-  os << "Ifpack2::AdditiveSchwarz, overlap level = " << OverlapLevel_ << endl;
-  if (CombineMode_ == Tpetra::INSERT)
-    os << "Combine mode                          = Insert" << endl;
-  else if (CombineMode_ == Tpetra::ADD)
-    os << "Combine mode                          = Add" << endl;
-  else if (CombineMode_ == Tpetra::REPLACE)
-    os << "Combine mode                          = Replace" << endl;
-  else if (CombineMode_ == Tpetra::ABSMAX)
-    os << "Combine mode                          = AbsMax" << endl;
+  const int myRank = Matrix_->getComm ()->getRank ();
+  const int numProcs = Matrix_->getComm ()->getSize ();
+  const Teuchos::EVerbosityLevel vl =
+    (verbLevel == Teuchos::VERB_DEFAULT) ? Teuchos::VERB_LOW : verbLevel;
 
-  os << "Condition number estimate             = " << Condest_ << endl;
-  os << "Global number of rows                 = " << Matrix_->getGlobalNumRows() << endl;
+  if (vl > Teuchos::VERB_NONE) {
+    // describe() starts with a tab, by convention.
+    OSTab tab0 (out);
+    if (myRank == 0) {
+      out << "Ifpack2::AdditiveSchwarz:";
+    }
+    OSTab tab1 (out);
+    if (myRank == 0) {
+      out << "MatrixType: " << TypeNameTraits<MatrixType>::name () << endl;
+      out << "LocalInverseType: " << TypeNameTraits<LocalInverseType>::name () << endl;
+      if (this->getObjectLabel () != "") {
+        out << "Label: \"" << this->getObjectLabel () << "\"" << endl;
+      }
 
-  os << endl;
-  os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;
-  os << "-----           -------   --------------       ------------     --------" << endl;
-  os << "Initialize()    "   << std::setw(5) << getNumInitialize()
-     << "  " << std::setw(15) << getInitializeTime() << endl;
-  os << "Compute()       "   << std::setw(5) << getNumCompute()
-     << "  " << std::setw(15) << getComputeTime() << endl;
-  os << "Apply()         "   << std::setw(5) << getNumApply()
-     << "  " << std::setw(15) << getApplyTime() <<endl;
-  os << "================================================================================" << endl;
-  os << endl;
+      out << "Overlap level: " << OverlapLevel_ << endl
+          << "Combine mode: \"";
+      if (CombineMode_ == Tpetra::INSERT) {
+        out << "INSERT";
+      } else if (CombineMode_ == Tpetra::ADD) {
+        out << "ADD";
+      } else if (CombineMode_ == Tpetra::REPLACE) {
+        out << "REPLACE";
+      } else if (CombineMode_ == Tpetra::ABSMAX) {
+        out << "ABSMAX";
+      } else if (CombineMode_ == Tpetra::ZERO) {
+        out << "ZERO";
+      }
+      out << "\"" << endl;
+    }
+
+    if (Matrix_.is_null ()) {
+      if (myRank == 0) {
+        out << "Input matrix A: null" << endl;
+      }
+    }
+    else {
+      if (myRank == 0) {
+        out << "Input matrix A:" << endl;
+        std::flush (out);
+      }
+      Matrix_->getComm ()->barrier (); // wait for output to finish
+      Matrix_->describe (out, Teuchos::VERB_LOW);
+    }
+
+    if (myRank == 0) {
+      out << "Number of initialize calls: " << getNumInitialize () << endl
+          << "Number of compute calls: " << getNumCompute () << endl
+          << "Number of apply calls: " << getNumApply () << endl
+          << "Total time in seconds for initialize: " << getInitializeTime () << endl
+          << "Total time in seconds for compute: " << getComputeTime () << endl
+          << "Total time in seconds for apply: " << getApplyTime () << endl;
+    }
+
+    if (Inverse_.is_null ()) {
+      if (myRank == 0) {
+        out << "Subdomain solver: null" << endl;
+      }
+    }
+    else {
+      if (vl < Teuchos::VERB_EXTREME) {
+        if (myRank == 0) {
+          out << "Subdomain solver: not null" << endl;
+        }
+      }
+      else { // vl >= Teuchos::VERB_EXTREME
+        for (int p = 0; p < numProcs; ++p) {
+          if (p == myRank) {
+            out << "Subdomain solver on Process " << myRank << ":" << endl;
+            Inverse_->describe (out, vl);
+          }
+          Matrix_->getComm ()->barrier ();
+          Matrix_->getComm ()->barrier ();
+          Matrix_->getComm ()->barrier (); // wait for output to finish
+        }
+      }
+    }
+
+    Matrix_->getComm ()->barrier (); // wait for output to finish
+  }
 }
 
 
