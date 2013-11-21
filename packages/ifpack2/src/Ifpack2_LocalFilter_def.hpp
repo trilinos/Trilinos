@@ -84,15 +84,15 @@ mapPairIsFitted (const map_type& map1, const map_type& map2)
   typedef global_ordinal_type GO; // a handy abbreviation
   typedef typename ArrayView<const GO>::size_type size_type;
 
-  bool locallyFitted = true;
+  bool fitted = true;
   if (&map1 == &map2) {
-    locallyFitted = true;
+    fitted = true;
   }
   else if (map1.isContiguous () && map2.isContiguous () &&
            map1.getMinGlobalIndex () == map2.getMinGlobalIndex () &&
            map1.getMaxGlobalIndex () <= map2.getMaxGlobalIndex ()) {
     // Special case where both Maps are contiguous.
-    locallyFitted = true;
+    fitted = true;
   }
   else {
     ArrayView<const GO> inds_map2 = map2.getNodeElementList ();
@@ -108,7 +108,7 @@ mapPairIsFitted (const map_type& map1, const map_type& map2)
       if (numInds_map1 > inds_map2.size ()) {
         // There are fewer indices in map1 on this process than in
         // map2.  This case might be impossible.
-        locallyFitted = false;
+        fitted = false;
       }
       else {
         // Do all the map1 indices match the initial map2 indices?
@@ -116,7 +116,7 @@ mapPairIsFitted (const map_type& map1, const map_type& map2)
         for (size_type k = 0; k < numInds_map1; ++k) {
           const GO inds_map1_k = as<GO> (k) + minInd_map1;
           if (inds_map1_k != inds_map2[k]) {
-            locallyFitted = false;
+            fitted = false;
             break;
           }
         }
@@ -128,20 +128,20 @@ mapPairIsFitted (const map_type& map1, const map_type& map2)
       if (numInds_map1 > inds_map2.size ()) {
         // There are fewer indices in map1 on this process than in
         // map2.  This case might be impossible.
-        locallyFitted = false;
+        fitted = false;
       }
       else {
         // Do all the map1 indices match those in map2?
         for (size_type k = 0; k < numInds_map1; ++k) {
           if (inds_map1[k] != inds_map2[k]) {
-            locallyFitted = false;
+            fitted = false;
             break;
           }
         }
       }
     }
   }
-  return locallyFitted;
+  return fitted;
 }
 
 
@@ -149,11 +149,11 @@ template<class MatrixType>
 LocalFilter<MatrixType>::
 LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
   A_ (A),
-  NumRows_ (0),
   NumNonzeros_ (0),
   MaxNumEntries_ (0),
   MaxNumEntriesA_ (0)
 {
+  using Teuchos::as;
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -167,7 +167,7 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
     "This will change soon.  Please see discussion of Bug 5992.");
 #endif // HAVE_IFPACK2_DEBUG
 
-  // Communicator containing this process only.
+  // Build the local communicator (containing this process only).
   RCP<const Teuchos::Comm<int> > localComm;
 #ifdef HAVE_MPI
   localComm = rcp (new Teuchos::MpiComm<int> (MPI_COMM_SELF));
@@ -175,16 +175,60 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
   localComm = rcp (new Teuchos::SerialComm<int> ());
 #endif // HAVE_MPI
 
-  // localized matrix has all the local rows of Matrix
-  NumRows_ = A_->getNodeNumRows ();
+  // Build the local row, domain, and range Maps.  They both use the
+  // local communicator built above.  The global indices of each are
+  // different than those of the corresponding original Map; they
+  // actually are the same as the local indices of the original Map.
+  //
+  // It's even OK if signedness of local_ordinal_type and
+  // global_ordinal_type are different.  (That would be a BAD IDEA but
+  // some users seem to enjoy making trouble for themselves and us.)
 
-  // build a linear map, based on the serial communicator
-  localMap_ = rcp (new map_type (NumRows_, 0, localComm));
+  localRowMap_ =
+    rcp (new map_type (A_->getRowMap ()->getNodeNumElements (),
+                       as<global_ordinal_type> (0),
+                       localComm, Tpetra::GloballyDistributed,
+                       A_->getNode ()));
+  // If the original matrix's row Map is fitted to its range Map, just
+  // use the same object for the local row and range Maps.  In that
+  // case, the locally filtered matrix will have row Map == range Map.
+
+  if (mapPairIsFitted (* (A_->getRowMap ()), * (A_->getRangeMap ()))) {
+    localRangeMap_ = localRowMap_;
+  }
+  else {
+    localRangeMap_ =
+      rcp (new map_type (A_->getRangeMap ()->getNodeNumElements (),
+                         as<global_ordinal_type> (0),
+                         localComm, Tpetra::GloballyDistributed,
+                         A_->getNode ()));
+  }
+  // If the original matrix's row and domain Maps are the same, just
+  // use the same object for the local row and domain Maps.  Unlike
+  // above, we don't check whether the domain Map is fitted to the row
+  // Map, since the proper check is for whether the domain Map is
+  // fitted to the column Map.  (The domain and range Maps could have
+  // a different order of global indices, and need not even have the
+  // same number of entries on this process.)  We'll construct the
+  // local column Map separately later.
+  if (A_->getRowMap ().getRawPtr () == A_->getDomainMap ().getRawPtr ()) {
+    localDomainMap_ = localRowMap_;
+  }
+  else {
+    localDomainMap_ =
+      rcp (new map_type (A_->getDomainMap ()->getNodeNumElements (),
+                         as<global_ordinal_type> (0),
+                         localComm, Tpetra::GloballyDistributed,
+                         A_->getNode ()));
+  }
+
+  // localized matrix has all the local rows of Matrix
+  const size_t numRows = as<size_t> (localRowMap_->getNodeNumElements ());
 
   // NodeNumEntries_ will contain the actual number of nonzeros
   // for each localized row (that is, without external nodes,
   // and always with the diagonal entry)
-  NumEntries_.resize (NumRows_);
+  NumEntries_.resize (numRows);
 
   // tentative value for MaxNumEntries. This is the number of
   // nonzeros in the local matrix
@@ -204,7 +248,7 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
   // diagonal entries (already modified)
   size_t ActualMaxNumEntries = 0;
 
-  for (size_t i = 0; i < NumRows_; ++i) {
+  for (size_t i = 0; i < numRows; ++i) {
     NumEntries_[i] = 0;
     size_t Nnz, NewNnz = 0;
     A_->getLocalRowCopy (i, Indices_, Values_, Nnz);
@@ -220,7 +264,7 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
       //    the same as its LID in the column Map.  (Hence the
       //    less-than test, which if true, means that Indices_[j]
       //    belongs to the row Map.)
-      if (Teuchos::as<size_t> (Indices_[j]) < NumRows_) {
+      if (Teuchos::as<size_t> (Indices_[j]) < numRows) {
         ++NewNnz;
       }
     }
@@ -246,7 +290,7 @@ template<class MatrixType>
 Teuchos::RCP<const Teuchos::Comm<int> >
 LocalFilter<MatrixType>::getComm () const
 {
-  return localMap_->getComm ();
+  return localRowMap_->getComm ();
 }
 
 
@@ -264,7 +308,7 @@ Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
                                typename MatrixType::node_type> >
 LocalFilter<MatrixType>::getRowMap () const
 {
-  return localMap_;
+  return localRowMap_;
 }
 
 
@@ -274,7 +318,7 @@ Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
                                typename MatrixType::node_type> >
 LocalFilter<MatrixType>::getColMap() const
 {
-  return localMap_;
+  return localRowMap_; // FIXME (mfh 20 Nov 2013)
 }
 
 
@@ -284,7 +328,7 @@ Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
                                typename MatrixType::node_type> >
 LocalFilter<MatrixType>::getDomainMap() const
 {
-  return localMap_;
+  return localDomainMap_;
 }
 
 
@@ -294,7 +338,7 @@ Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
                                typename MatrixType::node_type> >
 LocalFilter<MatrixType>::getRangeMap() const
 {
-  return localMap_;
+  return localRangeMap_;
 }
 
 
@@ -314,28 +358,28 @@ LocalFilter<MatrixType>::getGraph () const
 template<class MatrixType>
 global_size_t LocalFilter<MatrixType>::getGlobalNumRows() const
 {
-  return NumRows_;
+  return Teuchos::as<global_size_t> (localRangeMap_->getNodeNumElements ());
 }
 
 
 template<class MatrixType>
 global_size_t LocalFilter<MatrixType>::getGlobalNumCols() const
 {
-  return NumRows_;
+  return Teuchos::as<global_size_t> (localDomainMap_->getNodeNumElements ());
 }
 
 
 template<class MatrixType>
 size_t LocalFilter<MatrixType>::getNodeNumRows() const
 {
-  return NumRows_;
+  return Teuchos::as<size_t> (localRangeMap_->getNodeNumElements ());
 }
 
 
 template<class MatrixType>
 size_t LocalFilter<MatrixType>::getNodeNumCols() const
 {
-  return NumRows_;
+  return Teuchos::as<size_t> (localDomainMap_->getNodeNumElements ());
 }
 
 
@@ -471,24 +515,30 @@ getLocalRowCopy (local_ordinal_type LocalRow,
                  const Teuchos::ArrayView<scalar_type> &Values,
                  size_t &NumEntries) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    NumRows_ == 0, std::invalid_argument,
-    "Ifpack2::LocalFilter::getLocalRowCopy: Invalid local row index "
-    << LocalRow << ".  This process " << localMap_->getComm ()->getSize ()
-    << " owns no rows of the matrix.");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    LocalRow < 0 || (size_t) LocalRow >= NumRows_,
-    std::invalid_argument,
-    "Ifpack2::LocalFilter::getLocalRowCopy: Invalid local row index "
-    << LocalRow << ".  The valid range of row indices on this process "
-    << localMap_->getComm ()->getSize () << " is "
-    << "[0, " << (NumRows_ - 1) << "].");
+  const size_t numRows = localRowMap_->getNodeNumElements ();
+  const int myRank = localRowMap_->getComm ()->getSize ();
+
+  if (LocalRow < localRowMap_->getMinLocalIndex () ||
+        static_cast<size_t> (LocalRow) >= numRows) {
+    std::ostringstream err;
+    const int myRank = localRowMap_->getComm ()->getSize ();
+    err << "Ifpack2::LocalFilter::getLocalRowCopy: Invalid local row index "
+        << LocalRow << ".  The valid range of row indices on this process "
+        << myRank << " is ";
+    if (numRows == 0) {
+      err << "empty";
+    }
+    else {
+      err << "[0, " << (numRows - static_cast<size_t> (1)) << "]";
+    }
+    err << ".";
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, err.str ());
+  }
   TEUCHOS_TEST_FOR_EXCEPTION(
     (size_t) Indices.size() <  NumEntries_[LocalRow], std::runtime_error,
     "Ifpack2::LocalFilter::getLocalRowCopy: Invalid output array length.  "
     "The output arrays must each have length at least " << NumEntries_[LocalRow]
-    << " for local row " << LocalRow << " on process "
-    << localMap_->getComm ()->getSize () << ".");
+    << " for local row " << LocalRow << " on process " << myRank << ".");
 
   size_t A_NumEntries=0;
   // Always extract using the object Values_ and Indices_.  This is
@@ -502,7 +552,7 @@ getLocalRowCopy (local_ordinal_type LocalRow,
   NumEntries = 0;
   for (size_t j = 0 ; j < A_NumEntries; ++j) {
     // only local indices
-    if ((size_t) Indices_[j] < NumRows_) {
+    if ((size_t) Indices_[j] < numRows) {
       Indices[NumEntries] = Indices_[j];
       Values[NumEntries]  = Values_[j];
       NumEntries++;
@@ -541,6 +591,7 @@ LocalFilter<MatrixType>::
 getLocalDiagCopy (Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& diag) const
 {
   using Teuchos::ArrayRCP;
+  using Teuchos::as;
   typedef Tpetra::Vector<scalar_type, local_ordinal_type,
                          global_ordinal_type, node_type> vector_type;
 
@@ -554,7 +605,8 @@ getLocalDiagCopy (Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_t
   ArrayRCP<ArrayRCP<scalar_type> >       d_ptr = diag.get2dViewNonConst();
   ArrayRCP<ArrayRCP<const scalar_type> > t_ptr = temp.get2dView();
 
-  for (size_t i = 0; i < NumRows_; ++i) {
+  const size_t numRows = as<size_t> (localRowMap_->getNodeNumElements ());
+  for (size_t i = 0; i < numRows; ++i) {
     d_ptr[0][i] = t_ptr[0][i];
   }
 }
@@ -589,6 +641,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
        scalar_type alpha,
        scalar_type beta) const
 {
+  using Teuchos::as;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -613,7 +666,8 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   // FIXME (mfh 12 July 2013) This would be a good candidate for
   // parallelization via Kokkos.
 
-  for (size_t i = 0 ; i < NumRows_ ; ++i) {
+  const size_t numRows = as<size_t> (localRowMap_->getNodeNumElements ());
+  for (size_t i = 0; i < numRows; ++i) {
     size_t Nnz;
     // Use this class's getrow to make the below code simpler
     getLocalRowCopy (i, Indices_ (), Values_ (), Nnz);
@@ -656,12 +710,13 @@ typename
 Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
 LocalFilter<MatrixType>::getFrobeniusNorm () const
 {
+  using Teuchos::as;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
   Teuchos::ArrayView<local_ordinal_type> ind;
   Teuchos::ArrayView<scalar_type> val;
-  const size_t numRows = NumRows_; // compilers like constant loop bounds
+  const size_t numRows = as<size_t> (localRowMap_->getNodeNumElements ());
 
   // FIXME (mfh 03 Apr 2013) Scale during sum to avoid overflow.
   magnitude_type sumSquared = STM::zero ();

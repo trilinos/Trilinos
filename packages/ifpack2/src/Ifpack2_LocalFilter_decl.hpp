@@ -83,15 +83,13 @@ namespace Ifpack2 {
 /// by the domain Map on the calling process.  The view's communicator
 /// contains only the local process (in MPI terms,
 /// <tt>MPI_COMM_SELF</tt>), so each process will have its own
-/// distinct view of its local part of the matrix.  The global indices
-/// of the view's domain and range Maps will be different than those
-/// in the original matrix's domain and range Maps.  The global
-/// indices will be remapped to a consecutive sequence, starting from
-/// the index base of the original Map.
+/// distinct view of its local part of the matrix.
+///
+/// \subsection Ifpack2_LocalFilter_How_DiagBlock Square diagonal block of the original matrix
 ///
 /// If the following conditions hold on the Maps of a matrix A, then
 /// the view resulting from a LocalFilter of A will be that of a
-/// diagonal block of A:
+/// square diagonal block of A:
 ///   - Domain and range Maps are the same
 ///   - On every process, the row Map's entries are the same as the
 ///     range Map's entries, possibly followed by additional remote
@@ -103,6 +101,15 @@ namespace Ifpack2 {
 /// These conditions commonly hold for a Tpetra::CrsMatrix constructed
 /// without a column Map, after fillComplete() has been called on it,
 /// with default domain and range Maps.
+///
+/// \subsection Ifpack2_LocalFilter_How_Ind Remapping of global indices
+///
+/// The global indices of the view's domain and range Maps will be
+/// different than those in the original matrix's domain and range
+/// Maps.  The global indices of the new (domain, range) Map will be
+/// remapped to a consecutive sequence, corresponding exactly to the
+/// local indices of the original (domain, range) Map.  This ensures
+/// that the local indices of the old and new Maps match.
 ///
 /// \subsection Ifpack2_LocalFilter_How_Copy Not necessarily a copy
 ///
@@ -515,10 +522,16 @@ private:
 
   //! Pointer to the matrix to be preconditioned.
   Teuchos::RCP<const row_matrix_type> A_;
-  //! Map based on SerialComm_, containing the local rows only.
-  Teuchos::RCP<const map_type> localMap_;
-  //! Number of rows in the local matrix.
-  size_t NumRows_;
+
+  //! Row Map of the locally filtered matrix.
+  Teuchos::RCP<const map_type> localRowMap_;
+
+  //! Domain Map of the locally filtered matrix.
+  Teuchos::RCP<const map_type> localDomainMap_;
+
+  //! Range Map of the locally filtered matrix.
+  Teuchos::RCP<const map_type> localRangeMap_;
+
   //! Number of nonzeros in the local matrix.
   size_t NumNonzeros_;
   //! Maximum number of nonzero entries in a row for the filtered matrix.
