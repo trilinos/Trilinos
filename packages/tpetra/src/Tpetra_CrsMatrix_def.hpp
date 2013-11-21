@@ -3871,25 +3871,28 @@ namespace Tpetra {
   }
 
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::string CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::description() const {
-    std::ostringstream oss;
-    oss << DistObject<char, LocalOrdinal,GlobalOrdinal,Node>::description();
-    if (isFillComplete()) {
-      oss << "{ isFillComplete: true"
-          << ", global rows: " << getGlobalNumRows()
-          << ", global columns: " << getGlobalNumCols()
-          << ", global entries: " << getGlobalNumEntries()
-          << " }";
+  std::string CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  description () const
+  {
+    using Teuchos::TypeNameTraits;
+    std::ostringstream os;
+
+    os << "Tpetra::CrsMatrix: {"
+       << "ScalarType: " << TypeNameTraits<Scalar>::name ()
+       << ", LocalOrdinalType: " << TypeNameTraits<LocalOrdinal>::name ()
+       << ", GlobalOrdinalType: " << TypeNameTraits<GlobalOrdinal>::name ()
+       << ", NodeType: " << TypeNameTraits<Node>::name ();
+    if (this->getObjectLabel () != "") {
+      os << ", Label: \"" << this->getObjectLabel () << "\"";
     }
-    else {
-      oss << "{ isFillComplete: false"
-          << ", global rows: " << getGlobalNumRows()
-          << " }";
+    os << ", isFillComplete: " << (isFillComplete () ? "true" : "false")
+       << ", global number of rows: " << getGlobalNumRows ();
+    if (isFillComplete ()) {
+      os << ", global number of columns: " << getGlobalNumCols ()
+         << ", global number of entries: " << getGlobalNumEntries ();
     }
-    return oss.str();
+    return os.str ();
   }
 
 
@@ -3902,6 +3905,10 @@ namespace Tpetra {
     using std::endl;
     using std::setw;
     using Teuchos::as;
+    using Teuchos::Comm;
+    using Teuchos::OSTab;
+    using Teuchos::RCP;
+    using Teuchos::TypeNameTraits;
     using Teuchos::VERB_DEFAULT;
     using Teuchos::VERB_NONE;
     using Teuchos::VERB_LOW;
@@ -3909,19 +3916,22 @@ namespace Tpetra {
     using Teuchos::VERB_HIGH;
     using Teuchos::VERB_EXTREME;
 
-    Teuchos::EVerbosityLevel vl = verbLevel;
-    if (vl == VERB_DEFAULT) {
-      vl = VERB_LOW;
-    }
-    RCP<const Comm<int> > comm = this->getComm();
-    const int myRank = comm->getRank();
-    const int numProcs = comm->getSize();
+    const Teuchos::EVerbosityLevel vl =
+      (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
+
+    RCP<const Comm<int> > comm = this->getComm ();
+    const int myRank = comm->getRank ();
+    const int numProcs = comm->getSize ();
+
+    // describe() starts with a tab, by convention.
+    OSTab tab0 (out);
+
     size_t width = 1;
     for (size_t dec=10; dec<getGlobalNumRows(); dec *= 10) {
       ++width;
     }
     width = std::max<size_t> (width, as<size_t> (11)) + 2;
-    Teuchos::OSTab tab(out);
+
     //    none: print nothing
     //     low: print O(1) info from node 0
     //  medium: print O(P) info, num entries per process
@@ -3931,93 +3941,113 @@ namespace Tpetra {
     // for medium and higher, print constituent objects at specified verbLevel
     if (vl != VERB_NONE) {
       if (myRank == 0) {
-        out << this->description() << std::endl;
+        out << "Tpetra::CrsMatrix:" << endl;
       }
-      // O(1) globals, minus what was already printed by description()
-      if (isFillComplete() && myRank == 0) {
-        out << "Global number of diagonal entries: " << getGlobalNumDiags() << std::endl;
-        out << "Global max number of entries in a row: " << getGlobalMaxNumRowEntries() << std::endl;
-      }
-      // constituent objects
-      if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME) {
-        if (myRank == 0) {
-          out << endl << "Row map:" << endl;
+      OSTab tab1 (out);
+      if (myRank == 0) {
+        out << "ScalarType: " << TypeNameTraits<Scalar>::name () << endl
+            << "LocalOrdinalType: " << TypeNameTraits<LocalOrdinal>::name () << endl
+            << "GlobalOrdinalType: " << TypeNameTraits<GlobalOrdinal>::name () << endl
+            << "NodeType: " << TypeNameTraits<Node>::name () << endl;
+        if (this->getObjectLabel () != "") {
+          out << "Label: \"" << this->getObjectLabel () << "\"" << endl;
         }
-        getRowMap()->describe(out,vl);
-        //
-        if (getColMap() != null) {
+        out << "isFillComplete: " << (isFillComplete () ? "true" : "false") << endl
+            << "Global number of rows: " << getGlobalNumRows () << endl;
+        if (isFillComplete ()) {
+          out << "Global number of columns: " << getGlobalNumCols () << endl
+              << "Global number of entries: " << getGlobalNumEntries () << endl;
+        }
+
+        // O(1) globals, minus what was already printed by description()
+        if (isFillComplete ()) {
+          out << "Global number of diagonal entries: " << getGlobalNumDiags() << std::endl;
+          out << "Global max number of entries in a row: " << getGlobalMaxNumRowEntries() << std::endl;
+        }
+      }
+
+      // constituent objects
+      if (vl >= VERB_MEDIUM) {
+        if (myRank == 0) {
+          out << "Row Map:" << endl;
+        }
+        getRowMap()->describe (out, vl);
+
+        if (! getColMap ().is_null ()) {
           if (getColMap() == getRowMap()) {
             if (myRank == 0) {
-              out << endl << "Column map is row map.";
+              out << "Column Map: same as row Map" << endl;
             }
           }
           else {
             if (myRank == 0) {
-              out << endl << "Column map:" << endl;
+              out << "Column Map:" << endl;
             }
-            getColMap()->describe(out,vl);
+            getColMap ()->describe (out, vl);
           }
         }
-        if (getDomainMap() != null) {
-          if (getDomainMap() == getRowMap()) {
+        if (! getDomainMap ().is_null ()) {
+          if (getDomainMap () == getRowMap ()) {
             if (myRank == 0) {
-              out << endl << "Domain map is row map.";
+              out << "Domain Map: same as row Map" << endl;
             }
           }
-          else if (getDomainMap() == getColMap()) {
+          else if (getDomainMap () == getColMap ()) {
             if (myRank == 0) {
-              out << endl << "Domain map is column map.";
+              out << "Domain Map: same as column Map" << endl;
             }
           }
           else {
             if (myRank == 0) {
-              out << endl << "Domain map:" << endl;
+              out << "Domain Map:" << endl;
             }
-            getDomainMap()->describe(out,vl);
+            getDomainMap ()->describe (out, vl);
           }
         }
-        if (getRangeMap() != null) {
-          if (getRangeMap() == getDomainMap()) {
+        if (! getRangeMap ().is_null ()) {
+          if (getRangeMap () == getDomainMap ()) {
             if (myRank == 0) {
-              out << endl << "Range map is domain map." << endl;
+              out << "Range Map: same as domain Map" << endl;
             }
           }
-          else if (getRangeMap() == getRowMap()) {
+          else if (getRangeMap () == getRowMap ()) {
             if (myRank == 0) {
-              out << endl << "Range map is row map." << endl;
+              out << "Range Map: same as row Map" << endl;
             }
           }
           else {
             if (myRank == 0) {
-              out << endl << "Range map: " << endl;
+              out << "Range Map: " << endl;
             }
-            getRangeMap()->describe(out,vl);
+            getRangeMap ()->describe (out, vl);
           }
-        }
-        if (myRank == 0) {
-          out << endl;
         }
       }
       // O(P) data
-      if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME) {
+      if (vl >= VERB_MEDIUM) {
         for (int curRank = 0; curRank < numProcs; ++curRank) {
           if (myRank == curRank) {
-            out << "Process rank: " << curRank << std::endl;
-            if (staticGraph_->indicesAreAllocated() == false) {
-              out << "  Graph indices not allocated" << std::endl;
+            out << "Process: " << curRank << endl;
+            OSTab tab2 (out);
+
+            out << "Graph indices allocated: "
+                << (staticGraph_->indicesAreAllocated () ? "true" : "false")
+                << endl;
+            if (staticGraph_->indicesAreAllocated ()) {
+              out << "Number of allocated entries: "
+                  << staticGraph_->getNodeAllocationSize () << endl;
             }
-            else {
-              out << "  Number of allocated entries: " << staticGraph_->getNodeAllocationSize() << std::endl;
+            out << "Number of entries: " << getNodeNumEntries () << endl;
+            if (isFillComplete ()) {
+              out << "Number of diagonal entries: "
+                  << getNodeNumDiags () << endl;
             }
-            out << "  Number of entries: " << getNodeNumEntries() << std::endl;
-            if (isFillComplete()) {
-              out << "  Number of diagonal entries: " << getNodeNumDiags() << std::endl;
-            }
-            out << "  Max number of entries per row: " << getNodeMaxNumRowEntries() << std::endl;
+            out << "Max number of entries per row: "
+                << getNodeMaxNumRowEntries () << endl;
           }
-          comm->barrier();
-          comm->barrier();
-          comm->barrier();
+          comm->barrier ();
+          comm->barrier ();
+          comm->barrier (); // wait for output to finish
         }
       }
       // O(N) and O(NNZ) data
