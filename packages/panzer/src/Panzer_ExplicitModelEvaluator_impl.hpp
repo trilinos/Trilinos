@@ -215,11 +215,13 @@ buildArgsPrototypes()
   typedef Thyra::ModelEvaluatorBase MEB;
   
   MEB::InArgsSetup<Scalar> inArgs(this->getUnderlyingModel()->createInArgs());
+  inArgs.setModelEvalDescription(this->description());
   inArgs.setSupports(MEB::IN_ARG_alpha,false);
   inArgs.setSupports(MEB::IN_ARG_beta,false);
   prototypeInArgs_ = inArgs;
 
   MEB::OutArgsSetup<Scalar> outArgs(this->getUnderlyingModel()->createOutArgs());
+  outArgs.setModelEvalDescription(this->description());
   outArgs.setSupports(MEB::OUT_ARG_W,false);
   outArgs.setSupports(MEB::OUT_ARG_W_op,false);
   prototypeOutArgs_ = outArgs;
