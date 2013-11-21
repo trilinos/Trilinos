@@ -287,7 +287,7 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getThyraDomainSpace() const
 {
-   if(domainSpace_==Teuchos::null);
+   if(domainSpace_==Teuchos::null)
       domainSpace_ = Thyra::tpetraVectorSpace<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getMap());
 
    return domainSpace_;
@@ -299,7 +299,7 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getThyraRangeSpace() const
 {
-   if(rangeSpace_==Teuchos::null);
+   if(rangeSpace_==Teuchos::null)
       rangeSpace_ = Thyra::tpetraVectorSpace<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getMap());
 
    return rangeSpace_;
