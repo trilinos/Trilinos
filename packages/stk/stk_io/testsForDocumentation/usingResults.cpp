@@ -2,8 +2,6 @@
 #include <string>
 #include <mpi.h>
 #include <stk_io/StkMeshIoBroker.hpp>
-#include <stk_io/IossBridge.hpp>
-#include <Ioss_SubSystem.h>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Types.hpp>
@@ -38,7 +36,8 @@ TEST(StkMeshIoBrokerHowTo, writeResultsWithMultistateField)
         putDataOnTriStateField(stkIo.bulk_data(), triStateField,
                 stateNp1Value, stateNValue, stateNm1Value);
 
-        size_t fileHandle = stkIo.create_output_mesh(resultsFilename, stk::io::WRITE_RESULTS);
+        size_t fileHandle =
+	  stkIo.create_output_mesh(resultsFilename, stk::io::WRITE_RESULTS);
 
 	// Output each state of the multi-state field individually
 	stkIo.add_field(fileHandle,

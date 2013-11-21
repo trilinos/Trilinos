@@ -89,7 +89,7 @@ inline void testDataOnField(stk::mesh::BulkData &stkMeshBulkData, const double g
 
 inline void createExampleInputFile(stk::io::StkMeshIoBroker& stkMeshIoBroker)
 {
-    const std::string exodusFileName = "generated:1x1x1";
+    const std::string exodusFileName = "generated:1x1x8";
     stkMeshIoBroker.open_mesh_database(exodusFileName, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
 }

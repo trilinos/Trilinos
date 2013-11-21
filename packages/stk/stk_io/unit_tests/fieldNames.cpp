@@ -12,7 +12,7 @@ namespace {
 
 void generateMetaData(stk::io::StkMeshIoBroker &stkIo)
 {
-    const std::string exodusFileName = "generated:1x1x1";
+    const std::string exodusFileName = "generated:1x1x8";
     stkIo.open_mesh_database(exodusFileName, stk::io::READ_MESH);
     stkIo.create_input_mesh();
 }
@@ -56,7 +56,6 @@ STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameRenameTwice)
         requestedFieldNameForResultsOutput = "jeSSe";
         stkIo.add_field(results_output_index, *field0, requestedFieldNameForResultsOutput);
 
-        //stkIo.define_output_fields();
         stkIo.process_output_request(results_output_index, 0.0);
     }
 

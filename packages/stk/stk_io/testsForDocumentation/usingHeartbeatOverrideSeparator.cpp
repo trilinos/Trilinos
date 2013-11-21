@@ -4,7 +4,6 @@
 #include <mpi.h>
 #include <stk_util/util/ParameterList.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
-#include <fieldNameTestUtils.hpp>
 
 namespace
 {
@@ -44,11 +43,13 @@ namespace
       // Begin use of stk io heartbeat file...
       stk::io::StkMeshIoBroker stkIo(communicator);
 
-      // Define the heartbeat output...
-      //Use vertical bar as field separator instead of the default tab character.
+      //-BEGIN
+      //+ Use vertical bar as field separator 
       Ioss::PropertyManager hb_props;
       hb_props.add(Ioss::Property("FIELD_SEPARATOR", " | "));
-      size_t heartbeat_index = stkIo.add_heartbeat_output(file_name, stk::io::TEXT, hb_props);
+      size_t hb =
+	stkIo.add_heartbeat_output(file_name, stk::io::TEXT, hb_props);
+      //-END
 
       stk::util::ParameterMapType::const_iterator i = parameters.begin();
       stk::util::ParameterMapType::const_iterator iend = parameters.end();
@@ -57,14 +58,14 @@ namespace
 	stk::util::Parameter &parameter = parameters.get_param(parameterName);
 
 	// Tell heartbeat database which global variables should be output at each step...
-	stkIo.add_heartbeat_global(heartbeat_index, parameterName, parameter.value, parameter.type);
+	stkIo.add_heartbeat_global(hb, parameterName, parameter.value, parameter.type);
       }
 
       // Now output the global variables...
       int timestep_count = 1;
       double time = 0.0;
       for (int step=1; step <= timestep_count; step++) {
-	stkIo.process_heartbeat_output(heartbeat_index, step, time);
+	stkIo.process_heartbeat_output(hb, step, time);
       }
     }
 

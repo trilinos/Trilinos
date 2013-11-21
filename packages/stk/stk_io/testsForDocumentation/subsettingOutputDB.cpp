@@ -2,10 +2,8 @@
 #include <string>
 #include <mpi.h>
 #include <stk_io/StkMeshIoBroker.hpp>
-#include <stk_io/IossBridge.hpp>
 #include <Ioss_SubSystem.h>
 #include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <fieldNameTestUtils.hpp>
 #include <restartTestUtils.hpp>

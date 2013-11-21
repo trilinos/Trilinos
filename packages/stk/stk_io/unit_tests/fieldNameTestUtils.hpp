@@ -6,7 +6,7 @@
 
 inline stk::mesh::MetaData& generateMetaData(stk::io::StkMeshIoBroker &stkIo)
 {
-    const std::string exodusFileName = "generated:1x1x1";
+    const std::string exodusFileName = "generated:1x1x8";
     stkIo.open_mesh_database(exodusFileName, stk::io::READ_MESH);
     stkIo.create_input_mesh();
     return stkIo.meta_data();

@@ -2,11 +2,8 @@
 #include <string>
 #include <mpi.h>
 #include <stk_io/StkMeshIoBroker.hpp>
-#include <stk_io/IossBridge.hpp>
-#include <Ioss_SubSystem.h>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Types.hpp>
 #include <fieldNameTestUtils.hpp>
 #include <restartTestUtils.hpp>
 
@@ -31,7 +28,8 @@ TEST(StkMeshIoBrokerHowTo, restartWithMultistateField)
         putDataOnTriStateField(stkIo.bulk_data(), triStateField,
                 stateNp1Value, stateNValue, stateNm1Value);
 
-        size_t fileHandle = stkIo.create_output_mesh(restartFilename, stk::io::WRITE_RESTART);
+        size_t fileHandle =
+	  stkIo.create_output_mesh(restartFilename, stk::io::WRITE_RESTART);
         stkIo.add_field(fileHandle, *triStateField);
 
         stkIo.begin_output_step(fileHandle, time);
@@ -39,7 +37,7 @@ TEST(StkMeshIoBrokerHowTo, restartWithMultistateField)
         stkIo.end_output_step(fileHandle);
     }
 
-    //code to test that the field wrote correctly
+    //code to test that the field was written correctly
     testMultistateFieldWroteCorrectlyToRestart(restartFilename, time,
             fieldName, stateNp1Value, stateNValue);
     unlink(restartFilename.c_str());
