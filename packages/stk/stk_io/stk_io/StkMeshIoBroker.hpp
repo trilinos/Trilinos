@@ -42,12 +42,12 @@ namespace stk {
 
     // ------------------------------------------------------------------------
     struct GlobalAnyVariable {
-      GlobalAnyVariable(const std::string &name, boost::any *value, stk::util::ParameterType::Type type)
+      GlobalAnyVariable(const std::string &name, const boost::any *value, stk::util::ParameterType::Type type)
 	: m_name(name), m_value(value), m_type(type)
       {}
 
       std::string m_name;
-      boost::any *m_value;
+      const boost::any *m_value;
       stk::util::ParameterType::Type m_type;
     };
 
@@ -83,7 +83,7 @@ namespace stk {
         void write_output_mesh(const stk::mesh::BulkData& bulk_data);
         void add_field(stk::mesh::FieldBase &field, const std::string &alternate_name);
 
-        void add_global(const std::string &variableName, boost::any &value, stk::util::ParameterType::Type type);
+        void add_global(const std::string &variableName, const boost::any &value, stk::util::ParameterType::Type type);
         void add_global(const std::string &variableName, Ioss::Field::BasicType dataType);
         void add_global(const std::string &variableName, const std::string &type, Ioss::Field::BasicType dataType);
         void add_global(const std::string &variableName, int component_count,     Ioss::Field::BasicType dataType);
@@ -156,7 +156,7 @@ namespace stk {
 		Ioss::PropertyManager properties, MPI_Comm comm);
       ~Heartbeat() {};
       
-      void add_global(const std::string &variableName, boost::any &value, stk::util::ParameterType::Type type);
+      void add_global(const std::string &variableName, const boost::any &value, stk::util::ParameterType::Type type);
       void process_output(int step, double time);
 
     private:
@@ -456,7 +456,7 @@ namespace stk {
         void add_field(size_t output_file_index, stk::mesh::FieldBase &field, const std::string &db_name);
 
         void add_global(size_t output_file_index, const std::string &variableName,
-			boost::any &value, stk::util::ParameterType::Type type);
+			const boost::any &value, stk::util::ParameterType::Type type);
         void add_global(size_t output_file_index, const std::string &variableName,
 			Ioss::Field::BasicType dataType);
         void add_global(size_t output_file_index, const std::string &variableName,
@@ -505,7 +505,7 @@ namespace stk {
 				    const Ioss::PropertyManager &properties = Ioss::PropertyManager());
   
         void add_heartbeat_global(size_t index, const std::string &name,
-				  boost::any &value, stk::util::ParameterType::Type type)
+				  const boost::any &value, stk::util::ParameterType::Type type)
         {
 	  ThrowRequire(index < m_heartbeat.size());
 	  m_heartbeat[index]->add_global(name, value, type);

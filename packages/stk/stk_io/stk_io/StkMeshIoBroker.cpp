@@ -201,6 +201,17 @@ namespace {
 	}
     }
 
+  void write_defined_global_any_fields(Teuchos::RCP<Ioss::Region> region,
+				       std::vector<stk::io::GlobalAnyVariable> &global_any_fields)
+  {
+    for (size_t i=0; i < global_any_fields.size(); i++) {
+      const std::string &name = global_any_fields[i].m_name;
+      const boost::any *value = global_any_fields[i].m_value;
+      stk::util::ParameterType::Type type = global_any_fields[i].m_type;
+      internal_write_parameter(region, name, *value, type);
+    }
+  }
+
   void internal_read_parameter(Teuchos::RCP<Ioss::Region> input_region,
 			       const std::string &globalVarName,
 			       boost::any &any_value, stk::util::ParameterType::Type type)
@@ -1487,7 +1498,7 @@ namespace stk {
     }
 
     void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &name,
-				     boost::any &value, stk::util::ParameterType::Type type)
+				     const boost::any &value, stk::util::ParameterType::Type type)
     {
       validate_output_file_index(output_file_index);
       m_output_files[output_file_index]->add_global(name, value, type);
@@ -1720,7 +1731,7 @@ namespace stk {
       }
     }
 
-    void Heartbeat::add_global(const std::string &name, boost::any &value, stk::util::ParameterType::Type type)
+    void Heartbeat::add_global(const std::string &name, const boost::any &value, stk::util::ParameterType::Type type)
     {
       if (m_processor == 0) {
 	ThrowErrorMsgIf (m_current_step != 0, 
@@ -1751,12 +1762,7 @@ namespace stk {
         m_current_step = m_region->add_state(time);
         m_region->begin_state(m_current_step);
         
-        for (size_t i=0; i < m_fields.size(); i++) {
-	  const std::string &name = m_fields[i].m_name;
-	  boost::any *value = m_fields[i].m_value;
-	  stk::util::ParameterType::Type type = m_fields[i].m_type;
-          internal_write_parameter(m_region, name, *value, type);
-        }
+	write_defined_global_any_fields(m_region, m_fields);
 
         m_region->end_state(m_current_step);
         m_region->end_mode(Ioss::STATE_TRANSIENT);
@@ -1819,7 +1825,7 @@ namespace stk {
         }
     }
 
-    void OutputFile::add_global(const std::string &name, boost::any &value, stk::util::ParameterType::Type type)
+    void OutputFile::add_global(const std::string &name, const boost::any &value, stk::util::ParameterType::Type type)
     {
       ThrowErrorMsgIf (m_fields_defined,
 		       "On region named " << m_region->name() << 
@@ -1990,6 +1996,7 @@ namespace stk {
       
       begin_output_step(time, bulk_data);
       write_defined_output_fields(bulk_data);
+      write_defined_global_any_fields(m_region, m_global_any_fields);
       end_output_step();
 
       return m_current_output_step;
