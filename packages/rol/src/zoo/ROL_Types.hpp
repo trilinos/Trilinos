@@ -120,6 +120,7 @@ namespace ROL {
     SECANT_LDFP,
     SECANT_LSR1,
     SECANT_BARZILAIBORWEIN,
+    SECANT_USERDEFINED,
     SECANT_LAST
   };
 
@@ -130,6 +131,7 @@ namespace ROL {
       case SECANT_LDFP:            retString = "Limited-Memory DFP";  break;
       case SECANT_LSR1:            retString = "Limited-Memory SR1";  break;
       case SECANT_BARZILAIBORWEIN: retString = "Barzilai-Borwein";    break;
+      case SECANT_USERDEFINED:     retString = "User-Defined";        break;
       case SECANT_LAST:            retString = "Last Type (Dummy)";   break;
       default:                     retString = "INVALID ESecant";
     }
@@ -145,7 +147,8 @@ namespace ROL {
     return( (s == SECANT_LBFGS)           ||
             (s == SECANT_LDFP)            ||
             (s == SECANT_LSR1)            ||
-            (s == SECANT_BARZILAIBORWEIN)
+            (s == SECANT_BARZILAIBORWEIN) ||
+            (s == SECANT_USERDEFINED)
           );
   }
 

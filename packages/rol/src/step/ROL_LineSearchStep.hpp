@@ -77,6 +77,27 @@ public:
     }
   }
 
+  LineSearchStep( ELineSearch          els   = LINESEARCH_BACKTRACKING,
+                  ECurvatureCondition  econd = CURVATURECONDITION_WOLFE,
+                  EDescent             edesc = DESCENT_SECANT,             
+                  bool useInexact = false,    
+                  int maxit = 20, Real c1 = 1.e-4, Real c2 = 0.9, Real LStol = 1.e-8, Real rho = 0.5,
+                  Teuchos::RCP<Secant<Real> > &secant = Teuchos::null,        // Secant Parameters
+                  Real CGtol1 = 1.e-4, Real CGtol2 = 1.e-2, int maxitCG = 100 )
+    : secant_(secant), els_(els), econd_(econd), edesc_(edesc), useInexact_(useInexact) {
+
+    lineSearch_ = Teuchos::rcp( new LineSearch<Real>( els_, econd_, edesc_, maxit, c1, c2, LStol, rho ) );
+
+    krylov_ = Teuchos::null;
+    if ( edesc_ == DESCENT_NEWTONKRYLOV || edesc_ == DESCENT_SECANTPRECOND ) {
+      krylov_ = Teuchos::rcp( new Krylov<Real>(CGtol1,CGtol2,maxitCG,useInexact_) );
+      iterKrylov_ = 0;
+      flagKrylov_ = 0;
+    }
+
+    esec_ = SECANT_USERDEFINED;
+  }
+
   /** \brief Compute step.
   */
   void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, AlgorithmState<Real> &algo_state ) {

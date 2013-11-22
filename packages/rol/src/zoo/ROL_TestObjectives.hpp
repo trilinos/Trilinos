@@ -892,7 +892,7 @@ namespace ROL {
     }
     else if ( test == TESTOBJECTIVES_POISSONCONTROL ) {
       // Resize Vectors
-      n = 128;
+      n = 512;
       x0p->resize(n);
       xp->resize(n);
       // Instantiate Objective Function

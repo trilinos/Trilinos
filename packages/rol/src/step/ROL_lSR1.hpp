@@ -60,7 +60,7 @@ public:
   }
 
   // Apply Initial Secant Approximate Inverse Hessian
-  void applyH0( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x ) {
+  virtual void applyH0( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x ) {
     Hv.set(v);
   }
 
@@ -106,7 +106,7 @@ public:
   }
 
   // Apply Initial Secant Approximate Hessian  
-  void applyB0( Vector<Real> &Bv, const Vector<Real> &v, const Vector<Real> &x ) { 
+  virtual void applyB0( Vector<Real> &Bv, const Vector<Real> &v, const Vector<Real> &x ) { 
     Bv.set(v);
   }
 

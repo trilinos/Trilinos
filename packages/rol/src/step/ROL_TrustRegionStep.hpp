@@ -50,18 +50,24 @@ private:
 
   Real del_;
 
+  bool useInexactF_;
+  bool useInexactG_;
+  bool useInexactH_;
+
 public:
 
   virtual ~TrustRegionStep() {}
 
   TrustRegionStep( ETrustRegion etr   = TRUSTREGION_TRUNCATEDCG, 
                    EDescent     edesc = DESCENT_NEWTONKRYLOV,
+                   //bool useInexactF = false, bool useInexactG = false, bool useInexactH = false,
                    int maxit = 20, Real tol1 = 1.e-4, Real tol2 = 1.e-2,
                    Real del = -1.0, Real delmin = 1.e-8, Real delmax = 5000.0,
                    Real eta0 = 0.05, Real eta1 = 0.05, Real eta2 = 0.9,
                    Real gamma0 = 0.0625, Real gamma1 = 0.25, Real gamma2 = 2.5, Real TRsafe = 1.0,
                    ESecant esec = SECANT_LBFGS, int L = 10, int BBtype = 1 ) 
-    : etr_(etr), edesc_(edesc), esec_(esec), del_(del) {
+    : etr_(etr), edesc_(edesc), esec_(esec), del_(del) { //, 
+    //  useInexactF_(useInexactF), useInexactG_(useInexactG), useInexactG_(useInexactG) {
      
     trustRegion_ = Teuchos::rcp( new TrustRegion<Real>(etr_,edesc_,maxit,tol1,tol2,delmin,delmax,eta0,eta1,eta2,
                                                        gamma0,gamma1,gamma2,TRsafe) );
@@ -71,20 +77,52 @@ public:
     }
   }
 
+  TrustRegionStep( ETrustRegion etr   = TRUSTREGION_TRUNCATEDCG, 
+                   EDescent     edesc = DESCENT_NEWTONKRYLOV,
+                   //bool useInexactF = false, bool useInexactG = false, bool useInexactH = false,
+                   int maxit = 20, Real tol1 = 1.e-4, Real tol2 = 1.e-2,
+                   Real del = -1.0, Real delmin = 1.e-8, Real delmax = 5000.0,
+                   Real eta0 = 0.05, Real eta1 = 0.05, Real eta2 = 0.9,
+                   Real gamma0 = 0.0625, Real gamma1 = 0.25, Real gamma2 = 2.5, Real TRsafe = 1.0,
+                   Teuchos::RCP<Secant<Real> > &secant = Teuchos::null ) 
+    : secant_(secant), etr_(etr), edesc_(edesc), del_(del) { //, 
+    //  useInexactF_(useInexactF), useInexactG_(useInexactG), useInexactG_(useInexactG) {
+     
+    trustRegion_ = Teuchos::rcp( new TrustRegion<Real>(etr_,edesc_,maxit,tol1,tol2,delmin,delmax,eta0,eta1,eta2,
+                                                       gamma0,gamma1,gamma2,TRsafe) );
+    esec_ = SECANT_USERDEFINED;
+  }
+
   /** \brief Initialize step.
   */
   void initialize( const Vector<Real> &x, Objective<Real> &obj, AlgorithmState<Real> &algo_state ) {
-    Real tol = std::sqrt(ROL_EPSILON);
+    Real ftol = std::sqrt(ROL_EPSILON);
+    Real gtol = std::sqrt(ROL_EPSILON);
+    Real htol = std::sqrt(ROL_EPSILON);
 
     Teuchos::RCP<StepState<Real> >& state = Step<Real>::get_state();
 
     state->descentVec  = x.clone();
     state->gradientVec = x.clone();
-    obj.gradient(*(state->gradientVec),x,tol);
-    algo_state.ngrad = 1;
-    algo_state.gnorm = (state->gradientVec)->norm();
+    
+    //if ( useInexactG_ ) {
+    //  algo_state.ngrad = 0;
+    //  gtol = 2.0*del_;
+    //  algo_state.gnorm = del_;
+    //  while ( gtol > std::min(algo_state.gnorm,del_) ) {
+    //    gtol = std::min(algo_state.gnorm,del_);
+    //    obj.gradient(*(state->gradientVec),x,gtol);
+    //    algo_state.ngrad++;
+    //    algo_state.gnorm = (state->gradientVec)->norm();
+    //  }  
+    //}
+    //else {
+      obj.gradient(*(state->gradientVec),x,gtol);
+      algo_state.ngrad = 1;
+      algo_state.gnorm = (state->gradientVec)->norm();
+    //}
     algo_state.snorm = 1.e10;
-    algo_state.value = obj.value(x,tol);
+    algo_state.value = obj.value(x,ftol);
     algo_state.nfval = 1;
 
     // Evaluate Objective Function at Cauchy Point
@@ -94,7 +132,7 @@ public:
         secant_->applyB(*Bg,*(state->gradientVec),x);
       }
       else {
-        obj.hessVec(*Bg,*(state->gradientVec),x,tol);
+        obj.hessVec(*Bg,*(state->gradientVec),x,htol);
       }
       Real gBg   = Bg->dot(*(state->gradientVec));
       Real alpha = 1.0;
@@ -104,7 +142,7 @@ public:
       Teuchos::RCP<Vector<Real> > cp = x.clone();
       cp->set(*(state->gradientVec)); 
       cp->scale(-alpha);
-      Real fnew = obj.value(*cp,tol);
+      Real fnew = obj.value(*cp,ftol);
       algo_state.nfval++;
       // Perform Quadratic Interpolation to Determine Initial Trust Region Radius
       Real gs = (state->gradientVec)->dot(*cp);

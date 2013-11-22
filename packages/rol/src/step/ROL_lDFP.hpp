@@ -58,7 +58,7 @@ public:
   }
 
   // Apply Initial Secant Approximate Hessian
-  void applyH0( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x ) {
+  virtual void applyH0( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x ) {
     // Get Generic Secant State
     Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
 
@@ -97,7 +97,7 @@ public:
   }
 
   // Apply Initial Secant Approximate Hessian 
-  void applyB0( Vector<Real> &Bv, const Vector<Real> &v, const Vector<Real> &x ) {
+  virtual void applyB0( Vector<Real> &Bv, const Vector<Real> &v, const Vector<Real> &x ) {
     // Get Generic Secant State
     Teuchos::RCP<SecantState<Real> >& state = Secant<Real>::get_state();
 
