@@ -37,15 +37,19 @@
 
 namespace {
 
-    std::string pickFieldName(stk::mesh::FieldBase &field, const std::string &db_name)
-    {
-        std::string dbName(db_name);
-        if ( db_name.empty() )
-        {
-            dbName = field.name();
-        }
-        return dbName;
-    }
+  bool fieldOrdinalSort(const stk::io::FieldAndName& f1, const stk::io::FieldAndName &f2) {
+    return f1.m_field->mesh_meta_data_ordinal() < f2.m_field->mesh_meta_data_ordinal();
+  }
+
+  std::string pickFieldName(stk::mesh::FieldBase &field, const std::string &db_name)
+  {
+    std::string dbName(db_name);
+    if ( db_name.empty() )
+      {
+	dbName = field.name();
+      }
+    return dbName;
+  }
 
   std::pair<size_t, Ioss::Field::BasicType> get_io_parameter_size_and_type(const stk::util::ParameterType::Type type,
 									   const boost::any &value)
@@ -1573,6 +1577,8 @@ namespace stk {
 
       Ioss::Region *region = m_input_region.get();
 
+      std::sort(m_input_fields.begin(), m_input_fields.end(), fieldOrdinalSort);
+
       // Pick which time index to read into solution field.
       region->begin_state(step);
 
@@ -1911,12 +1917,6 @@ namespace stk {
         m_region->begin_mode(Ioss::STATE_TRANSIENT);
         m_current_output_step = m_region->add_state(time);
         m_region->begin_state(m_current_output_step);
-    }
-
-    namespace {
-      bool fieldOrdinalSort(const stk::io::FieldAndName& f1, const stk::io::FieldAndName &f2) {
-	return f1.m_field->mesh_meta_data_ordinal() < f2.m_field->mesh_meta_data_ordinal();
-      }
     }
 
     // ========================================================================
