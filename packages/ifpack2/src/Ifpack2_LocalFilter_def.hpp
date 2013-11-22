@@ -176,14 +176,14 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
 #endif // HAVE_MPI
 
 
-  // FIXME (mfh 21 Nov 2013) Currently, the implementation implicitly
-  // assumes that the range Map is fitted to the row Map.  Otherwise,
-  // it won't work at all.
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    mapPairIsFitted (* (A_->getRangeMap ()), * (A_->getRowMap ())),
-    std::logic_error, "Ifpack2::LocalFilter: Range Map of the input matrix "
-    "is not fitted to its row Map.  LocalFilter does not currently work in "
-    "this case.  See Bug 5992.");
+  // // FIXME (mfh 21 Nov 2013) Currently, the implementation implicitly
+  // // assumes that the range Map is fitted to the row Map.  Otherwise,
+  // // it probably won't work at all.
+  // TEUCHOS_TEST_FOR_EXCEPTION(
+  //   mapPairIsFitted (* (A_->getRangeMap ()), * (A_->getRowMap ())),
+  //   std::logic_error, "Ifpack2::LocalFilter: Range Map of the input matrix "
+  //   "is not fitted to its row Map.  LocalFilter does not currently work in "
+  //   "this case.  See Bug 5992.");
 
   // Build the local row, domain, and range Maps.  They both use the
   // local communicator built above.  The global indices of each are
