@@ -341,22 +341,10 @@ public:
                      Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &OvX,
                      Tpetra::CombineMode CM = Tpetra::INSERT);
 
-  template <class OpScalar>
-  void
-  importMultiVectorTempl (const Tpetra::MultiVector<OpScalar,local_ordinal_type,global_ordinal_type,node_type> &X,
-                          Tpetra::MultiVector<OpScalar,local_ordinal_type,global_ordinal_type,node_type> &OvX,
-                          Tpetra::CombineMode CM = Tpetra::INSERT);
-
   virtual void
   exportMultiVector (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &OvX,
                      Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &X,
                      Tpetra::CombineMode CM = Tpetra::ADD);
-
-  template <class OpScalar>
-  void
-  exportMultiVectorTempl (const Tpetra::MultiVector<OpScalar,local_ordinal_type,global_ordinal_type,node_type> &OvX,
-                          Tpetra::MultiVector<OpScalar,local_ordinal_type,global_ordinal_type,node_type> &X,
-                          Tpetra::CombineMode CM = Tpetra::ADD);
   //@}
 
   std::string description() const;

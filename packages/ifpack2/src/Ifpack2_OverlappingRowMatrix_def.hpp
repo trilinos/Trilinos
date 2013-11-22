@@ -170,13 +170,22 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
   // fix indices for overlapping matrix
   const size_t numMyRowsB = ExtMatrix_->getNodeNumRows ();
 
-  // FIXME: Fix this later when Teuchos::Comm gets redone
   GST NumMyNonzeros_tmp = A_->getNodeNumEntries () + ExtMatrix_->getNodeNumEntries ();
-  reduceAll<int, GST> (* (A_->getComm ()), REDUCE_SUM, NumMyNonzeros_tmp,
-                       outArg (NumGlobalNonzeros_));
   GST NumMyRows_tmp = numMyRowsA + numMyRowsB;
-  reduceAll<int, GST> (* (A_->getComm ()), REDUCE_SUM, NumMyRows_tmp,
-                       outArg (NumGlobalRows_));
+  {
+    GST inArray[2], outArray[2];
+    inArray[0] = NumMyNonzeros_tmp;
+    inArray[1] = NumMyRows_tmp;
+    outArray[0] = 0;
+    outArray[1] = 0;
+    reduceAll<int, GST> (* (A_->getComm ()), REDUCE_SUM, 2, inArray, outArray);
+    NumGlobalNonzeros_ = outArray[0];
+    NumGlobalRows_ = outArray[1];
+  }
+  // reduceAll<int, GST> (* (A_->getComm ()), REDUCE_SUM, NumMyNonzeros_tmp,
+  //                      outArg (NumGlobalNonzeros_));
+  // reduceAll<int, GST> (* (A_->getComm ()), REDUCE_SUM, NumMyRows_tmp,
+  //                      outArg (NumGlobalRows_));
 
   MaxNumEntries_ = A_->getNodeMaxNumRowEntries ();
   if (MaxNumEntries_ < ExtMatrix_->getNodeMaxNumRowEntries ()) {
@@ -635,18 +644,6 @@ importMultiVector (const Tpetra::MultiVector<scalar_type,local_ordinal_type,glob
                    Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &OvX,
                    Tpetra::CombineMode CM)
 {
-  this->template importMultiVectorTempl<scalar_type> (X, OvX, CM);
-}
-
-
-template<class MatrixType>
-template<class OpScalar>
-void
-OverlappingRowMatrix<MatrixType>::
-importMultiVectorTempl (const Tpetra::MultiVector<OpScalar,local_ordinal_type,global_ordinal_type,node_type> &X,
-                        Tpetra::MultiVector<OpScalar,local_ordinal_type,global_ordinal_type,node_type> &OvX,
-                        Tpetra::CombineMode CM)
-{
   OvX.doImport (X, *Importer_, CM);
 }
 
@@ -657,18 +654,6 @@ OverlappingRowMatrix<MatrixType>::
 exportMultiVector (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &OvX,
                    Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &X,
                    Tpetra::CombineMode CM)
-{
-  this->template exportMultiVectorTempl<scalar_type> (OvX, X, CM);
-}
-
-
-template<class MatrixType>
-template<class OpScalar>
-void
-OverlappingRowMatrix<MatrixType>::
-exportMultiVectorTempl (const Tpetra::MultiVector<OpScalar,local_ordinal_type,global_ordinal_type,node_type> &OvX,
-                        Tpetra::MultiVector<OpScalar,local_ordinal_type,global_ordinal_type,node_type> &X,
-                        Tpetra::CombineMode CM)
 {
   X.doExport (OvX, *Importer_, CM);
 }
