@@ -138,14 +138,14 @@ namespace panzer {
         // set the nominal values
         InArgs nom_vals = exp_me->getNominalValues();
         TEST_ASSERT(nom_vals.supports(MEB::IN_ARG_x));
-        TEST_ASSERT(nom_vals.supports(MEB::IN_ARG_x_dot)); // this will be supported for stabilization purposes
+        TEST_ASSERT(!nom_vals.supports(MEB::IN_ARG_x_dot)); // this will be supported for stabilization purposes
         TEST_ASSERT(!nom_vals.supports(MEB::IN_ARG_alpha));
         TEST_ASSERT(!nom_vals.supports(MEB::IN_ARG_beta));
 
         // create in args
         InArgs in_args = exp_me->createInArgs();
         TEST_ASSERT(in_args.supports(MEB::IN_ARG_x));
-        TEST_ASSERT(in_args.supports(MEB::IN_ARG_x_dot)); // this will be supported for stabilization purposes
+        TEST_ASSERT(!in_args.supports(MEB::IN_ARG_x_dot)); // this will be supported for stabilization purposes
         TEST_ASSERT(!in_args.supports(MEB::IN_ARG_alpha));
         TEST_ASSERT(!in_args.supports(MEB::IN_ARG_beta));
         InArgs nomValues = exp_me->getNominalValues();
@@ -154,7 +154,7 @@ namespace panzer {
         Thyra::assign(x_dot.ptr(),5.0);
         Thyra::assign(x.ptr(),5.0);
         in_args.set_x(x);
-        in_args.set_x_dot(x_dot);
+        // in_args.set_x_dot(x_dot);
         
         // create out args
         OutArgs out_args = exp_me->createOutArgs();

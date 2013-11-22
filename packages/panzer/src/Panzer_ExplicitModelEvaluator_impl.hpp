@@ -218,6 +218,7 @@ buildArgsPrototypes()
   inArgs.setModelEvalDescription(this->description());
   inArgs.setSupports(MEB::IN_ARG_alpha,false);
   inArgs.setSupports(MEB::IN_ARG_beta,false);
+  inArgs.setSupports(MEB::IN_ARG_x_dot,false);
   prototypeInArgs_ = inArgs;
 
   MEB::OutArgsSetup<Scalar> outArgs(this->getUnderlyingModel()->createOutArgs());
