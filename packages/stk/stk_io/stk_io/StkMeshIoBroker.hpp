@@ -57,7 +57,7 @@ namespace stk {
         OutputFile(const std::string &filename, MPI_Comm communicator, DatabasePurpose db_type,
 		   Ioss::PropertyManager& property_manager, const Ioss::Region *input_region)
         : m_current_output_step(-1), m_use_nodeset_for_part_nodes_fields(false),
-          m_mesh_defined(false), m_fields_defined(false), m_global_variables_defined(false),
+          m_mesh_defined(false), m_fields_defined(false), m_non_any_global_variables_defined(false),
 	  m_db_purpose(db_type), m_input_region(input_region), m_subset_selector(NULL)
         {
           setup_output_file(filename, communicator, property_manager);
@@ -66,18 +66,18 @@ namespace stk {
         OutputFile(Teuchos::RCP<Ioss::Region> ioss_output_region, MPI_Comm communicator,
 		   DatabasePurpose db_type, const Ioss::Region *input_region)
         : m_current_output_step(-1), m_use_nodeset_for_part_nodes_fields(false),
-          m_mesh_defined(false), m_fields_defined(false), m_global_variables_defined(false),
+          m_mesh_defined(false), m_fields_defined(false), m_non_any_global_variables_defined(false),
 	  m_db_purpose(db_type), m_input_region(input_region), m_subset_selector(NULL)
         {
-            m_output_region = ioss_output_region;
+            m_region = ioss_output_region;
             m_mesh_defined = true;
         }
         Teuchos::RCP<Ioss::Region> get_output_io_region() {
-            return m_output_region;
+            return m_region;
         }
         ~OutputFile()
         {
-          stk::io::delete_selector_property(*m_output_region);
+          stk::io::delete_selector_property(*m_region);
 	}
 
         void write_output_mesh(const stk::mesh::BulkData& bulk_data);
@@ -125,11 +125,11 @@ namespace stk {
         bool m_use_nodeset_for_part_nodes_fields;
         bool m_mesh_defined;
         bool m_fields_defined;
-        bool m_global_variables_defined;
+        bool m_non_any_global_variables_defined;
         DatabasePurpose m_db_purpose;
         const Ioss::Region* m_input_region;
         Teuchos::RCP<stk::mesh::Selector> m_subset_selector;
-        Teuchos::RCP<Ioss::Region> m_output_region;
+        Teuchos::RCP<Ioss::Region> m_region;
         std::vector<stk::io::FieldAndName> m_named_fields;
 
         // Global fields that can be output automatically without app calling write_global.

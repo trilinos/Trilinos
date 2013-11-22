@@ -1763,15 +1763,15 @@ namespace stk {
         m_mesh_defined = true;
 
 	 // used in stk_adapt/stk_percept
-        bool sort_stk_parts = m_output_region->property_exists("sort_stk_parts");
+        bool sort_stk_parts = m_region->property_exists("sort_stk_parts");
 
-        stk::io::define_output_db(*m_output_region, bulk_data, m_input_region, m_subset_selector.get(),
+        stk::io::define_output_db(*m_region, bulk_data, m_input_region, m_subset_selector.get(),
                                   sort_stk_parts, m_use_nodeset_for_part_nodes_fields);
 
-        stk::io::write_output_db(*m_output_region, bulk_data, m_subset_selector.get());
+        stk::io::write_output_db(*m_region, bulk_data, m_subset_selector.get());
 
         //Attempt to avoid putting state change into the interface.  We'll see . . .
-        m_output_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
+        m_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
       }
     }
 
@@ -1821,61 +1821,55 @@ namespace stk {
 
     void OutputFile::add_global(const std::string &globalVarName, Ioss::Field::BasicType dataType)
     {
-      this->add_global(globalVarName, "scalar", dataType);
+      ThrowErrorMsgIf (m_fields_defined,
+		       "On region named " << m_region->name() << 
+		       " Attempting to add global variable after data has already been written to the database.");
+      m_non_any_global_variables_defined = true;  // This output file has at least 1 global variable.
+      internal_add_global(m_region, globalVarName, "scalar", dataType);
     }
 
     void OutputFile::add_global(const std::string &globalVarName, int component_count, Ioss::Field::BasicType dataType)
     {
-      if (component_count == 1) {
-        this->add_global(globalVarName, "scalar", dataType);
-      } else {
-        std::ostringstream type;
-        type << "Real[" << component_count << "]";
-        this->add_global(globalVarName, type.str(), dataType);
-      }
+      ThrowErrorMsgIf (m_fields_defined,
+		       "On region named " << m_region->name() << 
+		       " Attempting to add global variable after data has already been written to the database.");
+      m_non_any_global_variables_defined = true;  // This output file has at least 1 global variable.
+      internal_add_global(m_region, globalVarName, component_count, dataType);
     }
 
     void OutputFile::add_global(const std::string &globalVarName, const std::string &storage, Ioss::Field::BasicType dataType)
     {
         ThrowErrorMsgIf (m_fields_defined,
-			 "On region named " << m_output_region->name() << 
+			 "On region named " << m_region->name() << 
 			 " Attempting to add global variable after data has already been written to the database.");
-        ThrowErrorMsgIf (m_output_region->field_exists(globalVarName),
-			 "On region named " << m_output_region->name() << 
-                         " Attempt to add global variable '" << globalVarName << "' twice.");
-
-	m_global_variables_defined = true;  // This output file has at least 1 global variable.
-
-        //Any field put onto the region instead of a element block, etc. gets written as "global" to exodus
-        int numberOfThingsToOutput = 1;
-        m_output_region->field_add(Ioss::Field(globalVarName, dataType, storage,
-					       Ioss::Field::TRANSIENT, numberOfThingsToOutput));
+	m_non_any_global_variables_defined = true;  // This output file has at least 1 global variable.
+	internal_add_global(m_region, globalVarName, storage, dataType);
     }
 
     void OutputFile::write_global(const std::string &globalVarName,
 				  const boost::any &value, stk::util::ParameterType::Type type)
     {
-        internal_write_parameter(m_output_region, globalVarName, value, type);
+        internal_write_parameter(m_region, globalVarName, value, type);
     }
 
     void OutputFile::write_global(const std::string &globalVarName, std::vector<double>& globalVarData)
     {
-        internal_write_global(m_output_region, globalVarName, globalVarData);
+        internal_write_global(m_region, globalVarName, globalVarData);
     }
 
     void OutputFile::write_global(const std::string &globalVarName, std::vector<int>& globalVarData)
     {
-        internal_write_global(m_output_region, globalVarName, globalVarData);
+        internal_write_global(m_region, globalVarName, globalVarData);
     }
 
     void OutputFile::write_global(const std::string &globalVarName, int globalVarData)
     {
-        internal_write_global(m_output_region, globalVarName, globalVarData);
+        internal_write_global(m_region, globalVarName, globalVarData);
     }
 
     void OutputFile::write_global(const std::string &globalVarName, double globalVarData)
     {
-        internal_write_global(m_output_region, globalVarName, globalVarData);
+        internal_write_global(m_region, globalVarName, globalVarData);
     }
 
     void OutputFile::setup_output_file(const std::string &filename, MPI_Comm communicator, Ioss::PropertyManager &property_manager)
@@ -1895,7 +1889,7 @@ namespace stk {
 
       // There is no "label" for the output region; just use the filename for now so
       // Ioss messages will specify a unique or identifiable instance.
-      m_output_region = Teuchos::rcp(new Ioss::Region(dbo, filename));
+      m_region = Teuchos::rcp(new Ioss::Region(dbo, filename));
     }
 
     void OutputFile::begin_output_step(double time, const stk::mesh::BulkData& bulk_data)
@@ -1905,14 +1899,14 @@ namespace stk {
         }
 
         //Attempt to avoid putting state change into the interface.  We'll see . . .
-        Ioss::State currentState = m_output_region->get_state();
+        Ioss::State currentState = m_region->get_state();
         if(currentState == Ioss::STATE_DEFINE_TRANSIENT) {
-          m_output_region->end_mode(Ioss::STATE_DEFINE_TRANSIENT);
+          m_region->end_mode(Ioss::STATE_DEFINE_TRANSIENT);
         }
 
-        m_output_region->begin_mode(Ioss::STATE_TRANSIENT);
-        m_current_output_step = m_output_region->add_state(time);
-        m_output_region->begin_state(m_current_output_step);
+        m_region->begin_mode(Ioss::STATE_TRANSIENT);
+        m_current_output_step = m_region->add_state(time);
+        m_region->begin_state(m_current_output_step);
     }
 
     namespace {
@@ -1937,7 +1931,7 @@ namespace stk {
 
         write_output_mesh(bulk_data);
 
-        Ioss::Region *region = m_output_region.get();
+        Ioss::Region *region = m_region.get();
 
 	// Sort the fields in m_named_fields based on the field ordinal.
 	// This is needed so all processors will process the fields in the same order
@@ -1985,8 +1979,8 @@ namespace stk {
 
     int OutputFile::process_output_request(double time, const stk::mesh::BulkData& bulk_data)
     {
-      ThrowErrorMsgIf(m_global_variables_defined,
-		      "The output database " << m_output_region->name() << " has defined global variables, "
+      ThrowErrorMsgIf(m_non_any_global_variables_defined,
+		      "The output database " << m_region->name() << " has defined global variables, "
 		      "but is calling the process_output_request() function which does not output global "
 		      "variables.  Call begin_output_step() instead.");
       
@@ -1999,7 +1993,7 @@ namespace stk {
 
     int OutputFile::write_defined_output_fields(const stk::mesh::BulkData& bulk_data)
     {
-      Ioss::Region *region = m_output_region.get();
+      Ioss::Region *region = m_region.get();
       ThrowErrorMsgIf (region==NULL, "INTERNAL ERROR: Mesh Output Region pointer is NULL in write_defined_output_fields.");
 
       const stk::mesh::MetaData& meta_data = bulk_data.mesh_meta_data();
@@ -2039,14 +2033,14 @@ namespace stk {
 
     void OutputFile::end_output_step()
     {
-        m_output_region->end_state(m_current_output_step);
-        m_output_region->end_mode(Ioss::STATE_TRANSIENT);
+        m_region->end_state(m_current_output_step);
+        m_region->end_mode(Ioss::STATE_TRANSIENT);
     }
 
     void OutputFile::set_subset_selector(Teuchos::RCP<stk::mesh::Selector> my_selector)
     {
       ThrowErrorMsgIf(m_mesh_defined,
-		      "ERROR: On region named " << m_output_region->name() << 
+		      "ERROR: On region named " << m_region->name() << 
 		      " the subset_selector cannot be changed after the mesh has already been written.");
       m_subset_selector = my_selector;
     }    
