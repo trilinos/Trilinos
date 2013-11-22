@@ -257,8 +257,8 @@ namespace snl_fei {
         int offset = 0;
         for(int i=0; i<numBlkCols; ++i) {
           if (offset >= coefsLen) {
-            cerr << "BlockMatrixTraits::copyOutRow ran off end of coefs array."
-                 << endl;
+            std::cerr << "BlockMatrixTraits::copyOutRow ran off end of coefs array."
+                 << std::endl;
             return(-2);
           }
           int numValues = rowDim*colDims[i];

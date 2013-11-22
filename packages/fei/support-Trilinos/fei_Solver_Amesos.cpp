@@ -179,8 +179,8 @@ int Solver_Amesos::solve(fei::LinearSystem* linearSystem,
       amesos_solver_ = amesos_factory_->Create(param, *epetra_linearproblem_);
     }
     if (amesos_solver_ == 0) {
-      cerr << "Solver_Amesos::solve ERROR, couldn't create Amesos solver named "
-	   << param << ", amesos_factory::Create returned NULL." << endl;
+      std::cerr << "Solver_Amesos::solve ERROR, couldn't create Amesos solver named "
+	   << param << ", amesos_factory::Create returned NULL." << std::endl;
       status = -999;
       return(-1);
     }
@@ -192,8 +192,8 @@ int Solver_Amesos::solve(fei::LinearSystem* linearSystem,
 						*epetra_linearproblem_);
     }
     if (amesos_solver_ == 0) {
-      cerr << "Solver_Amesos::solve ERROR, couldn't create Amesos solver named "
-	   << amesosklu << ", it's apparently not supported." << endl;
+      std::cerr << "Solver_Amesos::solve ERROR, couldn't create Amesos solver named "
+	   << amesosklu << ", it's apparently not supported." << std::endl;
       status = -999;
       return(-1);
     }
