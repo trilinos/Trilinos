@@ -124,9 +124,9 @@ Level 2
  A 1    3333   9997     3.00  1
  A 2    1111   3331     3.00  1
  
- Smoother (level 0) both : Ifpack2::ILUT<Tpetra::CrsMatrix<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > > >{status: [initialized, computed], global number of rows: 9999, global number of columns: 9999}
+ Smoother (level 0) both : Ifpack2::ILUT : {Initialized: true, Computed: true, Number of rows: 9999, Number of columns: 9999, level-of-fill = 1, absolute threshold = 0, relative threshold = 1, relaxation value = 0, nnz = 29995}
  
- Smoother (level 1) both : Ifpack2::ILUT<Tpetra::CrsMatrix<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > > >{status: [initialized, computed], global number of rows: 3333, global number of columns: 3333}
+ Smoother (level 1) both : Ifpack2::ILUT : {Initialized: true, Computed: true, Number of rows: 3333, Number of columns: 3333, level-of-fill = 1, absolute threshold = 0, relative threshold = 1, relaxation value = 0, nnz = 9997}
  
  Smoother (level 2) pre  : SuperLU solver interface
  Smoother (level 2) post : no smoother

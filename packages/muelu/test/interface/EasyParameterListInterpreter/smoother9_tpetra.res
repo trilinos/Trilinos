@@ -144,10 +144,10 @@ Level 2
  A 2    1111   3331     3.00  1
  
  Smoother (level 0) pre  : Ifpack2::Chebyshev{status = initialized, computed, Ifpack2::Details::Chebyshev : degree = 1, lambdaMax = 1.9506, alpha = 30, lambdaMin = 0.06502, global rows = 9999, global cols = 9999, global nnz  = 29995}
- Smoother (level 0) post : Ifpack2::ILUT<Tpetra::CrsMatrix<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > > >{status: [initialized, computed], global number of rows: 9999, global number of columns: 9999}
+ Smoother (level 0) post : Ifpack2::ILUT : {Initialized: true, Computed: true, Number of rows: 9999, Number of columns: 9999, level-of-fill = 1, absolute threshold = 0, relative threshold = 1, relaxation value = 0, nnz = 29995}
  
  Smoother (level 1) pre  : Ifpack2::Chebyshev{status = initialized, computed, Ifpack2::Details::Chebyshev : degree = 1, lambdaMax = 1.94634, alpha = 30, lambdaMin = 0.064878, global rows = 3333, global cols = 3333, global nnz  = 9997}
- Smoother (level 1) post : Ifpack2::ILUT<Tpetra::CrsMatrix<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > > >{status: [initialized, computed], global number of rows: 3333, global number of columns: 3333}
+ Smoother (level 1) post : Ifpack2::ILUT : {Initialized: true, Computed: true, Number of rows: 3333, Number of columns: 3333, level-of-fill = 1, absolute threshold = 0, relative threshold = 1, relaxation value = 0, nnz = 9997}
  
  Smoother (level 2) pre  : SuperLU solver interface
  Smoother (level 2) post : no smoother
