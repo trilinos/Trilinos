@@ -42,6 +42,9 @@
 #ifndef DOMI_MDMAP_HPP
 #define DOMI_MDMAP_HPP
 
+// System includes
+#include <limits>
+
 // Domi includes
 #include "Domi_ConfigDefs.hpp"
 #include "Domi_Utils.hpp"
@@ -1470,24 +1473,21 @@ MDMap< LocalOrd, GlobalOrd, Node >::getLayout() const
 ////////////////////////////////////////////////////////////////////////
 
 #ifdef HAVE_EPETRA
-// Default implementation for arbitrary LocalOrd, GlobalOrd
+
 template< class LocalOrd, class GlobalOrd, class Node >
 Teuchos::RCP< const Epetra_Map >
 MDMap< LocalOrd, GlobalOrd, Node >::getEpetraMap(bool withCommPad) const
-{
-  throw MapOrdinalError("MDMap must use int GlobalOrd and LocalOrd to be "
-                        "converted to an Epetra_Map");
-}
-
-// Specialized implementation for LocalOrd = GloblaOrd = int
-template< >
-Teuchos::RCP< const Epetra_Map >
-MDMap< int, int >::getEpetraMap(bool withCommPad) const
 {
   if (withCommPad)
   {
     if (_epetraMap.is_null())
     {
+      // Check if the maximum global ID is larger than what an int can
+      // hold (because Epetra uses int ordinals)
+      if (computeSize(_globalDims) - 1 > std::numeric_limits< int >::max())
+        throw MapOrdinalError("The maximum global ID of this MDMap is too "
+                              "large for an Epetra_Map");
+
       // Allocate the myElements MDArray and the index array
       int numDims = getNumDims();
       Teuchos::Array<size_type> localDims(numDims);
@@ -1525,6 +1525,12 @@ MDMap< int, int >::getEpetraMap(bool withCommPad) const
   {
     if (_epetraOwnMap.is_null())
     {
+      // Check if the maximum global ID is larger than what an int can
+      // hold (because Epetra uses int ordinals)
+      if (computeSize(_globalDims) - 1 > std::numeric_limits< int >::max())
+        throw MapOrdinalError("The maximum global ID of this MDMap is too "
+                              "large for an Epetra_Map");
+
       // Allocate the myElements MDArray and the index array
       int numDims = getNumDims();
       Teuchos::Array<int> index(numDims);
@@ -1568,26 +1574,16 @@ MDMap< int, int >::getEpetraMap(bool withCommPad) const
     return _epetraOwnMap;
   }
 }
+
 #endif
 
 ////////////////////////////////////////////////////////////////////////
 
 #ifdef HAVE_EPETRA
-// Default implementation for arbitrary LocalOrd, GlobalOrd
+
 template< class LocalOrd, class GlobalOrd, class Node >
 Teuchos::RCP< const Epetra_Map >
 MDMap< LocalOrd, GlobalOrd, Node >::
-getEpetraAxisMap(int axis,
-                 bool withCommPad) const
-{
-  throw MapOrdinalError("MDMap must use int GlobalOrd and LocalOrd to be "
-                        "converted to an Epetra_Map");
-}
-
-// Specialized implementation for LocalOrd = GloblaOrd = int
-template< >
-Teuchos::RCP< const Epetra_Map >
-MDMap< int, int >::
 getEpetraAxisMap(int axis,
                  bool withCommPad) const
 {
@@ -1630,16 +1626,19 @@ getEpetraAxisMap(int axis,
       }
     }
   }
+
   if (withCommPad)
     return _epetraAxisMaps[axis];
   else
     return _epetraAxisOwnMaps[axis];
 }
+
 #endif
 
 ////////////////////////////////////////////////////////////////////////
 
 #ifdef HAVE_TPETRA
+
 template< class LocalOrd, class GlobalOrd, class Node >
 Teuchos::RCP< const Tpetra::Map< LocalOrd, GlobalOrd, Node > >
 MDMap< LocalOrd, GlobalOrd, Node >::getTpetraMap(bool withCommPad) const
@@ -1742,6 +1741,7 @@ MDMap< LocalOrd, GlobalOrd, Node >::getTpetraMap(bool withCommPad) const
 ////////////////////////////////////////////////////////////////////////
 
 #ifdef HAVE_TPETRA
+
 template< class LocalOrd, class GlobalOrd, class Node >
 Teuchos::RCP< const Tpetra::Map< LocalOrd, GlobalOrd, Node > >
 MDMap< LocalOrd, GlobalOrd, Node >::
