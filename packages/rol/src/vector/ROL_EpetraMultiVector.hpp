@@ -109,10 +109,10 @@ public:
     int numMyElements = domainMap.NumMyElements();
     Epetra_BlockMap allGidsMap(-1, numMyElements, 1, 0, comm);
     Epetra_IntVector allGids(allGidsMap);
-    for (int j=0; j<numMyElements; j++) {allGids[j] = domainMap.GID64(j);}
+    for (int j=0; j<numMyElements; j++) {allGids[j] = domainMap.GID(j);}
 
     // Import my GIDs into an all-inclusive map. 
-    int numGlobalElements = domainMap.NumGlobalElements64();
+    int numGlobalElements = domainMap.NumGlobalElements();
     Epetra_LocalMap allGidsOnRootMap(numGlobalElements, 0, comm);
     Epetra_Import importer(allGidsOnRootMap, allGidsMap);
     Epetra_IntVector allGidsOnRoot(allGidsOnRootMap);
