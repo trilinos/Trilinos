@@ -594,8 +594,6 @@ protected:
   double ComputeFlops_;
   //! The total number of floating-point operations over all apply() calls.
   mutable double ApplyFlops_;
-  //! Object used for timing purposes.
-  Teuchos::RCP<Teuchos::Time> Time_;
   //! The inner (that is, per subdomain local) solver.
   Teuchos::RCP<prec_type> Inverse_;
   //! SerialMap for filtering multivector with no overlap.

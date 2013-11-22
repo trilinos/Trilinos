@@ -65,7 +65,7 @@
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
 
-#include <locale> // std::ctype::toupper
+#include <locale> // std::toupper
 
 namespace Ifpack2 {
 
@@ -248,136 +248,148 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
        scalar_type alpha,
        scalar_type beta) const
 {
+  using Teuchos::Time;
+  using Teuchos::TimeMonitor;
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  const scalar_type ZERO = Teuchos::ScalarTraits<scalar_type>::zero ();
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    ! IsComputed_, std::runtime_error,
-    "Ifpack2::AdditiveSchwarz::apply: "
-    "isComputed() must be true before you may call apply().");
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    X.getNumVectors() != Y.getNumVectors(), std::invalid_argument,
-    "Ifpack2::AdditiveSchwarz::apply: "
-    "X and Y must have the same number of columns.  X has "
-    << X.getNumVectors() << " columns, but Y has " << Y.getNumVectors() << ".");
-
-  const size_t numVectors = X.getNumVectors ();
-
-  Time_->reset ();
-  Time_->start ();
-
-  RCP<MV> OverlappingX,OverlappingY,Xtmp;
-
-  if (IsOverlapping_) {
-    // Setup if we're overlapping
-    OverlappingX = rcp (new MV (OverlappingMatrix_->getRowMap (), numVectors));
-    OverlappingY = rcp (new MV (OverlappingMatrix_->getRowMap (), numVectors));
-    // FIXME (mfh 28 Sep 2013) MV's constructor fills with zeros by default,
-    // so there is no need to call putScalar().
-    OverlappingY->putScalar (ZERO);
-    OverlappingX->putScalar (ZERO);
-    OverlappingMatrix_->importMultiVector (X, *OverlappingX, Tpetra::INSERT);
-    // FIXME from Ifpack1: Will not work with non-zero starting solutions.
-  }
-  else {
-    Xtmp = rcp (new MV (X));
-
-    MV Serial (SerialMap_, numVectors);
-    // Create Import object on demand, if necessary.
-    if (SerialImporter_.is_null ()) {
-      SerialImporter_ =
-        rcp (new import_type (SerialMap_, Matrix_->getDomainMap ()));
-    }
-    Serial.doImport (*Xtmp, *SerialImporter_, Tpetra::INSERT);
-
-    OverlappingX = rcp (new MV (LocalDistributedMap_, numVectors));
-    OverlappingY = rcp (new MV (LocalDistributedMap_, numVectors));
-
-    //OverlappingX->putScalar(0.0);
-    //OverlappingY->putScalar(0.0);
-
-    MV Distributed (DistributedMap_, numVectors);
-    // Create Import object on demand, if necessary.
-    if (DistributedImporter_.is_null ()) {
-      DistributedImporter_ =
-        rcp (new import_type (DistributedMap_, Matrix_->getDomainMap ()));
-    }
-    Distributed.doImport (*Xtmp, *DistributedImporter_, Tpetra::INSERT);
-
-    // FIXME (mfh 28 Sep 2013) Please don't call replaceLocalValue()
-    // for every entry.  It's important to understand how MultiVector
-    // views work.
-    Teuchos::ArrayRCP<const scalar_type> values = Distributed.get1dView();
-    size_t index = 0;
-
-    for (size_t v = 0; v < numVectors; v++) {
-      for (size_t i = 0; i < Matrix_->getRowMap()->getNodeNumElements(); i++) {
-        OverlappingX->replaceLocalValue(i, v, values[index]);
-        index++;
-      }
-    }
+  const std::string timerName ("Ifpack2::AdditiveSchwarz::apply");
+  RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
+  if (timer.is_null ()) {
+    timer = TimeMonitor::getNewCounter (timerName);
   }
 
-  if (FilterSingletons_) {
-    // process singleton filter
-    MV ReducedX (SingletonMatrix_->getRowMap (), numVectors);
-    MV ReducedY (SingletonMatrix_->getRowMap (), numVectors);
-    SingletonMatrix_->SolveSingletons (*OverlappingX, *OverlappingY);
-    SingletonMatrix_->CreateReducedRHS (*OverlappingY, *OverlappingX, ReducedX);
+  { // Start timing here.
+    TimeMonitor timeMon (*timer);
 
-    // process reordering
-    if (! UseReordering_) {
-      Inverse_->apply (ReducedX, ReducedY);
+    const scalar_type ZERO = Teuchos::ScalarTraits<scalar_type>::zero ();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! IsComputed_, std::runtime_error,
+      "Ifpack2::AdditiveSchwarz::apply: "
+      "isComputed() must be true before you may call apply().");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      X.getNumVectors() != Y.getNumVectors(), std::invalid_argument,
+      "Ifpack2::AdditiveSchwarz::apply: "
+      "X and Y must have the same number of columns.  X has "
+      << X.getNumVectors() << " columns, but Y has " << Y.getNumVectors() << ".");
+
+    const size_t numVectors = X.getNumVectors ();
+
+    RCP<MV> OverlappingX,OverlappingY,Xtmp;
+
+    if (IsOverlapping_) {
+      // Setup if we're overlapping
+      OverlappingX = rcp (new MV (OverlappingMatrix_->getRowMap (), numVectors));
+      OverlappingY = rcp (new MV (OverlappingMatrix_->getRowMap (), numVectors));
+      // FIXME (mfh 28 Sep 2013) MV's constructor fills with zeros by default,
+      // so there is no need to call putScalar().
+      OverlappingY->putScalar (ZERO);
+      OverlappingX->putScalar (ZERO);
+      OverlappingMatrix_->importMultiVector (X, *OverlappingX, Tpetra::INSERT);
+      // FIXME from Ifpack1: Will not work with non-zero starting solutions.
     }
     else {
-      MV ReorderedX (ReducedX);
-      MV ReorderedY (ReducedY);
-      ReorderedLocalizedMatrix_->permuteOriginalToReordered (ReducedX, ReorderedX);
-      Inverse_->apply (ReorderedX, ReorderedY);
-      ReorderedLocalizedMatrix_->permuteReorderedToOriginal (ReorderedY, ReducedY);
-    }
+      Xtmp = rcp (new MV (X));
 
-    // finish up with singletons
-    SingletonMatrix_->UpdateLHS (ReducedY, *OverlappingY);
-  }
-  else {
+      MV Serial (SerialMap_, numVectors);
+      // Create Import object on demand, if necessary.
+      if (SerialImporter_.is_null ()) {
+        SerialImporter_ =
+          rcp (new import_type (SerialMap_, Matrix_->getDomainMap ()));
+      }
+      Serial.doImport (*Xtmp, *SerialImporter_, Tpetra::INSERT);
 
-    // process reordering
-    if (! UseReordering_) {
-      Inverse_->apply (*OverlappingX, *OverlappingY);
-    }
-    else {
-      MV ReorderedX (*OverlappingX);
-      MV ReorderedY (*OverlappingY);
-      ReorderedLocalizedMatrix_->permuteOriginalToReordered (*OverlappingX, ReorderedX);
-      Inverse_->apply (ReorderedX, ReorderedY);
-      ReorderedLocalizedMatrix_->permuteReorderedToOriginal (ReorderedY, *OverlappingY);
-    }
-  }
+      OverlappingX = rcp (new MV (LocalDistributedMap_, numVectors));
+      OverlappingY = rcp (new MV (LocalDistributedMap_, numVectors));
 
-  if (IsOverlapping_) {
-    OverlappingMatrix_->exportMultiVector (*OverlappingY, Y, CombineMode_);
-  }
-  else {
-    Teuchos::ArrayRCP<const scalar_type> values = OverlappingY->get1dView();
-    size_t index = 0;
+      //OverlappingX->putScalar(0.0);
+      //OverlappingY->putScalar(0.0);
 
-    // FIXME (mfh 28 Sep 2013) Please don't call replaceLocalValue()
-    // for every entry.  It's important to understand how MultiVector
-    // views work.
-    for (size_t v = 0; v < numVectors; v++) {
-      for (size_t i = 0; i < Matrix_->getRowMap()->getNodeNumElements(); i++) {
-        Y.replaceLocalValue(i, v, values[index]);
-        index++;
+      MV Distributed (DistributedMap_, numVectors);
+      // Create Import object on demand, if necessary.
+      if (DistributedImporter_.is_null ()) {
+        DistributedImporter_ =
+          rcp (new import_type (DistributedMap_, Matrix_->getDomainMap ()));
+      }
+      Distributed.doImport (*Xtmp, *DistributedImporter_, Tpetra::INSERT);
+
+      // FIXME (mfh 28 Sep 2013) Please don't call replaceLocalValue()
+      // for every entry.  It's important to understand how MultiVector
+      // views work.
+      Teuchos::ArrayRCP<const scalar_type> values = Distributed.get1dView();
+      size_t index = 0;
+
+      for (size_t v = 0; v < numVectors; v++) {
+        for (size_t i = 0; i < Matrix_->getRowMap()->getNodeNumElements(); i++) {
+          OverlappingX->replaceLocalValue(i, v, values[index]);
+          index++;
+        }
       }
     }
-  }
 
-  NumApply_++;
-  ApplyTime_ += Time_->stop();
+    if (FilterSingletons_) {
+      // process singleton filter
+      MV ReducedX (SingletonMatrix_->getRowMap (), numVectors);
+      MV ReducedY (SingletonMatrix_->getRowMap (), numVectors);
+      SingletonMatrix_->SolveSingletons (*OverlappingX, *OverlappingY);
+      SingletonMatrix_->CreateReducedRHS (*OverlappingY, *OverlappingX, ReducedX);
+
+      // process reordering
+      if (! UseReordering_) {
+        Inverse_->apply (ReducedX, ReducedY);
+      }
+      else {
+        MV ReorderedX (ReducedX);
+        MV ReorderedY (ReducedY);
+        ReorderedLocalizedMatrix_->permuteOriginalToReordered (ReducedX, ReorderedX);
+        Inverse_->apply (ReorderedX, ReorderedY);
+        ReorderedLocalizedMatrix_->permuteReorderedToOriginal (ReorderedY, ReducedY);
+      }
+
+      // finish up with singletons
+      SingletonMatrix_->UpdateLHS (ReducedY, *OverlappingY);
+    }
+    else {
+
+      // process reordering
+      if (! UseReordering_) {
+        Inverse_->apply (*OverlappingX, *OverlappingY);
+      }
+      else {
+        MV ReorderedX (*OverlappingX);
+        MV ReorderedY (*OverlappingY);
+        ReorderedLocalizedMatrix_->permuteOriginalToReordered (*OverlappingX, ReorderedX);
+        Inverse_->apply (ReorderedX, ReorderedY);
+        ReorderedLocalizedMatrix_->permuteReorderedToOriginal (ReorderedY, *OverlappingY);
+      }
+    }
+
+    if (IsOverlapping_) {
+      OverlappingMatrix_->exportMultiVector (*OverlappingY, Y, CombineMode_);
+    }
+    else {
+      Teuchos::ArrayRCP<const scalar_type> values = OverlappingY->get1dView();
+      size_t index = 0;
+
+      // FIXME (mfh 28 Sep 2013) Please don't call replaceLocalValue()
+      // for every entry.  It's important to understand how MultiVector
+      // views work.
+      for (size_t v = 0; v < numVectors; v++) {
+        for (size_t i = 0; i < Matrix_->getRowMap()->getNodeNumElements(); i++) {
+          Y.replaceLocalValue(i, v, values[index]);
+          index++;
+        }
+      }
+    }
+  } // Stop timing here.
+
+  ++NumApply_;
+
+  // timer->totalElapsedTime() returns the total time over all timer
+  // calls.  Thus, we use = instead of +=.
+  ApplyTime_ = timer->totalElapsedTime ();
 }
 
 
@@ -561,46 +573,56 @@ getValidParameters () const
 
 
 template<class MatrixType,class LocalInverseType>
-void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize()
+void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
 {
+  using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::Time;
+  using Teuchos::TimeMonitor;
 
-  IsInitialized_ = false;
-  IsComputed_ = false; // values required
-  Condest_ = -Teuchos::ScalarTraits<magnitude_type>::one ();
-
-  if (Time_.is_null ()) {
-    Time_ = rcp (new Teuchos::Time ("Ifpack2::AdditiveSchwarz"));
+  const std::string timerName ("Ifpack2::AdditiveSchwarz::initialize");
+  RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
+  if (timer.is_null ()) {
+    timer = TimeMonitor::getNewCounter (timerName);
   }
 
-  Time_->start ();
+  { // Start timing here.
+    TimeMonitor timeMon (*timer);
 
-  // compute the overlapping matrix if necessary
-  if (IsOverlapping_) {
-    if (UseSubdomain_) {
-      const int sid = List_.get ("subdomain id", -1);
-      OverlappingMatrix_ = rcp (new OverlappingRowMatrix<row_matrix_type> (Matrix_, OverlapLevel_, sid));
-    } else {
-      OverlappingMatrix_ = rcp (new OverlappingRowMatrix<row_matrix_type> (Matrix_, OverlapLevel_));
+    IsInitialized_ = false;
+    IsComputed_ = false;
+    Condest_ = -Teuchos::ScalarTraits<magnitude_type>::one ();
+
+    // compute the overlapping matrix if necessary
+    if (IsOverlapping_) {
+      if (UseSubdomain_) {
+        const int sid = List_.get ("subdomain id", -1);
+        OverlappingMatrix_ = rcp (new OverlappingRowMatrix<row_matrix_type> (Matrix_, OverlapLevel_, sid));
+      } else {
+        OverlappingMatrix_ = rcp (new OverlappingRowMatrix<row_matrix_type> (Matrix_, OverlapLevel_));
+      }
     }
-  }
 
-  // Setup
-  setup ();
+    // Setup
+    setup ();
 
-  // Initialize inverse
-  //
-  // FIXME (mfh 28 Sep 2013) The "inverse" should have its own sublist
-  // in the input ParameterList.  We shouldn't pass AdditiveSchwarz's
-  // parameters directly to the "inverse."
-  //
-  // FIXME (mfh 28 Sep 2013) Why don't we call these methods in setup()?
-  Inverse_->setParameters (List_);
-  Inverse_->initialize ();
+    // Initialize subdomain solver.
+    //
+    // FIXME (mfh 28 Sep 2013) The "inverse" should have its own sublist
+    // in the input ParameterList.  We shouldn't pass AdditiveSchwarz's
+    // parameters directly to the "inverse."
+    //
+    // FIXME (mfh 28 Sep 2013) Why don't we call these methods in setup()?
+    Inverse_->setParameters (List_);
+    Inverse_->initialize ();
+  } // Stop timing here.
 
   IsInitialized_ = true;
-  NumInitialize_++;
-  InitializeTime_ += Time_->stop();
+  ++NumInitialize_;
+
+  // timer->totalElapsedTime() returns the total time over all timer
+  // calls.  Thus, we use = instead of +=.
+  InitializeTime_ = timer->totalElapsedTime ();
 }
 
 
@@ -614,28 +636,34 @@ bool AdditiveSchwarz<MatrixType,LocalInverseType>::isInitialized() const
 template<class MatrixType,class LocalInverseType>
 void AdditiveSchwarz<MatrixType,LocalInverseType>::compute ()
 {
+  using Teuchos::RCP;
+  using Teuchos::Time;
+  using Teuchos::TimeMonitor;
+
   if (! IsInitialized_) {
     initialize ();
   }
 
-  Time_->reset();
-  Time_->start();
-  IsComputed_ = false;
-  Condest_ = -Teuchos::ScalarTraits<magnitude_type>::one ();
+  const std::string timerName ("Ifpack2::AdditiveSchwarz::compute");
+  RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
+  if (timer.is_null ()) {
+    timer = TimeMonitor::getNewCounter (timerName);
+  }
 
-  Inverse_->compute ();
+  { // Start timing here.
+    TimeMonitor timeMon (*timer);
 
-  // FIXME (mfh 28 Sep 2013) It's really a bad idea to use barriers to
-  // "make the timings consistent."  This hides load imbalance.  If
-  // you want good timing information, you should collect min and max
-  // timings from all processes and report the entire range.
-#if defined (HAVE_IFPACK2_TIMER_BARRIER)
-  Matrix_->getDomainMap ()->getComm ()->barrier ();
-#endif
+    IsComputed_ = false;
+    Condest_ = -Teuchos::ScalarTraits<magnitude_type>::one ();
+    Inverse_->compute ();
+  } // Stop timing here.
 
   IsComputed_ = true;
   ++NumCompute_;
-  ComputeTime_ += Time_->stop();
+
+  // timer->totalElapsedTime() returns the total time over all timer
+  // calls.  Thus, we use = instead of +=.
+  ComputeTime_ = timer->totalElapsedTime ();
 }
 
 //==============================================================================
