@@ -28,6 +28,16 @@
  */
 
 /**
+ * NOTE NOTE NOTE
+ *
+ * This code demonstrates the low-level IossBridge capabilities.
+ * For a higher-level interface, see io_mesh_read_write_example.cpp which uses
+ * the StkMeshIoBroker class defined in StkMeshIoBroker.{hpp|cpp}.
+ *
+ * NOTE NOTE NOTE
+ */
+
+/**
  * Example code showing a basic, but complete, mesh to results output
  * coding including subsetting and periodic field input and output.
  * Includes handling of nodeblocks, element blocks, nodesets, and
@@ -39,9 +49,6 @@
  * bridge functions in the stk::io namespace defined in IossBridge.hpp
  * include file.
  *
- * This code demonstrates the low-level IossBridge capabilities.
- * For a higher-level interface, see io_mesh_read_write_example.cpp which uses
- * the MeshData class defined in MeshReadWriteUtils.{hpp|cpp}.
  */
 namespace stk_example_io {
 
