@@ -52,7 +52,6 @@ int main(int argc, char *argv[]) {
     //ROL::ESecant esec = ROL::SECANT_BARZILAIBORWEIN;
     int L        = 10;
     int BBtype   = 1;
-    Teuchos::RCP<ROL::Secant<RealT> > secant = ROL::getSecant<RealT>(esec,L,BBtype);
 
     /* BEGIN LINE SEARCH STEP DEFINTION */
     ROL::ELineSearch els = ROL::LINESEARCH_BACKTRACKING;
@@ -77,6 +76,9 @@ int main(int argc, char *argv[]) {
     ROL::StatusTest<RealT> status(1.e-6,1.e-12,100);    
 
     for ( ROL::ETestObjectives objFunc = ROL::TESTOBJECTIVES_ROSENBROCK; objFunc < ROL::TESTOBJECTIVES_LAST; objFunc++ ) {
+      // Initialize secant update.
+      Teuchos::RCP<ROL::Secant<RealT> > secant = ROL::getSecant<RealT>(esec,L,BBtype);
+
       *outStream << "\n\n" << ROL::ETestObjectivesToString(objFunc) << "\n\n";
 
       // Initial Guess Vector 
@@ -117,7 +119,7 @@ int main(int argc, char *argv[]) {
       obj->checkHessVec(x,y,true);
 
       // RUN LINE SEARCH
-      int maxit       = 20;
+      int maxit       = 100;
       RealT rho       = 0.5;
       RealT c1        = 1.e-4;
       RealT c2        = 0.9;
