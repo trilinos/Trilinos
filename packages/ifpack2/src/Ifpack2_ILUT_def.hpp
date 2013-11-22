@@ -873,19 +873,25 @@ std::string ILUT<MatrixType>::description() const {
   using Teuchos::TypeNameTraits;
   std::ostringstream os;
 
-  os << "Ifpack2::ILUT<" << TypeNameTraits<MatrixType>::name ()
-     << ">: {";
-  if (this->getObjectLabel () != "") {
-    os << "Label: \"" << this->getObjectLabel () << "\", ";
-  }
-  os << "Initialized: " << (isInitialized () ? "true" : "false")
+  os << "Ifpack2::ILUT : {"
+     << "Initialized: " << (isInitialized () ? "true" : "false")
      << ", "
      << "Computed: " << (isComputed () ? "true" : "false")
      << ", "
      << "Number of rows: " << A_->getGlobalNumRows ()
      << ", "
      << "Number of columns: " << A_->getGlobalNumCols ()
-     << "}";
+     << ", "
+     << "level-of-fill = " << getLevelOfFill()
+     << ", "
+     << "absolute threshold = " << getAbsoluteThreshold()
+     << ", "
+     << "relative threshold = " << getRelativeThreshold()
+     << ", "
+     << "relaxation value = " << getRelaxValue();
+  if (isComputed())
+    os << ", nnz = " << getGlobalNumEntries();
+  os << "}";
   return os.str();
 }
 
