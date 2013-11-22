@@ -40,6 +40,17 @@ namespace stk {
   namespace io {
     static std::string CoordinateFieldName("coordinates");
 
+    // ------------------------------------------------------------------------
+    struct GlobalAnyVariable {
+      GlobalAnyVariable(const std::string &name, boost::any *value, stk::util::ParameterType::Type type)
+	: m_name(name), m_value(value), m_type(type)
+      {}
+
+      std::string m_name;
+      boost::any *m_value;
+      stk::util::ParameterType::Type m_type;
+    };
+
     class OutputFile
     {
     public:
@@ -121,6 +132,9 @@ namespace stk {
         Teuchos::RCP<Ioss::Region> m_output_region;
         std::vector<stk::io::FieldAndName> m_named_fields;
 
+        // Global fields that can be output automatically without app calling write_global.
+        std::vector<GlobalAnyVariable> m_global_any_fields; 
+
         OutputFile(const OutputFile &);
         const OutputFile & operator=(const OutputFile &);
     };
@@ -136,17 +150,6 @@ namespace stk {
     };
 
     // ------------------------------------------------------------------------
-    struct HeartbeatVariable {
-      HeartbeatVariable(const std::string &name, boost::any *value, stk::util::ParameterType::Type type)
-	: m_name(name), m_value(value), m_type(type)
-      {}
-
-      std::string m_name;
-      boost::any *m_value;
-      stk::util::ParameterType::Type m_type;
-    };
-
-    // ------------------------------------------------------------------------
     class Heartbeat {
     public:
       Heartbeat(const std::string &filename, HeartbeatType db_type,
@@ -157,7 +160,7 @@ namespace stk {
       void process_output(int step, double time);
 
     private:
-      std::vector<HeartbeatVariable> m_fields;
+      std::vector<GlobalAnyVariable> m_fields;
       Teuchos::RCP<Ioss::Region> m_region;
       
       int m_current_step;

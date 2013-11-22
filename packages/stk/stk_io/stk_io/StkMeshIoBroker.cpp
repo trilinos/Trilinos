@@ -1728,7 +1728,7 @@ namespace stk {
         // Determine name and type of parameter...
         std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(type, value);
         internal_add_global(m_region, name, parameter_type.first, parameter_type.second);
-        m_fields.push_back(HeartbeatVariable(name, &value, type));
+        m_fields.push_back(GlobalAnyVariable(name, &value, type));
       }
     }
 
@@ -1815,7 +1815,8 @@ namespace stk {
     void OutputFile::add_global(const std::string &name, const boost::any &value, stk::util::ParameterType::Type type)
     {
       std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(type, value);
-      this->add_global(name, parameter_type.first, parameter_type.second);
+      internal_add_global(m_region, name, parameter_type.first, parameter_type.second);
+      m_global_any_fields.push_back(GlobalAnyVariable(name, &value, type));
     }
 
     void OutputFile::add_global(const std::string &globalVarName, Ioss::Field::BasicType dataType)
