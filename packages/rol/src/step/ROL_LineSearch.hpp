@@ -97,7 +97,7 @@ public:
     }
 
     if (type == LINESEARCH_BACKTRACKING || type == LINESEARCH_CUBICINTERP) {
-      return armijo;
+      return (armijo || itcond);
     }
     else {
       return ((armijo && curvcond) || itcond);
