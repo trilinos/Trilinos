@@ -258,10 +258,6 @@ namespace {
 			     const std::string &globalVarName, const std::string &storage,
 			     Ioss::Field::BasicType dataType)
     {
-      Ioss::State currentState = region->get_state();
-      if(currentState != Ioss::STATE_DEFINE_TRANSIENT) {
-	region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
-      }
       ThrowErrorMsgIf (region->field_exists(globalVarName),
 		       "On region named " << region->name() << 
 		       " Attempt to add global variable '" << globalVarName << "' twice.");
@@ -1487,7 +1483,7 @@ namespace stk {
     }
 
     void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &name,
-				     const boost::any &value, stk::util::ParameterType::Type type)
+				     boost::any &value, stk::util::ParameterType::Type type)
     {
       validate_output_file_index(output_file_index);
       m_output_files[output_file_index]->add_global(name, value, type);
@@ -1725,6 +1721,11 @@ namespace stk {
 			 "At least one output step has been written to the history/heartbeat file. "
 			 "Variables cannot be added anymore.");
 
+        Ioss::State currentState = m_region->get_state();
+        if(currentState != Ioss::STATE_DEFINE_TRANSIENT) {
+          m_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
+        }
+
         // Determine name and type of parameter...
         std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(type, value);
         internal_add_global(m_region, name, parameter_type.first, parameter_type.second);
@@ -1812,8 +1813,11 @@ namespace stk {
         }
     }
 
-    void OutputFile::add_global(const std::string &name, const boost::any &value, stk::util::ParameterType::Type type)
+    void OutputFile::add_global(const std::string &name, boost::any &value, stk::util::ParameterType::Type type)
     {
+      ThrowErrorMsgIf (m_fields_defined,
+		       "On region named " << m_region->name() << 
+		       " Attempting to add global variable after data has already been written to the database.");
       std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(type, value);
       internal_add_global(m_region, name, parameter_type.first, parameter_type.second);
       m_global_any_fields.push_back(GlobalAnyVariable(name, &value, type));
