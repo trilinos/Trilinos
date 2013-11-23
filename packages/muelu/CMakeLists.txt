@@ -45,6 +45,14 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_GOOGLE_PERFTOOLS
   "Enable detailed memory profiling using Google Perftools."
   OFF)
 
+# Boost
+# We don't actually need this option, but boost is not *really* needed, and
+# I really want to hide unnecessary warnings
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Boost_for_real
+  HAVE_${PACKAGE_NAME_UC}_BOOST_FOR_REAL
+  "Enable Boost"
+  OFF)
+
 # Explicit instantiation options:
 # - MueLu_ENABLE_EXPLICIT_INSTANTIATION
 # - MueLu_INST_DOUBLE_INT_INT         (= ON by default)

@@ -475,7 +475,7 @@ namespace MueLu {
     } // for (TwoKeyMap::const_iterator kt = map_.begin(); kt != map_.end(); kt++) {
   }
 
-#if defined(HAVE_MUELU_BOOST) && defined(BOOST_VERSION) && (BOOST_VERSION >= 104400)
+#if defined(HAVE_MUELU_BOOST) && defined(HAVE_MUELU_BOOST_FOR_REAL) && defined(BOOST_VERSION) && (BOOST_VERSION >= 104400)
     void Level::UpdateGraph(std::map<const FactoryBase*, BoostVertex>&                   vindices,
                             std::map<std::pair<BoostVertex, BoostVertex>, std::string>&  edges,
                             BoostProperties&                                             dp,

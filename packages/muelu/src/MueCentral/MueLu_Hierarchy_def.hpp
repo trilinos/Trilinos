@@ -657,7 +657,7 @@ namespace MueLu {
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DumpCurrentGraph() const {
     if (GetProcRankVerbose() != 0)
       return;
-#if defined(HAVE_MUELU_BOOST) && defined(BOOST_VERSION) && (BOOST_VERSION >= 104400)
+#if defined(HAVE_MUELU_BOOST) && defined(HAVE_MUELU_BOOST_FOR_REAL) && defined(BOOST_VERSION) && (BOOST_VERSION >= 104400)
     BoostGraph      graph;
 
     BoostProperties dp;
@@ -696,7 +696,7 @@ namespace MueLu {
     std::ofstream out(dumpFile_.c_str());
     boost::write_graphviz_dp(out, graph, dp, std::string("id"));
 #else
-    GetOStream(Errors,0) <<  "Dependency graph output requires boost" << std::endl;
+    GetOStream(Errors,0) <<  "Dependency graph output requires boost and MueLu_ENABLE_Boost_for_real" << std::endl;
 #endif
   }
 
