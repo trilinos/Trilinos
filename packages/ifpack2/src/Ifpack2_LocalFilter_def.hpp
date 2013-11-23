@@ -530,7 +530,6 @@ getLocalRowCopy (local_ordinal_type LocalRow,
   if (LocalRow < localRowMap_->getMinLocalIndex () ||
         static_cast<size_t> (LocalRow) >= numRows) {
     std::ostringstream err;
-    const int myRank = localRowMap_->getComm ()->getSize ();
     err << "Ifpack2::LocalFilter::getLocalRowCopy: Invalid local row index "
         << LocalRow << ".  The valid range of row indices on this process "
         << myRank << " is ";
