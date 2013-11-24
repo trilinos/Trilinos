@@ -126,15 +126,25 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
       }
     }
 
-    // Allocate & import new matrices, maps, etc.
-    TmpMap = rcp (new map_type (global_invalid, mylist (0, count),
-                                Teuchos::OrdinalTraits<global_ordinal_type>::zero (),
-                                A_->getComm (), A_->getNode ()));
-    TmpMatrix = rcp (new crs_matrix_type (TmpMap, 0));
-    TmpImporter = rcp (new import_type (A_->getRowMap (), TmpMap));
+    // mfh 24 Nov 2013: We don't need TmpMap, TmpMatrix, or
+    // TmpImporter after this loop, so we don't have to construct them
+    // on the last round.
+    if (overlap + 1 < OverlapLevel_) {
+      // Allocate & import new matrices, maps, etc.
+      //
+      // FIXME (mfh 24 Nov 2013) Do we always want to use index base
+      // zero?  It doesn't really matter, since the actual index base
+      // (in the current implementation of Map) will always be the
+      // globally least GID.
+      TmpMap = rcp (new map_type (global_invalid, mylist (0, count),
+                                  Teuchos::OrdinalTraits<global_ordinal_type>::zero (),
+                                  A_->getComm (), A_->getNode ()));
+      TmpMatrix = rcp (new crs_matrix_type (TmpMap, 0));
+      TmpImporter = rcp (new import_type (A_->getRowMap (), TmpMap));
 
-    TmpMatrix->doImport (*ACRS, *TmpImporter, Tpetra::INSERT);
-    TmpMatrix->fillComplete (A_->getDomainMap (), TmpMap);
+      TmpMatrix->doImport (*ACRS, *TmpImporter, Tpetra::INSERT);
+      TmpMatrix->fillComplete (A_->getDomainMap (), TmpMap);
+    }
   }
 
   // build the map containing all the nodes (original
