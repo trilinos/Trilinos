@@ -68,7 +68,8 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
   using Teuchos::REDUCE_SUM;
   using Teuchos::reduceAll;
   typedef Tpetra::global_size_t GST;
-
+  typedef Tpetra::CrsGraph<local_ordinal_type,
+                           global_ordinal_type, node_type> crs_graph_type;
   TEUCHOS_TEST_FOR_EXCEPTION(
     OverlapLevel_ <= 0, std::runtime_error,
     "Ifpack2::OverlappingRowMatrix: OverlapLevel must be > 0.");
@@ -84,6 +85,7 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
     "Ifpack2::OverlappingRowMatrix: The input matrix must be a Tpetra::"
     "CrsMatrix with matching template parameters.  This class currently "
     "requires that CrsMatrix's fifth template parameter be the default.");
+  RCP<const crs_graph_type> A_crsGraph = ACRS->getCrsGraph ();
 
   const size_t numMyRowsA = A_->getNodeNumRows ();
   const global_ordinal_type global_invalid =
@@ -92,41 +94,42 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
   // Temp arrays
   Array<global_ordinal_type> ExtElements;
   RCP<map_type>        TmpMap;
-  RCP<crs_matrix_type> TmpMatrix;
+  RCP<crs_graph_type>  TmpGraph;
   RCP<import_type>     TmpImporter;
   RCP<const map_type>  RowMap, ColMap;
 
   // The big import loop
   for (int overlap = 0 ; overlap < OverlapLevel_ ; ++overlap) {
     // Get the current maps
-    if(overlap==0){
-      RowMap = A_->getRowMap();
-      ColMap = A_->getColMap();
+    if (overlap == 0) {
+      RowMap = A_->getRowMap ();
+      ColMap = A_->getColMap ();
     }
     else {
-      RowMap = TmpMatrix->getRowMap();
-      ColMap = TmpMatrix->getColMap();
+      RowMap = TmpGraph->getRowMap ();
+      ColMap = TmpGraph->getColMap ();
     }
 
-    size_t size = ColMap->getNodeNumElements() - RowMap->getNodeNumElements();
-    Array<global_ordinal_type> mylist(size);
+    const size_t size = ColMap->getNodeNumElements () - RowMap->getNodeNumElements ();
+    Array<global_ordinal_type> mylist (size);
     size_t count = 0;
 
     // define the set of rows that are in ColMap but not in RowMap
     for (local_ordinal_type i = 0 ; (size_t) i < ColMap->getNodeNumElements() ; ++i) {
-      global_ordinal_type GID = ColMap->getGlobalElement(i);
-      if (A_->getRowMap ()->getLocalElement (GID) ==  global_invalid) {
-        typename Array<global_ordinal_type>::iterator pos
-          = std::find(ExtElements.begin(),ExtElements.end(),GID);
-        if (pos == ExtElements.end()) {
-          ExtElements.push_back(GID);
+      const global_ordinal_type GID = ColMap->getGlobalElement (i);
+      if (A_->getRowMap ()->getLocalElement (GID) == global_invalid) {
+        typedef typename Array<global_ordinal_type>::iterator iter_type;
+        const iter_type end = ExtElements.end ();
+        const iter_type pos = std::find (ExtElements.begin (), end, GID);
+        if (pos == end) {
+          ExtElements.push_back (GID);
           mylist[count] = GID;
           ++count;
         }
       }
     }
 
-    // mfh 24 Nov 2013: We don't need TmpMap, TmpMatrix, or
+    // mfh 24 Nov 2013: We don't need TmpMap, TmpGraph, or
     // TmpImporter after this loop, so we don't have to construct them
     // on the last round.
     if (overlap + 1 < OverlapLevel_) {
@@ -139,11 +142,11 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
       TmpMap = rcp (new map_type (global_invalid, mylist (0, count),
                                   Teuchos::OrdinalTraits<global_ordinal_type>::zero (),
                                   A_->getComm (), A_->getNode ()));
-      TmpMatrix = rcp (new crs_matrix_type (TmpMap, 0));
+      TmpGraph = rcp (new crs_graph_type (TmpMap, 0));
       TmpImporter = rcp (new import_type (A_->getRowMap (), TmpMap));
 
-      TmpMatrix->doImport (*ACRS, *TmpImporter, Tpetra::INSERT);
-      TmpMatrix->fillComplete (A_->getDomainMap (), TmpMap);
+      TmpGraph->doImport (*A_crsGraph, *TmpImporter, Tpetra::INSERT);
+      TmpGraph->fillComplete (A_->getDomainMap (), TmpMap);
     }
   }
 
