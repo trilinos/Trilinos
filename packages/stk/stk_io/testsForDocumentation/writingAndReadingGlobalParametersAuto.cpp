@@ -13,21 +13,21 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalParametersAuto)
     const std::string file_name = "GlobalParameters.e";
     MPI_Comm communicator = MPI_COMM_WORLD;
 
-    stk::util::ParameterList parameters;
-    stk::util::ParameterList gold_parameters; // To compare values read
+    stk::util::ParameterList params;
+    stk::util::ParameterList gold_params; // To compare values read
     
     // Add some parameters to write and read...
-    parameters.set_param("PI", 3.14159);  // Double 
-    parameters.set_param("Answer", 42);   // Integer
-    gold_parameters.set_param("PI", 3.14159);  // Double 
-    gold_parameters.set_param("Answer", 42);   // Integer
+    params.set_param("PI", 3.14159);  // Double 
+    params.set_param("Answer", 42);   // Integer
+    gold_params.set_param("PI", 3.14159);  // Double 
+    gold_params.set_param("Answer", 42);   // Integer
 
     std::vector<double> my_vector;
     my_vector.push_back(2.78);
     my_vector.push_back(5.30);
     my_vector.push_back(6.21);
-    parameters.set_param("some_doubles", my_vector);   // Vector of doubles...
-    gold_parameters.set_param("some_doubles", my_vector);   // Vector of doubles...
+    params.set_param("some_doubles", my_vector);   // Vector of doubles...
+    gold_params.set_param("some_doubles", my_vector); 
     
     std::vector<int> ages;
     ages.push_back(55);
@@ -35,29 +35,38 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalParametersAuto)
     ages.push_back(21);
     ages.push_back(19);
     
-    parameters.set_param("Ages", ages);   // Vector of integers...
-    gold_parameters.set_param("Ages", ages);   // Vector of integers...
+    params.set_param("Ages", ages);   // Vector of integers...
+    gold_params.set_param("Ages", ages);   // Vector of integers...
     
-    // Write output file with all parameters in parameters list...
+    //-BEGIN
+    // ... Setup is the same as in the previous example
+    // Write output file with all parameters in params list...
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
         generateMetaData(stkIo);
         stkIo.populate_bulk_data();
 
-        size_t fileIndex = stkIo.create_output_mesh(file_name, stk::io::WRITE_RESTART);
+        size_t idx = stkIo.create_output_mesh(file_name,
+					      stk::io::WRITE_RESTART);
 
-	stk::util::ParameterMapType::const_iterator i = parameters.begin();
-	stk::util::ParameterMapType::const_iterator iend = parameters.end();
+	stk::util::ParameterMapType::const_iterator i = params.begin();
+	stk::util::ParameterMapType::const_iterator iend = params.end();
 	for (; i != iend; ++i) {
-	  const std::string parameterName = (*i).first;
-	  stk::util::Parameter &parameter = parameters.get_param(parameterName);
-	  stkIo.add_global_ref(fileIndex, parameterName, &parameter.value, parameter.type);
+	  const std::string paramName = (*i).first;
+	  //+ NOTE: Need a reference to the parameter.
+	  stk::util::Parameter &param = params.get_param(paramName);
+	  //+ NOTE: Calling add_global_ref, passing address of value
+	  stkIo.add_global_ref(idx, paramName, &param.value, param.type);/*@\label{io:global:autoparam}*/
 	}
 
-	stkIo.process_output_request(fileIndex, 0.0);
+	//+ All writing of the values is handled automatically,
+	//+ do not need to call write_global
+	stkIo.process_output_request(idx, 0.0);/*@\label{io:global:autowrite}*/
     }
+    // ... Reading is the same as in previous example
+    //-END
 
-    // Read parameters from file...
+    // Read params from file...
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
         stkIo.open_mesh_database(file_name, stk::io::READ_MESH);
@@ -67,15 +76,16 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalParametersAuto)
         stkIo.read_defined_input_fields(0.0);
 
 	size_t param_count = 0;
-	stk::util::ParameterMapType::const_iterator i = parameters.begin();
-	stk::util::ParameterMapType::const_iterator iend = parameters.end();
+	stk::util::ParameterMapType::const_iterator i = params.begin();
+	stk::util::ParameterMapType::const_iterator iend = params.end();
 	for (; i != iend; ++i) {
 	  param_count++;
-	  const std::string parameterName = (*i).first;
-	  stk::util::Parameter &parameter = parameters.get_param(parameterName);
-	  stk::util::Parameter &gold_parameter = gold_parameters.get_param(parameterName);
-	  stkIo.get_global(parameterName, parameter.value, parameter.type);
-	  validate_parameters_equal_value(parameter, gold_parameter);
+	  const std::string paramName = (*i).first;
+	  stk::util::Parameter &param = params.get_param(paramName);
+	  stk::util::Parameter &gold_param
+	    = gold_params.get_param(paramName);
+	  stkIo.get_global(paramName, param.value, param.type);
+	  validate_parameters_equal_value(param, gold_param);
 	}
 
         std::vector<std::string> globalNamesOnFile;

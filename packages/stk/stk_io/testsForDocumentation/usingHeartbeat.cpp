@@ -53,17 +53,21 @@ namespace
       stk::util::ParameterMapType::const_iterator iend = params.end();
       for (; i != iend; ++i) {
 	const std::string paramName = (*i).first;
+	//+ NOTE: A reference to the param is needed here.
 	stk::util::Parameter &param = params.get_param(paramName);
 
 	//+ Tell heartbeat which variables to output at each step...
-	stkIo.add_heartbeat_global(hb, paramName, &param.value, param.type);
+	//+ NOTE: The address of the value to be output is needed since the
+	//+       value is output in the process_heartbeat_output call.
+	stkIo.add_heartbeat_global(hb,paramName, &param.value, param.type);
       }/*@\label{io:hb:end_add}*/
 
-      // Now output the global variables...
+      // Application's "Execution Loop"
       int timestep_count = 1;
       double time = 0.0;
       for (int step=1; step <= timestep_count; step++) {
 	//+ Now output the global variables...
+	//+ NOTE: All registered global values automatically output.
 	stkIo.process_heartbeat_output(hb, step, time);/*@\label{io:hb:output}*/
       }
     }
