@@ -200,6 +200,10 @@ void OrderingProblem<Adapter>::solve(bool newData)
   {
       AlgRandom<base_adapter_t>(this->identifierModel_, this->solution_, this->params_, problemComm_);
   }
+  else if (method.compare("sorteddegree") == 0)
+  {
+      AlgSortedDegree<base_adapter_t>(this->graphModel_, this->solution_, this->params_, problemComm_);
+  }
   else if (method.compare("minimum_degree") == 0)
   {
       string pkg = this->params_->template get<string>("order_package", "amd");

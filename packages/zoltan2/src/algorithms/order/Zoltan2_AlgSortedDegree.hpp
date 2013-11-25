@@ -42,8 +42,8 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef _ZOLTAN2_INCDEGREE_HPP_
-#define _ZOLTAN2_INCDEGREE_HPP_
+#ifndef _ZOLTAN2_SORTEDDEGREE_HPP_
+#define _ZOLTAN2_SORTEDDEGREE_HPP_
 
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
@@ -51,19 +51,24 @@
 
 
 ////////////////////////////////////////////////////////////////////////
-//! \file Zoltan2_AlgIncDegree.hpp
-//! \brief Order vertices by increasing degree
-
-// Comparison function for sort.
-bool comp(std::pair<lno_t,lno_t> a, std::pair<lno_t,lno_t> b)
-{
-  return (a.first < b.first);
-}
+//! \file Zoltan2_AlgSortedDegree.hpp
+//! \brief Order vertices by sorted (increasing) degree.
+//! \brief Sorting by decreasing degree is also possible.
 
 namespace Zoltan2{
 
+// Comparison functions for sort.
+bool sort_inc(std::pair<size_t,size_t> a, std::pair<size_t,size_t> b)
+{
+  return (a.first < b.first);
+}
+bool sort_dec(std::pair<size_t,size_t> a, std::pair<size_t,size_t> b)
+{
+  return (a.first > b.first);
+}
+
 template <typename Adapter>
-int AlgIncDegree(
+int AlgSortedDegree(
   const RCP<GraphModel<Adapter> > &model, 
   const RCP<OrderingSolution<typename Adapter::gid_t,
                              typename Adapter::lno_t> > &solution,
@@ -71,10 +76,11 @@ int AlgIncDegree(
   const RCP<Teuchos::Comm<int> > &comm
 ) 
 {
-#ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL
+//#ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL
+#if (0)
 
   int ierr= 0;
-  Z2_THROW_EXPERIMENTAL("Zoltan2 IncreasingDegree ordering is strictly "
+  Z2_THROW_EXPERIMENTAL("Zoltan2 SortedDegree ordering is strictly "
                         "experimental software "
                         "while it is being developed and tested.")
   return ierr;
@@ -94,20 +100,24 @@ int AlgIncDegree(
   perm = (lno_t *) (solution->getPermutationRCP().getRawPtr());
 
   // Get local graph.
+  const size_t nVtx = model->getLocalNumVertices();
   ArrayView<const lno_t> edgeIds;
   ArrayView<const lno_t> offsets;
   ArrayView<StridedData<lno_t, scalar_t> > wgts;
   model->getLocalEdgeList(edgeIds, offsets, wgts);
 
   // Store degrees together with index so we can sort.
-  std::vector<std::pair<lno_t, lno_t> >  degrees(nVtx);
+  std::vector<std::pair<size_t, size_t> >  degrees(nVtx);
   for (lno_t i=0; i<nVtx; i++){
     degrees[i].first  = offsets[i+1] - offsets[i];
     degrees[i].second = i;
   }
 
   // Sort degrees.
-  std::sort(degrees.begin(), degrees.end(), comp);
+  if (1) // TODO: Check parameter
+    std::sort(degrees.begin(), degrees.end(), sort_inc);
+  else
+    std::sort(degrees.begin(), degrees.end(), sort_dec);
 
   // Copy permuted indices to perm.
   for (lno_t i=0; i<nVtx; i++){
