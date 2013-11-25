@@ -68,59 +68,68 @@ bool sort_dec(std::pair<size_t,size_t> a, std::pair<size_t,size_t> b)
 }
 
 template <typename Adapter>
-int AlgSortedDegree(
-  const RCP<GraphModel<Adapter> > &model, 
-  const RCP<OrderingSolution<typename Adapter::gid_t,
-                             typename Adapter::lno_t> > &solution,
-  const RCP<Teuchos::ParameterList> &pl,
-  const RCP<Teuchos::Comm<int> > &comm
-) 
+class AlgSortedDegree
 {
-  typedef typename Adapter::lno_t lno_t;
-  typedef typename Adapter::gno_t gno_t;
-  typedef typename Adapter::gid_t gid_t;
-  typedef typename Adapter::scalar_t scalar_t;
+  public:
 
-  int ierr= 0;
+    AlgSortedDegree()
+    {
+    }
 
-  HELLO;
-
-  lno_t *perm;
-  //perm = (lno_t *) (solution->getPermutationRCP().getRawPtr());
-  perm = (lno_t *) (solution->getPermutation());
-  if (perm==0){
-    // Throw exception
-    cerr << "perm is NULL" << std::endl;
-    ierr = -1;
+  int order(
+    const RCP<GraphModel<Adapter> > &model, 
+    const RCP<OrderingSolution<typename Adapter::gid_t,
+                               typename Adapter::lno_t> > &solution,
+    const RCP<Teuchos::ParameterList> &pl,
+    const RCP<Teuchos::Comm<int> > &comm
+  ) 
+  {
+    typedef typename Adapter::lno_t lno_t;
+    typedef typename Adapter::gno_t gno_t;
+    typedef typename Adapter::gid_t gid_t;
+    typedef typename Adapter::scalar_t scalar_t;
+  
+    int ierr= 0;
+  
+    HELLO;
+  
+    lno_t *perm;
+    //perm = (lno_t *) (solution->getPermutationRCP().getRawPtr());
+    perm = (lno_t *) (solution->getPermutation());
+    if (perm==0){
+      // Throw exception
+      cerr << "perm is NULL" << std::endl;
+      ierr = -1;
+    }
+  
+    // Get local graph.
+    const size_t nVtx = model->getLocalNumVertices();
+    ArrayView<const lno_t> edgeIds;
+    ArrayView<const lno_t> offsets;
+    ArrayView<StridedData<lno_t, scalar_t> > wgts;
+    model->getLocalEdgeList(edgeIds, offsets, wgts);
+  
+    // Store degrees together with index so we can sort.
+    std::vector<std::pair<size_t, size_t> >  degrees(nVtx);
+    for (lno_t i=0; i<(lno_t)nVtx; i++){
+      degrees[i].first  = offsets[i+1] - offsets[i];
+      degrees[i].second = i;
+    }
+  
+    // Sort degrees.
+    if (1) // TODO: Check parameter for inc/dec order
+      std::sort(degrees.begin(), degrees.end(), sort_inc);
+    else
+      std::sort(degrees.begin(), degrees.end(), sort_dec);
+  
+    // Copy permuted indices to perm.
+    for (lno_t i=0; i<(lno_t)nVtx; i++){
+      perm[i] = degrees[i].second;
+    }
+  
+    return ierr;
   }
-
-  // Get local graph.
-  const size_t nVtx = model->getLocalNumVertices();
-  ArrayView<const lno_t> edgeIds;
-  ArrayView<const lno_t> offsets;
-  ArrayView<StridedData<lno_t, scalar_t> > wgts;
-  model->getLocalEdgeList(edgeIds, offsets, wgts);
-
-  // Store degrees together with index so we can sort.
-  std::vector<std::pair<size_t, size_t> >  degrees(nVtx);
-  for (lno_t i=0; i<(lno_t)nVtx; i++){
-    degrees[i].first  = offsets[i+1] - offsets[i];
-    degrees[i].second = i;
-  }
-
-  // Sort degrees.
-  if (1) // TODO: Check parameter for inc/dec order
-    std::sort(degrees.begin(), degrees.end(), sort_inc);
-  else
-    std::sort(degrees.begin(), degrees.end(), sort_dec);
-
-  // Copy permuted indices to perm.
-  for (lno_t i=0; i<(lno_t)nVtx; i++){
-    perm[i] = degrees[i].second;
-  }
-
-  return ierr;
-}
-
+  
+};
 }
 #endif

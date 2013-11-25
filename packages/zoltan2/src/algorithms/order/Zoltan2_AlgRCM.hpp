@@ -58,114 +58,122 @@
 namespace Zoltan2{
 
 template <typename Adapter>
-int AlgRCM(
-  const RCP<GraphModel<Adapter> > &model,
-  const RCP<OrderingSolution<typename Adapter::gid_t,
-			     typename Adapter::lno_t> > &solution,
-  const RCP<Teuchos::ParameterList> &pl,
-  const RCP<Teuchos::Comm<int> > &comm
-)
+class AlgRCM
 {
-  typedef typename Adapter::lno_t lno_t;
-  typedef typename Adapter::gno_t gno_t;
-  typedef typename Adapter::scalar_t scalar_t;
-
-  int ierr= 0;
-
-  HELLO;
-
-  // Check size of communicator: serial only.
-  // TODO: Remove this test when RCM works on local graph.
-  if (comm->getSize() > 1){
-    throw std::runtime_error("RCM currently only works in serial.");
+  public:
+  AlgRCM()
+  {
   }
 
-  // Get local graph.
-  ArrayView<const gno_t> edgeIds;
-  ArrayView<const lno_t> offsets;
-  ArrayView<StridedData<lno_t, scalar_t> > wgts;
-
-  // TODO: edgeIds should be of type lno_t for getLocalEdgeList. Needs revisit.
-  //model->getLocalEdgeList(edgeIds, offsets, wgts); // BUGGY!
-  // Use global graph for now. This only works in serial!
-  ArrayView<const int> procIds;
-  size_t numEdges = model->getEdgeList( edgeIds, procIds, offsets, wgts);
-
-  //cout << "Debug: Local graph from getLocalEdgeList" << endl;
-  //cout << "edgeIds: " << edgeIds << endl;
-  //cout << "offsets: " << offsets << endl;
-
-  const size_t nVtx = model->getLocalNumVertices();
-  ArrayRCP<lno_t> perm = solution->getPermutationRCP();
-
-  // Check if there are actually edges to reorder.
-  // If there are not, then just use the natural ordering.
-  if (numEdges == 0) {
-    for (size_t i = 0; i < nVtx; ++i) {
-      perm[i] = i;
+  int order(
+    const RCP<GraphModel<Adapter> > &model,
+    const RCP<OrderingSolution<typename Adapter::gid_t,
+  			     typename Adapter::lno_t> > &solution,
+    const RCP<Teuchos::ParameterList> &pl,
+    const RCP<Teuchos::Comm<int> > &comm
+  )
+  {
+    typedef typename Adapter::lno_t lno_t;
+    typedef typename Adapter::gno_t gno_t;
+    typedef typename Adapter::scalar_t scalar_t;
+  
+    int ierr= 0;
+  
+    HELLO;
+  
+    // Check size of communicator: serial only.
+    // TODO: Remove this test when RCM works on local graph.
+    if (comm->getSize() > 1){
+      throw std::runtime_error("RCM currently only works in serial.");
     }
-    return 0;
-  }
-
-  // Set the label of each vertex to invalid.
-  Tpetra::global_size_t INVALID = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-  for (size_t i = 0; i < nVtx; ++i) {
-    perm[i] = INVALID;
-  }
-
-  // TODO: Find min-degree (or pseudo-peripheral) root vertex.
-  lno_t root = 0;
-
-  // Do BFS from root
-  std::queue<lno_t> Q;
-  size_t count = 0; // CM label, reversed later
-  size_t next = 0;
-
-  while (count < nVtx) {
-
-    // Label connected component starting at root
-    Q.push(root);
-    //cout << "Debug: perm[" << root << "] = " << count << endl;
-    perm[root] = count++;
-
-    while (Q.size()){
-      // Get a vertex from the queue
-      lno_t v = Q.front();
-      Q.pop();
-      //cout << "Debug: v= " << v << ", offsets[v] = " << offsets[v] << endl;
-
-      // Add unmarked nbors to queue
-      // TODO: If edge weights, sort nbors by decreasing weight,
-      // TODO: Else, sort nbors by increasing degree
-      for (lno_t ptr = offsets[v]; ptr < offsets[v+1]; ++ptr){
-	lno_t nbor = edgeIds[ptr];
-	if (static_cast<Tpetra::global_size_t>(perm[nbor]) == INVALID){
-	  //cout << "Debug: perm[" << nbor << "] = " << count << endl;
-	  perm[nbor] = count++; // Label as we push on Q
-	  Q.push(nbor);
-	}
+  
+    // Get local graph.
+    ArrayView<const gno_t> edgeIds;
+    ArrayView<const lno_t> offsets;
+    ArrayView<StridedData<lno_t, scalar_t> > wgts;
+  
+    // TODO: edgeIds should be of type lno_t for getLocalEdgeList. Needs revisit.
+    //model->getLocalEdgeList(edgeIds, offsets, wgts); // BUGGY!
+    // Use global graph for now. This only works in serial!
+    ArrayView<const int> procIds;
+    size_t numEdges = model->getEdgeList( edgeIds, procIds, offsets, wgts);
+  
+    //cout << "Debug: Local graph from getLocalEdgeList" << endl;
+    //cout << "edgeIds: " << edgeIds << endl;
+    //cout << "offsets: " << offsets << endl;
+  
+    const size_t nVtx = model->getLocalNumVertices();
+    ArrayRCP<lno_t> perm = solution->getPermutationRCP();
+  
+    // Check if there are actually edges to reorder.
+    // If there are not, then just use the natural ordering.
+    if (numEdges == 0) {
+      for (size_t i = 0; i < nVtx; ++i) {
+        perm[i] = i;
+      }
+      return 0;
+    }
+  
+    // Set the label of each vertex to invalid.
+    Tpetra::global_size_t INVALID = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+    for (size_t i = 0; i < nVtx; ++i) {
+      perm[i] = INVALID;
+    }
+  
+    // TODO: Find min-degree (or pseudo-peripheral) root vertex.
+    lno_t root = 0;
+  
+    // Do BFS from root
+    std::queue<lno_t> Q;
+    size_t count = 0; // CM label, reversed later
+    size_t next = 0;
+  
+    while (count < nVtx) {
+  
+      // Label connected component starting at root
+      Q.push(root);
+      //cout << "Debug: perm[" << root << "] = " << count << endl;
+      perm[root] = count++;
+  
+      while (Q.size()){
+        // Get a vertex from the queue
+        lno_t v = Q.front();
+        Q.pop();
+        //cout << "Debug: v= " << v << ", offsets[v] = " << offsets[v] << endl;
+  
+        // Add unmarked nbors to queue
+        // TODO: If edge weights, sort nbors by decreasing weight,
+        // TODO: Else, sort nbors by increasing degree
+        for (lno_t ptr = offsets[v]; ptr < offsets[v+1]; ++ptr){
+  	lno_t nbor = edgeIds[ptr];
+  	if (static_cast<Tpetra::global_size_t>(perm[nbor]) == INVALID){
+  	  //cout << "Debug: perm[" << nbor << "] = " << count << endl;
+  	  perm[nbor] = count++; // Label as we push on Q
+  	  Q.push(nbor);
+  	}
+        }
+      }
+  
+      // Find an unmarked vertex, use as new root
+      while ((next < nVtx) && (static_cast<Tpetra::global_size_t>(perm[next]) != INVALID)) next++;
+      root = next;
+    }
+  
+    // Reverse labels for RCM
+    bool reverse = true; // TODO: Make parameter
+    if (reverse) {
+      lno_t temp;
+      for (size_t i=0; i < nVtx/2; ++i) {
+        // Swap (perm[i], perm[nVtx-i])
+        temp = perm[i];
+        perm[i] = perm[nVtx-1-i];
+        perm[nVtx-1-i] = temp;
       }
     }
-
-    // Find an unmarked vertex, use as new root
-    while ((next < nVtx) && (static_cast<Tpetra::global_size_t>(perm[next]) != INVALID)) next++;
-    root = next;
+  
+    return ierr;
   }
-
-  // Reverse labels for RCM
-  bool reverse = true; // TODO: Make parameter
-  if (reverse) {
-    lno_t temp;
-    for (size_t i=0; i < nVtx/2; ++i) {
-      // Swap (perm[i], perm[nVtx-i])
-      temp = perm[i];
-      perm[i] = perm[nVtx-1-i];
-      perm[nVtx-1-i] = temp;
-    }
-  }
-
-  return ierr;
-}
-
+  
+};
 }
 #endif
