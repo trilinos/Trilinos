@@ -205,8 +205,11 @@ void OrderingProblem<Adapter>::solve(bool newData)
       string pkg = this->params_->template get<string>("order_package", "amd");
       if (pkg.compare("amd") == 0)
       {
-          AlgAMD<base_adapter_t>(this->graphModel_, this->solution_, this->params_,
+          AlgAMD<base_adapter_t> alg;
+          alg.order (this->graphModel_, this->solution_, this->params_,
                           problemComm_);
+          //AlgAMD<base_adapter_t>(this->graphModel_, this->solution_, this->params_,
+                          //problemComm_);
       }
   }
   }
