@@ -254,7 +254,7 @@ template <typename User>
       gids_(), userWeightDim_(0), weights_(), gnos_(), gnosConst_()
 {
   userWeightDim_ = ia->getNumWeightsPer();
-  size_t nLocalIds = ia->getLocalNumIDs();
+  size_t nLocalIds = ia->getLocalNum();
 
   Model<IdentifierAdapter<User> >::maxCount(*comm, userWeightDim_);
 

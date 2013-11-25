@@ -280,11 +280,11 @@ public:
   // The Adapter interface.
   ////////////////////////////////////////////////////
 
-  size_t getLocalNumObjects() const { return getLocalNumberOfVertices();}
+  size_t getLocalNum() const { return getLocalNumberOfVertices();}
 
   int getNumWeightsPer() const { return 0;}
 
-  size_t getObjectWeightsView(const scalar_t *&wgt, int &stride, int idx) const
+  size_t getWeightsView(const scalar_t *&wgt, int &stride, int idx) const
   {
     return getVertexWeights(idx, wgt, stride);
   }

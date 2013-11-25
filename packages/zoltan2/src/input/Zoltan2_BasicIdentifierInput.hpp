@@ -114,27 +114,9 @@ public:
   // The Adapter interface.
   ////////////////////////////////////////////////////////////////
 
-  size_t getLocalNumObjects() const { return numIds_;}
+  size_t getLocalNum() const { return numIds_;}
 
   int getNumWeightsPer() const { return weights_.size(); }
-
-  size_t getObjectWeightsView(const scalar_t *&wgt, int &stride, int idx) const
-  {
-    return getWeightsView(wgt, stride, idx);
-  }
-
-  ////////////////////////////////////////////////////////////////
-  // The IdentifierAdapter interface.
-  // This is the interface that would be called by a model or a problem .
-  ////////////////////////////////////////////////////////////////
-
-  size_t getLocalNumIDs() const { return numIds_;}
-   
-  size_t getIDsView(const gid_t *&Ids) const
-  {
-    Ids = idList_;
-    return numIds_;
-  }
 
   size_t getWeightsView(const scalar_t *&weights, int &stride,
                         int idx) const
@@ -149,6 +131,17 @@ public:
     size_t length;
     weights_[idx].getStridedList(length, weights, stride);
     return length;
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // The IdentifierAdapter interface.
+  // This is the interface that would be called by a model or a problem .
+  ////////////////////////////////////////////////////////////////
+
+  size_t getIDsView(const gid_t *&Ids) const
+  {
+    Ids = idList_;
+    return numIds_;
   }
 
 

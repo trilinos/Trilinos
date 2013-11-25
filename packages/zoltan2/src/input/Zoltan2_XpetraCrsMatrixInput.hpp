@@ -53,7 +53,6 @@
 #include <Zoltan2_MatrixInput.hpp>
 #include <Zoltan2_StridedData.hpp>
 #include <Zoltan2_XpetraTraits.hpp>
-#include <Zoltan2_PartitioningSolution.hpp>
 
 #include <Xpetra_CrsMatrix.hpp>
 
@@ -165,11 +164,11 @@ public:
   // The Adapter interface.
   ////////////////////////////////////////////////////
 
-  size_t getLocalNumObjects() const { return getLocalNumRows();}
+  size_t getLocalNum() const { return getLocalNumRows();}
 
   int getNumWeightsPer() const { return 0;}
 
-  size_t getObjectWeightsView(const scalar_t *&wgt, int &stride, int idx) const
+  size_t getWeightsView(const scalar_t *&wgt, int &stride, int idx) const
   {
     return getRowWeights(idx, wgt, stride);
   }

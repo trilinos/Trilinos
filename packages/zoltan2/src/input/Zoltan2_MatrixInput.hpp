@@ -51,7 +51,6 @@
 #define _ZOLTAN2_MATRIXADAPTER_HPP_
 
 #include <Zoltan2_InputAdapter.hpp>
-#include <Zoltan2_PartitioningSolution.hpp>
 
 namespace Zoltan2 {
 

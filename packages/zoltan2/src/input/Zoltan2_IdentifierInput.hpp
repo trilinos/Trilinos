@@ -52,7 +52,6 @@
 #define _ZOLTAN2_IDENTIFIERADAPTER_HPP_
 
 #include <Zoltan2_InputAdapter.hpp>
-#include <Zoltan2_PartitioningSolution.hpp>
 
 #include <string>
 
@@ -126,16 +125,6 @@ public:
   // My interface.
   ////////////////////////////////////////////////////
 
-  /*! \brief Return the number of identifiers on this process.
-   */
-  virtual size_t getLocalNumIDs() const = 0;
-
-  /*! \brief Return the number of weights associated with each identifier.
-   *   If the number of weights is zero, then we assume that the
-   *   identifiers are equally weighted.
-   */
-  virtual int getNumWeightsPer() const = 0;
-
   /*! \brief Provide a pointer to this process' identifiers.
 
       \param Ids will on return point to the list of the global Ids for 
@@ -145,31 +134,6 @@ public:
    */
 
   virtual size_t getIDsView(gid_t const *&Ids) const = 0;
-
-  /*! \brief Provide a pointer to one of the dimensions of this process' 
-                optional weights.
-
-      \param weights on return will contain a list of the weights for
-               the dimension specified.  If weights for
-           this dimension are to be uniform for all identifierse in the
-           global problem, the \c weights should be a NULL pointer.
-
-      \param stride on return will indicate the stride of the weights list.
-      \param idx is a value ranging from zero to one less than 
-                   getNumWeightsPerID()
-
-
-       If stride is \c k then the weight 
-       corresponding to the identifier Ids[n] (returned in getIdentifierList)
-       should be found at weights[k*n].
-
-       \return The number of values in the weights list.  This may be greater
-          than the number of identifiers, because the stride may be greater
-          than one.
-   */
-
-  virtual size_t getWeightsView(const scalar_t *&weights, int &stride,
-                                int idx = 0) const = 0;
 
  /*! \brief Apply a PartitioningSolution to an input.
    *

@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
   Zoltan2::BasicIdentifierAdapter<userTypes_t> ia(numLocalIds, myIds,
     weightValues, strides);
 
-  if (!fail && ia.getLocalNumIDs() != size_t(numLocalIds)){
+  if (!fail && ia.getLocalNum() != size_t(numLocalIds)){
     fail = 4;
   }
 

@@ -944,7 +944,7 @@ template <typename Adapter>
 
   // Local number of objects.
 
-  size_t numLocalObjects = ia->getLocalNumObjects();
+  size_t numLocalObjects = ia->getLocalNum();
 
   // Parts to which objects are assigned.
 
@@ -968,7 +968,7 @@ template <typename Adapter>
     for (int i=0; i < weightDim; i++){
       int stride;
       const scalar_t *wgt;
-      size_t len = ia->getObjectWeightsView(wgt, stride, i); 
+      size_t len = ia->getWeightsView(wgt, stride, i); 
       ArrayRCP<const scalar_t> wgtArray(wgt, 0, len, false);
       weights[i] = sdata_t(wgtArray, stride);
     }
