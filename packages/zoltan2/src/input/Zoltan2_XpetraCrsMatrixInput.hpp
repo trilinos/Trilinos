@@ -165,13 +165,13 @@ public:
   // The Adapter interface.
   ////////////////////////////////////////////////////
 
-  size_t getLocalNumberOfObjects() const { return getLocalNumRows();}
+  size_t getLocalNumObjects() const { return getLocalNumRows();}
 
-  int getNumberOfWeightsPerObject() const { return 0;}
+  int getNumWeightsPerObject() const { return 0;}
 
-  size_t getObjectWeights(int dim, const scalar_t *&wgt, int &stride) const
+  size_t getObjectWeightsView(const scalar_t *&wgt, int &stride, int idx) const
   {
-    return getRowWeights(dim, wgt, stride);
+    return getRowWeights(idx, wgt, stride);
   }
 
   ////////////////////////////////////////////////////

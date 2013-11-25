@@ -101,24 +101,24 @@ public:
    *  Objects may be coordinates, graph vertices, matrix rows, etc.
    *  They are the objects to be partitioned, ordered, or colored.
    */
-  virtual size_t getLocalNumberOfObjects() const = 0;
+  virtual size_t getLocalNumObjects() const = 0;
 
   /*! \brief Returns the number of weights per object.
    *   Number of weights per object should be zero or greater.  If
    *   zero, then it is assumed that all objects are equally weighted.
    */ 
-  virtual int getNumberOfWeightsPerObject() const = 0;
+  virtual int getNumWeightsPerObject() const = 0;
 
   /*! \brief Provide pointer to a weight array with stride.
-   *    \param dim  the weight dimension, zero or greater
    *    \param wgt on return a pointer to the weights for this dimension
    *    \param stride on return, the value such that
    *       the \t nth weight should be found at <tt> wgt[n*stride] </tt>.
+   *    \param idx  the weight index, zero or greater
    *  \return the length of the \c wgt array, which should be at least
    *   equal to <tt> getLocalNumberOfObjects() * stride </tt>.
    */ 
-  virtual size_t getObjectWeights(int dim, const scalar_t *&wgt, 
-    int &stride) const = 0;
+  virtual size_t getObjectWeightsView(const scalar_t *&wgt, int &stride,
+                                      int idx = 0) const = 0;
 };
   
 }  //namespace Zoltan2

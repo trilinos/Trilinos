@@ -224,11 +224,11 @@ public:
   // The Adapter interface.
   ////////////////////////////////////////////////////////////////
 
-  size_t getLocalNumberOfObjects() const { return numIds_;}
+  size_t getLocalNumObjects() const { return numIds_;}
 
-  int getNumberOfWeightsPerObject() const { return numWeights_;}
+  int getNumWeightsPerObject() const { return numWeights_;}
 
-  size_t getObjectWeights(int idx, const scalar_t *&wgt, int &stride) const
+  size_t getObjectWeightsView(const scalar_t *&wgt, int &stride, int idx) const
   {
     return getVectorWeights(idx, wgt, stride);
   }
