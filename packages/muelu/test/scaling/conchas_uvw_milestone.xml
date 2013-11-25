@@ -56,7 +56,7 @@
     <ParameterList name="myProlongatorFact">
       <Parameter name="factory"                             type="string" value="SaPFactory"/>
       <Parameter name="P"                                   type="string" value="myTentativePFact"/>
-      <!-- <Parameter name="Damping factor"                      type="double" value="4./3"/> -->
+      <!-- <Parameter name="Damping factor"                      type="double" value="1.333"/> -->
     </ParameterList>
 
     <ParameterList name="myTentativeRFact"> <!-- for projecting coordinates -->
@@ -99,7 +99,7 @@
       <Parameter name="minRowsPerProcessor"                 type="int"    value="1000"/> <!-- default = 2000 -->
       <Parameter name="nonzeroImbalance"                    type="double" value="1.327"/> <!-- default = 1.2 -->
       <Parameter name="startLevel"                          type="int"    value="1"/>   <!-- default = 1 -->
-      <Parameter name="diffusiveHeuristic"                  type="int"    value="0"/>
+      <Parameter name="remapPartitions"                     type="bool"   value="false"/>
     </ParameterList>
 
     <ParameterList name="myRebalanceProlongatorFact">
@@ -186,7 +186,7 @@
     <Parameter name="maxCoarseSize"                         type="int"      value="1000"/> <!-- Min number of rows on coarsest level -->
     <Parameter name="verbosity"                             type="string"   value="High"/> <!--None, Low, Medium, High, Extreme -->
 
-    <ParameterList name="AllButCoarsestLevel">
+    <ParameterList name="All">
       <Parameter name="startLevel"                          type="int"      value="0"/>
       <Parameter name="Smoother"                            type="string"   value="ForwardGaussSeidel"/>
       <Parameter name="Aggregates"                          type="string"   value="UncoupledAggregationFact"/>
@@ -197,10 +197,6 @@
       <Parameter name="A"                                   type="string"   value="myRebalanceAFact"/>
       <Parameter name="P"                                   type="string"   value="myRebalanceProlongatorFact"/>
       <Parameter name="R"                                   type="string"   value="myRebalanceRestrictionFact"/>
-    </ParameterList>
-
-    <ParameterList name="CoarsestLevel">
-      <Parameter name="startLevel"                          type="int"      value="-1"/>
       <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>
     </ParameterList>
 

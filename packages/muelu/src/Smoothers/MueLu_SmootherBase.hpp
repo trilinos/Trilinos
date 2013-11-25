@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -60,7 +60,7 @@ namespace MueLu {
     smoothers.
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class SmootherBase : virtual public BaseClass {
 #undef MUELU_SMOOTHERBASE_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -76,12 +76,11 @@ namespace MueLu {
     //@{
 
     //! Apply smoother.
-    virtual void Apply(MultiVector &x, MultiVector const &rhs, bool const &InitialGuessIsZero = false) const = 0;
+    virtual void Apply(MultiVector& x, const MultiVector& rhs, bool InitialGuessIsZero = false) const = 0;
 
     //@}
 
   }; //class SmootherBase
-
 } //namespace MueLu
 
 #define MUELU_SMOOTHERBASE_SHORT

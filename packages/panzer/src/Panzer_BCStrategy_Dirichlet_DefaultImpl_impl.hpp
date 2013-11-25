@@ -46,29 +46,35 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Assert.hpp"
+
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Phalanx_FieldManager.hpp"
-#include "Panzer_PhysicsBlock.hpp"
-
-#include "Panzer_PureBasis.hpp"
 
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_DataLayout.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
 // Evaluators
+#include "Panzer_PhysicsBlock.hpp"
+#include "Panzer_PureBasis.hpp"
 #include "Panzer_Dirichlet_Residual.hpp"
+#include "Panzer_Dirichlet_Residual_EdgeBasis.hpp"
 #include "Panzer_GatherSolution_Epetra.hpp"
 #include "Panzer_GatherBasisCoordinates.hpp"
 #include "Panzer_ScatterDirichletResidual_Epetra.hpp"
+#include "Panzer_BasisValues_Evaluator.hpp"
+#include "Panzer_PointValues_Evaluator.hpp"
+#include "Panzer_DOF.hpp"
 
 // ***********************************************************************
 template <typename EvalT>
 panzer::BCStrategy_Dirichlet_DefaultImpl<EvalT>::
 BCStrategy_Dirichlet_DefaultImpl(const panzer::BC& bc,
-				 const Teuchos::RCP<panzer::GlobalData>& global_data) :
+				 const Teuchos::RCP<panzer::GlobalData>& global_data,
+				 const bool in_check_apply_bc) :
   panzer::BCStrategy<EvalT>(bc),
-  panzer::GlobalDataAcceptorDefaultImpl(global_data)
+  panzer::GlobalDataAcceptorDefaultImpl(global_data),
+  check_apply_bc(in_check_apply_bc)
 {
 
 }
@@ -151,6 +157,8 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 	       pb.getBaseCellTopology().getDimension() - 1);
     p.set<int>("Local Side ID", pb.cellData().side());
 
+    p.set("Check Apply BC",check_apply_bc);
+
     RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildScatterDirichlet<EvalT>(p);
       // rcp(new panzer::ScatterDirichletResidual_Epetra<EvalT,panzer::Traits>(p));
     
@@ -184,6 +192,9 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
   using std::string;
   using std::pair;
 
+  // volume cell data object (used for handling vector valued fields)
+  panzer::CellData cellData(pb.cellData().numCells(),pb.cellData().getCellTopology());
+
   // **************************
   // Coordinates for basis functions (no integration points needed)
   // **************************
@@ -192,24 +203,38 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
     for (std::map<std::string,Teuchos::RCP<panzer::PureBasis> >::const_iterator it=bases.begin();
          it!=bases.end();it++) {
 
-       // add basis coordinates
-       RCP< PHX::Evaluator<panzer::Traits> > basis_op
-          = rcp(new panzer::GatherBasisCoordinates<EvalT,panzer::Traits>(*it->second));
-       fm.template registerEvaluator<EvalT>(basis_op);
+       Teuchos::RCP<panzer::PureBasis> basis = it->second;
+
+       // add basis coordinates no matter what
+       {
+         RCP< PHX::Evaluator<panzer::Traits> > basis_op
+            = rcp(new panzer::GatherBasisCoordinates<EvalT,panzer::Traits>(*it->second));
+         fm.template registerEvaluator<EvalT>(basis_op);
+       }
+
+       // add point values and basis values
+       if(basis->isVectorBasis()) {
+         RCP<const panzer::PointRule> pointRule = rcp(new panzer::PointRule(basis->name()+":BasisPoints",basis->cardinality(),cellData)); 
+
+         {
+           RCP< PHX::Evaluator<panzer::Traits> > eval 
+             = rcp(new panzer::PointValues_Evaluator<EvalT,panzer::Traits>(pointRule,basis));
+         
+           fm.template registerEvaluator<EvalT>(eval);
+         }
+         {
+           RCP< PHX::Evaluator<panzer::Traits> > eval 
+             = rcp(new panzer::BasisValues_Evaluator<EvalT,panzer::Traits>(pointRule,basis));
+         
+           fm.template registerEvaluator<EvalT>(eval);
+         }
+       }
     }
   }
 
   // Gather
   for (vector<string>::const_iterator dof_name = required_dof_names.begin();
        dof_name != required_dof_names.end(); ++dof_name) {
-    
-    ParameterList p("BC Gather");
-    
-    RCP<vector<string> > gather_names_vec = rcp(new vector<string>);
-    gather_names_vec->push_back(*dof_name);
-    
-    p.set("DOF Names", gather_names_vec);
-    p.set("Indexer Names", gather_names_vec);
     
     const vector<pair<string,RCP<panzer::PureBasis> > >& dofBasisPair = pb.getProvidedDOFs();
     RCP<panzer::PureBasis> basis;
@@ -224,22 +249,53 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
 		       << "\" is not a valid DOF for the boundary condition:\n"
 		       << this->m_bc << "\n");
     
-    p.set("Basis", basis);
+    {
+      ParameterList p("BC Gather");
+      RCP<vector<string> > gather_names_vec = rcp(new vector<string>);
+      gather_names_vec->push_back(*dof_name);
     
-    RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGather<EvalT>(p);
+      p.set("DOF Names", gather_names_vec);
+      p.set("Indexer Names", gather_names_vec);
+      p.set("Basis", basis);
     
-    fm.template registerEvaluator<EvalT>(op);
+      RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGather<EvalT>(p);
+      fm.template registerEvaluator<EvalT>(op);
+    } 
+
+    if(basis->requiresOrientations())  {
+      ParameterList p("Gather Orientation");
+      RCP<vector<string> > gather_names_vec = rcp(new vector<string>);
+      gather_names_vec->push_back(*dof_name);
+    
+      p.set("DOF Names", gather_names_vec);
+      p.set("Indexer Names", gather_names_vec);
+      p.set("Basis", basis);
+      
+      RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGatherOrientation<EvalT>(p);
+      
+      fm.template registerEvaluator<EvalT>(op);
+    }
+
+    // evaluator a vector basis at the basis points
+    if(basis->isVectorBasis()) {
+      RCP<const panzer::PointRule> pointRule = rcp(new panzer::PointRule(basis->name()+":BasisPoints",basis->cardinality(),cellData)); 
+
+      ParameterList p;
+      p.set("Name",*dof_name);
+      p.set("Basis",basis.getConst());
+      p.set("Point Rule",pointRule);
+ 
+      RCP< PHX::Evaluator<panzer::Traits> > eval 
+             = rcp(new panzer::DOF_PointValues<EvalT,panzer::Traits>(p));
+      fm.template registerEvaluator<EvalT>(eval);
+    } 
+    
   }
   
   // Dirichlet Residual: residual = dof_value - target_value
   map<string,string>::const_iterator res_to_target = residual_to_target_field_map.begin();
   for (map<string,string>::const_iterator res_to_dof = residual_to_dof_names_map.begin();
        res_to_dof != residual_to_dof_names_map.end(); ++res_to_dof, ++res_to_target) {
-
-    ParameterList p("Dirichlet Residual: "+res_to_dof->first + " to " + res_to_dof->second);
-    p.set("Residual Name", res_to_dof->first);
-    p.set("DOF Name", res_to_dof->second);
-    p.set("Value Name", res_to_target->second);
 
     const vector<pair<string,RCP<panzer::PureBasis> > >& dofBasisPair = pb.getProvidedDOFs();
     RCP<panzer::PureBasis> basis;
@@ -254,12 +310,33 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
 		       << "\" is not a valid DOF for the boundary condition:\n"
 		       << this->m_bc << "\n");
     
-    p.set("Data Layout", basis->functional);
+    if(basis->isScalarBasis()) {
+      ParameterList p("Dirichlet Residual: "+res_to_dof->first + " to " + res_to_dof->second);
+      p.set("Residual Name", res_to_dof->first);
+      p.set("DOF Name", res_to_dof->second);
+      p.set("Value Name", res_to_target->second);
+      p.set("Data Layout", basis->functional);
 
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
-      rcp(new panzer::DirichletResidual<EvalT,panzer::Traits>(p));
+      RCP< PHX::Evaluator<panzer::Traits> > op = 
+        rcp(new panzer::DirichletResidual<EvalT,panzer::Traits>(p));
     
-    fm.template registerEvaluator<EvalT>(op);
+      fm.template registerEvaluator<EvalT>(op);
+    }
+    else if(basis->isVectorBasis()) {
+      RCP<const panzer::PointRule> pointRule = rcp(new panzer::PointRule(basis->name()+":BasisPoints",basis->cardinality(),cellData)); 
+
+      ParameterList p;
+      p.set("Residual Name", res_to_dof->first);
+      p.set("DOF Name", res_to_dof->second);
+      p.set("Value Name", res_to_target->second);
+      p.set("Basis", basis.getConst());
+      p.set("Point Rule", pointRule);
+
+      RCP< PHX::Evaluator<panzer::Traits> > op = 
+        rcp(new panzer::DirichletResidual_EdgeBasis<EvalT,panzer::Traits>(p));
+    
+      fm.template registerEvaluator<EvalT>(op);
+    }
 
   }
 }

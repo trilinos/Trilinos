@@ -47,7 +47,7 @@
 
 namespace {
 
-  using Kokkos::TBBNode;
+  using KokkosClassic::TBBNode;
   RCP<TBBNode> tbbNode_;
 
   template <>

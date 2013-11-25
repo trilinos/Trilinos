@@ -57,6 +57,13 @@
 
 namespace panzer {
 
+/** Print out unique global indexer load balancing information. This includes
+  * the minimum unknown, maximum unknown count, mean unknown and standard deviation of
+  * the unknowns for both owned and owned and shared.
+  */
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+std::string printUGILoadBalancingInformation(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi);
+
 /** Construct a vector that contains a reduced set of field numbers.
   * The ordering is based on the ordering from <code>ugi.getOwnedAndSharedIndices()</code>.
   * The term "reduced" means that this processor must be able to fully determine the
@@ -72,11 +79,6 @@ namespace panzer {
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 Teuchos::RCP<Tpetra::Vector<int,int,GlobalOrdinalT,Node> >
 buildGhostedFieldReducedVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi);
-
-// template <typename LocalOrdinalT,typename GlobalOrdinalT>
-// Teuchos::RCP<Tpetra::Vector<int,int,GlobalOrdinalT,Kokkos::DefaultNode::DefaultNodeType> >
-// buildGhostedFieldReducedVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi)
-// { return buildGhostedFieldReducedVector<LocalOrdinalT,GlobalOrdinalT,Kokkos::DefaultNode::DefaultNodeType>(ugi); }
 
 /** This function builds a vector that defines fields for each global unknown.
   * Notice that requires global communication and uses (underneath) the <code>Tpetra</code>
@@ -96,10 +98,10 @@ buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> 
 /** Convenience function default to the basic Kokkos node type.
   */
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-Teuchos::RCP<const Tpetra::Vector<int,int,GlobalOrdinalT,Kokkos::DefaultNode::DefaultNodeType> >
+Teuchos::RCP<const Tpetra::Vector<int,int,GlobalOrdinalT,KokkosClassic::DefaultNode::DefaultNodeType> >
 buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi,
-                        const Teuchos::RCP<const Tpetra::Vector<int,int,GlobalOrdinalT,Kokkos::DefaultNode::DefaultNodeType> > & reducedVec=Teuchos::null)
-{ return buildGhostedFieldVector<LocalOrdinalT,GlobalOrdinalT,Kokkos::DefaultNode::DefaultNodeType>(ugi,reducedVec); }
+                        const Teuchos::RCP<const Tpetra::Vector<int,int,GlobalOrdinalT,KokkosClassic::DefaultNode::DefaultNodeType> > & reducedVec=Teuchos::null)
+{ return buildGhostedFieldVector<LocalOrdinalT,GlobalOrdinalT,KokkosClassic::DefaultNode::DefaultNodeType>(ugi,reducedVec); }
 
 /** This function builds a vector that defines fields for each global unknown.
   * Notice that requires global communication and uses (underneath) the <code>Tpetra</code>
@@ -124,8 +126,8 @@ void buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdin
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi,
                              std::vector<int> & fieldNumbers,
-                             const Teuchos::RCP<const Tpetra::Vector<int,int,GlobalOrdinalT,Kokkos::DefaultNode::DefaultNodeType> > & reducedVec=Teuchos::null)
-{ buildGhostedFieldVector<LocalOrdinalT,GlobalOrdinalT,Kokkos::DefaultNode::DefaultNodeType>(ugi,fieldNumbers,reducedVec); }
+                             const Teuchos::RCP<const Tpetra::Vector<int,int,GlobalOrdinalT,KokkosClassic::DefaultNode::DefaultNodeType> > & reducedVec=Teuchos::null)
+{ buildGhostedFieldVector<LocalOrdinalT,GlobalOrdinalT,KokkosClassic::DefaultNode::DefaultNodeType>(ugi,fieldNumbers,reducedVec); }
 
 /** Build a reduced data vector using the reduced field vector. Here reduced is meant in the
   * exact same context as for the field vectors.
@@ -146,7 +148,14 @@ void updateGhostedDataReducedVector(const std::string & fieldName,const std::str
                                     Tpetra::MultiVector<ScalarT,int,GlobalOrdinalT,Node> & dataVector);
 
 /** Construct a map that only uses a certain field.
- */
+  *
+  * \param[in] fieldNum Field ID to use to build the map
+  * \param[in] fieldVector An listing of the fields. For instance [0,1,2,0,1,2,0,1,2...]
+  *                        for a three dimensional interlaced vector field.
+  *                        
+  * \returns A vector that contains the indices of the field requested. Again for the
+  *          three dimensional vector field if fieldNum==1, it would be [1,4,7,10,13,...].
+  */
 template <typename GlobalOrdinalT,typename Node>
 Teuchos::RCP<const Tpetra::Map<int,GlobalOrdinalT,Node> >
 getFieldMap(int fieldNum,const Tpetra::Vector<int,int,GlobalOrdinalT,Node> & fieldVector);

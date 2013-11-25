@@ -10,6 +10,9 @@
 
    By: Chris Siefert <csiefer@sandia.gov>
    Version History
+   10/28/2013 - Bug fixes for Maxwell2; adding some sanity checks.
+   09/27/2013 - Bug fixes for Maxwell2.
+   05/23/2013 - Adding thresholding control to Maxwell2
    05/01/2013 - Adding reuse support.
    04/26/2013 - Adding Maxwell2 support
    10/04/2012 - Some minor code cleanup and the memory bugfix.
@@ -124,12 +127,13 @@ Epetra_CrsMatrix* epetra_setup(int Nrows, int Ncols, int* rowind,int* colptr, do
   Epetra_Map RangeMap(Nrows,0,Comm);
   Epetra_Map DomainMap(Ncols,0,Comm);
 
-  Epetra_CrsMatrix *A=new Epetra_CrsMatrix(Copy,RangeMap,0);
+  Epetra_CrsMatrix *A=new Epetra_CrsMatrix(Copy,RangeMap,DomainMap,0);
 
   /* Do the matrix assembly */
   for(int i=0;i<Ncols;i++)
-    for(int j=colptr[i];j<colptr[i+1];j++)
+    for(int j=colptr[i];j<colptr[i+1];j++){
       A->InsertGlobalValues(rowind[j],1,&vals[j],&i);
+    }
   A->FillComplete(DomainMap,RangeMap);
 
   return A;
@@ -444,7 +448,7 @@ int ml_epetra_data_pack::status(){
 */
 int ml_epetra_data_pack::setup(int N,int* rowind,int* colptr, double* vals){
   /* Matrix Fill */
-  A=epetra_setup(N,N,rowind,colptr,vals);
+  A=epetra_setup(N,N,rowind,colptr,vals);  
 
   /* Allocate Memory */
   Prec=new MultiLevelPreconditioner(*A, *List,false);  
@@ -482,13 +486,15 @@ int ml_epetra_data_pack::solve(Teuchos::ParameterList *TPL, Epetra_CrsMatrix *Am
 /************* ml_maxwell_data_pack class functions ************/
 /**************************************************************/
 /**************************************************************/
-ml_maxwell_data_pack::ml_maxwell_data_pack():ml_data_pack(),EdgeMatrix(NULL),GradMatrix(NULL),NodeMatrix(NULL),Prec(NULL){}
+ml_maxwell_data_pack::ml_maxwell_data_pack():ml_data_pack(),EdgeMatrix(NULL),GradMatrix(NULL),NodeMatrix(NULL),DummyMatrix(NULL),DummyMatrix2(NULL),Prec(NULL){}
 
 ml_maxwell_data_pack::~ml_maxwell_data_pack(){
   delete Prec;
   delete EdgeMatrix;
   delete NodeMatrix;
   delete GradMatrix;
+  delete DummyMatrix;
+  delete DummyMatrix2;
 }/*end destructor*/
 
 /* ml_epetra_data_pack_status - This function does a status query on the
@@ -532,6 +538,11 @@ int ml_maxwell_data_pack::setup_preconditioner(){
   List22_.set("ML output",List->get("ML output",0));
   List11c_.set("ML output",List->get("ML output",0));
 
+  // Ditto for thresholding
+  List11_.set("aggregation: threshold",List->get("aggregation: threshold",0.0));
+  List22_.set("aggregation: threshold",List->get("aggregation: threshold",0.0));
+  List11c_.set("aggregation: threshold",List->get("aggregation: threshold",0.0));
+
   // To avoid having to grab other inputs...
   List->set("refmaxwell: disable addon",true); 
 
@@ -545,18 +556,28 @@ int ml_maxwell_data_pack::setup_preconditioner(){
     operator_complexity=-1;
     return IS_FALSE;
   }
+  /* Avoid aliasing */
+  DummyMatrix = new Epetra_CrsMatrix(Copy,EdgeMatrix->RowMap(),0);
+  for(int i=0; i<DummyMatrix->NumMyRows(); i++) {
+    int GID=DummyMatrix->GRID(i);
+    double one=1.0;
+    DummyMatrix->InsertGlobalValues(GID,1,&one,&GID);    
+  }
+  DummyMatrix->FillComplete();
  
-  /* Build Hierarchy */
+
+  /* Build Hierarchy */  
 #ifdef ENABLE_MS_MATRIX
-  Prec=new RefMaxwellPreconditioner(*EdgeMatrix, *GradMatrix,*EdgeMatrix,*NodeMatrix,*EdgeMatrix,*List);
+  DummyMatrix2=new Epetra_CrsMatrix(*EdgeMatrix);
+  Prec=new RefMaxwellPreconditioner(*EdgeMatrix, *GradMatrix,*DummyMatrix2,*NodeMatrix,*DummyMatrix,*List);
 #else
-  Prec=new RefMaxwellPreconditioner(*EdgeMatrix, *GradMatrix,*NodeMatrix,*EdgeMatrix,*List);
+  Prec=new RefMaxwellPreconditioner(*EdgeMatrix, *GradMatrix,*NodeMatrix,*DummyMatrix,*List);
 #endif
 
   /* Pull Operator Complexity */
-  operator_complexity=-1;
-    //  operator_complexity = Prec->GetML_Aggregate()->operator_complexity / Prec->GetML_Aggregate()->fine_complexity;
-  
+  double nnz;
+  Prec->Complexities(operator_complexity,nnz);  
+
   return IS_TRUE;
 }
 
@@ -1060,8 +1081,9 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
         
     /* Pull Problem Size */
     nr=mxGetM(prhs[2]);
-    nc=mxGetN(prhs[2]);
-    
+    nc=mxGetN(prhs[2]);    
+    if(nr!=D->NumMyRows() && nc!=D->NumMyCols()) mexErrMsgTxt("Error: Problem size mismatch.\n");
+
     /* Pull RHS */
     b=mxGetPr(prhs[3]);
 

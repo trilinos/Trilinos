@@ -152,8 +152,9 @@ namespace Belos {
     /// \brief "Container" for the GMRES projected least-squares problem.
     /// \author Mark Hoemmen
     ///
-    /// See the documentation of \c ProjectedLeastSquaresSolver to
-    /// learn how to use this class in a GMRES-type iterative solver.
+    /// See the documentation of ProjectedLeastSquaresSolver to learn
+    /// how to use this class in a GMRES or Flexible GMRES iterative
+    /// linear solver.
     template<class Scalar>
     class ProjectedLeastSquaresProblem {
     public:
@@ -1054,11 +1055,12 @@ namespace Belos {
 
       /// \brief Solve the projected least-squares problem.
       ///
-      /// Call this method only after calling \c updateColumn() or \c
-      /// updateColumns().  If you call \c updateColumn(), use the
-      /// same column index when calling this method.  If you call \c
-      /// updateColumns(), use the endCol argument as the column index
-      /// for calling this method.
+      /// Call this method only after calling updateColumn() or
+      /// updateColumns().  If you call updateColumn(), use the same
+      /// column index when calling this method as you did when
+      /// calling updateColumn().  If you call updateColumns(), use
+      /// its \c endCol argument as the column index for calling this
+      /// method.
       ///
       /// \param problem [in/out] The projected least-squares problem.
       ///

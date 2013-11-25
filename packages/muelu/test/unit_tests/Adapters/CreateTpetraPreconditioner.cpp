@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -98,7 +98,7 @@ TEUCHOS_UNIT_TEST(TpetraOperator, CreatePreconditioner)
     //normalized RHS, zero initial guess
     RHS1->setSeed(846930886);
     RHS1->randomize();
-    Teuchos::Array<ST::magnitudeType> norms(1);
+    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
     RHS1->norm2(norms);
     RHS1->scale(1/norms[0]);
 
@@ -162,7 +162,7 @@ TEUCHOS_UNIT_TEST(TpetraOperator, CreatePreconditioner_PDESystem)
     //normalized RHS, zero initial guess
     RHS1->setSeed(846930886);
     RHS1->randomize();
-    Teuchos::Array<ST::magnitudeType> norms(1);
+    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
     RHS1->norm2(norms);
     RHS1->scale(1/norms[0]);
 //

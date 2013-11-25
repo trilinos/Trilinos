@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -92,7 +92,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, nonsymExample)
 
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-  Teuchos::Array<ST::magnitudeType> results(2);
+  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> results(2);
 
   // used Xpetra lib (for maps and smoothers)
   Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
@@ -112,7 +112,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, nonsymExample)
   // build nullspace
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
   nullSpace->putScalar( (SC) 1.0);
-  Teuchos::Array<ST::magnitudeType> norms(1);
+  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
   nullSpace->norm1(norms);
   if (comm->getRank() == 0)
     out << "||NS|| = " << norms[0] << std::endl;
@@ -272,7 +272,9 @@ TEUCHOS_UNIT_TEST(PgPFactory, NonStandardMaps)
     Location: /home/jngaida/dev/MueLu/src/preCopyrightTrilinos/muelu/test/unit_tests/PgPFactory.cpp:216
   */
 
+#ifdef __GNUC__
 #warning Unit test PgPFactory NonStandardMaps disabled
+#endif
   return;
 
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
@@ -491,7 +493,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, ColumnBasedOmegas)
   // build nullspace
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
   nullSpace->putScalar( (SC) 1.0);
-  Teuchos::Array<ST::magnitudeType> norms(1);
+  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
   nullSpace->norm1(norms);
   if (comm->getRank() == 0)
     out << "||NS|| = " << norms[0] << std::endl;
@@ -632,7 +634,6 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegas)
   out << "version: " << MueLu::Version() << std::endl;
   out << "Test PgPFactory (reuse row based omegas for restriction operator)" << std::endl;
 
-
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
   // used Xpetra lib (for maps and smoothers)
@@ -640,11 +641,11 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegas)
 
   // generate problem
   LO maxLevels = 3;
-  LO its=10;
-  LO nEle = 63;
+  LO its       = 10;
+  LO nEle      = 63;
   const RCP<const Map> map = MapFactory::Build(lib, nEle, 0, comm);
   Teuchos::ParameterList matrixParameters;
-  matrixParameters.set("nx",nEle);
+  matrixParameters.set("nx", nEle);
 
   // create nonsymmetric tridiagonal matrix
   RCP<Matrix> Op = Galeri::Xpetra::TriDiag<SC,LO,GO,Map,CrsMatrixWrap>(map, nEle, 2.0, -1.0, -1.0);
@@ -652,7 +653,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegas)
   // build nullspace
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
   nullSpace->putScalar( (SC) 1.0);
-  Teuchos::Array<ST::magnitudeType> norms(1);
+  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
   nullSpace->norm1(norms);
   if (comm->getRank() == 0)
     out << "||NS|| = " << norms[0] << std::endl;
@@ -663,8 +664,8 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegas)
 
   RCP<Level> Finest = H->GetLevel();
   Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-  Finest->Set("A",Op);                      // set fine level matrix
-  Finest->Set("Nullspace",nullSpace);       // set null space information for finest level
+  Finest->Set("A",         Op);              // set fine level matrix
+  Finest->Set("Nullspace", nullSpace);       // set null space information for finest level
 
   // define transfer operators
   RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
@@ -674,39 +675,39 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegas)
   CoupledAggFact->SetPhase3AggCreation(0.5);
 
   RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
-  RCP<PgPFactory>        Pfact = rcp( new PgPFactory());
-  RCP<Factory>          Rfact = rcp( new GenericRFactory() );
-  RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
+  RCP<PgPFactory>        Pfact     = rcp(new PgPFactory());
+  RCP<Factory>           Rfact     = rcp(new GenericRFactory());
+  RCP<RAPFactory>        Acfact    = rcp(new RAPFactory());
   H->SetMaxCoarseSize(1);
 
   Pfact->ReUseDampingParameters(true);
 
   // setup smoothers
   Teuchos::ParameterList smootherParamList;
-  smootherParamList.set("relaxation: type", "Symmetric Gauss-Seidel");
-  smootherParamList.set("relaxation: sweeps", (LO) 1);
+  smootherParamList.set("relaxation: type",           "Symmetric Gauss-Seidel");
+  smootherParamList.set("relaxation: sweeps",         (LO) 1);
   smootherParamList.set("relaxation: damping factor", (SC) 1.0);
-  RCP<SmootherPrototype> smooProto = rcp( new TrilinosSmoother("RELAXATION", smootherParamList) );
-  RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
+  RCP<SmootherPrototype> smooProto = rcp(new TrilinosSmoother("RELAXATION", smootherParamList));
+  RCP<SmootherFactory>   SmooFact  = rcp(new SmootherFactory(smooProto));
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
   RCP<SmootherFactory> coarseSolveFact = rcp(new SmootherFactory(smooProto, Teuchos::null));
 
   FactoryManager M;
-  M.SetFactory("P", Pfact);
-  M.SetFactory("R", Rfact);
-  M.SetFactory("A", Acfact);
-  M.SetFactory("Ptent", Ptentfact);
-  M.SetFactory("Aggregates", CoupledAggFact);
-  M.SetFactory("Smoother", SmooFact);
-  M.SetFactory("CoarseSolver", coarseSolveFact);
+  M.SetFactory("P",             Pfact);
+  M.SetFactory("R",             Rfact);
+  M.SetFactory("A",             Acfact);
+  M.SetFactory("Ptent",         Ptentfact);
+  M.SetFactory("Aggregates",    CoupledAggFact);
+  M.SetFactory("Smoother",      SmooFact);
+  M.SetFactory("CoarseSolver",  coarseSolveFact);
 
   H->Setup(M, 0, maxLevels);
 
   // test some basic multigrid data
   RCP<Level> coarseLevel = H->GetLevel(1);
   coarseLevel->print(out);
-  TEST_EQUALITY(coarseLevel->IsRequested("A",MueLu::NoFactory::get()), false);
+  TEST_EQUALITY(coarseLevel->IsRequested("A", MueLu::NoFactory::get()), false);
 
   RCP<Matrix> P1 = coarseLevel->Get< RCP<Matrix> >("P");
   RCP<Matrix> R1 = coarseLevel->Get< RCP<Matrix> >("R");
@@ -740,57 +741,57 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegas)
 
   //Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
   RCP<Level> l0 = H->GetLevel(0);
-  TEST_EQUALITY(l0->IsRequested("A",MueLu::NoFactory::get()), false);
-  TEST_EQUALITY(l0->IsRequested("P",MueLu::NoFactory::get()), false);
-  TEST_EQUALITY(l0->IsRequested("PreSmoother",MueLu::NoFactory::get()), false);
-  TEST_EQUALITY(l0->IsRequested("PostSmoother",MueLu::NoFactory::get()), false);
-  TEST_EQUALITY(l0->IsRequested("R",MueLu::NoFactory::get()), false);
-  TEST_EQUALITY(l0->IsRequested("RowBasedOmega",Pfact.get()), false);
-  TEST_EQUALITY(l0->IsAvailable("A",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(l0->IsAvailable("P",MueLu::NoFactory::get()), false);
-  TEST_EQUALITY(l0->IsAvailable("PreSmoother",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(l0->IsAvailable("PostSmoother",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(l0->IsAvailable("RowBasedOmega",Pfact.get()), false);
-  TEST_EQUALITY(l0->IsAvailable("R",MueLu::NoFactory::get()), false);
-  TEST_EQUALITY(l0->IsRequested("P",Pfact.get()), false);
-  TEST_EQUALITY(l0->GetKeepFlag("A",MueLu::NoFactory::get()), MueLu::UserData);
+  TEST_EQUALITY(l0->IsRequested("A",            MueLu::NoFactory::get()), false);
+  TEST_EQUALITY(l0->IsRequested("P",            MueLu::NoFactory::get()), false);
+  TEST_EQUALITY(l0->IsRequested("PreSmoother",  MueLu::NoFactory::get()), false);
+  TEST_EQUALITY(l0->IsRequested("PostSmoother", MueLu::NoFactory::get()), false);
+  TEST_EQUALITY(l0->IsRequested("R",            MueLu::NoFactory::get()), false);
+  TEST_EQUALITY(l0->IsRequested("RowBasedOmega",Pfact.get()),             false);
+  TEST_EQUALITY(l0->IsAvailable("A",            MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l0->IsAvailable("P",            MueLu::NoFactory::get()), false);
+  TEST_EQUALITY(l0->IsAvailable("PreSmoother",  MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l0->IsAvailable("PostSmoother", MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l0->IsAvailable("RowBasedOmega",Pfact.get()),             false);
+  TEST_EQUALITY(l0->IsAvailable("R",            MueLu::NoFactory::get()), false);
+  TEST_EQUALITY(l0->IsRequested("P",            Pfact.get()),             false);
+  TEST_EQUALITY(l0->GetKeepFlag("A",            MueLu::NoFactory::get()), MueLu::UserData);
   RCP<Level> l1 = H->GetLevel(1);
-  TEST_EQUALITY(l1->IsRequested("A",MueLu::NoFactory::get()), false);
-  TEST_EQUALITY(l1->IsRequested("P",MueLu::NoFactory::get()), false);
-  TEST_EQUALITY(l1->IsRequested("PreSmoother",MueLu::NoFactory::get()), false);
-  TEST_EQUALITY(l1->IsRequested("PostSmoother",MueLu::NoFactory::get()), false);
-  TEST_EQUALITY(l1->IsRequested("R",MueLu::NoFactory::get()), false);
-  TEST_EQUALITY(l1->IsRequested("RowBasedOmega",Pfact.get()), false);
-  TEST_EQUALITY(l1->IsAvailable("A",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(l1->IsAvailable("P",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(l1->IsAvailable("PreSmoother",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(l1->IsAvailable("PostSmoother",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(l1->IsAvailable("R",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(l1->IsAvailable("RowBasedOmega",Pfact.get()), false);
-  TEST_EQUALITY(l1->IsRequested("P",Pfact.get()), false);
-  TEST_EQUALITY(l1->GetKeepFlag("A",MueLu::NoFactory::get()), MueLu::Final);
-  TEST_EQUALITY(l1->GetKeepFlag("P",MueLu::NoFactory::get()), MueLu::Final);
-  TEST_EQUALITY(l1->GetKeepFlag("R",MueLu::NoFactory::get()), MueLu::Final);
-  TEST_EQUALITY(l1->GetKeepFlag("PreSmoother",MueLu::NoFactory::get()), MueLu::Final);
-  TEST_EQUALITY(l1->GetKeepFlag("PostSmoother",MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(l1->IsRequested("A",            MueLu::NoFactory::get()), false);
+  TEST_EQUALITY(l1->IsRequested("P",            MueLu::NoFactory::get()), false);
+  TEST_EQUALITY(l1->IsRequested("PreSmoother",  MueLu::NoFactory::get()), false);
+  TEST_EQUALITY(l1->IsRequested("PostSmoother", MueLu::NoFactory::get()), false);
+  TEST_EQUALITY(l1->IsRequested("R",            MueLu::NoFactory::get()), false);
+  TEST_EQUALITY(l1->IsRequested("RowBasedOmega",Pfact.get()),             false);
+  TEST_EQUALITY(l1->IsAvailable("A",            MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l1->IsAvailable("P",            MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l1->IsAvailable("PreSmoother",  MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l1->IsAvailable("PostSmoother", MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l1->IsAvailable("R",            MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l1->IsAvailable("RowBasedOmega",Pfact.get()),             false);
+  TEST_EQUALITY(l1->IsRequested("P",            Pfact.get()),             false);
+  TEST_EQUALITY(l1->GetKeepFlag("A",            MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(l1->GetKeepFlag("P",            MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(l1->GetKeepFlag("R",            MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(l1->GetKeepFlag("PreSmoother",  MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(l1->GetKeepFlag("PostSmoother", MueLu::NoFactory::get()), MueLu::Final);
   RCP<Level> l2 = H->GetLevel(2);
-  TEST_EQUALITY(l2->IsRequested("A",MueLu::NoFactory::get()), false);
-  TEST_EQUALITY(l2->IsRequested("P",MueLu::NoFactory::get()), false);
-  TEST_EQUALITY(l2->IsRequested("PreSmoother",MueLu::NoFactory::get()), false);
-  TEST_EQUALITY(l2->IsRequested("PostSmoother",MueLu::NoFactory::get()), false);
-  TEST_EQUALITY(l2->IsRequested("R",MueLu::NoFactory::get()), false);
-  TEST_EQUALITY(l2->IsRequested("RowBasedOmega",Pfact.get()), false);
-  TEST_EQUALITY(l2->IsAvailable("A",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(l2->IsAvailable("P",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(l2->IsAvailable("PreSmoother",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(l2->IsAvailable("PostSmoother",MueLu::NoFactory::get()), false);
-  TEST_EQUALITY(l2->IsAvailable("R",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(l2->IsAvailable("RowBasedOmega",Pfact.get()), false);
-  TEST_EQUALITY(l2->IsRequested("P",Pfact.get()), false);
-  TEST_EQUALITY(l2->GetKeepFlag("A",MueLu::NoFactory::get()), MueLu::Final);
-  TEST_EQUALITY(l2->GetKeepFlag("P",MueLu::NoFactory::get()), MueLu::Final);
-  TEST_EQUALITY(l2->GetKeepFlag("R",MueLu::NoFactory::get()), MueLu::Final);
-  TEST_EQUALITY(l2->GetKeepFlag("PreSmoother",MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(l2->IsRequested("A",            MueLu::NoFactory::get()), false);
+  TEST_EQUALITY(l2->IsRequested("P",            MueLu::NoFactory::get()), false);
+  TEST_EQUALITY(l2->IsRequested("PreSmoother",  MueLu::NoFactory::get()), false);
+  TEST_EQUALITY(l2->IsRequested("PostSmoother", MueLu::NoFactory::get()), false);
+  TEST_EQUALITY(l2->IsRequested("R",            MueLu::NoFactory::get()), false);
+  TEST_EQUALITY(l2->IsRequested("RowBasedOmega",Pfact.get()),             false);
+  TEST_EQUALITY(l2->IsAvailable("A",            MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l2->IsAvailable("P",            MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l2->IsAvailable("PreSmoother",  MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l2->IsAvailable("PostSmoother", MueLu::NoFactory::get()), false);
+  TEST_EQUALITY(l2->IsAvailable("R",            MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l2->IsAvailable("RowBasedOmega",Pfact.get()),             false);
+  TEST_EQUALITY(l2->IsRequested("P",            Pfact.get()),             false);
+  TEST_EQUALITY(l2->GetKeepFlag("A",            MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(l2->GetKeepFlag("P",            MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(l2->GetKeepFlag("R",            MueLu::NoFactory::get()), MueLu::Final);
+  TEST_EQUALITY(l2->GetKeepFlag("PreSmoother",  MueLu::NoFactory::get()), MueLu::Final);
 }
 
 TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegasTransP)
@@ -820,7 +821,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegasTransP)
   // build nullspace
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
   nullSpace->putScalar( (SC) 1.0);
-  Teuchos::Array<ST::magnitudeType> norms(1);
+  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
   nullSpace->norm1(norms);
   if (comm->getRank() == 0)
     out << "||NS|| = " << norms[0] << std::endl;
@@ -971,7 +972,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, EpetraVsTpetra)
 
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-  Teuchos::Array<ST::magnitudeType> results(2);
+  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> results(2);
 
   // run test only on 1 procs
   // then we can check shape of transfer operators
@@ -1001,7 +1002,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, EpetraVsTpetra)
       // build nullspace
       RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
       nullSpace->putScalar( (SC) 1.0);
-      Teuchos::Array<ST::magnitudeType> norms(1);
+      Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
       nullSpace->norm1(norms);
       if (comm->getRank() == 0)
         out << "||NS|| = " << norms[0] << std::endl;
@@ -1119,7 +1120,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, EpetraVsTpetra)
       TEST_EQUALITY(R2->getGlobalNumRows(), 7);
       TEST_EQUALITY(R2->getGlobalNumCols(), 21);
 
-      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtentTPtent = MueLu::Utils<Scalar,LO,GO>::Multiply(*P1,true,*P1,false);
+      Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtentTPtent = MueLu::Utils<Scalar,LO,GO>::Multiply(*P1,true,*P1,false,out);
       TEST_EQUALITY(PtentTPtent->getGlobalMaxNumRowEntries()-3<1e-12, true);
       TEST_EQUALITY(P1->getGlobalMaxNumRowEntries()-2<1e-12, true);
       TEST_EQUALITY(P2->getGlobalMaxNumRowEntries()-2<1e-12, true);

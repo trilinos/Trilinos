@@ -102,4 +102,22 @@
   throw std::runtime_error(oss.str()); \
   }
 
+/*! \brief Throw an error when actual value is not equal to expected value.
+ *
+ *  Check if the two arguments passed are equal and throw a runtime error if
+ *  they are not.
+ */
+
+#define Z2_ASSERT_VALUE(actual, expected) \
+  { \
+      if (actual != expected) \
+      { \
+          std::ostringstream oss; \
+          oss << "Expected value " << expected << "does not match actual value"\
+              << actual << "in" << __FILE__<<", "<<__LINE__ \
+              << std::endl; \
+          throw std::runtime_error(oss.str()); \
+      }\
+  }
+
 #endif

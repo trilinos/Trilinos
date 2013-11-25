@@ -118,12 +118,13 @@ void Piro::RythmosSolver<Scalar>::initialize(
 
   {
     const std::string verbosity = rythmosPL->get("Verbosity Level", "VERB_DEFAULT");
-    solnVerbLevel = Teuchos::VERB_DEFAULT;
     if      (verbosity == "VERB_NONE")    solnVerbLevel = Teuchos::VERB_NONE;
+    else if (verbosity == "VERB_DEFAULT") solnVerbLevel = Teuchos::VERB_DEFAULT;
     else if (verbosity == "VERB_LOW")     solnVerbLevel = Teuchos::VERB_LOW;
     else if (verbosity == "VERB_MEDIUM")  solnVerbLevel = Teuchos::VERB_MEDIUM;
     else if (verbosity == "VERB_HIGH")    solnVerbLevel = Teuchos::VERB_HIGH;
     else if (verbosity == "VERB_EXTREME") solnVerbLevel = Teuchos::VERB_EXTREME;
+    else TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,"Unknown verbosity option specified in Piro_RythmosSolver.");
   }
 
   t_initial = rythmosPL->get("Initial Time", 0.0);
@@ -497,7 +498,9 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
 
   // Set paramters p_in as part of initial conditions
   if (num_p > 0) {
-    state_ic.set_p(l, p_in);
+    if (Teuchos::nonnull(p_in)) {
+      state_ic.set_p(l, p_in);
+    }
   }
 
   *out << "\nstate_ic:\n" << Teuchos::describe(state_ic, solnVerbLevel);

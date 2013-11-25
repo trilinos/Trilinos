@@ -412,11 +412,9 @@ MACRO(TRIBITS_FILTER_OR_ASSERT_EXTRA_REPOS)
       IF (NOT EXTRAREPO_EXISTS)
         SET(ADD_EXTRAREPO FALSE)
         IF (${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
-          MESSAGE(
-            "\n***"
-            "\n*** WARNING!  Ignoring missing extra repo '${EXTRAREPO_NAME}'"
-            " as requested since ${EXTRAREPO_SOURCE_DIR} does not exist!\n" 
-            "\n***\n")
+          MESSAGE("-- "
+            "WARNING: Ignoring missing extra repo '${EXTRAREPO_NAME}'"
+            " as requested since ${EXTRAREPO_SOURCE_DIR} does not exist" )
         ELSE()
           MESSAGE( SEND_ERROR
             "ERROR!  Skipping missing extra repo '${EXTRAREPO_NAME}'"

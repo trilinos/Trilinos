@@ -71,7 +71,8 @@ namespace Tpetra {
   /// the source and target of the Import or Export, and process ranks
   /// ("image IDs") to which to send.
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  struct ImportExportData {
+  class ImportExportData {
+  public:
     typedef LocalOrdinal local_ordinal_type;
     typedef GlobalOrdinal global_ordinal_type;
     typedef Node node_type;

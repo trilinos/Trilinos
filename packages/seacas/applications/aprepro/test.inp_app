@@ -1,6 +1,6 @@
 $ Test program for Aprepro
 $
-Test number reprsentations
+Test number representations
 {1}	{10e-1}	{10.e-1}	{.1e+1}	{.1e1}
 {1}	{10E-1}	{10.E-1}	{.1E+1}	{.1E1}
 	
@@ -47,7 +47,7 @@ This line should not be echoed
         {Endif}
 This line should be echoed. (d)
 
-$ Test if - else lines
+$ Test ifdef - else lines
              {Ifdef(ifyes)}
 This line should be echoed. (1)
 			{Else}
@@ -59,7 +59,7 @@ This line should not be echoed. (3)
 This line should be echoed (4)
    {Endif}
 
-$ Test if - else lines
+$ Test ifndef - else lines
  {Ifndef(ifyes)}
 This line should not be echoed. (5)
   {Else}
@@ -74,6 +74,59 @@ $ Lines a, b, c, d, 1, 4, 6, 7 should be echoed
 $ Check line counting -- should be on line 74: {Parse Error}
 {ifdef(ifyes)} {This should be an error}
 {endif}
+
+$ ========================================================================
+$ Test if lines
+{if(sqrt(4) == 2)}
+  This line should be echoed. (a)
+{endif}
+  This line should be echoed. (b)
+{if(sqrt(2) == 2 || sqrt(3) == 2)}
+ This line should not be echoed
+{endif}
+This line should be echoed. (c)
+
+{diff = sqrt(3)*sqrt(3) - 3}
+$ Test if - else lines
+{if(sqrt(3)*sqrt(3) - 3 == diff)}
+ complex if works
+{else}
+ complex if does not work
+{endif}
+
+{if (sqrt(4) == 2)}
+ {if (sqrt(9) == 3)}
+  {if (sqrt(16) == 4)}
+    square roots work
+  {else}
+    sqrt(16) does not work
+  {endif}
+ {else}
+   sqrt(9) does not work
+ {endif}
+{else}
+  sqrt(4) does not work
+{endif}
+
+{v1 = 1} {v2 = 2}
+{if (v1 == v2)}
+  Bad if
+  {if (v1 != v2)}
+   should not see (1)
+  {else}
+   should not see (2)
+  {endif}
+   should not see (3)
+{else}
+  {if (v1 != v2)}
+   good nested if
+  {else}
+   bad nested if
+  {endif}
+  good
+  make sure it is still good
+{endif}
+$ ========================================================================
 
 $ Test int and [] (shortcut for int)
 {int(5.01)}	{int(-5.01)}

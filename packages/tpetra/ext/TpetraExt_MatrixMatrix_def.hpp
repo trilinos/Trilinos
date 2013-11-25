@@ -91,16 +91,9 @@ void Multiply(
   //A and B should already be Filled.
   //(Should we go ahead and call FillComplete() on them if necessary?
   // or error out? For now, we choose to error out.)
-  TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), std::runtime_error,
-    "Uh oh. Looks like there's a bit of a problem here. No worries though. We'll help you figure it out. You're "
-    "a fantastic programer and this just a minor bump in the road! Maybe the information below can help you out a bit."
-    "\n\n MatrixMatrix::Multiply(): Matrix A is not fill complete.");
-  TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), std::runtime_error,
-    "Uh oh. Looks like there's a bit of a problem here. No worries though. We'll help you figure it out. You're "
-    "a fantastic programer and this just a minor bump in the road! Maybe the information below can help you out a bit."
-    "\n\n MatrixMatrix::Multiply(): Matrix B is not fill complete.");
-  TEUCHOS_TEST_FOR_EXCEPTION(C.isLocallyIndexed() , std::runtime_error,
-    "MatrixMatrix::Add ERROR, input matrix C must not be locally indexed!");
+  TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), std::runtime_error, "MatrixMatrix::Multiply(): Matrix A is not fill complete.");
+  TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), std::runtime_error, "MatrixMatrix::Multiply(): Matrix B is not fill complete.");
+  TEUCHOS_TEST_FOR_EXCEPTION(C.isLocallyIndexed() , std::runtime_error, "MatrixMatrix::Multiply(): Result matrix C must not be locally indexed.");
 
   //Convience typedefs
   typedef CrsMatrixStruct<
@@ -207,7 +200,7 @@ void Multiply(
 
   //Now call the appropriate method to perform the actual multiplication.
 
-  CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crsmat(C);
+  CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> crsmat(C);
 
   MMdetails::mult_A_B(Aview, Bview, crsmat);
 
@@ -738,6 +731,7 @@ void mult_A_B(
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
   bool onlyCalculateStructure)
 {
+  typedef Teuchos::ScalarTraits<Scalar> STS;
   //TEUCHOS_FUNC_TIME_MONITOR_DIFF("mult_A_B", mult_A_B);
   LocalOrdinal C_firstCol = Bview.colMap->getMinLocalIndex();
   LocalOrdinal C_lastCol = Bview.colMap->getMaxLocalIndex();
@@ -829,7 +823,11 @@ void mult_A_B(
 
     for(k = OrdinalTraits<size_t>::zero(); k < Aview.numEntriesPerRow[i]; ++k) {
       LocalOrdinal Ak = Acol2Brow[Aindices_i[k]];
-      Scalar Aval = onlyCalculateStructure ? Teuchos::as<Scalar>(0) : Aval_i[k];
+      Scalar Aval = Aval_i[k];
+      if (onlyCalculateStructure)
+        Aval = STS::zero();
+      else if (Aval == STS::zero())
+        continue;
 
       if (Bview.remote[Ak]) continue;
 
@@ -893,7 +891,11 @@ void mult_A_B(
 
     for(k = OrdinalTraits<size_t>::zero(); k < Aview.numEntriesPerRow[i]; ++k) {
       LocalOrdinal Ak = Acol2Brow[Aindices_i[k]];
-      Scalar Aval = onlyCalculateStructure ? Teuchos::as<Scalar>(0) : Aval_i[k];
+      Scalar Aval = Aval_i[k];
+      if (onlyCalculateStructure)
+        Aval = STS::zero();
+      else if (Aval == STS::zero())
+        continue;
 
       if (!Bview.remote[Ak]) continue;
 

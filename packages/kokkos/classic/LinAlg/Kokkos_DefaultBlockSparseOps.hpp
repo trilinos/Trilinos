@@ -56,7 +56,7 @@
 #include "Kokkos_DefaultArithmetic.hpp"
 #include "Kokkos_DefaultBlockSparseKernelOps.hpp"
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   // default implementation
   template <class Scalar, class Ordinal, class Node = DefaultNode::DefaultNodeType>
@@ -385,6 +385,6 @@ namespace Kokkos {
     }
   }
 
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif /* KOKKOS_DEFAULTSPARSEOPS_HPP */

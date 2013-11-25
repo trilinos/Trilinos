@@ -287,9 +287,9 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
   // set the number of blocks we need to save to compute the nev eigenvalues of interest.
   _xtra_nevBlocks = pl.get("Extra NEV Blocks",0);
   if (nev%_blockSize) {
-    _nevBlocks = nev/_blockSize + _xtra_nevBlocks + 1;
+    _nevBlocks = nev/_blockSize + 1;
   } else {
-    _nevBlocks = nev/_blockSize + _xtra_nevBlocks;
+    _nevBlocks = nev/_blockSize;
   }
 
   // determine if we should use the dynamic scheme for selecting the current number of retained eigenvalues.
@@ -448,21 +448,16 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
     bks_solver->setAuxVecs( Teuchos::tuple< Teuchos::RCP<const MV> >(probauxvecs) );
   }
 
-  // Check to see if there is enough of a subspace to use the dynamic boundary for restarting.
-  if ( _dynXtraNev && _blockSize==1 ) {
-    int maxNumVecs = ( bks_solver->getMaxSubspaceDim() - _nevBlocks ) / 2;
-    if ( maxNumVecs < _nevBlocks ) {
-      _dynXtraNev = false;
-      printer->stream(Debug) << " Turning OFF dymamic boundary for restarts because nev = " << nev << ", and ncv = " 
-                             << bks_solver->getMaxSubspaceDim() << std::endl << std::endl;
-    }
-  }
-  
   // Create workspace for the Krylov basis generated during a restart
   // Need at most (_nevBlocks*_blockSize+1) for the updated factorization and another block for the current factorization residual block (F).
   //  ---> (_nevBlocks*_blockSize+1) + _blockSize
   // If Hermitian, this becomes _nevBlocks*_blockSize + _blockSize
   // we only need this if there is the possibility of restarting, ex situ
+
+  // Maximum allowable extra vectors that BKS can keep to accelerate convergence
+  int maxXtraBlocks = 0;
+  if ( _dynXtraNev ) maxXtraBlocks = ( ( bks_solver->getMaxSubspaceDim() - nev ) / _blockSize ) / 2;
+
   Teuchos::RCP<MV> workMV;
   if (_maxRestarts > 0) {
     if (_inSituRestart==true) {
@@ -470,13 +465,11 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
       workMV = MVT::Clone( *_problem->getInitVec(), 1 );
     }
     else { // inSituRestart == false
-      int maxNumVecs = _nevBlocks*_blockSize;
-      // Additional nev vectors for dynamic restart
-      if ( _dynXtraNev && _blockSize==1 ) maxNumVecs = ( bks_solver->getMaxSubspaceDim() - _nevBlocks ) / 2;
       if (_problem->isHermitian()) {
-        workMV = MVT::Clone( *_problem->getInitVec(), maxNumVecs + _blockSize );
+        workMV = MVT::Clone( *_problem->getInitVec(), (_nevBlocks+maxXtraBlocks)*_blockSize + _blockSize );
       } else {
-        workMV = MVT::Clone( *_problem->getInitVec(), maxNumVecs + 1 + _blockSize );
+        // Increase workspace by 1 because of potential complex conjugate pairs on the Ritz vector boundary
+        workMV = MVT::Clone( *_problem->getInitVec(), (_nevBlocks+maxXtraBlocks)*_blockSize + 1 + _blockSize );
       }
     }
   } else {
@@ -549,15 +542,22 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
 
           int numConv = ordertest->howMany();
           cur_nevBlocks = _nevBlocks*_blockSize;
-          if ( _dynXtraNev && _blockSize==1 ) {
-            int maxDynNev = ( bks_solver->getMaxSubspaceDim() - _nevBlocks ) / 2;
-            if ( cur_nevBlocks + numConv <= maxDynNev )
-              cur_nevBlocks += numConv;
-            else
-              cur_nevBlocks = maxDynNev;
-          }
+
+          // Add in extra blocks for restarting if either static or dynamic boundaries are being used. 
+          int moreNevBlocks = std::min( maxXtraBlocks, std::max( numConv/_blockSize, _xtra_nevBlocks) );
+          if ( _dynXtraNev )
+            cur_nevBlocks += moreNevBlocks * _blockSize;
+          else if ( _xtra_nevBlocks )
+            cur_nevBlocks += _xtra_nevBlocks * _blockSize;
+/*
+            int cur_numConv = numConv;
+            while ( (cur_nevBlocks < (_nevBlocks + maxXtraVecs)) && cur_numConv > 0 ) {
+              cur_nevBlocks++;
+              cur_numConv--;
+*/
   
           printer->stream(Debug) << " Performing restart number " << numRestarts << " of " << _maxRestarts << std::endl << std::endl;
+          printer->stream(Debug) << "   - Current NEV blocks is " << cur_nevBlocks << ", the minimum is " << _nevBlocks*_blockSize << std::endl;
   
           // Get the most current Ritz values before we continue.
           _ritzValues = bks_solver->getRitzValues();
@@ -577,6 +577,17 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
             _conjSplit = false;
           }
 
+          // Print out a warning to the user if complex eigenvalues were found on the boundary of the restart subspace
+          // and the eigenproblem is Hermitian.  This solver is not prepared to handle this situation.
+          if (_problem->isHermitian() && _conjSplit) 
+          {
+            printer->stream(Warnings) 
+              << " Eigenproblem is Hermitian, complex eigenvalues have been detected, and eigenvalues of interest split a conjugate pair!!!" 
+              << std::endl
+              << " Block Krylov-Schur eigensolver cannot guarantee correct behavior in this situation, please turn Hermitian flag off!!!"
+              << std::endl;
+          }
+ 
           // Update the Krylov-Schur decomposition
 
           // Get a view of the Schur vectors of interest.

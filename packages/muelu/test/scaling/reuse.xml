@@ -70,12 +70,6 @@
       <Parameter name="factory"                             type="string" value="TentativePFactory"/>
     </ParameterList>
 
-    <ParameterList name="mySmoothFact">
-      <Parameter name="factory"                             type="string" value="SaPFactory"/>
-      <Parameter name="A"                                   type="string" value="myFilteredAFact"/>
-      <Parameter name="P"                                   type="string" value="myTentativePFact"/>
-    </ParameterList>
-
     <!-- =======================  ENERGY MINIMIZATION  ======================= -->
     <!-- <ParameterList name="myNullspaceFact"> -->
       <!-- <Parameter name="factory"                             type="string" value="NullspacePresmoothFactory"/> -->
@@ -83,8 +77,8 @@
 
     <ParameterList name="myPatternFact">
       <Parameter name="factory"                             type="string" value="PatternFactory"/>
-      <Parameter name="P"                                   type="string" value="mySmoothFact"/>
-      <Parameter name="k"                                   type="int"    value="0"/>
+      <Parameter name="P"                                   type="string" value="myTentativePFact"/>
+      <Parameter name="k"                                   type="int"    value="1"/>
     </ParameterList>
 
     <ParameterList name="myConstraintFact">
@@ -149,13 +143,13 @@
   <!-- Definition of the multigrid preconditioner -->
   <ParameterList name="Hierarchy">
 
-    <Parameter name="numDesiredLevel"                       type="int"      value="2"/>         <!-- Max number of levels -->
+    <Parameter name="numDesiredLevel"                       type="int"      value="6"/>         <!-- Max number of levels -->
     <Parameter name="maxCoarseSize"                         type="int"      value="500"/>       <!-- Min number of rows on coarsest level -->
     <Parameter name="verbosity"                             type="string"   value="High"/>
     <Parameter name="reuse"                                 type="bool"     value="true"/>      <!-- Allow factories to call Build method multiple times -->
     <!-- <Parameter name="dependencyOutputLevel"                 type="int"      value="0"/> -->
 
-    <ParameterList name="AllButCoarsestLevel">
+    <ParameterList name="All">
       <Parameter name="startLevel"                          type="int"      value="0"/>
       <Parameter name="Smoother"                            type="string"   value="Chebyshev"/>
       <!-- <Parameter name="Smoother"                            type="string"   value="SymGaussSeidel"/> -->
@@ -166,12 +160,7 @@
       <!-- <Parameter name="Aggregates"                          type="string"   value="UserAggregationFact"/> -->
       <Parameter name="Nullspace"                           type="string"   value="myTentativePFact"/>
       <Parameter name="Graph"                               type="string"   value="myCoalesceDropFact"/>
-    </ParameterList>
-
-    <ParameterList name="CoarsestLevel">
-      <Parameter name="startLevel"                          type="int"      value="-1"/>
       <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>
-      <!-- TODO: check how last level is built (A,P,R) fact -->
     </ParameterList>
 
   </ParameterList>

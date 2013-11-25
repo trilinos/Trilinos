@@ -58,7 +58,7 @@
 #include "Kokkos_DefaultRelaxationKernelOps.hpp"
 #include "Kokkos_DefaultSparseOps.hpp"
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   /*!
     \class DefaultRelaxation
@@ -597,6 +597,6 @@ namespace Kokkos {
 
   } //sweep_chebyshev()
 
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif // KOKKOS_DEFAULTRELAXATION_HPP

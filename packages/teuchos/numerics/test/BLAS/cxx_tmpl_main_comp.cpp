@@ -787,8 +787,10 @@ int main(int argc, char *argv[])
 	M2_1 = N1*std::abs(incy1);
 	N2_1 = M1*std::abs(incx1);
       }
-      OType2 M2_2 = ConvertType( M2_1, M2_2 );
-      OType2 N2_2 = ConvertType( N2_1, N2_2 );
+      OType2 M2_2 = 0;
+      OType2 N2_2 = 0;
+      M2_2 = ConvertType( M2_1, M2_2 );
+      N2_2 = ConvertType( N2_1, N2_2 );
 
       LDA1 = GetRandom(MVMIN, MVMAX);
       while (LDA1 < M1) {

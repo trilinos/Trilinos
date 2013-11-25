@@ -153,6 +153,9 @@ namespace ML_Epetra
   
     //! Returns the Epetra_Map object associated with the range of this operator.
     const Epetra_Map& OperatorRangeMap() const {return(*RangeMap_);};
+
+    //! Return operator complexity and #nonzeros in fine grid matrix.
+    void Complexities(double &complexity, double &fineNnz);
     //@}
 
 
@@ -244,7 +247,7 @@ namespace ML_Epetra
 #endif    
 
     //! Solver mode
-    string mode;
+    std::string mode;
 
     //! Aggregation info
     bool aggregate_with_sigma;

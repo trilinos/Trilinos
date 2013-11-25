@@ -60,7 +60,7 @@
 #include "Kokkos_DefaultSparseSolveKernelOps.hpp"
 #include "Kokkos_DefaultSparseMultiplyKernelOps.hpp"
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   namespace details {
 
@@ -480,7 +480,7 @@ namespace Kokkos {
     std::string description () const {
       using Teuchos::TypeNameTraits;
       std::ostringstream os;
-      os << "Kokkos::DefaultHostSparseOps<"
+      os << "KokkosClassic::DefaultHostSparseOps<"
          << "Scalar=" << TypeNameTraits<Scalar>::name()
          << ", Ordinal=" << TypeNameTraits<Ordinal>::name()
          << ", Node=" << TypeNameTraits<Node>::name()
@@ -847,6 +847,50 @@ namespace Kokkos {
                  const RangeScalar& omega = Teuchos::ScalarTraits<RangeScalar>::one(),
                  const enum ESweepDirection direction = Forward) const;
 
+    /// \brief Reordered Gauss-Seidel or SOR on \f$B = A X\f$.
+    ///
+    /// Apply a forward or backward sweep of reordered Gauss-Seidel or
+    /// Successive Over-Relaxation (SOR) to the linear system(s) \f$B
+    /// = A X\f$.  For Gauss-Seidel, set the damping factor \c omega
+    /// to 1.  The ordering can be a partial one, in which case the Gauss-Seidel is only
+    /// executed on a local subset of unknowns.
+    ///
+    /// \tparam DomainScalar The type of entries in the input
+    ///   multivector X.  This may differ from the type of entries in
+    ///   A or in B.
+    /// \tparam RangeScalar The type of entries in the output
+    ///   multivector B.  This may differ from the type of entries in
+    ///   A or in X.
+    ///
+    /// \param B [in] Right-hand side(s).
+    /// \param X [in/out] On input: initial guess(es).  On output:
+    ///   result multivector(s).
+    /// \param D [in] Inverse of diagonal entries of the matrix A.
+    /// \param rowIndices [in] Ordered list of indices on which to execute GS.
+    /// \param omega [in] SOR damping factor.  omega = 1 results in
+    ///   Gauss-Seidel.
+    /// \param direction [in] Sweep direction: Forward or Backward.
+    ///   If you want a symmetric sweep, call this method twice, first
+    ///   with direction = Forward then with direction = Backward.
+    ///
+    /// \note We don't include a separate "Symmetric" direction mode
+    ///   in order to avoid confusion when using this method to
+    ///   implement "hybrid" Jacobi + symmetric (Gauss-Seidel or SOR)
+    ///   for a matrix distributed over multiple processes.  ("Hybrid"
+    ///   means "Gauss-Seidel or SOR within the process, Jacobi
+    ///   outside.")  In that case, interprocess communication (a
+    ///   boundary exchange) must occur before both the forward sweep
+    ///   and the backward sweep, so we would need to invoke the
+    ///   kernel once per sweep direction anyway.
+    template <class DomainScalar, class RangeScalar>
+    void
+    reorderedGaussSeidel (const MultiVector<DomainScalar,Node> &B,
+			  MultiVector<RangeScalar,Node> &X,
+			  const MultiVector<Scalar,Node> &D,
+			  const ArrayView<Ordinal> & rowIndices,
+			  const RangeScalar& omega = Teuchos::ScalarTraits<RangeScalar>::one(),
+			  const enum ESweepDirection direction = Forward) const;
+
     /// \brief "Add in place": compute <tt>*this = alpha*A + beta*(*this)</tt>.
     ///
     /// This method may choose to reuse storage of <tt>*this</tt>.
@@ -879,6 +923,14 @@ namespace Kokkos {
                              const MultiVector<Scalar,Node> &D,
                              const RangeScalar& omega = Teuchos::ScalarTraits<RangeScalar>::one(),
                              const ESweepDirection direction = Forward) const;
+
+    template <class DomainScalar, class RangeScalar, class OffsetType>
+    void reorderedGaussSeidelPrivate (MultiVector< RangeScalar,Node> &X,
+				      const MultiVector<DomainScalar,Node> &B,
+				      const MultiVector<Scalar,Node> &D,
+				      const ArrayView<Ordinal> & rowIndices,
+				      const RangeScalar& omega = Teuchos::ScalarTraits<RangeScalar>::one(),
+				      const ESweepDirection direction = Forward) const;
 
     template <class DomainScalar, class RangeScalar, class OffsetType>
     void multiplyPrivate(Teuchos::ETransp trans,
@@ -917,7 +969,7 @@ namespace Kokkos {
   void DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::finalizeGraph(Teuchos::EUplo uplo, Teuchos::EDiag diag, DefaultCrsGraph<Ordinal,Node> &graph, const RCP<ParameterList> &params)
   {
     graph.setMatDesc(uplo,diag);
-    std::string FuncName("Kokkos::DefaultHostSparseOps::finalizeGraph(graph,params)");
+    std::string FuncName("KokkosClassic::DefaultHostSparseOps::finalizeGraph(graph,params)");
     TEUCHOS_TEST_FOR_EXCEPTION(
         graph.isInitialized() == false,
         std::runtime_error, FuncName << ": graph has not yet been initialized."
@@ -937,7 +989,7 @@ namespace Kokkos {
   void DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::finalizeMatrix(const DefaultCrsGraph<Ordinal,Node> &graph, DefaultCrsMatrix<Scalar,Ordinal,Node> &matrix, const RCP<ParameterList> &params)
   {
     // nothing much to do here
-    std::string FuncName("Kokkos::DefaultHostSparseOps::finalizeMatrix(graph,matrix,params)");
+    std::string FuncName("KokkosClassic::DefaultHostSparseOps::finalizeMatrix(graph,matrix,params)");
     TEUCHOS_TEST_FOR_EXCEPTION(
         matrix.isInitialized() == false,
         std::runtime_error, FuncName << ": matrix has not yet been initialized."
@@ -1000,7 +1052,7 @@ namespace Kokkos {
     (void) A;
     (void) beta;
     (void) B;
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Kokkos::"
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "KokkosClassic::"
       "DefaultHostSparseOps: sum constructor not implemented.");
   }
 
@@ -1014,7 +1066,7 @@ namespace Kokkos {
     (void) alpha;
     (void) A;
     (void) beta;
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Kokkos::"
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "KokkosClassic::"
       "DefaultHostSparseOps::addInPlace: Not implemented.");
   }
 
@@ -1241,6 +1293,117 @@ namespace Kokkos {
     }
   }
 
+
+  template <class Scalar, class Ordinal, class Node, class Allocator>
+  template <class DomainScalar, class RangeScalar, class OffsetType>
+  void DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::
+  reorderedGaussSeidelPrivate (MultiVector<RangeScalar,Node> &X,
+			       const MultiVector<DomainScalar,Node> &B,
+			       const MultiVector<Scalar,Node> &D,
+			       const ArrayView<Ordinal> & rowIndices,			       
+			       const RangeScalar& omega,
+			       const ESweepDirection direction) const
+  {
+    typedef Teuchos::ScalarTraits<RangeScalar> STS;
+
+    if (numRows_ == 0) {
+      return; // Nothing to do.
+    }
+    const size_t numCols = B.getNumCols ();
+    if (numCols == 0) {
+      return; // Nothing to do.
+    }
+
+    // Get the raw pointers to all the arrays.
+    ArrayRCP<const OffsetType> ptr_wrapped;
+    getOffsets (ptr_wrapped);
+    const OffsetType* const ptr = ptr_wrapped.getRawPtr ();
+    const Ordinal* const ind    = inds_.getRawPtr ();
+    const Scalar* const val     = vals_.getRawPtr ();
+    const DomainScalar* const b = B.getValues ().getRawPtr ();
+    const size_t b_stride       = B.getStride ();
+    RangeScalar* const x        = X.getValuesNonConst ().getRawPtr ();
+    const size_t x_stride       = X.getStride ();
+    const Scalar* const d       = D.getValues ().getRawPtr ();
+    const Ordinal* const rowInd = rowIndices.getRawPtr();
+    const Ordinal numActive     = (Ordinal) rowIndices.size();
+
+    if (numCols == 1) {
+      RangeScalar x_temp;
+
+      if (direction == Forward) {
+	for (Ordinal ii = 0; ii < numActive; ++ii) {
+	  Ordinal i = rowInd[ii];
+          x_temp = Teuchos::ScalarTraits<RangeScalar>::zero ();
+          for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
+            const Ordinal j = ind[k];
+            const Scalar A_ij = val[k];
+            x_temp += A_ij * x[j];
+          }
+          x[i] += omega * d[i] * (b[i] - x_temp);
+        }
+      } else if (direction == Backward) {
+	for (Ordinal ii = numActive - 1; ii >= 0; --ii) {
+	  Ordinal i = rowInd[ii];
+          x_temp = Teuchos::ScalarTraits<RangeScalar>::zero ();
+          for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
+            const Ordinal j = ind[k];
+            const Scalar A_ij = val[k];
+            x_temp += A_ij * x[j];
+          }
+          x[i] += omega * d[i] * (b[i] - x_temp);
+        }
+      }
+    }
+    else { // numCols > 1
+      // mfh 20 Dec 2012: If Gauss-Seidel for multivectors with
+      // multiple columns becomes important, we can add unrolled
+      // implementations.  The implementation below is not unrolled.
+      // It may also be reasonable to parallelize over right-hand
+      // sides, if there are enough of them, especially if the matrix
+      // fits in cache.
+      Teuchos::Array<RangeScalar> temp (numCols);
+      RangeScalar* const x_temp = temp.getRawPtr ();
+
+      if (direction == Forward) {
+	for (Ordinal ii = 0; ii < numActive; ++ii) {
+	  Ordinal i = rowInd[ii];
+          for (size_t c = 0; c < numCols; ++c) {
+            x_temp[c] = Teuchos::ScalarTraits<RangeScalar>::zero ();
+          }
+          for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
+            const Ordinal j = ind[k];
+            const Scalar A_ij = val[k];
+            for (size_t c = 0; c < numCols; ++c) {
+              x_temp[c] += A_ij * x[j + x_stride*c];
+            }
+          }
+          for (size_t c = 0; c < numCols; ++c) {
+            x[i + x_stride*c] += omega * d[i] * (b[i + b_stride*c] - x_temp[c]);
+          }
+        }
+      } else if (direction == Backward) { // backward mode
+	for (Ordinal ii = numActive - 1; ii >= 0; --ii) {
+	  Ordinal i = rowInd[ii];
+          for (size_t c = 0; c < numCols; ++c) {
+            x_temp[c] = Teuchos::ScalarTraits<RangeScalar>::zero ();
+          }
+          for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
+            const Ordinal j = ind[k];
+            const Scalar A_ij = val[k];
+            for (size_t c = 0; c < numCols; ++c) {
+              x_temp[c] += A_ij * x[j + x_stride*c];
+            }
+          }
+          for (size_t c = 0; c < numCols; ++c) {
+            x[i + x_stride*c] += omega * d[i] * (b[i + b_stride*c] - x_temp[c]);
+          }
+        }
+      }
+    }
+  }
+
+
   template <class Scalar, class Ordinal, class Node, class Allocator>
   template <class DomainScalar, class RangeScalar>
   void DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::solve(Teuchos::ETransp trans,
@@ -1284,25 +1447,25 @@ namespace Kokkos {
     TEUCHOS_TEST_FOR_EXCEPTION(
       isInitialized_ == false,
       std::runtime_error,
-      "Kokkos::DefaultHostSparseOps::gaussSeidel: "
+      "KokkosClassic::DefaultHostSparseOps::gaussSeidel: "
       "The solve was not fully initialized.");
     TEUCHOS_TEST_FOR_EXCEPTION(
       isEmpty_ && unit_diag_ != Teuchos::UNIT_DIAG && numRows_ > 0,
       std::runtime_error,
-      "Kokkos::DefaultHostSparseOps::gaussSeidel: Local Gauss-Seidel with a "
+      "KokkosClassic::DefaultHostSparseOps::gaussSeidel: Local Gauss-Seidel with a "
       "sparse matrix with no entries, but a nonzero number of rows, is only "
       "valid if the matrix has an implicit unit diagonal.  This matrix does "
       "not.");
     TEUCHOS_TEST_FOR_EXCEPTION(
       (size_t) X.getNumCols() != (size_t) B.getNumCols(),
       std::runtime_error,
-      "Kokkos::DefaultHostSparseOps::gaussSeidel: "
+      "KokkosClassic::DefaultHostSparseOps::gaussSeidel: "
       "The multivectors B and X have different numbers of vectors.  "
       "X has " << X.getNumCols() << ", but B has " << B.getNumCols() << ".");
     TEUCHOS_TEST_FOR_EXCEPTION(
       (size_t) X.getNumRows() < (size_t) numRows_,
       std::runtime_error,
-      "Kokkos::DefaultHostSparseOps::gaussSeidel: "
+      "KokkosClassic::DefaultHostSparseOps::gaussSeidel: "
       "The input/output multivector X does not have enough rows for the "
       "matrix.  X has " << X.getNumRows() << " rows, but the (local) matrix "
       "has " << numRows_ << " rows.  One possible cause is that the column map "
@@ -1311,7 +1474,7 @@ namespace Kokkos {
     TEUCHOS_TEST_FOR_EXCEPTION(
       (size_t) B.getNumRows() < (size_t) numRows_,
       std::runtime_error,
-      "Kokkos::DefaultHostSparseOps::gaussSeidel: "
+      "KokkosClassic::DefaultHostSparseOps::gaussSeidel: "
       "The input multivector B does not have enough rows for the "
       "matrix.  B has " << B.getNumRows() << " rows, but the (local) matrix "
       "has " << numRows_ << " rows.");
@@ -1327,6 +1490,64 @@ namespace Kokkos {
                                                             direction);
     }
   }
+
+  template <class Scalar, class Ordinal, class Node, class Allocator>
+  template <class DomainScalar, class RangeScalar>
+  void
+  DefaultHostSparseOps<Scalar,Ordinal,Node,Allocator>::
+  reorderedGaussSeidel (const MultiVector<DomainScalar,Node> &B,
+			MultiVector< RangeScalar,Node> &X,
+			const MultiVector<Scalar,Node> &D,
+			const ArrayView<Ordinal> & rowIndices,
+			const RangeScalar& dampingFactor,
+			const ESweepDirection direction) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      isInitialized_ == false,
+      std::runtime_error,
+      "KokkosClassic::AltSparseOps::reorderedGaussSeidel: "
+      "The solve was not fully initialized.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      isEmpty_ && unit_diag_ != Teuchos::UNIT_DIAG && numRows_ > 0,
+      std::runtime_error,
+      "KokkosClassic::AltSparseOps::reorderedGaussSeidel: Local Gauss-Seidel with a "
+      "sparse matrix with no entries, but a nonzero number of rows, is only "
+      "valid if the matrix has an implicit unit diagonal.  This matrix does "
+      "not.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (size_t) X.getNumCols() != (size_t) B.getNumCols(),
+      std::runtime_error,
+      "KokkosClassic::AltSparseOps::reorderedGaussSeidel: "
+      "The multivectors B and X have different numbers of vectors.  "
+      "X has " << X.getNumCols() << ", but B has " << B.getNumCols() << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (size_t) X.getNumRows() < (size_t) numRows_,
+      std::runtime_error,
+      "KokkosClassic::AltSparseOps::reorderedGaussSeidel: "
+      "The input/output multivector X does not have enough rows for the "
+      "matrix.  X has " << X.getNumRows() << " rows, but the (local) matrix "
+      "has " << numRows_ << " rows.  One possible cause is that the column map "
+      "was not provided to the Tpetra::CrsMatrix in the case of a matrix with "
+      "an implicitly stored unit diagonal.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (size_t) B.getNumRows() < (size_t) numRows_,
+      std::runtime_error,
+      "KokkosClassic::AltSparseOps::reorderefGaussSeidel: "
+      "The input multivector B does not have enough rows for the "
+      "matrix.  B has " << B.getNumRows() << " rows, but the (local) matrix "
+      "has " << numRows_ << " rows.");
+    if (big_ptrs_ != null) {
+      reorderedGaussSeidelPrivate<DomainScalar,RangeScalar,size_t> (X, B, D,  rowIndices,
+                                                           dampingFactor,
+                                                           direction);
+    }
+    else {
+      reorderedGaussSeidelPrivate<DomainScalar,RangeScalar,Ordinal> (X, B, D, rowIndices,
+                                                            dampingFactor,
+                                                            direction);
+    }
+  }
+
 
 
   template <class Scalar, class Ordinal, class Node, class Allocator>
@@ -1549,7 +1770,7 @@ namespace Kokkos {
       }
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Kokkos::DefaultHost"
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "KokkosClassic::DefaultHost"
         "SparseOps::asDenseMatrix: both big_ptrs_ and sml_ptrs_ are empty.  "
         "Please report this bug to the Kokkos developers.");
     }
@@ -1655,7 +1876,7 @@ namespace Kokkos {
     //! Constructor that takes a Kokkos Node: DO NOT CALL (Scalar=void specialization).
     DefaultHostSparseOps (const RCP<Node> &node) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Someone attempted to "
-        "instantiate Kokkos::DefaultHostSparseOps with Scalar=void.  "
+        "instantiate KokkosClassic::DefaultHostSparseOps with Scalar=void.  "
         "This is not allowed.  "
         "The Scalar=void specialization exists only for its typedefs.  "
         "Please report this bug to the Kokkos developers.");
@@ -1664,7 +1885,7 @@ namespace Kokkos {
     //! Constructor that takes a Kokkos Node and parameters: DO NOT CALL (Scalar=void specialization).
     DefaultHostSparseOps (const RCP<Node> &node, Teuchos::ParameterList& params) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Someone attempted to "
-        "instantiate Kokkos::DefaultHostSparseOps with Scalar=void.  "
+        "instantiate KokkosClassic::DefaultHostSparseOps with Scalar=void.  "
         "This is not allowed.  "
         "The Scalar=void specialization exists only for its typedefs.  "
         "Please report this bug to the Kokkos developers.");
@@ -1688,7 +1909,7 @@ namespace Kokkos {
     std::string description () const {
       using Teuchos::TypeNameTraits;
       std::ostringstream os;
-      os <<  "Kokkos::DefaultHostSparseOps<"
+      os <<  "KokkosClassic::DefaultHostSparseOps<"
          << "Scalar=void"
          << ", Ordinal=" << TypeNameTraits<Ordinal>::name()
          << ", Node=" << TypeNameTraits<Node>::name()
@@ -1772,7 +1993,7 @@ namespace Kokkos {
       using Teuchos::ArrayRCP;
       using Teuchos::as;
 
-      std::string FuncName("Kokkos::DefaultHostSparseOps::finalizeGraph(graph,params)");
+      std::string FuncName("KokkosClassic::DefaultHostSparseOps::finalizeGraph(graph,params)");
 
       graph.setMatDesc(uplo,diag);
       TEUCHOS_TEST_FOR_EXCEPTION(graph.isInitialized() == false,
@@ -1800,7 +2021,7 @@ namespace Kokkos {
     * This is an example that unit tests and demonstrates the implementation requirements for the DefaultSparseOps class.
     */
 
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif /* KOKKOS_DEFAULTSPARSEOPS_HPP */
 

@@ -178,6 +178,10 @@ public:
    void setBuildConnectivityCallback(const Teuchos::RCP<ConnCallback> & callback)
    { callback_ = callback; }
 
+   //! A dummy getNeighborElementBlock method included but not used
+   virtual const std::vector<int> & getNeighborElementBlock(const std::string&) const
+   { static std::vector<int> empty; return empty; }
+
 private:
    int procRank_;
    

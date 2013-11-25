@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
       X->setSeed(846930886);
       X->randomize();
       A->apply(*X, *RHS, Teuchos::NO_TRANS, (SC)1.0, (SC)0.0);
-      Teuchos::Array<ST::magnitudeType> norms(1);
+      Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
       RHS->norm2(norms);
       RHS->scale(1.0/norms[0]);
 
@@ -190,6 +190,7 @@ int main(int argc, char *argv[]) {
       level.SetFactoryManager(fm);
       level.SetLevelID(0);
       level.Set("A", A);
+      level.setlib(xpetraParameters.GetLib());
     }
 
     TimeMonitor tm(*TimeMonitor::getNewTimer("SmootherScalingTest: 2 - Smoother Setup"));
@@ -229,7 +230,12 @@ int main(int argc, char *argv[]) {
       }
 */
       smoother = rcp(new TrilinosSmoother(ifpackType, ifpackList));
+      // smoother->SetFactory("A", level.GetFactory("A"));
+      level.Request(*smoother);
+
       smoother->Setup(level);
+
+      level.Release(*smoother);
     }
 
 

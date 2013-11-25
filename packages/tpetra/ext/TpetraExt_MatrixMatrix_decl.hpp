@@ -48,7 +48,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "TpetraExt_MMHelpers.hpp"
 
-/*! \file Tpetra_MatrixMatrix_decl.hpp
+/*! \file TpetraExt_MatrixMatrix_decl.hpp
 
     The declarations for the class Tpetra::MMMultiMultiply and related non-member constructors.
  */
@@ -57,35 +57,41 @@ namespace Tpetra {
 
 namespace MatrixMatrix {
 
-    /** Given CrsMatrix objects A, B and C, form the product C = A*B.
-  In a parallel setting, A and B need not have matching distributions,
-  but C needs to have the same row-map as A.
-  At this time C=AT*B and C=A*BT are known to not work. However,
-  C=A*B and C=AT*BT are known to work, Kurtis Nusbaum 03/24/2011
-
-    @param A Input, must already have had 'FillComplete()' called.
-    @param transposeA Input, whether to use transpose of matrix A.
-    @param B Input, must already have had 'FillComplete()' called.
-    @param transposeB Input, whether to use transpose of matrix B.
-    @param C Result. On entry to this method, it doesn't matter whether
-             FillComplete() has already been called on C or not. If it has,
-       then C's graph must already contain all nonzero locations that
-       will be produced when forming the product A*B. On exit,
-       C.FillComplete() will have been called, unless the last argument
-             to this function is specified to be false.
-    @param call_FillComplete_on_result Optional argument, defaults to true.
-           Power users may specify this argument to be false if they *DON'T*
-           want this function to call C.FillComplete. (It is often useful
-           to allow this function to call C.FillComplete, in cases where
-           one or both of the input matrices are rectangular and it is not
-           trivial to know which maps to use for the domain- and range-maps.)
-
-     */
+/// \brief Sparse matrix-matrix multiply
+///
+/// Given CrsMatrix instances A and B, compute the product C = A*B,
+/// overwriting an existing CrsMatrix instance C with the result.  
+///
+/// \pre All three matrices A, B, and C must have uniquely owned row
+///   Maps.
+/// \pre On input, C must have the same row Map as A.
+/// \pre A and B must be fill complete.  
+/// \pre If C has a range Map on input, then A and C must have the
+///   same range Maps.
+/// \pre If C has a domain Map on input, then B and C must have the
+///   same domain Maps.
+///
+/// For the latter two preconditions, recall that a matrix does not
+/// have a domain or range Map unless fillComplete has been called on
+/// it at least once.
+///
+/// \param A [in] fill-complete sparse matrix.
+/// \param transposeA [in] Whether to use transpose of matrix A.
+/// \param B [in] fill-complete sparse matrix.
+/// \param transposeB [in] Whether to use transpose of matrix B.
+/// \param C [in/out] On entry to this method, if C is fill complete,
+///   then C's graph must have the correct structure, that is, its
+///   structure must equal the structure of A*B.  On exit, C will be
+///   fill complete, unless the last argument to this function is
+///   false.
+/// \param call_FillComplete_on_result [in] Optional argument;
+///   defaults to true.  If false, C will <i>not</i> be fill complete
+///   on output.
 template <class Scalar,
-           class LocalOrdinal,
-           class GlobalOrdinal,
-           class Node,
-           class SpMatOps >
+	  class LocalOrdinal,
+	  class GlobalOrdinal,
+	  class Node,
+	  class SpMatOps >
 void Multiply(
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& A,
   bool transposeA,
@@ -123,6 +129,13 @@ void Add(
 /// \brief Compute the sparse matrix sum <tt>C = scalarA * Op(A) +
 ///   scalarB * Op(B)</tt>, where Op(X) is either X or its transpose.
 ///
+/// This version of sparse matrix-matrix add returns a new CrsMatrix
+/// instance, rather than using an existing instance for the result.
+/// The returned matrix is fill complete, with the given domain and
+/// range Maps.  It is correct (though less efficient) for A and B to
+/// have different row Maps; the returned matrix will have the same
+/// row Map as the row Map of B.
+///
 /// \pre If A and B are both fill complete, then they must have the
 ///   same domain and range Maps.
 ///
@@ -134,12 +147,14 @@ void Add(
 /// \param transposeB [in] If true, use the transpose of B.
 /// \param B [in] The second input matrix.
 ///
-/// \param domainMap [in] Domain Map of C.
-/// \param rangeMap [in] Range Map of C.
+/// \param domainMap [in] Domain Map of C (on output).  If null or not
+///   provided, this defaults to the row Map of B.
+/// \param rangeMap [in] Range Map of C (on output).  If null or not
+///   provided, this defaults to the row Map of B.
 /// \param params [in/out] Same as the parameters of RowMatrix::add.
 ///
-/// For \c domainMap and \c rangeMap, see the documentation of
-/// RowMatrix::add.
+/// See the documentation of RowMatrix::add for a more detailed
+/// discussion of the optional parameters.
 template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
@@ -181,7 +196,10 @@ add (const Scalar& alpha,
 ///
 /// \warning The case where C == null on input does not actually work.
 ///   In order for it to work, we would need to change the interface
-///   of this function to pass in C as a Ptr<RCP<CrsMatrix> >.
+///   of this function (for example, to pass in C as a (pointer or
+///   nonconst reference) to a Teuchos::RCP).  Please use add() (which
+///   see) if you want matrix-matrix add to return a new instance of
+///   CrsMatrix.
 template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,

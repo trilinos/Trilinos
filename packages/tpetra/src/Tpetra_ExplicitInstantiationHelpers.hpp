@@ -64,18 +64,18 @@
 #include <Kokkos_ThrustGPUNode.hpp>
 #  if defined(HAVE_KOKKOSCLASSIC_CUDA_FLOAT) && defined(HAVE_TPETRA_INST_FLOAT)
 #    define TPETRA_MACRO_TEMPLATE_INSTANT_THRUST_FLOAT(LO,GO,INSTANT_MACRO)\
-       INSTANT_MACRO(float,LO,GO,Kokkos::ThrustGPUNode)
+       INSTANT_MACRO(float,LO,GO,KokkosClassic::ThrustGPUNode)
 #  else
 #    define TPETRA_MACRO_TEMPLATE_INSTANT_THRUST_FLOAT(LO,GO,INSTANT_MACRO)
 #  endif
 #  if defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
 #    define TPETRA_MACRO_TEMPLATE_INSTANT_THRUST_DOUBLE(LO,GO,INSTANT_MACRO)\
-       INSTANT_MACRO(double,LO,GO,Kokkos::ThrustGPUNode)
+       INSTANT_MACRO(double,LO,GO,KokkosClassic::ThrustGPUNode)
 #  else
 #    define TPETRA_MACRO_TEMPLATE_INSTANT_THRUST_DOUBLE(LO,GO,INSTANT_MACRO)
 #  endif
 #  define TPETRA_MACRO_TEMPLATE_INSTANT_THRUST_INT(LO,GO,INSTANT_MACRO)\
-     INSTANT_MACRO(int,LO,GO,Kokkos::ThrustGPUNode)
+     INSTANT_MACRO(int,LO,GO,KokkosClassic::ThrustGPUNode)
 #else
 #  define TPETRA_MACRO_TEMPLATE_INSTANT_THRUST_FLOAT(LO,GO,INSTANT_MACRO)
 #  define TPETRA_MACRO_TEMPLATE_INSTANT_THRUST_DOUBLE(LO,GO,INSTANT_MACRO)
@@ -87,28 +87,28 @@
   TPETRA_MACRO_TEMPLATE_INSTANT_THRUST_DOUBLE(LO,GO,MACRO) \
   TPETRA_MACRO_TEMPLATE_INSTANT_THRUST_INT(LO,GO,MACRO)
 
-/** \brief Instantiate a macro template for the Kokkos::TBBNode */
+/** \brief Instantiate a macro template for the KokkosClassic::TBBNode */
 #ifdef HAVE_KOKKOSCLASSIC_TBB
 #  include <Kokkos_TBBNode.hpp>
 #  define TPETRA_MACRO_TEMPLATE_INSTANT_TBBNODE(SCALAR,LO,GO,INSTANT_MACRO)\
-     INSTANT_MACRO(SCALAR,LO,GO,Kokkos::TBBNode)
+     INSTANT_MACRO(SCALAR,LO,GO,KokkosClassic::TBBNode)
 #else
 #  define TPETRA_MACRO_TEMPLATE_INSTANT_TBBNODE(SCALAR,LO,GO,INSTANT_MACRO)
 #endif
 
-/** \brief Instantiate a macro template for the Kokkos::TPINode */
+/** \brief Instantiate a macro template for the KokkosClassic::TPINode */
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
 #  include <Kokkos_TPINode.hpp>
 #  define TPETRA_MACRO_TEMPLATE_INSTANT_TPINODE(SCALAR,LO,GO,INSTANT_MACRO)\
-     INSTANT_MACRO(SCALAR,LO,GO,Kokkos::TPINode)
+     INSTANT_MACRO(SCALAR,LO,GO,KokkosClassic::TPINode)
 #else
 #  define TPETRA_MACRO_TEMPLATE_INSTANT_TPINODE(SCALAR,LO,GO,INSTANT_MACRO)
 #endif
 
-/** \brief Instantiate a macro template for the Kokkos::SerialNode */
+/** \brief Instantiate a macro template for the KokkosClassic::SerialNode */
 #include <Kokkos_SerialNode.hpp>
 #define TPETRA_MACRO_TEMPLATE_INSTANT_SERIALNODE(SCALAR,LO,GO,INSTANT_MACRO)\
-   INSTANT_MACRO(SCALAR,LO,GO,Kokkos::SerialNode)
+   INSTANT_MACRO(SCALAR,LO,GO,KokkosClassic::SerialNode)
 
 #define TPETRA_MACRO_TEMPLATE_INSTANT_ALL_CPUNODE(SCALAR,LO,GO,MACRO)\
   TPETRA_MACRO_TEMPLATE_INSTANT_SERIALNODE(SCALAR,LO,GO,MACRO)\

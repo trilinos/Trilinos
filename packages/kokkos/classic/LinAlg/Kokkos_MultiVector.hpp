@@ -50,7 +50,7 @@
 #include <Teuchos_Assert.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   /** \brief Data structure for local vector and multivector data.
 
@@ -240,7 +240,7 @@ namespace Kokkos {
         contigValues_.persistingView (offset, numEntries);
       // Get a read-write host view of the one entry.
       Teuchos::ArrayRCP<Scalar> hostView =
-        this->getNode ()->template viewBufferNonConst<Scalar> (Kokkos::ReadWrite,
+        this->getNode ()->template viewBufferNonConst<Scalar> (KokkosClassic::ReadWrite,
                                                                numEntries, deviceView);
       // Update the entry.  When hostView falls out of scope at the
       // end of this method, it will copy the updated entry back to
@@ -269,7 +269,7 @@ namespace Kokkos {
       // Get a host view of the one entry.  A write-only view
       //  suffices, since we're just replacing the value.
       Teuchos::ArrayRCP<Scalar> hostView =
-        this->getNode ()->template viewBufferNonConst<Scalar> (Kokkos::WriteOnly,
+        this->getNode ()->template viewBufferNonConst<Scalar> (KokkosClassic::WriteOnly,
                                                                numEntries, deviceView);
       // Update the entry.  When hostView falls out of scope at the
       // end of this method, it will copy the value back to the
@@ -301,12 +301,20 @@ namespace Kokkos {
       // necessary test to allow a view of a 0 x C or R x 0
       // multivector when the offset(s) corresponding to the zero
       // dimension(s) is/are also zero.
+      //
+      // mfh 23 Oct 2013: Thanks to Deaglan Halligan for pointing out
+      // that I needed to revise this test to allow a zero-length view
+      // just past the length of the current vector.  If the new
+      // number of rows or columns is zero, then it doesn't matter
+      // what the offsets are.  That simplifies the tests a bit.
+      const bool offsetRowOutOfBounds =
+        (newNumRows > 0) && ((origNumRows == 0 && offsetRow > 0) ||
+                             (origNumRows > 0 && offsetRow >= origNumRows));
+      const bool offsetColOutOfBounds =
+        (newNumCols > 0) && ((origNumCols == 0 && offsetCol > 0) ||
+                             (origNumCols > 0 && offsetCol >= origNumCols));
       TEUCHOS_TEST_FOR_EXCEPTION(
-        (origNumRows == 0 && offsetRow > 0) ||
-        (origNumRows > 0 && offsetRow >= origNumRows) ||
-        (origNumCols == 0 && offsetCol > 0) ||
-        (origNumCols > 0 && offsetCol >= origNumCols),
-        std::invalid_argument,
+        offsetRowOutOfBounds || offsetColOutOfBounds, std::invalid_argument,
         Teuchos::typeName (*this) << "::offsetView: offset row or column are "
         "out of bounds.  The original multivector has dimensions "
         << this->getOrigNumRows () << " x " << this->getOrigNumCols ()
@@ -329,7 +337,7 @@ namespace Kokkos {
 #ifdef HAVE_KOKKOSCLASSIC_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
         Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
-        "Kokkos::MultiVector::offsetView: contigValues_.size() = "
+        "KokkosClassic::MultiVector::offsetView: contigValues_.size() = "
         << contigValues_.size() << " < startPos(=" << startPos
         << ") + len(=" << len << ").  The original MultiVector had "
         "dimensions " << origNumRows << " x " << origNumCols << ", and "
@@ -393,7 +401,7 @@ namespace Kokkos {
 #ifdef HAVE_KOKKOSCLASSIC_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
         Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
-        "Kokkos::MultiVector::offsetViewNonConst: contigValues_.size() = "
+        "KokkosClassic::MultiVector::offsetViewNonConst: contigValues_.size() = "
         << contigValues_.size() << " < startPos(=" << startPos
         << ") + len(=" << len << ").  The original MultiVector had "
         "dimensions " << origNumRows << " x " << origNumCols << ", and "
@@ -603,7 +611,7 @@ namespace Kokkos {
 #ifdef HAVE_KOKKOSCLASSIC_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
         Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
-        "Kokkos::MultiVector::offsetView: contigValues_.size() = "
+        "KokkosClassic::MultiVector::offsetView: contigValues_.size() = "
         << contigValues_.size() << " < startPos(=" << startPos
         << ") + len(=" << len << ").  The original MultiVector had "
         "dimensions " << origNumRows << " x " << origNumCols << ", and "
@@ -661,7 +669,7 @@ namespace Kokkos {
 #ifdef HAVE_KOKKOSCLASSIC_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
         Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
-        "Kokkos::MultiVector::offsetViewNonConst: contigValues_.size() = "
+        "KokkosClassic::MultiVector::offsetViewNonConst: contigValues_.size() = "
         << contigValues_.size() << " < startPos(=" << startPos
         << ") + len(=" << len << ").  The original MultiVector had "
         "dimensions " << origNumRows << " x " << origNumCols << ", and "
@@ -838,7 +846,7 @@ namespace Kokkos {
 #ifdef HAVE_KOKKOSCLASSIC_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
         Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
-        "Kokkos::MultiVector::offsetView: contigValues_.size() = "
+        "KokkosClassic::MultiVector::offsetView: contigValues_.size() = "
         << contigValues_.size() << " < startPos(=" << startPos
         << ") + len(=" << len << ").  The original MultiVector had "
         "dimensions " << origNumRows << " x " << origNumCols << ", and "
@@ -896,7 +904,7 @@ namespace Kokkos {
 #ifdef HAVE_KOKKOSCLASSIC_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
         Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
-        "Kokkos::MultiVector::offsetViewNonConst: contigValues_.size() = "
+        "KokkosClassic::MultiVector::offsetViewNonConst: contigValues_.size() = "
         << contigValues_.size() << " < startPos(=" << startPos
         << ") + len(=" << len << ").  The original MultiVector had "
         "dimensions " << origNumRows << " x " << origNumCols << ", and "
@@ -1075,7 +1083,7 @@ namespace Kokkos {
 #ifdef HAVE_KOKKOSCLASSIC_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
         Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
-        "Kokkos::MultiVector::offsetView: contigValues_.size() = "
+        "KokkosClassic::MultiVector::offsetView: contigValues_.size() = "
         << contigValues_.size() << " < startPos(=" << startPos
         << ") + len(=" << len << ").  The original MultiVector had "
         "dimensions " << origNumRows << " x " << origNumCols << ", and "
@@ -1133,7 +1141,7 @@ namespace Kokkos {
 #ifdef HAVE_KOKKOSCLASSIC_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
         Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
-        "Kokkos::MultiVector::offsetViewNonConst: contigValues_.size() = "
+        "KokkosClassic::MultiVector::offsetViewNonConst: contigValues_.size() = "
         << contigValues_.size() << " < startPos(=" << startPos
         << ") + len(=" << len << ").  The original MultiVector had "
         "dimensions " << origNumRows << " x " << origNumCols << ", and "
@@ -1312,7 +1320,7 @@ namespace Kokkos {
 #ifdef HAVE_KOKKOSCLASSIC_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
         Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
-        "Kokkos::MultiVector::offsetView: contigValues_.size() = "
+        "KokkosClassic::MultiVector::offsetView: contigValues_.size() = "
         << contigValues_.size() << " < startPos(=" << startPos
         << ") + len(=" << len << ").  The original MultiVector had "
         "dimensions " << origNumRows << " x " << origNumCols << ", and "
@@ -1370,7 +1378,7 @@ namespace Kokkos {
 #ifdef HAVE_KOKKOSCLASSIC_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
         Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
-        "Kokkos::MultiVector::offsetViewNonConst: contigValues_.size() = "
+        "KokkosClassic::MultiVector::offsetViewNonConst: contigValues_.size() = "
         << contigValues_.size() << " < startPos(=" << startPos
         << ") + len(=" << len << ").  The original MultiVector had "
         "dimensions " << origNumRows << " x " << origNumCols << ", and "
@@ -1404,6 +1412,6 @@ namespace Kokkos {
   };
 #endif // defined (HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPNODE)
 
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif /* KOKKOS_MULTIVECTOR_H */

@@ -60,6 +60,59 @@
 
 namespace EpetraExt {
 
+//------------------------------------
+// DEBUGGING ROUTINES
+void debug_print_distor(const char * label, const Epetra_Distributor * Distor, const Epetra_Comm & Comm) {
+#ifdef HAVE_MPI
+  const Epetra_MpiDistributor * MDistor = dynamic_cast<const Epetra_MpiDistributor*>(Distor);
+  printf("[%d] %s\n",Comm.MyPID(),label);
+  printf("[%d] NumSends = %d NumRecvs = %d\n",Comm.MyPID(),MDistor->NumSends(),MDistor->NumReceives());
+  printf("[%d] ProcsTo = ",Comm.MyPID());
+  for(int ii=0; ii<MDistor->NumSends(); ii++)
+    printf("%d ",MDistor->ProcsTo()[ii]);
+  printf("\n[%d] ProcsFrom = ",Comm.MyPID());
+  for(int ii=0; ii<MDistor->NumReceives(); ii++)
+    printf("%d ",MDistor->ProcsFrom()[ii]);
+  printf("\n");
+  fflush(stdout);
+#endif
+}
+
+//------------------------------------
+// DEBUGGING ROUTINES
+void debug_compare_import(const Epetra_Import * Import1,const Epetra_Import * Import2) {
+  if(!Import1 && !Import2) return;
+  const Epetra_Comm & Comm = (Import1)? Import1->SourceMap().Comm() : Import2->SourceMap().Comm();
+  bool flag=true;
+  int PID=Comm.MyPID();
+  if( (!Import1 && Import2) || (Import2 && !Import1) ) {printf("[%d] DCI: One Import exists, the other does not\n",PID);return;}
+  if(!Import1->SourceMap().SameAs(Import2->SourceMap())) {printf("[%d] DCI: SourceMaps don't match\n",PID);return;}
+  if(!Import1->TargetMap().SameAs(Import2->TargetMap())) {printf("[%d] DCI: TargetMaps don't match\n",PID);return;}
+
+  if(Import1->NumSameIDs() != Import2->NumSameIDs()) {printf("[%d] DCI NumSameIDs() mismatch %d vs. %d\n",PID,Import1->NumSameIDs(),Import2->NumSameIDs());flag=false;}
+
+  if(Import1->NumPermuteIDs() != Import2->NumPermuteIDs()) {printf("[%d] DCI NumPermuteIDs() mismatch %d vs. %d\n",PID,Import1->NumPermuteIDs(),Import2->NumPermuteIDs()); flag=false;}
+
+  if(Import1->NumExportIDs() != Import2->NumExportIDs()) {printf("[%d] DCI NumExportIDs() mismatch %d vs. %d\n",PID,Import1->NumExportIDs(),Import2->NumExportIDs()); flag=false;}
+
+  if(Import1->NumRemoteIDs() != Import2->NumRemoteIDs()) {printf("[%d] DCI NumRemoteIDs() mismatch %d vs. %d\n",PID,Import1->NumRemoteIDs(),Import2->NumRemoteIDs()); flag=false;}
+
+  if(Import1->NumSend() != Import2->NumSend()) {printf("[%d] DCI NumSend() mismatch %d vs. %d\n",PID,Import1->NumSend(),Import2->NumSend()); flag=false;}
+
+  if(Import1->NumRecv() != Import2->NumRecv()) {printf("[%d] DCI NumRecv() mismatch %d vs. %d\n",PID,Import1->NumRecv(),Import2->NumRecv()); flag=false;}
+
+
+  if(flag) printf("[%d] DCI Importers compare OK\n",PID);    
+  fflush(stdout);
+  Import1->SourceMap().Comm().Barrier();
+  Import1->SourceMap().Comm().Barrier();
+  Import1->SourceMap().Comm().Barrier();
+  if(!flag) exit(1);
+}
+
+
+
+//------------------------------------
 CrsMatrixStruct::CrsMatrixStruct()
  : numRows(0), numEntriesPerRow(NULL), indices(NULL), values(NULL),
    remote(NULL), numRemote(0), importColMap(NULL), rowMap(NULL), colMap(NULL),
@@ -89,17 +142,17 @@ void CrsMatrixStruct::deleteContents()
 
 int dumpCrsMatrixStruct(const CrsMatrixStruct& M)
 {
-  cout << "proc " << M.rowMap->Comm().MyPID()<<endl;
-  cout << "numRows: " << M.numRows<<endl;
+  std::cout << "proc " << M.rowMap->Comm().MyPID()<<std::endl;
+  std::cout << "numRows: " << M.numRows<<std::endl;
   for(int i=0; i<M.numRows; ++i) {
     for(int j=0; j<M.numEntriesPerRow[i]; ++j) {
       if (M.remote[i]) {
-        cout << "  *"<<M.rowMap->GID(i)<<"   "
-             <<M.importColMap->GID(M.indices[i][j])<<"   "<<M.values[i][j]<<endl;
+        std::cout << "  *"<<M.rowMap->GID(i)<<"   "
+             <<M.importColMap->GID(M.indices[i][j])<<"   "<<M.values[i][j]<<std::endl;
       }
       else {
-        cout << "   "<<M.rowMap->GID(i)<<"   "
-             <<M.colMap->GID(M.indices[i][j])<<"   "<<M.values[i][j]<<endl;
+        std::cout << "   "<<M.rowMap->GID(i)<<"   "
+             <<M.colMap->GID(M.indices[i][j])<<"   "<<M.values[i][j]<<std::endl;
       }
     }
   }
@@ -1251,7 +1304,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
 #endif
 
   // Fused constructor, import & FillComplete
-  int i,rv=0;
+  int rv=0;
   int N;
   if(use_lw) N = RowMapLW_->NumMyElements();
   else N = RowMapEP_->NumMyElements();
@@ -1285,9 +1338,9 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   int* RemoteLIDs            = RowImporter.RemoteLIDs();
   int* PermuteToLIDs         = RowImporter.PermuteToLIDs();
   int* PermuteFromLIDs       = RowImporter.PermuteFromLIDs();
-  Epetra_Distributor& Distor = RowImporter.Distributor();
 
 #ifdef HAVE_MPI
+  Epetra_Distributor& Distor            = RowImporter.Distributor();
   const Epetra_MpiComm * MpiComm        = dynamic_cast<const Epetra_MpiComm*>(&SourceMatrix.Comm());
   const Epetra_MpiDistributor * MDistor = dynamic_cast<Epetra_MpiDistributor*>(&Distor);
 #endif
@@ -1341,7 +1394,7 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   if (communication_needed) {
 #ifdef HAVE_MPI 
     // Do the exchange of remote data
-    int curr_pid;
+    int i,curr_pid;
     const int * ExportPIDs = RowImporter.ExportPIDs();
 
     // Use the fact that the export procs are sorted to avoid building a hash table.

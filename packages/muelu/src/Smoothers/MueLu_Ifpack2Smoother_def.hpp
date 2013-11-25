@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -52,7 +52,11 @@
 
 #include <Teuchos_ParameterList.hpp>
 
-#include "Ifpack2_Factory.hpp"
+#include <Ifpack2_Chebyshev.hpp>
+#include <Ifpack2_Factory.hpp>
+#include <Ifpack2_Parameters.hpp>
+
+#include <Xpetra_MultiVectorFactory.hpp>
 
 #include "MueLu_Ifpack2Smoother_decl.hpp"
 #include "MueLu_Level.hpp"
@@ -63,27 +67,33 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Ifpack2Smoother(std::string const & type, Teuchos::ParameterList const & paramList, LO const &overlap)
-    : type_(type), paramList_(paramList), overlap_(overlap)
-  { }
+    : type_(type), overlap_(overlap)
+  {
+    SetParameterList(paramList);
+  }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~Ifpack2Smoother() {}
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetParameters(Teuchos::ParameterList const & paramList) {
-    paramList_ = paramList;
+  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetParameterList(const Teuchos::ParameterList& paramList) {
+    Factory::SetParameterList(paramList);
 
     if (SmootherPrototype::IsSetup()) {
       // It might be invalid to change parameters after the setup, but it depends entirely on Ifpack implementation.
       // TODO: I don't know if Ifpack returns an error code or exception or ignore parameters modification in this case...
-
-      Teuchos::ParameterList nonConstParamList = paramList; // because Ifpack SetParameters() input argument is not const...
-      prec_->setParameters(nonConstParamList);
+      SetPrecParameters();
     }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Teuchos::ParameterList const & Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetParameters() { return paramList_; }
+  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetPrecParameters(const Teuchos::ParameterList& list) const {
+    ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
+    paramList.setParameters(list);
+
+    RCP<ParameterList> precList = this->RemoveFactoriesFromList(this->GetParameterList());
+
+    prec_->setParameters(*precList);
+
+    paramList.setParameters(*precList);
+  }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
@@ -91,55 +101,56 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level &currentLevel) {
+  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level& currentLevel) {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
-    if (this->IsSetup() == true) this->GetOStream(Warnings0, 0) << "Warning: MueLu::Ifpack2Smoother::Setup(): Setup() has already been called";
 
-    RCP<Matrix> A = Factory::Get< RCP<Matrix> >(currentLevel, "A");
+    if (this->IsSetup() == true)
+      this->GetOStream(Warnings0, 0) << "Warning: MueLu::Ifpack2Smoother::Setup(): Setup() has already been called";
+
+    A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
     Scalar negone = -Teuchos::ScalarTraits<Scalar>::one();
 
     Scalar lambdaMax = negone;
+    if (type_ == "CHEBYSHEV")
+      try {
+        lambdaMax = Teuchos::getValue<Scalar>(this->GetParameter("chebyshev: max eigenvalue"));
+        this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue (cached with smoother parameter list)" << " = " << lambdaMax << std::endl;
 
-    if (type_ == "CHEBYSHEV") {
-      if ( !paramList_.isParameter("chebyshev: max eigenvalue") ) {
-        lambdaMax = A->GetMaxEigenvalueEstimate();
+      } catch (Teuchos::Exceptions::InvalidParameterName) {
+        lambdaMax = A_->GetMaxEigenvalueEstimate();
         if (lambdaMax != negone) {
           this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue (cached with matrix)" << " = " << lambdaMax << std::endl;
-          paramList_.set("chebyshev: max eigenvalue", lambdaMax);
+          this->SetParameter("chebyshev: max eigenvalue", ParameterEntry(lambdaMax));
         }
-      } else {
-        lambdaMax = paramList_.get<Scalar>("chebyshev: max eigenvalue");
-        this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue (cached with smoother parameter list)" << " = " << lambdaMax << std::endl;
       }
-    }
 
-    RCP<const Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> > tpA = Utils::Op2NonConstTpetraCrs(A);
+    RCP<const Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> > tpA = Utils::Op2NonConstTpetraCrs(A_);
     prec_ = Ifpack2::Factory::create(type_, tpA, overlap_);
 
-    prec_->setParameters(paramList_);
+    SetPrecParameters();
     prec_->initialize();
     prec_->compute();
 
     SmootherPrototype::IsSetup(true);
+
     if (type_ == "CHEBYSHEV" && lambdaMax == negone) {
       typedef Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> MatrixType;
-      Teuchos::RCP<Ifpack2::Chebyshev<MatrixType> > chebyPrec;
-      chebyPrec = rcp_dynamic_cast<Ifpack2::Chebyshev<MatrixType> >(prec_);
+
+      Teuchos::RCP<Ifpack2::Chebyshev<MatrixType> > chebyPrec = rcp_dynamic_cast<Ifpack2::Chebyshev<MatrixType> >(prec_);
       if (chebyPrec != Teuchos::null) {
         lambdaMax = chebyPrec->getLambdaMaxForApply();
-        A->SetMaxEigenvalueEstimate(lambdaMax);
+        A_->SetMaxEigenvalueEstimate(lambdaMax);
         this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue (calculated by Ifpack2)" << " = " << lambdaMax << std::endl;
       }
       TEUCHOS_TEST_FOR_EXCEPTION(lambdaMax == negone, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Setup(): no maximum eigenvalue estimate");
     }
 
-    this->GetOStream(Statistics1, 0) << description() << std::endl;
+    this->GetOStream(Statistics0, 0) << description() << std::endl;
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Apply(MultiVector& X, MultiVector const &B, bool const &InitialGuessIsZero) const
-  {
+  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Apply(): Setup() has not been called");
 
     // Forward the InitialGuessIsZero option to Ifpack2
@@ -148,58 +159,54 @@ namespace MueLu {
     //        initial value at the end but there is no way right now to get
     //        the current value of the "zero starting solution" in ifpack2.
     //        It's not really an issue, as prec_  can only be used by this method.
-    Teuchos::ParameterList  paramList = paramList_;
+    Teuchos::ParameterList paramList;
     if (type_ == "CHEBYSHEV") {
       paramList.set("chebyshev: zero starting solution", InitialGuessIsZero);
-    }
-    else if (type_ == "RELAXATION") {
+
+    } else if (type_ == "RELAXATION") {
       paramList.set("relaxation: zero starting solution", InitialGuessIsZero);
-    }
-    else if (type_ == "KRYLOV") {
+
+    } else if (type_ == "KRYLOV") {
       paramList.set("krylov: zero starting solution", InitialGuessIsZero);
-    }
-    else if (type_ == "SCHWARZ") {
+
+    } else if (type_ == "SCHWARZ") {
       int overlap=0;
       Ifpack2::getParameter(paramList, "schwarz: overlap level", overlap);
-      if (InitialGuessIsZero == false && overlap > 0) {
-        if (this->IsPrint(Warnings0, 0)) {
-          static int warning_only_once=0;
-          if ((warning_only_once++) == 0)
-            this->GetOStream(Warnings0, 0) << "Warning: MueLu::Ifpack2Smoother::Apply(): Additive Schwarz with overlap has no provision for a nonzero initial guess." << std::endl;
-        }
-      }
-      else {
-	paramList.set("schwarz: zero starting solution", InitialGuessIsZero);
-      }
-    }
-    else if (type_ == "ILUT") {
-      if (InitialGuessIsZero == false) {
-        if (this->IsPrint(Warnings0, 0)) {
-          static int warning_only_once=0;
-          if ((warning_only_once++) == 0)
-            this->GetOStream(Warnings0, 0) << "Warning: MueLu::Ifpack2Smoother::Apply(): ILUT has no provision for a nonzero initial guess." << std::endl;
-          // TODO: ILUT using correction equation should be implemented in ifpack2 directly
-          //       I think that an option named "zero starting solution"
-          //       is also appropriate for ILUT
-        }
-      }
+      if (InitialGuessIsZero == true)
+        paramList.set("schwarz: zero starting solution", InitialGuessIsZero);
+
+    } else if (type_ == "ILUT" || type_ == "RILUK") {
+      //do nothing
+
     } else {
       // TODO: When https://software.sandia.gov/bugzilla/show_bug.cgi?id=5283#c2 is done
       // we should remove the if/else/elseif and just test if this
       // option is supported by current ifpack2 preconditioner
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,"Ifpack2Smoother::Apply(): Ifpack2 preconditioner '"+type_+"' not supported");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Ifpack2Smoother::Apply(): Ifpack2 preconditioner '" + type_ + "' not supported");
     }
-    prec_->setParameters(paramList);
+    SetPrecParameters(paramList);
 
     // Apply
-    Tpetra::MultiVector<SC,LO,GO,NO> &tpX = Utils::MV2NonConstTpetraMV(X);
-    Tpetra::MultiVector<SC,LO,GO,NO> const &tpB = Utils::MV2TpetraMV(B);
-    prec_->apply(tpB,tpX);
+    if ( (type_ != "ILUT" && type_ != "SCHWARZ") || InitialGuessIsZero) {
+      Tpetra::MultiVector<SC,LO,GO,NO> &tpX = Utils::MV2NonConstTpetraMV(X);
+      Tpetra::MultiVector<SC,LO,GO,NO> const &tpB = Utils::MV2TpetraMV(B);
+      prec_->apply(tpB,tpX);
+    } else {
+      typedef Teuchos::ScalarTraits<Scalar> TST;
+      RCP<MultiVector> Residual = Utils::Residual(*A_,X,B);
+      RCP<MultiVector> Correction = MultiVectorFactory::Build(A_->getDomainMap(), X.getNumVectors());
+      Tpetra::MultiVector<SC,LO,GO,NO> &tpX = Utils::MV2NonConstTpetraMV(*Correction);
+      Tpetra::MultiVector<SC,LO,GO,NO> const &tpB = Utils::MV2TpetraMV(*Residual);
+      prec_->apply(tpB,tpX);
+      X.update(TST::one(), *Correction, TST::one());
+    }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Copy() const {
-    return rcp(new Ifpack2Smoother(*this) );
+    RCP<Ifpack2Smoother> smoother = rcp(new Ifpack2Smoother(*this) );
+    smoother->SetParameterList(this->GetParameterList());
+    return smoother;
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -218,18 +225,21 @@ namespace MueLu {
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
 
-    if (verbLevel & Parameters0) {
+    if (verbLevel & Parameters0)
       out0 << "Prec. type: " << type_ << std::endl;
-    }
 
     if (verbLevel & Parameters1) {
-      out0 << "Parameter list: " << std::endl; { Teuchos::OSTab tab2(out); out << paramList_; }
+      out0 << "Parameter list: " << std::endl;
+      Teuchos::OSTab tab2(out);
+      out << this->GetParameterList();
       out0 << "Overlap: "        << overlap_ << std::endl;
     }
 
-    if (verbLevel & External) {
-      if (prec_ != Teuchos::null) { Teuchos::OSTab tab2(out); out << *prec_ << std::endl; }
-    }
+    if (verbLevel & External)
+      if (prec_ != Teuchos::null) {
+        Teuchos::OSTab tab2(out);
+        out << *prec_ << std::endl;
+      }
 
     if (verbLevel & Debug) {
       out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl

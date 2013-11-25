@@ -61,7 +61,7 @@ namespace Tpetra {
 
   BlockCrsGraph is used by Tpetra::VbrMatrix (variable block row matrix).
 */
-template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
 class BlockCrsGraph : public Teuchos::Describable {
  public:
   typedef LocalOrdinal  local_ordinal_type;
@@ -160,16 +160,16 @@ class BlockCrsGraph : public Teuchos::Describable {
                              Teuchos::ArrayView<const LocalOrdinal>& blockCols) const;
 
   //! Returns the block-row map.
-  const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockRowMap() const;
+  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > getBlockRowMap() const;
 
   //! Returns the block-column map.
-  const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockColMap() const;
+  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > getBlockColMap() const;
 
   //! Returns the block-domain map.
-  const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockDomainMap() const;
+  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > getBlockDomainMap() const;
 
   //! Returns the block-range map.
-  const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockRangeMap() const;
+  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > getBlockRangeMap() const;
 
   //@}
 

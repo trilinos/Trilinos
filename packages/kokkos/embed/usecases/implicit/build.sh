@@ -4,11 +4,11 @@
 # Simple build script with options
 #-----------------------------------------------------------------------------
 
-# Directory for KokkosArray
+# Directory for Kokkos
 
-KOKKOSARRAY="../../../array"
+KOKKOS="../../../core"
 
-source ${KOKKOSARRAY}/src/build_common.sh
+source ${KOKKOS}/src/build_common.sh
 
 # Process command line options and set compilation variables
 #
@@ -23,9 +23,9 @@ source ${KOKKOSARRAY}/src/build_common.sh
 
 EXECUTABLE="proxyapp.exe"
 
-INC_PATH="${INC_PATH} -I../../src -I. -I${KOKKOSARRAY}/usecases/common"
+INC_PATH="${INC_PATH} -I../../src -I. -I${KOKKOS}/usecases/common"
 
-CXX_SOURCES="${CXX_SOURCES} ${KOKKOSARRAY}/usecases/common/*.cpp"
+CXX_SOURCES="${CXX_SOURCES} ${KOKKOS}/usecases/common/*.cpp"
 CXX_SOURCES="${CXX_SOURCES} ./*.cpp"
 
 #-----------------------------------------------------------------------------

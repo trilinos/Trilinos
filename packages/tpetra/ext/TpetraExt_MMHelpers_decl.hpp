@@ -51,7 +51,7 @@
 #include <map>
 
 
-/*! \file Tpetra_MMHelpers_decl.hpp 
+/*! \file TpetraExt_MMHelpers_decl.hpp
 
     The declarations for the class Tpetra::MMMultiMultiply and related non-member constructors.
  */
@@ -71,8 +71,8 @@ class Map;
 template <class Scalar, 
 	class LocalOrdinal=int, 
 	class GlobalOrdinal=LocalOrdinal, 
-	class Node=Kokkos::DefaultNode::DefaultNodeType, 
-	class SpMatOps= typename Kokkos::DefaultKernels<Scalar, LocalOrdinal, Node>::SparseOps >
+	class Node=KokkosClassic::DefaultNode::DefaultNodeType, 
+	class SpMatOps= typename KokkosClassic::DefaultKernels<Scalar, LocalOrdinal, Node>::SparseOps >
 class CrsMatrixStruct {
 public:
   CrsMatrixStruct();
@@ -130,8 +130,8 @@ class CrsWrapper {
 template <class Scalar, 
 	class LocalOrdinal=int, 
 	class GlobalOrdinal=LocalOrdinal, 
-	class Node=Kokkos::DefaultNode::DefaultNodeType, 
-	class SpMatOps= typename Kokkos::DefaultKernels<Scalar, LocalOrdinal, Node>::SparseOps >
+	class Node=KokkosClassic::DefaultNode::DefaultNodeType, 
+	class SpMatOps= typename KokkosClassic::DefaultKernels<Scalar, LocalOrdinal, Node>::SparseOps >
 class CrsWrapper_CrsMatrix : public CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>{
  public:
   CrsWrapper_CrsMatrix(CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps >& crsmatrix);
@@ -151,7 +151,7 @@ class CrsWrapper_CrsMatrix : public CrsWrapper<Scalar, LocalOrdinal, GlobalOrdin
 template<class Scalar,
 	class LocalOrdinal=int,
 	class GlobalOrdinal=LocalOrdinal,
-	class Node=Kokkos::DefaultNode::DefaultNodeType>
+	class Node=KokkosClassic::DefaultNode::DefaultNodeType>
 class CrsWrapper_GraphBuilder : public CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>{
  public:
   CrsWrapper_GraphBuilder(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& map);

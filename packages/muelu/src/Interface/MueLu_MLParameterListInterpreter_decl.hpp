@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -77,6 +77,14 @@
 #include "MueLu_NullspaceFactory_fwd.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
 
+#if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
+#include "MueLu_RepartitionFactory_fwd.hpp"
+#include "MueLu_RebalanceTransferFactory_fwd.hpp"
+#include "MueLu_IsorropiaInterface_fwd.hpp"
+#include "MueLu_RebalanceAcFactory_fwd.hpp"
+#include "MueLu_RebalanceMapFactory_fwd.hpp"
+#endif
+
 namespace MueLu {
 
   /*
@@ -110,7 +118,7 @@ namespace MueLu {
     TODO: A warning is issued if ML is not available
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class MLParameterListInterpreter : public HierarchyManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> {
 #undef MUELU_MLPARAMETERLISTINTERPRETER_SHORT
 #include "MueLu_UseShortNames.hpp"

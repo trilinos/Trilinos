@@ -46,8 +46,8 @@
 //#include "Teuchos_Assert.hpp"
 
 
-using namespace std;
-using namespace Intrepid;
+//using namespace std;
+//using namespace Intrepid;
 
 #define IM_TAG( ADT ) ADT ## _TAG
 
@@ -542,7 +542,7 @@ namespace stk
       // BasisFields_Tag m_BasisFields_Tag;
 
       CellTopology *m_topo;
-      Teuchos::RCP<Cubature<double, CubaturePoints, CubatureWeights > > m_cub;
+      Teuchos::RCP<Intrepid::Cubature<double, CubaturePoints, CubatureWeights > > m_cub;
 
     };
 

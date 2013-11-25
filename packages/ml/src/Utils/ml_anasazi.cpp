@@ -378,7 +378,7 @@ int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVect
   bool isSymmetric = List.get("eigen-analysis: symmetric problem", false);
 
   MLMatOp MatOp = A_MATRIX;
-  string MatOpStr = "A";
+  std::string MatOpStr = "A";
   MatOpStr = List.get("eigen-analysis: matrix operation", MatOpStr);
 
   if( MatOpStr == "A" ) MatOp = A_MATRIX;
@@ -398,21 +398,21 @@ int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVect
   int length = List.get("eigen-analysis: length", 20);
   int BlockSize = List.get("eigen-analysis: block-size", 1);
   double tol = List.get("eigen-analysis: tolerance", 1.0e-5);
-  string which = List.get("eigen-analysis: action", "LM");
+  std::string which = List.get("eigen-analysis: action", "LM");
   int restarts = List.get("eigen-analysis: restart", 100);
 
   int output = List.get("eigen-analysis: output", 6);
   
   if( output > 5 && MyPID == 0 ) {
-    if( MatOp == A_MATRIX ) cout << "ML_Anasazi : Computing eigenvalues of A" << endl;
-    if( MatOp == I_MINUS_A_MATRIX ) cout << "ML_Anasazi : Computing eigenvalues of I - A" << endl;
-    if( MatOp == A_PLUS_AT_MATRIX ) cout << "ML_Anasazi : Computing eigenvalues of A + A^T" << endl;
-    if( MatOp == A_MINUS_AT_MATRIX ) cout << "ML_Anasazi : Computing eigenvalues of A - A^T" << endl;
-    if( MatOp == ITERATION_MATRIX ) cout << "ML_Anasazi : Computing eigenvalues of I-BA" << endl;
-    if( UseDiagScaling ) cout << "ML_Anasazi : where A is scaled by D^{-1}" << endl;
-    if( isSymmetric ) cout << "ML_Anasazi : Problem is symmetric" << endl;
-    cout << "ML_Anasazi : Tolerance = " << tol << endl;
-    cout << "ML_Anasazi : Required Action = " << which << endl;
+    if( MatOp == A_MATRIX ) std::cout << "ML_Anasazi : Computing eigenvalues of A" << std::endl;
+    if( MatOp == I_MINUS_A_MATRIX ) std::cout << "ML_Anasazi : Computing eigenvalues of I - A" << std::endl;
+    if( MatOp == A_PLUS_AT_MATRIX ) std::cout << "ML_Anasazi : Computing eigenvalues of A + A^T" << std::endl;
+    if( MatOp == A_MINUS_AT_MATRIX ) std::cout << "ML_Anasazi : Computing eigenvalues of A - A^T" << std::endl;
+    if( MatOp == ITERATION_MATRIX ) std::cout << "ML_Anasazi : Computing eigenvalues of I-BA" << std::endl;
+    if( UseDiagScaling ) std::cout << "ML_Anasazi : where A is scaled by D^{-1}" << std::endl;
+    if( isSymmetric ) std::cout << "ML_Anasazi : Problem is symmetric" << std::endl;
+    std::cout << "ML_Anasazi : Tolerance = " << tol << std::endl;
+    std::cout << "ML_Anasazi : Required Action = " << which << std::endl;
 	
   }
 
@@ -587,10 +587,10 @@ int GetFieldOfValuesBox(const Epetra_RowMatrix * RowMatrix,
 
   
   if( output > 5 && MyPID == 0 ) {
-    cout << "ML_Anasazi : Estimate box containing the field of values" << endl;
-    cout << "ML_Anasazi : Tolerance = " << tol << endl;	
-    cout << "ML_Anasazi : Computing eigenvalues of A + A^T" << endl;
-    if( UseDiagScaling ) cout << "ML_Anasazi : where A is scaled by D^{-1}" << endl;
+    std::cout << "ML_Anasazi : Estimate box containing the field of values" << std::endl;
+    std::cout << "ML_Anasazi : Tolerance = " << tol << std::endl;	
+    std::cout << "ML_Anasazi : Computing eigenvalues of A + A^T" << std::endl;
+    if( UseDiagScaling ) std::cout << "ML_Anasazi : where A is scaled by D^{-1}" << std::endl;
   }
 
   bool PrintCurrentStatus =  List.get("field-of-values: print current status", false);
@@ -647,7 +647,7 @@ int GetFieldOfValuesBox(const Epetra_RowMatrix * RowMatrix,
   Teuchos::RefCountPtr<const std::vector<double> > residuals = MyBlockKrylovSchur1.GetRitzResiduals();
 
   if( output > 5 && MyPID == 0 ) {
-    cout << "ML_Anasazi : Ritz Residual for A^T + A = " << (*residuals)[0] << endl;
+    std::cout << "ML_Anasazi : Ritz Residual for A^T + A = " << (*residuals)[0] << std::endl;
   }
 
   if( PrintCurrentStatus && MyPID == 0 ) MyBlockKrylovSchur1.currentStatus();
@@ -659,7 +659,7 @@ int GetFieldOfValuesBox(const Epetra_RowMatrix * RowMatrix,
   if( isSymmetric == false ) {
     
     if( output > 5 && MyPID == 0 ) {
-      cout << "ML_Anasazi : Computing eigenvalues of A - A^T" << endl;
+      std::cout << "ML_Anasazi : Computing eigenvalues of A - A^T" << std::endl;
     }
     
     Vectors->MvRandom();
@@ -688,13 +688,13 @@ int GetFieldOfValuesBox(const Epetra_RowMatrix * RowMatrix,
 
     Teuchos::RefCountPtr<const std::vector<double> > residuals = MyBlockKrylovSchur2.GetRitzResiduals();
     if( output > 5 && MyPID == 0 ) {
-      cout << "ML_Anasazi : Ritz Residual for A^T - A = " << (*residuals)[0] << endl;
+      std::cout << "ML_Anasazi : Ritz Residual for A^T - A = " << (*residuals)[0] << std::endl;
     }
     
     if( PrintCurrentStatus && MyPID == 0 ) MyBlockKrylovSchur2.currentStatus();
 
     if( output > 5 && MyPID == 0 ) {
-      cout << "ML_Anasazi : Time = " << Time.ElapsedTime() << " (s)" << endl;
+      std::cout << "ML_Anasazi : Time = " << Time.ElapsedTime() << " (s)" << std::endl;
     }
     
   } else {
@@ -738,12 +738,12 @@ int ML_Anasazi_Get_FieldOfValuesBox_Interface(ML_Operator * Amat,
 
   if (MaxReal < 0.0) {
     if (CrsTemp->Comm().MyPID() == 0)
-      cout << "Warning (GetFieldOfValuesBox) : MaxReal was negative!" << endl;
+      std::cout << "Warning (GetFieldOfValuesBox) : MaxReal was negative!" << std::endl;
     MaxReal = -MaxReal;
   }
   if (MaxImag < 0.0) {
     if (CrsTemp->Comm().MyPID() == 0)
-      cout << "Warning (GetFieldOfValuesBox) : MaxImag was negative!" << endl;
+      std::cout << "Warning (GetFieldOfValuesBox) : MaxImag was negative!" << std::endl;
     MaxImag = -MaxImag;
   }
 
@@ -783,12 +783,12 @@ int ML_Anasazi_Get_FieldOfValuesBoxNonScaled_Interface(ML_Operator * Amat,
   
   if (MaxReal < 0.0) {
     if (CrsTemp->Comm().MyPID() == 0)
-      cout << "Warning (GetFieldOfValuesBox) : MaxReal was negative!" << endl;
+      std::cout << "Warning (GetFieldOfValuesBox) : MaxReal was negative!" << std::endl;
     MaxReal = -MaxReal;
   }
   if (MaxImag < 0.0) {
     if (CrsTemp->Comm().MyPID() == 0)
-      cout << "Warning (GetFieldOfValuesBox) : MaxReal was negative!" << endl;
+      std::cout << "Warning (GetFieldOfValuesBox) : MaxReal was negative!" << std::endl;
     MaxImag = -MaxImag;
   }
 
@@ -828,10 +828,10 @@ int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator* Amat,
   int restarts = 1;
 
   if( verbose ) {
-    cout << "ML_Anasazi : Estimate Lambda Max, ";
-    if( IsProblemSymmetric == ML_TRUE ) cout << "problem is symmetric, ";
-    if( UseDiagonalScaling == ML_TRUE ) cout << "diagonal scaling, ";
-    cout << " max iters = " << MaxIters << endl;
+    std::cout << "ML_Anasazi : Estimate Lambda Max, ";
+    if( IsProblemSymmetric == ML_TRUE ) std::cout << "problem is symmetric, ";
+    if( UseDiagonalScaling == ML_TRUE ) std::cout << "diagonal scaling, ";
+    std::cout << " max iters = " << MaxIters << std::endl;
   }
 
   /* ********************************************************************** */
@@ -895,7 +895,7 @@ int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator* Amat,
   
   if (verbose) {
     Teuchos::RefCountPtr<const std::vector<double> > residuals = MyBlockKrylovSchur.GetRitzResiduals();
-    cout << "ML_Anasazi : Ritz Residual = " << (*residuals)[0] << endl;
+    std::cout << "ML_Anasazi : Ritz Residual = " << (*residuals)[0] << std::endl;
   }
   
   delete RowMatrix;

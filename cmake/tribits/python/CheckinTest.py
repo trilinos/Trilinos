@@ -365,13 +365,18 @@ class GitRepo:
     return str(self)
 
 
-def getExtraReposPyFileFromCmakeFile(inOptions, extraReposPythonOutFile, \
-  consoleOutputFile = None, verbose=False \
-  ):
+def getExtraReposFilePath(inOptions):
   if inOptions.extraReposFile == "project":
     extraReposFile = inOptions.srcDir+"/cmake/ExtraRepositoriesList.cmake"
   else:
     extraReposFile = inOptions.extraReposFile
+  return extraReposFile
+
+
+def getExtraReposPyFileFromCmakeFile(inOptions, extraReposPythonOutFile, \
+  consoleOutputFile = None, verbose=False \
+  ):
+  extraReposFile = getExtraReposFilePath(inOptions)
   cmnd = "\""+inOptions.withCmake+"\""+ \
     " -DPROJECT_SOURCE_DIR="+inOptions.srcDir+ \
     " -DTRIBITS_BASE_DIR="+inOptions.tribitsDir+ \
@@ -474,35 +479,31 @@ def createAndGetProjectDependencies(inOptions, baseTestDir, tribitsGitRepos):
   if tribitsGitRepos.numTribitsExtraRepos() > 0:
     print "\nPulling in packages from extra repos: "+\
        ','.join(tribitsGitRepos.tribitsExtraRepoNamesList())+" ..."
-    for gitRepo in tribitsGitRepos.gitRepoList():
-      assertGitRepoExists(inOptions, gitRepo)        
-    if not inOptions.skipDepsUpdate:
-      # There are extra repos so we need to build a new list of Project
-      # packages to include the add-on packages.
-      cmakeArgumentList = [
-        "cmake",
-        "-DPROJECT_NAME=%s" % inOptions.projectName,
-        cmakeScopedDefine(inOptions.projectName, "TRIBITS_DIR", inOptions.tribitsDir),
-        "-DPROJECT_SOURCE_DIR="+inOptions.srcDir,
-        cmakeScopedDefine(inOptions.projectName, "OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR",
-          baseTestDir),
-        cmakeScopedDefine(inOptions.projectName, "EXTRA_REPOSITORIES", "\""+\
-          ';'.join(tribitsGitRepos.tribitsExtraRepoNamesList())+"\""),
-        "-P %s/cmake/tribits/package_arch/TribitsDumpDepsXmlScript.cmake" % inOptions.srcDir,
-        ]
-      cmnd = ' '.join(cmakeArgumentList)
-      echoRunSysCmnd(cmnd,
-        workingDir=baseTestDir,
-        outFile=baseTestDir+"/"\
-          +getProjectDependenciesXmlGenerateOutputFileName(inOptions.projectName),
-        timeCmnd=True)
-    else:
-      print "\nSkipping update of dependencies XML file on request!"
-    projectDepsXmlFile = baseTestDir+"/"\
-      +getProjectDependenciesXmlFileName(inOptions.projectName)
+  for gitRepo in tribitsGitRepos.gitRepoList():
+    assertGitRepoExists(inOptions, gitRepo)        
+  projectDepsXmlFile = baseTestDir+"/"\
+    +getProjectDependenciesXmlFileName(inOptions.projectName)
+  if not inOptions.skipDepsUpdate:
+    # There are extra repos so we need to build a new list of Project
+    # packages to include the add-on packages.
+    cmakeArgumentList = [
+      "cmake",
+      "-DPROJECT_NAME=%s" % inOptions.projectName,
+      cmakeScopedDefine(inOptions.projectName, "TRIBITS_DIR", inOptions.tribitsDir),
+      "-DPROJECT_SOURCE_DIR="+inOptions.srcDir,
+      cmakeScopedDefine(inOptions.projectName, "EXTRA_REPOSITORIES", "\""+\
+        ';'.join(tribitsGitRepos.tribitsExtraRepoNamesList())+"\""),
+      cmakeScopedDefine(inOptions.projectName, "DEPS_XML_OUTPUT_FILE", projectDepsXmlFile),
+      "-P %s/cmake/tribits/package_arch/TribitsDumpDepsXmlScript.cmake" % inOptions.srcDir,
+      ]
+    cmnd = ' '.join(cmakeArgumentList)
+    echoRunSysCmnd(cmnd,
+      workingDir=baseTestDir,
+      outFile=baseTestDir+"/"\
+        +getProjectDependenciesXmlGenerateOutputFileName(inOptions.projectName),
+      timeCmnd=True)
   else:
-    # No extra repos so you can just use the default list of packages
-    projectDepsXmlFile = getDefaultDepsXmlInFile(inOptions.srcDir, inOptions.projectName)
+    print "\nSkipping update of dependencies XML file on request!"
 
   projectDepsXmlFileOverride = os.environ.get("CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE")
   if projectDepsXmlFileOverride:
@@ -511,11 +512,6 @@ def createAndGetProjectDependencies(inOptions, baseTestDir, tribitsGitRepos):
 
   global projectDependenciesCache
   projectDependenciesCache = getProjectDependenciesFromXmlFile(projectDepsXmlFile)
-
-
-
-
-
 
 
 class BuildTestCase:
@@ -1200,10 +1196,18 @@ def getEnablesLists(inOptions, validPackageTypesList, isDefaultBuild,
     print "\nFinal package enable list: [" + ','.join(enablePackagesList) + "]"
 
   if tribitsGitRepos.numTribitsExtraRepos() > 0:
-    cmakePkgOptions.append(cmakeScopedDefine(
-      projectName, "EXTRA_REPOSITORIES:STRING",
-      ','.join(tribitsGitRepos.tribitsExtraRepoNamesList())))
-
+    cmakePkgOptions.extend(
+      [
+        cmakeScopedDefine(
+          projectName, "EXTRA_REPOSITORIES:STRING",
+          ','.join(tribitsGitRepos.tribitsExtraRepoNamesList())),
+        cmakeScopedDefine(
+          projectName, "ENABLE_KNOWN_EXTERNAL_REPOS_TYPE", inOptions.extraReposType),
+        cmakeScopedDefine(
+          projectName, "EXTRAREPOS_FILE", getExtraReposFilePath(inOptions)),
+        ]
+      )
+        
   for pkg in enablePackagesList:
     cmakePkgOptions.append(cmakeScopedDefine(projectName, "ENABLE_"+pkg+":BOOL", "ON"))
 
@@ -1270,11 +1274,12 @@ def runBuildTestCase(inOptions, tribitsGitRepos, buildTestCase, timings):
     if inOptions.extraCmakeOptions:
       cmakeBaseOptions.extend(commandLineOptionsToList(inOptions.extraCmakeOptions))
   
-    cmakeBaseOptions.append(cmakeScopedDefine(projectName, "ENABLE_TESTS:BOOL", "ON"))
-  
-    cmakeBaseOptions.append(cmakeScopedDefine(projectName, "TEST_CATEGORIES:STRING", "BASIC"))
-
-    cmakeBaseOptions.append(cmakeScopedDefine(projectName, "ALLOW_NO_PACKAGES:BOOL", "OFF"))
+    cmakeBaseOptions.append(cmakeScopedDefine(projectName,
+      "ENABLE_TESTS:BOOL", "ON"))
+    cmakeBaseOptions.append(cmakeScopedDefine(projectName,
+      "TEST_CATEGORIES:STRING", inOptions.testCategories))
+    cmakeBaseOptions.append(cmakeScopedDefine(projectName,
+      "ALLOW_NO_PACKAGES:BOOL", "OFF"))
 
     if inOptions.ctestTimeOut:
       cmakeBaseOptions.append(("-DDART_TESTING_TIMEOUT:STRING="+str(inOptions.ctestTimeOut)))

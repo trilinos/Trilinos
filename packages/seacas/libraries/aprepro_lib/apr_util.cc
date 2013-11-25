@@ -90,12 +90,20 @@ namespace SEAMS {
 		<< apr.ap_file_list.top().lineno + 1 <<")\n";
   }
 
-  void redefined_warning (const SEAMS::Aprepro &apr, const std::string &var)
+  void redefined_warning (const SEAMS::Aprepro &apr, const SEAMS::symrec* var)
   {
-    if (var[0] != '_' && apr.ap_options.warning_msg)
-      std::cerr << "Aprepro: WARN: Variable '"
-		<< var << "' redefined (" << apr.ap_file_list.top().name << ", line "
+    if (var->name[0] != '_' && apr.ap_options.warning_msg) {
+      // See if internal or user-defined variable...
+      std::string type;
+      if (var->isInternal)
+	type = "Pre";
+      else
+	type = "User";
+
+      std::cerr << "Aprepro: WARN: " << type << "-defined Variable '"
+		<< var->name << "' redefined (" << apr.ap_file_list.top().name << ", line "
 		<< apr.ap_file_list.top().lineno + 1 <<")\n";
+    }
   }
 
   void warning (const SEAMS::Aprepro &apr, const std::string &s)
@@ -159,4 +167,29 @@ namespace SEAMS {
     stat(filepath.c_str(), &s);
     return S_ISDIR(s.st_mode);
   }
+
+  bool check_valid_var(const char *var)
+  {
+    /* Check that 'var' meets the restriction for a variable name
+     * L(:|L|D)*
+     * D [0-9]
+     * L [A-Za-z_]
+     */
+  
+    int length = strlen(var);
+    if (length == 0)
+      return false;
+
+    if (!isalpha(var[0])) {
+      return false;
+    }
+
+    for (int i=1; i < length; i++) {
+      char c = var[i];
+      if (!isalnum(c) && c != ':' && c != '_')
+	return false;
+    }
+    return true;
+  }
+
 }

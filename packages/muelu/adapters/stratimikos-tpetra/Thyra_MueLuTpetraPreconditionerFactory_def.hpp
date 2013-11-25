@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -105,20 +105,6 @@ bool MueLuTpetraPreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::i
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-bool MueLuTpetraPreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applySupportsConj(EConj conj) const
-{
-  return false;
-}
-
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-bool MueLuTpetraPreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyTransposeSupportsConj(EConj conj) const
-{
-  return false;
-}
-
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<PreconditionerBase<Scalar> >
 MueLuTpetraPreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createPrec() const
 {
@@ -181,9 +167,14 @@ void MueLuTpetraPreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::i
   const Teuchos::RCP<TpetraCrsMat> tpetraFwdCrsMatNonConst = Teuchos::rcp_const_cast<TpetraCrsMat>(tpetraFwdCrsMat);
 
   // Create and compute the initial preconditioner
+  
+  typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
+  Teuchos::RCP<MV> coords, null_space;
+  if(paramList_->isType<Teuchos::RCP<MV> >("Coordinates")) coords = paramList_->get<Teuchos::RCP<MV> >("Coordinates");
+  if(paramList_->isType<Teuchos::RCP<MV> >("Null Space")) null_space = paramList_->get<Teuchos::RCP<MV> >("Null Space");
 
   typedef MueLu::TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> MueLuOperator;
-  const Teuchos::RCP<MueLuOperator> mueluPrecOp = MueLu::CreateTpetraPreconditioner(tpetraFwdCrsMatNonConst, *paramList_);
+  const Teuchos::RCP<MueLuOperator> mueluPrecOp = MueLu::CreateTpetraPreconditioner(tpetraFwdCrsMatNonConst, *paramList_,coords,null_space);
 
   timer.stop();
   if (Teuchos::nonnull(out) && Teuchos::includesVerbLevel(verbLevel, Teuchos::VERB_LOW)) {

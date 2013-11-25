@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -47,7 +47,7 @@
 #include <iostream>
 
 // Teuchos
-#include "Teuchos_ConfigDefs.hpp"
+#include <Teuchos_ConfigDefs.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
@@ -103,8 +103,8 @@
 typedef double                               Scalar;
 typedef int                                  LocalOrdinal;
 typedef long long                            GlobalOrdinal;
-typedef Kokkos::DefaultNode::DefaultNodeType Node;
-typedef Kokkos::DefaultKernels<Scalar, LocalOrdinal, Node>::SparseOps LocalMatOps;
+typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+typedef KokkosClassic::DefaultKernels<Scalar, LocalOrdinal, Node>::SparseOps LocalMatOps;
 //
 #include "MueLu_UseShortNames.hpp"
 
@@ -278,7 +278,7 @@ int main(int argc, char *argv[]) {
   // Define X, B
   RCP<MultiVector> X = MultiVectorFactory::Build(map, 1);
   RCP<MultiVector> B = MultiVectorFactory::Build(map, 1);
-  Teuchos::Array<ST::magnitudeType> norms(1);
+  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
 
   X->setSeed(846930886);
   X->randomize();

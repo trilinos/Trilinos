@@ -97,9 +97,10 @@ int print_args(
         out << prefix << " ------------  ARGUMENTS (server) ----------- " << std::endl;
 
     out << prefix << " \tserver-url       = " << args.server_url.c_str() << std::endl;
+    out << prefix << " \turl-file         = " << args.url_file << std::endl;
+    out << prefix << " \ttransport        = " << args.transport_name << std::endl;
 
     if (args.client_flag) {
-        out << prefix << " \ttransport        = " << args.transport_name << std::endl;
         out << prefix << " \tio-method        = " << args.io_method_name << std::endl;
         out << prefix << " \tnum-trials       = " << args.num_trials << std::endl;
         out << prefix << " \tnum-reqs         = " << args.num_reqs << std::endl;
@@ -153,16 +154,20 @@ int main(int argc, char *argv[])
             "read-encode-sync", "read-encode-async",
             "read-rdma-sync", "read-rdma-async"};
 
-    const int num_nssi_transports = 4;
+    const int num_nssi_transports = 5;
     const int nssi_transport_vals[] = {
             NSSI_RPC_PTL,
             NSSI_RPC_IB,
             NSSI_RPC_GEMINI,
+            NSSI_RPC_BGPDCMF,
+            NSSI_RPC_BGQPAMI,
             NSSI_RPC_MPI};
     const char * nssi_transport_names[] = {
             "ptl",
             "ib",
             "gni",
+            "bgpdcmf",
+            "bgqpami",
             "mpi"
     };
 
@@ -186,6 +191,7 @@ int main(int argc, char *argv[])
     args.timeout = 500;
     args.num_retries = 5;
     args.validate_flag = true;
+    args.kill_server_flag = true;
     args.block_distribution = true;
 
 
@@ -231,6 +237,7 @@ int main(int argc, char *argv[])
         parser.setOption("validate", "no-validate", &args.validate_flag, "Validate the data");
         parser.setOption("num-servers", &args.num_servers, "Number of server processes");
         parser.setOption("num-threads", &args.num_threads, "Number of threads used by each server process");
+        parser.setOption("kill-server", "no-kill-server", &args.kill_server_flag, "Kill the server at the end of the experiment");
         parser.setOption("block-distribution", "rr-distribution", &args.block_distribution,
                 "Use a block distribution scheme to assign clients to servers");
 
@@ -250,10 +257,11 @@ int main(int argc, char *argv[])
         // Set an enumeration command line option for the io_method
         parser.setOption("transport", &args.transport, num_nssi_transports, nssi_transport_vals, nssi_transport_names,
                 "NSSI transports (not all are available on every platform): \n"
-                "\t\t\tportals : Cray or Schutt\n"
+                "\t\t\tportals    : Cray or Schutt\n"
                 "\t\t\tinfiniband : libibverbs\n"
-                "\t\t\tgemini : Cray\n"
-                "\t\t\tmpi : isend/irecv implementation\n"
+                "\t\t\tgemini     : Cray\n"
+                "\t\t\tbgpdcmf    : BlueGene/P DCMF\n"
+                "\t\t\tmpi        : isend/irecv implementation\n"
                 );
 
 
@@ -576,9 +584,14 @@ int main(int argc, char *argv[])
             MPI_Barrier(comm);
 
             // Tell one of the clients to kill the server
-            if (rank_in_server == 0) {
+            if ((args.kill_server_flag) && (rank_in_server == 0)) {
                 log_debug(debug_level, "%d: Halting xfer service", rank);
                 rc = nssi_kill(&xfer_svc, 0, 5000);
+            }
+            rc=nssi_free_service((nssi_rpc_transport)args.transport, &xfer_svc);
+            if (rc != NSSI_OK) {
+                log_error(xfer_debug_level, "could not free svc description: %s",
+                        nssi_err_str(rc));
             }
         }
 

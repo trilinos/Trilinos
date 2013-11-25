@@ -315,6 +315,36 @@ FUNCTION(UNITTEST_EXTRA_REPO_MISSING_REQUIRED_PACKAGE)
 ENDFUNCTION()
 
 
+FUNCTION(UNITTEST_ELEVATE_SUBPACKAGES_SS_TO_PS)
+
+  MESSAGE("\n***")
+  MESSAGE("*** Testing elevating packages and subpackages from SS to PS")
+  MESSAGE("***\n")
+
+  # Debugging
+  #SET(TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS ON)
+  #SET(${PROJECT_NAME}_VERBOSE_CONFIGURE ON)
+  #SET(TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS_DEBUG ON)
+
+  SET(${PROJECT_NAME}_ELEVATE_SS_TO_PS TRUE)
+
+  TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS(${PROJECT_NAME} ".")
+
+  INCLUDE(${PROJECT_SOURCE_DIR}/extraRepoOnePackageThreeSubpackages/PackagesList.cmake)
+  TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS(extraRepoOnePackageThreeSubpackages
+    extraRepoOnePackageThreeSubpackages)
+
+  TRIBITS_READ_ALL_PACKAGE_DEPENDENCIES()
+
+  UNITTEST_COMPARE_CONST( ${PROJECT_NAME}_SE_PACKAGES
+    "Teuchos;RTOp;extraRepoOnePackageThreeSubpackagesSP1;extraRepoOnePackageThreeSubpackagesSP2;extraRepoOnePackageThreeSubpackagesSP3;extraRepoOnePackageThreeSubpackages")
+  UNITTEST_COMPARE_CONST(extraRepoOnePackageThreeSubpackagesSP1_CLASSIFICATION PS)
+  UNITTEST_COMPARE_CONST(extraRepoOnePackageThreeSubpackagesSP2_CLASSIFICATION PS)
+  UNITTEST_COMPARE_CONST(extraRepoOnePackageThreeSubpackagesSP3_CLASSIFICATION EX)
+
+ENDFUNCTION()
+
+
 #
 # B) Test enabled/disable logic
 #
@@ -521,7 +551,7 @@ ENDFUNCTION()
 FUNCTION(UNITTEST_TARNIPED_ENABLE_ALL)
 
   MESSAGE("\n***")
-  MESSAGE("*** Testing TARNIPE() enable all packages")
+  MESSAGE("*** Testing TARNIPE() enable all packages (no tests)")
   MESSAGE("***\n")
 
   # Debugging
@@ -577,8 +607,13 @@ FUNCTION(UNITTEST_TARNIPED_ENABLE_ALL_TESTS)
 
   UNITTEST_COMPARE_CONST(${PROJECT_NAME}_ENABLE_Teuchos ON)
   UNITTEST_COMPARE_CONST(${PROJECT_NAME}_ENABLE_RTOp ON)
-  UNITTEST_COMPARE_CONST(${PROJECT_NAME}_ENABLE_Ex2Package1 ON)
-  UNITTEST_COMPARE_CONST(${PROJECT_NAME}_ENABLE_Ex2Package2 ON)
+  UNITTEST_COMPARE_CONST(${PROJECT_NAME}_ENABLE_Ex2Package1 OFF)
+  UNITTEST_COMPARE_CONST(${PROJECT_NAME}_ENABLE_Ex2Package2 OFF)
+
+  # NOTE: Above, implicitly non-enabled packages are disabled even if they
+  # have tests that are enabled.  This makes the logic in
+  # TribitsCTestDriverCore.cmake avoid enabling modified packages if they are
+  # not to be implicilty enabled in CI testing.
 
 ENDFUNCTION()
 
@@ -586,7 +621,7 @@ ENDFUNCTION()
 FUNCTION(UNITTEST_TARNIPED_ENABLE_ALL_Ex2Package1_ENABLE_TESTS)
 
   MESSAGE("\n***")
-  MESSAGE("*** Testing TARNIPED() with all packages and tests for only Ex2Package1")
+  MESSAGE("*** Testing TARNIPED() with all packages and tests, Ex2Package1 not excluded")
   MESSAGE("***\n")
 
   # Debugging
@@ -595,17 +630,19 @@ FUNCTION(UNITTEST_TARNIPED_ENABLE_ALL_Ex2Package1_ENABLE_TESTS)
   SET(${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE ON)
   SET(${PROJECT_NAME}_ENABLE_ALL_PACKAGES ON)
   SET(Ex2Package1_ENABLE_TESTS ON)
+  SET(Ex2Package2_ENABLE_TESTS ON)
 
   UNITTEST_HELPER_READ_AND_PROESS_PACKAGES()
 
   UNITTEST_COMPARE_CONST(${PROJECT_NAME}_ENABLE_Ex2Package1 ON)
   UNITTEST_COMPARE_CONST(Ex2Package1_ENABLE_TESTS ON)
   UNITTEST_COMPARE_CONST(${PROJECT_NAME}_ENABLE_Ex2Package2 ON)
-  UNITTEST_COMPARE_CONST(Ex2Package2_ENABLE_TESTS "")
+  UNITTEST_COMPARE_CONST(Ex2Package2_ENABLE_TESTS ON)
 
-  MESSAGE("Unit test: Disabling repository implicitly excluded packages.")
+  MESSAGE("Unit test: Disabling repository implicitly excluded packages and tests, Ex2Package1 not excluded.")
 
   SET(${EXTRA_REPO_NAME}_NO_IMPLICIT_PACKAGE_ENABLE ON)
+  SET(${EXTRA_REPO_NAME}_NO_IMPLICIT_PACKAGE_ENABLE_EXCEPT Ex2Package1)
 
   TRIBITS_APPLY_REPOSITORY_NO_IMPLICIT_PACKAGE_ENABLE_DISABLE()  
 
@@ -613,6 +650,10 @@ FUNCTION(UNITTEST_TARNIPED_ENABLE_ALL_Ex2Package1_ENABLE_TESTS)
   UNITTEST_COMPARE_CONST(${PROJECT_NAME}_ENABLE_RTOp ON)
   UNITTEST_COMPARE_CONST(${PROJECT_NAME}_ENABLE_Ex2Package1 ON)
   UNITTEST_COMPARE_CONST(${PROJECT_NAME}_ENABLE_Ex2Package2 OFF)
+
+  # NOTE: The above shows that if you want to leave enabled a package in a
+  # repo that has implicit package enables turned on, then you need to add
+  # that package to the exclude list!
 
 ENDFUNCTION()
 
@@ -708,6 +749,7 @@ UNITTEST_SINGLE_PROJECT_EMAIL_LIST()
 UNITTEST_SINGLE_PROJECT_EMAIL_LIST_OVERRIDE()
 UNITTEST_EXTRA_REPO_MISSING_OPTIONAL_PACKAGE()
 UNITTEST_EXTRA_REPO_MISSING_REQUIRED_PACKAGE()
+UNITTEST_ELEVATE_SUBPACKAGES_SS_TO_PS()
 
 # B) Test enabled/disable logic
 UNITTEST_ENABLE_NO_PACKAGES()
@@ -726,4 +768,4 @@ UNITTEST_TARNIPED_ALLOW_Ex2Package1_ENABLE_ALL()
 UNITTEST_TARNIPED_ALLOW_Ex2Package2_ENABLE_ALL()
 
 # Pass in the number of expected tests that must pass!
-UNITTEST_FINAL_RESULT(139)
+UNITTEST_FINAL_RESULT(143)

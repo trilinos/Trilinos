@@ -53,7 +53,7 @@
 
 
 namespace {
-  using Kokkos::DefaultNode;
+  using KokkosClassic::DefaultNode;
   using Teuchos::arcp;
   using Teuchos::ArrayRCP;
   using Teuchos::null;
@@ -77,8 +77,8 @@ namespace {
   // start threads by default.  We use SerialNode to make absolutely
   // sure that this is a comparison of sequential kernels.
   //
-  //typedef Kokkos::DefaultNode::DefaultNodeType node_type;
-  typedef Kokkos::SerialNode node_type;
+  //typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
+  typedef KokkosClassic::SerialNode node_type;
 
   typedef Teuchos::ScalarTraits<double> STM;
 
@@ -158,9 +158,9 @@ namespace {
                    "Node type supports this.");
     clp.setOption ("debug", "release", &debug, "Whether to print copious "
                    "debugging output.");
-    clp.setOption ("unroll", "dontUnroll", &unroll, "Whether Kokkos::SeqSparse"
+    clp.setOption ("unroll", "dontUnroll", &unroll, "Whether KokkosClassic::SeqSparse"
                    "Ops should unroll across columns of the multivectors.");
-    clp.setOption ("variant", &variant, "Which algorithm variant Kokkos::Seq"
+    clp.setOption ("variant", &variant, "Which algorithm variant KokkosClassic::Seq"
                    "SparseOps should use for sparse mat-vec.  Valid options "
                    "are \"for-for\", \"for-while\", and \"for-if\".  You may "
                    "also use \"all\", which tests all possibilities.");
@@ -183,7 +183,7 @@ namespace {
   /// \brief Class for testing SparseOpsType.
   ///
   /// \tparam SparseOpsType Implementation of local sparse kernels.
-  ///   Examples include Kokkos::DefaultHostSparseOps.
+  ///   Examples include KokkosClassic::DefaultHostSparseOps.
   template<class SparseOpsType>
   class Tester {
   public:
@@ -257,7 +257,7 @@ namespace {
   // solve, using DefaultHostSparseOps.
   TEUCHOS_UNIT_TEST( DefaultSparseOps, TestSparseOps )
   {
-    using Kokkos::DefaultHostSparseOps;
+    using KokkosClassic::DefaultHostSparseOps;
     typedef DefaultHostSparseOps<scalar_type, ordinal_type, node_type> sparse_ops_type;
 
     const bool implicitUnitDiagTriMultCorrect = false;
@@ -270,7 +270,7 @@ namespace {
   // solve, using MklSparseOps.
   TEUCHOS_UNIT_TEST( MklSparseOps, TestSparseOps )
   {
-    using Kokkos::MklSparseOps;
+    using KokkosClassic::MklSparseOps;
     typedef MklSparseOps<scalar_type, ordinal_type, node_type> sparse_ops_type;
 
     // MKL correctly implements both sparse mat-vec and sparse
@@ -315,7 +315,7 @@ namespace {
 #if 0
   TEUCHOS_UNIT_TEST( AltSparseOpsDefaultParameters, TestSparseOps )
   {
-    using Kokkos::AltSparseOps;
+    using KokkosClassic::AltSparseOps;
     typedef AltSparseOps<scalar_type, ordinal_type, node_type> sparse_ops_type;
     const bool implicitUnitDiagTriMultCorrect = true;
     Tester<sparse_ops_type>::test ("AltSparseOps",
@@ -328,7 +328,7 @@ namespace {
   {
     using Teuchos::ParameterList;
     using Teuchos::RCP;
-    using Kokkos::AltSparseOps;
+    using KokkosClassic::AltSparseOps;
     typedef AltSparseOps<scalar_type, ordinal_type, node_type> sparse_ops_type;
     const bool implicitUnitDiagTriMultCorrect = false;
 

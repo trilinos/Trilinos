@@ -443,7 +443,7 @@ C   --Informational commands
      &      NAMES, TIMES, WHOTIM, NPTIMS, IPTIMS,
      &      IDELB, LENE, IDNPS, IDESS,
      &      NCSTEP, LISNP, NLISEL, LISEL, LISNPS, LISESS,
-     &      LISHV, LISGV, LISNV, LISEV)
+     &      LISHV, LISGV, LISNV, LISEV, MAPEL, MAPND)
          VERB = ' '
          CALL MDSTAT (NERR, MEM)
          IF (NERR .GT. 0) GOTO 160

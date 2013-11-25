@@ -109,7 +109,7 @@ int ex_put_prop (int   exoid,
   int status;
   int oldfill = 0;
   int temp;
-  int found = FALSE;
+  int found = EX_FALSE;
   int num_props, i, dimid, propid, dims[1];
   int int_type;
   size_t start[1]; 
@@ -195,7 +195,7 @@ int ex_put_prop (int   exoid,
       }
 
       if (strcmp(tmpstr, prop_name) == 0) {
-	found = TRUE;
+	found = EX_TRUE;
 	break;
       }
     }
@@ -371,7 +371,7 @@ int ex_put_prop (int   exoid,
       sprintf(errmsg,
 	      "Warning: no properties allowed for NULL %s id %"PRId64" in file id %d",
 	      ex_name_of_object(obj_type), obj_id,exoid);
-      ex_err("ex_put_prop",errmsg,EX_MSG);
+      ex_err("ex_put_prop",errmsg,EX_NULLENTITY);
       return (EX_WARN);
     } else {
       sprintf(errmsg,

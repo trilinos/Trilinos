@@ -170,7 +170,23 @@ namespace Teuchos
   void LAPACK<int,float>::LASCL(const char TYPE, const int kl, const int ku, const float cfrom, const float cto, const int m, const int n, float* A, const int lda, int* info) const
   { SLASCL_F77(CHAR_MACRO(TYPE), &kl, &ku, &cfrom, &cto, &m, &n, A, &lda, info); }
 
-
+  void 
+  LAPACK<int,float>::
+  GEQP3 (const int m, 
+	 const int n, 
+	 float* A, 
+	 const int lda, 
+	 int *jpvt, 
+	 float* TAU, 
+	 float* WORK, 
+	 const int lwork, 
+	 float* RWORK, 
+	 int* info) const
+  {
+    (void) RWORK;
+    SGEQP3_F77(&m, &n, A, &lda, jpvt, TAU, WORK, &lwork, info);
+  }
+  
   void LAPACK<int, float>::
   LASWP (const int N,
 	 float A[],
@@ -539,6 +555,11 @@ namespace Teuchos
   void LAPACK<int,double>::LASCL(const char TYPE, const int kl, const int ku, const double cfrom, const double cto, const int m, const int n, double* A, const int lda, int* info) const
   { DLASCL_F77(CHAR_MACRO(TYPE), &kl, &ku, &cfrom, &cto, &m, &n, A, &lda, info); }
 
+  void LAPACK<int,double>::GEQP3(const int m, const int n, double* A, const int lda, int *jpvt, double* TAU, double* WORK, const int lwork, double* RWORK, int* info ) const
+  {
+    (void) RWORK;
+    DGEQP3_F77(&m, &n, A, &lda, jpvt, TAU, WORK, &lwork, info);
+  }
 
   void LAPACK<int, double>::
   LASWP (const int N,
@@ -978,6 +999,10 @@ namespace Teuchos
   void LAPACK<int,std::complex<float> >::LASCL(const char TYPE, const int kl, const int ku, const float cfrom, const float cto, const int m, const int n, std::complex<float>* A, const int lda, int* info) const
   { CLASCL_F77(CHAR_MACRO(TYPE), &kl, &ku, &cfrom, &cto, &m, &n, A, &lda, info); }
 
+  void LAPACK<int,std::complex<float> >::GEQP3(const int m, const int n, std::complex<float>* A, const int lda, int *jpvt, std::complex<float>* TAU, std::complex<float>* WORK, const int lwork, float* RWORK, int* info ) const
+  {
+    CGEQP3_F77(&m, &n, A, &lda, jpvt, TAU, WORK, &lwork, RWORK, info);
+  }
 
   void LAPACK<int, std::complex<float> >::
   LASWP (const int N,
@@ -1361,6 +1386,10 @@ namespace Teuchos
   void LAPACK<int,std::complex<double> >::LASCL(const char TYPE, const int kl, const int ku, const double cfrom, const double cto, const int m, const int n, std::complex<double>* A, const int lda, int* info) const
   { ZLASCL_F77(CHAR_MACRO(TYPE), &kl, &ku, &cfrom, &cto, &m, &n, A, &lda, info); }
 
+  void LAPACK<int,std::complex<double> >::GEQP3(const int m, const int n, std::complex<double>* A, const int lda, int *jpvt, std::complex<double>* TAU, std::complex<double>* WORK, const int lwork, double* RWORK, int* info ) const
+  {
+    ZGEQP3_F77(&m, &n, A, &lda, jpvt, TAU, WORK, &lwork, RWORK, info);
+  }
 
   void LAPACK<int, std::complex<double> >::
   LASWP (const int N,

@@ -43,7 +43,7 @@
 #include <iostream>
 #include <cuda_runtime.h>
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   CUDANodeDeallocator::CUDANodeDeallocator(size_t sizeInBytes, const Teuchos::RCP<CUDANodeMemoryModel> &node)
 #ifdef HAVE_KOKKOSCLASSIC_CUDA_NODE_MEMORY_PROFILING
@@ -58,7 +58,7 @@ namespace Kokkos {
   void CUDANodeDeallocator::free(void *ptr) {
     cudaError_t err = cudaFree(ptr);
     TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error, 
-        "Kokkos::CUDANodeDeallocator::free(): cudaFree() returned error:\n"
+        "KokkosClassic::CUDANodeDeallocator::free(): cudaFree() returned error:\n"
         << cudaGetErrorString(err) 
       );
 #ifdef HAVE_KOKKOSCLASSIC_CUDA_NODE_MEMORY_PROFILING

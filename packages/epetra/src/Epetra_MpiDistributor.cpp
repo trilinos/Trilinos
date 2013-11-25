@@ -1332,7 +1332,7 @@ int Epetra_MpiDistributor::DoReversePosts( char * export_objs,
 }
 
 //==============================================================================
-void Epetra_MpiDistributor::Print( ostream & os) const
+void Epetra_MpiDistributor::Print(std::ostream & os) const
 {
   using std::endl;
 
@@ -1341,7 +1341,7 @@ void Epetra_MpiDistributor::Print( ostream & os) const
   MPI_Comm_size (comm_, &numProcs);
 
   if (myRank == 0) {
-    os << "Epetra_MpiDistributor (implements Epetra_Distributor)" << endl;
+    os << "Epetra_MpiDistributor (implements Epetra_Distributor)" << std::endl;
   }
   // Let each MPI process print its data.  We assume that all
   // processes can print to the given output stream, and execute
@@ -1349,9 +1349,9 @@ void Epetra_MpiDistributor::Print( ostream & os) const
   // right order.
   for (int p = 0; p < numProcs; ++p) {
     if (myRank == p) {
-      os << "[Node " << p << " of " << numProcs << "]" << endl;
-      os << " selfMessage: " << self_msg_ << endl;
-      os << " numSends: " << nsends_ << endl;
+      os << "[Node " << p << " of " << numProcs << "]" << std::endl;
+      os << " selfMessage: " << self_msg_ << std::endl;
+      os << " numSends: " << nsends_ << std::endl;
 
       os << " imagesTo: [";
       for (int i = 0; i < nsends_; ++i) {
@@ -1360,7 +1360,7 @@ void Epetra_MpiDistributor::Print( ostream & os) const
 	  os << " ";
 	}
       }
-      os << "]" << endl;
+      os << "]" << std::endl;
 
       os << " lengthsTo: [";
       for (int i = 0; i < nsends_; ++i) {
@@ -1369,13 +1369,13 @@ void Epetra_MpiDistributor::Print( ostream & os) const
 	  os << " ";
 	}
       }
-      os << "]" << endl;
+      os << "]" << std::endl;
 
-      os << " maxSendLength: " << max_send_length_ << endl;
+      os << " maxSendLength: " << max_send_length_ << std::endl;
 
       os << " startsTo: ";
       if (starts_to_ == NULL) {
-	os << "(NULL)" << endl;
+	os << "(NULL)" << std::endl;
       } else {
 	os << "[";
 	for (int i = 0; i < nsends_; ++i) {
@@ -1384,12 +1384,12 @@ void Epetra_MpiDistributor::Print( ostream & os) const
 	    os << " ";
 	  }
 	}
-	os << "]" << endl;
+	os << "]" << std::endl;
       }
 
       os << " indicesTo: ";
       if (indices_to_ == NULL) {
-	os << "(NULL)" << endl;
+	os << "(NULL)" << std::endl;
       } else {
 	os << "[";
 	int k = 0;
@@ -1399,11 +1399,11 @@ void Epetra_MpiDistributor::Print( ostream & os) const
 	  }
 	  k += lengths_to_[i];
 	}
-	os << "]" << endl;
+	os << "]" << std::endl;
       }
 
-      os << " numReceives: " << nrecvs_ << endl;
-      os << " totalReceiveLength: " << total_recv_length_ << endl;
+      os << " numReceives: " << nrecvs_ << std::endl;
+      os << " totalReceiveLength: " << total_recv_length_ << std::endl;
 
       os << " lengthsFrom: [";
       for (int i = 0; i < nrecvs_; ++i) {
@@ -1412,7 +1412,7 @@ void Epetra_MpiDistributor::Print( ostream & os) const
 	  os << " ";
 	}
       }
-      os << "]" << endl;
+      os << "]" << std::endl;
 
       os << " startsFrom: [";
       for (int i = 0; i < nrecvs_; ++i) {
@@ -1421,7 +1421,7 @@ void Epetra_MpiDistributor::Print( ostream & os) const
 	  os << " ";
 	}
       }
-      os << "]" << endl;
+      os << "]" << std::endl;
 
       os << " imagesFrom: [";
       for (int i = 0; i < nrecvs_; ++i) {
@@ -1430,7 +1430,7 @@ void Epetra_MpiDistributor::Print( ostream & os) const
 	  os << " ";
 	}
       }
-      os << "]" << endl;
+      os << "]" << std::endl;
 
       // mfh 16 Dec 2011: I found this commented out here; not sure if
       // we want to print this, so I'm leaving it commented out.

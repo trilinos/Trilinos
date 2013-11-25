@@ -49,7 +49,7 @@
 ///   If you edit this header by hand, your edits will disappear the 
 ///   next time you run the generator script.
 
-namespace Kokkos {
+namespace KokkosClassic {
 namespace Raw {
 
 /// CSC sparse matrix-(multi)vector multiply
@@ -3511,6 +3511,6 @@ matVecCsrColMajorForifConj4Vec (
   const Ordinal colStrideX);
 
 } // namespace Raw
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif // #ifndef __Kokkos_Raw_SparseMatVec_decl_hpp

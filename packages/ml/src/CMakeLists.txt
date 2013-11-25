@@ -52,6 +52,7 @@ APPEND_SET(HEADERS
   Coarsen/ml_check.h
   Coarsen/ml_aggregate.h
   Coarsen/ml_ggraph.h
+  Coarsen/ml_parmetis_constants.h
   FEGrid/ml_mapper.h
   FEGrid/ml_gridagx.h
   FEGrid/ml_pde.h

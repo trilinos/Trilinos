@@ -230,9 +230,11 @@ CreateMap(string MapType, Epetra_Comm& Comm, Teuchos::ParameterList& List)
                 else mz = mz*jj;
                 factors[jj]--;
              }
-         }
-        
+         }        
       }
+      List.set("mx", mx);
+      List.set("my", my);
+      List.set("mz", mz);
     } 
     else 
     {

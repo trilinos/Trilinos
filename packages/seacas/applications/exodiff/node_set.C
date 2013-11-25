@@ -190,13 +190,23 @@ int Node_Set<INT>::Check_State() const
 template <typename INT>
 void Node_Set<INT>::entity_load_params()
 {
-  int err = ex_get_set_param(fileId, EX_NODE_SET, id_, &numEntity, &num_dist_factors);
+  std::vector<ex_set> sets(1);
+  sets[0].id = id_;
+  sets[0].type = EX_NODE_SET;
+  sets[0].entry_list = NULL;
+  sets[0].extra_list = NULL;
+  sets[0].distribution_factor_list = NULL;
+
+  int err = ex_get_sets(fileId, 1, &sets[0]);
   
   if (err < 0) {
     std::cout << "ERROR: Failed to get nodeset parameters for nodeset " << id_
 	      << ". !  Aborting..." << std::endl;
     exit(1);
   }
+
+  numEntity = sets[0].num_entry;
+  num_dist_factors = sets[0].num_distribution_factor;
 }
 
 template class Node_Set<int>;

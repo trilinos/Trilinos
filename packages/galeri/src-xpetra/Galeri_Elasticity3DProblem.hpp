@@ -185,9 +185,8 @@ namespace Galeri {
       this->A_ = MatrixTraits<Map,Matrix>::Build(this->Map_, 27*numDofPerNode);
 
       SC one = Teuchos::ScalarTraits<SC>::one(), zero = Teuchos::ScalarTraits<SC>::zero();
+      SerialDenseMatrix<LO,SC> prevKE(numDofPerElem, numDofPerElem), prevElementNodes(numNodesPerElem, nDim);        // cache
       for (size_t i = 0; i < elements.size(); i++) {
-        SerialDenseMatrix<LO,SC> KE(numDofPerElem, numDofPerElem), K0(D->numRows(), numDofPerElem);
-
         // Select nodes subvector
         SerialDenseMatrix<LO,SC> elementNodes(numNodesPerElem, nDim);
         std::vector<LO>& elemNodes = elements[i];
@@ -197,44 +196,71 @@ namespace Galeri {
           elementNodes(j,2) = nodes[elemNodes[j]].z;
         }
 
-        // Evaluate the stiffness matrix for the element
-        for (size_t j = 0; j < numGaussPoints; j++) {
-          SerialDenseMatrix<LO,SC>& B = Bs[j];
-          SerialDenseMatrix<LO,SC>& S = Ss[j];
+        // Check if element is a translation of the previous element
+        SC xMove = elementNodes(0,0) - prevElementNodes(0,0), yMove = elementNodes(0,1) - prevElementNodes(0,1), zMove = elementNodes(0,2) - prevElementNodes(0,2);
+        SC eps = 1e-15;         // coordinate comparison criteria
+        bool recompute = false;
+        {
+          size_t j = 0;
+          for (j = 0; j < numNodesPerElem; j++)
+            if (Teuchos::ScalarTraits<SC>::magnitude(elementNodes(j,0) - (prevElementNodes(j,0) + xMove)) > eps ||
+                Teuchos::ScalarTraits<SC>::magnitude(elementNodes(j,1) - (prevElementNodes(j,1) + yMove)) > eps ||
+                Teuchos::ScalarTraits<SC>::magnitude(elementNodes(j,2) - (prevElementNodes(j,2) + zMove)) > eps)
+              break;
+          if (j != numNodesPerElem)
+            recompute = true;
+        }
 
-          SerialDenseMatrix<LO,SC> JAC(nDim, nDim);
+        SerialDenseMatrix<LO,SC> KE(numDofPerElem, numDofPerElem);
+        if (recompute == false) {
+          // If an element has the same form as previous element, reuse stiffness matrix
+          KE = prevKE;
 
-          for (size_t p = 0; p < nDim; p++)
-            for (size_t q = 0; q < nDim; q++) {
-              JAC(p,q) = zero;
+        } else {
+          // Evaluate new stiffness matrix for the element
+          SerialDenseMatrix<LO,SC> K0(D->numRows(), numDofPerElem);
+          for (size_t j = 0; j < numGaussPoints; j++) {
+            SerialDenseMatrix<LO,SC>& B = Bs[j];
+            SerialDenseMatrix<LO,SC>& S = Ss[j];
 
-              for (size_t k = 0; k < numNodesPerElem; k++)
-                JAC(p,q) += S(k,p)*elementNodes(k,q);
-            }
+            SerialDenseMatrix<LO,SC> JAC(nDim, nDim);
 
-          SC detJ = JAC(0,0)*JAC(1,1)*JAC(2,2) + JAC(2,0)*JAC(0,1)*JAC(1,2) + JAC(0,2)*JAC(2,1)*JAC(1,0) -
-                    JAC(2,0)*JAC(1,1)*JAC(0,2) - JAC(0,0)*JAC(2,1)*JAC(1,2) - JAC(2,2)*JAC(0,1)*JAC(1,0);
+            for (size_t p = 0; p < nDim; p++)
+              for (size_t q = 0; q < nDim; q++) {
+                JAC(p,q) = zero;
 
-          // J2 = inv([JAC zeros(3) zeros(3); zeros(3) JAC zeros(3); zeros(3) zeros(3) JAC])
-          SerialDenseMatrix<LO,SC> J2(nDim*nDim,nDim*nDim);
-          J2(0,0) = J2(3,3) = J2(6,6) =  (JAC(2,2)*JAC(1,1)-JAC(2,1)*JAC(1,2))/detJ;
-          J2(0,1) = J2(3,4) = J2(6,7) = -(JAC(2,2)*JAC(0,1)-JAC(2,1)*JAC(0,2))/detJ;
-          J2(0,2) = J2(3,5) = J2(6,8) =  (JAC(1,2)*JAC(0,1)-JAC(1,1)*JAC(0,2))/detJ;
-          J2(1,0) = J2(4,3) = J2(7,6) = -(JAC(2,2)*JAC(1,0)-JAC(2,0)*JAC(1,2))/detJ;
-          J2(1,1) = J2(4,4) = J2(7,7) =  (JAC(2,2)*JAC(0,0)-JAC(2,0)*JAC(0,2))/detJ;
-          J2(1,2) = J2(4,5) = J2(7,8) = -(JAC(1,2)*JAC(0,0)-JAC(1,0)*JAC(0,2))/detJ;
-          J2(2,0) = J2(5,3) = J2(8,6) =  (JAC(2,1)*JAC(1,0)-JAC(2,0)*JAC(1,1))/detJ;
-          J2(2,1) = J2(5,4) = J2(8,7) = -(JAC(2,1)*JAC(0,0)-JAC(2,0)*JAC(0,1))/detJ;
-          J2(2,2) = J2(5,5) = J2(8,8) =  (JAC(1,1)*JAC(0,0)-JAC(1,0)*JAC(0,1))/detJ;
+                for (size_t k = 0; k < numNodesPerElem; k++)
+                  JAC(p,q) += S(k,p)*elementNodes(k,q);
+              }
 
-          SerialDenseMatrix<LO,SC> B2(J2.numRows(), B.numCols());
-          B2.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, Teuchos::ScalarTraits<SC>::one(), J2, B, zero);
+            SC detJ = JAC(0,0)*JAC(1,1)*JAC(2,2) + JAC(2,0)*JAC(0,1)*JAC(1,2) + JAC(0,2)*JAC(2,1)*JAC(1,0) -
+                JAC(2,0)*JAC(1,1)*JAC(0,2) - JAC(0,0)*JAC(2,1)*JAC(1,2) - JAC(2,2)*JAC(0,1)*JAC(1,0);
 
-          // KE = KE + t * J2B' * D * J2B * detJ
-          SerialDenseMatrix<LO,SC> J2B(R.numRows(), B2.numCols());
-          J2B.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS,    one,   R,  B2, zero);
-          K0 .multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS,    one,  *D, J2B, zero);
-          KE .multiply(Teuchos::TRANS,    Teuchos::NO_TRANS, t*detJ, J2B,  K0, one);
+            // J2 = inv([JAC zeros(3) zeros(3); zeros(3) JAC zeros(3); zeros(3) zeros(3) JAC])
+            SerialDenseMatrix<LO,SC> J2(nDim*nDim,nDim*nDim);
+            J2(0,0) = J2(3,3) = J2(6,6) =  (JAC(2,2)*JAC(1,1)-JAC(2,1)*JAC(1,2))/detJ;
+            J2(0,1) = J2(3,4) = J2(6,7) = -(JAC(2,2)*JAC(0,1)-JAC(2,1)*JAC(0,2))/detJ;
+            J2(0,2) = J2(3,5) = J2(6,8) =  (JAC(1,2)*JAC(0,1)-JAC(1,1)*JAC(0,2))/detJ;
+            J2(1,0) = J2(4,3) = J2(7,6) = -(JAC(2,2)*JAC(1,0)-JAC(2,0)*JAC(1,2))/detJ;
+            J2(1,1) = J2(4,4) = J2(7,7) =  (JAC(2,2)*JAC(0,0)-JAC(2,0)*JAC(0,2))/detJ;
+            J2(1,2) = J2(4,5) = J2(7,8) = -(JAC(1,2)*JAC(0,0)-JAC(1,0)*JAC(0,2))/detJ;
+            J2(2,0) = J2(5,3) = J2(8,6) =  (JAC(2,1)*JAC(1,0)-JAC(2,0)*JAC(1,1))/detJ;
+            J2(2,1) = J2(5,4) = J2(8,7) = -(JAC(2,1)*JAC(0,0)-JAC(2,0)*JAC(0,1))/detJ;
+            J2(2,2) = J2(5,5) = J2(8,8) =  (JAC(1,1)*JAC(0,0)-JAC(1,0)*JAC(0,1))/detJ;
+
+            SerialDenseMatrix<LO,SC> B2(J2.numRows(), B.numCols());
+            B2.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, Teuchos::ScalarTraits<SC>::one(), J2, B, zero);
+
+            // KE = KE + t * J2B' * D * J2B * detJ
+            SerialDenseMatrix<LO,SC> J2B(R.numRows(), B2.numCols());
+            J2B.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS,    one,   R,  B2, zero);
+            K0 .multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS,    one,  *D, J2B, zero);
+            KE .multiply(Teuchos::TRANS,    Teuchos::NO_TRANS, t*detJ, J2B,  K0, one);
+          }
+
+          // Cache the matrix and nodes
+          prevKE           = KE;
+          prevElementNodes = elementNodes;
         }
 
         Teuchos::Array<GO> elemDofs(numDofPerElem);

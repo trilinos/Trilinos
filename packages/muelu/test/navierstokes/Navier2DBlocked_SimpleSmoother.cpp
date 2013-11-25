@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -532,7 +532,8 @@ int main(int argc, char *argv[]) {
   ifpackPredictList.set("relaxation: damping factor", PRED_omega );
   ifpackPredictType = "RELAXATION";
   ifpackPredictList.set("relaxation: type", "Gauss-Seidel");
-  smoProtoPredict = rcp( new TrilinosSmoother(ifpackPredictType, ifpackPredictList, 0, A00Fact) );
+  smoProtoPredict = rcp( new TrilinosSmoother(ifpackPredictType, ifpackPredictList, 0) );
+  smoProtoPredict->SetFactory("A", A00Fact);
   RCP<SmootherFactory> SmooPredictFact = rcp( new SmootherFactory(smoProtoPredict) );
   // define temporary FactoryManager that is used as input for BraessSarazin smoother
   RCP<FactoryManager> MPredict = rcp(new FactoryManager());
@@ -601,7 +602,7 @@ int main(int argc, char *argv[]) {
 
   RCP<Vector> xR = Teuchos::rcp(new Xpetra::EpetraVector(epv));
   // calculate initial (absolute) residual
-  Teuchos::Array<ST::magnitudeType> norms(1);
+  Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
 
   xR->norm2(norms);
   *out << "Test: ||x_0|| = " << norms[0] << std::endl;

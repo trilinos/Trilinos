@@ -71,7 +71,7 @@
 
 namespace panzer {
 
-template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT=Kokkos::DefaultNode::DefaultNodeType>
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT=KokkosClassic::DefaultNode::DefaultNodeType>
 class TpetraLinearObjFactory : public LinearObjFactory<Traits> 
                              , public ThyraObjFactory<ScalarT> {
 public:
@@ -113,7 +113,14 @@ public:
      */
    virtual void adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                                              const LinearObjContainer & globalBCRows,
-                                             LinearObjContainer & ghostedObjs) const;
+                                             LinearObjContainer & ghostedObjs,
+                                             bool zeroVectorRows=false) const;
+
+   /** Adjust a vector by replacing selected rows with the value of the evaluated
+     * dirichlet conditions. This is handled through the standard container mechanism.
+     */
+   virtual void applyDirichletBCs(const LinearObjContainer & counter,
+                                  LinearObjContainer & result) const;
 
    /** Acess to the MPI Comm used in constructing this LOF.
      */

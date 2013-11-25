@@ -7,7 +7,6 @@ Level
 PFactory
 RFactory
 SingleLevelFactoryBase
-TwoKeyMap
 TwoLevelFactoryBase
 VariableContainer
 SmootherFactoryBase

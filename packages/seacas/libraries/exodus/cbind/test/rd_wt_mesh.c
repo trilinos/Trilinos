@@ -68,7 +68,7 @@
 #define MBYTES                 (1024*1024)
 #define MAX_STRING_LEN         128
 #define NUM_NODES_PER_ELEM     8
-#define QUIT                   FALSE
+#define QUIT                   EX_FALSE
 #define WRITE_FILE_TYPE        "new"
 
 /*
@@ -136,7 +136,7 @@ double my_timer()
 int main( int argc, char **argv )
 {
   int rank, num_domains;
-  int quit=FALSE;
+  int quit=EX_FALSE;
   int loc_num_nodes, loc_num_elems;
   int *loc_connect = NULL;
 
@@ -144,11 +144,11 @@ int main( int argc, char **argv )
   MPI_Info     mpi_info_object = MPI_INFO_NULL;				/* Copy of MPI Info object.		*/
 #endif
   int         *elem_map                   = NULL;
-  int          exodus =                     TRUE;			/* TRUE, perform EXODUS benchmark; FALSE don't */
-  int          close_files = FALSE;
+  int          exodus =                     EX_TRUE;			/* EX_TRUE, perform EXODUS benchmark; EX_FALSE don't */
+  int          close_files = EX_FALSE;
   char         file_name[MAX_STRING_LEN] =  DEFAULT_FILE_NAME;		/* Input file name.				*/
-  /* object, FALSE otherwise. Should always be	*/
-  /* TRUE in the current implementation.		*/
+  /* object, EX_FALSE otherwise. Should always be	*/
+  /* EX_TRUE in the current implementation.		*/
   int          num_nodal_fields =           DEFAULT_NUM_FIELDS;
   int          num_global_fields =          DEFAULT_NUM_FIELDS;
   int          num_element_fields =         DEFAULT_NUM_FIELDS;
@@ -171,7 +171,7 @@ int main( int argc, char **argv )
   };
   char         key_name[MAX_STRING_LEN];				/* MPI Info object key name.			*/
   int          key;							/* MPI Info object key index.			*/
-  int          key_exists;						/* TRUE, if the key exists in the MPI Info	*/
+  int          key_exists;						/* EX_TRUE, if the key exists in the MPI Info	*/
   const int    nhints =                     10;                     	/* Number of items in hints list.		*/
   int          nkeys;							/* Number of keys in a MPI Info object.		*/
   char         value[MAX_STRING_LEN];					/* Value of a key/value pair in a MPI Info	*/
@@ -369,10 +369,10 @@ int parse_input (int	argc,
       if ( ++arg < argc ) *sleep_time = atoi( argv[arg] );
     }
     else if ( strcmp( "-x", argv[arg] ) == 0 ) {
-      *exodus = TRUE;
+      *exodus = EX_TRUE;
     }
     else if ( strcmp( "-C", argv[arg] ) == 0 ) {
-      *close_files = TRUE;
+      *close_files = EX_TRUE;
     }
     else if ( (strcmp( "-h", argv[arg] ) == 0) || (strcmp( "-u", argv[arg] ) == 0) ) {
       fprintf(stderr, "                                                                \n" );
@@ -853,7 +853,7 @@ int write_exo_mesh (char *file_name, int rank, int num_dim, int num_domains, int
 	char *names[1] = {"hex"};
 	int num_node_per_elem[1];
 	int num_attr_per_block[1];
-	int write_map = num_domains > 1 ? TRUE : FALSE;
+	int write_map = num_domains > 1 ? EX_TRUE : EX_FALSE;
 	num_elem_per_block[0] = num_elems;
 	num_node_per_elem[0]  = NUM_NODES_PER_ELEM;
 	num_attr_per_block[0] = 0;

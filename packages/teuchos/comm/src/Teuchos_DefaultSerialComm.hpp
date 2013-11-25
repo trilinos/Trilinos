@@ -421,8 +421,6 @@ int SerialComm<Ordinal>::receive(
     ,"SerialComm<Ordinal>::receive(...): Error, you can not call receive(...) when you"
     " only have one process!"
     );
-  // The next line will never be reached, but a return is required on some platforms
-  return 0;
 }
 
 
@@ -464,8 +462,7 @@ RCP<CommRequest<Ordinal> > SerialComm<Ordinal>::isend(
   const int /*destRank*/
   ) const
 {
-  TEUCHOS_TEST_FOR_EXCEPT(true);
-  return null;
+  TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error, "SerialComm<Ordinal>::isend: You cannot call isend when you only have one process." );
 }
 
 
@@ -476,8 +473,7 @@ isend (const ArrayView<const char> &/*sendBuffer*/,
        const int /*destRank*/,
        const int /*tag*/) const
 {
-  TEUCHOS_TEST_FOR_EXCEPT(true);
-  return null;
+  TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error, "SerialComm<Ordinal>::isend: You cannot call isend when you only have one process." );
 }
 
 
@@ -487,8 +483,7 @@ RCP<CommRequest<Ordinal> > SerialComm<Ordinal>::ireceive(
   const int /*sourceRank*/
   ) const
 {
-  TEUCHOS_TEST_FOR_EXCEPT(true);
-  return null;
+  TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error, "SerialComm<Ordinal>::ireceive: You cannot call isend when you only have one process." );
 }
 
 
@@ -499,8 +494,7 @@ ireceive (const ArrayView<char> &/*Buffer*/,
           const int /*sourceRank*/,
           const int /*tag*/) const
 {
-  TEUCHOS_TEST_FOR_EXCEPT(true);
-  return null;
+  TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error, "SerialComm<Ordinal>::ireceive: You cannot call isend when you only have one process." );
 }
 
 

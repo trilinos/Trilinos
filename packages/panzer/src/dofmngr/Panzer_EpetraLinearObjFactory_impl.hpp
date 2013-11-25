@@ -44,6 +44,9 @@
 #define PANZER_EPETRA_LINEAR_OBJ_FACTORY_IMPL_HPP
 
 #include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_ThyraObjContainer.hpp"
+
+#include "Thyra_SpmdVectorBase.hpp"
 
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
@@ -215,7 +218,9 @@ template <typename Traits,typename LocalOrdinalT>
 void EpetraLinearObjFactory<Traits,LocalOrdinalT>::
 adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                              const LinearObjContainer & globalBCRows,
-                             LinearObjContainer & ghostedObjs) const
+                             LinearObjContainer & ghostedObjs,
+                             bool zeroVectorRows) const
+          
 {
    TEUCHOS_ASSERT(!hasColProvider_); // not implemented
 
@@ -242,8 +247,9 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
       double * values = 0;
       int * indices = 0;
 
-      if(local_bcs[i]==0.0) { 
+      if(local_bcs[i]==0.0 || zeroVectorRows) { 
          // this boundary condition was NOT set by this processor
+         // or the user requrested that every row be zeroed
 
          // if they exist put 0.0 in each entry
          if(!Teuchos::is_null(f))
@@ -269,6 +275,38 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
          }
       }
    }
+}
+
+template <typename Traits,typename LocalOrdinalT>
+void  EpetraLinearObjFactory<Traits,LocalOrdinalT>::
+applyDirichletBCs(const LinearObjContainer & counter,
+                  LinearObjContainer & result) const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::dyn_cast;
+
+  const ThyraObjContainer<double> & th_counter = dyn_cast<const ThyraObjContainer<double> >(counter);
+  ThyraObjContainer<double> & th_result  = dyn_cast<ThyraObjContainer<double> >(result);
+  
+  RCP<const Thyra::VectorBase<double> > count = th_counter.get_x_th();
+  RCP<const Thyra::VectorBase<double> > f_in = th_counter.get_f_th();
+  RCP<Thyra::VectorBase<double> > f_out = th_result.get_f_th();
+
+  Teuchos::ArrayRCP<const double> count_array,f_in_array;
+  Teuchos::ArrayRCP<double> f_out_array;
+
+  rcp_dynamic_cast<const Thyra::SpmdVectorBase<double> >(count,true)->getLocalData(Teuchos::ptrFromRef(count_array));
+  rcp_dynamic_cast<const Thyra::SpmdVectorBase<double> >(f_in,true)->getLocalData(Teuchos::ptrFromRef(f_in_array));
+  rcp_dynamic_cast<Thyra::SpmdVectorBase<double> >(f_out,true)->getNonconstLocalData(Teuchos::ptrFromRef(f_out_array));
+
+  TEUCHOS_ASSERT(count_array.size()==f_in_array.size());
+  TEUCHOS_ASSERT(count_array.size()==f_out_array.size());
+
+  for(Teuchos::ArrayRCP<double>::size_type i=0;i<count_array.size();i++) {
+    if(count_array[i]!=0.0)
+      f_out_array[i] = f_in_array[i];
+  }
 }
 
 template <typename Traits,typename LocalOrdinalT>
@@ -358,11 +396,15 @@ void EpetraLinearObjFactory<Traits,LocalOrdinalT>::initializeGhostedContainer(in
    if((mem & ELOC::DxDt) == ELOC::DxDt)
       loc.set_dxdt(getGhostedEpetraVector());
     
-   if((mem & ELOC::F) == ELOC::F)
+   if((mem & ELOC::F) == ELOC::F) {
       loc.set_f(getGhostedEpetraVector());
+      loc.setRequiresDirichletAdjustment(true);
+   }
 
-   if((mem & ELOC::Mat) == ELOC::Mat)
+   if((mem & ELOC::Mat) == ELOC::Mat) {
       loc.set_A(getGhostedEpetraMatrix());
+      loc.setRequiresDirichletAdjustment(true);
+   }
 }
 
 // "Get" functions

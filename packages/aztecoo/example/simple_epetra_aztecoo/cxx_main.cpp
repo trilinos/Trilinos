@@ -86,9 +86,9 @@ int main(int argc, char *argv[])
   int NumMyElements = 1000;
 
   if (Comm.MyPID()==0)
-    cout << AztecOO_Version() << endl << endl;
+    std::cout << AztecOO_Version() << std::endl << std::endl;
 
-  cout << Comm <<endl;
+  std::cout << Comm <<std::endl;
 
   // Construct a Map that puts same number of equations on each processor
   Epetra_Map Map(-1, NumMyElements, 0, Comm);
@@ -125,8 +125,8 @@ int main(int argc, char *argv[])
   solver.SetAztecOption(AZ_precond, AZ_Jacobi);
   solver.Iterate(1000, 1.0E-8);
 
-  cout << "Solver performed " << solver.NumIters() << " iterations." << endl
-       << "Norm of true residual = " << solver.TrueResidual() << endl;
+  std::cout << "Solver performed " << solver.NumIters() << " iterations." << std::endl
+       << "Norm of true residual = " << solver.TrueResidual() << std::endl;
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif

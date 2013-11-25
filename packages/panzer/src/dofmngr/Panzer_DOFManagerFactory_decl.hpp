@@ -50,7 +50,7 @@ namespace panzer {
 template <typename LO,typename GO>
 class DOFManagerFactory : public virtual UniqueGlobalIndexerFactory<LO,GO,LO,GO> {
 public:
-   DOFManagerFactory() : useDOFManagerFEI_(false) {}
+   DOFManagerFactory() : useDOFManagerFEI_(false), useTieBreak_(false) {}
 
    virtual ~DOFManagerFactory() {}
 
@@ -76,6 +76,12 @@ public:
    bool getUseDOFManagerFEI() const
    { return useDOFManagerFEI_; }
 
+   void setUseTieBreak(bool flag) 
+   { useTieBreak_ = flag; }
+
+   bool getUseTieBreak()
+   { return useTieBreak_; }
+
 protected:
    template <typename DOFManagerT>
    Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > 
@@ -85,6 +91,7 @@ protected:
                             const std::string & fieldOrder) const;
 
    bool useDOFManagerFEI_;
+   bool useTieBreak_;
 };
 
 }

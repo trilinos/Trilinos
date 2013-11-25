@@ -48,7 +48,7 @@
 
 #include <Teuchos_ScalarTraits.hpp>
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   template <class Scalar, class OffsetType, class Ordinal, class DomainScalar, class RangeScalar, int NO_BETA_AND_OVERWRITE>
   struct DefaultSparseMultiplyOp {
@@ -101,7 +101,7 @@ namespace Kokkos {
     // http://software.intel.com/en-us/articles/consistency-of-floating-point-results-using-the-intel-compiler/
     //
     // mfh (27 Jul 2012): Reviewed and briefly edited changes and comments.
-    inline KERNEL_PREFIX void execute(size_t row) {
+    inline KERNEL_PREFIX void execute(size_t row) const {
       const OffsetType start = offs[row];
       const OffsetType end = offs[row+1];
 
@@ -384,7 +384,7 @@ namespace Kokkos {
     RangeScalar         *y;
     Ordinal numRHS, xstride, ystride;
 
-    inline void execute() {
+    inline void execute() const {
       using Teuchos::ScalarTraits;
       
       if (NO_BETA_AND_OVERWRITE) {
@@ -468,7 +468,7 @@ namespace Kokkos {
     RangeScalar         *y;
     Ordinal numRHS, xstride, ystride;
 
-    inline void execute() {
+    inline void execute() const {
       using Teuchos::ScalarTraits;
       typedef typename ScalarTraits<RangeScalar>::magnitudeType RSMT;
       if (NO_BETA_AND_OVERWRITE) {
@@ -545,6 +545,6 @@ namespace Kokkos {
     }
   };
 
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif

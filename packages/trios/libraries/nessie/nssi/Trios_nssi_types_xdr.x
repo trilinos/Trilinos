@@ -161,11 +161,13 @@ enum nssi_rpc_transport {
     /** @brief Use Cray Gemini to transfer rpc requests. */
     NSSI_RPC_GEMINI,
 
+   /** @brief Use  Blue Gene/P DCMF Lib to transfer rpc requests. */
+    NSSI_RPC_BGPDCMF,
+    
+    NSSI_RPC_BGQPAMI,
+
     /** @brief Use MPI to transfer rpc requests. */
     NSSI_RPC_MPI,
-
-    /** @brief Use Cray LUC to transfer rpc requests. */
-    NSSI_RPC_LUC,
 
     /** @brief Use a local buffer (not a remote operation). */
     NSSI_RPC_LOCAL
@@ -174,7 +176,7 @@ enum nssi_rpc_transport {
 /**
  * @brief The number of RPC mechanisms supported by NSSI.
  */
-const NSSI_RPC_COUNT = 6;
+const NSSI_RPC_COUNT = 7;
 
 
 /**
@@ -194,7 +196,7 @@ enum nssi_rpc_encode {
 /**
  * @brief Default timeout for rpc calls (in ms).
  */
-const DEFAULT_RPC_TIMEOUT = 10000;
+const DEFAULT_RPC_TIMEOUT = 10000000;
 
 
 /**

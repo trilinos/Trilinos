@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -153,6 +153,6 @@ const Epetra_Map & EpetraOperator::OperatorRangeMap() const {
   return epA->RangeMap();
 }
 
-RCP<MueLu::Hierarchy<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<double,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> > EpetraOperator::GetHierarchy() const { return Hierarchy_; }
+RCP<MueLu::Hierarchy<double, int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<double,int,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps> > EpetraOperator::GetHierarchy() const { return Hierarchy_; }
 
 } // namespace

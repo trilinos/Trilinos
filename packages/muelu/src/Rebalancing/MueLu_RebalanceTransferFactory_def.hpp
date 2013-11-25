@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -45,6 +45,11 @@
 // @HEADER
 #ifndef MUELU_REBALANCETRANSFERFACTORY_DEF_HPP
 #define MUELU_REBALANCETRANSFERFACTORY_DEF_HPP
+
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
 
 #include <Teuchos_Tuple.hpp>
 
@@ -99,10 +104,12 @@ namespace MueLu {
 
     if (pL.get<std::string>("type") == "Interpolation") {
       Input(coarseLevel, "P");
+
     } else {
       Input(coarseLevel, "R");
       Input(coarseLevel, "Nullspace");
-      Input(coarseLevel, "Coordinates");
+      if (pL.get< RCP<const FactoryBase> >("Coordinates") != Teuchos::null)
+        Input(coarseLevel, "Coordinates");
     }
 
     Input(coarseLevel, "Importer");
@@ -172,7 +179,7 @@ namespace MueLu {
 
         Set(coarseLevel, "P", rebalancedP);
 
-        GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebalancedP, "P (rebalanced)", params);
+        GetOStream(Statistics1, 0) << Utils::PrintMatrixInfo(*rebalancedP, "P (rebalanced)", params);
 
         ///////////////////////// EXPERIMENTAL
         // TODO FIXME somehow we have to transfer the striding information of the permuted domain/range maps.
@@ -191,9 +198,13 @@ namespace MueLu {
         if (IsAvailable(coarseLevel, "Nullspace"))
           Set(coarseLevel, "Nullspace", Get< RCP<MultiVector> >(coarseLevel, "Nullspace"));
 
-        TEUCHOS_TEST_FOR_EXCEPTION(!IsAvailable(coarseLevel, "Coordinates"), Exceptions::RuntimeError, "RebalanceTransferFactory::Build : no coordinates found");
-        if (IsAvailable(coarseLevel, "Coordinates"))
-          Set(coarseLevel, "Coordinates", Get< RCP<MultiVector> >(coarseLevel, "Coordinates"));
+        //TEUCHOS_TEST_FOR_EXCEPTION(!IsAvailable(coarseLevel, "Coordinates"), Exceptions::RuntimeError, "RebalanceTransferFactory::Build : no coordinates found");
+        //if (IsAvailable(coarseLevel, "Coordinates"))
+        //if (coarseLevel.IsAvailable("Coordinates"))
+        if(pL.isParameter("Coordinates") && pL.get< RCP<const FactoryBase> >("Coordinates") != Teuchos::null) {
+          if (IsAvailable(coarseLevel, "Coordinates"))
+            Set(coarseLevel, "Coordinates", Get< RCP<MultiVector> >(coarseLevel, "Coordinates"));
+        }
 
         return;
       }
@@ -211,7 +222,7 @@ namespace MueLu {
         }
         Set(coarseLevel, "R", rebalancedR);
 
-        GetOStream(Statistics0, 0) << Utils::PrintMatrixInfo(*rebalancedR, "R (rebalanced)", params);
+        GetOStream(Statistics1, 0) << Utils::PrintMatrixInfo(*rebalancedR, "R (rebalanced)", params);
 
         ///////////////////////// EXPERIMENTAL
         // TODO FIXME somehow we have to transfer the striding information of the permuted domain/range maps.
@@ -219,8 +230,10 @@ namespace MueLu {
         //if(originalR->IsView("stridedMaps")) rebalancedR->CreateView("stridedMaps", originalR);
         ///////////////////////// EXPERIMENTAL
 
-        TEUCHOS_TEST_FOR_EXCEPTION(!IsAvailable(coarseLevel, "Coordinates"), Exceptions::RuntimeError, "RebalanceTransferFactory::Build : no coordinates found");
-        if (IsAvailable(coarseLevel, "Coordinates")) {
+        //TEUCHOS_TEST_FOR_EXCEPTION(!IsAvailable(coarseLevel, "Coordinates"), Exceptions::RuntimeError, "RebalanceTransferFactory::Build : no coordinates found");
+        if (pL.isParameter("Coordinates") &&
+            pL.get< RCP<const FactoryBase> >("Coordinates") != Teuchos::null &&
+            IsAvailable(coarseLevel, "Coordinates")) {
           SubFactoryMonitor subM(*this, "Rebalancing coordinates", coarseLevel);
 
           RCP<MultiVector> coords = Get< RCP<MultiVector> >(coarseLevel, "Coordinates");

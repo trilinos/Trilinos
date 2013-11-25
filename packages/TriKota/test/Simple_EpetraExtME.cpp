@@ -36,6 +36,7 @@
 #  include "Epetra_SerialComm.h"
 #endif // HAVE_MPI
 
+#include <iostream>
 
 #ifdef HAVE_MPI
 Simple_ModelEval::Simple_ModelEval(const MPI_Comm appComm) 
@@ -136,7 +137,7 @@ void Simple_ModelEval::evalModel( const InArgs& inArgs,
 
   // Parse InArgs
   Teuchos::RCP<const Epetra_Vector> p_in = inArgs.get_p(0);
-  if (!p_in.get()) cout << "ERROR: Simple_ModelEval requires p as inargs" << endl;
+  if (!p_in.get()) std::cout << "ERROR: Simple_ModelEval requires p as inargs" << std::endl;
   int numParameters = p_in->GlobalLength();
 
   // Parse OutArgs

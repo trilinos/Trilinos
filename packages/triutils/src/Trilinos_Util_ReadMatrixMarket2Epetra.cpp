@@ -89,8 +89,8 @@ int Trilinos_Util_ReadMatrixMarket2Epetra_internal( char *data_file,
 
     fgets( buffer, BUFSIZE, in_file ) ;  // Pick symmetry info off of this string 
     bool symmetric = false ; 
-    string headerline1 = buffer;
-    if ( headerline1.find("symmetric") != string::npos) symmetric = true; 
+    std::string headerline1 = buffer;
+    if ( headerline1.find("symmetric") != std::string::npos) symmetric = true; 
     fgets( buffer, BUFSIZE, in_file ) ;
 
     while ( fgets( buffer, BUFSIZE, in_file ) ) { 

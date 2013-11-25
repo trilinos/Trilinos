@@ -67,8 +67,8 @@ namespace unit_test {
   * There is one element block called "block_0" with two elements. Each element
   * resides on a different processor.
   */
-template <typename LocalOrdinalT>
-class UniqueGlobalIndexer : public virtual panzer::UniqueGlobalIndexer<LocalOrdinalT,int> {
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+class UniqueGlobalIndexer : public virtual panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> {
 public:
    UniqueGlobalIndexer(int rank,int procCount);
 
@@ -129,7 +129,7 @@ public:
    /** \brief Get the global IDs for a particular element. This function
      * overwrites the <code>gids</code> variable.
      */
-   virtual void getElementGIDs(LocalOrdinalT localElmtId,std::vector<int> & gids,const std::string & blockId="") const;
+   virtual void getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinalT> & gids,const std::string & blockId="") const;
 
    virtual void getElementOrientation(LocalOrdinalT localElmtId,std::vector<double> & gidsOrientation) const
    { TEUCHOS_ASSERT(false); }
@@ -158,16 +158,16 @@ public:
 
    /** Get set of indices owned by this processor
      */
-   virtual void getOwnedIndices(std::vector<int> & indices) const;
+   virtual void getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const;
 
    /** Get set of indices owned and shared by this processor.
      * This can be thought of as the ``ghosted'' indices.
      */
-   virtual void getOwnedAndSharedIndices(std::vector<int> & indices) const;
+   virtual void getOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const;
 
    /** Get a yes/no on ownership for each index in a vector
      */
-   virtual void ownedIndices(const std::vector<int> & indices,std::vector<bool> & isOwned) const;
+   virtual void ownedIndices(const std::vector<GlobalOrdinalT> & indices,std::vector<bool> & isOwned) const;
 
    void getCoordinates(LocalOrdinalT localElementId,Intrepid::FieldContainer<double> & points);
 
@@ -184,8 +184,8 @@ private:
   * There is one element block called "block_0" with two elements. Each element
   * resides on a different processor.
   */
-template <typename LocalOrdinalT>
-class UniqueGlobalIndexer_Element : public virtual panzer::UniqueGlobalIndexer<LocalOrdinalT,int> {
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+class UniqueGlobalIndexer_Element : public virtual panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> {
 public:
    UniqueGlobalIndexer_Element(int rank,int procCount);
 
@@ -246,7 +246,7 @@ public:
    /** \brief Get the global IDs for a particular element. This function
      * overwrites the <code>gids</code> variable.
      */
-   virtual void getElementGIDs(LocalOrdinalT localElmtId,std::vector<int> & gids,const std::string & blockId="") const;
+   virtual void getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinalT> & gids,const std::string & blockId="") const;
 
    virtual void getElementOrientation(LocalOrdinalT localElmtId,std::vector<double> & gidsOrientation) const
    { TEUCHOS_ASSERT(false); }
@@ -275,16 +275,16 @@ public:
 
    /** Get set of indices owned by this processor
      */
-   virtual void getOwnedIndices(std::vector<int> & indices) const;
+   virtual void getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const;
 
    /** Get set of indices owned and shared by this processor.
      * This can be thought of as the ``ghosted'' indices.
      */
-   virtual void getOwnedAndSharedIndices(std::vector<int> & indices) const;
+   virtual void getOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const;
 
    /** Get a yes/no on ownership for each index in a vector
      */
-   virtual void ownedIndices(const std::vector<int> & indices,std::vector<bool> & isOwned) const;
+   virtual void ownedIndices(const std::vector<GlobalOrdinalT> & indices,std::vector<bool> & isOwned) const;
 
    void getCoordinates(LocalOrdinalT localElementId,Intrepid::FieldContainer<double> & points);
 
@@ -295,8 +295,8 @@ private:
    mutable Teuchos::RCP<std::vector<int> > field1Offset_; // local element IDs
 };
 
-template <typename LocalOrdinalT>
-class BlockUniqueGlobalIndexer : public virtual panzer::UniqueGlobalIndexer<LocalOrdinalT,std::pair<int,int> > {
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+class BlockUniqueGlobalIndexer : public virtual panzer::UniqueGlobalIndexer<LocalOrdinalT,std::pair<int,GlobalOrdinalT> > {
 public:
    BlockUniqueGlobalIndexer(int blocks,int rank,int procCount);
 
@@ -355,7 +355,7 @@ public:
    /** \brief Get the global IDs for a particular element. This function
      * overwrites the <code>gids</code> variable.
      */
-   virtual void getElementGIDs(LocalOrdinalT localElmtId,std::vector<std::pair<int,int> > & gids,const std::string & blockId="") const
+   virtual void getElementGIDs(LocalOrdinalT localElmtId,std::vector<std::pair<int,GlobalOrdinalT> > & gids,const std::string & blockId="") const
    { TEUCHOS_ASSERT(false); }
 
    virtual void getElementOrientation(LocalOrdinalT localElmtId,std::vector<double> & gidsOrientation) const
@@ -387,18 +387,18 @@ public:
 
    /** Get set of indices owned by this processor
      */
-   virtual void getOwnedIndices(std::vector<std::pair<int,int> > & indices) const
+   virtual void getOwnedIndices(std::vector<std::pair<int,GlobalOrdinalT> > & indices) const
    { TEUCHOS_ASSERT(false); }
 
    /** Get set of indices owned and shared by this processor.
      * This can be thought of as the ``ghosted'' indices.
      */
-   virtual void getOwnedAndSharedIndices(std::vector<std::pair<int,int> > & indices) const
+   virtual void getOwnedAndSharedIndices(std::vector<std::pair<int,GlobalOrdinalT> > & indices) const
    { TEUCHOS_ASSERT(false); }
 
    /** Get a yes/no on ownership for each index in a vector
      */
-   virtual void ownedIndices(const std::vector<std::pair<int,int> > & indices,std::vector<bool> & isOwned) const
+   virtual void ownedIndices(const std::vector<std::pair<int,GlobalOrdinalT> > & indices,std::vector<bool> & isOwned) const
    { TEUCHOS_ASSERT(false); }
 
    void getCoordinates(LocalOrdinalT localElementId,Intrepid::FieldContainer<double> & points)

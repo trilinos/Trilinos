@@ -1686,11 +1686,6 @@ namespace Belos {
     using Teuchos::rcp;
     using Teuchos::ScalarTraits;
     using Teuchos::tuple;
-    using std::cerr;
-    using std::endl;
-    // Don't set this to true unless you want lots of debugging
-    // messages written to stderr on every MPI process.
-    const bool extraDebug = false;
 
     const int numCols = MVT::GetNumberVecs (X);
     if (numCols == 0) {
@@ -1699,46 +1694,33 @@ namespace Belos {
 
     // We allow Q to have more columns than X.  In that case, we only
     // touch the first numCols columns of Q.
-    TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(Q) < numCols,
-                       std::invalid_argument,
-                       "TsqrOrthoManagerImpl::normalizeImpl(X,Q,B): Q has "
-                       << MVT::GetNumberVecs(Q) << " columns.  This is too "
-                       "few, since X has " << numCols << " columns.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      MVT::GetNumberVecs (Q) < numCols, std::invalid_argument,
+      "TsqrOrthoManagerImpl::normalizeImpl: Q has "
+      << MVT::GetNumberVecs(Q) << " columns.  This is too "
+      "few, since X has " << numCols << " columns.");
     // TSQR wants a Q with the same number of columns as X, so have it
     // work on a nonconstant view of Q with the same number of columns
     // as X.
-    RCP<MV> Q_view = MVT::CloneViewNonConst (Q, Range1D(0, numCols-1));
+    RCP<MV> Q_view = MVT::CloneViewNonConst (Q, Range1D (0, numCols-1));
 
     // Make space for the normalization coefficients.  This will
     // either be a freshly allocated matrix (if B is null), or a view
     // of the appropriately sized upper left submatrix of *B (if B is
     // not null).
     mat_ptr B_out;
-    if (B.is_null()) {
+    if (B.is_null ()) {
       B_out = rcp (new mat_type (numCols, numCols));
     } else {
       // Make sure that B is no smaller than numCols x numCols.
-      TEUCHOS_TEST_FOR_EXCEPTION(B->numRows() < numCols || B->numCols() < numCols,
-                         std::invalid_argument,
-                         "normalizeOne: Input matrix B must be at "
-                         "least " << numCols << " x " << numCols
-                         << ", but is instead " << B->numRows()
-                         << " x " << B->numCols() << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        B->numRows() < numCols || B->numCols() < numCols, std::invalid_argument,
+        "TsqrOrthoManagerImpl::normalizeImpl: Input matrix B must be at least "
+        << numCols << " x " << numCols << ", but is instead " << B->numRows ()
+        << " x " << B->numCols() << ".");
       // Create a view of the numCols x numCols upper left submatrix
       // of *B.  TSQR will write the normalization coefficients there.
       B_out = rcp (new mat_type (Teuchos::View, *B, numCols, numCols));
-    }
-
-    if (extraDebug) {
-      std::vector<magnitude_type> norms (numCols);
-      MVT::MvNorm (X, norms);
-      cerr << "Column norms of X before orthogonalization: ";
-      typedef typename std::vector<magnitude_type>::const_iterator iter_type;
-      for (iter_type iter = norms.begin(); iter != norms.end(); ++iter) {
-        cerr << *iter;
-        if (iter+1 != norms.end())
-          cerr << ", ";
-      }
     }
 
     // Compute rank-revealing decomposition (in this case, TSQR of X
@@ -1751,7 +1733,7 @@ namespace Belos {
     // numerical rank.  Otherwise, the entries below the diagonal may
     // be filled in as well.
     const int rank = rawNormalize (X, *Q_view, *B_out);
-    if (B.is_null()) {
+    if (B.is_null ()) {
       // The input matrix B is null, so assign B_out to it.  If B was
       // not null on input, then B_out is a view of *B, so we don't
       // have to do anything here.  Note that SerialDenseMatrix uses
@@ -1760,47 +1742,11 @@ namespace Belos {
       B = B_out;
     }
 
-    if (extraDebug) {
-      std::vector<magnitude_type> norms (numCols);
-      MVT::MvNorm (*Q_view, norms);
-      cerr << "Column norms of Q_view after orthogonalization: ";
-      for (typename std::vector<magnitude_type>::const_iterator iter = norms.begin();
-           iter != norms.end(); ++iter) {
-        cerr << *iter;
-        if (iter+1 != norms.end())
-          cerr << ", ";
-      }
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION(rank < 0 || rank > numCols, std::logic_error,
-                       "Belos::TsqrOrthoManagerImpl::normalizeImpl: "
-                       "rawNormalize() returned rank = " << rank << " for a "
-                       "matrix X with " << numCols << " columns.  Please report"
-                       " this bug to the Belos developers.");
-    if (extraDebug && rank == 0) {
-      // Sanity check: ensure that the columns of X are sufficiently
-      // small for X to be reported as rank zero.
-      const mat_type& B_ref = *B;
-      std::vector<magnitude_type> norms (B_ref.numCols());
-      for (typename mat_type::ordinalType j = 0; j < B_ref.numCols(); ++j) {
-        typedef typename mat_type::scalarType mat_scalar_type;
-        mat_scalar_type sumOfSquares = ScalarTraits<mat_scalar_type>::zero();
-        for (typename mat_type::ordinalType i = 0; i <= j; ++i) {
-          const mat_scalar_type B_ij =
-            ScalarTraits<mat_scalar_type>::magnitude (B_ref(i,j));
-          sumOfSquares += B_ij*B_ij;
-        }
-        norms[j] = ScalarTraits<mat_scalar_type>::magnitude (ScalarTraits<mat_scalar_type>::squareroot (sumOfSquares));
-      }
-      using std::cerr;
-      using std::endl;
-      cerr << "Norms of columns of B after orthogonalization: ";
-      for (typename mat_type::ordinalType j = 0; j < B_ref.numCols(); ++j) {
-        cerr << norms[j];
-        if (j != B_ref.numCols() - 1)
-          cerr << ", ";
-      }
-      cerr << endl;
-    }
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      rank < 0 || rank > numCols, std::logic_error,
+      "Belos::TsqrOrthoManagerImpl::normalizeImpl: rawNormalize returned rank "
+      " = " << rank << " for a matrix X with " << numCols << " columns.  "
+      "Please report this bug to the Belos developers.");
 
     // If X is full rank or we don't want to replace its null space
     // basis with random vectors, then we're done.
@@ -1825,11 +1771,11 @@ namespace Belos {
       // random data.
       Range1D nullSpaceIndices (rank, numCols-1);
 
-      // rawNormalize() wrote the null space basis vectors into
-      // Q_view.  We continue to work in place in Q_view by writing
-      // the random data there and (if there is a nontrival column
-      // space) projecting in place against the column space basis
-      // vectors (also in Q_view).
+      // rawNormalize wrote the null space basis vectors into Q_view.
+      // We continue to work in place in Q_view by writing the random
+      // data there and (if there is a nontrival column space)
+      // projecting in place against the column space basis vectors
+      // (also in Q_view).
       RCP<MV> Q_null = MVT::CloneViewNonConst (*Q_view, nullSpaceIndices);
       // Replace the null space basis with random data.
       MVT::MvRandom (*Q_null);
@@ -1838,7 +1784,7 @@ namespace Belos {
       // statistically nearly impossible, but we test for debugging
       // purposes.
       {
-        std::vector<magnitude_type> norms (MVT::GetNumberVecs(*Q_null));
+        std::vector<magnitude_type> norms (MVT::GetNumberVecs (*Q_null));
         MVT::MvNorm (*Q_null, norms);
 
         bool anyZero = false;
@@ -1879,7 +1825,7 @@ namespace Belos {
         // orthogonalized the column space basis of X nearly to
         // machine precision via a QR factorization (TSQR) with
         // accuracy comparable to Householder QR.
-        RCP<const MV> Q_col = MVT::CloneView (*Q_view, Range1D(0, rank-1));
+        RCP<const MV> Q_col = MVT::CloneView (*Q_view, Range1D (0, rank-1));
 
         // Temporary storage for projection coefficients.  We don't
         // need to keep them, since they represent the null space
@@ -1941,7 +1887,7 @@ namespace Belos {
            << "you are able to reproduce the behavior.";
 
         TEUCHOS_TEST_FOR_EXCEPTION(nullSpaceBasisRank < nullSpaceNumCols,
-                           TsqrOrthoError, os.str());
+         TsqrOrthoError, os.str ());
       }
       // If we're normalizing out of place, copy the X_null
       // vectors back into Q_null; the Q_col vectors are already
@@ -1954,8 +1900,8 @@ namespace Belos {
         MVT::Assign (*X_null, *Q_null);
       } else if (rank > 0) {
         // MVT::Assign() doesn't accept empty ranges of columns.
-        RCP<const MV> Q_col = MVT::CloneView (*Q_view, Range1D(0, rank-1));
-        RCP<MV> X_col = MVT::CloneViewNonConst (X, Range1D(0, rank-1));
+        RCP<const MV> Q_col = MVT::CloneView (*Q_view, Range1D (0, rank-1));
+        RCP<MV> X_col = MVT::CloneViewNonConst (X, Range1D (0, rank-1));
         MVT::Assign (*Q_col, *X_col);
       }
     }

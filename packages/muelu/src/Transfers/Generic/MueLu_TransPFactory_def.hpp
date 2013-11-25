@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -45,6 +45,11 @@
 // @HEADER
 #ifndef MUELU_TRANSPFACTORY_DEF_HPP
 #define MUELU_TRANSPFACTORY_DEF_HPP
+
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
 
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_Time.hpp>
@@ -93,7 +98,7 @@ namespace MueLu {
     //RCP<Matrix> R = Utils::TwoMatrixMultiply(P, true, I, false); //doesn't work -- bug in EpetraExt?
     //      RCP<Matrix> R = Utils::TwoMatrixMultiply(I, false, P, true);
 
-    RCP<Matrix> R = Utils2::Transpose(P, true);
+    RCP<Matrix> R = Utils2::Transpose(*P, true);
 
     Set(coarseLevel, "R", R);
 

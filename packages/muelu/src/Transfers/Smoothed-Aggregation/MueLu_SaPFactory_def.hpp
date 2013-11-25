@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -45,6 +45,11 @@
 // @HEADER
 #ifndef MUELU_SAPFACTORY_DEF_HPP
 #define MUELU_SAPFACTORY_DEF_HPP
+
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
 
 #include <Xpetra_Matrix.hpp>
 
@@ -105,7 +110,7 @@ namespace MueLu {
 
     if(restrictionMode_) {
       SubFactoryMonitor m2(*this, "Transpose A", coarseLevel);
-      A = Utils2::Transpose(A, true); // build transpose of A explicitely
+      A = Utils2::Transpose(*A, true); // build transpose of A explicitely
     }
 
     //Build final prolongator
@@ -138,18 +143,11 @@ namespace MueLu {
           optimizeStorage=false;
         }
 
-        bool allowMLMultiply = true;
-#ifdef HAVE_MUELU_EXPERIMENTAL
         // Energy minimization uses AP pattern for restriction. The problem with ML multiply is that it automatically
         // removes zero valued entries in the matrix product, resulting in incorrect pattern for the minimization.
         // One could try to mitigate that by multiply matrices with all entries equal to zero, which would produce the
         // correct graph. However, that is one extra MxM we don't need.
-        // Instead, I disable ML multiply when experimental option is specified.
-        // NOTE: Thanks to C.Siefert, native EPetra MxM multiply version should actually be comparable with ML in time
-        allowMLMultiply      = false;
-#endif
-
-        AP = Utils::Multiply(*A, false, *Ptent, false, doFillComplete, optimizeStorage, allowMLMultiply);
+        AP = Utils::Multiply(*A, false, *Ptent, false, GetOStream(Statistics2,0), doFillComplete, optimizeStorage);
       }
 
       {
@@ -157,7 +155,7 @@ namespace MueLu {
         bool doFillComplete=true;
         bool optimizeStorage=false;
         Teuchos::ArrayRCP<SC> diag = Utils::GetMatrixDiagonal(*A);
-        Utils::MyOldScaleMatrix(AP, diag, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
+        Utils::MyOldScaleMatrix(*AP, diag, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
       }
 
       Scalar lambdaMax;
@@ -172,7 +170,7 @@ namespace MueLu {
         } else {
           GetOStream(Statistics1, 0) << "Using cached max eigenvalue estimate" << std::endl;
         }
-        GetOStream(Statistics1, 0) << "Damping factor = " << dampingFactor/lambdaMax << " (" << dampingFactor << " / " << lambdaMax << ")" << std::endl;
+        GetOStream(Statistics0, 0) << "Prolongator damping factor = " << dampingFactor/lambdaMax << " (" << dampingFactor << " / " << lambdaMax << ")" << std::endl;
       }
 
       {
@@ -180,7 +178,8 @@ namespace MueLu {
 
         bool doTranspose=false;
         bool PtentHasFixedNnzPerRow=true;
-        Utils2::TwoMatrixAdd(Ptent, doTranspose, Teuchos::ScalarTraits<Scalar>::one(), AP, doTranspose, -dampingFactor/lambdaMax, finalP, PtentHasFixedNnzPerRow);
+        Utils2::TwoMatrixAdd(*Ptent, doTranspose, Teuchos::ScalarTraits<Scalar>::one(), *AP, doTranspose, -dampingFactor/lambdaMax, finalP,
+                             GetOStream(Statistics2,0), PtentHasFixedNnzPerRow);
       }
 
       {
@@ -203,7 +202,7 @@ namespace MueLu {
 
     } else {
       // prolongation factory is in restriction mode
-      RCP<Matrix> R = Utils2::Transpose(finalP, true); // use Utils2 -> specialization for double
+      RCP<Matrix> R = Utils2::Transpose(*finalP, true); // use Utils2 -> specialization for double
       Set(coarseLevel, "R", R);
 
       // NOTE: EXPERIMENTAL
@@ -213,7 +212,7 @@ namespace MueLu {
 
     RCP<ParameterList> params = rcp(new ParameterList());
     params->set("printLoadBalancingInfo", true);
-    GetOStream(Statistics0,0) << Utils::PrintMatrixInfo(*finalP, (!restrictionMode_ ? "P" : "R"), params);
+    GetOStream(Statistics1,0) << Utils::PrintMatrixInfo(*finalP, (!restrictionMode_ ? "P" : "R"), params);
 
   } //Build()
 

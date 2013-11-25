@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
+//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -45,10 +45,10 @@
 #define SPARSELINEARSYSTEM_HPP
 
 #include <cmath>
-#include <impl/KokkosArray_Timer.hpp>
+#include <impl/Kokkos_Timer.hpp>
 
-#include <KokkosArray_View.hpp>
-#include <KokkosArray_CrsArray.hpp>
+#include <Kokkos_View.hpp>
+#include <Kokkos_CrsArray.hpp>
 
 #include <TestBlas1.hpp>
 #include <TestCrsMatrix.hpp>
@@ -56,11 +56,11 @@
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-namespace KokkosArray {
+namespace Kokkos {
 
 //----------------------------------------------------------------------------
 
-#if defined( HAVE_MPI )
+#if defined( KOKKOS_HAVE_MPI )
 
 template< typename AScalarType ,
           typename VScalarType ,
@@ -124,9 +124,9 @@ private:
 
     vector_type vsend = subview<vector_type>( v , send_range );
 
-    DeepCopy<HostSpace,typename Device::memory_space>( m_host_send_buffer.ptr_on_device() ,
-                                                       vsend.ptr_on_device() ,
-                                                       m_map.count_send * m_chunk * sizeof(scalar_type) );
+    Impl::DeepCopy<HostSpace,typename Device::memory_space>( m_host_send_buffer.ptr_on_device() ,
+                                                             vsend.ptr_on_device() ,
+                                                             m_map.count_send * m_chunk * sizeof(scalar_type) );
 
     for ( unsigned i = 0 , j = 0 ; i < m_map.host_send.dimension_0() ; ++i ) {
       const int proc  = m_map.host_send(i,0);
@@ -195,9 +195,9 @@ private:
 
     // Copy received data to device memory.
 
-    DeepCopy<typename Device::memory_space,HostSpace>( vrecv.ptr_on_device() ,
-                                                       m_host_recv_buffer.ptr_on_device() ,
-                                                       m_map.count_receive * m_chunk * sizeof(scalar_type) );
+    Impl::DeepCopy<typename Device::memory_space,HostSpace>( vrecv.ptr_on_device() ,
+                                                             m_host_recv_buffer.ptr_on_device() ,
+                                                             m_map.count_receive * m_chunk * sizeof(scalar_type) );
   }
 
 public:
@@ -290,7 +290,7 @@ void cgsolve(
   // Need input vector to matvec to be owned + received
   vector_type pAll ( "cg::p" , count_total );
 
-  vector_type p = KokkosArray::subview< vector_type >( pAll , std::pair<size_t,size_t>(0,count_owned) );
+  vector_type p = Kokkos::subview< vector_type >( pAll , std::pair<size_t,size_t>(0,count_owned) );
   vector_type r ( "cg::r" , count_owned );
   vector_type Ap( "cg::Ap", count_owned );
 
@@ -306,7 +306,7 @@ void cgsolve(
   normr     = std::sqrt( old_rdot );
   iteration = 0 ;
 
-  KokkosArray::Impl::Timer wall_clock ;
+  Kokkos::Impl::Timer wall_clock ;
 
   while ( tolerance < normr && iteration < maximum_iteration ) {
 
@@ -329,12 +329,12 @@ void cgsolve(
     ++iteration ;
   }
 
-  iter_time = wall_clock.seconds();
+  iter_time = iteration ? wall_clock.seconds() / double(iteration) : 0 ;
 }
 
 //----------------------------------------------------------------------------
 
-} // namespace KokkosArray
+} // namespace Kokkos
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

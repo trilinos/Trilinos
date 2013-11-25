@@ -242,7 +242,18 @@ int ML_Epetra::GradDivPreconditioner::ComputePreconditioner(const bool CheckFilt
 
 
 
+// ================================================ ====== ==== ==== == = 
+// Return operator complexity and #nonzeros in fine grid matrix.
+void ML_Epetra::GradDivPreconditioner::Complexities(double &complexity, double &fineNnz) {
+  double e_cplex=0.0, e_nnz=0.0, f_cplex=0.0, f_nnz=0.0;
 
+  complexity=1.0; fineNnz=K2_Matrix_->NumGlobalNonzeros();
+
+  if(EdgePC) EdgePC->Complexities(e_cplex,e_nnz);
+  if(FacePC) FacePC->Complexities(f_cplex,f_nnz);
+
+  complexity= 1.0 + (e_cplex*e_nnz + f_cplex*f_nnz) / fineNnz;
+}/*end Complexities*/
 
 
 // ================================================ ====== ==== ==== == = 

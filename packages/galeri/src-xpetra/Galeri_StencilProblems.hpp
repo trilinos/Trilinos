@@ -163,17 +163,19 @@ namespace Galeri {
       GlobalOrdinal nx = this->list_.get("nx", (GlobalOrdinal) -1);
       GlobalOrdinal ny = this->list_.get("ny", (GlobalOrdinal) -1);
 
-      Scalar a = this->list_.get("a", 8.0);
-      Scalar b = this->list_.get("b", -1.0);
-      Scalar c = this->list_.get("c", -1.0);
-      Scalar d = this->list_.get("d", -1.0);
-      Scalar e = this->list_.get("e", -1.0);
+      Scalar a  = this->list_.get("a",   8.0);
+      Scalar b  = this->list_.get("b",  -1.0);
+      Scalar c  = this->list_.get("c",  -1.0);
+      Scalar d  = this->list_.get("d",  -1.0);
+      Scalar e  = this->list_.get("e",  -1.0);
       Scalar z1 = this->list_.get("z1", -1.0);
       Scalar z2 = this->list_.get("z2", -1.0);
       Scalar z3 = this->list_.get("z3", -1.0);
       Scalar z4 = this->list_.get("z4", -1.0);
 
-      this->A_ = Star2D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, a, b, c, d, e, z1, z2, z3, z4);
+      bool keepBCs = this->list_.get("keepBCs", false);
+
+      this->A_ = Star2D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, a, b, c, d, e, z1, z2, z3, z4, this->DirichletBC_, keepBCs);
       this->A_->setObjectLabel(this->getObjectLabel());
       return this->A_;
     }

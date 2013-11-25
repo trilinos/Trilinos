@@ -84,7 +84,7 @@ TEUCHOS_UNIT_TEST(tCubeTetMeshFactory, defaults)
 
    TEST_EQUALITY(mesh->getPeriodicBCVector().size(),0);
  
-   if(mesh->isWritable());
+   if(mesh->isWritable())
       mesh->writeToExodus("CubeTet.exo");
 
    // minimal requirements

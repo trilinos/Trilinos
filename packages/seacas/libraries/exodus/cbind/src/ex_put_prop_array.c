@@ -103,7 +103,7 @@ int ex_put_prop_array (int   exoid,
   int oldfill = 0;
   int temp;
   int num_props, i, propid, dimid, dims[1], status;
-  int found = FALSE;
+  int found = EX_FALSE;
   int int_type;
   size_t num_obj; 
   char name[MAX_VAR_NAME_LENGTH+1];
@@ -188,7 +188,7 @@ int ex_put_prop_array (int   exoid,
     }
 
     if (strcmp(tmpstr, prop_name) == 0) {
-      found = TRUE;
+      found = EX_TRUE;
       break;
     }
   }

@@ -59,7 +59,7 @@ namespace SEAMS {
 %type	<string>	sexp
 
 %token END 0 "end of file" 
-%token COMMA RT LPAR RPAR LBRACK RBRACK LBRACE RBRACE SEMI
+%token COMMA LPAR RPAR LBRACK RBRACK LBRACE RBRACE SEMI
 /* Precedence (Lowest to Highest) and associativity */
 %right	EQUAL
 %right  EQ_PLUS EQ_MINUS
@@ -112,7 +112,7 @@ line:	  '\n'			{ if (echo) aprepro.lexer->LexerOutput("\n", 1); }
 ;
 
 bool:     exp LT exp            { $$ = $1 < $3;                         }
-        | exp RT exp            { $$ = $1 > $3;                         }
+        | exp GT exp            { $$ = $1 > $3;                         }
         | NOT exp               { $$ = !($2);                           }
         | exp LE  exp           { $$ = $1 <= $3;                        }
         | exp GE  exp           { $$ = $1 >= $3;                        }
@@ -139,10 +139,10 @@ sexp:     QSTRING		{ $$ = $1;				}
 		                  set_type(aprepro, $1, Parser::token::SVAR);	}
         | SVAR EQUAL sexp	{ $$ = $3; 
 				  $1->value.svar = $3;
-				  redefined_warning(aprepro, $1->name);          }
+				  redefined_warning(aprepro, $1);          }
         | VAR EQUAL sexp	{ $$ = $3; 
 				  $1->value.svar= $3;
-				  redefined_warning(aprepro, $1->name);          
+				  redefined_warning(aprepro, $1);          
 		                  set_type(aprepro, $1, token::SVAR);		}
 	| IMMSVAR EQUAL sexp	{ immutable_modify(aprepro, $1); YYERROR; }
         | IMMVAR EQUAL sexp	{ immutable_modify(aprepro, $1); YYERROR; }
@@ -168,9 +168,9 @@ exp:	  NUM			{ $$ = $1; 				}
 	| VAR INC		{ $$ = ($1->value.var)++;		}
 	| VAR DEC		{ $$ = ($1->value.var)--;		}
 	| VAR EQUAL exp		{ $$ = $3; $1->value.var = $3;
-				  redefined_warning(aprepro, $1->name);          }
+				  redefined_warning(aprepro, $1);          }
 	| SVAR EQUAL exp		{ $$ = $3; $1->value.var = $3;
-				  redefined_warning(aprepro, $1->name);          
+				  redefined_warning(aprepro, $1);          
 		                  set_type(aprepro, $1, token::VAR);			}
 	| VAR EQ_PLUS exp	{ $1->value.var += $3; $$ = $1->value.var; }
 	| VAR EQ_MINUS exp	{ $1->value.var -= $3; $$ = $1->value.var; }

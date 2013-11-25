@@ -175,24 +175,6 @@ namespace Tpetra {
     DoNotOptimizeStorage /*!< Indicates that storage should not be optimized */
   };
 
-  /*!  \brief Tpetra::Combine Mode enumerable type */
-  /*!
-    If set to Add, existing values will be summed with new values.
-    If set to Insert, new values will be inserted that don't currently exist.
-    If set to Replace, existing values will be replaced with new values.
-
-    NOTE: Add and Replace are intended for modifying values that already exist,
-    but it will function correctly if those values don't already exist. (i.e.
-    zero will be inserted, and then summed with or replaced by the new value.)
-    However, performance may suffer. (The same goes for Insert.)
-  */
-  enum CombineMode {
-    ADD,     /*!< Existing values will be summed with new values. */
-    INSERT,  /*!< Insert new values that don't currently exist. */
-    REPLACE, /*!< Existing values will be replaced with new values. */
-    ABSMAX   /*!< Replacment is <tt>max( abs(old_value), abs(new_value) )</tt> */
-  };
-
   enum EPrivateComputeViewConstructor {
     COMPUTE_VIEW_CONSTRUCTOR
   };
@@ -307,6 +289,12 @@ namespace Tpetra {
 } // end of Tpetra namespace
 
 
+// We include this after the above Tpetra namespace declaration,
+// so that we don't interfere with Doxygen's ability to find the
+// Tpetra namespace declaration.
+#include <Tpetra_CombineMode.hpp>
+
+
 //! Namespace for %Tpetra example classes and methods
 namespace TpetraExamples {
 }
@@ -321,7 +309,12 @@ namespace Tpetra {
   //! Namespace for external %Tpetra functionality
   namespace Ext {
   }
-  //! Collection of matrix-matrix operations.
+
+  /// \brief Distributed sparse matrix-matrix multiply and add.
+  ///
+  /// This namespace includes functions for computing the sum or product
+  /// of two distributed sparse matrices, each of which is represented
+  /// as a Tpetra::CrsMatrix.
   namespace MatrixMatrix {
   }
 }
@@ -334,5 +327,11 @@ namespace Tpetra {
     Symmetric
   };
 }
+
+#if defined(HAVE_TPETRA_KOKKOSCORE) && defined(HAVE_TPETRA_KOKKOSCOMPAT) && defined(TPETRA_ENABLE_KOKKOS_DISTOBJECT)
+#define TPETRA_USE_KOKKOS_DISTOBJECT 1
+#else
+#define TPETRA_USE_KOKKOS_DISTOBJECT 0
+#endif
 
 #endif // TPETRA_CONFIGDEFS_HPP

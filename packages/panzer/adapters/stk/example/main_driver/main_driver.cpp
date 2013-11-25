@@ -59,6 +59,8 @@
 #include "Panzer_STK_ModelEvaluatorFactory_Epetra.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
 #include "Panzer_PauseToAttach.hpp"
+#include "Panzer_String_Utilities.hpp"
+#include "Panzer_EpetraLinearObjContainer.hpp"
 
 #ifdef Panzer_BUILD_PAPI_SUPPORT
 #include "Panzer_PAPI_Counter.hpp"
@@ -69,7 +71,6 @@
 #include "user_app_BCStrategy_Factory.hpp"
 #include "user_app_NOXObserverFactory.hpp"
 #include "user_app_RythmosObserverFactory.hpp"
-#include "user_app_ResponseAggregatorFactory.hpp"
 #include "user_app_ResponseEvaluatorFactory_HOFlux.hpp"
 
 #include <Ioss_SerializeIO.h>
@@ -195,10 +196,8 @@ int main(int argc, char *argv[])
 	input_params->remove("Solver Factories");
       } 
 
-      Teuchos::RCP<user_app::MyResponseAggregatorFactory<panzer::Traits> > ra_factory = 
-	Teuchos::rcp(new user_app::MyResponseAggregatorFactory<panzer::Traits>);
       me_factory.setParameterList(input_params);
-      me_factory.buildObjects(comm,global_data,eqset_factory,bc_factory,cm_factory,ra_factory.ptr()); 
+      me_factory.buildObjects(comm,global_data,eqset_factory,bc_factory,cm_factory);
 
       // add a volume response functional for each field 
       for(Teuchos::ParameterList::ConstIterator itr=responses.begin();itr!=responses.end();++itr) {

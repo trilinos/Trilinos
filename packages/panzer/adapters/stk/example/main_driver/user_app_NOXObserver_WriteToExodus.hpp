@@ -48,12 +48,20 @@
 
 #include "Panzer_config.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_LinearObjFactory.hpp"
+#include "Panzer_ResponseLibrary.hpp"
 
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_ResponseEvaluatorFactory_SolutionWriter.hpp"
 
+#include "Thyra_ProductVectorBase.hpp"
+#include "Thyra_DefaultProductVector.hpp"
+#include "Thyra_SpmdVectorBase.hpp"
+
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_dyn_cast.hpp"
+
+#include "Piro_NOXSolver.hpp" // bring in NOX includes
 
 namespace user_app {
   
@@ -103,7 +111,7 @@ namespace user_app {
       const NOX::Abstract::Vector& x = solver.getSolutionGroup().getX();
       const NOX::Thyra::Vector* n_th_x = dynamic_cast<const NOX::Thyra::Vector*>(&x);
       TEUCHOS_TEST_FOR_EXCEPTION(n_th_x == NULL, std::runtime_error, "Failed to dynamic_cast to NOX::Thyra::Vector!")
-      RCP<const Thyra::VectorBase<double> > th_x = n_th_x->getThyraRCPVector(); 
+      Teuchos::RCP<const Thyra::VectorBase<double> > th_x = n_th_x->getThyraRCPVector(); 
 
       // initialize the assembly container
       panzer::AssemblyEngineInArgs ae_inargs;

@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -56,7 +56,7 @@ namespace Thyra {
  *
  * ToDo: Finish documentation!
  */
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
 class MueLuTpetraPreconditionerFactory : public PreconditionerFactoryBase<Scalar> {
 public:
 
@@ -72,10 +72,6 @@ public:
 
   /** \brief . */
   bool isCompatible( const LinearOpSourceBase<Scalar> &fwdOp ) const;
-  /** \brief . */
-  bool applySupportsConj(EConj conj) const;
-  /** \brief . */
-  bool applyTransposeSupportsConj(EConj conj) const;
   /** \brief . */
   Teuchos::RCP<PreconditionerBase<Scalar> > createPrec() const;
   /** \brief . */

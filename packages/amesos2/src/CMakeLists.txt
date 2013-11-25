@@ -242,9 +242,27 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     )
 ENDIF()
 
-IF (Trilinos_ENABLE_Amesos)
-    ADD_SUBDIRECTORY(SuiteSparse/KLU2/Source)
+#IF (Trilinos_ENABLE_Amesos)
+    #ADD_SUBDIRECTORY(SuiteSparse/KLU2/Source)
+#ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_Experimental)
+   IF (${PACKAGE_NAME}_ENABLE_Cholmod)	
+      APPEND_SET(HEADERS
+	Amesos2_Cholmod.hpp
+      	Amesos2_Cholmod_decl.hpp
+      	Amesos2_Cholmod_def.hpp
+      	Amesos2_Cholmod_FunctionMap.hpp
+    	Amesos2_Cholmod_TypeMap.hpp
+    	)
+
+      APPEND_SET(SOURCES
+	Amesos2_Cholmod.cpp
+	)   
+ENDIF()	    	
 ENDIF()
+
+
 
 #
 # C) Define the targets for package's library(s)

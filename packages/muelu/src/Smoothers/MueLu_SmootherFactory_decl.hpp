@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -54,6 +54,7 @@
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_SmootherPrototype_fwd.hpp"
 #include "MueLu_SmootherBase_fwd.hpp"
+#include "MueLu_Ifpack2Smoother_fwd.hpp"
 
 namespace MueLu {
 
@@ -82,7 +83,7 @@ namespace MueLu {
     factory doesn't have any knowledge about that.
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class SmootherFactory : public SmootherFactoryBase {
 #undef MUELU_SMOOTHERFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -135,7 +136,7 @@ namespace MueLu {
 
     SmootherFactory(RCP<SmootherPrototype> preSmootherPrototype, RCP<SmootherPrototype> postSmootherPrototype);
 
-    virtual ~SmootherFactory();
+    virtual ~SmootherFactory() { }
     //@}
 
     //! @name Set/Get methods.
@@ -148,12 +149,12 @@ namespace MueLu {
     void SetSmootherPrototypes(RCP<SmootherPrototype> preSmootherPrototype, RCP<SmootherPrototype> postSmootherPrototype);
 
     //! Get smoother prototypes.
-    void GetSmootherPrototypes(RCP<SmootherPrototype> & preSmootherPrototype, RCP<SmootherPrototype> & postSmootherPrototype) const;
+    void GetSmootherPrototypes(RCP<SmootherPrototype>& preSmootherPrototype, RCP<SmootherPrototype>& postSmootherPrototype) const;
 
     //! Input
     //@{
 
-    void DeclareInput(Level &currentLevel) const;
+    void DeclareInput(Level& currentLevel) const;
 
     //@}
 
@@ -178,7 +179,7 @@ namespace MueLu {
     */
     void Build(Level& currentLevel) const;
 
-    void BuildSmoother(Level & currentLevel, PreOrPost const preOrPost = BOTH) const; // Build()
+    void BuildSmoother(Level& currentLevel, const PreOrPost preOrPost = BOTH) const; // Build()
 
     //@}
 
@@ -191,13 +192,15 @@ namespace MueLu {
 
     //! Print the object with some verbosity level to an FancyOStream object.
     using MueLu::Describable::describe; // overloading, not hiding
-    void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
+    void describe(Teuchos::FancyOStream& out, const VerbLevel verbLevel = Default) const;
 
     //@}
 
   private:
     RCP<SmootherPrototype> preSmootherPrototype_;
     RCP<SmootherPrototype> postSmootherPrototype_;
+
+    void CheckPrototypes() const;
 
     //@}
 

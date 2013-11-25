@@ -84,7 +84,7 @@ int ex_get_prop (int   exoid,
 {
    int status;
    int num_props, i, propid;
-   int found = FALSE;
+   int found = EX_FALSE;
    size_t start[1]; 
    char name[MAX_VAR_NAME_LENGTH+1];
    char tmpstr[MAX_STR_LENGTH+1];
@@ -162,7 +162,7 @@ int ex_get_prop (int   exoid,
      }
 
      if (strcmp(tmpstr, prop_name) == 0) {
-       found = TRUE;
+       found = EX_TRUE;
        break;
      }
    }
@@ -186,7 +186,7 @@ int ex_get_prop (int   exoid,
        sprintf(errmsg,
               "Warning: %s id %"PRId64" is NULL in file id %d",
                ex_name_of_object(obj_type), obj_id, exoid);
-       ex_err("ex_get_prop",errmsg,EX_MSG);
+       ex_err("ex_get_prop",errmsg,EX_NULLENTITY);
        return (EX_WARN);
      } else {
        exerrval = status;

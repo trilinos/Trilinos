@@ -238,7 +238,7 @@ ENDIF()
 
 IF(Stokhos_ENABLE_Sacado)
 
-  INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/../sacado/test/utils)
+  INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/../sacado/test/utils)
 
   SET(UTILS_SOURCES
     ${PACKAGE_SOURCE_DIR}/../sacado/test/utils/Sacado_Random.hpp
@@ -315,7 +315,7 @@ IF(Stokhos_ENABLE_Sacado)
     STANDARD_PASS_OUTPUT
   )
 
-  IF (Stokhos_ENABLE_KokkosArray)
+  IF (Stokhos_ENABLE_KokkosCore)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       SacadoMPVectorUnitTest
       SOURCES Stokhos_SacadoMPVectorUnitTest.cpp
@@ -342,41 +342,34 @@ IF(Stokhos_ENABLE_Sacado)
       STANDARD_PASS_OUTPUT
       )
 
-    SET(CUDA_SOURCES "")
-    SET(KKUT_DEPLIBS stokhos kokkosarray_impl kokkosarray_devicehost)
-    IF (Stokhos_ENABLE_CUDA AND KokkosArray_ENABLE_DeviceCuda)
-      CUDA_COMPILE(CUDA_SOURCES Stokhos_KokkosArrayKernelsUnitTestNew_Cuda.cu)
-      SET(KKUT_DEPLIBS ${KKUT_DEPLIBS} kokkosarray_devicecuda)
+    IF (Kokkos_ENABLE_Pthread)
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        KokkosMPVectorKernelsUnitTest_Threads
+        SOURCES Stokhos_KokkosMPVectorKernelsUnitTest.hpp
+                Stokhos_KokkosMPVectorKernelsUnitTest_Threads.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        DEPLIBS stokhos kokkoscore
+        )
     ENDIF()
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      KokkosArrayKernelsUnitTestNew
-      SOURCES Stokhos_KokkosArrayKernelsUnitTestNew.hpp
-              Stokhos_KokkosArrayKernelsUnitTestNew.cpp
-              ${CUDA_SOURCES}
-      COMM serial mpi
-      STANDARD_PASS_OUTPUT
-      NUM_MPI_PROCS 1
-      DEPLIBS ${KKUT_DEPLIBS}
-      )
 
-    # SET(KOKKOS_ARRAY_UQ ${CMAKE_CURRENT_SOURCE_DIR}/../../../kokkos/array/research/uq_on_gpgpu/src)
-  #   INCLUDE_DIRECTORIES(${KOKKOS_ARRAY_UQ})
-  #   SET(CUDA_SOURCES "")
-  #   IF (Stokhos_ENABLE_CUDA AND KokkosArray_ENABLE_DeviceCuda)
-  #     CUDA_COMPILE(CUDA_SOURCES Stokhos_KokkosArrayKernelsUnitTest_Cuda.cu)
-  #   ENDIF()
-  #   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  #     KokkosArrayKernelsUnitTest
-  #     SOURCES Stokhos_KokkosArrayKernelsUnitTest.hpp
-  #             Stokhos_KokkosArrayKernelsUnitTest.cpp
-  #             ${KOKKOS_ARRAY_UQ}/impl/KokkosArray_LegendrePolynomial.cpp
-  #             ${KOKKOS_ARRAY_UQ}/impl/KokkosArray_ProductTensorLegendre.cpp
-  #             ${CUDA_SOURCES}
-  #     COMM serial mpi
-  #     STANDARD_PASS_OUTPUT
-  #     NUM_MPI_PROCS 1
-  #     DEPLIBS ${KKUT_DEPLIBS}
-  #     )
+    IF (Kokkos_ENABLE_Cuda)
+      IF( TPL_ENABLE_MPI )
+        CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
+      ENDIF()
+      CUDA_COMPILE(CUDA_SOURCES Stokhos_KokkosMPVectorKernelsUnitTest_Cuda.cu)
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        KokkosMPVectorKernelsUnitTest_Cuda
+        SOURCES Stokhos_KokkosMPVectorKernelsUnitTest.hpp
+                ${CUDA_SOURCES}
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        DEPLIBS ${KKUT_DEPLIBS}
+        )
+    ENDIF()
+
   ENDIF()
 
 ENDIF()
@@ -455,5 +448,66 @@ IF(Stokhos_ENABLE_TriKota)
     STANDARD_PASS_OUTPUT
     NUM_MPI_PROCS 1
     )
+
+ENDIF()
+
+IF (Stokhos_ENABLE_KokkosCore)
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    KokkosArrayKernelsUnitTest_Serial
+    SOURCES Stokhos_KokkosArrayKernelsUnitTest.hpp
+            Stokhos_KokkosArrayKernelsUnitTestDecl.hpp
+            Stokhos_KokkosArrayKernelsUnitTest_Host.hpp
+            Stokhos_KokkosArrayKernelsUnitTest_Serial.cpp
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    DEPLIBS stokhos kokkoscore
+    )
+
+  IF (Kokkos_ENABLE_Pthread)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      KokkosArrayKernelsUnitTest_Threads
+      SOURCES Stokhos_KokkosArrayKernelsUnitTest.hpp
+              Stokhos_KokkosArrayKernelsUnitTestDecl.hpp
+              Stokhos_KokkosArrayKernelsUnitTest_Host.hpp
+              Stokhos_KokkosArrayKernelsUnitTest_Threads.cpp
+      COMM serial mpi
+      STANDARD_PASS_OUTPUT
+      NUM_MPI_PROCS 1
+      DEPLIBS stokhos kokkoscore
+      )
+  ENDIF()
+
+  IF (Kokkos_ENABLE_OpenMP)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      KokkosArrayKernelsUnitTest_OpenMP
+      SOURCES Stokhos_KokkosArrayKernelsUnitTest.hpp
+              Stokhos_KokkosArrayKernelsUnitTestDecl.hpp
+              Stokhos_KokkosArrayKernelsUnitTest_Host.hpp
+              Stokhos_KokkosArrayKernelsUnitTest_OpenMP.cpp
+      COMM serial mpi
+      STANDARD_PASS_OUTPUT
+      NUM_MPI_PROCS 1
+      DEPLIBS stokhos kokkoscore
+      )
+  ENDIF()
+
+  IF (Kokkos_ENABLE_Cuda)
+    IF( TPL_ENABLE_MPI )
+      CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
+    ENDIF()
+    CUDA_COMPILE(CUDA_SOURCES Stokhos_KokkosArrayKernelsUnitTest_Cuda.cu)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      KokkosArrayKernelsUnitTest_Cuda
+      SOURCES Stokhos_KokkosArrayKernelsUnitTest.hpp
+              Stokhos_KokkosArrayKernelsUnitTestDecl.hpp
+              ${CUDA_SOURCES}
+      COMM serial mpi
+      STANDARD_PASS_OUTPUT
+      NUM_MPI_PROCS 1
+      DEPLIBS stokhos kokkoscore
+      )
+  ENDIF()
 
 ENDIF()

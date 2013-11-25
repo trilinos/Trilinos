@@ -50,10 +50,10 @@ Epetra_MpiCommData::Epetra_MpiCommData(MPI_Comm& Comm)
 {
 	MPI_Comm_size(Comm, &size_);
 	MPI_Comm_rank(Comm, &rank_);
-	//cout << "--MCD created (dc), addr: " << this << endl; //DATA_DEBUG
+	//cout << "--MCD created (dc), addr: " << this << std::endl; //DATA_DEBUG
 }
 
 //=============================================================================
 Epetra_MpiCommData::~Epetra_MpiCommData() {
-	//cout << "--MCD destroyed, addr: " << this << endl; //DATA_DEBUG
+	//cout << "--MCD destroyed, addr: " << this << std::endl; //DATA_DEBUG
 }

@@ -120,12 +120,15 @@ initialize()
                RCP<Tpetra::Operator<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > t_block = 
                    rcp_dynamic_cast<Thyra::TpetraLinearOp<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >(block,true)->getTpetraOperator();
 
+               RCP<const MapType> map_i = t_block->getRangeMap();
+               RCP<const MapType> map_j = t_block->getDomainMap();
+
                RCP<Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > mat = 
                    rcp_dynamic_cast<Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >(t_block,true);
 
                mat->resumeFill();
                mat->setAllToScalar(0.0);
-               mat->fillComplete();
+               mat->fillComplete(map_j,map_i);
             }   
          }
       }
@@ -180,6 +183,77 @@ clear()
    set_dxdt(Teuchos::null);
    set_f(Teuchos::null);
    set_A(Teuchos::null);
+}
+
+template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+void BlockedTpetraLinearObjContainer<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+beginFill()
+{
+   using Thyra::LinearOpBase;
+   using Thyra::PhysicallyBlockedLinearOpBase;
+   using Thyra::ProductVectorSpaceBase;
+   using Teuchos::RCP;
+   using Teuchos::rcp_dynamic_cast;
+
+   if(get_A()!=Teuchos::null) {
+      RCP<PhysicallyBlockedLinearOpBase<ScalarT> > Amat 
+            = rcp_dynamic_cast<PhysicallyBlockedLinearOpBase<ScalarT> >(get_A(),true);
+      RCP<const ProductVectorSpaceBase<ScalarT> > range = Amat->productRange();
+      RCP<const ProductVectorSpaceBase<ScalarT> > domain = Amat->productDomain();
+
+      // loop over block entries
+      for(int i=0;i<range->numBlocks();i++) {
+         for(int j=0;j<domain->numBlocks();j++) {
+            RCP<LinearOpBase<ScalarT> > block = Amat->getNonconstBlock(i,j);
+            if(block!=Teuchos::null) {
+               RCP<Tpetra::Operator<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > t_block = 
+                   rcp_dynamic_cast<Thyra::TpetraLinearOp<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >(block,true)->getTpetraOperator();
+
+               RCP<Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > mat = 
+                   rcp_dynamic_cast<Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >(t_block,true);
+
+               mat->resumeFill();
+            }   
+         }
+      }
+   }
+}
+
+template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+void BlockedTpetraLinearObjContainer<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+endFill()
+{
+   using Thyra::LinearOpBase;
+   using Thyra::PhysicallyBlockedLinearOpBase;
+   using Thyra::ProductVectorSpaceBase;
+   using Teuchos::RCP;
+   using Teuchos::rcp_dynamic_cast;
+
+   if(get_A()!=Teuchos::null) {
+      RCP<PhysicallyBlockedLinearOpBase<ScalarT> > Amat 
+            = rcp_dynamic_cast<PhysicallyBlockedLinearOpBase<ScalarT> >(get_A(),true);
+      RCP<const ProductVectorSpaceBase<ScalarT> > range = Amat->productRange();
+      RCP<const ProductVectorSpaceBase<ScalarT> > domain = Amat->productDomain();
+
+      // loop over block entries
+      for(int i=0;i<range->numBlocks();i++) {
+         for(int j=0;j<domain->numBlocks();j++) {
+            RCP<LinearOpBase<ScalarT> > block = Amat->getNonconstBlock(i,j);
+            if(block!=Teuchos::null) {
+               RCP<Tpetra::Operator<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > t_block = 
+                   rcp_dynamic_cast<Thyra::TpetraLinearOp<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >(block,true)->getTpetraOperator();
+
+               RCP<const MapType> map_i = t_block->getRangeMap();
+               RCP<const MapType> map_j = t_block->getDomainMap();
+
+               RCP<Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > mat = 
+                   rcp_dynamic_cast<Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >(t_block,true);
+
+               mat->fillComplete(map_j,map_i);
+            }   
+         }
+      }
+   }
 }
 
 }

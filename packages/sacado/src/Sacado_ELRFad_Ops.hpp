@@ -85,7 +85,7 @@ namespace Sacado {							\
       template <int Arg>						\
       bool isActive() const { return expr.template isActive<Arg>(); }	\
 									\
-      bool isActive2(int j) const { return expr.template isActive2(j); } \
+      bool isActive2(int j) const { return expr.isActive2(j); }         \
 									\
       bool updateValue() const { return expr.updateValue(); }		\
 									\
@@ -362,9 +362,9 @@ namespace Sacado {							\
 									\
       bool isActive2(int j) const {					\
 	if (j < num_args1)						\
-	  return expr1.template isActive2(j);				\
+	  return expr1.isActive2(j);                                    \
 	else								\
-	  return expr2.template isActive2(j);				\
+	  return expr2.isActive2(j);                                    \
       }									\
 									\
       bool updateValue() const {					\
@@ -474,7 +474,7 @@ namespace Sacado {							\
 	return expr1.template isActive<Arg>();				\
       }									\
 									\
-      bool isActive2(int j) const { return expr1.template isActive2(j); } \
+      bool isActive2(int j) const { return expr1.isActive2(j); }        \
 									\
       bool updateValue() const {					\
 	return expr1.updateValue();					\
@@ -568,7 +568,7 @@ namespace Sacado {							\
 	return expr2.template isActive<Arg>();				\
       }									\
 									\
-      bool isActive2(int j) const { return expr2.template isActive2(j); } \
+      bool isActive2(int j) const { return expr2.isActive2(j); }        \
 									\
       bool updateValue() const {					\
 	return expr2.updateValue();					\

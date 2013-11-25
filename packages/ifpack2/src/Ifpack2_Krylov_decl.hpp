@@ -7,20 +7,33 @@
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ***********************************************************************
@@ -47,9 +60,7 @@
 #include "Ifpack2_AdditiveSchwarz.hpp"
 
 #include <BelosConfigDefs.hpp>
-#include <BelosSolverFactory.hpp>
 #include <BelosSolverManager.hpp>
-#include <BelosLinearProblem.hpp>
 #include <BelosTpetraAdapter.hpp>
 #include <BelosBlockGmresSolMgr.hpp>
 #include <BelosBlockCGSolMgr.hpp>
@@ -86,69 +97,77 @@ namespace Ifpack2 {
   struct BelosScalarType {
     typedef ScalarType type;
   };
-  
+
   //! A class for constructing and using a CG/GMRES smoother
   // for a given Tpetra::RowMatrix.
-  
+
   /*! Ifpack2::Krylov computes a few iterations of CG/GMRES with zero
     initial guess as a smoother for a given Tpetra::RowMatrix.
-    
+
     For all valid parameters, see the method Krylov::setParameters.
   */
   template<class MatrixType,class PrecType>
-  class Krylov: virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> {
-    
+  class Krylov :
+    virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
+                                           typename MatrixType::local_ordinal_type,
+                                           typename MatrixType::global_ordinal_type,
+                                           typename MatrixType::node_type>
+  {
   public:
-    // \name Typedefs
+    // \name Public typedefs
     //@{
-    
+
     //! The type of the entries of the input MatrixType.
     typedef typename MatrixType::scalar_type scalar_type;
 
     //! The scalar type used by Belos (which may not be scalar_type)
     typedef typename BelosScalarType<scalar_type>::type belos_scalar_type;
-    
+
     //! Preserved only for backwards compatibility.  Please use "scalar_type".
     TEUCHOS_DEPRECATED typedef typename MatrixType::scalar_type Scalar;
-    
-    
+
+
     //! The type of local indices in the input MatrixType.
     typedef typename MatrixType::local_ordinal_type local_ordinal_type;
-    
+
     //! Preserved only for backwards compatibility.  Please use "local_ordinal_type".
     TEUCHOS_DEPRECATED typedef typename MatrixType::local_ordinal_type LocalOrdinal;
-    
+
 
     //! The type of global indices in the input MatrixType.
     typedef typename MatrixType::global_ordinal_type global_ordinal_type;
-    
+
     //! Preserved only for backwards compatibility.  Please use "global_ordinal_type".
     TEUCHOS_DEPRECATED typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
-    
-    
+
+
     //! The type of the Kokkos Node used by the input MatrixType.
     typedef typename MatrixType::node_type node_type;
-    
+
     //! Preserved only for backwards compatibility.  Please use "node_type".
     TEUCHOS_DEPRECATED typedef typename MatrixType::node_type Node;
 
 
     //! The type of the magnitude (absolute value) of a matrix entry.
     typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
-    
+
     //! Preserved only for backwards compatibility.  Please use "magnitude_type".
     TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
+
+    //! Tpetra MultiVector/Operator
+    typedef typename Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> TMV;
+    typedef typename Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> TOP;
 
     //@}
     // \name Constructors and Destructors
     //@{
-    
+
     //! Krylov explicit constuctor with Tpetra::RowMatrix input.
     explicit Krylov(const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &A);
-    
+
     //! Krylov Destructor
     virtual ~Krylov();
-    
+
     //@}
     //@{ Construction methods
     //! Set parameters for the preconditioner.
@@ -162,37 +181,29 @@ namespace Ifpack2 {
        </ul>
     */
     void setParameters(const Teuchos::ParameterList& params);
-    
+
     //! Initialize Krylov preconditioner object.
     /*! Clear away any previously-allocated objects.
      */
     void initialize();
-    
+
     //! Returns \c true if the preconditioner has been successfully initialized.
     inline bool isInitialized() const {
       return(IsInitialized_);
     }
-    
-    //! Setup iteration
-    /*! Setups problem for Belos and computes any necessary preconditioners
-      <ol>
-      <li>
-      <li>
-      <li>
-      </ol>
-    */
-    void compute();
-    
+
+    //! Set up the iterative solver and compute any necessary preconditioners.
+    void compute ();
+
     //! If compute() is completed, this query returns true, otherwise it returns false.
     inline bool isComputed() const {
       return(IsComputed_);
     }
 
     //@}
-
-    //! @name Methods implementing Tpetra::Operator.
+    //! @name Implementation of Tpetra::Operator
     //@{
-    
+
     //! Returns the result of a few iterations of CG/GMRES on a Tpetra::MultiVector X in Y.
     /*!
       \param
@@ -200,85 +211,97 @@ namespace Ifpack2 {
       \param
       Y - (Out) A Tpetra::MultiVector of dimension NumVectors containing result.
     */
-    void apply(
-	       const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-	       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-	       Teuchos::ETransp mode = Teuchos::NO_TRANS,
-	       scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-	       scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
-    
+    void
+    apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+           Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+           Teuchos::ETransp mode = Teuchos::NO_TRANS,
+           scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+           scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+
     //! Tpetra::Map representing the domain of this operator.
-    const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& getDomainMap() const;
-    
+    Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getDomainMap() const;
+
     //! Tpetra::Map representing the range of this operator.
-    const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& getRangeMap() const;
-    
+    Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getRangeMap() const;
+
     //! Whether this object's apply() method can apply the transpose (or conjugate transpose, if applicable).
     bool hasTransposeApply() const;
-    
-    //! Returns the computed estimated condition number, or -1.0 if no computed.
-    magnitude_type getCondEst() const { return Condest_; }
+
+    /// \brief Return the computed condition number estimate, or -1 if not computed.
+    ///
+    /// \warning This method is DEPRECATED.  See warning for computeCondEst().
+    virtual magnitude_type TEUCHOS_DEPRECATED getCondEst() const {
+      return Condest_;
+    }
 
     //@}
-
-    //@{
     //! \name Mathematical functions.
-    
+    //@{
+
     //! Returns the Tpetra::BlockMap object associated with the range of this matrix operator.
-    const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
+    Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
     //! Returns a reference to the matrix to be preconditioned.
     Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > getMatrix() const;
-    
+
     //! Returns the number of calls to Initialize().
     int getNumInitialize() const;
-    
+
     //! Returns the number of calls to Compute().
     int getNumCompute() const;
 
     //! Returns the number of calls to apply().
     int getNumApply() const;
-    
+
     //! Returns the time spent in Initialize().
     double getInitializeTime() const;
 
     //! Returns the time spent in Compute().
     double getComputeTime() const;
-    
+
     //! Returns the time spent in apply().
     double getApplyTime() const;
 
-    //! Computes the estimated condition number and returns the value.
-    magnitude_type computeCondEst(CondestType CT = Cheap,
-				  local_ordinal_type MaxIters = 1550,
-				  magnitude_type Tol = 1e-9,
-				  const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &Matrix_in = Teuchos::null);
-    
+    /// \brief Compute the condition number estimate and return its value.
+    ///
+    /// \warning This method is DEPRECATED.  It was inherited from
+    ///   Ifpack, and Ifpack never clearly stated what this method
+    ///   computes.  Furthermore, Ifpack's method just estimates the
+    ///   condition number of the matrix A, and ignores the
+    ///   preconditioner -- which is probably not what users thought it
+    ///   did.  If there is sufficient interest, we might reintroduce
+    ///   this method with a different meaning and a better algorithm.
+    virtual magnitude_type TEUCHOS_DEPRECATED
+    computeCondEst (CondestType CT = Cheap,
+                    local_ordinal_type MaxIters = 1550,
+                    magnitude_type Tol = 1e-9,
+                    const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &Matrix_in = Teuchos::null);
+
     //! @name Overridden from Teuchos::Describable
     //@{
-    
+
     /** \brief Return a simple one-line description of this object. */
     std::string description() const;
-    
+
     /** \brief Print the object with some verbosity level to an FancyOStream object. */
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
-    
+
     //@}
-    
+
   private:
-    
+
     // @{ Internal methods
-    
+
     //! Copy constructor (should never be used)
     Krylov(const Krylov<MatrixType,PrecType>& RHS);
-    
+
     //! operator= (should never be used)
     Krylov<MatrixType,PrecType>& operator=(const Krylov<MatrixType,PrecType>& RHS);
-    
+
     //@}
-    
+
     // @{ Internal data and parameters
-    
+
     //! reference to the matrix to be preconditioned.
     const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > A_;
     //! Reference to the communicator object.
@@ -329,14 +352,14 @@ namespace Ifpack2 {
     local_ordinal_type NumMyRows_;
     //! Global number of nonzeros in L and U factors
     global_size_t NumGlobalNonzeros_;
-    
+
     //! Belos Objects
-    Teuchos::RCP< Belos::LinearProblem<belos_scalar_type,
-				       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
-				       Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > > belosProblem_;
-    Teuchos::RCP< Belos::SolverManager<belos_scalar_type,
-				       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
-				       Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > > belosSolver_;
+    Teuchos::RCP< Belos::LinearProblem<scalar_type,
+                                       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
+                                       Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > > belosProblem_;
+    Teuchos::RCP< Belos::SolverManager<scalar_type,
+                                       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
+                                       Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > > belosSolver_;
     Teuchos::RCP<Teuchos::ParameterList> belosList_;
     Teuchos::RCP<PrecType> ifpack2_prec_;
 

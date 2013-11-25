@@ -39,6 +39,7 @@ A.1) Project: a global, top-level CMake build
       NativeRepositoriesList.cmake  # [Optional] For meta-projects
       ExtraRepositoriesList.cmake   # [Optional] Lists VC URLs 
       ProjectDependenicesSetup.cmake # [Optional] Project deps overrides
+      CallbackDefineProjectPackaging.cmake # [Optioinal] Called after packages configured
       tribits/  # [Optional] Could just point to installed tribits
       ctest/
         CTestCustom.ctest.in  # [Optional] Custom ctest settings
@@ -65,7 +66,7 @@ A.2) Repository: a collection of packages and/or files
     cmake/
        RepositoryDependenciesSetup.cmake # [Optional] Read before package Dependencies.cmake
        CallbackSetupExtraOptions.cmake # [Optional] Called after tribits options
-       CallbackDefinePackaging.cmake # [Optioinal] Called after packages configured
+       CallbackDefineRepositoryPackaging.cmake # [Optioinal] Called after packages configured
 
 A.3) Package:
 * Defines a set of libraries and/or headers and/or executables and/or tests
@@ -132,6 +133,10 @@ Project is defined:
   PROJECT_BINARY_DIR: The absolute path to the base Project binary/build directory
   ${PROJECT_NAME}_SOURCE_DIR: Set to ${PROJECT_SOURCE_DIR}
   ${PROJECT_NAME}_BINARY_DIR: Set to ${PROJECT_BINARY_DIR}
+  ${PACKAGE_NAME}_ENABLE_TESTS:
+    If true, then tests for all explicitly enabled packages will be turned on.
+  ${PACKAGE_NAME}_ENABLE_EXAMPLES:
+    If true, then examples for all explicitly enabled packages will be turned on.
 
 B.2) Repository unit variables:
 
@@ -206,9 +211,14 @@ Package is processed.
   PARENT_PACKAGE_BINARY_DIR:
     The absolute path to the parent package's binary directory.
     This is useful for access by subpackages.
-  ${PROJECT_NAME}_PARENT_REPOSITORY:
+  ${PACKAGE_NAME}_PARENT_REPOSITORY:
     The name of the packages parent repository.  This can be used by a package to
     access information about its parent repository.
+  ${PACKAGE_NAME}_ENABLE_TESTS:
+    Set to true of the package's tests are to be enabled or not.
+  ${PACKAGE_NAME}_ENABLE_EXAMPLES:
+    Set to true of the package's examples are to be enabled or not.
+    
 
 C) CDash regression email addresses:
 ------------------------------------

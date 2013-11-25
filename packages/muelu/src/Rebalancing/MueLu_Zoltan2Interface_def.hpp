@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -45,6 +45,11 @@
 // @HEADER
 #ifndef MUELU_ZOLTAN2INTERFACE_DEF_HPP
 #define MUELU_ZOLTAN2INTERFACE_DEF_HPP
+
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
 
 #include <sstream>
 #include <set>
@@ -67,15 +72,21 @@
 namespace MueLu {
 
  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+ Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Zoltan2Interface() {
+    defaultZoltan2Params = rcp(new ParameterList());
+    defaultZoltan2Params->set("algorithm",             "multijagged");
+    defaultZoltan2Params->set("partitioning_approach", "partition");
+ }
+
+ template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
  RCP<const ParameterList> Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< RCP<const FactoryBase> >("A",                      Teuchos::null, "Factory of the matrix A");
-    validParamList->set< RCP<const FactoryBase> >("Coordinates",            Teuchos::null, "Factory of the coordinates");
-    validParamList->set< RCP<const FactoryBase> >("number of partitions",   Teuchos::null, "(advanced) Factory computing the number of partitions");
-    validParamList->set< int >                   ("rowWeight",                          0, "Default weight to rows (total weight = nnz + rowWeight");
-    validParamList->set< std::string >           ("algorithm",              "multijagged", "Zoltan2 partitioning algorithm (multijagged,rcb)");
-    validParamList->set< std::string >           ("pqparts",                       "2k3m", "Algorithm for deciding the pqparts split");
+    validParamList->set< RCP<const FactoryBase> >   ("A",                      Teuchos::null, "Factory of the matrix A");
+    validParamList->set< RCP<const FactoryBase> >   ("Coordinates",            Teuchos::null, "Factory of the coordinates");
+    validParamList->set< RCP<const FactoryBase> >   ("number of partitions",   Teuchos::null, "(advanced) Factory computing the number of partitions");
+    validParamList->set< int >                      ("rowWeight",                          0, "Default weight to rows (total weight = nnz + rowWeight");
+    validParamList->set< RCP<const ParameterList> > ("ParameterList",          Teuchos::null, "Zoltan2 parameters");
 
     return validParamList;
   }
@@ -114,10 +125,10 @@ namespace MueLu {
     // Make sure that logical blocks in row map coincide with logical nodes in coordinates map
     ArrayView<const GO> rowElements    = rowMap->getNodeElementList();
     ArrayView<const GO> coordsElements = map   ->getNodeElementList();
-    for (LO i = 0; i < Teuchos::as<LO>(rowMap->getNodeNumElements ()); i++)
+    for (LO i = 0; i < Teuchos::as<LO>(map->getNodeNumElements()); i++)
       TEUCHOS_TEST_FOR_EXCEPTION((coordsElements[i]-indexBase)*blkSize + indexBase != rowElements[i*blkSize],
                                  Exceptions::RuntimeError, "i = " << i << ", coords GID = " << coordsElements[i]
-                                 << ", row GID = " << rowElements[i*blkSize] << std::endl);
+                                 << ", row GID = " << rowElements[i*blkSize] << ", blkSize = " << blkSize << std::endl);
 #endif
 
     if (numParts == 1) {
@@ -153,33 +164,36 @@ namespace MueLu {
     }
     weights[0] = weightsPerRow.getRawPtr();
 
-    Teuchos::ParameterList params;
+    RCP<const ParameterList> providedList = pL.get<RCP<const ParameterList> >("ParameterList");
+    ParameterList Zoltan2Params;
+    if (providedList != Teuchos::null)
+      Zoltan2Params = *providedList;
 
-    std::string algo = pL.get<std::string>("algorithm");
-    TEUCHOS_TEST_FOR_EXCEPTION(algo != "multijagged" && algo != "rcb", Exceptions::RuntimeError, "Unknown partitioning algorithm: \"" << algo << "\"");
-    if (algo == "multijagged") {
-      std::string pqalgo = pL.get<std::string>("pqparts");
-      params.set("algorithm",             "multijagged");
-      params.set("pqParts",               getPQParts(pqalgo, numParts, dim));
-
-    } else if (algo == "rcb") {
-      params.set("algorithm",             "rcb");
-      params.set("num_global_parts",      Teuchos::as<int>(numParts));
+    // Merge defalt Zoltan2 parameters with user provided
+    // If default and user parameters contain the same parameter name, user one is always preferred
+    for (ParameterList::ConstIterator param = defaultZoltan2Params->begin(); param != defaultZoltan2Params->end(); param++) {
+      const std::string& pName = defaultZoltan2Params->name(param);
+      if (!Zoltan2Params.isParameter(pName))
+        Zoltan2Params.set(pName, defaultZoltan2Params->get<std::string>(pName));
     }
+    Zoltan2Params.set("num_global_parts", Teuchos::as<int>(numParts));
 
-    params.set("partitioning_approach",   "partition");
-    // NOTE: "compute metrics" is buggy in Zoltan2, especially for large runs
-    // params.set("compute_metrics",         "true");
+    GetOStream(Runtime0,0) << "Zoltan2 parameters:" << std::endl << "----------" << std::endl << Zoltan2Params << "----------" << std::endl;
 
-    GetOStream(Runtime0,0) << "Zoltan2 parameters:" << std::endl << "----------" << std::endl << params << "----------" << std::endl;
+    const std::string& algo = Zoltan2Params.get<std::string>("algorithm");
+    TEUCHOS_TEST_FOR_EXCEPTION(algo != "multijagged" &&
+                               algo != "rcb",
+                               Exceptions::RuntimeError, "Unknown partitioning algorithm: \"" << algo << "\"");
 
     typedef Zoltan2::BasicCoordinateInput<Zoltan2::BasicUserTypes<SC,GO,LO,GO> > InputAdapterType;
     typedef Zoltan2::PartitioningProblem<InputAdapterType> ProblemType;
 
     InputAdapterType adapter(numElements, map->getNodeElementList().getRawPtr(), values, strides, weights, strides);
 
-    const Teuchos::MpiComm<int>& comm = static_cast<const Teuchos::MpiComm<int>& >(*map->getComm());
-    RCP<ProblemType> problem(new ProblemType(&adapter, &params, *comm.getRawMpiComm()));
+    RCP<const Teuchos::MpiComm<int> >            dupMpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(rowMap->getComm()->duplicate());
+    RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > zoltanComm = dupMpiComm->getRawMpiComm();
+
+    RCP<ProblemType> problem(new ProblemType(&adapter, &Zoltan2Params, (*zoltanComm)()));
 
     {
       SubFactoryMonitor m1(*this, "Zoltan2 " + toString(algo), level);
@@ -191,17 +205,18 @@ namespace MueLu {
 
     const zoltan2_partId_t * parts = problem->getSolution().getPartList();
 
-    // KDDKDD NEW:  At present, Zoltan2 does not guarantee that the
-    // KDDKDD NEW:  parts in getPartList() are listed in the same order
-    // KDDKDD NEW:  as the input.  Using getIdList() compensates for
-    // KDDKDD NEW:  differences in the order.  Eventually, Zoltan2 will
-    // KDDKDD NEW:  guarantee identical ordering; at that time, all code
-    // KDDKDD NEW:  marked with "KDDKDD NEW" can be reverted to the code
-    // KDDKDD NEW:  marked with "KDDKDD OLD".
+    // K. Devine comment:
+    //   At present, Zoltan2 does not guarantee that the parts in getPartList() are listed
+    //   in the same order as the input. Using getIdList() compensates for differences
+    //   in the order. Eventually, Zoltan2 will guarantee identical ordering; at that time,
+    //   all code marked with
+    //       "KDDKDD NEW"
+    //   can be reverted to the code marked with
+    //       "KDDKDD OLD".
     const GO * zgids = problem->getSolution().getIdList();  // KDDKDD  NEW
 
     for (GO i = 0; i < numElements; i++) {
-      //GO localID = i;   // KDDKDD OLD
+      // GO localID = i;                           // KDDKDD OLD
       GO localID = map->getLocalElement(zgids[i]); // KDDKDD NEW
       int partNum = parts[i];
 
@@ -212,126 +227,6 @@ namespace MueLu {
     Set(level, "Partition", decomposition);
 
   } //Build()
-
-  // Algorithm is kind of complex, but the details are not important
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::string Zoltan2Interface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::getPQParts(const std::string& algo, GO numParts, size_t dim) const {
-    std::ostringstream pqParts;
-
-    TEUCHOS_TEST_FOR_EXCEPTION(algo != "2k3m" && algo != "2k", Exceptions::RuntimeError, "Unknown pqparts determination algorithm: \"" << algo << "\"");
-
-    if (dim == 1) {
-      pqParts << numParts;
-      return pqParts.str();
-    }
-
-    // We would like to find a good recursive representation of the numProcs. It is not
-    // possible for all values, so we try to find a close value which has one
-    if (algo == "2k3m") {
-      // Here is one of the possible algorithms: try to find a closest number
-      // of form 2^k*3^m which is smaller than numParts. Generally, this makes the number
-      // of processors off by less than 15%
-      int i2 = -1, m2 = Teuchos::as<int>(floor(log(numParts)/log(2)));
-      int i3 = -1, m3 = Teuchos::as<int>(floor(log(numParts)/log(3)));
-      int d = Teuchos::as<int>(1e+9);
-
-      for (int i = 0; i <= m2; i++)
-        for (int j = 0; j <= m3; j++) {
-          int k = Teuchos::as<int>(std::pow(2.,i) * std::pow(3.,j));
-          if (k <= numParts && (numParts - k < d)) {
-            d = numParts - k;
-            i2 = i;
-            i3 = j;
-          }
-        }
-      if (d) {
-        numParts -= d;
-        GetOStream(Runtime0,0) << "Changing number of partitions to " << numParts << " in order to improve Zoltan2 pqJagged algorithm" << std::endl;
-      }
-
-      std::multiset<int> vals;
-      std::multiset<int>::const_reverse_iterator rit, rit1;
-
-      // Step 1: initialization with 1,2,3 factors
-      for (int i = 1; i <= i2; i++)           vals.insert(2);
-      for (int i = 1; i <= i3; i++)           vals.insert(3);
-      while (vals.size() < dim)               vals.insert(1);
-
-      // Step 2: create factor products in order to limit ourselves to 2*dim factors
-      while (vals.size() > 2*dim) {
-        int v1 = *vals.begin(); vals.erase(vals.begin());
-        int v2 = *vals.begin(); vals.erase(vals.begin());
-        vals.insert(v1*v2);
-      }
-      // Save the current state for the possible fallback
-      std::multiset<int> vals_copy = vals;
-
-      // Step 3: try to do some further aggregation
-      const int threshold_factor = 4;
-      for (size_t k = 0; dim+k < 5 && vals.size() > dim; k++) {
-        int v1 = *vals.begin(), v2 = *(++vals.begin());
-        rit = vals.rbegin()++;
-        if (k+1 != dim)
-          rit++;
-        if (v1*v2 <= threshold_factor * (*rit)) {
-          vals.erase(vals.begin());
-          vals.erase(vals.begin());
-          vals.insert(v1*v2);
-        }
-      }
-
-      // Step 4: check if the aggregation is good enough
-      if (vals.size() > dim && vals.size() < 2*dim) {
-        rit = vals.rbegin();
-        for (size_t k = 0; k < dim; k++, rit++);
-        for (; rit != vals.rend() && (*rit <= 6); rit++);
-        if (rit != vals.rend()) {
-          // We don't like this factorization, fallback
-          vals = vals_copy;
-        }
-      }
-
-      // Step 5: save factors in a string
-      // Tricky: first <dim> factors are printed in reverse order
-      rit1 = vals.rbegin();
-      for (size_t k = 0; k < dim; k++) {
-        rit = vals.rbegin();
-        for (size_t j = 1; j+k < dim; j++)
-          rit++;
-        if (k)
-          pqParts << ",";
-        pqParts << *rit;
-        rit1++;
-      }
-      for (; rit1 != vals.rend(); rit1++)
-        pqParts << "," << *rit1;
-
-    } else if (algo == "2k") {
-      // Here is one of the possible algorithms: try to find a closest number
-      // of form 2^k which is smaller than numParts. This makes the number
-      // of processors off by less than 50%
-      int i2 = Teuchos::as<int>(floor(log(numParts)/log(2)));
-
-      int d = numParts - Teuchos::as<int>(std::pow(2.,i2));
-      if (d) {
-        numParts -= d;
-        GetOStream(Runtime0,0) << "Changing number of partitions to " << numParts << " in order to improve Zoltan2 pqJagged algorithm" << std::endl;
-      }
-
-      std::multiset<int> vals;
-
-      // Step 1: initialization with 1,2 factors
-      for (int i = 1; i <= i2; i++)           vals.insert(2);
-      while (vals.size() < dim)               vals.insert(1);
-
-      // Step 2: save factors in a string
-      pqParts << *(vals.begin());
-      for (std::multiset<int>::const_iterator it = (++vals.begin()); it != vals.end(); it++)
-        pqParts << "," << *it;
-    }
-
-    return pqParts.str();
-  }
 
 } //namespace MueLu
 

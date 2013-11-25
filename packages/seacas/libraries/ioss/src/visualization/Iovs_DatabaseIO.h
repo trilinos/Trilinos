@@ -25,16 +25,20 @@
 #include <sstream>
 #include <time.h>
 
+#include <exodusII.h>
+
 class ParaViewCatalystSierraAdaptorBase;
 
 namespace Iovs {
+
+  typedef std::set<std::pair<int64_t, int64_t> > EntityIdSet;
 
   class DatabaseIO : public Ioss::DatabaseIO
   {
   public:
     DatabaseIO(Ioss::Region *region, const std::string& filename,
-	       Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
-	       const Ioss::PropertyManager &properties);
+           Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
+           const Ioss::PropertyManager &properties);
     ~DatabaseIO();
 
     // Check capabilities of input/output database...  Returns an
@@ -71,58 +75,59 @@ namespace Iovs {
   private:
     // For the time being, treat vis as write only. Consider glue pipelines.
     int64_t get_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
+               void *data, size_t data_size) const {return 0;}
     int64_t get_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
+               void *data, size_t data_size) const {return 0;}
     int64_t get_field_internal(const Ioss::EdgeBlock* nb, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
+               void *data, size_t data_size) const {return 0;}
     int64_t get_field_internal(const Ioss::FaceBlock* nb, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
+               void *data, size_t data_size) const {return 0;}
     int64_t get_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
+               void *data, size_t data_size) const {return 0;}
     int64_t get_field_internal(const Ioss::SideBlock* fb, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
+               void *data, size_t data_size) const {return 0;}
     int64_t get_field_internal(const Ioss::NodeSet* ns, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
+               void *data, size_t data_size) const {return 0;}
     int64_t get_field_internal(const Ioss::EdgeSet* ns, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
+               void *data, size_t data_size) const {return 0;}
     int64_t get_field_internal(const Ioss::FaceSet* ns, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
+               void *data, size_t data_size) const {return 0;}
     int64_t get_field_internal(const Ioss::ElementSet* ns, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
+               void *data, size_t data_size) const {return 0;}
     int64_t get_field_internal(const Ioss::SideSet* fs, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
+               void *data, size_t data_size) const {return 0;}
     int64_t get_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
+               void *data, size_t data_size) const {return 0;}
 
     int64_t put_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
+               void *data, size_t data_size) const;
 
     int64_t put_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
+               void *data, size_t data_size) const;
     int64_t put_field_internal(const Ioss::EdgeBlock* nb, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
+               void *data, size_t data_size) const {return 0;}
     int64_t put_field_internal(const Ioss::FaceBlock* nb, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
+               void *data, size_t data_size) const {return 0;}
     int64_t put_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
+               void *data, size_t data_size) const;
     int64_t put_field_internal(const Ioss::SideBlock* eb, const Ioss::Field& field,
-			   void *data, size_t data_size) const { return 0; }
+               void *data, size_t data_size) const;
 
     int64_t put_field_internal(const Ioss::NodeSet* ns, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
+               void *data, size_t data_size) const;
     int64_t put_field_internal(const Ioss::EdgeSet* ns, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
+               void *data, size_t data_size) const {return 0;}
     int64_t put_field_internal(const Ioss::FaceSet* ns, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
+               void *data, size_t data_size) const {return 0;}
     int64_t put_field_internal(const Ioss::ElementSet* ns, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
+               void *data, size_t data_size) const {return 0;}
     int64_t put_field_internal(const Ioss::SideSet* fs, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
+               void *data, size_t data_size) const;
     int64_t put_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
+               void *data, size_t data_size) const {return 0;}
 
     void write_meta_data();
+    void load_plugin_library();
 
     int64_t handle_node_ids(void* ids, int64_t num_to_get);
     int64_t handle_element_ids(const Ioss::ElementBlock *eb, void* ids, size_t num_to_get);
@@ -140,7 +145,18 @@ namespace Iovs {
 
     std::string databaseTitle;
     std::string paraview_script_filename;
+    std::string paraview_json_parse;
+    std::string sierra_input_deck_name;
+    std::string catalyst_output_directory;
+    int enableLogging;
+    int debugLevel;
+    int underscoreVectors;
+    int applyDisplacements;
+    int createSideSets;
+    int createNodeSets;
     int spatialDimension;
+    static int useCount;
+    static int uniqueID;
 
     int64_t nodeCount;
     int64_t elementCount;
@@ -151,8 +167,9 @@ namespace Iovs {
     // Handle to the ParaView Catalyst dynamic library
     // that is loaded via Sierra user plugin at runtime.
     ParaViewCatalystSierraAdaptorBase* pvcsa;
-    bool globalNodeAndElementIDsCreated;
-    void create_global_node_and_element_ids();
+    mutable bool globalNodeAndElementIDsCreated;
+    void create_global_node_and_element_ids() const;
+    mutable EntityIdSet ids_;
 
     // Bulk Data
 

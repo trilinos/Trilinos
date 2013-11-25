@@ -188,4 +188,9 @@ typedef ML_BIG_INT ml_big_int;
 #define ML_Get_MyGetrowData(matrix_obj) ((matrix_obj)->data)
 #define ML_Get_MyMatvecData(matrix_obj) ((matrix_obj)->data)
 
+#ifdef HAVE_ML_MATLAB
+#include "mex.h"
+#endif /*ifdef HAVE_ML_MATLAB*/
+
+
 #endif

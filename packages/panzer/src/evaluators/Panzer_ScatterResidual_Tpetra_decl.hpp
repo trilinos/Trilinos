@@ -70,7 +70,7 @@ class UniqueGlobalIndexer;
     names vector.
 
 */
-template<typename EvalT, typename Traits,typename LO,typename GO,typename NodeT=Kokkos::DefaultNode::DefaultNodeType>
+template<typename EvalT, typename Traits,typename LO,typename GO,typename NodeT=KokkosClassic::DefaultNode::DefaultNodeType>
 class ScatterResidual_Tpetra;
 
 // **************************************************************
@@ -108,6 +108,58 @@ public:
 
 private:
   typedef typename panzer::Traits::Residual::ScalarT ScalarT;
+
+  // dummy field so that the evaluator will have something to do
+  Teuchos::RCP<PHX::FieldTag> scatterHolder_;
+
+  // fields that need to be scattered will be put in this vector
+  std::vector< PHX::MDField<ScalarT,Cell,NODE> > scatterFields_;
+
+  // maps the local (field,element,basis) triplet to a global ID
+  // for scattering
+  Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
+  std::vector<int> fieldIds_; // field IDs needing mapping
+
+  // This maps the scattered field names to the DOF manager field
+  // For instance a Navier-Stokes map might look like
+  //    fieldMap_["RESIDUAL_Velocity"] --> "Velocity"
+  //    fieldMap_["RESIDUAL_Pressure"] --> "Pressure"
+  Teuchos::RCP<const std::map<std::string,std::string> > fieldMap_;
+
+  std::string globalDataKey_; // what global data does this fill?
+  Teuchos::RCP<const TpetraLinearObjContainer<double,LO,GO,NodeT> > tpetraContainer_;
+
+  ScatterResidual_Tpetra();
+};
+
+// **************************************************************
+// Tangent 
+// **************************************************************
+template<typename Traits,typename LO,typename GO,typename NodeT>
+class ScatterResidual_Tpetra<panzer::Traits::Tangent,Traits,LO,GO,NodeT>
+  : public PHX::EvaluatorWithBaseImpl<Traits>,
+    public PHX::EvaluatorDerived<panzer::Traits::Tangent, Traits>,
+    public panzer::CloneableEvaluator {
+  
+public:
+  ScatterResidual_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer) 
+     : globalIndexer_(indexer) {}
+  
+  ScatterResidual_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
+                         const Teuchos::ParameterList& p);
+  
+  void postRegistrationSetup(typename Traits::SetupData d,
+			     PHX::FieldManager<Traits>& vm);
+
+  void preEvaluate(typename Traits::PreEvalData d);
+  
+  void evaluateFields(typename Traits::EvalData workset);
+  
+  virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
+  { return Teuchos::rcp(new ScatterResidual_Tpetra<panzer::Traits::Tangent,Traits,LO,GO,NodeT>(globalIndexer_,pl)); }
+
+private:
+  typedef typename panzer::Traits::Tangent::ScalarT ScalarT;
 
   // dummy field so that the evaluator will have something to do
   Teuchos::RCP<PHX::FieldTag> scatterHolder_;

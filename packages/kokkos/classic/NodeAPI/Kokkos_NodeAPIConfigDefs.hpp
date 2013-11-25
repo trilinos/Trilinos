@@ -47,7 +47,7 @@
 #include <Teuchos_TypeTraits.hpp>
 
 //! %Kokkos namespace
-namespace Kokkos {
+namespace KokkosClassic {
 
   /*! Read/write options for non-const views. */
   enum ReadWriteOption {

@@ -47,6 +47,7 @@
 
 #include "Thyra_DiagonalScalarProd_decl.hpp"
 #include "Thyra_DetachedSpmdVectorView.hpp"
+#include "Thyra_SpmdVectorSpaceBase.hpp"
 #include "Thyra_AssertOp.hpp"
 #include "Teuchos_CommHelpers.hpp"
 

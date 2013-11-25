@@ -1,12 +1,12 @@
-//@HEADER
-// ************************************************************************
-//
-//                 Belos: Block Linear Solvers Package
-//                  Copyright 2004 Sandia Corporation
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
+// @HEADER
+// ***********************************************************************
+// 
+//                           Stokhos Package
+//                 Copyright (2009) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,10 +34,10 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ************************************************************************
-//@HEADER
+// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
+// 
+// ***********************************************************************
+// @HEADER
 
 #ifndef BELOS_PCE_TPETRA_ADAPTER_HPP
 #define BELOS_PCE_TPETRA_ADAPTER_HPP

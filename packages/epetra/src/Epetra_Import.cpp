@@ -100,7 +100,9 @@ void Epetra_Import::Construct_Expert( const Epetra_BlockMap &  targetMap, const 
   for (i=NumSameIDs_; i< NumTargetIDs; i++) 
     if (sourceMap.MyGID(TargetGIDs[i])) NumPermuteIDs_++; // Check if Target GID is a local Source GID
     else NumRemoteIDs_++; // If not, then it is remote
-     
+
+
+  
   // Define remote and permutation lists  
   int_type * RemoteGIDs=0;
   RemoteLIDs_ = 0;
@@ -136,7 +138,7 @@ void Epetra_Import::Construct_Expert( const Epetra_BlockMap &  targetMap, const 
   
   if (sourceMap.DistributedGlobal()) {
     if (NumRemoteIDs_>0)  RemotePIDs = new int[NumRemoteIDs_];
-  
+
 #ifdef EPETRA_ENABLE_DEBUG
     int myeq = (NumRemotePIDs==NumRemoteIDs_);
     int globaleq=0;
@@ -147,7 +149,7 @@ void Epetra_Import::Construct_Expert( const Epetra_BlockMap &  targetMap, const 
       sourceMap.Comm().Barrier();
       sourceMap.Comm().Barrier();
       sourceMap.Comm().Barrier();
-      throw ReportError("Epetra_Import: UserRemotePIDs count wrong");
+      ReportError("Epetra_Import: UserRemotePIDs count wrong",-1);
     }
 #endif
 
@@ -198,6 +200,10 @@ void Epetra_Import::Construct_Expert( const Epetra_BlockMap &  targetMap, const 
     
     if(targetMap.GlobalIndicesLongLong())
       {
+	// FIXME (mfh 11 Jul 2013) This breaks ANSI aliasing rules, if
+	// int_type != long long.  On some compilers, it results in
+	// warnings such as this: "dereferencing type-punned pointer
+	// will break strict-aliasing rules".
 	util.Sort(true,NumRemoteIDs_,RemotePIDs,0,0, 1,&RemoteLIDs_, 1,(long long**)&RemoteGIDs);
       }
     else if(targetMap.GlobalIndicesInt())
@@ -219,6 +225,11 @@ void Epetra_Import::Construct_Expert( const Epetra_BlockMap &  targetMap, const 
     for(i=0; i<NumExportIDs_; i++)  {
       ExportPIDs_[i] = UserExportPIDs[i];
       ExportLIDs_[i] = UserExportLIDs[i];
+    }
+    
+    // Send Counts
+    for (i=0; i< NumExportIDs_; i++) {
+      NumSend_ += sourceMap.MaxElementSize(); // Count total number of entries to send (currently need max)
     }
 
 #ifdef HAVE_MPI
@@ -414,6 +425,10 @@ void Epetra_Import::Construct( const Epetra_BlockMap &  targetMap, const Epetra_
     //Sort Remote IDs by processor so DoReverses will work
     if(targetMap.GlobalIndicesLongLong())
       {
+	// FIXME (mfh 11 Jul 2013) This breaks ANSI aliasing rules, if
+	// int_type != long long.  On some compilers, it results in
+	// warnings such as this: "dereferencing type-punned pointer
+	// will break strict-aliasing rules".
 	Epetra_Util::Sort(true,NumRemoteIDs_,RemotePIDs,0,0, 1,&RemoteLIDs_, 1,(long long**)&RemoteGIDs);
       }
     else if(targetMap.GlobalIndicesInt())
@@ -721,7 +736,7 @@ Epetra_Import::Epetra_Import(const Epetra_Export& Exporter):
 }
 
 //=============================================================================
-void Epetra_Import::Print(ostream & os) const
+void Epetra_Import::Print(std::ostream & os) const
 {
   // mfh 14 Dec 2011: The implementation of Print() I found here
   // previously didn't print much at all, and it included a message
@@ -744,13 +759,13 @@ void Epetra_Import::Print(ostream & os) const
   const int numProcs = comm.NumProc();
   
   if (myRank == 0) {
-    os << "Import Data Members:" << endl;
+    os << "Import Data Members:" << std::endl;
   }
   // We don't need a barrier before this for loop, because Proc 0 is
   // the first one to do anything in the for loop anyway.
   for (int p = 0; p < numProcs; ++p) {
     if (myRank == p) {
-      os << "Image ID       : " << myRank << endl;
+      os << "Image ID       : " << myRank << std::endl;
 
       os << "permuteFromLIDs:";
       if (PermuteFromLIDs_ == NULL) {
@@ -771,7 +786,7 @@ void Epetra_Import::Print(ostream & os) const
   }
   os << "}";
       }
-      os << endl;
+      os << std::endl;
 
       os << "permuteToLIDs  :";
       if (PermuteToLIDs_ == NULL) {
@@ -792,7 +807,7 @@ void Epetra_Import::Print(ostream & os) const
   }
   os << "}";
       }
-      os << endl;
+      os << std::endl;
 
       os << "remoteLIDs     :";
       if (RemoteLIDs_ == NULL) {
@@ -813,7 +828,7 @@ void Epetra_Import::Print(ostream & os) const
   }
   os << "}";
       }
-      os << endl;
+      os << std::endl;
 
       // If sorting for output, the export LIDs and export PIDs have
       // to be sorted together.  We can use Epetra_Util::Sort, using
@@ -845,7 +860,7 @@ void Epetra_Import::Print(ostream & os) const
   }
   os << "}";
       }
-      os << endl;
+      os << std::endl;
 
       os << "exportImageIDs :";
       if (ExportPIDs_ == NULL) {
@@ -860,18 +875,18 @@ void Epetra_Import::Print(ostream & os) const
   }
   os << "}";
       }
-      os << endl;
+      os << std::endl;
 
-      os << "numSameIDs     : " << NumSameIDs_ << endl;
-      os << "numPermuteIDs  : " << NumPermuteIDs_ << endl;
-      os << "numRemoteIDs   : " << NumRemoteIDs_ << endl;
-      os << "numExportIDs   : " << NumExportIDs_ << endl;
+      os << "numSameIDs     : " << NumSameIDs_ << std::endl;
+      os << "numPermuteIDs  : " << NumPermuteIDs_ << std::endl;
+      os << "numRemoteIDs   : " << NumRemoteIDs_ << std::endl;
+      os << "numExportIDs   : " << NumExportIDs_ << std::endl;
 
       // Epetra keeps NumSend_ and NumRecv_, whereas in Tpetra, these
       // are stored in the Distributor object.  This is why we print
       // them here.
-      os << "Number of sends: " << NumSend_ << endl;
-      os << "Number of recvs: " << NumRecv_ << endl;
+      os << "Number of sends: " << NumSend_ << std::endl;
+      os << "Number of recvs: " << NumRecv_ << std::endl;
     } // if my rank is p
 
     // A few global barriers give I/O a chance to complete.
@@ -886,14 +901,14 @@ void Epetra_Import::Print(ostream & os) const
     // printing the Maps to the end, for easy comparison with the
     // output of Tpetra::Import::print().
     if (myRank == 0) {
-      os << endl << endl << "Source Map:" << endl << std::flush;
+      os << std::endl << std::endl << "Source Map:" << std::endl << std::flush;
     }
     comm.Barrier();
     SourceMap_.Print(os);
     comm.Barrier();
   
     if (myRank == 0) {
-      os << endl << endl << "Target Map:" << endl << std::flush;
+      os << std::endl << std::endl << "Target Map:" << std::endl << std::flush;
     }
     comm.Barrier();
     TargetMap_.Print(os);
@@ -901,12 +916,12 @@ void Epetra_Import::Print(ostream & os) const
   }
 
   if (myRank == 0) {
-    os << endl << endl << "Distributor:" << endl << std::flush;
+    os << std::endl << std::endl << "Distributor:" << std::endl << std::flush;
   }
   comm.Barrier();
   if (Distor_ == NULL) {
     if (myRank == 0) {
-      os << " is NULL." << endl;
+      os << " is NULL." << std::endl;
     }
   } else {
     Distor_->Print(os); // Printing the Distributor is itself distributed.

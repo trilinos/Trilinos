@@ -378,7 +378,7 @@ class Epetra_SerialDenseSVD : public virtual Epetra_SerialDenseOperator, public 
   //! @name I/O methods
   //@{ 
   //! Print service methods; defines behavior of ostream << operator.
-  virtual void Print(ostream& os) const;
+  virtual void Print(std::ostream& os) const;
   //@}
 
   //! @name Additional methods for support of Epetra_SerialDenseOperator interface

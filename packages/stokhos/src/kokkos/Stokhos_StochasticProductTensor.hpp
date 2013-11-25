@@ -1,27 +1,40 @@
 // @HEADER
 // ***********************************************************************
 //
-//                     Stokhos Package
+//                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov)
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
 //
 // ***********************************************************************
 // @HEADER
@@ -31,9 +44,11 @@
 
 #include <ostream>
 
-#include "KokkosArray_View.hpp"
+#include "Kokkos_View.hpp"
+#include "Kokkos_Cuda.hpp"
 
 #include "Stokhos_ProductBasis.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 namespace Stokhos {
 
@@ -64,16 +79,16 @@ template< typename ValueType , typename TensorType, class Device >
 class StochasticProductTensor {
 public:
 
-  typedef Device                                      device_type ;
-  typedef typename device_type::size_type             size_type ;
-  typedef ValueType                                   value_type ;
-  typedef TensorType                                  tensor_type ;
+  typedef Device                          device_type ;
+  typedef ValueType                       value_type ;
+  typedef TensorType                      tensor_type ;
+  typedef typename tensor_type::size_type size_type ;
 
 private:
 
-  tensor_type                                     m_tensor ;
-  KokkosArray::View< size_type** , device_type >  m_degree_map ;
-  size_type                                       m_variable ;
+  tensor_type                                m_tensor ;
+  Kokkos::View< size_type** , device_type >  m_degree_map ;
+  size_type                                  m_variable ;
 
 public:
 
@@ -103,22 +118,33 @@ public:
     return *this ;
   }
 
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   const tensor_type & tensor() const { return m_tensor ; }
 
   /** \brief  Dimension: number of bases and
    *          length of the vector block (and tensor).
    */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type dimension() const { return m_tensor.dimension(); }
 
+   /** \brief  Aligned dimension: length of the vector block properly aligned.
+   */
+  KOKKOS_INLINE_FUNCTION
+  size_type aligned_dimension() const {
+    const bool is_cuda =
+      Kokkos::Impl::is_same<device_type,Kokkos::Cuda>::value;
+    const size_type AlignBytes = is_cuda ? 128 : 64;
+    const size_type NumAlign = AlignBytes/sizeof(value_type);
+    return (dimension() + NumAlign-1) & ~(NumAlign-1);
+  }
+
   /** \brief  How many variables are being expanded. */
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type variable_count() const { return m_variable ; }
 
   /** \brief  Polynomial degree of a given variable */
   template< typename iType >
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type variable_degree( const iType & iVariable ) const
     { return m_degree_map( 0 , iVariable ); }
 
@@ -127,7 +153,7 @@ public:
    *          polynomial degree of component 'iVariable'.
    */
   template< typename iType , typename jType >
-  KOKKOSARRAY_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_type bases_degree( const iType & iBasis , const jType & iVariable ) const
     { return m_degree_map( iBasis + 1 , iVariable ); }
 
@@ -145,13 +171,14 @@ public:
   template <typename OrdinalType, typename CijkType>
   static StochasticProductTensor
   create( const Stokhos::ProductBasis<OrdinalType,ValueType>& basis,
-          const CijkType& Cijk)
+          const CijkType& Cijk,
+          const Teuchos::ParameterList& params = Teuchos::ParameterList())
   {
     StochasticProductTensor spt ;
 
     // Allocate and transfer data to the device-resident object.
 
-    typedef KokkosArray::View< size_type** , device_type > int_array_type ;
+    typedef Kokkos::View< size_type** , device_type > int_array_type ;
     typedef typename int_array_type::HostMirror host_int_array_type ;
 
     OrdinalType basis_sz = basis.size();
@@ -167,7 +194,7 @@ public:
 
     // Build degree_map
     host_int_array_type degree_map =
-      KokkosArray::create_mirror_view( spt.m_degree_map );
+      Kokkos::create_mirror_view( spt.m_degree_map );
     for ( OrdinalType j = 0 ; j < basis_dim ; ++j )
       degree_map(0,j) = max_orders[j];
     for ( OrdinalType i = 0 ; i < basis_sz ; ++i ) {
@@ -176,10 +203,10 @@ public:
         degree_map(i+1,j) = term[j];
       }
     }
-    KokkosArray::deep_copy( spt.m_degree_map , degree_map );
+    Kokkos::deep_copy( spt.m_degree_map , degree_map );
 
     // Build 3 tensor
-    spt.m_tensor = tensor_type::create( basis, Cijk );
+    spt.m_tensor = tensor_type::create( basis, Cijk, params );
 
     return spt ;
   }
@@ -189,12 +216,34 @@ template<  typename TensorType, typename OrdinalType , typename ValueType, typen
 StochasticProductTensor<ValueType, TensorType, typename TensorType::device_type>
 create_stochastic_product_tensor(
   const Stokhos::ProductBasis<OrdinalType,ValueType>& basis,
-  const CijkType& Cijk)
+  const CijkType& Cijk,
+  const Teuchos::ParameterList& params = Teuchos::ParameterList())
 {
   typedef typename TensorType::device_type Device;
-  return StochasticProductTensor<ValueType, TensorType, Device>::create( basis,
-                                                                         Cijk);
+  return StochasticProductTensor<ValueType, TensorType, Device>::create(
+    basis, Cijk, params);
 }
+
+template < typename ValueType , typename Device, class TensorType >
+class BlockMultiply< StochasticProductTensor< ValueType, TensorType, Device > >
+{
+public:
+  typedef Device device_type ;
+  typedef typename device_type::size_type size_type ;
+  typedef StochasticProductTensor< ValueType, TensorType, device_type > block_type ;
+
+  template< typename MatrixValue , typename VectorValue >
+  KOKKOS_INLINE_FUNCTION
+  static void apply( const block_type  & block ,
+                     const MatrixValue *       a ,
+                     const VectorValue * const x ,
+                           VectorValue * const y )
+  {
+    typedef BlockMultiply< typename block_type::tensor_type > tensor_multiply ;
+
+    tensor_multiply::apply( block.tensor() , a , x , y );
+  }
+};
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

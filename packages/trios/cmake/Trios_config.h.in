@@ -7,9 +7,9 @@
 #cmakedefine HAVE_TRIOS_CRAYPORTALS 1
 #cmakedefine HAVE_TRIOS_PORTALS 1
 #cmakedefine HAVE_TRIOS_INFINIBAND 1
-#cmakedefine HAVE_TRIOS_MTA 1
-#cmakedefine HAVE_TRIOS_LUC 1
 #cmakedefine HAVE_TRIOS_GEMINI 1
+#cmakedefine HAVE_TRIOS_BGPDCMF 1
+#cmakedefine HAVE_TRIOS_BGQPAMI 1
 #cmakedefine HAVE_TRIOS_MPI 1
 
 /* Special Portals config */

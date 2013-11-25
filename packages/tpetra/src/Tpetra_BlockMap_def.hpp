@@ -92,7 +92,7 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(
 
   myGlobalBlockIDs_.resize(numLocalBlocks);
   pbuf_firstPointInBlock_ = node->template allocBuffer<LocalOrdinal>(numLocalBlocks+1);
-  Teuchos::ArrayRCP<LocalOrdinal> v_firstPoints = node->template viewBufferNonConst<LocalOrdinal>(Kokkos::WriteOnly, numLocalBlocks+1, pbuf_firstPointInBlock_);
+  Teuchos::ArrayRCP<LocalOrdinal> v_firstPoints = node->template viewBufferNonConst<LocalOrdinal>(KokkosClassic::WriteOnly, numLocalBlocks+1, pbuf_firstPointInBlock_);
 
   LocalOrdinal firstPoint = pointMap_->getMinLocalIndex();
   GlobalOrdinal blockID = pointMap_->getMinGlobalIndex()/blockSize;
@@ -142,7 +142,7 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(
 
   myGlobalBlockIDs_.resize(numLocalBlocks);
   pbuf_firstPointInBlock_ = node->template allocBuffer<LocalOrdinal>(numLocalBlocks+1);
-  Teuchos::ArrayRCP<LocalOrdinal> v_firstPoints = node->template viewBufferNonConst<LocalOrdinal>(Kokkos::WriteOnly, numLocalBlocks+1, pbuf_firstPointInBlock_);
+  Teuchos::ArrayRCP<LocalOrdinal> v_firstPoints = node->template viewBufferNonConst<LocalOrdinal>(KokkosClassic::WriteOnly, numLocalBlocks+1, pbuf_firstPointInBlock_);
 
   LocalOrdinal firstPoint = pointMap_->getMinLocalIndex();
   GlobalOrdinal blockID = pointMap_->getMinGlobalIndex()/blockSize;
@@ -202,7 +202,7 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(
   LocalOrdinal firstPoint = pointMap_->getMinLocalIndex();
   LocalOrdinal numLocalBlocks = myGlobalBlockIDs.size();
   pbuf_firstPointInBlock_ = node->template allocBuffer<LocalOrdinal>(numLocalBlocks+1);
-  Teuchos::ArrayRCP<LocalOrdinal> v_firstPoints = node->template viewBufferNonConst<LocalOrdinal>(Kokkos::WriteOnly, numLocalBlocks+1, pbuf_firstPointInBlock_);
+  Teuchos::ArrayRCP<LocalOrdinal> v_firstPoints = node->template viewBufferNonConst<LocalOrdinal>(KokkosClassic::WriteOnly, numLocalBlocks+1, pbuf_firstPointInBlock_);
 
   bool blockSizesAreConstant = true;
   i=0;
@@ -263,7 +263,7 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(const Teuchos::RCP<const Map
   LocalOrdinal firstBlockSize = *iter;
 
   pbuf_firstPointInBlock_ = node->template allocBuffer<LocalOrdinal>(myGlobalBlockIDs.size()+1);
-  Teuchos::ArrayRCP<LocalOrdinal> v_firstPoints = node->template viewBufferNonConst<LocalOrdinal>(Kokkos::WriteOnly, numLocalBlocks+1, pbuf_firstPointInBlock_);
+  Teuchos::ArrayRCP<LocalOrdinal> v_firstPoints = node->template viewBufferNonConst<LocalOrdinal>(KokkosClassic::WriteOnly, numLocalBlocks+1, pbuf_firstPointInBlock_);
 
   bool blockSizesAreConstant = true;
   size_t i=0;

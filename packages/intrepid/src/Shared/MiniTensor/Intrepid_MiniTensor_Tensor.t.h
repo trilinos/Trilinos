@@ -50,16 +50,16 @@ namespace Intrepid {
 // \param is input stream
 // \return is input stream
 //
-template<typename T>
+template<typename T, Index N>
 std::istream &
-operator>>(std::istream & is, Tensor<T> & A)
+operator>>(std::istream & is, Tensor<T, N> & A)
 {
 
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
-  for (Index i = 0; i < N; ++i) {
-    for (Index j = 0; j < N; ++j) {
+  for (Index i = 0; i < dimension; ++i) {
+    for (Index j = 0; j < dimension; ++j) {
       is >> A(i,j);
     }
   }
@@ -73,23 +73,23 @@ operator>>(std::istream & is, Tensor<T> & A)
 // \param os output stream
 // \return os output stream
 //
-template<typename T>
+template<typename T, Index N>
 std::ostream &
-operator<<(std::ostream & os, Tensor<T> const & A)
+operator<<(std::ostream & os, Tensor<T, N> const & A)
 {
   Index const
-  N = A.get_dimension();
+  dimension = A.get_dimension();
 
-  if (N == 0) {
+  if (dimension == 0) {
     return os;
   }
 
-  for (Index i = 0; i < N; ++i) {
+  for (Index i = 0; i < dimension; ++i) {
 
-    os << std::scientific << A(i,0);
+    os << std::scientific << std::setprecision(16) << A(i,0);
 
-    for (Index j = 1; j < N; ++j) {
-      os << std::scientific << "," << A(i,j);
+    for (Index j = 1; j < dimension; ++j) {
+      os << "," << std::scientific  << std::setprecision(16) << A(i,j);
     }
 
     os << std::endl;

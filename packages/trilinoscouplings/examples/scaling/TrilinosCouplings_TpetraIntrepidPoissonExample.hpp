@@ -37,6 +37,10 @@
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
+// MueLu includes
+#include "MueLu_TpetraOperator.hpp"
+
+#include "TrilinosCouplings_IntrepidPoissonExample_SolveWithBelos.hpp"
 
 namespace TrilinosCouplings {
 /// \namespace TpetraIntrepidPoissonExample
@@ -87,6 +91,7 @@ typedef Tpetra::CrsMatrix<ST, LO, GO, Node>    sparse_matrix_type;
 typedef Tpetra::Operator<ST, LO, GO, Node>     operator_type;
 typedef Tpetra::MultiVector<ST, LO, GO, Node>  multivector_type;
 typedef Tpetra::Vector<ST, LO, GO, Node>       vector_type;
+typedef KokkosClassic::DefaultKernels<ST,LO,Node>::SparseOps sparse_ops;
 
 /// \brief Create the mesh and build the linear system to solve.
 ///
@@ -228,12 +233,49 @@ solveWithBelos (bool& converged,
                 int& numItersPerformed,
                 const Teuchos::ScalarTraits<ST>::magnitudeType& tol,
                 const int maxNumIters,
-		const int num_steps,
+                const int num_steps,
                 const Teuchos::RCP<multivector_type>& X,
                 const Teuchos::RCP<const sparse_matrix_type>& A,
                 const Teuchos::RCP<const multivector_type>& B,
                 const Teuchos::RCP<const operator_type>& M_left=Teuchos::null,
                 const Teuchos::RCP<const operator_type>& M_right=Teuchos::null);
+
+/// \brief Solve the linear system(s) AX=B with Belos on the GPU.
+///
+/// In addition to the parameters taken by solveWithBelos(), this function
+/// additionally takes the following parameters to determine which GPU
+/// device should be attached to which MPI rank:
+///
+/// \param ranks_per_node [in]  Number of MPI ranks per node.  For OpenMPI and
+///   MVAPICH MPI libraries, this is determined automatically and thus needn't
+///   be specified.  For other MPI libraries it must be supplied by the user.
+///
+/// \param gpu_ranks_per_node [in] Number of MPI ranks per node associated
+///   with GPUs.  This must be less than or equal to the number of devices
+///   per node.
+///
+/// \param device_offset [in] Offset for computing the CUDA device ID for
+///   each MPI rank associated with a GPU.  If there are n GPU's per node,
+///   the first n MPI ranks for each node will be associated with a GPU starting
+///   at device number device_offset.
+///
+/// \param prec_type [in] The preconditioner type (e.g., "MueLu").
+void
+solveWithBelosGPU (
+  bool& converged,
+  int& numItersPerformed,
+  const Teuchos::ScalarTraits<ST>::magnitudeType& tol,
+  const int maxNumIters,
+  const int num_steps,
+  const int ranks_per_node,
+  const int gpu_ranks_per_node,
+  const int device_offset,
+  const std::string& prec_type,
+  const Teuchos::RCP<multivector_type>& X,
+  const Teuchos::RCP<const sparse_matrix_type>& A,
+  const Teuchos::RCP<const multivector_type>& B,
+  const Teuchos::RCP<const operator_type>& M_left=Teuchos::null,
+  const Teuchos::RCP<const operator_type>& M_right=Teuchos::null);
 
 } // namespace TpetraIntrepidPoissonExample
 } // namespace TrilinosCouplings

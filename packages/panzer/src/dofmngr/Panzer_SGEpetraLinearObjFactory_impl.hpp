@@ -178,7 +178,8 @@ template <typename Traits,typename LocalOrdinalT>
 void SGEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                              const LinearObjContainer & globalBCRows,
-                             LinearObjContainer & ghostedObjs) const
+                             LinearObjContainer & ghostedObjs,
+                             bool zeroVectorRows) const
 {
    bool completed = false;
    try {
@@ -187,7 +188,7 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
       // simply iterate over each deterministic system and run adjustForDirichlet
       SGEpetraLinearObjContainer::iterator ghostObjsItr;
       for(ghostObjsItr=ghostContainerSG.begin();ghostObjsItr!=ghostContainerSG.end();ghostObjsItr++)
-         epetraFact_->adjustForDirichletConditions(localBCRows,globalBCRows,**ghostObjsItr);
+         epetraFact_->adjustForDirichletConditions(localBCRows,globalBCRows,**ghostObjsItr,zeroVectorRows);
 
       completed = true;
    }
@@ -197,8 +198,16 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
    if(!completed) {
       // this had many perils, primarily that the exception will come
       // from the epetra factory.
-      epetraFact_->adjustForDirichletConditions(localBCRows,globalBCRows,ghostedObjs);
+      epetraFact_->adjustForDirichletConditions(localBCRows,globalBCRows,ghostedObjs,zeroVectorRows);
    }
+}
+
+template <typename Traits,typename LocalOrdinalT>
+void SGEpetraLinearObjFactory<Traits,LocalOrdinalT>::
+applyDirichletBCs(const LinearObjContainer & counter,
+                  LinearObjContainer & result) const
+{
+  TEUCHOS_ASSERT(false); // not yet implemented
 }
 
 template <typename Traits,typename LocalOrdinalT>

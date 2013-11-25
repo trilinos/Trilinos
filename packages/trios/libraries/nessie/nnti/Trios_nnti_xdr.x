@@ -51,10 +51,12 @@
 
 #ifdef RPC_HDR
 %#include "Trios_xdr.h"
+%#include <stdint.h>
 #endif
 
 #ifdef RPC_XDR
 %#include "Trios_xdr.h"
+%#include <Trios_xdr.h>
 #endif
 
 
@@ -108,11 +110,14 @@ enum NNTI_transport_id_t {
     /** @brief Use Cray Gemini to transfer rpc requests. */
     NNTI_TRANSPORT_GEMINI,
 
+    /** @brief Use DCMF for Blue Gene /P transfer rpc requests. */
+    NNTI_TRANSPORT_DCMF,
+
+    /** @brief Use PAMI for Blue Gene /P transfer rpc requests. */
+    NNTI_TRANSPORT_PAMI,
+
     /** @brief Use Cray Gemini to transfer rpc requests. */
     NNTI_TRANSPORT_MPI,
-
-    /** @brief Use Cray LUC to transfer rpc requests. */
-    NNTI_TRANSPORT_LUC,
 
     /** @brief Use a local buffer (no remote operations). */
     NNTI_TRANSPORT_LOCAL,
@@ -124,7 +129,7 @@ enum NNTI_transport_id_t {
 /**
  * @brief The number of transport mechanisms supported by NNTI.
  */
-const NNTI_TRANSPORT_COUNT = 7;
+const NNTI_TRANSPORT_COUNT = 8;
 
 
 /**
@@ -256,38 +261,31 @@ struct NNTI_ib_process_t {
 
 
 
-
-
-
 /**
- * @brief The ID of a Cray LUC Endpoint.
+ * @brief Remote process identifier for BG/P DCMF.
  *
- * The <tt>\ref NNTI_luc_endpoint_id</tt> type identifies a particular LUC process
+ * The <tt>\ref NNTI_bgpdcmf_process_t</tt> identifies a particular process
  * on a particular node.
  */
-typedef uint64_t NNTI_luc_endpoint_id;    /* id used to contact a LUC program */
-
-/**
- * @brief Remote process identifier for Cray LUC.
- *
- * The <tt>\ref NNTI_luc_process_t</tt> identifies a particular process
- * on a particular node.
- */
-struct NNTI_luc_process_t {
-    /** @brief ID used to contact a LUC program */
-    NNTI_luc_endpoint_id req_endpoint_id;
-    /** @brief ID used to do RDMA transfers with a LUC program */
-    NNTI_luc_endpoint_id rdma_endpoint_id;
+struct NNTI_bgpdcmf_process_t {
+        int     xcoord;
+        int     ycoord;
+        int     zcoord;
+        int     pset_rank;
 };
 
 
-
-
-
-
-
-
-
+/**
+ * @brief Remote process identifier for BG/Q PAMI.
+ *
+ * The <tt>\ref NNTI_bgpdcmf_process_t</tt> identifies a particular process
+ * on a particular node.
+ */
+struct NNTI_bgqpami_process_t {
+        int     pset_rank;
+	int     taskid;
+	int     thrid;
+};
 
 /**
  * @brief The instance ID of a Gemini process.
@@ -346,10 +344,12 @@ union NNTI_remote_process_t switch (NNTI_transport_id_t transport_id) {
     case NNTI_TRANSPORT_PORTALS: NNTI_portals_process_t portals;
     /** @brief The IB representation of a process on the network. */
     case NNTI_TRANSPORT_IB:      NNTI_ib_process_t      ib;
-    /** @brief The Cray LUC representation of a process on the network. */
-    case NNTI_TRANSPORT_LUC:     NNTI_luc_process_t     luc;
     /** @brief The Cray Gemini representation of a process on the network. */
     case NNTI_TRANSPORT_GEMINI:  NNTI_gni_process_t     gni;
+    /** @brief The BGP  DCMF library usage  on the torus network. */
+    case NNTI_TRANSPORT_DCMF:      NNTI_bgpdcmf_process_t      bgpdcmf;
+    /** @brief The BGQ PAMI library usage  on the torus network. */
+    case NNTI_TRANSPORT_PAMI:      NNTI_bgqpami_process_t      bgqpami;
     /** @brief The MPI representation of a process on the network. */
     case NNTI_TRANSPORT_MPI:     NNTI_mpi_process_t     mpi;
 };
@@ -359,10 +359,10 @@ union NNTI_remote_process_t {
     NNTI_portals_process_t portals;
     /** @brief The IB representation of a process on the network. */
     NNTI_ib_process_t      ib;
-    /** @brief The Cray LUC representation of a process on the network. */
-    NNTI_luc_process_t     luc;
     /** @brief The Cray Gemini representation of a process on the network. */
     NNTI_gni_process_t     gni;
+    /** @brief The BGPDMA representation of a process on the network. */
+    NNTI_bgpdcmf_process_t      bgpdcmf;
     /** @brief The MPI representation of a process on the network. */
     NNTI_mpi_process_t     mpi;
 };
@@ -448,16 +448,6 @@ struct NNTI_ib_rdma_addr_t {
 
 
 
-/**
- * @brief RDMA address used for LUC implementation.
- */
-struct NNTI_luc_rdma_addr_t {
-    /** @brief Address of the memory buffer cast to a uint64_t. */
-    uint64_t buf;
-    /** @brief Size of the the memory buffer. */
-    uint32_t size;
-};
-
 enum NNTI_gni_buffer_type_t {
     NNTI_GNI_RDMA_INITIATOR,
     NNTI_GNI_RDMA_TARGET,
@@ -469,6 +459,54 @@ struct NNTI_gni_mem_hdl_t {
     uint64_t qword1;
     uint64_t qword2;
 };
+
+struct NNTI_bgpdcmf_memreg_hdl_t {
+	unsigned  word0;
+	unsigned  word1;
+	unsigned  word2;
+	unsigned  word3;
+};
+
+
+enum NNTI_bgpdcmf_buffer_type_t {
+        NNTI_DCMF_REQUEST_BUFFER,
+        NNTI_DCMF_RESULT_BUFFER,
+        NNTI_DCMF_SEND_SRC,
+        NNTI_DCMF_RECEIVE_DST
+};
+enum NNTI_bgqpami_buffer_type_t {
+        NNTI_PAMI_REQUEST_BUFFER,
+        NNTI_PAMI_RESULT_BUFFER,
+        NNTI_PAMI_SEND_SRC,
+        NNTI_PAMI_RECEIVE_DST
+};
+
+/**
+ * @brief RDMA address used for the InfiniBand implementation.
+ */
+struct NNTI_bgpdcmf_rdma_addr_t {
+    /** @brief Address of the memory buffer cast to a uint64_t. */
+    uint64_t buf;
+    /** @brief Size of the the memory buffer. */
+    uint32_t size;
+    uint32_t owner_rank;
+    NNTI_bgpdcmf_buffer_type_t type;
+    NNTI_bgpdcmf_memreg_hdl_t mem_hdl;
+    uint64_t wc_addr;
+    NNTI_bgpdcmf_memreg_hdl_t wc_mem_hdl;
+};
+
+struct NNTI_bgqpami_rdma_addr_t {
+    uint64_t  buf;
+    uint32_t size;
+    uint32_t owner_rank;
+    NNTI_bgqpami_buffer_type_t type;
+    uint64_t  mem_hdl;
+    uint64_t wc_addr;
+    uint64_t wc_mem_hdl;
+};
+
+
 
 /**
  * @brief RDMA address used for the Gemini implementation.
@@ -522,10 +560,12 @@ union NNTI_remote_addr_t switch (NNTI_transport_id_t transport_id) {
     case NNTI_TRANSPORT_PORTALS: NNTI_portals_rdma_addr_t portals;
     /** @brief The IB representation of a memory region. */
     case NNTI_TRANSPORT_IB:      NNTI_ib_rdma_addr_t      ib;
-    /** @brief The Cray LUC representation of a memory region. */
-    case NNTI_TRANSPORT_LUC:     NNTI_luc_rdma_addr_t     luc;
     /** @brief The Cray Gemini representation of a memory region. */
     case NNTI_TRANSPORT_GEMINI:  NNTI_gni_rdma_addr_t     gni;
+    /** @brief The BGP DCMF representation of a memory region. */
+    case NNTI_TRANSPORT_DCMF:      NNTI_bgpdcmf_rdma_addr_t      bgpdcmf;
+    /** @brief The BGQ PAMI representation of a memory region. */
+    case NNTI_TRANSPORT_PAMI:      NNTI_bgqpami_rdma_addr_t      bgqpami;
     /** @brief The MPI representation of a memory region. */
     case NNTI_TRANSPORT_MPI:     NNTI_mpi_rdma_addr_t     mpi;
 };
@@ -535,10 +575,12 @@ union NNTI_remote_addr_t {
     NNTI_portals_rdma_addr_t portals;
     /** @brief The IB representation of a memory region. */
     NNTI_ib_rdma_addr_t      ib;
-    /** @brief The Cray LUC representation of a memory region. */
-    NNTI_luc_rdma_addr_t     luc;
     /** @brief The Cray Gemini representation of a memory region. */
     NNTI_gni_rdma_addr_t     gni;
+    /** @brief The BGP DCMF representation of a memory region. */
+    NNTI_bgpdcmf_rdma_addr_t      bgpdcmf;
+    /** @brief The BGQ PAMI representation of a memory region. */
+    NNTI_bgqpami_rdma_addr_t      bgqpami;
     /** @brief The MPI representation of a memory region. */
     NNTI_mpi_rdma_addr_t     mpi;
 };

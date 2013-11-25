@@ -57,36 +57,46 @@
 namespace Teuchos {
 
 
-/** \brief Converts StringToIntegralParameterEntryValidators to and from XML.
- *
- * The XML Representation for a StringToIntegralValidator is:
- * \code
-  <Validator 
-    type="StringToIntegralValidator(NumberType)"
-    defaultParameterName="Name of default parameter"
-    validatorId="Validator id"
-  >
-    <String 
-      stringValue="Value 1" 
-      integralValue="int value 1" 
-      stringDoc="Documentation for Value 1"
-    />
-    <String 
-      stringValue="Value 2" 
-      integralValue="int value 2" 
-      stringDoc="Documentation for Value 2"
-    />
-    ...More String Values...
-  </Validator>
- 
- \endcode
- *
- * The "integralValue" and "stringDoc" XML attributes are optional. However,
- * if one of the "String" tags includes an "integralValue" and/or a "stringDoc"
- * XML attribute, all other "String" tags must do so as well.
+/** \brief Convert a StringToIntegralParameterEntryValidator to and from XML.
+
+This class knows how to write a
+StringToIntegralParameterEntryValidator to XML, and create an
+StringToIntegralParameterEntryValidator from its XML representation.
+
+Here is the XML representation of a StringToIntegralValidator:
+
+\code
+ <Validator
+   type="StringToIntegralValidator(NumberType)"
+   defaultParameterName="Name of default parameter"
+   caseSensitive="[true|false]"
+   validatorId="Validator id"
+ >
+   <String
+     stringValue="Value 1"
+     integralValue="int value 1"
+     stringDoc="Documentation for Value 1"
+   />
+   <String
+     stringValue="Value 2"
+     integralValue="int value 2"
+     stringDoc="Documentation for Value 2"
+   />
+   ...More String Values...
+ </Validator>
+\endcode
+
+Here, "[true|false]" means the XML string representation of either
+Boolean true, or Boolean false.
+
+The "integralValue", "stringDoc", and "caseSensitive" XML attributes
+are optional. However, if one of the "String" tags includes an
+"integralValue" and/or a "stringDoc" XML attribute, all other "String"
+tags must do so as well.
+
  */
 template<class IntegralType>
-class StringToIntegralValidatorXMLConverter : 
+class StringToIntegralValidatorXMLConverter :
   public ValidatorXMLConverter
 {
 
@@ -108,20 +118,20 @@ public:
 
   #ifdef HAVE_TEUCHOS_DEBUG
   /** \brief . */
-  RCP<const ParameterEntryValidator > 
+  RCP<const ParameterEntryValidator >
   getDummyValidator() const{
     return DummyObjectGetter<
     StringToIntegralParameterEntryValidator<IntegralType> >::getDummyObject();
   }
   #endif
-  
+
   //@}
 
 private:
 
   /** \name Private Members */
   //@{
-  
+
   /** \brief . */
   static const std::string& getIntegralValueAttributeName() {
     static const std::string integralValueAttributeName_ = "integralValue";
@@ -146,13 +156,20 @@ private:
     return stringDocAttributeName_;
   }
 
-  /** \brief . */
+  //! Name (tag) of the default parameter attribute.
   static const std::string& getDefaultParameterAttributeName() {
     static const std::string defaultParameterAttributeName_ =
       "defaultParameterName";
     return defaultParameterAttributeName_;
   }
-  
+
+  //! Name (tag) of the caseSensitive attribute.
+  static const std::string& getCaseSensitiveAttributeName() {
+    static const std::string caseSensitiveAttributeName_ =
+      "caseSensitive";
+    return caseSensitiveAttributeName_;
+  }
+
   //@}
 
 };
@@ -174,10 +191,10 @@ StringToIntegralValidatorXMLConverter<IntegralType>::convertXML(
   Array<IntegralType> integralValues;
   for (int i=0; i<xmlObj.numChildren(); ++i) {
     XMLObject currentChild = xmlObj.getChild(i);
-    TEUCHOS_TEST_FOR_EXCEPTION(currentChild.getTag() != getStringTagName(), 
-      BadTagException,  
+    TEUCHOS_TEST_FOR_EXCEPTION(currentChild.getTag() != getStringTagName(),
+      BadTagException,
       "Error converting xmlObject to "
-      "StringToIntegralParameterEntryValidator." << std::endl << 
+      "StringToIntegralParameterEntryValidator." << std::endl <<
       "Unrecognized tag: " << currentChild.getTag());
     strings.append(currentChild.getRequired(getStringValueAttributeName()));
     if (currentChild.hasAttribute(getIntegralValueAttributeName())) {
@@ -190,20 +207,22 @@ StringToIntegralValidatorXMLConverter<IntegralType>::convertXML(
         currentChild.getRequired<std::string>(getStringDocAttributeName()));
     }
   }
-  std::string defaultParameterName = 
+  std::string defaultParameterName =
     xmlObj.getRequired(getDefaultParameterAttributeName());
 
-  if(stringDocs.size() != 0 && integralValues.size() != 0){
-    return stringToIntegralParameterEntryValidator<IntegralType>(
-      strings, stringDocs, integralValues(), defaultParameterName);
+  // The "caseSensitive" attribute is not required.  It is true by default.
+  const bool caseSensitive =
+    xmlObj.getWithDefault<bool> (getCaseSensitiveAttributeName (), true);
+
+  typedef StringToIntegralParameterEntryValidator<IntegralType> ret_type;
+  if (stringDocs.size() != 0 && integralValues.size() != 0) {
+    return rcp (new ret_type (strings, stringDocs, integralValues (), defaultParameterName, caseSensitive));
   }
-  else if(integralValues.size() != 0){
-    return stringToIntegralParameterEntryValidator<IntegralType>(
-      strings, integralValues(), defaultParameterName);
+  else if (integralValues.size() != 0) {
+    return rcp (new ret_type (strings, integralValues(), defaultParameterName, caseSensitive));
   }
-  else{
-    return stringToIntegralParameterEntryValidator<IntegralType>(
-      strings, defaultParameterName);
+  else {
+    return rcp (new ret_type (strings, defaultParameterName, caseSensitive));
   }
 }
 
@@ -214,7 +233,7 @@ void StringToIntegralValidatorXMLConverter<IntegralType>::convertValidator(
   XMLObject& xmlObj,
   const ValidatortoIDMap& /*validatorIDsMap*/) const
 {
-  RCP<const StringToIntegralParameterEntryValidator<IntegralType> > 
+  RCP<const StringToIntegralParameterEntryValidator<IntegralType> >
     castedValidator =
     rcp_dynamic_cast<
       const StringToIntegralParameterEntryValidator<IntegralType> >(
@@ -222,10 +241,10 @@ void StringToIntegralValidatorXMLConverter<IntegralType>::convertValidator(
 
   RCP<const Array<std::string> > stringValues =
     castedValidator->validStringValues();
-  RCP<const Array<std::string> > stringDocValues = 
+  RCP<const Array<std::string> > stringDocValues =
     castedValidator->getStringDocs();
 
-  bool hasStringDocs = 
+  bool hasStringDocs =
     !(stringDocValues.is_null()) && (stringDocValues->size() != 0);
   for (int i =0; i<stringValues->size(); ++i) {
     XMLObject stringTag(getStringTagName());
@@ -240,6 +259,11 @@ void StringToIntegralValidatorXMLConverter<IntegralType>::convertValidator(
   }
   xmlObj.addAttribute(getDefaultParameterAttributeName(),
     castedValidator->getDefaultParameterName());
+
+  // Add "caseSensitive" bool attribute here.
+  const bool caseSensitive = castedValidator->isCaseSensitive ();
+  xmlObj.addBool (getCaseSensitiveAttributeName (), caseSensitive);
+
   xmlObj.addAttribute(getIntegralValueAttributeName(),
     TypeNameTraits<IntegralType>::name());
 }
@@ -249,7 +273,7 @@ void StringToIntegralValidatorXMLConverter<IntegralType>::convertValidator(
  *
  * The valid XML representation for an AnyNumberParameterEntryValidator is:
  * \code
-  <Validator type="AnyNumberValidator" 
+  <Validator type="AnyNumberValidator"
    allowInt="True or False"
    allowDouble="True or False"
    allowString="True or False"
@@ -280,14 +304,14 @@ public:
   /** \brief . */
   RCP<const ParameterEntryValidator> getDummyValidator() const;
   #endif
-  
+
   //@}
 
 private:
 
   /** \name Private Members */
   //@{
-  
+
   /** \brief . */
   static const std::string& getAllowIntAttributeName() {
     static const std::string allowIntAttributeName_ = "allowInt";
@@ -305,15 +329,15 @@ private:
     static const std::string allowStringAttributeName_ = "allowString";
     return allowStringAttributeName_;
   }
-  
+
   /** \brief . */
   static const std::string& getPrefferedTypeAttributeName() {
     static const std::string prefferedTypeAttributeName_ = "prefferedType";
     return prefferedTypeAttributeName_;
   }
-  
+
   //@}
- 
+
 };
 
 
@@ -357,14 +381,14 @@ public:
     return DummyObjectGetter<EnhancedNumberValidator<T> >::getDummyObject();
   }
 #endif
-  
+
   //@}
 
 private:
 
   /** \name Private Members */
   //@{
-  
+
   /** \brief . */
   static const std::string& getMinAttributeName() {
     static const std::string minAttributeName = "min";
@@ -388,19 +412,19 @@ private:
     static const std::string precisionAttributeName = "precision";
     return precisionAttributeName;
   }
-  
+
   //@}
 
 };
 
 
 template<class T>
-RCP<ParameterEntryValidator> 
+RCP<ParameterEntryValidator>
 EnhancedNumberValidatorXMLConverter<T>::convertXML(
   const XMLObject& xmlObj,
   const IDtoValidatorMap& /*validatorIDsMap*/) const
 {
-  RCP<EnhancedNumberValidator<T> > toReturn = 
+  RCP<EnhancedNumberValidator<T> > toReturn =
     rcp(new EnhancedNumberValidator<T>);
   T step = xmlObj.getWithDefault(
     getStepAttributeName(), EnhancedNumberTraits<T>::defaultStep());
@@ -476,22 +500,22 @@ public:
   /** \brief . */
   RCP<const ParameterEntryValidator> getDummyValidator() const;
   #endif
-  
+
   //@}
 
 private:
 
   /** \name Private Members */
   //@{
-  
+
   /** \brief . */
   static const std::string& getFileMustExistAttributeName() {
     static const std::string fileMustExistAttributeName = "fileMustExist";
     return fileMustExistAttributeName;
   }
-  
+
   //@}
-  
+
 };
 
 
@@ -532,14 +556,14 @@ public:
   /** \brief . */
   RCP<const ParameterEntryValidator> getDummyValidator() const;
   #endif
-  
+
   //@}
 
 private:
-  
+
   /** \name Private Members */
   //@{
-  
+
   /** \brief . */
   static const std::string& getStringTagName() {
     static const std::string stringTagName = "String";
@@ -551,7 +575,7 @@ private:
     static const std::string stringValueAttributeName = "value";
     return stringValueAttributeName;
   }
-  
+
   //@}
 
 };
@@ -575,14 +599,14 @@ public:
     const ValidatortoIDMap& validatorIDsMap) const;
 
   //@}
-  
+
   /** \name Pure Virtual Fuctions */
   //@{
-  
-  /** \brief Returns a concrete validator that has 
+
+  /** \brief Returns a concrete validator that has
    * AbstractArrayValidator as it's parent class.
    */
-  virtual RCP<AbstractArrayValidator<ValidatorType, EntryType> > 
+  virtual RCP<AbstractArrayValidator<ValidatorType, EntryType> >
     getConcreteValidator(RCP<ValidatorType> prototypeValidator) const = 0;
 
   //@}
@@ -604,7 +628,7 @@ AbstractArrayValidatorXMLConverter<ValidatorType, EntryType>::convertXML(
         xmlObj.getRequired<ParameterEntryValidator::ValidatorID>(
           getPrototypeIdAttributeName()));
     if (result != validatorIDsMap.end() ) {
-      prototypeValidator = 
+      prototypeValidator =
         rcp_dynamic_cast<ValidatorType>(result->second, true);
     }
     else {
@@ -624,25 +648,25 @@ AbstractArrayValidatorXMLConverter<ValidatorType, EntryType>::convertXML(
 }
 
 template<class ValidatorType, class EntryType>
-void 
+void
 AbstractArrayValidatorXMLConverter<ValidatorType, EntryType>::convertValidator(
   const RCP<const ParameterEntryValidator> validator,
   XMLObject& xmlObj,
   const ValidatortoIDMap& validatorIDsMap) const
 {
-  RCP<const AbstractArrayValidator<ValidatorType, EntryType> > castedValidator = 
+  RCP<const AbstractArrayValidator<ValidatorType, EntryType> > castedValidator =
     rcp_dynamic_cast<const AbstractArrayValidator<ValidatorType, EntryType> >(
       validator, true);
-  if(validatorIDsMap.find(castedValidator->getPrototype()) 
+  if(validatorIDsMap.find(castedValidator->getPrototype())
     == validatorIDsMap.end())
   {
     xmlObj.addChild(ValidatorXMLConverterDB::convertValidator(
       castedValidator->getPrototype(), validatorIDsMap, false));
   }
   else{
-    ParameterEntryValidator::ValidatorID prototypeID = 
+    ParameterEntryValidator::ValidatorID prototypeID =
       validatorIDsMap.find(castedValidator->getPrototype())->second;
-  
+
     xmlObj.addAttribute<ParameterEntryValidator::ValidatorID>(
       getPrototypeIdAttributeName(), prototypeID);
   }
@@ -656,7 +680,7 @@ AbstractArrayValidatorXMLConverter<ValidatorType, EntryType>::convertValidator(
  * the ArrayValidator. In this case, the prototype validator does
  * NOT use a validatorId.
  *\code
-  <Validator 
+  <Validator
    type="ArrayValidator(PrototypeValidatorType,ParameterArrayType)"
    validatorId="Validator id"
   >
@@ -668,7 +692,7 @@ AbstractArrayValidatorXMLConverter<ValidatorType, EntryType>::convertValidator(
  * the "prototypeId" attribute to specify the prototype validator as
  * some other validator you've already defined.
  * \code
-   <Validator 
+   <Validator
      type="ArrayValidator(PrototypeValidatorType,ParameterArrayType)"
      validatorId="Validator id"
      prototypeId="Prototype Validator Id"
@@ -676,7 +700,7 @@ AbstractArrayValidatorXMLConverter<ValidatorType, EntryType>::convertValidator(
  * \endcode
  */
 template<class ValidatorType, class EntryType>
-class ArrayValidatorXMLConverter : 
+class ArrayValidatorXMLConverter :
   public AbstractArrayValidatorXMLConverter<ValidatorType, EntryType>
 {
   /** @name Overridden from AbstractArrayValidatorXMLConverter */
@@ -708,7 +732,7 @@ class ArrayValidatorXMLConverter :
  * the ArrayValidator. In this case, the prototype validator does
  * NOT use a validatorId.
  *\code
-  <Validator 
+  <Validator
    type="TwoDArrayValidator(PrototypeValidatorType,ParameterArrayType)"
    validatorId="Validator id"
   >
@@ -720,7 +744,7 @@ class ArrayValidatorXMLConverter :
  * the "prototypeId" attribute to specify the prototype validator as
  * some other validator you've already defined.
  * \code
-   <Validator 
+   <Validator
      type="TwoDArrayValidator(PrototypeValidatorType,ParameterArrayType)"
      validatorId="Validator id"
      prototypeId="Prototype Validator Id"
@@ -728,7 +752,7 @@ class ArrayValidatorXMLConverter :
  * \endcode
  */
 template<class ValidatorType, class EntryType>
-class TwoDArrayValidatorXMLConverter : 
+class TwoDArrayValidatorXMLConverter :
   public AbstractArrayValidatorXMLConverter<ValidatorType, EntryType>
 {
   /** @name Overridden from AbstractArrayValidatorXMLConverter */
@@ -741,7 +765,7 @@ class TwoDArrayValidatorXMLConverter :
   }
 
   //@}
-  
+
 #ifdef HAVE_TEUCHOS_DEBUG
   /** @name Overridden ValidatorXMLConverter*/
   //@{
@@ -752,7 +776,7 @@ class TwoDArrayValidatorXMLConverter :
   }
   //@}
 #endif
-  
+
 };
 
 

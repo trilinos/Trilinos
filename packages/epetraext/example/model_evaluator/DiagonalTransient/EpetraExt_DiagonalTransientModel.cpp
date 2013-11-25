@@ -68,7 +68,7 @@ const std::string Gamma_max_name = "Gamma_max";
 const double Gamma_max_default = -0.01;
 
 const std::string Coeff_s_name = "Coeff_s";
-const string Coeff_s_default = "{ 0.0 }";
+const std::string Coeff_s_default = "{ 0.0 }";
 
 const std::string Gamma_fit_name = "Gamma_fit";
 const std::string Gamma_fit_default = "Linear"; // Will be validated at runtime!

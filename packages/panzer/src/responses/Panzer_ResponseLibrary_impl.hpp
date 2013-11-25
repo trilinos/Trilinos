@@ -553,6 +553,22 @@ addResponse(const std::string & responseName,
   using Teuchos::RCP;
   using Teuchos::rcp;
 
+  if(wkst_desc[0].useSideset() && !wkst_desc[0].sideAssembly()) {
+    // this is a simple side integration, use the "other" addResponse method
+
+    std::vector<std::pair<std::string,std::string> > sideset_blocks;
+    for(std::size_t i=0;i<wkst_desc.size();i++) {
+      std::string sideset = wkst_desc[i].getSideset();
+      std::string blockId = wkst_desc[i].getElementBlock();
+      sideset_blocks.push_back(std::make_pair(sideset,blockId));
+    }
+
+    // add in the response (as a side set)
+    addResponse(responseName,sideset_blocks,builder);
+
+    return;
+  }
+
   // build response factory objects for each evaluation type
   RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > modelFact_tm
        = rcp(new ResponseEvaluatorFactory_TemplateManager<TraitsT>);

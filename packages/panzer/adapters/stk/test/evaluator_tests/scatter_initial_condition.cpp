@@ -125,7 +125,7 @@ namespace panzer {
     TEST_EQUALITY(work_sets->size(),1);
 
     // build connection manager and field manager
-    const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+    const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
     RCP<panzer::BlockedDOFManager<int,int> > dofManager = Teuchos::rcp(new panzer::BlockedDOFManager<int,int>(conn_manager,MPI_COMM_WORLD));
 
     dofManager->addField(fieldName1_q1,Teuchos::rcp(new panzer::IntrepidFieldPattern(basis_q1->getIntrepidBasis())));
@@ -271,6 +271,7 @@ namespace panzer {
     fm.postRegistrationSetup(sd);
 
     panzer::GlobalEvaluationDataContainer gedc;
+    gedc.addDataObject("Scatter IC Container",gl_loc);
     gedc.addDataObject("Solution Gather Container",loc);
     fm.preEvaluate<panzer::Traits::Residual>(gedc);
 
@@ -278,8 +279,6 @@ namespace panzer {
     /////////////////////////////////////////////////////////////
 
     panzer::Workset & workset = (*work_sets)[0];
-    workset.ghostedLinContainer = loc;
-    workset.linContainer = gl_loc;
     workset.alpha = 0.0;
     workset.beta = 2.0; // derivatives multiplied by 2
     workset.time = 0.0;

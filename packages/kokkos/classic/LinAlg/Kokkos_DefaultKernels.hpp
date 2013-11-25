@@ -55,6 +55,14 @@
 #endif
 
 namespace Kokkos {
+namespace Compat {
+  template<class DeviceType>
+  class KokkosDeviceWrapperNode;
+}
+class Cuda;
+}
+
+namespace KokkosClassic {
 
   /// \brief Traits class providing default kernel types for CRS,
   ///   block CRS and relaxation kernels.
@@ -157,6 +165,7 @@ namespace Kokkos {
   //
 
   class ThrustGPUNode;
+
 #if defined(HAVE_KOKKOSCLASSIC_CUSP)
   template <class Scalar, class Ordinal>
   struct DefaultKernels<Scalar,Ordinal,ThrustGPUNode> {
@@ -174,6 +183,9 @@ namespace Kokkos {
   };
 #endif
 #if defined(HAVE_KOKKOSCLASSIC_CUSPARSE)
+  // cuSPARSE only implements float and double kernels.  Attempts to
+  // refer to DefaultKernels<T,LO,NT> for T != void, float, or double
+  // will result in a compile-time error.
   template <>
   struct DefaultKernels<void,int,ThrustGPUNode> {
     typedef CUSPARSEOps<void,ThrustGPUNode> SparseOps;
@@ -186,8 +198,20 @@ namespace Kokkos {
   struct DefaultKernels<double,int,ThrustGPUNode> {
     typedef CUSPARSEOps<void,ThrustGPUNode> SparseOps;
   };
+  template <>
+  struct DefaultKernels<void,int,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > {
+    typedef CUSPARSEOps<void,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > SparseOps;
+  };
+  template <>
+  struct DefaultKernels<float,int,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > {
+    typedef CUSPARSEOps<void,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > SparseOps;
+  };
+  template <>
+  struct DefaultKernels<double,int,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > {
+    typedef CUSPARSEOps<void,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > SparseOps;
+  };
 #endif
 
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif // KOKKOS_DEFAULT_KERNELS_HPP

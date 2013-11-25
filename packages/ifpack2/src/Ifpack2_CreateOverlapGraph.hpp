@@ -1,28 +1,41 @@
 /*@HEADER
 // ***********************************************************************
-// 
+//
 //       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//  
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//  
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
 //@HEADER
 */
@@ -39,104 +52,164 @@
 
 namespace Ifpack2 {
 
-//! Constructs an overlapped graph for use with Ifpack2 preconditioners.
-/**
-  If OverlapLevel is 0, then the overlapped graph is the input_graph.
- */
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > CreateOverlapGraph(const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& input_graph, int OverlapLevel)
+/// \brief Construct an overlapped graph for use with Ifpack2 preconditioners.
+/// \tparam GraphType A specialization of Tpetra::CrsGraph.
+///
+/// \param inputGraph [in] The input graph.  We assume that its row
+///   Map is nonoverlapping.
+///
+/// \param overlapLevel [in] The level of overlap.  Zero means no
+///   overlap, in which case this function just returns the original
+///   \c inputGraph.
+template<class GraphType>
+Teuchos::RCP<const GraphType> 
+createOverlapGraph (const Teuchos::RCP<const GraphType>& inputGraph, 
+		    const int overlapLevel)
 {
-  typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> GraphType;
-  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> MapType;
-  typedef Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> ImportType;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  typedef typename GraphType::map_type map_type;
+  typedef Tpetra::Import<typename GraphType::local_ordinal_type, 
+    typename GraphType::global_ordinal_type, 
+    typename GraphType::node_type> import_type;
 
-  TEUCHOS_TEST_FOR_EXCEPTION(OverlapLevel < 0, std::runtime_error, "Ifpack2::CreateOverlapGraph: OverlapLevel must be >= 0.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    overlapLevel < 0, std::invalid_argument,
+    "Ifpack2::createOverlapGraph: overlapLevel must be >= 0, "
+    "but you specified overlapLevel = " << overlapLevel << ".");
 
-  Teuchos::RCP<GraphType> OverlapGraph;
+  const int numProcs = inputGraph->getMap ()->getComm ()->getSize ();
+  if (overlapLevel == 0 || numProcs < 2) {
+    return inputGraph;
+  }
 
-  const int numProcs = input_graph->getMap()->getComm()->getSize();
-  if (OverlapLevel == 0 || numProcs < 2) return input_graph;
+  RCP<const map_type> overlapRowMap = inputGraph->getRowMap ();
+  RCP<const map_type> domainMap = inputGraph->getDomainMap ();
+  RCP<const map_type> rangeMap = inputGraph->getRangeMap ();
 
-  Teuchos::RCP<const MapType> OverlapRowMap = input_graph->getRowMap();
+  RCP<GraphType> overlapGraph;
+  RCP<const GraphType> oldGraph;
+  RCP<const map_type> oldRowMap;
+  for (int level = 0; level < overlapLevel; ++level) {
+    oldGraph = overlapGraph;
+    oldRowMap = overlapRowMap;
 
-  Teuchos::RCP<const GraphType> OldGraph;
-  Teuchos::RCP<const MapType> OldRowMap;
-  const Teuchos::RCP<const MapType> DomainMap = input_graph->getDomainMap();
-  const Teuchos::RCP<const MapType> RangeMap = input_graph->getRangeMap();
+    RCP<const import_type> overlapImporter; 
+    if (level == 0) {
+      overlapImporter = inputGraph->getImporter ();
+    } else {
+      overlapImporter = oldGraph->getImporter ();
+    }
 
-  for (int level=0; level < OverlapLevel; level++) {
-    OldGraph = OverlapGraph;
-    OldRowMap = OverlapRowMap;
-
-    Teuchos::RCP<const ImportType> OverlapImporter; 
-    if(level==0) OverlapImporter = input_graph->getImporter();
-    else OverlapImporter = OldGraph->getImporter();
-
-    OverlapRowMap = OverlapImporter->getTargetMap();
-    if (level<OverlapLevel-1) {
-      OverlapGraph = Teuchos::rcp( new GraphType(OverlapRowMap, 0) );
+    overlapRowMap = overlapImporter->getTargetMap ();
+    if (level < overlapLevel - 1) {
+      overlapGraph = rcp (new GraphType (overlapRowMap, 0));
     }
     else {
       // On last iteration, we want to filter out all columns except those that
-      // correspond to rows in the graph.  This assures that our matrix is square
-      OverlapGraph = Teuchos::rcp( new GraphType(OverlapRowMap, OverlapRowMap, 0) );
+      // correspond to rows in the graph.  This ensures that our graph is square
+      overlapGraph = rcp (new GraphType (overlapRowMap, overlapRowMap, 0));
     }
 
-    OverlapGraph->doImport(*input_graph, *OverlapImporter, Tpetra::INSERT);
-    OverlapGraph->fillComplete(DomainMap, RangeMap);
+    overlapGraph->doImport (*inputGraph, *overlapImporter, Tpetra::INSERT);
+    overlapGraph->fillComplete (domainMap, rangeMap);
   }
 
-  return OverlapGraph;
+  return overlapGraph;
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > CreateOverlapMatrix(const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& input_graph, int OverlapLevel)
+/// \brief Construct an overlapped graph for use with Ifpack2 preconditioners.
+///
+/// \warning This function is DEPRECATED, because it does not comply
+///   with Tpetra and Ifpack2 naming standards.  Please call
+///   createOverlapGraph() instead.
+template<class GraphType>
+TEUCHOS_DEPRECATED Teuchos::RCP<const GraphType> 
+CreateOverlapGraph (const Teuchos::RCP<const GraphType>& inputGraph, 
+		    int OverlapLevel)
 {
-  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> MatrixType;
-  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> MapType;
-  typedef Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> ImportType;
+  return createOverlapGraph (inputGraph, OverlapLevel);
+}
 
-  TEUCHOS_TEST_FOR_EXCEPTION(OverlapLevel < 0, std::runtime_error, "Ifpack2::CreateOverlapMatrix: OverlapLevel must be >= 0.");
+/// \brief Construct an overlapped matrix for use with Ifpack2 preconditioners.
+/// \tparam MatrixType A specialization of Tpetra::CrsMatrix.
+///
+/// \param inputMatrix [in] The input matrix.  We assume that its row
+///   Map is nonoverlapping.
+///
+/// \param overlapLevel [in] The level of overlap.  Zero means no
+///   overlap, in which case this function just returns the original
+///   \c inputMatrix.
+template<class MatrixType>
+Teuchos::RCP<const MatrixType> 
+createOverlapMatrix (const Teuchos::RCP<const MatrixType>& inputMatrix, 
+		     const int overlapLevel)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  typedef typename MatrixType::map_type map_type;
+  typedef Tpetra::Import<typename MatrixType::local_ordinal_type,
+    typename MatrixType::global_ordinal_type,
+    typename MatrixType::node_type> import_type;
 
-  Teuchos::RCP<MatrixType> OverlapGraph;
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    overlapLevel < 0, std::invalid_argument, 
+    "Ifpack2::createOverlapMatrix: overlapLevel must be >= 0, "
+    "but you specified overlapLevel = " << overlapLevel << ".");
 
-  const int numProcs = input_graph->getMap()->getComm()->getSize();
-  if (OverlapLevel == 0 || numProcs < 2) return input_graph;
+  const int numProcs = inputMatrix->getMap ()->getComm ()->getSize ();
+  if (overlapLevel == 0 || numProcs < 2) {
+    return inputMatrix;
+  }
 
-  Teuchos::RCP<const MapType> OverlapRowMap = input_graph->getRowMap();
+  RCP<const map_type> overlapRowMap = inputMatrix->getRowMap ();
+  RCP<const map_type> domainMap = inputMatrix->getDomainMap ();
+  RCP<const map_type> rangeMap = inputMatrix->getRangeMap ();
 
-  Teuchos::RCP<const MatrixType> OldGraph;
-  Teuchos::RCP<const MapType> OldRowMap;
-  const Teuchos::RCP<const MapType> DomainMap = input_graph->getDomainMap();
-  const Teuchos::RCP<const MapType> RangeMap = input_graph->getRangeMap();
+  RCP<MatrixType> overlapMatrix;
+  RCP<const MatrixType> oldMatrix;
+  RCP<const map_type> oldRowMap;
+  for (int level = 0; level < overlapLevel; ++level) {
+    oldMatrix = overlapMatrix;
+    oldRowMap = overlapRowMap;
 
-  for (int level=0; level < OverlapLevel; level++) {
-    OldGraph = OverlapGraph;
-    OldRowMap = OverlapRowMap;
+    RCP<const import_type> overlapImporter;
+    if (level == 0) {
+      overlapImporter = inputMatrix->getGraph ()->getImporter ();
+    } else {
+      overlapImporter = oldMatrix->getGraph ()->getImporter ();
+    }
 
-    Teuchos::RCP<const ImportType> OverlapImporter; 
-    if(level==0) OverlapImporter = input_graph->getGraph()->getImporter();
-    else OverlapImporter = OldGraph->getGraph()->getImporter();
-
-    OverlapRowMap = OverlapImporter->getTargetMap();
-    if (level<OverlapLevel-1) {
-      OverlapGraph = Teuchos::rcp( new MatrixType(OverlapRowMap, 0) );
+    overlapRowMap = overlapImporter->getTargetMap ();
+    if (level < overlapLevel - 1) {
+      overlapMatrix = rcp (new MatrixType (overlapRowMap, 0));
     }
     else {
       // On last iteration, we want to filter out all columns except those that
-      // correspond to rows in the graph.  This assures that our matrix is square
-      OverlapGraph = Teuchos::rcp( new MatrixType(OverlapRowMap, OverlapRowMap, 0) );
+      // correspond to rows in the matrix.  This assures that our matrix is square
+      overlapMatrix = rcp (new MatrixType (overlapRowMap, overlapRowMap, 0));
     }
 
-    OverlapGraph->doImport(*input_graph, *OverlapImporter, Tpetra::INSERT);
-    OverlapGraph->fillComplete(DomainMap, RangeMap);
+    overlapMatrix->doImport (*inputMatrix, *overlapImporter, Tpetra::INSERT);
+    overlapMatrix->fillComplete (domainMap, rangeMap);
   }
 
-  return OverlapGraph;
+  return overlapMatrix;
 }
 
+/// \brief Construct an overlapped matrix for use with Ifpack2 preconditioners.
+///
+/// \warning This function is DEPRECATED, because it does not comply
+///   with Tpetra and Ifpack2 naming standards.  Please call
+///   createOverlapMatrix() instead.
+template<class MatrixType>
+TEUCHOS_DEPRECATED Teuchos::RCP<const MatrixType> 
+CreateOverlapMatrix (const Teuchos::RCP<const MatrixType>& inputGraph, 
+		     int overlapLevel)
+{
+  return createOverlapMatrix (inputGraph, overlapLevel);
+}
 
-
-}//namespace Ifpack2
+} // namespace Ifpack2
 
 #endif // IFPACK2_CREATEOVERLAPGRAPH_HPP

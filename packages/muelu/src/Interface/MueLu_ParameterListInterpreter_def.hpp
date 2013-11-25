@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -64,7 +64,6 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ParameterListInterpreter(const std::string & xmlFileName, const Teuchos::Comm<int> &comm) {
-    Monitor m(*this,"Read parameters from xml");
     Teuchos::ParameterList paramList;
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), comm);
     SetParameterList(paramList);
@@ -72,8 +71,6 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetParameterList(const Teuchos::ParameterList & paramList) {
-
-    Monitor mon(*this,"SetParameterList");
 
     /*
     std::cout << "Parameter List:" << std::endl
@@ -210,15 +207,11 @@ namespace MueLu {
 
           RCP<FactoryManagerBase> m = rcp(new FactoryManager(levelFactoryMap));
 
-          if (startLevel >= 0) {
+          if (startLevel >= 0)
             this->AddFactoryManager(startLevel, numDesiredLevel, m);
-          } else if (startLevel == -1) { // -1 == coarsest level
-            this->SetFactoryManagerCoarsestLevel(m);
-          } else {
+          else
             TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::ParameterListInterpreter():: invalid level id");
-          }
         } /* TODO: else { } */
-
       }
     }
   }

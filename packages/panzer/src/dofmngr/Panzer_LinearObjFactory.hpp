@@ -188,10 +188,24 @@ public:
      *                            <code>globalBCRows</code> then those rows in both the
      *                            matrix and the residual vector are devided by the corresponding
      *                            entry in the <code>globalBCRows</code>.
+     * \param[in] zeroVectorRows Instead of preserving (and scaling) the vector rows, setting this
+                                 to true will zero them instead. 
      */
    virtual void adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                                              const LinearObjContainer & globalBCRows,
-                                             LinearObjContainer & ghostedObjs) const = 0;
+                                             LinearObjContainer & ghostedObjs,
+                                             bool zeroVectorRows=false) const = 0;
+
+   /** Adjust a vector by replacing selected rows with the value of the evaluated
+     * dirichlet conditions. This is handled through the standard container mechanism.
+     *
+     * \param[in] counter Contains a counter vector (the "x" vector) indicating which rows contain 
+     *                    dirichlet conditions by having a non zero entry. The dirichlet condition
+     *                    values are specified in the "f" vector.
+     * \param[in,out] result The vector to be modifed is the "f" vector.
+     */
+   virtual void applyDirichletBCs(const LinearObjContainer & counter,
+                                  LinearObjContainer & result) const = 0;
 
    /** Acess to the MPI Comm used in constructing this LOF.
      */

@@ -196,7 +196,6 @@ compare_services(nssi_service &service1, nssi_service &service2)
                 goto out;
             }
             break;
-        case NNTI_TRANSPORT_LUC:
         case NNTI_TRANSPORT_LOCAL:
         case NNTI_TRANSPORT_NULL:
             break;
@@ -261,7 +260,6 @@ compare_services(nssi_service &service1, nssi_service &service2)
                 goto out;
             }
             break;
-        case NNTI_TRANSPORT_LUC:
         case NNTI_TRANSPORT_LOCAL:
         case NNTI_TRANSPORT_NULL:
             break;
@@ -381,7 +379,6 @@ compare_services(nssi_service &service1, nssi_service &service2)
                 goto out;
             }
             break;
-        case NNTI_TRANSPORT_LUC:
         case NNTI_TRANSPORT_LOCAL:
         case NNTI_TRANSPORT_NULL:
             break;

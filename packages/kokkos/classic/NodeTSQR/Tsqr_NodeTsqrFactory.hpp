@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -50,6 +50,7 @@
 #endif // HAVE_KOKKOSCLASSIC_TBB
 
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
+#  include <Kokkos_TPINode.hpp>
 #  include <Tsqr_KokkosNodeTsqr.hpp>
 #endif // HAVE_KOKKOSCLASSIC_THREADPOOL
 
@@ -108,15 +109,15 @@ namespace TSQR {
     ///   NodeTsqr implementation.
     static Teuchos::RCP<node_tsqr_type>
     makeNodeTsqr (const Teuchos::RCP<node_type>& node,
-		  const Teuchos::RCP<Teuchos::ParameterList>& plist)
+                  const Teuchos::RCP<Teuchos::ParameterList>& plist)
     {
       // This method is implemented with correct behavior for those
       // Kokkos Node types for which we have implemented an intranode
       // TSQR implementation.
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-				 "TSQR is not supported on your Kokkos Node type "
-				 << Teuchos::TypeNameTraits<node_type>::name()
-				 << ".");
+                                 "TSQR is not supported on your Kokkos Node type "
+                                 << Teuchos::TypeNameTraits<node_type>::name()
+                                 << ".");
     }
 
     /// \brief Prepare the NodeTsqr instance for use by setting its Kokkos Node instance.
@@ -129,28 +130,28 @@ namespace TSQR {
     /// Precondition: ! nodeTsqr.is_null() && ! node.is_null().
     ///
     /// Postcondition: nodeTsqr->ready() == true.
-    static void 
+    static void
     prepareNodeTsqr (const Teuchos::RCP<node_tsqr_type>& nodeTsqr,
-		     const Teuchos::RCP<node_type>& node) 
+                     const Teuchos::RCP<node_type>& node)
     {
       // This method is implemented with correct behavior for those
       // Kokkos Node types for which we have implemented an intranode
       // TSQR implementation.
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-				 "TSQR is not supported on your Kokkos Node type "
-				 << Teuchos::TypeNameTraits<node_type>::name()
-				 << ".");
+                                 "TSQR is not supported on your Kokkos Node type "
+                                 << Teuchos::TypeNameTraits<node_type>::name()
+                                 << ".");
     }
   };
 
 #ifdef HAVE_KOKKOSCLASSIC_TBB
   //
-  // Specialization of NodeTsqrFactory for Kokkos::TBBNode.
+  // Specialization of NodeTsqrFactory for KokkosClassic::TBBNode.
   //
   template<class Scalar, class LocalOrdinal>
-  class NodeTsqrFactory<Kokkos::TBBNode, Scalar, LocalOrdinal> {
+  class NodeTsqrFactory<KokkosClassic::TBBNode, Scalar, LocalOrdinal> {
   public:
-    typedef Kokkos::TBBNode node_type;
+    typedef KokkosClassic::TBBNode node_type;
     typedef Teuchos::RCP<node_type> node_ptr;
     typedef TBB::TbbTsqr<LocalOrdinal, Scalar> node_tsqr_type;
 
@@ -172,15 +173,15 @@ namespace TSQR {
 
     static Teuchos::RCP<node_tsqr_type>
     makeNodeTsqr (const Teuchos::RCP<node_type>& node,
-		  const Teuchos::RCP<Teuchos::ParameterList>& params)
+                  const Teuchos::RCP<Teuchos::ParameterList>& params)
     {
       (void) node;
       return Teuchos::rcp (new node_tsqr_type (params));
     }
 
-    static void 
+    static void
     prepareNodeTsqr (const Teuchos::RCP<node_tsqr_type>& nodeTsqr,
-		     const Teuchos::RCP<node_type>& node) 
+                     const Teuchos::RCP<node_type>& node)
     {
       // TbbTsqr interacts directly with TBB and doesn't use the
       // Kokkos Node.  Thus, the TbbTsqr instance doesn't need to have
@@ -193,12 +194,12 @@ namespace TSQR {
 
 #if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
   //
-  // Specialization of NodeTsqrFactory for Kokkos::TPINode.
+  // Specialization of NodeTsqrFactory for KokkosClassic::TPINode.
   //
   template<class Scalar, class LocalOrdinal>
-  class NodeTsqrFactory<Kokkos::TPINode, Scalar, LocalOrdinal> {
+  class NodeTsqrFactory<KokkosClassic::TPINode, Scalar, LocalOrdinal> {
   public:
-    typedef Kokkos::TPINode node_type;
+    typedef KokkosClassic::TPINode node_type;
     typedef Teuchos::RCP<node_type> node_ptr;
     typedef KokkosNodeTsqr<LocalOrdinal, Scalar, node_type> node_tsqr_type;
 
@@ -220,14 +221,14 @@ namespace TSQR {
 
     static Teuchos::RCP<node_tsqr_type>
     makeNodeTsqr (const Teuchos::RCP<node_type>& node,
-		  const Teuchos::RCP<Teuchos::ParameterList>& params)
+                  const Teuchos::RCP<Teuchos::ParameterList>& params)
     {
       return Teuchos::rcp (new node_tsqr_type (node, params));
     }
 
-    static void 
+    static void
     prepareNodeTsqr (const Teuchos::RCP<node_tsqr_type>& nodeTsqr,
-		     const Teuchos::RCP<node_type>& node) 
+                     const Teuchos::RCP<node_type>& node)
     {
       // KokkosNodeTsqr needs a pointer to the Kokkos Node instance.
       nodeTsqr->setNode (node);
@@ -236,12 +237,12 @@ namespace TSQR {
 #endif // defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
 
   //
-  // Specialization of NodeTsqrFactory for Kokkos::SerialNode.
+  // Specialization of NodeTsqrFactory for KokkosClassic::SerialNode.
   //
   template<class Scalar, class LocalOrdinal>
-  class NodeTsqrFactory<Kokkos::SerialNode, Scalar, LocalOrdinal> {
+  class NodeTsqrFactory<KokkosClassic::SerialNode, Scalar, LocalOrdinal> {
   public:
-    typedef Kokkos::SerialNode node_type;
+    typedef KokkosClassic::SerialNode node_type;
     typedef Teuchos::RCP<node_type> node_ptr;
     typedef SequentialTsqr<LocalOrdinal, Scalar> node_tsqr_type;
 
@@ -263,15 +264,15 @@ namespace TSQR {
 
     static Teuchos::RCP<node_tsqr_type>
     makeNodeTsqr (const Teuchos::RCP<node_type>& node,
-		  const Teuchos::RCP<Teuchos::ParameterList>& params)
+                  const Teuchos::RCP<Teuchos::ParameterList>& params)
     {
       (void) node;
       return rcp (new node_tsqr_type (params));
     }
 
-    static void 
+    static void
     prepareNodeTsqr (const Teuchos::RCP<node_tsqr_type>& nodeTsqr,
-		     const Teuchos::RCP<node_type>& node) 
+                     const Teuchos::RCP<node_type>& node)
     {
       // SequentialTsqr doesn't need the Kokkos Node instance.
       (void) nodeTsqr;

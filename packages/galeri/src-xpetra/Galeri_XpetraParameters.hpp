@@ -105,11 +105,19 @@ namespace Galeri {
           ny_ = nz_ = -1;
           numGlobalElements = nx_;
 
-        } else if (matrixType_ == "Laplace2D" || matrixType_ == "Elasticity2D" || matrixType_ == "Helmholtz2D") {
+        } else if (matrixType_ == "Laplace2D"    ||
+                   matrixType_ == "Star2D"       ||
+                   matrixType_ == "BigStar2D"    ||
+                   matrixType_ == "Elasticity2D" ||
+                   matrixType_ == "Helmholtz2D") {
           nz_ = -1;
           numGlobalElements = nx_*ny_;
 
-        } else if (matrixType_ == "Laplace3D" || matrixType_ == "Elasticity3D" || matrixType_ == "Helmholtz3D") {
+        } else if (matrixType_ == "Laplace3D"    ||
+                   matrixType_ == "Brick3D"      ||
+                   matrixType_ == "BigStar2D"    ||
+                   matrixType_ == "Elasticity3D" ||
+                   matrixType_ == "Helmholtz3D") {
           numGlobalElements = nx_*ny_*nz_;
 
         } //TODO else throw

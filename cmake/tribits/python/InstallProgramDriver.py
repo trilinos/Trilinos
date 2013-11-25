@@ -95,7 +95,7 @@ which is set to /usr/local/bin by default.  For example, you might just type:
 
   $ SOME_DIR/"""+scriptName+""" --install-dir=$HOME --do-all
 
-and then it would install "+productName+" and the other executables in $HOME/bin.
+and then it would install """+productName+""" and the other executables in $HOME/bin.
 NOTE: You will have to update your PATH variable to include whatever directory
 you choose to install """+productName+""" in.
 

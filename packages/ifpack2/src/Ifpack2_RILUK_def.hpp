@@ -1,30 +1,44 @@
-//@HEADER
+/*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2010) Sandia Corporation
+//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ***********************************************************************
 //@HEADER
+*/
 
 #ifndef IFPACK2_CRSRILUK_DEF_HPP
 #define IFPACK2_CRSRILUK_DEF_HPP
@@ -34,24 +48,24 @@ namespace Ifpack2 {
 //==============================================================================
 template<class MatrixType>
 RILUK<MatrixType>::RILUK(const Teuchos::RCP<const MatrixType>& Matrix_in)
-  : isOverlapped_(false),
-    Graph_(),
+  : isOverlapped_ (false),
+    Graph_ (),
     A_(Matrix_in),
-    UseTranspose_(false),
-    LevelOfFill_(0),
-    LevelOfOverlap_(0),
-    NumMyDiagonals_(0),
-    isAllocated_(false),
-    isInitialized_(false),
-    numInitialize_(0),
-    numCompute_(0),
-    numApply_(0),
-    Factored_(false),
-    RelaxValue_(0.0),
-    Athresh_(0.0),
-    Rthresh_(1.0),
-    Condest_(-1.0),
-    OverlapMode_(Tpetra::REPLACE)
+    UseTranspose_ (false),
+    LevelOfFill_ (0),
+    LevelOfOverlap_ (0),
+    NumMyDiagonals_ (0),
+    isAllocated_ (false),
+    isInitialized_ (false),
+    numInitialize_ (0),
+    numCompute_ (0),
+    numApply_ (0),
+    Factored_ (false),
+    RelaxValue_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
+    Athresh_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
+    Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ()),
+    Condest_ (- Teuchos::ScalarTraits<magnitude_type>::one () ),
+    OverlapMode_ (Tpetra::REPLACE)
 {
 }
 
@@ -312,7 +326,7 @@ void RILUK<MatrixType>::initialize() {
 
   if (Graph_ != Teuchos::null) return;
 
-  Graph_ = Teuchos::rcp(new Ifpack2::IlukGraph<local_ordinal_type,global_ordinal_type,node_type>(A_->getCrsGraph(), LevelOfFill_, LevelOfOverlap_));
+  Graph_ = Teuchos::rcp(new Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type,mat_vec_type> >(A_->getCrsGraph(), LevelOfFill_, LevelOfOverlap_));
 
   Graph_->constructFilledGraph();
 
@@ -596,75 +610,81 @@ void RILUK<MatrixType>::compute() {
   ++numCompute_;
 }
 
-//=============================================================================
+
 template<class MatrixType>
-void RILUK<MatrixType>::apply(
-       const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-             Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-             Teuchos::ETransp mode, scalar_type alpha, scalar_type beta) const
+void
+RILUK<MatrixType>::
+apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+       Teuchos::ETransp mode,
+       scalar_type alpha,
+       scalar_type beta) const
 {
   typedef Teuchos::ScalarTraits<scalar_type> STS;
-
-  TEUCHOS_TEST_FOR_EXCEPTION(!isComputed(), std::runtime_error,
-    "Ifpack2::RILUK::apply() ERROR, compute() hasn't been called yet.");
+  typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    alpha != STS::one (), 
-    std::logic_error,
-    "Ifpack2::RILUK::apply() does not currently allow alpha != 1.");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    beta != STS::zero (), 
-    std::logic_error,
-    "Ifpack2::RILUK::apply() does not currently allow zero != 0.");
+    ! isComputed (), std::runtime_error,
+    "Ifpack2::RILUK::apply: If you have not yet called compute(), "
+    "you must call compute() before calling this method.");
 
-//
-// This function finds Y such that
-// LDU Y = X, or
-// U(trans) D L(trans) Y = X
-// for multiple RHS
-//
+  if (alpha == STS::one () && beta == STS::zero ()) {
+    //
+    // This function finds Y such that
+    // LDU Y = X, or
+    // U(trans) D L(trans) Y = X
+    // for multiple RHS
+    //
+    // First generate X and Y as needed for this function
+    Teuchos::RCP<const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > X1;
+    Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Y1;
+    generateXY (mode, X, Y, X1, Y1);
 
-  // First generate X and Y as needed for this function
-  Teuchos::RCP<const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > X1;
-  Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Y1;
-  generateXY(mode, X, Y, X1, Y1);
-
-  scalar_type one = Teuchos::ScalarTraits<scalar_type>::one();
-  scalar_type zero = Teuchos::ScalarTraits<scalar_type>::zero();
-
-  if (mode == Teuchos::NO_TRANS) {
-
-    L_->localSolve(*X1, *Y1,mode);
-    Y1->elementWiseMultiply(one, *D_, *Y1, zero); // y = D*y (D_ has inverse of diagonal)
-    U_->localSolve(*Y1, *Y1,mode); // Solve Uy = y
-    if (isOverlapped_) {
-      // Export computed Y values if needed
-      Y.doExport(*Y1,*L_->getGraph()->getExporter(), OverlapMode_);
+    const scalar_type one = Teuchos::ScalarTraits<scalar_type>::one();
+    const scalar_type zero = Teuchos::ScalarTraits<scalar_type>::zero();
+    if (mode == Teuchos::NO_TRANS) {
+      L_->localSolve (*X1, *Y1,mode);
+      Y1->elementWiseMultiply (one, *D_, *Y1, zero); // y = D*y (D_ has inverse of diagonal)
+      U_->localSolve (*Y1, *Y1, mode); // Solve Uy = y
+      if (isOverlapped_) {
+        // Export computed Y values if needed
+        Y.doExport (*Y1, *L_->getGraph ()->getExporter (), OverlapMode_);
+      }
     }
+    else {
+      U_->localSolve (*X1, *Y1, mode); // Solve Uy = y
+      Y1->elementWiseMultiply (one, *D_, *Y1, zero); // y = D*y (D_ has inverse of diagonal)
+      L_->localSolve (*Y1, *Y1,mode);
+      if (isOverlapped_) {
+        // Export computed Y values if needed
+        Y.doExport (*Y1, *U_->getGraph ()->getImporter (), OverlapMode_);
+      }
+    }
+    ++numApply_; // inside the 'if', so it's not called twice
   }
-  else {
-    U_->localSolve(*X1, *Y1,mode); // Solve Uy = y
-    Y1->elementWiseMultiply(one, *D_, *Y1, zero); // y = D*y (D_ has inverse of diagonal)
-    L_->localSolve(*Y1, *Y1,mode);
-    if (isOverlapped_) {Y.doExport(*Y1,*U_->getGraph()->getImporter(), OverlapMode_);} // Export computed Y values if needed
+  else { // alpha != 1 or beta != 0
+    MV Y_tmp (Y.getMap (), Y.getNumVectors ());
+    apply (X, Y_tmp, mode);
+    Y.update (alpha, Y_tmp, beta);
   }
-
-  ++numApply_;
 }
 
 //=============================================================================
 template<class MatrixType>
 int RILUK<MatrixType>::Multiply(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
                               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-            Teuchos::ETransp mode) const {
+            Teuchos::ETransp mode) const
+{
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
+
 //
 // This function finds X such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
 //
 
   // First generate X and Y as needed for this function
-  Teuchos::RCP<const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > X1;
-  Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Y1;
-  generateXY(mode, X, Y, X1, Y1);
+  Teuchos::RCP<const MV> X1;
+  Teuchos::RCP<MV> Y1;
+  generateXY (mode, X, Y, X1, Y1);
 
 //  Epetra_Flops * counter = this->GetFlopCounter();
 //  if (counter!=0) {
@@ -673,45 +693,53 @@ int RILUK<MatrixType>::Multiply(const Tpetra::MultiVector<scalar_type,local_ordi
 //    U_->SetFlopCounter(*counter);
 //  }
 
+  const scalar_type zero = Teuchos::ScalarTraits<scalar_type>::zero ();
+  const scalar_type one = Teuchos::ScalarTraits<scalar_type>::one ();
+
   if (!mode == Teuchos::NO_TRANS) {
-    U_->apply(*X1, *Y1,mode); //
-    Y1->update(1.0, *X1, 1.0); // Y1 = Y1 + X1 (account for implicit unit diagonal)
-    Y1->elementWiseMultiply(1.0, *D_, *Y1, 0.0); // y = D*y (D_ has inverse of diagonal)
-    Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> Y1temp(*Y1); // Need a temp copy of Y1
-    L_->apply(Y1temp, *Y1,mode);
-    Y1->update(1.0, Y1temp, 1.0); // (account for implicit unit diagonal)
-    if (isOverlapped_) {Y.doExport(*Y1,*L_->getGraph()->getExporter(), OverlapMode_);} // Export computed Y values if needed
+    U_->apply (*X1, *Y1,mode); //
+    Y1->update (one, *X1, one); // Y1 = Y1 + X1 (account for implicit unit diagonal)
+    Y1->elementWiseMultiply (one, *D_, *Y1, zero); // y = D*y (D_ has inverse of diagonal)
+    MV Y1temp (*Y1); // Need a temp copy of Y1
+    L_->apply (Y1temp, *Y1,mode);
+    Y1->update (one, Y1temp, one); // (account for implicit unit diagonal)
+    if (isOverlapped_) {
+      Y.doExport (*Y1, *L_->getGraph ()->getExporter (), OverlapMode_);
+    } // Export computed Y values if needed
   }
   else {
-
-    L_->apply(*X1, *Y1,mode);
-    Y1->update(1.0, *X1, 1.0); // Y1 = Y1 + X1 (account for implicit unit diagonal)
-    Y1->elementWiseMultiply(1, *D_, *Y1, 0); // y = D*y (D_ has inverse of diagonal)
-    Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> Y1temp(*Y1); // Need a temp copy of Y1
-    U_->apply(Y1temp, *Y1,mode);
-    Y1->update(1.0, Y1temp, 1.0); // (account for implicit unit diagonal)
-    if (isOverlapped_) {Y.doExport(*Y1,*L_->getGraph()->getExporter(), OverlapMode_);}
+    L_->apply (*X1, *Y1,mode);
+    Y1->update (one, *X1, one); // Y1 = Y1 + X1 (account for implicit unit diagonal)
+    Y1->elementWiseMultiply (one, *D_, *Y1, zero); // y = D*y (D_ has inverse of diagonal)
+    MV Y1temp (*Y1); // Need a temp copy of Y1
+    U_->apply (Y1temp, *Y1,mode);
+    Y1->update (one, Y1temp, one); // (account for implicit unit diagonal)
+    if (isOverlapped_) {
+      Y.doExport(*Y1, *L_->getGraph ()->getExporter (), OverlapMode_);
+    }
   }
-  return(0);
+  return 0;
 }
 
 //=============================================================================
 template<class MatrixType>
 typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
-RILUK<MatrixType>::computeCondEst(Teuchos::ETransp mode) const {
+RILUK<MatrixType>::computeCondEst(Teuchos::ETransp mode) const
+{
+  typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vec_type;
 
-  if (Condest_>=0.0) {
+  if (Condest_ != - Teuchos::ScalarTraits<magnitude_type>::one() ) {
     return Condest_;
   }
   // Create a vector with all values equal to one
-  Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> Ones(U_->getDomainMap());
-  Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> OnesResult(L_->getRangeMap());
-  Ones.putScalar(1.0);
+  vec_type Ones (U_->getDomainMap ());
+  vec_type OnesResult (L_->getRangeMap ());
+  Ones.putScalar (Teuchos::ScalarTraits<scalar_type>::one ());
 
-  apply(Ones, OnesResult,mode); // Compute the effect of the solve on the vector of ones
-  OnesResult.abs(OnesResult); // Make all values non-negative
-  Teuchos::Array<magnitude_type> norms(1);
-  OnesResult.normInf(norms());
+  apply (Ones, OnesResult,mode); // Compute the effect of the solve on the vector of ones
+  OnesResult.abs (OnesResult); // Make all values non-negative
+  Teuchos::Array<magnitude_type> norms (1);
+  OnesResult.normInf (norms ());
   Condest_ = norms[0];
   return Condest_;
 }

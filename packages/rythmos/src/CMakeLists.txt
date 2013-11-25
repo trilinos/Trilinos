@@ -45,24 +45,27 @@ IF (${PACKAGE_NAME}_ENABLE_TESTS)
   SET(HEADERS)
   SET(SOURCES)
 
-  INCLUDE_DIRECTORIES( 
+  INCLUDE_DIRECTORIES(
     ${PACKAGE_SOURCE_DIR}/test/SinCos
     ${PACKAGE_SOURCE_DIR}/test/PolynomialModel
+    ${PACKAGE_SOURCE_DIR}/test/LogTime
     )
 
   APPEND_SET(HEADERS
     ${PACKAGE_SOURCE_DIR}/test/SinCos/SinCosModel.hpp
     ${PACKAGE_SOURCE_DIR}/test/PolynomialModel/PolynomialModel.hpp
+    ${PACKAGE_SOURCE_DIR}/test/LogTime/LogTimeModel.hpp
     )
 
   APPEND_SET(SOURCES
     ${PACKAGE_SOURCE_DIR}/test/SinCos/SinCosModel.cpp
     ${PACKAGE_SOURCE_DIR}/test/PolynomialModel/PolynomialModel.cpp
+    ${PACKAGE_SOURCE_DIR}/test/LogTime/LogTimeModel.cpp
     )
 
   ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Sacado)
   IF (${PACKAGE_NAME}_ENABLE_Sacado)
-    INCLUDE_DIRECTORIES( 
+    INCLUDE_DIRECTORIES(
       ${PACKAGE_SOURCE_DIR}/test/VanderPol
       )
 
@@ -78,15 +81,15 @@ IF (${PACKAGE_NAME}_ENABLE_TESTS)
   ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_EpetraExt)
   IF (${PACKAGE_NAME}_ENABLE_EpetraExt)
 
-    INCLUDE_DIRECTORIES( 
+    INCLUDE_DIRECTORIES(
       REQUIRED_DURING_INSTALLATION_TESTING
       ${PACKAGE_SOURCE_DIR}/../epetraext/example/model_evaluator/DiagonalTransient
       )
-  
+
     APPEND_SET(HEADERS
       ${PACKAGE_SOURCE_DIR}/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.hpp
       )
-  
+
     APPEND_SET(SOURCES
       ${PACKAGE_SOURCE_DIR}/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp
       )
@@ -95,19 +98,19 @@ IF (${PACKAGE_NAME}_ENABLE_TESTS)
 
   ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_GAASP)
   IF (${PACKAGE_NAME}_ENABLE_GAASP)
-    INCLUDE_DIRECTORIES( 
+    INCLUDE_DIRECTORIES(
       ${PACKAGE_SOURCE_DIR}/adapters/gaasp/example
       )
-  
+
     APPEND_SET(HEADERS
       ${PACKAGE_SOURCE_DIR}/adapters/gaasp/example/LorenzModel.hpp
       )
-  
+
     APPEND_SET(SOURCES
       ${PACKAGE_SOURCE_DIR}/adapters/gaasp/example/LorenzModel.cpp
       )
 
-  ENDIF()  
+  ENDIF()
 
   TRIBITS_ADD_LIBRARY(
     rythmos_test_models
@@ -117,7 +120,7 @@ IF (${PACKAGE_NAME}_ENABLE_TESTS)
     DEPLIBS rythmos
     )
 
-ENDIF()  
+ENDIF()
 
 
 

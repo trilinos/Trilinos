@@ -87,11 +87,16 @@ filename "rab_commands.tex"
 \end_layout
 
 \begin_layout Title
-Rythmos: Solution and Analysis Package for Differential-Algebraic Equations
- (DAEs) and Ordinary-Differential Equations (ODEs)
+Rythmos: Solution and Analysis Package for Differential-Algebraic and Ordinary-D
+ifferential Equations
 \end_layout
 
 \begin_layout Author
+Curtis C.
+ Ober, Numerical Analysis and Applications
+\begin_inset Newline newline
+\end_inset
+
 Roscoe A.
  Bartlett, Oak Ridge National Laboratories
 \begin_inset Newline newline
@@ -104,16 +109,36 @@ Todd S.
 
 Roger P.
  Pawlowski, Multiphysics Simulation Technology
-\begin_inset Newline newline
-\end_inset
-
-Curtis C.
- Ober, Numerical Analysis and Applications
 \end_layout
 
 \begin_layout Abstract
-This document contains the basic theory on the time integrators; examples
- and usage; and software design and developer's guide for Rythmos.
+\begin_inset CommandInset include
+LatexCommand input
+filename "RythmosAbstract.lyx"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+\begin_inset Newpage newpage
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand include
+filename "RythmosAcknowledgment.lyx"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 \begin_inset Newpage newpage
 \end_inset
 
@@ -214,11 +239,28 @@ filename "RythmosConvergenceTestExamples.lyx"
 Developer's Guide
 \end_layout
 
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand include
+filename "RythmosDevelopersGuide.lyx"
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Part
 Back Matter
 \end_layout
 
 \begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand include
+filename "RythmosExtraCitations.lyx"
+
+\end_inset
+
+
 \begin_inset Newpage newpage
 \end_inset
 

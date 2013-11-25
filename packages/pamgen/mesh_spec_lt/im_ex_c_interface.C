@@ -17,9 +17,8 @@ int im_ex_get_init (int   im_exoid,
 		    int  *num_side_sets)
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;
-  
   const std::string tit = ms->Title();
   strcpy(title,tit.c_str());
   *num_dim = ms->getMSI(ms_lt::Mesh_Specification::DIM);
@@ -42,7 +41,7 @@ int im_ex_inquire (int   exoid,
 {
   char  errmsg[MAX_ERR_LENGTH];
   
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;
   
   
@@ -189,7 +188,7 @@ int im_ex_get_coord (int exoid,
 		     void *z_coor)
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;
 
   int num_nds = ms->getMSI(ms_lt::Mesh_Specification::NUM_NODES);
@@ -214,7 +213,7 @@ int im_ex_get_coord_names (int    exoid,
 			   char **coord_names)
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;
 
   std::string * cnames =  ms->getMSPSA(ms_lt::Mesh_Specification::COORDINATE_NAMES);//ms->Coordinate_Names();
@@ -230,7 +229,7 @@ int im_ex_get_coord_names (int    exoid,
 int im_ex_get_map (int  exoid, int *elem_map)
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;
 
   const long long * the_map = ms->getMSP(ms_lt::Mesh_Specification::ELEM_ORDER_MAP);
@@ -245,7 +244,7 @@ int im_ex_get_elem_num_map (int  exoid,
 			    int *elem_map)
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;
 
   int num_elem = ms->getMSI(ms_lt::Mesh_Specification::NUM_ELEMENTS);
@@ -261,7 +260,7 @@ int im_ex_get_node_num_map (int  exoid,
 			    int *node_map)
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;
 
   int num_nds = ms->getMSI(ms_lt::Mesh_Specification::NUM_NODES);
@@ -276,7 +275,7 @@ int im_ex_get_node_num_map (int  exoid,
 int im_ex_get_elem_blk_ids (int  exoid, int *ids)
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;
 
   int nb = ms->getMSI(ms_lt::Mesh_Specification::NUM_BLOCKS);
@@ -296,7 +295,7 @@ int im_ex_get_elem_block (int   exoid,
 			  int  *num_attr)
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;
 
   int nb = ms->getMSI(ms_lt::Mesh_Specification::NUM_BLOCKS);
@@ -328,7 +327,7 @@ int im_ex_get_elem_block (int   exoid,
 // 			 int   elem_blk_id,
 // 			 void *attrib)
 // {
-//   ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+//   ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
 //   if(!ms)return -1;
 //   int nb = ms->getMSI(ms_lt::Mesh_Specification::NUM_BLOCKS);
  
@@ -342,7 +341,7 @@ int im_ex_get_elem_conn (int   exoid,
 			 int  *connect)
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;
 
   int nb = ms->getMSI(ms_lt::Mesh_Specification::NUM_BLOCKS);
@@ -369,7 +368,7 @@ int im_ex_get_node_set_ids (int  exoid,
 			    int *ids)
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;
 
   int nns = ms->getMSI(ms_lt::Mesh_Specification::NUM_NODE_SETS);
@@ -383,7 +382,7 @@ int im_ex_get_node_set_ids (int  exoid,
 int get_ss_index(int ssid)
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;
 
   int nss = ms->getMSI(ms_lt::Mesh_Specification::NUM_SIDE_SETS);
@@ -399,7 +398,7 @@ int get_ss_index(int ssid)
 int get_ns_index(int nsid)
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;
 
   int nns = ms->getMSI(ms_lt::Mesh_Specification::NUM_NODE_SETS);
@@ -416,7 +415,7 @@ int im_ex_get_side_set_ids (int  exoid,
 			    int *ids)
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;
   int nss = ms->getMSI(ms_lt::Mesh_Specification::NUM_SIDE_SETS);
   
@@ -432,7 +431,7 @@ int im_ex_get_node_set_param (int exoid,
 			      int * num_dist_in_set)
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;
   
   int ns_index = get_ns_index(node_set_id);
@@ -454,7 +453,7 @@ int im_ex_get_side_set_param (int exoid,
 			      int * num_dist_in_set)
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;
   
   int ss_index = get_ss_index(side_set_id);
@@ -475,7 +474,7 @@ int im_ex_get_node_set (int   exoid,
 			int  *node_set_node_list)
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;
   
   int ns_index = get_ns_index(node_set_id);
@@ -497,7 +496,7 @@ int im_ex_get_side_set (int   exoid,
 			int  *side_set_side_list)
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;
   
   int ss_index = get_ss_index(side_set_id);
@@ -522,7 +521,7 @@ int im_ex_get_side_set_node_list(int exoid,
 				 int *side_set_node_list)
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;
   
   int ss_index = get_ss_index(side_set_id);
@@ -548,7 +547,7 @@ int im_ex_get_qa (int exoid,
 		  char *qa_record[][4])
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;
   
   int num_qa = ms->getMSI(ms_lt::Mesh_Specification::NUM_QA_RECORDS);
@@ -570,7 +569,7 @@ int im_ex_get_qa (int exoid,
 int im_ex_get_info (int exoid, char **info)
 /*****************************************************************************/
 {
-  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::static_storage;
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
   if(!ms)return -1;
 
   int num_info = ms->getMSI(ms_lt::Mesh_Specification::NUM_INFO_RECORDS);
@@ -580,6 +579,49 @@ int im_ex_get_info (int exoid, char **info)
     strcpy(info[i],info_strings[i].c_str());
   }
   
+  
+  return 0;
+}
+/*****************************************************************************/
+int im_ex_get_elem_blk_parent_mesh (int  exoid, int *ids)
+/*****************************************************************************/
+{
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
+  if(!ms)return -1;
+
+  int nb = ms->getMSI(ms_lt::Mesh_Specification::NUM_BLOCKS);
+  const long long * bid_arr = ms->getMSP(ms_lt::Mesh_Specification::BLOCK_PARENT_MESHES);
+
+  for(int i = 0; i < nb; i ++)ids[i] = bid_arr[i];
+  
+  return 0;
+}
+
+/*****************************************************************************/
+int im_ex_get_ns_parent_mesh (int  exoid, int *ids)
+/*****************************************************************************/
+{
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
+  if(!ms)return -1;
+
+  int nb = ms->getMSI(ms_lt::Mesh_Specification::NUM_NODE_SETS);
+  const long long * bid_arr = ms->getMSP(ms_lt::Mesh_Specification::NODESET_PARENT_MESHES);
+
+  for(int i = 0; i < nb; i ++)ids[i] = bid_arr[i];
+  
+  return 0;
+}
+/*****************************************************************************/
+int im_ex_get_ss_parent_mesh (int  exoid, int *ids)
+/*****************************************************************************/
+{
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
+  if(!ms)return -1;
+
+  int nb = ms->getMSI(ms_lt::Mesh_Specification::NUM_SIDE_SETS);
+  const long long * bid_arr = ms->getMSP(ms_lt::Mesh_Specification::SIDESET_PARENT_MESHES);
+
+  for(int i = 0; i < nb; i ++)ids[i] = bid_arr[i];
   
   return 0;
 }

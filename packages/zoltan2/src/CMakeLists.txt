@@ -50,6 +50,9 @@ APPEND_GLOB(SOURCES ${DIR}/algorithms/order/*.cpp)
 APPEND_GLOB(HEADERS ${DIR}/algorithms/partition/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/algorithms/partition/*.cpp)
 
+APPEND_GLOB(HEADERS ${DIR}/algorithms/match/*.hpp)
+APPEND_GLOB(SOURCES ${DIR}/algorithms/match/*.cpp)
+
 APPEND_GLOB(HEADERS ${DIR}/environment/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/environment/*.cpp)
 
@@ -80,6 +83,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 # for zoltan2 header files
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/algorithms/partition)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/algorithms/order)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/algorithms/match)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/environment)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/input)

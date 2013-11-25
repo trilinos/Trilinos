@@ -87,8 +87,6 @@ namespace panzer {
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs);
 
-  bool testEqualityOfEpetraVectorValues(Epetra_Vector& a, Epetra_Vector& b, double tolerance, bool write_to_cout = false);
-
   void buildAssemblyPieces(bool parameter_on,
                            Teuchos::RCP<panzer::FieldManagerBuilder> & fmb,  
                            Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & rLibrary, 
@@ -114,7 +112,7 @@ namespace panzer {
       typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
       typedef Thyra::VectorBase<double> VectorType;
       typedef Thyra::LinearOpBase<double> OperatorType;
-      typedef panzer::ModelEvaluator<double,Kokkos::DefaultNode::DefaultNodeType> PME;
+      typedef panzer::ModelEvaluator<double> PME;
 
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
       bool build_transient_support = true;
@@ -218,34 +216,6 @@ namespace panzer {
     }
   }
   
-  /** Compares Epetra_Vector values and returns true if difference is
-      less than tolerance
-  */
-  bool testEqualityOfEpetraVectorValues(Epetra_Vector& a, Epetra_Vector& b, double tolerance, bool write_to_cout)
-  {  
-    bool is_equal = true;
-
-    TEUCHOS_ASSERT(a.Map().NumMyElements() == b.Map().NumMyElements());
-
-    for (int i = 0; i < a.Map().NumMyElements(); ++i) {
-      
-      std::string output = "    equal!: ";
-      
-      if (std::fabs(a[i] - b[i]) > tolerance) {
-	is_equal = false;
-	output = "NOT equal!: ";
-      }
-      
-      if (write_to_cout)
-	std::cout << output << a[i] << " - " << b[i] << " = " << (a[i] - b[i]) << std::endl;
-    }
-
-    int globalSuccess = -1;
-    Teuchos::RCP<const Teuchos::Comm<Teuchos::Ordinal> > comm = Teuchos::DefaultComm<Teuchos::Ordinal>::getComm();
-    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, is_equal ? 0 : 1, Teuchos::outArg(globalSuccess) );
-    return (globalSuccess==0);
-  }
-
   void buildAssemblyPieces(bool parameter_on,
                            Teuchos::RCP<panzer::FieldManagerBuilder> & fmb,  
                            Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & rLibrary, 
@@ -314,15 +284,15 @@ namespace panzer {
     /////////////////////////////////////////////////////////////
  
     // build the connection manager 
-    const Teuchos::RCP<panzer::ConnManager<int,int> > 
-      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+    const Teuchos::RCP<panzer::ConnManager<int,panzer::Ordinal64> > 
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<panzer::Ordinal64>(mesh));
 
-    panzer::DOFManagerFactory<int,int> globalIndexerFactory;
-    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
+    panzer::DOFManagerFactory<int,panzer::Ordinal64> globalIndexerFactory;
+    RCP<panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > dofManager 
          = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
-        = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,int>(Comm.getConst(),dofManager));
+        = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64>(Comm.getConst(),dofManager));
     lof = linObjFactory;
 
     rLibrary = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory)); 

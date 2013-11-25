@@ -12,6 +12,7 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
     NUM_MPI_PROCS 1
     ADD_DIR_TO_NAME
     )
+IF(Trilinos_ENABLE_SEACAS)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Poisson
     SOURCES example_Poisson.cpp
@@ -19,6 +20,8 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
     NUM_MPI_PROCS 1
     ADD_DIR_TO_NAME
     )
+ENDIF()
+
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Poisson_BlockMaterials
     SOURCES example_Poisson_BlockMaterials.cpp
@@ -99,7 +102,7 @@ ENDIF()
 IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
    Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_AztecOO AND
    Trilinos_ENABLE_Intrepid AND Trilinos_ENABLE_ML AND
-   Trilinos_ENABLE_STK)
+   Trilinos_ENABLE_SEACAS AND Trilinos_ENABLE_STK)
   TRIBITS_ADD_EXECUTABLE(
     Example_Poisson_STK
     SOURCES example_Poisson_stk.cpp
@@ -225,7 +228,7 @@ ENDIF()
 
 # Copy over example xml file for [E|T]petraIntrepidPoisson example
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copyIntrepidPoissonFiles
-  DEST_FILES   intrepid_poisson.xml
+  DEST_FILES   intrepid_poisson.xml intrepid_poisson_muelu_cheby.xml
   )
 
 # mfh 14 Feb 2013

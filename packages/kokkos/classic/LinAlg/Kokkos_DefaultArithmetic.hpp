@@ -72,7 +72,7 @@
 #include <Teuchos_BLAS.hpp>
 
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   // Class for providing GEMM for a particular Node
   template <typename Scalar, typename Node>
@@ -548,7 +548,7 @@ namespace Kokkos {
   /// \brief Partial specialization of DefaultArithmetic for MultiVector<Scalar,Node>.
   ///
   /// Tpetra::MultiVector uses this as a traits class for
-  /// Kokkos::MultiVector, to implement all of its computational
+  /// KokkosClassic::MultiVector, to implement all of its computational
   /// kernels.
   ///
   /// \tparam Scalar The type of entries of the multivector.
@@ -795,7 +795,7 @@ namespace Kokkos {
         nR != B.getNumRows() || numColsToCopy > nC,
         std::runtime_error,
         "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Assign(A,B,"
-        "whichVectors): The Kokkos::MultiVector inputs A and B(whichVectors) "
+        "whichVectors): The KokkosClassic::MultiVector inputs A and B(whichVectors) "
         "do not have compatible dimensions.  "
         "A is " << nR << " x " << nC << ", but B has "
         << B.getNumRows() << ", and there are " << numColsToCopy
@@ -836,17 +836,22 @@ namespace Kokkos {
       const size_t nC = A.getNumCols();
       const size_t Astride = A.getStride();
       const size_t Bstride = B.getStride();
-      TEUCHOS_TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
-                                 "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Dot(A,B,dots): A and B must have the same dimensions.");
-      TEUCHOS_TEST_FOR_EXCEPTION(nC > Teuchos::as<size_t>(dots.size()), std::runtime_error,
-                                 "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Dot(A,B,dots): dots must have length as large as number of columns of A and B.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        nC != B.getNumCols () || nR != B.getNumRows (), std::runtime_error,
+        "DefaultArithmetic<" << Teuchos::typeName (A) << ">::Dot(A,B,dots): "
+        "A and B must have the same dimensions.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        nC > Teuchos::as<size_t> (dots.size ()), std::runtime_error,
+        "DefaultArithmetic<" << Teuchos::typeName (A) << ">::Dot(A,B,dots): "
+        "dots must have length as large as number of columns of A and B.");
       if (nR*nC == 0) {
-        std::fill( dots.begin(), dots.begin() + nC, Teuchos::ScalarTraits<Scalar>::zero() );
+        std::fill (dots.begin(), dots.begin() + nC,
+                   Teuchos::ScalarTraits<Scalar>::zero ());
         return;
       }
       RCP<Node> node = A.getNode();
-      ArrayRCP<const Scalar> Bdata = B.getValues(),
-        Adata = A.getValues();
+      ArrayRCP<const Scalar> Bdata = B.getValues();
+      ArrayRCP<const Scalar> Adata = A.getValues();
       // prepare buffers
       ReadyBufferHelper<Node> rbh(node);
       rbh.begin();
@@ -863,19 +868,22 @@ namespace Kokkos {
       }
     }
 
-    static Scalar Dot (const MultiVector<Scalar,Node> &A,
-                       const MultiVector<Scalar,Node> &B)
+    static Scalar
+    Dot (const MultiVector<Scalar,Node> &A,
+         const MultiVector<Scalar,Node> &B)
     {
       const size_t nR = A.getNumRows();
       const size_t nC = A.getNumCols();
-      TEUCHOS_TEST_FOR_EXCEPTION(nR != B.getNumRows(), std::runtime_error,
-                                 "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Dot(A,B,dots): A and B must have the same number of rows.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        nR != B.getNumRows(), std::runtime_error,
+        "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Dot(A,B): "
+        "A and B must have the same number of rows.");
       if (nR*nC == 0) {
-        return Teuchos::ScalarTraits<Scalar>::zero();
+        return Teuchos::ScalarTraits<Scalar>::zero ();
       }
       RCP<Node> node = A.getNode();
-      ArrayRCP<const Scalar> Bdata = B.getValues(0),
-        Adata = A.getValues(0);
+      ArrayRCP<const Scalar> Bdata = B.getValues(0);
+      ArrayRCP<const Scalar> Adata = A.getValues(0);
       // prepare buffers
       ReadyBufferHelper<Node> rbh(node);
       rbh.begin();
@@ -1403,7 +1411,7 @@ namespace Kokkos {
     }
   };
 
-  // Partial specialization for Node=Kokkos::SerialNode.
+  // Partial specialization for Node=KokkosClassic::SerialNode.
   template <class Scalar>
   class DefaultArithmetic<MultiVector<Scalar, SerialNode> > :
     public DefaultArithmeticBase<MultiVector<Scalar, SerialNode> > {
@@ -2245,7 +2253,7 @@ namespace Kokkos {
 
 
 
-  // Full specialization for Scalar=double and Node=Kokkos::SerialNode.
+  // Full specialization for Scalar=double and Node=KokkosClassic::SerialNode.
   template <>
   class DefaultArithmetic<MultiVector<double, SerialNode> > :
     public DefaultArithmeticBase<MultiVector<double, SerialNode> > {
@@ -3030,6 +3038,6 @@ namespace Kokkos {
   };
 
 
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif

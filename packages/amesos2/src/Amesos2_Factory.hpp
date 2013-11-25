@@ -110,6 +110,9 @@
 #ifdef HAVE_AMESOS2_LAPACK
 #include "Amesos2_Lapack.hpp"
 #endif
+#if defined (HAVE_AMESOS2_CHOLMOD) && defined (HAVE_AMESOS2_EXPERIMENTAL)
+#include "Amesos2_Cholmod.hpp"
+#endif
 
 namespace Amesos2 {
 
@@ -547,6 +550,11 @@ struct throw_no_scalar_support_exception {
        (solverName == "lapack")){
       return handle_solver_type_support<Lapack,Matrix,Vector>::apply(A, X, B);
     }
+#endif
+
+#if defined (HAVE_AMESOS2_CHOLMOD) && defined (HAVE_AMESOS2_EXPERIMENTAL) 
+    if(solverName == "amesos2_cholmod")
+      return handle_solver_type_support<Cholmod,Matrix,Vector>::apply(A, X, B);
 #endif
 
     /* If none of the above conditionals are satisfied, then the solver

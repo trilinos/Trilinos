@@ -67,7 +67,7 @@ namespace Tpetra {
      given the partitioning computed by the Partitioner object.
 */
 
-template <class Node=Kokkos::DefaultNode::DefaultNodeType>
+template <class Node=KokkosClassic::DefaultNode::DefaultNodeType>
 class Redistributor : public Isorropia::Redistributor {
 public:
 

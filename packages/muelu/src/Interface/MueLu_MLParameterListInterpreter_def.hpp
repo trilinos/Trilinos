@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -80,6 +80,14 @@
 #include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_ParameterListUtils.hpp"
+
+#if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
+#include "MueLu_RepartitionFactory.hpp"
+#include "MueLu_RebalanceTransferFactory.hpp"
+#include "MueLu_IsorropiaInterface.hpp"
+#include "MueLu_RebalanceAcFactory.hpp"
+#include "MueLu_RebalanceMapFactory.hpp"
+#endif
 
 // Note: do not add options that are only recognized by MueLu.
 
@@ -131,6 +139,7 @@ namespace MueLu {
     MUELU_READ_PARAM(paramList, "aggregation: damping factor",           double, (double)4/(double)3,       agg_damping);
     //MUELU_READ_PARAM(paramList, "aggregation: smoothing sweeps",            int,                   1,       agg_smoothingsweeps);
     MUELU_READ_PARAM(paramList, "aggregation: nodes per aggregate",         int,                   1,       minPerAgg);
+    MUELU_READ_PARAM(paramList, "aggregation: keep Dirichlet bcs",         bool,               false,       bKeepDirichletBcs); // This is a MueLu specific extension that does not exist in ML
 
     MUELU_READ_PARAM(paramList, "null space: type",                 std::string,   "default vectors",       nullspaceType);
     MUELU_READ_PARAM(paramList, "null space: dimension",                    int,                  -1,       nullspaceDim); // TODO: ML default not in documentation
@@ -138,6 +147,7 @@ namespace MueLu {
 
     MUELU_READ_PARAM(paramList, "energy minimization: enable",             bool,               false,       bEnergyMinimization);
 
+    MUELU_READ_PARAM(paramList, "RAP: fix diagonal",                       bool,               false,       bFixDiagonal); // This is a MueLu specific extension that does not exist in ML
 
     //
     // Move smoothers/aggregation/coarse parameters to sublists
@@ -185,27 +195,37 @@ namespace MueLu {
     blksize_ = nDofsPerNode;
 
     // Translate verbosity parameter
-    Teuchos::EVerbosityLevel eVerbLevel = Teuchos::VERB_NONE;
-    if (verbosityLevel == 0) eVerbLevel = Teuchos::VERB_NONE;
-    if (verbosityLevel >  0) eVerbLevel = Teuchos::VERB_LOW;
-    if (verbosityLevel >  4) eVerbLevel = Teuchos::VERB_MEDIUM;
-    if (verbosityLevel >  7) eVerbLevel = Teuchos::VERB_HIGH;
-    if (verbosityLevel >  9) eVerbLevel = Teuchos::VERB_EXTREME;
+
+    // Translate verbosity parameter
+    MsgType eVerbLevel = None;
+    if (verbosityLevel == 0) eVerbLevel = None;
+    if (verbosityLevel >  0) eVerbLevel = Low;
+    if (verbosityLevel >  4) eVerbLevel = Medium;
+    if (verbosityLevel >  7) eVerbLevel = High;
+    if (verbosityLevel >  9) eVerbLevel = Extreme;
+    if (verbosityLevel >  9) eVerbLevel = Test;
+    this->verbosity_ = eVerbLevel;
+
 
     TEUCHOS_TEST_FOR_EXCEPTION(agg_type != "Uncoupled" && agg_type != "Coupled", Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter::Setup(): parameter \"aggregation: type\": only 'Uncoupled' or 'Coupled' aggregation is supported.");
 
     // Create MueLu factories
-    // RCP<NullspaceFactory>     nspFact = rcp(new NullspaceFactory());
     RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
-    //dropFact->SetVerbLevel(toMueLuVerbLevel(eVerbLevel));
 
     RCP<FactoryBase> CoupledAggFact = Teuchos::null;
     if(agg_type == "Uncoupled") {
       // Uncoupled aggregation
       RCP<UncoupledAggregationFactory> CoupledAggFact2 = rcp(new UncoupledAggregationFactory());
-      CoupledAggFact2->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
+      /*CoupledAggFact2->SetMinNodesPerAggregate(minPerAgg); //TODO should increase if run anything other than 1D
       CoupledAggFact2->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
-      CoupledAggFact2->SetOrdering(MueLu::AggOptions::NATURAL);
+      CoupledAggFact2->SetOrdering(MueLu::AggOptions::NATURAL);*/
+      CoupledAggFact2->SetFactory("Graph", dropFact);
+      CoupledAggFact2->SetFactory("DofsPerNode", dropFact);
+      CoupledAggFact2->SetParameter("UsePreserveDirichletAggregationAlgorithm", Teuchos::ParameterEntry(bKeepDirichletBcs));
+      CoupledAggFact2->SetParameter("Ordering", Teuchos::ParameterEntry(MueLu::AggOptions::NATURAL));
+      CoupledAggFact2->SetParameter("MaxNeighAlreadySelected", Teuchos::ParameterEntry(maxNbrAlreadySelected));
+      CoupledAggFact2->SetParameter("MinNodesPerAggregate", Teuchos::ParameterEntry(minPerAgg));
+
       CoupledAggFact = CoupledAggFact2;
     } else {
       // Coupled Aggregation (default)
@@ -214,6 +234,8 @@ namespace MueLu {
       CoupledAggFact2->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
       CoupledAggFact2->SetOrdering(MueLu::AggOptions::NATURAL);
       CoupledAggFact2->SetPhase3AggCreation(0.5);
+      CoupledAggFact2->SetFactory("Graph", dropFact);
+      CoupledAggFact2->SetFactory("DofsPerNode", dropFact);
       CoupledAggFact = CoupledAggFact2;
     }
     if (verbosityLevel > 3) { // TODO fix me: Setup is a static function: we cannot use GetOStream without an object...
@@ -244,9 +266,67 @@ namespace MueLu {
     }
 
     RCP<RAPFactory> AcFact = rcp( new RAPFactory() );
+    AcFact->SetParameter("RepairMainDiagonal", Teuchos::ParameterEntry(bFixDiagonal));
     for (size_t i = 0; i<TransferFacts_.size(); i++) {
       AcFact->AddTransferFactory(TransferFacts_[i]);
     }
+
+    //
+    // introduce rebalancing
+    //
+#if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
+    Teuchos::RCP<Factory>            RebalancedPFact = Teuchos::null;
+    Teuchos::RCP<Factory>            RebalancedRFact = Teuchos::null;
+    Teuchos::RCP<Factory>            RepartitionFact = Teuchos::null;
+    Teuchos::RCP<RebalanceAcFactory> RebalancedAFact = Teuchos::null;
+
+    MUELU_READ_PARAM(paramList, "repartition: enable",                      int,                   0,       bDoRepartition);
+    if (bDoRepartition == 1) {
+      // The Factory Manager will be configured to return the rebalanced versions of P, R, A by default.
+      // Everytime we want to use the non-rebalanced versions, we need to explicitly define the generating factory.
+      RFact->SetFactory("P", PFact);
+      //
+      AcFact->SetFactory("P", PFact);
+      AcFact->SetFactory("R", RFact);
+
+      MUELU_READ_PARAM(paramList, "repartition: max min ratio",            double,                 1.3,       maxminratio);
+      MUELU_READ_PARAM(paramList, "repartition: min per proc",                int,                 512,       minperproc);
+
+      // create "Partition"
+      Teuchos::RCP<MueLu::IsorropiaInterface<LO, GO, NO, LMO> > isoInterface = Teuchos::rcp(new MueLu::IsorropiaInterface<LO, GO, NO, LMO>());
+      isoInterface->SetFactory("A", AcFact);
+
+      // Repartitioning (creates "Importer" from "Partition")
+      RepartitionFact = Teuchos::rcp(new RepartitionFactory());
+      {
+        Teuchos::ParameterList paramListRepFact;
+        paramListRepFact.set("minRowsPerProcessor", minperproc);
+        paramListRepFact.set("nonzeroImbalance", maxminratio);
+        RepartitionFact->SetParameterList(paramListRepFact);
+      }
+      RepartitionFact->SetFactory("A", AcFact);
+      RepartitionFact->SetFactory("Partition", isoInterface);
+
+      // Reordering of the transfer operators
+      RebalancedPFact = Teuchos::rcp(new RebalanceTransferFactory());
+      RebalancedPFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Interpolation")));
+      RebalancedPFact->SetFactory("P", PFact);
+
+      RebalancedRFact = Teuchos::rcp(new RebalanceTransferFactory());
+      RebalancedRFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Restriction")));
+      RebalancedRFact->SetFactory("R", RFact);
+      RebalancedRFact->SetFactory("Nullspace", PtentFact);
+
+      // Compute Ac from rebalanced P and R
+      RebalancedAFact = Teuchos::rcp(new RebalanceAcFactory());
+      RebalancedAFact->SetFactory("A", AcFact);
+    }
+#else // #ifdef HAVE_MUELU_ISORROPIA
+    // Get rid of [-Wunused] warnings
+    //(void)
+    //
+    // ^^^ FIXME (mfh 17 Nov 2013) That definitely doesn't compile.
+#endif
 
     //
     // Nullspace factory
@@ -264,7 +344,7 @@ namespace MueLu {
       nullspace_    = nullspaceVec;
     }
 
-    Teuchos::RCP<NullspaceFactory> nspFact = Teuchos::rcp(new NullspaceFactory());
+    Teuchos::RCP<NullspaceFactory> nspFact = Teuchos::rcp(new NullspaceFactory("Nullspace"));
     nspFact->SetFactory("Nullspace", PtentFact);
 
     //
@@ -272,7 +352,6 @@ namespace MueLu {
     //
 
     // Hierarchy options
-    this->SetVerbLevel(toMueLuVerbLevel(eVerbLevel));
     this->numDesiredLevel_ = maxLevels;
     this->maxCoarseSize_   = maxCoarseSize;
 
@@ -281,7 +360,7 @@ namespace MueLu {
     //
     ParameterList& coarseList = paramList.sublist("coarse: list");
     //    coarseList.get("smoother: type", "Amesos-KLU"); // set default
-    RCP<SmootherFactory> coarseFact = GetSmootherFactory(coarseList);
+    RCP<SmootherFactory> coarseFact = GetSmootherFactory(coarseList, Teuchos::null);
 
     // Smoothers Top Level Parameters
 
@@ -315,7 +394,7 @@ namespace MueLu {
         // std::cout << std::endl << "Merged List for level  " << levelID << std::endl;
         // std::cout << levelSmootherParam << std::endl;
 
-        RCP<SmootherFactory> smootherFact = GetSmootherFactory(levelSmootherParam); // TODO: missing AFact input arg.
+        RCP<SmootherFactory> smootherFact = GetSmootherFactory(levelSmootherParam, Teuchos::null); // TODO: missing AFact input arg.
 
         manager->SetFactory("Smoother", smootherFact);
       }
@@ -328,11 +407,24 @@ namespace MueLu {
       manager->SetFactory("Graph", dropFact);
       manager->SetFactory("Aggregates", CoupledAggFact);
       manager->SetFactory("DofsPerNode", dropFact);
-      manager->SetFactory("A", AcFact);
-      manager->SetFactory("P", PFact);
       manager->SetFactory("Ptent", PtentFact);
-      manager->SetFactory("R", RFact);
-      manager->SetFactory("Nullspace", nspFact);
+
+#if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
+    if(bDoRepartition == 1) {
+      manager->SetFactory("A", RebalancedAFact);
+      manager->SetFactory("P", RebalancedPFact);
+      manager->SetFactory("R", RebalancedRFact);
+      manager->SetFactory("Nullspace",   RebalancedRFact);
+      manager->SetFactory("Importer",    RepartitionFact);
+    } else {
+#endif // #ifdef HAVE_MUELU_ISORROPIA
+      manager->SetFactory("Nullspace", nspFact); // use same nullspace factory throughout all multigrid levels
+      manager->SetFactory("A", AcFact);          // same RAP factory for all levels
+      manager->SetFactory("P", PFact);           // same prolongator and restrictor factories for all levels
+      manager->SetFactory("R", RFact);           // same prolongator and restrictor factories for all levels
+#if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
+    }
+#endif
 
       this->AddFactoryManager(levelID, 1, manager);
     } // for (level loop)

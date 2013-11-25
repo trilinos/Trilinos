@@ -119,10 +119,10 @@ int CLAPS_sparse_lu::factor(int N_, int NNZ, int COLPTR[], int ROWIDX[],
   
   MAXDEF=10;
   ASDEF=0;
-  //  cout << "N    = " << N << endl;
-  //  cout << "NTOT = " << NTOT << endl;
-  //  cout << "NADJ = " << NADJ << endl;
-  //  cout << "NNZA = " << NNZA << endl;
+  //  std::cout << "N    = " << N << std::endl;
+  //  std::cout << "NTOT = " << NTOT << std::endl;
+  //  std::cout << "NADJ = " << NADJ << std::endl;
+  //  std::cout << "NNZA = " << NNZA << std::endl;
   int* ADJ = new int[NTOT];
   int* XADJ = new int[N+1];
   LINDX = new int[NTOT];
@@ -176,8 +176,8 @@ int CLAPS_sparse_lu::factor(int N_, int NNZ, int COLPTR[], int ROWIDX[],
   if (order_opt == 1) {
     ORDMMD2_F77(N,XLINDX,LINDX,INVP,PERM,IWSIZE,IWORK,NSUB,IFLAG);
     if (IFLAG != 0) {
-      cout << "error in call to ordmmd2 in CLAPS_sparse_lu::factor" << endl;
-      cout << "ORDMMD2 IFLAG=" << IFLAG << endl;
+      std::cout << "error in call to ordmmd2 in CLAPS_sparse_lu::factor" << std::endl;
+      std::cout << "ORDMMD2 IFLAG=" << IFLAG << std::endl;
       return -1;
     }
   }
@@ -200,8 +200,8 @@ int CLAPS_sparse_lu::factor(int N_, int NNZ, int COLPTR[], int ROWIDX[],
   SFINIT_F77(N,NADJ,XADJ,ADJ,PERM,INVP,MAXSUP,DEFBLK,COLCNT,
 	     NNZL,NSUB,NSUPER,XSUPER,SNODE,IWSIZE,IWORK,IFLAG);
   if (IFLAG != 0) {
-    cout << "error in call to sfinit in CLAPS_sparse_lu::factor" << endl;
-    cout << "SFINIT IFLAG=" << IFLAG << endl;
+    std::cout << "error in call to sfinit in CLAPS_sparse_lu::factor" << std::endl;
+    std::cout << "SFINIT IFLAG=" << IFLAG << std::endl;
     return -1;
   }
   //
@@ -215,16 +215,16 @@ int CLAPS_sparse_lu::factor(int N_, int NNZ, int COLPTR[], int ROWIDX[],
   SYMFCT_F77(N,NADJ,XADJ,ADJ,PERM,INVP,COLCNT,NSUPER,XSUPER,
 	     SNODE,NSUB,XLINDX,LINDX,XLNZ,IWSIZE,IWORK,IFLAG);
   if (IFLAG != 0) {
-    cout << "error in call to symfct in CLAPS_sparse_lu::factor" << endl;
-    cout << "SYMFCT IFLAG=" << IFLAG << endl;
+    std::cout << "error in call to symfct in CLAPS_sparse_lu::factor" << std::endl;
+    std::cout << "SYMFCT IFLAG=" << IFLAG << std::endl;
     return -1;
   }
   //
   // input numerical values into data structures
   //
   NLNZ=XLNZ[N];
-  //  cout << "number of nonzeros in LU factorization = " << NLNZ << endl;
-  //  cout << "NLNZ = " << NLNZ << endl;
+  //  std::cout << "number of nonzeros in LU factorization = " << NLNZ << std::endl;
+  //  std::cout << "NLNZ = " << NLNZ << std::endl;
 
   // later, sparsepak will call dgemm on some of the "panels" in this data. We need to have
   // memory on the end of the array to ensure we don't overrun. Without the extra "N", we
@@ -256,8 +256,8 @@ int CLAPS_sparse_lu::factor(int N_, int NNZ, int COLPTR[], int ROWIDX[],
 	     LBDEF,DEF,TOL,IPROW,IPCOL,TMPSIZ,TMPVEC,IWSIZE,IWORK,
 	     RWSIZE,RWORK,IFLAG);
   if (IFLAG != 0) {
-    cout << "error in call to blkldl in CLAPS_sparse_lu::factor" << endl;
-    cout << "BLKLDL IFLAG=" << IFLAG << endl;
+    std::cout << "error in call to blkldl in CLAPS_sparse_lu::factor" << std::endl;
+    std::cout << "BLKLDL IFLAG=" << IFLAG << std::endl;
     return -1;
   }
   //  if (DEFBLK == 0) {
@@ -272,12 +272,12 @@ int CLAPS_sparse_lu::factor(int N_, int NNZ, int COLPTR[], int ROWIDX[],
     LDNS=N;
     BLKNS_F77(NSUPER,XSUPER,XLINDX,LINDX,XLNZ,LNZ,DEFBLK,NDEF,LBDEF,
 	      DEF,IPCOL,INVP,NS,LDNS,RWORK);
-    cout << "null space dimension = " << NDEF << endl;
+    std::cout << "null space dimension = " << NDEF << std::endl;
     /*
-    cout << "NS = " << endl;
+    std::cout << "NS = " << std::endl;
     for (int i=0;i<NDEF;i++) {
-      for (int j=0;j<N;j++) cout << NS[j+N*i] << " ";
-      cout << endl;
+      for (int j=0;j<N;j++) std::cout << NS[j+N*i] << " ";
+      std::cout << std::endl;
     }
     */
   }
@@ -315,8 +315,8 @@ int CLAPS_sparse_lu::sol(int NRHS, double RHS[], double SOL[], double TEMP[])
   }
   int LRHS=N;
   int LSOL=N;
-  //  cout << "LBDEF = " << LBDEF << endl;
-  //  cout << "NDEF  = " << NDEF << endl;
+  //  std::cout << "LBDEF = " << LBDEF << std::endl;
+  //  std::cout << "NDEF  = " << NDEF << std::endl;
   BLKSLVN_F77(NSUPER,XSUPER,XLINDX,LINDX,XLNZ,LNZ,DEFBLK,NDEF,LBDEF,
 	      DEF,IPROW,IPCOL,PERM,INVP,LRHS,NRHS,RHS,LSOL,SOL,N,TEMP);
   if (scale_flag == 1) {

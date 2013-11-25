@@ -145,13 +145,14 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   SuperLUDist     "cmake/TPLs/"    SS
   SuperLUMT	  "cmake/TPLs/"	   SS
   SuperLU         "cmake/TPLs/"    SS
+  Cholmod	  "cmake/TPLs/"	   EX
   Zlib            "cmake/TPLs/"    SS
   UMFPACK         "cmake/TPLs/"    SS
   MA28            "cmake/TPLs/"    TS
   AMD             "cmake/TPLs/"    TS
   CSparse         "cmake/TPLs/"    EX
-  PETSC           "cmake/TPLs/"    SS
   HYPRE           "cmake/TPLs/"    EX
+  PETSC           "${${PROJECT_NAME}_TRIBITS_DIR}/tpls/"   SS
   BLACS           "cmake/TPLs/"    SS
   SCALAPACK       "cmake/TPLs/"    SS
   MUMPS           "cmake/TPLs/"    SS
@@ -169,11 +170,14 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   QT              "cmake/TPLs/"    SS
   gtest           "cmake/TPLs/"    EX
   BoostLib        "cmake/TPLs/"    SS
+  BoostAlbLib     "cmake/TPLs/"    SS
   OpenNURBS       "cmake/TPLs/"    EX
   Portals         "cmake/TPLs/"    SS
   CrayPortals     "cmake/TPLs/"    SS
   Gemini          "cmake/TPLs/"    SS
   InfiniBand      "cmake/TPLs/"    SS
+  BGPDCMF         "cmake/TPLs/"    SS
+  BGQPAMI         "cmake/TPLs/"    SS
   Pablo           "cmake/TPLs/"    SS
   HPCToolkit      "cmake/TPLs/"    SS
   Pnetcdf         "cmake/TPLs/"    SS
@@ -184,6 +188,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   PAPI            "cmake/TPLs/"    SS
   MATLABLib       "cmake/TPLs/"    EX
   Eigen           "cmake/TPLs/"    EX
+  X11             "cmake/TPLs/"    SS
   )
 
 # NOTES:

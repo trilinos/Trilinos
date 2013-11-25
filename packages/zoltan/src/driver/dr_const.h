@@ -117,7 +117,7 @@ extern "C" {
 #define ZOLTAN_OVIS
 #endif
 
-#ifdef HAVE_GZIP
+#ifdef ZHAVE_GZIP
 #define ZOLTAN_GZIP
 #endif
 

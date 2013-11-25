@@ -1,0 +1,4 @@
+dim=2
+#distribution-1=GRID,5,5,4,0,1,0,1,0,1
+distribution-1=GRID,25,25,0,1,0,1
+

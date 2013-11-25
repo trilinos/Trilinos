@@ -47,7 +47,7 @@ namespace Rythmos {
  *
  * \relates DefaultIntegrator
  */
-template<class Scalar> 
+template<class Scalar>
 RCP<DefaultIntegrator<Scalar> >
 defaultIntegrator()
 {
@@ -61,7 +61,7 @@ defaultIntegrator()
  *
  * \relates DefaultIntegrator
  */
-template<class Scalar> 
+template<class Scalar>
 RCP<DefaultIntegrator<Scalar> >
 defaultIntegrator(
   const RCP<IntegrationControlStrategyBase<Scalar> > &integrationControlStrategy,
@@ -80,7 +80,7 @@ defaultIntegrator(
  *
  * \relates DefaultIntegrator
  */
-template<class Scalar> 
+template<class Scalar>
 RCP<DefaultIntegrator<Scalar> >
 controlledDefaultIntegrator(
   const RCP<IntegrationControlStrategyBase<Scalar> > &integrationControlStrategy
@@ -97,7 +97,7 @@ controlledDefaultIntegrator(
  *
  * \relates DefaultIntegrator
  */
-template<class Scalar> 
+template<class Scalar>
 RCP<DefaultIntegrator<Scalar> >
 observedDefaultIntegrator(
   const RCP<IntegrationObserverBase<Scalar> > &integrationObserver
@@ -122,10 +122,11 @@ template<class Scalar>
 const std::string
 DefaultIntegrator<Scalar>::maxNumTimeSteps_name_ = "Max Number Time Steps";
 
-// replaced in code with std::numeric_limits<int>::max()
-// template<class Scalar>
-// const int
-// DefaultIntegrator<Scalar>::maxNumTimeSteps_default_ = 10000;
+template<class Scalar>
+const int
+DefaultIntegrator<Scalar>::maxNumTimeSteps_default_ =
+  std::numeric_limits<int>::max();
+
 
 
 // Constructors, Initializers, Misc
@@ -134,7 +135,7 @@ DefaultIntegrator<Scalar>::maxNumTimeSteps_name_ = "Max Number Time Steps";
 template<class Scalar>
 DefaultIntegrator<Scalar>::DefaultIntegrator()
   :landOnFinalTime_(true),
-   maxNumTimeSteps_(std::numeric_limits<int>::max()),
+   maxNumTimeSteps_(maxNumTimeSteps_default_),
    currTimeStepIndex_(-1)
 {}
 
@@ -151,14 +152,14 @@ void DefaultIntegrator<Scalar>::setIntegrationControlStrategy(
 }
 
 template<class Scalar>
-RCP<IntegrationControlStrategyBase<Scalar> > 
+RCP<IntegrationControlStrategyBase<Scalar> >
   DefaultIntegrator<Scalar>::getNonconstIntegrationControlStrategy()
 {
   return integrationControlStrategy_;
 }
 
 template<class Scalar>
-RCP<const IntegrationControlStrategyBase<Scalar> > 
+RCP<const IntegrationControlStrategyBase<Scalar> >
   DefaultIntegrator<Scalar>::getIntegrationControlStrategy() const
 {
   return integrationControlStrategy_;
@@ -177,7 +178,7 @@ void DefaultIntegrator<Scalar>::setIntegrationObserver(
 }
 
 
-template<class Scalar> 
+template<class Scalar>
 void DefaultIntegrator<Scalar>::setInterpolationBufferAppender(
   const RCP<InterpolationBufferAppenderBase<Scalar> > &interpBufferAppender
   )
@@ -186,21 +187,21 @@ void DefaultIntegrator<Scalar>::setInterpolationBufferAppender(
 }
 
 
-template<class Scalar> 
+template<class Scalar>
 RCP<const InterpolationBufferAppenderBase<Scalar> >
 DefaultIntegrator<Scalar>::getInterpolationBufferAppender()
 {
   return interpBufferAppender_;
 }
 
-template<class Scalar> 
+template<class Scalar>
 RCP<InterpolationBufferAppenderBase<Scalar> >
 DefaultIntegrator<Scalar>::getNonconstInterpolationBufferAppender()
 {
   return interpBufferAppender_;
 }
 
-template<class Scalar> 
+template<class Scalar>
 RCP<InterpolationBufferAppenderBase<Scalar> >
 DefaultIntegrator<Scalar>::unSetInterpolationBufferAppender()
 {
@@ -213,7 +214,7 @@ DefaultIntegrator<Scalar>::unSetInterpolationBufferAppender()
 // Overridden from ParameterListAcceptor
 
 
-template<class Scalar> 
+template<class Scalar>
 void DefaultIntegrator<Scalar>::setParameterList(
   RCP<ParameterList> const& paramList
   )
@@ -222,21 +223,20 @@ void DefaultIntegrator<Scalar>::setParameterList(
   paramList->validateParameters(*getValidParameters());
   this->setMyParamList(paramList);
   maxNumTimeSteps_ = paramList->get(
-    maxNumTimeSteps_name_, std::numeric_limits<int>::max());
+    maxNumTimeSteps_name_, maxNumTimeSteps_default_);
   Teuchos::readVerboseObjectSublist(&*paramList,this);
 }
 
 
-template<class Scalar> 
+template<class Scalar>
 RCP<const ParameterList>
 DefaultIntegrator<Scalar>::getValidParameters() const
 {
   static RCP<const ParameterList> validPL;
   if (is_null(validPL) ) {
     RCP<ParameterList> pl = Teuchos::parameterList();
-    pl->set(maxNumTimeSteps_name_, std::numeric_limits<int>::max(),
-      "Set the maximum number of integration time-steps allowed."
-      );
+    pl->set(maxNumTimeSteps_name_, maxNumTimeSteps_default_,
+      "Set the maximum number of integration time-steps allowed.");
     Teuchos::setupVerboseObjectSublist(&*pl);
     validPL = pl;
   }
@@ -273,7 +273,7 @@ DefaultIntegrator<Scalar>::cloneIntegrator() const
     // ToDo: implement the clone!
     newIntegrator->trailingInterpBuffer_ = null;
     //newIntegrator->trailingInterpBuffer_ =
-    //  trailingInterpBuffer_->cloneInterploationBuffer().assert_not_null();
+    //  trailingInterpBuffer_->cloneInterpolationBuffer().assert_not_null();
   }
   if (!is_null(interpBufferAppender_)) {
     // ToDo: implement the clone!
@@ -285,7 +285,7 @@ DefaultIntegrator<Scalar>::cloneIntegrator() const
 }
 
 
-template<class Scalar> 
+template<class Scalar>
 void DefaultIntegrator<Scalar>::setStepper(
   const RCP<StepperBase<Scalar> > &stepper,
   const Scalar &finalTime,
@@ -298,7 +298,8 @@ void DefaultIntegrator<Scalar>::setStepper(
   TEUCHOS_ASSERT( stepper->getTimeRange().length() == ST::zero() );
   // 2007/07/25: rabartl: ToDo: Validate state of the stepper!
   stepper_ = stepper;
-  integrationTimeDomain_ = timeRange(stepper_->getTimeRange().lower(), finalTime);
+  integrationTimeDomain_ = timeRange(stepper_->getTimeRange().lower(),
+                                     finalTime);
   landOnFinalTime_ = landOnFinalTime;
   currTimeStepIndex_ = 0;
   stepCtrlInfoLast_ = StepControlInfo<Scalar>();
@@ -375,8 +376,7 @@ void DefaultIntegrator<Scalar>::getFwdPoints(
   const Array<Scalar>& time_vec,
   Array<RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
   Array<RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
-  Array<ScalarMag>* accuracy_vec
-  )
+  Array<ScalarMag>* accuracy_vec)
 {
 
   RYTHMOS_FUNC_TIME_MONITOR_DIFF("Rythmos:DefaultIntegrator::getFwdPoints",
@@ -398,7 +398,8 @@ void DefaultIntegrator<Scalar>::getFwdPoints(
   VOTSIBB stepper_outputTempState(stepper_,out,incrVerbLevel(verbLevel,-1));
 
   if ( includesVerbLevel(verbLevel,Teuchos::VERB_LOW) )
-    *out << "\nEntering " << this->Describable::description() << "::getFwdPoints(...) ...\n"
+    *out << "\nEntering " << this->Describable::description()
+         << "::getFwdPoints(...) ...\n"
          << "\nStepper: " << Teuchos::describe(*stepper_,verbLevel);
 
   if ( includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM) )
@@ -431,7 +432,7 @@ void DefaultIntegrator<Scalar>::getFwdPoints(
   // that needs to be handled.  This gets updated as the time points are
   // filled below.
   int nextTimePointIndex = 0;
-  
+
   assertNoTimePointsBeforeCurrentTimeRange(*this,time_vec,nextTimePointIndex);
 
   //
@@ -439,7 +440,8 @@ void DefaultIntegrator<Scalar>::getFwdPoints(
   //
 
   {
-    RYTHMOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::getFwdPoints: getPoints");
+    RYTHMOS_FUNC_TIME_MONITOR(
+      "Rythmos:DefaultIntegrator::getFwdPoints: getPoints");
     // 2007/10/05: rabartl: ToDo: Get points from trailingInterpBuffer_ first!
     getCurrentPoints(*stepper_,time_vec,x_vec,xdot_vec,&nextTimePointIndex);
   }
@@ -450,14 +452,23 @@ void DefaultIntegrator<Scalar>::getFwdPoints(
   //
 
   while ( nextTimePointIndex < numTimePoints ) {
-    
+
     // Use the time stepping algorithm to step up to or past the next
     // requested time but not so far as to step past the point entirely.
     const Scalar t = time_vec[nextTimePointIndex];
     bool advanceStepperToTimeSucceeded = false;
-    {
-      RYTHMOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::getFwdPoints: advanceStepperToTime");
-      advanceStepperToTimeSucceeded= advanceStepperToTime(t);
+
+    // Make sure t is not beyond 'Final Time'.
+    if ( integrationTimeDomain_.upper() < t ) {
+      *out << "\nWARNING: Skipping time point, t = " << t
+           << ", because it is beyond 'Final Time' = "
+           << integrationTimeDomain_.upper() << "\n";
+      // Break out of the while loop and attempt to exit gracefully.
+      break;
+    } else {
+      RYTHMOS_FUNC_TIME_MONITOR(
+        "Rythmos:DefaultIntegrator::getFwdPoints: advanceStepperToTime");
+      advanceStepperToTimeSucceeded = advanceStepperToTime(t);
     }
     if (!advanceStepperToTimeSucceeded) {
       bool reachedMaxNumTimeSteps = (currTimeStepIndex_ >= maxNumTimeSteps_);
@@ -468,17 +479,19 @@ void DefaultIntegrator<Scalar>::getFwdPoints(
       TEUCHOS_TEST_FOR_EXCEPTION(
           !advanceStepperToTimeSucceeded, Exceptions::GetFwdPointsFailed,
           this->description() << "\n\n"
-          "Error:  The integration failed to get to time " << t << " and only achieved\n"
-          "getting to " << stepper_->getTimeRange().upper() << "!"
+          "Error:  The integration failed to get to time " << t
+          << " and only achieved\ngetting to "
+          << stepper_->getTimeRange().upper() << "!"
           );
     }
-    
+
     // Extract the next set of points (perhaps just one) from the stepper
     {
-      RYTHMOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::getFwdPoints: getPoints (fwd)");
+      RYTHMOS_FUNC_TIME_MONITOR(
+        "Rythmos:DefaultIntegrator::getFwdPoints: getPoints (fwd)");
       getCurrentPoints(*stepper_,time_vec,x_vec,xdot_vec,&nextTimePointIndex);
     }
-    
+
   }
 
   // Observe end of a time integration
@@ -487,12 +500,12 @@ void DefaultIntegrator<Scalar>::getFwdPoints(
   }
 
   if ( includesVerbLevel(verbLevel,Teuchos::VERB_LOW) )
-    *out << "\nLeaving " << this->Describable::description() << "::getFwdPoints(...) ...\n";
-  
+    *out << "\nLeaving " << this->Describable::description()
+         << "::getFwdPoints(...) ...\n";
 }
 
 
-template<class Scalar> 
+template<class Scalar>
 TimeRange<Scalar>
 DefaultIntegrator<Scalar>::getFwdTimeRange() const
 {
@@ -506,7 +519,7 @@ DefaultIntegrator<Scalar>::getFwdTimeRange() const
 // Overridden from InterpolationBufferBase
 
 
-template<class Scalar> 
+template<class Scalar>
 RCP<const Thyra::VectorSpaceBase<Scalar> >
 DefaultIntegrator<Scalar>::get_x_space() const
 {
@@ -514,7 +527,7 @@ DefaultIntegrator<Scalar>::get_x_space() const
 }
 
 
-template<class Scalar> 
+template<class Scalar>
 void DefaultIntegrator<Scalar>::addPoints(
   const Array<Scalar>& time_vec,
   const Array<RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
@@ -525,7 +538,7 @@ void DefaultIntegrator<Scalar>::addPoints(
 }
 
 
-template<class Scalar> 
+template<class Scalar>
 void DefaultIntegrator<Scalar>::getPoints(
   const Array<Scalar>& time_vec,
   Array<RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
@@ -550,7 +563,7 @@ void DefaultIntegrator<Scalar>::getPoints(
 }
 
 
-template<class Scalar> 
+template<class Scalar>
 TimeRange<Scalar> DefaultIntegrator<Scalar>::getTimeRange() const
 {
   if (nonnull(trailingInterpBuffer_)) {
@@ -561,21 +574,21 @@ TimeRange<Scalar> DefaultIntegrator<Scalar>::getTimeRange() const
 }
 
 
-template<class Scalar> 
+template<class Scalar>
 void DefaultIntegrator<Scalar>::getNodes(Array<Scalar>* time_vec) const
 {
   stepper_->getNodes(time_vec);
 }
 
 
-template<class Scalar> 
+template<class Scalar>
 void DefaultIntegrator<Scalar>::removeNodes(Array<Scalar>& time_vec)
 {
   stepper_->removeNodes(time_vec);
 }
 
 
-template<class Scalar> 
+template<class Scalar>
 int DefaultIntegrator<Scalar>::getOrder() const
 {
   return stepper_->getOrder();
@@ -585,7 +598,7 @@ int DefaultIntegrator<Scalar>::getOrder() const
 // private
 
 
-template<class Scalar> 
+template<class Scalar>
 void DefaultIntegrator<Scalar>::finalizeSetup()
 {
   if (!is_null(trailingInterpBuffer_) && is_null(interpBufferAppender_))
@@ -594,16 +607,16 @@ void DefaultIntegrator<Scalar>::finalizeSetup()
 }
 
 
-template<class Scalar> 
-bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t )
+template<class Scalar>
+bool DefaultIntegrator<Scalar>::advanceStepperToTime(const Scalar& advance_to_t)
 {
 
-  RYTHMOS_FUNC_TIME_MONITOR_DIFF("Rythmos:DefaultIntegrator::advanceStepperToTime",
-    TopLevel);
+  RYTHMOS_FUNC_TIME_MONITOR_DIFF(
+    "Rythmos:DefaultIntegrator::advanceStepperToTime", TopLevel);
 
   using std::endl;
   typedef std::numeric_limits<Scalar> NL;
-  using Teuchos::incrVerbLevel; 
+  using Teuchos::incrVerbLevel;
 #ifndef _MSC_VER
   using Teuchos::Describable;
 #endif
@@ -630,29 +643,31 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
   // Remember what timestep index we are on so we can report it later
   const int initCurrTimeStepIndex = currTimeStepIndex_;
 
-  // Take steps until we the requested time is reached (or passed)
+  // Take steps until the requested time is reached (or passed)
 
   TimeRange<Scalar> currStepperTimeRange = stepper_->getTimeRange();
 
-  // Start by assume we can reach the time advance_to_t
+  // Start by assuming we can reach the time advance_to_t
   bool return_val = true;
-  
+
   while ( !currStepperTimeRange.isInRange(advance_to_t) ) {
 
-    // Halt immediatly if exceeded max iterations
+    // Halt immediately if exceeded max iterations
     if (currTimeStepIndex_ >= maxNumTimeSteps_) {
       if ( includesVerbLevel(verbLevel,Teuchos::VERB_LOW) )
         *out
           << "\n***"
           << "\n*** NOTICE: currTimeStepIndex = "<<currTimeStepIndex_
-          << " >= maxNumTimeSteps = "<<maxNumTimeSteps_<< ", halting time integration!"
+          << " >= maxNumTimeSteps = "<<maxNumTimeSteps_
+          << ", halting time integration!"
           << "\n***\n";
       return_val = false;
       break; // Exit the loop immediately!
     }
 
     if ( includesVerbLevel(verbLevel,Teuchos::VERB_LOW) ) {
-      *out << "\nTake step:  current_stepper_t = " << currStepperTimeRange.upper()
+      *out << "\nTake step:  current_stepper_t = "
+           << currStepperTimeRange.upper()
            << ", currTimeStepIndex = " << currTimeStepIndex_ << endl;
     }
 
@@ -671,7 +686,7 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
       }
       else  {
         if ( includesVerbLevel(verbLevel,Teuchos::VERB_LOW) )
-          *out << "\nAt a soft-breakpoint, NOT restarting time integrator ...\n";
+          *out <<"\nAt a soft-breakpoint, NOT restarting time integrator ...\n";
       }
     }
 
@@ -695,13 +710,14 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
 
       StepControlInfo<Scalar> trialStepCtrlInfo;
       {
-        RYTHMOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::advanceStepperToTime: getStepCtrl");
+        RYTHMOS_FUNC_TIME_MONITOR(
+          "Rythmos:DefaultIntegrator::advanceStepperToTime: getStepCtrl");
         if (!is_null(integrationControlStrategy_)) {
           // Let an external strategy object determine the step size and type.
           // Note that any breakpoint info is also related through this call.
-          trialStepCtrlInfo = integrationControlStrategy_->getNextStepControlInfo(
-            *stepper_, stepCtrlInfoLast_, currTimeStepIndex_
-            );
+          trialStepCtrlInfo =
+            integrationControlStrategy_->getNextStepControlInfo(
+              *stepper_, stepCtrlInfoLast_, currTimeStepIndex_);
         }
         else {
           // Take a variable step if we have no control strategy
@@ -717,12 +733,13 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
         *out << trialStepCtrlInfo;
       }
 
-      // Halt immediately if we where told to do so
+      // Halt immediately if we were told to do so
       if (trialStepCtrlInfo.stepSize < ST::zero()) {
         if ( includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM) )
           *out
             << "\n***"
-            << "\n*** NOTICE: The IntegrationControlStrategy object return stepSize < 0.0, halting time integration!"
+            << "\n*** NOTICE: The IntegrationControlStrategy object "
+            << "return stepSize < 0.0, halting time integration!"
             << "\n***\n";
         return_val = false;
         break; // Exit the loop immediately!
@@ -732,14 +749,23 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
       bool updatedTrialStepCtrlInfo = false;
       {
         const Scalar finalTime = integrationTimeDomain_.upper();
-        if (landOnFinalTime_ && trialStepCtrlInfo.stepSize + currStepperTimeRange.upper() > finalTime) {
-          if ( includesVerbLevel(verbLevel,Teuchos::VERB_LOW) )
-            *out << "\nCutting trial step to avoid stepping past final time ...\n";
+        if (landOnFinalTime_ && trialStepCtrlInfo.stepSize
+                                + currStepperTimeRange.upper() > finalTime) {
+
           trialStepCtrlInfo.stepSize = finalTime - currStepperTimeRange.upper();
           updatedTrialStepCtrlInfo = true;
+
+          if ( includesVerbLevel(verbLevel,Teuchos::VERB_LOW) )
+            *out << "\nCutting trial step to "<< trialStepCtrlInfo.stepSize
+                 << " to avoid stepping past final time ...\n";
+          if ( includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM) ) {
+            *out << "\n"
+                 << "  integrationTimeDomain = " << integrationTimeDomain_<<"\n"
+                 << "  currStepperTimeRange  = " << currStepperTimeRange <<"\n";
+          }
         }
       }
-    
+
       // Print the modified trial step
       if ( updatedTrialStepCtrlInfo
         && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM) )
@@ -772,7 +798,8 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
       // Take step
       Scalar stepSizeTaken;
       {
-        RYTHMOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::advanceStepperToTime: takeStep");
+        RYTHMOS_FUNC_TIME_MONITOR(
+          "Rythmos:Defaultintegrator::advancesteppertotime: takestep");
         stepSizeTaken = stepper_->takeStep(
           trialStepCtrlInfo.stepSize, trialStepCtrlInfo.stepType
           );
@@ -782,7 +809,7 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
       currStepperTimeRange = stepper_->getTimeRange();
       stepCtrlInfo = stepCtrlInfoTaken(trialStepCtrlInfo,stepSizeTaken);
 
-      // Print the step actually taken 
+      // Print the step actually taken
       if ( includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM) ) {
         *out << "\nStep actually taken:\n";
         OSTab tab2(out);
@@ -792,7 +819,8 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
       // Determine if the timestep failed
       const bool timeStepFailed = (stepCtrlInfo.stepSize <= ST::zero());
       if (timeStepFailed && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM)) {
-        *out << "\nWARNING: timeStep = "<<trialStepCtrlInfo.stepSize<<" failed!\n";
+        *out << "\nWARNING: timeStep = "<<trialStepCtrlInfo.stepSize
+             <<" failed!\n";
       }
 
       // Notify observer of a failed time step
@@ -810,8 +838,8 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
         {
           // See if a new timestep can be suggested
           if (integrationControlStrategy_->resetForFailedTimeStep(
-                *stepper_, stepCtrlInfoLast_, currTimeStepIndex_, trialStepCtrlInfo)
-             )
+                *stepper_, stepCtrlInfoLast_,
+                 currTimeStepIndex_, trialStepCtrlInfo) )
           {
             if ( includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM) ) {
               *out << "\nThe IntegrationControlStrategy object indicated that"
@@ -825,8 +853,9 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
           else
           {
             if ( includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM) ) {
-              *out << "\nThe IntegrationControlStrategy object could not suggest"
-                << " a better time step!  Allowing to fail the time step!\n";
+              *out << "\nThe IntegrationControlStrategy object could not "
+                   << "suggest a better time step!  Allowing to fail the "
+                   << "time step!\n";
             }
             // Fall through to the failure checking!
           }
@@ -848,9 +877,9 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
       else { // STEP_TYPE_FIXED
         TEUCHOS_TEST_FOR_EXCEPTION(
           stepSizeTaken != trialStepCtrlInfo.stepSize, std::logic_error,
-          "Error, stepper took step of dt = " << stepSizeTaken 
-          << " when asked to take step of dt = " << trialStepCtrlInfo.stepSize << "\n"
-          );
+          "Error, stepper took step of dt = " << stepSizeTaken
+          << " when asked to take step of dt = " << trialStepCtrlInfo.stepSize
+          << "\n");
       }
 
       // If we get here, the timestep is fine and is accepted!
@@ -868,8 +897,9 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
 
       {
 
-        RYTHMOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::advanceStepperToTime: output");
-      
+        RYTHMOS_FUNC_TIME_MONITOR(
+          "Rythmos:DefaultIntegrator::advanceStepperToTime: output");
+
         // Print our own brief output
         if ( includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM) ) {
           StepStatus<Scalar> stepStatus = stepper_->getStepStatus();
@@ -880,12 +910,14 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
               solution = stepStatus.solution,
               solutionDot = stepStatus.solutionDot;
             if (!is_null(solution))
-              *out << "\nsolution = \n" << Teuchos::describe(*solution,verbLevel);
+              *out << "\nsolution = \n"
+                   << Teuchos::describe(*solution,verbLevel);
             if (!is_null(solutionDot))
-              *out << "\nsolutionDot = \n" << Teuchos::describe(*solutionDot,verbLevel);
+              *out << "\nsolutionDot = \n"
+                   << Teuchos::describe(*solutionDot,verbLevel);
           }
         }
-      
+
         // Output to the observer
         if (!is_null(integrationObserver_))
           integrationObserver_->observeCompletedTimeStep(
@@ -902,17 +934,18 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
 
     stepCtrlInfoLast_ = stepCtrlInfo;
     ++currTimeStepIndex_;
-    
+
   }
 
   if ( includesVerbLevel(verbLevel,Teuchos::VERB_LOW) )
-    *out << "\nNumber of steps taken in this call to advanceStepperToTime(...) = "
+    *out << "\nNumber of steps taken in this call to "
+         << "advanceStepperToTime(...) = "
          << (currTimeStepIndex_ - initCurrTimeStepIndex) << endl
-         << "\nLeaving" << this->Describable::description()
+         << "\nLeaving " << this->Describable::description()
          << "::advanceStepperToTime("<<advance_to_t<<") ...\n";
 
   return return_val;
-  
+
 }
 
 //

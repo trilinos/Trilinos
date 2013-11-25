@@ -68,12 +68,12 @@ int main(int argc, char *argv[]) {
 #endif
 
   if (Comm.MyPID()==0)
-    cout << Epetra_Version() << endl << endl;
+    std::cout << Epetra_Version() << std::endl << std::endl;
 
-  cout << Comm << endl; // Print out process information
+  std::cout << Comm << std::endl; // Print out process information
   // Get the number of global equations from the command line
   if (argc!=2) { 
-    cout << "Usage: " << argv[0] << " number_of_equations" << endl;
+    std::cout << "Usage: " << argv[0] << " number_of_equations" << std::endl;
     exit(1);
    }
   int NumGlobalElements = atoi(argv[1]);
@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
   // Iterate
   double lambda = power_method(A);
   if (Comm.MyPID()==0) 
-    cout << endl << "Estimate of Dominant Eigenvalue = " << lambda << endl;		
+    std::cout << std::endl << "Estimate of Dominant Eigenvalue = " << lambda << std::endl;		
 #ifdef UG_EX1_MPI
   MPI_Finalize() ;
 #endif

@@ -495,6 +495,12 @@ static int ex_inquire_internal (int      exoid,
     }
     break;
 
+  case EX_INQ_DB_FLOAT_SIZE:
+    {
+      nc_get_att_longlong(exoid, NC_GLOBAL, ATT_FLT_WORDSIZE, (long long*)ret_int);
+    }
+    break;
+    
   case EX_INQ_DB_MAX_USED_NAME_LENGTH:
     /* Return the value of the ATT_MAX_NAME_LENGTH attribute (if it
        exists) which is the maximum length of any entity, variable,
@@ -524,7 +530,7 @@ static int ex_inquire_internal (int      exoid,
        * default if not set by the client is 32 characters. The value
        * does not include the trailing null.
        */
-      struct file_item* file = ex_find_file_item(exoid);
+      struct ex_file_item* file = ex_find_file_item(exoid);
 
       if (!file ) {
 	exerrval = EX_BADFILEID;
@@ -749,12 +755,20 @@ static int ex_inquire_internal (int      exoid,
 	if (stat_vals[i] == 0) /* is this object null? */
 	  continue;
 
-	if (ex_int64_status(exoid) & EX_IDS_INT64_API)
+	if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
+	  int64_t tmp_len = 0;
 	  id = ((int64_t*)ids)[i];
-	else
+	  status = ex_get_side_set_node_list_len(exoid, id, &tmp_len);
+	  if (status == NC_NOERR) *ret_int += tmp_len;
+	}
+	else {
+	  int tmp_len = 0;
 	  id = ((int*)ids)[i];
-	  
-	if ((status = ex_get_side_set_node_list_len(exoid, id, &tmp_num)) != NC_NOERR) {
+	  status = ex_get_side_set_node_list_len(exoid, id, &tmp_len);
+	  if (status == NC_NOERR) *ret_int += tmp_len;
+	}
+
+	if (status != NC_NOERR) {
 	  *ret_int = 0;
 	  exerrval = status;
 	  sprintf(errmsg,
@@ -765,7 +779,6 @@ static int ex_inquire_internal (int      exoid,
 	  free(ids);
 	  return (EX_FATAL);
 	}
-	*ret_int += tmp_num;
       }
 
       free(stat_vals);

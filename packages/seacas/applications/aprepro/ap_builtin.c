@@ -127,6 +127,8 @@ double do_tanh(double x);
 double do_polarX(double rad, double ang);
 double do_polarY(double rad, double ang);
 double do_strtod(char *string);
+double do_csvrows(char *string);
+double do_csvcols(char *string);
 
 char  *do_getenv(char *string);
 char  *do_tolower(char *string);
@@ -154,6 +156,7 @@ double do_julday(double mon, double day, double year);
 double do_log1p(double mag);
 char  *do_include_path(char *newpath);
 char  *do_intout(double intval);
+char  *do_get_csv(char *filename, double i, double j);
 
 /* DO_INT:  Calculate integer nearest to zero from value */
 double do_int(double x)
@@ -729,6 +732,46 @@ double do_atanh(double x)
   x = x / (1.0 - x);
   return (z * LOG1P(x + x));
 }
+
+double do_csvrows(char * filename)
+{
+  size_t len = 0;
+  char *line = NULL;
+  double rows = 0;
+
+  FILE *fp = open_file(filename, "r");
+
+  while (getline(&line, &len, fp) != -1) {
+    rows++;
+  }
+  fclose(fp);
+  if (line) free(line);
+
+  return (rows);
+}
+
+double do_csvcols(char * filename)
+{
+  const char *delim = ",";
+  size_t len = 0;
+  char *line = NULL;
+
+  double tempCols = 0;
+  double cols = 0;
+  FILE *fp = open_file(filename, "r");
+
+  while (getline(&line, &len, fp) != -1) {
+    double tempCols = do_word_count(line,   delim);
+    if (tempCols > cols) {
+      cols = tempCols;
+    }
+  }
+  fclose(fp);
+  if (line) free(line);
+
+  return cols;
+}
+
 /*
   --------------------------STRING FUNCTIONS------------------------
  */
@@ -1095,4 +1138,34 @@ char *do_extract(char *string, char *begin, char *end)
     free(tmpstr);
   }      
   return tmp;
+}
+
+char *do_get_csv(char *filename, double row, double col)
+{
+  const char *delim = ",";
+
+  size_t len = 0;
+  char *line = NULL;
+
+  double rows = 0;
+  char *value = NULL;
+
+  FILE *fp = open_file(filename, "r");
+
+  while (getline(&line, &len, fp) != -1) {
+    rows++;
+    if (rows == row) {
+      /* Found the correct row, now get the value at the specified
+	 column */
+      double num_cols = do_word_count(line, delim);
+      if (num_cols  > col) {
+	value = do_get_word(col, line, delim);
+      }
+      break;
+    }
+  }
+  fclose(fp);
+  if (line) free(line);
+
+  return value;
 }

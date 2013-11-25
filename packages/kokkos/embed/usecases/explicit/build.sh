@@ -4,12 +4,12 @@
 # Simple build script with options
 #-----------------------------------------------------------------------------
 
-# Directory for KokkosArray
+# Directory for Kokkos
 
-KOKKOSARRAY="../../../array"
+KOKKOS="../../../core"
 KOKKOSEMBED="../.."
 
-source ${KOKKOSARRAY}/src/build_common.sh
+source ${KOKKOS}/src/build_common.sh
 
 # Process command line options and set compilation variables
 #
@@ -25,7 +25,7 @@ EXECUTABLE="test.exe"
 
 INC_PATH="${INC_PATH} -I. -I${KOKKOSEMBED}/src"
 
-CXX_SOURCES="${CXX_SOURCES} ./TestHost.cpp ./TestMain.cpp"
+CXX_SOURCES="${CXX_SOURCES} ./TestThreads.cpp ./TestMain.cpp"
 
 #-----------------------------------------------------------------------------
 

@@ -44,7 +44,14 @@
 #include <iostream>
 #include <cuda_runtime.h>
 
-namespace Kokkos {
+#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCORE
+#include "KokkosCore_config.h"
+#ifdef KOKKOS_HAVE_CUDA
+#include "Kokkos_Cuda.hpp"
+#endif
+#endif
+
+namespace KokkosClassic {
 
   ThrustGPUNode::ThrustGPUNode () {
     using std::cout;
@@ -87,6 +94,13 @@ namespace Kokkos {
         << endl;
     }
     totalMem_ = deviceProp.totalGlobalMem;
+
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+    if (!Kokkos::Cuda::host_mirror_device_type::is_initialized())
+      Kokkos::Cuda::host_mirror_device_type::initialize();
+    if (!Kokkos::Cuda::is_initialized())
+      Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(device) );
+#endif
   } 
 
   ThrustGPUNode::ThrustGPUNode(ParameterList &pl)
@@ -132,6 +146,13 @@ namespace Kokkos {
         << endl;
     }
     totalMem_ = deviceProp.totalGlobalMem;
+
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+    if (!Kokkos::Cuda::host_mirror_device_type::is_initialized())
+      Kokkos::Cuda::host_mirror_device_type::initialize();
+    if (!Kokkos::Cuda::is_initialized())
+      Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(device) );
+#endif
   } 
 
   ThrustGPUNode::~ThrustGPUNode() {}
@@ -146,7 +167,7 @@ namespace Kokkos {
   void ThrustGPUNode::sync() const {
     cudaError err = cudaThreadSynchronize();
     TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
-        "Kokkos::ThrustGPUNode::sync(): cudaThreadSynchronize() returned error " << err );
+        "KokkosClassic::ThrustGPUNode::sync(): cudaThreadSynchronize() returned error " << err );
   }
 
 }

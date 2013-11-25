@@ -142,16 +142,19 @@ int main(int argc, char *argv[])
             "get-sync",           "get-async",
             "put-sync",           "put-async"};
 
-    const int num_nssi_transports = 4;
+    const int num_nssi_transports = 5;
     const int nssi_transport_vals[] = {
             NSSI_RPC_PTL,
             NSSI_RPC_IB,
             NSSI_RPC_GEMINI,
+            NSSI_RPC_BGPDCMF,
+            NSSI_RPC_BGQPAMI,
             NSSI_RPC_MPI};
     const char * nssi_transport_names[] = {
             "ptl",
             "ib",
             "gni",
+            "dcmf",
             "mpi"
     };
 

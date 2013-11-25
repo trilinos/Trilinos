@@ -76,6 +76,7 @@ main (int argc, char *argv[])
   using TpetraIntrepidPoissonExample::exactResidualNorm;
   using TpetraIntrepidPoissonExample::makeMatrixAndRightHandSide;
   using TpetraIntrepidPoissonExample::solveWithBelos;
+  using TpetraIntrepidPoissonExample::solveWithBelosGPU;
   using IntrepidPoissonExample::makeMeshInput;
   using IntrepidPoissonExample::setCommandLineArgumentDefaults;
   using IntrepidPoissonExample::setUpCommandLineArguments;
@@ -131,6 +132,18 @@ main (int argc, char *argv[])
   Teuchos::CommandLineProcessor cmdp (false, true);
   setUpCommandLineArguments (cmdp, nx, ny, nz, xmlInputParamsFile,
                              verbose, debug);
+  bool gpu = false;
+  cmdp.setOption ("gpu", "no-gpu", &gpu,
+                  "Run example using GPU node (if supported)");
+  int ranks_per_node = 1;
+  cmdp.setOption("ranks_per_node", &ranks_per_node,
+                 "Number of MPI ranks per node");
+  int gpu_ranks_per_node = 1;
+  cmdp.setOption("gpu_ranks_per_node", &gpu_ranks_per_node,
+                 "Number of MPI ranks per node for GPUs");
+  int device_offset = 0;
+  cmdp.setOption("device_offset", &device_offset,
+                 "Offset for attaching MPI ranks to CUDA devices");
   parseCommandLineArguments (cmdp, printedHelp, argc, argv, nx, ny, nz,
                              xmlInputParamsFile, verbose, debug);
   if (printedHelp) {
@@ -160,8 +173,8 @@ main (int argc, char *argv[])
   if (xmlInputParamsFile != "") {
     *out << "Reading parameters from XML file \""
          << xmlInputParamsFile << "\"..." << endl;
-    Teuchos::updateParametersFromXmlFile (xmlInputParamsFile, 
-					  outArg (inputList));
+    Teuchos::updateParametersFromXmlFile (xmlInputParamsFile,
+                                          outArg (inputList));
     if (myRank == 0) {
       inputList.print (*out, 2, true, true);
       *out << endl;
@@ -188,7 +201,7 @@ main (int argc, char *argv[])
   {
     TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Assembly", total_assembly);
     makeMatrixAndRightHandSide (A, B, X_exact, X, comm, node, meshInput,
-				out, err, verbose, debug);
+                                out, err, verbose, debug);
   }
 
   const std::vector<MT> norms = exactResidualNorm (A, B, X_exact);
@@ -218,13 +231,20 @@ main (int argc, char *argv[])
   bool converged = false;
   int numItersPerformed = 0;
   const MT tol = inputList.get("Convergence Tolerance",
-			       STM::squareroot (STM::eps ()));
+                               STM::squareroot (STM::eps ()));
   const int maxNumIters = inputList.get("Maximum Iterations", 200);
   const int num_steps = inputList.get("Number of Time Steps", 1);
-  {
+  if (gpu) {
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total GPU Solve", total_solve);
+    solveWithBelosGPU(converged, numItersPerformed, tol, maxNumIters, num_steps,
+                      ranks_per_node, gpu_ranks_per_node, device_offset,
+                      prec_type,
+                      X, A, B, Teuchos::null, M);
+  }
+  else {
     TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Solve", total_solve);
     solveWithBelos (converged, numItersPerformed, tol, maxNumIters, num_steps,
-		    X, A, B, Teuchos::null, M);
+                    X, A, B, Teuchos::null, M);
   }
 
   // Compute ||X-X_exact||_2
@@ -232,7 +252,7 @@ main (int argc, char *argv[])
   X_exact->update(-1.0, *X, 1.0);
   MT norm_error = X_exact->norm2();
   *out << endl
-       << "||X-X_exact||_2 / ||X_exact||_2 = " << norm_error / norm_x 
+       << "||X-X_exact||_2 / ||X_exact||_2 = " << norm_error / norm_x
        << endl;
 
   } // total time block
@@ -243,7 +263,7 @@ main (int argc, char *argv[])
   // reportParams->set ("writeGlobalStats", true);
   // Teuchos::TimeMonitor::report (*out, reportParams);
   Teuchos::TimeMonitor::summarize(std::cout);
-  
+
   } //try
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
 
@@ -251,4 +271,3 @@ main (int argc, char *argv[])
     return EXIT_SUCCESS;
   return EXIT_FAILURE;
 }
-

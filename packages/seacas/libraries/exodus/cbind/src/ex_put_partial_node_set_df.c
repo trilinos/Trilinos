@@ -94,7 +94,7 @@ int ex_put_partial_node_set_df (int   exoid,
       sprintf(errmsg,
               "Warning: no data allowed for NULL node set %"PRId64" in file id %d",
               node_set_id, exoid);
-      ex_err("ex_put_partial_node_set_df",errmsg,EX_MSG);
+      ex_err("ex_put_partial_node_set_df",errmsg,EX_NULLENTITY);
       return (EX_WARN);
     } else {
       sprintf(errmsg,

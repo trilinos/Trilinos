@@ -51,6 +51,7 @@
 #include <Teuchos_BLAS_types.hpp>
 #include <Kokkos_DefaultSparseOps.hpp>
 #include <Teuchos_Describable.hpp>
+#include <Teuchos_ArrayView.hpp>
 
 /// \file KokkosExamples_EmptySparseKernelClass.hpp
 /// \brief A file containing a stub for a new sparse kernel provider,
@@ -67,11 +68,11 @@ namespace KokkosExamples {
   /// \class EmptyCrsGraph
   /// \brief An empty graph fulfilling the CrsGraph interface.
   ///
-  /// This is based off Kokkos::CrsGraphBase to ease our obligations.
+  /// This is based off KokkosClassic::CrsGraphBase to ease our obligations.
   template <class Node>
-  class EmptyCrsGraph : public Kokkos::CrsGraphBase<int,Node> {
+  class EmptyCrsGraph : public KokkosClassic::CrsGraphBase<int,Node> {
   public:
-    EmptyCrsGraph(int numrows, int numcols, const RCP<Node> &node, const RCP<ParameterList> &params) : Kokkos::CrsGraphBase<int,Node>(numrows,numcols,node,params) {}
+    EmptyCrsGraph(int numrows, int numcols, const RCP<Node> &node, const RCP<ParameterList> &params) : KokkosClassic::CrsGraphBase<int,Node>(numrows,numcols,node,params) {}
     ~EmptyCrsGraph() {}
     void setStructure(const ArrayRCP<const size_t>&, const ArrayRCP<const int>&) {}
   };
@@ -79,11 +80,11 @@ namespace KokkosExamples {
   /// \class EmptyCrsMatrix
   /// \brief An empty matrix fulfilling the CrsMatrix interface.
   ///
-  /// This is based off Kokkos::CrsMatrixBase to ease our obligations.
+  /// This is based off KokkosClassic::CrsMatrixBase to ease our obligations.
   template <class Scalar, class Node>
-  class EmptyCrsMatrix : public Kokkos::CrsMatrixBase<Scalar,int,Node> {
+  class EmptyCrsMatrix : public KokkosClassic::CrsMatrixBase<Scalar,int,Node> {
   public:
-    EmptyCrsMatrix(const RCP<const EmptyCrsGraph<Node> > &graph, const RCP<ParameterList> &params) : Kokkos::CrsMatrixBase<Scalar,int,Node>(graph,params) {}
+    EmptyCrsMatrix(const RCP<const EmptyCrsGraph<Node> > &graph, const RCP<ParameterList> &params) : KokkosClassic::CrsMatrixBase<Scalar,int,Node>(graph,params) {}
     ~EmptyCrsMatrix() {}
     void setValues(const ArrayRCP<const Scalar> &) {}
   };
@@ -115,11 +116,11 @@ namespace KokkosExamples {
     typedef Scalar  scalar_type;
     /// \brief The type of (local) indices of the sparse matrix.
     ///
-    /// This is \c void only because this is a stub implementation.
+    /// This is \c int only because this is a stub implementation.
     /// In a real implementation, ordinal_type would normally either be
     /// a fixed type (like \c int) or a template parameter of your
     /// class.
-    typedef void ordinal_type;
+    typedef int ordinal_type;
     //! The Kokos Node type.
     typedef Node    node_type;
     //! The type of this object: <tt>typeof(*this)</tt>
@@ -152,7 +153,7 @@ namespace KokkosExamples {
     /// library only implements the required kernels for scalar types
     /// <tt>float</tt> and <tt>double</tt>.  Thus, you can provide a
     /// "fall-back" implementation for scalar types not supported by
-    /// the third-party library.  We do this for Kokkos::MklSparseOps,
+    /// the third-party library.  We do this for KokkosClassic::MklSparseOps,
     /// for example.  Alternately, some scalar types T (especially
     /// those requiring dynamic memory allocation) might not work
     /// correctly or efficiently on certain Kokkos Node types
@@ -181,7 +182,7 @@ namespace KokkosExamples {
     //! One-line description of this instance.
     std::string description () const {
       std::ostringstream os;
-      os << "Kokkos::EmptySparseKernel<Scalar=" 
+      os << "KokkosClassic::EmptySparseKernel<Scalar=" 
 	 << Teuchos::TypeNameTraits<Scalar>::name () << ", Node=" 
 	 << Teuchos::TypeNameTraits<Node>::name () << ">";
       return os.str ();
@@ -204,14 +205,14 @@ namespace KokkosExamples {
     //! \brief Allocate and initialize the storage for the matrix values.
     static ArrayRCP<size_t> allocRowPtrs(const RCP<Node> &node, const ArrayView<const size_t> &numEntriesPerRow)
     {
-      return Kokkos::details::DefaultCRSAllocator::template allocRowPtrs<size_t,Node>(node,numEntriesPerRow);
+      return KokkosClassic::details::DefaultCRSAllocator::template allocRowPtrs<size_t,Node>(node,numEntriesPerRow);
     }
 
     //! \brief Allocate and initialize the storage for a sparse graph.
     template <class T>
     static ArrayRCP<T> allocStorage(const RCP<Node> &node, const ArrayView<const size_t> &rowPtrs)
     {
-      return Kokkos::details::DefaultCRSAllocator::template allocStorage<T,int,Node>(node,rowPtrs);
+      return KokkosClassic::details::DefaultCRSAllocator::template allocStorage<T,int,Node>(node,rowPtrs);
     }
 
     //! Finalize a graph
@@ -234,7 +235,7 @@ namespace KokkosExamples {
         responsible for deciding what to do with the graph and matrix objects.
         Since your implementation may choose just
         to view the original CrsGraph data instead of making a deep
-        copy, callers should not change the Kokkos::CrsGraph after
+        copy, callers should not change the KokkosClassic::CrsGraph after
         calling this method.
       */
     void setGraphAndMatrix(const RCP<const EmptyCrsGraph<Node> >         &graph,
@@ -272,8 +273,8 @@ namespace KokkosExamples {
     void
     multiply (Teuchos::ETransp trans,
               RangeScalar alpha,
-              const Kokkos::MultiVector<DomainScalar,Node> &X,
-              Kokkos::MultiVector<RangeScalar,Node> &Y) const
+              const KokkosClassic::MultiVector<DomainScalar,Node> &X,
+              KokkosClassic::MultiVector<RangeScalar,Node> &Y) const
     {}
 
     /// \brief Y := Y + alpha * Op(A) * X.
@@ -304,9 +305,9 @@ namespace KokkosExamples {
     void
     multiply (Teuchos::ETransp trans,
               RangeScalar alpha,
-              const Kokkos::MultiVector<DomainScalar,Node> &X,
+              const KokkosClassic::MultiVector<DomainScalar,Node> &X,
               RangeScalar beta,
-              Kokkos::MultiVector<RangeScalar,Node> &Y) const
+              KokkosClassic::MultiVector<RangeScalar,Node> &Y) const
     {}
 
     /// \brief Solve Y = Op(A) X for X, where we assume A is triangular.
@@ -338,8 +339,8 @@ namespace KokkosExamples {
     template <class DomainScalar, class RangeScalar>
     void
     solve (Teuchos::ETransp trans,
-           const Kokkos::MultiVector<DomainScalar,Node> &Y,
-           Kokkos::MultiVector<RangeScalar,Node> &X) const
+           const KokkosClassic::MultiVector<DomainScalar,Node> &Y,
+           KokkosClassic::MultiVector<RangeScalar,Node> &X) const
     {}
 
     /// \brief Gauss-Seidel or SOR on \f$B = A X\f$.
@@ -385,11 +386,11 @@ namespace KokkosExamples {
     /// direction anyway.
     template <class DomainScalar, class RangeScalar>
     void
-    gaussSeidel (const Kokkos::MultiVector<DomainScalar,Node> &B,
-                 Kokkos::MultiVector<RangeScalar,Node> &X,
-                 const Kokkos::MultiVector<Scalar,Node> &D,
+    gaussSeidel (const KokkosClassic::MultiVector<DomainScalar,Node> &B,
+                 KokkosClassic::MultiVector<RangeScalar,Node> &X,
+                 const KokkosClassic::MultiVector<Scalar,Node> &D,
                  const RangeScalar& dampingFactor,
-                 const Kokkos::ESweepDirection direction) const
+                 const KokkosClassic::ESweepDirection direction) const
     {
       (void) B; // Silence compiler warnings for unused variables.
       (void) X;
@@ -397,6 +398,67 @@ namespace KokkosExamples {
       (void) dampingFactor;
       (void) direction;
     }
+
+    // \brief Reordered Gauss-Seidel or SOR on \f$B = A X\f$.
+    ///
+    /// Apply a forward or backward sweep of reordered Gauss-Seidel or
+    /// Successive Over-Relaxation (SOR) to the linear system(s) \f$B
+    /// = A X\f$.  For Gauss-Seidel, set the damping factor \c omega
+    /// to 1.  The ordering can be a partial one, in which case the Gauss-Seidel is only
+    /// executed on a local subset of unknowns.
+    ///
+    /// \tparam DomainScalar The type of entries in the input
+    ///   multivector X.  This may differ from the type of entries in
+    ///   A or in B.
+    /// \tparam RangeScalar The type of entries in the output
+    ///   multivector B.  This may differ from the type of entries in
+    ///   A or in X.
+    ///
+    /// \param B [in] Right-hand side(s).
+    /// \param X [in/out] On input: initial guess(es).  On output:
+    ///   result multivector(s).
+    /// \param D [in] Inverse of diagonal entries of the matrix A.
+    /// \param rowIndices [in] Ordered list of indices on which to execute GS.
+    /// \param omega [in] SOR damping factor.  omega = 1 results in
+    ///   Gauss-Seidel.
+    /// \param direction [in] Sweep direction: Forward or Backward.
+    ///   If you want a symmetric sweep, call this method twice, first
+    ///   with direction = Forward then with direction = Backward.
+    ///
+    /// The Gauss-Seidel kernel asks the user to precompute the
+    /// inverse diagonal entries of the matrix (here, the vector D).
+    /// The L1 variant of Gauss-Seidel modifies D in order to improve
+    /// convergence when doing Gauss-Seidel within a process (or
+    /// thread) and Jacobi between processes (or threads).  Also,
+    /// precomputing the inverse diagonal entries avoids divisions and
+    /// branches in the inner loop of Gauss-Seidel.
+    ///
+    /// We don't include a separate "Symmetric" direction mode in
+    /// order to avoid confusion when using this method to implement
+    /// "hybrid" Jacobi + symmetric (Gauss-Seidel or SOR) for a matrix
+    /// distributed over multiple processes.  ("Hybrid" means
+    /// "Gauss-Seidel or SOR within the process, Jacobi outside.")  In
+    /// that case, interprocess communication (a boundary exchange)
+    /// must occur before both the forward sweep and the backward
+    /// sweep, so we would need to invoke the kernel once per sweep
+    /// direction anyway.
+    template <class DomainScalar, class RangeScalar>
+    void
+    reorderedGaussSeidel (const KokkosClassic::MultiVector<DomainScalar,Node> &B,
+			  KokkosClassic::MultiVector<RangeScalar,Node> &X,
+			  const KokkosClassic::MultiVector<Scalar,Node> &D,
+			  const Teuchos::ArrayView<ordinal_type> & rowIndices,
+			  const RangeScalar& dampingFactor,
+			  const KokkosClassic::ESweepDirection direction) const
+    {
+      (void) B; // Silence compiler warnings for unused variables.
+      (void) X;
+      (void) D;
+      (void) rowIndices;
+      (void) dampingFactor;
+      (void) direction;
+    }
+
 
     //@}
   protected:

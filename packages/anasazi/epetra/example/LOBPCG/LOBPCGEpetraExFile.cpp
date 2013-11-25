@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
     return -1;
   }
   if (k_filename=="") {
-    cout << "The matrix K must be supplied through an input file!!!" << endl;
+    std::cout << "The matrix K must be supplied through an input file!!!" << std::endl;
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
   bool boolret = MyProblem->setProblem();
   if (boolret != true) {
     if (verbose && MyPID == 0) {
-      cout << "Anasazi::BasicEigenproblem::setProblem() returned with error." << endl;
+      std::cout << "Anasazi::BasicEigenproblem::setProblem() returned with error." << std::endl;
     }
 #ifdef HAVE_MPI
     MPI_Finalize() ;
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
   // Solve the problem to the specified tolerances or length
   Anasazi::ReturnType returnCode = MySolverMgr.solve();
   if (returnCode != Anasazi::Converged && MyPID==0 && verbose) {
-    cout << "Anasazi::EigensolverMgr::solve() returned unconverged." << endl;
+    std::cout << "Anasazi::EigensolverMgr::solve() returned unconverged." << std::endl;
   }
   
   // Get the eigenvalues and eigenvectors from the eigenproblem
@@ -197,16 +197,16 @@ int main(int argc, char *argv[]) {
     
     // Output computed eigenvalues and their direct residuals
     if (verbose && MyPID==0) {
-      cout.setf(std::ios_base::right, std::ios_base::adjustfield);
-      cout<<endl<< "Actual Residuals"<<endl;
-      cout<< std::setw(16) << "Real Part"
-        << std::setw(20) << "Direct Residual"<< endl;
-      cout<<"-----------------------------------------------------------"<<endl;
+      std::cout.setf(std::ios_base::right, std::ios_base::adjustfield);
+      std::cout<<std::endl<< "Actual Residuals"<<std::endl;
+      std::cout<< std::setw(16) << "Real Part"
+        << std::setw(20) << "Direct Residual"<< std::endl;
+      std::cout<<"-----------------------------------------------------------"<<std::endl;
       for (int i=0; i<numev; i++) {
-        cout<< std::setw(16) << evals[i].realpart 
-          << std::setw(20) << normEV[i] << endl;
+        std::cout<< std::setw(16) << evals[i].realpart 
+          << std::setw(20) << normEV[i] << std::endl;
       }  
-      cout<<"-----------------------------------------------------------"<<endl;
+      std::cout<<"-----------------------------------------------------------"<<std::endl;
     }
   }
   

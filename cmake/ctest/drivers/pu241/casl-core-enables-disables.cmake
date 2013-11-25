@@ -16,12 +16,6 @@ FOREACH(EXCLUDED_PACKAGE ${${PROJECT_NAME}_EXCLUDE_PACKAGES})
     "Disabled in casl-core-enables-disables.cmake")
 ENDFOREACH()
 
-# Turn off float and complex testing because CASL does not need them
-SET(Teuchos_ENABLE_FLOAT OFF CACHE BOOL
-  "Disabled in casl-core-enables-disables.cmake")
-SET(Teuchos_ENABLE_COMPLEX OFF CACHE BOOL
-  "Disabled in casl-core-enables-disables.cmake")
-
 # We don't need ThreadPool or the Kokkoss::TPINode instnatiations (VRI Kanban
 # #2852, Trilinos #5861)
 SET(${PROJECT_NAME}_ENABLE_ThreadPool OFF CACHE BOOL
@@ -60,8 +54,10 @@ SET(Belos_Tpetra_MVOPTester_complex_test_DISABLE TRUE)
 SET(Anasazi_Tpetra_MVOPTester_MPI_4_DISABLE TRUE)
 SET(Anasazi_Tpetra_MVOPTester_DISABLE TRUE)
 
-# We don't want PETSC support in Trilinos in case of incompatible version
+# We don't want PETSC or HYPRE support in Trilinos in case of incompatible version
+SET(EpetraExt_ENABLE_HYPRE OFF CACHE BOOL "")
 SET(EpetraExt_ENABLE_PETSC OFF CACHE BOOL "")
+SET(Ifpack_ENABLE_HYPRE OFF CACHE BOOL "")
 SET(ML_ENABLE_PETSC OFF CACHE BOOL "")
 SET(NOX_ENABLE_PETSC OFF CACHE BOOL "")
 

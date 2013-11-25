@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -59,25 +59,31 @@
 namespace MueLu {
 
   IfpackSmoother::IfpackSmoother(std::string const & type, Teuchos::ParameterList const & paramList, LO const &overlap)
-    : type_(type), paramList_(paramList), overlap_(overlap)
-  { }
+    : type_(type), overlap_(overlap)
+  {
+    SetParameterList(paramList);
+  }
 
-  IfpackSmoother::~IfpackSmoother() { }
-
-  void IfpackSmoother::SetParameters(Teuchos::ParameterList const & paramList) {
-    paramList_ = paramList;
+  void IfpackSmoother::SetParameterList(const Teuchos::ParameterList& paramList) {
+    Factory::SetParameterList(paramList);
 
     if (SmootherPrototype::IsSetup()) {
       // It might be invalid to change parameters after the setup, but it depends entirely on Ifpack implementation.
       // TODO: I don't know if Ifpack returns an error code or exception or ignore parameters modification in this case...
-
-      Teuchos::ParameterList nonConstParamList = paramList; // because Ifpack SetParameters() input argument is not const...
-      prec_->SetParameters(nonConstParamList);
+      prec_->SetParameters(const_cast<ParameterList&>(this->GetParameterList()));
     }
   }
 
-  Teuchos::ParameterList const & IfpackSmoother::GetParameters() { return paramList_; }
+  void IfpackSmoother::SetPrecParameters(const Teuchos::ParameterList& list) const {
+    ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
+    paramList.setParameters(list);
 
+    RCP<ParameterList> precList = this->RemoveFactoriesFromList(this->GetParameterList());
+
+    prec_->SetParameters(*precList);
+
+    paramList.setParameters(*precList);
+  }
 
   void IfpackSmoother::DeclareInput(Level &currentLevel) const {
     this->Input(currentLevel, "A");
@@ -90,28 +96,30 @@ namespace MueLu {
     A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
     double lambdaMax = -1.0;
-    if (type_ == "Chebyshev") {
-      if ( !paramList_.isParameter("chebyshev: max eigenvalue") ) {
+    if (type_ == "CHEBYSHEV")
+      try {
+        lambdaMax = Teuchos::getValue<Scalar>(this->GetParameter("chebyshev: max eigenvalue"));
+        this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue (cached with smoother parameter list)" << " = " << lambdaMax << std::endl;
+
+      } catch (Teuchos::Exceptions::InvalidParameterName) {
         lambdaMax = A_->GetMaxEigenvalueEstimate();
         if (lambdaMax != -1.0) {
           this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue (cached with matrix)" << " = " << lambdaMax << std::endl;
-          paramList_.set("chebyshev: max eigenvalue", lambdaMax);
+          this->SetParameter("chebyshev: max eigenvalue", ParameterEntry(lambdaMax));
         }
-      } else {
-        lambdaMax = paramList_.get<double>("chebyshev: max eigenvalue");
-        this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue (cached with smoother parameter list)" << " = " << lambdaMax << std::endl;
       }
-    }
 
     RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
+
     Ifpack factory;
     prec_ = rcp(factory.Create(type_, &(*epA), overlap_));
-    prec_->SetParameters(paramList_);
+    SetPrecParameters();
     prec_->Compute();
 
+    SmootherPrototype::IsSetup(true);
+
     if (type_ == "Chebyshev" && lambdaMax == -1.0) {
-      Teuchos::RCP<Ifpack_Chebyshev> chebyPrec;
-      chebyPrec = rcp_dynamic_cast<Ifpack_Chebyshev>(prec_);
+      Teuchos::RCP<Ifpack_Chebyshev> chebyPrec = rcp_dynamic_cast<Ifpack_Chebyshev>(prec_);
       if (chebyPrec != Teuchos::null) {
         lambdaMax = chebyPrec->GetLambdaMax();
         A_->SetMaxEigenvalueEstimate(lambdaMax);
@@ -120,36 +128,30 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(lambdaMax == -1.0, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Setup(): no maximum eigenvalue estimate");
     }
 
-    SmootherPrototype::IsSetup(true);
+    this->GetOStream(Statistics0, 0) << description() << std::endl;
   }
 
-  void IfpackSmoother::Apply(MultiVector& X, MultiVector const &B, bool const &InitialGuessIsZero) const {
+  void IfpackSmoother::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Apply(): Setup() has not been called");
 
     // Forward the InitialGuessIsZero option to Ifpack
     Teuchos::ParameterList  paramList;
     if (type_ == "Chebyshev") {
       paramList.set("chebyshev: zero starting solution", InitialGuessIsZero);
+
     } else if (type_ == "point relaxation stand-alone") {
       paramList.set("relaxation: zero starting solution", InitialGuessIsZero);
+
     } else if  (type_ == "ILU") {
-      ;
-      /*
-      if (InitialGuessIsZero == false) {
-        if (IsPrint(Warnings0, 0)) {
-          static int warning_only_once=0;
-          if ((warning_only_once++) == 0)
-            this->GetOStream(Warnings0, 0) << "Warning: MueLu::Ifpack2Smoother::Apply(): ILUT has no provision for a nonzero initial guess." << std::endl;
-        }
-      }
-      */
+      // do nothing
+
     } else {
       // TODO: When https://software.sandia.gov/bugzilla/show_bug.cgi?id=5283#c2 is done
       // we should remove the if/else/elseif and just test if this
       // option is supported by current ifpack2 preconditioner
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,"IfpackSmoother::Apply(): Ifpack preconditioner '"+type_+"' not supported");
     }
-    prec_->SetParameters(paramList);
+    SetPrecParameters(paramList);
 
     // Apply
     if (InitialGuessIsZero) {
@@ -164,10 +166,12 @@ namespace MueLu {
       prec_->ApplyInverse(epB, epX);
       X.update(1.0, *Correction, 1.0);
     }
-  } //Apply
+  }
 
   RCP<MueLu::SmootherPrototype<double, int, int> > IfpackSmoother::Copy() const {
-    return rcp(new IfpackSmoother(*this) );
+    RCP<IfpackSmoother> smoother = rcp(new IfpackSmoother(*this) );
+    smoother->SetParameterList(this->GetParameterList());
+    return smoother;
   }
 
   std::string IfpackSmoother::description() const {
@@ -180,18 +184,21 @@ namespace MueLu {
   void IfpackSmoother::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
 
-    if (verbLevel & Parameters0) {
+    if (verbLevel & Parameters0)
       out0 << "Prec. type: " << type_ << std::endl;
-    }
 
     if (verbLevel & Parameters1) {
-      out0 << "Parameter list: " << std::endl; { Teuchos::OSTab tab2(out); out << paramList_; }
+      out0 << "Parameter list: " << std::endl;
+      Teuchos::OSTab tab2(out);
+      out << this->GetParameterList();
       out0 << "Overlap: "        << overlap_ << std::endl;
     }
 
-    if (verbLevel & External) {
-      if (prec_ != Teuchos::null) { Teuchos::OSTab tab2(out); out << *prec_ << std::endl; }
-    }
+    if (verbLevel & External)
+      if (prec_ != Teuchos::null) {
+        Teuchos::OSTab tab2(out);
+        out << *prec_ << std::endl;
+      }
 
     if (verbLevel & Debug) {
       out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl

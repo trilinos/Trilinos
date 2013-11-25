@@ -1,12 +1,11 @@
-/*
-//@HEADER
-// ************************************************************************
+// @HEADER
+// ***********************************************************************
 //
-//   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
+//                           Stokhos Package
+//                 Copyright (2009) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -35,55 +34,94 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
 //
-// ************************************************************************
-//@HEADER
-*/
+// ***********************************************************************
+// @HEADER
 
 #include <iostream>
 
-#include "KokkosArray_hwloc.hpp"
+#include "KokkosCore_config.h"
+#include "Kokkos_Threads.hpp"
+#include "Kokkos_OpenMP.hpp"
+#include "Kokkos_hwloc.hpp"
 
-#include <TestStochastic.hpp>
+#ifdef KOKKOS_HAVE_PTHREAD
+#include "Stokhos_Threads_CrsProductTensor.hpp"
+#endif
+#ifdef KOKKOS_HAVE_OPENMP
+#include "Stokhos_OpenMP_CrsProductTensor.hpp"
+#endif
 
-#include <Host/KokkosArray_Host_ProductTensor.hpp>
-#include <Host/KokkosArray_Host_StochasticProductTensor.hpp>
-#include <Host/KokkosArray_Host_SymmetricDiagonalSpec.hpp>
-#include <Host/KokkosArray_Host_BlockCrsMatrix.hpp>
-#include <Host/KokkosArray_Host_CrsMatrix.hpp>
+#include "TestStochastic.hpp"
 
 namespace unit_test {
 
-template<typename Scalar>
-struct performance_test_driver<Scalar,KokkosArray::Host> {
+template<typename Scalar, typename Device>
+struct performance_test_driver {
 
-  static void run(bool test_flat, bool test_orig, bool test_block) {
-    typedef KokkosArray::Host Device;
+  static void run(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
+                  bool test_block, bool symmetric, bool mkl) {
 
     int nGrid;
-    int nIter; 
-    
+    int nIter;
+
     // All methods compared against flat-original
     if (test_flat) {
       nGrid = 12 ;
-      nIter = 1 ; 
-      performance_test_driver_all<Scalar,Device>( 
-	3 , 1 ,  9 , nGrid , nIter , test_block );
-      performance_test_driver_all<Scalar,Device>( 
-	5 , 1 ,  5 , nGrid , nIter , test_block );
+      nIter = 1 ;
+      performance_test_driver_all<Scalar,Device>(
+        3 , 1 ,  9 , nGrid , nIter , test_block , symmetric );
+      performance_test_driver_all<Scalar,Device>(
+        5 , 1 ,  5 , nGrid , nIter , test_block , symmetric );
     }
-    
+
     // Just polynomial methods compared against original
     if (test_orig) {
-      nGrid = 64 ;
-      nIter = 1 ; 
-      performance_test_driver_poly<Scalar,Device>( 
-	3 , 1 , 12 , nGrid , nIter , test_block );
-      performance_test_driver_poly<Scalar,Device>( 
-	5 , 1 ,  6 , nGrid , nIter , test_block );
+#ifdef __MIC__
+      nGrid = 32 ;
+#else
+      nGrid = 32 ;
+#endif
+      nIter = 1 ;
+      // Something funny happens when we go to larger problem sizes on the
+      // MIC where it appears to slow down subsequent calculations (i.e.,
+      // the degree 5 cases will run slower).  Maybe it is getting too hot?
+#ifdef __MIC__
+      performance_test_driver_poly<Scalar,Device,Stokhos::DefaultMultiply>(
+        3 , 1 , 9 , nGrid , nIter , test_block , symmetric );
+#else
+      performance_test_driver_poly<Scalar,Device,Stokhos::DefaultMultiply>(
+        3 , 1 , 12 , nGrid , nIter , test_block , symmetric );
+#endif
+      performance_test_driver_poly<Scalar,Device,Stokhos::DefaultMultiply>(
+        5 , 1,  6 , nGrid , nIter , test_block , symmetric );
     }
-    
+
+    // Just polynomial methods compared against original
+    if (test_deg) {
+ #ifdef __MIC__
+      nGrid = 32 ;
+#else
+      nGrid = 64 ;
+#endif
+      nIter = 1 ;
+      performance_test_driver_poly_deg<Scalar,Device,Stokhos::DefaultMultiply>(
+        3 , 1 , 12 , nGrid , nIter , test_block , symmetric );
+    }
+
+    // Just polynomial methods compared against original
+    if (test_lin) {
+#ifdef __MIC__
+      nGrid = 32 ;
+#else
+      nGrid = 64 ;
+#endif
+      nIter = 10 ;
+      performance_test_driver_linear<Scalar,Device,Stokhos::DefaultMultiply>(
+        31 ,  255 , 32 , nGrid , nIter , test_block , symmetric );
+    }
+
     //------------------------------
   }
 
@@ -91,27 +129,45 @@ struct performance_test_driver<Scalar,KokkosArray::Host> {
 
 }
 
-template <typename Scalar>
-int mainHost(bool test_flat, bool test_orig, bool test_block)
+template <typename Scalar, typename Device>
+int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
+             bool test_block, bool symmetric, bool mkl)
 {
-  const std::pair<unsigned,unsigned> core_topo =
-    KokkosArray::hwloc::get_core_topology();
-  const size_t core_capacity = KokkosArray::hwloc::get_core_capacity();
+  Kokkos::Threads::print_configuration( std::cout );
+  const size_t team_count =
+    Kokkos::hwloc::get_available_numa_count() *
+    Kokkos::hwloc::get_available_cores_per_numa();
+  const size_t threads_per_team =
+    Kokkos::hwloc::get_available_threads_per_core();
 
-  const size_t gang_count = core_topo.first ;
-  const size_t gang_worker_count = core_topo.second * core_capacity;
+  Device::initialize( team_count * threads_per_team );
 
-  KokkosArray::Host::initialize( gang_count , gang_worker_count );
+  std::string name = "Host";
+#ifdef KOKKOS_HAVE_PTHREAD
+  if (Kokkos::Impl::is_same<Device,Kokkos::Threads>::value)
+    name = "Threads";
+#endif
+#ifdef KOKKOS_HAVE_OPENMP
+  if (Kokkos::Impl::is_same<Device,Kokkos::OpenMP>::value)
+    name = "OpenMP";
+#endif
+  std::cout << std::endl << "\"" << name << " Performance with "
+            << team_count * threads_per_team << " threads\"" << std::endl ;
 
-  std::cout << std::endl << "\"Host Performance with "
-            << gang_count * gang_worker_count << " threads\"" << std::endl ;
-  unit_test::performance_test_driver<Scalar,KokkosArray::Host>::run(
-    test_flat, test_orig, test_block);
+  unit_test::performance_test_driver<Scalar,Device>::run(
+    test_flat, test_orig, test_deg, test_lin, test_block, symmetric, mkl);
 
-  KokkosArray::Host::finalize();
+  Device::finalize();
 
   return 0 ;
 }
 
-template int mainHost<float>(bool, bool, bool);
-template int mainHost<double>(bool, bool, bool);
+#ifdef KOKKOS_HAVE_PTHREAD
+template int mainHost<float,Kokkos::Threads>(bool, bool, bool, bool, bool, bool, bool);
+template int mainHost<double,Kokkos::Threads>(bool, bool, bool, bool, bool, bool, bool);
+#endif
+
+#ifdef KOKKOS_HAVE_OPENMP
+template int mainHost<float,Kokkos::OpenMP>(bool, bool, bool, bool, bool, bool, bool);
+template int mainHost<double,Kokkos::OpenMP>(bool, bool, bool, bool, bool, bool, bool);
+#endif

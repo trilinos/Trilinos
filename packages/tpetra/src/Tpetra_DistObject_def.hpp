@@ -108,8 +108,8 @@ namespace Tpetra {
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
-  DistObject (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source)
-    : map_ (source.map_)
+  DistObject (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& rhs)
+    : map_ (rhs.map_)
   {}
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -193,24 +193,31 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
-  doImport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A,
-            const Import<LocalOrdinal,GlobalOrdinal,Node> & importer,
+  doImport (const SrcDistObject& source,
+            const Import<LocalOrdinal,GlobalOrdinal,Node>& importer,
             CombineMode CM)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(*getMap() != *importer.getTargetMap(),
       std::invalid_argument, "doImport: The target DistObject's Map is not "
       "identical to the Import's target Map.");
-    TEUCHOS_TEST_FOR_EXCEPTION(*A.getMap() != *importer.getSourceMap(),
-      std::invalid_argument, "doImport: The source DistObject's Map is not "
-      "identical to the Import's source Map.");
-    size_t numSameIDs = importer.getNumSameIDs();
+#ifdef HAVE_TPETRA_DEBUG
+    {
+      typedef DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> this_type;
+      const this_type* srcDistObj = dynamic_cast<const this_type*> (&source);
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        srcDistObj != NULL && * (srcDistObj->getMap ()) != *importer.getSourceMap(),
+        std::invalid_argument, "doImport: The source is a DistObject, yet its "
+        "Map is not identical to the Import's source Map.");
+    }
+#endif // HAVE_TPETRA_DEBUG
+    size_t numSameIDs = importer.getNumSameIDs ();
 
-    typedef ArrayView<const LocalOrdinal> view_type;
+    typedef Teuchos::ArrayView<const LocalOrdinal> view_type;
     const view_type exportLIDs      = importer.getExportLIDs();
     const view_type remoteLIDs      = importer.getRemoteLIDs();
     const view_type permuteToLIDs   = importer.getPermuteToLIDs();
     const view_type permuteFromLIDs = importer.getPermuteFromLIDs();
-    this->doTransfer (A, CM, numSameIDs, permuteToLIDs, permuteFromLIDs,
+    this->doTransfer (source, CM, numSameIDs, permuteToLIDs, permuteFromLIDs,
                       remoteLIDs, exportLIDs, importer.getDistributor (),
                       DoForward);
   }
@@ -218,14 +225,24 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
-  doExport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A,
-            const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter,
+  doExport (const SrcDistObject& source,
+            const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter,
             CombineMode CM)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(   *getMap() != *exporter.getTargetMap(), std::invalid_argument,
-      "doExport: The target DistObject's Map is not identical to the Export's target Map.");
-    TEUCHOS_TEST_FOR_EXCEPTION( *A.getMap() != *exporter.getSourceMap(), std::invalid_argument,
-      "doExport: The source DistObject's Map is not identical to the Export's source Map.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      *getMap() != *exporter.getTargetMap(), std::invalid_argument,
+      "doExport: The target DistObject's Map is not identical to the Export's "
+      "target Map.");
+#ifdef HAVE_TPETRA_DEBUG
+    {
+      typedef DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> this_type;
+      const this_type* srcDistObj = dynamic_cast<const this_type*> (&source);
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        srcDistObj != NULL && * (srcDistObj->getMap ()) != *exporter.getSourceMap(),
+        std::invalid_argument, "doExport: The source is a DistObject, yet its "
+        "Map is not identical to the Export's source Map.");
+    }
+#endif // HAVE_TPETRA_DEBUG
     size_t numSameIDs = exporter.getNumSameIDs();
 
     typedef ArrayView<const LocalOrdinal> view_type;
@@ -233,21 +250,32 @@ namespace Tpetra {
     view_type remoteLIDs      = exporter.getRemoteLIDs();
     view_type permuteToLIDs   = exporter.getPermuteToLIDs();
     view_type permuteFromLIDs = exporter.getPermuteFromLIDs();
-    doTransfer (A, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs,
+    doTransfer (source, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs,
                 exportLIDs, exporter.getDistributor (), DoForward);
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
-  doImport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A,
+  doImport (const SrcDistObject& source,
             const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter,
             CombineMode CM)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(  * getMap() != *exporter.getSourceMap(), std::invalid_argument,
-      "doImport (with Export): The target DistObject's Map is not identical to the Export's source Map.");
-    TEUCHOS_TEST_FOR_EXCEPTION( *A.getMap() != *exporter.getTargetMap(), std::invalid_argument,
-      "doImport (with Export): The source DistObject's Map is not identical to the Export's target Map.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      *getMap() != *exporter.getSourceMap(), std::invalid_argument,
+      "doImport (reverse mode): The target DistObject's Map is not identical "
+      "to the Export's source Map.");
+#ifdef HAVE_TPETRA_DEBUG
+    {
+      typedef DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> this_type;
+      const this_type* srcDistObj = dynamic_cast<const this_type*> (&source);
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        srcDistObj != NULL && * (srcDistObj->getMap ()) != *exporter.getTargetMap(),
+        std::invalid_argument,
+        "doImport (reverse mode): The source is a DistObject, yet its "
+        "Map is not identical to the Export's target Map.");
+    }
+#endif // HAVE_TPETRA_DEBUG
     size_t numSameIDs = exporter.getNumSameIDs();
 
     typedef ArrayView<const LocalOrdinal> view_type;
@@ -255,23 +283,32 @@ namespace Tpetra {
     view_type remoteLIDs      = exporter.getExportLIDs();
     view_type permuteToLIDs   = exporter.getPermuteFromLIDs();
     view_type permuteFromLIDs = exporter.getPermuteToLIDs();
-    doTransfer (A, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs,
+    doTransfer (source, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs,
                 exportLIDs, exporter.getDistributor (), DoReverse);
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
-  doExport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A,
+  doExport (const SrcDistObject& source,
             const Import<LocalOrdinal,GlobalOrdinal,Node> & importer,
             CombineMode CM)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION( *getMap() != *importer.getSourceMap(),
-      std::invalid_argument, "doExport (with Import): The target object's Map "
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      *getMap() != *importer.getSourceMap(), std::invalid_argument,
+      "doExport (reverse mode): The target object's Map "
       "is not identical to the Import's source Map.");
-    TEUCHOS_TEST_FOR_EXCEPTION( *A.getMap() != *importer.getTargetMap(),
-      std::invalid_argument, "doExport (with Import): The source object's Map "
-      "is not identical to the Import's target Map.");
+#ifdef HAVE_TPETRA_DEBUG
+    {
+      typedef DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> this_type;
+      const this_type* srcDistObj = dynamic_cast<const this_type*> (&source);
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        srcDistObj != NULL && * (srcDistObj->getMap ()) != *importer.getTargetMap(),
+        std::invalid_argument,
+        "doExport (reverse mode): The source is a DistObject, yet its "
+        "Map is not identical to the Import's target Map.");
+    }
+#endif // HAVE_TPETRA_DEBUG
     size_t numSameIDs = importer.getNumSameIDs();
 
     typedef ArrayView<const LocalOrdinal> view_type;
@@ -279,7 +316,7 @@ namespace Tpetra {
     view_type remoteLIDs      = importer.getExportLIDs();
     view_type permuteToLIDs   = importer.getPermuteFromLIDs();
     view_type permuteFromLIDs = importer.getPermuteToLIDs();
-    doTransfer (A, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs,
+    doTransfer (source, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs,
                 exportLIDs, importer.getDistributor (), DoReverse);
   }
 
@@ -299,7 +336,7 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
-  doTransfer (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source,
+  doTransfer (const SrcDistObject& src,
               CombineMode CM,
               size_t numSameIDs,
               const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
@@ -314,13 +351,14 @@ namespace Tpetra {
     Teuchos::TimeMonitor doXferMon (*doXferTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
 
-    TEUCHOS_TEST_FOR_EXCEPTION( ! checkSizes(source), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! checkSizes (src), std::invalid_argument,
       "Tpetra::DistObject::doTransfer(): checkSizes() indicates that the "
       "destination object is not a legal target for redistribution from the "
       "source object.  This probably means that they do not have the same "
       "dimensions.  For example, MultiVectors must have the same number of "
       "rows and columns.");
-    Kokkos::ReadWriteOption rwo = Kokkos::ReadWrite;
+    KokkosClassic::ReadWriteOption rwo = KokkosClassic::ReadWrite;
     if (CM == INSERT || CM == REPLACE) {
       const size_t numIDsToWrite = numSameIDs +
         as<size_t> (permuteToLIDs.size ()) +
@@ -333,7 +371,7 @@ namespace Tpetra {
         // CrsMatrix with a dynamic graph.  INSERT mode could mean
         // that we're adding new entries to the object, but we don't
         // want to get rid of the old ones.
-        rwo = Kokkos::WriteOnly;
+        rwo = KokkosClassic::WriteOnly;
       }
     }
     // Tell the source to create a read-only view of its data.  On a
@@ -344,7 +382,11 @@ namespace Tpetra {
     // rather, local LIDs to send) and packet counts, createViews()
     // could create a "sparse view" that only brings in the necessary
     // data from device to host memory.
-    source.createViews();
+    typedef DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> this_type;
+    const this_type* srcDistObj = dynamic_cast<const this_type*> (&src);
+    if (srcDistObj != NULL) {
+      srcDistObj->createViews ();
+    }
 
     // Tell the target to create a view of its data.  Depending on
     // rwo, this could be a write-only view or a read-and-write view.
@@ -358,113 +400,145 @@ namespace Tpetra {
     // rather, local LIDs into which to receive) and packet counts,
     // createViewsNonConst() could create a "sparse view" that only
     // transfers the necessary data.
-    this->createViewsNonConst(rwo);
+    this->createViewsNonConst (rwo);
 
     if (numSameIDs + permuteToLIDs.size()) {
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
       Teuchos::TimeMonitor copyAndPermuteMon (*copyAndPermuteTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
       // There is at least one GID to copy or permute.
-      copyAndPermute (source, numSameIDs, permuteToLIDs, permuteFromLIDs);
+      copyAndPermute (src, numSameIDs, permuteToLIDs, permuteFromLIDs);
     }
+
     // The method may return zero even if the implementation actually
     // does have a constant number of packets per LID.  However, if it
     // returns nonzero, we may use this information to avoid
     // (re)allocating num{Ex,Im}portPacketsPerLID_.  packAndPrepare()
     // will set this to its final value.
+    //
+    // We only need this if CM != ZERO, but it has to be lifted out of
+    // that scope because there are multiple tests for CM != ZERO.
     size_t constantNumPackets = this->constantNumberOfPackets ();
 
-    if (constantNumPackets == 0) {
-      numExportPacketsPerLID_.resize (exportLIDs.size ());
-      numImportPacketsPerLID_.resize (remoteLIDs.size ());
-    }
+    // We only need to pack communication buffers if the combine mode
+    // is not ZERO. A "ZERO combine mode" means that the results are
+    // the same as if we had received all zeros, and added them to the
+    // existing values. That means we don't need to communicate.
+    if (CM != ZERO) {
+      if (constantNumPackets == 0) {
+        numExportPacketsPerLID_.resize (exportLIDs.size ());
+        numImportPacketsPerLID_.resize (remoteLIDs.size ());
+      }
 
-    {
+      {
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
-      Teuchos::TimeMonitor packAndPrepareMon (*packAndPrepareTimer_);
+        Teuchos::TimeMonitor packAndPrepareMon (*packAndPrepareTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
-      // Ask the source to pack data.  Also ask it whether there are a
-      // constant number of packets per element (constantNumPackets is
-      // an output argument).  If there are, constantNumPackets will
-      // come back nonzero.  Otherwise, the source will fill the
-      // numExportPacketsPerLID_ array.
-      packAndPrepare (source, exportLIDs, exports_, numExportPacketsPerLID_(),
-                      constantNumPackets, distor);
+        // Ask the source to pack data.  Also ask it whether there are a
+        // constant number of packets per element (constantNumPackets is
+        // an output argument).  If there are, constantNumPackets will
+        // come back nonzero.  Otherwise, the source will fill the
+        // numExportPacketsPerLID_ array.
+        packAndPrepare (src, exportLIDs, exports_, numExportPacketsPerLID_ (),
+                        constantNumPackets, distor);
+      }
     }
 
     // We don't need the source's data anymore, so it can let go of
-    // its views.  On a discrete accelerator, this frees host memory,
-    // since device memory has the "master" version of the data.
-    source.releaseViews();
+    // its views.  On an accelerator device with a separate memory
+    // space (like a GPU), this frees host memory, since device memory
+    // has the "master" version of the data.
+    if (srcDistObj != NULL) {
+      srcDistObj->releaseViews ();
+    }
 
-    if (constantNumPackets != 0) {
-      // There are a constant number of packets per element.  We
-      // already know (from the number of "remote" (incoming)
-      // elements) how many incoming elements we expect, so we can
-      // resize the buffer accordingly.
-      const size_t rbufLen = remoteLIDs.size() * constantNumPackets;
-      if (as<size_t> (imports_.size()) != rbufLen) {
-        imports_.resize (rbufLen);
+    // We only need to send data if the combine mode is not ZERO.
+    if (CM != ZERO) {
+      if (constantNumPackets != 0) {
+        // There are a constant number of packets per element.  We
+        // already know (from the number of "remote" (incoming)
+        // elements) how many incoming elements we expect, so we can
+        // resize the buffer accordingly.
+        const size_t rbufLen = remoteLIDs.size() * constantNumPackets;
+        if (as<size_t> (imports_.size()) != rbufLen) {
+          imports_.resize (rbufLen);
+        }
       }
-    }
-    if ((isDistributed() && revOp == DoReverse) ||
-        (source.isDistributed() && revOp == DoForward)) {
-      // call one of the doPostsAndWaits functions
-      if (revOp == DoReverse) {
+
+      // Do we need to do communication (via doPostsAndWaits)?
+      bool needCommunication = true;
+      if (revOp == DoReverse && ! isDistributed ()) {
+        needCommunication = false;
+      }
+      // FIXME (mfh 30 Jun 2013): Checking whether the source object
+      // is distributed requires a cast to DistObject.  If it's not a
+      // DistObject, then I'm not quite sure what to do.  Perhaps it
+      // would be more appropriate for SrcDistObject to have an
+      // isDistributed() method.  For now, I'll just assume that we
+      // need to do communication unless the cast succeeds and the
+      // source is not distributed.
+      else if (revOp == DoForward && srcDistObj != NULL && ! srcDistObj->isDistributed ()) {
+        needCommunication = false;
+      }
+
+      if (needCommunication) {
+        if (revOp == DoReverse) {
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
-        Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
+          Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
-        if (constantNumPackets == 0) { //variable num-packets-per-LID:
-          distor.doReversePostsAndWaits (numExportPacketsPerLID_().getConst(), 1,
-                                         numImportPacketsPerLID_());
-          size_t totalImportPackets = 0;
-          for (Array_size_type i = 0; i < numImportPacketsPerLID_.size(); ++i) {
-            totalImportPackets += numImportPacketsPerLID_[i];
+          if (constantNumPackets == 0) { //variable num-packets-per-LID:
+            distor.doReversePostsAndWaits (numExportPacketsPerLID_().getConst(), 1,
+                                           numImportPacketsPerLID_());
+            size_t totalImportPackets = 0;
+            for (Array_size_type i = 0; i < numImportPacketsPerLID_.size(); ++i) {
+              totalImportPackets += numImportPacketsPerLID_[i];
+            }
+            imports_.resize(totalImportPackets);
+            distor.doReversePostsAndWaits (exports_().getConst(),
+                                           numExportPacketsPerLID_(),
+                                           imports_(),
+                                           numImportPacketsPerLID_());
           }
-          imports_.resize(totalImportPackets);
-          distor.doReversePostsAndWaits (exports_().getConst(),
-                                         numExportPacketsPerLID_(),
-                                         imports_(),
-                                         numImportPacketsPerLID_());
-        }
-        else {
-          distor.doReversePostsAndWaits (exports_().getConst(),
-                                         constantNumPackets,
-                                         imports_());
-        }
-      }
-      else { // revOp == DoForward
-#ifdef HAVE_TPETRA_TRANSFER_TIMERS
-        Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
-#endif // HAVE_TPETRA_TRANSFER_TIMERS
-        if (constantNumPackets == 0) { //variable num-packets-per-LID:
-          distor.doPostsAndWaits (numExportPacketsPerLID_().getConst(), 1,
-                                  numImportPacketsPerLID_());
-          size_t totalImportPackets = 0;
-          for (Array_size_type i = 0; i < numImportPacketsPerLID_.size(); ++i) {
-            totalImportPackets += numImportPacketsPerLID_[i];
+          else {
+            distor.doReversePostsAndWaits (exports_().getConst(),
+                                           constantNumPackets,
+                                           imports_());
           }
-          imports_.resize(totalImportPackets);
-          distor.doPostsAndWaits (exports_().getConst(),
-                                  numExportPacketsPerLID_(),
-                                  imports_(),
-                                  numImportPacketsPerLID_());
         }
-        else {
-          distor.doPostsAndWaits (exports_().getConst(),
-                                  constantNumPackets,
-                                  imports_());
-        }
-      }
-      {
+        else { // revOp == DoForward
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
-        Teuchos::TimeMonitor unpackAndCombineMon (*unpackAndCombineTimer_);
+          Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
-        unpackAndCombine (remoteLIDs, imports_(), numImportPacketsPerLID_(),
-                          constantNumPackets, distor, CM);
+          if (constantNumPackets == 0) { //variable num-packets-per-LID:
+            distor.doPostsAndWaits (numExportPacketsPerLID_().getConst(), 1,
+                                    numImportPacketsPerLID_());
+            size_t totalImportPackets = 0;
+            for (Array_size_type i = 0; i < numImportPacketsPerLID_.size(); ++i) {
+              totalImportPackets += numImportPacketsPerLID_[i];
+            }
+            imports_.resize(totalImportPackets);
+            distor.doPostsAndWaits (exports_().getConst(),
+                                    numExportPacketsPerLID_(),
+                                    imports_(),
+                                    numImportPacketsPerLID_());
+          }
+          else {
+            distor.doPostsAndWaits (exports_().getConst(),
+                                    constantNumPackets,
+                                    imports_());
+          }
+        }
+        {
+#ifdef HAVE_TPETRA_TRANSFER_TIMERS
+          Teuchos::TimeMonitor unpackAndCombineMon (*unpackAndCombineTimer_);
+#endif // HAVE_TPETRA_TRANSFER_TIMERS
+          unpackAndCombine (remoteLIDs, imports_(), numImportPacketsPerLID_(),
+                            constantNumPackets, distor, CM);
+        }
       }
-    }
-    this->releaseViews();
+    } // if (CM != ZERO)
+
+    this->releaseViews ();
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -489,7 +563,7 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
-  createViewsNonConst (Kokkos::ReadWriteOption /*rwo*/)
+  createViewsNonConst (KokkosClassic::ReadWriteOption /*rwo*/)
   {}
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>

@@ -67,7 +67,7 @@ class BlockedDOFManager; //forward declaration
            Newton-based solve
 
 */
-template <typename EvalT,typename Traits,typename S,typename LO,typename GO,typename NodeT=Kokkos::DefaultNode::DefaultNodeType>
+template <typename EvalT,typename Traits,typename S,typename LO,typename GO,typename NodeT=KokkosClassic::DefaultNode::DefaultNodeType>
 class ScatterResidual_BlockedTpetra
   : public PHX::EvaluatorWithBaseImpl<Traits>,
     public PHX::EvaluatorDerived<panzer::Traits::Residual, Traits>,
@@ -142,7 +142,7 @@ private:
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
-  Teuchos::RCP<const BlockedDOFManager<LO,int> > globalIndexer_;
+  Teuchos::RCP<const BlockedDOFManager<LO,GO> > globalIndexer_;
 
   std::vector<int> fieldIds_; // field IDs needing mapping
 
@@ -224,7 +224,7 @@ private:
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
-  Teuchos::RCP<const BlockedDOFManager<LO,int> > globalIndexer_;
+  Teuchos::RCP<const BlockedDOFManager<LO,GO> > globalIndexer_;
 
   std::vector<int> fieldIds_; // field IDs needing mapping
 

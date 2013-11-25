@@ -427,7 +427,7 @@ double Epetra_MsrMatrix::NormOne() const {
   return(NormOne_);
 }
 //=============================================================================
-void Epetra_MsrMatrix::Print(ostream& os) const {
+void Epetra_MsrMatrix::Print(std::ostream& os) const {
   int MyPID = RowMatrixRowMap().Comm().MyPID();
   int NumProc = RowMatrixRowMap().Comm().NumProc();
 
@@ -437,20 +437,20 @@ void Epetra_MsrMatrix::Print(ostream& os) const {
       const Epetra_fmtflags oldf = os.setf(ios::scientific,ios::floatfield);
       const int             oldp = os.precision(12); */
       if (MyPID==0) {
-	os <<  "\nNumber of Global Rows        = "; os << NumGlobalRows64(); os << endl;
-	os <<    "Number of Global Cols        = "; os << NumGlobalCols64(); os << endl;
-	os <<    "Number of Global Diagonals   = "; os << NumGlobalDiagonals64(); os << endl;
-	os <<    "Number of Global Nonzeros    = "; os << NumGlobalNonzeros64(); os << endl;
-	if (LowerTriangular()) os <<    " ** Matrix is Lower Triangular **"; os << endl;
-	if (UpperTriangular()) os <<    " ** Matrix is Upper Triangular **"; os << endl;
+	os <<  "\nNumber of Global Rows        = "; os << NumGlobalRows64(); os << std::endl;
+	os <<    "Number of Global Cols        = "; os << NumGlobalCols64(); os << std::endl;
+	os <<    "Number of Global Diagonals   = "; os << NumGlobalDiagonals64(); os << std::endl;
+	os <<    "Number of Global Nonzeros    = "; os << NumGlobalNonzeros64(); os << std::endl;
+	if (LowerTriangular()) os <<    " ** Matrix is Lower Triangular **"; os << std::endl;
+	if (UpperTriangular()) os <<    " ** Matrix is Upper Triangular **"; os << std::endl;
       }
 
-      os <<  "\nNumber of My Rows        = "; os << NumMyRows(); os << endl;
-      os <<    "Number of My Cols        = "; os << NumMyCols(); os << endl;
-      os <<    "Number of My Diagonals   = "; os << NumMyDiagonals(); os << endl;
-      os <<    "Number of My Nonzeros    = "; os << NumMyNonzeros(); os << endl; os << endl;
+      os <<  "\nNumber of My Rows        = "; os << NumMyRows(); os << std::endl;
+      os <<    "Number of My Cols        = "; os << NumMyCols(); os << std::endl;
+      os <<    "Number of My Diagonals   = "; os << NumMyDiagonals(); os << std::endl;
+      os <<    "Number of My Nonzeros    = "; os << NumMyNonzeros(); os << std::endl; os << std::endl;
 
-      os << flush;
+      os << std::flush;
       
       // Reset os flags
       
@@ -477,7 +477,7 @@ void Epetra_MsrMatrix::Print(ostream& os) const {
 	os <<  "   Col Index ";
 	os.width(20);
 	os <<  "   Value     ";
-	os << endl;
+	os << std::endl;
       }
       for (i=0; i<NumMyRows_; i++) {
 	long long Row = RowMatrixRowMap().GID64(i); // Get global row number
@@ -492,12 +492,12 @@ void Epetra_MsrMatrix::Print(ostream& os) const {
 	  os <<  RowMatrixColMap().GID64(Indices_[j]); os << "    ";
 	  os.width(20);
 	  os <<  Values_[j]; os << "    ";
-	  os << endl;
+	  os << std::endl;
 	}
       }
 
       
-      os << flush;
+      os << std::flush;
       
     }
     // Do a few global ops to give I/O a chance to complete

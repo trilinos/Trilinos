@@ -242,7 +242,7 @@ int error = 0;  /* flag to indicate status */
             if (pio_info->matrix_obj==ROWS){
               tmp = edge;
               edge = vtx;
-              vtx = edge;
+              vtx = tmp;
             }
             edge--;           /* so we can use it as array index */
 	    vtx--;            /* Want the same numbering, start from 0 */

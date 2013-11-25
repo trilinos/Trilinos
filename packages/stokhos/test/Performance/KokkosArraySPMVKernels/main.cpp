@@ -1,13 +1,12 @@
-/*
-//@HEADER
-// ************************************************************************
-// 
-//   KokkosArray: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-// 
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-// 
+// @HEADER
+// ***********************************************************************
+//
+//                           Stokhos Package
+//                 Copyright (2009) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,21 +34,28 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
-// ************************************************************************
-//@HEADER
-*/
+// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
+//
+// ***********************************************************************
+// @HEADER
 
 #include <string>
 #include <iostream>
 #include <cstdlib>
 
-template <typename scalar>
-int mainHost(bool test_flat, bool test_orig, bool test_block);
+#include "KokkosCore_config.h"
+#include "Kokkos_Threads.hpp"
+#include "Kokkos_OpenMP.hpp"
+
+#include "Stokhos_ConfigDefs.h"
+
+template <typename scalar, typename device>
+int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
+             bool test_block, bool symmetric, bool mkl);
 
 template <typename scalar>
-int mainCuda(bool test_flat, bool test_orig, bool test_block, int device_id);
+int mainCuda(bool test_flat, bool test_orig, bool test_lin,
+             bool test_block, bool symmetric, int device_id);
 
 int main(int argc, char *argv[])
 {
@@ -59,7 +65,21 @@ int main(int argc, char *argv[])
   bool test_block = true;
   bool test_flat = true;
   bool test_orig = true;
+  bool test_deg = false;
+  bool test_lin = false;
+  bool symmetric = true;
   bool single = false;
+  bool mkl = false;
+#ifdef KOKKOS_HAVE_OPENMP
+  bool omp = true;
+#else
+  bool omp = false;
+#endif
+#ifdef KOKKOS_HAVE_PTHREAD
+  bool threads = true;
+#else
+  bool threads = false;
+#endif
   int device = 0;
 
   // Parse command line arguments
@@ -87,6 +107,22 @@ int main(int argc, char *argv[])
       test_orig = true;
     else if (s == "no-orig")
       test_orig = false;
+    else if (s == "deg")
+      test_deg = true;
+    else if (s == "no-deg")
+      test_deg = false;
+    else if (s == "linear")
+      test_lin = true;
+    else if (s == "no-linear")
+      test_lin = false;
+    else if (s == "symmetric")
+      symmetric = true;
+    else if (s == "no-symmetric")
+      symmetric = false;
+    else if (s == "mkl")
+      mkl = true;
+    else if (s == "no-mkl")
+      mkl = false;
     else if (s == "single")
       single = true;
     else if (s == "double")
@@ -95,6 +131,18 @@ int main(int argc, char *argv[])
       ++i;
       device = std::atoi(argv[i]);
     }
+#ifdef KOKKOS_HAVE_OPENMP
+    else if (s == "omp")
+      omp = true;
+    else if (s == "no-omp")
+      omp = false;
+#endif
+#ifdef KOKKOS_HAVE_PTHREAD
+    else if (s == "threads")
+      threads = true;
+    else if (s == "no-threads")
+      threads = false;
+#endif
     else if (s == "-h" || s == "--help")
       print_usage = true;
     else {
@@ -105,25 +153,46 @@ int main(int argc, char *argv[])
   }
   if (print_usage) {
     std::cout << "Usage:" << std::endl
-	      << "\t" << argv[0] 
-	      << " [no-][cuda|host|block|flat|orig] [single|double] [device device_id]" 
-	      << std::endl << "Defaults are all enabled." << std::endl;
+              << "\t" << argv[0]
+              << " [no-][cuda|host|omp|threads|block|flat|orig|deg|linear|symmetric] [single|double] [device device_id]"
+              << std::endl << "Defaults are all enabled." << std::endl;
     return -1;
   }
 
   if (test_host) {
-    if (single)
-      mainHost<float>(test_flat, test_orig, test_block);
-    else
-      mainHost<double>(test_flat, test_orig, test_block);
+
+#ifdef KOKKOS_HAVE_PTHREAD
+    if (threads) {
+      if (single)
+        mainHost<float,Kokkos::Threads>(
+          test_flat, test_orig, test_deg, test_lin, test_block, symmetric, mkl);
+      else
+        mainHost<double,Kokkos::Threads>(
+          test_flat, test_orig, test_deg, test_lin, test_block, symmetric, mkl);
+    }
+#endif
+
+#ifdef KOKKOS_HAVE_OPENMP
+    if (omp) {
+      if (single)
+        mainHost<float,Kokkos::OpenMP>(
+          test_flat, test_orig, test_deg, test_lin, test_block, symmetric, mkl);
+      else
+        mainHost<double,Kokkos::OpenMP>(
+          test_flat, test_orig, test_deg, test_lin, test_block, symmetric, mkl);
+    }
+#endif
+
   }
+
+#ifdef KOKKOS_HAVE_CUDA
   if (test_cuda) {
     if (single)
-      mainCuda<float>(test_flat, test_orig, test_block, device);
+      mainCuda<float>(test_flat, test_orig, test_lin, test_block, symmetric, device);
     else
-      mainCuda<double>(test_flat, test_orig, test_block, device);
+      mainCuda<double>(test_flat, test_orig, test_lin, test_block, symmetric, device);
   }
+#endif
 
   return 0 ;
 }
-

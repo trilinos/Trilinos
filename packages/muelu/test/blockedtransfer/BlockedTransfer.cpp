@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -79,7 +79,6 @@
 #include "MueLu_Memory.hpp"
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_SaPFactory.hpp"
-#include "MueLu_GaussSeidelSmoother.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_Utilities.hpp"
@@ -115,8 +114,8 @@ typedef int    LocalOrdinal;
 typedef int GlobalOrdinal;
 // #endif
 
-typedef Kokkos::DefaultNode::DefaultNodeType Node;
-typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
+typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 
 #include "MueLu_UseShortNames.hpp"
 
@@ -249,7 +248,7 @@ int main(int argc, char *argv[]) {
   Teuchos::ArrayView< const GlobalOrdinal > map2eleList = map2->getNodeElementList();
   localGids.insert(localGids.end(), map2eleList.begin(), map2eleList.end());
   Teuchos::ArrayView<GlobalOrdinal> eleList(&localGids[0],localGids.size());
-  bigMap = MapFactory::Build(lib, numElements, eleList, 0, comm); // create full big map (concatenation of map1 and map2)
+  bigMap = StridedMapFactory::Build(lib, numElements, eleList, 0, stridingInfo, comm); // create full big map (concatenation of map1 and map2)
 
   std::vector<Teuchos::RCP<const Map> > maps;
   maps.push_back(map1); maps.push_back(map2);
@@ -274,6 +273,7 @@ int main(int argc, char *argv[]) {
 
   // build hierarchy
   Hierarchy H;
+  H.SetMaxCoarseSize(50);
   RCP<Level> levelOne = H.GetLevel();
   levelOne->Set("A", Teuchos::rcp_dynamic_cast<Matrix>(bOp)); // set blocked operator
 
@@ -293,8 +293,10 @@ int main(int argc, char *argv[]) {
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
   ifpackType = "RELAXATION";
   ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
-  RCP<SmootherPrototype> smoProto11     = rcp( new TrilinosSmoother(ifpackType, ifpackList, 0, A11Fact) );
-  RCP<SmootherPrototype> smoProto22     = rcp( new TrilinosSmoother(ifpackType, ifpackList, 0, A22Fact) );
+  RCP<SmootherPrototype> smoProto11     = rcp( new TrilinosSmoother(ifpackType, ifpackList, 0) );
+  smoProto11->SetFactory("A", A11Fact);
+  RCP<SmootherPrototype> smoProto22     = rcp( new TrilinosSmoother(ifpackType, ifpackList, 0) );
+  smoProto22->SetFactory("A", A22Fact);
 
   //RCP<SmootherPrototype> smoProto11     = rcp( new DirectSolver("", Teuchos::ParameterList(), A11Fact) );
   //RCP<SmootherPrototype> smoProto22     = rcp( new DirectSolver("", Teuchos::ParameterList(), A22Fact) );
@@ -327,14 +329,12 @@ int main(int argc, char *argv[]) {
   RCP<Factory> AcFact = rcp(new BlockedRAPFactory());
 
   // Smoothers
-  //RCP<SmootherPrototype> smootherPrototype     = rcp( new GaussSeidelSmoother(1, 1.0) );
   RCP<BlockedGaussSeidelSmoother> smootherPrototype     = rcp( new BlockedGaussSeidelSmoother(2,1.0) );
   smootherPrototype->AddFactoryManager(M11);
   smootherPrototype->AddFactoryManager(M22);
   RCP<SmootherFactory>   smootherFact          = rcp( new SmootherFactory(smootherPrototype) );
 
   // Coarse grid correction
-  //RCP<SmootherPrototype> coarseSolverPrototype = rcp( new DirectSolver() );
   RCP<BlockedGaussSeidelSmoother> coarseSolverPrototype = rcp( new BlockedGaussSeidelSmoother() );
   coarseSolverPrototype->AddFactoryManager(M11);
   coarseSolverPrototype->AddFactoryManager(M22);
@@ -348,6 +348,7 @@ int main(int argc, char *argv[]) {
   M.SetFactory("Smoother",     smootherFact); // TODO fix me
   M.SetFactory("CoarseSolver", coarseSolverFact);
 
+  H.SetVerbLevel(MueLu::Test);
   H.Setup(M);
 
   std::cout << "main AcFact = " << AcFact.get() << std::endl;

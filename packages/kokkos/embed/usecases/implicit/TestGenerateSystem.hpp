@@ -4,8 +4,9 @@
 
 #include <cstddef>
 #include <vector>
-#include <KokkosArray_View.hpp>
-#include <KokkosArray_Array.hpp>
+#include <algorithm>
+#include <Kokkos_View.hpp>
+#include <Kokkos_Array.hpp>
 #include <TestCrsMatrix.hpp>
 
 namespace Test {
@@ -61,27 +62,27 @@ GraphType create_graph_from_mesh( const MeshType & mesh )
     offset += work.size();
   }
 
-  return KokkosArray::create_crsarray< graph_type >( "node_node_ids" , node_node_ids );
+  return Kokkos::create_crsarray< graph_type >( "node_node_ids" , node_node_ids );
 }
 
 //----------------------------------------------------------------------------
 
 template< class FEMeshType , class ValueType , class Device >
 void fill_linear_system( const FEMeshType & mesh ,
-                         const KokkosArray::CrsMatrix< ValueType , Device > & matrix ,
-                         const KokkosArray::View< ValueType* , KokkosArray::LayoutRight , Device > & rhs ,
-                         const typename KokkosArray::View< ValueType* , KokkosArray::LayoutRight , Device >::HostMirror & solution )
+                         const Kokkos::CrsMatrix< ValueType , Device > & matrix ,
+                         const Kokkos::View< ValueType* , Kokkos::LayoutRight , Device > & rhs ,
+                         const typename Kokkos::View< ValueType* , Kokkos::LayoutRight , Device >::HostMirror & solution )
 {
-  typedef KokkosArray::CrsMatrix< ValueType , Device >                        matrix_type ;
-  typedef KokkosArray::View< ValueType* , KokkosArray::LayoutRight , Device > vector_type ;
+  typedef Kokkos::CrsMatrix< ValueType , Device >                        matrix_type ;
+  typedef Kokkos::View< ValueType* , Kokkos::LayoutRight , Device > vector_type ;
 
-  typename matrix_type::graph_type ::HostMirror host_graph  = KokkosArray::create_mirror( matrix.graph );
-  typename matrix_type::values_type::HostMirror host_values = KokkosArray::create_mirror( matrix.values );
-  typename FEMeshType::node_coords_type::HostMirror host_node_coords = KokkosArray::create_mirror_view( mesh.node_coords );
+  typename matrix_type::graph_type ::HostMirror host_graph  = Kokkos::create_mirror( matrix.graph );
+  typename matrix_type::values_type::HostMirror host_values = Kokkos::create_mirror( matrix.values );
+  typename FEMeshType::node_coords_type::HostMirror host_node_coords = Kokkos::create_mirror_view( mesh.node_coords );
 
-  typename vector_type::HostMirror host_rhs = KokkosArray::create_mirror( rhs );
+  typename vector_type::HostMirror host_rhs = Kokkos::create_mirror( rhs );
 
-  KokkosArray::deep_copy( host_node_coords , mesh.node_coords );
+  Kokkos::deep_copy( host_node_coords , mesh.node_coords );
 
   for ( unsigned iRow = 0 ; iRow < solution.dimension_0() ; ++iRow ) {
     for ( unsigned j = 0 ; j < solution.dimension_1() ; ++j ) {
@@ -119,8 +120,8 @@ void fill_linear_system( const FEMeshType & mesh ,
     }
   }
 
-  KokkosArray::deep_copy( rhs , host_rhs );
-  KokkosArray::deep_copy( matrix.values , host_values );
+  Kokkos::deep_copy( rhs , host_rhs );
+  Kokkos::deep_copy( matrix.values , host_values );
 }
 
 //----------------------------------------------------------------------------

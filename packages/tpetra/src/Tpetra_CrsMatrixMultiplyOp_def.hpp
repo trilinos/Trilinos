@@ -126,16 +126,16 @@ namespace Tpetra {
 
     // Translate from global to local sweep direction.
     // While doing this, validate the input.
-    Kokkos::ESweepDirection localDirection;
+    KokkosClassic::ESweepDirection localDirection;
     if (direction == Forward) {
-      localDirection = Kokkos::Forward;
+      localDirection = KokkosClassic::Forward;
     }
     else if (direction == Backward) {
-      localDirection = Kokkos::Backward;
+      localDirection = KokkosClassic::Backward;
     }
     else if (direction == Symmetric) {
       // We'll control local sweep direction manually.
-      localDirection = Kokkos::Forward;
+      localDirection = KokkosClassic::Forward;
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
@@ -312,14 +312,14 @@ namespace Tpetra {
       else { // direction == Symmetric
         matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D,
                                                    dampingFactor,
-                                                   Kokkos::Forward);
+                                                   KokkosClassic::Forward);
         // Communicate again before the Backward sweep.
         if (! importer.is_null ()) {
           X_colMap->doImport (*X_domainMap, *importer, INSERT);
         }
         matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D,
                                                    dampingFactor,
-                                                   Kokkos::Backward);
+                                                   KokkosClassic::Backward);
       }
     }
 
@@ -363,16 +363,16 @@ namespace Tpetra {
 
     // Translate from global to local sweep direction.
     // While doing this, validate the input.
-    Kokkos::ESweepDirection localDirection;
+    KokkosClassic::ESweepDirection localDirection;
     if (direction == Forward) {
-      localDirection = Kokkos::Forward;
+      localDirection = KokkosClassic::Forward;
     }
     else if (direction == Backward) {
-      localDirection = Kokkos::Backward;
+      localDirection = KokkosClassic::Backward;
     }
     else if (direction == Symmetric) {
       // We'll control local sweep direction manually.
-      localDirection = Kokkos::Forward;
+      localDirection = KokkosClassic::Forward;
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
@@ -528,14 +528,14 @@ namespace Tpetra {
       else { // direction == Symmetric
         matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D,
                                                    dampingFactor,
-                                                   Kokkos::Forward);
+                                                   KokkosClassic::Forward);
         // Communicate again before the Backward sweep, if necessary.
         if (! importer.is_null ()) {
           X_colMap->doImport (*X_domainMap, *importer, INSERT);
         }
         matrix_->template localGaussSeidel<OS,OS> (*B_in, *X_colMap, D,
                                                    dampingFactor,
-                                                   Kokkos::Backward);
+                                                   KokkosClassic::Backward);
       }
     }
 
@@ -869,13 +869,13 @@ namespace Tpetra {
   }
 
   template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
   CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getDomainMap() const {
     return matrix_->getDomainMap();
   }
 
   template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
   CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getRangeMap() const {
     return matrix_->getRangeMap();
   }
@@ -1010,7 +1010,7 @@ Tpetra::createCrsMatrixMultiplyOp(const Teuchos::RCP<const Tpetra::CrsMatrix<Mat
               MultiVector<OPSCALAR,LO,GO,NODE> &X, \
         const MultiVector<OPSCALAR,LO,GO,NODE> &D, \
         const OPSCALAR& alpha, \
-        const Kokkos::ESweepDirection direction) const;
+        const KokkosClassic::ESweepDirection direction) const;
 
 #define TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT_SINGLE(SCALAR,LO,GO,NODE) \
         TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(SCALAR,SCALAR,LO,GO,NODE)

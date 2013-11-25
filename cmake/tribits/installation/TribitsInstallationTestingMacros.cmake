@@ -37,7 +37,14 @@
 # ************************************************************************
 # @HEADER
 
-FUNCTION(FIND_PROJECT_INSTALL)
+
+#
+# Find an installed version of ${PROJECT_NAME} for installation testing
+# (the check that we are in installation mode is inside the macro)
+#
+
+FUNCTION(TRIBITS_FIND_PROJECT_INSTALL)
+
   IF(${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING)
     IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
       MESSAGE("Searching for ${PROJECT_NAME} installation at ${${PROJECT_NAME}_INSTALLATION_DIR}/include")

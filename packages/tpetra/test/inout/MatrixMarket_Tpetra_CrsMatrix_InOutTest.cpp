@@ -508,6 +508,7 @@ testCrsMatrix (Teuchos::FancyOStream& out, const GlobalOrdinalType indexBase)
   typedef Tpetra::CrsMatrix<ST, LO, GO, NT> crs_matrix_type;
   bool result = true; // current Boolean result; reused below
   bool success = true; // used by TEST_EQUALITY
+  (void) success; // silence "unused variable" compiler warning
 
   out << "Test: CrsMatrix Matrix Market I/O, w/ Map with index base "
       << indexBase << endl;
@@ -584,7 +585,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrixOutputInput, IndexBase1, ScalarType,
 
 
 // Unit test macro isn't smart enough to deal with namespace qualifications.
-typedef Kokkos::DefaultNode::DefaultNodeType the_node_type;
+typedef KokkosClassic::DefaultNode::DefaultNodeType the_node_type;
 
 // We instantiate tests for all combinations of the following parameters:
 // - indexBase = {0, 1}

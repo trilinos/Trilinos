@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -107,6 +107,29 @@ namespace MueLuTests {
 
     aLevel.SetLevelID(42);
     TEST_EQUALITY(aLevel.GetLevelID(), 42); //TODO: test default value of LevelID
+  }
+
+  TEUCHOS_UNIT_TEST(Level, NumRequests)
+  {
+    out << "version: " << MueLu::Version() << std::endl;
+
+    Level aLevel;
+    aLevel.SetLevelID(0);
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(2);
+    aLevel.Set("A", A);
+
+    RCP<FactoryManager> facManager = rcp(new FactoryManager());
+    aLevel.SetFactoryManager(facManager);
+    RCP<FactoryBase> factory = rcp(new CoalesceDropFactory());
+
+    aLevel.Request("Graph", factory.get());
+    aLevel.Request("Graph", factory.get());
+
+    aLevel.Release("Graph", factory.get());
+    TEST_EQUALITY(aLevel.IsRequested("Graph", factory.get()), true);
+
+    aLevel.Release("Graph", factory.get());
+    TEST_EQUALITY(aLevel.IsRequested("Graph", factory.get()), false);
   }
 
   TEUCHOS_UNIT_TEST(Level, RequestRelease)

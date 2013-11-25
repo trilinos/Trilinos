@@ -70,14 +70,16 @@
 
 namespace {
   const std::string id_str()           { return std::string("id");}
+  const std::string db_name_str()      { return std::string("db_name");}
   const std::string orig_topo_str()    { return std::string("original_topology_type");}
   const std::string orig_block_order() { return std::string("original_block_order");}
 
   bool lessOffset(const Ioss::EntityBlock *b1, const Ioss::EntityBlock *b2) {
     assert(b1->property_exists(orig_block_order()));
     assert(b2->property_exists(orig_block_order()));
-    return b1->get_property(orig_block_order()).get_int() <
-	   b2->get_property(orig_block_order()).get_int();
+    int64_t b1_orderInt = b1->get_property(orig_block_order()).get_int();
+    int64_t b2_orderInt = b2->get_property(orig_block_order()).get_int();
+    return ( (b1_orderInt == b2_orderInt) ? (b1->name() < b2->name()) : (b1_orderInt < b2_orderInt) );
   }
 
   std::string uppercase(const std::string &name);
@@ -122,6 +124,7 @@ namespace Ioss {
       if (iodatabase->open_create_behavior() != Ioss::DB_APPEND)
 	Region::begin_mode(STATE_READONLY);
     }
+
     properties.add(Property(this,
 			    "node_block_count",    Property::INTEGER));
     properties.add(Property(this,
@@ -158,6 +161,11 @@ namespace Ioss {
 			    "current_state",       Property::INTEGER));
     properties.add(Property(this,
 			    "database_name",       Property::STRING));
+
+    if (iodatabase->usage() == Ioss::WRITE_HISTORY &&
+	!(iodatabase->is_input() || iodatabase->open_create_behavior() == Ioss::DB_APPEND)) {
+      Ioss::Utils::generate_history_mesh(this);
+    }
   }
 
   Region::~Region()
@@ -400,7 +408,7 @@ namespace Ioss {
     }
 
     if (current_state == STATE_DEFINE_MODEL) {
-      // Sort the element blocks based on the idOffset field...
+      // Sort the element blocks based on the idOffset field, followed by name...
       if (!get_database()->is_input()) {
 	std::sort(elementBlocks.begin(), elementBlocks.end(), lessOffset);
 	std::sort(faceBlocks.begin(),    faceBlocks.end(),    lessOffset);
@@ -953,7 +961,18 @@ namespace Ioss {
 	IOSS_ERROR(errmsg);
       }
     }
-    return add_alias(db_name, db_name);
+
+    bool success = add_alias(db_name, db_name);
+
+    // "db_name" property is used with the canonical name setting.
+    if (success && ge->property_exists("db_name")) {
+      std::string canon_name = ge->get_property("db_name").get_string();
+      if (canon_name != db_name) {
+	success = add_alias(db_name, canon_name);
+      }
+    }
+
+    return success;
   }
 
   bool Region::add_alias(const std::string &db_name, const std::string &alias)
@@ -1504,6 +1523,18 @@ namespace Ioss {
 	    if (this_ge->name() != base) {
 	      this_ge->set_name(base);
 	    }
+	  }
+
+	  // See if there is an 'db_name' property...
+	  if (ge->property_exists(db_name_str())) {
+	    std::string db_name = ge->get_property(db_name_str()).get_string();
+
+	    if (this_ge->property_exists(db_name_str())) {
+	      // Remove the old property...
+	      this_ge->property_erase(db_name_str());
+	    }
+	    // Set the new property
+	    this_ge->property_add(Property(db_name_str(), db_name));
 	  }
 
 	  // See if there is a 'original_topology_type' property...

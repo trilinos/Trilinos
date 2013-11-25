@@ -1,28 +1,41 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//  
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//  
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -67,12 +80,18 @@ const int num_sg_rf = 4;
 const SG_RF sg_rf_values[] = { UNIFORM, CC_UNIFORM, RYS, LOGNORMAL };
 const char *sg_rf_names[] = { "Uniform", "CC-Uniform", "Rys", "Log-Normal" };
 
+// Quadrature types
+enum SG_Quad { TENSOR, SPARSE_GRID };
+const int num_sg_quad = 2;
+const SG_Quad sg_quad_values[] = { TENSOR, SPARSE_GRID };
+const char *sg_quad_names[] = { "tensor", "sparse-grid" };
+
 // Sparse grid growth rules
 enum SG_GROWTH { SLOW_RESTRICTED, MODERATE_RESTRICTED, UNRESTRICTED };
 const int num_sg_growth = 3;
 const SG_GROWTH sg_growth_values[] = {
   SLOW_RESTRICTED, MODERATE_RESTRICTED, UNRESTRICTED };
-const char *sg_growth_names[] = { 
+const char *sg_growth_names[] = {
   "Slow Restricted", "Moderate Restricted", "Unrestricted" };
 
 int main(int argc, char *argv[]) {
@@ -89,7 +108,7 @@ int main(int argc, char *argv[]) {
 #else
   Comm = Teuchos::rcp(new Epetra_SerialComm);
 #endif
-  
+
   int MyPID = Comm->MyPID();
 
   try {
@@ -103,9 +122,9 @@ int main(int argc, char *argv[]) {
     CLP.setOption("num_mesh", &n, "Number of mesh points in each direction");
 
     SG_RF randField = UNIFORM;
-    CLP.setOption("rand_field", &randField, 
-		   num_sg_rf, sg_rf_values, sg_rf_names,
-		  "Random field type");
+    CLP.setOption("rand_field", &randField,
+                   num_sg_rf, sg_rf_values, sg_rf_names,
+                  "Random field type");
 
     double mean = 0.2;
     CLP.setOption("mean", &mean, "Mean");
@@ -123,109 +142,133 @@ int main(int argc, char *argv[]) {
     CLP.setOption("order", &p, "Polynomial order");
 
     bool normalize_basis = true;
-    CLP.setOption("normalize", "unnormalize", &normalize_basis, 
-		  "Normalize PC basis");
+    CLP.setOption("normalize", "unnormalize", &normalize_basis,
+                  "Normalize PC basis");
 
     Krylov_Method krylov_method = CG;
-    CLP.setOption("krylov_method", &krylov_method, 
-		  num_krylov_method, krylov_method_values, krylov_method_names, 
-		  "Krylov method");
+    CLP.setOption("krylov_method", &krylov_method,
+                  num_krylov_method, krylov_method_values, krylov_method_names,
+                  "Krylov method");
 
-    PrecStrategy precStrategy = MEAN;  
-    CLP.setOption("prec_strategy", &precStrategy, 
-		  num_prec_strategy, prec_strategy_values, prec_strategy_names,
-		  "Preconditioner strategy");
+    PrecStrategy precStrategy = MEAN;
+    CLP.setOption("prec_strategy", &precStrategy,
+                  num_prec_strategy, prec_strategy_values, prec_strategy_names,
+                  "Preconditioner strategy");
 
     double tol = 1e-12;
     CLP.setOption("tol", &tol, "Solver tolerance");
 
+#ifdef HAVE_STOKHOS_DAKOTA
+    SG_Quad quad_method = SPARSE_GRID;
+#else
+    SG_Quad quad_method = TENSOR;
+#endif
+    CLP.setOption("quadrature", &quad_method,
+                   num_sg_quad, sg_quad_values, sg_quad_names,
+                  "Quadrature type");
+
     SG_GROWTH sg_growth = MODERATE_RESTRICTED;
-    CLP.setOption("sg_growth", &sg_growth, 
-		   num_sg_growth, sg_growth_values, sg_growth_names,
-		  "Sparse grid growth rule");
+    CLP.setOption("sg_growth", &sg_growth,
+                   num_sg_growth, sg_growth_values, sg_growth_names,
+                  "Sparse grid growth rule");
 
     CLP.parse( argc, argv );
 
     if (MyPID == 0) {
       std::cout << "Summary of command line options:" << std::endl
-		<< "\tnum_mesh        = " << n << std::endl
-		<< "\trand_field      = " << sg_rf_names[randField] << std::endl
-		<< "\tmean            = " << mean << std::endl
-		<< "\tstd_dev         = " << sigma << std::endl
-		<< "\tnum_kl          = " << num_KL << std::endl
-		<< "\torder           = " << p << std::endl
-		<< "\tnormalize_basis = " << normalize_basis << std::endl
-		<< "\tkrylov_method   = " << krylov_method_names[krylov_method] 
-		<< std::endl
-		<< "\tprec_strategy   = " << prec_strategy_names[precStrategy] 
-		<< std::endl 
-		<< "\ttol             = " << tol << std::endl
-		<< "\tsg_growth       = " << sg_growth_names[sg_growth]
-		<< std::endl;
+                << "\tnum_mesh        = " << n << std::endl
+                << "\trand_field      = " << sg_rf_names[randField] << std::endl
+                << "\tmean            = " << mean << std::endl
+                << "\tstd_dev         = " << sigma << std::endl
+                << "\tnum_kl          = " << num_KL << std::endl
+                << "\torder           = " << p << std::endl
+                << "\tnormalize_basis = " << normalize_basis << std::endl
+                << "\tkrylov_method   = " << krylov_method_names[krylov_method]
+                << std::endl
+                << "\tprec_strategy   = " << prec_strategy_names[precStrategy]
+                << std::endl
+                << "\ttol             = " << tol << std::endl
+                << "\tquadrature      = " << sg_quad_names[quad_method]
+                << std::endl
+                << "\tsg_growth       = " << sg_growth_names[sg_growth]
+                << std::endl;
     }
-    
+
     bool nonlinear_expansion = false;
     if (randField == LOGNORMAL)
       nonlinear_expansion = true;
-    
+
     {
     TEUCHOS_FUNC_TIME_MONITOR("Total Collocation Calculation Time");
 
     // Create Stochastic Galerkin basis
-    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(num_KL); 
+    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(num_KL);
     for (int i=0; i<num_KL; i++) {
       Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<int,double> > b;
       if (randField == UNIFORM) {
-	b = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(
-				  p, normalize_basis));
+        b = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(
+                                  p, normalize_basis));
       }
       else if (randField == CC_UNIFORM) {
-	b = 
-	  Teuchos::rcp(new Stokhos::ClenshawCurtisLegendreBasis<int,double>(
-			 p, normalize_basis, true));
+        b =
+          Teuchos::rcp(new Stokhos::ClenshawCurtisLegendreBasis<int,double>(
+                         p, normalize_basis, true));
       }
       else if (randField == RYS) {
-	b = Teuchos::rcp(new Stokhos::RysBasis<int,double>(
-				  p, weightCut, normalize_basis));
+        b = Teuchos::rcp(new Stokhos::RysBasis<int,double>(
+                                  p, weightCut, normalize_basis));
       }
       else if (randField == LOGNORMAL) {
-	b = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(
-				  p, normalize_basis));
+        b = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(
+                                  p, normalize_basis));
       }
       bases[i] = b;
     }
-    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
+    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis =
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
 
-   // Create sparse grid
-   int sparse_grid_growth = Pecos::MODERATE_RESTRICTED_GROWTH;
-   if (sg_growth == SLOW_RESTRICTED)
-     sparse_grid_growth = Pecos::SLOW_RESTRICTED_GROWTH;
-   else if (sg_growth == MODERATE_RESTRICTED)
-     sparse_grid_growth = Pecos::MODERATE_RESTRICTED_GROWTH;
-   else if (sg_growth == UNRESTRICTED)
-     sparse_grid_growth = Pecos::UNRESTRICTED_GROWTH;
-    Stokhos::SparseGridQuadrature<int,double> quad(basis,p,1e-12,sg_growth);
-    const Teuchos::Array< Teuchos::Array<double> >& quad_points = 
-      quad.getQuadPoints();
-    const Teuchos::Array<double>& quad_weights = 
-      quad.getQuadWeights();
+    // Create sparse grid
+    Teuchos::RCP<Stokhos::Quadrature<int,double> > quad;
+    if (quad_method == SPARSE_GRID) {
+#ifdef HAVE_STOKHOS_DAKOTA
+      int sparse_grid_growth = Pecos::MODERATE_RESTRICTED_GROWTH;
+      if (sg_growth == SLOW_RESTRICTED)
+        sparse_grid_growth = Pecos::SLOW_RESTRICTED_GROWTH;
+      else if (sg_growth == MODERATE_RESTRICTED)
+        sparse_grid_growth = Pecos::MODERATE_RESTRICTED_GROWTH;
+      else if (sg_growth == UNRESTRICTED)
+        sparse_grid_growth = Pecos::UNRESTRICTED_GROWTH;
+      quad = Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(
+                            basis,p,1e-12,sparse_grid_growth));
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::logic_error,
+        "Sparse grids require building with Dakota support!");
+#endif
+    }
+    else if (quad_method == TENSOR) {
+      quad =
+        Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
+    }
+    const Teuchos::Array< Teuchos::Array<double> >& quad_points =
+      quad->getQuadPoints();
+    const Teuchos::Array<double>& quad_weights = quad->getQuadWeights();
     int nqp = quad_weights.size();
 
     // Create application
-    twoD_diffusion_ME model(Comm, n, num_KL, sigma, mean, 
-    			    basis, nonlinear_expansion);
+    twoD_diffusion_ME model(Comm, n, num_KL, sigma, mean,
+                            basis, nonlinear_expansion);
 
     // Model data
-    Teuchos::RCP<Epetra_Vector> p = 
+    Teuchos::RCP<Epetra_Vector> p =
       Teuchos::rcp(new Epetra_Vector(*(model.get_p_map(0))));
-    Teuchos::RCP<Epetra_Vector> x = 
+    Teuchos::RCP<Epetra_Vector> x =
       Teuchos::rcp(new Epetra_Vector(*(model.get_x_map())));
-    Teuchos::RCP<Epetra_Vector> f = 
+    Teuchos::RCP<Epetra_Vector> f =
       Teuchos::rcp(new Epetra_Vector(*(model.get_f_map())));
-    Teuchos::RCP<Epetra_Vector> g = 
+    Teuchos::RCP<Epetra_Vector> g =
       Teuchos::rcp(new Epetra_Vector(*(model.get_g_map(0))));
-    Teuchos::RCP<Epetra_CrsMatrix> A = 
+    Teuchos::RCP<Epetra_CrsMatrix> A =
       Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(model.create_W());
     EpetraExt::ModelEvaluator::InArgs inArgs = model.createInArgs();
     EpetraExt::ModelEvaluator::OutArgs outArgs = model.createOutArgs();
@@ -261,8 +304,8 @@ int main(int argc, char *argv[]) {
       precParams.set("reuse: enable", true);
     }
     Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> M =
-      Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*A, precParams, 
-							   false));
+      Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*A, precParams,
+                                                           false));
     if (precStrategy == MEAN) {
       TEUCHOS_FUNC_TIME_MONITOR("Deterministic Preconditioner Calculation");
       *A = *(model.get_mean());
@@ -283,19 +326,19 @@ int main(int argc, char *argv[]) {
     aztec.SetPrecOperator(M.get());
     aztec.SetLHS(x.get());
     aztec.SetRHS(f.get());
-    
+
     x_mean.PutScalar(0.0);
     x_var.PutScalar(0.0);
     // Loop over colloction points
     for (int qp=0; qp<nqp; qp++) {
       TEUCHOS_FUNC_TIME_MONITOR("Collocation Loop");
 
-      if (qp%100 == 0 || qp == nqp-1) 
-	std::cout << "Collocation point " << qp+1 <<'/' << nqp << "\n";
-      
+      if (qp%100 == 0 || qp == nqp-1)
+        std::cout << "Collocation point " << qp+1 <<'/' << nqp << "\n";
+
       // Set parameters
       for (int i=0; i<num_KL; i++)
-	(*p)[i] = quad_points[qp][i];
+        (*p)[i] = quad_points[qp][i];
 
       // Set in/out args
       inArgs.set_p(0, p);
@@ -310,14 +353,14 @@ int main(int argc, char *argv[]) {
 
       // Compute preconditioner
       if (precStrategy != MEAN) {
-	TEUCHOS_FUNC_TIME_MONITOR("Deterministic Preconditioner Calculation");
-	M->ComputePreconditioner(checkFiltering);
+        TEUCHOS_FUNC_TIME_MONITOR("Deterministic Preconditioner Calculation");
+        M->ComputePreconditioner(checkFiltering);
       }
 
       // Solve linear system
       {
-	TEUCHOS_FUNC_TIME_MONITOR("Deterministic Solve");
-	aztec.Iterate(1000, tol);
+        TEUCHOS_FUNC_TIME_MONITOR("Deterministic Solve");
+        aztec.Iterate(1000, tol);
       }
 
       // Compute responses
@@ -331,7 +374,7 @@ int main(int argc, char *argv[]) {
       x_var.Update(quad_weights[qp], x2, 1.0);
       g_mean.Update(quad_weights[qp], *g, 1.0);
       g_var.Update(quad_weights[qp], g2, 1.0);
-      
+
     }
     x2.Multiply(1.0, x_mean, x_mean, 0.0);
     g2.Multiply(1.0, g_mean, g_mean, 0.0);
@@ -347,22 +390,22 @@ int main(int argc, char *argv[]) {
     std::cout.precision(16);
     std::cout << "\nResponse Mean =      " << std::endl << g_mean << std::endl;
     std::cout << "Response Std. Dev. = " << std::endl << g_var << std::endl;
-    
+
     // Save mean and variance to file
     EpetraExt::VectorToMatrixMarketFile("mean_col.mm", x_mean);
     EpetraExt::VectorToMatrixMarketFile("std_dev_col.mm", x_var);
 
     }
-    
+
     Teuchos::TimeMonitor::summarize(std::cout);
     Teuchos::TimeMonitor::zeroOutTimers();
 
   }
-  
+
   catch (std::exception& e) {
     std::cout << e.what() << std::endl;
   }
-  catch (string& s) {
+  catch (std::string& s) {
     std::cout << s << std::endl;
   }
   catch (char *s) {

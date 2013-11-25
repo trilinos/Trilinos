@@ -45,7 +45,7 @@
 #include <Kokkos_StandardNodeMemoryModel.hpp>
 #include "Kokkos_NodeHelpers.hpp"
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   /** \brief %Kokkos node interface for a serial, CPU node.
       \ingroup kokkos_node_api

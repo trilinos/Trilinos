@@ -207,7 +207,8 @@ template <typename Traits,typename LocalOrdinalT>
 void BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                              const LinearObjContainer & globalBCRows,
-                             LinearObjContainer & ghostedObjs) const
+                             LinearObjContainer & ghostedObjs,
+                             bool zeroVectorRows) const
 {
    typedef BlockedEpetraLinearObjContainer BLOC;
 
@@ -271,7 +272,7 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
             e_A = rcp_dynamic_cast<Epetra_CrsMatrix>(get_Epetra_Operator(*th_A),true);
 
          // adjust Block operator
-         adjustForDirichletConditions(*e_local_bcs,*e_global_bcs,e_f.ptr(),e_A.ptr());
+         adjustForDirichletConditions(*e_local_bcs,*e_global_bcs,e_f.ptr(),e_A.ptr(),zeroVectorRows);
 
          e_f = Teuchos::null; // this is so we only adjust it once on the first pass
       }
@@ -283,7 +284,8 @@ void BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 adjustForDirichletConditions(const Epetra_Vector & local_bcs,
                              const Epetra_Vector & global_bcs,
                              const Teuchos::Ptr<Epetra_Vector> & f,
-                             const Teuchos::Ptr<Epetra_CrsMatrix> & A) const
+                             const Teuchos::Ptr<Epetra_CrsMatrix> & A,
+                             bool zeroVectorRows) const
 {
    if(f==Teuchos::null && A==Teuchos::null)
       return;
@@ -297,7 +299,7 @@ adjustForDirichletConditions(const Epetra_Vector & local_bcs,
       double * values = 0;
       int * indices = 0;
 
-      if(local_bcs[i]==0.0) { 
+      if(local_bcs[i]==0.0 || zeroVectorRows) { 
          // this boundary condition was NOT set by this processor
 
          // if they exist put 0.0 in each entry
@@ -324,6 +326,14 @@ adjustForDirichletConditions(const Epetra_Vector & local_bcs,
          }
       }
    }
+}
+
+template <typename Traits,typename LocalOrdinalT>
+void BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
+applyDirichletBCs(const LinearObjContainer & counter,
+                  LinearObjContainer & result) const
+{
+  TEUCHOS_ASSERT(false); // not yet implemented
 }
 
 template <typename Traits,typename LocalOrdinalT>
@@ -391,11 +401,15 @@ initializeGhostedContainer(int mem,BlockedEpetraLinearObjContainer & loc) const
    if((mem & BLOC::DxDt) == BLOC::DxDt)
       loc.set_dxdt(getGhostedThyraDomainVector());
     
-   if((mem & BLOC::F) == BLOC::F)
+   if((mem & BLOC::F) == BLOC::F) {
       loc.set_f(getGhostedThyraRangeVector());
+      loc.setRequiresDirichletAdjustment(true);
+   }
 
-   if((mem & BLOC::Mat) == BLOC::Mat)
+   if((mem & BLOC::Mat) == BLOC::Mat) {
       loc.set_A(getGhostedThyraMatrix());
+      loc.setRequiresDirichletAdjustment(true);
+   }
 }
 
 template <typename Traits,typename LocalOrdinalT>

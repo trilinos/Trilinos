@@ -37,7 +37,7 @@
 namespace Rythmos {
 
 
-template<class Scalar> 
+template<class Scalar>
 RCP<SimpleIntegrationControlStrategy<Scalar> >
 simpleIntegrationControlStrategy()
 {
@@ -47,7 +47,7 @@ simpleIntegrationControlStrategy()
 }
 
 
-template<class Scalar> 
+template<class Scalar>
 RCP<SimpleIntegrationControlStrategy<Scalar> >
 simpleIntegrationControlStrategy( const RCP<ParameterList> &paramList )
 {
@@ -66,45 +66,45 @@ simpleIntegrationControlStrategy( const RCP<ParameterList> &paramList )
 // Static members
 
 
-template<class Scalar> 
+template<class Scalar>
 const std::string
 SimpleIntegrationControlStrategy<Scalar>::takeVariableSteps_name_
 = "Take Variable Steps";
 
-template<class Scalar> 
+template<class Scalar>
 const bool
 SimpleIntegrationControlStrategy<Scalar>::takeVariableSteps_default_
 = true;
 
 
-template<class Scalar> 
+template<class Scalar>
 const std::string
 SimpleIntegrationControlStrategy<Scalar>::max_dt_name_
 = "Max dt";
 
-template<class Scalar> 
+template<class Scalar>
 const double
 SimpleIntegrationControlStrategy<Scalar>::max_dt_default_
 = std::numeric_limits<Scalar>::max();
 
 
-template<class Scalar> 
+template<class Scalar>
 const std::string
 SimpleIntegrationControlStrategy<Scalar>::numTimeSteps_name_
 = "Number of Time Steps";
 
-template<class Scalar> 
+template<class Scalar>
 const int
 SimpleIntegrationControlStrategy<Scalar>::numTimeSteps_default_
 = -1;
 
 
-template<class Scalar> 
+template<class Scalar>
 const std::string
 SimpleIntegrationControlStrategy<Scalar>::fixed_dt_name_
 = "Fixed dt";
 
-template<class Scalar> 
+template<class Scalar>
 const double
 SimpleIntegrationControlStrategy<Scalar>::fixed_dt_default_
 = -1.0;
@@ -125,7 +125,7 @@ SimpleIntegrationControlStrategy<Scalar>::SimpleIntegrationControlStrategy()
 // Overridden from ParameterListAcceptor
 
 
-template<class Scalar> 
+template<class Scalar>
 void SimpleIntegrationControlStrategy<Scalar>::setParameterList(
   RCP<ParameterList> const& paramList
   )
@@ -140,7 +140,7 @@ void SimpleIntegrationControlStrategy<Scalar>::setParameterList(
     takeVariableSteps_name_, takeVariableSteps_ );
   if (!takeVariableSteps_) {
     numTimeSteps_ = paramList->get(numTimeSteps_name_,numTimeSteps_);
-    fixed_dt_ = paramList->get(fixed_dt_name_,fixed_dt_);
+    fixed_dt_ = paramList->get(fixed_dt_name_,fixed_dt_default_);
     TEUCHOS_TEST_FOR_EXCEPTION(
       numTimeSteps_ < 0 && fixed_dt_ <= ST::zero(), std::logic_error,
       "Error, when taking fixed steps, the user must set the parameters "
@@ -153,7 +153,7 @@ void SimpleIntegrationControlStrategy<Scalar>::setParameterList(
 }
 
 
-template<class Scalar> 
+template<class Scalar>
 RCP<const ParameterList>
 SimpleIntegrationControlStrategy<Scalar>::getValidParameters() const
 {
@@ -251,9 +251,9 @@ SimpleIntegrationControlStrategy<Scalar>::getNextStepControlInfo(
 #ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_ASSERT(integrationTimeDomain_.length() >= ST::zero());
 #endif
-  
+
   StepControlInfo<Scalar> trialStepCtrlInfo;
-  
+
   if (takeVariableSteps_) {
     trialStepCtrlInfo.stepType = STEP_TYPE_VARIABLE;
     trialStepCtrlInfo.stepSize = max_dt_;
@@ -262,12 +262,12 @@ SimpleIntegrationControlStrategy<Scalar>::getNextStepControlInfo(
     trialStepCtrlInfo.stepType = STEP_TYPE_FIXED;
     trialStepCtrlInfo.stepSize = fixed_dt_;
   }
-  
+
   return trialStepCtrlInfo;
-  
+
 }
 
-// 
+//
 // Explicit Instantiation macro
 //
 // Must be expanded from within the Rythmos namespace!
@@ -282,7 +282,7 @@ SimpleIntegrationControlStrategy<Scalar>::getNextStepControlInfo(
   \
   template RCP<SimpleIntegrationControlStrategy< SCALAR > > \
   simpleIntegrationControlStrategy( const RCP<ParameterList> &paramList );
-   
+
 
 } // namespace Rythmos
 

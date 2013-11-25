@@ -133,7 +133,7 @@ public:
   //! @name Attribute access functions
   //@{ 
 
-  //! Returns a character string describing the operator
+  //! Returns a character std::string describing the operator
   virtual const char * Label() const{return "Fix Me";}
 
   //! Returns the current UseTranspose setting.
@@ -164,7 +164,7 @@ public:
   //! @name Miscellaneous
   //@{ 
   //! Print method
-  virtual void Print(ostream& os) const;
+  virtual void Print(std::ostream& os) const;
 
   //@}
 

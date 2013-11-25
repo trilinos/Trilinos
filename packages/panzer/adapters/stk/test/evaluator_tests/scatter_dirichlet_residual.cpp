@@ -127,7 +127,7 @@ namespace panzer {
     TEST_EQUALITY(work_sets->size(),1);
 
     // build connection manager and field manager
-    const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+    const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
     RCP<panzer::BlockedDOFManager<int,int> > dofManager = Teuchos::rcp(new panzer::BlockedDOFManager<int,int>(conn_manager,MPI_COMM_WORLD));
 
     dofManager->addField(fieldName1_q1,Teuchos::rcp(new panzer::IntrepidFieldPattern(basis_q1->getIntrepidBasis())));
@@ -191,6 +191,7 @@ namespace panzer {
        pl.set("Dependent Map", names_map);
        pl.set("Side Subcell Dimension", 1);
        pl.set("Local Side ID", 2);
+       pl.set("Check Apply BC", false);
 
        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator = lof->buildScatterDirichlet<panzer::Traits::Residual>(pl);
 
@@ -212,6 +213,7 @@ namespace panzer {
        pl.set("Dependent Map", names_map);
        pl.set("Side Subcell Dimension", 1);
        pl.set("Local Side ID", 2);
+       pl.set("Check Apply BC", false);
 
        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator = lof->buildScatterDirichlet<panzer::Traits::Residual>(pl);
 
@@ -271,8 +273,6 @@ namespace panzer {
     /////////////////////////////////////////////////////////////
 
     panzer::Workset & workset = (*work_sets)[0];
-    workset.ghostedLinContainer = Teuchos::null;
-    workset.linContainer = Teuchos::null;
     workset.alpha = 0.0;
     workset.beta = 2.0; // derivatives multiplied by 2
     workset.time = 0.0;
@@ -372,7 +372,7 @@ namespace panzer {
     TEST_EQUALITY(work_sets->size(),1);
 
     // build connection manager and field manager
-    const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+    const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
     RCP<panzer::BlockedDOFManager<int,int> > dofManager = Teuchos::rcp(new panzer::BlockedDOFManager<int,int>(conn_manager,MPI_COMM_WORLD));
 
     dofManager->addField(fieldName1_q1,Teuchos::rcp(new panzer::IntrepidFieldPattern(basis_q1->getIntrepidBasis())));
@@ -443,6 +443,7 @@ namespace panzer {
        pl.set("Dependent Map", names_map);
        pl.set("Side Subcell Dimension", 1);
        pl.set("Local Side ID", 2);
+       pl.set("Check Apply BC", false);
 
        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator = lof->buildScatterDirichlet<panzer::Traits::Jacobian>(pl);
 
@@ -464,6 +465,7 @@ namespace panzer {
        pl.set("Dependent Map", names_map);
        pl.set("Side Subcell Dimension", 1);
        pl.set("Local Side ID", 2);
+       pl.set("Check Apply BC", false);
 
        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator = lof->buildScatterDirichlet<panzer::Traits::Jacobian>(pl);
 
@@ -522,8 +524,6 @@ namespace panzer {
     /////////////////////////////////////////////////////////////
 
     panzer::Workset & workset = (*work_sets)[0];
-    workset.ghostedLinContainer = Teuchos::null;
-    workset.linContainer = Teuchos::null;
     workset.alpha = 0.0;
     workset.beta = 2.0; // derivatives multiplied by 2
     workset.time = 0.0;

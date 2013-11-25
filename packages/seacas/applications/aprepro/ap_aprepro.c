@@ -47,8 +47,8 @@
 static char *qainfo[] =
 {
   "Aprepro",
-  "Date: 2013/02/07",
-  "Revision: 2.30"
+  "Date: 2013/10/23",
+  "Revision: 2.36"
 };
 
 #include <stdlib.h>
@@ -84,7 +84,6 @@ void initialize_options(aprepro_options *ap_options)
 }
 
 extern void add_input_file(char *filename);
-extern void yyparse(void);
 static void usage(void);
 extern void dumpsym(int type, int doInternal);
 extern void pstats(void);
@@ -92,6 +91,7 @@ extern void init_table(char comment);
 static void copyright_output(void);
 extern FILE *open_file(char *file, char *mode);
 extern int is_directory(char *filepath);
+extern int check_valid_var(char *var);
 
 /* The name the program was invoked under, for error messages */
 char *myname;
@@ -236,23 +236,27 @@ int main (int argc, char *argv[])
     var = argv[optind++];
     val = strchr (var, '=');
     *val++ = '\0';
-    if (strchr(val, '"') != NULL) { /* Should be a string variable */
-      char *pt = strrchr(val, '"');
-      val++;
-      *pt = '\0';
-      if (var[0] == '_')
-	s = putsym(var, SVAR, 0);
-      else
-	s = putsym(var, IMMSVAR, 0);
-      NEWSTR(val, s->value.svar);
-    }
-    else {
-      sscanf (val, "%lf", &value);
-      if (var[0] == '_')
-	s = putsym (var, VAR, 0);
-      else
-	s = putsym (var, IMMVAR, 0);
-      s->value.var = value;
+    if (!check_valid_var(var)) {
+      fprintf(stderr, "ERROR: '%s' is not a valid form for a variable; it will not be defined\n", var);
+    } else {
+      if (strchr(val, '"') != NULL) { /* Should be a string variable */
+	char *pt = strrchr(val, '"');
+	val++;
+	*pt = '\0';
+	if (var[0] == '_')
+	  s = putsym(var, SVAR, 0);
+	else
+	  s = putsym(var, IMMSVAR, 0);
+	NEWSTR(val, s->value.svar);
+      }
+      else {
+	sscanf (val, "%lf", &value);
+	if (var[0] == '_')
+	  s = putsym (var, VAR, 0);
+	else
+	  s = putsym (var, IMMVAR, 0);
+	s->value.var = value;
+      }
     }
   }
 
@@ -294,14 +298,14 @@ int main (int argc, char *argv[])
   }
 
   if (include_file) {
-      nfile++;
-      add_input_file(include_file);
-      /* Include file specified on command line is processed in immutable
-       * state. Reverts back to global immutable state at end of file.
-       */
-      state_immutable = True;
-      echo = False;
-    }
+    nfile++;
+    add_input_file(include_file);
+    /* Include file specified on command line is processed in immutable
+     * state. Reverts back to global immutable state at end of file.
+     */
+    state_immutable = True;
+    echo = False;
+  }
 
   srand((unsigned)time_val);
   
@@ -336,7 +340,7 @@ usage (void)
    ECHO("      --message or -M: Print INFO messages                     \n");
    ECHO("    --nowarning or -W: Do not print WARN messages	        \n");
    ECHO("    --copyright or -C: Print copyright message                 \n");
-   ECHO("        --quiet or -q: Do not anything extra to stdout         \n");
+   ECHO("        --quiet or -q: Do not output version info to stdout    \n");
    ECHO("              var=val: Assign value 'val' to variable 'var'  \n\n");
    ECHO("\tEnter {DUMP_FUNC()} for list of functions recognized by aprepro\n");
    ECHO("\tEnter {DUMP_PREVAR()} for list of predefined variables in aprepro\n");

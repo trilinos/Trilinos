@@ -94,7 +94,7 @@ typedef double		Real;
 
 #include <complex>
 
-typedef std::complex <Real>		Complex;
+//typedef std::complex <Real>		Complex;
 
 /* using C++ */
 #ifdef __cplusplus

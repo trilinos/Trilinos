@@ -8,7 +8,9 @@
 #include <cstring>
 
 /****************************************************************************/
-ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh_Desc* imd,long long rank, long long num_procs)
+ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh_Desc* imd,
+						      long long rank, 
+						      long long num_procs)
 /****************************************************************************/
 {
   imd->my_rank = rank;
@@ -45,13 +47,10 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
     nny = imd->nely_tot;
   }
 
-  ms_lt::Mesh_Specification * nemesis_db = new ms_lt::Mesh_Specification(imd->my_rank);
+  ms_lt::Mesh_Specification * nemesis_db = new ms_lt::Mesh_Specification();
+  nemesis_db->setMSI(ms_lt::Mesh_Specification::PROC_ID, imd->my_rank);
 
-  //Only room for one static copy
-  if(ms_lt::Mesh_Specification::static_storage != NULL)delete ms_lt::Mesh_Specification::static_storage;
-  
-  // this is available to the "C" linked routines
-  ms_lt::Mesh_Specification::static_storage = nemesis_db;
+
 
   // The strategy is to implement serial with a trivial decomposition.
   // The trivial decomposition is to disperse the elements based on their
@@ -126,6 +125,10 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
 		  global_node_vector,                             
 		  global_node_map,
 		  global_node_list.size());
+
+  imd->Offset_Coords(nemesis_db->Coord(),
+			global_node_list.size(),
+			dim);
 
   if(!imd->getErrorString().empty()){return NULL;}
 
@@ -206,15 +209,22 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
     global_node_numbers[gnv] = global_node_vector[gnv]+1;
   }
   //   Read_Global_Info();
-  nemesis_db->Global_Data_Size(
-                               nnx*nny*nnz,
+ {
+    long long telc;
+    long long tnoc;
+    long long tect;
+    imd->calculateSize(telc,
+                       tnoc,
+                       tect);
+
+  nemesis_db->Global_Data_Size(tnoc,
                                imd->GlobalNumElements(),
                                imd->numBlocks(),
                                imd->nodeset_list.size(),//num_nodesets
                                imd->sideset_list.size(),
 			       imd->num_processors,
 			       imd->my_rank);
-
+ }
 
   long long* elem_blk_ids_global =    nemesis_db->getMSP(ms_lt::Mesh_Specification::ELEM_BLK_IDS_GLOBAL);//Elem_Blk_Ids_Global();
   for(long long bct = 0; bct <  imd->numBlocks();bct++)elem_blk_ids_global[bct] = bct+1;// add 1 for block index
@@ -323,4 +333,12 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
 
 
   return nemesis_db;
+}
+
+
+/****************************************************************************/
+ms_lt::Mesh_Specification * consolidateMeshSpecification_LT(ms_lt::Mesh_Specification *)
+/****************************************************************************/
+{
+  return NULL;
 }

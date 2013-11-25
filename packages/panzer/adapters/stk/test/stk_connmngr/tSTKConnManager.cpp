@@ -114,7 +114,7 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, 2_blocks)
    RCP<const panzer::FieldPattern> fp 
          = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer> >();
 
-   STKConnManager connMngr(mesh);
+   STKConnManager<int> connMngr(mesh);
    connMngr.buildConnectivity(*fp);
 
    // did we get the element block correct?
@@ -133,8 +133,23 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, 2_blocks)
          TEST_EQUALITY(connMngr.getConnectivitySize(elementBlock[elmt]),9); 
    }
 
-   STKConnManager::GlobalOrdinal maxEdgeId = mesh->getMaxEntityId(mesh->getEdgeRank());
-   STKConnManager::GlobalOrdinal nodeCount = mesh->getEntityCounts(mesh->getNodeRank());
+   if(numProcs==1) {
+       TEST_EQUALITY(connMngr.getNeighborElementBlock("eblock-0_0").size(),0);
+       TEST_EQUALITY(connMngr.getNeighborElementBlock("eblock-1_0").size(),0);
+   }
+   else {
+       TEST_EQUALITY(connMngr.getNeighborElementBlock("eblock-0_0").size(),1);
+       TEST_EQUALITY(connMngr.getNeighborElementBlock("eblock-1_0").size(),1);
+
+       for(std::size_t blk=0;blk<connMngr.numElementBlocks();++blk) {
+         const std::vector<int> & elementBlock = connMngr.getNeighborElementBlock(elementBlockIds[blk]);
+         for(std::size_t elmt=0;elmt<elementBlock.size();++elmt)
+           TEST_EQUALITY(connMngr.getConnectivitySize(elementBlock[elmt]),9); 
+       }
+   }
+
+   STKConnManager<int>::GlobalOrdinal maxEdgeId = mesh->getMaxEntityId(mesh->getEdgeRank());
+   STKConnManager<int>::GlobalOrdinal nodeCount = mesh->getEntityCounts(mesh->getNodeRank());
 
    if(numProcs==1) {
       const int * conn1 = connMngr.getConnectivity(1);
@@ -158,6 +173,7 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, 2_blocks)
    else {
       const int * conn0 = connMngr.getConnectivity(0);
       const int * conn1 = connMngr.getConnectivity(1);
+
       TEST_EQUALITY(conn0[0],0+myRank);  
       TEST_EQUALITY(conn0[1],1+myRank);  
       TEST_EQUALITY(conn0[2],6+myRank);  
@@ -170,6 +186,24 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, 2_blocks)
 
       TEST_EQUALITY(conn0[8],nodeCount+(maxEdgeId+1)+1+myRank);
       TEST_EQUALITY(conn1[8],nodeCount+(maxEdgeId+1)+3+myRank);
+
+      const int * conn2 = connMngr.getConnectivity(2); // this is the "neighbor element"
+      const int * conn3 = connMngr.getConnectivity(3); // this is the "neighbor element"
+
+      int otherRank = myRank==0 ? 1 : 0;
+
+      TEST_EQUALITY(conn2[0],0+otherRank);  
+      TEST_EQUALITY(conn2[1],1+otherRank);  
+      TEST_EQUALITY(conn2[2],6+otherRank);  
+      TEST_EQUALITY(conn2[3],5+otherRank);  
+
+      TEST_EQUALITY(conn3[0],2+otherRank);  
+      TEST_EQUALITY(conn3[1],3+otherRank);  
+      TEST_EQUALITY(conn3[2],8+otherRank);  
+      TEST_EQUALITY(conn3[3],7+otherRank);  
+
+      TEST_EQUALITY(conn2[8],nodeCount+(maxEdgeId+1)+1+otherRank);
+      TEST_EQUALITY(conn3[8],nodeCount+(maxEdgeId+1)+3+otherRank);
    }
 }
 
@@ -189,7 +223,7 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, single_block_2d)
    RCP<const panzer::FieldPattern> fp 
          = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
 
-   STKConnManager connMngr(mesh);
+   STKConnManager<int> connMngr(mesh);
    connMngr.buildConnectivity(*fp);
 
    // did we get the element block correct?
@@ -269,7 +303,7 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, four_block_2d)
    RCP<const panzer::FieldPattern> fp 
          = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
 
-   STKConnManager connMngr(mesh);
+   STKConnManager<int> connMngr(mesh);
    connMngr.buildConnectivity(*fp);
 
    TEUCHOS_ASSERT(numProcs<=2);

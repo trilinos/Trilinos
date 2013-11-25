@@ -45,6 +45,8 @@
 #ifndef PANZER_EVALUATOR_SCATTER_DIRICHLET_RESIDUAL_TPETRA_SG_DECL_HPP
 #define PANZER_EVALUATOR_SCATTER_DIRICHLET_RESIDUAL_TPETRA_SG_DECL_HPP
 
+#include "Panzer_SGTpetraLinearObjContainer.hpp"
+
 namespace panzer {
 
 // **************************************************************
@@ -75,7 +77,7 @@ public:
 
 private:
   typedef typename panzer::Traits::SGResidual::ScalarT ScalarT;
-  typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
+  typedef SGTpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
   // dummy field so that the evaluator will have something to do
   Teuchos::RCP<PHX::FieldTag> scatterHolder_;
@@ -99,7 +101,11 @@ private:
   std::size_t side_subcell_dim_;
   std::size_t local_side_id_;
 
-  Teuchos::RCP<typename LOC::VectorType> dirichletCounter_;
+  // Teuchos::RCP<typename LOC::VectorType> dirichletCounter_;
+
+  std::string globalDataKey_; // what global data does this fill?
+
+  Teuchos::RCP<const LOC> sgTpetraContainer_;
 
   ScatterDirichletResidual_Tpetra() {}
 };
@@ -133,7 +139,7 @@ public:
 private:
 
   typedef typename panzer::Traits::SGJacobian::ScalarT ScalarT;
-  typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
+  typedef SGTpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
   // dummy field so that the evaluator will have something to do
   Teuchos::RCP<PHX::FieldTag> scatterHolder_;
@@ -158,7 +164,11 @@ private:
   std::size_t side_subcell_dim_;
   std::size_t local_side_id_;
 
-  Teuchos::RCP<typename LOC::VectorType> dirichletCounter_;
+  // Teuchos::RCP<typename LOC::VectorType> dirichletCounter_;
+
+  std::string globalDataKey_; // what global data does this fill?
+
+  Teuchos::RCP<const LOC> sgTpetraContainer_;
 
   ScatterDirichletResidual_Tpetra();
 };

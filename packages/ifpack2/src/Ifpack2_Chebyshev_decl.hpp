@@ -1,4 +1,5 @@
-/*@HEADER
+/*
+@HEADER
 // ***********************************************************************
 //
 //       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
@@ -7,45 +8,57 @@
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ***********************************************************************
 //@HEADER
 */
 
+/// \file Ifpack2_Chebyshev_decl.hpp
+/// \brief Declaration of Chebyshev interface
+///
+/// This file declares the user-facing interface.
+/// Ifpack2_Details_Chebyshev_decl.hpp declares the
+/// <i>implementation</i> of this interface.
+
 #ifndef IFPACK2_CHEBYSHEV_DECL_HPP
 #define IFPACK2_CHEBYSHEV_DECL_HPP
 
-/// \file Ifpack2_Chebyshev_decl.hpp
-/// \brief Chebyshev iteration
-
-#include "Ifpack2_ConfigDefs.hpp"
-#include "Ifpack2_Preconditioner.hpp"
-#include "Ifpack2_Condest.hpp"
-#include "Ifpack2_Parameters.hpp"
-#include "Ifpack2_Details_Chebyshev_decl.hpp"
-#include "Ifpack2_Details_Chebyshev_def.hpp"
-
+#include <Ifpack2_ConfigDefs.hpp>
+#include <Ifpack2_Preconditioner.hpp>
+// FIXME (mfh 20 Nov 2013) We really shouldn't have to include both of
+// these, if we were to handle the implementation by pointer instead
+// of by value.
+#include <Ifpack2_Details_Chebyshev_decl.hpp>
+#include <Ifpack2_Details_Chebyshev_def.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_Vector.hpp>
-
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_Time.hpp>
 
 #include <iostream>
 #include <string>
@@ -54,7 +67,7 @@
 
 namespace Ifpack2 {
 
-/// \class Chebyshev 
+/// \class Chebyshev
 /// \brief Diagonally scaled Chebyshev iteration for Tpetra sparse matrices.
 /// \tparam MatrixType A specialization of Tpetra::RowMatrix or Tpetra::CrsMatrix.
 ///
@@ -105,7 +118,7 @@ namespace Ifpack2 {
 /// positive definite.  Thus, all of its eigenvalues must lie in a
 /// positive interval on the real line.  Furthermore, if D is the
 /// matrix of the diagonal elements of A, then the same is true of
-/// \f$D^{-1} A\f$.  
+/// \f$D^{-1} A\f$.
 ///
 /// Suppose \f$[\lambda_{min}, \lambda_{max}]\f$ is the interval of
 /// the eigenvalues of \f$D^{-1} A\f$.  Users may either give us an
@@ -181,15 +194,15 @@ namespace Ifpack2 {
 /// a Sandia employee in what was then (2006) Org 1416.  Ifpack2 has
 /// seen significant development since then.
 template<class MatrixType>
-class Chebyshev : 
+class Chebyshev :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
-					   typename MatrixType::local_ordinal_type,
-					   typename MatrixType::global_ordinal_type,
-					   typename MatrixType::node_type> 
+                                           typename MatrixType::local_ordinal_type,
+                                           typename MatrixType::global_ordinal_type,
+                                           typename MatrixType::node_type>
 {
 public:
   //! \name Typedefs
-  //@{ 
+  //@{
 
   //! The template parameter of this class.
   typedef MatrixType matrix_type;
@@ -279,7 +292,7 @@ public:
 
   //@}
   //! \name Preconditioner computation methods
-  //@{ 
+  //@{
 
   /// \brief Set (or reset) parameters.
   ///
@@ -473,14 +486,49 @@ public:
   /// has changed, if you have called setParameters(), or if you have
   /// not yet called compute().  This method only tells you if
   /// compute() has been called at least once, not if you need to call
-  /// compute().
+  /// compute().  Ifpack2 doesn't have an efficient way to tell if the
+  /// matrix has changed, so we ask users to tell Ifpack2 if the
+  /// matrix has changed.
   inline bool isComputed() const {
     return IsComputed_;
   }
 
+  // This "template friend" declaration lets any Chebyshev
+  // specialization be a friend of any of its other specializations.
+  // That makes clone() easier to implement.
+  template <class NewMatrixType> friend class Chebyshev;
+
+  /// \brief Clone this object to one with a different Kokkos Node type.
+  ///
+  /// \tparam NewMatrixType The template parameter of the new
+  ///   preconditioner to return; a specialization of
+  ///   Tpetra::RowMatrix or Tpetra::CrsMatrix.  The intent is that
+  ///   this type differ from \c MatrixType only in its fourth Node
+  ///   template parameter, and/or its fifth \c LocalMatOps template
+  ///   parameter.  However, this is not strictly required.
+  ///
+  /// \param A_newnode [in] The matrix, with the new Kokkos Node type.
+  ///   This would generally be the result of cloning (calling
+  ///   <tt>Tpetra::CrsMatrix::clone()</tt> on) the original input
+  ///   matrix A, though the implementation does not require this.
+  ///
+  /// \param params [in/out] Parameters for the new preconditioner.
+  ///
+  /// \pre If \c A_newnode is a Tpetra::CrsMatrix, it must be fill
+  ///   complete.
+  ///
+  /// \post <tt>P->isInitialized() && P->isComputed()</tt>, where \c P
+  ///   is the returned object.  That is, P's apply() method is ready
+  ///   to be called; P is ready for use as a preconditioner.  This is
+  ///   true regardless of the current state of <tt>*this</tt>.
+  template <typename NewMatrixType>
+  Teuchos::RCP<Chebyshev<NewMatrixType> >
+  clone (const Teuchos::RCP<const NewMatrixType>& A_newnode,
+         const Teuchos::ParameterList& params) const;
+
   //@}
   //! @name Implementation of Tpetra::Operator
-  //@{ 
+  //@{
 
   /// \brief Apply the preconditioner to X, returning the result in Y.
   ///
@@ -512,16 +560,16 @@ public:
   /// \param beta [in] Scaling factor for Y.  The default is 0.
   void
   apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-	 Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-	 Teuchos::ETransp mode = Teuchos::NO_TRANS,
-	 scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-	 scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+         Teuchos::ETransp mode = Teuchos::NO_TRANS,
+         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! The Tpetra::Map representing the domain of this operator.
-  const Teuchos::RCP<const map_type>& getDomainMap() const;
+  Teuchos::RCP<const map_type> getDomainMap() const;
 
   //! The Tpetra::Map representing the range of this operator.
-  const Teuchos::RCP<const map_type>& getRangeMap() const;
+  Teuchos::RCP<const map_type> getRangeMap() const;
 
   //! Whether it's possible to apply the transpose of this operator.
   bool hasTransposeApply() const;
@@ -546,34 +594,47 @@ public:
   /// Since this class currently requires A to be real and symmetric
   /// positive definite, setting <tt>mode</tt> should not affect the
   /// result.
-  void 
+  void
   applyMat (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-	    Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-	    Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
+            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+            Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
   //@}
   //! \name Mathematical functions
   //@{
 
-  //! Compute and return the estimated condition number.
-  magnitude_type
-  computeCondEst (CondestType CT = Cheap, 
-		  local_ordinal_type MaxIters = 1550,
-		  magnitude_type Tol = 1e-9,
-		  const Teuchos::Ptr<const row_matrix_type>& matrix = Teuchos::null);
+  /// \brief Compute the condition number estimate and return its value.
+  ///
+  /// \warning This method is DEPRECATED.  It was inherited from
+  ///   Ifpack, and Ifpack never clearly stated what this method
+  ///   computes.  Furthermore, Ifpack's method just estimates the
+  ///   condition number of the matrix A, and ignores the
+  ///   preconditioner -- which is probably not what users thought it
+  ///   did.  If there is sufficient interest, we might reintroduce
+  ///   this method with a different meaning and a better algorithm.
+  virtual magnitude_type TEUCHOS_DEPRECATED
+  computeCondEst (CondestType CT = Cheap,
+                  local_ordinal_type MaxIters = 1550,
+                  magnitude_type Tol = 1e-9,
+                  const Teuchos::Ptr<const row_matrix_type>& matrix = Teuchos::null);
 
   //@}
   //! \name Attribute accessor methods
-  //@{ 
+  //@{
 
-  //! The estimated condition number, or -1.0 if it has not yet been computed.
-  magnitude_type getCondEst() const;
+  /// \brief Return the computed condition number estimate, or -1 if not computed.
+  ///
+  /// \warning This method is DEPRECATED.  See warning for computeCondEst().
+  virtual magnitude_type TEUCHOS_DEPRECATED getCondEst() const;
 
   //! The communicator over which the matrix is distributed.
-  const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
+  Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
   //! The matrix for which this is a preconditioner.
   Teuchos::RCP<const row_matrix_type> getMatrix() const;
+
+   //! Returns A as a CRS Matrix
+  Teuchos::RCP<const MatrixType > getCrsMatrix() const;
 
   //! The total number of floating-point operations taken by all calls to compute().
   double getComputeFlops() const;
@@ -603,7 +664,7 @@ public:
   typename MatrixType::scalar_type getLambdaMaxForApply() const;
 
   //@}
-  //! @name Implementation of Teuchos::Describable 
+  //! @name Implementation of Teuchos::Describable
   //@{
 
   //! A simple one-line description of this object.
@@ -622,28 +683,29 @@ public:
   /// don't normally need to, because this class now automatically
   /// uses the power method (a different implementation) to estimate
   /// the max eigenvalue, if you don't give it an estimate yourself.
-  static void TEUCHOS_DEPRECATED 
+  static void TEUCHOS_DEPRECATED
   PowerMethod (const Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Operator,
-	       const vector_type& InvPointDiagonal,
-	       const int MaximumIterations, 
-	       scalar_type& LambdaMax);
+               const vector_type& InvPointDiagonal,
+               const int MaximumIterations,
+               scalar_type& LambdaMax);
 
   //! Not currently implemented: Use CG to estimate lambda_min and lambda_max.
-  static void TEUCHOS_DEPRECATED 
-  CG (const Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Operator, 
-      const vector_type& InvPointDiagonal, 
-      const int MaximumIterations, 
+  static void TEUCHOS_DEPRECATED
+  CG (const Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Operator,
+      const vector_type& InvPointDiagonal,
+      const int MaximumIterations,
       scalar_type& lambda_min, scalar_type& lambda_max);
 
   //@}
 
 private:
+
   //! Abbreviation for the Teuchos::ScalarTraits specialization for scalar_type.
   typedef Teuchos::ScalarTraits<typename MatrixType::scalar_type> STS;
 
   //! Abbreviation for the Tpetra::MultiVector specialization used in methods like apply().
   typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
-  
+
   //! Copy constructor (use is syntactically forbidden)
   Chebyshev (const Chebyshev<MatrixType>&);
 
@@ -657,12 +719,12 @@ private:
   /// is A if mode is <tt>Teuchos::NO_TRANS</tt>, \f$A^T\f$ if mode is
   /// <tt>Teuchos::TRANS</tt>, and \f$A^H\f$ if mode is
   /// <tt>Teuchos::CONJ_TRANS</tt>.
-  void 
+  void
   applyImpl (const MV& X,
-	     MV& Y,
-	     Teuchos::ETransp mode,
-	     scalar_type alpha,
-	     scalar_type beta) const;
+             MV& Y,
+             Teuchos::ETransp mode,
+             scalar_type alpha,
+             scalar_type beta) const;
 
   //! \name Internal state
   //@{
@@ -676,8 +738,6 @@ private:
   /// whole thing mutable here.
   mutable Details::Chebyshev<scalar_type, MV, row_matrix_type> impl_;
 
-  //! Time object to track timing.
-  Teuchos::RCP<Teuchos::Time> Time_;
   //! The estimated condition number.
   magnitude_type Condest_;
   //! If \c true, initialize() has completed successfully.
@@ -713,7 +773,25 @@ private:
   //@}
 }; // class Chebyshev
 
-}//namespace Ifpack2
+
+template <typename MatrixType>
+template <typename NewMatrixType>
+Teuchos::RCP<Chebyshev<NewMatrixType> >
+Chebyshev<MatrixType>::
+clone (const Teuchos::RCP<const NewMatrixType>& A_newnode,
+       const Teuchos::ParameterList& params) const
+{
+  using Teuchos::RCP;
+  typedef Ifpack2::Chebyshev<NewMatrixType> new_prec_type;
+
+  RCP<new_prec_type> prec (new new_prec_type (A_newnode));
+  prec->setParameters (params);
+  prec->initialize ();
+  prec->compute ();
+  return prec;
+}
+
+} // namespace Ifpack2
 
 #endif // IFPACK2_CHEBYSHEV_DECL_HPP
 

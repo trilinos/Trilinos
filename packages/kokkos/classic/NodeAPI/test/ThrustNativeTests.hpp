@@ -53,7 +53,7 @@ int thrust_int_sum(const thrust::device_vector<int> &buff);
 
 namespace {
 
-  using Kokkos::ThrustGPUNode;
+  using KokkosClassic::ThrustGPUNode;
 
   template <>
   std::pair<double,double> nativeTimings<float,ThrustGPUNode>(int N, int numIters, float &result, const RCP<ThrustGPUNode> &node) {

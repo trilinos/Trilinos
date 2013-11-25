@@ -1011,6 +1011,36 @@ const char *do_rescan(char *string)
   return NULL;
 }
 
+const char *do_if(double x)
+{
+  aprepro->lexer->if_handler(x);
+  return NULL;
+}
+
+const char *do_notif(double x)
+{
+  aprepro->lexer->if_handler(!x);
+  return NULL;
+}
+
+const char *do_elseif(double x)
+{
+  aprepro->lexer->elseif_handler(x);
+  return NULL;
+}
+
+const char *do_switch(double x)
+{
+  aprepro->lexer->switch_handler(x);
+  return NULL;
+}
+
+const char *do_case(double x)
+{
+  aprepro->lexer->case_handler(x);
+  return NULL;
+}
+
 const char *do_extract(char *string, char *begin, char *end)
 {
   /* From 'string' return a substring delimited by 'begin' and 'end'.

@@ -43,6 +43,7 @@
 #define THYRA_PRECONDITIONER_FACTORY_BASE_DEF_HPP
 
 #include "Thyra_PreconditionerFactoryBase_decl.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
 
 namespace Thyra {
@@ -51,7 +52,8 @@ namespace Thyra {
 template<class Scalar>
 bool PreconditionerFactoryBase<Scalar>::applySupportsConj(EConj conj) const
 {
-  return true;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  return ( ST::isComplex ? ( conj==NONCONJ_ELE ) : true );
 }
 
 

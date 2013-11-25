@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -51,37 +51,27 @@
 
 namespace MueLu {
 
-  Level::Level() : levelID_(-1) { }
-
-  Level::Level(RCP<FactoryManagerBase> & factoryManager) : levelID_(-1), factoryManager_(factoryManager) { }
-
   RCP<Level> Level::Build() {
-    RCP<Level> newLevel = rcp( new Level() );
+    RCP<Level> newLevel = rcp(new Level());
 
     // Copy 'keep' status of variables
-    // TODO: this only concerns needs_. so a function in Needs class should be provided to do that!
-    // TODO: how can i move this to Needs? maybe we need a new constructor for Level which gets a
-    // Needs object...
+    for (TwoKeyMap::const_iterator kt = map_.begin(); kt != map_.end(); kt++) {
+      const FactoryBase* factory = kt->first;
 
-    std::vector<const MueLu::FactoryBase*> ehandles = needs_.RequestedFactories();
-    for (std::vector<const MueLu::FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++) {
-      std::vector<std::string> enames = needs_.RequestedKeys(*kt);
-      for (std::vector<std::string>::iterator it = enames.begin(); it != enames.end(); ++it) {
-        const std::string & ename = *it;
-        const MueLu::FactoryBase* fac = *kt;
-        if (IsKept(ename, fac, MueLu::Keep)) { // MueLu::Keep is the only flag propagated
-          if (fac == NULL) // TODO: Is this possible?? Throw exception. Not supposed to use the FactoryManager here.
+      for (SubMap::const_iterator it = kt->second.begin(); it != kt->second.end(); it++) {
+        const std::string& ename = it->first;
+
+        if (IsKept(ename, factory, MueLu::Keep)) { // MueLu::Keep is the only flag propagated
+          if (factory == NULL)                                  // TODO: Is this possible?? Throw exception. Not supposed to use the FactoryManager here.
             newLevel->Keep(ename, NoFactory::get());
           else
-            newLevel->Keep(ename, fac);
+            newLevel->Keep(ename, factory);
         }
       }
     }
 
     return newLevel;
   }
-
-  Level::~Level() {}
 
   int Level::GetLevelID() const { return levelID_; }
 
@@ -91,8 +81,6 @@ namespace MueLu {
 
     levelID_ = levelID;
   }
-
-  RCP<Level> & Level::GetPreviousLevel() { return previousLevel_; }
 
   void Level::SetPreviousLevel(const RCP<Level> & previousLevel) {
     if (previousLevel_ != Teuchos::null && previousLevel_ != previousLevel)
@@ -109,16 +97,40 @@ namespace MueLu {
     return factoryManager_;
   }
 
-  void Level::AddKeepFlag(const std::string& ename, const FactoryBase* factory, KeepType keepType) {
-    needs_.AddKeepFlag(ename, GetFactory(ename, factory), keepType);
+  void Level::AddKeepFlag(const std::string& ename, const FactoryBase* factory, KeepType keep) {
+    if (!IsKey(factory, ename)) {
+      // If the entry does not exist, create it to store the keep flag
+      Teuchos::RCP<MueLu::VariableContainer> newVar = Teuchos::rcp(new MueLu::VariableContainer);
+      map_[factory][ename] = newVar;
+    }
+    // Set the flag
+    map_[factory][ename]->AddKeepFlag(keep);
   }
 
-  void Level::RemoveKeepFlag(const std::string& ename, const FactoryBase* factory, KeepType keepType) {
-    needs_.RemoveKeepFlag(ename, GetFactory(ename, factory), keepType);
+  void Level::RemoveKeepFlag(const std::string& ename, const FactoryBase* factory, KeepType keep) {
+    // No entry = nothing to do
+    if (!IsKey(factory, ename))
+      return;
+
+    // Remove the flag
+    Teuchos::RCP<MueLu::VariableContainer>& v = map_[factory][ename];
+    v->RemoveKeepFlag(keep);
+
+    // Remove data if no keep flag left and counter == 0
+    if ((v->IsRequested() == false) && (v->GetKeepFlag() == 0)) {
+      v = Teuchos::null; // free data
+
+      map_[factory].erase(ename);
+      if (map_.count(factory) == 0)
+        map_.erase(factory);
+    }
   }
 
   KeepType Level::GetKeepFlag(const std::string& ename, const FactoryBase* factory) const {
-    return needs_.GetKeepFlag(ename, GetFactory(ename, factory));
+    if (!IsKey(factory,ename))
+      return false;
+
+    return Get(factory, ename)->GetKeepFlag();
   }
 
   void Level::Request(const FactoryBase& factory) {
@@ -137,12 +149,26 @@ namespace MueLu {
 
   void Level::DeclareInput(const std::string& ename, const FactoryBase* factory, const FactoryBase* requestedBy) {
     if (requestMode_ == REQUEST) {
-      Request(ename, factory, requestedBy);
-    }
-    else if (requestMode_ == RELEASE) {
+      try {
+        Request(ename, factory, requestedBy);
+
+      } catch (Exceptions::DependencyError& e) {
+        std::ostringstream msg;
+        msg << requestedBy->ShortClassName() << "::DeclareInput: (" << e.what() << ") unable to find or generate requested data \""
+            << ename << "\" with generating factory \"" << ((factory != NULL) ? factory->ShortClassName() : "null") << "\"";
+        msg << "\n    during request for data \"" << std::setw(15) << ename << "\" on level " << GetLevelID() << " by factory " << requestedBy->ShortClassName();
+        throw Exceptions::RuntimeError(msg.str());
+
+      } catch (Exceptions::RuntimeError &e) {
+        std::ostringstream msg;
+        msg << e.what() << "\n    during request for data \"" << std::setw(15) << ename << "\" on level " << GetLevelID() << " by factory " << requestedBy->ShortClassName();
+        throw Exceptions::RuntimeError(msg.str());
+      }
+
+    } else if (requestMode_ == RELEASE) {
       Release(ename, factory, requestedBy);
-    }
-    else
+
+    } else
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::Level::DeclareInput(): requestMode_ undefined.");
   }
 
@@ -163,61 +189,162 @@ namespace MueLu {
 
   void Level::Request(const std::string& ename, const FactoryBase* factory, const FactoryBase* requestedBy) {
     const FactoryBase* fac = GetFactory(ename, factory);
+    // printf("[%43s] requesting \"%20s\" generated by %10p  [actually, generated by %p (%43s)]\n",
+           // requestedBy->description().c_str(), ename.c_str(), factory, fac, fac->description().c_str());
 
-    // Call request for factory only if the factory has not been requested before and no data has
-    // been generated by fact (independent of ename)
-    bool test = ((needs_.IsAvailableFactory(fac) == false && needs_.IsRequestedFactory(fac) == false));
+    // We request factory only if necessary, i.e.
+    //   - factory has not been requested before, and
+    //   - we need data which is not available
+    // Let us consider an RAP factory in the reuse scenario. The factory generates "A" (coarse matrix) and
+    // "RAP Pattern" (pattern of A). Typically, "A" has keep flag Final, which is cleared during next Setup, but
+    // "RAP Pattern" has flag Keep, which is not cleared as it is part of NextRun. Therefore, during next Setup
+    // we have RAP factory with available "RAP Pattern" but not available "A".
+    //
+    // During the regular construction phase, we will do a single request: ("A", RAPFactory). Suppose, we used
+    //    bool test = (IsRequestedFactory(fac) == false && IsAvailable(fac) == false);
+    // This is incorrect, as IsAvailable(fac) checks whether there is *any* data generated by factory, which there is
+    // ("A"), and the dependencies of the factory would not be requested despite the need for them (we need fine A, P, and
+    // R to generate Ac even if we know sparsity pattern of Ac).
+    //
+    // On the other hand,
+    //   bool test = (IsRequestedFactory(fac) == false && IsAvailable(ename, fac) == false);
+    // is correct as ("A", fac) is not available (only ("RAP Pattern", fac) is), and dependent factories would be
+    // properly requested.
+    //
+    // This way, factory is requested only once (because of the IsRequested(fac) check), and only when one of the needed
+    // pieces of data is not availble.
+    bool test = (IsRequestedFactory(fac) == false && IsAvailable(ename, fac) == false);
 
     // This request must be done before calling Request(*fac) to avoid circular dependency problems.
-    needs_.Request(ename, fac, requestedBy);
+    if (!IsKey(fac, ename)) {
+      Teuchos::RCP<MueLu::VariableContainer> newVar = Teuchos::rcp(new MueLu::VariableContainer);
+      map_[fac][ename] = newVar;
+    }
+
+    Teuchos::RCP<MueLu::VariableContainer>& v = map_[fac][ename];
+    v->Request(requestedBy);
 
     // The value of IsRequestedFactory(fac) is true, due to the above request.
     // That is why a temporary boolean "test" is used!
-    TEUCHOS_TEST_FOR_EXCEPTION(needs_.IsRequestedFactory(fac) != true, Exceptions::RuntimeError, "Level::Request(ename, factory): internal logic error.");
+    TEUCHOS_TEST_FOR_EXCEPTION(IsRequestedFactory(fac) != true, Exceptions::RuntimeError, "Level::Request(ename, factory): internal logic error.");
 
-    // Call Request for factory dependencies
     if (test) {
+      // Call Request for factory dependencies.
+      // We only do that if necessary, see comments above
       Request(*fac);
     }
   }
 
-  //TODO: finish this
-// #define MUELU_LEVEL_ERROR_MESSAGE(function, message)
-//   "MueLu::Level[" << levelID_ << "]::" << function << "(" << ename << ", " << factory << " << ): " << message << std::endl
-//                                                                                                                  << ((factory == Teuchos::null && factoryManager_ != Teuchos::null) ? (*GetFactory(ename, factory)) : *factory)  << "Generating factory:" << *fac << " NoFactory=" << NoFactory::get()
-//   //
-
   void Level::Release(const std::string& ename, const FactoryBase* factory, const FactoryBase* requestedBy) {
     const FactoryBase* fac = GetFactory(ename, factory);
+    // printf("[%43s] releasing  \"%20s\" generated by %10p  [actually, generated by %p (%43s)]\n",
+           // requestedBy->description().c_str(), ename.c_str(), factory, fac, fac->description().c_str());
 
     // Only a factory which has requested (fac,ename) is allowed to release it again.
     // Do not release data if it has not been requested by the factory "requestedBy"
     // Note: when data is released (fac,ename) depends on it often happened that some
     //       of this data has (recursively) been released too often
-    if(needs_.IsRequestedBy(fac, ename, requestedBy)) {
-      if(needs_.CountRequestedFactory(fac) == 1 &&     // check if factory fac is not requested by another factory
-         needs_.IsAvailableFactory(fac) == false ) {   // check if Build function of factory fac has been called
-        // In general all data (fac,ename) depends on is released with the Get calls in the Build
-        // function of the generating factory fac.
-        // Here we have to release the dependencies of some data that has been requested (by factory "requestedBy")
-        // but the corresponding Build function of factory "fac" has never been called. Therefore the dependencies
-        // have never been released. Do it now.
+    if (IsRequestedBy(fac, ename, requestedBy)) {
+
+      // In general all data (fac,ename) depends on is released when calling Get in generating factory (fac) Build method
+      // Here we check the need to release the dependencies of some data that has been requested (by factory "requestedBy")
+      // but the corresponding Build function of factory "fac" has never been called. Therefore the dependencies
+      // have never been released. Do it now.
+      if (CountRequestedFactory(fac) == 1      &&     // check if factory fac is not requested by another factory
+          IsAvailableFactory(fac)    == false) {      // check if Build function of factory fac has been called
         Release(*fac);
       }
-      needs_.Release(ename,fac,requestedBy);
+
+      TEUCHOS_TEST_FOR_EXCEPTION(!IsKey(fac,ename), Exceptions::RuntimeError, "\"" + ename + "\" not found. Do a request first.");
+
+      Teuchos::RCP<MueLu::VariableContainer>& v = map_[fac][ename];
+      v->Release(requestedBy);
+
+      // Remove data if no keep flag left and counter == 0
+      if ((v->IsRequested() == false) && (v->GetKeepFlag() == 0)) {
+        v = Teuchos::null; // free data
+
+        map_[fac].erase(ename);
+        if (map_.count(fac) == 0)
+          map_.erase(fac);
+      }
     }
   }
 
-  bool Level::IsKey(const std::string & ename, const FactoryBase* factory) const {
-    return needs_.IsKey(ename, GetFactory(ename, factory));
+  void Level::Clear() {
+    // TODO: needs some love, ugly as it is
+    // The ugliness is the fact that we restart both loops when we remove a single element
+    bool wasRemoved;
+    do {
+      wasRemoved = false;
+      for (TwoKeyMap::const_iterator kt = map_.begin(); kt != map_.end(); kt++) {
+        const FactoryBase* factory = kt->first;
+
+        for (SubMap::const_iterator it = kt->second.begin(); it != kt->second.end(); it++) {
+          // We really want a reference here, but because later we'll need to check whether the
+          // key was removed, we should copy the value
+          const std::string ename = it->first;
+
+          // We clear all the data that
+          //   a) has not been requested
+          //   b) is not being kept using NextRun (e.g., we clear out Final data)
+          if (!IsKept(ename, factory, MueLu::NextRun)) {
+            RemoveKeepFlag(ename, factory, MueLu::All); // will delete the data if counter == 0
+
+            // To prevent infinite looping, we need to check whether we have
+            // actually removed the data. In buggy code it may happen that we
+            // were unable to do that, for instance, if the data was outstanding
+            // request
+            if (IsKey(factory, ename)) {
+              GetOStream(Errors, 0) << "Level::Clear found Internal data inconsistency" << std::endl;
+              print(GetOStream(Errors, 0), VERB_EXTREME);
+
+              throw Exceptions::RuntimeError("Level::Clear found Internal data inconsistency");
+            }
+
+            wasRemoved = true;
+            break;
+          }
+        }
+
+        if (wasRemoved)
+          break;
+      }
+
+    } while (wasRemoved == true);
   }
 
-  bool Level::IsAvailable(const std::string & ename, const FactoryBase* factory) const {
-    return needs_.IsAvailable(ename, GetFactory(ename, factory));
-  }
+  void Level::ExpertClear() {
+    TwoKeyMap::const_iterator kt = map_.begin();
+    while (kt != map_.end()) {
+      const FactoryBase* factory = kt->first;
 
-  bool Level::IsRequested(const std::string & ename, const FactoryBase* factory) const {
-    return needs_.IsRequested(ename, GetFactory(ename, factory));
+      SubMap::const_iterator it = kt->second.begin();
+      while ( it != kt->second.end()) {
+        const std::string& ename = it->first;
+
+        // obtain variable container
+        Teuchos::RCP<MueLu::VariableContainer>& v = map_[factory][ename];
+
+        if (v->GetKeepFlag() == 0 ||
+            v->IsKept(MueLu::UserData) == true ||
+            v->IsKept(MueLu::Final) == true) {
+          it++;
+          v = Teuchos::null; // free data
+          map_[factory].erase(ename);
+          if (map_.count(factory) == 0) {
+            break; // last occurence for factory has been removed. proceed with next factory
+          }
+        }
+        else
+          it++;
+      } // end for it
+
+      if (map_.count(factory) == 0) {
+        kt++;
+        map_.erase(factory);
+      } else kt++;
+    }
   }
 
   std::string Level::description() const {
@@ -233,7 +360,7 @@ namespace MueLu {
     out0->setShowProcRank(true);
 
     std::ostringstream ss;
-    ss << print(ss, verbLevel);
+    print(ss, verbLevel);
 
     out0->setOutputToRootOnly(-1);
     *out0 << ss.str();
@@ -241,13 +368,12 @@ namespace MueLu {
     out0->setShowProcRank(false);
   }
 
-  std::ostream& Level::print(std::ostream& out, const VerbLevel verbLevel) const {
+  void Level::print(std::ostream& out, const VerbLevel verbLevel) const {
     out << "LevelID = " << GetLevelID() << std::endl;
 
     typedef Teuchos::TabularOutputter TTO;
     TTO outputter(out);
     outputter.pushFieldSpec("data name",                TTO::STRING, TTO::LEFT, TTO::GENERAL, 20);
-    // outputter.pushFieldSpec("generating factory type",  TTO::STRING, TTO::LEFT, TTO::GENERAL, 30);
     outputter.pushFieldSpec("gen. factory addr.",       TTO::STRING, TTO::LEFT, TTO::GENERAL, 18);
     outputter.pushFieldSpec("req",                      TTO::INT,    TTO::LEFT, TTO::GENERAL, 3);
     outputter.pushFieldSpec("keep",                     TTO::STRING, TTO::LEFT, TTO::GENERAL, 5);
@@ -256,11 +382,13 @@ namespace MueLu {
     outputter.pushFieldSpec("req'd by",                 TTO::STRING, TTO::LEFT, TTO::GENERAL, 20);
     outputter.outputHeader();
 
-    std::vector<const MueLu::FactoryBase*> ehandles = needs_.RequestedFactories();
-    for (std::vector<const MueLu::FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++) {
-      std::vector<std::string> enames = needs_.RequestedKeys(*kt);
-      for (std::vector<std::string>::iterator it = enames.begin(); it != enames.end(); ++it) {
-        outputter.outputField(*it);   // variable name
+    for (TwoKeyMap::const_iterator kt = map_.begin(); kt != map_.end(); kt++) {
+      const FactoryBase* factory = kt->first;
+
+      for (SubMap::const_iterator it = kt->second.begin(); it != kt->second.end(); it++) {
+        const std::string& ename = it->first;
+
+        outputter.outputField(ename);   // variable name
 
         // NOTE: We cannot dereference the factory pointer and call factory->description() as we do not know
         // if the factory still exist (the factory pointer is a raw pointer by design). Instead, the level
@@ -271,12 +399,12 @@ namespace MueLu {
         //         outputter.outputField((ss1.str()).substr(0,30));
 
         // factory ptr
-        outputter.outputField(*kt);
+        outputter.outputField(factory);
 
-        int reqcount = needs_.NumRequests(*it, *kt); // request counter
+        int reqcount = NumRequests(factory, ename); // request counter
         outputter.outputField(reqcount);
 
-        KeepType keepType = needs_.GetKeepFlag(*it, *kt);
+        KeepType keepType = GetKeepFlag(ename, factory);
         if (keepType != 0) {
           std::stringstream ss;
           if (keepType & MueLu::UserData) { ss << "User";  }
@@ -287,8 +415,9 @@ namespace MueLu {
           outputter.outputField("No");
         }
 
-        if (needs_.IsAvailable(*it, *kt)) {
-          std::string strType = needs_.GetType(*it, *kt); // Variable type
+        if (IsAvailable(ename, factory)) {
+          std::string strType = it->second->GetData().getAny(true).typeName();
+
           if (strType.find("Xpetra::Matrix") != std::string::npos) {
             outputter.outputField("Matrix" );
             outputter.outputField("available");
@@ -310,18 +439,18 @@ namespace MueLu {
           } else if (strType.find("MueLu::Graph") != std::string::npos) {
             outputter.outputField("Graph");
             outputter.outputField("available");
+          } else if (strType.find("MueLu::Constraint") != std::string::npos) {
+            outputter.outputField("Constraint");
+            outputter.outputField("available");
           } else if (strType == "int") {
             outputter.outputField(strType);
-            int data = needs_.Get<int>(*it, *kt);
-            outputter.outputField(data);
+            outputter.outputField(Teuchos::getValue<int>(it->second->GetData()));
           } else if (strType == "double") {
             outputter.outputField(strType);
-            double data = needs_.Get<double>(*it, *kt);
-            outputter.outputField(data);
+            outputter.outputField(Teuchos::getValue<double>(it->second->GetData()));
           } else if (strType == "string") {
             outputter.outputField(strType);
-            std::string data = needs_.Get<std::string>(*it, *kt);
-            outputter.outputField(data);
+            outputter.outputField(Teuchos::getValue<std::string>(it->second->GetData()));
           } else {
             outputter.outputField(strType);
             outputter.outputField("available");
@@ -332,7 +461,7 @@ namespace MueLu {
         }
 
         typedef VariableContainer::request_container container_type;
-        const container_type& requestedBy = needs_.GetRequests(*it, *kt);
+        const container_type& requestedBy = it->second->Requests();
         std::ostringstream ss;
         for (container_type::const_iterator ct = requestedBy.begin(); ct != requestedBy.end(); ct++) {
           if (ct != requestedBy.begin())    ss << ",";
@@ -343,29 +472,57 @@ namespace MueLu {
 
         outputter.nextRow();
       }
-    } //for (std::vector<const MueLu::FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++)
-
-    return out;
+    } // for (TwoKeyMap::const_iterator kt = map_.begin(); kt != map_.end(); kt++) {
   }
 
-  Level::Level(const Level& source) { }
+#if defined(HAVE_MUELU_BOOST) && defined(HAVE_MUELU_BOOST_FOR_REAL) && defined(BOOST_VERSION) && (BOOST_VERSION >= 104400)
+    void Level::UpdateGraph(std::map<const FactoryBase*, BoostVertex>&                   vindices,
+                            std::map<std::pair<BoostVertex, BoostVertex>, std::string>&  edges,
+                            BoostProperties&                                             dp,
+                            BoostGraph&                                                  graph) const {
+      size_t vind = vindices.size();
+
+      for (TwoKeyMap::const_iterator it1 = map_.begin(); it1 != map_.end(); it1++) {
+        if (vindices.find(it1->first) == vindices.end()) {
+          BoostVertex boost_vertex = boost::add_vertex(graph);
+          boost::put("label", dp, boost_vertex, it1->first->description());
+          vindices[it1->first] = vind++;
+        }
+
+        for (SubMap::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); it2++) {
+          const VariableContainer::request_container& requests = it2->second->Requests();
+          for (VariableContainer::request_container::const_iterator rit = requests.begin(); rit != requests.end(); rit++) {
+            if (vindices.find(rit->first) == vindices.end()) {
+              // requested by factory which is unknown
+              BoostVertex boost_vertex = boost::add_vertex(graph);
+              boost::put("label", dp, boost_vertex, rit->first->description());
+              vindices[rit->first] = vind++;
+            }
+
+            edges[std::pair<BoostVertex,BoostVertex>(vindices[rit->first], vindices[it1->first])] =  it2->first;
+          }
+        }
+      }
+    }
+#endif
 
   // JG Note: should the option IgnoreUserData() moved to the Factory interface or on the specific factories that are using this option? It would simplify the level class.
-  const FactoryBase* Level::GetFactory(const std::string& varname, const FactoryBase* factory) const {
+  const FactoryBase* Level::GetFactory(const std::string& ename, const FactoryBase* factory) const {
     if (factory != NULL)
       return factory;
 
-    // If IgnoreUserData == false and if variable "varname" generated by NoFactory is provided by the user (MueLu::UserData), use user-provided data by default without querying the FactoryManager.
+    // If IgnoreUserData == false and if variable "ename" generated by NoFactory is provided by the user (MueLu::UserData),
+    // use user-provided data by default without querying the FactoryManager.
     // When FactoryManager == null, we consider that IgnoreUserData == false.
     if ((factoryManager_ == Teuchos::null || factoryManager_->IgnoreUserData() == false) &&
-        (IsAvailable(varname, NoFactory::get()) && IsKept(varname, NoFactory::get(), MueLu::UserData))) {
+        (IsAvailable(ename, NoFactory::get()) && IsKept(ename, NoFactory::get(), MueLu::UserData))) {
       return NoFactory::get();
     }
 
     // Query factory manager
-    TEUCHOS_TEST_FOR_EXCEPTION(factoryManager_ == null, Exceptions::RuntimeError, "MueLu::Level("<< levelID_ << ")::GetFactory(" << varname << ", " << factory << "): No FactoryManager");
-    const FactoryBase* fac = factoryManager_->GetFactory(varname).get();
-    TEUCHOS_TEST_FOR_EXCEPTION(fac == NULL, Exceptions::RuntimeError, "MueLu::Level("<< levelID_ << ")::GetFactory(" << varname << ", " << factory << "): Default factory returned by FactoryManager cannot be NULL");
+    TEUCHOS_TEST_FOR_EXCEPTION(factoryManager_ == null, Exceptions::RuntimeError, "MueLu::Level("<< levelID_ << ")::GetFactory(" << ename << ", " << factory << "): No FactoryManager");
+    const FactoryBase* fac = factoryManager_->GetFactory(ename).get();
+    TEUCHOS_TEST_FOR_EXCEPTION(fac == NULL, Exceptions::RuntimeError, "MueLu::Level("<< levelID_ << ")::GetFactory(" << ename << ", " << factory << "): Default factory returned by FactoryManager cannot be NULL");
     return fac;
   }
 

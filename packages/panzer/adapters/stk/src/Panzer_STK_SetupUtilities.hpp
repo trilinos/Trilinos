@@ -45,7 +45,6 @@
 
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_Workset.hpp"
-#include "Panzer_BC.hpp"
 #include "Panzer_PhysicsBlock.hpp"
 
 #include "Teuchos_RCP.hpp"
@@ -90,7 +89,7 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
   *
   * \param[in] mesh A pointer to the STK_Interface used to construct the worksets
   * \param[in] pb Physics block associated with the element block
-  * \param[in] bc Boundary condition object
+  * \param[in] sidesetID Name of sideset
   *
   * \returns Map relating local element side IDs to a workset.
   *
@@ -100,7 +99,7 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
 buildBCWorksets(const panzer_stk::STK_Interface & mesh,
                 const panzer::PhysicsBlock & pb,
-                const panzer::BC & bc);
+                const std::string & sidesetID);
 
 // namespace may not be neccssary in the future, currently avoids
 // collisions with previously implemented code in tests
@@ -116,12 +115,12 @@ namespace workset_utils {
   */
 template<typename ArrayT>
 void getIdsAndVertices(const panzer_stk::STK_Interface& mesh,
-			 std::string blockId,
-			 std::vector<std::size_t>& localIds,
-			 ArrayT& vertices);
+		       std::string blockId,
+		       std::vector<std::size_t>& localIds,
+		       ArrayT& vertices);
 
 /** This function loops over the passed in set of entities and looks
- * at there related elements. It is then determined which elements
+ * at their related elements. It is then determined which elements
  * belong in the requested element block, and what the local ID of 
  * the entitiy is.
  *
@@ -144,6 +143,31 @@ void getSubcellElements(const panzer_stk::STK_Interface & mesh,
 		        const std::vector<stk::mesh::Entity*> & entities,
 		        std::vector<std::size_t> & localEntityIds, 
 		        std::vector<stk::mesh::Entity*> & elements);
+
+/** This function loops over the passed in set of entities and looks
+ * at their related elements. It is then determined which elements
+ * belong in the requested element block, and what the local ID of 
+ * the entitiy is.  This will return both local and ghosted entities.
+ *
+ * \param[in] mesh STK mesh interface
+ * \param[in] blockId Requested element block identifier
+ * \param[in] entities Set of subcell entities where
+ *                  there is assumed part membership (induced or not)
+ *                  in the requested element block.
+ * \param[out] localEntityIds On output this will contain the local entity ids. 
+ *             Assumed that on input <code>entities.size()==0</code>
+ * \param[out] elements On output this will contain the elements associated
+ *             with each entity in the requested block. Assumed that on input
+ *             <code>elements.size()==0</code>
+ *
+ * \note Some elements may be repeated in the lists, however the
+ *       local entity ID should be distinct for each of those.
+ */
+void getUniversalSubcellElements(const panzer_stk::STK_Interface & mesh,
+				 const std::string & blockId, 
+				 const std::vector<stk::mesh::Entity*> & entities,
+				 std::vector<std::size_t> & localEntityIds, 
+				 std::vector<stk::mesh::Entity*> & elements);
 
 /** This function loops over the passed in set of "Sides" and looks
  * at there related elements. It is then determined which elements
@@ -195,7 +219,7 @@ void getNodeElements(const panzer_stk::STK_Interface & mesh,
 		       std::vector<std::size_t> & localNodeIds, 
 	 	       std::vector<stk::mesh::Entity*> & elements);
 
-/** This function builds the "element cascade" contained within an specfied
+/** This function builds the "element cascade" contained within a specfied
   * element block. That is given a set of "sides" extract all elements that
   * live in the block and touch those sides on a node, edge or face. It returns
   * the local sub cell index and sub cell dimension.

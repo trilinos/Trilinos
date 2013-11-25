@@ -95,6 +95,12 @@ namespace Ioss {
     const std::string & name() const {return entityName;}
     void set_name(const std::string &new_name) {entityName = new_name;}
     
+    //: Return a generated name based on the type of the entity and the id
+    //  For example, element block 10 would return "block_10"
+    //  This is the default name if no name is assigned in the mesh database.
+    std::string generic_name() const;
+
+    
     //: Returns true if 'name' is an alias for this entity.
     bool is_alias(const std::string &name) const;
 
@@ -108,6 +114,7 @@ namespace Ioss {
       
     std::string get_filename() const;
     virtual std::string type_string() const = 0;
+    virtual std::string short_type_string() const = 0;
     virtual EntityType type() const = 0;
       
     // ========================================================================

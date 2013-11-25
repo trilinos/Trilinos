@@ -68,13 +68,11 @@ class FieldManagerBuilder;
 template<typename> class LinearObjFactory;
 class GlobalData;
 
-template<typename Scalar, typename NODE>
+template<typename Scalar>
 class ModelEvaluator
   : public Thyra::StateFuncModelEvaluatorBase<Scalar>
 {
 public:
-
-//   typedef typename panzer::Traits<T>::node_type NODE;
 
 public:
 
@@ -190,6 +188,21 @@ public:
     outArgs.setSupports(MEB::OUT_ARG_W_op);
     prototypeOutArgs_ = outArgs; }
 
+  /** This function is intended for experts only, it allows for a beta to be set for the
+    * dirichlet conditions only. This allows the dirichlet condition to be propagated to
+    * the mass matrix. The reason it is one time only is that it breaks encapsulation,
+    * and should be only used if absolutely neccessary.
+    *
+    * \param[in] beta Value of beta to use.
+    */
+  void setOneTimeDirichletBeta(const Scalar & beta) const;
+
+  /** Apply the dirichlet boundary conditions to the vector "f" using the 
+    * "x" values as the current solution.
+    */
+  void applyDirichletBCs(const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,
+                         const Teuchos::RCP<Thyra::VectorBase<Scalar> > & f) const;
+
 private:
 
   /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
@@ -252,12 +265,15 @@ private: // data members
   Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > solverFactory_;
 
   GlobalEvaluationDataContainer nonParamGlobalEvaluationData_;
+
+  mutable bool oneTimeDirichletBeta_on_;
+  mutable Scalar oneTimeDirichletBeta_;
 };
 
 // Inline definition of the add response (its template on the builder type)
-template<typename Scalar, typename NODE>
+template<typename Scalar>
 template <typename ResponseEvaluatorFactory_BuilderT>
-int ModelEvaluator<Scalar,NODE>::
+int ModelEvaluator<Scalar>::
 addResponse(const std::string & responseName,
             const std::vector<WorksetDescriptor> & wkst_desc,
             const ResponseEvaluatorFactory_BuilderT & builder)

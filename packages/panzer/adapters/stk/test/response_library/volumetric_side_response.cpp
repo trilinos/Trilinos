@@ -90,7 +90,7 @@ namespace panzer_stk {
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs);
 
-  RCP<panzer_stk::STK_Interface> buildMesh();
+  RCP<panzer_stk::STK_Interface> buildMesh(bool flag=false);
   void buildPhysicsBlocks(panzer_stk::STK_Interface & mesh,
                           std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physics_blocks,
                           panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
@@ -181,6 +181,79 @@ namespace panzer_stk {
       else {
         TEST_ASSERT(worksets!=Teuchos::null);
         TEST_EQUALITY(worksets->size(),0);
+      }
+      
+    }
+  }
+
+  TEUCHOS_UNIT_TEST(volumetric_side_response, test_wkst2)
+  {
+  #ifdef HAVE_MPI
+     Teuchos::RCP<Teuchos::Comm<int> > tcomm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
+  #else
+     Teuchos::RCP<Teuchos::Comm<int> > tcomm = Teuchos::rcp(new Teuchos::SerialComm<int>);
+  #endif
+
+    std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physics_blocks;
+    panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
+    Teuchos::ParameterList closure_models("Closure Models");
+    Teuchos::ParameterList user_data("User Data");
+
+    Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(true); 
+
+    RCP<panzer_stk::WorksetFactory> wkstFactory 
+       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
+
+    buildPhysicsBlocks(*mesh,physics_blocks,cm_factory,closure_models,user_data);
+
+    {
+      RCP<std::vector<panzer::Workset> > worksets 
+         = wkstFactory->getWorksets(panzer::sidesetVolumeDescriptor("eblock-0_0","left"),*physics_blocks[0]);
+ 
+ 
+      if(tcomm->getRank()==0) {
+        TEST_ASSERT(worksets!=Teuchos::null);
+        TEST_EQUALITY(worksets->size(),3);
+
+
+        TEST_EQUALITY((*worksets)[0].num_cells,2);
+        TEST_EQUALITY((*worksets)[0].subcell_dim,0);
+        TEST_EQUALITY((*worksets)[0].subcell_index,0);
+        TEST_ASSERT(!(*worksets)[0].int_rules[0]->int_rule->isSide());
+
+        panzer::Workset & current = (*worksets)[0];
+        for(int i=0;i<current.num_cells;i++) {
+          std::cout << "Cell ID =  " << current.cell_local_ids[i] << std::endl;
+        }
+     
+        TEST_EQUALITY((*worksets)[1].num_cells,2);
+        TEST_EQUALITY((*worksets)[1].subcell_dim,0);
+        TEST_EQUALITY((*worksets)[1].subcell_index,3);
+        TEST_ASSERT(!(*worksets)[1].int_rules[0]->int_rule->isSide());
+
+        TEST_EQUALITY((*worksets)[2].num_cells,2);
+        TEST_EQUALITY((*worksets)[2].subcell_dim,1);
+        TEST_EQUALITY((*worksets)[2].subcell_index,3);
+        TEST_ASSERT(!(*worksets)[2].int_rules[0]->int_rule->isSide());
+      }
+      else {
+        TEST_ASSERT(worksets!=Teuchos::null);
+        TEST_EQUALITY(worksets->size(),3);
+
+        TEST_EQUALITY((*worksets)[0].num_cells,2);
+        TEST_EQUALITY((*worksets)[0].subcell_dim,0);
+        TEST_EQUALITY((*worksets)[0].subcell_index,0);
+        TEST_ASSERT(!(*worksets)[0].int_rules[0]->int_rule->isSide());
+
+        TEST_EQUALITY((*worksets)[1].num_cells,2);
+        TEST_EQUALITY((*worksets)[1].subcell_dim,0);
+        TEST_EQUALITY((*worksets)[1].subcell_index,3);
+        TEST_ASSERT(!(*worksets)[1].int_rules[0]->int_rule->isSide());
+
+        TEST_EQUALITY((*worksets)[2].num_cells,2);
+        TEST_EQUALITY((*worksets)[2].subcell_dim,1);
+        TEST_EQUALITY((*worksets)[2].subcell_index,3);
+        TEST_ASSERT(!(*worksets)[2].int_rules[0]->int_rule->isSide());
       }
       
     }
@@ -340,7 +413,7 @@ namespace panzer_stk {
     }
   }
 
-  RCP<panzer_stk::STK_Interface> buildMesh()
+  RCP<panzer_stk::STK_Interface> buildMesh(bool flag)
   {
     using Teuchos::RCP;
 
@@ -354,9 +427,20 @@ namespace panzer_stk {
 
     // setup mesh
     /////////////////////////////////////////////
-    RCP<panzer_stk::STK_Interface> mesh;
-    {
+    RCP<panzer_stk::STK_Interface> mesh; 
+    if(!flag) {
        RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+       pl->set("X Blocks",2);
+       pl->set("Y Blocks",1);
+       pl->set("X Elements",4);
+       pl->set("Y Elements",4);
+       mesh_factory.setParameterList(pl);
+       mesh = mesh_factory.buildMesh(MPI_COMM_WORLD);
+    }
+    else {
+       RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+       pl->set("X Procs",1);
+       pl->set("Y Procs",2);
        pl->set("X Blocks",2);
        pl->set("Y Blocks",1);
        pl->set("X Elements",4);
@@ -435,6 +519,8 @@ namespace panzer_stk {
     RCP<panzer_stk::STK_Interface> mesh;
     {
        RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+       pl->set("X Procs",1);
+       pl->set("Y Procs",2);
        pl->set("X Blocks",2);
        pl->set("Y Blocks",1);
        pl->set("X Elements",4);
@@ -488,7 +574,7 @@ namespace panzer_stk {
     // setup DOF manager
     /////////////////////////////////////////////
     const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager 
-           = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+           = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 
     Teuchos::RCP<const panzer::UniqueGlobalIndexerFactory<int,int,int,int> > indexerFactory
           = Teuchos::rcp(new panzer::DOFManagerFactory<int,int>);

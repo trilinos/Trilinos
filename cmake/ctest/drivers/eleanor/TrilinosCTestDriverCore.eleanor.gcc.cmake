@@ -78,8 +78,17 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
   
   SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-    "-DTrilinos_ENABLE_DEPENCENCY_UNIT_TESTS:BOOL=OFF"
+    "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
+    "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF"
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
+
+    "-DTPL_ENABLE_SuperLU:BOOL=ON"
+    "-DSuperLU_INCLUDE_DIRS=/home/jhu/Software/SuperLU_4.3/SRC"
+    "-DSuperLU_LIBRARY_DIRS=/home/jhu/Software/SuperLU_4.3/lib"
+    "-DSuperLU_LIBRARY_NAMES=superlu_4.3"
+
+    "-DTPL_BLAS_LIBRARIES:STRING=-L/usr/local/intel/Compiler/11.1/064/mkl/lib/em64t -L/usr/local/intel/Compiler/11.1/064/lib/intel64 -L/usr/lib64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread"
+    "-DTPL_LAPACK_LIBRARIES:STRING=-L/usr/local/intel/Compiler/11.1/064/mkl/lib/em64t -L/usr/local/intel/Compiler/11.1/064/lib/intel64 -L/usr/lib64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread"
     )
 
   SET_DEFAULT(COMPILER_VERSION "GCC-4.1.2")

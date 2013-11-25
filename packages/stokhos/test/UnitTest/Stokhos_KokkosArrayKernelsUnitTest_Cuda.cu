@@ -1,90 +1,107 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
+// Utilities
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
+// Device
+#include "Kokkos_Cuda.hpp"
+
+// Kernels
+#include "Stokhos_Cuda_CrsMatrix.hpp"
+#include "Stokhos_Cuda_BlockCrsMatrix.hpp"
+#include "Stokhos_Cuda_StochasticProductTensor.hpp"
+#include "Stokhos_Cuda_SymmetricDiagonalSpec.hpp"
+#include "Stokhos_Cuda_CrsProductTensor.hpp"
+#include "Stokhos_Cuda_TiledCrsProductTensor.hpp"
+#include "Stokhos_Cuda_SimpleTiledCrsProductTensor.hpp"
+#include "Stokhos_Cuda_CooProductTensor.hpp"
+#include "Stokhos_Cuda_LinearSparse3Tensor.hpp"
+
+// Tests
 #include "Stokhos_KokkosArrayKernelsUnitTest.hpp"
 
-#include <KokkosArray_Cuda.hpp>
-#include <Cuda/KokkosArray_Cuda_ProductTensor.hpp>
-#include <Cuda/KokkosArray_Cuda_CrsProductTensorLegendre.hpp>
-#include <Cuda/KokkosArray_Cuda_StochasticProductTensor.hpp>
-#include <Cuda/KokkosArray_Cuda_SymmetricDiagonalSpec.hpp>
-#include <Cuda/KokkosArray_Cuda_CrsMatrix.hpp>
-#include <Cuda/KokkosArray_Cuda_BlockCrsMatrix.hpp>
+using namespace KokkosKernelsUnitTest;
 
-using namespace KokkosArrayKernelsUnitTest;
+UnitTestSetup<Kokkos::Cuda> setup;
 
-extern UnitTestSetup setup;
+// Test declarations
+#include "Stokhos_KokkosArrayKernelsUnitTestDecl.hpp"
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsMatrixFree_Cuda ) {
-  typedef double Scalar;
-  typedef KokkosArray::Cuda Device;
-  bool test_block = true;
-  
-  success = test_crs_matrix_free<Scalar,Device>(setup, test_block, out);
-}
+// Not all of the generic kernels work with Cuda because of the way
+// the Cuda StochasticProductTensor specialization is done
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsProductLegendre_Cuda ) {
-  typedef double Scalar;
-  typedef KokkosArray::Cuda Device;
-  
-  success = test_crs_product_legendre<Scalar,Device>(setup, out);
-}
+using Kokkos::Cuda;
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsDenseBlock_Cuda ) {
-  typedef double Scalar;
-  typedef KokkosArray::Cuda Device;
-  
-  success = test_crs_dense_block<Scalar,Device>(setup, out);
-}
+// The Tiled-Crs kernel seems to fail when OpenMP is the host device
+#ifdef KOKKOS_HAVE_OPENMP
+#define TILED_CRS_TEST(SCALAR, DEVICE)
+#else
+#define TILED_CRS_TEST(SCALAR, DEVICE)                                         \
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, TiledCrsProductTensor, SCALAR, DEVICE )
+#endif
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsFlatCommuted_Cuda ) {
-  typedef double Scalar;
-  typedef KokkosArray::Cuda Device;
-  
-  success = test_crs_flat_commuted<Scalar,Device>(setup, out);
-}
+#define UNIT_TEST_GROUP_SCALAR_CUDA( SCALAR ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, CrsMatrixFree, SCALAR, Cuda ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, CrsMatrixFreeView, SCALAR, Cuda ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, CrsMatrixFreeSingleCol, SCALAR, Cuda ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, CrsDenseBlock, SCALAR, Cuda ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, CrsFlatCommuted, SCALAR, Cuda ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, CrsFlatOriginal, SCALAR, Cuda ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, CrsProductTensor, SCALAR, Cuda ) \
+  TILED_CRS_TEST(SCALAR, Cuda )                                         \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, SimpleTiledCrsProductTensor, SCALAR, Cuda ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, CooProductTensorPacked, SCALAR, Cuda ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, CooProductTensorUnpacked, SCALAR, Cuda ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, LinearTensorSymmetric, SCALAR, Cuda ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, LinearTensorAsymmetric, SCALAR, Cuda )
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsFlatOriginal_Cuda ) {
-  typedef double Scalar;
-  typedef KokkosArray::Cuda Device;
-  
-  success = test_crs_flat_original<Scalar,Device>(setup, out);
-}
+UNIT_TEST_GROUP_SCALAR_CUDA(double)
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosArrayKernels, CrsProductTensor_Cuda ) {
-  typedef double Scalar;
-  typedef KokkosArray::Cuda Device;
-  
-  success = test_crs_product_tensor<Scalar,Device,KokkosArray::CrsProductTensor>(setup, out);
+int main( int argc, char* argv[] ) {
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+
+  // Initialize Cuda
+  Kokkos::Cuda::host_mirror_device_type::initialize();
+  Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
+  Kokkos::Cuda::print_configuration( std::cout );
+
+  // Setup (has to happen after initialization)
+  setup.setup();
+
+  // Run tests
+  int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+
+  // Finish up
+  Kokkos::Cuda::host_mirror_device_type::finalize();
+  Kokkos::Cuda::finalize();
+
+  return ret;
 }

@@ -27,8 +27,8 @@ void Krylov(const Operator& A, const MultiVector& LHS,
             Teuchos::ParameterList& List)
 {
 #ifndef HAVE_ML_AZTECOO
-      cerr << "Please configure ML with --enable-aztecoo to use" << endl;
-      cerr << "MLAPI Krylov solvers" << endl;
+      std::cerr << "Please configure ML with --enable-aztecoo to use" << std::endl;
+      std::cerr << "MLAPI Krylov solvers" << std::endl;
       exit(EXIT_FAILURE);
 #else
   if (LHS.GetNumVectors() != 1)
@@ -56,7 +56,7 @@ void Krylov(const Operator& A, const MultiVector& LHS,
   // get options from List
   int    NumIters = List.get("krylov: max iterations", 1550);
   double Tol      = List.get("krylov: tolerance", 1e-9);
-  string type     = List.get("krylov: type", "gmres");
+  std::string type     = List.get("krylov: type", "gmres");
   int    output   = List.get("krylov: output level", GetPrintLevel());
     
   // set options in `solver'

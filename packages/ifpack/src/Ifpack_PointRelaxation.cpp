@@ -7,20 +7,33 @@
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ***********************************************************************
@@ -73,7 +86,9 @@ Ifpack_PointRelaxation(const Epetra_RowMatrix* Matrix_in) :
   ZeroStartingSolution_(true),
   DoBackwardGS_(false),
   DoL1Method_(false),
-  L1Eta_(1.5)
+  L1Eta_(1.5),
+  NumLocalSmoothingIndices_(Matrix_in->NumMyRows()),
+  LocalSmoothingIndices_(0)
 {
 }
 
@@ -114,7 +129,18 @@ int Ifpack_PointRelaxation::SetParameters(Teuchos::ParameterList& List)
   DoL1Method_           = List.get("relaxation: use l1",DoL1Method_);
 
   L1Eta_                = List.get("relaxation: l1 eta",L1Eta_);
-  
+
+
+  // This (partial) reordering would require a very different implementation of Jacobi than we have no, so we're not
+  // going to do it.
+  NumLocalSmoothingIndices_= List.get("relaxation: number of local smoothing indices",NumLocalSmoothingIndices_);
+  LocalSmoothingIndices_   = List.get("relaxation: local smoothing indices",LocalSmoothingIndices_);
+  if(PrecType_ == IFPACK_JACOBI && LocalSmoothingIndices_) {
+    NumLocalSmoothingIndices_=NumMyRows_;
+    LocalSmoothingIndices_=0;
+    if(!Comm().MyPID()) cout<<"Ifpack_PointRelaxation: WARNING: Reordered/Local Smoothing not implemented for Jacobi.  Defaulting to regular Jacobi"<<endl;
+  }
+
   SetLabel();
 
   return(0);
@@ -211,8 +237,8 @@ int Ifpack_PointRelaxation::Compute()
       IFPACK_CHK_ERR(Matrix_->ExtractMyRowCopy(i, maxLength,NumEntries,
 					       &Values[0], &Indices[0]));
       double diagonal_boost=0.0;
-      for (int k = 0 ; k < NumEntries ; ++i)
-	if(Indices[k] > i)
+      for (int k = 0 ; k < NumEntries ; ++k)
+	if(Indices[k] > NumMyRows_)
 	  diagonal_boost+=std::abs(Values[k]/2.0);  
       if ((*Diagonal_)[i] < L1Eta_*diagonal_boost)
 	(*Diagonal_)[i]+=diagonal_boost;
@@ -358,6 +384,9 @@ void Ifpack_PointRelaxation::SetLabel()
   else if (PrecType_ == IFPACK_SGS)
     PT = "SGS";
 
+  if(NumLocalSmoothingIndices_!=NumMyRows_) PT="Local " + PT;
+  else if(LocalSmoothingIndices_) PT="Reordered " + PT;
+
   Label_ = "IFPACK (" + PT + ", sweeps=" + Ifpack_toString(NumSweeps_)
     + ", damping=" + Ifpack_toString(DampingFactor_) + ")";
 }
@@ -458,7 +487,9 @@ ApplyInverseGS(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   // if several sweeps are used.
   if (CrsMatrix != 0)
   {
-    if (CrsMatrix->StorageOptimized())
+    if (CrsMatrix->StorageOptimized() && LocalSmoothingIndices_)
+      return(ApplyInverseGS_LocalFastCrsMatrix(CrsMatrix, X, Y));
+    else if (CrsMatrix->StorageOptimized())
       return(ApplyInverseGS_FastCrsMatrix(CrsMatrix, X, Y));
     else
       return(ApplyInverseGS_CrsMatrix(CrsMatrix, X, Y));
@@ -466,6 +497,8 @@ ApplyInverseGS(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   else
     return(ApplyInverseGS_RowMatrix(X, Y));
 } //ApplyInverseGS()
+
+
 
 //==============================================================================
 int Ifpack_PointRelaxation::
@@ -505,7 +538,8 @@ ApplyInverseGS_RowMatrix(const Epetra_MultiVector& X, Epetra_MultiVector& Y) con
 
       if(!DoBackwardGS_){      
         /* Forward Mode */
-        for (int i = 0 ; i < NumMyRows_ ; ++i) {
+	for (int ii = 0 ; ii < NumLocalSmoothingIndices_ ; ++ii) {
+	  int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
 
           int NumEntries;
           int col;
@@ -524,7 +558,8 @@ ApplyInverseGS_RowMatrix(const Epetra_MultiVector& X, Epetra_MultiVector& Y) con
       }
       else {
         /* Backward Mode */
-        for (int i = NumMyRows_  - 1 ; i > -1 ; --i) {
+	for (int ii = NumLocalSmoothingIndices_  - 1 ; ii > -1 ; --ii) {
+	  int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
 
           int NumEntries;
           int col;
@@ -597,9 +632,10 @@ ApplyInverseGS_RowMatrix(const Epetra_MultiVector& X, Epetra_MultiVector& Y) con
       // using Export() sounded quite expensive   
       if (IsParallel_)
         for (int m = 0 ; m < NumVectors ; ++m) 
-          for (int i = 0 ; i < NumMyRows_ ; ++i)
-            y_ptr[m][i] = y2_ptr[m][i];
-      
+	  for (int ii = 0 ; ii < NumLocalSmoothingIndices_ ; ++ii) {
+	    int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
+	    y_ptr[m][i] = y2_ptr[m][i];
+	  }
     }
   }
 
@@ -640,7 +676,8 @@ ApplyInverseGS_CrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector& X,
 
     if(!DoBackwardGS_){  
       /* Forward Mode */
-      for (int i = 0 ; i < NumMyRows_ ; ++i) {
+      for (int ii = 0 ; ii < NumLocalSmoothingIndices_ ; ++ii) {
+	int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
 
         int NumEntries;
         int col;
@@ -664,7 +701,8 @@ ApplyInverseGS_CrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector& X,
     }
     else {
       /* Backward Mode */
-      for (int i = NumMyRows_  - 1 ; i > -1 ; --i) {
+      for (int ii = NumLocalSmoothingIndices_  - 1 ; ii > -1 ; --ii) {
+	int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
 
         int NumEntries;
         int col;
@@ -689,8 +727,10 @@ ApplyInverseGS_CrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector& X,
     
     if (IsParallel_)
       for (int m = 0 ; m < NumVectors ; ++m) 
-        for (int i = 0 ; i < NumMyRows_ ; ++i)
+	for (int ii = 0 ; ii < NumLocalSmoothingIndices_ ; ++ii) {
+	  int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
           y_ptr[m][i] = y2_ptr[m][i];
+	}
   }
 
 #ifdef IFPACK_FLOPCOUNTERS
@@ -788,6 +828,101 @@ ApplyInverseGS_FastCrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector
   return(0);
 } //ApplyInverseGS_FastCrsMatrix()
 
+
+//
+//==============================================================================
+// ApplyInverseGS_LocalFastCrsMatrix() requires Epetra_CrsMatrix + OptimizeStorage() + LocalSmoothingIndices
+
+int Ifpack_PointRelaxation::
+ApplyInverseGS_LocalFastCrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+{
+  int* IndexOffset;
+  int* Indices;
+  double* Values;
+  IFPACK_CHK_ERR(A->ExtractCrsDataPointers(IndexOffset, Indices, Values));
+
+  int NumVectors = X.NumVectors();
+
+  Teuchos::RefCountPtr< Epetra_MultiVector > Y2;
+  if (IsParallel_) {
+    Y2 = Teuchos::rcp( new Epetra_MultiVector(Importer_->TargetMap(), NumVectors) );
+  }
+  else
+    Y2 = Teuchos::rcp( &Y, false );
+
+  double** y_ptr, ** y2_ptr, ** x_ptr, *d_ptr;
+  X.ExtractView(&x_ptr);
+  Y.ExtractView(&y_ptr);
+  Y2->ExtractView(&y2_ptr);
+  Diagonal_->ExtractView(&d_ptr);
+
+  for (int iter = 0 ; iter < NumSweeps_ ; ++iter) {
+    
+    // only one data exchange per sweep
+    if (IsParallel_)
+      IFPACK_CHK_ERR(Y2->Import(Y,*Importer_,Insert));
+
+    if(!DoBackwardGS_){  
+      /* Forward Mode */
+      for (int ii = 0 ; ii < NumLocalSmoothingIndices_ ; ++ii) {
+	int i=LocalSmoothingIndices_[ii];
+
+        int col;
+        double diag = d_ptr[i];
+        
+        for (int m = 0 ; m < NumVectors ; ++m) {
+          
+          double dtemp = 0.0;
+          
+          for (int k = IndexOffset[i] ; k < IndexOffset[i + 1] ; ++k) {
+            
+            col = Indices[k];
+            dtemp += Values[k] * y2_ptr[m][col];
+          }
+          
+          y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
+        }      
+      }
+    }
+    else {
+      /* Backward Mode */
+      for (int ii = NumLocalSmoothingIndices_  - 1 ; ii > -1 ; --ii) {
+	int i=LocalSmoothingIndices_[ii];
+
+        int col;
+        double diag = d_ptr[i];
+        
+        for (int m = 0 ; m < NumVectors ; ++m) {
+
+          double dtemp = 0.0;
+          for (int k = IndexOffset[i] ; k < IndexOffset[i + 1] ; ++k) {
+
+            col = Indices[k];
+            dtemp += Values[k] * y2_ptr[m][col];
+          }
+
+          y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
+
+        }
+      }
+    }
+    
+
+    if (IsParallel_)
+      for (int m = 0 ; m < NumVectors ; ++m) 
+        for (int ii = 0 ; ii < NumLocalSmoothingIndices_ ; ++ii) {
+	  int i=LocalSmoothingIndices_[ii];
+          y_ptr[m][i] = y2_ptr[m][i];
+	}
+  }
+
+#ifdef IFPACK_FLOPCOUNTERS
+  ApplyInverseFlops_ += NumVectors * (8 * NumGlobalRows_ + 4 * NumGlobalNonzeros_);
+#endif
+  return(0);
+} //ApplyInverseGS_LocalFastCrsMatrix()
+
+
 //==============================================================================
 int Ifpack_PointRelaxation::
 ApplyInverseSGS(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
@@ -797,7 +932,9 @@ ApplyInverseSGS(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   // if several sweeps are used.
   if (CrsMatrix != 0)
   {
-    if (CrsMatrix->StorageOptimized())
+    if (CrsMatrix->StorageOptimized() && LocalSmoothingIndices_)
+      return(ApplyInverseSGS_LocalFastCrsMatrix(CrsMatrix, X, Y));
+    else if (CrsMatrix->StorageOptimized())
       return(ApplyInverseSGS_FastCrsMatrix(CrsMatrix, X, Y));
     else
       return(ApplyInverseSGS_CrsMatrix(CrsMatrix, X, Y));
@@ -834,7 +971,8 @@ ApplyInverseSGS_RowMatrix(const Epetra_MultiVector& X, Epetra_MultiVector& Y) co
     if (IsParallel_)
       IFPACK_CHK_ERR(Y2->Import(Y,*Importer_,Insert));
 
-    for (int i = 0 ; i < NumMyRows_ ; ++i) {
+    for (int ii = 0 ; ii < NumLocalSmoothingIndices_ ; ++ii) {
+      int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
 
       int NumEntries;
       int col;
@@ -856,8 +994,8 @@ ApplyInverseSGS_RowMatrix(const Epetra_MultiVector& X, Epetra_MultiVector& Y) co
         y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
       }
     }
-
-    for (int i = NumMyRows_  - 1 ; i > -1 ; --i) {
+    for (int ii = NumLocalSmoothingIndices_  - 1 ; ii > -1 ; --ii) {
+      int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
 
       int NumEntries;
       int col;
@@ -882,8 +1020,10 @@ ApplyInverseSGS_RowMatrix(const Epetra_MultiVector& X, Epetra_MultiVector& Y) co
 
     if (IsParallel_)
       for (int m = 0 ; m < NumVectors ; ++m) 
-        for (int i = 0 ; i < NumMyRows_ ; ++i)
+	for (int ii = 0 ; ii < NumLocalSmoothingIndices_ ; ++ii) {
+	  int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
           y_ptr[m][i] = y2_ptr[m][i];
+	}
   }
 
 #ifdef IFPACK_FLOPCOUNTERS
@@ -920,7 +1060,8 @@ ApplyInverseSGS_CrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector& X
     if (IsParallel_)
       IFPACK_CHK_ERR(Y2->Import(Y,*Importer_,Insert));
 
-    for (int i = 0 ; i < NumMyRows_ ; ++i) {
+    for (int ii = 0 ; ii < NumLocalSmoothingIndices_ ; ++ii) {
+      int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
 
       int NumEntries;
       int col;
@@ -941,8 +1082,8 @@ ApplyInverseSGS_CrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector& X
         y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
       }
     }
-
-    for (int i = NumMyRows_  - 1 ; i > -1 ; --i) {
+    for (int ii = NumLocalSmoothingIndices_  - 1 ; ii > -1 ; --ii) {
+      int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
 
       int NumEntries;
       int col;
@@ -966,8 +1107,10 @@ ApplyInverseSGS_CrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector& X
 
     if (IsParallel_)
       for (int m = 0 ; m < NumVectors ; ++m) 
-        for (int i = 0 ; i < NumMyRows_ ; ++i)
+	for (int ii = 0 ; ii < NumLocalSmoothingIndices_ ; ++ii) {
+	  int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
           y_ptr[m][i] = y2_ptr[m][i];
+	}
   }
 
 #ifdef IFPACK_FLOPCOUNTERS
@@ -1055,6 +1198,98 @@ ApplyInverseSGS_FastCrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVecto
       for (int m = 0 ; m < NumVectors ; ++m) 
         for (int i = 0 ; i < NumMyRows_ ; ++i)
           y_ptr[m][i] = y2_ptr[m][i];
+  }
+
+#ifdef IFPACK_FLOPCOUNTERS
+  ApplyInverseFlops_ += NumVectors * (8 * NumGlobalRows_ + 4 * NumGlobalNonzeros_);
+#endif
+  return(0);
+}
+
+
+//==============================================================================
+// this requires Epetra_CrsMatrix + OptimizeStorage() + LocalSmoothingIndices_
+int Ifpack_PointRelaxation::
+ApplyInverseSGS_LocalFastCrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+{
+  int* IndexOffset;
+  int* Indices;
+  double* Values;
+  IFPACK_CHK_ERR(A->ExtractCrsDataPointers(IndexOffset, Indices, Values));
+
+  int NumVectors = X.NumVectors();
+
+  Teuchos::RefCountPtr< Epetra_MultiVector > Y2;
+  if (IsParallel_) {
+    Y2 = Teuchos::rcp( new Epetra_MultiVector(Importer_->TargetMap(), NumVectors) );
+  }
+  else
+    Y2 = Teuchos::rcp( &Y, false );
+
+  double** y_ptr, ** y2_ptr, ** x_ptr, *d_ptr;
+  X.ExtractView(&x_ptr);
+  Y.ExtractView(&y_ptr);
+  Y2->ExtractView(&y2_ptr);
+  Diagonal_->ExtractView(&d_ptr);
+  
+  for (int iter = 0 ; iter < NumSweeps_ ; ++iter) {
+    
+    // only one data exchange per sweep
+    if (IsParallel_)
+      IFPACK_CHK_ERR(Y2->Import(Y,*Importer_,Insert));
+
+    for (int ii = 0 ; ii < NumLocalSmoothingIndices_ ; ++ii) {
+      int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
+
+      int col;
+      double diag = d_ptr[i];
+
+      // no need to extract row i
+      //IFPACK_CHK_ERR(A->ExtractMyRowView(i, NumEntries, Values, Indices));
+
+      for (int m = 0 ; m < NumVectors ; ++m) {
+
+        double dtemp = 0.0;
+
+        for (int k = IndexOffset[i] ; k < IndexOffset[i + 1] ; ++k) {
+
+          col = Indices[k];
+          dtemp += Values[k] * y2_ptr[m][col];
+        }
+
+        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
+      }
+    }
+
+    for (int ii = NumLocalSmoothingIndices_  - 1 ; ii > -1 ; --ii) {
+      int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
+
+      int col;
+      double diag = d_ptr[i];
+
+      // no need to extract row i
+      //IFPACK_CHK_ERR(A->ExtractMyRowView(i, NumEntries, Values, Indices));
+
+      for (int m = 0 ; m < NumVectors ; ++m) {
+
+        double dtemp = 0.0;
+        for (int k = IndexOffset[i] ; k < IndexOffset[i + 1] ; ++k) {
+
+          col = Indices[k];
+          dtemp += Values[k] * y2_ptr[m][col];
+        }
+
+        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
+
+      }
+    }
+
+    if (IsParallel_)
+      for (int m = 0 ; m < NumVectors ; ++m) 
+	for (int ii = 0 ; ii < NumLocalSmoothingIndices_ ; ++ii) {
+	  int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
+          y_ptr[m][i] = y2_ptr[m][i];
+	}
   }
 
 #ifdef IFPACK_FLOPCOUNTERS

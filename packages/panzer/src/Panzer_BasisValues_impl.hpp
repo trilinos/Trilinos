@@ -192,9 +192,9 @@ namespace panzer {
         coords->getDofCoords(basis_coordinates_ref);
         Intrepid::CellTools<Scalar> cell_tools;
         cell_tools.mapToPhysicalFrame(basis_coordinates, 
-        basis_coordinates_ref,
-        node_coordinates,
-        intrepid_basis->getBaseCellTopology());
+                                      basis_coordinates_ref,
+                                      node_coordinates,
+                                      intrepid_basis->getBaseCellTopology());
       }
     }
 

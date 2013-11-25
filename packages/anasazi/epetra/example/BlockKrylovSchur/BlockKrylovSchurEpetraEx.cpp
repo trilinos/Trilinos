@@ -36,12 +36,22 @@ int main(int argc, char *argv[]) {
 
   bool verbose = true;
   bool debug = false;
+  bool dynXtraNev = false;
   std::string which("SM");
+  int nx = 10;        // Discretization points in any one direction.
+  int nev = 4;
+  int blockSize = 1;
+  int numBlocks = 20;
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM,LM,SR,LR,SI,or LI).");
+  cmdp.setOption("nx",&nx,"Number of discretization points in each direction; n=nx*nx.");
+  cmdp.setOption("nev",&nev,"Number of eigenvalues to compute.");
+  cmdp.setOption("blocksize",&blockSize,"Block Size.");
+  cmdp.setOption("numblocks",&numBlocks,"Number of blocks for the Krylov-Schur form.");
+  cmdp.setOption("dynrestart","nodynrestart",&dynXtraNev,"Use dynamic restart boundary to accelerate convergence.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
     MPI_Finalize();
@@ -58,7 +68,6 @@ int main(int argc, char *argv[]) {
   typedef Anasazi::OperatorTraits<ScalarType,MV,OP>  OPT;
 
   //  Dimension of the matrix
-  int nx = 10;        // Discretization points in any one direction.
   int NumGlobalElements = nx*nx;  // Size of matrix nx*nx
 
   // Construct a Map that puts approximately the same number of
@@ -111,7 +120,8 @@ int main(int argc, char *argv[]) {
   // Diffusion coefficient, can be set by user.
   // When rho*h/2 <= 1, the discrete convection-diffusion operator has real eigenvalues.
   // When rho*h/2 > 1, the operator has complex eigenvalues.
-  double rho = 2*nx+1;
+  //double rho = 2*nx+1;
+  double rho = 0.0;
   
   // Compute coefficients for discrete convection-diffution operator
   const double one = 1.0;
@@ -227,9 +237,6 @@ int main(int argc, char *argv[]) {
   //
   //  Variables used for the Block Krylov Schur Method
   //    
-  int nev = 4;
-  int blockSize = 1;
-  int numBlocks = 20;
   int maxRestarts = 500;
   //int stepSize = 5;
   double tol = 1e-8;
@@ -261,6 +268,7 @@ int main(int argc, char *argv[]) {
   MyPL.set( "Maximum Restarts", maxRestarts );
   //MyPL.set( "Step Size", stepSize );
   MyPL.set( "Convergence Tolerance", tol );
+  MyPL.set("Dynamic Extra NEV",dynXtraNev);
 
   // Create an Epetra_MultiVector for an initial vector to start the solver.
   // Note:  This needs to have the same number of columns as the blocksize.
@@ -281,7 +289,7 @@ int main(int argc, char *argv[]) {
   boolret = MyProblem->setProblem();
   if (boolret != true) {
     if (verbose && MyPID == 0) {
-      cout << "Anasazi::BasicEigenproblem::setProblem() returned with error." << endl;
+      std::cout << "Anasazi::BasicEigenproblem::setProblem() returned with error." << std::endl;
     }
 #ifdef HAVE_MPI
     MPI_Finalize() ;
@@ -295,7 +303,7 @@ int main(int argc, char *argv[]) {
   // Solve the problem to the specified tolerances or length
   Anasazi::ReturnType returnCode = MySolverMgr.solve();
   if (returnCode != Anasazi::Converged && MyPID==0 && verbose) {
-    cout << "Anasazi::EigensolverMgr::solve() returned unconverged." << endl;
+    std::cout << "Anasazi::EigensolverMgr::solve() returned unconverged." << std::endl;
   }
 
   // Get the Ritz values from the eigensolver
@@ -304,29 +312,29 @@ int main(int argc, char *argv[]) {
   // Output computed eigenvalues and their direct residuals
   if (verbose && MyPID==0) {
     int numritz = (int)ritzValues.size();
-    cout.setf(std::ios_base::right, std::ios_base::adjustfield);
-    cout<<endl<< "Computed Ritz Values"<< endl;
+    std::cout.setf(std::ios_base::right, std::ios_base::adjustfield);
+    std::cout<<std::endl<< "Computed Ritz Values"<< std::endl;
     if (MyProblem->isHermitian()) {
-      cout<< std::setw(16) << "Real Part"
-        << endl;
-      cout<<"-----------------------------------------------------------"<<endl;
+      std::cout<< std::setw(16) << "Real Part"
+        << std::endl;
+      std::cout<<"-----------------------------------------------------------"<<std::endl;
       for (int i=0; i<numritz; i++) {
-        cout<< std::setw(16) << ritzValues[i].realpart 
-          << endl;
+        std::cout<< std::setw(16) << ritzValues[i].realpart 
+          << std::endl;
       }  
-      cout<<"-----------------------------------------------------------"<<endl;
+      std::cout<<"-----------------------------------------------------------"<<std::endl;
     } 
     else {
-      cout<< std::setw(16) << "Real Part"
+      std::cout<< std::setw(16) << "Real Part"
         << std::setw(16) << "Imag Part"
-        << endl;
-      cout<<"-----------------------------------------------------------"<<endl;
+        << std::endl;
+      std::cout<<"-----------------------------------------------------------"<<std::endl;
       for (int i=0; i<numritz; i++) {
-        cout<< std::setw(16) << ritzValues[i].realpart 
+        std::cout<< std::setw(16) << ritzValues[i].realpart 
           << std::setw(16) << ritzValues[i].imagpart 
-          << endl;
+          << std::endl;
       }  
-      cout<<"-----------------------------------------------------------"<<endl;
+      std::cout<<"-----------------------------------------------------------"<<std::endl;
       }  
     }
 
@@ -431,29 +439,29 @@ int main(int argc, char *argv[]) {
 
     // Output computed eigenvalues and their direct residuals
     if (verbose && MyPID==0) {
-      cout.setf(std::ios_base::right, std::ios_base::adjustfield);
-      cout<<endl<< "Actual Residuals"<<endl;
+      std::cout.setf(std::ios_base::right, std::ios_base::adjustfield);
+      std::cout<<std::endl<< "Actual Residuals"<<std::endl;
       if (MyProblem->isHermitian()) {
-        cout<< std::setw(16) << "Real Part"
-          << std::setw(20) << "Direct Residual"<< endl;
-        cout<<"-----------------------------------------------------------"<<endl;
+        std::cout<< std::setw(16) << "Real Part"
+          << std::setw(20) << "Direct Residual"<< std::endl;
+        std::cout<<"-----------------------------------------------------------"<<std::endl;
         for (int i=0; i<numev; i++) {
-          cout<< std::setw(16) << evals[i].realpart 
-            << std::setw(20) << normA[i] << endl;
+          std::cout<< std::setw(16) << evals[i].realpart 
+            << std::setw(20) << normA[i] << std::endl;
         }  
-        cout<<"-----------------------------------------------------------"<<endl;
+        std::cout<<"-----------------------------------------------------------"<<std::endl;
       } 
       else {
-        cout<< std::setw(16) << "Real Part"
+        std::cout<< std::setw(16) << "Real Part"
           << std::setw(16) << "Imag Part"
-          << std::setw(20) << "Direct Residual"<< endl;
-        cout<<"-----------------------------------------------------------"<<endl;
+          << std::setw(20) << "Direct Residual"<< std::endl;
+        std::cout<<"-----------------------------------------------------------"<<std::endl;
         for (int i=0; i<numev; i++) {
-          cout<< std::setw(16) << evals[i].realpart 
+          std::cout<< std::setw(16) << evals[i].realpart 
             << std::setw(16) << evals[i].imagpart 
-            << std::setw(20) << normA[i] << endl;
+            << std::setw(20) << normA[i] << std::endl;
         }  
-        cout<<"-----------------------------------------------------------"<<endl;
+        std::cout<<"-----------------------------------------------------------"<<std::endl;
       }  
     }
   }

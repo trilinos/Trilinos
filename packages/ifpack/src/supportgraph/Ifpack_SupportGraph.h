@@ -1,28 +1,41 @@
-/*@HEADER 
+/*@HEADER
 // ***********************************************************************
 //
 //       Ifpack: Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2002) Sandia Corporation
-//                                        
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-//                                                  
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of       
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU   
-// Lesser General Public License for more details.     
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//     
+//
 // ***********************************************************************
 //@HEADER
 */
@@ -279,24 +292,6 @@ public virtual Ifpack_Preconditioner
 
  protected:
 
- // Finds the size of a subtree rooted at a vertex (work in progress)
- int treecount(const std::vector<Vertex>& v, int *subtreesize, int node);
-
- // Partitions the spanning tree (work in progress)
- int treepartition(int *table, int* children, int *subtreesize, std::vector<int>& roots, 
-		   int node, int n, int t);
-
- // Finds the largest edge between two trees (work in progress)
- int largestbetween(int *table, int* children, const Graph& graph, const property_map<Graph, edge_weight_t>::type& map,
-		    int tree1, int tree2, double *largest, int *extrasource, int *extratarget, int num_verts);
-
- // Finds a list of all the vertices of a tree rooted at input vertex (work in progress)
- int findall(std::vector<int>& tree, int root, int *table, int *children, int num_verts);
-
-
- //! Compute AMST support graph (work in progress).
- int AMST();
- 
  //! Compute the support graph.
  int FindSupport();
 
@@ -405,413 +400,6 @@ Matrix_(rcp(Matrix_in,false)),
 }
 //============================================================================== 
 template<typename T>
-int Ifpack_SupportGraph<T>::treecount(const std::vector<Vertex>& v, int *subtreesize, int node)
-{
-  int parent = v[node];
- 
-  if(node != parent)
-    {
-      subtreesize[node] = subtreesize[node] + 1;
-      treecount(v, subtreesize, parent);
-    }
-
-  return 0;
-}
-//==============================================================================
-template<typename T>
-int Ifpack_SupportGraph<T>::treepartition(int *table, int* children, int *subtreesize, 
-					  std::vector<int>& roots,int node, int n, int t)
-{
-  subtreesize[node] = 1;
-  for(int i = table[node]; i < table[node+1]; i++)
-    {
-      int child = children[i];
-    
-      if(subtreesize[child] > (n/t + 1))
-	{
-	  treepartition(table, children, subtreesize, roots, child, n, t);
-	}
-
-      if(subtreesize[child] > (n/t))
-	{
-	  children[i] = -children[i];
-	  roots.push_back(child);
-	  
-	}
-      else
-	{
-	  subtreesize[node] = subtreesize[node] + subtreesize[child];
-	}
-    }
-  return 0;
-}
-//==============================================================================
-template<typename T>
-int Ifpack_SupportGraph<T>::largestbetween(int* table, int* children, const Graph& graph, 
-					    const property_map<Graph, edge_weight_t>::type& map, 
-					    int tree1, int tree2,
-					   double *largest, int *extrasource, int *extratarget, int num_verts)
-{
-  std::vector <int> subtree1;
-  std::vector <int> subtree2;
-
-  if(tree1 < 0)
-    {
-      tree1 = -tree1;
-    }
-
-  if(tree2 < 0)
-    {
-      tree2 = -tree2;
-    }
-
-  subtree1.push_back(tree1);
-  subtree2.push_back(tree2);
-
-
-  findall(subtree1, tree1, table, children, num_verts);
-  findall(subtree2, tree2, table, children, num_verts);
-
-
-  for(int i = 0; i < subtree1.size(); i++)
-    {
-      for(int j = 0; j < subtree2.size(); j++)
-	{
-
-	  if(edge(subtree1[i], subtree2[j], graph).second)
-	    {                                                  
-
-	      double temp = get(map, edge(subtree1[i],subtree2[j], graph).first);                                                                                  
-
-	      if(temp < *largest)         
-		{
-		  *largest = temp;
-		  *extrasource = subtree1[i];
-		  *extratarget = subtree2[j];
-		}
-
-	    }    
-	}
-    }
-
-
-
-    return 0;
-}
-//==============================================================================
-template<typename T>
-int Ifpack_SupportGraph<T>::findall(std::vector<int>& tree, int root, int *table, int *children, int num_verts)
-{
-  int upper;
-  if(root == num_verts-1)
-    {
-      upper = num_verts;
-    }
-  else
-    {
-      upper = table[root+1];
-    }
-  for(int i = table[root]; i < upper; i++)
-    {
-      int child = children[i];
-     
-      if(child > 0)
-	{
-	  tree.push_back(child);
-	  findall(tree, child, table, children,num_verts);
-	}
-    }
-}
-//============================================================================== 
-template<typename T>
-int Ifpack_SupportGraph<T>::AMST()
-{
-  
- 
-
-  // Extract matrix dimensions
-  int rows = (*Matrix_).NumGlobalRows();
-  int cols = (*Matrix_).NumGlobalCols();
-  int num_edges  = ((*Matrix_).NumMyNonzeros() - (*Matrix_).NumMyDiagonals())/2;
-
-  // Assert square matrix
-  IFPACK_CHK_ERR((rows == cols));
-
-  // Rename for clarity
-  int num_verts = rows;
-
-  double fill = .9;
-  int t = fill*pow(num_verts,.5);
-
-  // Create data structures for the BGL code and temp data structures for extraction 
-  E *edge_array = new E[num_edges];
-  double *weights = new double[num_edges];
-  double *shiftedweights = new double[num_edges];
-
-  int num_entries;
-  int max_num_entries = (*Matrix_).MaxNumEntries();
-  double *values = new double[max_num_entries];
-  int *indices = new int[max_num_entries];
-
-  double * diagonal = new double[num_verts];
-  double shift = 0;
-
-  for(int i = 0; i < max_num_entries; i++)
-    {
-      values[i]=0;
-      indices[i]=0;
-    }
-
-  // Extract from the epetra matrix keeping only one edge per pair (assume symmetric) 
-  int k = 0;
-  for(int i = 0; i < num_verts; i++)
-    {
-      (*Matrix_).ExtractMyRowCopy(i,max_num_entries,num_entries,values,indices);
-
-      for(int j = 0; j < num_entries; j++)
-        {
-
-          if(i == indices[j])
-            {
-              diagonal[i] = values[j];
-            }
-
-          if(i < indices[j])
-            {
-              edge_array[k] = E(i,indices[j]);
-              if(values[j] < shift)
-                shift = values[j];
-
-              weights[k] = values[j];
-
-              k++;
-            }
-        }
-    }
-
-  shift = shift - 1;
-
-  for(int i = 0; i < num_edges; i++)
-    {
-      shiftedweights[i] = weights[i] - shift;
-    }
-
-
-  std::vector<int> TreeNz(num_verts,1);
-
-  int *TotalNz = new int[num_verts];
-  for(int i = 0; i < num_verts; i++)
-    {
-      TotalNz[i] = 1;
-    }
-
-
-  Graph gtemp(edge_array, edge_array + num_edges, shiftedweights, num_verts);
-  //gtemp = Graph(edge_array, edge_array + num_edges, shiftedweights, num_verts);
-
-  property_map<Graph, edge_weight_t>::type weightmap = get(edge_weight, gtemp);
-
-  //weightmap = get(edge_weight, gtemp);
-
-  std::vector < Vertex > p(num_vertices(gtemp));
-  prim_minimum_spanning_tree(gtemp, &p[0]);
-
-  std::vector<int> roots;
-  int numchildren[num_verts];
-  int table[num_verts];
-  int children[num_verts];
-  int *subtreesize = new int[num_verts];
-  for(std::size_t i = 0; i != p.size(); ++i)
-    {
-      numchildren[i] = 0;
-      table[i] = 0;
-      children[i] = 0;
-      subtreesize[i] = 0;
-    }
-
-  for (std::size_t i = 0; i != p.size(); ++i)
-    {
-
-      if (p[i] != i)
-	{
-	  numchildren[p[i]] = numchildren[p[i]] + 1;
-	  TreeNz[p[i]] = TreeNz[p[i]] + 1;
-	  TreeNz[i] = TreeNz[i] + 1;
-	  TotalNz[p[i]] = TotalNz[p[i]] + 1;
-	  TotalNz[i] = TotalNz[i] + 1;
-	  //std::cout << "parent[" << i << "] = " << p[i] << std::endl;
-	}
-      else
-	{
-	  roots.push_back(i);
-	}
-    }
-
-
-
-
-  k = 0;
- 
-  for (std::size_t i = 0; i != p.size(); ++i)
-    {
-      table[i] = k;
-      k = k + numchildren[i];
-    }
- 
- 
-  for (std::size_t i = 0; i != p.size(); ++i)
-    {
-      if(i != p[i])
-	{
-	  //	  std::cout << table[p[i]] << "    " << numchildren[p[i]] << "     " << table[p[i]] + numchildren[i] - 1 << std::endl;
-	  children[table[p[i]] + numchildren[p[i]] - 1] = i;
-	  numchildren[p[i]] = numchildren[p[i]] - 1;
-	}
-    }
-
- 
-  for(std::size_t i = 0; i != p.size(); ++i)
-    {
-      treecount(p,subtreesize, i);
-    }
-
- 
-  for(int i = 0; i < roots.size(); i++)
-    {
-      treepartition(table, children, subtreesize, roots, roots[i], num_verts, t);
-    }
-
-  /*
-  for(int i = 0; i < roots.size(); i++)
-    {
-      p[roots[i]] = i;
-      std::cout << roots[i] << std::endl;
-      }*/
-  /*
-  std::cout << "children" << std::endl;
-  for(std::size_t i = 0; i != p.size(); ++i)
-    {
-      std::cout << children[i] << std::endl;
-      }*/
-
-  std::vector<int> ExtraIndices[num_verts];
-  std::vector<double> ExtraValues[num_verts];
-
-  for(int i = 0; i < num_verts; i++)
-    {
-      std::vector<int> temp;
-      std::vector<double> temp2;
-      ExtraIndices[i] = temp;
-      ExtraValues[i] = temp2;
-    }
-
-
-
-  for(int i = 0; i < roots.size(); i++)
-    {
-      for(int j = i+1; j < roots.size(); j++)
-	{
-	  double largest = -shift;
-	  int extrasource = -1;
-	  int extratarget = -1;
-
-
-	  largestbetween(table, children, gtemp, weightmap, roots[i],roots[j],&largest,&extrasource,&extratarget,num_verts);
-
-	  if(largest < -shift)
-	    {
-
-	      if((p[extrasource] != extratarget) && (p[extratarget] != extrasource))
-		{
-
-		  ExtraIndices[extrasource].push_back(extratarget);
-		  ExtraIndices[extratarget].push_back(extrasource);
-		  ExtraValues[extrasource].push_back(largest+shift);
-		  ExtraValues[extratarget].push_back(largest+shift);
-		  TotalNz[extrasource] = TotalNz[extrasource] + 1;
-		  TotalNz[extratarget] = TotalNz[extratarget] + 1;
-		}
-	    } 
-	  
-	}
-	  
-	  
-
-    }
-
-
-  
-  Support_ = rcp(new Epetra_CrsMatrix(Copy, Matrix().RowMatrixRowMap(),TotalNz, true));
-
-
-  for(int i = 0; i < num_verts; i++)
-    {
-
-      std::vector<int> Indices(TotalNz[i],0);
-      std::vector<double> Values(TotalNz[i],0);
-     
-      int other;
-      int upper;
-      if(p[i] == i)
-	{
-	  upper = TreeNz[i] - 1;
-	      
-	}
-      else
-	{
-
-	  std::cout << TreeNz[i] << std::endl;
-	  upper = TreeNz[i] - 2;
-	  Indices[TreeNz[i]-1] = p[i];
-
-	  if(!edge(i,p[i],gtemp).second)
-	    {
-	      std::cout << "WTFFFFFF" << std::endl;
-	    }
-	  Values[TreeNz[i]-1] = get(weightmap, edge(i, p[i], gtemp).first) + shift;
-	}
-
-      for(int j = 0; j < upper; j++)
-	{
-
-	  other = children[table[i]+j];
-	  if(other < 0)
-	    other = -other;
-
-	  Indices[j+1] = other;
-	  Values[j+1] = get(weightmap, edge(i, other, gtemp).first) + shift;
-	}
-
-      int s = 0;
-      for(int j = TreeNz[i] + 1; j < TotalNz[i]; j++)
-	{
-	      std::cout << "extra" << std::endl;
-	      Indices[j] = ExtraIndices[i][s];
-	      Values[j] = ExtraValues[i][s];
-
-	      s++;
-
-	}
-		
-
-      Indices[0] = i;
-      Values[0] = diagonal[i];
-
-      (*Support_).InsertGlobalValues(i,TotalNz[i],&Values[0],&Indices[0]);
-
-    }
-
-  (*Support_).FillComplete();
-
-  //(*Support_).Print(std::cout);
-
-  delete subtreesize;
-  delete TotalNz;
-
-  return 0;
-}
-//============================================================================== 
-template<typename T>
 int Ifpack_SupportGraph<T>::FindSupport()
 {
 
@@ -819,6 +407,7 @@ int Ifpack_SupportGraph<T>::FindSupport()
   int rows = (*Matrix_).NumGlobalRows();
   int cols = (*Matrix_).NumGlobalCols();
   int num_edges  = ((*Matrix_).NumMyNonzeros() - (*Matrix_).NumMyDiagonals())/2;
+  std::cout << "global num rows " << rows << std::endl;
 
   // Assert square matrix                                                                       
   IFPACK_CHK_ERR((rows == cols));
@@ -920,6 +509,7 @@ int Ifpack_SupportGraph<T>::FindSupport()
   int *l = new int[num_verts];
   for(int i = 0; i < num_verts; i++)
     {
+      Indices[i][0] = i;
       l[i] = 1;
     }
   
@@ -987,26 +577,23 @@ int Ifpack_SupportGraph<T>::FindSupport()
      }
   
   // Create the CrsMatrix for the support graph                                                 
-  Support_ = rcp(new Epetra_CrsMatrix(Copy, Matrix().RowMatrixRowMap(),l, true));
-
+  Support_ = rcp(new Epetra_CrsMatrix(Copy, Matrix().RowMatrixRowMap(),l, false));
+  
  
   // Fill in the matrix with the stl vectors for each row                                       
   for(int i = 0; i < num_verts; i++)
     {
       (*Support_).InsertGlobalValues(i,l[i],&Values[i][0],&Indices[i][0]);
-    }
+    }  
  
   (*Support_).FillComplete();
-
-  //(*Support_).Print(std::cout);    
-
+ 
   delete edge_array;
   delete weights;
   delete values;
   delete indices;
   delete l;
   delete diagonal;
-
 
   return(0);
 }
@@ -1037,11 +624,11 @@ int Ifpack_SupportGraph<T>::Initialize()
       Time_ = Teuchos::rcp( new Epetra_Time(Comm()) );
     }
 
-  
+
   Time_->ResetStartTime();
  
   FindSupport();
-  //AMST();
+
   Inverse_ = Teuchos::rcp(new T(Support_.get()));
 
   IFPACK_CHK_ERR(Inverse_->Initialize());
@@ -1110,7 +697,8 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     IFPACK_CHK_ERR(-3);
 
   Time_->ResetStartTime();
-
+  
+  
   Inverse_->ApplyInverse(X,Y);
 
   ++NumApplyInverse_;
@@ -1127,7 +715,7 @@ Print(std::ostream& os) const
    os << "Ifpack_SupportGraph: " << Label () << endl << endl;
   os << "Condition number estimate = " << Condest() << endl;
   os << "Global number of rows            = " << Matrix_->NumGlobalRows() << endl;
-  os << "Number of off diagonal entries in support graph matrix     = " << Support_->NumGlobalNonzeros()-Support_->NumGlobalDiagonals() << endl;
+  os << "Number of edges in support graph     = " << (Support_->NumGlobalNonzeros()-Support_->NumGlobalDiagonals())/2 << endl;
   os << "Fraction of off diagonals of support graph/off diagonals of original     = "
      << ((double)Support_->NumGlobalNonzeros()-Support_->NumGlobalDiagonals())/(Matrix_->NumGlobalNonzeros()-Matrix_->NumGlobalDiagonals());
   os << endl;
@@ -1155,6 +743,8 @@ Print(std::ostream& os) const
   os << "Now calling the underlying preconditioner's print()" << std::endl;
 
   Inverse_->Print(os);
+
+  return os;
 }
 //==============================================================================
 template<typename T>

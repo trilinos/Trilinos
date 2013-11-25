@@ -47,21 +47,26 @@
 #include <iostream>
 #include <vector>
 
-#include "Intrepid_MiniTensor_Definitions.h"
 #include "Intrepid_MiniTensor_Storage.h"
 #include "Intrepid_MiniTensor_Utilities.h"
-
-///
-/// Type for setting components all at once
-///
-enum ComponentValue {ZEROS, ONES, RANDOM};
 
 namespace Intrepid {
 
 ///
+/// Type for setting components all at once
+///
+enum ComponentValue {
+  ZEROS,
+  ONES,
+  SEQUENCE,
+  RANDOM_UNIFORM,
+  RANDOM_NORMAL,
+  NANS};
+
+///
 /// Base class for all vector and tensor types.
 ///
-template<typename T>
+template<typename T, typename Store>
 class TensorBase
 {
 public:
@@ -69,7 +74,7 @@ public:
   ///
   /// Component type
   ///
-  typedef T type;
+  typedef T value_type;
 
   ///
   /// Default constructor
@@ -78,42 +83,51 @@ public:
 
   ///
   /// Constructor that initializes to NaNs
-  /// \param dimension, order
+  /// \param dimension the space dimension
   ///
+  explicit
   TensorBase(Index const dimension, Index const order);
 
   ///
   /// Create with specified value
-  /// \param dimension, order
+  /// \param dimension the space dimension
   /// \param value all components are set equal to this
   ///
-  TensorBase(Index const dimension, Index const order, ComponentValue value);
+  TensorBase(Index const dimension, Index const order,
+      ComponentValue const value);
 
   ///
   /// Create from a scalar
-  /// \param dimension, order
+  /// \param dimension the space dimension
   /// \param s all components are set equal to this value
   ///
   TensorBase(Index const dimension, Index const order, T const & s);
 
   ///
   /// Create from array
-  /// \param dimension, order
+  /// \param dimension the space dimension
   /// \param data_ptr pointer into the array
   ///
   TensorBase(Index const dimension, Index const order, T const * data_ptr);
 
   ///
   /// Copy constructor
-  /// \param v the values of its components are copied to the new vector
+  /// \param X the values of its components are copied to the new tensor
   ///
-  TensorBase(TensorBase<T> const & X);
+  TensorBase(TensorBase<T, Store> const & X);
+
+  ///
+  /// Copy assignment
+  /// \param X the values of its components are copied to this tensor
+  ///
+  TensorBase<T, Store> &
+  operator=(TensorBase<T, Store> const & X);
 
   ///
   /// Simple destructor
   ///
   virtual
-  ~TensorBase();
+  ~TensorBase() = 0;
 
   ///
   /// Linear access to components
@@ -130,18 +144,6 @@ public:
   operator[](Index const i);
 
   ///
-  /// \return dimension
-  ///
-  Index
-  get_dimension() const;
-
-  ///
-  /// \param N dimension of vector
-  ///
-  void
-  set_dimension(Index const N);
-
-  ///
   /// \return total number of components
   ///
   Index
@@ -149,10 +151,17 @@ public:
 
   ///
   /// Fill components with value
-  /// \param value all components are set equal to this
+  /// \param value all components are set equal to this specification
   ///
   void
-  fill(ComponentValue value);
+  fill(ComponentValue const value);
+
+  ///
+  /// Fill components with value
+  /// \param value all components are set equal to this parameter
+  ///
+  void
+  fill(T const & s);
 
   ///
   /// Fill components from array defined by pointer.
@@ -162,25 +171,18 @@ public:
   fill(T const * data_ptr);
 
   ///
-  /// Copy assignment
-  /// \param v the values of its components are copied to this vector
-  ///
-  TensorBase<T> &
-  operator=(TensorBase<T> const & X);
-
-  ///
   /// Component increment
-  /// \param components of X added to current components
+  /// \param X components are added to current components
   ///
-  TensorBase<T> &
-  operator+=(TensorBase<T> const & X);
+  TensorBase<T, Store> &
+  operator+=(TensorBase<T, Store> const & X);
 
   ///
   /// Component decrement
-  /// \param components of X subtracted to current components
+  /// \param X components are subtracted to current components
   ///
-  TensorBase<T> &
-  operator-=(TensorBase<T> const & X);
+  TensorBase<T, Store> &
+  operator-=(TensorBase<T, Store> const & X);
 
   ///
   /// Fill with zeros
@@ -188,97 +190,116 @@ public:
   void
   clear();
 
-  ///
-  /// TensorBase order
-  ///
-  virtual
-  Index
-  get_order() const = 0;
-
 protected:
 
   ///
-  /// \param set storage for components
+  /// \param number_components set storage for this number of components
   ///
   void
   set_number_components(Index const number_components);
 
   ///
-  /// TensorBase dimension
+  /// \return dimension
   ///
   Index
-  dimension_;
+  get_dimension() const;
+
+  ///
+  /// \param dimension
+  /// \param order
+  ///
+  void
+  set_dimension(Index const dimension, Index const order);
 
   ///
   /// TensorBase components
   ///
-  MiniTensor::StorageRCPArray<T>
+  Store
   components_;
+
+  ///
+  /// dimension
+  ///
+  Index
+  dimension_;
 
 };
 
 ///
 /// Frobenius norm
 ///
-template<typename T>
+template<typename T, typename Store>
 T
-norm_f(TensorBase<T> const & X);
+norm_f(TensorBase<T, Store> const & X);
 
 ///
 /// Square of Frobenius norm
 ///
-template<typename T>
+template<typename T, typename Store>
 T
-norm_f_square(TensorBase<T> const & X);
+norm_f_square(TensorBase<T, Store> const & X);
 
 ///
 /// Base addition
 ///
-template<typename R, typename S, typename T>
+template<typename R, typename S, typename T, typename Store>
 void
-add(TensorBase<R> const & A, TensorBase<S> const & B, TensorBase<T> & C);
+add(
+    TensorBase<R, Store> const & A,
+    TensorBase<S, Store> const & B,
+    TensorBase<T, Store> & C);
 
 ///
 /// Base subtraction
 ///
-template<typename R, typename S, typename T>
+template<typename R, typename S, typename T, typename Store>
 void
-subtract(TensorBase<R> const & A, TensorBase<S> const & B, TensorBase<T> & C);
+subtract(
+    TensorBase<R, Store> const & A,
+    TensorBase<S, Store> const & B,
+    TensorBase<T, Store> & C);
 
 ///
 /// Base minus
 ///
-template<typename T>
+template<typename T, typename Store>
 void
-minus(TensorBase<T> const & A, TensorBase<T> & B);
+minus(TensorBase<T, Store> const & A, TensorBase<T, Store> & B);
 
 ///
 /// Base equality
 ///
-template<typename T>
+template<typename T, typename Store>
 bool
-equal(TensorBase<T> const & A, TensorBase<T> const & B);
+equal(TensorBase<T, Store> const & A, TensorBase<T, Store> const & B);
 
 ///
 /// Base not equality
 ///
-template<typename T>
+template<typename T, typename Store>
 bool
-not_equal(TensorBase<T> const & A, TensorBase<T> const & B);
+not_equal(TensorBase<T, Store> const & A, TensorBase<T, Store> const & B);
 
 ///
 /// Base scaling
 ///
-template<typename R, typename S, typename T>
+template<typename R, typename S, typename T, typename Store>
 void
-scale(TensorBase<R> const & A, S const & s, TensorBase<T> & B);
+scale(TensorBase<R, Store> const & A, S const & s, TensorBase<T, Store> & B);
 
 ///
 /// Base division
 ///
-template<typename R, typename S, typename T>
+template<typename R, typename S, typename T, typename Store>
 void
-divide(TensorBase<R> const & A, S const & s, TensorBase<T> & B);
+divide(TensorBase<R, Store> const & A, S const & s, TensorBase<T, Store> & B);
+
+///
+/// Base split (scalar divided by tensor)
+///
+template<typename R, typename S, typename T, typename Store>
+void
+split(TensorBase<R, Store> const & A, S const & s, TensorBase<T, Store> & B);
 
 } // namespace Intrepid
 

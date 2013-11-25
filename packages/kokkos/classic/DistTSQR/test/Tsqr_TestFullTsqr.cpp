@@ -243,7 +243,7 @@ namespace {
   test (int argc,
 	char* argv[],
 	const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-	const Teuchos::RCP<Kokkos::SerialNode>& node,
+	const Teuchos::RCP<KokkosClassic::SerialNode>& node,
 	const bool allowedToPrint)
   {
     using TSQR::Test::NullCons;
@@ -346,9 +346,9 @@ main (int argc, char* argv[])
 #endif // HAVE_MPI
 
   RCP<ParameterList> nodeParams = 
-    TSQR::Test::getValidNodeParameters<Kokkos::SerialNode> ();
-  RCP<Kokkos::SerialNode> node =
-    TSQR::Test::getNode<Kokkos::SerialNode> (nodeParams);
+    TSQR::Test::getValidNodeParameters<KokkosClassic::SerialNode> ();
+  RCP<KokkosClassic::SerialNode> node =
+    TSQR::Test::getNode<KokkosClassic::SerialNode> (nodeParams);
 
   const bool success = test (argc, argv, comm, node, allowedToPrint);
   if (allowedToPrint && success)

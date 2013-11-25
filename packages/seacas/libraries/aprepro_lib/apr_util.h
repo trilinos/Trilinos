@@ -13,11 +13,12 @@ namespace SEAMS {
   void math_error(const char *function);
   void yyerror (const SEAMS::Aprepro &aprepro, const std::string &s);
   void undefined_warning (const SEAMS::Aprepro &aprepro, const std::string &var);
-  void redefined_warning (const SEAMS::Aprepro &aprepro, const std::string &var);
+  void redefined_warning (const SEAMS::Aprepro &aprepro, const SEAMS::symrec* var);
   void warning (const SEAMS::Aprepro &aprepro, const std::string &var);
   void immutable_modify(const SEAMS::Aprepro &aprepro, const SEAMS::symrec* var);
   void set_type(const SEAMS::Aprepro &apr, SEAMS::symrec* var, int type);
   void cleanup_memory();
   bool is_directory(const std::string &filepath);
+  bool check_valid_var(const char *s);
 }
 #endif

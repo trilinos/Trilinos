@@ -68,14 +68,17 @@ import subprocess
 # MesquiteConfig.cmake file.
 DEFAULT_ENABLE_DISABLE_LIST = [
   ("Amesos", True),
-  ("Amesos2", False),
+  ("Amesos2", True),
   ("Anasazi", True),
+  ("Aristos", False),
   ("AztecOO", True),
   ("Belos", True),
-  ("CTrilinos", False),
+  ("CTrilinos", True),
+  ("Claps", False),
   ("Didasko", False),
   ("Epetra", True),
   ("EpetraExt", True),
+  ("FEApp", False),
   ("FEI", True),
   ("ForTrilinos", False),
   ("Galeri", True),
@@ -86,16 +89,21 @@ DEFAULT_ENABLE_DISABLE_LIST = [
   ("Isorropia", True),
   ("Kokkos", True),
   ("Komplex", True),
-  ("Mesquite", False),
+  ("MeshingGenie", False),
+  ("Mesquite", True),
   ("ML", True),
   ("Moertel", True),
   ("MOOCHO", True),
+  ("MueLu", False),
   ("NOX", True),
+  ("NewPackage", False),
   ("Optika", False),
   ("OptiPack", True),
   ("Pamgen", True),
+  ("Panzer", False),
   ("Phalanx", True),
-  ("Piro", False),
+  ("Phdmesh", False),
+  ("Piro", True),
   ("Pliris", True),
   ("PyTrilinos", False),
   ("RBGen", False),
@@ -104,19 +112,25 @@ DEFAULT_ENABLE_DISABLE_LIST = [
   ("Sacado", True),
   ("SEACAS", False),
   ("Shards", True),
+  ("ShyLU", True),
   ("STK", False),
-  ("Stokhos", False),
+  ("Stokhos", True),
   ("Stratimikos", True),
-  ("Sundance", False),
-  ("Teko", False),
+  ("Sundance", True),
+  ("Teko", True),
   ("Teuchos", True),
   ("ThreadPool", True),
   ("Thyra", True),
   ("Tpetra", True),
   ("TriKota", False),
-  ("TrilinosCouplings", False),
+  ("TrilinosCouplings", True),
+  ("TrilinosFramework", False),
+  ("Trios", False),
   ("Triutils", True),
+  ("WebTrilinos", False),
+  ("Xpetra", True),
   ("Zoltan", True),
+  ("Zoltan2", True),
 ]
 
 #Make reporting errors easier to make consistent between all system calls
@@ -256,6 +270,7 @@ def main(package_enable_disable_list, options):
   cmake_configure_options.append(("HAVE_GCC_ABI_DEMANGLE", "ON"))
   cmake_configure_options.append(("Trilinos_WARNINGS_AS_ERRORS_FLAGS", ""))
   cmake_configure_options.append(("CMAKE_VERBOSE_MAKEFILE", "TRUE"))
+  cmake_configure_options.append(("Trilinos_ENABLE_CPACK_PACKAGING", "ON"))
   for package, is_enabled in package_enable_disable_list:
     if is_enabled:
       on_or_off = "ON"

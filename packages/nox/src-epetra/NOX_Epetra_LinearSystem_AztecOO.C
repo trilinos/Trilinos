@@ -801,6 +801,19 @@ applyRightPreconditioning(bool useTranspose,
       newIfpackPreconditionerPtr->SetUseTranspose(false);    
 
   }
+#ifdef HAVE_NOX_ML_EPETRA
+  else if (precAlgorithm == ML_) {  
+    if (useTranspose)
+      MLPreconditionerPtr->SetUseTranspose(useTranspose);
+
+    errorCode = MLPreconditionerPtr->ApplyInverse(input.getEpetraVector(),
+                                                   result.getEpetraVector());
+    // Unset the transpose call
+      if (useTranspose)
+        MLPreconditionerPtr->SetUseTranspose(false);
+
+  }
+#endif
   else if (precAlgorithm == UserDefined_) {
 
     if (useTranspose)

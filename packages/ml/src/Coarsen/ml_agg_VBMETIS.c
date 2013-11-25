@@ -42,9 +42,9 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
 /* ********************************************************************** */
 /*! \file ml_agg_VBMETIS.c: functions to decompose a local graph using METIS
 
-   \note metis.h is required to properly define idxtype, and to declare the     
+   \note metis.h is required to properly define indextype, and to declare the     
    function `METIS_PartGraphRecursive' or `METIS_PartGraphKway'.          
-   By default, idxtype is defined as int, so in principle you can         
+   By default, indextype is defined as int, so in principle you can         
    compile also without including metis.h. However, to be sure            
    that use has specified include and library, I require ML_METIS         
    to be defined at compilation time.                                     
@@ -57,23 +57,24 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
 extern "C" {
 #endif
 #include "metis.h"
+#include "ml_parmetis_constants.h"
 #ifdef __cplusplus
 }
 #endif
 #else
-#define idxtype int
+#define indextype int
 #endif
 
 #define ML_AGGR_VBMETIS  10  /* complete list of aggregation defines is in ml_aggregate.c */
 
 static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
-					   int N_parts,
-    					   int graph_decomposition[],
-					   char bdry_nodes[],
-					   int local_or_global,
-					   int offsets[],
-					   int reorder_flag,
-					   int current_level, int *total_nz);
+                                           int N_parts,
+                                           int graph_decomposition[],
+                                           char bdry_nodes[],
+                                           int local_or_global,
+                                           int offsets[],
+                                           int reorder_flag,
+                                           int current_level, int *total_nz);
 #define OPTIMAL_VALUE (27*27)
 #define EPS9 (1.0e-09)
 
@@ -86,7 +87,7 @@ void set_print(int MyPID )
 #include <stdarg.h>
 void print(char * str, ...) 
 {
-  
+
   va_list ArgList;
   va_start(ArgList, str);
   printf("===%d=== ", MyPID_);
@@ -106,7 +107,7 @@ static int find_max(int length, int vector[] )
 {
   int max = -1;
   int pos = -1, i;
-  
+
   for( i=0 ; i<length ; i++ )
     if( vector[i]>max ) {
       max = vector[i];
@@ -139,12 +140,12 @@ static int find_index( int key, int list[], int N )
 /*!
  \brief sets the coarsening scheme to variable block METIS 
  <pre>
-    
+
     Author:  Michael W. Gee, Org. 9214, November 2004
-     
+
  </pre>
  \param ag                 ML_Aggregate* (input/output)  The aggregate object
- 
+
  \sa ML_Aggregate_CoarsenVBMETIS ML_Aggregate_Set_CoarsenScheme_VBMETIS
      ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS
 */
@@ -164,9 +165,9 @@ int ML_Aggregate_Set_CoarsenScheme_VBMETIS( ML_Aggregate *ag  )
 /*!
  \brief function to pass variable block data to ML
  <pre>
-    
+
     Author:  Michael W. Gee, Org. 9214, November 2004
-     
+
  </pre>
  \param ag                 ML_Aggregate* (input/output)  The aggregate object
  \param level              const int     (input)         the level to set the block data for
@@ -177,7 +178,7 @@ int ML_Aggregate_Set_CoarsenScheme_VBMETIS( ML_Aggregate *ag  )
  \param block_dim          const int     (input)         dimension of blocks and block_pde
 
  \warning block numbers in blocks have to be ascending and c-style numbered
- 
+
  \sa ML_Aggregate_CoarsenVBMETIS ML_Aggregate_Set_CoarsenScheme_VBMETIS
      ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS
 */
@@ -247,10 +248,10 @@ int ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS( ML_Aggregate *ag,
    if (level < 0 || level >= N_levels)
    {
      fprintf(stderr,"*ML*ERR** given level %d is out of range in \n*ML*ERR** ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS\n%s:%d\n",
-	     level, __FILE__, __LINE__);
+             level, __FILE__, __LINE__);
       fflush(stderr); exit(EXIT_FAILURE);
    }
-   
+
    temp[level].nblocks         = nblocks;
    temp[level].block_dim       = block_dim;
    temp[level].old_invec_leng  = 0;
@@ -268,10 +269,10 @@ int ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS( ML_Aggregate *ag,
    if (temp[level].blocks==NULL)
    {
       fprintf(stderr,"*ML*ERR** not enough memory to allocate blocks in \n*ML*ERR** ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS\n%s:%d\n",
-	      __FILE__,__LINE__);
+              __FILE__,__LINE__);
       fflush(stderr); exit(EXIT_FAILURE);
    }
-   
+
    if (temp[level].block_pde==NULL)
    {
       temp[level].block_pde = (int*)ML_allocate(block_dim*sizeof(int));
@@ -284,17 +285,17 @@ int ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS( ML_Aggregate *ag,
    if (temp[level].block_pde==NULL)
    {
       fprintf(stderr,"*ML*ERR** not enough memory to allocate block_pde in \n*ML*ERR** ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS\n%s:%d\n",
-	      __FILE__,__LINE__);
+              __FILE__,__LINE__);
       fflush(stderr); exit(EXIT_FAILURE);
    }
-   
+
    for (i=0; i<block_dim; i++)
    {
       temp[level].blocks[i]          = blocks[i];
       temp[level].block_pde[i]       = block_pde[i];
    }
-   
-   
+
+
    ag->vblock_data = (void*)(temp);
 
    return 0;
@@ -305,14 +306,14 @@ int ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS( ML_Aggregate *ag,
 /*!
  \brief Modify matrix so that it uses a getrow wrapper
  <pre>
-    
+
     Modify matrix so that it uses a getrow wrapper that will effectively 
     drop small values and will collapse several rows into a block row.   
     this routine is derived from ML_Operator_AmalgamateAndDropWeak_VBlocks
     but  can handle variable block sizes                                 
-    
+
     Author:  Michael W. Gee, Org. 9214, November 2004
-     
+
  </pre>
  \param Amat               ML_Operator * (input/output)  The matrix
  \param block_size         int           (input)         the MAXIMUM blocks size
@@ -321,7 +322,7 @@ int ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS( ML_Aggregate *ag,
  \param blocks             const int *   (input)         row i belongs to block blocks[i]
 
  \warning block numbers in blocks have to be ascending and c-style numbered
- 
+
  \sa ML_Aggregate_CoarsenVBMETIS ML_Aggregate_Set_CoarsenScheme_VBMETIS
      ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS ML_Operator_UnAmalgamateAndDropWeak_Vblocks
 */
@@ -372,8 +373,8 @@ int ML_Operator_AmalgamateAndDropWeak_VBlocks(ML_Operator *Amat, int block_size,
      temp_data->old_invec_leng  = Amat->invec_leng;
      temp_data->old_outvec_leng = Amat->outvec_leng;
      new_data->vblock_data      = (void*)temp_data;
-     
-     
+
+
      /* figure out the block indices (need communication for ghost points) */
      /* and store these in new_data->blk_inds[]                            */
 
@@ -386,10 +387,10 @@ int ML_Operator_AmalgamateAndDropWeak_VBlocks(ML_Operator *Amat, int block_size,
      dtemp                = (double *) ML_allocate(sizeof(double)* i );
      if (dtemp == NULL) 
         pr_error("ML_Operator_AmalgamateAndDropWeak_VBlocks: out of space\n");
-                                        
+
      for (i = 0; i < Amat->invec_leng; i++)
         dtemp[i] = blocks[i];
-        
+
      if (Amat->getrow->pre_comm != NULL) {
        ML_exchange_bdry(dtemp,Amat->getrow->pre_comm, Amat->invec_leng,
                         comm, ML_OVERWRITE,NULL);
@@ -418,7 +419,7 @@ including the ghost blocks
            block_count++;
         }
      }
-    
+
      Nneigh    = ML_CommInfoOP_Get_Nneighbors(Amat->getrow->pre_comm);
      neighbors = ML_CommInfoOP_Get_neighbors(Amat->getrow->pre_comm);
 
@@ -427,7 +428,7 @@ including the ghost blocks
                                                 neighbors[i]);
        newrcv = ML_CommInfoOP_Get_rcvlist(Amat->getrow->pre_comm, 
                                               neighbors[i]);
-       
+
        for (j = 0; j < rcvleng; j++) {
           current = (int) dtemp[ newrcv[j] ];
           if (current >= 0) {
@@ -488,7 +489,7 @@ including the ghost blocks
         }
         ML_free(val);
         ML_free(bindx);
-      
+
         if ( Amat->getrow->pre_comm != NULL )
            ML_exchange_bdry(scaled_diag,Amat->getrow->pre_comm,Nrows, comm, 
                             ML_OVERWRITE,NULL);
@@ -544,8 +545,8 @@ including the ghost blocks
 
               if (k == sendcount) newsend[sendcount++] = temp;
            }
-           
-           
+
+
            rcvleng = ML_CommInfoOP_Get_Nrcvlist(Amat->getrow->pre_comm, 
                                                 neighbors[i]);
            newrcv = ML_CommInfoOP_Get_rcvlist(Amat->getrow->pre_comm, neighbors[i]);
@@ -574,32 +575,32 @@ including the ghost blocks
 /*!
  \brief Restores a matrix that has been modified via ML_Operator_AmalgamateAndDropWeak_Vblocks
  <pre>
-    
+
     Restores a matrix that has been modified via                         
     ML_Operator_AmalgamateAndDropWeak_Vblocks back to its original form
-    
+
     Author:  Michael W. Gee, Org. 9214, November 2004
-     
+
  </pre>
  \param Amat               ML_Operator * (input/output)  The matrix
  \param block_size         int           (input)         the MAXIMUM blocks size
  \param drop_tolerance     double        (input)         drop tolerance
- 
+
  \sa ML_Aggregate_CoarsenVBMETIS ML_Aggregate_Set_CoarsenScheme_VBMETIS
      ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS ML_Operator_AmalgamateAndDropWeak_VBlocks
 */
 /* ------------------------------------------------------------------------ */
 
 int ML_Operator_UnAmalgamateAndDropWeak_Vblocks(ML_Operator *Amat, int block_size,
-	double drop_tolerance)
+        double drop_tolerance)
 {
    struct amalg_drop  *temp;
    struct aggr_vblock *temp_data;
- 
+
    if ( (block_size > 1) || (drop_tolerance >= 0.0)) {
       temp      = (struct amalg_drop *) Amat->data;
       temp_data = (struct aggr_vblock*)(temp->vblock_data);
-      
+
       ML_CommInfoOP_Destroy(&(Amat->getrow->pre_comm));
       ML_memory_free((void**)&(Amat->getrow));
       Amat->data         = temp->original_data;
@@ -620,16 +621,16 @@ int ML_Operator_UnAmalgamateAndDropWeak_Vblocks(ML_Operator *Amat, int block_siz
 /*!
  \brief Getrow function for amalgamteded variable block row matrix
  <pre>
-    
+
     Getrow function that is used to drop matrix elements and to collapse 
     several rows into a block. It is assumed that                        
     ML_Operator_AmalgamateAndDropWeak_VBlocks() was previously called to 
     properly set up the data structure (data).                           
     This function is derived from ML_amalg_drop_getrow                   
     of which it is the variable block version                            
-    
+
     Author:  Michael W. Gee, Org. 9214, November 2004
-     
+
  </pre>
  \param data               ML_Operator * (input)         The matrix
  \param N_requested_rows   int           (input)         number of rows to receive
@@ -638,11 +639,11 @@ int ML_Operator_UnAmalgamateAndDropWeak_Vblocks(ML_Operator *Amat, int block_siz
  \param columns            int[]         (output)        column indizes of requested row
  \param values             double[]      (output)        values of requested row
  \param row_lengths        int[]         (output)        row_lengths[i] is length of requested row requested_rows[i]
- 
+
  \warning currently implemented only N_requested_rows=1
- 
+
  \sa ML_Operator_AmalgamateAndDropWeak_VBlocks ML_Operator_UnAmalgamateAndDropWeak_Vblocks
-     
+
 */
 /* ------------------------------------------------------------------------ */
 
@@ -659,7 +660,7 @@ int ML_amalg_drop_getrow_VBlocks(ML_Operator *data, int N_requested_rows,
    struct ML_GetrowFunc_Struct *amalg_getrow;
    ML_Operator *Amat;
    int nblocks,*blocks,index1,index2,nrows,bsize;
- 
+
    if (N_requested_rows > 1) {
       fprintf(stderr,"ML_amalg_drop_getrow_VBlocks: Not implemented for > 1 row at a time\n");
       fprintf(stderr,"file %s, line %d\n",__FILE__,__LINE__);
@@ -693,7 +694,7 @@ int ML_amalg_drop_getrow_VBlocks(ML_Operator *data, int N_requested_rows,
       Amat->outvec_leng  = nblocks;
       return(0);
    }
-   
+
    /* determine start rows in block and blocksize */
    index1 = ML_find_index(requested_rows[0],blocks,nrows);
    if (index1==-1)
@@ -721,7 +722,7 @@ int ML_amalg_drop_getrow_VBlocks(ML_Operator *data, int N_requested_rows,
    }
    else 
       bsize = nrows - index1;
-      
+
    if (bsize==0)
    {
       fprintf(stderr,"requested a variable block row of size 0\n");
@@ -734,7 +735,7 @@ int ML_amalg_drop_getrow_VBlocks(ML_Operator *data, int N_requested_rows,
       row = index1+i;
       status = ML_Operator_Getrow(Amat, N_requested_rows, &row, 
                                   tallocated_space, &(tcolumns[offset]), 
-				  &(tvalues[offset]), &size );
+                                  &(tvalues[offset]), &size );
       if (status == 0) {
          ML_free(tvalues); ML_free(tcolumns);
          Amat->data         = temp;
@@ -743,9 +744,9 @@ int ML_amalg_drop_getrow_VBlocks(ML_Operator *data, int N_requested_rows,
          Amat->outvec_leng  = nblocks;
          return(status);
       }
-      
-      
-      
+
+
+
       if (scaled_diag != NULL) {
          count = 0;
          for (j = offset; j < offset + size; j++) {
@@ -796,9 +797,9 @@ int ML_amalg_drop_getrow_VBlocks(ML_Operator *data, int N_requested_rows,
 /*!
  \brief function to obtain variable block data of a certain level
  <pre>
-    
+
     Author:  Michael W. Gee, Org. 9214, November 2004
-     
+
  </pre>
  \param ag                 const ML_Aggregate* (input)   The aggregate object
  \param level              const int           (input)   the level to get the block data from
@@ -806,9 +807,9 @@ int ML_amalg_drop_getrow_VBlocks(ML_Operator *data, int N_requested_rows,
  \param nblocks            int*                (output)  number of variable blocks
  \param blocks             int**               (output)  on output, row i is in blocks[i]
  \param block_pde          int**               (output)  on output, row i is the block_pde[i] pde equation
- 
+
  \warning block-numbers have to be ascending and C-style numbering
- 
+
  \sa ML_Aggregate_CoarsenVBMETIS ML_Aggregate_Set_CoarsenScheme_VBMETIS
      ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS
 */
@@ -846,7 +847,7 @@ int ML_Aggregate_Get_Vblocks_CoarsenScheme_VBMETIS( const ML_Aggregate *ag,
    if (level<0 || level >= N_levels)
    {
       fprintf(stderr,"*ML*ERR** ML_Aggregate_Get_Vblocks_CoarsenScheme_VBMETIS:\n*ML*ERR** level %d out of range ( 0 - %d )\n%s:%d\n",
-	      level,N_levels,__FILE__,__LINE__);
+              level,N_levels,__FILE__,__LINE__);
       fflush(stderr); exit(EXIT_FAILURE);
    }
    if (level >= ag->max_levels)
@@ -897,13 +898,13 @@ int ML_Aggregate_Get_Vblocks_CoarsenScheme_VBMETIS( const ML_Aggregate *ag,
 /*!
  \brief destroy variable block data of a certain level
  <pre>
-    
+
     Author:  Michael W. Gee, Org. 9214, November 2004
-     
+
  </pre>
  \param ag                 const ML_Aggregate* (input)   The aggregate object
  \param level              const int           (input)   the level to destroy the block data
- 
+
  \sa ML_Aggregate_CoarsenVBMETIS ML_Aggregate_Set_CoarsenScheme_VBMETIS
      ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS
 */
@@ -955,20 +956,20 @@ int ML_Aggregate_Destroy_Vblocks_CoarsenScheme_VBMETIS( const ML_Aggregate *ag,
     In order to use this function, the user has to define the number of aggregate 
     (or the # of nodes in each aggregate) using the functions 
     \c ML_Aggregate_Set_LocalNumber or \c ML_Aggregate_Set . 
-    
+
     Difference between ML_Aggregate_CoarsenMETIS and this routine is that 
     this one respects variable sized blocks in the aggregation process. 
     It guarantees that all rows of a variable block belong to the same 
     aggregate.
-    
+
     Author:  Michael W. Gee, Org. 9214, November 2004
-     
+
  </pre>
  \param ml_ag                ML_Aggregate* (input/output)   The aggregate object
  \param Amatrix              ML_Operator*  (input)          the operator of the current level
  \param Pmatrix              ML_Operator** (output)         the prolongation operator
  \param comm                 ML_Comm *     (input)          parallel layout
- 
+
  \sa  ML_Aggregate_Set_CoarsenScheme_VBMETIS
      ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS ML_Aggregate_Destroy_Vblocks_CoarsenScheme_VBMETIS
 
@@ -977,7 +978,7 @@ int ML_Aggregate_Destroy_Vblocks_CoarsenScheme_VBMETIS( const ML_Aggregate *ag,
 */
 /* ------------------------------------------------------------------------ */
 int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix, 
-			         ML_Operator **Pmatrix, ML_Comm *comm)
+                                 ML_Operator **Pmatrix, ML_Comm *comm)
 {
   unsigned int nbytes, length;
    int     i, j,  k, Nrows, exp_Nrows;
@@ -1002,7 +1003,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    int      nblocks,*blocks=NULL,oldNrows,*block_pde=NULL;
    int      new_nrows, new_nblocks, *new_blocks=NULL, *new_block_pde=NULL;
    int      index1,index2,printflag=0;
-      
+
    int reorder_flag;
    /*   int kk, old_upper, nnzs, count2, newptr; */
 #ifdef CLEAN_DEBUG
@@ -1026,11 +1027,11 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    int mod, Nprocs;
    int optimal_value;
    char * unamalg_bdry = NULL;
- 
+
 #ifdef EXTREME_DEBUGGING
  set_print(comm->ML_mypid);
 #endif
- 
+
  /* ------------------- execution begins --------------------------------- */
 
  sprintf( str, "VBMETIS (level %d) :", ml_ag->cur_level );
@@ -1038,7 +1039,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
  /* ============================================================= */
  /* get the machine information and matrix references             */
  /* ============================================================= */
- 
+
  mypid                   = comm->ML_mypid;
  Nprocs                  = comm->ML_nprocs;
  epsilon                 = ml_ag->threshold;
@@ -1055,12 +1056,12 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
              "*ML*ERR* (file %s, line %d)\n",__FILE__,__LINE__ );
     fflush(stderr); exit( EXIT_FAILURE );
  }
- 
+
  nblocks                 = vb_data[ml_ag->cur_level].nblocks;
  blocks                  = vb_data[ml_ag->cur_level].blocks;
  block_pde               = vb_data[ml_ag->cur_level].block_pde;
  Nrows                   = Amatrix->outvec_leng;
- 
+
  if (nblocks==0 || blocks==NULL || block_pde==NULL)
  {
     fprintf( stderr,
@@ -1073,10 +1074,10 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
  if( mypid == 0 && 5 < ML_Get_PrintLevel() ) {
      printf("%s variable blocks & num PDE eqns = %d\n",
-	    str,
-	    num_PDE_eqns);
+            str,
+            num_PDE_eqns);
  }
- 
+
    /* ============================================================= */
    /* check the system size versus null dimension size              */
    /* ============================================================= */
@@ -1099,25 +1100,25 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    if ( mypid == 0 && 7 < ML_Get_PrintLevel())
    {
       printf("%s current eps = %e\n",
-	     str,
-	     epsilon);
+             str,
+             epsilon);
       if( epsilon != 0.0 ) {
-	fprintf( stderr,
-		 "%s (note that VBMETIS may not work with dropping)\n",
-		 str );
+        fprintf( stderr,
+                 "%s (note that VBMETIS may not work with dropping)\n",
+                 str );
       }
-      
+
    }
    /*
      epsilon = epsilon * epsilon;
    */
    oldNrows = Amatrix->getrow->Nrows;
-   
+
    ML_Operator_AmalgamateAndDropWeak_VBlocks(Amatrix, num_PDE_eqns, epsilon,
                                              nblocks,blocks);
    Nrows     = nblocks;
    exp_Nrows = nblocks;
-   
+
    /* ********************************************************************** */
    /* allocate memory for aggr_index, which will contain the METIS decomp.   */
    /* ********************************************************************** */
@@ -1128,23 +1129,23 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      ML_memory_alloc((void**) &aggr_index, nbytes, "ACJ");
      if( aggr_index == NULL ) {
        fprintf( stderr,
-		"*ML*ERR* not enough memory for %d bytes\n"
-		"*ML*ERR* (file %s, line %d)\n",
-		nbytes,
-		__FILE__,
-		__LINE__ );
+                "*ML*ERR* not enough memory for %d bytes\n"
+                "*ML*ERR* (file %s, line %d)\n",
+                nbytes,
+                __FILE__,
+                __LINE__ );
        exit( EXIT_FAILURE );
      }
    }
    else              aggr_index = NULL;
 
    for( i=0 ; i<oldNrows ; i++ ) aggr_index[i] = -1;
-   
+
 #ifdef EXTREME_DEBUGGING
    print("aggr_index has size %d bytes\n", nbytes);
    print("aggr_options pointer is %x\n", aggr_options);
    print("Amatrix->to->Grid->Grid pointer is  %x\n",
-	 Amatrix->to->Grid->Grid );
+         Amatrix->to->Grid->Grid );
 #endif
 
    /* ********************************************************************** */
@@ -1159,27 +1160,27 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
      if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
        printf("%s Using default values\n",
-	      str);
+              str);
      }
 
      /* this value is hardwired in ml_agg_METIS.c, and can be set by      */
      /* the user with `ML_Aggregate_Set_OptimalNumberOfNodesPerAggregate' */
-     
+
      optimal_value = ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate();
-     
+
      aggr_count = Nrows/optimal_value;
      if( aggr_count < 1 ) aggr_count = 1;
 
      reorder_flag = ML_NO;
-     
+
    } else {
 
      if( aggr_options[ml_ag->cur_level].id != ML_AGGREGATE_OPTIONS_ID ) {
        fprintf( stderr,
-		"*ML*ERR* `ML_Aggregate_CoarsenVBMETIS' : wrong object\n"
-		"*ML*ERR* (file %s, line %d)\n",
-		__FILE__,
-		__LINE__ );
+                "*ML*ERR* `ML_Aggregate_CoarsenVBMETIS' : wrong object\n"
+                "*ML*ERR* (file %s, line %d)\n",
+                __FILE__,
+                __LINE__ );
        exit( EXIT_FAILURE );
      }
 
@@ -1198,122 +1199,122 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
        aggr_count = aggr_options[ml_ag->cur_level].Naggregates_local;
        if( mypid == 0 && 7 < ML_Get_PrintLevel() ) {
-	 printf( "%s Objective : %d local (block) aggregates (on proc 0)\n",
-		 str,
-		 aggr_count );
+         printf( "%s Objective : %d local (block) aggregates (on proc 0)\n",
+                 str,
+                 aggr_count );
        }
        break;
 
      case ML_NUM_GLOBAL_AGGREGATES:
-       
+
        aggr_count = aggr_options[ml_ag->cur_level].Naggregates_global;
        if( mypid == 0 && 7 < ML_Get_PrintLevel() ) {
-	 printf( "%s Objective : %d global aggregates\n",
-		 str,
-		 aggr_count );
+         printf( "%s Objective : %d global aggregates\n",
+                 str,
+                 aggr_count );
        }
-       
+
        if( aggr_count < Nprocs ) {
-	 if( mypid == 0 && 5 < ML_Get_PrintLevel() ) {
-	   fprintf( stderr,
-		    "*ML*WRN* In CoarsenVBMETIS, %d global (block) aggregates are required,\n"
-		    "*ML*WRN* but you have only %d processes. METIS requires at\n"
-		    "*ML*WRN* one aggregate per process. Otherwise, you can use ParMETIS\n"
-		    "*ML*WRN* as coarsen scheme. Now proceeding with 1 local (block) aggregate\n"
-		    "*ML*WRN* (file %s, line %d)\n",
-		    aggr_count,
-		    Nprocs,
-		    __FILE__,
-		    __LINE__ );
-	 }
-	 aggr_count = 1;
+         if( mypid == 0 && 5 < ML_Get_PrintLevel() ) {
+           fprintf( stderr,
+                    "*ML*WRN* In CoarsenVBMETIS, %d global (block) aggregates are required,\n"
+                    "*ML*WRN* but you have only %d processes. METIS requires at\n"
+                    "*ML*WRN* one aggregate per process. Otherwise, you can use ParMETIS\n"
+                    "*ML*WRN* as coarsen scheme. Now proceeding with 1 local (block) aggregate\n"
+                    "*ML*WRN* (file %s, line %d)\n",
+                    aggr_count,
+                    Nprocs,
+                    __FILE__,
+                    __LINE__ );
+         }
+         aggr_count = 1;
 
        } else { 
-       
-	 mod = aggr_count % Nprocs;
-     
-	 aggr_count /= Nprocs;
-	 if( mypid == 0 ) {
-	   aggr_count += mod;
-	 }
-	 
-	 if( aggr_count < 1 ) {
-	   fprintf( stderr,
-		    "*ML*WRN* something weird happened... Check the code !!\n"
-		    "*ML*WRN* (file %s, line %d)\n",
-		    __FILE__,
-		    __LINE__ );
-	   aggr_count = 1;
-	 }
+
+         mod = aggr_count % Nprocs;
+
+         aggr_count /= Nprocs;
+         if( mypid == 0 ) {
+           aggr_count += mod;
+         }
+
+         if( aggr_count < 1 ) {
+           fprintf( stderr,
+                    "*ML*WRN* something weird happened... Check the code !!\n"
+                    "*ML*WRN* (file %s, line %d)\n",
+                    __FILE__,
+                    __LINE__ );
+           aggr_count = 1;
+         }
        }
-       
+
        break;
-       
+
      case ML_NUM_NODES_PER_AGGREGATE:
-       
+
        aggr_count = aggr_options[ml_ag->cur_level].Nnodes_per_aggregate;
 
        if( mypid == 0 && 7 < ML_Get_PrintLevel() ) {
-	 printf( "%s Objective : %d nodes per aggregate\n",
-		 str,
-		 aggr_count );
+         printf( "%s Objective : %d nodes per aggregate\n",
+                 str,
+                 aggr_count );
        }
-       
+
        if( aggr_count >= Nrows) {
 
-	 i = aggr_count;
-	 
-	 aggr_count = Nrows/OPTIMAL_VALUE;
-	 if( aggr_count == 0 ) aggr_count = 1;
-	 
-	 if( mypid == 0 && 7 < ML_Get_PrintLevel() ) {
-	   fprintf( stderr,
-		    "*ML*WRN* # (block) nodes per (block) aggregate (%d) > # (block) nodes (%d)\n"
-		    "*ML*WRN* (on proc 0). Now proceeding with %d aggregates\n",
-		    i,
-		    Nrows,
-		    aggr_count);
-	 }
-	 
+         i = aggr_count;
+
+         aggr_count = Nrows/OPTIMAL_VALUE;
+         if( aggr_count == 0 ) aggr_count = 1;
+
+         if( mypid == 0 && 7 < ML_Get_PrintLevel() ) {
+           fprintf( stderr,
+                    "*ML*WRN* # (block) nodes per (block) aggregate (%d) > # (block) nodes (%d)\n"
+                    "*ML*WRN* (on proc 0). Now proceeding with %d aggregates\n",
+                    i,
+                    Nrows,
+                    aggr_count);
+         }
+
        } else {
 
-	 aggr_count = (Nrows/aggr_count);
+         aggr_count = (Nrows/aggr_count);
 
-	 if( aggr_count == 0 ) aggr_count = 1;
-	 
+         if( aggr_count == 0 ) aggr_count = 1;
+
        }
 
 #ifdef ML_MPI
        MPI_Reduce( &aggr_count, &i, 1, MPI_INT, MPI_SUM, 0,
-		   comm->USR_comm);
+                   comm->USR_comm);
 #else
        i = aggr_count;
 #endif
-       
+
        if ( mypid == 0 && 7 < ML_Get_PrintLevel() )  {
-	 printf("%s avg %f (block) aggr/process\n",
-		str,
-		1.0*i/Nprocs );
+         printf("%s avg %f (block) aggr/process\n",
+                str,
+                1.0*i/Nprocs );
        }
-       
+
        break;
-       
+
      } /* switch */
-       
+
      reorder_flag = aggr_options[ml_ag->cur_level].reordering_flag;
-     
+
    } /* if( aggr_options == NULL )*/
-   
+
    if( aggr_count<=0 ) {
      fprintf( stderr,
-	      "*ML*ERR* on proc %d, value of aggr_count not correct (%d)\n"
-	      "*ML*ERR* Set this value using ML_Aggregate_Set_LocalNumber\n"
-	      "*ML*ERR* or ML_Aggregate_Set_NodesPerAggr or ML_Aggregate_Set_GlobalNumber\n"
-	      "*ML*ERR* (file %s, line %d)\n",
-	      mypid,
-	      aggr_count,
-	      __FILE__,
-	      __LINE__ );
+              "*ML*ERR* on proc %d, value of aggr_count not correct (%d)\n"
+              "*ML*ERR* Set this value using ML_Aggregate_Set_LocalNumber\n"
+              "*ML*ERR* or ML_Aggregate_Set_NodesPerAggr or ML_Aggregate_Set_GlobalNumber\n"
+              "*ML*ERR* (file %s, line %d)\n",
+              mypid,
+              aggr_count,
+              __FILE__,
+              __LINE__ );
      fflush(stderr); exit( EXIT_FAILURE );
    }
 
@@ -1327,27 +1328,27 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
    if( unamalg_bdry == NULL ) {
      fprintf( stderr,
-	      "*ML*ERR* on proc %d, not enough space for %d bytes\n"
-	      "*ML*ERR* (file %s, line %d)\n",
-	      mypid,
-	      (int)sizeof(char) * Nrows,
-	      __FILE__,
-	      __LINE__ );
+              "*ML*ERR* on proc %d, not enough space for %d bytes\n"
+              "*ML*ERR* (file %s, line %d)\n",
+              mypid,
+              (int)sizeof(char) * Nrows,
+              __FILE__,
+              __LINE__ );
      fflush(stderr); exit( EXIT_FAILURE );
    }
 
 #ifdef EXTREME_DEBUGGING
    print("# requested local aggregates = %d, # rows_METIS = %d\n",
-	 aggr_count,
-	 Nrows );
+         aggr_count,
+         Nrows );
 #endif
 
 
    aggr_count = ML_DecomposeGraph_with_VBMETIS( Amatrix,aggr_count,
-					        aggr_index, unamalg_bdry,
-					        ML_LOCAL_INDICES, NULL,
-					        reorder_flag, ml_ag->cur_level,
-					        &total_nz);
+                                                aggr_index, unamalg_bdry,
+                                                ML_LOCAL_INDICES, NULL,
+                                                reorder_flag, ml_ag->cur_level,
+                                                &total_nz);
 
 
 #ifdef ML_MPI
@@ -1360,21 +1361,21 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
    if( mypid == 0 && 7 < ML_Get_PrintLevel() ) {
      printf("%s Using %d (variable block) aggregates (globally)\n",
-	    str,
-	    j );
+            str,
+            j );
      printf("%s # (vblock) aggre/ # (vblock) rows = %8.5f %% ( = %d / %d)\n",
-	    str,
-	    100.0*j/i,
-	    j, i);
+            str,
+            100.0*j/i,
+            j, i);
    }
 
    j = ML_gsum_int( aggr_count, comm );
    if ( mypid == 0 && 7 < ML_Get_PrintLevel() )  {
      printf("%s %d (variable block) aggregates (globally)\n",
-	    str,
-	    j );
+            str,
+            j );
    }   
-   
+
    /* ********************************************************************** */
    /* I allocate room to copy aggr_index and pass this value to the user,    */
    /* who will be able to analyze and visualize this after the construction  */
@@ -1392,11 +1393,11 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      graph_decomposition = (int *)ML_allocate(sizeof(int)*(Nrows+1));
      if( graph_decomposition == NULL ) {
        fprintf( stderr,
-		"*ML*ERR* Not enough memory for %d bytes\n"
-		"*ML*ERR* (file %s, line %d)\n",
-		(int)sizeof(int)*Nrows,
-		__FILE__,
-	        __LINE__ );
+                "*ML*ERR* Not enough memory for %d bytes\n"
+                "*ML*ERR* (file %s, line %d)\n",
+                (int)sizeof(int)*Nrows,
+                __FILE__,
+                __LINE__ );
        fflush(stderr); exit( EXIT_FAILURE );
      }
 
@@ -1414,15 +1415,15 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* ********************************************************************** */
    /* take the decomposition as created by METIS and form the aggregates     */
    /* ********************************************************************** */
-   
+
    total_nz = ML_Comm_GsumInt( comm, total_nz);
    i = ML_Comm_GsumInt( comm, Nrows);
 
    if ( mypid == 0 && 7 < ML_Get_PrintLevel())
      printf("%s Total (vblock) nnz = %d ( = %5.2f/(variable block)row)\n",
-	    str,
-	    total_nz,1.0*total_nz/i);
-   
+            str,
+            total_nz,1.0*total_nz/i);
+
    if ( ml_ag->operator_complexity == 0.0 ) {
       ml_ag->fine_complexity = total_nz;
       ml_ag->operator_complexity = total_nz;
@@ -1445,8 +1446,8 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
          if (j<i && i != 0)
          {
             fprintf( stderr,
-		     "*ML*ERR* check the code for blockrow %d\n*ML*ERR* (file %s, line %d)\n",
-		     i,__FILE__,__LINE__ ); 
+                     "*ML*ERR* check the code for blockrow %d\n*ML*ERR* (file %s, line %d)\n",
+                     i,__FILE__,__LINE__ ); 
                       fflush(stderr); exit( EXIT_FAILURE );
          }
          aggr_index[j] = aggr_index[i];
@@ -1465,11 +1466,11 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 #ifdef EXTREME_DEBUGGING
    print("After `ML_Operator_UnAmalgamateAndDropWeak_Vblocks'\n");
 #endif   
-   
+
    Nrows      = oldNrows;
    exp_Nrows  = oldNrows;
 
-   
+
    /* count the size of each aggregate */
 
    aggr_cnt_array = (int *) ML_allocate(sizeof(int)*(aggr_count+1));
@@ -1477,18 +1478,18 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    {
       fprintf( stderr,
                "*ML*ERR* not enough space\n*ML*ERR* (file %s, line %d)\n",
-	       __FILE__,__LINE__ ); 
+               __FILE__,__LINE__ ); 
                 fflush(stderr); exit( EXIT_FAILURE );
    }
    for (i = 0; i < aggr_count ; i++) aggr_cnt_array[i] = 0;
    for (i = 0; i < exp_Nrows; i++) {
      if (aggr_index[i] >= 0) {
        if( aggr_index[i] >= aggr_count ) {
-	 fprintf( stderr,
-		  "*ML*WRN* on process %d, something weird happened...\n*ML*WRN* node %d belong to aggregate %d (#aggr = %d)\n*ML*WRN* (file %s, line %d)\n",
-		  comm->ML_mypid,i,aggr_index[i],aggr_count,__FILE__,__LINE__ );
+         fprintf( stderr,
+                  "*ML*WRN* on process %d, something weird happened...\n*ML*WRN* node %d belong to aggregate %d (#aggr = %d)\n*ML*WRN* (file %s, line %d)\n",
+                  comm->ML_mypid,i,aggr_index[i],aggr_count,__FILE__,__LINE__ );
        } else {
-	 aggr_cnt_array[aggr_index[i]]++;
+         aggr_cnt_array[aggr_index[i]]++;
        }
      }
    }
@@ -1502,7 +1503,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 #endif
 
    Ncoarse = aggr_count; /* number of aggregates, not number of rows! */
-   
+
    /* ============================================================= */
    /* check and copy aggr_index                                     */
    /* ------------------------------------------------------------- */
@@ -1519,8 +1520,8 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
          if (aggr_index[i] >= count) 
          {
             fprintf(stderr,
-		    "**WRNG** %d : aggr_index[%d]=%d >= count=%d\n**WRNG** (file %s, line %d)\n",
-		    mypid,i,aggr_index[i],count,__FILE__,__LINE__ );
+                    "**WRNG** %d : aggr_index[%d]=%d >= count=%d\n**WRNG** (file %s, line %d)\n",
+                    mypid,i,aggr_index[i],count,__FILE__,__LINE__ );
             count = aggr_index[i] + 1;
          }
       }
@@ -1533,7 +1534,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
       }
    }
    ml_ag->aggr_count[level] = count; /* for relaxing boundary points */ 
-   
+
    /* ============================================================= */
    /* set up the new operator                                       */
    /* ------------------------------------------------------------- */
@@ -1542,16 +1543,16 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    print("nullspace_dim = %d\n", nullspace_dim );
    print("Nrows = %d\n", Nrows );
 #endif
-   
+
    new_Nrows   = Nrows;
    exp_Ncoarse = Nrows;
-   
+
    for ( i = 0; i < new_Nrows; i++ ) 
    {
       if ( aggr_index[i] >= exp_Ncoarse ) 
       {
          fprintf(stderr,"*ML*WRN* index out of bound %d = %d(%d)\n",
-		i, aggr_index[i], 
+                i, aggr_index[i], 
                 exp_Ncoarse); fflush(stderr);
       }
    }
@@ -1562,14 +1563,14 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    nbytes = ( new_Nrows+1)  * nullspace_dim * sizeof(double); 
    ML_memory_alloc((void**)&(new_val), nbytes, "AVA");
    for ( i = 0; i < new_Nrows*nullspace_dim; i++ ) new_val[i] = 0.0;
-   
+
    /* ------------------------------------------------------------- */
    /* set up the space for storing the new null space               */
    /* ------------------------------------------------------------- */
 
    nbytes = (Ncoarse+1) * nullspace_dim * nullspace_dim * sizeof(double);
    ML_memory_alloc((void**)&(new_null),nbytes,"AGr");
-   
+
    for (i = 0; i < Ncoarse*nullspace_dim*nullspace_dim; i++) 
       new_null[i] = 0.0;
 
@@ -1602,8 +1603,8 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      rows_in_aggs[i] = (int *) ML_allocate(nbytes*sizeof(int));
      if (rows_in_aggs[i] == NULL)  {
        fprintf(stderr,
-	       "*ML*ERR* couldn't allocate memory in CoarsenMETIS\n*ML*ERR* (file %s, line %d)\n",
-	       __FILE__,__LINE__);
+               "*ML*ERR* couldn't allocate memory in CoarsenMETIS\n*ML*ERR* (file %s, line %d)\n",
+               __FILE__,__LINE__);
        fflush(stderr); exit(EXIT_FAILURE);
      }
      aggr_cnt_array[i] = 0;
@@ -1655,7 +1656,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
             index = rows_in_aggs[i][j];
             for (k = 0; k < nullspace_dim; k++)
             {
-	      if ( unamalg_bdry[blocks[index]] == 'T')
+              if ( unamalg_bdry[blocks[index]] == 'T')
                 qr_tmp[k*length+j] = 0.;
                else
                {
@@ -1674,17 +1675,17 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
             for (j = 0; j < (int) length; j++)
             {
                index = rows_in_aggs[i][j];
-	      if ( unamalg_bdry[blocks[index]] == 'T')
-		 qr_tmp[k*length+j] = 0.;
+              if ( unamalg_bdry[blocks[index]] == 'T')
+                 qr_tmp[k*length+j] = 0.;
                else {
                   if (index < Nrows) {
                      qr_tmp[k*length+j] = nullspace_vect[k*Nrows+index];
                   }
                   else {
-		    fprintf( stderr,
-			     "*ML*ERR* in QR, index out of range\n*ML*ERR* (file %s, line %d)\n",
-			     __FILE__,__LINE__ );
-		    fflush(stderr);exit( EXIT_FAILURE );
+                    fprintf( stderr,
+                             "*ML*ERR* in QR, index out of range\n*ML*ERR* (file %s, line %d)\n",
+                             __FILE__,__LINE__ );
+                    fflush(stderr);exit( EXIT_FAILURE );
                   }
                }
             }
@@ -1711,14 +1712,14 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
          }
          if (index1==-1)
          {
-	     fprintf( stderr,
-	              "*ML*WRN* detected zero column in QR block,\n*ML*WRN* that might crash the QR-fact.\n*ML*WRN* column %d of nullspace\n*ML*WRN* (file %s, line %d)\n",
-	              k,__FILE__,__LINE__ );
-	     fflush(stderr);
+             fprintf( stderr,
+                      "*ML*WRN* detected zero column in QR block,\n*ML*WRN* that might crash the QR-fact.\n*ML*WRN* column %d of nullspace\n*ML*WRN* (file %s, line %d)\n",
+                      k,__FILE__,__LINE__ );
+             fflush(stderr);
              printflag++;
-             
+
          }
-         
+
       }
 #if 0 /* for debugging purpose */
       if (printflag>0)
@@ -1742,30 +1743,30 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
       if (aggr_cnt_array[i] >= nullspace_dim) {
 
-	DGEQRF_F77(&(aggr_cnt_array[i]), &nullspace_dim, qr_tmp, 
-			  &(aggr_cnt_array[i]), tmp_vect, work, &lwork, &info);
-	if (info != 0)
-	  pr_error("%s **ERR** dgeqrf returned a non-zero %d %d\n",str,
-		   aggr_cnt_array[i],i);
+        DGEQRF_F77(&(aggr_cnt_array[i]), &nullspace_dim, qr_tmp, 
+                          &(aggr_cnt_array[i]), tmp_vect, work, &lwork, &info);
+        if (info != 0)
+          pr_error("%s **ERR** dgeqrf returned a non-zero %d %d\n",str,
+                   aggr_cnt_array[i],i);
 
-	if (work[0] > lwork) 
-	  {
-	    lwork=(int) work[0]; 
-	    ML_memory_free((void**) &work);
-	    ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AGx");
-	  }
-	else lwork=(int) work[0];
-		 
-	/* ---------------------------------------------------------- */
-	/* the upper triangle of qr_tmp is now R, so copy that into   */
-	/* the new nullspace                                          */
-	/* ---------------------------------------------------------- */
+        if (work[0] > lwork) 
+          {
+            lwork=(int) work[0]; 
+            ML_memory_free((void**) &work);
+            ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AGx");
+          }
+        else lwork=(int) work[0];
 
-	for (j = 0; j < nullspace_dim; j++)
-	  for (k = j; k < nullspace_dim; k++)
+        /* ---------------------------------------------------------- */
+        /* the upper triangle of qr_tmp is now R, so copy that into   */
+        /* the new nullspace                                          */
+        /* ---------------------------------------------------------- */
+
+        for (j = 0; j < nullspace_dim; j++)
+          for (k = j; k < nullspace_dim; k++)
             new_null[i*nullspace_dim+j+k*Ncoarse*nullspace_dim] = 
-	      qr_tmp[j+aggr_cnt_array[i]*k];
-		 
+              qr_tmp[j+aggr_cnt_array[i]*k];
+
 #if 0 /* for debugging purpose */
         if (printflag>0)
         {
@@ -1783,65 +1784,65 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
            fflush(stdout);
         }
 #endif      
-	/* ---------------------------------------------------------- */
-	/* to get this block of P, need to run qr_tmp through another */
-	/* LAPACK function:                                           */
-	/* ---------------------------------------------------------- */
+        /* ---------------------------------------------------------- */
+        /* to get this block of P, need to run qr_tmp through another */
+        /* LAPACK function:                                           */
+        /* ---------------------------------------------------------- */
 
-	if ( aggr_cnt_array[i] < nullspace_dim ){
-	  printf("Error in dorgqr on %d row (dims are %d, %d)\n(file %s, line %d)\n",
-		 nullspace_dim, i,aggr_cnt_array[i],__FILE__,__LINE__ );
-	  printf("ERROR : performing QR on a MxN matrix where M<N.\n");
-	  fflush(stdout);
+        if ( aggr_cnt_array[i] < nullspace_dim ){
+          printf("Error in dorgqr on %d row (dims are %d, %d)\n(file %s, line %d)\n",
+                 nullspace_dim, i,aggr_cnt_array[i],__FILE__,__LINE__ );
+          printf("ERROR : performing QR on a MxN matrix where M<N.\n");
+          fflush(stdout);
         }
-	DORGQR_F77(&(aggr_cnt_array[i]), &nullspace_dim, &nullspace_dim, 
-			  qr_tmp, &(aggr_cnt_array[i]), tmp_vect, work, &lwork, &info);
-	if (info != 0) {
-	  printf("Error in dorgqr on %d row (dims are %d, %d)\n(file %s, line %d)\n",
-		 i,aggr_cnt_array[i],nullspace_dim,__FILE__,__LINE__ );
+        DORGQR_F77(&(aggr_cnt_array[i]), &nullspace_dim, &nullspace_dim, 
+                          qr_tmp, &(aggr_cnt_array[i]), tmp_vect, work, &lwork, &info);
+        if (info != 0) {
+          printf("Error in dorgqr on %d row (dims are %d, %d)\n(file %s, line %d)\n",
+                 i,aggr_cnt_array[i],nullspace_dim,__FILE__,__LINE__ );
           fflush(stdout);       
-	  pr_error("Error in CoarsenMIS: dorgqr returned a non-zero\n");
-	}
+          pr_error("Error in CoarsenMIS: dorgqr returned a non-zero\n");
+        }
 
-	if (work[0] > lwork) 
-	  {
-	    lwork=(int) work[0]; 
-	    ML_memory_free((void**) &work);
-	    ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AGy");
-	  }
-	else lwork=(int) work[0];
+        if (work[0] > lwork) 
+          {
+            lwork=(int) work[0]; 
+            ML_memory_free((void**) &work);
+            ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AGy");
+          }
+        else lwork=(int) work[0];
 
-	/* ---------------------------------------------------------- */
-	/* now copy Q over into the appropriate part of P:            */
-	/* The rows of P get calculated out of order, so I assume the */
-	/* Q is totally dense and use what I know of how big each Q   */
-	/* will be to determine where in ia, ja, etc each nonzero in  */
-	/* Q belongs.  If I did not assume this, I would have to keep */
-	/* all of P in memory in order to determine where each entry  */
-	/* should go                                                  */
-	/* ---------------------------------------------------------- */
+        /* ---------------------------------------------------------- */
+        /* now copy Q over into the appropriate part of P:            */
+        /* The rows of P get calculated out of order, so I assume the */
+        /* Q is totally dense and use what I know of how big each Q   */
+        /* will be to determine where in ia, ja, etc each nonzero in  */
+        /* Q belongs.  If I did not assume this, I would have to keep */
+        /* all of P in memory in order to determine where each entry  */
+        /* should go                                                  */
+        /* ---------------------------------------------------------- */
 
-	for (j = 0; j < aggr_cnt_array[i]; j++)
-	  {
-	    index = rows_in_aggs[i][j];
-	    
-	    if ( index < Nrows )
-	      {
-		index3 = new_ia[index];
-		for (k = 0; k < nullspace_dim; k++) 
-		  {
-		    new_ja [index3+k] = i * nullspace_dim + k;
-		    new_val[index3+k] = qr_tmp[ k*aggr_cnt_array[i]+j];
-		  }
-	      }
-	    else 
-	      {
-	     fprintf( stderr,
-	              "*ML*ERR* in QR: index out of bounds (%d)\n*ML*ERR* (file %s, line %d)\n",
-		      index,__FILE__,__LINE__ );
-	     fflush(stderr);exit( EXIT_FAILURE );
-	      }
-	  }
+        for (j = 0; j < aggr_cnt_array[i]; j++)
+          {
+            index = rows_in_aggs[i][j];
+
+            if ( index < Nrows )
+              {
+                index3 = new_ia[index];
+                for (k = 0; k < nullspace_dim; k++) 
+                  {
+                    new_ja [index3+k] = i * nullspace_dim + k;
+                    new_val[index3+k] = qr_tmp[ k*aggr_cnt_array[i]+j];
+                  }
+              }
+            else 
+              {
+             fprintf( stderr,
+                      "*ML*ERR* in QR: index out of bounds (%d)\n*ML*ERR* (file %s, line %d)\n",
+                      index,__FILE__,__LINE__ );
+             fflush(stderr);exit( EXIT_FAILURE );
+              }
+          }
 #if 0 /* for debugging purpose */
         if (printflag>0)
         {
@@ -1860,28 +1861,28 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 #endif      
       }
       else {
-	/* We have a small aggregate such that the QR factorization can not */
-	/* be performed. Instead let us copy the null space from the fine   */
+        /* We have a small aggregate such that the QR factorization can not */
+        /* be performed. Instead let us copy the null space from the fine   */
         /* into the coarse grid nullspace and put the identity for the      */
-	/* prolongator????                                                  */
-	fprintf(stdout,
-		"*ML*WRN* in QR: aggregate (%d) smaller then nullspace\n*ML*WRN* (file %s, line %d)\n",
-		 index,__FILE__,__LINE__ );
-	fflush(stdout);
-	
+        /* prolongator????                                                  */
+        fprintf(stdout,
+                "*ML*WRN* in QR: aggregate (%d) smaller then nullspace\n*ML*WRN* (file %s, line %d)\n",
+                 index,__FILE__,__LINE__ );
+        fflush(stdout);
+
         for (j = 0; j < nullspace_dim; j++)
-	  for (k = 0; k < nullspace_dim; k++)
+          for (k = 0; k < nullspace_dim; k++)
             new_null[i*nullspace_dim+j+k*Ncoarse*nullspace_dim] = 
-	      qr_tmp[j+aggr_cnt_array[i]*k];
-	for (j = 0; j < aggr_cnt_array[i]; j++) {
-	  index = rows_in_aggs[i][j];
-	  index3 = new_ia[index];
-	  for (k = 0; k < nullspace_dim; k++) {
-	    new_ja [index3+k] = i * nullspace_dim + k;
-	    if (k == j) new_val[index3+k] = 1.;
-	    else new_val[index3+k] = 0.;
-	  }
-	}
+              qr_tmp[j+aggr_cnt_array[i]*k];
+        for (j = 0; j < aggr_cnt_array[i]; j++) {
+          index = rows_in_aggs[i][j];
+          index3 = new_ia[index];
+          for (k = 0; k < nullspace_dim; k++) {
+            new_ja [index3+k] = i * nullspace_dim + k;
+            if (k == j) new_val[index3+k] = 1.;
+            else new_val[index3+k] = 0.;
+          }
+        }
       }
 
 
@@ -1899,7 +1900,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* constant block sizes as well though slower than               */
    /* ML_Aggregate_CoarsenMETIS                                     */
    /* ------------------------------------------------------------- */
-   
+
    if (ml_ag->cur_level+1 < ml_ag->max_levels)
    {
       new_nblocks   = Ncoarse;
@@ -1908,10 +1909,10 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
       new_block_pde = (int*)ML_allocate(new_nrows*sizeof(int));
       if (new_block_pde==NULL)
       {
-      	 fprintf( stderr,
-	          "*ML*ERR* ML_Aggregate_CoarsenVBMETIS: out of space\n*ML*ERR* (file %s, line %d)\n",
-		  __FILE__,__LINE__ );
-	 fflush(stderr);exit( EXIT_FAILURE );
+         fprintf( stderr,
+                  "*ML*ERR* ML_Aggregate_CoarsenVBMETIS: out of space\n*ML*ERR* (file %s, line %d)\n",
+                  __FILE__,__LINE__ );
+         fflush(stderr);exit( EXIT_FAILURE );
       }
       index1=0;
       for (i=0; i<new_nrows; i+=nullspace_dim)
@@ -1930,7 +1931,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
       ML_free(new_blocks);
       ML_free(new_block_pde);
    }
-      
+
 
 
    /* ------------------------------------------------------------- */
@@ -1940,7 +1941,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 #ifdef EXTREME_DEBUGGING
    print("set up the csr_data data structure\n");
 #endif
-   
+
    ML_memory_alloc((void**) &csr_data, sizeof(struct ML_CSR_MSRdata),"CSR");
    csr_data->rowptr  = new_ia;
    csr_data->columns = new_ja;
@@ -1951,7 +1952,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    (*Pmatrix)->data_destroy = ML_CSR_MSR_ML_memorydata_Destroy;
    (*Pmatrix)->getrow->pre_comm = ML_CommInfoOP_Create();
    (*Pmatrix)->max_nz_per_row = 1; /* why this? mgee */
-   
+
    ML_Operator_Set_Getrow((*Pmatrix), Nrows, CSR_getrow);
    ML_Operator_Set_ApplyFunc((*Pmatrix), CSR_matvec);
    (*Pmatrix)->max_nz_per_row = 1; /* why this? mgee */
@@ -1965,7 +1966,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 #ifdef EXTREME_DEBUGGING
    print("clean up\n");
 #endif
-   
+
    if (unamalg_bdry) ML_free(unamalg_bdry);
    ML_memory_free((void**)&aggr_index);
    if (aggr_cnt_array) ML_free(aggr_cnt_array);
@@ -2030,7 +2031,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
 #endif
    return Ncoarse*nullspace_dim;
-   
+
 } /* ML_Aggregate_CoarsenVBMETIS */
 
 /* ------------------------------------------------------------------------ */
@@ -2041,9 +2042,9 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
     (that is, ignoring any inter-domain connections)                          
     this function is derived from ML_DecomposeGraph_with_METIS of which it is 
     the variable block version                                                
-    
+
     Author:  Michael W. Gee, Org. 9214, November 2004
-     
+
 </pre>
 \param Amatrix              ML_Operator*       (input)     the operator of the current level
 \param N_parts              int                (input)     local number of aggregates requested
@@ -2059,54 +2060,67 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS ML_Aggregate_Destroy_Vblocks_CoarsenScheme_VBMETIS
 
  \note this function is derived from ML_DecomposeGraph_with_METIS
- 
+
  \warning some features of the original routine ML_DecomposeGraph_with_METIS are
           in here, but they are not tested! E.g. local_or_global=ML_GLOBAL_INDICES
 
 */
 /* ------------------------------------------------------------------------ */
 static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
-					   int N_parts,
-					   int graph_decomposition[],
-					   char bdry_nodes[],
-					   int local_or_global,
-					   int offsets[],
-					   int reorder_flag,
-					   int current_level,
-					   int *total_nz)
+                                           int N_parts,
+                                           int graph_decomposition[],
+                                           char bdry_nodes[],
+                                           int local_or_global,
+                                           int offsets[],
+                                           int reorder_flag,
+                                           int current_level,
+                                           int *total_nz)
 {
 
   int i, j,jj,  count, count2;
   int Nrows, Nrows_global,NrowsMETIS, N_nonzeros, N_bdry_nodes;
-  int *wgtflag=NULL, numflag, *options=NULL, edgecut;
-  idxtype *xadj=NULL, *adjncy=NULL;
+  int *wgtflag=NULL, numflag;
+  indextype *xadj=NULL, *adjncy=NULL;
 #ifdef HAVE_ML_METIS
-  idxtype *vwgt=NULL, *adjwgt=NULL;
+  indextype *vwgt=NULL, *adjwgt=NULL;
 #endif
-  idxtype *part=NULL;
+  indextype *part=NULL;
   ML_Comm * comm;
   int allocated = 0;
   int * rowi_col = NULL;
   int rowi_N;
   double * rowi_val = NULL;
+#if defined(HAVE_ML_METIS)
+  indextype edgecut;
+# if (METIS_VER_MAJOR<5)
   int nbytes = 0, nbytes_max = 0;
+  int options[4];
+# else
+  indextype options[METIS_NOPTIONS];
+  indextype numBalancingConstraints;
+  indextype *vsize;
+  real_t *tpwgts, *ubvec;
+# endif
+#else
+  int *options=NULL,edgecut;
+#endif
   int ok = 0;
   int * nodes_per_aggre = NULL;
   double t0;
   int * perm = NULL;
   char str[80];
   char *ptrToBdry;
-  
+
   /* ------------------- execution begins --------------------------------- */
-  
+
   t0 = GetClock();
 
   sprintf( str, "VBMETIS (level %d) :", current_level );
-  
+
   comm = Amatrix->comm;
 
   /* dimension of the problem (NOTE: only local matrices) */
-  
+
   Nrows = Amatrix->getrow->Nrows;
   perm = (int *) ML_allocate( sizeof(int) * Nrows );
 
@@ -2118,8 +2132,8 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
      define the boundary nodes, and to handle epetra matrices.) 
      Finally, I need to compute the number of rows to give in input to
      METIS. Those do not include Dirichlet rows. */
-  
-  
+
+
   /* check row with only main diagonal entry -> boundry nodes */   
   N_nonzeros = 0;
   NrowsMETIS = 0;
@@ -2136,46 +2150,51 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
   /* N_bdry_nodes: number of boundary blocks */
   N_bdry_nodes = ML_Comm_GsumInt(comm, Nrows-NrowsMETIS);
   Nrows_global = ML_Comm_GsumInt(comm, Nrows);
-  
+
   if( comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
     printf("%s # bdry (vblock) nodes = %d, # (vblock) nodes = %d\n",
-	   str,
-	   N_bdry_nodes, Nrows_global);
+           str,
+           N_bdry_nodes, Nrows_global);
   }
-  
+
   /* construct the CSR graph information of the LOCAL matrix
      using the get_row function */
 
-  wgtflag = (idxtype *) ML_allocate (4*sizeof(idxtype));
-  options = (int *)     ML_allocate (4*sizeof(int));
-  
+  wgtflag = (indextype *) ML_allocate (4*sizeof(indextype));
+
   /* set parameters */
-   
+
   wgtflag[0] = 0;    /* no weights */
   numflag    = 0;    /* C style */
+#if defined(HAVE_ML_METIS)
+# if (METIS_VER_MAJOR<5)
   options[0] = 0;    /* default options */
-   
-  xadj    = (idxtype *) ML_allocate ((NrowsMETIS+1)*sizeof(idxtype));
-  adjncy  = (idxtype *) ML_allocate ((N_nonzeros)*sizeof(idxtype));
-   
+# else
+  METIS_SetDefaultOptions(options);
+# endif
+# endif
+
+  xadj    = (indextype *) ML_allocate ((NrowsMETIS+1)*sizeof(indextype));
+  adjncy  = (indextype *) ML_allocate ((N_nonzeros)*sizeof(indextype));
+
   if(  xadj==NULL || adjncy==NULL ) {
     fprintf( stderr,
-	     "**ERR** on proc %d, not enought space for %d bytes.\nfile %s, line %d\n",
-	     comm->ML_mypid, N_nonzeros,
-	     __FILE__,
-	     __LINE__);fflush(stderr);exit(EXIT_FAILURE);
+             "**ERR** on proc %d, not enought space for %d bytes.\nfile %s, line %d\n",
+             comm->ML_mypid, N_nonzeros,
+             __FILE__,
+             __LINE__);fflush(stderr);exit(EXIT_FAILURE);
   }
-   
+
   count = 0; count2 = 0; xadj[0] = 0;
-  
+
   for (i = 0; i < Nrows; i++) {
 
     if( bdry_nodes[i] == 'F' ) {
 
       xadj[count2+1] = xadj[count2]; /* nonzeros in row i-1 */
-    
+
       ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
-		        &rowi_N, 0);
+                        &rowi_N, 0);
 
       /* need to avoid boundary nodes in METIS vectors. Skip them */
       /* (I am not pretty sure that rows with zero elements are   */
@@ -2184,13 +2203,13 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
       /* be given as input to perm                                */
 
       for( j=0 ; j<rowi_N ; j++ ) {
-	jj = rowi_col[j];
-	if( jj<Nrows ) {
-	  if( jj != i && perm[jj] != -1 ) {
-	    adjncy[count++] = perm[jj];
-	    xadj[count2+1]++;
-	  }
-	}
+        jj = rowi_col[j];
+        if( jj<Nrows ) {
+          if( jj != i && perm[jj] != -1 ) {
+            adjncy[count++] = perm[jj];
+            xadj[count2+1]++;
+          }
+        }
       }
       count2++;
     }      
@@ -2204,19 +2223,19 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
       fprintf(fp,"NrowsMETIS = %d;\n", NrowsMETIS);
       fprintf(fp,"xadj = zeros(NrowsMETIS,1);\n");
       for( i=0 ; i<NrowsMETIS+1 ; i++ ) {
-	fprintf(fp,"xadj(%d) = %d;\n", i+1, xadj[i]+1);
+        fprintf(fp,"xadj(%d) = %d;\n", i+1, xadj[i]+1);
       }
       fprintf(fp,"Nonzeros = %d;\n", count);
       fprintf(fp,"adjncy = zeros(Nonzeros,1);\n");
       for( i=0 ; i<count ; i++ ) {
-	fprintf(fp,"adjncy(%d) = %d;\n", i+1, adjncy[i]+1);
+        fprintf(fp,"adjncy(%d) = %d;\n", i+1, adjncy[i]+1);
       }
       fprintf(fp,"A = zeros(%d,%d)\n", NrowsMETIS,NrowsMETIS);
       for( i=0 ; i<NrowsMETIS ; i++ ) {
-	for( j=xadj[i] ; j<xadj[i+1] ; j++ ) {
-	  fprintf(fp,"A(%d,%d) = 1;\n",
-		  i+1,adjncy[j]+1);
-	}
+        for( j=xadj[i] ; j<xadj[i+1] ; j++ ) {
+          fprintf(fp,"A(%d,%d) = 1;\n",
+                  i+1,adjncy[j]+1);
+        }
       }
       fclose(fp);
 #endif
@@ -2226,60 +2245,60 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
       fp = fopen(str,"w");
       fprintf(fp,"Nrows = %d\n", NrowsMETIS);
       for( i=0 ; i<NrowsMETIS+1 ; i++ ) {
-	fprintf(fp,"%d\n", xadj[i]);
+        fprintf(fp,"%d\n", xadj[i]);
       }
       fprintf(fp,"Nonzeros = %d\n", count);
       for( i=0 ; i<count ; i++ ) {
-	fprintf(fp,"%d\n", adjncy[i]);
+        fprintf(fp,"%d\n", adjncy[i]);
       }
       fclose(fp);
 #endif
-      
+
   if( count > N_nonzeros || count2 != NrowsMETIS ) {
     fprintf( stderr,
-	     "*ML*WRN* On proc %d, count  > N_nonzeros (%d>%d)\n"
-	     "*ML*WRN* or count2 != NrowsMETIS (%d>%d)\n"
-	     "a buffer overflow has probably occurred...\n",
-	     comm->ML_mypid, count, N_nonzeros, count2, NrowsMETIS );
+             "*ML*WRN* On proc %d, count  > N_nonzeros (%d>%d)\n"
+             "*ML*WRN* or count2 != NrowsMETIS (%d>%d)\n"
+             "a buffer overflow has probably occurred...\n",
+             comm->ML_mypid, count, N_nonzeros, count2, NrowsMETIS );
   }
 
-  /* idxtype is by default int, but on some architectures can be
+  /* indextype is by default int, but on some architectures can be
      slightly different (for instance, a short int). */
-   
-  part = (idxtype *) ML_allocate( sizeof(idxtype) * NrowsMETIS );
+
+  part = (indextype *) ML_allocate( sizeof(indextype) * NrowsMETIS );
   nodes_per_aggre  = (int *) ML_allocate( sizeof(int) * N_parts );
 
   /* ********************************************************************** */
   /* Before calling METIS, I verify that the two extreme situations are     */
   /* handled separately.                                                    */
   /* ********************************************************************** */
-  
+
   if( N_parts == 1 ) {
 
     for( i=0 ; i<NrowsMETIS ; i++ ) part[i] = 0;
     edgecut = 0;
-    
+
   } else if( N_parts == NrowsMETIS ) {
 
     fprintf( stderr,
-	     "*ML*WRN*: on proc %d, N_part == N_rows_noDirichlet (%d==%d)\n",
-	     comm->ML_mypid, N_parts, NrowsMETIS );
- 
+             "*ML*WRN*: on proc %d, N_part == N_rows_noDirichlet (%d==%d)\n",
+             comm->ML_mypid, N_parts, NrowsMETIS );
+
     for( i=0 ; i<NrowsMETIS ; i++ ) part[i] = i;
     edgecut = 0;
-  
+
   } else {
 
     ok = 0;
 
     while( ok == 0 ) {
-      
+
       /* ****************************************************************** */
       /* Put -1 in part, so I can verify that METIS has filled each pos    */
       /* ****************************************************************** */
 
       for( i=0 ; i<NrowsMETIS ; i++ ) part[i] = -1;
-    
+
       /* ****************************************************************** */
       /* Estimate memory required by METIS. This memory will be dynamically */
       /* allocated inside; however this is a good estimation of how METIS   */
@@ -2290,40 +2309,58 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
 #ifdef HAVE_ML_METIS
       if( N_parts < 8 ) {
 
-	i = 1; /* optype in the METIS manual */
-	numflag = 0;
-	METIS_EstimateMemory( &NrowsMETIS, xadj, adjncy, &numflag,
-			      &i, &nbytes );
-	
-	METIS_PartGraphRecursive (&NrowsMETIS, xadj, adjncy, vwgt, adjwgt,
-				  wgtflag, &numflag, &N_parts, options,
-				  &edgecut, part);
-      } else {
-	
-	i = 2;
-	numflag = 0;
+        i = 1; /* optype in the METIS manual */
+        numflag = 0;
+#       if (METIS_VER_MAJOR<5)
+        METIS_EstimateMemory( &NrowsMETIS, xadj, adjncy, &numflag,
+                  &i, &nbytes );
 
-	METIS_EstimateMemory( &NrowsMETIS, xadj, adjncy, &numflag,
-			      &i, &nbytes );
-	
-	METIS_PartGraphKway (&NrowsMETIS, xadj, adjncy, vwgt, adjwgt,
-			     wgtflag, &numflag, &N_parts, options,
-			     &edgecut, part);
+        METIS_PartGraphRecursive (&NrowsMETIS, xadj, adjncy, vwgt, adjwgt,
+                  wgtflag, &numflag, &N_parts, options,
+                  &edgecut, part);
+#       else
+        numBalancingConstraints = 1;
+        vsize = NULL;
+        tpwgts = NULL;
+        ubvec = NULL;
+        METIS_PartGraphRecursive (&NrowsMETIS, &numBalancingConstraints, xadj, adjncy,
+                  vwgt, vsize, adjwgt, &N_parts, tpwgts, ubvec, options, &edgecut, part);
+#       endif
+      } else {
+
+        i = 2;
+        numflag = 0;
+
+#       if (METIS_VER_MAJOR<5)
+        METIS_EstimateMemory( &NrowsMETIS, xadj, adjncy, &numflag,
+                  &i, &nbytes );
+
+        METIS_PartGraphKway (&NrowsMETIS, xadj, adjncy, vwgt, adjwgt,
+                 wgtflag, &numflag, &N_parts, options,
+                 &edgecut, part);
+#       else
+        numBalancingConstraints = 1;
+        vsize = NULL;
+        tpwgts = NULL;
+        ubvec = NULL;
+        METIS_PartGraphKway (&NrowsMETIS, &numBalancingConstraints, xadj, adjncy,
+                  vwgt, vsize, adjwgt, &N_parts, tpwgts, ubvec, options, &edgecut, part);
+#      endif
       }
 #else
       if( Amatrix->comm->ML_mypid == 0 ) {
-	fprintf( stderr,
-		 "*ML*WRN* This function has been compiled without the configure\n"
-		 "*ML*WRN* option --with-ml_metis\n"
-		 "*ML*WRN* I will put all the nodes in the same aggregate, this time...\n"
-		 "*ML*WRN* (file %s, line %d)\n",
-		 __FILE__,
-		 __LINE__);
+        fprintf( stderr,
+                 "*ML*WRN* This function has been compiled without the configure\n"
+                 "*ML*WRN* option --with-ml_metis\n"
+                 "*ML*WRN* I will put all the nodes in the same aggregate, this time...\n"
+                 "*ML*WRN* (file %s, line %d)\n",
+                 __FILE__,
+                 __LINE__);
       }
       for( i=0 ; i<NrowsMETIS ; i++ ) part[i] = 0;
       N_parts = 1;
 #endif
-      
+
       /* **************************************************************** */
       /* perform some checks. If aggregates with zero assigned nodes      */
       /* exist, then recall METIS, asking for a smaller number of sub     */
@@ -2332,80 +2369,82 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
       /* **************************************************************** */
 
       ok = 1;
-      
+
       for( i=0 ; i<N_parts ; i++ ) nodes_per_aggre[i] = 0;
       for( i=0 ; i<NrowsMETIS ; i++ ) {
-	j = part[i];
-	if( j<0 || j>= N_parts ) {
-	  ok = 0;
-	  break;
-	} 
-	else nodes_per_aggre[j]++;
+        j = part[i];
+        if( j<0 || j>= N_parts ) {
+          ok = 0;
+          break;
+        } 
+        else nodes_per_aggre[j]++;
       }
-      
+
       for( i=0 ; i<N_parts ; i++ ) {
-	if( nodes_per_aggre[i] == 0 ) {
-	  ok = 0;
-	  break;
-	}
+        if( nodes_per_aggre[i] == 0 ) {
+          ok = 0;
+          break;
+        }
       }
-      
+
       if( ok == 0 ) {
-	if( comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
-	  printf( "*ML*WRN* input # of (block) aggregates (%d) does not assure "
-		  "non-empty aggregates.\n"
-		  "*ML*WRN* Now recalling METIS with # aggregates = %d\n",
-		  N_parts, N_parts/2 );
-	}
-	N_parts = N_parts/2;
+        if( comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
+          printf( "*ML*WRN* input # of (block) aggregates (%d) does not assure "
+                  "non-empty aggregates.\n"
+                  "*ML*WRN* Now recalling METIS with # aggregates = %d\n",
+                  N_parts, N_parts/2 );
+        }
+        N_parts = N_parts/2;
       }
-      
+
       if( N_parts == 0 ) {
-	if( comm->ML_mypid == 0 && 9 < ML_Get_PrintLevel()) {
-	  fprintf( stderr,
-		   "*ML*WRN* something went **VERY** wrong in calling METIS\n"
-		   "*ML*WRN* try to ask for a smaller number of subdomains\n"
-		   "*ML*WRN* I will put all the nodes into one aggregate...\n"
-		   "*ML*WRN* (file %s, line %d)\n",
-		   __FILE__,
-		   __LINE__ );
-	}
-	N_parts = 1;
+        if( comm->ML_mypid == 0 && 9 < ML_Get_PrintLevel()) {
+          fprintf( stderr,
+                   "*ML*WRN* something went **VERY** wrong in calling METIS\n"
+                   "*ML*WRN* try to ask for a smaller number of subdomains\n"
+                   "*ML*WRN* I will put all the nodes into one aggregate...\n"
+                   "*ML*WRN* (file %s, line %d)\n",
+                   __FILE__,
+                   __LINE__ );
+        }
+        N_parts = 1;
       }
-      
+
       /* ************************************************************** */
       /* handle the case N_parts = 1 separately. Do not recall METIS    */
       /* in this case, simply put everything to zero and continue       */
       /* ************************************************************** */
-      
+
       if( N_parts == 1 ) {
-	for( i=0 ; i<NrowsMETIS ; i++ ) part[i] = 0;
-	ok = 1;
+        for( i=0 ; i<NrowsMETIS ; i++ ) part[i] = 0;
+        ok = 1;
       }
-      
+
     } /* while( ok == 0 ) */
-  
+
   } /* if( N_parts == 1 ) */
 
   /* ********************************************************************** */
   /* Some fancy output for memory usage.                                    */
   /* ********************************************************************** */
 
+#if defined(HAVE_ML_METIS) && (METIS_VER_MAJOR<5)
   nbytes /= 1024;
-  
+
   nbytes_max = ML_gmax_int( nbytes, comm );
   nbytes = ML_gsum_int( nbytes, comm);
 
   if( Amatrix->comm->ML_mypid == 0 &&  ML_Get_PrintLevel() > 7 ) {
-   
+
     printf("%s Estimated required mem for METIS = %d Kb\n"
-	   "%s Max estimated mem for METIS = %d Kb\n",
-	   str,
-	   nbytes,
-	   str,
-	   nbytes_max );
+           "%s Max estimated mem for METIS = %d Kb\n",
+           str,
+           nbytes,
+           str,
+           nbytes_max );
   }
-  
+#endif
+
   /* ********************************************************************** */
   /* reordering using METIS to minimize the fill-in during factorization    */
   /* ********************************************************************** */
@@ -2416,7 +2455,7 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
          "file %s, line %d\n",
          comm->ML_mypid,__FILE__,__LINE__);fflush(stderr);exit(EXIT_FAILURE);
 
-    
+
   }
 
   /* copy back part into aggr_index, and set to -1
@@ -2438,14 +2477,14 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
      offsets[i] <= indices_of_i < offsets[i+1]
      Note that I do not suppose that N_parts is the same
      value among all the processors */
-     
+
   if( local_or_global == ML_GLOBAL_INDICES ) {
     fprintf( stderr,
          "%s **WRN** on proc %d, global indizes not checked for variable blocks\n"
          "good luck! file %s, line %d\n",str,
          comm->ML_mypid,__FILE__,__LINE__);fflush(stderr);    
     ML_DecomposeGraph_BuildOffsets( N_parts, offsets, comm->ML_nprocs,
-				    Amatrix->comm->USR_comm );
+                                    Amatrix->comm->USR_comm );
   }
 
   /* ------------------- that's all folks --------------------------------- */
@@ -2454,24 +2493,23 @@ static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
   rowi_col = NULL; rowi_val = NULL;
   allocated = 0; 
 
-  if( options != NULL ) ML_free( options );
   if( wgtflag != NULL ) ML_free( wgtflag );
   if( adjncy != NULL  ) ML_free( adjncy  );
   if( xadj != NULL    ) ML_free( xadj    );
   if( part != NULL    ) ML_free( part    );
   if( perm != NULL    ) ML_free( perm    );
   if( nodes_per_aggre != NULL ) ML_free( nodes_per_aggre );
-  
+
   t0 = GetClock() - t0;
 
   if ( comm->ML_mypid == 0 &&  ML_Get_PrintLevel() > 7 ) {
-   
+
     printf("%s Time to partition graph = %e (s)\n",
-	   str,
-	   t0 );
-    
+           str,
+           t0 );
+
   }
-  
+
   return N_parts;
-  
+
 } /* ML_DecomposeGraph_with_VBMETIS */

@@ -49,10 +49,13 @@
 namespace Thyra {
 
 
-/** \brief . */
+/** \brief Determines what to do if inverse solve fails.
+ *
+ * \ingroup Thyra_Op_Vec_ANA_Development_grp
+ */
 enum EThrowOnSolveFailure {
-  THROW_ON_SOLVE_FAILURE=1 ///< Throw an exception if a solve fails to converge
-  ,IGNORE_SOLVE_FAILURE=0  ///< Don't throw an exception if a solve fails to converge
+  THROW_ON_SOLVE_FAILURE=1, ///< Throw an exception if a solve fails to converge
+  IGNORE_SOLVE_FAILURE=0  ///< Don't throw an exception if a solve fails to converge
 };
 
 

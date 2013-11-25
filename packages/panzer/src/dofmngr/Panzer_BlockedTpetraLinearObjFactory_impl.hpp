@@ -185,7 +185,8 @@ template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename Globa
 void BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                              const LinearObjContainer & globalBCRows,
-                             LinearObjContainer & ghostedObjs) const
+                             LinearObjContainer & ghostedObjs,
+                             bool zeroVectorRows) const
 {
    typedef Teuchos::ArrayRCP<const double>::Ordinal Ordinal;
 
@@ -233,6 +234,8 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
         t_f = rcp_dynamic_cast<ThyraVector>(th_f,true)->getTpetraVector();
 
       for(std::size_t j=0;j<blockDim;j++) {
+        RCP<const MapType> map_i = getGhostedMap(i);
+        RCP<const MapType> map_j = getGhostedMap(j);
 
          // pull out epetra values
          RCP<LinearOpBase<ScalarT> > th_A = (A== Teuchos::null)? Teuchos::null : A->getNonconstBlock(i,j);
@@ -247,7 +250,15 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
          }
 
          // adjust Block operator
-         adjustForDirichletConditions(*t_local_bcs,*t_global_bcs,t_f.ptr(),t_A.ptr());
+         if(t_A!=Teuchos::null) {
+           t_A->resumeFill();
+         }
+
+         adjustForDirichletConditions(*t_local_bcs,*t_global_bcs,t_f.ptr(),t_A.ptr(),zeroVectorRows);
+
+         if(t_A!=Teuchos::null) {
+           //t_A->fillComplete(map_j,map_i);
+         }
 
          t_f = Teuchos::null; // this is so we only adjust it once on the first pass
       }
@@ -259,7 +270,8 @@ void BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,N
 adjustForDirichletConditions(const VectorType & local_bcs,
                              const VectorType & global_bcs,
                              const Teuchos::Ptr<VectorType> & f,
-                             const Teuchos::Ptr<CrsMatrixType> & A) const
+                             const Teuchos::Ptr<CrsMatrixType> & A,
+                             bool zeroVectorRows) const
 {
    if(f==Teuchos::null && A==Teuchos::null)
       return;
@@ -268,8 +280,6 @@ adjustForDirichletConditions(const VectorType & local_bcs,
 
    Teuchos::ArrayRCP<const ScalarT> local_bcs_array = local_bcs.get1dView();
    Teuchos::ArrayRCP<const ScalarT> global_bcs_array = global_bcs.get1dView();
-
-   A->resumeFill();
 
    TEUCHOS_ASSERT(local_bcs.getLocalLength()==global_bcs.getLocalLength());
    for(std::size_t i=0;i<local_bcs.getLocalLength();i++) {
@@ -281,7 +291,7 @@ adjustForDirichletConditions(const VectorType & local_bcs,
       Teuchos::Array<LocalOrdinalT> indices(sz);
       Teuchos::Array<ScalarT> values(sz);
 
-      if(local_bcs_array[i]==0.0) { 
+      if(local_bcs_array[i]==0.0 || zeroVectorRows) { 
          // this boundary condition was NOT set by this processor
 
          // if they exist put 0.0 in each entry
@@ -314,8 +324,14 @@ adjustForDirichletConditions(const VectorType & local_bcs,
          }
       }
    }
+}
 
-   A->fillComplete(A->getDomainMap(),A->getRangeMap());
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+void BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+applyDirichletBCs(const LinearObjContainer & counter,
+                  LinearObjContainer & result) const
+{
+  TEUCHOS_ASSERT(false); // not yet implemented
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
@@ -379,11 +395,15 @@ initializeGhostedContainer(int mem,BTLOC & loc) const
    if((mem & LOC::DxDt) == LOC::DxDt)
       loc.set_dxdt(getGhostedThyraDomainVector());
     
-   if((mem & LOC::F) == LOC::F)
+   if((mem & LOC::F) == LOC::F) {
       loc.set_f(getGhostedThyraRangeVector());
+      loc.setRequiresDirichletAdjustment(true);
+   }
 
-   if((mem & LOC::Mat) == LOC::Mat)
+   if((mem & LOC::Mat) == LOC::Mat) {
       loc.set_A(getGhostedThyraMatrix());
+      loc.setRequiresDirichletAdjustment(true);
+   }
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
@@ -988,6 +1008,24 @@ BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>
 getBlockColCount() const
 {
    return gidProviders_.size();
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+void BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+beginFill(LinearObjContainer & loc) const
+{
+  BTLOC & tloc = Teuchos::dyn_cast<BTLOC>(loc);
+  if(tloc.get_A()!=Teuchos::null) 
+    tloc.beginFill();
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+void BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+endFill(LinearObjContainer & loc) const
+{
+  BTLOC & tloc = Teuchos::dyn_cast<BTLOC>(loc);
+  if(tloc.get_A()!=Teuchos::null) 
+    tloc.endFill();
 }
 
 }

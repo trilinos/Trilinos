@@ -183,7 +183,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
    int numProc = eComm->NumProc();
 
    RCP<panzer::UniqueGlobalIndexer<int,int> > indexer 
-         = rcp(new panzer::unit_test::UniqueGlobalIndexer<int>(myRank,numProc));
+         = rcp(new panzer::unit_test::UniqueGlobalIndexer<int,int>(myRank,numProc));
  
    // setup factory
    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > la_factory
@@ -276,6 +276,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
       scatterDirichletParams.set<RCP<panzer::PureBasis> >("Basis",basis);
       scatterDirichletParams.set<int>("Side Subcell Dimension",1);
       scatterDirichletParams.set<int>("Local Side ID",2);
+      scatterDirichletParams.set("Check Apply BC",false);
    }
 
    // Evaluator construction tests
@@ -459,7 +460,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, adjustDirichlet)
    typedef EpetraLinearObjContainer ELOC;
 
    RCP<panzer::UniqueGlobalIndexer<int,int> > indexer 
-         = rcp(new unit_test::UniqueGlobalIndexer<int>(myRank,numProc));
+         = rcp(new unit_test::UniqueGlobalIndexer<int,int>(myRank,numProc));
 
    // setup factory
    Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > la_factory
@@ -573,7 +574,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, initializeContianer)
    typedef EpetraLinearObjContainer ELOC;
 
    RCP<panzer::UniqueGlobalIndexer<int,int> > indexer 
-         = rcp(new unit_test::UniqueGlobalIndexer<int>(myRank,numProc));
+         = rcp(new unit_test::UniqueGlobalIndexer<int,int>(myRank,numProc));
 
    std::vector<int> ownedIndices, ownedAndSharedIndices;
    indexer->getOwnedIndices(ownedIndices);

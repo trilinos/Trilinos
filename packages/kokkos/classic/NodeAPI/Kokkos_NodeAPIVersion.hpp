@@ -44,7 +44,7 @@
 
 #include <string>
 
-namespace Kokkos {
+namespace KokkosClassic {
   std::string NodeAPIVersion();
 }
 

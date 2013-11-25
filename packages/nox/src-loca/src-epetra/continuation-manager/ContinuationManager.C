@@ -111,13 +111,13 @@ ContinuationManager(
                                                  isParameter("Solution Files Prefix") )
     solutionFilesPrefix = taskList->sublist("Continuation Manager").
                                      sublist("Continuation").
-				     get<string>("Solution Files Prefix");
+				     get<std::string>("Solution Files Prefix");
 
   if ( taskList->sublist("Continuation Manager").sublist("Continuation").
                                                  isParameter("Solution Files Extension") )
     solutionFilesExtension = taskList->sublist("Continuation Manager").
                                      sublist("Continuation").
-				     get<string>("Solution Files Extension");
+				     get<std::string>("Solution Files Extension");
 
 }
 
@@ -226,8 +226,8 @@ BuildLOCAStepper()
 //      interfaceConstraint = phaseConstraint;
 
     // Instantiate the constraint parameters names
-    Teuchos::RCP< std::vector<string> > constraintParamsNames = 
-      Teuchos::rcp(new std::vector<string>());
+    Teuchos::RCP< std::vector<std::string> > constraintParamsNames = 
+      Teuchos::rcp(new std::vector<std::string>());
 
     // The user-defined constrained parameters
     Teuchos::ParameterList & constraintParams = 
@@ -239,7 +239,7 @@ BuildLOCAStepper()
     Teuchos::ParameterList::ConstIterator i;
     for (i = constraintParams.begin(); i !=constraintParams.end(); ++i) 
       constraintParamsNames->push_back(
-	  constraintParams.get<string>(constraintParams.name(i)));
+	  constraintParams.get<std::string>(constraintParams.name(i)));
 
     // Instantiating the constraint list
     Teuchos::ParameterList & constraintsList =
@@ -332,7 +332,7 @@ BuildLOCAPeriodicStepper(const Teuchos::RCP<EpetraExt::MultiComm> globalComm)
   for (int i=0; i<globalComm->NumTimeStepsOnDomain(); i++) *(guessMV(i)) = *initialGuess;
 
 
-cout << "XXX  num time steps on domain = " <<  globalComm->NumTimeStepsOnDomain() << std::endl;
+std::cout << "XXX  num time steps on domain = " <<  globalComm->NumTimeStepsOnDomain() << std::endl;
 
   double dt = 1.0;
   Teuchos::RCP <LOCA::Epetra::Interface::xyzt> xyzt_interface = 
@@ -380,8 +380,8 @@ cout << "XXX  num time steps on domain = " <<  globalComm->NumTimeStepsOnDomain(
 //      interfaceConstraint = phaseConstraint;
 
     // Instantiate the constraint parameters names
-    Teuchos::RCP< std::vector<string> > constraintParamsNames = 
-      Teuchos::rcp(new std::vector<string>());
+    Teuchos::RCP< std::vector<std::string> > constraintParamsNames = 
+      Teuchos::rcp(new std::vector<std::string>());
 
     // The user-defined constrained parameters
     Teuchos::ParameterList & constraintParams = 
@@ -393,7 +393,7 @@ cout << "XXX  num time steps on domain = " <<  globalComm->NumTimeStepsOnDomain(
     Teuchos::ParameterList::ConstIterator i;
     for (i = constraintParams.begin(); i !=constraintParams.end(); ++i) 
       constraintParamsNames->push_back(
-	  constraintParams.get<string>(constraintParams.name(i)));
+	  constraintParams.get<std::string>(constraintParams.name(i)));
 
     // Instantiating the constraint list
     Teuchos::ParameterList & constraintsList =
@@ -513,7 +513,7 @@ PrintLOCAStepperStatistics()
   return true;
 }
 
-string ContinuationManager:: 
+std::string ContinuationManager:: 
 GetSolutionFileName() const
 {
   // Number of digits
@@ -530,7 +530,7 @@ GetSolutionFileName() const
   return fileName.str();
 }
 
-string ContinuationManager:: 
+std::string ContinuationManager:: 
 GetContinuationFileName() const
 {
   return outputDir + "/" + continuationFileName;
@@ -597,7 +597,7 @@ SetTaskList( Teuchos::RCP <Teuchos::ParameterList> aTaskList )
   return true;
 }
 
-string ContinuationManager::
+std::string ContinuationManager::
 StringifyInt( const int & intNumber , const int & digits) const 
 {
   // The number of Steps

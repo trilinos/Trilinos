@@ -181,7 +181,7 @@ namespace Galeri {
       dxs.resize(quadPoints.size());
       dys.resize(quadPoints.size());
       dzs.resize(quadPoints.size());
-      for(int i=0; i<quadPoints.size(); i++) {
+      for(unsigned int i=0; i<quadPoints.size(); i++) {
 	EvalBasis(quadPoints[i], vals[i], dxs[i], dys[i], dzs[i]);
       }
 
@@ -217,8 +217,8 @@ namespace Galeri {
 	  Scalar pml1 = qdwt*sy*sz/sx;
 	  Scalar pml2 = qdwt*sx*sz/sy;
 	  Scalar pml3 = qdwt*sx*sy/sz;
-	  for(int m=0; m<numDofPerElem; m++) {
-	    for(int n=0; n<numDofPerElem; n++) {
+	  for(unsigned int m=0; m<numDofPerElem; m++) {
+	    for(unsigned int n=0; n<numDofPerElem; n++) {
 	      KE[m][n] += pml1*curdxs[m]*curdxs[n] + pml2*curdys[m]*curdys[n] + pml3*curdzs[m]*curdzs[n] - mass*curvals[m]*curvals[n];
 	    }
 	  }
@@ -264,7 +264,7 @@ namespace Galeri {
       dxs.resize(quadPoints.size());
       dys.resize(quadPoints.size());
       dzs.resize(quadPoints.size());
-      for(int i=0; i<quadPoints.size(); i++) {
+      for(unsigned int i=0; i<quadPoints.size(); i++) {
 	EvalBasis(quadPoints[i], vals[i], dxs[i], dys[i], dzs[i]);
       }
 
@@ -301,8 +301,8 @@ namespace Galeri {
 	  Scalar pml1 = qdwt*sy*sz/sx;
 	  Scalar pml2 = qdwt*sx*sz/sy;
 	  Scalar pml3 = qdwt*sx*sy/sz;
-	  for(int m=0; m<numDofPerElem; m++) {
-	    for(int n=0; n<numDofPerElem; n++) {
+	  for(unsigned int m=0; m<numDofPerElem; m++) {
+	    for(unsigned int n=0; n<numDofPerElem; n++) {
 	      KE[m][n] += pml1*curdxs[m]*curdxs[n] + pml2*curdys[m]*curdys[n] + pml3*curdzs[m]*curdzs[n];
 	      ME[m][n] += mass*curvals[m]*curvals[n];
 	    }
@@ -465,7 +465,7 @@ namespace Galeri {
       sx.resize(quadPoints.size());
       sy.resize(quadPoints.size());
       sz.resize(quadPoints.size());
-      for(int i=0; i<quadPoints.size(); i++) {
+      for(unsigned int i=0; i<quadPoints.size(); i++) {
 	double quadx=quadPoints[i].x;
 	double quady=quadPoints[i].y;
 	double quadz=quadPoints[i].z;

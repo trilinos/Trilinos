@@ -73,7 +73,7 @@ TEUCHOS_UNIT_TEST( Rythmos_BackwardEulerStepper, momento_create ) {
 TEUCHOS_UNIT_TEST( Rythmos_BackwardEulerStepper, restart ) {
   RCP<const MomentoBase<double> > stepper_momento;
   // place to store solution at time = 1.0
-  RCP<const VectorBase<double> > x_norestart; 
+  RCP<const VectorBase<double> > x_norestart;
   RCP<const VectorBase<double> > xdot_norestart;
   // Create Backward Euler stepper
   // Step to t = 0.5, pull out the momento, then step the rest of the way to t = 1.0.
@@ -183,7 +183,7 @@ TEUCHOS_UNIT_TEST( Rythmos_BackwardEulerStepper, checkConsistentState ) {
       momento = Teuchos::rcp_dynamic_cast<BackwardEulerStepperMomento<double> >(beMomento->clone(),true);
     }
     {
-      // Check if isInitialized_ == true, but 
+      // Check if isInitialized_ == true, but
       // model_ = null or solver = null or haveInitialCondition_ = false or interpolator = null
       RCP<BackwardEulerStepperMomento<double> > m = Teuchos::rcp_dynamic_cast<BackwardEulerStepperMomento<double> >(momento->clone(),true);
       RCP<BackwardEulerStepper<double> > stepper = backwardEulerStepper<double>();
@@ -205,12 +205,12 @@ TEUCHOS_UNIT_TEST( Rythmos_BackwardEulerStepper, checkConsistentState ) {
       TEST_NOTHROW(stepper->setMomento(m.ptr(),model,neSolver));
     }
     {
-      // Check if haveInitialCondition_ == true, but 
-      // t_ == nan or 
-      // t_old_ == nan or 
-      // scaled_x_old == null or 
+      // Check if haveInitialCondition_ == true, but
+      // t_ == nan or
+      // t_old_ == nan or
+      // scaled_x_old == null or
       // x_dot_old == null or
-      // x == null or 
+      // x == null or
       // x_dot == null
       typedef Teuchos::ScalarTraits<double> ST;
       RCP<BackwardEulerStepperMomento<double> > m = Teuchos::rcp_dynamic_cast<BackwardEulerStepperMomento<double> >(momento->clone(),true);

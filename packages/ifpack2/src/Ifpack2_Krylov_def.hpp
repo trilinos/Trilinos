@@ -7,20 +7,33 @@
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ***********************************************************************
@@ -52,7 +65,7 @@ Krylov<MatrixType,PrecType>::Krylov(const Teuchos::RCP<const Tpetra::RowMatrix<s
   ZeroStartingSolution_(true),
   PreconditionerType_(1),
   // General
-  Condest_(-1.0),
+  Condest_ (- Teuchos::ScalarTraits<magnitude_type>::one()),
   IsInitialized_(false),
   IsComputed_(false),
   NumInitialize_(0),
@@ -92,44 +105,44 @@ void Krylov<MatrixType,PrecType>::setParameters(const Teuchos::ParameterList& pa
 
 //==========================================================================
 template <class MatrixType, class PrecType>
-const Teuchos::RCP<const Teuchos::Comm<int> > &
-Krylov<MatrixType,PrecType>::getComm() const{
-  return(Comm_);
+Teuchos::RCP<const Teuchos::Comm<int> >
+Krylov<MatrixType,PrecType>::getComm () const {
+  return Comm_;
 }
 
 //==========================================================================
 template <class MatrixType, class PrecType>
 Teuchos::RCP<const Tpetra::RowMatrix<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >
-Krylov<MatrixType,PrecType>::getMatrix() const {
-  return(A_);
+Krylov<MatrixType,PrecType>::getMatrix () const {
+  return A_;
 }
 
 //==========================================================================
 template <class MatrixType, class PrecType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >&
-Krylov<MatrixType,PrecType>::getDomainMap() const
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >
+Krylov<MatrixType,PrecType>::getDomainMap () const
 {
-  return A_->getDomainMap();
+  return A_->getDomainMap ();
 }
 
 //==========================================================================
 template <class MatrixType, class PrecType>
-const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >&
-Krylov<MatrixType,PrecType>::getRangeMap() const
+Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >
+Krylov<MatrixType,PrecType>::getRangeMap () const
 {
-  return A_->getRangeMap();
+  return A_->getRangeMap ();
 }
 
 //==============================================================================
 template <class MatrixType, class PrecType>
-bool Krylov<MatrixType,PrecType>::hasTransposeApply() const {
+bool Krylov<MatrixType,PrecType>::hasTransposeApply () const {
   return true;
 }
 
 //==========================================================================
 template <class MatrixType, class PrecType>
-int Krylov<MatrixType,PrecType>::getNumInitialize() const {
-  return(NumInitialize_);
+int Krylov<MatrixType,PrecType>::getNumInitialize () const {
+  return NumInitialize_;
 }
 
 //==========================================================================
@@ -170,14 +183,14 @@ computeCondEst (CondestType CT,
                 local_ordinal_type MaxIters,
                 magnitude_type Tol,
                 const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &matrix) {
-  if (!isComputed()) { // cannot compute right now
-    return(-1.0);
+  if (! isComputed ()) { // cannot compute right now
+    return -Teuchos::ScalarTraits<magnitude_type>::one ();
   }
   // NOTE: this is computing the *local* condest
-  if (Condest_ == -1.0) {
+  if (Condest_ == -Teuchos::ScalarTraits<magnitude_type>::one()) {
     Condest_ = Ifpack2::Condest(*this, CT, MaxIters, Tol, matrix);
   }
-  return(Condest_);
+  return Condest_;
 }
 
 //==========================================================================
@@ -197,16 +210,14 @@ void Krylov<MatrixType,PrecType>::initialize() {
   if(PreconditionerType_==0) {
     // no preconditioner
   }
-  else if(PreconditionerType_==1) { 
+  else if(PreconditionerType_==1) {
     ifpack2_prec_=Teuchos::rcp( new Relaxation<MatrixType>(A_) );
   }
   else if(PreconditionerType_==2) {
     ifpack2_prec_=Teuchos::rcp( new ILUT<MatrixType>(A_) );
   }
   else if(PreconditionerType_==3) {
-    int overlaplevel=0;
-    Ifpack2::getParameter(params_, "schwarz: overlap level",overlaplevel);
-    ifpack2_prec_=Teuchos::rcp( new AdditiveSchwarz< MatrixType,ILUT<MatrixType> >(A_,overlaplevel) );
+    ifpack2_prec_ = Teuchos::rcp (new AdditiveSchwarz<MatrixType, ILUT<MatrixType> > (A_));
   }
   else if(PreconditionerType_==4) {
     ifpack2_prec_=Teuchos::rcp( new Chebyshev<MatrixType>(A_) );
@@ -215,22 +226,15 @@ void Krylov<MatrixType,PrecType>::initialize() {
     ifpack2_prec_->initialize();
     ifpack2_prec_->setParameters(params_);
   }
-  belosProblem_ = 
-    Teuchos::rcp( new Belos::LinearProblem<belos_scalar_type,
-		  Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
-		  Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > );
+  belosProblem_ = Teuchos::rcp( new Belos::LinearProblem<scalar_type,TMV,TOP> );
   belosProblem_ -> setOperator(A_);
   if(IterationType_==1) {
-    belosSolver_ = 
-      Teuchos::rcp( new Belos::BlockGmresSolMgr<belos_scalar_type,
-		    Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
-		    Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > (belosProblem_, belosList_) );
+    belosSolver_ =
+      Teuchos::rcp( new Belos::BlockGmresSolMgr<scalar_type,TMV,TOP> (belosProblem_, belosList_) );
   }
   else {
-    belosSolver_ = 
-      Teuchos::rcp( new Belos::BlockCGSolMgr<belos_scalar_type,
-		    Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>,
-		    Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > (belosProblem_, belosList_) );
+    belosSolver_ =
+      Teuchos::rcp( new Belos::BlockCGSolMgr<scalar_type,TMV,TOP> (belosProblem_, belosList_) );
   }
   IsInitialized_ = true;
   ++NumInitialize_;
@@ -263,16 +267,16 @@ void Krylov<MatrixType,PrecType>::compute() {
 //==========================================================================
 template <class MatrixType, class PrecType>
 void Krylov<MatrixType,PrecType>::apply(const Tpetra::MultiVector<typename MatrixType::scalar_type,
-			      typename MatrixType::local_ordinal_type,
-			      typename MatrixType::global_ordinal_type,
-			      typename MatrixType::node_type>& X,
-			      Tpetra::MultiVector<typename MatrixType::scalar_type,
-			      typename MatrixType::local_ordinal_type,
-			      typename MatrixType::global_ordinal_type,
-			      typename MatrixType::node_type>& Y,
-			      Teuchos::ETransp mode,
-			      typename MatrixType::scalar_type alpha,
-			      typename MatrixType::scalar_type beta) const
+                              typename MatrixType::local_ordinal_type,
+                              typename MatrixType::global_ordinal_type,
+                              typename MatrixType::node_type>& X,
+                              Tpetra::MultiVector<typename MatrixType::scalar_type,
+                              typename MatrixType::local_ordinal_type,
+                              typename MatrixType::global_ordinal_type,
+                              typename MatrixType::node_type>& Y,
+                              Teuchos::ETransp mode,
+                              typename MatrixType::scalar_type alpha,
+                              typename MatrixType::scalar_type beta) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(!isComputed(), std::runtime_error,
     "Ifpack2::Krylov::apply() ERROR, compute() hasn't been called yet.");
@@ -292,7 +296,7 @@ void Krylov<MatrixType,PrecType>::apply(const Tpetra::MultiVector<typename Matri
     Xcopy = Teuchos::rcp( &X, false );
   }
 
-  const Teuchos::RCP< Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Zeros = 
+  const Teuchos::RCP< Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Zeros =
     Teuchos::rcp( new Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> (Y) );
   if(ZeroStartingSolution_==true) {
     Zeros->putScalar((scalar_type) 0.0);

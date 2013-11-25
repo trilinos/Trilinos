@@ -88,7 +88,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
   Teuchos::EVerbosityLevel solnVerbLevel = Teuchos::VERB_DEFAULT;
 
   // Allow for Matrix-Free implementation
-  string jacobianSource = piroParams->get("Jacobian Operator", "Have Jacobian");
+  std::string jacobianSource = piroParams->get("Jacobian Operator", "Have Jacobian");
   if (jacobianSource == "Matrix-Free") {
     if (piroParams->isParameter("Matrix-Free Perturbation")) {
       model = Teuchos::rcp(new Piro::Epetra::MatrixFreeDecorator(
@@ -115,12 +115,15 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
     rythmosPL->validateParameters(*getValidRythmosParameters(),0);
 
     {
-      const string verbosity = rythmosPL->get("Verbosity Level", "VERB_DEFAULT");
+      const std::string verbosity = rythmosPL->get("Verbosity Level", "VERB_DEFAULT");
       if      (verbosity == "VERB_NONE")    solnVerbLevel = Teuchos::VERB_NONE;
+      else if (verbosity == "VERB_DEFAULT") solnVerbLevel = Teuchos::VERB_DEFAULT;
       else if (verbosity == "VERB_LOW")     solnVerbLevel = Teuchos::VERB_LOW;
       else if (verbosity == "VERB_MEDIUM")  solnVerbLevel = Teuchos::VERB_MEDIUM;
       else if (verbosity == "VERB_HIGH")    solnVerbLevel = Teuchos::VERB_HIGH;
       else if (verbosity == "VERB_EXTREME") solnVerbLevel = Teuchos::VERB_EXTREME;
+      else TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+         "Unknown verbosity option specified in Piro_Epetra_RythmosSolver.");
     }
 
     const int numTimeSteps = rythmosPL->get("Num Time Steps", 10);
@@ -131,7 +134,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
     const double delta_t = (finalTime - initialTime) / (double) numTimeSteps;
     *out << "\ndelta_t = " << delta_t;
 
-    const string stepperType = rythmosPL->get("Stepper Type", "Backward Euler");
+    const std::string stepperType = rythmosPL->get("Stepper Type", "Backward Euler");
 
     //
     *out << "\nB) Create the Stratimikos linear solver factory ...\n";
@@ -214,18 +217,21 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
     rythmosSolverPL->validateParameters(*getValidRythmosSolverParameters(),0);
 
     {
-      const string verbosity = rythmosSolverPL->get("Verbosity Level", "VERB_DEFAULT");
+      const std::string verbosity = rythmosSolverPL->get("Verbosity Level", "VERB_DEFAULT");
       if      (verbosity == "VERB_NONE")    solnVerbLevel = Teuchos::VERB_NONE;
+      else if (verbosity == "VERB_DEFAULT") solnVerbLevel = Teuchos::VERB_DEFAULT;
       else if (verbosity == "VERB_LOW")     solnVerbLevel = Teuchos::VERB_LOW;
       else if (verbosity == "VERB_MEDIUM")  solnVerbLevel = Teuchos::VERB_MEDIUM;
       else if (verbosity == "VERB_HIGH")    solnVerbLevel = Teuchos::VERB_HIGH;
       else if (verbosity == "VERB_EXTREME") solnVerbLevel = Teuchos::VERB_EXTREME;
+      else TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+         "Unknown verbosity option specified in Piro_Epetra_RythmosSolver.");
     }
 
     initialTime = rythmosPL->sublist("Integrator Settings").get("Initial Time", 0.0);
     finalTime = rythmosPL->sublist("Integrator Settings").get("Final Time", 0.1);
 
-    const string stepperType = rythmosPL->sublist("Stepper Settings")
+    const std::string stepperType = rythmosPL->sublist("Stepper Settings")
       .sublist("Stepper Selection").get("Stepper Type", "Backward Euler");
 
     //

@@ -552,7 +552,7 @@
                                      values starting at AZ_FIRST_USER_PARAM  */
 /* End Aztec 2.1 mheroux mod */
 #define AZ_PROC_SIZE           (7+SIZEOF_MPI_AZCOMM)
-#define AZ_STATUS_SIZE         11
+#define AZ_STATUS_SIZE         15
 #define AZ_COMM_SIZE          AZ_send_list
 #define AZ_CONV_INFO_SIZE      8
 #define AZ_COMMLESS_DATA_ORG_SIZE  AZ_neighbors
@@ -580,6 +580,10 @@
 #define AZ_condnum             8
 #define AZ_lambda_min          9
 #define AZ_lambda_max          10
+#define AZ_lambda_real_min     11
+#define AZ_lambda_real_max     12
+#define AZ_lambda_imag_min     13
+#define AZ_lambda_imag_max     14
 
 /*******************************************************************************
  *

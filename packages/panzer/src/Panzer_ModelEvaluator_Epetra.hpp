@@ -211,6 +211,21 @@ namespace panzer {
 
     //@}
 
+    /** This function is intended for experts only, it allows for a beta to be set for the
+      * dirichlet conditions only. This allows the dirichlet condition to be propagated to
+      * the mass matrix. The reason it is one time only is that it breaks encapsulation,
+      * and should be only used if absolutely neccessary.
+      *
+      * \param[in] beta Value of beta to use.
+      */
+    void setOneTimeDirichletBeta(const double & beta) const;
+
+    /** Apply the dirichlet boundary conditions to the vector "f" using the 
+      * "x" values as the current solution.
+      */
+    void applyDirichletBCs(const Teuchos::RCP<Thyra::VectorBase<double> > & x,
+                           const Teuchos::RCP<Thyra::VectorBase<double> > & f) const;
+
   private:
 
     // /////////////////////////////////////
@@ -246,11 +261,21 @@ namespace panzer {
       */
     void evalModel_basic_dgdx(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const OutArgs & outArgs) const;
 
+    /** handles evaluation of residual derivatives dfdp
+      *
+      * \note This method should (basically) be a no-op if <code>required_basic_dfdp(outArgs)==false</code>.
+      *       However, for efficiency this is not checked.
+      */
+    void evalModel_basic_dfdp(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const OutArgs & outArgs) const;
+
     //! Are their required responses in the out args? g and DgDx
     bool required_basic_g(const OutArgs & outArgs) const;
 
     //! Are their required responses in the out args? DgDx 
     bool required_basic_dgdx(const OutArgs & outArgs) const;
+
+    //! Are derivatives of the residual with respect to the parameters in the out args? DfDp 
+    bool required_basic_dfdp(const OutArgs & outArgs) const;
 
     #ifdef HAVE_STOKHOS
        //! Are their required SG responses in the out args? sg
@@ -333,6 +358,9 @@ namespace panzer {
     #endif
 
     Teuchos::RCP<Teuchos::AbstractFactory<Epetra_Operator> > epetraOperatorFactory_;
+
+    mutable bool oneTimeDirichletBeta_on_;
+    mutable double oneTimeDirichletBeta_;
   };
 
   // Inline definition of the add response (its template on the builder type)

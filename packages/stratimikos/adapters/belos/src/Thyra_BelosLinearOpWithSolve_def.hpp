@@ -1,3 +1,46 @@
+/*
+// @HEADER
+// ***********************************************************************
+// 
+//         Stratimikos: Thyra-based strategies for linear solvers
+//                Copyright (2006) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
+// 
+// ***********************************************************************
+// @HEADER
+*/
+
 
 #ifndef THYRA_BELOS_LINEAR_OP_WITH_SOLVE_HPP
 #define THYRA_BELOS_LINEAR_OP_WITH_SOLVE_HPP
@@ -118,9 +161,9 @@ void BelosLinearOpWithSolve<Scalar>::initialize(
   const RCP<Belos::SolverManager<Scalar,MV_t,LO_t> > &iterativeSolver,
   const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
   const RCP<const PreconditionerBase<Scalar> > &prec,
-  const bool isExternalPrec,
+  const bool isExternalPrec_in,
   const RCP<const LinearOpSourceBase<Scalar> > &approxFwdOpSrc,
-  const ESupportSolveUse &supportSolveUse,
+  const ESupportSolveUse &supportSolveUse_in,
   const int convergenceTestFrequency
   )
 {
@@ -131,9 +174,9 @@ void BelosLinearOpWithSolve<Scalar>::initialize(
   iterativeSolver_ = iterativeSolver;
   fwdOpSrc_ = fwdOpSrc;
   prec_ = prec;
-  isExternalPrec_ = isExternalPrec;
+  isExternalPrec_ = isExternalPrec_in;
   approxFwdOpSrc_ = approxFwdOpSrc;
-  supportSolveUse_ = supportSolveUse;
+  supportSolveUse_ = supportSolveUse_in;
   convergenceTestFrequency_ = convergenceTestFrequency;
   // Check if "Convergence Tolerance" is in the solver parameter list.  If
   // not, use the default from the solver.
@@ -204,9 +247,9 @@ void BelosLinearOpWithSolve<Scalar>::uninitialize(
   RCP<Belos::SolverManager<Scalar,MV_t,LO_t> > *iterativeSolver,
   RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc,
   RCP<const PreconditionerBase<Scalar> > *prec,
-  bool *isExternalPrec,
+  bool *isExternalPrec_in,
   RCP<const LinearOpSourceBase<Scalar> > *approxFwdOpSrc,
-  ESupportSolveUse *supportSolveUse
+  ESupportSolveUse *supportSolveUse_in
   )
 {
   if (lp) *lp = lp_;
@@ -214,9 +257,9 @@ void BelosLinearOpWithSolve<Scalar>::uninitialize(
   if (iterativeSolver) *iterativeSolver = iterativeSolver_;
   if (fwdOpSrc) *fwdOpSrc = fwdOpSrc_;
   if (prec) *prec = prec_;
-  if (isExternalPrec) *isExternalPrec = isExternalPrec_;
+  if (isExternalPrec_in) *isExternalPrec_in = isExternalPrec_;
   if (approxFwdOpSrc) *approxFwdOpSrc = approxFwdOpSrc_;
-  if (supportSolveUse) *supportSolveUse = supportSolveUse_;
+  if (supportSolveUse_in) *supportSolveUse_in = supportSolveUse_;
 
   lp_ = Teuchos::null;
   solverPL_ = Teuchos::null;
@@ -309,7 +352,7 @@ void BelosLinearOpWithSolve<Scalar>::describe(
         << "rangeDim=" << this->range()->dim()
         << ",domainDim=" << this->domain()->dim() << "}\n";
       if (lp_->getOperator().get()) {
-        OSTab tab(out);
+        OSTab tab1(out);
         *out
           << "iterativeSolver = "<<describe(*iterativeSolver_,verbLevel)
           << "fwdOp = " << describe(*lp_->getOperator(),verbLevel);
@@ -519,7 +562,7 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
         ? out
         : rcp(new FancyOStream(rcp(new Teuchos::oblackholestream())))
         );
-    Teuchos::OSTab tab(outUsed,1,"BELOS");
+    Teuchos::OSTab tab1(outUsed,1,"BELOS");
     tmpPL->set("Output Stream", outUsed);
     iterativeSolver_->setParameters(tmpPL);
     if (nonnull(generalSolveCriteriaBelosStatusTest)) {
@@ -620,7 +663,7 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
 //  is not set to Teuchos::VERB_NONE, so I'm commenting this out for now.
 //  if (out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
 //    *out << "\nTotal solve time in Belos = "<<totalTimer.totalElapsedTime()<<" sec\n";
-
+  
   return solveStatus;
 
 }

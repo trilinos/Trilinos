@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -125,7 +125,7 @@
   {
     if (A==Teuchos::null)
       {
-        cout << "ERROR: SplitMatrix2x2: A==null on entry" << endl;
+        std::cout << "ERROR: SplitMatrix2x2: A==null on entry" << std::endl;
         return false;
       }
 
@@ -155,7 +155,7 @@
         }
       if (count != A22map.NumGlobalElements())
         {
-          cout << "ERROR SplitMatrix2x2: mismatch in dimensions" << endl;
+          std::cout << "ERROR SplitMatrix2x2: mismatch in dimensions" << std::endl;
           return false;
         }
 
@@ -181,7 +181,7 @@
           int err = A->ExtractMyRowView(i,numentries,values,cindices);
           if (err)
             {
-              cout << "ERROR: SplitMatrix2x2: A->ExtractMyRowView returned " << err << endl;
+              std::cout << "ERROR: SplitMatrix2x2: A->ExtractMyRowView returned " << err << std::endl;
               return false;
             }
 
@@ -197,17 +197,17 @@
               // see whether we have gcid in a22gmap
               std::map<int,int>::iterator curr = a22gmap.find(gcid);
               if (curr==a22gmap.end()) continue;
-              //cout << gcid << " ";
+              //std::cout << gcid << " ";
               a22gcindices[count] = gcid;
               a22values[count]    = values[j];
               ++count;
             }
-          //cout << endl; fflush(stdout);
+          //std::cout << std::endl; fflush(stdout);
           // add this filtered row to A22
           err = A22->InsertGlobalValues(grid,count,&a22values[0],&a22gcindices[0]);
           if (err<0)
             {
-              cout << "ERROR: SplitMatrix2x2: A->InsertGlobalValues returned " << err << endl;
+              std::cout << "ERROR: SplitMatrix2x2: A->InsertGlobalValues returned " << err << std::endl;
               return false;
             }
 
@@ -233,7 +233,7 @@
           int err = A->ExtractMyRowView(i,numentries,values,cindices);
           if (err)
             {
-              cout << "ERROR: SplitMatrix2x2: A->ExtractMyRowView returned " << err << endl;
+              std::cout << "ERROR: SplitMatrix2x2: A->ExtractMyRowView returned " << err << std::endl;
               return false;
             }
 
@@ -256,7 +256,7 @@
           err = A11->InsertGlobalValues(grid,count,&a11values[0],&a11gcindices[0]);
           if (err<0)
             {
-              cout << "ERROR: SplitMatrix2x2: A->InsertGlobalValues returned " << err << endl;
+              std::cout << "ERROR: SplitMatrix2x2: A->InsertGlobalValues returned " << err << std::endl;
               return false;
             }
 
@@ -282,7 +282,7 @@
           int err = A->ExtractMyRowView(i,numentries,values,cindices);
           if (err)
             {
-              cout << "ERROR: SplitMatrix2x2: A->ExtractMyRowView returned " << err << endl;
+              std::cout << "ERROR: SplitMatrix2x2: A->ExtractMyRowView returned " << err << std::endl;
               return false;
             }
 
@@ -305,7 +305,7 @@
           err = A12->InsertGlobalValues(grid,count,&a12values[0],&a12gcindices[0]);
           if (err<0)
             {
-              cout << "ERROR: SplitMatrix2x2: A->InsertGlobalValues returned " << err << endl;
+              std::cout << "ERROR: SplitMatrix2x2: A->InsertGlobalValues returned " << err << std::endl;
               return false;
             }
 
@@ -331,7 +331,7 @@
           int err = A->ExtractMyRowView(i,numentries,values,cindices);
           if (err)
             {
-              cout << "ERROR: SplitMatrix2x2: A->ExtractMyRowView returned " << err << endl;
+              std::cout << "ERROR: SplitMatrix2x2: A->ExtractMyRowView returned " << err << std::endl;
               return false;
             }
 
@@ -354,7 +354,7 @@
           err = A21->InsertGlobalValues(grid,count,&a21values[0],&a21gcindices[0]);
           if (err<0)
             {
-              cout << "ERROR: SplitMatrix2x2: A->InsertGlobalValues returned " << err << endl;
+              std::cout << "ERROR: SplitMatrix2x2: A->InsertGlobalValues returned " << err << std::endl;
               return false;
             }
 
@@ -521,7 +521,8 @@ int main(int argc, char *argv[]) {
   ifpack11List.set("relaxation: damping factor", (SC) 0.5);
   ifpack11Type = "RELAXATION";
   ifpack11List.set("relaxation: type", "Gauss-Seidel");
-  RCP<SmootherPrototype> smoProto11     = rcp( new TrilinosSmoother(ifpack11Type, ifpack11List, 0, A11Fact) );
+  RCP<SmootherPrototype> smoProto11     = rcp( new TrilinosSmoother(ifpack11Type, ifpack11List, 0) );
+  smoProto11->SetFactory("A", A11Fact);
   RCP<SmootherFactory> Smoo11Fact = rcp( new SmootherFactory(smoProto11) );
   Smoo11Fact->SetFactory("A",A11Fact);
 
@@ -638,7 +639,8 @@ int main(int argc, char *argv[]) {
   ifpack22List.set("relaxation: damping factor", (SC) 0.3);
   ifpack22Type = "RELAXATION";
   ifpack22List.set("relaxation: type", "Gauss-Seidel");
-  RCP<SmootherPrototype> smoProto22     = rcp( new TrilinosSmoother(ifpack22Type, ifpack22List, 0, A22Fact) );
+  RCP<SmootherPrototype> smoProto22     = rcp( new TrilinosSmoother(ifpack22Type, ifpack22List, 0) );
+  smoProto22->SetFactory("A", A22Fact);
   RCP<SmootherFactory> Smoo22Fact = rcp( new SmootherFactory(smoProto22) );
 
   ////////////////////////////////////////// prepare null space for A22
@@ -767,7 +769,7 @@ int main(int argc, char *argv[]) {
     RCP<Vector> xRhs = Teuchos::rcp(new Xpetra::EpetraVector(epv));
 
     // calculate initial (absolute) residual
-    Teuchos::Array<ST::magnitudeType> norms(1);
+    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
     xRhs->norm2(norms);
     *out << "||x_0|| = " << norms[0] << std::endl;
 

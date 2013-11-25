@@ -48,6 +48,7 @@
 #include <Ioss_BoundingBox.h>
 
 #include <vector>
+#include <set>
 
 namespace Ioss {
   class GroupingEntity;
@@ -76,11 +77,16 @@ namespace Ioss {
   {
     public:
 
-      // Check to see if database state is ok...
-      // If 'write_message' true, then output a warning message indicating the problem.
-      // If 'error_message' non-null, then put the warning message into the string and return it.
-      virtual bool ok(bool write_message = false, std::string *error_message=NULL) const
-    {return dbState != Ioss::STATE_INVALID;}
+    // Check to see if database state is ok...
+    // If 'write_message' true, then output a warning message indicating the problem.
+    // If 'error_message' non-null, then put the warning message into the string and return it.
+    // If 'bad_count' non-null, it counts the number of processors where the file does not exist.
+      //    if ok returns false, but *bad_count==0, then the routine does not support this argument.
+    virtual bool ok(bool write_message = false, std::string *error_message=NULL, int *bad_count=NULL) const
+    {
+      if (bad_count) *bad_count = 0;
+      return dbState != Ioss::STATE_INVALID;
+    }
 
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
@@ -156,6 +162,12 @@ namespace Ioss {
     bool get_logging() const {return doLogging && !singleProcOnly;}
     void set_logging(bool on_off) {doLogging = on_off;}
 
+    bool is_parallel_consistent() const {return isParallelConsistent;}
+    void set_parallel_consistency(bool on_off) {isParallelConsistent = on_off;}
+
+    bool get_use_generic_canonical_name() const {return useGenericCanonicalName;}
+    void set_use_generic_canonical_name(bool yes_no) {useGenericCanonicalName = yes_no;}
+
     virtual int maximum_symbol_length() const {return 0;} // Default is unlimited...
     char get_field_separator() const;
     void set_field_separator(const char separator);
@@ -225,7 +237,12 @@ namespace Ioss {
     void set_cycle_count(int count) const {cycleCount = count;}
     void set_overlay_count(int count) const {overlayCount = count;}
 
+    void set_time_scale_factor(double factor) {timeScaleFactor = factor;}
+    
     const Ioss::ParallelUtils &util() const {return util_;}
+    
+    int parallel_rank() const {return myProcessor;} /* Return processor that this mesh db is on */
+
     protected:
 
     DatabaseIO(Region *region, const std::string& filename,
@@ -312,6 +329,16 @@ namespace Ioss {
 
     mutable int overlayCount;
 
+    /*! Scale the time read/written from/to the file by the specified
+      scaleFactor.  If the datbase times are 0.1, 0.2, 0.3 and the
+      scaleFactor is 20, then the application will think that the
+      times read are 20, 40, 60.
+      
+      If specified for an output database, then the analysis time
+      is divided by the scaleFactor time prior to output.
+    */
+    double timeScaleFactor;
+
     Ioss::SurfaceSplitType splitType;
     Ioss::DatabaseUsage dbUsage;
     mutable Ioss::DataSize dbIntSizeAPI;
@@ -385,13 +412,20 @@ namespace Ioss {
     DatabaseIO(const DatabaseIO&); // Do not implement
     DatabaseIO& operator=(const DatabaseIO&); // Do not implement
 
+    
     mutable std::map<std::string, AxisAlignedBoundingBox> elementBlockBoundingBoxes;
 
     Ioss::ParallelUtils util_; // Encapsulate parallel and other utility functions.
     Region *region_;
     bool isInput;
+    bool isParallelConsistent; // True if application will make field data get/put calls parallel consistently.
+                               // True is default and required for parallel-io databases.
+                               // Even if false, metadata operations must be called by all processors
+    
     bool singleProcOnly; // True if history or heartbeat which is only written from proc 0...
     bool doLogging; // True if logging field input/output
+    bool useGenericCanonicalName; // True if "block_id" is used as canonical name instead of the name
+                                  // given on the mesh file e.g. "fireset".  Both names are still aliases.
   };
 }
 #endif

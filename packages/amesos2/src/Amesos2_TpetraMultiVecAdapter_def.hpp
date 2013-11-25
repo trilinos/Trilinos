@@ -67,9 +67,7 @@ namespace Amesos2 {
 		GlobalOrdinal,
 		Node> >::MultiVecAdapter( const Teuchos::RCP<multivec_t>& m )
   : mv_(m)
-  {
-    mv_map_ = this->getMap();
-  }
+  {}
 
   
   template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node >
@@ -103,11 +101,12 @@ namespace Amesos2 {
 
     multivec_t redist_mv(rcpFromPtr(distribution_map), num_vecs);
 
-    const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> importer(mv_map_, rcpFromPtr(distribution_map));
-    redist_mv.doImport(*mv_, importer, Tpetra::REPLACE);
+    typedef Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> import_type;
+    import_type importer (this->getMap (), rcpFromPtr (distribution_map));
+    redist_mv.doImport (*mv_, importer, Tpetra::REPLACE);
 
     // do copy
-    redist_mv.get1dCopy(av, lda);
+    redist_mv.get1dCopy (av, lda);
   }
 
   template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node >
@@ -184,11 +183,13 @@ namespace Amesos2 {
   {
     using Teuchos::rcpFromPtr;
 
-    const size_t num_vecs  = getGlobalNumVectors();
-    const multivec_t source_mv(rcpFromPtr(source_map), new_data, lda, num_vecs);
-    const Tpetra::Import<local_ordinal_t, global_ordinal_t, node_t> importer(rcpFromPtr(source_map), mv_map_);
+    const size_t num_vecs = getGlobalNumVectors ();
+    const multivec_t source_mv (rcpFromPtr (source_map), new_data, lda, num_vecs);
 
-    mv_->doImport(source_mv, importer, Tpetra::REPLACE);
+    typedef Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> import_type;
+    import_type importer (rcpFromPtr (source_map), this->getMap ());
+
+    mv_->doImport (source_mv, importer, Tpetra::REPLACE);
   }
 
 

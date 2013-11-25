@@ -18,7 +18,6 @@
 #include <Shards_CellTopologyData.h>
 
 //using namespace Intrepid;
-using namespace shards;
 
 
 namespace stk
@@ -32,7 +31,7 @@ namespace stk
       //typedef std::set<std::pair<char > invalid_edge_set_type;
       bool m_dump;
       double m_badJacobian;  // default and settable value for bad jacobian
-      double getEquiVol(CellTopology& cell_topo);
+      double getEquiVol(shards::CellTopology& cell_topo);
 
     public:
       GeometryVerifier(bool dump=false, double badJac=1.e-10);

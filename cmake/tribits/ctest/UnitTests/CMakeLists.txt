@@ -124,18 +124,6 @@ FUNCTION(CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE TEST_NAME)
       PASS_REGULAR_EXPRESSION_ALL ${PARSE_PASS_REGULAR_EXPRESSION_ALL}
     )
 
-  IF (NOT PARSE_SKIP_STANDARD_DEPS_CHECK)
-    SET(TEST_BLOCKS ${TEST_BLOCKS}
-      "Dumping the XML dependencies file .*/${TEST_FULL_NAME}/TrilinosPackageDependencies.xml"
-      "CDASH_SUBPROJECT_XML_FILE='.*/${TEST_FULL_NAME}/CDashSubprojectDependencies.xml'"
-      )
-    IF (PYTHON_EXECUTABLE)
-      SET(TEST_BLOCKS ${TEST_BLOCKS}
-        "Dumping the CDash XML dependencies file .*/${TEST_FULL_NAME}/CDashSubprojectDependencies.xml"
-        )
-    ENDIF()
-  ENDIF()
-
   MATH(EXPR TEST_IDX "${TEST_IDX}+1")
 
   IF (PARSE_COMPARE_DEPS_FILE)
@@ -150,6 +138,7 @@ FUNCTION(CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE TEST_NAME)
   TRIBITS_ADD_ADVANCED_TEST( ${TEST_CORE_NAME}
     OVERALL_WORKING_DIRECTORY TEST_NAME
     ${TEST_BLOCKS}
+    OVERALL_NUM_MPI_PROCS 1
     )
 
 ENDFUNCTION()
@@ -187,6 +176,33 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   )
 # NOTE: The above test pins down the form of the configure options passed to
 # different package configures to make sure everything in there.
+
+
+CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableRTOp_DisableTeuchos
+  ARGS Trilinos_PACKAGES=RTOp Trilinos_EXCLUDE_PACKAGES=Teuchos
+  PASS_REGULAR_EXPRESSION_ALL
+    "Explicitly enabled packages on input .by user.:  RTOp 1"
+    "WARNING: Setting Trilinos_ENABLE_RTOp=OFF which was 'ON' because RTOp has a required library dependence on disabled package Teuchos but Trilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON!"
+    "Final set of enabled packages:  0"
+    "Trilinos_NUM_ENABLED_PACKAGES=0:  Exiting the script!"
+  )
+# NOTE: The above test ensures that disabled packages turn off explicitly
+#  enabled downstream packages.
+
+
+CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableTeuchos_DisableTPLBLAS
+  ARGS Trilinos_PACKAGES=Teuchos Trilinos_EXCLUDE_TPLS=BLAS
+  PASS_REGULAR_EXPRESSION_ALL
+    "Explicitly enabled packages on input .by user.:  Teuchos 1"
+    "Explicitly disabled TPLs on input .by user or by default.:  BLAS 1"
+    "WARNING: Setting Trilinos_ENABLE_Teuchos=OFF which was 'ON' because Teuchos has a required library dependence on disabled TPL BLAS but Trilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON!"
+    "Final set of enabled packages:  0"
+    "Trilinos_NUM_ENABLED_PACKAGES=0:  Exiting the script!"
+  )
+# NOTE: The above test ensures that disabled TPLS turn off explicitly
+#  enabled downstream packages.
 
 
 CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
@@ -612,6 +628,10 @@ IF (PYTHON_EXECUTABLE)
       "Final set of non-enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Stokhos Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Panzer Teko Stalix 26"
       "MODIFIED_PACKAGES_LIST='':  No modified packages to justify continuous integration test iteration"
     )
+
+
+  # ToDo: Test modified package not to be implicitly enabled to not be enabled!
+
 
 ENDIF(PYTHON_EXECUTABLE)
 

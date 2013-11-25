@@ -3399,10 +3399,16 @@ int ML_Smoother_Create_BGS_Data(ML_Sm_BGS_Data **data)
    ML_memory_alloc((void**) data, sizeof(ML_Sm_BGS_Data), "BGS" );
    ml_data = (*data);
    ml_data->blockfacts = NULL;
+   ml_data->trid_dl = NULL;
+   ml_data->trid_d  = NULL;
+   ml_data->trid_du = NULL;
+   ml_data->trid_du2= NULL;
+   ml_data->trid_ipiv = NULL;
    ml_data->perms = NULL;
    ml_data->blocksize = -1;
    ml_data->blocklengths = NULL;
    ml_data->blockmap = NULL;
+   ml_data->blockOffset = NULL;
    ml_data->optimized = 0;
    return 0;
 }
@@ -3427,8 +3433,23 @@ void ML_Smoother_Destroy_BGS_Data(void *data)
           (ml_data->blockfacts[i] != NULL )) ML_free(ml_data->blockfacts[i]);
      if ( (ml_data->perms         != NULL ) && 
 	  (ml_data->perms[i]      != NULL )) ML_free(ml_data->perms[i]);
+     if ( (ml_data->trid_dl != NULL ) &&
+          (ml_data->trid_dl[i] != NULL )) ML_free(ml_data->trid_dl[i]);
+     if ( (ml_data->trid_d  != NULL ) &&
+          (ml_data->trid_d [i] != NULL )) ML_free(ml_data->trid_d [i]);
+     if ( (ml_data->trid_du != NULL ) &&
+          (ml_data->trid_du[i] != NULL )) ML_free(ml_data->trid_du[i]);
+     if ( (ml_data->trid_du2 != NULL ) &&
+          (ml_data->trid_du2[i] != NULL )) ML_free(ml_data->trid_du2[i]);
+     if ( (ml_data->trid_ipiv != NULL ) &&
+          (ml_data->trid_ipiv[i] != NULL )) ML_free(ml_data->trid_ipiv[i]);
    }
    if (ml_data->blockfacts != NULL ) ML_free( ml_data->blockfacts );
+   if (ml_data->trid_dl != NULL ) ML_free( ml_data->trid_dl);
+   if (ml_data->trid_d  != NULL ) ML_free( ml_data->trid_d );
+   if (ml_data->trid_du != NULL ) ML_free( ml_data->trid_du);
+   if (ml_data->trid_du2 != NULL) ML_free( ml_data->trid_du2);
+   if (ml_data->trid_ipiv != NULL) ML_free( ml_data->trid_ipiv);
    if (ml_data->perms      != NULL ) ML_free( ml_data->perms );
 
    if ( ml_data->blocklengths != NULL ) {
@@ -3437,6 +3458,7 @@ void ML_Smoother_Destroy_BGS_Data(void *data)
    if (ml_data->blockmap != NULL) {
      ML_free(ml_data->blockmap);
    }
+   if (ml_data->blockOffset != NULL) ML_free(ml_data->blockOffset);
 
    ML_memory_free((void**) &ml_data);
 }
@@ -3449,6 +3471,8 @@ void ML_Smoother_Clean_BGS_Data(void *data)
 {
    int            Nblocks, i, **perms;
    double         **blockfacts;
+   double **trid_dl,  **trid_d,  **trid_du,  **trid_du2; 
+   int    **trid_ipiv; 
    ML_Sm_BGS_Data *dataptr;
 
    dataptr = (ML_Sm_BGS_Data *) data;
@@ -3456,14 +3480,29 @@ void ML_Smoother_Clean_BGS_Data(void *data)
    Nblocks = dataptr->Nblocks;
    perms = dataptr->perms;
    blockfacts = dataptr->blockfacts;
+   trid_dl = dataptr->trid_dl;
+   trid_d  = dataptr->trid_d;
+   trid_du = dataptr->trid_du;
+   trid_du2= dataptr->trid_du2;
+   trid_ipiv= dataptr->trid_ipiv;
 
    for (i = Nblocks-1; i >= 0; i--) {
      if (perms[i]      != NULL) ML_free(perms[i]);
      if (blockfacts[i] != NULL)  ML_free(blockfacts[i]);
+     if ((trid_dl != NULL) && (trid_dl[i] != NULL))  ML_free(trid_dl[i]);
+     if ((trid_d  != NULL) && (trid_d[i] != NULL))  ML_free(trid_d[i]);
+     if ((trid_du != NULL) && (trid_du[i] != NULL))  ML_free(trid_du[i]);
+     if ((trid_du2!= NULL) && (trid_du2[i] != NULL))  ML_free(trid_du2[i]);
+     if ((trid_ipiv!= NULL) && (trid_ipiv[i] != NULL))  ML_free(trid_ipiv[i]);
    }
 
    ML_free(perms);
    ML_free(blockfacts);
+   if (trid_dl != NULL) ML_free(trid_dl);
+   if (trid_d  != NULL) ML_free(trid_d);
+   if (trid_du != NULL) ML_free(trid_du);
+   if (trid_du2!= NULL) ML_free(trid_du2);
+   if (trid_ipiv != NULL) ML_free(trid_ipiv);
    ML_memory_free((void **) &dataptr);
 }
 
@@ -4394,6 +4433,176 @@ int ML_Smoother_Gen_VBGSFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
    ML_free(cols);
    ML_free(vals);
    ML_free(block_offset);
+	
+   return 0;
+}
+
+/* ************************************************************************* */
+/* Generate block tridiagonal factorizations needed to do things like line   */
+/* GS and line Jacobi. This primarily might arise for a structured mesh or   */
+/* if one has extruded an unstructured 2D mesh in the 3rd dimension. Right   */
+/* now the code that uses these factorizations assumes that all the          */
+/* tridiagonal matrices are of the same size. However, this factorization    */
+/* code is more general (and does not cause too much inefficiency) should we */
+/* some day want to lift that restriction. By the way, it is assumed that    */
+/* the equations are ordered so that ascending local ids within a block      */
+/* correspond to a tridiagonal matrix OR THAT an offset is provide (called   */
+/* ExternalBlkOffset) indicating where within the tridiagonal each equation  */
+/* is located.                                                               */
+/* Note: Not providing this offset is allowed primarily for the case of      */
+/* serial computations where equations are ordered in somme type of          */
+/* lexicographic fashion.                                                    */
+/* ************************************************************************* */
+
+int ML_Smoother_Gen_LineSmootherFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
+                              int Nblocks, int *blockIndices, int *ExternalBlkOffset)
+{
+   int            i, j, *cols, allocated_space, length, Nrows;
+   int            row_in_block, col_in_block, info, col;
+   int            *block_sizes, *block_offset, block_num;
+   double         *vals;
+   ML_Sm_BGS_Data *dataptr;
+   int Nnz;
+   double **trid_dl,  **trid_d,  **trid_du,  **trid_du2; 
+   int    **trid_ipiv; 
+
+   Nrows           = Amat->getrow->Nrows;
+   dataptr         = (*data);
+   allocated_space = Amat->max_nz_per_row+2;
+   dataptr->Nblocks= Nblocks;
+
+   if ( Nblocks < 0 || Nblocks > Nrows )
+      pr_error("Error(ML_Gen_LineSmootherFacts): invalid blocking information.\n                   Nblocks = %d.\n", Nblocks);
+   if ( blockIndices == NULL )
+      pr_error("ML_Gen_VBGSFacts : blocking information not available.\n");
+
+   dataptr->blockmap = (int *) ML_allocate( (Nrows+1) * sizeof(int));
+   if (dataptr->blockmap == NULL) 
+      pr_error("Error(ML_Smoother_Gen_LineSmootherFacts): out of space\n");
+   for (i = 0; i < Nrows; i++) dataptr->blockmap[i] = blockIndices[i];
+   if (ExternalBlkOffset != NULL) {
+      dataptr->blockOffset = (int *) ML_allocate( (Nrows+1) * sizeof(int));
+      if (dataptr->blockOffset == NULL) 
+         pr_error("Error(ML_Smoother_Gen_LineSmootherFacts): out of space\n");
+      for (i = 0; i < Nrows; i++) dataptr->blockOffset[i] = ExternalBlkOffset[i];
+   }
+
+   dataptr->blocklengths = (int*) ML_allocate( (Nblocks+1) * sizeof(int));
+   if (dataptr->blocklengths == NULL) 
+      pr_error("Error(ML_Smoother_Gen_LineSmootherFacts): out of space\n");
+
+   block_sizes = dataptr->blocklengths;
+
+   /* ----------------------------------------------------------- */
+   /* search for sizes of each block                              */
+   /* ----------------------------------------------------------- */
+
+   for ( i = 0; i < Nblocks; i++ ) block_sizes[i] = 0;
+   for ( i = 0; i < Nrows; i++ ) {
+      if ( blockIndices[i] < 0 || blockIndices[i] >= Nblocks ) {
+         if ( blockIndices[i] != -1 )
+            pr_error("ML_Gen_LineSmootherFacts : block index not valid %d. %d Nblocks = %d\n",
+                                       blockIndices[i],i,Nblocks);
+      }
+      else block_sizes[blockIndices[i]]++;
+   }
+   
+   /* ----------------------------------------------------------- */
+   /* allocate memory for each block                              */
+   /* ----------------------------------------------------------- */
+
+   dataptr->trid_dl  = (double **) ML_allocate(Nblocks*sizeof(double *));
+   dataptr->trid_d   = (double **) ML_allocate(Nblocks*sizeof(double *));
+   dataptr->trid_du  = (double **) ML_allocate(Nblocks*sizeof(double *));
+   dataptr->trid_du2 = (double **) ML_allocate(Nblocks*sizeof(double *));
+   dataptr->trid_ipiv= (int    **) ML_allocate(Nblocks*sizeof(int    *));
+
+   trid_dl  = dataptr->trid_dl;
+   trid_d   = dataptr->trid_d;
+   trid_du  = dataptr->trid_du;
+   trid_du2 = dataptr->trid_du2;
+   trid_ipiv= dataptr->trid_ipiv;
+   for ( i = 0; i < Nblocks; i++) {
+      trid_dl[i]  = (double *)ML_allocate( block_sizes[i]* sizeof(double) );
+      trid_d[i]   = (double *)ML_allocate( block_sizes[i]* sizeof(double) );
+      trid_du[i]  = (double *)ML_allocate( block_sizes[i]* sizeof(double) );
+      trid_du2[i] = (double *)ML_allocate( block_sizes[i]* sizeof(double) );
+      trid_ipiv[i]= (int    *)ML_allocate( block_sizes[i]* sizeof(int   ) );
+      for ( j = 0; j < block_sizes[i] ; j++) trid_dl[i][j] = 0.0; 
+      for ( j = 0; j < block_sizes[i] ; j++) trid_d[i][j] = 0.0; 
+      for ( j = 0; j < block_sizes[i] ; j++) trid_du[i][j] = 0.0; 
+      for ( j = 0; j < block_sizes[i] ; j++) trid_du2[i][j] = 0.0; 
+      for ( j = 0; j < block_sizes[i] ; j++) trid_ipiv[i][j] = 0; 
+   }
+
+   /* ----------------------------------------------------------- */
+   /* load the block matrices                                     */
+   /* ----------------------------------------------------------- */
+
+   if (ExternalBlkOffset == NULL)
+      block_offset= (int    *) ML_allocate(Nrows*sizeof(int));
+   else block_offset= ExternalBlkOffset;
+
+   cols        = (int    *) ML_allocate(allocated_space*sizeof(int    ));
+   vals        = (double *) ML_allocate(allocated_space*sizeof(double ));
+   if (vals == NULL) 
+      pr_error("Error(ML_Smoother_Gen_LineSmootherFacts): out of space\n");
+
+   if (ExternalBlkOffset == NULL) {
+      for ( i = 0; i < Nblocks; i++) block_sizes[i] = 0; 
+      for (i = 0; i < Nrows; i++) {
+         block_num       = blockIndices[i];
+         if ( blockIndices[i] >= 0 && blockIndices[i] < Nblocks )
+            block_offset[i] = block_sizes[block_num]++;
+      }
+   }
+
+   for (i = 0; i < Nrows; i++) {
+      block_num    = blockIndices[i];
+      if ( blockIndices[i] >= 0 && blockIndices[i] < Nblocks ) {
+         row_in_block = block_offset[i];
+         ML_get_matrix_row(Amat,1,&i,&allocated_space,&cols,&vals,&length,0);
+	 Nnz = 0;
+         for (j = 0; j < length; j++) {
+            col = cols[j];
+            if ( col < Nrows ) {
+               if ( blockIndices[col] == block_num ) {
+		 if (vals[j] != 0.) Nnz++;
+		 col_in_block = block_offset[col];
+                 if (col_in_block   == row_in_block) trid_d[block_num][row_in_block]   = vals[j];
+                 if (col_in_block+1 == row_in_block) trid_du[block_num][col_in_block]  = vals[j];
+                 if (col_in_block-1 == row_in_block) trid_dl[block_num][col_in_block-1]= vals[j];
+               }
+            }
+         }
+	 /* Handle a zero row by putting a 1 on the diagonal. */
+	 if (Nnz == 0) {
+	   trid_d[block_num][row_in_block] = 1.;
+	 }
+      }
+   }
+
+   /* ----------------------------------------------------------- */
+   /* perform factorization on each block                         */
+   /* ----------------------------------------------------------- */
+
+   for (i = 0; i < Nblocks; i++) {
+      length = block_sizes[i];
+      DGTTRF_F77(&length, trid_dl[i], trid_d[i], trid_du[i], trid_du2[i], trid_ipiv[i], &info);
+      if (info != 0) {
+         printf("Error(ML_Smoother_Gen_LineSmootherFacts: dgttrf returned %d (!=0)\n",info);
+         printf("This was caused by block %d of size %d\n",i,length);
+         exit(1);
+      }
+   }
+
+   /* ----------------------------------------------------------- */
+   /* clean up                                                    */
+   /* ----------------------------------------------------------- */
+
+   ML_free(cols);
+   ML_free(vals);
+   if (ExternalBlkOffset == NULL) ML_free(block_offset);
 	
    return 0;
 }
@@ -8095,6 +8304,236 @@ void ML_Smoother_DestroySubdomainOverlap(void *data)
 			 &((sub_ml)->void_options));
   ML_Destroy(&sub_ml);
 }
+
+
+/* ************************************************************************* */
+/* Line Jacobi smoother                                                      */
+/*    This feature is intended for cases when a 3D mesh has been obtained    */
+/*    by extruding a 2D mesh in the z direction AND when the corresponding   */
+/*    stencil in the z direction corresponds to a tridiagonal matrix.        */
+/*    Actually, couplings between different PDEs are ignored when NumPDEs >1 */
+/*    as a tridiagonal is solved to do the line solve.                       */
+/*    FURTHER IN PARALLEL, it is assumed that partitioning is done so that   */
+/*    all tridiagonals reside on a processor. That is, no mesh line in the   */
+/*    z direction is split between processors.                               */
+/*                                                                           */
+/*    Notes: There is almost no error checking here and there are some minor */
+/*           inefficiencies. In particular, it is assumed that the Gen()     */
+/*           function has properly setup the tridiagonal systems and that it */
+/*           in fact makes sense to solve a bunch of tridiagonal systems all */
+/*           of the same size. The code could be more efficient if it assumed*/
+/*           all variables within a block are consecutively ordered. This is */
+/*           currently not done. PLEASE NOTE that the parallel partitioning  */
+/*           must be consistent so that all tridiagonals still make sense.   */
+/* ------------------------------------------------------------------------- */
+
+int ML_Smoother_LineJacobi(ML_Smoother *sm, int inlen, double x[], int outlen, 
+                             double rhs[])
+{
+   int            i, k, iter, one=1, *BlkPtr, *block_indices, *blkOffset;
+   int            Nrows, NBlks;
+   int            *RowsInBlk;
+   double         omega;
+   double         *res = NULL, *dtemp = NULL;
+   ML_Smoother    *smooth_ptr;
+   ML_Sm_BGS_Data *dataptr;
+   char           N[2];
+   double         **trid_dl,  **trid_d,  **trid_du,  **trid_du2; 
+   int            **trid_ipiv; 
+   int            Bsize;
+
+   /* ----------------------------------------------------- */
+   /* fetch parameters                                      */
+   /* ----------------------------------------------------- */
+
+   smooth_ptr   = (ML_Smoother *) sm;
+   omega        = smooth_ptr->omega;
+   Nrows        = smooth_ptr->my_level->Amat->getrow->Nrows;
+   dataptr      = (ML_Sm_BGS_Data *)smooth_ptr->smoother->data;
+   NBlks        = dataptr->Nblocks;
+   block_indices= dataptr->blockmap;
+   blkOffset    = dataptr->blockOffset;
+   trid_dl      = dataptr->trid_dl;
+   trid_d       = dataptr->trid_d;
+   trid_du      = dataptr->trid_du;
+   trid_du2     = dataptr->trid_du2;
+   trid_ipiv    = dataptr->trid_ipiv;
+
+   if ((inlen%NBlks) != 0) {
+      pr_error("Error(ML_LineJacobi): inlen not evenly divisible by NBlks\n");
+      ML_avoid_unused_param((void *) &outlen);
+   }
+   Bsize = inlen/NBlks;
+
+   if (blkOffset == NULL) BlkPtr    = (int    *) ML_allocate((NBlks+1)*sizeof(int) );
+   RowsInBlk = (int    *) ML_allocate((Nrows+1)*sizeof(int) );
+   dtemp     = (double *) ML_allocate((Bsize+1)*sizeof(double));
+   res       = (double *) ML_allocate((inlen+1)*sizeof(double));
+   if (res == NULL) 
+      pr_error("Error(ML_LineJacobi): Not enough space\n");
+
+   if (blkOffset == NULL) {
+      for (i = 0; i < NBlks; i++) BlkPtr[i] = i*Bsize;
+      for (i = 0; i < Nrows; i++) RowsInBlk[BlkPtr[block_indices[i]]++]= i;
+      ML_free( BlkPtr );
+   }
+   else for (i = 0; i < Nrows; i++) RowsInBlk[Bsize*block_indices[i] + blkOffset[i]] = i;
+
+   strcpy(N,"N");
+   for (iter = 0; iter < smooth_ptr->ntimes; iter++) {
+
+      if ( (iter != 0) || (smooth_ptr->init_guess == ML_NONZERO)) {
+         ML_Operator_Apply(smooth_ptr->my_level->Amat, inlen, x, inlen, res);
+         for (i = 0; i < inlen; i++) res[i] = rhs[i] - res[i];
+      }
+      else for (i = 0; i < inlen; i++) res[i] = rhs[i];
+
+      for (i = 0; i < NBlks; i++) {
+
+	 for (k = 0; k < Bsize; k++) dtemp[k] = res[RowsInBlk[i*Bsize+k]];
+         
+         DGTTS2_F77(N,&Bsize, &one, trid_dl[i], trid_d[i],  trid_du[i],  
+                    trid_du2[i],  trid_ipiv[i],dtemp,&Bsize);
+
+         for (k = 0; k < Bsize; k++) res[RowsInBlk[i*Bsize+k]] = dtemp[k];
+      }
+      for (i = 0; i < inlen; i++)  x[i] += (omega * res[i]);
+   }
+	 
+   ML_free(RowsInBlk);
+   ML_free(res);
+   ML_free(dtemp);
+
+   return 0;
+}
+/* ************************************************************************* */
+/* Line Gauss-Seidel smoother                                                */
+/*    This feature is intended for cases when a 3D mesh has been obtained    */
+/*    by extruding a 2D mesh in the z direction AND when the corresponding   */
+/*    stencil in the z direction corresponds to a tridiagonal matrix.        */
+/*    Actually, couplings between different PDEs are ignored when NumPDEs >1 */
+/*    as a tridiagonal is solved to do the line solve.                       */
+/*    FURTHER IN PARALLEL, it is assumed that partitioning is done so that   */
+/*    all tridiagonals reside on a processor. That is, no mesh line in the   */
+/*    z direction is split between processors.                               */
+/*                                                                           */
+/*    Notes: There is almost no error checking here and there are some minor */
+/*           inefficiencies. In particular, it is assumed that the Gen()     */
+/*           function has properly setup the tridiagonal systems and that it */
+/*           in fact makes sense to solve a bunch of tridiagonal systems all */
+/*           of the same size. The code could be more efficient if it assumed*/
+/*           all variables within a block are consecutively ordered. This is */
+/*           currently not done. PLEASE NOTE that the parallel partitioning  */
+/*           must be consistent so that all tridiagonals still make sense.   */
+/* ------------------------------------------------------------------------- */
+int ML_Smoother_LineGS(ML_Smoother *sm, int inlen, double x[], 
+                          int outlen, double rhs[])
+{
+   int            i, j, k, iter, one=1, *BlkPtr, *block_indices, *blkOffset;
+   int            Nrows, NBlks, row;
+   int            *RowsInBlk;
+   ML_CommInfoOP  *getrow_comm;
+   double         *x_ext=NULL, *res=NULL, omega;
+   ML_Smoother    *smooth_ptr;
+   ML_Sm_BGS_Data *dataptr;
+   char           N[2];
+   double         **trid_dl,  **trid_d,  **trid_du,  **trid_du2; 
+   int            **trid_ipiv; 
+   double         *Amat_CrsVal;
+   int            *Amat_CrsRowptr, *Amat_CrsBindx;
+   int            Bsize;
+
+   smooth_ptr   = (ML_Smoother *) sm;
+   omega        = smooth_ptr->omega;
+   Nrows        = smooth_ptr->my_level->Amat->getrow->Nrows;
+   dataptr      = (ML_Sm_BGS_Data *)smooth_ptr->smoother->data;
+   NBlks        = dataptr->Nblocks;
+   block_indices= dataptr->blockmap;
+   blkOffset    = dataptr->blockOffset;
+   trid_dl      = dataptr->trid_dl;
+   trid_d       = dataptr->trid_d;
+   trid_du      = dataptr->trid_du;
+   trid_du2     = dataptr->trid_du2;
+   trid_ipiv    = dataptr->trid_ipiv;
+   getrow_comm  = smooth_ptr->my_level->Amat->getrow->pre_comm;
+
+   if (smooth_ptr->my_level->Amat->getrow->post_comm != NULL) {
+      pr_error("Error(ML_LineGS): Post communication not allowed.\n");
+      ML_avoid_unused_param((void *) &outlen);
+   }
+   if ( Epetra_ML_GetCrsDataptrs(smooth_ptr->my_level->Amat, &Amat_CrsVal, 
+                                 &Amat_CrsBindx,&Amat_CrsRowptr) != 0)
+      pr_error("Error(ML_LineGS):failed to get Epetra Crs pointers\n");
+
+   if ((inlen%NBlks) != 0) {
+      pr_error("Error(ML_LineGS): inlen not evenly divisible by NBlks\n");
+      ML_avoid_unused_param((void *) &outlen);
+   }
+   Bsize = inlen/NBlks;
+
+   if (getrow_comm != NULL) {
+      x_ext = (double *) ML_allocate((inlen+getrow_comm->total_rcv_length+1)*
+                                 sizeof(double));
+   }
+   if (blkOffset == NULL) BlkPtr    = (int    *) ML_allocate((NBlks+1)*sizeof(int) );
+   res       = (double *) ML_allocate((Bsize+1)*sizeof(double) );
+   RowsInBlk = (int    *) ML_allocate((Nrows+1)*sizeof(int) );
+   if (RowsInBlk == NULL)
+      pr_error("Error(ML_LineGS): Not enough space\n");
+
+   if (getrow_comm != NULL) for (i = 0; i < inlen; i++) x_ext[i] = x[i];
+   else x_ext = x;
+
+   if (blkOffset == NULL) {
+      for (i = 0; i < NBlks; i++) BlkPtr[i] = i*Bsize;
+      for (i = 0; i < Nrows; i++) RowsInBlk[BlkPtr[block_indices[i]]++]= i;
+      ML_free( BlkPtr );
+   }
+   else for (i = 0; i < Nrows; i++) RowsInBlk[Bsize*block_indices[i] + blkOffset[i]] = i;
+
+   strcpy(N,"N");
+   for (iter = 0; iter < smooth_ptr->ntimes; iter++) {
+
+      if ( (getrow_comm != NULL) && ((iter != 0) || 
+                                     (smooth_ptr->init_guess == ML_NONZERO)))
+         ML_exchange_bdry(x_ext,getrow_comm, inlen,smooth_ptr->my_level->comm,
+                          ML_OVERWRITE,NULL);
+
+      for (i = 0; i < NBlks; i++) {
+         for (k = 0; k < Bsize ; k++) {
+            row = RowsInBlk[i*Bsize+k];
+            res[k] = rhs[row];
+            for (j = Amat_CrsRowptr[row]; j < Amat_CrsRowptr[row+1]; j++)
+               res[k] -= (Amat_CrsVal[j]*x_ext[Amat_CrsBindx[j]]);
+         }
+         DGTTS2_F77(N,&Bsize, &one, trid_dl[i], trid_d[i], trid_du[i], 
+                    trid_du2[i], trid_ipiv[i],res,&Bsize);
+         for (k = 0; k < Bsize; k++)
+            x_ext[RowsInBlk[i*Bsize+k]] +=(omega * res[k]);
+      }
+      for (i = NBlks-1; i >= 0; i--) {
+         for (k = 0; k < Bsize; k++) {
+            row = RowsInBlk[i*Bsize+k];
+            res[k] = rhs[row];
+            for (j = Amat_CrsRowptr[row]; j < Amat_CrsRowptr[row+1]; j++) 
+               res[k] -= (Amat_CrsVal[j]*x_ext[Amat_CrsBindx[j]]);
+         }
+         DGTTS2_F77(N,&Bsize, &one, trid_dl[i], trid_d[i], trid_du[i],
+                    trid_du2[i], trid_ipiv[i],res,&Bsize);
+         for (k = 0; k < Bsize; k++)
+               x_ext[RowsInBlk[i*Bsize+k]] += (omega * res[k]);
+      }
+   }
+   if (getrow_comm != NULL) {
+      for (i = 0; i < inlen; i++) x[i] = x_ext[i];
+      ML_free(x_ext);
+   }
+   ML_free( RowsInBlk );
+   ML_free( res );
+	 
+   return 0;
+}
+
 
 /* *************************************************************************  */
 

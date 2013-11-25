@@ -65,7 +65,7 @@ namespace panzer {
 /** Linear object container for Block operators, this
   * always assumes the matrix is square.
   */
-template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT=Kokkos::DefaultNode::DefaultNodeType>
+template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT=KokkosClassic::DefaultNode::DefaultNodeType>
 class BlockedTpetraLinearObjContainer : public LinearObjContainer
                                       , public ThyraObjContainer<ScalarT> {
 public:
@@ -116,6 +116,9 @@ public:
 
    void set_A_th(const Teuchos::RCP<CrsMatrixType> & in) { A = in; }
    Teuchos::RCP<CrsMatrixType> get_A_th() const { return A; }
+
+   void beginFill();
+   void endFill();
 
 private:
    Teuchos::RCP<VectorType> x, dxdt, f;

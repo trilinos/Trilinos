@@ -69,7 +69,7 @@ class UniqueGlobalIndexer; //forward declaration
     and that the nmber of dofs is equal to the size of the solution
     names vector.
 */
-template<typename EvalT, typename Traits,typename LO,typename GO,typename NodeT=Kokkos::DefaultNode::DefaultNodeType>
+template<typename EvalT, typename Traits,typename LO,typename GO,typename NodeT=KokkosClassic::DefaultNode::DefaultNodeType>
 class GatherSolution_Tpetra;
 
 // **************************************************************
@@ -110,6 +110,54 @@ public:
 private:
 
   typedef typename panzer::Traits::Residual::ScalarT ScalarT;
+
+  // maps the local (field,element,basis) triplet to a global ID
+  // for scattering
+  Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
+  std::vector<int> fieldIds_; // field IDs needing mapping
+
+  std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
+
+  Teuchos::RCP<std::vector<std::string> > indexerNames_;
+  bool useTimeDerivativeSolutionVector_;
+  std::string globalDataKey_; // what global data does this fill?
+
+  Teuchos::RCP<const TpetraLinearObjContainer<double,LO,GO,NodeT> > tpetraContainer_;
+
+  GatherSolution_Tpetra();
+};
+
+// **************************************************************
+// Tangent 
+// **************************************************************
+template<typename Traits,typename LO,typename GO,typename NodeT>
+class GatherSolution_Tpetra<panzer::Traits::Tangent,Traits,LO,GO,NodeT>
+  : public PHX::EvaluatorWithBaseImpl<Traits>,
+    public PHX::EvaluatorDerived<panzer::Traits::Tangent, Traits>,
+    public panzer::CloneableEvaluator  {
+   
+  
+public:
+  
+  GatherSolution_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer) :
+     globalIndexer_(indexer) {}
+
+  GatherSolution_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
+                        const Teuchos::ParameterList& p);
+  
+  void postRegistrationSetup(typename Traits::SetupData d,
+			     PHX::FieldManager<Traits>& vm);
+
+  void preEvaluate(typename Traits::PreEvalData d);
+  
+  void evaluateFields(typename Traits::EvalData d);
+
+  virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
+  { return Teuchos::rcp(new GatherSolution_Tpetra<panzer::Traits::Tangent,Traits,LO,GO,NodeT>(globalIndexer_,pl)); }
+  
+private:
+
+  typedef typename panzer::Traits::Tangent::ScalarT ScalarT;
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering

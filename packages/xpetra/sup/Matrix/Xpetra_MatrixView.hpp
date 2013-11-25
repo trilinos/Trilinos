@@ -64,7 +64,7 @@ namespace Xpetra {
   template <class Scalar = double,
             class LocalOrdinal  = int,
             class GlobalOrdinal = LocalOrdinal,
-            class Node          = Kokkos::DefaultNode::DefaultNodeType>
+            class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
   class MatrixView { // TODO : virtual public Teuchos::Describable {
     typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
 

@@ -7,4 +7,4 @@
 INCLUDE(${CMAKE_CURRENT_LIST_DIR}/gcc-4.6.1-base-options.cmake)
 
 # Point to OpenMPI build with GCC 4.6.1 C/C++ 
-SET(MPI_BASE_DIR "${TRILINOS_TOOLSET_BASE}" CACHE PATH "")
+SET(MPI_BASE_DIR "${TRILINOS_TOOLSET_BASE}/openmpi-1.4.3" CACHE PATH "")

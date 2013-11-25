@@ -56,6 +56,7 @@ using Teuchos::rcp;
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_AssemblyEngine.hpp"
+#include "Panzer_AssemblyEngine_InArgs.hpp"
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
 #include "Panzer_SGEpetraLinearObjFactory.hpp"
@@ -96,7 +97,7 @@ public:
                       std::vector<panzer::BC> & bcs,
                       int myRank) {
      volume_worksets["block_0"] = panzer::buildWorksets(pb,cellIds,coords);
-     bc_worksets[bcs[myRank]] = panzer::buildBCWorkset(bcs[myRank],pb,cellIds,sideIds,coords);
+     bc_worksets[bcs[myRank]] = panzer::buildBCWorkset(pb,cellIds,sideIds,coords);
    }
    virtual ~TestWorksetFactory() {}
 
@@ -105,11 +106,6 @@ public:
    getWorksets(const WorksetDescriptor & wd,
                const panzer::PhysicsBlock & pb) const
    { return volume_worksets[wd.getElementBlock()]; } // lazy
-
-   Teuchos::RCP<std::vector<panzer::Workset> >
-   getVolumeWorksets(const std::string & eBlock,
-                     const panzer::PhysicsBlock & pb) const
-   { return volume_worksets[eBlock]; }
 
    Teuchos::RCP<std::map<unsigned,panzer::Workset> > 
    getSideWorksets(const panzer::BC & bc,

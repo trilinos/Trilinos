@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -72,7 +72,7 @@ namespace MueLu {
 
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class AmalgamationFactory : public SingleLevelFactoryBase {
 #undef MUELU_AMALGAMATIONFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -103,11 +103,10 @@ namespace MueLu {
 
     //! translate global (row/column) id to global amalgamation block id
     // @param gid (GlobalOrdinal): input global id (row gid or column gid)
-    // @param A: input operator (just used to check the maps for validity)
     // @param blockSize (LocalOrdinal): block size (needed for constant block size)
     // @param offset (GlobalOrdinal): global offset for dofs (stored in strided map, default = 0)
     // @param indexBase (GlobalOrdinal): indexBase for DOF map (and node map, default = 0)
-    static const GlobalOrdinal DOFGid2NodeId(GlobalOrdinal gid, const RCP<Matrix>& A, LocalOrdinal blockSize, const GlobalOrdinal offset /*= 0*/, const GlobalOrdinal indexBase/* = 0*/);
+    static const GlobalOrdinal DOFGid2NodeId(GlobalOrdinal gid, LocalOrdinal blockSize, const GlobalOrdinal offset /*= 0*/, const GlobalOrdinal indexBase/* = 0*/);
 
     /*! @brief ComputeUnamalgamatedAggregateSizes
      * computes the size of the aggregates (in DOFs)

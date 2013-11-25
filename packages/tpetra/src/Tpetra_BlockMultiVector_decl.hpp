@@ -56,9 +56,9 @@ namespace Tpetra {
   This class inherits (is-a) Tpetra::MultiVector, adding block-entry
   functionality for referencing/accessing data.
 */
-template <class Scalar, class LocalOrdinal=int, class GlobalOrdinal=LocalOrdinal, class Node=Kokkos::DefaultNode::DefaultNodeType>
+template <class Scalar, class LocalOrdinal=int, class GlobalOrdinal=LocalOrdinal, class Node=KokkosClassic::DefaultNode::DefaultNodeType>
 class BlockMultiVector : public MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
- public:
+public:
   typedef Scalar        scalar_type;
   typedef LocalOrdinal  local_ordinal_type;
   typedef GlobalOrdinal global_ordinal_type;
@@ -77,7 +77,7 @@ class BlockMultiVector : public MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,No
   //! @name Attribute Queries
   //@{
 
-  const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& getBlockMap() const
+  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > getBlockMap() const
   { return blockMap_; }
 
   //@}

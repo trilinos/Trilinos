@@ -108,3 +108,5 @@ IF (${PACKAGE_NAME}_ENABLE_LAPACK)
     COMM serial mpi
     )
 ENDIF()
+
+

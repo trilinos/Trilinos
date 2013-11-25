@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -138,19 +138,11 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
     permRowMap = A->getRowMap(); // use full row map of A
   }
 
-  /*TEUCHOS_TEST_FOR_EXCEPTION(true,
-                              std::logic_error,
-                              "`MatrixType' has incorrect value (" << MatrixType << ") in input to function CreateCrsMatrix()."
-                              << "Check the documentation for a list of valid choices");
-*/
-
   std::string strStrategy = pL.get<std::string> ("PermutationStrategy");
   if( strStrategy == "Algebraic" ) {
-    // TODO switch between different permutation strategies
     Teuchos::RCP<AlgebraicPermutationStrategy> permStrat = Teuchos::rcp(new AlgebraicPermutationStrategy());
     permStrat->BuildPermutation(A,permRowMap,currentLevel,this);
   } else if( strStrategy == "Local" ) {
-    // TODO switch between different permutation strategies
     Teuchos::RCP<LocalPermutationStrategy> permStrat = Teuchos::rcp(new LocalPermutationStrategy());
     permStrat->BuildPermutation(A,permRowMap,currentLevel,this);
   } else

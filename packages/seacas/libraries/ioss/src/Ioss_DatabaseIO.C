@@ -67,7 +67,7 @@ namespace {
 		 const Ioss::ParallelUtils &util);
 
 #ifndef NDEBUG
-  bool is_parallel_consistent(bool single_proc_only, const Ioss::GroupingEntity *ge,
+  bool internal_parallel_consistent(bool single_proc_only, const Ioss::GroupingEntity *ge,
 			      const Ioss::Field &field, const Ioss::ParallelUtils &util)
   {
     if (single_proc_only)
@@ -152,11 +152,12 @@ namespace Ioss {
 			 const PropertyManager &props)
     : properties(props), commonSideTopology(NULL), DBFilename(filename), dbState(STATE_INVALID),
       isParallel(false), isSerialParallel(false), myProcessor(0), cycleCount(0), overlayCount(0),
-      splitType(SPLIT_BY_TOPOLOGIES),
+      timeScaleFactor(1.0), splitType(SPLIT_BY_TOPOLOGIES),
       dbUsage(db_usage),dbIntSizeAPI(USE_INT32_API), lowerCaseVariableNames(true),
       util_(communicator), region_(region), isInput(is_input_event(db_usage)),
+      isParallelConsistent(true), 
       singleProcOnly(db_usage == WRITE_HISTORY || db_usage == WRITE_HEARTBEAT || SerializeIO::isEnabled()),
-      doLogging(false)
+      doLogging(false), useGenericCanonicalName(false)
   {
     isParallel  = util_.parallel_size() > 1;
     myProcessor = util_.parallel_rank();
@@ -216,6 +217,15 @@ namespace Ioss {
       set_logging(logging != 0);
     }
 
+    if (properties.exists("USE_GENERIC_CANONICAL_NAMES")) {
+      int generic = properties.get("USE_GENERIC_CANONICAL_NAMES").get_int();
+      useGenericCanonicalName = (generic != 0);
+    }
+
+    if (properties.exists("PARALLEL_CONSISTENCY")) {
+      int consistent = properties.get("PARALLEL_CONSISTENCY").get_int();
+      set_parallel_consistency(consistent == 1);
+    }
   }
 
   DatabaseIO::~DatabaseIO()
@@ -268,7 +278,7 @@ namespace Ioss {
 
   void DatabaseIO::verify_and_log(const GroupingEntity *ge, const Field& field) const
   {
-    assert(is_parallel_consistent(singleProcOnly, ge, field, util_));
+    assert(!is_parallel_consistent() || internal_parallel_consistent(singleProcOnly, ge, field, util_));
     if (get_logging()) {
       log_field(">", ge, field, singleProcOnly, util_);
     }

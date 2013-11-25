@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -75,8 +75,8 @@ namespace MueLu {
     typedef double Scalar;
     typedef int    LocalOrdinal;
     typedef int    GlobalOrdinal;
-    typedef Kokkos::DefaultNode::DefaultNodeType Node;
-    typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
+    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+    typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 #undef MUELU_IFPACKSMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -122,40 +122,11 @@ namespace MueLu {
     IfpackSmoother(std::string const & type, Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LO const &overlap=0); //TODO: empty paramList valid for Ifpack??
 
     //! Destructor
-    virtual ~IfpackSmoother();
+    virtual ~IfpackSmoother() { }
 
     //@}
 
-    //! @name Set/Get methods
-
-    //@{
-
-    //! Set smoother parameters
-    void SetParameters(Teuchos::ParameterList const & paramList);
-
-    //! Get smoother parameters
-    Teuchos::ParameterList const & GetParameters();
-
-    //JG: I'm not sure if it's a good idea to provide Get/Set NIts (for code maintainability)
-
-    //     /*! @brief Set the number of smoothing sweeps/degree.
-    //
-    //        If the smoother is relaxation, this sets the number of sweeps.
-    //        If the smoother is Chebyshev, this sets the polynomial degree.
-    //
-    //        Note:  This can be called after the preconditioner is set up, i.e., after
-    //        calling IfpackSmoother::Setup().
-    //     */
-    //     void SetNIts(LO const &nIts);
-    //
-    //     /*! @brief Get the number of smoothing sweeps.
-    //
-    //        If the smoother is relaxation, this returns the number of sweeps.
-    //        If the smoother is Chebyshev, this returns the polynomial degree.
-    //     */
-    //     LO GetNIts();
-
-    //@}
+    void SetParameterList(const Teuchos::ParameterList& paramList);
 
     //! Input
     //@{
@@ -182,7 +153,7 @@ namespace MueLu {
     @param B right-hand side
     @param InitialGuessIsZero (optional) If false, some work can be avoided.  Whether this actually saves any work depends on the underlying Ifpack implementation.
     */
-    void Apply(MultiVector& X, MultiVector const &B, bool const &InitialGuessIsZero=false) const;
+    void Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero = false) const;
 
     //@}
 
@@ -207,12 +178,12 @@ namespace MueLu {
     //@}
 
   private:
+    void SetPrecParameters(const Teuchos::ParameterList& list = Teuchos::ParameterList()) const;
+
+  private:
 
     //! ifpack-specific key phrase that denote smoother type
     std::string type_;
-
-    //! parameter list that is used by Ifpack internally
-    Teuchos::ParameterList paramList_;
 
     //! overlap when using the smoother in additive Schwarz mode
     LO overlap_;
@@ -229,16 +200,14 @@ namespace MueLu {
   //! Non-member templated function GetIfpackSmoother() returns a new IfpackSmoother object when <Scalar, LocalOrdinal, GlobalOrdinal> == <double, int, int>. Otherwise, an exception is thrown.
   //! This function simplifies the usage of IfpackSmoother objects inside of templates as templates do not have to be specialized for <double, int, int> (see DirectSolver for an example).
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > GetIfpackSmoother(std::string const & type = "", Teuchos::ParameterList const & paramList = Teuchos::ParameterList(), LocalOrdinal const &overlap=0, RCP<FactoryBase> AFact = Teuchos::null) {
+  RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > GetIfpackSmoother(const std::string& type = "", const Teuchos::ParameterList& paramList = Teuchos::ParameterList(), const LocalOrdinal& overlap = 0) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "IfpackSmoother cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
     return Teuchos::null;
   }
   //
   template <>
-  inline RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> > GetIfpackSmoother<double, int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps>(std::string const & type, Teuchos::ParameterList const & paramList, int const &overlap, RCP<FactoryBase> AFact) {
-    RCP<IfpackSmoother> smoother = rcp( new IfpackSmoother(type, paramList, overlap) );
-    smoother->SetFactory("A", AFact);
-    return smoother;
+  inline RCP<MueLu::SmootherPrototype<double, int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void,int,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps> > GetIfpackSmoother<double, int, int, KokkosClassic::DefaultNode::DefaultNodeType, KokkosClassic::DefaultKernels<void,int,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>(const std::string& type, const Teuchos::ParameterList& paramList, const int& overlap) {
+    return rcp(new IfpackSmoother(type, paramList, overlap));
   }
 
 } // namespace MueLu

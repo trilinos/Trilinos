@@ -44,7 +44,6 @@
 #ifdef HAVE_MPI
 #include <assert.h>
 #include <cstring>
-#include <Ioss_SerializeIO.h>
 #include <mpi.h>
 #include <Ioss_SerializeIO.h>
 
@@ -358,6 +357,8 @@ void Ioss::ParallelUtils::global_array_minmax(std::vector<T> &local_minmax,  Min
 
 template void Ioss::ParallelUtils::gather(int, std::vector<int>&) const;
 template void Ioss::ParallelUtils::gather(int64_t, std::vector<int64_t>&) const;
+template void Ioss::ParallelUtils::all_gather(int, std::vector<int>&) const;
+template void Ioss::ParallelUtils::all_gather(int64_t, std::vector<int64_t>&) const;
 
 template <typename T>
 void Ioss::ParallelUtils::gather(T my_value, std::vector<T> &result) const
@@ -370,6 +371,28 @@ void Ioss::ParallelUtils::gather(T my_value, std::vector<T> &result) const
     const int success = MPI_Gather((void*)&my_value,  1, mpi_type(T(1)),
 				   (void*)&result[0], 1, mpi_type(T(1)),
 				   0, communicator_);
+    if (success !=  MPI_SUCCESS) {
+      std::ostringstream errmsg;
+      errmsg << "Ioss::ParallelUtils::gather - MPI_Gather failed";
+      IOSS_ERROR(errmsg);
+    }
+  } else {
+    result[0] = my_value;
+  }
+#else
+  result[0] = my_value;
+#endif
+}
+
+template <typename T>
+void Ioss::ParallelUtils::all_gather(T my_value, std::vector<T> &result) const
+{
+  result.resize(parallel_size());
+#ifdef HAVE_MPI
+  if (parallel_size() > 1) {
+    const int success = MPI_Allgather((void*)&my_value,  1, mpi_type(T(1)),
+				      (void*)&result[0], 1, mpi_type(T(1)),
+				      communicator_);
     if (success !=  MPI_SUCCESS) {
       std::ostringstream errmsg;
       errmsg << "Ioss::ParallelUtils::gather - MPI_Gather failed";

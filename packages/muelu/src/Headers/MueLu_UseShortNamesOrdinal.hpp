@@ -26,16 +26,20 @@ typedef MueLu::DemoFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> DemoFact
 typedef MueLu::EmergencyAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> EmergencyAggregationAlgorithm;
 #endif
 
-#ifdef MUELU_GRAPHBASE_SHORT
-typedef MueLu::GraphBase<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> GraphBase;
-#endif
-
 #ifdef MUELU_GRAPH_SHORT
 typedef MueLu::Graph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Graph;
 #endif
 
+#ifdef MUELU_GRAPHBASE_SHORT
+typedef MueLu::GraphBase<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> GraphBase;
+#endif
+
 #ifdef MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_SHORT
 typedef MueLu::IsolatedNodeAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> IsolatedNodeAggregationAlgorithm;
+#endif
+
+#ifdef MUELU_ISORROPIAINTERFACE_SHORT
+typedef MueLu::IsorropiaInterface<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> IsorropiaInterface;
 #endif
 
 #ifdef MUELU_LWGRAPH_SHORT
@@ -58,8 +62,20 @@ typedef MueLu::MaxLinkAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,Local
 typedef MueLu::OnePtAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> OnePtAggregationAlgorithm;
 #endif
 
+#ifdef MUELU_PRESERVEDIRICHLETAGGREGATIONALGORITHM_SHORT
+typedef MueLu::PreserveDirichletAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PreserveDirichletAggregationAlgorithm;
+#endif
+
 #ifdef MUELU_PRFACTORY_SHORT
 typedef MueLu::PRFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PRFactory;
+#endif
+
+#ifdef MUELU_REBALANCEMAPFACTORY_SHORT
+typedef MueLu::RebalanceMapFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RebalanceMapFactory;
+#endif
+
+#ifdef MUELU_REPARTITIONINTERFACE_SHORT
+typedef MueLu::RepartitionInterface<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> RepartitionInterface;
 #endif
 
 #ifdef MUELU_SMALLAGGREGATIONALGORITHM_SHORT
@@ -120,10 +136,6 @@ typedef MueLu::RFactory RFactory;
 
 #ifdef MUELU_SINGLELEVELFACTORYBASE_SHORT
 typedef MueLu::SingleLevelFactoryBase SingleLevelFactoryBase;
-#endif
-
-#ifdef MUELU_TWOKEYMAP_SHORT
-typedef MueLu::TwoKeyMap TwoKeyMap;
 #endif
 
 #ifdef MUELU_TWOLEVELFACTORYBASE_SHORT

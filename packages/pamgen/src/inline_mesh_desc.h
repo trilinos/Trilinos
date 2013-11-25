@@ -202,6 +202,7 @@ virtual  void Calc_Parallel_Info(
   double ** first_size;
   double ** last_size;
   long long ** interval;
+  double inline_offset[3];
   double inline_gminx;
   double inline_gminy;
   double inline_gminz;
@@ -257,6 +258,8 @@ virtual  void Calc_Parallel_Info(
 		       std::map <long long, long long> & global_node_map,
 			       long long num_nodes){};
 
+  void Offset_Coords(double * coords,long long num_nodes,long long dim);
+
   void Customize_Coords(double * coords,long long num_nodes,long long dim);
 
   double * Icoors;
@@ -292,7 +295,21 @@ virtual  void Calc_Parallel_Info(
 
   std::vector < std::pair < long long, Topo_Loc > > *  sideset_vectors;
   std::vector < long long > *  nodeset_vectors;
-  static Inline_Mesh_Desc * static_storage;
+  static Inline_Mesh_Desc * im_static_storage;
+  static Inline_Mesh_Desc * first_im_static_storage;
+
+  static void addDisc(Inline_Mesh_Desc * imd){
+    /*set the first pointer if unset*/
+    /*add the new entry to next if there is an im_static_storage*/
+    /*set im_static_storage*/
+    if(!first_im_static_storage)first_im_static_storage = imd;
+    if(im_static_storage)im_static_storage->next = imd;
+    im_static_storage = imd;
+  }
+
+  Inline_Mesh_Desc * next;
+//   static std::vector <Inline_Mesh_Desc *> InlineMeshDescVector;
+//   static int curr_inline_mesh;
   static std::stringstream echo_stream;
   
 

@@ -32,6 +32,7 @@
 #
 # System imports
 from optparse import *
+import sys
 
 #
 # Parse the command-line arguments
@@ -52,46 +53,78 @@ Epetra  = fromPyTrilinosImport('Epetra' , options.testharness)
 Galeri  = fromPyTrilinosImport('Galeri' , options.testharness)
 AztecOO = fromPyTrilinosImport('AztecOO', options.testharness)
 
-comm = Epetra.PyComm()
+# Main routine, takes a communicator and a solution tolerance
+def main(comm, tol):
 
-nx = 30; ny = 30
-GaleriList = {"n": nx * ny,  # for Linear map
-              "nx": nx,      # for Laplace2D, which requires nx
-              "ny": ny       # and ny
-              }
-Map = Galeri.CreateMap("Linear", comm, GaleriList)
-Matrix = Galeri.CreateCrsMatrix("Laplace2D", Map, GaleriList)
-Exact = Epetra.Vector(Map) 
-LHS = Epetra.Vector(Map) 
-RHS = Epetra.Vector(Map) 
-Exact.Random()       # fix exact solution
-LHS.PutScalar(0.0)   # fix starting solution
-Matrix.Multiply(False, Exact, RHS) # fix rhs corresponding to Exact
+   # Obtain the example matrix from Galeri
+   nx = 30
+   ny = 30
+   galeriList = {"n": nx * ny,  # for Linear map
+                 "nx": nx,      # for Laplace2D, which requires nx
+                 "ny": ny       # and ny
+                 }
+   map = Galeri.CreateMap("Linear", comm, galeriList)
+   matrix = Galeri.CreateCrsMatrix("Laplace2D", map, galeriList)
 
-# Solve the linear problem
-if 0:
-   # this does not work on most installations
-   Problem = Epetra.LinearProblem(Matrix, LHS, RHS)
-   Solver = AztecOO.AztecOO(Problem)
-else:
-   Solver = AztecOO.AztecOO(Matrix, LHS, RHS)
+   # Allocate and initialize the solution and RHS vector
+   exact = Epetra.Vector(map)
+   x = Epetra.Vector(map)
+   b = Epetra.Vector(map)
+   exact.Random()       # Fix exact solution
+   x.PutScalar(0.0)     # Fix starting guess for solution
+   matrix.Multiply(False, exact, b) # Fix rhs corresponding to exact
 
-try:
-   plist = {"Solver"          : "CG",
-            "Precond"         : "Dom_Decomp",
-            "Subdomain_Solve" : "ICC",
-            "Output"          : 16
-            }
-   Solver.SetParameters(plist,True)
-except AttributeError:
-   # If AztecOO and its python wrappers have been compiled without Teuchos
-   # support, then then the SetParameters method will not exist, thus raising an
-   # AttributeError exception
-   print "Teuchos ParameterLists not supported"
-   Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg)
-   Solver.SetAztecOption(AztecOO.AZ_precond, AztecOO.AZ_dom_decomp)
-   Solver.SetAztecOption(AztecOO.AZ_subdomain_solve, AztecOO.AZ_icc)
-   Solver.SetAztecOption(AztecOO.AZ_output, 16)
-   Solver.Iterate(1550, 1e-5)
+   # Build the solver object
+   if 0:
+      # this does not work on most installations
+      problem = Epetra.LinearProblem(matrix, x, b)
+      solver = AztecOO.AztecOO(problem)
+   else:
+      solver = AztecOO.AztecOO(matrix, x, b)
 
-if comm.MyPID() == 0: print "End Result: TEST PASSED"
+   # Set the solver parameters
+   try:
+      plist = {"Solver"          : "CG",
+               "Precond"         : "Dom_Decomp",
+               "Subdomain_Solve" : "ICC",
+               "Output"          : 16
+               }
+      solver.SetParameters(plist,True)
+   except AttributeError:
+      # If AztecOO and its python wrappers have been compiled without Teuchos
+      # support, then then the SetParameters method will not exist, thus raising
+      # an AttributeError exception
+      print "Teuchos ParameterLists not supported"
+      solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg)
+      solver.SetAztecOption(AztecOO.AZ_precond, AztecOO.AZ_dom_decomp)
+      solver.SetAztecOption(AztecOO.AZ_subdomain_solve, AztecOO.AZ_icc)
+      solver.SetAztecOption(AztecOO.AZ_output, 16)
+
+   # Solve the system
+   solver.Iterate(galeriList["n"], tol)
+
+   # Compute and return the solution error
+   return Epetra.Vector(map, (x - exact))
+
+if __name__ == "__main__":
+
+   # Call the main routine
+   comm  = Epetra.PyComm()
+   tol   = 1e-5
+   error = main(comm, tol)
+
+   # Check the results
+   myErrors = 0
+   solnError = error.Norm2() / error.Map().NumGlobalElements()
+   if solnError > tol:
+      myErrors = 1
+   totalErrors = comm.SumAll(myErrors)
+
+   # Print results message and exit
+   if comm.MyPID() == 0:
+      print "solution error norm =", solnError
+      if totalErrors == 0:
+         print "End Result: TEST PASSED"
+      else:
+         print "End Result: TEST FAILED"
+   sys.exit(totalErrors)

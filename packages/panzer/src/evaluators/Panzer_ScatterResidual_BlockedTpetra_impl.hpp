@@ -178,7 +178,7 @@ evaluateFields(typename Traits::EvalData workset)
    using Thyra::ProductVectorBase;
 
    std::vector<std::pair<int,GO> > GIDs;
-   std::vector<int> LIDs;
+   std::vector<LO> LIDs;
  
    // for convenience pull out some objects from workset
    std::string blockId = workset.block_id;

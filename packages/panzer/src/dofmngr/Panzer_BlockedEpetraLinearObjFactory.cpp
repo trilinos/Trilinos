@@ -40,9 +40,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Panzer_config.hpp"
-
-#ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
+#include "Panzer_ConfigDefs.hpp"
 
 #include "Panzer_Traits.hpp"
 #include "Panzer_BlockedEpetraLinearObjFactory_decl.hpp"
@@ -50,5 +48,3 @@
 
 template class panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>;
 // template class panzer::BlockedEpetraLinearObjFactory<panzer::Traits,short>;
-
-#endif

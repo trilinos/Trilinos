@@ -1,28 +1,41 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//  
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//  
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -40,7 +53,7 @@ MatrixFreeOperator(
   const Teuchos::RCP<const Epetra_Map>& range_base_map_,
   const Teuchos::RCP<const Epetra_Map>& domain_sg_map_,
   const Teuchos::RCP<const Epetra_Map>& range_sg_map_,
-  const Teuchos::RCP<Teuchos::ParameterList>& params) : 
+  const Teuchos::RCP<Teuchos::ParameterList>& params) :
   label("Stokhos Matrix Free Operator"),
   sg_comm(sg_comm_),
   sg_basis(sg_basis_),
@@ -97,28 +110,28 @@ MatrixFreeOperator(
   int num_row_blocks = expansion_size;
   if (is_stoch_parallel) {
 
-    // Build column map from base domain map.  This will communicate 
+    // Build column map from base domain map.  This will communicate
     // stochastic components to column map, but not deterministic.  It would
     // be more efficient to do both, but the Epetra_Operator interface
     // doesn't have the concept of a column map.
-    global_col_map = 
+    global_col_map =
       Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(*domain_base_map,
-							     *stoch_col_map,
-							     *sg_comm));
-    global_col_map_trans = 
+                                                             *stoch_col_map,
+                                                             *sg_comm));
+    global_col_map_trans =
       Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(*range_base_map,
-							     *stoch_col_map,
-							     *sg_comm));
+                                                             *stoch_col_map,
+                                                             *sg_comm));
 
     // Build importer from Domain Map to Column Map
-    col_importer = 
+    col_importer =
       Teuchos::rcp(new Epetra_Import(*global_col_map, *domain_sg_map));
-    col_importer_trans = 
+    col_importer_trans =
       Teuchos::rcp(new Epetra_Import(*global_col_map_trans, *range_sg_map));
 
     num_col_blocks = epetraCijk->numMyCols();
     num_row_blocks = epetraCijk->numMyRows();
-  } 
+  }
 
   input_block.resize(num_col_blocks);
   result_block.resize(num_row_blocks);
@@ -129,7 +142,33 @@ Stokhos::MatrixFreeOperator::
 {
 }
 
-void 
+double
+Stokhos::MatrixFreeOperator::
+countApplyFlops() const
+{
+  int n_apply = 0;
+  int n_add = 0;
+  for (Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
+    Cijk_type::kj_iterator j_begin = Cijk->j_begin(k_it);
+    Cijk_type::kj_iterator j_end = Cijk->j_end(k_it);
+    for (Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
+      ++n_apply;
+      for (Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
+           i_it != Cijk->i_end(j_it); ++i_it) {
+        ++n_add;
+      }
+    }
+  }
+
+  const Epetra_CrsMatrix& mat =
+    dynamic_cast<const Epetra_CrsMatrix&>((*block_ops)[0]);
+  const int nnz = mat.NumGlobalNonzeros();
+  const int nrow = mat.NumGlobalRows();
+  return 2.0 * static_cast<double>(n_apply) * static_cast<double>(nnz) +
+               static_cast<double>(n_add)   * static_cast<double>(nrow);
+}
+
+void
 Stokhos::MatrixFreeOperator::
 setupOperator(
    const Teuchos::RCP<Stokhos::EpetraOperatorOrthogPoly >& ops)
@@ -140,23 +179,23 @@ setupOperator(
     k_end = Cijk->find_k(num_blocks);
 }
 
-Teuchos::RCP< Stokhos::EpetraOperatorOrthogPoly > 
+Teuchos::RCP< Stokhos::EpetraOperatorOrthogPoly >
 Stokhos::MatrixFreeOperator::
 getSGPolynomial()
 {
   return block_ops;
 }
 
-Teuchos::RCP<const Stokhos::EpetraOperatorOrthogPoly > 
+Teuchos::RCP<const Stokhos::EpetraOperatorOrthogPoly >
 Stokhos::MatrixFreeOperator::
 getSGPolynomial() const
 {
   return block_ops;
 }
 
-int 
+int
 Stokhos::MatrixFreeOperator::
-SetUseTranspose(bool UseTranspose) 
+SetUseTranspose(bool UseTranspose)
 {
   useTranspose = UseTranspose;
   for (int i=0; i<num_blocks; i++)
@@ -165,7 +204,7 @@ SetUseTranspose(bool UseTranspose)
   return 0;
 }
 
-int 
+int
 Stokhos::MatrixFreeOperator::
 Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 {
@@ -201,15 +240,15 @@ Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 
   // Allocate temporary storage
   int m = Input.NumVectors();
-  if (useTranspose == false && 
+  if (useTranspose == false &&
       (tmp == Teuchos::null || tmp->NumVectors() != m*max_num_mat_vec))
-    tmp = Teuchos::rcp(new Epetra_MultiVector(*result_base_map, 
-					      m*max_num_mat_vec));
-  else if (useTranspose == true && 
-	   (tmp_trans == Teuchos::null || 
-	    tmp_trans->NumVectors() != m*max_num_mat_vec))
-    tmp_trans = Teuchos::rcp(new Epetra_MultiVector(*result_base_map, 
-						    m*max_num_mat_vec));
+    tmp = Teuchos::rcp(new Epetra_MultiVector(*result_base_map,
+                                              m*max_num_mat_vec));
+  else if (useTranspose == true &&
+           (tmp_trans == Teuchos::null ||
+            tmp_trans->NumVectors() != m*max_num_mat_vec))
+    tmp_trans = Teuchos::rcp(new Epetra_MultiVector(*result_base_map,
+                                                    m*max_num_mat_vec));
   Epetra_MultiVector *tmp_result;
   if (useTranspose == false)
     tmp_result = tmp.get();
@@ -223,15 +262,15 @@ Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
   else {
     if (useTranspose == false) {
       if (input_col == Teuchos::null || input_col->NumVectors() != m)
-	input_col = Teuchos::rcp(new Epetra_MultiVector(*global_col_map, m));
+        input_col = Teuchos::rcp(new Epetra_MultiVector(*global_col_map, m));
       input_col->Import(*input, *col_importer, Insert);
       tmp_col = input_col.get();
     }
     else {
-      if (input_col_trans == Teuchos::null || 
-	  input_col_trans->NumVectors() != m)
-	input_col_trans = 
-	  Teuchos::rcp(new Epetra_MultiVector(*global_col_map_trans, m));
+      if (input_col_trans == Teuchos::null ||
+          input_col_trans->NumVectors() != m)
+        input_col_trans =
+          Teuchos::rcp(new Epetra_MultiVector(*global_col_map_trans, m));
       input_col_trans->Import(*input, *col_importer_trans, Insert);
       tmp_col = input_col_trans.get();
     }
@@ -246,11 +285,11 @@ Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
     result_block[i] = sg_result.GetBlock(i);
 
   // Apply block SG operator via
-  // w_i = 
+  // w_i =
   //    \sum_{j=0}^P \sum_{k=0}^L J_k v_j < \psi_i \psi_j \psi_k > / <\psi_i^2>
-  // for i=0,...,P where P = expansion_size, L = num_blocks, w_j is the jth 
+  // for i=0,...,P where P = expansion_size, L = num_blocks, w_j is the jth
   // input block, w_i is the ith result block, and J_k is the kth block operator
-  
+
   // k_begin and k_end are initialized in the constructor
   const Teuchos::Array<double>& norms = sg_basis->norm_squared();
   for (Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
@@ -265,10 +304,10 @@ Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
       for (Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
         int j = index(j_it);
         for (int mm=0; mm<m; mm++) {
-	  j_ptr[l*m+mm] = (*input_block[j])[mm];
-	  mj_indices[l*m+mm] = l*m+mm;
-	}
-	l++;
+          j_ptr[l*m+mm] = (*input_block[j])[mm];
+          mj_indices[l*m+mm] = l*m+mm;
+        }
+        l++;
       }
       Epetra_MultiVector input_tmp(View, *input_base_map, &j_ptr[0], nj*m);
       Epetra_MultiVector result_tmp(View, *tmp_result, &mj_indices[0], nj*m);
@@ -281,23 +320,23 @@ Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
       }
       l = 0;
       for (Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
-	int j = index(j_it);
-	for (Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
-	     i_it != Cijk->i_end(j_it); ++i_it) {
-	  int i = index(i_it);
-	  double c = value(i_it);
-	  if (scale_op) {
-	    int i_gid;
-	    if (useTranspose)
-	      i_gid = epetraCijk->GCID(j);
-	    else
-	      i_gid = epetraCijk->GRID(i);
-	    c /= norms[i_gid];
-	  }
-	  for (int mm=0; mm<m; mm++)
-	    (*result_block[i])(mm)->Update(c, *result_tmp(l*m+mm), 1.0);
-	}
-	l++;
+        int j = index(j_it);
+        for (Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
+             i_it != Cijk->i_end(j_it); ++i_it) {
+          int i = index(i_it);
+          double c = value(i_it);
+          if (scale_op) {
+            int i_gid;
+            if (useTranspose)
+              i_gid = epetraCijk->GCID(j);
+            else
+              i_gid = epetraCijk->GRID(i);
+            c /= norms[i_gid];
+          }
+          for (int mm=0; mm<m; mm++)
+            (*result_block[i])(mm)->Update(c, *result_tmp(l*m+mm), 1.0);
+        }
+        l++;
       }
     }
   }
@@ -314,45 +353,45 @@ Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
   return 0;
 }
 
-int 
-Stokhos::MatrixFreeOperator::ApplyInverse(const Epetra_MultiVector& Input, 
-					  Epetra_MultiVector& Result) const
+int
+Stokhos::MatrixFreeOperator::ApplyInverse(const Epetra_MultiVector& Input,
+                                          Epetra_MultiVector& Result) const
 {
   throw "MatrixFreeOperator::ApplyInverse not defined!";
   return -1;
 }
 
-double 
+double
 Stokhos::MatrixFreeOperator::NormInf() const
 {
   return 1.0;
 }
 
 
-const char* 
+const char*
 Stokhos::MatrixFreeOperator::Label () const
 {
   return const_cast<char*>(label.c_str());
 }
-  
-bool 
+
+bool
 Stokhos::MatrixFreeOperator::UseTranspose() const
 {
   return useTranspose;
 }
 
-bool 
+bool
 Stokhos::MatrixFreeOperator::HasNormInf() const
 {
   return false;
 }
 
-const Epetra_Comm & 
+const Epetra_Comm &
 Stokhos::MatrixFreeOperator::Comm() const
 {
   return *sg_comm;
 }
-const Epetra_Map& 
+const Epetra_Map&
 Stokhos::MatrixFreeOperator::OperatorDomainMap() const
 {
   if (useTranspose)
@@ -360,7 +399,7 @@ Stokhos::MatrixFreeOperator::OperatorDomainMap() const
   return *domain_sg_map;
 }
 
-const Epetra_Map& 
+const Epetra_Map&
 Stokhos::MatrixFreeOperator::OperatorRangeMap() const
 {
   if (useTranspose)

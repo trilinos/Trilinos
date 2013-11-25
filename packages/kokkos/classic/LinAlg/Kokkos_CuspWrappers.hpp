@@ -42,7 +42,7 @@
 #ifndef KOKKOS_CUSPWRAPPERS_HPP
 #define KOKKOS_CUSPWRAPPERS_HPP
 
-namespace Kokkos {
+namespace KokkosClassic {
   namespace Cuspdetails {
 
     template <class Offset, class Ordinal, class ScalarA, class ScalarX, class ScalarY> 

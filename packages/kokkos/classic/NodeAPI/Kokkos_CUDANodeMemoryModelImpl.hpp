@@ -59,7 +59,7 @@
 #include "Kokkos_CUDANodeMemoryModel.hpp" // in case someone directly included this implementation file
 #include "Kokkos_CUDANodeUtils.hpp"
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   template <class T> inline
   ArrayRCP<T> 
@@ -70,7 +70,7 @@ namespace Kokkos {
     if (size > 0) {
       cudaError_t err = cudaMalloc( (void**)&devptr, sizeInBytes );
       TEUCHOS_TEST_FOR_EXCEPTION( err != cudaSuccess, std::runtime_error,
-        "Kokkos::CUDANodeMemoryModel::allocBuffer<" 
+        "KokkosClassic::CUDANodeMemoryModel::allocBuffer<" 
         << Teuchos::TypeNameTraits<T>::name () << ">: cudaMalloc() returned "
         "error: " << cudaGetErrorString (err) 
         );
@@ -107,7 +107,7 @@ namespace Kokkos {
 #endif
     cudaError_t err = cudaMemcpy( hostDest.getRawPtr(), buffSrc.getRawPtr(), size*sizeof(T), cudaMemcpyDeviceToHost);
     TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
-      "Kokkos::CUDANodeMemoryModel::copyFromBuffer<"
+      "KokkosClassic::CUDANodeMemoryModel::copyFromBuffer<"
       << Teuchos::TypeNameTraits<T>::name () 
       << ">(): cudaMemcpy() returned error: " << cudaGetErrorString (err) 
       );
@@ -135,7 +135,7 @@ namespace Kokkos {
 #endif
     cudaError_t err = cudaMemcpy( buffDest.getRawPtr(), hostSrc.getRawPtr(), size*sizeof(T), cudaMemcpyHostToDevice);
     TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
-      "Kokkos::CUDANodeMemoryModel::copyToBuffer<"
+      "KokkosClassic::CUDANodeMemoryModel::copyToBuffer<"
       << Teuchos::TypeNameTraits<T>::name () 
       << ">(): cudaMemcpy() returned error: " << cudaGetErrorString (err)
       );
@@ -166,7 +166,7 @@ namespace Kokkos {
 #endif
     cudaError_t err = cudaMemcpy( buffDest.getRawPtr(), buffSrc.getRawPtr(), size*sizeof(T), cudaMemcpyDeviceToDevice);
     TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
-      "Kokkos::CUDANodeMemoryModel::copyBuffers<"
+      "KokkosClassic::CUDANodeMemoryModel::copyBuffers<"
       << Teuchos::TypeNameTraits<T>::name () 
       << ">(): cudaMemcpy() returned error: " << cudaGetErrorString (err)
       );
@@ -223,6 +223,6 @@ namespace Kokkos {
     (void)ncBuffers;
   }
 
-} // end of namespace Kokkos
+} // end of namespace KokkosClassic
 
 #endif

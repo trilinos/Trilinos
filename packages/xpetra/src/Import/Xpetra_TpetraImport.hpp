@@ -66,7 +66,7 @@ namespace Xpetra {
   RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > toXpetra(const RCP< const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > &);
   //
 
-  template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+  template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class TpetraImport
     : public Import<LocalOrdinal, GlobalOrdinal, Node>
   {

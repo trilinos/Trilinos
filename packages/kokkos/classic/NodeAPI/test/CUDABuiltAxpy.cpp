@@ -75,15 +75,15 @@ void axpyGPU(float *y, const float*x, float alpha, int N)
   pl.set("Device Number",0);
   pl.set("Verbose",1);
 
-  typedef Kokkos::ThrustGPUNode GPUNode;
+  typedef KokkosClassic::ThrustGPUNode GPUNode;
 
   Teuchos::RCP<GPUNode> node = Teuchos::rcp(new GPUNode(pl));
   Teuchos::ArrayRCP<float> xbuf_dev = node->allocBuffer<float>(N);
   Teuchos::ArrayRCP<float> ybuf_dev = node->allocBuffer<float>(N);
   {
-    Teuchos::ArrayRCP<float> xbuf_host = node->viewBufferNonConst<float>(Kokkos::WriteOnly,N,xbuf_dev);
+    Teuchos::ArrayRCP<float> xbuf_host = node->viewBufferNonConst<float>(KokkosClassic::WriteOnly,N,xbuf_dev);
     std::copy(x, x+N, xbuf_host.getRawPtr());
-    Teuchos::ArrayRCP<float> ybuf_host = node->viewBufferNonConst<float>(Kokkos::WriteOnly,N,ybuf_dev);
+    Teuchos::ArrayRCP<float> ybuf_host = node->viewBufferNonConst<float>(KokkosClassic::WriteOnly,N,ybuf_dev);
     std::copy(y, y+N, ybuf_host.getRawPtr());
   }
 

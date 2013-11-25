@@ -59,12 +59,12 @@ public:
   //! Sets all the parameters for the preconditioner from the list.
   virtual int SetParameters(Teuchos::ParameterList& List)
   {
-    string listName = List.get("ML sublist name","ML list");
+    std::string listName = List.get("ML sublist name","ML list");
     try{MLList_ = List.sublist(listName,true);}
     catch(...) {
       if (A_->Comm().MyPID()==0)
-        cout << "Did not find sublist \"" << listName
-             << "\" for ML subdomain solver.  Setting \"SA\" defaults." << endl;
+        std::cout << "Did not find sublist \"" << listName
+             << "\" for ML subdomain solver.  Setting \"SA\" defaults." << std::endl;
       SetDefaults("SA",MLList_);
     };
     return(0);
@@ -187,7 +187,7 @@ public:
   }
 
   //! Prints basic information on iostream. This function is used by operator<<.
-  virtual ostream& Print(std::ostream& os) const
+  virtual std::ostream& Print(std::ostream& os) const
   {
     return(os);
   }

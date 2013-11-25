@@ -62,8 +62,8 @@
 #include "Panzer_GatherOrientation.hpp"
 #include "Panzer_GatherSolution_BlockedTpetra.hpp"
 #include "Panzer_ScatterResidual_BlockedTpetra.hpp"
-// #include "Panzer_ScatterDirichletResidual_BlockedEpetra.hpp"
-// #include "Panzer_ScatterInitialCondition_BlockedEpetra.hpp"
+#include "Panzer_ScatterDirichletResidual_BlockedTpetra.hpp"
+#include "Panzer_ScatterInitialCondition_BlockedTpetra.hpp"
 #include "Panzer_ThyraObjFactory.hpp"
 
 #include "Thyra_BlockedLinearOpBase.hpp"
@@ -75,7 +75,7 @@
 
 namespace panzer {
 
-template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT=Kokkos::DefaultNode::DefaultNodeType>
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT=KokkosClassic::DefaultNode::DefaultNodeType>
 class BlockedTpetraLinearObjFactory : public LinearObjFactory<Traits>
                                     , public ThyraObjFactory<double> {
 public:
@@ -125,7 +125,14 @@ public:
      */
    virtual void adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                                              const LinearObjContainer & globalBCRows,
-                                             LinearObjContainer & ghostedObjs) const;
+                                             LinearObjContainer & ghostedObjs,
+                                             bool zeroVectorRows=false) const;
+
+   /** Adjust a vector by replacing selected rows with the value of the evaluated
+     * dirichlet conditions. This is handled through the standard container mechanism.
+     */
+   virtual void applyDirichletBCs(const LinearObjContainer & counter,
+                                  LinearObjContainer & result) const;
 
    Teuchos::MpiComm<int> getComm() const;
 
@@ -147,14 +154,12 @@ public:
    //! Use preconstructed dirichlet scatter evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator> buildScatterDirichlet() const
-   // { return Teuchos::rcp(new ScatterDirichletResidual_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(blockedDOFManager_)); }
-   { return Teuchos::null; }
+   { return Teuchos::rcp(new ScatterDirichletResidual_BlockedTpetra<EvalT,Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(blockedDOFManager_)); }
 
    //! Use preconstructed initial condition scatter evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator> buildScatterInitialCondition() const
-   // { return Teuchos::rcp(new ScatterInitialCondition_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(blockedDOFManager_)); }
-   { return Teuchos::null; }
+   { return Teuchos::rcp(new ScatterInitialCondition_BlockedTpetra<EvalT,Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(blockedDOFManager_)); }
 
 /*************** Generic helper functions for container setup *******************/
    
@@ -258,6 +263,9 @@ public:
    //! exclude a vector of pairs from the matrix
    void addExcludedPairs(const std::vector<std::pair<int,int> > & exPairs);
 
+   virtual void beginFill(LinearObjContainer & loc) const;
+   virtual void endFill(LinearObjContainer & loc) const;
+
 protected:
 /*************** Generic methods/members *******************/
 
@@ -293,7 +301,8 @@ protected:
    void adjustForDirichletConditions(const VectorType & local_bcs,
                                      const VectorType & global_bcs,
                                      const Teuchos::Ptr<VectorType> & f,
-                                     const Teuchos::Ptr<CrsMatrixType> & A) const;
+                                     const Teuchos::Ptr<CrsMatrixType> & A,
+                                     bool zeroVectorRows) const;
 
    void ghostToGlobalTpetraVector(int i,const VectorType & in,VectorType & out) const;
    void ghostToGlobalTpetraMatrix(int blockRow,const CrsMatrixType & in,CrsMatrixType & out) const;

@@ -97,12 +97,6 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ForwardEuler ) {
     // Finish Creation of IntegratorBuilder
     RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
 
-    //std::ofstream fout("PL.txt");
-    //ib->getParameterList()
-    //  ->print(fout,Teuchos::ParameterList::PrintOptions().showDoc(true)
-    //                                                     .indent(4));
-    //fout.close();
-
     Teuchos::Array<double> time_vec;
     Teuchos::Array<RCP<const VectorBase<double> > > x_vec;
     time_vec.push_back(finalTime);
@@ -115,7 +109,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ForwardEuler ) {
     TEST_FLOATING_EQUALITY( t, time_vec[0], 1.0e-14 );
 
     // Calculate the error
-    RCP<VectorBase<double> > tmp_vec = 
+    RCP<VectorBase<double> > tmp_vec =
       createMember(integrator->getStepper()->getModel()->get_x_space());
     Thyra::V_StVpStV(tmp_vec.ptr(), 1.0, *x_exact, -1.0, *(x_vec[0]));
     logStepSize.push_back(log(maxStepSize));
@@ -126,16 +120,16 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ForwardEuler ) {
   }
   fout.close();
 
-  if (logStepSize.size() > 1) 
-  { 
-    double slope = 
+  if (logStepSize.size() > 1)
+  {
+    double slope =
       computeLinearRegressionSlope<double>(logStepSize,logErrorNorm);
 
     // Test for shift in curve and change in slope.
     TEST_FLOATING_EQUALITY( exp(logErrorNorm[0]), 0.0229174, 1.0e-5 );
     TEST_FLOATING_EQUALITY( slope, 1.0, 0.02 );
   }
-  
+
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, BackwardEuler ) {
@@ -193,12 +187,6 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, BackwardEuler ) {
     // Finish Creation of IntegratorBuilder
     RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
 
-    //std::ofstream fout("PL.txt");
-    //ib->getParameterList()
-    //  ->print(fout,Teuchos::ParameterList::PrintOptions().showDoc(true)
-    //                                                     .indent(4));
-    //fout.close();
-
     Teuchos::Array<double> time_vec;
     Teuchos::Array<RCP<const VectorBase<double> > > x_vec;
     time_vec.push_back(finalTime);
@@ -211,7 +199,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, BackwardEuler ) {
     TEST_FLOATING_EQUALITY( t, time_vec[0], 1.0e-14 );
 
     // Calculate the error
-    RCP<VectorBase<double> > tmp_vec = 
+    RCP<VectorBase<double> > tmp_vec =
       createMember(integrator->getStepper()->getModel()->get_x_space());
     Thyra::V_StVpStV(tmp_vec.ptr(), 1.0, *x_exact, -1.0, *(x_vec[0]));
     logStepSize.push_back(log(maxStepSize));
@@ -222,16 +210,16 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, BackwardEuler ) {
   }
   fout.close();
 
-  if (logStepSize.size() > 1) 
-  { 
-    double slope = 
+  if (logStepSize.size() > 1)
+  {
+    double slope =
       computeLinearRegressionSlope<double>(logStepSize,logErrorNorm);
 
     // Test for shift in curve and change in slope.
     TEST_FLOATING_EQUALITY( exp(logErrorNorm[0]), 0.0207877, 1.0e-5 );
     TEST_FLOATING_EQUALITY( slope, 1.0, 0.02 );
   }
-  
+
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ImplicitBDF ) {
@@ -332,12 +320,6 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ImplicitBDF ) {
       // Finish Creation of IntegratorBuilder
       RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
 
-      //std::ofstream fout("PL.txt");
-      //ib->getParameterList()
-      //  ->print(fout,Teuchos::ParameterList::PrintOptions().showDoc(true)
-      //                                                     .indent(4));
-      //fout.close();
-
       Teuchos::Array<double> time_vec;
       Teuchos::Array<RCP<const VectorBase<double> > > x_vec;
       time_vec.push_back(finalTime);
@@ -350,7 +332,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ImplicitBDF ) {
       TEST_FLOATING_EQUALITY( t, time_vec[0], 1.0e-14 );
 
       // Calculate the error
-      RCP<VectorBase<double> > tmp_vec = 
+      RCP<VectorBase<double> > tmp_vec =
         createMember(integrator->getStepper()->getModel()->get_x_space());
       Thyra::V_StVpStV(tmp_vec.ptr(), 1.0, *x_exact, -1.0, *(x_vec[0]));
       logStepSize.push_back(log(maxStepSize));
@@ -361,9 +343,9 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ImplicitBDF ) {
     }
     fout.close();
 
-    if (logStepSize.size() > 1) 
-    { 
-      double slope = 
+    if (logStepSize.size() > 1)
+    {
+      double slope =
         computeLinearRegressionSlope<double>(logStepSize,logErrorNorm);
 
       // Test for shift in curve and change in slope.
@@ -430,12 +412,6 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ERK_ForwardEuler ) {
     // Finish Creation of IntegratorBuilder
     RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
 
-    //std::ofstream fout("PL.txt");
-    //ib->getParameterList()
-    //  ->print(fout,Teuchos::ParameterList::PrintOptions().showDoc(true)
-    //                                                     .indent(4));
-    //fout.close();
-
     Teuchos::Array<double> time_vec;
     Teuchos::Array<RCP<const VectorBase<double> > > x_vec;
     time_vec.push_back(finalTime);
@@ -448,7 +424,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ERK_ForwardEuler ) {
     TEST_FLOATING_EQUALITY( t, time_vec[0], 1.0e-14 );
 
     // Calculate the error
-    RCP<VectorBase<double> > tmp_vec = 
+    RCP<VectorBase<double> > tmp_vec =
       createMember(integrator->getStepper()->getModel()->get_x_space());
     Thyra::V_StVpStV(tmp_vec.ptr(), 1.0, *x_exact, -1.0, *(x_vec[0]));
     logStepSize.push_back(log(maxStepSize));
@@ -459,9 +435,9 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ERK_ForwardEuler ) {
   }
   fout.close();
 
-  if (logStepSize.size() > 1) 
-  { 
-    double slope = 
+  if (logStepSize.size() > 1)
+  {
+    double slope =
       computeLinearRegressionSlope<double>(logStepSize,logErrorNorm);
 
     // Test for shift in curve and change in slope.
@@ -527,12 +503,6 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ERK_4Stage ) {
     // Finish Creation of IntegratorBuilder
     RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
 
-    //std::ofstream fout("PL.txt");
-    //ib->getParameterList()
-    //  ->print(fout,Teuchos::ParameterList::PrintOptions().showDoc(true)
-    //                                                     .indent(4));
-    //fout.close();
-
     Teuchos::Array<double> time_vec;
     Teuchos::Array<RCP<const VectorBase<double> > > x_vec;
     time_vec.push_back(finalTime);
@@ -545,7 +515,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ERK_4Stage ) {
     TEST_FLOATING_EQUALITY( t, time_vec[0], 1.0e-14 );
 
     // Calculate the error
-    RCP<VectorBase<double> > tmp_vec = 
+    RCP<VectorBase<double> > tmp_vec =
       createMember(integrator->getStepper()->getModel()->get_x_space());
     Thyra::V_StVpStV(tmp_vec.ptr(), 1.0, *x_exact, -1.0, *(x_vec[0]));
     logStepSize.push_back(log(maxStepSize));
@@ -556,16 +526,16 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ERK_4Stage ) {
   }
   fout.close();
 
-  if (logStepSize.size() > 1) 
-  { 
-    double slope = 
+  if (logStepSize.size() > 1)
+  {
+    double slope =
       computeLinearRegressionSlope<double>(logStepSize,logErrorNorm);
 
     // Test for shift in curve and change in slope.
     TEST_FLOATING_EQUALITY( exp(logErrorNorm[0]), 3.8098e-07, 1.0e-5 );
     TEST_FLOATING_EQUALITY( slope, 4.0, 0.01 );
   }
-  
+
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ERK_3_8_Rule ) {
@@ -625,12 +595,6 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ERK_3_8_Rule ) {
     // Finish Creation of IntegratorBuilder
     RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
 
-    //std::ofstream fout("PL.txt");
-    //ib->getParameterList()
-    //  ->print(fout,Teuchos::ParameterList::PrintOptions().showDoc(true)
-    //                                                     .indent(4));
-    //fout.close();
-
     Teuchos::Array<double> time_vec;
     Teuchos::Array<RCP<const VectorBase<double> > > x_vec;
     time_vec.push_back(finalTime);
@@ -643,7 +607,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ERK_3_8_Rule ) {
     TEST_FLOATING_EQUALITY( t, time_vec[0], 1.0e-14 );
 
     // Calculate the error
-    RCP<VectorBase<double> > tmp_vec = 
+    RCP<VectorBase<double> > tmp_vec =
       createMember(integrator->getStepper()->getModel()->get_x_space());
     Thyra::V_StVpStV(tmp_vec.ptr(), 1.0, *x_exact, -1.0, *(x_vec[0]));
     logStepSize.push_back(log(maxStepSize));
@@ -654,16 +618,16 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ERK_3_8_Rule ) {
   }
   fout.close();
 
-  if (logStepSize.size() > 1) 
-  { 
-    double slope = 
+  if (logStepSize.size() > 1)
+  {
+    double slope =
       computeLinearRegressionSlope<double>(logStepSize,logErrorNorm);
 
     // Test for shift in curve and change in slope.
     TEST_FLOATING_EQUALITY( exp(logErrorNorm[0]), 3.8098e-07, 1.0e-5 );
     TEST_FLOATING_EQUALITY( slope, 4.0, 0.01 );
   }
-  
+
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ERK_4Stage3rdOrderRunge ) {
@@ -724,12 +688,6 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ERK_4Stage3rdOrderRunge ) {
     // Finish Creation of IntegratorBuilder
     RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
 
-    //std::ofstream fout("PL.txt");
-    //ib->getParameterList()
-    //  ->print(fout,Teuchos::ParameterList::PrintOptions().showDoc(true)
-    //                                                     .indent(4));
-    //fout.close();
-
     Teuchos::Array<double> time_vec;
     Teuchos::Array<RCP<const VectorBase<double> > > x_vec;
     time_vec.push_back(finalTime);
@@ -742,7 +700,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ERK_4Stage3rdOrderRunge ) {
     TEST_FLOATING_EQUALITY( t, time_vec[0], 1.0e-14 );
 
     // Calculate the error
-    RCP<VectorBase<double> > tmp_vec = 
+    RCP<VectorBase<double> > tmp_vec =
       createMember(integrator->getStepper()->getModel()->get_x_space());
     Thyra::V_StVpStV(tmp_vec.ptr(), 1.0, *x_exact, -1.0, *(x_vec[0]));
     logStepSize.push_back(log(maxStepSize));
@@ -753,9 +711,9 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ERK_4Stage3rdOrderRunge ) {
   }
   fout.close();
 
-  if (logStepSize.size() > 1) 
-  { 
-    double slope = 
+  if (logStepSize.size() > 1)
+  {
+    double slope =
       computeLinearRegressionSlope<double>(logStepSize,logErrorNorm);
 
     // Test for shift in curve and change in slope.
@@ -822,12 +780,6 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ERK_3Stage3rdOrder ) {
     // Finish Creation of IntegratorBuilder
     RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
 
-    //std::ofstream fout("PL.txt");
-    //ib->getParameterList()
-    //  ->print(fout,Teuchos::ParameterList::PrintOptions().showDoc(true)
-    //                                                     .indent(4));
-    //fout.close();
-
     Teuchos::Array<double> time_vec;
     Teuchos::Array<RCP<const VectorBase<double> > > x_vec;
     time_vec.push_back(finalTime);
@@ -840,7 +792,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ERK_3Stage3rdOrder ) {
     TEST_FLOATING_EQUALITY( t, time_vec[0], 1.0e-14 );
 
     // Calculate the error
-    RCP<VectorBase<double> > tmp_vec = 
+    RCP<VectorBase<double> > tmp_vec =
       createMember(integrator->getStepper()->getModel()->get_x_space());
     Thyra::V_StVpStV(tmp_vec.ptr(), 1.0, *x_exact, -1.0, *(x_vec[0]));
     logStepSize.push_back(log(maxStepSize));
@@ -851,9 +803,9 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ERK_3Stage3rdOrder ) {
   }
   fout.close();
 
-  if (logStepSize.size() > 1) 
-  { 
-    double slope = 
+  if (logStepSize.size() > 1)
+  {
+    double slope =
       computeLinearRegressionSlope<double>(logStepSize,logErrorNorm);
 
     // Test for shift in curve and change in slope.
@@ -920,12 +872,6 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ERK_3Stage3rdOrderHeun ) {
     // Finish Creation of IntegratorBuilder
     RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
 
-    //std::ofstream fout("PL.txt");
-    //ib->getParameterList()
-    //  ->print(fout,Teuchos::ParameterList::PrintOptions().showDoc(true)
-    //                                                     .indent(4));
-    //fout.close();
-
     Teuchos::Array<double> time_vec;
     Teuchos::Array<RCP<const VectorBase<double> > > x_vec;
     time_vec.push_back(finalTime);
@@ -938,7 +884,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ERK_3Stage3rdOrderHeun ) {
     TEST_FLOATING_EQUALITY( t, time_vec[0], 1.0e-14 );
 
     // Calculate the error
-    RCP<VectorBase<double> > tmp_vec = 
+    RCP<VectorBase<double> > tmp_vec =
       createMember(integrator->getStepper()->getModel()->get_x_space());
     Thyra::V_StVpStV(tmp_vec.ptr(), 1.0, *x_exact, -1.0, *(x_vec[0]));
     logStepSize.push_back(log(maxStepSize));
@@ -949,9 +895,9 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ERK_3Stage3rdOrderHeun ) {
   }
   fout.close();
 
-  if (logStepSize.size() > 1) 
-  { 
-    double slope = 
+  if (logStepSize.size() > 1)
+  {
+    double slope =
       computeLinearRegressionSlope<double>(logStepSize,logErrorNorm);
 
     // Test for shift in curve and change in slope.
@@ -1018,12 +964,6 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ERK_3Stage3rdOrderTVD ) {
     // Finish Creation of IntegratorBuilder
     RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
 
-    //std::ofstream fout("PL.txt");
-    //ib->getParameterList()
-    //  ->print(fout,Teuchos::ParameterList::PrintOptions().showDoc(true)
-    //                                                     .indent(4));
-    //fout.close();
-
     Teuchos::Array<double> time_vec;
     Teuchos::Array<RCP<const VectorBase<double> > > x_vec;
     time_vec.push_back(finalTime);
@@ -1036,7 +976,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ERK_3Stage3rdOrderTVD ) {
     TEST_FLOATING_EQUALITY( t, time_vec[0], 1.0e-14 );
 
     // Calculate the error
-    RCP<VectorBase<double> > tmp_vec = 
+    RCP<VectorBase<double> > tmp_vec =
       createMember(integrator->getStepper()->getModel()->get_x_space());
     Thyra::V_StVpStV(tmp_vec.ptr(), 1.0, *x_exact, -1.0, *(x_vec[0]));
     logStepSize.push_back(log(maxStepSize));
@@ -1047,9 +987,9 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ERK_3Stage3rdOrderTVD ) {
   }
   fout.close();
 
-  if (logStepSize.size() > 1) 
-  { 
-    double slope = 
+  if (logStepSize.size() > 1)
+  {
+    double slope =
       computeLinearRegressionSlope<double>(logStepSize,logErrorNorm);
 
     // Test for shift in curve and change in slope.
@@ -1116,12 +1056,6 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ERK_2Stage2ndOrderRunge ) {
     // Finish Creation of IntegratorBuilder
     RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
 
-    //std::ofstream fout("PL.txt");
-    //ib->getParameterList()
-    //  ->print(fout,Teuchos::ParameterList::PrintOptions().showDoc(true)
-    //                                                     .indent(4));
-    //fout.close();
-
     Teuchos::Array<double> time_vec;
     Teuchos::Array<RCP<const VectorBase<double> > > x_vec;
     time_vec.push_back(finalTime);
@@ -1134,7 +1068,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ERK_2Stage2ndOrderRunge ) {
     TEST_FLOATING_EQUALITY( t, time_vec[0], 1.0e-14 );
 
     // Calculate the error
-    RCP<VectorBase<double> > tmp_vec = 
+    RCP<VectorBase<double> > tmp_vec =
       createMember(integrator->getStepper()->getModel()->get_x_space());
     Thyra::V_StVpStV(tmp_vec.ptr(), 1.0, *x_exact, -1.0, *(x_vec[0]));
     logStepSize.push_back(log(maxStepSize));
@@ -1145,9 +1079,9 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ERK_2Stage2ndOrderRunge ) {
   }
   fout.close();
 
-  if (logStepSize.size() > 1) 
-  { 
-    double slope = 
+  if (logStepSize.size() > 1)
+  {
+    double slope =
       computeLinearRegressionSlope<double>(logStepSize,logErrorNorm);
 
     // Test for shift in curve and change in slope.
@@ -1214,12 +1148,6 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ERK_Trapezoidal ) {
     // Finish Creation of IntegratorBuilder
     RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
 
-    //std::ofstream fout("PL.txt");
-    //ib->getParameterList()
-    //  ->print(fout,Teuchos::ParameterList::PrintOptions().showDoc(true)
-    //                                                     .indent(4));
-    //fout.close();
-
     Teuchos::Array<double> time_vec;
     Teuchos::Array<RCP<const VectorBase<double> > > x_vec;
     time_vec.push_back(finalTime);
@@ -1232,7 +1160,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ERK_Trapezoidal ) {
     TEST_FLOATING_EQUALITY( t, time_vec[0], 1.0e-14 );
 
     // Calculate the error
-    RCP<VectorBase<double> > tmp_vec = 
+    RCP<VectorBase<double> > tmp_vec =
       createMember(integrator->getStepper()->getModel()->get_x_space());
     Thyra::V_StVpStV(tmp_vec.ptr(), 1.0, *x_exact, -1.0, *(x_vec[0]));
     logStepSize.push_back(log(maxStepSize));
@@ -1243,9 +1171,9 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, ERK_Trapezoidal ) {
   }
   fout.close();
 
-  if (logStepSize.size() > 1) 
-  { 
-    double slope = 
+  if (logStepSize.size() > 1)
+  {
+    double slope =
       computeLinearRegressionSlope<double>(logStepSize,logErrorNorm);
 
     // Test for shift in curve and change in slope.
@@ -1321,11 +1249,102 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, IRK_BackwardEuler ) {
     // Finish Creation of IntegratorBuilder
     RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
 
-    //std::ofstream fout("PL.txt");
-    //ib->getParameterList()
-    //  ->print(fout,Teuchos::ParameterList::PrintOptions().showDoc(true)
-    //                                                     .indent(4));
-    //fout.close();
+    Teuchos::Array<double> time_vec;
+    Teuchos::Array<RCP<const VectorBase<double> > > x_vec;
+    time_vec.push_back(finalTime);
+
+    // Perform Time Integration
+    integrator->getFwdPoints(time_vec,&x_vec,NULL,NULL);
+
+    // Get final time from stepper to test if we completed integration.
+    double t = integrator->getStepper()->getStepStatus().time;
+    TEST_FLOATING_EQUALITY( t, time_vec[0], 1.0e-14 );
+
+    // Calculate the error
+    RCP<VectorBase<double> > tmp_vec =
+      createMember(integrator->getStepper()->getModel()->get_x_space());
+    Thyra::V_StVpStV(tmp_vec.ptr(), 1.0, *x_exact, -1.0, *(x_vec[0]));
+    logStepSize.push_back(log(maxStepSize));
+    double nrm = Thyra::norm_inf(*tmp_vec);
+    logErrorNorm.push_back(log(nrm));
+
+    fout << maxStepSize << "       " << nrm << std::endl;
+  }
+  fout.close();
+
+  if (logStepSize.size() > 1)
+  {
+    double slope =
+      computeLinearRegressionSlope<double>(logStepSize,logErrorNorm);
+
+    // Test for shift in curve and change in slope.
+    TEST_FLOATING_EQUALITY( exp(logErrorNorm[0]), 0.0207877, 1.0e-5 );
+    TEST_FLOATING_EQUALITY( slope, 1.0, 0.02 );
+  }
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, IRK1StageTheta ) {
+
+  // Compute Order of Accuracy
+  Array<double> logStepSize;
+  Array<double> logErrorNorm;
+  //std::cout << std::endl << "stepSize  errorNorm" << std::endl;
+
+  std::ofstream fout("IRK1StageTheta.dat");
+  int numStepSizes = 6;
+  for (int i=0; i<numStepSizes ; ++i)
+  {
+    double maxStepSize = 0.1/pow(2.0,i);
+
+    RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+
+    // Set IntegratorBuilder ParameterList
+    RCP<ParameterList> pl = Teuchos::parameterList();
+    pl->setParameters(*(ib->getValidParameters()));
+    //pl->sublist("Integrator Settings")
+    //   .sublist("Integrator Selection")
+    //   .sublist("Default Integrator")
+    //   .sublist("VerboseObject")
+    //       .set(    "Verbosity Level","medium");
+    pl->sublist("Integrator Settings")
+           .set(    "Final Time",0.5);
+    pl->sublist("Stepper Settings")
+       .sublist("Stepper Selection")
+           .set(    "Stepper Type","Implicit RK");
+    pl->sublist("Stepper Settings")
+       .sublist("Runge Kutta Butcher Tableau Selection")
+           .set(    "Runge Kutta Butcher Tableau Type",
+                    "IRK 1 Stage Theta Method");
+    pl->sublist("Stepper Settings")
+       .sublist("Runge Kutta Butcher Tableau Selection")
+       .sublist("IRK 1 Stage Theta Method")
+           .set(    "theta", 0.5);
+    pl->sublist("Integration Control Strategy Selection")
+           .set(    "Integration Control Strategy Type",
+                    "Simple Integration Control Strategy");
+    pl->sublist("Integration Control Strategy Selection")
+       .sublist("Simple Integration Control Strategy")
+           .set(    "Take Variable Steps",false);
+    pl->sublist("Integration Control Strategy Selection")
+       .sublist("Simple Integration Control Strategy")
+           .set(    "Fixed dt", maxStepSize);
+    pl->sublist("Interpolation Buffer Settings")
+       .sublist("Trailing Interpolation Buffer Selection")
+           .set(    "Interpolation Buffer Type","Interpolation Buffer");
+    ib->setParameterList(pl);
+
+    double finalTime = ib->getParameterList()->sublist("Integrator Settings")
+                                              .get<double>("Final Time");
+
+    RCP<SinCosModel> model = sinCosModel(true);
+    RCP<const VectorBase<double> >
+      x_exact = model->getExactSolution(finalTime).get_x();
+    Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
+    RCP<Thyra::NonlinearSolverBase<double> > nlSolver =
+      timeStepNonlinearSolver<double>();
+
+    // Finish Creation of IntegratorBuilder
+    RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
 
     Teuchos::Array<double> time_vec;
     Teuchos::Array<RCP<const VectorBase<double> > > x_vec;
@@ -1339,7 +1358,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, IRK_BackwardEuler ) {
     TEST_FLOATING_EQUALITY( t, time_vec[0], 1.0e-14 );
 
     // Calculate the error
-    RCP<VectorBase<double> > tmp_vec = 
+    RCP<VectorBase<double> > tmp_vec =
       createMember(integrator->getStepper()->getModel()->get_x_space());
     Thyra::V_StVpStV(tmp_vec.ptr(), 1.0, *x_exact, -1.0, *(x_vec[0]));
     logStepSize.push_back(log(maxStepSize));
@@ -1350,9 +1369,494 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, IRK_BackwardEuler ) {
   }
   fout.close();
 
-  if (logStepSize.size() > 1) 
-  { 
-    double slope = 
+  if (logStepSize.size() > 1)
+  {
+    double slope =
+      computeLinearRegressionSlope<double>(logStepSize,logErrorNorm);
+
+    // Test for shift in curve and change in slope.
+    TEST_FLOATING_EQUALITY( exp(logErrorNorm[0]), 0.000365153, 1.0e-5 );
+    TEST_FLOATING_EQUALITY( slope, 2.0, 0.01 );
+  }
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, IRK1StageTheta0 ) {
+
+  // Compute Order of Accuracy
+  Array<double> logStepSize;
+  Array<double> logErrorNorm;
+  //std::cout << std::endl << "stepSize  errorNorm" << std::endl;
+
+  std::ofstream fout("IRK1StageTheta0.dat");
+  int numStepSizes = 6;
+  for (int i=0; i<numStepSizes ; ++i)
+  {
+    double maxStepSize = 0.1/pow(2.0,i);
+
+    RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+
+    // Set IntegratorBuilder ParameterList
+    RCP<ParameterList> pl = Teuchos::parameterList();
+    pl->setParameters(*(ib->getValidParameters()));
+    //pl->sublist("Integrator Settings")
+    //   .sublist("Integrator Selection")
+    //   .sublist("Default Integrator")
+    //   .sublist("VerboseObject")
+    //       .set(    "Verbosity Level","medium");
+    pl->sublist("Integrator Settings")
+           .set(    "Final Time",0.5);
+    pl->sublist("Stepper Settings")
+       .sublist("Stepper Selection")
+           .set(    "Stepper Type","Implicit RK");
+    pl->sublist("Stepper Settings")
+       .sublist("Runge Kutta Butcher Tableau Selection")
+           .set(    "Runge Kutta Butcher Tableau Type",
+                    "IRK 1 Stage Theta Method");
+    pl->sublist("Stepper Settings")
+       .sublist("Runge Kutta Butcher Tableau Selection")
+       .sublist("IRK 1 Stage Theta Method")
+           .set(    "theta", 0.0);
+    pl->sublist("Integration Control Strategy Selection")
+           .set(    "Integration Control Strategy Type",
+                    "Simple Integration Control Strategy");
+    pl->sublist("Integration Control Strategy Selection")
+       .sublist("Simple Integration Control Strategy")
+           .set(    "Take Variable Steps",false);
+    pl->sublist("Integration Control Strategy Selection")
+       .sublist("Simple Integration Control Strategy")
+           .set(    "Fixed dt", maxStepSize);
+    pl->sublist("Interpolation Buffer Settings")
+       .sublist("Trailing Interpolation Buffer Selection")
+           .set(    "Interpolation Buffer Type","Interpolation Buffer");
+    ib->setParameterList(pl);
+
+    double finalTime = ib->getParameterList()->sublist("Integrator Settings")
+                                              .get<double>("Final Time");
+
+    RCP<SinCosModel> model = sinCosModel(true);
+    RCP<const VectorBase<double> >
+      x_exact = model->getExactSolution(finalTime).get_x();
+    Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
+    RCP<Thyra::NonlinearSolverBase<double> > nlSolver =
+      timeStepNonlinearSolver<double>();
+
+    // Finish Creation of IntegratorBuilder
+    RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
+
+    Teuchos::Array<double> time_vec;
+    Teuchos::Array<RCP<const VectorBase<double> > > x_vec;
+    time_vec.push_back(finalTime);
+
+    // Perform Time Integration
+    integrator->getFwdPoints(time_vec,&x_vec,NULL,NULL);
+
+    // Get final time from stepper to test if we completed integration.
+    double t = integrator->getStepper()->getStepStatus().time;
+    TEST_FLOATING_EQUALITY( t, time_vec[0], 1.0e-14 );
+
+    // Calculate the error
+    RCP<VectorBase<double> > tmp_vec =
+      createMember(integrator->getStepper()->getModel()->get_x_space());
+    Thyra::V_StVpStV(tmp_vec.ptr(), 1.0, *x_exact, -1.0, *(x_vec[0]));
+    logStepSize.push_back(log(maxStepSize));
+    double nrm = Thyra::norm_inf(*tmp_vec);
+    logErrorNorm.push_back(log(nrm));
+
+    fout << maxStepSize << "       " << nrm << std::endl;
+  }
+  fout.close();
+
+  if (logStepSize.size() > 1)
+  {
+    double slope =
+      computeLinearRegressionSlope<double>(logStepSize,logErrorNorm);
+
+    // Test for shift in curve and change in slope.
+    TEST_FLOATING_EQUALITY( exp(logErrorNorm[0]), 0.0229174, 1.0e-5 );
+    TEST_FLOATING_EQUALITY( slope, 1.0, 0.02 );
+  }
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, IRK1StageTheta1 ) {
+
+  // Compute Order of Accuracy
+  Array<double> logStepSize;
+  Array<double> logErrorNorm;
+  //std::cout << std::endl << "stepSize  errorNorm" << std::endl;
+
+  std::ofstream fout("IRK1StageTheta1.dat");
+  int numStepSizes = 6;
+  for (int i=0; i<numStepSizes ; ++i)
+  {
+    double maxStepSize = 0.1/pow(2.0,i);
+
+    RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+
+    // Set IntegratorBuilder ParameterList
+    RCP<ParameterList> pl = Teuchos::parameterList();
+    pl->setParameters(*(ib->getValidParameters()));
+    //pl->sublist("Integrator Settings")
+    //   .sublist("Integrator Selection")
+    //   .sublist("Default Integrator")
+    //   .sublist("VerboseObject")
+    //       .set(    "Verbosity Level","medium");
+    pl->sublist("Integrator Settings")
+           .set(    "Final Time",0.5);
+    pl->sublist("Stepper Settings")
+       .sublist("Stepper Selection")
+           .set(    "Stepper Type","Implicit RK");
+    pl->sublist("Stepper Settings")
+       .sublist("Runge Kutta Butcher Tableau Selection")
+           .set(    "Runge Kutta Butcher Tableau Type",
+                    "IRK 1 Stage Theta Method");
+    pl->sublist("Stepper Settings")
+       .sublist("Runge Kutta Butcher Tableau Selection")
+       .sublist("IRK 1 Stage Theta Method")
+           .set(    "theta", 1.0);
+    pl->sublist("Integration Control Strategy Selection")
+           .set(    "Integration Control Strategy Type",
+                    "Simple Integration Control Strategy");
+    pl->sublist("Integration Control Strategy Selection")
+       .sublist("Simple Integration Control Strategy")
+           .set(    "Take Variable Steps",false);
+    pl->sublist("Integration Control Strategy Selection")
+       .sublist("Simple Integration Control Strategy")
+           .set(    "Fixed dt", maxStepSize);
+    pl->sublist("Interpolation Buffer Settings")
+       .sublist("Trailing Interpolation Buffer Selection")
+           .set(    "Interpolation Buffer Type","Interpolation Buffer");
+    ib->setParameterList(pl);
+
+    double finalTime = ib->getParameterList()->sublist("Integrator Settings")
+                                              .get<double>("Final Time");
+
+    RCP<SinCosModel> model = sinCosModel(true);
+    RCP<const VectorBase<double> >
+      x_exact = model->getExactSolution(finalTime).get_x();
+    Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
+    RCP<Thyra::NonlinearSolverBase<double> > nlSolver =
+      timeStepNonlinearSolver<double>();
+
+    // Finish Creation of IntegratorBuilder
+    RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
+
+    Teuchos::Array<double> time_vec;
+    Teuchos::Array<RCP<const VectorBase<double> > > x_vec;
+    time_vec.push_back(finalTime);
+
+    // Perform Time Integration
+    integrator->getFwdPoints(time_vec,&x_vec,NULL,NULL);
+
+    // Get final time from stepper to test if we completed integration.
+    double t = integrator->getStepper()->getStepStatus().time;
+    TEST_FLOATING_EQUALITY( t, time_vec[0], 1.0e-14 );
+
+    // Calculate the error
+    RCP<VectorBase<double> > tmp_vec =
+      createMember(integrator->getStepper()->getModel()->get_x_space());
+    Thyra::V_StVpStV(tmp_vec.ptr(), 1.0, *x_exact, -1.0, *(x_vec[0]));
+    logStepSize.push_back(log(maxStepSize));
+    double nrm = Thyra::norm_inf(*tmp_vec);
+    logErrorNorm.push_back(log(nrm));
+
+    fout << maxStepSize << "       " << nrm << std::endl;
+  }
+  fout.close();
+
+  if (logStepSize.size() > 1)
+  {
+    double slope =
+      computeLinearRegressionSlope<double>(logStepSize,logErrorNorm);
+
+    // Test for shift in curve and change in slope.
+    TEST_FLOATING_EQUALITY( exp(logErrorNorm[0]), 0.0207877, 1.0e-5 );
+    TEST_FLOATING_EQUALITY( slope, 1.0, 0.02 );
+  }
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, IRK2StageTheta ) {
+
+  // Compute Order of Accuracy
+  Array<double> logStepSize;
+  Array<double> logErrorNorm;
+  //std::cout << std::endl << "stepSize  errorNorm" << std::endl;
+
+  std::ofstream fout("IRK2StageTheta.dat");
+  int numStepSizes = 6;
+  for (int i=0; i<numStepSizes ; ++i)
+  {
+    double maxStepSize = 0.1/pow(2.0,i);
+
+    RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+
+    // Set IntegratorBuilder ParameterList
+    RCP<ParameterList> pl = Teuchos::parameterList();
+    pl->setParameters(*(ib->getValidParameters()));
+    //pl->sublist("Integrator Settings")
+    //   .sublist("Integrator Selection")
+    //   .sublist("Default Integrator")
+    //   .sublist("VerboseObject")
+    //       .set(    "Verbosity Level","medium");
+    pl->sublist("Integrator Settings")
+           .set(    "Final Time",0.5);
+    pl->sublist("Stepper Settings")
+       .sublist("Stepper Selection")
+           .set(    "Stepper Type","Implicit RK");
+    pl->sublist("Stepper Settings")
+       .sublist("Runge Kutta Butcher Tableau Selection")
+           .set(    "Runge Kutta Butcher Tableau Type",
+                    "IRK 2 Stage Theta Method");
+    pl->sublist("Stepper Settings")
+       .sublist("Runge Kutta Butcher Tableau Selection")
+       .sublist("IRK 2 Stage Theta Method")
+           .set(    "theta", 0.5);
+    pl->sublist("Integration Control Strategy Selection")
+           .set(    "Integration Control Strategy Type",
+                    "Simple Integration Control Strategy");
+    pl->sublist("Integration Control Strategy Selection")
+       .sublist("Simple Integration Control Strategy")
+           .set(    "Take Variable Steps",false);
+    pl->sublist("Integration Control Strategy Selection")
+       .sublist("Simple Integration Control Strategy")
+           .set(    "Fixed dt", maxStepSize);
+    pl->sublist("Interpolation Buffer Settings")
+       .sublist("Trailing Interpolation Buffer Selection")
+           .set(    "Interpolation Buffer Type","Interpolation Buffer");
+    ib->setParameterList(pl);
+
+    double finalTime = ib->getParameterList()->sublist("Integrator Settings")
+                                              .get<double>("Final Time");
+
+    RCP<SinCosModel> model = sinCosModel(true);
+    RCP<const VectorBase<double> >
+      x_exact = model->getExactSolution(finalTime).get_x();
+    Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
+    RCP<Thyra::NonlinearSolverBase<double> > nlSolver =
+      timeStepNonlinearSolver<double>();
+
+    // Finish Creation of IntegratorBuilder
+    RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
+
+    Teuchos::Array<double> time_vec;
+    Teuchos::Array<RCP<const VectorBase<double> > > x_vec;
+    time_vec.push_back(finalTime);
+
+    // Perform Time Integration
+    integrator->getFwdPoints(time_vec,&x_vec,NULL,NULL);
+
+    // Get final time from stepper to test if we completed integration.
+    double t = integrator->getStepper()->getStepStatus().time;
+    TEST_FLOATING_EQUALITY( t, time_vec[0], 1.0e-14 );
+
+    // Calculate the error
+    RCP<VectorBase<double> > tmp_vec =
+      createMember(integrator->getStepper()->getModel()->get_x_space());
+    Thyra::V_StVpStV(tmp_vec.ptr(), 1.0, *x_exact, -1.0, *(x_vec[0]));
+    logStepSize.push_back(log(maxStepSize));
+    double nrm = Thyra::norm_inf(*tmp_vec);
+    logErrorNorm.push_back(log(nrm));
+
+    fout << maxStepSize << "       " << nrm << std::endl;
+  }
+  fout.close();
+
+  if (logStepSize.size() > 1)
+  {
+    double slope =
+      computeLinearRegressionSlope<double>(logStepSize,logErrorNorm);
+
+    // Test for shift in curve and change in slope.
+    TEST_FLOATING_EQUALITY( exp(logErrorNorm[0]), 0.000365153, 1.0e-5 );
+    TEST_FLOATING_EQUALITY( slope, 2.0, 0.01 );
+  }
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, IRK2StageTheta0 ) {
+
+  // Compute Order of Accuracy
+  Array<double> logStepSize;
+  Array<double> logErrorNorm;
+  //std::cout << std::endl << "stepSize  errorNorm" << std::endl;
+
+  std::ofstream fout("IRK2StageTheta0.dat");
+  int numStepSizes = 6;
+  for (int i=0; i<numStepSizes ; ++i)
+  {
+    double maxStepSize = 0.1/pow(2.0,i);
+
+    RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+
+    // Set IntegratorBuilder ParameterList
+    RCP<ParameterList> pl = Teuchos::parameterList();
+    pl->setParameters(*(ib->getValidParameters()));
+    //pl->sublist("Integrator Settings")
+    //   .sublist("Integrator Selection")
+    //   .sublist("Default Integrator")
+    //   .sublist("VerboseObject")
+    //       .set(    "Verbosity Level","medium");
+    pl->sublist("Integrator Settings")
+           .set(    "Final Time",0.5);
+    pl->sublist("Stepper Settings")
+       .sublist("Stepper Selection")
+           .set(    "Stepper Type","Implicit RK");
+    pl->sublist("Stepper Settings")
+       .sublist("Runge Kutta Butcher Tableau Selection")
+           .set(    "Runge Kutta Butcher Tableau Type",
+                    "IRK 2 Stage Theta Method");
+    pl->sublist("Stepper Settings")
+       .sublist("Runge Kutta Butcher Tableau Selection")
+       .sublist("IRK 2 Stage Theta Method")
+           .set(    "theta", 1.0e-16);
+    pl->sublist("Integration Control Strategy Selection")
+           .set(    "Integration Control Strategy Type",
+                    "Simple Integration Control Strategy");
+    pl->sublist("Integration Control Strategy Selection")
+       .sublist("Simple Integration Control Strategy")
+           .set(    "Take Variable Steps",false);
+    pl->sublist("Integration Control Strategy Selection")
+       .sublist("Simple Integration Control Strategy")
+           .set(    "Fixed dt", maxStepSize);
+    pl->sublist("Interpolation Buffer Settings")
+       .sublist("Trailing Interpolation Buffer Selection")
+           .set(    "Interpolation Buffer Type","Interpolation Buffer");
+    ib->setParameterList(pl);
+
+    double finalTime = ib->getParameterList()->sublist("Integrator Settings")
+                                              .get<double>("Final Time");
+
+    RCP<SinCosModel> model = sinCosModel(true);
+    RCP<const VectorBase<double> >
+      x_exact = model->getExactSolution(finalTime).get_x();
+    Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
+    RCP<Thyra::NonlinearSolverBase<double> > nlSolver =
+      timeStepNonlinearSolver<double>();
+
+    // Finish Creation of IntegratorBuilder
+    RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
+
+    Teuchos::Array<double> time_vec;
+    Teuchos::Array<RCP<const VectorBase<double> > > x_vec;
+    time_vec.push_back(finalTime);
+
+    // Perform Time Integration
+    integrator->getFwdPoints(time_vec,&x_vec,NULL,NULL);
+
+    // Get final time from stepper to test if we completed integration.
+    double t = integrator->getStepper()->getStepStatus().time;
+    TEST_FLOATING_EQUALITY( t, time_vec[0], 1.0e-14 );
+
+    // Calculate the error
+    RCP<VectorBase<double> > tmp_vec =
+      createMember(integrator->getStepper()->getModel()->get_x_space());
+    Thyra::V_StVpStV(tmp_vec.ptr(), 1.0, *x_exact, -1.0, *(x_vec[0]));
+    logStepSize.push_back(log(maxStepSize));
+    double nrm = Thyra::norm_inf(*tmp_vec);
+    logErrorNorm.push_back(log(nrm));
+
+    fout << maxStepSize << "       " << nrm << std::endl;
+  }
+  fout.close();
+
+  if (logStepSize.size() > 1)
+  {
+    double slope =
+      computeLinearRegressionSlope<double>(logStepSize,logErrorNorm);
+
+    // Test for shift in curve and change in slope.
+    TEST_FLOATING_EQUALITY( exp(logErrorNorm[0]), 0.0229174, 1.0e-5 );
+    TEST_FLOATING_EQUALITY( slope, 1.0, 0.02 );
+  }
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, IRK2StageTheta1 ) {
+
+  // Compute Order of Accuracy
+  Array<double> logStepSize;
+  Array<double> logErrorNorm;
+  //std::cout << std::endl << "stepSize  errorNorm" << std::endl;
+
+  std::ofstream fout("IRK2StageTheta1.dat");
+  int numStepSizes = 6;
+  for (int i=0; i<numStepSizes ; ++i)
+  {
+    double maxStepSize = 0.1/pow(2.0,i);
+
+    RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+
+    // Set IntegratorBuilder ParameterList
+    RCP<ParameterList> pl = Teuchos::parameterList();
+    pl->setParameters(*(ib->getValidParameters()));
+    //pl->sublist("Integrator Settings")
+    //   .sublist("Integrator Selection")
+    //   .sublist("Default Integrator")
+    //   .sublist("VerboseObject")
+    //       .set(    "Verbosity Level","medium");
+    pl->sublist("Integrator Settings")
+           .set(    "Final Time",0.5);
+    pl->sublist("Stepper Settings")
+       .sublist("Stepper Selection")
+           .set(    "Stepper Type","Implicit RK");
+    pl->sublist("Stepper Settings")
+       .sublist("Runge Kutta Butcher Tableau Selection")
+           .set(    "Runge Kutta Butcher Tableau Type",
+                    "IRK 2 Stage Theta Method");
+    pl->sublist("Stepper Settings")
+       .sublist("Runge Kutta Butcher Tableau Selection")
+       .sublist("IRK 2 Stage Theta Method")
+           .set(    "theta", 1.0);
+    pl->sublist("Integration Control Strategy Selection")
+           .set(    "Integration Control Strategy Type",
+                    "Simple Integration Control Strategy");
+    pl->sublist("Integration Control Strategy Selection")
+       .sublist("Simple Integration Control Strategy")
+           .set(    "Take Variable Steps",false);
+    pl->sublist("Integration Control Strategy Selection")
+       .sublist("Simple Integration Control Strategy")
+           .set(    "Fixed dt", maxStepSize);
+    pl->sublist("Interpolation Buffer Settings")
+       .sublist("Trailing Interpolation Buffer Selection")
+           .set(    "Interpolation Buffer Type","Interpolation Buffer");
+    ib->setParameterList(pl);
+
+    double finalTime = ib->getParameterList()->sublist("Integrator Settings")
+                                              .get<double>("Final Time");
+
+    RCP<SinCosModel> model = sinCosModel(true);
+    RCP<const VectorBase<double> >
+      x_exact = model->getExactSolution(finalTime).get_x();
+    Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
+    RCP<Thyra::NonlinearSolverBase<double> > nlSolver =
+      timeStepNonlinearSolver<double>();
+
+    // Finish Creation of IntegratorBuilder
+    RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
+
+    Teuchos::Array<double> time_vec;
+    Teuchos::Array<RCP<const VectorBase<double> > > x_vec;
+    time_vec.push_back(finalTime);
+
+    // Perform Time Integration
+    integrator->getFwdPoints(time_vec,&x_vec,NULL,NULL);
+
+    // Get final time from stepper to test if we completed integration.
+    double t = integrator->getStepper()->getStepStatus().time;
+    TEST_FLOATING_EQUALITY( t, time_vec[0], 1.0e-14 );
+
+    // Calculate the error
+    RCP<VectorBase<double> > tmp_vec =
+      createMember(integrator->getStepper()->getModel()->get_x_space());
+    Thyra::V_StVpStV(tmp_vec.ptr(), 1.0, *x_exact, -1.0, *(x_vec[0]));
+    logStepSize.push_back(log(maxStepSize));
+    double nrm = Thyra::norm_inf(*tmp_vec);
+    logErrorNorm.push_back(log(nrm));
+
+    fout << maxStepSize << "       " << nrm << std::endl;
+  }
+  fout.close();
+
+  if (logStepSize.size() > 1)
+  {
+    double slope =
       computeLinearRegressionSlope<double>(logStepSize,logErrorNorm);
 
     // Test for shift in curve and change in slope.
@@ -1424,12 +1928,6 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, SDIRK_2Stage2ndOrdergp5 ) {
     // Finish Creation of IntegratorBuilder
     RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
 
-    //std::ofstream fout("PL.txt");
-    //ib->getParameterList()
-    //  ->print(fout,Teuchos::ParameterList::PrintOptions().showDoc(true)
-    //                                                     .indent(4));
-    //fout.close();
-
     Teuchos::Array<double> time_vec;
     Teuchos::Array<RCP<const VectorBase<double> > > x_vec;
     time_vec.push_back(finalTime);
@@ -1442,7 +1940,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, SDIRK_2Stage2ndOrdergp5 ) {
     TEST_FLOATING_EQUALITY( t, time_vec[0], 1.0e-14 );
 
     // Calculate the error
-    RCP<VectorBase<double> > tmp_vec = 
+    RCP<VectorBase<double> > tmp_vec =
       createMember(integrator->getStepper()->getModel()->get_x_space());
     Thyra::V_StVpStV(tmp_vec.ptr(), 1.0, *x_exact, -1.0, *(x_vec[0]));
     logStepSize.push_back(log(maxStepSize));
@@ -1453,9 +1951,9 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, SDIRK_2Stage2ndOrdergp5 ) {
   }
   fout.close();
 
-  if (logStepSize.size() > 1) 
-  { 
-    double slope = 
+  if (logStepSize.size() > 1)
+  {
+    double slope =
       computeLinearRegressionSlope<double>(logStepSize,logErrorNorm);
 
     // Test for shift in curve and change in slope.
@@ -1523,12 +2021,6 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, SDIRK_2Stage2ndOrder ) {
     // Finish Creation of IntegratorBuilder
     RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
 
-    //std::ofstream fout("PL.txt");
-    //ib->getParameterList()
-    //  ->print(fout,Teuchos::ParameterList::PrintOptions().showDoc(true)
-    //                                                     .indent(4));
-    //fout.close();
-
     Teuchos::Array<double> time_vec;
     Teuchos::Array<RCP<const VectorBase<double> > > x_vec;
     time_vec.push_back(finalTime);
@@ -1541,7 +2033,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, SDIRK_2Stage2ndOrder ) {
     TEST_FLOATING_EQUALITY( t, time_vec[0], 1.0e-14 );
 
     // Calculate the error
-    RCP<VectorBase<double> > tmp_vec = 
+    RCP<VectorBase<double> > tmp_vec =
       createMember(integrator->getStepper()->getModel()->get_x_space());
     Thyra::V_StVpStV(tmp_vec.ptr(), 1.0, *x_exact, -1.0, *(x_vec[0]));
     logStepSize.push_back(log(maxStepSize));
@@ -1552,9 +2044,9 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, SDIRK_2Stage2ndOrder ) {
   }
   fout.close();
 
-  if (logStepSize.size() > 1) 
-  { 
-    double slope = 
+  if (logStepSize.size() > 1)
+  {
+    double slope =
       computeLinearRegressionSlope<double>(logStepSize,logErrorNorm);
 
     // Test for shift in curve and change in slope.
@@ -1626,12 +2118,6 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, SDIRK_2Stage3rdOrderAStable ) {
     // Finish Creation of IntegratorBuilder
     RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
 
-    //std::ofstream fout("PL.txt");
-    //ib->getParameterList()
-    //  ->print(fout,Teuchos::ParameterList::PrintOptions().showDoc(true)
-    //                                                     .indent(4));
-    //fout.close();
-
     Teuchos::Array<double> time_vec;
     Teuchos::Array<RCP<const VectorBase<double> > > x_vec;
     time_vec.push_back(finalTime);
@@ -1644,7 +2130,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, SDIRK_2Stage3rdOrderAStable ) {
     TEST_FLOATING_EQUALITY( t, time_vec[0], 1.0e-14 );
 
     // Calculate the error
-    RCP<VectorBase<double> > tmp_vec = 
+    RCP<VectorBase<double> > tmp_vec =
       createMember(integrator->getStepper()->getModel()->get_x_space());
     Thyra::V_StVpStV(tmp_vec.ptr(), 1.0, *x_exact, -1.0, *(x_vec[0]));
     logStepSize.push_back(log(maxStepSize));
@@ -1655,9 +2141,9 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, SDIRK_2Stage3rdOrderAStable ) {
   }
   fout.close();
 
-  if (logStepSize.size() > 1) 
-  { 
-    double slope = 
+  if (logStepSize.size() > 1)
+  {
+    double slope =
       computeLinearRegressionSlope<double>(logStepSize,logErrorNorm);
 
     // Test for shift in curve and change in slope.
@@ -1733,12 +2219,6 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, SDIRK_2Stage3rdOrderLStable ) {
     // Finish Creation of IntegratorBuilder
     RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
 
-    //std::ofstream fout("PL.txt");
-    //ib->getParameterList()
-    //  ->print(fout,Teuchos::ParameterList::PrintOptions().showDoc(true)
-    //                                                     .indent(4));
-    //fout.close();
-
     Teuchos::Array<double> time_vec;
     Teuchos::Array<RCP<const VectorBase<double> > > x_vec;
     time_vec.push_back(finalTime);
@@ -1751,7 +2231,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, SDIRK_2Stage3rdOrderLStable ) {
     TEST_FLOATING_EQUALITY( t, time_vec[0], 1.0e-14 );
 
     // Calculate the error
-    RCP<VectorBase<double> > tmp_vec = 
+    RCP<VectorBase<double> > tmp_vec =
       createMember(integrator->getStepper()->getModel()->get_x_space());
     Thyra::V_StVpStV(tmp_vec.ptr(), 1.0, *x_exact, -1.0, *(x_vec[0]));
     logStepSize.push_back(log(maxStepSize));
@@ -1762,9 +2242,9 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, SDIRK_2Stage3rdOrderLStable ) {
   }
   fout.close();
 
-  if (logStepSize.size() > 1) 
-  { 
-    double slope = 
+  if (logStepSize.size() > 1)
+  {
+    double slope =
       computeLinearRegressionSlope<double>(logStepSize,logErrorNorm);
 
     // Test for shift in curve and change in slope.
@@ -1832,12 +2312,6 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, SDIRK_5Stage5thOrder ) {
     // Finish Creation of IntegratorBuilder
     RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
 
-    //std::ofstream fout("PL.txt");
-    //ib->getParameterList()
-    //  ->print(fout,Teuchos::ParameterList::PrintOptions().showDoc(true)
-    //                                                     .indent(4));
-    //fout.close();
-
     Teuchos::Array<double> time_vec;
     Teuchos::Array<RCP<const VectorBase<double> > > x_vec;
     time_vec.push_back(finalTime);
@@ -1850,7 +2324,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, SDIRK_5Stage5thOrder ) {
     TEST_FLOATING_EQUALITY( t, time_vec[0], 1.0e-14 );
 
     // Calculate the error
-    RCP<VectorBase<double> > tmp_vec = 
+    RCP<VectorBase<double> > tmp_vec =
       createMember(integrator->getStepper()->getModel()->get_x_space());
     Thyra::V_StVpStV(tmp_vec.ptr(), 1.0, *x_exact, -1.0, *(x_vec[0]));
     logStepSize.push_back(log(maxStepSize));
@@ -1861,9 +2335,9 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, SDIRK_5Stage5thOrder ) {
   }
   fout.close();
 
-  if (logStepSize.size() > 1) 
-  { 
-    double slope = 
+  if (logStepSize.size() > 1)
+  {
+    double slope =
       computeLinearRegressionSlope<double>(logStepSize,logErrorNorm);
 
     // Test for shift in curve and change in slope.
@@ -1931,12 +2405,6 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, SDIRK_5Stage4thOrder ) {
     // Finish Creation of IntegratorBuilder
     RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
 
-    //std::ofstream fout("PL.txt");
-    //ib->getParameterList()
-    //  ->print(fout,Teuchos::ParameterList::PrintOptions().showDoc(true)
-    //                                                     .indent(4));
-    //fout.close();
-
     Teuchos::Array<double> time_vec;
     Teuchos::Array<RCP<const VectorBase<double> > > x_vec;
     time_vec.push_back(finalTime);
@@ -1949,7 +2417,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, SDIRK_5Stage4thOrder ) {
     TEST_FLOATING_EQUALITY( t, time_vec[0], 1.0e-14 );
 
     // Calculate the error
-    RCP<VectorBase<double> > tmp_vec = 
+    RCP<VectorBase<double> > tmp_vec =
       createMember(integrator->getStepper()->getModel()->get_x_space());
     Thyra::V_StVpStV(tmp_vec.ptr(), 1.0, *x_exact, -1.0, *(x_vec[0]));
     logStepSize.push_back(log(maxStepSize));
@@ -1960,9 +2428,9 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, SDIRK_5Stage4thOrder ) {
   }
   fout.close();
 
-  if (logStepSize.size() > 1) 
-  { 
-    double slope = 
+  if (logStepSize.size() > 1)
+  {
+    double slope =
       computeLinearRegressionSlope<double>(logStepSize,logErrorNorm);
 
     // Test for shift in curve and change in slope.
@@ -2030,12 +2498,6 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, SDIRK_3Stage4thOrder ) {
     // Finish Creation of IntegratorBuilder
     RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
 
-    //std::ofstream fout("PL.txt");
-    //ib->getParameterList()
-    //  ->print(fout,Teuchos::ParameterList::PrintOptions().showDoc(true)
-    //                                                     .indent(4));
-    //fout.close();
-
     Teuchos::Array<double> time_vec;
     Teuchos::Array<RCP<const VectorBase<double> > > x_vec;
     time_vec.push_back(finalTime);
@@ -2048,7 +2510,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, SDIRK_3Stage4thOrder ) {
     TEST_FLOATING_EQUALITY( t, time_vec[0], 1.0e-14 );
 
     // Calculate the error
-    RCP<VectorBase<double> > tmp_vec = 
+    RCP<VectorBase<double> > tmp_vec =
       createMember(integrator->getStepper()->getModel()->get_x_space());
     Thyra::V_StVpStV(tmp_vec.ptr(), 1.0, *x_exact, -1.0, *(x_vec[0]));
     logStepSize.push_back(log(maxStepSize));
@@ -2059,9 +2521,9 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, SDIRK_3Stage4thOrder ) {
   }
   fout.close();
 
-  if (logStepSize.size() > 1) 
-  { 
-    double slope = 
+  if (logStepSize.size() > 1)
+  {
+    double slope =
       computeLinearRegressionSlope<double>(logStepSize,logErrorNorm);
 
     // Test for shift in curve and change in slope.
@@ -2129,12 +2591,6 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, DIRK_2Stage3rdOrder ) {
     // Finish Creation of IntegratorBuilder
     RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
 
-    //std::ofstream fout("PL.txt");
-    //ib->getParameterList()
-    //  ->print(fout,Teuchos::ParameterList::PrintOptions().showDoc(true)
-    //                                                     .indent(4));
-    //fout.close();
-
     Teuchos::Array<double> time_vec;
     Teuchos::Array<RCP<const VectorBase<double> > > x_vec;
     time_vec.push_back(finalTime);
@@ -2147,7 +2603,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, DIRK_2Stage3rdOrder ) {
     TEST_FLOATING_EQUALITY( t, time_vec[0], 1.0e-14 );
 
     // Calculate the error
-    RCP<VectorBase<double> > tmp_vec = 
+    RCP<VectorBase<double> > tmp_vec =
       createMember(integrator->getStepper()->getModel()->get_x_space());
     Thyra::V_StVpStV(tmp_vec.ptr(), 1.0, *x_exact, -1.0, *(x_vec[0]));
     logStepSize.push_back(log(maxStepSize));
@@ -2158,9 +2614,9 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, DIRK_2Stage3rdOrder ) {
   }
   fout.close();
 
-  if (logStepSize.size() > 1) 
-  { 
-    double slope = 
+  if (logStepSize.size() > 1)
+  {
+    double slope =
       computeLinearRegressionSlope<double>(logStepSize,logErrorNorm);
 
     // Test for shift in curve and change in slope.
@@ -2169,4 +2625,4 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, DIRK_2Stage3rdOrder ) {
   }
 }
 
-} // namespace Rythmos 
+} // namespace Rythmos

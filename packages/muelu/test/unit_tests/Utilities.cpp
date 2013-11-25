@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -69,11 +69,13 @@ namespace MueLuTests {
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
+    typedef Teuchos::ScalarTraits<SC> ST;
+
     //Calculate result = (Op*Op)*X for Epetra
     int nx = 37*comm->getSize();
     int ny=nx;
     RCP<Matrix> Op = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build2DPoisson(nx,ny,Xpetra::UseEpetra);
-    RCP<Matrix> OpOp = Utils::Multiply(*Op,false,*Op,false);
+    RCP<Matrix> OpOp = Utils::Multiply(*Op,false,*Op,false,out);
     RCP<MultiVector> result = MultiVectorFactory::Build(OpOp->getRangeMap(),1);
     RCP<MultiVector> X = MultiVectorFactory::Build(OpOp->getDomainMap(),1);
     Teuchos::Array<ST::magnitudeType> xnorm(1);
@@ -94,7 +96,7 @@ namespace MueLuTests {
 
     //Calculate result = (Op*Op)*X for Tpetra
     Op = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build2DPoisson(nx,ny,Xpetra::UseTpetra);
-    OpOp = Utils::Multiply(*Op,false,*Op,false);
+    OpOp = Utils::Multiply(*Op,false,*Op,false,out);
     result = MultiVectorFactory::Build(OpOp->getRangeMap(),1);
     X = MultiVectorFactory::Build(OpOp->getDomainMap(),1);
     X->setSeed(8675309);

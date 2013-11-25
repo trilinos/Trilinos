@@ -342,7 +342,7 @@ int main(int argc, char *argv[]) {
 
    // get xml file from command line if provided, otherwise use default
     std::string  xmlSolverInFileName;
-    if(argc>=3) xmlSolverInFileName=string(argv[2]);
+    if(argc>=3) xmlSolverInFileName=std::string(argv[2]);
 
    // Read xml file into parameter list
     Teuchos::ParameterList inputSolverList;
@@ -1346,13 +1346,13 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   Ax.Update(1.0, *rhs, -1.0);
   Ax.Norm2(&Norm);
 
-  string msg = ProblemType;
+  std::string msg = ProblemType;
 
   if (A.Comm().MyPID() == 0) {
-    cout << msg << std::endl << "......Using " << A.Comm().NumProc() << " processes" << std::endl;
-    cout << msg << "......||A x - b||_2 = " << Norm << std::endl;
-    cout << msg << "......||x_exact - x||_2 = " << sqrt(d_tot) << std::endl;
-    cout << msg << "......Total Time = " << Time.ElapsedTime() << std::endl << std::endl;
+    std::cout << msg << std::endl << "......Using " << A.Comm().NumProc() << " processes" << std::endl;
+    std::cout << msg << "......||A x - b||_2 = " << Norm << std::endl;
+    std::cout << msg << "......||x_exact - x||_2 = " << sqrt(d_tot) << std::endl;
+    std::cout << msg << "......Total Time = " << Time.ElapsedTime() << std::endl << std::endl;
   }
 
   TotalErrorExactSol += sqrt(d_tot);

@@ -160,12 +160,15 @@ int nssi_rpc_init(
         case NSSI_RPC_IB:
             transport_id=NNTI_TRANSPORT_IB;
             break;
-        case NSSI_RPC_LUC:
-            transport_id=NNTI_TRANSPORT_LUC;
-            break;
         case NSSI_RPC_GEMINI:
             transport_id=NNTI_TRANSPORT_GEMINI;
             break;
+        case NSSI_RPC_BGPDCMF:
+             transport_id=NNTI_TRANSPORT_DCMF;
+             break;
+        case NSSI_RPC_BGQPAMI:
+             transport_id=NNTI_TRANSPORT_PAMI;
+             break;
         case NSSI_RPC_MPI:
             transport_id=NNTI_TRANSPORT_MPI;
             break;

@@ -61,13 +61,6 @@ class WorksetFactoryBase {
 public:
    virtual ~WorksetFactoryBase() {}
 
-   /** Build sets of volume worksets
-     */ 
-   virtual
-   Teuchos::RCP<std::vector<panzer::Workset> >
-   getVolumeWorksets(const std::string & eBlock,
-                     const panzer::PhysicsBlock & pb) const = 0;
-
    /** Build sets of boundary condition worksets
      */
    virtual

@@ -456,13 +456,13 @@ class EPETRA_DEPRECATED Epetra_MpiSmpComm: public Epetra_Object, public virtual 
   //! @name Print object to an output stream
   //@{ 
   //! Print method that implements Epetra_Object virtual Print method
-  inline void Print(ostream & os) const {
-  os << "::Processor "<< MyPID()<<" of " << NumProc() << " total processors" << endl; 
-  os << "::Thread "<< MyThreadID()<<" of " << NumThreads() << " on node " << MyNodeID() << endl; 
+  inline void Print(std::ostream & os) const {
+  os << "::Processor "<< MyPID()<<" of " << NumProc() << " total processors" << std::endl; 
+  os << "::Thread "<< MyThreadID()<<" of " << NumThreads() << " on node " << MyNodeID() << std::endl; 
   return;}
 
   //! Print method that implements Epetra_Comm virtual PrintInfo method
-  void PrintInfo(ostream & os) const {Epetra_MpiSmpComm::Print(os);return;};
+  void PrintInfo(std::ostream & os) const {Epetra_MpiSmpComm::Print(os);return;};
 
   //@}
 

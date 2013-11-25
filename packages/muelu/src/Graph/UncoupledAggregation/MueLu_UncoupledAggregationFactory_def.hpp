@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -53,6 +53,11 @@
 #ifndef MUELU_UNCOUPLEDAGGREGATIONFACTORY_DEF_HPP_
 #define MUELU_UNCOUPLEDAGGREGATIONFACTORY_DEF_HPP_
 
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
+
 #include <Xpetra_Map.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
@@ -61,6 +66,7 @@
 
 #include "MueLu_OnePtAggregationAlgorithm.hpp"
 #include "MueLu_SmallAggregationAlgorithm.hpp"
+#include "MueLu_PreserveDirichletAggregationAlgorithm.hpp"
 #include "MueLu_UncoupledAggregationAlgorithm.hpp"
 #include "MueLu_MaxLinkAggregationAlgorithm.hpp"
 #include "MueLu_IsolatedNodeAggregationAlgorithm.hpp"
@@ -93,6 +99,7 @@ RCP<const ParameterList> UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal
 
   validParamList->set<bool> ("UseOnePtAggregationAlgorithm", true, "Allow special nodes to be marked for one-to-one transfer to the coarsest level. (default = on)");
   validParamList->set<bool> ("UseSmallAggregatesAggregationAlgorithm", false, "Turn on/off build process for small aggregates in user defined regions. (default = off)");
+  validParamList->set<bool> ("UsePreserveDirichletAggregationAlgorithm", false, "Turn on/off aggregate Dirichlet (isolated nodes) into separate 1pt node aggregates (default = off)");
   validParamList->set<bool> ("UseUncoupledAggregationAlgorithm", true, "Turn on/off uncoupled aggregation process. Do not turn off: this is the main aggregation routine within the uncoupled aggregation process. (default = on)");
   validParamList->set<bool> ("UseMaxLinkAggregationAlgorithm", true, "Turn on/off MaxLink aggregation algorithm. Adds non-aggregated nodes to the next already aggregated neighbour node with the most links. (default = on)");
   validParamList->set<bool> ("UseIsolatedNodeAggregationAlgorithm", true, "Turn on/off IsolatedNode aggregation algorithm. Ignores isolated nodes during aggregation process. (default = on)");
@@ -147,22 +154,24 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
 
   bDefinitionPhase_ = false;  // definition phase is finished, now all aggregation algorithm information is fixed
 
-  bool bUseOnePtAggregationAlgorithm        = pL.get<bool> ("UseOnePtAggregationAlgorithm");
-  bool bUseSmallAggregationAlgorithm        = pL.get<bool> ("UseSmallAggregatesAggregationAlgorithm");
-  bool bUseUncoupledAggregationAglorithm    = pL.get<bool> ("UseUncoupledAggregationAlgorithm");
-  bool bUseMaxLinkAggregationAlgorithm      = pL.get<bool> ("UseMaxLinkAggregationAlgorithm");
-  bool bUseIsolatedNodeAggregationAglorithm = pL.get<bool> ("UseIsolatedNodeAggregationAlgorithm");
-  bool bUseEmergencyAggregationAlgorithm    = pL.get<bool> ("UseEmergencyAggregationAlgorithm");
+  bool bUseOnePtAggregationAlgorithm              = pL.get<bool> ("UseOnePtAggregationAlgorithm");
+  bool bUseSmallAggregationAlgorithm             = pL.get<bool> ("UseSmallAggregatesAggregationAlgorithm");
+  bool bUsePreserveDirichletAggregationAlgorithm = pL.get<bool> ("UsePreserveDirichletAggregationAlgorithm");
+  bool bUseUncoupledAggregationAglorithm         = pL.get<bool> ("UseUncoupledAggregationAlgorithm");
+  bool bUseMaxLinkAggregationAlgorithm           = pL.get<bool> ("UseMaxLinkAggregationAlgorithm");
+  bool bUseIsolatedNodeAggregationAglorithm      = pL.get<bool> ("UseIsolatedNodeAggregationAlgorithm");
+  bool bUseEmergencyAggregationAlgorithm         = pL.get<bool> ("UseEmergencyAggregationAlgorithm");
 
   // define aggregation algorithms
   Teuchos::RCP<const FactoryBase> graphFact = GetFactory("Graph");
   algos_.clear();  // TODO can we keep different aggregation algorithms over more Build calls?
-  if (bUseOnePtAggregationAlgorithm)        algos_.push_back(Teuchos::rcp(new MueLu::OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
-  if (bUseSmallAggregationAlgorithm)        algos_.push_back(Teuchos::rcp(new MueLu::SmallAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
-  if (bUseUncoupledAggregationAglorithm)    algos_.push_back(Teuchos::rcp(new MueLu::UncoupledAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
-  if (bUseMaxLinkAggregationAlgorithm)      algos_.push_back(Teuchos::rcp(new MueLu::MaxLinkAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
-  if (bUseIsolatedNodeAggregationAglorithm) algos_.push_back(Teuchos::rcp(new MueLu::IsolatedNodeAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
-  if (bUseEmergencyAggregationAlgorithm)    algos_.push_back(Teuchos::rcp(new MueLu::EmergencyAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
+  if (bUseOnePtAggregationAlgorithm)             algos_.push_back(Teuchos::rcp(new MueLu::OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
+  if (bUseSmallAggregationAlgorithm)             algos_.push_back(Teuchos::rcp(new MueLu::SmallAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
+  if (bUseUncoupledAggregationAglorithm)         algos_.push_back(Teuchos::rcp(new MueLu::UncoupledAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
+  if (bUseMaxLinkAggregationAlgorithm)           algos_.push_back(Teuchos::rcp(new MueLu::MaxLinkAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
+  if (bUsePreserveDirichletAggregationAlgorithm) algos_.push_back(Teuchos::rcp(new MueLu::PreserveDirichletAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
+  if (bUseIsolatedNodeAggregationAglorithm)      algos_.push_back(Teuchos::rcp(new MueLu::IsolatedNodeAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
+  if (bUseEmergencyAggregationAlgorithm)         algos_.push_back(Teuchos::rcp(new MueLu::EmergencyAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(graphFact)));
 
 
   RCP<Aggregates> aggregates;

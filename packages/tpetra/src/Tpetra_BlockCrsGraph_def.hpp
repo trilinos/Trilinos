@@ -298,7 +298,7 @@ BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNodeNumBlockDiags() const
 
 //-------------------------------------------------------------------
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > &
+Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >
 BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getBlockRowMap() const
 {
   return blkRowMap_;
@@ -306,7 +306,7 @@ BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getBlockRowMap() const
 
 //-------------------------------------------------------------------
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > &
+Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >
 BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getBlockColMap() const
 {
   return blkColMap_;
@@ -314,7 +314,7 @@ BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getBlockColMap() const
 
 //-------------------------------------------------------------------
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > &
+Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >
 BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getBlockDomainMap() const
 {
   return blkDomainMap_;
@@ -322,7 +322,7 @@ BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getBlockDomainMap() const
 
 //-------------------------------------------------------------------
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > &
+Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >
 BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getBlockRangeMap() const
 {
   return blkRangeMap_;

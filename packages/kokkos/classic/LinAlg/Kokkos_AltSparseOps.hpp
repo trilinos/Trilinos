@@ -83,7 +83,7 @@
 /// if your compiler does not inline well or does not optimize
 /// effectively across inlining.
 
-namespace Kokkos {
+namespace KokkosClassic {
 
   namespace details {
 
@@ -448,7 +448,7 @@ namespace Kokkos {
 
 #ifdef HAVE_KOKKOSCLASSIC_OPENMP
     // Partial speicalization of AltSparseOpsFirstTouchAllocator for
-    // Node=Kokkos::OpenMPNode.  This just uses OpenMP pragmas
+    // Node=KokkosClassic::OpenMPNode.  This just uses OpenMP pragmas
     // directly, avoiding any possible overhead of going through the
     // Kokkos Node instance.
     template <class Ordinal>
@@ -576,7 +576,7 @@ namespace Kokkos {
 
       template<class T>
       static Teuchos::ArrayRCP<T>
-      copyStorage (const Teuchos::RCP<Kokkos::OpenMPNode>& node,
+      copyStorage (const Teuchos::RCP<KokkosClassic::OpenMPNode>& node,
                    const Teuchos::ArrayView<const size_t>& rowPtrs,
                    const Teuchos::ArrayView<const T>& inputVals)
       {
@@ -1423,10 +1423,55 @@ namespace Kokkos {
     template <class DomainScalar, class RangeScalar>
     void
     gaussSeidel (const MultiVector<DomainScalar,Node> &B,
-                 MultiVector< RangeScalar,Node> &X,
+                 MultiVector<RangeScalar,Node> &X,
                  const MultiVector<Scalar,Node> &D,
                  const RangeScalar& omega = Teuchos::ScalarTraits<RangeScalar>::one(),
                  const enum ESweepDirection direction = Forward) const;
+
+
+    /// \brief Reordered Gauss-Seidel or SOR on \f$B = A X\f$.
+    ///
+    /// Apply a forward or backward sweep of reordered Gauss-Seidel or
+    /// Successive Over-Relaxation (SOR) to the linear system(s) \f$B
+    /// = A X\f$.  For Gauss-Seidel, set the damping factor \c omega
+    /// to 1.  The ordering can be a partial one, in which case the Gauss-Seidel is only
+    /// executed on a local subset of unknowns.
+    ///
+    /// \tparam DomainScalar The type of entries in the input
+    ///   multivector X.  This may differ from the type of entries in
+    ///   A or in B.
+    /// \tparam RangeScalar The type of entries in the output
+    ///   multivector B.  This may differ from the type of entries in
+    ///   A or in X.
+    ///
+    /// \param B [in] Right-hand side(s).
+    /// \param X [in/out] On input: initial guess(es).  On output:
+    ///   result multivector(s).
+    /// \param D [in] Inverse of diagonal entries of the matrix A.
+    /// \param rowIndices [in] Ordered list of indices on which to execute GS.
+    /// \param omega [in] SOR damping factor.  omega = 1 results in
+    ///   Gauss-Seidel.
+    /// \param direction [in] Sweep direction: Forward or Backward.
+    ///   If you want a symmetric sweep, call this method twice, first
+    ///   with direction = Forward then with direction = Backward.
+    ///
+    /// \note We don't include a separate "Symmetric" direction mode
+    ///   in order to avoid confusion when using this method to
+    ///   implement "hybrid" Jacobi + symmetric (Gauss-Seidel or SOR)
+    ///   for a matrix distributed over multiple processes.  ("Hybrid"
+    ///   means "Gauss-Seidel or SOR within the process, Jacobi
+    ///   outside.")  In that case, interprocess communication (a
+    ///   boundary exchange) must occur before both the forward sweep
+    ///   and the backward sweep, so we would need to invoke the
+    ///   kernel once per sweep direction anyway.
+    template <class DomainScalar, class RangeScalar>
+    void
+    reorderedGaussSeidel (const MultiVector<DomainScalar,Node> &B,
+                          MultiVector<RangeScalar,Node> &X,
+                          const MultiVector<Scalar,Node> &D,
+                          const ArrayView<Ordinal> & rowIndices,
+                          const RangeScalar& omega = Teuchos::ScalarTraits<RangeScalar>::one(),
+                          const enum ESweepDirection direction = Forward) const;
 
     /// \brief "Add in place": compute <tt>*this = alpha*A + beta*(*this)</tt>.
     ///
@@ -1466,11 +1511,22 @@ namespace Kokkos {
     //! Implementation of gaussSeidel(); no error checking.
     template <class DomainScalar, class RangeScalar>
     void
-    gaussSeidelPrivate (MultiVector< RangeScalar,Node> &X,
+    gaussSeidelPrivate (MultiVector<RangeScalar,Node> &X,
                         const MultiVector<DomainScalar,Node> &B,
                         const MultiVector<Scalar,Node> &D,
                         const RangeScalar& omega = Teuchos::ScalarTraits<RangeScalar>::one(),
                         const ESweepDirection direction = Forward) const;
+
+    //! Implementation of reorderedGaussSeidel(); no error checking.
+    template <class DomainScalar, class RangeScalar>
+    void
+    reorderedGaussSeidelPrivate (MultiVector<RangeScalar,Node> &X,
+                                 const MultiVector<DomainScalar,Node> &B,
+                                 const MultiVector<Scalar,Node> &D,
+                                 const ArrayView<Ordinal> & rowIndices,
+                                 const RangeScalar& omega = Teuchos::ScalarTraits<RangeScalar>::one(),
+                                 const ESweepDirection direction = Forward) const;
+
 
     //! Fill the given ParameterList with defaults and validators.
     static void
@@ -1557,7 +1613,7 @@ namespace Kokkos {
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! graph.isInitialized(), std::runtime_error,
-      "Kokkos::AltSparseOps::finalizeGraph: Graph has not yet been initialized."
+      "KokkosClassic::AltSparseOps::finalizeGraph: Graph has not yet been initialized."
     );
     graph.setMatDesc (uplo, diag);
   }
@@ -1571,7 +1627,7 @@ namespace Kokkos {
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! matrix.isInitialized(), std::runtime_error,
-      "Kokkos::AltSparseOps::finalizeMatrix(graph,matrix,params): "
+      "KokkosClassic::AltSparseOps::finalizeMatrix(graph,matrix,params): "
       "Matrix has not yet been initialized."
     );
   }
@@ -1588,12 +1644,12 @@ namespace Kokkos {
     graph.setMatDesc (uplo, diag);
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! graph.isInitialized(), std::runtime_error,
-      "Kokkos::AltSparseOps::finalizeGraphAndMatrix(graph,matrix,params): "
+      "KokkosClassic::AltSparseOps::finalizeGraphAndMatrix(graph,matrix,params): "
       "Graph has not yet been initialized."
     );
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! matrix.isInitialized(), std::runtime_error,
-      "Kokkos::AltSparseOps::finalizeGraphAndMatrix(graph,matrix,params): "
+      "KokkosClassic::AltSparseOps::finalizeGraphAndMatrix(graph,matrix,params): "
       "Matrix has not yet been initialized."
     );
 
@@ -1683,7 +1739,7 @@ namespace Kokkos {
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       A.numRows_ != B.numRows_ || A.numCols_ != B.numCols_,
-      std::invalid_argument, "Kokkos::AltSparseOps sum constructor: "
+      std::invalid_argument, "KokkosClassic::AltSparseOps sum constructor: "
       << std::endl << "The dimensions of the input matrices A and B must be "
       "the same.  " << std::endl << "A is " << A.numRows_ << " x " << A.numCols_
       << " and B is " << B.numRows_ << " x " << B.numCols_ << ".");
@@ -1702,7 +1758,7 @@ namespace Kokkos {
     ArrayRCP<const Scalar> val (const_cast<const Scalar*> (valRaw), numEntries);
 
     TEUCHOS_TEST_FOR_EXCEPTION(firstTouchAllocation_, std::logic_error,
-      "Kokkos::AltSparseOps sum constructor: First-touch allocation not "
+      "KokkosClassic::AltSparseOps sum constructor: First-touch allocation not "
       "implemented for sparse matrix add.");
 
     // "Commit" the changes.
@@ -1716,7 +1772,7 @@ namespace Kokkos {
     // This only matters when using the FOR_IF mat-vec variant.
     hasEmptyRows_ = false;
     TEUCHOS_TEST_FOR_EXCEPTION(
-      matVecVariant_ == FOR_IF, std::logic_error, "Kokkos::AltSparseOps sum "
+      matVecVariant_ == FOR_IF, std::logic_error, "KokkosClassic::AltSparseOps sum "
       "constructor: Does not currently work for matVecVariant_ == FOR_IF.");
   }
 
@@ -1739,7 +1795,7 @@ namespace Kokkos {
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       A.numRows_ != numRows_ || A.numCols_ != numCols_,
-      std::invalid_argument, "Kokkos::AltSparseOps::addInPlace: " << std::endl
+      std::invalid_argument, "KokkosClassic::AltSparseOps::addInPlace: " << std::endl
       << "The dimensions of the input matrices A and *this must be the same."
       << std::endl << "A is " << A.numRows_ << " x " << A.numCols_
       << " and *this is " << numRows_ << " x " << numCols_ << ".");
@@ -1759,7 +1815,7 @@ namespace Kokkos {
     ArrayRCP<const Scalar> val (const_cast<const Scalar*> (valRaw), numEntries);
 
     TEUCHOS_TEST_FOR_EXCEPTION(firstTouchAllocation_, std::logic_error,
-      "Kokkos::AltSparseOps sum constructor: First-touch allocation not "
+      "KokkosClassic::AltSparseOps sum constructor: First-touch allocation not "
       "implemented for sparse matrix add.");
 
     // "Commit" the changes.
@@ -1773,7 +1829,7 @@ namespace Kokkos {
     // This only matters when using the FOR_IF mat-vec variant.
     hasEmptyRows_ = false;
     TEUCHOS_TEST_FOR_EXCEPTION(
-      matVecVariant_ == FOR_IF, std::logic_error, "Kokkos::AltSparseOps sum "
+      matVecVariant_ == FOR_IF, std::logic_error, "KokkosClassic::AltSparseOps sum "
       "constructor: Does not currently work for matVecVariant_ == FOR_IF.");
   }
 
@@ -1971,25 +2027,25 @@ namespace Kokkos {
     TEUCHOS_TEST_FOR_EXCEPTION(
       isInitialized_ == false,
       std::runtime_error,
-      "Kokkos::AltSparseOps::gaussSeidel: "
+      "KokkosClassic::AltSparseOps::gaussSeidel: "
       "The solve was not fully initialized.");
     TEUCHOS_TEST_FOR_EXCEPTION(
       isEmpty_ && unit_diag_ != Teuchos::UNIT_DIAG && numRows_ > 0,
       std::runtime_error,
-      "Kokkos::AltSparseOps::gaussSeidel: Local Gauss-Seidel with a "
+      "KokkosClassic::AltSparseOps::gaussSeidel: Local Gauss-Seidel with a "
       "sparse matrix with no entries, but a nonzero number of rows, is only "
       "valid if the matrix has an implicit unit diagonal.  This matrix does "
       "not.");
     TEUCHOS_TEST_FOR_EXCEPTION(
       (size_t) X.getNumCols() != (size_t) B.getNumCols(),
       std::runtime_error,
-      "Kokkos::AltSparseOps::gaussSeidel: "
+      "KokkosClassic::AltSparseOps::gaussSeidel: "
       "The multivectors B and X have different numbers of vectors.  "
       "X has " << X.getNumCols() << ", but B has " << B.getNumCols() << ".");
     TEUCHOS_TEST_FOR_EXCEPTION(
       (size_t) X.getNumRows() < (size_t) numRows_,
       std::runtime_error,
-      "Kokkos::AltSparseOps::gaussSeidel: "
+      "KokkosClassic::AltSparseOps::gaussSeidel: "
       "The input/output multivector X does not have enough rows for the "
       "matrix.  X has " << X.getNumRows() << " rows, but the (local) matrix "
       "has " << numRows_ << " rows.  One possible cause is that the column map "
@@ -1998,7 +2054,7 @@ namespace Kokkos {
     TEUCHOS_TEST_FOR_EXCEPTION(
       (size_t) B.getNumRows() < (size_t) numRows_,
       std::runtime_error,
-      "Kokkos::AltSparseOps::gaussSeidel: "
+      "KokkosClassic::AltSparseOps::gaussSeidel: "
       "The input multivector B does not have enough rows for the "
       "matrix.  B has " << B.getNumRows() << " rows, but the (local) matrix "
       "has " << numRows_ << " rows.");
@@ -2006,6 +2062,58 @@ namespace Kokkos {
     gaussSeidelPrivate<DomainScalar, RangeScalar> (X, B, D, dampingFactor,
                                                    direction);
   }
+
+
+  template <class Scalar, class Ordinal, class Node, class Allocator>
+  template <class DomainScalar, class RangeScalar>
+  void
+  AltSparseOps<Scalar,Ordinal,Node,Allocator>::
+  reorderedGaussSeidel (const MultiVector<DomainScalar,Node> &B,
+                        MultiVector< RangeScalar,Node> &X,
+                        const MultiVector<Scalar,Node> &D,
+                        const ArrayView<Ordinal> & rowIndices,
+                        const RangeScalar& dampingFactor,
+                        const ESweepDirection direction) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      isInitialized_ == false,
+      std::runtime_error,
+      "KokkosClassic::AltSparseOps::reorderedGaussSeidel: "
+      "The solve was not fully initialized.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      isEmpty_ && unit_diag_ != Teuchos::UNIT_DIAG && numRows_ > 0,
+      std::runtime_error,
+      "KokkosClassic::AltSparseOps::reorderedGaussSeidel: Local Gauss-Seidel with a "
+      "sparse matrix with no entries, but a nonzero number of rows, is only "
+      "valid if the matrix has an implicit unit diagonal.  This matrix does "
+      "not.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (size_t) X.getNumCols() != (size_t) B.getNumCols(),
+      std::runtime_error,
+      "KokkosClassic::AltSparseOps::reorderedGaussSeidel: "
+      "The multivectors B and X have different numbers of vectors.  "
+      "X has " << X.getNumCols() << ", but B has " << B.getNumCols() << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (size_t) X.getNumRows() < (size_t) numRows_,
+      std::runtime_error,
+      "KokkosClassic::AltSparseOps::reorderedGaussSeidel: "
+      "The input/output multivector X does not have enough rows for the "
+      "matrix.  X has " << X.getNumRows() << " rows, but the (local) matrix "
+      "has " << numRows_ << " rows.  One possible cause is that the column map "
+      "was not provided to the Tpetra::CrsMatrix in the case of a matrix with "
+      "an implicitly stored unit diagonal.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (size_t) B.getNumRows() < (size_t) numRows_,
+      std::runtime_error,
+      "KokkosClassic::AltSparseOps::reorderefGaussSeidel: "
+      "The input multivector B does not have enough rows for the "
+      "matrix.  B has " << B.getNumRows() << " rows, but the (local) matrix "
+      "has " << numRows_ << " rows.");
+
+    reorderedGaussSeidelPrivate<DomainScalar, RangeScalar> (X, B, D, rowIndices, dampingFactor,
+                                                   direction);
+  }
+
 
   template <class Scalar, class Ordinal, class Node, class Allocator>
   template <class DomainScalar, class RangeScalar>
@@ -2125,6 +2233,115 @@ namespace Kokkos {
 
   template <class Scalar, class Ordinal, class Node, class Allocator>
   template <class DomainScalar, class RangeScalar>
+  void AltSparseOps<Scalar,Ordinal,Node,Allocator>::
+  reorderedGaussSeidelPrivate (MultiVector<RangeScalar,Node> &X,
+                               const MultiVector<DomainScalar,Node> &B,
+                               const MultiVector<Scalar,Node> &D,
+                               const ArrayView<Ordinal> & rowIndices,
+                               const RangeScalar& omega,
+                               const ESweepDirection direction) const
+  {
+    typedef size_t OffsetType;
+    typedef Teuchos::ScalarTraits<RangeScalar> STS;
+
+    if (numRows_ == 0) {
+      return; // Nothing to do.
+    }
+    const size_t numCols = B.getNumCols ();
+    if (numCols == 0) {
+      return; // Nothing to do.
+    }
+
+    // Get the raw pointers to all the arrays.
+    const OffsetType* const ptr = ptr_.getRawPtr ();
+    const Ordinal* const ind    = ind_.getRawPtr ();
+    const Scalar* const val     = val_.getRawPtr ();
+    const DomainScalar* const b = B.getValues ().getRawPtr ();
+    const size_t b_stride       = B.getStride ();
+    RangeScalar* const x        = X.getValuesNonConst ().getRawPtr ();
+    const size_t x_stride       = X.getStride ();
+    const Scalar* const d       = D.getValues ().getRawPtr ();
+    const Ordinal* const rowInd = rowIndices.getRawPtr();
+    const Ordinal numActive     = (Ordinal) rowIndices.size();
+
+    if (numCols == 1) {
+      RangeScalar x_temp;
+
+      if (direction == Forward) {
+        for (Ordinal ii = 0; ii < numActive; ++ii) {
+          Ordinal i = rowInd[ii];
+          x_temp = Teuchos::ScalarTraits<RangeScalar>::zero ();
+          for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
+            const Ordinal j = ind[k];
+            const Scalar A_ij = val[k];
+            x_temp += A_ij * x[j];
+          }
+          x[i] += omega * d[i] * (b[i] - x_temp);
+        }
+      } else if (direction == Backward) {
+        for (Ordinal ii = numActive - 1; ii >= 0; --ii) {
+          Ordinal i = rowInd[ii];
+          x_temp = Teuchos::ScalarTraits<RangeScalar>::zero ();
+          for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
+            const Ordinal j = ind[k];
+            const Scalar A_ij = val[k];
+            x_temp += A_ij * x[j];
+          }
+          x[i] += omega * d[i] * (b[i] - x_temp);
+        }
+      }
+    }
+    else { // numCols > 1
+      // mfh 20 Dec 2012: If Gauss-Seidel for multivectors with
+      // multiple columns becomes important, we can add unrolled
+      // implementations.  The implementation below is not unrolled.
+      // It may also be reasonable to parallelize over right-hand
+      // sides, if there are enough of them, especially if the matrix
+      // fits in cache.
+      Teuchos::Array<RangeScalar> temp (numCols);
+      RangeScalar* const x_temp = temp.getRawPtr ();
+
+      if (direction == Forward) {
+        for (Ordinal ii = 0; ii < numActive; ++ii) {
+          Ordinal i = rowInd[ii];
+          for (size_t c = 0; c < numCols; ++c) {
+            x_temp[c] = Teuchos::ScalarTraits<RangeScalar>::zero ();
+          }
+          for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
+            const Ordinal j = ind[k];
+            const Scalar A_ij = val[k];
+            for (size_t c = 0; c < numCols; ++c) {
+              x_temp[c] += A_ij * x[j + x_stride*c];
+            }
+          }
+          for (size_t c = 0; c < numCols; ++c) {
+            x[i + x_stride*c] += omega * d[i] * (b[i + b_stride*c] - x_temp[c]);
+          }
+        }
+      } else if (direction == Backward) { // backward mode
+        for (Ordinal ii = numActive - 1; ii >= 0; --ii) {
+          Ordinal i = rowInd[ii];
+          for (size_t c = 0; c < numCols; ++c) {
+            x_temp[c] = Teuchos::ScalarTraits<RangeScalar>::zero ();
+          }
+          for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
+            const Ordinal j = ind[k];
+            const Scalar A_ij = val[k];
+            for (size_t c = 0; c < numCols; ++c) {
+              x_temp[c] += A_ij * x[j + x_stride*c];
+            }
+          }
+          for (size_t c = 0; c < numCols; ++c) {
+            x[i + x_stride*c] += omega * d[i] * (b[i + b_stride*c] - x_temp[c]);
+          }
+        }
+      }
+    }
+  }
+
+
+  template <class Scalar, class Ordinal, class Node, class Allocator>
+  template <class DomainScalar, class RangeScalar>
   void
   AltSparseOps<Scalar, Ordinal, Node, Allocator>::
   solve (Teuchos::ETransp trans,
@@ -2132,42 +2349,73 @@ namespace Kokkos {
          MultiVector<RangeScalar, Node>& X) const
   {
     using Teuchos::as;
-    const char tfecfFuncName[] = "solve";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    using Teuchos::TypeNameTraits;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
       ! isInitialized_,
       std::runtime_error,
-      ": The solve was not fully initialized."
+      "Kokkos::AltSparseOps<"
+      << TypeNameTraits<Scalar>::name ()
+      << ", " << TypeNameTraits<Ordinal>::name ()
+      << ", " << TypeNameTraits<Node>::name ()
+      << ", " << TypeNameTraits<Allocator>::name ()
+      << ">: The solve was not fully initialized."
     );
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       X.getNumCols() != Y.getNumCols(),
       std::runtime_error,
-      ": Input and output multivectors have different numbers of vectors (columns)."
+      "Kokkos::AltSparseOps<"
+      << TypeNameTraits<Scalar>::name ()
+      << ", " << TypeNameTraits<Ordinal>::name ()
+      << ", " << TypeNameTraits<Node>::name ()
+      << ", " << TypeNameTraits<Allocator>::name ()
+      << ">: Input and output multivectors have different numbers of vectors (columns)."
     );
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       trans == Teuchos::NO_TRANS && as<size_t> (X.getNumRows()) != as<size_t> (numRows_),
       std::runtime_error,
-      ": Dimensions of the matrix and the output multivector X do not match.  "
+      "Kokkos::AltSparseOps<"
+      << TypeNameTraits<Scalar>::name ()
+      << ", " << TypeNameTraits<Ordinal>::name ()
+      << ", " << TypeNameTraits<Node>::name ()
+      << ", " << TypeNameTraits<Allocator>::name ()
+      << ">: Dimensions of the matrix and the output multivector X do not match.  "
       "X.getNumRows() == " << X.getNumRows() << ", but the matrix has "
       << numRows_ << " rows."
     );
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       trans != Teuchos::NO_TRANS && as<size_t> (X.getNumRows()) != as<size_t> (numCols_),
       std::runtime_error,
-      ": Dimensions of the matrix and the output multivector X do not match.  "
+      "Kokkos::AltSparseOps<"
+      << TypeNameTraits<Scalar>::name ()
+      << ", " << TypeNameTraits<Ordinal>::name ()
+      << ", " << TypeNameTraits<Node>::name ()
+      << ", " << TypeNameTraits<Allocator>::name ()
+      << ">: Dimensions of the matrix and the output multivector X do not match.  "
       "X.getNumRows() == " << X.getNumRows() << ", but the transposed matrix has "
       << numCols_ << " rows."
     );
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       trans == Teuchos::NO_TRANS && as<size_t> (Y.getNumRows()) != as<size_t> (numCols_),
       std::runtime_error,
-      ": Dimensions of the matrix and the input multivector Y do not match.  "
+      "Kokkos::AltSparseOps<"
+      << TypeNameTraits<Scalar>::name ()
+      << ", " << TypeNameTraits<Ordinal>::name ()
+      << ", " << TypeNameTraits<Node>::name ()
+      << ", " << TypeNameTraits<Allocator>::name ()
+      << ">: Dimensions of the matrix and the input multivector Y do not match.  "
       "Y.getNumRows() == " << Y.getNumRows() << ", but the matrix has "
       << numCols_ << " columns."
     );
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    TEUCHOS_TEST_FOR_EXCEPTION(
       trans != Teuchos::NO_TRANS && as<size_t> (Y.getNumRows()) != as<size_t> (numRows_),
       std::runtime_error,
-      ": Dimensions of the matrix and the input multivector Y do not match.  "
+      "Kokkos::AltSparseOps<"
+      << TypeNameTraits<Scalar>::name ()
+      << ", " << TypeNameTraits<Ordinal>::name ()
+      << ", " << TypeNameTraits<Node>::name ()
+      << ", " << TypeNameTraits<Allocator>::name ()
+      << ">: Dimensions of the matrix and the input multivector Y do not match.  "
       "Y.getNumRows() == " << Y.getNumRows() << ", but the transposed matrix has "
       << numRows_ << " columns."
     );
@@ -2176,10 +2424,15 @@ namespace Kokkos {
       return; // Nothing to do
     }
     else if (isEmpty_) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      TEUCHOS_TEST_FOR_EXCEPTION(
         unit_diag_ != Teuchos::UNIT_DIAG,
         std::runtime_error,
-        ": Solve with empty matrix is only valid for an implicit unit diagonal.");
+        "Kokkos::AltSparseOps<"
+        << TypeNameTraits<Scalar>::name ()
+        << ", " << TypeNameTraits<Ordinal>::name ()
+        << ", " << TypeNameTraits<Node>::name ()
+        << ", " << TypeNameTraits<Allocator>::name ()
+        << ">: Solve with empty matrix is only valid for an implicit unit diagonal.");
       // solve I * X = Y for X = Y
       DefaultArithmetic<MultiVector<RangeScalar,Node> >::Assign (X, Y);
     }
@@ -2204,7 +2457,7 @@ namespace Kokkos {
       if (trans == Teuchos::NO_TRANS) {
         if (tri_uplo_ == Teuchos::LOWER_TRI) {
           if (unit_diag_ == Teuchos::UNIT_DIAG) {
-            using Kokkos::Raw::lowerTriSolveCsrColMajorUnitDiag;
+            using KokkosClassic::Raw::lowerTriSolveCsrColMajorUnitDiag;
             lowerTriSolveCsrColMajorUnitDiag<OT, MST, DST, RST> (numRows, numCols,
                                                                  numVecs,
                                                                  X_raw, X_stride,
@@ -2212,7 +2465,7 @@ namespace Kokkos {
                                                                  Y_raw, Y_stride);
           }
           else { // non unit diagonal
-            using Kokkos::Raw::lowerTriSolveCsrColMajor;
+            using KokkosClassic::Raw::lowerTriSolveCsrColMajor;
             lowerTriSolveCsrColMajor<OT, MST, DST, RST> (numRows, numCols,
                                                          numVecs,
                                                          X_raw, X_stride,
@@ -2222,7 +2475,7 @@ namespace Kokkos {
         }
         else { // upper triangular
           if (unit_diag_ == Teuchos::UNIT_DIAG) {
-            using Kokkos::Raw::upperTriSolveCsrColMajorUnitDiag;
+            using KokkosClassic::Raw::upperTriSolveCsrColMajorUnitDiag;
             upperTriSolveCsrColMajorUnitDiag<OT, MST, DST, RST> (numRows, numCols,
                                                                  numVecs,
                                                                  X_raw, X_stride,
@@ -2230,7 +2483,7 @@ namespace Kokkos {
                                                                  Y_raw, Y_stride);
           }
           else { // non unit diagonal
-            using Kokkos::Raw::upperTriSolveCsrColMajor;
+            using KokkosClassic::Raw::upperTriSolveCsrColMajor;
             upperTriSolveCsrColMajor<OT, MST, DST, RST> (numRows, numCols,
                                                          numVecs,
                                                          X_raw, X_stride,
@@ -2243,7 +2496,7 @@ namespace Kokkos {
         if (tri_uplo_ == Teuchos::LOWER_TRI) {
           // Transposed lower triangular solves are upper triangular solves.
           if (unit_diag_ == Teuchos::UNIT_DIAG) {
-            using Kokkos::Raw::upperTriSolveCscColMajorUnitDiag;
+            using KokkosClassic::Raw::upperTriSolveCscColMajorUnitDiag;
             // numRows resp. numCols come from the number of rows in Y
             // resp. X, so they still appear in the same order as
             // in the not transposed cases above.
@@ -2254,7 +2507,7 @@ namespace Kokkos {
                                                                  Y_raw, Y_stride);
           }
           else {
-            using Kokkos::Raw::upperTriSolveCscColMajor;
+            using KokkosClassic::Raw::upperTriSolveCscColMajor;
             upperTriSolveCscColMajor<OT, MST, DST, RST> (numRows, numCols,
                                                          numVecs,
                                                          X_raw, X_stride,
@@ -2265,7 +2518,7 @@ namespace Kokkos {
         else { // upper triangular
           // Transposed upper triangular solves are lower triangular solves.
           if (unit_diag_ == Teuchos::UNIT_DIAG) {
-            using Kokkos::Raw::lowerTriSolveCscColMajorUnitDiag;
+            using KokkosClassic::Raw::lowerTriSolveCscColMajorUnitDiag;
             lowerTriSolveCscColMajorUnitDiag<OT, MST, DST, RST> (numRows, numCols,
                                                                  numVecs,
                                                                  X_raw, X_stride,
@@ -2273,7 +2526,7 @@ namespace Kokkos {
                                                                  Y_raw, Y_stride);
           }
           else {
-            using Kokkos::Raw::lowerTriSolveCscColMajor;
+            using KokkosClassic::Raw::lowerTriSolveCscColMajor;
             lowerTriSolveCscColMajor<OT, MST, DST, RST> (numRows, numCols,
                                                          numVecs,
                                                          X_raw, X_stride,
@@ -2286,7 +2539,7 @@ namespace Kokkos {
         if (tri_uplo_ == Teuchos::LOWER_TRI) {
           // Transposed lower triangular solves are upper triangular solves.
           if (unit_diag_ == Teuchos::UNIT_DIAG) {
-            using Kokkos::Raw::upperTriSolveCscColMajorUnitDiagConj;
+            using KokkosClassic::Raw::upperTriSolveCscColMajorUnitDiagConj;
             upperTriSolveCscColMajorUnitDiagConj<OT, MST, DST, RST> (numRows, numCols,
                                                                      numVecs,
                                                                      X_raw, X_stride,
@@ -2294,7 +2547,7 @@ namespace Kokkos {
                                                                      Y_raw, Y_stride);
           }
           else {
-            using Kokkos::Raw::upperTriSolveCscColMajorConj;
+            using KokkosClassic::Raw::upperTriSolveCscColMajorConj;
             upperTriSolveCscColMajorConj<OT, MST, DST, RST> (numRows, numCols,
                                                              numVecs,
                                                              X_raw, X_stride,
@@ -2305,7 +2558,7 @@ namespace Kokkos {
         else { // upper triangular
           // Transposed upper triangular solves are lower triangular solves.
           if (unit_diag_ == Teuchos::UNIT_DIAG) {
-            using Kokkos::Raw::lowerTriSolveCscColMajorUnitDiagConj;
+            using KokkosClassic::Raw::lowerTriSolveCscColMajorUnitDiagConj;
             lowerTriSolveCscColMajorUnitDiagConj<OT, MST, DST, RST> (numRows, numCols,
                                                                      numVecs,
                                                                      X_raw, X_stride,
@@ -2313,7 +2566,7 @@ namespace Kokkos {
                                                                      Y_raw, Y_stride);
           }
           else {
-            using Kokkos::Raw::lowerTriSolveCscColMajorConj;
+            using KokkosClassic::Raw::lowerTriSolveCscColMajorConj;
             lowerTriSolveCscColMajorConj<OT, MST, DST, RST> (numRows, numCols,
                                                              numVecs,
                                                              X_raw, X_stride,
@@ -2429,140 +2682,140 @@ namespace Kokkos {
     case 1:
       if (trans == Teuchos::NO_TRANS) {
         if (matVecVariant_ == FOR_FOR) {
-          matVec = &Kokkos::Raw::matVecCsrColMajorForfor1Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCsrColMajorForfor1Vec<OT, MST, DST, RST>;
         }
         else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &Kokkos::Raw::matVecCsrColMajorForif1Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCsrColMajorForif1Vec<OT, MST, DST, RST>;
         }
         else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &Kokkos::Raw::matVecCsrColMajorForwhile1Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCsrColMajorForwhile1Vec<OT, MST, DST, RST>;
         }
       }
       else if (trans == Teuchos::TRANS) {
         if (matVecVariant_ == FOR_FOR) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForfor1Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCscColMajorForfor1Vec<OT, MST, DST, RST>;
         }
         else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForif1Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCscColMajorForif1Vec<OT, MST, DST, RST>;
         }
         else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &Kokkos::Raw::matVecCscColMajorForwhile1Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCscColMajorForwhile1Vec<OT, MST, DST, RST>;
         }
       }
       else { // if (trans == Teuchos::CONJ_TRANS) {
         if (matVecVariant_ == FOR_FOR) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForforConj1Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCscColMajorForforConj1Vec<OT, MST, DST, RST>;
         }
         else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForifConj1Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCscColMajorForifConj1Vec<OT, MST, DST, RST>;
         }
         else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &Kokkos::Raw::matVecCscColMajorForwhileConj1Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCscColMajorForwhileConj1Vec<OT, MST, DST, RST>;
         }
       }
       break;
     case 2:
       if (trans == Teuchos::NO_TRANS) {
         if (matVecVariant_ == FOR_FOR) {
-          matVec = &Kokkos::Raw::matVecCsrColMajorForfor2Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCsrColMajorForfor2Vec<OT, MST, DST, RST>;
         }
         else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &Kokkos::Raw::matVecCsrColMajorForif2Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCsrColMajorForif2Vec<OT, MST, DST, RST>;
         }
         else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &Kokkos::Raw::matVecCsrColMajorForwhile2Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCsrColMajorForwhile2Vec<OT, MST, DST, RST>;
         }
       }
       else if (trans == Teuchos::TRANS) {
         if (matVecVariant_ == FOR_FOR) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForfor2Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCscColMajorForfor2Vec<OT, MST, DST, RST>;
         }
         else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForif2Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCscColMajorForif2Vec<OT, MST, DST, RST>;
         }
         else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &Kokkos::Raw::matVecCscColMajorForwhile2Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCscColMajorForwhile2Vec<OT, MST, DST, RST>;
         }
       }
       else { // if (trans == Teuchos::CONJ_TRANS) {
         if (matVecVariant_ == FOR_FOR) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForforConj2Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCscColMajorForforConj2Vec<OT, MST, DST, RST>;
         }
         else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForifConj2Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCscColMajorForifConj2Vec<OT, MST, DST, RST>;
         }
         else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &Kokkos::Raw::matVecCscColMajorForwhileConj2Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCscColMajorForwhileConj2Vec<OT, MST, DST, RST>;
         }
       }
       break;
     case 3:
       if (trans == Teuchos::NO_TRANS) {
         if (matVecVariant_ == FOR_FOR) {
-          matVec = &Kokkos::Raw::matVecCsrColMajorForfor3Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCsrColMajorForfor3Vec<OT, MST, DST, RST>;
         }
         else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &Kokkos::Raw::matVecCsrColMajorForif3Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCsrColMajorForif3Vec<OT, MST, DST, RST>;
         }
         else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &Kokkos::Raw::matVecCsrColMajorForwhile3Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCsrColMajorForwhile3Vec<OT, MST, DST, RST>;
         }
       }
       else if (trans == Teuchos::TRANS) {
         if (matVecVariant_ == FOR_FOR) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForfor3Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCscColMajorForfor3Vec<OT, MST, DST, RST>;
         }
         else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForif3Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCscColMajorForif3Vec<OT, MST, DST, RST>;
         }
         else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &Kokkos::Raw::matVecCscColMajorForwhile3Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCscColMajorForwhile3Vec<OT, MST, DST, RST>;
         }
       }
       else { // if (trans == Teuchos::CONJ_TRANS) {
         if (matVecVariant_ == FOR_FOR) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForforConj3Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCscColMajorForforConj3Vec<OT, MST, DST, RST>;
         }
         else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForifConj3Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCscColMajorForifConj3Vec<OT, MST, DST, RST>;
         }
         else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &Kokkos::Raw::matVecCscColMajorForwhileConj3Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCscColMajorForwhileConj3Vec<OT, MST, DST, RST>;
         }
       }
       break;
     case 4:
       if (trans == Teuchos::NO_TRANS) {
         if (matVecVariant_ == FOR_FOR) {
-          matVec = &Kokkos::Raw::matVecCsrColMajorForfor4Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCsrColMajorForfor4Vec<OT, MST, DST, RST>;
         }
         else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &Kokkos::Raw::matVecCsrColMajorForif4Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCsrColMajorForif4Vec<OT, MST, DST, RST>;
         }
         else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &Kokkos::Raw::matVecCsrColMajorForwhile4Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCsrColMajorForwhile4Vec<OT, MST, DST, RST>;
         }
       }
       else if (trans == Teuchos::TRANS) {
         if (matVecVariant_ == FOR_FOR) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForfor4Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCscColMajorForfor4Vec<OT, MST, DST, RST>;
         }
         else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForif4Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCscColMajorForif4Vec<OT, MST, DST, RST>;
         }
         else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &Kokkos::Raw::matVecCscColMajorForwhile4Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCscColMajorForwhile4Vec<OT, MST, DST, RST>;
         }
       }
       else { // if (trans == Teuchos::CONJ_TRANS) {
         if (matVecVariant_ == FOR_FOR) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForforConj4Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCscColMajorForforConj4Vec<OT, MST, DST, RST>;
         }
         else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-          matVec = &Kokkos::Raw::matVecCscColMajorForifConj4Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCscColMajorForifConj4Vec<OT, MST, DST, RST>;
         }
         else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-          matVec = &Kokkos::Raw::matVecCscColMajorForwhileConj4Vec<OT, MST, DST, RST>;
+          matVec = &KokkosClassic::Raw::matVecCscColMajorForwhileConj4Vec<OT, MST, DST, RST>;
         }
       }
       break;
@@ -2570,7 +2823,7 @@ namespace Kokkos {
       if (unroll_) {
         if (trans == Teuchos::NO_TRANS) {
           if (matVecVariant_ == FOR_FOR) {
-            matVec = &Kokkos::Raw::matVecCsrColMajorForfor4Unrolled<OT, MST, DST, RST>;
+            matVec = &KokkosClassic::Raw::matVecCsrColMajorForfor4Unrolled<OT, MST, DST, RST>;
           }
           else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
             // FIXME (mfh 26 Jul 2012) Currently, the code generator
@@ -2583,7 +2836,7 @@ namespace Kokkos {
             // want to make sure that people don't get confusing
             // performance results.
 
-            //matVec = &Kokkos::Raw::matVecCsrColMajorForif4Unrolled<OT, MST, DST, RST>;
+            //matVec = &KokkosClassic::Raw::matVecCsrColMajorForif4Unrolled<OT, MST, DST, RST>;
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-if' "
               "variant of sparse matrix-vector multiply is not currently "
               "implemented for a non-fixed number of columns in the multi"
@@ -2591,7 +2844,7 @@ namespace Kokkos {
           }
           else { // matVecVariant_ == FOR_WHILE ||
                  // (matVecVariant_ == FOR_IF && hasEmptyRows_)
-            //matVec = &Kokkos::Raw::matVecCsrColMajorForwhile4Unrolled<OT, MST, DST, RST>;
+            //matVec = &KokkosClassic::Raw::matVecCsrColMajorForwhile4Unrolled<OT, MST, DST, RST>;
 
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-while' "
               "variant of sparse matrix-vector multiply is not currently "
@@ -2601,10 +2854,10 @@ namespace Kokkos {
         }
         else if (trans == Teuchos::TRANS) {
           if (matVecVariant_ == FOR_FOR) {
-            matVec = &Kokkos::Raw::matVecCscColMajorForfor4Unrolled<OT, MST, DST, RST>;
+            matVec = &KokkosClassic::Raw::matVecCscColMajorForfor4Unrolled<OT, MST, DST, RST>;
           }
           else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-            //matVec = &Kokkos::Raw::matVecCscColMajorForif4Unrolled<OT, MST, DST, RST>;
+            //matVec = &KokkosClassic::Raw::matVecCscColMajorForif4Unrolled<OT, MST, DST, RST>;
 
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-if' "
               "variant of sparse matrix-vector multiply is not currently "
@@ -2612,7 +2865,7 @@ namespace Kokkos {
               "vectors.  Please use the 'for-for' variant for now.");
           }
           else { // matVecVariant_ == FOR_WHILE || (matVecVariant_ == FOR_IF && hasEmptyRows_)
-            //matVec = &Kokkos::Raw::matVecCscColMajorForwhile4Unrolled<OT, MST, DST, RST>;
+            //matVec = &KokkosClassic::Raw::matVecCscColMajorForwhile4Unrolled<OT, MST, DST, RST>;
 
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-while' "
               "variant of sparse matrix-vector multiply is not currently "
@@ -2622,10 +2875,10 @@ namespace Kokkos {
         }
         else { // if (trans == Teuchos::CONJ_TRANS) {
           if (matVecVariant_ == FOR_FOR) {
-            matVec = &Kokkos::Raw::matVecCscColMajorForforConj4Unrolled<OT, MST, DST, RST>;
+            matVec = &KokkosClassic::Raw::matVecCscColMajorForforConj4Unrolled<OT, MST, DST, RST>;
           }
           else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-            //matVec = &Kokkos::Raw::matVecCscColMajorForifConj4Unrolled<OT, MST, DST, RST>;
+            //matVec = &KokkosClassic::Raw::matVecCscColMajorForifConj4Unrolled<OT, MST, DST, RST>;
 
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-if' "
               "variant of sparse matrix-vector multiply is not currently "
@@ -2634,7 +2887,7 @@ namespace Kokkos {
           }
           else { // matVecVariant_ == FOR_WHILE ||
                  // (matVecVariant_ == FOR_IF && hasEmptyRows_)
-            //matVec = &Kokkos::Raw::matVecCscColMajorForwhileConj4Unrolled<OT, MST, DST, RST>;
+            //matVec = &KokkosClassic::Raw::matVecCscColMajorForwhileConj4Unrolled<OT, MST, DST, RST>;
 
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-while' "
               "variant of sparse matrix-vector multiply is not currently "
@@ -2646,10 +2899,10 @@ namespace Kokkos {
       else { // Don't unroll across multivector columns
         if (trans == Teuchos::NO_TRANS) {
           if (matVecVariant_ == FOR_FOR) {
-            matVec = &Kokkos::Raw::matVecCsrColMajorForfor<OT, MST, DST, RST>;
+            matVec = &KokkosClassic::Raw::matVecCsrColMajorForfor<OT, MST, DST, RST>;
           }
           else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-            //matVec = &Kokkos::Raw::matVecCsrColMajorForif<OT, MST, DST, RST>;
+            //matVec = &KokkosClassic::Raw::matVecCsrColMajorForif<OT, MST, DST, RST>;
 
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-if' "
               "variant of sparse matrix-vector multiply is not currently "
@@ -2658,7 +2911,7 @@ namespace Kokkos {
           }
           else { // matVecVariant_ == FOR_WHILE ||
                  // (matVecVariant_ == FOR_IF && hasEmptyRows_)
-            //matVec = &Kokkos::Raw::matVecCsrColMajorForwhile<OT, MST, DST, RST>;
+            //matVec = &KokkosClassic::Raw::matVecCsrColMajorForwhile<OT, MST, DST, RST>;
 
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-if' "
               "variant of sparse matrix-vector multiply is not currently "
@@ -2668,10 +2921,10 @@ namespace Kokkos {
         }
         else if (trans == Teuchos::TRANS) {
           if (matVecVariant_ == FOR_FOR) {
-            matVec = &Kokkos::Raw::matVecCscColMajorForfor<OT, MST, DST, RST>;
+            matVec = &KokkosClassic::Raw::matVecCscColMajorForfor<OT, MST, DST, RST>;
           }
           else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-            //matVec = &Kokkos::Raw::matVecCscColMajorForif<OT, MST, DST, RST>;
+            //matVec = &KokkosClassic::Raw::matVecCscColMajorForif<OT, MST, DST, RST>;
 
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-if' "
               "variant of sparse matrix-vector multiply is not currently "
@@ -2680,7 +2933,7 @@ namespace Kokkos {
           }
           else { // matVecVariant_ == FOR_WHILE ||
                  // (matVecVariant_ == FOR_IF && hasEmptyRows_)
-            //matVec = &Kokkos::Raw::matVecCscColMajorForwhile<OT, MST, DST, RST>;
+            //matVec = &KokkosClassic::Raw::matVecCscColMajorForwhile<OT, MST, DST, RST>;
 
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-while' "
               "variant of sparse matrix-vector multiply is not currently "
@@ -2690,10 +2943,10 @@ namespace Kokkos {
         }
         else { // if (trans == Teuchos::CONJ_TRANS) {
           if (matVecVariant_ == FOR_FOR) {
-            matVec = &Kokkos::Raw::matVecCscColMajorForforConj<OT, MST, DST, RST>;
+            matVec = &KokkosClassic::Raw::matVecCscColMajorForforConj<OT, MST, DST, RST>;
           }
           else if (matVecVariant_ == FOR_IF && ! hasEmptyRows_) {
-            //matVec = &Kokkos::Raw::matVecCscColMajorForifConj<OT, MST, DST, RST>;
+            //matVec = &KokkosClassic::Raw::matVecCscColMajorForifConj<OT, MST, DST, RST>;
 
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-if' "
               "variant of sparse matrix-vector multiply is not currently "
@@ -2702,7 +2955,7 @@ namespace Kokkos {
           }
           else { // matVecVariant_ == FOR_WHILE ||
                  // (matVecVariant_ == FOR_IF && hasEmptyRows_)
-            //matVec = &Kokkos::Raw::matVecCscColMajorForwhileConj<OT, MST, DST, RST>;
+            //matVec = &KokkosClassic::Raw::matVecCscColMajorForwhileConj<OT, MST, DST, RST>;
 
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "The 'for-while' "
               "variant of sparse matrix-vector multiply is not currently "
@@ -2795,7 +3048,7 @@ namespace Kokkos {
   {
     using Teuchos::TypeNameTraits;
     std::ostringstream os;
-    os <<  "Kokkos::AltSparseOps<"
+    os <<  "KokkosClassic::AltSparseOps<"
        << "Scalar=" << TypeNameTraits<Scalar>::name()
        << ", Ordinal=" << TypeNameTraits<Ordinal>::name()
        << ", Node=" << TypeNameTraits<Node>::name()
@@ -2835,7 +3088,7 @@ namespace Kokkos {
       out << this->description() << endl;
       return;
     } else { // vl > VERB_LOW
-      out << "Kokkos::AltSparseOps: {" << endl;
+      out << "KokkosClassic::AltSparseOps: {" << endl;
       {
         OSTab tab1 (rcpFromRef (out));
         out << "Template parameters: {" << endl;
@@ -3029,7 +3282,7 @@ namespace Kokkos {
     //! Constructor (Kokkos Node): DO NOT CALL (Scalar=void specialization).
     AltSparseOps (const Teuchos::RCP<Node>& node) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "It is not allowed to "
-        "instantiate Kokkos::AltSparseOps with Scalar=void.  The Scalar=void "
+        "instantiate KokkosClassic::AltSparseOps with Scalar=void.  The Scalar=void "
         "specialization exists only for its typedefs.  "
         "Please report this bug to the Kokkos and Tpetra developers.");
     }
@@ -3038,7 +3291,7 @@ namespace Kokkos {
     AltSparseOps (const Teuchos::RCP<Node>& node,
                   Teuchos::ParameterList& plist) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "It is not allowed to "
-        "instantiate Kokkos::AltSparseOps with Scalar=void.  The Scalar=void "
+        "instantiate KokkosClassic::AltSparseOps with Scalar=void.  The Scalar=void "
         "specialization exists only for its typedefs.  "
         "Please report this bug to the Kokkos and Tpetra developers.");
     }
@@ -3076,7 +3329,7 @@ namespace Kokkos {
     std::string description () const {
       using Teuchos::TypeNameTraits;
       std::ostringstream os;
-      os <<  "Kokkos::AltSparseOps<"
+      os <<  "KokkosClassic::AltSparseOps<"
          << "Scalar=void"
          << ", Ordinal=" << TypeNameTraits<Ordinal>::name()
          << ", Node=" << TypeNameTraits<Node>::name()
@@ -3212,12 +3465,12 @@ namespace Kokkos {
     {
       TEUCHOS_TEST_FOR_EXCEPTION(
         ! graph.isInitialized(), std::runtime_error,
-        "Kokkos::AltSparseOps::finalizeGraph: "
+        "KokkosClassic::AltSparseOps::finalizeGraph: "
         "Graph has not yet been initialized.");
       graph.setMatDesc (uplo, diag);
     }
   };
-} // namespace Kokkos
+} // namespace KokkosClassic
 
 #endif // #ifndef __Kokkos_AltSparseOps_hpp
 

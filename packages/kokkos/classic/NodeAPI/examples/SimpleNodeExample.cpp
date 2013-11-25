@@ -50,10 +50,10 @@
  */
 
 int main() {
-  typedef Kokkos::DefaultNode::DefaultNodeType NODE;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType NODE;
   const int VEC_LENGTH = 100;
 
-  Teuchos::RCP<NODE> node = Kokkos::DefaultNode::getDefaultNode();
+  Teuchos::RCP<NODE> node = KokkosClassic::DefaultNode::getDefaultNode();
   Teuchos::ArrayRCP<int> x = node->allocBuffer<int>( VEC_LENGTH );
 
   KokkosExamples::initVec( node, x );

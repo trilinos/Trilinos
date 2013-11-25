@@ -12,6 +12,7 @@ TRIBITS_PACKAGE(MueLu ENABLE_SHADOWING_WARNINGS)
 # B) Set up package-specific options
 #
 
+
 TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 TRIBITS_ADD_DEBUG_OPTION()
 TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
@@ -42,6 +43,14 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_PROFILING
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_GOOGLE_PERFTOOLS
   HAVE_${PACKAGE_NAME_UC}_GOOGLE_PERFTOOLS
   "Enable detailed memory profiling using Google Perftools."
+  OFF)
+
+# Boost
+# We don't actually need this option, but boost is not *really* needed, and
+# I really want to hide unnecessary warnings
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Boost_for_real
+  HAVE_${PACKAGE_NAME_UC}_BOOST_FOR_REAL
+  "Enable Boost"
   OFF)
 
 # Explicit instantiation options:
@@ -107,6 +116,17 @@ IF(((NOT ${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION) AND Teuchos_ENABLE_COMPL
 ELSE()
   SET(HAVE_${PACKAGE_NAME_UC}_COMPLEX OFF)
 ENDIF()
+
+
+# ML's MMM
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_ML_MMM
+  HAVE_${PACKAGE_NAME_UC}_ML_MMM
+  "Use ML's Matrix-Matrix-Multiply when available"
+  OFF)
+IF (${PACKAGE_NAME}_ENABLE_ML_MMM AND NOT ${PACKAGE_NAME}_ENABLE_ML)
+  MESSAGE(FATAL_ERROR "Option MueLu_ENABLE_ML_MMM=ON requires MueLu_ENABLE_ML=ON.")
+ENDIF ()
+
 
 #
 # C) Add the libraries, tests, and examples

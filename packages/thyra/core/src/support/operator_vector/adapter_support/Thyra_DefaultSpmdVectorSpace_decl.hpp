@@ -142,7 +142,8 @@ public:
    */
   void initialize(
     const RCP<const Teuchos::Comm<Ordinal> > &comm,
-    const Ordinal localSubDim, const Ordinal globalDim
+    const Ordinal localSubDim, const Ordinal globalDim,
+    const bool isLocallyReplicated = false
     );
 
   /** \brief Set to an uninitialized state.
@@ -264,12 +265,32 @@ template<class Scalar>
 RCP<DefaultSpmdVectorSpace<Scalar> >
 defaultSpmdVectorSpace(
   const RCP<const Teuchos::Comm<Ordinal> > &comm,
-  const Ordinal localSubDim, const Ordinal globalDim
+  const Ordinal localSubDim, const Ordinal globalDim,
+  const int isLocallyReplicated = false
   )
 {
   RCP<DefaultSpmdVectorSpace<Scalar> > vs =
     DefaultSpmdVectorSpace<Scalar>::create();
-  vs->initialize(comm, localSubDim, globalDim);
+  vs->initialize(comm, localSubDim, globalDim, isLocallyReplicated);
+  return vs;
+}
+
+
+/** \brief Nonmember consturctor function that creates a locally-replicated
+ * parallel vector space.
+ *
+ * \relates DefaultSpmdVectorSpace
+ */
+template<class Scalar>
+RCP<DefaultSpmdVectorSpace<Scalar> >
+locallyReplicatedDefaultSpmdVectorSpace(
+  const RCP<const Teuchos::Comm<Ordinal> > &comm,
+  const Ordinal globalDim
+  )
+{
+  RCP<DefaultSpmdVectorSpace<Scalar> > vs =
+    DefaultSpmdVectorSpace<Scalar>::create();
+  vs->initialize(comm, globalDim, globalDim, true);
   return vs;
 }
 

@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -46,13 +46,14 @@
 #ifndef MUELU_LEVEL_HPP
 #define MUELU_LEVEL_HPP
 
+#include <Xpetra_Map.hpp>               // for UnderlyingLib definition
+
 #include "MueLu_BoostGraphviz.hpp"
 
+#include "MueLu_KeepType.hpp"
+#include "MueLu_VariableContainer.hpp"
 #include "MueLu_BaseClass.hpp"
-
-#include "MueLu_Needs.hpp"
 #include "MueLu_NoFactory.hpp"
-
 #include "MueLu_FactoryManagerBase_fwd.hpp"
 
 namespace MueLu {
@@ -61,17 +62,26 @@ namespace MueLu {
     @class Level
     @brief Class that holds all level-specific information.
 
-    All data is stored in an associative list. See the Needs class for more information.
+    All data that is stored in the <tt>Level</tt> class need a variable name
+    (e.g. "A", "P", ...) and a pointer to the generating factory. Only with
+    both the variable name and the generating factory the data can be accessed.
 
-    The Level class uses the functionality of the Needs class with the extended hashtables and
-    adds the handling of default factories.
-    All data that is stored in the <tt>Level</tt> class need a variable name (e.g. "A", "P", ...) and
-    a pointer to the generating factory. Only with both the variable name and the generating factory
-    the data can be accessed.
+    If no pointer to the generating factory is provided (or it is NULL) then
+    the Level class uses the information from a factory manager, which stores
+    default factories for different variable names.
 
-    If no pointer to the generating factory is provided (or it is NULL) then the Level class
-    uses the information from a factory manager, which stores default factories for different
-    variable names.
+    We use a "two key" map for storage of data, with the pointer to the
+    generating factory as primary key and the variable name as secondary key.
+    The pointer to the generating factory is only used as primary "key".  It
+    doesn't matter if the given factory pointer is valid or not. So the NULL
+    pointer can also be used.
+
+    The data itself is stored within a VariableContainer object.  A reference
+    counter keeps track of the storage and automatically frees the memory if
+    the data is not needed any more. In the standard mode, the data first has
+    to be requested by calling the Request function. Then the data can be set
+    by calling Set.  With Get the user can fetch data when needed. Release
+    decrements the reference counter for the given variable.
   */
   class Level : public BaseClass {
 
@@ -79,10 +89,13 @@ namespace MueLu {
     //@{
 
     //! @name Constructors / Destructors
-    Level();
 
-    //! Constructor
-    Level(RCP<FactoryManagerBase> & factoryManager);
+    Level() : levelID_(-1) { }
+
+    Level(RCP<FactoryManagerBase>& factoryManager) : lib_(Xpetra::UseTpetra), levelID_(-1), factoryManager_(factoryManager) { }
+
+    //! Destructor
+    virtual ~Level() { }
 
     //@}
 
@@ -92,9 +105,6 @@ namespace MueLu {
     RCP<Level> Build();
 
     //@}
-
-    //! Destructor
-    virtual ~Level();
 
     //@{
     //! @name Level handling
@@ -106,17 +116,18 @@ namespace MueLu {
     void SetLevelID(int levelID);
 
     //! Previous level
-    RCP<Level> & GetPreviousLevel();
+    RCP<Level>& GetPreviousLevel() { return previousLevel_; }
 
     //! Set previous level object
     //! @\param[in] const RCP<Level>& previousLevel
-    void SetPreviousLevel(const RCP<Level> & previousLevel);
+    void SetPreviousLevel(const RCP<Level>& previousLevel);
+    //@}
 
     //! @name Set/Get factory manager
     //@{
     //! Set default factories (used internally by Hierarchy::SetLevel()).
     // Users should not use this method.
-    void SetFactoryManager(const RCP<const FactoryManagerBase> & factoryManager);
+    void SetFactoryManager(const RCP<const FactoryManagerBase>& factoryManager);
 
     //! returns the current factory manager
     // Users should not use this method
@@ -124,23 +135,25 @@ namespace MueLu {
     //@}
 
     //@{
-    //! @name Get functions
+    //! @name Set functions
 
     //! Store need label and its associated data. This does not increment the storage counter.
     //! - If factory is not specified or factory == NoFactory::get(), mark data as user-defined by default
     //! - If factory is == NULL, use defaultFactory (FactoryManager have to be available).
     template <class T>
-    void Set(const std::string & ename, const T &entry, const FactoryBase* factory = NoFactory::get()) {
+    void Set(const std::string& ename, const T& entry, const FactoryBase* factory = NoFactory::get()) {
       const FactoryBase* fac = GetFactory(ename, factory);
 
       if (fac == NoFactory::get()) {
-        // user defined data
-        // keep data
+        // Any data set with a NoFactory gets UserData keep flag by default
         AddKeepFlag(ename, NoFactory::get(), MueLu::UserData);
       }
 
-      needs_.Set<T>(ename, entry, fac);
-
+      // Store entry only if data have been requested (or any keep flag)
+      if (IsRequested(ename, factory) || GetKeepFlag(ename, factory) != 0) {
+        TEUCHOS_TEST_FOR_EXCEPTION(!IsKey(factory, ename), Exceptions::RuntimeError, "" + ename + " not found in");
+        map_[factory][ename]->SetData(Teuchos::ParameterEntry(entry));
+      }
     } // Set
 
     //@}
@@ -158,30 +171,33 @@ namespace MueLu {
      *  @return data (templated)
      * */
     template <class T>
-    T & Get(const std::string& ename, const FactoryBase* factory = NoFactory::get()) {
+    T& Get(const std::string& ename, const FactoryBase* factory = NoFactory::get()) {
       const FactoryBase* fac = GetFactory(ename, factory);
+      // printf("getting  \"%20s\" generated by %10p  [actually, generated by %p (%43s)]\n",
+             // ename.c_str(), factory, fac, fac->description().c_str());
+
+      TEUCHOS_TEST_FOR_EXCEPTION(!IsKey(fac, ename), Exceptions::RuntimeError, "\"" + ename + "\" not found");
 
       if (!IsAvailable(ename, fac)) {
-
-        TEUCHOS_TEST_FOR_EXCEPTION(needs_.NumRequests(ename, fac) < 1 && needs_.GetKeepFlag(ename, fac) == 0, Exceptions::RuntimeError,
-                                   "MueLu::Level::Get(): " << ename << " has not been requested (counter = " << needs_.NumRequests(ename, fac) << ", KeepFlag = " << needs_.GetKeepFlag(ename, fac) << "). " << std::endl << "Generating factory:" << *fac << " NoFactory="<<NoFactory::get());
-
+        TEUCHOS_TEST_FOR_EXCEPTION(NumRequests(fac, ename) < 1 && GetKeepFlag(ename, fac) == 0, Exceptions::RuntimeError,
+                                   "\"" << ename << "\" has not been requested (counter = " << NumRequests(fac, ename) << ", "
+                                   "KeepFlag = " << GetKeepFlag(ename, fac) << "). " << std::endl <<
+                                   "Generating factory:" << *fac << " NoFactory = " << NoFactory::get());
         fac->CallBuild(*this);
         Release(*fac);
       }
 
-      TEUCHOS_TEST_FOR_EXCEPTION(!IsAvailable(ename, fac), Exceptions::RuntimeError, "MueLu::Level::Get(): factory did not produce expected output. " << ename << " has not been generated by " << *fac);
+      TEUCHOS_TEST_FOR_EXCEPTION(!IsAvailable(ename, fac), Exceptions::RuntimeError, "MueLu::Level::Get(): factory did not produce expected output. "
+                                 "\"" << ename << "\" has not been generated by " << *fac);
 
-      return needs_.Get<T>(ename, fac);
+      return Teuchos::getValue<T>(map_[fac][ename]->GetData());
     }
 
     /*! @brief Get data without decrementing associated storage counter (i.e., read-only access).*/
     template <class T>
-    void Get(const std::string& ename, T& Value, const FactoryBase* factory = NoFactory::get()) {
-      Value = Get<T>(ename, factory);
+    void Get(const std::string& ename, T& rValue, const FactoryBase* factory = NoFactory::get()) {
+      rValue = Get<T>(ename, factory);
     }
-
-    //TODO: add a const version of Get()?
 
     //@}
 
@@ -207,7 +223,8 @@ namespace MueLu {
     // - If entry (ename, factory) does not exist, nothing is done.
     // - If entry exists but counter !=, entry cannot be desallocated before counter set to 0 (using Release()) so an exeption is thrown.
     void Delete(const std::string& ename, const FactoryBase* factory) { // Note: do not add default value for input parameter 'factory'
-      if (!IsKey(ename, factory)) { return; } // if entry (ename, factory) does not exist, nothing is done.
+      if (!IsKey(factory, ename))
+        return;
 
       // Precondition:
       // Delete() should only be called if counter == 0
@@ -222,13 +239,17 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(IsAvailable(ename, factory) == true, Exceptions::RuntimeError, "MueLu::Level::Delete(): Internal error (Post condition). Data have not been deleted.");
     }
 
+    //! Delete all data that have been retained after the setup phase using Final flag
+    void Clear();
+
+    //! Delete all data from level that has no Keep flag set.
+    //! This is a function for experts only
+    void ExpertClear();
+
     //! Test if a keep flag is set for variable 'ename' generated by 'factory'
     //! The input parameter keep can be a combination of flags. IsKept() will then return true if at least one of the flag is set.
     //! Note: There is no default parameter for IsKept() because it might be confusing (user generally wants to test IsKept with keep=MueLu::Keep but classes Level and Needs generally use keep = All)
     bool IsKept(const std::string& ename, const FactoryBase* factory, KeepType keep) const { return GetKeepFlag(ename, factory) & keep; }
-
-    //! Alias for IsKept(ename, factory, keep) with factory = NoFactory::get()
-    bool IsKept(const std::string& ename, KeepType keep) const { return GetKeepFlag(ename, NoFactory::get()) & keep; }
 
     //! Add a keep flag for variable 'ename' generated by 'factory'
     //! A variable can cumulate several keep flags (UserData+Final for example). This function just add a flag to the current flag combination.
@@ -242,7 +263,7 @@ namespace MueLu {
     void RemoveKeepFlag(const std::string & ename, const FactoryBase* factory, KeepType keep = MueLu::All);
 
     //! Get the flag combination set for variable 'ename' generated by 'factory'
-    KeepType GetKeepFlag(const std::string& ename, const FactoryBase* factory = NoFactory::get()) const; // TODO: remove default value for input parameter 'factory'?
+    KeepType GetKeepFlag(const std::string& ename, const FactoryBase* factory) const;
 
     //@}
 
@@ -273,17 +294,30 @@ namespace MueLu {
     //! @name Utility functions
     //@{
 
-    //! Test whether some information about (ename, factory) are stored
-    bool IsKey(const std::string & ename, const FactoryBase* factory = NoFactory::get()) const;
-
     //! Test whether a need's value has been saved.
-    bool IsAvailable(const std::string & ename, const FactoryBase* factory = NoFactory::get()) const;
+    bool IsAvailable(const std::string& ename, const FactoryBase* factory = NoFactory::get()) const {
+      if (!IsKey(factory, ename))
+        return false;
+      try {
+        return Get(factory, ename)->IsAvailable();
+      } catch (...) {
+        return false;
+      }
+    }
 
     //! Test whether a need has been requested.  Note: this tells nothing about whether the need's value exists.
-    bool IsRequested(const std::string & ename, const FactoryBase* factory = NoFactory::get()) const;
+    bool IsRequested(const std::string& ename, const FactoryBase* factory = NoFactory::get()) const {
+      if (!IsKey(factory, ename))
+        return false;
+      try {
+        return IsRequested(Get(factory, ename));
+      } catch (...) {
+        return false;
+      }
+    }
+
 
     //@}
-
     //! @name I/O Functions
     //@{
 
@@ -293,25 +327,27 @@ namespace MueLu {
     //! Printing method
     // TODO: print only shows requested variables. check if we also list kept factories with ref counter=0?
     void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
-    std::ostream& print(std::ostream& out, const VerbLevel verbLevel = Default) const;
+    void print(std::ostream& out, const VerbLevel verbLevel = Default) const;
 
-#if defined(HAVE_MUELU_BOOST) && defined(BOOST_VERSION) && (BOOST_VERSION >= 104400)
+#if defined(HAVE_MUELU_BOOST) && defined(HAVE_MUELU_BOOST_FOR_REAL) && defined(BOOST_VERSION) && (BOOST_VERSION >= 104400)
     void UpdateGraph(std::map<const FactoryBase*, BoostVertex>&                   vindices,
                      std::map<std::pair<BoostVertex, BoostVertex>, std::string>&  edges,
                      BoostProperties&                                             dp,
-                     BoostGraph&                                                  graph) const {
-      needs_.UpdateGraph(vindices, edges, dp, graph);
-    }
+                     BoostGraph&                                                  graph) const;
 #endif
 
     //@}
 
+    enum   RequestMode { REQUEST, RELEASE, UNDEF };
+    RequestMode GetRequestMode() const { return requestMode_; }
+
+    void setlib(Xpetra::UnderlyingLib lib2) { lib_ = lib2; }
+    Xpetra::UnderlyingLib lib() { return lib_; }
+
   private:
 
     //! Copy constructor.
-    Level(const Level& source);
-    //
-    // explicit Level(const Level& source);
+    Level(const Level& source) { }
 
     //! If input factory == NULL, returns the default factory. Else, return input factory.
     //
@@ -335,18 +371,100 @@ namespace MueLu {
     //
     const FactoryBase* GetFactory(const std::string& varname, const FactoryBase* factory) const;
 
-    enum   RequestMode { REQUEST, RELEASE, UNDEF }; //EI TODO
-    static RequestMode requestMode_;                //EI TODO
+    static RequestMode requestMode_;
+    Xpetra::UnderlyingLib lib_;
 
-    //
-    //
-    //
+    typedef const FactoryBase*          Key1;
+    typedef const std::string           Key2;
+    typedef RCP<VariableContainer>      Value;
+    typedef Teuchos::map<Key2, Value>   SubMap;     //! Sub-map container (Key2 -> Value)
+    typedef Teuchos::map<Key1, SubMap>  TwoKeyMap;  //! Map of a map (Key1 -> SubMap)
 
-    int levelID_; // id number associated with level
-    RCP<const FactoryManagerBase> factoryManager_;
-    RCP<Level> previousLevel_;  // linked list of Level
+    int                                 levelID_;           // id number associated with level
+    RCP<const FactoryManagerBase>       factoryManager_;
+    RCP<Level>                          previousLevel_;     // linked list of Level
+    TwoKeyMap                           map_;
 
-    Needs needs_;
+    //! @name Utility functions
+    //@{
+
+    //! Test whether some information about (ename, factory) are stored
+    bool IsKey(const FactoryBase* factory, const std::string& ename) const {
+      TwoKeyMap::const_iterator it = map_.find(factory);
+      return (it != map_.end()) ? (it->second).count(ename) : false;
+    }
+
+    bool IsAvailableFactory(const FactoryBase* factory) const {
+      TwoKeyMap::const_iterator it = map_.find(factory);
+      if (it == map_.end())
+        return false;
+      for (SubMap::const_iterator sit = it->second.begin(); sit != it->second.end(); sit++) {
+        if (sit->second->IsAvailable())
+            return true;
+      }
+      return false;
+    }
+
+    bool IsRequested(const Value& v) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(v->NumAllRequests() == 0 && v->GetKeepFlag() == 0, Exceptions::RuntimeError,
+                                 "Internal logic error: if counter == 0, the entry in countTable_ should have been deleted");
+      return v->IsRequested();
+    }
+
+    bool IsRequestedBy(const FactoryBase* factory, const std::string& ename, const FactoryBase* requestedBy) const {
+      if (!IsKey(factory, ename))
+        return false;
+
+      return IsRequestedBy(Get(factory, ename), requestedBy);
+    }
+
+    bool IsRequestedBy(const Value& v, const FactoryBase* requestedBy) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(v->NumAllRequests() == 0 && v->GetKeepFlag() == 0, Exceptions::RuntimeError,
+                                 "Internal logic error: if counter == 0, the entry in countTable_ should have been deleted");
+      return v->IsRequested(requestedBy);
+    }
+
+    bool IsRequestedFactory(const FactoryBase* factory) const {
+      TwoKeyMap::const_iterator it = map_.find(factory);
+      if (it == map_.end())
+        return false;
+      for (SubMap::const_iterator sit = it->second.begin(); sit != it->second.end(); sit++)
+        if (IsRequested(sit->second))
+            return true;
+      return false;
+    }
+
+    const Value& Get(const FactoryBase* factory, const std::string& ename) const {
+      TwoKeyMap::const_iterator it = map_.find(factory);
+      TEUCHOS_TEST_FOR_EXCEPTION(it == map_.end(), Exceptions::RuntimeError, "Key (" << factory << ", *) does not exist.");
+
+      SubMap::const_iterator sit = it->second.find(ename);
+      TEUCHOS_TEST_FOR_EXCEPTION(sit == it->second.end(), Exceptions::RuntimeError, "Key (" << factory << ", " << ename << ") does not exist.");
+
+      return sit->second;
+    }
+
+    int NumRequests(const FactoryBase* factory, const std::string & ename) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(!IsKey(factory, ename), Exceptions::RuntimeError, "\"" + ename + "\" not found. Do a request first.");
+      const Teuchos::RCP<MueLu::VariableContainer>& v = Get(factory, ename);
+      TEUCHOS_TEST_FOR_EXCEPTION(v->NumAllRequests() == 0 && v->GetKeepFlag() == 0, Exceptions::RuntimeError,
+                                 "NumRequests(): Internal logic error: if counter == 0, the entry in countTable_ should have been deleted");
+      return v->NumAllRequests();
+    }
+
+    int CountRequestedFactory(const FactoryBase* factory) const {
+      TwoKeyMap::const_iterator it = map_.find(factory);
+      if (it == map_.end())
+        return 0;
+
+      int cnt = 0;
+      for (SubMap::const_iterator sit = it->second.begin(); sit != it->second.end(); sit++)
+        cnt += sit->second->NumAllRequests();
+
+      return cnt;
+    }
+
+    //@}
 
   }; //class Level
 

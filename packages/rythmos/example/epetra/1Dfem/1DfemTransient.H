@@ -178,18 +178,17 @@ public:
     udot.Import(*solndot, *Importer, Insert); // 09/21/05 tscoffe
   
     // Declare required variables
-    int ierr;
     int OverlapNumMyElements = OverlapMap->NumMyElements();
   
-    int OverlapMinMyGID;
-    if (MyPID == 0) OverlapMinMyGID = StandardMap->MinMyGID();
-    else OverlapMinMyGID = StandardMap->MinMyGID()-1;
+    //int OverlapMinMyGID;
+    //if (MyPID == 0) OverlapMinMyGID = StandardMap->MinMyGID();
+    //else OverlapMinMyGID = StandardMap->MinMyGID()-1;
   
     int row, column;
     double jac;
     double xx[2];
     double uu[2];
-    double uuold[2];
+    //double uuold[2];
     double uudot[2]; // 09/21/05 tscoffe
     Basis basis;
   
@@ -209,8 +208,8 @@ public:
         xx[1]=xvec[ne+1];
         uu[0]=u[ne];
         uu[1]=u[ne+1];
-        uuold[0]=uold[ne];
-        uuold[1]=uold[ne+1];
+        //uuold[0]=uold[ne];
+        //uuold[1]=uold[ne+1];
         uudot[0] = udot[ne]; // 09/21/05 tscoffe
         uudot[1] = udot[ne+1]; // 09/21/05 tscoffe
         // Calculate the basis function at the gauss point
@@ -247,7 +246,7 @@ public:
                 8.0/factor/factor*
                 (2.0*basis.uu-3.0*basis.uu*basis.uu)*
                 basis.phi[j]*basis.phi[i])); // 09/21/05 tscoffe
-  	      ierr=jacout->SumIntoGlobalValues(row, 1, &jac, &column);
+  	      jacout->SumIntoGlobalValues(row, 1, &jac, &column);
   	    }
   	  }
   	}

@@ -61,6 +61,10 @@ namespace {
     }
   }
 
+  // This function is commented out because no code in this file
+  // actually uses it.  Commenting it out avoids compiler warnings
+  // ("unused function").
+#if 0
   // Slowly compute the n-th Fibonacci number.  This gives timers
   // something to time.  Be careful not to make n too large, or you'll
   // run out of stack space.
@@ -79,10 +83,12 @@ namespace {
       return fib (n-1) + fib (n-2);
     }
   }
+#endif // 0
 
   // Do a number of arithmetic operations proportional to n^3, in
-  // order to have something to time.  Unlike fib() above, this
-  // function shouldn't take up a lot of stack space.
+  // order to have something to time.  Unlike the recursive function
+  // fib() commented out above, this function shouldn't take up a lot
+  // of stack space.
   double
   slowLoop (const size_t n)
   {

@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -60,7 +60,7 @@ namespace MueLu {
     @brief Base class for energy-minimization iterative solvers
     */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
+  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class SolverBase : public BaseClass {
 #undef MUELU_SOLVERBASE_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -79,11 +79,10 @@ namespace MueLu {
      \param A -- Energy matrix
      \param C -- Constraints
      \param P0 -- Initial guess
-     \param B -- Fine nullspace
      \param P -- Resulting prolongator
      \note We assume that P0 has correct sparsity pattern
      */
-    virtual void Iterate(const Matrix& A, const Constraint& C, const Matrix& P0, const MultiVector& B, RCP<Matrix>& P) const = 0;
+    virtual void Iterate(const Matrix& A, const Constraint& C, const Matrix& P0, RCP<Matrix>& P) const = 0;
 
     //@}
 

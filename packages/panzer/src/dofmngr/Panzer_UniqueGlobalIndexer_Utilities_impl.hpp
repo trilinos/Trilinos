@@ -45,12 +45,49 @@
 
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_ArrayView.hpp"
+#include "Teuchos_CommHelpers.hpp"
 
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Import.hpp"
 
+#include <sstream>
+#include <cmath>
+
 namespace panzer {
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+std::string 
+printUGILoadBalancingInformation(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi)
+{
+  std::vector<GlobalOrdinalT> owned;
+  ugi.getOwnedIndices(owned);
+
+  std::size_t myOwnedCount = owned.size();
+ 
+  std::size_t sum=-1,min=-1,max=-1;
+
+  // get min,max and sum
+  Teuchos::reduceAll(*ugi.getComm(),Teuchos::REDUCE_SUM,1,&myOwnedCount,&sum);
+  Teuchos::reduceAll(*ugi.getComm(),Teuchos::REDUCE_MIN,1,&myOwnedCount,&min);
+  Teuchos::reduceAll(*ugi.getComm(),Teuchos::REDUCE_MAX,1,&myOwnedCount,&max);
+
+  // compute mean and variance
+  double dev2 = (double(myOwnedCount)-double(sum)/double(ugi.getComm()->getSize()));
+  dev2 *= dev2;
+
+  double variance = 0.0;
+  Teuchos::reduceAll(*ugi.getComm(),Teuchos::REDUCE_SUM,1,&dev2,&variance);
+ 
+  double mean = sum / double(ugi.getComm()->getSize());
+  variance = variance / double(ugi.getComm()->getSize());
+
+  // now print to a string stream
+  std::stringstream ss;
+  ss << "Max, Min, Mean, StdDev = " << max << ", " << min << ", " << mean << ", " << std::sqrt(variance);
+
+  return ss.str();
+}
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 Teuchos::RCP<Tpetra::Vector<int,int,GlobalOrdinalT,Node> >
@@ -284,7 +321,7 @@ void computeCellEdgeOrientations(const std::vector<std::pair<int,int> > & topEdg
    }
 }
 
-}
+} // end orientation helpers
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
@@ -301,6 +338,8 @@ Teuchos::RCP<Tpetra::MultiVector<ScalarT,int,GlobalOrdinalT,Node> >
 ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
    getGhostedDataVector(const std::string & fieldName,const std::map<std::string,ArrayT> & data) const
 {
+   TEUCHOS_ASSERT(data.size()>0); // there must be at least one "data" item
+
    int fieldNum = ugi_->getFieldNum(fieldName);
    std::vector<std::string> blockIds;
    ugi_->getElementBlockIds(blockIds);
@@ -312,9 +351,10 @@ ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
       numCols = 1;
    else if(rank==3)
       numCols = data.begin()->second.dimension(2);
-   else
+   else {
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
-                          "ArrayToFieldVector::getGhostedDataVector: data array must have rank 2 or 3");
+                          "ArrayToFieldVector::getGhostedDataVector: data array must have rank 2 or 3. This array has rank " << rank << ".");
+   }
 
 
    // first build and fill in final reduced field vector

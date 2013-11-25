@@ -47,6 +47,7 @@ namespace Ioss {
 	    int64_t number_faces);
 
     std::string type_string() const {return "FaceSet";}
+    std::string short_type_string() const {return "facelist";}
     EntityType type() const {return FACESET;}
       
     // Handle implicit properties -- These are calcuated from data stored

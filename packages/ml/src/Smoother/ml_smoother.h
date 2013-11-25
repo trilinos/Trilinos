@@ -95,8 +95,14 @@ struct ML_Sm_BGS_Data_Struct
    int    blocksize;
    int    *blocklengths;
    int    *blockmap;
+   int    *blockOffset;
    int    Nblocks;
   int    optimized;
+   double **trid_dl;
+   double **trid_d;
+   double **trid_du;
+   double **trid_du2;
+   int    **trid_ipiv;
 };
 
 struct ML_Sm_ILUT_Data_Struct 
@@ -267,6 +273,8 @@ extern  int ML_Smoother_ParaSails(ML_Smoother *, int, double *, int, double *);
 extern  int ML_Smoother_ParaSailsSym(ML_Smoother *, int, double *, int, double *);
 extern  int ML_Smoother_ParaSailsTrans(ML_Smoother *, int, double *, int, double *);
 extern  int ML_Smoother_VBlockJacobi(ML_Smoother *,int,double *x,int, double *);
+extern  int ML_Smoother_LineJacobi(ML_Smoother *,int,double *x,int, double *);
+extern  int ML_Smoother_LineGS(ML_Smoother *,int,double *x,int, double *);
 extern  int ML_Smoother_VBlockKrylovJacobi(ML_Smoother *,int,double*,int,double*);
 extern  int ML_Smoother_VBlockSGS(ML_Smoother *, int, double *x, int, double *);
 extern  int ML_Smoother_VBlockSGSSequential(ML_Smoother*,int,double*,int,double*);
@@ -321,6 +329,7 @@ extern  int ML_Smoother_Create_ILUT_Data(ML_Sm_ILUT_Data **data);
 extern void ML_Smoother_Destroy_ILUT_Data(void *data);
 extern  int ML_Smoother_Gen_BGSFacts(ML_Sm_BGS_Data **, ML_Operator *,int); 
 extern  int ML_Smoother_Gen_VBGSFacts(ML_Sm_BGS_Data**,ML_Operator*,int,int*); 
+extern  int ML_Smoother_Gen_LineSmootherFacts(ML_Sm_BGS_Data**, ML_Operator*, int, int*, int*);
 extern void ML_Smoother_Destroy_Schwarz_Data(void *data);
 extern void ML_Smoother_Clean_ParaSails(void *data);
 extern struct MLSthing *ML_Smoother_Create_MLS(void);

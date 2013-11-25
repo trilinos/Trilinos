@@ -430,6 +430,7 @@ F2C(exgqa) (int *idexo,
     for (ii = 0; ii < alen; ii++) {
       *(sptr + iii) = malloc((slen + 1) * sizeof(char));
       if (*(sptr + iii) == 0) {
+	free(sptr);
         *ierr = EX_MEMFAIL;
         return;
       }
@@ -772,6 +773,7 @@ F2C(expclb) (int *idexo,
   }
   /* allocate memory to stage the element type name into */
   if (!(sptr = malloc(num_elem_blk * (slen + 1) * sizeof(char)))) {
+    free(aptr);
     *ierr = EX_MEMFAIL;
     return;
   }
@@ -1006,6 +1008,7 @@ F2C(exgean) (int *idexo,
     *ierr = EX_FATAL;
     free(sptr);                 /* free up allocated space */
     free(aptr);
+    return;
   }
   /* Copy Fortran names from staging space */
   memset(names, 0, *num_attr * nameslen);
@@ -2554,7 +2557,6 @@ F2C(expfrm) (int *idexo,
 
     if (ex_put_coordinate_frames(*idexo, *nframe, cfids, coord, ctags) == EX_FATAL) {
       *ierr = EX_FATAL;
-      return;
     }
     free(ctags);
   }

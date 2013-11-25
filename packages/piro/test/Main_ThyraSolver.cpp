@@ -46,7 +46,7 @@
 #include "MockModelEval_A.hpp"
 
 #include "Piro_SolverFactory.hpp"
-
+#include "Piro_StratimikosUtils.hpp"
 #include "Piro_PerformSolve.hpp"
 
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -89,18 +89,14 @@ int main(int argc, char *argv[]) {
   int numTests=2;
 #endif
 
-#ifdef NO_LOCA_THYRA_YET
   for (int iTest=0; iTest<numTests; iTest++) {
-#else
-  for (int iTest=0; iTest<numTests; iTest+=2) {
-#endif
 
     if (doAll) {
       switch (iTest) {
        case 0: inputFile="input_Solve_NOX_3.xml"; break;
        case 1: inputFile="input_Solve_LOCA_1.xml"; break;
        case 2: inputFile="input_Solve_Rythmos_2.xml"; break;
-       default : cout << "iTest logic error " << endl; exit(-1);
+       default : std::cout << "iTest logic error " << std::endl; exit(-1);
       }
     }
      else {
@@ -109,10 +105,10 @@ int main(int argc, char *argv[]) {
     }
 
     if (Proc==0)
-     cout << "===================================================\n"
+     std::cout << "===================================================\n"
           << "======  Running input file "<< iTest <<": "<< inputFile <<"\n"
           << "===================================================\n"
-          << endl;
+          << std::endl;
 
     try {
 
@@ -126,17 +122,7 @@ int main(int argc, char *argv[]) {
       // Use these two objects to construct a Piro solved application
       RCP<const Thyra::ResponseOnlyModelEvaluatorBase<double> > piro;
       {
-        const std::string& solver = piroParams->get("Solver Type","NOX");
-
-        RCP<Teuchos::ParameterList> stratParams;
-        if (solver=="NOX" || solver=="LOCA") {
-          stratParams = Teuchos::rcp(&(piroParams->sublist("NOX").sublist("Direction").
-            sublist("Newton").sublist("Stratimikos Linear Solver").sublist("Stratimikos")),false);
-        }
-        else if (solver=="Rythmos") {
-          piroParams->sublist("Rythmos").set("Nonlinear Solver Type", "NOX");
-          stratParams = Teuchos::rcp(&(piroParams->sublist("Rythmos").sublist("Stratimikos")),false);
-        }
+        const RCP<Teuchos::ParameterList> stratParams = Piro::extractStratimikosParams(piroParams);
 
         Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
         linearSolverBuilder.setParameterList(stratParams);
@@ -167,18 +153,18 @@ int main(int argc, char *argv[]) {
 
       // Print out everything
       if (Proc == 0)
-        cout << "Finished Model Evaluation: Printing everything {Exact in brackets}"
+        std::cout << "Finished Model Evaluation: Printing everything {Exact in brackets}"
              << "\n-----------------------------------------------------------------"
-             << std::setprecision(9) << endl;
+             << std::setprecision(9) << std::endl;
 
-      cout << "\nParameters! {1,1}\n" << *p1 << endl;
-      cout << "\nResponses! {8.0}\n" << *g1 << endl;
-      cout << "\nSolution! {1,2,3,4}\n" << *gx << endl;
+      std::cout << "\nParameters! {1,1}\n" << *p1 << std::endl;
+      std::cout << "\nResponses! {8.0}\n" << *g1 << std::endl;
+      std::cout << "\nSolution! {1,2,3,4}\n" << *gx << std::endl;
       if (Teuchos::nonnull(dgdp))
-        cout <<"\nSensitivities {2.0, -8.0}\n" << *dgdp << endl;
+        std::cout <<"\nSensitivities {2.0, -8.0}\n" << *dgdp << std::endl;
 
       if (Proc == 0)
-        cout <<
+        std::cout <<
           "\n-----------------------------------------------------------------\n";
     }
     TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
@@ -189,9 +175,9 @@ int main(int argc, char *argv[]) {
 
   if (Proc==0) {
     if (overall_status==0)
-      cout << "\nTEST PASSED\n" << endl;
+      std::cout << "\nTEST PASSED\n" << std::endl;
     else
-      cout << "\nTEST Failed:  " << overall_status << endl;
+      std::cout << "\nTEST Failed:  " << overall_status << std::endl;
   }
 
   return status;

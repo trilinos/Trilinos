@@ -187,7 +187,12 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     else if (strcasecmp(prob->params[i].Name, "NUM_LID_ENTRIES") == 0)
       Num_LID = atoi(prob->params[i].Val);
     else if (strcasecmp(prob->params[i].Name, "RETURN_LISTS") == 0)
-      Export_Lists_Special = (strcasestr(prob->params[i].Val,"part") != NULL);
+      Export_Lists_Special = ((strstr(prob->params[i].Val,"part") != NULL) ||
+                              (strstr(prob->params[i].Val,"Part") != NULL) ||
+                              (strstr(prob->params[i].Val,"PArt") != NULL) ||
+                              (strstr(prob->params[i].Val,"PARt") != NULL) ||
+                              (strstr(prob->params[i].Val,"PART") != NULL));
+                              /* strcasestr not supported in PGI compiler */
   }
 
   /* Set the load-balance method */
@@ -692,6 +697,7 @@ for (i = 0; i < num_exported; i++)
  /* fprintf(fp, "%d : %d\n", export_gids[(i+1)*Num_GID-1], export_to_part[i]); */
 fclose(fp);
 MPI_Barrier(MPI_COMM_WORLD);
+MPI_Finalize();
 exit(-1);
 }
 #endif

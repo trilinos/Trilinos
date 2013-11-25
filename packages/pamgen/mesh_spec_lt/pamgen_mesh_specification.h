@@ -90,6 +90,9 @@ class Mesh_Specification
     NODE_CMAP_IDS,
     ELEM_CMAP_ELEM_CNTS,
     ELEM_CMAP_IDS,
+    BLOCK_PARENT_MESHES,
+    SIDESET_PARENT_MESHES,
+    NODESET_PARENT_MESHES,
     NUM_MSPA};
 
   enum MSIA {
@@ -120,6 +123,7 @@ class Mesh_Specification
     NUM_NODE_COMM_MAPS,
     NUM_ELEM_COMM_MAPS,
     NUM_NBR_PROCS,
+    NUM_PARENT_MESHES,
     NUM_MSIA};
 
   long long getMSI(MSIA ind){return msia[ind];}
@@ -137,12 +141,41 @@ class Mesh_Specification
         double * const * getMSPPD(MSPPDA ind)       {return msppda[ind];}
   const double * const * getMSPPD(MSPPDA ind) const {return msppda[ind];}
 
-  static Mesh_Specification * static_storage;
+  static Mesh_Specification * first_ms_static_storage;
+  
+  static void Add_MS(Mesh_Specification * ms){
+    /*set the first pointer if unset*/
+    /*add the new entry to next if there is an im_static_storage*/
+    /*set im_static_storage*/
+    if(!first_ms_static_storage){
+      first_ms_static_storage = ms;
+    }
+    else{
+      Mesh_Specification * ams = first_ms_static_storage;
+      while(ams->next){
+	ams=ams->next;
+      }
+      ams->next = ms;
+    }
+  }
+
+  static void Replace_MS(Mesh_Specification * ms){
+    /*set the first pointer if unset*/
+    /*add the new entry to next if there is an im_static_storage*/
+    /*set im_static_storage*/
+    if(ms == first_ms_static_storage)return;
+    else if(first_ms_static_storage){
+      delete first_ms_static_storage;
+    }
+    first_ms_static_storage = ms;
+  }
+
+  Mesh_Specification * consolidateMS();
+
+  Mesh_Specification * Next(){return next;}
 
   Mesh_Specification();
-  Mesh_Specification( long long pid){
-    Zero_Set();
-    msia[PROC_ID] = pid;}
+
   virtual ~Mesh_Specification();
   
   std::string getErrorString()  {return error_stream.str();}
@@ -259,6 +292,8 @@ class Mesh_Specification
     QA_Record*  qa_strings;
 
     bool         suppress_warnings;
+
+    Mesh_Specification * next;
 
     //nem data
     std::string file_type;

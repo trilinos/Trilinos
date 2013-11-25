@@ -51,6 +51,11 @@
 #ifndef _ZOLTAN2_COORDINATEMODEL_HPP_
 #define _ZOLTAN2_COORDINATEMODEL_HPP_
 
+// disable clang warnings
+#ifdef __clang__
+#pragma clang system_header
+#endif
+
 #include <Zoltan2_Model.hpp>
 #include <Zoltan2_MatrixInput.hpp>
 #include <Zoltan2_GraphInput.hpp>

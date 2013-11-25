@@ -43,6 +43,7 @@
 
 #include <Tpetra_TestingUtilities.hpp>
 
+#include <Teuchos_DefaultSerialComm.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
@@ -112,22 +113,22 @@ namespace {
   using Tpetra::createContigMapWithNode;
   using Tpetra::createLocalMapWithNode;
 
-  using Kokkos::SerialNode;
+  using KokkosClassic::SerialNode;
   RCP<SerialNode> snode;
 #ifdef HAVE_KOKKOSCLASSIC_TBB
-  using Kokkos::TBBNode;
+  using KokkosClassic::TBBNode;
   RCP<TBBNode> tbbnode;
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  using Kokkos::TPINode;
+  using KokkosClassic::TPINode;
   RCP<TPINode> tpinode;
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_OPENMP
-  using Kokkos::OpenMPNode;
+  using KokkosClassic::OpenMPNode;
   RCP<OpenMPNode> ompnode;
 #endif
 #ifdef HAVE_KOKKOSCLASSIC_THRUST
-  using Kokkos::ThrustGPUNode;
+  using KokkosClassic::ThrustGPUNode;
   RCP<ThrustGPUNode> thrustnode;
 #endif
 
@@ -1339,6 +1340,286 @@ namespace {
   }
 
 
+  // This unit test exercises the following situation: Given a
+  // Tpetra::MultiVector X, partition it into row blocks [X1; X2]
+  // (Matlab notation) using offsetView (or offsetViewNonConst).  The
+  // sum of the local number of rows in X1 and X2 equals the local
+  // number of rows in X, but either X1 or X2 might have a zero number
+  // of local rows.  We exercise each of the latter cases, in two
+  // separate tests.  Repeat both cases for offsetView (const X1 and
+  // X2) and offsetViewNonConst (nonconst X1 and X2).
+  //
+  // The most interesting thing this test exercises is that neither of
+  // the above cases should throw exceptions.  This was not originally
+  // true for the case where X2 has zero local rows.  Thanks to
+  // Deaglan Halligan for pointing this out (on 23 Oct 2013).
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, OffsetViewZeroLength, LO , GO , Scalar , Node )
+  {
+    typedef Tpetra::global_size_t GST;
+    typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+
+    // Get a communicator and Kokkos node instance.
+    RCP<const Comm<int> > comm = getDefaultComm ();
+    RCP<Node> node = getNode<Node> ();
+
+    // Create a Map with a nonzero number of entries on each process.
+    const size_t numLocalEntries = 10;
+    RCP<const map_type> map = createContigMapWithNode<LO,GO> (INVALID, numLocalEntries, comm, node);
+
+    // Create a MultiVector X using that Map.  Give it some number of
+    // columns (vectors) other than 1, just to exercise the most
+    // general case.
+    const size_t numVecs = 3;
+    MV X (map, numVecs);
+
+    // Make sure that X has the right (local) dimensions.
+    TEST_EQUALITY( X->getLocalLength (), numLocalEntries );
+    TEST_EQUALITY( X->getNumVectors (), numVecs );
+
+    // Create a Map with zero entries on every process.
+    RCP<const map_type> mapZero = createContigMapWithNode<LO,GO> (INVALID, 0, comm, node);
+
+    // Case 1: X1 has the same local number of rows as X, and X2 has
+    // zero local rows.  Thus, X2 will be a zero-length view of X,
+    // starting at the end of the local part of X (so the offset is
+    // numLocalEntries).
+    {
+      RCP<const MV> X1;
+      RCP<const MV> X2;
+      try {
+        X1 = X.offsetView (map, 0);
+        X2 = X.offsetView (mapZero, numLocalEntries);
+      } catch (...) {
+        out << "The following case failed: X = [X1; X2] where X2 has zero "
+          "local rows." << std::endl;
+        throw;
+      }
+      // Make sure that offsetView() didn't change X's dimensions.
+      TEST_EQUALITY( X->getLocalLength (), numLocalEntries );
+      TEST_EQUALITY( X->getNumVectors (), numVecs );
+
+      // Make sure that X1 and X2 have the right (local) dimensions.
+      TEST_EQUALITY( X1->getLocalLength (), numLocalEntries );
+      TEST_EQUALITY( X1->getNumVectors (), numVecs );
+      TEST_EQUALITY_CONST( X2->getLocalLength (), static_cast<size_t> (0) );
+      TEST_EQUALITY( X2->getNumVectors (), numVecs );
+
+      // Make sure the pointers are the same, by extracting the
+      // KokkosClassic::MultiVector (KMV) objects.  KMV's copy
+      // constructor does a shallow (pointer) copy.
+      //
+      // FIXME (mfh 24 Oct 2013) This interface (to get the
+      // KokkosClassic::MultiVector) will change at some point, due to
+      // the port of Tpetra to use the new Kokkos.
+      typedef KokkosClassic::MultiVector<Scalar, Node> KMV;
+      const KMV X_local = X.getLocalMV ();
+      const KMV X1_local = X1->getLocalMV ();
+      const KMV X2_local = X2->getLocalMV ();
+
+      // Make sure the pointers match.  It doesn't really matter to
+      // what X2_val points, as long as X2_local has zero rows.
+      ArrayRCP<const Scalar> X_val = X_local.getValues ();
+      ArrayRCP<const Scalar> X1_val = X1_local.getValues ();
+      TEST_EQUALITY( X1_val.getRawPtr (), X_val.getRawPtr () );
+
+      // Make sure the local dimensions of X1 are correct.
+      TEST_EQUALITY( X1_local.getNumRows (), X_local.getNumRows () );
+      TEST_EQUALITY( X1_local.getNumCols (), X_local.getNumCols () );
+
+      // Make sure the local dimensions of X2 are correct.
+      TEST_EQUALITY_CONST( X2_local.getNumRows (), static_cast<size_t> (0) );
+      TEST_EQUALITY( X2_local.getNumCols (), X_local.getNumCols () );
+
+      // Make sure that nothing bad happens on deallocation.
+      try {
+        X1 = Teuchos::null;
+        X2 = Teuchos::null;
+      } catch (...) {
+        out << "Failed to deallocate X1 or X2." << std::endl;
+        throw;
+      }
+    }
+
+    // Nonconst version of Case 1.
+    {
+      RCP<MV> X1_nonconst;
+      RCP<MV> X2_nonconst;
+      try {
+        X1_nonconst = X.offsetViewNonConst (map, 0);
+        X2_nonconst = X.offsetViewNonConst (mapZero, numLocalEntries);
+      } catch (...) {
+        out << "The following case failed: X = [X1; X2] where X2 has zero "
+          "local rows, and X1 and X2 are nonconst." << std::endl;
+        throw;
+      }
+      // Make sure that offsetView() didn't change X's dimensions.
+      TEST_EQUALITY( X->getLocalLength (), numLocalEntries );
+      TEST_EQUALITY( X->getNumVectors (), numVecs );
+
+      // Make sure that X1 and X2 have the right (local) dimensions.
+      TEST_EQUALITY( X1_nonconst->getLocalLength (), numLocalEntries );
+      TEST_EQUALITY( X1_nonconst->getNumVectors (), numVecs );
+      TEST_EQUALITY_CONST( X2_nonconst->getLocalLength (), static_cast<size_t> (0) );
+      TEST_EQUALITY( X2_nonconst->getNumVectors (), numVecs );
+
+      // Make sure the pointers are the same, by extracting the
+      // KokkosClassic::MultiVector (KMV) objects.  KMV's copy
+      // constructor does a shallow (pointer) copy.
+      //
+      // FIXME (mfh 24 Oct 2013) This interface (to get the
+      // KokkosClassic::MultiVector) will change at some point, due to
+      // the port of Tpetra to use the new Kokkos.
+      typedef KokkosClassic::MultiVector<Scalar, Node> KMV;
+      const KMV X_local = X.getLocalMV ();
+      KMV X1_local = X1_nonconst->getLocalMV ();
+      KMV X2_local = X2_nonconst->getLocalMV ();
+
+      // Make sure the pointers match.  It doesn't really matter to
+      // what X2_val points, as long as X2_local has zero rows.
+      ArrayRCP<const Scalar> X_val = X_local.getValues ();
+      ArrayRCP<const Scalar> X1_val = X1_local.getValues ();
+      TEST_EQUALITY( X1_val.getRawPtr (), X_val.getRawPtr () );
+
+      // Make sure the local dimensions of X1 are correct.
+      TEST_EQUALITY( X1_local.getNumRows (), X_local.getNumRows () );
+      TEST_EQUALITY( X1_local.getNumCols (), X_local.getNumCols () );
+
+      // Make sure the local dimensions of X2 are correct.
+      TEST_EQUALITY_CONST( X2_local.getNumRows (), static_cast<size_t> (0) );
+      TEST_EQUALITY( X2_local.getNumCols (), X_local.getNumCols () );
+
+      // Make sure that nothing bad happens on deallocation.
+      try {
+        X1_nonconst = Teuchos::null;
+        X2_nonconst = Teuchos::null;
+      } catch (...) {
+        out << "Failed to deallocate X1 or X2." << std::endl;
+        throw;
+      }
+    }
+
+    // Case 2: X1 has zero rows, and X2 has the same local number of
+    // rows as X.  Thus, X1 will be a zero-length view of X, starting
+    // at the beginning of the local part of X (so the offset is 0).
+    {
+      RCP<const MV> X1;
+      RCP<const MV> X2;
+      try {
+        X1 = X.offsetView (mapZero, 0);
+        X2 = X.offsetView (map, 0);
+      } catch (...) {
+        out << "The following case failed: X = [X1; X2] where X1 has zero "
+          "local rows." << std::endl;
+        throw;
+      }
+      // Make sure that offsetView() didn't change X's dimensions.
+      TEST_EQUALITY( X->getLocalLength (), numLocalEntries );
+      TEST_EQUALITY( X->getNumVectors (), numVecs );
+
+      // Make sure that X1 and X2 have the right (local) dimensions.
+      TEST_EQUALITY_CONST( X1->getLocalLength (), static_cast<size_t> (0) );
+      TEST_EQUALITY( X1->getNumVectors (), numVecs );
+      TEST_EQUALITY( X2->getLocalLength (), numLocalEntries );
+      TEST_EQUALITY( X2->getNumVectors (), numVecs );
+
+      // Make sure the pointers are the same, by extracting the
+      // KokkosClassic::MultiVector (KMV) objects.  KMV's copy
+      // constructor does a shallow (pointer) copy.
+      //
+      // FIXME (mfh 24 Oct 2013) This interface (to get the
+      // KokkosClassic::MultiVector) will change at some point, due to
+      // the port of Tpetra to use the new Kokkos.
+      typedef KokkosClassic::MultiVector<Scalar, Node> KMV;
+      const KMV X_local = X.getLocalMV ();
+      const KMV X1_local = X1->getLocalMV ();
+      const KMV X2_local = X2->getLocalMV ();
+
+      // Make sure the pointers match.  It doesn't really matter to
+      // what X1_val points, as long as X1_local has zero rows.
+      ArrayRCP<const Scalar> X_val = X_local.getValues ();
+      ArrayRCP<const Scalar> X2_val = X2_local.getValues ();
+      TEST_EQUALITY( X2_val.getRawPtr (), X_val.getRawPtr () );
+
+      // Make sure the local dimensions of X1 are correct.
+      TEST_EQUALITY_CONST( X1_local.getNumRows (), static_cast<size_t> (0) );
+      TEST_EQUALITY( X1_local.getNumCols (), X_local.getNumCols () );
+
+      // Make sure the local dimensions of X2 are correct.
+      TEST_EQUALITY( X2_local.getNumRows (), X_local.getNumRows () );
+      TEST_EQUALITY( X2_local.getNumCols (), X_local.getNumCols () );
+
+      // Make sure that nothing bad happens on deallocation.
+      try {
+        X1 = Teuchos::null;
+        X2 = Teuchos::null;
+      } catch (...) {
+        out << "Failed to deallocate X1 or X2." << std::endl;
+        throw;
+      }
+    }
+
+    // Nonconst version of Case 2.
+    {
+      RCP<MV> X1_nonconst;
+      RCP<MV> X2_nonconst;
+      try {
+        X1_nonconst = X.offsetViewNonConst (mapZero, 0);
+        X2_nonconst = X.offsetViewNonConst (map, 0);
+      } catch (...) {
+        out << "The following case failed: X = [X1; X2] where X1 has zero "
+          "local rows, and X1 and X2 are nonconst." << std::endl;
+        throw;
+      }
+      // Make sure that offsetView() didn't change X's dimensions.
+      TEST_EQUALITY( X->getLocalLength (), numLocalEntries );
+      TEST_EQUALITY( X->getNumVectors (), numVecs );
+
+      // Make sure that X1 and X2 have the right (local) dimensions.
+      TEST_EQUALITY_CONST( X1_nonconst->getLocalLength (), static_cast<size_t> (0) );
+      TEST_EQUALITY( X1_nonconst->getNumVectors (), numVecs );
+      TEST_EQUALITY( X2_nonconst->getLocalLength (), numLocalEntries );
+      TEST_EQUALITY( X2_nonconst->getNumVectors (), numVecs );
+
+      // Make sure the pointers are the same, by extracting the
+      // KokkosClassic::MultiVector (KMV) objects.  KMV's copy
+      // constructor does a shallow (pointer) copy.
+      //
+      // FIXME (mfh 24 Oct 2013) This interface (to get the
+      // KokkosClassic::MultiVector) will change at some point, due to
+      // the port of Tpetra to use the new Kokkos.
+      typedef KokkosClassic::MultiVector<Scalar, Node> KMV;
+      const KMV X_local = X.getLocalMV ();
+      KMV X1_local = X1_nonconst->getLocalMV ();
+      KMV X2_local = X2_nonconst->getLocalMV ();
+
+      // Make sure the pointers match.  It doesn't really matter to
+      // what X1_val points, as long as X1_local has zero rows.
+      ArrayRCP<const Scalar> X_val = X_local.getValues ();
+      ArrayRCP<const Scalar> X2_val = X2_local.getValues ();
+      TEST_EQUALITY( X2_val.getRawPtr (), X_val.getRawPtr () );
+
+      // Make sure the local dimensions of X1 are correct.
+      TEST_EQUALITY_CONST( X1_local.getNumRows (), static_cast<size_t> (0) );
+      TEST_EQUALITY( X1_local.getNumCols (), X_local.getNumCols () );
+
+      // Make sure the local dimensions of X2 are correct.
+      TEST_EQUALITY( X2_local.getNumRows (), X_local.getNumRows () );
+      TEST_EQUALITY( X2_local.getNumCols (), X_local.getNumCols () );
+
+      // Make sure that nothing bad happens on deallocation.
+      try {
+        X1_nonconst = Teuchos::null;
+        X2_nonconst = Teuchos::null;
+      } catch (...) {
+        out << "Failed to deallocate X1 or X2." << std::endl;
+        throw;
+      }
+    }
+  }
+
+
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, ZeroScaleUpdate, LO , GO , Scalar , Node )
   {
@@ -2159,6 +2440,53 @@ namespace {
     TEST_EQUALITY_CONST( (is_same< node_type           , Node    >::value) == true, true );
   }
 
+#ifdef HAVE_TEUCHOS_COMPLEX
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, ComplexDotOneColumn, RealType, LO, GO, Node )
+  {
+    using Teuchos::as;
+    using Teuchos::rcp_implicit_cast;
+
+    typedef RealType magnitude_type;
+    typedef std::complex<RealType> scalar_type;
+    typedef Teuchos::ScalarTraits<scalar_type> STS;
+    typedef Teuchos::ScalarTraits<magnitude_type> STM;
+    typedef Tpetra::MultiVector<scalar_type, LO, GO, Node> MV;
+
+    typedef Teuchos::SerialComm<int> comm_type;
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+
+    // We use a SerialComm so that we don't complicate the test by
+    // introducing interprocess communication.  The point of this test
+    // is to test conjugation, that is, to make sure that the dot
+    // product of x and y is the conjugate transpose of x times y.
+    RCP<const Comm<int> > serialComm =
+      rcp_implicit_cast<const comm_type > (rcp (new comm_type));
+    RCP<Node> node = getNode<Node> ();
+
+    const size_t numLocalElts = 1;
+    const Tpetra::global_size_t numGlobalElts = serialComm->getSize () * numLocalElts;
+    const GO indexBase = 0;
+    RCP<const map_type> map (new map_type (numGlobalElts, indexBase, serialComm,
+                                           Tpetra::GloballyDistributed, node));
+    MV x (map, 1);
+    MV y (map, 1);
+
+    std::vector<scalar_type> results (1, STS::zero ()); // dot product result
+
+    // dot([i], [i]) should be 1, not -1.
+    x.replaceLocalValue (as<LO> (0), 0, scalar_type (STM::zero (), STM::one ()));
+    y.replaceLocalValue (as<LO> (0), 0, scalar_type (STM::zero (), STM::one ()));
+    x.dot (y, results);
+    TEST_EQUALITY( results[0], STS::one() );
+
+    // dot([-i], [i]) should be -1, not +1.
+    x.replaceLocalValue (as<LO> (0), 0, scalar_type (STM::zero (), -STM::one ()));
+    y.replaceLocalValue (as<LO> (0), 0, scalar_type (STM::zero (), STM::one ()));
+    x.dot (y, results);
+    TEST_EQUALITY( results[0], -STS::one() );
+  }
+#endif // HAVE_TEUCHOS_COMPLEX
+
 //
 // INSTANTIATIONS
 //
@@ -2194,6 +2522,20 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Describable       , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Typedefs          , LO, GO, SCALAR, NODE )
 
+#if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
+#  define TPETRA_MULTIVECTOR_COMPLEX_FLOAT_DOT_TEST( NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ComplexDotOneColumn, float, int, int, NODE )
+#else
+#  define TPETRA_MULTIVECTOR_COMPLEX_FLOAT_DOT_TEST( NODE )
+#endif // defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
+
+#if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
+#  define TPETRA_MULTIVECTOR_COMPLEX_DOUBLE_DOT_TEST( NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ComplexDotOneColumn, double, int, int, NODE )
+#else
+#  define TPETRA_MULTIVECTOR_COMPLEX_DOUBLE_DOT_TEST( NODE )
+#endif // defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
+
 #define VIEWMODETEST(NODE) \
         TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MultiVector, ViewModeConstructorTests, NODE ) \
         TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(      Vector, ViewModeConstructorTests, NODE )
@@ -2201,6 +2543,24 @@ namespace {
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
   TPETRA_INSTANTIATE_N_NOGPU(VIEWMODETEST)
+
+  // mfh 04 June 2013: To avoid explicit instantiation - related link
+  // errors for LO = int and GO = unsigned (long) int, I've forced
+  // this test to use LO = int and GO = int.  LO and GO should not
+  // matter for this test.
+  //
+  // mfh 06 June 2013: To avoid link errors on GPUs, I've forced this
+  // test to build only for non-GPU Node types.
+  TPETRA_INSTANTIATE_N_NOGPU( TPETRA_MULTIVECTOR_COMPLEX_FLOAT_DOT_TEST )
+
+  // mfh 04 June 2013: To avoid explicit instantiation - related link
+  // errors for LO = int and GO = unsigned (long) int, I've forced
+  // this test to use LO = int and GO = int.  LO and GO should not
+  // matter for this test.
+  //
+  // mfh 06 June 2013: To avoid link errors on GPUs, I've forced this
+  // test to build only for non-GPU Node types.
+  TPETRA_INSTANTIATE_N_NOGPU( TPETRA_MULTIVECTOR_COMPLEX_DOUBLE_DOT_TEST )
 
   TPETRA_INSTANTIATE_TESTMV( UNIT_TEST_GROUP )
 

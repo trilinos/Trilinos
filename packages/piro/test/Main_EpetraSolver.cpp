@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
        case 2: inputFile="input_Solve_LOCA_1.xml"; break;
        case 3: inputFile="input_Solve_Rythmos_1.xml"; break;
        case 4: inputFile="input_Solve_Rythmos_1new.xml"; break;
-       default : cout << "iTest logic error " << endl; exit(-1);
+       default : std::cout << "iTest logic error " << std::endl; exit(-1);
       }
     }
      else {
@@ -112,10 +112,10 @@ int main(int argc, char *argv[]) {
     }
 
     if (Proc==0)
-     cout << "===================================================\n"
+     std::cout << "===================================================\n"
           << "======  Running input file "<< iTest <<": "<< inputFile <<"\n"
           << "===================================================\n"
-          << endl;
+          << std::endl;
 
     try {
 
@@ -145,18 +145,18 @@ int main(int argc, char *argv[]) {
 
       // Print out everything
       if (Proc == 0)
-        cout << "Finished Model Evaluation: Printing everything {Exact in brackets}"
+        std::cout << "Finished Model Evaluation: Printing everything {Exact in brackets}"
              << "\n-----------------------------------------------------------------"
-             << std::setprecision(9) << endl;
+             << std::setprecision(9) << std::endl;
 
-      p1->Print(cout << "\nParameters! {1,1}\n");
-      g1->Print(cout << "\nResponses! {8.0}\n");
-      gx->Print(cout << "\nSolution! {1,2,3,4}\n");
+      p1->Print(std::cout << "\nParameters! {1,1}\n");
+      g1->Print(std::cout << "\nResponses! {8.0}\n");
+      gx->Print(std::cout << "\nSolution! {1,2,3,4}\n");
       if (Teuchos::nonnull(dgdp))
-        dgdp->Print(cout <<"\nSensitivities {2.0, -8.0}\n");
+        dgdp->Print(std::cout <<"\nSensitivities {2.0, -8.0}\n");
 
       if (Proc == 0)
-        cout <<
+        std::cout <<
           "\n-----------------------------------------------------------------\n";
     }
     TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
@@ -167,9 +167,9 @@ int main(int argc, char *argv[]) {
 
   if (Proc==0) {
     if (overall_status==0)
-      cout << "\nTEST PASSED\n" << endl;
+      std::cout << "\nTEST PASSED\n" << std::endl;
     else
-      cout << "\nTEST Failed:  " << overall_status << endl;
+      std::cout << "\nTEST Failed:  " << overall_status << std::endl;
   }
 
   return status;

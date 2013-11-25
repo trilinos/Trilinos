@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -119,7 +119,7 @@ LocalOrdinal EmergencyAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, Lo
   aggregates.SetNumAggregates(nLocalAggregates);
 
   // print aggregation information
-  this->PrintAggregationInformation("Phase 3 (emergency aggregation):", graph, aggregates, aggStat);
+  this->PrintAggregationInformation("Phase 5 (emergency aggregation):", graph, aggregates, aggStat);
 
   // collect some local information
   LO nLocalAggregated    = 0;

@@ -87,8 +87,8 @@ int Epetra_SerialDistributor::CreateFromSends( const int & NumExportIDs,
   //basically just do a sanity check.
   for(int i=0; i<NumExportIDs; ++i) {
     if (ExportPIDs[i] != myproc) {
-      cerr << "Epetra_SerialDistributor::CreateFromSends: ExportPIDs["<<i
-          <<"]=="<<ExportPIDs[i]<<", not allowed for serial case."<<endl;
+      std::cerr << "Epetra_SerialDistributor::CreateFromSends: ExportPIDs["<<i
+          <<"]=="<<ExportPIDs[i]<<", not allowed for serial case."<< std::endl;
       return(-1);
     }
     ++NumRemoteIDs;
@@ -305,8 +305,8 @@ int Epetra_SerialDistributor::DoReversePosts(char * export_objs,
 }
 
 //==============================================================================
-void Epetra_SerialDistributor::Print( ostream & os) const
+void Epetra_SerialDistributor::Print(std::ostream & os) const
 {
-  os << "Trivial Distributor" << endl;
+  os << "Trivial Distributor" << std::endl;
   return;
 }

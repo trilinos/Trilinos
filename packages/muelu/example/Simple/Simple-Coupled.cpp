@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -77,13 +77,13 @@
 typedef std::complex<double>                         SC;
 typedef int                                          LO;
 typedef int                                          GO;
-typedef Kokkos::DefaultNode::DefaultNodeType         NO;
-typedef Kokkos::DefaultKernels<SC,LO,NO>::SparseOps  LMO;
-//typedef Kokkos::SerialNode                           NO;
-//typedef Kokkos::AltSparseOps<void,int,
-//			     Kokkos::SerialNode,
-//			     Kokkos::details::AltSparseOpsDefaultAllocator
-//			     <int, Kokkos::SerialNode> >     LMO;
+typedef KokkosClassic::DefaultNode::DefaultNodeType         NO;
+typedef KokkosClassic::DefaultKernels<SC,LO,NO>::SparseOps  LMO;
+//typedef KokkosClassic::SerialNode                           NO;
+//typedef KokkosClassic::AltSparseOps<void,int,
+//			     KokkosClassic::SerialNode,
+//			     KokkosClassic::details::AltSparseOpsDefaultAllocator
+//			     <int, KokkosClassic::SerialNode> >     LMO;
 
 typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
 typedef Tpetra::MultiVector<SC,LO,GO,NO>             TMV;

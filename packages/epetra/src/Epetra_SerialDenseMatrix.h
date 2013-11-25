@@ -395,7 +395,7 @@ This function performs a variety of matrix-matrix multiply operations.
   //! @name I/O methods
   //@{ 
   //! Print service methods; defines behavior of ostream << operator.
-  virtual void Print(ostream& os) const;
+  virtual void Print(std::ostream& os) const;
   //@}
 
   //! @name Deprecated methods (will be removed in later versions of this class)

@@ -1497,6 +1497,70 @@ int ML_Gen_Smoother_VBlockJacobi( ML *ml , int nl, int pre_or_post,
 }
 
 /* ------------------------------------------------------------------------- */
+/* generate line smoothers                                                   */
+/* ------------------------------------------------------------------------- */
+
+int ML_Gen_Smoother_LineSmoother( ML *ml , int nl, int pre_or_post,
+       int ntimes, double omega, int nBlocks, int *blockIndices, int *blockOffset,
+       int  (*fun)(ML_Smoother *, int, double *, int, double *))
+{
+   double         myomega;
+   ML_Sm_BGS_Data *data;
+   char           prestr[80];
+   char           str[80];
+
+   if (nl == ML_ALL_LEVELS) {
+      printf("ML_Gen_Smoother_LineSmoother: ML_ALL_LEVELS not allowed\n");
+      return 1;
+   }
+   if (nl < 0) {
+      printf("ML_Gen_Smoother_LineSmoother: cannot set smoother on level %d\n",nl);
+      return 1;
+   }
+   if (omega == ML_DDEFAULT) myomega = .5;
+   else                     myomega = omega;
+
+   if (fun == ML_Smoother_LineJacobi) {
+      sprintf(prestr,"LineJac");
+   }
+   else if (fun == ML_Smoother_LineGS) {
+      sprintf(prestr,"LineGS");
+   }
+   else {
+      printf("ML_Gen_Smoother_LineSmoother: unknown function\n");
+      return 1;
+   }
+
+   ML_Smoother_Create_BGS_Data(&data);
+
+   ML_Smoother_Gen_LineSmootherFacts(&data, &(ml->Amat[nl]), nBlocks, blockIndices, blockOffset);
+
+   if (pre_or_post == ML_PRESMOOTHER) {
+      sprintf(str,"%s_pre%d",prestr,nl);
+      ml->pre_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
+      return(ML_Smoother_Set(&(ml->pre_smoother[nl]), 
+                        (void *) data, fun, ntimes, myomega, str));
+   }
+   else if (pre_or_post == ML_POSTSMOOTHER) {
+      sprintf(str,"%s_post%d",prestr,nl);
+      ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
+      return(ML_Smoother_Set(&(ml->post_smoother[nl]), 
+                             (void *) data, fun, ntimes, myomega, str));
+   }
+   else if (pre_or_post == ML_BOTH) {
+      sprintf(str,"%s_pre%d",prestr,nl);
+      ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
+      ML_Smoother_Set(&(ml->pre_smoother[nl]), 
+                        (void *) data, fun, ntimes, myomega, str);
+      sprintf(str,"%s_post%d",prestr,nl);
+      return(ML_Smoother_Set(&(ml->post_smoother[nl]), 
+                             (void *) data, fun, ntimes, myomega, str));
+   }
+   else pr_error("Print unknown pre_or_post choice\n");
+   return 0;
+}
+
+/* ------------------------------------------------------------------------- */
 /* generate the variable block Gauss Seidel smoother                         */
 /* ------------------------------------------------------------------------- */
 
@@ -7100,7 +7164,7 @@ double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol,
    /* ------------------------------------------------------------ */
    if (Rmat->to == NULL) {    /* coarsest grid */
 
-/*if ( comm->ML_mypid == 0 ) cout << ep_sol.MyLength() << " " << ep_sol.GlobalLength() << " " << endl; */
+/*if ( comm->ML_mypid == 0 ) std::cout << ep_sol.MyLength() << " " << ep_sol.GlobalLength() << " " << std::endl; */
 
       if ( ML_CSolve_Check( csolve ) == 1 ) {
          ML_CSolve_Apply(csolve, lengf, ep_sol, lengf, ep_rhss);
@@ -7154,7 +7218,7 @@ double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol,
   tot_size_WKC = lengc;
 #endif
 
-/*if ( comm->ML_mypid == 0 ) cout << "Recursing down" << endl; */
+/*if ( comm->ML_mypid == 0 ) std::cout << "Recursing down" << std::endl; */
 
       Epetra_Map Map ( tot_size_WKC , lengc , 0 , ep_res.Comm() );
       Epetra_MultiVector ep_rhs2 ( Map , ep_res.NumVectors() );
@@ -7207,7 +7271,7 @@ double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol,
       if (ml->ML_scheme == ML_MGW)
 	ML_Cycle_MG( Rmat->to, ep_sol2, ep_rhs2, ML_NONZERO,comm, ML_NO_RES_NORM,ml);
 
-/*if ( comm->ML_mypid == 0 ) cout << "Recursing up" << endl; */
+/*if ( comm->ML_mypid == 0 ) std::cout << "Recursing up" << std::endl; */
       /* ------------------------------------------------------------ */
       /* transform the data from equation to grid space, do grid      */
       /* transfer and then transfer back to equation space            */

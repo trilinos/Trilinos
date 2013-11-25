@@ -731,12 +731,24 @@ int ML_Epetra::MultiLevelPreconditioner::SetLevelIds(int Direction)
   // check no levels are negative
   for (int i = 0 ; i < NumLevels_ ; ++i)
     if (LevelID_[i] < 0) {
-      cerr << ErrorMsg_ << "Level " << i << " has a negative ID" << std::endl;
+      std::cerr << ErrorMsg_ << "Level " << i << " has a negative ID" << std::endl;
       ML_EXIT(EXIT_FAILURE);
     }
 
    return 0;
 }
+
+void ML_Epetra::MultiLevelPreconditioner::Complexities(double &complexity, double &fineNnz)
+{
+  if ( agg_ != 0 && agg_->fine_complexity != 0.0 ) {
+    complexity = agg_->operator_complexity / agg_->fine_complexity;
+    fineNnz = agg_->fine_complexity;
+  } else {
+    complexity = -1.0;
+    fineNnz = -1.0;
+  }
+}
+
 int ML_Epetra::MultiLevelPreconditioner::ComputeAndPrintComplexities()
 {
   // ====================================================================== //
@@ -1022,6 +1034,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
   Epetra_Time Time(Comm());
   Epetra_Time InitialTime(Comm());
+  Epetra_Time TotalTime(Comm());
   {
     int NumCompute = OutputList_.get("number of construction phases", 0);
     OutputList_.set("number of construction phases", ++NumCompute);
@@ -1075,7 +1088,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   CycleApplications_   =List_.get("cycle applications", 1);                  //
   ZeroStartingSolution_=List_.get("zero starting solution", true);           //
   mlpLabel_            = List_.get("ML label","not-set");                    //
-  string IsIncreasing  =List_.get("increasing or decreasing", "increasing"); //
+  std::string IsIncreasing  =List_.get("increasing or decreasing", "increasing"); //
   
                                                                              //
   if (AMGSolver_ == ML_MAXWELL) IsIncreasing = "decreasing";                 //
@@ -1100,7 +1113,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
     int NumBlockRows = VbrMatrix->RowMap().NumGlobalElements();              //
     int NumRows = VbrMatrix->RowMap().NumGlobalPoints();                     //
     if( NumRows % NumBlockRows ) {                                           //
-      cerr << "# rows must be a multiple of # block rows ("                  //
+      std::cerr << "# rows must be a multiple of # block rows ("                  //
        << NumRows << "," << NumBlockRows << ")" << std::endl;                     //
       exit( EXIT_FAILURE );                                                  //
     }                                                                        //
@@ -1138,7 +1151,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
      && !ValidateMLPParameters(List_,depth))
   {
     if (Comm_->MyPID() == 0)
-      std::cout<<"ERROR: ML's Teuchos::ParameterList contains incorrect parameter!\n"<<endl;
+      std::cout<<"ERROR: ML's Teuchos::ParameterList contains incorrect parameter!\n"<<std::endl;
       std::cout << std::endl << "** IMPORTANT **" << std::endl << std::endl;
       std::cout << "ML copies your parameter list and modifies copy:" << std::endl
            << "   1) Level-specific smoother and aggregation options are placed in sublists" << std::endl
@@ -1345,7 +1358,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
        if (agg_ != NULL) ML_Aggregate_Set_Dimensions(agg_, NumDimensions);   //
        int zoltan_est_its=List_.get("repartition: estimated iterations",40); //
        bool zoltan_timers=List_.get("repartition: output timings",false);    //
-       string zoltan_type=List_.get("repartition: Zoltan type","RCB");       //
+       std::string zoltan_type=List_.get("repartition: Zoltan type","RCB");       //
        int smoother_steps = List_.get("smoother: sweeps", 2);                //
        if (List_.get("smoother: pre or post","post") == "pre or post")       //
          smoother_steps*=2;                                                  //
@@ -1662,7 +1675,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
                   + OutputList_.get("time: final setup", 0.0));
   InitialTime.ResetStartTime();
 
-  if (ML_Get_PrintLevel() == 10 && Comm().MyPID() == 0) {
+  if (ML_Get_PrintLevel() >= 10 && Comm().MyPID() == 0) {
     std::cout << std::endl;
     std::cout << "Cumulative timing for construction so far: " << std::endl;
     std::cout << PrintMsg_ << "- for initial setup   = " 
@@ -1675,6 +1688,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
          << OutputList_.get("time: coarse solver setup", 0.0) << " (s)" << std::endl;
     std::cout << PrintMsg_ << "- for final setup     = " 
          << OutputList_.get("time: final setup", 0.0) << " (s)" << std::endl;
+    std::cout << PrintMsg_ << "Total for this setup  = "
+         << TotalTime.ElapsedTime() << " (s)" << std::endl;
   }
 
 
@@ -1947,7 +1962,7 @@ void ML_Epetra::MultiLevelPreconditioner::PrintList()
   std::cout << "+++ Printing ML parameter list \"" << List_.name()
        << "\" on pid " << Comm().MyPID() << std::endl;
   ML_print_line("+",78);
-  List_.print(cout);
+  List_.print(std::cout);
   ML_print_line("-",49);
   std::cout << "----------- end of ML parameter list ------------" << std::endl;
   ML_print_line("-",49);
@@ -2516,7 +2531,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
        sprintf(aggListName,"aggregation: list (level %d)",LevelID_[level]);
        ParameterList &aggList = List_.sublist(aggListName);
    
-       string MyCoarsenScheme = aggList.get("aggregation: type",CoarsenScheme);
+       std::string MyCoarsenScheme = aggList.get("aggregation: type",CoarsenScheme);
 
        if (MyCoarsenScheme == "METIS")
          ML_Aggregate_Set_CoarsenSchemeLevel_METIS(level,NumLevels_,agg_);

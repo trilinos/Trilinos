@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -146,7 +146,7 @@ namespace {
     //
 
   typedef double Scalar;                             // Scalar is not relevant for this test
-  typedef Kokkos::DefaultNode::DefaultNodeType Node; // Kokkos Node is not relevant for this test
+  typedef KokkosClassic::DefaultNode::DefaultNodeType Node; // Kokkos Node is not relevant for this test
 
   typedef long int LongInt;                          // macros dislike parameters with space...
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
@@ -158,7 +158,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(CoupledAggregationFactory, Build,       SC, LO, GO, NO, LMO)
 
 #define UNIT_TEST_GROUP_2(LO, GO)                                       \
-  typedef Kokkos::DefaultKernels<Scalar,LO,Node>::SparseOps LMO ## LO;  \
+  typedef KokkosClassic::DefaultKernels<Scalar,LO,Node>::SparseOps LMO ## LO;  \
   UNIT_TEST_GROUP_5(Scalar, LO, GO, Node, LMO ## LO)
 
   UNIT_TEST_GROUP_2(int, int)

@@ -77,6 +77,16 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuc
    // build the DOF manager for the problem
    Teuchos::RCP<DOFManagerT> dofManager 
          = Teuchos::rcp(new DOFManagerT(connMngr,*mpiComm));
+ 
+   // this is bad, but it works for now; DOFManagerFEI does not have a 
+   // tie break capability but the native one does, so cast to it
+   // and set the tie break if needed.
+   {
+     Teuchos::RCP<panzer::DOFManager<LO,GO> > nativeDofMngr = 
+         Teuchos::rcp_dynamic_cast<panzer::DOFManager<LO,GO> >(dofManager);
+     if(nativeDofMngr!=Teuchos::null)
+       nativeDofMngr->enableTieBreak(useTieBreak_);
+   }
 
    // by default assume orientations are not required
    bool orientationsRequired = false;

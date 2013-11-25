@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -169,8 +169,31 @@ int main(int argc, char *argv[]) {
     // Multigrid Hierarchy
     MLParameterListInterpreter mueLuFactory(*params);
     RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
+
+    // build default null space
+    LocalOrdinal numPDEs = 1;
+    if(A->IsView("stridedMaps")==true) {
+      Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps"); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
+      numPDEs = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getFixedBlockSize();
+      oldView = A->SwitchToView(oldView);
+    }
+
+    RCP<MultiVector> nullspace = MultiVectorFactory::Build(A->getDomainMap(), numPDEs);
+
+    for (int i=0; i<numPDEs; ++i) {
+      Teuchos::ArrayRCP<Scalar> nsValues = nullspace->getDataNonConst(i);
+      int numBlocks = nsValues.size() / numPDEs;
+      for (int j=0; j< numBlocks; ++j) {
+        nsValues[j*numPDEs + i] = 1.0;
+      }
+    }
+
+    H->GetLevel(0)->Set("Nullspace", nullspace);
     H->GetLevel(0)->Set("A", A);
 
+    //
+    // build hierarchy
+    //
     mueLuFactory.SetupHierarchy(*H);
 
     //
@@ -188,7 +211,7 @@ int main(int argc, char *argv[]) {
     H->Iterate(*B, nIts, *X);
 
     // Print relative residual norm
-    ST::magnitudeType residualNorms = Utils::ResidualNorm(*A, *X, *B)[0];
+    Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utils::ResidualNorm(*A, *X, *B)[0];
     if (comm->getRank() == 0)
       std::cout << "||Residual|| = " << residualNorms << std::endl;
 
@@ -233,7 +256,7 @@ int main(int argc, char *argv[]) {
         RCP<Vector> mueluX = rcp(new Xpetra::EpetraVector(eX));
         RCP<Vector> mueluB = rcp(new Xpetra::EpetraVector(eB));
         // Print relative residual norm
-        ST::magnitudeType residualNorms2 = Utils::ResidualNorm(*A, *mueluX, *mueluB)[0];
+        Teuchos::ScalarTraits<SC>::magnitudeType residualNorms2 = Utils::ResidualNorm(*A, *mueluX, *mueluB)[0];
         if (comm->getRank() == 0)
           std::cout << "||Residual|| = " << residualNorms2 << std::endl;
       }
@@ -295,7 +318,7 @@ int main(int argc, char *argv[]) {
       RCP<Vector> mueluX = rcp(new Xpetra::EpetraVector(eX));
       RCP<Vector> mueluB = rcp(new Xpetra::EpetraVector(eB));
       // Print relative residual norm
-      ST::magnitudeType residualNorms = Utils::ResidualNorm(*A, *mueluX, *mueluB)[0];
+      Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utils::ResidualNorm(*A, *mueluX, *mueluB)[0];
       if (comm->getRank() == 0)
         std::cout << "||Residual|| = " << residualNorms << std::endl;
     }

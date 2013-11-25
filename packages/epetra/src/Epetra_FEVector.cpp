@@ -398,9 +398,9 @@ int Epetra_FEVector::inputNonlocalValues(int_type GID, int numValues,
     //  put value in nonlocalCoefs_[vectorIndex][offset*elemSize]
 
     if (numValues != nonlocalElementSize_[offset]) {
-      cerr << "Epetra_FEVector ERROR: block-size for GID " << GID << " is "
+      std::cerr << "Epetra_FEVector ERROR: block-size for GID " << GID << " is "
      << numValues<<" which doesn't match previously set block-size of "
-     << nonlocalElementSize_[offset] << endl;
+     << nonlocalElementSize_[offset] << std::endl;
       return(-1);
     }
 

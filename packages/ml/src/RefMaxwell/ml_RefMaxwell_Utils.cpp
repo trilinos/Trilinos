@@ -50,9 +50,9 @@ void ML_Epetra::IVOUT(const Epetra_IntVector & A, const char *of){
       int MyLength = A.MyLength();
       for (i=0; i<MyLength; i++) {        
           os.width(20);
-          os << A[i]<<endl;
+          os << A[i]<<std::endl;
       }
-      os << flush;      
+      os << std::flush;      
     }/*end if*/
     // Do a few global ops to give I/O a chance to complete
     A.Map().Comm().Barrier();
@@ -146,6 +146,94 @@ after:
   return(ierr);
 }
 
+
+// ================================================ ====== ==== ==== == = 
+int RefMaxwell_SetupCoordinates(ML_Operator* A, Teuchos::ParameterList &List_, double *&coordx, double *&coordy, double *&coordz) 
+// Coppied From int ML_Epetra::MultiLevelPreconditioner::SetupCoordinates()
+{
+  double* in_x_coord = 0;
+  double* in_y_coord = 0;
+  double* in_z_coord = 0;
+  int NumPDEEqns_ =1;  // Always use 1 because A is a nodal matrix.
+
+  // For node coordinates
+  in_x_coord = List_.get("x-coordinates", (double *)0);
+  in_y_coord = List_.get("y-coordinates", (double *)0);
+  in_z_coord = List_.get("z-coordinates", (double *)0);
+    
+  if (!(in_x_coord == 0 && in_y_coord == 0 && in_z_coord == 0))
+    {
+      ML_Operator* AAA = A;
+      
+      int n = AAA->invec_leng, Nghost = 0;
+      
+      if (AAA->getrow->pre_comm) 
+	{
+	  if (AAA->getrow->pre_comm->total_rcv_length <= 0)
+	    ML_CommInfoOP_Compute_TotalRcvLength(AAA->getrow->pre_comm);
+	  Nghost = AAA->getrow->pre_comm->total_rcv_length;
+	}
+      
+      std::vector<double> tmp(Nghost + n);
+      for (int i = 0 ; i < Nghost + n ; ++i)
+        tmp[i] = 0.0;
+      
+      n /= NumPDEEqns_;
+      Nghost /= NumPDEEqns_;
+      
+      if (in_x_coord) 
+	{
+	  double* x_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n));
+	  
+	  for (int i = 0 ; i < n ; ++i)
+	    tmp[i * NumPDEEqns_] = in_x_coord[i];
+	  
+	  ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n, 
+			   AAA->comm, ML_OVERWRITE,NULL);
+	  
+	  for (int i = 0 ; i < n + Nghost ; ++i)
+	    x_coord[i] = tmp[i * NumPDEEqns_];
+	  
+	  coordx = x_coord;
+	}
+      
+      if (in_y_coord) 
+	{
+	  double* y_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n));
+	  
+	  for (int i = 0 ; i < n ; ++i)
+	    tmp[i * NumPDEEqns_] = in_y_coord[i];
+	  
+	  ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n, 
+			   AAA->comm, ML_OVERWRITE,NULL);
+	  
+	  for (int i = 0 ; i < n + Nghost ; ++i)
+	    y_coord[i] = tmp[i * NumPDEEqns_];
+	  
+	  coordy = y_coord;
+	}
+      
+      if (in_z_coord) 
+	{
+	  double* z_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n));
+	  
+	  for (int i = 0 ; i < n ; ++i)
+	    tmp[i * NumPDEEqns_] = in_z_coord[i];
+	  
+	  ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n, 
+			   AAA->comm, ML_OVERWRITE,NULL);
+	  
+	  for (int i = 0 ; i < n + Nghost ; ++i)
+	    z_coord[i] = tmp[i * NumPDEEqns_];
+	  
+	  coordz = z_coord;
+	}
+
+    } // if (!(in_x_coord == 0 && in_y_coord == 0 && in_z_coord == 0)) 
+
+  return(0);
+ }
+
 // ================================================ ====== ==== ==== == = 
 // Copied from ml_agg_genP.c 
 static void ML_Init_Aux(ML_Operator* A, Teuchos::ParameterList &List) {
@@ -162,14 +250,15 @@ static void ML_Init_Aux(ML_Operator* A, Teuchos::ParameterList &List) {
   double *LaplacianDiag;
   int     Nghost;
 
-  double * x_coord = List.get("x-coordinates",(double*)0);
-  double * y_coord = List.get("y-coordinates",(double*)0);
-  double * z_coord = List.get("z-coordinates",(double*)0);
+  
+  // Boundary exchange the coords
+  double *x_coord=0, *y_coord=0, *z_coord=0;
+  RefMaxwell_SetupCoordinates(A,List,x_coord,y_coord,z_coord);
   int dim=(x_coord!=0) + (y_coord!=0) + (z_coord!=0);    
 
   /* Sanity Checks */
   if(dim == 0 || ((!x_coord && (y_coord || z_coord)) || (x_coord && !y_coord && z_coord))){
-    cerr<<"Error: Coordinates not defined.  This is necessary for aux aggregation (found "<<dim<<" coordinates).\n";
+    std::cerr<<"Error: Coordinates not defined.  This is necessary for aux aggregation (found "<<dim<<" coordinates).\n";
     exit(-1);
   }
 
@@ -194,13 +283,14 @@ static void ML_Init_Aux(ML_Operator* A, Teuchos::ParameterList &List) {
     BlockRow = i;
     DiagID = -1;
     DiagValue = 0.0;
-
+    
     ML_get_matrix_row(A,1,&i,&allocated,&columns,&values, &entries,0);
 
     for (j = 0; j < entries; j++) {
       BlockCol = columns[j];
       if (BlockRow != BlockCol) {
         dist = 0.0;
+	
         switch (N_dimensions) {
         case 3:
           dist += (z_coord[BlockRow] - z_coord[BlockCol]) * (z_coord[BlockRow] - z_coord[BlockCol]);
@@ -209,7 +299,7 @@ static void ML_Init_Aux(ML_Operator* A, Teuchos::ParameterList &List) {
         case 1:
           dist += (x_coord[BlockRow] - x_coord[BlockCol]) * (x_coord[BlockRow] - x_coord[BlockCol]);
         }
-
+	
         if (dist == 0.0) {
           printf("node %d = %e ", i, x_coord[BlockRow]);
           if (N_dimensions > 1) printf(" %e ", y_coord[BlockRow]);
@@ -296,6 +386,12 @@ static void ML_Init_Aux(ML_Operator* A, Teuchos::ParameterList &List) {
   A->getrow->func_ptr = ML_Aux_Getrow;
   A->aux_data->filter = filter;
   A->aux_data->filter_size = n;
+
+  // Cleanup
+  ML_free(x_coord);
+  ML_free(y_coord);
+  ML_free(z_coord);
+
 }
 
 // ================================================ ====== ==== ==== == = 
@@ -328,7 +424,7 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
   ML_Operator_WrapEpetraCrsMatrix(const_cast<Epetra_CrsMatrix*>(&A),A_ML);
 
  /* Pull Teuchos Options */
-  string CoarsenType  = List.get("aggregation: type", "Uncoupled");
+  std::string CoarsenType  = List.get("aggregation: type", "Uncoupled");
   double Threshold    = List.get("aggregation: threshold", 0.0);  
   int    NodesPerAggr = List.get("aggregation: nodes per aggregate", 
                                   ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate());
@@ -381,7 +477,7 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
   if(verbose) ML_Set_PrintLevel(printlevel);
 
   if (NumAggregates == 0){
-    cerr << "Found 0 aggregates, perhaps the problem is too small." << endl;
+    std::cerr << "Found 0 aggregates, perhaps the problem is too small." << std::endl;
     ML_CHK_ERR(-2);
   }/*end if*/
   else if(very_verbose) printf("[%d] %s %d aggregates created invec_leng=%d\n",A.Comm().MyPID(),PrintMsg.c_str(),NumAggregates,P->invec_leng);
@@ -403,6 +499,5 @@ int ML_Epetra::RefMaxwell_Aggregate_Nodes(const Epetra_CrsMatrix & A, Teuchos::P
 
   return 0;
 }
-
 
 #endif
