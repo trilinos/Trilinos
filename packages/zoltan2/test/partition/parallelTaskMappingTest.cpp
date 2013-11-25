@@ -232,7 +232,7 @@ int main(int argc, char *argv[]){
         const Zoltan2::MachineRepresentation<scalar_t> machine(tcomm);
 
         typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
-        typedef Zoltan2::XpetraMultiVectorInput<tMVector_t> inputAdapter_t;
+        typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
 
 
         const Zoltan2::Environment *env = new Zoltan2::Environment();
