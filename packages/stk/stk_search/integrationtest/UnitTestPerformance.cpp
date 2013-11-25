@@ -5,6 +5,8 @@
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
 
+#include <valgrind/callgrind.h>
+
 #include <mpi.h>
 #include <gtest/gtest.h>
 #include <vector>
@@ -24,6 +26,24 @@ extern char** gl_argv;
 
 namespace
 {
+
+void check_valgrind_version()
+{
+    ASSERT_EQ(__VALGRIND_MAJOR__, 3);
+    ASSERT_EQ(__VALGRIND_MINOR__, 8);
+}
+
+void print_debug_skip(stk::ParallelMachine pm)
+{
+#ifndef NDEBUG
+  // We're in debug; need to tell test script not to validate cycle count
+  const size_t p_rank = stk::parallel_machine_rank(pm);
+  if (p_rank == 0) {
+    std::cout << "\nSTKPERF SKIP VALIDATION" << std::endl;
+  }
+#endif
+}
+
 
 typedef stk::search::IdentProc<int,int> Ident;
 typedef stk::search::Box<double> Box;
@@ -129,6 +149,7 @@ void testPerformanceOfAxisAlignedBoundingBoxes(stk::search::SearchMethod searchM
 
     double startTime = stk::wall_time();
     stk::search::coarse_search(smallBoxVector, bigBoxVector, searchMethod, comm, boxIdPairResults);
+
     double elapsedTime = stk::wall_time() - startTime;
 
     printPeformanceStats(elapsedTime, comm);
@@ -176,8 +197,20 @@ TEST(Performance, gtkSearch)
     testGtkSearch(comm, domainBoxes, boxIdPairResults);
 }
 
+size_t getGoldValueForTest()
+{
+    std::string goldValue = getOption("-gold");
+    EXPECT_LT(0u, goldValue.size());
+    std::istringstream ss(goldValue);
+    size_t goldValueNumber=0;
+    ss >> goldValueNumber;
+    return goldValueNumber;
+}
 void testGtkSearch(MPI_Comm comm, const std::vector<mybox>&inputBoxes, SearchResults& searchResults)
 {
+    check_valgrind_version();
+    CALLGRIND_START_INSTRUMENTATION;
+
     int num_procs = -1;
     int proc_id   = -1;
     MPI_Comm_rank(comm, &proc_id);
@@ -198,6 +231,9 @@ void testGtkSearch(MPI_Comm comm, const std::vector<mybox>&inputBoxes, SearchRes
     }
 
     std::vector<geometry::AxisAlignedBB> rangeBoxes(domainBoxes);
+
+    CALLGRIND_TOGGLE_COLLECT;
+
     double startTime = stk::wall_time();
     std::vector<int> ghost_indices;
     std::vector<int> ghost_procs;
@@ -229,7 +265,12 @@ void testGtkSearch(MPI_Comm comm, const std::vector<mybox>&inputBoxes, SearchRes
     geometry::BoxA_BoxB_Search(domainBoxes, rangeBoxes, interaction_list, first_interaction, last_interaction);
 
     double elapsedTime = stk::wall_time() - startTime;
+
+    CALLGRIND_TOGGLE_COLLECT;
+    CALLGRIND_STOP_INSTRUMENTATION;
+
     printPeformanceStats(elapsedTime, comm);
+    print_debug_skip(comm);
 
     EXPECT_EQ(domainBoxes.size(), first_interaction.size());
     EXPECT_EQ(domainBoxes.size(), last_interaction.size());
@@ -251,6 +292,9 @@ void testGtkSearch(MPI_Comm comm, const std::vector<mybox>&inputBoxes, SearchRes
 void testStkSearch(MPI_Comm comm, std::vector<mybox> &domainBoxes,
         stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults)
 {
+    check_valgrind_version();
+    CALLGRIND_START_INSTRUMENTATION;
+
     int procId=-1;
     MPI_Comm_rank(comm, &procId);
 
@@ -266,12 +310,17 @@ void testStkSearch(MPI_Comm comm, std::vector<mybox> &domainBoxes,
         stkBoxes[i] = std::make_pair(Box(min,max), domainBoxId);
     }
 
+    CALLGRIND_TOGGLE_COLLECT;
+
     double startTime = stk::wall_time();
     stk::search::coarse_search(stkBoxes, stkBoxes, searchMethod, comm, boxIdPairResults);
     double elapsedTime = stk::wall_time() - startTime;
 
+    CALLGRIND_TOGGLE_COLLECT;
+    CALLGRIND_STOP_INSTRUMENTATION;
+
     printPeformanceStats(elapsedTime, comm);
-    printSumOfResults(comm, boxIdPairResults.size());
+    print_debug_skip(comm);
 
     int procIdDestination = 0;
     stk::CommAll gather(comm);
@@ -308,7 +357,8 @@ void testStkSearch(MPI_Comm comm, std::vector<mybox> &domainBoxes,
         std::sort(boxIdPairResults.begin(), boxIdPairResults.end());
         SearchResults::iterator iter_end = std::unique(boxIdPairResults.begin(), boxIdPairResults.end());
         boxIdPairResults.erase(iter_end, boxIdPairResults.end());
-        std::cerr << "Size of data on proc 0 after sorting: " << boxIdPairResults.size() << std::endl;
+        size_t goldValueNumber=getGoldValueForTest();
+        EXPECT_EQ(goldValueNumber, boxIdPairResults.size());
     }
 }
 
@@ -350,7 +400,6 @@ TEST(Performance, getGoldResults)
 
     double elapsedTime = stk::wall_time() - startTime;
     printPeformanceStats(elapsedTime, comm);
-    printSumOfResults(comm, boxIdPairResults.size());
 
     std::cerr << "Number of boxes: " << boxIdPairResults.size() << std::endl;
 }
@@ -427,10 +476,8 @@ void printSumOfResults(MPI_Comm comm, const size_t sizeResults)
     int sumOverAll=0;
     MPI_Allreduce(&numResults, &sumOverAll, 1, MPI_INT, MPI_SUM, comm);
 
-    if (procId == 0 )
-    {
-        std::cerr << "Size of results: " << sumOverAll << std::endl;
-    }
+    size_t goldValueNumber=getGoldValueForTest();
+    EXPECT_EQ(goldValueNumber, (size_t)sumOverAll);
 }
 
 void fillBoxesUsingSidesetsFromFile(MPI_Comm comm, const std::string& filename, std::vector<mybox> &domainBoxes)
@@ -646,6 +693,9 @@ void printPeformanceStats(double elapsedTime, MPI_Comm comm)
         <<", Min HWM: "<<double(minHwm)/double(bytesInMegabyte)<<", Avg HWM: "<<avgHwm/bytesInMegabyte<<std::endl;
       std::cout<<"### Total Number of Steps Taken ###: 1"<<std::endl;
       std::cout<<"### Total Wall Clock Run Time Used ###: "<< maxTime <<std::endl;
+
+      std::cout << "\nSTKPERF peak memory sum: " << maxHwm << std::endl;
+
     }
 }
 
