@@ -200,7 +200,7 @@ void OrderingProblem<Adapter>::solve(bool newData)
   {
       AlgRandom<base_adapter_t>(this->identifierModel_, this->solution_, this->params_, problemComm_);
   }
-  else if (method.compare("sorteddegree") == 0)
+  else if (method.compare("sorted_degree") == 0)
   {
       AlgSortedDegree<base_adapter_t>(this->graphModel_, this->solution_, this->params_, problemComm_);
   }

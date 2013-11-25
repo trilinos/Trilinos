@@ -51,7 +51,7 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS
-   "--order_method=sorteddegree"
+   "--order_method=sorted_degree"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
