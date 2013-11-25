@@ -92,25 +92,25 @@ int main(int argc, char *argv[])
   strides.push_back(2);
   strides.push_back(2);
 
-  Zoltan2::BasicIdentifierAdapter<userTypes_t> ia( numLocalIds, myIds,
+  Zoltan2::BasicIdentifierAdapter<userTypes_t> ia(numLocalIds, myIds,
     weightValues, strides);
 
-  if (!fail && ia.getLocalNumberOfIdentifiers() != size_t(numLocalIds)){
+  if (!fail && ia.getLocalNumIDs() != size_t(numLocalIds)){
     fail = 4;
   }
 
-  if (!fail && ia.getNumberOfWeights() != weightDim)
+  if (!fail && ia.getNumWeightsPer() != weightDim)
     fail = 5;
 
   const gno_t *globalIdsIn;
   scalar_t const *weightsIn[2];
   int weightStridesIn[2];
 
-  if (!fail && ia.getIdentifierList(globalIdsIn) != size_t(numLocalIds))
+  if (!fail && ia.getIDsView(globalIdsIn) != size_t(numLocalIds))
     fail = 6;
 
   for (int w=0; !fail && w < weightDim; w++){
-    if (ia.getIdentifierWeights(w, weightsIn[w], weightStridesIn[w]) <
+    if (ia.getWeightsView(weightsIn[w], weightStridesIn[w], w) <
         size_t(numLocalIds * weightStridesIn[w]))
       fail = 20;
   }

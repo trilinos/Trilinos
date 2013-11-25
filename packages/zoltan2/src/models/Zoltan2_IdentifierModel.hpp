@@ -253,8 +253,8 @@ template <typename User>
       gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), comm_(comm),
       gids_(), userWeightDim_(0), weights_(), gnos_(), gnosConst_()
 {
-  userWeightDim_ = ia->getNumberOfWeights();
-  size_t nLocalIds = ia->getLocalNumberOfIdentifiers();
+  userWeightDim_ = ia->getNumWeightsPer();
+  size_t nLocalIds = ia->getLocalNumIDs();
 
   Model<IdentifierAdapter<User> >::maxCount(*comm, userWeightDim_);
 
@@ -270,9 +270,9 @@ template <typename User>
   const gid_t *gids=NULL;
 
   try{
-    ia->getIdentifierList(gids);
-    for (int dim=0; dim < userWeightDim_; dim++)
-      ia->getIdentifierWeights(dim, wgts[dim], wgtStrides[dim]);
+    ia->getIDsView(gids);
+    for (int idx=0; idx < userWeightDim_; idx++)
+      ia->getWeightsView(wgts[idx], wgtStrides[idx], idx);
   }
   Z2_FORWARD_EXCEPTIONS;
 

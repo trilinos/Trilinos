@@ -411,7 +411,7 @@ template <typename Adapter>
   // Number of criteria is number of user supplied weights if non-zero.
   // Otherwise it is 1 and uniform weight is implied.
 
-  numberOfWeights_ = this->inputAdapter_->getNumWeightsPerObject();
+  numberOfWeights_ = this->inputAdapter_->getNumWeightsPer();
 
   numberOfCriteria_ = (numberOfWeights_ > 1) ? numberOfWeights_ : 1;
 

@@ -226,7 +226,7 @@ public:
 
   size_t getLocalNumObjects() const { return numIds_;}
 
-  int getNumWeightsPerObject() const { return numWeights_;}
+  int getNumWeightsPer() const { return numWeights_;}
 
   size_t getObjectWeightsView(const scalar_t *&wgt, int &stride, int idx) const
   {

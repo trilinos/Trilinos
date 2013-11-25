@@ -116,11 +116,11 @@ public:
 
   size_t getLocalNumObjects() const { return numIds_;}
 
-  int getNumWeightsPerObject() const { return weights_.size();}
+  int getNumWeightsPer() const { return weights_.size(); }
 
   size_t getObjectWeightsView(const scalar_t *&wgt, int &stride, int idx) const
   {
-    return getIdentifierWeights(idx, wgt, stride);
+    return getWeightsView(wgt, stride, idx);
   }
 
   ////////////////////////////////////////////////////////////////
@@ -128,18 +128,16 @@ public:
   // This is the interface that would be called by a model or a problem .
   ////////////////////////////////////////////////////////////////
 
-  size_t getLocalNumberOfIdentifiers() const { return numIds_;}
+  size_t getLocalNumIDs() const { return numIds_;}
    
-  int getNumberOfWeights() const { return weights_.size(); }
-
-  size_t getIdentifierList(const gid_t *&Ids) const
+  size_t getIDsView(const gid_t *&Ids) const
   {
     Ids = idList_;
     return numIds_;
   }
 
-  size_t getIdentifierWeights(int idx,
-     const scalar_t *&weights, int &stride) const
+  size_t getWeightsView(const scalar_t *&weights, int &stride,
+                        int idx) const
   {
     if (idx < 0 || idx >= weights_.size()) {
       std::ostringstream emsg;
@@ -152,6 +150,7 @@ public:
     weights_[idx].getStridedList(length, weights, stride);
     return length;
   }
+
 
 private:
 

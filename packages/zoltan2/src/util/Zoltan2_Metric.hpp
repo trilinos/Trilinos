@@ -955,7 +955,7 @@ template <typename Adapter>
 
   // Weights, if any, for each object.
 
-  int weightDim = ia->getNumWeightsPerObject();
+  int weightDim = ia->getNumWeightsPer();
   int numCriteria = (weightDim > 0 ? weightDim : 1);
   Array<sdata_t> weights(numCriteria);
 

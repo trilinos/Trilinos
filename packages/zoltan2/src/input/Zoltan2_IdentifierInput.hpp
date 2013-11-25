@@ -128,13 +128,13 @@ public:
 
   /*! \brief Return the number of identifiers on this process.
    */
-  virtual size_t getLocalNumberOfIdentifiers() const = 0;
+  virtual size_t getLocalNumIDs() const = 0;
 
   /*! \brief Return the number of weights associated with each identifier.
    *   If the number of weights is zero, then we assume that the
    *   identifiers are equally weighted.
    */
-  virtual int getNumberOfWeights() const = 0;
+  virtual int getNumWeightsPer() const = 0;
 
   /*! \brief Provide a pointer to this process' identifiers.
 
@@ -144,19 +144,19 @@ public:
        \return The number of ids in the Ids list.
    */
 
-  virtual size_t getIdentifierList(gid_t const *&Ids) const = 0;
+  virtual size_t getIDsView(gid_t const *&Ids) const = 0;
 
   /*! \brief Provide a pointer to one of the dimensions of this process' 
                 optional weights.
 
-      \param dimension is a value ranging from zero to one less than 
-                   getNumberOfWeights()
       \param weights on return will contain a list of the weights for
                the dimension specified.  If weights for
            this dimension are to be uniform for all identifierse in the
            global problem, the \c weights should be a NULL pointer.
 
       \param stride on return will indicate the stride of the weights list.
+      \param idx is a value ranging from zero to one less than 
+                   getNumWeightsPerID()
 
 
        If stride is \c k then the weight 
@@ -168,9 +168,8 @@ public:
           than one.
    */
 
-  virtual size_t getIdentifierWeights(int dimension,
-     const scalar_t *&weights, int &stride) const = 0;
-
+  virtual size_t getWeightsView(const scalar_t *&weights, int &stride,
+                                int idx = 0) const = 0;
 
  /*! \brief Apply a PartitioningSolution to an input.
    *
