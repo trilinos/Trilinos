@@ -168,7 +168,7 @@ public:
       must remain valid for the lifetime of this Adapter.
   */
   virtual size_t getLocalEntityIDsWeightsView(entityType etype,
-     const scalar_t *&weights, int &stride, int number) const = 0;
+     const scalar_t *&weights, int &stride, int number = 0) const = 0;
 
 
   /*! \brief Copy the weights for a specific entity into array provided by
