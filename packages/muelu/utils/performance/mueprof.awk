@@ -99,7 +99,7 @@ BEGIN {
           #print linalg[FILENAME] " | " before " | " pattern " | " after   #debugging
           factAndLevel = before;
           ntllabels[factAndLevel] = factAndLevel;
-          #ntltallies[factAndLevel,linalg[FILENAME]] = pattern;  # <<<< this was active
+          ntltallies[factAndLevel,linalg[FILENAME]] = pattern;
           alltimes = substr($0,RSTART+RLENGTH);
           #trim off white space before and after
           sub(/^[ ]*/,"",alltimes);
