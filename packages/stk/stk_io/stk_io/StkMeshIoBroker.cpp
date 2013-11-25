@@ -372,23 +372,6 @@ namespace {
     return entities.size();
   }
 
-  bool is_restart_field_on_part(const stk::mesh::FieldBase *field,
-				const stk::mesh::EntityRank part_type,
-				const stk::mesh::Part &part)
-  {
-    return (field->attribute<stk::io::RestartFieldAttribute>() != NULL &&
-	    stk::io::is_field_on_part(field,part_type,part));
-  }
-
-  std::string get_restart_field_name(const stk::mesh::FieldBase *field)
-  {
-    ThrowRequire(field != NULL);
-    const stk::io::RestartFieldAttribute *attr = field->attribute<stk::io::RestartFieldAttribute>();
-    ThrowRequire(attr != NULL);
-    
-    return attr->databaseName;
-  }
-
   int ioss_restore_input_fields(std::vector<stk::io::FieldAndName> &fields,
 				stk::mesh::BulkData &bulk,
 				const stk::mesh::Part &part,

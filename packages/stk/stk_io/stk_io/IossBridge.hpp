@@ -182,12 +182,6 @@ struct FieldAndName
     std::string m_db_name;
 };
 
-struct RestartFieldAttribute {
-  RestartFieldAttribute(const std::string &name) : databaseName(name)
-  {}
-  std::string databaseName;
-};
-
 std::string get_field_name(const stk::mesh::FieldBase &f, Ioss::DatabaseUsage dbUsage);
 void getNamedFields(const stk::mesh::MetaData &meta, Ioss::GroupingEntity *io_entity, std::vector<FieldAndName> &namedFields);
 

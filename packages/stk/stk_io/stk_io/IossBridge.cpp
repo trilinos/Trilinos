@@ -33,12 +33,6 @@
 
 namespace {
 
-struct ResultsFieldName
-{
-    ResultsFieldName(const std::string &name) : name_(name) {}
-    std::string name_;
-};
-
   const std::string internal_selector_name = "_stk_io_internal_selector";
   const std::string base_stk_part_name = "_base_stk_part_name";
   const std::string block_nodes_suffix = "_nodes";
@@ -645,19 +639,6 @@ void ioss_add_fields(const stk::mesh::Part &part,
     }
 }
 
-std::string get_field_name(const stk::mesh::FieldBase &f, Ioss::DatabaseUsage dbUsage)
-{
-  std::string name = f.name();
-  if(dbUsage == Ioss::WRITE_RESTART || dbUsage == Ioss::READ_RESTART) {
-    const RestartFieldAttribute *restartAttribute = f.attribute<RestartFieldAttribute>();
-    if(restartAttribute !=NULL) {
-      name = restartAttribute->databaseName;
-    }
-  }
-
-  return name;
-}
-
 void getNamedFields(const stk::mesh::MetaData &meta, Ioss::GroupingEntity *io_entity, std::vector<FieldAndName> &namedFields)
 {
     const std::vector<stk::mesh::FieldBase*> &fields = meta.get_fields();
@@ -665,7 +646,7 @@ void getNamedFields(const stk::mesh::MetaData &meta, Ioss::GroupingEntity *io_en
     std::vector<stk::mesh::FieldBase *>::const_iterator fieldIterator = fields.begin();
     for(;fieldIterator != fields.end();++fieldIterator)
     {
-      std::string field_name = stk::io::get_field_name(**fieldIterator, io_entity->get_database()->usage());
+      std::string field_name = (*fieldIterator)->name();
       namedFields.push_back(FieldAndName(*fieldIterator, field_name));
     }
 }
