@@ -882,13 +882,13 @@ std::string ILUT<MatrixType>::description() const {
      << ", "
      << "Number of columns: " << A_->getGlobalNumCols ()
      << ", "
-     << "level-of-fill = " << getLevelOfFill()
+     << "Level of fill: " << getLevelOfFill()
      << ", "
-     << "absolute threshold = " << getAbsoluteThreshold()
+     << "Absolute threshold: " << getAbsoluteThreshold()
      << ", "
-     << "relative threshold = " << getRelativeThreshold()
+     << "Relative threshold: " << getRelativeThreshold()
      << ", "
-     << "relaxation value = " << getRelaxValue();
+     << "Relax value: " << getRelaxValue();
   if (isComputed())
     os << ", nnz = " << getGlobalNumEntries();
   os << "}";
