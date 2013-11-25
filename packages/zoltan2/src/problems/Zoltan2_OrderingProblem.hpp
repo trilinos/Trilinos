@@ -286,6 +286,7 @@ void OrderingProblem<Adapter>::createOrderingProblem()
   string method = this->params_->template get<string>("order_method", "rcm");
 
   if ((method == string("rcm")) || 
+      (method == string("sorted_degree")) || 
       (method == string("minimum_degree"))) {
     modelType = GraphModelType;
   }

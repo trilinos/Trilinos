@@ -124,6 +124,13 @@ public:
 
   /*! \brief TODO.
    */
+  inline lno_t *getPermutation()
+  {
+    return perm_.getRawPtr();
+  }
+
+  /*! \brief TODO.
+   */
   inline lno_t *getPermutation(size_t *length)
   {
     *length = perm_.size();
