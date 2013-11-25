@@ -46,16 +46,17 @@ struct mybox
 void printPeformanceStats(double elapsedTime, MPI_Comm comm);
 void createBoundingBoxForElement(const sierra::Mesh::LocalNodeId *connectivity, const int numNodesPerElement,
         const std::vector<double> &coordinates, std::vector<double>& boxCoordinates);
-void createExodusFileUsingBoxes(const std::vector<mybox> & boxes, const std::string &filename);
-void doSomething(stk::search::SearchMethod search);
+void writeExodusFileUsingBoxes(const std::vector<mybox> & boxes, const std::string &filename);
+void runStkSearchTest(stk::search::SearchMethod search);
 void printSumOfResults(MPI_Comm comm, const size_t sizeResults);
-void testGeometryToolkitSearch(MPI_Comm comm, const std::vector<mybox>&domainBoxes, SearchResults& boxIdPairResults);
-void fillBoxes(MPI_Comm comm, const std::string& filename, std::vector<mybox> &domainBoxes);
-void createExodusFileUsingBoxes(const std::vector<mybox>& boxes, const std::string &filename);
+void testGtkSearch(MPI_Comm comm, const std::vector<mybox>&domainBoxes, SearchResults& boxIdPairResults);
+void fillBoxesUsingSidesetsFromFile(MPI_Comm comm, const std::string& filename, std::vector<mybox> &domainBoxes);
+void writeExodusFileUsingBoxes(const std::vector<mybox>& boxes, const std::string &filename);
 void testPerformanceOfAxisAlignedBoundingBoxes(stk::search::SearchMethod searchMethod, MPI_Comm comm);
 std::string getOption(const std::string& option, const std::string defaultString = std::string("false"));
 void testStkSearch(MPI_Comm comm, std::vector<mybox> &domainBoxes,
         stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults);
+void fillDomainBoxes(MPI_Comm comm, std::vector<mybox>& domainBoxes);
 
 TEST(Performance, ofAxisAlignedBoundingBoxesUsingOctTree)
 {
@@ -144,47 +145,38 @@ void testPerformanceOfAxisAlignedBoundingBoxes(stk::search::SearchMethod searchM
 
 ////////////////////////////////////////////////////////////
 
-TEST(Performance, doSomethingWithBoost)
+TEST(Performance, stkSearchUsingBoost)
 {
-    doSomething(stk::search::BOOST_RTREE);
+    runStkSearchTest(stk::search::BOOST_RTREE);
 }
 
-TEST(Performance, doSomethingWithOcttree)
+TEST(Performance, stkSearchUsingOcttree)
 {
-    doSomething(stk::search::OCTREE);
+    runStkSearchTest(stk::search::OCTREE);
 }
 
-void doSomething(stk::search::SearchMethod searchMethod)
+void runStkSearchTest(stk::search::SearchMethod searchMethod)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
-
-    std::string filename = getOption("-i", "input.exo");
     std::vector<mybox> domainBoxes;
-    fillBoxes(comm, filename, domainBoxes);
-
-    std::string exodusFilename = getOption("-o", "boxes.exo");
-    createExodusFileUsingBoxes(domainBoxes, exodusFilename);
+    fillDomainBoxes(comm, domainBoxes);
 
     SearchResults boxIdPairResults;
     testStkSearch(comm, domainBoxes, searchMethod, boxIdPairResults);
 }
 
-TEST(Performance, doSomethingWithGeometry)
+TEST(Performance, gtkSearch)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
 
-    std::string filename = getOption("-i", "input.exo");
     std::vector<mybox> domainBoxes;
-    fillBoxes(comm, filename, domainBoxes);
-
-    std::string exodusFilename = getOption("-o", "boxes.exo");
-    createExodusFileUsingBoxes(domainBoxes, exodusFilename);
+    fillDomainBoxes(comm, domainBoxes);
 
     SearchResults boxIdPairResults;
-    testGeometryToolkitSearch(comm, domainBoxes, boxIdPairResults);
+    testGtkSearch(comm, domainBoxes, boxIdPairResults);
 }
 
-void testGeometryToolkitSearch(MPI_Comm comm, const std::vector<mybox>&inputBoxes, SearchResults& searchResults)
+void testGtkSearch(MPI_Comm comm, const std::vector<mybox>&inputBoxes, SearchResults& searchResults)
 {
     int num_procs = -1;
     int proc_id   = -1;
@@ -326,12 +318,8 @@ TEST(Performance, getGoldResults)
     int procId=-1;
     MPI_Comm_rank(comm, &procId);
 
-    std::string filename = getOption("-i", "input.exo");
     std::vector<mybox> domainBoxes;
-    fillBoxes(comm, filename, domainBoxes);
-
-    std::string exodusFilename = getOption("-o", "boxes.exo");
-    createExodusFileUsingBoxes(domainBoxes, exodusFilename);
+    fillDomainBoxes(comm, domainBoxes);
 
     SearchResults boxIdPairResults;
 
@@ -445,7 +433,7 @@ void printSumOfResults(MPI_Comm comm, const size_t sizeResults)
     }
 }
 
-void fillBoxes(MPI_Comm comm, const std::string& filename, std::vector<mybox> &domainBoxes)
+void fillBoxesUsingSidesetsFromFile(MPI_Comm comm, const std::string& filename, std::vector<mybox> &domainBoxes)
 {
     sierra::ExodusMeshInterface mesh(filename, comm);
 
@@ -575,7 +563,7 @@ void fillNumElementsPerBlock(const int num_elements, std::vector<int> &numElemen
     }
 }
 
-void createExodusFileUsingBoxes(const std::vector<mybox>& boxes, const std::string &filename)
+void writeExodusFileUsingBoxes(const std::vector<mybox>& boxes, const std::string &filename)
 {
     if ( boxes.size() == 0 )
     {
@@ -697,6 +685,15 @@ void createBoundingBoxForElement(const sierra::Mesh::LocalNodeId *connectivity, 
             maxCoordinates[i] += inflation;
         }
     }
+}
+
+void fillDomainBoxes(MPI_Comm comm, std::vector<mybox>& domainBoxes)
+{
+    std::string filename = getOption("-i", "input.exo");
+    fillBoxesUsingSidesetsFromFile(comm, filename, domainBoxes);
+
+    std::string exodusFilename = getOption("-o", "boxes.exo");
+    writeExodusFileUsingBoxes(domainBoxes, exodusFilename);
 }
 
 }
