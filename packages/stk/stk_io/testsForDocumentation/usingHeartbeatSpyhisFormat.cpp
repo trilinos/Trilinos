@@ -53,7 +53,7 @@ namespace
 	stk::util::Parameter &parameter = parameters.get_param(parameterName);
 
 	// Tell heartbeat database which global variables should be output at each step...
-	stkIo.add_heartbeat_global(heartbeat_index, parameterName, parameter.value, parameter.type);
+	stkIo.add_heartbeat_global(heartbeat_index, parameterName, &parameter.value, parameter.type);
       }
 
       // Now output the global variables...

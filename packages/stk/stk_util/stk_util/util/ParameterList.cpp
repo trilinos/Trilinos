@@ -10,7 +10,7 @@ namespace stk {
       for (; i != iend; ++i)
 	{
 	  std::string parameterName = (*i).first;
-	  Parameter parameter = (*i).second;
+	  Parameter &parameter = (*i).second;
 	  switch(parameter.type)
 	    {
 	    case ParameterType::INTEGER:

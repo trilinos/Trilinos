@@ -56,7 +56,7 @@ namespace
 	stk::util::Parameter &param = params.get_param(paramName);
 
 	//+ Tell heartbeat which variables to output at each step...
-	stkIo.add_heartbeat_global(hb, paramName, param.value, param.type);
+	stkIo.add_heartbeat_global(hb, paramName, &param.value, param.type);
       }/*@\label{io:hb:end_add}*/
 
       // Now output the global variables...

@@ -109,7 +109,7 @@ namespace {
       mesh_data.add_global(restart_index, input_field.get_name(), input_field.raw_storage()->name(), input_field.get_type());
       mesh_data.add_global(results_index, input_field.get_name(), input_field.raw_storage()->name(), input_field.get_type());
       stk::util::Parameter &param = parameters.get_param(input_field.get_name());
-      mesh_data.add_heartbeat_global(heart, input_field.get_name(), param.value, param.type);
+      mesh_data.add_heartbeat_global(heart, input_field.get_name(), &param.value, param.type);
     }
 
     // ========================================================================

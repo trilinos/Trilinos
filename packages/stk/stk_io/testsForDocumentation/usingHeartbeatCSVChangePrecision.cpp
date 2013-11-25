@@ -64,7 +64,7 @@ namespace
 
 	//+ Tell heartbeat which variables to output at each step...
 	stkIo.add_heartbeat_global(hb, parameterName,
-				   parameter.value, parameter.type);
+				   &parameter.value, parameter.type);
       }
 
       int timestep_count = 1;

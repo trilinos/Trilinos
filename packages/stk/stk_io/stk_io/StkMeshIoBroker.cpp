@@ -54,37 +54,44 @@ namespace {
   std::pair<size_t, Ioss::Field::BasicType> get_io_parameter_size_and_type(const stk::util::ParameterType::Type type,
 									   const boost::any &value)
   {
-    switch(type)  {
-    case stk::util::ParameterType::INTEGER: {
-      return std::make_pair(1, Ioss::Field::INTEGER);
-    }
+    try {
+      switch(type)  {
+      case stk::util::ParameterType::INTEGER: {
+	return std::make_pair(1, Ioss::Field::INTEGER);
+      }
 
-    case stk::util::ParameterType::INT64: {
-      return std::make_pair(1, Ioss::Field::INT64);
-    }
+      case stk::util::ParameterType::INT64: {
+	return std::make_pair(1, Ioss::Field::INT64);
+      }
     
-    case stk::util::ParameterType::DOUBLE: {
-      return std::make_pair(1, Ioss::Field::REAL);
-    }
+      case stk::util::ParameterType::DOUBLE: {
+	return std::make_pair(1, Ioss::Field::REAL);
+      }
     
-    case stk::util::ParameterType::DOUBLEVECTOR: {
-      std::vector<double> vec = boost::any_cast<std::vector<double> >(value);
-      return std::make_pair(vec.size(), Ioss::Field::REAL);
-    }
+      case stk::util::ParameterType::DOUBLEVECTOR: {
+	std::vector<double> vec = boost::any_cast<std::vector<double> >(value);
+	return std::make_pair(vec.size(), Ioss::Field::REAL);
+      }
 
-    case stk::util::ParameterType::INTEGERVECTOR: {
-      std::vector<int> vec = boost::any_cast<std::vector<int> >(value);
-      return std::make_pair(vec.size(), Ioss::Field::INTEGER);
-    }
+      case stk::util::ParameterType::INTEGERVECTOR: {
+	std::vector<int> vec = boost::any_cast<std::vector<int> >(value);
+	return std::make_pair(vec.size(), Ioss::Field::INTEGER);
+      }
 
-    case stk::util::ParameterType::INT64VECTOR: {
-      std::vector<int64_t> vec = boost::any_cast<std::vector<int64_t> >(value);
-      return std::make_pair(vec.size(), Ioss::Field::INT64);
-    }
+      case stk::util::ParameterType::INT64VECTOR: {
+	std::vector<int64_t> vec = boost::any_cast<std::vector<int64_t> >(value);
+	return std::make_pair(vec.size(), Ioss::Field::INT64);
+      }
     
-    default: {
-      return std::make_pair(0, Ioss::Field::INVALID);
+      default: {
+	return std::make_pair(0, Ioss::Field::INVALID);
+      }
+      }
     }
+    catch(...) {
+      std::cerr << "ERROR: Actual type of parameter does not match the declared type. Something went wrong."
+		<< " Maybe you need to call add_global_ref() instead of add_global() or vice-versa.";
+      throw;
     }
   }
 
@@ -154,6 +161,7 @@ namespace {
 				const std::string &name, const boost::any &any_value,
 				stk::util::ParameterType::Type type)
     {
+      try {
       switch(type)
 	{
 	case stk::util::ParameterType::INTEGER: {
@@ -199,6 +207,13 @@ namespace {
 	  break;
 	}
 	}
+      }
+      catch(...) {
+	std::cerr << "ERROR: Actual type of parameter named '" << name
+		  << "' does not match the declared type. Something went wrong."
+		  << " Maybe you need to call add_global_ref() instead of add_global() or vice-versa.";
+	throw;
+      }
     }
 
   void write_defined_global_any_fields(Teuchos::RCP<Ioss::Region> region,
@@ -1487,6 +1502,13 @@ namespace stk {
       m_output_files[output_file_index]->add_global(name, value, type);
     }
 
+    void StkMeshIoBroker::add_global_ref(size_t output_file_index, const std::string &name,
+					 const boost::any *value, stk::util::ParameterType::Type type)
+    {
+      validate_output_file_index(output_file_index);
+      m_output_files[output_file_index]->add_global_ref(name, value, type);
+    }
+
     void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &globalVarName, Ioss::Field::BasicType dataType)
     {
       validate_output_file_index(output_file_index);
@@ -1714,7 +1736,8 @@ namespace stk {
       }
     }
 
-    void Heartbeat::add_global(const std::string &name, const boost::any &value, stk::util::ParameterType::Type type)
+    void Heartbeat::add_global_ref(const std::string &name, const boost::any *value,
+				   stk::util::ParameterType::Type type)
     {
       if (m_processor == 0) {
 	ThrowErrorMsgIf (m_current_step != 0, 
@@ -1727,9 +1750,9 @@ namespace stk {
         }
 
         // Determine name and type of parameter...
-        std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(type, value);
+        std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(type, *value);
         internal_add_global(m_region, name, parameter_type.first, parameter_type.second);
-        m_fields.push_back(GlobalAnyVariable(name, &value, type));
+        m_fields.push_back(GlobalAnyVariable(name, value, type));
       }
     }
 
@@ -1808,14 +1831,24 @@ namespace stk {
         }
     }
 
+    void OutputFile::add_global_ref(const std::string &name, const boost::any *value, stk::util::ParameterType::Type type)
+    {
+      ThrowErrorMsgIf (m_fields_defined,
+		       "On region named " << m_region->name() << 
+		       " Attempting to add global variable after data has already been written to the database.");
+      std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(type, *value);
+      internal_add_global(m_region, name, parameter_type.first, parameter_type.second);
+      m_global_any_fields.push_back(GlobalAnyVariable(name, value, type));
+    }
+
     void OutputFile::add_global(const std::string &name, const boost::any &value, stk::util::ParameterType::Type type)
     {
       ThrowErrorMsgIf (m_fields_defined,
 		       "On region named " << m_region->name() << 
 		       " Attempting to add global variable after data has already been written to the database.");
       std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(type, value);
+      m_non_any_global_variables_defined = true;  // This output file has at least 1 global variable.
       internal_add_global(m_region, name, parameter_type.first, parameter_type.second);
-      m_global_any_fields.push_back(GlobalAnyVariable(name, &value, type));
     }
 
     void OutputFile::add_global(const std::string &globalVarName, Ioss::Field::BasicType dataType)

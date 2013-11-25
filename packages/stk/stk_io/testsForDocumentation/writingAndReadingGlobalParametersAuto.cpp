@@ -51,7 +51,7 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalParametersAuto)
 	for (; i != iend; ++i) {
 	  const std::string parameterName = (*i).first;
 	  stk::util::Parameter &parameter = parameters.get_param(parameterName);
-	  stkIo.add_global(fileIndex, parameterName, parameter.value, parameter.type);
+	  stkIo.add_global_ref(fileIndex, parameterName, &parameter.value, parameter.type);
 	}
 
 	stkIo.process_output_request(fileIndex, 0.0);
