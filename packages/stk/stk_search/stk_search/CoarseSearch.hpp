@@ -13,6 +13,7 @@
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search/CoarseSearchBoostRTree.hpp>
 #include <stk_search/OctTreeOps.hpp>
+#include <stk_search/SearchMethod.hpp>
 //#include <stk_search/BihTreeParallelOps.hpp>
 
 #include <vector>
@@ -20,13 +21,6 @@
 
 
 namespace stk { namespace search {
-
-enum SearchMethod {
-  BOOST_RTREE,
-  OCTREE,
-  BIHTREE
-};
-
 
 inline
 std::ostream& operator<<(std::ostream &out, SearchMethod method)
