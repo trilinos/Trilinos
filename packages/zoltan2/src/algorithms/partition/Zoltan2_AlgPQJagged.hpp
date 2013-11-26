@@ -53,6 +53,7 @@
 #include <Zoltan2_AlgRCB_methods.hpp>
 #include <Zoltan2_CoordinateModel.hpp>
 #include <Zoltan2_Metric.hpp>             // won't need thiss
+#include <Zoltan2_Parameters.hpp>
 #include <Tpetra_Distributor.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Zoltan2_CoordinatePartitioningGraph.hpp>
@@ -75,6 +76,10 @@
 //#define FIRST_TOUCH
 //#define BINARYCUTSEARCH
 //#define Zoltan_Comm
+//
+// TODO list: NUM_RCB_PARAMS cannot be used here. Should be NUM_MJ_PARAMS if 
+// needed.
+//  
 
 #include <bitset>
 
@@ -228,8 +233,6 @@ public:
 
 namespace Zoltan2{
 
-//diffclock for temporary timing experiments.
-
 #ifdef mpi_communication
 partId_t concurrent = 0;
 void sumMinMin(void *in, void *inout, int *count, MPI_Datatype *type) {
@@ -279,6 +282,7 @@ void minMaxSum(void *in, void *inout, int *count, MPI_Datatype *type) {
 }
 #endif
 
+#if 0
 /*! \brief A helper class containing array representation of
  *  coordinate linked lists.
  */
@@ -347,6 +351,7 @@ public:
     pq_lno_t *getPartEnds(){ return partEnds;}
 
 };
+#endif
 
 template<typename T>
 inline void firstTouch(T *arrayName, size_t arraySize){
@@ -391,16 +396,16 @@ inline pq_scalar_t pivotPos (pq_scalar_t * cutUpperBounds, pq_scalar_t *cutLower
 
 template <typename T>
 void get_partitioning_params(
-        const Teuchos::ParameterList &pl,
-        T &imbalanceTolerance,
-        multiCriteriaNorm &mcnorm,
-        std::bitset<NUM_RCB_PARAMS> &params,
-        int &numTestCuts,
-        bool &ignoreWeights){
+   const Teuchos::ParameterList &pl,
+   T &imbalanceTolerance,
+   multiCriteriaNorm &mcnorm,
+   std::bitset<NUM_RCB_PARAMS> &params,
+   int &numTestCuts,
+   bool &ignoreWeights){
 
     string obj;
-
-    const Teuchos::ParameterEntry *pe = pl.getEntryPtr("partitioning_objective");
+    const Teuchos::ParameterEntry *pe = pl.getEntryPtr
+                                                ("partitioning_objective");
     if (pe)
         obj = pe->getValue(&obj);
 
@@ -411,6 +416,7 @@ void get_partitioning_params(
     else if (obj == string("balance_object_count")){
         params.set(rcb_balanceCount);
     }
+#if 0
     else if (obj == string("multicriteria_minimize_total_weight")){
         params.set(rcb_minTotalWeight);
         mcnorm = normMinimizeTotalWeight;
@@ -423,11 +429,13 @@ void get_partitioning_params(
         params.set(rcb_balanceTotalMaximum);
         mcnorm = normBalanceTotalMaximum;
     }
+#endif
     else{
         params.set(rcb_balanceWeight);
         mcnorm = normBalanceTotalMaximum;
     }
 
+#if 0
     int val = 0;
     pe = pl.getEntryPtr("average_cuts");
     if (pe)
@@ -435,7 +443,12 @@ void get_partitioning_params(
 
     if (val == 1)
         params.set(rcb_averageCuts);
+#endif
 
+    // TODO: Imbalance tolerance and ignoreWeights are the two parameters
+    // that are used. ignoreWeights derives from rcb_balanceCount which 
+    // never seem to be set, making me wonder whether it is used at all.
+    //
     imbalanceTolerance = .1;
     pe = pl.getEntryPtr("imbalance_tolerance");
     if (pe){
@@ -447,11 +460,12 @@ void get_partitioning_params(
     if (imbalanceTolerance <= 0)
         imbalanceTolerance = 10e-4;
 
+#if 0
     numTestCuts = 1;
     pe = pl.getEntryPtr("bisection_num_test_cuts");
     if (pe)
         numTestCuts = pe->getValue(&numTestCuts);
-
+#endif
 
     ignoreWeights = params.test(rcb_balanceCount);
 }
@@ -490,6 +504,7 @@ void pqJagged_getParameters(
         int &recursion_depth){
 
 
+    // TODO: Append all the parameters with mj_
     const Teuchos::ParameterEntry *pe = pl.getEntryPtr("partitioning_objective");
     migration_imbalance_cut_off = 0.35;
     pe = pl.getEntryPtr("migration_imbalance_cut_off");
@@ -595,8 +610,8 @@ void pqJagged_getParameters(
 template <typename Adapter>
 void pqJagged_getCoordinateValues( const RCP<const CoordinateModel<
         typename Adapter::base_adapter_t> > &coords, int &coordDim,
-        int &weightDim, size_t &numLocalCoords, global_size_t &numGlobalCoords, int &criteriaDim, const bool &ignoreWeights){
-
+        int &weightDim, size_t &numLocalCoords, global_size_t &numGlobalCoords,
+        int &criteriaDim, const bool &ignoreWeights){
     coordDim = coords->getCoordinateDim();
     weightDim = coords->getCoordinateWeightDim();
     numLocalCoords = coords->getLocalNumCoordinates();
@@ -604,7 +619,6 @@ void pqJagged_getCoordinateValues( const RCP<const CoordinateModel<
     criteriaDim = (weightDim ? weightDim : 1);
     if (criteriaDim > 1 && ignoreWeights)
         criteriaDim = 1;
-
 }
 
 
@@ -664,9 +678,6 @@ void pqJagged_getInputValues(
     coords->getCoordinates(gnos, xyz, wgts);
     pqJagged_gnos = gnos;
 
-
-    //std::cout << std::endl;
-
     for (int dim=0; dim < coordDim; dim++){
         ArrayRCP<const pq_scalar_t> ar;
         xyz[dim].getInputArray(ar);
@@ -707,7 +718,7 @@ void pqJagged_getInputValues(
             pqJagged_partSizes[wdim] = NULL;
         }
         else{
-            //TODO
+            //TODO : Need a test for this, 
             pq_scalar_t *tmp = new pq_scalar_t [numGlobalParts];
             env->localMemoryAssertion(__FILE__, __LINE__, numGlobalParts, tmp) ;
             for (size_t i=0; i < numGlobalParts; i++){
@@ -723,6 +734,7 @@ void pqJagged_getInputValues(
 
     bool multiplePartSizeSpecs = false;
 
+    // TODO: Do we handle multidimensional weights.
     if (criteriaDim > 1){
         for (int wdim1 = 0; wdim1 < criteriaDim; wdim1++)
             for (int wdim2 = wdim1+1; wdim2 < criteriaDim; wdim2++)
@@ -732,6 +744,7 @@ void pqJagged_getInputValues(
                 }
     }
 
+    // TODO: We do not use this at all, should be removed.
     if (multiplePartSizeSpecs)
         params.set(rcb_multiplePartSizeSpecs);
 
@@ -5093,18 +5106,25 @@ void getInitialPartAssignments(
 
 
 
+/* Either the pqParts array (partNo) or numGlobalParts should be provided in
+ * the input. partArraySize should be provided. partNo takes
+ * precedence if both are provided. The rest of the parameters are all
+ * output. Providing pqParts array also requires its size be provided.
+ * */
 template <typename partId_t>
-void getPartSpecifications(const partId_t *partNo,
-                  int partArraySize,
-                  size_t &numGlobalParts,
-                  partId_t &totalDimensionCut, //how many cuts will be totally
-                  partId_t &totalPartCount ,    //how many parts will be totally
-                  partId_t &maxPartNo ,         //maximum cut count along a dimension.
-                  partId_t &reduceAllCount ,    //estimate on how many reduceAlls will be done.
-                  partId_t &maxTotalCumulativePartCount, //maximum number of parts that might occur
-                                                            //during the partition before the last partitioning dimension.
-                  partId_t &maxCutNo,
-                  size_t &maxTotalPartCount
+void getPartSpecifications(
+    const partId_t *partNo,     // pqParts array
+    int partArraySize,
+    size_t &numGlobalParts,
+    partId_t &totalDimensionCut, //how many cuts will be totally
+    partId_t &totalPartCount ,    //how many parts will be totally
+    partId_t &maxPartNo ,         //maximum cut count along a dimension.
+    partId_t &reduceAllCount ,    //estimate on #reduceAlls that can be done.
+    partId_t &maxTotalCumulativePartCount, //max no of parts that might occur
+                                           //during the partition before the
+                                           //last partitioning dimension.
+    partId_t &maxCutNo,
+    size_t &maxTotalPartCount
 ){
     if (partNo){
         for (int i = 0; i < partArraySize; ++i){
@@ -5119,7 +5139,6 @@ void getPartSpecifications(const partId_t *partNo,
         partId_t futureNumParts = numGlobalParts;
 
         for (int i = 0; i < partArraySize; ++i){
-
             partId_t maxNoPartAlongI = getPartCount<partId_t>( futureNumParts, 1.0f / (partArraySize - i), fEpsilon);
             //cout << "futureNumParts:" << futureNumParts << "partArraySize:" << partArraySize << " i:" << i << "maxNoPartAlongI:" << maxNoPartAlongI<< endl;
             //partId_t maxNoPartAlongI = ceil(pow(futureNumParts, 1.0f / (coordDim - i)));// + 0.5f;
@@ -5718,28 +5737,17 @@ void sequentialTaskPartitioning(
     partId_t totalDimensionCut = 0; //how many cuts will be totally
     partId_t totalPartCount = 1;    //how many parts will be totally
     partId_t maxPartNo = 0;         //maximum cut count along a dimension.
-    partId_t reduceAllCount = 0;    //estimate on how many reduceAlls will be done.
-    partId_t maxTotalCumulativePartCount = 1; //maximum number of parts that might occur
-                                              //during the partition before the last partitioning dimension.
+    partId_t reduceAllCount = 0;    //estimate of #reduceAlls that can be done.
+    partId_t maxTotalCumulativePartCount = 1; //max no of parts that might occur
+                                              //during partitioning before the
+                                              //last partitioning dimension.
     partId_t maxCutNo = 0;
     size_t maxTotalPartCount = 0;
 
     //partArraySize = coordDim * 8;
-    getPartSpecifications <partId_t>(
-                        partNo,   //partNoArray Input
-                        partArraySize,  //size of the partNoArray --output if partNo is not given.
-                        //coordDim,       //coordinate dim
-                        numGlobalParts,     //how many global parts will be -- output if partNo is not given.
-                        totalDimensionCut, //how many cuts will be totally
-                        totalPartCount ,    //how many parts will be totally
-                        maxPartNo ,         //maximum cut count along a dimension.
-                        reduceAllCount ,    //estimate on how many reduceAlls will be done.
-                        maxTotalCumulativePartCount, //maximum number of parts that might occur
-                                                                //during the partition before the last partitioning dimension.
-                        maxCutNo,
-                        maxTotalPartCount
-    );
-
+    getPartSpecifications <partId_t>( partNo, partArraySize, numGlobalParts,
+        totalDimensionCut, totalPartCount, maxPartNo, reduceAllCount,
+        maxTotalCumulativePartCount, maxCutNo, maxTotalPartCount);
 
     // coordinates of the cut lines. First one is the min, last one is max coordinate.
     // kddnote if (keep_cuts)
@@ -5926,19 +5934,9 @@ void sequentialTaskPartitioning(
         */
         //returns the total number of output parts for this dimension partitioning.
         partId_t outPartCount = getPartitionArrays<pq_scalar_t, partId_t>(
-                partNo,
-                pAlongI,
-                currentPartitions,
-                newFuturePartitions,
-                futurePartNumbers,
-                currentPartitionCount,
-                partArraySize,
-                i,
-                maxPartNo,
-                0,
-                t1,
-                t2
-                );
+                partNo, pAlongI, currentPartitions, newFuturePartitions,
+                futurePartNumbers, currentPartitionCount, partArraySize, i,
+                maxPartNo, 0, t1, t2);
 
         /*
         cout << "i:" << i << " ";
@@ -6371,6 +6369,10 @@ void AlgPQJagged(
     typedef typename Adapter::lno_t pq_lno_t;
     typedef typename Adapter::node_t pq_node_t;
 
+    //MessageOutputLevel inout_msg = static_cast<MessageOutputLevel>(3);
+    //env->debug(inout_msg, "In PQ Jagged");
+    env->debug(3, "In PQ Jagged");
+
     /*
     if(comm->getRank() == 0){
     cout << "size of gno:" << sizeof(pq_gno_t) << endl;
@@ -6380,22 +6382,17 @@ void AlgPQJagged(
      */
     const Teuchos::ParameterList &pl = env->getParameters();
 
+    // TODO: This is not used
     std::bitset<NUM_RCB_PARAMS> params;
     int numTestCuts = 5;
-
 
     pq_scalar_t imbalanceTolerance;
 
     multiCriteriaNorm mcnorm;
     bool ignoreWeights=false;
 
-
-    get_partitioning_params<pq_scalar_t>(pl,
-            imbalanceTolerance,
-            mcnorm,
-            params,
-            numTestCuts,
-            ignoreWeights);
+    get_partitioning_params<pq_scalar_t>(pl, imbalanceTolerance, mcnorm, params,
+            numTestCuts, ignoreWeights);
 
     const partId_t *partNo = NULL;
     int partArraySize = 0;
@@ -6403,22 +6400,15 @@ void AlgPQJagged(
     if (pl.getPtr<Array <partId_t> >("pqParts")){
         partNo = pl.getPtr<Array <partId_t> >("pqParts")->getRawPtr();
         partArraySize = pl.getPtr<Array <partId_t> >("pqParts")->size() - 1;
+        env->debug(2, "PQparts provided by user");
     }
 
     //cout << "partArraySize:" << partArraySize << endl;
     int coordDim, weightDim;
     size_t nlc;
     global_size_t gnc; int criteriaDim;
-    pqJagged_getCoordinateValues<Adapter>(
-            coords,
-            coordDim,
-            weightDim,
-            nlc,
-            gnc,
-            criteriaDim,
-            ignoreWeights
-    );
-
+    pqJagged_getCoordinateValues<Adapter>( coords, coordDim, weightDim, nlc,
+            gnc, criteriaDim, ignoreWeights);
 
     pq_lno_t numLocalCoords = nlc;
 #ifdef enable_migration2
@@ -6429,34 +6419,24 @@ void AlgPQJagged(
     //raw pointer addresess will be obtained from multivector.
     pq_scalar_t **pqJagged_coordinates = allocMemory<pq_scalar_t *>(coordDim);
     pq_scalar_t **pqJagged_weights = allocMemory<pq_scalar_t *>(criteriaDim);
-    bool *pqJagged_uniformParts = allocMemory< bool >(criteriaDim); //if the partitioning results wanted to be uniform.
-    pq_scalar_t **pqJagged_partSizes =  allocMemory<pq_scalar_t *>(criteriaDim); //if in a criteria dimension, uniform part is false this shows ratios of the target part weights.
-    bool *pqJagged_uniformWeights = allocMemory< bool >(criteriaDim); //if the weights of coordinates are uniform in a criteria dimension.
+     //if the partitioning results are to be uniform.
+    bool *pqJagged_uniformParts = allocMemory< bool >(criteriaDim);
+
+    //if in a criteria dimension, uniform part is false this shows ratios of
+    //the target part weights.
+    pq_scalar_t **pqJagged_partSizes =  allocMemory<pq_scalar_t *>(criteriaDim);
+    //if the weights of coordinates are uniform in a criteria dimension.
+    bool *pqJagged_uniformWeights = allocMemory< bool >(criteriaDim);
 
     ArrayView<const pq_gno_t> pqJagged_gnos;
     size_t numGlobalParts;
     int pqJagged_multiVectorDim;
 
     pqJagged_getInputValues<Adapter, pq_scalar_t, pq_gno_t>(
-            env,
-            coords,
-            solution,
-            params,
-            coordDim,
-            weightDim,
-            numLocalCoords,
-            numGlobalParts,
-            pqJagged_multiVectorDim, //output
-            pqJagged_coordinates,   //output
-            criteriaDim,
-            pqJagged_weights,       //output
-            pqJagged_gnos,          //output
-            ignoreWeights,
-            pqJagged_uniformWeights,    //output
-            pqJagged_uniformParts,      //output
-            pqJagged_partSizes          //output
-    );
-
+            env, coords, solution, params, coordDim, weightDim, numLocalCoords,
+            numGlobalParts, pqJagged_multiVectorDim, pqJagged_coordinates,
+            criteriaDim, pqJagged_weights, pqJagged_gnos, ignoreWeights,
+            pqJagged_uniformWeights, pqJagged_uniformParts, pqJagged_partSizes);
 
     //////////////////BEGINNING OF THE FUNCTION///////////////////////
 
@@ -6518,16 +6498,11 @@ void AlgPQJagged(
     int recursion_depth = -1;
 
     pqJagged_getParameters<pq_scalar_t>(pl,
-            allowNonRectelinearPart,
-            concurrentPartCount,
-            migration_actualMigration_option,
-            migration_check_option,
-            migration_all2all_option,
-            migration_imbalance_cut_off,
-            migration_assignment_type,
-            keep_part_boxes,
-            enable_rcb,
-            recursion_depth);
+        allowNonRectelinearPart, concurrentPartCount,
+        migration_actualMigration_option, migration_check_option,
+        migration_all2all_option, migration_imbalance_cut_off,
+        migration_assignment_type, keep_part_boxes, enable_rcb,
+        recursion_depth);
 
     //cout << "enable_rcb:" << enable_rcb << " recursion_depth:" << recursion_depth << endl;
     //cout << "partArraySize:" << partArraySize << " recursion_depth:" << recursion_depth << endl;
@@ -6558,26 +6533,16 @@ void AlgPQJagged(
     partId_t totalDimensionCut = 0; //how many cuts will be totally
     partId_t totalPartCount = 1;    //how many parts will be totally
     partId_t maxPartNo = 0;         //maximum cut count along a dimension.
-    partId_t reduceAllCount = 0;    //estimate on how many reduceAlls will be done.
-    partId_t maxTotalCumulativePartCount = 1; //maximum number of parts that might occur
-                                              //during the partition before the last partitioning dimension.
+    partId_t reduceAllCount = 0;    //estimate on #reduceAlls can be done.
+    partId_t maxTotalCumulativePartCount = 1; //max no of parts that might occur
+                                              //during the partition before the
+                                              //last partitioning dimension.
     partId_t maxCutNo = 0;
     size_t maxTotalPartCount = 0;
 
-    getPartSpecifications <partId_t>(
-                        partNo,   //partNoArray Input
-                        partArraySize,  //size of the partNoArray --output if partNo is not given.
-                        //coordDim,       //coordinate dim
-                        numGlobalParts,     //how many global parts will be -- output if partNo is not given.
-                        totalDimensionCut, //how many cuts will be totally
-                        totalPartCount ,    //how many parts will be totally
-                        maxPartNo ,         //maximum cut count along a dimension.
-                        reduceAllCount ,    //estimate on how many reduceAlls will be done.
-                        maxTotalCumulativePartCount, //maximum number of parts that might occur
-                                                                //during the partition before the last partitioning dimension.
-                        maxCutNo,
-                        maxTotalPartCount
-    );
+    getPartSpecifications <partId_t>( partNo, partArraySize, numGlobalParts,
+     totalDimensionCut, totalPartCount, maxPartNo, reduceAllCount,
+      maxTotalCumulativePartCount, maxCutNo, maxTotalPartCount);
 
 
     if (concurrentPartCount == 0)
@@ -6897,24 +6862,11 @@ void AlgPQJagged(
         }
 
 
-        //returns the total number of output parts for this dimension partitioning.
+        //returns the total no. of output parts for this dimension partitioning.
         partId_t outPartCount = getPartitionArrays<pq_scalar_t, partId_t>(
-                partNo,
-                pAlongI,
-                currentPartitions,
-                newFuturePartitions,
-                futurePartNumbers,
-                currentPartitionCount,
-                partArraySize,
-                i,
-                maxPartNo,
-                keep_part_boxes,
-                inPartBoxes,
-                outPartBoxes
-                );
-
-
-
+                partNo, pAlongI, currentPartitions, newFuturePartitions,
+                futurePartNumbers, currentPartitionCount, partArraySize, i,
+                maxPartNo, keep_part_boxes, inPartBoxes, outPartBoxes);
 
         if(outPartCount == currentPartitionCount) {
             tmpPartVect= currentPartitions;
@@ -7407,7 +7359,6 @@ void AlgPQJagged(
 /*
     problemComm->barrier();
 
-
     cout    << "me:" << problemComm->getRank()
             << " partIndexBegin:" << partIndexBegin
             << " currentPartitionCount:" << currentPartitionCount
@@ -7492,9 +7443,6 @@ void AlgPQJagged(
             string a = toString<partId_t>(i)+".part";
             plotStr += "\""+a + "\"";
             arrowLines << plotStr << endl;
-
-
-
         }
 
         arrowLines << "set terminal png" << endl;
@@ -7692,21 +7640,13 @@ void AlgPQJagged(
     freeArray<pq_scalar_t *>(leftClosestDistance);
     freeArray<pq_scalar_t *>(rightClosestDistance);
 
-
     env->timerStop(MACRO_TIMERS, "PQJagged - Problem_Free");
     env->timerStop(MACRO_TIMERS, "PQJagged - Total");
-
-
+    env->debug(3, "Out of PQ Jagged");
 #endif // INCLUDE_ZOLTAN2_EXPERIMENTAL
 }
 
-
-
 } // namespace Zoltan2
-
-
-
-
 
 #endif
 
