@@ -1,4 +1,6 @@
-#include <stk_util/util/FileUtils.hpp>
+#include <stk_util/diag/FileUtils.hpp>
+#include <stk_util/environment/ProgramOptions.hpp>
+#include <stk_util/parallel/ParallelComm.hpp>
 
 #include <stk_util/diag/Env.hpp>
 #include <stk_util/util/tokenize.hpp>

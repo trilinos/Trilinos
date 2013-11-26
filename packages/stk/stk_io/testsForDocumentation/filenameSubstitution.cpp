@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <string>
 #include <mpi.h>
-#include <stk_util/util/FileUtils.hpp>
+#include <stk_util/diag/FileUtils.hpp>
 
 namespace
 {
