@@ -10,13 +10,13 @@ TEST(StkSearchHowTo, useBoostRtreeSearch)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
     int procId = stk::parallel_machine_rank(comm);
-    std::vector< std::pair<Box, BoxId> > localDomain, localRange;
+    std::vector< std::pair<Box, BoxId> > firstList, secondList;
     Box unitBox(Box::point_type(0, 0, 0), Box::point_type(1, 1, 1));
-    localDomain.push_back(std::make_pair(unitBox, BoxId(0, procId)));
-    localRange.push_back(std::make_pair(unitBox, BoxId(1, procId)));
+    firstList.push_back(std::make_pair(unitBox, BoxId(0, procId)));
+    secondList.push_back(std::make_pair(unitBox, BoxId(1, procId)));
 
     std::vector< std::pair<BoxId, BoxId> > searchResults;
-    stk::search::coarse_search(localDomain, localRange,
+    stk::search::coarse_search(firstList, secondList,
                                stk::search::BOOST_RTREE,
                                comm, searchResults);
 
