@@ -51,6 +51,9 @@
 /* Define if Thrust is enabled */
 /* #undef HAVE_STOKHOS_THRUST */
 
+/* Define if Thrust is enabled */
+/* #undef HAVE_STOKHOS_CUSPARSE */
+
 /* Define if Clp is enabled */
 /* #undef HAVE_STOKHOS_CLP */
 
