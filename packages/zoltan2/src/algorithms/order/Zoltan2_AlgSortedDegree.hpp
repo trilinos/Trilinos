@@ -59,11 +59,11 @@ namespace Zoltan2{
 
 // Comparison functions for sort. Note sort_inc is defined in some
 // versions of the gcc library, so spell it 'zort_inc' here.
-bool zort_inc(std::pair<size_t,size_t> a, std::pair<size_t,size_t> b)
+static bool zort_inc(std::pair<size_t,size_t> a, std::pair<size_t,size_t> b)
 {
   return (a.first < b.first);
 }
-bool zort_dec(std::pair<size_t,size_t> a, std::pair<size_t,size_t> b)
+static bool zort_dec(std::pair<size_t,size_t> a, std::pair<size_t,size_t> b)
 {
   return (a.first > b.first);
 }
