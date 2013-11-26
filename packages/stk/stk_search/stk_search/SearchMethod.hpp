@@ -5,8 +5,7 @@ namespace stk { namespace search {
 
 enum SearchMethod {
     BOOST_RTREE,
-    OCTREE,
-    BIHTREE
+    OCTREE
 };
 
 }}

@@ -14,7 +14,6 @@
 #include <stk_search/CoarseSearchBoostRTree.hpp>
 #include <stk_search/OctTreeOps.hpp>
 #include <stk_search/SearchMethod.hpp>
-//#include <stk_search/BihTreeParallelOps.hpp>
 
 #include <vector>
 #include <utility>
@@ -28,7 +27,6 @@ std::ostream& operator<<(std::ostream &out, SearchMethod method)
   switch( method )   {
   case BOOST_RTREE: out << "BOOST_RTREE"; break;
   case OCTREE:      out << "OCTREE"; break;
-  case BIHTREE:     out << "BIHTREE"; break;
   }
   return out;
 }
@@ -49,9 +47,6 @@ void coarse_search( std::vector<std::pair<DomainBox,DomainIdent> > const& domain
     break;
   case OCTREE:
     coarse_search_octree(domain,range,comm,intersections);
-    break;
-  case BIHTREE:
-    ThrowRequireMsg(false, "Coarse search with " << BIHTREE << " not implemented.");
     break;
   }
 }
