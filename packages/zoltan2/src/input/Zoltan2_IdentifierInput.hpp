@@ -121,44 +121,6 @@ public:
 
   enum BaseAdapterType adapterType() const {return IdentifierAdapterType;}
 
-  ////////////////////////////////////////////////////
-  // My interface.
-  ////////////////////////////////////////////////////
-
-  /*! \brief Provide a pointer to this process' identifiers.
-
-      \param Ids will on return point to the list of the global Ids for 
-        this process.
-
-       \return The number of ids in the Ids list.
-   */
-
-  virtual size_t getIDsView(gid_t const *&Ids) const = 0;
-
- /*! \brief Apply a PartitioningSolution to an input.
-   *
-   *  This is not a required part of the IdentifierAdapter interface. However
-   *  if the Caller calls a Problem method to redistribute data, it needs
-   *  this method to perform the redistribution.
-   *
-   *  \param in  An input object with a structure and assignment of
-   *           of global Ids to processes that matches that of the input
-   *           data that instantiated this Adapter.
-   *  \param out On return this should point to a newly created object
-   *            with the specified partitioning.
-   *  \param solution  The Solution object created by a Problem should
-   *      be supplied as the third argument.  It must have been templated
-   *      on user data that has the same global ID distribution as this
-   *      user data.
-   *  \return   Returns the number of local Ids in the new partitioning.
-   */
-
-  template <typename Adapter>
-    size_t applyPartitioningSolution(User &in, User *&out,
-      const PartitioningSolution<Adapter> &solution) const
-  {
-    return 0;
-  } 
 };
   
   

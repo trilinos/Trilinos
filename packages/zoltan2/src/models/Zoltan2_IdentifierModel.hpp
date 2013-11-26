@@ -433,14 +433,15 @@ template <typename User>
   /////////////////////////////////////////
   // Get global IDs.
 
-  size_t nLocalIds = ia->getLocalNumberOfCoordinates();
+  size_t nLocalIds = ia->getLocalNum();
   const gid_t *gids=NULL;
 
   if (nLocalIds > 0){
     try{
       const scalar_t *coords;
       int stride;
-      ia->getCoordinates(0, gids, coords, stride);
+      ia->getIDsView(gids);
+      ia->getCoordinatesView(coords, stride, 0);
     }
     Z2_FORWARD_EXCEPTIONS;
 
@@ -464,7 +465,7 @@ template <typename User>
   /////////////////////////////////////////
   // Get weights.
 
-  userWeightDim_ = ia->getNumberOfWeights();
+  userWeightDim_ = ia->getNumWeightsPer();
   Array<lno_t> weightListSizes(userWeightDim_, 0);
 
   Model<CoordinateAdapter<User> >::maxCount(*comm, userWeightDim_);
@@ -479,7 +480,7 @@ template <typename User>
       size_t wgtListSize;
 
       for (int wdim=0; wdim < userWeightDim_; wdim++){
-        wgtListSize = ia->getCoordinateWeights(wdim, wgts, stride);
+        wgtListSize = ia->getWeightsView(wgts, stride, wdim);
 
         if (wgtListSize > 0){  // non-uniform weights
           ArrayRCP<const scalar_t> wgtArray(wgts, 0, wgtListSize, false);

@@ -226,6 +226,8 @@ public:
 
   size_t getLocalNum() const { return numIds_;}
 
+  size_t getIDsView(const gid_t *&ids) const {ids = idList_; return numIds_;}
+
   int getNumWeightsPer() const { return numWeights_;}
 
   size_t getWeightsView(const scalar_t *&wgt, int &stride, int idx) const

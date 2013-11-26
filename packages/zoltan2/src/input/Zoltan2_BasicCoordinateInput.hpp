@@ -166,44 +166,11 @@ public:
 
   size_t getLocalNum() const { return numIds_;}
 
+  size_t getIDsView(const gid_t *&ids) const {ids = idList_; return numIds_;}
+
   int getNumWeightsPer() const { return numWeights_;}
 
-  size_t getWeightsView(const scalar_t *&wgt, int &stride, int idx) const
-  {
-    return getCoordinateWeights(idx, wgt, stride);
-  }
-
-  ////////////////////////////////////////////////////
-  // The CoordinateAdapter interface.
-  ////////////////////////////////////////////////////
-
-  int getCoordinateDimension() const { return dimension_;}
-
-  int getNumberOfWeights() const { return numWeights_;}  
-
-  size_t getLocalNumberOfCoordinates() const { return numIds_; }
-
-  size_t getCoordinates(int dim, const gid_t *&gids, const scalar_t *&coords, 
-    int &stride) const
-  {
-    if (dim < 0 || dim >= dimension_) {
-      std::ostringstream emsg;
-      emsg << __FILE__ << ":" << __LINE__
-           << "  Invalid dimension " << dim << std::endl;
-      throw std::runtime_error(emsg.str());
-    }
-
-    gids = idList_;
-    
-    size_t length;
-
-    coords_[dim].getStridedList(length, coords, stride);
-
-    return length;
-  }
-
-  size_t getCoordinateWeights(int idx, const scalar_t *&weights, 
-    int &stride) const
+  size_t getWeightsView(const scalar_t *&weights, int &stride, int idx=0) const
   {
     if (idx < 0 || idx >= numWeights_) {
       std::ostringstream emsg;
@@ -215,6 +182,28 @@ public:
     size_t length;
 
     weights_[idx].getStridedList(length, weights, stride);
+
+    return length;
+  }
+
+  ////////////////////////////////////////////////////
+  // The CoordinateAdapter interface.
+  ////////////////////////////////////////////////////
+
+  int getDimension() const { return dimension_;}
+
+  size_t getCoordinatesView(const scalar_t *&coords, int &stride, int dim) const
+  {
+    if (dim < 0 || dim >= dimension_) {
+      std::ostringstream emsg;
+      emsg << __FILE__ << ":" << __LINE__
+           << "  Invalid dimension " << dim << std::endl;
+      throw std::runtime_error(emsg.str());
+    }
+
+    size_t length;
+
+    coords_[dim].getStridedList(length, coords, stride);
 
     return length;
   }

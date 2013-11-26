@@ -72,13 +72,13 @@ int checkBasicCoordinate(
 {
   int fail = 0;
 
-  if (ia->getCoordinateDimension() != nCoords)
+  if (ia->getDimension() != nCoords)
     fail = 100;
 
-  if (!fail && ia->getNumberOfWeights() != nWeights)
+  if (!fail && ia->getNumWeightsPer() != nWeights)
     fail = 101;
 
-  if (!fail && ia->getLocalNumberOfCoordinates() != size_t(len))
+  if (!fail && ia->getLocalNum() != size_t(len))
     fail = 102;
 
   for (int x=0; !fail && x < nCoords; x++){
@@ -86,7 +86,8 @@ int checkBasicCoordinate(
     const scalar_t *vals;
     int stride;
 
-    size_t nvals = ia->getCoordinates(x, idList, vals, stride);
+    ia->getIDsView(idList);
+    size_t nvals = ia->getCoordinatesView(vals, stride, x);
 
     if (nvals != size_t(len*stride))
       fail = 104;
@@ -106,7 +107,7 @@ int checkBasicCoordinate(
     const scalar_t *wgts;
     int stride;
 
-    size_t nvals = ia->getCoordinateWeights(w, wgts, stride);
+    size_t nvals = ia->getWeightsView(wgts, stride, w);
 
     if (nvals != size_t(len))
       fail = 108;

@@ -133,11 +133,6 @@ public:
     return length;
   }
 
-  ////////////////////////////////////////////////////////////////
-  // The IdentifierAdapter interface.
-  // This is the interface that would be called by a model or a problem .
-  ////////////////////////////////////////////////////////////////
-
   size_t getIDsView(const gid_t *&Ids) const
   {
     Ids = idList_;

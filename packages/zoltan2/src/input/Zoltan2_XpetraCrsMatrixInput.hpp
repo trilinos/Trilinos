@@ -164,10 +164,20 @@ public:
   // The Adapter interface.
   ////////////////////////////////////////////////////
 
+  // TODO Assume row partitioning for now; need to add test for partition object
   size_t getLocalNum() const { return getLocalNumRows();}
 
-  int getNumWeightsPer() const { return 0;}
+  // TODO Assume row partitioning for now; need to add test for partition object
+  size_t getIDsView(const gid_t *&ids) const {
+    size_t nrows = getLocalNumRows();
+    ids = rowMap_->getNodeElementList().getRawPtr();
+    return nrows;
+  }
 
+  // TODO Assume row partitioning for now; need to add test for partition object
+  int getNumWeightsPer() const { return 0; }
+
+  // TODO Assume row partitioning for now; need to add test for partition object
   size_t getWeightsView(const scalar_t *&wgt, int &stride, int idx) const
   {
     return getRowWeights(idx, wgt, stride);

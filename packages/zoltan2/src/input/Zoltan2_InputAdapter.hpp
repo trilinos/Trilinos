@@ -85,7 +85,8 @@ template <typename User>
 
 private:
 
-  typedef typename InputTraits<User>::scalar_t    scalar_t;
+  typedef typename InputTraits<User>::gid_t    gid_t;
+  typedef typename InputTraits<User>::scalar_t scalar_t;
 
 public:
 
@@ -103,6 +104,14 @@ public:
    *  They are the objects to be partitioned, ordered, or colored.
    */
   virtual size_t getLocalNum() const = 0;
+
+  /*! \brief Provide a pointer to this process' identifiers.
+
+      \param Ids will on return point to the list of the global Ids for 
+        this process.
+      \return The number of ids in the Ids list.
+   */
+  virtual size_t getIDsView(const gid_t *&Ids) const = 0;
 
   /*! \brief Returns the number of weights per object.
    *   Number of weights per object should be zero or greater.  If

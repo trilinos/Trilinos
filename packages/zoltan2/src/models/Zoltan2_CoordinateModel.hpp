@@ -260,12 +260,12 @@ template <typename User>
 {
   bool consecutiveIds = flags.test(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
 
-  size_t nLocalIds = ia->getLocalNumberOfCoordinates();
+  size_t nLocalIds = ia->getLocalNum();
 
   // Get coordinates and weights (if any)
 
-  coordinateDim_ = ia->getCoordinateDimension();
-  userNumWeights_ = ia->getNumberOfWeights();
+  coordinateDim_ = ia->getDimension();
+  userNumWeights_ = ia->getNumWeightsPer();
 
   Model<CoordinateAdapter<User> >::maxCount(*comm, coordinateDim_, 
     userNumWeights_);
@@ -289,7 +289,8 @@ template <typename User>
       const gid_t *gids=NULL;
       const scalar_t *coords=NULL;
       try{
-        ia->getCoordinates(dim, gids, coords, stride);
+        ia->getIDsView(gids);
+        ia->getCoordinatesView(coords, stride, dim);
       }
       Z2_FORWARD_EXCEPTIONS;
 
@@ -304,7 +305,7 @@ template <typename User>
       int stride;
       const scalar_t *weights;
       try{
-        ia->getCoordinateWeights(dim, weights, stride);
+        ia->getWeightsView(weights, stride, dim);
       }
       Z2_FORWARD_EXCEPTIONS;
 

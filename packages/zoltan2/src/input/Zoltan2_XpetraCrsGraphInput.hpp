@@ -282,6 +282,15 @@ public:
 
   size_t getLocalNum() const { return getLocalNumberOfVertices();}
 
+  size_t getIDsView(const gid_t *& ids) const
+  {
+    size_t nvtx = getLocalNumberOfVertices();
+    ids = NULL;
+    if (nvtx)
+      ids = graph_->getRowMap()->getNodeElementList().getRawPtr();
+    return nvtx;
+  }
+
   int getNumWeightsPer() const { return 0;}
 
   size_t getWeightsView(const scalar_t *&wgt, int &stride, int idx) const
