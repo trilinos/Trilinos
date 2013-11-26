@@ -32,47 +32,45 @@ namespace stk {
 	STRINGVECTOR
       };
 
-      namespace {
 	template <typename T>
-	ParameterType::Type get_type(const T &value)
+	inline ParameterType::Type get_type(const T &value)
 	{ return ParameterType::INVALID; }
 
-	template <> ParameterType::Type get_type(const double &value)
+	template <> inline ParameterType::Type get_type(const double &value)
 	{ return ParameterType::DOUBLE; }
 
-	template <> ParameterType::Type get_type(const float &value)
+	template <> inline ParameterType::Type get_type(const float &value)
 	{ return ParameterType::FLOAT; }
 
-	template <> ParameterType::Type get_type(const int &value)
+	template <> inline ParameterType::Type get_type(const int &value)
 	{ return ParameterType::INTEGER; }
 
-	template <> ParameterType::Type get_type(const int64_t &value)
+	template <> inline ParameterType::Type get_type(const int64_t &value)
 	{ return ParameterType::INT64; }
 
-	template <> ParameterType::Type get_type(const std::string &value)
+	template <> inline ParameterType::Type get_type(const std::string &value)
 	{ return ParameterType::STRING; }
 
 	template <>
-	ParameterType::Type get_type(const std::vector<float> &value)
+	inline ParameterType::Type get_type(const std::vector<float> &value)
 	{ return ParameterType::FLOATVECTOR; }
 
 	template <>
-	ParameterType::Type get_type(const std::vector<double> &value)
+	inline ParameterType::Type get_type(const std::vector<double> &value)
 	{ return ParameterType::DOUBLEVECTOR; }
 
 	template <>
-	ParameterType::Type get_type(const std::vector<int> &value)
+	inline ParameterType::Type get_type(const std::vector<int> &value)
 	{return ParameterType::INTEGERVECTOR; }
 
 	template <>
-	ParameterType::Type get_type(const std::vector<int64_t> &value)
+	inline ParameterType::Type get_type(const std::vector<int64_t> &value)
 	{ return ParameterType::INT64VECTOR; }
 
 	template <>
-	ParameterType::Type get_type(const std::vector<std::string> &value)
+	inline ParameterType::Type get_type(const std::vector<std::string> &value)
 	{ return ParameterType::STRINGVECTOR; }
       }
-    }
 
     /*
      * can call set_value without a prior call to set_param, then it
