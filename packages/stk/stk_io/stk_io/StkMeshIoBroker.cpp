@@ -23,7 +23,7 @@
 #include <Shards_BasicTopologies.hpp>
 
 #include <stk_io/IossBridge.hpp>
-#include <stk_util/util/FileUtils.hpp>
+#include <stk_util/diag/FileUtils.hpp>
 
 #include <Ioss_SubSystem.h>
 #include <init/Ionit_Initializer.h>
