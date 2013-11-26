@@ -92,10 +92,6 @@ namespace
 
       // ============================================================
       //+ VALIDATION
-      std::vector<std::string> globalNamesOnFile;
-      stkIo.get_global_variable_names(globalNamesOnFile);
-      ASSERT_EQ(param_count, globalNamesOnFile.size());
-
       size_t param_count = 0;
       for (i = params.begin(); i != ie; ++i) {
 	param_count++;
@@ -109,7 +105,6 @@ namespace
       std::vector<std::string> globalNamesOnFile;
       stkIo.get_global_variable_names(globalNamesOnFile);
       ASSERT_EQ(param_count, globalNamesOnFile.size());
-
     }
     // ============================================================
     // CLEAN UP
