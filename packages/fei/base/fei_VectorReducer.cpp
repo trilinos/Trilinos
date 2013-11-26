@@ -54,7 +54,8 @@ VectorReducer::VectorReducer(fei::SharedPtr<fei::Reducer> reducer,
     }
   }
 
-  target_core->setOverlap(overlap.size(), &overlap[0]);
+  int* overlap_ptr = overlap.empty() ? NULL : &overlap[0];
+  target_core->setOverlap(overlap.size(), overlap_ptr);
 }
 
 //----------------------------------------------------------------------------
