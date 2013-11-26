@@ -169,7 +169,7 @@ int main(int narg, char** arg)
   //////////////////////////////////
   std::string orderMethod("rcm"); // TODO: Allow "RCM" as well
   cmdp.setOption("order_method", &orderMethod,
-                "order_method: rcm, natural, random");
+                "order_method: natural, random, rcm, sorted_degree");
   
   //////////////////////////////////
   cmdp.parse(narg, arg);

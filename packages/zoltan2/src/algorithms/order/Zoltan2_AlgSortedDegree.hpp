@@ -57,12 +57,13 @@
 
 namespace Zoltan2{
 
-// Comparison functions for sort.
-bool sort_inc(std::pair<size_t,size_t> a, std::pair<size_t,size_t> b)
+// Comparison functions for sort. Note sort_inc is defined in some
+// versions of the gcc library, so spell it 'zort_inc' here.
+bool zort_inc(std::pair<size_t,size_t> a, std::pair<size_t,size_t> b)
 {
   return (a.first < b.first);
 }
-bool sort_dec(std::pair<size_t,size_t> a, std::pair<size_t,size_t> b)
+bool zort_dec(std::pair<size_t,size_t> a, std::pair<size_t,size_t> b)
 {
   return (a.first > b.first);
 }
@@ -118,9 +119,9 @@ class AlgSortedDegree
   
     // Sort degrees.
     if (1) // TODO: Check parameter for inc/dec order
-      std::sort(degrees.begin(), degrees.end(), sort_inc);
+      std::sort(degrees.begin(), degrees.end(), zort_inc);
     else
-      std::sort(degrees.begin(), degrees.end(), sort_dec);
+      std::sort(degrees.begin(), degrees.end(), zort_dec);
   
     // Copy permuted indices to perm.
     for (lno_t i=0; i<(lno_t)nVtx; i++){
