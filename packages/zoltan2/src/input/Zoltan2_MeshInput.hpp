@@ -115,6 +115,10 @@ public:
 
   enum entityType = {REGION, FACE, EDGE, VERTEX};
 
+  /*! \brief Return the mesh entity type to be partitioned
+   */
+  virtual entityType getEntityType();
+
   /*! \brief Return the global number of IDs across all processes
    */
   virtual size_t getGlobalNumEntityIDs(entityType etype) const = 0;
