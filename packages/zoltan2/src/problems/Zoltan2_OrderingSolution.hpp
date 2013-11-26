@@ -72,15 +72,25 @@ public:
   /*! \brief Constructor allocates memory for the solution.
    */
   OrderingSolution(
-    size_t perm_size, // TODO: Is this always equal to nlids ?
-    size_t ngids
+    size_t perm_size // This should be equal to nlids
   )
   {
     HELLO;
     perm_size_ = perm_size;
-    gids_   = ArrayRCP<gid_t>(ngids);
+    gids_   = ArrayRCP<gid_t>(perm_size_);
     perm_  = ArrayRCP<lno_t>(perm_size_);
+    invperm_  = ArrayRCP<lno_t>(perm_size_);
   }
+
+  /*! \brief Compute inverse permutation.
+   */
+  void computeInverse()
+  {
+    for(size_t i=0; i<perm_size_; i++) {
+      invperm_[perm_[i]] = i;
+    }
+  }
+
 
 
   //////////////////////////////////////////////
@@ -141,8 +151,9 @@ protected:
   // Ordering solution consists of GIDs, LIDs, and permutation vector(s).
   size_t perm_size_;
   ArrayRCP<gid_t>  gids_;
+  // For now, assume permutations are local. Revisit later (e.g., for Scotch)
   ArrayRCP<lno_t> perm_;    // zero-based local permutation
-  //ArrayRCP<size_t> invperm_; // inverse of permutation above
+  ArrayRCP<lno_t> invperm_; // inverse of permutation above
 };
 
 }
