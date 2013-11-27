@@ -115,6 +115,34 @@ int validatePerm(size_t n, z2TestLO *perm)
   return status;
 }
 
+size_t computeBandwidth(RCP<SparseMatrix> A, z2TestLO *perm)
+// returns the bandwidth of the (local) permuted matrix
+{
+  z2TestLO i, j, k;
+  ArrayView<const z2TestLO> indices;
+  ArrayView<const Scalar> values;
+  z2TestLO bw_left = 0;
+  z2TestLO bw_right = 0;
+
+  // Loop over rows of matrix
+  for (i=0; i<A->getNodeNumRows(); i++) {
+    A->getLocalRowView (i, indices, values);
+    for (k=0; k< indices.size(); k++){
+      if (perm)
+        j = perm[indices[k]];
+      else
+        j = indices[k];
+      if (j-i > bw_right)
+        bw_right = j-i;
+      if (i-j > bw_left)
+        bw_left = i-j;
+    }
+  }
+
+  // Total bandwidth is the sum of left and right + 1
+  return (bw_left + bw_right + 1);
+}
+
 /////////////////////////////////////////////////////////////////////////////
 int main(int narg, char** arg)
 {
@@ -244,6 +272,12 @@ int main(int narg, char** arg)
   // Verify that checkPerm is a permutation
   testReturn = validatePerm(checkLength, checkPerm);
 
+  cout << "Going to compute the bandwidth" << endl;
+  // Compute original bandwidth (not really part of test)
+  cout << "Original Bandwidth: " << computeBandwidth(origMatrix, 0) << endl;
+  // Compute permuted bandwidth (not really part of test)
+  cout << "Permuted Bandwidth: " << computeBandwidth(origMatrix, checkPerm) << endl;
+
   } catch (std::exception &e){
       if (comm->getSize() != 1)
       {
@@ -266,5 +300,6 @@ int main(int narg, char** arg)
     else
       std::cout << "PASS" << std::endl;
   }
+
 }
 
