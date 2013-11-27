@@ -65,7 +65,7 @@ ASSERT_DEFINED(
   )
 IF (${PACKAGE_NAME}_ENABLE_Tpetra)
   APPEND_SET(SOURCES Adapters/TpetraOperatorAdapter.cpp)
-  APPEND_SET(SOURCES Adapters/CreateTpetraPreconditioner.cpp)
+  APPEND_SET(SOURCES Adapters/CreatePreconditioner.cpp)
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2)

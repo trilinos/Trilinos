@@ -1160,17 +1160,6 @@ namespace Tpetra {
     mutable ArrayRCP<const Scalar> cview_;
 
     //@}
-    //! @name Instance data for tracking efficiency warnings
-    //@{
-
-    //! Whether releaseViews() has yet raised an efficiency warning.
-    mutable bool releaseViewsRaisedEfficiencyWarning_;
-    //! Whether createViews() has yet raised an efficiency warning.
-    mutable bool createViewsRaisedEfficiencyWarning_;
-    //! Whether createViewsNonConst() has yet raised an efficiency warning.
-    mutable bool createViewsNonConstRaisedEfficiencyWarning_;
-
-    //@}
 
 #if TPETRA_USE_KOKKOS_DISTOBJECT
 
@@ -1272,9 +1261,6 @@ namespace Tpetra {
         return clonedMV;
   }
 
-
-
 } // namespace Tpetra
-
 
 #endif // TPETRA_MULTIVECTOR_DECL_HPP
