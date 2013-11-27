@@ -33,10 +33,10 @@ template <class Real>
 class LineSearchStep : public Step<Real> {
 private:
 
-  Teuchos::RCP<Secant<Real> >     secant_;
-  Teuchos::RCP<Krylov<Real> >     krylov_;
-  Teuchos::RCP<NonlinearCG<Real> >  nlcg_;
-  Teuchos::RCP<LineSearch<Real> > lineSearch_;
+  Teuchos::RCP<Secant<Real> >      secant_;
+  Teuchos::RCP<Krylov<Real> >      krylov_;
+  Teuchos::RCP<NonlinearCG<Real> > nlcg_;
+  Teuchos::RCP<LineSearch<Real> >  lineSearch_;
 
   int iterKrylov_;
   int flagKrylov_;
@@ -49,84 +49,109 @@ private:
   int ls_nfval_;
   int ls_ngrad_;
 
-  bool useInexact_;
+  std::vector<bool> useInexact_;
 
 public:
 
   virtual ~LineSearchStep() {}
 
-  LineSearchStep( ELineSearch          els   = LINESEARCH_BACKTRACKING,
-                  ECurvatureCondition  econd = CURVATURECONDITION_WOLFE,
-                  EDescent             edesc = DESCENT_SECANT,             
-                  bool useInexact = false,    
-                  int maxit = 20, Real c1 = 1.e-4, Real c2 = 0.9, Real LStol = 1.e-8, Real rho = 0.5,
-                  ESecant esec = SECANT_LBFGS, int L = 10, int BBtype = 1,        // Secant Parameters
-                  Real CGtol1 = 1.e-4, Real CGtol2 = 1.e-2, int maxitCG = 100 )
-    : els_(els), econd_(econd), edesc_(edesc), esec_(esec), useInexact_(useInexact) {
+  LineSearchStep( Teuchos::ParameterList &parlist ) {
+    // Enumerations
+    edesc_ = parlist.get("Descent Type",                   DESCENT_SECANT);
+    els_   = parlist.get("Linesearch Type",                LINESEARCH_CUBICINTERP);
+    econd_ = parlist.get("Linesearch Curvature Condition", CURVATURECONDITION_STRONGWOLFE);
+    esec_  = parlist.get("Secant Type",                    SECANT_LBFGS);
+    // Inexactness Information
+    useInexact_.clear();
+    useInexact_.push_back(parlist.get("Use Inexact Objective Function", false));
+    useInexact_.push_back(parlist.get("Use Inexact Gradient", false));
+    useInexact_.push_back(parlist.get("Use Inexact Hessian-Times-A-Vector", false));
+     
+    // Initialize Linesearch Object
+    lineSearch_ = Teuchos::rcp( new LineSearch<Real>(parlist) );
 
-    lineSearch_ = Teuchos::rcp( new LineSearch<Real>( els_, econd_, edesc_, maxit, c1, c2, LStol, rho ) );
-
+    // Initialize Krylov Object
     krylov_ = Teuchos::null;
     if ( edesc_ == DESCENT_NEWTONKRYLOV || edesc_ == DESCENT_SECANTPRECOND ) {
-      krylov_ = Teuchos::rcp( new Krylov<Real>(CGtol1,CGtol2,maxitCG,useInexact_) );
+      Real CGtol1 = parlist.get("Absolute Krylov Tolerance", 1.e-4);
+      Real CGtol2 = parlist.get("Relative Krylov Tolerance", 1.e-2);
+      int maxitCG = parlist.get("Maximum Number of Krylov Iterations", 20);
+      krylov_ = Teuchos::rcp( new Krylov<Real>(CGtol1,CGtol2,maxitCG,useInexact_[2]) );
       iterKrylov_ = 0;
       flagKrylov_ = 0;
     }
 
+    // Initialize Secant Object
     secant_ = Teuchos::null;
     if ( edesc_ == DESCENT_SECANT || edesc_ == DESCENT_SECANTPRECOND ) {
+      int L      = parlist.get("Maximum Secant Storage",10);
+      int BBtype = parlist.get("Barzilai-Borwein Type",1);
       secant_ = getSecant<Real>(esec_,L,BBtype);
     }
 
+    // Initialize Nonlinear CG Object
     nlcg_ = Teuchos::null;
     if ( edesc_ == DESCENT_NONLINEARCG ) {
       nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(NONLINEARCG_HAGAR_ZHANG) );
     }
   }
 
-  LineSearchStep( ELineSearch          els   = LINESEARCH_BACKTRACKING,
-                  ECurvatureCondition  econd = CURVATURECONDITION_WOLFE,
-                  EDescent             edesc = DESCENT_SECANT,             
-                  bool useInexact = false,    
-                  int maxit = 20, Real c1 = 1.e-4, Real c2 = 0.9, Real LStol = 1.e-8, Real rho = 0.5,
-                  Teuchos::RCP<Secant<Real> > &secant = Teuchos::null,        // Secant Parameters
-                  Real CGtol1 = 1.e-4, Real CGtol2 = 1.e-2, int maxitCG = 100 )
-    : secant_(secant), els_(els), econd_(econd), edesc_(edesc), useInexact_(useInexact) {
+  LineSearchStep( Teuchos::RCP<Secant<Real> > &secant, Teuchos::ParameterList &parlist ) :
+    secant_(secant) {
+    // Enumerations
+    edesc_ = parlist.get("Descent Type",                   DESCENT_SECANT);
+    els_   = parlist.get("Linesearch Type",                LINESEARCH_CUBICINTERP);
+    econd_ = parlist.get("Linesearch Curvature Condition", CURVATURECONDITION_STRONGWOLFE);
+    esec_  = SECANT_USERDEFINED;
+    // Inexactness Information
+    useInexact_.clear();
+    useInexact_.push_back(parlist.get("Use Inexact Objective Function", false));
+    useInexact_.push_back(parlist.get("Use Inexact Gradient", false));
+    useInexact_.push_back(parlist.get("Use Inexact Hessian-Times-A-Vector", false));
+     
+    // Initialize Linesearch Object
+    lineSearch_ = Teuchos::rcp( new LineSearch<Real>(parlist) );
 
-    lineSearch_ = Teuchos::rcp( new LineSearch<Real>( els_, econd_, edesc_, maxit, c1, c2, LStol, rho ) );
-
+    // Initialize Krylov Object
     krylov_ = Teuchos::null;
     if ( edesc_ == DESCENT_NEWTONKRYLOV || edesc_ == DESCENT_SECANTPRECOND ) {
+      Real CGtol1 = parlist.get("Absolute Krylov Tolerance", 1.e-4);
+      Real CGtol2 = parlist.get("Relative Krylov Tolerance", 1.e-2);
+      int maxitCG = parlist.get("Maximum Number of Krylov Iterations", 20);
       krylov_ = Teuchos::rcp( new Krylov<Real>(CGtol1,CGtol2,maxitCG,useInexact_) );
       iterKrylov_ = 0;
       flagKrylov_ = 0;
     }
 
-    esec_ = SECANT_USERDEFINED;
+    // Initialize Nonlinear CG Object
+    nlcg_ = Teuchos::null;
+    if ( edesc_ == DESCENT_NONLINEARCG ) {
+      nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(NONLINEARCG_HAGAR_ZHANG) );
+    }
   }
 
   /** \brief Compute step.
   */
   void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, AlgorithmState<Real> &algo_state ) {
     // Compute step s
-    if ( edesc_ == DESCENT_NEWTONKRYLOV || edesc_ == DESCENT_SECANTPRECOND ) {
-      flagKrylov_ = 0;
-      krylov_->CG(s,iterKrylov_,flagKrylov_,*(Step<Real>::state_->gradientVec),x,obj,secant_);
+    if ( this->edesc_ == DESCENT_NEWTONKRYLOV || this->edesc_ == DESCENT_SECANTPRECOND ) {
+      this->flagKrylov_ = 0;
+      this->krylov_->CG(s,this->iterKrylov_,this->flagKrylov_,*(Step<Real>::state_->gradientVec),x,obj,this->secant_);
     }
-    else if ( edesc_ == DESCENT_NEWTON ) {
+    else if ( this->edesc_ == DESCENT_NEWTON ) {
       Real tol = std::sqrt(ROL_EPSILON);
       obj.invHessVec(s,*(Step<Real>::state_->gradientVec),x,tol);
     }
-    else if ( edesc_ == DESCENT_SECANT ) {
-      secant_->applyH(s,*(Step<Real>::state_->gradientVec),x);
+    else if ( this->edesc_ == DESCENT_SECANT ) {
+      this->secant_->applyH(s,*(Step<Real>::state_->gradientVec),x);
     }
-    else if ( edesc_ == DESCENT_NONLINEARCG ) {
-      nlcg_->run(s,*(Step<Real>::state_->gradientVec),x,obj);
+    else if ( this->edesc_ == DESCENT_NONLINEARCG ) {
+      this->nlcg_->run(s,*(Step<Real>::state_->gradientVec),x,obj);
     }
 
     // Check if s is a descent direction
     Real gs = -(Step<Real>::state_->gradientVec)->dot(s);
-    if ( gs > 0.0 || flagKrylov_ == 2 || edesc_ == DESCENT_STEEPEST ) {
+    if ( gs > 0.0 || this->flagKrylov_ == 2 || this->edesc_ == DESCENT_STEEPEST ) {
       s.set(*(Step<Real>::state_->gradientVec));
       gs = -(Step<Real>::state_->gradientVec)->dot(s);
     }
@@ -135,11 +160,11 @@ public:
     // Perform line search
     Real alpha = 0.0;
     Real fnew  = algo_state.value;
-    ls_nfval_  = 0;
-    ls_ngrad_  = 0;
-    lineSearch_->run(alpha,fnew,ls_nfval_,ls_ngrad_,gs,s,x,obj);
-    algo_state.nfval += ls_nfval_;
-    algo_state.ngrad += ls_ngrad_;
+    this->ls_nfval_ = 0;
+    this->ls_ngrad_ = 0;
+    this->lineSearch_->run(alpha,fnew,this->ls_nfval_,this->ls_ngrad_,gs,s,x,obj);
+    algo_state.nfval += this->ls_nfval_;
+    algo_state.ngrad += this->ls_ngrad_;
     s.scale(alpha);
 
     // Update step state information
@@ -160,7 +185,7 @@ public:
 
     // Compute new gradient
     Teuchos::RCP<Vector<Real> > gp;
-    if ( edesc_ == DESCENT_SECANT || edesc_ == DESCENT_SECANTPRECOND ) {
+    if ( this->edesc_ == DESCENT_SECANT || this->edesc_ == DESCENT_SECANTPRECOND ) {
       gp = x.clone();
       gp->set(*(Step<Real>::state_->gradientVec));
     }
@@ -168,7 +193,7 @@ public:
     algo_state.ngrad++;
 
     // Update Secant Information
-    if ( edesc_ == DESCENT_SECANT || edesc_ == DESCENT_SECANTPRECOND ) {
+    if ( this->edesc_ == DESCENT_SECANT || this->edesc_ == DESCENT_SECANTPRECOND ) {
       secant_->update(*(Step<Real>::state_->gradientVec),*gp,s,algo_state.snorm,algo_state.iter+1);
     }
 
@@ -183,12 +208,12 @@ public:
   std::string print( AlgorithmState<Real> & algo_state, bool printHeader = false ) const  {
     std::stringstream hist;
     if ( algo_state.iter == 0 ) {
-      hist << "\n" << EDescentToString(edesc_) 
-           << " with " << ELineSearchToString(els_) 
+      hist << "\n" << EDescentToString(this->edesc_) 
+           << " with " << ELineSearchToString(this->els_) 
            << " Linesearch satisfying " 
-           << ECurvatureConditionToString(econd_) << "\n";
-      if ( edesc_ == DESCENT_SECANT || edesc_ == DESCENT_SECANTPRECOND ) {
-        hist << "Secant Type: " << ESecantToString(esec_) << "\n";
+           << ECurvatureConditionToString(this->econd_) << "\n";
+      if ( this->edesc_ == DESCENT_SECANT || this->edesc_ == DESCENT_SECANTPRECOND ) {
+        hist << "Secant Type: " << ESecantToString(this->esec_) << "\n";
       }
       hist << "  ";
       hist << std::setw(6) << std::left << "iter";  
@@ -199,8 +224,8 @@ public:
       hist << std::setw(10) << std::left << "#grad";
       hist << std::setw(10) << std::left << "ls_#fval";
       hist << std::setw(10) << std::left << "ls_#grad";
-      if (    edesc_ == DESCENT_NEWTONKRYLOV 
-           || edesc_ == DESCENT_SECANTPRECOND ) {
+      if (    this->edesc_ == DESCENT_NEWTONKRYLOV 
+           || this->edesc_ == DESCENT_SECANTPRECOND ) {
         hist << std::setw(10) << std::left << "iterCG";
         hist << std::setw(10) << std::left << "flagCG";
       }
@@ -220,12 +245,12 @@ public:
       hist << std::setw(15) << std::left << algo_state.snorm; 
       hist << std::setw(10) << std::left << algo_state.nfval;              
       hist << std::setw(10) << std::left << algo_state.ngrad;              
-      hist << std::setw(10) << std::left << ls_nfval_;              
-      hist << std::setw(10) << std::left << ls_ngrad_;              
-      if (    edesc_ == DESCENT_NEWTONKRYLOV 
-           || edesc_ == DESCENT_SECANTPRECOND ) {
-        hist << std::setw(10) << std::left << iterKrylov_;
-        hist << std::setw(10) << std::left << flagKrylov_;
+      hist << std::setw(10) << std::left << this->ls_nfval_;              
+      hist << std::setw(10) << std::left << this->ls_ngrad_;              
+      if (    this->edesc_ == DESCENT_NEWTONKRYLOV 
+           || this->edesc_ == DESCENT_SECANTPRECOND ) {
+        hist << std::setw(10) << std::left << this->iterKrylov_;
+        hist << std::setw(10) << std::left << this->flagKrylov_;
       }
       hist << "\n";
     }

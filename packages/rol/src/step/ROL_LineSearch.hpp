@@ -39,9 +39,20 @@ public:
   virtual ~LineSearch() {}
 
   // Constructor
-  LineSearch( ELineSearch els, ECurvatureCondition econd, EDescent edesc,  
-              int maxit = 20, Real c1 = 1.e-4, Real c2 = 0.9, Real tol = 1.e-8, Real rho = 0.5 ) : 
-    els_(els), econd_(econd), edesc_(edesc), maxit_(maxit), c1_(c1), c2_(c2), tol_(tol), rho_(rho) {
+  LineSearch( Teuchos::ParameterList &parlist ) {
+    // Enumerations
+    edesc_     = parlist.get("Descent Type",                   DESCENT_SECANT);
+    els_       = parlist.get("Linesearch Type",                LINESEARCH_CUBICINTERP);
+    econd_     = parlist.get("Linesearch Curvature Condition", CURVATURECONDITION_STRONGWOLFE);
+    // Linesearc Parameters
+    maxit_     = parlist.get("Maximum Number of Function Evaluations", 20);
+    c1_        = parlist.get("Sufficient Decrease Parameter",          1.e-4);
+    c2_        = parlist.get("Curvature Conditions Parameter",         0.9);
+    tol_       = parlist.get("Bracketing Tolerance",                   1.e-8);
+    rho_       = parlist.get("Backtracking Rate",                      0.5);
+    alpha0_    = parlist.get("Initial Linesearch Parameter",           1.0);
+    useralpha_ = parlist.get("User Defined Linesearch Parameter",      false);
+
     if ( c2_ <= c1_ ) {
       c1_ = 1.e-4;
       c2_ = 0.9;
@@ -49,10 +60,6 @@ public:
     if ( edesc_ == DESCENT_NONLINEARCG ) {
       c2_ = 0.4;
     }
-
-    alpha0_ = 0.0;
-    // TODO: Provide user interface!
-    useralpha_ = false;
   }
 
   bool status( const ELineSearch type, int &ls_neval, int &ls_ngrad, const Real alpha, 
@@ -62,22 +69,22 @@ public:
 
     // Check Armijo Condition
     bool armijo = false;
-    if ( fnew <= fold + c1_*alpha*sgold ) {
+    if ( fnew <= fold + this->c1_*alpha*sgold ) {
       armijo = true;
     }
 
     // Check Maximum Iteration
     bool itcond = false;
-    if ( ls_neval >= maxit_ ) { 
+    if ( ls_neval >= this->maxit_ ) { 
       itcond = true;
     }
 
     // Check Curvature Condition
     bool curvcond = false;
     if ( armijo && ((type != LINESEARCH_BACKTRACKING && type != LINESEARCH_CUBICINTERP) ||
-                    (edesc_ == DESCENT_NONLINEARCG)) ) {
-      if (econd_ == CURVATURECONDITION_GOLDSTEIN) {
-        if (fnew >= fold + (1.0-c1_)*alpha*sgold) {
+                    (this->edesc_ == DESCENT_NONLINEARCG)) ) {
+      if (this->econd_ == CURVATURECONDITION_GOLDSTEIN) {
+        if (fnew >= fold + (1.0-this->c1_)*alpha*sgold) {
           curvcond = true;
         }
       }
@@ -90,15 +97,15 @@ public:
         Real sgnew = grad->dot(s);
         ls_ngrad++;
    
-        if (    ((econd_ == CURVATURECONDITION_WOLFE)       && (sgnew >= c2_*sgold))
-             || ((econd_ == CURVATURECONDITION_STRONGWOLFE) && (std::abs(sgnew) <= c2_*std::abs(sgold))) ) {
+        if (    ((this->econd_ == CURVATURECONDITION_WOLFE)       && (sgnew >= this->c2_*sgold))
+             || ((this->econd_ == CURVATURECONDITION_STRONGWOLFE) && (std::abs(sgnew) <= this->c2_*std::abs(sgold))) ) {
           curvcond = true;
         }
       }
     }
 
     if (type == LINESEARCH_BACKTRACKING || type == LINESEARCH_CUBICINTERP) {
-      if (edesc_ == DESCENT_NONLINEARCG) {
+      if (this->edesc_ == DESCENT_NONLINEARCG) {
         return ((armijo && curvcond) || itcond);
       }
       else {
@@ -113,10 +120,10 @@ public:
   void run( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
             const Real &gs, const Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj ) {
     // Determine Initial Step Length
-    if (useralpha_) {
-      alpha = alpha0_;
+    if (this->useralpha_) {
+      alpha = this->alpha0_;
     }
-    else if ( edesc_ == DESCENT_STEEPEST || edesc_ == DESCENT_NONLINEARCG ) {
+    else if ( this->edesc_ == DESCENT_STEEPEST || this->edesc_ == DESCENT_NONLINEARCG ) {
       Teuchos::RCP<Vector<Real> > xnew = x.clone();
       xnew->set(x);
       xnew->plus(s);
@@ -127,7 +134,7 @@ public:
       xnew->set(x);
       xnew->axpy(alpha,s);
       fnew = obj.value(*xnew, ftol);
-      bool stat = status(els_,ls_neval,ls_ngrad,alpha,fval,gs,fnew,x,s,obj);
+      bool stat = status(LINESEARCH_BISECTION,ls_neval,ls_ngrad,alpha,fval,gs,fnew,x,s,obj);
       if (!stat) {
         alpha = 1.0;
       }
@@ -140,19 +147,19 @@ public:
     // Run Linesearch
     ls_neval = 0;
     ls_ngrad = 0;
-    if ( els_ == LINESEARCH_BACKTRACKING ) {
+    if ( this->els_ == LINESEARCH_BACKTRACKING ) {
       simplebacktracking( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj ); 
     }
-    else if ( els_ == LINESEARCH_CUBICINTERP ) {
+    else if ( this->els_ == LINESEARCH_CUBICINTERP ) {
       backtracking( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj ); 
     }
-    else if ( els_ == LINESEARCH_BRENTS ) {
+    else if ( this->els_ == LINESEARCH_BRENTS ) {
       brents( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj ); 
     }
-    else if ( els_ == LINESEARCH_BISECTION ) {
+    else if ( this->els_ == LINESEARCH_BISECTION ) {
       bisection( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj ); 
     }
-    else if ( els_ == LINESEARCH_GOLDENSECTION ) {
+    else if ( this->els_ == LINESEARCH_GOLDENSECTION ) {
       goldensection( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj ); 
     }
 
@@ -171,7 +178,7 @@ public:
     ls_neval++;
 
     while ( !status(LINESEARCH_BACKTRACKING,ls_neval,ls_ngrad,alpha,fold,gs,fval,*xnew,s,obj) ) {
-      alpha *= rho_;
+      alpha *= this->rho_;
       xnew->set(x);
       xnew->axpy(alpha, s);
       fval = obj.value(*xnew,tol);
@@ -288,7 +295,7 @@ public:
     Real val_t2 = 0.0;
 
     while (    !status(LINESEARCH_BISECTION,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj)  
-            && std::abs(tr - tl) > tol_ ) {
+            && std::abs(tr - tl) > this->tol_ ) {
       t1 = (tl+tc)/2.0;
       xnew->set(x);
       xnew->axpy(t1,s);
@@ -412,7 +419,7 @@ public:
     }
 
     while (    !status(LINESEARCH_GOLDENSECTION,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj) 
-            && (std::abs(tl-tr) >= tol_) ) {
+            && (std::abs(tl-tr) >= this->tol_) ) {
       if ( val_tc1 > val_tc2 ) {
         tl      = tc1;
         val_tl  = val_tc1;
@@ -682,13 +689,13 @@ public:
     b  = (tr > tc ? tr : tc);
 
     while (    !status(LINESEARCH_BRENTS,ls_neval,ls_ngrad,t,fval,gs,ft,x,s,obj)
-            && std::abs(t - tm) > tol_*(b-a) ) {
+            && std::abs(t - tm) > this->tol_*(b-a) ) {
       if ( it < 2 ) {
         e = 2.0*(b-a);
       }
       tm = (a+b)/2.0;
 
-      Real tol1 = tol_*std::abs(t) + tiny;
+      Real tol1 = this->tol_*std::abs(t) + tiny;
       Real tol2 = 2.0*tol1;
 
       if ( std::abs(e) > tol1 || it < 2 ) {

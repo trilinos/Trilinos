@@ -13,6 +13,7 @@
 #define ROL_STEP_H
 
 #include "ROL_Vector.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 /** \class ROL::Step
     \brief Provides the interface to compute optimization steps.

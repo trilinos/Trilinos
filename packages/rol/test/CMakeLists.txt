@@ -13,7 +13,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  TestStdVectorInterface
+  StdVectorInterface
   SOURCES test_01.cpp
   ARGS PrintItAll
   NUM_MPI_PROCS 1
@@ -22,7 +22,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  TestRosenbrock
+  TrustRegion
   SOURCES test_02.cpp
   ARGS PrintItAll
   NUM_MPI_PROCS 1
@@ -31,7 +31,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  InputSecant
+  LineSearch
   SOURCES test_03.cpp
   ARGS PrintItAll
   NUM_MPI_PROCS 1

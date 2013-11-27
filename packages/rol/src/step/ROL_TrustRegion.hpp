@@ -25,7 +25,9 @@ class TrustRegion {
 private:
 
   ETrustRegion etr_;
-  EDescent     edesc_;
+
+  bool useSecantPrecond_;
+  bool useSecantHessVec_;
 
   int maxit_;
   Real tol1_;
@@ -49,15 +51,30 @@ public:
   virtual ~TrustRegion() {}
 
   // Constructor
-  TrustRegion( ETrustRegion etr, EDescent edesc,  
-              int maxit = 20, Real tol1 = 1.e-4, Real tol2 = 1.e-2, 
-              Real delmin = 1.e-8, Real delmax = 5000.0,
-              Real eta0 = 0.05, Real eta1 = 0.05, Real eta2 = 0.9,
-              Real gamma0 = 0.0625, Real gamma1 = 0.25, Real gamma2 = 2.5, Real TRsafe = 1.0 ) : 
-    etr_(etr), edesc_(edesc), maxit_(maxit), tol1_(tol1), tol2_(tol2), 
-    delmin_(delmin), delmax_(delmax), eta0_(eta0), eta1_(eta1), eta2_(eta2),
-    gamma0_(gamma0), gamma1_(gamma1), gamma2_(gamma2), TRsafe_(TRsafe) {
-    eps_ = TRsafe_*ROL_EPSILON;
+  TrustRegion( Teuchos::ParameterList & parlist ) {
+    // Unravel Parameter List
+    // Enumerations
+    etr_    = parlist.get("Trust-Region Subproblem Solver Type",  TRUSTREGION_TRUNCATEDCG);
+    // Secant Information
+    useSecantPrecond_ = parlist.get("Use Secant Preconditioning", false);
+    useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
+    // Trust-Region Parameters
+    delmin_ = parlist.get("Minimum Trust-Region Radius",          1.e-8);
+    delmax_ = parlist.get("Maximum Trust-Region Radius",          5000.0);
+    eta0_   = parlist.get("Step Acceptance Parameter",            0.05);
+    eta1_   = parlist.get("Radius Shrinking Threshold",           0.05);
+    eta2_   = parlist.get("Radius Growing Threshold",             0.9);
+    gamma0_ = parlist.get("Radius Shrinking Rate (Negative rho)", 0.0625);
+    gamma1_ = parlist.get("Radius Shrinking Rate (Positive rho)", 0.25);
+    gamma2_ = parlist.get("Radius Growing Rate",                  2.5);
+    TRsafe_ = parlist.get("Trust-Region Safeguard",               1.0);
+    // CG Parameters
+    if ( etr_ == TRUSTREGION_TRUNCATEDCG ) {
+      maxit_ = parlist.get("Maximum Number of CG Iterations",     20);
+      tol1_  = parlist.get("Absolute CG Tolerance",               1.e-4);
+      tol2_  = parlist.get("Relative CG Tolerance",               1.e-2);
+    }
+    eps_    = TRsafe_*ROL_EPSILON;
   }
 
   void update( Vector<Real> &x, Real &fnew, Real &del, 
@@ -77,19 +94,19 @@ public:
     // Compute Ratio of Actual and Predicted Reduction
     Real aRed = fold - fnew;
     Real rho  = 0.0;  
-    if ((std::abs(aRed) < eps_) && (std::abs(pRed_) < eps_)) {
+    if ((std::abs(aRed) < this->eps_) && (std::abs(this->pRed_) < this->eps_)) {
       rho = 1.0; 
       flagTR = 0;
     }
     else {
-      rho = aRed/pRed_;
-      if (pRed_ < 0 && aRed > 0) { 
+      rho = aRed/this->pRed_;
+      if (this->pRed_ < 0 && aRed > 0) { 
         flagTR = 1;
       }
-      else if (aRed <= 0 && pRed_ > 0) {
+      else if (aRed <= 0 && this->pRed_ > 0) {
         flagTR = 2;
       }
-      else if (aRed <= 0 && pRed_ < 0) { 
+      else if (aRed <= 0 && this->pRed_ < 0) { 
         flagTR = 3;
       }
       else {
@@ -98,12 +115,12 @@ public:
     }
 
     // Accept or Reject Step and Update Trust Region
-    if ((rho < eta0_ && flagTR == 0) || flagTR >= 2 ) {      // Step Rejected 
+    if ((rho < this->eta0_ && flagTR == 0) || flagTR >= 2 ) {      // Step Rejected 
       fnew = fold;
       if (rho < 0.0) {  
         Real gs = g.dot(s);
         Teuchos::RCP<Vector<Real> > Hs = x.clone();
-        if ( secant != Teuchos::null && edesc_ == DESCENT_SECANT ) {
+        if ( secant != Teuchos::null && this->useSecantHessVec_ ) {
           secant->applyB(*Hs,s,x);
         } 
         else {
@@ -112,19 +129,19 @@ public:
         Real modelVal = Hs->dot(s);
         modelVal *= 0.5;
         modelVal += gs;
-        Real theta = (1.0-eta2_)*gs/((1.0-eta2_)*(fold+gs)+eta2_*modelVal-fnew);
-        del  = std::min(gamma1_*snorm,std::max(gamma0_,theta)*del);
+        Real theta = (1.0-this->eta2_)*gs/((1.0-this->eta2_)*(fold+gs)+this->eta2_*modelVal-fnew);
+        del  = std::min(this->gamma1_*snorm,std::max(this->gamma0_,theta)*del);
       }
       else { 
-        del = gamma1_*snorm; 
+        del = this->gamma1_*snorm; 
       } 
     }
-    else if ((rho >= eta0_ && flagTR != 3) || flagTR == 1) { // Step Accepted
+    else if ((rho >= this->eta0_ && flagTR != 3) || flagTR == 1) { // Step Accepted
       x.axpy(1.0,s);
     }
-    if ((rho >= eta0_ && flagTR != 3) || flagTR == 1) {
-      if (rho >= eta2_) {
-        del = std::min(gamma2_*del,delmax_);
+    if ((rho >= this->eta0_ && flagTR != 3) || flagTR == 1) {
+      if (rho >= this->eta2_) {
+        del = std::min(this->gamma2_*del,this->delmax_);
       }
     }
   }
@@ -133,19 +150,17 @@ public:
             const Vector<Real> &grad, const Real &gnorm, Objective<Real> &obj, 
             Teuchos::RCP<Secant<Real> > &secant = Teuchos::null ) { 
     // Run Trust Region
-    if ( edesc_ == DESCENT_STEEPEST || etr_ == TRUSTREGION_CAUCHYPOINT ) {
+    if ( this->etr_ == TRUSTREGION_CAUCHYPOINT ) {
       cauchypoint(s,snorm,del,iflag,iter,x,grad,gnorm,obj,secant);
     }
-    else {
-      if ( etr_ == TRUSTREGION_TRUNCATEDCG ) {
-        truncatedCG(s,snorm,del,iflag,iter,x,grad,gnorm,obj,secant);
-      }
-      else if ( etr_ == TRUSTREGION_DOGLEG ) {
-        dogleg(s,snorm,del,iflag,iter,x,grad,gnorm,obj,secant);
-      }
-      else if ( etr_ == TRUSTREGION_DOUBLEDOGLEG ) {
-        doubledogleg(s,snorm,del,iflag,iter,x,grad,gnorm,obj,secant);
-      }
+    else if ( this->etr_ == TRUSTREGION_TRUNCATEDCG ) {
+      truncatedCG(s,snorm,del,iflag,iter,x,grad,gnorm,obj,secant);
+    }
+    else if ( this->etr_ == TRUSTREGION_DOGLEG ) {
+      dogleg(s,snorm,del,iflag,iter,x,grad,gnorm,obj,secant);
+    }
+    else if ( this->etr_ == TRUSTREGION_DOUBLEDOGLEG ) {
+      doubledogleg(s,snorm,del,iflag,iter,x,grad,gnorm,obj,secant);
     }
   }
 
@@ -155,7 +170,7 @@ public:
     Real tol = std::sqrt(ROL_EPSILON);
 
     Teuchos::RCP<Vector<Real> > Bg = x.clone();
-    if ( secant != Teuchos::null ) {
+    if ( secant != Teuchos::null && this->useSecantHessVec_ ) {
       secant->applyB(*Bg,grad,x);
     }
     else {
@@ -172,7 +187,7 @@ public:
     snorm = tau*del;
     iflag = 0;
     iter  = 0;
-    pRed_ = tau*del/gnorm * pow(gnorm,2.0) - 0.5*pow(tau*del/gnorm,2.0)*gBg;
+    this->pRed_ = tau*del/gnorm * pow(gnorm,2.0) - 0.5*pow(tau*del/gnorm,2.0)*gBg;
   }
 
   void truncatedCG( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
@@ -180,7 +195,7 @@ public:
                     Teuchos::RCP<Secant<Real> > &secant = Teuchos::null ) {
     Real tol = std::sqrt(ROL_EPSILON);
 
-    const Real gtol = std::min(tol2_,tol1_*gnorm);
+    const Real gtol = std::min(this->tol2_,this->tol1_*gnorm);
 
     // Old and New Step Vectors
     s.zero(); 
@@ -197,7 +212,7 @@ public:
 
     // Preconditioned Gradient Vector
     Teuchos::RCP<Vector<Real> > v  = x.clone();
-    if ( secant != Teuchos::null && edesc_ == DESCENT_SECANTPRECOND ) { 
+    if ( secant != Teuchos::null && this->useSecantPrecond_ ) { 
       secant->applyH(*v,*g,x); 
     }
     else { 
@@ -212,7 +227,7 @@ public:
 
     // Hessian Times Basis Vector
     Teuchos::RCP<Vector<Real> > Hp = x.clone();
-    if ( secant != Teuchos::null && edesc_ == DESCENT_SECANT ) { 
+    if ( secant != Teuchos::null && this->useSecantHessVec_ ) { 
       secant->applyB(*Hp,*p,x); 
     }
     else { 
@@ -230,7 +245,7 @@ public:
     Real sMp   = 0.0;
     pRed_      = 0.0;
 
-    for (iter = 0; iter < maxit_; iter++) {
+    for (iter = 0; iter < this->maxit_; iter++) {
       kappa = p->dot(*Hp);
       if (kappa <= 0) {
         sigma = (-sMp+sqrt(sMp*sMp+pnorm2*(del*del-snorm2)))/pnorm2;
@@ -251,7 +266,7 @@ public:
         break;
       }
 
-      pRed_ += 0.5*alpha*gv;
+      this->pRed_ += 0.5*alpha*gv;
 
       s.set(*s1);
       snorm2 = s1norm2;  
@@ -262,7 +277,7 @@ public:
         break;
       }
 
-      if ( secant != Teuchos::null && edesc_ == DESCENT_SECANTPRECOND ) { 
+      if ( secant != Teuchos::null && this->useSecantPrecond_ ) { 
         secant->applyH(*v,*g,x); 
       }
       else { 
@@ -276,7 +291,7 @@ public:
       p->axpy(-1.0,*v);
       sMp    = beta*(sMp+alpha*pnorm2);
       pnorm2 = gv + beta*beta*pnorm2; 
-      if ( secant != Teuchos::null && edesc_ == DESCENT_SECANT ) { 
+      if ( secant != Teuchos::null && this->useSecantHessVec_ ) { 
         secant->applyB(*Hp,*p,x); 
       }
       else { 
@@ -284,10 +299,10 @@ public:
       }
     }
     if (iflag > 0) {
-      pRed_ += sigma*(gv-0.5*sigma*kappa);
+      this->pRed_ += sigma*(gv-0.5*sigma*kappa);
     }
 
-    if (iter == maxit_) {
+    if (iter == this->maxit_) {
       iflag = 3;
     }
     if (iflag != 3) { 
@@ -304,7 +319,7 @@ public:
 
     // Compute quasi-Newton step
     Teuchos::RCP<Vector<Real> > sN = x.clone();
-    if ( secant != Teuchos::null && edesc_ == DESCENT_SECANT ) {
+    if ( secant != Teuchos::null && this->useSecantHessVec_ ) {
       secant->applyH(*sN,grad,x); 
     }
     else {
@@ -319,7 +334,7 @@ public:
     }
 
     if ( negCurv ) {
-      cauchypoint(s,snorm,del,iflag,iter,x,grad,gnorm,obj,secant);
+      this->cauchypoint(s,snorm,del,iflag,iter,x,grad,gnorm,obj,secant);
       iflag = 2;
     }  
     else {
@@ -327,12 +342,12 @@ public:
       if (sNnorm <= del) {        // Use the quasi-Newton step
         s.set(*sN); 
         snorm = sNnorm;
-        pRed_ = -0.5*gsN;
+        this->pRed_ = -0.5*gsN;
         iflag = 0;
       }
       else {                      // quasi-Newton step is outside of trust region
         Teuchos::RCP<Vector<Real> > Bg = x.clone(); 
-        if ( secant != Teuchos::null && edesc_ == DESCENT_SECANT ) {
+        if ( secant != Teuchos::null && this->useSecantHessVec_ ) {
           secant->applyB(*Bg,grad,x);
         }
         else {
@@ -363,7 +378,7 @@ public:
           snorm = del;
           iflag = 1;
         }
-        pRed_ = (alpha*(0.5*alpha-1)*gsN - 0.5*beta*beta*gBg + beta*(1-alpha)*gnorm2);
+        this->pRed_ = (alpha*(0.5*alpha-1)*gsN - 0.5*beta*beta*gBg + beta*(1-alpha)*gnorm2);
       }
     }
   }
@@ -375,7 +390,7 @@ public:
 
     // Compute quasi-Newton step
     Teuchos::RCP<Vector<Real> > sN = x.clone();
-    if ( secant != Teuchos::null && edesc_ == DESCENT_SECANT ) {
+    if ( secant != Teuchos::null && this->useSecantHessVec_ ) {
       secant->applyH(*sN,grad,x); 
     }
     else {
@@ -398,12 +413,12 @@ public:
       if (sNnorm <= del) {        // Use the quasi-Newton step
         s.set(*sN); 
         snorm = sNnorm;
-        pRed_ = 0.5*gsN;
+        this->pRed_ = 0.5*gsN;
         iflag = 0;
       }
       else {                      // quasi-Newton step is outside of trust region
         Teuchos::RCP<Vector<Real> > Bg = x.clone(); 
-        if ( secant != Teuchos::null && edesc_ == DESCENT_SECANT ) {
+        if ( secant != Teuchos::null && this->useSecantHessVec_ ) {
           secant->applyB(*Bg,grad,x);
         }
         else {
@@ -451,7 +466,7 @@ public:
             iflag = 3;
           }
         }
-        pRed_ = -(alpha*(0.5*alpha-1)*gsN + 0.5*beta*beta*gBg + beta*(1-alpha)*gnorm2);
+        this->pRed_ = -(alpha*(0.5*alpha-1)*gsN + 0.5*beta*beta*gBg + beta*(1-alpha)*gnorm2);
       }
     }
   }

@@ -38,44 +38,37 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    // Define Descent Type
-    //ROL::EDescent edesc = ROL::DESCENT_STEEPEST;
-    //ROL::EDescent edesc = ROL::DESCENT_SECANT;
-    //ROL::EDescent edesc = ROL::DESCENT_NEWTON;
-    //ROL::EDescent edesc = ROL::DESCENT_NEWTONKRYLOV;
-    ROL::EDescent edesc = ROL::DESCENT_NONLINEARCG;
-    //ROL::EDescent edesc = ROL::DESCENT_SECANTPRECOND;
-
-    // Define Secant Type
-    ROL::ESecant esec = ROL::SECANT_LBFGS;
-    //ROL::ESecant esec = ROL::SECANT_LDFP;
-    //ROL::ESecant esec = ROL::SECANT_LSR1;
-    //ROL::ESecant esec = ROL::SECANT_BARZILAIBORWEIN;
-    int L        = 10;
-    int BBtype   = 1;
-
-    /* BEGIN LINE SEARCH STEP DEFINTION */
-    //ROL::ELineSearch els = ROL::LINESEARCH_BACKTRACKING;
-    ROL::ELineSearch els = ROL::LINESEARCH_CUBICINTERP;
-    //ROL::ELineSearch els = ROL::LINESEARCH_BISECTION;
-    //ROL::ELineSearch els = ROL::LINESEARCH_GOLDENSECTION;
-    //ROL::ELineSearch els = ROL::LINESEARCH_BRENTS;
-
-    //ROL::ECurvatureCondition econd = ROL::CURVATURECONDITION_WOLFE;
-    ROL::ECurvatureCondition econd = ROL::CURVATURECONDITION_STRONGWOLFE;
-    //ROL::ECurvatureCondition econd = ROL::CURVATURECONDITION_GOLDSTEIN;
-    /* END LINE SEARCH STEP DEFINITION */
-
-    /* BEGIN TRUST REGION STEP DEFINTION */
-    //ROL::ETrustRegion etr = ROL::TRUSTREGION_CAUCHYPOINT;
-    ROL::ETrustRegion etr = ROL::TRUSTREGION_TRUNCATEDCG;
-    //ROL::ETrustRegion etr = ROL::TRUSTREGION_DOGLEG;
-    //ROL::ETrustRegion etr = ROL::TRUSTREGION_DOUBLEDOGLEG;
-    /* END TRUST REGION STEP DEFINITION */ 
+    Teuchos::ParameterList parlist;
+    // Step Information
+    parlist.set("Secant Type",                          ROL::SECANT_LBFGS);
+    // Secant Information
+    parlist.set("Use Secant Preconditioning",           false); 
+    parlist.set("Maximum Secant Storage",               10);
+    parlist.set("Barzilai-Borwein Type",                1);
+    // Inexactness Information
+    parlist.set("Use Inexact Objective Function",       false);
+    parlist.set("Use Inexact Gradient",                 false);
+    parlist.set("Use Inexact Hessian-Times-A-Vector",   false);
+    // Trust-Region Parameters
+    parlist.set("Initial Trust-Region Radius",          -1.0);
+    parlist.set("Minimum Trust-Region Radius",          1.e-8);
+    parlist.set("Maximum Trust-Region Radius",          5000.0);
+    parlist.set("Step Acceptance Parameter",            0.05);
+    parlist.set("Radius Shrinking Threshold",           0.05);
+    parlist.set("Radius Growing Threshold",             0.9);
+    parlist.set("Radius Shrinking Rate (Negative rho)", 0.0625);
+    parlist.set("Radius Shrinking Rate (Positive rho)", 0.25);
+    parlist.set("Radius Growing Rate",                  2.5);
+    parlist.set("Trust-Region Safeguard",               1.0);
+    // CG Parameters
+    parlist.set("Absolute CG Tolerance",                1.e-4);
+    parlist.set("Relative CG Tolerance",                1.e-2);
+    
 
     // Define Status Test
     ROL::StatusTest<RealT> status(1.e-8,1.e-12,1000);    
 
+    // Loop Through Test Objectives
     for ( ROL::ETestObjectives objFunc = ROL::TESTOBJECTIVES_ROSENBROCK; objFunc < ROL::TESTOBJECTIVES_LAST; objFunc++ ) {
       *outStream << "\n\n" << ROL::ETestObjectivesToString(objFunc) << "\n\n";
 
@@ -94,72 +87,43 @@ int main(int argc, char *argv[]) {
       // Get Dimension of Problem
       int dim = 
         Teuchos::rcp_const_cast<std::vector<RealT> >((Teuchos::dyn_cast<ROL::StdVector<RealT> >(x0)).getVector())->size();
+      parlist.set("Maximum Number of CG Iterations", 2*dim);
 
       // Iteration Vector
       Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
       ROL::StdVector<RealT> x(x_rcp);
       x.set(x0);
 
-      // Random Direction for Derivative Checks
-      Teuchos::RCP<std::vector<RealT> > y_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-      ROL::StdVector<RealT> y(y_rcp);
-      for (int i=0; i<dim; i++) {
-        (*y_rcp)[i] = ((RealT)rand())/((RealT)RAND_MAX);
-      }
-
       // Error Vector
       Teuchos::RCP<std::vector<RealT> > e_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
       ROL::StdVector<RealT> e(e_rcp);
       e.zero();
 
-      // Run Finite Difference Checks
-      obj->checkGradient(x,y,true);
-      obj->checkHessVec(x,y,true);
+      for ( ROL::ETrustRegion tr = ROL::TRUSTREGION_CAUCHYPOINT; tr < ROL::TRUSTREGION_LAST; tr++ ) {
+        *outStream << "\n\n" << ROL::ETrustRegionToString(tr) << "\n\n";
+        parlist.set("Trust-Region Subproblem Solver Type", tr);
+        if ( tr == ROL::TRUSTREGION_DOGLEG || tr == ROL::TRUSTREGION_DOUBLEDOGLEG ) {
+          parlist.set("Use Secant Hessian-Times-A-Vector", true);
+        } 
+        else {
+          parlist.set("Use Secant Hessian-Times-A-Vector", false);
+        }
 
-      // RUN LINE SEARCH
-      int maxit       = 20;
-      RealT rho       = 0.5;
-      RealT c1        = 1.e-4;
-      RealT c2        = 0.9;
-      RealT tol       = 1.e-8;
-      RealT CGtol1    = 1.e-4;
-      RealT CGtol2    = 1.e-2;
-      int maxitCG     = 2*dim;
-      bool useInexact = true;
+        // Define Step
+        ROL::TrustRegionStep<RealT> step(parlist);
 
-      ROL::LineSearchStep<RealT> LS_step(els,econd,edesc,useInexact,maxit,c1,c2,tol,
-                                         rho,esec,L,BBtype,CGtol1,CGtol2,maxitCG);
-      x.set(x0);
-      ROL::DefaultAlgorithm<RealT> LS_algo(LS_step,status);
-      LS_algo.run(x, *obj);
-      e.set(x);
-      e.axpy(-1.0,z);
-      *outStream << "\nNorm of Error: " << e.norm() << "\n";
+        // Define Algorithm
+        ROL::DefaultAlgorithm<RealT> algo(step,status);
 
-      // RUN TRUST REGION
-      maxit        = 2*dim;
-      RealT tol1   = 1.e-4;
-      RealT tol2   = 1.e-2;
-      RealT del    = -1.0;
-      RealT delmin = 1.e-8;
-      RealT delmax = 5000.0;
-      RealT eta0   = 0.05;
-      RealT eta1   = 0.05;
-      RealT eta2   = 0.9;
-      RealT gamma0 = 0.0625;
-      RealT gamma1 = 0.25;
-      RealT gamma2 = 2.50;
-      RealT TRsafe = 1.0;
-
-      ROL::TrustRegionStep<RealT> TR_step(etr,edesc,maxit,tol1,tol2,del,delmin,delmax,
-                                          eta0,eta1,eta2,gamma0,gamma1,gamma2,TRsafe,
-                                          esec,L,BBtype);
-      x.set(x0);
-      ROL::DefaultAlgorithm<RealT> TR_algo(TR_step,status);
-      //TR_algo.run(x, *obj);
-      e.set(x);
-      e.axpy(-1.0,z);
-      *outStream << "\nNorm of Error: " << e.norm() << "\n";
+        // Run Algorithm
+        x.set(x0);
+        algo.run(x, *obj);
+  
+        // Compute Error 
+        e.set(x);
+        e.axpy(-1.0,z);
+        *outStream << "\nNorm of Error: " << e.norm() << "\n";
+      }
     }
   }
   catch (std::logic_error err) {
