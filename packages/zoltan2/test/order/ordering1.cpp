@@ -118,20 +118,23 @@ int validatePerm(size_t n, z2TestLO *perm)
 size_t computeBandwidth(RCP<SparseMatrix> A, z2TestLO *perm)
 // returns the bandwidth of the (local) permuted matrix
 {
-  z2TestLO i, j, k;
+  z2TestLO ii, i, j, k;
   ArrayView<const z2TestLO> indices;
   ArrayView<const Scalar> values;
   z2TestLO bw_left = 0;
   z2TestLO bw_right = 0;
 
   // Loop over rows of matrix
-  for (i=0; i<A->getNodeNumRows(); i++) {
-    A->getLocalRowView (i, indices, values);
+  for (ii=0; ii<A->getNodeNumRows(); ii++) {
+    A->getLocalRowView (ii, indices, values);
     for (k=0; k< indices.size(); k++){
-      if (perm)
+      if (perm){
+        i = perm[ii];
         j = perm[indices[k]];
-      else
+      } else {
+        i = ii;
         j = indices[k];
+      }
       if (j-i > bw_right)
         bw_right = j-i;
       if (i-j > bw_left)
