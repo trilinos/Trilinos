@@ -378,7 +378,7 @@ namespace MueLu {
           ordering = GRAPH;
         else TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory::BuildUncoupledAggregationFactory()::Unknown Ordering type");
 
-        paramListWithFactories.set<AggOptions::Ordering>("Ordering",ordering);
+        paramListWithFactories.set("Ordering",ordering);
         //factory->SetOrdering(ordering);
       }
 
