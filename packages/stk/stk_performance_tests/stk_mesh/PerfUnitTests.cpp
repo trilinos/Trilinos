@@ -23,6 +23,26 @@
 namespace {
 
 using namespace stk::mesh;
+using stk::mesh::fixtures::HexFixture;
+
+
+#define PERFORMANCE_TEST_PREAMBLE(expected_np)          \
+  CALLGRIND_START_INSTRUMENTATION;                      \
+                                                        \
+  check_valgrind_version();                             \
+                                                        \
+  stk::ParallelMachine pm = MPI_COMM_WORLD;             \
+                                                        \
+  const int p_size = stk::parallel_machine_size(pm);    \
+                                                        \
+  ThrowRequire(p_size == expected_np)
+
+
+#define PERFORMANCE_TEST_POSTAMBLE()            \
+  print_memory_sum_all_procs(pm);               \
+                                                \
+  print_debug_skip(pm)
+
 
 void print_memory_sum_all_procs(stk::ParallelMachine pm)
 {
@@ -56,22 +76,13 @@ void print_debug_skip(stk::ParallelMachine pm)
 
 STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, induced_part )
 {
-  CALLGRIND_START_INSTRUMENTATION;
-
-  check_valgrind_version();
-
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
-
-  const size_t p_size = stk::parallel_machine_size(pm);
-
-  // serial only
-  ThrowRequire(p_size == 1);
+  PERFORMANCE_TEST_PREAMBLE(1 /*num procs*/);
 
   const int x_dim = 500;
   const int y_dim = 3;
   const int z_dim = 3;
 
-  stk::mesh::fixtures::HexFixture mesh(pm, x_dim, y_dim, z_dim);
+  HexFixture mesh(pm, x_dim, y_dim, z_dim);
   MetaData & meta = mesh.m_meta;
   BulkData & bulk = mesh.m_bulk_data;
 
@@ -133,21 +144,19 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, induced_part )
 
   bulk.modification_end();
 
-  print_memory_sum_all_procs(pm);
-
-  print_debug_skip(pm);
+  PERFORMANCE_TEST_POSTAMBLE();
 }
 
 void mesh_create_hex_with_edges_test(stk::ParallelMachine pm)
 {
-  const size_t p_size = stk::parallel_machine_size(pm);
+  const int p_size = stk::parallel_machine_size(pm);
 
   const int x_dim = 10 * p_size;
   const int y_dim = 10;
   const int z_dim = 10;
 
-  // Set up dead-simple mesh, 2 quads sharing 2 nodes
-  stk::mesh::fixtures::HexFixture mesh(pm, x_dim, y_dim, z_dim);
+  // Set up mesh
+  HexFixture mesh(pm, x_dim, y_dim, z_dim);
   MetaData & meta = mesh.m_meta;
   BulkData & bulk = mesh.m_bulk_data;
 
@@ -174,7 +183,6 @@ void mesh_create_hex_with_edges_test(stk::ParallelMachine pm)
   mesh.add_elem_parts(elem_parts.begin(), elem_parts.size());
   mesh.add_node_parts(node_parts.begin(), node_parts.size());
 
-  CALLGRIND_START_INSTRUMENTATION;
   CALLGRIND_TOGGLE_COLLECT;
 
   meta.commit();
@@ -193,195 +201,310 @@ void mesh_create_hex_with_edges_test(stk::ParallelMachine pm)
 
 STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, mesh_create_hex_with_edges_serial )
 {
-  check_valgrind_version();
-
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
-
-  const size_t p_size = stk::parallel_machine_size(pm);
-
-  // serial only
-  ThrowRequire(p_size == 1);
+  PERFORMANCE_TEST_PREAMBLE(1 /*num procs*/);
 
   mesh_create_hex_with_edges_test(pm);
 
-  print_memory_sum_all_procs(pm);
-
-  print_debug_skip(pm);
+  PERFORMANCE_TEST_POSTAMBLE();
 }
 
 STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, mesh_create_hex_with_edges_parallel )
 {
-  check_valgrind_version();
-
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
-
-  const size_t p_size = stk::parallel_machine_size(pm);
-
-  // 8-proc only only
-  ThrowRequire(p_size == 8);
+  PERFORMANCE_TEST_PREAMBLE(8 /*num procs*/);
 
   mesh_create_hex_with_edges_test(pm);
 
-  print_memory_sum_all_procs(pm);
-
-  print_debug_skip(pm);
+  PERFORMANCE_TEST_POSTAMBLE();
 }
 
-STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_selector )
+// caller will need to delete returned ptr
+const bool TIME_CHANGE_PARTS = true;
+const bool INDUCE_ELEMENT_PARTS = true;
+const bool ALLOCATE_FIELDS = true;
+
+typedef Field<double> SimpleField;
+
+template <bool TimeChangeParts, bool Induce, bool AllocateFields>
+HexFixture* create_hex_with_complex_parts(stk::ParallelMachine pm, int x_dim, int y_dim, int z_dim, int dim_span,
+                                          std::vector<PartVector>& element_parts,
+                                          std::vector<std::vector<SimpleField*> >* fields = NULL)
 {
-  CALLGRIND_START_INSTRUMENTATION;
+  ThrowRequire(x_dim % dim_span == 0);
+  ThrowRequire(y_dim % dim_span == 0);
+  ThrowRequire(z_dim % dim_span == 0);
 
-  check_valgrind_version();
+  // Set up mesh
+  HexFixture* mesh = new HexFixture(pm, x_dim, y_dim, z_dim);
+  MetaData & meta = mesh->m_meta;
+  BulkData & bulk = mesh->m_bulk_data;
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  element_parts.clear();
+  element_parts.resize(3);
+  if (AllocateFields) {
+    fields->clear();
+    fields->resize(3);
+  }
 
-  const size_t p_size = stk::parallel_machine_size(pm);
+  int dims[3] = {x_dim, y_dim, z_dim};
+  char dim_names[3] = {'x', 'y', 'z'};
 
-  // serial only
-  ThrowRequire(p_size == 1);
+  for (int dim = 0; dim < 3; ++dim) {
+    int dim_size = dims[dim];
+    char dim_name = dim_names[dim];
+    for (int i = 0; i < dim_size; ++i) {
+      if (i % dim_span == 0) {
+        std::ostringstream oss;
+        oss << dim_name << "_" << i / dim_span;
+        if (Induce) {
+          element_parts[dim].push_back(&meta.declare_part(std::string("part_") + oss.str(), stk::topology::ELEMENT_RANK));
+        }
+        else {
+          element_parts[dim].push_back(&meta.declare_part(std::string("part_") + oss.str()));
+        }
 
-  const int x_dim = 10;
-  const int y_dim = 10;
-  const int z_dim = 10;
-
-  // Set up dead-simple mesh, 2 quads sharing 2 nodes
-  stk::mesh::fixtures::HexFixture mesh(pm, x_dim, y_dim, z_dim);
-  MetaData & meta = mesh.m_meta;
-  BulkData & bulk = mesh.m_bulk_data;
-
-  std::vector<std::vector<PartVector> > parts;
-
-  parts.resize(x_dim);
-
-  for (int x = 0; x < x_dim; ++x) {
-    parts[x].resize(y_dim);
-    for (int y = 0; y < y_dim; ++y) {
-      parts[x][y].resize(z_dim);
-      for (int z = 0; z < z_dim; ++z) {
-        std::ostringstream out;
-        out << "part_" << x << "_" << y << "_" << z;
-        parts[x][y][z] = &meta.declare_part(out.str());
+        if (AllocateFields) {
+          double init_val = 0.0;
+          (*fields)[dim].push_back(&meta.declare_field<SimpleField>(std::string("field_") + oss.str()));
+          put_field(*((*fields)[dim].back()), stk::topology::ELEMENT_RANK, *element_parts[dim].back(), &init_val);
+        }
       }
     }
   }
 
+  ThrowRequire(element_parts[0].size() == static_cast<size_t>(x_dim));
+  ThrowRequire(element_parts[1].size() == static_cast<size_t>(y_dim));
+  ThrowRequire(element_parts[2].size() == static_cast<size_t>(z_dim));
+
+  if (AllocateFields) {
+    ThrowRequire((*fields)[0].size() == static_cast<size_t>(x_dim));
+    ThrowRequire((*fields)[1].size() == static_cast<size_t>(y_dim));
+    ThrowRequire((*fields)[2].size() == static_cast<size_t>(z_dim));
+  }
+
   meta.commit();
 
-  mesh.generate_mesh();
+  mesh->generate_mesh();
 
   bulk.modification_begin();
+
+  if (TimeChangeParts) {
+    CALLGRIND_TOGGLE_COLLECT;
+  }
 
   for (int x = 0; x < x_dim; ++x) {
     for (int y = 0; y < y_dim; ++y) {
       for (int z = 0; z < z_dim; ++z) {
-        PartVector add(1, parts[x][y][z]);
-        Entity elem = mesh.elem(x, y, z);
+        PartVector add(3);
+        add[0] = element_parts[0][x / dim_span];
+        add[1] = element_parts[1][y / dim_span];
+        add[2] = element_parts[2][z / dim_span];
+
+        Entity elem = mesh->elem(x, y, z);
         bulk.change_entity_parts(elem, add);
       }
     }
   }
 
+  if (TimeChangeParts) {
+    CALLGRIND_TOGGLE_COLLECT;
+    CALLGRIND_STOP_INSTRUMENTATION;
+  }
+
   bulk.modification_end();
+
+  return mesh;
+}
+
+STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_selector )
+{
+  PERFORMANCE_TEST_PREAMBLE(1 /*num procs*/);
+
+  const int x_dim = 10;
+  const int y_dim = 10;
+  const int z_dim = 10;
+  const int dim_span = 1; // max fragmentation
+
+  std::vector<PartVector> element_parts;
+  HexFixture* mesh =
+    create_hex_with_complex_parts< !TIME_CHANGE_PARTS, !INDUCE_ELEMENT_PARTS, !ALLOCATE_FIELDS >(pm, x_dim, y_dim, z_dim, dim_span, element_parts);
+  BulkData & bulk = mesh->m_bulk_data;
 
   const int num_iterations = 5;
 
   bulk.modification_begin();
 
   CALLGRIND_TOGGLE_COLLECT;
+
   for (int i = 0; i < num_iterations; ++i) {
     for (int x = 0; x < x_dim; ++x) {
       for (int y = 0; y < y_dim; ++y) {
-        size_t size_sum = 0;
-        Selector sel;
+        int size_sum = 0;
         for (int z = 0; z < z_dim; ++z) {
-          sel |= *parts[x][y][z];
+          Selector sel = *element_parts[0][x];
+          sel &= *element_parts[1][y];
+          sel &= *element_parts[2][z];
+
+          BucketVector output_buckets;
+          get_buckets(sel, bulk.buckets(stk::topology::ELEMENT_RANK), output_buckets);
+          for (int j = 0, je = output_buckets.size(); j < je; ++j) {
+            size_sum += output_buckets[j]->size();
+          }
         }
-        BucketVector output_buckets;
-        get_buckets(sel, bulk.buckets(stk::topology::ELEMENT_RANK), output_buckets);
-        for (int j = 0, je = output_buckets.size(); j < je; ++j) {
-          size_sum += output_buckets[j]->size();
-        }
-        STKUNIT_EXPECT_EQ(size_sum, 10u);
+        STKUNIT_EXPECT_EQ(size_sum, z_dim);
       }
     }
   }
+
   CALLGRIND_TOGGLE_COLLECT;
   CALLGRIND_STOP_INSTRUMENTATION;
 
   bulk.modification_end();
 
-  print_memory_sum_all_procs(pm);
+  PERFORMANCE_TEST_POSTAMBLE();
 
-  print_debug_skip(pm);
+  delete mesh;
 }
 
-STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_memory)
+STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_single_part_selector )
 {
-  CALLGRIND_START_INSTRUMENTATION;
-
-  check_valgrind_version();
-
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
-
-  const size_t p_size = stk::parallel_machine_size(pm);
-
-  // serial only
-  ThrowRequire(p_size == 1);
+  PERFORMANCE_TEST_PREAMBLE(1 /*num procs*/);
 
   const int x_dim = 10;
   const int y_dim = 10;
   const int z_dim = 10;
+  const int dim_span = 1; // max fragmentation
 
-  // Set up dead-simple mesh, 2 quads sharing 2 nodes
-  stk::mesh::fixtures::HexFixture mesh(pm, x_dim, y_dim, z_dim);
-  MetaData & meta = mesh.m_meta;
-  BulkData & bulk = mesh.m_bulk_data;
+  std::vector<PartVector> element_parts;
+  HexFixture* mesh =
+    create_hex_with_complex_parts< !TIME_CHANGE_PARTS, !INDUCE_ELEMENT_PARTS, !ALLOCATE_FIELDS >(pm, x_dim, y_dim, z_dim, dim_span, element_parts);
+  BulkData & bulk = mesh->m_bulk_data;
 
-  std::vector<std::vector<PartVector> > parts;
-
-  parts.resize(x_dim);
-
-  for (int x = 0; x < x_dim; ++x) {
-    parts[x].resize(y_dim);
-    for (int y = 0; y < y_dim; ++y) {
-      parts[x][y].resize(z_dim);
-      for (int z = 0; z < z_dim; ++z) {
-        std::ostringstream out;
-        out << "part_" << x << "_" << y << "_" << z;
-        parts[x][y][z] = &meta.declare_part(out.str(), stk::topology::ELEMENT_RANK);
-      }
-    }
-  }
-
-  meta.commit();
-
-  mesh.generate_mesh();
-
-  CALLGRIND_TOGGLE_COLLECT;
+  const int num_iterations = 5;
 
   bulk.modification_begin();
 
-  // Currently, this causes an incredible bloat in memory
-  for (int x = 0; x < x_dim; ++x) {
-    for (int y = 0; y < y_dim; ++y) {
-      for (int z = 0; z < z_dim; ++z) {
-        PartVector add(1, parts[x][y][z]);
-        Entity elem = mesh.elem(x, y, z);
-        bulk.change_entity_parts(elem, add);
+  CALLGRIND_TOGGLE_COLLECT;
+
+  for (int i = 0; i < num_iterations; ++i) {
+    for (int x = 0; x < x_dim; ++x) {
+      for (int y = 0; y < y_dim; ++y) {
+        int size_sum = 0;
+        for (int z = 0; z < z_dim; ++z) {
+          Selector sel = *element_parts[2][z];
+          BucketVector output_buckets;
+          get_buckets(sel, bulk.buckets(stk::topology::ELEMENT_RANK), output_buckets);
+          for (int j = 0, je = output_buckets.size(); j < je; ++j) {
+            size_sum += output_buckets[j]->size();
+          }
+        }
+        STKUNIT_EXPECT_EQ(size_sum, x_dim * y_dim * z_dim);
       }
     }
   }
-
-  bulk.modification_end();
 
   CALLGRIND_TOGGLE_COLLECT;
   CALLGRIND_STOP_INSTRUMENTATION;
 
   bulk.modification_end();
 
-  print_memory_sum_all_procs(pm);
+  PERFORMANCE_TEST_POSTAMBLE();
 
-  print_debug_skip(pm);
+  delete mesh;
+}
+
+STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_memory)
+{
+  PERFORMANCE_TEST_PREAMBLE(1 /*num procs*/);
+
+  const int x_dim = 10;
+  const int y_dim = 10;
+  const int z_dim = 10;
+  const int dim_span = 1; // max fragmentation
+
+  // Set up mesh
+  // This mesh uses incredible amounts of memory with part induction turned on
+  std::vector<PartVector> element_parts;
+  HexFixture* mesh =
+    create_hex_with_complex_parts< TIME_CHANGE_PARTS, !INDUCE_ELEMENT_PARTS, !ALLOCATE_FIELDS >(pm, x_dim, y_dim, z_dim, dim_span, element_parts);
+
+  PERFORMANCE_TEST_POSTAMBLE();
+
+  delete mesh;
+}
+
+STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access)
+{
+  PERFORMANCE_TEST_PREAMBLE(1 /*num procs*/);
+
+  const int x_dim = 10;
+  const int y_dim = 10;
+  const int z_dim = 10;
+  const int dim_span = 1; // max fragmentation
+
+  // Set up mesh
+  // This mesh uses incredible amounts of memory with part induction turned on
+  std::vector<PartVector> element_parts;
+  std::vector<std::vector<SimpleField*> > fields;
+  HexFixture* mesh =
+    create_hex_with_complex_parts< !TIME_CHANGE_PARTS, !INDUCE_ELEMENT_PARTS, ALLOCATE_FIELDS>(pm, x_dim, y_dim, z_dim, dim_span, element_parts, &fields);
+  BulkData & bulk = mesh->m_bulk_data;
+
+  BucketVector all_elem_buckets = bulk.buckets(stk::topology::ELEMENT_RANK);
+
+  std::vector<std::vector<BucketVector> > bucket_map;
+  bucket_map.resize(x_dim);
+
+  for (int x = 0; x < x_dim; ++x) {
+    bucket_map[x].resize(y_dim);
+    for (int y = 0; y < y_dim; ++y) {
+      bucket_map[x][y].resize(z_dim);
+      for (int z = 0; z < z_dim; ++z) {
+        Selector sel = *element_parts[0][x];
+        sel &= *element_parts[1][y];
+        sel &= *element_parts[2][z];
+
+        BucketVector selected_buckets;
+        get_buckets(sel, all_elem_buckets, selected_buckets);
+        ThrowRequire(selected_buckets.size() == 1u);
+        bucket_map[x][y][z] = selected_buckets[0];
+      }
+    }
+  }
+
+  CALLGRIND_TOGGLE_COLLECT;
+
+  const int num_iterations = 5000;
+  int dummy = 0;
+  for (int i = 0; i < num_iterations; ++i) {
+    for (int x = 0; x < x_dim; ++x) {
+      SimpleField& x_field = *fields[0][x];
+      for (int y = 0; y < y_dim; ++y) {
+        SimpleField& y_field = *fields[1][y];
+        for (int z = 0; z < z_dim; ++z) {
+          SimpleField& z_field = *fields[2][z];
+          Bucket& bucket = *bucket_map[x][y][z];
+
+          const double* x_field_data = bulk.field_data(x_field, bucket);
+          const double* y_field_data = bulk.field_data(y_field, bucket);
+          const double* z_field_data = bulk.field_data(z_field, bucket);
+
+          if (x_field_data != NULL && y_field_data != NULL && z_field_data != NULL) {
+            ++dummy;
+          }
+        }
+      }
+    }
+  }
+
+  STKUNIT_EXPECT_EQ(dummy, x_dim * y_dim * z_dim * num_iterations);
+
+  CALLGRIND_TOGGLE_COLLECT;
+  CALLGRIND_STOP_INSTRUMENTATION;
+
+
+  PERFORMANCE_TEST_POSTAMBLE();
+
+  delete mesh;
 }
 
 }
