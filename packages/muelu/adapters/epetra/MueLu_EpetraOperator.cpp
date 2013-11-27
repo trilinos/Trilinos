@@ -103,7 +103,7 @@ int EpetraOperator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector
 }
 
 const Epetra_Comm& EpetraOperator::Comm() const {
-  RCP<Matrix> A = Hierarchy_->GetLevel(0)->template Get<RCP<Matrix> >("A");
+  RCP<Matrix> A = Hierarchy_->GetLevel(0)->Get<RCP<Matrix> >("A");
 
   //TODO: This code is not pretty
   RCP<Xpetra::BlockedCrsMatrix<double, int, int> > epbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<double, int, int> >(A);
@@ -121,7 +121,7 @@ const Epetra_Comm& EpetraOperator::Comm() const {
 }
 
 const Epetra_Map& EpetraOperator::OperatorDomainMap() const {
-  RCP<Matrix> A = Hierarchy_->GetLevel(0)->template Get<RCP<Matrix> >("A");
+  RCP<Matrix> A = Hierarchy_->GetLevel(0)->Get<RCP<Matrix> >("A");
 
   RCP<Xpetra::BlockedCrsMatrix<double, int, int> > epbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<double, int, int> >(A);
   if (epbA != Teuchos::null)
@@ -132,7 +132,7 @@ const Epetra_Map& EpetraOperator::OperatorDomainMap() const {
 }
 
 const Epetra_Map & EpetraOperator::OperatorRangeMap() const {
-  RCP<Matrix> A = Hierarchy_->GetLevel(0)->template Get<RCP<Matrix> >("A");
+  RCP<Matrix> A = Hierarchy_->GetLevel(0)->Get<RCP<Matrix> >("A");
 
   RCP<Xpetra::BlockedCrsMatrix<double, int, int> > epbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<double, int, int> >(A);
   if (epbA != Teuchos::null)
