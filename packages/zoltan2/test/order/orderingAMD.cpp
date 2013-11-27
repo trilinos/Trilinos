@@ -202,7 +202,6 @@ int main(int narg, char** arg)
   Teuchos::ParameterList params;
   ////// Basic metric checking of the ordering solution
   size_t checkLength;
-  size_t dummy;
   z2TestGO *checkGIDs;
   z2TestLO *checkPerm;
 
@@ -222,8 +221,8 @@ int main(int narg, char** arg)
 
   // Check that the solution is really a permutation
   checkLength = soln->getPermutationSize();
-  checkGIDs = soln->getGids(&dummy);
-  checkPerm = soln->getPermutation(&dummy);
+  checkGIDs = soln->getGids();
+  checkPerm = soln->getPermutation();
 
   for (int ii = 0; ii < checkLength; ii++)
       cout << checkPerm[ii] << " ";

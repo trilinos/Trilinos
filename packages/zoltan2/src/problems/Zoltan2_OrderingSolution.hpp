@@ -98,53 +98,59 @@ public:
   // Algorithms can then load the memory.
   // Non-RCP versions are provided for applications to use.
 
-  /*! \brief TODO.
+  /*! \brief Get (local) size of permutation.
    */
   inline size_t getPermutationSize() {return perm_size_;}
 
-  /*! \brief TODO.
+  /*! \brief Get (local) permuted GIDs by RCP.
    */
   inline ArrayRCP<gid_t>  &getGidsRCP()  {return gids_;}
 
-  /*! \brief TODO.
+  /*! \brief Get (local) permutation by RCP.
+   *  If inverse = true, return inverse permutation.
    */
-  inline ArrayRCP<lno_t> &getPermutationRCP() {return perm_;}
+  inline ArrayRCP<lno_t> &getPermutationRCP(bool inverse=false) 
+  {
+    if (inverse)
+      return invperm_;
+    else
+      return perm_;
+  }
 
-  /*! \brief TODO.
+  /*! \brief Get (local) permuted GIDs by const RCP.
    */
   inline ArrayRCP<gid_t>  &getGidsRCPConst()  const
   {
     return const_cast<ArrayRCP<gid_t>& > (gids_);
   }
 
-  /*! \brief TODO.
+  /*! \brief Get (local) permutation by const RCP.
+   *  If inverse = true, return inverse permutation.
    */
-  inline ArrayRCP<lno_t> &getPermutationRCPConst() const
+  inline ArrayRCP<lno_t> &getPermutationRCPConst(bool inverse=false) const
   {
-    return const_cast<ArrayRCP<lno_t>& > (perm_);
+    if (inverse)
+      return const_cast<ArrayRCP<lno_t>& > (invperm_);
+    else
+      return const_cast<ArrayRCP<lno_t>& > (perm_);
   }
 
-  /*! \brief TODO.
+  /*! \brief Get pointer to (local) GIDs.
    */
-  inline gid_t  *getGids(size_t *length)
+  inline gid_t  *getGids()
   {
-    *length = gids_.size();
     return gids_.getRawPtr();
   }
 
-  /*! \brief TODO.
+  /*! \brief Get pointer to (local) permutation.
+   *  If inverse = true, return inverse permutation.
    */
-  inline lno_t *getPermutation()
+  inline lno_t *getPermutation(bool inverse = false)
   {
-    return perm_.getRawPtr();
-  }
-
-  /*! \brief TODO.
-   */
-  inline lno_t *getPermutation(size_t *length)
-  {
-    *length = perm_.size();
-    return perm_.getRawPtr();
+    if (inverse)
+      return invperm_.getRawPtr();
+    else
+      return perm_.getRawPtr();
   }
 
 protected:
