@@ -108,6 +108,7 @@ public:
 
   /*! \brief Get (local) permutation by RCP.
    *  If inverse = true, return inverse permutation.
+   *  By default, perm[i] is where index i should be in the new ordering.
    */
   inline ArrayRCP<lno_t> &getPermutationRCP(bool inverse=false) 
   {
@@ -126,6 +127,7 @@ public:
 
   /*! \brief Get (local) permutation by const RCP.
    *  If inverse = true, return inverse permutation.
+   *  By default, perm[i] is where index i should be in the new ordering.
    */
   inline ArrayRCP<lno_t> &getPermutationRCPConst(bool inverse=false) const
   {
@@ -144,6 +146,7 @@ public:
 
   /*! \brief Get pointer to (local) permutation.
    *  If inverse = true, return inverse permutation.
+   *  By default, perm[i] is where index i should be in the new ordering.
    */
   inline lno_t *getPermutation(bool inverse = false)
   {
