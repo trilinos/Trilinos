@@ -113,6 +113,13 @@ class AlgRCM
       }
       return 0;
     }
+
+#ifdef ZOLTAN2_HAVE_AZTECOO
+  // Call AztecOO's RCM, if requested by user
+  // TODO: Introduce parameter rcm_package=aztec ?
+  // TODO: Check that lno_t is int, otherwise abort.
+  // TODO: Call Zoltan2_AlgRCMAztec()
+#else
   
     // Set the label of each vertex to invalid.
     Tpetra::global_size_t INVALID = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
@@ -171,6 +178,8 @@ class AlgRCM
       }
     }
   
+#endif // !ZOLTAN2_HAVE_AZTECOO
+
     return ierr;
   }
   
