@@ -72,15 +72,25 @@ public:
   /*! \brief Constructor allocates memory for the solution.
    */
   OrderingSolution(
-    size_t perm_size, // TODO: Is this always equal to nlids ?
-    size_t ngids
+    size_t perm_size // This should be equal to nlids
   )
   {
     HELLO;
     perm_size_ = perm_size;
-    gids_   = ArrayRCP<gid_t>(ngids);
+    gids_   = ArrayRCP<gid_t>(perm_size_);
     perm_  = ArrayRCP<lno_t>(perm_size_);
+    invperm_  = ArrayRCP<lno_t>(perm_size_);
   }
+
+  /*! \brief Compute inverse permutation.
+   */
+  void computeInverse()
+  {
+    for(size_t i=0; i<perm_size_; i++) {
+      invperm_[perm_[i]] = i;
+    }
+  }
+
 
 
   //////////////////////////////////////////////
@@ -88,61 +98,71 @@ public:
   // Algorithms can then load the memory.
   // Non-RCP versions are provided for applications to use.
 
-  /*! \brief TODO.
+  /*! \brief Get (local) size of permutation.
    */
   inline size_t getPermutationSize() {return perm_size_;}
 
-  /*! \brief TODO.
+  /*! \brief Get (local) permuted GIDs by RCP.
    */
   inline ArrayRCP<gid_t>  &getGidsRCP()  {return gids_;}
 
-  /*! \brief TODO.
+  /*! \brief Get (local) permutation by RCP.
+   *  If inverse = true, return inverse permutation.
+   *  By default, perm[i] is where index i should be in the new ordering.
    */
-  inline ArrayRCP<lno_t> &getPermutationRCP() {return perm_;}
+  inline ArrayRCP<lno_t> &getPermutationRCP(bool inverse=false) 
+  {
+    if (inverse)
+      return invperm_;
+    else
+      return perm_;
+  }
 
-  /*! \brief TODO.
+  /*! \brief Get (local) permuted GIDs by const RCP.
    */
   inline ArrayRCP<gid_t>  &getGidsRCPConst()  const
   {
     return const_cast<ArrayRCP<gid_t>& > (gids_);
   }
 
-  /*! \brief TODO.
+  /*! \brief Get (local) permutation by const RCP.
+   *  If inverse = true, return inverse permutation.
+   *  By default, perm[i] is where index i should be in the new ordering.
    */
-  inline ArrayRCP<lno_t> &getPermutationRCPConst() const
+  inline ArrayRCP<lno_t> &getPermutationRCPConst(bool inverse=false) const
   {
-    return const_cast<ArrayRCP<lno_t>& > (perm_);
+    if (inverse)
+      return const_cast<ArrayRCP<lno_t>& > (invperm_);
+    else
+      return const_cast<ArrayRCP<lno_t>& > (perm_);
   }
 
-  /*! \brief TODO.
+  /*! \brief Get pointer to (local) GIDs.
    */
-  inline gid_t  *getGids(size_t *length)
+  inline gid_t  *getGids()
   {
-    *length = gids_.size();
     return gids_.getRawPtr();
   }
 
-  /*! \brief TODO.
+  /*! \brief Get pointer to (local) permutation.
+   *  If inverse = true, return inverse permutation.
+   *  By default, perm[i] is where index i should be in the new ordering.
    */
-  inline lno_t *getPermutation()
+  inline lno_t *getPermutation(bool inverse = false)
   {
-    return perm_.getRawPtr();
-  }
-
-  /*! \brief TODO.
-   */
-  inline lno_t *getPermutation(size_t *length)
-  {
-    *length = perm_.size();
-    return perm_.getRawPtr();
+    if (inverse)
+      return invperm_.getRawPtr();
+    else
+      return perm_.getRawPtr();
   }
 
 protected:
   // Ordering solution consists of GIDs, LIDs, and permutation vector(s).
   size_t perm_size_;
   ArrayRCP<gid_t>  gids_;
+  // For now, assume permutations are local. Revisit later (e.g., for Scotch)
   ArrayRCP<lno_t> perm_;    // zero-based local permutation
-  //ArrayRCP<size_t> invperm_; // inverse of permutation above
+  ArrayRCP<lno_t> invperm_; // inverse of permutation above
 };
 
 }

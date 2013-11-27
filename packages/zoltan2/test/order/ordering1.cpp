@@ -115,6 +115,37 @@ int validatePerm(size_t n, z2TestLO *perm)
   return status;
 }
 
+size_t computeBandwidth(RCP<SparseMatrix> A, z2TestLO *perm)
+// returns the bandwidth of the (local) permuted matrix
+{
+  z2TestLO ii, i, j, k;
+  ArrayView<const z2TestLO> indices;
+  ArrayView<const Scalar> values;
+  z2TestLO bw_left = 0;
+  z2TestLO bw_right = 0;
+
+  // Loop over rows of matrix
+  for (ii=0; ii<A->getNodeNumRows(); ii++) {
+    A->getLocalRowView (ii, indices, values);
+    for (k=0; k< indices.size(); k++){
+      if (perm){
+        i = perm[ii];
+        j = perm[indices[k]];
+      } else {
+        i = ii;
+        j = indices[k];
+      }
+      if (j-i > bw_right)
+        bw_right = j-i;
+      if (i-j > bw_left)
+        bw_left = i-j;
+    }
+  }
+
+  // Total bandwidth is the sum of left and right + 1
+  return (bw_left + bw_right + 1);
+}
+
 /////////////////////////////////////////////////////////////////////////////
 int main(int narg, char** arg)
 {
@@ -221,7 +252,6 @@ int main(int narg, char** arg)
 
   ////// Basic metric checking of the ordering solution
   size_t checkLength;
-  size_t dummy;
   z2TestGO *checkGIDs;
   z2TestLO *checkPerm;
   Zoltan2::OrderingSolution<z2TestGO, z2TestLO> *soln = problem.getSolution();
@@ -229,8 +259,8 @@ int main(int narg, char** arg)
   cout << "Going to get results" << endl;
   // Check that the solution is really a permutation
   checkLength = soln->getPermutationSize();
-  checkGIDs = soln->getGids(&dummy);
-  checkPerm = soln->getPermutation(&dummy);
+  checkGIDs = soln->getGids();
+  checkPerm = soln->getPermutation();
 
 #ifdef DEBUG
   cout << "DEBUG: checkPerm= " << endl;
@@ -243,6 +273,12 @@ int main(int narg, char** arg)
   cout << "Going to validate the soln" << endl;
   // Verify that checkPerm is a permutation
   testReturn = validatePerm(checkLength, checkPerm);
+
+  cout << "Going to compute the bandwidth" << endl;
+  // Compute original bandwidth (not really part of test)
+  cout << "Original Bandwidth: " << computeBandwidth(origMatrix, 0) << endl;
+  // Compute permuted bandwidth (not really part of test)
+  cout << "Permuted Bandwidth: " << computeBandwidth(origMatrix, checkPerm) << endl;
 
   } catch (std::exception &e){
       if (comm->getSize() != 1)
@@ -266,5 +302,6 @@ int main(int narg, char** arg)
     else
       std::cout << "PASS" << std::endl;
   }
+
 }
 

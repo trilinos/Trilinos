@@ -196,7 +196,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   // ======================================== //
 #ifdef HAVE_IFPACK2_ZOLTAN2
   // Fill the permulation with a local reversal
-  Zoltan2::OrderingSolution<GlobalOrdinal,LocalOrdinal> Ordering((size_t)num_rows_per_proc,(size_t)num_rows_per_proc);
+  Zoltan2::OrderingSolution<GlobalOrdinal,LocalOrdinal> Ordering((size_t)num_rows_per_proc);
   Teuchos::ArrayRCP<LocalOrdinal> l_perm=Ordering.getPermutationRCP();
   for(LocalOrdinal i=0; i < (LocalOrdinal)num_rows_per_proc; i++){
     l_perm[i] = (LocalOrdinal) (num_rows_per_proc - i - 1);

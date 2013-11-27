@@ -477,7 +477,8 @@ namespace Tpetra {
       // isDistributed() method.  For now, I'll just assume that we
       // need to do communication unless the cast succeeds and the
       // source is not distributed.
-      else if (revOp == DoForward && srcDistObj != NULL && ! srcDistObj->isDistributed ()) {
+      else if (revOp == DoForward && srcDistObj != NULL &&
+               ! srcDistObj->isDistributed ()) {
         needCommunication = false;
       }
 
@@ -487,7 +488,8 @@ namespace Tpetra {
           Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
           if (constantNumPackets == 0) { //variable num-packets-per-LID:
-            distor.doReversePostsAndWaits (numExportPacketsPerLID_().getConst(), 1,
+            distor.doReversePostsAndWaits (numExportPacketsPerLID_().getConst(),
+                                           1,
                                            numImportPacketsPerLID_());
             size_t totalImportPackets = 0;
             for (Array_size_type i = 0; i < numImportPacketsPerLID_.size(); ++i) {
@@ -500,9 +502,9 @@ namespace Tpetra {
                                            numImportPacketsPerLID_());
           }
           else {
-            distor.doReversePostsAndWaits (exports_().getConst(),
+            distor.doReversePostsAndWaits (exports_ ().getConst (),
                                            constantNumPackets,
-                                           imports_());
+                                           imports_ ());
           }
         }
         else { // revOp == DoForward
@@ -523,9 +525,9 @@ namespace Tpetra {
                                     numImportPacketsPerLID_());
           }
           else {
-            distor.doPostsAndWaits (exports_().getConst(),
+            distor.doPostsAndWaits (exports_ ().getConst (),
                                     constantNumPackets,
-                                    imports_());
+                                    imports_ ());
           }
         }
         {

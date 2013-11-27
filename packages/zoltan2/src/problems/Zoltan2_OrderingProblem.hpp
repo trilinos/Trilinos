@@ -147,6 +147,8 @@ public:
   //   \return  a reference to the solution to the most recent solve().
 
   OrderingSolution<gid_t, lno_t> *getSolution() {
+    // Assume solve() computed perm but not invperm. TODO?
+    solution_->computeInverse();
     return solution_.getRawPtr();
   };
 
@@ -174,7 +176,7 @@ void OrderingProblem<Adapter>::solve(bool newData)
   // TODO: Assuming one MPI process now. nVtx = ngids = nlids
   try
   {
-      this->solution_ = rcp(new OrderingSolution<gid_t, lno_t>(nVtx, nVtx));
+      this->solution_ = rcp(new OrderingSolution<gid_t, lno_t>(nVtx));
   }
   Z2_FORWARD_EXCEPTIONS;
 

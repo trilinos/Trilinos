@@ -210,11 +210,9 @@ Reducer::setLocalUnreducedEqns(const std::vector<int>& localUnreducedEqns)
       <<localUnreducedEqns.size() << FEI_ENDL;
   }
 
-  if (localUnreducedEqns_ == localUnreducedEqns) {
-    return;
+  if (localUnreducedEqns_ != localUnreducedEqns) {
+    localUnreducedEqns_ = localUnreducedEqns;
   }
-
-  localUnreducedEqns_ = localUnreducedEqns;
 
   int num = localUnreducedEqns_.size();
 
@@ -266,20 +264,22 @@ Reducer::setLocalUnreducedEqns(const std::vector<int>& localUnreducedEqns)
   }
 #endif
 
-  unsigned first_non_slave_offset = 0;
-  while(first_non_slave_offset < localUnreducedEqns_.size() &&
-        isSlaveEqn_[first_non_slave_offset] == true) {
-    ++first_non_slave_offset;
+  if (!localUnreducedEqns_.empty()) {
+    unsigned first_non_slave_offset = 0;
+    while(first_non_slave_offset < localUnreducedEqns_.size() &&
+          isSlaveEqn_[first_non_slave_offset] == true) {
+      ++first_non_slave_offset;
+    }
+
+    firstLocalReducedEqn_ = localUnreducedEqns_[first_non_slave_offset]
+        - num_slaves_on_lower_procs - first_non_slave_offset;
+
+    int num_local_eqns = localUnreducedEqns_.size() - numLocalSlaves_;
+
+    lastLocalReducedEqn_ = firstLocalReducedEqn_ + num_local_eqns - 1;
+
+    localReducedEqns_.resize(num_local_eqns);
   }
-
-  firstLocalReducedEqn_ = localUnreducedEqns_[first_non_slave_offset]
-      - num_slaves_on_lower_procs - first_non_slave_offset;
-
-  int num_local_eqns = localUnreducedEqns_.size() - numLocalSlaves_;
-
-  lastLocalReducedEqn_ = firstLocalReducedEqn_ + num_local_eqns - 1;
-
-  localReducedEqns_.resize(num_local_eqns);
 
   unsigned offset = 0;
   int eqn = firstLocalReducedEqn_;
