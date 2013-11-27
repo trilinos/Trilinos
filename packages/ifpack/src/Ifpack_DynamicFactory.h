@@ -38,6 +38,7 @@
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_Preconditioner.h"
 #include "Teuchos_iostream_helpers.hpp"
+#include "Ifpack_AdditiveSchwarz.h"
 
 
 #ifdef HAVE_HYPRE
@@ -102,10 +103,32 @@ public:
    */
   static void Print(std::ostream& os = std::cout);
 
+  // Templated build function
+  template <typename PrecType, bool StandAlone>
+  static Ifpack_Preconditioner* buildPreconditioner(Epetra_RowMatrix* Matrix,
+		  	  	  	  	  	  	  	  	  	  	    int Overlap,
+		  	  	  	  	  	  	  	  	  	  	    bool Serial,
+		  	  	  	  	  	  	  	  	  	  	    bool OverrideSerialDefault);
+
 private:
   static std::map<std::string, builderFunction> PreconditionerMap_;
   static int NumPreconditioners_;
   static bool Initialized_;
 };
+
+// Templated build function
+template <typename PrecType, bool StandAlone>
+Ifpack_Preconditioner*
+Ifpack_DynamicFactory::buildPreconditioner(Epetra_RowMatrix* Matrix,
+										   int Overlap,
+										   bool Serial,
+										   bool OverrideSerialDefault)
+{
+	if (StandAlone || (Serial && !OverrideSerialDefault)) {
+		return new PrecType(Matrix);
+	} else {
+		return new Ifpack_AdditiveSchwarz<PrecType>(Matrix, Overlap);
+	}
+}
 
 #endif // IFPACK_DYNAMIC_FACTORY_H

@@ -57,358 +57,73 @@
 #include "Teuchos_StringToIntMap.hpp"
 #include "Epetra_CrsMatrix.h"
 
-// Define builder functions for the default set of preconditioners
-namespace {
-
-// POINT_RELAXATION
-Ifpack_Preconditioner* buildPointRelaxation(Epetra_RowMatrix* Matrix,
-											int Overlap,
-											bool serial,
-											bool overrideSerialDefault)
-{
-  if (serial && !overrideSerialDefault)
-	return(new Ifpack_PointRelaxation(Matrix));
-  else
-	return(new Ifpack_AdditiveSchwarz<Ifpack_PointRelaxation>(Matrix, Overlap));
-}
-
-// POINT_RELAXATION_STAND_ALONE
-Ifpack_Preconditioner* buildPointRelaxationStandAlone(Epetra_RowMatrix* Matrix,
-													  int /*Overlap*/,
-													  bool /*serial*/,
-													  bool /*overrideSerialDefault*/)
-{
-	return new Ifpack_PointRelaxation(Matrix);
-}
-
-// BLOCK_RELAXATION
-Ifpack_Preconditioner* buildBlockRelaxation(Epetra_RowMatrix* Matrix,
-											int Overlap,
-											bool serial,
-											bool overrideSerialDefault)
-{
-  if (serial && !overrideSerialDefault)
-	return(new Ifpack_BlockRelaxation<Ifpack_DenseContainer>(Matrix));
-  else
-	return(new Ifpack_AdditiveSchwarz<
-		 Ifpack_BlockRelaxation<Ifpack_DenseContainer> >(Matrix,Overlap));
-}
-
-// BLOCK_RELAXATION_STAND_ALONE
-Ifpack_Preconditioner* buildBlockRelaxationStandAlone(Epetra_RowMatrix* Matrix,
-													  int /*Overlap*/,
-													  bool /*serial*/,
-													  bool /*overrideSerialDefault*/)
-{
-	return new Ifpack_BlockRelaxation<Ifpack_DenseContainer>(Matrix);
-}
-
-// BLOCK_RELAXATION_STAND_ALONE_ILU
-Ifpack_Preconditioner* buildBlockRelaxationStandAloneILU(Epetra_RowMatrix* Matrix,
-													  	 int /*Overlap*/,
-													  	 bool /*serial*/,
-													  	 bool /*overrideSerialDefault*/)
-{
-	return new Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_ILU> >(Matrix);
-}
-
-#ifdef HAVE_IFPACK_AMESOS
-
-// BLOCK_RELAXATION_STAND_ALONE_AMESOS
-Ifpack_Preconditioner* buildBlockRelaxationStandAloneAmesos(Epetra_RowMatrix* Matrix,
-													  	 	int /*Overlap*/,
-													  	 	bool /*serial*/,
-													  	 	bool /*overrideSerialDefault*/)
-{
-	return new Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> >(Matrix);
-}
-
-// BLOCK_RELAXATION_AMESOS
-Ifpack_Preconditioner* buildBlockRelaxationAmesos(Epetra_RowMatrix* Matrix,
-												  int Overlap,
-												  bool /*serial*/,
-												  bool /*overrideSerialDefault*/)
-{
-	return(new Ifpack_AdditiveSchwarz<
-					  Ifpack_BlockRelaxation<
-							  Ifpack_SparseContainer<Ifpack_Amesos> > >
-				(Matrix,Overlap));
-}
-
-// AMESOS
-Ifpack_Preconditioner* buildAmesos(Epetra_RowMatrix* Matrix,
-								   int Overlap,
-								   bool serial,
-								   bool overrideSerialDefault)
-{
-  if (serial && !overrideSerialDefault)
-	return(new Ifpack_Amesos(Matrix));
-  else
-	return(new Ifpack_AdditiveSchwarz<Ifpack_Amesos>(Matrix,Overlap));
-}
-
-// AMESOS_STAND_ALONE
-Ifpack_Preconditioner* buildAmesosStandAlone(Epetra_RowMatrix* Matrix,
-											 int /*Overlap*/,
-											 bool /*serial*/,
-											 bool /*overrideSerialDefault*/)
-{
-	return new Ifpack_Amesos(Matrix);
-}
-
-#endif // HAVE_IFPACK_AMESOS
-
-// IC
-Ifpack_Preconditioner* buildIC(Epetra_RowMatrix* Matrix,
-							   int Overlap,
-							   bool serial,
-							   bool overrideSerialDefault)
-{
-  if (serial && !overrideSerialDefault)
-	return(new Ifpack_IC(Matrix));
-  else
-	return(new Ifpack_AdditiveSchwarz<Ifpack_IC>(Matrix,Overlap));
-}
-
-// IC_STAND_ALONE
-Ifpack_Preconditioner* buildICStandAlone(Epetra_RowMatrix* Matrix,
-										 int /*Overlap*/,
-										 bool /*serial*/,
-										 bool /*overrideSerialDefault*/)
-{
-	return new Ifpack_IC(Matrix);
-}
-
-// ICT
-Ifpack_Preconditioner* buildICT(Epetra_RowMatrix* Matrix,
-							    int Overlap,
-							    bool serial,
-							    bool overrideSerialDefault)
-{
-  if (serial && !overrideSerialDefault)
-	return(new Ifpack_ICT(Matrix));
-  else
-	return(new Ifpack_AdditiveSchwarz<Ifpack_ICT>(Matrix,Overlap));
-}
-
-// ICT_STAND_ALONE
-Ifpack_Preconditioner* buildICTStandAlone(Epetra_RowMatrix* Matrix,
-										  int /*Overlap*/,
-										  bool /*serial*/,
-										  bool /*overrideSerialDefault*/)
-{
-	return new Ifpack_ICT(Matrix);
-}
-
-// ILU
-Ifpack_Preconditioner* buildILU(Epetra_RowMatrix* Matrix,
-							    int Overlap,
-							    bool serial,
-							    bool overrideSerialDefault)
-{
-  if (serial && !overrideSerialDefault)
-	return(new Ifpack_ILU(Matrix));
-  else
-	return(new Ifpack_AdditiveSchwarz<Ifpack_ILU>(Matrix,Overlap));
-}
-
-// ILU_STAND_ALONE
-Ifpack_Preconditioner* buildILUStandAlone(Epetra_RowMatrix* Matrix,
-										  int /*Overlap*/,
-										  bool /*serial*/,
-										  bool /*overrideSerialDefault*/)
-{
-	return new Ifpack_ILU(Matrix);
-}
-
-// ILUT
-Ifpack_Preconditioner* buildILUT(Epetra_RowMatrix* Matrix,
-							     int Overlap,
-							     bool serial,
-							     bool overrideSerialDefault)
-{
-  if (serial && !overrideSerialDefault)
-	return(new Ifpack_ILUT(Matrix));
-  else
-	return(new Ifpack_AdditiveSchwarz<Ifpack_ILUT>(Matrix,Overlap));
-}
-
-// ILUT_STAND_ALONE
-Ifpack_Preconditioner* buildILUTStandAlone(Epetra_RowMatrix* Matrix,
-										   int /*Overlap*/,
-										   bool /*serial*/,
-										   bool /*overrideSerialDefault*/)
-{
-	return new Ifpack_ILUT(Matrix);
-}
-
-#ifdef HAVE_IFPACK_SPARSKIT
-
-// SPARSKIT
-Ifpack_Preconditioner* buildSPARSKIT(Epetra_RowMatrix* Matrix,
-									 int /*Overlap*/,
-									 bool /*serial*/,
-									 bool /*overrideSerialDefault*/)
-{
-	return new Ifpack_SPARSKIT(Matrix);
-}
-
-#endif // HAVE_IFPACK_SPARSKIT
-
-#ifdef HAVE_IFPACK_HIPS
-
-// HIPS
-Ifpack_Preconditioner* buildHIPS(Epetra_RowMatrix* Matrix,
-								 int /*Overlap*/,
-								 bool /*serial*/,
-								 bool /*overrideSerialDefault*/)
-{
-	return new Ifpack_HIPS(Matrix);
-}
-
-#endif // HAVE_IFPACK_HIPS
-
-#ifdef HAVE_HYPRE
-
-// HYPRE
-Ifpack_Preconditioner* buildHypre(Epetra_RowMatrix* Matrix,
-								  int /*Overlap*/,
-								  bool /*serial*/,
-								  bool /*overrideSerialDefault*/)
-{
-	return new Ifpack_Hypre(Matrix);
-}
-
-#endif // HAVE_IFPACK_HYPRE
-
-#ifdef HAVE_IFPACK_SUPERLU
-
-// SILU
-Ifpack_Preconditioner* buildSILU(Epetra_RowMatrix* Matrix,
-								 int /*Overlap*/,
-								 bool /*serial*/,
-								 bool /*overrideSerialDefault*/)
-{
-	return new Ifpack_SILU(Matrix);
-}
-
-#endif // HAVE_IFPACK_SUPERLU
-
-// CHEBYSHEV
-Ifpack_Preconditioner* buildChebyshev(Epetra_RowMatrix* Matrix,
-								 	  int /*Overlap*/,
-								 	  bool /*serial*/,
-								 	  bool /*overrideSerialDefault*/)
-{
-	return new Ifpack_Chebyshev(Matrix);
-}
-
-#ifdef HAVE_IFPACK_EPETRAEXT
-
-// IHSS
-Ifpack_Preconditioner* buildIHSS(Epetra_RowMatrix* Matrix,
-								 int /*Overlap*/,
-								 bool /*serial*/,
-								 bool /*overrideSerialDefault*/)
-{
-	return new Ifpack_IHSS(Matrix);
-}
-
-// SORA
-Ifpack_Preconditioner* buildSORa(Epetra_RowMatrix* Matrix,
-								 int /*Overlap*/,
-								 bool /*serial*/,
-								 bool /*overrideSerialDefault*/)
-{
-	return new Ifpack_SORa(Matrix);
-}
-
-#endif // HAVE_IFPACK_EPETRAEXT
-
-}
-
 std::map<std::string, Ifpack_DynamicFactory::builderFunction>
 	Ifpack_DynamicFactory::PreconditionerMap_;
 bool Ifpack_DynamicFactory::Initialized_ = false;
 int Ifpack_DynamicFactory::NumPreconditioners_ = 0;
 
-////==============================================================================
-//const char* Ifpack_DynamicFactory::precTypeNames[Ifpack::numPrecTypes] =
-//{
-//#ifdef HAVE_IFPACK_SPARSKIT
-//  ,"SPARSKIT"
-//#endif
-//#ifdef HAVE_IFPACK_HIPS
-//  ,"HIPS"
-//#endif
-//#ifdef HAVE_HYPRE
-//  ,"Hypre"
-//#endif
-//#ifdef HAVE_IFPACK_SUPERLU
-//  ,"SILU"
-//#endif
-//  ,"Chebyshev"
-//  ,"IHSS"
-//  ,"SORa"
-//};
-
 bool Ifpack_DynamicFactory::Initialize()
 {
 	if (! Initialized_) {
-		PreconditionerMap_["point relaxation"] = &buildPointRelaxation;
+		PreconditionerMap_["point relaxation"]
+			  = &buildPreconditioner<Ifpack_PointRelaxation, false>;
 		PreconditionerMap_["point relaxation stand-alone"]
-			  = &buildPointRelaxationStandAlone;
-		PreconditionerMap_["block relaxation"] = &buildBlockRelaxation;
+			  = &buildPreconditioner<Ifpack_PointRelaxation, true>;
+		PreconditionerMap_["block relaxation"]
+              = &buildPreconditioner<Ifpack_BlockRelaxation<Ifpack_DenseContainer>, false>;
 		PreconditionerMap_["block relaxation stand-alone"]
-			  = &buildBlockRelaxationStandAlone;
+			  = &buildPreconditioner<Ifpack_BlockRelaxation<Ifpack_DenseContainer>, true>;
 		PreconditionerMap_["block relaxation stand-alone (ILU)"]
-			  = &buildBlockRelaxationStandAloneILU;
+              = &buildPreconditioner<Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_ILU> >, true>;
 
 #ifdef HAVE_IFPACK_AMESOS
 		PreconditionerMap_["block relaxation stand-alone (Amesos)"]
-			  = &buildBlockRelaxationStandAloneAmesos;
+              = &buildPreconditioner<Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> >, true>;
 		PreconditionerMap_["block relaxation (Amesos)"]
-			  = &buildBlockRelaxationAmesos;
+              = &buildPreconditioner<Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> >, false>;
 		PreconditionerMap_["Amesos"]
-			  = &buildAmesos;
+              = &buildPreconditioner<Ifpack_Amesos, false>;
 		PreconditionerMap_["Amesos stand-alone"]
-			  = &buildAmesosStandAlone;
+              = &buildPreconditioner<Ifpack_Amesos, true>;
 #endif // HAVE_IFPACK_AMESOS
 
-		PreconditionerMap_["IC"] = &buildIC;
-		PreconditionerMap_["IC stand-alone"] = &buildICStandAlone;
-		PreconditionerMap_["ICT"] = &buildICT;
-		PreconditionerMap_["ICT stand-alone"] = &buildICTStandAlone;
-		PreconditionerMap_["ILU"] = &buildILU;
-		PreconditionerMap_["ILU stand-alone"] = &buildILUStandAlone;
-		PreconditionerMap_["ILUT"] = &buildILUT;
-		PreconditionerMap_["ILUT stand-alone"] = &buildILUTStandAlone;
+		PreconditionerMap_["IC"] = &buildPreconditioner<Ifpack_IC, false>;
+		PreconditionerMap_["IC stand-alone"] = &buildPreconditioner<Ifpack_IC, true>;
+		PreconditionerMap_["ICT"] = &buildPreconditioner<Ifpack_ICT, false>;
+		PreconditionerMap_["ICT stand-alone"] = &buildPreconditioner<Ifpack_ICT, true>;
+		PreconditionerMap_["ILU"] = &buildPreconditioner<Ifpack_ILU, false>;
+		PreconditionerMap_["ILU stand-alone"] = &buildPreconditioner<Ifpack_ILU, true>;
+		PreconditionerMap_["ILUT"] = &buildPreconditioner<Ifpack_ILUT, false>;
+		PreconditionerMap_["ILUT stand-alone"] = &buildPreconditioner<Ifpack_ILUT, true>;
 
 #ifdef HAVE_IFPACK_SPARSKIT
 		PreconditionerMap_["SPARSKIT"]
-			  = &buildSPARSKIT;
+			  = &buildPreconditioner<Ifpack_SPARSKIT, true>;
 #endif
 
 #ifdef HAVE_IFPACK_HIPS
 		PreconditionerMap_["HIPS"]
-			  = &buildHIPS;
+			  = &buildPreconditioner<Ifpack_HIPS, true>;
 #endif
 
 #ifdef HAVE_HYPRE
 		PreconditionerMap_["Hypre"]
-			  = &buildHypre;
+			  = &buildPreconditioner<Ifpack_Hypre, true>;
 #endif
 
 #ifdef HAVE_IFPACK_SUPERLU
 		PreconditionerMap_["SILU"]
-			  = &buildSILU;
+			  = &buildPreconditioner<Ifpack_SILU, true>;
 #endif
 
-		PreconditionerMap_["Chebyshev"] = &buildChebyshev;
+		PreconditionerMap_["Chebyshev"]
+              = &buildPreconditioner<Ifpack_Chebyshev, true>;
 
 #ifdef HAVE_IFPACK_EPETRAEXT
-		PreconditionerMap_["IHSS"] = &buildIHSS;
-		PreconditionerMap_["SORa"] = &buildSORa;
+		PreconditionerMap_["IHSS"]
+              = &buildPreconditioner<Ifpack_IHSS, true>;
+		PreconditionerMap_["SORa"]
+              = &buildPreconditioner<Ifpack_SORa, true>;
 #endif
 
 		NumPreconditioners_ =
