@@ -9,6 +9,9 @@
 #include "Epetra_CrsMatrix.h"
 #include "ml_ValidateParameters.h"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
+#ifdef HAVE_ML_IFPACK
+#include "Ifpack_config.h"
+#endif
 
 # ifdef HAVE_ML_TekoSmoothers
 namespace Teko {
@@ -56,8 +59,11 @@ bool ML_Epetra::ValidateMLPParameters(const Teuchos::ParameterList &inList, int 
     List.validateParameters (*validList, depth, Teuchos::VALIDATE_USED_ENABLED, 
 			     Teuchos::VALIDATE_DEFAULTS_DISABLED);
   }
-  // Radu: I think ML should allow parameters that it doesn't recognize
-  catch(InvalidParameterName &excpt)  {/*rv=false; cout<<excpt.what()<<endl;*/}
+#ifdef HAVE_IFPACK_DYNAMIC_FACTORY
+  catch(InvalidParameterName &excpt)  {/*rv=false; std::cout<<excpt.what()<<std::endl;*/}
+#else
+  catch(InvalidParameterName &excpt)  {rv=false; std::cout<<excpt.what()<<std::endl;}
+#endif
   catch(InvalidParameterType &excpt)  {rv=false; std::cout<<excpt.what()<<std::endl;}
   catch(InvalidParameterValue &excpt) {rv=false; std::cout<<excpt.what()<<std::endl;}
   catch(...) {rv=false;}

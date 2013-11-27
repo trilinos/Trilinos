@@ -50,6 +50,7 @@
 
 #include "Ifpack_ShyLU.h"
 #include "Teuchos_Time.hpp"
+#include "Ifpack_config.h"
 
 #include <IQRSolver.h>
 
@@ -227,7 +228,11 @@ int Ifpack_ShyLU::Initialize()
 
 int Ifpack_ShyLU::SetParameters(Teuchos::ParameterList& parameterlist)
 {
+#ifdef HAVE_IFPACK_DYNAMIC_FACTORY
+    List_ = parameterlist.sublist("ShyLU list", true);
+#else
     List_ = parameterlist;
+#endif
     return 0;
 }
 
