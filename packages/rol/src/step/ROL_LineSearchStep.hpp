@@ -16,6 +16,7 @@
 #include "ROL_Step.hpp"
 #include "ROL_Secant.hpp"
 #include "ROL_Krylov.hpp"
+#include "ROL_NonlinearCG.hpp"
 #include "ROL_LineSearch.hpp"
 #include <sstream>
 #include <iomanip>
@@ -34,6 +35,7 @@ private:
 
   Teuchos::RCP<Secant<Real> >     secant_;
   Teuchos::RCP<Krylov<Real> >     krylov_;
+  Teuchos::RCP<NonlinearCG<Real> >  nlcg_;
   Teuchos::RCP<LineSearch<Real> > lineSearch_;
 
   int iterKrylov_;
@@ -75,6 +77,11 @@ public:
     if ( edesc_ == DESCENT_SECANT || edesc_ == DESCENT_SECANTPRECOND ) {
       secant_ = getSecant<Real>(esec_,L,BBtype);
     }
+
+    nlcg_ = Teuchos::null;
+    if ( edesc_ == DESCENT_NONLINEARCG ) {
+      nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(NONLINEARCG_HAGAR_ZHANG) );
+    }
   }
 
   LineSearchStep( ELineSearch          els   = LINESEARCH_BACKTRACKING,
@@ -113,15 +120,17 @@ public:
     else if ( edesc_ == DESCENT_SECANT ) {
       secant_->applyH(s,*(Step<Real>::state_->gradientVec),x);
     }
+    else if ( edesc_ == DESCENT_NONLINEARCG ) {
+      nlcg_->run(s,*(Step<Real>::state_->gradientVec),x,obj);
+    }
 
     // Check if s is a descent direction
-    Real gs = (Step<Real>::state_->gradientVec)->dot(s);
-    if ( gs <= 0.0 || flagKrylov_ == 2 || edesc_ == DESCENT_STEEPEST ) {
+    Real gs = -(Step<Real>::state_->gradientVec)->dot(s);
+    if ( gs > 0.0 || flagKrylov_ == 2 || edesc_ == DESCENT_STEEPEST ) {
       s.set(*(Step<Real>::state_->gradientVec));
-      gs = (Step<Real>::state_->gradientVec)->dot(s);
+      gs = -(Step<Real>::state_->gradientVec)->dot(s);
     }
     s.scale(-1.0);
-    gs *= -1.0;
 
     // Perform line search
     Real alpha = 0.0;

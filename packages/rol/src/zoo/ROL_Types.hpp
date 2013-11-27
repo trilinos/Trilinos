@@ -22,6 +22,7 @@
 #endif
 
 #include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_TestForException.hpp>
 
 /** \def    ROL_NUM_CHECKDERIV_STEPS
     \brief  Number of steps for derivative checks.
@@ -38,10 +39,11 @@ namespace ROL {
    */
   static const double ROL_THRESHOLD = 10.0 * ROL_EPSILON;
 
-  /** \enum   ROL::ESecant
+  /** \enum   ROL::EDescent
       \brief  Enumeration of descent direction types.
 
       \arg    STEEPEST        describe
+      \arg    NONLINEARCG     describe
       \arg    SECANT          describe
       \arg    NEWTON          describe 
       \arg    NEWTONKRYLOV    describe
@@ -108,7 +110,7 @@ namespace ROL {
   }
 
   /** \enum   ROL::ESecant
-      \brief  Enumeration of descent direction types.
+      \brief  Enumeration of secant update algorithms.
 
       \arg    LBFGS           describe
       \arg    LDFP            describe
@@ -168,6 +170,84 @@ namespace ROL {
 
   inline ESecant operator--(ESecant &type, int) {
     ESecant oldval = type;
+    --type;
+    return oldval;
+  }
+
+  /** \enum   ROL::ENonlinearCG
+      \brief  Enumeration of nonlinear CG algorithms.
+
+      \arg    HESTENES_STIEFEL   describe
+      \arg    FLETCHER_REEVES    describe
+      \arg    DANIEL             describe 
+      \arg    POLAK_RIBIERE      describe
+      \arg    FLETCHER_CONJDESC  describe
+      \arg    LIU_STOREY         describe
+      \arg    DAI_YUAN           describe
+      \arg    HAGAR_ZHANG        describe
+   */
+  enum ENonlinearCG{
+    NONLINEARCG_HESTENES_STIEFEL = 0,
+    NONLINEARCG_FLETCHER_REEVES,
+    NONLINEARCG_DANIEL,
+    NONLINEARCG_POLAK_RIBIERE,
+    NONLINEARCG_FLETCHER_CONJDESC,
+    NONLINEARCG_LIU_STOREY,
+    NONLINEARCG_DAI_YUAN,
+    NONLINEARCG_HAGAR_ZHANG,
+    NONLINEARCG_LAST
+  };
+
+  inline std::string ENonlinearCGToString(ENonlinearCG tr) {
+    std::string retString;
+    switch(tr) {
+      case NONLINEARCG_HESTENES_STIEFEL:      retString = "Hestenes-Stiefel";            break;
+      case NONLINEARCG_FLETCHER_REEVES:       retString = "Fletcher-Reeves";             break;
+      case NONLINEARCG_DANIEL:                retString = "Daniel (uses Hessian)";       break;
+      case NONLINEARCG_POLAK_RIBIERE:         retString = "Polak-Ribiere";               break;
+      case NONLINEARCG_FLETCHER_CONJDESC:     retString = "Fletcher Conjugate Descent";  break;
+      case NONLINEARCG_LIU_STOREY:            retString = "Liu-Storey";                  break;
+      case NONLINEARCG_DAI_YUAN:              retString = "Dai-Yuan";                    break;
+      case NONLINEARCG_HAGAR_ZHANG:           retString = "Hagar-Zhang";                 break;
+      case NONLINEARCG_LAST:                  retString = "Last Type (Dummy)";           break;
+      default:                                retString = "INVALID ENonlinearCG";
+    }
+    return retString;
+  }
+  
+  /** \brief  Verifies validity of a NonlinearCG enum.
+    
+      \param  tr  [in]  - enum of the NonlinearCG
+      \return 1 if the argument is a valid NonlinearCG; 0 otherwise.
+    */
+  inline int isValidNonlinearCG(ENonlinearCG s) {
+    return( (s == NONLINEARCG_HESTENES_STIEFEL)  ||
+            (s == NONLINEARCG_FLETCHER_REEVES)   ||
+            (s == NONLINEARCG_DANIEL)            ||
+            (s == NONLINEARCG_POLAK_RIBIERE)     ||
+            (s == NONLINEARCG_FLETCHER_CONJDESC) ||
+            (s == NONLINEARCG_LIU_STOREY)        ||
+            (s == NONLINEARCG_DAI_YUAN)          ||
+            (s == NONLINEARCG_HAGAR_ZHANG)
+          );
+  }
+
+  inline ENonlinearCG & operator++(ENonlinearCG &type) {
+    return type = static_cast<ENonlinearCG>(type+1);
+  }
+
+  inline ENonlinearCG operator++(ENonlinearCG &type, int) {
+    ENonlinearCG oldval = type;
+    ++type;
+    return oldval;
+  }
+
+  inline ENonlinearCG & operator--(ENonlinearCG &type) {
+    return type = static_cast<ENonlinearCG>(type-1);
+  }
+
+  inline ENonlinearCG operator--(ENonlinearCG &type, int) {
+    ENonlinearCG oldval = type;
     --type;
     return oldval;
   }

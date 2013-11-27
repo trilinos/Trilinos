@@ -93,7 +93,7 @@ public:
       }
       tmp  = gv;         
       gv   = v->dot(*gnew); 
-      beta = gv/tmp;  
+      beta = gv/tmp;
  
       p->scale(beta);
       p->axpy(1.0,*v);

@@ -6,7 +6,7 @@
     \brief Test Rosenbrock.
 */
 
-#define USE_HESSVEC 0
+#define USE_HESSVEC 1
 
 #include "ROL_TestObjectives.hpp"
 #include "ROL_LineSearchStep.hpp"
@@ -42,26 +42,27 @@ int main(int argc, char *argv[]) {
     //ROL::EDescent edesc = ROL::DESCENT_STEEPEST;
     //ROL::EDescent edesc = ROL::DESCENT_SECANT;
     //ROL::EDescent edesc = ROL::DESCENT_NEWTON;
-    ROL::EDescent edesc = ROL::DESCENT_NEWTONKRYLOV;
+    //ROL::EDescent edesc = ROL::DESCENT_NEWTONKRYLOV;
+    ROL::EDescent edesc = ROL::DESCENT_NONLINEARCG;
     //ROL::EDescent edesc = ROL::DESCENT_SECANTPRECOND;
 
     // Define Secant Type
-    //ROL::ESecant esec = ROL::SECANT_LBFGS;
-    ROL::ESecant esec = ROL::SECANT_LDFP;
+    ROL::ESecant esec = ROL::SECANT_LBFGS;
+    //ROL::ESecant esec = ROL::SECANT_LDFP;
     //ROL::ESecant esec = ROL::SECANT_LSR1;
     //ROL::ESecant esec = ROL::SECANT_BARZILAIBORWEIN;
     int L        = 10;
     int BBtype   = 1;
 
     /* BEGIN LINE SEARCH STEP DEFINTION */
-    ROL::ELineSearch els = ROL::LINESEARCH_BACKTRACKING;
-    //ROL::ELineSearch els = ROL::LINESEARCH_CUBICINTERP;
+    //ROL::ELineSearch els = ROL::LINESEARCH_BACKTRACKING;
+    ROL::ELineSearch els = ROL::LINESEARCH_CUBICINTERP;
     //ROL::ELineSearch els = ROL::LINESEARCH_BISECTION;
     //ROL::ELineSearch els = ROL::LINESEARCH_GOLDENSECTION;
     //ROL::ELineSearch els = ROL::LINESEARCH_BRENTS;
 
-    ROL::ECurvatureCondition econd = ROL::CURVATURECONDITION_WOLFE;
-    //ROL::ECurvatureCondition econd = ROL::CURVATURECONDITION_STRONGWOLFE;
+    //ROL::ECurvatureCondition econd = ROL::CURVATURECONDITION_WOLFE;
+    ROL::ECurvatureCondition econd = ROL::CURVATURECONDITION_STRONGWOLFE;
     //ROL::ECurvatureCondition econd = ROL::CURVATURECONDITION_GOLDSTEIN;
     /* END LINE SEARCH STEP DEFINITION */
 
@@ -73,7 +74,7 @@ int main(int argc, char *argv[]) {
     /* END TRUST REGION STEP DEFINITION */ 
 
     // Define Status Test
-    ROL::StatusTest<RealT> status(1.e-10,1.e-12,100);    
+    ROL::StatusTest<RealT> status(1.e-8,1.e-12,1000);    
 
     for ( ROL::ETestObjectives objFunc = ROL::TESTOBJECTIVES_ROSENBROCK; objFunc < ROL::TESTOBJECTIVES_LAST; objFunc++ ) {
       *outStream << "\n\n" << ROL::ETestObjectivesToString(objFunc) << "\n\n";
@@ -155,7 +156,7 @@ int main(int argc, char *argv[]) {
                                           esec,L,BBtype);
       x.set(x0);
       ROL::DefaultAlgorithm<RealT> TR_algo(TR_step,status);
-      TR_algo.run(x, *obj);
+      //TR_algo.run(x, *obj);
       e.set(x);
       e.axpy(-1.0,z);
       *outStream << "\nNorm of Error: " << e.norm() << "\n";

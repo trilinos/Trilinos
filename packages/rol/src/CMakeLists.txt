@@ -119,6 +119,7 @@ APPEND_SET(HEADERS
 #
 
 APPEND_SET(SOURCES
+  ROL_Version.cpp
   )
 
 

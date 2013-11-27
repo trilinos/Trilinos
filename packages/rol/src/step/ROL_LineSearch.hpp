@@ -32,9 +32,7 @@ private:
   Real tol_;
   Real rho_;
   Real alpha0_;
-  Real gs_old_;
-  Real alpha_old_;
-  bool firstIt_;
+  bool useralpha_;
 
 public:
 
@@ -47,14 +45,14 @@ public:
     if ( c2_ <= c1_ ) {
       c1_ = 1.e-4;
       c2_ = 0.9;
-      if ( edesc_ == DESCENT_NONLINEARCG ) {
-        c2_ = 0.1;
-      }
+    }
+    if ( edesc_ == DESCENT_NONLINEARCG ) {
+      c2_ = 0.4;
     }
 
-    gs_old_    = 0.0;
-    alpha_old_ = 0.0;
-    firstIt_   = true;
+    alpha0_ = 0.0;
+    // TODO: Provide user interface!
+    useralpha_ = false;
   }
 
   bool status( const ELineSearch type, int &ls_neval, int &ls_ngrad, const Real alpha, 
@@ -76,9 +74,12 @@ public:
 
     // Check Curvature Condition
     bool curvcond = false;
-    if ( armijo && (type != LINESEARCH_BACKTRACKING && type != LINESEARCH_CUBICINTERP) ) {
-      if ( (econd_ == CURVATURECONDITION_GOLDSTEIN) && (fnew >= fold + (1.0-c1_)*alpha*sgold) ) {
-        curvcond = true;
+    if ( armijo && ((type != LINESEARCH_BACKTRACKING && type != LINESEARCH_CUBICINTERP) ||
+                    (edesc_ == DESCENT_NONLINEARCG)) ) {
+      if (econd_ == CURVATURECONDITION_GOLDSTEIN) {
+        if (fnew >= fold + (1.0-c1_)*alpha*sgold) {
+          curvcond = true;
+        }
       }
       else { 
         Teuchos::RCP<Vector<Real> > xnew = x.clone();
@@ -97,7 +98,12 @@ public:
     }
 
     if (type == LINESEARCH_BACKTRACKING || type == LINESEARCH_CUBICINTERP) {
-      return (armijo || itcond);
+      if (edesc_ == DESCENT_NONLINEARCG) {
+        return ((armijo && curvcond) || itcond);
+      }
+      else {
+        return (armijo || itcond);
+      }
     }
     else {
       return ((armijo && curvcond) || itcond);
@@ -107,14 +113,28 @@ public:
   void run( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
             const Real &gs, const Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj ) {
     // Determine Initial Step Length
-    alpha0_ = 1.0;
-    if ( firstIt_ == true ) {
-      firstIt_ = false;
+    if (useralpha_) {
+      alpha = alpha0_;
     }
-    else {
-      if ( edesc_ == DESCENT_STEEPEST || edesc_ == DESCENT_NONLINEARCG ) {
-        alpha0_ = alpha_old_*gs_old_/gs;      
+    else if ( edesc_ == DESCENT_STEEPEST || edesc_ == DESCENT_NONLINEARCG ) {
+      Teuchos::RCP<Vector<Real> > xnew = x.clone();
+      xnew->set(x);
+      xnew->plus(s);
+      Real ftol = 0.0;
+      // TODO: Think about reusing for efficiency!
+      Real fnew = obj.value(*xnew, ftol);
+      alpha = -gs/(2.0*(fnew-fval-gs));
+      xnew->set(x);
+      xnew->axpy(alpha,s);
+      fnew = obj.value(*xnew, ftol);
+      bool stat = status(els_,ls_neval,ls_ngrad,alpha,fval,gs,fnew,x,s,obj);
+      if (!stat) {
+        alpha = 1.0;
       }
+      ls_neval++;
+    }
+    else { // Newton-type methods
+      alpha = 1.0;
     }
 
     // Run Linesearch
@@ -136,16 +156,11 @@ public:
       goldensection( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj ); 
     }
 
-    // Update Storage
-    gs_old_    = gs;
-    alpha_old_ = alpha;
   }
 
   void simplebacktracking( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
                            const Real &gs, const Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj ) {
     Real tol = std::sqrt(ROL_EPSILON);
-
-    alpha = alpha0_;
 
     Teuchos::RCP<Vector<Real> > xnew = x.clone();
     xnew->set(x);
@@ -168,8 +183,6 @@ public:
                      const Real &gs, const Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj ) {
     Real tol = std::sqrt(ROL_EPSILON);
 
-    alpha = alpha0_;
-
     Teuchos::RCP<Vector<Real> > xnew = x.clone();
     xnew->set(x);
     xnew->axpy(alpha, s);
@@ -186,9 +199,12 @@ public:
     Real x1     = 0.0;
     Real x2     = 0.0;
 
+    bool first_iter = true;
+
     while ( !status(LINESEARCH_CUBICINTERP,ls_neval,ls_ngrad,alpha,fold,gs,fval,x,s,obj) ) {
-      if ( alpha == alpha0_ ) {
+      if ( first_iter ) {
         alpha1 = -gs*alpha*alpha/(2.0*(fval-fold-gs*alpha));
+        first_iter = false;
       }
       else {
         x1 = fval-fold-alpha*gs;
@@ -228,7 +244,7 @@ public:
     Real tol = std::sqrt(ROL_EPSILON);
 
     Real tl = 0.0;
-    Real tr = alpha0_;
+    Real tr = alpha;
  
     Teuchos::RCP<Vector<Real> > xnew = x.clone();
     xnew->set(x);
@@ -340,7 +356,7 @@ public:
     Teuchos::RCP<Vector<Real> > grad = x.clone();
     Real c   = (-1.0+sqrt(5.0))/2.0;
     Real tl  = 0.0;
-    Real tr  = alpha0_;
+    Real tr  = alpha;
 
     xnew->set(x);
     xnew->axpy(tr,s);
@@ -450,7 +466,7 @@ public:
 
     Teuchos::RCP<Vector<Real> > xnew = x.clone();
     Real tl = 0.0;         // Left interval point
-    Real tr = alpha0_;     // Right interval point
+    Real tr = alpha;     // Right interval point
     Real tc = 0.0;         // Center interval point
 
     xnew->set(x);
