@@ -236,6 +236,7 @@ namespace MueLu {
     Teuchos::ParameterList            coarsestSmooList_;
     std::string                       ifpack2Type_;
     Teuchos::ParameterList            ifpack2List_;
+    Teuchos::ParameterList            ifpack2precList_;  // separate parameter list for inner preconditioner
     
     // Operator and Preconditioner
     RCP< MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO> > MueLuOp_;

@@ -22,6 +22,7 @@ APPEND_SET(SOURCES
 Ifpack2_UnitTestMain.cpp
 Ifpack2_UnitTestTemplate.cpp
 Ifpack2_UnitTestAdditiveSchwarz.cpp
+Ifpack2_UnitTestAmesos2solver.cpp
 Ifpack2_UnitTestBlockRelaxation.cpp
 Ifpack2_UnitTestChebyshev.cpp
 Ifpack2_UnitTestContainer.cpp

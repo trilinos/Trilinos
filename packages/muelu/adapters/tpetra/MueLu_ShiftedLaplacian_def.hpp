@@ -195,6 +195,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setSm
   else if(stype==2) { Smoother_="ilu";        }
   else if(stype==3) { Smoother_="schwarz";    }
   else if(stype==4) { Smoother_="relaxation"; }
+  else if(stype==5) { Smoother_="block diag"; }
   else              { Smoother_="gmres";      }
 
 }
@@ -308,7 +309,10 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
     ifpack2List_.set("krylov: residual tolerance",1e-6);
     ifpack2List_.set("krylov: block size",1);
     ifpack2List_.set("krylov: zero starting solution",true);
-    ifpack2List_.set("krylov: preconditioner type",0);
+    ifpack2List_.set("krylov: preconditioner type",1);
+    // Parameter list for inner preconditioner
+    ifpack2precList_.set("relaxation: sweeps",1);
+    ifpack2precList_.set("relaxation: zero starting solution",true);
     // must use FGMRES for GMRES smoothing
     FGMRESoption_=true;
   }
@@ -340,6 +344,10 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
     ifpack2List_.set("relaxation: sweeps", nsweeps_);
     ifpack2List_.set("relaxation: damping factor", (SC) 0.5);
     ifpack2List_.set("relaxation: zero starting solution", true);
+  }
+  else if(Smoother_=="block diag") {
+    // block diagonal with amesos2 as direct solver
+    ifpack2Type_ = "AMESOS2";
   }
   smooProto_ = rcp( new Ifpack2Smoother(ifpack2Type_,ifpack2List_) );
   smooFact_  = rcp( new SmootherFactory(smooProto_) );
@@ -474,7 +482,10 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
     ifpack2List_.set("krylov: residual tolerance",1e-6);
     ifpack2List_.set("krylov: block size",1);
     ifpack2List_.set("krylov: zero starting solution",true);
-    ifpack2List_.set("krylov: preconditioner type",0);
+    ifpack2List_.set("krylov: preconditioner type",1);
+    // Parameter list for inner preconditioner
+    ifpack2precList_.set("relaxation: sweeps",1);
+    ifpack2precList_.set("relaxation: zero starting solution",true);
     // must use FGMRES for GMRES smoothing
     FGMRESoption_=true;
   }
@@ -506,6 +517,10 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
     ifpack2List_.set("relaxation: sweeps", nsweeps_);
     ifpack2List_.set("relaxation: damping factor", (SC) 0.5);
     ifpack2List_.set("relaxation: zero starting solution", true);
+  }
+  else if(Smoother_=="block diag") {
+    // block diagonal with amesos2 as direct solver
+    ifpack2Type_ = "AMESOS2";
   }
   smooProto_ = rcp( new Ifpack2Smoother(ifpack2Type_,ifpack2List_) );
   smooFact_  = rcp( new SmootherFactory(smooProto_) );

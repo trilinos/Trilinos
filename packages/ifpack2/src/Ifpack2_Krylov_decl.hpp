@@ -55,9 +55,10 @@
 #include "Ifpack2_Heap.hpp"
 #include "Ifpack2_Parameters.hpp"
 #include "Ifpack2_Relaxation.hpp"
-#include "Ifpack2_Chebyshev.hpp"
 #include "Ifpack2_ILUT.hpp"
 #include "Ifpack2_AdditiveSchwarz.hpp"
+#include "Ifpack2_Chebyshev.hpp"
+#include "Ifpack2_DenseContainer.hpp"
 
 #include <BelosConfigDefs.hpp>
 #include <BelosSolverManager.hpp>
@@ -74,11 +75,6 @@
 #include <iostream>
 #include <string>
 #include <sstream>
-
-
-#include <string>
-#include <sstream>
-#include <iostream>
 #include <cmath>
 
 namespace Teuchos {
@@ -321,12 +317,13 @@ namespace Ifpack2 {
     //! If true, the starting solution is always the zero vector.
     bool ZeroStartingSolution_;
     //! Preconditioner Type
-    // 1 for relaxation (default)
+    // 1 for relaxation
     // 2 for ILUT
-    // 3 for Chebyshev
+    // 3 for Additive Schwarz with ILUT
+    // 4 for Chebyshev
     int PreconditionerType_;
-    //! Teuchos parameter list
-    Teuchos::ParameterList params_;
+    //! Teuchos parameter lists
+    Teuchos::ParameterList params_, precParams_;
 
     //! Condition number estimate
     magnitude_type Condest_;
