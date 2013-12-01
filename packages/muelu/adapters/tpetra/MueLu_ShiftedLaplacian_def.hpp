@@ -278,6 +278,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
   Rfact_     = rcp( new GenericRFactory             );
   Acfact_    = rcp( new RAPFactory                  );
   Acshift_   = rcp( new RAPShiftFactory             );
+  Dropfact_  = rcp( new CoalesceDropFactory         );
   Aggfact_   = rcp( new CoupledAggregationFactory   );
   UCaggfact_ = rcp( new UncoupledAggregationFactory );
   Manager_   = rcp( new FactoryManager              );
@@ -291,6 +292,11 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
     solverType_ = 1;
   }
   Manager_   -> SetFactory("Ptent", TentPfact_);
+  Teuchos::ParameterList params;
+  params.set("lightweight wrap",true);
+  params.set("algorithm","original");
+  Dropfact_  -> SetParameterList(params);
+  Manager_   -> SetFactory("Graph", Dropfact_);
   Manager_   -> SetFactory("Smoother", Teuchos::null);
   Manager_   -> SetFactory("CoarseSolver", Teuchos::null);
   if(Aggregation_=="coupled") {
@@ -453,6 +459,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   Rfact_     = rcp( new GenericRFactory             );
   Acfact_    = rcp( new RAPFactory                  );
   Acshift_   = rcp( new RAPShiftFactory             );
+  Dropfact_  = rcp( new CoalesceDropFactory         );
   Aggfact_   = rcp( new CoupledAggregationFactory   );
   UCaggfact_ = rcp( new UncoupledAggregationFactory );
   Manager_   = rcp( new FactoryManager              );
@@ -466,6 +473,11 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
     solverType_ = 1;
   }
   Manager_   -> SetFactory("Ptent", TentPfact_);
+  Teuchos::ParameterList params;
+  params.set("lightweight wrap",true);
+  params.set("algorithm","original");
+  Dropfact_  -> SetParameterList(params);
+  Manager_   -> SetFactory("Graph", Dropfact_);
   if(Aggregation_=="coupled") {
     Manager_   -> SetFactory("Aggregates", Aggfact_   );
   }

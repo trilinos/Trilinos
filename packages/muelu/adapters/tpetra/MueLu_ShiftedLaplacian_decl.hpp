@@ -229,6 +229,7 @@ namespace MueLu {
     RCP<GenericRFactory>              Rfact_;
     RCP<RAPFactory>                   Acfact_;
     RCP<RAPShiftFactory>              Acshift_;
+    RCP<CoalesceDropFactory>          Dropfact_;
     RCP<CoupledAggregationFactory>    Aggfact_;
     RCP<UncoupledAggregationFactory>  UCaggfact_;
     RCP<SmootherPrototype>            smooProto_, coarsestSmooProto_;
