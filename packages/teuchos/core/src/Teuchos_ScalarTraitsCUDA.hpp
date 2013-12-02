@@ -47,9 +47,11 @@
 */
  
 #include "Teuchos_ScalarTraitsDecl.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
 namespace Teuchos {
 
+#ifdef __CUDA_ARCH__
 template<>
 struct ScalarTraits<int>
 {
@@ -114,6 +116,28 @@ struct ScalarTraits<long int>
   static inline __device__ __host__ long int pow(long int x, long int y) { return (long int)powf((float)x,(float)y); }  // perhaps this cast should be replaced by an explicit call like __float2int_rn
 };
 
+template<>
+struct ScalarTraits<long unsigned int>
+{
+  typedef long unsigned int magnitudeType;
+  typedef long unsigned int halfPrecision;
+  typedef long unsigned int doublePrecision;
+  static const bool isComplex = false;
+  static const bool isOrdinal = true;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = false;
+  // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
+  static inline __device__ __host__ magnitudeType magnitude(long unsigned int a) { return (long unsigned int)fabsf((float)a); }
+  static inline __device__ __host__ long unsigned int zero()  { return 0; }
+  static inline __device__ __host__ long unsigned int one()   { return 1; }
+  static inline __device__ __host__ long unsigned int conjugate(long unsigned int x) { return x; }
+  static inline __device__ __host__ long unsigned int real(long unsigned int x) { return x; }
+  static inline __device__ __host__ long unsigned int imag(long unsigned int) { return 0; }
+  static inline __device__ __host__ bool isnaninf(int) { return false; }
+  static inline __device__ __host__ long unsigned int squareroot(long unsigned int x) { return (long unsigned int)sqrtf((float)x); }          // perhaps this cast should be replaced by an explicit call like __float2int_rn
+  static inline __device__ __host__ long unsigned int pow(long unsigned int x, long unsigned int y) { return (long unsigned int)powf((float)x,(float)y); }  // perhaps this cast should be replaced by an explicit call like __float2int_rn
+};
+
 #ifdef HAVE_KOKKOSCLASSIC_CUDA_FLOAT
 template<>
 struct ScalarTraits<float>
@@ -167,6 +191,7 @@ struct ScalarTraits<double>
   static inline __device__ __host__ double pow(double x, double y) { return pow(x,y); }
 };
 #endif // HAVE_KOKKOSCLASSIC_CUDA_DOUBLE
+#endif // __CUDA_ARCH__
 
 } // Teuchos namespace
 

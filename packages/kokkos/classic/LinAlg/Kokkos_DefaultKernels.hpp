@@ -198,18 +198,20 @@ namespace KokkosClassic {
   struct DefaultKernels<double,int,ThrustGPUNode> {
     typedef CUSPARSEOps<void,ThrustGPUNode> SparseOps;
   };
-  template <>
+/*  template <>
   struct DefaultKernels<void,int,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > {
-    typedef CUSPARSEOps<void,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > SparseOps;
+//    typedef CUSPARSEOps<void,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > SparseOps;
+    typedef DefaultHostSparseOps <void  , int,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> , details::DefaultCRSAllocator>  SparseOps;
   };
   template <>
   struct DefaultKernels<float,int,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > {
-    typedef CUSPARSEOps<void,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > SparseOps;
+//    typedef CUSPARSEOps<void,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > SparseOps;
+    typedef DefaultHostSparseOps <float  , int,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> , details::DefaultCRSAllocator>  SparseOps;
   };
   template <>
   struct DefaultKernels<double,int,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > {
-    typedef CUSPARSEOps<void,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > SparseOps;
-  };
+    typedef DefaultHostSparseOps <double  , int,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> , details::DefaultCRSAllocator>  SparseOps;
+  };*/
 #endif
 
 } // namespace KokkosClassic

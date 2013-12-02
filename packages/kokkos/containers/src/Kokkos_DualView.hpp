@@ -66,17 +66,27 @@ public:
   /* Define base types for Device and Host */
 
   typedef Kokkos::View<T,L,D> t_dev ;
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM)
+  typedef t_dev t_host;
+#else
   typedef typename t_dev::HostMirror t_host ;
-
+#endif
   /* Define typedefs for different usage scenarios */
 
   // Define const view types
   typedef Kokkos::View<typename t_dev::const_data_type,L,D> t_dev_const;
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM)
+  typedef t_dev_const t_host_const;
+#else
   typedef typename t_dev_const::HostMirror t_host_const;
-
+#endif
   // Define const randomread view types
   typedef Kokkos::View<typename t_dev::const_data_type,L,D,Kokkos::MemoryRandomRead> t_dev_const_randomread ;
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM)
+  typedef t_dev_const_randomread t_host_const_randomread;
+#else
   typedef typename t_dev_const_randomread::HostMirror t_host_const_randomread;
+#endif
 
   // Define unmanaged view types
   typedef Kokkos::View<T,L,D,Kokkos::MemoryUnmanaged> t_dev_um;
@@ -141,7 +151,11 @@ public:
     const size_t n6 = 0 ,
     const size_t n7 = 0 )
     : d_view( label, n0, n1, n2, n3, n4, n5, n6, n7 )
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM)
+    , h_view( d_view )
+#else
     , h_view( create_mirror_view( d_view ) )
+#endif
   {
     modified_host = 0;
     modified_device = 0;
@@ -194,8 +208,11 @@ public:
            const size_t n6 = 0 ,
            const size_t n7 = 0 ) {
      Kokkos::realloc(d_view,n0,n1,n2,n3,n4,n5,n6,n7);
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM)
+     h_view = d_view ;
+#else
      h_view = create_mirror_view( d_view );
-
+#endif
      /* Reset dirty flags */
      modified_device = modified_host = 0;
   }
@@ -213,7 +230,11 @@ public:
    if(modified_device >= modified_host) {
      /* Resize on Device */
      Kokkos::resize(d_view,n0,n1,n2,n3,n4,n5,n6,n7);
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM)
+     h_view = d_view ;
+#else
      h_view = create_mirror_view( d_view );
+#endif
 
      /* Mark Device copy as modified */
      modified_device++;
@@ -222,7 +243,11 @@ public:
      /* Realloc on Device */
 
      Kokkos::realloc(d_view,n0,n1,n2,n3,n4,n5,n6,n7);
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM)
+     t_host temp_view = d_view ;
+#else
      t_host temp_view = create_mirror_view( d_view );
+#endif
 
      /* Remap on Host */
      Kokkos::Impl::ViewRemap< t_host , t_host >( temp_view , h_view );

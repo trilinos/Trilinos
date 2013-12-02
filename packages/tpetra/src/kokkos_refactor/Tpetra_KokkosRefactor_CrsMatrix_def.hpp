@@ -658,8 +658,6 @@ namespace Tpetra {
 
       typename Graph::t_LocalOrdinal_1D::HostMirror h_inds = Kokkos::create_mirror_view(k_inds);
       typename t_ValuesType::HostMirror h_vals = Kokkos::create_mirror_view(k_vals);
-      Kokkos::deep_copy(h_inds,k_inds);
-      Kokkos::deep_copy(h_vals,k_vals);
 
       for (size_t row=0; row < numRows; ++row) {
               const size_t numentrs = numRowEntries_[row];
@@ -670,6 +668,8 @@ namespace Tpetra {
                          values2D_[row].begin() + numentrs,
                          h_vals.ptr_on_device() + h_tmpk_ptrs[row]);
       }
+      Kokkos::deep_copy(k_inds,h_inds);
+      Kokkos::deep_copy(k_vals,h_vals);
       /*for (size_t row=0; row < numRows; ++row) {
         const size_t numentrs = numRowEntries_[row];
         std::copy (lclInds2D_[row].begin(),
@@ -828,6 +828,7 @@ namespace Tpetra {
     }
     // The local matrix should be null, but we delete it first so that
     // any memory can be freed before we allocate the new one.
+    std::cout << "Values C: " << vals[0] << " " << k_vals[0] << std::endl;
     lclMatrix_ = null;
     lclMatrix_ = rcp (new local_matrix_type (staticGraph_->getLocalGraph (), lclparams));
     lclMatrix_->setValues (vals);
@@ -3607,9 +3608,9 @@ namespace Tpetra {
     const char tfecfFuncName[] = "localMultiply()";
 #endif // HAVE_TPETRA_DEBUG
     typedef Teuchos::ScalarTraits<RangeScalar> RST;
+#ifdef HAVE_TPETRA_DEBUG
     const KokkosClassic::MultiVector<DomainScalar,Node> *lclX = &X.getLocalMV();
     KokkosClassic::MultiVector<RangeScalar,Node>        *lclY = &Y.getLocalMVNonConst();
-#ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       mode == NO_TRANS && X.getMap() != getColMap() && *X.getMap() != *getColMap(),
       std::runtime_error, " X is not distributed according to the appropriate map.");
@@ -3643,7 +3644,7 @@ namespace Tpetra {
     }
     else {
       // Y = alpha*op(M) + beta*Y
-      lclMatOps_->template multiply<DomainScalar,RangeScalar>(mode, alpha, *lclX, beta, *lclY);
+      //lclMatOps_->template multiply<DomainScalar,RangeScalar>(mode, alpha, *lclX, beta, *lclY);
       Kokkos::MV_Multiply(beta,Y.getLocalView().d_view,alpha,k_lclMatrix_,X.getLocalView().d_view);
     }
   }

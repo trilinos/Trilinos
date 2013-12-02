@@ -1169,89 +1169,123 @@ struct V_AddVectorFunctor
   }
 };
 
+template<class RVector, class XVector, int scalar_x>
+struct V_AddVectorSelfFunctor
+{
+  typedef typename RVector::device_type        device_type;
+  typedef typename RVector::size_type            size_type;
+  typedef typename XVector::scalar_type      scalar_type;
+  RVector   m_r ;
+  typename XVector::const_type  m_x ;
+  const scalar_type m_a;
+
+  V_AddVectorSelfFunctor(const RVector& r, const scalar_type& a,const XVector& x):
+    m_r(r),m_x(x),m_a(a)
+  { }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const size_type i ) const
+  {
+  if((scalar_x==1))
+      m_r(i) += m_x(i);
+  if((scalar_x==-1))
+      m_r(i) -= m_x(i);
+  if((scalar_x==2))
+      m_r(i) += m_a*m_x(i);
+  }
+};
 template<class RVector, class XVector, class YVector, int doalpha, int dobeta>
 RVector V_AddVector( const RVector & r,const typename XVector::scalar_type &av,const XVector & x,
-		const typename XVector::scalar_type &bv, const YVector & y)
+		const typename XVector::scalar_type &bv, const YVector & y,int n=-1)
 {
-  V_AddVectorFunctor<RVector,XVector,YVector,doalpha,dobeta> f(r,av,x,bv,y);
-  vector_parallel_for(x.dimension_0(),f);
+  if(n == -1) n = x.dimension_0();
+  if(r.ptr_on_device()==x.ptr_on_device() && doalpha == 1) {
+    V_AddVectorSelfFunctor<RVector,YVector,dobeta> f(r,bv,y);
+    parallel_for(n,f);
+  } else if(r.ptr_on_device()==y.ptr_on_device() && dobeta == 1) {
+    V_AddVectorSelfFunctor<RVector,XVector,doalpha> f(r,av,x);
+    parallel_for(n,f);
+  } else {
+    V_AddVectorFunctor<RVector,XVector,YVector,doalpha,dobeta> f(r,av,x,bv,y);
+    parallel_for(n,f);
+  }
   return r;
 }
 
 template<class RVector, class XVector, class YVector>
 RVector V_AddVector( const RVector & r,const typename XVector::scalar_type &av,const XVector & x,
-		const typename YVector::scalar_type &bv, const YVector & y,
+		const typename YVector::scalar_type &bv, const YVector & y, int n = -1,
 		int a=2,int b=2)
 {
 	if(a==-1) {
 	  if(b==-1)
-		  V_AddVector<RVector,XVector,YVector,-1,-1>(r,av,x,bv,y);
+		  V_AddVector<RVector,XVector,YVector,-1,-1>(r,av,x,bv,y,n);
 	  else if(b==0)
-		  V_AddVector<RVector,XVector,YVector,-1,0>(r,av,x,bv,y);
+		  V_AddVector<RVector,XVector,YVector,-1,0>(r,av,x,bv,y,n);
 	  else if(b==1)
-	      V_AddVector<RVector,XVector,YVector,-1,1>(r,av,x,bv,y);
+	      V_AddVector<RVector,XVector,YVector,-1,1>(r,av,x,bv,y,n);
 	  else
-	      V_AddVector<RVector,XVector,YVector,-1,2>(r,av,x,bv,y);
+	      V_AddVector<RVector,XVector,YVector,-1,2>(r,av,x,bv,y,n);
 	} else if (a==0) {
 	  if(b==-1)
-		  V_AddVector<RVector,XVector,YVector,0,-1>(r,av,x,bv,y);
+		  V_AddVector<RVector,XVector,YVector,0,-1>(r,av,x,bv,y,n);
 	  else if(b==0)
-		  V_AddVector<RVector,XVector,YVector,0,0>(r,av,x,bv,y);
+		  V_AddVector<RVector,XVector,YVector,0,0>(r,av,x,bv,y,n);
 	  else if(b==1)
-	      V_AddVector<RVector,XVector,YVector,0,1>(r,av,x,bv,y);
+	      V_AddVector<RVector,XVector,YVector,0,1>(r,av,x,bv,y,n);
 	  else
-	      V_AddVector<RVector,XVector,YVector,0,2>(r,av,x,bv,y);
+	      V_AddVector<RVector,XVector,YVector,0,2>(r,av,x,bv,y,n);
 	} else if (a==1) {
 	  if(b==-1)
-		  V_AddVector<RVector,XVector,YVector,1,-1>(r,av,x,bv,y);
+		  V_AddVector<RVector,XVector,YVector,1,-1>(r,av,x,bv,y,n);
 	  else if(b==0)
-		  V_AddVector<RVector,XVector,YVector,1,0>(r,av,x,bv,y);
+		  V_AddVector<RVector,XVector,YVector,1,0>(r,av,x,bv,y,n);
 	  else if(b==1)
-	      V_AddVector<RVector,XVector,YVector,1,1>(r,av,x,bv,y);
+	      V_AddVector<RVector,XVector,YVector,1,1>(r,av,x,bv,y,n);
 	  else
-	      V_AddVector<RVector,XVector,YVector,1,2>(r,av,x,bv,y);
+	      V_AddVector<RVector,XVector,YVector,1,2>(r,av,x,bv,y,n);
 	} else if (a==2) {
 	  if(b==-1)
-		  V_AddVector<RVector,XVector,YVector,2,-1>(r,av,x,bv,y);
+		  V_AddVector<RVector,XVector,YVector,2,-1>(r,av,x,bv,y,n);
 	  else if(b==0)
-		  V_AddVector<RVector,XVector,YVector,2,0>(r,av,x,bv,y);
+		  V_AddVector<RVector,XVector,YVector,2,0>(r,av,x,bv,y,n);
 	  else if(b==1)
-	      V_AddVector<RVector,XVector,YVector,2,1>(r,av,x,bv,y);
+	      V_AddVector<RVector,XVector,YVector,2,1>(r,av,x,bv,y,n);
 	  else
-	      V_AddVector<RVector,XVector,YVector,2,2>(r,av,x,bv,y);
+	      V_AddVector<RVector,XVector,YVector,2,2>(r,av,x,bv,y,n);
 	}
 	return r;
 }
 
 template<class RVector,class XVector,class YVector>
-RVector V_Add( const RVector & r, const XVector & x, const YVector & y)
+RVector V_Add( const RVector & r, const XVector & x, const YVector & y, int n=-1)
 {
-	return V_AddVector( r,1,x,1,y,1,1);
+	return V_AddVector( r,1,x,1,y,n,1,1);
 }
 
 template<class RVector,class XVector,class YVector>
-RVector V_Add( const RVector & r, const XVector & x, const typename XVector::scalar_type  & bv, const YVector & y )
+RVector V_Add( const RVector & r, const XVector & x, const typename XVector::scalar_type  & bv, const YVector & y,int n=-1 )
 {
   int b = 2;
- /* if(bv == 0) b = 0;
-  if(bv == 1) b = 1;
-  if(bv == -1) b = -1;*/
-  return V_AddVector(r,bv,x,bv,y,1,b);
+  //if(bv == 0) b = 0;
+  //if(bv == 1) b = 1;
+  //if(bv == -1) b = -1;
+  return V_AddVector(r,bv,x,bv,y,n,1,b);
 }
 
 template<class RVector,class XVector,class YVector>
-RVector V_Add( const RVector & r, const typename XVector::scalar_type  & av, const XVector & x, const typename XVector::scalar_type  & bv, const YVector & y )
+RVector V_Add( const RVector & r, const typename XVector::scalar_type  & av, const XVector & x, const typename XVector::scalar_type  & bv, const YVector & y,int n=-1 )
 {
   int a = 2;
   int b = 2;
-  /*if(av == 0) a = 0;
-  if(av == 1) a = 1;
-  if(av == -1) a = -1;
-  if(bv == 0) b = 0;
-  if(bv == 1) b = 1;
-  if(bv == -1) b = -1;*/
+  //if(av == 0) a = 0;
+  //if(av == 1) a = 1;
+  //if(av == -1) a = -1;
+  //if(bv == 0) b = 0;
+  //if(bv == 1) b = 1;
+  //if(bv == -1) b = -1;
 
-  return V_AddVector(r,av,x,bv,y,a,b);
+  return V_AddVector(r,av,x,bv,y,n,a,b);
 }
 
 template<class XVector, class YVector>

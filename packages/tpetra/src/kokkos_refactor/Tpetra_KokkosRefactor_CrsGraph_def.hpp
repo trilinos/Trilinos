@@ -606,14 +606,12 @@ namespace Tpetra {
       }
 
       if (lg == LocalIndices) {
-        std::cout << "Allocate Local\n ";
         // lclInds1D_ = LocalMatOps::template allocStorage<LocalOrdinal>( getRowMap()->getNode(), rowPtrs_() );
         k_lclInds1D_ = t_LocalOrdinal_1D("Tpetra::CrsGraph::lclInds1D_",*(rowPtrs_.end()-1));
         lclInds1D_ = Teuchos::arcp(k_lclInds1D_.ptr_on_device(), 0, k_lclInds1D_.dimension_0(),
                                    Kokkos::Compat::deallocator(k_lclInds1D_), false);
       }
       else {
-        std::cout << "Allocate Global\n ";
         // gblInds1D_ = LocalMatOps::template allocStorage<GlobalOrdinal>( getRowMap()->getNode(), rowPtrs_() );
         k_gblInds1D_ = t_GlobalOrdinal_1D("Tpetra::CrsGraph::gblInds1D_",*(rowPtrs_.end()-1));
         gblInds1D_ = Teuchos::arcp(k_gblInds1D_.ptr_on_device(), 0, k_gblInds1D_.dimension_0(),

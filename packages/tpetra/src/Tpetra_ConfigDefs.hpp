@@ -119,7 +119,7 @@ namespace Tpetra {
 
 #include <functional>
 
-#ifndef __CUDACC__
+//#ifndef __CUDACC__
 // mem management
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ArrayRCP.hpp>
@@ -137,7 +137,7 @@ namespace Tpetra {
 #include <Teuchos_CommHelpers.hpp>
 // misc
 #include <Teuchos_ParameterList.hpp>
-#endif
+//#endif
 
 //! Namespace for Tpetra classes and methods
 namespace Tpetra {
@@ -184,7 +184,7 @@ namespace Tpetra {
   };
 
   // import Teuchos memory management classes into Tpetra
-#ifndef __CUDACC__
+//#ifndef __CUDACC__
   using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
   using Teuchos::Array;
@@ -209,7 +209,7 @@ namespace Tpetra {
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
   using Teuchos::sublist;
-#endif
+//#endif
 
   /// \class project1st
   /// \brief Binary function that returns its first argument.
