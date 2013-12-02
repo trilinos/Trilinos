@@ -78,6 +78,7 @@
 #include <Ifpack2_ConfigDefs.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Ifpack2_Version.hpp>
+#include <Amesos2_config.h>
 #include <iostream>
 
 #if defined(HAVE_IFPACK2_QD) && !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)

@@ -48,6 +48,7 @@
 #include "Ifpack2_Chebyshev.hpp"
 #include "Ifpack2_RILUK.hpp"
 #include "Ifpack2_ILUT.hpp"
+#include "Amesos2_config.h"
 #if defined(HAVE_AMESOS2_SUPERLU) || defined(HAVE_AMESOS2_SUPERLUDIST) || defined(HAVE_AMESOS2_KLU) || defined(HAVE_AMESOS2_LAPACK)
 #include "Ifpack2_Amesos2solver.hpp"
 #endif

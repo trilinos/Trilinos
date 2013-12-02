@@ -49,7 +49,6 @@
 #include <Ifpack2_ConfigDefs.hpp>
 #include <Ifpack2_Preconditioner.hpp>
 #include <Ifpack2_Details_CanChangeMatrix.hpp>
-#include <Amesos2_config.h>
 #include <Amesos2.hpp>
 
 #include <string>

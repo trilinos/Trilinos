@@ -51,6 +51,7 @@
 #include <Ifpack2_Heap.hpp>
 #include <Ifpack2_Condest.hpp>
 #include <Ifpack2_Parameters.hpp>
+#include <Amesos2.hpp>
 
 #include <Teuchos_Time.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
