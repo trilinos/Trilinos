@@ -175,7 +175,7 @@ namespace MueLu {
       if (InitialGuessIsZero == true)
         paramList.set("schwarz: zero starting solution", InitialGuessIsZero);
 
-    } else if (type_ == "ILUT" || type_ == "RILUK") {
+    } else if (type_ == "ILUT" || type_ == "RILUK" || type_ == "AMESOS2") {
       //do nothing
 
     } else {

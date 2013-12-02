@@ -140,6 +140,7 @@ namespace MueLu {
     //MUELU_READ_PARAM(paramList, "aggregation: smoothing sweeps",            int,                   1,       agg_smoothingsweeps);
     MUELU_READ_PARAM(paramList, "aggregation: nodes per aggregate",         int,                   1,       minPerAgg);
     MUELU_READ_PARAM(paramList, "aggregation: keep Dirichlet bcs",         bool,               false,       bKeepDirichletBcs); // This is a MueLu specific extension that does not exist in ML
+    MUELU_READ_PARAM(paramList, "aggregation: max neighbours already aggregated", int,             0,       maxNbrAlreadySelected); // This is a MueLu specific extension that does not exist in ML
 
     MUELU_READ_PARAM(paramList, "null space: type",                 std::string,   "default vectors",       nullspaceType);
     MUELU_READ_PARAM(paramList, "null space: dimension",                    int,                  -1,       nullspaceDim); // TODO: ML default not in documentation
@@ -189,7 +190,7 @@ namespace MueLu {
     //
     //
 
-    int maxNbrAlreadySelected = 0;
+
 
     // Matrix option
     blksize_ = nDofsPerNode;

@@ -48,6 +48,10 @@
 #include "Ifpack2_Chebyshev.hpp"
 #include "Ifpack2_RILUK.hpp"
 #include "Ifpack2_ILUT.hpp"
+#include "Amesos2_config.h"
+#if defined(HAVE_AMESOS2_SUPERLU) || defined(HAVE_AMESOS2_SUPERLUDIST) || defined(HAVE_AMESOS2_KLU) || defined(HAVE_AMESOS2_LAPACK)
+#include "Ifpack2_Amesos2solver.hpp"
+#endif
 #include "Ifpack2_Krylov.hpp"
 #include "Ifpack2_AdditiveSchwarz.hpp"
 #include "Ifpack2_IdentitySolver.hpp"
@@ -94,6 +98,11 @@ Factory::create (const std::string& precType,
   if (precTypeUpper == "ILUT") {
     prec = rcp (new ILUT<MatrixType> (matrix));
   }
+#if defined(HAVE_AMESOS2_SUPERLU) || defined(HAVE_AMESOS2_SUPERLUDIST) || defined(HAVE_AMESOS2_KLU) || defined(HAVE_AMESOS2_LAPACK)
+  else if (precTypeUpper == "AMESOS2") {
+    prec = rcp (new Amesos2solver<MatrixType> (matrix));
+  }
+#endif
   else if (precTypeUpper == "RILUK") {
     prec = rcp (new RILUK<MatrixType> (matrix));
   }
@@ -172,6 +181,11 @@ Factory::create (const std::string& precType,
   if (precTypeUpper == "ILUT") {
     prec = rcp (new ILUT<MatrixType> (matrix));
   }
+#if defined(HAVE_AMESOS2_SUPERLU) || defined(HAVE_AMESOS2_SUPERLUDIST) || defined(HAVE_AMESOS2_KLU) || defined(HAVE_AMESOS2_LAPACK)
+  else if (precTypeUpper == "AMESOS2") {
+    prec = rcp (new Amesos2solver<MatrixType> (matrix));
+  }
+#endif
   else if (precTypeUpper == "RILUK") {
     prec = rcp (new RILUK<MatrixType> (matrix));
   }

@@ -229,6 +229,7 @@ namespace MueLu {
     RCP<GenericRFactory>              Rfact_;
     RCP<RAPFactory>                   Acfact_;
     RCP<RAPShiftFactory>              Acshift_;
+    RCP<CoalesceDropFactory>          Dropfact_;
     RCP<CoupledAggregationFactory>    Aggfact_;
     RCP<UncoupledAggregationFactory>  UCaggfact_;
     RCP<SmootherPrototype>            smooProto_, coarsestSmooProto_;
@@ -236,6 +237,7 @@ namespace MueLu {
     Teuchos::ParameterList            coarsestSmooList_;
     std::string                       ifpack2Type_;
     Teuchos::ParameterList            ifpack2List_;
+    Teuchos::ParameterList            ifpack2precList_;  // separate parameter list for inner preconditioner
     
     // Operator and Preconditioner
     RCP< MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO> > MueLuOp_;

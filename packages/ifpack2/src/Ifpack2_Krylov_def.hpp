@@ -101,6 +101,27 @@ void Krylov<MatrixType,PrecType>::setParameters(const Teuchos::ParameterList& pa
   Ifpack2::getParameter(params, "krylov: zero starting solution",ZeroStartingSolution_);
   Ifpack2::getParameter(params, "krylov: preconditioner type",PreconditionerType_);
   params_=params;
+  // Separate preconditioner parameters into another list
+  if(PreconditionerType_==1) {
+    precParams_.set("relaxation: sweeps",                 params_.get("relaxation: sweeps",1));
+    precParams_.set("relaxation: damping factor",         params_.get("relaxation: damping factor",(scalar_type)1.0));
+    precParams_.set("relaxation: min diagonal value",     params_.get("relaxation: min diagonal value",(scalar_type)1.0));
+    precParams_.set("relaxation: zero starting solution", params_.get("relaxation: zero starting solution",true));
+    precParams_.set("relaxation: backward mode",          params_.get("relaxation: backward mode",false));
+  }
+  if(PreconditionerType_==2 || PreconditionerType_==3) {
+    precParams_.set("fact: ilut level-of-fill", params_.get("fact: ilut level-of-fill",(double)1.0));
+    precParams_.set("fact: absolute threshold", params_.get("fact: absolute threshold",(double)0.0));
+    precParams_.set("fact: relative threshold", params_.get("fact: relative threshold",(double)1.0));
+    precParams_.set("fact: relax value",        params_.get("fact: relax value",(double)0.0));
+  }
+  if(PreconditionerType_==3) {
+    precParams_.set("schwarz: compute condest",   params_.get("schwarz: compute condest",true));
+    precParams_.set("schwarz: combine mode",      params_.get("schwarz: combine mode","Zero")); // use string mode for this
+    precParams_.set("schwarz: use reordering",    params_.get("schwarz: use reordering",true));
+    precParams_.set("schwarz: filter singletons", params_.get("schwarz: filter singletons",false));
+    precParams_.set("schwarz: overlap level",     params_.get("schwarz: overlap level",(int)0));
+  }
 }
 
 //==========================================================================
@@ -211,7 +232,7 @@ void Krylov<MatrixType,PrecType>::initialize() {
     // no preconditioner
   }
   else if(PreconditionerType_==1) {
-    ifpack2_prec_=Teuchos::rcp( new Relaxation<MatrixType>(A_) );
+    ifpack2_prec_=Teuchos::rcp( new Relaxation<MatrixType> (A_) );
   }
   else if(PreconditionerType_==2) {
     ifpack2_prec_=Teuchos::rcp( new ILUT<MatrixType>(A_) );
@@ -224,7 +245,7 @@ void Krylov<MatrixType,PrecType>::initialize() {
   }
   if(PreconditionerType_>0) {
     ifpack2_prec_->initialize();
-    ifpack2_prec_->setParameters(params_);
+    ifpack2_prec_->setParameters(precParams_);
   }
   belosProblem_ = Teuchos::rcp( new Belos::LinearProblem<scalar_type,TMV,TOP> );
   belosProblem_ -> setOperator(A_);
