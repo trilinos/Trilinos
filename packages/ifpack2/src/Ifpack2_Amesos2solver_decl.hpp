@@ -49,13 +49,14 @@
 #include <Ifpack2_ConfigDefs.hpp>
 #include <Ifpack2_Preconditioner.hpp>
 #include <Ifpack2_Details_CanChangeMatrix.hpp>
-#include <Amesos2.hpp>
 
 #include <string>
 #include <sstream>
 #include <iostream>
 #include <cmath>
 
+#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_AMESOS2)
+#include <Amesos2.hpp>
 
 namespace Teuchos {
   // forward declaration
@@ -358,4 +359,5 @@ private:
 
 } // namespace Ifpack2
 
+#endif // HAVE_IFPACK2_AMESOS2
 #endif /* IFPACK2_AMESOS2SOLVER_HPP */

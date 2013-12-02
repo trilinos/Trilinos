@@ -51,11 +51,11 @@
 #include <Ifpack2_Heap.hpp>
 #include <Ifpack2_Condest.hpp>
 #include <Ifpack2_Parameters.hpp>
-#include <Amesos2.hpp>
-
 #include <Teuchos_Time.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 
+#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_AMESOS2)
+#include <Amesos2.hpp>
 
 namespace Ifpack2 {
 
@@ -468,5 +468,6 @@ Amesos2solver<MatrixType>::makeLocalMatrix(Teuchos::RCP<const row_matrix_type> A
 
 }//namespace Ifpack2
 
+#endif // HAVE_IFPACK2_AMESOS2
 #endif /* IFPACK2_AMESOS2SOLVER_DEF_HPP */
 

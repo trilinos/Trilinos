@@ -78,7 +78,11 @@
 #include <Ifpack2_ConfigDefs.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Ifpack2_Version.hpp>
+
+#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_AMESOS2)
+
 #include <Amesos2_config.h>
+#include <Ifpack2_Amesos2solver.hpp>
 #include <iostream>
 
 #if defined(HAVE_IFPACK2_QD) && !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
@@ -86,9 +90,6 @@
 #endif
 
 #include <Ifpack2_UnitTestHelpers.hpp>
-#if defined(HAVE_AMESOS2_SUPERLU) || defined(HAVE_AMESOS2_SUPERLUDIST) || defined(HAVE_AMESOS2_KLU) || defined(HAVE_AMESOS2_LAPACK)
-#include <Ifpack2_Amesos2solver.hpp>
-#endif
 
 namespace {
 using Tpetra::global_size_t;
@@ -100,7 +101,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Amesos2solver, Test0, Scalar, LocalOrdi
 //we are now in a class method declared by the above macro, and
 //that method has these input arguments:
 //Teuchos::FancyOStream& out, bool& success
-#if defined(HAVE_AMESOS2_SUPERLU) || defined(HAVE_AMESOS2_SUPERLUDIST) || defined(HAVE_AMESOS2_KLU) || defined(HAVE_AMESOS2_LAPACK)
   std::string version = Ifpack2::Version();
   out << "Ifpack2::Version(): " << version << std::endl;
 
@@ -142,7 +142,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Amesos2solver, Test0, Scalar, LocalOrdi
   Teuchos::ArrayRCP<Scalar> halfs(num_rows_per_proc*2, 0.5);
 
   TEST_COMPARE_FLOATING_ARRAYS(yview, halfs(), Teuchos::ScalarTraits<Scalar>::eps());
-#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Amesos2solver, Test1, Scalar, LocalOrdinal, GlobalOrdinal)
@@ -150,7 +149,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Amesos2solver, Test1, Scalar, LocalOrdi
 //we are now in a class method declared by the above macro, and
 //that method has these input arguments:
 //Teuchos::FancyOStream& out, bool& success
-#if defined(HAVE_AMESOS2_SUPERLU) || defined(HAVE_AMESOS2_SUPERLUDIST) || defined(HAVE_AMESOS2_KLU) || defined(HAVE_AMESOS2_LAPACK)
   std::string version = Ifpack2::Version();
   out << "Ifpack2::Version(): " << version << std::endl;
 
@@ -182,7 +180,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Amesos2solver, Test1, Scalar, LocalOrdi
   Teuchos::ArrayRCP<Scalar> ones(num_rows_per_proc*2, 1);
 
   TEST_COMPARE_FLOATING_ARRAYS(xview, ones(), 2*Teuchos::ScalarTraits<Scalar>::eps());
-#endif
 }
 
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
@@ -202,3 +199,4 @@ UNIT_TEST_GROUP_SCALAR_ORDINAL(dd_real, int, int)
 
 }//namespace <anonymous>
 
+#endif
