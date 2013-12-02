@@ -48,7 +48,8 @@ enum DatabaseUsage {
    DB_OVERWRITE,
    DB_APPEND,
    DB_ABORT,
-   DB_ADD_SUFFIX};
+   DB_ADD_SUFFIX,
+   DB_ADD_SUFFIX_OVERWRITE}; // Used if topology change in DB_OVERWRITE mode
 
 inline bool is_input_event(Ioss::DatabaseUsage db_usage) {
   return db_usage == Ioss::READ_MODEL || db_usage == Ioss::READ_RESTART;
