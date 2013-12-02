@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010, 2011 Sandia Corporation.                     */
+/*  Copyright 2010, 2011, 2012, 2013  Sandia Corporation.                 */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -72,10 +72,10 @@ namespace {
     const stk::mesh::FieldVector &fields = mesh_data.meta_data().get_fields();
     for (size_t i=0; i < fields.size(); i++) {
       const Ioss::Field::RoleType* role = stk::io::get_field_role(*fields[i]);
-       if ( role && *role == Ioss::Field::TRANSIENT ) {
-         mesh_data.add_field(restart_index, *fields[i]); // restart output
-         mesh_data.add_field(results_index, *fields[i]); // results output
-       }
+      if ( role && *role == Ioss::Field::TRANSIENT ) {
+	mesh_data.add_field(restart_index, *fields[i]); // restart output
+	mesh_data.add_field(results_index, *fields[i]); // results output
+      }
     }
 
     // Determine the names of the global fields on the input
@@ -106,8 +106,10 @@ namespace {
       }
 
       // Define the global fields that will be written on each timestep.
-      mesh_data.add_global(restart_index, input_field.get_name(), input_field.raw_storage()->name(), input_field.get_type());
-      mesh_data.add_global(results_index, input_field.get_name(), input_field.raw_storage()->name(), input_field.get_type());
+      mesh_data.add_global(restart_index, input_field.get_name(),
+			   input_field.raw_storage()->name(), input_field.get_type());
+      mesh_data.add_global(results_index, input_field.get_name(),
+			   input_field.raw_storage()->name(), input_field.get_type());
       stk::util::Parameter &param = parameters.get_param(input_field.get_name());
       mesh_data.add_heartbeat_global(heart, input_field.get_name(), &param.value, param.type);
     }
@@ -119,50 +121,48 @@ namespace {
     // Determine number of timesteps on input database...
     int timestep_count = mesh_data.get_input_io_region()->get_property("state_count").get_int();
 
-    if (timestep_count == 0 )
-      {
-        mesh_data.write_output_mesh(results_index);
-      }
-    else
-      {
-	for (int step=1; step <= timestep_count; step++) {
-	  double time = mesh_data.get_input_io_region()->get_state_time(step);
+    if (timestep_count == 0 ) {
+      mesh_data.write_output_mesh(results_index);
+    }
+    else {
+      for (int step=1; step <= timestep_count; step++) {
+	double time = mesh_data.get_input_io_region()->get_state_time(step);
 
-	  // Normally, an app would only process the restart input at a single step and
-	  // then continue with execution at that point.  Here just for testing, we are
-	  // reading restart data at each step on the input restart file/mesh and then
-	  // outputting that data to the restart and results output.
+	// Normally, an app would only process the restart input at a single step and
+	// then continue with execution at that point.  Here just for testing, we are
+	// reading restart data at each step on the input restart file/mesh and then
+	// outputting that data to the restart and results output.
 
-	  mesh_data.read_defined_input_fields(step);
-	  mesh_data.begin_output_step(restart_index, time);
-	  mesh_data.begin_output_step(results_index, time);
+	mesh_data.read_defined_input_fields(step);
+	mesh_data.begin_output_step(restart_index, time);
+	mesh_data.begin_output_step(results_index, time);
 
-	  mesh_data.write_defined_output_fields(restart_index);
-	  mesh_data.write_defined_output_fields(results_index);
+	mesh_data.write_defined_output_fields(restart_index);
+	mesh_data.write_defined_output_fields(results_index);
 
-	  // Transfer all global variables from the input mesh to the
-	  // restart and results databases
-	  stk::util::ParameterMapType::const_iterator i = parameters.begin();
-	  stk::util::ParameterMapType::const_iterator iend = parameters.end();
-	  for (; i != iend; ++i) {
-	    const std::string parameterName = (*i).first;
-	    stk::util::Parameter &parameter = parameters.get_param(parameterName);
-	    mesh_data.get_global(parameterName, parameter.value, parameter.type);
-	  }
-
-	  for (i=parameters.begin(); i != iend; ++i) {
-	    const std::string parameterName = (*i).first;
-	    stk::util::Parameter parameter = (*i).second;
-	    mesh_data.write_global(restart_index,  parameterName, parameter.value, parameter.type);
-	    mesh_data.write_global(results_index, parameterName, parameter.value, parameter.type);
-	  }
-
-          mesh_data.end_output_step(restart_index);
-          mesh_data.end_output_step(results_index);
-
-	  mesh_data.process_heartbeat_output(heart, step, time);
+	// Transfer all global variables from the input mesh to the
+	// restart and results databases
+	stk::util::ParameterMapType::const_iterator i = parameters.begin();
+	stk::util::ParameterMapType::const_iterator iend = parameters.end();
+	for (; i != iend; ++i) {
+	  const std::string parameterName = (*i).first;
+	  stk::util::Parameter &parameter = parameters.get_param(parameterName);
+	  mesh_data.get_global(parameterName, parameter.value, parameter.type);
 	}
+
+	for (i=parameters.begin(); i != iend; ++i) {
+	  const std::string parameterName = (*i).first;
+	  stk::util::Parameter parameter = (*i).second;
+	  mesh_data.write_global(restart_index, parameterName, parameter.value, parameter.type);
+	  mesh_data.write_global(results_index, parameterName, parameter.value, parameter.type);
+	}
+
+	mesh_data.end_output_step(restart_index);
+	mesh_data.end_output_step(results_index);
+
+	mesh_data.process_heartbeat_output(heart, step, time);
       }
+    }
   }
 
   void driver(stk::ParallelMachine  comm,
@@ -270,6 +270,8 @@ int main(int argc, char** argv)
   stk::io::HeartbeatType hb_type = stk::io::BINARY; // Default is binary.
   if (heartbeat_format == "csv")
     hb_type = stk::io::CSV;
+  else if (heartbeat_format == "ts_csv")
+    hb_type = stk::io::TS_CSV;
   else if (heartbeat_format == "text")
     hb_type = stk::io::TEXT;
   else if (heartbeat_format == "ts_text")
