@@ -48,10 +48,11 @@
 
 #include "Stokhos_UnitTestHelpers.hpp"
 
-#include "Stokhos_CrsMatrix.hpp"
 #include "Stokhos_Sacado_Kokkos.hpp"
-#include "Kokkos_View.hpp"
+#include "Stokhos_CrsMatrix.hpp"
+#include "Stokhos_CrsMatrix_MP_Vector.hpp"
 
+#if 0
 namespace Stokhos {
 
 template <typename Storage, typename L, typename D, typename M, typename S>
@@ -171,6 +172,7 @@ public:
 };
 
 }
+#endif
 
 namespace KokkosMPVectorKernelsUnitTest {
 
@@ -275,9 +277,9 @@ struct UnitTestSetup {
   std::vector< matrix_type > A;
   std::vector< vector_type > x, y;
 
-  void setup(const ordinal_type threads_per_team) {
+  void setup(const ordinal_type threads_per_vector) {
 
-    nGrid = 5;
+    nGrid = 10;
     rel_tol = ScalarTol<ScalarType>::tol();
     abs_tol = ScalarTol<ScalarType>::tol();
 
@@ -286,7 +288,7 @@ struct UnitTestSetup {
     fem_graph_length = generate_fem_graph( nGrid, fem_graph );
 
     // Generate FEM matrices and vectors
-    stoch_length = local_vec_size * threads_per_team;
+    stoch_length = local_vec_size * threads_per_vector;
     A.resize(stoch_length);
     x.resize(stoch_length);
     y.resize(stoch_length);
@@ -366,7 +368,7 @@ struct UnitTestSetup {
         bool s = diff < tol;
         if (!s) {
           out << "y_expected[" << block << "][" << i << "] - "
-              << "y(" << block << "," << i << ") = " << y[block][i]
+              << "y(" << i << "," << block << ") = " << y[block][i]
               << " - " << yy(i,block) << " == "
               << diff << " < " << tol << " : failed"
               << std::endl;
@@ -381,9 +383,12 @@ struct UnitTestSetup {
 };
 
 template <typename VectorType, typename Layout,
-          typename OrdinalType, typename ScalarType, typename Device>
+          typename OrdinalType, typename ScalarType, typename Device,
+          typename MultiplyTag>
 bool test_embedded_vector(
   const UnitTestSetup<OrdinalType,ScalarType,Device>& setup,
+  Stokhos::DeviceConfig dev_config,
+  MultiplyTag tag,
   Teuchos::FancyOStream& out)
 {
   typedef OrdinalType ordinal_type;
@@ -391,7 +396,7 @@ bool test_embedded_vector(
   typedef typename VectorType::storage_type storage_type;
   typedef typename storage_type::device_type device_type;
   typedef Kokkos::View< VectorType*, Layout, device_type > block_vector_type;
-  typedef Stokhos::CrsMatrix2< VectorType, Layout, device_type > block_matrix_type;
+  typedef Stokhos::CrsMatrix< VectorType, device_type, Layout > block_matrix_type;
   typedef typename block_matrix_type::graph_type matrix_graph_type;
   typedef typename block_matrix_type::values_type matrix_values_type;
 
@@ -406,20 +411,23 @@ bool test_embedded_vector(
                       "y", setup.fem_length, setup.stoch_length);
 
   typename block_vector_type::HostMirror hx = Kokkos::create_mirror_view( x );
+  typename block_vector_type::HostMirror hy = Kokkos::create_mirror_view( y );
 
   for (ordinal_type iRowFEM=0; iRowFEM<setup.fem_length; ++iRowFEM) {
     for (ordinal_type iRowStoch=0; iRowStoch<setup.stoch_length; ++iRowStoch) {
       hx(iRowFEM,iRowStoch) =
         generate_vector_coefficient<ScalarType>(
           setup.fem_length, setup.stoch_length, iRowFEM, iRowStoch );
+      hy(iRowFEM,iRowStoch) = 0.0;
     }
   }
 
   Kokkos::deep_copy( x, hx );
+  Kokkos::deep_copy( y, hy );
 
   //------------------------------
 
-  block_matrix_type matrix;
+  block_matrix_type matrix(dev_config);
   matrix.graph = Kokkos::create_crsarray<matrix_graph_type>(
     std::string("test crs graph"), setup.fem_graph);
   matrix.values = matrix_values_type(
@@ -447,9 +455,8 @@ bool test_embedded_vector(
 
   //------------------------------
 
-  Stokhos::multiply( matrix, x, y );
+  Stokhos::multiply( matrix, x, y, tag );
 
-  typename block_vector_type::HostMirror hy = Kokkos::create_mirror_view( y );
   Kokkos::deep_copy( hy, y );
 
   bool success = setup.test_commuted(hy, out);

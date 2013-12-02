@@ -457,9 +457,10 @@ struct UnitTestSetup {
 template <typename value_type, typename Device, typename SparseMatOps>
 bool test_crs_matrix_free(const UnitTestSetup<Device>& setup,
                           Teuchos::FancyOStream& out) {
-  typedef Stokhos::CrsMatrix<value_type,Device> matrix_type ;
-  typedef Kokkos::CrsArray<int,Device,void,int> crsarray_type ;
-  typedef Kokkos::View<value_type*,Device> vec_type ;
+  typedef Stokhos::CrsMatrix<value_type,Device> matrix_type;
+  typedef typename matrix_type::values_type matrix_values_type;
+  typedef typename matrix_type::graph_type matrix_graph_type;
+  typedef Kokkos::View<value_type*,Device> vec_type;
 
   //------------------------------
 
@@ -469,16 +470,17 @@ bool test_crs_matrix_free(const UnitTestSetup<Device>& setup,
   std::vector<vec_type> tmp( setup.stoch_length ) ;
 
   for (int block=0; block<setup.stoch_length; ++block) {
-    matrix[block].graph = Kokkos::create_crsarray<crsarray_type>(
+    matrix[block].graph = Kokkos::create_crsarray<matrix_graph_type>(
       std::string("testing") , setup.fem_graph );
 
-    matrix[block].values = vec_type( "matrix" , setup.fem_graph_length );
+    matrix[block].values =
+      matrix_values_type( "matrix" , setup.fem_graph_length );
 
     x[block]   = vec_type( "x" , setup.fem_length );
     y[block]   = vec_type( "y" , setup.fem_length );
     tmp[block] = vec_type( "tmp" , setup.fem_length );
 
-    typename vec_type::HostMirror hM =
+    typename matrix_values_type::HostMirror hM =
       Kokkos::create_mirror( matrix[block].values );
 
     for ( int iRowFEM = 0 , iEntryFEM = 0 ; iRowFEM < setup.fem_length ; ++iRowFEM ) {
@@ -565,11 +567,11 @@ bool test_crs_matrix_free(const UnitTestSetup<Device>& setup,
 template <typename value_type, typename Device, typename SparseMatOps>
 bool test_crs_matrix_free_view(const UnitTestSetup<Device>& setup,
                                Teuchos::FancyOStream& out) {
-  typedef Stokhos::CrsMatrix<value_type,Device> matrix_type ;
-  typedef Kokkos::CrsArray<int,Device,void,int> crsarray_type ;
-  typedef Kokkos::View<value_type*, Device> matrix_values_type ;
-  typedef Kokkos::View<value_type*, Kokkos::LayoutLeft, Device, Kokkos::MemoryUnmanaged> vec_type ;
-  typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, Device> multi_vec_type ;
+  typedef Stokhos::CrsMatrix<value_type,Device> matrix_type;
+  typedef typename matrix_type::values_type matrix_values_type;
+  typedef typename matrix_type::graph_type matrix_graph_type;
+  typedef Kokkos::View<value_type*, Kokkos::LayoutLeft, Device, Kokkos::MemoryUnmanaged> vec_type;
+  typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, Device> multi_vec_type;
 
   //------------------------------
 
@@ -582,7 +584,7 @@ bool test_crs_matrix_free_view(const UnitTestSetup<Device>& setup,
   typename multi_vec_type::HostMirror hy = Kokkos::create_mirror( y );
 
   for (int block=0; block<setup.stoch_length; ++block) {
-    matrix[block].graph = Kokkos::create_crsarray<crsarray_type>(
+    matrix[block].graph = Kokkos::create_crsarray<matrix_graph_type>(
       std::string("testing") , setup.fem_graph );
 
     matrix[block].values =
@@ -782,8 +784,9 @@ test_crs_flat_commuted(const UnitTestSetup<Device>& setup,
 
   //------------------------------
 
-  typedef Stokhos::CrsMatrix<value_type,Device> matrix_type ;
-  typedef Kokkos::CrsArray<int,Device,void,int> crsarray_type ;
+  typedef Stokhos::CrsMatrix<value_type,Device> matrix_type;
+  typedef typename matrix_type::values_type matrix_values_type;
+  typedef typename matrix_type::graph_type matrix_graph_type;
 
   // Build stochastic graph
   std::vector< std::vector< int > > stoch_graph( setup.stoch_length );
@@ -875,14 +878,14 @@ test_crs_flat_commuted(const UnitTestSetup<Device>& setup,
 
   matrix_type matrix ;
 
-  matrix.graph = Kokkos::create_crsarray<crsarray_type>(
+  matrix.graph = Kokkos::create_crsarray<matrix_graph_type>(
     std::string("testing") , flat_graph );
 
   const size_t flat_graph_length = matrix.graph.entries.dimension_0();
 
-  matrix.values = vector_type( "matrix" , flat_graph_length );
+  matrix.values = matrix_values_type( "matrix" , flat_graph_length );
   {
-    typename vector_type::HostMirror hM =
+    typename matrix_values_type::HostMirror hM =
       Kokkos::create_mirror( matrix.values );
 
     for ( int iRow = 0 , iEntry = 0 ; iRow < flat_length ; ++iRow ) {
@@ -930,8 +933,9 @@ test_crs_flat_original(const UnitTestSetup<Device>& setup,
 
   //------------------------------
 
-  typedef Stokhos::CrsMatrix<value_type,Device> matrix_type ;
-  typedef Kokkos::CrsArray<int,Device,void,int> crsarray_type ;
+  typedef Stokhos::CrsMatrix<value_type,Device> matrix_type;
+  typedef typename matrix_type::values_type matrix_values_type;
+  typedef typename matrix_type::graph_type matrix_graph_type;
 
   // Build stochastic graph
   std::vector< std::vector< int > > stoch_graph( setup.stoch_length );
@@ -1022,13 +1026,13 @@ test_crs_flat_original(const UnitTestSetup<Device>& setup,
 
   matrix_type matrix ;
 
-  matrix.graph = Kokkos::create_crsarray<crsarray_type>( std::string("testing") , flat_graph );
+  matrix.graph = Kokkos::create_crsarray<matrix_graph_type>( std::string("testing") , flat_graph );
 
   const size_t flat_graph_length = matrix.graph.entries.dimension_0();
 
-  matrix.values = vector_type( "matrix" , flat_graph_length );
+  matrix.values = matrix_values_type( "matrix" , flat_graph_length );
   {
-    typename vector_type::HostMirror hM =
+    typename matrix_values_type::HostMirror hM =
       Kokkos::create_mirror( matrix.values );
 
     for ( size_t iRow = 0 , iEntry = 0 ; iRow < flat_length ; ++iRow ) {

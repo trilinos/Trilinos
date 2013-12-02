@@ -346,6 +346,8 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/Sacado_MP_VectorTraits.hpp
       sacado/kokkos/Sacado_MP_Vector_ops.hpp
       sacado/kokkos/Sacado_MP_ExpressionTraits.hpp
+      sacado/kokkos/Stokhos_CrsMatrix_MP_Vector.hpp
+      sacado/kokkos/Stokhos_CrsMatrix_MP_Vector_Cuda.hpp
     )
   ENDIF()
   IF (Stokhos_ENABLE_Experimental AND Stokhos_ENABLE_MueLu)

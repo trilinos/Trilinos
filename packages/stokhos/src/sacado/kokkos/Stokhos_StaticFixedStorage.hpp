@@ -72,6 +72,11 @@ namespace Stokhos {
       typedef StaticFixedStorage<ord_t,val_t,Num,dev_t> type;
     };
 
+    template <int N>
+    struct apply_N {
+      typedef StaticFixedStorage<ordinal_type,value_type,N,device_type> type;
+    };
+
     //! Constructor
     KOKKOS_INLINE_FUNCTION
     StaticFixedStorage(const ordinal_type& sz,

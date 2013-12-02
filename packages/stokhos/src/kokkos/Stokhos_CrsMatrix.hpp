@@ -54,34 +54,61 @@
 
 namespace Stokhos {
 
+struct DeviceConfig {
+  struct Dim3 {
+    size_t x, y, z;
+    Dim3(const size_t x_, const size_t y_ = 1, const size_t z_ = 1) :
+      x(x_), y(y_), z(z_) {}
+  };
+
+  Dim3 block_dim;
+  size_t num_blocks;
+  size_t num_threads_per_block;
+
+  DeviceConfig(const size_t num_blocks_,
+               const size_t threads_per_block_x_,
+               const size_t threads_per_block_y_ = 1,
+               const size_t threads_per_block_z_ = 1) :
+    block_dim(threads_per_block_x_,threads_per_block_y_,threads_per_block_z_),
+    num_blocks(num_blocks_),
+    num_threads_per_block(block_dim.x * block_dim.y * block_dim.z)
+    {}
+};
+
 /** \brief  CRS matrix.  */
-template< typename ValueType , typename Device >
+template <typename ValueType, typename Device,
+          typename Layout = Kokkos::LayoutRight>
 class CrsMatrix {
 public:
   typedef Device device_type;
   typedef ValueType value_type;
-  typedef Kokkos::View< value_type[] , device_type > values_type;
+  typedef Kokkos::View< value_type[], Layout, device_type > values_type;
   typedef Kokkos::CrsArray< int , device_type , void , int > graph_type;
 
-  typedef CrsMatrix< ValueType, typename device_type::host_mirror_device_type> HostMirror;
+  typedef CrsMatrix< ValueType, Layout, typename device_type::host_mirror_device_type> HostMirror;
 
   values_type values;
   graph_type graph;
+  Stokhos::DeviceConfig dev_config;
+
+  CrsMatrix() : dev_config(0, 0) {}
+  CrsMatrix(Stokhos::DeviceConfig dev_config_) : dev_config(dev_config_) {}
 };
 
 // Generic matrix vector multiply kernel for CrsMatrix
 template <typename MatrixValue,
+          typename Layout,
           typename Device,
           typename InputVectorType,
           typename OutputVectorType>
-class Multiply< CrsMatrix<MatrixValue,Device>,
+class Multiply< CrsMatrix<MatrixValue,Device,Layout>,
                 InputVectorType,
                 OutputVectorType,
                 void,
                 IntegralRank<1> >
 {
 public:
-  typedef CrsMatrix<MatrixValue,Device> matrix_type;
+  typedef CrsMatrix<MatrixValue,Device,Layout> matrix_type;
   typedef InputVectorType input_vector_type;
   typedef OutputVectorType output_vector_type;
 
@@ -129,18 +156,19 @@ public:
 
 // Generic matrix multi-vector multiply kernel for CrsMatrix
 template <typename MatrixValue,
+          typename Layout,
           typename Device,
           typename InputMultiVectorType,
           typename OutputMultiVectorType,
           typename OrdinalType >
-class Multiply< CrsMatrix< MatrixValue, Device >,
+class Multiply< CrsMatrix<MatrixValue,Device,Layout>,
                 InputMultiVectorType,
                 OutputMultiVectorType,
                 std::vector<OrdinalType>,
                 IntegralRank<2> >
 {
 public:
-  typedef CrsMatrix<MatrixValue,Device> matrix_type;
+  typedef CrsMatrix<MatrixValue,Device,Layout> matrix_type;
   typedef InputMultiVectorType input_multi_vector_type;
   typedef OutputMultiVectorType output_multi_vector_type;
   typedef std::vector<OrdinalType> column_indices_type;
@@ -219,17 +247,18 @@ public:
 // performance.  Seems to help signficantly on SandyBridge, little difference
 // on MIC (although not extensive investigation of block sizes).
 template <typename MatrixValue,
+          typename Layout,
           typename Device,
           typename InputViewType,
           typename OutputViewType>
-class Multiply< CrsMatrix< MatrixValue, Device >,
+class Multiply< CrsMatrix<MatrixValue,Device,Layout>,
                 std::vector<InputViewType>,
                 std::vector<OutputViewType>,
                 void,
                 IntegralRank<1> >
 {
 public:
-  typedef CrsMatrix<MatrixValue,Device> matrix_type;
+  typedef CrsMatrix<MatrixValue,Device,Layout> matrix_type;
   typedef std::vector<InputViewType> input_multi_vector_type;
   typedef std::vector<OutputViewType> output_multi_vector_type;
 
@@ -314,17 +343,18 @@ public:
 #else
 // Generic matrix multi-vector multiply kernel for CrsMatrix
 template <typename MatrixValue,
+          typename Layout,
           typename Device,
           typename InputViewType,
           typename OutputViewType>
-class Multiply< CrsMatrix< MatrixValue, Device >,
+class Multiply< CrsMatrix<MatrixValue,Device,Layout>,
                 std::vector<InputViewType>,
                 std::vector<OutputViewType>,
                 void,
                 IntegralRank<1> >
 {
 public:
-  typedef CrsMatrix<MatrixValue,Device> matrix_type;
+  typedef CrsMatrix<MatrixValue,Device,Layout> matrix_type;
   typedef std::vector<InputViewType> input_multi_vector_type;
   typedef std::vector<OutputViewType> output_multi_vector_type;
 
@@ -400,17 +430,18 @@ public:
 // Matrix multivector multiply specializations for one column at a time
 class SingleColumnMultivectorMultiply {};
 template <typename MatrixValue,
+          typename Layout,
           typename Device,
           typename InputMultiVectorType,
           typename OutputMultiVectorType,
           typename OrdinalType>
-void multiply(const CrsMatrix<MatrixValue,Device>& A,
+void multiply(const CrsMatrix<MatrixValue,Device,Layout>& A,
               const InputMultiVectorType& x,
               OutputMultiVectorType& y,
               const std::vector<OrdinalType>& col_indices,
               SingleColumnMultivectorMultiply)
 {
-  typedef CrsMatrix<MatrixValue,Device> MatrixType;
+  typedef CrsMatrix<MatrixValue,Device,Layout> MatrixType;
   typedef std::vector<OrdinalType> ColumnIndicesType;
 
   typedef Kokkos::View<typename InputMultiVectorType::value_type*, typename InputMultiVectorType::array_layout, Device, Kokkos::MemoryUnmanaged> InputVectorType;
@@ -426,15 +457,16 @@ void multiply(const CrsMatrix<MatrixValue,Device>& A,
 }
 
 template <typename MatrixValue,
+          typename Layout,
           typename Device,
           typename InputVectorType,
           typename OutputVectorType>
-void multiply(const CrsMatrix<MatrixValue,Device>& A,
+void multiply(const CrsMatrix<MatrixValue,Device,Layout>& A,
               const std::vector<InputVectorType>& x,
               std::vector<OutputVectorType>& y,
               SingleColumnMultivectorMultiply)
 {
-  typedef CrsMatrix<MatrixValue,Device> MatrixType;
+  typedef CrsMatrix<MatrixValue,Device,Layout> MatrixType;
   typedef Multiply<MatrixType,InputVectorType,OutputVectorType> multiply_type;
   for (size_t i=0; i<x.size(); ++i) {
     multiply_type::apply( A , x[i] , y[i] );
@@ -442,11 +474,11 @@ void multiply(const CrsMatrix<MatrixValue,Device>& A,
 }
 
 // MatrixMarket writer for CrsMatrix
-template < typename MatrixValue, typename Device >
-class MatrixMarketWriter< CrsMatrix<MatrixValue, Device> >
+template < typename MatrixValue, typename Layout, typename Device >
+class MatrixMarketWriter< CrsMatrix<MatrixValue,Device,Layout> >
 {
 public:
-  typedef CrsMatrix< MatrixValue, Device> matrix_type ;
+  typedef CrsMatrix<MatrixValue,Device,Layout> matrix_type ;
   typedef Device device_type ;
   typedef typename device_type::size_type size_type ;
 
@@ -483,10 +515,10 @@ public:
 
 namespace Kokkos {
 
-template <typename ValueType, typename Device>
-typename Stokhos::CrsMatrix<ValueType,Device>::HostMirror
-create_mirror(const Stokhos::CrsMatrix<ValueType,Device>& A) {
-  typename Stokhos::CrsMatrix<ValueType,Device>::HostMirror mirror_A;
+template <typename ValueType, typename Layout, typename Device>
+typename Stokhos::CrsMatrix<ValueType,Device,Layout>::HostMirror
+create_mirror(const Stokhos::CrsMatrix<ValueType,Device,Layout>& A) {
+  typename Stokhos::CrsMatrix<ValueType,Device,Layout>::HostMirror mirror_A;
   mirror_A.values = Kokkos::create_mirror(A.values);
   mirror_A.graph = Kokkos::create_mirror(A.graph);
   return mirror_A;
