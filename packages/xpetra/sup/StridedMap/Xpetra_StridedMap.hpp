@@ -170,7 +170,7 @@ namespace Xpetra {
       const GlobalOrdinal goStridedOffset = Teuchos::as<GlobalOrdinal>(nStridedOffset);
 
       // adapt offset_
-      offset_ -= goStridedOffset - indexBase_;  // TODO check me
+      offset_ -= goStridedOffset + indexBase_;  // TODO check me
     }
 
     //! Destructor.
@@ -209,7 +209,7 @@ namespace Xpetra {
 
     // returns number of strided block id which gid belongs to.
     size_t GID2StridingBlockId( GlobalOrdinal gid ) const {
-      GlobalOrdinal tgid = gid - offset_;
+      GlobalOrdinal tgid = gid - offset_ - indexBase_;
       tgid = tgid % getFixedBlockSize();
 
       size_t nStridedOffset = 0;

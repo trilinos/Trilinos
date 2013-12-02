@@ -63,6 +63,12 @@ Scalar shfl_down(const Scalar &val, const int& delta, const int& width){
   return val;
 }
 
+template<typename Scalar>
+KOKKOS_INLINE_FUNCTION
+Scalar shfl_up(const Scalar &val, const int& delta, const int& width){
+  return val;
+}
+
 
 #if HAVE_CUDA_SHUFFLE
 
@@ -91,6 +97,34 @@ double shfl_down(const double &val, const int& delta, const int& width) {
   int hi = __double2hiint(val);
   lo = __shfl_down(lo,delta,width);
   hi = __shfl_down(hi,delta,width);
+  return __hiloint2double(hi,lo);
+}
+
+KOKKOS_INLINE_FUNCTION
+unsigned int shfl_up(
+  const unsigned int &val, const int& delta, const int& width) {
+  unsigned int tmp1 = val;
+  int tmp = *reinterpret_cast<int*>(&tmp1);
+  tmp = __shfl_up(tmp,delta,width);
+  return *reinterpret_cast<unsigned int*>(&tmp);
+}
+
+KOKKOS_INLINE_FUNCTION
+int shfl_up(const int &val, const int& delta, const int& width) {
+  return __shfl_up(val,delta,width);
+}
+
+KOKKOS_INLINE_FUNCTION
+float shfl_up(const float &val, const int& delta, const int& width) {
+  return __shfl_up(val,delta,width);
+}
+
+KOKKOS_INLINE_FUNCTION
+double shfl_up(const double &val, const int& delta, const int& width) {
+  int lo = __double2loint(val);
+  int hi = __double2hiint(val);
+  lo = __shfl_up(lo,delta,width);
+  hi = __shfl_up(hi,delta,width);
   return __hiloint2double(hi,lo);
 }
 
