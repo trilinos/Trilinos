@@ -120,6 +120,10 @@ class CudaSpace ;
 
 #if defined( __INTEL_COMPILER )
 
+#if (__INTEL_COMPILER < 1200)
+#define KOKKOS_DISABLE_ASM true;
+#endif
+
 /*  Compiling with Intel compiler */
 /*  TBD: Version testing */
 
