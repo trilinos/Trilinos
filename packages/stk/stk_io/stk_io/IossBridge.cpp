@@ -607,14 +607,14 @@ void ioss_add_fields(const stk::mesh::Part &part,
 
     for (size_t i=0;i<namedFields.size();i++)
     {
-        const stk::mesh::FieldBase *f = namedFields[i].m_field;
+        const stk::mesh::FieldBase *f = namedFields[i].field();
         if (stk::io::is_valid_part_field(f, part_type, part, filter_role)) {
             const stk::mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*f, part_type, part);
             std::pair<std::string, Ioss::Field::BasicType> field_type;
             get_io_field_type(f, res, &field_type);
             if (field_type.second != Ioss::Field::INVALID) {
             size_t entity_size = entity->get_property("entity_count").get_int();
-            std::string name = namedFields[i].m_db_name;
+            std::string name = namedFields[i].db_name();
             entity->field_add(Ioss::Field(name, field_type.second, field_type.first,
                                       filter_role, entity_size));
             }
@@ -629,7 +629,7 @@ void ioss_add_fields(const stk::mesh::Part &part,
 	      get_io_field_type(f, res, &field_type);
 	      if (field_type.second != Ioss::Field::INVALID) {
 		size_t entity_size = entity->get_property("entity_count").get_int();
-		std::string name = namedFields[i].m_db_name;
+		std::string name = namedFields[i].db_name();
 		entity->field_add(Ioss::Field(name, field_type.second, field_type.first,
 					      filter_role, entity_size));
             }

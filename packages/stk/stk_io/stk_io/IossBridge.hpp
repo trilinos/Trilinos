@@ -177,9 +177,15 @@ bool is_field_on_part(const stk::mesh::FieldBase *field,
  */
 struct FieldAndName
 {
-    FieldAndName(stk::mesh::FieldBase *field, const std::string& db_name) : m_field(field), m_db_name(db_name) {}
-    stk::mesh::FieldBase *m_field;
-    std::string m_db_name;
+public:
+  FieldAndName(stk::mesh::FieldBase *my_field, const std::string& my_db_name) :
+    m_field(my_field), m_db_name(my_db_name) {}
+  stk::mesh::FieldBase *field() const {return m_field;};
+  std::string db_name() const {return m_db_name;}
+  void set_db_name(const std::string &name) {m_db_name = name;}
+private:
+  stk::mesh::FieldBase *m_field;
+  std::string m_db_name;
 };
 
 std::string get_field_name(const stk::mesh::FieldBase &f, Ioss::DatabaseUsage dbUsage);

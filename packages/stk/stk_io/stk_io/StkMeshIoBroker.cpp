@@ -38,7 +38,7 @@
 namespace {
 
   bool fieldOrdinalSort(const stk::io::FieldAndName& f1, const stk::io::FieldAndName &f2) {
-    return f1.m_field->mesh_meta_data_ordinal() < f2.m_field->mesh_meta_data_ordinal();
+    return f1.field()->mesh_meta_data_ordinal() < f2.field()->mesh_meta_data_ordinal();
   }
 
   std::string pickFieldName(stk::mesh::FieldBase &field, const std::string &db_name)
@@ -387,23 +387,24 @@ namespace {
     return entities.size();
   }
 
-  int ioss_restore_input_fields(std::vector<stk::io::FieldAndName> &fields,
-				stk::mesh::BulkData &bulk,
-				const stk::mesh::Part &part,
-				const stk::mesh::EntityRank part_type,
-				Ioss::GroupingEntity *io_entity,
-				stk::io::DatabasePurpose purpose)
+  size_t ioss_restore_input_fields(std::vector<stk::io::FieldAndName> &fields,
+				   stk::mesh::BulkData &bulk,
+				   const stk::mesh::Part &part,
+				   const stk::mesh::EntityRank part_type,
+				   Ioss::GroupingEntity *io_entity,
+				   stk::io::DatabasePurpose purpose,
+				   std::vector<stk::io::FieldAndName> *missing=NULL)
   {
-    int missing_fields = 0;
+    size_t missing_fields = 0;
 
     assert(io_entity != NULL);
     std::vector<stk::mesh::Entity> entity_list;
     bool entity_list_filled=false;
 
-    std::vector<stk::io::FieldAndName>::const_iterator I = fields.begin();
+    std::vector<stk::io::FieldAndName>::iterator I = fields.begin();
     while (I != fields.end()) {
-      const std::string db_name = (*I).m_db_name;
-      const stk::mesh::FieldBase *f = (*I).m_field; ++I;
+      std::string db_name = (*I).db_name();
+      stk::mesh::FieldBase *f = (*I).field(); ++I;
 
       if (stk::io::is_field_on_part(f,part_type,part)) {
 	// Only add TRANSIENT Fields -- check role; if not present assume transient...
@@ -433,9 +434,13 @@ namespace {
 	          stk::io::multistate_field_data_from_ioss(bulk, f, entity_list, io_entity, db_name, state_count);
 	      }
 	    } else {
-	      std::cerr  << "ERROR: Could not find input field '"
-			 << db_name << "' on '" << io_entity->name() << "'.\n";
-
+	      if (missing) {
+		missing->push_back(stk::io::FieldAndName(f, db_name));
+	      }
+	      else {
+		std::cerr  << "ERROR: Could not find input field '"
+			   << db_name << "' on '" << io_entity->name() << "'.\n";
+	      }
 	      missing_fields++;
 	    }
 	  }
@@ -1074,8 +1079,8 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
 
     for (size_t i=0;i<namedFields.size();i++)
     {
-        const stk::mesh::FieldBase *f = namedFields[i].m_field;
-        std::string field_name = namedFields[i].m_db_name;
+        const stk::mesh::FieldBase *f = namedFields[i].field();
+        std::string field_name = namedFields[i].db_name();
 	// NOTE: Multi-state issues are currently handled at field_add time
 	stk::io::field_data_to_ioss(bulk, f, entities, io_entity, field_name, filter_role);
     }
@@ -1428,8 +1433,8 @@ namespace stk {
       
       bool fieldAlreadyExists=false;
       for (size_t i=0; i <m_input_fields.size(); i++) {
-	if (&field == m_input_fields[i].m_field) {
-	  m_input_fields[i].m_db_name = name;
+	if (&field == m_input_fields[i].field()) {
+	  m_input_fields[i].set_db_name(name);
 	  fieldAlreadyExists = true;
 	  break;
 	}
@@ -1573,21 +1578,23 @@ namespace stk {
       }
     }
 
-    double StkMeshIoBroker::read_defined_input_fields(double time)
+    double StkMeshIoBroker::read_defined_input_fields(double time,
+						      std::vector<stk::io::FieldAndName> *missing)
     {
       // Find the step on the database with time closest to the requested time...
       Ioss::Region *region = m_input_region.get();
       
       int step = find_closest_step(region, time);
-      return read_defined_input_fields(step);
+      return read_defined_input_fields(step, missing);
     }
 
-    double StkMeshIoBroker::read_defined_input_fields(int step)
+    double StkMeshIoBroker::read_defined_input_fields(int step,
+						      std::vector<stk::io::FieldAndName> *missing)
     {
       if (step <= 0)
         return 0;
 
-      int missing_fields = 0;
+      size_t missing_fields = 0;
       ThrowErrorMsgIf (Teuchos::is_null(m_input_region),
                        "There is no Input mesh/restart region associated with this Mesh Data.");
 
@@ -1601,7 +1608,7 @@ namespace stk {
       // Special processing for nodeblock (all nodes in model)...
       missing_fields += ioss_restore_input_fields(m_input_fields, bulk_data(), meta_data().universal_part(),
 						  stk::mesh::MetaData::NODE_RANK,
-						  region->get_node_blocks()[0], m_db_purpose);
+						  region->get_node_blocks()[0], m_db_purpose, missing);
 
       // Now handle all non-nodeblock parts...
       const stk::mesh::PartVector &all_parts = meta_data().get_parts();
@@ -1617,7 +1624,7 @@ namespace stk {
           Ioss::GroupingEntity *entity = region->get_entity(part->name());
           if (entity != NULL && entity->type() != Ioss::SIDESET) {
             missing_fields += ioss_restore_input_fields(m_input_fields, bulk_data(), *part, rank, entity,
-							m_db_purpose);
+							m_db_purpose, missing);
           }
 
           // If rank is != NODE_RANK, then see if any fields are defined on the nodes of this part
@@ -1633,13 +1640,14 @@ namespace stk {
 	    if (node_entity != NULL) {
 	      missing_fields += ioss_restore_input_fields(m_input_fields, bulk_data(), *part,
 							  stk::mesh::MetaData::NODE_RANK, node_entity,
-							  m_db_purpose);
+							  m_db_purpose, missing);
             }
           }
         }
       }
 
-      if (missing_fields > 0) {
+      ThrowAssert(missing==NULL || missing_fields == missing->size());
+      if (missing_fields > 0 && missing==NULL) {
         std::ostringstream msg ;
         msg << "ERROR: Input processing at step " << step << " could not find " << missing_fields << " fields.\n";
         throw std::runtime_error( msg.str() );
@@ -1647,7 +1655,6 @@ namespace stk {
 
       region->end_state(step);
 
-      // return time
       return region->get_state_time(step);
     }
 
@@ -1803,8 +1810,8 @@ namespace stk {
 
         bool fieldAlreadyExists=false;
         for (size_t i=0;i<m_named_fields.size();i++) {
-          if ( &field == m_named_fields[i].m_field ) {
-            m_named_fields[i].m_db_name = alternate_name;
+          if ( &field == m_named_fields[i].field() ) {
+            m_named_fields[i].set_db_name(alternate_name);
             fieldAlreadyExists = true;
             break;
           }

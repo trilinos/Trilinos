@@ -184,7 +184,7 @@ namespace stk {
         ~StkMeshIoBroker();
 
         /**
-	 * Add the specified 'new_property' to the default property
+	 * Add the specified 'property' to the default property
 	 * manager for this StkMeshIoBroker object.  The property
 	 * manager is (currently) used for the input mesh region and
 	 * the output mesh regions if no output property manager is
@@ -401,16 +401,26 @@ namespace stk {
          * For all transient input fields defined, read the data at the
          * specified database step 'step' (1-based) and populate the stk
          * data structures with those values.
+	 * If 'missing' is non-NULL, then any fields that are not found
+	 * on the input database will be put on the vector.  If 'missing'
+	 * is NULL, then an exception will be thrown if any fields are
+	 * not found.
          */
-        double read_defined_input_fields(int step);
+        double read_defined_input_fields(int step,
+					 std::vector<stk::io::FieldAndName> *missing=NULL);
 
         /**
          * For all transient input fields defined, read the data at the
          * specified database time 'time' and populate the stk
          * data structures with those values.  The database time closest
          * to the specified time will be used with no interpolation (yet).
+	 * If 'missing' is non-NULL, then any fields that are not found
+	 * on the input database will be put on the vector.  If 'missing'
+	 * is NULL, then an exception will be thrown if any fields are
+	 * not found.
          */
-        double read_defined_input_fields(double time);
+        double read_defined_input_fields(double time,
+					 std::vector<stk::io::FieldAndName> *missing=NULL);
 
         void get_global_variable_names(std::vector<std::string> &names);
         void get_global(const std::string &variableName,
