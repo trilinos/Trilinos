@@ -922,8 +922,8 @@ template <typename User>
       gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), comm_(comm),
       gids_(), userWeightDim_(0), weights_(), gnos_(), gnosConst_()
 {
-  userWeightDim_ = ia->getVertexWeightDimension();
-  size_t nLocalIds = ia->getLocalNumberOfVertices();
+  userWeightDim_ = ia->getNumWeightsPer();
+  size_t nLocalIds = ia->getLocalNum();
 
   Model<GraphAdapter<User> >::maxCount(*comm, userWeightDim_);
 

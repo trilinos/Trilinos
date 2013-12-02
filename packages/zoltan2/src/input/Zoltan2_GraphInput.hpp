@@ -55,6 +55,13 @@
 
 namespace Zoltan2 {
 
+/*!  \brief Enumerated entity type for graphs:  Vertices or Edges
+ */
+enum GraphEntityType {
+  GRAPH_VERTEX,
+  GRAPH_EDGE
+};
+
 /*!  \brief GraphAdapter defines the interface for graph-based user data.
 
     Adapter objects provide access for Zoltan2 to the user's data.
@@ -94,6 +101,13 @@ namespace Zoltan2 {
 template <typename User>
   class GraphAdapter : public BaseAdapter<User> {
 private:
+  enum GraphEntityType primaryEntityType; // Entity (vertex or edge) to
+                                          // be partitioned, ordered,
+                                          // colored, matched, etc.
+  enum GraphEntityType adjacencyEntityType; // Entity (edge or vertex)
+                                            // describing adjacencies;
+                                            // typically opposite of
+                                            // primaryEntityType.
 
 public:
 
@@ -112,21 +126,79 @@ public:
    */
   virtual ~GraphAdapter() {};
 
-  /*! \brief Returns the number vertices on this process.
-   */
-  virtual size_t getLocalNumberOfVertices() const = 0;
+  // Default GraphEntityType is GRAPH_VERTEX.
+  GraphAdapter() : primaryEntityType(GRAPH_VERTEX),
+                   adjacencyEntityType(GRAPH_EDGE) {};
 
-  /*! \brief Returns the number edges on this process.
+  /*! \brief Returns the entity to be partitioned, ordered, colored, etc.
+   *  Valid values are GRAPH_VERTEX or GRAPH_EDGE.
    */
-  virtual size_t getLocalNumberOfEdges() const = 0;
+  inline enum GraphEntityType getPrimaryEntityType() const {
+    return this->primaryEntityType;
+  }
+
+  /*! \brief Sets the primary entity type.  Called by algorithm based on
+   *  parameter value in parameter list from application.
+   */
+  void setPrimaryEntityType(string typestr) {
+    if (typestr == "vertex")
+      this->primaryEntityType = GRAPH_VERTEX;
+    else if (typestr == "edge")
+      this->primaryEntityType = GRAPH_EDGE;
+    else {
+      std::ostringstream emsg;
+      emsg << __FILE__ << "," << __LINE__
+           << " error:  Invalid GraphEntityType " << typestr << std::endl;
+      emsg << "Valid values are 'vertex' and 'edge'" << std::endl;
+      throw std::runtime_error(emsg.str());
+    }
+  }
+
+  /*! \brief Returns the entity that describes adjacencies between the
+   *  entities to be partitioned, ordered, colored, etc.
+   *  Valid values are GRAPH_VERTEX or GRAPH_EDGE.
+   */
+  inline enum GraphEntityType getAdjacencyEntityType() const {
+    return this->adjacencyEntityType;
+  }
+
+  /*! \brief Sets the adjacency entity type.  Called by algorithm based on
+   *  parameter value in parameter list from application.
+   *  Default is opposite of primaryEntityType.
+   */
+  void setAdjacencyEntityType(string typestr) {
+    if (typestr == "vertex")
+      this->adjacencyEntityType = GRAPH_VERTEX;
+    else if (typestr == "edge")
+      this->adjacencyEntityType = GRAPH_EDGE;
+    else {
+      std::ostringstream emsg;
+      emsg << __FILE__ << "," << __LINE__
+           << " error:  Invalid GraphEntityType " << typestr << std::endl;
+      emsg << "Valid values are 'vertex' and 'edge'" << std::endl;
+      throw std::runtime_error(emsg.str());
+    }
+  }
+
+  // Functions from the BaseAdapter interface
+  size_t getLocalNum() const {
+    return getLocalNumOf(getPrimaryEntityType());
+   }
+
+  int getNumWeightsPer() const {
+    return getNumWeightsPerOf(getPrimaryEntityType());
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  // Methods to be defined in derived classes.
+
+  /*! \brief Returns the number entities of a given type on this process.
+   */
+  virtual size_t getLocalNumOf(enum GraphEntityType ent) const = 0;
 
   /*! \brief Returns the dimension (0 or greater) of vertex weights.
    */
-  virtual int getVertexWeightDimension() const = 0;
-
-  /*! \brief Returns the dimension (0 or greater) of edge weights.
-   */
-  virtual int getEdgeWeightDimension() const = 0;
+  virtual int getNumWeightsPerOf(enum GraphEntityType ent) const = 0;
 
   /*! \brief Returns the dimension of the geometry, if any.
    *
@@ -201,7 +273,7 @@ public:
               ith coordinate value is coords[2*i].
 
        \return The length of the \c coords list.  This may be more than
-              getLocalNumberOfVertices() because the \c stride
+              getLocalNumOf() because the \c stride
               may be more than one.
 
       Zoltan2 does not copy your data.  The data pointed to by coords
@@ -212,31 +284,6 @@ public:
     const scalar_t *&coords, int &stride) const = 0;
 
 
-  /*! \brief Apply a partitioning problem solution to an input.  
-   *
-   *  This is not a required part of the GraphAdapter interface. However
-   *  if the Caller calls a Problem method to redistribute data, it needs
-   *  this method to perform the redistribution.
-   *
-   *  \param in  An input object with a structure and assignment of
-   *           of global Ids to processes that matches that of the input
-   *           data that instantiated this Adapter.
-   *  \param out On return this should point to a newly created object 
-   *            with the specified partitioning.
-   *  \param solution  The Solution object created by a Problem should
-   *      be supplied as the third argument.  It must have been templated
-   *      on user data that has the same global ID distribution as this
-   *      user data.
-   *  \return   Returns the number of local Ids in the new partitioning.
-   */
-
-  template <typename Adapter>
-    size_t applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<Adapter> &solution) const
-  {
-    return 0;
-  }
-  
 };
   
 }  //namespace Zoltan2

@@ -865,7 +865,7 @@ CoordinateModel<GraphAdapter<User> >::CoordinateModel(
 
   // Get coordinates and weights (if any)
 
-  userNumWeights_ = ia->getVertexWeightDimension();
+  userNumWeights_ = ia->getNumWeightsPer();
 
   Model<GraphAdapter<User> >::maxCount(*comm, coordinateDim_, userNumWeights_);
 
@@ -879,7 +879,7 @@ CoordinateModel<GraphAdapter<User> >::CoordinateModel(
 
   Array<lno_t> arrayLengths(userNumWeights_, 0);
 
-  size_t nLocalIds = ia->getLocalNumberOfVertices();
+  size_t nLocalIds = ia->getLocalNum();
 
   if (nLocalIds){
     const gid_t *globalIds=NULL;

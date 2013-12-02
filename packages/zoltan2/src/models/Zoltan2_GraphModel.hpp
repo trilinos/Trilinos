@@ -1185,7 +1185,7 @@ template <typename User>
   edgeGids_ = arcp<const gid_t>(nborIds, 0, numLocalEdges_, false);
   offsets_ = arcp<const lno_t>(offsets, 0, numLocalVertices_ + 1, false);
 
-  eWeightDim_ = ia->getEdgeWeightDimension();
+  eWeightDim_ = ia->getNumWeightPerOf(ia->getAdjacencyEntityType());
 
   if (eWeightDim_ > 0){
     input_t *wgts = new input_t [eWeightDim_];
@@ -1380,7 +1380,7 @@ template <typename User>
 
   // Vertex weights
 
-  vWeightDim_ = ia->getVertexWeightDimension();
+  vWeightDim_ = ia->getNumWeightsPerOf(ia->getPrimaryEntityType());
 
   if (vWeightDim_ > 0){
     input_t *weightInfo = new input_t [vWeightDim_];

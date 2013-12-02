@@ -280,11 +280,9 @@ public:
   // The Adapter interface.
   ////////////////////////////////////////////////////
 
-  size_t getLocalNum() const { return getLocalNumberOfVertices();}
-
   size_t getIDsView(const gid_t *& ids) const
   {
-    size_t nvtx = getLocalNumberOfVertices();
+    size_t nvtx = getLocalNumOf(GRAPH_VERTEX); // KDDKDD TODO Assuming Vertex
     ids = NULL;
     if (nvtx)
       ids = graph_->getRowMap()->getNodeElementList().getRawPtr();
@@ -302,20 +300,18 @@ public:
   // The GraphAdapter interface.
   ////////////////////////////////////////////////////
 
-  size_t getLocalNumberOfVertices() const { 
-    return graph_->getNodeNumRows(); 
+  size_t getLocalNumOf(enum GraphEntityType ent) const { 
+    if (ent == GRAPH_VERTEX)
+      return graph_->getNodeNumRows(); 
+    else
+      return graph_->getNodeNumEntries();
   }
 
-  size_t getLocalNumberOfEdges() const { 
-    return graph_->getNodeNumEntries();
-  }
-
-  int getVertexWeightDimension() const { 
-    return vertexWeightDim_;
-  }
-
-  int getEdgeWeightDimension() const { 
-    return edgeWeightDim_;
+  int getNumWeightsPerOf(enum GraphEntityType ent) const { 
+    if (ent == GRAPH_VERTEX)
+      return vertexWeightDim_;
+    else
+      return edgeWeightDim_;
   }
 
   int getCoordinateDimension() const { 
@@ -325,7 +321,7 @@ public:
   size_t getVertexListView(const gid_t *&ids,
     const lno_t *&offsets, const gid_t *& edgeId) const
   {
-    size_t nvtx = getLocalNumberOfVertices();
+    size_t nvtx = getLocalNumOf(GRAPH_VERTEX);
     ids = edgeId = NULL;
     offsets = NULL;
 
