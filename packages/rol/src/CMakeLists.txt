@@ -111,6 +111,13 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/zoo)
 APPEND_SET(HEADERS
   zoo/ROL_Types.hpp
   zoo/ROL_TestObjectives.hpp
+  zoo/ROL_Rosenbrock.hpp
+  zoo/ROL_FreudensteinRoth.hpp
+  zoo/ROL_Beale.hpp
+  zoo/ROL_Powell.hpp
+  zoo/ROL_SumOfSquares.hpp
+  zoo/ROL_LeastSquares.hpp
+  zoo/ROL_PoissonControl.hpp
   )
 
 
