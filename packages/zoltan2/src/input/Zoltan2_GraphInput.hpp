@@ -139,12 +139,18 @@ public:
 
   /*! \brief Sets the primary entity type.  Called by algorithm based on
    *  parameter value in parameter list from application.
+   *  Also sets to adjacencyEntityType to something reasonable:  opposite of
+   *  primaryEntityType.
    */
   void setPrimaryEntityType(string typestr) {
-    if (typestr == "vertex")
+    if (typestr == "vertex") {
       this->primaryEntityType = GRAPH_VERTEX;
-    else if (typestr == "edge")
+      this->adjacencyEntityType = GRAPH_EDGE;
+    }
+    else if (typestr == "edge") {
       this->primaryEntityType = GRAPH_EDGE;
+      this->adjacencyEntityType = GRAPH_VERTEX;
+    }
     else {
       std::ostringstream emsg;
       emsg << __FILE__ << "," << __LINE__
@@ -164,13 +170,18 @@ public:
 
   /*! \brief Sets the adjacency entity type.  Called by algorithm based on
    *  parameter value in parameter list from application.
-   *  Default is opposite of primaryEntityType.
+   *  Also sets to primaryEntityType to something reasonable:  opposite of
+   *  adjacencyEntityType.
    */
   void setAdjacencyEntityType(string typestr) {
-    if (typestr == "vertex")
+    if (typestr == "vertex") {
       this->adjacencyEntityType = GRAPH_VERTEX;
-    else if (typestr == "edge")
+      this->primaryEntityType = GRAPH_EDGE;
+    }
+    else if (typestr == "edge") {
       this->adjacencyEntityType = GRAPH_EDGE;
+      this->primaryEntityType = GRAPH_VERTEX;
+    }
     else {
       std::ostringstream emsg;
       emsg << __FILE__ << "," << __LINE__
