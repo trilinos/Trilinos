@@ -61,6 +61,8 @@ MockModelEval_B::MockModelEval_B(const MPI_Comm appComm)
     x_vec->PutScalar(0.0);
     x_dot_vec = rcp(new Epetra_Vector(*x_map));
     x_dot_vec->PutScalar(1.0);
+    x_dotdot_vec = rcp(new Epetra_Vector(*x_map));
+    x_dotdot_vec->PutScalar(0.0);
 
     //set up responses
     const int numResponses = 1;
@@ -151,6 +153,11 @@ RCP<const Epetra_Vector> MockModelEval_B::get_x_dot_init() const
   return x_dot_vec;
 }
 
+RCP<const Epetra_Vector> MockModelEval_B::get_x_dotdot_init() const
+{
+  return x_dotdot_vec;
+}
+
 RCP<const Epetra_Vector> MockModelEval_B::get_p_init(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(l != 0, std::logic_error,
@@ -168,7 +175,9 @@ EpetraExt::ModelEvaluator::InArgs MockModelEval_B::createInArgs() const
   inArgs.set_Np(1);
   inArgs.setSupports(IN_ARG_x,true);
   inArgs.setSupports(IN_ARG_x_dot,true);
+  inArgs.setSupports(IN_ARG_x_dotdot,true);
   inArgs.setSupports(IN_ARG_t,true);
+  inArgs.setSupports(IN_ARG_omega,true);
   inArgs.setSupports(IN_ARG_alpha,true);
   inArgs.setSupports(IN_ARG_beta,true);
   return inArgs;
@@ -204,26 +213,40 @@ void MockModelEval_B::evalModel( const InArgs& inArgs,
   RCP<const Epetra_Vector> x_dot_in = inArgs.get_x_dot();
   double alpha = inArgs.get_alpha();
 
+  RCP<const Epetra_Vector> x_dotdot_in = inArgs.get_x_dotdot();
+  double omega = inArgs.get_omega();
+
   // Parse OutArgs
 
   RCP<Epetra_Vector> f_out = outArgs.get_f(); 
   RCP<Epetra_Vector> g_out = outArgs.get_g(0); 
   RCP<Epetra_CrsMatrix> W_out = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(outArgs.get_W()); 
 
+  double damping=0.0;
   if (f_out != Teuchos::null) {
     for (int i=0; i<myVecLength; i++) {
        (*f_out)[i] = -(*p_in)[0];
     }
+    if (x_dotdot_in != Teuchos::null) {
+       for (int i=0; i<myVecLength; i++) {
+       (*f_out)[i] = (*x_dotdot_in)[i] - (*f_out)[i];
+       }
+    }
     if (x_dot_in != Teuchos::null) {
        for (int i=0; i<myVecLength; i++) {
-       (*f_out)[i] = (*x_dot_in)[i] - (*f_out)[i];
+       (*f_out)[i] += damping*(*x_dot_in)[i];
        }
     }
   }
   if (W_out != Teuchos::null) {
     int z=0;
-    if (alpha==0.0) throw "alpha=0.0";
-    W_out->ReplaceGlobalValues(0, 1, &alpha, &z);
+    if (omega==0.0) throw "omega=0.0";
+    W_out->ReplaceGlobalValues(0, 1, &omega, &z);
+
+    if (x_dot_in != Teuchos::null) {
+      double da = damping*alpha;
+      W_out->SumIntoGlobalValues(0, 1, &da, &z);
+    }
     W_out->FillComplete();
   }
 

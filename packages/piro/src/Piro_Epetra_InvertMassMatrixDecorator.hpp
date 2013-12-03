@@ -72,7 +72,8 @@ class InvertMassMatrixDecorator
                 Teuchos::RCP<Teuchos::ParameterList> stratParams,
                 Teuchos::RCP<EpetraExt::ModelEvaluator>& model,
                 bool massMatrixIsConstant=true,
-                bool lumpMassMatrix=false
+                bool lumpMassMatrix=false,
+                bool massMatrixIsCoeffOfSecondDeriv=false
                 );
 
   //@}
@@ -120,6 +121,7 @@ class InvertMassMatrixDecorator
 
    bool massMatrixIsConstant; // User Setting
    bool lumpMassMatrix; // User Setting to rowSum Matrix
+   bool massMatrixIsCoeffOfSecondDeriv; // Set to true for x_dotdot acceleration problems
    Teuchos::RCP<Epetra_Vector> invDiag;
 
    // The following get modified in evalModel and so are mutable
