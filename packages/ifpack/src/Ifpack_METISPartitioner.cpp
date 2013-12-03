@@ -105,27 +105,54 @@ int Ifpack_METISPartitioner::ComputePartitions()
 
   if (UseSymmetricGraph_) {
 
+#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
     // need to build a symmetric graph. 
     // I do this in two stages:
     // 1.- construct an Epetra_CrsMatrix, symmetric
     // 2.- convert the Epetra_CrsMatrix into METIS format
     SymMap = Teuchos::rcp( new Epetra_Map(NumMyRows(),0,Graph_->Comm()) );
     SymGraph = Teuchos::rcp( new Epetra_CrsGraph(Copy,*SymMap,0) );
+#endif
 
-    for (int i = 0; i < NumMyRows() ; ++i) {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+      if(SymGraph->RowMap().GlobalIndicesInt()) {
+        for (int i = 0; i < NumMyRows() ; ++i) {
 
-      ierr = Graph_->ExtractMyRowCopy(i, Length, NumIndices, 
-				      &Indices[0]);
-      IFPACK_CHK_ERR(ierr);
+          ierr = Graph_->ExtractMyRowCopy(i, Length, NumIndices, &Indices[0]);
+          IFPACK_CHK_ERR(ierr);
 
-      for (int j = 0 ; j < NumIndices ; ++j) {
-	int jj = Indices[j];
-	if (jj != i) {
-	  SymGraph->InsertGlobalIndices(i,1,&jj);
-	  SymGraph->InsertGlobalIndices(jj,1,&i);
-	}
-      }      
-    }
+          for (int j = 0 ; j < NumIndices ; ++j) {
+            int jj = Indices[j];
+            if (jj != i) {
+              SymGraph->InsertGlobalIndices(i,1,&jj);
+              SymGraph->InsertGlobalIndices(jj,1,&i);
+            }
+          }
+        }
+      }
+      else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+      if(SymGraph->RowMap().GlobalIndicesLongLong()) {
+        for (int i = 0; i < NumMyRows() ; ++i) {
+          long long i_LL = i;
+
+          ierr = Graph_->ExtractMyRowCopy(i, Length, NumIndices, &Indices[0]);
+          IFPACK_CHK_ERR(ierr);
+
+          for (int j = 0 ; j < NumIndices ; ++j) {
+            long long jj = Indices[j];
+            if (jj != i_LL) {
+              SymGraph->InsertGlobalIndices(i_LL,1,&jj);
+              SymGraph->InsertGlobalIndices(jj,1,&i_LL);
+            }
+          }
+        }
+      }
+      else
+#endif
+        throw "Ifpack_METISPartitioner::ComputePartitions: GlobalIndices type unknown";
+
     IFPACK_CHK_ERR(SymGraph->FillComplete());
     SymIFPACKGraph = Teuchos::rcp( new Ifpack_Graph_Epetra_CrsGraph(SymGraph) );
     IFPACKGraph = SymIFPACKGraph;

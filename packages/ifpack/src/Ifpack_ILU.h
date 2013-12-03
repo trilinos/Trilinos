@@ -333,6 +333,7 @@ private:
   //! Get relative threshold value
   double RelativeThreshold() const {return Rthresh_;}
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   //! Returns the number of global matrix rows.
   int NumGlobalRows() const {return(Graph().NumGlobalRows());};
   
@@ -341,10 +342,19 @@ private:
   
   //! Returns the number of nonzero entries in the global graph.
   int NumGlobalNonzeros() const {return(L().NumGlobalNonzeros()+U().NumGlobalNonzeros());};
-  
+
   //! Returns the number of diagonal entries found in the global input graph.
   virtual int NumGlobalBlockDiagonals() const {return(Graph().NumGlobalBlockDiagonals());};
+#endif
+
+  long long NumGlobalRows64() const {return(Graph().NumGlobalRows64());};
   
+  long long NumGlobalCols64() const {return(Graph().NumGlobalCols64());};
+
+  long long NumGlobalNonzeros64() const {return(L().NumGlobalNonzeros64()+U().NumGlobalNonzeros64());};
+    
+  virtual long long NumGlobalBlockDiagonals64() const {return(Graph().NumGlobalBlockDiagonals64());};
+
   //! Returns the number of local matrix rows.
   int NumMyRows() const {return(Graph().NumMyRows());};
   
@@ -361,7 +371,10 @@ private:
   virtual int NumMyDiagonals() const {return(NumMyDiagonals_);};
   
   //! Returns the index base for row and column indices for this graph.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int IndexBase() const {return(Graph().IndexBase());};
+#endif
+  long long IndexBase64() const {return(Graph().IndexBase64());};
   
   //! Returns the address of the Ifpack_IlukGraph associated with this factored matrix.
   const Ifpack_IlukGraph & Graph() const {return(*Graph_);};

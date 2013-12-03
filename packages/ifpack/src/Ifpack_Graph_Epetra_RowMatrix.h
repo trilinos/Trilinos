@@ -45,6 +45,8 @@
 
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_Graph.h"
+#include "Epetra_RowMatrix.h"
+#include "Epetra_Map.h"
 #include "Teuchos_RefCountPtr.hpp"
 
 class Epetra_Comm;
@@ -83,14 +85,32 @@ public:
     return(NumMyCols_);
   }
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   //! Returns the number of global rows.
   int NumGlobalRows() const
+  {
+    if(RowMatrix_->RowMatrixRowMap().GlobalIndicesInt())
+      return (int) (NumGlobalRows_);
+	else
+      throw "Ifpack_Graph_Epetra_RowMatrix::NumGlobalRows: GlobalIndices not int.";
+  }
+#endif
+  long long NumGlobalRows64() const
   {
     return(NumGlobalRows_);
   }
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   //! Returns the number of global columns.
   int NumGlobalCols() const
+  {
+    if(RowMatrix_->RowMatrixColMap().GlobalIndicesInt())
+      return (int) (NumGlobalCols_);
+	else
+      throw "Ifpack_Graph_Epetra_RowMatrix::NumGlobalCols: GlobalIndices not int.";
+  }
+#endif
+  long long NumGlobalCols64() const
   {
     return(NumGlobalCols_);
   }
@@ -107,17 +127,33 @@ public:
   //! Returns \c true is graph is filled.
   bool Filled() const;
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   //! Returns the global row ID of input local row.
   int GRID(int) const;
+#endif
+  long long GRID64(int) const;
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   //! Returns the global column ID of input local column.
   int GCID(int) const;
-  
+#endif
+  long long GCID64(int) const;
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   //! Returns the local row ID of input global row.
   int LRID(int) const;
 
   //! Returns the local column ID of input global column.
   int LCID(int) const;
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  //! Returns the local row ID of input global row.
+  int LRID(long long) const;
+
+  //! Returns the local column ID of input global column.
+  int LCID(long long) const;
+#endif
 
   //! Extracts a copy of input local row.
   int ExtractMyRowCopy(int GlobalRow, int LenOfIndices, 
@@ -136,9 +172,9 @@ private:
   //! Number of local columns.
   int NumMyCols_;
   //! Number of global rows.
-  int NumGlobalRows_;
+  long long NumGlobalRows_;
   //! Number of global columns.
-  int NumGlobalCols_;
+  long long NumGlobalCols_;
   //! Maximum number of indices per row.
   int MaxNumIndices_;
   //! Pointer to the wrapped Epetra_CrsGraph.
