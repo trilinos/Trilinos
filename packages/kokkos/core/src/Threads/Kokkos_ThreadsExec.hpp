@@ -48,6 +48,7 @@
 
 #include <utility>
 #include <impl/Kokkos_spinwait.hpp>
+#include <Kokkos_Atomic.hpp>
 
 //----------------------------------------------------------------------------
 
