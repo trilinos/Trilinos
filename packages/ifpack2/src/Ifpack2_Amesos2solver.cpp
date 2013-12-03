@@ -48,6 +48,8 @@
 #include "Ifpack2_ExplicitInstantiationHelpers.hpp"
 #include "Ifpack2_ETIHelperMacros.h"
 
+#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_AMESOS2)
+
 namespace Ifpack2 {
 
   #define LCLINST(S,LO,GO) \
@@ -66,5 +68,7 @@ namespace Ifpack2 {
   #endif
 
 }
+
+#endif // HAVE_IFPACK2_EXPERIMENTAL
 
 #endif
