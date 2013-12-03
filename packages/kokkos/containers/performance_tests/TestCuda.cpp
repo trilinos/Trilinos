@@ -58,7 +58,7 @@ protected:
   {
     std::cout << std::setprecision(5) << std::scientific;
     Kokkos::Cuda::host_mirror_device_type::initialize();
-    Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(3) );
+    Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
   }
   static void TearDownTestCase()
   {
