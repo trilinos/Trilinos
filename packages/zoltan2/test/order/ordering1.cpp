@@ -253,7 +253,7 @@ int main(int narg, char** arg)
   cout << "Going to get results" << endl;
   // Check that the solution is really a permutation
   checkLength = soln->getPermutationSize();
-  checkGIDs = soln->getGids();
+  checkGIDs = soln->getGids(); // NOT computed; this should be done in ApplyOrderingSolution()
   checkPerm = soln->getPermutation();
 
   if (outputFile != "") {
@@ -266,12 +266,6 @@ int main(int narg, char** arg)
     }
     permFile.close();
 
-    // Write permuted gids to file
-    permFile.open((outputFile + ".gids").c_str());
-    for (size_t i=0; i<checkLength; i++){
-      permFile << " " << checkGIDs[i] << endl;
-    }
-    permFile.close();
   }
 
   cout << "Going to validate the soln" << endl;
