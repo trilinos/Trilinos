@@ -211,13 +211,6 @@ public:
    */
   virtual int getNumWeightsPerOf(enum GraphEntityType ent) const = 0;
 
-  /*! \brief Returns the dimension of the geometry, if any.
-   *
-   *  Some algorithms can use geometric vertex coordinate 
-   *    information if it is present.
-   */
-  virtual int getCoordinateDimension() const = 0;
-
   /*! \brief Sets pointers to this process' graph entries.
       \param vertexIds will on return a pointer to vertex global Ids
       \param offsets is an array of size numVertices + 1.  
@@ -273,30 +266,50 @@ public:
   virtual size_t getEdgeWeights(int weightDim,
      const scalar_t *&weights, int &stride) const = 0;
 
+  /*! \brief Returns the dimension of the geometry, if any.
+   *  \param ent is the entity for which coordinate information is requested
+   *         Valid values are GRAPH_VERTEX and GRAPH_EDGE.
+   *
+   *  Some algorithms can use geometric coordinate information if it is present.
+   *  Since coordinate information is optional, we provide a default definition
+   *  that does not return coordinate info.  Individual graph adapters can
+   *  override this definition.
+   */
+  virtual int getDimensionOf(enum GraphEntityType ent) const { return 0; }
+
   /*! \brief Provide a pointer to one dimension of vertex coordinates.
-      \param coordDim  is a value from 0 to one less than
-         getCoordinateDimension() specifying which dimension is
-         being provided in the coords list.
-      \param coords  points to a list of coordinate values for the dimension.
-      \param stride  describes the layout of the coordinate values in
-              the coords list.  If stride is one, then the ith coordinate
-              value is coords[i], but if stride is two, then the
-              ith coordinate value is coords[2*i].
-
-       \return The length of the \c coords list.  This may be more than
-              getLocalNumOf() because the \c stride
-              may be more than one.
-
-      Zoltan2 does not copy your data.  The data pointed to by coords
-      must remain valid for the lifetime of this Adapter.
+   *  \param ent is the entity for which coordinate information is requested
+   *         Valid values are GRAPH_VERTEX and GRAPH_EDGE.
+   *  \param coordDim  is a value from 0 to one less than
+   *     getDimension() specifying which dimension is
+   *     being provided in the coords list.
+   *  \param coords  points to a list of coordinate values for the dimension.
+   *  \param stride  describes the layout of the coordinate values in
+   *          the coords list.  If stride is one, then the ith coordinate
+   *          value is coords[i], but if stride is two, then the
+   *          ith coordinate value is coords[2*i].
+   *
+   *   \return The length of the \c coords list.  This may be more than
+   *          getLocalNumOf() because the \c stride
+   *          may be more than one.
+   *
+   *  Zoltan2 does not copy your data.  The data pointed to by coords
+   *  must remain valid for the lifetime of this Adapter.
+   *  Since coordinate information is optional, we provide a default definition
+   *  that does not return coordinate info.  Individual graph adapters can
+   *  override this definition.
    */
 
-  virtual size_t getVertexCoordinates(int coordDim, 
-    const scalar_t *&coords, int &stride) const = 0;
-
+  virtual size_t getCoordinatesView(enum GraphEntityType ent, int coordDim,
+    const scalar_t *&coords, int &stride) const
+  {
+    coords = NULL;
+    stride = 0;
+    return 0;
+  }
 
 };
-  
+
 }  //namespace Zoltan2
-  
+
 #endif

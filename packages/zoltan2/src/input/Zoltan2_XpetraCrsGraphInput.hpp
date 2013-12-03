@@ -314,10 +314,6 @@ public:
       return edgeWeightDim_;
   }
 
-  int getCoordinateDimension() const { 
-    return coordinateDim_;
-  }
-
   size_t getVertexListView(const gid_t *&ids,
     const lno_t *&offsets, const gid_t *& edgeId) const
   {
@@ -356,21 +352,32 @@ public:
     return length;
   }
 
-  size_t getVertexCoordinates(int dim,
-    const scalar_t *&coords, int &stride) const
-  {
-    env_->localInputAssertion(__FILE__, __LINE__, 
-      "invalid coordinate dimension",
-      dim >= 0 && dim < coordinateDim_, BASIC_ASSERTION);
-
-    size_t length;
-    coords_[dim].getStridedList(length, coords, stride);
-    return length;
+  int getDimensionOf(enum GraphEntityType ent) const { 
+    if (ent == Zoltan2::GRAPH_VERTEX)
+      return coordinateDim_;
+    else
+      return 0;
   }
 
- /*! \brief Repartition a graph that has the same structure as
-   *   the graph that instantiated this input adapter.
-   */
+  size_t getCoordinatesViewOf(enum GraphEntityType ent, int dim,
+    const scalar_t *&coords, int &stride) const
+  {
+    if (ent == Zoltan2::GRAPH_VERTEX) {
+      env_->localInputAssertion(__FILE__, __LINE__, 
+        "invalid coordinate dimension",
+        dim >= 0 && dim < coordinateDim_, BASIC_ASSERTION);
+
+      size_t length;
+      coords_[dim].getStridedList(length, coords, stride);
+      return length;
+    }
+    else {
+      coords = NULL;
+      stride = 0;
+      return 0;
+    }
+  }
+
   template<typename Adapter>
     size_t applyPartitioningSolution(const User &in, User *&out,
          const PartitioningSolution<Adapter> &solution) const;

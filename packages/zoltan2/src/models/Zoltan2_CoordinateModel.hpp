@@ -857,7 +857,7 @@ CoordinateModel<GraphAdapter<User> >::CoordinateModel(
       coordinateDim_(), gids_(), xyz_(), userNumWeights_(0), weights_(), 
       gnos_(), gnosConst_()
 {
-  coordinateDim_ = ia->getCoordinateDimension();
+  coordinateDim_ = ia->getDimensionOf(ia->getPrimaryEntityType());
 
   env->localInputAssertion(__FILE__, __LINE__, 
    "graph input does not have vertex coordinates",
@@ -894,7 +894,8 @@ CoordinateModel<GraphAdapter<User> >::CoordinateModel(
       int stride;
       const scalar_t *coords=NULL;
       try{
-        ia->getVertexCoordinates(dim, coords, stride);
+        ia->getCoordinatesViewOf(ia->getPrimaryEntityType(),
+                                 dim, coords, stride);
       }
       Z2_FORWARD_EXCEPTIONS;
 

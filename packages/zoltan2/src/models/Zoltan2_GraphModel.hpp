@@ -1410,7 +1410,7 @@ template <typename User>
 
   // Vertex coordinates
 
-  vCoordDim_ = ia->getCoordinateDimension();
+  vCoordDim_ = ia->getDimensionOf(ia->getPrimaryEntityType());
 
   if (vCoordDim_ > 0){
     input_t *coordInfo = new input_t [vCoordDim_];
@@ -1419,7 +1419,8 @@ template <typename User>
     for (int dim=0; dim < vCoordDim_; dim++){
       const scalar_t *coords=NULL;
       int stride=0;
-      size_t len = ia->getVertexCoordinates(dim, coords, stride);
+      size_t len = ia->getCoordinatesViewOf(ia->getPrimaryEntityType(),
+                                            dim, coords, stride);
       ArrayRCP<const scalar_t> coordArray = arcp(coords, 0, len, false);
       coordInfo[dim] = input_t(coordArray, stride);
     }
