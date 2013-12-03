@@ -59,6 +59,18 @@ inverse(Tensor<T, N> const & A)
   Index const
   dimension = A.get_dimension();
 
+  Index const
+  maximum_dimension = static_cast<Index>(std::numeric_limits<Index>::digits);
+
+  if (dimension > maximum_dimension) {
+    std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
+    std::cerr << std::endl;
+    std::cerr << "Requested dimension (" << dimension;
+    std::cerr << ") exceeds maximum allowed for inverse: " << maximum_dimension;
+    std::cerr << std::endl;
+    exit(1);
+  }
+
   switch (dimension) {
 
   case 3:

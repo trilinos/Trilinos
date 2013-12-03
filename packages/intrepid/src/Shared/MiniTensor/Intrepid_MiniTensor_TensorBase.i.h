@@ -207,8 +207,6 @@ TensorBase<T, Store>::set_dimension(Index const dimension, Index const order)
 {
   if (Store::IS_STATIC == true) return;
 
-  check_dynamic<Store>(dimension);
-
   dimension_ = dimension;
 
   Index const
