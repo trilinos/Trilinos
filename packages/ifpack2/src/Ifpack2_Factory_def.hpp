@@ -100,10 +100,12 @@ Factory::create (const std::string& precType,
   if (precTypeUpper == "ILUT") {
     prec = rcp (new ILUT<MatrixType> (matrix));
   }
+#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_AMESOS2)
 #if defined(HAVE_AMESOS2_SUPERLU) || defined(HAVE_AMESOS2_SUPERLUDIST) || defined(HAVE_AMESOS2_KLU) || defined(HAVE_AMESOS2_LAPACK)
   else if (precTypeUpper == "AMESOS2") {
     prec = rcp (new Amesos2solver<MatrixType> (matrix));
   }
+#endif
 #endif
   else if (precTypeUpper == "RILUK") {
     prec = rcp (new RILUK<MatrixType> (matrix));
@@ -183,10 +185,12 @@ Factory::create (const std::string& precType,
   if (precTypeUpper == "ILUT") {
     prec = rcp (new ILUT<MatrixType> (matrix));
   }
+#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_AMESOS2)
 #if defined(HAVE_AMESOS2_SUPERLU) || defined(HAVE_AMESOS2_SUPERLUDIST) || defined(HAVE_AMESOS2_KLU) || defined(HAVE_AMESOS2_LAPACK)
   else if (precTypeUpper == "AMESOS2") {
     prec = rcp (new Amesos2solver<MatrixType> (matrix));
   }
+#endif
 #endif
   else if (precTypeUpper == "RILUK") {
     prec = rcp (new RILUK<MatrixType> (matrix));
