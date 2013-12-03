@@ -69,6 +69,9 @@
 /* Define if KokkosCore is enabled */
 #cmakedefine HAVE_STOKHOS_KOKKOSCORE
 
+/* Define if KokkosCore is enabled */
+#cmakedefine HAVE_STOKHOS_KOKKOSLINALG
+
 /* Define if MueLu is enabled */
 #cmakedefine HAVE_STOKHOS_MUELU
 
