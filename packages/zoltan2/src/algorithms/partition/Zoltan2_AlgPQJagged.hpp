@@ -50,7 +50,9 @@
 #ifndef _ZOLTAN2_ALGPQJagged_HPP_
 #define _ZOLTAN2_ALGPQJagged_HPP_
 
-#include <Zoltan2_AlgRCB_methods.hpp>
+#include <Zoltan2_PQJagged_ReductionOps.hpp>
+#include <Zoltan2_AlgRCB_methods.hpp> // TODO: Needed for RCB params, not sure
+                                      // why they are needed here.
 #include <Zoltan2_CoordinateModel.hpp>
 #include <Zoltan2_Metric.hpp>             // won't need thiss
 #include <Zoltan2_Parameters.hpp>
@@ -60,7 +62,6 @@
 #include <new>          // ::operator new[]
 #include <algorithm>    // std::sort
 #include <Zoltan2_Util.hpp>
-
 
 
 #ifdef HAVE_ZOLTAN2_ZOLTAN
@@ -109,127 +110,6 @@
 #define Z2_DEFAULT_CON_PART_COUNT 16
 
 using std::vector;
-
-namespace Teuchos{
-template <typename Ordinal, typename T>
-class PQJaggedCombinedReductionOp  : public ValueTypeReductionOp<Ordinal,T>
-{
-private:
-    Ordinal numSum_0, numMin_1, numMin_2;
-    std::vector <Ordinal> *partVector;
-    Ordinal vectorBegin;
-    Ordinal k;
-    int reductionType;
-
-public:
-    /*! \brief Default Constructor
-     */
-    PQJaggedCombinedReductionOp ():numSum_0(0), numMin_1(0),
-            numMin_2(0), k(0), partVector(NULL), vectorBegin(0), reductionType(0){}
-
-    /*! \brief Constructor
-     *   \param nsum  the count of how many sums will be computed at the
-     *             start of the list.
-     *   \param nmin  following the sums, this many minimums will be computed.
-     *   \param nmax  following the minimums, this many maximums will be computed.
-     */
-    PQJaggedCombinedReductionOp (Ordinal nsum, Ordinal nmin1, Ordinal nmin2, Ordinal k_):
-        numSum_0(nsum), numMin_1(nmin1), numMin_2(nmin2),
-        partVector(NULL),vectorBegin(0),
-        k(k_),
-        reductionType(0){}
-
-
-    PQJaggedCombinedReductionOp (std::vector <Ordinal> *pVector, Ordinal vBegin, Ordinal k_):
-//  PQJaggedCombinedReductionOp (vector <Ordinal> *pVector, Ordinal vBegin, Ordinal k_):
-        numSum_0(0), numMin_1(0), numMin_2(0),
-        partVector(pVector), vectorBegin(vBegin),
-        k(k_),
-        reductionType(1){}
-
-
-    /*! \brief Implement Teuchos::ValueTypeReductionOp interface
-     */
-    void reduce( const Ordinal count, const T inBuffer[], T inoutBuffer[]) const
-    {
-        if (reductionType == 0){
-            Ordinal next=0;
-            for(Ordinal ii = 0; ii < k ; ++ii){
-                for (Ordinal i=0; i < numSum_0; i++, next++)
-                    inoutBuffer[next] += inBuffer[next];
-
-                for (Ordinal i=0; i < numMin_1; i++, next++)
-                    if (inoutBuffer[next] < inBuffer[next])
-                        inoutBuffer[next] = inBuffer[next];
-
-                for (Ordinal i=0; i < numMin_2; i++, next++)
-                    if (inoutBuffer[next] > inBuffer[next])
-                        inoutBuffer[next] = inBuffer[next];
-            }
-        }
-        else {
-            Ordinal next=0;
-            for(Ordinal ii = 0; ii < k ; ++ii){
-                Ordinal partPartition = (*partVector)[ii + vectorBegin];
-                Ordinal tnumSum_ = 2 * partPartition - 1;
-                Ordinal tnumMin_1 = partPartition - 1;
-                Ordinal tnumMin_2 = tnumMin_1 ;
-                for (Ordinal i=0; i < tnumSum_; i++, next++)
-                    inoutBuffer[next] += inBuffer[next];
-
-                for (Ordinal i=0; i < tnumMin_1; i++, next++)
-                    if (inoutBuffer[next] < inBuffer[next])
-                        inoutBuffer[next] = inBuffer[next];
-
-                for (Ordinal i=0; i < tnumMin_2; i++, next++)
-                    if (inoutBuffer[next] > inBuffer[next])
-                        inoutBuffer[next] = inBuffer[next];
-            }
-        }
-    }
-};
-
-
-template <typename Ordinal, typename T>
-class PQJaggedCombinedMinMaxTotalReductionOp  : public ValueTypeReductionOp<Ordinal,T>
-{
-private:
-    Ordinal numMin, numMax, numTotal;
-
-public:
-    /*! \brief Default Constructor
-     */
-    PQJaggedCombinedMinMaxTotalReductionOp ():numMin(0), numMax(0), numTotal(0){}
-
-    /*! \brief Constructor
-     *   \param nsum  the count of how many sums will be computed at the
-     *             start of the list.
-     *   \param nmin  following the sums, this many minimums will be computed.
-     *   \param nmax  following the minimums, this many maximums will be computed.
-     */
-    PQJaggedCombinedMinMaxTotalReductionOp (Ordinal nmin, Ordinal nmax, Ordinal nTotal):
-        numMin(nmin), numMax(nmax), numTotal(nTotal){}
-
-    /*! \brief Implement Teuchos::ValueTypeReductionOp interface
-     */
-    void reduce( const Ordinal count, const T inBuffer[], T inoutBuffer[]) const
-    {
-        Ordinal next=0;
-
-        for (Ordinal i=0; i < numMin; i++, next++)
-            if (inoutBuffer[next] > inBuffer[next])
-                inoutBuffer[next] = inBuffer[next];
-
-        for (Ordinal i=0; i < numMax; i++, next++)
-            if (inoutBuffer[next] < inBuffer[next])
-                inoutBuffer[next] = inBuffer[next];
-
-
-        for (Ordinal i=0; i < numTotal; i++, next++)
-            inoutBuffer[next] += inBuffer[next];
-    }
-};
-} // namespace Teuchos
 
 namespace Zoltan2{
 
@@ -997,14 +877,14 @@ void pqJagged_getGlobalMinMaxTotalCoord(
         pq_scalar_t *globalMinMaxTotal){
 
 
-    //reduce min for first concurrentPartCount elements, reduce max for next concurrentPartCount elements,
+    //reduce min for first concurrentPartCount elements, reduce max for next
+    //concurrentPartCount elements,
     //reduce sum for the last concurrentPartCount elements.
     if(comm->getSize()  > 1){
 
 #ifndef mpi_communication
-        Teuchos::PQJaggedCombinedMinMaxTotalReductionOp<int, pq_scalar_t> reductionOp(
-                concurrentPartCount,
-                concurrentPartCount,
+        Teuchos::PQJaggedCombinedMinMaxTotalReductionOp<int, pq_scalar_t>
+         reductionOp( concurrentPartCount, concurrentPartCount,
                 concurrentPartCount);
 #endif
 
@@ -1014,16 +894,14 @@ void pqJagged_getGlobalMinMaxTotalCoord(
 #endif
 
         try{
-
-
 #ifdef mpi_communication
-
-            MPI_Allreduce(localMinMaxTotal, globalMinMaxTotal, 3 * concurrentPartCount, MPI_FLOAT, myop,MPI_COMM_WORLD);
+            MPI_Allreduce(localMinMaxTotal, globalMinMaxTotal,
+            3 * concurrentPartCount, MPI_FLOAT, myop,MPI_COMM_WORLD);
 #endif
 #ifndef mpi_communication
             reduceAll<int, pq_scalar_t>(*comm, reductionOp,
-                    3 * concurrentPartCount, localMinMaxTotal, globalMinMaxTotal
-            );
+                    3 * concurrentPartCount, localMinMaxTotal,
+                    globalMinMaxTotal);
 #endif
 
         }
@@ -1093,7 +971,8 @@ void pqJagged_getCutCoord_Weights(
                 cumulative += (*futurePartitions)[i + futureArrayIndex];
                 //cutPartRatios[i] = (cumulative /*+  (*futurePartitions)[i + futureArrayIndex]*/) / (totalInnerPartCount);
                 cutPartRatios[i] = cumulative * unitWeight;
-                cutCoordinates[i] = minCoordinate + (coordinateRange * cumulative) / totalInnerPartCount;
+                cutCoordinates[i] = minCoordinate + (coordinateRange *
+                                         cumulative) / totalInnerPartCount;
             }
             cutPartRatios[noCuts] = 1;
         }
@@ -1345,10 +1224,13 @@ void getNewCoordinates(
             }
 
 
-            pq_scalar_t newPivot = pivotPos<pq_scalar_t> (cutUpperBounds, cutLowerBounds,i, cutUpperWeight, cutLowerWeight, ew, _EPSILON);
+            pq_scalar_t newPivot = pivotPos<pq_scalar_t> (cutUpperBounds,
+             cutLowerBounds,i, cutUpperWeight, cutLowerWeight, ew, _EPSILON);
 
             //if cut line does not move significantly.
-            if (ABS(cutCoordinates[i] - newPivot) < _EPSILON * EPS_SCALE || cutLowerBounds[i] - cutUpperBounds[i] > _EPSILON/*cutUpperBounds[i] < cutLowerBounds[i]*/){
+            if (ABS(cutCoordinates[i] - newPivot) < _EPSILON * EPS_SCALE ||
+                 cutLowerBounds[i] - cutUpperBounds[i] > _EPSILON
+                 /*cutUpperBounds[i] < cutLowerBounds[i]*/){
                 isDone[i] = true;
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp atomic
@@ -1414,7 +1296,8 @@ void getNewCoordinates(
 
 
 
-    //communication to determine the ratios of processors for the distribution of coordinates on the cut lines.
+    //communication to determine the ratios of processors for the distribution
+    //of coordinates on the cut lines.
 #ifdef HAVE_ZOLTAN2_OMP
     //#pragma omp barrier
 #pragma omp single
@@ -2218,7 +2101,6 @@ void pqJagged_1D_Partition(
     partId_t recteLinearCutCount = 0;
     pq_scalar_t *cutCoordinates_tmp = cutCoordinates;
 
-
 #ifdef mpi_communication
     MPI_Op myop;
     MPI_Op_create(sumMinMin, 0, &myop);   /* step 3 */
@@ -2227,8 +2109,9 @@ void pqJagged_1D_Partition(
 
     pq_scalar_t _EPSILON = numeric_limits<pq_scalar_t>::epsilon();
 
-    Teuchos::PQJaggedCombinedReductionOp<partId_t, pq_scalar_t> *reductionOp = NULL;
-        reductionOp = new Teuchos::PQJaggedCombinedReductionOp<partId_t, pq_scalar_t>(&pVector , currentPartBeginIndex , concurrentPartCount);
+    Teuchos::PQJaggedCombinedReductionOp<partId_t, pq_scalar_t>
+                 *reductionOp = NULL;
+    reductionOp = new Teuchos::PQJaggedCombinedReductionOp <partId_t, pq_scalar_t>(&pVector , currentPartBeginIndex , concurrentPartCount);
 
 
     size_t totalReductionSize = 0;
@@ -2391,22 +2274,18 @@ void pqJagged_1D_Partition(
 #endif
 #ifndef mpi_communication
 
-                        reduceAll<int, pq_scalar_t>(
-                                *comm,
-                                *reductionOp,
-                                totalReductionSize,
-                                local_totalPartWeights_leftClosest_rightCloset,
-                                global_totalPartWeights_leftClosest_rightCloset
-                        );
+                        reduceAll<int, pq_scalar_t>( *comm, *reductionOp,
+                            totalReductionSize,
+                            local_totalPartWeights_leftClosest_rightCloset,
+                            global_totalPartWeights_leftClosest_rightCloset);
 #endif
                     }
                     Z2_THROW_OUTSIDE_ERROR(*env)
                 }
                 else {
                         memcpy(global_totalPartWeights_leftClosest_rightCloset,
-                                local_totalPartWeights_leftClosest_rightCloset,
-                                totalReductionSize * sizeof(pq_scalar_t)
-                        );
+                            local_totalPartWeights_leftClosest_rightCloset,
+                            totalReductionSize * sizeof(pq_scalar_t));
                 }
             }
             partId_t cutShift = 0;
@@ -6375,8 +6254,6 @@ void AlgPQJagged(
     typedef typename Adapter::lno_t pq_lno_t;
     typedef typename Adapter::node_t pq_node_t;
 
-    //MessageOutputLevel inout_msg = static_cast<MessageOutputLevel>(3);
-    //env->debug(inout_msg, "In PQ Jagged");
     env->debug(3, "In PQ Jagged");
 
     /*
@@ -6628,7 +6505,8 @@ void AlgPQJagged(
     //necessary because previous cut line information is used for determining
     //the next cutline information. therefore, cannot update the cut work array
     //until all cutlines are determined.
-    pq_scalar_t *cutCoordinatesWork = allocMemory<pq_scalar_t>(maxCutNo * concurrentPartCount);
+    pq_scalar_t *cutCoordinatesWork = allocMemory<pq_scalar_t>(maxCutNo *
+    concurrentPartCount);
 
 #ifdef HAVE_ZOLTAN2_OMP
 #ifdef FIRST_TOUCH
@@ -6637,7 +6515,8 @@ void AlgPQJagged(
 #endif
 
     //cumulative part weight ratio array.
-    pq_scalar_t *targetPartWeightRatios = allocMemory<pq_scalar_t>(maxPartNo * concurrentPartCount); // the weight ratios at left side of the cuts. First is 0, last is 1.
+    pq_scalar_t *targetPartWeightRatios = allocMemory<pq_scalar_t>(maxPartNo *
+    concurrentPartCount); // the weight ratios at left side of the cuts. First is 0, last is 1.
 #ifdef HAVE_ZOLTAN2_OMP
 #ifdef FIRST_TOUCH
     firstTouch<pq_scalar_t>(cutPartRatios, maxCutNo);
@@ -6693,7 +6572,6 @@ void AlgPQJagged(
         for(partId_t ii = 0; ii < maxCutNo; ++ii){
             rightClosestDistance[me][ii] = 0;
             leftClosestDistance[me][ii] = 0;
-
         }
     }
 #endif
@@ -6778,8 +6656,12 @@ void AlgPQJagged(
     vector<partId_t> *newFuturePartitions = new vector<partId_t> ();
     newFuturePartitions->push_back(numGlobalParts);
 
-    RCP < vector <coordinateModelPartBox <pq_scalar_t, partId_t> > > inPartBoxes(new vector <coordinateModelPartBox <pq_scalar_t, partId_t> > (), true) ;
-    RCP < vector <coordinateModelPartBox <pq_scalar_t, partId_t> > > outPartBoxes(new vector <coordinateModelPartBox <pq_scalar_t, partId_t> > (), true);
+    RCP < vector <coordinateModelPartBox <pq_scalar_t, partId_t> > >
+     inPartBoxes(new vector <coordinateModelPartBox <pq_scalar_t, partId_t> >
+      (), true) ;
+    RCP < vector <coordinateModelPartBox <pq_scalar_t, partId_t> > >
+     outPartBoxes(new vector <coordinateModelPartBox <pq_scalar_t, partId_t> >
+      (), true);
 
 
     if(keep_part_boxes){
@@ -6789,11 +6671,13 @@ void AlgPQJagged(
         pq_scalar_t *maxs = allocMemory<pq_scalar_t>(coordDim);
         pq_scalar_t *gmaxs = allocMemory<pq_scalar_t>(coordDim);
         for (int i = 0; i < coordDim; ++i){
-            //cout << " pqJagged_coordinates[i][0]:" << pqJagged_coordinates[i][0] << endl;
+            //cout << " pqJagged_coordinates[i][0]:" <<
+            //pqJagged_coordinates[i][0] << endl;
             pq_scalar_t localMin = pqJagged_coordinates[i][0];
             pq_scalar_t localMax = pqJagged_coordinates[i][0];
             for (pq_lno_t j = 1; j < numLocalCoords; ++j){
-                //cout << " pqJagged_coordinates[i][i]:" << pqJagged_coordinates[i][j] << endl;
+                //cout << " pqJagged_coordinates[i][i]:" <<
+                //pqJagged_coordinates[i][j] << endl;
                 if (pqJagged_coordinates[i][j] < localMin){
                     localMin = pqJagged_coordinates[i][j];
                 }
@@ -6914,7 +6798,8 @@ void AlgPQJagged(
 
         //the index where in the outtotalCounts will be written.
         partId_t currentOut = 0;
-        //whatever is written to outTotalCounts will be added with previousEnd so that the points will be shifted.
+        //whatever is written to outTotalCounts will be added with previousEndi
+        //so that the points will be shifted.
         partId_t previousEnd = 0;
 
         partId_t currentWorkPart = 0;
@@ -6949,7 +6834,8 @@ void AlgPQJagged(
                 ++workPartCount;
                 pq_lno_t coordinateEnd= inTotalCounts[currentPart];
                 pq_lno_t coordinateBegin = currentPart==0 ? 0: inTotalCounts[currentPart -1];
-                //cout << "me:" << problemComm->getRank() << " begin:" << coordinateBegin  << " end:" << coordinateEnd << endl;
+                //cout << "me:" << problemComm->getRank() << " begin:" <<i
+                //coordinateBegin  << " end:" << coordinateEnd << endl;
                 pqJagged_getLocalMinMaxTotalCoord<pq_scalar_t, pq_lno_t>(
                     partitionedPointCoordinates, pqCoord,
                     pqJagged_uniformWeights[0], pqJagged_weights[0], numThreads,
@@ -7110,26 +6996,41 @@ void AlgPQJagged(
                         if(keep_part_boxes){
                             for (partId_t j = 0; j < noParts - 1; ++j){
 /*
-                                cout << " outShift + currentOut + j: " << outShift + currentOut + j << endl;
-                                cout << " coordInd:" << coordInd << " cut:" << "usedCutCoordinate["<< j<< "]" << usedCutCoordinate[j] << endl;
+                                cout << " outShift + currentOut + j: " <<
+                                 outShift + currentOut + j << endl;
+                                cout << " coordInd:" << coordInd << " cut:" <<
+                                 "usedCutCoordinate["<< j<< "]" <<
+                                  usedCutCoordinate[j] << endl;
 
-                                cout << "me:" << problemComm->getRank() << " before update:" << endl;
+                                cout << "me:" << problemComm->getRank() << "
+                                 before update:" << endl;
 
-                                (*outPartBoxes)[outShift + currentOut + j].print();
+                                (*outPartBoxes)[outShift + currentOut +
+                                 j].print();
 */
-                                (*outPartBoxes)[outShift + currentOut + j].updateMinMax(usedCutCoordinate[j], 1 /*update max*/, coordInd);
+                                (*outPartBoxes)[outShift + currentOut +
+                                 j].updateMinMax(usedCutCoordinate[j], 1
+                                  /*update max*/, coordInd);
 /*
-                                cout << "me:" << problemComm->getRank() <<  " after update:"<< endl;
-                                (*outPartBoxes)[outShift + currentOut + j].print();
+                                cout << "me:" << problemComm->getRank() <<
+                                  " after update:"<< endl;
+                                (*outPartBoxes)[outShift + currentOut +
+                                 j].print();
 
-                                cout <<  "me:" << problemComm->getRank() << " before update:"<< endl;
+                                cout <<  "me:" << problemComm->getRank() <<
+                                " before update:"<< endl;
 
-                                (*outPartBoxes)[outShift + currentOut + j + 1].print();
+                                (*outPartBoxes)[outShift + currentOut + j +
+                                1].print();
 */
-                                (*outPartBoxes)[outShift + currentOut + j + 1].updateMinMax(usedCutCoordinate[j], 0 /*update min*/, coordInd);
+                                (*outPartBoxes)[outShift + currentOut + j +
+                                 1].updateMinMax(usedCutCoordinate[j], 0
+                                  /*update min*/, coordInd);
 /*
-                                cout <<  "me:" << problemComm->getRank() << " after update:"<< endl;
-                                (*outPartBoxes)[outShift + currentOut + j + 1].print();
+                                cout <<  "me:" << problemComm->getRank() <<
+                                 " after update:"<< endl;
+                                (*outPartBoxes)[outShift + currentOut + j +
+                                 1].print();
 */
 
                             }
