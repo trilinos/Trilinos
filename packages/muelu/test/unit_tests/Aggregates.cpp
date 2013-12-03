@@ -141,7 +141,7 @@ namespace MueLuTests {
   {
     out << "version: " << MueLu::Version() << std::endl;
     RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(15);
-    RCP<AmalgamationInfo> amalgInfo = Teuchos::rcp(new AmalgamationInfo);
+    RCP<AmalgamationInfo> amalgInfo;
     RCP<Aggregates> aggregates = gimmeAggregates(A, amalgInfo);
     TEST_EQUALITY(aggregates != Teuchos::null, true);
   }
@@ -154,7 +154,7 @@ namespace MueLuTests {
 
       RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(36);
       RCP<const Map> rowmap = A->getRowMap();
-      RCP<AmalgamationInfo> amalgInfo = Teuchos::rcp(new AmalgamationInfo);
+      RCP<AmalgamationInfo> amalgInfo;
       RCP<Aggregates> aggregates = gimmeAggregates(A, amalgInfo);
       GO numAggs = aggregates->GetNumAggregates();
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();

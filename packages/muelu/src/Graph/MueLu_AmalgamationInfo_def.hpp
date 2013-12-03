@@ -58,30 +58,6 @@
 
 namespace MueLu {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetAmalgamationParams(RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > nodegid2dofgids) const {
-    nodegid2dofgids_ = nodegid2dofgids;
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetGlobalAmalgamationParams() const {
-    return nodegid2dofgids_;
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetNodeGIDVector(RCP<std::vector<GlobalOrdinal> > nodegids) const {
-    gNodeIds_ = nodegids;
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<std::vector<GlobalOrdinal> > AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetNodeGIDVector() const {
-    return gNodeIds_;
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::string AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::description() const {
-    return "AmalgamationInfo";
-  }
 }
 
 
