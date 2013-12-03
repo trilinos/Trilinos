@@ -51,6 +51,8 @@
 
 #define KERNEL_PREFIX __device__ __host__
 
+#include "Teuchos_ScalarTraitsCUDA.hpp"
+
 #include "Stokhos_Sacado.hpp"
 #include "Stokhos_CUDAStorage.hpp"
 #include "Stokhos_CUDAQuadOrthogPolyExpansion.hpp"
