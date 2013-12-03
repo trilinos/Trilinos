@@ -46,6 +46,8 @@
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
+#include <vector>
+#include <algorithm>
 
 // Copied from Trilinos/packages/triutils/src, this file is here
 // only to make it easier for users to create and read matrices.
@@ -516,6 +518,11 @@ void ReadHB(const char *data_file, const Epetra_Comm  &comm,
             Epetra_Vector *& x, Epetra_Vector *& b,
             Epetra_Vector *&xexact) 
 {
+  // In modifying this function for 64 bit Epetra GIDS, we assume that no one
+  // would read in a matrix from a file with more than INT_MAX rows.  Thus,
+  // 64 bit GIDs are used only when 32 bit GIDs are disabled. 
+  // -- Chetan
+
   FILE *in_file ;
   int numGlobalEquations=0, N_columns=0, n_entries=0, Nrhs=0;
   char Title[73], Key[9], Rhstype[4];
@@ -689,12 +696,33 @@ void ReadHB(const char *data_file, const Epetra_Comm  &comm,
   comm.Broadcast(&numGlobalEquations, 1, 0);
   int nlocal = 0;
   if (comm.MyPID()==0) nlocal = numGlobalEquations;
+
+#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
+  // If 32 bit map constructor is available, this code will call it
+  // else 64 bit constructor will be called (and it will be available
+  // due to the macro checks above).
   map = new Epetra_Map(numGlobalEquations, nlocal, 0, comm); // Create map with all elements on PE 0
-  
+#else
+  map = 0;
+#endif
+
   A = new Epetra_CrsMatrix(Copy, *map, 0); // Construct matrix on PE 0
-  if (comm.MyPID()==0)
+  if (comm.MyPID()==0) {
+#if defined(EPETRA_NO_32BIT_GLOBAL_INDICES) && !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
+    // Locally copy int indices to long long space.  Not the best way, but at least
+    // the code will run.
+    for (int i=0; i<numGlobalEquations; i++) {
+      if(pntr1[i+1] > pntr1[i]) { // If something to insert
+        std::vector<long long> local_LL_ids(pntr1[i+1]-pntr1[i]);
+	    std::copy(indx1 + pntr1[i], indx1 + pntr1[i+1], local_LL_ids.begin());
+        A->InsertGlobalValues(i, pntr1[i+1]-pntr1[i], val1+pntr1[i], &local_LL_ids[0]);
+      }
+	}
+#elif !defined(EPETRA_NO_32BIT_GLOBAL_INDICES)
     for (int i=0; i<numGlobalEquations; i++)
       A->InsertGlobalValues(i, pntr1[i+1]-pntr1[i], val1+pntr1[i], indx1+pntr1[i]);
+#endif
+  }
   A->FillComplete();
   
   x = new Epetra_Vector(Copy, *map, hbx);

@@ -51,6 +51,7 @@
 namespace Galeri {
 namespace Matrices {
 
+template<typename int_type>
 inline
 Epetra_CrsMatrix* 
 Cross3D(const Epetra_Map* Map, 
@@ -62,11 +63,12 @@ Cross3D(const Epetra_Map* Map,
   Epetra_CrsMatrix* Matrix = new Epetra_CrsMatrix(Copy, *Map,  7);
 
   int NumMyElements = Map->NumMyElements();
-  int* MyGlobalElements = Map->MyGlobalElements();
+  int_type* MyGlobalElements = 0;
+  Map->MyGlobalElementsPtr(MyGlobalElements);
 
   int left, right, lower, upper, below, above;
   vector<double> Values(6);
-  vector<int> Indices(6);
+  vector<int_type> Indices(6);
 
   //    e
   //  b a c
@@ -128,6 +130,29 @@ Cross3D(const Epetra_Map* Map,
   Matrix->OptimizeStorage();
 
   return(Matrix);
+}
+
+inline
+Epetra_CrsMatrix* 
+Cross3D(const Epetra_Map* Map, 
+        const int nx, const int ny, const int nz,
+        const double a, const double b, const double c,
+        const double d, const double e, const double f,
+        const double g)
+{
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(Map->GlobalIndicesInt()) {
+	  return Cross3D<int>(Map, nx, ny, nz, a, b, c, d, e, f, g);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(Map->GlobalIndicesLongLong()) {
+	  return Cross3D<long long>(Map, nx, ny, nz, a, b, c, d, e, f, g);
+  }
+  else
+#endif
+    throw "Galeri::Matrices::Cross3D: GlobalIndices type unknown";
 }
 
 } // namespace Matrices

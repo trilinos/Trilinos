@@ -49,18 +49,35 @@
 namespace Galeri {
 namespace Maps {
 
+template<typename int_type>
 inline
 Epetra_Map* 
-Linear(Epetra_Comm& Comm, int NumGlobalElements)
+TLinear(Epetra_Comm& Comm, int_type NumGlobalElements)
 {
   if (NumGlobalElements <= 0)
     throw(Exception(__FILE__, __LINE__,
                     "Incorrect input parameter to Maps::Linear()",
                     "n = " + toString(NumGlobalElements)));
 
-  return(new Epetra_Map (NumGlobalElements, 0, Comm));
+  return(new Epetra_Map (NumGlobalElements, (int_type) 0, Comm));
 
-} // Linear()
+} // TLinear()
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+inline
+Epetra_Map* 
+Linear(Epetra_Comm& Comm, int NumGlobalElements) {
+  return TLinear<int>(Comm, NumGlobalElements);
+}
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+inline
+Epetra_Map* 
+Linear64(Epetra_Comm& Comm, long long NumGlobalElements) {
+  return TLinear<long long>(Comm, NumGlobalElements);
+}
+#endif
 
 } // namespace Linear
 } // namespace Galeri

@@ -50,17 +50,19 @@
 namespace Galeri {
 namespace Matrices {
 
+template<typename int_type>
 inline
 Epetra_CrsMatrix* JordanBlock(const Epetra_Map* Map, const double value)
 {
   // this is actually a dense matrix, stored into Crs format
   int NumMyElements     = Map->NumMyElements();
-  int NumGlobalElements = Map->NumGlobalElements();
-  int* MyGlobalElements = Map->MyGlobalElements();
+  int_type NumGlobalElements = (int_type) Map->NumGlobalElements64();
+  int_type* MyGlobalElements = 0;
+  Map->MyGlobalElementsPtr(MyGlobalElements);
 
   Epetra_CrsMatrix* Matrix = new Epetra_CrsMatrix(Copy, *Map, 2);
 
-  int Indices[2];
+  int_type Indices[2];
   double Values[2];
   
   for (int i = 0 ; i < NumMyElements ; ++i) 
@@ -87,6 +89,23 @@ Epetra_CrsMatrix* JordanBlock(const Epetra_Map* Map, const double value)
   Matrix->OptimizeStorage();
 
   return(Matrix);
+}
+
+Epetra_CrsMatrix* JordanBlock(const Epetra_Map* Map, const double value)
+{
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(Map->GlobalIndicesInt()) {
+	  return JordanBlock<int>(Map, value);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(Map->GlobalIndicesLongLong()) {
+	  return JordanBlock<long long>(Map, value);
+  }
+  else
+#endif
+    throw "Galeri::Matrices::JordanBlock: GlobalIndices type unknown";
 }
 
 } // namespace Matrices
