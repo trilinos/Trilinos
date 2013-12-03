@@ -124,11 +124,11 @@ namespace MueLu {
     gNodeIds = Teuchos::rcp(new std::vector<GlobalOrdinal>);
     gNodeIds->empty();
 
-    // in nodegid2dofgids_ for each node on the current proc a vector of
+    // in nodegid2dofgids for each node on the current proc a vector of
     // the corresponding DOFs gids is stored.
     // The map contains all nodes the current proc has connections to (including
     // nodes that are stored on other procs when there are off-diagonal entries in A)
-    nodegid2dofgids_ = Teuchos::rcp(new std::map<GlobalOrdinal,std::vector<GlobalOrdinal> >);
+    RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > nodegid2dofgids = Teuchos::rcp(new std::map<GlobalOrdinal,std::vector<GlobalOrdinal> >);
 
     RCP<const Map> rowMap = A->getRowMap();
     RCP<const Map> colMap = A->getColMap();
@@ -143,10 +143,10 @@ namespace MueLu {
       GlobalOrdinal gNodeId = DOFGid2NodeId(gDofId, fullblocksize, offset, indexBase);
 
       // gblockid -> gDofId/lDofId
-      if (nodegid2dofgids_->count(gNodeId) == 0) {
+      if (nodegid2dofgids->count(gNodeId) == 0) {
 
         // current column DOF gDofId belongs to a node that has not been added
-        // to nodeid2dofgids_ yet. Do it now and add ALL DOFs of node gNodeId to
+        // to nodeid2dofgids yet. Do it now and add ALL DOFs of node gNodeId to
         // unamalgamation information.
         // Note: we use offset and fullblocksize, ie. information from strided maps indirectly
         std::vector<GlobalOrdinal> DOFs;
@@ -160,7 +160,7 @@ namespace MueLu {
             DOFs.push_back(gDofIndex);
         }
 
-        (*nodegid2dofgids_)[gNodeId] = DOFs;
+        (*nodegid2dofgids)[gNodeId] = DOFs;
 
         if (rowMap->isNodeGlobalElement(gDofId)) {
           gNodeIds->push_back(gNodeId);
@@ -170,7 +170,7 @@ namespace MueLu {
     }
 
     // store (un)amalgamation information on current level
-    RCP<AmalgamationInfo> amalgamationData = rcp(new AmalgamationInfo(nodegid2dofgids_, gNodeIds, cnt_amalRows));
+    RCP<AmalgamationInfo> amalgamationData = rcp(new AmalgamationInfo(nodegid2dofgids, gNodeIds, cnt_amalRows));
     Set(currentLevel, "UnAmalgamationInfo", amalgamationData);
   }
 

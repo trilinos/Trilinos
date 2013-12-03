@@ -126,9 +126,6 @@ namespace MueLu {
 
   private:
 
-    // amalgamation information
-    mutable RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > nodegid2dofgids_;
-
   }; //class SubBlockUnAmalgamationFactory
 
 } //namespace MueLu
