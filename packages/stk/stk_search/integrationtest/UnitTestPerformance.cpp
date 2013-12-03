@@ -200,6 +200,7 @@ TEST(Performance, gtkSearch)
 size_t getGoldValueForTest()
 {
     std::string goldValue = getOption("-gold");
+    if ( goldValue == "skip" ) return 0u;
     EXPECT_LT(0u, goldValue.size());
     std::istringstream ss(goldValue);
     size_t goldValueNumber=0;
@@ -358,7 +359,14 @@ void testStkSearch(MPI_Comm comm, std::vector<mybox> &domainBoxes,
         SearchResults::iterator iter_end = std::unique(boxIdPairResults.begin(), boxIdPairResults.end());
         boxIdPairResults.erase(iter_end, boxIdPairResults.end());
         size_t goldValueNumber=getGoldValueForTest();
-        EXPECT_EQ(goldValueNumber, boxIdPairResults.size());
+        if ( goldValueNumber != 0u)
+        {
+            EXPECT_EQ(goldValueNumber, boxIdPairResults.size());
+        }
+        else
+        {
+            std::cerr << "Number of interactions: " << boxIdPairResults.size() << std::endl;
+        }
     }
 }
 
@@ -477,7 +485,14 @@ void printSumOfResults(MPI_Comm comm, const size_t sizeResults)
     MPI_Allreduce(&numResults, &sumOverAll, 1, MPI_INT, MPI_SUM, comm);
 
     size_t goldValueNumber=getGoldValueForTest();
-    EXPECT_EQ(goldValueNumber, (size_t)sumOverAll);
+    if ( goldValueNumber != 0u)
+    {
+        EXPECT_EQ(goldValueNumber, (size_t)sumOverAll);
+    }
+    else if ( procId == 0 )
+    {
+        std::cerr << "Number of interactions: " << sumOverAll << std::endl;
+    }
 }
 
 void fillBoxesUsingSidesetsFromFile(MPI_Comm comm, const std::string& filename, std::vector<mybox> &domainBoxes)
@@ -615,6 +630,7 @@ void writeExodusFileUsingBoxes(const std::vector<mybox>& boxes, const std::strin
     if ( boxes.size() == 0 )
     {
         std::cerr << "Skipping writing of file. No boxes to write.\n";
+        return;
     }
 
     const int num_nodes_per_elem = 8; 
@@ -743,7 +759,10 @@ void fillDomainBoxes(MPI_Comm comm, std::vector<mybox>& domainBoxes)
     fillBoxesUsingSidesetsFromFile(comm, filename, domainBoxes);
 
     std::string exodusFilename = getOption("-o", "boxes.exo");
-    writeExodusFileUsingBoxes(domainBoxes, exodusFilename);
+    if ( exodusFilename != "skip" )
+    {
+        writeExodusFileUsingBoxes(domainBoxes, exodusFilename);
+    } 
 }
 
 }
