@@ -391,6 +391,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
                   const Epetra_Comm& comm,
                   bool UserIsDistributedGlobal,
                   long long UserMinAllGID, long long UserMaxAllGID);
+  Epetra_BlockMap(long long NumGlobal_Elements, int NumMy_Elements,
+                  const long long * myGlobalElements,
+                  int ElementSize, long long indexBase,
+                  const Epetra_Comm& comm,
+                  bool UserIsDistributedGlobal,
+                  long long UserMinAllGID, long long UserMaxAllGID);
 #endif
 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
@@ -456,6 +462,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   // default implementation so that no compiler/linker error in case neither 32 nor 64
   // bit indices present.
   int  LID(long long GID) const { return -1; }
+  bool MyGID(long long GID_in) const { return false; }
 #endif
 
   //! Returns global ID of local ID, return IndexBase-1 if not found on this processor.
@@ -882,7 +889,7 @@ private:
   template<typename int_type>
   void ConstructUserConstantNoComm(int_type NumGlobal_Elements, int NumMy_Elements,
       const int_type * myGlobalElements,
-      int ElementSize, int indexBase,
+      int ElementSize, int_type indexBase,
       const Epetra_Comm& comm, bool IsLongLong,
       bool UserIsDistributedGlobal,
       int_type UserMinAllGID, int_type UserMaxAllGID);

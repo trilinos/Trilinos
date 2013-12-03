@@ -251,6 +251,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Map : public Epetra_BlockMap {
 	     const Epetra_Comm& comm,
 	     bool UserIsDistributedGlobal,
 	     long long UserMinAllGID, long long UserMaxAllGID);
+  Epetra_Map(long long NumGlobal_Elements, int NumMy_Elements,
+	     const long long * myGlobalElements, 
+	     long long indexBase,
+	     const Epetra_Comm& comm,
+	     bool UserIsDistributedGlobal,
+	     long long UserMinAllGID, long long UserMaxAllGID);
 #endif
   
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES

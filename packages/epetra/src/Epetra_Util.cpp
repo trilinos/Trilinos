@@ -51,7 +51,9 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_IntVector.h"
+#include "Epetra_GIDTypeVector.h"
 #include "Epetra_Import.h"
+#include <limits>
 
 #ifdef HAVE_MPI
 #include "Epetra_MpiDistributor.h"
@@ -262,10 +264,9 @@ Epetra_Util::Create_OneToOne_Map(const Epetra_Map& usermap,
 }
 #endif // EPETRA_NO_32BIT_GLOBAL_INDICES
 //----------------------------------------------------------------------------
-#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES // FIXME
-// FIXME long long
-Epetra_Map
-Epetra_Util::Create_Root_Map(const Epetra_Map& usermap,
+
+template<typename int_type>
+static Epetra_Map TCreate_Root_Map(const Epetra_Map& usermap,
          int root)
 {
   int numProc = usermap.Comm().NumProc();
@@ -297,8 +298,10 @@ Epetra_Util::Create_Root_Map(const Epetra_Map& usermap,
   // Linear map: Simple case, just put all GIDs linearly on root processor
   if (usermap.LinearMap() && root!=-1) {
     int numMyElements = 0;
-    if (isRoot) numMyElements = usermap.MaxAllGID64()+1; // FIXME long long
-    Epetra_Map newmap(-1, numMyElements, usermap.IndexBase(), comm); // CJ TODO FIXME long long
+    if(usermap.MaxAllGID64()+1 > std::numeric_limits<int>::max())
+      throw "Epetra_Util::Create_Root_Map: cannot fit all gids in int";
+    if (isRoot) numMyElements = (int)(usermap.MaxAllGID64()+1);
+    Epetra_Map newmap((int_type) -1, numMyElements, (int_type)usermap.IndexBase64(), comm);
     return(newmap);
   }
 
@@ -309,34 +312,54 @@ Epetra_Util::Create_Root_Map(const Epetra_Map& usermap,
 
   // Build IntVector of the GIDs, then ship them to root processor
   int numMyElements = usermap.NumMyElements();
-  Epetra_Map allGidsMap(-1, numMyElements, 0, comm);
-  Epetra_IntVector allGids(allGidsMap);
-  for (int i=0; i<numMyElements; i++) allGids[i] = usermap.GID64(i); // CJ TODO FIXME long long
+  Epetra_Map allGidsMap((int_type) -1, numMyElements, (int_type) 0, comm);
+  typename Epetra_GIDTypeVector<int_type>::impl allGids(allGidsMap);
+  for (int i=0; i<numMyElements; i++) allGids[i] = (int_type) usermap.GID64(i);
   
-  int numGlobalElements = usermap.NumGlobalElements64(); // CJ TODO FIXME long long
+  if(usermap.MaxAllGID64() > std::numeric_limits<int>::max())
+    throw "Epetra_Util::Create_Root_Map: cannot fit all gids in int";
+  int numGlobalElements = (int) usermap.NumGlobalElements64();
   if (root!=-1) {
     int n1 = 0; if (isRoot) n1 = numGlobalElements;
-    Epetra_Map allGidsOnRootMap(-1, n1, 0, comm);
+    Epetra_Map allGidsOnRootMap((int_type) -1, n1, (int_type) 0, comm);
     Epetra_Import importer(allGidsOnRootMap, allGidsMap);
-    Epetra_IntVector allGidsOnRoot(allGidsOnRootMap);
+    typename Epetra_GIDTypeVector<int_type>::impl allGidsOnRoot(allGidsOnRootMap);
     allGidsOnRoot.Import(allGids, importer, Insert);
     
-    Epetra_Map rootMap(-1, allGidsOnRoot.MyLength(), allGidsOnRoot.Values(), usermap.IndexBase(), comm); // CJ TODO FIXME long long
+    Epetra_Map rootMap((int_type)-1, allGidsOnRoot.MyLength(), allGidsOnRoot.Values(), (int_type)usermap.IndexBase64(), comm);
     return(rootMap);
   }
   else {
     int n1 = numGlobalElements;
-    Epetra_LocalMap allGidsOnRootMap(n1, 0, comm);
+    Epetra_LocalMap allGidsOnRootMap((int_type) n1, (int_type) 0, comm);
     Epetra_Import importer(allGidsOnRootMap, allGidsMap);
-    Epetra_IntVector allGidsOnRoot(allGidsOnRootMap);
+    typename Epetra_GIDTypeVector<int_type>::impl allGidsOnRoot(allGidsOnRootMap);
     allGidsOnRoot.Import(allGids, importer, Insert);
     
-    Epetra_Map rootMap(-1, allGidsOnRoot.MyLength(), allGidsOnRoot.Values(), usermap.IndexBase(), comm); // CJ TODO FIXME long long
+    Epetra_Map rootMap((int_type) -1, allGidsOnRoot.MyLength(), allGidsOnRoot.Values(), (int_type)usermap.IndexBase64(), comm);
 
     return(rootMap);
   }
 }
-#endif // EPETRA_NO_32BIT_GLOBAL_INDICES
+
+Epetra_Map Epetra_Util::Create_Root_Map(const Epetra_Map& usermap,
+         int root)
+{
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(usermap.GlobalIndicesInt()) {
+	  return TCreate_Root_Map<int>(usermap, root);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(usermap.GlobalIndicesLongLong()) {
+	  return TCreate_Root_Map<long long>(usermap, root);
+  }
+  else
+#endif
+    throw "Epetra_Util::Create_Root_Map: GlobalIndices type unknown";
+}
+
 //----------------------------------------------------------------------------
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES // FIXME
 // FIXME long long
