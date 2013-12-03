@@ -286,14 +286,13 @@ template<typename ScalarType,
          class Device,
          class MemoryTraits = void,
          typename SizeType = size_t>
-
 class CrsMatrix {
 public:
-  typedef Device      device_type;
-  typedef ScalarType  scalar_type;
-  typedef OrdinalType ordinal_type;
-  typedef MemoryTraits memory_traits;
-  typedef SizeType size_type;
+  typedef Device        device_type;
+  typedef ScalarType    scalar_type;
+  typedef OrdinalType   ordinal_type;
+  typedef MemoryTraits  memory_traits;
+  typedef SizeType      size_type;
 
   // FIXME (mfh 28 Sep 2013) Cuda::host_mirror_device_type is Threads.
   // Shouldn't CrsMatrix::host_device_type always be the same as its
@@ -367,19 +366,30 @@ public:
   StaticCrsGraphType graph;
   values_type values;
 
-  // FIXME (mfh 28 Sep 2013) std::vector should never appear in this
-  // class, except perhaps as an input format for compatibility.
-
-  std::vector<OrdinalType> h_entries_;
-  std::vector<OrdinalType> rows_;
-
 
   /// \brief Default constructor; constructs an empty sparse matrix.
   ///
   /// FIXME (mfh 09 Aug 2013) numRows, numCols, and nnz should be
   /// properties of the graph, not the matrix.  Then CrsMatrix needs
   /// methods to get these from the graph.
-  CrsMatrix() : _numRows (0), _numCols (0), _nnz (0) {}
+  CrsMatrix()
+    : graph(), values(), _numRows (0), _numCols (0), _nnz (0)
+    {}
+
+  //------------------------------------
+  /// \brief  Construct with a graph that will be shared.
+  ///
+  ///  Allocate the values array for subsquent fill.
+  CrsMatrix( const std::string        & arg_label ,
+             const StaticCrsGraphType & arg_graph )
+    : graph( arg_graph )
+    , values( arg_label , arg_graph.entries.dimension_0() )
+    , _numRows( arg_graph.row_map.dimension_0() - 1 )
+    , _numCols( maximum_entry( arg_graph ) + 1 )
+    , _nnz( arg_graph.entries.dimension_0() )
+    {}
+
+  //------------------------------------
 
   /// \brief Constructor that copies raw arrays of host data in
   ///   coordinate format.
@@ -533,38 +543,6 @@ public:
     insertInGraph(row, &col, 1);
   }
 
-  // FIXME (mfh 29 Sep 2013) There should not be an "insertInGraph"
-  // method.  If you want to insert into the graph, you should get the
-  // graph and insert into it.  If you want to change the structure of
-  // the matrix, you should be required to specify a value to put in
-  // the new spot.
-  //
-  // Furthermore, this should be a device function, by analogy with
-  // UnorderedMap.
-  void
-  insertInGraph (const OrdinalType row, OrdinalType *cols, const size_t ncol)
-  {
-    OrdinalType* const start = &h_entries_[rows_[row]];
-    OrdinalType* const end   = &h_entries_[rows_[row+1]];
-    for (size_t i = 0; i < ncol; ++i) {
-      OrdinalType *iter = start;
-      while (iter < end && *iter != -1 && *iter != cols[i]) {
-        ++iter;
-      }
-
-      // FIXME (mfh 29 Sep 2013) Use of assert() statements is only
-      // acceptable for debugging.  It's legitimate for insertions to
-      // fail.  We should use the techniques that Dan Sunderland uses
-      // in UnorderedMap; for example:
-      //
-      // 1. Insertion should return an indication of success or failure
-      // 2. The graph should keep track of the number of failed insertions
-
-      assert (iter != end );
-      *iter = cols[i];
-    }
-  }
-
   // FIXME (mfh 29 Sep 2013) We need a way to disable atomic updates
   // for ScalarType types that do not support them.  We're pretty much
   // limited to ScalarType = float, double, and {u}int{32,64}_t.  It
@@ -681,10 +659,57 @@ public:
   }
 
 private:
+
   ordinal_type _numRows;
   ordinal_type _numCols;
   ordinal_type _nnz;
+
+public:
+
+  // FIXME: [HCE 2013-12-03] The following members will be removed soon.
+
+  // FIXME (mfh 28 Sep 2013) std::vector should never appear in this
+  // class, except perhaps as an input format for compatibility.
+
+  std::vector<OrdinalType> h_entries_;
+  std::vector<OrdinalType> rows_;
+
+  // FIXME (mfh 29 Sep 2013) There should not be an "insertInGraph"
+  // method.  If you want to insert into the graph, you should get the
+  // graph and insert into it.  If you want to change the structure of
+  // the matrix, you should be required to specify a value to put in
+  // the new spot.
+  //
+  // Furthermore, this should be a device function, by analogy with
+  // UnorderedMap.
+  void
+  insertInGraph (const OrdinalType row, OrdinalType *cols, const size_t ncol)
+  {
+    OrdinalType* const start = &h_entries_[rows_[row]];
+    OrdinalType* const end   = &h_entries_[rows_[row+1]];
+    for (size_t i = 0; i < ncol; ++i) {
+      OrdinalType *iter = start;
+      while (iter < end && *iter != -1 && *iter != cols[i]) {
+        ++iter;
+      }
+
+      // FIXME (mfh 29 Sep 2013) Use of assert() statements is only
+      // acceptable for debugging.  It's legitimate for insertions to
+      // fail.  We should use the techniques that Dan Sunderland uses
+      // in UnorderedMap; for example:
+      //
+      // 1. Insertion should return an indication of success or failure
+      // 2. The graph should keep track of the number of failed insertions
+
+      assert (iter != end );
+      *iter = cols[i];
+    }
+  }
+
 };
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 template< typename ScalarType , typename OrdinalType, class Device, class MemoryTraits, typename SizeType >
 void

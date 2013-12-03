@@ -156,23 +156,36 @@ public:
   unsigned node_count() const { return m_node_grid.dimension_0(); }
 
   KOKKOS_INLINE_FUNCTION
+  unsigned node_count_owned() const { return m_box_part.owns_node_count(); }
+
+  KOKKOS_INLINE_FUNCTION
+  unsigned node_count_global() const { return m_box_part.global_node_count(); }
+
+  KOKKOS_INLINE_FUNCTION
   unsigned elem_count() const { return m_elem_node.dimension_0(); }
+
+  KOKKOS_INLINE_FUNCTION
+  unsigned elem_count_global() const { return m_box_part.global_elem_count(); }
 
   KOKKOS_INLINE_FUNCTION
   unsigned elem_node_local( unsigned inode , unsigned k ) const
     { return m_elem_node_local[inode][k] ; }
 
   KOKKOS_INLINE_FUNCTION
-  unsigned node_grid( unsigned inode , unsigned iaxis ) const { return m_node_grid(inode,iaxis); }
+  unsigned node_grid( unsigned inode , unsigned iaxis ) const
+    { return m_node_grid(inode,iaxis); }
 
   KOKKOS_INLINE_FUNCTION
-  double node_coord( unsigned inode , unsigned iaxis ) const { return m_node_coord(inode,iaxis); }
+  double node_coord( unsigned inode , unsigned iaxis ) const
+    { return m_node_coord(inode,iaxis); }
 
   KOKKOS_INLINE_FUNCTION
-  unsigned node_grid_max( unsigned iaxis ) const { return m_box_part.global_coord_max(iaxis); }
+  unsigned node_grid_max( unsigned iaxis ) const
+    { return m_box_part.global_coord_max(iaxis); }
 
   KOKKOS_INLINE_FUNCTION
-  unsigned elem_node( unsigned ielem , unsigned inode ) const { return m_elem_node(ielem,inode); }
+  unsigned elem_node( unsigned ielem , unsigned inode ) const
+    { return m_elem_node(ielem,inode); }
 
   elem_node_type   elem_node()   const { return m_elem_node ; }
   node_coord_type  node_coord()  const { return m_node_coord ; }

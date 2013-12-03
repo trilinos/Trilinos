@@ -46,7 +46,7 @@
 
 #if defined( __CUDACC__ )
 
-#include <cusparse.h>
+#include <cusparse_v2.h>
 #include <Kokkos_Cuda.hpp>
 
 namespace Kokkos {
