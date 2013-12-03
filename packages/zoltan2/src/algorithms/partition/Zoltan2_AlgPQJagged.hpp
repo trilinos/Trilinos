@@ -254,7 +254,9 @@ inline void firstTouch(T *arrayName, size_t arraySize){
  * \param ew is the expected weight that should be placed on the left of the cut line.
  */
 template <typename pq_scalar_t>
-inline pq_scalar_t pivotPos (pq_scalar_t * cutUpperBounds, pq_scalar_t *cutLowerBounds,size_t currentCutIndex, pq_scalar_t *cutUpperWeight, pq_scalar_t *cutLowerWeight, pq_scalar_t ew, pq_scalar_t _EPSILON){
+inline pq_scalar_t pivotPos (pq_scalar_t * cutUpperBounds, pq_scalar_t
+ *cutLowerBounds, size_t currentCutIndex, pq_scalar_t *cutUpperWeight,
+  pq_scalar_t *cutLowerWeight, pq_scalar_t ew, pq_scalar_t _EPSILON){
 
     if(ABS(cutUpperWeight[currentCutIndex] - cutLowerWeight[currentCutIndex]) < _EPSILON){
         return cutLowerBounds[currentCutIndex];
@@ -794,7 +796,7 @@ void pqJagged_getLocalMinMaxTotalCoord(
                     << " ind:" << partitionedPointPermutations[coordinateBegin] << endl;
 */
             myMin=myMax
-                    =pqJagged_coordinates[partitionedPointPermutations[coordinateBegin]];
+                =pqJagged_coordinates[partitionedPointPermutations[coordinateBegin]];
 //            problemComm->barrier();
  //           cout << "initial me:" << problemComm->getRank() << " myMin:" << myMin << " myMax:" << myMax << endl;
 
@@ -895,6 +897,7 @@ void pqJagged_getGlobalMinMaxTotalCoord(
 
         try{
 #ifdef mpi_communication
+            // TODO: Should we use comm instead of MPI_COMM_WORLD
             MPI_Allreduce(localMinMaxTotal, globalMinMaxTotal,
             3 * concurrentPartCount, MPI_FLOAT, myop,MPI_COMM_WORLD);
 #endif
@@ -2111,7 +2114,9 @@ void pqJagged_1D_Partition(
 
     Teuchos::PQJaggedCombinedReductionOp<partId_t, pq_scalar_t>
                  *reductionOp = NULL;
-    reductionOp = new Teuchos::PQJaggedCombinedReductionOp <partId_t, pq_scalar_t>(&pVector , currentPartBeginIndex , concurrentPartCount);
+    reductionOp = new Teuchos::PQJaggedCombinedReductionOp
+                     <partId_t, pq_scalar_t>(&pVector , currentPartBeginIndex ,i
+                      concurrentPartCount);
 
 
     size_t totalReductionSize = 0;
@@ -6071,48 +6076,26 @@ void sequentialTaskPartitioning(
                     }
 
                     if(noParts > 1){
-
                         // Rewrite the indices based on the computed cuts.
                         getChunksFromCoordinates<pq_lno_t,pq_scalar_t>(
-                                noParts,
-                                numThreads,
-                                partitionedPointCoordinates,
-                                pqCoord,
-                                pqJagged_uniformWeights[0],
-                                pqJagged_weights[0],
-
-                                usedCutCoordinate,
-                                coordinateBegin,
-                                coordinateEnd,
-
-                                allowNonRectelinearPart,
-                                usednonRectelinearPart,
-                                tlr,
-                                pws,
-                                nonRectRatios,
-                                //coordinate_linked_list,
-                                //coordinate_starts,
-                                //coordinate_ends,
-                                partPointCounts,
-
-                                newpartitionedPointCoordinates,
-                                outTotalCounts + currentOut + outShift,
-                                partIds,
-                                true,
-
-                                pqJagged_coordinates,
-                                coordDim,
-                                coordInd
-
-                        );
-
-
+                            noParts, numThreads, partitionedPointCoordinates,
+                            pqCoord, pqJagged_uniformWeights[0],
+                            pqJagged_weights[0], usedCutCoordinate,
+                            coordinateBegin, coordinateEnd, 
+                            allowNonRectelinearPart, usednonRectelinearPart,
+                            tlr, pws, nonRectRatios,
+                            partPointCounts, newpartitionedPointCoordinates,
+                            outTotalCounts + currentOut + outShift, partIds,
+                            true, pqJagged_coordinates, coordDim, coordInd );
                     }
                     else {
-                        //if this part is partitioned into 1 then just copy the old values.
+                        //if this part is partitioned into 1 then just copy
+                        //the old values.
                         pq_lno_t partSize = coordinateEnd - coordinateBegin;
                         *(outTotalCounts + currentOut + outShift) = partSize;
-                        memcpy(newpartitionedPointCoordinates + coordinateBegin, partitionedPointCoordinates + coordinateBegin, partSize * sizeof(pq_lno_t));
+                        memcpy(newpartitionedPointCoordinates + coordinateBegin,
+                        partitionedPointCoordinates + coordinateBegin,
+                        partSize * sizeof(pq_lno_t));
                     }
                     cutShift += noParts - 1;
                     tlrShift += (4 *(noParts - 1) + 1);
@@ -7041,7 +7024,7 @@ void AlgPQJagged(
                             noParts, numThreads, partitionedPointCoordinates,
                             pqCoord, pqJagged_uniformWeights[0],
                             pqJagged_weights[0], usedCutCoordinate,
-                            coordinateBegin, coordinateEnd, 
+                            coordinateBegin, coordinateEnd,
                             allowNonRectelinearPart, usednonRectelinearPart,
                             tlr, pws, nonRectRatios, partPointCounts,
                             newpartitionedPointCoordinates,
