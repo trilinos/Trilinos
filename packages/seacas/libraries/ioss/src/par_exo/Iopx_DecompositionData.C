@@ -476,7 +476,7 @@ namespace Iopx {
     }
 
     if (myProcessor == 0)
-      std::cout << "\nUsing decomposition method " << method << "\n\n";
+      std::cout << "\nUsing decomposition method " << method << " on " << processorCount << " processors.\n\n";
 
     if (method == "RCB" ||
         method == "RIB" ||

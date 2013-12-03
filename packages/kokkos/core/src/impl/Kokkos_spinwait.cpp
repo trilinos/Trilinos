@@ -49,7 +49,7 @@
 #if ! defined( KOKKOS_DISABLE_ASM ) && \
     ( defined( __GNUC__ ) || \
       defined( __GNUG__ ) || \
-      defined( __INTEL_COMPILER__ ) )
+      defined( __INTEL_COMPILER ) )
 
 #ifndef __arm__
 /* Pause instruction to prevent excess processor bus usage */
