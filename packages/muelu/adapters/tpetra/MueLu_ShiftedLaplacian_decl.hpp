@@ -62,8 +62,9 @@
 #include <MueLu_RAPShiftFactory.hpp>
 #include <MueLu_PgPFactory.hpp>
 #include <MueLu_GenericRFactory.hpp>
-#include <MueLu_ShiftedLaplacian_fwd.hpp>
+#include <MueLu_Amesos2BlockSmoother.hpp>
 #include <MueLu_UncoupledAggregationFactory.hpp>
+#include <MueLu_ShiftedLaplacian_fwd.hpp>
 #include <MueLu_ShiftedLaplacianOperator.hpp>
 
 // Belos
