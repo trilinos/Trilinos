@@ -90,6 +90,10 @@ class CrsMatrix_SubCopy : public SameTypeTransform<Epetra_CrsMatrix> {
 
   ///
   bool rvs();
+
+private:
+  template<typename int_type>
+  NewTypeRef transform( OriginalTypeRef orig );
 };
 
 } //namespace EpetraExt

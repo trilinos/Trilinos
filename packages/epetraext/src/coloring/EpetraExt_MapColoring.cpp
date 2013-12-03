@@ -39,13 +39,14 @@
 // ***********************************************************************
 //@HEADER
 
+#include <Epetra_ConfigDefs.h>
 #include <EpetraExt_MapColoring.h>
 
 #include <EpetraExt_Transpose_CrsGraph.h>
 #include <EpetraExt_Overlap_CrsGraph.h>
 
 #include <Epetra_CrsGraph.h>
-#include <Epetra_IntVector.h>
+#include <Epetra_GIDTypeVector.h>
 #include <Epetra_MapColoring.h>
 #include <Epetra_Map.h>
 #include <Epetra_Comm.h>
@@ -65,9 +66,10 @@ using std::map;
 
 namespace EpetraExt {
 
+template<typename int_type>
 CrsGraph_MapColoring::NewTypeRef
 CrsGraph_MapColoring::
-operator()( OriginalTypeRef orig  )
+Toperator( OriginalTypeRef orig  )
 {
   Epetra_Time timer( orig.Comm() );
 
@@ -357,7 +359,7 @@ operator()( OriginalTypeRef orig  )
         set<int> Cols;
         for( int j = 0; j < NumAdj1Indices; ++j )
         {
-          int GID = OverlapGraph.LRID( OverlapGraph.GCID( Adj1Indices[j] ) );
+          int GID = OverlapGraph.LRID( OverlapGraph.GCID64( Adj1Indices[j] ) );
           OverlapGraph.ExtractMyRowView( GID, NumIndices, Indices );
           for( int k = 0; k < NumIndices; ++k ) Cols.insert( Indices[k] );
         }
@@ -375,16 +377,16 @@ operator()( OriginalTypeRef orig  )
     }
 
     //collect GIDs on boundary
-    std::vector<int> boundaryGIDs;
-    std::vector<int> interiorGIDs;
+    std::vector<int_type> boundaryGIDs;
+    std::vector<int_type> interiorGIDs;
     for( int row = 0; row < nRows; ++row )
     {
       Adj2->ExtractMyRowView( row, NumIndices, Indices );
       bool testFlag = false;
       for( int i = 0; i < NumIndices; ++i )
         if( Indices[i] >= nRows ) testFlag = true;
-      if( testFlag ) boundaryGIDs.push_back( Adj2->GRID(row) );
-      else           interiorGIDs.push_back( Adj2->GRID(row) );
+      if( testFlag ) boundaryGIDs.push_back( (int_type) Adj2->GRID64(row) );
+      else           interiorGIDs.push_back( (int_type) Adj2->GRID64(row) );
     }
 
     int LocalBoundarySize = boundaryGIDs.size();
@@ -394,7 +396,7 @@ operator()( OriginalTypeRef orig  )
       0, RowMap.Comm() );
     if( verbosity_ > 1 ) std::cout << "BoundaryMap:\n" << BoundaryMap;
     
-    int BoundarySize = BoundaryMap.NumGlobalElements();
+    int_type BoundarySize = (int_type) BoundaryMap.NumGlobalElements64();
     Epetra_MapColoring BoundaryColoring( BoundaryMap );
 
     if( algo_ == PSEUDO_PARALLEL )
@@ -402,16 +404,16 @@ operator()( OriginalTypeRef orig  )
       Epetra_Map BoundaryIndexMap( BoundarySize, LocalBoundarySize, 0, RowMap.Comm() );
       if( verbosity_ > 1) std::cout << "BoundaryIndexMap:\n" << BoundaryIndexMap;
 
-      Epetra_IntVector bGIDs( View, BoundaryIndexMap, &boundaryGIDs[0] );
+      typename Epetra_GIDTypeVector<int_type>::impl bGIDs( View, BoundaryIndexMap, &boundaryGIDs[0] );
       if( verbosity_ > 1) std::cout << "BoundaryGIDs:\n" << bGIDs;
 
-      int NumLocalBs = 0;
+      int_type NumLocalBs = 0;
       if( !RowMap.Comm().MyPID() ) NumLocalBs = BoundarySize;
      
       Epetra_Map LocalBoundaryIndexMap( BoundarySize, NumLocalBs, 0, RowMap.Comm() );
       if( verbosity_ > 1) std::cout << "LocalBoundaryIndexMap:\n" << LocalBoundaryIndexMap;
 
-      Epetra_IntVector lbGIDs( LocalBoundaryIndexMap );
+      typename Epetra_GIDTypeVector<int_type>::impl lbGIDs( LocalBoundaryIndexMap );
       Epetra_Import lbImport( LocalBoundaryIndexMap, BoundaryIndexMap );
       lbGIDs.Import( bGIDs, lbImport, Insert );
       if( verbosity_ > 1) std::cout << "LocalBoundaryGIDs:\n" << lbGIDs;
@@ -443,12 +445,12 @@ operator()( OriginalTypeRef orig  )
      * 5.Goto 3
      */
 
-      std::vector<int> OverlapBoundaryGIDs( boundaryGIDs );
+      std::vector<int_type> OverlapBoundaryGIDs( boundaryGIDs );
       for( int i = nRows; i < Adj2->ColMap().NumMyElements(); ++i )
-        OverlapBoundaryGIDs.push_back( Adj2->ColMap().GID(i) );
+        OverlapBoundaryGIDs.push_back( (int_type) Adj2->ColMap().GID64(i) );
 
-      int OverlapBoundarySize = OverlapBoundaryGIDs.size();
-      Epetra_Map BoundaryColMap( -1, OverlapBoundarySize,
+      int_type OverlapBoundarySize = OverlapBoundaryGIDs.size();
+      Epetra_Map BoundaryColMap( (int_type) -1, OverlapBoundarySize,
         OverlapBoundarySize ? &OverlapBoundaryGIDs[0] : 0,
         0, RowMap.Comm() );
 
@@ -563,7 +565,7 @@ operator()( OriginalTypeRef orig  )
     //Add Boundary Colors
     for( int i = 0; i < LocalBoundarySize; ++i )
     {
-      int GID = BoundaryMap.GID(i);
+      int_type GID = (int_type) BoundaryMap.GID64(i);
       RowColorMap(GID) = BoundaryColoring(GID);
     }
 
@@ -645,6 +647,25 @@ operator()( OriginalTypeRef orig  )
   newObj_ = ColorMap;
 
   return *ColorMap;
+}
+
+CrsGraph_MapColoring::NewTypeRef
+CrsGraph_MapColoring::
+operator()( OriginalTypeRef orig  )
+{
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(orig.RowMap().GlobalIndicesInt()) {
+    return Toperator<int>(orig);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(orig.RowMap().GlobalIndicesLongLong()) {
+    return Toperator<long long>(orig);
+  }
+  else
+#endif
+    throw "CrsGraph_MapColoring::operator(): ERROR, GlobalIndices type unknown.";
 }
 
 } // namespace EpetraExt

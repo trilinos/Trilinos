@@ -85,6 +85,8 @@ public:
    Teuchos::RCP<Epetra_CrsGraph> compute( Epetra_CrsGraph& B, int nbrr, std::vector<int>&r, std::vector<double>& weights, bool verbose = false);
 
 private:
+   template<typename int_type>
+   Teuchos::RCP<Epetra_CrsGraph> compute( Epetra_CrsGraph& B, int nbrr, std::vector<int>&r, std::vector<double>& weights, bool verbose = false);
 
   // Some binary search tree helper functions.
   int* csr_bst( int n );

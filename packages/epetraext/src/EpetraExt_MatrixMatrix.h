@@ -148,12 +148,45 @@ class MatrixMatrix {
                    Epetra_CrsMatrix * & C);
 
  private:
+    template<typename int_type>
+    static int Tmult_A_B(const Epetra_CrsMatrix & A,
+		 CrsMatrixStruct & Aview,
+		 const Epetra_CrsMatrix & B,
+		 CrsMatrixStruct& Bview,
+		 Epetra_CrsMatrix& C,
+		 bool call_FillComplete_on_result);
+
     static int mult_A_B(const Epetra_CrsMatrix & A,
 		 CrsMatrixStruct & Aview,
 		 const Epetra_CrsMatrix & B,
 		 CrsMatrixStruct& Bview,
 		 Epetra_CrsMatrix& C,
 		 bool call_FillComplete_on_result);
+
+    template<typename int_type>
+    static int TMultiply(const Epetra_CrsMatrix& A,
+			bool transposeA,
+			const Epetra_CrsMatrix& B,
+			bool transposeB,
+			Epetra_CrsMatrix& C,
+                        bool call_FillComplete_on_result);
+
+    template<typename int_type>
+    static int TAdd(const Epetra_CrsMatrix& A,
+                   bool transposeA,
+                   double scalarA,
+                   Epetra_CrsMatrix& B,
+                   double scalarB);
+
+    template<typename int_type>
+    static int TAdd(const Epetra_CrsMatrix& A,
+                      bool transposeA,
+                      double scalarA,
+                      const Epetra_CrsMatrix & B,
+                      bool transposeB,
+                      double scalarB,
+                      Epetra_CrsMatrix * & C);
+
 };//class MatrixMatrix
 
 
@@ -162,8 +195,9 @@ class MatrixMatrix {
  *sparsely-populated 'vectors'.
  *Important assumption: assumes the indices in u_ind and v_ind are sorted.
  */
- double sparsedot(double* u, int* u_ind, int u_len,
-		  double* v, int* v_ind, int v_len);
+ template<typename int_type>
+ double sparsedot(double* u, int_type* u_ind, int u_len,
+		  double* v, int_type* v_ind, int v_len);
 }//namespace EpetraExt
 
 #endif

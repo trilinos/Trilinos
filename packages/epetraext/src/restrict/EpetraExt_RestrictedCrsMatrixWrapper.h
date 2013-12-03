@@ -104,6 +104,9 @@ private:
 
   Teuchos::RCP<Epetra_CrsMatrix> input_matrix_;
   Teuchos::RCP<Epetra_CrsMatrix> restricted_matrix_;  
+
+  template<typename int_type>
+  int Trestrict_comm(Teuchos::RCP<Epetra_CrsMatrix> input_matrix);
 };
 
 

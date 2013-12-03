@@ -231,9 +231,9 @@ int mm_read_banner(FILE *f, MM_typecode *matcode)
     return 0;
 }
 
-int mm_write_mtx_crd_size(FILE *f, int M, int N, int nz)
+int mm_write_mtx_crd_size(FILE *f, long long M, long long N, long long nz)
 {
-  fprintf(f, "%d %d %d\n", M, N, nz);
+  fprintf(f, "%lld %lld %lld\n", M, N, nz);
   return 0;
 }
 
@@ -267,6 +267,35 @@ int mm_read_mtx_crd_size(FILE *f, int *M, int *N, int *nz )
     return 0;
 }
 
+int mm_read_mtx_crd_size(FILE *f, long long *M, long long *N, long long *nz )
+{
+    char line[MM_MAX_LINE_LENGTH];
+    int num_items_read;
+
+    /* set return null parameter values, in case we exit with errors */
+    *M = *N = *nz = 0;
+
+    /* now continue scanning until you reach the end-of-comments */
+    do 
+    {
+        if (fgets(line,MM_MAX_LINE_LENGTH,f) == NULL) 
+            return MM_PREMATURE_EOF;
+    }while (line[0] == '%');
+
+    /* line[] is either blank or has M,N, nz */
+    if (sscanf(line, "%lld %lld %lld", M, N, nz) == 3)
+        return 0;
+        
+    else
+    do
+    { 
+        num_items_read = fscanf(f, "%lld %lld %lld", M, N, nz); 
+        if (num_items_read == EOF) return MM_PREMATURE_EOF;
+    }
+    while (num_items_read != 3);
+
+    return 0;
+}
 
 int mm_read_mtx_array_size(FILE *f, int *M, int *N)
 {
@@ -297,9 +326,9 @@ int mm_read_mtx_array_size(FILE *f, int *M, int *N)
     return 0;
 }
 
-int mm_write_mtx_array_size(FILE *f, int M, int N)
+int mm_write_mtx_array_size(FILE *f, long long M, long long N)
 {
-    fprintf(f, "%d %d\n", M, N);
+    fprintf(f, "%lld %lld\n", M, N);
     return 0;
 }
 
@@ -370,6 +399,31 @@ int mm_read_mtx_crd_entry(FILE *f, int *I, int *J,
         
 }
 
+int mm_read_mtx_crd_entry(FILE *f, long long *I, long long *J,
+        double *real, double *imag, MM_typecode matcode)
+{
+    if (mm_is_complex(matcode))
+    {
+            if (fscanf(f, "%lld %lld %lg %lg", I, J, real, imag)
+                != 4) return MM_PREMATURE_EOF;
+    }
+    else if (mm_is_real(matcode))
+    {
+            if (fscanf(f, "%lld %lld %lg\n", I, J, real)
+                != 3) return MM_PREMATURE_EOF;
+
+    }
+
+    else if (mm_is_pattern(matcode))
+    {
+            if (fscanf(f, "%lld %lld", I, J) != 2) return MM_PREMATURE_EOF;
+    }
+    else
+        return MM_UNSUPPORTED_TYPE;
+
+    return 0;
+        
+}
 
 /************************************************************************
     mm_read_mtx_crd()  fills M, N, nz, array of values, and return

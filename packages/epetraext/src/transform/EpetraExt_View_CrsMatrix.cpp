@@ -78,7 +78,7 @@ operator()( OriginalTypeRef orig )
     int newIndicesCnt = indicesCnt;
     bool done = false;
     for( int j = 0; j < indicesCnt; ++j )
-      if( !done && NewGraph_.GCID( myIndices[j] ) == -1 )
+      if( !done && NewGraph_.GCID64( myIndices[j] ) == -1 )
       {
         newIndicesCnt = j;
         done = true;

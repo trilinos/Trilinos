@@ -45,7 +45,8 @@
 #include <Epetra_Map.h>
 #include <Epetra_Import.h>
 #include <Epetra_IntSerialDenseVector.h>
-
+#include <Epetra_LongLongSerialDenseVector.h>
+#include <Epetra_GIDTypeSerialDenseVector.h>
 #include <vector>
 
 namespace EpetraExt {
@@ -56,9 +57,10 @@ CrsMatrix_SubCopy::
   if( newObj_ ) delete newObj_;
 }
 
+template<typename int_type>
 CrsMatrix_SubCopy::NewTypeRef
 CrsMatrix_SubCopy::
-operator()( OriginalTypeRef orig )
+transform( OriginalTypeRef orig )
 {
   origObj_ = &orig;
 
@@ -79,13 +81,15 @@ operator()( OriginalTypeRef orig )
 
   // Make sure all rows in newRowMap are already on this processor
   for( int i = 0; i < nNumRows; ++i )
-    matched = matched && ( oRowMap.MyGID(newRowMap_.GID(i)) );
+    matched = matched && ( oRowMap.MyGID(newRowMap_.GID64(i)) );
   if( !matched ) std::cerr << "EDT_CrsMatrix_SubCopy: Bad new_row_Map.  GIDs of new row map must be GIDs of the original row map on the same processor.\n";
 
   // Make sure all GIDs in the new domain map are GIDs in the old domain map
   if( !newRangeMap_.SameAs(newDomainMap_) ) {
     Epetra_IntSerialDenseVector pidList(nNumDomain);
-    oColMap.RemoteIDList(newDomainMap_.NumMyElements(), newDomainMap_.MyGlobalElements(), pidList.Values(), 0);
+	int_type* newDomainMap_MyGlob = 0;
+	newDomainMap_.MyGlobalElementsPtr(newDomainMap_MyGlob);
+    oColMap.RemoteIDList(newDomainMap_.NumMyElements(), newDomainMap_MyGlob, pidList.Values(), 0);
     for( int i = 0; i < nNumDomain; ++i )
       matched = matched && ( pidList[i]>=0 );
   }
@@ -98,10 +102,13 @@ operator()( OriginalTypeRef orig )
   Epetra_IntSerialDenseVector pidList(oNumCols);
   Epetra_IntSerialDenseVector lidList(oNumCols);
   Epetra_IntSerialDenseVector sizeList(oNumCols);
-  newDomainMap_.RemoteIDList(oColMap.NumMyElements(), oColMap.MyGlobalElements(), pidList.Values(), 0);
+  int_type* oColMap_MyGlob = 0;
+  oColMap.MyGlobalElementsPtr(oColMap_MyGlob);
+  newDomainMap_.RemoteIDList(oColMap.NumMyElements(), oColMap_MyGlob, pidList.Values(), 0);
   int numNewCols = 0;
-  Epetra_IntSerialDenseVector newColMapGidList(oNumCols);
-  int * origColGidList = oColMap.MyGlobalElements();
+  typename Epetra_GIDTypeSerialDenseVector<int_type>::impl newColMapGidList(oNumCols);
+  int_type * origColGidList = 0;
+  oColMap.MyGlobalElementsPtr(origColGidList);
   for( int i = 0; i < oNumCols; ++i )
     if (pidList[i] >=0)
       newColMapGidList[numNewCols++]= origColGidList[i];
@@ -118,6 +125,30 @@ operator()( OriginalTypeRef orig )
   newObj_->FillComplete();
 
   return *newObj_;
+}
+
+//==============================================================================
+
+CrsMatrix_SubCopy::NewTypeRef
+CrsMatrix_SubCopy::
+operator()( OriginalTypeRef orig )
+{
+  const Epetra_Map & oRowMap = orig.RowMap();
+  const Epetra_Map & oColMap = orig.ColMap();
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(oRowMap.GlobalIndicesInt() && oColMap.GlobalIndicesInt()) {
+    return transform<int>(orig);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(oRowMap.GlobalIndicesLongLong() && oColMap.GlobalIndicesLongLong()) {
+    return transform<long long>(orig);
+  }
+  else
+#endif
+    throw "CrsMatrix_SubCopy::operator(): GlobalIndices type unknown";
 }
 
 //==============================================================================
