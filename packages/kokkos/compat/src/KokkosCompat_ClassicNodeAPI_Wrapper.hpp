@@ -27,13 +27,13 @@ namespace Kokkos {
       //! Indicates that parallel buffers allocated by this node are available for use on the host thread.
       typedef DeviceType device_type;
 
-#ifdef KOKKOS_HAVE_CUDA
+/*#ifdef KOKKOS_HAVE_CUDA
       static const bool isHostNode = !Kokkos::Impl::is_same<DeviceType,Kokkos::Cuda>::value;
       static const bool isCUDANode = Kokkos::Impl::is_same<DeviceType,Kokkos::Cuda>::value;
-#else
+#else*/
       static const bool isHostNode = true;
       static const bool isCUDANode = false;
-#endif
+//#endif
 
       KokkosDeviceWrapperNode(Teuchos::ParameterList &pl) {
         ParameterList params = getDefaultParameters();

@@ -33,10 +33,9 @@ namespace Kokkos {
     }
     template<>
     void KokkosDeviceWrapperNode<Kokkos::Cuda>::init(int NumTeams, int NumThreads, int Device) {
+      Kokkos::Cuda::host_mirror_device_type::initialize(NumTeams*NumThreads);
       Kokkos::Cuda::SelectDevice select_device(Device);
       Kokkos::Cuda::initialize(select_device);
-      Kokkos::Cuda::host_mirror_device_type::initialize(NumTeams*NumThreads);
-      std::cout<<"Init Devices "<<NumTeams<<" "<<NumThreads<<"\n";
     }
 #endif
 
