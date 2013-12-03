@@ -122,6 +122,9 @@ template< class Device ,
 class BoxElemFixture {
 public:
 
+  typedef Device device_type ;
+
+  enum { SpaceDim = 3 };
   enum { ElemNode = Order == BoxElemPart::ElemLinear ? 8 :
                     Order == BoxElemPart::ElemQuadratic ? 27 : 0 };
 
@@ -132,8 +135,8 @@ private:
   Kokkos::Example::BoxElemPart m_box_part ;
   CoordinateMap                m_coord_map ;
 
-  Kokkos::View< double  *[3] ,        Device > m_node_coord ;
-  Kokkos::View< unsigned*[3] ,        Device > m_node_grid ;
+  Kokkos::View< double  *[SpaceDim] , Device > m_node_coord ;
+  Kokkos::View< unsigned*[SpaceDim] , Device > m_node_grid ;
   Kokkos::View< unsigned*[ElemNode] , Device > m_elem_node ;
   Kokkos::View< unsigned*[2] ,        Device > m_recv_node ;
   Kokkos::View< unsigned*[2] ,        Device > m_send_node ;
@@ -143,9 +146,9 @@ private:
 
 public:
 
-  typedef Kokkos::View< const unsigned * [ElemNode] , Device > elem_node_type ;
-  typedef Kokkos::View< const double   * [3] , Device > node_coord_type ;
-  typedef Kokkos::View< const unsigned * [3] , Device > node_grid_type ;
+  typedef Kokkos::View< const unsigned * [ElemNode], Device > elem_node_type ;
+  typedef Kokkos::View< const double   * [SpaceDim], Device > node_coord_type ;
+  typedef Kokkos::View< const unsigned * [SpaceDim], Device > node_grid_type ;
   typedef Kokkos::View< const unsigned * [2] , Device > comm_list_type ;
   typedef Kokkos::View< const unsigned *     , Device > send_nodeid_type ;
 
@@ -258,8 +261,6 @@ public:
 
   // Initialization:
 
-  typedef Device device_type ;
-
   KOKKOS_INLINE_FUNCTION
   void operator()( size_t i ) const
   {
@@ -268,8 +269,8 @@ public:
       const size_t ielem = i / ElemNode ;
       const size_t inode = i % ElemNode ;
 
-      unsigned elem_grid[3] ;
-      unsigned node_grid[3] ;
+      unsigned elem_grid[SpaceDim] ;
+      unsigned node_grid[SpaceDim] ;
 
       m_box_part.uses_elem_coord( ielem , elem_grid );
 
@@ -284,7 +285,7 @@ public:
     }
 
     if ( i < m_node_grid.dimension_0() ) {
-      unsigned node_grid[3] ;
+      unsigned node_grid[SpaceDim] ;
       m_box_part.local_node_coord( i , node_grid );
       m_node_grid(i,0) = node_grid[0] ;
       m_node_grid(i,1) = node_grid[1] ;
