@@ -485,7 +485,7 @@ set::
 
   -D Trilinos_ENABLE_Fortran:BOOL=OFF
 
-NOTE: The fortran compiler will be disabled automatically by default on
+NOTE: The fortran compiler may be disabled automatically by default on
 systems like MS Windows.
 
 NOTE: Most Apple Macs do not come with a compatible Fortran compiler by
@@ -1341,7 +1341,38 @@ Setting the install prefix at configure time
 In order to set up for the install, the install prefix should be set up at
 configure time by setting, for example::
 
-  -D CMAKE_INSTALL_PREFIX:PATH=$HOME/install/trilinos/mpi/opt
+  -D CMAKE_INSTALL_PREFIX:PATH=$HOME/install/Trilinos/mpi/opt
+
+The default location for the installation of libraries, headers, and
+executables is given by the variables (with defaults)::
+
+  -D Trilinos_INSTALL_INCLUDE_DIR:PATH="include" \
+  -D Trilinos_INSTALL_LIB_DIR:PATH="lib" \
+  -D Trilinos_INSTALL_RUNTIME_DIR:PATH="bin"
+
+If these paths are relative (i.e. don't start with "/") then they are relative
+to ``${CMAKE_INSTALL_PREFIX}``.  Otherwise the paths can be absolute and don't
+have to be under ``${CMAKE_INSTALL_PREFIX}``.
+
+
+Avoiding installing libraries and headers
+-----------------------------------------
+
+By default, any libraries and header files defined by in the TriBITS project
+Trilinos will get installed into the installation directories specified by
+``CMAKE_INSTALL_PREFIX``, ``Trilinos_INSTALL_INCLUDE_DIR`` and
+``Trilinos_INSTALL_LIB_DIR``.  However, if the primary desire is to install
+executables only, then the user can set::
+
+   -D Trilinos_INSTALL_LIBRARIES_AND_HEADERS:BOOL=ON
+
+which, if in addition static libraries are being built
+(i.e. ``BUILD_SHARED_LIBS=OFF``), this this option will result in no libraries
+or headers being installed into the ``<install>/include/`` and
+``<install>/lib/`` directories, respectively.  However, if shared libraries
+are being built (i.e. ``BUILD_SHARED_LIBS=ON``), they the libraries will be
+installed in ``<install>/lib/`` along with the executables because the
+executables can't run without the shared libraries being installed.
 
 
 Installing the software
@@ -1394,16 +1425,15 @@ files using::
 You can also include generated files, such as Doxygen output files first, then
 run ``make package_source`` and it will be included in the distribution.
 
-While the TriBITS project
-has a default, disabled subpackages can be include or excluded from the
-tarball by setting
+While the TriBITS project has a default, disabled subpackages can be included
+or excluded from the tarball by setting
 ``Trilinos_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION``.  If
 ``Trilinos_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION=ON`` and one wants
-to include some subpackages that are otherwise excluded, just enble them or
+to include some subpackages that are otherwise excluded, just enable them or
 their outer package so they will be included in the source tarball.
 
-While a default set of defualt CPack source generator types is defined, it can
-be overridded using, for exmaple::
+While a set of default CPack source generator types is defined, it can be
+overridden using, for example::
 
   -D Trilinos_CPACK_SOURCE_GENERATOR:STRING="TGZ;TBZ2"
 

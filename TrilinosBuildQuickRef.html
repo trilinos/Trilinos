@@ -389,14 +389,15 @@ ul.auto-toc {
 </li>
 <li><a class="reference internal" href="#installing" id="id52">8&nbsp;&nbsp;&nbsp;Installing</a><ul class="auto-toc">
 <li><a class="reference internal" href="#setting-the-install-prefix-at-configure-time" id="id53">8.1&nbsp;&nbsp;&nbsp;Setting the install prefix at configure time</a></li>
-<li><a class="reference internal" href="#installing-the-software" id="id54">8.2&nbsp;&nbsp;&nbsp;Installing the software</a></li>
+<li><a class="reference internal" href="#avoiding-installing-libraries-and-headers" id="id54">8.2&nbsp;&nbsp;&nbsp;Avoiding installing libraries and headers</a></li>
+<li><a class="reference internal" href="#installing-the-software" id="id55">8.3&nbsp;&nbsp;&nbsp;Installing the software</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#packaging" id="id55">9&nbsp;&nbsp;&nbsp;Packaging</a><ul class="auto-toc">
-<li><a class="reference internal" href="#creating-a-tarball-of-the-source-tree" id="id56">9.1&nbsp;&nbsp;&nbsp;Creating a tarball of the source tree</a></li>
+<li><a class="reference internal" href="#packaging" id="id56">9&nbsp;&nbsp;&nbsp;Packaging</a><ul class="auto-toc">
+<li><a class="reference internal" href="#creating-a-tarball-of-the-source-tree" id="id57">9.1&nbsp;&nbsp;&nbsp;Creating a tarball of the source tree</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#dashboard-submissions" id="id57">10&nbsp;&nbsp;&nbsp;Dashboard submissions</a></li>
+<li><a class="reference internal" href="#dashboard-submissions" id="id58">10&nbsp;&nbsp;&nbsp;Dashboard submissions</a></li>
 </ul>
 </div>
 <div class="section" id="introduction">
@@ -867,7 +868,7 @@ set:</p>
 <pre class="literal-block">
 -D Trilinos_ENABLE_Fortran:BOOL=OFF
 </pre>
-<p>NOTE: The fortran compiler will be disabled automatically by default on
+<p>NOTE: The fortran compiler may be disabled automatically by default on
 systems like MS Windows.</p>
 <p>NOTE: Most Apple Macs do not come with a compatible Fortran compiler by
 default so you must turn off Fortran if you don't have a compatible Fortran
@@ -1641,11 +1642,39 @@ after the build and testing is complete.</p>
 <p>In order to set up for the install, the install prefix should be set up at
 configure time by setting, for example:</p>
 <pre class="literal-block">
--D CMAKE_INSTALL_PREFIX:PATH=$HOME/install/trilinos/mpi/opt
+-D CMAKE_INSTALL_PREFIX:PATH=$HOME/install/Trilinos/mpi/opt
 </pre>
+<p>The default location for the installation of libraries, headers, and
+executables is given by the variables (with defaults):</p>
+<pre class="literal-block">
+-D Trilinos_INSTALL_INCLUDE_DIR:PATH=&quot;include&quot; \
+-D Trilinos_INSTALL_LIB_DIR:PATH=&quot;lib&quot; \
+-D Trilinos_INSTALL_RUNTIME_DIR:PATH=&quot;bin&quot;
+</pre>
+<p>If these paths are relative (i.e. don't start with &quot;/&quot;) then they are relative
+to <tt class="docutils literal">${CMAKE_INSTALL_PREFIX}</tt>.  Otherwise the paths can be absolute and don't
+have to be under <tt class="docutils literal">${CMAKE_INSTALL_PREFIX}</tt>.</p>
+</div>
+<div class="section" id="avoiding-installing-libraries-and-headers">
+<h2><a class="toc-backref" href="#id54">8.2&nbsp;&nbsp;&nbsp;Avoiding installing libraries and headers</a></h2>
+<p>By default, any libraries and header files defined by in the TriBITS project
+Trilinos will get installed into the installation directories specified by
+<tt class="docutils literal">CMAKE_INSTALL_PREFIX</tt>, <tt class="docutils literal">Trilinos_INSTALL_INCLUDE_DIR</tt> and
+<tt class="docutils literal">Trilinos_INSTALL_LIB_DIR</tt>.  However, if the primary desire is to install
+executables only, then the user can set:</p>
+<pre class="literal-block">
+-D Trilinos_INSTALL_LIBRARIES_AND_HEADERS:BOOL=ON
+</pre>
+<p>which, if in addition static libraries are being built
+(i.e. <tt class="docutils literal">BUILD_SHARED_LIBS=OFF</tt>), this this option will result in no libraries
+or headers being installed into the <tt class="docutils literal"><span class="pre">&lt;install&gt;/include/</span></tt> and
+<tt class="docutils literal"><span class="pre">&lt;install&gt;/lib/</span></tt> directories, respectively.  However, if shared libraries
+are being built (i.e. <tt class="docutils literal">BUILD_SHARED_LIBS=ON</tt>), they the libraries will be
+installed in <tt class="docutils literal"><span class="pre">&lt;install&gt;/lib/</span></tt> along with the executables because the
+executables can't run without the shared libraries being installed.</p>
 </div>
 <div class="section" id="installing-the-software">
-<h2><a class="toc-backref" href="#id54">8.2&nbsp;&nbsp;&nbsp;Installing the software</a></h2>
+<h2><a class="toc-backref" href="#id55">8.3&nbsp;&nbsp;&nbsp;Installing the software</a></h2>
 <p>To install the software, type:</p>
 <pre class="literal-block">
 $ make install
@@ -1662,11 +1691,11 @@ installing.</p>
 </div>
 </div>
 <div class="section" id="packaging">
-<h1><a class="toc-backref" href="#id55">9&nbsp;&nbsp;&nbsp;Packaging</a></h1>
+<h1><a class="toc-backref" href="#id56">9&nbsp;&nbsp;&nbsp;Packaging</a></h1>
 <p>Packaged source and binary distributions can also be created using CMake and
 CPack.</p>
 <div class="section" id="creating-a-tarball-of-the-source-tree">
-<h2><a class="toc-backref" href="#id56">9.1&nbsp;&nbsp;&nbsp;Creating a tarball of the source tree</a></h2>
+<h2><a class="toc-backref" href="#id57">9.1&nbsp;&nbsp;&nbsp;Creating a tarball of the source tree</a></h2>
 <p>To create a source tarball of the project, first configure with the list of
 desired packages and configure with:</p>
 <pre class="literal-block">
@@ -1687,15 +1716,14 @@ $ git clean -fd -x
 </pre>
 <p>You can also include generated files, such as Doxygen output files first, then
 run <tt class="docutils literal">make package_source</tt> and it will be included in the distribution.</p>
-<p>While the TriBITS project
-has a default, disabled subpackages can be include or excluded from the
-tarball by setting
+<p>While the TriBITS project has a default, disabled subpackages can be included
+or excluded from the tarball by setting
 <tt class="docutils literal">Trilinos_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION</tt>.  If
 <tt class="docutils literal">Trilinos_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION=ON</tt> and one wants
-to include some subpackages that are otherwise excluded, just enble them or
+to include some subpackages that are otherwise excluded, just enable them or
 their outer package so they will be included in the source tarball.</p>
-<p>While a default set of defualt CPack source generator types is defined, it can
-be overridded using, for exmaple:</p>
+<p>While a set of default CPack source generator types is defined, it can be
+overridden using, for example:</p>
 <pre class="literal-block">
 -D Trilinos_CPACK_SOURCE_GENERATOR:STRING=&quot;TGZ;TBZ2&quot;
 </pre>
@@ -1704,7 +1732,7 @@ generators on your system).</p>
 </div>
 </div>
 <div class="section" id="dashboard-submissions">
-<h1><a class="toc-backref" href="#id57">10&nbsp;&nbsp;&nbsp;Dashboard submissions</a></h1>
+<h1><a class="toc-backref" href="#id58">10&nbsp;&nbsp;&nbsp;Dashboard submissions</a></h1>
 <p>You can use the TriBITS scripting code to submit package-by-package build,
 test, coverage, memcheck results to the project's CDash dashboard.</p>
 <p>First, configure as normal but add the build and test parallel levels with:</p>
