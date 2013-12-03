@@ -1958,8 +1958,8 @@ namespace Tpetra {
         (this->getLocalLength () == source.getLocalLength ()) ? 1 : 0;
 #ifdef HAVE_TPETRA_DEBUG
       int globallyCompat = 1; // innocent until proven guilty
-      reduceAll<int, int> (* (this->getMap ()->getComm ()), REDUCE_MIN,
-                           locallyCompat, outArg (globallyCompat));
+      Teuchos::reduceAll<int, int> (* (this->getMap ()->getComm ()), Teuchos::REDUCE_MIN,
+                                    locallyCompat, outArg (globallyCompat));
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         globallyCompat == 0, std::invalid_argument,
         ": MultiVectors do not have the same local length on all processes.");
