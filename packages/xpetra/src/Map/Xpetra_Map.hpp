@@ -178,6 +178,13 @@ namespace Xpetra {
 
     //@}
 
+    // TODO: find a better solution for this hack
+    // The problem is that EpetraMap, TpetraMap and StridedMap all inherit Map. To have proper toEpetra() we
+    // need to understand the type of underlying matrix. But in src/Map we have no knowledge of StridedMaps, so
+    // we cannot check for it by casting. This function allows us to avoid the restriction, as StridedMap redefines
+    // it to return the base map.
+    virtual RCP<const Map> getMap() const { return rcpFromRef(*this); }
+
   }; // Map class
 
 } // Xpetra namespace

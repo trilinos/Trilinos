@@ -533,12 +533,12 @@ namespace Xpetra {
       stridingInfo.push_back(Teuchos::as<size_t>(blksize));
       LocalOrdinal stridedBlockId = -1;
 
-      RCP<const Xpetra::StridedMap<LocalOrdinal, GlobalOrdinal, Node> > stridedRangeMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(getRangeMap()->lib(),
+      RCP<const Xpetra::StridedMap<LocalOrdinal, GlobalOrdinal, Node> > stridedRangeMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(
                                                     getRangeMap(),
                                                     stridingInfo,
                                                     stridedBlockId
                                                     );
-      RCP<const Map> stridedDomainMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(getDomainMap()->lib(),
+      RCP<const Map> stridedDomainMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(
 					      getDomainMap(),
 					      stridingInfo,
 					      stridedBlockId
