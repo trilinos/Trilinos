@@ -330,7 +330,8 @@ void get_partitioning_params(
     // TODO: Imbalance tolerance and ignoreWeights are the two parameters
     // that are used. ignoreWeights derives from rcb_balanceCount which 
     // never seem to be set, making me wonder whether it is used at all.
-    //
+    // MD: ignoreWeights is not used. I copied this part 
+    // from Lee Ann's code. Left it in this way, in case needed in future.
     imbalanceTolerance = .1;
     pe = pl.getEntryPtr("imbalance_tolerance");
     if (pe){
@@ -617,6 +618,7 @@ void pqJagged_getInputValues(
     bool multiplePartSizeSpecs = false;
 
     // TODO: Do we handle multidimensional weights.
+    // MD: no. We can only handle single dimensional weights.
     if (criteriaDim > 1){
         for (int wdim1 = 0; wdim1 < criteriaDim; wdim1++)
             for (int wdim2 = wdim1+1; wdim2 < criteriaDim; wdim2++)
@@ -626,7 +628,8 @@ void pqJagged_getInputValues(
                 }
     }
 
-    // TODO: We do not use this at all, should be removed.
+    // TODO: We do not use this at all, should be removed. 
+    //MD: Yes. Again, I left this in case used in future.
     if (multiplePartSizeSpecs)
         params.set(rcb_multiplePartSizeSpecs);
 
@@ -848,6 +851,9 @@ void pqJagged_getLocalMinMaxTotalCoord(
 
 // TODO: Why is the fEpsilon passed here ? Is going to be different than numeric
 // limits epsilon any place ?
+//MD: I did not use global variables other than const global ones.
+//fEpsilopn is different for double and float. This is calculated once in the 
+//code, then as I did not use the global variable, it is passed over the code.
 template <typename partId_t>
 inline partId_t getPartCount(partId_t numFuture, double root, double fEpsilon){
     double fp = pow(numFuture, root);
@@ -898,6 +904,8 @@ void pqJagged_getGlobalMinMaxTotalCoord(
         try{
 #ifdef mpi_communication
             // TODO: Should we use comm instead of MPI_COMM_WORLD
+	    //MD: The parts insides the mpi_communication are not run, and can be removed.
+	    //I was testing here, if the pure mpi functions are faster.
             MPI_Allreduce(localMinMaxTotal, globalMinMaxTotal,
             3 * concurrentPartCount, MPI_FLOAT, myop,MPI_COMM_WORLD);
 #endif
@@ -3309,6 +3317,8 @@ void procAssignment2(
         //should traverse from end to beginning.
         //currently gets the processors with least number of coordinates,
         //and assings the part to this part.
+	//MD: uqsort sorts it in increasing order. 
+	//We traverse it from end to beginning to get the highest number of coordinates.
         for (partId_t iii = nprocs - 1; iii >= 0; --iii){
 
             partId_t ii = proc_load_sort[iii].id;
@@ -6446,6 +6456,8 @@ void AlgPQJagged(
     }
 
     // TODO: Document why we need this duplicate.
+    //MD:We duplicate the comm as we create subcommunicators when migration is done. 
+    //We keep the problemComm as it is, while comm changes after each migration.
     RCP<Comm<int> > comm = problemComm->duplicate();
 
     // coordinates of the cut lines. First one is the min, last one is max
@@ -7223,9 +7235,10 @@ void AlgPQJagged(
 
 #ifdef debug_setparts
             //TODO: This shouldn't compile the last parameter needs a 2 ?
+	    MD:Yes.
             fprintf(f, "setting %d with coords: %lf %lf %lf to part %d\n", k,
              pqJagged_coordinates[0][k],  pqJagged_coordinates[1][k],
-             pqJagged_coordinates[][k], partIds[k]);
+             pqJagged_coordinates[2][k], partIds[k]);
 #endif
 
         }
