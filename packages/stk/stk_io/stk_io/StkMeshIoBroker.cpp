@@ -131,30 +131,51 @@ namespace {
   }
 
   template <typename DataType>
-  void internal_read_global(Teuchos::RCP<Ioss::Region> input_region, const std::string &globalVarName,
-			    DataType &globalVarData, Ioss::Field::BasicType iossType)
+  bool internal_read_global(Teuchos::RCP<Ioss::Region> input_region, const std::string &globalVarName,
+			    DataType &globalVarData, Ioss::Field::BasicType iossType,
+			    bool abort_if_not_found)
   {
-      ThrowErrorMsgIf (Teuchos::is_null(input_region),
-                       "There is no Input mesh region associated with this Mesh Data.");
-      ThrowErrorMsgIf (!input_region->field_exists(globalVarName),
-                       "The field named '" << globalVarName << "' does not exist "
-		       "on input region "  << input_region->name());
+    ThrowErrorMsgIf (Teuchos::is_null(input_region),
+		     "There is no Input mesh region associated with this Mesh Data.");
 
+    if (input_region->field_exists(globalVarName)) {
       input_region->get_fieldref(globalVarName).check_type(iossType);
       input_region->get_field_data(globalVarName, &globalVarData, sizeof(DataType));
+      return true;
+    }
+    else {
+      if (abort_if_not_found) {
+	std::ostringstream msg;
+	msg << "ERROR: The field named '" << globalVarName << "' does not exist "
+	    << "on input region "  << input_region->name();
+	throw std::runtime_error( msg.str() );
+      }
+      return false;
+    }
   }
 
   template <typename DataType>
-  void internal_read_global(Teuchos::RCP<Ioss::Region> input_region, const std::string &globalVarName,
-			    std::vector<DataType> &globalVarData, Ioss::Field::BasicType iossType)
+  bool internal_read_global(Teuchos::RCP<Ioss::Region> input_region, const std::string &globalVarName,
+			    std::vector<DataType> &globalVarData, Ioss::Field::BasicType iossType,
+			    bool abort_if_not_found)
   {
-      ThrowErrorMsgIf (Teuchos::is_null(input_region),
-                       "There is no Input mesh region associated with this Mesh Data.");
-      ThrowErrorMsgIf (!input_region->field_exists(globalVarName),
-                       "The field named '" << globalVarName << "' does not exist "
-		       "on input region "  << input_region->name());
+    ThrowErrorMsgIf (Teuchos::is_null(input_region),
+		     "There is no Input mesh region associated with this Mesh Data.");
+
+    if (input_region->field_exists(globalVarName)) {
       input_region->get_fieldref(globalVarName).check_type(iossType);
       input_region->get_field_data(globalVarName, globalVarData);
+      return true;
+    }
+    else {
+      if (abort_if_not_found) {
+	std::ostringstream msg;
+	msg << "ERROR: The field named '" << globalVarName << "' does not exist "
+	    << "on input region "  << input_region->name();
+	throw std::runtime_error( msg.str() );
+      }
+      return false;
+    }
   }
 
   void internal_write_parameter(Teuchos::RCP<Ioss::Region> output_region,
@@ -227,50 +248,58 @@ namespace {
     }
   }
 
-  void internal_read_parameter(Teuchos::RCP<Ioss::Region> input_region,
+  bool internal_read_parameter(Teuchos::RCP<Ioss::Region> input_region,
 			       const std::string &globalVarName,
-			       boost::any &any_value, stk::util::ParameterType::Type type)
+			       boost::any &any_value, stk::util::ParameterType::Type type,
+			       bool abort_if_not_found)
     {
+      bool success = false;
       switch(type)
 	{
 	case stk::util::ParameterType::INTEGER: {
 	  int value = 0;
-	  internal_read_global(input_region, globalVarName, value, Ioss::Field::INTEGER);
+	  success = internal_read_global(input_region, globalVarName, value, Ioss::Field::INTEGER,
+					 abort_if_not_found);
 	  any_value = value;
 	  break;
 	}
 
 	case stk::util::ParameterType::INT64: {
 	  int64_t value = 0;
-	  internal_read_global(input_region, globalVarName, value, Ioss::Field::INT64);
+	  success = internal_read_global(input_region, globalVarName, value, Ioss::Field::INT64,
+					 abort_if_not_found);
 	  any_value = value;
 	  break;
 	}
 
 	case stk::util::ParameterType::DOUBLE: {
 	  double value = 0;
-	  internal_read_global(input_region, globalVarName, value, Ioss::Field::REAL);
+	  success = internal_read_global(input_region, globalVarName, value, Ioss::Field::REAL,
+					 abort_if_not_found);
 	  any_value = value;
 	  break;
 	}
 
 	case stk::util::ParameterType::DOUBLEVECTOR: {
 	  std::vector<double> vec;
-	  internal_read_global(input_region, globalVarName, vec, Ioss::Field::REAL);
+	  success = internal_read_global(input_region, globalVarName, vec, Ioss::Field::REAL,
+					 abort_if_not_found);
 	  any_value = vec;
 	  break;
 	}
 
 	case stk::util::ParameterType::INTEGERVECTOR: {
 	  std::vector<int> vec;
-	  internal_read_global(input_region, globalVarName, vec, Ioss::Field::INTEGER);
+	  success = internal_read_global(input_region, globalVarName, vec, Ioss::Field::INTEGER,
+					 abort_if_not_found);
 	  any_value = vec;
 	  break;
 	}
 
 	case stk::util::ParameterType::INT64VECTOR: {
 	  std::vector<int64_t> vec;
-	  internal_read_global(input_region, globalVarName, vec, Ioss::Field::INT64);
+	  success = internal_read_global(input_region, globalVarName, vec, Ioss::Field::INT64,
+					 abort_if_not_found);
 	  any_value = vec;
 	  break;
 	}
@@ -282,6 +311,7 @@ namespace {
 	  break;
 	}
       }
+      return success;
     }
 
     void internal_add_global(Teuchos::RCP<Ioss::Region> region,
@@ -1474,30 +1504,39 @@ namespace stk {
         m_input_region->field_describe(Ioss::Field::TRANSIENT, &names);
     }
 
-    void StkMeshIoBroker::get_global(const std::string &globalVarName,
-				     boost::any &value, stk::util::ParameterType::Type type)
+    bool StkMeshIoBroker::get_global(const std::string &globalVarName,
+				     boost::any &value, stk::util::ParameterType::Type type,
+				     bool abort_if_not_found)
     {
-        internal_read_parameter(m_input_region, globalVarName, value, type);
+      return internal_read_parameter(m_input_region, globalVarName, value, type, abort_if_not_found);
     }
 
-    void StkMeshIoBroker::get_global(const std::string &globalVarName, std::vector<double> &globalVar)
+    bool StkMeshIoBroker::get_global(const std::string &globalVarName, std::vector<double> &globalVar,
+				     bool abort_if_not_found)
     {
-        internal_read_global(m_input_region, globalVarName, globalVar, Ioss::Field::REAL);
+      return internal_read_global(m_input_region, globalVarName, globalVar, Ioss::Field::REAL,
+				  abort_if_not_found);
     }
 
-    void StkMeshIoBroker::get_global(const std::string &globalVarName, std::vector<int> &globalVar)
+    bool StkMeshIoBroker::get_global(const std::string &globalVarName, std::vector<int> &globalVar,
+				     bool abort_if_not_found)
     {
-        internal_read_global(m_input_region, globalVarName, globalVar, Ioss::Field::INTEGER);
+      return internal_read_global(m_input_region, globalVarName, globalVar, Ioss::Field::INTEGER,
+				  abort_if_not_found);
     }
 
-    void StkMeshIoBroker::get_global(const std::string &globalVarName, int &globalVar)
+    bool StkMeshIoBroker::get_global(const std::string &globalVarName, int &globalVar,
+				     bool abort_if_not_found)
     {
-        internal_read_global(m_input_region, globalVarName, globalVar, Ioss::Field::INTEGER);
+      return internal_read_global(m_input_region, globalVarName, globalVar, Ioss::Field::INTEGER,
+				  abort_if_not_found);
     }
 
-    void StkMeshIoBroker::get_global(const std::string &globalVarName, double &globalVar)
+    bool StkMeshIoBroker::get_global(const std::string &globalVarName, double &globalVar,
+				     bool abort_if_not_found)
     {
-        internal_read_global(m_input_region, globalVarName, globalVar, Ioss::Field::REAL);
+      return internal_read_global(m_input_region, globalVarName, globalVar, Ioss::Field::REAL,
+				  abort_if_not_found);
     }
 
     void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &name,

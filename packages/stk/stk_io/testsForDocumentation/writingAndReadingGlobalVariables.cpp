@@ -47,7 +47,19 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalVariables)
 	stkIo.get_global(globalNamesOnFile[0], timeStepSizeReadFromFile);
         const double tolerance = 1e-16;
         EXPECT_NEAR(timeStepSize, timeStepSizeReadFromFile, tolerance);
+
+	// If try to get a global that does not exist, will throw
+	// an exception by default...
+	double value = 0.0;
+	EXPECT_THROW(stkIo.get_global("does_not_exist", value),std::exception);
+	
+	// If the application wants to handle the error instead (without a try/catch),
+	// can pass in an optional boolean:
+	bool abort_if_not_found = false;
+	bool found = stkIo.get_global("does_not_exist", value, abort_if_not_found);
+	ASSERT_FALSE(found);
     }
+
     unlink(restartFileName.c_str());
 }
 }

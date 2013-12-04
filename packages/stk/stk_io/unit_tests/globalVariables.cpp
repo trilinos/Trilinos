@@ -46,7 +46,7 @@ void testGlobalVarOnFile(const std::string &outputFileName, const int stepNumber
     {
         EXPECT_STRCASEEQ(goldGlobalVarName[i].c_str(), globalVarNames[i].c_str());
         std::vector<DataType> globalVar;
-        stkIo.get_global(globalVarNames[i], globalVar);
+        ASSERT_TRUE(stkIo.get_global(globalVarNames[i], globalVar));
         for(size_t j=0; j<globalVar.size(); j++)
         {
             EXPECT_NEAR(goldGlobalVarValue[i]+goldGlobalScale*j, globalVar[j], tolerance);
@@ -101,6 +101,48 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDouble)
     std::vector<double> globalVarValues(1,globalVarValue);
     double goldGlobalScaleFactor = 0.0;
     testGlobalVarOnFile(outputFileName, stepNumber, globalVarNames, globalVarValues, goldGlobalScaleFactor, communicator);
+    unlink(outputFileName.c_str());
+}
+
+STKUNIT_UNIT_TEST(GlobalVariablesTest, InvalidGlobalRequest)
+{
+    const std::string outputFileName = "InvalidGlobalRequest.exo";
+    const std::string globalVarName = "testGlobal";
+    const double globalVarValue = 13.0;
+    MPI_Comm communicator = MPI_COMM_WORLD;
+    {
+        stk::io::StkMeshIoBroker stkIo(communicator);
+        generateMetaData(stkIo);
+        stkIo.populate_bulk_data();
+
+        size_t result_file_index = stkIo.create_output_mesh(outputFileName, stk::io::WRITE_RESULTS);
+
+        stkIo.add_global(result_file_index, globalVarName, Ioss::Field::REAL);
+
+        const double time = 1.0;
+        stkIo.begin_output_step(result_file_index, time);
+
+        stkIo.write_global(result_file_index, globalVarName, globalVarValue);
+
+        stkIo.end_output_step(result_file_index);
+    }
+
+    {
+      double global_value = 0.0;
+      stk::io::StkMeshIoBroker stkIo(communicator);
+      stkIo.open_mesh_database(outputFileName, stk::io::READ_MESH);
+      stkIo.create_input_mesh();
+      stkIo.populate_bulk_data();
+
+      bool abort_if_not_exist = true;
+      EXPECT_THROW(stkIo.get_global("does_not_exist", global_value), std::exception);
+      EXPECT_THROW(stkIo.get_global("does_not_exist", global_value, abort_if_not_exist), std::exception);
+      ASSERT_TRUE(stkIo.get_global(globalVarName, global_value, abort_if_not_exist));
+
+      abort_if_not_exist = false;
+      ASSERT_FALSE(stkIo.get_global("does_not_exist", global_value, abort_if_not_exist));
+      ASSERT_TRUE(stkIo.get_global(globalVarName, global_value, abort_if_not_exist));
+    }
     unlink(outputFileName.c_str());
 }
 
@@ -368,7 +410,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleRestart)
         ASSERT_EQ(1u, globalVarNames.size());
         EXPECT_STRCASEEQ(globalVarName.c_str(), globalVarNames[0].c_str());
         double globalVar = 0.0;
-	stkIo.get_global(globalVarNames[0], globalVar);
+	ASSERT_TRUE(stkIo.get_global(globalVarNames[0], globalVar));
         EXPECT_NEAR(globalVarValue, globalVar, tolerance);
     }
     const int stepNumber = 1;
