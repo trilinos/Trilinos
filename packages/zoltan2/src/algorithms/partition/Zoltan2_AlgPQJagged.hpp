@@ -809,8 +809,10 @@ void pqJagged_getLocalMinMaxTotalCoord(
 #endif
             for(pq_lno_t j = coordinateBegin + 1; j < coordinateEnd; ++j){
                 int i = partitionedPointPermutations[j];
-                if(pqJagged_coordinates[i] > myMax) myMax = pqJagged_coordinates[i];
-                if(pqJagged_coordinates[i] < myMin) myMin = pqJagged_coordinates[i];
+                if(pqJagged_coordinates[i] > myMax)
+                    myMax = pqJagged_coordinates[i];
+                if(pqJagged_coordinates[i] < myMin)
+                    myMin = pqJagged_coordinates[i];
             }
             max_min_array[myId] = myMin;
             max_min_array[myId + numThreads] = myMax;
@@ -828,7 +830,8 @@ void pqJagged_getLocalMinMaxTotalCoord(
             {
                 minCoordinate = max_min_array[0];
                 for(int i = 1; i < numThreads; ++i){
-                    if(max_min_array[i] < minCoordinate) minCoordinate = max_min_array[i];
+                    if(max_min_array[i] < minCoordinate)
+                        minCoordinate = max_min_array[i];
                 }
             }
 
@@ -840,7 +843,8 @@ void pqJagged_getLocalMinMaxTotalCoord(
             {
                 maxCoordinate = max_min_array[numThreads];
                 for(int i = numThreads + 1; i < numThreads * 2; ++i){
-                    if(max_min_array[i] > maxCoordinate) maxCoordinate = max_min_array[i];
+                    if(max_min_array[i] > maxCoordinate)
+                        maxCoordinate = max_min_array[i];
                 }
             }
         }
@@ -849,8 +853,8 @@ void pqJagged_getLocalMinMaxTotalCoord(
 
 }
 
-//fEpsilon is different for double and float. It is calculated once in the 
-//code, and passed multiple times.
+// fEpsilon is different for double and float. It is found once
+// and passed multiple times.
 template <typename partId_t>
 inline partId_t getPartCount(partId_t numFuture, double root, double fEpsilon){
     double fp = pow(numFuture, root);
@@ -880,7 +884,6 @@ void pqJagged_getGlobalMinMaxTotalCoord(
         partId_t concurrentPartCount,
         pq_scalar_t *localMinMaxTotal,
         pq_scalar_t *globalMinMaxTotal){
-
 
     //reduce min for first concurrentPartCount elements, reduce max for next
     //concurrentPartCount elements,
@@ -1678,10 +1681,9 @@ void pqJagged_1DPart_getPartWeights(
                     // kddnote Mehmet says it is probably needed anyway.
                     distance =ABS(cutCoordinates_tmp[kk] - cut);
                     if(distance < _EPSILON){
-                        //cout << "yo" << endl;
                         myPartWeights[2 * kk + 1] += w;
-
-                        //cout << "2to part:" << 2*kk+1 << " coord:" << coord << endl;
+                        //cout << "2to part:" << 2*kk+1 << " coord:" << coord
+                        //<< endl;
                         myLeftClosest[kk] = 0;
                         myRightClosest[kk] = 0;
                         kk++;
@@ -1699,7 +1701,8 @@ void pqJagged_1DPart_getPartWeights(
                     distance =ABS(cutCoordinates_tmp[kk] - cut);
                     if(distance < _EPSILON){
                         myPartWeights[2 * kk + 1] += w;
-                        //cout << "3to part:" << 2*kk+1 << " coord:" << coord << endl;
+                        //cout << "3to part:" << 2*kk+1 << " coord:" << coord
+                        //<< endl;
 
                         myLeftClosest[kk] = 0;
                         myRightClosest[kk] = 0;
@@ -1731,20 +1734,24 @@ void pqJagged_1DPart_getPartWeights(
                     myLeftClosest[j] = 0;
                     myRightClosest[j] = 0;
                     cut = cutCoordinates_tmp[j];
-                    //cout << "4to part:" << 2*j+1 <<" j:" << j <<  " coord:" << coord << endl;
-                    //cout << "cut:" << cutCoordinates_tmp[j] << " dis:" << distance << endl;
+                    //cout << "4to part:" << 2*j+1 <<" j:" << j <<  " coord:"
+                    //<< coord << endl;
+                    //cout << "cut:" << cutCoordinates_tmp[j] << " dis:" <<i
+                    //distance << endl;
                     partIds[i] = j * 2 + 1;
 
                     partId_t kk = j + 1;
-                    while(kk < noCuts){  // Needed when cuts shared the same position
+                    while(kk < noCuts){//Needed when cuts share the same position
                         // kddnote Can this loop be disabled for RECTILINEAR BLOCKS?
                         // kddnote Mehmet says it is probably needed anyway.
                         distance =ABS(cutCoordinates_tmp[kk] - cut);
                         //cout << "distance:" << distance << endl;
                         if(distance < _EPSILON){
                             myPartWeights[2 * kk + 1] += w;
-                            //cout << "5to part:" << 2*kk+1 << " kk:" << kk << " coord:" << coord << endl;
-                            //cout << "cut:" << cutCoordinates_tmp[kk] << " dis:" << distance << endl;
+                            //cout << "5to part:" << 2*kk+1 << " kk:" << kk <<
+                            //" coord:" << coord << endl;
+                            //cout << "cut:" << cutCoordinates_tmp[kk] <<
+                            //" dis:" << distance << endl;
                             myLeftClosest[kk] = 0;
                             myRightClosest[kk] = 0;
                             kk++;
@@ -1762,8 +1769,10 @@ void pqJagged_1DPart_getPartWeights(
                         distance =ABS(cutCoordinates_tmp[kk] - cut);
                         if(distance < _EPSILON){
                             myPartWeights[2 * kk + 1] += w;
-                            //cout << "6to part:" << 2*kk+1 << " coord:" << coord << endl;
-                            //cout << "cut:" << cutCoordinates_tmp[kk] << " dis:" << distance << endl;
+                            //cout << "6to part:" << 2*kk+1 << " coord:" <<
+                            //coord << endl;
+                            //cout << "cut:" << cutCoordinates_tmp[kk] <<i
+                            //" dis:" << distance << endl;
 
                             myLeftClosest[kk] = 0;
                             myRightClosest[kk] = 0;
@@ -1810,7 +1819,7 @@ void pqJagged_1DPart_getPartWeights(
                     partIds[i] = j * 2 + 1;
                     cut = cutCoordinates_tmp[j];
                     partId_t kk = j + 1;
-                    while(kk < noCuts){  // Needed when cuts shared the same position
+                    while(kk < noCuts){//Needed when cuts share the same position
                         // kddnote Can this loop be disabled for RECTILINEAR BLOCKS?
                         // kddnote Mehmet says it is probably needed anyway.
                         distance =ABS(cutCoordinates_tmp[kk] - cut);
