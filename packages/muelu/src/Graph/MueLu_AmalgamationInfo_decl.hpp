@@ -55,11 +55,15 @@
 
 #include <Xpetra_ConfigDefs.hpp>   // global_size_t
 #include <Xpetra_Map_fwd.hpp>
+#include <Xpetra_MapFactory_fwd.hpp>
+#include <Xpetra_Vector_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 
 #include "MueLu_BaseClass.hpp"
+
 #include "MueLu_AmalgamationInfo_fwd.hpp"
+#include "MueLu_Aggregates_fwd.hpp"
 
 namespace MueLu {
 
@@ -101,6 +105,17 @@ namespace MueLu {
     RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > GetGlobalAmalgamationParams() const   { return nodegid2dofgids_; }
     RCP<std::vector<GlobalOrdinal> >                          GetNodeGIDVector() const              { return gNodeIds_; }
     GlobalOrdinal                                             GetNumberOfNodes() const              { return gNodeIds_.is_null() ? 0 : gNodeIds_->size(); }
+
+    /*! @brief UnamalgamateAggregates
+
+       Puts all dofs for aggregate \c i in aggToRowMap[\c i].  Also calculate aggregate sizes.
+    */
+    void UnamalgamateAggregates(const Aggregates& aggregates, Teuchos::ArrayRCP<LocalOrdinal>& aggStart, Teuchos::ArrayRCP<GlobalOrdinal>& aggToRowMap) const;
+
+    /*! @brief ComputeUnamalgamatedImportDofMap
+     * build overlapping dof row map from aggregates needed for overlapping null space
+     */
+    Teuchos::RCP< Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > ComputeUnamalgamatedImportDofMap(const Aggregates& aggregates) const;
 
   private:
 

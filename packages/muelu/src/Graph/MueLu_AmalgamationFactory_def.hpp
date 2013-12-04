@@ -52,14 +52,11 @@
 #endif
 
 #include <Xpetra_Matrix.hpp>
-#include <Xpetra_BlockedCrsMatrix.hpp>
 
 #include "MueLu_AmalgamationFactory.hpp"
 
 #include "MueLu_Level.hpp"
-#include "MueLu_Graph.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
-#include "MueLu_Aggregates.hpp"
 #include "MueLu_Monitor.hpp"
 
 namespace MueLu {
@@ -176,78 +173,6 @@ namespace MueLu {
     // here, the assumption is, that the node map has the same indexBase as the dof map
     GlobalOrdinal globalblockid = ((GlobalOrdinal) gid - offset - indexBase) / blockSize + indexBase;
     return globalblockid;
-  }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::UnamalgamateAggregates(const Aggregates& aggregates,
-const AmalgamationInfo& amalgInfo, Teuchos::ArrayRCP<LocalOrdinal> & aggStart, Teuchos::ArrayRCP<GlobalOrdinal> & aggToRowMap) {
-    int myPid = aggregates.GetMap()->getComm()->getRank();
-    //const Map& map = *(aggregates.GetMap());
-    Teuchos::ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
-    Teuchos::ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-    LO size = procWinner.size();
-
-    GO total=0;
-    std::vector<LO> sizes(aggregates.GetNumAggregates());
-    for (LO lnode = 0; lnode < size; ++lnode) {
-      LO myAgg = vertex2AggId[lnode];
-      if (procWinner[lnode] == myPid) {
-        //GO gnodeid = map.getGlobalElement(lnode);
-        GO gnodeid = (aggregates.GetMap())->getGlobalElement(lnode);
-        std::vector<GO> gDofIds = (*(amalgInfo.GetGlobalAmalgamationParams()))[gnodeid];
-        total += Teuchos::as<LO>(gDofIds.size());
-        sizes[myAgg] += Teuchos::as<LO>(gDofIds.size());
-      }
-    }
-    aggToRowMap = ArrayRCP<GO>(total,0);
-
-    aggStart = ArrayRCP<LO>(aggregates.GetNumAggregates()+1,0);
-    aggStart[0]=0;
-    for (GO i=0; i<aggregates.GetNumAggregates(); ++i) {
-      aggStart[i+1] = aggStart[i] + sizes[i];
-    }
-
-    // count, how many dofs have been recorded for each aggregate so far
-    Array<LO> numDofs(aggregates.GetNumAggregates(), 0); // empty array with number of Dofs for each aggregate
-
-    for (LO lnode = 0; lnode < size; ++lnode) {
-      LO myAgg = vertex2AggId[lnode];
-
-      if (procWinner[lnode] == myPid) {
-        //GO gnodeid = map.getGlobalElement(lnode);
-        GO gnodeid = (aggregates.GetMap())->getGlobalElement(lnode);
-        std::vector<GO> gDofIds = (*(amalgInfo.GetGlobalAmalgamationParams()))[gnodeid];
-        LO gDofIds_size = Teuchos::as<LO>(gDofIds.size());
-        for (LO gDofId=0; gDofId < gDofIds_size; ++gDofId) {
-          //aggToRowMap[ aggStart[myAgg] + gDofId ] = gDofIds[gDofId]; // fill aggToRowMap structure
-          aggToRowMap[ aggStart[myAgg] + numDofs[myAgg] ] = gDofIds[gDofId]; // fill aggToRowMap structure
-          ++(numDofs[myAgg]);
-        }
-      }
-    }
-    // todo plausibility check: entry numDofs[k] == aggToRowMap[k].size()
-
-  } //UnamalgamateAggregates
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeUnamalgamatedImportDofMap(const Aggregates& aggregates, const AmalgamationInfo& amalgInfo) {
-    Teuchos::RCP<const Map> nodeMap = aggregates.GetMap(); //aggregates.GetVertex2AggId();
-
-    Teuchos::RCP<std::vector<GO> > myDofGids = Teuchos::rcp(new std::vector<GO>);
-    LO nodeElements = Teuchos::as<LO>(nodeMap->getNodeNumElements());
-    for(LO n = 0; n<nodeElements; n++) {
-      GO gnodeid = (GO) nodeMap->getGlobalElement(n);
-      std::vector<GO> gDofIds = (*(amalgInfo.GetGlobalAmalgamationParams()))[gnodeid];
-      for(typename std::vector<GO>::iterator gDofIdsIt = gDofIds.begin(); gDofIdsIt != gDofIds.end(); gDofIdsIt++) {
-        myDofGids->push_back(*gDofIdsIt);
-      }
-    }
-
-    Teuchos::ArrayRCP<GO> arr_myDofGids = Teuchos::arcp( myDofGids );
-    Teuchos::RCP<Map> importDofMap = MapFactory::Build(aggregates.GetMap()->lib(),
-                                                       Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), arr_myDofGids(),
-                                                       aggregates.GetMap()->getIndexBase(), aggregates.GetMap()->getComm());
-    return importDofMap;
   }
 
 } //namespace MueLu
