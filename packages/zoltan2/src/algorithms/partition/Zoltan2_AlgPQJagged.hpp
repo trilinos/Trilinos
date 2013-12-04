@@ -2115,7 +2115,7 @@ void pqJagged_1D_Partition(
     Teuchos::PQJaggedCombinedReductionOp<partId_t, pq_scalar_t>
                  *reductionOp = NULL;
     reductionOp = new Teuchos::PQJaggedCombinedReductionOp
-                     <partId_t, pq_scalar_t>(&pVector , currentPartBeginIndex ,i
+                     <partId_t, pq_scalar_t>(&pVector , currentPartBeginIndex ,
                       concurrentPartCount);
 
 
