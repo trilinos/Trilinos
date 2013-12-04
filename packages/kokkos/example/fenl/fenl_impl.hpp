@@ -45,14 +45,23 @@
 #define KOKKOS_EXAMPLE_FENL_IMPL_HPP
 
 #include <math.h>
+
+// Kokkos libraries' headers:
+
 #include <Kokkos_UnorderedMap.hpp>
 #include <Kokkos_StaticCrsGraph.hpp>
 #include <Kokkos_CrsMatrix.hpp>
+#include <impl/Kokkos_Timer.hpp>
+
+// Examples headers:
 
 #include <BoxElemFixture.hpp>
+#include <LinAlgBLAS.hpp>
+#include <VectorImport.hpp>
+#include <CGSolve.hpp>
+
 #include <fenl.hpp>
 #include <fenlFunctors.hpp>
-#include <impl/Kokkos_Timer.hpp>
 
 //----------------------------------------------------------------------------
 
@@ -160,13 +169,25 @@ Perf fenl(
   typedef Kokkos::Example::FENL::NodeNodeGraph< typename FixtureType::elem_node_type , SparseGraphType , FixtureType::ElemNode > 
      NodeNodeGraphType ;
 
-#if 0
   typedef Kokkos::Example::FENL::ElementComputation< FixtureType , SparseMatrixType >
-    ElementComputation ;
+    ElementComputationType ;
 
   typedef Kokkos::Example::FENL::DirichletComputation< FixtureType , SparseMatrixType >
-    DirichletComputation ;
-#endif
+    DirichletComputationType ;
+
+  typedef NodeElemGatherFill< ElementComputationType >
+    NodeElemGatherFillType ;
+
+  typedef typename ElementComputationType::vector_type VectorType ;
+
+  typedef Kokkos::Example::VectorImport< VectorType > ImportType ;
+
+  //------------------------------------
+
+  const unsigned newton_iteration_limit     = 5 ;
+  const double   newton_iteration_tolerance = 1e-7 ;
+  const unsigned cg_iteration_limit         = 200;
+  const double   cg_iteration_tolerance     = 1e-7 ;
 
   //------------------------------------
 
@@ -180,10 +201,41 @@ Perf fenl(
 
   // Decompose by node to avoid mpi-communication for assembly
 
+  const float bubble_x = 1.0 ;
+  const float bubble_y = 1.0 ;
+  const float bubble_z = 1.0 ;
+
   const FixtureType fixture( BoxElemPart::DecomposeNode , comm_size , comm_rank ,
-                             use_nodes[0] , use_nodes[1] , use_nodes[2] );
+                             use_nodes[0] , use_nodes[1] , use_nodes[2] ,
+                             bubble_x , bubble_y , bubble_z );
+
+  //------------------------------------
+
+  const ImportType comm_nodal_import( comm ,
+                                      fixture.node_count_owned() , 
+                                      fixture.node_count() - fixture.node_count_owned() );
+
+  //------------------------------------
+
+  const double bc_lower_value = 1 ;
+  const double bc_upper_value = 2 ;
+
+  const Kokkos::Example::FENL::ManufacturedSolution
+    manufactured_solution( 0 , 1 , bc_lower_value , bc_upper_value  );
+
+  //------------------------------------
 
   if ( print_flag ) {
+    std::cout << "Manufactured solution"
+              << " a[" << manufactured_solution.a << "]"
+              << " b[" << manufactured_solution.b << "]"
+              << " K[" << manufactured_solution.K << "]"
+              << " {" ;
+    for ( unsigned inode = 0 ; inode < fixture.node_count() ; ++inode ) {
+      std::cout << " " << manufactured_solution( fixture.node_coord( inode , 2 ) );
+    }
+    std::cout << " }" << std::endl ;
+
     std::cout << "ElemNode {" << std::endl ;
     for ( unsigned ielem = 0 ; ielem < fixture.elem_count() ; ++ielem ) {
       std::cout << "  elem[" << ielem << "]{" ;
@@ -197,21 +249,13 @@ Perf fenl(
 
   //------------------------------------
 
-  const double bc_lower_value = 1 ;
-  const double bc_upper_value = 2 ;
-
-  const Kokkos::Example::FENL::ManufacturedSolution
-    manufactured_solution( 0 , 1 , bc_lower_value , bc_upper_value  );
-
-  //------------------------------------
-
-  std::vector< Kokkos::Example::FENL::Perf > perf_all( use_trials );
-
   Kokkos::Impl::Timer wall_clock ;
 
-  for ( int i = 0 ; i < use_trials ; ++i ) {
+  Perf perf_stats ;
 
-    Kokkos::Example::FENL::Perf & perf = perf_all[i] ;
+  for ( int itrial = 0 ; itrial < use_trials ; ++itrial ) {
+
+    Kokkos::Example::FENL::Perf perf ;
 
     perf.global_elem_count = fixture.elem_count_global();
     perf.global_node_count = fixture.node_count_global();
@@ -237,7 +281,7 @@ Perf fenl(
     //----------------------------------
 
     if ( print_flag ) {
-      const unsigned nrow = mesh_to_graph.graph.row_map.dimension_0() - 1 ;
+      const unsigned nrow = jacobian.numRows();
       std::cout << "JacobianGraph[ "
                 << jacobian.numRows() << " x " << jacobian.numCols()
                 << " ] {" << std::endl ;
@@ -250,80 +294,198 @@ Perf fenl(
         std::cout << " }" << std::endl ;
       }
       std::cout << "}" << std::endl ;
+
+      std::cout << "ElemGraph {" << std::endl ;
+      for ( unsigned ielem = 0 ; ielem < mesh_to_graph.elem_graph.dimension_0() ; ++ielem ) {
+        std::cout << "  elem[" << ielem << "]{" ;
+        for ( unsigned irow = 0 ; irow < mesh_to_graph.elem_graph.dimension_1() ; ++irow ) {
+          std::cout << " {" ;
+          for ( unsigned icol = 0 ; icol < mesh_to_graph.elem_graph.dimension_2() ; ++icol ) {
+            std::cout << " " << mesh_to_graph.elem_graph(ielem,irow,icol);
+          }
+          std::cout << " }" ;
+        }
+        std::cout << " }" << std::endl ;
+      }
+      std::cout << "}" << std::endl ;
     }
 
     //----------------------------------
 
-#if 0
+    // Allocate solution vector for each node in the mesh and residual vector for each owned node
+    const VectorType nodal_solution( "nodal_solution" , fixture.node_count() );
+    const VectorType nodal_residual( "nodal_residual" , fixture.node_count_owned() );
+    const VectorType nodal_delta(    "nodal_delta" ,    fixture.node_count_owned() );
 
-    const ElementComputation    elemcomp( fixture , use_atomic , coeff_K );
-    const DirichletComputation  dirichlet( fixture );
+    // Create element computation functor
+    const ElementComputationType elemcomp(
+      use_atomic ? ElementComputationType( fixture , manufactured_solution.K , nodal_solution ,
+                                           mesh_to_graph.elem_graph , jacobian , nodal_residual )
+                 : ElementComputationType( fixture , manufactured_solution.K , nodal_solution ) );
 
-    //----------------------------------
-    // Set the solution vector
+    const NodeElemGatherFillType gatherfill(
+      use_atomic ? NodeElemGatherFillType()
+                 : NodeElemGatherFillType( fixture.elem_node() ,
+                                           mesh_to_graph.elem_graph ,
+                                           nodal_residual ,
+                                           jacobian ,
+                                           elemcomp.elem_residuals ,
+                                           elemcomp.elem_jacobians ) );
 
-    dirichlet.apply_solution( nodal_solution );
+    // Create boundary condition functor
+    const DirichletComputationType dirichlet(
+      fixture , nodal_solution , jacobian , nodal_residual ,
+      2 /* apply at 'z' ends */ ,
+      manufactured_solution.T_zmin , 
+      manufactured_solution.T_zmax ); 
 
     //----------------------------------
     // Nonlinear Newton iteration:
 
-    for ( perf.newton_iteration = 0 ;
-          perf.newton_iteration < newton_iteration_limit ;
-          ++perf.newton_iteration ) {
+    double residual_norm_init = 0 ;
+
+    for ( perf.newton_iter_count = 0 ;
+          perf.newton_iter_count < newton_iteration_limit ;
+          ++perf.newton_iter_count ) {
 
       //--------------------------------
 
-      comm_import.apply( nodal_solution );
+      comm_nodal_import( nodal_solution );
 
       //--------------------------------
       // Element contributions to residual and jacobian
 
-      if ( use_atomic ) {
-        wall_clock.reset();
-        elemcomp.apply_and_atomic_fill( jacobian , residual , nodal_solution );
-        Device::fence();
-        perf_data.elem_time = maximum( comm , wall_clock.seconds() );
-      }
-      else {
-        wall_clock.reset();
-        elemcomp.apply( nodal_solution );
-        Device::fence();
-        perf_data.elem_time = maximum( comm , wall_clock.seconds() );
+      wall_clock.reset();
 
-        wall_clock.reset();
-        gatherfill.apply( jacobian , residual , elem_jacobian , elem_residual );
-        Device::fence();
-        perf_data.fill_time = maximum( comm , wall_clock.seconds() );
-      }
+      Kokkos::deep_copy( nodal_residual , double(0) );
+      Kokkos::deep_copy( jacobian.values , double(0) );
+
+      elemcomp.apply();
+
+      if ( ! use_atomic ) {
+        gatherfill.apply();
+      } 
+
+      Device::fence();
+      perf.fill_time = maximum( comm , wall_clock.seconds() );
 
       //--------------------------------
       // Apply boundary conditions
 
-      dirichlet.apply_residual( jacobian , residual );
+      wall_clock.reset();
+
+      dirichlet.apply();
+
+      Device::fence();
+      perf.bc_time = maximum( comm , wall_clock.seconds() );
 
       //--------------------------------
       // Evaluate convergence
 
+      const double residual_norm =
+        std::sqrt(
+          Kokkos::Example::all_reduce(
+            Kokkos::Example::dot( nodal_residual, nodal_residual ) , comm ) );
+
+      perf.newton_residual = residual_norm ;
+
+      if ( 0 == perf.newton_iter_count ) { residual_norm_init = residual_norm ; }
+
+      if ( residual_norm < residual_norm_init * newton_iteration_tolerance ) { break ; }
+
       //--------------------------------
       // Solve for nonlinear update
 
-      cgsolve( ... );
+      CGSolve< ImportType , SparseMatrixType , VectorType >
+        cgsolve( comm_nodal_import , jacobian, nodal_residual, nodal_delta ,
+                 cg_iteration_limit , cg_iteration_tolerance );
 
       // Update solution vector
 
+      Kokkos::Example::axpy( -1.0 , nodal_delta , nodal_solution );
+
+      perf.cg_iter_count += cgsolve.iteration ;
+      perf.cg_time       += cgsolve.iter_time ;
+
+      //--------------------------------
+
+      if ( print_flag ) {
+        const double delta_norm =
+          std::sqrt(
+            Kokkos::Example::all_reduce(
+              Kokkos::Example::dot( nodal_delta, nodal_delta ) , comm ) );
+
+        std::cout << "Newton iteration[" << perf.newton_iter_count << "]"
+                  << " residual[" << perf.newton_residual << "]"
+                  << " update[" << delta_norm << "]"
+                  << " cg_iteration[" << cgsolve.iteration << "]"
+                  << " cg_residual[" << cgsolve.norm_res << "]"
+                  << std::endl ;
+
+        const unsigned nrow = jacobian.numRows();
+
+        std::cout << "Residual {" ;
+        for ( unsigned irow = 0 ; irow < nrow ; ++irow ) {
+          std::cout << " " << nodal_residual(irow);
+        }
+        std::cout << " }" << std::endl ;
+
+        std::cout << "Delta {" ;
+        for ( unsigned irow = 0 ; irow < nrow ; ++irow ) {
+          std::cout << " " << nodal_delta(irow);
+        }
+        std::cout << " }" << std::endl ;
+
+        std::cout << "Solution {" ;
+        for ( unsigned irow = 0 ; irow < nrow ; ++irow ) {
+          std::cout << " " << nodal_solution(irow);
+        }
+        std::cout << " }" << std::endl ;
+
+        std::cout << "Jacobian[ "
+                  << jacobian.numRows() << " x " << jacobian.numCols()
+                  << " ] {" << std::endl ;
+        for ( unsigned irow = 0 ; irow < nrow ; ++irow ) {
+          std::cout << "  {" ;
+          const unsigned entry_end = jacobian.graph.row_map(irow+1);
+          for ( unsigned entry = jacobian.graph.row_map(irow) ; entry < entry_end ; ++entry ) {
+            std::cout << " (" << jacobian.graph.entries(entry)
+                      << "," << jacobian.values(entry)
+                      << ")" ;
+          }
+          std::cout << " }" << std::endl ;
+        }
+        std::cout << "}" << std::endl ;
+      }
+
+      //--------------------------------
     }
 
-    // Per-iteration times
+    // Evaluate solution error
 
-#endif
+    if ( 0 == itrial ) {
+      const typename VectorType::HostMirror h_nodal_solution = Kokkos::create_mirror_view( nodal_solution );
 
+      Kokkos::deep_copy( h_nodal_solution , nodal_solution );
+    
+      double error_max = 0 ;
+      for ( unsigned inode = 0 ; inode < fixture.node_count_owned() ; ++inode ) {
+        const double answer = manufactured_solution( fixture.node_coord( inode , 2 ) );
+        const double error = ( h_nodal_solution(inode) - answer ) / answer ;
+        if ( error_max < fabs( error ) ) { error_max = fabs( error ); }
+      }
+
+      perf.error_max   = std::sqrt( Kokkos::Example::all_reduce_max( error_max , comm ) );
+
+      perf_stats = perf ;
+    }
+    else {
+      perf_stats.graph_time = std::min( perf_stats.graph_time , perf.graph_time );
+      perf_stats.fill_time = std::min( perf_stats.fill_time , perf.fill_time );
+      perf_stats.bc_time = std::min( perf_stats.bc_time , perf.bc_time );
+      perf_stats.cg_time = std::min( perf_stats.cg_time , perf.cg_time );
+    }
   }
-
-  // Evaluate solution error
-
-  // Performance statistics
-
-  Perf perf_stats = perf_all[0];
 
   return perf_stats ;
 }

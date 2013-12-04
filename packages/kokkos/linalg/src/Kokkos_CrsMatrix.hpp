@@ -1288,22 +1288,22 @@ struct MV_MultiplyFunctor {
     void operator()(const size_type i) const {
       const size_type iRow = i/ThreadsPerRow;
       const int lane = i%ThreadsPerRow;
+      const SparseRowViewConst<CrsMatrix> row = m_A.rowConst(iRow);
+      const size_type row_length = row.length ;
       scalar_type sum = 0;
 
       if (doalpha != -1) {
-	const SparseRowViewConst<CrsMatrix> row = m_A.rowConst(iRow);
 
 #pragma loop count (15)
 #pragma unroll
-	for (size_type iEntry = lane; iEntry < row.length; iEntry += ThreadsPerRow) {
+	for (size_type iEntry = lane; iEntry < row_length; iEntry += ThreadsPerRow) {
 	  sum += row.value(iEntry) * m_x(row.colidx(iEntry));
 	}
       } else {
-	const SparseRowViewConst<CrsMatrix> row = m_A.rowConst(iRow);
 
 #pragma loop count (15)
 #pragma unroll
-	for (size_type iEntry = lane; iEntry < row.length; iEntry += ThreadsPerRow) {
+	for (size_type iEntry = lane; iEntry < row_length; iEntry += ThreadsPerRow) {
 	  sum -= row.value(iEntry) * m_x(row.colidx(iEntry));
 	}
       }
@@ -1859,7 +1859,8 @@ struct MV_MultiplyFunctor {
     aVector b;
     int numVecs = x.dimension_1();
 
-    if(numVecs==1)
+    // [HCE 2013/12/09] Following 'if' appears to be a mistake and has been commented out
+    // if(numVecs==1)
     if (s_b == 0) {
       if (s_a == 0)
         return MV_Multiply (a, y, a, A, x, 0, 0);
