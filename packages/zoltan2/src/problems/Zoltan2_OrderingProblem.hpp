@@ -150,8 +150,11 @@ public:
   //   \return  a reference to the solution to the most recent solve().
 
   OrderingSolution<gid_t, lno_t> *getSolution() {
-    // Assume solve() computed perm but not invperm. TODO?
-    solution_->computeInverse();
+    // Compute Perm or InvPerm, if one is missing.
+    if (!(solution_->havePerm()))
+      solution_->computePerm();
+    if (!(solution_->haveInverse()))
+      solution_->computeInverse();
     return solution_.getRawPtr();
   };
 

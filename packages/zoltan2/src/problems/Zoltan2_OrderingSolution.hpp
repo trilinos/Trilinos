@@ -80,6 +80,32 @@ public:
     gids_   = ArrayRCP<gid_t>(perm_size_);
     perm_  = ArrayRCP<lno_t>(perm_size_);
     invperm_  = ArrayRCP<lno_t>(perm_size_);
+    havePerm_ = false;
+    haveInverse_ = false;
+  }
+
+  /*! \brief Do we have the direct permutation?
+   */
+  bool havePerm()
+  {
+    return havePerm_; 
+  }
+
+  /*! \brief Do we have the inverse permutation?
+   */
+  bool haveInverse()
+  {
+    return haveInverse_; 
+  }
+
+  /*! \brief Compute direct permutation from inverse.
+   */
+  void computePerm()
+  {
+    for(size_t i=0; i<perm_size_; i++) {
+      perm_[invperm_[i]] = i;
+    }
+    havePerm_ = true;
   }
 
   /*! \brief Compute inverse permutation.
@@ -89,8 +115,8 @@ public:
     for(size_t i=0; i<perm_size_; i++) {
       invperm_[perm_[i]] = i;
     }
+    haveInverse_ = true;
   }
-
 
 
   //////////////////////////////////////////////
@@ -157,10 +183,13 @@ public:
   }
 
 protected:
-  // Ordering solution consists of GIDs, LIDs, and permutation vector(s).
+  // Ordering solution consists of permutation vector(s).
+  // Either perm or invperm should be computed by the algorithm.
   size_t perm_size_;
-  ArrayRCP<gid_t>  gids_;
+  ArrayRCP<gid_t>  gids_; // TODO: Remove?
   // For now, assume permutations are local. Revisit later (e.g., for Scotch)
+  bool havePerm_;    // has perm_ been computed yet?
+  bool haveInverse_; // has invperm_ been computed yet?
   ArrayRCP<lno_t> perm_;    // zero-based local permutation
   ArrayRCP<lno_t> invperm_; // inverse of permutation above
 };

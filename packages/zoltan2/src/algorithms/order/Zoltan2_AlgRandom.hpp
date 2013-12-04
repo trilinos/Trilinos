@@ -49,13 +49,12 @@
 #include <Zoltan2_OrderingSolution.hpp>
 
 
+namespace Zoltan2{
+
 ////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_AlgRandom.hpp
-//! \brief Random ordering using the Knuth shuffle.
-//! \brief TODO: Only local permutation, should add global option.
-
-
-namespace Zoltan2{
+//! \brief Random ordering using the Fisher-Yates (Knuth) shuffle.
+//! \brief TODO: Only local permutation, could add global option.
 
 template <typename Adapter>
 class AlgRandom
@@ -80,10 +79,11 @@ class AlgRandom
   
     HELLO;
   
-    // This is the classic Knuth shuffle, also known as Fisher-Yates shuffle.
+    // This is the Fisher-Yates shuffle (aka Knuth shuffle).
     // References:
-    //   D.E. Knuth, "The Art of Computer Programming", volume 2, 1969.
+    //   R.A. Fisher, F. Yates, (1948) [1938], Statistical tables for biological, agricultural and medical research (3rd ed.).
     //   R. Durstenfeld, "Algorithm 235: Random permutation", CACM, vol. 7, 1964.
+    //   D.E. Knuth, "The Art of Computer Programming", volume 2, 1969.
   
     // Start with the identity permutation.
     const size_t n = model->getLocalNumIdentifiers();
