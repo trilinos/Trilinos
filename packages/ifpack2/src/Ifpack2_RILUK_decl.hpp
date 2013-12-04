@@ -406,16 +406,7 @@ class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_
   computeCondEst (CondestType CT = Ifpack2::Cheap,
                   local_ordinal_type MaxIters = 1550,
                   magnitude_type Tol = 1e-9,
-                  const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &Matrix = Teuchos::null)
-  {
-    // Forestall "unused variable" compiler warnings.
-    (void) CT;
-    (void) MaxIters;
-    (void) Tol;
-    (void) Matrix;
-
-    return computeCondEst (Teuchos::NO_TRANS);
-  }
+                  const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &Matrix = Teuchos::null);
 
   magnitude_type getCondEst() const {return Condest_;}
 
