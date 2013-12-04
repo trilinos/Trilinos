@@ -103,13 +103,14 @@ class AlgRCM
     //cout << "offsets: " << offsets << endl;
   
     const size_t nVtx = model->getLocalNumVertices();
-    ArrayRCP<lno_t> perm = solution->getPermutationRCP();
+    // RCM constructs invPerm, not perm
+    ArrayRCP<lno_t> invPerm = solution->getPermutationRCP(true);
   
     // Check if there are actually edges to reorder.
     // If there are not, then just use the natural ordering.
     if (numEdges == 0) {
       for (size_t i = 0; i < nVtx; ++i) {
-        perm[i] = i;
+        invPerm[i] = i;
       }
       return 0;
     }
@@ -117,7 +118,7 @@ class AlgRCM
     // Set the label of each vertex to invalid.
     Tpetra::global_size_t INVALID = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
     for (size_t i = 0; i < nVtx; ++i) {
-      perm[i] = INVALID;
+      invPerm[i] = INVALID;
     }
   
     // TODO: Find min-degree (or pseudo-peripheral) root vertex.
@@ -132,8 +133,8 @@ class AlgRCM
   
       // Label connected component starting at root
       Q.push(root);
-      //cout << "Debug: perm[" << root << "] = " << count << endl;
-      perm[root] = count++;
+      //cout << "Debug: invPerm[" << root << "] = " << count << endl;
+      invPerm[root] = count++;
   
       while (Q.size()){
         // Get a vertex from the queue
@@ -146,16 +147,16 @@ class AlgRCM
         // TODO: Else, sort nbors by increasing degree
         for (lno_t ptr = offsets[v]; ptr < offsets[v+1]; ++ptr){
   	lno_t nbor = edgeIds[ptr];
-  	if (static_cast<Tpetra::global_size_t>(perm[nbor]) == INVALID){
-  	  //cout << "Debug: perm[" << nbor << "] = " << count << endl;
-  	  perm[nbor] = count++; // Label as we push on Q
+  	if (static_cast<Tpetra::global_size_t>(invPerm[nbor]) == INVALID){
+  	  //cout << "Debug: invPerm[" << nbor << "] = " << count << endl;
+  	  invPerm[nbor] = count++; // Label as we push on Q
   	  Q.push(nbor);
   	}
         }
       }
   
       // Find an unmarked vertex, use as new root
-      while ((next < nVtx) && (static_cast<Tpetra::global_size_t>(perm[next]) != INVALID)) next++;
+      while ((next < nVtx) && (static_cast<Tpetra::global_size_t>(invPerm[next]) != INVALID)) next++;
       root = next;
     }
   
@@ -164,13 +165,14 @@ class AlgRCM
     if (reverse) {
       lno_t temp;
       for (size_t i=0; i < nVtx/2; ++i) {
-        // Swap (perm[i], perm[nVtx-i])
-        temp = perm[i];
-        perm[i] = perm[nVtx-1-i];
-        perm[nVtx-1-i] = temp;
+        // Swap (invPerm[i], invPerm[nVtx-i])
+        temp = invPerm[i];
+        invPerm[i] = invPerm[nVtx-1-i];
+        invPerm[nVtx-1-i] = temp;
       }
     }
   
+    solution->setHaveInverse(true);
     return ierr;
   }
   

@@ -91,6 +91,14 @@ public:
     return havePerm_; 
   }
 
+  /*! \brief Set havePerm (intended for ordering algorithms only)
+   */
+  void setHavePerm(bool status)
+  {
+    havePerm_ = status; 
+  }
+
+
   /*! \brief Do we have the inverse permutation?
    */
   bool haveInverse()
@@ -98,24 +106,43 @@ public:
     return haveInverse_; 
   }
 
+  /*! \brief Set haveInverse (intended for ordering algorithms only)
+   */
+  void setHaveInverse(bool status)
+  {
+    haveInverse_ = status; 
+  }
+
   /*! \brief Compute direct permutation from inverse.
    */
   void computePerm()
   {
-    for(size_t i=0; i<perm_size_; i++) {
-      perm_[invperm_[i]] = i;
+    if (haveInverse_) {
+      for(size_t i=0; i<perm_size_; i++) {
+        perm_[invperm_[i]] = i;
+      }
+      havePerm_ = true;
     }
-    havePerm_ = true;
+    else {
+      // TODO: throw exception
+      cerr << "No inverse!" << endl;
+    }
   }
 
   /*! \brief Compute inverse permutation.
    */
   void computeInverse()
   {
-    for(size_t i=0; i<perm_size_; i++) {
-      invperm_[perm_[i]] = i;
+    if (havePerm_) {
+      for(size_t i=0; i<perm_size_; i++) {
+        invperm_[perm_[i]] = i;
+      }
+      havePerm_ = true;
     }
-    haveInverse_ = true;
+    else {
+      // TODO: throw exception
+      cerr << "No perm!" << endl;
+    }
   }
 
 

@@ -94,6 +94,7 @@ class AlgNatural
       // TODO: throw exception?
       ierr = -1;
 
+    solution->setHavePerm(true);
     return ierr;
 
   }

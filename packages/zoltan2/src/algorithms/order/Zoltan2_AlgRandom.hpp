@@ -109,6 +109,7 @@ class AlgRandom
       perm[j] = temp;
     }
   
+    solution->setHavePerm(true);
     return ierr;
   
   }

@@ -95,7 +95,6 @@ class AlgSortedDegree
     HELLO;
   
     lno_t *perm;
-    //perm = (lno_t *) (solution->getPermutationRCP().getRawPtr());
     perm = (lno_t *) (solution->getPermutation());
     if (perm==0){
       // Throw exception
@@ -128,6 +127,7 @@ class AlgSortedDegree
       perm[i] = degrees[i].second;
     }
   
+    solution->setHavePerm(true);
     return ierr;
   }
   

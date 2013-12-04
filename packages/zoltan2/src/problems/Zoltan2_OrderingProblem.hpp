@@ -150,6 +150,7 @@ public:
   //   \return  a reference to the solution to the most recent solve().
 
   OrderingSolution<gid_t, lno_t> *getSolution() {
+    // cout << "havePerm= " << solution_->havePerm() <<  " haveInverse= " << solution_->haveInverse() << endl;
     // Compute Perm or InvPerm, if one is missing.
     if (!(solution_->havePerm()))
       solution_->computePerm();
