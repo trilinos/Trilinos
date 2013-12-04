@@ -85,12 +85,12 @@
 //
 // \date 30-Jun-06
 // ============================================================================ 
-
-class Ifpack_HashTable 
+template<typename key_type>
+class TIfpack_HashTable 
 {
   public:
     //! constructor.
-    Ifpack_HashTable(const int n_keys = 1031, const int n_sets = 1)
+    TIfpack_HashTable(const int n_keys = 1031, const int n_sets = 1)
     {
       n_keys_ = getRecommendedHashSize(n_keys) ;
       n_sets_ = n_sets;
@@ -113,7 +113,7 @@ class Ifpack_HashTable
     }
 
     //! Returns an element from the hash table, or 0.0 if not found.
-    inline double get(const int key)
+    inline double get(const key_type key)
     {
       int hashed_key = doHash(key);
 
@@ -127,7 +127,7 @@ class Ifpack_HashTable
     }
 
     //! Sets an element in the hash table.
-    inline void set(const int key, const double value,
+    inline void set(const key_type key, const double value,
                     const bool addToValue = false)
     {
       int hashed_key = doHash(key);
@@ -153,7 +153,7 @@ class Ifpack_HashTable
         return;
       }
 
-      std::vector<int> new_key;
+      std::vector<key_type> new_key;
       std::vector<double> new_val;
 
       keys_.push_back(new_key);
@@ -186,7 +186,7 @@ class Ifpack_HashTable
     }
 
     //! Converts the contents in array format for both keys and values.
-    void arrayify(int* key_array, double* val_array)
+    void arrayify(key_type* key_array, double* val_array)
     {
       int count = 0;
       for (int key = 0; key < n_keys_; ++key)
@@ -238,7 +238,7 @@ class Ifpack_HashTable
 
   private:
     //! Performs the hashing.
-    inline int doHash(const int key)
+    inline int doHash(const key_type key)
     {
       return (key % n_keys_);
       //return ((seed_ ^ key) % n_keys_);
@@ -247,8 +247,27 @@ class Ifpack_HashTable
     int n_keys_;
     int n_sets_;
     std::vector<std::vector<double> > vals_;
-    std::vector<std::vector<int> > keys_;
+    std::vector<std::vector<key_type> > keys_;
     std::vector<int> counter_;
     unsigned int seed_;
 };
+
+class Ifpack_HashTable : public TIfpack_HashTable<int>
+{
+  public:
+    Ifpack_HashTable(const int n_keys = 1031, const int n_sets = 1)
+      : TIfpack_HashTable<int>(n_keys, n_sets)
+    {
+    }
+};
+
+class Ifpack_HashTable64 : public TIfpack_HashTable<long long>
+{
+  public:
+    Ifpack_HashTable64(const int n_keys = 1031, const int n_sets = 1)
+      : TIfpack_HashTable<long long>(n_keys, n_sets)
+    {
+    }
+};
+
 #endif

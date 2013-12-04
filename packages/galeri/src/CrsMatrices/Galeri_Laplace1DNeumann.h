@@ -49,17 +49,19 @@
 namespace Galeri {
 namespace Matrices {
 
+template<typename int_type>
 inline
 Epetra_CrsMatrix* Laplace1DNeumann(const Epetra_Map* Map)
 {
   int NumMyElements     = Map->NumMyElements();
-  int NumGlobalElements = Map->NumGlobalElements();
-  int* MyGlobalElements = Map->MyGlobalElements();
+  int_type NumGlobalElements = (int_type) Map->NumGlobalElements64();
+  int_type* MyGlobalElements = 0;
+  Map->MyGlobalElementsPtr(MyGlobalElements);
 
   Epetra_CrsMatrix* Matrix = new Epetra_CrsMatrix(Copy, *Map, 3);
 
   vector<double> Values(2);
-  vector<int>    Indices(2);
+  vector<int_type> Indices(2);
   int NumEntries;
 
   for (int i = 0 ; i < NumMyElements ; ++i) 
@@ -103,6 +105,24 @@ Epetra_CrsMatrix* Laplace1DNeumann(const Epetra_Map* Map)
   Matrix->OptimizeStorage();
 
   return(Matrix);
+}
+
+inline
+Epetra_CrsMatrix* Laplace1DNeumann(const Epetra_Map* Map)
+{
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(Map->GlobalIndicesInt()) {
+	  return Laplace1DNeumann<int>(Map);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(Map->GlobalIndicesLongLong()) {
+	  return Laplace1DNeumann<long long>(Map);
+  }
+  else
+#endif
+    throw "Galeri::Matrices::Laplace1DNeumann: GlobalIndices type unknown";
 }
 
 } // namespace Matrices

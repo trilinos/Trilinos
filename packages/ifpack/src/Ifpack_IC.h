@@ -202,7 +202,10 @@ class Ifpack_IC: public Ifpack_Preconditioner {
   double GetRelativeThreshold() {return Rthresh_;}
     
   //! Returns the number of nonzero entries in the global graph.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int NumGlobalNonzeros() const {return(U().NumGlobalNonzeros()+D().GlobalLength());};
+#endif
+  long long NumGlobalNonzeros64() const {return(U().NumGlobalNonzeros64()+D().GlobalLength64());};
  
   //! Returns the number of nonzero entries in the local graph.
   int NumMyNonzeros() const {return(U().NumMyNonzeros()+D().MyLength());};

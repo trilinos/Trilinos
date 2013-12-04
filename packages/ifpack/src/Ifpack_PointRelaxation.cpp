@@ -175,13 +175,13 @@ int Ifpack_PointRelaxation::Initialize()
   if (Time_ == Teuchos::null)
     Time_ = Teuchos::rcp( new Epetra_Time(Comm()) );
 
-  if (Matrix().NumGlobalRows() != Matrix().NumGlobalCols())
+  if (Matrix().NumGlobalRows64() != Matrix().NumGlobalCols64())
     IFPACK_CHK_ERR(-2); // only square matrices
 
   NumMyRows_ = Matrix_->NumMyRows();
   NumMyNonzeros_ = Matrix_->NumMyNonzeros();
-  NumGlobalRows_ = Matrix_->NumGlobalRows();
-  NumGlobalNonzeros_ = Matrix_->NumGlobalNonzeros();
+  NumGlobalRows_ = Matrix_->NumGlobalRows64();
+  NumGlobalNonzeros_ = Matrix_->NumGlobalNonzeros64();
 
   if (Comm().NumProc() != 1)
     IsParallel_ = true;
@@ -322,7 +322,7 @@ ostream& Ifpack_PointRelaxation::Print(ostream & os) const
     else
       os << "Using input starting solution" << endl;
     os << "Condition number estimate = " << Condest() << endl;
-    os << "Global number of rows            = " << Matrix_->NumGlobalRows() << endl;
+    os << "Global number of rows            = " << Matrix_->NumGlobalRows64() << endl;
     if (IsComputed_) {
       os << "Minimum value on stored diagonal = " << MinVal << endl;
       os << "Maximum value on stored diagonal = " << MaxVal << endl;

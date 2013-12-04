@@ -209,9 +209,9 @@ private:
   //!< stores the matrix in SuperLU format.
   std::vector <double> Aval_; 
   //! Global size of the matrix.
-  int NumGlobalRows_; 
+  long long NumGlobalRows_; 
   //! Global number of nonzeros in the matrix.
-  int NumGlobalNonzeros_; 
+  long long NumGlobalNonzeros_; 
   //! If \c true, solve the linear system with the transpose of the matrix.
   bool UseTranspose_;      
   //! If \c true, the factorization has been successfully computed.

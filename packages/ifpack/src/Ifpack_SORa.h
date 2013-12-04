@@ -308,11 +308,15 @@ private:
   int Solve(bool Trans, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   //! Returns the number of global matrix rows.
   int NumGlobalRows() const {return(A_->NumGlobalRows());};
   
   //! Returns the number of global matrix columns.
   int NumGlobalCols() const {return(A_->NumGlobalCols());};
+#endif
+  long long NumGlobalRows64() const {return(A_->NumGlobalRows64());};
+  long long NumGlobalCols64() const {return(A_->NumGlobalCols64());};
   
   //! Returns the number of local matrix rows.
   int NumMyRows() const {return(A_->NumMyRows());};
@@ -329,6 +333,8 @@ private:
   {
     return(*A_);
     }*/
+  template<typename int_type>
+  int TCompute();
 
   // @}
   // @{ Internal data

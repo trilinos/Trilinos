@@ -58,9 +58,10 @@ CrsMatrix_SolverMap::
   if( NewColMap_ ) delete NewColMap_;
 }
 
+  template<typename int_type>
 CrsMatrix_SolverMap::NewTypeRef
 CrsMatrix_SolverMap::
-operator()( OriginalTypeRef orig )
+construct( OriginalTypeRef orig )
 {
   origObj_ = &orig;
 
@@ -75,7 +76,7 @@ operator()( OriginalTypeRef orig )
   int NumCols = DomainMap.NumMyElements();
   int Match = 0;
   for( int i = 0; i < NumCols; ++i )
-    if( DomainMap.GID(i) != ColMap.GID(i) )
+    if( DomainMap.GID64(i) != ColMap.GID64(i) )
     {
       Match = 1;
       break;
@@ -91,21 +92,21 @@ operator()( OriginalTypeRef orig )
   else
   {
     //create ColMap with all local rows included
-    std::vector<int> Cols(NumCols);
+    std::vector<int_type> Cols(NumCols);
     //fill Cols list with GIDs of all local columns 
     for( int i = 0; i < NumCols; ++i )
-      Cols[i] = DomainMap.GID(i);
+      Cols[i] = (int_type) DomainMap.GID64(i);
 
     //now append to Cols any ghost column entries
     int NumMyCols = ColMap.NumMyElements();
     for( int i = 0; i < NumMyCols; ++i )
-      if( !DomainMap.MyGID( ColMap.GID(i) ) ) Cols.push_back( ColMap.GID(i) );
+      if( !DomainMap.MyGID( ColMap.GID64(i) ) ) Cols.push_back( (int_type) ColMap.GID64(i) );
     
     int NewNumMyCols = Cols.size();
     int NewNumGlobalCols;
     Comm.SumAll( &NewNumMyCols, &NewNumGlobalCols, 1 );
     //create new column std::map
-    NewColMap_ = new Epetra_Map( NewNumGlobalCols, NewNumMyCols,&Cols[0], DomainMap.IndexBase(), Comm );
+    NewColMap_ = new Epetra_Map( NewNumGlobalCols, NewNumMyCols,&Cols[0], DomainMap.IndexBase64(), Comm );
 
     //New Graph
     std::vector<int> NumIndicesPerRow( NumMyRows );
@@ -115,10 +116,10 @@ operator()( OriginalTypeRef orig )
 
     int MaxNumEntries = orig.MaxNumEntries();
     int NumEntries;
-    std::vector<int> Indices( MaxNumEntries );
+    std::vector<int_type> Indices( MaxNumEntries );
     for( int i = 0; i < NumMyRows; ++i )
     {
-      int RowGID = RowMap.GID(i);
+      int_type RowGID = (int_type) RowMap.GID64(i);
       orig.Graph().ExtractGlobalRowCopy( RowGID, MaxNumEntries, NumEntries, &Indices[0] );
       NewGraph_->InsertGlobalIndices( RowGID, NumEntries, &Indices[0] );
     }
@@ -149,5 +150,23 @@ operator()( OriginalTypeRef orig )
   return *newObj_;
 }
 
+CrsMatrix_SolverMap::NewTypeRef
+CrsMatrix_SolverMap::
+operator()( OriginalTypeRef orig )
+{
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(orig.RowMap().GlobalIndicesInt()) {
+    return construct<int>(orig);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(orig.RowMap().GlobalIndicesLongLong()) {
+    return construct<long long>(orig);
+  }
+  else
+#endif
+    throw "CrsMatrix_SolverMap::operator(): GlobalIndices type unknown";
+}
 } // namespace EpetraExt
 

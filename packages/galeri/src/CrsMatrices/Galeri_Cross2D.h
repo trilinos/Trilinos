@@ -52,6 +52,7 @@
 namespace Galeri {
 namespace Matrices {
 
+template<typename int_type>
 inline
 Epetra_CrsMatrix* 
 Cross2D(const Epetra_Map* Map, const int nx, const int ny,
@@ -61,11 +62,12 @@ Cross2D(const Epetra_Map* Map, const int nx, const int ny,
   Epetra_CrsMatrix* Matrix = new Epetra_CrsMatrix(Copy, *Map,  5);
 
   int NumMyElements = Map->NumMyElements();
-  int* MyGlobalElements = Map->MyGlobalElements();
+  int_type* MyGlobalElements = 0;
+  Map->MyGlobalElementsPtr(MyGlobalElements);
 
   int left, right, lower, upper;
   vector<double> Values(4);
-  vector<int> Indices(4);
+  vector<int_type> Indices(4);
 
   //    e
   //  b a c
@@ -116,6 +118,7 @@ Cross2D(const Epetra_Map* Map, const int nx, const int ny,
   return(Matrix);
 }
 
+template<typename int_type>
 Epetra_CrsMatrix* 
 Cross2D(const Epetra_Map* Map, const int nx, const int ny,
         const Epetra_Vector& A, const Epetra_Vector& B, const Epetra_Vector& C,
@@ -124,11 +127,12 @@ Cross2D(const Epetra_Map* Map, const int nx, const int ny,
   Epetra_CrsMatrix* Matrix = new Epetra_CrsMatrix(Copy, *Map,  5);
 
   int NumMyElements = Map->NumMyElements();
-  int* MyGlobalElements = Map->MyGlobalElements();
+  int_type* MyGlobalElements = 0;
+  Map->MyGlobalElementsPtr(MyGlobalElements);
 
   int left, right, lower, upper;
   double Values[5];
-  int    Indices[5];
+  int_type Indices[5];
     
   for (int i = 0 ; i < NumMyElements ; ++i) 
   {
@@ -173,6 +177,49 @@ Cross2D(const Epetra_Map* Map, const int nx, const int ny,
   Matrix->OptimizeStorage();
 
   return(Matrix);
+}
+
+inline
+Epetra_CrsMatrix* 
+Cross2D(const Epetra_Map* Map, const int nx, const int ny,
+        const double a, const double b, const double c, 
+        const double d, const double e)
+{
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(Map->GlobalIndicesInt()) {
+	  return Cross2D<int>(Map, nx, ny, a, b, c, d, e);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(Map->GlobalIndicesLongLong()) {
+	  return Cross2D<long long>(Map, nx, ny, a, b, c, d, e);
+  }
+  else
+#endif
+    throw "Galeri::Matrices::Cross2D: GlobalIndices type unknown";
+}
+
+inline
+Epetra_CrsMatrix* 
+Cross2D(const Epetra_Map* Map, const int nx, const int ny,
+        const Epetra_Vector& A, const Epetra_Vector& B, const Epetra_Vector& C,
+        const Epetra_Vector& D, const Epetra_Vector& E)
+{
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(Map->GlobalIndicesInt()) {
+	  return Cross2D<int>(Map, nx, ny, A, B, C, D, E);
+
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(Map->GlobalIndicesLongLong()) {
+	  return Cross2D<long long>(Map, nx, ny, A, B, C, D, E);
+  }
+  else
+#endif
+    throw "Galeri::Matrices::Cross2D: GlobalIndices type unknown";
 }
 
 } // namespace Matrices

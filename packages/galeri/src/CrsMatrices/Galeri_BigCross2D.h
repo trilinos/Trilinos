@@ -52,6 +52,7 @@
 namespace Galeri {
 namespace Matrices {
 
+template<typename int_type>
 inline
 Epetra_CrsMatrix* 
 BigCross2D(const Epetra_Map* Map, const int nx, const int ny,
@@ -62,13 +63,14 @@ BigCross2D(const Epetra_Map* Map, const int nx, const int ny,
   Epetra_CrsMatrix* Matrix = new Epetra_CrsMatrix(Copy, *Map,  9);
 
   int NumMyElements = Map->NumMyElements();
-  int* MyGlobalElements = Map->MyGlobalElements();
+  int_type* MyGlobalElements = 0;
+  Map->MyGlobalElementsPtr(MyGlobalElements);
 
   int left, right, lower, upper;
   int left2, right2, lower2, upper2;
 
   double Values[9];
-  int    Indices[9];
+  int_type Indices[9];
 
   //       ee
   //       e
@@ -146,6 +148,28 @@ BigCross2D(const Epetra_Map* Map, const int nx, const int ny,
   Matrix->OptimizeStorage();
 
   return(Matrix);
+}
+
+inline
+Epetra_CrsMatrix* 
+BigCross2D(const Epetra_Map* Map, const int nx, const int ny,
+           const double a, 
+           const double b, const double c, const double d, const double e,
+           const double bb, const double cc, const double dd, const double ee)
+{
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(Map->GlobalIndicesInt()) {
+	  return BigCross2D<int>(Map, nx, ny, a, b, c, d, e, bb, cc, dd, ee);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(Map->GlobalIndicesLongLong()) {
+	  return BigCross2D<long long>(Map, nx, ny, a, b, c, d, e, bb, cc, dd, ee);
+  }
+  else
+#endif
+    throw "Galeri::Matrices::BigCross2D: GlobalIndices type unknown";
 }
 
 } // namespace Matrices

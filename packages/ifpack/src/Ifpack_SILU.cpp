@@ -135,7 +135,8 @@ int Ifpack_SILU::SetParameters(Teuchos::ParameterList& List)
 }
 
 //==========================================================================
-int Ifpack_SILU::Initialize() 
+template<typename int_type>
+int Ifpack_SILU::TInitialize() 
 {
 
 #ifdef IFPACK_TEUCHOS_TIME_MONITOR
@@ -161,7 +162,7 @@ int Ifpack_SILU::Initialize()
     int size = A_->MaxNumEntries();
     int N=A_->NumMyRows();
     Aover_ = rcp(new Epetra_CrsMatrix(Copy,A_->RowMatrixRowMap(), size));
-    vector<int> Indices(size);
+    vector<int_type> Indices(size);
     vector<double> Values(size);
 
     int i,j,ct,*rowptr,*colind;
@@ -172,12 +173,12 @@ int Ifpack_SILU::Initialize()
     for(i=0;i<N;i++){
       for(j=rowptr[i],ct=0;j<rowptr[i+1];j++){
 	if(colind[j]<N){
-	  Indices[ct]=CrsMatrix->GCID(colind[j]);
+	  Indices[ct]= (int_type) CrsMatrix->GCID64(colind[j]);
 	  Values[ct]=values[j];
 	  ct++;
 	}
       }
-      Aover_->InsertGlobalValues(CrsMatrix->GRID(i),ct,&Values[0],&Indices[0]);
+      Aover_->InsertGlobalValues((int_type) CrsMatrix->GRID64(i),ct,&Values[0],&Indices[0]);
     }
     IFPACK_CHK_ERR(Aover_->FillComplete(CrsMatrix->RowMap(),CrsMatrix->RowMap()));  
   }
@@ -187,7 +188,8 @@ int Ifpack_SILU::Initialize()
     Aover_ = rcp(new Epetra_CrsMatrix(Copy,A_->RowMatrixRowMap(), size));
     if (Aover_.get() == 0) IFPACK_CHK_ERR(-5); // memory allocation error
 
-    vector<int> Indices1(size),Indices2(size);
+    vector<int> Indices1(size);
+    vector<int_type> Indices2(size);
     vector<double> Values1(size),Values2(size);
 
     // extract each row at-a-time, and insert it into
@@ -195,7 +197,7 @@ int Ifpack_SILU::Initialize()
     int N=A_->NumMyRows();
     for (int i = 0 ; i < N ; ++i) {
       int NumEntries;
-      int GlobalRow = A_->RowMatrixRowMap().GID(i);
+      int_type GlobalRow = (int_type) A_->RowMatrixRowMap().GID64(i);
       IFPACK_CHK_ERR(A_->ExtractMyRowCopy(i, size, NumEntries, 
 					  &Values1[0], &Indices1[0]));
 
@@ -203,7 +205,7 @@ int Ifpack_SILU::Initialize()
       int ct=0;
       for (int j=0; j < NumEntries ; ++j) {
 	if(Indices1[j] < N){
-	  Indices2[ct] = A_->RowMatrixColMap().GID(Indices1[j]);
+	  Indices2[ct] = (int_type) A_->RowMatrixColMap().GID64(Indices1[j]);
 	  Values2[ct]=Values1[j];
 	  ct++;
 	} 
@@ -224,6 +226,23 @@ int Ifpack_SILU::Initialize()
 
   return(0);
 }
+
+int Ifpack_SILU::Initialize() {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(A_->RowMatrixRowMap().GlobalIndicesInt()) {
+    return TInitialize<int>();
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(A_->RowMatrixRowMap().GlobalIndicesLongLong()) {
+    return TInitialize<long long>();
+  }
+  else
+#endif
+    throw "Ifpack_SILU::Initialize: GlobalIndices type unknown for A_";
+}
+
 
 //==========================================================================
 int Ifpack_SILU::Compute() 
@@ -396,7 +415,7 @@ Ifpack_SILU::Print(std::ostream& os) const
     os << "Max fill factor    = "<< FillFactor() << endl;
     os << "Drop tolerance     = "<< DropTol() << endl;
     os << "Condition number estimate = " << Condest() << endl;
-    os << "Global number of rows     = " << A_->NumGlobalRows() << endl;
+    os << "Global number of rows     = " << A_->NumGlobalRows64() << endl;
     if (IsComputed_) {
       // Internal SuperLU info
       int fnnz=0;

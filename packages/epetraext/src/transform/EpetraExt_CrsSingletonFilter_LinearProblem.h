@@ -42,6 +42,7 @@
 #ifndef _EpetraExt_LINEARPROBLEM_CRSSINGLETONFILTER_H_
 #define _EpetraExt_LINEARPROBLEM_CRSSINGLETONFILTER_H_
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Object.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_MapColoring.h"
@@ -258,8 +259,13 @@ class LinearProblem_CrsSingletonFilter : public SameTypeTransform<Epetra_LinearP
   int Setup(Epetra_LinearProblem * Problem);
   int InitFullMatrixAccess();
   int GetRow(int Row, int & NumIndices, int * & Indices);
-  int GetRowGCIDs(int Row, int & NumIndices, double * & Values, int * & GlobalIndices);
   int GetRow(int Row, int & NumIndices, double * & Values, int * & Indices);
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  int GetRowGCIDs(int Row, int & NumIndices, double * & Values, int * & GlobalIndices);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  int GetRowGCIDs(int Row, int & NumIndices, double * & Values, long long * & GlobalIndices);
+#endif
   int CreatePostSolveArrays(const Epetra_IntVector & RowIDs,
 			    const Epetra_MapColoring & RowMapColors,
 			    const Epetra_IntVector & ColProfiles,
@@ -312,7 +318,10 @@ class LinearProblem_CrsSingletonFilter : public SameTypeTransform<Epetra_LinearP
   Epetra_MultiVector * tempX_;
   Epetra_MultiVector * tempB_;
   Epetra_MultiVector * RedistributeReducedLHS_;
-  int * Indices_;
+  int * Indices_int_;
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  long long * Indices_LL_;
+#endif
   Epetra_SerialDenseVector Values_;
   
   Epetra_MapColoring * RowMapColors_;
@@ -326,6 +335,17 @@ class LinearProblem_CrsSingletonFilter : public SameTypeTransform<Epetra_LinearP
  private:
   //! Copy constructor (defined as private so it is unavailable to user).
   LinearProblem_CrsSingletonFilter(const LinearProblem_CrsSingletonFilter & Problem){};
+
+  template<typename int_type>
+  int TConstructReducedProblem(Epetra_LinearProblem * Problem);
+
+  template<typename int_type>
+  int TUpdateReducedProblem(Epetra_LinearProblem * Problem);
+
+  template<typename int_type>
+  int TConstructRedistributeExporter(Epetra_Map * SourceMap, Epetra_Map * TargetMap,
+				    Epetra_Export * & RedistributeExporter,
+				    Epetra_Map * & RedistributeMap);
 };
 
 } //namespace EpetraExt

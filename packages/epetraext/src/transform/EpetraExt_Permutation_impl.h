@@ -98,8 +98,9 @@ struct Perm_traits {
   { std::cerr << "not implemented for unknown type"<<std::endl; }
 
   /** return new object, which is a column-permutation of srcObj */
+  template<typename int_type>
   static T*
-  produceColumnPermutation(Permutation<T>* perm,
+  produceColumnPermutation(TPermutation<T, int_type>* perm,
 			   T* srcObj)
   { std::cerr << "not implemented for unknown type"<<std::endl; }
 
@@ -146,8 +147,9 @@ struct Perm_traits<Epetra_CrsMatrix> {
   { mat->ReplaceRowMap(map); }
 
   /** return new object, which is a column-permutation of srcObj */
+  template<typename int_type>
   static Epetra_CrsMatrix*
-  produceColumnPermutation(Permutation<Epetra_CrsMatrix>* perm,
+  TproduceColumnPermutation(TPermutation<Epetra_CrsMatrix, int_type>* perm,
 			   Epetra_CrsMatrix* srcObj)
   {
     //First we need to export this permutation to match the column-map of the
@@ -157,8 +159,8 @@ struct Perm_traits<Epetra_CrsMatrix> {
 
     const Epetra_Map& origColMap = srcObj->ColMap();
 
-    Permutation<Epetra_CrsMatrix>* colperm =
-      new Permutation<Epetra_CrsMatrix>(origColMap);
+    TPermutation<Epetra_CrsMatrix, int_type>* colperm =
+      new TPermutation<Epetra_CrsMatrix, int_type>(origColMap);
     colperm->PutValue(0);
 
     Epetra_Export p_exporter(perm->Map(), origColMap);
@@ -166,19 +168,20 @@ struct Perm_traits<Epetra_CrsMatrix> {
 
     const Epetra_Map& origRowMap = srcObj->RowMap();
     int numMyRows = origRowMap.NumMyElements();
-    const int* myGlobalRows = origRowMap.MyGlobalElements();
+    int_type* myGlobalRows = 0;
+    origRowMap.MyGlobalElementsPtr(myGlobalRows);
 
     //Create the new object, giving it the same map as the original object.
 
     Epetra_CrsMatrix* result = new Epetra_CrsMatrix(Copy, origRowMap, 1);
 
     for(int i=0; i<numMyRows; ++i) {
-      int globalRow = myGlobalRows[i];
+      int_type globalRow = myGlobalRows[i];
       int len = srcObj->NumGlobalEntries(globalRow);
 
       int numIndices;
       double* src_values = new double[len];
-      int* src_indices = new int[len];
+      int_type* src_indices = new int_type[len];
       int err = srcObj->ExtractGlobalRowCopy(globalRow, len, numIndices,
 					     src_values, src_indices);
       if (err < 0 || numIndices != len) {
@@ -186,13 +189,13 @@ struct Perm_traits<Epetra_CrsMatrix> {
 	    <<globalRow<<", len "<<len<<", numIndices "<<numIndices<<std::endl;
       }
 
-      int* pindices = new int[len];
+      int_type* pindices = new int_type[len];
 
       const Epetra_BlockMap& pmap = colperm->Map();
-      int* p = colperm->Values();
+      int_type* p = colperm->Values();
 
       for(int j=0; j<len; ++j) {
-	int old_col = src_indices[j];
+	int_type old_col = src_indices[j];
 
 	int lid = pmap.LID(old_col);
 	if (lid<0) {
@@ -222,6 +225,25 @@ struct Perm_traits<Epetra_CrsMatrix> {
     return(result);
   }
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  /** return new object, which is a column-permutation of srcObj */
+  static Epetra_CrsMatrix*
+  produceColumnPermutation(TPermutation<Epetra_CrsMatrix, int>* perm,
+			   Epetra_CrsMatrix* srcObj)
+  {
+    return TproduceColumnPermutation<int>(perm, srcObj);
+  }
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  /** return new object, which is a column-permutation of srcObj */
+  static Epetra_CrsMatrix*
+  produceColumnPermutation(TPermutation<Epetra_CrsMatrix, long long>* perm,
+			   Epetra_CrsMatrix* srcObj)
+  {
+    return TproduceColumnPermutation<long long>(perm, srcObj);
+  }
+#endif
 };//struct Perm_traits<Epetra_CrsMatrix>
 
 
@@ -255,8 +277,9 @@ struct Perm_traits<Epetra_CrsGraph> {
   { graph->ReplaceRowMap(map); }
 
   /** return new object which is a column-permutation of srcObj */
+  template<typename int_type>
   static Epetra_CrsGraph*
-  produceColumnPermutation(Permutation<Epetra_CrsGraph>* perm,
+  TproduceColumnPermutation(TPermutation<Epetra_CrsGraph, int_type>* perm,
 			   Epetra_CrsGraph* srcObj)
   {
     //First we need to export this permutation to match the column-map of the
@@ -266,8 +289,8 @@ struct Perm_traits<Epetra_CrsGraph> {
 
     const Epetra_BlockMap& origColMap = srcObj->ColMap();
 
-    Permutation<Epetra_CrsGraph>* colperm =
-      new Permutation<Epetra_CrsGraph>(origColMap);
+    TPermutation<Epetra_CrsGraph, int_type>* colperm =
+      new TPermutation<Epetra_CrsGraph, int_type>(origColMap);
     colperm->PutValue(0);
 
     Epetra_Export p_exporter(perm->Map(), origColMap);
@@ -275,31 +298,32 @@ struct Perm_traits<Epetra_CrsGraph> {
 
     const Epetra_BlockMap& origRowMap = srcObj->RowMap();
     int numMyRows = origRowMap.NumMyElements();
-    const int* myGlobalRows = origRowMap.MyGlobalElements();
+    int_type* myGlobalRows = 0;
+    origRowMap.MyGlobalElementsPtr(myGlobalRows);
 
     //Create the new object, giving it the same map as the original object.
 
     Epetra_CrsGraph* result = new Epetra_CrsGraph(Copy, origRowMap, 1);
 
     for(int i=0; i<numMyRows; ++i) {
-      int globalRow = myGlobalRows[i];
+      int_type globalRow = myGlobalRows[i];
       int len = srcObj->NumGlobalIndices(globalRow);
 
       int numIndices;
-      int* src_indices = new int[len];
+      int_type* src_indices = new int_type[len];
       int err = srcObj->ExtractGlobalRowCopy(globalRow, len, numIndices, src_indices);
       if (err < 0 || numIndices != len) {
 	std::cerr<<"Perm_traits<CrsGraph>::produceColumnPermutation err("<<err<<") row "
 	  <<globalRow<<", len "<<len<<", numIndices "<<numIndices<<std::endl;
       }
 
-      int* pindices = new int[len];
+      int_type* pindices = new int_type[len];
 
       const Epetra_BlockMap& pmap = colperm->Map();
-      int* p = colperm->Values();
+      int_type* p = colperm->Values();
 
       for(int j=0; j<len; ++j) {
-	int old_col = src_indices[j];
+	int_type old_col = src_indices[j];
 
 	int lid = pmap.LID(old_col);
 	if (lid<0) {
@@ -328,6 +352,25 @@ struct Perm_traits<Epetra_CrsGraph> {
     return(result);
   }
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  /** return new object which is a column-permutation of srcObj */
+  static Epetra_CrsGraph*
+  produceColumnPermutation(TPermutation<Epetra_CrsGraph, int>* perm,
+			   Epetra_CrsGraph* srcObj)
+  {
+    return TproduceColumnPermutation<int>(perm, srcObj);
+  }
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  /** return new object which is a column-permutation of srcObj */
+  static Epetra_CrsGraph*
+  produceColumnPermutation(TPermutation<Epetra_CrsGraph, long long>* perm,
+			   Epetra_CrsGraph* srcObj)
+  {
+    return TproduceColumnPermutation<long long>(perm, srcObj);
+  }
+#endif
 };//struct Perm_traits<Epetra_CrsGraph>
 
 
@@ -356,6 +399,7 @@ struct Perm_traits<Epetra_MultiVector> {
   static void replaceMap(Epetra_MultiVector* mvec, const Epetra_BlockMap& map)
   { mvec->ReplaceMap(map); }
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   /** permute column-indices within a specified row, if applicable*/
   static Epetra_MultiVector*
   produceColumnPermutation(Permutation<Epetra_MultiVector>* perm,
@@ -364,7 +408,17 @@ struct Perm_traits<Epetra_MultiVector> {
     std::cerr << "col-permutation not implemented for Epetra_MultiVector"<<std::endl;
     return(NULL);
   }
-
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  /** permute column-indices within a specified row, if applicable*/
+  static Epetra_MultiVector*
+  produceColumnPermutation(Permutation64<Epetra_MultiVector>* perm,
+			   Epetra_MultiVector* srcObj)
+  {
+    std::cerr << "col-permutation not implemented for Epetra_MultiVector"<<std::endl;
+    return(NULL);
+  }
+#endif
 };//struct Perm_traits<Epetra_CrsGraph>
 
 
@@ -372,11 +426,11 @@ struct Perm_traits<Epetra_MultiVector> {
 //Now the method definitions for the EpetraExt::Permutation class.
 //-------------------------------------------------------------------------
 
-template<typename T>
-Permutation<T>::Permutation(Epetra_DataAccess CV,
+template<typename T, typename int_type>
+TPermutation<T, int_type>::TPermutation(Epetra_DataAccess CV,
                          const Epetra_BlockMap& map,
-                         int* permutation)
-  : Epetra_IntVector(CV, map, permutation),
+                         int_type* permutation)
+  : Epetra_GIDTypeVector<int_type>::impl(CV, map, permutation),
     newObj_(NULL),
     origObj_(NULL)
 {
@@ -386,9 +440,9 @@ Permutation<T>::Permutation(Epetra_DataAccess CV,
   }
 }
 
-template<typename T>
-Permutation<T>::Permutation(const Epetra_BlockMap& map)
-  : Epetra_IntVector(map),
+template<typename T, typename int_type>
+TPermutation<T, int_type>::TPermutation(const Epetra_BlockMap& map)
+  : Epetra_GIDTypeVector<int_type>::impl(map),
     newObj_(NULL),
     origObj_(NULL)
 {
@@ -398,9 +452,9 @@ Permutation<T>::Permutation(const Epetra_BlockMap& map)
   }
 }
 
-template<typename T>
-Permutation<T>::Permutation(const Permutation& src)
-  : Epetra_IntVector((const Epetra_IntVector&)src),
+template<typename T, typename int_type>
+TPermutation<T, int_type>::TPermutation(const TPermutation& src)
+  : Epetra_GIDTypeVector<int_type>::impl((const typename Epetra_GIDTypeVector<int_type>::impl&)src),
     newObj_(NULL),
     origObj_(NULL)
 {
@@ -410,14 +464,14 @@ Permutation<T>::Permutation(const Permutation& src)
   }
 }
 
-template<typename T>
-Permutation<T>::~Permutation()
+template<typename T, typename int_type>
+TPermutation<T, int_type>::~TPermutation()
 {
   if (newObj_ != NULL) delete newObj_;
 }
 
-template<typename T>
-bool Permutation<T>::isTypeSupported()
+template<typename T, typename int_type>
+bool TPermutation<T, int_type>::isTypeSupported()
 {
   const char* type_name = Perm_traits<T>::typeName();
   if (!strcmp(type_name, "unknown")) {
@@ -427,9 +481,9 @@ bool Permutation<T>::isTypeSupported()
   return( true );
 }
 
-template<typename T>
-typename Permutation<T>::OutputRef
-Permutation<T>::operator()( typename Permutation<T>::InputRef orig )
+template<typename T, typename int_type>
+typename TPermutation<T, int_type>::OutputRef
+TPermutation<T, int_type>::operator()( typename TPermutation<T, int_type>::InputRef orig )
 {
   //In this function we're going to produce a new object which is a
   //row-permutation of the input object (orig).
@@ -457,28 +511,28 @@ Permutation<T>::operator()( typename Permutation<T>::InputRef orig )
 
   //Create an Epetra_Map representing the permutation.
 
-  Epetra_Map* pmap = new Epetra_Map(Map().NumGlobalPoints(),
-				    Map().NumMyPoints(),
-				    Values(),
-				    Map().IndexBase(),
-				    Map().Comm());
+  Epetra_Map* pmap = new Epetra_Map((int_type) Epetra_DistObject::Map().NumGlobalPoints64(),
+				    Epetra_DistObject::Map().NumMyPoints(),
+				    Epetra_GIDTypeVector<int_type>::impl::Values(),
+				    (int_type) Epetra_DistObject::Map().IndexBase64(),
+				    Epetra_DistObject::Map().Comm());
 
-  Permutation* p = this;
+  TPermutation* p = this;
 
   //Next check that the maps are compatible. If they aren't, we'll redistribute
   //the permutation to match the distribution of the input object.
 
   if (!pmap->PointSameAs(origMap)) {
-    Epetra_Export p_exporter(Map(), origMap);
-    Permutation* newp = new Permutation(origMap);
+    Epetra_Export p_exporter(Epetra_DistObject::Map(), origMap);
+    TPermutation* newp = new TPermutation(origMap);
     newp->Export(*p, p_exporter, Add);
     p = newp;
 
     delete pmap;
-    pmap = new Epetra_Map(p->Map().NumGlobalPoints(),
+    pmap = new Epetra_Map((int_type) p->Map().NumGlobalPoints64(),
 			  p->Map().NumMyPoints(),
 			  p->Values(),
-			  p->Map().IndexBase(),
+			  (int_type) p->Map().IndexBase64(),
 			  p->Map().Comm());
   }
 
@@ -512,9 +566,9 @@ Permutation<T>::operator()( typename Permutation<T>::InputRef orig )
   return( *newObj_ );
 }
 
-template<typename T>
-typename Permutation<T>::OutputRef
-Permutation<T>::operator()( typename Permutation<T>::InputRef orig,
+template<typename T, typename int_type>
+typename TPermutation<T, int_type>::OutputRef
+TPermutation<T, int_type>::operator()( typename TPermutation<T, int_type>::InputRef orig,
 			    bool column_permutation )
 {
   origObj_ = &orig;

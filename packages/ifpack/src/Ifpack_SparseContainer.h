@@ -383,7 +383,9 @@ int Ifpack_SparseContainer<T>::Initialize()
 
   IsInitialized_ = false;
 
+#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
   Map_ = Teuchos::rcp( new Epetra_Map(NumRows_,0,*SerialComm_) );
+#endif
 
   LHS_ = Teuchos::rcp( new Epetra_MultiVector(*Map_,NumVectors_) );
   RHS_ = Teuchos::rcp( new Epetra_MultiVector(*Map_,NumVectors_) );
@@ -440,12 +442,30 @@ SetMatrixElement(const int row, const int col, const double value)
     IFPACK_CHK_ERR(-2); // not in range
   }
 
-  int ierr = Matrix_->InsertGlobalValues((int)row,1,(double*)&value,(int*)&col);
-  if (ierr < 0) {
-    ierr = Matrix_->SumIntoGlobalValues((int)row,1,(double*)&value,(int*)&col);
-    if (ierr < 0)
-      IFPACK_CHK_ERR(-1);
-  }
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+   if(Matrix_->RowMatrixRowMap().GlobalIndicesInt()) {
+     int ierr = Matrix_->InsertGlobalValues((int)row,1,(double*)&value,(int*)&col);
+     if (ierr < 0) {
+       ierr = Matrix_->SumIntoGlobalValues((int)row,1,(double*)&value,(int*)&col);
+       if (ierr < 0)
+         IFPACK_CHK_ERR(-1);
+     }
+   }
+   else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+   if(Matrix_->RowMatrixRowMap().GlobalIndicesLongLong()) {
+     long long col_LL = col;
+     int ierr = Matrix_->InsertGlobalValues(row,1,(double*)&value,&col_LL);
+     if (ierr < 0) {
+       ierr = Matrix_->SumIntoGlobalValues(row,1,(double*)&value,&col_LL);
+       if (ierr < 0)
+         IFPACK_CHK_ERR(-1);
+     }
+   }
+   else
+#endif
+     throw "Ifpack_SparseContainer<T>::SetMatrixElement: GlobalIndices type unknown";
 
   return(0);
 
@@ -487,7 +507,7 @@ int Ifpack_SparseContainer<T>::Apply()
   
   IFPACK_CHK_ERR(Matrix_->Apply(*RHS_, *LHS_));
 
-  ApplyFlops_ += 2 * Matrix_->NumGlobalNonzeros();
+  ApplyFlops_ += 2 * Matrix_->NumGlobalNonzeros64();
   return(0);
 }
 

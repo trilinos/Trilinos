@@ -261,24 +261,51 @@ int Ifpack_ILU::Initialize()
     if (CrsGraph_.get() == 0)
       IFPACK_CHK_ERR(-5); // memory allocation error
 
-    vector<int> Indices(size);
-    vector<double> Values(size);
+	vector<double> Values(size);
 
-    // extract each row at-a-time, and insert it into
-    // the graph, ignore all off-process entries
-    for (int i = 0 ; i < A_->NumMyRows() ; ++i) {
-      int NumEntries;
-      int GlobalRow = A_->RowMatrixRowMap().GID(i);
-      IFPACK_CHK_ERR(A_->ExtractMyRowCopy(i, size, NumEntries, 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+    if(A_->RowMatrixRowMap().GlobalIndicesInt()) {
+      vector<int> Indices(size);
+      // extract each row at-a-time, and insert it into
+      // the graph, ignore all off-process entries
+      for (int i = 0 ; i < A_->NumMyRows() ; ++i) {
+        int NumEntries;
+        int GlobalRow = A_->RowMatrixRowMap().GID(i);
+        IFPACK_CHK_ERR(A_->ExtractMyRowCopy(i, size, NumEntries, 
 					  &Values[0], &Indices[0]));
-      // convert to global indices
-      for (int j = 0 ; j < NumEntries ; ++j) {
-	Indices[j] = A_->RowMatrixColMap().GID(Indices[j]); 
-      }
-      IFPACK_CHK_ERR(CrsGraph_->InsertGlobalIndices(GlobalRow,NumEntries,
+        // convert to global indices
+        for (int j = 0 ; j < NumEntries ; ++j) {
+          Indices[j] = A_->RowMatrixColMap().GID(Indices[j]); 
+        }
+        IFPACK_CHK_ERR(CrsGraph_->InsertGlobalIndices(GlobalRow,NumEntries,
 						   &Indices[0]));
+      }
     }
-    
+	else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+    if(A_->RowMatrixRowMap().GlobalIndicesLongLong()) {
+      vector<int> Indices_local(size);
+      vector<long long> Indices(size);
+      // extract each row at-a-time, and insert it into
+      // the graph, ignore all off-process entries
+      for (int i = 0 ; i < A_->NumMyRows() ; ++i) {
+        int NumEntries;
+        long long GlobalRow = A_->RowMatrixRowMap().GID64(i);
+        IFPACK_CHK_ERR(A_->ExtractMyRowCopy(i, size, NumEntries, 
+					  &Values[0], &Indices_local[0]));
+        // convert to global indices
+        for (int j = 0 ; j < NumEntries ; ++j) {
+          Indices[j] = A_->RowMatrixColMap().GID64(Indices_local[j]); 
+        }
+        IFPACK_CHK_ERR(CrsGraph_->InsertGlobalIndices(GlobalRow,NumEntries,
+						   &Indices[0]));
+      }
+	}
+	else
+#endif
+      throw "Ifpack_ILU::Initialize: GlobalIndices type unknown";
+
     IFPACK_CHK_ERR(CrsGraph_->FillComplete(A_->RowMatrixRowMap(),
 					  A_->RowMatrixRowMap()));
 
@@ -615,12 +642,12 @@ Ifpack_ILU::Print(std::ostream& os) const
     os << "Relative threshold = " << RelativeThreshold() << endl;
     os << "Relax value        = " << RelaxValue() << endl;
     os << "Condition number estimate = " << Condest() << endl;
-    os << "Global number of rows            = " << A_->NumGlobalRows() << endl;
+    os << "Global number of rows            = " << A_->NumGlobalRows64() << endl;
     if (IsComputed_) {
-      os << "Number of rows of L, D, U       = " << L_->NumGlobalRows() << endl;
-      os << "Number of nonzeros of L + U     = " << NumGlobalNonzeros() << endl;
+      os << "Number of rows of L, D, U       = " << L_->NumGlobalRows64() << endl;
+      os << "Number of nonzeros of L + U     = " << NumGlobalNonzeros64() << endl;
       os << "nonzeros / rows                 = " 
-        << 1.0 * NumGlobalNonzeros() / U_->NumGlobalRows() << endl;
+        << 1.0 * NumGlobalNonzeros64() / U_->NumGlobalRows64() << endl;
     }
     os << endl;
     os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;

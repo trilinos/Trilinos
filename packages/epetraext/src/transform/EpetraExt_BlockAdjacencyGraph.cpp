@@ -86,6 +86,7 @@ namespace EpetraExt {
 //  This is done here using a binary search tree, so that the
 //  look up cost is nzB*log2(nbrr).
 
+  template<typename int_type>
   Teuchos::RCP<Epetra_CrsGraph> BlockAdjacencyGraph::compute( Epetra_CrsGraph& B, int nbrr, std::vector<int>&r, std::vector<double>& weights, bool verbose)
   {
     // Check if the graph is on one processor.
@@ -93,7 +94,7 @@ namespace EpetraExt {
     int myPID = B.Comm().MyPID();
     for (int proc=0; proc<B.Comm().NumProc(); proc++)
       {
-        if (B.NumGlobalEntries() == B.NumMyEntries())
+        if (B.NumGlobalEntries64() == B.NumMyEntries())
           myMatProc = myPID;
       }
     B.Comm().MaxAll( &myMatProc, &matProc, 1 );
@@ -109,7 +110,7 @@ namespace EpetraExt {
     int m = 0;         /* maximum number of nonzeros in any block row of B */
     int* colstack = 0; /* stack used to process each block row */
     int* bstree = 0;   /* binary search tree */
-    std::vector<int> Mi, Mj, Mnum(nbrr+1,0);
+    std::vector<int_type> Mi, Mj, Mnum(nbrr+1,0);
     nrr = B.NumMyRows();
     if ( matProc == myPID && verbose )
       std::printf(" Matrix Size = %d      Number of Blocks = %d\n",nrr, nbrr);
@@ -235,6 +236,22 @@ namespace EpetraExt {
     newGraph->FillComplete();
 
     return (newGraph);
+  }
+
+  Teuchos::RCP<Epetra_CrsGraph> BlockAdjacencyGraph::compute( Epetra_CrsGraph& B, int nbrr, std::vector<int>&r, std::vector<double>& weights, bool verbose) {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(B.RowMap().GlobalIndicesInt()) {
+    return compute<int>(B, nbrr, r, weights, verbose);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(B.RowMap().GlobalIndicesLongLong()) {
+    return compute<long long>(B, nbrr, r, weights, verbose);
+  }
+  else
+#endif
+    throw "EpetraExt::BlockAdjacencyGraph::compute: GlobalIndices type unknown";
   }
 
   /*

@@ -47,15 +47,17 @@
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Util.h"
+#include <limits>
 
 namespace Galeri {
 namespace Maps {
 
+template<typename int_type>
 inline
 Epetra_Map* 
-Random(const Epetra_Comm& Comm, const int n)
+TRandom(const Epetra_Comm& Comm, const int_type n)
 {
-  if (n <= 0)
+  if (n <= 0 || n > std::numeric_limits<int>::max())
     throw(Exception(__FILE__, __LINE__,
                     "Incorrect input parameter to Maps::Random()",
                     "n = " + toString(n)));
@@ -69,7 +71,7 @@ Random(const Epetra_Comm& Comm, const int n)
   {
     Epetra_Util Util;
 
-    for (int i = 0 ; i < n ; ++i) 
+    for (int_type i = 0 ; i < n ; ++i) 
     {
       unsigned int r = Util.RandomInt();	
       part[i] = r%(Comm.NumProc());
@@ -80,19 +82,37 @@ Random(const Epetra_Comm& Comm, const int n)
       
   // count the elements assigned to this proc
   int NumMyElements = 0;
-  for (int i = 0 ; i < n; ++i) 
+  for (int_type i = 0 ; i < n; ++i) 
     if (part[i] == Comm.MyPID()) NumMyElements++;
 
   // get the loc2global list
-  vector<int> MyGlobalElements(NumMyElements);
+  vector<int_type> MyGlobalElements(NumMyElements);
   int count = 0;
-  for (int i = 0 ; i < n ; ++i)
+  for (int_type i = 0 ; i < n ; ++i)
     if (part[i] == Comm.MyPID()) 
       MyGlobalElements[count++] = i;
 
+#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
   return(new Epetra_Map(n, NumMyElements, &MyGlobalElements[0], 0, Comm));
+#else
+  return(new Epetra_Map);
+#endif
 
-} // Random()
+} // TRandom()
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+Epetra_Map* 
+Random(const Epetra_Comm& Comm, const int n) {
+  return TRandom<int>(Comm, n);
+}
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+Epetra_Map* 
+Random64(const Epetra_Comm& Comm, const long long n) {
+  return TRandom<long long>(Comm, n);
+}
+#endif
 
 } // namespace BlockMaps
 } // namespace Galeri

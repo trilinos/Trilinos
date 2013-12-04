@@ -282,9 +282,9 @@ private:
   //! 1 if Problem_->GetOperator() is stored entirely on process 0
   int UseDataInPlace_;
   //! Number of non-zero entries in Problem_->GetOperator()
-  int numentries_;
+  long long numentries_;
   //! Number of rows and columns in the Problem_->GetOperator()
-  int NumGlobalElements_;
+  long long NumGlobalElements_;
 
   //! Operator converted to a RowMatrix
   Epetra_RowMatrix* RowMatrixA_;

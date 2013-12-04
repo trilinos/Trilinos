@@ -41,11 +41,13 @@
 #ifndef EPETRAEXT_CRSMATRIXIN_H
 #define EPETRAEXT_CRSMATRIXIN_H
 #include <EpetraExt_ConfigDefs.h>
+#include <Epetra_ConfigDefs.h>
 class Epetra_Comm;
 class Epetra_CrsMatrix;
 class Epetra_Map;
 namespace EpetraExt {
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   //! Constructs an Epetra_CrsMatrix object from a Matlab format file, distributes rows evenly across processors.
   /*! This function constructs an Epetra_CrsMatrix object by reading a Matlab (i,j,value) format file.
 
@@ -114,6 +116,7 @@ must be integer values and in those in the third column must be floating point f
 \endhtmlonly
 
   */
+
   int MatrixMarketFileToCrsMatrix( const char *filename, const Epetra_Comm & comm, Epetra_CrsMatrix * & A, const bool transpose=0, const bool verbose=0);
  
   //! Constructs an Epetra_CrsMatrix object from a Matrix Market format file, row, range and domain map specified; typically used for rectangular matrices.
@@ -233,6 +236,33 @@ must be integer values and in those in the third column must be floating point f
 					 const Epetra_Map * domainMap = 0,
                                          const bool transpose = 0, 
                                          const bool verbose=0);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  int MatlabFileToCrsMatrix64( const char *filename, const Epetra_Comm & comm, Epetra_CrsMatrix * & A);
 
+  int MatrixMarketFileToCrsMatrix64( const char *filename, const Epetra_Comm & comm, Epetra_CrsMatrix * & A, const bool transpose=0, const bool verbose=0);
+ 
+  int MatrixMarketFileToCrsMatrix64(const char *filename,const Epetra_Map & rowMap, 
+				  const Epetra_Map& rangeMap, const Epetra_Map& domainMap, Epetra_CrsMatrix * & A, const bool transpose=0, const bool verbose=0);
+
+  int MatrixMarketFileToCrsMatrix64( const char *filename, const Epetra_Map & rowMap, Epetra_CrsMatrix * & A, const bool transpose=0, const bool verbose=0);
+ 
+  int MatrixMarketFileToCrsMatrix64( const char *filename, const Epetra_Map & rowMap, const Epetra_Map & colMap, Epetra_CrsMatrix * & A, const bool transpose=0, const bool verbose=0);
+
+  int MatrixMarketFileToCrsMatrix64(const char *filename, const Epetra_Map & rowMap, const Epetra_Map & colMap,
+				  const Epetra_Map& rangeMap, const Epetra_Map& domainMap, Epetra_CrsMatrix * & A, const bool transpose=0, const bool verbose=0);
+
+  int HypreFileToCrsMatrix64(const char *filename, const Epetra_Comm &comm, Epetra_CrsMatrix *&A);
+
+  int MatrixMarketFileToCrsMatrixHandle64( const char *filename,
+					 const Epetra_Comm & comm,
+                                         Epetra_CrsMatrix * & A,
+					 const Epetra_Map * rowMap = 0,
+					 const Epetra_Map * colMap = 0,
+					 const Epetra_Map * rangeMap = 0,
+					 const Epetra_Map * domainMap = 0,
+                                         const bool transpose = 0, 
+                                         const bool verbose=0);
+#endif
 } // namespace EpetraExt
 #endif /* EPETRAEXT_CRSMATRIXIN_H */
