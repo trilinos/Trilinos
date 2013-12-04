@@ -5156,7 +5156,7 @@ namespace Tpetra {
     // Pre-count the nonzeros to allow a build w/ Static Profile
     Tpetra::Vector<LO, LO, GO, NT> sourceNnzPerRowVec (sourceMap);
     Tpetra::Vector<LO, LO, GO, NT> targetNnzPerRowVec (targetMap);
-    ArrayRCP<int> nnzPerRow = sourceNnzPerRowVec.getDataNonConst (0);
+    ArrayRCP<LO> nnzPerRow = sourceNnzPerRowVec.getDataNonConst (0);
     for (size_t i = 0; i < this->getNodeNumRows (); ++i) {
       nnzPerRow[i] = as<LO> (this->getNumEntriesInLocalRow (i));
     }
@@ -5168,7 +5168,7 @@ namespace Tpetra {
 
     ArrayRCP<size_t> MyNnz (targetMap->getNodeNumElements ());
 
-    ArrayRCP<const int> targetNnzPerRow = targetNnzPerRowVec.getData (0);
+    ArrayRCP<const LO> targetNnzPerRow = targetNnzPerRowVec.getData (0);
     for (size_t i = 0; i < targetNnzPerRowVec.getLocalLength (); ++i) {
       MyNnz[i] = as<size_t> (targetNnzPerRow[i]);
     }
@@ -5263,21 +5263,23 @@ namespace Tpetra {
     // Pre-count the nonzeros to allow a build w/ Static Profile
     Tpetra::Vector<LO, LO, GO, NT> sourceNnzPerRowVec (sourceMap);
     Tpetra::Vector<LO, LO, GO, NT> targetNnzPerRowVec (targetMap);
-    ArrayRCP<int> nnzPerRow = sourceNnzPerRowVec.getDataNonConst(0);
-    for (size_t i = 0; i < this->getNodeNumRows (); ++i) {
-      nnzPerRow[i] = as<LO> (this->getNumEntriesInLocalRow (i));
+    {
+      ArrayRCP<LO> nnzPerRow = sourceNnzPerRowVec.getDataNonConst (0);
+      for (size_t i = 0; i < this->getNodeNumRows (); ++i) {
+        nnzPerRow[i] = as<LO> (this->getNumEntriesInLocalRow (i));
+      }
     }
-
     if (reverseMode) {
       targetNnzPerRowVec.doImport (sourceNnzPerRowVec, exporter, Tpetra::INSERT);
     } else {
       targetNnzPerRowVec.doExport (sourceNnzPerRowVec, exporter, Tpetra::ADD);
     }
     ArrayRCP<size_t> MyNnz (targetMap->getNodeNumElements ());
-
-    ArrayRCP<const int> targetNnzPerRow = targetNnzPerRowVec.getData (0);
-    for (size_t i=0; i<targetNnzPerRowVec.getLocalLength(); ++i) {
-      MyNnz[i] = as<size_t> (targetNnzPerRow[i]);
+    {
+      ArrayRCP<const LO> targetNnzPerRow = targetNnzPerRowVec.getData (0);
+      for (size_t i = 0; i < targetNnzPerRowVec.getLocalLength (); ++i) {
+        MyNnz[i] = as<size_t> (targetNnzPerRow[i]);
+      }
     }
 
     RCP<ParameterList> matrixparams;
