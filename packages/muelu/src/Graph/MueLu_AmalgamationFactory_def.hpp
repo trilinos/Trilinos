@@ -133,7 +133,6 @@ namespace MueLu {
     RCP<const Map> rowMap = A->getRowMap();
     RCP<const Map> colMap = A->getColMap();
 
-    GlobalOrdinal cnt_amalRows = 0; // counts number of nodes (rows in amalgamated matrix) on current proc
     LocalOrdinal nColEle = Teuchos::as<LocalOrdinal>(colMap->getNodeNumElements());
     for (LocalOrdinal i = 0; i < nColEle; i++) {
       // get global DOF id
@@ -162,15 +161,13 @@ namespace MueLu {
 
         (*nodegid2dofgids)[gNodeId] = DOFs;
 
-        if (rowMap->isNodeGlobalElement(gDofId)) {
+        if (rowMap->isNodeGlobalElement(gDofId))
           gNodeIds->push_back(gNodeId);
-          cnt_amalRows++; // new local block row in amalgamated matrix graph
-        }
       }
     }
 
     // store (un)amalgamation information on current level
-    RCP<AmalgamationInfo> amalgamationData = rcp(new AmalgamationInfo(nodegid2dofgids, gNodeIds, cnt_amalRows));
+    RCP<AmalgamationInfo> amalgamationData = rcp(new AmalgamationInfo(nodegid2dofgids, gNodeIds));
     Set(currentLevel, "UnAmalgamationInfo", amalgamationData);
   }
 

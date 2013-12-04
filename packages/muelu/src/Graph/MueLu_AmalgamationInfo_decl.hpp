@@ -83,11 +83,9 @@ namespace MueLu {
   public:
 
     AmalgamationInfo(RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > nodegid2dofgids,
-                     RCP<std::vector<GlobalOrdinal> > nodegids,
-                     GlobalOrdinal cntNodes) {
+                     RCP<std::vector<GlobalOrdinal> > nodegids) {
       nodegid2dofgids_ = nodegid2dofgids;
       gNodeIds_        = nodegids;
-      cntNodes_        = cntNodes;
     }
 
     virtual ~AmalgamationInfo() {}
@@ -102,7 +100,7 @@ namespace MueLu {
 
     RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > GetGlobalAmalgamationParams() const   { return nodegid2dofgids_; }
     RCP<std::vector<GlobalOrdinal> >                          GetNodeGIDVector() const              { return gNodeIds_; }
-    GlobalOrdinal                                             GetNumberOfNodes() const              { return cntNodes_; }
+    GlobalOrdinal                                             GetNumberOfNodes() const              { return gNodeIds_.is_null() ? 0 : gNodeIds_->size(); }
 
   private:
 
@@ -114,9 +112,6 @@ namespace MueLu {
 
     // contains global node ids on current proc (used by CoalesceDropFactory to build nodeMap)
     RCP<std::vector<GlobalOrdinal> > gNodeIds_;
-
-    /// number of nodes on current proc
-    GlobalOrdinal cntNodes_;
 
     //@}
 
