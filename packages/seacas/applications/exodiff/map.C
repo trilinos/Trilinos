@@ -300,7 +300,7 @@ void Compute_Maps(INT*& node_map, INT*& elmt_map,
 		    double x_val = x2_f[ conn2[l3] - 1 ];
 		    double y_val = dim > 1 ? y2_f[ conn2[l3] - 1 ] : 0.0;
 		    double z_val = dim > 2 ? z2_f[ conn2[l3] - 1 ] : 0.0;
-		    std::cout << "\t(" << l2+1 << ")\t" << conn2[l2] << "\t" << x_val << "\t" << y_val << "\t" << z_val << "\n";
+		    std::cout << "\t(" << l3+1 << ")\t" << conn2[l3] << "\t" << x_val << "\t" << y_val << "\t" << z_val << "\n";
 		  }
 		  std::cout << "Coordinates compared using tolerance: " << interface.coord_tol.value
 			    << " (" << interface.coord_tol.typestr() << "), floor: "
@@ -553,7 +553,7 @@ void Compute_Partial_Maps(INT*& node_map, INT*& elmt_map,
 	      double x_val = x2_f[ conn2[l3] - 1 ];
 	      double y_val = dim > 1 ? y2_f[ conn2[l3] - 1 ] : 0.0;
 	      double z_val = dim > 2 ? z2_f[ conn2[l3] - 1 ] : 0.0;
-	      std::cout << "\t(" << l2+1 << ")\t" << conn2[l2] << "\t" << x_val << "\t" << y_val << "\t" << z_val << "\n";
+	      std::cout << "\t(" << l3+1 << ")\t" << conn2[l3] << "\t" << x_val << "\t" << y_val << "\t" << z_val << "\n";
 	    }
 	    std::cout << "Coordinates compared using tolerance: " << interface.coord_tol.value
 		      << " (" << interface.coord_tol.typestr() << "), floor: "
