@@ -849,11 +849,8 @@ void pqJagged_getLocalMinMaxTotalCoord(
 
 }
 
-// TODO: Why is the fEpsilon passed here ? Is going to be different than numeric
-// limits epsilon any place ?
-//MD: I did not use global variables other than const global ones.
-//fEpsilopn is different for double and float. This is calculated once in the 
-//code, then as I did not use the global variable, it is passed over the code.
+//fEpsilon is different for double and float. It is calculated once in the 
+//code, and passed multiple times.
 template <typename partId_t>
 inline partId_t getPartCount(partId_t numFuture, double root, double fEpsilon){
     double fp = pow(numFuture, root);
@@ -903,9 +900,8 @@ void pqJagged_getGlobalMinMaxTotalCoord(
 
         try{
 #ifdef mpi_communication
-            // TODO: Should we use comm instead of MPI_COMM_WORLD
-	    //MD: The parts insides the mpi_communication are not run, and can be removed.
-	    //I was testing here, if the pure mpi functions are faster.
+	    //TODO: The parts insides the mpi_communication are not run, and should
+        //be removed.
             MPI_Allreduce(localMinMaxTotal, globalMinMaxTotal,
             3 * concurrentPartCount, MPI_FLOAT, myop,MPI_COMM_WORLD);
 #endif
@@ -4524,37 +4520,17 @@ bool migration_refactored(
     //allocation_size is returned, and this is the size of p_gno_np_global_num_coord_each_part_actual array.
     //size_t allocation_size =
     getProcessorCoordinatePartCounts <pq_gno_t, pq_lno_t ,partId_t>(
-            pcomm,
-            env,
-            comm,
-
-            migration_proc_assignment_type,
-            nprocs,
-            myRank,
-            num_parts,
-            partBeginArray,
+            pcomm, env, comm, migration_proc_assignment_type, nprocs, myRank,
+            num_parts, partBeginArray,
             p_gno_np_global_num_coord_each_part_actual);
 
 
     //check if migration will be performed or not.
     if (!checkMigration <pq_gno_t, pq_lno_t ,partId_t>(
-            pcomm,
-            env,
-            comm,
-
-            migration_check_option,
-            futureReduceAll,
-            numCoordinatesForLastDimPartitioning,
-            migration_imbalance_cut_off,
-
-            migration_proc_assignment_type,
-            nprocs,
-            myRank,
-            num_parts,
-
-            p_gno_np_global_num_coord_each_part_actual,
-            partBeginArray)){
-
+            pcomm, env, comm, migration_check_option, futureReduceAll,
+            numCoordinatesForLastDimPartitioning, migration_imbalance_cut_off, 
+            migration_proc_assignment_type, nprocs, myRank, num_parts, 
+            p_gno_np_global_num_coord_each_part_actual, partBeginArray)){
         freeArray<pq_gno_t>(p_gno_np_global_num_coord_each_part_actual);
         return false;
     }
@@ -4563,23 +4539,9 @@ bool migration_refactored(
     if (nprocs < num_parts) {
         if (doMigrationType == 0){
             vectors = createNewMultivector(
-                    comm,
-                    numGlobalPoints,
-                    numLocalPoints,
-
-                    coord_dim,
-                    coords,
-
-                    weight_dim,
-                    weight,
-
-                    num_parts,
-                    partBeginArray,
-                    permutation,
-
-                    multiVectorDim,
-                    vectors
-            );
+                    comm, numGlobalPoints, numLocalPoints, coord_dim, coords, 
+                    weight_dim, weight, num_parts, partBeginArray, permutation, 
+                    multiVectorDim, vectors);
         } else {
 
             for (partId_t i = 0; i < num_parts; ++i){
@@ -4623,22 +4585,14 @@ bool migration_refactored(
 
 
     getProcGroups_SendCounts_SendBuff<partId_t, pq_lno_t, pq_gno_t>(
-            pcomm,
-            migration_proc_assignment_type,
-            assignment_type, //either assign to minimize migration, or assign to increase locality.
-
-            p_gno_np_global_num_coord_each_part_actual,
-            numGlobalPoints,
-            numLocalPoints,
-            num_parts,
-            nprocs,
-            myRank,
-
-
+            pcomm, migration_proc_assignment_type,
+            assignment_type, //either assign to minimize migration, or
+                             // assign to increase locality.  
+            p_gno_np_global_num_coord_each_part_actual, numGlobalPoints,
+            numLocalPoints, num_parts, nprocs, myRank, 
             partBeginArray, //holds the beginning of each part.
             permutation, //the permutation array ordered wrt partBegins array.
-            gnoList, //gno array
-
+            gnoList, //gno array 
             sendBuf, //output: sized nLocal, the buffer is filled by the function with gnos.
             sendCount, //output: sized nprocs, show the number of send point counts to each proc.
             ids, //output: this holds the id of the processors for the next subcommunicatior.
@@ -4896,7 +4850,8 @@ partId_t getPartitionArrays(
 
             //get the ideal number of parts that is close to the
             //(partArraySize - i) root of the numFuture.
-            partId_t numParts = getPartCount<partId_t>( numFuture, 1.0 / (partArraySize - i), fEpsilon);
+            partId_t numParts = getPartCount<partId_t>( numFuture,
+                                 1.0 / (partArraySize - i), fEpsilon);
             //partId_t numParts = ceil( pow(numFuture, 1.0f / (partArraySize - i)));// + 0.5f;
 
             //cout << "\tii:" << ii << " numParts:" << numParts << endl;
@@ -6455,8 +6410,7 @@ void AlgPQJagged(
         concurrentPartCount = maxTotalCumulativePartCount;
     }
 
-    // TODO: Document why we need this duplicate.
-    //MD:We duplicate the comm as we create subcommunicators when migration is done. 
+    //We duplicate the comm as we create subcommunicators during migration.
     //We keep the problemComm as it is, while comm changes after each migration.
     RCP<Comm<int> > comm = problemComm->duplicate();
 
@@ -7234,8 +7188,6 @@ void AlgPQJagged(
 #endif
 
 #ifdef debug_setparts
-            //TODO: This shouldn't compile the last parameter needs a 2 ?
-	    MD:Yes.
             fprintf(f, "setting %d with coords: %lf %lf %lf to part %d\n", k,
              pqJagged_coordinates[0][k],  pqJagged_coordinates[1][k],
              pqJagged_coordinates[2][k], partIds[k]);
