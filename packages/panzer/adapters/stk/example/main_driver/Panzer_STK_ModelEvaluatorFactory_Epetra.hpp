@@ -84,7 +84,7 @@ namespace Thyra {
 }
 
 namespace panzer {
-  class GlobalData;
+  struct GlobalData;
   class UniqueGlobalIndexerBase;
   template <typename> class LinearObjFactory;
 

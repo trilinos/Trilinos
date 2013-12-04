@@ -50,7 +50,7 @@ namespace Teuchos {
 namespace panzer {
 
   class CellData;
-  class GlobalData;
+  struct GlobalData;
 
   class EquationSet_FactoryComposite : public panzer::EquationSetFactory {
 

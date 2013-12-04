@@ -123,8 +123,6 @@ namespace panzer {
                                            const ArraySideGIDs& subcellGIDs,
                                            const shards::CellTopology& cell,unsigned subcell_dim)
   {
-    unsigned cell_dim = cell.getDimension();
-  
     unsigned local_subcell;
     bool found_local_subcell = false;
     unsigned subcell = 0;
