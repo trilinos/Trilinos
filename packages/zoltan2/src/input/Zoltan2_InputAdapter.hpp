@@ -149,7 +149,7 @@ public:
    */
 
   template <typename Adapter>
-    size_t applyPartitioningSolution(User &in, User *&out,
+    size_t applyPartitioningSolution(const User &in, User *&out,
       const PartitioningSolution<Adapter> &solution) const
   {
     return 0;

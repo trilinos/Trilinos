@@ -280,107 +280,82 @@ public:
   // The Adapter interface.
   ////////////////////////////////////////////////////
 
-  size_t getIDsView(const gid_t *& ids) const
-  {
-    size_t nvtx = getLocalNumOf(GRAPH_VERTEX); // KDDKDD TODO Assuming Vertex
-    ids = NULL;
-    if (nvtx)
-      ids = graph_->getRowMap()->getNodeElementList().getRawPtr();
-    return nvtx;
-  }
-
-  int getNumWeightsPer() const { return 0;}
-
-  size_t getWeightsView(const scalar_t *&wgt, int &stride, int idx) const
-  {
-    return getVertexWeights(idx, wgt, stride);
-  }
-
   ////////////////////////////////////////////////////
   // The GraphAdapter interface.
   ////////////////////////////////////////////////////
 
-  size_t getLocalNumOf(enum GraphEntityType ent) const { 
-    if (ent == GRAPH_VERTEX)
-      return graph_->getNodeNumRows(); 
-    else
-      return graph_->getNodeNumEntries();
-  }
+  // TODO:  Assuming rows == objects; 
+  // TODO:  Need to add option for columns or nonzeros?
+  size_t getLocalNumVertices() const { return graph_->getNodeNumRows(); }
 
-  int getNumWeightsPerOf(enum GraphEntityType ent) const { 
-    if (ent == GRAPH_VERTEX)
-      return vertexWeightDim_;
-    else
-      return edgeWeightDim_;
-  }
-
-  size_t getVertexListView(const gid_t *&ids,
-    const lno_t *&offsets, const gid_t *& edgeId) const
+  size_t getVertexIDsView(const gid_t *&ids) const 
   {
-    size_t nvtx = getLocalNumOf(GRAPH_VERTEX);
-    ids = edgeId = NULL;
-    offsets = NULL;
-
+    size_t nvtx = getLocalNumVertices();
+    ids = NULL;
     if (nvtx){
       ids = graph_->getRowMap()->getNodeElementList().getRawPtr();
-      offsets = offs_.getRawPtr();
-      edgeId = eids_.getRawPtr();
     }
-    
     return nvtx;
   }
 
-  size_t getVertexWeights(int dim,
-    const scalar_t *&weights, int &stride) const
-  {
-    env_->localInputAssertion(__FILE__, __LINE__, "invalid weight dimension",
-      dim >= 0 && dim < vertexWeightDim_, BASIC_ASSERTION);
 
+  size_t getLocalNumEdges() const { return graph_->getNodeNumEntries(); }
+
+  size_t getEdgesView(const lno_t *&offsets, const gid_t *&adjIds) const
+  {
+    size_t nvtx = getLocalNumVertices();
+    adjIds = NULL;
+    offsets = NULL;
+    if (nvtx){
+      offsets = offs_.getRawPtr();
+      adjIds = adjids_.getRawPtr();
+    }
+    return nvtx;
+  }
+
+
+  int getNumWeightsPerVertex() const { return vertexWeightDim_;}
+
+  size_t getVertexWeightsView(const scalar_t *&weights, int &stride,
+                              int idx) const
+  {
+    env_->localInputAssertion(__FILE__, __LINE__, "invalid weight index",
+      idx >= 0 && idx < vertexWeightDim_, BASIC_ASSERTION);
     size_t length;
-    vertexWeights_[dim].getStridedList(length, weights, stride);
+    vertexWeights_[idx].getStridedList(length, weights, stride);
     return length;
   }
 
-  size_t getEdgeWeights(int dim,
-    const scalar_t *&weights, int &stride) const
-  {
-    env_->localInputAssertion(__FILE__, __LINE__, "invalid weight dimension",
-      dim >= 0 && dim < edgeWeightDim_, BASIC_ASSERTION);
 
+  int getNumWeightsPerEdge() const { return edgeWeightDim_;}
+
+  size_t getEdgeWeightsView(const scalar_t *&weights, int &stride,
+                            int idx) const
+  {
+    env_->localInputAssertion(__FILE__, __LINE__, "invalid weight index",
+      idx >= 0 && idx < edgeWeightDim_, BASIC_ASSERTION);
     size_t length;
-    edgeWeights_[dim].getStridedList(length, weights, stride);
+    edgeWeights_[idx].getStridedList(length, weights, stride);
     return length;
   }
 
-  int getDimensionOf(enum GraphEntityType ent) const { 
-    if (ent == Zoltan2::GRAPH_VERTEX)
-      return coordinateDim_;
-    else
-      return 0;
-  }
 
-  size_t getCoordinatesViewOf(enum GraphEntityType ent, int dim,
-    const scalar_t *&coords, int &stride) const
+  int getDimension() const { return coordinateDim_; }
+
+  size_t getVertexCoordinatesView(const scalar_t *&coords, int &stride,
+                                  int idx) const
   {
-    if (ent == Zoltan2::GRAPH_VERTEX) {
-      env_->localInputAssertion(__FILE__, __LINE__, 
-        "invalid coordinate dimension",
-        dim >= 0 && dim < coordinateDim_, BASIC_ASSERTION);
-
-      size_t length;
-      coords_[dim].getStridedList(length, coords, stride);
-      return length;
-    }
-    else {
-      coords = NULL;
-      stride = 0;
-      return 0;
-    }
+    env_->localInputAssertion(__FILE__, __LINE__, 
+      "invalid coordinate dimension",
+      idx >= 0 && idx < coordinateDim_, BASIC_ASSERTION);
+    size_t length;
+    coords_[idx].getStridedList(length, coords, stride);
+    return length;
   }
 
-  template<typename Adapter>
+  template <typename Adapter>
     size_t applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<Adapter> &solution) const;
+      const PartitioningSolution<Adapter> &solution) const;
 
 private:
 
@@ -394,7 +369,7 @@ private:
   RCP<const Comm<int> > comm_;
 
   ArrayRCP<const lno_t> offs_;
-  ArrayRCP<const gid_t> eids_;
+  ArrayRCP<const gid_t> adjids_;
 
   int vertexWeightDim_;
   ArrayRCP<StridedData<lno_t, scalar_t> > vertexWeights_;
@@ -418,7 +393,7 @@ private:
 template <typename User>
   XpetraCrsGraphAdapter<User>::XpetraCrsGraphAdapter(
     const RCP<const User> &ingraph):
-      ingraph_(ingraph), graph_(), comm_() , offs_(), eids_(),
+      ingraph_(ingraph), graph_(), comm_() , offs_(), adjids_(),
       vertexWeightDim_(0), vertexWeights_(),
       edgeWeightDim_(0), edgeWeights_(),
       coordinateDim_(0), coords_(),
@@ -436,7 +411,7 @@ template <typename User>
   const RCP<const User> &ingraph,
     vector<const scalar_t *> &vWeights,  vector<int> &vWeightStrides,
     vector<const scalar_t *> &eWeights,  vector<int> &eWeightStrides):
-      ingraph_(ingraph), graph_(), comm_() , offs_(), eids_(),
+      ingraph_(ingraph), graph_(), comm_() , offs_(), adjids_(),
       vertexWeightDim_(vWeights.size()), vertexWeights_(),
       edgeWeightDim_(eWeights.size()), edgeWeights_(),
       coordinateDim_(0), coords_(),
@@ -455,7 +430,7 @@ template <typename User>
     vector<const scalar_t *> &vWeights,  vector<int> &vWeightStrides,
     vector<const scalar_t *> &eWeights,  vector<int> &eWeightStrides,
     vector<const scalar_t *> &coords,  vector<int> &coordStrides):
-      ingraph_(ingraph), graph_(), comm_() , offs_(), eids_(),
+      ingraph_(ingraph), graph_(), comm_() , offs_(), adjids_(),
       vertexWeightDim_(vWeights.size()), vertexWeights_(),
       edgeWeightDim_(eWeights.size()), edgeWeights_(),
       coordinateDim_(coords.size()), coords_(),
@@ -502,10 +477,10 @@ template <typename User>
   lno_t *offs = new lno_t [n];
   env_->localMemoryAssertion(__FILE__, __LINE__, n, offs);
 
-  gid_t *eids = NULL;
+  gid_t *adjids = NULL;
   if (nedges){
-    eids = new gid_t [nedges];
-    env_->localMemoryAssertion(__FILE__, __LINE__, nedges, eids);
+    adjids = new gid_t [nedges];
+    env_->localMemoryAssertion(__FILE__, __LINE__, nedges, adjids);
   }
 
   offs[0] = 0;
@@ -514,11 +489,11 @@ template <typename User>
     graph_->getLocalRowView(v, nbors);
     offs[v+1] = offs[v] + nbors.size();
     for (lno_t e=offs[v], i=0; e < offs[v+1]; e++)
-      eids[e] = graph_->getColMap()->getGlobalElement(nbors[i++]);
+      adjids[e] = graph_->getColMap()->getGlobalElement(nbors[i++]);
   }
 
   offs_ = arcp(offs, 0, n, true);
-  eids_ = arcp(eids, 0, nedges, true);
+  adjids_ = arcp(adjids, 0, nedges, true);
 
   int stride = 1;
   for (int dim=0; dim < coordinateDim_; dim++){

@@ -106,11 +106,11 @@ int verifyInputAdapter(
   int fail = 0, gfail=0;
 
   if (!fail && 
-      ia.getLocalNumOf(Zoltan2::GRAPH_VERTEX) != graph.getNodeNumRows())
+      ia.getLocalNumVertices() != graph.getNodeNumRows())
     fail = 4;
 
   if (!fail && 
-      ia.getLocalNumOf(Zoltan2::GRAPH_EDGE) != graph.getNodeNumEntries())
+      ia.getLocalNumEdges() != graph.getNodeNumEntries())
       fail = 6;
 
   gfail = globalFail(comm, fail);
@@ -121,7 +121,8 @@ int verifyInputAdapter(
 
   if (!gfail){
 
-    nvtx = ia.getVertexListView(vtxIds, offsets, edgeIds);
+    nvtx = ia.getVertexIDsView(vtxIds);
+    ia.getEdgesView(offsets, edgeIds);
 
     if (nvtx != graph.getNodeNumRows())
       fail = 8;

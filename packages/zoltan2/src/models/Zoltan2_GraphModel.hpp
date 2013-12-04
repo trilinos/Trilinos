@@ -1163,6 +1163,14 @@ template <typename User>
      numLocalVertices_(0), numGlobalVertices_(0), numLocalEdges_(0),
      numGlobalEdges_(0), numLocalGraphEdges_(0)
 {
+
+  // This GraphModel is built with vertices == GRAPH_VERTEX from GraphAdapter.
+  // It is not ready to use vertices == GRAPH_EDGE from GraphAdapter.
+  env_->localInputAssertion(__FILE__, __LINE__,
+    "GraphModel from GraphAdapter is implemented only for "
+    "Graph Vertices as primary object, not for Graph Edges", 
+    ia->getPrimaryEntityType() == Zoltan2::GRAPH_VERTEX, BASIC_ASSERTION);
+
   // Model creation flags
 
   bool consecutiveIdsRequired =
@@ -1175,7 +1183,7 @@ template <typename User>
   gid_t const *vtxIds=NULL, *nborIds=NULL;
   lno_t const  *offsets=NULL;
   try{
-    numLocalVertices_ = ia->getVertexListView(vtxIds, offsets, nborIds);
+    numLocalVertices_ = ia->getVertexIDsView(vtxIds, offsets, nborIds);
   }
   Z2_FORWARD_EXCEPTIONS;
 
@@ -1185,7 +1193,7 @@ template <typename User>
   edgeGids_ = arcp<const gid_t>(nborIds, 0, numLocalEdges_, false);
   offsets_ = arcp<const lno_t>(offsets, 0, numLocalVertices_ + 1, false);
 
-  eWeightDim_ = ia->getNumWeightPerOf(ia->getAdjacencyEntityType());
+  eWeightDim_ = ia->getNumWeightPerEdge();
 
   if (eWeightDim_ > 0){
     input_t *wgts = new input_t [eWeightDim_];
@@ -1196,7 +1204,7 @@ template <typename User>
     const scalar_t *ewgts=NULL;
     int stride=0;
 
-    ia->getEdgeWeights(w, ewgts, stride);
+    ia->getEdgeWeightsView(ewgts, stride, w);
 
     ArrayRCP<const scalar_t> wgtArray(ewgts, 0, numLocalEdges_, false);
     eWeights_[w] = input_t(wgtArray, stride);
@@ -1380,20 +1388,20 @@ template <typename User>
 
   // Vertex weights
 
-  vWeightDim_ = ia->getNumWeightsPerOf(ia->getPrimaryEntityType());
+  vWeightDim_ = ia->getNumWeightsPerVertex();
 
   if (vWeightDim_ > 0){
     input_t *weightInfo = new input_t [vWeightDim_];
     env_->localMemoryAssertion(__FILE__, __LINE__, vWeightDim_, weightInfo);
 
-    for (int dim=0; dim < vWeightDim_; dim++){
+    for (int idx=0; idx < vWeightDim_; idx++){
       const scalar_t *weights=NULL;
       int stride=0;
-      size_t len = ia->getVertexWeights(dim, weights, stride);
+      size_t len = ia->getVertexWeightsView(weights, stride, idx);
       // If weights is NULL, user wants to use uniform weights
       if (weights != NULL){
         ArrayRCP<const scalar_t> wgtArray = arcp(weights, 0, len, false);
-        weightInfo[dim] = input_t(wgtArray, stride);
+        weightInfo[idx] = input_t(wgtArray, stride);
       }
     }
 
@@ -1403,8 +1411,8 @@ template <typename User>
   // Model base class needs to know if any weights are uniform.
 
   Array<lno_t> weightArrayLengths(vWeightDim_);
-  for (int dim=0; dim < vWeightDim_; dim++){
-    weightArrayLengths[dim] = vWeights_[dim].size();
+  for (int idx=0; idx < vWeightDim_; idx++){
+    weightArrayLengths[idx] = vWeights_[idx].size();
   }
   this->setWeightArrayLengths(weightArrayLengths, *comm_);
 
@@ -1419,8 +1427,7 @@ template <typename User>
     for (int dim=0; dim < vCoordDim_; dim++){
       const scalar_t *coords=NULL;
       int stride=0;
-      size_t len = ia->getCoordinatesViewOf(ia->getPrimaryEntityType(),
-                                            dim, coords, stride);
+      size_t len = ia->getVertexCoordinatesView(coords, stride, dim);
       ArrayRCP<const scalar_t> coordArray = arcp(coords, 0, len, false);
       coordInfo[dim] = input_t(coordArray, stride);
     }

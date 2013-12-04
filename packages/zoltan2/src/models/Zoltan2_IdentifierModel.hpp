@@ -438,10 +438,7 @@ template <typename User>
 
   if (nLocalIds > 0){
     try{
-      const scalar_t *coords;
-      int stride;
       ia->getIDsView(gids);
-      ia->getCoordinatesView(coords, stride, 0);
     }
     Z2_FORWARD_EXCEPTIONS;
 
@@ -479,13 +476,13 @@ template <typename User>
       int stride = 0;
       size_t wgtListSize;
 
-      for (int wdim=0; wdim < userWeightDim_; wdim++){
-        wgtListSize = ia->getWeightsView(wgts, stride, wdim);
+      for (int idx=0; idx < userWeightDim_; idx++){
+        wgtListSize = ia->getWeightsView(wgts, stride, idx);
 
         if (wgtListSize > 0){  // non-uniform weights
           ArrayRCP<const scalar_t> wgtArray(wgts, 0, wgtListSize, false);
-          weightObj[wdim] = StridedData<lno_t, scalar_t>(wgtArray, stride);
-          weightListSizes[wdim] = wgtListSize;
+          weightObj[idx] = StridedData<lno_t, scalar_t>(wgtArray, stride);
+          weightListSizes[idx] = wgtListSize;
         }
       }
     }
@@ -922,8 +919,16 @@ template <typename User>
       gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), comm_(comm),
       gids_(), userWeightDim_(0), weights_(), gnos_(), gnosConst_()
 {
-  userWeightDim_ = ia->getNumWeightsPer();
-  size_t nLocalIds = ia->getLocalNum();
+  // IdentifierModel is built with identifiers == GRAPH_VERTEX from 
+  // GraphAdapter.
+  // It is not ready to use identifiers == GRAPH_EDGE from GraphAdapter.
+  env->localInputAssertion(__FILE__, __LINE__,
+   "IdentifierModel from GraphAdapter is implemented only for "
+   "Graph Vertices as primary object, not for Graph Edges", 
+   ia->getPrimaryEntityType() == Zoltan2::GRAPH_VERTEX, BASIC_ASSERTION);
+
+  userWeightDim_ = ia->getNumWeightsPerVertex();
+  size_t nLocalIds = ia->getLocalNumVertices();
 
   Model<GraphAdapter<User> >::maxCount(*comm, userWeightDim_);
 
@@ -941,9 +946,9 @@ template <typename User>
   try{
     const lno_t *offsets;
     const gid_t *nbors;
-    ia->getVertexListView(gids, offsets, nbors);
-    for (int dim=0; dim < userWeightDim_; dim++)
-      ia->getVertexWeights(dim, wgts[dim], wgtStrides[dim]);
+    ia->getVertexIDsView(gids);
+    for (int idx=0; idx < userWeightDim_; idx++)
+      ia->getVertexWeightsView(wgts[idx], wgtStrides[idx], idx);
   }
   Z2_FORWARD_EXCEPTIONS;
 

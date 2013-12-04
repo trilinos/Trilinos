@@ -857,15 +857,22 @@ CoordinateModel<GraphAdapter<User> >::CoordinateModel(
       coordinateDim_(), gids_(), xyz_(), userNumWeights_(0), weights_(), 
       gnos_(), gnosConst_()
 {
-  coordinateDim_ = ia->getDimensionOf(ia->getPrimaryEntityType());
+  coordinateDim_ = ia->getDimension();
 
   env->localInputAssertion(__FILE__, __LINE__, 
    "graph input does not have vertex coordinates",
    coordinateDim_>0, BASIC_ASSERTION);
 
+  // CoordinateModel is built with points == GRAPH_VERTEX from GraphAdapter.
+  // It is not ready to use points == GRAPH_EDGE from GraphAdapter.
+  env->localInputAssertion(__FILE__, __LINE__, 
+   "CoordinateModel from GraphAdapter is implemented only for "
+   "Graph Vertices as primary object, not for Graph Edges", 
+   ia->getPrimaryEntityType() == Zoltan2::GRAPH_VERTEX, BASIC_ASSERTION);
+
   // Get coordinates and weights (if any)
 
-  userNumWeights_ = ia->getNumWeightsPer();
+  userNumWeights_ = ia->getNumWeightsPerVertex();
 
   Model<GraphAdapter<User> >::maxCount(*comm, coordinateDim_, userNumWeights_);
 
@@ -879,14 +886,14 @@ CoordinateModel<GraphAdapter<User> >::CoordinateModel(
 
   Array<lno_t> arrayLengths(userNumWeights_, 0);
 
-  size_t nLocalIds = ia->getLocalNum();
+  size_t nLocalIds = ia->getLocalNumVertices();
 
   if (nLocalIds){
     const gid_t *globalIds=NULL;
     const lno_t *offsets=NULL;
     const gid_t *edgeIds=NULL;
 
-    size_t numIds = ia->getVertexListView(globalIds, offsets, edgeIds);
+    size_t numIds = ia->getVertexIDsView(globalIds, offsets, edgeIds);
 
     gids_ = arcp(globalIds, 0, nLocalIds, false);
 
@@ -894,8 +901,7 @@ CoordinateModel<GraphAdapter<User> >::CoordinateModel(
       int stride;
       const scalar_t *coords=NULL;
       try{
-        ia->getCoordinatesViewOf(ia->getPrimaryEntityType(),
-                                 dim, coords, stride);
+        ia->getVertexCoordinatesView(coords, stride, dim);
       }
       Z2_FORWARD_EXCEPTIONS;
 
@@ -903,18 +909,18 @@ CoordinateModel<GraphAdapter<User> >::CoordinateModel(
       coordArray[dim] = input_t(cArray, stride);
     }
 
-    for (int dim=0; dim < userNumWeights_; dim++){
+    for (int idx=0; idx < userNumWeights_; idx++){
       int stride;
       const scalar_t *weights;
       try{
-        ia->getVertexWeights(dim, weights, stride);
+        ia->getVertexWeightsView(weights, stride, idx);
       }
       Z2_FORWARD_EXCEPTIONS;
 
       if (weights){
         ArrayRCP<const scalar_t> wArray(weights, 0, nLocalIds*stride, false);
-        weightArray[dim] = input_t(wArray, stride);
-        arrayLengths[dim] = nLocalIds;
+        weightArray[idx] = input_t(wArray, stride);
+        arrayLengths[idx] = nLocalIds;
       }
     }
   }

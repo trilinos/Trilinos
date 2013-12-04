@@ -130,6 +130,121 @@ public:
   GraphAdapter() : primaryEntityType(GRAPH_VERTEX),
                    adjacencyEntityType(GRAPH_EDGE) {};
 
+  ////////////////////////////////////////////////////////////////////////////
+  // Methods to be defined in derived classes.
+
+  /*! \brief Returns the number of vertices on this process.
+   */
+  virtual size_t getLocalNumVertices() const = 0;
+
+  /*! \brief Returns the number of edges on this process.
+   */
+  virtual size_t getLocalNumEdges() const = 0;
+
+  /*! \brief Sets pointers to this process' graph entries.
+      \param vertexIds will on return a pointer to vertex global Ids
+       \return The number of ids in the vertexIds list.
+
+      Zoltan2 does not copy your data.  The data pointed to by 
+      vertexIds, offsets and edgeIds
+      must remain valid for the lifetime of this Adapter.
+   */
+  virtual size_t getVertexIDsView(const gid_t *&vertexIds) const = 0; 
+
+  /*! \brief Gets adjacency lists for all vertices in a compressed
+             sparse row (CSR) format.
+      \param offsets is an array of size getLocalNumVertices() + 1.  
+         The neighboring vertices for vertexId[i] 
+         begin at adjIds[offsets[i]].  
+          The last element of offsets is the size of the adjIds array.
+      \param adjIds on return will point to the array of adjacent vertices for
+         for each vertex.
+      \return The number of adjacencies on this process.
+   */
+  virtual size_t getEdgesView(const lno_t *&offsets,
+                              const gid_t *&adjIds) const = 0;
+       
+  /*! \brief Returns the dimension (0 or greater) of vertex weights.
+   */
+  virtual int getNumWeightsPerVertex() const = 0;
+
+  /*! \brief  Provide a pointer to the vertex weights, if any.
+      \param weights is the list of weights of the given dimension for
+           the vertices returned in getVertexListView().  If weights for
+           this dimension are to be uniform for all vertices in the
+           global problem, the \c weights should be a NULL pointer.
+      \param stride The k'th weight is located at weights[stride*k]
+      \param idx ranges from zero to one less than getNumWeightsPerVertex().
+      \return The number of weights listed, which should be at least
+                  the local number of vertices times the stride for
+                  non-uniform weights, zero otherwise.
+
+      Zoltan2 does not copy your data.  The data pointed to by weights
+      must remain valid for the lifetime of this Adapter.
+   */
+  virtual size_t getVertexWeightsView(const scalar_t *&weights, int &stride, 
+                                      int idx = 0) const = 0;
+
+  /*! \brief Returns the dimension (0 or greater) of vertex weights.
+   */
+  virtual int getNumWeightsPerEdge() const = 0;
+
+  /*! \brief  Provide a pointer to the edge weights, if any.  
+      \param weights is the list of weights of the given index for
+           the edges returned in getEdgesView().
+      \param stride The k'th weight is located at weights[stride*k]
+      \param idx ranges from zero to one less than getNumWeightsPerEdge().
+      \return The number of weights listed, which should be the same
+               as the number of edges in getEdgesView().
+
+      Zoltan2 does not copy your data.  The data pointed to by weights
+      must remain valid for the lifetime of this Adapter.
+   */
+  virtual size_t getEdgeWeightsView(const scalar_t *&weights, int &stride,
+                                    int idx = 0) const = 0;
+
+  /*! \brief Returns the dimension of the geometry, if any.
+   *  Some algorithms can use geometric coordinate information if it is present.
+   *  Since coordinate information is optional, we provide a default definition
+   *  that does not return coordinate info.  Individual graph adapters can
+   *  override this definition.
+   */
+  virtual int getDimension() const { return 0; }
+
+  /*! \brief Provide a pointer to one dimension of vertex coordinates.
+   *  \param ent is the entity for which coordinate information is requested
+   *         Valid values are GRAPH_VERTEX and GRAPH_EDGE.
+   *  \param coordDim  is a value from 0 to one less than
+   *     getDimension() specifying which dimension is
+   *     being provided in the coords list.
+   *  \param coords  points to a list of coordinate values for the dimension.
+   *  \param stride  describes the layout of the coordinate values in
+   *          the coords list.  If stride is one, then the ith coordinate
+   *          value is coords[i], but if stride is two, then the
+   *          ith coordinate value is coords[2*i].
+   *
+   *   \return The length of the \c coords list.  This may be more than
+   *          getLocalNumVertices() because the \c stride
+   *          may be more than one.
+   *
+   *  Zoltan2 does not copy your data.  The data pointed to by coords
+   *  must remain valid for the lifetime of this Adapter.
+   *  Since coordinate information is optional, we provide a default definition
+   *  that does not return coordinate info.  Individual graph adapters can
+   *  override this definition.
+   */
+
+  virtual size_t getVertexCoordinatesView(const scalar_t *&coords, int &stride,
+                                          int idx) const
+  {
+    coords = NULL;
+    stride = 0;
+    return 0;
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+  // Implementations of base-class methods
+
   /*! \brief Returns the entity to be partitioned, ordered, colored, etc.
    *  Valid values are GRAPH_VERTEX or GRAPH_EDGE.
    */
@@ -193,121 +308,48 @@ public:
 
   // Functions from the BaseAdapter interface
   size_t getLocalNum() const {
-    return getLocalNumOf(getPrimaryEntityType());
+    if (getPrimaryEntityType() == GRAPH_VERTEX)
+      return getLocalNumVertices();
+    else
+      return getLocalNumEdges();
    }
 
+  size_t getIDsView(const gid_t *&Ids) const {
+    if (getPrimaryEntityType() == GRAPH_VERTEX)
+      return getVertexIDsView(Ids);
+    else {
+      // TODO:  Need getEdgeIDsView?  What is an Edge ID?  
+      // TODO:  std::pair<gid_t, gid_t>?
+      std::ostringstream emsg;
+      emsg << __FILE__ << "," << __LINE__
+           << " error:  getIDsView not yet supported for graph edges." 
+           << std::endl;
+      throw std::runtime_error(emsg.str());
+      return 0;
+    }
+  }
+
   int getNumWeightsPer() const {
-    return getNumWeightsPerOf(getPrimaryEntityType());
+    if (getPrimaryEntityType() == GRAPH_VERTEX)
+      return getNumWeightsPerVertex();
+    else
+      return getNumWeightsPerEdge();
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  // Methods to be defined in derived classes.
-
-  /*! \brief Returns the number entities of a given type on this process.
-   */
-  virtual size_t getLocalNumOf(enum GraphEntityType ent) const = 0;
-
-  /*! \brief Returns the dimension (0 or greater) of vertex weights.
-   */
-  virtual int getNumWeightsPerOf(enum GraphEntityType ent) const = 0;
-
-  /*! \brief Sets pointers to this process' graph entries.
-      \param vertexIds will on return a pointer to vertex global Ids
-      \param offsets is an array of size numVertices + 1.  
-         The edge Ids for vertexId[i] begin at edgeIds[offsets[i]].  
-          The last element of offsets
-          is the size of the edgeIds array.
-      \param edgeIds on return will point to the global edge Ids for
-         for each vertex.
-       \return The number of ids in the vertexIds list.
-
-      Zoltan2 does not copy your data.  The data pointed to by 
-      vertexIds, offsets and edgeIds
-      must remain valid for the lifetime of this Adapter.
-   */
-
-  virtual size_t getVertexListView(const gid_t *&vertexIds, 
-    const lno_t *&offsets, const gid_t *& edgeIds) const = 0; 
-
-  /*! \brief  Provide a pointer to the vertex weights, if any.
-
-      \param weightDim ranges from zero to one less than 
-                   getVertexWeightDimension().
-      \param weights is the list of weights of the given dimension for
-           the vertices returned in getVertexListView().  If weights for
-           this dimension are to be uniform for all vertices in the
-           global problem, the \c weights should be a NULL pointer.
-       \param stride The k'th weight is located at weights[stride*k]
-      \return The number of weights listed, which should be at least
-                  the local number of vertices times the stride for
-                  non-uniform weights, zero otherwise.
-
-      Zoltan2 does not copy your data.  The data pointed to by weights
-      must remain valid for the lifetime of this Adapter.
-   */
-
-  virtual size_t getVertexWeights(int weightDim,
-     const scalar_t *&weights, int &stride) const = 0;
-
-  /*! \brief  Provide a pointer to the edge weights, if any.
-
-      \param weightDim ranges from zero to one less than 
-                   getEdgeWeightDimension().
-      \param weights is the list of weights of the given dimension for
-           the edges returned in getVertexListView().
-       \param stride The k'th weight is located at weights[stride*k]
-       \return The number of weights listed, which should be the same
-               as the number of edges in getVertexListView().
-
-      Zoltan2 does not copy your data.  The data pointed to by weights
-      must remain valid for the lifetime of this Adapter.
-   */
-
-  virtual size_t getEdgeWeights(int weightDim,
-     const scalar_t *&weights, int &stride) const = 0;
-
-  /*! \brief Returns the dimension of the geometry, if any.
-   *  \param ent is the entity for which coordinate information is requested
-   *         Valid values are GRAPH_VERTEX and GRAPH_EDGE.
-   *
-   *  Some algorithms can use geometric coordinate information if it is present.
-   *  Since coordinate information is optional, we provide a default definition
-   *  that does not return coordinate info.  Individual graph adapters can
-   *  override this definition.
-   */
-  virtual int getDimensionOf(enum GraphEntityType ent) const { return 0; }
-
-  /*! \brief Provide a pointer to one dimension of vertex coordinates.
-   *  \param ent is the entity for which coordinate information is requested
-   *         Valid values are GRAPH_VERTEX and GRAPH_EDGE.
-   *  \param coordDim  is a value from 0 to one less than
-   *     getDimension() specifying which dimension is
-   *     being provided in the coords list.
-   *  \param coords  points to a list of coordinate values for the dimension.
-   *  \param stride  describes the layout of the coordinate values in
-   *          the coords list.  If stride is one, then the ith coordinate
-   *          value is coords[i], but if stride is two, then the
-   *          ith coordinate value is coords[2*i].
-   *
-   *   \return The length of the \c coords list.  This may be more than
-   *          getLocalNumOf() because the \c stride
-   *          may be more than one.
-   *
-   *  Zoltan2 does not copy your data.  The data pointed to by coords
-   *  must remain valid for the lifetime of this Adapter.
-   *  Since coordinate information is optional, we provide a default definition
-   *  that does not return coordinate info.  Individual graph adapters can
-   *  override this definition.
-   */
-
-  virtual size_t getCoordinatesView(enum GraphEntityType ent, int coordDim,
-    const scalar_t *&coords, int &stride) const
-  {
-    coords = NULL;
-    stride = 0;
-    return 0;
+  size_t getWeightsView(const scalar_t *&wgt, int &stride, int idx = 0) const {
+    if (getPrimaryEntityType() == GRAPH_VERTEX)
+      return getVertexWeightsView(wgt, stride, idx);
+    else {
+      // TODO:  Need getEdgeWeightsView that lets Edges be primary object? 
+      // TODO:  That is, get edge weights based on some Edge ID.
+      std::ostringstream emsg;
+      emsg << __FILE__ << "," << __LINE__
+           << " error:  getWeightsView not yet supported for graph edges." 
+           << std::endl;
+      throw std::runtime_error(emsg.str());
+      return 0;
+    }
   }
-
 };
 
 }  //namespace Zoltan2
