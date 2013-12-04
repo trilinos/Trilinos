@@ -1,5 +1,0 @@
-
-ADD_SUBDIRECTORY(stk_linsys)
-
-TRIBITS_ADD_TEST_DIRECTORIES(unit_tests)
-
