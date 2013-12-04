@@ -77,7 +77,7 @@ int EpetraOperator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector
 
       // apply one V/W-cycle as preconditioner
       bool initialGuessZero = true;
-      Hierarchy_->Iterate(*epX, 1, *epY, true);
+      Hierarchy_->Iterate(*epX, 1, *epY, initialGuessZero);
 
       // deep copy solution from MueLu to AztecOO
       tY.update(1.0, *epY, 0.0);
