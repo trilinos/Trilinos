@@ -12,12 +12,18 @@ namespace {
     std::string resultsFilename = "subsetted.results";
     MPI_Comm communicator = MPI_COMM_WORLD;
 
+    size_t num_elems_per_edge = 9;  
     {
       //-BEGIN
       // ============================================================
       // INITIALIZATION
+      std::string s_elems_per_edge = Ioss::Utils::to_string(num_elems_per_edge);
+
       //+ Create a generated mesh containg hexes and shells.
-      std::string input_filename = "9x9x9|shell:xyzXYZ";
+      std::string input_filename = s_elems_per_edge + "x" +
+                                   s_elems_per_edge + "x" +
+                                   s_elems_per_edge + "|shell:xyzXYZ";
+
       stk::io::StkMeshIoBroker stkIo(communicator);
       stkIo.open_mesh_database(input_filename, "generated",
 			       stk::io::READ_MESH);
@@ -68,9 +74,6 @@ namespace {
       // The output model should consist of the elements and nodes in the 6 shell blocks.
       size_t num_elements = ioRegion.get_property("element_count").get_int();
       size_t num_nodes    = ioRegion.get_property("node_count").get_int();
-
-      // This value should match the values used in input_filename above.
-      size_t num_elems_per_edge = 9;  
 
       // Calculate the expected number of nodes and elements.
       size_t expected_elements = 6 * num_elems_per_edge * num_elems_per_edge ;
