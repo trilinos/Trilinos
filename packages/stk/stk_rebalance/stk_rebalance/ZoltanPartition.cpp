@@ -346,7 +346,7 @@ void stkCallback_Centroid_Coord( void *data,
 
   rebalance::GeomDecomp::entity_to_point(*zdata->get_mesh_info().m_mesh, target_entity, coor, temp );
 
-  for (size_t i=0 ; i < nd ; i++ ) geom[ i ] = (double) temp[ i ];
+  for (size_t i=0 ; i < nd ; i++ ) geom[ i ] = temp[ i ];
 
   *ierr = ZOLTAN_OK;
 }

@@ -34,7 +34,7 @@ formatTime(
       oss << std::fixed << std::setprecision(0) << time;
   }
   else if ((time_format & TIMEFORMAT_STYLE_MASK) == TIMEFORMAT_HMS) {
-    int int_time = int(time);
+    int int_time = static_cast<int>(time);
 
     if (time >= 3600.0)
       oss << (int_time)/3600 << ':'
@@ -42,12 +42,12 @@ formatTime(
              << std::setw(2) << std::setfill('0') << int_time%60;
 
     else if (time >= 60.0)
-      oss << ((int) (time)/60)%60 << ':'
+      oss << (int_time/60)%60 << ':'
              << std::setw(2) << std::setfill('0') << int_time%60;
 
 
     else
-      oss << ((int) time)%60;
+      oss << int_time%60;
 
     if (time_format & TIMEFORMAT_MILLIS) {
       int milliseconds = int(std::fmod(time, 1.0)*1000.0 + 0.5);

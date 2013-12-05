@@ -409,7 +409,7 @@ collect_timers(
       char * const recv_ptr = recv_size ? & buffer[0] : 0;
       int * const recv_displ_ptr = & recv_displ[0] ;
   
-      result = MPI_Gatherv((void *) send_ptr, send_count, MPI_CHAR,
+      result = MPI_Gatherv(const_cast<char*>(send_ptr), send_count, MPI_CHAR,
                            recv_ptr, recv_count_ptr, recv_displ_ptr, MPI_CHAR,
                            parallel_root, comm);
       if (MPI_SUCCESS != result) {

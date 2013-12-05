@@ -1052,8 +1052,9 @@ namespace stk {
 	  // Face will be 0 for all shells...
 	  elem_sides.resize(2*sideset_side_count_proc(id));
 	  int face_ordinal = 0;
-	  int i = 2* (int)sideset_side_count_proc(id) - 1;
-	  int j =    (int)sideset_side_count_proc(id) - 1;
+	  int sideset_side_count = sideset_side_count_proc(id);
+	  int i = 2* sideset_side_count - 1;
+	  int j =    sideset_side_count - 1;
 	  while (i >= 0) {
 	    elem_sides[i--] = face_ordinal;
 	    elem_sides[i--] = elem_sides[j--];

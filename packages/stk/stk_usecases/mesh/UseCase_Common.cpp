@@ -33,7 +33,7 @@
 namespace {
 
 const stk::mesh::EntityRank NODE_RANK = stk::mesh::MetaData::NODE_RANK;
-enum { SpatialDim = 3 };
+size_t SpatialDim = 3;
 
 }
 
@@ -70,13 +70,13 @@ bool verify_elem_node_coord(
 
     // Checking the size and dimensionality of node_coord_array
     {
-      const unsigned n1 = node_coord_array.dimension<0>();
-      if( n1 != (unsigned) SpatialDim ) {
+      const size_t n1 = node_coord_array.dimension<0>();
+      if( n1 != SpatialDim ) {
         std::cerr << "Error!  node coord array dimension<0> == " << n1 << " != "
           << SpatialDim << " == SpatialDim" << std::endl;
         result = false;
       }
-      if( node_coord_array.size() != SpatialDim ) {
+      if( static_cast<size_t>(node_coord_array.size()) != SpatialDim ) {
         std::cerr << "Error!  node coord array size == "
           << node_coord_array.size() << " != " << SpatialDim
           << " == SpatialDim" << std::endl;

@@ -171,7 +171,7 @@ format_time(
   double	t,
   const char *	format)
 {
-  time_t	time = (time_t) t;
+  time_t	time = static_cast<time_t>(t);
   char s[128];
 
   ::strftime(s, sizeof(s), format, ::localtime(&time));
@@ -268,7 +268,8 @@ word_wrap(
 	p2 = p3;
 	break;
       }
-      if ((unsigned int) (p1 - p0) > (line_length - u->size()))
+      unsigned int diff = p1 - p0;
+      if (diff > (line_length - u->size()))
 	break;
       p2 = p1;
     } while (p2 != s.end());

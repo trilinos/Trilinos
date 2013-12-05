@@ -96,8 +96,8 @@ void apply_rotation (std::vector<double> &coor)
   // to be "disaligned" from straight lines of the model.
 
   static const double tS = 0.0001 ; /* sin( angle / 2 ), angle = 0.012 deg */
-  static const double tC = sqrt( (double)( 1.0 - tS * tS ) );
-  static const double tQ = tS / sqrt( (double) 3.0 );
+  static const double tC = sqrt( ( 1.0 - tS * tS ) );
+  static const double tQ = tS / sqrt( 3.0 );
   static const double t1 = tC * tC - tQ * tQ ;
   static const double t2 =  2.0 * tQ * ( tC + tQ );
   static const double t3 = -2.0 * tQ * ( tC - tQ );

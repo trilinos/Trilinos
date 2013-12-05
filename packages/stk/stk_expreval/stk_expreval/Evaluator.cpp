@@ -856,7 +856,7 @@ Node *
 Eval::newNode(
   int           opcode)
 {
-  Node *new_node = new Node((Opcode) opcode);
+  Node *new_node = new Node(static_cast<Opcode>(opcode));
   m_nodes.push_back(new_node);
   return new_node;
 }

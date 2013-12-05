@@ -98,7 +98,7 @@ encode(
         os.width(3);
         os.fill('0');
         os.setf(std::ios_base::oct, std::ios_base::basefield);
-        os << (unsigned int) (*it);
+        os << static_cast<unsigned int>(*it);
         os.fill(fill_char);
         os.flags(fmt_flags);
       }
@@ -146,7 +146,7 @@ decode(
         case '0': 
           {
             int i = (is.get() - '0')*0100 + (is.get() - '0')*0x10 + (is.get() - '0');
-            oss << (char) i;
+            oss << static_cast<char>(i);
           }
         }
       }

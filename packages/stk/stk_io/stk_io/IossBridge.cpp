@@ -568,7 +568,7 @@ void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &me
 
     if (entity->type() == Ioss::ELEMENTBLOCK) {
       assert(topology != NULL);
-      if (topology->spatial_dimension() < (int)meta.spatial_dimension()) {
+      if (topology->spatial_dimension() < static_cast<int>(meta.spatial_dimension())) {
 	// NOTE: The comparison is '<' and not '!=' since a 2D mesh
 	// can contain a "3d" element -- a Beam is both a 2D and
 	// 3D element...

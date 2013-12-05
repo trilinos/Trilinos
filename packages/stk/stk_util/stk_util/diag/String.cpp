@@ -160,7 +160,7 @@ char * StringData::mem( const char * cs , size_t n )
 
 	  if ( buf_len % sizeof(long) ||
 	       sizeof(StringData) != buf_len ||
-	       small + max_len < (char*)(&(large)) + sizeof(Large) ) {
+	       small + max_len < reinterpret_cast<char*>(&(large)) + sizeof(Large) ) {
 	    throw std::logic_error("StringData memory layout error");
 	  }
 	}
@@ -168,7 +168,7 @@ char * StringData::mem( const char * cs , size_t n )
 
       try {
 	large.siz = new_alloc ;
-	large.ptr = (char *) a.allocate( new_alloc );
+	large.ptr = static_cast<char *>(a.allocate( new_alloc ));
 //	std::cout << "String allocated at " << (void *)large.ptr << " for " << new_alloc << std::endl;
       }
       catch (...) {

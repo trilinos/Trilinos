@@ -102,7 +102,7 @@ crc32_write(
   if (it == s_typeNameMap.end())
     s_typeNameMap.insert(std::make_pair(crc, std::string(name)));
                          
-  os.write((const char *) &crc, sizeof(uint32_t));
+  os.write(reinterpret_cast<char*>(&crc), sizeof(uint32_t));
 }
 
 
@@ -126,7 +126,7 @@ crc32_check(
       s_typeNameMap.insert(std::make_pair(crc_check, std::string(name)));
   }
                          
-  is.read((char *) &crc, sizeof(uint32_t));
+  is.read(reinterpret_cast<char *>(&crc), sizeof(uint32_t));
 
   if (crc_check != crc) {
     std::ostringstream ss;
