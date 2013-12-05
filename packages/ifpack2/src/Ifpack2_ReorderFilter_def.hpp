@@ -69,16 +69,10 @@ ReorderFilter<MatrixType>::ReorderFilter(const Teuchos::RCP<const Tpetra::RowMat
 
   // perm_[i]         gives the where OLD index i shows up in the NEW ordering
   // reverseperm_[i]  gives the where NEW index i shows up in the OLD ordering
-  perm_=Reordering->getPermutationRCPConst();
-
-  // Generate the reverse permutation
-  size_t N=A_->getNodeNumRows();
-  reverseperm_.resize(N);
-
-  for(size_t i=0; i<N; i++) {
-    reverseperm_[perm_[i]] = i;
-  }
-
+  // Note perm_ is actually the "inverse permutation" in Zoltan2 terminology
+  perm_=       Reordering->getPermutationRCPConst(true);
+  reverseperm_=Reordering->getPermutationRCPConst();
+  
   // Temp arrays for apply
   Indices_.resize(A_->getNodeMaxNumRowEntries());
   Values_.resize(A_->getNodeMaxNumRowEntries());
