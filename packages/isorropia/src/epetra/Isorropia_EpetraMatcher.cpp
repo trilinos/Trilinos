@@ -784,7 +784,7 @@ int Matcher::construct_layered_graph()
                 }   
             }
 #ifdef ISORROPIA_HAVE_OMP
-            #pragma omp std::flush
+            #pragma omp flush
 #endif
             startInd[tid]=pqind;
         }   
@@ -1092,7 +1092,7 @@ int Matcher::dfs_augment()
         {
             
 #ifdef ISORROPIA_HAVE_OMP
-            #pragma omp std::flush
+            #pragma omp flush
 #endif
             flag=1;
             int u=unmatchedU_[i];
@@ -1100,7 +1100,7 @@ int Matcher::dfs_augment()
             if(ind!=-1)
             {   
 #ifdef ISORROPIA_HAVE_OMP
-                #pragma omp std::flush
+                #pragma omp flush
 #endif
                 flag1=1;
                 int lnt=augment_matching(ind);
