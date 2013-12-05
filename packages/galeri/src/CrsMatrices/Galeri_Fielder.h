@@ -73,7 +73,7 @@ Epetra_CrsMatrix* Fielder(const Epetra_Map* Map)
     for (int_type j = 0 ; j < NumGlobalElements ; ++j) 
     {
       Indices[j] = j;
-      Values[j]  = (double)abs(iGlobal - j);
+      Values[j]  = (double)abs((double) (iGlobal - j));
     }
 
     Matrix->InsertGlobalValues(MyGlobalElements[i], NumEntries, 
