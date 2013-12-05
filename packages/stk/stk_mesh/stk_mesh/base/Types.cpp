@@ -80,7 +80,7 @@ void print_dynamic_connectivity_profile( ParallelMachine parallel, int parallel_
       size_t send_buf[] = {sum_max_capacity, sum_abandoned_space, sum_unused_chunk_capacity, sum_num_growths, sum_num_entity_relocations, sum_total_unused_memory, sum_unused_capactity, sum_total_num_conn, num_connectivity_objs};
       static const int buf_size = sizeof(send_buf) / sizeof(size_t);
       size_t recv_buf[buf_size];
-      int err = MPI_Reduce((void*)send_buf, (void*)recv_buf, buf_size, MPI_LONG_LONG, MPI_SUM, 0 /*root*/, parallel);
+      int err = MPI_Reduce(static_cast<void*>(send_buf), static_cast<void*>(recv_buf), buf_size, MPI_LONG_LONG, MPI_SUM, 0 /*root*/, parallel);
       ThrowRequire(err == MPI_SUCCESS);
 
       if (parallel_rank == 0) {
@@ -176,9 +176,9 @@ void print_max_stk_memory_usage( ParallelMachine parallel, int parallel_rank, st
 
   std::vector<size_t> max_memory(memory.size()*parallel_machine_size(parallel),0);
 
-  MPI_Gather((void*)&memory[0], memory.size(), MPI_LONG_LONG,
-	     (void*)&max_memory[0], memory.size(), MPI_LONG_LONG,
-	     0, parallel);
+  MPI_Gather(static_cast<void*>(&memory[0]), memory.size(), MPI_LONG_LONG,
+	           static_cast<void*>(&max_memory[0]), memory.size(), MPI_LONG_LONG,
+	           0, parallel);
 
   const int nproc = parallel_machine_size(parallel);
 

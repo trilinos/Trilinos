@@ -133,7 +133,7 @@ void print_memory_usage(const MemoryUsage& mem_usage, std::ostream& os)
       os << "  Rank "<<i<<": ";
     os << n << " buckets, "<< bytes<<" bytes"<<std::endl;
   }
-  os << "Total bytes: "<<mem_usage.total_bytes<<" ("<<((double)mem_usage.total_bytes)/(1024*1024)<<"MB)"<<std::endl;
+  os << "Total bytes: "<<mem_usage.total_bytes<<" ("<<(static_cast<double>(mem_usage.total_bytes))/(1024*1024)<<"MB)"<<std::endl;
 }
 
 }//namespace mesh

@@ -1169,7 +1169,7 @@ Property<DataType> *
 MetaData::get_property( const std::string & name ) const
 {
   Property<void> * const pv = get_property_base( name, typeid(DataType) );
-  return pv ? pv->property<DataType>() : (Property<DataType>*) NULL ;
+  return pv ? pv->property<DataType>() : static_cast<Property<DataType>*>(NULL) ;
 }
 
 template< typename DataType >

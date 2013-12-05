@@ -120,7 +120,10 @@ void BoxFixture::box_partition( int ip , int up , int axis ,
     const int np_low = np / 2 ;  /* Rounded down */
     const int np_upp = np - np_low ;
 
-    const int n_upp = (int) (((double) n) * ( ((double)np_upp) / ((double)np)));
+    const int n_upp =
+        static_cast<int>(
+            static_cast<double>(n) * ( static_cast<double>(np_upp) / static_cast<double>(np) )
+            );
     const int n_low = n - n_upp ;
     const int next_axis = ( axis + 2 ) % 3 ;
 
@@ -133,7 +136,7 @@ void BoxFixture::box_partition( int ip , int up , int axis ,
       dbox[ axis ][1] = dbox[ axis ][0] + n_low ;
 
       box_partition( ip, ip + np_low, next_axis,
-                     (const int (*)[2]) dbox, p_box );
+                     static_cast<const int (*)[2]>(dbox), p_box );
     }
 
     if ( np_upp ) { /* P = [ip+np_low,ip+np_low+np_upp) */
@@ -147,7 +150,7 @@ void BoxFixture::box_partition( int ip , int up , int axis ,
       dbox[ axis ][1]  = dbox[ axis ][0] + n_upp ;
 
       box_partition( ip, ip + np_upp, next_axis,
-                     (const int (*)[2]) dbox, p_box );
+                     static_cast<const int (*)[2]>(dbox), p_box );
     }
   }
 }

@@ -71,7 +71,7 @@ operator()(const BulkData& mesh, CommAll & sparse ) const
 
         for ( Type * ptr = ptr_beg ; ptr < ptr_end ; ++ptr ) {
           Type tmp ;
-          b.template unpack<unsigned char>( (unsigned char *)(&tmp), sizeof(Type) );
+          b.template unpack<unsigned char>( reinterpret_cast<unsigned char *>(&tmp), sizeof(Type) );
           ReduceOp( ptr , & tmp );
         }
       }
@@ -117,7 +117,7 @@ operator()(const BulkData& mesh, CommAll & sparse ) const
 
         for ( Type * ptr = ptr_beg ; ptr < ptr_end ; ++ptr ) {
           Type tmp ;
-          b.template unpack<unsigned char>( (unsigned char *)(&tmp), sizeof(Type) );
+          b.template unpack<unsigned char>( reinterpret_cast<unsigned char *>(&tmp), sizeof(Type) );
           ReduceOp( ptr , & tmp );
         }
       }

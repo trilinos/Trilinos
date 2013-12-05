@@ -206,7 +206,7 @@ public:
     if ( BulkData::get(b).field_data_size_per_entity(f, b) && 0 < n ) {
       unsigned b_ord = i-b.begin();
       array_type::assign( BulkData::get(b).field_data( f, b, b_ord ),
-                          (typename array_type::size_type) n );
+                          static_cast<typename array_type::size_type>(n) );
     }
   }
 
@@ -244,7 +244,7 @@ public:
     if ( BulkData::get(b).field_data_size_per_entity(f, b) ) {
       array_type::assign_stride( BulkData::get(b).field_data(f, b, 0),
                                  BulkData::get(b).field_data_stride(f, b),
-                                 (typename array_type::size_type) b.size() );
+                                 static_cast<typename array_type::size_type>(b.size()) );
     }
   }
 
@@ -261,7 +261,7 @@ public:
         Bucket::size_type bucket_ordinal = i - b.begin();
         array_type::assign_stride( BulkData::get(b).field_data(f, b, bucket_ordinal),
                                    BulkData::get(b).field_data_stride(f, b),
-                                   (typename array_type::size_type) distance );
+                                   static_cast<typename array_type::size_type>(distance) );
       }
     }
   }
