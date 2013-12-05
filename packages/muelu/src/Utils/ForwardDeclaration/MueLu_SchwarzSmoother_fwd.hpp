@@ -43,21 +43,21 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_AMESOS2BLOCKSMOOTHER_FWD_HPP
-#define MUELU_AMESOS2BLOCKSMOOTHER_FWD_HPP
+#ifndef MUELU_SCHWARZSMOOTHER_FWD_HPP
+#define MUELU_SCHWARZSMOOTHER_FWD_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2) && defined(HAVE_MUELU_IFPACK2)
 
 namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class Amesos2BlockSmoother;
+  class SchwarzSmoother;
 }
 
-#ifndef MUELU_AMESOS2BLOCKSMOOTHER_SHORT
-#define MUELU_AMESOS2BLOCKSMOOTHER_SHORT
+#ifndef MUELU_SCHWARZSMOOTHER_SHORT
+#define MUELU_SCHWARZSMOOTHER_SHORT
 #endif
 
 #endif
 
-#endif // MUELU_AMESOS2BLOCKSMOOTHER_FWD_HPP
+#endif // MUELU_SCHWARZSMOOTHER_FWD_HPP

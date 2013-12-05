@@ -2,7 +2,6 @@ AdaptiveSaMLParameterListInterpreter
 AggregationExportFactory
 AmalgamationFactory
 Amesos2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
-Amesos2BlockSmoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
 AlgebraicPermutationStrategy
 BlockedCoarseMapFactory
 BlockedGaussSeidelSmoother
@@ -57,6 +56,7 @@ RepartitionFactory - #ifdef HAVE_MPI
 RigidBodyModeFactory
 SaPFactory
 SchurComplementFactory
+SchwarzSmoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2) && defined(HAVE_MUELU_IFPACK2)
 ShiftedLaplacian
 ShiftedLaplacianOperator
 SimpleSmoother

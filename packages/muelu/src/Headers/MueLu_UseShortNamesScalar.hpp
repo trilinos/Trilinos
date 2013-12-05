@@ -18,8 +18,8 @@ typedef MueLu::AmalgamationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalM
 typedef MueLu::Amesos2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Amesos2Smoother;
 #endif
 
-#ifdef MUELU_AMESOS2BLOCKSMOOTHER_SHORT
-typedef MueLu::Amesos2BlockSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Amesos2BlockSmoother;
+#ifdef MUELU_SCHWARZSMOOTHER_SHORT
+typedef MueLu::SchwarzSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SchwarzSmoother;
 #endif
 
 #ifdef MUELU_ALGEBRAICPERMUTATIONSTRATEGY_SHORT

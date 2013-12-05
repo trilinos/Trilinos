@@ -123,6 +123,8 @@ ENDIF()
 if (NOT ${PACKAGE_NAME}_ENABLE_Ifpack2)
   LIST(REMOVE_ITEM HEADERS ${DIR}/Smoothers/MueLu_Ifpack2Smoother.hpp)
   LIST(REMOVE_ITEM SOURCES ${DIR}/Utils/ExplicitInstantiation/MueLu_Ifpack2Smoother.cpp)
+  LIST(REMOVE_ITEM HEADERS ${DIR}/Smoothers/MueLu_SchwarzSmoother.hpp)
+  LIST(REMOVE_ITEM SOURCES ${DIR}/Utils/ExplicitInstantiation/MueLu_SchwarzSmoother.cpp)
 ENDIF()
 
 if (NOT ${PACKAGE_NAME}_ENABLE_Tpetra)

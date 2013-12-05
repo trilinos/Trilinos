@@ -62,7 +62,7 @@
 #include <MueLu_RAPShiftFactory.hpp>
 #include <MueLu_PgPFactory.hpp>
 #include <MueLu_GenericRFactory.hpp>
-#include <MueLu_Amesos2BlockSmoother.hpp>
+#include <MueLu_SchwarzSmoother.hpp>
 #include <MueLu_UncoupledAggregationFactory.hpp>
 #include <MueLu_ShiftedLaplacian_fwd.hpp>
 #include <MueLu_ShiftedLaplacianOperator.hpp>
@@ -100,7 +100,7 @@ namespace MueLu {
 
     //! Constructors
     ShiftedLaplacian()
-      : Problem_("acoustic"), numPDEs_(1), Smoother_("schwarz"), Aggregation_("coupled"), Nullspace_("constant"), numLevels_(5), coarseGridSize_(100),
+      : Problem_("acoustic"), numPDEs_(1), Smoother_("riluk"), Aggregation_("coupled"), Nullspace_("constant"), numLevels_(5), coarseGridSize_(100),
 	omega_(2.0*M_PI), ashift1_((SC) 0.0), ashift2_((SC) -1.0), pshift1_((SC) 0.0), pshift2_((SC) -1.0), iters_(500), blksize_(1), tol_(1.0e-4),
 	nsweeps_(5), ncycles_(1), FGMRESoption_(false), cycles_(8), subiters_(10), option_(1), nproblems_(0), solverType_(1),
 	GridTransfersExist_(false), UseLaplacian_(true), VariableShift_(false),
@@ -236,9 +236,8 @@ namespace MueLu {
     RCP<SmootherPrototype>            smooProto_, coarsestSmooProto_;
     RCP<SmootherFactory>              smooFact_,  coarsestSmooFact_;
     Teuchos::ParameterList            coarsestSmooList_;
-    std::string                       ifpack2Type_;
-    Teuchos::ParameterList            ifpack2List_;
-    Teuchos::ParameterList            ifpack2precList_;  // separate parameter list for inner preconditioner
+    std::string                       precType_;
+    Teuchos::ParameterList            precList_;
     
     // Operator and Preconditioner
     RCP< MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO> > MueLuOp_;

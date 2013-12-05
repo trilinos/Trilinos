@@ -43,11 +43,11 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_AMESOS2BLOCKSMOOTHER_DECL_HPP
-#define MUELU_AMESOS2BLOCKSMOOTHER_DECL_HPP
+#ifndef MUELU_SCHWARZSMOOTHER_DECL_HPP
+#define MUELU_SCHWARZSMOOTHER_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2) && defined(HAVE_MUELU_IFPACK2)
 
 #include <Teuchos_ParameterList.hpp>
 
@@ -57,7 +57,11 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>                    class MultiVector;
 }
 
-#include "MueLu_Amesos2BlockSmoother_fwd.hpp"
+#include "MueLu_SchwarzSmoother_fwd.hpp"
+
+#include "Ifpack2_Preconditioner.hpp"
+#include "Ifpack2_Factory_decl.hpp"
+#include "Ifpack2_Factory_def.hpp"
 
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
@@ -68,17 +72,14 @@ namespace Amesos2 { template<class OP, class MV> class Solver; }
 namespace MueLu {
 
   /*!
-    @class Amesos2BlockSmoother
-    @brief Class that uses Amesos2 direct solvers as a block diagonal preconditioner.
-
-    This class creates an Amesos2 preconditioner factory.  The factory is capable of generating direct solvers
-    based on the type and ParameterList passed into the constructor.  See the constructor for more information.
+    @class SchwarzSmoother
+    @brief Class that uses Amesos2 direct solvers and Ifpack2 preconditioners in an additive schwarz setting.
   */
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-  class Amesos2BlockSmoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
+  class SchwarzSmoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
   {
-#undef MUELU_AMESOS2BLOCKSMOOTHER_SHORT
+#undef MUELU_SCHWARZSMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -87,13 +88,12 @@ namespace MueLu {
     //@{
 
     /*! @brief Constructor
-      Creates a MueLu interface to the direct solvers in the Amesos2 package.
-      If you are using type=="", then either SuperLU or KLU2 are used by default.
+      Creates a MueLu interface to the direct solvers in Amesos2 and preconditioners in Ifpack2.
     */
-    Amesos2BlockSmoother(const std::string& type = "", const Teuchos::ParameterList& paramList = Teuchos::ParameterList());
+    SchwarzSmoother(const std::string& type = "", const Teuchos::ParameterList& paramList = Teuchos::ParameterList());
 
     //! Destructor
-    virtual ~Amesos2BlockSmoother();
+    virtual ~SchwarzSmoother();
     //@}
 
     //! Input
@@ -108,7 +108,7 @@ namespace MueLu {
 
     /*! @brief Set up the direct solver.
       This creates the underlying Amesos2 solver object according to the parameter list options passed into the
-      Amesos2BlockSmoother constructor.  This includes doing a numeric factorization of the matrix.
+      SchwarzSmoother constructor.  This includes doing a numeric factorization of the matrix.
     */
     void Setup(Level& currentLevel);
 
@@ -142,18 +142,31 @@ namespace MueLu {
     //! amesos2-specific key phrase that denote smoother type
     std::string type_;
 
-    //! pointer to local map
-    Teuchos::RCP< Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > localRowMap_;
+    //! parameter list
+    Teuchos::ParameterList paramList_;
+
+    //! pointer to maps
+    Teuchos::RCP< Tpetra::Map<LO,GO,NO> > localRowMap_;
+    Teuchos::RCP< Tpetra::Export<LO,GO,NO> > TpetraExporter_;
+    Teuchos::RCP< Tpetra::Import<LO,GO,NO> > TpetraImporter_;
+    Teuchos::RCP<const Tpetra::Map<LO,GO,NO> > UniqueMap_;
+    Teuchos::RCP<const Tpetra::Map<LO,GO,NO> > OverlapMap_;
+
+    //! pointer to matrix
+    RCP<Matrix> A_;
 
     //! pointer to Amesos2 solver object
     RCP<Amesos2::Solver<Tpetra_CrsMatrix, Tpetra_MultiVector> > prec_;
 
-  }; // class Amesos2BlockSmoother
+    //! pointer to Ifpack2 preconditiioner
+    RCP< Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > ifpack2prec_;
+    
+  }; // class SchwarzSmoother
 
 } // namespace MueLu
 
-#define MUELU_AMESOS2BLOCKSMOOTHER_SHORT
+#define MUELU_SCHWARZSMOOTHER_SHORT
 #endif // HAVE_MUELU_TPETRA && HAVE_MUELU_AMESOS2
-#endif // MUELU_AMESOS2BLOCKSMOOTHER_DECL_HPP
+#endif // MUELU_SCHWARZSMOOTHER_DECL_HPP
 
 // TODO: PARAMETER LIST NOT TAKE INTO ACCOUNT !!!
