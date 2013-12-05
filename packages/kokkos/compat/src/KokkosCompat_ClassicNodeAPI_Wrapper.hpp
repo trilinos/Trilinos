@@ -3,6 +3,8 @@
 
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_ArrayView.hpp>
+#include <Teuchos_ParameterList.hpp>
+
 #include <Kokkos_View.hpp>
 #ifdef KOKKOS_HAVE_CUDA
 #include <Kokkos_Cuda.hpp>
@@ -15,6 +17,12 @@
 #endif
 
 #include <KokkosCompat_View.hpp>
+/*namespace KokkosClassic {
+      enum ReadWriteOption {
+        ReadWrite, // < Indicates that the view may be safely read and written.
+        WriteOnly  // < Indicates that the contents of the view are undefined until set on the host.
+      };
+}*/
 
 namespace Kokkos {
   namespace Compat {
@@ -24,6 +32,7 @@ namespace Kokkos {
   template<class DeviceType>
   class KokkosDeviceWrapperNode {
     public:
+
       //! Indicates that parallel buffers allocated by this node are available for use on the host thread.
       typedef DeviceType device_type;
 
@@ -36,7 +45,7 @@ namespace Kokkos {
 //#endif
 
       KokkosDeviceWrapperNode(Teuchos::ParameterList &pl) {
-        ParameterList params = getDefaultParameters();
+        Teuchos::ParameterList params = getDefaultParameters();
         params.setParameters(pl);
         const int curNumThreads = params.get<int>("Num Threads");
         const int curNumTeams = params.get<int>("Num Teams");
@@ -52,7 +61,7 @@ namespace Kokkos {
       }
 
       KokkosDeviceWrapperNode() {
-        ParameterList params = getDefaultParameters();
+        Teuchos::ParameterList params = getDefaultParameters();
         const int curNumThreads = params.get<int>("Num Threads");
         const int curNumTeams = params.get<int>("Num Teams");
         const int curDevice = params.get<int>("Device");
@@ -68,8 +77,8 @@ namespace Kokkos {
 
       ~KokkosDeviceWrapperNode();
 
-      ParameterList getDefaultParameters() {
-        ParameterList params;
+      Teuchos::ParameterList getDefaultParameters() {
+        Teuchos::ParameterList params;
         params.set("Verbose",     0);
         params.set("Num Threads", 1);
         params.set("Num Teams", 1);
@@ -116,16 +125,16 @@ namespace Kokkos {
         }
 
         KOKKOS_INLINE_FUNCTION
-        static void init( volatile value_type &update)
+        void init( volatile value_type &update) const
         {
-          update = WDP::identity();
+          update = _c.identity();
         }
 
         KOKKOS_INLINE_FUNCTION
-        static void join( volatile value_type &update ,
-                          const volatile value_type &source )
+        void join( volatile value_type &update ,
+                          const volatile value_type &source ) const
         {
-          update = WDP::reduce(update, source);
+          update = _c.reduce(update, source);
         }
 
       };
@@ -134,7 +143,7 @@ namespace Kokkos {
       static typename WDP::ReductionType
       parallel_reduce(int beg, int end, WDP wd) {
         typedef typename WDP::ReductionType ReductionType;
-        ReductionType globalResult = WDP::identity();
+        ReductionType globalResult = wd.identity();
         const FunctorParallelReduce<WDP> f(beg,wd);
         int n = end-beg;
         Kokkos::parallel_reduce(n,f,globalResult);
@@ -183,11 +192,11 @@ namespace Kokkos {
           \post On return, entries in the range <tt>[0 , size)</tt> of \c buffSrc have been copied to \c hostDest entries in the range <tt>[0 , size)</tt>.
       */
       template <class T> inline
-      void copyFromBuffer(size_t size, const ArrayRCP<const T> &buffSrc, const ArrayView<T> &hostDest) {
+      void copyFromBuffer(size_t size, const Teuchos::ArrayRCP<const T> &buffSrc, const Teuchos::ArrayView<T> &hostDest) {
         if (isHostNode == false) {
           CHECK_COMPUTE_BUFFER(buffSrc);
         }
-        ArrayRCP<T> buffDest = arcpFromArrayView(hostDest);
+        Teuchos::ArrayRCP<T> buffDest = Teuchos::arcpFromArrayView(hostDest);
         copyBuffers(size,buffSrc,buffDest);
       }
 
@@ -203,11 +212,11 @@ namespace Kokkos {
           \post On return, entries in the range <tt>[0 , size)</tt> of \c hostSrc are allowed to be written to. The data is guaranteed to be present in \c buffDest before it is used in a parallel computation.
       */
       template <class T> inline
-      void copyToBuffer(size_t size, const ArrayView<const T> &hostSrc, const ArrayRCP<T> &buffDest) {
+      void copyToBuffer(size_t size, const Teuchos::ArrayView<const T> &hostSrc, const Teuchos::ArrayRCP<T> &buffDest) {
         if (isHostNode == false) {
           CHECK_COMPUTE_BUFFER(buffDest);
         }
-        ArrayRCP<const T> buffSrc = arcpFromArrayView(hostSrc);
+        Teuchos::ArrayRCP<const T> buffSrc = Teuchos::arcpFromArrayView(hostSrc);
         copyBuffers<T>(size,buffSrc,buffDest);
       }
 
@@ -220,36 +229,38 @@ namespace Kokkos {
         \post The data is guaranteed to have been copied before any other usage of buffSrc or buffDest occurs.
       */
       template <class T> inline
-      void copyBuffers(size_t size, const ArrayRCP<const T> &buffSrc, const ArrayRCP<T> &buffDest) {
+      void copyBuffers(size_t size, const Teuchos::ArrayRCP<const T> &buffSrc, const Teuchos::ArrayRCP<T> &buffDest) {
         if (isHostNode == false) {
           CHECK_COMPUTE_BUFFER(buffSrc);
           CHECK_COMPUTE_BUFFER(buffDest);
         }
-        ArrayView<const T> av_src = buffSrc(0,size);
-        ArrayView<T>       av_dst = buffDest(0,size);
+        Teuchos::ArrayView<const T> av_src = buffSrc(0,size);
+        Teuchos::ArrayView<T>       av_dst = buffDest(0,size);
         std::copy(av_src.begin(),av_src.end(),av_dst.begin());
       }
 
       //! \brief Return a const view of a buffer for use on the host.
       template <class T> inline
-      ArrayRCP<const T> viewBuffer(size_t size, ArrayRCP<const T> buff) {
+      Teuchos::ArrayRCP<const T> viewBuffer(size_t size, Teuchos::ArrayRCP<const T> buff) {
         if (isHostNode == false) {
           CHECK_COMPUTE_BUFFER(buff);
         }
         return buff.persistingView(0,size);
       }
 
-      //! \brief Return a non-const view of a buffer for use on the host.
+      /// \brief Return a non-const view of a buffer for use on the host.
+      ///
+      /// \param rw [in] 0 if read-only, 1 if read-write.  This is an int and not a KokkosClassic::ReadWriteOption, in order to avoid a circular dependency between KokkosCompat and KokkosClassic.
       template <class T> inline
-      ArrayRCP<T> viewBufferNonConst(ReadWriteOption rw, size_t size, const ArrayRCP<T> &buff) {
-  (void) rw; // Silence "unused parameter" compiler warning
+      Teuchos::ArrayRCP<T> viewBufferNonConst (const int rw, size_t size, const Teuchos::ArrayRCP<T> &buff) {
+        (void) rw; // Silence "unused parameter" compiler warning
         if (isHostNode == false) {
           CHECK_COMPUTE_BUFFER(buff);
         }
         return buff.persistingView(0,size);
       }
 
-      inline void readyBuffers(ArrayView<ArrayRCP<const char> > buffers, ArrayView<ArrayRCP<char> > ncBuffers) {
+      inline void readyBuffers(Teuchos::ArrayView<Teuchos::ArrayRCP<const char> > buffers, Teuchos::ArrayView<Teuchos::ArrayRCP<char> > ncBuffers) {
 #ifdef HAVE_KOKKOSCLASSIC_DEBUG
         if (isHostNode == false) {
           for (size_t i=0; i < (size_t)buffers.size(); ++i) {

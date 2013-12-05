@@ -42,6 +42,7 @@
 #ifndef EPETRAEXT_POINTTOBLOCKDIAGPERMUTE_H
 #define EPETRAEXT_POINTTOBLOCKDIAGPERMUTE_H
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_DistObject.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_BlockMap.h"
@@ -294,7 +295,10 @@ private:
 
   int NumBlocks_;
   int *Blockstart_;
-  int *Blockids_;
+  int *Blockids_int_;
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  long long *Blockids_LL_;
+#endif
   Epetra_BlockMap *BDMap_;
   Epetra_Map *CompatibleMap_; //A map compatible with BD's block map - used for imports
   EpetraExt_BlockDiagMatrix* BDMat_;
@@ -303,7 +307,33 @@ private:
   mutable Epetra_MultiVector *ImportVector_;
   mutable Epetra_MultiVector *ExportVector_;
   
+  template<typename int_type>
+  Epetra_FECrsMatrix * TCreateFECrsMatrix();
+
+  template<typename int_type>
+  int TSetupContiguousMode();
+
+  template<typename int_type>
+  int TExtractBlockDiagonal();
+
+  template<typename int_type>
+  int TSetParameters(Teuchos::ParameterList & List);
+
+  template<typename int_type>
+  const int_type* Blockids_const_ptr() const;
+
+  template<typename int_type>
+  int_type*& Blockids_ref();
 
 };  /* EPETRAEXT_POINTTOBLOCKDIAGPERMUTE_H */
+
+template<> inline const int* EpetraExt_PointToBlockDiagPermute::Blockids_const_ptr<int>() const { return Blockids_int_; }
+
+template<> inline int*& EpetraExt_PointToBlockDiagPermute::Blockids_ref<int>() { return Blockids_int_; }
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+template<> inline const long long* EpetraExt_PointToBlockDiagPermute::Blockids_const_ptr<long long>() const { return Blockids_LL_; }
+template<> inline long long*& EpetraExt_PointToBlockDiagPermute::Blockids_ref<long long>() { return Blockids_LL_; }
+#endif
 
 #endif

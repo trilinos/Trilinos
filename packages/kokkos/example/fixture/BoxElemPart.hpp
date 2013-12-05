@@ -98,6 +98,15 @@ void box_partition( const unsigned global_size ,
 namespace Kokkos {
 namespace Example {
 
+/** \brief Partition a box of hexahedral elements among subdomains.
+ *
+ *  Nodes are ordered locally as follows:
+ *    { owned_by[ this_process ] ,
+ *      owned_by[ neighbor_process[0] ] ,
+ *      owned_by[ neighbor_process[1] ] ,
+ *      owned_by[ neighbor_process[2] ] ,
+ *      ... };
+ */
 class BoxElemPart {
 public:
 
@@ -113,13 +122,24 @@ public:
                const unsigned elem_nz );
 
   KOKKOS_INLINE_FUNCTION
-  size_t uses_elem_count() const { return Kokkos::Example::box_count( m_uses_elem_box ); }
+  size_t global_elem_count() const
+    { return Kokkos::Example::box_count( m_global_elem_box ); }
 
   KOKKOS_INLINE_FUNCTION
-  size_t owns_node_count() const { return Kokkos::Example::box_count( m_owns_node_box[0] ); }
+  size_t global_node_count() const
+    { return Kokkos::Example::box_count( m_global_node_box ); }
 
   KOKKOS_INLINE_FUNCTION
-  size_t uses_node_count() const { return Kokkos::Example::box_count( m_uses_node_box ); }
+  size_t uses_elem_count() const
+    { return Kokkos::Example::box_count( m_uses_elem_box ); }
+
+  KOKKOS_INLINE_FUNCTION
+  size_t owns_node_count() const
+    { return Kokkos::Example::box_count( m_owns_node_box[0] ); }
+
+  KOKKOS_INLINE_FUNCTION
+  size_t uses_node_count() const
+    { return Kokkos::Example::box_count( m_uses_node_box ); }
 
   //----------------------------------------
 
@@ -149,6 +169,8 @@ public:
   KOKKOS_INLINE_FUNCTION
   unsigned global_coord_max( unsigned axis ) const
   { return m_global_node_box[axis][1] - 1 ; }
+
+  //----------------------------------------
 
   KOKKOS_INLINE_FUNCTION
   void local_node_coord( size_t lid , unsigned coord[] ) const

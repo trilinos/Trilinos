@@ -721,69 +721,117 @@ int RILUK<MatrixType>::Multiply(const Tpetra::MultiVector<scalar_type,local_ordi
   return 0;
 }
 
-//=============================================================================
+
 template<class MatrixType>
 typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
-RILUK<MatrixType>::computeCondEst(Teuchos::ETransp mode) const
+RILUK<MatrixType>::computeCondEst (Teuchos::ETransp mode) const
 {
   typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vec_type;
 
-  if (Condest_ != - Teuchos::ScalarTraits<magnitude_type>::one() ) {
+  if (Condest_ != -Teuchos::ScalarTraits<magnitude_type>::one ()) {
     return Condest_;
   }
   // Create a vector with all values equal to one
-  vec_type Ones (U_->getDomainMap ());
-  vec_type OnesResult (L_->getRangeMap ());
-  Ones.putScalar (Teuchos::ScalarTraits<scalar_type>::one ());
+  vec_type ones (U_->getDomainMap ());
+  vec_type onesResult (L_->getRangeMap ());
+  ones.putScalar (Teuchos::ScalarTraits<scalar_type>::one ());
 
-  apply (Ones, OnesResult,mode); // Compute the effect of the solve on the vector of ones
-  OnesResult.abs (OnesResult); // Make all values non-negative
+  apply (ones, onesResult, mode); // Compute the effect of the solve on the vector of ones
+  onesResult.abs (onesResult); // Make all values non-negative
   Teuchos::Array<magnitude_type> norms (1);
-  OnesResult.normInf (norms ());
+  onesResult.normInf (norms ());
   Condest_ = norms[0];
   return Condest_;
 }
 
 
-//=========================================================================
 template<class MatrixType>
-void RILUK<MatrixType>::generateXY(Teuchos::ETransp mode,
-    const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Xin,
-    const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Yin,
-    Teuchos::RCP<const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& Xout,
-    Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& Yout) const {
+typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
+RILUK<MatrixType>::
+computeCondEst (CondestType CT,
+                local_ordinal_type MaxIters,
+                magnitude_type Tol,
+                const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& Matrix)
+{
+  // Forestall "unused variable" compiler warnings.
+  (void) CT;
+  (void) MaxIters;
+  (void) Tol;
+  (void) Matrix;
 
-  // Generate an X and Y suitable for performing Solve() and Multiply() methods
+  typedef Tpetra::Vector<scalar_type, local_ordinal_type,
+                         global_ordinal_type, node_type> vec_type;
 
-  TEUCHOS_TEST_FOR_EXCEPTION(Xin.getNumVectors()!=Yin.getNumVectors(), std::runtime_error,
-       "Ifpack2::RILUK::GenerateXY ERROR: X and Y not the same size");
+  if (Condest_ != -Teuchos::ScalarTraits<magnitude_type>::one() ) {
+    return Condest_;
+  }
+  // Create a vector with all values equal to one
+  vec_type ones (U_->getDomainMap ());
+  vec_type onesResult (L_->getRangeMap ());
+  ones.putScalar (Teuchos::ScalarTraits<scalar_type>::one ());
 
-  //cout << "Xin = " << Xin << endl;
-  Xout = Teuchos::rcp( (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> *) &Xin, false );
-  Yout = Teuchos::rcp( (Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> *) &Yin, false );
-  if (!isOverlapped_) return; // Nothing more to do
+  // Compute the effect of the solve on the vector of ones
+  apply (ones, onesResult, Teuchos::NO_TRANS);
+  onesResult.abs (onesResult); // Make all values non-negative
+  Teuchos::Array<magnitude_type> norms (1);
+  onesResult.normInf (norms ());
+  Condest_ = norms[0];
+  return Condest_;
+}
+
+
+template<class MatrixType>
+void
+RILUK<MatrixType>::
+generateXY (Teuchos::ETransp mode,
+            const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Xin,
+            const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Yin,
+            Teuchos::RCP<const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& Xout,
+            Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& Yout) const
+{
+  // mfh 05 Dec 2013: I just cleaned up the implementation of this
+  // method to make it more legible; I didn't otherwise try to improve
+  // it.  I don't know if it works or not.
+
+  using Teuchos::rcp;
+  using Teuchos::rcpFromRef;
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
+                              global_ordinal_type, node_type> MV;
+  // Generate an X and Y suitable for solve() and multiply()
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    Xin.getNumVectors () != Yin.getNumVectors (), std::runtime_error,
+    "Ifpack2::RILUK::generateXY: X and Y do not have the same number of "
+    "columns.  X has " << Xin.getNumVectors () << " columns, but Y has "
+    << Yin.getNumVectors () << " columns.");
+
+  Xout = rcpFromRef (Xin);
+  Yout = rcpFromRef (const_cast<MV&> (Yin));
+  if (! isOverlapped_) {
+    return; // Nothing more to do
+  }
 
   if (isOverlapped_) {
     // Make sure the number of vectors in the multivector is the same as before.
-    if (OverlapX_!=Teuchos::null) {
-      if (OverlapX_->getNumVectors()!=Xin.getNumVectors()) {
+    if (! OverlapX_.is_null ()) {
+      if (OverlapX_->getNumVectors () != Xin.getNumVectors ()) {
         OverlapX_ = Teuchos::null;
         OverlapY_ = Teuchos::null;
       }
     }
-    if (OverlapX_==Teuchos::null) { // Need to allocate space for overlap X and Y
-      OverlapX_ = Teuchos::rcp( new Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>(U_->getColMap(), Xout->getNumVectors()) );
-      OverlapY_ = Teuchos::rcp( new Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>(L_->getRowMap(), Yout->getNumVectors()) );
+    if (OverlapX_.is_null ()) { // Need to allocate space for overlap X and Y
+      OverlapX_ = rcp (new MV (U_->getColMap (), Xout->getNumVectors ()));
+      OverlapY_ = rcp (new MV (L_->getRowMap (), Yout->getNumVectors ()));
     }
+
+    // Import X values for solve
     if (mode == Teuchos::NO_TRANS) {
-      OverlapX_->doImport(*Xout,*U_->getGraph()->getImporter(), Tpetra::INSERT); // Import X values for solve
-    }
-    else {
-      OverlapX_->doImport(*Xout,*L_->getGraph()->getExporter(), Tpetra::INSERT); // Import X values for solve
+      OverlapX_->doImport (*Xout, *U_->getGraph ()->getImporter (), Tpetra::INSERT);
+    } else {
+      OverlapX_->doImport (*Xout, *L_->getGraph ()->getExporter (), Tpetra::INSERT);
     }
     Xout = OverlapX_;
     Yout = OverlapY_; // Set pointers for Xout and Yout to point to overlap space
-    //cout << "OverlapX_ = " << *OverlapX_ << endl;
   }
 }
 

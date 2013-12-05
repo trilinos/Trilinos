@@ -48,6 +48,14 @@
 
 #include <omp.h>
 
+#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#  include "KokkosCore_config.h"
+#  ifdef KOKKOS_HAVE_OPENMP
+#    include "Kokkos_OpenMP.hpp"
+#  endif
+#endif
+
+
 namespace Teuchos {
   //forward declarations
   class ParameterList;
@@ -113,8 +121,8 @@ namespace KokkosClassic {
     static typename WDP::ReductionType
     parallel_reduce(int beg, int end, WDP wd) {
       typedef typename WDP::ReductionType ReductionType;
-      ReductionType threadResult = WDP::identity();
-      ReductionType globalResult = WDP::identity();
+      ReductionType threadResult = wd.identity();
+      ReductionType globalResult = wd.identity();
 #pragma omp parallel default(shared) firstprivate(threadResult)
       {
 #pragma omp for
@@ -146,5 +154,16 @@ namespace KokkosClassic {
     public ArrayOfViewsHelperTrivialImpl<OpenMPNode> {};
 
 }
+
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_OPENMP)
+namespace Kokkos {
+  namespace Compat {
+    template <>
+    struct NodeDevice<KokkosClassic::OpenMPNode> {
+      typedef Kokkos::OpenMP type;
+    };
+  } // namespace Compat
+} // namespace Kokkos
+#endif
 
 #endif

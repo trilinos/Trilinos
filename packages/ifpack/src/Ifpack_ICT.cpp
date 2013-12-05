@@ -155,7 +155,8 @@ int Ifpack_ICT::Initialize()
 }
 
 //==========================================================================
-int Ifpack_ICT::Compute() 
+template<typename int_type>
+int Ifpack_ICT::TCompute() 
 {
   if (!IsInitialized()) 
     IFPACK_CHK_ERR(Initialize());
@@ -170,15 +171,27 @@ int Ifpack_ICT::Compute()
 
   bool distributed = (Comm().NumProc() > 1)?true:false;
 
+#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
   if (distributed)
   {
     SerialComm_ = Teuchos::rcp(new Epetra_SerialComm);
-    SerialMap_ = Teuchos::rcp(new Epetra_Map(NumMyRows_, 0, *SerialComm_));
+#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES)
+    if(A_.RowMatrixRowMap().GlobalIndicesInt())
+      SerialMap_ = Teuchos::rcp(new Epetra_Map(NumMyRows_, 0, *SerialComm_));
+    else
+#endif
+#if !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
+    if(A_.RowMatrixRowMap().GlobalIndicesLongLong())
+      SerialMap_ = Teuchos::rcp(new Epetra_Map((long long) NumMyRows_, (long long) 0, *SerialComm_));
+    else
+#endif
+      throw "Ifpack_ICT::TCompute: Global indices unknown.";
     assert (SerialComm_.get() != 0);
     assert (SerialMap_.get() != 0);
   }
   else
     SerialMap_ = Teuchos::rcp(const_cast<Epetra_Map*>(&A_.RowMatrixRowMap()), false);
+#endif
 
   int RowNnz;
 #ifdef IFPACK_FLOPCOUNTERS
@@ -222,13 +235,13 @@ int Ifpack_ICT::Compute()
   }
 
   diag_val = sqrt(diag_val);
-  int diag_idx = 0;
+  int_type diag_idx = 0;
   EPETRA_CHK_ERR(H_->InsertGlobalValues(0,1,&diag_val, &diag_idx));
 
   // The 10 is just a small constant to limit collisons as the actual keys
   // we store are the indices and not integers
   // [0..A_.MaxNumEntries()*LevelofFill()].
-  Ifpack_HashTable Hash( 10 * A_.MaxNumEntries() * LevelOfFill(), 1);
+  TIfpack_HashTable<int_type> Hash( 10 * A_.MaxNumEntries() * LevelOfFill(), 1);
 
   // start factorization for line 1
   for (int row_i = 1 ; row_i < NumMyRows_ ; ++row_i) {
@@ -284,13 +297,14 @@ int Ifpack_ICT::Compute()
       h_ij = Hash.get(col_j);
 
       // get pointers to row `col_j'
-      int* ColIndices;
+      int_type* ColIndices;
       double* ColValues;
       int ColNnz;
-      H_->ExtractGlobalRowView(col_j, ColNnz, ColValues, ColIndices);
+	  int_type col_j_GID = (int_type) H_->RowMap().GID64(col_j);
+      H_->ExtractGlobalRowView(col_j_GID, ColNnz, ColValues, ColIndices);
 
       for (int k = 0 ; k < ColNnz ; ++k) {
-        int col_k = ColIndices[k];
+        int_type col_k = ColIndices[k];
 
         if (col_k == col_j)
           h_jj = ColValues[k];
@@ -325,7 +339,7 @@ int Ifpack_ICT::Compute()
     int count = 0;
     
     // +1 because I use the extra position for diagonal in insert
-    vector<int> keys(size + 1);
+    vector<int_type> keys(size + 1);
     vector<double> values(size + 1);
 
     Hash.arrayify(&keys[0], &values[0]);
@@ -379,10 +393,10 @@ int Ifpack_ICT::Compute()
     }
 
     values[count] = h_ii;
-    keys[count] = row_i;
+    keys[count] = (int_type) H_->RowMap().GID64(row_i);
     ++count;
 
-    H_->InsertGlobalValues(row_i, count, &(values[0]), (int*)&(keys[0]));
+    H_->InsertGlobalValues((int_type) H_->RowMap().GID64(row_i), count, &(values[0]), (int_type*)&(keys[0]));
   }
 
   IFPACK_CHK_ERR(H_->FillComplete());
@@ -403,7 +417,7 @@ int Ifpack_ICT::Compute()
   cout << endl;
   cout << RHS1;
 #endif
-  int MyNonzeros = H_->NumGlobalNonzeros();
+  long long MyNonzeros = H_->NumGlobalNonzeros64();
   Comm().SumAll(&MyNonzeros, &GlobalNonzeros_, 1);
 
   IsComputed_ = true;
@@ -417,6 +431,22 @@ int Ifpack_ICT::Compute()
 
   return(0);
 
+}
+
+int Ifpack_ICT::Compute() {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(A_.RowMatrixRowMap().GlobalIndicesInt()) {
+    return TCompute<int>();
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(A_.RowMatrixRowMap().GlobalIndicesLongLong()) {
+    return TCompute<long long>();
+  }
+  else
+#endif
+    throw "Ifpack_ICT::Compute: GlobalIndices type unknown for A_";
 }
 
 //=============================================================================
@@ -494,11 +524,11 @@ Ifpack_ICT::Print(std::ostream& os) const
     os << "Relative threshold = " << RelativeThreshold() << endl;
     os << "Relax value        = " << RelaxValue() << endl;
     os << "Condition number estimate = " << Condest() << endl;
-    os << "Global number of rows            = " << Matrix().NumGlobalRows() << endl;
+    os << "Global number of rows            = " << Matrix().NumGlobalRows64() << endl;
     if (IsComputed_) {
-      os << "Number of nonzeros of H         = " << H_->NumGlobalNonzeros() << endl;
+      os << "Number of nonzeros of H         = " << H_->NumGlobalNonzeros64() << endl;
       os << "nonzeros / rows                 = " 
-         << 1.0 * H_->NumGlobalNonzeros() / H_->NumGlobalRows() << endl;
+         << 1.0 * H_->NumGlobalNonzeros64() / H_->NumGlobalRows64() << endl;
     }
     os << endl;
     os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;

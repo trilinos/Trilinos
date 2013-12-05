@@ -144,6 +144,15 @@ Epetra_Map::Epetra_Map(long long numGlobalElements, int numMyElements,
 {
   SetLabel("Epetra::Map");
 }
+Epetra_Map::Epetra_Map(long long numGlobalElements, int numMyElements,
+                       const long long * myGlobalElements,
+                       long long indexBase, const Epetra_Comm& comm,
+		       bool UserIsDistributedGlobal,
+		       long long UserMinAllGID, long long UserMaxAllGID)
+  : Epetra_BlockMap(numGlobalElements, numMyElements, myGlobalElements, 1, indexBase, comm, UserIsDistributedGlobal, UserMinAllGID, UserMaxAllGID) // Map is just a special case of BlockMap
+{
+  SetLabel("Epetra::Map");
+}
 #endif
 
 //==============================================================================

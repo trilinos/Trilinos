@@ -40,6 +40,7 @@
 //@HEADER
 
 #include "Ifpack_CrsRiluk.h"
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_CrsGraph.h"
@@ -207,6 +208,7 @@ int Ifpack_CrsRiluk::InitValues(const Epetra_CrsMatrix & A) {
 }
 
 //==========================================================================
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES // FIXME LONG LONG
 int Ifpack_CrsRiluk::InitValues(const Epetra_VbrMatrix & A) {
 
   UserMatrixIsVbr_ = true;
@@ -243,6 +245,7 @@ int Ifpack_CrsRiluk::InitValues(const Epetra_VbrMatrix & A) {
 
   return(0);
 }
+#endif
 //==========================================================================
 
 int Ifpack_CrsRiluk::InitAllValues(const Epetra_RowMatrix & OverlapA, int MaxNumEntries) {
@@ -677,20 +680,52 @@ int Ifpack_CrsRiluk::BlockMap2PointMap(const Epetra_BlockMap & BlockMap, Teuchos
 
 	int MaxElementSize = BlockMap.MaxElementSize();
 	int PtNumMyElements = BlockMap.NumMyPoints();
-	vector<int> PtMyGlobalElements;
-	if (PtNumMyElements>0) PtMyGlobalElements.resize(PtNumMyElements);
+
+	vector<int> PtMyGlobalElements_int;
+	vector<long long> PtMyGlobalElements_LL;
 
 	int NumMyElements = BlockMap.NumMyElements();
-
 	int curID = 0;
-	for (int i=0; i<NumMyElements; i++) {
-		int StartID = BlockMap.GID(i)*MaxElementSize;
-		int ElementSize = BlockMap.ElementSize(i);
-		for (int j=0; j<ElementSize; j++) PtMyGlobalElements[curID++] = StartID+j;
-	}
+
+	if (PtNumMyElements>0) {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+      if(BlockMap.GlobalIndicesInt()) {
+        PtMyGlobalElements_int.resize(PtNumMyElements);
+        for (int i=0; i<NumMyElements; i++) {
+		  int StartID = BlockMap.GID(i)*MaxElementSize;
+		  int ElementSize = BlockMap.ElementSize(i);
+		  for (int j=0; j<ElementSize; j++) PtMyGlobalElements_int[curID++] = StartID+j;
+        }
+      }
+	  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+      if(BlockMap.GlobalIndicesLongLong()) {
+        PtMyGlobalElements_LL.resize(PtNumMyElements);
+        for (int i=0; i<NumMyElements; i++) {
+		  long long StartID = BlockMap.GID64(i)*MaxElementSize;
+		  int ElementSize = BlockMap.ElementSize(i);
+		  for (int j=0; j<ElementSize; j++) PtMyGlobalElements_LL[curID++] = StartID+j;
+        }
+	  }
+	  else
+#endif
+        throw "Ifpack_CrsRiluk::BlockMap2PointMap: GlobalIndices type unknown";
+    }
+
 	assert(curID==PtNumMyElements); // Sanity test
 
-	(*PointMap) = Teuchos::rcp( new Epetra_Map(-1, PtNumMyElements, &PtMyGlobalElements[0], BlockMap.IndexBase(), BlockMap.Comm()) );
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+    if(BlockMap.GlobalIndicesInt())
+      (*PointMap) = Teuchos::rcp( new Epetra_Map(-1, PtNumMyElements, &PtMyGlobalElements_int[0], BlockMap.IndexBase(), BlockMap.Comm()) );
+	else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+    if(BlockMap.GlobalIndicesLongLong())
+      (*PointMap) = Teuchos::rcp( new Epetra_Map(-1LL, PtNumMyElements, &PtMyGlobalElements_LL[0], BlockMap.IndexBase64(), BlockMap.Comm()) );
+	else
+#endif
+      throw "Ifpack_CrsRiluk::BlockMap2PointMap: GlobalIndices type unknown";
 
 	if (!BlockMap.PointSameAs(*(*PointMap))) {EPETRA_CHK_ERR(-1);} // Maps not compatible
   return(0);

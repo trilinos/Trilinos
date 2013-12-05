@@ -57,6 +57,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include <functional>
+#include <algorithm>
 
 using namespace Teuchos;
 
@@ -229,6 +230,7 @@ int Ifpack_IKLU::Compute()
   int Length = A_.MaxNumEntries();
 
   bool distributed = (Comm().NumProc() > 1)?true:false;
+#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
   if (distributed)
   {
     SerialComm_ = rcp(new Epetra_SerialComm);
@@ -238,6 +240,7 @@ int Ifpack_IKLU::Compute()
   }
   else
     SerialMap_ = rcp(const_cast<Epetra_Map*>(&A_.RowMatrixRowMap()), false);
+#endif
 
   int RowNnz;
   vector<int>    RowIndices(Length);
@@ -276,15 +279,37 @@ int Ifpack_IKLU::Compute()
   U_ = rcp(new Epetra_CrsMatrix(View, *SerialMap_, &numEntriesU[0]));
 
   // Insert the values into L and U
-  for (int i=0; i < NumMyRows_; ++i) {
-    L_->InsertGlobalValues( i, numEntriesL[i], &(L_tmp->x[L_tmp->p[i]]), &(L_tmp->j[L_tmp->p[i]]) );
-    U_->InsertGlobalValues( i, numEntriesU[i], &(U_tmp->x[U_tmp->p[i]]), &(U_tmp->j[U_tmp->p[i]]) );
-  }
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+    if(SerialMap_->GlobalIndicesInt()) {
+      for (int i=0; i < NumMyRows_; ++i) {
+        L_->InsertGlobalValues( i, numEntriesL[i], &(L_tmp->x[L_tmp->p[i]]), &(L_tmp->j[L_tmp->p[i]]) );
+        U_->InsertGlobalValues( i, numEntriesU[i], &(U_tmp->x[U_tmp->p[i]]), &(U_tmp->j[U_tmp->p[i]]) );
+      }
+    }
+    else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+    if(SerialMap_->GlobalIndicesLongLong()) {
+
+      const int MaxNumEntries_L_U = std::max(L_->MaxNumEntries(), U_->MaxNumEntries());
+	  std::vector<long long> entries(MaxNumEntries_L_U);
+
+      for (int i=0; i < NumMyRows_; ++i) {
+        std::copy(&(L_tmp->j[L_tmp->p[i]]), &(L_tmp->j[L_tmp->p[i]]) + numEntriesL[i], entries.begin());
+        L_->InsertGlobalValues( i, numEntriesL[i], &(L_tmp->x[L_tmp->p[i]]), &(entries[0]) );
+
+        std::copy(&(U_tmp->j[U_tmp->p[i]]), &(U_tmp->j[U_tmp->p[i]]) + numEntriesU[i], entries.begin());
+        U_->InsertGlobalValues( i, numEntriesU[i], &(U_tmp->x[U_tmp->p[i]]), &(entries[0]) );
+      }
+    }
+    else
+#endif
+      throw "Ifpack_IKLU::Compute: GlobalIndices type unknown for SerialMap_";
 
   IFPACK_CHK_ERR(L_->FillComplete());
   IFPACK_CHK_ERR(U_->FillComplete());
 
-  int MyNonzeros = L_->NumGlobalNonzeros() + U_->NumGlobalNonzeros();
+  long long MyNonzeros = L_->NumGlobalNonzeros64() + U_->NumGlobalNonzeros64();
   Comm().SumAll(&MyNonzeros, &GlobalNonzeros_, 1);
 
   IsComputed_ = true;
@@ -396,14 +421,14 @@ Ifpack_IKLU::Print(std::ostream& os) const
     os << "Relative threshold = " << RelativeThreshold() << endl;
     os << "Relax value        = " << RelaxValue() << endl;
     os << "Condition number estimate       = " << Condest() << endl;
-    os << "Global number of rows           = " << A_.NumGlobalRows() << endl;
+    os << "Global number of rows           = " << A_.NumGlobalRows64() << endl;
     if (IsComputed_) {
-      os << "Number of nonzeros in A         = " << A_.NumGlobalNonzeros() << endl;
-      os << "Number of nonzeros in L + U     = " << NumGlobalNonzeros() 
-         << " ( = " << 100.0 * NumGlobalNonzeros() / A_.NumGlobalNonzeros() 
+      os << "Number of nonzeros in A         = " << A_.NumGlobalNonzeros64() << endl;
+      os << "Number of nonzeros in L + U     = " << NumGlobalNonzeros64() 
+         << " ( = " << 100.0 * NumGlobalNonzeros64() / A_.NumGlobalNonzeros64() 
          << " % of A)" << endl;
       os << "nonzeros / rows                 = " 
-        << 1.0 * NumGlobalNonzeros() / U_->NumGlobalRows() << endl;
+        << 1.0 * NumGlobalNonzeros64() / U_->NumGlobalRows64() << endl;
     }
     os << endl;
     os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;

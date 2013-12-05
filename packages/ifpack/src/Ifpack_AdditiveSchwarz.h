@@ -1164,7 +1164,7 @@ Print(std::ostream& os) const
     os << "Combine mode                          = AbsMax" << endl;
 
   os << "Condition number estimate             = " << Condest_ << endl;
-  os << "Global number of rows                 = " << Matrix_->NumGlobalRows() << endl;
+  os << "Global number of rows                 = " << Matrix_->NumGlobalRows64() << endl;
 
 #ifdef IFPACK_SUBCOMM_CODE
   os << endl;

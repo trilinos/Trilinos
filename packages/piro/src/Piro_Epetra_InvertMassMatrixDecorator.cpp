@@ -55,10 +55,12 @@
 Piro::Epetra::InvertMassMatrixDecorator::InvertMassMatrixDecorator(
                           Teuchos::RCP<Teuchos::ParameterList> stratParams,
                           Teuchos::RCP<EpetraExt::ModelEvaluator>& model_,
-                          bool massMatrixIsConstant_, bool lumpMassMatrix_) :
+                          bool massMatrixIsConstant_, bool lumpMassMatrix_,
+                          bool massMatrixIsCoeffOfSecondDeriv_) :
   model(model_),
   massMatrixIsConstant(massMatrixIsConstant_),
   lumpMassMatrix(lumpMassMatrix_),
+  massMatrixIsCoeffOfSecondDeriv(massMatrixIsCoeffOfSecondDeriv_),
   calcMassMatrix(true)
 {
   using Teuchos::RCP;
@@ -165,13 +167,20 @@ void Piro::Epetra::InvertMassMatrixDecorator::evalModel( const InArgs& inArgs,
     OutArgs modelOutArgs(outArgs);
     InArgs modelInArgs(inArgs);
 
-    modelInArgs.set_x_dot(x_dot);
-
+    if (!massMatrixIsCoeffOfSecondDeriv) {
+      modelInArgs.set_x_dot(x_dot);
+      modelInArgs.set_alpha(-1.0); 
+      modelInArgs.set_beta(0.0);
+    }
+    else {  // Mass Matric is coeff of Second deriv
+      modelInArgs.set_x_dotdot(x_dot);
+      modelInArgs.set_alpha(0.0); 
+      modelInArgs.set_beta(0.0);
+      modelInArgs.set_omega(-1.0);
+    }
     
     if (calcMassMatrix) {
       modelOutArgs.set_W(massMatrix);
-      modelInArgs.set_alpha(-1.0); 
-      modelInArgs.set_beta(0.0);
     }
 
     //Evaluate the underlying model

@@ -186,8 +186,11 @@ protected:
   int NumMyRows() const;
   //! Returns the number of local nonzero elements.
   int NumMyNonzeros() const;
-  //! Returns the number of local rows.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  //! Returns the number of global rows.
   int NumGlobalRows() const;
+#endif
+  long long NumGlobalRows64() const;
   //! Returns the max number of local entries in a row.
   int MaxNumEntries() const;
   //! Returns the communicator object of Graph.

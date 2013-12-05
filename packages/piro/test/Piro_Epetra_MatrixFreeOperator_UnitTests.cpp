@@ -125,7 +125,7 @@ TEUCHOS_UNIT_TEST(Epetra_MatrixFreeOperator, Static)
   }
 
   const RCP<Epetra::MatrixFreeOperator> jacobian(new Epetra::MatrixFreeOperator(model));
-  jacobian->setBase(modelInArgs, f_base, /*haveXdot =*/ false);
+  jacobian->setBase(modelInArgs, f_base, /*haveXdot =*/ false, false);
 
   TEST_EQUALITY(
       jacobian->OperatorDomainMap().NumGlobalElements(),
@@ -157,7 +157,7 @@ TEUCHOS_UNIT_TEST(Epetra_MatrixFreeOperator, Dynamic)
   }
 
   const RCP<Epetra::MatrixFreeOperator> jacobian(new Epetra::MatrixFreeOperator(model));
-  jacobian->setBase(modelInArgs, f_base, /*haveXdot =*/ true);
+  jacobian->setBase(modelInArgs, f_base, /*haveXdot =*/ true, false);
 
   TEST_EQUALITY(
       jacobian->OperatorDomainMap().NumGlobalElements(),

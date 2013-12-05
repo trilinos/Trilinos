@@ -122,8 +122,8 @@ int Ifpack_SORa::SetParameters(Teuchos::ParameterList& parameterlist){
 }
 
 
-int Ifpack_SORa::Compute(){
-  if(!IsInitialized_) Initialize();
+template<typename int_type>
+int Ifpack_SORa::TCompute(){
   Epetra_Map *RowMap=const_cast<Epetra_Map*>(&A_->RowMatrixRowMap());
   Epetra_Vector Adiag(*RowMap);
   Epetra_CrsMatrix *Askew2=0, *Aherm2=0,*W=0;
@@ -142,16 +142,35 @@ int Ifpack_SORa::Compute(){
 
     int Nmax=A_->MaxNumEntries();
     int length;
-    vector<int> indices(Nmax);
     vector<double> values(Nmax); 
     Epetra_CrsMatrix *Acrs=new Epetra_CrsMatrix(Copy,*RowMap,Nmax);
 
-    for(int i=0;i<Arow->NumMyRows();i++){
-      Arow->ExtractMyRowCopy(i,Nmax,length,&values[0],&indices[0]);
-      for(int j=0;j<length;j++)
-	indices[j]=ColMap->GID(indices[j]);
-      Acrs->InsertGlobalValues(RowMap->GID(i),length,&values[0],&indices[0]);
-    }
+	vector<int> indices_local(Nmax);
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+	if(RowMap->GlobalIndicesInt()) {
+      for(int i=0;i<Arow->NumMyRows();i++) {
+        Arow->ExtractMyRowCopy(i,Nmax,length,&values[0],&indices_local[0]);
+        for(int j=0;j<length;j++)
+          indices_local[j]= ColMap->GID(indices_local[j]);
+        Acrs->InsertGlobalValues(RowMap->GID(i),length,&values[0],&indices_local[0]);
+      }
+	}
+	else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+    if(RowMap->GlobalIndicesLongLong()) {
+      vector<int_type> indices_global(Nmax);
+      for(int i=0;i<Arow->NumMyRows();i++) {
+        Arow->ExtractMyRowCopy(i,Nmax,length,&values[0],&indices_local[0]);
+        for(int j=0;j<length;j++)
+          indices_global[j]= (int_type) ColMap->GID64(indices_local[j]);
+        Acrs->InsertGlobalValues((int_type) RowMap->GID64(i),length,&values[0],&indices_global[0]);
+      }
+	}
+	else
+#endif
+    throw "Ifpack_SORa::TCompute: GlobalIndices type unknown";
+
     Acrs->FillComplete(A_->OperatorDomainMap(),A_->OperatorRangeMap());
     Acrs_=rcp(Acrs,true);
   }
@@ -204,18 +223,18 @@ int Ifpack_SORa::Compute(){
   // Build the W matrix (lower triangle only)
   // Note: Relies on EpetraExt giving me identical sparsity patterns for both Askew2 and Aherm2 (see sanity check above)
   int maxentries=Askew2->MaxNumEntries();
-  int* gids=new int [maxentries];
+  int_type* gids=new int_type [maxentries];
   double* newvals=new double[maxentries];
   W=new Epetra_CrsMatrix(Copy,*RowMap,0);
   for(int i=0;i<N;i++){
     // Build the - (1+alpha)/2 E - (1-alpha)/2 F part of the W matrix
-    int rowgid=Acrs_->GRID(i);
+    int_type rowgid = (int_type) Acrs_->GRID64(i);
     double c_data=0.0;
     double ipdamp=0.0;
     int idx=0;
 
     for(int j=rowptr_s[i];j<rowptr_s[i+1];j++){      
-      int colgid=Askew2->GCID(colind_s[j]);
+      int_type colgid = (int_type) Askew2->GCID64(colind_s[j]);
       c_data+=fabs(vals_s[j]);
       if(rowgid>colgid){
 	// Rely on the fact that off-diagonal entries are always numbered last, dropping the entry entirely.
@@ -267,6 +286,25 @@ int Ifpack_SORa::Compute(){
   return 0;
 }
 
+int Ifpack_SORa::Compute(){
+  if(!IsInitialized_) Initialize();
+  int ret_val = 0;
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(A_->RowMatrixRowMap().GlobalIndicesInt()) {
+	  ret_val = TCompute<int>();
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(A_->RowMatrixRowMap().GlobalIndicesLongLong()) {
+	  ret_val = TCompute<long long>();
+  }
+  else
+#endif
+    throw "Ifpack_SORa::Compute: GlobalIndices type unknown";
+
+  return ret_val;
+}
 
 
 int Ifpack_SORa::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const{  

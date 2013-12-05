@@ -63,7 +63,7 @@ namespace Epetra {
  *
  * This class is the ModelEvaluator version of NOX_Epetra_MatrixFree.
  * One difference, is that it supports time-dependent problems
- * when x_dot != null, and using alpha and beta. 
+ * when x_dot != null or x_dotdot !- null, and using alpha, beta, and omega. 
  * 
  */
 
@@ -149,7 +149,7 @@ class MatrixFreeOperator
   //!  Method to save base solution and residual
   void setBase(const EpetraExt::ModelEvaluator::InArgs modelInArgs_,
                Teuchos::RCP<Epetra_Vector> fBase,
-               const bool haveXdot_);
+               const bool haveXdot_, const bool haveXdotdot_);
 
   /** \name Overridden from Epetra_Operator . */
   //@{
@@ -177,8 +177,10 @@ class MatrixFreeOperator
    Teuchos::RCP<const Epetra_Map> map;
    // Storage for Perturbed solution vector for MatrixFree 
    Teuchos::RCP<Epetra_Vector> xPert;
-   // Storage for Perturbed solution vector for MatrixFree 
+   // Storage for Perturbed time dependent vector for MatrixFree 
    Teuchos::RCP<Epetra_Vector> xdotPert;
+   // Storage for Perturbed acceleration vector for MatrixFree 
+   Teuchos::RCP<Epetra_Vector> xdotdotPert;
    // Storage for Base resid vector for MatrixFree 
    Teuchos::RCP<Epetra_Vector> fBase;
    // Storage for Perturbed resid vector for MatrixFree 
@@ -187,6 +189,7 @@ class MatrixFreeOperator
    double solutionNorm;
    bool  baseIsSet;
    bool  haveXdot;
+   bool  haveXdotdot;
    const double lambda;
 
 };

@@ -152,8 +152,8 @@ int Amesos_Superlu::SetParameters( Teuchos::ParameterList &ParameterList)
 // ====================================================================== 
 bool Amesos_Superlu::MatrixShapeOK() const 
 { 
-  if (GetProblem()->GetOperator()->OperatorRangeMap().NumGlobalPoints() != 
-      GetProblem()->GetOperator()->OperatorDomainMap().NumGlobalPoints()) 
+  if (GetProblem()->GetOperator()->OperatorRangeMap().NumGlobalPoints64() != 
+      GetProblem()->GetOperator()->OperatorDomainMap().NumGlobalPoints64()) 
     return(false);
 
   return(true);
@@ -173,9 +173,9 @@ int Amesos_Superlu::ConvertToSerial()
 
   const Epetra_Map &OriginalMap = RowMatrixA_->RowMatrixRowMap() ; 
 
-  NumGlobalRows_ = RowMatrixA_->NumGlobalRows();
-  NumGlobalNonzeros_ = RowMatrixA_->NumGlobalNonzeros();
-  if (NumGlobalRows_ != RowMatrixA_->NumGlobalCols())
+  NumGlobalRows_ = RowMatrixA_->NumGlobalRows64();
+  NumGlobalNonzeros_ = RowMatrixA_->NumGlobalNonzeros64();
+  if (NumGlobalRows_ != RowMatrixA_->NumGlobalCols64())
     AMESOS_CHK_ERR(-1); // only square matrices
   if (NumGlobalNonzeros_ <= 0)
     AMESOS_CHK_ERR(-2); // empty matrix
@@ -195,7 +195,17 @@ int Amesos_Superlu::ConvertToSerial()
   } 
   else 
   {
-    SerialMap_ = rcp(new Epetra_Map(NumGlobalRows_, NumMyElements_, 0, Comm()));
+#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES)
+    if(RowMatrixA_->RowMatrixRowMap().GlobalIndicesInt())
+      SerialMap_ = rcp(new Epetra_Map((int) NumGlobalRows_, NumMyElements_, 0, Comm()));
+    else
+#endif
+#if !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
+    if(RowMatrixA_->RowMatrixRowMap().GlobalIndicesLongLong())
+      SerialMap_ = rcp(new Epetra_Map((long long) NumGlobalRows_, NumMyElements_, 0, Comm()));
+    else
+#endif
+      throw "Amesos_Superlu::ConvertToSerial: Global indices unknown.";
 
     ImportToSerial_ = rcp(new Epetra_Import(SerialMap(), OriginalMap));
 
@@ -262,16 +272,16 @@ int Amesos_Superlu::Factor()
   {
     ResetTimer(1);
 
-    if (NumGlobalRows_ != SerialMatrix_->NumGlobalRows() ||
-        NumGlobalRows_ != SerialMatrix_->NumGlobalCols() ||
+    if (NumGlobalRows_ != SerialMatrix_->NumGlobalRows64() ||
+        NumGlobalRows_ != SerialMatrix_->NumGlobalCols64() ||
         NumGlobalRows_ != SerialMatrix_->NumMyRows() ||
         NumGlobalRows_ != SerialMatrix_->NumMyCols() ||
-        NumGlobalNonzeros_ != SerialMatrix_->NumGlobalNonzeros())
+        NumGlobalNonzeros_ != SerialMatrix_->NumGlobalNonzeros64())
     {
       AMESOS_CHK_ERR(-1); // something fishy here
     }
 
-    NumGlobalNonzeros_ = SerialMatrix_->NumGlobalNonzeros();
+    NumGlobalNonzeros_ = SerialMatrix_->NumGlobalNonzeros64();
     Ap_.resize(NumGlobalRows_ + 1, 0);
     Ai_.resize(EPETRA_MAX( NumGlobalRows_, NumGlobalNonzeros_), 0);
     Aval_.resize(EPETRA_MAX( NumGlobalRows_, NumGlobalNonzeros_), 0);
@@ -327,11 +337,11 @@ int Amesos_Superlu::ReFactor()
   {
     ResetTimer(1);
 
-    if (NumGlobalRows_ != SerialMatrix_->NumGlobalRows() ||
-        NumGlobalRows_ != SerialMatrix_->NumGlobalCols() ||
+    if (NumGlobalRows_ != SerialMatrix_->NumGlobalRows64() ||
+        NumGlobalRows_ != SerialMatrix_->NumGlobalCols64() ||
         NumGlobalRows_ != SerialMatrix_->NumMyRows() ||
         NumGlobalRows_ != SerialMatrix_->NumMyCols() ||
-        NumGlobalNonzeros_ != SerialMatrix_->NumGlobalNonzeros())
+        NumGlobalNonzeros_ != SerialMatrix_->NumGlobalNonzeros64())
     {
       AMESOS_CHK_ERR(-1);
     }
@@ -653,8 +663,8 @@ void Amesos_Superlu::PrintStatus() const
   std::string p = "Amesos_Superlu : ";
   PrintLine();
 
-  int n = GetProblem()->GetMatrix()->NumGlobalRows();
-  int nnz = GetProblem()->GetMatrix()->NumGlobalNonzeros();
+  long long n = GetProblem()->GetMatrix()->NumGlobalRows64();
+  long long nnz = GetProblem()->GetMatrix()->NumGlobalNonzeros64();
 
   std::cout << p << "Matrix has " << n << " rows"
        << " and " << nnz << " nonzeros" << std::endl;

@@ -93,16 +93,16 @@ class BlockMultiVector: public Epetra_MultiVector {
   //@}
   
   //! Extract a single block from a Block Vector: block row is global, not a stencil value
-  int ExtractBlockValues( Epetra_MultiVector & BaseVec, int BlockRow) const;
+  int ExtractBlockValues( Epetra_MultiVector & BaseVec, long long BlockRow) const;
 
   //! Load a single block into a Block Vector: block row is global, not a stencil value
-  int LoadBlockValues(const Epetra_MultiVector & BaseVec, int BlockRow);
+  int LoadBlockValues(const Epetra_MultiVector & BaseVec, long long BlockRow);
 
   //! Return Epetra_MultiVector for given block row
-  Teuchos::RCP<const Epetra_MultiVector> GetBlock(int BlockRow) const;
+  Teuchos::RCP<const Epetra_MultiVector> GetBlock(long long BlockRow) const;
 
   //! Return Epetra_MultiVector for given block row
-  Teuchos::RCP<Epetra_MultiVector> GetBlock(int BlockRow);
+  Teuchos::RCP<Epetra_MultiVector> GetBlock(long long BlockRow);
 
   //! Return base map
   const Epetra_BlockMap& GetBaseMap() const;
@@ -111,7 +111,7 @@ class BlockMultiVector: public Epetra_MultiVector {
 
   Epetra_BlockMap BaseMap_;
 
-  int Offset_;
+  long long Offset_;
 
 };
 

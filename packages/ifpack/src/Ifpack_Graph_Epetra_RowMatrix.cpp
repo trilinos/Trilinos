@@ -53,8 +53,8 @@ RowMatrix_(RowMatrix)
 {
   NumMyRows_ = RowMatrix_->NumMyRows();
   NumMyCols_ = RowMatrix_->NumMyCols();
-  NumGlobalRows_ = RowMatrix_->NumGlobalRows();
-  NumGlobalCols_ = RowMatrix_->NumGlobalCols();
+  NumGlobalRows_ = RowMatrix_->NumGlobalRows64();
+  NumGlobalCols_ = RowMatrix_->NumGlobalCols64();
   MaxNumIndices_ = RowMatrix_->MaxNumEntries();
 
   Values_.resize(MaxNumIndices_);
@@ -73,6 +73,7 @@ bool Ifpack_Graph_Epetra_RowMatrix::Filled() const
 }
  
 //==============================================================================
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Ifpack_Graph_Epetra_RowMatrix::GRID(int LRID_in) const
 {
   return(RowMatrix_->RowMatrixRowMap().GID(LRID_in));
@@ -83,8 +84,21 @@ int Ifpack_Graph_Epetra_RowMatrix::GCID(int LCID_in) const
 {
   return(RowMatrix_->RowMatrixColMap().GID(LCID_in));
 }
+#endif
+
+long long Ifpack_Graph_Epetra_RowMatrix::GRID64(int LRID_in) const
+{
+  return(RowMatrix_->RowMatrixRowMap().GID64(LRID_in));
+}
 
 //==============================================================================
+long long Ifpack_Graph_Epetra_RowMatrix::GCID64(int LCID_in) const
+{
+  return(RowMatrix_->RowMatrixColMap().GID64(LCID_in));
+}
+
+//==============================================================================
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Ifpack_Graph_Epetra_RowMatrix::LRID(int GRID_in) const
 {
   return(RowMatrix_->RowMatrixRowMap().LID(GRID_in));
@@ -95,7 +109,20 @@ int Ifpack_Graph_Epetra_RowMatrix::LCID(int GCID_in) const
 {
   return(RowMatrix_->RowMatrixColMap().LID(GCID_in));
 }
+#endif
+//==============================================================================
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+int Ifpack_Graph_Epetra_RowMatrix::LRID(long long GRID_in) const
+{
+  return(RowMatrix_->RowMatrixRowMap().LID(GRID_in));
+}
 
+//==============================================================================
+int Ifpack_Graph_Epetra_RowMatrix::LCID(long long GCID_in) const
+{
+  return(RowMatrix_->RowMatrixColMap().LID(GCID_in));
+}
+#endif
 //==============================================================================
 int Ifpack_Graph_Epetra_RowMatrix::
 ExtractMyRowCopy(int MyRow, int LenOfIndices, 

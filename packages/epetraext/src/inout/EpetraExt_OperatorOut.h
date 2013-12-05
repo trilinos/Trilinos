@@ -130,8 +130,8 @@ namespace EpetraExt {
 
   */
   int OperatorToHandle(std::FILE * handle, const Epetra_Operator & A);
-  int writeOperatorStrip(std::FILE * handle, const Epetra_MultiVector & y, const Epetra_Map & rootDomainMap, const Epetra_Map & rootRangeMap, int startColumn);
-  int get_nz(const Epetra_Operator & A, int & nz);
+  int writeOperatorStrip(std::FILE * handle, const Epetra_MultiVector & y, const Epetra_Map & rootDomainMap, const Epetra_Map & rootRangeMap, long long startColumn);
+  int get_nz(const Epetra_Operator & A, long long & nz);
 
 } // namespace EpetraExt
 #endif /* EPETRAEXT_OPERATOROUT_H */

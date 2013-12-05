@@ -52,17 +52,44 @@ namespace Galeri {
 Epetra_VbrMatrix* 
 CreateVbrMatrix(const Epetra_CrsMatrix* CrsMatrix, const int NumPDEs)
 {
+#ifdef EPETRA_NO_32BIT_GLOBAL_INDICES // FIXME
+  throw "Galeri::CreateVbrMatrix: VbrMatrix support not available in 64 bit global indices.";
+  return 0;
+#else
+
   const Epetra_Comm& Comm = CrsMatrix->Comm();
   const Epetra_Map& Map = CrsMatrix->RowMatrixRowMap();
-
-  int NumGlobalElements = Map.NumGlobalElements();
+  long long NumGlobalElements = 0;
   int NumMyElements = Map.NumMyElements();
-  int* MyGlobalElements = Map.MyGlobalElements();
+  const int* MyGlobalElements_int = 0;
+  const long long* MyGlobalElements_LL = 0;
+  Epetra_BlockMap* BlockMap = 0;
 
-  Epetra_BlockMap* BlockMap = new Epetra_BlockMap(NumGlobalElements,
-                                                  NumMyElements,
-                                                  MyGlobalElements,
-                                                  NumPDEs, 0, Comm);
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(Map.GlobalIndicesInt()) {
+    NumGlobalElements = Map.NumGlobalElements();
+    MyGlobalElements_int = Map.MyGlobalElements();
+
+    BlockMap = new Epetra_BlockMap((int) NumGlobalElements,
+                                   NumMyElements,
+                                   MyGlobalElements_int,
+                                   NumPDEs, 0, Comm);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(Map.GlobalIndicesLongLong()) {
+    NumGlobalElements = Map.NumGlobalElements64();
+    MyGlobalElements_LL = Map.MyGlobalElements64();
+
+    BlockMap = new Epetra_BlockMap(NumGlobalElements,
+                                   NumMyElements,
+                                   MyGlobalElements_LL,
+                                   NumPDEs, 0, Comm);
+  }
+  else
+#endif
+    throw "Galeri::CreateVbrMatrix: GlobalIndices type unknown";
 
   int MaxNnzPerRow = CrsMatrix->MaxNumEntries();
   // create a VBR matrix based on BlockMap
@@ -87,14 +114,20 @@ CreateVbrMatrix(const Epetra_CrsMatrix* CrsMatrix, const int NumPDEs)
 
   for (int i = 0 ; i < NumMyElements ; ++i) 
   {
-    int GlobalNode = MyGlobalElements[i];
+    long long GlobalNode = MyGlobalElements_int ? MyGlobalElements_int[i] : MyGlobalElements_LL[i];
 
     ierr = CrsMatrix->ExtractMyRowView(i, CrsNumEntries, CrsValues, CrsIndices);
 
+    // CJ TODO FIXME : Change this when Epetra VBR matrix is changed for long long
+	// Commenting out right now so the package builds when 32 bit GIDs are disabled.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     for (int kk = 0 ; kk < CrsNumEntries ; ++kk)
       VbrIndices[kk] = CrsMatrix->GCID(CrsIndices[kk]);
 
     VbrMatrix->BeginInsertGlobalValues(GlobalNode, CrsNumEntries, &VbrIndices[0]);
+#else
+    throw "Galeri::CreateVbrMatrix: not implemented fully";
+#endif
 
     for (int i = 0 ; i < CrsNumEntries ; ++i) 
     {
@@ -115,6 +148,7 @@ CreateVbrMatrix(const Epetra_CrsMatrix* CrsMatrix, const int NumPDEs)
   VbrMatrix->FillComplete();
 
   return(VbrMatrix);
+#endif
 
 } // CreateVbrMatrix()
 

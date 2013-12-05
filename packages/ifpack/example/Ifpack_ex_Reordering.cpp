@@ -83,8 +83,12 @@ int main(int argc, char *argv[])
   
   int NumPoints = 16;
   
+#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
   Epetra_Map Map(-1,NumPoints,0,Comm);
-  
+#else
+  Epetra_Map Map;
+#endif
+
   vector<int> Indices(NumPoints);
   vector<double> Values(NumPoints);
 
@@ -107,7 +111,9 @@ int main(int argc, char *argv[])
       Values[1] = 1.0;
     }
 
+#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
     A->InsertGlobalValues(i, NumEntries, &Values[0], &Indices[0]);
+#endif
   }
 
   A->FillComplete();

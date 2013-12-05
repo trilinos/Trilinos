@@ -579,6 +579,32 @@ public:
 };
 
 
+/** \brief Class that gets and sets x_dotdot in an InArgs object. */
+class InArgsGetterSetter_x_dotdot {
+public:
+
+  std::string getName() const { return "x_dotdot"; }
+
+  Teuchos::RefCountPtr<const Epetra_Vector>
+  getVector( const ModelEvaluator::InArgs &inArgs ) const
+  {
+    return inArgs.get_x_dotdot();
+  }
+
+  void setVector(
+    const Teuchos::RefCountPtr<const Epetra_Vector> &x_dotdot,
+    ModelEvaluator::InArgs *inArgs
+    ) const
+  {
+#ifdef TEUCHOS_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPT(!inArgs);
+#endif
+    inArgs->set_x_dotdot(x_dotdot);
+  }
+
+};
+
+
 /** \brief Class that gets and sets x in an InArgs object. */
 class InArgsGetterSetter_x {
 public:
