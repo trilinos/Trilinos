@@ -2654,7 +2654,11 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::fillLocalGraph(const RCP<ParameterList> &params)
+  void CrsGraph<LocalOrdinal,
+                GlobalOrdinal,
+                Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+                typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  fillLocalGraph (const RCP<ParameterList> &params)
   {
     std::cout<<"\n--------------AllocCrsGraph-A-----------------\n";
     const size_t numRows = getNodeNumRows();
@@ -2679,8 +2683,8 @@ namespace Tpetra {
         //ptrs = LocalMatOps::allocRowPtrs( getRowMap()->getNode(), numRowEntries_() );
         //inds = LocalMatOps::template allocStorage<LocalOrdinal>( getRowMap()->getNode(), ptrs() );
         size_t nRE = numRowEntries_().size();
-        typename LocalStaticCrsGraphType::entries_type lclInds1DView_ = typename LocalStaticCrsGraphType::entries_type("Graph::lclInds1D",
-            nRE+1);
+        typename LocalStaticCrsGraphType::row_map_type::non_const_type lclInds1DView_ =
+          typename LocalStaticCrsGraphType::row_map_type::non_const_type ("Graph::lclInds1D", nRE + 1);
         ptrs = Kokkos::Compat::persistingView(lclInds1DView_);
         ptrs[0] = 0;
         std::partial_sum( numRowEntries_().getRawPtr(), numRowEntries_().getRawPtr()+numRowEntries_().size(), ptrs.begin()+1 );
