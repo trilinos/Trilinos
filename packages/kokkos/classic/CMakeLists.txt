@@ -26,6 +26,13 @@ IF(KokkosClassic_ENABLE_OpenMP AND NOT ${PROJECT_NAME}_ENABLE_OpenMP)
 ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
+  KokkosClassic_ENABLE_KokkosCompat
+  HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+  "Enable use of the KokkosCompat subpackage in the KokkosClassic subpackage.  This option is only for use by expert developers.  I MEAN IT."
+  ${Trilinos_ENABLE_KokkosCompat}
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
   KokkosClassic_ENABLE_NodeAPI
   HAVE_KOKKOSCLASSIC_NODEAPI
   "Enable Kokkos node programming API."

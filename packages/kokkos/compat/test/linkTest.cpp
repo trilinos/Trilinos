@@ -46,7 +46,15 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <KokkosCompat_TMM.hpp>
 #include <Teuchos_Array.hpp>
+
+// FIXME (mfh 04 Dec 2013) Disable dependency on KokkosClassic for now
+// to make this test build correctly, given that we are reversing Kokkos
+// subpackage dependencies so that KokkosClassic has an optional dependency
+// on KokkosCompat (rather than KokkosCompat having a required dependency
+// on KokkosClassic, which was the case previously).
+#if 0
 #include <Kokkos_MultiVector.hpp> // Kokkos Classic
+#endif // 0
 
 namespace {
 
@@ -307,6 +315,8 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP2D_of_2DView ) {
 }
 
 
+// FIXME (mfh 04 Dec 2013) See note at top of file.
+#if 0
 // Create a 2-D LayoutLeft HostSpace-memory View, and create a
 // KokkosClassic::MultiVector which views its memory and holds a
 // reference to the View.  The latter will ensure that the
@@ -389,4 +399,4 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, KMV_of_2DView ) {
   TEST_EQUALITY(Y.getValues().getRawPtr(), X.ptr_on_device());
   TEST_EQUALITY(Y.getValues().getRawPtr(), X_view.ptr_on_device());
 }
-
+#endif // 0

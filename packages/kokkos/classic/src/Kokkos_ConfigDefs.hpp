@@ -97,4 +97,16 @@ enum ESweepDirection {
 
 } // namespace KokkosClassic
 
+
+namespace Kokkos {
+  namespace Compat {
+    /// \struct NodeDevice
+    /// \tparam Node Kokkos (Classic) Node type
+    /// \brief Determine KokkosCore device type from KokkosClassic node type.
+    template <typename Node>
+    struct NodeDevice {};
+  }
+}
+
+
 #endif /* KOKKOS_CONFIGDEFS_H */

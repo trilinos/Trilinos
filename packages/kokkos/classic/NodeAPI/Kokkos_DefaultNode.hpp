@@ -57,6 +57,9 @@
 #ifdef HAVE_KOKKOSCLASSIC_THRUST
 #include "Kokkos_ThrustGPUNode.hpp"
 #endif
+#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#endif
 
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_RCP.hpp>
@@ -103,6 +106,17 @@ namespace Details {
       typedef OpenMPNode DefaultNodeType;
 #elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE)
       typedef ThrustGPUNode DefaultNodeType;
+#elif defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT)
+#  if defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE)
+      typedef ::Kokkos::Compat::KokkosCudaWrapperNode DefaultNodeType;
+#    pragma message "Kokkos default Node type: Kokkos::Compat::CudaWrapperNode"
+#  elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE)
+      typedef ::Kokkos::Compat::KokkosOpenMPWrapperNode DefaultNodeType;
+#  elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE)
+      typedef ::Kokkos::Compat::KokkosThreadsWrapperNode DefaultNodeType;
+#  else
+      typedef SerialNode DefaultNodeType;
+#  endif // defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT)
 #else
       //! Typedef specifying the default node type.
       typedef SerialNode DefaultNodeType;
@@ -115,6 +129,6 @@ namespace Details {
       static RCP<DefaultNodeType> node_;
   };
 
-}
+} // namespace KokkosClassic
 
 #endif

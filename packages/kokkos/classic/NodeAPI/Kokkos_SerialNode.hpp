@@ -45,6 +45,12 @@
 #include <Kokkos_StandardNodeMemoryModel.hpp>
 #include "Kokkos_NodeHelpers.hpp"
 
+#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#  include "KokkosCore_config.h"
+#  include "Kokkos_Serial.hpp"
+#endif
+
+
 namespace KokkosClassic {
 
   /** \brief %Kokkos node interface for a serial, CPU node.
@@ -96,5 +102,18 @@ namespace KokkosClassic {
     public ArrayOfViewsHelperTrivialImpl<SerialNode> {};
 
 } // end of Kokkos namespace
+
+
+#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+namespace Kokkos {
+  namespace Compat {
+    template <>
+    struct NodeDevice<KokkosClassic::SerialNode> {
+      typedef Kokkos::Serial type;
+    };
+  } // namespace Compat
+} // namespace Kokkos
+#endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+
 
 #endif
