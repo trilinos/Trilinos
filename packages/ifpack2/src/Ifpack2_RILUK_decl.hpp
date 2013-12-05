@@ -408,20 +408,20 @@ class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_
                   magnitude_type Tol = 1e-9,
                   const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &Matrix = Teuchos::null);
 
-  magnitude_type getCondEst() const {return Condest_;}
+  magnitude_type getCondEst() const { return Condest_; }
 
-  Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > getMatrix() const
-  {
+  Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >
+  getMatrix () const {
     return A_;
   }
 
   // Attribute access functions
 
   //! Get RILU(k) relaxation parameter
-  magnitude_type GetRelaxValue() const {return RelaxValue_;}
+  magnitude_type getRelaxValue() const { return RelaxValue_; }
 
   //! Get absolute threshold value
-  magnitude_type getAbsoluteThreshold() const {return Athresh_;}
+  magnitude_type getAbsoluteThreshold() const { return Athresh_; }
 
   //! Get relative threshold value
   magnitude_type getRelativeThreshold() const {return Rthresh_;}

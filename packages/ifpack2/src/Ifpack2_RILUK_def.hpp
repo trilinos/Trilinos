@@ -721,10 +721,10 @@ int RILUK<MatrixType>::Multiply(const Tpetra::MultiVector<scalar_type,local_ordi
   return 0;
 }
 
-//=============================================================================
+
 template<class MatrixType>
 typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
-RILUK<MatrixType>::computeCondEst(Teuchos::ETransp mode) const
+RILUK<MatrixType>::computeCondEst (Teuchos::ETransp mode) const
 {
   typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vec_type;
 
@@ -781,7 +781,39 @@ RILUK<MatrixType>::computeCondEst(CondestType CT,
   return Condest_;
 }
 
-//=========================================================================
+template<class MatrixType>
+typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
+RILUK<MatrixType>::
+computeCondEst (CondestType CT,
+                local_ordinal_type MaxIters,
+                magnitude_type Tol,
+                const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& Matrix)
+{
+  // Forestall "unused variable" compiler warnings.
+  (void) CT;
+  (void) MaxIters;
+  (void) Tol;
+  (void) Matrix;
+
+  typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vec_type;
+
+  if (Condest_ != - Teuchos::ScalarTraits<magnitude_type>::one() ) {
+    return Condest_;
+  }
+  // Create a vector with all values equal to one
+  vec_type Ones (U_->getDomainMap ());
+  vec_type OnesResult (L_->getRangeMap ());
+  Ones.putScalar (Teuchos::ScalarTraits<scalar_type>::one ());
+
+  apply (Ones, OnesResult, Teuchos::NO_TRANS); // Compute the effect of the solve on the vector of ones
+  OnesResult.abs (OnesResult); // Make all values non-negative
+  Teuchos::Array<magnitude_type> norms (1);
+  OnesResult.normInf (norms ());
+  Condest_ = norms[0];
+  return Condest_;
+}
+
+
 template<class MatrixType>
 void RILUK<MatrixType>::generateXY(Teuchos::ETransp mode,
     const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Xin,
