@@ -19,6 +19,11 @@ TRIBITS_PACKAGE(TriKota DISABLE_STRONG_WARNINGS)
 SET(TriKota_ENABLE_DakotaCMake ON CACHE BOOL 
     "Compile Dakota using CMake instead of the default autotools")
 
+# If TriBITS is disabling the install of libraries, we need 
+IF (NOT ${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS AND NOT BUILD_SHARED_LIBS)
+  SET(DAKOTA_SKIP_LIB_AND_HEADER_INSTALLS TRUE)
+ENDIF()
+
 #
 # C) Add the libraries, tests, and examples
 #
