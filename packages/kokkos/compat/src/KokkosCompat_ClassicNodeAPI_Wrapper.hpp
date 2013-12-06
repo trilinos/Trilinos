@@ -44,6 +44,8 @@ namespace Kokkos {
       static const bool isCUDANode = false;
 //#endif
 
+      static int count;
+
       KokkosDeviceWrapperNode(Teuchos::ParameterList &pl) {
         Teuchos::ParameterList params = getDefaultParameters();
         params.setParameters(pl);
@@ -57,7 +59,9 @@ namespace Kokkos {
                     << curNumThreads << ", \"numteams\" = " << curNumTeams
                     << " \"device\" = " << curDevice << std::endl;
         }
-        init (curNumTeams,curNumThreads,curDevice);
+        if(count==0)
+          init (curNumTeams,curNumThreads,curDevice);
+        count++;
       }
 
       KokkosDeviceWrapperNode() {
@@ -72,7 +76,9 @@ namespace Kokkos {
               << curNumThreads << ", \"numteams\" = " << curNumTeams
               << " \"device\" = " << curDevice << std::endl;
         }
-        init (curNumTeams,curNumThreads,curDevice);
+        if(count==0)
+          init (curNumTeams,curNumThreads,curDevice);
+        count++;
       };
 
       ~KokkosDeviceWrapperNode();
@@ -281,14 +287,17 @@ namespace Kokkos {
 
   #ifdef KOKKOS_HAVE_CUDA
     typedef  KokkosDeviceWrapperNode<Kokkos::Cuda> KokkosCudaWrapperNode;
+    int KokkosCudaWrapperNode::count = 0;
   #endif
 
   #ifdef KOKKOS_HAVE_OPENMP
     typedef  KokkosDeviceWrapperNode<Kokkos::OpenMP> KokkosOpenMPWrapperNode;
+    int KokkosOpenMPWrapperNode::count = 0;
   #endif
 
   #ifdef KOKKOS_HAVE_PTHREAD
     typedef  KokkosDeviceWrapperNode<Kokkos::Threads> KokkosThreadsWrapperNode;
+    int KokkosThreadsWrapperNode::count = 0;
   #endif
   }
 } // end of namespace Kokkos

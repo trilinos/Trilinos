@@ -6,7 +6,9 @@ namespace Kokkos {
 #ifdef KOKKOS_HAVE_PTHREAD
     template<>
     KokkosDeviceWrapperNode<Kokkos::Threads>::~KokkosDeviceWrapperNode<Kokkos::Threads>() {
-      Threads::finalize();
+      count--;
+      if(count==0)
+        Threads::finalize();
     }
     template<>
     void KokkosDeviceWrapperNode<Kokkos::Threads>::init(int NumTeams, int NumThreads, int Device) {
@@ -17,7 +19,9 @@ namespace Kokkos {
 #ifdef KOKKOS_HAVE_OPENMP
     template<>
     KokkosDeviceWrapperNode<Kokkos::OpenMP>::~KokkosDeviceWrapperNode<Kokkos::OpenMP>() {
-      OpenMP::finalize();
+      count--;
+      if(count==0)
+        OpenMP::finalize();
     }
     template<>
     void KokkosDeviceWrapperNode<Kokkos::OpenMP>::init(int NumTeams, int NumThreads, int Device) {
@@ -28,8 +32,11 @@ namespace Kokkos {
 #ifdef KOKKOS_HAVE_CUDA
     template<>
     KokkosDeviceWrapperNode<Kokkos::Cuda>::~KokkosDeviceWrapperNode<Kokkos::Cuda>() {
-      Cuda::host_mirror_device_type::finalize();
-      Cuda::finalize();
+      count--;
+      if(count==0) {
+        Cuda::host_mirror_device_type::finalize();
+        Cuda::finalize();
+      }
     }
     template<>
     void KokkosDeviceWrapperNode<Kokkos::Cuda>::init(int NumTeams, int NumThreads, int Device) {
