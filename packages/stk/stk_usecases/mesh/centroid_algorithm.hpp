@@ -165,7 +165,7 @@ bool centroid_algorithm_unit_test_dimensions(
         BucketArray< VectorFieldType > array(elem_centroid , bucket , bucket.begin(), bucket.end()  );
         const unsigned n1 = array.template dimension<0>();
         const unsigned n2 = array.template dimension<1>();
-        if ( n1 != (unsigned) SpatialDim ) {
+        if ( n1 != static_cast<unsigned>(SpatialDim) ) {
           std::cerr << "Error!  n1 == " << n1 << " != " << SpatialDim << " == SpatialDim" << std::endl;
           result = false;
         }
@@ -173,7 +173,7 @@ bool centroid_algorithm_unit_test_dimensions(
           std::cerr << "Error!  n2 == " << n2 << " != " << size << " == size" << std::endl;
           result = false;
         }
-        if ( (unsigned) array.size() != n1 * n2 ) {
+        if ( static_cast<unsigned>(array.size()) != n1 * n2 ) {
           std::cerr << "Error!  array.size() == " << array.size() << " != " << n1*n2 << " == n1*n2" << std::endl;
           result = false;
         }

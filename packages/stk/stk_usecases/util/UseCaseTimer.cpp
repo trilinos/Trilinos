@@ -55,7 +55,7 @@ work()
 
   for (int i = 0; i < 100000; ++i)
 //  for (int i = 0; i < 100; ++i)
-    x += std::sin((double) i);
+    x += std::sin(i);
 
   return x;
 }
