@@ -71,9 +71,10 @@
 #include "MueLu_TpetraOperator.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 
 namespace MueLuTests {
+
+#include "MueLu_UseShortNames.hpp"
 
   typedef MueLu::Utils<SC,LO,GO,NO,LMO>          Utils;
   typedef MueLu::TpetraOperator<SC,LO,GO,NO,LMO> TpetraOperator;

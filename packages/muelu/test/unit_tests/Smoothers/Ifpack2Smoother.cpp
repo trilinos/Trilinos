@@ -51,7 +51,6 @@
 #include "MueLu_Utilities.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 
 /*
   Comments about tests with hard coded results:
@@ -62,6 +61,8 @@
 */
 
 namespace MueLuTests {
+
+#include "MueLu_UseShortNames.hpp"
 
   using namespace TestHelpers::Smoothers;
 

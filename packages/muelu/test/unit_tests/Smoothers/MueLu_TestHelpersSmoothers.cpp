@@ -59,6 +59,7 @@
 // See .hpp file for description
 
 namespace MueLuTests {
+
   namespace TestHelpers {
     namespace Smoothers {
 

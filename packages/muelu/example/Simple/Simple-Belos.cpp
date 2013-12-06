@@ -59,7 +59,6 @@
 // Header files defining default types for template parameters.
 // These headers must be included after other MueLu/Xpetra headers.
 #include <MueLu_UseDefaultTypes.hpp>  // => Scalar=double, LocalOrdinal=int, GlobalOrdinal=int
-#include <MueLu_UseShortNames.hpp>    // => typedef MueLu::FooClass<Scalar, LocalOrdinal, ...> Foo
 
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
@@ -68,6 +67,8 @@
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 
 int main(int argc, char *argv[]) {
+#include <MueLu_UseShortNames.hpp>
+
   using Teuchos::RCP; // reference count pointers
   using Teuchos::rcp; //
 

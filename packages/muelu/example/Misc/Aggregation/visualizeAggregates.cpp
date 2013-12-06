@@ -92,12 +92,20 @@
 #include "MueLu_Aggregates.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
+
+namespace MueLuExamples {
+
 #include "MueLu_UseShortNames.hpp"
 
 void ExportAggregates(const Teuchos::RCP<Level>& level, const MueLu::FactoryBase* aggFact,const Teuchos::RCP<const Teuchos::Comm<int> >& comm );
 
+}
+
 int main(int argc, char *argv[]) {
+#include "MueLu_UseShortNames.hpp"
+
   using Teuchos::RCP;
+  using namespace MueLuExamples;
 
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
@@ -226,6 +234,10 @@ int main(int argc, char *argv[]) {
   return EXIT_SUCCESS;
 }
 
+namespace MueLuExamples {
+
+#include "MueLu_UseShortNames.hpp"
+
 void ExportAggregates(const Teuchos::RCP<Level>& level, const MueLu::FactoryBase* aggFact,const Teuchos::RCP<const Teuchos::Comm<int> >& comm ) {
   if(level->IsAvailable("Aggregates",aggFact) == false) {
     std::cout << "no Aggregates available." << std::endl;
@@ -282,4 +294,6 @@ void ExportAggregates(const Teuchos::RCP<Level>& level, const MueLu::FactoryBase
     fout << i << " " << Op->getRowMap()->getGlobalElement(i) << " " << RowMap2GlobalAggId_data[i] << std::endl;
   }
   fout.close();
+}
+
 }
