@@ -626,7 +626,7 @@ namespace Tpetra {
       // values2D_ (for values).  We allocate 1-D storage and then
       // copy from 2-D storage in lclInds2D_ resp. values2D_ into 1-D
       // storage in inds resp. vals.
-
+      std::cout << "NumRowEntries_.size(): "<< numRowEntries_.size() << std::endl;
       typename Graph::t_RowPtrs tmpk_ptrs = typename Graph::t_RowPtrs("Tpetra::CrsGraph::RowPtrs",numRowEntries_.size()+1);
       ptrs = Teuchos::arcp(tmpk_ptrs.ptr_on_device(), 0, tmpk_ptrs.dimension_0(),
                                          Kokkos::Compat::deallocator(tmpk_ptrs), false);
@@ -638,9 +638,10 @@ namespace Tpetra {
         // hack until we get parallel_scan in kokkos
       for(int i = 0; i < numRowEntries_.size(); i++) {
         h_tmpk_ptrs(i+1) = h_tmpk_ptrs(i)+numRowEntries_[i];
+        std::cout << h_tmpk_ptrs(i+1) << " ";
       }
       Kokkos::deep_copy(tmpk_ptrs,h_tmpk_ptrs);
-
+      std::cout << std::endl;
 
       k_inds = typename Graph::t_LocalOrdinal_1D("Tpetra::CrsGraph::lclInds1D_",h_tmpk_ptrs[h_tmpk_ptrs.dimension_0()-1]);
       inds = Teuchos::arcp(k_inds.ptr_on_device(), 0, k_inds.dimension_0(),
@@ -828,6 +829,8 @@ namespace Tpetra {
     }
     // The local matrix should be null, but we delete it first so that
     // any memory can be freed before we allocate the new one.
+
+    std::cout << "ValuesPtr C: " << vals << " " << k_vals.ptr_on_device() << std::endl;
     std::cout << "Values C: " << vals[0] << " " << k_vals[0] << std::endl;
     lclMatrix_ = null;
     lclMatrix_ = rcp (new local_matrix_type (staticGraph_->getLocalGraph (), lclparams));
