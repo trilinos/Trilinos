@@ -150,6 +150,72 @@ TEUCHOS_UNIT_TEST( MDComm, axisCommSizesPeriodicConstructor )
   }
 }
 
+TEUCHOS_UNIT_TEST( MDComm, pListConstructor )
+{
+  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  // If axisCommSizes is shorter than numDims, pad it with -1 values
+  // at the end
+  for (int axis = axisCommSizes.size(); axis < numDims; ++axis)
+  {
+    axisCommSizes.push_back(-1);
+  }
+
+  Teuchos::ParameterList plist;
+  plist.set("axisCommSizes", axisCommSizes);
+
+  MDComm mdComm(comm, plist);
+
+  TEST_EQUALITY(mdComm.getNumDims(), numDims);
+
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    if (axisCommSizes[axis] > 0)
+    {
+      TEST_EQUALITY(mdComm.getAxisCommSize(axis), axisCommSizes[axis]);
+    }
+    TEST_ASSERT(not mdComm.isPeriodic(axis));
+  }
+#ifdef HAVE_EPETRA
+  Teuchos::RCP< const Epetra_Comm > epetraComm = mdComm.getEpetraComm();
+  TEST_EQUALITY(epetraComm->NumProc(), comm->getSize());
+  TEST_EQUALITY(epetraComm->MyPID(), comm->getRank());
+#endif
+}
+
+TEUCHOS_UNIT_TEST( MDComm, pListConstructorPeriodic )
+{
+  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  // If axisCommSizes is shorter than numDims, pad it with -1 values
+  // at the end
+  for (int axis = axisCommSizes.size(); axis < numDims; ++axis)
+  {
+    axisCommSizes.push_back(-1);
+  }
+  // Construct periodic flags
+  Array< int > periodic(numDims, 0);
+  periodic[0] = 1;
+
+  Teuchos::ParameterList plist;
+  plist.set("axisCommSizes", axisCommSizes);
+  plist.set("periodic"     , periodic     );
+
+  // Construct an MDComm
+  MDComm mdComm(comm, plist);
+
+  TEST_EQUALITY(mdComm.getNumDims(), numDims);
+
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    if (axisCommSizes[axis] > 0)
+    {
+      TEST_EQUALITY(mdComm.getAxisCommSize(axis), axisCommSizes[axis]);
+    }
+    TEST_EQUALITY(mdComm.isPeriodic(axis), (axis==0));
+  }
+}
+
 TEUCHOS_UNIT_TEST( MDComm, numDimsConstructor )
 {
   Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
