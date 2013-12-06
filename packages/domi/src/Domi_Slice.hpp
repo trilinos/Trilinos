@@ -195,7 +195,7 @@ public:
 
   /** \brief Destructor
    */
-  ~Slice() { }
+  virtual ~Slice() { }
 
   //@}
 
@@ -362,11 +362,11 @@ public:
 
   /** \brief Destructor
    */
-  ~ConcreteSlice() { }
+  virtual ~ConcreteSlice() { }
 
   /** \brief Simply return this ConcreteSlice
    */
-  inline Slice bounds(Ordinal size) const {return *this;}
+  inline Slice bounds(Ordinal size) const { return *this; }
 
 private:
 
