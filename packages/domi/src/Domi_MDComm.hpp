@@ -333,9 +333,12 @@ public:
    * communicator is a sub-communicator and this processor does not
    * belong to the sub-communicator.
    *
-   * If the periodic flag for the given axis is set, the returned
-   * lower neighbor will be the highest rank of the highest axis rank
-   * processor along this axis.
+   * If the periodic flag for the given axis is off, and the axis rank
+   * of the calling processor is zero, then this method returns -1.
+   *
+   * If the periodic flag for the given axis is on, and the axis rank
+   * of the calling processor is zero, then the returned lower
+   * neighbor will be the highest axis rank processor along this axis.
    */
   int getLowerNeighbor(int axis) const;
 
@@ -348,9 +351,13 @@ public:
    * communicator is a sub-communicator and this processor does not
    * belong to the sub-communicator.
    *
-   * If the periodic flag for the given axis is set, the lower
-   * neighbor will be the rank of the zero axis rank processor along
-   * this axis.
+   * If the periodic flag for the given axis is off, and the axis rank
+   * of the calling processor is the highest axis rank along the axis,
+   * then this method returns -1.
+   *
+   * If the periodic flag for the given axis is on, and the axis rank
+   * of the calling processor is the highest axis rank along the axis,
+   * then this method will return axis rank zero.
    */
   int getUpperNeighbor(int axis) const;
 
