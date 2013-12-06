@@ -55,7 +55,7 @@ int main(int argc, char **argv)
     listeners.Append(new MinimalistPrinter);
 
     int returnVal = RUN_ALL_TESTS();
-    
+
     MPI_Finalize();
     return returnVal;
 }

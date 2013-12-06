@@ -520,44 +520,44 @@ int openFileAndGetId(const int numBoxes, const int num_element_blocks, const std
     return exoid;
 }
 
-void setHexCoordinates(const double &xmin, const double &ymin, const double &zmin, 
+void setHexCoordinates(const double &xmin, const double &ymin, const double &zmin,
                        const double &xmax, const double &ymax, const double &zmax,
                        double* hexCoordinates)
 {
 //    int ordering[8] = { 4, 3, 2, 1, 8, 7, 6, 5 }; // one based!
-    int ordering[8] = { 3, 2, 1, 0, 7, 6, 5, 4 }; 
-   
-    hexCoordinates[3*ordering[0]+0] = xmin; 
-    hexCoordinates[3*ordering[0]+1] = ymin; 
-    hexCoordinates[3*ordering[0]+2] = zmin; 
+    int ordering[8] = { 3, 2, 1, 0, 7, 6, 5, 4 };
 
-    hexCoordinates[3*ordering[1]+0] = xmax; 
-    hexCoordinates[3*ordering[1]+1] = ymin; 
-    hexCoordinates[3*ordering[1]+2] = zmin; 
+    hexCoordinates[3*ordering[0]+0] = xmin;
+    hexCoordinates[3*ordering[0]+1] = ymin;
+    hexCoordinates[3*ordering[0]+2] = zmin;
 
-    hexCoordinates[3*ordering[2]+0] = xmax; 
-    hexCoordinates[3*ordering[2]+1] = ymin; 
-    hexCoordinates[3*ordering[2]+2] = zmax; 
+    hexCoordinates[3*ordering[1]+0] = xmax;
+    hexCoordinates[3*ordering[1]+1] = ymin;
+    hexCoordinates[3*ordering[1]+2] = zmin;
 
-    hexCoordinates[3*ordering[3]+0] = xmin; 
-    hexCoordinates[3*ordering[3]+1] = ymin; 
-    hexCoordinates[3*ordering[3]+2] = zmax; 
+    hexCoordinates[3*ordering[2]+0] = xmax;
+    hexCoordinates[3*ordering[2]+1] = ymin;
+    hexCoordinates[3*ordering[2]+2] = zmax;
 
-    hexCoordinates[3*ordering[4]+0] = xmin; 
-    hexCoordinates[3*ordering[4]+1] = ymax; 
-    hexCoordinates[3*ordering[4]+2] = zmin; 
+    hexCoordinates[3*ordering[3]+0] = xmin;
+    hexCoordinates[3*ordering[3]+1] = ymin;
+    hexCoordinates[3*ordering[3]+2] = zmax;
 
-    hexCoordinates[3*ordering[5]+0] = xmax; 
-    hexCoordinates[3*ordering[5]+1] = ymax; 
-    hexCoordinates[3*ordering[5]+2] = zmin; 
+    hexCoordinates[3*ordering[4]+0] = xmin;
+    hexCoordinates[3*ordering[4]+1] = ymax;
+    hexCoordinates[3*ordering[4]+2] = zmin;
 
-    hexCoordinates[3*ordering[6]+0] = xmax; 
-    hexCoordinates[3*ordering[6]+1] = ymax; 
-    hexCoordinates[3*ordering[6]+2] = zmax; 
+    hexCoordinates[3*ordering[5]+0] = xmax;
+    hexCoordinates[3*ordering[5]+1] = ymax;
+    hexCoordinates[3*ordering[5]+2] = zmin;
 
-    hexCoordinates[3*ordering[7]+0] = xmin; 
-    hexCoordinates[3*ordering[7]+1] = ymax; 
-    hexCoordinates[3*ordering[7]+2] = zmax; 
+    hexCoordinates[3*ordering[6]+0] = xmax;
+    hexCoordinates[3*ordering[6]+1] = ymax;
+    hexCoordinates[3*ordering[6]+2] = zmax;
+
+    hexCoordinates[3*ordering[7]+0] = xmin;
+    hexCoordinates[3*ordering[7]+1] = ymax;
+    hexCoordinates[3*ordering[7]+2] = zmax;
 }
 
 void putCoordinatesInFile(const int exoid, const std::vector<mybox>& boxes)
@@ -579,15 +579,15 @@ void putCoordinatesInFile(const int exoid, const std::vector<mybox>& boxes)
         xmax = boxes[i].coordinates[3];
         ymax = boxes[i].coordinates[4];
         zmax = boxes[i].coordinates[5];
-    
+
         double hexCoordinates[24];
         setHexCoordinates(xmin, ymin, zmin, xmax, ymax, zmax, &hexCoordinates[0]);
         unsigned offset = i*num_nodes_per_element;
         for (int j=0;j<num_nodes_per_element;j++)
         {
-            x[offset+j] = hexCoordinates[spatialDim*j+0];            
-            y[offset+j] = hexCoordinates[spatialDim*j+1];            
-            z[offset+j] = hexCoordinates[spatialDim*j+2];            
+            x[offset+j] = hexCoordinates[spatialDim*j+0];
+            y[offset+j] = hexCoordinates[spatialDim*j+1];
+            z[offset+j] = hexCoordinates[spatialDim*j+2];
         }
     }
 
@@ -633,14 +633,14 @@ void writeExodusFileUsingBoxes(const std::vector<mybox>& boxes, const std::strin
         return;
     }
 
-    const int num_nodes_per_elem = 8; 
+    const int num_nodes_per_elem = 8;
     const int num_attr = 0;
     const unsigned num_elements = boxes.size();
     std::vector<int> numElementsPerBlock;
     fillNumElementsPerBlock(num_elements, numElementsPerBlock);
     const int num_blocks = numElementsPerBlock.size();
     const int exoid = openFileAndGetId(boxes.size(), num_blocks, filename);
-    putCoordinatesInFile(exoid, boxes); 
+    putCoordinatesInFile(exoid, boxes);
 
     std::vector<int> connect(numElementsPerBlock[0]*num_nodes_per_elem);
     int ordering[8] = { 4, 3, 2, 1, 8, 7, 6, 5 }; // one based!
@@ -762,7 +762,7 @@ void fillDomainBoxes(MPI_Comm comm, std::vector<mybox>& domainBoxes)
     if ( exodusFilename != "skip" )
     {
         writeExodusFileUsingBoxes(domainBoxes, exodusFilename);
-    } 
+    }
 }
 
 }
