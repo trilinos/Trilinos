@@ -314,9 +314,12 @@ public:
    * communicator is a sub-communicator and this processor does not
    * belong to the sub-communicator.
    *
-   * If the periodic flag for the given axis is set, the returned
-   * lower neighbor will be the highest rank of the highest axis rank
-   * processor along this axis.
+   * If the periodic flag for the given axis is off, and the axis rank
+   * of the calling processor is zero, then this method returns -1.
+   *
+   * If the periodic flag for the given axis is on, and the axis rank
+   * of the calling processor is zero, then the returned lower
+   * neighbor will be the highest axis rank processor along this axis.
    */
   int getLowerNeighbor(int axis) const;
 
@@ -325,9 +328,13 @@ public:
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
    *
-   * If the periodic flag for the given axis is set, the lower
-   * neighbor will be the rank of the zero axis rank processor along
-   * this axis.
+   * If the periodic flag for the given axis is off, and the axis rank
+   * of the calling processor is the highest axis rank along the axis,
+   * then this method returns -1.
+   *
+   * If the periodic flag for the given axis is on, and the axis rank
+   * of the calling processor is the highest axis rank along the axis,
+   * then this method will return axis rank zero.
    */
   int getUpperNeighbor(int axis) const;
 
@@ -376,25 +383,25 @@ public:
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
    *
-   * \param withCommPad [in] specify whether the dimension should
-   *        include communication padding or not
+   * \param withPad [in] specify whether the dimension should include
+   *        padding or not
    */
-  LocalOrd getLocalDim(int axis, bool withCommPad=false) const;
+  LocalOrd getLocalDim(int axis, bool withPad=false) const;
 
-  /** \brief Get the local dimension along the specified axis
+  /** \brief Get the local loop bounds along the specified axis
    *
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
    *
-   * \param withCommPad [in] specify whether the dimension should
-   *        include communication padding or not
+   * \param withPad [in] specify whether the dimension should include
+   *        padding or not
    *
    * The loop bounds are returned in the form of a <tt>Slice</tt>, in
    * which the <tt>start()</tt> method returns the loop begin value,
    * and the <tt>stop()</tt> method returns the non-inclusive end
    * value.
    */
-  Slice getLocalBounds(int axis, bool withCommPad=false) const;
+  Slice getLocalBounds(int axis, bool withPad=false) const;
 
   //@}
 
@@ -413,27 +420,25 @@ public:
    */
   bool hasPadding() const;
 
-  /** \brief Get the size of the lower communication padding along the
-   *         given axis
+  /** \brief Get the size of the lower padding along the given axis
    *
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
    *
-   * Note that on processors that contain lower domain boundaries, the
-   * returned value will be the boundary padding size.
+   * Note that the returned padding can be either communication
+   * padding or boundary padding as appropriate.
    */
-  int getLowerCommPad(int axis) const;
+  int getLowerPad(int axis) const;
 
-  /** \brief Get the size of the upper communication padding along the
-   *         given axis
+  /** \brief Get the size of the upper padding along the given axis
    *
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
    *
-   * Note that on processors that contain upper domain boundaries, the
-   * returned value will be the boundary padding size.
+   * Note that the returned padding can be either communication
+   * padding or boundary padding as appropriate.
    */
-  int getUpperCommPad(int axis) const;
+  int getUpperPad(int axis) const;
 
   /** \brief Get the communication padding size along the given axis
    *
@@ -484,21 +489,26 @@ public:
 
 #ifdef HAVE_EPETRA
 
-  /** \brief Return an Epetra_Map that is equivalent to this MDMap
+  /** \brief Return an RCP to an Epetra_Map that is equivalent to this
+   *         MDMap
    *
    * \param withCommPad [in] flag whether to include the communication
    *        padding in the map
+   *
+   * Note that the boundary padding is always included in the map
    */
   Teuchos::RCP< const Epetra_Map >
   getEpetraMap(bool withCommPad=true) const;
 
   /** \brief Return an RCP to an Epetra_Map that represents the
-   * decomposition of this MDMap along the given axis
+   *         decomposition of this MDMap along the given axis
    *
    * \param axis [in] the requested axis
    *
    * \param withCommPad [in] flag whether to include the communication
    *        padding in the map
+   *
+   * Note that the boundary padding is always included in the map
    */
   Teuchos::RCP< const Epetra_Map >
   getEpetraAxisMap(int axis,
@@ -508,21 +518,26 @@ public:
 
 #ifdef HAVE_TPETRA
 
-  /** \brief Return a Tpetra::Map that is equivalent to this MDMap
+  /** \brief Return an RCP to a Tpetra::Map that is equivalent to this
+   *         MDMap
    *
    * \param withCommPad [in] flag whether to include the communication
    *        padding in the map
+   *
+   * Note that the boundary padding is always included in the map
    */
   Teuchos::RCP< const Tpetra::Map< LocalOrd, GlobalOrd, Node > >
   getTpetraMap(bool withCommPad=true) const;
 
   /** \brief Return an RCP to a Tpetra::Map that represents the
-   * decomposition of this MDMap along the given axis
+   *         decomposition of this MDMap along the given axis
    *
    * \param axis [in] the requested axis
    *
    * \param withCommPad [in] flag whether to include the communication
    *        padding in the map
+   *
+   * Note that the boundary padding is always included in the map
    */
   Teuchos::RCP< const Tpetra::Map< LocalOrd, GlobalOrd, Node > >
   getTpetraAxisMap(int axis,
@@ -648,11 +663,10 @@ private:
   // value along each axis.
   Teuchos::Array< int > _commPadSizes;
 
-  // The actual communication padding stored on this processor along
-  // each axis.  The lower and upper communication padding can be
-  // different due to the processor position on the boundary of a
-  // domain.
-  Teuchos::Array< padding > _commPad;
+  // The actual padding stored on this processor along each axis.  The
+  // padding can be either communication padding or boundary padding
+  // based on the processor position on the boundary of a domain.
+  Teuchos::Array< padding > _pad;
 
   // The size of the boundary padding along each axis.
   Teuchos::Array< int > _bndryPadSizes;
@@ -757,7 +771,7 @@ MDMap(const MDCommRCP mdComm,
   _localMin(0),
   _localMax(),
   _commPadSizes(mdComm->getNumDims(), 0),
-  _commPad(),
+  _pad(),
   _bndryPadSizes(mdComm->getNumDims(), 0),
   _bndryPad(),
   _layout(layout),
@@ -802,7 +816,7 @@ MDMap(const MDCommRCP mdComm,
       upper = _bndryPadSizes[axis];
     else
       upper = _commPadSizes[axis];
-    _commPad.push_back(Teuchos::tuple(lower, upper));
+    _pad.push_back(Teuchos::tuple(lower, upper));
   }
 
   // Compute _globalRankBounds, _localBounds, and _localDims.
@@ -835,7 +849,7 @@ MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
   _localMin(),
   _localMax(),
   _commPadSizes(),
-  _commPad(),
+  _pad(),
   _bndryPadSizes(),
   _bndryPad(),
   _layout(parent._layout),
@@ -896,7 +910,7 @@ MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
         parent._localStrides[axis];
       _localMax = _localMin;
       _commPadSizes.push_back(0);
-      _commPad.push_back(Teuchos::tuple(0,0));
+      _pad.push_back(Teuchos::tuple(0,0));
       _bndryPadSizes.push_back(0);
       _bndryPad.push_back(Teuchos::tuple(0,0));
     }
@@ -918,7 +932,7 @@ MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
           _localBounds.push_back(parent._localBounds[myAxis]);
           _localStrides.push_back(parent._localStrides[myAxis]);
           _commPadSizes.push_back(parent._commPadSizes[myAxis]);
-          _commPad.push_back(parent._commPad[myAxis]);
+          _pad.push_back(parent._pad[myAxis]);
           _bndryPadSizes.push_back(parent._bndryPadSizes[myAxis]);
           _bndryPad.push_back(parent._bndryPad[myAxis]);
         }
@@ -959,7 +973,7 @@ MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
   _localMin(parent._localMin),
   _localMax(parent._localMax),
   _commPadSizes(parent._commPadSizes),
-  _commPad(parent._commPad),
+  _pad(parent._pad),
   _bndryPadSizes(parent._bndryPadSizes),
   _bndryPad(parent._bndryPad),
   _layout(parent._layout),
@@ -1055,9 +1069,9 @@ MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
     {
       int axisRank = getAxisRank(axis);
       if (axisRank == 0)
-        _commPad[axis][0] = _bndryPad[axis][0];
+        _pad[axis][0] = _bndryPad[axis][0];
       if (axisRank == _mdComm->getAxisCommSize(axis)-1)
-        _commPad[axis][1] = _bndryPad[axis][1];
+        _pad[axis][1] = _bndryPad[axis][1];
       LocalOrd start = parent._localBounds[axis].start();
       if (_globalBounds[axis].start() >
           _globalRankBounds[axis][axisRank].start())
@@ -1068,9 +1082,9 @@ MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
       else
       {
         if (_globalRankBounds[axis][axisRank].start() -
-            _globalBounds[axis].start() < _commPad[axis][0])
+            _globalBounds[axis].start() < _pad[axis][0])
         {
-          _commPad[axis][0] = _globalRankBounds[axis][axisRank].start() -
+          _pad[axis][0] = _globalRankBounds[axis][axisRank].start() -
             _globalBounds[axis].start();
         }
       }
@@ -1084,9 +1098,9 @@ MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
       else
       {
         if (_globalBounds[axis].stop() -
-            _globalRankBounds[axis][axisRank].stop() < _commPad[axis][1])
+            _globalRankBounds[axis][axisRank].stop() < _pad[axis][1])
         {
-          _commPad[axis][1] = _globalBounds[axis].stop() -
+          _pad[axis][1] = _globalBounds[axis].stop() -
             _globalRankBounds[axis][axisRank].stop();
         }
       }
@@ -1112,7 +1126,7 @@ MDMap(const MDMap< LocalOrd, GlobalOrd, Node > & parent,
       _localMax = 0;
       _localBounds.clear();
       _commPadSizes.clear();
-      _commPad.clear();
+      _pad.clear();
       _bndryPadSizes.clear();
       _bndryPad.clear();
       _localStrides.clear();
@@ -1283,7 +1297,7 @@ template< class LocalOrd, class GlobalOrd, class Node >
 LocalOrd
 MDMap< LocalOrd, GlobalOrd, Node >::
 getLocalDim(int axis,
-            bool withCommPad) const
+            bool withPad) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1292,10 +1306,10 @@ getLocalDim(int axis,
     "invalid axis index = " << axis << " (number of dimensions = " <<
     getNumDims() << ")");
 #endif
-  if (withCommPad)
+  if (withPad)
     return _localDims[axis];
   else
-    return _localDims[axis] - _commPad[axis][0] - _commPad[axis][1];
+    return _localDims[axis] - _pad[axis][0] - _pad[axis][1];
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1334,7 +1348,7 @@ template< class LocalOrd, class GlobalOrd, class Node >
 Slice
 MDMap< LocalOrd, GlobalOrd, Node >::
 getLocalBounds(int axis,
-               bool withCommPad) const
+               bool withPad) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1343,12 +1357,12 @@ getLocalBounds(int axis,
     "invalid axis index = " << axis << " (number of dimensions = " <<
     getNumDims() << ")");
 #endif
-  if (withCommPad)
+  if (withPad)
     return _localBounds[axis];
   else
   {
-    LocalOrd start = _localBounds[axis].start() + _commPad[axis][0];
-    LocalOrd stop  = _localBounds[axis].stop()  - _commPad[axis][1];
+    LocalOrd start = _localBounds[axis].start() + _pad[axis][0];
+    LocalOrd stop  = _localBounds[axis].stop()  - _pad[axis][1];
     return ConcreteSlice(start, stop);
   }
 }
@@ -1361,7 +1375,7 @@ MDMap< LocalOrd, GlobalOrd, Node >::hasPadding() const
 {
   bool result = false;
   for (int axis = 0; axis < getNumDims(); ++axis)
-    if (_commPad[axis][0] + _commPad[axis][1]) result = true;
+    if (_pad[axis][0] + _pad[axis][1]) result = true;
   return result;
 }
 
@@ -1369,7 +1383,7 @@ MDMap< LocalOrd, GlobalOrd, Node >::hasPadding() const
 
 template< class LocalOrd, class GlobalOrd, class Node >
 int
-MDMap< LocalOrd, GlobalOrd, Node >::getLowerCommPad(int axis) const
+MDMap< LocalOrd, GlobalOrd, Node >::getLowerPad(int axis) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1378,14 +1392,14 @@ MDMap< LocalOrd, GlobalOrd, Node >::getLowerCommPad(int axis) const
     "invalid axis index = " << axis << " (number of dimensions = " <<
     getNumDims() << ")");
 #endif
-  return _commPad[axis][0];
+  return _pad[axis][0];
 }
 
 ////////////////////////////////////////////////////////////////////////
 
 template< class LocalOrd, class GlobalOrd, class Node >
 int
-MDMap< LocalOrd, GlobalOrd, Node >::getUpperCommPad(int axis) const
+MDMap< LocalOrd, GlobalOrd, Node >::getUpperPad(int axis) const
 {
 #if DOMI_ENABLE_ABC
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1394,7 +1408,7 @@ MDMap< LocalOrd, GlobalOrd, Node >::getUpperCommPad(int axis) const
     "invalid axis index = " << axis << " (number of dimensions = " <<
     getNumDims() << ")");
 #endif
-  return _commPad[axis][1];
+  return _pad[axis][1];
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1505,7 +1519,7 @@ MDMap< LocalOrd, GlobalOrd, Node >::getEpetraMap(bool withCommPad) const
         {
           int axisRank = getAxisRank(axis);
           int start    = _globalRankBounds[axis][axisRank].start() -
-                         _commPad[axis][0];
+                         _pad[axis][0];
           globalID += (start + it.index(axis)) * _globalStrides[axis];
         }
         *it = globalID;
@@ -1537,7 +1551,7 @@ MDMap< LocalOrd, GlobalOrd, Node >::getEpetraMap(bool withCommPad) const
       Teuchos::Array<size_type> myDims(numDims);
       for (int axis = 0; axis < numDims; ++axis)
       {
-        myDims[axis] = _localDims[axis] - _commPad[axis][0] - _commPad[axis][1];
+        myDims[axis] = _localDims[axis] - _pad[axis][0] - _pad[axis][1];
         int axisRank = getAxisRank(axis);
         if (axisRank == 0)
           myDims[axis] += _bndryPad[axis][0];
@@ -1603,7 +1617,7 @@ getEpetraAxisMap(int axis,
     {
       Teuchos::Array<int> elements(getLocalDim(axis, withCommPad));
       int start = getGlobalRankBounds(axis,true).start();
-      if (withCommPad && (getAxisRank(axis) != 0)) start -= _commPad[axis][0];
+      if (withCommPad && (getAxisRank(axis) != 0)) start -= _pad[axis][0];
       for (int i = 0; i < elements.size(); ++i)
         elements[i] = i + start;
       if (withCommPad)
@@ -1664,7 +1678,7 @@ MDMap< LocalOrd, GlobalOrd, Node >::getTpetraMap(bool withCommPad) const
         {
           int axisRank    = getAxisRank(axis);
           GlobalOrd start = _globalRankBounds[axis][axisRank].start() -
-                            _commPad[axis][0];
+                            _pad[axis][0];
           globalID += (start + it.index(axis)) * _globalStrides[axis];
         }
         *it = globalID;
@@ -1695,7 +1709,7 @@ MDMap< LocalOrd, GlobalOrd, Node >::getTpetraMap(bool withCommPad) const
       for (int axis = 0; axis < numDims; ++axis)
       {
         myDims[axis] =
-          _localDims[axis] - _commPad[axis][0] - _commPad[axis][1];
+          _localDims[axis] - _pad[axis][0] - _pad[axis][1];
         int axisRank = getAxisRank(axis);
         if (axisRank == 0)
           myDims[axis] += _bndryPad[axis][0];
@@ -1764,7 +1778,7 @@ getTpetraAxisMap(int axis,
     {
       Teuchos::Array<GlobalOrd> elements(getLocalDim(axis,withCommPad));
       GlobalOrd start = getGlobalRankBounds(axis,true).start();
-      if (withCommPad && (getAxisRank(axis) != 0)) start -= _commPad[axis][0];
+      if (withCommPad && (getAxisRank(axis) != 0)) start -= _pad[axis][0];
       for (LocalOrd i = 0; i < elements.size(); ++i)
         elements[i] = i + start;
       if (withCommPad)
@@ -1893,7 +1907,7 @@ getGlobalIndex(LocalOrd localIndex) const
   for (int axis = 0; axis < getNumDims(); ++axis)
   {
     GlobalOrd globalAxisIndex = localAxisIndex[axis] +
-      _globalRankBounds[axis][getAxisRank(axis)].start() - _commPad[axis][0];
+      _globalRankBounds[axis][getAxisRank(axis)].start() - _pad[axis][0];
     result += globalAxisIndex * _globalStrides[axis];
   }
   return result;
@@ -1948,7 +1962,7 @@ getLocalIndex(GlobalOrd globalIndex) const
   for (int axis = 0; axis < getNumDims(); ++axis)
   {
     LocalOrd localAxisIndex = globalAxisIndex[axis] -
-      _globalRankBounds[axis][getAxisRank(axis)].start() + _commPad[axis][0];
+      _globalRankBounds[axis][getAxisRank(axis)].start() + _pad[axis][0];
     TEUCHOS_TEST_FOR_EXCEPTION(
       (localAxisIndex < 0 || localAxisIndex >= _localDims[axis]),
       RangeError,
@@ -2036,10 +2050,10 @@ MDMap< LocalOrd, GlobalOrd, Node >::computeBounds()
       // axisRank equals the axis rank of this processor
       if (axisRank == getAxisRank(axis))
       {
-        // Local adjustment for communication padding.  Note that
-        // _commPad should already be corrected to use boundary
-        // padding for processors on the boundaries
-        _localDims[axis] = localDim + _commPad[axis][0] + _commPad[axis][1];
+        // Local adjustment for padding.  Note that _pad should
+        // already be corrected to be either the communication padding
+        // or boundary padding as appropriate
+        _localDims[axis] = localDim + _pad[axis][0] + _pad[axis][1];
 
         // Compute and store the axis bounds
         _localBounds.push_back(ConcreteSlice(_localDims[axis]));
