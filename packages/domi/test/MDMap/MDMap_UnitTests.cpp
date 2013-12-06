@@ -128,8 +128,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, dimensionsConstructor, T )
     Slice localBounds  = mdMap.getLocalBounds(axis);
     TEST_EQUALITY_CONST(localBounds.start(), 0);
     TEST_EQUALITY(localBounds.stop(), localDim);
-    TEST_EQUALITY_CONST(mdMap.getLowerCommPad(axis), 0);
-    TEST_EQUALITY_CONST(mdMap.getUpperCommPad(axis), 0);
+    TEST_EQUALITY_CONST(mdMap.getLowerPad(axis), 0);
+    TEST_EQUALITY_CONST(mdMap.getUpperPad(axis), 0);
     TEST_EQUALITY_CONST(mdMap.getCommPadSize(axis), 0);
     TEST_EQUALITY_CONST(mdMap.getLowerBndryPad(axis), 0);
     TEST_EQUALITY_CONST(mdMap.getUpperBndryPad(axis), 0);
@@ -270,8 +270,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, commPadConstructor, T )
     localBounds = mdMap.getLocalBounds(axis,false);
     TEST_EQUALITY_CONST(localBounds.start(), lowerCommPad);
     TEST_EQUALITY(localBounds.stop(), lowerCommPad+localDim);
-    TEST_EQUALITY_CONST(mdMap.getLowerCommPad(axis), lowerCommPad);
-    TEST_EQUALITY_CONST(mdMap.getUpperCommPad(axis), upperCommPad);
+    TEST_EQUALITY_CONST(mdMap.getLowerPad(axis), lowerCommPad);
+    TEST_EQUALITY_CONST(mdMap.getUpperPad(axis), upperCommPad);
     TEST_EQUALITY_CONST(mdMap.getCommPadSize(axis), commPad[axis]);
     TEST_EQUALITY_CONST(mdMap.getLowerBndryPad(axis), 0);
     TEST_EQUALITY_CONST(mdMap.getUpperBndryPad(axis), 0);
@@ -453,8 +453,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, bndryPadConstructor, T )
     localBounds = mdMap.getLocalBounds(axis,false);
     TEST_EQUALITY_CONST(localBounds.start(), lowerBndryPad);
     TEST_EQUALITY(localBounds.stop(), lowerBndryPad+localDim);
-    TEST_EQUALITY(mdMap.getLowerCommPad(axis), lowerBndryPad);
-    TEST_EQUALITY(mdMap.getUpperCommPad(axis), upperBndryPad);
+    TEST_EQUALITY(mdMap.getLowerPad(axis), lowerBndryPad);
+    TEST_EQUALITY(mdMap.getUpperPad(axis), upperBndryPad);
     TEST_EQUALITY_CONST(mdMap.getCommPadSize(axis), 0);
     TEST_EQUALITY(mdMap.getLowerBndryPad(axis), bndryPad[axis]);
     TEST_EQUALITY(mdMap.getUpperBndryPad(axis), bndryPad[axis]);
@@ -640,8 +640,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, paddingConstructor, T )
     localBounds = mdMap.getLocalBounds(axis,false);
     TEST_EQUALITY_CONST(localBounds.start(), lowerCommPad);
     TEST_EQUALITY(localBounds.stop(), lowerCommPad+localDim);
-    TEST_EQUALITY(mdMap.getLowerCommPad(axis), lowerCommPad);
-    TEST_EQUALITY(mdMap.getUpperCommPad(axis), upperCommPad);
+    TEST_EQUALITY(mdMap.getLowerPad(axis), lowerCommPad);
+    TEST_EQUALITY(mdMap.getUpperPad(axis), upperCommPad);
     TEST_EQUALITY(mdMap.getCommPadSize(axis), commPad[axis]);
     TEST_EQUALITY(mdMap.getLowerBndryPad(axis), bndryPad[axis]);
     TEST_EQUALITY(mdMap.getUpperBndryPad(axis), bndryPad[axis]);
@@ -753,8 +753,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, indexes, T )
   for (int axis = 0; axis < numDims; ++axis)
   {
     axisRanks[axis]    = mdMap.getAxisRank(axis);
-    lowerCommPad[axis] = mdMap.getLowerCommPad(axis);
-    upperCommPad[axis] = mdMap.getUpperCommPad(axis);
+    lowerCommPad[axis] = mdMap.getLowerPad(axis);
+    upperCommPad[axis] = mdMap.getUpperPad(axis);
     myLocalDims[axis]  = localDim + lowerCommPad[axis] + upperCommPad[axis];
     if (axis > 0)
     {
@@ -825,8 +825,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, exceptions, T )
   TEST_THROW(mdMap.getLocalDim(        -1), Domi::RangeError);
   TEST_THROW(mdMap.getGlobalRankBounds(-1), Domi::RangeError);
   TEST_THROW(mdMap.getLocalBounds(     -1), Domi::RangeError);
-  TEST_THROW(mdMap.getLowerCommPad(    -1), Domi::RangeError);
-  TEST_THROW(mdMap.getUpperCommPad(    -1), Domi::RangeError);
+  TEST_THROW(mdMap.getLowerPad(        -1), Domi::RangeError);
+  TEST_THROW(mdMap.getUpperPad(        -1), Domi::RangeError);
   TEST_THROW(mdMap.getCommPadSize(     -1), Domi::RangeError);
   TEST_THROW(mdMap.getLowerBndryPad(   -1), Domi::RangeError);
   TEST_THROW(mdMap.getUpperBndryPad(   -1), Domi::RangeError);
@@ -841,8 +841,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, exceptions, T )
   TEST_THROW(mdMap.getLocalDim(        numDims+1), Domi::RangeError);
   TEST_THROW(mdMap.getGlobalRankBounds(numDims+1), Domi::RangeError);
   TEST_THROW(mdMap.getLocalBounds(     numDims+1), Domi::RangeError);
-  TEST_THROW(mdMap.getLowerCommPad(    numDims+1), Domi::RangeError);
-  TEST_THROW(mdMap.getUpperCommPad(    numDims+1), Domi::RangeError);
+  TEST_THROW(mdMap.getLowerPad(        numDims+1), Domi::RangeError);
+  TEST_THROW(mdMap.getUpperPad(        numDims+1), Domi::RangeError);
   TEST_THROW(mdMap.getCommPadSize(     numDims+1), Domi::RangeError);
   TEST_THROW(mdMap.getLowerBndryPad(   numDims+1), Domi::RangeError);
   TEST_THROW(mdMap.getUpperBndryPad(   numDims+1), Domi::RangeError);
@@ -990,25 +990,25 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapLowerLeftWithCommPad, T )
       {
         if (subMDMap.getAxisRank(axis) == 0)
         {
-          TEST_EQUALITY_CONST(subMDMap.getLowerCommPad(axis), 0);
+          TEST_EQUALITY_CONST(subMDMap.getLowerPad(axis), 0);
         }
         else
         {
-          TEST_EQUALITY(subMDMap.getLowerCommPad(axis), commPad[axis]);
+          TEST_EQUALITY(subMDMap.getLowerPad(axis), commPad[axis]);
         }
         if (subMDMap.getAxisRank(axis) == subMDMap.getAxisCommSize(axis)-1)
         {
-          TEST_EQUALITY_CONST(subMDMap.getUpperCommPad(axis), 0);
+          TEST_EQUALITY_CONST(subMDMap.getUpperPad(axis), 0);
         }
         else
         {
-          TEST_EQUALITY(subMDMap.getUpperCommPad(axis), commPad[axis]);
+          TEST_EQUALITY(subMDMap.getUpperPad(axis), commPad[axis]);
         }
       }
       else
       {
-        TEST_EQUALITY_CONST(subMDMap.getLowerCommPad(axis), 0);
-        TEST_EQUALITY_CONST(subMDMap.getUpperCommPad(axis), 0);
+        TEST_EQUALITY_CONST(subMDMap.getLowerPad(axis), 0);
+        TEST_EQUALITY_CONST(subMDMap.getUpperPad(axis), 0);
       }
     }
   }
@@ -1396,25 +1396,25 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapUpperLeftPadding, T )
       {
         if (subMDMap.getAxisRank(axis) == 0)
         {
-          TEST_EQUALITY_CONST(subMDMap.getLowerCommPad(axis), 0);
+          TEST_EQUALITY_CONST(subMDMap.getLowerPad(axis), 0);
         }
         else
         {
-          TEST_EQUALITY(subMDMap.getLowerCommPad(axis), commPad[axis]);
+          TEST_EQUALITY(subMDMap.getLowerPad(axis), commPad[axis]);
         }
         if (subMDMap.getAxisRank(axis) == subMDMap.getAxisCommSize(axis)-1)
         {
-          TEST_EQUALITY_CONST(subMDMap.getUpperCommPad(axis), 0);
+          TEST_EQUALITY_CONST(subMDMap.getUpperPad(axis), 0);
         }
         else
         {
-          TEST_EQUALITY(subMDMap.getUpperCommPad(axis), commPad[axis]);
+          TEST_EQUALITY(subMDMap.getUpperPad(axis), commPad[axis]);
         }
       }
       else
       {
-        TEST_EQUALITY_CONST(subMDMap.getLowerCommPad(axis), 0);
-        TEST_EQUALITY_CONST(subMDMap.getUpperCommPad(axis), 0);
+        TEST_EQUALITY_CONST(subMDMap.getLowerPad(axis), 0);
+        TEST_EQUALITY_CONST(subMDMap.getUpperPad(axis), 0);
       }
     }
   }
@@ -1600,25 +1600,25 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapUpperRightNewBndryPad, T )
       {
         if (subMDMap.getAxisRank(axis) == 0)
         {
-          TEST_EQUALITY_CONST(subMDMap.getLowerCommPad(axis), newBndryPad[axis]);
+          TEST_EQUALITY_CONST(subMDMap.getLowerPad(axis), newBndryPad[axis]);
         }
         else
         {
-          TEST_EQUALITY(subMDMap.getLowerCommPad(axis), commPad[axis]);
+          TEST_EQUALITY(subMDMap.getLowerPad(axis), commPad[axis]);
         }
         if (subMDMap.getAxisRank(axis) == subMDMap.getAxisCommSize(axis)-1)
         {
-          TEST_EQUALITY_CONST(subMDMap.getUpperCommPad(axis), newBndryPad[axis]);
+          TEST_EQUALITY_CONST(subMDMap.getUpperPad(axis), newBndryPad[axis]);
         }
         else
         {
-          TEST_EQUALITY(subMDMap.getUpperCommPad(axis), commPad[axis]);
+          TEST_EQUALITY(subMDMap.getUpperPad(axis), commPad[axis]);
         }
       }
       else
       {
-        TEST_EQUALITY_CONST(subMDMap.getLowerCommPad(axis), newBndryPad[axis]);
-        TEST_EQUALITY_CONST(subMDMap.getUpperCommPad(axis), newBndryPad[axis]);
+        TEST_EQUALITY_CONST(subMDMap.getLowerPad(axis), newBndryPad[axis]);
+        TEST_EQUALITY_CONST(subMDMap.getUpperPad(axis), newBndryPad[axis]);
       }
     }
   }
@@ -1686,8 +1686,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapReduce, T )
           TEST_EQUALITY(bounds.start(), 0);
           TEST_EQUALITY(bounds.stop(),  1);
           TEST_ASSERT(not reducedMdMap.hasPadding());
-          TEST_EQUALITY_CONST(reducedMdMap.getLowerCommPad(newAxis), 0);
-          TEST_EQUALITY_CONST(reducedMdMap.getUpperCommPad(newAxis), 0);
+          TEST_EQUALITY_CONST(reducedMdMap.getLowerPad(newAxis), 0);
+          TEST_EQUALITY_CONST(reducedMdMap.getUpperPad(newAxis), 0);
           TEST_EQUALITY_CONST(reducedMdMap.getCommPadSize(newAxis), 0);
           TEST_EQUALITY_CONST(reducedMdMap.getLowerBndryPad(newAxis), 0);
           TEST_EQUALITY_CONST(reducedMdMap.getUpperBndryPad(newAxis), 0);
@@ -1710,22 +1710,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapReduce, T )
           {
             TEST_EQUALITY(bounds.start(), bndryPad[newAxis]          );
             TEST_EQUALITY(bounds.stop() , bndryPad[newAxis]+localSize);
-            TEST_EQUALITY(reducedMdMap.getLowerCommPad(newAxis), bndryPad[newAxis]);
+            TEST_EQUALITY(reducedMdMap.getLowerPad(newAxis), bndryPad[newAxis]);
           }
           else if (reducedMdMap.getAxisRank(newAxis) ==
                    reducedMdMap.getAxisCommSize(newAxis)-1)
           {
             TEST_EQUALITY(bounds.start(), commPad[newAxis]          );
             TEST_EQUALITY(bounds.stop() , commPad[newAxis]+localSize);
-            TEST_EQUALITY(reducedMdMap.getLowerCommPad(newAxis), commPad[newAxis]);
-            TEST_EQUALITY(reducedMdMap.getUpperCommPad(newAxis), bndryPad[newAxis]);
+            TEST_EQUALITY(reducedMdMap.getLowerPad(newAxis), commPad[newAxis]);
+            TEST_EQUALITY(reducedMdMap.getUpperPad(newAxis), bndryPad[newAxis]);
           }
           else
           {
             TEST_EQUALITY(bounds.start(), commPad[newAxis]          );
             TEST_EQUALITY(bounds.stop() , commPad[newAxis]+localSize);
-            TEST_EQUALITY(reducedMdMap.getLowerCommPad(newAxis), commPad[newAxis]);
-            TEST_EQUALITY(reducedMdMap.getUpperCommPad(newAxis), commPad[newAxis]);
+            TEST_EQUALITY(reducedMdMap.getLowerPad(newAxis), commPad[newAxis]);
+            TEST_EQUALITY(reducedMdMap.getUpperPad(newAxis), commPad[newAxis]);
           }
           TEST_EQUALITY(reducedMdMap.getLowerBndryPad(newAxis), bndryPad[newAxis]);
           TEST_EQUALITY(reducedMdMap.getUpperBndryPad(newAxis), bndryPad[newAxis]);
@@ -1751,7 +1751,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapReduce, T )
           {
             TEST_EQUALITY(bounds.start(), bndryPad[newAxis+1]          );
             TEST_EQUALITY(bounds.stop() , bndryPad[newAxis+1]+localSize);
-            TEST_EQUALITY(reducedMdMap.getLowerCommPad(newAxis),
+            TEST_EQUALITY(reducedMdMap.getLowerPad(newAxis),
                           bndryPad[newAxis+1]);
           }
           else if (reducedMdMap.getAxisRank(newAxis) ==
@@ -1759,15 +1759,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapReduce, T )
           {
             TEST_EQUALITY(bounds.start(), commPad[newAxis+1]          );
             TEST_EQUALITY(bounds.stop() , commPad[newAxis+1]+localSize);
-            TEST_EQUALITY(reducedMdMap.getLowerCommPad(newAxis),commPad[newAxis+1]);
-            TEST_EQUALITY(reducedMdMap.getUpperCommPad(newAxis),bndryPad[newAxis+1]);
+            TEST_EQUALITY(reducedMdMap.getLowerPad(newAxis),commPad[newAxis+1]);
+            TEST_EQUALITY(reducedMdMap.getUpperPad(newAxis),bndryPad[newAxis+1]);
           }
           else
           {
             TEST_EQUALITY(bounds.start(), commPad[newAxis+1]          );
             TEST_EQUALITY(bounds.stop() , commPad[newAxis+1]+localSize);
-            TEST_EQUALITY(reducedMdMap.getLowerCommPad(newAxis), commPad[newAxis+1]);
-            TEST_EQUALITY(reducedMdMap.getUpperCommPad(newAxis), commPad[newAxis+1]);
+            TEST_EQUALITY(reducedMdMap.getLowerPad(newAxis), commPad[newAxis+1]);
+            TEST_EQUALITY(reducedMdMap.getUpperPad(newAxis), commPad[newAxis+1]);
           }
           TEST_EQUALITY(reducedMdMap.getLowerBndryPad(newAxis), bndryPad[newAxis+1]);
           TEST_EQUALITY(reducedMdMap.getUpperBndryPad(newAxis), bndryPad[newAxis+1]);
