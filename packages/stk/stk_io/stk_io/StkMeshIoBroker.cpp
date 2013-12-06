@@ -121,10 +121,11 @@ namespace {
       ThrowErrorMsgIf (!output_region->field_exists(globalVarName),
                        "The field named '" << globalVarName << "' does not exist "
 		       "on output region "  << output_region->name());
-      ThrowErrorMsgIf ((size_t)output_region->get_fieldref(globalVarName).raw_storage()->component_count() != globalVarData.size(),
+      size_t comp_count = output_region->get_fieldref(globalVarName).raw_storage()->component_count();
+      ThrowErrorMsgIf (comp_count != globalVarData.size(),
 		       "On output region "  << output_region->name() <<
                        ", the field named '" << globalVarName << "' was registered with size "
-		       << output_region->get_fieldref(globalVarName).raw_storage()->component_count()
+		       << comp_count
 		       << " but the output size is " << globalVarData.size());
 
       output_region->put_field_data(globalVarName, globalVarData);
@@ -1092,7 +1093,7 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
         // NOTE: Could use this method for all entity types, but then need to correctly
         // specify whether shared entities are included/excluded (See IossBridge version).
         size_t num_sides = get_entities(part, bulk, entities, subset_selector);
-        if(num_sides != (size_t) io_entity->get_property("entity_count").get_int())
+        if(num_sides != static_cast<size_t>(io_entity->get_property("entity_count").get_int()))
         {
             std::ostringstream msg;
             msg << " INTERNAL_ERROR: Number of sides on part " << part.name() << " (" << num_sides

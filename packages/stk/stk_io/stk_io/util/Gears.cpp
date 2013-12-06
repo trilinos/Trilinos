@@ -223,9 +223,9 @@ void Gear::mesh( stk::mesh::BulkData & M )
 
           // Centroid of the element for verification
 
-          const double TWO_PI = 2.0 * acos( (double) -1.0 );
-          const double angle = m_ang_inc * ( 0.5 + (double) ia );
-          const double z = m_center[2] + m_z_min + m_z_inc * (0.5 + (double)iz);
+          const double TWO_PI = 2.0 * acos( -1.0 );
+          const double angle = m_ang_inc * (0.5 + ia);
+          const double z = m_center[2] + m_z_min + m_z_inc * (0.5 + iz);
 
           double c[3] = { 0 , 0 , 0 };
 
