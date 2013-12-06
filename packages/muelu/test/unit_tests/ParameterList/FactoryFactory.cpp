@@ -64,9 +64,10 @@
 #include "MueLu_FactoryFactory.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 
 namespace MueLuTests {
+
+#include "MueLu_UseShortNames.hpp"
 
 #define RUN  FactoryFactory().BuildFactory(paramValue, factoryMapIn)
 

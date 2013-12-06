@@ -76,11 +76,11 @@
 #include <Galeri_XpetraUtils.hpp>
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 #include <unistd.h>
 /**********************************************************************************/
 
 int main(int argc, char *argv[]) {
+#include "MueLu_UseShortNames.hpp"
 
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);

@@ -52,9 +52,10 @@
 #include "MueLu_Graph.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 
 namespace MueLuTests {
+
+#include "MueLu_UseShortNames.hpp"
 
   TEUCHOS_UNIT_TEST(CoalesceDropFactory, Constructor)
   {

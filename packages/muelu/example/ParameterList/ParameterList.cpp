@@ -50,7 +50,6 @@
 #include <MueLu_ParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
 
 #include <MueLu_UseDefaultTypes.hpp>
-#include <MueLu_UseShortNames.hpp>
 
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
@@ -58,6 +57,8 @@
 
 
 int main(int argc, char *argv[]) {
+#include <MueLu_UseShortNames.hpp>
+
   using Teuchos::RCP; // reference count pointers
 
   //

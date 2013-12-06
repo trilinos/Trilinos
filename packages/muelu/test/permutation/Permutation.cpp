@@ -78,10 +78,12 @@ typedef int     GlobalOrdinal;
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 
-#include "MueLu_UseShortNames.hpp"
 #include <unistd.h>
 /**********************************************************************************/
 
+namespace MueLuTests {
+
+#include "MueLu_UseShortNames.hpp"
 
 Teuchos::RCP<const Epetra_CrsMatrix> GetEpetraMatrix(std::string name, const Teuchos::RCP<Level> level, const Teuchos::RCP<Factory>& fct) {
   Teuchos::RCP<Matrix> result = level->Get<Teuchos::RCP<Matrix> >(name, fct.get());
@@ -288,9 +290,14 @@ bool runPermutationTest2(const std::string input_filename, const std::string exp
   return false; // no result for comparison available
 }
 
+}
+
 
 int main(int argc, char *argv[]) {
+#include "MueLu_UseShortNames.hpp"
+
   using Teuchos::RCP;
+  using namespace MueLuTests;
 
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);

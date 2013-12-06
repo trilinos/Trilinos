@@ -76,7 +76,6 @@
 #include <Galeri_XpetraProblemFactory.hpp>
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 #include <unistd.h>
 /**********************************************************************************/
 
@@ -85,6 +84,9 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosBlockCGSolMgr.hpp"
 #include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuOp()
+
+namespace MueLuTests {
+#include "MueLu_UseShortNames.hpp"
 
 RCP<SmootherPrototype> gimmeGaussSeidelProto(Xpetra::UnderlyingLib lib) {
 
@@ -169,8 +171,10 @@ RCP<SmootherPrototype> gimmeMergedSmoother(int nSmoothers, Xpetra::UnderlyingLib
   //verbose mode: return rcp (new MergedSmoother(smootherList, true));
 }
 
+}
 
 int main(int argc, char *argv[]) {
+#include "MueLu_UseShortNames.hpp"
 
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);

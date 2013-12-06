@@ -53,9 +53,10 @@
 #include "MueLu_Exceptions.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 
 namespace MueLuTests {
+
+#include "MueLu_UseShortNames.hpp"
 
   typedef std::map<std::string, RCP<const FactoryBase> > FactoryMap; // TODO: remove
 

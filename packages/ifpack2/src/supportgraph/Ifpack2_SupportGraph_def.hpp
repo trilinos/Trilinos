@@ -48,17 +48,29 @@
 #ifndef IFPACK2_SUPPORTGRAPH_DEF_HPP
 #define IFPACK2_SUPPORTGRAPH_DEF_HPP
 
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/kruskal_min_spanning_tree.hpp>
-#include <boost/graph/prim_minimum_spanning_tree.hpp>
-#include <boost/config.hpp>
-#include "Amesos2.hpp"
-#include "Amesos2_Version.hpp"
+// Ifpack2's CMake system should (and does) prevent Trilinos from
+// attempting to build or install this class, if Boost is not enabled.
+// We check for this case regardless, in order to catch any bugs that
+// future development might introduce in the CMake scripts.
 
+#ifdef HAVE_IFPACK2_BOOST
+#  include <boost/graph/adjacency_list.hpp>
+#  include <boost/graph/kruskal_min_spanning_tree.hpp>
+#  include <boost/graph/prim_minimum_spanning_tree.hpp>
+#  include <boost/config.hpp>
+#else
+#  error "Ifpack2::SupportGraph requires that Trilinos be built with Boost support."
+#endif // HAVE_IFPACK2_BOOST
+
+#include "Ifpack2_Condest.hpp"
+#include "Ifpack2_Heap.hpp"
+#include "Ifpack2_LocalFilter.hpp"
+#include "Ifpack2_Parameters.hpp"
+
+#include <Teuchos_TimeMonitor.hpp>
+#include <Teuchos_TypeNameTraits.hpp>
 
 namespace Ifpack2 {
-
-
 
 template <class MatrixType>
 SupportGraph<MatrixType>::
@@ -78,17 +90,17 @@ SupportGraph (const Teuchos::RCP<const row_matrix_type>& A) :
   NumApply_ (0),
   IsInitialized_ (false),
   IsComputed_ (false)
+{}
+
+
+template <class MatrixType>
+SupportGraph<MatrixType>::~SupportGraph () {}
+
+
+template <class MatrixType>
+void SupportGraph<MatrixType>::
+setParameters (const Teuchos::ParameterList& params)
 {
-}
-
-
-template <class MatrixType>
-SupportGraph<MatrixType>::~SupportGraph() {
-}
-
-
-template <class MatrixType>
-void SupportGraph<MatrixType>::setParameters(const Teuchos::ParameterList& params) {
   using Teuchos::as;
   using Teuchos::Exceptions::InvalidParameterName;
   using Teuchos::Exceptions::InvalidParameterType;
@@ -167,7 +179,7 @@ Teuchos::RCP<const Tpetra::RowMatrix<typename MatrixType::scalar_type,
                                      typename MatrixType::local_ordinal_type,
                                      typename MatrixType::global_ordinal_type,
                                      typename MatrixType::node_type> >
-SupportGraph<MatrixType>::getMatrix() const {
+SupportGraph<MatrixType>::getMatrix () const {
   return A_;
 }
 
@@ -225,22 +237,20 @@ int SupportGraph<MatrixType>::getNumApply() const {
 
 template <class MatrixType>
 double SupportGraph<MatrixType>::getInitializeTime() const {
-  return(InitializeTime_);
+  return InitializeTime_;
 }
 
 
 template<class MatrixType>
 double SupportGraph<MatrixType>::getComputeTime() const {
-  return(ComputeTime_);
+  return ComputeTime_;
 }
 
 
 template<class MatrixType>
 double SupportGraph<MatrixType>::getApplyTime() const {
-  return(ApplyTime_);
+  return ApplyTime_;
 }
-
-
 
 
 template<class MatrixType>
@@ -397,8 +407,8 @@ SupportGraph<MatrixType>::findSupport ()
 
   // Find the degree of all the vertices
   for (edge_iterator ei = spanning_tree.begin(); ei != spanning_tree.end(); ++ei) {
-    LocalOrdinal localsource = source (*ei,g);
-    LocalOrdinal localtarget = target (*ei,g);
+    local_ordinal_type localsource = source (*ei,g);
+    local_ordinal_type localtarget = target (*ei,g);
 
     // We only want upper triangular entries, might need to swap
     if (localsource > localtarget) {
@@ -463,11 +473,12 @@ SupportGraph<MatrixType>::findSupport ()
       }
     }
 
-    for (edge_iterator ei = spanning_tree.begin(); ei != spanning_tree.end(); ++ei) {
-      LocalOrdinal localsource = source(*ei,g);
-      LocalOrdinal localtarget = target(*ei,g);
+    for (edge_iterator ei = spanning_tree.begin ();
+         ei != spanning_tree.end (); ++ei) {
+      local_ordinal_type localsource = source (*ei, g);
+      local_ordinal_type localtarget = target (*ei, g);
 
-      if(localsource > localtarget) {
+      if (localsource > localtarget) {
         localsource = target(*ei,g);
         localtarget = source(*ei,g);
       }
@@ -564,13 +575,37 @@ SupportGraph<MatrixType>::findSupport ()
   delete Indices;
 }
 
+template<class MatrixType>
+Teuchos::RCP<const typename SupportGraph<MatrixType>::row_matrix_type>
+SupportGraph<MatrixType>::
+makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A)
+{
+  if (A->getComm ()->getSize () > 1) {
+    return Teuchos::rcp (new LocalFilter<MatrixType> (A));
+  } else {
+    return A;
+  }
+}
 
 template<class MatrixType>
 void SupportGraph<MatrixType>::initialize ()
 {
-  Teuchos::Time timer ("SupportGraph::initialize");
-  {
-    Teuchos::TimeMonitor timeMon (timer);
+  using Teuchos::RCP;
+  using Teuchos::Time;
+  using Teuchos::TimeMonitor;
+
+  // Create a timer for this method, if it doesn't exist already.
+  // TimeMonitor::getNewCounter registers the timer, so that
+  // TimeMonitor's class methods like summarize() will report the
+  // total time spent in successful calls to this method.
+  const std::string timerName ("Ifpack2::SupportGraph::initialize");
+  RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
+  if (timer.is_null ()) {
+    timer = TimeMonitor::getNewCounter (timerName);
+  }
+
+  { // Start timing here.
+    TimeMonitor timeMon (*timer);
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       A_.is_null (), std::runtime_error, "Ifpack2::SupportGraph::initialize: "
@@ -590,38 +625,49 @@ void SupportGraph<MatrixType>::initialize ()
     // Set up the solver and compute the symbolic factorization.
     solver_ = Amesos2::create<MatrixType, MV> ("amesos2_cholmod", Support_);
     solver_->symbolicFactorization ();
-  }
 
-  IsInitialized_ = true;
-  ++NumInitialize_;
-  InitializeTime_ += timer.totalElapsedTime ();
+    IsInitialized_ = true;
+    ++NumInitialize_;
+  } // Stop timing here.
+
+  // timer->totalElapsedTime() returns the total time over all timer
+  // calls.  Thus, we use = instead of +=.
+  InitializeTime_ = timer->totalElapsedTime ();
 }
 
 
 
 template<class MatrixType>
 void SupportGraph<MatrixType>::compute () {
-  using Teuchos::Array;
-  using Teuchos::ArrayRCP;
-  using Teuchos::ArrayView;
-  using Teuchos::as;
-  using Teuchos::rcp;
-  using Teuchos::reduceAll;
+  using Teuchos::RCP;
+  using Teuchos::Time;
+  using Teuchos::TimeMonitor;
 
   // Don't count initialization in the compute() time.
   if (! isInitialized ()) {
     initialize ();
   }
 
-  Teuchos::Time timer ("SupportGraph::compute");
-  { // Timer scope for timing compute()
-    Teuchos::TimeMonitor timeMon (timer, true);
-    solver_->numericFactorization ();
+  // Create a timer for this method, if it doesn't exist already.
+  // TimeMonitor::getNewCounter registers the timer, so that
+  // TimeMonitor's class methods like summarize() will report the
+  // total time spent in successful calls to this method.
+  const std::string timerName ("Ifpack2::SupportGraph::compute");
+  RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
+  if (timer.is_null ()) {
+    timer = TimeMonitor::getNewCounter (timerName);
   }
 
-  ComputeTime_ += timer.totalElapsedTime ();
-  IsComputed_ = true;
-  ++NumCompute_;
+  { // Start timing here.
+    Teuchos::TimeMonitor timeMon (*timer);
+    solver_->numericFactorization ();
+    IsComputed_ = true;
+    ++NumCompute_;
+  } // Stop timing here.
+
+  // timer->totalElapsedTime() returns the total time over all timer
+  // calls.  Thus, we use = instead of +=.
+  ComputeTime_ = timer->totalElapsedTime ();
 }
 
 
@@ -640,20 +686,32 @@ apply (const Tpetra::MultiVector<scalar_type,
        scalar_type alpha,
        scalar_type beta) const
 {
-  typedef scalar_type DomainScalar;
-  typedef scalar_type RangeScalar;
-
-  Teuchos::RCP<Teuchos::FancyOStream> out
-    = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
-
+  using Teuchos::FancyOStream;
+  using Teuchos::getFancyOStream;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::rcpFromRef;
+  using Teuchos::Time;
+  using Teuchos::TimeMonitor;
+  typedef scalar_type DomainScalar;
+  typedef scalar_type RangeScalar;
   typedef Tpetra::MultiVector<DomainScalar, local_ordinal_type,
     global_ordinal_type, node_type> MV;
 
-  Teuchos::Time timer ("SupportGraph::apply");
-  { // Timer scope for timing apply()
-    Teuchos::TimeMonitor timeMon (timer, true);
+  RCP<FancyOStream> out = getFancyOStream (rcpFromRef (std::cout));
+
+  // Create a timer for this method, if it doesn't exist already.
+  // TimeMonitor::getNewCounter registers the timer, so that
+  // TimeMonitor's class methods like summarize() will report the
+  // total time spent in successful calls to this method.
+  const std::string timerName ("Ifpack2::SupportGraph::apply");
+  RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
+  if (timer.is_null ()) {
+    timer = TimeMonitor::getNewCounter (timerName);
+  }
+
+  { // Start timing here.
+    Teuchos::TimeMonitor timeMon (*timer);
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! isComputed (), std::runtime_error,
@@ -690,10 +748,13 @@ apply (const Tpetra::MultiVector<scalar_type,
     solver_->setX (Ycopy);
 
     solver_->solve ();
-  }
+  } // Stop timing here.
 
   ++NumApply_;
-  ApplyTime_ += timer.totalElapsedTime ();
+
+  // timer->totalElapsedTime() returns the total time over all timer
+  // calls.  Thus, we use = instead of +=.
+  ApplyTime_ = timer->totalElapsedTime ();
 }
 
 
@@ -759,7 +820,7 @@ describe (Teuchos::FancyOStream &out,
 
     if (isComputed ()) {
       out << "Number of nonzeros in A: " << A_->getGlobalNumEntries() << endl;
-      out << "Number of nonzeros in A_local: " << A_local->getGlobalNumEntries() << endl;
+      out << "Number of nonzeros in A_local: " << A_local_->getGlobalNumEntries() << endl;
       out << "Number of edges in support graph: "
           << Support_->getGlobalNumEntries () - Support_->getGlobalNumDiags () << endl;
 

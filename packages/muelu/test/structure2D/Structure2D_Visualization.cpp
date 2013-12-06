@@ -98,7 +98,6 @@
 #include "MueLu_AggregationExportFactory.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 
 #include <Epetra_LinearProblem.h>
 #include <AztecOO.h>
@@ -113,6 +112,8 @@
 
 
 int main(int argc, char *argv[]) {
+#include "MueLu_UseShortNames.hpp"
+
   using Teuchos::RCP;
   using Teuchos::rcp;
 

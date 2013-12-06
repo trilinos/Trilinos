@@ -91,7 +91,6 @@
 #include <Galeri_XpetraProblemFactory.hpp>
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 #include <unistd.h>
 /**********************************************************************************/
 
@@ -107,6 +106,10 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::ArrayRCP;
+
+namespace MueLuTests {
+
+#include "MueLu_UseShortNames.hpp"
 
 RCP<SmootherPrototype> gimmeGaussSeidelProto(Xpetra::UnderlyingLib lib) {
 
@@ -191,8 +194,10 @@ RCP<SmootherPrototype> gimmeMergedSmoother(int nSmoothers, Xpetra::UnderlyingLib
   //verbose mode: return rcp (new MergedSmoother(smootherList, true));
 }
 
+}
 
 int main(int argc, char *argv[]) {
+#include "MueLu_UseShortNames.hpp"
 
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
