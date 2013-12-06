@@ -160,7 +160,7 @@ void Epetra_Util::Sort(bool SortAscending, int NumKeys, int * Keys,
            int NumIntCompanions, int ** IntCompanions,
            int NumLongLongCompanions, long long ** LongLongCompanions)
 {
-  return Sort<int>(SortAscending, NumKeys, Keys, 
+  Sort<int>(SortAscending, NumKeys, Keys, 
            NumDoubleCompanions, DoubleCompanions, 
            NumIntCompanions, IntCompanions,
            NumLongLongCompanions, LongLongCompanions);
@@ -171,7 +171,7 @@ void Epetra_Util::Sort(bool SortAscending, int NumKeys, long long * Keys,
            int NumIntCompanions, int ** IntCompanions,
            int NumLongLongCompanions, long long ** LongLongCompanions)
 {
-  return Sort<long long>(SortAscending, NumKeys, Keys, 
+  Sort<long long>(SortAscending, NumKeys, Keys, 
            NumDoubleCompanions, DoubleCompanions, 
            NumIntCompanions, IntCompanions,
            NumLongLongCompanions, LongLongCompanions);
@@ -780,3 +780,10 @@ int Epetra_Util_ExtractHbData(Epetra_CrsMatrix * A, Epetra_MultiVector * LHS,
   EPETRA_CHK_ERR(ierr);
   return(0);
 }
+
+// Explicitly instantiate these two even though a call to them is made.
+// Possible fix for a bug reported by Kenneth Belcourt.
+template void Epetra_Util::Sort<int>      (bool, int, int *,       int, double **, int, int **, int, long long **);
+template void Epetra_Util::Sort<long long>(bool, int, long long *, int, double **, int, int **, int, long long **);
+
+
