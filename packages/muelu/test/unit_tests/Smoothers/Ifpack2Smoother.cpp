@@ -62,8 +62,7 @@
 
 namespace MueLuTests {
 
-#include "MueLu_UseShortNames.hpp"
-
+  // this namespace already has:  #include "MueLu_UseShortNames.hpp"
   using namespace TestHelpers::Smoothers;
 
   TEUCHOS_UNIT_TEST(Ifpack2Smoother, NotSetup)
