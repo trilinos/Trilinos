@@ -321,34 +321,34 @@ const AllocateWithoutInitializing allocate_without_initializing = AllocateWithou
  *   wrap externally allocated memory in a View without automatic
  *   deallocation.
  *
- * \section Kokkos_View_MT \c MemoryTraits discussion
+ * \section Kokkos_View_MT MemoryTraits discussion
  *
- * \subsection Kokkos_View_MT_Interp \c MemoryTraits interpretation depends on \c Device
+ * \subsection Kokkos_View_MT_Interp MemoryTraits interpretation depends on Device
  *
  * Some \c MemoryTraits options may have different interpretations for
  * different \c Device types.  For example, with the Cuda device,
- * RandomRead tells Kokkos to fetch the data through the texture
+ * \c RandomRead tells Kokkos to fetch the data through the texture
  * cache, whereas the non-GPU devices have no such hardware construct.
  *
- * \subsection Kokkos_View_MT_PrefUse Preferred use of \c MemoryTraits
+ * \subsection Kokkos_View_MT_PrefUse Preferred use of MemoryTraits
  *
  * Users should defer applying the optional \c MemoryTraits parameter
  * until the point at which they actually plan to rely on it in a
  * computational kernel.  This minimizes the number of template
  * parameters exposed in their code, which reduces the cost of
  * compilation.  Users may always assign a View without specified
- * <tt>MemoryTraits</tt> to a compatible View with that specification.
+ * \c MemoryTraits to a compatible View with that specification.
  * For example:
  * \code
  * // Pass in the simplest types of View possible.
- * void 
- * doSomething (View<double*, Cuda> out, 
- *              View<const double*, Cuda> in) 
+ * void
+ * doSomething (View<double*, Cuda> out,
+ *              View<const double*, Cuda> in)
  * {
  *   // Assign the "generic" View in to a RandomRead View in_rr.
  *   // Note that RandomRead View objects must have const data.
  *   View<const double*, Cuda, RandomRead> in_rr = in;
- *   // ... do something with in_rr and out ... 
+ *   // ... do something with in_rr and out ...
  * }
  * \endcode
  */
@@ -400,7 +400,7 @@ private:
   typename traits::scalar_type * m_ptr_on_device ;
   typename traits::shape_type    m_shape ;
   stride_type                    m_stride ;
-  
+
 public:
 
   typedef View< typename traits::non_const_data_type ,
@@ -666,7 +666,7 @@ public:
 
     shape_type  shape ;
     stride_type stride ;
-    
+
     traits::shape_type::assign( shape, n0, n1, n2, n3, n4, n5, n6, n7 );
     stride_type::assign_no_padding( stride , shape );
 
@@ -1445,7 +1445,7 @@ void deep_copy( const View< DT, DL, DD, DM, DS> & dst ,
 
 template< class T , class L , class D , class M , class S >
 typename Impl::enable_if<(
-    View<T,L,D,M,S>::is_managed 
+    View<T,L,D,M,S>::is_managed
   ), typename View<T,L,D,M,S>::HostMirror >::type
 inline
 create_mirror( const View<T,L,D,M,S> & src )
@@ -1456,7 +1456,7 @@ create_mirror( const View<T,L,D,M,S> & src )
 
   // 'view' is managed therefore we can allocate a
   // compatible host_view through the ordinary constructor.
-  
+
   std::string label = memory_space::query_label( src.ptr_on_device() );
   label.append("_mirror");
 
