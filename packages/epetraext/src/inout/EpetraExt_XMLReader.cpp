@@ -67,6 +67,10 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Import.h"
 
+#if defined(__PGI)
+#include <sstream>
+#endif
+
 // ============================================================================
 static void Tokenize(const std::string& str, std::vector<std::string>& tokens,
               const std::string& delimiters = " ")
@@ -195,8 +199,15 @@ Read64(const std::string& Label, Epetra_CrsGraph*& Graph)
           row = _strtoi64((char*)tokens[0].c_str(), &endp, base);
           col = _strtoi64((char*)tokens[1].c_str(), &endp, base);
 #else
+#if defined(__PGI)
+          std::istringstream ss_row(tokens[0]);
+          ss_row >> row;
+          std::istringstream ss_col(tokens[1]);
+          ss_col >> col;
+#else
           row = strtoll((char*)tokens[0].c_str(), &endp, base);
           col = strtoll((char*)tokens[1].c_str(), &endp, base);
+#endif
 #endif
 
           if (map.LID(row) != -1)
@@ -305,8 +316,15 @@ Read64(const std::string& Label, Epetra_CrsMatrix*& matrix)
           row = _strtoi64((char*)tokens[0].c_str(), &endp, base);
           col = _strtoi64((char*)tokens[1].c_str(), &endp, base);
 #else
+#if defined(__PGI)
+          std::istringstream ss_row(tokens[0]);
+          ss_row >> row;
+          std::istringstream ss_col(tokens[1]);
+          ss_col >> col;
+#else
           row = strtoll((char*)tokens[0].c_str(), &endp, base);
           col = strtoll((char*)tokens[1].c_str(), &endp, base);
+#endif
 #endif
           sscanf((char*)tokens[2].c_str(), "%lg", &val);
           //val = atof((char*)tokens[2].c_str());
@@ -566,7 +584,12 @@ Read64(const std::string& Label, Epetra_Map*& Map)
 #if defined(_MSC_VER)
                 MyGlobalElements[count++] = _strtoi64((char*)tokens[k].c_str(), &endp, base);
 #else
+#if defined(__PGI)
+                std::istringstream ss(tokens[k]);
+                ss >> MyGlobalElements[count++];
+#else
                 MyGlobalElements[count++] = strtoll((char*)tokens[k].c_str(), &endp, base);
+#endif
 #endif
               }
             }
