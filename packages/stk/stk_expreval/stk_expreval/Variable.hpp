@@ -123,7 +123,7 @@ public:
    */
   Variable &operator=(const double &value) {
     if (m_type == INTEGER)
-      *m_intPtr = (int) value;
+      *m_intPtr = static_cast<int>(value);
     else if (m_type == DOUBLE)
       *m_doublePtr = value;
     return *this;
@@ -142,7 +142,7 @@ public:
     if (m_type == INTEGER)
       *m_intPtr = value;
     else if (m_type == DOUBLE)
-      *m_doublePtr = (double) value;
+      *m_doublePtr = static_cast<double>(value);
     return *this;
   }
 
@@ -165,28 +165,6 @@ public:
    * double values.  No bounds checkin is performed.  Not even if the variable is and
    * array is checked.
    *
-   * @param index		a <b>double</b> value of the zero based index into
-   *				the array to retrieve the value.
-   *
-   * @return			a <b>double</b> reference to the value.
-   */
-  inline double &operator[](double index) {
-    if (m_type != DOUBLE)
-      throw std::runtime_error("Only double arrays allowed");
-
-    if ((void *) m_doublePtr == 0)
-      throw std::runtime_error("Unbound variable");
-
-    int i = (int) index;
-
-    return m_doublePtr[i];
-  }
-
-  /**
-   * @brief Member function <b>operator[]</b> returns a value from an array of
-   * double values.  No bounds checkin is performed.  Not even if the variable is and
-   * array is checked.
-   *
    * @param index		a <b>int</b> value of the zero based index into the
    *				array to retrieve the value.
    *
@@ -196,7 +174,7 @@ public:
     if (m_type != DOUBLE)
       throw std::runtime_error("Only double arrays allowed");
 
-    if ((void *) m_doublePtr == 0)
+    if (m_doublePtr == 0)
       throw std::runtime_error("Unbound variable");
 
     return m_doublePtr[index];
@@ -266,7 +244,7 @@ public:
     case DOUBLE:
       return *m_doublePtr;
     case INTEGER:
-      return (double) *m_intPtr;
+      return *m_intPtr;
     }
     throw std::runtime_error("Invalid variable type");
   }
@@ -416,7 +394,7 @@ public:
    * @return			a <b>Variable</b> pointer to the new variable.
    */
   Variable *operator[](const std::string &s) {
-    std::pair<iterator,bool> i = insert(std::pair<const std::string, Variable *>(s, (Variable *) 0));
+    std::pair<iterator,bool> i = insert(std::pair<const std::string, Variable *>(s, NULL));
     if (i.second)
       (*i.first).second = new Variable();
     return (*i.first).second;

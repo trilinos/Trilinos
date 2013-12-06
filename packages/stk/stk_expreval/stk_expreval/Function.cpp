@@ -190,7 +190,7 @@ extern "C" {
   /// Interface to the pseudo-random number generator function rand
   /// provided by ANSI C math library.
   double real_rand() {
-    return (double) std::rand() / ((double)(RAND_MAX) + 1.0);
+    return static_cast<double>(std::rand()) / (static_cast<double>(RAND_MAX) + 1.0);
   }
 
   /// Sets x as the "seed". Interface to the srand function provided by the

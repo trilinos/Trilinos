@@ -735,7 +735,7 @@ CommandSpec::set_parameter_optional(
       ++m_optionalParameters;
 
     for (ParamSpecList::iterator it = m_paramSpecList.begin(); it != m_paramSpecList.end(); ++it)
-      if ((UInt)(*it).getId() == ith_parameter)
+      if (static_cast<UInt>((*it).getId()) == ith_parameter)
 	(*it).setOptional(optional);
   }
 

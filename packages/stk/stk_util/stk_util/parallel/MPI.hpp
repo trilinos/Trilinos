@@ -360,7 +360,7 @@ AllReduce(MPI_Comm mpi_comm, MPI_Op op, T *src_dest, size_t size)
 {
   std::vector<T> source(src_dest, src_dest + size);
 
-  if (MPI_Allreduce(&source[0], &src_dest[0], (int) size, Datatype<T>::type(), op, mpi_comm) != MPI_SUCCESS )
+  if (MPI_Allreduce(&source[0], &src_dest[0], size, Datatype<T>::type(), op, mpi_comm) != MPI_SUCCESS )
     throw std::runtime_error("MPI_Allreduce failed");
 }
 
@@ -385,7 +385,7 @@ AllReduce(MPI_Comm mpi_comm, MPI_Op op, std::vector<T> &dest)
 {
   std::vector<T> source(dest);
 
-  if (MPI_Allreduce(&source[0], &dest[0], (int) dest.size(), Datatype<T>::type(), op, mpi_comm) != MPI_SUCCESS )
+  if (MPI_Allreduce(&source[0], &dest[0], dest.size(), Datatype<T>::type(), op, mpi_comm) != MPI_SUCCESS )
     throw std::runtime_error("MPI_Allreduce failed");
 }
 
@@ -414,7 +414,7 @@ AllReduce(MPI_Comm mpi_comm, MPI_Op op, std::vector<T> &source, std::vector<T> &
   if (source.size() != dest.size())
     throw std::runtime_error("sierra::MPI::AllReduce(MPI_Comm mpi_comm, MPI_Op op, std::vector<T> &source, std::vector<T> &dest) vector lengths not equal");
 
-  if (MPI_Allreduce(&source[0], &dest[0], (int) dest.size(), Datatype<T>::type(), op, mpi_comm) != MPI_SUCCESS )
+  if (MPI_Allreduce(&source[0], &dest[0], dest.size(), Datatype<T>::type(), op, mpi_comm) != MPI_SUCCESS )
     throw std::runtime_error("MPI_Allreduce failed");
 }
 
@@ -428,8 +428,8 @@ AllGather(MPI_Comm mpi_comm, std::vector<T> &source, std::vector<T> &dest)
   if (source.size()*nproc != dest.size())
     throw std::runtime_error("sierra::MPI::AllReduce(MPI_Comm mpi_comm, MPI_Op op, std::vector<T> &source, std::vector<T> &dest) vector lengths not equal");
 
-  if (MPI_Allgather(&source[0], (int)source.size(), Datatype<T>::type(),
-                    &dest[0],   (int)source.size(), Datatype<T>::type(),
+  if (MPI_Allgather(&source[0], source.size(), Datatype<T>::type(),
+                    &dest[0],   source.size(), Datatype<T>::type(),
                     mpi_comm) != MPI_SUCCESS ){
     throw std::runtime_error("MPI_Allreduce failed");
   }
@@ -451,10 +451,10 @@ T *align_cast(void *p)
   enum {mask = alignment - 1};
 
   char * c = reinterpret_cast<char *>(p);
-  size_t front_misalign = (c - '\0') & mask;
+  size_t front_misalign = (c - static_cast<char*>(0)) & mask;
   if (front_misalign > 0) {
     size_t correction = alignment - front_misalign;
-    T *q = reinterpret_cast<T *>((c - '\0') + correction);
+    T *q = reinterpret_cast<T *>((c - static_cast<char*>(0)) + correction);
     return q;
   }
 
