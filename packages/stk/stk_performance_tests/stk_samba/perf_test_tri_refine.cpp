@@ -61,7 +61,7 @@ struct MemoryInfo
 
 };
 
-inline double MegaByte(MemorySizeType x) { return  ((double)x/1024.0/1024.0); }
+inline double MegaByte(MemorySizeType x) { return  (static_cast<double>(x)/1024.0/1024.0); }
 
 std::ostream& operator<<(std::ostream& os, const MemoryInfo& mem)
 {

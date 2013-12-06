@@ -82,25 +82,6 @@ void create_entities( BulkData & bulk,
     }
 
     stk::mesh::declare_element( bulk, elem_parts, entity_id , elem_node);
-
-#if 0
-    for (unsigned i = 0; i<8; ++i) {
-      stk::mesh::Entity const node = bulk.get_entity( MetaData::NODE_RANK , elem_node[i] );
-      bulk.change_entity_parts(*node, node_parts);
-
-      ThrowRequireMsg( node != NULL, "found null node in create_entities");
-
-      // Compute and assign coordinates to the node
-      unsigned nx = 0, ny = 0, nz = 0;
-      refine_info.node_x_y_z(elem_node[i], nx, ny, nz);
-
-      Scalar * data = stk::mesh::field_data( m_coord_field , *node );
-
-      data[0] = nx ;
-      data[1] = ny ;
-      data[2] = -(Scalar)nz ;
-    }
-#endif
   }
 }
 

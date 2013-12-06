@@ -47,9 +47,9 @@ using stk::mesh::fixtures::HexFixture;
 void print_memory_sum_all_procs(stk::ParallelMachine pm)
 {
   const size_t p_rank = stk::parallel_machine_rank(pm);
-  const size_t my_peak = stk::allocator_memory_usage<void>::peak_memory();
+  size_t my_peak = stk::allocator_memory_usage<void>::peak_memory();
   size_t peak_sum = 0;
-  int err = MPI_Reduce((void*)&my_peak, (void*)&peak_sum, 1 /*size*/, MPI_LONG_LONG, MPI_SUM, 0 /*root*/, pm);
+  int err = MPI_Reduce(&my_peak, &peak_sum, 1 /*size*/, MPI_LONG_LONG, MPI_SUM, 0 /*root*/, pm);
   ThrowRequire(err == MPI_SUCCESS);
 
   if (p_rank == 0) {

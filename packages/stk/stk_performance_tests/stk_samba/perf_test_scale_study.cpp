@@ -112,7 +112,7 @@ STKUNIT_UNIT_TEST(scale_study, scale_study)
     end_time = cpu_time() - start_time;
 
     const double tolerance = 1.e-6;
-    const double expected = ((double)NX)/2;
+    const double expected = NX/2.0;
 
     samba::mesh mesh = fixture.mesh();
     coordinate_field coordinates = fixture.coordinates();

@@ -104,7 +104,7 @@ STKUNIT_UNIT_TEST(array_mesh, gather_centroid_hex_elem_genmesh)
 
   std::vector<double> avg_centroid(3,0);
   const double tolerance = 1.e-6;
-  const double expected = ((double)ex)/2;
+  const double expected = ex/2.0;
 
   start_time = stk::cpu_time();
 

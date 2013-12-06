@@ -120,7 +120,7 @@ STKUNIT_UNIT_TEST(mesh_gather, mesh_gather)
   double end_time = cpu_time() - start_time;
 
   const double tolerance = 1.e-6;
-  const double expected = ((double)NX)/2;
+  const double expected = NX/2.0;
 
   const int num_iterations = 100;
 

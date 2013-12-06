@@ -25,8 +25,6 @@
 #if __GNUC__ == 4 && !defined __itanium__ && !defined __ICC && !defined __PATHSCALE__ && !defined __PGI
 
 #define FLAG_STK_MESH_ENTITYREPOSITORY_MAP_TYPE_STD 1
-#define FLAG_EASTL_HASH_MAP 0
-#define FLAG_RDESTL_HASH_MAP 0
 #if defined(__PGI) || defined(__PATHSCALE__)
   #define FLAG_GOOGLE_SPARSE_HASH_MAP 0
   #define FLAG_GOOGLE_DENSE_HASH_MAP 0
@@ -53,11 +51,6 @@
   using Teuchos::Hashtable;
 #endif
 
-#if FLAG_EASTL_HASH_MAP
-  #include <stk_util/util/hash_map_eastl.h>
-  using eastl::hash_map;
-#endif
-
 #if FLAG_GOOGLE_SPARSE_HASH_MAP
   #include <stk_util/util/config_google.h>
   #include HASH_MAP_H
@@ -73,11 +66,6 @@
   #include <stk_util/util/densehashtable.h>
   #include <stk_util/util/dense_hash_map>
   using google::dense_hash_map;
-#endif
-
-#if FLAG_RDESTL_HASH_MAP
-  #include <cstdio>
-  #include <stk_util/util/hash_map_rdestl.h>
 #endif
 
 using stk::mesh::EntityKey;
@@ -157,53 +145,16 @@ namespace Teuchos {
 template<>
 int hashCode(const EntityKey& x)
 {
-  return (int)(x);
+  return static_cast<int>(x);
 }
 
 }
-#endif
-
-#if FLAG_EASTL_HASH_MAP
-// EASTL expects the developer to define "new", see allocator_eastl.h line 194
-void* operator new[](size_t size, const char* pName, int flags,
-                     unsigned debugFlags, const char* file, int line)
-{
-  return malloc(size);
-}
-
-void* operator new[](size_t size, size_t alignment, size_t alignmentOffset,
-                     const char* pName, int flags, unsigned debugFlags, const char* file, int line)
-{
-  // this allocator doesn't support alignment
-  EASTL_ASSERT(alignment <= 8);
-  return malloc(size);
-}
-
-struct eastl_stk_entity_rep_hash : public eastl::unary_function< EntityKey, std::size_t>
-{
-  inline std::size_t
-  operator()(const EntityKey& x) const
-  {
-    return (std::size_t)(x);
-  }
-};
 #endif
 
 namespace {
 
 #if FLAG_GOOGLE_SPARSE_HASH_MAP || FLAG_GOOGLE_DENSE_HASH_MAP
 struct google_stk_entity_rep_hash : public google::is_integral< EntityKey >
-{
-  inline std::size_t
-  operator()(const EntityKey& x) const
-  {
-    return (std::size_t)(x);
-  }
-};
-#endif
-
-#if FLAG_RDESTL_HASH_MAP
-struct rdestl_stk_entity_rep_hash : public rde::hash< EntityKey >
 {
   inline std::size_t
   operator()(const EntityKey& x) const
@@ -267,18 +218,6 @@ STKUNIT_UNIT_TEST( map_tests, teuchosmap)
 }
 #endif // end of teuchos map
 
-//Fifth map type: eastl
-//From http://github.com/paulhodge/EASTL
-#if FLAG_EASTL_HASH_MAP
-STKUNIT_UNIT_TEST( map_tests, eastlmap)
-{
-  typedef eastl::hash_map< EntityKey, int, stk_entity_rep_hash, eastl::equal_to<EntityKey>  > EntityMap;
-  EntityMap testmap;
-
-  time_map(testmap, NUM_KEYS, "eastl map");
-}
-#endif // end of eastl map
-
 //Sixth map type: google sparse
 //From http://code.google.com/p/google-sparsehash
 #if FLAG_GOOGLE_SPARSE_HASH_MAP
@@ -315,18 +254,6 @@ STKUNIT_UNIT_TEST( map_tests, googledensemap)
   time_map(testmap, NUM_KEYS, "google dense map");
 }
 #endif //end of dense_hash_map
-
-//Eighth map type: rdestl
-//From http://rdestl.googlecode.com.svn
-#if FLAG_RDESTL_HASH_MAP
-STKUNIT_UNIT_TEST( map_tests, rdestlmap)
-{
-  typedef rde::hash_map< EntityKey, int, stk_entity_rep_hash, 6, rde::equal_to<EntityKey> > EntityMap;
-
-  EntityMap testmap;
-  time_map(testmap, NUM_KEYS, "rdestl map");
-}
-#endif //end of rdestl map
 
 }//namespace <anonymous>
 
