@@ -70,7 +70,6 @@
 #include "MueLu_RAPFactory.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 
 //TODO: remove this
 #ifdef HAVE_MUELU_EPETRAEXT
@@ -80,6 +79,7 @@
 
 namespace MueLuTests {
 
+#include "MueLu_UseShortNames.hpp"
 
   //this macro declares the unit-test-class:
   TEUCHOS_UNIT_TEST(GenericRFactory, Constructor)

@@ -443,28 +443,28 @@ IF(Stokhos_ENABLE_NOX)
 
 ENDIF()
 
-IF (Stokhos_ENABLE_Thrust)
+# IF (Stokhos_ENABLE_Thrust)
 
-  TRIBITS_ADD_EXECUTABLE(
-    cuda_example
-    SOURCES cuda_example.cpp
-    COMM serial mpi
-    DEPLIBS stokhos
-  )
+#   TRIBITS_ADD_EXECUTABLE(
+#     cuda_example
+#     SOURCES cuda_example.cpp
+#     COMM serial mpi
+#     DEPLIBS stokhos
+#   )
 
-  IF(Stokhos_ENABLE_Sacado)
+#   IF(Stokhos_ENABLE_Sacado)
 
-    CUDA_COMPILE(CUDA_SOURCES sacado_cuda_example.cu)
-    TRIBITS_ADD_EXECUTABLE(
-      sacado_cuda_example
-      SOURCES ${CUDA_SOURCES}
-      COMM serial mpi
-      DEPLIBS stokhos
-    )
+#     CUDA_COMPILE(CUDA_SOURCES sacado_cuda_example.cu)
+#     TRIBITS_ADD_EXECUTABLE(
+#       sacado_cuda_example
+#       SOURCES ${CUDA_SOURCES}
+#       COMM serial mpi
+#       DEPLIBS stokhos
+#     )
 
-  ENDIF()
+#   ENDIF()
 
-ENDIF()
+# ENDIF()
 
 TRIBITS_ADD_EXECUTABLE(
   cijk_partition_rcb

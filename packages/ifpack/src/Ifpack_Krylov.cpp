@@ -208,18 +208,18 @@ int Ifpack_Krylov::Initialize()
 
   if (IsRowMatrix_)
   {
-    if (Matrix().NumGlobalRows() != Matrix().NumGlobalCols())
+    if (Matrix().NumGlobalRows64() != Matrix().NumGlobalCols64())
       IFPACK_CHK_ERR(-2); // only square matrices
 
     NumMyRows_ = Matrix_->NumMyRows();
     NumMyNonzeros_ = Matrix_->NumMyNonzeros();
-    NumGlobalRows_ = Matrix_->NumGlobalRows();
-    NumGlobalNonzeros_ = Matrix_->NumGlobalNonzeros();
+    NumGlobalRows_ = Matrix_->NumGlobalRows64();
+    NumGlobalNonzeros_ = Matrix_->NumGlobalNonzeros64();
   }
   else
   {
-    if (Operator_->OperatorDomainMap().NumGlobalElements() !=       
-        Operator_->OperatorRangeMap().NumGlobalElements())
+    if (Operator_->OperatorDomainMap().NumGlobalElements64() !=       
+        Operator_->OperatorRangeMap().NumGlobalElements64())
       IFPACK_CHK_ERR(-2); // only square operators
   }
   
@@ -267,8 +267,16 @@ int Ifpack_Krylov::Compute()
   else {
     IfpackPrec_ = Teuchos::rcp( new Ifpack_BlockRelaxation< Ifpack_DenseContainer > (&*Matrix_) );
     int NumRows;
-    if(IsRowMatrix_==true) {  NumRows = Matrix_->NumMyRows();                                }
-    else                   {  NumRows = Operator_->OperatorDomainMap().NumGlobalElements();  }
+    if(IsRowMatrix_==true) {
+      NumRows = Matrix_->NumMyRows();
+    }
+    else {
+      long long NumRows_LL = Operator_->OperatorDomainMap().NumGlobalElements64();
+      if(NumRows_LL > std::numeric_limits<int>::max())
+        throw "Ifpack_Krylov::Compute: NumGlobalElements don't fit an int";
+      else
+        NumRows = static_cast<int>(NumRows_LL);
+    }
     List.set("partitioner: type", "linear");
     List.set("partitioner: local parts", NumRows/BlockSize_);
   }
@@ -309,7 +317,7 @@ ostream& Ifpack_Krylov::Print(ostream & os) const
     os << "Preconditioner type                  = " << PreconditionerType_ << endl;
     os << "(0 for none, 1 for Jacobi, 2 for GS, 3 for SGS )" << endl;
     os << "Condition number estimate            = " << Condest() << endl;
-    os << "Global number of rows                = " << Operator_->OperatorRangeMap().NumGlobalElements() << endl;
+    os << "Global number of rows                = " << Operator_->OperatorRangeMap().NumGlobalElements64() << endl;
     if (ZeroStartingSolution_) 
       os << "Using zero starting solution" << endl;
     else

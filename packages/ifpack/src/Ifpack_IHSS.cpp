@@ -131,10 +131,27 @@ int Ifpack_IHSS::Compute(){
   Askew=new Epetra_CrsMatrix(Copy,A_->RowMap(),0);
   rv=EpetraExt::MatrixMatrix::Add(*A_,false,.5,*A_,true,-.5,Askew);
   if(rv) IFPACK_CHK_ERR(-2); 
-  for(int i=0;i<Askew->NumMyRows();i++) {
-    int gid=Askew->GRID(i);
-    Askew->InsertGlobalValues(gid,1,&Alpha_,&gid);
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(Askew->RowMap().GlobalIndicesInt()) {
+    for(int i=0;i<Askew->NumMyRows();i++) {
+      int gid=Askew->GRID(i);
+      Askew->InsertGlobalValues(gid,1,&Alpha_,&gid);
+    }
   }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(Askew->RowMap().GlobalIndicesLongLong()) {
+    for(int i=0;i<Askew->NumMyRows();i++) {
+      long long gid=Askew->GRID64(i);
+      Askew->InsertGlobalValues(gid,1,&Alpha_,&gid);
+    }
+  }
+  else
+#endif
+  throw "Ifpack_IHSS::Compute: Unable to deduce GlobalIndices type";
+
   Askew->FillComplete();
   Askew_=rcp(Askew);
 

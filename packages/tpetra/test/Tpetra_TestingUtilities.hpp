@@ -44,6 +44,13 @@
 #ifndef TPETRA_TESTINGUTILITIES_HPP_
 #define TPETRA_TESTINGUTILITIES_HPP_
 
+/// \file Tpetra_TestingUtilities.hpp
+/// \brief Internal utilities for testing Tpetra.
+///
+/// \warning This header file and its contents are implementation
+///   details of Tpetra.  Users must not rely on this file existing,
+///   or on any contents of this file.
+
 #include <Teuchos_UnitTestHarness.hpp>
 
 #include <Tpetra_ConfigDefs.hpp>
@@ -51,108 +58,65 @@
 #include <Tpetra_DefaultPlatform.hpp>
 
 namespace Tpetra {
-
   namespace TestingUtilities {
 
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    using Tpetra::DefaultPlatform;
-    using Teuchos::Comm;
-
+    /// \brief Whether to test MPI functionality.
+    ///
+    /// \warning This variable is an implementation detail of Tpetra.
+    ///   Users must not rely on this variable's name or contents, set
+    ///   this variable, or rely on behavior resulting from setting
+    ///   this variable.
+    ///
+    /// This variable is true by default.  Its value affects the
+    /// behavior of getDefaultComm() (see below in this header file).
     bool testMpi = true;
 
-    using KokkosClassic::SerialNode;
-    RCP<SerialNode> snode;
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-    using KokkosClassic::TBBNode;
-    RCP<TBBNode> tbbnode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-    using KokkosClassic::TPINode;
-    RCP<TPINode> tpinode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-    using KokkosClassic::OpenMPNode;
-    RCP<OpenMPNode> ompnode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-    using KokkosClassic::ThrustGPUNode;
-    RCP<ThrustGPUNode> thrustnode;
-#endif
-
-    RCP<const Comm<int> > getDefaultComm()
+    /// \brief Get the default communicator for Tpetra tests.
+    ///
+    /// \warning This function is an implementation detail of Tpetra.
+    ///   Users must not call this function or rely on its behavior.
+    ///
+    /// If testMpi (see above in this header file) false, this
+    /// function will return a Teuchos::SerialComm.  Otherwise, this
+    /// fucntion will return the default communicator from
+    /// Tpetra::DefaultPlatform.  If Trilinos was built with MPI
+    /// support, the resulting communicator will be a Teuchos::MpiComm
+    /// that wraps <tt>MPI_COMM_WORLD</tt>.  Otherwise, it will be
+    /// either a Teuchos::SerialComm, or a Teuchos::MpiComm that wraps
+    /// <tt>MPI_COMM_SELF</tt>.
+    Teuchos::RCP<const Teuchos::Comm<int> >
+    getDefaultComm ()
     {
       if (testMpi) {
-        return DefaultPlatform::getDefaultPlatform().getComm();
+        return DefaultPlatform::getDefaultPlatform ().getComm ();
+      } else {
+        // Always return the same Comm instance.  Create it if it
+        // hasn't already been created.  A function-static RCP has an
+        // initial value of Teuchos::null.
+        static Teuchos::RCP<const Teuchos::SerialComm<int> > serialComm_;
+        if (serialComm_.is_null ()) {
+          serialComm_ = Teuchos::rcp (new Teuchos::SerialComm<int> ());
+        }
+        return serialComm_;
       }
-      return rcp(new Teuchos::SerialComm<int>());
     }
 
+    /// \brief Get the default Kokkos(Classic) Node for Tpetra tests.
+    /// \tparam Node The Kokkos(Classic) Node type.
+    ///
+    /// \warning This function is an implementation detail of Tpetra.
+    ///   Users must not call this function or rely on its behavior.
+    ///
+    /// This function defers to KokkosClassic::Details::getNode.  The
+    /// latter function creates at most one Node instance (per Node
+    /// type); it returns the created instance if it has already been
+    /// created via a previous call to getNode.
     template <class Node>
-      RCP<Node> getNode() {
-        assert(false);
-      }
+    Teuchos::RCP<Node> getNode () {
+      return KokkosClassic::Details::getNode<Node> ();
+    }
 
-    template <>
-      RCP<SerialNode> getNode<SerialNode>() {
-        if (snode == null) {
-          Teuchos::ParameterList pl;
-          snode = rcp(new SerialNode(pl));
-        }
-        return snode;
-      }
-
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-    template <>
-      RCP<TBBNode> getNode<TBBNode>() {
-        if (tbbnode == null) {
-          Teuchos::ParameterList pl;
-          pl.set<int>("Num Threads",0);
-          tbbnode = rcp(new TBBNode(pl));
-        }
-        return tbbnode;
-      }
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-    template <>
-      RCP<TPINode> getNode<TPINode>() {
-        if (tpinode == null) {
-          Teuchos::ParameterList pl;
-          pl.set<int>("Num Threads",0);
-          tpinode = rcp(new TPINode(pl));
-        }
-        return tpinode;
-      }
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-    template <>
-      RCP<OpenMPNode> getNode<OpenMPNode>() {
-        if (ompnode == null) {
-          Teuchos::ParameterList pl;
-          pl.set<int>("Num Threads",0);
-          ompnode = rcp(new OpenMPNode(pl));
-        }
-        return ompnode;
-      }
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-    template <>
-      RCP<ThrustGPUNode> getNode<ThrustGPUNode>() {
-        if (thrustnode == null) {
-          Teuchos::ParameterList pl;
-          pl.set<int>("Num Threads",0);
-          pl.set<int>("Verbose",1);
-          thrustnode = rcp(new ThrustGPUNode(pl));
-        }
-        return thrustnode;
-      }
-#endif
-
-  } // end namespace Tpetra::TestingUtilities
-
-} // end namespace Tpetra
+  } // namespace TestingUtilities
+} // namespace Tpetra
 
 #endif // TPETRA_TESTINGUTILITIES_HPP_

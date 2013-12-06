@@ -89,7 +89,7 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(sEpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Amesos direct solver");
     } catch (Exceptions::RuntimeError) {
       // AmesosSmoother throws if Scalar != double, LocalOrdinal != int, GlobalOrdinal != int
-      this->GetOStream(Warnings0,0) << "Skipping AmesosSmoother construction due to incorrect type" << std::endl;
+      this->GetOStream(Debug,0) << "Skipping AmesosSmoother construction due to incorrect type" << std::endl;
     }
     triedEpetra = true;
 #endif

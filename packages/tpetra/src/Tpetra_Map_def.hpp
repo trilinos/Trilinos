@@ -629,14 +629,12 @@ namespace Tpetra {
 
     contiguous_  = false; // "Contiguous" is conservative.
 
-#ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
       minAllGID_ < indexBase_,
       std::invalid_argument,
       "Tpetra::Map constructor (noncontiguous): "
       "Minimum global ID = " << minAllGID_ << " over all process(es) is "
       "less than the given indexBase = " << indexBase_ << ".");
-#endif // HAVE_TPETRA_DEBUG
 
     // Create the Directory on demand in getRemoteIndexList().
     //setupDirectory ();

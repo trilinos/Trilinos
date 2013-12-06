@@ -73,7 +73,11 @@ int main(int argc, char *argv[])
   }
   
   int NumPoints = 5;
+#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
   Epetra_Map Map(NumPoints,0,Comm);
+#else
+  Epetra_Map Map;
+#endif
 
   Teuchos::RefCountPtr<Epetra_CrsMatrix> Matrix = Teuchos::rcp( new Epetra_CrsMatrix(Copy,Map,0) );
 
@@ -92,7 +96,9 @@ int main(int argc, char *argv[])
       Values[NumEntries] = 1.0 * (j - i);
       ++NumEntries;
     }
+#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
     Matrix->InsertGlobalValues(i,NumEntries,&Values[0],&Indices[0]);
+#endif
   }
   Matrix->FillComplete();
 

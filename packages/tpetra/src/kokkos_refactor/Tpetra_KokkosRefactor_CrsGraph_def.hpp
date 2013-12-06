@@ -606,14 +606,12 @@ namespace Tpetra {
       }
 
       if (lg == LocalIndices) {
-        std::cout << "Allocate Local\n ";
         // lclInds1D_ = LocalMatOps::template allocStorage<LocalOrdinal>( getRowMap()->getNode(), rowPtrs_() );
         k_lclInds1D_ = t_LocalOrdinal_1D("Tpetra::CrsGraph::lclInds1D_",*(rowPtrs_.end()-1));
         lclInds1D_ = Teuchos::arcp(k_lclInds1D_.ptr_on_device(), 0, k_lclInds1D_.dimension_0(),
                                    Kokkos::Compat::deallocator(k_lclInds1D_), false);
       }
       else {
-        std::cout << "Allocate Global\n ";
         // gblInds1D_ = LocalMatOps::template allocStorage<GlobalOrdinal>( getRowMap()->getNode(), rowPtrs_() );
         k_gblInds1D_ = t_GlobalOrdinal_1D("Tpetra::CrsGraph::gblInds1D_",*(rowPtrs_.end()-1));
         gblInds1D_ = Teuchos::arcp(k_gblInds1D_.ptr_on_device(), 0, k_gblInds1D_.dimension_0(),
@@ -2656,7 +2654,11 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::fillLocalGraph(const RCP<ParameterList> &params)
+  void CrsGraph<LocalOrdinal,
+                GlobalOrdinal,
+                Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+                typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  fillLocalGraph (const RCP<ParameterList> &params)
   {
     std::cout<<"\n--------------AllocCrsGraph-A-----------------\n";
     const size_t numRows = getNodeNumRows();
@@ -2681,8 +2683,8 @@ namespace Tpetra {
         //ptrs = LocalMatOps::allocRowPtrs( getRowMap()->getNode(), numRowEntries_() );
         //inds = LocalMatOps::template allocStorage<LocalOrdinal>( getRowMap()->getNode(), ptrs() );
         size_t nRE = numRowEntries_().size();
-        typename LocalStaticCrsGraphType::entries_type lclInds1DView_ = typename LocalStaticCrsGraphType::entries_type("Graph::lclInds1D",
-            nRE+1);
+        typename LocalStaticCrsGraphType::row_map_type::non_const_type lclInds1DView_ =
+          typename LocalStaticCrsGraphType::row_map_type::non_const_type ("Graph::lclInds1D", nRE + 1);
         ptrs = Kokkos::Compat::persistingView(lclInds1DView_);
         ptrs[0] = 0;
         std::partial_sum( numRowEntries_().getRawPtr(), numRowEntries_().getRawPtr()+numRowEntries_().size(), ptrs.begin()+1 );

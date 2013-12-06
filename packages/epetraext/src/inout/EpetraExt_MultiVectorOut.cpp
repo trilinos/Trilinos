@@ -45,8 +45,12 @@
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
+#include "Epetra_LongLongVector.h"
+#include "Epetra_GIDTypeVector.h"
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_IntSerialDenseVector.h"
+#include "Epetra_LongLongSerialDenseVector.h"
+#include "Epetra_GIDTypeSerialDenseVector.h"
 #include "Epetra_Import.h"
 #include "Epetra_CrsMatrix.h"
 
@@ -71,7 +75,7 @@ int MultiVectorToMatrixMarketFile( const char *filename, const Epetra_MultiVecto
 				 const char * matrixName,
 				 const char *matrixDescription, 
 				 bool writeHeader) {
-  int M = A.GlobalLength();
+  long long M = A.GlobalLength64();
   int N = A.NumVectors();
 
   FILE * handle = 0;
@@ -110,7 +114,9 @@ int MultiVectorToMatlabHandle(FILE * handle, const Epetra_MultiVector & A) {
 int MultiVectorToMatrixMarketHandle(FILE * handle, const Epetra_MultiVector & A) {
   return(MultiVectorToHandle(handle, A, true));
 }
-int MultiVectorToHandle(FILE * handle, const Epetra_MultiVector & A, bool mmFormat) {
+
+template<typename int_type>
+int TMultiVectorToHandle(FILE * handle, const Epetra_MultiVector & A, bool mmFormat) {
 
   Epetra_BlockMap bmap = A.Map();
   const Epetra_Comm & comm = bmap.Comm();
@@ -130,23 +136,23 @@ int MultiVectorToHandle(FILE * handle, const Epetra_MultiVector & A, bool mmForm
       return(0);
     }
 
-    Epetra_Map map(-1, bmap.NumMyPoints(), 0, comm);
+    Epetra_Map map((int_type) -1, bmap.NumMyPoints(), (int_type) 0, comm);
     // Create a veiw of this multivector using a map (instead of block map)
     Epetra_MultiVector A1(View, map, A.Pointers(), A.NumVectors());
     int numRows = map.NumMyElements();
     
-    Epetra_Map allGidsMap(-1, numRows, 0,comm);
+    Epetra_Map allGidsMap((int_type) -1, numRows, (int_type) 0,comm);
     
-    Epetra_IntVector allGids(allGidsMap);
-    for (int i=0; i<numRows; i++) allGids[i] = map.GID(i);
+    typename Epetra_GIDTypeVector<int_type>::impl allGids(allGidsMap);
+    for (int i=0; i<numRows; i++) allGids[i] = (int_type) map.GID64(i);
     
     // Now construct a MultiVector on PE 0 by strip-mining the rows of the input matrix A.
     int numChunks = numProc;
-    int stripSize = allGids.GlobalLength()/numChunks;
-    int remainder = allGids.GlobalLength()%numChunks;
+    int stripSize = allGids.GlobalLength64()/numChunks;
+    int remainder = allGids.GlobalLength64()%numChunks;
     int curStart = 0;
     int curStripSize = 0;
-    Epetra_IntSerialDenseVector importGidList;
+    typename Epetra_GIDTypeSerialDenseVector<int_type>::impl importGidList;
     if (comm.MyPID()==0) 
       importGidList.Size(stripSize+1); // Set size of vector to max needed
     for (int i=0; i<numChunks; i++) {
@@ -157,16 +163,16 @@ int MultiVectorToHandle(FILE * handle, const Epetra_MultiVector & A, bool mmForm
 	curStart += curStripSize;
       }
       // The following import map will be non-trivial only on PE 0.
-      Epetra_Map importGidMap(-1, curStripSize, importGidList.Values(), 0, comm);
+      Epetra_Map importGidMap((int_type) -1, curStripSize, importGidList.Values(), (int_type) 0, comm);
       Epetra_Import gidImporter(importGidMap, allGidsMap);
-      Epetra_IntVector importGids(importGidMap);
+      typename Epetra_GIDTypeVector<int_type>::impl importGids(importGidMap);
       if (importGids.Import(allGids, gidImporter, Insert)) return(-1); 
 
       // importGids now has a list of GIDs for the current strip of matrix rows.
       // Use these values to build another importer that will get rows of the matrix.
 
       // The following import map will be non-trivial only on PE 0.
-      Epetra_Map importMap(-1, importGids.MyLength(), importGids.Values(), 0, comm);
+      Epetra_Map importMap((int_type) -1, importGids.MyLength(), importGids.Values(), (int_type) 0, comm);
       Epetra_Import importer(importMap, map);
       Epetra_MultiVector importA(importMap, A1.NumVectors());
       if (importA.Import(A1, importer, Insert)) return(-1); 
@@ -177,10 +183,27 @@ int MultiVectorToHandle(FILE * handle, const Epetra_MultiVector & A, bool mmForm
   }
   return(0);
 }
+
+int MultiVectorToHandle(FILE * handle, const Epetra_MultiVector & A, bool mmFormat) {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(A.Map().GlobalIndicesInt()) {
+    return TMultiVectorToHandle<int>(handle, A, mmFormat);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(A.Map().GlobalIndicesLongLong()) {
+    return TMultiVectorToHandle<long long>(handle, A, mmFormat);
+  }
+  else
+#endif
+    throw "EpetraExt::MultiVectorToHandle: GlobalIndices type unknown";
+}
+
 int writeMultiVector(FILE * handle, const Epetra_MultiVector & A, bool mmFormat) {
 
   int ierr = 0;
-  int length = A.GlobalLength();
+  long long length = A.GlobalLength64();
   int numVectors = A.NumVectors();
   const Epetra_Comm & comm = A.Map().Comm();
   if (comm.MyPID()!=0) {
@@ -189,7 +212,7 @@ int writeMultiVector(FILE * handle, const Epetra_MultiVector & A, bool mmFormat)
   else {
     if (length!=A.MyLength()) ierr = -1;
     for (int j=0; j<numVectors; j++) {
-      for (int i=0; i<length; i++) {
+      for (long long i=0; i<length; i++) {
 	double val = A[j][i];
 	if (mmFormat)
 	  fprintf(handle, "%22.16e\n", val);
@@ -204,3 +227,4 @@ int writeMultiVector(FILE * handle, const Epetra_MultiVector & A, bool mmFormat)
   return(ierrGlobal);
 }
 } // namespace EpetraExt
+

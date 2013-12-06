@@ -51,8 +51,8 @@ namespace KokkosClassic {
 
   /*! Read/write options for non-const views. */
   enum ReadWriteOption {
-    ReadWrite, /*!< Indicates that the view may be safely read and written. */
-    WriteOnly  /*!< Indicates that the contents of the view are undefined until set on the host. */
+    ReadWrite = 0, /*!< Indicates that the view may be safely read and written. */
+    WriteOnly = 1 /*!< Indicates that the contents of the view are undefined until set on the host. */
   };
 
 }

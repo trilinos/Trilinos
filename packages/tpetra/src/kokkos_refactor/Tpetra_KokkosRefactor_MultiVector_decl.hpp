@@ -641,34 +641,89 @@ namespace Tpetra {
     Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
     subViewNonConst (const Teuchos::ArrayView<const size_t> &cols);
 
-    //! \brief Return a const MultiVector view of a subset of rows.
-    /**
-        Return a const view of this MultiVector consisting of a subset
-        of the rows, as specified by an offset and a subset Map of
-        this MultiVector's current row Map.
-
-        \param In subMap - The row Map for the new MultiVector.
-        \param In offset - The offset into the data of <tt>(*this)</tt>.
-
-        \pre <tt>subMap->getNodeNumElements() + offset < this->getLocalLength()</tt>
-        \pre The given Map must be a subset Map of this MultiVector's row Map.
-     */
+    /// \brief Return a const view of a subset of rows.
+    ///
+    /// Return a const (nonmodifiable) view of this MultiVector
+    /// consisting of a subset of the rows, as specified by an offset
+    /// and a subset Map of this MultiVector's current row Map.  If
+    /// you want X1 or X2 to be nonconst (modifiable) views, use
+    /// offsetViewNonConst() with the same arguments.  "View" means
+    /// "alias": if the original (this) MultiVector's data change, the
+    /// view will see the changed data.
+    ///
+    /// \param subMap [in] The row Map for the new MultiVector.  This
+    ///   must be a subset Map of this MultiVector's row Map.
+    /// \param offset [in] The local row offset at which to start the view.
+    ///
+    /// Suppose that you have a MultiVector X, and you want to view X,
+    /// on all processes in X's (MPI) communicator, as split into two
+    /// row blocks X1 and X2.  One could express this in Matlab
+    /// notation as X = [X1; X2], except that here, X1 and X2 are
+    /// views into X, rather than copies of X's data.  This method
+    /// assumes that the <i>local</i> indices of X1 and X2 are each
+    /// contiguous, and that the local indices of X2 follow those of
+    /// X1.  If that is not the case, you cannot use views to divide X
+    /// into blocks like this; you must instead use the Import or
+    /// Export functionality, which copies the relevant rows of X.
+    ///
+    /// Here is how you would construct the views X1 and X2.
+    /// \code
+    /// using Teuchos::RCP;
+    /// typedef Tpetra::Map<LO, GO, Node> map_type;
+    /// typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
+    ///
+    /// MV X (...); // the input MultiVector
+    /// // ... fill X with data ...
+    ///
+    /// // Map that on each process in X's communicator,
+    /// // contains the global indices of the rows of X1.
+    /// RCP<const map_type> map1 (new map_type (...));
+    /// // Map that on each process in X's communicator,
+    /// // contains the global indices of the rows of X2.
+    /// RCP<const map_type> map2 (new map_type (...));
+    ///
+    /// // Create the first view X1.  The second argument, the offset,
+    /// // is the index of the local row at which to start the view.
+    /// // X1 is the topmost block of X, so the offset is zero.
+    /// RCP<const MV> X1 = X.offsetView (map1, 0);
+    ///
+    /// // Create the second view X2.  X2 is directly below X1 in X,
+    /// // so the offset is the local number of rows in X1.  This is
+    /// // the same as the local number of entries in map1.
+    /// RCP<const MV> X2 = X.offsetView (map2, X1->getLocalLength ());
+    /// \endcode
+    ///
+    /// It is legal, in the above example, for X1 or X2 to have zero
+    /// local rows on any or all process(es).  In that case, the
+    /// corresponding Map must have zero local entries on that / those
+    /// process(es).  In particular, if X2 has zero local rows on a
+    /// process, then the corresponding offset on that process would
+    /// be the number of local rows in X (and therefore in X1) on that
+    /// process.  This is the only case in which the sum of the local
+    /// number of entries in \c subMap (in this case, zero) and the \c
+    /// offset may equal the number of local entries in
+    /// <tt>*this</tt>.
     Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
     offsetView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& subMap,
                 size_t offset) const;
 
-    //! \brief Return a non-const MultiVector view of a subset of rows.
-    /**
-        Returns a non-const view of this MultiVector consisting of a
-        subset of the rows, as specified by an offset and a subset Map
-        of this MultiVector's current row Map.
-
-        \param In subMap - The row Map for the new MultiVector.
-        \param In offset - The offset into the data of <tt>(*this)</tt>.
-
-        \pre <tt>subMap->getNodeNumElements() + offset < this->getLocalLength()</tt>
-        \pre The given Map must be a subset Map of this MultiVector's row Map.
-     */
+    /// \brief Return a nonconst view of a subset of rows.
+    ///
+    /// Return a nonconst (modifiable) view of this MultiVector
+    /// consisting of a subset of the rows, as specified by an offset
+    /// and a subset Map of this MultiVector's current row Map.  If
+    /// you want X1 or X2 to be const (nonmodifiable) views, use
+    /// offsetView() with the same arguments.  "View" means "alias":
+    /// if the original (this) MultiVector's data change, the view
+    /// will see the changed data, and if the view's data change, the
+    /// original MultiVector will see the changed data.
+    ///
+    /// \param subMap [in] The row Map for the new MultiVector.  This
+    ///   must be a subset Map of this MultiVector's row Map.
+    /// \param offset [in] The local row offset at which to start the view.
+    ///
+    /// See the documentation of offsetView() for a code example and
+    /// an explanation of edge cases.
     Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
     offsetViewNonConst (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap,
                         size_t offset);
@@ -955,10 +1010,13 @@ namespace Tpetra {
     typedef KokkosClassic::MultiVector<Scalar,Node> KMV;
     typedef KokkosClassic::DefaultArithmetic<KMV>   MVT;
 
-    //! The KokkosClassic::MultiVector containing the compute buffer of data.
+    /// \brief The KokkosClassic::MultiVector containing the MultiVector's data.
+    ///
+    /// This is actually just a view of the Kokkos::DualView \c view_.
+    /// The latter owns the MultiVector's data.
     KMV lclMV_;
 
-
+    //! The Kokkos::DualView containing the MultiVector's data.
     view_type view_;
 
     /// \brief Indices of columns this multivector is viewing.

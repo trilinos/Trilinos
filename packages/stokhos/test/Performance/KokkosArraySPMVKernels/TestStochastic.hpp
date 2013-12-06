@@ -42,6 +42,8 @@
 #include <cmath>
 #include <iostream>
 
+#include "Teuchos_ScalarTraitsCUDA.hpp"
+
 #include "Kokkos_Threads.hpp"
 #include "impl/Kokkos_Timer.hpp"
 
@@ -350,8 +352,9 @@ test_product_flat_commuted_matrix(
 
   //------------------------------
 
-  typedef Stokhos::CrsMatrix<value_type,Device> matrix_type ;
-  typedef Kokkos::CrsArray<int,Device,void,int> crsarray_type ;
+  typedef Stokhos::CrsMatrix<value_type,Device> matrix_type;
+  typedef typename matrix_type::values_type matrix_values_type;
+  typedef typename matrix_type::graph_type matrix_graph_type;
 
   typedef ScalarType value_type ;
   typedef Stokhos::OneDOrthogPolyBasis<int,value_type> abstract_basis_type;
@@ -455,12 +458,12 @@ test_product_flat_commuted_matrix(
 
   matrix_type matrix ;
 
-  matrix.graph = Kokkos::create_crsarray<crsarray_type>(
+  matrix.graph = Kokkos::create_crsarray<matrix_graph_type>(
     std::string("testing") , flat_graph );
 
   const size_t flat_graph_length = matrix.graph.entries.dimension_0();
 
-  matrix.values = vector_type( Kokkos::allocate_without_initializing, "matrix" , flat_graph_length );
+  matrix.values = matrix_values_type( Kokkos::allocate_without_initializing, "matrix" , flat_graph_length );
 
   Kokkos::deep_copy( matrix.values , ScalarType(1.0) );
 
@@ -506,8 +509,9 @@ test_product_flat_original_matrix(
 
   //------------------------------
 
-  typedef Stokhos::CrsMatrix<value_type,Device> matrix_type ;
-  typedef Kokkos::CrsArray<int,Device,void,int> crsarray_type ;
+  typedef Stokhos::CrsMatrix<value_type,Device> matrix_type;
+  typedef typename matrix_type::values_type matrix_values_type;
+  typedef typename matrix_type::graph_type matrix_graph_type;
 
   typedef ScalarType value_type ;
   typedef Stokhos::OneDOrthogPolyBasis<int,value_type> abstract_basis_type;
@@ -610,11 +614,11 @@ test_product_flat_original_matrix(
 
   matrix_type matrix ;
 
-  matrix.graph = Kokkos::create_crsarray<crsarray_type>( std::string("testing") , flat_graph );
+  matrix.graph = Kokkos::create_crsarray<matrix_graph_type>( std::string("testing") , flat_graph );
 
   const size_t flat_graph_length = matrix.graph.entries.dimension_0();
 
-  matrix.values = vector_type( Kokkos::allocate_without_initializing, "matrix" , flat_graph_length );
+  matrix.values = matrix_values_type( Kokkos::allocate_without_initializing, "matrix" , flat_graph_length );
 
   Kokkos::deep_copy( matrix.values , ScalarType(1.0) );
 
@@ -1111,8 +1115,9 @@ test_original_matrix_free_vec(
 
   //------------------------------
 
-  typedef Stokhos::CrsMatrix<value_type,Device> matrix_type ;
-  typedef Kokkos::CrsArray<int,Device,void,int> crsarray_type ;
+  typedef Stokhos::CrsMatrix<value_type,Device> matrix_type;
+  typedef typename matrix_type::values_type matrix_values_type;
+  typedef typename matrix_type::graph_type matrix_graph_type;
 
   //------------------------------
   // Generate FEM graph:
@@ -1133,9 +1138,9 @@ test_original_matrix_free_vec(
   std::vector<vec_type> tmp( outer_length ) ;
 
   for (size_t block=0; block<outer_length; ++block) {
-    matrix[block].graph = Kokkos::create_crsarray<crsarray_type>( std::string("testing") , fem_graph );
+    matrix[block].graph = Kokkos::create_crsarray<matrix_graph_type>( std::string("testing") , fem_graph );
 
-    matrix[block].values = vec_type( Kokkos::allocate_without_initializing, "matrix" , graph_length );
+    matrix[block].values = matrix_values_type( Kokkos::allocate_without_initializing, "matrix" , graph_length );
 
     x[block]   = vec_type( Kokkos::allocate_without_initializing, "x" , inner_length );
     y[block]   = vec_type( Kokkos::allocate_without_initializing, "y" , inner_length );
@@ -1249,8 +1254,9 @@ test_original_matrix_free_view(
 
   //------------------------------
 
-  typedef Stokhos::CrsMatrix<value_type,Device> matrix_type ;
-  typedef Kokkos::CrsArray<int,Device,void,int> crsarray_type ;
+  typedef Stokhos::CrsMatrix<value_type,Device> matrix_type;
+  typedef typename matrix_type::values_type matrix_values_type;
+  typedef typename matrix_type::graph_type matrix_graph_type;
 
   //------------------------------
   // Generate FEM graph:
@@ -1265,7 +1271,6 @@ test_original_matrix_free_view(
 
   typedef Kokkos::View<value_type*, Kokkos::LayoutLeft, Device, Kokkos::MemoryUnmanaged> vec_type ;
   typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, Device> multi_vec_type ;
-  typedef Kokkos::View<value_type*,Device> matrix_values_type ;
 
   std::vector<matrix_type> matrix( outer_length ) ;
   multi_vec_type x( Kokkos::allocate_without_initializing, "x", inner_length, outer_length  ) ;
@@ -1276,7 +1281,7 @@ test_original_matrix_free_view(
   Kokkos::deep_copy( y , ScalarType(0.0) );
 
   for (size_t block=0; block<outer_length; ++block) {
-    matrix[block].graph = Kokkos::create_crsarray<crsarray_type>( std::string("testing") , fem_graph );
+    matrix[block].graph = Kokkos::create_crsarray<matrix_graph_type>( std::string("testing") , fem_graph );
 
     matrix[block].values = matrix_values_type( "matrix" , graph_length );
 

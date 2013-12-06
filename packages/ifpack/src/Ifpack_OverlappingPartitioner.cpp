@@ -122,7 +122,7 @@ int Ifpack_OverlappingPartitioner::Compute()
   if (Graph_->Filled() == false)
     IFPACK_CHK_ERR(-4); // need FillComplete() called
 
-  if (Graph_->NumGlobalRows() != Graph_->NumGlobalCols())
+  if (Graph_->NumGlobalRows64() != Graph_->NumGlobalCols64())
     IFPACK_CHK_ERR(-3); // can partition square matrices only
 
   if (NumLocalParts_ < 1)
@@ -258,11 +258,17 @@ int Ifpack_OverlappingPartitioner::NumMyNonzeros() const
 }
 
 //============================================================================
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Ifpack_OverlappingPartitioner::NumGlobalRows() const
 {
   return(Graph_->NumGlobalRows());
 }
+#endif
 
+long long Ifpack_OverlappingPartitioner::NumGlobalRows64() const
+{
+  return(Graph_->NumGlobalRows64());
+}
 //============================================================================
 int Ifpack_OverlappingPartitioner::MaxNumEntries() const
 {
@@ -285,7 +291,7 @@ ostream& Ifpack_OverlappingPartitioner::Print(ostream & os) const
   os << "================================================================================" << endl;
   os << "Ifpack_OverlappingPartitioner" << endl;
   os << "Number of local rows  = " << Graph_->NumMyRows() << endl;
-  os << "Number of global rows = " << Graph_->NumGlobalRows() << endl;
+  os << "Number of global rows = " << Graph_->NumGlobalRows64() << endl;
   os << "Number of local parts = " << NumLocalParts_ << endl;
   os << "Overlapping level     = " << OverlappingLevel_ << endl;
   os << "Is computed           = " << IsComputed_ << endl;

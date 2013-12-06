@@ -55,6 +55,7 @@ namespace Matrices {
   // def for conv = 1;
   // def for diff = 1e-5
   // for alpha = 0
+template<typename int_type>
 inline
 Epetra_CrsMatrix* UniFlow2D(const Epetra_Map* Map, 
                             const int nx, const int ny,
@@ -63,7 +64,8 @@ Epetra_CrsMatrix* UniFlow2D(const Epetra_Map* Map,
                             const double alpha)
 {
   int NumMyElements = Map->NumMyElements();
-  int* MyGlobalElements = Map->MyGlobalElements();
+  int_type* MyGlobalElements = 0;
+  Map->MyGlobalElementsPtr(MyGlobalElements);
 
   Epetra_Vector A(*Map);
   Epetra_Vector B(*Map);
@@ -118,6 +120,28 @@ Epetra_CrsMatrix* UniFlow2D(const Epetra_Map* Map,
   }
 
   return(Cross2D(Map, nx, ny, A, B, C, D, E));
+}
+
+inline
+Epetra_CrsMatrix* UniFlow2D(const Epetra_Map* Map, 
+                            const int nx, const int ny,
+                            const double lx, const double ly,
+                            const double conv, const double diff,
+                            const double alpha)
+{
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(Map->GlobalIndicesInt()) {
+	  return UniFlow2D<int>(Map, nx, ny, lx, ly, conv, diff, alpha);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(Map->GlobalIndicesLongLong()) {
+	  return UniFlow2D<long long>(Map, nx, ny, lx, ly, conv, diff, alpha);
+  }
+  else
+#endif
+    throw "Galeri::Matrices::UniFlow2D: GlobalIndices type unknown";
 }
 
 } // namespace Matrices

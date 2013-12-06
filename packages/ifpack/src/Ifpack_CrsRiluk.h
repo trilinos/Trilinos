@@ -46,6 +46,7 @@
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_ScalingType.h"
 #include "Ifpack_IlukGraph.h"
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_CompObject.h"
 #include "Epetra_Operator.h"
 #include "Epetra_CrsMatrix.h"
@@ -243,7 +244,9 @@ class Ifpack_CrsRiluk: public Epetra_Object, public Epetra_CompObject, public vi
     \warning The graph of A must be identical to the graph passed in to Ifpack_IlukGraph constructor.
              
    */
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES // FIXME LONG LONG
   int InitValues(const Epetra_VbrMatrix &A);
+#endif
 
   //! If values have been initialized, this query returns true, otherwise it returns false.
   bool ValuesInitialized() const {return(ValuesInitialized_);};
@@ -340,6 +343,7 @@ class Ifpack_CrsRiluk: public Epetra_Object, public Epetra_CompObject, public vi
   Epetra_CombineMode GetOverlapMode() {return OverlapMode_;}
 
     
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   //! Returns the number of global matrix rows.
   int NumGlobalRows() const {return(Graph().NumGlobalRows());};
   
@@ -348,10 +352,16 @@ class Ifpack_CrsRiluk: public Epetra_Object, public Epetra_CompObject, public vi
   
   //! Returns the number of nonzero entries in the global graph.
   int NumGlobalNonzeros() const {return(L().NumGlobalNonzeros()+U().NumGlobalNonzeros());};
-  
+
   //! Returns the number of diagonal entries found in the global input graph.
   virtual int NumGlobalBlockDiagonals() const {return(Graph().NumGlobalBlockDiagonals());};
-  
+#endif
+
+  long long NumGlobalRows64() const {return(Graph().NumGlobalRows64());};
+  long long NumGlobalCols64() const {return(Graph().NumGlobalCols64());};
+  long long NumGlobalNonzeros64() const {return(L().NumGlobalNonzeros64()+U().NumGlobalNonzeros64());};
+  virtual long long NumGlobalBlockDiagonals64() const {return(Graph().NumGlobalBlockDiagonals64());};
+    
   //! Returns the number of local matrix rows.
   int NumMyRows() const {return(Graph().NumMyRows());};
   
@@ -368,9 +378,12 @@ class Ifpack_CrsRiluk: public Epetra_Object, public Epetra_CompObject, public vi
   virtual int NumMyDiagonals() const {return(NumMyDiagonals_);};
   
   //! Returns the index base for row and column indices for this graph.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int IndexBase() const {return(Graph().IndexBase());};
-  
-  //! Returns the address of the Ifpack_IlukGraph associated with this factored matrix.
+#endif
+  long long IndexBase64() const {return(Graph().IndexBase64());};
+    
+  //! returns the address of the Ifpack_IlukGraph associated with this factored matrix.
   const Ifpack_IlukGraph & Graph() const {return(Graph_);};
   
   //! Returns the address of the L factor associated with this factored matrix.

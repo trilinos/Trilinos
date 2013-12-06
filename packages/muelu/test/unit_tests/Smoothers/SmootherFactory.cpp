@@ -57,6 +57,7 @@
 namespace MueLuTests {
 
   namespace SmootherFactory {
+
 #include "MueLu_UseShortNames.hpp"
 
     using Teuchos::RCP;

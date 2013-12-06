@@ -53,8 +53,8 @@ CrsGraph_(CrsGraph)
 {
   NumMyRows_ = CrsGraph_->NumMyRows();
   NumMyCols_ = CrsGraph_->NumMyCols();
-  NumGlobalRows_ = CrsGraph_->NumGlobalRows();
-  NumGlobalCols_ = CrsGraph_->NumGlobalCols();
+  NumGlobalRows_ = CrsGraph_->NumGlobalRows64();
+  NumGlobalCols_ = CrsGraph_->NumGlobalCols64();
   MaxNumIndices_ = CrsGraph_->MaxNumIndices();
 }
 
@@ -71,6 +71,7 @@ bool Ifpack_Graph_Epetra_CrsGraph::Filled() const
 }
  
 //==============================================================================
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Ifpack_Graph_Epetra_CrsGraph::GRID(int LRID_in) const
 {
   return(CrsGraph_->GRID(LRID_in));
@@ -81,8 +82,21 @@ int Ifpack_Graph_Epetra_CrsGraph::GCID(int LCID_in) const
 {
   return(CrsGraph_->GCID(LCID_in));
 }
+#endif
+
+long long Ifpack_Graph_Epetra_CrsGraph::GRID64(int LRID_in) const
+{
+  return(CrsGraph_->GRID64(LRID_in));
+}
 
 //==============================================================================
+long long Ifpack_Graph_Epetra_CrsGraph::GCID64(int LCID_in) const
+{
+  return(CrsGraph_->GCID64(LCID_in));
+}
+
+//==============================================================================
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Ifpack_Graph_Epetra_CrsGraph::LRID(int GRID_in) const
 {
   return(CrsGraph_->LRID(GRID_in));
@@ -93,7 +107,21 @@ int Ifpack_Graph_Epetra_CrsGraph::LCID(int GCID_in) const
 {
   return(CrsGraph_->LCID(GCID_in));
 }
+#endif
 
+//==============================================================================
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+int Ifpack_Graph_Epetra_CrsGraph::LRID(long long GRID_in) const
+{
+  return(CrsGraph_->LRID(GRID_in));
+}
+
+//==============================================================================
+int Ifpack_Graph_Epetra_CrsGraph::LCID(long long GCID_in) const
+{
+  return(CrsGraph_->LCID(GCID_in));
+}
+#endif
 //==============================================================================
 int Ifpack_Graph_Epetra_CrsGraph::
 ExtractMyRowCopy(int MyRow, int LenOfIndices, 

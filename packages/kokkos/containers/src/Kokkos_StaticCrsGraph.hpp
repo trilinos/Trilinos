@@ -171,5 +171,51 @@ create_mirror( const StaticCrsGraph<DataType,Arg1Type,Arg2Type,SizeType > & inpu
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
+namespace Kokkos {
+namespace Impl {
+
+template< class GraphType >
+struct StaticCrsGraphMaximumEntry {
+
+  typedef typename GraphType::device_type device_type ;
+  typedef typename GraphType::data_type value_type ;
+
+  const typename GraphType::entries_type entries ;
+
+  StaticCrsGraphMaximumEntry( const GraphType & graph ) : entries( graph.entries ) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const unsigned i , value_type & update ) const
+    { if ( update < entries(i) ) update = entries(i); }
+
+  KOKKOS_INLINE_FUNCTION
+  void init( value_type & update ) const
+    { update = 0 ; }
+
+  KOKKOS_INLINE_FUNCTION
+  void join( volatile value_type & update ,
+             volatile const value_type & input ) const
+    { if ( update < input ) update = input ; }
+};
+
+}
+
+template< class DataType, class Arg1Type, class Arg2Type, typename SizeType >
+DataType maximum_entry( const StaticCrsGraph< DataType , Arg1Type , Arg2Type , SizeType > & graph )
+{
+  typedef StaticCrsGraph<DataType,Arg1Type,Arg2Type,SizeType> GraphType ;
+  typedef Impl::StaticCrsGraphMaximumEntry< GraphType > FunctorType ;
+
+  DataType result = 0 ;
+  Kokkos::parallel_reduce( graph.entries.dimension_0(),
+                           FunctorType(graph), result );
+  return result ;
+}
+
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
 #endif /* #ifndef KOKKOS_CRSARRAY_HPP */
 

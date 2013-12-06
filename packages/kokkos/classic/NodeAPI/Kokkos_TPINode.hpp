@@ -47,6 +47,14 @@
 #include "Kokkos_NodeHelpers.hpp"
 #include <TPI.h>
 
+#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#  include "KokkosCore_config.h"
+#  ifdef KOKKOS_HAVE_PTHREAD
+#    include "Kokkos_Threads.hpp"
+#  endif
+#endif
+
+
 namespace KokkosClassic {
 
   template <class WDP>
@@ -121,7 +129,8 @@ namespace KokkosClassic {
   void tpi_reduction_init(TPI_Work * work)
   {
     typedef typename WDP::ReductionType ReductionType;
-    *(static_cast<ReductionType*>(work->reduce)) = WDP::identity();
+    const WDPPlusRange<WDP>* const_wdp_wrapper = static_cast<const WDPPlusRange<WDP>*>(work->info);
+    *(static_cast<ReductionType*>(work->reduce)) = const_wdp_wrapper->wdp.identity();
   }
 
   /** \brief %Kokkos node interface to the ThreadPool threading library.
@@ -172,7 +181,7 @@ namespace KokkosClassic {
     static typename WDP::ReductionType 
     parallel_reduce(int beg, int end, WDP wd) {
       typedef typename WDP::ReductionType ReductionType;
-      ReductionType result = WDP::identity();
+      ReductionType result = wd.identity();
       WDPPlusRange<WDP> wdp_plus(beg,end,wd);
       TPI_Run_threads_reduce(tpi_reduction_work<WDP>, &wdp_plus,
 			     tpi_reduction_join<WDP>,
@@ -190,5 +199,17 @@ namespace KokkosClassic {
   template <> class ArrayOfViewsHelper<TPINode> : public ArrayOfViewsHelperTrivialImpl<TPINode> {};
 
 } // end namespace KokkosClassic
+
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD)
+namespace Kokkos {
+  namespace Compat {
+    template <>
+    struct NodeDevice<KokkosClassic::TPINode> {
+      typedef Kokkos::Threads type;
+    };
+  }
+}
+#endif
+
 
 #endif

@@ -52,6 +52,7 @@ namespace Galeri {
 namespace Matrices {
 
   //def for espilon muyst be 1e-5
+template<typename int_type>
 inline
 Epetra_CrsMatrix* 
 Stretched2D(const Epetra_Map* Map, const int nx, const int ny,
@@ -60,12 +61,13 @@ Stretched2D(const Epetra_Map* Map, const int nx, const int ny,
   Epetra_CrsMatrix* Matrix = new Epetra_CrsMatrix(Copy, *Map,  9);
 
   int NumMyElements = Map->NumMyElements();
-  int* MyGlobalElements = Map->MyGlobalElements();
+  int_type* MyGlobalElements = 0;
+  Map->MyGlobalElementsPtr(MyGlobalElements);
 
   int left, right, lower, upper;
     
   double Values[9];
-  int    Indices[9];
+  int_type Indices[9];
 
   for (int i = 0 ; i < NumMyElements ; ++i) 
   {
@@ -134,6 +136,26 @@ Stretched2D(const Epetra_Map* Map, const int nx, const int ny,
   Matrix->OptimizeStorage();
 
   return(Matrix);
+}
+
+inline
+Epetra_CrsMatrix* 
+Stretched2D(const Epetra_Map* Map, const int nx, const int ny,
+            const double epsilon)
+{
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(Map->GlobalIndicesInt()) {
+	  return Stretched2D<int>(Map, nx, ny, epsilon);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(Map->GlobalIndicesLongLong()) {
+	  return Stretched2D<long long>(Map, nx, ny, epsilon);
+  }
+  else
+#endif
+    throw "Galeri::Matrices::Stretched2D: GlobalIndices type unknown";
 }
 
 } // namespace Matrices

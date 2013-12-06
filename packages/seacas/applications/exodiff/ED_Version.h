@@ -32,7 +32,7 @@
 #ifndef SEACAS_Version_h
 #define SEACAS_Version_h
 
-static std::string version("2.69");
-static std::string verdate("2013-07-11");
+static std::string version("2.70");
+static std::string verdate("2013-12-04");
 
 #endif // SEACAS_Version_h

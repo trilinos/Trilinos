@@ -71,11 +71,12 @@
 #include <Galeri_XpetraProblemFactory.hpp>
 
 #include <MueLu_UseDefaultTypes.hpp>
-#include <MueLu_UseShortNames.hpp>
 
 // Default problem is Laplace1D with nx = 8748. Use --help to list available options.
 
 int main(int argc, char *argv[]) {
+#include <MueLu_UseShortNames.hpp>
+
   using Teuchos::RCP;
   using Teuchos::rcp;
 

@@ -66,7 +66,7 @@ Ifpack_DropFilter::Ifpack_DropFilter(const Teuchos::RefCountPtr<Epetra_RowMatrix
     exit(EXIT_FAILURE);
   }
   
-  if ((A_->NumMyRows() != A_->NumGlobalRows()) ||
+  if ((A_->NumMyRows() != A_->NumGlobalRows64()) ||
       (A_->NumMyRows() != A_->NumMyCols()))
     IFPACK_CHK_ERRV(-2);
 

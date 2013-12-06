@@ -42,7 +42,8 @@
 #ifndef EpetraExt_PERMUTATION_H
 #define EpetraExt_PERMUTATION_H
 
-#include <Epetra_IntVector.h>
+#include <Epetra_ConfigDefs.h>
+#include <Epetra_GIDTypeVector.h>
 
 #include <EpetraExt_Transform.h>
 
@@ -112,8 +113,8 @@ namespace EpetraExt {
 
 Questions and comments about this class may be directed to Alan Williams.
 */
-template<typename T>
-class Permutation : public Epetra_IntVector,
+template<typename T, typename int_type>
+class TPermutation : public Epetra_GIDTypeVector<int_type>::impl,
                     public EpetraExt::StructuralSameTypeTransform<T> {
  public:
   /** Constructor
@@ -127,22 +128,22 @@ class Permutation : public Epetra_IntVector,
 	 is the local portion of the 'p' vector described in the
 	 'Detailed Description' section.
    */
-  Permutation(Epetra_DataAccess CV,
+  TPermutation(Epetra_DataAccess CV,
 	      const Epetra_BlockMap& map,
-	      int* permutation);
+	      int_type* permutation);
 
   /** Constructor. This constructor creates an empty permutation object.
       The contents must then be set using regular Epetra_IntVector methods.
 
       @param map Defines the index space to be permuted.
   */
-  Permutation(const Epetra_BlockMap& map);
+  TPermutation(const Epetra_BlockMap& map);
 
   /** Copy Constructor */
-  Permutation(const Permutation<T>& src);
+  TPermutation(const TPermutation<T, int_type>& src);
 
   /** Destructor */
-  virtual ~Permutation();
+  virtual ~TPermutation();
 
   typedef typename EpetraExt::SameTypeTransform<T>::TransformTypeRef OutputRef;
   typedef typename EpetraExt::SameTypeTransform<T>::TransformTypeRef InputRef;
@@ -185,7 +186,7 @@ class Permutation : public Epetra_IntVector,
 		      bool column_permutation );
 
  private:
-  Permutation<T>& operator=(const Permutation<T>& src)
+  TPermutation<T, int_type>& operator=(const TPermutation<T, int_type>& src)
     {
       //not currently supported
       abort();
@@ -197,6 +198,87 @@ class Permutation : public Epetra_IntVector,
   OutputPtr newObj_;
   InputPtr origObj_;
 };
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+template<typename T>
+class Permutation : public TPermutation<T, int> {
+public:
+  /** Constructor
+
+      @param CV Set to either Copy or View.
+
+      @param map Defines the index space to be permuted.
+
+      @param permutation Array defining the permutation.
+         The length of this array must be 'map.NumMyElements()'. This array
+	 is the local portion of the 'p' vector described in the
+	 'Detailed Description' section.
+   */
+  Permutation(Epetra_DataAccess CV,
+	      const Epetra_BlockMap& map,
+	      int* permutation)
+		  : TPermutation<T, int>(CV, map, permutation)
+  {
+  }
+
+  /** Constructor. This constructor creates an empty permutation object.
+      The contents must then be set using regular Epetra_IntVector methods.
+
+      @param map Defines the index space to be permuted.
+  */
+  Permutation(const Epetra_BlockMap& map)
+	  : TPermutation<T, int>(map)
+  {
+  }
+
+  /** Copy Constructor */
+  Permutation(const Permutation<T>& src)
+	  : TPermutation<T, int>(src)
+  {
+  }
+};
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+
+template<typename T>
+class Permutation64 : public TPermutation<T, long long> {
+public:
+  /** Constructor
+
+      @param CV Set to either Copy or View.
+
+      @param map Defines the index space to be permuted.
+
+      @param permutation Array defining the permutation.
+         The length of this array must be 'map.NumMyElements()'. This array
+	 is the local portion of the 'p' vector described in the
+	 'Detailed Description' section.
+   */
+  Permutation64(Epetra_DataAccess CV,
+	      const Epetra_BlockMap& map,
+	      long long* permutation)
+		  : TPermutation<T, long long>(CV, map, permutation)
+  {
+  }
+
+  /** Constructor. This constructor creates an empty permutation object.
+      The contents must then be set using regular Epetra_IntVector methods.
+
+      @param map Defines the index space to be permuted.
+  */
+  Permutation64(const Epetra_BlockMap& map)
+	  : TPermutation<T, long long>(map)
+  {
+  }
+
+  /** Copy Constructor */
+  Permutation64(const Permutation64<T>& src)
+	  : TPermutation<T, long long>(src)
+  {
+  }
+};
+#endif
 
 }//namespace EpetraExt
 

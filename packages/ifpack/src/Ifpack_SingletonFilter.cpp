@@ -68,7 +68,7 @@ Ifpack_SingletonFilter::Ifpack_SingletonFilter(const Teuchos::RefCountPtr<Epetra
     exit(EXIT_FAILURE);
   }
   
-  if ((A_->NumMyRows() != A_->NumGlobalRows()) ||
+  if ((A_->NumMyRows() != A_->NumGlobalRows64()) ||
      (A_->NumMyRows() != A_->NumMyCols()))
     IFPACK_CHK_ERRV(-1);
   
@@ -127,7 +127,9 @@ Ifpack_SingletonFilter::Ifpack_SingletonFilter(const Teuchos::RefCountPtr<Epetra
     }
   }
 
+#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
   Map_ = Teuchos::rcp( new Epetra_Map(NumRows_,0,Comm()) );
+#endif
 
   // and finish up with the diagonal entry
   Diagonal_ = Teuchos::rcp( new Epetra_Vector(*Map_) );

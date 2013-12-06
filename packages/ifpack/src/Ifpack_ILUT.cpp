@@ -57,6 +57,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include <functional>
+#include <algorithm>
 
 using namespace Teuchos;
 
@@ -172,31 +173,15 @@ class Ifpack_AbsComp
 // MS // completely rewritten the algorithm on 25-Jan-05, using more STL
 // MS // and in a nicer and cleaner way. Also, it is more efficient.
 // MS // WARNING: Still not fully tested!
-int Ifpack_ILUT::Compute() 
+template<typename int_type>
+int Ifpack_ILUT::TCompute() 
 {
-  if (!IsInitialized()) 
-    IFPACK_CHK_ERR(Initialize());
-
-  Time_.ResetStartTime();
-  IsComputed_ = false;
-
-  NumMyRows_ = A_.NumMyRows();
   int Length = A_.MaxNumEntries();
-  vector<int>    RowIndicesL(Length);
   vector<double> RowValuesL(Length);
   vector<int>    RowIndicesU(Length);
+  vector<int_type> RowIndicesU_LL;
+  RowIndicesU_LL.resize(Length);
   vector<double> RowValuesU(Length);
-  bool distributed = (Comm().NumProc() > 1)?true:false;
-
-  if (distributed)
-  {
-    SerialComm_ = rcp(new Epetra_SerialComm);
-    SerialMap_ = rcp(new Epetra_Map(NumMyRows_, 0, *SerialComm_));
-    assert (SerialComm_.get() != 0);
-    assert (SerialMap_.get() != 0);
-  }
-  else
-    SerialMap_ = rcp(const_cast<Epetra_Map*>(&A_.RowMatrixRowMap()), false);
   
   int RowNnzU;
 
@@ -209,6 +194,8 @@ int Ifpack_ILUT::Compute()
   // insert first row in U_ and L_
   IFPACK_CHK_ERR(A_.ExtractMyRowCopy(0,Length,RowNnzU,
                                      &RowValuesU[0],&RowIndicesU[0]));
+
+  bool distributed = (Comm().NumProc() > 1)?true:false;
 
   if (distributed)
   {
@@ -235,13 +222,15 @@ int Ifpack_ILUT::Compute()
     }
   }
   
+  std::copy(&(RowIndicesU[0]), &(RowIndicesU[0]) + RowNnzU, RowIndicesU_LL.begin());
   IFPACK_CHK_ERR(U_->InsertGlobalValues(0,RowNnzU,&(RowValuesU[0]),
-                                        &(RowIndicesU[0])));
+                                        &(RowIndicesU_LL[0])));
    // FIXME: DOES IT WORK IN PARALLEL ??
   RowValuesU[0] = 1.0;
   RowIndicesU[0] = 0;
+  int_type RowIndicesU_0_templ = RowIndicesU[0];
   IFPACK_CHK_ERR(L_->InsertGlobalValues(0,1,&(RowValuesU[0]),
-                                        &(RowIndicesU[0])));
+                                        &RowIndicesU_0_templ));
 
   int max_keys =  (int) 10 * A_.MaxNumEntries() * LevelOfFill() ;
   Ifpack_HashTable SingleRowU(max_keys , 1);
@@ -323,7 +312,7 @@ int Ifpack_ILUT::Compute()
   
     for (int col_k = start_col ; col_k < row_i ; ++col_k) {
 
-      int*    ColIndicesK;
+      int_type* ColIndicesK;
       double* ColValuesK;
       int     ColNnzK;
 
@@ -355,7 +344,7 @@ int Ifpack_ILUT::Compute()
 
           for (int j = 0 ; yyy != 0.0 && j < ColNnzK ; ++j)
           {
-            int col_j = ColIndicesK[j];
+            int_type col_j = ColIndicesK[j];
 
             if (col_j < col_k) continue;
 
@@ -400,7 +389,8 @@ int Ifpack_ILUT::Compute()
 
     for (int i = 0; i < sizeL; ++i) {
       if (IFPACK_ABS(values[i]) >= cutoff) {
-        IFPACK_CHK_ERR(L_->InsertGlobalValues(row_i,1, &values[i], (int*)&keys[i]));
+        int_type key_templ = keys[i];
+        IFPACK_CHK_ERR(L_->InsertGlobalValues(row_i,1, &values[i], &key_templ));
       }
       else
         DiscardedElements += values[i];
@@ -409,7 +399,8 @@ int Ifpack_ILUT::Compute()
     // FIXME: DOES IT WORK IN PARALLEL ???
     // add 1 to the diagonal
     double dtmp = 1.0;
-    IFPACK_CHK_ERR(L_->InsertGlobalValues(row_i,1, &dtmp, &row_i));
+	int_type row_i_templ = row_i;
+    IFPACK_CHK_ERR(L_->InsertGlobalValues(row_i,1, &dtmp, &row_i_templ));
 
     // same business with U_
     count = 0;
@@ -440,7 +431,8 @@ int Ifpack_ILUT::Compute()
 
       if (col >= row_i) {
         if (IFPACK_ABS(val) >= cutoff || row_i == col) {
-          IFPACK_CHK_ERR(U_->InsertGlobalValues(row_i,1, &val, &col));
+          int_type col_templ = col;
+          IFPACK_CHK_ERR(U_->InsertGlobalValues(row_i,1, &val, &col_templ));
         }
         else
           DiscardedElements += val;
@@ -451,7 +443,7 @@ int Ifpack_ILUT::Compute()
     if (RelaxValue() != 0.0) {
       DiscardedElements *= RelaxValue();
       IFPACK_CHK_ERR(U_->InsertGlobalValues(row_i,1, &DiscardedElements,
-                                            &row_i));
+                                            &row_i_templ));
     }
   }
 
@@ -485,7 +477,7 @@ int Ifpack_ILUT::Compute()
   RHS1.Norm2(&Norm);
 #endif
 
-  int MyNonzeros = L_->NumGlobalNonzeros() + U_->NumGlobalNonzeros();
+  long long MyNonzeros = L_->NumGlobalNonzeros64() + U_->NumGlobalNonzeros64();
   Comm().SumAll(&MyNonzeros, &GlobalNonzeros_, 1);
 
   IsComputed_ = true;
@@ -496,7 +488,48 @@ int Ifpack_ILUT::Compute()
   return(0);
 
 }
-  
+
+int Ifpack_ILUT::Compute() {
+  if (!IsInitialized()) 
+    IFPACK_CHK_ERR(Initialize());
+
+  Time_.ResetStartTime();
+  IsComputed_ = false;
+
+  NumMyRows_ = A_.NumMyRows();
+  bool distributed = (Comm().NumProc() > 1)?true:false;
+
+#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
+  if (distributed)
+  {
+    SerialComm_ = rcp(new Epetra_SerialComm);
+    SerialMap_ = rcp(new Epetra_Map(NumMyRows_, 0, *SerialComm_));
+    assert (SerialComm_.get() != 0);
+    assert (SerialMap_.get() != 0);
+  }
+  else
+    SerialMap_ = rcp(const_cast<Epetra_Map*>(&A_.RowMatrixRowMap()), false);
+#endif
+
+  int ret_val = 1;
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(SerialMap_->GlobalIndicesInt()) {
+    ret_val = TCompute<int>();
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(SerialMap_->GlobalIndicesLongLong()) {
+    ret_val = TCompute<long long>();
+  }
+  else
+#endif
+    throw "Ifpack_ILUT::Compute: GlobalIndices type unknown";
+
+  return ret_val;
+}
+
 //=============================================================================
 int Ifpack_ILUT::ApplyInverse(const Epetra_MultiVector& X, 
 			     Epetra_MultiVector& Y) const
@@ -579,14 +612,14 @@ Ifpack_ILUT::Print(std::ostream& os) const
     os << "Relative threshold = " << RelativeThreshold() << endl;
     os << "Relax value        = " << RelaxValue() << endl;
     os << "Condition number estimate       = " << Condest() << endl;
-    os << "Global number of rows           = " << A_.NumGlobalRows() << endl;
+    os << "Global number of rows           = " << A_.NumGlobalRows64() << endl;
     if (IsComputed_) {
-      os << "Number of nonzeros in A         = " << A_.NumGlobalNonzeros() << endl;
-      os << "Number of nonzeros in L + U     = " << NumGlobalNonzeros() 
-         << " ( = " << 100.0 * NumGlobalNonzeros() / A_.NumGlobalNonzeros() 
+      os << "Number of nonzeros in A         = " << A_.NumGlobalNonzeros64() << endl;
+      os << "Number of nonzeros in L + U     = " << NumGlobalNonzeros64() 
+         << " ( = " << 100.0 * NumGlobalNonzeros64() / A_.NumGlobalNonzeros64() 
          << " % of A)" << endl;
       os << "nonzeros / rows                 = " 
-        << 1.0 * NumGlobalNonzeros() / U_->NumGlobalRows() << endl;
+        << 1.0 * NumGlobalNonzeros64() / U_->NumGlobalRows64() << endl;
     }
     os << endl;
     os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;

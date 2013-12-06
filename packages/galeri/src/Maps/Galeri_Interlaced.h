@@ -45,13 +45,15 @@
 #include "Galeri_Exception.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
+#include <limits>
 
 namespace Galeri {
 namespace Maps {
 
+template<typename int_type>
 inline
 Epetra_Map* 
-Interlaced(Epetra_Comm& Comm, int NumGlobalElements)
+TInterlaced(Epetra_Comm& Comm, int_type NumGlobalElements)
 {
   if (NumGlobalElements <= 0)
     throw(Exception(__FILE__, __LINE__,
@@ -66,13 +68,18 @@ Interlaced(Epetra_Comm& Comm, int NumGlobalElements)
   int NumProcs = Comm.NumProc();
   int MyPID    = Comm.MyPID();
 
-  int NumMyElements = NumGlobalElements / NumProcs;
+  if (NumGlobalElements / NumProcs > std::numeric_limits<int>::max())
+    throw(Exception(__FILE__, __LINE__,
+                    "Too high NumGlobalElements to Maps::Interlaced()",
+                    "n = " + toString(NumGlobalElements)));
+
+  int NumMyElements = (int) (NumGlobalElements / NumProcs);
   if (MyPID < NumGlobalElements % NumProcs) NumMyElements++;
 
   int count = 0;
-  vector<int> MyGlobalElements(NumMyElements);
+  vector<int_type> MyGlobalElements(NumMyElements);
 
-  for (int i = 0 ; i < NumGlobalElements ; ++i) 
+  for (int_type i = 0 ; i < NumGlobalElements ; ++i) 
   {
     if (i%NumProcs == MyPID) 
       MyGlobalElements[count++] = i;
@@ -84,9 +91,27 @@ Interlaced(Epetra_Comm& Comm, int NumGlobalElements)
                     "count = " + toString(count) 
                     + ", NumMyElements = " + toString(NumMyElements)));
 
+#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
   return(new Epetra_Map(NumGlobalElements, NumMyElements,
                           &MyGlobalElements[0], 0, Comm));
-} // Interlaced()
+#else
+  return(new Epetra_Map);
+#endif
+} // TInterlaced()
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+Epetra_Map* 
+Interlaced(Epetra_Comm& Comm, int NumGlobalElements) {
+  return TInterlaced<int>(Comm, NumGlobalElements);
+}
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+Epetra_Map* 
+Interlaced64(Epetra_Comm& Comm, long long NumGlobalElements) {
+  return TInterlaced<long long>(Comm, NumGlobalElements);
+}
+#endif
 
 } // namespace Maps
 } // namespace Galeri

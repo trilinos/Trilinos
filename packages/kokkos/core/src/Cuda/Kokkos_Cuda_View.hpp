@@ -96,7 +96,7 @@ namespace Impl {
 // future version of Cuda and this typedef would have to
 // change accordingly.
 
-#if defined( CUDA_VERSION ) && ( 500 <= CUDA_VERSION )
+#if defined( CUDA_VERSION ) && ( 5000 <= CUDA_VERSION )
 
 typedef enable_if<
   sizeof(::cudaTextureObject_t) == sizeof(const void *) ,
@@ -412,7 +412,7 @@ namespace Impl {
 
 struct CudaTexture {};
 
-#if defined( CUDA_VERSION ) && ( 500 <= CUDA_VERSION )
+#if defined( CUDA_VERSION ) && ( 5000 <= CUDA_VERSION )
 
 /** \brief  Replace LayoutDefault specialization */
 template< typename ScalarType , class Rank , class RankDynamic >

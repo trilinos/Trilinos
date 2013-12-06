@@ -53,7 +53,7 @@
 
 namespace panzer {
   class FieldManagerBuilder;
-  struct AssemblyEngineInArgs;
+  class AssemblyEngineInArgs;
 }
 
 namespace panzer {

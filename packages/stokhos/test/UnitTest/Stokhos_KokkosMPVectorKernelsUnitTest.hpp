@@ -48,129 +48,9 @@
 
 #include "Stokhos_UnitTestHelpers.hpp"
 
-#include "Stokhos_CrsMatrix.hpp"
 #include "Stokhos_Sacado_Kokkos.hpp"
-#include "Kokkos_View.hpp"
-
-namespace Stokhos {
-
-template <typename Storage, typename L, typename D, typename M, typename S>
-struct ViewRank< Kokkos::View<Sacado::MP::Vector<Storage>*,L,D,M,S> > {
-  typedef IntegralRank<1> type;
-};
-
-template< typename ValueType , typename Layout, typename Device >
-class CrsMatrix2 {
-public:
-  typedef Device device_type;
-  typedef ValueType value_type;
-  typedef Kokkos::View< value_type[] , Layout, device_type > values_type;
-  typedef Kokkos::CrsArray< int , device_type , void , int > graph_type;
-
-  typedef CrsMatrix2< ValueType, Layout, typename device_type::host_mirror_device_type> HostMirror;
-
-  values_type values;
-  graph_type graph;
-};
-
-//! Generic CRS Matrix multiply functor
-template <typename MatrixStorage,
-          typename Layout,
-          typename Device,
-          typename InputVectorType,
-          typename OutputVectorType>
-class Multiply<CrsMatrix2< Sacado::MP::Vector<MatrixStorage>, Layout, Device >,
-               InputVectorType,
-               OutputVectorType,
-               void,
-               IntegralRank<1> >
-{
-public:
-  typedef Sacado::MP::Vector<MatrixStorage> MatrixValue;
-  typedef typename InputVectorType::value_type InputVectorValue;
-  typedef typename OutputVectorType::value_type OutputVectorValue;
-
-  typedef Device device_type;
-  typedef typename device_type::size_type size_type;
-
-  typedef CrsMatrix2< MatrixValue, Layout, device_type > matrix_type;
-  typedef typename matrix_type::values_type matrix_values_type;
-  typedef InputVectorType input_vector_type;
-  typedef OutputVectorType output_vector_type;
-
-  typedef Kokkos::View< typename matrix_values_type::data_type,
-                        typename matrix_values_type::array_layout,
-                        device_type,
-                        Kokkos::MemoryUnmanaged > matrix_local_view_type;
-  typedef Kokkos::View< typename input_vector_type::data_type,
-                        typename input_vector_type::array_layout,
-                        device_type,
-                        Kokkos::MemoryUnmanaged > input_local_view_type;
-  typedef Kokkos::View< typename output_vector_type::data_type,
-                        typename output_vector_type::array_layout,
-                        device_type,
-                        Kokkos::MemoryUnmanaged > output_local_view_type;
-  typedef typename matrix_local_view_type::Partition matrix_partition_type;
-  typedef typename input_local_view_type::Partition input_partition_type;
-  typedef typename output_local_view_type::Partition output_partition_type;
-
-  typedef OutputVectorValue scalar_type;
-
-  const matrix_type  m_A;
-  const input_vector_type  m_x;
-  output_vector_type  m_y;
-
-  Multiply( const matrix_type & A,
-            const input_vector_type & x,
-            output_vector_type & y )
-  : m_A( A )
-  , m_x( x )
-  , m_y( y )
-  {}
-
-  //--------------------------------------------------------------------------
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( device_type dev ) const
-  {
-    matrix_partition_type matrix_partition(dev.team_rank() , dev.team_size());
-    input_partition_type input_partition(dev.team_rank() , dev.team_size());
-    output_partition_type output_partition(dev.team_rank() , dev.team_size());
-    const matrix_local_view_type A(m_A.values, matrix_partition);
-    const input_local_view_type x(m_x, input_partition);
-    const output_local_view_type y(m_y, output_partition);
-
-    const size_type iRow = dev.league_rank();
-    const size_type iEntryBegin = m_A.graph.row_map[iRow];
-    const size_type iEntryEnd   = m_A.graph.row_map[iRow+1];
-
-    scalar_type sum = 0;
-
-    for ( size_type iEntry = iEntryBegin; iEntry < iEntryEnd; ++iEntry ) {
-      sum += A(iEntry) * x(m_A.graph.entries(iEntry));
-    }
-
-    y(iRow) = sum;
-  }
-
-  static void apply( const matrix_type & A,
-                     const input_vector_type & x,
-                     output_vector_type & y )
-  {
-    // To do:  need a reasonable way of computing local vector size
-    // for dynamic case
-    const size_type row_count = A.graph.row_map.dimension_0() - 1;
-    const size_type local_vec_size = x.static_storage_size();
-    const size_type global_vec_size = x.dimension_1();
-    const size_type team_size =
-      local_vec_size != 0 ? global_vec_size / local_vec_size : size_type(1);
-    Kokkos::ParallelWorkRequest config(row_count, team_size);
-    Kokkos::parallel_for( config, Multiply(A,x,y) );
-    //Kokkos::parallel_for( row_count, Multiply(A,x,y) );
-  }
-};
-
-}
+#include "Stokhos_CrsMatrix.hpp"
+#include "Stokhos_CrsMatrix_MP_Vector.hpp"
 
 namespace KokkosMPVectorKernelsUnitTest {
 
@@ -275,9 +155,9 @@ struct UnitTestSetup {
   std::vector< matrix_type > A;
   std::vector< vector_type > x, y;
 
-  void setup(const ordinal_type threads_per_team) {
+  void setup(const ordinal_type threads_per_vector) {
 
-    nGrid = 5;
+    nGrid = 10;
     rel_tol = ScalarTol<ScalarType>::tol();
     abs_tol = ScalarTol<ScalarType>::tol();
 
@@ -286,7 +166,7 @@ struct UnitTestSetup {
     fem_graph_length = generate_fem_graph( nGrid, fem_graph );
 
     // Generate FEM matrices and vectors
-    stoch_length = local_vec_size * threads_per_team;
+    stoch_length = local_vec_size * threads_per_vector;
     A.resize(stoch_length);
     x.resize(stoch_length);
     y.resize(stoch_length);
@@ -366,7 +246,7 @@ struct UnitTestSetup {
         bool s = diff < tol;
         if (!s) {
           out << "y_expected[" << block << "][" << i << "] - "
-              << "y(" << block << "," << i << ") = " << y[block][i]
+              << "y(" << i << "," << block << ") = " << y[block][i]
               << " - " << yy(i,block) << " == "
               << diff << " < " << tol << " : failed"
               << std::endl;
@@ -381,9 +261,12 @@ struct UnitTestSetup {
 };
 
 template <typename VectorType, typename Layout,
-          typename OrdinalType, typename ScalarType, typename Device>
+          typename OrdinalType, typename ScalarType, typename Device,
+          typename MultiplyTag>
 bool test_embedded_vector(
   const UnitTestSetup<OrdinalType,ScalarType,Device>& setup,
+  Stokhos::DeviceConfig dev_config,
+  MultiplyTag tag,
   Teuchos::FancyOStream& out)
 {
   typedef OrdinalType ordinal_type;
@@ -391,7 +274,7 @@ bool test_embedded_vector(
   typedef typename VectorType::storage_type storage_type;
   typedef typename storage_type::device_type device_type;
   typedef Kokkos::View< VectorType*, Layout, device_type > block_vector_type;
-  typedef Stokhos::CrsMatrix2< VectorType, Layout, device_type > block_matrix_type;
+  typedef Stokhos::CrsMatrix< VectorType, device_type, Layout > block_matrix_type;
   typedef typename block_matrix_type::graph_type matrix_graph_type;
   typedef typename block_matrix_type::values_type matrix_values_type;
 
@@ -406,20 +289,23 @@ bool test_embedded_vector(
                       "y", setup.fem_length, setup.stoch_length);
 
   typename block_vector_type::HostMirror hx = Kokkos::create_mirror_view( x );
+  typename block_vector_type::HostMirror hy = Kokkos::create_mirror_view( y );
 
   for (ordinal_type iRowFEM=0; iRowFEM<setup.fem_length; ++iRowFEM) {
     for (ordinal_type iRowStoch=0; iRowStoch<setup.stoch_length; ++iRowStoch) {
       hx(iRowFEM,iRowStoch) =
         generate_vector_coefficient<ScalarType>(
           setup.fem_length, setup.stoch_length, iRowFEM, iRowStoch );
+      hy(iRowFEM,iRowStoch) = 0.0;
     }
   }
 
   Kokkos::deep_copy( x, hx );
+  Kokkos::deep_copy( y, hy );
 
   //------------------------------
 
-  block_matrix_type matrix;
+  block_matrix_type matrix(dev_config);
   matrix.graph = Kokkos::create_crsarray<matrix_graph_type>(
     std::string("test crs graph"), setup.fem_graph);
   matrix.values = matrix_values_type(
@@ -447,9 +333,8 @@ bool test_embedded_vector(
 
   //------------------------------
 
-  Stokhos::multiply( matrix, x, y );
+  Stokhos::multiply( matrix, x, y, tag );
 
-  typename block_vector_type::HostMirror hy = Kokkos::create_mirror_view( y );
   Kokkos::deep_copy( hy, y );
 
   bool success = setup.test_commuted(hy, out);

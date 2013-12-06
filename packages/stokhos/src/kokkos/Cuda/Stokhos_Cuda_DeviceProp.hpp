@@ -153,6 +153,18 @@ namespace Stokhos {
       return 0;
 #endif
     }
+
+    // Returns number of resident warps per sm for the given kernel
+    template <typename Kernel>
+    size_type
+    get_resident_warps_per_sm(Kernel kernel) {
+      const size_type regs_per_thread = get_kernel_registers(kernel);
+      const size_type regs_per_warp =
+        (warp_size*regs_per_thread + reg_bank_size-1) & ~(reg_bank_size-1);
+      const size_type warps_per_sm =
+        (max_regs_per_sm/regs_per_warp) & ~(warp_granularity-1);
+      return warps_per_sm;
+    }
   };
 
 } // namespace Stokhos

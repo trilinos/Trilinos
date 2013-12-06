@@ -42,8 +42,8 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef _ZOLTAN2_INCDEGREE_HPP_
-#define _ZOLTAN2_INCDEGREE_HPP_
+#ifndef _ZOLTAN2_SORTEDDEGREE_HPP_
+#define _ZOLTAN2_SORTEDDEGREE_HPP_
 
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
@@ -51,72 +51,86 @@
 
 
 ////////////////////////////////////////////////////////////////////////
-//! \file Zoltan2_AlgIncDegree.hpp
-//! \brief Order vertices by increasing degree
-
-// Comparison function for sort.
-bool comp(std::pair<lno_t,lno_t> a, std::pair<lno_t,lno_t> b)
-{
-  return (a.first < b.first);
-}
+//! \file Zoltan2_AlgSortedDegree.hpp
+//! \brief Order vertices by sorted (increasing) degree.
+//! \brief Sorting by decreasing degree is also possible.
 
 namespace Zoltan2{
 
-template <typename Adapter>
-int AlgIncDegree(
-  const RCP<GraphModel<Adapter> > &model, 
-  const RCP<OrderingSolution<typename Adapter::gid_t,
-                             typename Adapter::lno_t> > &solution,
-  const RCP<Teuchos::ParameterList> &pl,
-  const RCP<Teuchos::Comm<int> > &comm
-) 
+// Comparison functions for sort. Note sort_inc is defined in some
+// versions of the gcc library, so spell it 'zort_inc' here.
+static bool zort_inc(std::pair<size_t,size_t> a, std::pair<size_t,size_t> b)
 {
-#ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL
-
-  int ierr= 0;
-  Z2_THROW_EXPERIMENTAL("Zoltan2 IncreasingDegree ordering is strictly "
-                        "experimental software "
-                        "while it is being developed and tested.")
-  return ierr;
-
-#else //INCLUDE_ZOLTAN2_EXPERIMENTAL
-
-  typedef typename Adapter::lno_t lno_t;
-  typedef typename Adapter::gno_t gno_t;
-  typedef typename Adapter::gid_t gid_t;
-  typedef typename Adapter::scalar_t scalar_t;
-
-  int ierr= 0;
-
-  HELLO;
-
-  lno_t *perm;
-  perm = (lno_t *) (solution->getPermutationRCP().getRawPtr());
-
-  // Get local graph.
-  ArrayView<const lno_t> edgeIds;
-  ArrayView<const lno_t> offsets;
-  ArrayView<StridedData<lno_t, scalar_t> > wgts;
-  model->getLocalEdgeList(edgeIds, offsets, wgts);
-
-  // Store degrees together with index so we can sort.
-  std::vector<std::pair<lno_t, lno_t> >  degrees(nVtx);
-  for (lno_t i=0; i<nVtx; i++){
-    degrees[i].first  = offsets[i+1] - offsets[i];
-    degrees[i].second = i;
-  }
-
-  // Sort degrees.
-  std::sort(degrees.begin(), degrees.end(), comp);
-
-  // Copy permuted indices to perm.
-  for (lno_t i=0; i<nVtx; i++){
-    perm[i] = degrees[i].second;
-  }
-
-  return ierr;
-#endif // INCLUDE_ZOLTAN2_EXPERIMENTAL
+  return (a.first < b.first);
+}
+static bool zort_dec(std::pair<size_t,size_t> a, std::pair<size_t,size_t> b)
+{
+  return (a.first > b.first);
 }
 
+template <typename Adapter>
+class AlgSortedDegree
+{
+  public:
+
+    AlgSortedDegree()
+    {
+    }
+
+  int order(
+    const RCP<GraphModel<Adapter> > &model, 
+    const RCP<OrderingSolution<typename Adapter::gid_t,
+                               typename Adapter::lno_t> > &solution,
+    const RCP<Teuchos::ParameterList> &pl,
+    const RCP<Teuchos::Comm<int> > &comm
+  ) 
+  {
+    typedef typename Adapter::lno_t lno_t;
+    typedef typename Adapter::gno_t gno_t;
+    typedef typename Adapter::gid_t gid_t;
+    typedef typename Adapter::scalar_t scalar_t;
+  
+    int ierr= 0;
+  
+    HELLO;
+  
+    lno_t *perm;
+    //perm = (lno_t *) (solution->getPermutationRCP().getRawPtr());
+    perm = (lno_t *) (solution->getPermutation());
+    if (perm==0){
+      // Throw exception
+      cerr << "perm is NULL" << std::endl;
+      ierr = -1;
+    }
+  
+    // Get local graph.
+    const size_t nVtx = model->getLocalNumVertices();
+    ArrayView<const lno_t> edgeIds;
+    ArrayView<const lno_t> offsets;
+    ArrayView<StridedData<lno_t, scalar_t> > wgts;
+    model->getLocalEdgeList(edgeIds, offsets, wgts);
+  
+    // Store degrees together with index so we can sort.
+    std::vector<std::pair<size_t, size_t> >  degrees(nVtx);
+    for (lno_t i=0; i<(lno_t)nVtx; i++){
+      degrees[i].first  = offsets[i+1] - offsets[i];
+      degrees[i].second = i;
+    }
+  
+    // Sort degrees.
+    if (1) // TODO: Check parameter for inc/dec order
+      std::sort(degrees.begin(), degrees.end(), zort_inc);
+    else
+      std::sort(degrees.begin(), degrees.end(), zort_dec);
+  
+    // Copy permuted indices to perm.
+    for (lno_t i=0; i<(lno_t)nVtx; i++){
+      perm[i] = degrees[i].second;
+    }
+  
+    return ierr;
+  }
+  
+};
 }
 #endif

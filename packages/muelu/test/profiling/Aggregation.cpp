@@ -79,7 +79,6 @@ typedef int    GlobalOrdinal;
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 
-#include "MueLu_UseShortNames.hpp"
 #include <unistd.h>
 /**********************************************************************************/
 
@@ -93,6 +92,7 @@ typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps Local
 #endif
 
 int main(int argc, char *argv[]) {
+#include "MueLu_UseShortNames.hpp"
   using Teuchos::RCP;
 
   Teuchos::oblackholestream blackhole;

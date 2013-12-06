@@ -57,6 +57,9 @@
 #include "MueLu.hpp"
 #include "MueLu_TestHelpers.hpp"
 #include <MueLu_UseDefaultTypes.hpp>
+
+namespace MueLuTests {
+
 #include <MueLu_UseShortNames.hpp>
 
 // generate "random" whole number in interval [a,b]
@@ -75,11 +78,16 @@ Teuchos::RCP<Matrix> generateRandomMatrix(LO const &minEntriesPerRow, LO const &
                                           Teuchos::RCP<const Map> const &rowMap,
                                           Teuchos::RCP<const Map> const &domainMap);
 
+}
+
 int main(int argc, char *argv[]) {
+#include <MueLu_UseShortNames.hpp>
+
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::Time;
   using Teuchos::TimeMonitor;
+  using namespace MueLuTests;
 
   //
   // MPI initialization using Teuchos
@@ -206,6 +214,10 @@ int main(int argc, char *argv[]) {
 
 //- -- --------------------------------------------------------
 
+namespace MueLuTests {
+
+#include <MueLu_UseShortNames.hpp>
+
 template <class T>
 size_t generateRandomNumber(T a, T b)
 {
@@ -285,4 +297,6 @@ Teuchos::RCP<Matrix> generateRandomMatrix(LO const &minEntriesPerRow, LO const &
     A->fillComplete(domainMap,rowMap);
 
     return A;
+}
+
 }

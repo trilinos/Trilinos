@@ -56,6 +56,8 @@ IFPACK classes.
 
 */
 
+#include "Epetra_ConfigDefs.h"
+
 class Ifpack_Graph {
 
 public:
@@ -69,11 +71,17 @@ public:
   //! Returns the number of local columns.
   virtual int NumMyCols() const = 0;
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   //! Returns the number of global rows.
   virtual int NumGlobalRows() const = 0;
 
   //! Returns the number of global columns.
   virtual int NumGlobalCols() const = 0;
+#endif
+
+  virtual long long NumGlobalRows64() const = 0;
+
+  virtual long long NumGlobalCols64() const = 0;
 
   //! Returns the maximun number of entries for row.
   virtual int MaxMyNumEntries() const = 0;
@@ -84,17 +92,34 @@ public:
   //! Returns \c true is graph is filled.
   virtual bool Filled() const = 0;
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   //! Returns the global row ID of input local row.
   virtual int GRID(int) const = 0;
 
   //! Returns the global column ID of input local column.
   virtual int GCID(int) const = 0;
-  
+#endif
+
+  virtual long long GRID64(int) const = 0;
+
+  //! Returns the global column ID of input local column.
+  virtual long long GCID64(int) const = 0;
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   //! Returns the local row ID of input global row.
   virtual int LRID(int) const = 0;
 
   //! Returns the local column ID of input global column.
   virtual int LCID(int) const = 0;
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  //! Returns the local row ID of input global row.
+  virtual int LRID(long long) const = 0;
+
+  //! Returns the local column ID of input global column.
+  virtual int LCID(long long) const = 0;
+#endif
 
   //! Extracts a copy of input local row.
   virtual int ExtractMyRowCopy(int MyRow, int LenOfIndices, 

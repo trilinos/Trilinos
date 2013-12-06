@@ -49,7 +49,6 @@
 
 // Define template parameters
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 
 template<class F>
 void printFactoryDoc() {
@@ -59,6 +58,7 @@ void printFactoryDoc() {
 }
 
 int main(int argc, char *argv[]) {
+#include "MueLu_UseShortNames.hpp"
 
   std::cout << "Smoothed Aggregation:" << std::endl;
   printFactoryDoc<SaPFactory>();

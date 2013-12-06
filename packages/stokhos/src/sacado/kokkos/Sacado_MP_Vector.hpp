@@ -163,13 +163,7 @@ namespace Sacado {
         typedef typename Expr<S>::derived_type expr_type;
         const expr_type& x = xx.derived();
 
-        if (storage_type::is_static) {
-          typedef Sacado::mpl::range_c< int, 0,
-                                        storage_type::static_size > range_type;
-          StaticOp<expr_type> op(s,x);
-          Stokhos::mpl::for_each< range_type > f(op);
-        }
-        else if (x.hasFastAccess(s.size())) {
+        if (x.hasFastAccess(s.size())) {
           for (ordinal_type i=0; i<s.size(); i++)
             s[i] = x.fastAccessCoeff(i);
         }
@@ -273,13 +267,7 @@ namespace Sacado {
         const expr_type& x = xx.derived();
 
         this->reset(x.size());
-        if (storage_type::is_static) {
-          typedef Sacado::mpl::range_c< int, 0,
-                                        storage_type::static_size > range_type;
-          StaticOp<expr_type > op(s,x);
-          Stokhos::mpl::for_each< range_type > f(op);
-        }
-        else if (x.hasFastAccess(s.size())) {
+        if (x.hasFastAccess(s.size())) {
           for (ordinal_type i=0; i<s.size(); i++)
             s[i] = x.fastAccessCoeff(i);
         }

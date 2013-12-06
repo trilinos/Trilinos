@@ -122,9 +122,9 @@ Write(const std::string& Label, const Epetra_RowMatrix& Matrix)
   TEUCHOS_TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
                      "No file has been opened");
 
-  int Rows = Matrix.NumGlobalRows();
-  int Cols = Matrix.NumGlobalRows();
-  int Nonzeros = Matrix.NumGlobalNonzeros();
+  long long Rows = Matrix.NumGlobalRows64();
+  long long Cols = Matrix.NumGlobalRows64();
+  long long Nonzeros = Matrix.NumGlobalNonzeros64();
 
   if (Comm_.MyPID() == 0)
   {
@@ -152,10 +152,10 @@ Write(const std::string& Label, const Epetra_RowMatrix& Matrix)
         int NumMyEntries;
         Matrix.ExtractMyRowCopy(i, Length, NumMyEntries, &Values[0], &Indices[0]);
 
-        int GRID = Matrix.RowMatrixRowMap().GID(i);
+        long long GRID = Matrix.RowMatrixRowMap().GID64(i);
 
         for (int j = 0; j < NumMyEntries; ++j)
-          of << GRID << " " << Matrix.RowMatrixColMap().GID(Indices[j])
+          of << GRID << " " << Matrix.RowMatrixColMap().GID64(Indices[j])
              << " " << std::setiosflags(std::ios::scientific) << Values[j] << std::endl;
       }
       of.close();
@@ -178,7 +178,7 @@ Write(const std::string& Label, const Epetra_MultiVector& MultiVector)
   TEUCHOS_TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
                      "No file has been opened");
 
-  int Length = MultiVector.GlobalLength();
+  long long Length = MultiVector.GlobalLength64();
   int NumVectors = MultiVector.NumVectors();
 
   if (Comm_.MyPID() == 0)
@@ -225,8 +225,13 @@ Write(const std::string& Label, const Epetra_Map& Map)
   TEUCHOS_TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
                      "No file has been opened");
 
-  int NumGlobalElements = Map.NumGlobalElements();
-  int* MyGlobalElements = Map.MyGlobalElements();
+  long long NumGlobalElements = Map.NumGlobalElements64();
+  const int* MyGlobalElements_int = 0;
+  const long long* MyGlobalElements_LL = 0;
+  Map.MyGlobalElements(MyGlobalElements_int, MyGlobalElements_LL);
+
+  if(!MyGlobalElements_int || !MyGlobalElements_LL)
+    throw "EpetraExt::XMLWriter::Write: ERROR, GlobalIndices type unknown.";
 
   if (Comm_.MyPID() == 0)
   {
@@ -234,7 +239,7 @@ Write(const std::string& Label, const Epetra_Map& Map)
 
     of << "<Map Label=\"" << Label 
       << "\" NumElements=\"" << NumGlobalElements << '"'
-      << " IndexBase=\"" << Map.IndexBase() << '"'
+      << " IndexBase=\"" << Map.IndexBase64() << '"'
       << " NumProc=\"" << Comm_.NumProc() << '"';
 
     of.close();
@@ -267,9 +272,19 @@ Write(const std::string& Label, const Epetra_Map& Map)
 
       of << "<Proc ID=\"" << Comm_.MyPID() << "\">" << std::endl;
 
-      for (int i = 0; i < Map.NumMyElements(); ++i)
+      if(MyGlobalElements_int)
       {
-        of << MyGlobalElements[i] << std::endl;
+        for (int i = 0; i < Map.NumMyElements(); ++i)
+        {
+          of << MyGlobalElements_int[i] << std::endl;
+        }
+      }
+      else
+      {
+        for (int i = 0; i < Map.NumMyElements(); ++i)
+        {
+          of << MyGlobalElements_LL[i] << std::endl;
+        }
       }
 
       of << "</Proc>" << std::endl;

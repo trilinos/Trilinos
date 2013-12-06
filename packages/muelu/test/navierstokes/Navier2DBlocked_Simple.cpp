@@ -114,10 +114,13 @@
 #include "MueLu_AggregationExportFactory.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 
 #include <Epetra_LinearProblem.h>
 #include <AztecOO.h>
+
+namespace MueLuTests {
+
+#include "MueLu_UseShortNames.hpp"
 
 // helper routines
   bool SplitMatrix2x2(Teuchos::RCP<const Epetra_CrsMatrix> A,
@@ -375,6 +378,8 @@
     return true;
   }
 
+}
+
 /*!
  *  2d Navier Stokes example (for Epetra)
  *
@@ -383,8 +388,11 @@
 
 
 int main(int argc, char *argv[]) {
+#include "MueLu_UseShortNames.hpp"
+
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using namespace MueLuTests;
 
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);

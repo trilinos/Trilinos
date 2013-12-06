@@ -50,7 +50,6 @@
 #include "MueLu_IfpackSmoother.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 
 /*
   Comments about tests with hard coded results:
@@ -62,6 +61,7 @@
 
 namespace MueLuTests {
 
+  // this namespace already has:  #include "MueLu_UseShortNames.hpp"
   using namespace TestHelpers::Smoothers;
 
   TEUCHOS_UNIT_TEST(IfpackSmoother, NotSetup)

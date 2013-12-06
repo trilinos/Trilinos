@@ -74,7 +74,7 @@ namespace panzer {
   #endif
   class EpetraLinearObjContainer;
   class SGEpetraLinearObjContainer;
-  class GlobalData;
+  struct GlobalData;
 
   class ModelEvaluator_Epetra : public EpetraExt::ModelEvaluator {
   public:

@@ -155,7 +155,13 @@ void * CudaSpace::allocate(
 
     try {
       CUDA_SAFE_CALL( cudaDeviceSynchronize() );
+
+#if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM)
+      CUDA_SAFE_CALL( cudaMallocManaged( (void**) &ptr, size, cudaMemAttachGlobal) );
+#else
       CUDA_SAFE_CALL( cudaMalloc( (void**) &ptr, size) );
+#endif
+
       CUDA_SAFE_CALL( cudaThreadSynchronize() );
     }
     catch( std::runtime_error & err) {
@@ -231,7 +237,7 @@ void CudaSpace::access_error( const void * const ptr )
 
 } // namespace Kokkos
 
-#if defined( CUDA_VERSION ) && ( 500 <= CUDA_VERSION )
+#if defined( CUDA_VERSION ) && ( 5000 <= CUDA_VERSION )
 
 namespace Kokkos {
 namespace Impl {

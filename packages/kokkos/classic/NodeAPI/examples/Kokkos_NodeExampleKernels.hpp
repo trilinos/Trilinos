@@ -64,7 +64,7 @@ namespace KokkosExamples {
     //! 
     int * x;
     //! 
-    KERNEL_PREFIX inline void execute(int i) {x[i] = i;}
+    KERNEL_PREFIX inline void execute(int i) const {x[i] = i;}
   };
 
   /** \brief A wrapper for kernel VecInit
@@ -89,11 +89,11 @@ namespace KokkosExamples {
     //!
     typedef int ReductionType;
     //!
-    KERNEL_PREFIX static inline int identity()            { return 0;    }
+    KERNEL_PREFIX        inline int identity() const             { return 0;    }
     //!
-    KERNEL_PREFIX        inline int generate(int i)       { return x[i]; }
+    KERNEL_PREFIX        inline int generate(int i) const        { return x[i]; }
     //!
-    KERNEL_PREFIX        inline int reduce  (int a, int b){ return a+b;  }
+    KERNEL_PREFIX        inline int reduce  (int a, int b) const { return a+b;  }
   };
 
   /** \brief A wrapper for for VecReduce 
