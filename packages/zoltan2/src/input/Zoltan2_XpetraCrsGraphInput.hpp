@@ -301,7 +301,7 @@ public:
 
   size_t getLocalNumEdges() const { return graph_->getNodeNumEntries(); }
 
-  size_t getEdgesView(const lno_t *&offsets, const gid_t *&adjIds) const
+  size_t getEdgeView(const lno_t *&offsets, const gid_t *&adjIds) const
   {
     size_t nvtx = getLocalNumVertices();
     adjIds = NULL;

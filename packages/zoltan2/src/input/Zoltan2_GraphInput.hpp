@@ -161,8 +161,8 @@ public:
          for each vertex.
       \return The number of adjacencies on this process.
    */
-  virtual size_t getEdgesView(const lno_t *&offsets,
-                              const gid_t *&adjIds) const = 0;
+  virtual size_t getEdgeView(const lno_t *&offsets,
+                             const gid_t *&adjIds) const = 0;
        
   /*! \brief Returns the dimension (0 or greater) of vertex weights.
    */
