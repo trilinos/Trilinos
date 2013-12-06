@@ -106,14 +106,13 @@ namespace MueLu {
     //! @name Setup and Apply methods.
     //@{
 
-    /*! @brief Set up the direct solver.
-      This creates the underlying Amesos2 solver object according to the parameter list options passed into the
-      SchwarzSmoother constructor.  This includes doing a numeric factorization of the matrix.
+    /*! @brief Set up the local subdomain solver or preconditioner.
+      This creates the underlying Amesos2 solver object or Ifpack2 preconditioning object according
+      to the parameter list options passed into the SchwarzSmoother constructor.
     */
     void Setup(Level& currentLevel);
 
-    /*! @brief Apply the direct solver.
-    Solves the linear system <tt>AX=B</tt> using the constructed solver.
+    /*! @brief Apply Additive Schwarz with Amesos2/Ifpack2 as the local subdomain solver.
     @param X initial guess
     @param B right-hand side
     @param InitialGuessIsZero This option has no effect.
@@ -139,7 +138,7 @@ namespace MueLu {
     typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Tpetra_CrsMatrix;
     typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Tpetra_MultiVector;
 
-    //! amesos2-specific key phrase that denote smoother type
+    //! local smoother type
     std::string type_;
 
     //! parameter list

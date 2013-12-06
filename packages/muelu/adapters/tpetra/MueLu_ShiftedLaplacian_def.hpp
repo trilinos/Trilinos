@@ -56,22 +56,20 @@ ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::~ShiftedLa
 
 // Input
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setParameters(const Teuchos::ParameterList List) {
+void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setParameters(Teuchos::RCP< Teuchos::ParameterList > paramList) {
 
-  Problem_        =  List.get<std::string>      (  "muelu: problem type"          );
-  Smoother_       =  List.get<std::string>      (  "muelu: smoother"              );
-  Aggregation_    =  List.get<std::string>      (  "muelu: aggregation"           );
-  Nullspace_      =  List.get<std::string>      (  "muelu: nullspace"             );
-  UseLaplacian_   =  List.get<bool>             (  "muelu: use laplacian"         );
-  VariableShift_  =  List.get<bool>             (  "muelu: variable shift"        );
-  numPDEs_        =  List.get<int>              (  "muelu: dofs per node"         );
-  numLevels_      =  List.get<int>              (  "muelu: number of levels"      );
-  coarseGridSize_ =  List.get<int>              (  "muelu: coarse grid size"      );
-  iters_          =  List.get<int>              (  "muelu: number of iterations"  );
-  blksize_        =  List.get<int>              (  "muelu: block size"            );
-  FGMRESoption_   =  List.get<bool>             (  "muelu: fgmres on/off"         );
-  tol_            =  List.get<double>           (  "muelu: residual tolerance"    );  
-  omega_          =  List.get<double>           (  "muelu: omega"                 );
+  // Smoother parameters
+  overlap_level_        = paramList->get("schwarz: overlap level",2);
+  relaxation_sweeps_    = paramList->get("relaxation: sweeps",4);
+  relaxation_damping_   = paramList->get("relaxation: damping factor",(SC)1.0);
+  krylov_type_          = paramList->get("krylov: iteration type",1);
+  krylov_iterations_    = paramList->get("krylov: number of iterations",5);
+  ilu_leveloffill_      = paramList->get("fact: iluk level-of-fill",2.0);
+  ilu_abs_thresh_       = paramList->get("fact: absolute threshold",0.0);
+  ilu_rel_thresh_       = paramList->get("fact: relative threshold",1.0);
+  ilu_drop_tol_         = paramList->get("fact: drop tolerance",0.01);
+  ilu_relax_val_        = paramList->get("fact: relax value",1.0);
+  schwarz_usereorder_   = paramList->get("schwarz: use reordering",true);
 
 }
 
@@ -314,29 +312,29 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
   if(Smoother_=="jacobi") {
     precType_ = "RELAXATION";
     precList_.set("relaxation: type", "Jacobi");
-    precList_.set("relaxation: sweeps", nsweeps_);
-    precList_.set("relaxation: damping factor", (SC) 1.0);
+    precList_.set("relaxation: sweeps", relaxation_sweeps_);
+    precList_.set("relaxation: damping factor", relaxation_damping_);
   }
   else if(Smoother_=="gauss-seidel") {
     precType_ = "RELAXATION";
     precList_.set("relaxation: type", "Gauss-Seidel");
-    precList_.set("relaxation: sweeps", nsweeps_);
-    precList_.set("relaxation: damping factor", (SC) 1.0);
+    precList_.set("relaxation: sweeps", relaxation_sweeps_);
+    precList_.set("relaxation: damping factor", relaxation_damping_);
   }
   else if(Smoother_=="symmetric gauss-seidel") {
     precType_ = "RELAXATION";
     precList_.set("relaxation: type", "Symmetric Gauss-Seidel");
-    precList_.set("relaxation: sweeps", nsweeps_);
-    precList_.set("relaxation: damping factor", (SC) 1.0);
+    precList_.set("relaxation: sweeps", relaxation_sweeps_);
+    precList_.set("relaxation: damping factor", relaxation_damping_);
   }
   else if(Smoother_=="chebyshev") {
     precType_ = "CHEBYSHEV";
   }
   else if(Smoother_=="krylov") {
     precType_ = "KRYLOV";
-    precList_.set("krylov: iteration type",1);
-    precList_.set("krylov: number of iterations", nsweeps_);
-    precList_.set("krylov: residual tolerance",1e-6);
+    precList_.set("krylov: iteration type",krylov_type_);
+    precList_.set("krylov: number of iterations", krylov_iterations_);
+    precList_.set("krylov: residual tolerance",1.0e-8);
     precList_.set("krylov: block size",1);
     precList_.set("krylov: preconditioner type",1);
     precList_.set("relaxation: sweeps",1);
@@ -344,36 +342,35 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
   }
   else if(Smoother_=="ilut") {
     precType_ = "ILUT";
-    precList_.set("fact: ilut level-of-fill", (double)5.0);
-    precList_.set("fact: absolute threshold", (double)0.0);
-    precList_.set("fact: relative threshold", (double)1.0);
-    precList_.set("fact: drop tolerance",    (double)0.01);
-    precList_.set("fact: relax value",        (double)0.0);
+    precList_.set("fact: ilut level-of-fill", ilu_leveloffill_);
+    precList_.set("fact: absolute threshold", ilu_abs_thresh_);
+    precList_.set("fact: relative threshold", ilu_rel_thresh_);
+    precList_.set("fact: drop tolerance",     ilu_drop_tol_);
+    precList_.set("fact: relax value",        ilu_relax_val_);
   }
   else if(Smoother_=="riluk") {
     precType_ = "RILUK";
-    precList_.set("fact: iluk level-of-fill", (double)5.0);
-    precList_.set("fact: absolute threshold", (double)0.0);
-    precList_.set("fact: relative threshold", (double)1.0);
-    precList_.set("fact: drop tolerance",    (double)0.01);
-    precList_.set("fact: relax value",        (double)1.0);
+    precList_.set("fact: iluk level-of-fill", ilu_leveloffill_);
+    precList_.set("fact: absolute threshold", ilu_abs_thresh_);
+    precList_.set("fact: relative threshold", ilu_rel_thresh_);
+    precList_.set("fact: drop tolerance",     ilu_drop_tol_);
+    precList_.set("fact: relax value",        ilu_relax_val_);
   }
   else if(Smoother_=="schwarz") {
     precType_ = "SCHWARZ";
-    precList_.set("fact: ilut level-of-fill", (double)5.0);
-    precList_.set("fact: drop tolerance", (double)0.01);
+    precList_.set("fact: ilut level-of-fill", ilu_leveloffill_);
+    precList_.set("fact: drop tolerance", ilu_drop_tol_);
     precList_.set("schwarz: compute condest", false);
     precList_.set("schwarz: combine mode", "Add");
-    precList_.set("schwarz: use reordering", true);
+    precList_.set("schwarz: use reordering", schwarz_usereorder_);
     precList_.set("schwarz: filter singletons", false);
-    precList_.set("schwarz: overlap level", 0);
     precList_.set("order_method","rcm");
     precList_.sublist("schwarz: reordering list").set("order_method","rcm");
   }
   else if(Smoother_=="superlu") {
     precType_ = "superlu";
   }
-  smooProto_ = rcp( new SchwarzSmoother(precType_,precList_,overlapLevel_) );
+  smooProto_ = rcp( new SchwarzSmoother(precType_,precList_,overlap_level_) );
   smooFact_  = rcp( new SmootherFactory(smooProto_) );
   coarsestSmooProto_ = rcp( new DirectSolver("Superlu",coarsestSmooList_) );
   coarsestSmooFact_  = rcp( new SmootherFactory(coarsestSmooProto_, Teuchos::null) );
@@ -507,29 +504,29 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   if(Smoother_=="jacobi") {
     precType_ = "RELAXATION";
     precList_.set("relaxation: type", "Jacobi");
-    precList_.set("relaxation: sweeps", nsweeps_);
-    precList_.set("relaxation: damping factor", (SC) 1.0);
+    precList_.set("relaxation: sweeps", relaxation_sweeps_);
+    precList_.set("relaxation: damping factor", relaxation_damping_);
   }
   else if(Smoother_=="gauss-seidel") {
     precType_ = "RELAXATION";
     precList_.set("relaxation: type", "Gauss-Seidel");
-    precList_.set("relaxation: sweeps", nsweeps_);
-    precList_.set("relaxation: damping factor", (SC) 1.0);
+    precList_.set("relaxation: sweeps", relaxation_sweeps_);
+    precList_.set("relaxation: damping factor", relaxation_damping_);
   }
   else if(Smoother_=="symmetric gauss-seidel") {
     precType_ = "RELAXATION";
     precList_.set("relaxation: type", "Symmetric Gauss-Seidel");
-    precList_.set("relaxation: sweeps", nsweeps_);
-    precList_.set("relaxation: damping factor", (SC) 1.0);
+    precList_.set("relaxation: sweeps", relaxation_sweeps_);
+    precList_.set("relaxation: damping factor", relaxation_damping_);
   }
   else if(Smoother_=="chebyshev") {
     precType_ = "CHEBYSHEV";
   }
   else if(Smoother_=="krylov") {
     precType_ = "KRYLOV";
-    precList_.set("krylov: iteration type",1);
-    precList_.set("krylov: number of iterations", nsweeps_);
-    precList_.set("krylov: residual tolerance",1e-6);
+    precList_.set("krylov: iteration type",krylov_type_);
+    precList_.set("krylov: number of iterations", krylov_iterations_);
+    precList_.set("krylov: residual tolerance",1.0e-8);
     precList_.set("krylov: block size",1);
     precList_.set("krylov: preconditioner type",1);
     precList_.set("relaxation: sweeps",1);
@@ -537,36 +534,35 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   }
   else if(Smoother_=="ilut") {
     precType_ = "ILUT";
-    precList_.set("fact: ilut level-of-fill", (double)5.0);
-    precList_.set("fact: absolute threshold", (double)0.0);
-    precList_.set("fact: relative threshold", (double)1.0);
-    precList_.set("fact: drop tolerance",    (double)0.01);
-    precList_.set("fact: relax value",        (double)0.0);
+    precList_.set("fact: ilut level-of-fill", ilu_leveloffill_);
+    precList_.set("fact: absolute threshold", ilu_abs_thresh_);
+    precList_.set("fact: relative threshold", ilu_rel_thresh_);
+    precList_.set("fact: drop tolerance",     ilu_drop_tol_);
+    precList_.set("fact: relax value",        ilu_relax_val_);
   }
   else if(Smoother_=="riluk") {
     precType_ = "RILUK";
-    precList_.set("fact: iluk level-of-fill", (double)5.0);
-    precList_.set("fact: absolute threshold", (double)0.0);
-    precList_.set("fact: relative threshold", (double)1.0);
-    precList_.set("fact: drop tolerance",    (double)0.01);
-    precList_.set("fact: relax value",        (double)1.0);
+    precList_.set("fact: iluk level-of-fill", ilu_leveloffill_);
+    precList_.set("fact: absolute threshold", ilu_abs_thresh_);
+    precList_.set("fact: relative threshold", ilu_rel_thresh_);
+    precList_.set("fact: drop tolerance",     ilu_drop_tol_);
+    precList_.set("fact: relax value",        ilu_relax_val_);
   }
   else if(Smoother_=="schwarz") {
     precType_ = "SCHWARZ";
-    precList_.set("fact: ilut level-of-fill", (double)5.0);
-    precList_.set("fact: drop tolerance", (double)0.01);
+    precList_.set("fact: ilut level-of-fill", ilu_leveloffill_);
+    precList_.set("fact: drop tolerance", ilu_drop_tol_);
     precList_.set("schwarz: compute condest", false);
     precList_.set("schwarz: combine mode", "Add");
-    precList_.set("schwarz: use reordering", true);
+    precList_.set("schwarz: use reordering", schwarz_usereorder_);
     precList_.set("schwarz: filter singletons", false);
-    precList_.set("schwarz: overlap level", 0);
     precList_.set("order_method","rcm");
     precList_.sublist("schwarz: reordering list").set("order_method","rcm");
   }
   else if(Smoother_=="superlu") {
     precType_ = "superlu";
   }
-  smooProto_ = rcp( new SchwarzSmoother(precType_,precList_,overlapLevel_) );
+  smooProto_ = rcp( new SchwarzSmoother(precType_,precList_,overlap_level_) );
   smooFact_  = rcp( new SmootherFactory(smooProto_) );
   coarsestSmooProto_ = rcp( new DirectSolver("Superlu",coarsestSmooList_) );
   coarsestSmooFact_  = rcp( new SmootherFactory(coarsestSmooProto_, Teuchos::null) );

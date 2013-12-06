@@ -101,9 +101,11 @@ namespace MueLu {
     //! Constructors
     ShiftedLaplacian()
       : Problem_("acoustic"), numPDEs_(1), Smoother_("riluk"), Aggregation_("coupled"), Nullspace_("constant"), numLevels_(5), coarseGridSize_(100),
-	omega_(2.0*M_PI), ashift1_((SC) 0.0), ashift2_((SC) -1.0), pshift1_((SC) 0.0), pshift2_((SC) -1.0), overlapLevel_(2), iters_(500), blksize_(1),
+	omega_(2.0*M_PI), ashift1_((SC) 0.0), ashift2_((SC) -1.0), pshift1_((SC) 0.0), pshift2_((SC) -1.0), iters_(500), blksize_(1),
 	tol_(1.0e-4), nsweeps_(5), ncycles_(1), FGMRESoption_(false), cycles_(8), subiters_(10), option_(1), nproblems_(0), solverType_(1),
-	GridTransfersExist_(false), UseLaplacian_(true), VariableShift_(false),
+	overlap_level_(2), relaxation_sweeps_(4), relaxation_damping_((SC)1.0), krylov_type_(1), krylov_iterations_(5),
+	ilu_leveloffill_(2.0), ilu_abs_thresh_(0.0), ilu_rel_thresh_(1.0), ilu_drop_tol_(0.01), ilu_relax_val_(1.0),
+	schwarz_usereorder_(true), GridTransfersExist_(false), UseLaplacian_(true), VariableShift_(false),
 	LaplaceOperatorSet_(false), ProblemMatrixSet_(false), PreconditioningMatrixSet_(false),
 	StiffMatrixSet_(false), MassMatrixSet_(false), DampMatrixSet_(false),
 	LevelShiftsSet_(false), isSymmetric_(true)
@@ -113,7 +115,7 @@ namespace MueLu {
     virtual ~ShiftedLaplacian();
     
     // Input
-    void setParameters(const Teuchos::ParameterList List);
+    void setParameters(Teuchos::RCP< Teuchos::ParameterList > paramList);
 
     // Set matrices
     void setLaplacian(RCP<Matrix>& L);
@@ -161,8 +163,7 @@ namespace MueLu {
     // numPDEs_ -> number of DOFs at each node
     
     std::string Problem_; 
-    int numPDEs_;
-    int numSetups_;
+    int numPDEs_, numSetups_;
 
     // Multigrid options
     // numLevels_      -> number of Multigrid levels
@@ -180,8 +181,7 @@ namespace MueLu {
     // ashift1, ashift2, pshift1, pshift2 are user-defined scalar values.
 
     double     omega_;
-    SC         ashift1_, ashift2_;
-    SC         pshift1_, pshift2_;
+    SC         ashift1_, ashift2_, pshift1_, pshift2_;
     std::vector<SC> levelshifts_;
 
     // Krylov solver inputs
@@ -189,18 +189,20 @@ namespace MueLu {
     // tol    -> residual tolerance
     // FMGRES -> if true, FGMRES is chosen as solver
 
-    int    overlapLevel_;
-    int    iters_;
-    int    blksize_;
+    int    iters_, blksize_;
     double tol_;
-    int    nsweeps_;
-    int    ncycles_;
+    int    nsweeps_, ncycles_;
     bool   FGMRESoption_;
-    int    cycles_;
-    int    subiters_;
-    int    option_;
-    int    nproblems_;
-    int    solverType_;
+    int    cycles_, subiters_, option_, nproblems_, solverType_;
+
+    // Smoother parameters
+    int    overlap_level_;
+    int    relaxation_sweeps_;
+    Scalar relaxation_damping_;
+    int    krylov_type_;
+    int    krylov_iterations_;
+    double ilu_leveloffill_, ilu_abs_thresh_, ilu_rel_thresh_, ilu_drop_tol_, ilu_relax_val_;
+    bool   schwarz_usereorder_;
 
     // flags for setup
     bool GridTransfersExist_;
