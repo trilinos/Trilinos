@@ -13,7 +13,7 @@ struct intrusive_relation_descriptor_type {
   typedef const intrusive_relation *       base_type;
   typedef sierra::util::parameters_by_value  parameter_catagory;
 
-  static size_t invalid() { return (size_t)NULL; }
+  static size_t invalid() { return 0; }
 };
 
 typedef sierra::util::descriptor<details::intrusive_relation_descriptor_type> intrusive_relation_descriptor;

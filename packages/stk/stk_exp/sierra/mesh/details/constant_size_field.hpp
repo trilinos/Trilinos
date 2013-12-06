@@ -36,7 +36,7 @@ class constant_size_field {
                         const Mesh & mesh)
   {
     typename Mesh::bucket_range bdrange = mesh.get_buckets();
-    m_bucket_data_ptrs.assign(std::distance(bdrange.first, bdrange.second), (pointer)NULL);
+    m_bucket_data_ptrs.assign(std::distance(bdrange.first, bdrange.second), static_cast<pointer>(NULL));
     m_bucket_offsets.assign(std::distance(bdrange.first, bdrange.second), 0);
     size_t num_field_data_scalars = 0;
     BOOST_FOREACH(bucket_key bd, bdrange) {
