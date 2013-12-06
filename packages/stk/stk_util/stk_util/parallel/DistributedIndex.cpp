@@ -591,8 +591,6 @@ void DistributedIndex::update_keys(
 
   unpack_with_proc_recv_buffer(all, m_comm_size, new_key_usage);
 
-  std::sort( new_key_usage.begin(), new_key_usage.end() );
-
   m_key_usage.insert(m_key_usage.end(), new_key_usage.begin(), new_key_usage.end());
   std::sort(m_key_usage.begin(), m_key_usage.end());
 
@@ -601,9 +599,8 @@ void DistributedIndex::update_keys(
                     m_key_usage.end() );
 
   // Check invariant that m_key_usage is sorted
-  if (!is_sorted_and_unique(m_key_usage)) {
-    throw std::runtime_error( "Sorted&unique invariant violated!" );
-  }
+  ThrowAssertMsg(is_sorted_and_unique(m_key_usage),
+                 "Sorted&unique invariant violated!");
 }
 
 //----------------------------------------------------------------------
