@@ -46,5 +46,17 @@ namespace Kokkos {
     }
 #endif
 
+#ifdef KOKKOS_HAVE_CUDA
+  int KokkosCudaWrapperNode::count = 0;
+#endif
+
+#ifdef KOKKOS_HAVE_OPENMP
+  int KokkosOpenMPWrapperNode::count = 0;
+#endif
+
+#ifdef KOKKOS_HAVE_PTHREAD
+  int KokkosThreadsWrapperNode::count = 0;
+#endif
+
   }
 }
