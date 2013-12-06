@@ -250,7 +250,7 @@ void testGtkSearch(MPI_Comm comm, const std::vector<mybox>&inputBoxes, SearchRes
 
     ACME::Parallel_Data_Exchange(send_list, recv_list, comm);
 
-    ASSERT_EQ((size_t)num_procs, recv_list.size());
+    ASSERT_EQ(static_cast<size_t>(num_procs), recv_list.size());
     for (size_t i=0;i<recv_list.size();i++)
     {
         for (size_t j=0;j<recv_list[i].size();j++)
@@ -487,7 +487,7 @@ void printSumOfResults(MPI_Comm comm, const size_t sizeResults)
     size_t goldValueNumber=getGoldValueForTest();
     if ( goldValueNumber != 0u)
     {
-        EXPECT_EQ(goldValueNumber, (size_t)sumOverAll);
+        EXPECT_EQ(goldValueNumber, static_cast<size_t>(sumOverAll));
     }
     else if ( procId == 0 )
     {

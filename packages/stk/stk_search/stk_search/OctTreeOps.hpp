@@ -738,7 +738,7 @@ ProximitySearch<DomainBoundingBox, RangeBoundingBox>::ProximitySearch(
 {
   if ( m_tree_iter != m_tree_end ) {
 
-    TPI_work_subprogram worker = (TPI_work_subprogram) proximity_search_work<DomainBoundingBox, RangeBoundingBox>;
+    TPI_work_subprogram worker = proximity_search_work<DomainBoundingBox, RangeBoundingBox>;
     TPI_Run_threads(worker, this, NLOCKS );
 
     if ( m_tree_iter != m_tree_end ) {
