@@ -96,6 +96,7 @@ namespace KokkosClassic {
     if (curNumThreads_ >= 1) {
       TPI_Init(curNumThreads_);
     }
+#if 0
 #if defined(HAVE_KOKKOSCLASSIC_KOKKOSCORE) && defined(KOKKOS_HAVE_PTHREAD)
     if (!Kokkos::Threads::is_initialized()) {
       if (curNumThreads_ >= 1)
@@ -104,6 +105,7 @@ namespace KokkosClassic {
         Kokkos::Threads::initialize( 1 );
     }
 #endif
+#endif // 0
   }
 
   TPINode::~TPINode()
