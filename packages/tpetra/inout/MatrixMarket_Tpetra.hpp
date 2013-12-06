@@ -5806,10 +5806,10 @@ namespace Tpetra {
       printAsComment (std::ostream& out, const std::string& str)
       {
         using std::endl;
-        std::istringstream istream (str);
+        std::istringstream inpstream (str);
         std::string line;
 
-        while (getline (istream, line)) {
+        while (getline (inpstream, line)) {
           if (! line.empty()) {
             // Note that getline() doesn't store '\n', so we have to
             // append the endline ourselves.
