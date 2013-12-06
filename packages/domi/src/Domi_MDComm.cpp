@@ -73,6 +73,34 @@ MDComm::MDComm(const TeuchosCommRCP teuchosComm,
 ////////////////////////////////////////////////////////////////////////
 
 MDComm::MDComm(const TeuchosCommRCP teuchosComm,
+               Teuchos::ParameterList & plist) :
+  _teuchosComm(teuchosComm)
+{
+  // Set the communicator sizes along each axis
+  Teuchos::Array< int > axisCommSizes =
+    plist.get("axisCommSizes", Teuchos::Array< int >());
+  _axisCommSizes = regularizeAxisSizes(_teuchosComm->getSize(),
+                                       axisCommSizes.size(),
+                                       axisCommSizes());
+
+  // Set the periodic flags along each axis
+  Teuchos::Array< int > periodic =
+    plist.get("periodic", Teuchos::Array< int >());
+  _periodic = computePeriodic(_axisCommSizes.size(),
+                              periodic);
+
+  // Set the axis ranks for this processor
+  _axisRanks = computeAxisRanks(_teuchosComm->getRank(),
+                                _axisCommSizes);
+
+  // Set the axis strides
+  _axisStrides = computeStrides(_axisCommSizes,
+                                DEFAULT_ORDER);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+MDComm::MDComm(const TeuchosCommRCP teuchosComm,
                int numDims) :
   _teuchosComm(teuchosComm),
   _axisCommSizes(regularizeAxisSizes(teuchosComm->getSize(),

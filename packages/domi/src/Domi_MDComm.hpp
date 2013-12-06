@@ -46,6 +46,7 @@
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayView.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 // Domi includes
 #include "Domi_ConfigDefs.hpp"
@@ -154,6 +155,15 @@ public:
          const Teuchos::ArrayView< int > & axisCommSizes,
          const Teuchos::ArrayView< int > & periodic =
            Teuchos::ArrayView< int >());
+
+  /** \brief Constructor with ParameterList
+   * 
+   * \param teuchosComm [in] The Teuchos Communicator
+   *
+   * \param plist [in] ParameterList with construction information
+   */
+  MDComm(const TeuchosCommRCP teuchosComm,
+         Teuchos::ParameterList & plist);
 
   /** \brief Constructor with number of dimensions
    *
