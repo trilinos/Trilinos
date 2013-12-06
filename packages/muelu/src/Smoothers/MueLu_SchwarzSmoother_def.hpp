@@ -65,8 +65,8 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  SchwarzSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SchwarzSmoother(const std::string& type, const Teuchos::ParameterList& paramList)
-    : type_(type), paramList_(paramList) {
+  SchwarzSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SchwarzSmoother(const std::string& type, const Teuchos::ParameterList& paramList, const LocalOrdinal& overlapLevel)
+    : type_(type), paramList_(paramList), overlapLevel_(overlapLevel) {
     
     this->SetParameterList(paramList);
 
@@ -135,9 +135,67 @@ namespace MueLu {
     localComm = Teuchos::rcp(new Teuchos::SerialComm<int> ());
 #endif
 
+    // first, determine the overlap map
+    Array<GO> ExtElements;
+    Teuchos::RCP< Tpetra::Map<LO,GO,NO> >       TmpMap;
+    Teuchos::RCP< Tpetra::CrsGraph<LO,GO,NO> >  TmpGraph;
+    Teuchos::RCP< Tpetra::Import<LO,GO,NO> >    TmpImporter;
+    Teuchos::RCP< const Tpetra::Map<LO,GO,NO> > TmpRowMap, TmpColMap;
+    Teuchos::RCP< const Tpetra::CrsGraph<LO,GO,NO> > tA_CrsGraph = tA->getCrsGraph();
+    const GO global_invalid = Teuchos::OrdinalTraits<GO>::invalid();
+    const size_t numMyRowsA = tA->getNodeNumRows();
+    
+    for (int i=0; i<=overlapLevel_; i++) {
+      // Get the current maps
+      if (i==0){
+	TmpRowMap = tA->getRowMap();
+	TmpColMap = tA->getColMap();
+      }
+      else {
+	TmpRowMap = TmpGraph->getRowMap();
+	TmpColMap = TmpGraph->getColMap();
+      }
+      const size_t size = TmpColMap->getNodeNumElements() - TmpRowMap->getNodeNumElements();
+      Array<GO> mylist(size);
+      size_t count = 0;
+      // define the set of rows that are in ColMap but not in RowMap
+      for (LO j = 0 ; (size_t) j < TmpColMap->getNodeNumElements(); j++) {
+	const GO GID = TmpColMap->getGlobalElement(j);
+	if (tA->getRowMap()->getLocalElement(GID) == global_invalid) {
+	  typedef typename Array<GO>::iterator iter_type;
+	  const iter_type end = ExtElements.end();
+	  const iter_type pos = std::find (ExtElements.begin(), end, GID);
+	  if (pos == end) {
+	    ExtElements.push_back(GID);
+	    mylist[count] = GID;
+	    ++count;
+	  }
+	}
+      }
+      TmpMap = Teuchos::rcp( new Tpetra::Map<LO,GO,NO>(global_invalid, mylist(0,count),
+						       Teuchos::OrdinalTraits<GO>::zero(),
+						       tA->getComm(), tA->getNode()) );
+      TmpGraph = Teuchos::rcp( new Tpetra::CrsGraph<LO,GO,NO>(TmpMap, 0));
+      TmpImporter = Teuchos::rcp( new Tpetra::Import<LO,GO,NO>(tA->getRowMap(), TmpMap));
+      TmpGraph->doImport(*tA_CrsGraph, *TmpImporter, Tpetra::INSERT);
+      TmpGraph->fillComplete (tA->getDomainMap(), TmpMap);      
+    }
+    
+    // build the map containing all the nodes (original
+    // matrix + extended matrix)
+    Array<GO> mylist(numMyRowsA + ExtElements.size());
+    for (LO i = 0; (size_t)i < numMyRowsA; ++i) {
+      mylist[i] = tA->getRowMap()->getGlobalElement(i);
+    }
+    for (LO i = 0; i < ExtElements.size(); ++i) {
+      mylist[i + numMyRowsA] = ExtElements[i];
+    }
+    OverlapMap_ = Teuchos::rcp( new Tpetra::Map<LO,GO,NO>(global_invalid, mylist(),
+							  Teuchos::OrdinalTraits<GO>::zero(),
+							  tA->getComm(), tA->getNode()) );
+    
     // get maps and setup local matrix
     UniqueMap_  = tA->getRowMap();
-    OverlapMap_ = tA->getColMap();
     LO numOverlapRows = OverlapMap_ -> getNodeNumElements();
     LO numUniqueRows = UniqueMap_ -> getNodeNumElements();
     TEUCHOS_TEST_FOR_EXCEPTION(numUniqueRows>numOverlapRows, Exceptions::RuntimeError, "More unique elements than overlapped elements!");    
@@ -153,6 +211,7 @@ namespace MueLu {
     TpetraImporter_ = Teuchos::rcp( new Tpetra::Import<LO,GO,NO>(UniqueMap_,OverlapMap_) );
     // do import to get overlapped matrix (OverlapA)
     OverlapA -> doImport(*tA,*TpetraImporter_,Tpetra::INSERT);
+
     // extract to local matrix (LocalA)
     for(LO i = 0; i < numOverlapRows; i++) {
       GO globalRow = globalRowList[i];
@@ -165,7 +224,7 @@ namespace MueLu {
 	LocalOrdinal local_col = OverlapMap_->getLocalElement(global_col);
 	indices_vec.push_back(local_col);
       }
-      LocalA -> insertLocalValues(i,Teuchos::ArrayView<GO>(indices_vec),values);
+      LocalA -> insertLocalValues(i,Teuchos::ArrayView<LO>(indices_vec),values);
     }
     LocalA -> fillComplete();
     
@@ -220,7 +279,7 @@ namespace MueLu {
     RCP<MultiVector> Res = Utils::Residual(*A_,X,B);
     Tpetra::MultiVector<SC,LO,GO,NO> const &tB = Utils::MV2TpetraMV(*Res);
 
-    // do import/export of multivector and construct the local vectors
+    // do import/export of multivector and construct the local vector
     size_t numvecs = X.getNumVectors();
     Teuchos::RCP< Tpetra::MultiVector<SC,LO,GO,NO> > OverlapB = rcp( new Tpetra::MultiVector<SC,LO,GO,NO>(OverlapMap_,numvecs) );
     OverlapB -> doImport(tB,*TpetraImporter_,Tpetra::INSERT);
@@ -261,7 +320,7 @@ namespace MueLu {
     }
     // create temporary vector and do export
     Teuchos::RCP< Tpetra::MultiVector<SC,LO,GO,NO> > Xtemp = Teuchos::rcp( new Tpetra::MultiVector<SC,LO,GO,NO>(UniqueMap_,numvecs) );
-    Xtemp->doExport(*OverlapX,*TpetraExporter_,Tpetra::INSERT);
+    Xtemp->doExport(*OverlapX,*TpetraExporter_,Tpetra::ZERO);
     // update
     Teuchos::RCP< Xpetra::MultiVector<SC,LO,GO,NO> > Xvec = Xpetra::toXpetra(Xtemp);
     if(InitialGuessIsZero) {

@@ -373,7 +373,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
   else if(Smoother_=="superlu") {
     precType_ = "superlu";
   }
-  smooProto_ = rcp( new SchwarzSmoother(precType_,precList_) );
+  smooProto_ = rcp( new SchwarzSmoother(precType_,precList_,overlapLevel_) );
   smooFact_  = rcp( new SmootherFactory(smooProto_) );
   coarsestSmooProto_ = rcp( new DirectSolver("Superlu",coarsestSmooList_) );
   coarsestSmooFact_  = rcp( new SmootherFactory(coarsestSmooProto_, Teuchos::null) );
@@ -566,7 +566,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   else if(Smoother_=="superlu") {
     precType_ = "superlu";
   }
-  smooProto_ = rcp( new SchwarzSmoother(precType_,precList_) );
+  smooProto_ = rcp( new SchwarzSmoother(precType_,precList_,overlapLevel_) );
   smooFact_  = rcp( new SmootherFactory(smooProto_) );
   coarsestSmooProto_ = rcp( new DirectSolver("Superlu",coarsestSmooList_) );
   coarsestSmooFact_  = rcp( new SmootherFactory(coarsestSmooProto_, Teuchos::null) );

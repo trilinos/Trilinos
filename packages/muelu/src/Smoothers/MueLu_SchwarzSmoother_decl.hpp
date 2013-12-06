@@ -90,7 +90,7 @@ namespace MueLu {
     /*! @brief Constructor
       Creates a MueLu interface to the direct solvers in Amesos2 and preconditioners in Ifpack2.
     */
-    SchwarzSmoother(const std::string& type = "", const Teuchos::ParameterList& paramList = Teuchos::ParameterList());
+    SchwarzSmoother(const std::string& type = "", const Teuchos::ParameterList& paramList = Teuchos::ParameterList(), const LocalOrdinal& overlapLevel = 0);
 
     //! Destructor
     virtual ~SchwarzSmoother();
@@ -144,6 +144,9 @@ namespace MueLu {
 
     //! parameter list
     Teuchos::ParameterList paramList_;
+
+    //! level of overlap
+    LocalOrdinal overlapLevel_;
 
     //! pointer to maps
     Teuchos::RCP< Tpetra::Map<LO,GO,NO> > localRowMap_;

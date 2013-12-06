@@ -101,8 +101,8 @@ namespace MueLu {
     //! Constructors
     ShiftedLaplacian()
       : Problem_("acoustic"), numPDEs_(1), Smoother_("riluk"), Aggregation_("coupled"), Nullspace_("constant"), numLevels_(5), coarseGridSize_(100),
-	omega_(2.0*M_PI), ashift1_((SC) 0.0), ashift2_((SC) -1.0), pshift1_((SC) 0.0), pshift2_((SC) -1.0), iters_(500), blksize_(1), tol_(1.0e-4),
-	nsweeps_(5), ncycles_(1), FGMRESoption_(false), cycles_(8), subiters_(10), option_(1), nproblems_(0), solverType_(1),
+	omega_(2.0*M_PI), ashift1_((SC) 0.0), ashift2_((SC) -1.0), pshift1_((SC) 0.0), pshift2_((SC) -1.0), overlapLevel_(2), iters_(500), blksize_(1),
+	tol_(1.0e-4), nsweeps_(5), ncycles_(1), FGMRESoption_(false), cycles_(8), subiters_(10), option_(1), nproblems_(0), solverType_(1),
 	GridTransfersExist_(false), UseLaplacian_(true), VariableShift_(false),
 	LaplaceOperatorSet_(false), ProblemMatrixSet_(false), PreconditioningMatrixSet_(false),
 	StiffMatrixSet_(false), MassMatrixSet_(false), DampMatrixSet_(false),
@@ -189,6 +189,7 @@ namespace MueLu {
     // tol    -> residual tolerance
     // FMGRES -> if true, FGMRES is chosen as solver
 
+    int    overlapLevel_;
     int    iters_;
     int    blksize_;
     double tol_;
