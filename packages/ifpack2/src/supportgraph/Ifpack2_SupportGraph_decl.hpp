@@ -48,34 +48,20 @@
 
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_Preconditioner.hpp"
-#include "Ifpack2_Condest.hpp"
-#include "Ifpack2_Heap.hpp"
-#include "Ifpack2_Parameters.hpp"
-
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
 
-#include <Teuchos_Assert.hpp>
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Time.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
-#include <Teuchos_ScalarTraits.hpp>
+// Ifpack2's CMake system should (and does) prevent Trilinos from
+// attempting to build or install this class, if Amesos2 is not
+// enabled.  We check for this case regardless, in order to catch any
+// bugs that future development might introduce in the CMake scripts.
 
-#include <string>
-#include <sstream>
-#include <iostream>
-#include <cmath>
+#ifdef HAVE_IFPACK2_AMESOS2
+#  include <Amesos2.hpp>
+#  include <Amesos2_Version.hpp>
+#else
+#  error "Ifpack2::SupportGraph requires that Trilinos be built with the Amesos2 package enabled."
+#endif // HAVE_IFPACK2_AMESOS2
 
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/kruskal_min_spanning_tree.hpp>
-#include <boost/graph/prim_minimum_spanning_tree.hpp>
-#include <boost/config.hpp>
-#include "Amesos2.hpp"
-#include "Amesos2_Version.hpp"
-
-namespace Teuchos {
-  // forward declaration
-  class ParameterList;
-}
 
 namespace Ifpack2 {
 
@@ -87,17 +73,24 @@ namespace Ifpack2 {
 /// or multiple trees (forest), of a given sparse matrix
 /// represented as a Tpetra::RowMatrix.
 ///
+/// \warning Do not attempt to use this class unless Trilinos was
+///   built with support for the Boost and Cholmod third-party
+///   libraries.
+///
+/// \warning This class will not be installed unless the CMake option
+///   Ifpack2_ENABLE_Experimental was set to ON when configuring
+///   Trilinos.
+///
 /// \warning If the matrix is distributed over multiple MPI processes,
 ///   this class will not work correctly by itself.  You must use it
 ///   as a subdomain solver inside of a domain decomposition method
 ///   like AdditiveSchwarz (which see).  If you use Factory to create
-///   an SupportGraph preconditioner, the Factory will automatically wrap
-///   SupportGraph in AdditiveSchwarz for you, if the matrix's communicator
-///   contains multiple processes.
+///   an SupportGraph preconditioner, the Factory will automatically
+///   wrap SupportGraph in AdditiveSchwarz for you, if the matrix's
+///   communicator contains multiple processes.
 ///
 /// See the documentation of setParameters() for a list of valid
 /// parameters.
-///
 template<class MatrixType>
 class SupportGraph :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,

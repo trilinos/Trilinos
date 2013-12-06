@@ -50,8 +50,7 @@
 
 namespace Ifpack2 {
 
-  #define LCLINST(S,LO,GO) \
-          IFPACK2_INST(SUPPORTGRAPH,S,LO,GO)
+#define LCLINST(S,LO,GO) IFPACK2_INST( SupportGraph, S, LO, GO )
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 
