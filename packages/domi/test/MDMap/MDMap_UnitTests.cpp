@@ -217,6 +217,144 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, dimensionsConstructor, T )
 #endif
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, pListDimensionsConstructor, T )
+{
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  // Note: axisCommSizes from command line should be fully specified
+  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+
+  // Check that the axisCommSizes are completely specified
+  TEST_EQUALITY(axisCommSizes.size(), numDims)
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    TEST_ASSERT(axisCommSizes[axis] > 0);
+  }
+
+  // Construct dimensions
+  T localDim = 10;
+  Array< T > dims(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    dims[axis] = localDim * axisCommSizes[axis];
+
+  // Construct a ParameterList
+  Teuchos::ParameterList plist;
+  plist.set("axisCommSizes", axisCommSizes);
+  plist.set("dimensions"   , dims         );
+
+  // Construct an MDMap
+  MDMap< T > mdMap(comm, plist);
+
+  // Perform unit tests of MDMap as a whole
+  TEST_ASSERT(mdMap.onSubcommunicator());
+  TEST_EQUALITY(mdMap.getNumDims(), numDims);
+  TEST_ASSERT(not mdMap.hasPadding());
+  TEST_EQUALITY(mdMap.getLayout(), Domi::DEFAULT_ORDER);
+
+  // Perform unit tests of MDMap axis quantities
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    int axisRank = mdMap.getAxisRank(axis);
+    TEST_EQUALITY(mdMap.getAxisCommSize(axis), axisCommSizes[axis]);
+    TEST_ASSERT(not mdMap.isPeriodic(axis));
+    TEST_EQUALITY(mdMap.getGlobalDim(axis), dims[axis]);
+    TEST_EQUALITY_CONST(mdMap.getGlobalBounds(axis).start(), 0);
+    TEST_EQUALITY(mdMap.getGlobalBounds(axis).stop(), dims[axis]);
+    TEST_EQUALITY(mdMap.getLocalDim(axis) , localDim);
+    Slice globalRankBounds = mdMap.getGlobalRankBounds(axis);
+    TEST_EQUALITY(globalRankBounds.start(), axisRank    *localDim);
+    TEST_EQUALITY(globalRankBounds.stop() , (axisRank+1)*localDim);
+    Slice localBounds  = mdMap.getLocalBounds(axis);
+    TEST_EQUALITY_CONST(localBounds.start(), 0);
+    TEST_EQUALITY(localBounds.stop(), localDim);
+    TEST_EQUALITY_CONST(mdMap.getLowerPad(axis), 0);
+    TEST_EQUALITY_CONST(mdMap.getUpperPad(axis), 0);
+    TEST_EQUALITY_CONST(mdMap.getCommPadSize(axis), 0);
+    TEST_EQUALITY_CONST(mdMap.getLowerBndryPad(axis), 0);
+    TEST_EQUALITY_CONST(mdMap.getUpperBndryPad(axis), 0);
+    TEST_EQUALITY_CONST(mdMap.getBndryPadSize(axis), 0);
+  }
+
+#ifdef HAVE_EPETRA
+  if (typeid(T) == typeid(int))
+  {
+    Teuchos::Array<int> gstrides(numDims);
+    Teuchos::Array<int> lstrides(numDims);
+    gstrides[0] = 1;
+    lstrides[0] = 1;
+    for (int axis=1; axis < numDims; ++axis)
+    {
+      gstrides[axis] = dims[axis-1] * gstrides[axis-1];
+      lstrides[axis] = localDim     * lstrides[axis-1];
+    }
+    int gll = 0;
+    int gur = 0;
+    int lur = 0;
+    for (int axis=0; axis < numDims; ++axis)
+    {
+      int axisRank = mdMap.getAxisRank(axis);
+      gll += ( axisRank   *localDim  ) * gstrides[axis];
+      gur += ((axisRank+1)*localDim-1) * gstrides[axis];
+      lur += (localDim-1) * lstrides[axis];
+    }
+    Teuchos::RCP< const Epetra_Map > epetraMap = mdMap.getEpetraMap();
+    TEST_EQUALITY(epetraMap->GID(  0), gll);
+    TEST_EQUALITY(epetraMap->GID(lur), gur);
+
+    for (int axis = 0; axis < numDims; ++axis)
+    {
+      int axisRank = mdMap.getAxisRank(axis);
+      Teuchos::RCP< const Epetra_Map > epetraMap = mdMap.getEpetraAxisMap(axis);
+      TEST_EQUALITY(epetraMap->GID(         0),  axisRank   *localDim  );
+      TEST_EQUALITY(epetraMap->GID(localDim-1), (axisRank+1)*localDim-1);
+    }
+  }
+  else
+  {
+    TEST_THROW(mdMap.getEpetraMap(true ), Domi::MapOrdinalError);
+    TEST_THROW(mdMap.getEpetraMap(false), Domi::MapOrdinalError);
+    TEST_THROW(mdMap.getEpetraAxisMap(0,true ), Domi::MapOrdinalError);
+    TEST_THROW(mdMap.getEpetraAxisMap(0,false), Domi::MapOrdinalError);
+  }
+#endif
+
+#ifdef HAVE_TPETRA
+  Teuchos::Array<T> gstrides(numDims);
+  Teuchos::Array<T> lstrides(numDims);
+  gstrides[0] = 1;
+  lstrides[0] = 1;
+  for (int axis=1; axis < numDims; ++axis)
+  {
+    gstrides[axis] = dims[axis-1] * gstrides[axis-1];
+    lstrides[axis] = localDim     * lstrides[axis-1];
+  }
+  T gll = 0;
+  T gur = 0;
+  T lll = 0;
+  T lur = 0;
+  for (int axis=0; axis < numDims; ++axis)
+  {
+    int axisRank = mdMap.getAxisRank(axis);
+    gll += ( axisRank   *localDim  ) * gstrides[axis];
+    gur += ((axisRank+1)*localDim-1) * gstrides[axis];
+    lur += (localDim-1) * lstrides[axis];
+  }
+  Teuchos::RCP< const Tpetra::Map<T, T> > tpetraMap =
+    mdMap.getTpetraMap();
+  TEST_EQUALITY(tpetraMap->getGlobalElement(lll), gll);
+  TEST_EQUALITY(tpetraMap->getGlobalElement(lur), gur);
+
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    int axisRank = mdMap.getAxisRank(axis);
+    Teuchos::RCP< const Tpetra::Map<T,T> > tpetraMap =
+      mdMap.getTpetraAxisMap(axis);
+    TEST_EQUALITY(tpetraMap->getGlobalElement(0), axisRank*localDim);
+    TEST_EQUALITY(tpetraMap->getGlobalElement(localDim-1),
+                  (axisRank+1)*localDim-1);
+  }
+#endif
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, commPadConstructor, T )
 {
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
@@ -237,6 +375,179 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, commPadConstructor, T )
 
   // Construct an MDMap
   MDMap< T > mdMap(mdComm, dims(), commPad());
+
+  // Perform unit tests of MDMap as a whole
+  TEST_ASSERT(mdMap.onSubcommunicator());
+  TEST_EQUALITY(mdMap.getNumDims(), numDims);
+  TEST_EQUALITY(mdMap.hasPadding(), comm->getSize() > 1);
+  TEST_EQUALITY(mdMap.getLayout(), Domi::DEFAULT_ORDER);
+
+  // Perform unit tests of MDMap axis quantities
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    int axisRank = mdMap.getAxisRank(axis);
+    int lowerCommPad = 0;
+    if (axisRank > 0) lowerCommPad = commPad[axis];
+    int upperCommPad = 0;
+    if (axisRank < axisCommSizes[axis]-1) upperCommPad = commPad[axis];
+    T myDim = localDim + lowerCommPad + upperCommPad;
+
+    TEST_EQUALITY(mdMap.getAxisCommSize(axis), axisCommSizes[axis]);
+    TEST_ASSERT(not mdMap.isPeriodic(axis));
+    TEST_EQUALITY(mdMap.getGlobalDim(axis), dims[axis]);
+    TEST_EQUALITY_CONST(mdMap.getGlobalBounds(axis).start(), 0);
+    TEST_EQUALITY(mdMap.getGlobalBounds(axis).stop(), dims[axis]);
+    TEST_EQUALITY(mdMap.getLocalDim(axis,true ), myDim   );
+    TEST_EQUALITY(mdMap.getLocalDim(axis,false), localDim);
+    Slice globalRankBounds = mdMap.getGlobalRankBounds(axis);
+    TEST_EQUALITY(globalRankBounds.start(),  axisRank   *localDim);
+    TEST_EQUALITY(globalRankBounds.stop() , (axisRank+1)*localDim);
+    Slice localBounds  = mdMap.getLocalBounds(axis,true);
+    TEST_EQUALITY_CONST(localBounds.start(), 0);
+    TEST_EQUALITY(localBounds.stop(), myDim);
+    localBounds = mdMap.getLocalBounds(axis,false);
+    TEST_EQUALITY_CONST(localBounds.start(), lowerCommPad);
+    TEST_EQUALITY(localBounds.stop(), lowerCommPad+localDim);
+    TEST_EQUALITY_CONST(mdMap.getLowerPad(axis), lowerCommPad);
+    TEST_EQUALITY_CONST(mdMap.getUpperPad(axis), upperCommPad);
+    TEST_EQUALITY_CONST(mdMap.getCommPadSize(axis), commPad[axis]);
+    TEST_EQUALITY_CONST(mdMap.getLowerBndryPad(axis), 0);
+    TEST_EQUALITY_CONST(mdMap.getUpperBndryPad(axis), 0);
+    TEST_EQUALITY_CONST(mdMap.getBndryPadSize(axis), 0);
+  }
+
+#ifdef HAVE_EPETRA
+  if (typeid(T) == typeid(int))
+  {
+    Teuchos::Array<int> gstrides(numDims);
+    Teuchos::Array<int> lstrides(numDims);
+    gstrides[0] = 1;
+    lstrides[0] = 1;
+    for (int axis=1; axis < numDims; ++axis)
+    {
+      int axisRank = mdMap.getAxisRank(axis-1);
+      int myCommPad = 0;
+      if (axisRank > 0) myCommPad += commPad[axis-1];
+      if (axisRank != mdMap.getAxisCommSize(axis-1)-1)
+        myCommPad += commPad[axis-1];
+      gstrides[axis] = dims[axis-1]       * gstrides[axis-1];
+      lstrides[axis] = (localDim+myCommPad) * lstrides[axis-1];
+    }
+    int gll = 0;
+    int gur = 0;
+    int lll = 0;
+    int lur = 0;
+    for (int axis=0; axis < numDims; ++axis)
+    {
+      int axisRank = mdMap.getAxisRank(axis);
+      gll += ( axisRank   *localDim) * gstrides[axis];
+      gur += ((axisRank+1)*localDim-1) * gstrides[axis];
+      if (axisRank == 0)
+        lur += (localDim-1) * lstrides[axis];
+      else
+      {
+        lll += commPad[axis] * lstrides[axis];
+        lur += (localDim+commPad[axis]-1) * lstrides[axis];
+      }
+    }
+    Teuchos::RCP< const Epetra_Map > epetraMap = mdMap.getEpetraMap();
+    TEST_EQUALITY(epetraMap->GID(lll), gll);
+    TEST_EQUALITY(epetraMap->GID(lur), gur);
+
+    for (int axis = 0; axis < numDims; ++axis)
+    {
+      int axisRank  = mdMap.getAxisRank(axis);
+      int myCommPad = 0;
+      if (axisRank > 0) myCommPad = commPad[axis];
+      Teuchos::RCP< const Epetra_Map > epetraMap = mdMap.getEpetraAxisMap(axis);
+      TEST_EQUALITY(epetraMap->GID(0), axisRank*localDim-myCommPad);
+      TEST_EQUALITY(epetraMap->GID(localDim+myCommPad-1), (axisRank+1)*localDim-1);
+    }
+  }
+  else
+  {
+    TEST_THROW(mdMap.getEpetraMap(true ), Domi::MapOrdinalError);
+    TEST_THROW(mdMap.getEpetraMap(false), Domi::MapOrdinalError);
+    TEST_THROW(mdMap.getEpetraAxisMap(0,true ), Domi::MapOrdinalError);
+    TEST_THROW(mdMap.getEpetraAxisMap(0,false), Domi::MapOrdinalError);
+  }
+#endif
+
+#ifdef HAVE_TPETRA
+  Teuchos::Array<T> gstrides(numDims);
+  Teuchos::Array<T> lstrides(numDims);
+  gstrides[0] = 1;
+  lstrides[0] = 1;
+  for (int axis=1; axis < numDims; ++axis)
+  {
+    int axisRank  = mdMap.getAxisRank(axis-1);
+    int myCommPad = 0;
+    if (axisRank > 0) myCommPad += commPad[axis-1];
+    if (axisRank != mdMap.getAxisCommSize(axis-1)-1)
+      myCommPad += commPad[axis-1];
+    gstrides[axis] = dims[axis-1]       * gstrides[axis-1];
+    lstrides[axis] = (localDim+myCommPad) * lstrides[axis-1];
+  }
+  T gll = 0;
+  T gur = 0;
+  T lll = 0;
+  T lur = 0;
+  for (int axis=0; axis < numDims; ++axis)
+  {
+    int axisRank = mdMap.getAxisRank(axis);
+    gll += ( axisRank   *localDim) * gstrides[axis];
+    gur += ((axisRank+1)*localDim-1) * gstrides[axis];
+    if (axisRank == 0)
+      lur += (localDim-1) * lstrides[axis];
+    else
+    {
+      lll += commPad[axis] * lstrides[axis];
+      lur += (localDim+commPad[axis]-1) * lstrides[axis];
+    }
+  }
+  Teuchos::RCP< const Tpetra::Map<T,T> > tpetraMap = mdMap.getTpetraMap();
+  TEST_EQUALITY(tpetraMap->getGlobalElement(lll), gll);
+  TEST_EQUALITY(tpetraMap->getGlobalElement(lur), gur);
+
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    int axisRank  = mdMap.getAxisRank(axis);
+    int myCommPad = 0;
+    if (axisRank > 0) myCommPad = commPad[axis];
+    Teuchos::RCP< const Tpetra::Map<T> > tpetraMap =
+      mdMap.getTpetraAxisMap(axis);
+    TEST_EQUALITY(tpetraMap->getGlobalElement(0), axisRank*localDim-myCommPad);
+    TEST_EQUALITY(tpetraMap->getGlobalElement(localDim+myCommPad-1),
+                  (axisRank+1)*localDim-1);
+  }
+#endif
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, pListCommPadConstructor, T )
+{
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  // Note: axisCommSizes from command line should be fully specified
+  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes));
+
+  // Construct dimensions
+  T localDim = 10;
+  Array< T > dims(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    dims[axis] = localDim * mdComm->getAxisCommSize(axis);
+
+  // Construct communication padding
+  Array< int > commPad(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    commPad[axis] = axis+1;
+
+  // Construct a ParameterList
+  Teuchos::ParameterList plist;
+  plist.set("dimensions", dims   );
+  plist.set("commPad"   , commPad);
+
+  // Construct an MDMap
+  MDMap< T > mdMap(mdComm, plist);
 
   // Perform unit tests of MDMap as a whole
   TEST_ASSERT(mdMap.onSubcommunicator());
@@ -571,6 +882,194 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, bndryPadConstructor, T )
 #endif
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, pListBndryPadConstructor, T )
+{
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  // Note: axisCommSizes from command line should be fully specified
+  Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
+
+  // Construct dimensions
+  T localDim = 10;
+  Array< T > dims(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    dims[axis] = localDim * axisCommSizes[axis];
+
+  // Construct boundary padding
+  Array< int > bndryPad(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    bndryPad[axis] = axis+1;
+
+  // Construct a ParameterList
+  Teuchos::ParameterList plist;
+  plist.set("axisCommSizes", axisCommSizes);
+  plist.set("dimensions"   , dims         );
+  plist.set("bndryPad"     , bndryPad     );
+
+  // Construct an MDMap
+  MDMap< T > mdMap(comm, plist);
+
+  // Perform unit tests of MDMap as a whole
+  TEST_ASSERT(mdMap.onSubcommunicator());
+  TEST_EQUALITY(mdMap.getNumDims(), numDims);
+  TEST_ASSERT(mdMap.hasPadding());
+  TEST_EQUALITY(mdMap.getLayout(), Domi::DEFAULT_ORDER);
+
+  // Perform unit tests of MDMap axis quantities
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    int axisRank = mdMap.getAxisRank(axis);
+    int lowerBndryPad = 0;
+    if (axisRank == 0) lowerBndryPad = bndryPad[axis];
+    int upperBndryPad = 0;
+    if (axisRank == axisCommSizes[axis]-1) upperBndryPad = bndryPad[axis];
+    T myDim = localDim + lowerBndryPad + upperBndryPad;
+
+    TEST_EQUALITY(mdMap.getAxisCommSize(axis), axisCommSizes[axis]);
+    TEST_ASSERT(not mdMap.isPeriodic(axis));
+    TEST_EQUALITY(mdMap.getGlobalDim(axis,true ), dims[axis]+2*bndryPad[axis]);
+    TEST_EQUALITY(mdMap.getGlobalDim(axis,false), dims[axis]               );
+    TEST_EQUALITY_CONST(mdMap.getGlobalBounds(axis,true ).start(), 0);
+    TEST_EQUALITY(mdMap.getGlobalBounds(axis,false).start(), bndryPad[axis]);
+    TEST_EQUALITY(mdMap.getGlobalBounds(axis,true ).stop(), dims[axis]+
+                  2*bndryPad[axis]);
+    TEST_EQUALITY(mdMap.getGlobalBounds(axis,false).stop(), dims[axis]+
+                  bndryPad[axis]);
+    TEST_EQUALITY(mdMap.getLocalDim(axis,true ), myDim   );
+    TEST_EQUALITY(mdMap.getLocalDim(axis,false), localDim);
+    Slice globalRankBounds = mdMap.getGlobalRankBounds(axis,false);
+    T myStart = bndryPad[axis] +  axisRank    * localDim;
+    T myStop  = bndryPad[axis] + (axisRank+1) * localDim;
+    TEST_EQUALITY(globalRankBounds.start(), myStart);
+    TEST_EQUALITY(globalRankBounds.stop() , myStop );
+    globalRankBounds = mdMap.getGlobalRankBounds(axis,true);
+    if (axisRank == 0                    ) myStart -= bndryPad[axis];
+    if (axisRank == axisCommSizes[axis]-1) myStop  += bndryPad[axis];
+    TEST_EQUALITY(globalRankBounds.start(), myStart);
+    TEST_EQUALITY(globalRankBounds.stop( ), myStop );
+    Slice localBounds  = mdMap.getLocalBounds(axis,true);
+    TEST_EQUALITY_CONST(localBounds.start(), 0);
+    TEST_EQUALITY(localBounds.stop(), myDim);
+    localBounds = mdMap.getLocalBounds(axis,false);
+    TEST_EQUALITY_CONST(localBounds.start(), lowerBndryPad);
+    TEST_EQUALITY(localBounds.stop(), lowerBndryPad+localDim);
+    TEST_EQUALITY(mdMap.getLowerPad(axis), lowerBndryPad);
+    TEST_EQUALITY(mdMap.getUpperPad(axis), upperBndryPad);
+    TEST_EQUALITY_CONST(mdMap.getCommPadSize(axis), 0);
+    TEST_EQUALITY(mdMap.getLowerBndryPad(axis), bndryPad[axis]);
+    TEST_EQUALITY(mdMap.getUpperBndryPad(axis), bndryPad[axis]);
+    TEST_EQUALITY(mdMap.getBndryPadSize(axis), bndryPad[axis]);
+  }
+
+#ifdef HAVE_EPETRA
+  if (typeid(T) == typeid(int))
+  {
+    Teuchos::Array<int> gstrides(numDims);
+    Teuchos::Array<int> lstrides(numDims);
+    gstrides[0] = 1;
+    lstrides[0] = 1;
+    for (int axis=1; axis < numDims; ++axis)
+    {
+      gstrides[axis] = (dims[axis-1]+2*bndryPad[axis-1]) * gstrides[axis-1];
+      int myBndryPad = 0;
+      int axisRank = mdMap.getAxisRank(axis-1);
+      if (axisRank == 0) myBndryPad += bndryPad[axis-1];
+      if (axisRank == mdMap.getAxisCommSize(axis-1)-1)
+        myBndryPad += bndryPad[axis-1];
+      lstrides[axis] = (localDim+myBndryPad) * lstrides[axis-1];
+    }
+    int gll = 0;
+    int gur = 0;
+    int lll = 0;
+    int lur = 0;
+    for (int axis=0; axis < numDims; ++axis)
+    {
+      int axisRank = mdMap.getAxisRank(axis);
+      gll += (axisRank*localDim+bndryPad[axis]) * gstrides[axis];
+      gur += ((axisRank+1)*localDim+bndryPad[axis]-1) * gstrides[axis];
+      if (axisRank == 0)
+      {
+        lll += bndryPad[axis] * lstrides[axis];
+        lur += (localDim+bndryPad[axis]-1) * lstrides[axis];
+      }
+      else
+        lur += (localDim-1) * lstrides[axis];
+    }
+    Teuchos::RCP< const Epetra_Map > epetraMap = mdMap.getEpetraMap();
+    TEST_EQUALITY(epetraMap->GID(lll), gll);
+    TEST_EQUALITY(epetraMap->GID(lur), gur);
+
+    for (int axis = 0; axis < numDims; ++axis)
+    {
+      int axisRank  = mdMap.getAxisRank(axis);
+      int myCommPad = 0;
+      if (axisRank == 0) myCommPad = bndryPad[axis];
+      Teuchos::RCP< const Epetra_Map > epetraMap =
+        mdMap.getEpetraAxisMap(axis);
+      TEST_EQUALITY(epetraMap->GID(myCommPad), axisRank*localDim+bndryPad[axis]);
+      TEST_EQUALITY(epetraMap->GID(myCommPad+localDim-1),
+                    bndryPad[axis]+(axisRank+1)*localDim-1);
+    }
+  }
+  else
+  {
+    TEST_THROW(mdMap.getEpetraMap(true ), Domi::MapOrdinalError);
+    TEST_THROW(mdMap.getEpetraMap(false), Domi::MapOrdinalError);
+    TEST_THROW(mdMap.getEpetraAxisMap(0,true ), Domi::MapOrdinalError);
+    TEST_THROW(mdMap.getEpetraAxisMap(0,false), Domi::MapOrdinalError);
+  }
+#endif
+
+#ifdef HAVE_TPETRA
+  Teuchos::Array<T> gstrides(numDims);
+  Teuchos::Array<T> lstrides(numDims);
+  gstrides[0] = 1;
+  lstrides[0] = 1;
+  for (int axis=1; axis < numDims; ++axis)
+  {
+    gstrides[axis] = (dims[axis-1]+2*bndryPad[axis-1]) * gstrides[axis-1];
+    int myBndryPad = 0;
+    int axisRank = mdMap.getAxisRank(axis-1);
+    if (axisRank == 0) myBndryPad += bndryPad[axis-1];
+    if (axisRank == mdMap.getAxisCommSize(axis-1)-1)
+      myBndryPad += bndryPad[axis-1];
+    lstrides[axis] = (localDim+myBndryPad) * lstrides[axis-1];
+  }
+  T gll = 0;
+  T gur = 0;
+  T lll = 0;
+  T lur = 0;
+  for (int axis=0; axis < numDims; ++axis)
+  {
+    int axisRank = mdMap.getAxisRank(axis);
+    gll += (axisRank*localDim+bndryPad[axis]) * gstrides[axis];
+    gur += ((axisRank+1)*localDim+bndryPad[axis]-1) * gstrides[axis];
+    if (axisRank == 0)
+    {
+      lll += bndryPad[axis] * lstrides[axis];
+      lur += (localDim+bndryPad[axis]-1) * lstrides[axis];
+    }
+    else
+      lur += (localDim-1) * lstrides[axis];
+  }
+  Teuchos::RCP< const Tpetra::Map<T,T> > tpetraMap = mdMap.getTpetraMap();
+  TEST_EQUALITY(tpetraMap->getGlobalElement(lll), gll);
+  TEST_EQUALITY(tpetraMap->getGlobalElement(lur), gur);
+
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    int axisRank  = mdMap.getAxisRank(axis);
+    int myCommPad = 0;
+    if (axisRank == 0) myCommPad = bndryPad[axis];
+    Teuchos::RCP< const Tpetra::Map<T> > tpetraMap =
+      mdMap.getTpetraAxisMap(axis);
+    TEST_EQUALITY(tpetraMap->getGlobalElement(myCommPad),
+                  axisRank*localDim+bndryPad[axis]);
+    TEST_EQUALITY(tpetraMap->getGlobalElement(myCommPad+localDim-1),
+                  bndryPad[axis]+(axisRank+1)*localDim-1);
+  }
+#endif
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, paddingConstructor, T )
 {
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
@@ -702,20 +1201,141 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, paddingConstructor, T )
 #endif
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, periodic, T )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, pListPaddingConstructor, T )
 {
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
   // Note: axisCommSizes from command line should be fully specified
   Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
-  Array< int > periodic(numDims, 0);
-  periodic[0] = 1;
-  MDCommRCP mdComm =
-    Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes, periodic));
+  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, axisCommSizes));
 
+  // Construct dimensions
+  T localDim = 10;
+  Array< T > dims(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    dims[axis] = localDim * mdComm->getAxisCommSize(axis);
+
+  // Construct communication and boundary padding
+  Array< int > commPad(numDims);
+  Array< int > bndryPad(numDims);
   for (int axis = 0; axis < numDims; ++axis)
   {
-    TEST_EQUALITY(mdComm->isPeriodic(axis), (axis == 0));
+    commPad[axis]  = axis+1;
+    bndryPad[axis] = axis+2;
   }
+
+  // Construct a ParameterList
+  Teuchos::ParameterList plist;
+  plist.set("dimensions", dims    );
+  plist.set("commPad"   , commPad );
+  plist.set("bndryPad"  , bndryPad);
+
+  // Construct an MDMap
+  MDMap< T > mdMap(mdComm, plist);
+
+  // Perform unit tests of MDMap as a whole
+  TEST_ASSERT(mdMap.onSubcommunicator());
+  TEST_EQUALITY(mdMap.getNumDims(), numDims);
+  TEST_ASSERT(mdMap.hasPadding());
+  TEST_EQUALITY(mdMap.getLayout(), Domi::DEFAULT_ORDER);
+
+  // Perform unit tests of MDMap axis quantities
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    int axisRank     = mdMap.getAxisRank(axis);
+    int lowerCommPad = commPad[axis];
+    int upperCommPad = commPad[axis];
+    if (axisRank == 0                ) lowerCommPad = bndryPad[axis];
+    if (axisRank == axisCommSizes[axis]-1) upperCommPad = bndryPad[axis];
+    T myDim = localDim + lowerCommPad + upperCommPad;
+
+    TEST_EQUALITY(mdMap.getAxisCommSize(axis), axisCommSizes[axis]);
+    TEST_ASSERT(not mdMap.isPeriodic(axis));
+    TEST_EQUALITY(mdMap.getGlobalDim(axis,true ), dims[axis]+2*bndryPad[axis]);
+    TEST_EQUALITY(mdMap.getGlobalDim(axis,false), dims[axis]               );
+    TEST_EQUALITY_CONST(mdMap.getGlobalBounds(axis,true ).start(), 0);
+    TEST_EQUALITY(mdMap.getGlobalBounds(axis,false).start(), bndryPad[axis]);
+    TEST_EQUALITY(mdMap.getGlobalBounds(axis,true ).stop(), dims[axis]+
+                  2*bndryPad[axis]);
+    TEST_EQUALITY(mdMap.getGlobalBounds(axis,false).stop(), dims[axis]+
+                  bndryPad[axis]);
+    TEST_EQUALITY(mdMap.getLocalDim(axis,true ), myDim   );
+    TEST_EQUALITY(mdMap.getLocalDim(axis,false), localDim);
+    Slice globalRankBounds = mdMap.getGlobalRankBounds(axis,false);
+    T myStart = bndryPad[axis] +  axisRank    * localDim;
+    T myStop  = bndryPad[axis] + (axisRank+1) * localDim;
+    TEST_EQUALITY(globalRankBounds.start(), myStart);
+    TEST_EQUALITY(globalRankBounds.stop() , myStop );
+    globalRankBounds = mdMap.getGlobalRankBounds(axis,true);
+    if (axisRank == 0                    ) myStart -= bndryPad[axis];
+    if (axisRank == axisCommSizes[axis]-1) myStop  += bndryPad[axis];
+    TEST_EQUALITY(globalRankBounds.start(), myStart);
+    TEST_EQUALITY(globalRankBounds.stop( ), myStop );
+    Slice localBounds  = mdMap.getLocalBounds(axis,true);
+    TEST_EQUALITY_CONST(localBounds.start(), 0);
+    TEST_EQUALITY(localBounds.stop(), myDim);
+    localBounds = mdMap.getLocalBounds(axis,false);
+    TEST_EQUALITY_CONST(localBounds.start(), lowerCommPad);
+    TEST_EQUALITY(localBounds.stop(), lowerCommPad+localDim);
+    TEST_EQUALITY(mdMap.getLowerPad(axis), lowerCommPad);
+    TEST_EQUALITY(mdMap.getUpperPad(axis), upperCommPad);
+    TEST_EQUALITY(mdMap.getCommPadSize(axis), commPad[axis]);
+    TEST_EQUALITY(mdMap.getLowerBndryPad(axis), bndryPad[axis]);
+    TEST_EQUALITY(mdMap.getUpperBndryPad(axis), bndryPad[axis]);
+    TEST_EQUALITY(mdMap.getBndryPadSize(axis), bndryPad[axis]);
+  }
+
+#ifdef HAVE_EPETRA
+  if (typeid(T) == typeid(int))
+  {
+    Teuchos::Array<int> gstrides(numDims);
+    Teuchos::Array<int> lstrides(numDims);
+    gstrides[0] = 1;
+    lstrides[0] = 1;
+    for (int axis=1; axis < numDims; ++axis)
+    {
+      gstrides[axis] = (dims[axis-1]+2*bndryPad[axis-1]) * gstrides[axis-1];
+      int myCommPad = 0;
+      int axisRank  = mdMap.getAxisRank(axis-1);
+      if (axisRank == 0)
+        myCommPad += bndryPad[axis-1];
+      else
+        myCommPad += commPad[axis-1];
+      if (axisRank == mdMap.getAxisCommSize(axis-1)-1)
+        myCommPad += bndryPad[axis-1];
+      else
+        myCommPad += commPad[axis-1];
+      lstrides[axis] = (localDim+myCommPad) * lstrides[axis-1];
+    }
+    int gll = 0;
+    int gur = 0;
+    int lll = 0;
+    int lur = 0;
+    for (int axis=0; axis < numDims; ++axis)
+    {
+      int axisRank = mdMap.getAxisRank(axis);
+      gll += (axisRank*localDim+bndryPad[axis]) * gstrides[axis];
+      gur += ((axisRank+1)*localDim+bndryPad[axis]-1) * gstrides[axis];
+      if (axisRank == 0)
+      {
+        lll += bndryPad[axis] * lstrides[axis];
+        lur += (localDim+bndryPad[axis]-1) * lstrides[axis];
+      }
+      else
+      {
+        lll += commPad[axis] * lstrides[axis];
+        lur += (localDim+commPad[axis]-1) * lstrides[axis];
+      }
+    }
+    Teuchos::RCP< const Epetra_Map > epetraMap = mdMap.getEpetraMap();
+    TEST_EQUALITY(epetraMap->GID(lll), gll);
+    TEST_EQUALITY(epetraMap->GID(lur), gur);
+  }
+  else
+  {
+    TEST_THROW(mdMap.getEpetraMap(true ), Domi::MapOrdinalError);
+    TEST_THROW(mdMap.getEpetraMap(false), Domi::MapOrdinalError);
+  }
+#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, indexes, T )
@@ -1846,9 +2466,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, subMapPeriodic, T )
 
 #define UNIT_TEST_GROUP( T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, dimensionsConstructor, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, pListDimensionsConstructor, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, commPadConstructor, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, pListCommPadConstructor, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, bndryPadConstructor, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, pListBndryPadConstructor, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, paddingConstructor, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, pListPaddingConstructor, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, indexes, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, exceptions, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDMap, subMapLowerLeft, T )   \
