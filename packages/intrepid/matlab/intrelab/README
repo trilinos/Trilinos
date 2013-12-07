@@ -1,0 +1,87 @@
+This README covers the installation of Intrelab, the
+Intrepid/Matlab interface, along with the installation
+of an interface to some Trilinos solvers, through ML.
+
+1) Get a recent version of Trilinos (10.x or newer).
+
+2) Get a recent version of Matlab (2010 or newer).
+
+3) Build Trilinos with Intrepid and solvers (ML, etc.)
+   in shared library mode.
+
+   - for release mode use configure options
+      -D CMAKE_BUILD_TYPE:STRING=RELEASE \
+      -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
+      -D Trilinos_ENABLE_Amesos:BOOL=ON \
+      -D Trilinos_ENABLE_AztecOO:BOOL=ON \
+      -D Trilinos_ENABLE_Epetra:BOOL=ON \
+      -D Trilinos_ENABLE_EpetraExt:BOOL=ON \
+      -D Trilinos_ENABLE_Ifpack:BOOL=ON \
+      -D Trilinos_ENABLE_ML:BOOL=ON \
+      -D Trilinos_ENABLE_Teuchos:BOOL=ON \
+      -D Trilinos_ENABLE_Intrepid:BOOL=ON \
+      -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF \
+      -D Trilinos_ENABLE_TESTS:BOOL=OFF \
+      -D BUILD_SHARED_LIBS:BOOL=ON \
+      -D TPL_ENABLE_BinUtils=OFF \
+      -D CMAKE_INSTALL_PREFIX:PATH=/YOUR_INSTALL_PATH_HERE \
+
+   - for debug mode use configure options
+      -D CMAKE_BUILD_TYPE:STRING=DEBUG \
+      -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
+      -D Trilinos_ENABLE_Amesos:BOOL=ON \
+      -D Trilinos_ENABLE_AztecOO:BOOL=ON \
+      -D Trilinos_ENABLE_Epetra:BOOL=ON \
+      -D Trilinos_ENABLE_EpetraExt:BOOL=ON \
+      -D Trilinos_ENABLE_Ifpack:BOOL=ON \
+      -D Trilinos_ENABLE_ML:BOOL=ON \
+      -D Trilinos_ENABLE_Teuchos:BOOL=ON \
+      -D Trilinos_ENABLE_Intrepid:BOOL=ON \
+      -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF \
+      -D Trilinos_ENABLE_TESTS:BOOL=OFF \
+      -D BUILD_SHARED_LIBS:BOOL=ON \
+      -D TPL_ENABLE_BinUtils=OFF \
+      -D CMAKE_INSTALL_PREFIX:PATH=/YOUR_INSTALL_PATH_HERE \
+
+   Also see Trilinos configure scripts contained in
+     scripts/cmake.intrepid+ML.shared.release
+   and
+     scripts/cmake.intrepid+ML.shared.debug
+
+3) Copy the Makefile in scripts/ to the directory above (intrelab).
+   Modify the Makefile according to the instructions contained in it.
+
+4) Run
+
+   make -j12 install
+
+5) Copy the Matlab startup script scripts/Ridzal_run_matlab.sh to the
+   directory above (intrelab).  Call it my_run_matlab.sh and make
+   sure that you have execution privileges (chmod u+x).  Modify it to
+   suit your needs.
+
+   REQUIRED:
+   Point the variable MATLABPATH to the Intrelab installation path
+   that you defined in the Makefile.
+
+   OPTIONAL/AS NEEDED:
+   The modifications will depend on your platform, your version
+   of Matlab, etc.  Some trial and error may be needed.  The main goal is to
+   make Matlab aware of the library paths and the versions of BLAS and LAPACK
+   used by Trilinos.  If Matlab's default BLAS and LAPACK (MKL) are used,
+   there could be problems.  Other libraries may need to be pointed to,
+   such as libgfortran, libgcc_s, etc., but newer versions of Matlab may not
+   require them.  It may be best to start with paths to BLAS and LAPACK,
+   and let Matlab tell you which libraries are missing, if any.
+
+6) Start Matlab using the script my_run_matlab.sh.
+
+7) To test the install of Intrelab discretizations, cd to the test/basic
+   directory and run the Matlab script m2i_test (check output).
+
+8) For the testing of Intrepid and ML solver capabilities, cd to the test/basic
+   directory and run the Matlab script m2ml_test (check output).
+
+9) Go to the test/poisson_fem directory and run the driver.
+
+10) Have fun!

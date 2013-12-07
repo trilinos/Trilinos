@@ -83,6 +83,9 @@ class CrsMatrix_SolverMap : public StructuralSameTypeTransform<Epetra_CrsMatrix>
 private:
   template<typename int_type>
   NewTypeRef construct( OriginalTypeRef orig );
+
+  // avoid virtual function hidden warning
+  using StructuralSameTypeTransform<Epetra_CrsMatrix>::construct;
 };
 
 } //namespace EpetraExt

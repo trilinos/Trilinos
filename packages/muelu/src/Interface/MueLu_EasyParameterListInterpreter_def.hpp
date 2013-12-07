@@ -332,8 +332,23 @@ namespace MueLu {
       // NOTE: none of the smoothers at the moment use parameter validation framework, so we
       // cannot get the default values from it.
       MUELU_READ_2LIST_PARAM(paramList, defaultList, "coarse: type", std::string, "", coarseType);
-      manager.SetFactory("CoarseSolver", rcp(new SmootherFactory(rcp(new DirectSolver(coarseType,
-                                                                                       paramList.sublist("coarse: params",    false))))));
+
+      ParameterList coarseParams;
+      if (paramList.isSublist("coarse: params"))
+        coarseParams = paramList.sublist("coarse: params");
+      else if (defaultList.isSublist("coarse: params"))
+        coarseParams = defaultList.sublist("coarse: params");
+
+      RCP<SmootherPrototype> coarseSmoother;
+      // TODO: this is not a proper place to check. If we consider direct solver to be a special
+      // case of smoother, we would like to unify Amesos and Ifpack2 smoothers in src/Smoothers, and
+      // have a single factory responsible for those. Then, this check would belong there.
+      if (coarseType == "RELAXATION" || coarseType == "CHEBYSHEV" || coarseType == "ILUT")
+        coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams));
+      else
+        coarseSmoother = rcp(new DirectSolver(coarseType, coarseParams));
+
+      manager.SetFactory("CoarseSolver", rcp(new SmootherFactory(coarseSmoother)));
     }
 
     // === Aggregation ===

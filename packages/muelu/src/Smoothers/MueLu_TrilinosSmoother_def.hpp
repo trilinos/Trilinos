@@ -92,7 +92,7 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(sEpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Ifpack smoother");
     } catch (Exceptions::RuntimeError) {
       // IfpackSmoother throws if Scalar != double, LocalOrdinal != int, GlobalOrdinal != int
-      this->GetOStream(Warnings0,0) << "Skipping IfpackSmoother construction due to incorrect type" << std::endl;
+      this->GetOStream(Debug,0) << "Skipping IfpackSmoother construction due to incorrect type" << std::endl;
     }
     triedEpetra = true;
 #endif

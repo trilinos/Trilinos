@@ -49,6 +49,10 @@
 #include "Epetra_Time.h"
 #include "Epetra_Util.h"
 
+#if defined(__PGI)
+#include <sstream>
+#endif
+
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 // Functions to read a MatrixMarket file and load it into a matrix.
@@ -673,8 +677,16 @@ int MatrixMarketFileToCrsMatrixHandle64(const char *filename,
       long long I = _strtoi64(strtok(lineptr," \t\n"), &endp, base) + ioffset;
       long long J = _strtoi64(strtok(NULL," \t\n"), &endp, base) + joffset;
 #else
+#if defined(__PGI)
+      long long I, J;
+      std::istringstream ssI(strtok(lineptr," \t\n"));
+      ssI >> I; I += ioffset;
+      std::istringstream ssJ(strtok(NULL," \t\n"));
+      ssJ >> J; J += joffset;
+#else
       long long I = strtoll(strtok(lineptr," \t\n"), &endp, base) + ioffset;
       long long J = strtoll(strtok(NULL," \t\n"), &endp, base) + joffset;
+#endif
 #endif
       double V = atof(strtok(NULL," \t\n"));
       lineptr = next + 1;
