@@ -64,7 +64,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPa
   relaxation_damping_   = paramList->get("relaxation: damping factor",(SC)1.0);
   krylov_type_          = paramList->get("krylov: iteration type",1);
   krylov_iterations_    = paramList->get("krylov: number of iterations",5);
-  ilu_leveloffill_      = paramList->get("fact: iluk level-of-fill",2.0);
+  ilut_leveloffill_     = paramList->get("fact: ilut level-of-fill",5.0);
+  iluk_leveloffill_     = paramList->get("fact: iluk level-of-fill",1.0);
   ilu_abs_thresh_       = paramList->get("fact: absolute threshold",0.0);
   ilu_rel_thresh_       = paramList->get("fact: relative threshold",1.0);
   ilu_drop_tol_         = paramList->get("fact: drop tolerance",0.01);
@@ -198,7 +199,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setSm
   else if(stype==7) { Smoother_="riluk";                  }
   else if(stype==8) { Smoother_="schwarz";                } 
   else if(stype==9) { Smoother_="superlu";                }
-  else              { Smoother_="superlu";                }
+  else              { Smoother_="schwarz";                }
 
 }
 
@@ -342,7 +343,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
   }
   else if(Smoother_=="ilut") {
     precType_ = "ILUT";
-    precList_.set("fact: ilut level-of-fill", ilu_leveloffill_);
+    precList_.set("fact: ilut level-of-fill", ilut_leveloffill_);
     precList_.set("fact: absolute threshold", ilu_abs_thresh_);
     precList_.set("fact: relative threshold", ilu_rel_thresh_);
     precList_.set("fact: drop tolerance",     ilu_drop_tol_);
@@ -350,7 +351,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
   }
   else if(Smoother_=="riluk") {
     precType_ = "RILUK";
-    precList_.set("fact: iluk level-of-fill", ilu_leveloffill_);
+    precList_.set("fact: iluk level-of-fill", iluk_leveloffill_);
     precList_.set("fact: absolute threshold", ilu_abs_thresh_);
     precList_.set("fact: relative threshold", ilu_rel_thresh_);
     precList_.set("fact: drop tolerance",     ilu_drop_tol_);
@@ -358,19 +359,25 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
   }
   else if(Smoother_=="schwarz") {
     precType_ = "SCHWARZ";
-    precList_.set("fact: ilut level-of-fill", ilu_leveloffill_);
+    precList_.set("fact: ilut level-of-fill", ilut_leveloffill_);
     precList_.set("fact: drop tolerance", ilu_drop_tol_);
     precList_.set("schwarz: compute condest", false);
     precList_.set("schwarz: combine mode", "Add");
     precList_.set("schwarz: use reordering", schwarz_usereorder_);
-    precList_.set("schwarz: filter singletons", false);
+    precList_.set("schwarz: filter singletons", true);
     precList_.set("order_method","rcm");
     precList_.sublist("schwarz: reordering list").set("order_method","rcm");
   }
   else if(Smoother_=="superlu") {
     precType_ = "superlu";
   }
-  smooProto_ = rcp( new SchwarzSmoother(precType_,precList_,overlap_level_) );
+  // construct smoother
+  if(Smoother_=="schwarz") {
+    smooProto_ = rcp( new Ifpack2Smoother(precType_,precList_) );
+  }
+  else {
+    smooProto_ = rcp( new SchwarzSmoother(precType_,precList_,overlap_level_) );
+  }
   smooFact_  = rcp( new SmootherFactory(smooProto_) );
   coarsestSmooProto_ = rcp( new DirectSolver("Superlu",coarsestSmooList_) );
   coarsestSmooFact_  = rcp( new SmootherFactory(coarsestSmooProto_, Teuchos::null) );
@@ -534,7 +541,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   }
   else if(Smoother_=="ilut") {
     precType_ = "ILUT";
-    precList_.set("fact: ilut level-of-fill", ilu_leveloffill_);
+    precList_.set("fact: ilut level-of-fill", ilut_leveloffill_);
     precList_.set("fact: absolute threshold", ilu_abs_thresh_);
     precList_.set("fact: relative threshold", ilu_rel_thresh_);
     precList_.set("fact: drop tolerance",     ilu_drop_tol_);
@@ -542,7 +549,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   }
   else if(Smoother_=="riluk") {
     precType_ = "RILUK";
-    precList_.set("fact: iluk level-of-fill", ilu_leveloffill_);
+    precList_.set("fact: iluk level-of-fill", iluk_leveloffill_);
     precList_.set("fact: absolute threshold", ilu_abs_thresh_);
     precList_.set("fact: relative threshold", ilu_rel_thresh_);
     precList_.set("fact: drop tolerance",     ilu_drop_tol_);
@@ -550,7 +557,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   }
   else if(Smoother_=="schwarz") {
     precType_ = "SCHWARZ";
-    precList_.set("fact: ilut level-of-fill", ilu_leveloffill_);
+    precList_.set("fact: ilut level-of-fill", ilut_leveloffill_);
     precList_.set("fact: drop tolerance", ilu_drop_tol_);
     precList_.set("schwarz: compute condest", false);
     precList_.set("schwarz: combine mode", "Add");
@@ -562,7 +569,13 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   else if(Smoother_=="superlu") {
     precType_ = "superlu";
   }
-  smooProto_ = rcp( new SchwarzSmoother(precType_,precList_,overlap_level_) );
+  // construct smoother
+  if(Smoother_=="schwarz") {
+    smooProto_ = rcp( new Ifpack2Smoother(precType_,precList_) );
+  }
+  else {
+    smooProto_ = rcp( new SchwarzSmoother(precType_,precList_,overlap_level_) );
+  }
   smooFact_  = rcp( new SmootherFactory(smooProto_) );
   coarsestSmooProto_ = rcp( new DirectSolver("Superlu",coarsestSmooList_) );
   coarsestSmooFact_  = rcp( new SmootherFactory(coarsestSmooProto_, Teuchos::null) );
