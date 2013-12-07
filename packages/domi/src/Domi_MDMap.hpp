@@ -178,6 +178,34 @@ public:
         const Teuchos::RCP< Node > & node =
           Kokkos::DefaultNode::getDefaultNode());
 
+  /** \brief Constructor with Teuchos::Comm and ParameterList
+   *
+   * \param teuchosComm [in] The Teuchos Communicator.  Note that an
+   *        MDComm will be constructed from the information in plist.
+   *
+   * \param plist [in] ParameterList with construction information
+   *
+   * \param node [in] the Kokkos node of the map
+   */
+  MDMap(const TeuchosCommRCP teuchosComm,
+        Teuchos::ParameterList & plist,
+        const Teuchos::RCP< Node > & node =
+          Kokkos::DefaultNode::getDefaultNode());
+
+  /** \brief Constructor with MDComm and ParameterList
+   *
+   * \param mdComm [in] an RCP of an MDComm (multi-dimensional
+   *        communicator), on which this MDMap will be built.
+   *
+   * \param plist [in] ParameterList with construction information
+   *
+   * \param node [in] the Kokkos node of the map
+   */
+  MDMap(const MDCommRCP mdComm,
+        Teuchos::ParameterList & plist,
+        const Teuchos::RCP< Node > & node =
+          Kokkos::DefaultNode::getDefaultNode());
+
   /** \brief Parent/single global ordinal sub-map constructor
    *
    * \param parent [in] an MDMap, from which this sub-map will be
@@ -801,8 +829,7 @@ MDMap(const MDCommRCP mdComm,
   // Compute the global size
   _globalMax = computeSize(_globalDims());
 
-  // Copy the communication padding sizes and set the communication
-  // padding
+  // Copy the communication padding sizes and set the actual padding
   for (int axis = 0; axis < numDims; ++axis)
   {
     if (axis < commPad.size())
@@ -823,6 +850,213 @@ MDMap(const MDCommRCP mdComm,
   // Then compute the local size
   computeBounds();
   _localMax = computeSize(_localDims());
+
+  // Compute the strides
+  _globalStrides = computeStrides(_globalDims, _layout);
+  _localStrides  = computeStrides(_localDims , _layout);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class LocalOrd, class GlobalOrd, class Node >
+MDMap< LocalOrd, GlobalOrd, Node>::
+MDMap(TeuchosCommRCP teuchosComm,
+      Teuchos::ParameterList & plist,
+      const Teuchos::RCP< Node > & node) :
+  _mdComm(Teuchos::rcp(new MDComm(teuchosComm, plist))),
+  _globalDims(),
+  _globalBounds(),
+  _globalRankBounds(),
+  _globalStrides(),
+  _globalMin(0),
+  _globalMax(),
+  _localDims(),
+  _localBounds(),
+  _localStrides(),
+  _localMin(0),
+  _localMax(),
+  _commPadSizes(),
+  _pad(),
+  _bndryPadSizes(),
+  _bndryPad(),
+  _layout(),
+  _node(node)
+{
+  // Temporarily store the number of dimensions
+  int numDims = _mdComm->getNumDims();
+
+  // Check the global dimensions
+  Teuchos::Array< GlobalOrd > dimensions =
+    plist.get("dimensions", Teuchos::Array< GlobalOrd >());
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    numDims != dimensions.size(),
+    InvalidArgument,
+    "Size of dimensions does not match MDComm number of dimensions");
+
+  // Copy the boundary padding sizes and compute the global dimensions
+  // and bounds
+  Teuchos::Array< int > bndryPad =
+    plist.get("bndryPad", Teuchos::Array< int >());
+  _bndryPadSizes.resize(numDims);
+  _globalDims.resize(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    if (axis < bndryPad.size())
+      _bndryPadSizes[axis] = bndryPad[axis];
+    _bndryPad.push_back(Teuchos::tuple(_bndryPadSizes[axis],
+                                       _bndryPadSizes[axis]));
+    _globalDims[axis] = dimensions[axis] + 2*_bndryPadSizes[axis];
+    _globalBounds.push_back(ConcreteSlice(_globalDims[axis]));
+  }
+
+  // Compute the global size
+  _globalMax = computeSize(_globalDims());
+
+  // Copy the communication padding sizes and set the actual padding
+  Teuchos::Array< int > commPad =
+    plist.get("commPad", Teuchos::Array< int >());
+  _commPadSizes.resize(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    if (axis < commPad.size())
+      _commPadSizes[axis] = commPad[axis];
+    int lower, upper;
+    if (getLowerNeighbor(axis) == -1)
+      lower = _bndryPadSizes[axis];
+    else
+      lower = _commPadSizes[axis];
+    if (getUpperNeighbor(axis) == -1)
+      upper = _bndryPadSizes[axis];
+    else
+      upper = _commPadSizes[axis];
+    _pad.push_back(Teuchos::tuple(lower, upper));
+  }
+
+  // Compute _globalRankBounds, _localBounds, and _localDims.
+  // Then compute the local size
+  _globalRankBounds.resize(numDims);
+  _localDims.resize(numDims);
+  computeBounds();
+  _localMax = computeSize(_localDims());
+
+  // Set the layout
+  std::string layout = plist.get("layout", "DEFAULT");
+  std::transform(layout.begin(), layout.end(), layout.begin(), ::toupper);
+  if (layout == "C ORDER")
+    _layout = C_ORDER;
+  else if (layout == "FORTRAN ORDER")
+    _layout = FORTRAN_ORDER;
+  else if (layout == "ROW MAJOR")
+    _layout = ROW_MAJOR;
+  else if (layout == "COLUMN MAJOR")
+    _layout = COLUMN_MAJOR;
+  else if (layout == "LAST INDEX FASTEST")
+    _layout = LAST_INDEX_FASTEST;
+  else if (layout == "FIRST INDEX FASTEST")
+    _layout = FIRST_INDEX_FASTEST;
+  else
+    _layout = DEFAULT_ORDER;
+
+  // Compute the strides
+  _globalStrides = computeStrides(_globalDims, _layout);
+  _localStrides  = computeStrides(_localDims , _layout);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class LocalOrd, class GlobalOrd, class Node >
+MDMap< LocalOrd, GlobalOrd, Node>::
+MDMap(MDCommRCP mdComm,
+      Teuchos::ParameterList & plist,
+      const Teuchos::RCP< Node > & node) :
+  _mdComm(mdComm),
+  _globalDims(mdComm->getNumDims()),
+  _globalBounds(),
+  _globalRankBounds(mdComm->getNumDims()),
+  _globalStrides(),
+  _globalMin(0),
+  _globalMax(),
+  _localDims(mdComm->getNumDims(), 0),
+  _localBounds(),
+  _localStrides(),
+  _localMin(0),
+  _localMax(),
+  _commPadSizes(mdComm->getNumDims(), 0),
+  _pad(),
+  _bndryPadSizes(mdComm->getNumDims(), 0),
+  _bndryPad(),
+  _layout(),
+  _node(node)
+{
+  // Temporarily store the number of dimensions
+  int numDims = _mdComm->getNumDims();
+
+  // Check the global dimensions
+  Teuchos::Array< GlobalOrd > dimensions =
+    plist.get("dimensions", Teuchos::Array< GlobalOrd >());
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    numDims != dimensions.size(),
+    InvalidArgument,
+    "Size of dimensions does not match MDComm number of dimensions");
+
+  // Copy the boundary padding sizes and compute the global dimensions
+  // and bounds
+  Teuchos::Array< int > bndryPad =
+    plist.get("bndryPad", Teuchos::Array< int >());
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    if (axis < bndryPad.size())
+      _bndryPadSizes[axis] = bndryPad[axis];
+    _bndryPad.push_back(Teuchos::tuple(_bndryPadSizes[axis],
+                                       _bndryPadSizes[axis]));
+    _globalDims[axis] = dimensions[axis] + 2*_bndryPadSizes[axis];
+    _globalBounds.push_back(ConcreteSlice(_globalDims[axis]));
+  }
+
+  // Compute the global size
+  _globalMax = computeSize(_globalDims());
+
+  // Copy the communication padding sizes and set the actual padding
+  Teuchos::Array< int > commPad =
+    plist.get("commPad", Teuchos::Array< int >());
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    if (axis < commPad.size())
+      _commPadSizes[axis] = commPad[axis];
+    int lower, upper;
+    if (getLowerNeighbor(axis) == -1)
+      lower = _bndryPadSizes[axis];
+    else
+      lower = _commPadSizes[axis];
+    if (getUpperNeighbor(axis) == -1)
+      upper = _bndryPadSizes[axis];
+    else
+      upper = _commPadSizes[axis];
+    _pad.push_back(Teuchos::tuple(lower, upper));
+  }
+
+  // Compute _globalRankBounds, _localBounds, and _localDims.
+  // Then compute the local size
+  computeBounds();
+  _localMax = computeSize(_localDims());
+
+  // Set the layout
+  std::string layout = plist.get("layout", "DEFAULT");
+  std::transform(layout.begin(), layout.end(), layout.begin(), ::toupper);
+  if (layout == "C ORDER")
+    _layout = C_ORDER;
+  else if (layout == "FORTRAN ORDER")
+    _layout = FORTRAN_ORDER;
+  else if (layout == "ROW MAJOR")
+    _layout = ROW_MAJOR;
+  else if (layout == "COLUMN MAJOR")
+    _layout = COLUMN_MAJOR;
+  else if (layout == "LAST INDEX FASTEST")
+    _layout = LAST_INDEX_FASTEST;
+  else if (layout == "FIRST INDEX FASTEST")
+    _layout = FIRST_INDEX_FASTEST;
+  else
+    _layout = DEFAULT_ORDER;
 
   // Compute the strides
   _globalStrides = computeStrides(_globalDims, _layout);
