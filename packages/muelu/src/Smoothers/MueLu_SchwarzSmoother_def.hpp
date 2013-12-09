@@ -50,6 +50,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #if defined (HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2) && defined(HAVE_MUELU_IFPACK2)
+
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 
@@ -212,20 +213,14 @@ namespace MueLu {
     TpetraImporter_ = Teuchos::rcp( new Tpetra::Import<LO,GO,NO>(UniqueMap_,OverlapMap_) );
     // do import to get overlapped matrix (OverlapA)
     OverlapA -> doImport(*tA,*TpetraImporter_,Tpetra::INSERT);
+    OverlapA -> fillComplete();
 
     // extract to local matrix (LocalA)
     for(LO i = 0; i < numOverlapRows; i++) {
-      GO globalRow = globalRowList[i];
-      Teuchos::ArrayView<const GO> indices;
+      Teuchos::ArrayView<const LO> indices;
       Teuchos::ArrayView<const SC> values;
-      OverlapA -> getGlobalRowView(globalRow,indices,values);
-      std::vector<LO> indices_vec; indices_vec.resize(0);
-      for(unsigned int j=0; j < indices.size(); j++ ) {
-	GlobalOrdinal global_col = indices[j];
-	LocalOrdinal local_col = OverlapMap_->getLocalElement(global_col);
-	indices_vec.push_back(local_col);
-      }
-      LocalA -> insertLocalValues(i,Teuchos::ArrayView<LO>(indices_vec),values);
+      OverlapA -> getLocalRowView(i,indices,values);
+      LocalA -> insertLocalValues(i,indices,values);
     }
     LocalA -> fillComplete();
     
@@ -261,7 +256,7 @@ namespace MueLu {
     else {
 
       prec_ = Amesos2::create<Tpetra_CrsMatrix,Tpetra_MultiVector>(type_, LocalA);
-      //prec_ -> symbolicFactorization();
+      prec_ -> symbolicFactorization();
       prec_ -> numericFactorization();
       TEUCHOS_TEST_FOR_EXCEPTION(prec_ == Teuchos::null, Exceptions::RuntimeError, "Amesos2::create returns Teuchos::null");
 

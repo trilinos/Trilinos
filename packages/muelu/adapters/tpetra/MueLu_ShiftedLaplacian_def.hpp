@@ -66,11 +66,21 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPa
   krylov_iterations_    = paramList->get("krylov: number of iterations",5);
   ilut_leveloffill_     = paramList->get("fact: ilut level-of-fill",5.0);
   iluk_leveloffill_     = paramList->get("fact: iluk level-of-fill",1.0);
+  silu_leveloffill_     = paramList->get("ILU_FillFactor",10.0);
   ilu_abs_thresh_       = paramList->get("fact: absolute threshold",0.0);
   ilu_rel_thresh_       = paramList->get("fact: relative threshold",1.0);
-  ilu_drop_tol_         = paramList->get("fact: drop tolerance",0.01);
+  ilu_diagpivotthresh_  = paramList->get("DiagPivotThresh",0.1);
+  ilu_drop_tol_         = paramList->get("fact: drop tolerance",0.0001);
+  ilu_fill_tol_         = paramList->get("ILU_FillTol",0.01);
   ilu_relax_val_        = paramList->get("fact: relax value",1.0);
+  ilu_rowperm_          = paramList->get("RowPerm","LargeDiag");
+  ilu_colperm_          = paramList->get("ColPerm","COLAMD");
+  ilu_drop_rule_        = paramList->get("ILU_DropRule","DROP_BASIC");
+  ilu_normtype_         = paramList->get("ILU_Norm","INF_NORM");
+  ilu_milutype_         = paramList->get("ILU_MILU","SILU");
   schwarz_usereorder_   = paramList->get("schwarz: use reordering",true);
+  schwarz_combinemode_  = paramList->get("schwarz: combine mode",Tpetra::ZERO);
+  schwarz_ordermethod_  = paramList->get("order_method","rcm");
 
 }
 
@@ -190,16 +200,17 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setAg
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setSmoother(int stype) {
 
-  if(stype==1)      { Smoother_="jacobi";                 }
-  else if(stype==2) { Smoother_="gauss-seidel";           }
-  else if(stype==3) { Smoother_="symmetric gauss-seidel"; }
-  else if(stype==4) { Smoother_="chebyshev";              }
-  else if(stype==5) { Smoother_="krylov";                 }
-  else if(stype==6) { Smoother_="ilut";                   }
-  else if(stype==7) { Smoother_="riluk";                  }
-  else if(stype==8) { Smoother_="schwarz";                } 
-  else if(stype==9) { Smoother_="superlu";                }
-  else              { Smoother_="schwarz";                }
+  if(stype==1)       { Smoother_="jacobi";                 }
+  else if(stype==2)  { Smoother_="gauss-seidel";           }
+  else if(stype==3)  { Smoother_="symmetric gauss-seidel"; }
+  else if(stype==4)  { Smoother_="chebyshev";              }
+  else if(stype==5)  { Smoother_="krylov";                 }
+  else if(stype==6)  { Smoother_="ilut";                   }
+  else if(stype==7)  { Smoother_="riluk";                  }
+  else if(stype==8)  { Smoother_="schwarz";                }
+  else if(stype==9)  { Smoother_="superilu";               }
+  else if(stype==10) { Smoother_="superlu";                }
+  else               { Smoother_="schwarz";                }
 
 }
 
@@ -362,14 +373,40 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
     precList_.set("fact: ilut level-of-fill", ilut_leveloffill_);
     precList_.set("fact: drop tolerance", ilu_drop_tol_);
     precList_.set("schwarz: compute condest", false);
-    precList_.set("schwarz: combine mode", "Add");
+    precList_.set("schwarz: combine mode", schwarz_combinemode_);
     precList_.set("schwarz: use reordering", schwarz_usereorder_);
     precList_.set("schwarz: filter singletons", true);
-    precList_.set("order_method","rcm");
-    precList_.sublist("schwarz: reordering list").set("order_method","rcm");
+    precList_.set("order_method",schwarz_ordermethod_);
+    precList_.sublist("schwarz: reordering list").set("order_method",schwarz_ordermethod_);
+  }
+  else if(Smoother_=="superilu") {
+    precType_ = "superilu";
+    if(isSymmetric_==true) {
+      precList_.set("SymmetricMode", true);
+    }
+    else {
+      precList_.set("SymmetricMode", false);
+    }
+    precList_.set("RowPerm", ilu_rowperm_);
+    precList_.set("ColPerm", ilu_colperm_);
+    precList_.set("DiagPivotThresh", ilu_diagpivotthresh_);
+    precList_.set("ILU_DropRule",ilu_drop_rule_);
+    precList_.set("ILU_DropTol",ilu_drop_tol_);
+    precList_.set("ILU_FillFactor",silu_leveloffill_);
+    precList_.set("ILU_Norm",ilu_normtype_);
+    precList_.set("ILU_MILU",ilu_milutype_);
+    precList_.set("ILU_FillTol",ilu_fill_tol_);
   }
   else if(Smoother_=="superlu") {
     precType_ = "superlu";
+    if(isSymmetric_==true) {
+      precList_.set("SymmetricMode", true);
+    }
+    else {
+      precList_.set("SymmetricMode", false);
+    }
+    precList_.set("ColPerm", ilu_colperm_);
+    precList_.set("DiagPivotThresh", ilu_diagpivotthresh_);
   }
   // construct smoother
   if(Smoother_=="schwarz") {
@@ -560,14 +597,40 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
     precList_.set("fact: ilut level-of-fill", ilut_leveloffill_);
     precList_.set("fact: drop tolerance", ilu_drop_tol_);
     precList_.set("schwarz: compute condest", false);
-    precList_.set("schwarz: combine mode", "Add");
+    precList_.set("schwarz: combine mode", schwarz_combinemode_);
     precList_.set("schwarz: use reordering", schwarz_usereorder_);
-    precList_.set("schwarz: filter singletons", false);
-    precList_.set("order_method","rcm");
-    precList_.sublist("schwarz: reordering list").set("order_method","rcm");
+    precList_.set("schwarz: filter singletons", true);
+    precList_.set("order_method",schwarz_ordermethod_);
+    precList_.sublist("schwarz: reordering list").set("order_method",schwarz_ordermethod_);
+  }
+  else if(Smoother_=="superilu") {
+    precType_ = "superilu";
+    if(isSymmetric_==true) {
+      precList_.set("SymmetricMode", true);
+    }
+    else {
+      precList_.set("SymmetricMode", false);
+    }
+    precList_.set("RowPerm", ilu_rowperm_);
+    precList_.set("ColPerm", ilu_colperm_);
+    precList_.set("DiagPivotThresh", ilu_diagpivotthresh_);
+    precList_.set("ILU_DropRule",ilu_drop_rule_);
+    precList_.set("ILU_DropTol",ilu_drop_tol_);
+    precList_.set("ILU_FillFactor",silu_leveloffill_);
+    precList_.set("ILU_Norm",ilu_normtype_);
+    precList_.set("ILU_MILU",ilu_milutype_);
+    precList_.set("ILU_FillTol",ilu_fill_tol_);
   }
   else if(Smoother_=="superlu") {
     precType_ = "superlu";
+    if(isSymmetric_==true) {
+      precList_.set("SymmetricMode", true);
+    }
+    else {
+      precList_.set("SymmetricMode", false);
+    }
+    precList_.set("ColPerm", ilu_colperm_);
+    precList_.set("DiagPivotThresh", ilu_diagpivotthresh_);
   }
   // construct smoother
   if(Smoother_=="schwarz") {
