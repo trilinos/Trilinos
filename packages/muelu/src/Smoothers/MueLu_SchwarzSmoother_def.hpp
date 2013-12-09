@@ -51,6 +51,7 @@
 #include "MueLu_ConfigDefs.hpp"
 #if defined (HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2) && defined(HAVE_MUELU_IFPACK2)
 #include <Xpetra_Matrix.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
 
 #include <Amesos2_config.h>
 #include <Amesos2.hpp>
@@ -231,7 +232,6 @@ namespace MueLu {
     if(type_ == "RELAXATION" || type_ == "ILUT"  || type_ == "SCHWARZ" ||
        type_ == "CHEBYSHEV"  || type_ == "RILUK" || type_ == "KRYLOV"  ) {
       
-      //ifpack2prec_ = Ifpack2::Factory::create(type_, LocalA);
       if (type_ == "ILUT") {
 	ifpack2prec_ = Teuchos::rcp( new Ifpack2::ILUT<Tpetra_CrsMatrix>(LocalA) );
       }
@@ -261,8 +261,7 @@ namespace MueLu {
     else {
 
       prec_ = Amesos2::create<Tpetra_CrsMatrix,Tpetra_MultiVector>(type_, LocalA);
-      prec_ -> preOrdering();
-      prec_ -> symbolicFactorization();
+      //prec_ -> symbolicFactorization();
       prec_ -> numericFactorization();
       TEUCHOS_TEST_FOR_EXCEPTION(prec_ == Teuchos::null, Exceptions::RuntimeError, "Amesos2::create returns Teuchos::null");
 
@@ -276,58 +275,58 @@ namespace MueLu {
   void SchwarzSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::SchwarzSmoother::Apply(): Setup() has not been called");
 
-    RCP<MultiVector> Res = Utils::Residual(*A_,X,B);
-    Tpetra::MultiVector<SC,LO,GO,NO> const &tB = Utils::MV2TpetraMV(*Res);
-
-    // do import/export of multivector and construct the local vector
-    size_t numvecs = X.getNumVectors();
-    Teuchos::RCP< Tpetra::MultiVector<SC,LO,GO,NO> > OverlapB = rcp( new Tpetra::MultiVector<SC,LO,GO,NO>(OverlapMap_,numvecs) );
-    OverlapB -> doImport(tB,*TpetraImporter_,Tpetra::INSERT);
-    Teuchos::RCP< Tpetra::MultiVector<SC,LO,GO,NO> > LocalX = Teuchos::rcp( new Tpetra::MultiVector<SC,LO,GO,NO>(localRowMap_,numvecs) );
-    Teuchos::RCP< Tpetra::MultiVector<SC,LO,GO,NO> > LocalB = Teuchos::rcp( new Tpetra::MultiVector<SC,LO,GO,NO>(localRowMap_,numvecs) );
-    LO numLocalRows = OverlapMap_ -> getNodeNumElements();
-    Teuchos::ArrayView<const GO> OverlapList = OverlapMap_ -> getNodeElementList();
-    for(size_t j=0; j<numvecs; j++) {
-      Teuchos::ArrayRCP<const Scalar> vecj = OverlapB -> getData(j);
-      for(LocalOrdinal i = 0; i < numLocalRows; i++) {
-	LocalB->replaceLocalValue(i,j,vecj[i]);
+    // Apply
+    if (InitialGuessIsZero) {
+      Tpetra::MultiVector<SC,LO,GO,NO> &tX = Utils::MV2NonConstTpetraMV(X);
+      Tpetra::MultiVector<SC,LO,GO,NO> const &tB = Utils::MV2TpetraMV(B);      
+      // do import/export of multivector and construct the local vector
+      size_t numvecs = X.getNumVectors();
+      Teuchos::RCP< Tpetra::MultiVector<SC,LO,GO,NO> > OverlapB = rcp( new Tpetra::MultiVector<SC,LO,GO,NO>(OverlapMap_,numvecs) );
+      OverlapB -> doImport(tB,*TpetraImporter_,Tpetra::INSERT);
+      OverlapB -> replaceMap(localRowMap_);
+      Teuchos::RCP< Tpetra::MultiVector<SC,LO,GO,NO> > OverlapX = Teuchos::rcp( new Tpetra::MultiVector<SC,LO,GO,NO>(localRowMap_,numvecs) );
+      if(type_ == "RELAXATION" || type_ == "ILUT"  || type_ == "SCHWARZ" ||
+	 type_ == "CHEBYSHEV"  || type_ == "RILUK" || type_ == "KRYLOV"  ) {
+	ifpack2prec_->apply(*OverlapB,*OverlapX);
       }
-    }
-
-    if(type_ == "RELAXATION" || type_ == "ILUT"  || type_ == "SCHWARZ" ||
-       type_ == "CHEBYSHEV"  || type_ == "RILUK" || type_ == "KRYLOV"  ) {
-
-      ifpack2prec_->apply(*LocalB,*LocalX);
-
-    }
+      else {
+	// solve
+	prec_->setX(OverlapX);
+	prec_->setB(OverlapB);
+	prec_->solve();
+      }
+      // import to global vector
+      OverlapX -> replaceMap(OverlapMap_);
+      tX.doExport(*OverlapX,*TpetraExporter_,Tpetra::ZERO);
+    } 
 
     else {
-      
-      // solve
-      prec_->setX(LocalX);
-      prec_->setB(LocalB);
-      prec_->solve(); 
-     
-    }
-
-    // extract to global vector
-    Teuchos::RCP< Tpetra::MultiVector<SC,LO,GO,NO> > OverlapX = rcp( new Tpetra::MultiVector<SC,LO,GO,NO>(OverlapMap_,numvecs) );
-    for(size_t j=0; j<numvecs; j++) {
-      Teuchos::ArrayRCP<const Scalar> localview = LocalX->getData(j);
-      for(LocalOrdinal i=0; i<numLocalRows; i++) {
-	OverlapX->replaceLocalValue(i,j,localview[i]);
+      typedef Teuchos::ScalarTraits<Scalar> TST;
+      RCP<MultiVector> Residual = Utils::Residual(*A_,X,B);
+      RCP<MultiVector> Correction = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(A_->getDomainMap(), X.getNumVectors());
+      Tpetra::MultiVector<SC,LO,GO,NO> &tX = Utils::MV2NonConstTpetraMV(*Correction);
+      Tpetra::MultiVector<SC,LO,GO,NO> const &tB = Utils::MV2TpetraMV(*Residual);
+      // do import/export of multivector and construct the local vector
+      size_t numvecs = X.getNumVectors();
+      Teuchos::RCP< Tpetra::MultiVector<SC,LO,GO,NO> > OverlapB = rcp( new Tpetra::MultiVector<SC,LO,GO,NO>(OverlapMap_,numvecs) );
+      OverlapB -> doImport(tB,*TpetraImporter_,Tpetra::INSERT);
+      OverlapB -> replaceMap(localRowMap_);
+      Teuchos::RCP< Tpetra::MultiVector<SC,LO,GO,NO> > OverlapX = Teuchos::rcp( new Tpetra::MultiVector<SC,LO,GO,NO>(localRowMap_,numvecs) );
+      if(type_ == "RELAXATION" || type_ == "ILUT"  || type_ == "SCHWARZ" ||
+	 type_ == "CHEBYSHEV"  || type_ == "RILUK" || type_ == "KRYLOV"  ) {
+	ifpack2prec_->apply(*OverlapB,*OverlapX);
       }
-    }
-    // create temporary vector and do export
-    Teuchos::RCP< Tpetra::MultiVector<SC,LO,GO,NO> > Xtemp = Teuchos::rcp( new Tpetra::MultiVector<SC,LO,GO,NO>(UniqueMap_,numvecs) );
-    Xtemp->doExport(*OverlapX,*TpetraExporter_,Tpetra::ZERO);
-    // update
-    Teuchos::RCP< Xpetra::MultiVector<SC,LO,GO,NO> > Xvec = Xpetra::toXpetra(Xtemp);
-    if(InitialGuessIsZero) {
-      X=*Xvec;
-    }
-    else {
-      X.update((Scalar)1.0,*Xvec,(Scalar)1.0);
+      else {
+	// solve
+	prec_->setX(OverlapX);
+	prec_->setB(OverlapB);
+	prec_->solve(); 
+      }
+      // extract to global vector
+      OverlapX -> replaceMap(OverlapMap_);
+      tX.doExport(*OverlapX,*TpetraExporter_,Tpetra::ZERO);
+      // update
+      X.update((Scalar)1.0,*Correction,(Scalar)1.0);
     }
 
   }
