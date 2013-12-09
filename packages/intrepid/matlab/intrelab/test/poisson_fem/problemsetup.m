@@ -1,4 +1,4 @@
-function [usr_par] = problemsetup(nxint, nyint, myRHS)
+function [usr_par] = problemsetup(nxint, nyint, myRHS, myDiffusivity)
 
 %  function [u] = problemsetup(nxint, nyint, nPDEs, generateRHS)
 %
@@ -22,14 +22,17 @@ function [usr_par] = problemsetup(nxint, nyint, myRHS)
 %  u_exp - observed state (experiments)
 %  f     - source term
 %
-%  INPUT:   nxint       integer
-%                       number of subintervals in x-direction
+%  INPUT:   nxint          integer
+%                          number of subintervals in x-direction
 %
-%           nyint       integer
-%                       number of subintervals in y-direction
+%           nyint          integer
+%                          number of subintervals in y-direction
 %
-%           myRHS       functor
-%                       right-hand side functor
+%           myRHS          functor
+%                          right-hand side functor
+%
+%           myDiffusivity  functor
+%                          material property (diffusivity) functor
 %
 %  OUTPUT:  usr_par     contains all input parameters, as well as additional
 %                       computed quantities
@@ -83,8 +86,8 @@ usr_par.iVecIdx   = iVecIdx;
 f = myRHS(usr_par);
 usr_par.f = f;
 
-% Generate the true solution
-k = diffusivity(usr_par);
+% Generate the diffusivity (material parameter)
+k = myDiffusivity(usr_par);
 usr_par.k = k;
 
 end

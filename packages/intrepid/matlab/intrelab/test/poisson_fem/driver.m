@@ -16,13 +16,16 @@ fprintf('\n*** Poisson Equation Solver ***\n');
 nxint = 256;
 nyint = 256;
 
-% generate rhs_fn = @generateSine;
-rhs_fn=@(usr_par)rhs(usr_par);
+% set rhs_fn = @rhs_sine;
+rhs_fn=@(usr_par)rhs_sine(usr_par);
+
+% set rhs_fn = @diff_jump;
+diff_fn=@(usr_par)diff_jump(usr_par);
 
 % set up PDE
 fprintf('\nSetting up problem and assembling FEM operators ...\n');
 tic
-[usr_par] = problemsetup(nxint, nyint, rhs_fn);
+[usr_par] = problemsetup(nxint, nyint, rhs_fn, diff_fn);
 toc
 
 % solve PDE
@@ -34,8 +37,10 @@ toc
 figure(1)
 trisurf(usr_par.mesh.t, usr_par.mesh.p(:,1), usr_par.mesh.p(:,2), ...
         u, 'facecolor','interp')
-view(10,40);
+view(0,90);
 shading interp;
+axis equal;
+axis tight;
 title('PDE Solution')
 xlabel('x')
 ylabel('y')
@@ -43,8 +48,10 @@ ylabel('y')
 figure(2)
 trisurf(usr_par.mesh.t, usr_par.mesh.p(:,1), usr_par.mesh.p(:,2), ...
         usr_par.k, 'facecolor','interp')
-view(10,40);
+view(0,90);
 shading flat;
+axis equal;
+axis tight;
 title('Diffusivity')
 xlabel('x')
 ylabel('y')
