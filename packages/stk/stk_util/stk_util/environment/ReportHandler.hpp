@@ -277,8 +277,8 @@ void handle_invalid_arg(const char* expr,
 #define ThrowRequire(expr)            ThrowRequireMsg(expr, "")
 
 #ifdef NDEBUG
-#  define ThrowAssert(expr)            ((void) (0))
-#  define ThrowAssertMsg(expr,message) ((void) (0))
+#  define ThrowAssert(expr)            (static_cast<void>(0))
+#  define ThrowAssertMsg(expr,message) (static_cast<void>(0))
 #else 
 #  define ThrowAssert(expr)            ThrowRequire(expr)
 #  define ThrowAssertMsg(expr,message) ThrowRequireMsg(expr,message)

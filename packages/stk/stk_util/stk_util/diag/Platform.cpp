@@ -261,7 +261,7 @@ wall_now()
   timeval tp;
   struct timezone tz;
   gettimeofday(&tp, &tz);
-  return (tp.tv_sec + (((double)(tp.tv_usec))/1000000.0));
+  return (tp.tv_sec + ((static_cast<double>(tp.tv_usec))/1000000.0));
 }
 
 
@@ -273,16 +273,16 @@ cpu_now()
 
   getrusage(RUSAGE_SELF, &my_rusage);
 
-  return (double) (my_rusage.ru_utime.tv_sec)
-    + ((double)(my_rusage.ru_utime.tv_usec))*1.0e-6;
+  return static_cast<double>(my_rusage.ru_utime.tv_sec) +
+    static_cast<double>(my_rusage.ru_utime.tv_usec)*1.0e-6;
 
 #elif ! defined(__PGI)
   struct rusage my_rusage;
 
   getrusage(RUSAGE_SELF, &my_rusage);
 
-  return (double) (my_rusage.ru_utime.tv_sec + my_rusage.ru_stime.tv_sec)
-    + ((double)(my_rusage.ru_utime.tv_usec + my_rusage.ru_stime.tv_usec))*1.0e-6;
+  return static_cast<double>(my_rusage.ru_utime.tv_sec + my_rusage.ru_stime.tv_sec) +
+    static_cast<double>(my_rusage.ru_utime.tv_usec + my_rusage.ru_stime.tv_usec)*1.0e-6;
 #else
   return 0;
 #endif
@@ -321,20 +321,20 @@ get_heap_info(
 # elif ( defined(__linux__) || defined(REDS) ) && ! defined(__IBMCPP__)
   static struct mallinfo minfo;
   minfo = mallinfo();
-  heap_size = (unsigned int) minfo.uordblks + (unsigned int) minfo.hblkhd;
-  largest_free = (unsigned int) minfo.fordblks;
+  heap_size = static_cast<unsigned int>(minfo.uordblks) + static_cast<unsigned int>(minfo.hblkhd);
+  largest_free = static_cast<unsigned int>(minfo.fordblks);
 
   slibout.m(Slib::LOG_MEMORY) << "size_t size " << sizeof(size_t)*8 << " bits"
                               << ", heap size " << heap_size
-                              << ", arena " << (unsigned int) minfo.arena
+                              << ", arena " << static_cast<unsigned int>(minfo.arena)
 			      << ", ordblks " << minfo.ordblks
 			      << ", smblks " << minfo.smblks
 			      << ", hblks " << minfo.hblks
-			      << ", hblkhd " << (unsigned int) minfo.hblkhd
+			      << ", hblkhd " << static_cast<unsigned int>(minfo.hblkhd)
 			      << ", usmblks " << minfo.usmblks
 			      << ", fsmblks " << minfo.fsmblks
-			      << ", uordblks " << (unsigned int) minfo.uordblks
-			      << ", fordblks " << (unsigned int) minfo.fordblks
+			      << ", uordblks " << static_cast<unsigned int>(minfo.uordblks)
+			      << ", fordblks " << static_cast<unsigned int>(minfo.fordblks)
 			      << ", keepcost " << minfo.keepcost << Diag::dendl;
 
 
@@ -343,7 +343,7 @@ get_heap_info(
 
   std::ifstream proc("/proc/self/status", std::ios_base::in|std::ios_base::binary);
   if (proc) {
-    proc.read((char *)&proc_status, sizeof(proc_status));
+    proc.read(reinterpret_cast<char *>(&proc_status), sizeof(proc_status));
     heap_size = proc_status.pr_brksize;
     slibout.m(Slib::LOG_MEMORY) <<"pr_brksize " << proc_status.pr_brksize
 				<< ", pr_stksize " << proc_status.pr_stksize << Diag::dendl;
@@ -390,7 +390,7 @@ get_memory_info(
 
 #if defined(SIERRA_MEMORY_INFO)
 # if defined(REDS)
-  memory_usage = (size_t) __heap_start + get_heap_usage();
+  memory_usage = static_cast<size_t>(__heap_start) + get_heap_usage();
 
 # elif defined(__linux__)
   std::ifstream proc("/proc/self/stat", std::ios_base::in|std::ios_base::binary);
@@ -417,7 +417,7 @@ get_memory_info(
 
     std::ifstream proc("/proc/self/psinfo", std::ios_base::in|std::ios_base::binary);
     if (proc) {
-      proc.read((char *)&proc_info, sizeof(proc_info));
+      proc.read(reinterpret_cast<char *>(&proc_info), sizeof(proc_info));
       memory_usage = proc_info.pr_size*1024;
     }
   }
@@ -427,7 +427,7 @@ get_memory_info(
 
     std::ifstream proc("/proc/self/usage", std::ios_base::in|std::ios_base::binary);
     if (proc) {
-      proc.read((char *)&proc_usage, sizeof(proc_usage));
+      proc.read(reinterpret_cast<char *>(&proc_usage), sizeof(proc_usage));
       faults = proc_usage.pr_majf;
     }
   }
@@ -444,7 +444,7 @@ vm_now()
 
   get_memory_info(memory_usage, faults);
 
-  return (double) memory_usage;
+  return static_cast<double>(memory_usage);
 }
 
 
@@ -728,8 +728,8 @@ namespace {
      * Determine the address of the base of the heap,
      * estimated to be the address of an allocated test block
      */
-    p1 = (char *) malloc (1);
-    heap_base = (size_t) p1;
+    p1 = malloc (1);
+    heap_base = p1;
     free (p1);
 
     /**
@@ -743,7 +743,7 @@ namespace {
      * Determine the base address of the stack;
      * the address of the PCB is in a 2 MB page below the stack
      */
-    stack_base = (size_t) _my_pcb;
+    stack_base = _my_pcb;
     stack_base &= ~0x1fffff;
     stack_base +=  0x400000;
 

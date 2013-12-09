@@ -119,7 +119,7 @@ public:
   size_t size() const
     {
       const difference_type d = std::distance( Pair::first , Pair::second );
-      return d < 0 ? 0 : (size_t) d ;
+      return d < 0 ? 0 : static_cast<size_t>(d) ;
     }
 };
 

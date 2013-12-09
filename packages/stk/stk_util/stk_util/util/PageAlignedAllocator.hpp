@@ -81,10 +81,10 @@ public:
     pointer ret;
 
     if (use_page_aligned_memory(size)) {
-      ret = (pointer) detail::page_aligned_allocator_impl::allocate(size);
+      ret = static_cast<pointer>(detail::page_aligned_allocator_impl::allocate(size));
     }
     else {
-      ret = (pointer) malloc(size);
+      ret = static_cast<pointer>(malloc(size));
     }
     return ret;
   }
@@ -97,7 +97,7 @@ public:
     memory_usage::deallocate(size);
 
     if (use_page_aligned_memory(size)) {
-      detail::page_aligned_allocator_impl::deallocate( (void *)p, size);
+      detail::page_aligned_allocator_impl::deallocate(p, size);
     }
     else {
       free(p);
@@ -107,7 +107,7 @@ public:
   // initialize elements of allocated storage p with value value
   static void construct(pointer p, const T& value)
   {
-    new((void*)p)T(value);
+    new(p)T(value);
   }
 
   // destroy elements of initialized storage p

@@ -12,7 +12,7 @@ FArrayBootstrap::~FArrayBootstrap()
 {
   static void (*array_dimension_error_bootstrap)(const std::type_info &typeinfo, unsigned dimension, unsigned value, unsigned upper) = array_dimension_error;
 
-  (void) array_dimension_error_bootstrap; // suppress compiler warning for unused variable
+  static_cast<void>(array_dimension_error_bootstrap); // suppress compiler warning for unused variable
 }
 
 namespace {

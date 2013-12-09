@@ -111,7 +111,7 @@ void cset_member_delete( void * v ) { delete reinterpret_cast<T*>( v ); }
 template<class T>
 inline
 const T * CSet::get() const
-{ return (const T*) p_get( typeid(T) ); }
+{ return static_cast<const T*>(p_get( typeid(T)) ); }
 
 template<class T>
 inline
@@ -121,7 +121,7 @@ const T * CSet::insert_with_delete( const T * arg_value)
   m.first = & typeid(T);
   m.second = & cset_member_delete<T> ;
 
-  return (const T *) p_insert( m , arg_value );
+  return static_cast<const T*>(p_insert( m , arg_value ));
 }
 
 template<class T>
@@ -132,7 +132,7 @@ const T * CSet::insert_no_delete( const T * arg_value)
   m.first = & typeid(T);
   m.second = 0 ;
 
-  return (const T *) p_insert( m , arg_value );
+  return static_cast<const T*>(p_insert( m , arg_value ));
 }
 
 template<class T>

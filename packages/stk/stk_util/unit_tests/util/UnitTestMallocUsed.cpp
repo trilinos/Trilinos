@@ -21,7 +21,7 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_8)
 
   size_t used = 0;
 
-  char *x = (char *) malloc(bytes_to_allocate);
+  char *x = static_cast<char *>(malloc(bytes_to_allocate));
 
   used += malloc_used();
 
@@ -44,7 +44,7 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_16)
 
   size_t used = 0;
 
-  char *x = (char *) malloc(bytes_to_allocate);
+  char *x = static_cast<char *>(malloc(bytes_to_allocate));
 
   used += malloc_used();
 
@@ -67,7 +67,7 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_32)
 
   size_t used = 0;
 
-  char *x = (char *) malloc(bytes_to_allocate);
+  char *x = static_cast<char *>(malloc(bytes_to_allocate));
 
   used += malloc_used();
 
@@ -90,7 +90,7 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_1024)
 
   size_t used = 0;
 
-  char *x = (char *) malloc(bytes_to_allocate);
+  char *x = static_cast<char *>(malloc(bytes_to_allocate));
 
   used += malloc_used();
 
@@ -115,7 +115,7 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_100x1024)
 
     size_t used = 0;
 
-    char *x = (char *) malloc(bytes_to_allocate);
+    char *x = static_cast<char *>(malloc(bytes_to_allocate));
 
     used += malloc_used();
 
@@ -139,7 +139,7 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_1M)
 
   size_t used = 0;
 
-  char *x = (char *) malloc(bytes_to_allocate);
+  char *x = static_cast<char *>(malloc(bytes_to_allocate));
 
   used += malloc_used();
 
@@ -162,7 +162,7 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_100M)
 
   size_t used = 0;
 
-  char *x = (char *) malloc(bytes_to_allocate);
+  char *x = static_cast<char *>(malloc(bytes_to_allocate));
 
   used += malloc_used();
 
@@ -187,7 +187,7 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_100_32)
   size_t used = 0;
 
   for (size_t i = 0; i < 100; ++i)
-    x[i] = (char *) malloc(bytes_to_allocate);
+    x[i] = static_cast<char *>(malloc(bytes_to_allocate));
 
   used += malloc_used();
 
@@ -213,7 +213,7 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_100_1024)
   size_t used = 0;
 
   for (size_t i = 0; i < 100; ++i)
-    x[i] = (char *) malloc(bytes_to_allocate);
+    x[i] = static_cast<char *>(malloc(bytes_to_allocate));
 
   used += malloc_used();
 
@@ -239,7 +239,7 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_100_1M)
   size_t used = 0;
 
   for (size_t i = 0; i < 100; ++i)
-    x[i] = (char *) malloc(bytes_to_allocate);
+    x[i] = static_cast<char *>(malloc(bytes_to_allocate));
 
   used += malloc_used();
 
@@ -263,7 +263,7 @@ int lrand()
 {
   static unsigned long long next = 0;
   next = next * 0x5deece66dLL + 11;
-  return (int)((next >> 16) & 0x7fffffff);
+  return static_cast<int>((next >> 16) & 0x7fffffff);
 }
 
 int rsize()
@@ -294,7 +294,7 @@ STKUNIT_UNIT_TEST(UnitTestMalloc, DISABLED_Performance)
   ptrdiff_t start_mem = malloc_used();
   ptrdiff_t start_footprint = malloc_footprint();
 #else
-  ptrdiff_t start_mem = (ptrdiff_t) sbrk(0);
+  ptrdiff_t start_mem = static_cast<ptrdiff_t>(sbrk(0));
 #endif
 
 #if defined SIERRA_PTMALLOC3_ALLOCATOR
@@ -367,7 +367,7 @@ STKUNIT_UNIT_TEST(UnitTestMalloc, DISABLED_Performance)
     ptrdiff_t end_mem = malloc_used();
     ptrdiff_t end_footprint = malloc_footprint();
 #else
-    ptrdiff_t end_mem = (ptrdiff_t) sbrk(0);
+    ptrdiff_t end_mem = static_cast<ptrdiff_t>(sbrk(0));
 #endif
 
     double elapsed = end_time - start_time;

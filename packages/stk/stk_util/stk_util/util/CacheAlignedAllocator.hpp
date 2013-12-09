@@ -65,9 +65,9 @@ public:
 
     pointer ptr = NULL;
 #if defined( __INTEL_COMPILER )
-    ptr = (pointer)_mm_malloc(size, CacheSize);
+    ptr = static_cast<pointer>(_mm_malloc(size, CacheSize));
 #else
-    posix_memalign( (void**)&ptr, CacheSize, size );
+    posix_memalign(reinterpret_cast<void**>(&ptr), CacheSize, size );
 #endif
 
     return ptr;
@@ -87,7 +87,7 @@ public:
   // initialize elements of allocated storage p with value value
   static void construct(pointer p, const T& value)
   {
-    new((void*)p)T(value);
+    new(static_cast<void*>(p))T(value);
   }
 
   // destroy elements of initialized storage p

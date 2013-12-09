@@ -50,7 +50,7 @@ mpi_filebuf::~mpi_filebuf()
 mpi_filebuf * mpi_filebuf::set_buffer_length( const size_t len )
 {
   // If already open then abort
-  if ( NULL != comm_buffer ) return (mpi_filebuf *) NULL ;
+  if ( NULL != comm_buffer ) return NULL ;
 
   // Wait and verify upon the attempt to open
   comm_buffer_len = buffer_putback_length < len ? len : buffer_putback_length ;
@@ -69,7 +69,7 @@ mpi_filebuf * mpi_filebuf::open(
   const double start_time = MPI_Wtime();
 
   // If already open then abort
-  if ( NULL != comm_buffer ) return (mpi_filebuf *) NULL ;
+  if ( NULL != comm_buffer ) return NULL ;
 
   const int mode =
     ( std::ios::in  == file_mode ) ? 'r' : (
@@ -92,7 +92,7 @@ mpi_filebuf * mpi_filebuf::open(
 
   // Verify that all processors have the same root, mode, and buffer length:
 
-  local = data[0] != root_processor || data[1] != mode || data[2] != (signed) comm_buffer_len ;
+  local = data[0] != root_processor || data[1] != mode || data[2] != static_cast<signed>(comm_buffer_len) ;
 
   if ( MPI_SUCCESS != ( err =
        MPI_Allreduce(&local,&global,1,MPI_INT,MPI_BOR,communicator) ) )
@@ -100,7 +100,7 @@ mpi_filebuf * mpi_filebuf::open(
 
   if ( global ) {
     comm_time += MPI_Wtime() - start_time ;
-    return (mpi_filebuf *) NULL ;
+    return NULL ;
   }
 
   //--------------------------------------------------------------------
@@ -111,7 +111,7 @@ mpi_filebuf * mpi_filebuf::open(
   if ( MPI_SUCCESS != ( err =  MPI_Comm_rank( communicator , &rank ) ) )
     MPI_Abort( communicator , err );
 
-  char * const tmp_buf = (char *) std::malloc( comm_buffer_len );
+  char * const tmp_buf = static_cast<char*>(std::malloc( comm_buffer_len ));
   std::FILE *       tmp_fp  = NULL ;
 
   local = tmp_buf == NULL ; // Failed allocation ?
@@ -138,7 +138,7 @@ mpi_filebuf * mpi_filebuf::open(
     if ( NULL != tmp_buf ) std::free(   tmp_buf ); // Deallocate
     if ( NULL != tmp_fp  ) std::fclose( tmp_fp );  // Close the file
     comm_time += MPI_Wtime() - start_time ;
-    return (mpi_filebuf *) NULL ;
+    return NULL ;
   }
 
   // If input and use_aprepro, parse the file and store parsed results
@@ -163,7 +163,7 @@ mpi_filebuf * mpi_filebuf::open(
 	aprepro.clear_results();
 	aprepro_buffer_len = tmp.size();
 	aprepro_buffer_ptr = 0; // At beginning of buffer...
-	aprepro_buffer = (char*) std::malloc(aprepro_buffer_len);
+	aprepro_buffer = static_cast<char*>(std::malloc(aprepro_buffer_len));
 	std::memcpy(aprepro_buffer, tmp.data(), aprepro_buffer_len);
       }
     }
@@ -313,7 +313,7 @@ int mpi_filebuf::overflow( int c )
     else if ( cur_length <= cur_offset ) {
       // Not root processor, ran out of buffer space and
       // cannot write so increase the buffer size:
-      cur_buffer = (char *) std::realloc( cur_buffer , cur_length *= 2 );
+      cur_buffer = static_cast<char*>(std::realloc( cur_buffer , cur_length *= 2 ));
     }
 
     // If buffer is still good then reset the put-buffer
@@ -378,7 +378,7 @@ mpi_filebuf * mpi_filebuf::flush()
     if ( MPI_SUCCESS != ( err = MPI_Comm_size(comm,&nproc) ) )
       MPI_Abort( comm , err );
 
-    recv_len = (int*) std::malloc( sizeof(int) * nproc );
+    recv_len = static_cast<int*>(std::malloc( sizeof(int) * nproc ));
 
     if ( NULL == recv_len ) MPI_Abort( comm , MPI_ERR_UNKNOWN );
 
@@ -398,7 +398,7 @@ mpi_filebuf * mpi_filebuf::flush()
 
       recv_len[ comm_root ] = 0 ; // Don't send to self
 
-      if ( NULL == ( recv_disp = (int*) std::malloc( sizeof(int) * (nproc + 1) ) ) )
+      if ( NULL == ( recv_disp = static_cast<int*>(std::malloc( sizeof(int) * (nproc + 1) )) ) )
 	result = -1 ;
 
       if ( 0 == result ) { // Allocation succeeded
@@ -409,7 +409,7 @@ mpi_filebuf * mpi_filebuf::flush()
 	  recv_disp[i+1] = recv_disp[i] + recv_len[i] ;
 
 	if ( 0 < recv_disp[nproc] ) {
-	  if ( NULL == ( recv_buf = (char*) std::malloc( recv_disp[nproc] ) ) )
+	  if ( NULL == ( recv_buf = static_cast<char*>(std::malloc( recv_disp[nproc] ) ) ))
 	    result = -1 ;
 	}
 	else {
@@ -486,7 +486,7 @@ mpi_filebuf * mpi_filebuf::flush()
 
   comm_time += MPI_Wtime() - start_time ;
 
-  return -1 == result ? (mpi_filebuf *) NULL : this ;
+  return -1 == result ? NULL : this ;
 }
 
 /*--------------------------------------------------------------------*/

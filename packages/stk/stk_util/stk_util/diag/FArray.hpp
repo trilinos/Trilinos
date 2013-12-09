@@ -896,16 +896,18 @@ public:
 public:
   ~FArray()
   {
+    unsigned zero = 0;
     m_ptr = NULL;
-    ArrayHelper<NumDim>::fill((unsigned) 0, m_dim);
-    ArrayHelper<NumDim+1>::fill((unsigned) 0, m_stride);
+    ArrayHelper<NumDim>::fill(zero, m_dim);
+    ArrayHelper<NumDim+1>::fill(zero, m_stride);
   }
 
   FArray()
     : m_ptr(NULL)
   {
-    ArrayHelper<NumDim>::fill((unsigned) 0, m_dim);
-    ArrayHelper<NumDim+1>::fill((unsigned) 0, m_stride);
+    unsigned zero = 0;
+    ArrayHelper<NumDim>::fill(zero, m_dim);
+    ArrayHelper<NumDim+1>::fill(zero, m_stride);
   }
 
   FArray(const SelfType & a)

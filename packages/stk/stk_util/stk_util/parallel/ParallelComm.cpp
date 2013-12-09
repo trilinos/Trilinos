@@ -822,8 +822,8 @@ void sum_np_max_2_op(
   void * inv , void * outv , int * len , ParallelDatatype * )
 {
   const int np = *len - 2 ;
-  size_t * ind  = (size_t *) inv ;
-  size_t * outd = (size_t *) outv ;
+  size_t * ind  = static_cast<size_t *>(inv);
+  size_t * outd = static_cast<size_t *>(outv);
 
   // Sum all but the last two
   // the last two are maximum
@@ -922,7 +922,7 @@ bool comm_sizes( ParallelMachine comm ,
     // Dense, pay for an all-to-all
 
     result =
-       MPI_Alltoall( (void*) send_size , 1 , MPI_LONG_LONG ,
+      MPI_Alltoall( const_cast<unsigned*>(send_size) , 1 , MPI_LONG_LONG ,
                      recv_size , 1 , MPI_UNSIGNED , comm );
 
     if ( MPI_SUCCESS != result ) {

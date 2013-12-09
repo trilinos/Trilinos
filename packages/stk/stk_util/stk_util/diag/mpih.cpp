@@ -414,7 +414,7 @@ Get_Local_Handle()
       << "Error in function sierra::mpih::Get_Local_Handle." << std::endl
       << "MPIH_Comm_get_local_handle returned error:" << result << std::endl << StackTrace;
 
-  ExParallel *handle = (ExParallel*)(p);
+  ExParallel *handle = reinterpret_cast<ExParallel*>(p);
 
   return handle;
 }

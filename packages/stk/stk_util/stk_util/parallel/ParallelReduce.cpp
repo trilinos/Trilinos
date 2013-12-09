@@ -58,16 +58,16 @@ void all_write_string( ParallelMachine arg_comm ,
     recv_displ[i+1] = recv_displ[i] + recv_count[i] ;
   }
 
-  const unsigned recv_size = (unsigned) recv_displ[ p_size ] ;
+  const unsigned recv_size = static_cast<unsigned>(recv_displ[ p_size ]);
 
   std::vector<char> buffer( recv_size );
 
   {
     const char * const send_ptr = arg_msg.c_str();
-    char * const recv_ptr = recv_size ? & buffer[0] : (char *) NULL ;
+    char * const recv_ptr = recv_size ? & buffer[0] : NULL ;
     int * const recv_displ_ptr = & recv_displ[0] ;
 
-    result = MPI_Gatherv( (void*) send_ptr, send_count, MPI_CHAR ,
+    result = MPI_Gatherv( const_cast<char*>(send_ptr), send_count, MPI_CHAR ,
                           recv_ptr, recv_count_ptr, recv_displ_ptr, MPI_CHAR,
                           p_root, arg_comm );
   }
@@ -78,7 +78,7 @@ void all_write_string( ParallelMachine arg_comm ,
     throw std::runtime_error( msg.str() );
   }
 
-  if ( p_root == (int) p_rank ) {
+  if ( p_root == static_cast<int>(p_rank) ) {
 //    arg_root_os << std::endl ;
     for ( unsigned i = 0 ; i < p_size ; ++i ) {
       if ( recv_count[i] ) {

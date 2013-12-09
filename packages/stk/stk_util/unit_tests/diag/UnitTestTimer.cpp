@@ -51,9 +51,10 @@ quick_work()
 {
   double x = 1.0;
 
-  for (int i = 0; i < 10000; ++i) 
-    x += std::sin((double) i);
-
+  for (int i = 0; i < 10000; ++i) {
+    double di = i;
+    x += std::sin(di);
+  }
   return x;
 }
 
@@ -63,10 +64,11 @@ work()
 {
   double x = 1.0;
 
-  for (int i = 0; i < 100000; ++i) 
+  for (int i = 0; i < 100000; ++i) {
 //  for (int i = 0; i < 100; ++i) 
-    x += std::sin((double) i);
-
+    double di = i;
+    x += std::sin(di);
+  }
   return x;
 }
 
@@ -152,7 +154,7 @@ STKUNIT_UNIT_TEST(UnitTestTimer, UnitTest)
     
     stk::diag::TimeBlock _time(lap_timer);
     double x = quick_work();
-    (void) x;
+    static_cast<void>(x);
     std::ostringstream oss;
     oss << x << std::endl;
     

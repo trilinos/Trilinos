@@ -220,7 +220,7 @@ public:
    * @return      a <b>Writer</b> reference to this object
    */
   Writer &setFlags(int flags) {
-    m_flags = (Flags) flags;
+    m_flags = static_cast<Flags>(flags);
     return *this;
   }
 

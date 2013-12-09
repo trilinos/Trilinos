@@ -366,7 +366,8 @@ public:
    *
    */
   static void registerCreator(const std::string &derived_name, Signature function) {
-    Registry::rootInstance().registerIt(std::make_pair(&typeid(Signature), derived_name), (void *) function);
+    Registry::rootInstance().registerIt(std::make_pair(&typeid(Signature), derived_name),
+					static_cast<void *>(function));
   }
 
   /**
@@ -384,7 +385,7 @@ public:
    *				create function.
    */
   static Signature create(const std::string &derived_name) {
-    Signature creator_function = (Signature) Registry::rootInstance().getPluginPtr(std::make_pair(&typeid(Signature), derived_name));
+    Signature creator_function = reinterpret_cast<Signature>(Registry::rootInstance().getPluginPtr(std::make_pair(&typeid(Signature), derived_name)));
 
     return (*creator_function);
   }
@@ -554,7 +555,8 @@ public:
    *
    */
   inline static void registerFunction(const std::string &function_name, Signature *function) {
-    Registry::rootInstance().registerIt(std::make_pair(&typeid(Signature), function_name), (void *) function);
+    Registry::rootInstance().registerIt(std::make_pair(&typeid(Signature), function_name),
+					static_cast<void *>(function));
   }
 
   /**
@@ -571,7 +573,7 @@ public:
    * @return			a <b>Signature</b> user function.
    */
   static Signature *execute(const std::string &function_name) {
-    Signature *user_function = (Signature *) Registry::rootInstance().getFunctionPtr(std::make_pair(&typeid(Signature), function_name));
+    Signature *user_function = reinterpret_cast<Signature *>(Registry::rootInstance().getFunctionPtr(std::make_pair(&typeid(Signature), function_name)));
 
     return (*user_function);
   }
@@ -590,7 +592,7 @@ public:
    * @return			a <b>Signature</b> user function pointer.
    */
   static Signature *getFunction(const std::string &function_name) {
-    Signature *user_function = (Signature *) Registry::rootInstance().getFunctionPtr(std::make_pair(&typeid(Signature), function_name));
+    Signature *user_function = reinterpret_cast<Signature *>(Registry::rootInstance().getFunctionPtr(std::make_pair(&typeid(Signature), function_name)));
 
     return user_function;
   }

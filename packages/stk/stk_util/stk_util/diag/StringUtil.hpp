@@ -763,8 +763,9 @@ size_t hash_string_nocase(
   const char *		p)
 {
   size_t h = 0;
+  size_t byt = 0xF;
   const size_t sr = std::numeric_limits<unsigned char>::digits *  sizeof(size_t) - 8;
-  const size_t mask = ((size_t) 0xF) << (sr + 4);
+  const size_t mask = byt << (sr + 4);
   while (*p) {
     h = (h << 4) + std::tolower(*p++);
     size_t g = h & mask;

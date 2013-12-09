@@ -21,7 +21,7 @@ template <typename Key>
 FORCEINLINE
 typename boost::enable_if_c< !boost::is_unsigned<Key>::value, bool  >::type
 is_negative(const Key & k)
-{ return (k < (Key)0); }
+{ return (k < 0); }
 
 inline
 bool is_little_endian()

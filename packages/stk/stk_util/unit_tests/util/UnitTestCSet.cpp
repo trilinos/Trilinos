@@ -29,7 +29,7 @@ class U : public A {
 public:
   int id() const 
   {
-    return (int)ID;
+    return static_cast<int>(ID);
   }
   ~U() {}
   enum {ID = 0};
@@ -39,7 +39,7 @@ class V : public B {
 public:
   int id() const 
   {
-    return (int)ID;
+    return static_cast<int>(ID);
   }
   ~V() {}
   enum {ID = 1};
@@ -49,7 +49,7 @@ class W : public B {
 public:
   int id() const 
   {
-    return (int)ID;
+    return static_cast<int>(ID);
   }
   ~W() {}
   enum {ID = 2};
@@ -59,7 +59,7 @@ class X : public A , public B {
 public:
   int id() const
   {
-    return (int)ID;
+    return static_cast<int>(ID);
   }
   ~X() {}
   enum {ID = 3};
@@ -69,7 +69,7 @@ class Y : public A , public B {
 public:
   int id() const
   {
-    return (int)ID;
+    return static_cast<int>(ID);
   }
   ~Y() {}
   enum {ID = 4};
@@ -79,7 +79,7 @@ class Z {
 public:
   int id() const
   {
-    return (int)ID;
+    return static_cast<int>(ID);
   }
   ~Z() {}
   enum {ID = 5};
@@ -109,14 +109,14 @@ STKUNIT_UNIT_TEST( UnitTestCSet, UnitTest)
     CSet cs ;
 
     sa = cs.insert_no_delete<A>(&u);
-    STKUNIT_ASSERT(sa->id() == (int)U::ID);
+    STKUNIT_ASSERT(sa->id() == static_cast<int>(U::ID));
 
     sb = cs.insert_no_delete<B>(&v);
-    STKUNIT_ASSERT(sb->id() == (int)V::ID);
+    STKUNIT_ASSERT(sb->id() == static_cast<int>(V::ID));
 
     // Should not replace:
     sb = cs.insert_no_delete<B>(&w);
-    STKUNIT_ASSERT(sb->id() == (int)V::ID);
+    STKUNIT_ASSERT(sb->id() == static_cast<int>(V::ID));
 
     flag = cs.remove<A>( &u );
     STKUNIT_ASSERT(flag);
@@ -126,13 +126,13 @@ STKUNIT_UNIT_TEST( UnitTestCSet, UnitTest)
 
     sa = cs.insert_no_delete<A>(&x);
     sb = cs.insert_no_delete<B>(&x);
-    STKUNIT_ASSERT(sa->id() == (int)X::ID);
-    STKUNIT_ASSERT(sb->id() == (int)X::ID);
+    STKUNIT_ASSERT(sa->id() == static_cast<int>(X::ID));
+    STKUNIT_ASSERT(sb->id() == static_cast<int>(X::ID));
 
     sa = cs.insert_no_delete<A>(&y);
     sb = cs.insert_no_delete<B>(&y);
-    STKUNIT_ASSERT(sa->id() == (int)X::ID);
-    STKUNIT_ASSERT(sb->id() == (int)X::ID);
+    STKUNIT_ASSERT(sa->id() == static_cast<int>(X::ID));
+    STKUNIT_ASSERT(sb->id() == static_cast<int>(X::ID));
   }
 }
 

@@ -117,7 +117,7 @@ inline int  mpi_filebuf::is_open() const { return NULL != comm_buffer ; }
    Therefore, must cast away the const. */
 
 inline void mpi_filebuf::get_buffer( const char * & b , size_t & n ) const
-  { b = comm_buffer ; n = ((mpi_filebuf*)this)->pptr() - comm_buffer ; }
+{ b = comm_buffer ; n = (const_cast<mpi_filebuf*>(this))->pptr() - comm_buffer ; }
 
 inline double mpi_filebuf::wtime() const { return comm_time ; }
 

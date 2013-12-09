@@ -306,7 +306,7 @@ Marshal &operator>>(Marshal &min, std::list<T> &l)  {
 
 template <class T>
 Marshal &write(Marshal &mout, const T &t) {
-  mout.write((const char *) &t, sizeof(T));
+  mout.write(reinterpret_cast<const char *>(&t), sizeof(T));
 
   return mout;
 }
@@ -315,7 +315,7 @@ template <typename T>
 Marshal &read(Marshal &min, T &t) {
   t = T();
   
-  min.read((char *) &t, sizeof(T));
+  min.read(reinterpret_cast<char *>(&t), sizeof(T));
   return min;
 }
 

@@ -936,7 +936,7 @@ startup_multi_exec(MPI_Comm                world_comm,
         if (MPI_Recv(proc_stat, 2, MPI_INTEGER, i, MPI_ANY_TAG, world_comm, &status) != MPI_SUCCESS)
           throw RuntimeError() << "MPI_Recv failed";
 
-        exec_type_ranks[(ExecType) proc_stat[1]].push_back(proc_stat[0]);
+        exec_type_ranks[static_cast<ExecType>(proc_stat[1])].push_back(proc_stat[0]);
       }
 
       std::vector<int> &fluid_ranks = exec_type_ranks[EXEC_TYPE_FLUID];

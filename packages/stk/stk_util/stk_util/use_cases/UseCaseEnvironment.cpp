@@ -415,10 +415,10 @@ report_handler(
   int                   type)
 {
   if (type & stk::MSG_DEFERRED)
-    pout() << "Deferred " << (message_type) type << ": " << message << std::endl;
+    pout() << "Deferred " << static_cast<message_type>(type) << ": " << message << std::endl;
 
   else
-    out() << (message_type) type << ": " << message << std::endl;
+    out() << static_cast<message_type>(type) << ": " << message << std::endl;
 }
 
 

@@ -140,7 +140,7 @@ struct MessageCode
    *
    */
   MessageCode(size_t throttle_cutoff = 5, int throttle_group = MSG_APPLICATION)
-    : m_id(&m_id - (MessageId *) 0),
+    : m_id(&m_id - static_cast<MessageId *>(0)),
       m_throttle(throttle_cutoff, throttle_group)
   {}
 

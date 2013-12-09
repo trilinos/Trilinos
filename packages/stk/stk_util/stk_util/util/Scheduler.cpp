@@ -178,9 +178,9 @@ bool Scheduler::internal_is_it_time(Time time)
         Time start = (*interval).first;
         Time delta = (*interval).second;
 
-        int inter = int((restartTime_ - start) / delta);
+        int inter = static_cast<int>((restartTime_ - start) / delta);
         if (inter >= 0) {
-          firstTime_ = ((double)inter * delta) + start;
+          firstTime_ = (static_cast<double>(inter) * delta) + start;
           lastTime_  = restartTime_;
         }
       }
@@ -389,7 +389,7 @@ bool Scheduler::is_it_time(Time time, Step step)
  * Steps to reach that time at current dt is: nstep = (time_out - time) / dt
  * [Account for overflow or extremely small dt....]
  * If 'nstep' > lookahead, return current dt,
- * else, new_dt = (time_out - time) / (int)nstep
+ * else, new_dt = (time_out - time) / static_cast<int>(nstep)
  *
  * \pre dt > 0.0
  * \post 0.0 < returned_dt <= dt
@@ -471,9 +471,9 @@ Time Scheduler::next_implicit_output_time(Time time) const
         Time start = (*interval).first;
         Time delta = (*interval).second;
 
-        int inter = int((restartTime_ - start) / delta);
+        int inter = static_cast<int>((restartTime_ - start) / delta);
         if (inter >= 0) {
-          firstTime_ = ((double)inter * delta) + start;
+          firstTime_ = (static_cast<double>(inter) * delta) + start;
           lastTime_  = restartTime_;
         }
       }
@@ -537,7 +537,7 @@ Time Scheduler::next_implicit_output_time(Time time) const
   }
 
   // Calculate next output time....
-  Time next_time = start + (Time)intervals * tdelta;
+  Time next_time = start + static_cast<Time>(intervals) * tdelta;
   Time next_interval_start = next != end ? (*next).first : next_time;
   if (next_interval_start < next_time) next_time = next_interval_start;
   if (get_toleranced_time_range(time).max > terminationTime_) {

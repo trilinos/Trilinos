@@ -334,10 +334,10 @@ report_deferred_messages(
 
   {
     const char * const send_ptr = send_string.data();
-    char * const recv_ptr = recv_size ? & buffer[0] : (char *) NULL ;
+    char * const recv_ptr = recv_size ? & buffer[0] : NULL ;
     int * const recv_displ_ptr = & recv_displ[0] ;
 
-    result = MPI_Gatherv((void *) send_ptr, send_count, MPI_CHAR,
+    result = MPI_Gatherv(const_cast<char*>(send_ptr), send_count, MPI_CHAR,
                          recv_ptr, recv_count_ptr, recv_displ_ptr, MPI_CHAR,
                          p_root, comm);
     if (MPI_SUCCESS != result) {
@@ -445,10 +445,10 @@ aggregate_messages(
 
   {
     const char * const send_ptr = message.c_str();
-    char * const recv_ptr = recv_size ? & buffer[0] : (char *) NULL ;
+    char * const recv_ptr = recv_size ? & buffer[0] : NULL ;
     int * const recv_displ_ptr = & recv_displ[0] ;
 
-    result = MPI_Gatherv((void*) send_ptr, send_count, MPI_CHAR,
+    result = MPI_Gatherv(const_cast<char*>(send_ptr), send_count, MPI_CHAR,
                          recv_ptr, recv_count_ptr, recv_displ_ptr, MPI_CHAR,
                          p_root, comm);
   }
@@ -459,7 +459,7 @@ aggregate_messages(
     throw std::runtime_error(s.str());
   }
 
-  if (p_root == (int) p_rank) {
+  if (p_root == static_cast<int>(p_rank)) {
     bool first = true;
     for (int i = 0 ; i < p_size ; ++i) {
       if (recv_count[i]) {

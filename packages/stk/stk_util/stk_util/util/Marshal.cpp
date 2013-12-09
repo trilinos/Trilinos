@@ -96,7 +96,7 @@ crc32_write(
   const char *name = typeinfo.name();
   unsigned length = std::strlen(name);
   
-  uint32_t      crc = crc32((const unsigned char *) name, length);
+  uint32_t      crc = crc32(reinterpret_cast<const unsigned char *>(name), length);
 
   TypeNameMap::iterator it = s_typeNameMap.find(crc);
   if (it == s_typeNameMap.end())
@@ -117,7 +117,7 @@ crc32_check(
   const char *name = typeinfo.name();
   unsigned length = std::strlen(name);
   
-  uint32_t      crc_check = crc32((const unsigned char *) name, length);
+  uint32_t      crc_check = crc32(reinterpret_cast<const unsigned char *>(name), length);
   uint32_t      crc = 0;
   
   {

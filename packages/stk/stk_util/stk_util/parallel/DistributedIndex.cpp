@@ -431,8 +431,8 @@ void DistributedIndex::update_keys(
 {
   ThrowAssert(m_removed_keys.empty()); // do not mix
 
-  UnsignedVector count_remove( m_comm_size , (unsigned long)0 );
-  UnsignedVector count_add(    m_comm_size , (unsigned long)0 );
+  UnsignedVector count_remove( m_comm_size , 0 );
+  UnsignedVector count_add(    m_comm_size , 0 );
 
   size_t local_bad_input = 0 ;
 
@@ -619,8 +619,8 @@ void DistributedIndex::generate_new_global_key_upper_bound(
 
 
   UnsignedVector
-    local_counts( m_span_count + 1 , (unsigned long) 0 ),
-    global_counts( m_span_count + 1 , (unsigned long) 0 );
+    local_counts( m_span_count + 1 , 0 ),
+    global_counts( m_span_count + 1 , 0 );
 
   // Count unique keys in each span and add requested keys for
   // final total count of keys needed.
@@ -805,7 +805,7 @@ void DistributedIndex::generate_new_keys_global_planning(
 #if defined(__INTEL_COMPILER) && (__INTEL_COMPILER >= 1200)
       {
         // MPI doesn't do 'const' in its interface, but the send buffer is const
-        void * send_buf = const_cast<void*>( (void *)( (new_request.empty() ? NULL : & new_request[0]) ));
+        void * send_buf = const_cast<long int*>( (new_request.empty() ? NULL : & new_request[0]) );
         void * recv_buf = (new_request_global.empty() ? NULL : & new_request_global[0]) ;
         for (int root = 0; root < m_comm_size; ++root)
           {
@@ -816,7 +816,7 @@ void DistributedIndex::generate_new_keys_global_planning(
 #else
       {
         // MPI doesn't do 'const' in its interface, but the send buffer is const
-        void * send_buf = const_cast<void*>( (void *)( (new_request.empty() ? NULL : & new_request[0]) ));
+        void * send_buf = const_cast<long int*>( (new_request.empty() ? NULL : & new_request[0]) );
         void * recv_buf = (new_request_global.empty() ? NULL : & new_request_global[0]) ;
         MPI_Allgather( send_buf , m_span_count , MPI_LONG ,
                        recv_buf , m_span_count , MPI_LONG , m_comm );

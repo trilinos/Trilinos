@@ -63,7 +63,7 @@ public:
 
     memory_usage::allocate(size);
 
-    return (pointer) malloc(size);
+    return static_cast<pointer>(malloc(size));
   }
 
   // deallocate storage p of deleted elements
@@ -76,7 +76,7 @@ public:
   // initialize elements of allocated storage p with value value
   static void construct(pointer p, const T& value)
   {
-    new((void*)p)T(value);
+    new(static_cast<void*>(p))T(value);
   }
 
   // destroy elements of initialized storage p
