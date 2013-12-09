@@ -51,6 +51,7 @@
 #include <Kokkos_Macros.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 #include <impl/Kokkos_Traits.hpp>
+#include <impl/Kokkos_MemoryTracking.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -120,6 +121,9 @@ struct VerifyExecutionSpaceCanAccessDataSpace< HostSpace , HostSpace >
   inline static void verify(void) {}
   inline static void verify(const void *) {}
 };
+namespace NEVEREVERUSEMEIWILLFINDYOU {
+Impl::MemoryTracking & host_space_singleton_wrapper();
+}
 
 } // namespace Kokkos
 
