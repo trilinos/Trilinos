@@ -71,7 +71,6 @@
 #include <Zoltan2_XpetraCrsGraphInput.hpp>
 #include <Zoltan2_XpetraCrsMatrixInput.hpp>
 #include <Zoltan2_XpetraMultiVectorInput.hpp>
-#include <Zoltan2_XpetraVectorInput.hpp>
 
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_XMLObject.hpp>
@@ -113,7 +112,6 @@ typedef Zoltan2::BasicVectorAdapter<tcrsMatrix_t>     bvi_t;
 typedef Zoltan2::XpetraCrsGraphAdapter<tcrsGraph_t>  xgi_t;
 typedef Zoltan2::XpetraCrsMatrixAdapter<tcrsMatrix_t> xmi_t;
 typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t>  xmvi_t;
-typedef Zoltan2::XpetraVectorAdapter<tVector_t>    xvi_t;
 
 #define ERRMSG(msg) if (rank == 0){ cerr << "FAIL: " << msg << endl; }
 #define EXC_ERRMSG(msg, e) \
@@ -451,16 +449,16 @@ int main(int argc, char *argv[])
     else if (iaType == string("XpetraVectorInput")){
       // UserInputForTests can give us a vector based on M.
       const RCP<const tVector_t> V;
-      xvi_t *ia = NULL;
+      xmvi_t *ia = NULL;
       try{
-        ia = new xvi_t(V, vweights, strides);
+        ia = new xmvi_t(V, vweights, strides);
       }
       catch (std::exception &e){
         EXC_ERRMSG("Test error: InputAdapter build", e);
         fail = true;
       }
 
-      int err = runAlgorithm<xvi_t>(rank, ia, pList, quality);
+      int err = runAlgorithm<xmvi_t>(rank, ia, pList, quality);
       if (err != 0)
         fail = true;
     }

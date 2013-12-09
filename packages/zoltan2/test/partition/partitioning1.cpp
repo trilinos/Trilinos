@@ -44,7 +44,7 @@
 // @HEADER
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_XpetraCrsMatrixInput.hpp>
-#include <Zoltan2_XpetraVectorInput.hpp>
+#include <Zoltan2_XpetraMultiVectorInput.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 #include <iostream>
 #include <limits>
@@ -84,7 +84,7 @@ typedef Tpetra::CrsMatrix<Scalar, z2TestLO, z2TestGO> SparseMatrix;
 typedef Tpetra::Vector<Scalar, z2TestLO, z2TestGO> Vector;
 
 typedef Zoltan2::XpetraCrsMatrixAdapter<SparseMatrix> SparseMatrixAdapter;
-typedef Zoltan2::XpetraVectorAdapter<Vector> VectorAdapter;
+typedef Zoltan2::XpetraMultiVectorAdapter<Vector> MultiVectorAdapter;
 
 #define epsilon 0.00000001
 
@@ -268,7 +268,7 @@ int main(int narg, char** arg)
   Vector *redistribVector;
   std::vector<const scalar_t *> weights;
   std::vector<int> weightStrides;
-  VectorAdapter adapterVector(origVector, weights, weightStrides);
+  MultiVectorAdapter adapterVector(origVector, weights, weightStrides);
   adapterVector.applyPartitioningSolution(*origVector, redistribVector,
                                           problem.getSolution());
 

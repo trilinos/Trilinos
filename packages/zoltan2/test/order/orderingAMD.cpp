@@ -44,7 +44,6 @@
 // @HEADER
 #include <Zoltan2_OrderingProblem.hpp>
 #include <Zoltan2_XpetraCrsMatrixInput.hpp>
-#include <Zoltan2_XpetraVectorInput.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 #include <iostream>
 #include <limits>
