@@ -335,6 +335,8 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_selector )
 
   CALLGRIND_TOGGLE_COLLECT;
 
+  BucketVector output_buckets;
+
   for (int i = 0; i < num_iterations; ++i) {
     for (int x = 0; x < x_dim; ++x) {
       for (int y = 0; y < y_dim; ++y) {
@@ -344,7 +346,6 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_selector )
           sel &= *element_parts[1][y];
           sel &= *element_parts[2][z];
 
-          BucketVector output_buckets;
           get_buckets(sel, bulk.buckets(stk::topology::ELEMENT_RANK), output_buckets);
           for (int j = 0, je = output_buckets.size(); j < je; ++j) {
             size_sum += output_buckets[j]->size();

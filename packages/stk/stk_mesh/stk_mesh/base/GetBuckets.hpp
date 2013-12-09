@@ -48,7 +48,7 @@ void get_buckets( const SELECTOR & selector ,
 }
 
 /* \brief  Get the parts from the union part vector that the bucket is
- *         contained in. 
+ *         contained in.
  */
 void get_involved_parts( const PartVector & union_parts,
                          const Bucket & candidate,
