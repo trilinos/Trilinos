@@ -50,7 +50,7 @@ namespace ROL {
       hu_       = 1.0/((Real)nu_+1.0);
       hz_       = hu_; 
       eps_      = 1.e-4;
-      reg_type_ = 0;
+      reg_type_ = 2;
     }
 
     /* REGULARIZATION DEFINITIONS */
@@ -305,7 +305,6 @@ namespace ROL {
         else if ( (Real)(i+1)*this->hu_ > 0.5 ) {
          (*bp)[i] = 2.0*k2*this->hu_;
         }
-        //std::cout << " x = " << (Real)(i+1)*this->hu_ << "  b = " << (*bp)[i] << "\n";
       }
      
       StdVector<Real> b(bp);
@@ -437,7 +436,7 @@ namespace ROL {
     x0p->resize(n);
     xp->resize(n);
     // Instantiate Objective Function
-    obj = Teuchos::rcp( new Objective_PoissonInversion<Real>(n,1.e-10) );
+    obj = Teuchos::rcp( new Objective_PoissonInversion<Real>(n,1.e-6) );
     // Get Initial Guess
     for (int i=0; i<n; i++) {
       (*x0p)[i] = 1.5;

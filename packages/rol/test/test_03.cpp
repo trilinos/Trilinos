@@ -107,11 +107,14 @@ int main(int argc, char *argv[]) {
         ROL::LineSearchStep<RealT> step(parlist);
       
         // Define Algorithm
-        ROL::DefaultAlgorithm<RealT> algo(step,status);
+        ROL::DefaultAlgorithm<RealT> algo(step,status,false);
 
         // Run Algorithm
         x.set(x0);
-        algo.run(x, *obj);
+        std::vector<std::string> output = algo.run(x, *obj);
+        for ( unsigned i = 0; i < output.size(); i++ ) {
+          std::cout << output[i];
+        }
 
         // Compute Error
         e.set(x);

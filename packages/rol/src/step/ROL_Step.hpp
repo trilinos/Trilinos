@@ -79,6 +79,14 @@ public:
   virtual void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, 
                        AlgorithmState<Real> &algo_state ) = 0;
 
+  /** \brief Print iterate header.
+  */
+  virtual std::string printHeader( void ) const = 0;
+
+  /** \brief Print step name.
+  */
+  virtual std::string printName( void ) const = 0;
+
   /** \brief Print iterate status.
   */
   virtual std::string print( AlgorithmState<Real> &algo_state, bool printHeader = false ) const = 0;

@@ -203,35 +203,53 @@ public:
     algo_state.iter++;
   }
 
+  /** \brief Print iterate header.
+  */
+  std::string printHeader( void ) const  {
+    std::stringstream hist;
+    hist << "  ";
+    hist << std::setw(6) << std::left << "iter";  
+    hist << std::setw(15) << std::left << "value";
+    hist << std::setw(15) << std::left << "gnorm"; 
+    hist << std::setw(15) << std::left << "snorm";
+    hist << std::setw(10) << std::left << "#fval";
+    hist << std::setw(10) << std::left << "#grad";
+    hist << std::setw(10) << std::left << "ls_#fval";
+    hist << std::setw(10) << std::left << "ls_#grad";
+    if (    this->edesc_ == DESCENT_NEWTONKRYLOV 
+         || this->edesc_ == DESCENT_SECANTPRECOND ) {
+      hist << std::setw(10) << std::left << "iterCG";
+      hist << std::setw(10) << std::left << "flagCG";
+    }
+    hist << "\n";
+    return hist.str();
+  }
+
+  std::string printName( void ) const {
+    std::stringstream hist;
+    hist << "\n" << EDescentToString(this->edesc_) 
+         << " with " << ELineSearchToString(this->els_) 
+         << " Linesearch satisfying " 
+         << ECurvatureConditionToString(this->econd_) << "\n";
+    if ( this->edesc_ == DESCENT_SECANT || this->edesc_ == DESCENT_SECANTPRECOND ) {
+      hist << "Secant Type: " << ESecantToString(this->esec_) << "\n";
+    }
+    return hist.str();
+  }
+
   /** \brief Print iterate status.
   */
   std::string print( AlgorithmState<Real> & algo_state, bool printHeader = false ) const  {
     std::stringstream hist;
+    hist << std::scientific << std::setprecision(6);
     if ( algo_state.iter == 0 ) {
-      hist << "\n" << EDescentToString(this->edesc_) 
-           << " with " << ELineSearchToString(this->els_) 
-           << " Linesearch satisfying " 
-           << ECurvatureConditionToString(this->econd_) << "\n";
-      if ( this->edesc_ == DESCENT_SECANT || this->edesc_ == DESCENT_SECANTPRECOND ) {
-        hist << "Secant Type: " << ESecantToString(this->esec_) << "\n";
-      }
+      hist << this->printName();
+    }
+    if ( printHeader ) {
+      hist << this->printHeader();
+    }
+    if ( algo_state.iter == 0 ) {
       hist << "  ";
-      hist << std::setw(6) << std::left << "iter";  
-      hist << std::setw(15) << std::left << "value";
-      hist << std::setw(15) << std::left << "gnorm"; 
-      hist << std::setw(15) << std::left << "snorm";
-      hist << std::setw(10) << std::left << "#fval";
-      hist << std::setw(10) << std::left << "#grad";
-      hist << std::setw(10) << std::left << "ls_#fval";
-      hist << std::setw(10) << std::left << "ls_#grad";
-      if (    this->edesc_ == DESCENT_NEWTONKRYLOV 
-           || this->edesc_ == DESCENT_SECANTPRECOND ) {
-        hist << std::setw(10) << std::left << "iterCG";
-        hist << std::setw(10) << std::left << "flagCG";
-      }
-      hist << "\n";
-      hist << std::setfill('-') << std::setw(110) << "-" << "\n";
-      hist << std::setfill(' ') << "  ";
       hist << std::setw(6) << std::left << algo_state.iter;
       hist << std::setw(15) << std::left << algo_state.value;
       hist << std::setw(15) << std::left << algo_state.gnorm;

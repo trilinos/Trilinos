@@ -203,42 +203,60 @@ public:
     algo_state.iter++;
   }
 
+  /** \brief Print iterate header.
+  */
+  std::string printHeader( void ) const  {
+    std::stringstream hist;
+    hist << "  ";
+    hist << std::setw(6)  << std::left << "iter";
+    hist << std::setw(15) << std::left << "value";
+    hist << std::setw(15) << std::left << "gnorm";
+    hist << std::setw(15) << std::left << "snorm";
+    hist << std::setw(15) << std::left << "delta";
+    hist << std::setw(10) << std::left << "#fval";
+    hist << std::setw(10) << std::left << "#grad";
+    hist << std::setw(10) << std::left << "tr_flag";
+    if ( this->etr_ == TRUSTREGION_TRUNCATEDCG ) {
+      hist << std::setw(10) << std::left << "iterCG";
+      hist << std::setw(10) << std::left << "flagCG";
+    }
+    hist << "\n";
+    return hist.str();
+  }
+
+  std::string printName( void ) const {
+    std::stringstream hist;
+    hist << "\n" << ETrustRegionToString(this->etr_) << " Trust-Region solver";
+    if ( this->useSecantPrecond_ || this->useSecantHessVec_ ) {
+      if ( this->useSecantPrecond_ && !this->useSecantHessVec_ ) {
+        hist << " with " << ESecantToString(this->esec_) << " preconditioning\n";
+      }
+      else if ( !this->useSecantPrecond_ && this->useSecantHessVec_ ) {
+        hist << " with " << ESecantToString(this->esec_) << " Hessian approximation\n";
+      }
+      else {
+        hist << " with " << ESecantToString(this->esec_) << " preconditioning and Hessian approximation\n";
+      }
+    }
+    else {
+      hist << "\n";
+    }
+    return hist.str();
+  }
+
   /** \brief Print iterate status.
   */
   std::string print( AlgorithmState<Real> & algo_state, bool printHeader = false ) const  {
     std::stringstream hist;
+    hist << std::scientific << std::setprecision(6);
     if ( algo_state.iter == 0 ) {
-      hist << "\n" << ETrustRegionToString(this->etr_) << " Trust-Region solver";
-      if ( this->useSecantPrecond_ || this->useSecantHessVec_ ) {
-        if ( this->useSecantPrecond_ && !this->useSecantHessVec_ ) {
-          hist << " with " << ESecantToString(this->esec_) << " preconditioning\n";
-        }
-        else if ( !this->useSecantPrecond_ && this->useSecantHessVec_ ) {
-          hist << " with " << ESecantToString(this->esec_) << " Hessian approximation\n";
-        }
-        else {
-          hist << " with " << ESecantToString(this->esec_) << " preconditioning and Hessian approximation\n";
-        }
-      }
-      else {
-        hist << "\n";
-      } 
+      hist << this->printName();
+    }
+    if ( printHeader ) {
+      hist << this->printHeader();
+    }
+    if ( algo_state.iter == 0 ) {
       hist << "  ";
-      hist << std::setw(6)  << std::left << "iter";  
-      hist << std::setw(15) << std::left << "value";
-      hist << std::setw(15) << std::left << "gnorm"; 
-      hist << std::setw(15) << std::left << "snorm";
-      hist << std::setw(15) << std::left << "delta";
-      hist << std::setw(10) << std::left << "#fval";
-      hist << std::setw(10) << std::left << "#grad";
-      hist << std::setw(10) << std::left << "tr_flag";
-      if ( this->etr_ == TRUSTREGION_TRUNCATEDCG ) {
-        hist << std::setw(10) << std::left << "iterCG";
-        hist << std::setw(10) << std::left << "flagCG";
-      }
-      hist << "\n";
-      hist << std::setfill('-') << std::setw(120) << "-" << "\n";
-      hist << std::setfill(' ') << "  ";
       hist << std::setw(6)  << std::left << algo_state.iter;
       hist << std::setw(15) << std::left << algo_state.value;
       hist << std::setw(15) << std::left << algo_state.gnorm;
