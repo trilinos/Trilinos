@@ -367,7 +367,7 @@ public:
    */
   static void registerCreator(const std::string &derived_name, Signature function) {
     Registry::rootInstance().registerIt(std::make_pair(&typeid(Signature), derived_name),
-					static_cast<void *>(function));
+					reinterpret_cast<void *>(function));
   }
 
   /**
@@ -556,7 +556,7 @@ public:
    */
   inline static void registerFunction(const std::string &function_name, Signature *function) {
     Registry::rootInstance().registerIt(std::make_pair(&typeid(Signature), function_name),
-					static_cast<void *>(function));
+					reinterpret_cast<void *>(function));
   }
 
   /**
