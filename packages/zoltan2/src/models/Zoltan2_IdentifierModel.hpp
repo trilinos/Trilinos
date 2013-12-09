@@ -765,11 +765,9 @@ template <typename User>
 {
   size_t nLocalIds;
   const gid_t *gids;
-  const scalar_t *elements;
-  int stride;
 
   try{
-    nLocalIds = ia->getVector(gids, elements, stride);
+    nLocalIds = ia->getIDsView(gids);
   }
   Z2_FORWARD_EXCEPTIONS;
 

@@ -230,34 +230,37 @@ public:
 
   int getNumWeightsPer() const { return numWeights_;}
 
-  size_t getWeightsView(const scalar_t *&wgt, int &stride, int idx) const
+  size_t getWeightsView(const scalar_t *&weights, int &stride, int idx) const
   {
-    return getVectorWeights(idx, wgt, stride);
+    if (idx < 0 || idx >= numWeights_) {
+      std::ostringstream emsg;
+      emsg << __FILE__ << ":" << __LINE__
+           << "  Invalid vector index " << idx << std::endl;
+      throw std::runtime_error(emsg.str());
+    }
+    size_t length;
+    weights_[idx].getStridedList(length, weights, stride);
+    return length;
   }
 
   ////////////////////////////////////////////////////
   // The VectorAdapter interface.
   ////////////////////////////////////////////////////
 
-  int getNumberOfVectors() const { return numVectors_;}
+  int getNumVectors() const { return numVectors_;}
 
-  int getNumberOfWeights() const { return numWeights_;}
-
-  size_t getLocalLength() const { return numIds_; }
-
-  size_t getGlobalLength() const { return globalNumIds_;}
-
-  size_t getVector(const gid_t *&ids, 
-     const scalar_t *&element, int &stride) const
+  size_t getVectorView(const scalar_t *&element, int &stride, int idx = 0) const
   {
-    return getVector(0, ids, element, stride);
+    if (idx < 0 || idx >= numVectors_) {
+      std::ostringstream emsg;
+      emsg << __FILE__ << ":" << __LINE__
+           << "  Invalid vector index " << idx << std::endl;
+      throw std::runtime_error(emsg.str());
+    }
+    size_t length;
+    elements_[idx].getStridedList(length, element, stride);
+    return length;
   }
-
-  size_t getVector(int i, const gid_t *&ids, 
-     const scalar_t *&element, int &stride) const;
-
-  size_t getVectorWeights(int idx, 
-     const scalar_t *&weights, int &stride) const;
 
 private:
 
@@ -287,44 +290,6 @@ private:
 ////////////////////////////////////////////////////////////////
 // Definitions
 ////////////////////////////////////////////////////////////////
-
-template <typename User>
-  size_t BasicVectorAdapter<User>::getVector(int idx, const gid_t *&ids, 
-    const scalar_t *&element, int &stride) const
-{
-  if (idx < 0 || idx >= numVectors_) {
-    std::ostringstream emsg;
-    emsg << __FILE__ << ":" << __LINE__
-         << "  Invalid vector index " << idx << std::endl;
-    throw std::runtime_error(emsg.str());
-  }
-  
-  ids = idList_;
-
-  size_t length;
-
-  elements_[idx].getStridedList(length, element, stride);
-
-  return length;
-}
-
-template <typename User>
-  size_t BasicVectorAdapter<User>::getVectorWeights(int idx, 
-    const scalar_t *&weights, int &stride) const
-{
-  if (idx < 0 || idx >= numWeights_) {
-    std::ostringstream emsg;
-    emsg << __FILE__ << ":" << __LINE__
-         << "  Invalid vector index " << idx << std::endl;
-    throw std::runtime_error(emsg.str());
-  }
-
-  size_t length;
-
-  weights_[idx].getStridedList(length, weights, stride);
-
-  return length;
-}
 
 template <typename User>
   void BasicVectorAdapter<User>::createBasicVector(

@@ -630,12 +630,12 @@ CoordinateModel<VectorAdapter<User> >::CoordinateModel(
 {
   bool consecutiveIds = flags.test(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
 
-  size_t nLocalIds = ia->getLocalLength();
+  size_t nLocalIds = ia->getLocalNum();
 
   // Get coordinates and weights (if any)
 
-  coordinateDim_ = ia->getNumberOfVectors();
-  userNumWeights_ = ia->getNumberOfWeights();
+  coordinateDim_ = ia->getNumVectors();
+  userNumWeights_ = ia->getNumWeightsPer();
 
   Model<VectorAdapter<User> >::maxCount(*comm, coordinateDim_, userNumWeights_);
 
@@ -653,34 +653,34 @@ CoordinateModel<VectorAdapter<User> >::CoordinateModel(
   Array<lno_t> arrayLengths(userNumWeights_, 0);
 
   if (nLocalIds){
+    const gid_t *gids=NULL;
+    ia->getIDsView(gids);
+    gids_ = arcp(gids, 0, nLocalIds, false);
+
     for (int dim=0; dim < coordinateDim_; dim++){
       int stride;
-      const gid_t *gids=NULL;
       const scalar_t *coords=NULL;
       try{
-        ia->getVector(dim, gids, coords, stride);
+        ia->getVectorView(coords, stride, dim);
       }
       Z2_FORWARD_EXCEPTIONS;
 
       ArrayRCP<const scalar_t> cArray(coords, 0, nLocalIds*stride, false);
       coordArray[dim] = input_t(cArray, stride);
-
-      if (dim==0)
-        gids_ = arcp(gids, 0, nLocalIds, false);
     }
 
-    for (int dim=0; dim < userNumWeights_; dim++){
+    for (int idx=0; idx < userNumWeights_; idx++){
       int stride;
       const scalar_t *weights;
       try{
-        ia->getVectorWeights(dim, weights, stride);
+        ia->getWeightsView(weights, stride, idx);
       }
       Z2_FORWARD_EXCEPTIONS;
 
       if (weights){
         ArrayRCP<const scalar_t> wArray(weights, 0, nLocalIds*stride, false);
-        weightArray[dim] = input_t(wArray, stride);
-        arrayLengths[dim] = nLocalIds;
+        weightArray[idx] = input_t(wArray, stride);
+        arrayLengths[idx] = nLocalIds;
       }
     }
   }

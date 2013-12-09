@@ -121,68 +121,37 @@ public:
   XpetraVectorAdapter( const RCP<const User> &invector,
     vector<const scalar_t *> &weights, vector<int> &weightStrides);
 
-  /*! \brief Access to the xpetra-wrapped vector
-   */
-
-  const RCP<const x_vector_t> &getVector() const
-  {
-    return vector_;
-  }
 
   ////////////////////////////////////////////////////
   // The Adapter interface.
   ////////////////////////////////////////////////////
 
-  size_t getLocalNum() const { return getLocalLength();}
+  size_t getLocalNum() const { return vector_->getLocalLength();}
 
   size_t getIDsView(const gid_t *&ids) const
   {
     ids = map_->getNodeElementList().getRawPtr();
-    return getLocalLength();
+    return vector_->getLocalLength();
   }
 
   int getNumWeightsPer() const { return numWeights_;}
 
-  size_t getWeightsView(const scalar_t *&wgt, int &stride, int idx) const
+  size_t getWeightsView(const scalar_t *&weights, int &stride, int idx) const
   {
-    return getVectorWeights(idx, wgt, stride);
+    env_->localInputAssertion(__FILE__, __LINE__, "invalid weight index",
+      idx >= 0 && idx < numWeights_, BASIC_ASSERTION);
+    size_t length;
+    weights_[idx].getStridedList(length, weights, stride);
+    return length;
   }
 
   ////////////////////////////////////////////////////
   // The VectorAdapter interface.
   ////////////////////////////////////////////////////
 
-  int getNumberOfVectors() const { return 1; }
+  int getNumVectors() const { return 1; }
 
-  int getNumberOfWeights() const {return numWeights_;}
-
-  size_t getLocalLength() const {return vector_->getLocalLength();}
-  
-  size_t getGlobalLength() const {return vector_->getGlobalLength();}
-
-  size_t getVector(const gid_t *&Ids, const scalar_t *&elements, 
-    int &stride) const;
-
-  size_t getVector(int vectorNumber, const gid_t *&Ids, 
-    const scalar_t *&elements, int &stride) const
-  {
-    env_->localInputAssertion(__FILE__, __LINE__, "invalid vector",
-      vectorNumber==0, BASIC_ASSERTION);
-
-    return getVector(Ids, elements, stride);
-  }
-
-  size_t getVectorWeights(int dim, const scalar_t *&weights, int &stride) const
-  {
-    env_->localInputAssertion(__FILE__, __LINE__, "invalid dimension",
-      dim >= 0 && dim < numWeights_, BASIC_ASSERTION);
-
-    size_t length;
-
-    weights_[dim].getStridedList(length, weights, stride);
-
-    return length;
-  }
+  size_t getVectorView(const scalar_t *&elements, int &stride, int idx=0) const;
 
   template <typename Adapter>
     size_t applyPartitioningSolution(const User &in, User *&out,
@@ -235,9 +204,13 @@ template <typename User>
 }
 
 template <typename User>
-  size_t XpetraVectorAdapter<User>::getVector(const gid_t *&Ids, 
-    const scalar_t *&elements, int &stride) const
+  size_t XpetraVectorAdapter<User>::getVectorView(
+    const scalar_t *&elements, int &stride, int idx) const
 {
+  env_->localInputAssertion(__FILE__, __LINE__, "invalid vector",
+    idx==0, BASIC_ASSERTION);
+
+  size_t vecsize;
   stride = 1;
   elements = NULL;
   const x_vector_t *vec =  vector_.get();
@@ -245,7 +218,8 @@ template <typename User>
   if (map_->lib() == Xpetra::UseTpetra){
     const xt_vector_t *tvector = dynamic_cast<const xt_vector_t *>(vec);
 
-    if (tvector->getLocalLength() > 0){
+    vecsize = tvector->getLocalLength();
+    if (vecsize > 0){
       // getData hangs if vector length is 0
       ArrayRCP<const scalar_t> data = tvector->getData(0);
       elements = data.get();
@@ -254,7 +228,8 @@ template <typename User>
   else if (map_->lib() == Xpetra::UseEpetra){
     const xe_vector_t *evector = dynamic_cast<const xe_vector_t *>(vec);
       
-    if (evector->getLocalLength() > 0){
+    vecsize = evector->getLocalLength();
+    if (vecsize > 0){
       // getData hangs if vector length is 0
       ArrayRCP<const double> data = evector->getData(0);
 
@@ -267,10 +242,7 @@ template <typename User>
     throw logic_error("invalid underlying lib");
   }
 
-  ArrayView<const gid_t> gids = map_->getNodeElementList();
-  Ids = gids.getRawPtr();
-
-  return getLocalLength();
+  return vecsize;
 }
 
 template <typename User>

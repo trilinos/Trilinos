@@ -69,25 +69,27 @@ int checkBasicVector(
 
   if (valueStrides == NULL) strideOne = true;
 
-  if (ia->getNumberOfVectors() != mvdim)
+  if (ia->getNumVectors() != mvdim)
     fail = 100;
 
-  if (!fail && ia->getNumberOfWeights() != wdim)
+  if (!fail && ia->getNumWeightsPer() != wdim)
     fail = 101;
 
-  if (!fail && ia->getLocalLength() != size_t(len))
+  if (!fail && ia->getLocalNum() != size_t(len))
     fail = 102;
 
-  if (!fail && ia->getGlobalLength() != size_t(glen))
-    fail = 103;
+  const gno_t *idList;
+  ia->getIDsView(idList);
+  for (int i=0; !fail && i < len; i++)
+    if (!fail && idList[i] != ids[i])
+      fail = 107;
 
   for (int v=0; !fail && v < mvdim; v++){
-    const gno_t *idList;
     const scalar_t *vals;
     int correctStride = (strideOne ? 1 : valueStrides[v]);
     int stride;
 
-    size_t nvals = ia->getVector(v, idList, vals, stride);
+    size_t nvals = ia->getVectorView(vals, stride, v);
 
     if (nvals != size_t(len*stride))
       fail = 104;
@@ -99,9 +101,6 @@ int checkBasicVector(
 // TODO fix values check
 //      if (vals[stride*i] != values[v][correctStride*i])
 //        fail = 106;
-
-      if (!fail && idList[i] != ids[i])
-        fail = 107;
     }
   }
 
@@ -109,7 +108,7 @@ int checkBasicVector(
     const scalar_t *wgts;
     int stride;
 
-    size_t nvals = ia->getVectorWeights(w, wgts, stride);
+    size_t nvals = ia->getWeightsView(wgts, stride, w);
 
     if (nvals != size_t(len*stride))
       fail = 108;

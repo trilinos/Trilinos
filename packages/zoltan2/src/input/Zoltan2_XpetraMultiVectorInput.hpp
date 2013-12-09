@@ -125,65 +125,37 @@ public:
 
   XpetraMultiVectorAdapter(const RCP<const User> &invector);
 
-  /*! \brief Access to xpetra wrapper multivector
-   */
-
-  const RCP<const x_mvector_t> &getVector() const
-  {
-    return vector_;
-  }
 
   ////////////////////////////////////////////////////
   // The Adapter interface.
   ////////////////////////////////////////////////////
 
-  size_t getLocalNum() const { return getLocalLength();}
+  size_t getLocalNum() const { return vector_->getLocalLength();}
 
   size_t getIDsView(const gid_t *&ids) const
   { 
     ids = map_->getNodeElementList().getRawPtr();
-    return getLocalLength();
+    return vector_->getLocalLength();
   }
 
   int getNumWeightsPer() const { return numWeights_;}
 
-  size_t getWeightsView(const scalar_t *&wgt, int &stride, int idx) const
+  size_t getWeightsView(const scalar_t *&weights, int &stride, int idx) const
   {
-    return getVectorWeights(idx, wgt, stride);
+    env_->localInputAssertion(__FILE__, __LINE__, "invalid weight index",
+      idx >= 0 && idx < numWeights_, BASIC_ASSERTION);
+    size_t length;
+    weights_[idx].getStridedList(length, weights, stride);
+    return length;
   }
 
   ////////////////////////////////////////////////////
   // The VectorAdapter interface.
   ////////////////////////////////////////////////////
 
-  int getNumberOfVectors() const {return vector_->getNumVectors();}
+  int getNumVectors() const {return vector_->getNumVectors();}
 
-  int getNumberOfWeights() const {return numWeights_;}
-  
-  size_t getLocalLength() const {return vector_->getLocalLength();}
-  
-  size_t getGlobalLength() const {return vector_->getGlobalLength();}
-
-  size_t getVector(const gid_t *&Ids, 
-    const scalar_t *&elements, int &stride) const
-  {
-    return getVector(0, Ids, elements, stride);
-  }
-
-  size_t getVector(int i, const gid_t *&Ids, 
-    const scalar_t *&elements, int &stride) const;
-
-  size_t getVectorWeights(int dim, const scalar_t *&weights, int &stride) const
-  {
-    env_->localInputAssertion(__FILE__, __LINE__, "invalid dimension",
-      dim >= 0 && dim < numWeights_, BASIC_ASSERTION);
-
-    size_t length;
-
-    weights_[dim].getStridedList(length, weights, stride);
-
-    return length;
-  }
+  size_t getVectorView(const scalar_t *&elements, int &stride, int idx=0) const;
 
   template <typename Adapter>
     size_t applyPartitioningSolution(const User &in, User *&out,
@@ -246,17 +218,19 @@ template <typename User>
 }
 
 template <typename User>
-  size_t XpetraMultiVectorAdapter<User>::getVector(
-    int i, const gid_t *&Ids, const scalar_t *&elements, int &stride) const
+  size_t XpetraMultiVectorAdapter<User>::getVectorView(
+    const scalar_t *&elements, int &stride, int idx) const
 {
+  size_t vecsize;
   stride = 1;
   elements = NULL;
   if (map_->lib() == Xpetra::UseTpetra){
     const xt_mvector_t *tvector = 
       dynamic_cast<const xt_mvector_t *>(vector_.get());
      
-    if (tvector->getLocalLength() > 0){
-      ArrayRCP<const scalar_t> data = tvector->getData(i);
+    vecsize = tvector->getLocalLength();
+    if (vecsize > 0){
+      ArrayRCP<const scalar_t> data = tvector->getData(idx);
       elements = data.get();
     }
   }
@@ -264,8 +238,9 @@ template <typename User>
     const xe_mvector_t *evector = 
       dynamic_cast<const xe_mvector_t *>(vector_.get());
       
-    if (evector->getLocalLength() > 0){
-      ArrayRCP<const double> data = evector->getData(i);
+    vecsize = evector->getLocalLength();
+    if (vecsize > 0){
+      ArrayRCP<const double> data = evector->getData(idx);
 
       // Cast so this will compile when scalar_t is not double,
       // a case when this code should never execute.
@@ -277,8 +252,7 @@ template <typename User>
   }
 
   ArrayView<const gid_t> gids = map_->getNodeElementList();
-  Ids = gids.getRawPtr();
-  return gids.size();
+  return vecsize;
 }
 
 template <typename User>

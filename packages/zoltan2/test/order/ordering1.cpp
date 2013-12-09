@@ -84,7 +84,6 @@ typedef Tpetra::CrsMatrix<Scalar, z2TestLO, z2TestGO> SparseMatrix;
 typedef Tpetra::Vector<Scalar, z2TestLO, z2TestGO> Vector;
 
 typedef Zoltan2::XpetraCrsMatrixAdapter<SparseMatrix> SparseMatrixAdapter;
-typedef Zoltan2::XpetraVectorAdapter<Vector> VectorAdapter;
 
 #define epsilon 0.00000001
 
