@@ -115,6 +115,9 @@ namespace Example {
 
 /** \brief  Generate a distributed unstructured finite element mesh
  *          from a partitioned NX*NY*NZ box of elements.
+ *
+ *  Order owned nodes first followed by off-process nodes
+ *  grouped by owning process.
  */
 template< class Device ,
           BoxElemPart::ElemOrder Order ,

@@ -93,6 +93,39 @@ struct VectorImport {
 namespace Kokkos {
 namespace Example {
 
+template< class CommMessageType , class CommIdentType , class VectorType >
+struct VectorImport {
+
+  const MPI_Comm         comm ;
+  const CommMessageType  recv_node ;
+  const CommMessageType  send_node ;
+  const CommIdentType    send_nodeid ;
+  const unsigned         count_owned ;
+  const unsigned         count_receive ;
+
+  VectorImport( MPI_Comm arg_comm ,
+                const CommMessageType & arg_recv_node ,
+                const CommMessageType & arg_send_node ,
+                const CommIdentType   & arg_send_nodeid ,
+                const unsigned arg_count_owned ,
+                const unsigned arg_count_receive )
+    : comm( arg_comm )
+    , recv_node( arg_recv_node )
+    , send_node( arg_send_node )
+    , send_nodeid( arg_send_nodeid )
+    , count_owned( arg_count_owned )
+    , count_receive( arg_count_receive )
+    {}
+
+  inline
+  void operator()( const VectorType & v ) const
+  {
+    // Post receives
+
+
+  }
+};
+
 /** \brief  Parallel distributed data mapping
  *
  *  ordering { interior : { owned items not sent elsewhere }
