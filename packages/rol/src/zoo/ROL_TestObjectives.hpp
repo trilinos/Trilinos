@@ -22,6 +22,7 @@
 #include "ROL_SumOfSquares.hpp"
 #include "ROL_LeastSquares.hpp"
 #include "ROL_PoissonControl.hpp"
+#include "ROL_PoissonInversion.hpp"
 
 #include "ROL_Types.hpp"
 #include "ROL_StdVector.hpp"
@@ -40,6 +41,7 @@ namespace ROL {
       case TESTOBJECTIVES_SUMOFSQUARES:        getSumOfSquares(obj,x0,x);     break;
       case TESTOBJECTIVES_LEASTSQUARES:        getLeastSquares(obj,x0,x);     break; 
       case TESTOBJECTIVES_POISSONCONTROL:      getPoissonControl(obj,x0,x);   break;
+      case TESTOBJECTIVES_POISSONINVERSION:    getPoissonInversion(obj,x0,x); break;
       case TESTOBJECTIVES_LAST:                break;
     }
   }

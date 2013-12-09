@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
     parlist.set("Use Inexact Gradient",                 false);
     parlist.set("Use Inexact Hessian-Times-A-Vector",   false);
     // Trust-Region Parameters
-    parlist.set("Initial Trust-Region Radius",          -1.0);
+    parlist.set("Initial Trust-Region Radius",          10.0);
     parlist.set("Minimum Trust-Region Radius",          1.e-8);
     parlist.set("Maximum Trust-Region Radius",          5000.0);
     parlist.set("Step Acceptance Parameter",            0.05);
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
     
 
     // Define Status Test
-    ROL::StatusTest<RealT> status(1.e-8,1.e-12,1000);    
+    ROL::StatusTest<RealT> status(1.e-10,1.e-12,1000);    
 
     // Loop Through Test Objectives
     for ( ROL::ETestObjectives objFunc = ROL::TESTOBJECTIVES_ROSENBROCK; objFunc < ROL::TESTOBJECTIVES_LAST; objFunc++ ) {
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
         *outStream << "\n\n" << ROL::ETrustRegionToString(tr) << "\n\n";
         parlist.set("Trust-Region Subproblem Solver Type", tr);
         if ( tr == ROL::TRUSTREGION_DOGLEG || tr == ROL::TRUSTREGION_DOUBLEDOGLEG ) {
-          parlist.set("Use Secant Hessian-Times-A-Vector", true);
+          parlist.set("Use Secant Hessian-Times-A-Vector", false);
         } 
         else {
           parlist.set("Use Secant Hessian-Times-A-Vector", false);
@@ -118,7 +118,11 @@ int main(int argc, char *argv[]) {
         // Run Algorithm
         x.set(x0);
         algo.run(x, *obj);
-  
+
+        for ( int i = 0; i < dim; i++ ) {
+          std::cout << (*x_rcp)[i] << "\n";
+        } 
+
         // Compute Error 
         e.set(x);
         e.axpy(-1.0,z);

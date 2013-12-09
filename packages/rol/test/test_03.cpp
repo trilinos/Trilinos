@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
     // Inexactness Information
     parlist.set("Use Inexact Objective Function",         false);
     parlist.set("Use Inexact Gradient",                   false);
-    parlist.set("Use Inexact Hessian-Times-A-Vector",     false);
+    parlist.set("Use Inexact Hessian-Times-A-Vector",     true);
     // Secant Information
     parlist.set("Maximum Secant Storage",                 10);
     parlist.set("Barzilai-Borwein Type",                  1);

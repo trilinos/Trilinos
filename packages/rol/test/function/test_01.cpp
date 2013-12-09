@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    int dim = 100;
+    int dim = 512;
     Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
     Teuchos::RCP<std::vector<RealT> > y_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
     ROL::StdVector<RealT> x(x_rcp);
@@ -50,11 +50,12 @@ int main(int argc, char *argv[]) {
 
     // set x,y
     for (int i=0; i<dim; i++) {
-      (*x_rcp)[i] = 2.0;
+      (*x_rcp)[i] = 10.0* (1.0 + (RealT)rand() / (RealT)RAND_MAX);
       (*y_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
     }
 
-    ROL::Objective_Rosenbrock<RealT> obj;
+    //ROL::Objective_Rosenbrock<RealT> obj;
+    ROL::Objective_PoissonInversion<RealT> obj(dim,1.e-6);
     //ROL::Objective_SumOfSquares<RealT> obj;
     //ROL::Objective_LeastSquares<RealT> obj;
 
