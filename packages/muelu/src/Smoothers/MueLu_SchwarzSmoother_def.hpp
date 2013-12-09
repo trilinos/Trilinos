@@ -51,6 +51,7 @@
 #include "MueLu_ConfigDefs.hpp"
 #if defined (HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2) && defined(HAVE_MUELU_IFPACK2)
 #include <Xpetra_Matrix.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
 
 #include <Amesos2_config.h>
 #include <Amesos2.hpp>
@@ -302,7 +303,7 @@ namespace MueLu {
     else {
       typedef Teuchos::ScalarTraits<Scalar> TST;
       RCP<MultiVector> Residual = Utils::Residual(*A_,X,B);
-      RCP<MultiVector> Correction = MultiVectorFactory::Build(A_->getDomainMap(), X.getNumVectors());
+      RCP<MultiVector> Correction = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(A_->getDomainMap(), X.getNumVectors());
       Tpetra::MultiVector<SC,LO,GO,NO> &tX = Utils::MV2NonConstTpetraMV(*Correction);
       Tpetra::MultiVector<SC,LO,GO,NO> const &tB = Utils::MV2TpetraMV(*Residual);
       // do import/export of multivector and construct the local vector
