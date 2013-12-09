@@ -294,7 +294,7 @@ STKUNIT_UNIT_TEST(UnitTestMalloc, DISABLED_Performance)
   ptrdiff_t start_mem = malloc_used();
   ptrdiff_t start_footprint = malloc_footprint();
 #else
-  ptrdiff_t start_mem = static_cast<ptrdiff_t>(sbrk(0));
+  ptrdiff_t start_mem = reinterpret_cast<ptrdiff_t>(sbrk(0));
 #endif
 
 #if defined SIERRA_PTMALLOC3_ALLOCATOR
@@ -367,7 +367,7 @@ STKUNIT_UNIT_TEST(UnitTestMalloc, DISABLED_Performance)
     ptrdiff_t end_mem = malloc_used();
     ptrdiff_t end_footprint = malloc_footprint();
 #else
-    ptrdiff_t end_mem = static_cast<ptrdiff_t>(sbrk(0));
+    ptrdiff_t end_mem = reinterpret_cast<ptrdiff_t>(sbrk(0));
 #endif
 
     double elapsed = end_time - start_time;

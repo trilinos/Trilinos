@@ -158,12 +158,12 @@ meshlog.m(mask) << message << stk::diag::dendl
 
 inline void setStream(std::ostream& stream) { }
 
-#define Trace_(location)                              ((void) (0))
-#define TraceIf(location, mask)                       ((void) (0))
-#define TraceIfWatching(location, mask, item)         ((void) (0))
-#define TraceIfWatchingDec(location, mask, item, dec) ((void) (0))
-#define DiagIf(mask, message)                         ((void) (0))
-#define DiagIfWatching(mask, item, message)           ((void) (0))
+#define Trace_(location)                              (static_cast<void>(0))
+#define TraceIf(location, mask)                       (static_cast<void>(0))
+#define TraceIfWatching(location, mask, item)         (static_cast<void>(0))
+#define TraceIfWatchingDec(location, mask, item, dec) (static_cast<void>(0))
+#define DiagIf(mask, message)                         (static_cast<void>(0))
+#define DiagIfWatching(mask, item, message)           (static_cast<void>(0))
 
 #endif
 

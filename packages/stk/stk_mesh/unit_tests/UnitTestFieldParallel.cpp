@@ -61,7 +61,7 @@ void setup_simple_mesh(stk::mesh::BulkData& bulk_data)
     stk::mesh::EntityId elem_id = this_proc+1;
     stk::mesh::Entity elem = bulk_data.declare_entity(stk::topology::ELEMENT_RANK, elem_id, block_1);
     const int num_nodes_per_elem = 8;
-    STKUNIT_ASSERT_EQUAL(num_nodes_per_elem, (int)nodes.size());
+    STKUNIT_ASSERT_EQUAL(num_nodes_per_elem, static_cast<int>(nodes.size()));
 
     for(int i=0; i<num_nodes_per_elem; ++i) {
       bulk_data.declare_relation(elem, nodes[i], i);

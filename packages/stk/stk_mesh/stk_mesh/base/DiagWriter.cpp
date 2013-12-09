@@ -48,12 +48,12 @@ DiagWriterParser & theDiagWriterParser()
 DiagWriterParser::DiagWriterParser()
   : stk::diag::WriterParser()
 {
-  mask("entity",       (unsigned long) (LOG_ENTITY),       "Display entity diagnostic information");
-  mask("bucket",       (unsigned long) (LOG_BUCKET),       "Display bucket diagnostic information");
-  mask("part",         (unsigned long) (LOG_PART),         "Display part diagnostic information");
-  mask("field",        (unsigned long) (LOG_FIELD),        "Display field diagnostic information");
-  mask("partition",    (unsigned long) (LOG_PARTITION),    "Display partition diagnostic information");
-  mask("connectivity", (unsigned long) (LOG_CONNECTIVITY), "Display connectivity diagnostic information");
+  mask("entity",       static_cast<unsigned long>(LOG_ENTITY),       "Display entity diagnostic information");
+  mask("bucket",       static_cast<unsigned long>(LOG_BUCKET),       "Display bucket diagnostic information");
+  mask("part",         static_cast<unsigned long>(LOG_PART),         "Display part diagnostic information");
+  mask("field",        static_cast<unsigned long>(LOG_FIELD),        "Display field diagnostic information");
+  mask("partition",    static_cast<unsigned long>(LOG_PARTITION),    "Display partition diagnostic information");
+  mask("connectivity", static_cast<unsigned long>(LOG_CONNECTIVITY), "Display connectivity diagnostic information");
 }
 
 namespace {

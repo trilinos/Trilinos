@@ -740,7 +740,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_ring)
                                                    nPerProc );
 
     STKUNIT_ASSERT_EQUAL( n_node , local_count[MetaData::NODE_RANK] );
-    STKUNIT_ASSERT_EQUAL( (unsigned) nPerProc , local_count[MetaData::ELEMENT_RANK] );
+    STKUNIT_ASSERT_EQUAL( static_cast<unsigned>(nPerProc) , local_count[MetaData::ELEMENT_RANK] );
 
     count_entities( select_used , ring_mesh.m_bulk_data , local_count );
     STKUNIT_ASSERT_EQUAL( nLocalNode , local_count[MetaData::NODE_RANK] );
@@ -894,7 +894,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testModifyPropagation)
   // get one of the nodes related to this element
   STKUNIT_ASSERT(bulk.num_nodes(element) > 0);
   stk::mesh::Entity node = *bulk.begin_nodes(element);
-  STKUNIT_ASSERT_EQUAL( bulk.entity_rank(node), (unsigned) stk::mesh::BaseEntityRank );
+  STKUNIT_ASSERT_EQUAL( bulk.entity_rank(node), static_cast<unsigned>(stk::mesh::BaseEntityRank) );
 
   // make a modification to the node by changing its parts
   ring_mesh.m_bulk_data.modification_begin();
@@ -1685,7 +1685,7 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
 {
   unsigned p_rank = eMesh.parallel_rank();
   unsigned p_size = eMesh.parallel_size();
-  (void)p_size;
+  static_cast<void>(p_size);
 
   const std::vector<stk::mesh::Bucket*> & buckets = eMesh.buckets( stk::mesh::MetaData::NODE_RANK );
 
