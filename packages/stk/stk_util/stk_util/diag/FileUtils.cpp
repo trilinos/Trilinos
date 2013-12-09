@@ -12,8 +12,6 @@
 typedef std::vector<std::string> StringVector;
 
 namespace {
-  inline int to_lower(int c) { return std::tolower(c); }
-  
   std::string  get_input_file_basename()
   {
     std::string filename;
