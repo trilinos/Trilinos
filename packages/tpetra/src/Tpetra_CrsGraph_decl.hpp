@@ -1756,4 +1756,9 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
+// Include KokkosRefactor partial specialisation if enabled
+#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#include "Tpetra_KokkosRefactor_CrsGraph.hpp"
+#endif
+
 #endif
