@@ -83,6 +83,7 @@ APPEND_SET(HEADERS
   step/ROL_lSR1.hpp
   step/ROL_BarzilaiBorwein.hpp
   step/ROL_Krylov.hpp
+  step/ROL_NonlinearCG.hpp
   )
 
 #
@@ -118,6 +119,7 @@ APPEND_SET(HEADERS
   zoo/ROL_SumOfSquares.hpp
   zoo/ROL_LeastSquares.hpp
   zoo/ROL_PoissonControl.hpp
+  zoo/ROL_PoissonInversion.hpp
   )
 
 
