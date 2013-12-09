@@ -47,7 +47,7 @@ namespace {
 
 	for(size_t i=0; i<nodes.size(); i++) {
 	  double *fieldDataForNode =
-	    reinterpret_cast<double*>(stkIo.bulk_data().field_data(temperature, nodes[i]));
+	    stkIo.bulk_data().field_data(temperature, nodes[i]);
 	  *fieldDataForNode = time;
 	}
 
@@ -116,8 +116,7 @@ namespace {
 			      nodes);
       for(size_t i=0; i<nodes.size(); i++) {
 	double *fieldDataForNode =
-	  reinterpret_cast<double*>(stkIo.bulk_data().
-				    field_data(temperature, nodes[i]));
+	  stkIo.bulk_data().field_data(temperature, nodes[i]);
 	EXPECT_DOUBLE_EQ(2.0, *fieldDataForNode);
       }
       //-END      
