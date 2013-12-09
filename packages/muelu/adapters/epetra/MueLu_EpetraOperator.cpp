@@ -56,40 +56,35 @@ namespace MueLu {
 
 int EpetraOperator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
   try {
-    Epetra_MultiVector& temp_x = const_cast<Epetra_MultiVector&>(X);
+    // There is no rcpFromRef(const T&), so we need to do const_cast
+    const Xpetra::EpetraMultiVector eX(rcpFromRef(const_cast<Epetra_MultiVector&>(X)));
+    Xpetra::EpetraMultiVector       eY(rcpFromRef(Y));
 
-    const Xpetra::EpetraMultiVector tX(rcpFromRef(temp_x));
-    Xpetra::EpetraMultiVector       tY(rcpFromRef(Y));
-
-    // check if X and Y points to the same memory
+    // Generally, we assume two different vectors, but AztecOO uses a single vector
     if (X.Values() == Y.Values()) {
-      // For AztecOO X and Y point to the same memory, use work vectors
+      // X and Y point to the same memory, use an additional vector
+      RCP<Xpetra::EpetraMultiVector> tmpY = Teuchos::rcp(new Xpetra::EpetraMultiVector(eY.getMap(), eY.getNumVectors()));
 
-      // reserve memory for deep copy vectors
-      RCP<Xpetra::EpetraMultiVector> epX = Teuchos::rcp(new Xpetra::EpetraMultiVector(tX.getMap(), tX.getNumVectors())); // oops, we don't have a copy constructor?
-      RCP<Xpetra::EpetraMultiVector> epY = Teuchos::rcp(new Xpetra::EpetraMultiVector(tY.getMap(), tY.getNumVectors()));
-
-      // deep copy of RHS vector
-      epX->update(1.0, tX, 0.0);
-
-      //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate()
-      epY->putScalar(0.0);
-
-      // apply one V/W-cycle as preconditioner
+      // InitialGuessIsZero in MueLu::Hierarchy.Iterate() does not zero out components, it
+      // only assumes that user provided an already zeroed out vector
       bool initialGuessZero = true;
-      Hierarchy_->Iterate(*epX, 1, *epY, initialGuessZero);
+      tmpY->putScalar(0.0);
 
-      // deep copy solution from MueLu to AztecOO
-      tY.update(1.0, *epY, 0.0);
+      // apply one V-cycle as preconditioner
+      Hierarchy_->Iterate(eX, 1, *tmpY, initialGuessZero);
+
+      // deep copy solution from MueLu
+      eY.update(1.0, *tmpY, 0.0);
 
     } else {
       // X and Y point to different memory, pass the vectors through
 
-      //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate()
-      tY.putScalar(0.0);
-
+      // InitialGuessIsZero in MueLu::Hierarchy.Iterate() does not zero out components, it
+      // only assumes that user provided an already zeroed out vector
       bool initialGuessZero = true;
-      Hierarchy_->Iterate(tX, 1, tY, initialGuessZero);
+      eY.putScalar(0.0);
+
+      Hierarchy_->Iterate(eX, 1, eY, initialGuessZero);
     }
 
   } catch (std::exception& e) {
