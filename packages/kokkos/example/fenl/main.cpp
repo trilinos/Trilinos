@@ -251,13 +251,13 @@ int main( int argc , char ** argv )
     if ( cmdline[ CMD_USE_CUDA ] ) {
       // Use the last device:
 
-      Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( cmdline[ CMD_USE_CUDA_DEV ] ) );
       Kokkos::Cuda::host_mirror_device_type::initialize();
+      Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( cmdline[ CMD_USE_CUDA_DEV ] ) );
 
       run< Kokkos::Cuda , Kokkos::Example::BoxElemPart::ElemLinear >( comm , cmdline );
 
-      Kokkos::Cuda::host_mirror_device_type::finalize();
       Kokkos::Cuda::finalize();
+      Kokkos::Cuda::host_mirror_device_type::finalize();
     }
 
 #endif

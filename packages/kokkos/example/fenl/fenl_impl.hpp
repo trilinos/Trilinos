@@ -61,7 +61,7 @@
 #include <CGSolve.hpp>
 
 #include <fenl.hpp>
-#include <fenlFunctors.hpp>
+#include <fenl_functors.hpp>
 
 //----------------------------------------------------------------------------
 
@@ -187,9 +187,9 @@ Perf fenl(
 
   //------------------------------------
 
-  const unsigned newton_iteration_limit     = 5 ;
+  const unsigned newton_iteration_limit     = 10 ;
   const double   newton_iteration_tolerance = 1e-7 ;
-  const unsigned cg_iteration_limit         = 200;
+  const unsigned cg_iteration_limit         = 200 ;
   const double   cg_iteration_tolerance     = 1e-7 ;
 
   //------------------------------------
@@ -471,18 +471,23 @@ Perf fenl(
     // Evaluate solution error
 
     if ( 0 == itrial ) {
-      const typename VectorType::HostMirror h_nodal_solution = Kokkos::create_mirror_view( nodal_solution );
+      const typename FixtureType::node_coord_type::HostMirror
+        h_node_coord = Kokkos::create_mirror_view( fixture.node_coord() );
 
+      const typename VectorType::HostMirror
+        h_nodal_solution = Kokkos::create_mirror_view( nodal_solution );
+
+      Kokkos::deep_copy( h_node_coord , fixture.node_coord() );
       Kokkos::deep_copy( h_nodal_solution , nodal_solution );
     
       double error_max = 0 ;
       for ( unsigned inode = 0 ; inode < fixture.node_count_owned() ; ++inode ) {
-        const double answer = manufactured_solution( fixture.node_coord( inode , 2 ) );
+        const double answer = manufactured_solution( h_node_coord( inode , 2 ) );
         const double error = ( h_nodal_solution(inode) - answer ) / answer ;
         if ( error_max < fabs( error ) ) { error_max = fabs( error ); }
       }
 
-      perf.error_max   = std::sqrt( Kokkos::Example::all_reduce_max( error_max , comm ) );
+      perf.error_max = std::sqrt( Kokkos::Example::all_reduce_max( error_max , comm ) );
 
       perf_stats = perf ;
     }
