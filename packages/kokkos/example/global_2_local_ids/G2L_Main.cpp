@@ -112,6 +112,9 @@ int main(int argc, char *argv[])
   unsigned team_count = 1 ;
   unsigned threads_count = 4 ;
 
+  //avoid unused variable warning
+  (void)team_count;
+
   if (Kokkos::hwloc::available()) {
     threads_count = Kokkos::hwloc::get_available_numa_count() *
                     Kokkos::hwloc::get_available_cores_per_numa();
