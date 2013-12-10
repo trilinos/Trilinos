@@ -28,7 +28,7 @@ size_t get_memory_usage_now()
 
   if (KERN_SUCCESS != task_info(mach_task_self(),
       TASK_BASIC_INFO,
-      static_cast<task_info_t>(&t_info),
+      reinterpret_cast<task_info_t>(&t_info),
       &t_info_count))
   {
     return 0;
