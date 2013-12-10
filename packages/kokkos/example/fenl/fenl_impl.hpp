@@ -180,7 +180,10 @@ Perf fenl(
 
   typedef typename ElementComputationType::vector_type VectorType ;
 
-  typedef Kokkos::Example::VectorImport< VectorType > ImportType ;
+  typedef Kokkos::Example::VectorImport<
+     typename FixtureType::comm_list_type ,
+     typename FixtureType::send_nodeid_type ,
+     VectorType > ImportType ;
 
   //------------------------------------
 
@@ -211,9 +214,13 @@ Perf fenl(
 
   //------------------------------------
 
-  const ImportType comm_nodal_import( comm ,
-                                      fixture.node_count_owned() , 
-                                      fixture.node_count() - fixture.node_count_owned() );
+  const ImportType comm_nodal_import(
+    comm ,
+    fixture.recv_node() ,
+    fixture.send_node() ,
+    fixture.send_nodeid() ,
+    fixture.node_count_owned() , 
+    fixture.node_count() - fixture.node_count_owned() );
 
   //------------------------------------
 
