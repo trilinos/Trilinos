@@ -1,4 +1,8 @@
+function solnorm = m2ml_test
+
 addpath ../../mesh
+
+fprintf('\nTesting Intrepid and ML functionality ...\n');
 
 spaceDim  = 2;
 cellType  = 'Triangle';
@@ -147,12 +151,12 @@ stiff_mat = stiff_mat + 1e-6*speye(size(stiff_mat));
 rr = symrcm(stiff_mat);
 [h,oc] = ml('setup', stiff_mat(rr,rr), ml_setup{:});
 x = (1/nx/ny)*ones(size(stiff_mat,1), 1);
+tic
 y(rr) = ml(h, stiff_mat(rr,rr), x(rr), ml_apply{:});
+toc
 
-testnum = 2.5888736e+03;
+solnorm = norm(y);
 
-if (abs(norm(y)-testnum) < 1e-4)
-  fprintf('\nINTREPID + ML TEST PASSED!\n');
-else
-  fprintf('\nINTREPID + ML TEST FAILED!\n');
-end
+fprintf('Done testing Intrepid and ML functionality.\n\n');
+
+end % m2ml_test

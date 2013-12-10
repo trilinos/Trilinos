@@ -82,11 +82,18 @@ public:
 
 private:
 
+  enum PhaseType { FILL_NODE_SET ,
+                   SCAN_NODE_COUNT ,
+                   FILL_GRAPH_ENTRIES ,
+                   SORT_GRAPH_ENTRIES ,
+                   FILL_ELEMENT_GRAPH };
+
   const ElemNodeIdView  elem_node_id ;
   UnsignedValue         row_total ;
   RowMapType            row_count ;
   RowMapType            row_map ;
   SetType               node_node_set ;
+  PhaseType             phase ;
 
 public:
 
@@ -100,10 +107,14 @@ public:
     , row_count( "row_count" , arg_node_count )
     , row_map( "graph_row_map" , arg_node_count + 1 )
     , node_node_set()
+    , phase( FILL_NODE_SET )
     , graph()
     , elem_graph()
     {
+      //--------------------------------
       // Guess at capacity required for the map:
+
+      phase = FILL_NODE_SET ;
       unsigned set_capacity = 2 * arg_elem_node_id.dimension_0() * arg_elem_node_id.dimension_1();
 
       // Increase capacity until the (node,node) map is successfully filled.
@@ -123,6 +134,10 @@ public:
 
       } while ( node_node_set.failed_inserts() );
 
+      //--------------------------------
+
+      phase = SCAN_NODE_COUNT ;
+
       // Exclusive scan of row_count into row_map
       // including the final total in the 'arg_node_count + 1' position.
       // Zero the 'row_count' values.
@@ -139,18 +154,30 @@ public:
       graph.row_map = row_map ;
       graph.entries = typename CrsGraphType::entries_type( "graph_entries" , graph_entry_count );
 
+      //--------------------------------
       // Fill graph's entries from the (node,node) set.
+
+      phase = FILL_GRAPH_ENTRIES ;
       Kokkos::parallel_for( node_node_set.capacity() , *this );
 
       device_type::fence();
 
+      //--------------------------------
       // Done with the temporary sets and arrays
+
       row_total = UnsignedValue();
       row_count = RowMapType();
       row_map   = RowMapType();
       node_node_set.clear();
 
+      //--------------------------------
+
+      phase = SORT_GRAPH_ENTRIES ;
+      Kokkos::parallel_for( arg_node_count , *this );
+
+      //--------------------------------
       // Element-to-graph mapping:
+      phase = FILL_ELEMENT_GRAPH ;
       elem_graph = ElemGraphType("elem_graph", elem_node_id.dimension_0() );
       Kokkos::parallel_for( elem_node_id.dimension_0() , *this );
 
@@ -202,6 +229,21 @@ public:
   }
 
   KOKKOS_INLINE_FUNCTION
+  void sort_graph_entries( const unsigned irow ) const
+  {
+    const unsigned row_beg = graph.row_map( irow );
+    const unsigned row_end = graph.row_map( irow + 1 );
+    for ( unsigned i = row_beg + 1 ; i < row_end ; ++i ) {
+      const unsigned col = graph.entries(i);
+      unsigned j = i ;
+      for ( ; row_beg < j && col < graph.entries(j-1) ; --j ) {
+        graph.entries(j) = graph.entries(j-1);
+      }
+      graph.entries(j) = col ;
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION
   void fill_elem_graph_map( const unsigned ielem ) const
   {
     for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.dimension_1() ; ++row_local_node ) {
@@ -214,7 +256,7 @@ public:
 
         unsigned entry = ~0u ;
 
-        if ( row_node < row_count.dimension_0() ) {
+        if ( row_node + 1 < graph.row_map.dimension_0() ) {
 
           const unsigned entry_end = graph.row_map( row_node + 1 );
 
@@ -233,14 +275,17 @@ public:
   KOKKOS_INLINE_FUNCTION
   void operator()( const unsigned iwork ) const
   {
-    if ( elem_graph.dimension_0() ) { // Phase 3: Fill element graph mapping
-      fill_elem_graph_map( iwork ); 
+    if ( phase == FILL_NODE_SET ) {
+      fill_set( iwork );
     }
-    else if ( graph.entries.dimension_0() ) { // Phase 2: Fill graph entries
+    else if ( phase == FILL_GRAPH_ENTRIES ) {
       fill_graph_entries( iwork );
     }
-    else { // Phase 1: Fill node-node set
-      fill_set( iwork );
+    else if ( phase == SORT_GRAPH_ENTRIES ) {
+      sort_graph_entries( iwork );
+    }
+    else if ( phase == FILL_ELEMENT_GRAPH ) {
+      fill_elem_graph_map( iwork ); 
     }
   }
 
@@ -284,6 +329,294 @@ namespace Kokkos {
 namespace Example {
 namespace FENL {
 
+template< class ElemCompType >
+class NodeElemGatherFill {
+public:
+
+  typedef typename ElemCompType::device_type         device_type ;
+  typedef typename ElemCompType::vector_type         vector_type ;
+  typedef typename ElemCompType::sparse_matrix_type  sparse_matrix_type ;
+  typedef typename ElemCompType::elem_node_type      elem_node_type ;
+  typedef typename ElemCompType::elem_vectors_type   elem_vectors_type ;
+  typedef typename ElemCompType::elem_matrices_type  elem_matrices_type ;
+  typedef typename ElemCompType::elem_graph_type     elem_graph_type ;
+
+  static const unsigned ElemNodeCount = ElemCompType::ElemNodeCount ;
+
+  //------------------------------------
+
+private:
+
+  typedef Kokkos::StaticCrsGraph< unsigned[2] , device_type >  CrsGraphType ;
+  typedef typename CrsGraphType::row_map_type::non_const_type  RowMapType ;
+  typedef Kokkos::View< unsigned ,  device_type >              UnsignedValue ;
+
+  enum PhaseType { FILL_NODE_COUNT ,
+                   SCAN_NODE_COUNT ,
+                   FILL_GRAPH_ENTRIES ,
+                   SORT_GRAPH_ENTRIES ,
+                   GATHER_FILL };
+
+  const elem_node_type  elem_node_id ;
+  const elem_graph_type elem_graph ;
+  UnsignedValue         row_total ;
+  RowMapType            row_count ;
+  RowMapType            row_map ;
+  CrsGraphType          graph ;
+  vector_type           residual ;
+  sparse_matrix_type    jacobian ;
+  elem_vectors_type     elem_residual ;
+  elem_matrices_type    elem_jacobian ;
+  PhaseType             phase ;
+
+public:
+
+  NodeElemGatherFill()
+    : elem_node_id()
+    , elem_graph()
+    , row_total()
+    , row_count()
+    , row_map()
+    , graph()
+    , residual()
+    , jacobian()
+    , elem_residual()
+    , elem_jacobian()
+    , phase( FILL_NODE_COUNT )
+    {}
+
+  NodeElemGatherFill( const NodeElemGatherFill & rhs )
+    : elem_node_id(  rhs.elem_node_id )
+    , elem_graph(    rhs.elem_graph )
+    , row_total(     rhs.row_total )
+    , row_count(     rhs.row_count )
+    , row_map(       rhs.row_map )
+    , graph(         rhs.graph )
+    , residual(      rhs.residual )
+    , jacobian(      rhs.jacobian )
+    , elem_residual( rhs.elem_residual )
+    , elem_jacobian( rhs.elem_jacobian )
+    , phase(         rhs.phase )
+    {}
+
+  NodeElemGatherFill( const elem_node_type     & arg_elem_node_id ,
+                      const elem_graph_type    & arg_elem_graph ,
+                      const vector_type        & arg_residual ,
+                      const sparse_matrix_type & arg_jacobian ,
+                      const elem_vectors_type  & arg_elem_residual ,
+                      const elem_matrices_type & arg_elem_jacobian )
+    : elem_node_id( arg_elem_node_id )
+    , elem_graph( arg_elem_graph )
+    , row_total( "row_total" )
+    , row_count( "row_count" , arg_residual.dimension_0() )
+    , row_map( "graph_row_map" , arg_residual.dimension_0() + 1 )
+    , graph()
+    , residual( arg_residual )
+    , jacobian( arg_jacobian )
+    , elem_residual( arg_elem_residual )
+    , elem_jacobian( arg_elem_jacobian )
+    , phase( FILL_NODE_COUNT )
+    {
+      //--------------------------------
+      // Count node->element relations
+
+      phase = FILL_NODE_COUNT ;
+
+      Kokkos::parallel_for( elem_node_id.dimension_0() , *this );
+
+      //--------------------------------
+
+      phase = SCAN_NODE_COUNT ;
+
+      // Exclusive scan of row_count into row_map
+      // including the final total in the 'arg_node_count + 1' position.
+      // Zero the 'row_count' values.
+      Kokkos::parallel_scan( residual.dimension_0() , *this );
+
+      // Zero the row count for the fill:
+      Kokkos::deep_copy( row_count , typename RowMapType::scalar_type(0) );
+
+      unsigned graph_entry_count = 0 ;
+
+      Kokkos::deep_copy( graph_entry_count , row_total ); 
+
+      // Assign graph's row_map and allocate graph's entries
+      graph.row_map = row_map ;
+
+      typedef typename CrsGraphType::entries_type graph_entries_type ;
+
+      graph.entries = graph_entries_type( "graph_entries" , graph_entry_count );
+
+      //--------------------------------
+      // Fill graph's entries from the (node,node) set.
+
+      phase = FILL_GRAPH_ENTRIES ;
+
+      Kokkos::deep_copy( row_count , 0u );
+      Kokkos::parallel_for( elem_node_id.dimension_0() , *this );
+
+      device_type::fence();
+
+      //--------------------------------
+      // Done with the temporary sets and arrays
+
+      row_total = UnsignedValue();
+      row_count = RowMapType();
+      row_map   = RowMapType();
+
+      //--------------------------------
+
+      phase = SORT_GRAPH_ENTRIES ;
+      Kokkos::parallel_for( residual.dimension_0() , *this );
+
+      device_type::fence();
+
+      phase = GATHER_FILL ;
+    }
+
+  void apply() const
+  {
+    Kokkos::parallel_for( residual.dimension_0() , *this );
+  }
+
+  //------------------------------------
+  //------------------------------------
+  // parallel_for: Count node->element pairs
+
+  KOKKOS_INLINE_FUNCTION
+  void fill_node_count( const unsigned ielem ) const
+  {
+    for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.dimension_1() ; ++row_local_node ) {
+
+      const unsigned row_node = elem_node_id( ielem , row_local_node );
+
+      if ( row_node < row_count.dimension_0() ) {
+        atomic_fetch_add( & row_count( row_node ) , 1 );
+      }
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void fill_graph_entries( const unsigned ielem ) const
+  {
+    for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.dimension_1() ; ++row_local_node ) {
+
+      const unsigned row_node = elem_node_id( ielem , row_local_node );
+
+      if ( row_node < row_count.dimension_0() ) {
+    
+        const unsigned offset = graph.row_map( row_node ) + atomic_fetch_add( & row_count( row_node ) , 1 );
+
+        graph.entries( offset , 0 ) = ielem ;
+        graph.entries( offset , 1 ) = row_local_node ;
+      }
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void sort_graph_entries( const unsigned irow ) const
+  {
+    const unsigned row_beg = graph.row_map( irow );
+    const unsigned row_end = graph.row_map( irow + 1 );
+    for ( unsigned i = row_beg + 1 ; i < row_end ; ++i ) {
+      const unsigned elem  = graph.entries(i,0);
+      const unsigned local = graph.entries(i,1);
+      unsigned j = i ;
+      for ( ; row_beg < j && elem < graph.entries(j-1,0) ; --j ) {
+        graph.entries(j,0) = graph.entries(j-1,0);
+        graph.entries(j,1) = graph.entries(j-1,1);
+      }
+      graph.entries(j,0) = elem ;
+      graph.entries(j,1) = local ;
+    }
+  }
+
+  //------------------------------------
+
+  KOKKOS_INLINE_FUNCTION
+  void gather_fill( const unsigned irow ) const
+  {
+    const unsigned node_elem_begin = graph.row_map(irow);
+    const unsigned node_elem_end   = graph.row_map(irow+1);
+
+    //  for each element that a node belongs to 
+
+    for ( unsigned i = node_elem_begin ; i < node_elem_end ; i++ ) {
+
+      const unsigned elem_id   = graph.entries( i, 0);
+      const unsigned row_index = graph.entries( i, 1);
+
+      residual(irow) += elem_residual(elem_id, row_index);
+
+      //  for each node in a particular related element  
+      //  gather the contents of the element stiffness
+      //  matrix that belong in irow
+
+      for ( unsigned j = 0 ; j < ElemNodeCount ; ++j ) {
+        const unsigned A_index = elem_graph( elem_id , row_index , j );
+
+        jacobian.values( A_index ) += elem_jacobian( elem_id, row_index, j );
+      }
+    }
+  }
+
+  //------------------------------------
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const unsigned iwork ) const
+  {
+    if ( phase == FILL_NODE_COUNT ) {
+      fill_node_count( iwork );
+    }
+    else if ( phase == FILL_GRAPH_ENTRIES ) {
+      fill_graph_entries( iwork );
+    }
+    else if ( phase == SORT_GRAPH_ENTRIES ) {
+      sort_graph_entries( iwork );
+    }
+    else if ( phase == GATHER_FILL ) {
+      gather_fill( iwork );
+    }
+  }
+
+  //------------------------------------
+  // parallel_scan: row offsets
+
+  typedef unsigned value_type ;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const unsigned irow , unsigned & update , const bool final ) const
+  {
+    // exclusive scan
+    if ( final ) { row_map( irow ) = update ; }
+
+    update += row_count( irow );
+
+    if ( final ) {
+      if ( irow + 1 == row_count.dimension_0() ) {
+        row_map( irow + 1 ) = update ;
+        row_total()         = update ;
+      }
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void init( unsigned & update ) const { update = 0 ; }
+
+  KOKKOS_INLINE_FUNCTION
+  void join( volatile unsigned & update , const volatile unsigned & input ) const { update += input ; }
+};
+
+} /* namespace FENL */
+} /* namespace Example */
+} /* namespace Kokkos  */
+
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace Example {
+namespace FENL {
+
 template< class FiniteElementMeshType , class SparseMatrixType >
 class ElementComputation ;
 
@@ -313,20 +646,23 @@ public:
 
   //------------------------------------
 
-  typedef typename mesh_type::node_coords_type                                     node_coords_type ;
-  typedef typename mesh_type::elem_node_ids_type                                   elem_node_ids_type ;
+  typedef typename mesh_type::node_coord_type                                      node_coord_type ;
+  typedef typename mesh_type::elem_node_type                                       elem_node_type ;
   typedef Kokkos::View< scalar_type*[FunctionCount][FunctionCount] , device_type > elem_matrices_type ;
   typedef Kokkos::View< scalar_type*[FunctionCount] ,                device_type > elem_vectors_type ;
   typedef Kokkos::View< scalar_type* ,                               device_type > vector_type ;
 
-  typedef typename NodeNodeGraph< elem_node_ids_type , sparse_graph_type , ElemNodeCount >::ElemGraphType elem_graph_type ;
+  typedef typename NodeNodeGraph< elem_node_type , sparse_graph_type , ElemNodeCount >::ElemGraphType elem_graph_type ;
+
+  //------------------------------------
+
 
   //------------------------------------
   // Computational data:
 
   const element_data_type   elem_data ;
-  const elem_node_ids_type  elem_node_ids ;
-  const node_coords_type    node_coords ;
+  const elem_node_type      elem_node_ids ;
+  const node_coord_type     node_coords ;
   const elem_graph_type     elem_graph ;
   const elem_matrices_type  elem_jacobians ;
   const elem_vectors_type   elem_residuals ;
@@ -334,6 +670,19 @@ public:
   const vector_type         residual ;
   const sparse_matrix_type  jacobian ;
   const scalar_type         coeff_K ;
+
+  ElementComputation( const ElementComputation & rhs )
+    : elem_data()
+    , elem_node_ids( rhs.elem_node_ids )
+    , node_coords(   rhs.node_coords )
+    , elem_graph(    rhs.elem_graph )
+    , elem_jacobians( rhs.elem_jacobians )
+    , elem_residuals( rhs.elem_residuals )
+    , solution( rhs.solution )
+    , residual( rhs.residual )
+    , jacobian( rhs.jacobian )
+    , coeff_K( rhs.coeff_K )
+    {}
 
   // If the element->sparse_matrix graph is provided then perform atomic updates
   // Otherwise fill per-element contributions for subequent gather-add into a residual and jacobian.
@@ -343,36 +692,36 @@ public:
                       const elem_graph_type    & arg_elem_graph ,
                       const sparse_matrix_type & arg_jacobian ,
                       const vector_type        & arg_residual )
-  : elem_data()
-  , elem_node_ids( arg_mesh.elem_node_ids )
-  , node_coords(   arg_mesh.node_coords )
-  , elem_graph(    arg_elem_graph )
-  , elem_jacobians()
-  , elem_residuals()
-  , solution( arg_solution )
-  , residual( arg_residual )
-  , jacobian( arg_jacobian )
-  , coeff_K( arg_coeff_K )
-  {}
+    : elem_data()
+    , elem_node_ids( arg_mesh.elem_node() )
+    , node_coords(   arg_mesh.node_coord() )
+    , elem_graph(    arg_elem_graph )
+    , elem_jacobians()
+    , elem_residuals()
+    , solution( arg_solution )
+    , residual( arg_residual )
+    , jacobian( arg_jacobian )
+    , coeff_K( arg_coeff_K )
+    {}
 
   ElementComputation( const mesh_type    & arg_mesh ,
 	              const scalar_type    arg_coeff_K ,
                       const vector_type  & arg_solution )
-  : elem_data()
-  , elem_node_ids( arg_mesh.elem_node_ids )
-  , node_coords(   arg_mesh.node_coords )
-  , elem_graph()
-  , elem_jacobians( "elem_jacobians" , arg_mesh.elem_count() )
-  , elem_residuals( "elem_residuals" , arg_mesh.elem_count() )
-  , solution( arg_solution )
-  , residual()
-  , jacobian()
-  , coeff_K( arg_coeff_K )
-  {}
+    : elem_data()
+    , elem_node_ids( arg_mesh.elem_node() )
+    , node_coords(   arg_mesh.node_coord() )
+    , elem_graph()
+    , elem_jacobians( "elem_jacobians" , arg_mesh.elem_count() )
+    , elem_residuals( "elem_residuals" , arg_mesh.elem_count() )
+    , solution( arg_solution )
+    , residual()
+    , jacobian()
+    , coeff_K( arg_coeff_K )
+    {}
 
   //------------------------------------
 
-  void apply()
+  void apply() const
   {
     parallel_for( elem_node_ids.dimension_0() , *this );
   }
@@ -494,7 +843,7 @@ public:
     // $$ R_i = \int_{\Omega} \nabla \phi_i \cdot (k \nabla T) + \phi_i T^2 d \Omega $$
     // $$ J_{i,j} = \frac{\partial R_i}{\partial T_j} = \int_{\Omega} k \nabla \phi_i \cdot \nabla \phi_j + 2 \phi_i \phi_j T d \Omega $$
 
-    for ( unsigned m = 0; m < FunctionCount; m++) {
+    for ( unsigned m = 0; m < FunctionCount; ++m) {
       double * const mat = elem_mat[m] ;
       const float bases_val_m = bases_vals[m];
       const float dpsidx_m    = dpsidx[m] ;
@@ -539,6 +888,7 @@ public:
       val[i] = solution( ni );
     }
 
+
     double elem_vec[ FunctionCount ] ;
     double elem_mat[ FunctionCount ][ FunctionCount ] ;
 
@@ -548,6 +898,7 @@ public:
         elem_mat[i][j] = 0 ;
       }
     }
+
 
     for ( unsigned i = 0 ; i < IntegrationCount ; ++i ) {
       float dpsidx[ FunctionCount ] ;
@@ -566,7 +917,40 @@ public:
                                   elem_vec , elem_mat );
     }
 
-    if ( residual.empty() ) {
+#if 0
+
+printf("ElemResidual { %f %f %f %f %f %f %f %f }\n",
+       elem_vec[0], elem_vec[1], elem_vec[2], elem_vec[3],
+       elem_vec[4], elem_vec[5], elem_vec[6], elem_vec[7]);
+
+printf("ElemJacobian {\n  { %f %f %f %f %f %f %f %f }\n  { %f %f %f %f %f %f %f %f }\n  { %f %f %f %f %f %f %f %f }\n  { %f %f %f %f %f %f %f %f }\n  { %f %f %f %f %f %f %f %f }\n  { %f %f %f %f %f %f %f %f }\n  { %f %f %f %f %f %f %f %f }\n  { %f %f %f %f %f %f %f %f }\n}\n",
+       elem_mat[0][0], elem_mat[0][1], elem_mat[0][2], elem_mat[0][3],
+       elem_mat[0][4], elem_mat[0][5], elem_mat[0][6], elem_mat[0][7],
+
+       elem_mat[1][0], elem_mat[1][1], elem_mat[1][2], elem_mat[1][3],
+       elem_mat[1][4], elem_mat[1][5], elem_mat[1][6], elem_mat[1][7],
+
+       elem_mat[2][0], elem_mat[2][1], elem_mat[2][2], elem_mat[2][3],
+       elem_mat[2][4], elem_mat[2][5], elem_mat[2][6], elem_mat[2][7],
+
+       elem_mat[3][0], elem_mat[3][1], elem_mat[3][2], elem_mat[3][3],
+       elem_mat[3][4], elem_mat[3][5], elem_mat[3][6], elem_mat[3][7],
+
+       elem_mat[4][0], elem_mat[4][1], elem_mat[4][2], elem_mat[4][3],
+       elem_mat[4][4], elem_mat[4][5], elem_mat[4][6], elem_mat[4][7],
+
+       elem_mat[5][0], elem_mat[5][1], elem_mat[5][2], elem_mat[5][3],
+       elem_mat[5][4], elem_mat[5][5], elem_mat[5][6], elem_mat[5][7],
+
+       elem_mat[6][0], elem_mat[6][1], elem_mat[6][2], elem_mat[6][3],
+       elem_mat[6][4], elem_mat[6][5], elem_mat[6][6], elem_mat[6][7],
+
+       elem_mat[7][0], elem_mat[7][1], elem_mat[7][2], elem_mat[7][3],
+       elem_mat[7][4], elem_mat[7][5], elem_mat[7][6], elem_mat[7][7] );
+
+#endif
+
+    if ( ! residual.dimension_0() ) {
       for( unsigned i = 0; i < FunctionCount ; i++){
         elem_residuals(ielem, i) = elem_vec[i] ;
         for( unsigned j = 0; j < FunctionCount ; j++){
@@ -606,8 +990,8 @@ class DirichletComputation<
 public:
 
   typedef Kokkos::Example::BoxElemFixture< DeviceType, Order, CoordinateMap >  mesh_type ;
-  typedef typename mesh_type::node_coords_type                                 node_coords_type ;
-  typedef typename node_coords_type::scalar_type                               scalar_coords_type ;
+  typedef typename mesh_type::node_coord_type                                  node_coord_type ;
+  typedef typename node_coord_type::scalar_type                                scalar_coord_type ;
 
   typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >  sparse_matrix_type ;
   typedef typename sparse_matrix_type::StaticCrsGraphType                                       sparse_graph_type ;
@@ -622,15 +1006,16 @@ public:
   //------------------------------------
   // Computational data:
 
-  const node_coords_type    node_coords ;
+  const node_coord_type     node_coords ;
   const vector_type         solution ;
   const sparse_matrix_type  jacobian ;
   const vector_type         residual ;
   const scalar_type         bc_lower_value ;
   const scalar_type         bc_upper_value ;
-  const scalar_coords_type  bc_lower_limit ;
-  const scalar_coords_type  bc_upper_limit ;
+  const scalar_coord_type   bc_lower_limit ;
+  const scalar_coord_type   bc_upper_limit ;
   const unsigned            bc_plane ;
+        bool                init ;
 
 
   DirichletComputation( const mesh_type          & arg_mesh ,
@@ -646,12 +1031,16 @@ public:
     , residual(    arg_residual )
     , bc_lower_value( arg_bc_lower_value )
     , bc_upper_value( arg_bc_upper_value )
-    , bc_lower_limit( std::numeric_limits<scalar_coords_type>::epsilon() )
-    , bc_upper_limit( scalar_coords_type(1) - std::numeric_limits<scalar_coords_type>::epsilon() )
+    , bc_lower_limit( std::numeric_limits<scalar_coord_type>::epsilon() )
+    , bc_upper_limit( scalar_coord_type(1) - std::numeric_limits<scalar_coord_type>::epsilon() )
     , bc_plane(       arg_bc_plane )
-    {}
+    , init( false )
+    {
+      parallel_for( node_coords.dimension_0() , *this );
+      init = true ;
+    }
 
-  void apply()
+  void apply() const
   {
     parallel_for( node_coords.dimension_0() , *this );
   }
@@ -669,33 +1058,38 @@ public:
     const unsigned iBeg = jacobian.graph.row_map[inode];
     const unsigned iEnd = jacobian.graph.row_map[inode+1];
 
-    const scalar_coords_type c = node_coords(inode,bc_plane);
+    const scalar_coord_type c = node_coords(inode,bc_plane);
     const bool bc_lower = c <= bc_lower_limit ;
     const bool bc_upper = bc_upper_limit <= c ;
 
-    if ( bc_lower || bc_upper ) {
-
-      solution(inode) = bc_lower ? bc_lower_value : bc_upper_value ;
-      residual(inode) = 0 ;
-
-      //  zero each value on the row, and leave a one
-      //  on the diagonal
-
-      for( unsigned i = iBeg ; i < iEnd ; ++i ) {
-        jacobian.values(i) = int(inode) == int(jacobian.graph.entries(i)) ? 1 : 0 ;
-      }
+    if ( ! init ) {
+      solution(inode) = bc_lower ? bc_lower_value : (
+                        bc_upper ? bc_upper_value : 0 );
     }
     else {
+      if ( bc_lower || bc_upper ) {
 
-      //  Find any columns that are boundary conditions.
-      //  Clear them and adjust the residual vector
+        residual(inode) = 0 ;
 
-      for( unsigned i = iBeg ; i < iEnd ; ++i ) {
-        const unsigned        cnode = jacobian.graph.entries(i) ;
-        const scalar_coords_type cc = node_coords(cnode,bc_plane);
+        //  zero each value on the row, and leave a one
+        //  on the diagonal
 
-        if ( ( cc <= bc_lower_limit ) || ( bc_upper_limit <= cc ) ) {
-	   jacobian.values(i) = 0 ;
+        for( unsigned i = iBeg ; i < iEnd ; ++i ) {
+          jacobian.values(i) = int(inode) == int(jacobian.graph.entries(i)) ? 1 : 0 ;
+        }
+      }
+      else {
+
+        //  Find any columns that are boundary conditions.
+        //  Clear them and adjust the residual vector
+
+        for( unsigned i = iBeg ; i < iEnd ; ++i ) {
+          const unsigned       cnode = jacobian.graph.entries(i) ;
+          const scalar_coord_type cc = node_coords(cnode,bc_plane);
+
+          if ( ( cc <= bc_lower_limit ) || ( bc_upper_limit <= cc ) ) {
+            jacobian.values(i) = 0 ;
+          }
         }
       }
     }

@@ -1,4 +1,8 @@
+function fdiff = m2i_test
+
 addpath ../../mesh
+
+fprintf('\nTesting Intrepid functionality ...\n');
 
 spaceDim  = 2;
 cellType  = 'Triangle';
@@ -166,10 +170,10 @@ intrepid_evaluate(physValues, ...
                   transformed_val_at_cub_points);
 toc
 pause(0.01)
+
 %%%%%%%%%%% check evaluated field (f(x,y) = ax + by + c) at cubature points
 fprintf('%50s', 'check evaluated field f(x,y) at cubature points:  ');
 physCubPoints = zeros(spaceDim,nVert,numCells);
-refCubPoints = zeros(spaceDim,nVert,numCells);
 tic
 intrepid_mapToPhysicalFrame(physCubPoints, ...
                             cubPoints, ...
@@ -177,7 +181,12 @@ intrepid_mapToPhysicalFrame(physCubPoints, ...
                             cellType);
 toc
 pause(0.01);
+
 physCubCoeffs = zeros(numFields,numCells);
 physCubCoeffs(:,:) = a*physCubPoints(1,:,:) + b*physCubPoints(2,:,:) + c;
 
-fprintf('\nINTREPID TEST PASSED!\n');
+fdiff = norm(physCubCoeffs - physValues);
+
+fprintf('Done testing Intrepid functionality.\n\n');
+
+end % function m2i_test

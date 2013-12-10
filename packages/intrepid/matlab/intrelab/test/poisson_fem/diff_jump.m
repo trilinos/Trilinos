@@ -1,4 +1,4 @@
-function k = diffusivity(usr_par)
+function k = diff_jump(usr_par)
 
 %%%%%%%%%%% get the material properties
 

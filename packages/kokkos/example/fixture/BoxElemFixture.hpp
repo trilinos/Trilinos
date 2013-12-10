@@ -73,9 +73,9 @@ struct MapGridUnitCube {
   MapGridUnitCube( const unsigned grid_max_x ,
                    const unsigned grid_max_y ,
                    const unsigned grid_max_z ,
-                   const float bubble_x = 1.1f ,
-                   const float bubble_y = 1.2f ,
-                   const float bubble_z = 1.3f )
+                   const float bubble_x ,
+                   const float bubble_y ,
+                   const float bubble_z )
     : m_a( bubble_x )
     , m_b( bubble_y )
     , m_c( bubble_z )
@@ -115,6 +115,9 @@ namespace Example {
 
 /** \brief  Generate a distributed unstructured finite element mesh
  *          from a partitioned NX*NY*NZ box of elements.
+ *
+ *  Order owned nodes first followed by off-process nodes
+ *  grouped by owning process.
  */
 template< class Device ,
           BoxElemPart::ElemOrder Order ,
@@ -238,11 +241,17 @@ public:
                   const unsigned global_rank ,
                   const unsigned elem_nx ,
                   const unsigned elem_ny ,
-                  const unsigned elem_nz )
+                  const unsigned elem_nz ,
+                  const float bubble_x = 1.1f ,
+                  const float bubble_y = 1.2f ,
+                  const float bubble_z = 1.3f )
   : m_box_part( Order , decompose , global_size , global_rank , elem_nx , elem_ny , elem_nz )
   , m_coord_map( m_box_part.global_coord_max(0) ,
                  m_box_part.global_coord_max(1) ,
-                 m_box_part.global_coord_max(2) )
+                 m_box_part.global_coord_max(2) ,
+                 bubble_x ,
+                 bubble_y ,
+                 bubble_z )
   , m_node_coord( "fixture_node_coord" , m_box_part.uses_node_count() )
   , m_node_grid(  "fixture_node_grid" , m_box_part.uses_node_count() )
   , m_elem_node(  "fixture_elem_node" , m_box_part.uses_elem_count() )
