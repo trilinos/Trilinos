@@ -42,11 +42,11 @@
 
 #include "Panzer_ConfigDefs.hpp"
 
-#include "Panzer_STK_ModelEvaluatorFactory_Epetra.hpp"
-#include "Panzer_STK_ModelEvaluatorFactory_Epetra_impl.hpp"
+#include "Panzer_STK_ModelEvaluatorFactory.hpp"
+#include "Panzer_STK_ModelEvaluatorFactory_impl.hpp"
 
 namespace panzer_stk {
 
-  template class ModelEvaluatorFactory_Epetra<double>;
+  template class ModelEvaluatorFactory<double>;
 
 }

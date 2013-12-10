@@ -132,14 +132,14 @@
 namespace panzer_stk {
 
   template<typename ScalarT>
-  void ModelEvaluatorFactory_Epetra<ScalarT>::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
+  void ModelEvaluatorFactory<ScalarT>::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
   {
     paramList->validateParametersAndSetDefaults(*this->getValidParameters());
     this->setMyParamList(paramList);
   }
 
   template<typename ScalarT>
-  Teuchos::RCP<const Teuchos::ParameterList> ModelEvaluatorFactory_Epetra<ScalarT>::getValidParameters() const
+  Teuchos::RCP<const Teuchos::ParameterList> ModelEvaluatorFactory<ScalarT>::getValidParameters() const
   {
     static Teuchos::RCP<const Teuchos::ParameterList> validPL;
     if (is_null(validPL)) {
@@ -186,7 +186,7 @@ namespace panzer_stk {
   }
 
   template<typename ScalarT>
-  void  ModelEvaluatorFactory_Epetra<ScalarT>::buildObjects(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+  void  ModelEvaluatorFactory<ScalarT>::buildObjects(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
 							    const Teuchos::RCP<panzer::GlobalData>& global_data,
                                                             const Teuchos::RCP<const panzer::EquationSetFactory>& eqset_factory,
                                                             const panzer::BCStrategyFactory & bc_factory,
@@ -664,7 +664,7 @@ namespace panzer_stk {
 
   //! build STK mesh from a mesh parameter list
   template<typename ScalarT>
-  Teuchos::RCP<panzer_stk::STK_MeshFactory> ModelEvaluatorFactory_Epetra<ScalarT>::buildSTKMeshFactory(const Teuchos::ParameterList & mesh_params) const
+  Teuchos::RCP<panzer_stk::STK_MeshFactory> ModelEvaluatorFactory<ScalarT>::buildSTKMeshFactory(const Teuchos::ParameterList & mesh_params) const
   {
     Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory;
 
@@ -744,7 +744,7 @@ namespace panzer_stk {
   }
 
   template<typename ScalarT>
-  void ModelEvaluatorFactory_Epetra<ScalarT>::finalizeMeshConstruction(const STK_MeshFactory & mesh_factory,
+  void ModelEvaluatorFactory<ScalarT>::finalizeMeshConstruction(const STK_MeshFactory & mesh_factory,
                                                                        const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                                                                        const Teuchos::MpiComm<int> mpi_comm,
                                                                        STK_Interface & mesh) const
@@ -791,7 +791,7 @@ namespace panzer_stk {
 
 
   template<typename ScalarT>
-  Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > ModelEvaluatorFactory_Epetra<ScalarT>::getPhysicsModelEvaluator()
+  Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > ModelEvaluatorFactory<ScalarT>::getPhysicsModelEvaluator()
   {
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(m_physics_me), std::runtime_error,
 		       "Objects are not built yet!  Please call buildObjects() member function.");
@@ -799,19 +799,19 @@ namespace panzer_stk {
   }
 
   template<typename ScalarT>
-  void ModelEvaluatorFactory_Epetra<ScalarT>::setNOXObserverFactory(const Teuchos::RCP<const panzer_stk::NOXObserverFactory>& nox_observer_factory)
+  void ModelEvaluatorFactory<ScalarT>::setNOXObserverFactory(const Teuchos::RCP<const panzer_stk::NOXObserverFactory>& nox_observer_factory)
   {
     m_nox_observer_factory = nox_observer_factory;
   }
 
   template<typename ScalarT>
-  void ModelEvaluatorFactory_Epetra<ScalarT>::setRythmosObserverFactory(const Teuchos::RCP<const panzer_stk::RythmosObserverFactory>& rythmos_observer_factory)
+  void ModelEvaluatorFactory<ScalarT>::setRythmosObserverFactory(const Teuchos::RCP<const panzer_stk::RythmosObserverFactory>& rythmos_observer_factory)
   {
     m_rythmos_observer_factory = rythmos_observer_factory;
   }
 
   template<typename ScalarT>
-  Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > ModelEvaluatorFactory_Epetra<ScalarT>::getResponseOnlyModelEvaluator()
+  Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > ModelEvaluatorFactory<ScalarT>::getResponseOnlyModelEvaluator()
   {
     if(m_rome_me==Teuchos::null)
       m_rome_me = buildResponseOnlyModelEvaluator(m_physics_me,m_global_data);
@@ -820,7 +820,7 @@ namespace panzer_stk {
   }
 
   template<typename ScalarT>
-  Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > ModelEvaluatorFactory_Epetra<ScalarT>::
+  Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > ModelEvaluatorFactory<ScalarT>::
   buildResponseOnlyModelEvaluator(const Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > & thyra_me,
  		                  const Teuchos::RCP<panzer::GlobalData>& global_data,
                                   const Teuchos::RCP<Piro::RythmosSolver<ScalarT> > rythmosSolver)
@@ -894,7 +894,7 @@ namespace panzer_stk {
   }
 
   template<typename ScalarT>
-  Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > ModelEvaluatorFactory_Epetra<ScalarT>::getResponseLibrary()
+  Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > ModelEvaluatorFactory<ScalarT>::getResponseLibrary()
   {
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(m_response_library), std::runtime_error,
 		       "Objects are not built yet!  Please call buildObjects() member function.");
@@ -903,7 +903,7 @@ namespace panzer_stk {
   }
 
   template<typename ScalarT>
-    const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & ModelEvaluatorFactory_Epetra<ScalarT>::getPhysicsBlocks() const
+    const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & ModelEvaluatorFactory<ScalarT>::getPhysicsBlocks() const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(m_physics_blocks.size()==0, std::runtime_error,
 		       "Objects are not built yet!  Please call buildObjects() member function.");
@@ -912,7 +912,7 @@ namespace panzer_stk {
   }
 
   template<typename ScalarT>
-  bool ModelEvaluatorFactory_Epetra<ScalarT>::determineCoordinateField(const panzer::UniqueGlobalIndexerBase & globalIndexer,std::string & fieldName) const
+  bool ModelEvaluatorFactory<ScalarT>::determineCoordinateField(const panzer::UniqueGlobalIndexerBase & globalIndexer,std::string & fieldName) const
   {
     std::vector<std::string> elementBlocks;
     globalIndexer.getElementBlockIds(elementBlocks);
@@ -943,7 +943,7 @@ namespace panzer_stk {
   }
 
   template<typename ScalarT>
-  void ModelEvaluatorFactory_Epetra<ScalarT>::fillFieldPatternMap(const panzer::UniqueGlobalIndexerBase & globalIndexer,
+  void ModelEvaluatorFactory<ScalarT>::fillFieldPatternMap(const panzer::UniqueGlobalIndexerBase & globalIndexer,
                                                                   const std::string & fieldName,
                                                                   std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const
   {
@@ -992,7 +992,7 @@ namespace panzer_stk {
 
   template<typename ScalarT>
   template<typename GO>
-  void ModelEvaluatorFactory_Epetra<ScalarT>::fillFieldPatternMap(const panzer::DOFManagerFEI<int,GO> & globalIndexer,
+  void ModelEvaluatorFactory<ScalarT>::fillFieldPatternMap(const panzer::DOFManagerFEI<int,GO> & globalIndexer,
                                                                   const std::string & fieldName,
                                                                   std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const
   {
@@ -1010,7 +1010,7 @@ namespace panzer_stk {
 
   template<typename ScalarT>
   template<typename GO>
-  void ModelEvaluatorFactory_Epetra<ScalarT>::fillFieldPatternMap(const panzer::DOFManager<int,GO> & globalIndexer,
+  void ModelEvaluatorFactory<ScalarT>::fillFieldPatternMap(const panzer::DOFManager<int,GO> & globalIndexer,
                                                                   const std::string & fieldName,
                                                                   std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const
   {
@@ -1027,7 +1027,7 @@ namespace panzer_stk {
   }
 
   template<typename ScalarT>
-  void ModelEvaluatorFactory_Epetra<ScalarT>::addVolumeResponses(panzer::ResponseLibrary<panzer::Traits> & rLibrary,
+  void ModelEvaluatorFactory<ScalarT>::addVolumeResponses(panzer::ResponseLibrary<panzer::Traits> & rLibrary,
                                                                  const panzer_stk::STK_Interface & mesh,
                                                                  const Teuchos::ParameterList & pl) const
   {
@@ -1059,7 +1059,7 @@ namespace panzer_stk {
   }
 
   template<typename ScalarT>
-  double ModelEvaluatorFactory_Epetra<ScalarT>::
+  double ModelEvaluatorFactory<ScalarT>::
   getInitialTime(Teuchos::ParameterList& p,
 		 const panzer_stk::STK_Interface & mesh) const
   {
@@ -1093,7 +1093,7 @@ namespace panzer_stk {
   // Setup STK response library for writing out the solution fields
   ////////////////////////////////////////////////////////////////////////
   template<typename ScalarT>
-  Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > ModelEvaluatorFactory_Epetra<ScalarT>::
+  Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > ModelEvaluatorFactory<ScalarT>::
   initializeSolnWriterResponseLibrary(const Teuchos::RCP<panzer::WorksetContainer> & wc,
                                       const Teuchos::RCP<panzer::UniqueGlobalIndexerBase> & ugi,
                                       const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof,
@@ -1113,7 +1113,7 @@ namespace panzer_stk {
   }
 
   template<typename ScalarT>
-  void ModelEvaluatorFactory_Epetra<ScalarT>::
+  void ModelEvaluatorFactory<ScalarT>::
   finalizeSolnWriterResponseLibrary(panzer::ResponseLibrary<panzer::Traits> & rl,
                                     const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                                     const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
@@ -1125,7 +1125,7 @@ namespace panzer_stk {
   }
 
   template<typename ScalarT>
-  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > ModelEvaluatorFactory_Epetra<ScalarT>::
+  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > ModelEvaluatorFactory<ScalarT>::
   buildLOWSFactory(bool blockedAssembly,
                    const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
                    const Teuchos::RCP<panzer::ConnManagerBase<int> > & conn_manager,
@@ -1147,7 +1147,7 @@ namespace panzer_stk {
 
   template<typename ScalarT>
   template<typename GO>
-  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > ModelEvaluatorFactory_Epetra<ScalarT>::
+  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > ModelEvaluatorFactory<ScalarT>::
   buildLOWSFactory(bool blockedAssembly,
                    const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
                    const Teuchos::RCP<panzer_stk::STKConnManager<GO> > & stkConn_manager,
@@ -1360,7 +1360,7 @@ namespace panzer_stk {
 
   template<typename ScalarT>
   template<typename GO>
-  void ModelEvaluatorFactory_Epetra<ScalarT>::
+  void ModelEvaluatorFactory<ScalarT>::
   writeTopology(const panzer::BlockedDOFManager<int,GO> & blkDofs) const
   {
     using Teuchos::RCP;
@@ -1386,7 +1386,7 @@ namespace panzer_stk {
 
   template<typename ScalarT>
   template <typename GO>
-  void ModelEvaluatorFactory_Epetra<ScalarT>::
+  void ModelEvaluatorFactory<ScalarT>::
   writeTopology(const panzer::DOFManagerFEI<int,GO> & dofs,const std::string & block,std::ostream & os) const
   {
     std::vector<std::string> fields(dofs.getElementBlockGIDCount(block));
@@ -1425,7 +1425,7 @@ namespace panzer_stk {
   }
 
   template<typename ScalarT>
-  void ModelEvaluatorFactory_Epetra<ScalarT>::
+  void ModelEvaluatorFactory<ScalarT>::
   buildResponses(const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
                  const bool write_graphviz_file,
                  const std::string& graphviz_file_prefix)
