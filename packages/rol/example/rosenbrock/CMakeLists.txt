@@ -1,17 +1,8 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  RosenbrockSTL
-  SOURCES rosenbrock_stl.cpp
-  ARGS PrintItAll
-  NUM_MPI_PROCS 1
-  PASS_REGULAR_EXPRESSION "TEST PASSED"
-  ADD_DIR_TO_NAME
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  RosenbrockTeuchos
-  SOURCES rosenbrock_teuchos.cpp
+  Rosenbrock
+  SOURCES example_01.cpp
   ARGS PrintItAll
   NUM_MPI_PROCS 1
   PASS_REGULAR_EXPRESSION "TEST PASSED"

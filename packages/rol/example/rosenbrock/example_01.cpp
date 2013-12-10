@@ -41,20 +41,21 @@
 // ************************************************************************
 // @HEADER
 
-
-/*! \file  test_01.cpp
-    \brief Test std::vector interface.
+/*! \file  example_01.cpp
+    \brief Shows how to minimize Rosenbrock's function using Newton-Krylov.
 */
 
-#include "ROL_StdVector.hpp"
-#include "ROL_Types.hpp"
+#define USE_HESSVEC 1
+
+#include "ROL_Rosenbrock.hpp"
+#include "ROL_LineSearchStep.hpp"
+#include "ROL_Algorithm.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include <iostream>
 
 typedef double RealT;
-typedef double ElementT;
 
 int main(int argc, char *argv[]) {
 
@@ -71,89 +72,69 @@ int main(int argc, char *argv[]) {
 
   int errorFlag  = 0;
 
-  double errtol = ROL::ROL_THRESHOLD;
-
-  // *** Test body.
+  // *** Example body.
 
   try {
 
-    int dim = 100;
-    Teuchos::RCP<std::vector<ElementT> > x_rcp = Teuchos::rcp( new std::vector<ElementT> (dim, 0.0) );
-    Teuchos::RCP<std::vector<ElementT> > y_rcp = Teuchos::rcp( new std::vector<ElementT> (dim, 0.0) );
-    ROL::StdVector<RealT, ElementT> x(x_rcp);
-    ROL::StdVector<RealT, ElementT> y(y_rcp);
+    ROL::Objective_Rosenbrock<RealT> obj;
+    int dim = 100; // Set problem dimension. Must be even.
 
-    // set x,y
-    for (int i=0; i<dim; i++) {
-      (*x_rcp)[i] = i;
-      (*y_rcp)[i] = 2.0;
+    Teuchos::ParameterList parlist;
+    // Enumerations
+    parlist.set("Descent Type",                           ROL::DESCENT_NEWTONKRYLOV);
+    parlist.set("Linesearch Type",                        ROL::LINESEARCH_CUBICINTERP);
+    parlist.set("Linesearch Curvature Condition",         ROL::CURVATURECONDITION_WOLFE);
+    // Linesearch Parameters
+    parlist.set("Maximum Number of Function Evaluations", 20);
+    parlist.set("Sufficient Decrease Parameter",          1.e-4);
+    parlist.set("Curvature Conditions Parameter",         0.9);
+    parlist.set("Backtracking Rate",                      0.5);
+    parlist.set("Initial Linesearch Parameter",           1.0);
+    parlist.set("User Defined Linesearch Parameter",      false);
+    // Krylov Parameters
+    parlist.set("Absolute Krylov Tolerance",              1.e-4);
+    parlist.set("Relative Krylov Tolerance",              1.e-2);
+    parlist.set("Maximum Number of Krylov Iterations",    10);
+    // Define Step
+    ROL::LineSearchStep<RealT> step(parlist);
+
+    // Define Status Test
+    RealT gtol  = 1e-14;  // norm of gradient tolerance
+    RealT stol  = 1e-12;  // norm of step tolerance
+    int   maxit = 100;    // maximum number of iterations
+    ROL::StatusTest<RealT> status(gtol, stol, maxit);    
+
+    // Define Algorithm
+    ROL::DefaultAlgorithm<RealT> algo(step,status,false);
+
+    // Iteration Vector
+    Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+    // Set Initial Guess
+    for (int i=0; i<dim/2; i++) {
+      (*x_rcp)[2*i]   = -1.2;
+      (*x_rcp)[2*i+1] =  1.0;
+    }
+    ROL::StdVector<RealT> x(x_rcp);
+
+    // Run Algorithm
+    std::vector<std::string> output = algo.run(x, obj, false);
+    for ( unsigned i = 0; i < output.size(); i++ ) {
+      std::cout << output[i];
     }
 
-    // norm of x
-    RealT xnorm = x.norm();
-    *outStream << "\nNorm of ROL::StdVector x: " << xnorm << "\n";
-
-    // norm of y
-    RealT ynorm = y.norm();
-    *outStream << "\nNorm of ROL::StdVector y: " << ynorm << "\n";
-
-    // scale x
-    x.scale(0.5);
-    RealT xnorm2 = x.norm();
-    *outStream << "\nNorm of half of x: " << xnorm2 << "\n";
-    if ( std::abs(xnorm/xnorm2 - 2.0) > errtol ) {
-      *outStream << "---> POSSIBLE ERROR ABOVE!\n";
-      errorFlag++;
-    };
-
-    // clone z from x, deep copy x into z, norm of z
-    Teuchos::RCP<ROL::Vector<RealT> > z = x.clone();
-    z->set(x);
-    RealT znorm = z->norm();
-    *outStream << "\nNorm of ROL::Vector z (clone of x): " << znorm << "\n";
-    if ( std::abs(xnorm2 - znorm) > errtol ) {
-      *outStream << "---> POSSIBLE ERROR ABOVE!\n";
-      errorFlag++;
-    };
-
-    // compute norm of x - x - 0
-    z->set(x);
-    x.scale(-1.0);
-    z->plus(x);
-    y.zero();
-    z->axpy(-1.0, y);
-    znorm = z->norm();
-    *outStream << "\nNorm of (x - x) - 0: " << znorm << "\n";
-    if ( std::abs(znorm) > errtol ) {
-      *outStream << "---> POSSIBLE ERROR ABOVE!\n";
-      errorFlag++;
-    };
-
-    // set x to first basis vector
-    z = x.basis(0);
-    znorm = z->norm();
-    *outStream << "\nNorm of ROL::Vector z (first basis vector): " << znorm << "\n";
-    if ( std::abs(znorm-1.0) > errtol ) {
-      *outStream << "---> POSSIBLE ERROR ABOVE!\n";
-      errorFlag++;
-    };
-    // set x to middle basis vector
-    z = x.basis(dim/2);
-    znorm = z->norm();
-    *outStream << "\nNorm of ROL::Vector z ('middle' basis vector): " << znorm << "\n";
-    if ( std::abs(znorm-1.0) > errtol ) {
-      *outStream << "---> POSSIBLE ERROR ABOVE!\n";
-      errorFlag++;
-    };
-    // set x to last basis vector
-    z = x.basis(dim-1);
-    znorm = z->norm();
-    *outStream << "\nNorm of ROL::Vector z (last basis vector): " << znorm << "\n";
-    if ( std::abs(znorm-1.0) > errtol ) {
-      *outStream << "---> POSSIBLE ERROR ABOVE!\n";
-      errorFlag++;
-    };
-
+    // Get True Solution
+    Teuchos::RCP<std::vector<RealT> > xtrue_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 1.0) );
+    ROL::StdVector<RealT> xtrue(xtrue_rcp);
+    
+    // Compute Error
+    x.axpy(-1.0, xtrue);
+    RealT abserr = x.norm();
+    RealT relerr = abserr/xtrue.norm();
+    *outStream << std::scientific << "\n   Absolute Error: " << abserr;
+    *outStream << std::scientific << "\n   Relative Error: " << relerr << "\n";
+    if ( relerr > sqrt(ROL::ROL_EPSILON) ) {
+      errorFlag += 1;
+    }
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

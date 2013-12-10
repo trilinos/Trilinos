@@ -1,7 +1,7 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  StdVectorInterface
+  LineSearch
   SOURCES test_01.cpp
   ARGS PrintItAll
   NUM_MPI_PROCS 1
@@ -11,7 +11,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 IF(${PROJECT_NAME}_ENABLE_Epetra)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    EpetraMultiVectorInterface
+    TrustRegion
     SOURCES test_02.cpp
     DEPLIBS epetra
     ARGS PrintItAll

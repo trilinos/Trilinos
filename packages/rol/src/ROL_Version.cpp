@@ -1,8 +1,8 @@
 // @HEADER
 // ************************************************************************
 //
-//                             ROL Package
-//                 Copyright (2013) Sandia Corporation
+//               Rapid Optimization Library (ROL) Package
+//                 Copyright (2014) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -34,8 +34,9 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Drew Kouri   (dpkouri@sandia.gov) and
-//                    Denis Ridzal (dridzal@sandia.gov).
+// Questions? Contact lead developers:
+//              Drew Kouri   (dpkouri@sandia.gov) and
+//              Denis Ridzal (dridzal@sandia.gov)
 //
 // ************************************************************************
 // @HEADER

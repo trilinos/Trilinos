@@ -1,7 +1,7 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Test_01
+  DerivativeCheck
   SOURCES test_01.cpp
   ARGS PrintItAll
   NUM_MPI_PROCS 1
