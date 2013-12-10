@@ -40,35 +40,35 @@
 //@HEADER
 */
 
-#include "Ifpack2_Amesos2solver_decl.hpp"
+#include "Ifpack2_Details_Amesos2Wrapper_decl.hpp"
 
 #ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
-#include "Ifpack2_Amesos2solver_def.hpp"
+#include "Ifpack2_Details_Amesos2Wrapper_def.hpp"
 #include "Ifpack2_ExplicitInstantiationHelpers.hpp"
 #include "Ifpack2_ETIHelperMacros.h"
 
 #if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_AMESOS2)
 
 namespace Ifpack2 {
+namespace Details {
 
-  #define LCLINST(S,LO,GO) \
-          IFPACK2_INST(Amesos2solver,S,LO,GO)
+#define LCLINST(S,LO,GO) IFPACK2_INST(Amesos2Wrapper,S,LO,GO)
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 
   IFPACK2_INSTANTIATE_SLG_REAL(LCLINST)
 
-  #if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
-  template class Amesos2solver<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
-  #endif
-
-  #if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
-  template class Amesos2solver<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >;
-  #endif
-
-}
-
-#endif // HAVE_IFPACK2_EXPERIMENTAL
-
+#if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
+  template class Amesos2Wrapper< Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
 #endif
+
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
+  template class Amesos2Wrapper< Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >;
+#endif
+
+} // namespace Details
+} // namespace Ifpack2
+
+#endif // HAVE_IFPACK2_EXPERIMENTAL && HAVE_IFPACK2_AMESOS2
+#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION

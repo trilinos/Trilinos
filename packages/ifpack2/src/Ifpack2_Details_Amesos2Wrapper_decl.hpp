@@ -40,22 +40,23 @@
 //@HEADER
 */
 
-/// \file Ifpack2_Amesos2solver_decl.hpp
-/// \brief Declaration of Amesos2 solver
+/// \file Ifpack2_Details_Amesos2Wrapper_decl.hpp
+/// \brief Declaration of wrapper for Amesos2 solvers
+///
+/// \warning This header file and its contents is an implementation
+///   detail of Ifpack2.  Users of Ifpack2 must NOT depend on this
+///   header file continuing to exist, on its name, or on any of its
+///   contents.
 
-#ifndef IFPACK2_AMESOS2SOLVER_DECL_HPP
-#define IFPACK2_AMESOS2SOLVER_DECL_HPP
+#ifndef IFPACK2_DETAILS_AMESOS2WRAPPER_DECL_HPP
+#define IFPACK2_DETAILS_AMESOS2WRAPPER_DECL_HPP
 
 #include <Ifpack2_ConfigDefs.hpp>
 #include <Ifpack2_Preconditioner.hpp>
 #include <Ifpack2_Details_CanChangeMatrix.hpp>
 
-#include <string>
-#include <sstream>
-#include <iostream>
-#include <cmath>
-
 #if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_AMESOS2)
+#include <Amesos2_config.h>
 #include <Amesos2.hpp>
 
 namespace Teuchos {
@@ -64,21 +65,29 @@ namespace Teuchos {
 }
 
 namespace Ifpack2 {
+namespace Details {
 
-/// \class Amesos2solver
+/// \class Amesos2Wrapper
+/// \tparam MatrixType A specialization of Tpetra::RowMatrix.
 ///
 /// This class computes a sparse direct factorization of a local
 /// matrix using Amesos2.
 ///
-/// The "local matrix" is the square diagonal block
-/// of the matrix owned by the calling process.  Thus, if the input
-/// matrix is distributed over multiple MPI processes, this
-/// preconditioner is equivalent to nonoverlapping additive Schwarz
-/// domain decomposition over the MPI processes, with Amesos2 as the
-/// subdomain solver on each process.
+/// The "local matrix" is the square diagonal block of the matrix
+/// owned by the calling process.  Thus, if the input matrix is
+/// distributed over multiple MPI processes, this preconditioner is
+/// equivalent to nonoverlapping additive Schwarz domain decomposition
+/// over the MPI processes, with Amesos2 as the subdomain Wrapper on
+/// each process.
 ///
+/// \warning (mfh 10 Dec 2013) I strongly object to the need for this
+///   class.  I will leave it in place because users need a way to
+///   specify a sparse direct solver as a subdomain solver for
+///   AdditiveSchwarz and SupportGraph.  It should be removed as soon
+///   as we have a Stratimikos-like central factory solution for
+///   solvers in the Tpetra-based solver stack.
 template<class MatrixType>
-class Amesos2solver :
+class Amesos2Wrapper :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
                                            typename MatrixType::local_ordinal_type,
                                            typename MatrixType::global_ordinal_type,
@@ -136,13 +145,8 @@ public:
   typedef Tpetra::Map<local_ordinal_type,
                       global_ordinal_type,
                       node_type> map_type;
-
-  typedef Tpetra::MultiVector<scalar_type,
-			      local_ordinal_type,
-			      global_ordinal_type,
-			      node_type> multivector_type;
   //@}
-  //! \name Constructors and Destructors
+  //! \name Constructors and destructor
   //@{
 
   /// \brief Constructor
@@ -150,19 +154,30 @@ public:
   /// \param A [in] The sparse matrix to factor, as a
   ///   Tpetra::RowMatrix.  (Tpetra::CrsMatrix inherits from this, so
   ///   you may use a Tpetra::CrsMatrix here instead.)
-  explicit Amesos2solver (const Teuchos::RCP<const row_matrix_type>& A);
+  explicit Amesos2Wrapper (const Teuchos::RCP<const row_matrix_type>& A);
 
   //! Destructor
-  virtual ~Amesos2solver();
+  virtual ~Amesos2Wrapper();
 
   //@}
   //! \name Methods for setting up and computing the factorization
   //@{
 
-  /// \brief Set solver parameters.
+  /// \brief Set parameters.
   void setParameters (const Teuchos::ParameterList& params);
 
-  /// \brief Clear any previously computed factors.
+  /// \brief Compute the preordering and symbolic factorization of the matrix.
+  ///
+  /// You must call this method before you may call compute() or
+  /// apply(), under the following conditions:
+  /// <ol>
+  /// <li> If you have not yet called initialize() before on this instance </li>
+  /// <li> If you have just called setMatrix() with a nonnull matrix </li>
+  /// <li> If the structure of the sparse matrix has changed </li>
+  /// </ol>
+  /// Please also see the documentation of compute() for the
+  /// conditions under which you must call compute() before calling
+  /// apply().
   void initialize ();
 
   //! Returns \c true if the preconditioner has been successfully initialized.
@@ -170,10 +185,20 @@ public:
     return IsInitialized_;
   }
 
-  //! Compute
+  /// \brief Compute the numeric factorization of the matrix.
+  ///
+  /// You must call this method before you may call apply(), under the
+  /// following conditions:
+  /// <ol>
+  /// <li> If you have not yet called compute() before on this instance </li>
+  /// <li> If the values in the sparse matrix has changed </li>
+  /// </ol>
+  /// Please also see the documentation of initialize() for the
+  /// conditions under which you must call initialize() before calling
+  /// compute() or apply().
   void compute();
 
-  //! If compute() is completed, this query returns true, otherwise it returns false.
+  //! True if compute() completed successfully, else false.
   inline bool isComputed() const {
     return IsComputed_;
   }
@@ -213,8 +238,19 @@ public:
 
   /// \brief Apply the preconditioner to X, resulting in Y.
   ///
+  /// If \f$M^{-1}\f$ represents the action of the preconditioner,
+  /// then this routine computes \f$Y := beta \cdot Y + alpha \cdot
+  /// Op(M^{-1}) X\f$, where \f$Op(M^{-1})\f$ can be either
+  /// \f$M^{-1}\f$, \f$M^{-T}\f$, or \f$M^{-H}\f$, depending on \c
+  /// mode.
+  ///
   /// \param X [in] Input multivector; "right-hand side" of the solve.
   /// \param Y [out] Output multivector; result of the solve.
+  /// \param mode [in] Whether to solve with the original matrix, its
+  ///   transpose, or its conjugate transpose.
+  /// \param alpha [in] Scaling factor for the result of applying the
+  ///   preconditioner.
+  /// \param alpha [in] Scaling factor for Y.
   void
   apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
          Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
@@ -223,13 +259,13 @@ public:
          scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! Tpetra::Map representing the domain of this operator.
-  Teuchos::RCP<const map_type> getDomainMap() const;
+  Teuchos::RCP<const map_type> getDomainMap () const;
 
   //! Tpetra::Map representing the range of this operator.
-  Teuchos::RCP<const map_type> getRangeMap() const;
+  Teuchos::RCP<const map_type> getRangeMap () const;
 
   //! Whether this object's apply() method can apply the transpose (or conjugate transpose, if applicable).
-  bool hasTransposeApply() const;
+  bool hasTransposeApply () const;
 
   //@}
   //! \name Mathematical functions
@@ -253,44 +289,46 @@ public:
   /// \brief Return the computed condition number estimate, or -1 if not computed.
   ///
   /// \warning This method is DEPRECATED.  See warning for computeCondEst().
-  virtual magnitude_type TEUCHOS_DEPRECATED getCondEst() const {
+  virtual magnitude_type TEUCHOS_DEPRECATED getCondEst () const {
     return Condest_;
   }
 
-  //! Returns the Tpetra::BlockMap object associated with the range of this matrix operator.
-  Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
+  //! The input matrix's communicator.
+  Teuchos::RCP<const Teuchos::Comm<int> > getComm () const;
 
-  //! Returns a reference to the matrix to be preconditioned.
-  Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > getMatrix() const;
+  //! The input matrix; the matrix to be preconditioned.
+  Teuchos::RCP<const row_matrix_type> getMatrix () const;
 
-  //! Returns the number of calls to Initialize().
-  int getNumInitialize() const;
+  //! The total number of successful calls to initialize().
+  int getNumInitialize () const;
 
-  //! Returns the number of calls to Compute().
-  int getNumCompute() const;
+  //! The total number of successful calls to compute().
+  int getNumCompute () const;
 
-  //! Returns the number of calls to apply().
-  int getNumApply() const;
+  //! The total number of successful calls to apply().
+  int getNumApply () const;
 
-  //! Returns the time spent in Initialize().
-  double getInitializeTime() const;
+  //! The total time in seconds spent in successful calls to initialize().
+  double getInitializeTime () const;
 
-  //! Returns the time spent in Compute().
-  double getComputeTime() const;
+  //! The total time in seconds spent in successful calls to compute().
+  double getComputeTime () const;
 
-  //! Returns the time spent in apply().
-  double getApplyTime() const;
+  //! The total time in seconds spent in successful calls to apply().
+  double getApplyTime () const;
 
   //@}
   //! \name Implementation of Teuchos::Describable
   //@{
 
-  /** \brief Return a simple one-line description of this object. */
-  std::string description() const;
+  //! A one-line description of this object.
+  std::string description () const;
 
-  /** \brief Print the object with some verbosity level to an FancyOStream object. */
-  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
-
+  //! Print the object with some verbosity level to the given output stream.
+  void
+  describe (Teuchos::FancyOStream &out,
+            const Teuchos::EVerbosityLevel verbLevel =
+            Teuchos::Describable::verbLevel_default) const;
   //@}
 
 private:
@@ -298,11 +336,14 @@ private:
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
   typedef typename Teuchos::Array<local_ordinal_type>::size_type size_type;
 
+  //! Type of the Tpetra::MultiVector specialization that this class uses.
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
+
   //! Copy constructor (declared private and undefined; may not be used)
-  Amesos2solver (const Amesos2solver<MatrixType>& RHS);
+  Amesos2Wrapper (const Amesos2Wrapper<MatrixType>& RHS);
 
   //! operator= (declared private and undefined; may not be used)
-  Amesos2solver<MatrixType>& operator= (const Amesos2solver<MatrixType>& RHS);
+  Amesos2Wrapper<MatrixType>& operator= (const Amesos2Wrapper<MatrixType>& RHS);
 
   /// \brief Construct the local matrix.
   ///
@@ -315,29 +356,27 @@ private:
   /// matrix is already "local," so this function just returns the
   /// original input.
   Teuchos::RCP<MatrixType>
-  makeLocalMatrix(Teuchos::RCP<const row_matrix_type> A);
+  makeLocalMatrix (const row_matrix_type& A);
 
-  //! pointer to Amesos2 solver object
-  Teuchos::RCP< Amesos2::Solver<MatrixType,multivector_type> > amesos2solver_;
+  //! Amesos2 solver.
+  Teuchos::RCP<Amesos2::Solver<MatrixType, MV> > amesos2solver_;
 
   //! The matrix to be preconditioned.
   Teuchos::RCP<const row_matrix_type> A_;
+
   //! "Local matrix" version of A_.
   Teuchos::RCP<MatrixType> A_local_;
-  //! local row map
-  Teuchos::RCP<map_type> localRowMap_;
 
   //@}
   // \name Parameters (set by setParameters())
   //@{
 
-  //! Condition number estimate
-  magnitude_type Condest_;
-
   //@}
   // \name Other internal data
   //@{
 
+  //! Condition number estimate (DEPRECATED; DO NOT USE)
+  magnitude_type Condest_;
   //! Total time in seconds for all successful calls to initialize().
   double InitializeTime_;
   //! Total time in seconds for all successful calls to compute().
@@ -355,9 +394,11 @@ private:
   //! \c true if \c this object has been computed
   bool IsComputed_;
   //@}
-}; // class Amesos2solver
+}; // class Amesos2Wrapper
 
+} // namespace Details
 } // namespace Ifpack2
 
 #endif // HAVE_IFPACK2_AMESOS2
-#endif /* IFPACK2_AMESOS2SOLVER_HPP */
+
+#endif // IFPACK2_DETAILS_AMESOS2WRAPPER_DECL_HPP
