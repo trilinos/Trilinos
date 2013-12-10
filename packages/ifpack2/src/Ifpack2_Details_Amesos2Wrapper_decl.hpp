@@ -68,7 +68,7 @@ namespace Ifpack2 {
 namespace Details {
 
 /// \class Amesos2Wrapper
-/// \tparam MatrixType A specialization of Tpetra::RowMatrix.
+/// \tparam MatrixType A specialization of Tpetra::CrsMatrix.
 ///
 /// This class computes a sparse direct factorization of a local
 /// matrix using Amesos2.
@@ -80,12 +80,29 @@ namespace Details {
 /// over the MPI processes, with Amesos2 as the subdomain Wrapper on
 /// each process.
 ///
+/// \warning This class is an implementation detail of Ifpack2.  Users
+///   must not rely on this class.  It may go away or its interface
+///   may change at any time.
+///
 /// \warning (mfh 10 Dec 2013) I strongly object to the need for this
 ///   class.  I will leave it in place because users need a way to
 ///   specify a sparse direct solver as a subdomain solver for
 ///   AdditiveSchwarz and SupportGraph.  It should be removed as soon
 ///   as we have a Stratimikos-like central factory solution for
 ///   solvers in the Tpetra-based solver stack.
+///
+/// \warning \c MatrixType <i>must</i> be a specialization of
+///   Tpetra::CrsMatrix.  It may <i>not</i> just be a specialization
+///   of Tpetra::RowMatrix.  This is a requirement of the interface of
+///   Amesos2.
+///
+/// \note This class does <i>not</i> apply a LocalFilter to the input
+///   matrix A.  This is unnecessary for subdomain solvers in
+///   AdditiveSchwarz, because AdditiveSchwarz already applies a
+///   LocalFilter to the matrix it passes to its subdomain solver.
+///   Furthermore, some Amesos2 sparse factorizations do support MPI
+///   parallelism, so it is reasonable to leave this option open to
+///   users, rather than forcing a LocalFilter.
 template<class MatrixType>
 class Amesos2Wrapper :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
@@ -345,27 +362,11 @@ private:
   //! operator= (declared private and undefined; may not be used)
   Amesos2Wrapper<MatrixType>& operator= (const Amesos2Wrapper<MatrixType>& RHS);
 
-  /// \brief Construct the local matrix.
-  ///
-  /// The "local matrix" excludes rows and columns that do not belong to
-  /// the calling process.  It also uses a "serial" communicator
-  /// (equivalent to MPI_COMM_SELF) rather than the matrix's original
-  /// communicator.
-  ///
-  /// If the matrix's communicator only contains one process, then the
-  /// matrix is already "local," so this function just returns the
-  /// original input.
-  Teuchos::RCP<MatrixType>
-  makeLocalMatrix (const row_matrix_type& A);
-
-  //! Amesos2 solver.
+  //! Amesos2 solver; it contains the factorization of the matrix A_.
   Teuchos::RCP<Amesos2::Solver<MatrixType, MV> > amesos2solver_;
 
   //! The matrix to be preconditioned.
-  Teuchos::RCP<const row_matrix_type> A_;
-
-  //! "Local matrix" version of A_.
-  Teuchos::RCP<MatrixType> A_local_;
+  Teuchos::RCP<const MatrixType> A_;
 
   //@}
   // \name Parameters (set by setParameters())

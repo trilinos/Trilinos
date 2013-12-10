@@ -62,8 +62,7 @@ namespace Details {
 template <class MatrixType>
 Amesos2Wrapper<MatrixType>::
 Amesos2Wrapper (const Teuchos::RCP<const row_matrix_type>& A) :
-  A_ (A),
-  Condest_ (-Teuchos::ScalarTraits<magnitude_type>::one ()),
+  Condest_ (-STM::one ()),
   InitializeTime_ (0.0),
   ComputeTime_ (0.0),
   ApplyTime_ (0.0),
@@ -72,7 +71,17 @@ Amesos2Wrapper (const Teuchos::RCP<const row_matrix_type>& A) :
   NumApply_ (0),
   IsInitialized_ (false),
   IsComputed_ (false)
-{}
+{
+  // The input matrix A (an instance of Tpetra::RowMatrix) must have
+  // type MatrixType (a specialization of Tpetra::CrsMatrix).
+  Teuchos::RCP<const MatrixType> A_crs =
+    Teuchos::rcp_dynamic_cast<const MatrixType> (A);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_crs.is_null (), std::invalid_argument, "Ifpack2::Details::Amesos2Wrapper "
+    "constructor: The input matrix A is not a Tpetra::CrsMatrix instance, "
+    "but it must be in order for Amesos2 to work correctly.");
+  A_ = A_crs;
+}
 
 template <class MatrixType>
 Amesos2Wrapper<MatrixType>::~Amesos2Wrapper()
@@ -191,23 +200,35 @@ computeCondEst (CondestType CT,
 template<class MatrixType>
 void Amesos2Wrapper<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
 {
-  // Check in serial or one-process mode if the matrix is square.
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    ! A.is_null () && A->getComm ()->getSize () == 1 &&
-    A->getNodeNumRows () != A->getNodeNumCols (),
-    std::runtime_error, "Ifpack2::Amesos2Wrapper::setMatrix: If A's communicator only "
-    "contains one process, then A must be square.  Instead, you provided a "
-    "matrix A with " << A->getNodeNumRows () << " rows and "
-    << A->getNodeNumCols () << " columns.");
-
   // It's legal for A to be null; in that case, you may not call
   // initialize() until calling setMatrix() with a nonnull input.
   // Regardless, setting the matrix invalidates any previous
   // factorization.
   IsInitialized_ = false;
   IsComputed_ = false;
-  A_local_ = Teuchos::null;
-  A_ = A;
+
+  if (A.is_null ()) {
+    A_ = Teuchos::null;
+  }
+  else {
+    // The input matrix A (an instance of Tpetra::RowMatrix) must have
+    // type MatrixType (a specialization of Tpetra::CrsMatrix).
+    Teuchos::RCP<const MatrixType> A_crs =
+      Teuchos::rcp_dynamic_cast<const MatrixType> (A);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      A_crs.is_null (), std::invalid_argument, "Ifpack2::Details::Amesos2Wrapper "
+      "constructor: The input matrix A is not a Tpetra::CrsMatrix instance, "
+      "but it must be in order for Amesos2 to work correctly.");
+    A_ = A_crs;
+  }
+
+  // FIXME (mfh 10 Dec 2013) Currently, initialize() recreates
+  // amesos2solver_ unconditionally, so this code won't have any
+  // effect.  Once we fix initialize() so that it keeps
+  // amesos2solver_, the code below will be effective.
+  if (! amesos2solver_.is_null ()) {
+    amesos2solver_->setA (A_);
+  }
 }
 
 
@@ -237,10 +258,6 @@ void Amesos2Wrapper<MatrixType>::initialize ()
     IsInitialized_ = false;
     IsComputed_ = false;
     Condest_ = -STM::one ();
-    A_local_ = Teuchos::null;
-
-    // Construct the local matrix.
-    A_local_ = makeLocalMatrix (*A_);
 
     // FIXME (10 Dec 2013) This (the Amesos2 solver type) should be a
     // run-time parameter through the input ParameterList.
@@ -257,7 +274,11 @@ void Amesos2Wrapper<MatrixType>::initialize ()
     solverType = "lapack";
 #endif
 
-    amesos2solver_ = Amesos2::create<MatrixType, MV> (solverType, A_local_);
+    // FIXME (10 Dec 2013) It shouldn't be necessary to recreate the
+    // solver each time, since Amesos2::Solver has a setA() method.
+    // See the implementation of setMatrix().
+
+    amesos2solver_ = Amesos2::create<MatrixType, MV> (solverType, A_);
     amesos2solver_->preOrdering ();
 
     // The symbolic factorization properly belongs to initialize(),
@@ -353,10 +374,12 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
       "Teuchos::TRANS) or conjugate transpose (Teuchos::CONJ_TRANS) is not "
       "implemented.");
 
-    // If beta != 0, create a temporary multivector Y_temp to hold the
-    // contents of alpha*M^{-1}*X.  Otherwise, alias Y_temp to Y.
-    RCP<MV> Y_temp;
-    Y_temp = rcp (new MV (Y.getMap (), Y.getNumVectors ()));
+    // If alpha != 1 or beta != 0, create a temporary multivector
+    // Y_temp to hold the contents of alpha*M^{-1}*X.  Otherwise,
+    // alias Y_temp to Y.
+    RCP<MV> Y_temp = (alpha != STS::one () || beta != STS::zero ()) ?
+      rcp (new MV (Y.getMap (), Y.getNumVectors ())) :
+      rcpFromRef (Y);
 
     // If X and Y are pointing to the same memory location, create an
     // auxiliary vector, X_temp, so that we don't clobber the input
@@ -368,40 +391,14 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
       X_temp = rcpFromRef (X);
     }
 
-    // FIXME (mfh 10 Dec 2013) LocalFilter would take care of all this.
-    // Replace this extraction stuff with use of LocalFilter.
-
-    // construct local vectors
-    size_t numvecs = X_temp->getNumVectors();
-    RCP<const map_type> globalRowMap = A_->getRowMap ();
-    const local_ordinal_type numRows = globalRowMap->getNodeNumElements ();
-    RCP<MV> localY = rcp (new MV (A_local_->getRowMap (), numvecs));
-    RCP<MV> localX = rcp (new MV (A_local_->getRowMap (), numvecs));
-    // extract values
-    for (size_t j = 0; j < numvecs; ++j) {
-      Teuchos::ArrayRCP<const scalar_type> vecj = X_temp->getData (j);
-      for(local_ordinal_type i = 0; i < numRows; ++i) {
-        localX->replaceLocalValue (i, j, vecj[i]);
-      }
-    }
-
-    // solve
-    amesos2solver_->setX (localY);
-    amesos2solver_->setB (localX);
+    // Use the precomputed factorization to solve.
+    amesos2solver_->setX (Y_temp);
+    amesos2solver_->setB (X_temp);
     amesos2solver_->solve ();
 
-    // FIXME (mfh 10 Dec 2013) LocalFilter would take care of all this.
-    // Replace this extraction stuff with use of LocalFilter.
-
-    // extract to global vector
-    for (size_t j = 0; j < localY->getNumVectors (); ++j) {
-      Teuchos::ArrayRCP<const scalar_type> localview = localY->getData (j);
-      for (unsigned int i = 0; i<globalRowMap->getNodeNumElements (); ++i) {
-        Y_temp->replaceLocalValue (i, j, localview[i]);
-      }
+    if (alpha != STS::one () || beta != STS::zero ()) {
+      Y.update (alpha, *Y_temp, beta);
     }
-
-    Y.update (alpha, *Y_temp, beta);
   } // Stop timing here.
 
   ++NumApply_;
@@ -472,63 +469,10 @@ describe (Teuchos::FancyOStream& out,
     out << "Total time in seconds for apply: " << getApplyTime () << endl;
 
     if (vl > Teuchos::VERB_LOW) {
-      out << "Local matrix:" << endl;
-      A_local_->describe (out, vl);
+      out << "Matrix:" << endl;
+      A_->describe (out, vl);
     }
   }
-}
-
-template <class MatrixType>
-Teuchos::RCP<MatrixType>
-Amesos2Wrapper<MatrixType>::makeLocalMatrix (const row_matrix_type& A)
-{
-  using Teuchos::Array;
-  using Teuchos::ArrayView;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-
-  // FIXME (mfh 10 Dec 2013) Why aren't you using LocalFilter here?
-
-  // local communicator
-  RCP<const Teuchos::Comm<int> > localComm;
-#ifdef HAVE_MPI
-  localComm = rcp (new Teuchos::MpiComm<int> (MPI_COMM_SELF));
-#else
-  localComm = rcp (new Teuchos::SerialComm<int> ());
-#endif
-
-  // get row map and setup local matrix
-  RCP<const map_type> globalRowMap = A.getRowMap ();
-  RCP<const map_type> globalColMap = A.getColMap ();
-  const local_ordinal_type numRows = globalRowMap->getNodeNumElements ();
-
-  RCP<const map_type> localRowMap =
-    rcp (new map_type (numRows, 0, localComm, Tpetra::GloballyDistributed,
-                       A.getNode ()));
-  RCP<MatrixType> Alocal = rcp (new MatrixType (localRowMap, localRowMap, 100));
-
-  // extract rows
-  for (local_ordinal_type i = 0; i < numRows; ++i) {
-    ArrayView<const local_ordinal_type> indices;
-    ArrayView<const scalar_type> values;
-    Array<local_ordinal_type> indices_vec;
-    Array<scalar_type> values_vec;
-
-    A.getLocalRowView (i, indices, values);
-    indices_vec.resize (0);
-    values_vec.resize (0);
-    for (unsigned int j = 0; j < indices.size (); ++j) {
-      const local_ordinal_type local_col = indices[j];
-      const global_ordinal_type global_col = globalColMap->getGlobalElement (local_col);
-      if (globalRowMap->isNodeGlobalElement (global_col)) {
-        indices_vec.push_back (globalRowMap->getLocalElement (global_col));
-        values_vec.push_back (values[j]);
-      }
-    }
-    Alocal->insertLocalValues (i, indices_vec (), values_vec ());
-  }
-  Alocal->fillComplete ();
-  return Alocal;
 }
 
 } // namespace Details
