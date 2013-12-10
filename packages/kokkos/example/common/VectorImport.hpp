@@ -54,7 +54,16 @@
 
 #include <WrapMPI.hpp>
 
-#if ! defined( KOKKOS_HAVE_MPI ) || 1
+namespace Kokkos {
+namespace Example {
+
+template< class CommMessageType , class CommIdentType , class VectorType >
+class VectorImport ;
+
+} // namespace Example
+} // namespace Kokkos
+
+#if ! defined( KOKKOS_HAVE_MPI )
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -62,7 +71,7 @@
 namespace Kokkos {
 namespace Example {
 
-template< class VectorType >
+template< class CommMessageType , class CommIdentType , class VectorType >
 struct VectorImport {
 
   const MPI_Comm comm ;
@@ -70,8 +79,11 @@ struct VectorImport {
   const unsigned count_receive ;
 
   VectorImport( MPI_Comm arg_comm ,
-                unsigned arg_count_owned ,
-                unsigned arg_count_receive )
+                const CommMessageType & ,
+                const CommMessageType & ,
+                const CommIdentType   & ,
+                const unsigned arg_count_owned ,
+                const unsigned arg_count_receive )
     : comm( arg_comm )
     , count_owned( arg_count_owned )
     , count_receive( arg_count_receive )
@@ -94,427 +106,148 @@ namespace Kokkos {
 namespace Example {
 
 template< class CommMessageType , class CommIdentType , class VectorType >
-struct VectorImport {
+class VectorImport {
+private:
+
+  // rank == 1 or array_layout == LayoutRight
+  enum { OK = Kokkos::Impl::StaticAssert<
+           ( VectorType::rank == 1 ) ||
+           Kokkos::Impl::is_same< typename VectorType::array_layout , Kokkos::LayoutRight >::value
+         >::value };
+
+  typedef typename VectorType::HostMirror HostVectorType ;
+
+  enum { ReceiveInPlace =
+    Kokkos::Impl::is_same< typename VectorType::memory_space ,
+                           typename HostVectorType::memory_space >::value };
+
+  const CommMessageType  recv_msg ;
+  const CommMessageType  send_msg ;
+  const CommIdentType    send_nodeid ;
+  VectorType             send_buffer ;
+  HostVectorType         host_send_buffer ;
+  HostVectorType         host_recv_buffer ;
+  unsigned               chunk ;
+
+public:
 
   const MPI_Comm         comm ;
-  const CommMessageType  recv_node ;
-  const CommMessageType  send_node ;
-  const CommIdentType    send_nodeid ;
   const unsigned         count_owned ;
   const unsigned         count_receive ;
 
+  struct Pack {
+    typedef typename VectorType::device_type device_type ;
+    const CommIdentType  index ;
+    const VectorType     source ;
+    const VectorType     buffer ;
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()( const unsigned i ) const
+      { buffer( i ) = source( index(i) ); }
+
+    Pack( const CommIdentType  & arg_index ,
+          const VectorType     & arg_source ,
+          const VectorType     & arg_buffer )
+      : index( arg_index )
+      , source( arg_source )
+      , buffer( arg_buffer )
+    {
+      Kokkos::parallel_for( index.dimension_0() , *this );
+      device_type::fence();
+    }
+  };
+
   VectorImport( MPI_Comm arg_comm ,
-                const CommMessageType & arg_recv_node ,
-                const CommMessageType & arg_send_node ,
+                const CommMessageType & arg_recv_msg ,
+                const CommMessageType & arg_send_msg ,
                 const CommIdentType   & arg_send_nodeid ,
                 const unsigned arg_count_owned ,
                 const unsigned arg_count_receive )
-    : comm( arg_comm )
-    , recv_node( arg_recv_node )
-    , send_node( arg_send_node )
+    : recv_msg( arg_recv_msg )
+    , send_msg( arg_send_msg )
     , send_nodeid( arg_send_nodeid )
+    , send_buffer()
+    , host_send_buffer()
+    , host_recv_buffer()
+    , comm( arg_comm )
     , count_owned( arg_count_owned )
     , count_receive( arg_count_receive )
-    {}
+    {
+      if ( ! ReceiveInPlace ) {
+        host_recv_buffer = HostVectorType("recv_buffer",count_receive);
+      }
+
+      unsigned send_count = 0 ;
+      for ( unsigned i = 0 ; i < send_msg.dimension_0() ; ++i ) { send_count += send_msg(i,1); }
+      send_buffer      = VectorType("send_buffer",send_count);
+      host_send_buffer = Kokkos::create_mirror_view( send_buffer );
+    }
 
   inline
   void operator()( const VectorType & v ) const
   {
-    // Post receives
+    typedef typename VectorType::scalar_type  scalar_type ;
 
+    const int mpi_tag = 42 ;
+    const unsigned chunk = v.dimension_1();
 
-  }
-};
+    // Subvector for receives
+    const std::pair<unsigned,unsigned> recv_range( count_owned , count_owned + count_receive );
+    const VectorType recv_vector = Kokkos::subview< VectorType >( v , recv_range );
 
-/** \brief  Parallel distributed data mapping
- *
- *  ordering { interior : { owned items not sent elsewhere }
- *             send     : { owned items sent }
- *             receive  : { not-owned items received } }
- *
- *  recv { { N ghosted items from process P : ( P , N ) } }
- *
- *  send { { N send items to process P : ( P , N ) } }
- *
- *  send_item { send item offsets within 'send' range }
- */
-struct ParallelDataMap {
-  typedef View< unsigned*[2], Serial >  host_recv_type ;
-  typedef View< unsigned*[2], Serial >  host_send_type ;
-  typedef View< unsigned* ,   Serial >  host_send_item_type ;
+    std::vector< MPI_Request > recv_request( recv_msg.dimension_0() , MPI_REQUEST_NULL );
 
-  comm::Machine        machine ;
-  host_recv_type       host_recv ;
-  host_send_type       host_send ;
-  host_send_item_type  host_send_item ;
-  unsigned             count_interior ;
-  unsigned             count_send ;
-  unsigned             count_owned ; // = count_interior + count_send
-  unsigned             count_receive ;
+    { // Post receives
+      scalar_type * ptr =
+        ReceiveInPlace ? recv_vector.ptr_on_device() : host_recv_buffer.ptr_on_device();
 
-  void assign( const unsigned arg_count_interior ,
-               const unsigned arg_count_owned ,
-               const unsigned arg_count_total ,
-               const unsigned arg_recv_msg ,
-               const unsigned arg_send_msg ,
-               const unsigned arg_send_count )
-  {
-    const std::string label("Kokkos::ParallelDataMap buffer");
+      for ( size_t i = 0 ; i < recv_msg.dimension_0() ; ++i ) {
+        const int proc  = recv_msg(i,0);
+        const int count = recv_msg(i,1) * chunk ;
 
-    count_interior = arg_count_interior ;
-    count_owned    = arg_count_owned ;
-    count_send     = arg_count_owned - arg_count_interior ;
-    count_receive  = arg_count_total - arg_count_owned ;
-
-    host_recv = host_recv_type( label , arg_recv_msg );
-    host_send = host_send_type( label , arg_send_msg );
-    host_send_item = host_send_item_type( label , arg_send_count );
-  }
-};
-
-//----------------------------------------------------------------------------
-//PackArray
-//----------------------------------------------------------------------------
-template< class ArrayType , class Rank = void >
-struct PackArray ;
-
-template< typename DeviceType, typename ValueType >
-struct PackArray< View< ValueType* , DeviceType > , void >
-{
-  typedef DeviceType                         device_type ;
-  typedef typename DeviceType::size_type     size_type ;
-  typedef View< ValueType* , device_type >  array_type ;
-  typedef View< ValueType* , device_type >  buffer_type ;
-
-private:
-
-  buffer_type  output ;
-  array_type   input ;
-  size_type    base ;
-
-public:
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( const size_type i ) const
-  { output[i] = input(base+i); }
-
-  inline
-  static
-  void pack( const buffer_type & arg_output ,
-             const size_type     arg_begin ,
-             const size_type     arg_count ,
-             const array_type  & arg_input )
-  {
-    PackArray op ;
-    op.output = arg_output ;
-    op.input  = arg_input ;
-    op.base   = arg_begin ;
-    parallel_for( arg_count , op );
-  }
-};
-
-template< typename DeviceType, typename ValueType , unsigned N1 >
-struct PackArray< View< ValueType*[N1] , DeviceType > , void >
-{
-  typedef DeviceType                                  device_type ;
-  typedef typename DeviceType::size_type              size_type ;
-  typedef View< ValueType*[N1] , device_type >       array_type ;
-  typedef View< ValueType* , device_type >           buffer_type ;
-
-private:
-
-  buffer_type  output ;
-  array_type   input ;
-  size_type    base ;
-
-public:
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( const size_type i ) const
-  {
-    for ( size_type j = 0 , k = i * N1 ; j < N1 ; ++j , ++k ) {
-      output[k] = input(base+i,j);
-    }
-  }
-
-  inline static
-  void pack( const buffer_type & arg_output ,
-             const size_type     arg_begin ,
-             const size_type     arg_count ,
-             const array_type  & arg_input )
-  {
-    if ( arg_count ) {
-      PackArray op ;
-      op.output = arg_output ;
-      op.input  = arg_input ;
-      op.base   = arg_begin ;
-      parallel_for( arg_count , op );
-    }
-  }
-};
-
-//----------------------------------------------------------------------------
-//UnpackArray
-//----------------------------------------------------------------------------
-template< class ArrayType , class Rank = void > struct UnpackArray ;
-
-template< typename DeviceType, typename ValueType >
-struct UnpackArray< View< ValueType* , DeviceType > , void >
-{
-  typedef DeviceType                         device_type ;
-  typedef typename DeviceType::size_type     size_type ;
-  typedef View< ValueType* , device_type >  array_type ;
-  typedef View< ValueType* , device_type >  buffer_type ;
-
-private:
-
-  array_type   output ;
-  buffer_type  input ;
-  size_type    base ;
-
-public:
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( const size_type i ) const
-  { output(base+i) = input[i]; }
-
-  inline
-  static
-  void unpack( const array_type  & arg_output ,
-               const buffer_type & arg_input ,
-               const size_type     arg_begin ,
-               const size_type     arg_count )
-  {
-    UnpackArray op ;
-    op.output = arg_output ;
-    op.input  = arg_input ;
-    op.base   = arg_begin ;
-    parallel_for( arg_count , op );
-  }
-};
-
-template< typename DeviceType, typename ValueType , unsigned N1 >
-struct UnpackArray< View< ValueType*[N1] , DeviceType > , void >
-{
-  typedef DeviceType                                  device_type ;
-  typedef typename DeviceType::size_type              size_type ;
-  typedef View< ValueType* , device_type >           buffer_type ;
-  typedef View< ValueType*[N1] , device_type >       array_type ;
-
-private:
-
-  array_type   output ;
-  buffer_type  input ;
-  size_type    base ;
-
-public:
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( const size_type i ) const
-  {
-    for ( size_type j = 0 , k = i * N1 ; j < N1 ; ++j , ++k ) {
-      output(base+i,j) = input(k);
-    }
-  }
-
-  inline
-  static
-  void unpack( const array_type  & arg_output ,
-               const buffer_type & arg_input ,
-               const size_type     arg_begin ,
-               const size_type     arg_count )
-  {
-    if ( arg_count ) {
-      UnpackArray op ;
-      op.output = arg_output ;
-      op.input  = arg_input ;
-      op.base   = arg_begin ;
-      parallel_for( arg_count , op );
-    }
-  }
-};
-//----------------------------------------------------------------------------
-
-template< class ValueType , class Device , class DataMap >
-class AsyncExchange ;
-
-} // namespace Example
-} // namespace Kokkos
-
-//----------------------------------------------------------------------------
-// Application call procedure:
-//
-// construct: AsyncExchange object
-// * pack send buffer on device
-// initiate: copy send buffer from device to host
-// * dispatch asynchronous local work
-// complete: send/receive on host, copy receive buffer to device
-// * unpack receive buffer on device
-// destroy: AsyncExchange object
-//
-//----------------------------------------------------------------------------
-
-namespace Kokkos {
-namespace Example {
-
-template< class ValueType , class Device >
-class AsyncExchange< ValueType, Device , Kokkos::ParallelDataMap > {
-public:
-
-  typedef Device                                    device_type ;
-  typedef Kokkos::ParallelDataMap                   data_map_type ;
-  typedef Kokkos::View< ValueType* , device_type >  buffer_dev_type ;
-  typedef typename buffer_dev_type::HostMirror      buffer_host_type ;
-
-private:
-
-  static const int mpi_tag = 11 ;
-
-  const data_map_type  data_map ;
-  unsigned             chunk_size ;
-  unsigned             send_count_max ;
-  buffer_host_type     host_recv_buffer ;
-  buffer_host_type     host_send_buffer ;
-  buffer_host_type     send_msg_buffer ;
-  buffer_dev_type      dev_buffer ;
-  buffer_dev_type      dev_send_buffer ; // Subview for send
-  buffer_dev_type      dev_recv_buffer ; // Subview for receive
-  std::vector< MPI_Request > recv_request ;
-
-public:
-
-  const buffer_dev_type & buffer() const { return dev_buffer ; }
-
-  AsyncExchange( const data_map_type & arg_data_map ,
-                 const size_t          arg_chunk )
-  : data_map( arg_data_map )
-  , chunk_size( arg_chunk )
-  , send_count_max( 0 )
-  , host_recv_buffer()
-  , host_send_buffer()
-  , send_msg_buffer()
-  , dev_buffer()
-  , dev_send_buffer()
-  , dev_recv_buffer()
-  , recv_request()
-  {
-    const size_t send_msg_count = arg_data_map.host_send.dimension_0();
-    const size_t recv_msg_count = arg_data_map.host_recv.dimension_0();
-
-    const size_t send_msg_length = arg_chunk * arg_data_map.count_send ;
-    const size_t recv_msg_length = arg_chunk * arg_data_map.count_receive ;
-
-    for ( size_t i = 0 ; i < send_msg_count ; ++i ) {
-      send_count_max = std::max( send_count_max ,
-                                 (unsigned) arg_data_map.host_send(i,1) );
-    }
-
-    // A single shared buffer on the device can be used for
-    // send and receive message buffers.
-    dev_buffer = buffer_dev_type(
-                     std::string("AsyncExchange dev_buffer") ,
-                     std::max( send_msg_length , recv_msg_length ) );
-
-    // Total send subview of the device buffer
-    dev_send_buffer =
-      Kokkos::subview< buffer_dev_type >( dev_buffer , std::pair<size_t,size_t>( 0 , send_msg_length ) );
-
-    // Total receive subview of the device buffer
-    dev_recv_buffer =
-      Kokkos::subview< buffer_dev_type >( dev_buffer , std::pair<size_t,size_t>( 0 , recv_msg_length ) );
-
-    // Total receive message buffer on the host:
-    host_recv_buffer = buffer_host_type(
-                           std::string("AsyncExchange host_recv_buffer") ,
-                           recv_msg_length );
-
-    // Total send message buffer on the host:
-    host_send_buffer = buffer_host_type(
-                           std::string("AsyncExchange host_send_buffer") ,
-                           send_msg_length );
-
-    // Individual send message buffer on the host:
-    send_msg_buffer = buffer_host_type(
-                          std::string("AsyncExchange send_msg_buffer") ,
-                          arg_chunk * send_count_max );
-
-    // MPI asynchronous receive request handles:
-    recv_request.assign( recv_msg_count , MPI_REQUEST_NULL );
-  }
-
-  //------------------------------------------------------------------------
-
-  void setup()
-  {
-    { // Post receives:
-      const size_t recv_msg_count = data_map.host_recv.dimension_0();
-
-      ValueType * ptr = host_recv_buffer.ptr_on_device();
-
-      for ( size_t i = 0 ; i < recv_msg_count ; ++i ) {
-        const int proc  = data_map.host_recv(i,0);
-        const int count = data_map.host_recv(i,1) * chunk_size ;
-
-        MPI_Irecv( ptr , count * sizeof(ValueType) , MPI_BYTE ,
-                   proc , mpi_tag , data_map.machine.mpi_comm ,
-                   & recv_request[i] );
+        MPI_Irecv( ptr , count * sizeof(scalar_type) , MPI_BYTE ,
+                   proc , mpi_tag , comm , & recv_request[i] );
 
         ptr += count ;
       }
     }
 
-    // Copy send buffer from the device to host memory for sending
+    MPI_Barrier( comm );
 
-    Kokkos::deep_copy( host_send_buffer , dev_send_buffer );
+    { // Pack and send 
+      const Pack pack( send_nodeid , v , send_buffer );
 
-    // Done with the device until communication is complete.
-    // Application can dispatch asynchronous work on the device.
-  }
+      Kokkos::deep_copy( host_send_buffer , send_buffer );
 
-  // Application can dispatch local work to device ...
-  // No communication progress until main thread calls 'send_receive'
+      scalar_type * ptr = host_send_buffer.ptr_on_device();
 
-  void send_receive()
-  {
-    const size_t recv_msg_count = data_map.host_recv.dimension_0();
-    const size_t send_msg_count = data_map.host_send.dimension_0();
+      for ( size_t i = 0 ; i < send_msg.dimension_0() ; ++i ) {
+        const int proc  = send_msg(i,0);
+        const int count = send_msg(i,1) * chunk ;
 
-    // Pack and send:
+        // MPI_Ssend blocks until
+        // (1) a receive is matched for the message and
+        // (2) the send buffer can be re-used.
+        //
+        // It is suggested that MPI_Ssend will have the best performance:
+        // http://www.mcs.anl.gov/research/projects/mpi/sendmode.html .
 
-    for ( size_t i = 0 , j = 0 ; i < send_msg_count ; ++i ) {
-      const int proc  = data_map.host_send(i,0);
-      const int count = data_map.host_send(i,1);
+        MPI_Ssend( ptr ,
+                   count * sizeof(scalar_type) , MPI_BYTE ,
+                   proc , mpi_tag , comm );
 
-      for ( int k = 0 , km = 0 ; k < count ; ++k , ++j ) {
-        const int km_end = km + chunk_size ;
-        int ki = chunk_size * data_map.host_send_item(j);
-
-        for ( ; km < km_end ; ++km , ++ki ) {
-          send_msg_buffer[km] = host_send_buffer[ki];
-        }
+        ptr += count ;
       }
-
-      // MPI_Ssend blocks until
-      // (1) a receive is matched for the message and
-      // (2) the send buffer can be re-used.
-      //
-      // It is suggested that MPI_Ssend will have the best performance:
-      // http://www.mcs.anl.gov/research/projects/mpi/sendmode.html .
-
-      MPI_Ssend( send_msg_buffer.ptr_on_device(),
-                 count * chunk_size * sizeof(ValueType) , MPI_BYTE ,
-                 proc , mpi_tag , data_map.machine.mpi_comm );
     }
 
     // Wait for receives and verify:
 
-    for ( size_t i = 0 ; i < recv_msg_count ; ++i ) {
+    for ( size_t i = 0 ; i < recv_msg.dimension_0() ; ++i ) {
       MPI_Status recv_status ;
       int recv_which = 0 ;
       int recv_size  = 0 ;
 
-      MPI_Waitany( recv_msg_count , & recv_request[0] ,
-                   & recv_which , & recv_status );
+      MPI_Waitany( recv_msg.dimension_0() , & recv_request[0] , & recv_which , & recv_status );
 
       const int recv_proc = recv_status.MPI_SOURCE ;
 
@@ -522,15 +255,19 @@ public:
 
       // Verify message properly received:
 
-      const int  expected_proc = data_map.host_recv(recv_which,0);
-      const int  expected_size = data_map.host_recv(recv_which,1) *
-                                 chunk_size * sizeof(ValueType);
+      const int  expected_proc = recv_msg(recv_which,0);
+      const int  expected_size = recv_msg(recv_which,1) * chunk * sizeof(scalar_type);
 
       if ( ( expected_proc != recv_proc ) ||
            ( expected_size != recv_size ) ) {
+
+        int local_rank  = 0 ;
+
+        MPI_Comm_rank( comm , & local_rank );
+
         std::ostringstream msg ;
-        msg << "AsyncExchange error:"
-            << " P" << comm::rank( data_map.machine )
+        msg << "VectorImport error:"
+            << " P" << local_rank
             << " received from P" << recv_proc
             << " size "     << recv_size
             << " expected " << expected_size
@@ -541,7 +278,7 @@ public:
 
     // Copy received data to device memory.
 
-    Kokkos::deep_copy( dev_recv_buffer , host_recv_buffer );
+    if ( ! ReceiveInPlace ) { Kokkos::deep_copy( recv_vector , host_recv_buffer ); }
   }
 };
 

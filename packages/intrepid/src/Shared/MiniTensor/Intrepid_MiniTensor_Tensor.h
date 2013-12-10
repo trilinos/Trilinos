@@ -463,7 +463,7 @@ Tensor<typename Promote<S, T>::type, N>
 dyad(Vector<S, N> const & u, Vector<T, N> const & v);
 
 ///
-/// Bun operator, just for Jay
+/// Bun operator, just for Jay, and now Reese too.
 /// \param u vector
 /// \param v vector
 /// \return \f$ u \otimes v \f$

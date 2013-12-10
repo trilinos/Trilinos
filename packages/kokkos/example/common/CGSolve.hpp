@@ -59,40 +59,6 @@
 namespace Kokkos {
 namespace Example {
 
-/* A * x => y */
-template< class SparseMatrixType , class VectorType >
-void multiply( const SparseMatrixType & A ,
-               const VectorType       & x ,
-               const VectorType       & y ,
-               typename Kokkos::Impl::enable_if<(
-                 Kokkos::is_view< VectorType >::value
-               )>::type * = 0 )
-{
-  typedef View< typename VectorType::data_type ,
-                typename VectorType::array_layout ,
-                typename VectorType::device_type ,
-                Kokkos::MemoryUnmanaged > RangeVectorType ;
-
-  typedef View< typename VectorType::const_data_type ,
-                typename VectorType::array_layout ,
-                typename VectorType::device_type ,
-                Kokkos::MemoryUnmanaged > DomainVectorType ;
-
-  // y = alpha * A * x + beta * y
-  // => alpha == 1 and beta == 0
-  Kokkos::MV_Multiply< RangeVectorType , SparseMatrixType , DomainVectorType >
-    ( 0 /*beta*/ , y , 1 /*alpha*/ , A , x );
-}
-
-} // namespace Example
-} // namespace Kokkos
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-namespace Kokkos {
-namespace Example {
-
 template< class ImportType , class SparseMatrixType , class VectorType , class TagType = void >
 struct CGSolve ;
 
@@ -136,7 +102,7 @@ struct CGSolve< ImportType , SparseMatrixType , VectorType ,
 
     /* p  = x       */  Kokkos::deep_copy( p , x );
     /* import p     */  import( pAll );
-    /* A * p  => Ap */  Kokkos::Example::multiply( A , pAll , Ap );
+    /* Ap = A * p   */  Kokkos::MV_Multiply( Ap , A , pAll );
     /* b - Ap => r  */  Kokkos::Example::waxpby( 1.0 , b , -1.0 , Ap , r );
     /* p  = r       */  Kokkos::deep_copy( p , r );
 
@@ -152,7 +118,7 @@ struct CGSolve< ImportType , SparseMatrixType , VectorType ,
       /* pAp_dot = dot( p , Ap = A * p ) */
 
       /* import p    */  import( pAll );
-      /* A * p => Ap */  Kokkos::Example::multiply( A , pAll , Ap );
+      /* Ap = A * p  */  Kokkos::MV_Multiply( Ap , A , pAll );
 
       const double pAp_dot = Kokkos::Example::all_reduce( Kokkos::Example::dot( p , Ap ) , import.comm );
       const double alpha   = old_rdot / pAp_dot ;

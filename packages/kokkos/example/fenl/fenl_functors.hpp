@@ -919,34 +919,20 @@ public:
 
 #if 0
 
-printf("ElemResidual { %f %f %f %f %f %f %f %f }\n",
-       elem_vec[0], elem_vec[1], elem_vec[2], elem_vec[3],
-       elem_vec[4], elem_vec[5], elem_vec[6], elem_vec[7]);
+if ( 1 == ielem ) {
+  printf("ElemResidual { %f %f %f %f %f %f %f %f }\n",
+         elem_vec[0], elem_vec[1], elem_vec[2], elem_vec[3],
+         elem_vec[4], elem_vec[5], elem_vec[6], elem_vec[7]);
 
-printf("ElemJacobian {\n  { %f %f %f %f %f %f %f %f }\n  { %f %f %f %f %f %f %f %f }\n  { %f %f %f %f %f %f %f %f }\n  { %f %f %f %f %f %f %f %f }\n  { %f %f %f %f %f %f %f %f }\n  { %f %f %f %f %f %f %f %f }\n  { %f %f %f %f %f %f %f %f }\n  { %f %f %f %f %f %f %f %f }\n}\n",
-       elem_mat[0][0], elem_mat[0][1], elem_mat[0][2], elem_mat[0][3],
-       elem_mat[0][4], elem_mat[0][5], elem_mat[0][6], elem_mat[0][7],
+  printf("ElemJacobian {\n");
 
-       elem_mat[1][0], elem_mat[1][1], elem_mat[1][2], elem_mat[1][3],
-       elem_mat[1][4], elem_mat[1][5], elem_mat[1][6], elem_mat[1][7],
-
-       elem_mat[2][0], elem_mat[2][1], elem_mat[2][2], elem_mat[2][3],
-       elem_mat[2][4], elem_mat[2][5], elem_mat[2][6], elem_mat[2][7],
-
-       elem_mat[3][0], elem_mat[3][1], elem_mat[3][2], elem_mat[3][3],
-       elem_mat[3][4], elem_mat[3][5], elem_mat[3][6], elem_mat[3][7],
-
-       elem_mat[4][0], elem_mat[4][1], elem_mat[4][2], elem_mat[4][3],
-       elem_mat[4][4], elem_mat[4][5], elem_mat[4][6], elem_mat[4][7],
-
-       elem_mat[5][0], elem_mat[5][1], elem_mat[5][2], elem_mat[5][3],
-       elem_mat[5][4], elem_mat[5][5], elem_mat[5][6], elem_mat[5][7],
-
-       elem_mat[6][0], elem_mat[6][1], elem_mat[6][2], elem_mat[6][3],
-       elem_mat[6][4], elem_mat[6][5], elem_mat[6][6], elem_mat[6][7],
-
-       elem_mat[7][0], elem_mat[7][1], elem_mat[7][2], elem_mat[7][3],
-       elem_mat[7][4], elem_mat[7][5], elem_mat[7][6], elem_mat[7][7] );
+  for ( unsigned j = 0 ; j < FunctionCount ; ++j ) {
+  printf("  { %f %f %f %f %f %f %f %f }\n",
+         elem_mat[j][0], elem_mat[j][1], elem_mat[j][2], elem_mat[j][3],
+         elem_mat[j][4], elem_mat[j][5], elem_mat[j][6], elem_mat[j][7]);
+  }
+  printf("}\n");
+}
 
 #endif
 

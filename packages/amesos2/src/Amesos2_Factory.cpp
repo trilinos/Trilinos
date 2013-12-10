@@ -83,7 +83,9 @@ namespace Amesos2 {
 
 #ifdef HAVE_AMESOS2_SUPERLU
     if((solverName == "amesos2_superlu") ||
-       (solverName == "superlu")){
+       (solverName == "superlu") ||
+       (solverName == "amesos2_superilu") ||
+       (solverName == "superilu")){
       return( true );
     }
 #endif

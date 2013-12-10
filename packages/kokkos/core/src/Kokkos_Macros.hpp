@@ -56,18 +56,17 @@ class CudaSpace ;
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#if defined( __CUDACC__ ) && ! defined( KOKKOS_HAVE_CUDA )
+#if defined( __CUDACC__ ) 
+
+// Compiling with CUDA compiler.
+
+#if ! defined( KOKKOS_HAVE_CUDA )
 #error "Compiling Kokkos with Cuda compiler but KOKKOS_HAVE_CUDA is undefined"
 #endif
 
-#if defined( _OPENMP ) && ! defined( KOKKOS_HAVE_OPENMP )
-#error "Compiling Kokkos for OpenMP but KOKKOS_HAVE_OPENMP is undefined"
+#if ! defined( KOKKOS_HAVE_CUDA_ARCH )
+#error "Compiling Kokkos with Cuda compiler but KOKKOS_HAVE_CUDA_ARCH is undefined"
 #endif
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-#if defined( __CUDACC__ ) 
 
 #include <cuda.h>
 
@@ -92,6 +91,10 @@ class CudaSpace ;
 //----------------------------------------------------------------------------
 
 #if defined( __CUDACC__ ) && defined( __CUDA_ARCH__ )
+
+#if ( __CUDA_ARCH__ != KOKKOS_HAVE_CUDA_ARCH )
+#error "Compiling Kokkos with Cuda compiler but __CUDA_ARCH__ != KOKKOS_HAVE_CUDA_ARCH"
+#endif
 
 /*  Compiling with CUDA compiler for device code. */
 
@@ -173,7 +176,11 @@ class CudaSpace ;
 
 #if defined( _OPENMP )
 
-/*  Compiling with in OpenMP mode.
+#if ! defined( KOKKOS_HAVE_OPENMP )
+#error "Compiling Kokkos for OpenMP but KOKKOS_HAVE_OPENMP is undefined"
+#endif
+
+/*  Compiling with OpenMP.
  *  The value of _OPENMP is an integer value YYYYMM
  *  where YYYY and MM are the year and month designation
  *  of the supported OpenMP API version.

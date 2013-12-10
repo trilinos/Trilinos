@@ -1423,7 +1423,7 @@ struct MV_MultiplyFunctor {
     static const int value = 1;
   };
 
-#ifdef KOKKOS_HAVE_CUDA
+#if defined(KOKKOS_HAVE_CUDA) && defined(KOKKOS_HAVE_CUDA_ARCH) && ( 300 <= KOKKOS_HAVE_CUDA_ARCH )
 
   template<>
   struct ThreadsPerRow<Kokkos::Cuda,unsigned int> {

@@ -103,6 +103,7 @@
 #endif
 #ifdef HAVE_AMESOS2_SUPERLU     // Sequential SuperLU
 #include "Amesos2_Superlu.hpp"
+#include "Amesos2_Superilu.hpp"
 #endif
 #ifdef HAVE_AMESOS2_PARDISO_MKL // MKL version of Pardiso
 #include "Amesos2_PardisoMKL.hpp"
@@ -534,6 +535,10 @@ struct throw_no_scalar_support_exception {
        (solverName == "superlu")){
       return handle_solver_type_support<Superlu,Matrix,Vector>::apply(A, X, B);
     }
+    if((solverName == "amesos2_superilu") ||
+       (solverName == "superilu")){
+      return handle_solver_type_support<Superilu,Matrix,Vector>::apply(A, X, B);
+    }    
 #endif
 
 #ifdef HAVE_AMESOS2_PARDISO_MKL
