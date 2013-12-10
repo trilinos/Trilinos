@@ -319,6 +319,6 @@ addResponse(const std::string & responseName,const std::vector<panzer::WorksetDe
 
 }
 
-#include "Panzer_STK_ModelEvaluatorFactory_Epetra_impl.hpp"
+// #include "Panzer_STK_ModelEvaluatorFactory_Epetra_impl.hpp"
 
 #endif
