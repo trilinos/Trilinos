@@ -796,6 +796,18 @@ TEUCHOS_UNIT_TEST(MiniTensor, MixedTypes)
   error = norm_f(A);
 
   TEST_COMPARE(error, <=, machine_epsilon<Real>());
+
+  A += C;
+
+  error = norm_f(A) - 3.0;
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+
+  A -= C;
+
+  error = norm_f(A);
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, SymmetricEigen2x2)
