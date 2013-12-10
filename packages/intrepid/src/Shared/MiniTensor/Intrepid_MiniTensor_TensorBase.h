@@ -242,22 +242,24 @@ norm_f_square(TensorBase<T, Store> const & X);
 ///
 /// Base addition
 ///
-template<typename R, typename S, typename T, typename Store>
+template<typename R, typename S, typename T, typename StoreR, typename StoreS,
+typename StoreT>
 void
 add(
-    TensorBase<R, Store> const & A,
-    TensorBase<S, Store> const & B,
-    TensorBase<T, Store> & C);
+    TensorBase<R, StoreR> const & A,
+    TensorBase<S, StoreS> const & B,
+    TensorBase<T, StoreT> & C);
 
 ///
 /// Base subtraction
 ///
-template<typename R, typename S, typename T, typename Store>
+template<typename R, typename S, typename T, typename StoreR, typename StoreS,
+typename StoreT>
 void
 subtract(
-    TensorBase<R, Store> const & A,
-    TensorBase<S, Store> const & B,
-    TensorBase<T, Store> & C);
+    TensorBase<R, StoreR> const & A,
+    TensorBase<S, StoreS> const & B,
+    TensorBase<T, StoreT> & C);
 
 ///
 /// Base minus
@@ -283,23 +285,23 @@ not_equal(TensorBase<T, Store> const & A, TensorBase<T, Store> const & B);
 ///
 /// Base scaling
 ///
-template<typename R, typename S, typename T, typename Store>
+template<typename R, typename S, typename T, typename StoreR, typename StoreT>
 void
-scale(TensorBase<R, Store> const & A, S const & s, TensorBase<T, Store> & B);
+scale(TensorBase<R, StoreR> const & A, S const & s, TensorBase<T, StoreT> & B);
 
 ///
 /// Base division
 ///
-template<typename R, typename S, typename T, typename Store>
+template<typename R, typename S, typename T, typename StoreR, typename StoreT>
 void
-divide(TensorBase<R, Store> const & A, S const & s, TensorBase<T, Store> & B);
+divide(TensorBase<R, StoreR> const & A, S const & s, TensorBase<T, StoreT> & B);
 
 ///
 /// Base split (scalar divided by tensor)
 ///
-template<typename R, typename S, typename T, typename Store>
+template<typename R, typename S, typename T, typename StoreR, typename StoreT>
 void
-split(TensorBase<R, Store> const & A, S const & s, TensorBase<T, Store> & B);
+split(TensorBase<R, StoreR> const & A, S const & s, TensorBase<T, StoreT> & B);
 
 } // namespace Intrepid
 
