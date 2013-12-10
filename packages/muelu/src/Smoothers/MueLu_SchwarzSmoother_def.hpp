@@ -256,6 +256,7 @@ namespace MueLu {
     else {
 
       prec_ = Amesos2::create<Tpetra_CrsMatrix,Tpetra_MultiVector>(type_, LocalA);
+      prec_ -> setParameters(Teuchos::rcpFromRef(paramList_));
       prec_ -> symbolicFactorization();
       prec_ -> numericFactorization();
       TEUCHOS_TEST_FOR_EXCEPTION(prec_ == Teuchos::null, Exceptions::RuntimeError, "Amesos2::create returns Teuchos::null");

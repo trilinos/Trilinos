@@ -381,12 +381,6 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
   }
   else if(Smoother_=="superilu") {
     precType_ = "superilu";
-    if(isSymmetric_==true) {
-      precList_.set("SymmetricMode", true);
-    }
-    else {
-      precList_.set("SymmetricMode", false);
-    }
     precList_.set("RowPerm", ilu_rowperm_);
     precList_.set("ColPerm", ilu_colperm_);
     precList_.set("DiagPivotThresh", ilu_diagpivotthresh_);
@@ -399,12 +393,6 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
   }
   else if(Smoother_=="superlu") {
     precType_ = "superlu";
-    if(isSymmetric_==true) {
-      precList_.set("SymmetricMode", true);
-    }
-    else {
-      precList_.set("SymmetricMode", false);
-    }
     precList_.set("ColPerm", ilu_colperm_);
     precList_.set("DiagPivotThresh", ilu_diagpivotthresh_);
   }
@@ -605,12 +593,6 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   }
   else if(Smoother_=="superilu") {
     precType_ = "superilu";
-    if(isSymmetric_==true) {
-      precList_.set("SymmetricMode", true);
-    }
-    else {
-      precList_.set("SymmetricMode", false);
-    }
     precList_.set("RowPerm", ilu_rowperm_);
     precList_.set("ColPerm", ilu_colperm_);
     precList_.set("DiagPivotThresh", ilu_diagpivotthresh_);
@@ -623,12 +605,6 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   }
   else if(Smoother_=="superlu") {
     precType_ = "superlu";
-    if(isSymmetric_==true) {
-      precList_.set("SymmetricMode", true);
-    }
-    else {
-      precList_.set("SymmetricMode", false);
-    }
     precList_.set("ColPerm", ilu_colperm_);
     precList_.set("DiagPivotThresh", ilu_diagpivotthresh_);
   }
