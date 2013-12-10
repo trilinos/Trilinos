@@ -455,6 +455,9 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
   stk::io::StkMeshIoBroker stkMeshIoBroker;
   stkMeshIoBroker.set_bulk_data(fixture.bulk_data);
 
+  size_t vol_mesh_index = std::numeric_limits<size_t>::max();
+  size_t surf_mesh_index = std::numeric_limits<size_t>::max();
+
   for (size_t time_step = 0; time_step < NUM_TIME_STEPS; ++time_step) {
 
     // Determine if it's time to separate a wedge
@@ -520,8 +523,6 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
     }
 
     //This section writes mesh data out to an exodus file:
-    size_t vol_mesh_index = std::numeric_limits<size_t>::max();
-    size_t surf_mesh_index = std::numeric_limits<size_t>::max();
     if (output_exodus_file) {
       // Write the output file at the first time step and every time the mesh is modified.
       const bool create_output_file = do_separate_wedge || !time_step;
@@ -530,8 +531,6 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
         std::ostringstream volume_out_filename;
         volume_out_filename << "volume_mesh_" << std::setw(7) << std::setfill('0') << time_step << ".e";
 
-//	surf_mesh.m_resultsFieldsDefined = true;
-//	vol_mesh.m_resultsFieldsDefined = true;
         vol_mesh_index = stkMeshIoBroker.create_output_mesh(volume_out_filename.str(), stk::io::WRITE_RESULTS);
 
         std::ostringstream surface_out_filename;
