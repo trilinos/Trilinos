@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
     parlist.set("Radius Shrinking Rate (Negative rho)", 0.0625);
     parlist.set("Radius Shrinking Rate (Positive rho)", 0.25);
     parlist.set("Radius Growing Rate",                  2.5);
-    parlist.set("Trust-Region Safeguard",               1.0);
+    parlist.set("Trust-Region Safeguard",               1e4);
     // CG Parameters
     parlist.set("Absolute CG Tolerance",                1.e-4);
     parlist.set("Relative CG Tolerance",                1.e-2);

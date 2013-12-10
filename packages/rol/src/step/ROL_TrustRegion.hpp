@@ -99,7 +99,7 @@ public:
     gamma0_ = parlist.get("Radius Shrinking Rate (Negative rho)", 0.0625);
     gamma1_ = parlist.get("Radius Shrinking Rate (Positive rho)", 0.25);
     gamma2_ = parlist.get("Radius Growing Rate",                  2.5);
-    TRsafe_ = parlist.get("Trust-Region Safeguard",               1.0);
+    TRsafe_ = parlist.get("Trust-Region Safeguard",               100.0);
     // CG Parameters
     if ( etr_ == TRUSTREGION_TRUNCATEDCG ) {
       maxit_ = parlist.get("Maximum Number of CG Iterations",     20);
@@ -160,7 +160,7 @@ public:
         }
         Real modelVal = Hs->dot(s);
         modelVal *= 0.5;
-        modelVal += gs;
+        modelVal += gs + fold;
         Real theta = (1.0-this->eta2_)*gs/((1.0-this->eta2_)*(fold+gs)+this->eta2_*modelVal-fnew);
         del  = std::min(this->gamma1_*snorm,std::max(this->gamma0_,theta)*del);
       }
