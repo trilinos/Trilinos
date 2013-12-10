@@ -348,7 +348,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
       << Y.getNumVectors () << " columns.");
 
     TEUCHOS_TEST_FOR_EXCEPTION(
-      ! mode != Teuchos::NO_TRANS, std::logic_error,
+      mode != Teuchos::NO_TRANS, std::logic_error,
       "Ifpack2::Amesos2Wrapper::apply: Solving with the transpose (mode == "
       "Teuchos::TRANS) or conjugate transpose (Teuchos::CONJ_TRANS) is not "
       "implemented.");
