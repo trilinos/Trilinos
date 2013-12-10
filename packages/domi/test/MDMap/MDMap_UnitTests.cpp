@@ -210,8 +210,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, pListDimensionsConstructor, T )
 
   // Construct a ParameterList
   Teuchos::ParameterList plist;
-  plist.set("axisCommSizes", axisCommSizes);
-  plist.set("dimensions"   , dims         );
+  plist.set("axis comm sizes", axisCommSizes);
+  plist.set("dimensions"     , dims         );
 
   // Construct an MDMap
   MDMap< T > mdMap(comm, plist);
@@ -448,8 +448,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, pListCommPadConstructor, T )
 
   // Construct a ParameterList
   Teuchos::ParameterList plist;
-  plist.set("dimensions", dims   );
-  plist.set("commPad"   , commPad);
+  plist.set("dimensions"       , dims   );
+  plist.set("communication pad", commPad);
 
   // Construct an MDMap
   MDMap< T > mdMap(mdComm, plist);
@@ -728,9 +728,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, pListBndryPadConstructor, T )
 
   // Construct a ParameterList
   Teuchos::ParameterList plist;
-  plist.set("axisCommSizes", axisCommSizes);
-  plist.set("dimensions"   , dims         );
-  plist.set("bndryPad"     , bndryPad     );
+  plist.set("axis comm sizes", axisCommSizes);
+  plist.set("dimensions"     , dims         );
+  plist.set("boundary pad"   , bndryPad     );
 
   // Construct an MDMap
   MDMap< T > mdMap(comm, plist);
@@ -1013,9 +1013,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDMap, pListPaddingConstructor, T )
 
   // Construct a ParameterList
   Teuchos::ParameterList plist;
-  plist.set("dimensions", dims    );
-  plist.set("commPad"   , commPad );
-  plist.set("bndryPad"  , bndryPad);
+  plist.set("dimensions"       , dims    );
+  plist.set("communication pad", commPad );
+  plist.set("boundary pad"     , bndryPad);
 
   // Construct an MDMap
   MDMap< T > mdMap(mdComm, plist);

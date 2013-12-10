@@ -162,7 +162,7 @@ TEUCHOS_UNIT_TEST( MDComm, pListConstructor )
   }
 
   Teuchos::ParameterList plist;
-  plist.set("axisCommSizes", axisCommSizes);
+  plist.set("axis comm sizes", axisCommSizes);
 
   MDComm mdComm(comm, plist);
 
@@ -198,8 +198,8 @@ TEUCHOS_UNIT_TEST( MDComm, pListConstructorPeriodic )
   periodic[0] = 1;
 
   Teuchos::ParameterList plist;
-  plist.set("axisCommSizes", axisCommSizes);
-  plist.set("periodic"     , periodic     );
+  plist.set("axis comm sizes", axisCommSizes);
+  plist.set("periodic"       , periodic     );
 
   // Construct an MDComm
   MDComm mdComm(comm, plist);

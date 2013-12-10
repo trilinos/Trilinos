@@ -896,7 +896,7 @@ MDMap(TeuchosCommRCP teuchosComm,
   // Copy the boundary padding sizes and compute the global dimensions
   // and bounds
   Teuchos::Array< int > bndryPad =
-    plist.get("bndryPad", Teuchos::Array< int >());
+    plist.get("boundary pad", Teuchos::Array< int >());
   _bndryPadSizes.resize(numDims);
   _globalDims.resize(numDims);
   for (int axis = 0; axis < numDims; ++axis)
@@ -914,7 +914,7 @@ MDMap(TeuchosCommRCP teuchosComm,
 
   // Copy the communication padding sizes and set the actual padding
   Teuchos::Array< int > commPad =
-    plist.get("commPad", Teuchos::Array< int >());
+    plist.get("communication pad", Teuchos::Array< int >());
   _commPadSizes.resize(numDims);
   for (int axis = 0; axis < numDims; ++axis)
   {
@@ -1002,7 +1002,7 @@ MDMap(MDCommRCP mdComm,
   // Copy the boundary padding sizes and compute the global dimensions
   // and bounds
   Teuchos::Array< int > bndryPad =
-    plist.get("bndryPad", Teuchos::Array< int >());
+    plist.get("boundary pad", Teuchos::Array< int >());
   for (int axis = 0; axis < numDims; ++axis)
   {
     if (axis < bndryPad.size())
@@ -1018,7 +1018,7 @@ MDMap(MDCommRCP mdComm,
 
   // Copy the communication padding sizes and set the actual padding
   Teuchos::Array< int > commPad =
-    plist.get("commPad", Teuchos::Array< int >());
+    plist.get("communication pad", Teuchos::Array< int >());
   for (int axis = 0; axis < numDims; ++axis)
   {
     if (axis < commPad.size())

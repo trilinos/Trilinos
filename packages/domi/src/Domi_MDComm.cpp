@@ -78,7 +78,7 @@ MDComm::MDComm(const TeuchosCommRCP teuchosComm,
 {
   // Set the communicator sizes along each axis
   Teuchos::Array< int > axisCommSizes =
-    plist.get("axisCommSizes", Teuchos::Array< int >());
+    plist.get("axis comm sizes", Teuchos::Array< int >());
   _axisCommSizes = regularizeAxisSizes(_teuchosComm->getSize(),
                                        axisCommSizes.size(),
                                        axisCommSizes());
