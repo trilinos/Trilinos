@@ -56,8 +56,6 @@ namespace MueLuTests {
 
 #include "MueLu_UseShortNames.hpp"
 
-  using namespace TestHelpers::Smoothers;
-
   TEUCHOS_UNIT_TEST(AmesosSmoother, NotSetup)
   {
     MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)
