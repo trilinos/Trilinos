@@ -47,6 +47,7 @@ APPEND_SET(HEADERS
   Domi_MDComm.hpp
   Domi_MDMap.hpp
   Domi_MDVector.hpp
+  Domi_getValidParameters.hpp
   )
 
 APPEND_SET(SOURCES
@@ -54,6 +55,7 @@ APPEND_SET(SOURCES
   Domi_Utils.cpp
   Domi_Slice.cpp
   Domi_MDComm.cpp
+  Domi_getValidParameters.cpp
   )
 
 #
