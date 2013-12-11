@@ -165,7 +165,6 @@ namespace Tpetra {
                EPrivateComputeViewConstructor /* dummy */) :
     DO (map),
     lclMV_ (localMultiVector)
-    view_ (source.view_)
   {
     const size_t localNumElts = map->getNodeNumElements ();
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -3063,14 +3062,5 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
-//
-// Explicit instantiation macro
-//
-// Must be expanded from within the Tpetra namespace!
-//
-
-#define TPETRA_MULTIVECTOR_INSTANT(SCALAR,LO,GO,NODE) \
-  \
-  template class MultiVector< SCALAR , LO , GO , NODE >; \
 
 #endif // TPETRA_KOKKOS_REFACTOR_MULTIVECTOR_DEF_HPP

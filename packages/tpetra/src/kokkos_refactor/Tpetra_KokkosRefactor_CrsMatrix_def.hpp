@@ -173,6 +173,7 @@ namespace Tpetra {
     staticGraph_ = myGraph_;
     resumeFill (params);
     checkInternalState();
+    std::cout<<"USING KokkosRefactor_CrsMatrix"<<std::endl;
   }
 
   template <class Scalar,
@@ -5185,52 +5186,5 @@ namespace Tpetra {
   }
 
 } // namespace Tpetra
-
-//
-// Explicit instantiation macro
-//
-// Must be expanded from within the Tpetra namespace!
-//
-
-#define TPETRA_CRSMATRIX_INSTANT(SCALAR,LO,GO,NODE) \
-  \
-  template class CrsMatrix< SCALAR , LO , GO , NODE >; \
-  template RCP< CrsMatrix< SCALAR , LO , GO , NODE > >   \
-                CrsMatrix< SCALAR , LO , GO , NODE >::convert< SCALAR > () const;
-
-#define TPETRA_CRSMATRIX_CONVERT_INSTANT(SO,SI,LO,GO,NODE) \
-  \
-  template RCP< CrsMatrix< SO , LO , GO , NODE > >   \
-                CrsMatrix< SI , LO , GO , NODE >::convert< SO > () const;
-
-#define TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(SCALAR, LO, GO, NODE) \
-  template<>                                                                        \
-  RCP<CrsMatrix<SCALAR, LO, GO, NODE> >                                \
-  importAndFillCompleteCrsMatrix (const RCP<const CrsMatrix<SCALAR, LO, GO, NODE> >& sourceMatrix, \
-                                  const Import<CrsMatrix<SCALAR, LO, GO, NODE>::local_ordinal_type,  \
-                                               CrsMatrix<SCALAR, LO, GO, NODE>::global_ordinal_type,  \
-                                               CrsMatrix<SCALAR, LO, GO, NODE>::node_type>& importer, \
-                                  const RCP<const Map<CrsMatrix<SCALAR, LO, GO, NODE>::local_ordinal_type,      \
-                                                               CrsMatrix<SCALAR, LO, GO, NODE>::global_ordinal_type,     \
-                                                               CrsMatrix<SCALAR, LO, GO, NODE>::node_type> >& domainMap, \
-                                  const RCP<const Map<CrsMatrix<SCALAR, LO, GO, NODE>::local_ordinal_type,      \
-                                                               CrsMatrix<SCALAR, LO, GO, NODE>::global_ordinal_type,     \
-                                                               CrsMatrix<SCALAR, LO, GO, NODE>::node_type> >& rangeMap,  \
-                                                               const RCP<Teuchos::ParameterList>& params);
-
-#define TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(SCALAR, LO, GO, NODE) \
-  template<>                                                                        \
-  RCP<CrsMatrix<SCALAR, LO, GO, NODE> >                                \
-  exportAndFillCompleteCrsMatrix (const RCP<const CrsMatrix<SCALAR, LO, GO, NODE> >& sourceMatrix, \
-                                  const Export<CrsMatrix<SCALAR, LO, GO, NODE>::local_ordinal_type,  \
-                                               CrsMatrix<SCALAR, LO, GO, NODE>::global_ordinal_type,  \
-                                               CrsMatrix<SCALAR, LO, GO, NODE>::node_type>& exporter, \
-                                  const RCP<const Map<CrsMatrix<SCALAR, LO, GO, NODE>::local_ordinal_type,      \
-                                                               CrsMatrix<SCALAR, LO, GO, NODE>::global_ordinal_type,     \
-                                                               CrsMatrix<SCALAR, LO, GO, NODE>::node_type> >& domainMap, \
-                                  const RCP<const Map<CrsMatrix<SCALAR, LO, GO, NODE>::local_ordinal_type,      \
-                                                               CrsMatrix<SCALAR, LO, GO, NODE>::global_ordinal_type,     \
-                                                               CrsMatrix<SCALAR, LO, GO, NODE>::node_type> >& rangeMap,  \
-                                                               const RCP<Teuchos::ParameterList>& params);
 
 #endif

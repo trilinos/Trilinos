@@ -243,7 +243,7 @@ Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::clone(const RCP<Node2> &node2
 
 // Include KokkosRefactor partial specialisation if enabled
 #if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-#include "Tpetra_KokkosRefactor_MultiVector.hpp"
+#include "Tpetra_KokkosRefactor_Vector_decl.hpp"
 #endif
 
 #endif // TPETRA_VECTOR_DECL_HPP

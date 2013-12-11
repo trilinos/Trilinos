@@ -2981,6 +2981,11 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
+// Include KokkosRefactor partial specialisation if enabled
+#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#include "Tpetra_KokkosRefactor_MultiVector_def.hpp"
+#endif
+
 //
 // Explicit instantiation macro
 //

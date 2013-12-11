@@ -3935,15 +3935,6 @@ namespace Tpetra {
 } // namespace Tpetra
 
 
-//
-// Explicit instantiation macro
-//
-// Must be expanded from within the Tpetra namespace!
-//
-
-#define TPETRA_CRSGRAPH_INSTANT(LO,GO,NODE) \
-  \
-  template class CrsGraph< LO , GO , NODE >; \
 
 
 #endif // TPETRA_CRSGRAPH_DEF_HPP
