@@ -48,10 +48,10 @@
 #include <limits>
 #include <Kokkos_View.hpp>
 #include <Kokkos_CrsMatrix.hpp>
+#include <Kokkos_MV.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
 #include <WrapMPI.hpp>
-#include <LinAlgBLAS.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -103,10 +103,10 @@ struct CGSolve< ImportType , SparseMatrixType , VectorType ,
     /* p  = x       */  Kokkos::deep_copy( p , x );
     /* import p     */  import( pAll );
     /* Ap = A * p   */  Kokkos::MV_Multiply( Ap , A , pAll );
-    /* b - Ap => r  */  Kokkos::Example::waxpby( 1.0 , b , -1.0 , Ap , r );
+    /* b - Ap => r  */  Kokkos::V_Add( r , 1.0 , b , -1.0 , Ap );
     /* p  = r       */  Kokkos::deep_copy( p , r );
 
-    double old_rdot = Kokkos::Example::all_reduce( Kokkos::Example::dot( r , r ) , import.comm );
+    double old_rdot = Kokkos::Example::all_reduce( Kokkos::V_Dot( r , r ) , import.comm );
 
     norm_res  = sqrt( old_rdot );
     iteration = 0 ;
@@ -120,16 +120,16 @@ struct CGSolve< ImportType , SparseMatrixType , VectorType ,
       /* import p    */  import( pAll );
       /* Ap = A * p  */  Kokkos::MV_Multiply( Ap , A , pAll );
 
-      const double pAp_dot = Kokkos::Example::all_reduce( Kokkos::Example::dot( p , Ap ) , import.comm );
+      const double pAp_dot = Kokkos::Example::all_reduce( Kokkos::V_Dot( p , Ap ) , import.comm );
       const double alpha   = old_rdot / pAp_dot ;
 
-      /* x +=  alpha * p ;  */ axpy(  alpha, p , x );
-      /* r += -alpha * Ap ; */ axpy( -alpha, Ap, r );
+      /* x +=  alpha * p ;  */ Kokkos::V_Add( x ,  alpha, p  , 1.0 , x );
+      /* r += -alpha * Ap ; */ Kokkos::V_Add( r , -alpha, Ap , 1.0 , r );
 
-      const double r_dot = Kokkos::Example::all_reduce( Kokkos::Example::dot( r , r ) , import.comm );
+      const double r_dot = Kokkos::Example::all_reduce( Kokkos::V_Dot( r , r ) , import.comm );
       const double beta  = r_dot / old_rdot ;
 
-      /* p = r + beta * p ; */ Kokkos::Example::xpby( r , beta , p );
+      /* p = r + beta * p ; */ Kokkos::V_Add( p , 1.0 , r , beta , p );
 
       norm_res = sqrt( old_rdot = r_dot );
 

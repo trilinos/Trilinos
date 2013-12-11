@@ -56,7 +56,6 @@
 // Examples headers:
 
 #include <BoxElemFixture.hpp>
-#include <LinAlgBLAS.hpp>
 #include <VectorImport.hpp>
 #include <CGSolve.hpp>
 
@@ -392,7 +391,7 @@ Perf fenl(
       const double residual_norm =
         std::sqrt(
           Kokkos::Example::all_reduce(
-            Kokkos::Example::dot( nodal_residual, nodal_residual ) , comm ) );
+            Kokkos::V_Dot( nodal_residual, nodal_residual ) , comm ) );
 
       perf.newton_residual = residual_norm ;
 
@@ -409,7 +408,7 @@ Perf fenl(
 
       // Update solution vector
 
-      Kokkos::Example::axpy( -1.0 , nodal_delta , nodal_solution );
+      Kokkos::V_Add( nodal_solution , -1.0 , nodal_delta , 1.0 , nodal_solution );
 
       perf.cg_iter_count += cgsolve.iteration ;
       perf.cg_time       += cgsolve.iter_time ;
@@ -420,7 +419,7 @@ Perf fenl(
         const double delta_norm =
           std::sqrt(
             Kokkos::Example::all_reduce(
-              Kokkos::Example::dot( nodal_delta, nodal_delta ) , comm ) );
+              Kokkos::V_Dot( nodal_delta, nodal_delta ) , comm ) );
 
         std::cout << "Newton iteration[" << perf.newton_iter_count << "]"
                   << " residual[" << perf.newton_residual << "]"
