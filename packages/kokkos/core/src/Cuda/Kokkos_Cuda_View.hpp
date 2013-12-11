@@ -129,15 +129,82 @@ cuda_texture_object_attach( const void * const )
 
 //----------------------------------------------------------------------------
 
-template< typename ValueType >
-struct CudaTextureFetch ;
+// Cuda Texture fetches can be performed for 4, 8 and 16 byte objects (int,int2,int4)
+// Via reinterpret_case this can be used to support all scalar types of those sizes.
+// Any other scalar type falls back to either normal reads out of global memory,
+// or using the __ldg intrinsic on Kepler GPUs or newer (Compute Capability >= 3.0)
 
-/** \brief  Cuda texture fetch is limited to a subset of Cuda types.
- *          Map commonly used types to the required subset of Cuda types.
- */
+template< typename T, size_t size = sizeof(T) >
+struct alias_type {
+  typedef void type;
+};
+
+template< typename T >
+struct alias_type<T,4> {
+  typedef int type;
+};
+
+template< typename T >
+struct alias_type<T,8> {
+  typedef int2 type;
+};
+
+template< typename T >
+struct alias_type<T,16> {
+  typedef int4 type;
+};
+
+template< typename ValueType, typename AliasType = typename alias_type<ValueType>::type >
+struct CudaTextureFetch {
+  private:
+
+    cuda_texture_object_type  obj ;
+
+  public:
+
+    const ValueType * ptr ;
+
+    KOKKOS_INLINE_FUNCTION
+    CudaTextureFetch() : obj( 0 ) , ptr( 0 ) {}
+
+    KOKKOS_INLINE_FUNCTION
+    ~CudaTextureFetch() {}
+
+    KOKKOS_INLINE_FUNCTION
+    CudaTextureFetch( const CudaTextureFetch & rhs )
+      : obj( rhs.obj ) , ptr( rhs.ptr ) {}
+
+    KOKKOS_INLINE_FUNCTION
+    CudaTextureFetch & operator = ( const CudaTextureFetch & rhs )
+      { obj = rhs.obj ; ptr = rhs.ptr ; return *this ; }
+
+    explicit
+    CudaTextureFetch( const ValueType * const base_view_ptr )
+      : obj( cuda_texture_object_attach<AliasType>( base_view_ptr ) )
+      , ptr( base_view_ptr ) {}
+
+    template< typename iType >
+    KOKKOS_INLINE_FUNCTION
+    double operator[]( const iType & i ) const
+    {
+  #if defined( __CUDA_ARCH__ ) && ( 300 <= __CUDA_ARCH__ )
+  // Enable the usage of the _ldg intrinsic even in cases where texture fetches work
+  // Currently texture fetches are faster, but that might change in the future
+  #ifdef KOKKOS_USE_LDG_INTRINSIC
+      return _ldg(&ptr[i]);
+  #else
+      AliasType v = tex1Dfetch<AliasType>( obj , i );
+
+      return  *(reinterpret_cast<ValueType*> (&v));
+  #endif
+  #else
+      return ptr[ i ];
+  #endif
+    }
+};
 
 template< typename ValueType >
-struct CudaTextureFetch< const ValueType > {
+struct CudaTextureFetch< const ValueType, void > {
 private:
 
   cuda_texture_object_type  obj ;
@@ -169,235 +236,11 @@ public:
   KOKKOS_INLINE_FUNCTION
   ValueType operator[]( const iType & i ) const
   {
-    return ptr[ i ];
-  }
-};
-
-template<>
-struct CudaTextureFetch< const int > {
-private:
-
-  cuda_texture_object_type  obj ;
-
-public:
-
-  const int * ptr ;
-
-  KOKKOS_INLINE_FUNCTION
-  CudaTextureFetch() : obj( 0 ) , ptr( 0 ) {}
-
-  KOKKOS_INLINE_FUNCTION
-  ~CudaTextureFetch() {}
-
-  KOKKOS_INLINE_FUNCTION
-  CudaTextureFetch( const CudaTextureFetch & rhs )
-    : obj( rhs.obj ) , ptr( rhs.ptr ) {}
-
-  KOKKOS_INLINE_FUNCTION
-  CudaTextureFetch & operator = ( const CudaTextureFetch & rhs )
-    { obj = rhs.obj ; ptr = rhs.ptr ; return *this ; }
-
-  explicit
-  CudaTextureFetch( const int * const base_view_ptr )
-    : obj( cuda_texture_object_attach<int>( base_view_ptr ) )
-    , ptr( base_view_ptr ) {}
-
-  template< typename iType >
-  KOKKOS_INLINE_FUNCTION
-  int operator[]( const iType & i ) const
-  {
-#if defined( __CUDA_ARCH__ ) && ( 300 <= __CUDA_ARCH__ )
-#ifdef KOKKOS_USE_LDG_INTRINSIC
+  #if defined( __CUDA_ARCH__ ) && ( 300 <= __CUDA_ARCH__ )
     return _ldg(&ptr[i]);
-#else
-    return tex1Dfetch<int>( obj , i );
-#endif
-#else
+  #else
     return ptr[ i ];
-#endif
-  }
-};
-
-template<>
-struct CudaTextureFetch< const unsigned int > {
-private:
-
-  cuda_texture_object_type  obj ;
-
-public:
-
-  const unsigned int * ptr ;
-
-  KOKKOS_INLINE_FUNCTION
-  CudaTextureFetch() : obj( 0 ) , ptr( 0 ) {}
-
-  KOKKOS_INLINE_FUNCTION
-  ~CudaTextureFetch() {}
-
-  KOKKOS_INLINE_FUNCTION
-  CudaTextureFetch( const CudaTextureFetch & rhs )
-    : obj( rhs.obj ) , ptr( rhs.ptr ) {}
-
-  KOKKOS_INLINE_FUNCTION
-  CudaTextureFetch & operator = ( const CudaTextureFetch & rhs )
-    { obj = rhs.obj ; ptr = rhs.ptr ; return *this ; }
-
-  explicit
-  CudaTextureFetch( const unsigned int * const base_view_ptr )
-    : obj( cuda_texture_object_attach<unsigned int>( base_view_ptr ) )
-    , ptr( base_view_ptr ) {}
-
-  template< typename iType >
-  KOKKOS_INLINE_FUNCTION
-  unsigned int operator[]( const iType & i ) const
-  {
-#if defined( __CUDA_ARCH__ ) && ( 300 <= __CUDA_ARCH__ )
-#ifdef KOKKOS_USE_LDG_INTRINSIC
-    return _ldg(&ptr[i]);
-#else
-    return tex1Dfetch<unsigned int>( obj , i );
-#endif
-#else
-    return ptr[ i ];
-#endif
-  }
-};
-
-template<>
-struct CudaTextureFetch< const float > {
-private:
-
-  cuda_texture_object_type  obj ;
-
-public:
-
-  const float * ptr ;
-
-  KOKKOS_INLINE_FUNCTION
-  CudaTextureFetch() : obj( 0 ) , ptr( 0 ) {}
-
-  KOKKOS_INLINE_FUNCTION
-  ~CudaTextureFetch() {}
-
-  KOKKOS_INLINE_FUNCTION
-  CudaTextureFetch( const CudaTextureFetch & rhs )
-    : obj( rhs.obj ) , ptr( rhs.ptr ) {}
-
-  KOKKOS_INLINE_FUNCTION
-  CudaTextureFetch & operator = ( const CudaTextureFetch & rhs )
-    { obj = rhs.obj ; ptr = rhs.ptr ; return *this ; }
-
-  explicit
-  CudaTextureFetch( const float * const base_view_ptr )
-    : obj( cuda_texture_object_attach<float>( base_view_ptr ) )
-    , ptr( base_view_ptr ) {}
-
-  template< typename iType >
-  KOKKOS_INLINE_FUNCTION
-  float operator[]( const iType & i ) const
-  {
-#if defined( __CUDA_ARCH__ ) && ( 300 <= __CUDA_ARCH__ )
-#ifdef KOKKOS_USE_LDG_INTRINSIC
-    return _ldg(&ptr[i]);
-#else
-    return tex1Dfetch<float>( obj , i );
-#endif
-#else
-    return ptr[ i ];
-#endif
-  }
-};
-
-template<>
-struct CudaTextureFetch< const double > {
-private:
-
-  cuda_texture_object_type  obj ;
-
-public:
-
-  const double * ptr ;
-
-  KOKKOS_INLINE_FUNCTION
-  CudaTextureFetch() : obj( 0 ) , ptr( 0 ) {}
-
-  KOKKOS_INLINE_FUNCTION
-  ~CudaTextureFetch() {}
-
-  KOKKOS_INLINE_FUNCTION
-  CudaTextureFetch( const CudaTextureFetch & rhs )
-    : obj( rhs.obj ) , ptr( rhs.ptr ) {}
-
-  KOKKOS_INLINE_FUNCTION
-  CudaTextureFetch & operator = ( const CudaTextureFetch & rhs )
-    { obj = rhs.obj ; ptr = rhs.ptr ; return *this ; }
-
-  explicit
-  CudaTextureFetch( const double * const base_view_ptr )
-    : obj( cuda_texture_object_attach<int2>( base_view_ptr ) )
-    , ptr( base_view_ptr ) {}
-
-  template< typename iType >
-  KOKKOS_INLINE_FUNCTION
-  double operator[]( const iType & i ) const
-  {
-#if defined( __CUDA_ARCH__ ) && ( 300 <= __CUDA_ARCH__ )
-#ifdef KOKKOS_USE_LDG_INTRINSIC
-    return _ldg(&ptr[i]);
-#else
-    int2 v = tex1Dfetch<int2>( obj , i );
-    return __hiloint2double(v.y, v.x);
-#endif
-#else
-    return ptr[ i ];
-#endif
-  }
-};
-
-template<>
-struct CudaTextureFetch< const double2 > {
-private:
-
-  cuda_texture_object_type  obj ;
-
-public:
-
-  const double2 * ptr ;
-
-  KOKKOS_INLINE_FUNCTION
-  CudaTextureFetch() : obj( 0 ) , ptr( 0 ) {}
-
-  KOKKOS_INLINE_FUNCTION
-  ~CudaTextureFetch() {}
-
-  KOKKOS_INLINE_FUNCTION
-  CudaTextureFetch( const CudaTextureFetch & rhs )
-    : obj( rhs.obj ) , ptr( rhs.ptr ) {}
-
-  KOKKOS_INLINE_FUNCTION
-  CudaTextureFetch & operator = ( const CudaTextureFetch & rhs )
-    { obj = rhs.obj ; ptr = rhs.ptr ; return *this ; }
-
-  explicit
-  CudaTextureFetch( const double2 * const base_view_ptr )
-    : obj( cuda_texture_object_attach<int4>( base_view_ptr ) )
-    , ptr( base_view_ptr ) {}
-
-  template< typename iType >
-  KOKKOS_INLINE_FUNCTION
-  double2 operator[]( const iType & i ) const
-  {
-#if defined( __CUDA_ARCH__ ) && ( 300 <= __CUDA_ARCH__ )
-#ifdef KOKKOS_USE_LDG_INTRINSIC
-    return _ldg(&ptr[i]);
-#else
-    int4 v = tex1Dfetch<int4>(tex_obj , idx);
-    double2 retval = { __hiloint2double(v.y, v.x) , __hiloint2double(v.w, v.z) };
-    return retval ;
-#endif
-#else
-    return ptr[ i ];
-#endif
+  #endif
   }
 };
 
