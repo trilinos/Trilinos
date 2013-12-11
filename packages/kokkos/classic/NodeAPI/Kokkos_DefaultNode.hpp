@@ -98,34 +98,19 @@ namespace Details {
 #ifdef KOKKOS_HAVE_CUDA
   template<>
   Teuchos::RCP< ::Kokkos::Compat::KokkosCudaWrapperNode>
-  getNode< ::Kokkos::Compat::KokkosCudaWrapperNode> () {
-    Teuchos::ParameterList defaultParams;
-    // This Node type knows how to handle multiple Node instances,
-    // so we don't have to keep a static instance around.
-    return Teuchos::rcp (new ::Kokkos::Compat::KokkosCudaWrapperNode (defaultParams));
-  }
+  getNode< ::Kokkos::Compat::KokkosCudaWrapperNode> ();
 #endif // KOKKOS_HAVE_CUDA
 
 #ifdef KOKKOS_HAVE_OPENMP
   template<>
   Teuchos::RCP< ::Kokkos::Compat::KokkosOpenMPWrapperNode>
-  getNode< ::Kokkos::Compat::KokkosOpenMPWrapperNode> () {
-    Teuchos::ParameterList defaultParams;
-    // This Node type knows how to handle multiple Node instances,
-    // so we don't have to keep a static instance around.
-    return Teuchos::rcp (new ::Kokkos::Compat::KokkosOpenMPWrapperNode (defaultParams));
-  }
+  getNode< ::Kokkos::Compat::KokkosOpenMPWrapperNode> ();
 #endif // KOKKOS_HAVE_OPENMP
 
 #ifdef KOKKOS_HAVE_PTHREAD
   template<>
   Teuchos::RCP< ::Kokkos::Compat::KokkosThreadsWrapperNode>
-  getNode< ::Kokkos::Compat::KokkosThreadsWrapperNode> () {
-    Teuchos::ParameterList defaultParams;
-    // This Node type knows how to handle multiple Node instances,
-    // so we don't have to keep a static instance around.
-    return Teuchos::rcp (new ::Kokkos::Compat::KokkosThreadsWrapperNode (defaultParams));
-  }
+  getNode< ::Kokkos::Compat::KokkosThreadsWrapperNode> ();
 #endif // KOKKOS_HAVE_PTHREAD
 
 #endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
@@ -163,9 +148,6 @@ namespace Details {
 
       //! \brief Return a pointer to the default node.
       static RCP<DefaultNodeType> getDefaultNode();
-
-    private:
-      static RCP<DefaultNodeType> node_;
   };
 
 } // namespace KokkosClassic
