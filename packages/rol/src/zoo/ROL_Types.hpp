@@ -552,8 +552,8 @@ namespace ROL {
 
 /*! \mainpage ROL Documentation (Development Version)
  
-  \image html rol.png
-  \image latex rol.jpg "Rapid Optimization Library" width=1in
+  \image html rol.png "Rapid Optimization Library" width=1in
+  \image latex rol.pdf "Rapid Optimization Library" width=1in
 
   \section intro_sec Introduction
 
@@ -563,34 +563,61 @@ namespace ROL {
   \section overview_sec Overview
 
   Current release of %ROL includes the following features:
-  \li Unconstrained.
+  \li Unconstrained optimization algorithms.
 
   \section quickstart_sec Quick Start
 
-  The following example demonstrates, in 2 steps, the use of %ROL.
+  The Rosenbrock example (rol/example/rosenbrock/example_01.cpp) demonstrates the use of %ROL.
+  It amounts to sixsteps:
 
-  \subsection vector_qs_sec Step 1: Define linear algebra / vector interface.
+  \subsection vector_qs_sec Step 1: Implement linear algebra / vector interface.
+  --- or try one of the provided implementations, such as ROL::StdVector in rol/vector.
   
   \code
       ROL::Vector
   \endcode
 
-  We additionally set the number of computational cells \c numCells.
-
-
-  \subsection objective_qs_sec Step 2: Define objective function.
+  \subsection objective_qs_sec Step 2: Implement objective function interface.
+  --- or try one of the provided functions, such as ROL::Objective_Rosenbrock in rol/zoo.
 
   \code
       ROL::Objective
   \endcode
 
+  \subsection step_qs_sec Step 3: Choose optimization step.
+  ---  with ParameterList settings in the variable parlist.
+
+  \code
+      ROL::LineSearchStep<RealT> step(parlist);
+  \endcode
+
+  \subsection status_qs_sec Step 4: Set status test.
+  ---  with gradient tolerance \textt{gtol}, step tolerance \texttt{stol} and the maximum
+  number of iterations \texttt{maxit}.
+
+  \code
+      ROL::StatusTest<RealT> status(gtol, stol, maxit);
+  \endcode
+
+  \subsection algo_qs_sec Step 5: Define an algorithm.
+  ---  based on the status test and the step.
+
+  \code
+      ROL::DefaultAlgorithm<RealT> algo(step,status);
+  \endcode
+
+  \subsection run_qs_sec Step 6: Run algorithm.
+  ---  starting from the initial iterate \textt{x}, applied to objective function \texttt{obj}.
+
+  \code
+      algo.run(x, obj);
+  \endcode
 
   \subsection done_qs_sec Done!
 
-
   \section devplans_sec Development Plans
 
-  The next release of %ROL is expected to ...
+  Constrained optimization, optimization under uncertainty, etc.
 */
   
 
