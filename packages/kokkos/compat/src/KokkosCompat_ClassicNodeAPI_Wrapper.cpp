@@ -1,5 +1,22 @@
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 #include <Kokkos_HostSpace.hpp>
+
+//static size_t KokkosHostWrapperNodeDUMMYINT = Kokkos::NEVEREVERUSEMEIWILLFINDYOU::host_space_singleton_wrapper().size();
+
+#ifdef KOKKOS_HAVE_CUDA
+  //static size_t KokkosCudaWrapperNodeDUMMYINT = Kokkos::Impl::cuda_internal_maximum_warp_count();
+  template<> int Kokkos::Compat::KokkosCudaWrapperNode::count = 0;// KokkosCudaWrapperNodeDUMMYINT;
+#endif
+
+#ifdef KOKKOS_HAVE_OPENMP
+  template<> int Kokkos::Compat::KokkosOpenMPWrapperNode::count = 0;
+#endif
+
+#ifdef KOKKOS_HAVE_PTHREAD
+  template<> int Kokkos::Compat::KokkosThreadsWrapperNode::count = 0;
+#endif
+
+
 namespace Kokkos {
   namespace Compat {
 
@@ -57,19 +74,16 @@ namespace Kokkos {
 //  Some TPetra Unit tests and possibly some codes have static Nodes
 //  Create a static node here in order to make sure that HostSpace is initialized first
 
-static size_t KokkosCudaWrapperNodeDUMMYINT = Kokkos::NEVEREVERUSEMEIWILLFINDYOU::host_space_singleton_wrapper().size();
-
+/*
 #ifdef KOKKOS_HAVE_CUDA
-  int Kokkos::Compat::KokkosCudaWrapperNode::count = 0;
-  static Kokkos::Compat::KokkosCudaWrapperNode CUDANODE_;
+  static Kokkos::Compat::KokkosCudaWrapperNode KOKKOSCUDANODE_;
 #endif
 
 #ifdef KOKKOS_HAVE_OPENMP
-  int Kokkos::Compat::KokkosOpenMPWrapperNode::count = 0;
-  static Kokkos::Compat::KokkosOpenMPWrapperNode OPENMPNODE_;
+  static Kokkos::Compat::KokkosOpenMPWrapperNode KOKKOSOPENMPNODE_;
 #endif
 
 #ifdef KOKKOS_HAVE_PTHREAD
-  int Kokkos::Compat::KokkosThreadsWrapperNode::count = 0;
+  static Kokkos::Compat::KokkosThreadsWrapperNode KOKKOSTHREADSNODE_;
 #endif
-
+*/
