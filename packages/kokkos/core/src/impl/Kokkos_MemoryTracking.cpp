@@ -109,7 +109,7 @@ MemoryTracking::MemoryTracking( const std::string & space )
 
 MemoryTracking::~MemoryTracking()
 {
-  const ptrdiff_t max =  std::numeric_limits<ptrdiff_t>::max();
+  const ptrdiff_t max = std::numeric_limits<ptrdiff_t>::max();
 
   try {
     if ( 1 < m_tracking.size() ) {
@@ -119,12 +119,20 @@ MemoryTracking::~MemoryTracking()
     else if ( 1 != m_tracking_end.size() || m_tracking_end.back() != max ) {
       std::cerr << m_space << " corrupted data structure" << std::endl ;
     }
+
+    // Deallocate memory within the try-catch block:
+    m_space        = std::string();
+    m_tracking     = std::vector<MemoryTrackingEntry*>();
+    m_tracking_end = std::vector<ptrdiff_t>();
+
   } catch( ... ) {}
 }
 
 void MemoryTracking::insert( MemoryTrackingEntry * entry )
 {
-  const ptrdiff_t max =  std::numeric_limits<ptrdiff_t>::max();
+  const ptrdiff_t max = std::numeric_limits<ptrdiff_t>::max();
+
+  const bool ok_exists = ! m_tracking_end.empty();
 
   const bool ok_range = entry &&
                         0 < entry->begin &&
@@ -133,7 +141,7 @@ void MemoryTracking::insert( MemoryTrackingEntry * entry )
 
   int i = -1 ;
 
-  if ( ok_range ) {
+  if ( ok_exists && ok_range ) {
 
     i = upper_bound( & m_tracking_end[0] , m_tracking_end.size() , entry->begin );
 
@@ -153,7 +161,7 @@ void MemoryTracking::insert( MemoryTrackingEntry * entry )
     }
   }
 
-  if ( ! ok_range || -1 == i ) {
+  if ( ! ok_exists || ! ok_range || -1 == i ) {
     std::ostringstream msg ;
     msg << "MemoryTracking(" << m_space << ")::insert( " ;
     entry->print( msg );
@@ -175,12 +183,21 @@ void MemoryTracking::increment( const void * ptr )
 {
   if ( ptr ) {
     const ptrdiff_t p = reinterpret_cast<ptrdiff_t>( ptr );
-    const int i = upper_bound( & m_tracking_end[0] , m_tracking_end.size() , p );
 
-    if ( m_tracking[i]->begin <= p ) {
-      ++( m_tracking[i]->m_count );
+    bool error = m_tracking_end.empty();
+
+    if ( ! error ) {
+
+      const int i = upper_bound( & m_tracking_end[0] , m_tracking_end.size() , p );
+
+      error = p < m_tracking[i]->begin ;
+
+      if ( ! error ) {
+        ++( m_tracking[i]->m_count );
+      }
     }
-    else {
+
+    if ( error ) {
       std::ostringstream msg ;
       msg << "MemoryTracking(" << m_space
           << ")::increment( " << p << " ) ERROR: Not being tracked" ;
@@ -193,22 +210,29 @@ void MemoryTracking::decrement( const void * ptr )
 {
   if ( ptr ) {
     const ptrdiff_t p = reinterpret_cast<ptrdiff_t>( ptr );
-    const int i = upper_bound( & m_tracking_end[0] , m_tracking_end.size() , p );
 
-    if ( m_tracking[i]->begin <= p ) {
-      if ( 0 == --( m_tracking[i]->m_count ) ) {
+    bool error = m_tracking_end.empty();
 
+    if ( ! error ) {
+
+      const int i = upper_bound( & m_tracking_end[0] , m_tracking_end.size() , p );
+
+      error = p < m_tracking[i]->begin ;
+
+      if ( ! error && ( 0 == --( m_tracking[i]->m_count ) ) ) {
         delete m_tracking[i] ;
 
         m_tracking.erase(     m_tracking.begin() + i );
         m_tracking_end.erase( m_tracking_end.begin() + i );
       }
     }
-    else {
+
+    if ( error ) {
       std::ostringstream msg ;
       msg << "MemoryTracking(" << m_space
-          << ")::decrement( " << p << " ) ERROR: Not being tracked" ;
-      throw_runtime_exception( msg.str() );
+          << ")::decrement( " << p << " ) ERROR: Not being tracked" 
+          << std::endl ;
+      std::cerr << msg.str();
     }
   }
 }
@@ -218,7 +242,7 @@ MemoryTracking::query( const void * ptr ) const
 {
   MemoryTrackingEntry * result = 0 ;
 
-  if ( ptr ) {
+  if ( ptr && ! m_tracking_end.empty() ) {
     const ptrdiff_t p = reinterpret_cast<ptrdiff_t>( ptr );
 
     const int i = upper_bound( & m_tracking_end[0] , m_tracking_end.size() , p );
@@ -232,7 +256,7 @@ MemoryTracking::query( const void * ptr ) const
 void MemoryTracking::print( std::ostream & s , const std::string & lead ) const
 {
   // Don't print the sentinal value:
-  const size_t n = m_tracking.size() - 1 ;
+  const size_t n = m_tracking.empty() ? 0 : m_tracking.size() - 1 ;
 
   for ( size_t i = 0 ; i < n ; ++i ) {
     s << lead ;

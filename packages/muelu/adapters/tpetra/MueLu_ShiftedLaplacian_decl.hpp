@@ -100,12 +100,14 @@ namespace MueLu {
 
     //! Constructors
     ShiftedLaplacian()
-      : Problem_("acoustic"), numPDEs_(1), Smoother_("riluk"), Aggregation_("coupled"), Nullspace_("constant"), numLevels_(5), coarseGridSize_(100),
+      : Problem_("acoustic"), numPDEs_(1), Smoother_("schwarz"), Aggregation_("uncoupled"), Nullspace_("constant"), numLevels_(5), coarseGridSize_(100),
 	omega_(2.0*M_PI), ashift1_((SC) 0.0), ashift2_((SC) -1.0), pshift1_((SC) 0.0), pshift2_((SC) -1.0), iters_(500), blksize_(1),
 	tol_(1.0e-4), nsweeps_(5), ncycles_(1), FGMRESoption_(false), cycles_(8), subiters_(10), option_(1), nproblems_(0), solverType_(1),
-	overlap_level_(2), relaxation_sweeps_(4), relaxation_damping_((SC)1.0), krylov_type_(1), krylov_iterations_(5),
-	ilu_leveloffill_(2.0), ilu_abs_thresh_(0.0), ilu_rel_thresh_(1.0), ilu_drop_tol_(0.01), ilu_relax_val_(1.0),
-	schwarz_usereorder_(true), GridTransfersExist_(false), UseLaplacian_(true), VariableShift_(false),
+	relaxation_sweeps_(4), relaxation_damping_((SC)1.0), krylov_type_(1), krylov_iterations_(5), krylov_preconditioner_(1),
+	ilu_leveloffill_(5.0), ilu_abs_thresh_(0.0), ilu_rel_thresh_(1.0), ilu_diagpivotthresh_(0.1), ilu_drop_tol_(0.01), ilu_fill_tol_(0.01), ilu_relax_val_(1.0),
+	ilu_rowperm_("LargeDiag"), ilu_colperm_("COLAMD"), ilu_drop_rule_("DROP_BASIC"), ilu_normtype_("INF_NORM"), ilu_milutype_("SILU"),
+	schwarz_overlap_(2), schwarz_usereorder_(true), schwarz_combinemode_(Tpetra::ZERO), schwarz_ordermethod_("rcm"),
+	GridTransfersExist_(false), UseLaplacian_(true), VariableShift_(false),
 	LaplaceOperatorSet_(false), ProblemMatrixSet_(false), PreconditioningMatrixSet_(false),
 	StiffMatrixSet_(false), MassMatrixSet_(false), DampMatrixSet_(false),
 	LevelShiftsSet_(false), isSymmetric_(true)
@@ -196,13 +198,18 @@ namespace MueLu {
     int    cycles_, subiters_, option_, nproblems_, solverType_;
 
     // Smoother parameters
-    int    overlap_level_;
     int    relaxation_sweeps_;
     Scalar relaxation_damping_;
     int    krylov_type_;
     int    krylov_iterations_;
-    double ilu_leveloffill_, ilu_abs_thresh_, ilu_rel_thresh_, ilu_drop_tol_, ilu_relax_val_;
+    int    krylov_preconditioner_;
+    double ilu_leveloffill_, ilu_abs_thresh_, ilu_rel_thresh_, ilu_diagpivotthresh_;
+    double ilu_drop_tol_, ilu_fill_tol_, ilu_relax_val_;
+    std::string ilu_rowperm_, ilu_colperm_, ilu_drop_rule_, ilu_normtype_, ilu_milutype_;
+    int    schwarz_overlap_;
     bool   schwarz_usereorder_;
+    Tpetra::CombineMode schwarz_combinemode_;
+    std::string schwarz_ordermethod_;
 
     // flags for setup
     bool GridTransfersExist_;

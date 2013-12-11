@@ -470,7 +470,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, InverseNxN)
   std::srand(std::time(NULL));
 
   Index const
-  N = static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX) * 7 + 4;
+  N = static_cast<Real>(std::rand()) / static_cast<Real>(RAND_MAX) * 7 + 4;
 
   Tensor<Real> const
   A = 2.0 * eye<Real>(N) + Tensor<Real>(N, RANDOM_UNIFORM);
@@ -492,7 +492,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, Inverse_4th_NxN)
   std::srand(std::time(NULL));
 
   Index const
-  N = static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX) * 2 + 2;
+  N = static_cast<Real>(std::rand()) / static_cast<Real>(RAND_MAX) * 2 + 2;
 
   Tensor4<Real> const
   A = 2.0 * identity_1<Real>(N) + Tensor4<Real>(N, RANDOM_UNIFORM);
@@ -747,18 +747,67 @@ TEUCHOS_UNIT_TEST(MiniTensor, SVD3x3)
 
 TEUCHOS_UNIT_TEST(MiniTensor, SVD3x3Fad)
 {
-  Tensor<Sacado::Fad::DFad<double> > A(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0,
+  Tensor<Sacado::Fad::DFad<Real> > A(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0,
       9.0);
 
-  Tensor<Sacado::Fad::DFad<double> > U(3), S(3), V(3);
+  Tensor<Sacado::Fad::DFad<Real> > U(3), S(3), V(3);
 
   boost::tie(U, S, V) = svd(A);
 
-  Tensor<Sacado::Fad::DFad<double> > B = U * S * transpose(V);
+  Tensor<Sacado::Fad::DFad<Real> > B = U * S * transpose(V);
 
-  Sacado::Fad::DFad<double> const error = norm(B - A) / norm(A);
+  Sacado::Fad::DFad<Real> const error = norm(B - A) / norm(A);
 
   TEST_COMPARE(error, <=, 100.0*machine_epsilon<Real>());
+}
+
+TEUCHOS_UNIT_TEST(MiniTensor, MixedTypes)
+{
+  Tensor<Sacado::Fad::DFad<Real> >
+  A(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0);
+
+  Tensor<Sacado::Fad::DFad<Real> > B(3, ONES);
+
+  Tensor<Real> C(3, ONES);
+
+  Real const
+  b = 1.0;
+
+  Sacado::Fad::DFad<Real> const
+  c = 1.0;
+
+  A += b * B;
+
+  A -= c * C;
+
+  Sacado::Fad::DFad<Real>
+  error = norm_f_square(A) - 3.0;
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+
+  A = B + C;
+
+  error = norm_f(A) - 6.0;
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+
+  A = C - B;
+
+  error = norm_f(A);
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+
+  A += C;
+
+  error = norm_f(A) - 3.0;
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
+
+  A -= C;
+
+  error = norm_f(A);
+
+  TEST_COMPARE(error, <=, machine_epsilon<Real>());
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, SymmetricEigen2x2)

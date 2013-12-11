@@ -415,11 +415,6 @@ public:
 
   typedef View< typename traits::non_const_data_type ,
                 typename traits::array_layout ,
-                typename traits::device_type ,
-                typename traits::memory_traits > non_const_type ;
-
-  typedef View< typename traits::non_const_data_type ,
-                typename traits::array_layout ,
                 typename traits::device_type::host_mirror_device_type ,
                 void > HostMirror ;
 

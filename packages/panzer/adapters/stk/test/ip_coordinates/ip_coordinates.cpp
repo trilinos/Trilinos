@@ -95,6 +95,7 @@ namespace panzer {
     { return Teuchos::rcp(new ResponseEvaluatorFactory_IPCoordinates<T>(cubatureDegree)); }
   };
 
+/*
   TEUCHOS_UNIT_TEST(response_library_stk, test)
   {
     typedef Traits::Residual EvalT;
@@ -359,6 +360,7 @@ namespace panzer {
     }
 
   }
+*/
 
   TEUCHOS_UNIT_TEST(response_library_stk2, test)
   {

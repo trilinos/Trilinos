@@ -14,10 +14,6 @@ SET(main_driver_SOURCES
   user_app_NOXObserver_NeumannBCAnalyticSystemTest.hpp
   user_app_RythmosObserverFactory.hpp
   user_app_RythmosObserver_WriteToExodus.hpp
-  Panzer_STK_ModelEvaluatorFactory_Epetra.hpp
-  Panzer_STK_ModelEvaluatorFactory_Epetra_impl.hpp
-  Panzer_STK_NOXObserverFactory.hpp
-  Panzer_STK_RythmosObserverFactory.hpp
   )
 
 TRIBITS_ADD_EXECUTABLE(

@@ -114,6 +114,18 @@ public:
      */
    void initialize(const ResponseLibrary & rl);
 
+   //! Get the internally stored workset container
+   Teuchos::RCP<const WorksetContainer> getWorksetContainer() const
+   { return wkstContainer_; }
+
+   //! Get the internally stored global indexer
+   Teuchos::RCP<const UniqueGlobalIndexerBase> getGlobalIndexer() const 
+   { return globalIndexer_; }
+
+   //! Get the internally stored linear object factory
+   Teuchos::RCP<const LinearObjFactory<TraitsT> > getLinearObjFactory() const 
+   { return linObjFactory_; }
+
    /** Asks, does this string correspond to a response type
      * in this library?
      */

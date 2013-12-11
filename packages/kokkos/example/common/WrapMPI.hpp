@@ -51,6 +51,28 @@
 
 #include <mpi.h>
 
+namespace Kokkos {
+namespace Example {
+
+inline
+double all_reduce( double value , MPI_Comm comm )
+{
+  double local = value ;
+  MPI_Allreduce( & local , & value , 1 , MPI_DOUBLE , MPI_SUM , comm );
+  return value ;
+}
+
+inline
+double all_reduce_max( double value , MPI_Comm comm )
+{
+  double local = value ;
+  MPI_Allreduce( & local , & value , 1 , MPI_DOUBLE , MPI_MAX , comm );
+  return value ;
+}
+
+} // namespace Example
+} // namespace Kokkos
+
 #elif ! defined( KOKKOS_HAVE_MPI )
 
 /* Wrap the the MPI_Comm type and heavily used MPI functions
@@ -62,6 +84,18 @@ typedef int MPI_Comm ;
 
 inline int MPI_Comm_size( MPI_Comm , int * size ) { *size = 1 ; return 0 ; }
 inline int MPI_Comm_rank( MPI_Comm , int * rank ) { *rank = 0 ; return 0 ; }
+
+namespace Kokkos {
+namespace Example {
+
+inline
+double all_reduce( double value , MPI_Comm ) { return value ; }
+
+inline
+double all_reduce_max( double value , MPI_Comm ) { return value ; }
+
+} // namespace Example
+} // namespace Kokkos
 
 #endif /* ! defined( KOKKOS_HAVE_MPI ) */
 #endif /* #ifndef KOKKOS_EXAMPLE_WRAP_MPI */

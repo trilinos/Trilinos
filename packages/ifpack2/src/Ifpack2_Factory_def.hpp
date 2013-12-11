@@ -48,19 +48,18 @@
 #include "Ifpack2_Chebyshev.hpp"
 #include "Ifpack2_RILUK.hpp"
 #include "Ifpack2_ILUT.hpp"
+
 #if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_AMESOS2)
-#include "Amesos2_config.h"
-#if defined(HAVE_AMESOS2_SUPERLU) || defined(HAVE_AMESOS2_SUPERLUDIST) || defined(HAVE_AMESOS2_KLU) || defined(HAVE_AMESOS2_LAPACK)
-#include "Ifpack2_Amesos2solver.hpp"
-#endif
-#endif
+#  include "Ifpack2_Details_Amesos2Wrapper.hpp"
+#endif //  defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_AMESOS2)
+
 #include "Ifpack2_Krylov.hpp"
 #include "Ifpack2_AdditiveSchwarz.hpp"
 #include "Ifpack2_IdentitySolver.hpp"
+
 #if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
 #  include "Ifpack2_SupportGraph.hpp"
-#endif
-
+#endif // defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
 
 namespace Ifpack2 {
 
@@ -103,7 +102,7 @@ Factory::create (const std::string& precType,
 #if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_AMESOS2)
 #if defined(HAVE_AMESOS2_SUPERLU) || defined(HAVE_AMESOS2_SUPERLUDIST) || defined(HAVE_AMESOS2_KLU) || defined(HAVE_AMESOS2_LAPACK)
   else if (precTypeUpper == "AMESOS2") {
-    prec = rcp (new Amesos2solver<MatrixType> (matrix));
+    prec = rcp (new Details::Amesos2Wrapper<MatrixType> (matrix));
   }
 #endif
 #endif
@@ -188,7 +187,7 @@ Factory::create (const std::string& precType,
 #if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_AMESOS2)
 #if defined(HAVE_AMESOS2_SUPERLU) || defined(HAVE_AMESOS2_SUPERLUDIST) || defined(HAVE_AMESOS2_KLU) || defined(HAVE_AMESOS2_LAPACK)
   else if (precTypeUpper == "AMESOS2") {
-    prec = rcp (new Amesos2solver<MatrixType> (matrix));
+    prec = rcp (new Details::Amesos2Wrapper<MatrixType> (matrix));
   }
 #endif
 #endif

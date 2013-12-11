@@ -58,10 +58,10 @@ struct Perf {
   size_t newton_iter_count ;
   size_t cg_iter_count ;
   double graph_time ;
-  double elem_time ;
   double fill_time ;
   double bc_time ;
   double cg_time ;
+  double newton_residual ;
   double error_max ;
 
   Perf()
@@ -70,10 +70,10 @@ struct Perf {
     , newton_iter_count(0)
     , cg_iter_count(0)
     , graph_time(0)
-    , elem_time(0)
     , fill_time(0)
     , bc_time(0)
     , cg_time(0)
+    , newton_residual(0)
     , error_max(0)
     {}
 };

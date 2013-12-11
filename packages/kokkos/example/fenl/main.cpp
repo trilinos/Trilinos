@@ -82,11 +82,10 @@ void print_perf_value( std::ostream & s , const Kokkos::Example::FENL::Perf & pe
     << perf.global_node_count << " , "
     << perf.newton_iter_count << " , "
     << perf.cg_iter_count << " , "
-    << perf.graph_time * 1000 << " , "
-    << perf.elem_time * 1000 << " , "
-    << perf.fill_time * 1000 << " , "
-    << perf.bc_time * 1000 << " , "
-    << perf.cg_time * 1000 << " , "
+    << ( perf.graph_time * 1000.0 ) / perf.global_node_count << " , "
+    << ( perf.fill_time * 1000.0 ) / perf.global_node_count << " , "
+    << ( perf.bc_time * 1000.0 ) / perf.global_node_count << " , "
+    << ( ( perf.cg_time * 1000.0 ) / perf.cg_iter_count ) / perf.global_node_count << " , "
     << perf.error_max
     << std::endl ;
 }
@@ -97,13 +96,14 @@ void run( MPI_Comm comm , const int cmd[] )
   if ( cmd[ CMD_USE_THREADS ] ) { std::cout << "THREADS , " << cmd[ CMD_USE_THREADS ] ; }
   else if ( cmd[ CMD_USE_CUDA ] ) { std::cout << "CUDA" ; }
 
-  if ( cmd[ CMD_USE_ATOMIC ] ) { std::cout << " , USING ATOMICS" ; }
   if ( cmd[ CMD_USE_FIXTURE_QUADRATIC ] ) { std::cout << " , QUADRATIC-ELEMENT" ; }
   else { std::cout << " , LINEAR-ELEMENT" ; }
 
+  if ( cmd[ CMD_USE_ATOMIC ] ) { std::cout << " , USING ATOMICS" ; }
+
   std::cout << std::endl ;
-  std::cout << "ELEMS , NODES , NEWTON , CG   , GRAPH    , ELEMENT  , FILL     , BOUNDARY , CG       , ERROR" << std::endl ;
-  std::cout << "count , count , iter   , iter , millisec , millisec , millisec , millisec , millisec , ratio" << std::endl ;
+  std::cout << "ELEMS , NODES , NEWTON , CG   , GRAPH/NODE , FILL/NODE , BOUNDARY/NODE , CG/ITER/ROW , ERROR" << std::endl ;
+  std::cout << "count , count , iter   , iter , millisec ,   millisec  , millisec      , millisec    , ratio" << std::endl ;
 
   if ( cmd[ CMD_USE_FIXTURE_BEGIN ] ) {
     for ( int i = cmd[CMD_USE_FIXTURE_BEGIN] ; i < cmd[CMD_USE_FIXTURE_END] * 2 ; i *= 2 ) {
@@ -192,7 +192,7 @@ int main( int argc , char ** argv )
         cmdline[ CMD_USE_FIXTURE_QUADRATIC ] = 1 ;
       }
       else if ( 0 == strcasecmp( argv[i] , "atomic" ) ) {
-        cmdline[ CMD_USE_ATOMIC ] = atoi( argv[++i] ) ;
+        cmdline[ CMD_USE_ATOMIC ] = 1 ;
       }
       else if ( 0 == strcasecmp( argv[i] , "trials" ) ) {
         cmdline[ CMD_USE_TRIALS ] = atoi( argv[++i] ) ;
@@ -251,13 +251,13 @@ int main( int argc , char ** argv )
     if ( cmdline[ CMD_USE_CUDA ] ) {
       // Use the last device:
 
-      Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( cmdline[ CMD_USE_CUDA_DEV ] ) );
       Kokkos::Cuda::host_mirror_device_type::initialize();
+      Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( cmdline[ CMD_USE_CUDA_DEV ] ) );
 
       run< Kokkos::Cuda , Kokkos::Example::BoxElemPart::ElemLinear >( comm , cmdline );
 
-      Kokkos::Cuda::host_mirror_device_type::finalize();
       Kokkos::Cuda::finalize();
+      Kokkos::Cuda::host_mirror_device_type::finalize();
     }
 
 #endif
