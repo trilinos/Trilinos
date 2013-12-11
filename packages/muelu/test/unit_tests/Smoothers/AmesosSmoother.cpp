@@ -75,7 +75,7 @@ namespace MueLuTests {
 #endif
 
 #ifdef HAVE_AMESOS_SUPERLU
-        smoother = rcp(new AmesosSmoother("Superlu"));
+        smoother = rcp(new MueLu::AmesosSmoother("Superlu"));
         testDirectSolver(*smoother, out, success);
 #endif
       }

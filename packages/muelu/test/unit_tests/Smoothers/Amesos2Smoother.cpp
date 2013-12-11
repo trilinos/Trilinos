@@ -61,7 +61,7 @@ namespace MueLuTests {
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra)
       {
 #if defined HAVE_AMESOS2_KLU2 || defined HAVE_AMESOS2_SUPERLU
-        testApplyNoSetup(Amesos2Smoother(), out, success);
+        testApplyNoSetup(MueLu::Amesos2Smoother(), out, success);
 #endif
       }
   }
@@ -71,12 +71,12 @@ namespace MueLuTests {
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra)
       {
 #ifdef HAVE_AMESOS2_KLU2
-        Amesos2Smoother smoother("Klu");
+        MueLu::Amesos2Smoother smoother("Klu");
         testDirectSolver(smoother, out, success);
 #endif
 
 #ifdef HAVE_AMESOS2_SUPERLU
-        Amesos2Smoother smoother("Superlu");
+        MueLu::Amesos2Smoother smoother("Superlu");
         testDirectSolver(smoother, out, success);
 #endif
       }
