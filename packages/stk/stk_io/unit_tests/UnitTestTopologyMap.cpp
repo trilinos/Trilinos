@@ -17,7 +17,7 @@
 #include <Ioss_ElementTopology.h>
 
 #include <stk_io/IossBridge.hpp>
-#include <Shards_CellTopology.hpp>
+#include <stk_topology/topology.hpp>
 
 #include <assert.h>
 
@@ -49,13 +49,13 @@ int testElement(const std::string &name)
   }
 
   std::cerr << "Testing element '" << name << "'\n";
-  // Currently not supported in shards:
+  // Currently not supported:
   if (element->name() == "unknown") {
     std::cerr << "\tERROR (EXPECTED): No support for '" << element->name() << "'\n";
     return 0;
   }
 
-  // Get the corresponding shards CellTopologyData* ..
+  // Get the corresponding stk::topology:
   stk::topology cell = stk::io::map_ioss_topology_to_stk(element);
   if (cell == stk::topology::INVALID_TOPOLOGY) {
     std::cerr << "\tERROR: Could not find a stk::topology corresponding to the Ioss::ElementTopology element '"
@@ -74,10 +74,10 @@ int testElement(const std::string &name)
   }
 
   // At this point, 'element' is the Ioss element topology and
-  //                'cell' is the corresponding shards CellTopology data pointer.
+  //                'cell' is the corresponding stk:topology topology.
   // Make sure that they agree on all subcell details...
   // Exceptions:
-  // 1. An Ioss Node has 1 node per element; a shards Node has 0 nodes per element...
+  // 1. An Ioss Node has 1 node per element; a stk::topology Node has 0 nodes per element...
 
   errors += my_assert(static_cast<int>(cell.num_nodes()),
                       element->number_nodes(),

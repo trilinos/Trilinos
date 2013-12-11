@@ -20,8 +20,6 @@
 #include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/FindRestriction.hpp>
 
-#include <Shards_BasicTopologies.hpp>
-
 #include <stk_io/IossBridge.hpp>
 #include <stk_util/diag/FileUtils.hpp>
 

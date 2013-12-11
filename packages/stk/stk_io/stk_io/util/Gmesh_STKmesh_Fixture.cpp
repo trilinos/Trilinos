@@ -1,21 +1,12 @@
 #include "Gmesh_STKmesh_Fixture.hpp"
 
 #include <stk_mesh/base/Part.hpp>
-
 #include <stk_mesh/base/MetaData.hpp>
-
-#include <stk_io/IossBridge.hpp>
 
 #include <generated/Iogn_DatabaseIO.h>
 #include <generated/Iogn_GeneratedMesh.h>
 
-#include <init/Ionit_Initializer.h>
-#include <Ioss_Region.h>
-
-#include <Shards_BasicTopologies.hpp>
-
-#include <stdexcept>
-#include <sstream>
+#include <Ioss_Property.h>
 
 using namespace stk::io::util;
 

@@ -10,13 +10,8 @@
 
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-
-#  include <stk_mesh/base/FEMHelpers.hpp>
-
+#include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
-
-#include <Shards_BasicTopologies.hpp>
-#include <Shards_CellTopologyData.h>
 
 #include <Ioss_Utils.h>
 

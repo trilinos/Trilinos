@@ -19,11 +19,9 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/Comm.hpp>
-
 #include <stk_mesh/base/Stencils.hpp>
 
-#include <Shards_BasicTopologies.hpp>
-
+#include <stk_topology/topology.hpp>
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
@@ -80,17 +78,13 @@ Gear::Gear( stk::mesh::MetaData & S ,
     m_gear_coord( gear_fields.gear_coord ),
     m_model_coord(gear_fields.model_coord )
 {
-  typedef shards::Hexahedron<> Hex ;
-  typedef shards::Quadrilateral<> Quad ;
   enum { SpatialDimension = GearFields::SpatialDimension };
 
   stk::io::put_io_part_attribute(m_gear);
   stk::io::put_io_part_attribute(m_surf);
-  stk::mesh::CellTopology hex_top (shards::getCellTopologyData<shards::Hexahedron<8> >());
-  stk::mesh::CellTopology quad_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
 
-  stk::mesh::set_cell_topology( m_gear, hex_top );
-  stk::mesh::set_cell_topology( m_surf, quad_top );
+  stk::mesh::set_topology( m_gear, stk::topology::HEX_8 );
+  stk::mesh::set_cell_topology( m_surf, stk::topology::QUAD_8 );
 
   // Meshing parameters for this gear:
 
