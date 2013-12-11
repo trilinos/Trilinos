@@ -232,9 +232,8 @@ namespace MueLu {
 
     if (type_ == "RELAXATION" || type_ == "ILUT"  || type_ == "SCHWARZ" ||
         type_ == "CHEBYSHEV"  || type_ == "RILUK" || type_ == "KRYLOV"  ) {
-
-      Ifpack2::Factory<Tpetra::RowMatrix<SC,LO,GO,NO> > factory;
-      ifpack2prec_ = factory.create (type_, LocalA);
+      Ifpack2::Factory factory;
+      ifpack2prec_ = factory.template create<Tpetra_CrsMatrix> (type_, LocalA);
       ifpack2prec_->setParameters (paramList_);
       ifpack2prec_->initialize ();
       ifpack2prec_->compute ();
