@@ -50,6 +50,7 @@ void assemble_data(std::vector<std::string>& names,
 
 void print_dynamic_connectivity_profile( ParallelMachine parallel, int parallel_rank, std::ostream & out)
 {
+#ifdef STK_MESH_ANALYZE_DYN_CONN
   for (EntityRank from_rank = 0; from_rank < 5; ++from_rank) {
     for (EntityRank to_rank = 0; to_rank < 5; ++to_rank) {
 
@@ -117,6 +118,9 @@ void print_dynamic_connectivity_profile( ParallelMachine parallel, int parallel_
       }
     }
   }
+#else
+  ThrowRequire(false);
+#endif
 }
 
 void print_max_stk_memory_usage( ParallelMachine parallel, int parallel_rank, std::ostream & out)
@@ -126,6 +130,8 @@ void print_max_stk_memory_usage( ParallelMachine parallel, int parallel_rank, st
 
   // Total
   assemble_data<void>(names, memory, "Total");
+
+  assemble_data<SelectorMapTag>(names, memory, "Get Buckets Memoization");
 
   // Distributed index
   assemble_data<parallel::DistributedIndex>(names, memory, "Distributed Index");

@@ -131,13 +131,18 @@ public:
   typedef page_aligned_allocator<unsigned char, FieldDataTag> field_data_allocator;
 #ifdef __IBMCPP__
   // The IBM compiler is easily confused by complex template types...
-  typedef std::vector<FieldMetaData>             FieldMetaDataVector;
-  typedef std::vector<FieldMetaDataVector>       FieldMetaDataVectorVector;
+  typedef std::vector<FieldMetaData>                                     FieldMetaDataVector;
+  typedef std::vector<FieldMetaDataVector>                               FieldMetaDataVectorVector;
+  typedef BucketVector                                                   TrackedBucketVector;
+  typedef std::map<std::pair<EntityRank, Selector>, TrackedBucketVector> SelectorBucketMap;
 #else
   typedef std::vector<FieldMetaData, tracking_allocator<FieldMetaData, FieldDataTag> >             FieldMetaDataVector;
   typedef std::vector<FieldMetaDataVector, tracking_allocator<FieldMetaDataVector, FieldDataTag> > FieldMetaDataVectorVector;
+  typedef std::vector<Bucket*, tracking_allocator<Bucket*, SelectorMapTag> >                       TrackedBucketVector;
+  typedef std::map<std::pair<EntityRank, Selector>, TrackedBucketVector,
+                   std::less<std::pair<EntityRank, Selector> >,
+                   tracking_allocator<std::pair<std::pair<EntityRank, Selector>, TrackedBucketVector>, SelectorMapTag> > SelectorBucketMap;
 #endif
-
 
   inline const FieldMetaDataVector& get_meta_data_for_field(const FieldBase & f, const stk::mesh::EntityRank rank) const {
     return m_field_meta_data[m_num_fields*rank +  f.mesh_meta_data_ordinal()];
@@ -1198,6 +1203,8 @@ public:
   // Print all mesh info
   void dump_all_mesh_info(std::ostream& out = std::cout) const;
 
+  BucketVector const& get_buckets(EntityRank rank, Selector const& selector) const;
+
 private:
 
   void update_deleted_entities_container();
@@ -1249,8 +1256,6 @@ private:
 public:
   mutable bool       m_check_invalid_rels; // TODO REMOVE
 
-
-
 private:
 #endif
   int m_num_fields;
@@ -1277,7 +1282,6 @@ private:
   std::vector<unsigned short>           m_fmwk_connect_counts;
 #endif
 
-
  // There will be one of these per bucket
 
   // Outer index is (m_num_fields * entity rank) + field_ordinal, inner index
@@ -1291,6 +1295,9 @@ private:
   // data for a bucket.
   std::vector<std::vector<unsigned char*> > m_field_raw_data;
 
+  // Memoize user bucket requests
+  mutable SelectorBucketMap m_selector_to_buckets_map;
+
   impl::BucketRepository              m_bucket_repository; // needs to be destructed first!
 
   //
@@ -1299,7 +1306,7 @@ private:
 
   // Field callbacks
 
-  void new_bucket_callback(EntityRank rank, const PartVector& superset_parts, size_t capacity);
+  void new_bucket_callback(EntityRank rank, const PartVector& superset_parts, size_t capacity, Bucket* new_bucket);
 
   void copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_bucket_id, Bucket::size_type dst_bucket_ord,
                                    EntityRank src_rank, unsigned src_bucket_id, Bucket::size_type src_bucket_ord);

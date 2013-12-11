@@ -35,6 +35,7 @@ namespace mesh {
 
 // Tags used by tracking allocator
 struct FieldDataTag {};
+struct SelectorMapTag {};
 struct PartitionTag {};
 struct BucketTag {};
 struct EntityCommTag {};

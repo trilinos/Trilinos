@@ -130,6 +130,7 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
 #endif
     m_field_meta_data(),
     m_field_raw_data(mesh_meta_data.entity_rank_count()),
+    m_selector_to_buckets_map(),
     m_bucket_repository(
         *this,
         mesh_meta_data.entity_rank_count(),
@@ -137,7 +138,7 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
         arg_connectivity_map != NULL ? *arg_connectivity_map :
            (mesh_meta_data.spatial_dimension() == 2 ? ConnectivityMap::default_map_2d() : ConnectivityMap::default_map())
 /*           (mesh_meta_data.spatial_dimension() == 2 ? ConnectivityMap::fixed_edges_map_2d() : ConnectivityMap::fixed_edges_map()) */
-        )
+                        )
 {
   initialize_arrays();
 
@@ -873,13 +874,25 @@ void BulkData::allocate_field_data()
   for(EntityRank rank = stk::topology::NODE_RANK; rank < mesh_meta_data().entity_rank_count(); ++rank) {
     const std::vector<Bucket*>& buckets = this->buckets(rank);
     for(size_t i=0; i<buckets.size(); ++i) {
-      new_bucket_callback(rank, buckets[i]->supersets(), buckets[i]->capacity());
+      new_bucket_callback(rank, buckets[i]->supersets(), buckets[i]->capacity(), NULL);
     }
   }
 }
 
-void BulkData::new_bucket_callback(EntityRank rank, const PartVector& superset_parts, size_t capacity)
+void BulkData::new_bucket_callback(EntityRank rank, const PartVector& superset_parts, size_t capacity, Bucket * new_bucket)
 {
+  // update selector map
+  if (new_bucket != NULL) {
+    for (SelectorBucketMap::iterator itr = m_selector_to_buckets_map.begin(), end = m_selector_to_buckets_map.end();
+         itr != end; ++itr) {
+      Selector const& sel = itr->first.second;
+      const EntityRank map_rank = itr->first.first;
+      if (map_rank == rank && sel(*new_bucket)) {
+        itr->second.push_back(new_bucket);
+      }
+    }
+  }
+
   if (!m_keep_fields_updated) {
     return;
   }
@@ -1060,6 +1073,23 @@ void BulkData::remove_entity_callback(EntityRank rank, unsigned bucket_id, Bucke
 
 void BulkData::destroy_bucket_callback(EntityRank rank, unsigned bucket_id, unsigned capacity)
 {
+  // Remove destroyed bucket out of memoized get_buckets results
+  for (SelectorBucketMap::iterator itr = m_selector_to_buckets_map.begin(), end = m_selector_to_buckets_map.end();
+       itr != end; ++itr) {
+    const EntityRank map_rank = itr->first.first;
+    if (map_rank == rank) {
+      TrackedBucketVector & cached_buckets = itr->second;
+      // iterate backwards due to deletions that may take place
+      for (size_t i = cached_buckets.size(); i > 0; ) {
+        --i;
+        if (cached_buckets[i]->bucket_id() == bucket_id) {
+          cached_buckets.erase(cached_buckets.begin() + i);
+          break;
+        }
+      }
+    }
+  }
+
   if (!m_keep_fields_updated) {
     return;
   }
@@ -1419,6 +1449,31 @@ void BulkData::internal_verify_initialization_invariant(Entity entity)
 #endif
   ThrowAssert ( !(my_global_id < 0 && my_key.id() == static_cast<EntityId>(my_global_id)) &&
                 !(my_global_id > 0 && my_key.id() != static_cast<EntityId>(my_global_id)) );
+}
+
+BucketVector const& BulkData::get_buckets(EntityRank rank, Selector const& selector) const
+{
+  std::pair<EntityRank, Selector> search_item = std::make_pair(rank, selector);
+  SelectorBucketMap::const_iterator fitr =
+    m_selector_to_buckets_map.find(search_item);
+  if (fitr != m_selector_to_buckets_map.end()) {
+    TrackedBucketVector const& rv = fitr->second;
+    return reinterpret_cast<BucketVector const&>(rv);
+  }
+  else {
+    std::pair<SelectorBucketMap::iterator, bool> insert_rv =
+      m_selector_to_buckets_map.insert(std::make_pair( std::make_pair(rank, selector), TrackedBucketVector() ));
+    ThrowAssertMsg(insert_rv.second, "Should not have already been in map");
+    TrackedBucketVector& map_buckets = insert_rv.first->second;
+    BucketVector const& all_buckets_for_rank = buckets(rank);
+    for (size_t i = 0, e = all_buckets_for_rank.size(); i < e; ++i) {
+      if (selector(*all_buckets_for_rank[i])) {
+        map_buckets.push_back(all_buckets_for_rank[i]);
+      }
+    }
+
+    return reinterpret_cast<BucketVector const&>(map_buckets);
+  }
 }
 
 } // namespace mesh

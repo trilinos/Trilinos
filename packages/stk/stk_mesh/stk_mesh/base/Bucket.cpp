@@ -273,7 +273,7 @@ Bucket::Bucket( BulkData & arg_mesh ,
 
   m_parts.reserve(m_key.size());
   supersets(m_parts);
-  m_mesh.new_bucket_callback(m_entity_rank, m_parts, m_capacity);
+  m_mesh.new_bucket_callback(m_entity_rank, m_parts, m_capacity, this);
 }
 
 Bucket::~Bucket()
