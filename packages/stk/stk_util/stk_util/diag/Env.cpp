@@ -466,20 +466,10 @@ bool StartupSierra(int *			  argc,
     const std::string s((*argv)[i]);
     if (s == "-h" || s == "-help" || s == "--help") {
       std::cout << std::endl
-                << "Sierra Usage: sierra [sierra-options...] " << lower(product_name) << " [" << lower(product_name) << "-options...]" << std::endl << std::endl
+                << "Usage: " << lower(product_name) << " [" << lower(product_name) << "-options...]" << std::endl << std::endl
                 << "For example:" << std::endl
                 << "" << std::endl
-                << "  sierra " << lower(product_name) << " -i input_deck.i -o sierra.log" << std::endl
-                << "    This creates the normal output file sierra.log" << std::endl
-                << "" << std::endl
-                << "  sierra " << lower(product_name) << " -i input_deck.i -o sierra.log -O \"--pout=pp.log\"" << std::endl
-                << "    The per-processor output is written to pp.log.n.r for each rank, r, of n processors." << std::endl
-                << "" << std::endl
-                << "  sierra " << lower(product_name) << " -i input_deck.i -o sierra.log -O \"--fmwkout=field,parameters\"" << std::endl
-                << "    Enable the framework field and parameter diagnostics" << std::endl
-                << "" << std::endl
-                << "  sierra " << lower(product_name) << " -i input_deck.i -o sierra.log -O \"--timer=all\"" << std::endl
-                << "    Enable the all timers" << std::endl
+                << "  " << lower(product_name) << " -i <input-file> -o <log-file>" << std::endl
                 << std::endl
                 << "  For additional information see:" << std::endl
                 << "      http://sierra-dev.sandia.gov/stk/group__stk__util__output__log__detail.html#stk_util_output_log_howto_use_in_sierra_app" << std::endl << std::endl
