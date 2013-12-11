@@ -983,6 +983,36 @@ double shfl_down<double>(const double &val, const int& delta, const int& width){
 #endif
 }
 
+//----------------------------------------------------------------------------
+
+template< class DeviceType , typename ScalarType >
+struct MV_MultiplyShflThreadsPerRow {
+private:
+
+  typedef typename Kokkos::Impl::remove_const< ScalarType >::type scalar_type ;
+
+  enum { shfl_possible =
+    Kokkos::Impl::is_same< DeviceType , Kokkos::Cuda >::value &&
+    ( 
+      Kokkos::Impl::is_same< scalar_type , unsigned int >::value ||
+      Kokkos::Impl::is_same< scalar_type , int >::value ||
+      Kokkos::Impl::is_same< scalar_type , float >::value ||
+      Kokkos::Impl::is_same< scalar_type , double >::value
+    )};
+
+public:
+
+#if defined( __CUDA_ARCH__ )
+  enum { device_value = shfl_possible && ( 300 <= __CUDA_ARCH__ ) ? 8 : 1 };
+#else
+  enum { device_value = 1 };
+#endif
+
+  inline static int host_value()
+    { return shfl_possible && ( 300 <= Kokkos::Cuda::device_arch() ) ? 8 : 1 ; }
+};
+
+//----------------------------------------------------------------------------
 
 template<class RangeVector,
          class CrsMatrix,
@@ -990,13 +1020,14 @@ template<class RangeVector,
          class CoeffVector1,
          class CoeffVector2,
          int doalpha,
-         int dobeta,
-         int ThreadsPerRow>
+         int dobeta >
 struct MV_MultiplyFunctor {
   typedef typename CrsMatrix::device_type                   device_type ;
   typedef typename CrsMatrix::ordinal_type                    size_type ;
   typedef typename CrsMatrix::non_const_scalar_type         scalar_type ;
-  typedef typename Kokkos::View<scalar_type*, typename CrsMatrix::device_type> range_values;
+  typedef typename Kokkos::View<scalar_type*, device_type>  range_values;
+
+  typedef MV_MultiplyShflThreadsPerRow< device_type , scalar_type > ShflThreadsPerRow ;
 
   CoeffVector1 beta;
   CoeffVector2 alpha;
@@ -1010,8 +1041,9 @@ struct MV_MultiplyFunctor {
   template<int UNROLL>
   KOKKOS_INLINE_FUNCTION
   void strip_mine (const size_type i, const size_type kk) const {
-    const size_type iRow = i / ThreadsPerRow;
-    const int lane = i % ThreadsPerRow;
+    const size_type iRow = i / ShflThreadsPerRow::device_value ;
+    const int lane = i % ShflThreadsPerRow::device_value ;
+
     scalar_type sum[UNROLL];
     // FIXME (mfh 29 Sep 2013) These pragmas ("ivdep", "unroll", and
     // "loop count") should be protected by macros that identify the
@@ -1041,7 +1073,7 @@ struct MV_MultiplyFunctor {
 #pragma ivdep
 #pragma loop count (15)
 #pragma unroll
-      for (size_type iEntry = lane; iEntry < row.length; iEntry += ThreadsPerRow) {
+      for (size_type iEntry = lane; iEntry < row.length; iEntry += ShflThreadsPerRow::device_value ) {
         const scalar_type val = row.value(iEntry);
         const size_type ind = row.colidx(iEntry);
 
@@ -1056,7 +1088,7 @@ struct MV_MultiplyFunctor {
 #pragma ivdep
 #pragma loop count (15)
 #pragma unroll
-      for(size_type iEntry = lane ; iEntry < row.length ; iEntry+=ThreadsPerRow) {
+      for(size_type iEntry = lane ; iEntry < row.length ; iEntry+=ShflThreadsPerRow::device_value ) {
         const scalar_type val = row.value(iEntry);
         const size_type ind = row.colidx(iEntry);
 
@@ -1067,16 +1099,16 @@ struct MV_MultiplyFunctor {
       }
     }
     for (int i=0; i < UNROLL; ++i) {
-      if (ThreadsPerRow > 1)
-        sum[i] += shfl_down(sum[i], 1,ThreadsPerRow);
-      if (ThreadsPerRow > 2)
-        sum[i] += shfl_down(sum[i], 2,ThreadsPerRow);
-      if (ThreadsPerRow > 4)
-        sum[i] += shfl_down(sum[i], 4,ThreadsPerRow);
-      if (ThreadsPerRow > 8)
-        sum[i] += shfl_down(sum[i], 8,ThreadsPerRow);
-      if (ThreadsPerRow > 16)
-        sum[i] += shfl_down(sum[i], 16,ThreadsPerRow);
+      if (ShflThreadsPerRow::device_value > 1)
+        sum[i] += shfl_down(sum[i], 1,ShflThreadsPerRow::device_value);
+      if (ShflThreadsPerRow::device_value > 2)
+        sum[i] += shfl_down(sum[i], 2,ShflThreadsPerRow::device_value);
+      if (ShflThreadsPerRow::device_value > 4)
+        sum[i] += shfl_down(sum[i], 4,ShflThreadsPerRow::device_value);
+      if (ShflThreadsPerRow::device_value > 8)
+        sum[i] += shfl_down(sum[i], 8,ShflThreadsPerRow::device_value);
+      if (ShflThreadsPerRow::device_value > 16)
+        sum[i] += shfl_down(sum[i], 16,ShflThreadsPerRow::device_value);
     }
     if (lane==0) {
       if(doalpha * doalpha != 1) {
@@ -1117,36 +1149,36 @@ struct MV_MultiplyFunctor {
 
   KOKKOS_INLINE_FUNCTION
   void strip_mine_1 (const size_type i) const {
-    const size_type iRow = i/ThreadsPerRow;
-    const int lane = i%ThreadsPerRow;
+    const size_type iRow = i/ShflThreadsPerRow::device_value;
+    const int lane = i%ShflThreadsPerRow::device_value;
     scalar_type sum = 0;
 
     if(doalpha != -1) {
       const SparseRowViewConst<CrsMatrix> row = m_A.rowConst(iRow);
 
 #pragma loop count (15)
-      for(size_type iEntry = lane; iEntry < row.length; iEntry += ThreadsPerRow) {
+      for(size_type iEntry = lane; iEntry < row.length; iEntry += ShflThreadsPerRow::device_value) {
         sum += row.value(iEntry) * m_x(row.colidx(iEntry),0);
       }
     } else {
       const SparseRowViewConst<CrsMatrix> row = m_A.rowConst(iRow);
 
 #pragma loop count (15)
-      for(size_type iEntry = lane; iEntry < row.length; iEntry += ThreadsPerRow) {
+      for(size_type iEntry = lane; iEntry < row.length; iEntry += ShflThreadsPerRow::device_value) {
         sum -= row.value(iEntry) * m_x(row.colidx(iEntry),0);
       }
     }
 
-    if(ThreadsPerRow > 1)
-      sum += shfl_down(sum, 1,ThreadsPerRow);
-    if(ThreadsPerRow > 2)
-      sum += shfl_down(sum, 2,ThreadsPerRow);
-    if(ThreadsPerRow > 4)
-      sum += shfl_down(sum, 4,ThreadsPerRow);
-    if(ThreadsPerRow > 8)
-      sum += shfl_down(sum, 8,ThreadsPerRow);
-    if(ThreadsPerRow > 16)
-      sum += shfl_down(sum, 16,ThreadsPerRow);
+    if(ShflThreadsPerRow::device_value > 1)
+      sum += shfl_down(sum, 1,ShflThreadsPerRow::device_value);
+    if(ShflThreadsPerRow::device_value > 2)
+      sum += shfl_down(sum, 2,ShflThreadsPerRow::device_value);
+    if(ShflThreadsPerRow::device_value > 4)
+      sum += shfl_down(sum, 4,ShflThreadsPerRow::device_value);
+    if(ShflThreadsPerRow::device_value > 8)
+      sum += shfl_down(sum, 8,ShflThreadsPerRow::device_value);
+    if(ShflThreadsPerRow::device_value > 16)
+      sum += shfl_down(sum, 16,ShflThreadsPerRow::device_value);
 
     if (lane == 0) {
       if(doalpha * doalpha != 1) {
@@ -1269,13 +1301,14 @@ struct MV_MultiplyFunctor {
 	   class CoeffVector1,
 	   class CoeffVector2,
 	   int doalpha,
-	   int dobeta,
-	   int ThreadsPerRow>
+	   int dobeta >
   struct MV_MultiplySingleFunctor {
     typedef typename CrsMatrix::device_type                   device_type ;
     typedef typename CrsMatrix::ordinal_type                    size_type ;
     typedef typename CrsMatrix::non_const_scalar_type         scalar_type ;
     typedef typename Kokkos::View<scalar_type*, typename CrsMatrix::device_type> range_values;
+
+    typedef MV_MultiplyShflThreadsPerRow< device_type , scalar_type > ShflThreadsPerRow ;
 
     CoeffVector1 beta;
     CoeffVector2 alpha;
@@ -1286,8 +1319,8 @@ struct MV_MultiplyFunctor {
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const size_type i) const {
-      const size_type iRow = i/ThreadsPerRow;
-      const int lane = i%ThreadsPerRow;
+      const size_type iRow = i/ShflThreadsPerRow::device_value;
+      const int lane = i%ShflThreadsPerRow::device_value;
       const SparseRowViewConst<CrsMatrix> row = m_A.rowConst(iRow);
       const size_type row_length = row.length ;
       scalar_type sum = 0;
@@ -1296,27 +1329,27 @@ struct MV_MultiplyFunctor {
 
 #pragma loop count (15)
 #pragma unroll
-	for (size_type iEntry = lane; iEntry < row_length; iEntry += ThreadsPerRow) {
+	for (size_type iEntry = lane; iEntry < row_length; iEntry += ShflThreadsPerRow::device_value) {
 	  sum += row.value(iEntry) * m_x(row.colidx(iEntry));
 	}
       } else {
 
 #pragma loop count (15)
 #pragma unroll
-	for (size_type iEntry = lane; iEntry < row_length; iEntry += ThreadsPerRow) {
+	for (size_type iEntry = lane; iEntry < row_length; iEntry += ShflThreadsPerRow::device_value) {
 	  sum -= row.value(iEntry) * m_x(row.colidx(iEntry));
 	}
       }
-      if (ThreadsPerRow > 1)
-	sum += shfl_down(sum, 1,ThreadsPerRow);
-      if (ThreadsPerRow > 2)
-	sum += shfl_down(sum, 2,ThreadsPerRow);
-      if (ThreadsPerRow > 4)
-	sum += shfl_down(sum, 4,ThreadsPerRow);
-      if (ThreadsPerRow > 8)
-	sum += shfl_down(sum, 8,ThreadsPerRow);
-      if (ThreadsPerRow > 16)
-	sum += shfl_down(sum, 16,ThreadsPerRow);
+      if (ShflThreadsPerRow::device_value > 1)
+	sum += shfl_down(sum, 1,ShflThreadsPerRow::device_value);
+      if (ShflThreadsPerRow::device_value > 2)
+	sum += shfl_down(sum, 2,ShflThreadsPerRow::device_value);
+      if (ShflThreadsPerRow::device_value > 4)
+	sum += shfl_down(sum, 4,ShflThreadsPerRow::device_value);
+      if (ShflThreadsPerRow::device_value > 8)
+	sum += shfl_down(sum, 8,ShflThreadsPerRow::device_value);
+      if (ShflThreadsPerRow::device_value > 16)
+	sum += shfl_down(sum, 16,ShflThreadsPerRow::device_value);
 
       if (lane == 0) {
 	if (doalpha * doalpha != 1) {
@@ -1418,34 +1451,6 @@ struct MV_MultiplyFunctor {
     }
   } // namespace Impl
 
-  template<class Device, class ScalarType>
-  struct ThreadsPerRow {
-    static const int value = 1;
-  };
-
-#if defined(KOKKOS_HAVE_CUDA) && defined(KOKKOS_HAVE_CUDA_ARCH) && ( 300 <= KOKKOS_HAVE_CUDA_ARCH )
-
-  template<>
-  struct ThreadsPerRow<Kokkos::Cuda,unsigned int> {
-    static const int value = 8;
-  };
-
-  template<>
-  struct ThreadsPerRow<Kokkos::Cuda,int> {
-    static const int value = 8;
-  };
-
-  template<>
-  struct ThreadsPerRow<Kokkos::Cuda,float> {
-    static const int value = 8;
-  };
-
-  template<>
-  struct ThreadsPerRow<Kokkos::Cuda,double> {
-    static const int value = 8;
-  };
-
-#endif // KOKKOS_HAVE_CUDA
 
   template <class RangeVector,
 	    class TCrsMatrix,
@@ -1501,18 +1506,19 @@ struct MV_MultiplyFunctor {
 
       Impl::MV_Multiply_Check_Compatibility(betav,y,alphav,A,x,doalpha,dobeta);
 
-      #ifndef KOKKOS_FAST_COMPILE
+#ifndef KOKKOS_FAST_COMPILE
+
       if(x.dimension_1()==1) {
         typedef View<typename DomainVectorType::const_scalar_type*,typename DomainVector::array_layout ,typename DomainVectorType::device_type,Kokkos::MemoryRandomRead> DomainVector1D;
         typedef View<typename DomainVectorType::const_scalar_type*,typename DomainVector::array_layout ,typename DomainVectorType::device_type> DomainVector1DPlain;
         typedef View<typename RangeVectorType::scalar_type*,typename RangeVector::array_layout ,typename RangeVectorType::device_type,typename RangeVector::memory_traits> RangeVector1D;
 
+         typedef MV_MultiplySingleFunctor<RangeVector1D, CrsMatrixType, DomainVector1D,
+                                  CoeffVector1Type, CoeffVector2Type, doalpha, dobeta> OpType ;
 
          Kokkos::subview< RangeVector1D >( y , ALL(),0 );
-         MV_MultiplySingleFunctor<RangeVector1D, CrsMatrixType, DomainVector1D,
-                                  CoeffVector1Type, CoeffVector2Type, doalpha, dobeta,
-                                  ThreadsPerRow<typename CrsMatrixType::device_type,
-                                  typename CrsMatrixType::non_const_scalar_type>::value> op ;
+
+         OpType op ;
          const typename CrsMatrixType::ordinal_type nrow = A.numRows();
          op.m_A = A ;
          op.m_x = Kokkos::subview< DomainVector1DPlain >( x , ALL(),0 ) ;
@@ -1520,13 +1526,12 @@ struct MV_MultiplyFunctor {
          op.beta = betav;
          op.alpha = alphav;
          op.n = x.dimension(1);
-         Kokkos::parallel_for (nrow * ThreadsPerRow<typename TCrsMatrix::device_type,
-                               typename TCrsMatrix::non_const_scalar_type>::value, op);
+         Kokkos::parallel_for (nrow * OpType::ShflThreadsPerRow::host_value(), op);
 
       } else {
-        MV_MultiplyFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
-                         CoeffVector1Type, CoeffVector2Type, doalpha, dobeta,
-	          ThreadsPerRow<typename TCrsMatrix::device_type,typename TCrsMatrix::non_const_scalar_type>::value> op ;
+        typedef MV_MultiplyFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
+                         CoeffVector1Type, CoeffVector2Type, doalpha, dobeta> OpType ;
+        OpType op ;
         const typename CrsMatrixType::ordinal_type nrow = A.numRows();
         op.m_A = A ;
         op.m_x = x ;
@@ -1534,13 +1539,15 @@ struct MV_MultiplyFunctor {
         op.beta = betav;
         op.alpha = alphav;
         op.n = x.dimension(1);
-        Kokkos::parallel_for(nrow*ThreadsPerRow<typename TCrsMatrix::device_type,typename TCrsMatrix::non_const_scalar_type>::value , op);
+        Kokkos::parallel_for(nrow*OpType::ShflThreadsPerRow::host_value() , op);
       }
 
 #else // NOT KOKKOS_FAST_COMPILE
 
-      MV_MultiplyFunctor<RangeVectorType, CrsMatrixType, DomainVectorType, CoeffVector1Type, CoeffVector2Type, 2, 2,
-	          ThreadsPerRow<typename TCrsMatrix::device_type, typename TCrsMatrix::non_const_scalar_type>::value> op ;
+      typedef MV_MultiplyFunctor<RangeVectorType, CrsMatrixType, DomainVectorType, CoeffVector1Type, CoeffVector2Type, 2, 2 >
+        OpType ;
+
+      OpType op ;
 
       int numVecs = x.dimension_1();
       CoeffVector1 beta = betav;
@@ -1575,8 +1582,8 @@ struct MV_MultiplyFunctor {
       op.beta = beta;
       op.alpha = alpha;
       op.n = x.dimension_1();
-      Kokkos::parallel_for (nrow * ThreadsPerRow<typename TCrsMatrix::device_type,
-                            typename TCrsMatrix::non_const_scalar_type>::value, op);
+      Kokkos::parallel_for (nrow * OpType::ShflThreadsPerRow::host_value() , op );
+
 #endif // KOKKOS_FAST_COMPILE
     }
   }
@@ -1638,9 +1645,11 @@ struct MV_MultiplyFunctor {
       Impl::MV_Multiply_Check_Compatibility(betav,y,alphav,A,x,doalpha,dobeta);
 
 #ifndef KOKKOS_FAST_COMPILE
-      MV_MultiplySingleFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
-                               CoeffVector1Type, CoeffVector2Type, doalpha, dobeta
-	,ThreadsPerRow<typename CrsMatrixType::device_type,typename CrsMatrixType::non_const_scalar_type>::value> op ;
+
+      typedef MV_MultiplySingleFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
+                               CoeffVector1Type, CoeffVector2Type, doalpha, dobeta > OpType ;
+
+      OpType op ;
       const typename CrsMatrixType::ordinal_type nrow = A.numRows();
       op.m_A = A ;
       op.m_x = x ;
@@ -1648,14 +1657,14 @@ struct MV_MultiplyFunctor {
       op.beta = betav;
       op.alpha = alphav;
       op.n = x.dimension(1);
-      Kokkos::parallel_for (nrow * ThreadsPerRow<typename TCrsMatrix::device_type,
-                            typename TCrsMatrix::non_const_scalar_type>::value, op);
+      Kokkos::parallel_for (nrow * OpType::ShflThreadsPerRow::host_value() , op );
 
 #else // NOT KOKKOS_FAST_COMPILE
 
-      MV_MultiplySingleFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
-                               CoeffVector1Type, CoeffVector2Type, 2, 2,
-	ThreadsPerRow<typename CrsMatrixType::device_type, typename CrsMatrixType::non_const_scalar_type>::value> op;
+      typedef MV_MultiplySingleFunctor<RangeVectorType, CrsMatrixType, DomainVectorType,
+                               CoeffVector1Type, CoeffVector2Type, 2, 2 > OpType ;
+
+      OpType op ;
 
       int numVecs = x.dimension_1();
       CoeffVector1 beta = betav;
@@ -1688,8 +1697,8 @@ struct MV_MultiplyFunctor {
       op.beta = beta;
       op.alpha = alpha;
       op.n = x.dimension_1();
-      Kokkos::parallel_for (nrow * ThreadsPerRow<typename TCrsMatrix::device_type,
-                            typename TCrsMatrix::non_const_scalar_type>::value, op);
+      Kokkos::parallel_for (nrow * OpType::ShflThreadsPerRow::host_value() , op );
+
 #endif // KOKKOS_FAST_COMPILE
     }
   }

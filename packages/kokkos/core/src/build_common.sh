@@ -54,7 +54,7 @@ CUDA | Cuda | cuda )
   # -x cu : process all files through the Cuda compiler as Cuda code.
   # -lib -o : produce library
   #
-  NVCC="nvcc -DKOKKOS_HAVE_CUDA_ARCH=${CUDA_ARCH}0 -gencode arch=compute_${CUDA_ARCH},code=sm_${CUDA_ARCH}"
+  NVCC="nvcc -gencode arch=compute_${CUDA_ARCH},code=sm_${CUDA_ARCH}"
   NVCC="${NVCC} -maxrregcount=64"
   NVCC="${NVCC} -Xcompiler -Wall,-ansi"
   NVCC="${NVCC} -lib -o libCuda.a -x cu"
@@ -69,7 +69,7 @@ CUDA_OSX | Cuda_OSX | cuda_osx )
   # -x cu : process all files through the Cuda compiler as Cuda code.
   # -lib -o : produce library
   #
-  NVCC="nvcc -DKOKKOS_HAVE_CUDA_ARCH=${CUDA_ARCH}0 -gencode arch=compute_${CUDA_ARCH},code=sm_${CUDA_ARCH}"
+  NVCC="nvcc -gencode arch=compute_${CUDA_ARCH},code=sm_${CUDA_ARCH}"
   NVCC="${NVCC} -maxrregcount=64"
   NVCC="${NVCC} -Xcompiler -Wall,-ansi -Xcompiler -m64"
   NVCC="${NVCC} -lib -o libCuda.a -x cu"

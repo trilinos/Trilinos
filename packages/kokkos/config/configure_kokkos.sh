@@ -63,9 +63,9 @@ CMAKE_HWLOC="${CMAKE_HWLOC} -D HWLOC_LIBRARY_DIRS:FILEPATH=${HWLOC_BASE_DIR}/lib
 
 # Cuda compilation flags:
 
-CUDA_NVCC_FLAGS="-DKOKKOS_HAVE_CUDA_ARCH=200;-gencode;arch=compute_20,code=sm_20"
-# CUDA_NVCC_FLAGS="-DKOKKOS_HAVE_CUDA_ARCH=300;-gencode;arch=compute_30,code=sm_30"
-# CUDA_NVCC_FLAGS="-DKOKKOS_HAVE_CUDA_ARCH=350;-gencode;arch=compute_35,code=sm_35"
+CUDA_NVCC_FLAGS="-gencode;arch=compute_20,code=sm_20"
+# CUDA_NVCC_FLAGS="-gencode;arch=compute_30,code=sm_30"
+# CUDA_NVCC_FLAGS="-gencode;arch=compute_35,code=sm_35"
 CUDA_NVCC_FLAGS="${CUDA_NVCC_FLAGS};-Xcompiler;-Wall,-ansi"
 CUDA_NVCC_FLAGS="${CUDA_NVCC_FLAGS};-O3"
 

@@ -64,10 +64,6 @@ class CudaSpace ;
 #error "Compiling Kokkos with Cuda compiler but KOKKOS_HAVE_CUDA is undefined"
 #endif
 
-#if ! defined( KOKKOS_HAVE_CUDA_ARCH )
-#error "Compiling Kokkos with Cuda compiler but KOKKOS_HAVE_CUDA_ARCH is undefined"
-#endif
-
 #include <cuda.h>
 
 /*  Compiling with a CUDA compiler for device code.
@@ -91,10 +87,6 @@ class CudaSpace ;
 //----------------------------------------------------------------------------
 
 #if defined( __CUDACC__ ) && defined( __CUDA_ARCH__ )
-
-#if ( __CUDA_ARCH__ != KOKKOS_HAVE_CUDA_ARCH )
-#error "Compiling Kokkos with Cuda compiler but __CUDA_ARCH__ != KOKKOS_HAVE_CUDA_ARCH"
-#endif
 
 /*  Compiling with CUDA compiler for device code. */
 
