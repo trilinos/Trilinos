@@ -164,15 +164,11 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLU)
     Amesos2_Superlu_def.hpp
     Amesos2_Superlu_FunctionMap.hpp
     Amesos2_Superlu_TypeMap.hpp
-    Amesos2_Superilu.hpp
-    Amesos2_Superilu_decl.hpp
-    Amesos2_Superilu_def.hpp
     )
 
   APPEND_SET(SOURCES
     Amesos2_Superlu.cpp
     Amesos2_Superlu_TypeMap.cpp
-    Amesos2_Superilu.cpp
     )
 ENDIF()
 
