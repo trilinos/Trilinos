@@ -6,6 +6,7 @@
 #include <generated/Iogn_DatabaseIO.h>
 #include <generated/Iogn_GeneratedMesh.h>
 
+#include <Ioss_Region.h>
 #include <Ioss_Property.h>
 
 using namespace stk::io::util;

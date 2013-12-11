@@ -84,7 +84,7 @@ Gear::Gear( stk::mesh::MetaData & S ,
   stk::io::put_io_part_attribute(m_surf);
 
   stk::mesh::set_topology( m_gear, stk::topology::HEX_8 );
-  stk::mesh::set_cell_topology( m_surf, stk::topology::QUAD_8 );
+  stk::mesh::set_topology( m_surf, stk::topology::QUAD_8 );
 
   // Meshing parameters for this gear:
 
