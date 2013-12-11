@@ -955,9 +955,9 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
     // FIXME (mfh 18 Nov 2013) Shouldn't this come from the Zoltan2 sublist?
     ReorderingAlgorithm_ = List_.get<std::string> ("order_method", "rcm");
     XpetraTpetraMatrixType XpetraMatrix (ActiveMatrix);
-    Zoltan2::XpetraRowMatrixInput<XpetraMatrixType> Zoltan2Matrix (rcpFromRef (XpetraMatrix));
+    Zoltan2::XpetraRowMatrixAdapter<XpetraMatrixType> Zoltan2Matrix (rcpFromRef (XpetraMatrix));
 
-    typedef Zoltan2::OrderingProblem<Zoltan2::XpetraRowMatrixInput<XpetraMatrixType> > ordering_problem_type;
+    typedef Zoltan2::OrderingProblem<Zoltan2::XpetraRowMatrixAdapter<XpetraMatrixType> > ordering_problem_type;
 #ifdef HAVE_MPI
     // Grab the MPI Communicator and build the ordering problem with that
     MPI_Comm myRawComm;

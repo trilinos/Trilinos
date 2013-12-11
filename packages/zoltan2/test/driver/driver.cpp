@@ -407,7 +407,7 @@ int main(int argc, char *argv[])
       xmi_t *ia = NULL;
       RCP<const tcrsMatrix_t> Mptr(M);
       try{
-        ia = new xmi_t(Mptr, coordDim, vWeightDim);
+        ia = new xmi_t(Mptr, vWeightDim, coordDim);
       }
       catch (std::exception &e){
         EXC_ERRMSG("Test error: InputAdapter build", e);
@@ -416,13 +416,13 @@ int main(int argc, char *argv[])
 
       if (coordDim > 0){
         for (int i=0; i < coordDim; i++){
-          ia->setRowCoordinates(i, coords[i], 1);
+          ia->setRowCoordinates(coords[i], 1, i);
         }
       }
 
       if (vWeightDim > 0){
         for (int i=0; i < vWeightDim; i++){
-          ia->setRowWeights(i, vweights[i], 1);
+          ia->setRowWeights(vweights[i], 1, i);
         }
       }
 

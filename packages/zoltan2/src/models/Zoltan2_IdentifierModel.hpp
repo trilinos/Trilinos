@@ -613,13 +613,12 @@ template <typename User>
       gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), comm_(comm),
       gids_(), userWeightDim_(0), weights_(), gnos_(), gnosConst_()
 {
+// TODO:  Why doesn't this specialization support weights?
   size_t nLocalIds;
   const gid_t *gids;
-  const gid_t *colIds;
-  const lno_t *offsets;
 
   try{
-    nLocalIds = ia->getRowListView(gids, offsets, colIds);
+    nLocalIds = ia->getIDsView(gids);
   }
   Z2_FORWARD_EXCEPTIONS;
 

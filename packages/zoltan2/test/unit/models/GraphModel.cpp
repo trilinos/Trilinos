@@ -185,17 +185,17 @@ void testMatrixAdapter(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
     }
   }
 
-  adapter_t tmi(M, coordDim, rowWeightDim);
+  adapter_t tmi(M, rowWeightDim, coordDim);
 
   for (int i=0; i < rowWeightDim; i++){
     if (nnzDim == i)
       tmi.setRowWeightIsNumberOfNonZeros(i);
     else
-      tmi.setRowWeights(i, rowWeights[i], 1);
+      tmi.setRowWeights(rowWeights[i], 1, i);
   }
 
   for (int i=0; i < coordDim; i++){
-    tmi.setRowCoordinates(i, coords[i], 1);
+    tmi.setRowCoordinates(coords[i], 1, i);
   }
 
   int numLocalDiags = M->getNodeNumDiags();

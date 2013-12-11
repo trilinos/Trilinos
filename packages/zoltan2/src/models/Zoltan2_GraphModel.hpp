@@ -716,7 +716,18 @@ template <typename User>
   gid_t const *vtxIds=NULL, *nborIds=NULL;
   lno_t const  *offsets=NULL;
   try{
-    numLocalVertices_ = ia->getRowListView(vtxIds, offsets, nborIds);
+    numLocalVertices_ = ia->getIDsView(vtxIds);
+  }
+  Z2_FORWARD_EXCEPTIONS;
+  try{
+    if (ia->CRSViewAvailable()) {
+      ia->getCRSView(offsets, nborIds);
+    }
+    else {
+      // TODO:  Add support for CCS matrix layout
+      throw std::runtime_error("Only MatrixAdapter::getCRSView is supported "
+                               "in graph model");
+    }
   }
   Z2_FORWARD_EXCEPTIONS;
 
@@ -903,14 +914,14 @@ template <typename User>
 
   // Vertex weights
 
-  vWeightDim_ = ia->getRowWeightDimension();
+  vWeightDim_ = ia->getNumWeightsPer();
 
   if (vWeightDim_ > 0){
     input_t *weightInfo = new input_t [vWeightDim_];
     env_->localMemoryAssertion(__FILE__, __LINE__, vWeightDim_, weightInfo);
 
     for (int dim=0; dim < vWeightDim_; dim++){
-      bool useNumNZ = ia->getRowWeightIsNumberOfNonZeros(dim);
+      bool useNumNZ = ia->useNumNonzerosAsRowWeight(dim); //TODO assuming vertices == rows
       if (useNumNZ){
         scalar_t *wgts = new scalar_t [numLocalVertices_];
         env_->localMemoryAssertion(__FILE__, __LINE__, numLocalVertices_, wgts);
@@ -924,7 +935,7 @@ template <typename User>
       else{
         const scalar_t *weights=NULL;
         int stride=0;
-        size_t len = ia->getRowWeights(dim, weights, stride);
+        size_t len = ia->getWeightsView(weights, stride, dim);
         // If weights is NULL, user wants to use uniform weights
         if (weights != NULL){
           ArrayRCP<const scalar_t> wgtArray = arcp(weights, 0, len, false);
@@ -946,7 +957,7 @@ template <typename User>
 
   // Vertex coordinates
 
-  vCoordDim_ = ia->getCoordinateDimension();
+  vCoordDim_ = ia->getDimension();
 
   if (vCoordDim_ > 0){
     input_t *coordInfo = new input_t [vCoordDim_];
@@ -955,7 +966,7 @@ template <typename User>
     for (int dim=0; dim < vCoordDim_; dim++){
       const scalar_t *coords=NULL;
       int stride=0;
-      size_t len = ia->getRowCoordinates(dim, coords, stride);
+      size_t len = ia->getCoordinatesView(coords, stride, dim);
       ArrayRCP<const scalar_t> coordArray = arcp(coords, 0, len, false);
       coordInfo[dim] = input_t(coordArray, stride);
     }

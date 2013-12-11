@@ -469,14 +469,14 @@ template <typename User>
 
   userNumWeights_= 0;  // matrix input does not have weights
 
-  coordinateDim_ = ia->getCoordinateDimension();
+  coordinateDim_ = ia->getDimension();
 
   Model<MatrixAdapter<User> >::maxCount(*comm, coordinateDim_, userNumWeights_);
 
   env_->localBugAssertion(__FILE__, __LINE__, "coordinate dimension",
     coordinateDim_ > 0, COMPLEX_ASSERTION);
 
-  size_t nLocalIds = (coordinateDim_ ? ia->getLocalNumRows() : 0);
+  size_t nLocalIds = (coordinateDim_ ? ia->getLocalNum() : 0);
 
   // Get coordinates
 
@@ -488,7 +488,7 @@ template <typename User>
       int stride;
       const scalar_t *coords=NULL;
       try{
-        ia->getRowCoordinates(dim, coords, stride);
+        ia->getCoordinatesView(coords, stride, dim);
       }
       Z2_FORWARD_EXCEPTIONS;
 
@@ -501,13 +501,11 @@ template <typename User>
 
   // Create identifier map.
 
-  const gid_t *rowGids;
-  const lno_t *offsets;
-  const gid_t *colGids;
+  const gid_t *gids;
 
-  ia->getRowListView(rowGids, offsets, colGids);
+  ia->getIDsView(gids);
 
-  gids_ = arcp<const gid_t>(rowGids, 0, nLocalIds, false);
+  gids_ = arcp<const gid_t>(gids, 0, nLocalIds, false);
 
   RCP<const idmap_t> idMap;
 
