@@ -177,9 +177,10 @@ private:
     ( Impl::is_same< typename traits::array_layout , LayoutRight >::value ? 1 : 0 ) ,
     typename traits::device_type >  stokhos_view_storage_type ;
 
-  typedef Sacado::MP::Vector< stokhos_view_storage_type >  sacado_mp_vector_view_type ;
-
 public:
+
+  // This needs to be public so that we know what the return type of () is
+  typedef Sacado::MP::Vector< stokhos_view_storage_type >  sacado_mp_vector_view_type ;
 
   typedef View< typename traits::const_data_type ,
                 typename traits::array_layout ,

@@ -126,6 +126,15 @@ namespace Sacado {
       //! Number of arguments
       static const int num_args = 1;
 
+      // A temporary hack to allow taking the address of a temporary
+      // Vector with ViewStorage.  A better approach would be to return
+      // a VectorViewStoragePtr with overloaded * to return a new
+      // Vector<ViewStorage>
+      KOKKOS_INLINE_FUNCTION
+      Vector* operator&() { return this; }
+      KOKKOS_INLINE_FUNCTION
+      const Vector* operator&() const { return this; }
+
       //! Default constructor
       /*!
        * Sets size to 1 and first coefficient to 0 (represents a constant).
@@ -487,7 +496,6 @@ namespace Sacado {
     };
 
     template <typename Storage>
-    KOKKOS_INLINE_FUNCTION
     std::ostream&
     operator << (std::ostream& os,
                  const Vector<Storage>& a)

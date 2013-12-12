@@ -43,37 +43,23 @@
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Stokhos_Sacado_Kokkos.hpp"
-#include "Kokkos_CrsMatrix.hpp"
+#include "Stokhos_KokkosCrsMatrixMPVectorUnitTest.hpp"
 
 #include "Kokkos_hwloc.hpp"
 #include "Kokkos_Threads.hpp"
 
-size_t num_cores, num_hyper_threads;
-
-TEUCHOS_UNIT_TEST( Stokhos_KokkosMPVectorKernels,
-                   EmbeddedVector_Right_1_MPKernel_Thread ) {
-  typedef int Ordinal;
-  typedef double Scalar;
-  typedef Kokkos::Threads Device;
-  typedef Kokkos::LayoutRight Layout;
-  const Ordinal VectorSize = 1;
-  typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,VectorSize,Device> Storage;
-  typedef Sacado::MP::Vector<Storage> MatrixScalar;
-
-  // typedef Kokkos::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
-
-  // Matrix matrix;
-}
+// Instantiate test for Threads device
+using Kokkos::Threads;
+CRSMATRIX_MP_VECTOR_TESTS_SCALAR_ORDINAL_DEVICE( double, int, Threads )
 
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // Initialize threads
-  num_cores =
+  size_t num_cores =
     Kokkos::hwloc::get_available_numa_count() *
     Kokkos::hwloc::get_available_cores_per_numa();
-  num_hyper_threads =
+  size_t num_hyper_threads =
     Kokkos::hwloc::get_available_threads_per_core();
   Kokkos::Threads::initialize(num_cores * num_hyper_threads);
   Kokkos::Threads::print_configuration(std::cout);
