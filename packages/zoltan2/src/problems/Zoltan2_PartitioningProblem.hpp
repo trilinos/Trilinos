@@ -660,6 +660,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   // this->env_ = rcp(new Environment(newParams, oldComm));
   ////////////////////////////////////////////////////////////////////////////
 
+  this->env_->debug(DETAILED_STATUS, "    parameters");
   Environment &env = *(this->env_);
   ParameterList &pl = env.getParametersNonConst();
 
@@ -867,6 +868,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   ///////////////////////////////////////////////////////////////////
   // Set model creation flags, if any.
 
+  this->env_->debug(DETAILED_STATUS, "    models");
   if (modelType_ == GraphModelType){
 
     // Any parameters in the graph sublist?
@@ -952,6 +954,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     switch (modelType_) {
 
     case GraphModelType:
+      this->env_->debug(DETAILED_STATUS, "    building graph model");
       this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
         this->baseInputAdapter_, this->envConst_, problemComm_, graphFlags_));
 
@@ -964,6 +967,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       break;
   
     case CoordinateModelType:
+      this->env_->debug(DETAILED_STATUS, "    building coordinate model");
       this->coordinateModel_ = rcp(new CoordinateModel<base_adapter_t>(
         this->baseInputAdapter_, this->envConst_, problemComm_, coordFlags_));
 
@@ -1027,6 +1031,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       break;
 
     case IdentifierModelType:
+      this->env_->debug(DETAILED_STATUS, "    building identifier model");
       this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
         this->baseInputAdapter_, this->envConst_, problemComm_, idFlags_));
 
@@ -1040,6 +1045,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     }
 
     this->env_->memory("After creating Model");
+    this->env_->debug(DETAILED_STATUS, "createPartitioningProblem done");
   }
 
   /*

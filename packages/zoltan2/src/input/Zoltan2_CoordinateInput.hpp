@@ -145,8 +145,8 @@ public:
       must remain valid for the lifetime of this Adapter.
    */
 
-  virtual size_t getCoordinatesView(const scalar_t *&coords, int &stride,
-                                    int coordDim) const = 0;
+  virtual void getCoordinatesView(const scalar_t *&coords, int &stride,
+                                  int coordDim) const = 0;
 
 private:
 };

@@ -316,33 +316,31 @@ public:
 
   int getNumWeightsPerVertex() const { return vertexWeightDim_;}
 
-  size_t getVertexWeightsView(const scalar_t *&weights, int &stride,
+  void getVertexWeightsView(const scalar_t *&weights, int &stride,
                               int idx) const
   {
     env_->localInputAssertion(__FILE__, __LINE__, "invalid weight index",
       idx >= 0 && idx < vertexWeightDim_, BASIC_ASSERTION);
     size_t length;
     vertexWeights_[idx].getStridedList(length, weights, stride);
-    return length;
   }
 
 
   int getNumWeightsPerEdge() const { return edgeWeightDim_;}
 
-  size_t getEdgeWeightsView(const scalar_t *&weights, int &stride,
+  void getEdgeWeightsView(const scalar_t *&weights, int &stride,
                             int idx) const
   {
     env_->localInputAssertion(__FILE__, __LINE__, "invalid weight index",
       idx >= 0 && idx < edgeWeightDim_, BASIC_ASSERTION);
     size_t length;
     edgeWeights_[idx].getStridedList(length, weights, stride);
-    return length;
   }
 
 
   int getDimension() const { return coordinateDim_; }
 
-  size_t getVertexCoordinatesView(const scalar_t *&coords, int &stride,
+  void getVertexCoordinatesView(const scalar_t *&coords, int &stride,
                                   int idx) const
   {
     env_->localInputAssertion(__FILE__, __LINE__, 
@@ -350,7 +348,6 @@ public:
       idx >= 0 && idx < coordinateDim_, BASIC_ASSERTION);
     size_t length;
     coords_[idx].getStridedList(length, coords, stride);
-    return length;
   }
 
   template <typename Adapter>

@@ -230,7 +230,7 @@ public:
 
   int getNumWeightsPerID() const { return numWeights_;}
 
-  size_t getWeightsView(const scalar_t *&weights, int &stride, int idx) const
+  void getWeightsView(const scalar_t *&weights, int &stride, int idx) const
   {
     if (idx < 0 || idx >= numWeights_) {
       std::ostringstream emsg;
@@ -240,7 +240,6 @@ public:
     }
     size_t length;
     weights_[idx].getStridedList(length, weights, stride);
-    return length;
   }
 
   ////////////////////////////////////////////////////

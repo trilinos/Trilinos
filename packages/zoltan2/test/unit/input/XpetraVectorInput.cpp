@@ -139,14 +139,12 @@ int verifyInputAdapter(
     int stride;
 
     for (int w=0; !fail && w < wdim; w++){
-      size_t nvals = ia.getWeightsView(wgt, stride, w);
+      ia.getWeightsView(wgt, stride, w);
 
-      if (nvals != vector.getLocalLength())
-        fail = 100;
       if (!fail && stride != strides[w])
         fail = 101;
 
-      for (size_t v=0; !fail && v < nvals; v++){
+      for (size_t v=0; !fail && v < vector.getLocalLength(); v++){
         if (wgt[v*stride] != weights[w][v*stride])
           fail=102;
       }

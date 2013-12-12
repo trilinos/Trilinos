@@ -935,10 +935,12 @@ template <typename User>
       else{
         const scalar_t *weights=NULL;
         int stride=0;
-        size_t len = ia->getWeightsView(weights, stride, dim);
+        ia->getWeightsView(weights, stride, dim);
         // If weights is NULL, user wants to use uniform weights
         if (weights != NULL){
-          ArrayRCP<const scalar_t> wgtArray = arcp(weights, 0, len, false);
+          ArrayRCP<const scalar_t> wgtArray = arcp(weights, 0,
+                                                   stride*numLocalVertices_,
+                                                   false);
           weightInfo[dim] = input_t(wgtArray, stride);
         }
       }
@@ -966,8 +968,10 @@ template <typename User>
     for (int dim=0; dim < vCoordDim_; dim++){
       const scalar_t *coords=NULL;
       int stride=0;
-      size_t len = ia->getCoordinatesView(coords, stride, dim);
-      ArrayRCP<const scalar_t> coordArray = arcp(coords, 0, len, false);
+      ia->getCoordinatesView(coords, stride, dim);
+      ArrayRCP<const scalar_t> coordArray = arcp(coords, 0,
+                                                 stride*numLocalVertices_,
+                                                 false);
       coordInfo[dim] = input_t(coordArray, stride);
     }
 
@@ -1408,10 +1412,12 @@ template <typename User>
     for (int idx=0; idx < vWeightDim_; idx++){
       const scalar_t *weights=NULL;
       int stride=0;
-      size_t len = ia->getVertexWeightsView(weights, stride, idx);
+      ia->getVertexWeightsView(weights, stride, idx);
       // If weights is NULL, user wants to use uniform weights
       if (weights != NULL){
-        ArrayRCP<const scalar_t> wgtArray = arcp(weights, 0, len, false);
+        ArrayRCP<const scalar_t> wgtArray = arcp(weights, 0, 
+                                                 stride*numLocalVertices_,
+                                                 false);
         weightInfo[idx] = input_t(wgtArray, stride);
       }
     }
@@ -1438,8 +1444,8 @@ template <typename User>
     for (int dim=0; dim < vCoordDim_; dim++){
       const scalar_t *coords=NULL;
       int stride=0;
-      size_t len = ia->getVertexCoordinatesView(coords, stride, dim);
-      ArrayRCP<const scalar_t> coordArray = arcp(coords, 0, len, false);
+      ia->getVertexCoordinatesView(coords, stride, dim);
+      ArrayRCP<const scalar_t> coordArray = arcp(coords, 0, stride*numLocalVertices_, false);
       coordInfo[dim] = input_t(coordArray, stride);
     }
 

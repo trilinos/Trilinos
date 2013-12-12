@@ -182,8 +182,8 @@ public:
       Zoltan2 does not copy your data.  The data pointed to by weights
       must remain valid for the lifetime of this Adapter.
    */
-  virtual size_t getVertexWeightsView(const scalar_t *&weights, int &stride, 
-                                      int idx = 0) const = 0;
+  virtual void getVertexWeightsView(const scalar_t *&weights, int &stride, 
+                                    int idx = 0) const = 0;
 
   /*! \brief Returns the dimension (0 or greater) of vertex weights.
    */
@@ -200,8 +200,8 @@ public:
       Zoltan2 does not copy your data.  The data pointed to by weights
       must remain valid for the lifetime of this Adapter.
    */
-  virtual size_t getEdgeWeightsView(const scalar_t *&weights, int &stride,
-                                    int idx = 0) const = 0;
+  virtual void getEdgeWeightsView(const scalar_t *&weights, int &stride,
+                                  int idx = 0) const = 0;
 
   /*! \brief Returns the dimension of the geometry, if any.
    *  Some algorithms can use geometric coordinate information if it is present.
@@ -234,12 +234,11 @@ public:
    *  override this definition.
    */
 
-  virtual size_t getVertexCoordinatesView(const scalar_t *&coords, int &stride,
+  virtual void getVertexCoordinatesView(const scalar_t *&coords, int &stride,
                                           int idx) const
   {
     coords = NULL;
     stride = 0;
-    return 0;
   }
 
   ////////////////////////////////////////////////////////////////////////////
@@ -336,9 +335,9 @@ public:
       return getNumWeightsPerEdge();
   }
 
-  size_t getWeightsView(const scalar_t *&wgt, int &stride, int idx = 0) const {
+  void getWeightsView(const scalar_t *&wgt, int &stride, int idx = 0) const {
     if (getPrimaryEntityType() == GRAPH_VERTEX)
-      return getVertexWeightsView(wgt, stride, idx);
+      getVertexWeightsView(wgt, stride, idx);
     else {
       // TODO:  Need getEdgeWeightsView that lets Edges be primary object? 
       // TODO:  That is, get edge weights based on some Edge ID.
@@ -347,7 +346,6 @@ public:
            << " error:  getWeightsView not yet supported for graph edges." 
            << std::endl;
       throw std::runtime_error(emsg.str());
-      return 0;
     }
   }
 };

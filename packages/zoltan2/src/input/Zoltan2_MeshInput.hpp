@@ -173,7 +173,7 @@ public:
       Zoltan2 does not copy your data.  The data pointed to by weights
       must remain valid for the lifetime of this Adapter.
   */
-  virtual size_t getWeightsViewOf(MeshEntityType etype,
+  virtual void getWeightsViewOf(MeshEntityType etype,
      const scalar_t *&weights, int &stride, int idx = 0) const = 0;
 
 
@@ -220,7 +220,7 @@ public:
       Zoltan2 does not copy your data.  The data pointed to coords
       must remain valid for the lifetime of this Adapter.
   */
-  virtual size_t getCoordinatesViewOf(MeshEntityType etype,
+  virtual void getCoordinatesViewOf(MeshEntityType etype,
     const scalar_t *&coords, int &stride, int coordDim) const = 0;
 
 
@@ -375,7 +375,7 @@ public:
 //KDD Since the source objects are assumed to be gotten from getIDsViewOf(),
 //KDD is the sourcetarget MeshEntityType understood here?
 //KDD What about the through MeshEntityType?
-  virtual size_t get2ndAdjWeightsView(MeshEntityType sourcetarget,
+  virtual void get2ndAdjWeightsView(MeshEntityType sourcetarget,
      MeshEntityType through, const scalar_t *&weights, int &stride,
      int idx) const = 0;
 
@@ -497,8 +497,8 @@ public:
     return getNumWeightsPerOf(getPrimaryEntityType());
   }
 
-  size_t getWeightsView(const scalar_t *&wgt, int &stride, int idx = 0) const {
-    return getWeightsViewOf(getPrimaryEntityType());
+  void getWeightsView(const scalar_t *&wgt, int &stride, int idx = 0) const {
+    getWeightsViewOf(getPrimaryEntityType());
   }
 
 };

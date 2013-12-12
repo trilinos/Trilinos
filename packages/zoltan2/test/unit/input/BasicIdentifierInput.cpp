@@ -109,11 +109,8 @@ int main(int argc, char *argv[])
   if (!fail && ia.getIDsView(globalIdsIn) != size_t(numLocalIds))
     fail = 6;
 
-  for (int w=0; !fail && w < weightDim; w++){
-    if (ia.getWeightsView(weightsIn[w], weightStridesIn[w], w) <
-        size_t(numLocalIds * weightStridesIn[w]))
-      fail = 20;
-  }
+  for (int w=0; !fail && w < weightDim; w++)
+    ia.getWeightsView(weightsIn[w], weightStridesIn[w], w);
 
   const scalar_t *w1 = weightsIn[0];
   const scalar_t *w2 = weightsIn[1];

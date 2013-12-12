@@ -302,14 +302,13 @@ public:
                   the local number of rows times the stride for
                   non-uniform weights, zero otherwise.
    */
-  virtual size_t getRowWeightsView(const scalar_t *&weights, int &stride,
-                                   int idx = 0) const
+  virtual void getRowWeightsView(const scalar_t *&weights, int &stride,
+                                 int idx = 0) const
   {
 // KDDDEC THROW AN ERROR INSTEAD OF RETURNING 0.
     // Default implementation
     weights = NULL;
     stride = 0;
-    return 0;
   }
 
   /*! \brief Indicate whether row weight with index idx should be the
@@ -334,14 +333,13 @@ public:
                   the local number of columns times the stride for
                   non-uniform weights, zero otherwise.
    */
-  virtual size_t getColumnWeightsView(const scalar_t *&weights, int &stride,
-                                      int idx = 0) const 
+  virtual void getColumnWeightsView(const scalar_t *&weights, int &stride,
+                                    int idx = 0) const 
   {
     // Default implementation
 // KDDDEC THROW AN ERROR INSTEAD OF RETURNING 0.
     weights = NULL;
     stride = 0;
-    return 0;
   }
 
   /*! \brief Indicate whether column weight with index idx should be the
@@ -390,13 +388,12 @@ public:
               coordinates but not row coordinates are supplied.
    */
 
-  virtual size_t getRowCoordinatesView(const scalar_t *&coords, int &stride,
-                                       int dim) const 
+  virtual void getRowCoordinatesView(const scalar_t *&coords, int &stride,
+                                     int dim) const 
   {
 // KDDDEC THROW AN ERROR INSTEAD OF RETURNING 0.
     coords = NULL;
     stride = 0;
-    return 0;
   }
 
   /*! \brief Provide a pointer to one dimension of column coordinates.
@@ -417,12 +414,11 @@ public:
               coordinates but not column coordinates are supplied.
    */
 
-  virtual size_t getColumnCoordinatesView(const scalar_t *&coords, int &stride,
-                                          int dim) const 
+  virtual void getColumnCoordinatesView(const scalar_t *&coords, int &stride,
+                                        int dim) const 
   {
     coords = NULL;
     stride = 0;
-    return 0;
   }
 
 
@@ -509,12 +505,14 @@ public:
     }
   }
 
-  size_t getWeightsView(const scalar_t *&wgt, int &stride, int idx = 0) const {
+  void getWeightsView(const scalar_t *&wgt, int &stride, int idx = 0) const {
     switch (getPrimaryEntityType()) {
     case MATRIX_ROW:
-      return getRowWeightsView(wgt, stride, idx);
+      getRowWeightsView(wgt, stride, idx);
+      break;
     case MATRIX_COLUMN:
-      return getColumnWeightsView(wgt, stride, idx);
+      getColumnWeightsView(wgt, stride, idx);
+      break;
     case MATRIX_NONZERO:
       {
       // TODO:  Need getNonzeroWeightsView with Nonzeros as primary object? 
@@ -524,22 +522,23 @@ public:
            << " error:  getWeightsView not yet supported for matrix nonzeros." 
            << std::endl;
       throw std::runtime_error(emsg.str());
-      return 0;
+      break;
       }
     default:   // Shouldn't reach default; just making compiler happy
-      return 0;
+      break;
     }
   }
 
-  size_t getCoordinatesView(const scalar_t *&coords, int &stride, int dim) const
+  void getCoordinatesView(const scalar_t *&coords, int &stride, int dim) const
   {
     switch (getPrimaryEntityType()) {
     case MATRIX_ROW:
-      return getRowCoordinatesView(coords, stride, dim);
+      getRowCoordinatesView(coords, stride, dim);
+      break;
     case MATRIX_COLUMN:
-      return getColumnCoordinatesView(coords, stride, dim);
-    case MATRIX_NONZERO:
-      {
+      getColumnCoordinatesView(coords, stride, dim);
+      break;
+    case MATRIX_NONZERO: {
       // TODO:  Need getCoordinatesView with Nonzeros as primary object? 
       // TODO:  Could return (i,j), but need an ordering for nonzeros.
       std::ostringstream emsg;
@@ -547,10 +546,10 @@ public:
            << " error:  getCoordinatesView not supported for matrix nonzeros." 
            << std::endl;
       throw std::runtime_error(emsg.str());
-      return 0;
+      break;
       }
     default:   // Shouldn't reach default; just making compiler happy
-      return 0;
+      break;
     }
   }
 };

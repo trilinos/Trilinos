@@ -108,10 +108,7 @@ int checkBasicVector(
     const scalar_t *wgts;
     int stride;
 
-    size_t nvals = ia->getWeightsView(wgts, stride, w);
-
-    if (nvals != size_t(len*stride))
-      fail = 108;
+    ia->getWeightsView(wgts, stride, w);
 
     if (!fail && stride != weightStrides[w])
       fail = 109;

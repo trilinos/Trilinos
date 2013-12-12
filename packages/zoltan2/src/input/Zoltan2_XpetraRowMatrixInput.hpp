@@ -196,32 +196,28 @@ public:
     return weightDim_;
   }
 
-  size_t getRowWeightsView(const scalar_t *&weights, int &stride,
-                           int idx = 0) const
+  void getRowWeightsView(const scalar_t *&weights, int &stride,
+                         int idx = 0) const
   {
     env_->localInputAssertion(__FILE__, __LINE__,
       "invalid weight index",
       idx >= 0 && idx < weightDim_, BASIC_ASSERTION);
-
     size_t length;
     rowWeights_[idx].getStridedList(length, weights, stride);
-    return length;
   }
 
   bool useNumNonzerosAsRowWeight(int idx) const { return numNzWeight_[idx];}
 
   int getDimension() const {return coordinateDim_;}
 
-  size_t getRowCoordinatesView(const scalar_t *&coords, int &stride,
-                               int dim) const
+  void getRowCoordinatesView(const scalar_t *&coords, int &stride,
+                             int dim) const
   {
     env_->localInputAssertion(__FILE__, __LINE__,
       "invalid coordinate dimension",
       dim >= 0 && dim < coordinateDim_, BASIC_ASSERTION);
-
     size_t length;
     rowCoords_[dim].getStridedList(length, coords, stride);
-    return length;
   }
 
   template <typename Adapter>

@@ -140,13 +140,12 @@ public:
 
   int getNumWeightsPerID() const { return numWeights_;}
 
-  size_t getWeightsView(const scalar_t *&weights, int &stride, int idx) const
+  void getWeightsView(const scalar_t *&weights, int &stride, int idx) const
   {
     env_->localInputAssertion(__FILE__, __LINE__, "invalid weight index",
       idx >= 0 && idx < numWeights_, BASIC_ASSERTION);
     size_t length;
     weights_[idx].getStridedList(length, weights, stride);
-    return length;
   }
 
   ////////////////////////////////////////////////////

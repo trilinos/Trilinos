@@ -118,8 +118,7 @@ public:
 
   int getNumWeightsPerID() const { return weights_.size(); }
 
-  size_t getWeightsView(const scalar_t *&weights, int &stride,
-                        int idx) const
+  void getWeightsView(const scalar_t *&weights, int &stride, int idx) const
   {
     if (idx < 0 || idx >= weights_.size()) {
       std::ostringstream emsg;
@@ -127,10 +126,8 @@ public:
            << "  Invalid weight index " << idx << std::endl;
       throw std::runtime_error(emsg.str());
     }
-
     size_t length;
     weights_[idx].getStridedList(length, weights, stride);
-    return length;
   }
 
   size_t getIDsView(const gid_t *&Ids) const

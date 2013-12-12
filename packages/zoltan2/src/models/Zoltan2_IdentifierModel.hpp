@@ -474,16 +474,13 @@ template <typename User>
     if (nLocalIds > 0){
       const scalar_t *wgts=NULL;
       int stride = 0;
-      size_t wgtListSize;
 
       for (int idx=0; idx < userWeightDim_; idx++){
-        wgtListSize = ia->getWeightsView(wgts, stride, idx);
-
-        if (wgtListSize > 0){  // non-uniform weights
-          ArrayRCP<const scalar_t> wgtArray(wgts, 0, wgtListSize, false);
-          weightObj[idx] = StridedData<lno_t, scalar_t>(wgtArray, stride);
-          weightListSizes[idx] = wgtListSize;
-        }
+        ia->getWeightsView(wgts, stride, idx);
+        size_t wgtListSize = stride * nLocalIds;
+        ArrayRCP<const scalar_t> wgtArray(wgts, 0, wgtListSize, false);
+        weightObj[idx] = StridedData<lno_t, scalar_t>(wgtArray, stride);
+        weightListSizes[idx] = wgtListSize;
       }
     }
   }

@@ -202,32 +202,28 @@ public:
     return weightDim_;
   }
 
-  size_t getRowWeightsView(const scalar_t *&weights, int &stride,
+  void getRowWeightsView(const scalar_t *&weights, int &stride,
                            int idx = 0) const
   {
     env_->localInputAssertion(__FILE__, __LINE__,
       "invalid weight index",
       idx >= 0 && idx < weightDim_, BASIC_ASSERTION);
-
     size_t length;
     rowWeights_[idx].getStridedList(length, weights, stride);
-    return length;
   }
 
   bool useNumNonzerosAsRowWeight(int idx) const { return numNzWeight_[idx];}
 
   int getDimension() const {return coordinateDim_;}
 
-  size_t getRowCoordinatesView(const scalar_t *&coords, int &stride,
-                               int dim) const
+  void getRowCoordinatesView(const scalar_t *&coords, int &stride,
+                             int dim) const
   {
     env_->localInputAssertion(__FILE__, __LINE__,
       "invalid coordinate dimension",
       dim >= 0 && dim < coordinateDim_, BASIC_ASSERTION);
-
     size_t length;
     rowCoords_[dim].getStridedList(length, coords, stride);
-    return length;
   }
 
   template <typename Adapter>
@@ -318,14 +314,11 @@ template <typename User>
     const scalar_t *coordVal, int stride, int dim)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
-
   env_->localInputAssertion(__FILE__, __LINE__, 
     "invalid row coordinate dimension",
     dim >= 0 && dim < coordinateDim_, BASIC_ASSERTION);
-
   size_t nvtx = getLocalNumRows();
-
-  ArrayRCP<const scalar_t> coordV(coordVal, 0, nvtx, false);
+  ArrayRCP<const scalar_t> coordV(coordVal, 0, nvtx*stride, false);
   rowCoords_[dim] = input_t(coordV, stride);
 }
 
@@ -334,14 +327,11 @@ template <typename User>
     const scalar_t *weightVal, int stride, int idx)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
-
   env_->localInputAssertion(__FILE__, __LINE__,
     "invalid row weight index",
     idx >= 0 && idx < weightDim_, BASIC_ASSERTION);
-
   size_t nvtx = getLocalNumRows();
-
-  ArrayRCP<const scalar_t> weightV(weightVal, 0, nvtx, false);
+  ArrayRCP<const scalar_t> weightV(weightVal, 0, nvtx*stride, false);
   rowWeights_[idx] = input_t(weightV, stride);
 }
 

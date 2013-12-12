@@ -465,6 +465,8 @@ template <typename User>
       coordinateDim_(), gids_(), xyz_(), userNumWeights_(0), weights_(), 
       gnos_(), gnosConst_()
 {
+  this->env_->debug(DETAILED_STATUS, "CoordinateModel<MatrixAdapter>");
+
   bool consecutiveIds = flags.test(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
 
   userNumWeights_= 0;  // matrix input does not have weights
@@ -480,6 +482,7 @@ template <typename User>
 
   // Get coordinates
 
+  this->env_->debug(DETAILED_STATUS, "    getting coordinates");
   input_t *coordArray = new input_t [coordinateDim_];
   env_->localMemoryAssertion(__FILE__, __LINE__, coordinateDim_, coordArray);
 
@@ -501,6 +504,7 @@ template <typename User>
 
   // Create identifier map.
 
+  this->env_->debug(DETAILED_STATUS, "    getting identifiers");
   const gid_t *gids;
 
   ia->getIDsView(gids);
@@ -535,6 +539,7 @@ template <typename User>
   gnosConst_ = arcp_const_cast<const gno_t>(gnos_);
 
   env_->memory("After construction of coordinate model");
+  this->env_->debug(DETAILED_STATUS, "    finished");
 }
 
 ////////////////////////////////////////////////////////////////

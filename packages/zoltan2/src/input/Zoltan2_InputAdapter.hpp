@@ -127,8 +127,8 @@ public:
    *  \return the length of the \c wgt array, which should be at least
    *   equal to <tt> getLocalNumberOfObjects() * stride </tt>.
    */ 
-  virtual size_t getWeightsView(const scalar_t *&wgt, int &stride,
-                                      int idx = 0) const = 0;
+  virtual void getWeightsView(const scalar_t *&wgt, int &stride,
+                              int idx = 0) const = 0;
 
  /*! \brief Apply a PartitioningSolution to an input.
    *

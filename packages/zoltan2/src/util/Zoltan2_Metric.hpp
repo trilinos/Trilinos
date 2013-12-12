@@ -968,8 +968,8 @@ template <typename Adapter>
     for (int i=0; i < weightDim; i++){
       int stride;
       const scalar_t *wgt;
-      size_t len = ia->getWeightsView(wgt, stride, i); 
-      ArrayRCP<const scalar_t> wgtArray(wgt, 0, len, false);
+      ia->getWeightsView(wgt, stride, i); 
+      ArrayRCP<const scalar_t> wgtArray(wgt, 0, stride*numLocalObjects, false);
       weights[i] = sdata_t(wgtArray, stride);
     }
   }
