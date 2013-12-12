@@ -924,19 +924,25 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_nabors)
 
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,4,2,1,1);
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManager<int,int> > dofManager_noghosts = rcp(new panzer::DOFManager<int,int>());
    dofManager->enableGhosting(true);
 
    TEST_EQUALITY(dofManager->getOrientationsRequired(),false);
    TEST_EQUALITY(dofManager->getConnManager(),Teuchos::null);
 
    dofManager->setConnManager(connManager,MPI_COMM_WORLD);
+   dofManager_noghosts->setConnManager(connManager,MPI_COMM_WORLD);
    TEST_EQUALITY(dofManager->getConnManager(),connManager);
 
    dofManager->addField("ux",patternC1);
    dofManager->addField("uy",patternC1);
    dofManager->addField("p",patternC1);
+   dofManager_noghosts->addField("ux",patternC1);
+   dofManager_noghosts->addField("uy",patternC1);
+   dofManager_noghosts->addField("p",patternC1);
 
    dofManager->buildGlobalUnknowns();
+   dofManager_noghosts->buildGlobalUnknowns();
    dofManager->printFieldInformation(out);
 
    TEST_EQUALITY(connManager->getElementBlock("eblock-0_0").size(),4);
@@ -999,6 +1005,40 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_nabors)
       TEST_EQUALITY(gids[3],27); TEST_EQUALITY(gids[4],28); TEST_EQUALITY(gids[5],29);
       TEST_EQUALITY(gids[6],36); TEST_EQUALITY(gids[7],37); TEST_EQUALITY(gids[8],38);
       TEST_EQUALITY(gids[9],15); TEST_EQUALITY(gids[10],16); TEST_EQUALITY(gids[11],17);
+   }
+
+   // owned vector
+   {
+     std::vector<int> owned, owned_noghosts;
+     dofManager->getOwnedIndices(owned);
+     dofManager_noghosts->getOwnedIndices(owned_noghosts);
+     TEST_EQUALITY(owned.size(),owned_noghosts.size());
+  
+     bool owned_result = true;
+     for(std::size_t j=0;j<owned.size();j++) 
+       owned_result &= (owned[j]==owned_noghosts[j]);
+     TEST_ASSERT(owned_result);
+   }
+
+   // owned and shared vector
+   {
+     std::vector<int> shared;
+     dofManager->getOwnedAndSharedIndices(shared);
+
+     std::set<int> shared_set;
+     shared_set.insert(shared.begin(),shared.end());
+     TEST_EQUALITY(shared_set.size(),shared.size()); // make sure there are no duplicated entries
+
+     for(int e=0;e<6;e++) {
+       std::vector<int> gids;
+
+       dofManager->getElementGIDs(e,gids);
+       bool allFound = true;
+       for(std::size_t i=0;i<gids.size();i++) 
+         allFound &= (shared_set.find(gids[i])!=shared_set.end());
+
+       TEST_ASSERT(allFound); 
+     }
    }
 }
 
