@@ -503,13 +503,13 @@ namespace Xpetra {
             const GlobalOrdinal r   = (gid - Teuchos::as<GlobalOrdinal>(j) - goStridedOffset - offset_ - indexBase_) /
                                       Teuchos::as<GlobalOrdinal>(getFixedBlockSize()) - goZeroOffset - cnt;
             if (r) {
-              printf("goZeroOffset   : %i\n",  goZeroOffset);
-              printf("dofGids[0]     : %i\n",  dofGids[0]);
-              printf("stridedOffset  : %lu\n", nStridedOffset);
-              printf("offset_        : %i\n",  offset_);
-              printf("goStridedOffset: %i\n",  goStridedOffset);
-              printf("getFixedBlkSize: %lu\n", getFixedBlockSize());
-              std::cout << "gid: " << gid << " GID: " << r << std::endl;
+              std::cout << "goZeroOffset   : " <<  goZeroOffset << std::endl
+                        << "dofGids[0]     : " <<  dofGids[0] << std::endl
+                        << "stridedOffset  : " <<  nStridedOffset << std::endl
+                        << "offset_        : " <<  offset_ << std::endl
+                        << "goStridedOffset: " <<  goStridedOffset << std::endl
+                        << "getFixedBlkSize: " <<  getFixedBlockSize() << std::endl
+                        << "gid: " << gid << " GID: " << r << std::endl;
 
               return false;
             }
