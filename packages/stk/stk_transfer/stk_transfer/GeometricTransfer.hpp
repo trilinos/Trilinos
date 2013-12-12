@@ -23,6 +23,7 @@
 
 #include <stk_search/CoarseSearch.hpp>
 #include <stk_transfer/TransferBase.hpp>
+#include <stk_search/SearchMethod.hpp>
 
 namespace stk {
 namespace transfer {
@@ -65,7 +66,8 @@ public :
   GeometricTransfer(boost::shared_ptr<MeshA> &mesha,
                     boost::shared_ptr<MeshB> &meshb,
                     const std::string &name,
-                    const double expansion_factor = 1.5);
+                    const double expansion_factor = 1.5,
+                    const stk::search::SearchMethod search_method = stk::search::BOOST_RTREE);
   virtual ~GeometricTransfer(){};
   virtual void coarse_search();
   virtual void communication();
@@ -87,6 +89,7 @@ private :
 
   const std::string     m_name;
   const double          m_expansion_factor;
+  const stk::search::SearchMethod m_search_method;
 
   EntityProcRelationVec m_global_range_to_domain;
   EntityKeyMap          m_local_range_to_domain;
@@ -176,12 +179,13 @@ private :
 template <class INTERPOLATE> GeometricTransfer<INTERPOLATE>::GeometricTransfer (boost::shared_ptr<MeshA> &mesha,
                                                                                 boost::shared_ptr<MeshB> &meshb,
                                                                                 const std::string        &name,
-                                                                                const double              expansion_factor) :
+                                                                                const double              expansion_factor,
+                                                                                const stk::search::SearchMethod search_method) :
   m_mesha(mesha),
   m_meshb(meshb),
   m_name (name) ,
-  m_expansion_factor(expansion_factor) {}
-
+  m_expansion_factor(expansion_factor),
+  m_search_method(search_method) {}
 
 template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::coarse_search() {
 
@@ -306,7 +310,7 @@ template <class INTERPOLATE>  void GeometricTransfer<INTERPOLATE>::coarse_search
     // sorted on range key. It might appear we have the arguments revered
     // in coarse_search call, but really, this is what we want.
     EntityProcRelationVec rng_to_dom;
-    search::coarse_search(range_vector, domain_vector, stk::search::BOOST_RTREE, mesha.comm(), rng_to_dom);
+    search::coarse_search(range_vector, domain_vector, m_search_method, mesha.comm(), rng_to_dom);
 
     if (optional_functions<InterpolateClass>::post_coarse_search_filter) {
       post_coarse_search_filter<InterpolateClass>(rng_to_dom, mesha, meshb);
