@@ -151,6 +151,7 @@ public:
    */
   virtual size_t getRowIDsView(const gid_t *&rowIds) const
   {
+// KDDDEC THROW AN ERROR INSTEAD OF RETURNING 0.
     rowIds = NULL;
     return 0;
   }
@@ -164,6 +165,7 @@ public:
    */
   virtual size_t getColumnIDsView(const gid_t *&colIds) const
   {
+// KDDDEC THROW AN ERROR INSTEAD OF RETURNING 0.
     colIds = NULL;
     return 0;
   }
@@ -199,6 +201,7 @@ public:
                             const gid_t *&colIds) const 
   {
     // Default implementation; no CRS view provided.
+// KDDDEC THROW AN ERROR INSTEAD OF RETURNING 0.
     offsets = NULL;
     colIds = NULL;
     return 0;
@@ -224,6 +227,7 @@ public:
                             const gid_t *& colIds,
                             const scalar_t *&values) const 
   {
+// KDDDEC THROW AN ERROR INSTEAD OF RETURNING 0.
     // Default implementation; no CRS view provided.
     offsets = NULL;
     colIds = NULL;
@@ -248,6 +252,7 @@ public:
                             const gid_t *&rowIds) const 
   {
     // Default implementation; no CCS view provided.
+// KDDDEC THROW AN ERROR INSTEAD OF RETURNING 0.
     offsets = NULL;
     rowIds = NULL;
     return 0;
@@ -273,6 +278,7 @@ public:
                             const gid_t *&rowIds,
                             const scalar_t *&values) const
   {
+// KDDDEC THROW AN ERROR INSTEAD OF RETURNING 0.
     // Default implementation; no CCS view provided.
     offsets = NULL;
     rowIds = NULL;
@@ -299,6 +305,7 @@ public:
   virtual size_t getRowWeightsView(const scalar_t *&weights, int &stride,
                                    int idx = 0) const
   {
+// KDDDEC THROW AN ERROR INSTEAD OF RETURNING 0.
     // Default implementation
     weights = NULL;
     stride = 0;
@@ -331,6 +338,7 @@ public:
                                       int idx = 0) const 
   {
     // Default implementation
+// KDDDEC THROW AN ERROR INSTEAD OF RETURNING 0.
     weights = NULL;
     stride = 0;
     return 0;
@@ -346,7 +354,8 @@ public:
    *  stored, or is the entire matrix stored?
    *  TODO DO WE TEST THIS OPTION?
    */
-  virtual bool symmetricStorage() const {return false;}
+// Future feature
+//  virtual bool symmetricStorage() const {return false;}
   
 
   /*! \brief Returns the dimension of the geometry, if any.
@@ -356,6 +365,10 @@ public:
    *    supplied by the user, it may make sense to use row coordinates
    *    or it may make sense to use column coordinates.
    */
+//KDDDEC  Instead of having coordinate-based functions, 
+//KDDDEC  see if can have a method SetCoordinateInput that
+//KDDDEC  allows user to provide a coordinate input adapter,
+//KDDDEC  and just save it.
 
   virtual int getDimension() const { return 0; }
 
@@ -380,6 +393,7 @@ public:
   virtual size_t getRowCoordinatesView(const scalar_t *&coords, int &stride,
                                        int dim) const 
   {
+// KDDDEC THROW AN ERROR INSTEAD OF RETURNING 0.
     coords = NULL;
     stride = 0;
     return 0;

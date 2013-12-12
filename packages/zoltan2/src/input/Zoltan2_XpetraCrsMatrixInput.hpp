@@ -286,6 +286,8 @@ template <typename User>
   ArrayView<const lno_t> indices;
   ArrayView<const scalar_t> nzs;
   lno_t next = 0;
+//TODO WE ARE COPYING THE MATRIX HERE.  IS THERE A WAY TO USE VIEWS?
+//TODO THEY ARE AVAILABLE IN EPETRA; ARE THEY AVAIL IN TPETRA AND XPETRA?
   for (size_t i=0; i < nrows; i++){
     lno_t row = i + base_;
     nnz = matrix_->getNumEntriesInLocalRow(row);
