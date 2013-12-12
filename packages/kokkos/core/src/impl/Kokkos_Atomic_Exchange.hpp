@@ -120,6 +120,14 @@ T atomic_exchange( volatile T * const dest , const T val )
 
 //----------------------------------------------------------------------------
 
+// Simpler version of atomic_exchange when the return value is not needed
+template <typename T>
+KOKKOS_INLINE_FUNCTION
+void atomic_assign(volatile T * const dest, const T src)
+{
+  atomic_exchange(dest,src);
+}
+
 } // namespace Kokkos
 
 #endif

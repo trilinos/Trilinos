@@ -156,6 +156,13 @@ T atomic_fetch_add( volatile T * const dest , const T val )
 
 //----------------------------------------------------------------------------
 
+// Simpler version of atomic_fetch_add without the fetch
+template <typename T>
+KOKKOS_INLINE_FUNCTION
+void atomic_add(volatile T * const dest, const T src) {
+  atomic_fetch_add(dest,src);
+}
+
 }
 
 #endif
