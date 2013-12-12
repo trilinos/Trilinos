@@ -279,6 +279,11 @@ namespace Tpetra {
 // Must be expanded from within the Tpetra namespace!
 //
 
+#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#include "Tpetra_KokkosRefactor_Vector_def.hpp"
+#endif
+
+
 #define TPETRA_VECTOR_INSTANT(SCALAR,LO,GO,NODE) \
   \
   template class Vector< SCALAR , LO , GO , NODE >; \

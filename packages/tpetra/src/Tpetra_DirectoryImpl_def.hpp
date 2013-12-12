@@ -1007,6 +1007,7 @@ namespace Tpetra {
 #define TPETRA_DIRECTORY_IMPL_INSTANT(LO,GO,NODE)                     \
   template class Directory< LO , GO , NODE >;                         \
   template class ReplicatedDirectory< LO , GO , NODE >;               \
+  template class ContiguousUniformDirectory< LO, GO, NODE >;          \
   template class DistributedContiguousDirectory< LO , GO , NODE >;    \
   template class DistributedNoncontiguousDirectory< LO , GO , NODE >; \
 

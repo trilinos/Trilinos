@@ -44,7 +44,7 @@
 
 #include <Kokkos_DefaultArithmetic.hpp>
 #include <Kokkos_NodeTrace.hpp>
-#include <Tpetra_KokkosRefactor_MultiVector.hpp>
+#include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Vector.hpp>
 
 #ifdef DOXYGEN_USE_ONLY
@@ -52,6 +52,7 @@
 #endif
 #include <KokkosCompat_View.hpp>
 #include <Kokkos_MV.hpp>
+#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 namespace Tpetra {
 
@@ -278,16 +279,6 @@ namespace Tpetra {
   }
 
 } // namespace Tpetra
-
-//
-// Explicit instantiation macro
-//
-// Must be expanded from within the Tpetra namespace!
-//
-
-#define TPETRA_VECTOR_INSTANT(SCALAR,LO,GO,NODE) \
-  \
-  template class Vector< SCALAR , LO , GO , NODE >; \
 
 
 #endif // TPETRA_VECTOR_DEF_HPP

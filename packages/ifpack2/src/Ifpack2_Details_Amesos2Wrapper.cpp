@@ -40,6 +40,7 @@
 //@HEADER
 */
 
+#include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_Details_Amesos2Wrapper_decl.hpp"
 
 #ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION

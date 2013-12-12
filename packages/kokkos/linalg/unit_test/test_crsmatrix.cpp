@@ -18,23 +18,26 @@
 #ifndef DEVICE
 #  define DEVICE 1
 #endif
+#pragma message "HALLO"
 #if DEVICE==1
 #  ifdef _OPENMP
 typedef Kokkos::OpenMP device_type;
 #  else
 typedef Kokkos::Threads device_type;
 #  endif // _OPENMP
-#  define KokkosHost( yourCode ) do { yourCode } while (0)
+//#  define KokkosHost( yourCode ) do { yourCode } while (0)
+#  define KokkosHost( yourCode ) yourCode
 #  define KokkosCUDA( yourCode )
 #else // DEVICE != 1
 typedef Kokkos::Cuda device_type;
-#  define KokkosHost ( yourCode )
-#  define KokkosCUDA( yourCode ) do { yourCode } while (0)
+#  define KokkosHost(a)
+//#  define KokkosCUDA( yourCode ) do { yourCode } while (0)
+#  define KokkosCUDA(a) a
 #endif // DEVICE == 1
 
 // FIXME (mfh 28 Sep 2013) That seems like a rather large rounding
 // error tolerance.  This should really depend on the Scalar type.
-#define EPSILON 1e-5;
+#define EPSILON 1e-5
 
 void cuda_check_error(char* comment)
 {
@@ -91,8 +94,7 @@ SparseMatrix_generate (const OrdinalType nrows,
 }
 
 template<typename Scalar, class Matrix, class RangeVector, class DomainVector>
-int
-test_crs_matrix (testf_data& test_sum, 
+int test_crs_matrix (test_data& test_sum,
 		 Matrix A, 
 		 RangeVector y, 
 		 DomainVector x, 
@@ -108,7 +110,7 @@ test_crs_matrix (testf_data& test_sum,
   typedef DomainVector mv_type;
   typedef typename Kokkos::MultiVectorDynamic<Scalar,device_type>::random_read_type mv_random_read_type;
   typedef typename mv_type::HostMirror h_mv_type;
-  typename matrix_type::CrsArrayType::HostMirror h_graph = Kokkos::create_mirror(A.graph);
+  typename matrix_type::StaticCrsGraphType::HostMirror h_graph = Kokkos::create_mirror(A.graph);
   typename matrix_type::values_type::HostMirror h_values = Kokkos::create_mirror_view(A.values);
   typedef Kokkos::View<Scalar*,device_type> vector;
   typedef typename vector::HostMirror h_vector;
@@ -231,7 +233,7 @@ int
 test_crs_matrix_test (test_data& test_sum, 
 		      const int numRows, 
 		      const int numCols, 
-		      const int nnz, 
+		      int nnz,
 		      const int numVecs, 
 		      const int test, 
 		      const char* typestring) 
@@ -246,7 +248,7 @@ test_crs_matrix_test (test_data& test_sum,
   int* col = NULL;
 
   srand (17312837);
-  nnz = SparseMatrix_generate<Scalar, int> (numRows, numCols, nnz, nnz/numRows*0.2, numRows*0.01, val, row, col);
+  nnz = SparseMatrix_generate<Scalar, int> (numRows, numCols, nnz, (int) nnz/numRows*0.2, (int) numRows*0.01, val, row, col);
 
   matrix_type A ("CRS::A", numRows, numCols, nnz, val, row, col, false);
   mv_type x ("X", numCols, numVecs);
@@ -260,19 +262,19 @@ test_crs_matrix_test (test_data& test_sum,
   if (test == -1) {
     for (int alpha = -1; alpha < 3; ++alpha) {
       for (int beta = -1; beta < 3; ++beta) {
-	num_errors += test_crs_matrix<Scalar>(test_sum,A,y,x,h_y,h_x,h_y_compare,alpha,beta,false,typestring);
+	num_errors += test_crs_matrix<Scalar,matrix_type,mv_type,mv_type>(test_sum,A,y,x,h_y,h_x,h_y_compare,alpha,beta,false,typestring);
       }
     }
     for (int alpha = -1; alpha < 3; ++alpha) {
       for (int beta = -1; beta < 3; ++beta) {
-	num_errors += test_crs_matrix<Scalar>(test_sum,A,y,x,h_y,h_x,h_y_compare,alpha,beta,true,typestring);
+	num_errors += test_crs_matrix<Scalar,matrix_type,mv_type,mv_type>(test_sum,A,y,x,h_y,h_x,h_y_compare,alpha,beta,true,typestring);
       }
     }
   } else {
     const int alpha = ((test % 10) % 4) - 1;
     const int beta = (((test / 10) % 10) % 4) - 1;
     const bool do_vector = (test / 100) % 2;
-    num_errors += test_crs_matrix<Scalar>(test_sum,A,y,x,h_y,h_x,h_y_compare,alpha,beta,do_vector,typestring);
+    num_errors += test_crs_matrix<Scalar,matrix_type,mv_type,mv_type>(test_sum,A,y,x,h_y,h_x,h_y_compare,alpha,beta,do_vector,typestring);
   }
   return num_errors;
 }
@@ -288,7 +290,7 @@ test_crs_matrix_type (test_data& test_sum,
 		      const int numcols, 
 		      const int nnz, 
 		      const int numVecs, 
-		      const int type, 
+		      int type,
 		      const int test) 
 {
   const int maxtype = type < 1 ? 4 : type;
@@ -300,7 +302,11 @@ test_crs_matrix_type (test_data& test_sum,
       total_errors += test_crs_matrix_test<int>(test_sum,numrows,numcols,nnz,numVecs,test,"int          ");
     }
     if (type == 2) {
+#ifdef __CUDACC__
+      total_errors += test_crs_matrix_test<long int>(test_sum,numrows,numcols,nnz,numVecs,test,"long long int");
+#else
       total_errors += test_crs_matrix_test<long long int>(test_sum,numrows,numcols,nnz,numVecs,test,"long long int");
+#endif
     }
     if (type == 3) {
       total_errors += test_crs_matrix_test<float>(test_sum,numrows,numcols,nnz,numVecs,test,"float        ");
@@ -338,10 +344,6 @@ int main (int argc, char **argv) {
     if((strcmp(argv[i],"-p")==0)) {print_results=atoi(argv[++i])==1; continue;}
   }
 
-  KokkosCUDA(
-    Kokkos::Cuda::SelectDevice select_device(device);
-    Kokkos::Cuda::initialize( select_device );
-  );
 
 #ifdef _OPENMP
   omp_set_num_threads (numa * threads_per_numa);
@@ -353,6 +355,11 @@ int main (int argc, char **argv) {
    Kokkos::Threads::initialize( numa*threads_per_numa , numa );
 #pragma message "Compile PThreads"
 #endif
+
+   KokkosCUDA(
+     Kokkos::Cuda::SelectDevice select_device(device);
+     Kokkos::Cuda::initialize( select_device );
+   );
 
  int numVecsList[10] = {1, 2, 3, 4, 5, 8, 11, 15, 16, 17};
  int maxNumVecs = numVecs == -1 ? 17 : numVecs;

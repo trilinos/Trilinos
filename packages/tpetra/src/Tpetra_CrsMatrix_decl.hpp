@@ -2534,6 +2534,11 @@ namespace Tpetra {
   }
 } // namespace Tpetra
 
+// Include KokkosRefactor partial specialisation if enabled
+#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#include "Tpetra_KokkosRefactor_CrsMatrix_decl.hpp"
+#endif
+
 /**
   \example LocalMatOpExample.cpp
   An example using a different sparse mat-vec with Tpetra::CrsMatrix and Tpetra::CrsGraph.

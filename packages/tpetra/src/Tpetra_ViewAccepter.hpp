@@ -42,19 +42,10 @@
 #ifndef TPETRA_VIEWACCEPTER_HPP
 #define TPETRA_VIEWACCEPTER_HPP
 
-#include <Teuchos_ArrayRCP.hpp>
 #include "Tpetra_ConfigDefs.hpp"
+#include <Teuchos_ArrayRCP.hpp>
+#include <Kokkos_DefaultNode.hpp>
 
-#include <Kokkos_SerialNode.hpp>
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-#include <Kokkos_TBBNode.hpp>
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-#include <Kokkos_TPINode.hpp>
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-#include <Kokkos_OpenMPNode.hpp>
-#endif
 
 namespace Tpetra {
 
@@ -101,6 +92,25 @@ namespace Tpetra {
   class ViewAccepter<KokkosClassic::OpenMPNode> : public ViewAccepterSupportedNode {};
 #endif
 
+#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+    // Full specializations for the new Kokkos wrapper Node types.
+
+  #ifdef KOKKOS_HAVE_CUDA
+    template<>
+    class ViewAccepter< ::Kokkos::Compat::KokkosCudaWrapperNode> : public ViewAccepterSupportedNode {};
+  #endif // KOKKOS_HAVE_CUDA
+
+  #ifdef KOKKOS_HAVE_OPENMP
+    template<>
+    class ViewAccepter< ::Kokkos::Compat::KokkosOpenMPWrapperNode> : public ViewAccepterSupportedNode {};
+  #endif // KOKKOS_HAVE_OPENMP
+
+  #ifdef KOKKOS_HAVE_PTHREAD
+    template<>
+    class ViewAccepter< ::Kokkos::Compat::KokkosThreadsWrapperNode> : public ViewAccepterSupportedNode {};
+  #endif // KOKKOS_HAVE_PTHREAD
+
+#endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
   } // end of namespace Tpetra::details
 
 } // end of namespace Tpetra

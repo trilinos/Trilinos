@@ -218,6 +218,10 @@ namespace Tpetra {
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
 
+    Kokkos::View<Scalar*,DeviceType> view = data;
+    std::cout << "Data: " <<  &data[0] << " " << &view[0] << std::endl;
+    view_ = view_type("MV::view_",data.size());
+    Kokkos::deep_copy(view_.d_view,view);
     const char tfecfFuncName[] = "MultiVector(data,LDA,NumVector)";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(NumVectors < 1, std::invalid_argument,
       ": NumVectors must be strictly positive.");
@@ -228,7 +232,7 @@ namespace Tpetra {
       std::runtime_error,
       ": data does not contain enough data to specify the entries in this.");
 #endif
-    MVT::initializeValues(lclMV_,myLen,NumVectors,data,LDA);
+    MVT::initializeValues(lclMV_,myLen,NumVectors,Kokkos::Compat::persistingView(view_.d_view),LDA);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -282,9 +286,14 @@ namespace Tpetra {
   {
     const char tfecfFuncName[] = "MultiVector(map,data,LDA,numVecs)";
     const size_t numRows = this->getLocalLength ();
+    view_ = view_type("MV::view_",numRows,numVecs);
+    for(size_t i = 0; i<numRows;i++)
+      for(size_t j = 0; j<numVecs;j++)
+        view_.h_view(i,j) = data[j*LDA+i]
+    view_.modify<typename view_type::h_dev::device_type>();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(LDA < numRows, std::runtime_error,
       ": LDA = " << LDA << " < numRows = " << numRows << ".");
-    MVT::initializeValues (lclMV_, numRows, numVecs, data, LDA);
+    MVT::initializeValues (lclMV_, numRows, numVecs, Kokkos::Compat::persistingView(view_.d_view), LDA);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -351,8 +360,13 @@ namespace Tpetra {
 #endif
     if (myLen > 0) {
       RCP<Node> node = MVT::getNode(lclMV_);
-      ArrayRCP<Scalar> mydata = node->template allocBuffer<Scalar>(myLen*NumVectors);
-      MVT::initializeValues(lclMV_,myLen,NumVectors,mydata,myLen);
+      //ArrayRCP<Scalar> mydata = node->template allocBuffer<Scalar>(myLen*NumVectors);
+      view_ = view_type("MV::view_",myLen,NumVectors);
+      for(size_t i = 0; i<myLen;i++)
+        for(size_t j = 0; j<NumVectors;j++)
+          view_.h_view(i,j) = A[j*LDA+i];
+      view_.template modify<typename view_type::t_host::device_type>();
+      MVT::initializeValues(lclMV_,myLen,NumVectors,Kokkos::Compat::persistingView(view_.d_view),myLen);
       // FIXME (mfh 13 Sep 2012) It would be better to use the Kokkos
       // Node's copyToBuffer method to push data directly to the
       // device pointer, rather than using an intermediate host
@@ -360,7 +374,7 @@ namespace Tpetra {
       // contiguous storage case (constant stride, and the stride
       // equals the local number of rows).
       KOKKOS_NODE_TRACE("MultiVector::MultiVector(1D)")
-      ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(KokkosClassic::WriteOnly,myLen*NumVectors,mydata);
+      /*ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(KokkosClassic::WriteOnly,myLen*NumVectors,mydata);
       typename ArrayView<const Scalar>::iterator srcit = A.begin();
       for (size_t j = 0; j < NumVectors; ++j) {
         std::copy(srcit,srcit+myLen,myview);
@@ -368,7 +382,7 @@ namespace Tpetra {
         myview += myLen;
       }
       mydata = Teuchos::null;
-      myview = Teuchos::null;
+      myview = Teuchos::null;*/
     }
     else {
       MVT::initializeValues(lclMV_,0,NumVectors,Teuchos::null,0);
@@ -1201,7 +1215,6 @@ namespace Tpetra {
   dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &A,
        const Teuchos::ArrayView<Scalar> &dots) const
   {
-    Kokkos::MV_Dot(&dots[0],view_.d_view,A.view_.d_view);
     /*using Teuchos::Array;
     using Teuchos::ArrayRCP;
     using Teuchos::as;
@@ -1239,6 +1252,7 @@ namespace Tpetra {
         dots[j] = MVT::Dot((const KMV&)v,(const KMV &)a);
       }
     }*/
+    Kokkos::MV_Dot(&dots[0],view_.d_view,A.view_.d_view);
     const size_t numVecs = getNumVectors();
 
     if (this->isDistributed()) {
@@ -1273,7 +1287,7 @@ namespace Tpetra {
     // the MultiVector's native device.
 
     const size_t numVecs = this->getNumVectors();
-    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t>(norms.size()) != numVecs,
+    /*TEUCHOS_TEST_FOR_EXCEPTION(as<size_t>(norms.size()) != numVecs,
       std::runtime_error,
       "Tpetra::MultiVector::norm2(norms): norms.size() must be as large as the number of vectors in *this.");
     if (isConstantStride ()) {
@@ -1287,7 +1301,8 @@ namespace Tpetra {
         MVT::initializeValues (v, MVT::getNumRows (lclMV_), 1, vi, MVT::getStride (lclMV_));
         norms[i] = MVT::Norm2Squared (v);
       }
-    }
+    }*/
+    Kokkos::MV_Dot(&norms[0],view_.d_view,view_.d_view);
     if (this->isDistributed ()) {
       Array<MT> lnorms (norms);
       // FIXME (mfh 25 Apr 2012) Somebody explain to me why we're
@@ -3047,14 +3062,5 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
-//
-// Explicit instantiation macro
-//
-// Must be expanded from within the Tpetra namespace!
-//
-
-#define TPETRA_MULTIVECTOR_INSTANT(SCALAR,LO,GO,NODE) \
-  \
-  template class MultiVector< SCALAR , LO , GO , NODE >; \
 
 #endif // TPETRA_KOKKOS_REFACTOR_MULTIVECTOR_DEF_HPP

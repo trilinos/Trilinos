@@ -101,6 +101,18 @@ typedef Xpetra::EpetraCrsMatrix EpetraCrsMatrix;
 typedef Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraMultiVector;
 #endif
 
+#ifdef XPETRA_TPETRAVECTOR_SHORT
+typedef Xpetra::TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraVector;
+#endif
+
+#ifdef XPETRA_MAPEXTRACTOR_SHORT
+typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractor;
+#endif
+
+#ifdef XPETRA_MAPEXTRACTORFACTORY_SHORT
+typedef Xpetra::MapExtractorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractorFactory;
+#endif
+
 // TODO: add namespace {} for shortcut types
 
 // Define convenient shortcut for data types

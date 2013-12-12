@@ -12,16 +12,9 @@ repartition: enable = 0   [default]
 Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
  postsmoother -> 
-  relaxation: sweeps = 1
-  relaxation: damping factor = 1
-  relaxation: type = symmetric Gauss-Seidel
-  relaxation: min diagonal value = 0   [default]
-  relaxation: zero starting solution = 1   [default]
-  relaxation: backward mode = 0   [default]
-  relaxation: use l1 = 0   [default]
-  relaxation: l1 eta = 1.5   [default]
-  relaxation: number of local smoothing indices = 9999   [default]
-  relaxation: local smoothing indices = 0   [default]
+  relaxation: sweeps = 1   [unused]
+  relaxation: damping factor = 1   [unused]
+  relaxation: type = symmetric Gauss-Seidel   [unused]
  
 Level 1
  Prolongator smoothing (MueLu::SaPFactory)
@@ -70,16 +63,9 @@ Level 1
  
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
  postsmoother -> 
-  relaxation: sweeps = 1
-  relaxation: damping factor = 1
-  relaxation: type = symmetric Gauss-Seidel
-  relaxation: min diagonal value = 0   [default]
-  relaxation: zero starting solution = 1   [default]
-  relaxation: backward mode = 0   [default]
-  relaxation: use l1 = 0   [default]
-  relaxation: l1 eta = 1.5   [default]
-  relaxation: number of local smoothing indices = 3333   [default]
-  relaxation: local smoothing indices = 0   [default]
+  relaxation: sweeps = 1   [unused]
+  relaxation: damping factor = 1   [unused]
+  relaxation: type = symmetric Gauss-Seidel   [unused]
  
 Level 2
  Prolongator smoothing (MueLu::SaPFactory)

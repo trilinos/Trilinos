@@ -11,16 +11,7 @@ repartition: enable = 0   [default]
 
 Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
- chebyshev: ratio eigenvalue = 30   [default]
- chebyshev: min eigenvalue = 0   [default]
- chebyshev: max eigenvalue = -1   [default]
- chebyshev: degree = 1   [default]
- chebyshev: min diagonal value = 0   [default]
- chebyshev: zero starting solution = 1   [default]
- chebyshev: operator inv diagonal = 0   [default]
- chebyshev: eigenvalue max iterations = 10   [default]
- chebyshev: use block mode = 0   [default]
- chebyshev: solve normal equations = 0   [default]
+ [empty list]
  
 Level 1
  Prolongator smoothing (MueLu::SaPFactory)
@@ -68,16 +59,7 @@ Level 1
  RepairMainDiagonal = 0   [default]
  
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
- chebyshev: ratio eigenvalue = 30   [default]
- chebyshev: min eigenvalue = 0   [default]
- chebyshev: max eigenvalue = -1   [default]
- chebyshev: degree = 1   [default]
- chebyshev: min diagonal value = 0   [default]
- chebyshev: zero starting solution = 1   [default]
- chebyshev: operator inv diagonal = 0   [default]
- chebyshev: eigenvalue max iterations = 10   [default]
- chebyshev: use block mode = 0   [default]
- chebyshev: solve normal equations = 0   [default]
+ [empty list]
  
 Level 2
  Prolongator smoothing (MueLu::SaPFactory)

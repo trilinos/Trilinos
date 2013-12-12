@@ -42,7 +42,7 @@
 #ifndef TPETRA_KOKKOSREFACTOR_CRSGRAPH_DECL_HPP
 #define TPETRA_KOKKOSREFACTOR_CRSGRAPH_DECL_HPP
 
-#include <Teuchos_CompileTimeAssert.hpp>
+/*#include <Teuchos_CompileTimeAssert.hpp>
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
 
@@ -53,7 +53,7 @@
 #include "Tpetra_RowGraph.hpp"
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_Exceptions.hpp"
-#include "Tpetra_CrsGraph_decl.hpp"
+#include "Tpetra_CrsGraph_decl.hpp"*/
 #include "Kokkos_StaticCrsGraph.hpp"
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 #include <Kokkos_DualView.hpp>

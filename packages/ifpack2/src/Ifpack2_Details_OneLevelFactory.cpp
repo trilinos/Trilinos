@@ -1,7 +1,8 @@
-/*@HEADER
+/*
+//@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -41,31 +42,42 @@
 */
 
 #include "Ifpack2_ConfigDefs.hpp"
-#include "Ifpack2_Details_DenseSolver_decl.hpp"
+#include "Ifpack2_Details_OneLevelFactory_decl.hpp"
 
 #ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
-
-#include "Ifpack2_Details_DenseSolver_def.hpp"
-#include "Ifpack2_ExplicitInstantiationHelpers.hpp"
-#include "Ifpack2_ETIHelperMacros.h"
+#  include "Ifpack2_Details_OneLevelFactory_def.hpp"
+#  include "Ifpack2_ExplicitInstantiationHelpers.hpp"
+#  include "Ifpack2_ETIHelperMacros.h"
 
 namespace Ifpack2 {
 namespace Details {
 
-// mfh 15 Nov 2013: Since we defined a stub implementation for
-// unsupported Scalar (S) types, we don't have to go through any
-// trouble to exclude unsupported Scalar types here.
-//
-// mfh 12 Dec 2013: For some reason, this all has to be on one line,
-// otherwise the macro definition includes the whole rest of the file.
-#define IFPACK2_INST_DETAILS_DENSE_SOLVER(S,LO,GO) template class DenseSolver<Tpetra::CrsMatrix< S , LO , GO > >;
+  // mfh 09 Nov 2013: We can't use the usual IFPACK2_* class macro
+  // here because OneLevelFactory is not a templated class; its methods are.
+  //
+  // mfh 12 Dec 2013: For some reason, this all has to be on one line,
+  // otherwise the macro definition includes the whole rest of the file.
+#define LCLINST(S, LO, GO) template Teuchos::RCP<Preconditioner<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> > OneLevelFactory::create<Tpetra::CrsMatrix< S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> > (const std::string&, const Teuchos::RCP<const Tpetra::CrsMatrix<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> >&);
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 
-  IFPACK2_INSTANTIATE_SLG(IFPACK2_INST_DETAILS_DENSE_SOLVER)
+  IFPACK2_INSTANTIATE_SLG( LCLINST )
+
+#if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
+  template<>
+  Teuchos::RCP<Preconditioner<double, int, int, KokkosClassic::ThrustGPUNode> >
+  OneLevelFactory::create<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> > (const std::string& precType,
+                                                                                               const Teuchos::RCP<const Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >& A);
+#endif
+
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
+  template<>
+  Teuchos::RCP<Preconditioner<double, int, int, KokkosClassic::TPINode> >
+  OneLevelFactory::create<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> > (const std::string& precType,
+                                                                                         const Teuchos::RCP<const Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >& A);
+#endif
 
 } // namespace Details
 } // namespace Ifpack2
 
 #endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
-

@@ -42,7 +42,7 @@
 #ifndef TPETRA_KOKKOSREFACTOR_CRSMATRIX_DECL_HPP
 #define TPETRA_KOKKOSREFACTOR_CRSMATRIX_DECL_HPP
 
-#include <Kokkos_DefaultNode.hpp>
+/*#include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
 
 #include "Tpetra_ConfigDefs.hpp"
@@ -50,8 +50,8 @@
 #include "Tpetra_Exceptions.hpp"
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_KokkosRefactor_CrsGraph.hpp"
-#include "Tpetra_KokkosRefactor_Vector.hpp"
-#include "Tpetra_CrsMatrix_decl.hpp"
+#include "Tpetra_KokkosRefactor_Vector.hpp"*/
+//#include "Tpetra_CrsMatrix_decl.hpp"
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include "Kokkos_CrsMatrix.hpp"

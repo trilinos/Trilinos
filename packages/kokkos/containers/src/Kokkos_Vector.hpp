@@ -206,7 +206,7 @@ public:
 
   size_t lower_bound(const size_t &start, const size_t &end, const Scalar &comp_val) const {
 
-    int lower = 0 > start  ? 0   : start;
+    int lower = start;
     int upper = _size > end? end : _size-1;
     if(upper<=lower) return end;
 

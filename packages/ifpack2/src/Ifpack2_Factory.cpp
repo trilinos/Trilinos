@@ -41,6 +41,7 @@
 //@HEADER
 */
 
+#include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_Factory_decl.hpp"
 
 #ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
@@ -51,7 +52,7 @@
 
 namespace Ifpack2 {
 
-bool supportsUnsymmetric(const std::string& prec_type)
+bool supportsUnsymmetric (const std::string& prec_type)
 {
   bool result = false;
   if (prec_type == "RELAXATION" ||
@@ -75,19 +76,16 @@ bool supportsUnsymmetric(const std::string& prec_type)
 
 #ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
-  // mfh 09 Nov 2013: We can't use the usual IFPACK2_* class macro
-  // here because Factory is not a templated class; its methods are.
-#define LCLINST(S,LO,GO) \
-  template<> \
-  Teuchos::RCP<Preconditioner<S, LO, GO, Tpetra::CrsMatrix<S, LO, GO>::node_type> > \
-  Factory::create<Tpetra::CrsMatrix<S, LO, GO> > (const std::string& precType, \
-                                                  const Teuchos::RCP<const Tpetra::CrsMatrix<S, LO, GO> >& matrix); \
-  \
-  template<> \
-  Teuchos::RCP<Preconditioner<S, LO, GO, Tpetra::CrsMatrix<S, LO, GO>::node_type> > \
-  Factory::create<Tpetra::CrsMatrix<S, LO, GO> > (const std::string& precType, \
-                                                  const Teuchos::RCP<const Tpetra::CrsMatrix<S, LO, GO> >& matrix, \
-                                                  const int overlap);
+  // We can't use the usual IFPACK2_* class macro here because
+  // OneLevelFactory is not a templated class; its methods are.
+  //
+  // mfh 12 Dec 2013: For some reason, this all has to be on one line,
+  // otherwise the macro definition includes the whole rest of the file.
+#define LCLINST(S, LO, GO) template Teuchos::RCP<Preconditioner<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> > Factory::create<Tpetra::CrsMatrix< S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> > (const std::string&, const Teuchos::RCP<const Tpetra::CrsMatrix<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> >&); template Teuchos::RCP<Preconditioner<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> > Factory::create<Tpetra::CrsMatrix< S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> > (const std::string&, const Teuchos::RCP<const Tpetra::CrsMatrix<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> >&, const int);
+
+  IFPACK2_ETI_MANGLING_TYPEDEFS()
+
+  IFPACK2_INSTANTIATE_SLG_REAL( LCLINST )
 
 #if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
   template<>
@@ -115,11 +113,7 @@ bool supportsUnsymmetric(const std::string& prec_type)
                    const int overlap);
 #endif
 
-  IFPACK2_ETI_MANGLING_TYPEDEFS()
-
-  IFPACK2_INSTANTIATE_SLG( LCLINST )
-
-#endif
+#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
 } // namespace Ifpack2
 

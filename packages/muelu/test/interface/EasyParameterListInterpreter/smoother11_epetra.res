@@ -17,27 +17,9 @@ Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
  presmoother -> 
-  relaxation: sweeps = 3
-  relaxation: type = Jacobi   [default]
-  relaxation: damping factor = 1   [default]
-  relaxation: min diagonal value = 0   [default]
-  relaxation: zero starting solution = 1   [default]
-  relaxation: backward mode = 0   [default]
-  relaxation: use l1 = 0   [default]
-  relaxation: l1 eta = 1.5   [default]
-  relaxation: number of local smoothing indices = 9999   [default]
-  relaxation: local smoothing indices = 0   [default]
+  relaxation: sweeps = 3   [unused]
  postsmoother -> 
-  relaxation: sweeps = 0
-  relaxation: type = Jacobi   [default]
-  relaxation: damping factor = 1   [default]
-  relaxation: min diagonal value = 0   [default]
-  relaxation: zero starting solution = 1   [default]
-  relaxation: backward mode = 0   [default]
-  relaxation: use l1 = 0   [default]
-  relaxation: l1 eta = 1.5   [default]
-  relaxation: number of local smoothing indices = 9999   [default]
-  relaxation: local smoothing indices = 0   [default]
+  relaxation: sweeps = 0   [unused]
  
 Level 1
  Prolongator smoothing (MueLu::SaPFactory)
@@ -87,27 +69,9 @@ Level 1
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
  presmoother -> 
-  relaxation: sweeps = 3
-  relaxation: type = Jacobi   [default]
-  relaxation: damping factor = 1   [default]
-  relaxation: min diagonal value = 0   [default]
-  relaxation: zero starting solution = 1   [default]
-  relaxation: backward mode = 0   [default]
-  relaxation: use l1 = 0   [default]
-  relaxation: l1 eta = 1.5   [default]
-  relaxation: number of local smoothing indices = 3333   [default]
-  relaxation: local smoothing indices = 0   [default]
+  relaxation: sweeps = 3   [unused]
  postsmoother -> 
-  relaxation: sweeps = 0
-  relaxation: type = Jacobi   [default]
-  relaxation: damping factor = 1   [default]
-  relaxation: min diagonal value = 0   [default]
-  relaxation: zero starting solution = 1   [default]
-  relaxation: backward mode = 0   [default]
-  relaxation: use l1 = 0   [default]
-  relaxation: l1 eta = 1.5   [default]
-  relaxation: number of local smoothing indices = 3333   [default]
-  relaxation: local smoothing indices = 0   [default]
+  relaxation: sweeps = 0   [unused]
  
 Level 2
  Prolongator smoothing (MueLu::SaPFactory)

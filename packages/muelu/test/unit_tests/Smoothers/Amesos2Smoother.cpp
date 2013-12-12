@@ -54,6 +54,7 @@
 
 namespace MueLuTests {
 
+  // this namespace already has:  #include "MueLu_UseShortNames.hpp"
   using namespace TestHelpers::Smoothers;
 
   TEUCHOS_UNIT_TEST(Amesos2Smoother, NotSetup)
@@ -61,7 +62,7 @@ namespace MueLuTests {
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra)
       {
 #if defined HAVE_AMESOS2_KLU2 || defined HAVE_AMESOS2_SUPERLU
-        testApplyNoSetup(MueLu::Amesos2Smoother(), out, success);
+        testApplyNoSetup(Amesos2Smoother(), out, success);
 #endif
       }
   }
@@ -71,12 +72,12 @@ namespace MueLuTests {
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra)
       {
 #ifdef HAVE_AMESOS2_KLU2
-        MueLu::Amesos2Smoother smoother("Klu");
+        Amesos2Smoother smoother("Klu");
         testDirectSolver(smoother, out, success);
 #endif
 
 #ifdef HAVE_AMESOS2_SUPERLU
-        MueLu::Amesos2Smoother smoother("Superlu");
+        Amesos2Smoother smoother("Superlu");
         testDirectSolver(smoother, out, success);
 #endif
       }
