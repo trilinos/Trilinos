@@ -26,8 +26,8 @@ STKUNIT_UNIT_TEST(StkMeshIoBroker, CheckInvalidCallOrdering)
     {
       size_t results_output_index = stkIo.create_output_mesh(outputFilename, stk::io::WRITE_RESULTS);
 
-      stk::mesh::FieldBase *field0 = stkMeshMetaData.get_field("displacement");
-      stkIo.add_field(results_output_index, *field0);
+      stk::mesh::FieldBase *field0a = stkMeshMetaData.get_field("displacement");
+      stkIo.add_field(results_output_index, *field0a);
       stkIo.add_global(results_output_index, "NotTooLate", "scalar", Ioss::Field::DOUBLE);
 
       // Global variables defined, process_output_request does not output globals...
@@ -41,7 +41,7 @@ STKUNIT_UNIT_TEST(StkMeshIoBroker, CheckInvalidCallOrdering)
       EXPECT_THROW(stkIo.write_global(results_output_index, "NotTooLate", 1.0), std::exception);
 
       // Try to add a field after output has already been done...
-      EXPECT_THROW(stkIo.add_field(results_output_index, *field0), std::exception);
+      EXPECT_THROW(stkIo.add_field(results_output_index, *field0a), std::exception);
 
       // Try to add a global field after output has already been done...
       EXPECT_THROW(stkIo.add_global(results_output_index, "TooLate", "scalar", Ioss::Field::DOUBLE), std::exception);
