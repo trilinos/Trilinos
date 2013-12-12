@@ -14,21 +14,9 @@ Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
  Setup Smoother (MueLu::IfpackSmoother{type = ILU})
  presmoother -> 
-  chebyshev: ratio eigenvalue = 30   [default]
-  chebyshev: min eigenvalue = 0   [default]
-  chebyshev: max eigenvalue = -1   [default]
-  chebyshev: degree = 1   [default]
-  chebyshev: min diagonal value = 0   [default]
-  chebyshev: zero starting solution = 1   [default]
-  chebyshev: operator inv diagonal = 0   [default]
-  chebyshev: eigenvalue max iterations = 10   [default]
-  chebyshev: use block mode = 0   [default]
-  chebyshev: solve normal equations = 0   [default]
+  [empty list]
  postsmoother -> 
-  fact: relax value = 0   [default]
-  fact: absolute threshold = 0   [default]
-  fact: relative threshold = 1   [default]
-  fact: level-of-fill = 0   [default]
+  [empty list]
  
 Level 1
  Prolongator smoothing (MueLu::SaPFactory)
@@ -78,21 +66,9 @@ Level 1
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
  Setup Smoother (MueLu::IfpackSmoother{type = ILU})
  presmoother -> 
-  chebyshev: ratio eigenvalue = 30   [default]
-  chebyshev: min eigenvalue = 0   [default]
-  chebyshev: max eigenvalue = -1   [default]
-  chebyshev: degree = 1   [default]
-  chebyshev: min diagonal value = 0   [default]
-  chebyshev: zero starting solution = 1   [default]
-  chebyshev: operator inv diagonal = 0   [default]
-  chebyshev: eigenvalue max iterations = 10   [default]
-  chebyshev: use block mode = 0   [default]
-  chebyshev: solve normal equations = 0   [default]
+  [empty list]
  postsmoother -> 
-  fact: relax value = 0   [default]
-  fact: absolute threshold = 0   [default]
-  fact: relative threshold = 1   [default]
-  fact: level-of-fill = 0   [default]
+  [empty list]
  
 Level 2
  Prolongator smoothing (MueLu::SaPFactory)

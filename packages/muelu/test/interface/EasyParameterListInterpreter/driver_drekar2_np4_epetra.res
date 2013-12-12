@@ -34,11 +34,6 @@ Level 0
  chebyshev: min eigenvalue = 1
  chebyshev: zero starting solution = 1
  chebyshev: eigenvalue max iterations = 10
- chebyshev: max eigenvalue = -1   [default]
- chebyshev: min diagonal value = 0   [default]
- chebyshev: operator inv diagonal = 0   [default]
- chebyshev: use block mode = 0   [default]
- chebyshev: solve normal equations = 0   [default]
  
 Level 1
  Build (MueLu::RebalanceTransferFactory)
@@ -121,11 +116,6 @@ Level 1
  chebyshev: min eigenvalue = 1
  chebyshev: zero starting solution = 1
  chebyshev: eigenvalue max iterations = 10
- chebyshev: max eigenvalue = -1   [default]
- chebyshev: min diagonal value = 0   [default]
- chebyshev: operator inv diagonal = 0   [default]
- chebyshev: use block mode = 0   [default]
- chebyshev: solve normal equations = 0   [default]
  
 Level 2
  Build (MueLu::RebalanceTransferFactory)
@@ -208,11 +198,6 @@ Level 2
  chebyshev: min eigenvalue = 1
  chebyshev: zero starting solution = 1
  chebyshev: eigenvalue max iterations = 10
- chebyshev: max eigenvalue = -1   [default]
- chebyshev: min diagonal value = 0   [default]
- chebyshev: operator inv diagonal = 0   [default]
- chebyshev: use block mode = 0   [default]
- chebyshev: solve normal equations = 0   [default]
  
 Level 3
  Build (MueLu::RebalanceTransferFactory)
