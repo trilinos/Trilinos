@@ -99,6 +99,8 @@ Superlu<Matrix,Vector>::Superlu(
   data_.U.Store = NULL;
   data_.X.Store = NULL;
   data_.B.Store = NULL;
+  
+  ILU_Flag_=false; // default: turn off ILU
 }
 
 
