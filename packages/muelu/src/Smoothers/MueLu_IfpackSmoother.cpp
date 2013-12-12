@@ -96,7 +96,7 @@ namespace MueLu {
     A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
     double lambdaMax = -1.0;
-    if (type_ == "CHEBYSHEV")
+    if (type_ == "Chebyshev")
       try {
         lambdaMax = Teuchos::getValue<Scalar>(this->GetParameter("chebyshev: max eigenvalue"));
         this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue (cached with smoother parameter list)" << " = " << lambdaMax << std::endl;
