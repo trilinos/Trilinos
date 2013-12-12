@@ -253,7 +253,7 @@ template <typename User>
       gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), comm_(comm),
       gids_(), userWeightDim_(0), weights_(), gnos_(), gnosConst_()
 {
-  userWeightDim_ = ia->getNumWeightsPer();
+  userWeightDim_ = ia->getNumWeightsPerID();
   size_t nLocalIds = ia->getLocalNum();
 
   Model<IdentifierAdapter<User> >::maxCount(*comm, userWeightDim_);
@@ -462,7 +462,7 @@ template <typename User>
   /////////////////////////////////////////
   // Get weights.
 
-  userWeightDim_ = ia->getNumWeightsPer();
+  userWeightDim_ = ia->getNumWeightsPerID();
   Array<lno_t> weightListSizes(userWeightDim_, 0);
 
   Model<CoordinateAdapter<User> >::maxCount(*comm, userWeightDim_);

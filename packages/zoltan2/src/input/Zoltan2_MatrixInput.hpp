@@ -496,7 +496,7 @@ public:
     }
   }
 
-  int getNumWeightsPer() const {
+  int getNumWeightsPerID() const {
     switch (getPrimaryEntityType()) {
     case MATRIX_ROW:
       return getNumWeightsPerRow();

@@ -329,7 +329,7 @@ public:
     }
   }
 
-  int getNumWeightsPer() const {
+  int getNumWeightsPerID() const {
     if (getPrimaryEntityType() == GRAPH_VERTEX)
       return getNumWeightsPerVertex();
     else

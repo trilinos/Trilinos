@@ -103,7 +103,7 @@ int verifyInputAdapter(
   if (!fail && ia.getNumVectors() !=1) 
     fail = 42;
 
-  if (!fail && ia.getNumWeightsPer() !=wdim) 
+  if (!fail && ia.getNumWeightsPerID() !=wdim) 
     fail = 41;
 
   if (!fail && ia.getLocalNum() != vector.getLocalLength())

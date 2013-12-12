@@ -265,7 +265,7 @@ template <typename User>
   // Get coordinates and weights (if any)
 
   coordinateDim_ = ia->getDimension();
-  userNumWeights_ = ia->getNumWeightsPer();
+  userNumWeights_ = ia->getNumWeightsPerID();
 
   Model<CoordinateAdapter<User> >::maxCount(*comm, coordinateDim_, 
     userNumWeights_);
@@ -633,7 +633,7 @@ CoordinateModel<VectorAdapter<User> >::CoordinateModel(
   // Get coordinates and weights (if any)
 
   coordinateDim_ = ia->getNumVectors();
-  userNumWeights_ = ia->getNumWeightsPer();
+  userNumWeights_ = ia->getNumWeightsPerID();
 
   Model<VectorAdapter<User> >::maxCount(*comm, coordinateDim_, userNumWeights_);
 

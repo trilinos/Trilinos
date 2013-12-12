@@ -493,7 +493,7 @@ public:
     return getIDsViewOf(getPrimaryEntityType());
   }
 
-  int getNumWeightsPer() const {
+  int getNumWeightsPerID() const {
     return getNumWeightsPerOf(getPrimaryEntityType());
   }
 

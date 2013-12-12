@@ -75,7 +75,7 @@ int checkBasicCoordinate(
   if (ia->getDimension() != nCoords)
     fail = 100;
 
-  if (!fail && ia->getNumWeightsPer() != nWeights)
+  if (!fail && ia->getNumWeightsPerID() != nWeights)
     fail = 101;
 
   if (!fail && ia->getLocalNum() != size_t(len))

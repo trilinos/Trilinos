@@ -138,7 +138,7 @@ public:
     return vector_->getLocalLength();
   }
 
-  int getNumWeightsPer() const { return numWeights_;}
+  int getNumWeightsPerID() const { return numWeights_;}
 
   size_t getWeightsView(const scalar_t *&weights, int &stride, int idx) const
   {

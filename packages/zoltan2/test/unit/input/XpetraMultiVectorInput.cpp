@@ -87,7 +87,7 @@ int verifyInputAdapter(
   if (!fail && ia.getNumVectors() !=nvec) 
     fail = 42;
 
-  if (!fail && ia.getNumWeightsPer() !=wdim) 
+  if (!fail && ia.getNumWeightsPerID() !=wdim) 
     fail = 41;
 
   size_t length = vector.getLocalLength();

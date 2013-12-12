@@ -914,7 +914,7 @@ template <typename User>
 
   // Vertex weights
 
-  vWeightDim_ = ia->getNumWeightsPer();
+  vWeightDim_ = ia->getNumWeightsPerID();
 
   if (vWeightDim_ > 0){
     input_t *weightInfo = new input_t [vWeightDim_];

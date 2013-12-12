@@ -72,7 +72,7 @@ int checkBasicVector(
   if (ia->getNumVectors() != mvdim)
     fail = 100;
 
-  if (!fail && ia->getNumWeightsPer() != wdim)
+  if (!fail && ia->getNumWeightsPerID() != wdim)
     fail = 101;
 
   if (!fail && ia->getLocalNum() != size_t(len))

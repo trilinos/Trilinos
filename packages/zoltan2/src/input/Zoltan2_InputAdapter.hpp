@@ -117,7 +117,7 @@ public:
    *   Number of weights per object should be zero or greater.  If
    *   zero, then it is assumed that all objects are equally weighted.
    */ 
-  virtual int getNumWeightsPer() const = 0;
+  virtual int getNumWeightsPerID() const = 0;
 
   /*! \brief Provide pointer to a weight array with stride.
    *    \param wgt on return a pointer to the weights for this dimension

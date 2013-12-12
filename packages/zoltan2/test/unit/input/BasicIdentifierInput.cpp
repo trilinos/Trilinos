@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
     fail = 4;
   }
 
-  if (!fail && ia.getNumWeightsPer() != weightDim)
+  if (!fail && ia.getNumWeightsPerID() != weightDim)
     fail = 5;
 
   const gno_t *globalIdsIn;
