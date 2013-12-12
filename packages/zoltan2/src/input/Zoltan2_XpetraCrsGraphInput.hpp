@@ -205,12 +205,12 @@ public:
     vector<const scalar_t *> &coords,  vector<int> &coordStrides);
 
   /*! \brief Provide a pointer to one dimension of the vertex weights.
-   *    \param dim A number from 0 to one less than 
-   *          vertex weight dimension specified in the constructor.
    *    \param val A pointer to the weights for dimension \c dim.
    *    \param stride    A stride for the \c val array.  If \stride is
    *             \c k, then val[n * k] is the weight for the
    *             \c n th vertex for dimension \dim.
+   *    \param idx A number from 0 to one less than 
+   *          vertex weight dimension specified in the constructor.
    *
    *  The order of the vertex weights should match the order that
    *  vertices appear in the input data structure.
@@ -219,15 +219,15 @@ public:
    *     \endcode
    */
 
-  void setVertexWeights(int dim, const scalar_t *val, int stride);
+  void setVertexWeights(const scalar_t *val, int stride, int idx);
 
   /*! \brief Provide a pointer to one dimension of the edge weights.
-   *    \param dim A number from 0 to one less than 
-   *          edge weight dimension specified in the constructor.
    *    \param val A pointer to the weights for dimension \c dim.
    *    \param stride    A stride for the \c val array.  If \stride is
    *             \c k, then val[n * k] is the weight for the
    *             \c n th edge for dimension \dim.
+   *    \param dim A number from 0 to one less than 
+   *          edge weight dimension specified in the constructor.
    *
    *  The order of the edge weights should follow the order that the
    *  the vertices and edges appear in the input data structure.
@@ -243,7 +243,7 @@ public:
    *     \endcode
    */
 
-  void setEdgeWeights(int dim, const scalar_t *val, int stride);
+  void setEdgeWeights(const scalar_t *val, int stride, int idx);
 
   /*! \brief Provide a pointer to one dimension of the vertex coordinates.
    *    \param dim A number from 0 to one less than 
@@ -288,36 +288,29 @@ public:
   // TODO:  Need to add option for columns or nonzeros?
   size_t getLocalNumVertices() const { return graph_->getNodeNumRows(); }
 
-  size_t getVertexIDsView(const gid_t *&ids) const 
+  void getVertexIDsView(const gid_t *&ids) const 
   {
-    size_t nvtx = getLocalNumVertices();
     ids = NULL;
-    if (nvtx){
+    if (getLocalNumVertices())
       ids = graph_->getRowMap()->getNodeElementList().getRawPtr();
-    }
-    return nvtx;
   }
-
 
   size_t getLocalNumEdges() const { return graph_->getNodeNumEntries(); }
 
-  size_t getEdgeView(const lno_t *&offsets, const gid_t *&adjIds) const
+  void getEdgeView(const lno_t *&offsets, const gid_t *&adjIds) const
   {
-    size_t nvtx = getLocalNumVertices();
     adjIds = NULL;
     offsets = NULL;
-    if (nvtx){
+    if (getLocalNumVertices()) {
       offsets = offs_.getRawPtr();
       adjIds = adjids_.getRawPtr();
     }
-    return nvtx;
   }
-
 
   int getNumWeightsPerVertex() const { return vertexWeightDim_;}
 
   void getVertexWeightsView(const scalar_t *&weights, int &stride,
-                              int idx) const
+                            int idx) const
   {
     env_->localInputAssertion(__FILE__, __LINE__, "invalid weight index",
       idx >= 0 && idx < vertexWeightDim_, BASIC_ASSERTION);
@@ -328,8 +321,7 @@ public:
 
   int getNumWeightsPerEdge() const { return edgeWeightDim_;}
 
-  void getEdgeWeightsView(const scalar_t *&weights, int &stride,
-                            int idx) const
+  void getEdgeWeightsView(const scalar_t *&weights, int &stride, int idx) const
   {
     env_->localInputAssertion(__FILE__, __LINE__, "invalid weight index",
       idx >= 0 && idx < edgeWeightDim_, BASIC_ASSERTION);
@@ -341,7 +333,7 @@ public:
   int getDimension() const { return coordinateDim_; }
 
   void getVertexCoordinatesView(const scalar_t *&coords, int &stride,
-                                  int idx) const
+                                int idx) const
   {
     env_->localInputAssertion(__FILE__, __LINE__, 
       "invalid coordinate dimension",

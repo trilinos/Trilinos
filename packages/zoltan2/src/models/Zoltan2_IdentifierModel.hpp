@@ -615,7 +615,8 @@ template <typename User>
   const gid_t *gids;
 
   try{
-    nLocalIds = ia->getIDsView(gids);
+    nLocalIds = ia->getLocalNum();
+    ia->getIDsView(gids);
   }
   Z2_FORWARD_EXCEPTIONS;
 
@@ -763,7 +764,8 @@ template <typename User>
   const gid_t *gids;
 
   try{
-    nLocalIds = ia->getIDsView(gids);
+    nLocalIds = ia->getLocalNum();
+    ia->getIDsView(gids);
   }
   Z2_FORWARD_EXCEPTIONS;
 

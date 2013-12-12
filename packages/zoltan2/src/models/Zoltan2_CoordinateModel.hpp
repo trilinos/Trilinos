@@ -506,13 +506,10 @@ template <typename User>
 
   this->env_->debug(DETAILED_STATUS, "    getting identifiers");
   const gid_t *gids;
-
   ia->getIDsView(gids);
-
   gids_ = arcp<const gid_t>(gids, 0, nLocalIds, false);
 
   RCP<const idmap_t> idMap;
-
   try{
     idMap = rcp(new idmap_t(env_, comm_, gids_, consecutiveIds));
   }
@@ -896,8 +893,7 @@ CoordinateModel<GraphAdapter<User> >::CoordinateModel(
     const lno_t *offsets=NULL;
     const gid_t *edgeIds=NULL;
 
-    size_t numIds = ia->getVertexIDsView(globalIds, offsets, edgeIds);
-
+    ia->getVertexIDsView(globalIds, offsets, edgeIds);
     gids_ = arcp(globalIds, 0, nLocalIds, false);
 
     for (int dim=0; dim < coordinateDim_; dim++){

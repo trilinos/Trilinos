@@ -102,7 +102,8 @@ int verifyInputAdapter(
     const scalar_t *vals=NULL;
     int stride;
 
-    size_t nvals = ia.getIDsView(vtxIds);
+    size_t nvals = ia.getLocalNum();
+    ia.getIDsView(vtxIds);
     if (nvals != vector.getLocalLength())
       fail = 8;
 

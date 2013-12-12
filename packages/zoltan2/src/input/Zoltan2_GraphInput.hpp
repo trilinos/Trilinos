@@ -143,13 +143,8 @@ public:
 
   /*! \brief Sets pointers to this process' graph entries.
       \param vertexIds will on return a pointer to vertex global Ids
-       \return The number of ids in the vertexIds list.
-
-      Zoltan2 does not copy your data.  The data pointed to by 
-      vertexIds, offsets and edgeIds
-      must remain valid for the lifetime of this Adapter.
    */
-  virtual size_t getVertexIDsView(const gid_t *&vertexIds) const = 0; 
+  virtual void getVertexIDsView(const gid_t *&vertexIds) const = 0; 
 
   /*! \brief Gets adjacency lists for all vertices in a compressed
              sparse row (CSR) format.
@@ -159,10 +154,9 @@ public:
           The last element of offsets is the size of the adjIds array.
       \param adjIds on return will point to the array of adjacent vertices for
          for each vertex.
-      \return The number of adjacencies on this process.
    */
-  virtual size_t getEdgeView(const lno_t *&offsets,
-                             const gid_t *&adjIds) const = 0;
+  virtual void getEdgeView(const lno_t *&offsets,
+                           const gid_t *&adjIds) const = 0;
        
   /*! \brief Returns the dimension (0 or greater) of vertex weights.
    */
@@ -170,17 +164,11 @@ public:
 
   /*! \brief  Provide a pointer to the vertex weights, if any.
       \param weights is the list of weights of the given dimension for
-           the vertices returned in getVertexListView().  If weights for
+           the vertices returned in getVertexIDsView().  If weights for
            this dimension are to be uniform for all vertices in the
            global problem, the \c weights should be a NULL pointer.
       \param stride The k'th weight is located at weights[stride*k]
       \param idx ranges from zero to one less than getNumWeightsPerVertex().
-      \return The number of weights listed, which should be at least
-                  the local number of vertices times the stride for
-                  non-uniform weights, zero otherwise.
-
-      Zoltan2 does not copy your data.  The data pointed to by weights
-      must remain valid for the lifetime of this Adapter.
    */
   virtual void getVertexWeightsView(const scalar_t *&weights, int &stride, 
                                     int idx = 0) const = 0;
@@ -191,14 +179,9 @@ public:
 
   /*! \brief  Provide a pointer to the edge weights, if any.  
       \param weights is the list of weights of the given index for
-           the edges returned in getEdgesView().
+           the edges returned in getEdgeView().
       \param stride The k'th weight is located at weights[stride*k]
       \param idx ranges from zero to one less than getNumWeightsPerEdge().
-      \return The number of weights listed, which should be the same
-               as the number of edges in getEdgesView().
-
-      Zoltan2 does not copy your data.  The data pointed to by weights
-      must remain valid for the lifetime of this Adapter.
    */
   virtual void getEdgeWeightsView(const scalar_t *&weights, int &stride,
                                   int idx = 0) const = 0;
@@ -222,13 +205,6 @@ public:
    *          the coords list.  If stride is one, then the ith coordinate
    *          value is coords[i], but if stride is two, then the
    *          ith coordinate value is coords[2*i].
-   *
-   *   \return The length of the \c coords list.  This may be more than
-   *          getLocalNumVertices() because the \c stride
-   *          may be more than one.
-   *
-   *  Zoltan2 does not copy your data.  The data pointed to by coords
-   *  must remain valid for the lifetime of this Adapter.
    *  Since coordinate information is optional, we provide a default definition
    *  that does not return coordinate info.  Individual graph adapters can
    *  override this definition.
@@ -313,9 +289,9 @@ public:
       return getLocalNumEdges();
    }
 
-  size_t getIDsView(const gid_t *&Ids) const {
+  void getIDsView(const gid_t *&Ids) const {
     if (getPrimaryEntityType() == GRAPH_VERTEX)
-      return getVertexIDsView(Ids);
+      getVertexIDsView(Ids);
     else {
       // TODO:  Need getEdgeIDsView?  What is an Edge ID?  
       // TODO:  std::pair<gid_t, gid_t>?
@@ -324,7 +300,6 @@ public:
            << " error:  getIDsView not yet supported for graph edges." 
            << std::endl;
       throw std::runtime_error(emsg.str());
-      return 0;
     }
   }
 

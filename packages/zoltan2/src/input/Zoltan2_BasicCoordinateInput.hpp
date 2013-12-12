@@ -166,7 +166,7 @@ public:
 
   size_t getLocalNum() const { return numIds_;}
 
-  size_t getIDsView(const gid_t *&ids) const {ids = idList_; return numIds_;}
+  void getIDsView(const gid_t *&ids) const {ids = idList_;}
 
   int getNumWeightsPerID() const { return numWeights_;}
 

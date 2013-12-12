@@ -132,10 +132,9 @@ public:
 
   size_t getLocalNum() const { return vector_->getLocalLength();}
 
-  size_t getIDsView(const gid_t *&ids) const
+  void getIDsView(const gid_t *&ids) const
   { 
     ids = map_->getNodeElementList().getRawPtr();
-    return vector_->getLocalLength();
   }
 
   int getNumWeightsPerID() const { return numWeights_;}

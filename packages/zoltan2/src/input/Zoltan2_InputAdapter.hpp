@@ -109,9 +109,8 @@ public:
 
       \param Ids will on return point to the list of the global Ids for 
         this process.
-      \return The number of ids in the Ids list.
    */
-  virtual size_t getIDsView(const gid_t *&Ids) const = 0;
+  virtual void getIDsView(const gid_t *&Ids) const = 0;
 
   /*! \brief Returns the number of weights per object.
    *   Number of weights per object should be zero or greater.  If
@@ -124,8 +123,6 @@ public:
    *    \param stride on return, the value such that
    *       the \t nth weight should be found at <tt> wgt[n*stride] </tt>.
    *    \param idx  the weight index, zero or greater
-   *  \return the length of the \c wgt array, which should be at least
-   *   equal to <tt> getLocalNumberOfObjects() * stride </tt>.
    */ 
   virtual void getWeightsView(const scalar_t *&wgt, int &stride,
                               int idx = 0) const = 0;

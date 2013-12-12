@@ -716,7 +716,8 @@ template <typename User>
   gid_t const *vtxIds=NULL, *nborIds=NULL;
   lno_t const  *offsets=NULL;
   try{
-    numLocalVertices_ = ia->getIDsView(vtxIds);
+    numLocalVertices_ = ia->getLocalNum();
+    ia->getIDsView(vtxIds);
   }
   Z2_FORWARD_EXCEPTIONS;
   try{
@@ -1198,7 +1199,8 @@ template <typename User>
   gid_t const *vtxIds=NULL, *nborIds=NULL;
   lno_t const  *offsets=NULL;
   try{
-    numLocalVertices_ = ia->getVertexIDsView(vtxIds, offsets, nborIds);
+    numLocalVertices_ = ia->getLocalNumVertices();
+    ia->getVertexIDsView(vtxIds, offsets, nborIds);
   }
   Z2_FORWARD_EXCEPTIONS;
 

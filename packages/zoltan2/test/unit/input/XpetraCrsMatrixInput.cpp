@@ -120,7 +120,8 @@ int verifyInputAdapter(
 
   if (!gfail){
 
-    nrows = ia.getRowIDsView(rowIds);
+    nrows = ia.getLocalNumRows();
+    ia.getRowIDsView(rowIds);
     ia.getCRSView(offsets, colIds);
 
     if (nrows != M.getNodeNumRows())

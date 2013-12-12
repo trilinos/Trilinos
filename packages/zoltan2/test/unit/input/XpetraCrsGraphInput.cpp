@@ -121,7 +121,8 @@ int verifyInputAdapter(
 
   if (!gfail){
 
-    nvtx = ia.getVertexIDsView(vtxIds);
+    nvtx = ia.getLocalNumVertices();
+    ia.getVertexIDsView(vtxIds);
     ia.getEdgeView(offsets, edgeIds);
 
     if (nvtx != graph.getNodeNumRows())

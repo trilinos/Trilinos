@@ -144,30 +144,26 @@ public:
 
   /*! \brief Sets pointer to this process' rows' global IDs.
       \param rowIds will on return a pointer to row global Ids
-      \return The number of ids in the rowIds list.
       KDDKDD TODO SHOULD THIS FUNCTION BE OPTIONAL?
       KDDKDD TODO SHOULD getColumnIDsView BE REQUIRED 
       KDDKDD TODO ONLY WHEN CRSViewAvailable()?
    */
-  virtual size_t getRowIDsView(const gid_t *&rowIds) const
+  virtual void getRowIDsView(const gid_t *&rowIds) const
   {
 // KDDDEC THROW AN ERROR INSTEAD OF RETURNING 0.
     rowIds = NULL;
-    return 0;
   }
 
   /*! \brief Sets pointer to this process' columns' global IDs.
       \param colIds will on return a pointer to column global Ids
-      \return The number of ids in the colIds list.
       KDDKDD TODO SHOULD THIS FUNCTION BE OPTIONAL?
       KDDKDD TODO SHOULD getColumnIDsView BE REQUIRED 
       KDDKDD TODO ONLY WHEN CCSViewAvailable()?
    */
-  virtual size_t getColumnIDsView(const gid_t *&colIds) const
+  virtual void getColumnIDsView(const gid_t *&colIds) const
   {
 // KDDDEC THROW AN ERROR INSTEAD OF RETURNING 0.
     colIds = NULL;
-    return 0;
   }
 
   /*! \brief Indicates whether the MatrixAdapter implements a view of the 
@@ -194,17 +190,14 @@ public:
           is the size of the colIds array.
       \param colIds on return will point to the global column Ids for
          the non-zeros for each row.
-      \return The number of ids in the rowIds list.  
-       KDDKDD TODO EXAMINE RETURN VALUE; MAYBE MAKE LENGTH OF OFFSETS
    */
-  virtual size_t getCRSView(const lno_t *&offsets,
-                            const gid_t *&colIds) const 
+  virtual void getCRSView(const lno_t *&offsets,
+                          const gid_t *&colIds) const 
   {
     // Default implementation; no CRS view provided.
 // KDDDEC THROW AN ERROR INSTEAD OF RETURNING 0.
     offsets = NULL;
     colIds = NULL;
-    return 0;
   }
 
   /*! \brief Sets pointers to this process' matrix entries 
@@ -220,19 +213,16 @@ public:
          the non-zeros for each row.
       \param values on return will point to the values stored in the 
          non-zeros for each row.
-      \return The number of ids in the rowIds list.  
-       KDDKDD TODO EXAMINE RETURN VALUE; MAYBE MAKE LENGTH OF OFFSETS
    */
-  virtual size_t getCRSView(const lno_t *&offsets,
-                            const gid_t *& colIds,
-                            const scalar_t *&values) const 
+  virtual void getCRSView(const lno_t *&offsets,
+                          const gid_t *& colIds,
+                          const scalar_t *&values) const 
   {
 // KDDDEC THROW AN ERROR INSTEAD OF RETURNING 0.
     // Default implementation; no CRS view provided.
     offsets = NULL;
     colIds = NULL;
     values = NULL;
-    return 0;
   }
 
   /*! \brief Sets pointers to this process' matrix entries using
@@ -245,17 +235,14 @@ public:
           is the size of the rowIds array.
       \param rowIds on return will point to the global row Ids for
          the non-zeros for each column.
-      \return The number of ids in the colIds list.  
-       KDDKDD TODO EXAMINE RETURN VALUE; MAYBE MAKE LENGTH OF OFFSETS
    */
-  virtual size_t getCCSView(const lno_t *&offsets,
-                            const gid_t *&rowIds) const 
+  virtual void getCCSView(const lno_t *&offsets,
+                          const gid_t *&rowIds) const 
   {
     // Default implementation; no CCS view provided.
 // KDDDEC THROW AN ERROR INSTEAD OF RETURNING 0.
     offsets = NULL;
     rowIds = NULL;
-    return 0;
   }
 
   /*! \brief Sets pointers to this process' matrix entries 
@@ -271,19 +258,16 @@ public:
          the non-zeros for each column.
       \param values on return will point to the values stored in the
          non-zeros for each column.
-      \return The number of ids in the colIds list.  
-       KDDKDD TODO EXAMINE RETURN VALUE; MAYBE MAKE LENGTH OF OFFSETS
    */
-  virtual size_t getCCSView(const lno_t *&offsets,
-                            const gid_t *&rowIds,
-                            const scalar_t *&values) const
+  virtual void getCCSView(const lno_t *&offsets,
+                          const gid_t *&rowIds,
+                          const scalar_t *&values) const
   {
 // KDDDEC THROW AN ERROR INSTEAD OF RETURNING 0.
     // Default implementation; no CCS view provided.
     offsets = NULL;
     rowIds = NULL;
     values = NULL;
-    return 0;
   }
 
   /*! \brief Returns the number of weights per row (0 or greater).
@@ -298,9 +282,6 @@ public:
            global problem, the \c weights should be a NULL pointer.
       \param stride The k'th weight is located at weights[stride*k]
       \param idx ranges from zero to one less than getNumWeightsPerRow().
-      \return The number of weights listed, which should be at least
-                  the local number of rows times the stride for
-                  non-uniform weights, zero otherwise.
    */
   virtual void getRowWeightsView(const scalar_t *&weights, int &stride,
                                  int idx = 0) const
@@ -329,9 +310,6 @@ public:
            global problem, the \c weights should be a NULL pointer.
       \param stride The k'th weight is located at weights[stride*k]
       \param idx ranges from zero to one less than getNumWeightsPerColumn().
-      \return The number of weights listed, which should be at least
-                  the local number of columns times the stride for
-                  non-uniform weights, zero otherwise.
    */
   virtual void getColumnWeightsView(const scalar_t *&weights, int &stride,
                                     int idx = 0) const 
@@ -382,10 +360,6 @@ public:
       \param dim [input] is a value from 0 to one less than
          getCoordinateDimension() specifying which dimension is
          being provided in the coords list.
-       \return The length of the \c coords list.  This may be more than
-              getLocalNumRows() because the \c stride
-              may be more than one.  It may also be zero if column 
-              coordinates but not row coordinates are supplied.
    */
 
   virtual void getRowCoordinatesView(const scalar_t *&coords, int &stride,
@@ -408,10 +382,6 @@ public:
       \param dim [input] is a value from 0 to one less than
          getDimension() specifying which dimension is
          being provided in the coords list.
-       \return The length of the \c coords list.  This may be more than
-              getLocalNumRows() because the \c stride
-              may be more than one.  It may also be zero if column 
-              coordinates but not column coordinates are supplied.
    */
 
   virtual void getColumnCoordinatesView(const scalar_t *&coords, int &stride,
@@ -470,14 +440,15 @@ public:
     }
   }
 
-  size_t getIDsView(const gid_t *&Ids) const {
+  void getIDsView(const gid_t *&Ids) const {
     switch (getPrimaryEntityType()) {
     case MATRIX_ROW:
-      return getRowIDsView(Ids);
+      getRowIDsView(Ids);
+      break;
     case MATRIX_COLUMN:
-      return getColumnIDsView(Ids);
-    case MATRIX_NONZERO:
-      {
+      getColumnIDsView(Ids);
+      break;
+    case MATRIX_NONZERO: {
       // TODO:  Need getNonzeroIDsView?  What is a Nonzero ID?  
       // TODO:  std::pair<gid_t, gid_t>?
       std::ostringstream emsg;
@@ -485,10 +456,10 @@ public:
            << " error:  getIDsView not yet supported for matrix nonzeros." 
            << std::endl;
       throw std::runtime_error(emsg.str());
-      return 0;
+      break;
       }
     default:   // Shouldn't reach default; just making compiler happy
-      return 0;
+      break;
     }
   }
 

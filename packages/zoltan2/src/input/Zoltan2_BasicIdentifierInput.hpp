@@ -116,6 +116,8 @@ public:
 
   size_t getLocalNum() const { return numIds_;}
 
+  void getIDsView(const gid_t *&Ids) const { Ids = idList_; }
+
   int getNumWeightsPerID() const { return weights_.size(); }
 
   void getWeightsView(const scalar_t *&weights, int &stride, int idx) const
@@ -129,13 +131,6 @@ public:
     size_t length;
     weights_[idx].getStridedList(length, weights, stride);
   }
-
-  size_t getIDsView(const gid_t *&Ids) const
-  {
-    Ids = idList_;
-    return numIds_;
-  }
-
 
 private:
 

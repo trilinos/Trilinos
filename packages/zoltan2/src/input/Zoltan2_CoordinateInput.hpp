@@ -136,13 +136,6 @@ public:
               the coords list.  If stride is one, then the ith coordinate
               value is coords[i], but if stride is two, then the
               ith coordinate value is coords[2*i].
-
-       \return The length of the \c coords list.  This may be more than
-              getLocalNumberOfCoordinates() because the \c stride
-              may be more than one.
-
-      Zoltan2 does not copy your data.  The data pointed to coords
-      must remain valid for the lifetime of this Adapter.
    */
 
   virtual void getCoordinatesView(const scalar_t *&coords, int &stride,

@@ -131,24 +131,20 @@ public:
   virtual size_t getLocalNumOf(MeshEntityType etype) const = 0;
 
 
+  /*! \brief Provide a pointer to this process' identifiers.
+      \param Ids will on return point to the list of the global Ids for this
+       process.
+  */
+  virtual void getIDsViewOf(MeshEntityType etype,
+                              gid_t const *&Ids) const = 0;
+
+
   /*! \brief Return the number of weights per entity.
    *  \return the count of weights, zero or more per entity.
    *   If the number of weights is zero, then we assume that the entities
    *   are equally weighted.
    */
   virtual int getNumWeightsPerOf(MeshEntityType etype) const = 0;
-
-
-  /*! \brief Provide a pointer to this process' identifiers.
-      \param Ids will on return point to the list of the global Ids for this
-       process.
-      \return The number of ids in the Ids list.
-
-      Some algorithms can partition a simple list of weighted identifiers
-        with no geometry or topology provided.
-  */
-  virtual size_t getIDsViewOf(MeshEntityType etype,
-                              gid_t const *&Ids) const = 0;
 
 
   /*! \brief Provide a pointer to one of the number of this process'
@@ -165,13 +161,6 @@ public:
 
       \param idx is a value ranging from zero to one less than
                    getNumWeightsPerEntityID()
-
-       \return The number of values in the weights list.  This may be greater
-          than the number of entities, because the stride may be greater
-          than one.
-
-      Zoltan2 does not copy your data.  The data pointed to by weights
-      must remain valid for the lifetime of this Adapter.
   */
   virtual void getWeightsViewOf(MeshEntityType etype,
      const scalar_t *&weights, int &stride, int idx = 0) const = 0;
@@ -212,13 +201,6 @@ public:
       \param coordDim  is a value from 0 to one less than
          getEntityCoordinateDimension() specifying which dimension is
          being provided in the coords list.
-
-       \return The length of the \c coords list.  This may be more than
-              getLocalNumEntityIDs() because the \c stride
-              may be more than one.
-
-      Zoltan2 does not copy your data.  The data pointed to coords
-      must remain valid for the lifetime of this Adapter.
   */
   virtual void getCoordinatesViewOf(MeshEntityType etype,
     const scalar_t *&coords, int &stride, int coordDim) const = 0;
@@ -265,16 +247,11 @@ public:
           is the size of the adjacencyIds array.
       \param adjacencyIds on return will point to the global first adjacency
          Ids for each entity.
-       \return The number of ids in the adjacencyIds list.
-
-      Zoltan2 does not copy your data.  The data pointed to by
-      offsets and adjacencyIds
-      must remain valid for the lifetime of this Adapter.
    */
 //KDD Since the source objects are assumed to be gotten from getIDsViewOf(),
 //KDD is the source MeshEntityType understood here?
 //KDD What about the target?
-  virtual size_t getAdjsView(MeshEntityType source, MeshEntityType target,
+  virtual void getAdjsView(MeshEntityType source, MeshEntityType target,
      const lno_t *&offsets, const gid_t *& adjacencyIds) const = 0;
 
 
@@ -318,25 +295,20 @@ public:
 
   /*! \brief Sets pointers to this process' mesh second adjacencies.
       \param sourcetarget
-      \param offsets is an array of size getLocalNumEntityIDs() + 1.
+      \param offsets is an array of size getLocalNumOf() + 1.
          The second adjacency Ids for Ids[i] (returned in
-         getLocalEntityIDsView()) begin at adjacencyIds[offsets[i]].
+         getIDsViewOf()) begin at adjacencyIds[offsets[i]].
           The last element of offsets
           is the size of the adjacencyIds array.
       \param adjacencyIds on return will point to the global second adjacency
          Ids for each entity.
-       \return The number of ids in the adjacencyIds list.
-
-      Zoltan2 does not copy your data.  The data pointed to by
-      offsets and adjacencyIds
-      must remain valid for the lifetime of this Adapter.
    */
 // TODO:  Later may allow user to not implement second adjacencies and, if we want them,
 // TODO:  we compute A^T A, where A is matrix of first adjacencies.
 //KDD Since the source objects are assumed to be gotten from getIDsViewOf(),
 //KDD is the sourcetarget MeshEntityType understood here?
 //KDD What about the through MeshEntityType?
-  virtual size_t get2ndAdjsView(MeshEntityType sourcetarget,
+  virtual void get2ndAdjsView(MeshEntityType sourcetarget,
      MeshEntityType through, const lno_t *&offsets,
      const gid_t *& adjacencyIds) const = 0;
 
@@ -362,15 +334,10 @@ public:
   /*! \brief  Provide a pointer to the second adjacency weights, if any.
 
       \param weights is the list of weights of the given number for
-           the second adjacencies returned in getLocal2ndAdjsView().
+           the second adjacencies returned in get2ndAdjsView().
       \param stride The k'th weight is located at weights[stride*k]
       \param idx ranges from zero to one less than
                    getNumWeightsPer2ndAdj().
-       \return The number of weights listed, which should be the same
-               as the number of adjacencies in getLocal2ndAdjsView().
-
-      Zoltan2 does not copy your data.  The data pointed to by weights
-      must remain valid for the lifetime of this Adapter.
    */
 //KDD Since the source objects are assumed to be gotten from getIDsViewOf(),
 //KDD is the sourcetarget MeshEntityType understood here?
@@ -489,8 +456,8 @@ public:
     return getLocalNumOf(getPrimaryEntityType());
   }
 
-  size_t getIDsView(const gid_t *&Ids) const {
-    return getIDsViewOf(getPrimaryEntityType());
+  void getIDsView(const gid_t *&Ids) const {
+    getIDsViewOf(getPrimaryEntityType(), Ids);
   }
 
   int getNumWeightsPerID() const {
@@ -498,7 +465,7 @@ public:
   }
 
   void getWeightsView(const scalar_t *&wgt, int &stride, int idx = 0) const {
-    getWeightsViewOf(getPrimaryEntityType());
+    getWeightsViewOf(getPrimaryEntityType(), wgt, stride, idx);
   }
 
 };

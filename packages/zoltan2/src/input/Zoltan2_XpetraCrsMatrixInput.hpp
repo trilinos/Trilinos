@@ -170,30 +170,24 @@ public:
 
   bool CRSViewAvailable() const { return true; }
 
-  size_t getRowIDsView(const gid_t *&rowIds) const 
+  void getRowIDsView(const gid_t *&rowIds) const 
   {
-    size_t nrows = getLocalNumRows();
     ArrayView<const gid_t> rowView = rowMap_->getNodeElementList();
     rowIds = rowView.getRawPtr();
-    return nrows;
   }
 
-  size_t getCRSView(const lno_t *&offsets, const gid_t *&colIds) const
+  void getCRSView(const lno_t *&offsets, const gid_t *&colIds) const
   {
-    size_t nrows = getLocalNumRows();
     offsets = offset_.getRawPtr();
     colIds = columnIds_.getRawPtr();
-    return nrows;
   }
 
-  size_t getCRSView(const lno_t *&offsets, const gid_t *&colIds,
+  void getCRSView(const lno_t *&offsets, const gid_t *&colIds,
                     const scalar_t *&values) const
   {
-    size_t nrows = getLocalNumRows();
     offsets = offset_.getRawPtr();
     colIds = columnIds_.getRawPtr();
     values = values_.getRawPtr();
-    return nrows;
   }
 
 
