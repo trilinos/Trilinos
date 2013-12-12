@@ -60,6 +60,18 @@ namespace Domi
       Teuchos::ParameterList* plist = new Teuchos::ParameterList;
 
       /* "axis comm sizes" parameter applies to MDComm */
+      Teuchos::RCP< Teuchos::EnhancedNumberValidator< int > > axisCommNumber =
+        Teuchos::rcp(new Teuchos::EnhancedNumberValidator< int >());
+      axisCommNumber->setMin(-1);
+
+      Teuchos::RCP< const Teuchos::EnhancedNumberValidator< int > > constAxisCommNumber =
+	Teuchos::rcp_const_cast< Teuchos::EnhancedNumberValidator< int > >(axisCommNumber);
+
+      Teuchos::RCP< const Teuchos::ParameterEntryValidator > axisCommValidator =
+	Teuchos::rcp< const Teuchos::ParameterEntryValidator >
+	(new Teuchos::ArrayValidator< Teuchos::EnhancedNumberValidator< int >,
+	 int >(constAxisCommNumber));
+
       Teuchos::Array< int > axisCommSizes(1);
       axisCommSizes[0] = -1;
       plist->set("axis comm sizes",
@@ -68,9 +80,23 @@ namespace Domi
                  "of the problem and whose entries specify the size of the "
                  "MDComm along each axis. A negative value tells Domi to "
                  "fill in a logical value based on the total number of "
-                 "processors");
+                 "processors",
+		 axisCommValidator);
 
       /* "periodic" parameter applies to MDComm */
+      Teuchos::RCP< Teuchos::EnhancedNumberValidator< int > > periodicNumber =
+        Teuchos::rcp(new Teuchos::EnhancedNumberValidator< int >());
+      periodicNumber->setMin(0);
+      periodicNumber->setMax(1);
+
+      Teuchos::RCP< const Teuchos::EnhancedNumberValidator< int > > constPeriodicNumber =
+	Teuchos::rcp_const_cast< Teuchos::EnhancedNumberValidator< int > >(periodicNumber);
+
+      Teuchos::RCP< const Teuchos::ParameterEntryValidator > periodicValidator =
+	Teuchos::rcp< const Teuchos::ParameterEntryValidator >
+	(new Teuchos::ArrayValidator< Teuchos::EnhancedNumberValidator< int >,
+	 int >(constPeriodicNumber));
+
       Teuchos::Array< int > periodic(1);
       periodic[0] = 0;
       plist->set("periodic",
@@ -79,9 +105,23 @@ namespace Domi
                  "periodic axis. If the periodic array is shorter than the "
                  "length of axisCommSizes array, then the unspecified "
                  "entries are given a default value of zero (not "
-                 "periodic).");
+                 "periodic).",
+		 periodicValidator);
 
       /* "dimensions" parameter applies to MDMap */
+      // Teuchos::RCP< Teuchos::EnhancedNumberValidator< long long > > dimensionNumber =
+      //   Teuchos::rcp(new Teuchos::EnhancedNumberValidator< long long >());
+      // dimensionNumber->setMin(1);
+
+      // Teuchos::RCP< const Teuchos::EnhancedNumberValidator< long long > > constDimensionNumber =
+      // 	Teuchos::rcp_const_cast< Teuchos::EnhancedNumberValidator< long long > >(dimensionNumber);
+
+      // Teuchos::RCP< const Teuchos::ParameterEntryValidator > dimensionValidator =
+      // 	Teuchos::rcp< const Teuchos::ParameterEntryValidator >
+      // 	(new Teuchos::ArrayValidator< Teuchos::EnhancedNumberValidator< long long >,
+      // 	 int >(constDimensionNumber));
+
+
       Teuchos::Array< long long > dimensions(1);
       dimensions[0] = 0;
       plist->set("dimensions",
@@ -91,21 +131,38 @@ namespace Domi
                  "the length of the axisCommSizes array. Note that this is "
                  "an array of long long and it will need to be copied to an "
                  "array of type GlobalOrd.");
+		 //dimensionValidator);
 
       Teuchos::Array< int > pad;
+
+
       /* "boundary pad" parameter applies to MDMap */
+      Teuchos::RCP< Teuchos::EnhancedNumberValidator< int > > padNumber =
+        Teuchos::rcp(new Teuchos::EnhancedNumberValidator< int >());
+      padNumber->setMin(0);
+
+      Teuchos::RCP< const Teuchos::EnhancedNumberValidator< int > > constPadNumber =
+	Teuchos::rcp_const_cast< Teuchos::EnhancedNumberValidator< int > >(padNumber);
+
+      Teuchos::RCP< const Teuchos::ParameterEntryValidator > padValidator =
+	Teuchos::rcp< const Teuchos::ParameterEntryValidator >
+	(new Teuchos::ArrayValidator< Teuchos::EnhancedNumberValidator< int >,
+	 int >(constPadNumber));
+
       plist->set("boundary pad",
                  pad,
                  "An array of ints specifying the size of the boundary "
                  "padding along each axis. All unspecified entries are "
-                 "assumed to be zero.");
+                 "assumed to be zero.",
+		 padValidator);
 
       /* "communication pad" parameter applies to MDMap */
       plist->set("communication pad",
                  pad,
                  "An array of ints specifying the size of the commmunication "
                  "padding along each axis. All unspecified entries are "
-                 "assumed to be zero.");
+                 "assumed to be zero.",
+		 padValidator);
 
       /* "layout" parameter applies to MDMap */
       string layout = "Default";
@@ -136,7 +193,8 @@ namespace Domi
                       layoutDocs,
                       layoutVals,
                       string("Default"),
-                      false));
+		      false));
+
       plist->set("layout",
                  layout,
                  "A string indicating how the data is laid out in memory. "
