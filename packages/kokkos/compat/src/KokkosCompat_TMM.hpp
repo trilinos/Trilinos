@@ -63,14 +63,6 @@
 namespace Kokkos {
 namespace Impl {
 
-  /*
-  template< class Device >
-  struct ViewInitialize {
-    template< class ViewType >
-    inline explicit ViewInitialize( const ViewType & ) {}
-  };
-  */
-
   // template<class DestViewType>
   // struct ViewAssignment<DestViewType, Teuchos::ArrayView<typename DestViewType::value_type> {}; // ???
 

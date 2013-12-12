@@ -328,7 +328,8 @@ struct ViewAssignment< CudaTexture , LayoutDefault , void >
   ViewAssignment(       View<DT,DL,DD,DM,CudaTexture> & dst ,
                   const View<ST,SL,SD,SM,LayoutDefault> & src ,
                   const typename enable_if<(
-                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::value
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
+                                    ViewTraits<ST,SL,SD,SM> >::value
                   )>::type * = 0 )
   {
     typedef View<DT,DL,DD,DM,CudaTexture> DstViewType ;

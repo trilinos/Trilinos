@@ -56,6 +56,7 @@
 
 #include <TestMemoryTracking.hpp>
 #include <TestViewAPI.hpp>
+#include <TestAggregate.hpp>
 #include <TestAtomic.hpp>
 
 #include <TestCrsArray.hpp>
@@ -125,6 +126,10 @@ TEST_F( threads, view_impl) {
 
 TEST_F( threads, view_api) {
   TestViewAPI< double , Kokkos::Threads >();
+}
+
+TEST_F( threads, view_aggregate ) {
+  TestViewAggregate< Kokkos::Threads >();
 }
 
 TEST_F( threads, long_reduce) {

@@ -214,17 +214,20 @@ struct UnitTestSetup {
 
   template <typename vec_type>
   bool test_original(const vec_type& yy,
-                     Teuchos::FancyOStream& out) const {
+                     Teuchos::FancyOStream& out) const
+  {
+    typename vec_type::array_type ayy = yy ;
+
     bool success = true;
     for (ordinal_type block=0; block<stoch_length; ++block) {
       for (ordinal_type i=0; i<fem_length; ++i) {
-        value_type diff = std::abs( y[block][i] - yy(block,i) );
+        value_type diff = std::abs( y[block][i] - ayy(block,i) );
         value_type tol = rel_tol*std::abs(y[block][i]) + abs_tol;
         bool s = diff < tol;
         if (!s) {
           out << "y_expected[" << block << "][" << i << "] - "
               << "y(" << i << "," << block << ") = " << y[block][i]
-              << " - " << yy(block,i) << " == "
+              << " - " << ayy(block,i) << " == "
               << diff << " < " << tol << " : failed"
               << std::endl;
         }
@@ -237,17 +240,20 @@ struct UnitTestSetup {
 
   template <typename vec_type>
   bool test_commuted(const vec_type& yy,
-                     Teuchos::FancyOStream& out) const {
+                     Teuchos::FancyOStream& out) const
+  {
+    typename vec_type::array_type ayy = yy ;
+
     bool success = true;
     for (ordinal_type block=0; block<stoch_length; ++block) {
       for (ordinal_type i=0; i<fem_length; ++i) {
-        value_type diff = std::abs( y[block][i] - yy(i,block) );
+        value_type diff = std::abs( y[block][i] - ayy(i,block) );
         value_type tol = rel_tol*std::abs(y[block][i]) + abs_tol;
         bool s = diff < tol;
         if (!s) {
           out << "y_expected[" << block << "][" << i << "] - "
               << "y(" << i << "," << block << ") = " << y[block][i]
-              << " - " << yy(i,block) << " == "
+              << " - " << ayy(i,block) << " == "
               << diff << " < " << tol << " : failed"
               << std::endl;
         }
@@ -291,12 +297,16 @@ bool test_embedded_vector(
   typename block_vector_type::HostMirror hx = Kokkos::create_mirror_view( x );
   typename block_vector_type::HostMirror hy = Kokkos::create_mirror_view( y );
 
+  // View the block vector as an array of the embedded intrinsic type.
+  typename block_vector_type::HostMirror::array_type hax = hx ;
+  typename block_vector_type::HostMirror::array_type hay = hy ;
+
   for (ordinal_type iRowFEM=0; iRowFEM<setup.fem_length; ++iRowFEM) {
     for (ordinal_type iRowStoch=0; iRowStoch<setup.stoch_length; ++iRowStoch) {
-      hx(iRowFEM,iRowStoch) =
+      hax(iRowFEM,iRowStoch) =
         generate_vector_coefficient<ScalarType>(
           setup.fem_length, setup.stoch_length, iRowFEM, iRowStoch );
-      hy(iRowFEM,iRowStoch) = 0.0;
+      hay(iRowFEM,iRowStoch) = 0.0;
     }
   }
 
@@ -315,6 +325,8 @@ bool test_embedded_vector(
   typename matrix_values_type::HostMirror hM =
     Kokkos::create_mirror_view( matrix.values );
 
+  typename matrix_values_type::HostMirror::array_type haM = hM ;
+
   for (ordinal_type iRowFEM=0, iEntryFEM=0; iRowFEM<setup.fem_length; ++iRowFEM) {
     const ordinal_type row_size = setup.fem_graph[iRowFEM].size();
     for (ordinal_type iRowEntryFEM=0; iRowEntryFEM<row_size;
@@ -322,7 +334,7 @@ bool test_embedded_vector(
       const ordinal_type iColFEM = setup.fem_graph[iRowFEM][iRowEntryFEM];
 
       for (ordinal_type k=0; k<setup.stoch_length; ++k) {
-        hM(iEntryFEM,k) =
+        haM(iEntryFEM,k) =
           generate_matrix_coefficient<ScalarType>(
             setup.fem_length, setup.stoch_length, iRowFEM, iColFEM, k);
       }

@@ -280,12 +280,14 @@ struct view_kernel
       if ( ! device.team_rank() ) {
         printf("x(%i) = { ",element);
         for (int sample=0; sample< int(dev_x.dimension_1()); ++sample) {
-          printf("%g ", dev_x(element,sample));
+          // printf("%g ", dev_x(element,sample));
+          printf("%g ", dev_x(element).coeff(sample));
         }
         printf("}\n\n");
         printf("y(%i) = { ",element);
         for (int sample=0; sample< int(dev_y.dimension_1()); ++sample) {
-          printf("%g ", dev_y(element,sample));
+          // printf("%g ", dev_y(element,sample));
+          printf("%g ", dev_y(element).coeff(sample));
         }
         printf("}\n\n");
       }
@@ -485,13 +487,16 @@ bool run_view_kernel( Kokkos::ParallelWorkRequest config,
 
   host_view_type hx = Kokkos::create_mirror(x);
 
+  typename host_view_type::array_type hay_ans = hy_ans ;
+  typename host_view_type::array_type hax = hx ;
+
   // Initialize x
   for (int element=0; element<num_elements; element++) {
     for (int sample=0; sample<num_samples; sample++) {
-      hx(element,sample) =
+      hax(element,sample) =
         static_cast<Scalar>(element+sample+1) /
         static_cast<Scalar>(num_elements*num_samples);
-      simple_function<Scalar>( hx(element,sample) , hy_ans(element,sample) );
+      simple_function<Scalar>( hax(element,sample) , hay_ans(element,sample) );
     }
   }
 
@@ -509,13 +514,15 @@ bool run_view_kernel( Kokkos::ParallelWorkRequest config,
 
   Kokkos::deep_copy(hy, y);
 
+  typename host_view_type::array_type hay = hy ;
+
   // Check results agree
   double rtol = 1e-15;
   double atol = 1e-15;
   bool agree = true;
   for (int e=0; e<num_elements; e++) {
     for (int s=0; s<num_samples; s++) {
-      if (std::abs(hy(e,s)-hy_ans(e,s)) > std::abs(hy_ans(e,s))*rtol+atol) {
+      if (std::abs(hay(e,s)-hay_ans(e,s)) > std::abs(hay_ans(e,s))*rtol+atol) {
         agree = false;
         break;
       }
@@ -527,7 +534,7 @@ bool run_view_kernel( Kokkos::ParallelWorkRequest config,
     std::cout << "x = [ ";
     for (int e=0; e<num_elements; e++) {
       for (int s=0; s<num_samples; s++)
-        std::cout << hx(e,s) << " ";
+        std::cout << hax(e,s) << " ";
       std::cout << ";" << std::endl;
     }
     std::cout << "]" << std::endl;
@@ -535,7 +542,7 @@ bool run_view_kernel( Kokkos::ParallelWorkRequest config,
     std::cout << "y = [ ";
     for (int e=0; e<num_elements; e++) {
       for (int s=0; s<num_samples; s++)
-        std::cout << hy(e,s) << " ";
+        std::cout << hay(e,s) << " ";
       std::cout << ";" << std::endl;
     }
     std::cout << "]" << std::endl;
@@ -543,7 +550,7 @@ bool run_view_kernel( Kokkos::ParallelWorkRequest config,
     std::cout << "hy_ans = [ ";
     for (int e=0; e<num_elements; e++) {
       for (int s=0; s<num_samples; s++)
-        std::cout << hy_ans(e,s) << " ";
+        std::cout << hay_ans(e,s) << " ";
       std::cout << ";" << std::endl;
     }
     std::cout << "]" << std::endl;

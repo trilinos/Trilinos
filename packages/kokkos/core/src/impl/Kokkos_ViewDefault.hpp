@@ -56,6 +56,36 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
   typedef LayoutDefault Specialize ;
 
   //------------------------------------
+  /** \brief  Compatible value and shape */
+
+  template< class DT , class DL , class DD , class DM ,
+            class ST , class SL , class SD , class SM >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
+                  const typename enable_if<(
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
+                                    ViewTraits<ST,SL,SD,SM> >::value
+                  )>::type * = 0 )
+  {
+    typedef ViewTraits<DT,DL,DD,DM> dst_traits ;
+    typedef typename View<DT,DL,DD,DM,Specialize>::shape_type   shape_type ;
+    typedef typename View<DT,DL,DD,DM,Specialize>::stride_type  stride_type ;
+
+    ViewTracking< dst_traits >::decrement( dst.m_ptr_on_device );
+
+    shape_type::assign( dst.m_shape,
+                        src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
+                        src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
+
+    stride_type::assign( dst.m_stride , src.m_stride.value );
+
+    dst.m_ptr_on_device = src.m_ptr_on_device ;
+
+    Impl::ViewTracking< dst_traits >::increment( dst.m_ptr_on_device );
+  }
+
+  //------------------------------------
   /** \brief  Extract Rank-0 from Rank-1 */
 
   template< class DT , class DL , class DD , class DM ,

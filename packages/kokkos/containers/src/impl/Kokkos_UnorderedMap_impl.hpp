@@ -120,6 +120,15 @@ struct node
   void destruct_value()
   { value.~value_type(); }
 
+  // Needed for allocation-initialization
+  KOKKOS_FORCEINLINE_FUNCTION
+  node & operator = ( const node & rhs )
+    {
+      construct_value( rhs.value );
+      atomic = rhs.atomic ;
+      return *this ;
+    }
+
   value_type value;
   uint8_t pad[AlignPad];
   node_atomic atomic;
@@ -139,6 +148,15 @@ struct node<ValueType, 0u>
   KOKKOS_FORCEINLINE_FUNCTION
   void destruct_value()
   { value.~value_type(); }
+
+  // Needed for allocation-initialization
+  KOKKOS_FORCEINLINE_FUNCTION
+  node & operator = ( const node & rhs )
+    {
+      construct_value( rhs.value );
+      atomic = rhs.atomic ;
+      return *this ;
+    }
 
   value_type value;
   node_atomic atomic;
@@ -472,9 +490,9 @@ struct map_data
     , key_hash()
   {}
 
-  map_data(  uint32_t num_nodes
+  map_data( uint32_t num_nodes
            , compare_type compare
-           , hash_type hash
+           , const hash_type & hash
           )
     : node_blocks("UnorderedMap_nodes", (static_cast<uint32_t>((num_nodes+node_block_type::size-1u)/node_block_type::size)))
     , hashes("UnorderedMap_hashes", find_hash_size(capacity()) )

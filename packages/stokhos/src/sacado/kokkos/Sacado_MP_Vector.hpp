@@ -348,6 +348,11 @@ namespace Sacado {
       value_type coeff(ordinal_type i) const {
         return i<s.size() ? s[i] : s[0]; }
 
+      //! Returns degree \c i term with bounds checking
+      KOKKOS_INLINE_FUNCTION
+      value_type & coeff(ordinal_type i) {
+        return i<s.size() ? s[i] : s[0]; }
+
       //! Returns degree \c i term without bounds checking
       KOKKOS_INLINE_FUNCTION
       reference fastAccessCoeff(ordinal_type i) { return s[i];}
