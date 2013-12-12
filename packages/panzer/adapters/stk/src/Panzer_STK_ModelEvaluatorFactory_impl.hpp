@@ -187,10 +187,10 @@ namespace panzer_stk {
 
   template<typename ScalarT>
   void  ModelEvaluatorFactory<ScalarT>::buildObjects(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-							    const Teuchos::RCP<panzer::GlobalData>& global_data,
-                                                            const Teuchos::RCP<const panzer::EquationSetFactory>& eqset_factory,
-                                                            const panzer::BCStrategyFactory & bc_factory,
-                                                            const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & user_cm_factory)
+                                                     const Teuchos::RCP<panzer::GlobalData>& global_data,
+                                                     const Teuchos::RCP<const panzer::EquationSetFactory>& eqset_factory,
+                                                     const panzer::BCStrategyFactory & bc_factory,
+                                                     const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & user_cm_factory)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(this->getParameterList()), std::runtime_error,
 		       "ParameterList must be set before objects can be built!");
@@ -503,20 +503,16 @@ namespace panzer_stk {
     // setup field manager build
     /////////////////////////////////////////////////////////////
 
-    Teuchos::RCP<panzer::FieldManagerBuilder> fmb = Teuchos::rcp(new panzer::FieldManagerBuilder);
-    fmb->setWorksetContainer(wkstContainer);
-    fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params);
-    fmb->setupBCFieldManagers(bcs,physicsBlocks,*eqset_factory,user_cm_factory,bc_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params);
-
-    // Print Phalanx DAGs
+    Teuchos::RCP<panzer::FieldManagerBuilder> fmb;
     {
       bool write_dot_files = false;
+      std::string prefix = "Panzer_AssemblyGraph_";
       write_dot_files = p.sublist("Options").get("Write Volume Assembly Graphs",write_dot_files);
-      if (write_dot_files) {
-	std::string prefix = "Panzer_AssemblyGraph_";
-	prefix = p.sublist("Options").get("Volume Assembly Graph Prefix",prefix);
-	fmb->writeVolumeGraphvizDependencyFiles(prefix, physicsBlocks);
-      }
+      prefix = p.sublist("Options").get("Volume Assembly Graph Prefix",prefix);
+
+      fmb = buildFieldManagerBuilder(wkstContainer,physicsBlocks,bcs,*eqset_factory,bc_factory,cm_factory,
+                                     user_cm_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params,
+                                     write_dot_files,prefix);
     }
 
     // build response library
@@ -579,23 +575,19 @@ namespace panzer_stk {
     /////////////////////////////////////////////////////////////
 
     double t_init = 0.0;
+    if(is_transient)
+      t_init = this->getInitialTime(p.sublist("Initial Conditions").sublist("Transient Parameters"), *mesh);
 
-    Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyra_me;
-    Teuchos::RCP<panzer::ModelEvaluator_Epetra> ep_me;
-    if(!blockedAssembly && !useTpetra) {
-      ep_me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,m_response_library,linObjFactory, p_names, global_data, is_transient));
-      if (is_transient) {
-        t_init = this->getInitialTime(p.sublist("Initial Conditions").sublist("Transient Parameters"), *mesh);
-        ep_me->set_t_init(t_init);
-      }
-
-      // Build Thyra Model Evaluator
-      thyra_me = Thyra::epetraModelEvaluator(ep_me,lowsFactory);
-    }
-    else {
-      thyra_me = Teuchos::rcp(new panzer::ModelEvaluator<double>
-                  (fmb,m_response_library,linObjFactory,p_names,lowsFactory,global_data,is_transient,t_init));
-    }
+    Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyra_me
+        = buildPhysicsModelEvaluator(blockedAssembly || useTpetra, // this determines if a Thyra or Epetra ME is used
+                                     fmb,
+                                     m_response_library,
+                                     linObjFactory,
+                                     p_names,
+                                     lowsFactory,
+                                     global_data,
+                                     is_transient,
+                                     t_init);
 
     // Setup initial conditions
     /////////////////////////////////////////////////////////////
@@ -903,12 +895,70 @@ namespace panzer_stk {
   }
 
   template<typename ScalarT>
-    const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & ModelEvaluatorFactory<ScalarT>::getPhysicsBlocks() const
+  const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & ModelEvaluatorFactory<ScalarT>::getPhysicsBlocks() const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(m_physics_blocks.size()==0, std::runtime_error,
 		       "Objects are not built yet!  Please call buildObjects() member function.");
 
     return m_physics_blocks;
+  }
+
+  template<typename ScalarT>
+  Teuchos::RCP<panzer::FieldManagerBuilder> 
+  ModelEvaluatorFactory<ScalarT>::
+  buildFieldManagerBuilder(const Teuchos::RCP<panzer::WorksetContainer> & wc,
+                           const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+                           const std::vector<panzer::BC> & bcs,
+                           const panzer::EquationSetFactory & eqset_factory,
+                           const panzer::BCStrategyFactory& bc_factory,
+                           const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& volume_cm_factory,
+                           const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& bc_cm_factory,
+                           const Teuchos::ParameterList& closure_models,
+                           const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
+                           const Teuchos::ParameterList& user_data,
+                           bool writeGraph,const std::string & graphPrefix) const
+  {
+    Teuchos::RCP<panzer::FieldManagerBuilder> fmb = Teuchos::rcp(new panzer::FieldManagerBuilder);
+    fmb->setWorksetContainer(wc);
+    fmb->setupVolumeFieldManagers(physicsBlocks,volume_cm_factory,closure_models,lo_factory,user_data);
+    fmb->setupBCFieldManagers(bcs,physicsBlocks,eqset_factory,bc_cm_factory,bc_factory,closure_models,lo_factory,user_data);
+
+    // Print Phalanx DAGs
+    if (writeGraph)
+      fmb->writeVolumeGraphvizDependencyFiles(graphPrefix, physicsBlocks);
+
+    return fmb;
+  }
+
+  template<typename ScalarT>
+  Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > 
+  ModelEvaluatorFactory<ScalarT>::
+  buildPhysicsModelEvaluator(bool buildThyraME,
+                             const Teuchos::RCP<panzer::FieldManagerBuilder> & fmb,
+                             const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & rLibrary,
+      	                     const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof,
+                             const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > & p_names,
+                             const Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<ScalarT> > & solverFactory,
+                             const Teuchos::RCP<panzer::GlobalData> & global_data,
+                             bool is_transient,double t_init) const
+  {
+    Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyra_me;
+    if(!buildThyraME) {
+      Teuchos::RCP<panzer::ModelEvaluator_Epetra> ep_me 
+          = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,lof, p_names, global_data, is_transient));
+
+      if (is_transient)
+        ep_me->set_t_init(t_init);
+      
+      // Build Thyra Model Evaluator
+      thyra_me = Thyra::epetraModelEvaluator(ep_me,solverFactory);
+    }
+    else {
+      thyra_me = Teuchos::rcp(new panzer::ModelEvaluator<double>
+                  (fmb,rLibrary,lof,p_names,solverFactory,global_data,is_transient,t_init));
+    }
+
+    return thyra_me;
   }
 
   template<typename ScalarT>
