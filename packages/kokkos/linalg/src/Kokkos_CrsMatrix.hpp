@@ -268,6 +268,33 @@ public:
   }
 };
 
+// A simple struct for storing a kernel launch configuration.
+// This is currently used by CrsMatrix to allow the user to have some control
+// over how kernels are launched, however it is currently only exercised by
+// Stokhos.  This is a simpler case of "state" needed by TPLs, and at this point
+// is just a hack until we figure out how to support state in a general,
+// extensible way.
+struct DeviceConfig {
+  struct Dim3 {
+    size_t x, y, z;
+    Dim3(const size_t x_, const size_t y_ = 1, const size_t z_ = 1) :
+      x(x_), y(y_), z(z_) {}
+  };
+
+  Dim3 block_dim;
+  size_t num_blocks;
+  size_t num_threads_per_block;
+
+  DeviceConfig(const size_t num_blocks_ = 0,
+               const size_t threads_per_block_x_ = 0,
+               const size_t threads_per_block_y_ = 0,
+               const size_t threads_per_block_z_ = 1) :
+    block_dim(threads_per_block_x_,threads_per_block_y_,threads_per_block_z_),
+    num_blocks(num_blocks_),
+    num_threads_per_block(block_dim.x * block_dim.y * block_dim.z)
+    {}
+};
+
 
 /// \class CrsMatrix
 /// \brief Compressed sparse row implementation of a sparse matrix.
@@ -352,7 +379,7 @@ public:
   //! Type of the "row map" (which contains the offset for each row's data).
   typedef typename StaticCrsGraphType::row_map_type row_map_type;
   //! Kokkos Array type of the entries (values) in the sparse matrix.
-  typedef Kokkos::View<scalar_type*, Kokkos::LayoutLeft, device_type, MemoryTraits> values_type;
+  typedef Kokkos::View<scalar_type*, Kokkos::LayoutRight, device_type, MemoryTraits> values_type;
   //! Const version of the type of the entries in the sparse matrix.
   typedef typename values_type::const_scalar_type  const_scalar_type;
   //! Nonconst version of the type of the entries in the sparse matrix.
@@ -366,6 +393,16 @@ public:
   StaticCrsGraphType graph;
   values_type values;
 
+  // Launch configuration that can be used by overloads/specializations of
+  // MV_multiply().  This is a hack and needs to be replaced by a general
+  // state mechanism.
+  DeviceConfig dev_config;
+
+  // FIXME (mfh 28 Sep 2013) std::vector should never appear in this
+  // class, except perhaps as an input format for compatibility.
+
+  std::vector<OrdinalType> h_entries_;
+  std::vector<OrdinalType> rows_;
 
   /// \brief Default constructor; constructs an empty sparse matrix.
   ///
@@ -491,11 +528,11 @@ public:
              OrdinalType ncols,
              values_type vals,
              StaticCrsGraphType graph_) :
+    graph(graph_),
+    values(vals),
     _numRows (graph_.row_map.dimension_0()-1),
     _numCols (ncols),
-    _nnz (graph_.entries.dimension_0()),
-    values(vals),
-    graph(graph_)
+    _nnz (graph_.entries.dimension_0())
   {
 #ifdef KOKKOS_USE_CUSPARSE
     cusparseCreate(&cusparse_handle);
@@ -565,7 +602,7 @@ public:
       for (int j = 0; j < length; ++j) {
         if (row_view.colidx(j) == cols[i]) {
           if (force_atomic) {
-            atomic_fetch_add(&row_view.value(j), vals[i]);
+            atomic_add(&row_view.value(j), vals[i]);
           } else {
             row_view.value(j) += vals[i];
           }
@@ -589,7 +626,7 @@ public:
       for (int j = 0; j < length; ++j) {
         if (row_view.colidx(j) == cols[i]) {
           if (force_atomic) {
-            atomic_exchange(&row_view.value(j), vals[i]);
+            atomic_assign(&row_view.value(j), vals[i]);
           } else {
             row_view.value(j) = vals[i];
           }
@@ -619,6 +656,7 @@ public:
     _nnz = mtx.nnz();
     graph = mtx.graph;
     values = mtx.values;
+    dev_config = mtx.dev_config;
     return *this;
   }
 
