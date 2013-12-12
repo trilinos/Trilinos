@@ -167,7 +167,6 @@ public:
 
   void getRowIDsView(const gid_t *&rowIds) const 
   {
-    size_t nrows = getLocalNumRows();
     ArrayView<const gid_t> rowView = rowMap_->getNodeElementList();
     rowIds = rowView.getRawPtr();
   }
