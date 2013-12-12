@@ -39,6 +39,14 @@
 
 //----------------------------------------------------------------------
 
+#ifdef SIERRA_MIGRATION
+
+namespace sierra { namespace Fmwk {
+class MeshBulkData;
+}}
+
+#endif // SIERRA_MIGRATION
+
 namespace stk {
 namespace mesh {
 
@@ -160,8 +168,6 @@ public:
 #endif
     return m_field_meta_data[f.mesh_meta_data_ordinal()];
   }
-
-
 
   // current memory usage of stk_mesh data structures on current processor
   void current_memory_usage(std::ostream & out);
@@ -1149,13 +1155,13 @@ public:
 
 #ifdef SIERRA_MIGRATION
   //strictly a transition aid!!! don't add new usage of this!
-  void set_fmwk_bulk_data(const void* fmwk_bulk_ptr)
+  void set_fmwk_bulk_data(const sierra::Fmwk::MeshBulkData* fmwk_bulk_ptr)
   {
     m_fmwk_bulk_ptr = fmwk_bulk_ptr;
   }
 
   //strictly a transition aid!!! don't add new usage of this!
-  const void* get_fmwk_bulk_data() const
+  const sierra::Fmwk::MeshBulkData* get_fmwk_bulk_data() const
   {
     return m_fmwk_bulk_ptr;
   }
@@ -1250,8 +1256,8 @@ private:
   int                m_bulk_data_id;
 #endif
 #ifdef SIERRA_MIGRATION
-  bool               m_add_fmwk_data; // flag that will add extra data to buckets to support fmwk
-  const void*        m_fmwk_bulk_ptr;
+  bool                              m_add_fmwk_data; // flag that will add extra data to buckets to support fmwk
+  const sierra::Fmwk::MeshBulkData* m_fmwk_bulk_ptr;
 
 public:
   mutable bool       m_check_invalid_rels; // TODO REMOVE

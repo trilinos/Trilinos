@@ -36,8 +36,8 @@ namespace mesh {
 template<class SELECTOR>
 inline
 void get_buckets( const SELECTOR & selector ,
-                  const std::vector< Bucket * > & input ,
-                        std::vector< Bucket * > & output )
+                  const BucketVector & input ,
+                        BucketVector & output )
 {
   output.clear();
   for ( std::vector< Bucket * >::const_iterator
