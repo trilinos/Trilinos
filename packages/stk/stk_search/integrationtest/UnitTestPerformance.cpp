@@ -48,6 +48,7 @@ void print_debug_skip(stk::ParallelMachine pm)
 typedef stk::search::IdentProc<int,int> Ident;
 typedef stk::search::Box<double> Box;
 typedef std::vector< std::pair<Box,Ident> > BoxVector;
+typedef std::vector< std::pair<geometry::AxisAlignedBB,Ident> > GtkBoxVector;
 typedef std::vector<std::pair<Ident,Ident> > SearchResults;
 typedef stk::search::Point<double> Point;
 
@@ -302,19 +303,25 @@ void testStkSearch(MPI_Comm comm, std::vector<mybox> &domainBoxes,
     int numProc=-1;
     MPI_Comm_size(comm, &numProc);
 
-    BoxVector stkBoxes(domainBoxes.size());
-    for (size_t i=0;i<domainBoxes.size();i++)
+    GtkBoxVector searchBoxPairs(domainBoxes.size());
+    std::vector<geometry::AxisAlignedBB> gtkBoxes(domainBoxes.size());
+    for(size_t i=0;i<domainBoxes.size();i++)
     {
-        Point min(domainBoxes[i].coordinates[0], domainBoxes[i].coordinates[1], domainBoxes[i].coordinates[2]);
-        Point max(domainBoxes[i].coordinates[3], domainBoxes[i].coordinates[4], domainBoxes[i].coordinates[5]);
+        gtkBoxes[i] = geometry::AxisAlignedBB(domainBoxes[i].coordinates[0],
+                domainBoxes[i].coordinates[1],
+                domainBoxes[i].coordinates[2],
+                domainBoxes[i].coordinates[3],
+                domainBoxes[i].coordinates[4],
+                domainBoxes[i].coordinates[5]
+        );
         Ident domainBoxId(i, procId);
-        stkBoxes[i] = std::make_pair(Box(min,max), domainBoxId);
+        searchBoxPairs[i] = std::make_pair(gtkBoxes[i], domainBoxId);
     }
 
     CALLGRIND_TOGGLE_COLLECT;
 
     double startTime = stk::wall_time();
-    stk::search::coarse_search(stkBoxes, stkBoxes, searchMethod, comm, boxIdPairResults);
+    stk::search::coarse_search(searchBoxPairs, searchBoxPairs, searchMethod, comm, boxIdPairResults);
     double elapsedTime = stk::wall_time() - startTime;
 
     CALLGRIND_TOGGLE_COLLECT;

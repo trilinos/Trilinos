@@ -33,6 +33,13 @@ public:
   bool operator!=(Sphere<value_type> const& s) const
   { return !(*this == s); }
 
+  value_type get_x_min() const { return m_center[0] - m_radius; }
+  value_type get_y_min() const { return m_center[1] - m_radius; }
+  value_type get_z_min() const { return m_center[2] - m_radius; }
+  value_type get_x_max() const { return m_center[0] + m_radius; }
+  value_type get_y_max() const { return m_center[1] + m_radius; }
+  value_type get_z_max() const { return m_center[2] + m_radius; }
+
   friend std::ostream& operator<<(std::ostream & out, Sphere<value_type> const& s)
   {
     out << "{" << s.center() << ":" << s.radius() << "}";

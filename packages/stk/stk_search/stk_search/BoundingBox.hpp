@@ -12,6 +12,7 @@
 #include <stk_search/Point.hpp>
 #include <stk_search/Sphere.hpp>
 #include <stk_search/Box.hpp>
+#include <Geom_AxisAlignedBB.h>
 
 namespace stk { namespace search {
 
@@ -214,6 +215,10 @@ inline bool intersects(Box<T> const& a, Box<T> const& b)
 
 }
 
+inline bool intersects(const geometry::AxisAlignedBB& a, const geometry::AxisAlignedBB& b)
+{
+  return a.overlap(b);
+}
 
 template <typename T, typename U>
 inline void scale_by(Sphere<T> &s, U const& c)

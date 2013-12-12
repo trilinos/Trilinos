@@ -143,7 +143,7 @@ void box_global_bounds(
   float        * const arg_global_box )
 {
   typedef typename DomainBoundingBox::first_type box_type;
-  enum { Dim = box_type::Dim };
+  enum { Dim = 3};
 
 #if defined(__INTEL_COMPILER) && (__INTEL_COMPILER == 1210)
 #pragma warning disable 191
@@ -157,30 +157,25 @@ void box_global_bounds(
 
   //------------------------------------
   // Trivial loop threading possible:
-
   for ( size_t i = 0 ; i < arg_domain_boxes_number ; ++i ) {
     const DomainBoundingBox & box = arg_domain_boxes[i];
-    for (int j=0; j<Dim; ++j) {
-      if (arg_global_box[j] > static_cast<float>(min_corner(box.first,j)) ) {
-        arg_global_box[j] = static_cast<float>(min_corner(box.first,j));
-      }
-      if (arg_global_box[j+Dim] < static_cast<float>(max_corner(box.first,j)) ) {
-        arg_global_box[j+Dim] = static_cast<float>(max_corner(box.first,j));
-      }
-    }
+    arg_global_box[0] = std::min(arg_global_box[0], static_cast<float>(box.first.get_x_min()));
+    arg_global_box[1] = std::min(arg_global_box[1], static_cast<float>(box.first.get_y_min()));
+    arg_global_box[2] = std::min(arg_global_box[2], static_cast<float>(box.first.get_z_min()));
+    arg_global_box[3] = std::max(arg_global_box[3], static_cast<float>(box.first.get_x_max()));
+    arg_global_box[4] = std::max(arg_global_box[4], static_cast<float>(box.first.get_y_max()));
+    arg_global_box[5] = std::max(arg_global_box[5], static_cast<float>(box.first.get_z_max()));
   }
 
   if ( ! symmetric ) {
     for ( size_t i = 0 ; i < arg_range_boxes_number ; ++i ) {
       const RangeBoundingBox & box = arg_range_boxes[i];
-      for (int j=0; j<Dim; ++j) {
-        if (arg_global_box[j] > static_cast<float>(min_corner(box.first,j)) ) {
-          arg_global_box[j] = static_cast<float>(min_corner(box.first,j));
-        }
-        if (arg_global_box[j+Dim] < static_cast<float>(max_corner(box.first,j)) ) {
-          arg_global_box[j+Dim] = static_cast<float>(max_corner(box.first,j));
-        }
-      }
+      arg_global_box[0] = std::min(arg_global_box[0], static_cast<float>(box.first.get_x_min()));
+      arg_global_box[1] = std::min(arg_global_box[1], static_cast<float>(box.first.get_y_min()));
+      arg_global_box[2] = std::min(arg_global_box[2], static_cast<float>(box.first.get_z_min()));
+      arg_global_box[3] = std::max(arg_global_box[3], static_cast<float>(box.first.get_x_max()));
+      arg_global_box[4] = std::max(arg_global_box[4], static_cast<float>(box.first.get_y_max()));
+      arg_global_box[5] = std::max(arg_global_box[5], static_cast<float>(box.first.get_z_max()));
     }
   }
 
@@ -789,11 +784,12 @@ void createSearchTree(
 
     float box[6];
 
-    for(unsigned x = 0u; x < Dim; ++x)
-    {
-      box[x] = min_corner(tmp.first,x);
-      box[x + Dim] = max_corner(tmp.first,x);
-    }
+    box[0] = static_cast<float>(tmp.first.get_x_min());
+    box[1] = static_cast<float>(tmp.first.get_y_min());
+    box[2] = static_cast<float>(tmp.first.get_z_min());
+    box[3] = static_cast<float>(tmp.first.get_x_max());
+    box[4] = static_cast<float>(tmp.first.get_y_max());
+    box[5] = static_cast<float>(tmp.first.get_z_max());
 
     const bool valid =
       hsfc_box_covering(arg_global_box, box, covering, number, scale);
@@ -821,11 +817,12 @@ void createSearchTree(
 
       float box[6];
 
-      for(unsigned x = 0u; x < Dim; ++x)
-      {
-      box[x] = min_corner(tmp.first,x);
-      box[x + Dim] = max_corner(tmp.first,x);
-      }
+      box[0] = static_cast<float>(tmp.first.get_x_min());
+      box[1] = static_cast<float>(tmp.first.get_y_min());
+      box[2] = static_cast<float>(tmp.first.get_z_min());
+      box[3] = static_cast<float>(tmp.first.get_x_max());
+      box[4] = static_cast<float>(tmp.first.get_y_max());
+      box[5] = static_cast<float>(tmp.first.get_z_max());
 
       const bool valid =
         hsfc_box_covering(arg_global_box, box, covering, number, scale);

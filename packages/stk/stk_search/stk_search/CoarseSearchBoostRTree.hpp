@@ -23,6 +23,8 @@
 #include <boost/timer.hpp>
 #include <boost/utility/enable_if.hpp>
 
+#include <stk_search/CoarseSearchGeometryToolkit.hpp>
+
 #include <vector>
 #include <utility>
 

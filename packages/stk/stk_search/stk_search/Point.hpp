@@ -42,6 +42,14 @@ public:
   bool operator!=(Point<value_type> const& p) const
   { return !(*this == p); }
 
+  value_type get_x_min() const { return m_value[0]; }
+  value_type get_y_min() const { return m_value[1]; }
+  value_type get_z_min() const { return m_value[2]; }
+  value_type get_x_max() const { return m_value[0]; }
+  value_type get_y_max() const { return m_value[1]; }
+  value_type get_z_max() const { return m_value[2]; }
+
+
   friend std::ostream& operator<<(std::ostream & out, Point<value_type> const& p)
   {
     out << "(" << p[0] << "," << p[1] << "," << p[2] << ")";

@@ -2,6 +2,7 @@
 #define STK_SEARCH_BOX_HPP
 
 #include <stk_search/Point.hpp>
+#include <Geom_AxisAlignedBB.h>
 
 namespace stk { namespace search {
 
@@ -22,6 +23,13 @@ public:
   point_type      & min_corner()       { return m_min_corner; }
   point_type const& max_corner() const { return m_max_corner; }
   point_type      & max_corner()       { return m_max_corner; }
+
+  value_type get_x_min() const { return m_min_corner[0]; }
+  value_type get_y_min() const { return m_min_corner[1]; }
+  value_type get_z_min() const { return m_min_corner[2]; }
+  value_type get_x_max() const { return m_max_corner[0]; }
+  value_type get_y_max() const { return m_max_corner[1]; }
+  value_type get_z_max() const { return m_max_corner[2]; }
 
   void set_min_corner(point_type const& x_min_corner) { m_min_corner = x_min_corner; }
   void set_max_corner(point_type const& x_max_corner) { m_max_corner = x_max_corner; }
@@ -45,7 +53,10 @@ private:
 
 }} //namespace stk::search
 
-namespace boost { namespace geometry { namespace traits {
+
+namespace boost {
+namespace geometry {
+namespace traits {
 
 // traits for stk::search::Box<T>
 template <typename T> struct tag< stk::search::Box<T> > { typedef box_tag type; };
@@ -64,6 +75,35 @@ struct indexed_access< stk::search::Box<T>, max_corner, Index >
   BOOST_STATIC_ASSERT((Index < 3));
   static inline T const& get( stk::search::Box<T> const& s) { return s.max_corner()[Index]; }
 };
+
+
+// traits for ::geometry::AxisAlignedBB
+template <> struct tag< ::geometry::AxisAlignedBB > { typedef box_tag type; };
+template <> struct point_type< ::geometry::AxisAlignedBB > { typedef stk::search::Point<Real> type; };
+
+template <>
+struct indexed_access< ::geometry::AxisAlignedBB, min_corner, 0 >
+{  static inline Real get( ::geometry::AxisAlignedBB const& s) { return s.get_x_min(); } };
+
+template <>
+struct indexed_access< ::geometry::AxisAlignedBB, min_corner, 1 >
+{  static inline Real get( ::geometry::AxisAlignedBB const& s) { return s.get_y_min(); } };
+
+template <>
+struct indexed_access< ::geometry::AxisAlignedBB, min_corner, 2 >
+{  static inline Real get( ::geometry::AxisAlignedBB const& s) { return s.get_z_min(); } };
+
+template <>
+struct indexed_access< ::geometry::AxisAlignedBB, max_corner, 0 >
+{  static inline Real get( ::geometry::AxisAlignedBB const& s) { return s.get_x_max(); } };
+
+template <>
+struct indexed_access< ::geometry::AxisAlignedBB, max_corner, 1 >
+{  static inline Real get( ::geometry::AxisAlignedBB const& s) { return s.get_y_max(); } };
+
+template <>
+struct indexed_access< ::geometry::AxisAlignedBB, max_corner, 2 >
+{  static inline Real get( ::geometry::AxisAlignedBB const& s) { return s.get_z_max(); } };
 
 }}} // namespace boost::geometry::traits
 
