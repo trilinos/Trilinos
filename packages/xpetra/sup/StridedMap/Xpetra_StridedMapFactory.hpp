@@ -119,7 +119,7 @@ namespace Xpetra {
       // TODO fill vector with dofs
       LocalOrdinal ind = 0;
       for (typename Teuchos::ArrayView< const GlobalOrdinal >::iterator it = dofGids.begin(); it!=dofGids.end(); ++it)
-        if (map->GID2StridingBlockId(*it) == stridedBlockId)
+        if (map->GID2StridingBlockId(*it) == Teuchos::as<size_t>(stridedBlockId))
           subBlockDofGids[ind++] = *it;
 
       const Teuchos::ArrayView<const LocalOrdinal> subBlockDofGids_view(&subBlockDofGids[0],subBlockDofGids.size());
