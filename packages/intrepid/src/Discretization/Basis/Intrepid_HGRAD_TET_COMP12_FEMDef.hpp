@@ -233,75 +233,50 @@ void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &   
       // initialize to 0.0 since we will be accumulating
       outputValues.initialize(0.0);
 
-      // local looping indices 
-      // NOTE: bc is barycentric coord
-      int node, tet, pt, dim, bc1, bc2;
+      FieldContainer<Scalar> Lopt(10,3);
+      for (int pt=0; pt < dim0; ++pt) {
 
-      // get 12 subtet gradients sized as 3, 11, 12
-      Intrepid::FieldContainer<Scalar> dx = getSubTetGrads();
-      // get subtet jacobian determinants (12)
-      Intrepid::FieldContainer<Scalar> xJ = getSubTetDetF();
-      // get integration weights (numPoints, 12)
-      Intrepid::FieldContainer<Scalar> w = getWeights(inputPoints);
-      // get Barycentric Coordinates of points
-      Intrepid::FieldContainer<Scalar> lambda = getBarycentricCoords(inputPoints);
-      
-      // declare FieldContainer for intermediate calcs
-      // a - for the 4x4 projection matrix
-      FieldContainer<Scalar> a(4, 4);
-      FieldContainer<Scalar> ai;
+        double r = inputPoints(pt, 0);
+        double s = inputPoints(pt, 1);
+        double t = inputPoints(pt, 2);
+        
+        Lopt(0,0) = (-17 + 20*r + 20*s + 20*t)/8.;
+        Lopt(0,1) = (-17 + 20*r + 20*s + 20*t)/8.;
+        Lopt(0,2) = (-17 + 20*r + 20*s + 20*t)/8.;
+        Lopt(1,0) = -0.375 + (5*r)/2.;
+        Lopt(1,1) = 0.;
+        Lopt(1,2) = 0.;
+        Lopt(2,0) = 0.;
+        Lopt(2,1) = -0.375 + (5*s)/2.;
+        Lopt(2,2) = 0.;
+        Lopt(3,0) = 0.;
+        Lopt(3,1) = 0.;
+        Lopt(3,2) = -0.375 + (5*t)/2.;
+        Lopt(4,0) = (-35*(-1 + 2*r + s + t))/12.;
+        Lopt(4,1) = (-4 - 35*r + 5*s + 10*t)/12.;
+        Lopt(4,2) = (-4 - 35*r + 10*s + 5*t)/12.;
+        Lopt(5,0) = (-1 + 5*r + 40*s - 5*t)/12.;
+        Lopt(5,1) = (-1 + 40*r + 5*s - 5*t)/12.;
+        Lopt(5,2) = (-5*(-1 + r + s + 2*t))/12.;
+        Lopt(6,0) = (-4 + 5*r - 35*s + 10*t)/12.;
+        Lopt(6,1) = (-35*(-1 + r + 2*s + t))/12.;
+        Lopt(6,2) = (-4 + 10*r - 35*s + 5*t)/12.;
+        Lopt(7,0) = (-4 + 5*r + 10*s - 35*t)/12.;
+        Lopt(7,1) = (-4 + 10*r + 5*s - 35*t)/12.;
+        Lopt(7,2) = (-35*(-1 + r + s + 2*t))/12.;
+        Lopt(8,0) = (-1 + 5*r - 5*s + 40*t)/12.;
+        Lopt(8,1) = (-5*(-1 + r + 2*s + t))/12.;
+        Lopt(8,2) = (-1 + 40*r - 5*s + 5*t)/12.;
+        Lopt(9,0) = (-5*(-1 + 2*r + s + t))/12.;
+        Lopt(9,1) = (-1 - 5*r + 5*s + 40*t)/12.;
+        Lopt(9,2) = (-1 - 5*r + 40*s + 5*t)/12.;
 
-      // b - for the 3 x 4 x 10 integrated gradients
-      FieldContainer<Scalar> b(3,4,10);
-
-      // c - product of inv(a) and b
-      FieldContainer<Scalar> c(4,3,10);
-
-      // again initialize for safety
-      a.initialize(0.0);
-      b.initialize(0.0);
-      c.initialize(0.0);
-
-      for (pt=0; pt < dim0; ++pt) 
-      {
-	// compute a
-	for (tet=0; tet < 12; ++tet)
-	  for (bc1=0; bc1 < 4; ++bc1)
-	    for (bc2=0; bc2 < 4; ++bc2)
-	      a(bc1,bc2) += xJ(tet) * w(pt,tet) * lambda(pt,bc1) * lambda(pt,bc2);
-
-	// compute b
-	for (tet=0; tet < 12; ++tet)
-	{
-	  for (node=0; node < 10; ++node)
-	    for (bc1=0; bc1 < 4; ++bc1)
-	      for (dim=0; dim < 3; ++dim)
-		b(dim,bc1,node) += xJ(tet) * w(pt,tet) * lambda(pt,bc1) * dx(dim,node,tet);
-
-	  // add in contribution from the auxiliary node, averaged over the 6 mid-edge ndoes
-	  for (node=4; node < 10; ++node)
-	    for (bc1=0; bc1 < 4; ++bc1)
-	      for (dim=0; dim < 3; ++dim)
-		b(dim,bc1,node) += xJ(tet) * w(pt,tet) * lambda(pt,bc1) * dx(dim,10,tet)/6;
-	}
-      } // loop over pts
-
-      // compute inverse of a (4x4 inverse)
-      ai = inverse44(a);
-
-      // compute c
-      for (node=0; node < 10; ++node)
-	for (bc1=0; bc1 < 4; ++bc1)
-	  for (bc2=0; bc2 < 4; ++bc2)
-	    for (dim=0; dim < 3; ++dim)
-	      c(bc1,dim,node) += ai(bc1,bc2) * b(dim,bc2,node);
-
-      // fill in shape function derivatives
-      for (pt=0; pt < dim0; ++pt) 
-	for (node=0; node < 10; ++node)
-	  for (dim=0; dim < 3; ++dim)
-	    for (bc1=0; bc1 < 4; ++bc1)
-	      outputValues(node,pt,dim) += lambda(pt,bc1) * c(bc1,dim,node);
+        for (int node=0; node < 10; ++node) {
+          for (int dim=0; dim < 3; ++dim) {
+            outputValues(node,pt,dim) = Lopt(node,dim);
+          }
+        }
+      }
     }
     break;
       
