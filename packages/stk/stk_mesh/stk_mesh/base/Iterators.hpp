@@ -298,17 +298,8 @@ typedef std::pair<SelectedBucketRangeEntityIterator, SelectedBucketRangeEntityIt
 //       GetBuckets.hpp, GetEntities.hpp or their BulkData object.
 //
 
-// Get a range allowing you to iterate over all entities withing a collection of buckets
-BucketVectorEntityIteratorRange get_entity_range(const std::vector<Bucket*>& buckets);
-
-// Get a range allowing you to iterate over all *selected* entities withing a collection of buckets
-SelectedBucketVectorEntityIteratorRange get_entity_range(const std::vector<Bucket*>& buckets, const Selector& selector);
-
 // Get a range allowing you iterate over selected buckets in a vector
 SelectedBucketVectorIteratorRange get_selected_bucket_range(const std::vector<Bucket*>& buckets, const Selector& selector);
-
-// Get a range allowing you to iterate over all *selected* buckets within a collection of collections of buckets
-SelectedBucketRangeEntityIteratorRange get_selected_bucket_entity_range(const AllBucketsRange& bucket_range, const Selector& selector);
 
 } //namespace mesh
 } //namespace stk

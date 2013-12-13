@@ -50,12 +50,6 @@ void get_entities( const BulkData & mesh , EntityRank entity_rank ,
   std::sort(entities.begin(), entities.end(), EntityLess(mesh));
 }
 
-BucketVectorEntityIteratorRange get_entities( EntityRank entity_rank, const BulkData& mesh )
-{
-  const std::vector<Bucket*>& buckets = mesh.buckets(entity_rank);
-  return get_entity_range(buckets);
-}
-
 unsigned count_selected_entities(
   const Selector & selector ,
   const std::vector< Bucket * > & input_buckets )
