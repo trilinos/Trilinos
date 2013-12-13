@@ -45,9 +45,9 @@ namespace {
       for (size_t i=0; i < 3; i++) {
 	double time = i;
 
-	for(size_t i=0; i<nodes.size(); i++) {
+	for(size_t inode=0; inode<nodes.size(); inode++) {
 	  double *fieldDataForNode =
-	    stkIo.bulk_data().field_data(temperature, nodes[i]);
+	    stkIo.bulk_data().field_data(temperature, nodes[inode]);
 	  *fieldDataForNode = time;
 	}
 
