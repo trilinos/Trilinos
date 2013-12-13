@@ -366,6 +366,7 @@ IF(Stokhos_ENABLE_Sacado)
         COMM serial mpi
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
+        RUN_SERIAL
         DEPLIBS stokhos kokkoscore
         )
     ENDIF()
@@ -396,6 +397,7 @@ IF(Stokhos_ENABLE_Sacado)
           COMM serial mpi
           STANDARD_PASS_OUTPUT
           NUM_MPI_PROCS 1
+          RUN_SERIAL
           DEPLIBS stokhos kokkoscore kokkoslinalg
           )
       ENDIF()
@@ -538,6 +540,7 @@ IF (Stokhos_ENABLE_KokkosCore)
       COMM serial mpi
       STANDARD_PASS_OUTPUT
       NUM_MPI_PROCS 1
+      RUN_SERIAL
       DEPLIBS stokhos kokkoscore
       )
   ENDIF()
