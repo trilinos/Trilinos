@@ -41,17 +41,52 @@
 
 #include "Kokkos_DefaultNode.hpp"
 
-Teuchos::RCP<KokkosClassic::DefaultNode::DefaultNodeType> KokkosClassic::DefaultNode::node_ = Teuchos::null;
-
 namespace KokkosClassic {
 
   Teuchos::RCP<DefaultNode::DefaultNodeType> DefaultNode::getDefaultNode()
   {
-    if (node_ == null) {
-      Teuchos::ParameterList pl;
-      node_ = Teuchos::rcp<DefaultNodeType> (new DefaultNodeType (pl));
-    }
-    return node_;
+    return Details::getNode<DefaultNodeType> ();
   }
+
+#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+  namespace Details {
+
+  // Full specializations for the new Kokkos wrapper Node types.
+
+#ifdef KOKKOS_HAVE_CUDA
+  template<>
+  Teuchos::RCP< ::Kokkos::Compat::KokkosCudaWrapperNode>
+  getNode< ::Kokkos::Compat::KokkosCudaWrapperNode> () {
+    Teuchos::ParameterList defaultParams;
+    // This Node type knows how to handle multiple Node instances,
+    // so we don't have to keep a static instance around.
+    return Teuchos::rcp (new ::Kokkos::Compat::KokkosCudaWrapperNode (defaultParams));
+  }
+#endif // KOKKOS_HAVE_CUDA
+
+#ifdef KOKKOS_HAVE_OPENMP
+  template<>
+  Teuchos::RCP< ::Kokkos::Compat::KokkosOpenMPWrapperNode>
+  getNode< ::Kokkos::Compat::KokkosOpenMPWrapperNode> () {
+    Teuchos::ParameterList defaultParams;
+    // This Node type knows how to handle multiple Node instances,
+    // so we don't have to keep a static instance around.
+    return Teuchos::rcp (new ::Kokkos::Compat::KokkosOpenMPWrapperNode (defaultParams));
+  }
+#endif // KOKKOS_HAVE_OPENMP
+
+#ifdef KOKKOS_HAVE_PTHREAD
+  template<>
+  Teuchos::RCP< ::Kokkos::Compat::KokkosThreadsWrapperNode>
+  getNode< ::Kokkos::Compat::KokkosThreadsWrapperNode> () {
+    Teuchos::ParameterList defaultParams;
+    // This Node type knows how to handle multiple Node instances,
+    // so we don't have to keep a static instance around.
+    return Teuchos::rcp (new ::Kokkos::Compat::KokkosThreadsWrapperNode (defaultParams));
+  }
+#endif // KOKKOS_HAVE_PTHREAD
+
+  } // namespace Details
+#endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
 
 } // namespace KokkosClassic

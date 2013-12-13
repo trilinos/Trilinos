@@ -43,127 +43,116 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_InputAdapter.hpp
-    \brief Defines the InputAdapter interface.
+/*! \file Zoltan2_BaseAdapter.hpp
+    \brief Defines the Adapter interface for accessing user data.
 */
 
-#ifndef _ZOLTAN2_INPUTADAPTER_HPP_
-#define _ZOLTAN2_INPUTADAPTER_HPP_
+#ifndef _ZOLTAN2_ADAPTER_HPP_
+#define _ZOLTAN2_ADAPTER_HPP_
 
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_InputTraits.hpp>
+#include <Zoltan2_PartitioningSolution.hpp>
 
 namespace Zoltan2 {
 
-/*! \brief An enum to identify general types of input adapters.
+/*! \brief An enum to identify general types of adapters.
  *
- *  If you change this, update inputAdapterTypeName().
  */
-enum InputAdapterType {
-  InvalidAdapterType = 0,    /*!< \brief unused value */
-  IdentifierAdapterType,    /*!< \brief plain identifier input, just a list of Ids*/
-  VectorAdapterType,    /*!< \brief vector input*/
-  CoordinateAdapterType,    /*!< \brief coordinate input */
-  GraphAdapterType,    /*!< \brief graph input */
-  MeshAdapterType,    /*!< \brief mesh input */
-  MatrixAdapterType    /*!< \brief matrix input */
+enum BaseAdapterType {
+  InvalidAdapterType = 0, /*!< \brief unused value */
+  IdentifierAdapterType,  /*!< \brief identifier data, just a list of IDs*/
+  CoordinateAdapterType,  /*!< \brief coordinate data */
+  VectorAdapterType,      /*!< \brief vector data */
+  MatrixAdapterType,      /*!< \brief matrix data */
+  GraphAdapterType,       /*!< \brief graph data */
+  MeshAdapterType         /*!< \brief mesh data */
 };
 
 
-/*! \brief InputAdapter defines methods required by all InputAdapters
+/*! \brief BaseAdapter defines methods required by all Adapters
 
-    Input adapters provide access for Zoltan2 to the user's data.  The
+    Adapters provide access from Zoltan2 to the user's data.  The
     methods in the interface must be defined by users.  Many built-in
     adapters are already defined for common data structures, such as
     Tpetra and Epetra objects and C-language pointers to arrays.
 
-    \todo Add add a MeshInput adapter
+    \todo Add add a MeshAdapter
  */
 
 template <typename User>
-  class InputAdapter {
+  class BaseAdapter {
 
 private:
 
-  typedef typename InputTraits<User>::scalar_t    scalar_t;
+  typedef typename InputTraits<User>::gid_t    gid_t;
+  typedef typename InputTraits<User>::scalar_t scalar_t;
 
 public:
 
   /*! \brief Returns the type of adapter.
    */
-  virtual enum InputAdapterType inputAdapterType()const = 0;
+  virtual enum BaseAdapterType adapterType()const = 0;
 
-  /*! \brief Desstructor
+  /*! \brief Destructor
    */
-  virtual ~InputAdapter() {};
+  virtual ~BaseAdapter() {};
 
-  /*! \brief Returns a descriptive name that identifies the concrete adapter.
-   */
-  virtual string inputAdapterName() const = 0;
-
-  /*! \brief Returns the number of objects in the input.
+  /*! \brief Returns the number of objects on this process
    *
    *  Objects may be coordinates, graph vertices, matrix rows, etc.
    *  They are the objects to be partitioned, ordered, or colored.
    */
-  virtual size_t getLocalNumberOfObjects() const = 0;
+  virtual size_t getLocalNum() const = 0;
+
+  /*! \brief Provide a pointer to this process' identifiers.
+
+      \param Ids will on return point to the list of the global Ids for 
+        this process.
+   */
+  virtual void getIDsView(const gid_t *&Ids) const = 0;
 
   /*! \brief Returns the number of weights per object.
    *   Number of weights per object should be zero or greater.  If
    *   zero, then it is assumed that all objects are equally weighted.
    */ 
-  virtual int getNumberOfWeightsPerObject() const = 0;
+  virtual int getNumWeightsPerID() const = 0;
 
   /*! \brief Provide pointer to a weight array with stride.
-   *    \param dim  the weight dimension, zero or greater
    *    \param wgt on return a pointer to the weights for this dimension
    *    \param stride on return, the value such that
    *       the \t nth weight should be found at <tt> wgt[n*stride] </tt>.
-   *  \return the length of the \c wgt array, which should be at least
-   *   equal to <tt> getLocalNumberOfObjects() * stride </tt>.
+   *    \param idx  the weight index, zero or greater
    */ 
-  virtual size_t getObjectWeights(int dim, const scalar_t *&wgt, 
-    int &stride) const = 0;
+  virtual void getWeightsView(const scalar_t *&wgt, int &stride,
+                              int idx = 0) const = 0;
 
-  /*! \brief Returns the name of the input adapter
+ /*! \brief Apply a PartitioningSolution to an input.
+   *
+   *  This is not a required part of the InputAdapter interface. However
+   *  if the Caller calls a Problem method to redistribute data, it needs
+   *  this method to perform the redistribution.
+   *
+   *  \param in  An input object with a structure and assignment of
+   *             of global Ids to processes that matches that of the input
+   *             data that instantiated this Adapter.
+   *  \param out On return this should point to a newly created object
+   *             with the specified partitioning.
+   *  \param solution  The Solution object created by a Problem should
+   *      be supplied as the third argument.  It must have been templated
+   *      on user data that has the same global ID distribution as this
+   *      user data.
+   *  \return   Returns the number of local Ids in the new partitioning.
    */
-  static string inputAdapterTypeName(InputAdapterType iaType);
-};
 
-template <typename User>
-  string InputAdapter<User>::inputAdapterTypeName(InputAdapterType iaType)
-{
-  string typeName;
-  switch (iaType){
-    case InvalidAdapterType:
-      typeName = string("invalid");
-      break;
-    case IdentifierAdapterType:
-      typeName = string("identifier");
-      break;
-    case VectorAdapterType:
-      typeName = string("vector");
-      break;
-    case CoordinateAdapterType:
-      typeName = string("coordinate");
-      break;
-    case GraphAdapterType:
-      typeName = string("graph");
-      break;
-    case MeshAdapterType:
-      typeName = string("mesh");
-      break;
-    case MatrixAdapterType:
-      typeName = string("matrix");
-      break;
-    default:
-      typeName = string("unknown");
-      break;
+  template <typename Adapter>
+    size_t applyPartitioningSolution(const User &in, User *&out,
+      const PartitioningSolution<Adapter> &solution) const
+  {
+    return 0;
   }
 
-  return typeName;
-}
-  
+};
   
 }  //namespace Zoltan2
   

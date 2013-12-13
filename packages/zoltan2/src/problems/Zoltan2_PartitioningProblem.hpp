@@ -186,10 +186,10 @@ public:
       metrics_->printMetrics(os);
   };
 
-  /*! \brief Set or reset relative sizes for the partitions that Zoltan2 will create.
+  /*! \brief Set or reset relative sizes for the parts that Zoltan2 will create.
    *
    *  \param len  The size of the \c partIds and \c partSizes lists
-   *  \param partIds   A list of \c len partition identifiers.  Partition
+   *  \param partIds   A list of \c len part identifiers.  Part
    *           identifiers range from zero to one less than the global
    *           number of identifiers.  
    *  \param partSizes  A list of \c len relative sizes corresponding to
@@ -201,7 +201,7 @@ public:
    *      and memory use is an issue, then set makeCopy to false.  By default,
    *      Zoltan2 will copy the caller's list of ids and sizes.
    *
-   * A given partid should only be provided once across the application.
+   * A given partid should be provided only once across all ranks.
    * Duplicate partIds will generate a std::runtime_error exception when
    * the PartitioningSolution is created.  Part
    * ids that are omitted will be assigned the average of the sizes that
@@ -213,9 +213,9 @@ public:
    * If the application has set multiple weights per object, then the
    * part sizes supplied in this method are applied to the first weight.
    *
-   * Zoltan2 assumes that uniform partition sizes are desired by the caller,
+   * Zoltan2 assumes that uniform part sizes are desired by the caller,
    * unless specified otherwise in a call to setPartSizes or 
-   * setPartSizesForCritiera.
+   * setPartSizesForCriteria.
    *
    * \todo A user should be able to give us one set of part sizes
    *            that applies to all weight dimensions.  Right now
@@ -227,10 +227,10 @@ public:
   void setPartSizes(int len, partId_t *partIds, scalar_t *partSizes, 
     bool makeCopy=true) 
   { 
-    setPartSizesForCritiera(0, len, partIds, partSizes, makeCopy);
+    setPartSizesForCriteria(0, len, partIds, partSizes, makeCopy);
   }
 
-  /*! \brief Set or reset the relative sizes (per weight) for the partitions 
+  /*! \brief Set or reset the relative sizes (per weight) for the parts
    *    that Zoltan2 will create.
    *
    *  \param criteria the criteria (weight dimension) for which these 
@@ -238,7 +238,7 @@ public:
    *     the number of weights per object specified in the 
    *     caller's InputAdapter.
    *  \param len  The size of the \c partIds and \c partSizes lists
-   *  \param partIds   A list of \c len partition identifiers.  Partition
+   *  \param partIds   A list of \c len part identifiers.  Part
    *           identifiers range from zero to one less than the global
    *           number of identifiers.  
    *  \param partSizes  A list of \c len relative sizes corresponding to
@@ -259,12 +259,12 @@ public:
    * Subsequent calls to setPartSizes for the same criteria will replace 
    * the list of part ids and part sizes provided for that criteria previously.
    *
-   * Zoltan2 assumes that uniform partition sizes are desired by the caller,
+   * Zoltan2 assumes that uniform part sizes are desired by the caller,
    * unless specified otherwise in a call to setPartSizes or 
-   * setPartSizesForCritiera.
+   * setPartSizesForCriteria.
    */
 
-  void setPartSizesForCritiera(int criteria, int len, partId_t *partIds, 
+  void setPartSizesForCriteria(int criteria, int len, partId_t *partIds,
     scalar_t *partSizes, bool makeCopy=true) ;
 /*
   void setMachine(MachineRepresentation<typename Adapter::base_adapter_t::scalar_t> *machine);
@@ -303,7 +303,7 @@ private:
   MPI_Comm mpiComm_;
 #endif
 
-  InputAdapterType inputType_;
+  BaseAdapterType inputType_;
   ModelType modelType_;
   modelFlag_t graphFlags_;
   modelFlag_t idFlags_;
@@ -411,11 +411,11 @@ template <typename Adapter>
   // Number of criteria is number of user supplied weights if non-zero.
   // Otherwise it is 1 and uniform weight is implied.
 
-  numberOfWeights_ = this->inputAdapter_->getNumberOfWeightsPerObject();
+  numberOfWeights_ = this->inputAdapter_->getNumWeightsPerID();
 
   numberOfCriteria_ = (numberOfWeights_ > 1) ? numberOfWeights_ : 1;
 
-  inputType_ = this->inputAdapter_->inputAdapterType();
+  inputType_ = this->inputAdapter_->adapterType();
 
   // The Caller can specify part sizes in setPartSizes().  If he/she
   // does not, the part size arrays are empty.
@@ -429,9 +429,7 @@ template <typename Adapter>
   if (this->env_->getDebugLevel() >= DETAILED_STATUS){
     ostringstream msg;
     msg << problemComm_->getSize() << " procs,"
-      << numberOfWeights_ << " user-defined weights, "
-      << this->inputAdapter_->inputAdapterName() 
-      << " input adapter type.\n";
+      << numberOfWeights_ << " user-defined weights\n";
     this->env_->debug(DETAILED_STATUS, msg.str());
   }
 
@@ -439,7 +437,7 @@ template <typename Adapter>
 }
 
 template <typename Adapter>
-  void PartitioningProblem<Adapter>::setPartSizesForCritiera(
+  void PartitioningProblem<Adapter>::setPartSizesForCriteria(
     int criteria, int len, partId_t *partIds, scalar_t *partSizes, bool makeCopy) 
 {
   this->env_->localInputAssertion(__FILE__, __LINE__, "invalid length", 
@@ -662,6 +660,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   // this->env_ = rcp(new Environment(newParams, oldComm));
   ////////////////////////////////////////////////////////////////////////////
 
+  this->env_->debug(DETAILED_STATUS, "    parameters");
   Environment &env = *(this->env_);
   ParameterList &pl = env.getParametersNonConst();
 
@@ -869,6 +868,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   ///////////////////////////////////////////////////////////////////
   // Set model creation flags, if any.
 
+  this->env_->debug(DETAILED_STATUS, "    models");
   if (modelType_ == GraphModelType){
 
     // Any parameters in the graph sublist?
@@ -954,6 +954,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     switch (modelType_) {
 
     case GraphModelType:
+      this->env_->debug(DETAILED_STATUS, "    building graph model");
       this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
         this->baseInputAdapter_, this->envConst_, problemComm_, graphFlags_));
 
@@ -966,6 +967,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       break;
   
     case CoordinateModelType:
+      this->env_->debug(DETAILED_STATUS, "    building coordinate model");
       this->coordinateModel_ = rcp(new CoordinateModel<base_adapter_t>(
         this->baseInputAdapter_, this->envConst_, problemComm_, coordFlags_));
 
@@ -1029,6 +1031,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       break;
 
     case IdentifierModelType:
+      this->env_->debug(DETAILED_STATUS, "    building identifier model");
       this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
         this->baseInputAdapter_, this->envConst_, problemComm_, idFlags_));
 
@@ -1042,6 +1045,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     }
 
     this->env_->memory("After creating Model");
+    this->env_->debug(DETAILED_STATUS, "createPartitioningProblem done");
   }
 
   /*

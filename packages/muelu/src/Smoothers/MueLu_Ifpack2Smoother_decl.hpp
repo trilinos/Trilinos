@@ -122,7 +122,7 @@ namespace MueLu {
       - parameter list options
         - <tt>fact: level-of-fill</tt>
 
-    See also Ifpack2_Relaxation, Ifpack2_Chebyshev, Ifpack2_ILUT, Ifpac2_Krylov.
+    See also Ifpack2::Relaxation, Ifpack2::Chebyshev, Ifpack2::ILUT, Ifpack2::Krylov.
     */
 
     template<class Scalar2, class LocalOrdinal2, class GlobalOrdinal2, class Node2, class LocalMatOps2>

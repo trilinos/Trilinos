@@ -82,7 +82,28 @@ namespace MueLu {
 
     prec_->SetParameters(*precList);
 
-    paramList.setParameters(*precList);
+    // We would like to have the following line here:
+    //      paramList.setParameters(*precList);
+    // For instance, if Ifpack sets somem parameters internally, we would like to have
+    // them listed when we call this->GetParameterList()
+    // But because of the way Ifpack handles the list, we cannot do that.
+    // The bad scenario goes like this:
+    //   * SmootherFactory calls Setup
+    //   * Setup calls SetPrecParameters
+    //   * We call prec_->SetParameters(*precList)
+    //     This actually updates the internal parameter list  with default prec_ parameters
+    //     This means that we get a parameter ("chebyshev: max eigenvalue", -1) in the list
+    //   * Setup calls prec_->Compute()
+    //     Here we may compute the max eigenvalue, but we get no indication of this. If we
+    //     do compute it, our parameter list becomes outdated
+    //   * SmootherFactory calls Apply
+    //   * Apply constructs a list with a list with an entry "chebyshev: zero starting solution"
+    //   * We call prec_->SetParameters(*precList)
+    // The last call is the problem. At this point, we have a list with an outdated entry
+    // "chebyshev: max eigenvalue", but prec_ uses this entry and replaces the computed max
+    // eigenvalue with the one from the list, resulting in -1.0 eigenvalue.
+    //
+    // Ifpack2 does not have this problem, as it does not populate the list with new entries
   }
 
   void IfpackSmoother::DeclareInput(Level &currentLevel) const {
@@ -96,7 +117,7 @@ namespace MueLu {
     A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
     double lambdaMax = -1.0;
-    if (type_ == "CHEBYSHEV")
+    if (type_ == "Chebyshev")
       try {
         lambdaMax = Teuchos::getValue<Scalar>(this->GetParameter("chebyshev: max eigenvalue"));
         this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue (cached with smoother parameter list)" << " = " << lambdaMax << std::endl;

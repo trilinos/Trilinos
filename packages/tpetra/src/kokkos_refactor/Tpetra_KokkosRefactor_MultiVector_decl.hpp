@@ -42,7 +42,7 @@
 #ifndef TPETRA_KOKKOS_REFACTOR_MULTIVECTOR_DECL_HPP
 #define TPETRA_KOKKOS_REFACTOR_MULTIVECTOR_DECL_HPP
 
-#include <Teuchos_DataAccess.hpp>
+/*#include <Teuchos_DataAccess.hpp>
 #include <Teuchos_Range1D.hpp>
 #include "Tpetra_ConfigDefs.hpp"
 #if TPETRA_USE_KOKKOS_DISTOBJECT
@@ -53,10 +53,10 @@
 #include "Tpetra_ViewAccepter.hpp"
 #include <Kokkos_MultiVector.hpp>
 #include <Teuchos_BLAS_types.hpp>
-
+*/
 #include <Kokkos_DualView.hpp>
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
-#include <Tpetra_MultiVector.hpp>
+//#include <Tpetra_MultiVector.hpp>
 
 namespace KokkosClassic {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS

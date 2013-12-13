@@ -59,18 +59,27 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, clas
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setParameters(Teuchos::RCP< Teuchos::ParameterList > paramList) {
 
   // Smoother parameters
-  overlap_level_        = paramList->get("schwarz: overlap level",2);
   relaxation_sweeps_    = paramList->get("relaxation: sweeps",4);
   relaxation_damping_   = paramList->get("relaxation: damping factor",(SC)1.0);
   krylov_type_          = paramList->get("krylov: iteration type",1);
   krylov_iterations_    = paramList->get("krylov: number of iterations",5);
-  ilut_leveloffill_     = paramList->get("fact: ilut level-of-fill",5.0);
-  iluk_leveloffill_     = paramList->get("fact: iluk level-of-fill",1.0);
+  krylov_preconditioner_= paramList->get("krylov: preconditioner type",1);
+  ilu_leveloffill_      = paramList->get("fact: ilut level-of-fill",5.0);
   ilu_abs_thresh_       = paramList->get("fact: absolute threshold",0.0);
   ilu_rel_thresh_       = paramList->get("fact: relative threshold",1.0);
+  ilu_diagpivotthresh_  = paramList->get("fact: diag pivot thresh",0.1);
   ilu_drop_tol_         = paramList->get("fact: drop tolerance",0.01);
+  ilu_fill_tol_         = paramList->get("fact: fill tolerance",0.01);
   ilu_relax_val_        = paramList->get("fact: relax value",1.0);
+  ilu_rowperm_          = paramList->get("fact: row permutation","LargeDiag");
+  ilu_colperm_          = paramList->get("fact: col permutation","COLAMD");
+  ilu_drop_rule_        = paramList->get("fact: drop rule","DROP_BASIC");
+  ilu_normtype_         = paramList->get("fact: norm type","INF_NORM");
+  ilu_milutype_         = paramList->get("fact: modified ilu","SILU");
+  schwarz_overlap_      = paramList->get("schwarz: overlap level",2);
   schwarz_usereorder_   = paramList->get("schwarz: use reordering",true);
+  schwarz_combinemode_  = paramList->get("schwarz: combine mode",Tpetra::ZERO);
+  schwarz_ordermethod_  = paramList->get("order_method","rcm");
 
 }
 
@@ -190,16 +199,17 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setAg
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setSmoother(int stype) {
 
-  if(stype==1)      { Smoother_="jacobi";                 }
-  else if(stype==2) { Smoother_="gauss-seidel";           }
-  else if(stype==3) { Smoother_="symmetric gauss-seidel"; }
-  else if(stype==4) { Smoother_="chebyshev";              }
-  else if(stype==5) { Smoother_="krylov";                 }
-  else if(stype==6) { Smoother_="ilut";                   }
-  else if(stype==7) { Smoother_="riluk";                  }
-  else if(stype==8) { Smoother_="schwarz";                } 
-  else if(stype==9) { Smoother_="superlu";                }
-  else              { Smoother_="schwarz";                }
+  if(stype==1)       { Smoother_="jacobi";                 }
+  else if(stype==2)  { Smoother_="gauss-seidel";           }
+  else if(stype==3)  { Smoother_="symmetric gauss-seidel"; }
+  else if(stype==4)  { Smoother_="chebyshev";              }
+  else if(stype==5)  { Smoother_="krylov";                 }
+  else if(stype==6)  { Smoother_="ilut";                   }
+  else if(stype==7)  { Smoother_="riluk";                  }
+  else if(stype==8)  { Smoother_="schwarz";                }
+  else if(stype==9)  { Smoother_="superilu";               }
+  else if(stype==10) { Smoother_="superlu";                }
+  else               { Smoother_="schwarz";                }
 
 }
 
@@ -333,17 +343,17 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
   }
   else if(Smoother_=="krylov") {
     precType_ = "KRYLOV";
-    precList_.set("krylov: iteration type",krylov_type_);
+    precList_.set("krylov: iteration type", krylov_type_);
     precList_.set("krylov: number of iterations", krylov_iterations_);
     precList_.set("krylov: residual tolerance",1.0e-8);
     precList_.set("krylov: block size",1);
-    precList_.set("krylov: preconditioner type",1);
+    precList_.set("krylov: preconditioner type", krylov_preconditioner_);
     precList_.set("relaxation: sweeps",1);
     FGMRESoption_=true;
   }
   else if(Smoother_=="ilut") {
     precType_ = "ILUT";
-    precList_.set("fact: ilut level-of-fill", ilut_leveloffill_);
+    precList_.set("fact: ilut level-of-fill", ilu_leveloffill_);
     precList_.set("fact: absolute threshold", ilu_abs_thresh_);
     precList_.set("fact: relative threshold", ilu_rel_thresh_);
     precList_.set("fact: drop tolerance",     ilu_drop_tol_);
@@ -351,7 +361,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
   }
   else if(Smoother_=="riluk") {
     precType_ = "RILUK";
-    precList_.set("fact: iluk level-of-fill", iluk_leveloffill_);
+    precList_.set("fact: iluk level-of-fill", ilu_leveloffill_);
     precList_.set("fact: absolute threshold", ilu_abs_thresh_);
     precList_.set("fact: relative threshold", ilu_rel_thresh_);
     precList_.set("fact: drop tolerance",     ilu_drop_tol_);
@@ -359,24 +369,40 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
   }
   else if(Smoother_=="schwarz") {
     precType_ = "SCHWARZ";
-    precList_.set("fact: ilut level-of-fill", ilut_leveloffill_);
+    precList_.set("fact: ilut level-of-fill", ilu_leveloffill_);
     precList_.set("fact: drop tolerance", ilu_drop_tol_);
+    precList_.set("schwarz: overlap level", schwarz_overlap_);
     precList_.set("schwarz: compute condest", false);
-    precList_.set("schwarz: combine mode", "Add");
+    precList_.set("schwarz: combine mode", schwarz_combinemode_);
     precList_.set("schwarz: use reordering", schwarz_usereorder_);
     precList_.set("schwarz: filter singletons", true);
-    precList_.set("order_method","rcm");
-    precList_.sublist("schwarz: reordering list").set("order_method","rcm");
+    precList_.set("order_method",schwarz_ordermethod_);
+    precList_.sublist("schwarz: reordering list").set("order_method",schwarz_ordermethod_);
+  }
+  else if(Smoother_=="superilu") {
+    precType_ = "superlu";
+    precList_.set("RowPerm", ilu_rowperm_);
+    precList_.set("ColPerm", ilu_colperm_);
+    precList_.set("DiagPivotThresh", ilu_diagpivotthresh_);
+    precList_.set("ILU_DropRule",ilu_drop_rule_);
+    precList_.set("ILU_DropTol",ilu_drop_tol_);
+    precList_.set("ILU_FillFactor",ilu_leveloffill_);
+    precList_.set("ILU_Norm",ilu_normtype_);
+    precList_.set("ILU_MILU",ilu_milutype_);
+    precList_.set("ILU_FillTol",ilu_fill_tol_);
+    precList_.set("ILU_Flag",true);
   }
   else if(Smoother_=="superlu") {
     precType_ = "superlu";
+    precList_.set("ColPerm", ilu_colperm_);
+    precList_.set("DiagPivotThresh", ilu_diagpivotthresh_);
   }
   // construct smoother
   if(Smoother_=="schwarz") {
     smooProto_ = rcp( new Ifpack2Smoother(precType_,precList_) );
   }
   else {
-    smooProto_ = rcp( new SchwarzSmoother(precType_,precList_,overlap_level_) );
+    smooProto_ = rcp( new SchwarzSmoother(precType_,precList_,schwarz_overlap_) );
   }
   smooFact_  = rcp( new SmootherFactory(smooProto_) );
   coarsestSmooProto_ = rcp( new DirectSolver("Superlu",coarsestSmooList_) );
@@ -535,13 +561,13 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
     precList_.set("krylov: number of iterations", krylov_iterations_);
     precList_.set("krylov: residual tolerance",1.0e-8);
     precList_.set("krylov: block size",1);
-    precList_.set("krylov: preconditioner type",1);
+    precList_.set("krylov: preconditioner type", krylov_preconditioner_);
     precList_.set("relaxation: sweeps",1);
     FGMRESoption_=true;
   }
   else if(Smoother_=="ilut") {
     precType_ = "ILUT";
-    precList_.set("fact: ilut level-of-fill", ilut_leveloffill_);
+    precList_.set("fact: ilut level-of-fill", ilu_leveloffill_);
     precList_.set("fact: absolute threshold", ilu_abs_thresh_);
     precList_.set("fact: relative threshold", ilu_rel_thresh_);
     precList_.set("fact: drop tolerance",     ilu_drop_tol_);
@@ -549,7 +575,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   }
   else if(Smoother_=="riluk") {
     precType_ = "RILUK";
-    precList_.set("fact: iluk level-of-fill", iluk_leveloffill_);
+    precList_.set("fact: iluk level-of-fill", ilu_leveloffill_);
     precList_.set("fact: absolute threshold", ilu_abs_thresh_);
     precList_.set("fact: relative threshold", ilu_rel_thresh_);
     precList_.set("fact: drop tolerance",     ilu_drop_tol_);
@@ -557,24 +583,40 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   }
   else if(Smoother_=="schwarz") {
     precType_ = "SCHWARZ";
-    precList_.set("fact: ilut level-of-fill", ilut_leveloffill_);
+    precList_.set("fact: ilut level-of-fill", ilu_leveloffill_);
     precList_.set("fact: drop tolerance", ilu_drop_tol_);
+    precList_.set("schwarz: overlap level", schwarz_overlap_);
     precList_.set("schwarz: compute condest", false);
-    precList_.set("schwarz: combine mode", "Add");
+    precList_.set("schwarz: combine mode", schwarz_combinemode_);
     precList_.set("schwarz: use reordering", schwarz_usereorder_);
-    precList_.set("schwarz: filter singletons", false);
-    precList_.set("order_method","rcm");
-    precList_.sublist("schwarz: reordering list").set("order_method","rcm");
+    precList_.set("schwarz: filter singletons", true);
+    precList_.set("order_method",schwarz_ordermethod_);
+    precList_.sublist("schwarz: reordering list").set("order_method",schwarz_ordermethod_);
+  }
+  else if(Smoother_=="superilu") {
+    precType_ = "superlu";
+    precList_.set("RowPerm", ilu_rowperm_);
+    precList_.set("ColPerm", ilu_colperm_);
+    precList_.set("DiagPivotThresh", ilu_diagpivotthresh_);
+    precList_.set("ILU_DropRule",ilu_drop_rule_);
+    precList_.set("ILU_DropTol",ilu_drop_tol_);
+    precList_.set("ILU_FillFactor",ilu_leveloffill_);
+    precList_.set("ILU_Norm",ilu_normtype_);
+    precList_.set("ILU_MILU",ilu_milutype_);
+    precList_.set("ILU_FillTol",ilu_fill_tol_);
+    precList_.set("ILU_Flag",true);
   }
   else if(Smoother_=="superlu") {
     precType_ = "superlu";
+    precList_.set("ColPerm", ilu_colperm_);
+    precList_.set("DiagPivotThresh", ilu_diagpivotthresh_);
   }
   // construct smoother
   if(Smoother_=="schwarz") {
     smooProto_ = rcp( new Ifpack2Smoother(precType_,precList_) );
   }
   else {
-    smooProto_ = rcp( new SchwarzSmoother(precType_,precList_,overlap_level_) );
+    smooProto_ = rcp( new SchwarzSmoother(precType_,precList_,schwarz_overlap_) );
   }
   smooFact_  = rcp( new SmootherFactory(smooProto_) );
   coarsestSmooProto_ = rcp( new DirectSolver("Superlu",coarsestSmooList_) );

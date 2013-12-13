@@ -43,12 +43,12 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_BasicCoordinateInput.hpp
-    \brief Defines the BasicCoordinateInput class.
+/*! \file Zoltan2_BasicCoordinateAdapter.hpp
+    \brief Defines the BasicCoordinateAdapter class.
 */
 
-#ifndef _ZOLTAN2_BASICCOORDINATEINPUT_HPP_
-#define _ZOLTAN2_BASICCOORDINATEINPUT_HPP_
+#ifndef _ZOLTAN2_BASICCOORDINATEADAPTER_HPP_
+#define _ZOLTAN2_BASICCOORDINATEADAPTER_HPP_
 
 #include <Zoltan2_CoordinateInput.hpp>
 #include <Zoltan2_StridedData.hpp>
@@ -56,10 +56,10 @@
 
 namespace Zoltan2 {
 
-  /*!  \brief BasicCoordinateInput represents geometric coordinates that are
+  /*!  \brief BasicCoordinateAdapter represents geometric coordinates that are
                 supplied by the user as pointers to strided arrays.
 
-    Input adapters provide access for Zoltan2 to the user's data.  The
+    Adapters provide access from Zoltan2 to the user's data.  The
     methods in the interface must be defined by users.  Many built-in
     adapters are already defined for common data structures, such as
     Tpetra and Epetra objects and C-language pointers to arrays.
@@ -90,7 +90,7 @@ namespace Zoltan2 {
 */
 
 template <typename User>
-  class BasicCoordinateInput : public CoordinateInput<User> {
+  class BasicCoordinateAdapter : public CoordinateAdapter<User> {
 
 public:
 
@@ -101,7 +101,7 @@ public:
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
-  typedef CoordinateInput<User>   base_adapter_t;
+  typedef CoordinateAdapter<User>   base_adapter_t;
   typedef User user_t;
 
 #endif
@@ -121,10 +121,10 @@ public:
    *          for point \c ids[n]  should be found at <tt>z[zStride * n]</tt>.
    *  
    *  The values pointed to the arguments must remain valid for the
-   *  lifetime of this InputAdapter.
+   *  lifetime of this Adapter.
    */
 
-  BasicCoordinateInput(lno_t numIds, const gid_t *ids,
+  BasicCoordinateAdapter(lno_t numIds, const gid_t *ids,
     const scalar_t *x, const scalar_t *y, const scalar_t *z,
     int xStride=1, int yStride=1, int zStride=1);
 
@@ -149,77 +149,62 @@ public:
    *     If \c weightStrides.size() is zero, it is assumed all strides are one.
    *  
    *  The values pointed to the arguments must remain valid for the
-   *  lifetime of this InputAdapter.
+   *  lifetime of this Adapter.
    */
 
-  BasicCoordinateInput(lno_t numIds, const gid_t *ids, 
+  BasicCoordinateAdapter(lno_t numIds, const gid_t *ids, 
     vector<const scalar_t *> &values,  vector<int> &valueStrides,
     vector<const scalar_t *> &weights, vector<int> &weightStrides);
 
   /*! Destructor
    */
-  ~BasicCoordinateInput() {};
+  ~BasicCoordinateAdapter() {};
 
   ////////////////////////////////////////////////////////////////
-  // The InputAdapter interface.
+  // The Adapter interface.
   ////////////////////////////////////////////////////////////////
 
-  string inputAdapterName() const {return string("BasicCoordinate");}
+  size_t getLocalNum() const { return numIds_;}
 
-  size_t getLocalNumberOfObjects() const { return numIds_;}
+  void getIDsView(const gid_t *&ids) const {ids = idList_;}
 
-  int getNumberOfWeightsPerObject() const { return numWeights_;}
+  int getNumWeightsPerID() const { return numWeights_;}
 
-  size_t getObjectWeights(int dim, const scalar_t *&wgt, int &stride) const
+  void getWeightsView(const scalar_t *&weights, int &stride, int idx=0) const
   {
-    return getCoordinateWeights(dim, wgt, stride);
+    if (idx < 0 || idx >= numWeights_) {
+      std::ostringstream emsg;
+      emsg << __FILE__ << ":" << __LINE__
+           << "  Invalid weight index " << idx << std::endl;
+      throw std::runtime_error(emsg.str());
+    }
+    size_t length;
+    weights_[idx].getStridedList(length, weights, stride);
   }
 
   ////////////////////////////////////////////////////
-  // The CoordinateInput interface.
+  // The CoordinateAdapter interface.
   ////////////////////////////////////////////////////
 
-  int getCoordinateDimension() const { return dimension_;}
+  int getDimension() const { return dimension_;}
 
-  int getNumberOfWeights() const { return numWeights_;}  
-
-  size_t getLocalNumberOfCoordinates() const { return numIds_; }
-
-  size_t getCoordinates(int dim, const gid_t *&gids, const scalar_t *&coords, 
-    int &stride) const
+  void getCoordinatesView(const scalar_t *&coords, int &stride, int dim) const
   {
-    env_->localInputAssertion(__FILE__, __LINE__, "invalid dimension",
-      dim >= 0 && dim < dimension_, BASIC_ASSERTION);
+    if (dim < 0 || dim >= dimension_) {
+      std::ostringstream emsg;
+      emsg << __FILE__ << ":" << __LINE__
+           << "  Invalid dimension " << dim << std::endl;
+      throw std::runtime_error(emsg.str());
+    }
 
-    gids = idList_;
-    
     size_t length;
-
     coords_[dim].getStridedList(length, coords, stride);
-
-    return length;
-  }
-
-  size_t getCoordinateWeights(int dim, const scalar_t *&weights, 
-    int &stride) const
-  {
-    env_->localInputAssertion(__FILE__, __LINE__, "invalid dimension",
-      dim >= 0 && dim < numWeights_, BASIC_ASSERTION);
-    
-    size_t length;
-
-    weights_[dim].getStridedList(length, weights, stride);
-
-    return length;
   }
 
 private:
   void initializeData(
     vector<const scalar_t *> &values,  vector<int> &valueStrides,
     vector<const scalar_t *> &weights, vector<int> &weightStrides);
-
-  // A default Environment for error handling.
-  RCP<const Environment> env_;
 
   lno_t numIds_;
   const gid_t *idList_;
@@ -236,11 +221,10 @@ private:
 /////////////////////////////////////////////////////////////////
 
 template <typename User>
-  BasicCoordinateInput<User>::BasicCoordinateInput( 
+  BasicCoordinateAdapter<User>::BasicCoordinateAdapter( 
     lno_t numIds, const gid_t *ids,
     const scalar_t *x, const scalar_t *y, const scalar_t *z,
     int xStride, int yStride, int zStride):
-      env_(rcp(new Environment)), 
       numIds_(numIds), idList_(ids), 
       dimension_(0), coords_(), 
       numWeights_(0), weights_()
@@ -270,11 +254,10 @@ template <typename User>
 }
 
 template <typename User>
-  BasicCoordinateInput<User>::BasicCoordinateInput( 
+  BasicCoordinateAdapter<User>::BasicCoordinateAdapter( 
     lno_t numIds, const gid_t *ids, 
     vector<const scalar_t *> &values,  vector<int> &valueStrides,
     vector<const scalar_t *> &weights, vector<int> &weightStrides):
-      env_(rcp(new Environment)), 
       numIds_(numIds), idList_(ids), 
       dimension_(values.size()), coords_(),
       numWeights_(weights.size()), weights_()
@@ -283,7 +266,7 @@ template <typename User>
 }
 
 template <typename User>
-  void BasicCoordinateInput<User>::initializeData(
+  void BasicCoordinateAdapter<User>::initializeData(
     vector<const scalar_t *> &values,  vector<int> &valueStrides,
     vector<const scalar_t *> &weights, vector<int> &weightStrides)
 {

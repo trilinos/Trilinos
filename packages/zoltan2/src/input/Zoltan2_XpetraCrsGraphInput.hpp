@@ -43,12 +43,12 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_XpetraCrsGraphInput.hpp
-    \brief Defines XpetraCrsGraphInput class.
+/*! \file Zoltan2_XpetraCrsGraphAdapter.hpp
+    \brief Defines XpetraCrsGraphAdapter class.
 */
 
-#ifndef _ZOLTAN2_XPETRACRSGRAPHINPUT_HPP_
-#define _ZOLTAN2_XPETRACRSGRAPHINPUT_HPP_
+#ifndef _ZOLTAN2_XPETRACRSGRAPHADAPTER_HPP_
+#define _ZOLTAN2_XPETRACRSGRAPHADAPTER_HPP_
 
 #include <Zoltan2_GraphInput.hpp>
 #include <Zoltan2_StridedData.hpp>
@@ -81,7 +81,7 @@ namespace Zoltan2 {
 */
 
 template <typename User>
-  class XpetraCrsGraphInput : public GraphInput<User> {
+  class XpetraCrsGraphAdapter : public GraphAdapter<User> {
 
 public:
 
@@ -92,22 +92,22 @@ public:
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef Xpetra::CrsGraph<lno_t, gno_t, node_t> xgraph_t;
-  typedef GraphInput<User>       base_adapter_t;
+  typedef GraphAdapter<User> base_adapter_t;
   typedef User user_t;
 #endif
 
   /*! \brief Destructor
    */
-  ~XpetraCrsGraphInput() { }
+  ~XpetraCrsGraphAdapter() { }
 
   /*! \brief Constructor for graph with no weights or coordinates.
    *  \param ingraph the Epetra_CrsGraph, Tpetra::CrsGraph or Xpetra::CrsGraph
    *
-   * Most input adapters do not have RCPs in their interface.  This
+   * Most adapters do not have RCPs in their interface.  This
    * one does because the user is obviously a Trilinos user.
    */
 
-  XpetraCrsGraphInput(const RCP<const User> &ingraph);
+  XpetraCrsGraphAdapter(const RCP<const User> &ingraph);
 
   /*! \brief Constructor for graph with weights but no coordinates.
    *  \param ingraph the Epetra_CrsGraph, Tpetra::CrsGraph or Xpetra::CrsGraph
@@ -145,11 +145,11 @@ public:
    *       TheGraph->getLocalRowView(vertexNum, neighborList);
    *     \endcode
    *
-   * Most input adapters do not have RCPs in their interface.  This
+   * Most adapters do not have RCPs in their interface.  This
    * one does because the user is obviously a Trilinos user.
    */
 
-  XpetraCrsGraphInput(const RCP<const User> &ingraph,
+  XpetraCrsGraphAdapter(const RCP<const User> &ingraph,
     vector<const scalar_t *> &vWeights,  vector<int> &vWeightStrides,
     vector<const scalar_t *> &eWeights,  vector<int> &eWeightStrides);
 
@@ -195,22 +195,22 @@ public:
    *       TheGraph->getLocalRowView(vertexNum, neighborList);
    *     \endcode
    *
-   * Most input adapters do not have RCPs in their interface.  This
+   * Most adapters do not have RCPs in their interface.  This
    * one does because the user is obviously a Trilinos user.
    */
 
-  XpetraCrsGraphInput(const RCP<const User> &ingraph,
+  XpetraCrsGraphAdapter(const RCP<const User> &ingraph,
     vector<const scalar_t *> &vWeights,  vector<int> &vWeightStrides,
     vector<const scalar_t *> &eWeights,  vector<int> &eWeightStrides,
     vector<const scalar_t *> &coords,  vector<int> &coordStrides);
 
   /*! \brief Provide a pointer to one dimension of the vertex weights.
-   *    \param dim A number from 0 to one less than 
-   *          vertex weight dimension specified in the constructor.
    *    \param val A pointer to the weights for dimension \c dim.
    *    \param stride    A stride for the \c val array.  If \stride is
    *             \c k, then val[n * k] is the weight for the
    *             \c n th vertex for dimension \dim.
+   *    \param idx A number from 0 to one less than 
+   *          vertex weight dimension specified in the constructor.
    *
    *  The order of the vertex weights should match the order that
    *  vertices appear in the input data structure.
@@ -219,15 +219,15 @@ public:
    *     \endcode
    */
 
-  void setVertexWeights(int dim, const scalar_t *val, int stride);
+  void setVertexWeights(const scalar_t *val, int stride, int idx);
 
   /*! \brief Provide a pointer to one dimension of the edge weights.
-   *    \param dim A number from 0 to one less than 
-   *          edge weight dimension specified in the constructor.
    *    \param val A pointer to the weights for dimension \c dim.
    *    \param stride    A stride for the \c val array.  If \stride is
    *             \c k, then val[n * k] is the weight for the
    *             \c n th edge for dimension \dim.
+   *    \param dim A number from 0 to one less than 
+   *          edge weight dimension specified in the constructor.
    *
    *  The order of the edge weights should follow the order that the
    *  the vertices and edges appear in the input data structure.
@@ -243,7 +243,7 @@ public:
    *     \endcode
    */
 
-  void setEdgeWeights(int dim, const scalar_t *val, int stride);
+  void setEdgeWeights(const scalar_t *val, int stride, int idx);
 
   /*! \brief Provide a pointer to one dimension of the vertex coordinates.
    *    \param dim A number from 0 to one less than 
@@ -277,100 +277,74 @@ public:
   }
 
   ////////////////////////////////////////////////////
-  // The InputAdapter interface.
+  // The Adapter interface.
   ////////////////////////////////////////////////////
 
-  string inputAdapterName()const { return string("XpetraCrsGraph");}
+  ////////////////////////////////////////////////////
+  // The GraphAdapter interface.
+  ////////////////////////////////////////////////////
 
-  size_t getLocalNumberOfObjects() const { return getLocalNumberOfVertices();}
+  // TODO:  Assuming rows == objects; 
+  // TODO:  Need to add option for columns or nonzeros?
+  size_t getLocalNumVertices() const { return graph_->getNodeNumRows(); }
 
-  int getNumberOfWeightsPerObject() const { return 0;}
-
-  size_t getObjectWeights(int dim, const scalar_t *&wgt, int &stride) const
+  void getVertexIDsView(const gid_t *&ids) const 
   {
-    return getVertexWeights(dim, wgt, stride);
-  }
-
-  ////////////////////////////////////////////////////
-  // The GraphInput interface.
-  ////////////////////////////////////////////////////
-
-  size_t getLocalNumberOfVertices() const { 
-    return graph_->getNodeNumRows(); 
-  }
-
-  size_t getLocalNumberOfEdges() const { 
-    return graph_->getNodeNumEntries();
-  }
-
-  int getVertexWeightDimension() const { 
-    return vertexWeightDim_;
-  }
-
-  int getEdgeWeightDimension() const { 
-    return edgeWeightDim_;
-  }
-
-  int getCoordinateDimension() const { 
-    return coordinateDim_;
-  }
-
-  size_t getVertexListView(const gid_t *&ids,
-    const lno_t *&offsets, const gid_t *& edgeId) const
-  {
-    size_t nvtx = getLocalNumberOfVertices();
-    ids = edgeId = NULL;
-    offsets = NULL;
-
-    if (nvtx){
+    ids = NULL;
+    if (getLocalNumVertices())
       ids = graph_->getRowMap()->getNodeElementList().getRawPtr();
+  }
+
+  size_t getLocalNumEdges() const { return graph_->getNodeNumEntries(); }
+
+  void getEdgeView(const lno_t *&offsets, const gid_t *&adjIds) const
+  {
+    adjIds = NULL;
+    offsets = NULL;
+    if (getLocalNumVertices()) {
       offsets = offs_.getRawPtr();
-      edgeId = eids_.getRawPtr();
+      adjIds = adjids_.getRawPtr();
     }
-    
-    return nvtx;
   }
 
-  size_t getVertexWeights(int dim,
-    const scalar_t *&weights, int &stride) const
+  int getNumWeightsPerVertex() const { return vertexWeightDim_;}
+
+  void getVertexWeightsView(const scalar_t *&weights, int &stride,
+                            int idx) const
   {
-    env_->localInputAssertion(__FILE__, __LINE__, "invalid weight dimension",
-      dim >= 0 && dim < vertexWeightDim_, BASIC_ASSERTION);
-
+    env_->localInputAssertion(__FILE__, __LINE__, "invalid weight index",
+      idx >= 0 && idx < vertexWeightDim_, BASIC_ASSERTION);
     size_t length;
-    vertexWeights_[dim].getStridedList(length, weights, stride);
-    return length;
+    vertexWeights_[idx].getStridedList(length, weights, stride);
   }
 
-  size_t getEdgeWeights(int dim,
-    const scalar_t *&weights, int &stride) const
+
+  int getNumWeightsPerEdge() const { return edgeWeightDim_;}
+
+  void getEdgeWeightsView(const scalar_t *&weights, int &stride, int idx) const
   {
-    env_->localInputAssertion(__FILE__, __LINE__, "invalid weight dimension",
-      dim >= 0 && dim < edgeWeightDim_, BASIC_ASSERTION);
-
+    env_->localInputAssertion(__FILE__, __LINE__, "invalid weight index",
+      idx >= 0 && idx < edgeWeightDim_, BASIC_ASSERTION);
     size_t length;
-    edgeWeights_[dim].getStridedList(length, weights, stride);
-    return length;
+    edgeWeights_[idx].getStridedList(length, weights, stride);
   }
 
-  size_t getVertexCoordinates(int dim,
-    const scalar_t *&coords, int &stride) const
+
+  int getDimension() const { return coordinateDim_; }
+
+  void getVertexCoordinatesView(const scalar_t *&coords, int &stride,
+                                int idx) const
   {
     env_->localInputAssertion(__FILE__, __LINE__, 
       "invalid coordinate dimension",
-      dim >= 0 && dim < coordinateDim_, BASIC_ASSERTION);
-
+      idx >= 0 && idx < coordinateDim_, BASIC_ASSERTION);
     size_t length;
-    coords_[dim].getStridedList(length, coords, stride);
-    return length;
+    coords_[idx].getStridedList(length, coords, stride);
   }
 
- /*! \brief Repartition a graph that has the same structure as
-   *   the graph that instantiated this input adapter.
-   */
-  template<typename Adapter>
+  template <typename Adapter>
     size_t applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<Adapter> &solution) const;
+      const PartitioningSolution<Adapter> &solution) const;
 
 private:
 
@@ -384,7 +358,7 @@ private:
   RCP<const Comm<int> > comm_;
 
   ArrayRCP<const lno_t> offs_;
-  ArrayRCP<const gid_t> eids_;
+  ArrayRCP<const gid_t> adjids_;
 
   int vertexWeightDim_;
   ArrayRCP<StridedData<lno_t, scalar_t> > vertexWeights_;
@@ -406,9 +380,9 @@ private:
 /////////////////////////////////////////////////////////////////
 
 template <typename User>
-  XpetraCrsGraphInput<User>::XpetraCrsGraphInput(
+  XpetraCrsGraphAdapter<User>::XpetraCrsGraphAdapter(
     const RCP<const User> &ingraph):
-      ingraph_(ingraph), graph_(), comm_() , offs_(), eids_(),
+      ingraph_(ingraph), graph_(), comm_() , offs_(), adjids_(),
       vertexWeightDim_(0), vertexWeights_(),
       edgeWeightDim_(0), edgeWeights_(),
       coordinateDim_(0), coords_(),
@@ -422,11 +396,11 @@ template <typename User>
 }
 
 template <typename User>
-  XpetraCrsGraphInput<User>::XpetraCrsGraphInput(
+  XpetraCrsGraphAdapter<User>::XpetraCrsGraphAdapter(
   const RCP<const User> &ingraph,
     vector<const scalar_t *> &vWeights,  vector<int> &vWeightStrides,
     vector<const scalar_t *> &eWeights,  vector<int> &eWeightStrides):
-      ingraph_(ingraph), graph_(), comm_() , offs_(), eids_(),
+      ingraph_(ingraph), graph_(), comm_() , offs_(), adjids_(),
       vertexWeightDim_(vWeights.size()), vertexWeights_(),
       edgeWeightDim_(eWeights.size()), edgeWeights_(),
       coordinateDim_(0), coords_(),
@@ -440,12 +414,12 @@ template <typename User>
 }
 
 template <typename User>
-  XpetraCrsGraphInput<User>::XpetraCrsGraphInput(
+  XpetraCrsGraphAdapter<User>::XpetraCrsGraphAdapter(
     const RCP<const User> &ingraph,
     vector<const scalar_t *> &vWeights,  vector<int> &vWeightStrides,
     vector<const scalar_t *> &eWeights,  vector<int> &eWeightStrides,
     vector<const scalar_t *> &coords,  vector<int> &coordStrides):
-      ingraph_(ingraph), graph_(), comm_() , offs_(), eids_(),
+      ingraph_(ingraph), graph_(), comm_() , offs_(), adjids_(),
       vertexWeightDim_(vWeights.size()), vertexWeights_(),
       edgeWeightDim_(eWeights.size()), edgeWeights_(),
       coordinateDim_(coords.size()), coords_(),
@@ -456,7 +430,7 @@ template <typename User>
 }
 
 template <typename User>
-  void XpetraCrsGraphInput<User>::initializeData(
+  void XpetraCrsGraphAdapter<User>::initializeData(
     vector<const scalar_t *> &vWeights,  vector<int> &vWeightStrides,
     vector<const scalar_t *> &eWeights,  vector<int> &eWeightStrides,
     vector<const scalar_t *> &coords,  vector<int> &coordStrides)
@@ -492,10 +466,10 @@ template <typename User>
   lno_t *offs = new lno_t [n];
   env_->localMemoryAssertion(__FILE__, __LINE__, n, offs);
 
-  gid_t *eids = NULL;
+  gid_t *adjids = NULL;
   if (nedges){
-    eids = new gid_t [nedges];
-    env_->localMemoryAssertion(__FILE__, __LINE__, nedges, eids);
+    adjids = new gid_t [nedges];
+    env_->localMemoryAssertion(__FILE__, __LINE__, nedges, adjids);
   }
 
   offs[0] = 0;
@@ -504,11 +478,11 @@ template <typename User>
     graph_->getLocalRowView(v, nbors);
     offs[v+1] = offs[v] + nbors.size();
     for (lno_t e=offs[v], i=0; e < offs[v+1]; e++)
-      eids[e] = graph_->getColMap()->getGlobalElement(nbors[i++]);
+      adjids[e] = graph_->getColMap()->getGlobalElement(nbors[i++]);
   }
 
   offs_ = arcp(offs, 0, n, true);
-  eids_ = arcp(eids, 0, nedges, true);
+  adjids_ = arcp(adjids, 0, nedges, true);
 
   int stride = 1;
   for (int dim=0; dim < coordinateDim_; dim++){
@@ -537,13 +511,12 @@ template <typename User>
 
 template <typename User>
   template<typename Adapter>
-    size_t XpetraCrsGraphInput<User>::applyPartitioningSolution(
+    size_t XpetraCrsGraphAdapter<User>::applyPartitioningSolution(
       const User &in, User *&out, 
       const PartitioningSolution<Adapter> &solution) const
 {
   // Get an import list
 
-  Zoltan2::Environment env;
   size_t len = solution.getLocalNumberOfIds();
   const gid_t *gids = solution.getIdList();
   const partId_t *parts = solution.getPartList();

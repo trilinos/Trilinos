@@ -64,7 +64,7 @@ typedef Teuchos::SerialDenseVector<lno_t, scalar_t> tvec_t;
 typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> userTypes_t;
 
 int checkBasicCoordinate(
-  Zoltan2::BasicCoordinateInput<userTypes_t> *ia, 
+  Zoltan2::BasicCoordinateAdapter<userTypes_t> *ia, 
   int len, int glen, gno_t *ids,
   scalar_t *xyz,
   scalar_t *weights,
@@ -72,13 +72,13 @@ int checkBasicCoordinate(
 {
   int fail = 0;
 
-  if (ia->getCoordinateDimension() != nCoords)
+  if (ia->getDimension() != nCoords)
     fail = 100;
 
-  if (!fail && ia->getNumberOfWeights() != nWeights)
+  if (!fail && ia->getNumWeightsPerID() != nWeights)
     fail = 101;
 
-  if (!fail && ia->getLocalNumberOfCoordinates() != size_t(len))
+  if (!fail && ia->getLocalNum() != size_t(len))
     fail = 102;
 
   for (int x=0; !fail && x < nCoords; x++){
@@ -86,10 +86,8 @@ int checkBasicCoordinate(
     const scalar_t *vals;
     int stride;
 
-    size_t nvals = ia->getCoordinates(x, idList, vals, stride);
-
-    if (nvals != size_t(len*stride))
-      fail = 104;
+    ia->getIDsView(idList);
+    ia->getCoordinatesView(vals, stride, x);
 
     scalar_t *coordVal = xyz + x;
     for (int i=0; !fail && i < len; i++, coordVal += 3){
@@ -106,10 +104,7 @@ int checkBasicCoordinate(
     const scalar_t *wgts;
     int stride;
 
-    size_t nvals = ia->getCoordinateWeights(w, wgts, stride);
-
-    if (nvals != size_t(len))
-      fail = 108;
+    ia->getWeightsView(wgts, stride, w);
 
     scalar_t *weightVal = weights + len*w;
     for (int i=0; !fail && i < len; i++, weightVal++){
@@ -193,7 +188,7 @@ int main(int argc, char *argv[])
     z[ii] = z_values[i];
   }
 
-  RCP<Zoltan2::BasicCoordinateInput<userTypes_t> > ia;
+  RCP<Zoltan2::BasicCoordinateAdapter<userTypes_t> > ia;
 
   {
     ////////////////////////////////////////////////////////////////
@@ -204,7 +199,7 @@ int main(int argc, char *argv[])
     int nweights = 0;
   
     try{
-     ia = rcp(new Zoltan2::BasicCoordinateInput<userTypes_t>(
+     ia = rcp(new Zoltan2::BasicCoordinateAdapter<userTypes_t>(
        numLocalIds, myIds.getRawPtr(), x_values, y_values, z_values));
     }
     catch (std::exception &e){
@@ -238,7 +233,7 @@ int main(int argc, char *argv[])
     valueStrides.push_back(1);
   
     try{
-     ia = rcp(new Zoltan2::BasicCoordinateInput<userTypes_t>(
+     ia = rcp(new Zoltan2::BasicCoordinateAdapter<userTypes_t>(
        numLocalIds, myIds.getRawPtr(), values, valueStrides, 
        weightValues, weightStrides));
     }
@@ -259,7 +254,7 @@ int main(int argc, char *argv[])
     std::vector<int> emptyStrides;
   
     try{
-     ia = rcp(new Zoltan2::BasicCoordinateInput<userTypes_t>(
+     ia = rcp(new Zoltan2::BasicCoordinateAdapter<userTypes_t>(
        numLocalIds, myIds.getRawPtr(), values, emptyStrides, 
        weightValues, emptyStrides));
     }
@@ -297,7 +292,7 @@ int main(int argc, char *argv[])
     weightStrides.push_back(1);
   
     try{
-     ia = rcp(new Zoltan2::BasicCoordinateInput<userTypes_t>(
+     ia = rcp(new Zoltan2::BasicCoordinateAdapter<userTypes_t>(
        numLocalIds, myIds.getRawPtr(), values, valueStrides, 
        weightValues, weightStrides));
     }
@@ -318,7 +313,7 @@ int main(int argc, char *argv[])
     std::vector<int> emptyStrides;
   
     try{
-     ia = rcp(new Zoltan2::BasicCoordinateInput<userTypes_t>(
+     ia = rcp(new Zoltan2::BasicCoordinateAdapter<userTypes_t>(
        numLocalIds, myIds.getRawPtr(), values, valueStrides, 
        weightValues, emptyStrides));
     }
@@ -354,7 +349,7 @@ int main(int argc, char *argv[])
     weightStrides.push_back(1);
   
     try{
-     ia = rcp(new Zoltan2::BasicCoordinateInput<userTypes_t>(
+     ia = rcp(new Zoltan2::BasicCoordinateAdapter<userTypes_t>(
        numLocalIds, myIds.getRawPtr(), values, valueStrides, 
        weightValues, weightStrides));
     }

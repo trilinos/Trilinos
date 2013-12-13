@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -228,7 +228,7 @@ namespace Xpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> & toTpetra(const Map<LocalOrdinal,GlobalOrdinal,Node> &map) {
     // TODO: throw exception
-    const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> & tpetraMap = dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &>(map);
+    const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> & tpetraMap = dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &>(*map.getMap());
     return *tpetraMap.getTpetra_Map();
   }
 
@@ -236,7 +236,7 @@ namespace Xpetra {
   const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > toTpetra(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map) {
     typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMapClass;
     if (map != Teuchos::null) {
-      XPETRA_RCP_DYNAMIC_CAST(const TpetraMapClass, map, tpetraMap, "toTpetra");
+      XPETRA_RCP_DYNAMIC_CAST(const TpetraMapClass, map->getMap(), tpetraMap, "toTpetra");
       return tpetraMap->getTpetra_Map();
     }
     return Teuchos::null;

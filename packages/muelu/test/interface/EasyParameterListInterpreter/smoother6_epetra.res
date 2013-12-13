@@ -11,10 +11,7 @@ repartition: enable = 0   [default]
 
 Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = ILU})
- fact: relax value = 0   [default]
- fact: absolute threshold = 0   [default]
- fact: relative threshold = 1   [default]
- fact: level-of-fill = 0   [default]
+ [empty list]
  
 Level 1
  Prolongator smoothing (MueLu::SaPFactory)
@@ -62,10 +59,7 @@ Level 1
  RepairMainDiagonal = 0   [default]
  
  Setup Smoother (MueLu::IfpackSmoother{type = ILU})
- fact: relax value = 0   [default]
- fact: absolute threshold = 0   [default]
- fact: relative threshold = 1   [default]
- fact: level-of-fill = 0   [default]
+ [empty list]
  
 Level 2
  Prolongator smoothing (MueLu::SaPFactory)

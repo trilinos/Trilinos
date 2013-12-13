@@ -185,7 +185,7 @@ namespace MueLu {
                                algo != "rcb",
                                Exceptions::RuntimeError, "Unknown partitioning algorithm: \"" << algo << "\"");
 
-    typedef Zoltan2::BasicCoordinateInput<Zoltan2::BasicUserTypes<SC,GO,LO,GO> > InputAdapterType;
+    typedef Zoltan2::BasicCoordinateAdapter<Zoltan2::BasicUserTypes<SC,GO,LO,GO> > InputAdapterType;
     typedef Zoltan2::PartitioningProblem<InputAdapterType> ProblemType;
 
     InputAdapterType adapter(numElements, map->getNodeElementList().getRawPtr(), values, strides, weights, strides);

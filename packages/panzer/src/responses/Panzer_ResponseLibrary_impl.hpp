@@ -342,6 +342,8 @@ void ResponseLibrary<TraitsT>::
 evaluateVolumeFieldManagers(const panzer::AssemblyEngineInArgs & ae_in,
                             const Teuchos::Comm<int> & comm)
 {
+   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"Email ECC if this is called. I'd like to discover if this code is used anymore!");
+
    typedef panzer::LinearObjContainer LOC;
    const int idx = Sacado::mpl::find<TypeSeq,EvalT>::value;
 

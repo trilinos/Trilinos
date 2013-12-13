@@ -48,16 +48,12 @@
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Thyra_TpetraThyraWrappers.hpp"
 
-// FIXME (mfh 10 Nov 2013): Should only need to include
-// "Ifpack2_Factory.hpp", but that causes linker errors.
-#include "Ifpack2_Factory_decl.hpp"
-#include "Ifpack2_Factory_def.hpp"
+#include "Ifpack2_Factory.hpp"
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Parameters.hpp"
 
 #include "Tpetra_RowMatrix.hpp"
 
-#include "Teuchos_Ptr.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_Time.hpp"

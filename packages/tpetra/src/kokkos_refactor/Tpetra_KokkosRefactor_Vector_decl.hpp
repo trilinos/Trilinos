@@ -43,8 +43,6 @@
 #define TPETRA_KOKKOS_REFACTOR_VECTOR_DECL_HPP
 
 #include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_KokkosRefactor_MultiVector_decl.hpp"
-#include "Tpetra_Vector_decl.hpp"
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 namespace Tpetra {

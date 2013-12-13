@@ -40,6 +40,7 @@
 //@HEADER
 */
 
+#include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_Details_DenseSolver_decl.hpp"
 
 #ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
@@ -48,22 +49,23 @@
 #include "Ifpack2_ExplicitInstantiationHelpers.hpp"
 #include "Ifpack2_ETIHelperMacros.h"
 
+namespace Ifpack2 {
+namespace Details {
+
 // mfh 15 Nov 2013: Since we defined a stub implementation for
 // unsupported Scalar (S) types, we don't have to go through any
 // trouble to exclude unsupported Scalar types here.
-
-#define IFPACK2_INST_DETAILS_DENSE_SOLVER(S,LO,GO)                \
-  template class DenseSolver<Tpetra::RowMatrix< S , LO , GO > >;  \
-
-namespace Ifpack2 {
-namespace Details {
+//
+// mfh 12 Dec 2013: For some reason, this all has to be on one line,
+// otherwise the macro definition includes the whole rest of the file.
+#define IFPACK2_INST_DETAILS_DENSE_SOLVER(S,LO,GO) template class DenseSolver<Tpetra::CrsMatrix< S , LO , GO > >;
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 
   IFPACK2_INSTANTIATE_SLG(IFPACK2_INST_DETAILS_DENSE_SOLVER)
 
-}
-}
+} // namespace Details
+} // namespace Ifpack2
 
-#endif
+#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 

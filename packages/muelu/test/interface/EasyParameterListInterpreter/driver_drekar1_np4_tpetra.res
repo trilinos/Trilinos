@@ -300,9 +300,9 @@ Level 3
  
  Smoother (level 0) both : Ifpack2::Chebyshev{status = initialized, computed, Ifpack2::Details::Chebyshev : degree = 2, lambdaMax = 1.9477, alpha = 20, lambdaMin = 0.097385, global rows = 9999, global cols = 9999, global nnz  = 29995}
  
- Smoother (level 1) both : Ifpack2::Chebyshev{status = initialized, computed, Ifpack2::Details::Chebyshev : degree = 2, lambdaMax = 1.95221, alpha = 20, lambdaMin = 0.0976105, global rows = 3335, global cols = 3335, global nnz  = 10015}
+ Smoother (level 1) both : Ifpack2::Chebyshev{status = initialized, computed, Ifpack2::Details::Chebyshev : degree = 2, lambdaMax = 1.95236, alpha = 20, lambdaMin = 0.0976182, global rows = 3335, global cols = 3335, global nnz  = 10015}
  
- Smoother (level 2) both : Ifpack2::Chebyshev{status = initialized, computed, Ifpack2::Details::Chebyshev : degree = 2, lambdaMax = 1.9463, alpha = 20, lambdaMin = 0.0973151, global rows = 1111, global cols = 1111, global nnz  = 3331}
+ Smoother (level 2) both : Ifpack2::Chebyshev{status = initialized, computed, Ifpack2::Details::Chebyshev : degree = 2, lambdaMax = 1.9461, alpha = 20, lambdaMin = 0.097305, global rows = 1111, global cols = 1111, global nnz  = 3331}
  
  Smoother (level 3) pre  : SuperLU solver interface
  Smoother (level 3) post : no smoother

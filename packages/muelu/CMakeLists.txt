@@ -37,7 +37,7 @@ ENDIF ()
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_PROFILING
   HAVE_${PACKAGE_NAME_UC}_PROFILING
   "Enable detailed timing and memory profiling of MueLu."
-  ON)
+  OFF)
 
 # Profiling (expert users only. There is no TPL for Google Perftools)
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_GOOGLE_PERFTOOLS

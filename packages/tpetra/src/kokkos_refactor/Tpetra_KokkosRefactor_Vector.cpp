@@ -41,7 +41,7 @@
 // @HEADER
 */
 
-#include "Tpetra_KokkosRefactor_Vector.hpp"
+#include "Tpetra_Vector.hpp"
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 

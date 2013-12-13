@@ -130,7 +130,7 @@ namespace MueLu {
 
     ArrayRCP<LO>            aggStart;
     ArrayRCP<GlobalOrdinal> aggToRowMap;
-    AmalgamationFactory::UnamalgamateAggregates(*aggregates, *amalgInfo, aggStart, aggToRowMap);
+    amalgInfo->UnamalgamateAggregates(*aggregates, aggStart, aggToRowMap);
 
     // write to file
     //std::string outFile = outputFileName_;

@@ -43,24 +43,23 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_CoordinateInput.hpp
-    \brief Defines the CoordinateInput interface.     
+/*! \file Zoltan2_CoordinateAdapter.hpp
+    \brief Defines the CoordinateAdapter interface.     
 */
 
-#ifndef _ZOLTAN2_COORDINATEINPUT_HPP_
-#define _ZOLTAN2_COORDINATEINPUT_HPP_
+#ifndef _ZOLTAN2_COORDINATEADAPTER_HPP_
+#define _ZOLTAN2_COORDINATEADAPTER_HPP_
 
 #include <Zoltan2_InputAdapter.hpp>
-#include <Zoltan2_PartitioningSolution.hpp>
 
 #include <string>
 
 namespace Zoltan2 {
 
-/*!  \brief CoordinateInput defines the interface for input geometric
+/*!  \brief CoordinateAdapter defines the interface for input geometric
                 coordinates.
 
-    InputAdapter objects provide access for Zoltan2 to the user's data.
+    Adapters provide access for Zoltan2 to the user's data.
     Many built-in adapters are already defined for common data structures,
     such as Tpetra and Epetra objects and C-language pointers to arrays.
 
@@ -92,18 +91,12 @@ namespace Zoltan2 {
     set by Zoltan2 to \c float.  If you wish to change it to double, set
     the second template parameter to \c double.
 
-
-    Input adapters provide access for Zoltan2 to the user's data.  The
-    methods in the interface must be defined by users.  Many built-in
-    adapters are already defined for common data structures, such as
-    Tpetra and Epetra objects and C-language pointers to arrays.
-
     \todo We don't really need global Ids.  They should be optional
     \todo Migration doesn't move weights.  Should it?
 */
 
 template <typename User>
-  class CoordinateInput : public InputAdapter<User> {
+  class CoordinateAdapter : public BaseAdapter<User> {
 
 public:
 
@@ -118,13 +111,13 @@ public:
 
   /*! \brief Destructor
    */
-  virtual ~CoordinateInput() {};
+  virtual ~CoordinateAdapter() {};
 
   ////////////////////////////////////////////////////
-  // The InputAdapter interface.
+  // The Adapter interface.
   ////////////////////////////////////////////////////
 
-  enum InputAdapterType inputAdapterType() const {return CoordinateAdapterType;}
+  enum BaseAdapterType adapterType() const {return CoordinateAdapterType;}
 
   ////////////////////////////////////////////////////
   // My interface.
@@ -132,17 +125,7 @@ public:
 
   /*! \brief Return dimension of the coordinates.
    */
-  virtual int getCoordinateDimension() const = 0;
-
-  /*! \brief Return the number of weights per coordinate.
-   *   \return the count of weights, zero or more per coordinate.
-   */
-  virtual int getNumberOfWeights() const = 0;
-
-  /*! \brief Return the number of coordinates on this process.
-   *   \return  the count of coordinates on the local process.
-   */
-  virtual size_t getLocalNumberOfCoordinates() const = 0;
+  virtual int getDimension() const = 0;
 
   /*! \brief Provide a pointer to one dimension of this process' coordinates.
       \param coordDim  is a value from 0 to one less than 
@@ -153,59 +136,10 @@ public:
               the coords list.  If stride is one, then the ith coordinate
               value is coords[i], but if stride is two, then the
               ith coordinate value is coords[2*i].
-
-       \return The length of the \c coords list.  This may be more than
-              getLocalNumberOfCoordinates() because the \c stride
-              may be more than one.
-
-      Zoltan2 does not copy your data.  The data pointed to coords
-      must remain valid for the lifetime of this InputAdapter.
    */
 
-  virtual size_t getCoordinates(int coordDim, const gid_t *&gids, 
-    const scalar_t *&coords, int &stride) const = 0;
-
-  /*! \brief  Provide a pointer to the weights, if any, corresponding 
-       to the coordinates returned in getCoordinates(). 
-
-      \param weightDim ranges from zero to one less than getNumberOfWeights()
-      \param weights is the list of weights of the given dimension for
-           the coordinates listed in getCoordinates().  If weights for
-           this dimension are to be uniform for all coordinates in the
-           global problem, the \c weights should be a NULL pointer.
-       \param stride The k'th weight is located at weights[stride*k]
-       \return The number of weights listed, which should be at least
-                  the local number of coordinates times the stride for
-                  non-uniform weights, zero otherwise.
-   */
-
-  virtual size_t getCoordinateWeights(int weightDim,
-     const scalar_t *&weights, int &stride) const = 0;
-
-  /*! \brief Apply a PartitioningSolution to an input.
-   *
-   *  This is not a required part of the CoordinateInput interface. However
-   *  if the Caller calls a Problem method to redistribute data, it needs
-   *  this method to perform the redistribution.
-   *
-   *  \param in  An input object with a structure and assignment of
-   *           of global Ids to processes that matches that of the input
-   *           data that instantiated this InputAdapter.
-   *  \param out On return this should point to a newly created object
-   *            with the specified partitioning.
-   *  \param solution  The Solution object created by a Problem should
-   *      be supplied as the third argument.  It must have been templated
-   *      on user data that has the same global ID distribution as this
-   *      user data.
-   *  \return   Returns the number of local Ids in the new partitioning.
-   */
-
-  template <typename Adapter>
-    size_t applyPartitioningSolution(User &in, User *&out,
-         const PartitioningSolution<Adapter> &solution) const
-  {
-    return 0;
-  } 
+  virtual void getCoordinatesView(const scalar_t *&coords, int &stride,
+                                  int coordDim) const = 0;
 
 private:
 };

@@ -157,11 +157,11 @@ void testCoordinateModel(std::string &fname, int weightDim,
 
 
   //////////////////////////////////////////////////////////////
-  // Create a BasicCoordinateInput adapter object.
+  // Create a BasicCoordinateAdapter adapter object.
   //////////////////////////////////////////////////////////////
 
-  typedef Zoltan2::BasicCoordinateInput<mv_t> ia_t;
-  typedef Zoltan2::CoordinateInput<mv_t>      base_ia_t;
+  typedef Zoltan2::BasicCoordinateAdapter<mv_t> ia_t;
+  typedef Zoltan2::CoordinateAdapter<mv_t>      base_ia_t;
 
   RCP<ia_t> ia;
 

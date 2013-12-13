@@ -43,7 +43,7 @@
 //
 // @HEADER
 //
-// Test for Zoltan2::BasicVectorInput 
+// Test for Zoltan2::BasicVectorAdapter 
 
 #include <Zoltan2_BasicVectorInput.hpp>
 #include <Zoltan2_TestHelpers.hpp>
@@ -60,7 +60,7 @@ using Teuchos::DefaultComm;
 typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> userTypes_t;
 
 int checkBasicVector(
-  Zoltan2::BasicVectorInput<userTypes_t> *ia, int len, int glen,
+  Zoltan2::BasicVectorAdapter<userTypes_t> *ia, int len, int glen,
   gno_t *ids, int mvdim, const scalar_t **values, int *valueStrides,
   int wdim, const scalar_t **weights, int *weightStrides)
 {
@@ -69,25 +69,27 @@ int checkBasicVector(
 
   if (valueStrides == NULL) strideOne = true;
 
-  if (ia->getNumberOfVectors() != mvdim)
+  if (ia->getNumVectors() != mvdim)
     fail = 100;
 
-  if (!fail && ia->getNumberOfWeights() != wdim)
+  if (!fail && ia->getNumWeightsPerID() != wdim)
     fail = 101;
 
-  if (!fail && ia->getLocalLength() != size_t(len))
+  if (!fail && ia->getLocalNum() != size_t(len))
     fail = 102;
 
-  if (!fail && ia->getGlobalLength() != size_t(glen))
-    fail = 103;
+  const gno_t *idList;
+  ia->getIDsView(idList);
+  for (int i=0; !fail && i < len; i++)
+    if (!fail && idList[i] != ids[i])
+      fail = 107;
 
   for (int v=0; !fail && v < mvdim; v++){
-    const gno_t *idList;
     const scalar_t *vals;
     int correctStride = (strideOne ? 1 : valueStrides[v]);
     int stride;
 
-    size_t nvals = ia->getVector(v, idList, vals, stride);
+    size_t nvals = ia->getVectorView(vals, stride, v);
 
     if (nvals != size_t(len*stride))
       fail = 104;
@@ -99,9 +101,6 @@ int checkBasicVector(
 // TODO fix values check
 //      if (vals[stride*i] != values[v][correctStride*i])
 //        fail = 106;
-
-      if (!fail && idList[i] != ids[i])
-        fail = 107;
     }
   }
 
@@ -109,10 +108,7 @@ int checkBasicVector(
     const scalar_t *wgts;
     int stride;
 
-    size_t nvals = ia->getVectorWeights(w, wgts, stride);
-
-    if (nvals != size_t(len*stride))
-      fail = 108;
+    ia->getWeightsView(wgts, stride, w);
 
     if (!fail && stride != weightStrides[w])
       fail = 109;
@@ -175,16 +171,16 @@ int main(int argc, char *argv[])
     valuePtrs[v] = mv_values + v;
   }
 
-  Zoltan2::BasicVectorInput<userTypes_t> *ia = NULL;
+  Zoltan2::BasicVectorAdapter<userTypes_t> *ia = NULL;
 
   {
-    // A Zoltan2::BasicVectorInput object with one vector and no weights
+    // A Zoltan2::BasicVectorAdapter object with one vector and no weights
 
     std::vector<const scalar_t *> weightValues;
     std::vector<int> strides;
   
     try{
-     ia = new Zoltan2::BasicVectorInput<userTypes_t>(numLocalIds, myIds,
+     ia = new Zoltan2::BasicVectorAdapter<userTypes_t>(numLocalIds, myIds,
        v_values, 1, weightValues, strides);
     }
     catch (std::exception &e){
@@ -202,7 +198,7 @@ int main(int argc, char *argv[])
   }
 
   {
-    // A Zoltan2::BasicVectorInput object with one vector and weights
+    // A Zoltan2::BasicVectorAdapter object with one vector and weights
 
     std::vector<const scalar_t *> weightValues;
     std::vector<int> strides;
@@ -213,7 +209,7 @@ int main(int argc, char *argv[])
     strides.push_back(1);
   
     try{
-     ia = new Zoltan2::BasicVectorInput<userTypes_t>(numLocalIds, myIds,
+     ia = new Zoltan2::BasicVectorAdapter<userTypes_t>(numLocalIds, myIds,
        v_values, 1, weightValues, strides);
     }
     catch (std::exception &e){
@@ -231,7 +227,7 @@ int main(int argc, char *argv[])
   }
 
   {
-    // A Zoltan2::BasicVectorInput object with a multivector and no weights
+    // A Zoltan2::BasicVectorAdapter object with a multivector and no weights
 
     std::vector<const scalar_t *> weightValues, values;
     std::vector<int> wstrides, vstrides;
@@ -243,7 +239,7 @@ int main(int argc, char *argv[])
   
   
     try{
-      ia = new Zoltan2::BasicVectorInput<userTypes_t>(
+      ia = new Zoltan2::BasicVectorAdapter<userTypes_t>(
         numLocalIds, myIds, values, vstrides, weightValues, wstrides);
     }
     catch (std::exception &e){
@@ -261,7 +257,7 @@ int main(int argc, char *argv[])
   }
 
   {
-    // A Zoltan2::BasicVectorInput object with a multivector with weights
+    // A Zoltan2::BasicVectorAdapter object with a multivector with weights
 
     std::vector<const scalar_t *> weightValues, values;
     std::vector<int> wstrides, vstrides;
@@ -277,7 +273,7 @@ int main(int argc, char *argv[])
     }
   
     try{
-     ia = new Zoltan2::BasicVectorInput<userTypes_t>(
+     ia = new Zoltan2::BasicVectorAdapter<userTypes_t>(
         numLocalIds, myIds, values, vstrides, weightValues, wstrides);
       
     }
