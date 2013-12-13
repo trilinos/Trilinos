@@ -116,8 +116,8 @@ for i=2:length(L2_err)
   L2_rate_c = [L2_rate_c p(1)];
 end
 
-fprintf('\n    L2 error       ratio          rate_two_grid        rate_cummulative\n');
-fprintf('    %6.2e       %6.2e       %6.2e             %6.2e\n', [L2_err; L2_ratio; L2_rate; L2_rate_c]);
+fprintf('\n    mesh         L2 error       ratio          rate_two_grid        rate_cummulative\n');
+fprintf('    %04dx%04d    %6.2e       %6.2e       %6.2e             %6.2e\n', [2.^gridsizes; 2.^gridsizes; L2_err; L2_ratio; L2_rate; L2_rate_c]);
 
 rate = L2_rate(end);
 
