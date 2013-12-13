@@ -1061,6 +1061,8 @@ public:
   bool owned_closure(Entity entity) const
   { return m_closure_count[entity.local_offset()] > static_cast<uint16_t>(0); }
 
+  void get_selected_nodes(stk::mesh::Selector selector, stk::mesh::EntityVector& nodes);
+
   unsigned field_data_size(const FieldBase& f, Entity e) const
   {
     return field_data_size_per_entity(f, bucket(e));

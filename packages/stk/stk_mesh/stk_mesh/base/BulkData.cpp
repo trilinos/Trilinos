@@ -25,6 +25,7 @@
 
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/FieldData.hpp>
@@ -177,6 +178,11 @@ BulkData::~BulkData()
 #ifdef STK_MESH_ALLOW_DEPRECATED_ENTITY_FNS
   the_bulk_data_registry[m_bulk_data_id] = NULL;
 #endif
+}
+
+void BulkData::get_selected_nodes(stk::mesh::Selector selector, stk::mesh::EntityVector& nodes)
+{
+    get_selected_entities( selector, this->buckets(stk::topology::NODE_RANK), nodes );
 }
 
 void BulkData::update_deleted_entities_container()

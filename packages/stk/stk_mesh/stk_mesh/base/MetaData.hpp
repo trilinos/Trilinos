@@ -680,6 +680,19 @@ field_type & put_field( field_type & field ,
                         unsigned     n6 ,
                         unsigned     n7 ,
                         const void* init_value = NULL);
+
+template< class field_type >
+field_type & put_field_on_all_nodes_with_initial_value(field_type & field, const typename FieldTraits<field_type>::data_type *initial_value)
+{
+    return put_field(field, stk::topology::NODE_RANK, field.mesh_meta_data().universal_part(), initial_value);
+}
+
+template< class field_type >
+field_type & put_field_on_all_nodes(field_type & field)
+{
+    return put_field_on_all_nodes_with_initial_value(field, NULL);
+}
+
 /** \} */
 /** \} */
 
