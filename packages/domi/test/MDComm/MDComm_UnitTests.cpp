@@ -219,7 +219,6 @@ TEUCHOS_UNIT_TEST( MDComm, pListConstructorPeriodic )
   }
 }
 
-#if 0
 TEUCHOS_UNIT_TEST( MDComm, pListConstructorBad )
 {
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
@@ -243,7 +242,6 @@ TEUCHOS_UNIT_TEST( MDComm, pListConstructorBad )
   plist.set("axis comm sizes", axisCommSizes);
   TEST_THROW(MDComm(comm, plist), Teuchos::Exceptions::InvalidParameterValue);
 }
-#endif
 
 TEUCHOS_UNIT_TEST( MDComm, numDimsConstructor )
 {
