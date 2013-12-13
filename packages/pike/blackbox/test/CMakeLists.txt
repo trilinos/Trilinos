@@ -1,0 +1,2 @@
+ADD_SUBDIRECTORY(version)
+ADD_SUBDIRECTORY(applications)
