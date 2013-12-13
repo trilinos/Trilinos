@@ -690,7 +690,8 @@ field_type & put_field_on_all_nodes_with_initial_value(field_type & field, const
 template< class field_type >
 field_type & put_field_on_all_nodes(field_type & field)
 {
-    return put_field_on_all_nodes_with_initial_value(field, NULL);
+    typename FieldTraits<field_type>::data_type* init_value = NULL;
+    return put_field_on_all_nodes_with_initial_value(field, init_value);
 }
 
 /** \} */
