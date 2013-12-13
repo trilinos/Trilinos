@@ -76,7 +76,7 @@ MDComm::MDComm(const TeuchosCommRCP teuchosComm,
   _teuchosComm(teuchosComm)
 {
   // Validate the ParameterList
-  // plist.validateParameters(*getValidParameters());
+  plist.validateParameters(*getValidParameters());
 
   // Set the communicator sizes along each axis
   Teuchos::Array< int > axisCommSizes =

@@ -891,12 +891,16 @@ MDMap(TeuchosCommRCP teuchosComm,
   int numDims = _mdComm->getNumDims();
 
   // Check the global dimensions
-  Teuchos::Array< GlobalOrd > dimensions =
-    plist.get("dimensions", Teuchos::Array< GlobalOrd >());
+  Teuchos::Array< long long > dimensions =
+    plist.get("dimensions", Teuchos::Array< long long >());
   TEUCHOS_TEST_FOR_EXCEPTION(
     numDims != dimensions.size(),
     InvalidArgument,
     "Size of dimensions does not match MDComm number of dimensions");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    computeSize(dimensions) - 1 > std::numeric_limits< GlobalOrd >::max(),
+    MapOrdinalError,
+    "The maximum global ID of this MDMap is too large for GlobalOrd");
 
   // Copy the boundary padding sizes and compute the global dimensions
   // and bounds
@@ -994,18 +998,22 @@ MDMap(MDCommRCP mdComm,
   _node(node)
 {
   // Validate the ParameterList
-  // plist.validateParameters(*getValidParameters());
+  plist.validateParameters(*getValidParameters());
 
   // Temporarily store the number of dimensions
   int numDims = _mdComm->getNumDims();
 
   // Check the global dimensions
-  Teuchos::Array< GlobalOrd > dimensions =
-    plist.get("dimensions", Teuchos::Array< GlobalOrd >());
+  Teuchos::Array< long long > dimensions =
+    plist.get("dimensions", Teuchos::Array< long long >());
   TEUCHOS_TEST_FOR_EXCEPTION(
     numDims != dimensions.size(),
     InvalidArgument,
     "Size of dimensions does not match MDComm number of dimensions");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    computeSize(dimensions) - 1 > std::numeric_limits< GlobalOrd >::max(),
+    MapOrdinalError,
+    "The maximum global ID of this MDMap is too large for GlobalOrd");
 
   // Copy the boundary padding sizes and compute the global dimensions
   // and bounds
@@ -1740,9 +1748,10 @@ MDMap< LocalOrd, GlobalOrd, Node >::getEpetraMap(bool withCommPad) const
     {
       // Check if the maximum global ID is larger than what an int can
       // hold (because Epetra uses int ordinals)
-      if (computeSize(_globalDims) - 1 > std::numeric_limits< int >::max())
-        throw MapOrdinalError("The maximum global ID of this MDMap is too "
-                              "large for an Epetra_Map");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        computeSize(_globalDims) - 1 > std::numeric_limits< int >::max(),
+        MapOrdinalError,
+        "The maximum global ID of this MDMap is too large for an Epetra_Map");
 
       // Allocate the myElements MDArray and the index array
       int numDims = getNumDims();
