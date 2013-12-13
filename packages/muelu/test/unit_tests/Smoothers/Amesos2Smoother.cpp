@@ -45,8 +45,8 @@
 // @HEADER
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Amesos2_config.h>
-#include "MueLu_Amesos2Smoother.hpp"
 #include "MueLu_TestHelpers.hpp"
+#include "MueLu_Amesos2Smoother.hpp"
 #include "MueLu_TestHelpersSmoothers.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
