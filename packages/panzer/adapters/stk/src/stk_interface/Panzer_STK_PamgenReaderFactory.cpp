@@ -191,9 +191,11 @@ void STK_PamgenReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
 //! From ParameterListAcceptor
 void STK_PamgenReaderFactory::setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & paramList)
 {
-   TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(!paramList->isParameter("File Name"),
+   TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(!paramList->isParameter("File Name")
+&& !paramList->isParameter("Text Input"),
         Teuchos::Exceptions::InvalidParameterName,
-        "Error, the parameter {name=\"File Name\","
+        "Error, either parameter {name=\"File Name\","
+        "or the parameter {name=\"Text Input\","
         "type=\"string\""
         "\nis required in parameter (sub)list \""<< paramList->name() <<"\"."
         "\n\nThe parsed parameter parameter list is: \n" << paramList->currentParametersString()
