@@ -328,6 +328,7 @@ IF (Stokhos_ENABLE_Sacado)
     )
   IF (Stokhos_ENABLE_KokkosCore)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector)
     SET(HEADERS ${HEADERS}
       sacado/kokkos/Stokhos_Sacado_Kokkos.hpp
       sacado/kokkos/Stokhos_Sacado_Kokkos_MathFunctions.hpp
@@ -342,13 +343,30 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/Stokhos_DynamicThreadedStorage_cuda.hpp
       sacado/kokkos/Stokhos_ViewStorage.hpp
       sacado/kokkos/Stokhos_ViewStridedStorage.hpp
-      sacado/kokkos/Sacado_MP_Vector.hpp
-      sacado/kokkos/Sacado_MP_VectorTraits.hpp
-      sacado/kokkos/Sacado_MP_Vector_ops.hpp
-      sacado/kokkos/Sacado_MP_ExpressionTraits.hpp
-      sacado/kokkos/Stokhos_CrsMatrix_MP_Vector.hpp
-      sacado/kokkos/Stokhos_CrsMatrix_MP_Vector_Cuda.hpp
-    )
+      sacado/kokkos/vector/Sacado_MP_Vector.hpp
+      sacado/kokkos/vector/Sacado_MP_VectorTraits.hpp
+      sacado/kokkos/vector/Sacado_MP_Vector_ops.hpp
+      sacado/kokkos/vector/Sacado_MP_ExpressionTraits.hpp
+      sacado/kokkos/vector/Kokkos_View_MP_Vector.hpp
+      sacado/kokkos/vector/Kokkos_Atomic_MP_Vector.hpp
+      sacado/kokkos/vector/Stokhos_CrsMatrix_MP_Vector.hpp
+      )
+    IF(Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
+      SET(HEADERS ${HEADERS}
+        sacado/kokkos/vector/Stokhos_CrsMatrix_MP_Vector_Cuda.hpp
+        )
+    ENDIF()
+    IF (Stokhos_ENABLE_KokkosLinAlg)
+      INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/linalg)
+      SET(HEADERS ${HEADERS}
+        sacado/kokkos/vector/linalg/Kokkos_CrsMatrix_MP_Vector.hpp
+        )
+      IF(Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
+        SET(HEADERS ${HEADERS}
+          sacado/kokkos/vector/linalg/Kokkos_CrsMatrix_MP_Vector_Cuda.hpp
+          )
+      ENDIF()
+    ENDIF()
   ENDIF()
   IF (Stokhos_ENABLE_Experimental AND Stokhos_ENABLE_MueLu)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/muelu)

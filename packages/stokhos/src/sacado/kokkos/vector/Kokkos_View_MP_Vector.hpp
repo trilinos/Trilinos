@@ -39,8 +39,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SACADO_VEIW_MP_VECTOR_HPP
-#define SACADO_VEIW_MP_VECTOR_HPP
+#ifndef KOKKOS_VIEW_MP_VECTOR_HPP
+#define KOKKOS_VIEW_MP_VECTOR_HPP
 
 #include "Sacado_MP_Vector.hpp"
 #include "Sacado_MP_VectorTraits.hpp"
@@ -1321,5 +1321,4 @@ struct RebindStokhosStorageDevice< Sacado::MP::Vector< OldStorageType > , Device
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#endif /* #ifndef SACADO_VIEW_MP_VECTOR_HPP */
-
+#endif /* #ifndef KOKKOS_VIEW_MP_VECTOR_HPP */

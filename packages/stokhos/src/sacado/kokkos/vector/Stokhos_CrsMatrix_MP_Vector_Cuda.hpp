@@ -89,10 +89,6 @@ struct EnsembleMultiplyKernel<MatrixType,
   output_vector_type  m_y;
   const size_type m_row_count;
 
-  const typename matrix_type::values_type::array_type m_Avals ;
-  const typename input_vector_type::array_type  m_Xvals ;
-  const typename output_vector_type::array_type m_Yvals ;
-
   EnsembleMultiplyKernel( const matrix_type & A,
                           const input_vector_type & x,
                           output_vector_type & y )
@@ -100,9 +96,6 @@ struct EnsembleMultiplyKernel<MatrixType,
     , m_x( x )
     , m_y( y )
     , m_row_count( A.graph.row_map.dimension_0()-1 )
-    , m_Avals( A.values )
-    , m_Xvals( x )
-    , m_Yvals( y )
     {}
 
   __device__
@@ -151,18 +144,14 @@ struct EnsembleMultiplyKernel<MatrixType,
           size_type iCol = sh_col[blockDim.x*threadIdx.y + col];
 
           for (size_type e=0, ee=threadIdx.x; e<NumPerThread;
-               ++e, ee+=blockDim.x) {
-            // sum[e] += m_A.values(col_block+col, ee) * m_x(iCol, ee);
-            sum[e] += m_Avals(col_block+col, ee) * m_Xvals(iCol, ee);
-          }
+               ++e, ee+=blockDim.x)
+            sum[e] += m_A.values(col_block+col, ee) * m_x(iCol, ee);
         }
 
       }
 
-      for (size_type e=0, ee=threadIdx.x; e<NumPerThread; ++e, ee+=blockDim.x) {
-        // m_y(iRow, ee) = sum[e];
-        m_Yvals(iRow, ee) = sum[e];
-      }
+      for (size_type e=0, ee=threadIdx.x; e<NumPerThread; ++e, ee+=blockDim.x)
+        m_y(iRow, ee) = sum[e];
     }
   } // operator()
 };
@@ -190,10 +179,6 @@ struct EnsembleMultiplyKernel<MatrixType,
   output_vector_type  m_y;
   const size_type m_row_count;
 
-  const typename matrix_type::values_type::array_type m_Avals ;
-  const typename input_vector_type::array_type  m_Xvals ;
-  const typename output_vector_type::array_type m_Yvals ;
-
   EnsembleMultiplyKernel( const matrix_type & A,
                           const input_vector_type & x,
                           output_vector_type & y )
@@ -201,9 +186,6 @@ struct EnsembleMultiplyKernel<MatrixType,
     , m_x( x )
     , m_y( y )
     , m_row_count( A.graph.row_map.dimension_0()-1 )
-    , m_Avals( A.values )
-    , m_Xvals( x )
-    , m_Yvals( y )
     {}
 
   __device__
@@ -248,15 +230,13 @@ struct EnsembleMultiplyKernel<MatrixType,
         for ( size_type col = 0; col < num_col; ++col ) {
           size_type iCol = sh_col[blockDim.x*threadIdx.y + col];
 
-          // sum += m_A.values(col_block+col, threadIdx.x) *
-          //   m_x(iCol, threadIdx.x);
-          sum += m_Avals(col_block+col, threadIdx.x) * m_Xvals(iCol, threadIdx.x);
+          sum += m_A.values(col_block+col, threadIdx.x) *
+            m_x(iCol, threadIdx.x);
         }
 
       }
 
-      // m_y(iRow, threadIdx.x) = sum;
-      m_Yvals(iRow, threadIdx.x) = sum;
+      m_y(iRow, threadIdx.x) = sum;
     }
   } // operator()
 };
@@ -344,10 +324,6 @@ struct EnsembleMultiplyKernel<MatrixType,
   output_vector_type  m_y;
   const size_type m_row_count;
 
-  const typename matrix_type::values_type::array_type m_Avals ;
-  const typename input_vector_type::array_type  m_Xvals ;
-  const typename output_vector_type::array_type m_Yvals ;
-
   EnsembleMultiplyKernel( const matrix_type & A,
                           const input_vector_type & x,
                           output_vector_type & y )
@@ -355,9 +331,6 @@ struct EnsembleMultiplyKernel<MatrixType,
     , m_x( x )
     , m_y( y )
     , m_row_count( A.graph.row_map.dimension_0()-1 )
-    , m_Avals( A.values )
-    , m_Xvals( x )
-    , m_Yvals( y )
     {}
 
   __device__
@@ -370,10 +343,10 @@ struct EnsembleMultiplyKernel<MatrixType,
 
       scalar_type sum = 0;
       for (size_type iEntry = iEntryBegin; iEntry < iEntryEnd; ++iEntry) {
-        sum += m_Avals(iEntry, threadIdx.x) *
-          m_Xvals(m_A.graph.entries(iEntry),threadIdx.x);
+        sum += m_A.values(iEntry, threadIdx.x) *
+          m_x(m_A.graph.entries(iEntry), threadIdx.x);
       }
-      m_Yvals(iRow,threadIdx.x) = sum;
+      m_y(iRow, threadIdx.x) = sum;
     }
   } // operator()
 };

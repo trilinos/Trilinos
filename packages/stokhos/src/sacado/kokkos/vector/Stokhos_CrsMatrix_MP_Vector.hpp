@@ -49,11 +49,20 @@
 #include "Stokhos_CrsMatrix.hpp"
 #include "Stokhos_Multiply.hpp"
 #include "Sacado_MP_Vector.hpp"
-#include "Sacado_View_MP_Vector.hpp"
+#include "Kokkos_View_MP_Vector.hpp"
 
 #include "Kokkos_Cuda.hpp" // for determining work range
 
 namespace Stokhos {
+
+// Specialization of ViewRank<> for View< Sacado::MP::Vector<...>,...> since
+// the rank enum for the view specialization isn't right
+template <typename Storage, typename L, typename D, typename M, typename S>
+struct ViewRank< Kokkos::View<Sacado::MP::Vector<Storage>*,L,D,M,S> > {
+  typedef IntegralRank<1> type;
+};
+
+namespace details {
 
 /*
  * Compute work range = (begin, end) such that adjacent threads/blocks write to
@@ -84,6 +93,8 @@ compute_work_range( const size_type work_count,
   if (work_end > work_count)
     work_end = work_count;
   return work_end;
+}
+
 }
 
 // Specialization of multiply for CrsMatrix< Sacado::MP::Vector<...>, ... >
@@ -169,8 +180,7 @@ public:
     const size_type row_count = m_A.graph.row_map.dimension_0()-1;
     size_type work_begin;
     const size_type work_end =
-      compute_work_range<typename scalar_type::value_type,device_type,size_type>(
-        row_count, dev.league_size(), dev.league_rank(), work_begin);
+      details::compute_work_range<typename scalar_type::value_type,device_type,size_type>(row_count, dev.league_size(), dev.league_rank(), work_begin);
 
     // To make better use of L1 cache on the CPU/MIC, we move through the
     // row range where each thread processes a cache-line's worth of rows,
@@ -265,19 +275,12 @@ public:
   const input_vector_type  m_x;
   output_vector_type  m_y;
 
-  const typename matrix_values_type::array_type m_Avals ;
-  const typename input_vector_type::array_type  m_Xvals ;
-  const typename output_vector_type::array_type m_Yvals ;
-
   Multiply( const matrix_type & A,
             const input_vector_type & x,
             output_vector_type & y )
     : m_A( A )
     , m_x( x )
     , m_y( y )
-    , m_Avals( A.values )
-    , m_Xvals( x )
-    , m_Yvals( y )
     {}
 
   KOKKOS_INLINE_FUNCTION
@@ -318,7 +321,7 @@ public:
     const size_type row_count = m_A.graph.row_map.dimension_0()-1;
     size_type work_begin;
     const size_type work_end =
-      compute_work_range<scalar_type,device_type,size_type>(
+      details::compute_work_range<scalar_type,device_type,size_type>(
         row_count, dev.league_size(), dev.league_rank(), work_begin);
     const size_type vector_offset =
       is_cuda ? vector_rank : vector_rank*NumPerThread;
@@ -349,8 +352,7 @@ public:
         const size_type iEntryBegin = m_A.graph.row_map[iRow];
         const size_type iEntryEnd   = m_A.graph.row_map[iRow+1];
 
-        // y_scalar_type * const y = &m_y(iRow,vector_offset);
-        y_scalar_type * const y = &m_Yvals(iRow,vector_offset);
+        y_scalar_type * const y = &m_y(iRow,vector_offset);
 
         for (size_type e=0; e<NumPerThread; ++e)
           sum[e] = 0;
@@ -358,10 +360,8 @@ public:
         for ( size_type iEntry = iEntryBegin; iEntry < iEntryEnd; ++iEntry ) {
           size_type iCol = m_A.graph.entries(iEntry);
 
-          // const A_scalar_type * const A = &m_A.values(iEntry,vector_offset);
-          // const x_scalar_type * const x = &m_x(iCol,vector_offset);
-          const A_scalar_type * const A = &m_Avals(iEntry,vector_offset);
-          const x_scalar_type * const x = &m_Xvals(iCol,vector_offset);
+          const A_scalar_type * const A = &m_A.values(iEntry,vector_offset);
+          const x_scalar_type * const x = &m_x(iCol,vector_offset);
 
           for (size_type e=0; e<NumPerThread; ++e)
             sum[e] += A[e*A_stride] * x[e*x_stride];
