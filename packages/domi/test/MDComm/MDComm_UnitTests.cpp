@@ -76,6 +76,7 @@ TEUCHOS_STATIC_SETUP()
                 "number of processors along each axis");
 }
 
+#if 1
 TEUCHOS_UNIT_TEST( MDComm, regularizeAxisSizes )
 {
   Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
@@ -149,6 +150,7 @@ TEUCHOS_UNIT_TEST( MDComm, axisCommSizesPeriodicConstructor )
     TEST_EQUALITY(mdComm.isPeriodic(axis), (axis==0));
   }
 }
+#endif
 
 TEUCHOS_UNIT_TEST( MDComm, pListConstructor )
 {
@@ -183,6 +185,7 @@ TEUCHOS_UNIT_TEST( MDComm, pListConstructor )
 #endif
 }
 
+#if 1
 TEUCHOS_UNIT_TEST( MDComm, pListConstructorPeriodic )
 {
   Domi::splitStringOfIntsWithCommas(axisCommSizesStr, axisCommSizes);
@@ -215,6 +218,32 @@ TEUCHOS_UNIT_TEST( MDComm, pListConstructorPeriodic )
     TEST_EQUALITY(mdComm.isPeriodic(axis), (axis==0));
   }
 }
+
+#if 0
+TEUCHOS_UNIT_TEST( MDComm, pListConstructorBad )
+{
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  Teuchos::ParameterList plist;
+
+  // Test for illegal parameter name
+  std::string illegalName("illegal parameter name");
+  plist.set(illegalName, 0);
+  TEST_THROW(MDComm(comm, plist), Teuchos::Exceptions::InvalidParameterName);
+
+  // Test for illegal parameter type
+  plist.remove(illegalName);
+  plist.set("axis comm sizes", "illegal parameter type");
+  TEST_THROW(MDComm(comm, plist), Teuchos::Exceptions::InvalidParameterType);
+
+  // Test for illegal parameter value
+  Teuchos::Array< int > axisCommSizes(3);
+  axisCommSizes[0] = -2;
+  axisCommSizes[1] = -1;
+  axisCommSizes[2] = 0;
+  plist.set("axis comm sizes", axisCommSizes);
+  TEST_THROW(MDComm(comm, plist), Teuchos::Exceptions::InvalidParameterValue);
+}
+#endif
 
 TEUCHOS_UNIT_TEST( MDComm, numDimsConstructor )
 {
@@ -1025,5 +1054,6 @@ TEUCHOS_UNIT_TEST( MDComm, subCommPeriodic )
     TEST_EQUALITY(subMDComm.getNumDims(), 0);
   }
 }
+#endif
 
 }  // namespace
