@@ -15,6 +15,7 @@ TRIBITS_ADD_TEST(
   ValidParameters
   NAME ValidParameters
   COMM serial mpi
-  ARGS "--add-xsl-header > Domi_ParamterList.xml"
+  NUM_MPI_PROCS 1
+  ARGS "--add-xsl-header"
   )
 
