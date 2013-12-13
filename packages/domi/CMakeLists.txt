@@ -19,5 +19,9 @@ ADD_SUBDIRECTORY(src)
 TRIBITS_ADD_TEST_DIRECTORIES(test)
 
 #
+# Add the Parameter List documentation
+TRIBITS_ADD_TEST_DIRECTORIES(doc/parameterList)
+
+#
 # Do standard postprocessing
 TRIBITS_PACKAGE_POSTPROCESS()
