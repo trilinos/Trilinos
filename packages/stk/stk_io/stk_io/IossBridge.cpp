@@ -29,7 +29,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_topology/topology.hpp>
-#include <Shards_BasicTopologies.hpp>
+#include <Shards_Array.hpp>
 
 namespace {
 
