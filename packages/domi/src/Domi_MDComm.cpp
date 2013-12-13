@@ -42,14 +42,13 @@
 // Domi includes
 #include "Domi_Exceptions.hpp"
 #include "Domi_Utils.hpp"
+#include "Domi_getValidParameters.hpp"
 #include "Domi_MDComm.hpp"
 
 // Teuchos includes
 #include "Teuchos_TestForException.hpp"
-#ifdef HAVE_EPETRA
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
-#endif
 #endif
 
 namespace Domi
@@ -76,6 +75,9 @@ MDComm::MDComm(const TeuchosCommRCP teuchosComm,
                Teuchos::ParameterList & plist) :
   _teuchosComm(teuchosComm)
 {
+  // Validate the ParameterList
+  // plist.validateParameters(*getValidParameters());
+
   // Set the communicator sizes along each axis
   Teuchos::Array< int > axisCommSizes =
     plist.get("axis comm sizes", Teuchos::Array< int >());

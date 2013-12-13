@@ -48,6 +48,7 @@
 // Domi includes
 #include "Domi_ConfigDefs.hpp"
 #include "Domi_Utils.hpp"
+#include "Domi_getValidParameters.hpp"
 #include "Domi_Slice.hpp"
 #include "Domi_MDComm.hpp"
 #include "Domi_MDArray.hpp"
@@ -882,6 +883,10 @@ MDMap(TeuchosCommRCP teuchosComm,
   _layout(),
   _node(node)
 {
+  // Note that the call to the MDComm constructor in the constructor
+  // initialization list will validate the ParameterList, so we don't
+  // have to do it again here.
+
   // Temporarily store the number of dimensions
   int numDims = _mdComm->getNumDims();
 
@@ -988,6 +993,9 @@ MDMap(MDCommRCP mdComm,
   _layout(),
   _node(node)
 {
+  // Validate the ParameterList
+  // plist.validateParameters(*getValidParameters());
+
   // Temporarily store the number of dimensions
   int numDims = _mdComm->getNumDims();
 
