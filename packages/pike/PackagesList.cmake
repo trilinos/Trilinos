@@ -1,7 +1,7 @@
 
 INCLUDE(TribitsListHelpers)
 
-SET(Pike_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
+SET(pike_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Pike                  .        PS
   )
 

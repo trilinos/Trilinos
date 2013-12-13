@@ -6,6 +6,6 @@
 #   Trilinos/TPLsList.cmake
 #
 
-SET(Panzer_TPLS_FINDMODS_CLASSIFICATIONS
+SET(pike_TPLS_FINDMODS_CLASSIFICATIONS
 #    PAPI            "cmake/TPLs/"    SS
     )

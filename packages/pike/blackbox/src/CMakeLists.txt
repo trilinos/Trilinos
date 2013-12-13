@@ -6,7 +6,9 @@ INCLUDE(TrilinosCreateClientTemplateHeaders)
 #
 
 #TRIBITS_CONFIGURE_FILE(${PARENT_PACKAGE_NAME}_config.hpp)
-TRIBITS_CONFIGURE_FILE(${SUBPACKAGE_FULLNAME}_config.hpp)
+#TRIBITS_CONFIGURE_FILE(${SUBPACKAGE_NAME}_config.hpp)
+#TRIBITS_CONFIGURE_FILE(${SUBPACKAGE_FULLNAME}_config.hpp)
+TRIBITS_CONFIGURE_FILE(Pike_BlackBox_config.hpp)
 
 #
 # B) Define the header and source files (and directories)

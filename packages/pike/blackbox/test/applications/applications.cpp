@@ -1,12 +1,12 @@
 #include "Teuchos_UnitTestHarness.hpp"
-#include "Cthulhu_ConfigDefs.hpp"
-#include "Cthulhu_Version.hpp"
+#include "Pike_BlackBox_config.hpp"
+#include "Pike_Version.hpp"
 
-namespace cthulhu {
+namespace pike {
 
-  TEUCHOS_UNIT_TEST(version, default)
+  TEUCHOS_UNIT_TEST(application, default)
   {
-    cthulhu::version();
+    pike::version();
   }
 
 }
