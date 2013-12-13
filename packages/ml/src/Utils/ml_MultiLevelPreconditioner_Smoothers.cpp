@@ -637,7 +637,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
        for (int i = 0; i < nnn;  i++) {
           int BadCount = 0;
           if (blockIndices[i] == -1) {
-             if (BadCount<5) printf("Warning: did not assign %d to a block????? %d\n",i);
+             if (BadCount<5) printf("Warning: did not assign %d to a block?????\n",i);
              BadCount++;
           }
        }
