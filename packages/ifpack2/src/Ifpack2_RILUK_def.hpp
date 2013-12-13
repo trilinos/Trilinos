@@ -621,7 +621,6 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
        scalar_type beta) const
 {
   typedef Teuchos::ScalarTraits<scalar_type> STS;
-  typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     ! isComputed (), std::runtime_error,
@@ -675,8 +674,6 @@ int RILUK<MatrixType>::Multiply(const Tpetra::MultiVector<scalar_type,local_ordi
                               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
             Teuchos::ETransp mode) const
 {
-  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
-
 //
 // This function finds X such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
 //
@@ -726,8 +723,6 @@ template<class MatrixType>
 typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
 RILUK<MatrixType>::computeCondEst (Teuchos::ETransp mode) const
 {
-  typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vec_type;
-
   if (Condest_ != -Teuchos::ScalarTraits<magnitude_type>::one ()) {
     return Condest_;
   }
@@ -758,9 +753,6 @@ computeCondEst (CondestType CT,
   (void) MaxIters;
   (void) Tol;
   (void) Matrix;
-
-  typedef Tpetra::Vector<scalar_type, local_ordinal_type,
-                         global_ordinal_type, node_type> vec_type;
 
   if (Condest_ != -Teuchos::ScalarTraits<magnitude_type>::one() ) {
     return Condest_;
@@ -795,8 +787,6 @@ generateXY (Teuchos::ETransp mode,
 
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
-  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
-                              global_ordinal_type, node_type> MV;
   // Generate an X and Y suitable for solve() and multiply()
 
   TEUCHOS_TEST_FOR_EXCEPTION(
