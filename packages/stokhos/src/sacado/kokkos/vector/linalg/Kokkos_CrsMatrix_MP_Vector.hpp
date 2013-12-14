@@ -363,9 +363,6 @@ public:
 // Specialization of multiply for CrsMatrix< Sacado::MP::Vector<...>, ... >
 // that uses the 2-D view directly.
 // Currently this only works for statically sized MP::Vector
-//
-// Note:  This appears to give the wrong answer with Cuda and LayoutLeft
-// sometimes, and not others, so there is probably a race-condition somewhere.
 struct EnsembleMultiply {};
 template <typename MatrixStorage,
           typename MatrixOrdinal,
@@ -440,26 +437,10 @@ public:
 
     // We have to extract pointers to the A, x, and y views below
     // because the Intel compiler does not appear to be able to vectorize
-    // through them.  Thus we need to compute the correct stride for
-    // LayoutLeft.
+    // through them.  Thus we need to compute the correct stride for Cuda.
     using Kokkos::Impl::is_same;
-    using Kokkos::LayoutRight;
-    typedef typename matrix_values_type::array_layout matrix_layout;
-    typedef typename input_vector_type::array_layout input_layout;
-    typedef typename output_vector_type::array_layout output_layout;
-    size_type As[2], xs[2], ys[2];
-    m_A.values.stride(As);
-    m_x.stride(xs);
-    m_y.stride(ys);
     const bool is_cuda = is_same<device_type, Kokkos::Cuda>::value;
-    const size_type stride_one =
-      is_cuda ? num_vector_threads : size_type(1);
-    const size_type A_stride =
-      is_same<matrix_layout, LayoutRight>::value ? stride_one : As[1];
-    const size_type x_stride =
-      is_same<input_layout,  LayoutRight>::value ? stride_one : xs[1];
-    const size_type y_stride =
-      is_same<output_layout, LayoutRight>::value ? stride_one : ys[1];
+    const size_type stride = is_cuda ? num_vector_threads : size_type(1);
 
     // Compute range of rows processed for each thread block
     const size_type row_count = m_A.graph.row_map.dimension_0()-1;
@@ -474,8 +455,7 @@ public:
     // row range where each thread processes a cache-line's worth of rows,
     // with adjacent threads processing adjacent cache-lines.
     // For Cuda, adjacent threads process adjacent rows.
-    const size_type cache_line =
-      Kokkos::Impl::is_same<device_type,Kokkos::Cuda>::value ? 1 : 64;
+    const size_type cache_line = is_cuda ? 1 : 64;
     const size_type scalar_size = sizeof(scalar_type);
     const size_type rows_per_thread = (cache_line+scalar_size-1)/scalar_size;
     const size_type row_block_size = rows_per_thread * num_row_threads;
@@ -511,11 +491,11 @@ public:
           const x_scalar_type * const x = &m_Xvals(iCol,vector_offset);
 
           for (size_type e=0; e<NumPerThread; ++e)
-            sum[e] += A[e*A_stride] * x[e*x_stride];
+            sum[e] += A[e*stride] * x[e*stride];
         }
 
         for (size_type e=0; e<NumPerThread; ++e)
-          y[e*y_stride] = sum[e];
+          y[e*stride] = sum[e];
 
       } // row loop
 
