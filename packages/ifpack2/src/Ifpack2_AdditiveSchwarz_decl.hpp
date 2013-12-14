@@ -282,10 +282,11 @@ public:
   /// Tpetra::RowMatrix specialization.  This typedef will always be a
   /// Tpetra::RowMatrix specialization which is either the same as
   /// MatrixType, or the parent class of MatrixType.
-  typedef typename Tpetra::RowMatrix<scalar_type,
-                                     local_ordinal_type,
-                                     global_ordinal_type,
-                                     node_type> row_matrix_type;
+  typedef Tpetra::RowMatrix<scalar_type,
+                            local_ordinal_type,
+                            global_ordinal_type,
+                            node_type> row_matrix_type;
+
   //@}
   // \name Deprecated typedefs
   //@{

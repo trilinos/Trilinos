@@ -246,11 +246,11 @@ class RILUK:
   TEUCHOS_DEPRECATED typedef typename MatrixType::node_type Node;
 
 
-  //! The type of the Kokkos Node used by the input MatrixType.
-  typedef typename MatrixType::mat_vec_type mat_vec_type;
+  // //! The type of the Kokkos Node used by the input MatrixType.
+  // typedef typename MatrixType::mat_vec_type mat_vec_type;
 
-  //! Preserved only for backwards compatibility.  Please use "mat_vec_type".
-  TEUCHOS_DEPRECATED typedef typename MatrixType::mat_vec_type LocalMatOps;
+  // //! Preserved only for backwards compatibility.  Please use "mat_vec_type".
+  // TEUCHOS_DEPRECATED typedef typename MatrixType::mat_vec_type LocalMatOps;
 
 
   //! The type of the magnitude (absolute value) of a matrix entry.
@@ -260,10 +260,18 @@ class RILUK:
   TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
 
   //! Tpetra::RowMatrix specialization used by this class.
-  typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type,
-                            global_ordinal_type, node_type> row_matrix_type;
+  typedef Tpetra::RowMatrix<scalar_type,
+                            local_ordinal_type,
+                            global_ordinal_type,
+                            node_type> row_matrix_type;
 
-  template <class new_matrix_type> friend class RILUK;
+  //! Tpetra::RowMatrix specialization used by this class for representing L and U.
+  typedef Tpetra::CrsMatrix<scalar_type,
+                            local_ordinal_type,
+                            global_ordinal_type,
+                            node_type> crs_matrix_type;
+
+  template <class NewMatrixType> friend class RILUK;
 
   /// \brief Constructor.
   ///
@@ -415,9 +423,7 @@ class RILUK:
 
   magnitude_type getCondEst() const { return Condest_; }
 
-  Teuchos::RCP<const row_matrix_type> getMatrix () const {
-    return A_;
-  }
+  Teuchos::RCP<const row_matrix_type> getMatrix () const;
 
   // Attribute access functions
 
@@ -441,10 +447,11 @@ class RILUK:
   }
 
   //! Returns the Ifpack2::IlukGraph associated with this factored matrix.
-  const Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type,mat_vec_type> > >& getGraph() const {return(Graph_);}
+  // const Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type,mat_vec_type> > >& getGraph() const {return(Graph_);}
+  const Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type> > >& getGraph() const {return(Graph_);}
 
   //! Returns the L factor associated with this factored matrix.
-  const MatrixType& getL () const {
+  const crs_matrix_type& getL () const {
     return *L_;
   }
 
@@ -455,17 +462,12 @@ class RILUK:
   }
 
   //! Returns the U factor associated with this factored matrix.
-  const MatrixType& getU () const {
+  const crs_matrix_type& getU () const {
     return *U_;
   }
 
-  /// \brief Return the input matrix A as a Tpetra::CrsMatrix.
-  ///
-  /// FIXME (mfh 11 Dec 2013) How do I know that MatrixType is a
-  /// Tpetra::CrsMatrix specialization?
-  Teuchos::RCP<const MatrixType> getCrsMatrix () const {
-    return A_;
-  }
+  //! Return the input matrix A as a Tpetra::CrsMatrix, if possible; else throws.
+  Teuchos::RCP<const crs_matrix_type> getCrsMatrix () const;
 
   //@{ \name Additional methods required to support the Tpetra::Operator interface.
 
@@ -505,11 +507,12 @@ private:
 
   bool isOverlapped_;
 
-  Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type,mat_vec_type> > > Graph_;
+  // Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type,mat_vec_type> > > Graph_;
+  Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type> > > Graph_;
 
   const Teuchos::RCP<const MatrixType> A_;
-  Teuchos::RCP<MatrixType> L_;
-  Teuchos::RCP<MatrixType> U_;
+  Teuchos::RCP<crs_matrix_type> L_;
+  Teuchos::RCP<crs_matrix_type> U_;
   Teuchos::RCP<vec_type> D_;
 
   bool UseTranspose_;

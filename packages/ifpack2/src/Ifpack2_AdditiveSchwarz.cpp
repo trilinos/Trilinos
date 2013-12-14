@@ -71,26 +71,26 @@
   template class AdditiveSchwarz<Tpetra::CrsMatrix< S, LO, GO >, \
                                  Ifpack2::IdentitySolver<Tpetra::CrsMatrix< S, LO, GO > > >;
 #define IFPACK2_INST_ADDITIVE_SCHWARZ_DENSESOLVER(S,LO,GO) \
-  template class AdditiveSchwarz<Tpetra::RowMatrix< S, LO, GO >, \
-                                 Ifpack2::Details::DenseSolver<Tpetra::RowMatrix< S, LO, GO > > >;
+  template class AdditiveSchwarz<Tpetra::CrsMatrix< S, LO, GO >, \
+                                 Ifpack2::Details::DenseSolver<Tpetra::CrsMatrix< S, LO, GO > > >;
 
 namespace Ifpack2 {
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 
   IFPACK2_INSTANTIATE_SLG( IFPACK2_INST_ADDITIVE_SCHWARZ_ILUT )
+
   IFPACK2_INSTANTIATE_SLG( IFPACK2_INST_ADDITIVE_SCHWARZ_IDENTITYSOLVER )
+
   IFPACK2_INSTANTIATE_SLG( IFPACK2_INST_ADDITIVE_SCHWARZ_DENSESOLVER )
 
-   #if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
-//  template class AdditiveSchwarz<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode>, Ifpack2::Preconditioner<double, int, int, KokkosClassic::ThrustGPUNode> >;
+#if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
   template class AdditiveSchwarz<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode>, Ifpack2::ILUT<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> > >;
-  #endif
+#endif
 
-  #if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
-//  template class AdditiveSchwarz<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode>, Ifpack2::Preconditioner<double, int, int, KokkosClassic::TPINode> >;
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
   template class AdditiveSchwarz<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode>, Ifpack2::ILUT<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> > >;
-  #endif
+#endif
 
 }
 

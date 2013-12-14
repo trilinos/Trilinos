@@ -49,24 +49,28 @@
 #include "Ifpack2_ETIHelperMacros.h"
 
 namespace Ifpack2 {
-  
-#define IFPACK2_INST_RELAXATION( S, LO, GO )		       \
-							       \
+
+#define IFPACK2_INST_RELAXATION( S, LO, GO )                   \
+                                                               \
   template class Relaxation< Tpetra::RowMatrix< S, LO, GO > >; \
-							       \
+                                                               \
   template class Relaxation< Tpetra::CrsMatrix< S, LO, GO > >;
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 
   IFPACK2_INSTANTIATE_SLG( IFPACK2_INST_RELAXATION )
 
-  #if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
+#if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
   template class Relaxation<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
-  #endif
 
-  #if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
+  template class Relaxation<Tpetra::RowMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
+#endif
+
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
   template class Relaxation<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >;
-  #endif
+
+  template class Relaxation<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode> >;
+#endif
 
 }
 

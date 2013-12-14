@@ -99,23 +99,23 @@ RILUK<MatrixType>::~RILUK() {
 
 //==============================================================================
 template<class MatrixType>
-void RILUK<MatrixType>::allocate_L_and_U() {
-
+void RILUK<MatrixType>::allocate_L_and_U()
+{
   // Allocate Matrix using ILUK graphs
-  L_ = Teuchos::rcp( new MatrixType(Graph_->getL_Graph()) );
-  U_ = Teuchos::rcp( new MatrixType(Graph_->getU_Graph()) );
-  L_->setAllToScalar(0.0); // Zero out L and U matrices
-  U_->setAllToScalar(0.0);
-  L_->fillComplete();
-  U_->fillComplete();
-  bool isLower = L_->isLowerTriangular();
-  bool isUpper = U_->isUpperTriangular();
+  L_ = Teuchos::rcp (new crs_matrix_type (Graph_->getL_Graph ()));
+  U_ = Teuchos::rcp (new crs_matrix_type (Graph_->getU_Graph ()));
+  L_->setAllToScalar (Teuchos::ScalarTraits<scalar_type>::zero ()); // Zero out L and U matrices
+  U_->setAllToScalar (Teuchos::ScalarTraits<scalar_type>::zero ());
+  L_->fillComplete ();
+  U_->fillComplete ();
+  bool isLower = L_->isLowerTriangular ();
+  bool isUpper = U_->isUpperTriangular ();
   if (!isLower || !isUpper) {
     std::cout << "error in triangular detection" << std::endl;
   }
 
-  D_ = Teuchos::rcp( new Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>(Graph_->getL_Graph()->getRowMap()) );
-  setAllocated(true);
+  D_ = Teuchos::rcp (new Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> (Graph_->getL_Graph ()->getRowMap ()));
+  setAllocated (true);
 }
 
 //==========================================================================
@@ -320,13 +320,56 @@ setParameters (const Teuchos::ParameterList& params)
   }
 }
 
-//==========================================================================
+
 template<class MatrixType>
-void RILUK<MatrixType>::initialize() {
+Teuchos::RCP<const typename RILUK<MatrixType>::row_matrix_type>
+RILUK<MatrixType>::getMatrix () const {
+  return Teuchos::rcp_implicit_cast<const row_matrix_type> (A_);
+}
 
-  if (Graph_ != Teuchos::null) return;
 
-  Graph_ = Teuchos::rcp(new Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type,mat_vec_type> >(A_->getCrsGraph(), LevelOfFill_, LevelOfOverlap_));
+template<class MatrixType>
+Teuchos::RCP<const typename RILUK<MatrixType>::crs_matrix_type>
+RILUK<MatrixType>::getCrsMatrix () const {
+  return Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_, true);
+}
+
+
+
+template<class MatrixType>
+void RILUK<MatrixType>::initialize ()
+{
+  typedef Tpetra::CrsGraph<local_ordinal_type,
+                           global_ordinal_type,
+                           node_type> crs_graph_type;
+
+  // FIXME (mfh 13 Dec 2013) Calling initialize() means that the user
+  // asserts that the graph of the sparse matrix may have changed.  We
+  // must not just reuse the previous graph in that case.
+  if (! Graph_.is_null ()) {
+    return;
+  }
+
+  // mfh 13 Dec 2013: If it's a Tpetra::CrsMatrix, just give Graph_
+  // its Tpetra::CrsGraph.  Otherwise, we might need to rewrite
+  // IlukGraph to handle a Tpetra::RowGraph.  Just throw an exception
+  // for now.
+  {
+    Teuchos::RCP<const crs_matrix_type> A_crs =
+      Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
+    if (! A_crs.is_null ()) {
+      Graph_ = Teuchos::rcp (new Ifpack2::IlukGraph<crs_graph_type> (A_crs->getCrsGraph (),
+                                                                     LevelOfFill_,
+                                                                     LevelOfOverlap_));
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::logic_error, "Ifpack2::RILUK::initialize: "
+        "Input matrix A_ is not a Tpetra::CrsMatrix.  "
+        "This case is not currently implemented, "
+        "though it is not hard to implement.");
+    }
+  }
 
   Graph_->constructFilledGraph();
 
@@ -335,7 +378,8 @@ void RILUK<MatrixType>::initialize() {
   if (!isAllocated()) allocate_L_and_U();
 
   if (isOverlapped_) {
-    throw std::runtime_error("Error, Ifpack2::RILUK::initialize: overlapping not yet supported.");
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+      "Ifpack2::RILUK::initialize: overlapping not yet supported.");
 //    OverlapA = Teuchos::rcp( new MatrixType(Graph_->OverlapGraph()) );
 //    EPETRA_CHK_ERR(OverlapA->Import(A, *Graph_->OverlapImporter(), Insert));
 //    EPETRA_CHK_ERR(OverlapA->FillComplete());

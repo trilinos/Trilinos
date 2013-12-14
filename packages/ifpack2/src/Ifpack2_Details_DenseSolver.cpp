@@ -58,7 +58,7 @@ namespace Details {
 //
 // mfh 12 Dec 2013: For some reason, this all has to be on one line,
 // otherwise the macro definition includes the whole rest of the file.
-#define IFPACK2_INST_DETAILS_DENSE_SOLVER(S,LO,GO) template class DenseSolver<Tpetra::CrsMatrix< S , LO , GO > >;
+#define IFPACK2_INST_DETAILS_DENSE_SOLVER(S,LO,GO) template class DenseSolver<Tpetra::CrsMatrix< S , LO , GO > >; template class DenseSolver<Tpetra::RowMatrix< S , LO , GO > >;
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 

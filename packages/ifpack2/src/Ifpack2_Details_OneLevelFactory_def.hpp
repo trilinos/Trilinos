@@ -59,23 +59,14 @@ namespace Ifpack2 {
 namespace Details {
 
 template<class MatrixType>
-Teuchos::RCP<Preconditioner<typename MatrixType::scalar_type,
-                            typename MatrixType::local_ordinal_type,
-                            typename MatrixType::global_ordinal_type,
-                            typename MatrixType::node_type> >
-OneLevelFactory::create (const std::string& precType,
-                         const Teuchos::RCP<const MatrixType>& matrix)
+Teuchos::RCP<typename OneLevelFactory<MatrixType>::prec_type>
+OneLevelFactory<MatrixType>::create (const std::string& precType,
+                                     const Teuchos::RCP<const MatrixType>& matrix) const
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
-  typedef typename MatrixType::scalar_type scalar_type;
-  typedef typename MatrixType::local_ordinal_type local_ordinal_type;
-  typedef typename MatrixType::global_ordinal_type global_ordinal_type;
-  typedef typename MatrixType::node_type node_type;
-  typedef Preconditioner<scalar_type, local_ordinal_type,
-                         global_ordinal_type, node_type> prec_base_type;
 
-  RCP<prec_base_type> prec;
+  RCP<prec_type> prec;
 
   // precTypeUpper is the upper-case version of precType.
   std::string precTypeUpper (precType);

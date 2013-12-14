@@ -105,7 +105,8 @@ Factory::create (const std::string& precType,
 #endif
   else {
     try {
-      prec = Details::OneLevelFactory::template create<MatrixType> (precType, matrix);
+      Details::OneLevelFactory<MatrixType> factory;
+      prec = factory.create (precType, matrix);
     } catch (std::invalid_argument&) {
       TEUCHOS_TEST_FOR_EXCEPTION(
         true, std::invalid_argument, "Ifpack2::Factory::create: "
@@ -169,7 +170,8 @@ Factory::create (const std::string& precType,
 #endif
   else {
     try {
-      prec = Details::OneLevelFactory::template create<MatrixType> (precType, matrix);
+      Details::OneLevelFactory<MatrixType> factory;
+      prec = factory.create (precType, matrix);
     } catch (std::invalid_argument&) {
       TEUCHOS_TEST_FOR_EXCEPTION(
         true, std::invalid_argument, "Ifpack2::Factory::create: "

@@ -44,6 +44,7 @@
 #define IFPACK2_DIAGONAL_DECL_HPP
 
 #include "Ifpack2_Preconditioner.hpp"
+#include "Tpetra_CrsMatrix_decl.hpp"
 
 namespace Ifpack2 {
 
@@ -83,7 +84,7 @@ public:
   typedef typename MatrixType::node_type node_type;
   typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
-  //! Constructor to create a Diagonal preconditioner using a Tpetra::CrsMatrix.
+  //! Constructor to create a Diagonal preconditioner using a sparse matrix.
   Diagonal (const Teuchos::RCP<const MatrixType>& A);
 
   //! Constructor to create a Diagonal preconditioner using a Tpetra::Vector.
@@ -241,24 +242,40 @@ public:
 
   //@}
 
-  private:
-    bool isInitialized_;
-    bool isComputed_;
-    Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > domainMap_;
-    Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > rangeMap_;
-    Teuchos::RCP<const MatrixType> matrix_;
-    Teuchos::RCP<const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > inversediag_;
-    Teuchos::ArrayRCP<size_t> offsets_;
+private:
+  typedef Tpetra::RowMatrix<scalar_type,
+                            local_ordinal_type,
+                            global_ordinal_type,
+                            node_type> row_matrix_type;
+  typedef Tpetra::CrsMatrix<scalar_type,
+                            local_ordinal_type,
+                            global_ordinal_type,
+                            node_type> crs_matrix_type;
+  typedef Tpetra::Vector<scalar_type,
+                         local_ordinal_type,
+                         global_ordinal_type,
+                         node_type> vector_type;
+  typedef Tpetra::Map<local_ordinal_type,
+                      global_ordinal_type,
+                      node_type> map_type;
 
-    mutable int numInitialize_;
-    mutable int numCompute_;
-    mutable int numApply_;
+  bool isInitialized_;
+  bool isComputed_;
+  Teuchos::RCP<const map_type> domainMap_;
+  Teuchos::RCP<const map_type> rangeMap_;
+  Teuchos::RCP<const MatrixType> matrix_;
+  Teuchos::RCP<const vector_type> inversediag_;
+  Teuchos::ArrayRCP<size_t> offsets_;
 
-    double initializeTime_;
-    double computeTime_;
-    double applyTime_;
+  mutable int numInitialize_;
+  mutable int numCompute_;
+  mutable int numApply_;
 
-    magnitude_type condEst_;
+  double initializeTime_;
+  double computeTime_;
+  double applyTime_;
+
+  magnitude_type condEst_;
 };
 
 /** Function to construct a Diagonal preconditioner with vector input.
