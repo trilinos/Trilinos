@@ -331,64 +331,6 @@ panzer::buildBCWorkset(const panzer::PhysicsBlock & volume_pb,
        wkst != worksets.end(); ++wkst) {
 
     populateValueArrays(wkst->second.num_cells,true,volume_pb,wkst->second); // populate "side" values
-      
-/*
-    const panzer::CellData side_cell_data(wkst->second.num_cells,
-					  static_cast<int>(wkst->first),
-					  volume_pb.cellData().getCellTopology());
-
-    RCP<panzer::PhysicsBlock> side_pb = volume_pb.copyWithCellData(side_cell_data);
-
-    const std::map<int,RCP<panzer::IntegrationRule> >& int_rules = side_pb->getIntegrationRules();
-
-    wkst->second.ir_degrees = rcp(new vector<int>(0));
-    wkst->second.basis_names = rcp(new vector<string>(0));
-
-    for (std::map<int,RCP<panzer::IntegrationRule> >::const_iterator ir_itr = int_rules.begin();
-	 ir_itr != int_rules.end(); ++ir_itr) {
-
-      wkst->second.ir_degrees->push_back(ir_itr->first);
-      
-      RCP<panzer::IntegrationValues<double,Intrepid::FieldContainer<double> > > iv = 
-	rcp(new panzer::IntegrationValues<double,Intrepid::FieldContainer<double> >);
-    
-      iv->setupArrays(ir_itr->second);
-      iv->evaluateValues(wkst->second.cell_vertex_coordinates);
-      
-      wkst->second.int_rules.push_back(iv);
-
-      
-      // Need to create all combinations of basis/ir pairings 
-      const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& bases = side_pb->getBases();
-      
-      for (std::map<std::string,Teuchos::RCP<panzer::PureBasis> >::const_iterator b_itr = bases.begin();
-	   b_itr != bases.end(); ++b_itr) {
-	
-	RCP<panzer::BasisIRLayout> b_layout = rcp(new panzer::BasisIRLayout(b_itr->second,*ir_itr->second));
-	wkst->second.basis_names->push_back(b_layout->name());
-      
-	RCP<panzer::BasisValues<double,Intrepid::FieldContainer<double> > > bv = 
-	  rcp(new panzer::BasisValues<double,Intrepid::FieldContainer<double> >);
-	
-	bv->setupArrays(b_layout,arrayFactory);
-	
-	std::size_t int_degree_index = 
-	  std::distance(wkst->second.ir_degrees->begin(), 
-			std::find(wkst->second.ir_degrees->begin(), 
-				  wkst->second.ir_degrees->end(), 
-				  ir_itr->second->order()));
-	
-	bv->evaluateValues(wkst->second.int_rules[int_degree_index]->cub_points,
-			   wkst->second.int_rules[int_degree_index]->jac,
-			   wkst->second.int_rules[int_degree_index]->jac_det,
-			   wkst->second.int_rules[int_degree_index]->jac_inv,
-			   wkst->second.int_rules[int_degree_index]->weighted_measure,
-			   wkst->second.cell_vertex_coordinates);
-
-	wkst->second.bases.push_back(bv);
-      }
-    }
-*/
   }
 
   return worksets_ptr;
@@ -517,9 +459,9 @@ panzer::buildEdgeWorksets(const panzer::PhysicsBlock & pb_a,
   std::vector<Workset>::iterator current_workset = worksets.begin();
   for(edge=element_list.begin(); edge!=element_list.end();++edge) {
     // loop over each workset
-    const std::vector<std::size_t> & cell_indicies = edge->second;
+    const std::vector<std::size_t> & cell_indices = edge->second;
     
-    current_workset = buildEdgeWorksets(cell_indicies,
+    current_workset = buildEdgeWorksets(cell_indices,
                                        pb_a,local_cell_ids_a,local_side_ids_a,vertex_coordinates_a,
                                        pb_b,local_cell_ids_b,local_side_ids_b,vertex_coordinates_b,
                                        current_workset);
