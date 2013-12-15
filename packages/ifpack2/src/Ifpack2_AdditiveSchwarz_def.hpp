@@ -720,8 +720,6 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
   RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
   if (timer.is_null ()) {
     timer = TimeMonitor::getNewCounter (timerName);
-    TEUCHOS_TEST_FOR_EXCEPTION(timer.is_null (), std::logic_error,
-      "Timer is null; this shouldn't happen.");
   }
 
   { // Start timing here.
@@ -1189,15 +1187,20 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
 
     // Make sure that the new inner solver knows how to have its matrix changed.
     typedef Details::CanChangeMatrix<row_matrix_type> can_change_type;
-    can_change_type* innerSolver = dynamic_cast<can_change_type*> (&*innerPrec);
+    can_change_type* innerSolver = dynamic_cast<can_change_type*> (innerPrec.getRawPtr ());
     TEUCHOS_TEST_FOR_EXCEPTION(
       innerSolver == NULL, std::invalid_argument, "Ifpack2::AdditiveSchwarz::"
-      "setInnerPreconditioner: The input preconditioner does not implement the "
-      "setMatrix() feature.  Only input preconditioners that inherit from "
-      "Ifpack2::Details::CanChangeMatrix implement this feature.");
+      "setup: The input preconditioner does not implement the setMatrix()"
+      "feature.  Only input preconditioners that inherit from Ifpack2::Details"
+      "::CanChangeMatrix implement this feature.");
 
     Inverse_ = innerPrec;
   }
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    Inverse_.is_null (), std::logic_error, "Ifpack2::AdditiveSchwarz::"
+    "setup: Inverse_ is null right after we were supposed to have created it."
+    "  Please report this bug to the Ifpack2 developers.");
 
   setInnerPreconditioner (Inverse_);
 }
@@ -1222,6 +1225,11 @@ setInnerPreconditioner (const Teuchos::RCP<Preconditioner<scalar_type,
     "setInnerPreconditioner: The input preconditioner does not implement the "
     "setMatrix() feature.  Only input preconditioners that inherit from "
     "Ifpack2::Details::CanChangeMatrix implement this feature.");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    innerMatrix_.is_null (), std::logic_error, "Ifpack2::AdditiveSchwarz::"
+    "setInnerPreconditioner: innerMatrix_ is null.  This should never happen.  "
+    "Please report this bug to the Ifpack2 developers.");
 
   // Give the local matrix to the new inner solver.
   innerSolver->setMatrix (innerMatrix_);

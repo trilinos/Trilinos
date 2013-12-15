@@ -420,6 +420,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(AdditiveSchwarz, ZeroCombineMode, ScalarType, 
   vec_type x_add (ranMap);
   solver.apply (b, x_add);
 
+  out << "Checking solution" << endl;
+
   // Solution should be [2 3 34/3 41/3] to within a very small tolerance.
   vec_type x_add_expected (ranMap);
   {

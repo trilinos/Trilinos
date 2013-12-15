@@ -169,15 +169,24 @@ Factory::create (const std::string& precType,
   }
 #endif
   else {
+    bool success = false;
+    std::ostringstream err;
     try {
       Details::OneLevelFactory<MatrixType> factory;
       prec = factory.create (precType, matrix);
-    } catch (std::invalid_argument&) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::invalid_argument, "Ifpack2::Factory::create: "
-        "Invalid preconditioner type \"" << precType << "\".");
+      success = true;
+    } catch (std::invalid_argument& e) {
+      err << "Ifpack2::Factory::create: Invalid preconditioner type \""
+          << precType << "\".  More information for Ifpack2 developers: "
+          << e.what ();
     }
+    TEUCHOS_TEST_FOR_EXCEPTION(! success, std::invalid_argument, err.str ());
   }
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    prec.is_null (), std::logic_error, "Ifpack2::Factory::create: "
+    "Return value is null right before return.  This should never happen.  "
+    "Please report this bug to the Ifpack2 developers.");
   return prec;
 }
 
