@@ -1,23 +1,32 @@
 #ifndef PIKE_RESPONSE_HPP
 #define PIKE_RESPONSE_HPP
 
+#include "Teuchos_Describable.hpp"
+#include "Teuchos_VerboseObject.hpp"
 #include <string>
 #include <iostream>
 
 namespace pike {
 
-  class Response {
+  class Response : public Teuchos::Describable, public Teuchos::VerboseObject<pike::Response> {
 
-    virtual ~Response();
+  public:
+
+    virtual ~Response() {}
 
     virtual std::string name() const = 0;
 
-    virtual std::ostream& print(std::ostream& os) const = 0;
-
   };
 
-  std::ostream& operator<<(std::ostream& os);
+  std::ostream& operator<<(std::ostream& os, const pike::Response& r);
 
+}
+
+inline 
+std::ostream& pike::operator<<(std::ostream& os, const pike::Response& r)
+{
+  r.describe(os); 
+  return os;
 }
 
 #endif

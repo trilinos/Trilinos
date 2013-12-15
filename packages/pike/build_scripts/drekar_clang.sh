@@ -1,4 +1,4 @@
-!#/bin/bash
+#!/bin/bash
 rm -rf CMakeCache.txt CMakeFiles
 cmake \
 -D CMAKE_INSTALL_PREFIX="/home/rppawlo/install/gnu4.8.1/pike" \

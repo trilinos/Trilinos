@@ -8,6 +8,8 @@ namespace pike {
 
   class BlackBoxModelEvaluator {
 
+  public:
+
     virtual ~BlackBoxModelEvaluator() {}
 
     virtual const std::string name() const = 0;
