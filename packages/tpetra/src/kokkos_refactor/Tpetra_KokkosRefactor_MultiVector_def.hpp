@@ -289,8 +289,8 @@ namespace Tpetra {
     view_ = view_type("MV::view_",numRows,numVecs);
     for(size_t i = 0; i<numRows;i++)
       for(size_t j = 0; j<numVecs;j++)
-        view_.h_view(i,j) = data[j*LDA+i]
-    view_.modify<typename view_type::h_dev::device_type>();
+        view_.h_view(i,j) = data[j*LDA+i];
+    view_.template modify<typename view_type::h_dev::device_type>();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(LDA < numRows, std::runtime_error,
       ": LDA = " << LDA << " < numRows = " << numRows << ".");
     MVT::initializeValues (lclMV_, numRows, numVecs, Kokkos::Compat::persistingView(view_.d_view), LDA);
@@ -1236,7 +1236,6 @@ namespace Tpetra {
         ": MultiVectors must have the same number of vectors.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(dots.size()) != numVecs, std::runtime_error,
         ": dots.size() must be as large as the number of vectors in *this and A.");
-    /*
     if (isConstantStride() && A.isConstantStride()) {
       MVT::Dot(lclMV_,A.lclMV_,dots);
     }
