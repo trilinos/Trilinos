@@ -38,7 +38,6 @@ print( std::ostream & , const std::string & indent , const Bucket & );
 // The part count and parts are equal
 bool raw_part_equal( const unsigned * lhs , const unsigned * rhs );
 
-
 #define CONNECTIVITY_TYPE_SWITCH(entity_kind, fixed_func_sig, dynamic_func_sig, check_invalid) \
   switch(entity_kind) {                                                 \
   case FIXED_CONNECTIVITY:                                              \
@@ -370,7 +369,8 @@ private:
           EntityRank arg_entity_rank,
           const std::vector<unsigned> & arg_key,
           size_t arg_capacity,
-          const ConnectivityMap& connectivity_map
+          const ConnectivityMap& connectivity_map,
+          unsigned bucket_id
         );
 
   const std::vector<unsigned> & key_vector() const { return m_key; }
@@ -461,6 +461,25 @@ inline
 std::vector<Bucket*>::iterator
 lower_bound( std::vector<Bucket*> & v , const unsigned * key )
 { return std::lower_bound( v.begin() , v.end() , key , BucketLess() ); }
+
+struct BucketIdComparator
+{
+  bool operator()(Bucket const* lhs, Bucket const* rhs) const
+  {
+    ThrowAssertMsg(lhs->entity_rank() == rhs->entity_rank(), "Cannot compare buckets of different rank");
+    return lhs->bucket_id() < rhs->bucket_id();
+  }
+
+  bool operator()(unsigned bucket_id, Bucket const* rhs) const
+  {
+    return bucket_id < rhs->bucket_id();
+  }
+
+  bool operator()(Bucket const* lhs, unsigned bucket_id) const
+  {
+    return lhs->bucket_id() < bucket_id;
+  }
+};
 
 /** \} */
 

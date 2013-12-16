@@ -90,12 +90,10 @@ void internal_count_entities_to_create( BulkData & mesh, std::vector<size_t> & e
 
   Selector select_owned = MetaData::get(mesh).locally_owned_part();
 
-  BucketVector element_buckets;
-
-  get_buckets( select_owned, mesh.buckets(element_rank), element_buckets);
+  BucketVector const& element_buckets = mesh.get_buckets( stk::topology::ELEMENT_RANK, select_owned );
 
   for ( EntityRank subcell_rank = side_rank; subcell_rank >= edge_rank; --subcell_rank) {
-    for (BucketVector::iterator bitr = element_buckets.begin();
+    for (BucketVector::const_iterator bitr = element_buckets.begin();
         bitr != element_buckets.end();
         ++bitr)
     {
@@ -211,13 +209,9 @@ void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_
 
   Selector select_owned = fem_meta.locally_owned_part();
 
-  BucketVector element_buckets;
-
-  get_buckets( select_owned, mesh.buckets(element_rank), element_buckets);
-
+  BucketVector const& element_buckets = mesh.get_buckets( stk::topology::ELEMENT_RANK, select_owned );
 
   mesh.modification_begin();
-
 
   std::vector< EntityVector > requested_entities;
 
@@ -230,7 +224,7 @@ void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_
   std::vector<size_t> entities_used(num_ranks, 0);
 
   for ( EntityRank subcell_rank = side_rank; subcell_rank >= edge_rank; --subcell_rank) {
-    for (BucketVector::iterator bitr = element_buckets.begin();
+    for (BucketVector::const_iterator bitr = element_buckets.begin();
         bitr != element_buckets.end();
         ++bitr)
     {
@@ -344,11 +338,9 @@ void complete_connectivity( BulkData & mesh )
     mesh.modification_begin();
     for (EntityRank entity_rank = element_rank; entity_rank > subcell_rank; --entity_rank) {
 
-      BucketVector entity_buckets;
+      BucketVector const& entity_buckets = mesh.get_buckets( entity_rank, select_owned_or_shared );
 
-      get_buckets(select_owned_or_shared, mesh.buckets(entity_rank),entity_buckets);
-
-      for (BucketVector::iterator bitr = entity_buckets.begin();
+      for (BucketVector::const_iterator bitr = entity_buckets.begin();
           bitr != entity_buckets.end();
           ++bitr)
       {

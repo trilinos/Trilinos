@@ -366,9 +366,7 @@ void create_edges( BulkData & mesh, const Selector & element_selector )
 
       // create edges and connect them to elements
       {
-        BucketVector element_buckets;
-
-        get_buckets( element_selector & mesh.mesh_meta_data().locally_owned_part(), mesh.buckets(stk::topology::ELEMENT_RANK), element_buckets);
+        BucketVector const& element_buckets = mesh.get_buckets(stk::topology::ELEMENT_RANK, element_selector & mesh.mesh_meta_data().locally_owned_part());
 
         //create the edges for the elements in each bucket
         for (size_t i=0, e=element_buckets.size(); i<e; ++i) {
@@ -383,9 +381,7 @@ void create_edges( BulkData & mesh, const Selector & element_selector )
       // connect existing faces to edges
       if (mesh.mesh_meta_data().spatial_dimension() == 3u) {
 
-        BucketVector face_buckets;
-
-        get_buckets( element_selector & (mesh.mesh_meta_data().locally_owned_part() | mesh.mesh_meta_data().globally_shared_part()), mesh.buckets(stk::topology::FACE_RANK), face_buckets);
+        BucketVector const& face_buckets = mesh.get_buckets(stk::topology::FACE_RANK, element_selector & (mesh.mesh_meta_data().locally_owned_part() | mesh.mesh_meta_data().globally_shared_part()));
 
         //create the edges for the faces in each bucket
         for (size_t i=0, e=face_buckets.size(); i<e; ++i) {

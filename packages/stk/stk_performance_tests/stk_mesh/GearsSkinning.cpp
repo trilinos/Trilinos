@@ -203,20 +203,11 @@ void move_detached_wedges(
   stk::mesh::Selector select_detached_wedges =  (! fixture.cylindrical_coord_part ) &
     (fixture.meta_data.locally_owned_part() | fixture.meta_data.globally_shared_part());
 
-  const stk::mesh::BucketVector all_node_buckets =
-    fixture.bulk_data.buckets(NODE_RANK);
-
-  stk::mesh::BucketVector node_buckets;
-
-  stk::mesh::get_buckets(
-      select_detached_wedges,
-      all_node_buckets,
-      node_buckets
-      );
+  stk::mesh::BucketVector const& node_buckets = fixture.bulk_data.get_buckets(NODE_RANK, select_detached_wedges);
 
   // Iterate over selected node_buckets, then iterate over each node in the
   // bucket, adjusting the node's displacement according to its velocity.
-  for (stk::mesh::BucketVector::iterator b_itr = node_buckets.begin();
+  for (stk::mesh::BucketVector::const_iterator b_itr = node_buckets.begin();
       b_itr != node_buckets.end();
       ++b_itr)
   {
@@ -246,17 +237,9 @@ void populate_processor_id_field_data( stk::mesh::fixtures::GearsFixture & fixtu
 
   stk::mesh::Selector locally_owned_selector = fixture.meta_data.locally_owned_part();
 
-  stk::mesh::BucketVector all_element_buckets =
-    fixture.bulk_data.buckets(stk::mesh::MetaData::ELEMENT_RANK);
-  stk::mesh::BucketVector element_buckets;
+  stk::mesh::BucketVector const& element_buckets = fixture.bulk_data.get_buckets(stk::topology::ELEMENT_RANK, locally_owned_selector);
 
-  stk::mesh::get_buckets(
-      locally_owned_selector,
-      all_element_buckets,
-      element_buckets
-      );
-
-  for (stk::mesh::BucketVector::iterator b_itr = element_buckets.begin();
+  for (stk::mesh::BucketVector::const_iterator b_itr = element_buckets.begin();
       b_itr != element_buckets.end();
       ++b_itr)
   {
@@ -494,10 +477,8 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
     }
 
     // update a face field
-    stk::mesh::BucketVector face_buckets;
-    stk::mesh::BucketVector all_face_buckets = fixture.bulk_data.buckets(stk::mesh::MetaData::ELEMENT_RANK-1);
-    stk::mesh::get_buckets( surface_select, all_face_buckets, face_buckets);
-    for (stk::mesh::BucketVector::iterator b_itr = face_buckets.begin(); b_itr != face_buckets.end(); ++b_itr) {
+    stk::mesh::BucketVector const& face_buckets = fixture.bulk_data.get_buckets(stk::topology::FACE_RANK, surface_select);
+    for (stk::mesh::BucketVector::const_iterator b_itr = face_buckets.begin(); b_itr != face_buckets.end(); ++b_itr) {
       stk::mesh::Bucket & b = **b_itr;
       for (size_t i = 0; i < b.size(); ++i) {
         stk::mesh::Entity face = b[i];

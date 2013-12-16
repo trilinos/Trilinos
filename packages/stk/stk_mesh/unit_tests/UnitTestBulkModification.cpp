@@ -33,6 +33,7 @@ using stk::mesh::Bucket;
 using stk::mesh::BucketIterator;
 using stk::mesh::Entity;
 using stk::mesh::EntityRank;
+using stk::mesh::BucketVector;
 using stk::mesh::fixtures::RingFixture;
 
 class UnitTestStkMeshBulkModification {
@@ -158,13 +159,11 @@ void UnitTestStkMeshBulkModification::test_all_local_nodes()
     stk::mesh::Selector universal_selector(universal);
 
     // Get the buckets that will give us the universal nodes
-    const std::vector<Bucket*>& node_buckets = bulk_data.buckets(NODE_RANK);
-    std::vector<Bucket*> buckets;
-    stk::mesh::get_buckets(universal_selector, node_buckets, buckets);
+    BucketVector buckets = bulk_data.get_buckets(NODE_RANK, universal_selector);
 
     // Get the universal nodes
     std::vector< Entity> universal_entities;
-    for (std::vector<Bucket*>::iterator itr = buckets.begin();
+    for (BucketVector::iterator itr = buckets.begin();
          itr != buckets.end(); ++itr) {
       Bucket& b = **itr;
       for (BucketIterator bitr = b.begin(); bitr != b.end(); ++bitr) {
@@ -183,11 +182,11 @@ void UnitTestStkMeshBulkModification::test_all_local_nodes()
       m_ring_mesh.m_meta_data.locally_owned_part() |
       m_ring_mesh.m_meta_data.globally_shared_part();
 
-    stk::mesh::get_buckets(locally_used_selector, node_buckets, buckets);
+    buckets = bulk_data.get_buckets(stk::topology::NODE_RANK, locally_used_selector);
 
     // Get the locally used nodes
     std::vector< Entity> entities;
-    for (std::vector<Bucket*>::iterator itr = buckets.begin();
+    for (BucketVector::iterator itr = buckets.begin();
          itr != buckets.end(); ++itr) {
       Bucket& b = **itr;
       for (BucketIterator bitr = b.begin(); bitr != b.end(); ++bitr) {
@@ -214,21 +213,15 @@ void UnitTestStkMeshBulkModification::test_all_local_nodes()
 void UnitTestStkMeshBulkModification::test_all_local_elements()
 {
   BulkData& bulk_data = initialize_ring_fixture();
-  const stk::mesh::EntityRank element_rank = MetaData::ELEMENT_RANK;
-
   {
     const stk::mesh::Part& universal = m_ring_mesh.m_meta_data.universal_part();
     stk::mesh::Selector universal_selector(universal);
 
-    const std::vector<Bucket*>& node_buckets = bulk_data.buckets(NODE_RANK);
-    const std::vector<Bucket*>& element_buckets = bulk_data.buckets(element_rank);
-    std::vector<Bucket*> buckets;
-
-    stk::mesh::get_buckets(universal_selector, node_buckets, buckets);
+    BucketVector buckets = bulk_data.get_buckets(stk::topology::NODE_RANK, universal_selector);
 
     // get all the nodes that this process knows about
     std::vector< Entity> universal_entities;
-    for (std::vector<Bucket*>::iterator itr = buckets.begin();
+    for (BucketVector::iterator itr = buckets.begin();
          itr != buckets.end(); ++itr) {
       Bucket& b = **itr;
       for (BucketIterator bitr = b.begin(); bitr != b.end(); ++bitr) {
@@ -237,10 +230,10 @@ void UnitTestStkMeshBulkModification::test_all_local_elements()
     }
     buckets.clear();
 
-    stk::mesh::get_buckets(universal_selector, element_buckets, buckets);
+    buckets = bulk_data.get_buckets(stk::topology::ELEMENT_RANK, universal_selector);
 
     // get all the elements that this process knows about
-    for (std::vector<Bucket*>::iterator itr = buckets.begin();
+    for (BucketVector::iterator itr = buckets.begin();
          itr != buckets.end(); ++itr) {
       Bucket& b = **itr;
       for (BucketIterator bitr = b.begin(); bitr != b.end(); ++bitr) {
@@ -260,11 +253,11 @@ void UnitTestStkMeshBulkModification::test_all_local_elements()
       m_ring_mesh.m_meta_data.locally_owned_part() |
       m_ring_mesh.m_meta_data.globally_shared_part();
 
-    stk::mesh::get_buckets(locally_used_selector, element_buckets, buckets);
+    buckets = bulk_data.get_buckets(stk::topology::ELEMENT_RANK, locally_used_selector);
 
     // get the locally used elements and store them in entities
     std::vector< Entity> entities;
-    for (std::vector<Bucket*>::iterator itr = buckets.begin();
+    for (BucketVector::iterator itr = buckets.begin();
          itr != buckets.end(); ++itr) {
       Bucket& b = **itr;
       for (BucketIterator bitr = b.begin(); bitr != b.end(); ++bitr) {
@@ -301,16 +294,13 @@ void UnitTestStkMeshBulkModification::test_parallel_consistency()
   // For proc 0 only, add locally used nodes to entities, for all other
   // procs, leave entities empty.
   if (m_rank == 0) {
-    const std::vector<Bucket*>& node_buckets = bulk_data.buckets(NODE_RANK);
-
     stk::mesh::Selector locally_used_selector =
       m_ring_mesh.m_meta_data.locally_owned_part() |
       m_ring_mesh.m_meta_data.globally_shared_part();
 
-    std::vector<Bucket*> buckets;
-    stk::mesh::get_buckets(locally_used_selector, node_buckets, buckets);
+    BucketVector const& buckets = bulk_data.get_buckets(stk::topology::NODE_RANK, locally_used_selector);
 
-    for (std::vector<Bucket*>::iterator itr = buckets.begin();
+    for (BucketVector::const_iterator itr = buckets.begin();
          itr != buckets.end(); ++itr) {
       Bucket& b = **itr;
       for (BucketIterator bitr = b.begin(); bitr != b.end(); ++bitr) {

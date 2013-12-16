@@ -32,8 +32,7 @@ size_t do_stk_node_rel_test(stk::mesh::BulkData& bulk)
 
   Selector local = meta.locally_owned_part();
 
-  BucketVector buckets;
-  get_buckets(local, bulk.buckets(stk::mesh::MetaData::ELEMENT_RANK), buckets);
+  BucketVector const& buckets = bulk.get_buckets(stk::topology::ELEMENT_RANK, local);
 
   size_t nodes_visited = 0;
   unsigned owner_rank = 0;

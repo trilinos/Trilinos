@@ -366,6 +366,54 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_selector )
   delete mesh;
 }
 
+STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_selector_fast )
+{
+  PERFORMANCE_TEST_PREAMBLE(1 /*num procs*/);
+
+  const int x_dim = 10;
+  const int y_dim = 10;
+  const int z_dim = 10;
+  const int dim_span = 1; // max fragmentation
+
+  std::vector<PartVector> element_parts;
+  HexFixture* mesh =
+    create_hex_with_complex_parts< !TIME_CHANGE_PARTS, !INDUCE_ELEMENT_PARTS, !ALLOCATE_FIELDS >(pm, x_dim, y_dim, z_dim, dim_span, element_parts);
+  BulkData & bulk = mesh->m_bulk_data;
+
+  const int num_iterations = 5;
+
+  CALLGRIND_TOGGLE_COLLECT;
+
+  for (int i = 0; i < num_iterations; ++i) {
+    for (int x = 0; x < x_dim; ++x) {
+      for (int y = 0; y < y_dim; ++y) {
+        int size_sum = 0;
+        for (int z = 0; z < z_dim; ++z) {
+          Selector sel = *element_parts[0][x];
+          sel &= *element_parts[1][y];
+          sel &= *element_parts[2][z];
+
+          BucketVector const& output_buckets = bulk.get_buckets(stk::topology::ELEMENT_RANK, sel);
+          for (int j = 0, je = output_buckets.size(); j < je; ++j) {
+            size_sum += output_buckets[j]->size();
+          }
+        }
+        STKUNIT_EXPECT_EQ(size_sum, z_dim);
+      }
+    }
+  }
+
+  STKUNIT_EXPECT_EQ(1000u, bulk.buckets(stk::topology::ELEMENT_RANK).size());
+  STKUNIT_EXPECT_EQ(3u,    bulk.buckets(stk::topology::NODE_RANK).size());
+
+  CALLGRIND_TOGGLE_COLLECT;
+  CALLGRIND_STOP_INSTRUMENTATION;
+
+  PERFORMANCE_TEST_POSTAMBLE();
+
+  delete mesh;
+}
+
 STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_single_part_selector )
 {
   PERFORMANCE_TEST_PREAMBLE(1 /*num procs*/);

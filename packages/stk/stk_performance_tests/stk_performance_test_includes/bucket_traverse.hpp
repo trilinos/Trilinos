@@ -7,7 +7,7 @@ namespace sierra {
 namespace mesh {
 
 template <class Mesh, class EntitySelector, class RelationSelector, class Visitor>
-void bucket_traverse(const EntitySelector &entity_selector, const RelationSelector &relation_selector, Visitor &visitor, Mesh &mesh) 
+void bucket_traverse(const EntitySelector &entity_selector, const RelationSelector &relation_selector, Visitor &visitor, Mesh &mesh)
 {
   typedef typename sierra::mesh::mesh_traits<Mesh>::bucket_key bucket_key;
   typedef typename sierra::mesh::mesh_traits<Mesh>::selected_bucket_range selected_bucket_range;
@@ -23,12 +23,12 @@ void bucket_traverse(const EntitySelector &entity_selector, const RelationSelect
   typedef typename sierra::mesh::mesh_traits<Mesh>::entity_rank entity_rank;
 
   visitor.initialize(mesh);
-  
+
   selected_bucket_range buckets = get_buckets(entity_selector, mesh);
   for (selected_bucket_iterator b_iter = boost::begin(buckets), b_end = boost::end(buckets);  b_iter != b_end; ++b_iter) {
     bucket_descriptor bucket = *b_iter;
     visitor.discover_bucket(bucket, mesh);
-    
+
     bucket_entity_range entities = get_entities(*b_iter, mesh);
     for (bucket_entity_iterator ent_iter = boost::begin(entities), ent_end = boost::end(entities); ent_iter != ent_end; ++ent_iter) {
       entity_descriptor entity = *ent_iter;
@@ -50,7 +50,7 @@ void bucket_traverse(const EntitySelector &entity_selector, const RelationSelect
 }
 
 template <class Mesh>
-class BucketVisitor 
+class BucketVisitor
 {
 public:
   typedef typename sierra::mesh::mesh_traits<Mesh>::bucket_entity_iterator bucket_entity_iterator;
@@ -69,7 +69,7 @@ public:
 protected:
   virtual ~BucketVisitor()
   {}
-  
+
 public:
   void initialize(Mesh &/* mesh */)
   {}
@@ -83,7 +83,7 @@ public:
   void finish_bucket(bucket_descriptor /* bucket */, Mesh &/* mesh */)
   {}
 
-  
+
   void discover_entity(entity_descriptor /* entity */, Mesh &/* mesh */)
   {}
 
@@ -94,7 +94,7 @@ public:
   void examine_relation_range(const relation_range & /* entity_relations */, Mesh &/* mesh */)
   {}
 
-  
+
   void examine_relation(relation_descriptor /* relation */, Mesh &/* mesh */)
   {}
 };

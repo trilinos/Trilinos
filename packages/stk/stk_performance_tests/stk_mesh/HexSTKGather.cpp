@@ -47,8 +47,7 @@ void do_stk_gather_test(stk::mesh::BulkData& bulk, std::vector<double>& sum_cent
 
   Selector local = meta.locally_owned_part();
 
-  BucketVector buckets;
-  get_buckets(local, bulk.buckets(stk::mesh::MetaData::ELEMENT_RANK), buckets);
+  BucketVector const& buckets = bulk.get_buckets(stk::topology::ELEMENT_RANK, local);
 
   std::vector<double> elem_node_coords;
 

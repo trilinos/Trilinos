@@ -1314,7 +1314,7 @@ private:
 
 
 
-  void destroy_bucket_callback(EntityRank rank, unsigned bucket_id, unsigned capacity);
+  void destroy_bucket_callback(EntityRank rank, Bucket const& dying_bucket, unsigned capacity);
 
   // id_map, indexed by new id, maps to old id
   void reorder_buckets_callback(EntityRank rank, const std::vector<unsigned>& id_map);

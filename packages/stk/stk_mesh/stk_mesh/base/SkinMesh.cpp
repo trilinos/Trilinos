@@ -60,8 +60,7 @@ void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector co
   const EntityRank side_rank = mesh.mesh_meta_data().side_rank();
   const Part & locally_owned = mesh.mesh_meta_data().locally_owned_part();
 
-  BucketVector element_buckets;
-  get_buckets(element_selector & locally_owned, mesh.buckets( stk::topology::ELEMENT_RANK), element_buckets);
+  const BucketVector& element_buckets = mesh.get_buckets(stk::topology::ELEMENT_RANK, element_selector & locally_owned);
 
   Boundary boundary;
 

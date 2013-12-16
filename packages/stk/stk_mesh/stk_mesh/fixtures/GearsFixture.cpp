@@ -231,10 +231,9 @@ void distribute_gear_across_processors(Gear & gear, GearsFixture::CylindricalFie
 
   Selector locally_owned = gear.meta_data.locally_owned_part();
   if (p_rank == 0) {
-    BucketVector all_elements;
-    stk::mesh::get_buckets(locally_owned, bulk_data.buckets(ELEMENT_RANK), all_elements);
+    BucketVector const& all_elements = bulk_data.get_buckets(ELEMENT_RANK, locally_owned);
     std::set<Entity> node_set; // First come first serve nodal movement.
-    for (BucketVector::iterator it = all_elements.begin() ; it != all_elements.end() ; ++it) {
+    for (BucketVector::const_iterator it = all_elements.begin() ; it != all_elements.end() ; ++it) {
       Bucket & b = **it;
       for (size_t i=0 ; i<b.size() ; ++i) {
         Entity element = b[i];

@@ -105,6 +105,8 @@ public:
 
   const ConnectivityMap& connectivity_map() const { return m_connectivity_map; }
 
+  bool being_destroyed() const { return m_being_destroyed; }
+
 private:
 
   BucketRepository();
@@ -127,6 +129,8 @@ private:
   std::vector<bool> m_need_sync_from_partitions;
 
   ConnectivityMap m_connectivity_map;
+
+  bool m_being_destroyed;
 };
 
 inline

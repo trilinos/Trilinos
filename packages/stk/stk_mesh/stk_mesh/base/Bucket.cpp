@@ -227,7 +227,8 @@ Bucket::Bucket( BulkData & arg_mesh ,
                 EntityRank arg_entity_rank,
                 const std::vector<unsigned> & arg_key,
                 size_t arg_capacity,
-                const ConnectivityMap& connectivity_map
+                const ConnectivityMap& connectivity_map,
+                unsigned bucket_id
                 )
   : m_mesh(arg_mesh)
   , m_entity_rank(arg_entity_rank)
@@ -236,7 +237,7 @@ Bucket::Bucket( BulkData & arg_mesh ,
   , m_capacity(arg_capacity)
   , m_size(0)
   , m_bucket(NULL)
-  , m_bucket_id(static_cast<unsigned>(-1))
+  , m_bucket_id(bucket_id)
   , m_nodes_per_entity(0)
 // TODO: Move owner ranks to BulkData
   , m_entities(arg_capacity)
@@ -278,7 +279,7 @@ Bucket::Bucket( BulkData & arg_mesh ,
 
 Bucket::~Bucket()
 {
-  m_mesh.destroy_bucket_callback(m_entity_rank, m_bucket_id, m_capacity);
+  m_mesh.destroy_bucket_callback(m_entity_rank, *this, m_capacity);
 }
 
 bool Bucket::member( const Part & part ) const

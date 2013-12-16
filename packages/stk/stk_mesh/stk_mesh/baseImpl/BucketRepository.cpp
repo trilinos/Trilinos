@@ -27,7 +27,8 @@ BucketRepository::BucketRepository(BulkData & mesh,
     m_buckets(entity_rank_count),
     m_partitions(entity_rank_count),
     m_need_sync_from_partitions(entity_rank_count, false),
-    m_connectivity_map(connectivity_map)
+    m_connectivity_map(connectivity_map),
+    m_being_destroyed(false)
 {
   // Nada.
 }
@@ -35,6 +36,8 @@ BucketRepository::BucketRepository(BulkData & mesh,
 BucketRepository::~BucketRepository()
 {
   // Destroy buckets, which were *not* allocated by the set.
+
+  m_being_destroyed = true;
 
   typedef tracking_allocator<Partition, PartitionTag> partition_allocator;
 
@@ -378,15 +381,15 @@ Bucket *BucketRepository::allocate_bucket(EntityRank arg_entity_rank,
 {
 
   Bucket * new_bucket = bucket_allocator().allocate(1);
+  std::vector<Bucket *> &bucket_vec = m_buckets[arg_entity_rank];
+  const unsigned bucket_id = bucket_vec.size();
   try {
-    new_bucket = new (new_bucket) Bucket(m_mesh, arg_entity_rank, arg_key, arg_capacity, m_connectivity_map);
+    new_bucket = new (new_bucket) Bucket(m_mesh, arg_entity_rank, arg_key, arg_capacity, m_connectivity_map, bucket_id);
   } catch(std::runtime_error & e) {
     bucket_allocator().deallocate(new_bucket,1);
     throw;
   }
 
-  std::vector<Bucket *> &bucket_vec = m_buckets[arg_entity_rank];
-  new_bucket->m_bucket_id = bucket_vec.size();
   bucket_vec.push_back(new_bucket);
   m_need_sync_from_partitions[arg_entity_rank] = true;
 
@@ -395,11 +398,14 @@ Bucket *BucketRepository::allocate_bucket(EntityRank arg_entity_rank,
 
 void BucketRepository::deallocate_bucket(Bucket *b)
 {
-  ThrowAssertMsg((b != NULL) && (b == m_buckets[b->m_entity_rank][b->m_bucket_id]),
-           "BucketRepository::deallocate_bucket(.) m_buckets invariant broken.");
+  const unsigned bucket_id = b->bucket_id();
+  const EntityRank bucket_rank = b->entity_rank();
 
-  m_buckets[b->m_entity_rank][b->m_bucket_id] = 0; // space will be reclaimed by sync_from_partitions
-  m_need_sync_from_partitions[b->m_entity_rank] = true;
+  ThrowAssertMsg((b != NULL) && (b == m_buckets[bucket_rank][bucket_id]),
+                 "BucketRepository::deallocate_bucket(.) m_buckets invariant broken.");
+
+  m_buckets[bucket_rank][bucket_id] = NULL; // space will be reclaimed by sync_from_partitions
+  m_need_sync_from_partitions[bucket_rank] = true;
   b->~Bucket();
   bucket_allocator().deallocate(b,1);
 }
@@ -415,7 +421,7 @@ void BucketRepository::sync_bucket_ids(EntityRank entity_rank)
     ThrowAssertMsg(buckets[i] != NULL,
                    "BucketRepository::sync_bucket_ids() called when m_buckets["
                    << entity_rank << "] is not dense.");
-    id_map[i] = buckets[i]->m_bucket_id;
+    id_map[i] = buckets[i]->bucket_id();
     buckets[i]->m_bucket_id = i;
   }
 

@@ -267,17 +267,9 @@ void Gear::move( const GearMovement & data) {
 
   Selector select = gear_part & cylindrical_coord_part & (meta_data.locally_owned_part() | meta_data.globally_shared_part());
 
-  BucketVector all_node_buckets = bulk_data.buckets(NODE_RANK);
+  BucketVector const& node_buckets = bulk_data.get_buckets(NODE_RANK, select);
 
-  BucketVector node_buckets;
-
-  get_buckets(
-      select,
-      all_node_buckets,
-      node_buckets
-      );
-
-  for (BucketVector::iterator b_itr = node_buckets.begin();
+  for (BucketVector::const_iterator b_itr = node_buckets.begin();
       b_itr != node_buckets.end();
       ++b_itr)
   {

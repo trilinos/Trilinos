@@ -15,6 +15,7 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/Iterators.hpp>
+#include <stk_mesh/base/BulkData.hpp>
 
 //----------------------------------------------------------------------
 

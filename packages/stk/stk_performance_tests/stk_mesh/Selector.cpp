@@ -35,8 +35,7 @@ STKUNIT_UNIT_TEST(selector_timings, selector_timings)
 
   std::vector<double> selector_creation(N/2);
   std::vector<double> get_buckets_usage(N/2);
-  std::vector<stk::mesh::Bucket*> buckets_out;
-  buckets_out.reserve(N*10);
+  size_t total_buckets_grabbed = 0;
 
   double total_selector_time = 0.0, total_bucket_time = 0.0;
   size_t timing_index = 0;
@@ -53,13 +52,14 @@ STKUNIT_UNIT_TEST(selector_timings, selector_timings)
     // Selector usage:
     start_time = stk::wall_time();
     unsigned entity_rank = 0;
-    buckets_out.clear();
-    get_buckets(selectUnion, fix.m_BulkData.buckets(entity_rank), buckets_out);
+    stk::mesh::BucketVector const& buckets_out =  fix.m_BulkData.get_buckets(entity_rank, selectUnion);
+    total_buckets_grabbed += buckets_out.size();
     get_buckets_usage[timing_index] = stk::wall_dtime(start_time);
     total_bucket_time += get_buckets_usage[timing_index];
   }
 
   // Print out table
+  std::cout << "total_buckets_grabbed: " << total_buckets_grabbed << std::endl;
   std::cout << "\"N\" \"selector_creation_time\" \"get_buckets_time\" " << std::endl;
   timing_index = 0;
   for (size_t n = 1 ; n<N; n*=2) {

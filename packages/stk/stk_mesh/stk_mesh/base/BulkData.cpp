@@ -884,7 +884,7 @@ void BulkData::allocate_field_data()
   }
 }
 
-void BulkData::new_bucket_callback(EntityRank rank, const PartVector& superset_parts, size_t capacity, Bucket * new_bucket)
+void BulkData::new_bucket_callback(EntityRank rank, const PartVector& superset_parts, size_t capacity, Bucket* new_bucket)
 {
   // update selector map
   if (new_bucket != NULL) {
@@ -893,7 +893,9 @@ void BulkData::new_bucket_callback(EntityRank rank, const PartVector& superset_p
       Selector const& sel = itr->first.second;
       const EntityRank map_rank = itr->first.first;
       if (map_rank == rank && sel(*new_bucket)) {
-        itr->second.push_back(new_bucket);
+        TrackedBucketVector& cached_buckets = itr->second;
+        TrackedBucketVector::iterator lb_itr = std::lower_bound(cached_buckets.begin(), cached_buckets.end(), new_bucket, BucketIdComparator());
+        cached_buckets.insert(lb_itr, new_bucket);
       }
     }
   }
@@ -1010,7 +1012,7 @@ void BulkData::copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_buc
 
 // More specific version, of copy_entity_fields, here assume know entities are of the same rank
 
-void BulkData::copy_entity_fields_callback_same_rank(EntityRank rank, 
+void BulkData::copy_entity_fields_callback_same_rank(EntityRank rank,
                                                      unsigned dst_bucket_id, Bucket::size_type dst_bucket_ord,
                                                      unsigned src_bucket_id, Bucket::size_type src_bucket_ord)
 {
@@ -1046,11 +1048,6 @@ void BulkData::copy_entity_fields_callback_same_rank(EntityRank rank,
   }
 }
 
-
-
-
-
-
 void BulkData::remove_entity_callback(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord)
 {
   if (!m_keep_fields_updated) {
@@ -1076,21 +1073,23 @@ void BulkData::remove_entity_callback(EntityRank rank, unsigned bucket_id, Bucke
   }
 }
 
-void BulkData::destroy_bucket_callback(EntityRank rank, unsigned bucket_id, unsigned capacity)
+void BulkData::destroy_bucket_callback(EntityRank rank, Bucket const& dying_bucket, unsigned capacity)
 {
-  // Remove destroyed bucket out of memoized get_buckets results
-  for (SelectorBucketMap::iterator itr = m_selector_to_buckets_map.begin(), end = m_selector_to_buckets_map.end();
-       itr != end; ++itr) {
-    const EntityRank map_rank = itr->first.first;
-    if (map_rank == rank) {
-      TrackedBucketVector & cached_buckets = itr->second;
-      // iterate backwards due to deletions that may take place
-      for (size_t i = cached_buckets.size(); i > 0; ) {
-        --i;
-        if (cached_buckets[i]->bucket_id() == bucket_id) {
-          cached_buckets.erase(cached_buckets.begin() + i);
-          break;
-        }
+  // Remove destroyed bucket out of memoized get_buckets result, but
+  // don't bother if the mesh is being destructed.
+  const unsigned bucket_id = dying_bucket.bucket_id();
+
+  if (!m_bucket_repository.being_destroyed()) {
+    for (SelectorBucketMap::iterator itr = m_selector_to_buckets_map.begin(), end = m_selector_to_buckets_map.end();
+         itr != end; ++itr) {
+      Selector const& sel = itr->first.second;
+      const EntityRank map_rank = itr->first.first;
+      if (map_rank == rank && sel(dying_bucket)) {
+        TrackedBucketVector & cached_buckets = itr->second;
+        TrackedBucketVector::iterator lb_itr = std::lower_bound(cached_buckets.begin(), cached_buckets.end(), bucket_id, BucketIdComparator());
+        ThrowAssertMsg(lb_itr != cached_buckets.end() && (*lb_itr)->bucket_id() == bucket_id,
+                       "Error, bucket id " << bucket_id << ":\n " << dying_bucket << "\nWas selected by selector " << sel << " but was not in the cache");
+        cached_buckets.erase(lb_itr);
       }
     }
   }
@@ -1143,6 +1142,12 @@ void BulkData::update_field_data_states()
 
 void BulkData::reorder_buckets_callback(EntityRank rank, const std::vector<unsigned>& id_map)
 {
+  for (SelectorBucketMap::iterator itr = m_selector_to_buckets_map.begin(), end = m_selector_to_buckets_map.end();
+       itr != end; ++itr) {
+    TrackedBucketVector& cached_buckets = itr->second;
+    std::sort(cached_buckets.begin(), cached_buckets.end(), BucketIdComparator());
+  }
+
   if (!m_keep_fields_updated) {
     return;
   }
@@ -1466,11 +1471,11 @@ BucketVector const& BulkData::get_buckets(EntityRank rank, Selector const& selec
     return reinterpret_cast<BucketVector const&>(rv);
   }
   else {
+    BucketVector const& all_buckets_for_rank = buckets(rank); // lots of potential side effects! Need to happen before map insertion
     std::pair<SelectorBucketMap::iterator, bool> insert_rv =
       m_selector_to_buckets_map.insert(std::make_pair( std::make_pair(rank, selector), TrackedBucketVector() ));
     ThrowAssertMsg(insert_rv.second, "Should not have already been in map");
     TrackedBucketVector& map_buckets = insert_rv.first->second;
-    BucketVector const& all_buckets_for_rank = buckets(rank);
     for (size_t i = 0, e = all_buckets_for_rank.size(); i < e; ++i) {
       if (selector(*all_buckets_for_rank[i])) {
         map_buckets.push_back(all_buckets_for_rank[i]);
