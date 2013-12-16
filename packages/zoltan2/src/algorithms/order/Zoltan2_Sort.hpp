@@ -78,11 +78,11 @@ class SortPairs
   private:
     bool zort_inc(std::pair<key_t,value_t> a, std::pair<key_t,value_t> b)
     {
-      return (a.first < b.first);
+      return (a.second < b.second);
     }
     bool zort_dec(std::pair<key_t,value_t> a, std::pair<key_t,value_t> b)
     {
-      return (a.first > b.first);
+      return (a.second > b.second);
     }
 
 };

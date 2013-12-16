@@ -47,6 +47,7 @@
 
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
+#include <Zoltan2_Sort.hpp>
 #include <queue>
 
 
@@ -128,6 +129,7 @@ class AlgRCM
     std::queue<lno_t> Q;
     size_t count = 0; // CM label, reversed later
     size_t next = 0;  // next unmarked vertex
+    std::vector<std::pair<lno_t, size_t> >  children; // children and their degrees
   
     while (count < nVtx) {
   
@@ -159,16 +161,28 @@ class AlgRCM
         Q.pop();
         //cout << "Debug: v= " << v << ", offsets[v] = " << offsets[v] << endl;
   
-        // Add unmarked children to queue
-        // TODO: If edge weights, sort children by decreasing weight,
-        // TODO: Else, sort children by increasing degree
+        // Add unmarked children to list of pairs, to be added to queue.
+        children.resize(0);
         for (lno_t ptr = offsets[v]; ptr < offsets[v+1]; ++ptr){
           lno_t child = edgeIds[ptr];
           if (static_cast<Tpetra::global_size_t>(invPerm[child]) == INVALID){
-            //cout << "Debug: invPerm[" << child << "] = " << count << endl;
-            invPerm[child] = count++; // Label as we push on Q
-            Q.push(child);
+            // Not visited yet; add child to vector of pairs.
+            pair<lno_t,size_t> newchild;
+            newchild.first = child;
+            newchild.second = offsets[child+1] - offsets[child];
+            children.push_back(newchild); 
           }
+        }
+        // Sort children by increasing degree
+        // TODO: If edge weights, sort children by decreasing weight,
+        SortPairs<lno_t,size_t> zort;
+        zort.sort(children);
+        for (pair<lno_t,size_t> *ptr= children.begin(); ptr<children.end(); ptr++){
+          // Push children on the queue in sorted order.
+          lno_t child = ptr->first;
+          invPerm[child] = count++; // Label as we push on Q
+          Q.push(child);
+          //cout << "Debug: invPerm[" << child << "] = " << count << endl;
         }
       }
     }
