@@ -344,6 +344,16 @@ IF(Stokhos_ENABLE_Sacado)
 
     IF (Kokkos_ENABLE_Pthread)
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        KokkosViewMPVectorUnitTest_Threads
+        SOURCES Stokhos_KokkosViewMPVectorUnitTest.hpp
+                Stokhos_KokkosViewMPVectorUnitTest_Threads.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        DEPLIBS stokhos kokkoscore
+        )
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
         KokkosMPVectorKernelsUnitTest_Threads
         SOURCES Stokhos_KokkosMPVectorKernelsUnitTest.hpp
                 Stokhos_KokkosMPVectorKernelsUnitTest_Threads.cpp
@@ -358,6 +368,21 @@ IF(Stokhos_ENABLE_Sacado)
       IF( TPL_ENABLE_MPI )
         CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
       ENDIF()
+
+      SET(CUDA_SOURCES "")
+      CUDA_COMPILE(CUDA_SOURCES Stokhos_KokkosViewMPVectorUnitTest_Cuda.cu)
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        KokkosViewMPVectorUnitTest_Cuda
+        SOURCES Stokhos_KokkosViewMPVectorUnitTest.hpp
+                ${CUDA_SOURCES}
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        RUN_SERIAL
+        DEPLIBS stokhos kokkoscore
+        )
+
+      SET(CUDA_SOURCES "")
       CUDA_COMPILE(CUDA_SOURCES Stokhos_KokkosMPVectorKernelsUnitTest_Cuda.cu)
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
         KokkosMPVectorKernelsUnitTest_Cuda
