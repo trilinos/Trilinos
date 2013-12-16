@@ -84,18 +84,41 @@ public:
   typedef typename MatrixType::node_type node_type;
   typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
-  //! Constructor to create a Diagonal preconditioner using a sparse matrix.
-  Diagonal (const Teuchos::RCP<const MatrixType>& A);
+  //! Tpetra::RowMatrix specialization used by this class.
+  typedef Tpetra::RowMatrix<scalar_type,
+                            local_ordinal_type,
+                            global_ordinal_type,
+                            node_type> row_matrix_type;
 
-  //! Constructor to create a Diagonal preconditioner using a Tpetra::Vector.
-  /**
-   * If your compiler complains about this constructor being ambigous with the
-   * other constructor overload, instead call the free-standing function
-   * Ifpack2::createDiagonalPreconditioner which is located at the bottom
-   * of this header file.
-  * (This issue arises if this constructor is called with a RCP<Tpetra::Vector>
-  * that isn't const-qualified exactly as declared here.)
-  */
+  //! Tpetra::CrsMatrix specialization used by this class.
+  typedef Tpetra::CrsMatrix<scalar_type,
+                            local_ordinal_type,
+                            global_ordinal_type,
+                            node_type> crs_matrix_type;
+
+  /// \brief Constructor that takes a Tpetra::RowMatrix.
+  ///
+  /// \param A_in [in] The input matrix.
+  Diagonal (const Teuchos::RCP<const row_matrix_type>& A);
+
+  /// \brief Constructor that takes a Tpetra::CrsMatrix.
+  ///
+  /// This constructor exists to avoid "ambiguous constructor"
+  /// warnings.  It does the same thing as the constructor that takes
+  /// a Tpetra::RowMatrix.
+  ///
+  /// \param A_in [in] The input matrix.
+  Diagonal (const Teuchos::RCP<const crs_matrix_type>& A_in);
+
+  /// \brief Constructor that accepts a Tpetra::Vector of diagonal entries.
+  ///
+  /// If your compiler complains about this constructor being ambigous
+  /// with the other constructor overload, instead call the
+  /// free-standing function Ifpack2::createDiagonalPreconditioner
+  /// which is located at the bottom of this header file.  (This issue
+  /// may arise if this constructor is called with a
+  /// <tt>Teuchos::RCP<Tpetra::Vector></tt> that isn't const-qualified
+  /// exactly as declared here.)
   Diagonal (const Teuchos::RCP<const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& diag);
 
   //! Destructor
@@ -243,14 +266,6 @@ public:
   //@}
 
 private:
-  typedef Tpetra::RowMatrix<scalar_type,
-                            local_ordinal_type,
-                            global_ordinal_type,
-                            node_type> row_matrix_type;
-  typedef Tpetra::CrsMatrix<scalar_type,
-                            local_ordinal_type,
-                            global_ordinal_type,
-                            node_type> crs_matrix_type;
   typedef Tpetra::Vector<scalar_type,
                          local_ordinal_type,
                          global_ordinal_type,
@@ -263,7 +278,7 @@ private:
   bool isComputed_;
   Teuchos::RCP<const map_type> domainMap_;
   Teuchos::RCP<const map_type> rangeMap_;
-  Teuchos::RCP<const MatrixType> matrix_;
+  Teuchos::RCP<const row_matrix_type> matrix_;
   Teuchos::RCP<const vector_type> inversediag_;
   Teuchos::ArrayRCP<size_t> offsets_;
 

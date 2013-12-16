@@ -45,12 +45,11 @@
 
 namespace Ifpack2 {
 
-//==============================================================================
 template<class MatrixType>
-RILUK<MatrixType>::RILUK(const Teuchos::RCP<const MatrixType>& Matrix_in)
+RILUK<MatrixType>::RILUK (const Teuchos::RCP<const row_matrix_type>& Matrix_in)
   : isOverlapped_ (false),
     Graph_ (),
-    A_(Matrix_in),
+    A_ (Matrix_in),
     UseTranspose_ (false),
     LevelOfFill_ (0),
     LevelOfOverlap_ (0),
@@ -64,12 +63,33 @@ RILUK<MatrixType>::RILUK(const Teuchos::RCP<const MatrixType>& Matrix_in)
     RelaxValue_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
     Athresh_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
     Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ()),
-    Condest_ (- Teuchos::ScalarTraits<magnitude_type>::one () ),
+    Condest_ (-Teuchos::ScalarTraits<magnitude_type>::one ()),
     OverlapMode_ (Tpetra::REPLACE)
-{
-}
+{}
 
-//==============================================================================
+template<class MatrixType>
+RILUK<MatrixType>::RILUK (const Teuchos::RCP<const crs_matrix_type>& Matrix_in)
+  : isOverlapped_ (false),
+    Graph_ (),
+    A_ (Matrix_in),
+    UseTranspose_ (false),
+    LevelOfFill_ (0),
+    LevelOfOverlap_ (0),
+    NumMyDiagonals_ (0),
+    isAllocated_ (false),
+    isInitialized_ (false),
+    numInitialize_ (0),
+    numCompute_ (0),
+    numApply_ (0),
+    Factored_ (false),
+    RelaxValue_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
+    Athresh_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
+    Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ()),
+    Condest_ (-Teuchos::ScalarTraits<magnitude_type>::one ()),
+    OverlapMode_ (Tpetra::REPLACE)
+{}
+
+
 //template<class MatrixType>
 //RILUK<MatrixType>::RILUK(const RILUK<MatrixType>& src)
 //  : isOverlapped_(src.isOverlapped_),

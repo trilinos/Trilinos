@@ -265,7 +265,7 @@ class RILUK:
                             global_ordinal_type,
                             node_type> row_matrix_type;
 
-  //! Tpetra::RowMatrix specialization used by this class for representing L and U.
+  //! Tpetra::CrsMatrix specialization used by this class for representing L and U.
   typedef Tpetra::CrsMatrix<scalar_type,
                             local_ordinal_type,
                             global_ordinal_type,
@@ -273,10 +273,20 @@ class RILUK:
 
   template <class NewMatrixType> friend class RILUK;
 
-  /// \brief Constructor.
+  /// \brief Constructor that takes a Tpetra::RowMatrix.
   ///
   /// \param A_in [in] The input matrix.
-  RILUK (const Teuchos::RCP<const MatrixType>& A_in);
+  RILUK (const Teuchos::RCP<const row_matrix_type>& A_in);
+
+  /// \brief Constructor that takes a Tpetra::CrsMatrix.
+  ///
+  /// This constructor exists to avoid "ambiguous constructor"
+  /// warnings.  It does the same thing as the constructor that takes
+  /// a Tpetra::RowMatrix.
+  ///
+  /// \param A_in [in] The input matrix.
+  RILUK (const Teuchos::RCP<const crs_matrix_type>& A_in);
+
 
  private:
 
@@ -510,7 +520,7 @@ private:
   // Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type,mat_vec_type> > > Graph_;
   Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type> > > Graph_;
 
-  const Teuchos::RCP<const MatrixType> A_;
+  const Teuchos::RCP<const row_matrix_type> A_;
   Teuchos::RCP<crs_matrix_type> L_;
   Teuchos::RCP<crs_matrix_type> U_;
   Teuchos::RCP<vec_type> D_;

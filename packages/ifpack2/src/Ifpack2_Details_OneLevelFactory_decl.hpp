@@ -115,6 +115,10 @@ public:
                                     local_ordinal_type,
                                     global_ordinal_type,
                                     node_type> prec_type;
+  typedef ::Tpetra::RowMatrix<scalar_type,
+                              local_ordinal_type,
+                              global_ordinal_type,
+                              node_type> row_matrix_type;
 
   /** \brief Create an instance of Preconditioner given the string
    * name of the preconditioner type.
@@ -128,7 +132,7 @@ public:
    */
   Teuchos::RCP<prec_type>
   create (const std::string& precType,
-          const Teuchos::RCP<const MatrixType>& matrix) const;
+          const Teuchos::RCP<const row_matrix_type>& matrix) const;
 };
 
 } // namespace Details

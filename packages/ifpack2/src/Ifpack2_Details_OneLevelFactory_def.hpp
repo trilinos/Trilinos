@@ -61,7 +61,7 @@ namespace Details {
 template<class MatrixType>
 Teuchos::RCP<typename OneLevelFactory<MatrixType>::prec_type>
 OneLevelFactory<MatrixType>::create (const std::string& precType,
-                                     const Teuchos::RCP<const MatrixType>& matrix) const
+                                     const Teuchos::RCP<const row_matrix_type>& matrix) const
 {
   using Teuchos::RCP;
   using Teuchos::rcp;

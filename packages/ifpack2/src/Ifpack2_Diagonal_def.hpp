@@ -50,7 +50,20 @@
 namespace Ifpack2 {
 
 template<class MatrixType>
-Diagonal<MatrixType>::Diagonal (const Teuchos::RCP<const MatrixType>& A)
+Diagonal<MatrixType>::Diagonal (const Teuchos::RCP<const row_matrix_type>& A)
+ : isInitialized_ (false),
+   isComputed_ (false),
+   domainMap_ (A->getDomainMap ()),
+   rangeMap_ (A->getRangeMap ()),
+   matrix_ (A),
+   numInitialize_ (0),
+   numCompute_ (0),
+   numApply_ (0),
+   condEst_ (-Teuchos::ScalarTraits<magnitude_type>::one ())
+{}
+
+template<class MatrixType>
+Diagonal<MatrixType>::Diagonal (const Teuchos::RCP<const crs_matrix_type>& A)
  : isInitialized_ (false),
    isComputed_ (false),
    domainMap_ (A->getDomainMap ()),
