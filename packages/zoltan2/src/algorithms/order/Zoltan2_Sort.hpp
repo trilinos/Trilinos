@@ -42,84 +42,49 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef _ZOLTAN2_SORTEDDEGREE_HPP_
-#define _ZOLTAN2_SORTEDDEGREE_HPP_
+#ifndef _ZOLTAN2_SORT_HPP_
+#define _ZOLTAN2_SORT_HPP_
 
-#include <Zoltan2_GraphModel.hpp>
-#include <Zoltan2_OrderingSolution.hpp>
-#include <Zoltan2_Sort.hpp>
 #include <algorithm>
 
 
 ////////////////////////////////////////////////////////////////////////
-//! \file Zoltan2_AlgSortedDegree.hpp
-//! \brief Order vertices by sorted (increasing) degree.
-//! \brief Sorting by decreasing degree is also possible.
+//! \file Zoltan2_Sort.hpp
+//! \brief Sort vector of pairs (key, value) by value. 
+//! \brief This class is needed so we also get the sorted keys (indices).
+  
+// TODO: This is a generic utility class; should move this source file.
 
 namespace Zoltan2{
 
-template <typename Adapter>
-class AlgSortedDegree
+template <typename key_t, typename value_t>
+class SortPairs
 {
   public:
-
-    AlgSortedDegree()
+    SortPairs()
     {
     }
 
-  int order(
-    const RCP<GraphModel<Adapter> > &model, 
-    const RCP<OrderingSolution<typename Adapter::gid_t,
-                               typename Adapter::lno_t> > &solution,
-    const RCP<Teuchos::ParameterList> &pl,
-    const RCP<Teuchos::Comm<int> > &comm
-  ) 
-  {
-    typedef typename Adapter::lno_t lno_t;
-    typedef typename Adapter::gno_t gno_t;
-    typedef typename Adapter::gid_t gid_t;
-    typedef typename Adapter::scalar_t scalar_t;
-  
-    int ierr= 0;
-  
-    HELLO;
-  
-    lno_t *perm;
-    perm = (lno_t *) (solution->getPermutation());
-    if (perm==0){
-      // Throw exception
-      cerr << "perm is NULL" << std::endl;
-      ierr = -1;
+  public:
+    void sort(std::vector<std::pair<key_t,value_t> > &listofPairs, bool inc=true)
+    {
+      // Sort in increasing (default) or decreasing order of value
+      if (inc)
+        std::sort(listofPairs.begin(), listofPairs.end(), zort_inc);
+      else
+        std::sort(listofPairs.begin(), listofPairs.end(), zort_dec);
     }
-  
-    // Get local graph.
-    const size_t nVtx = model->getLocalNumVertices();
-    ArrayView<const lno_t> edgeIds;
-    ArrayView<const lno_t> offsets;
-    ArrayView<StridedData<lno_t, scalar_t> > wgts;
-    model->getLocalEdgeList(edgeIds, offsets, wgts);
-  
-    // Store degrees together with index so we can sort.
-    std::vector<std::pair<size_t, size_t> >  degrees(nVtx);
-    for (lno_t i=0; i<(lno_t)nVtx; i++){
-      degrees[i].first  = offsets[i+1] - offsets[i];
-      degrees[i].second = i;
+
+  private:
+    bool zort_inc(std::pair<key_t,value_t> a, std::pair<key_t,value_t> b)
+    {
+      return (a.first < b.first);
     }
-  
-    // Sort degrees.
-    SortPairs<size_t,size_t> zort;
-    bool inc = true; // TODO: Add user parameter
-    zort.sort(degrees, inc);
-  
-    // Copy permuted indices to perm.
-    for (lno_t i=0; i<(lno_t)nVtx; i++){
-      perm[i] = degrees[i].second;
+    bool zort_dec(std::pair<key_t,value_t> a, std::pair<key_t,value_t> b)
+    {
+      return (a.first > b.first);
     }
-  
-    solution->setHavePerm(true);
-    return ierr;
-  }
-  
+
 };
 }
 #endif
