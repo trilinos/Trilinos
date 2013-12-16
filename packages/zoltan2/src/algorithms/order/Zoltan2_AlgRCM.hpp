@@ -135,14 +135,18 @@ class AlgRCM
       // First find an unmarked vertex, use to find root in next component.
       while ((next < nVtx) && (static_cast<Tpetra::global_size_t>(invPerm[next]) != INVALID)) next++;
 
-      // TODO: User parameter
-      std::string root_method ("psedoperipheral");
+      // Select root method. Pseudoperipheral usually gives the best
+      // ordering, but the user may choose a faster method.
+      std::string root_method = pl->get("root_method", "pseudoperipheral");
       if (root_method == string("first"))
         root = next;
       else if (root_method == string("smallest_degree"))
         root = findSmallestDegree(next, nVtx, edgeIds, offsets);
       else if (root_method == string("pseudoperipheral"))
         root = findPseudoPeripheral(next, nVtx, edgeIds, offsets);
+      else
+        // This should never happen if pl was validated.
+        ;
 
       // Label connected component starting at root
       Q.push(root);
