@@ -383,8 +383,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   // Create matrix
   matrix_values_type matrix_values =
     matrix_values_type("values", fem_graph_length, VectorSize);
-  host_matrix_values_type host_matrix_values =
+  host_matrix_values_type host_matrix_values_vec =
     Kokkos::create_mirror_view(matrix_values);
+  typename host_matrix_values_type::array_type host_matrix_values =
+    host_matrix_values_vec;
   for (Ordinal rowFEM=0, entryFEM=0; rowFEM<fem_length; ++rowFEM) {
     const Ordinal row_size = fem_graph[rowFEM].size();
     for (Ordinal rowEntryFEM=0; rowEntryFEM<row_size; ++rowEntryFEM,++entryFEM){
@@ -396,18 +398,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
       }
     }
   }
-  Kokkos::deep_copy(matrix_values, host_matrix_values);
+  Kokkos::deep_copy(matrix_values, host_matrix_values_vec);
   Matrix A("matrix", fem_length, matrix_values, matrix_graph);
 
   // Create x and y vectors
   Vector x("x", fem_length, VectorSize);
   Vector y("y", fem_length, VectorSize);
-  HostVector host_x = Kokkos::create_mirror_view(x);
+  HostVector host_x_vec = Kokkos::create_mirror_view(x);
+  typename HostVector::array_type host_x = host_x_vec;
   for (Ordinal i=0; i<fem_length; ++i)
     for (Ordinal j=0; j<VectorSize; ++j)
       host_x(i,j) = generate_vector_coefficient<Scalar>(
         fem_length, VectorSize, i, j);
-  Kokkos::deep_copy(x, host_x);
+  Kokkos::deep_copy(x, host_x_vec);
 
   // Setup DeviceConfig
   if (Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value) {

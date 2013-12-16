@@ -272,13 +272,15 @@ public:
   static const size_type NumPerThread = MatrixStorage::static_size;
 
   const matrix_type  m_A;
-  const input_vector_type  m_x;
-  output_vector_type  m_y;
+  const typename matrix_values_type::array_type m_Avals;
+  const typename input_vector_type::array_type  m_x;
+  typename output_vector_type::array_type  m_y;
 
   Multiply( const matrix_type & A,
             const input_vector_type & x,
             output_vector_type & y )
     : m_A( A )
+    , m_Avals( A.values )
     , m_x( x )
     , m_y( y )
     {}
@@ -304,7 +306,7 @@ public:
     typedef typename input_vector_type::array_layout input_layout;
     typedef typename output_vector_type::array_layout output_layout;
     size_type As[2], xs[2], ys[2];
-    m_A.values.stride(As);
+    m_Avals.stride(As);
     m_x.stride(xs);
     m_y.stride(ys);
     const bool is_cuda = is_same<device_type, Kokkos::Cuda>::value;
@@ -360,7 +362,7 @@ public:
         for ( size_type iEntry = iEntryBegin; iEntry < iEntryEnd; ++iEntry ) {
           size_type iCol = m_A.graph.entries(iEntry);
 
-          const A_scalar_type * const A = &m_A.values(iEntry,vector_offset);
+          const A_scalar_type * const A = &m_Avals(iEntry,vector_offset);
           const x_scalar_type * const x = &m_x(iCol,vector_offset);
 
           for (size_type e=0; e<NumPerThread; ++e)

@@ -76,6 +76,7 @@ struct EnsembleMultiplyKernel<MatrixType,
                               OutputVectorType,
                               NumPerThread, true> {
   typedef MatrixType matrix_type;
+  typedef typename matrix_type::values_type matrix_values_type;
   typedef InputVectorType input_vector_type;
   typedef OutputVectorType output_vector_type;
   typedef typename OutputVectorType::value_type OutputVectorValue;
@@ -85,14 +86,16 @@ struct EnsembleMultiplyKernel<MatrixType,
   typedef typename device_type::size_type size_type;
 
   const matrix_type  m_A;
-  const input_vector_type  m_x;
-  output_vector_type  m_y;
+  const typename matrix_values_type::array_type m_Avals;
+  const typename input_vector_type::array_type  m_x;
+  typename output_vector_type::array_type  m_y;
   const size_type m_row_count;
 
   EnsembleMultiplyKernel( const matrix_type & A,
                           const input_vector_type & x,
                           output_vector_type & y )
     : m_A( A )
+    , m_Avals( A.values )
     , m_x( x )
     , m_y( y )
     , m_row_count( A.graph.row_map.dimension_0()-1 )
@@ -145,7 +148,7 @@ struct EnsembleMultiplyKernel<MatrixType,
 
           for (size_type e=0, ee=threadIdx.x; e<NumPerThread;
                ++e, ee+=blockDim.x)
-            sum[e] += m_A.values(col_block+col, ee) * m_x(iCol, ee);
+            sum[e] += m_Avals(col_block+col, ee) * m_x(iCol, ee);
         }
 
       }
@@ -166,6 +169,7 @@ struct EnsembleMultiplyKernel<MatrixType,
                               OutputVectorType,
                               1, true> {
   typedef MatrixType matrix_type;
+  typedef typename matrix_type::values_type matrix_values_type;
   typedef InputVectorType input_vector_type;
   typedef OutputVectorType output_vector_type;
   typedef typename OutputVectorType::value_type OutputVectorValue;
@@ -175,14 +179,16 @@ struct EnsembleMultiplyKernel<MatrixType,
   typedef typename device_type::size_type size_type;
 
   const matrix_type  m_A;
-  const input_vector_type  m_x;
-  output_vector_type  m_y;
+  const typename matrix_values_type::array_type m_Avals;
+  const typename input_vector_type::array_type  m_x;
+  typename output_vector_type::array_type  m_y;
   const size_type m_row_count;
 
   EnsembleMultiplyKernel( const matrix_type & A,
                           const input_vector_type & x,
                           output_vector_type & y )
     : m_A( A )
+    , m_Avals( A.values )
     , m_x( x )
     , m_y( y )
     , m_row_count( A.graph.row_map.dimension_0()-1 )
@@ -230,7 +236,7 @@ struct EnsembleMultiplyKernel<MatrixType,
         for ( size_type col = 0; col < num_col; ++col ) {
           size_type iCol = sh_col[blockDim.x*threadIdx.y + col];
 
-          sum += m_A.values(col_block+col, threadIdx.x) *
+          sum += m_Avals(col_block+col, threadIdx.x) *
             m_x(iCol, threadIdx.x);
         }
 
@@ -252,6 +258,7 @@ struct EnsembleMultiplyKernel<MatrixType,
                               OutputVectorType,
                               NumPerThread, false> {
   typedef MatrixType matrix_type;
+  typedef typename matrix_type::values_type matrix_values_type;
   typedef InputVectorType input_vector_type;
   typedef OutputVectorType output_vector_type;
   typedef typename OutputVectorType::value_type OutputVectorValue;
@@ -261,14 +268,16 @@ struct EnsembleMultiplyKernel<MatrixType,
   typedef typename device_type::size_type size_type;
 
   const matrix_type  m_A;
-  const input_vector_type  m_x;
-  output_vector_type  m_y;
+  const typename matrix_values_type::array_type m_Avals;
+  const typename input_vector_type::array_type  m_x;
+  typename output_vector_type::array_type  m_y;
   const size_type m_row_count;
 
   EnsembleMultiplyKernel( const matrix_type & A,
                           const input_vector_type & x,
                           output_vector_type & y )
     : m_A( A )
+    , m_Avals( A.values )
     , m_x( x )
     , m_y( y )
     , m_row_count( A.graph.row_map.dimension_0()-1 )
@@ -290,7 +299,7 @@ struct EnsembleMultiplyKernel<MatrixType,
         size_type iCol = m_A.graph.entries(iEntry);
 
         for (size_type e=0, ee=threadIdx.x; e<NumPerThread; ++e, ee+=blockDim.x)
-          sum[e] += m_A.values(iEntry, ee) * m_x(iCol, ee);
+          sum[e] += m_Avals(iEntry, ee) * m_x(iCol, ee);
       }
 
       for (size_type e=0, ee=threadIdx.x; e<NumPerThread; ++e, ee+=blockDim.x)
@@ -311,6 +320,7 @@ struct EnsembleMultiplyKernel<MatrixType,
                               OutputVectorType,
                               1, false> {
   typedef MatrixType matrix_type;
+  typedef typename matrix_type::values_type matrix_values_type;
   typedef InputVectorType input_vector_type;
   typedef OutputVectorType output_vector_type;
   typedef typename OutputVectorType::value_type OutputVectorValue;
@@ -320,14 +330,16 @@ struct EnsembleMultiplyKernel<MatrixType,
   typedef typename device_type::size_type size_type;
 
   const matrix_type  m_A;
-  const input_vector_type  m_x;
-  output_vector_type  m_y;
+  const typename matrix_values_type::array_type m_Avals;
+  const typename input_vector_type::array_type  m_x;
+  typename output_vector_type::array_type  m_y;
   const size_type m_row_count;
 
   EnsembleMultiplyKernel( const matrix_type & A,
                           const input_vector_type & x,
                           output_vector_type & y )
     : m_A( A )
+    , m_Avals( A.values )
     , m_x( x )
     , m_y( y )
     , m_row_count( A.graph.row_map.dimension_0()-1 )
@@ -343,7 +355,7 @@ struct EnsembleMultiplyKernel<MatrixType,
 
       scalar_type sum = 0;
       for (size_type iEntry = iEntryBegin; iEntry < iEntryEnd; ++iEntry) {
-        sum += m_A.values(iEntry, threadIdx.x) *
+        sum += m_Avals(iEntry, threadIdx.x) *
           m_x(m_A.graph.entries(iEntry), threadIdx.x);
       }
       m_y(iRow, threadIdx.x) = sum;

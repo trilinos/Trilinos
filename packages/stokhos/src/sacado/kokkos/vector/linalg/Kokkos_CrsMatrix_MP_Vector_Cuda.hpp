@@ -76,6 +76,8 @@ struct EnsembleMultiplyKernel<MatrixType,
                               OutputVectorType,
                               NumPerThread, true> {
   typedef MatrixType matrix_type;
+  typedef typename matrix_type::values_type matrix_values_type;
+  typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef InputVectorType input_vector_type;
   typedef OutputVectorType output_vector_type;
   typedef typename OutputVectorType::value_type OutputVectorValue;
@@ -84,25 +86,20 @@ struct EnsembleMultiplyKernel<MatrixType,
   typedef typename Kokkos::Cuda device_type;
   typedef typename device_type::size_type size_type;
 
-  const matrix_type  m_A;
-  const input_vector_type  m_x;
-  output_vector_type  m_y;
+  const matrix_graph_type  m_Agraph;
+  const typename matrix_values_type::array_type m_Avals;
+  const typename input_vector_type::array_type  m_x;
+  typename output_vector_type::array_type  m_y;
   const size_type m_row_count;
-
-  const typename matrix_type::values_type::array_type m_Avals ;
-  const typename input_vector_type::array_type  m_Xvals ;
-  const typename output_vector_type::array_type m_Yvals ;
 
   EnsembleMultiplyKernel( const matrix_type & A,
                           const input_vector_type & x,
                           output_vector_type & y )
-    : m_A( A )
+    : m_Agraph( A.graph )
+    , m_Avals( A.values )
     , m_x( x )
     , m_y( y )
     , m_row_count( A.graph.row_map.dimension_0()-1 )
-    , m_Avals( A.values )
-    , m_Xvals( x )
-    , m_Yvals( y )
     {}
 
   __device__
@@ -122,7 +119,7 @@ struct EnsembleMultiplyKernel<MatrixType,
       block_row+blockDim.y+1 <= m_row_count+1 ? blockDim.y+1 :
       m_row_count+1 - block_row;
     for (size_type i=tid; i<num_row; i+=nid)
-      sh_row[i] = m_A.graph.row_map[block_row+i];
+      sh_row[i] = m_Agraph.row_map[block_row+i];
     __syncthreads();
 
     const size_type iRow = block_row + threadIdx.y;
@@ -145,24 +142,21 @@ struct EnsembleMultiplyKernel<MatrixType,
         // Note:  it might be a little faster if we ensured aligned access
         // to m_A.graph.entries() and m_A.values() below.
         if (threadIdx.x < num_col)
-          sh_col[tid] =
-            m_A.graph.entries(col_block+threadIdx.x);
+          sh_col[tid] = m_Agraph.entries(col_block+threadIdx.x);
 
         for ( size_type col = 0; col < num_col; ++col ) {
           size_type iCol = sh_col[blockDim.x*threadIdx.y + col];
 
           for (size_type e=0, ee=threadIdx.x; e<NumPerThread;
                ++e, ee+=blockDim.x) {
-            // sum[e] += m_A.values(col_block+col, ee) * m_x(iCol, ee);
-            sum[e] += m_Avals(col_block+col, ee) * m_Xvals(iCol, ee);
+            sum[e] += m_Avals(col_block+col, ee) * m_x(iCol, ee);
           }
         }
 
       }
 
       for (size_type e=0, ee=threadIdx.x; e<NumPerThread; ++e, ee+=blockDim.x) {
-        // m_y(iRow, ee) = sum[e];
-        m_Yvals(iRow, ee) = sum[e];
+        m_y(iRow, ee) = sum[e];
       }
     }
   } // operator()
@@ -178,6 +172,8 @@ struct EnsembleMultiplyKernel<MatrixType,
                               OutputVectorType,
                               1, true> {
   typedef MatrixType matrix_type;
+  typedef typename matrix_type::values_type matrix_values_type;
+  typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef InputVectorType input_vector_type;
   typedef OutputVectorType output_vector_type;
   typedef typename OutputVectorType::value_type OutputVectorValue;
@@ -186,25 +182,20 @@ struct EnsembleMultiplyKernel<MatrixType,
   typedef typename Kokkos::Cuda device_type;
   typedef typename device_type::size_type size_type;
 
-  const matrix_type  m_A;
-  const input_vector_type  m_x;
-  output_vector_type  m_y;
+  const matrix_graph_type  m_Agraph;
+  const typename matrix_values_type::array_type m_Avals;
+  const typename input_vector_type::array_type  m_x;
+  typename output_vector_type::array_type  m_y;
   const size_type m_row_count;
-
-  const typename matrix_type::values_type::array_type m_Avals ;
-  const typename input_vector_type::array_type  m_Xvals ;
-  const typename output_vector_type::array_type m_Yvals ;
 
   EnsembleMultiplyKernel( const matrix_type & A,
                           const input_vector_type & x,
                           output_vector_type & y )
-    : m_A( A )
+    : m_Agraph( A.graph )
+    , m_Avals( A.values )
     , m_x( x )
     , m_y( y )
     , m_row_count( A.graph.row_map.dimension_0()-1 )
-    , m_Avals( A.values )
-    , m_Xvals( x )
-    , m_Yvals( y )
     {}
 
   __device__
@@ -224,7 +215,7 @@ struct EnsembleMultiplyKernel<MatrixType,
       block_row+blockDim.y+1 <= m_row_count+1 ? blockDim.y+1 :
       m_row_count+1 - block_row;
     for (size_type i=tid; i<num_row; i+=nid)
-      sh_row[i] = m_A.graph.row_map[block_row+i];
+      sh_row[i] = m_Agraph.row_map[block_row+i];
     __syncthreads();
 
     const size_type iRow = block_row + threadIdx.y;
@@ -245,20 +236,17 @@ struct EnsembleMultiplyKernel<MatrixType,
         // Note:  it might be a little faster if we ensured aligned access
         // to m_A.graph.entries() and m_A.values() below.
         if (threadIdx.x < num_col)
-          sh_col[tid] = m_A.graph.entries(col_block+threadIdx.x);
+          sh_col[tid] = m_Agraph.entries(col_block+threadIdx.x);
 
         for ( size_type col = 0; col < num_col; ++col ) {
           size_type iCol = sh_col[blockDim.x*threadIdx.y + col];
 
-          // sum += m_A.values(col_block+col, threadIdx.x) *
-          //   m_x(iCol, threadIdx.x);
-          sum += m_Avals(col_block+col, threadIdx.x) * m_Xvals(iCol, threadIdx.x);
+          sum += m_Avals(col_block+col, threadIdx.x) * m_x(iCol, threadIdx.x);
         }
 
       }
 
-      // m_y(iRow, threadIdx.x) = sum;
-      m_Yvals(iRow, threadIdx.x) = sum;
+      m_y(iRow, threadIdx.x) = sum;
     }
   } // operator()
 };
@@ -274,6 +262,8 @@ struct EnsembleMultiplyKernel<MatrixType,
                               OutputVectorType,
                               NumPerThread, false> {
   typedef MatrixType matrix_type;
+  typedef typename matrix_type::values_type matrix_values_type;
+  typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef InputVectorType input_vector_type;
   typedef OutputVectorType output_vector_type;
   typedef typename OutputVectorType::value_type OutputVectorValue;
@@ -282,15 +272,17 @@ struct EnsembleMultiplyKernel<MatrixType,
   typedef typename Kokkos::Cuda device_type;
   typedef typename device_type::size_type size_type;
 
-  const matrix_type  m_A;
-  const input_vector_type  m_x;
-  output_vector_type  m_y;
+  const matrix_graph_type  m_Agraph;
+  const typename matrix_values_type::array_type m_Avals;
+  const typename input_vector_type::array_type  m_x;
+  typename output_vector_type::array_type  m_y;
   const size_type m_row_count;
 
   EnsembleMultiplyKernel( const matrix_type & A,
                           const input_vector_type & x,
                           output_vector_type & y )
-    : m_A( A )
+    : m_Agraph( A.graph )
+    , m_Avals( A.values )
     , m_x( x )
     , m_y( y )
     , m_row_count( A.graph.row_map.dimension_0()-1 )
@@ -302,17 +294,17 @@ struct EnsembleMultiplyKernel<MatrixType,
     const size_type iRow = blockDim.y*blockIdx.x + threadIdx.y;
     if (iRow < m_row_count) {
       scalar_type sum[NumPerThread];
-      const size_type iEntryBegin = m_A.graph.row_map[iRow];
-      const size_type iEntryEnd   = m_A.graph.row_map[iRow+1];
+      const size_type iEntryBegin = m_Agraph.row_map[iRow];
+      const size_type iEntryEnd   = m_Agraph.row_map[iRow+1];
 
       for (size_type e=0; e<NumPerThread; ++e)
         sum[e] = 0;
 
       for ( size_type iEntry = iEntryBegin; iEntry < iEntryEnd; ++iEntry ) {
-        size_type iCol = m_A.graph.entries(iEntry);
+        size_type iCol = m_Agraph.entries(iEntry);
 
         for (size_type e=0, ee=threadIdx.x; e<NumPerThread; ++e, ee+=blockDim.x)
-          sum[e] += m_A.values(iEntry, ee) * m_x(iCol, ee);
+          sum[e] += m_Avals(iEntry, ee) * m_x(iCol, ee);
       }
 
       for (size_type e=0, ee=threadIdx.x; e<NumPerThread; ++e, ee+=blockDim.x)
@@ -333,6 +325,8 @@ struct EnsembleMultiplyKernel<MatrixType,
                               OutputVectorType,
                               1, false> {
   typedef MatrixType matrix_type;
+  typedef typename matrix_type::values_type matrix_values_type;
+  typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef InputVectorType input_vector_type;
   typedef OutputVectorType output_vector_type;
   typedef typename OutputVectorType::value_type OutputVectorValue;
@@ -341,25 +335,20 @@ struct EnsembleMultiplyKernel<MatrixType,
   typedef typename Kokkos::Cuda device_type;
   typedef typename device_type::size_type size_type;
 
-  const matrix_type  m_A;
-  const input_vector_type  m_x;
-  output_vector_type  m_y;
+  const matrix_graph_type  m_Agraph;
+  const typename matrix_values_type::array_type m_Avals;
+  const typename input_vector_type::array_type  m_x;
+  typename output_vector_type::array_type  m_y;
   const size_type m_row_count;
-
-  const typename matrix_type::values_type::array_type m_Avals ;
-  const typename input_vector_type::array_type  m_Xvals ;
-  const typename output_vector_type::array_type m_Yvals ;
 
   EnsembleMultiplyKernel( const matrix_type & A,
                           const input_vector_type & x,
                           output_vector_type & y )
-    : m_A( A )
+    : m_Agraph( A.graph )
+    , m_Avals( A.values )
     , m_x( x )
     , m_y( y )
     , m_row_count( A.graph.row_map.dimension_0()-1 )
-    , m_Avals( A.values )
-    , m_Xvals( x )
-    , m_Yvals( y )
     {}
 
   __device__
@@ -367,15 +356,15 @@ struct EnsembleMultiplyKernel<MatrixType,
   {
     const size_type iRow = blockDim.y*blockIdx.x + threadIdx.y;
     if (iRow < m_row_count) {
-      const size_type iEntryBegin = m_A.graph.row_map[iRow];
-      const size_type iEntryEnd   = m_A.graph.row_map[iRow+1];
+      const size_type iEntryBegin = m_Agraph.row_map[iRow];
+      const size_type iEntryEnd   = m_Agraph.row_map[iRow+1];
 
       scalar_type sum = 0;
       for (size_type iEntry = iEntryBegin; iEntry < iEntryEnd; ++iEntry) {
         sum += m_Avals(iEntry, threadIdx.x) *
-          m_Xvals(m_A.graph.entries(iEntry),threadIdx.x);
+          m_x(m_Agraph.entries(iEntry),threadIdx.x);
       }
-      m_Yvals(iRow,threadIdx.x) = sum;
+      m_y(iRow,threadIdx.x) = sum;
     }
   } // operator()
 };

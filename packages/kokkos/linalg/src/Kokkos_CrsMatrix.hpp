@@ -398,12 +398,6 @@ public:
   // state mechanism.
   DeviceConfig dev_config;
 
-  // FIXME (mfh 28 Sep 2013) std::vector should never appear in this
-  // class, except perhaps as an input format for compatibility.
-
-  std::vector<OrdinalType> h_entries_;
-  std::vector<OrdinalType> rows_;
-
   /// \brief Default constructor; constructs an empty sparse matrix.
   ///
   /// FIXME (mfh 09 Aug 2013) numRows, numCols, and nnz should be

@@ -403,22 +403,17 @@ public:
   static const size_type NumPerThread = MatrixStorage::static_size;
 
   const matrix_type  m_A;
-  const input_vector_type  m_x;
-  output_vector_type  m_y;
-
-  const typename matrix_values_type::array_type m_Avals ;
-  const typename input_vector_type::array_type  m_Xvals ;
-  const typename output_vector_type::array_type m_Yvals ;
+  const typename matrix_values_type::array_type m_Avals;
+  const typename input_vector_type::array_type  m_x;
+  typename output_vector_type::array_type  m_y;
 
   Multiply( const matrix_type & A,
             const input_vector_type & x,
             output_vector_type & y )
     : m_A( A )
+    , m_Avals( A.values )
     , m_x( x )
     , m_y( y )
-    , m_Avals( A.values )
-    , m_Xvals( x )
-    , m_Yvals( y )
     {}
 
   KOKKOS_INLINE_FUNCTION
@@ -473,8 +468,7 @@ public:
         const size_type iEntryBegin = m_A.graph.row_map[iRow];
         const size_type iEntryEnd   = m_A.graph.row_map[iRow+1];
 
-        // y_scalar_type * const y = &m_y(iRow,vector_offset);
-        y_scalar_type * const y = &m_Yvals(iRow,vector_offset);
+        y_scalar_type * const y = &m_y(iRow,vector_offset);
 
         for (size_type e=0; e<NumPerThread; ++e)
           sum[e] = 0;
@@ -482,10 +476,8 @@ public:
         for ( size_type iEntry = iEntryBegin; iEntry < iEntryEnd; ++iEntry ) {
           size_type iCol = m_A.graph.entries(iEntry);
 
-          // const A_scalar_type * const A = &m_A.values(iEntry,vector_offset);
-          // const x_scalar_type * const x = &m_x(iCol,vector_offset);
           const A_scalar_type * const A = &m_Avals(iEntry,vector_offset);
-          const x_scalar_type * const x = &m_Xvals(iCol,vector_offset);
+          const x_scalar_type * const x = &m_x(iCol,vector_offset);
 
           for (size_type e=0; e<NumPerThread; ++e)
             sum[e] += A[e*stride] * x[e*stride];
@@ -540,7 +532,7 @@ MV_Multiply(
   const Kokkos::CrsMatrix<Sacado::MP::Vector<MatrixStorage>,MatrixOrdinal,MatrixDevice,MatrixMemory,MatrixSize>& A,
   const InputVectorType& x)
 {
-  //typedef DefaultMultiply Tag;
+  //typedef Stokhos::DefaultMultiply Tag;
   typedef Stokhos::EnsembleMultiply Tag;
   Stokhos::multiply(A, x, y, Tag());
 }
