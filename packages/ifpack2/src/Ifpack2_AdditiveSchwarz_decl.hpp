@@ -525,12 +525,18 @@ private:
                          local_ordinal_type,
                          global_ordinal_type,
                          node_type> prec_type;
-protected:
+
   //! Copy constructor (unimplemented; do not use)
   AdditiveSchwarz (const AdditiveSchwarz& RHS);
 
   //! Set up the localized matrix and the singleton filter.
   void setup ();
+
+  //! The current inner preconditioner name.
+  std::string innerPrecName () const;
+
+  //! The default inner preconditioner name.
+  static std::string defaultInnerPrecName ();
 
   /// \brief The matrix to be preconditioned.
   ///

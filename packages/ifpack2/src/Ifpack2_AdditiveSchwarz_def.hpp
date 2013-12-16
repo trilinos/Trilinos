@@ -85,7 +85,13 @@ template<class PrecType>
 class OneLevelPreconditionerNamer {
 public:
   //! Name corresponding to Preconditioner subclass PrecType.
-  static std::string name ();
+  static std::string name () {
+    // This is the default name for any preconditioner type for which
+    // a partial specialization does not exist.  We make this "ILUT"
+    // for backwards compatibility with the original AdditiveSchwarz
+    // implementation.
+    return "ILUT";
+  }
 };
 
 //
@@ -159,6 +165,31 @@ public:
 };
 
 } // namespace Details
+
+
+template<class MatrixType, class LocalInverseType>
+std::string
+AdditiveSchwarz<MatrixType, LocalInverseType>::innerPrecName () const
+{
+  // TODO (mfh 14 Dec 2013) Add an "inner preconditioner" string
+  // parameter to the input ParameterList, rather than using a default
+  // name.  (The default name currently comes from the
+  // LocalInverseType template parameter, which will go away.)
+  return defaultInnerPrecName ();
+}
+
+
+template<class MatrixType, class LocalInverseType>
+std::string
+AdditiveSchwarz<MatrixType, LocalInverseType>::defaultInnerPrecName ()
+{
+  // FIXME (mfh 14 Dec 2013) We want to get rid of the
+  // LocalInverseType template parameter.  Soon, we will add an "inner
+  // preconditioner" string parameter to the input ParameterList.  For
+  // now, we map statically from LocalInverseType to its string name,
+  // and use the string name to create the inner preconditioner.
+  return Details::OneLevelPreconditionerNamer<LocalInverseType>::name ();
+}
 
 
 template<class MatrixType, class LocalInverseType>
@@ -1163,46 +1194,46 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
     "setup: Inner matrix is null right before constructing inner solver.  "
     "Please report this bug to the Ifpack2 developers.");
 
-  // Construct the inner solver if necessary.  We go through a bit
-  // more trouble than usual to do so, because we want to exercise the
-  // new setInnerPreconditioner feature.
+  // Construct the inner solver if necessary.
   if (Inverse_.is_null ()) {
-    // FIXME (mfh 13 Dec 2013) We want to get rid of the
-    // LocalInverseType template parameter.  Soon, we will add an
-    // "inner preconditioner" string parameter to the input
-    // ParameterList.  For now, we map statically from
-    // LocalInverseType to its string name, and use the string name to
-    // create the inner preconditioner.
-    const std::string innerPrecName =
-      Details::OneLevelPreconditionerNamer<LocalInverseType>::name ();
+    const std::string innerName = innerPrecName ();
 
-    // The second null argument refers to the inner preconditioner's
-    // matrix.  We don't know it yet so we leave it null.
     Details::OneLevelFactory<MatrixType> factory;
-    RCP<prec_type> innerPrec = factory.create (innerPrecName, Teuchos::null);
+    RCP<prec_type> innerPrec = factory.create (innerName, innerMatrix_);
     TEUCHOS_TEST_FOR_EXCEPTION(
       innerPrec.is_null (), std::logic_error,
       "Ifpack2::AdditiveSchwarz::setup: Failed to create inner preconditioner "
-      "with name \"" << innerPrecName << "\".");
-
-    // Make sure that the new inner solver knows how to have its matrix changed.
-    typedef Details::CanChangeMatrix<row_matrix_type> can_change_type;
-    can_change_type* innerSolver = dynamic_cast<can_change_type*> (innerPrec.getRawPtr ());
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      innerSolver == NULL, std::invalid_argument, "Ifpack2::AdditiveSchwarz::"
-      "setup: The input preconditioner does not implement the setMatrix()"
-      "feature.  Only input preconditioners that inherit from Ifpack2::Details"
-      "::CanChangeMatrix implement this feature.");
+      "with name \"" << innerName << "\".");
 
     Inverse_ = innerPrec;
   }
+  else if (Inverse_->getMatrix ().getRawPtr () != innerMatrix_.getRawPtr ()) {
+    // The new inner matrix is different from the inner
+    // preconditioner's current matrix, so give the inner
+    // preconditioner the new inner matrix.  First make sure that the
+    // inner solver knows how to have its matrix changed.
+    typedef Details::CanChangeMatrix<row_matrix_type> can_change_type;
+    can_change_type* innerSolver =
+      dynamic_cast<can_change_type*> (Inverse_.getRawPtr ());
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      innerSolver == NULL, std::invalid_argument, "Ifpack2::AdditiveSchwarz::"
+      "setup: The current inner preconditioner does not implement the "
+      "setMatrix() feature.  Only preconditioners that inherit from "
+      "Ifpack2::Details::CanChangeMatrix implement this feature.");
 
+    // Give the new inner matrix to the inner preconditioner.
+    innerSolver->setMatrix (innerMatrix_);
+  }
   TEUCHOS_TEST_FOR_EXCEPTION(
     Inverse_.is_null (), std::logic_error, "Ifpack2::AdditiveSchwarz::"
     "setup: Inverse_ is null right after we were supposed to have created it."
     "  Please report this bug to the Ifpack2 developers.");
 
-  setInnerPreconditioner (Inverse_);
+  // We don't have to call setInnerPreconditioner() here, because we
+  // had the inner matrix (innerMatrix_) before creation of the inner
+  // preconditioner.  Calling setInnerPreconditioner here would be
+  // legal, but it would require an unnecessary reset of the inner
+  // preconditioner (i.e., calling initialize() and compute() again).
 }
 
 
