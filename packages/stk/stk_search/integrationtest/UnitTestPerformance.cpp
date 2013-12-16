@@ -1,4 +1,4 @@
-#include <stk_search/CoarseSearch.hpp>
+// #include <stk_search/CoarseSearch.hpp>
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search/IdentProc.hpp>
 #include <stk_util/util/memory_util.hpp>
@@ -20,6 +20,8 @@
 #include <search/ContactCommunication.h>
 
 #include <exodusMeshInterface.h>
+#include <stk_search/CoarseSearch.hpp>
+
 
 extern int gl_argc;
 extern char** gl_argv;
