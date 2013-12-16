@@ -70,15 +70,18 @@ void printPeformanceStats(double elapsedTime, MPI_Comm comm);
 void createBoundingBoxForElement(const sierra::Mesh::LocalNodeId *connectivity, const int numNodesPerElement,
         const std::vector<double> &coordinates, std::vector<double>& boxCoordinates);
 void writeExodusFileUsingBoxes(const std::vector<mybox> & boxes, const std::string &filename);
-void runStkSearchTest(stk::search::SearchMethod search);
+void runStkSearchTestUsingStkAABoxes(stk::search::SearchMethod search);
+void runStkSearchTestUsingGtkAABoxes(stk::search::SearchMethod search);
 void printSumOfResults(MPI_Comm comm, const size_t sizeResults);
 void testGtkSearch(MPI_Comm comm, const std::vector<mybox>&domainBoxes, SearchResults& boxIdPairResults);
 void fillBoxesUsingSidesetsFromFile(MPI_Comm comm, const std::string& filename, std::vector<mybox> &domainBoxes);
 void writeExodusFileUsingBoxes(const std::vector<mybox>& boxes, const std::string &filename);
 void testPerformanceOfAxisAlignedBoundingBoxes(stk::search::SearchMethod searchMethod, MPI_Comm comm);
 std::string getOption(const std::string& option, const std::string defaultString = std::string("false"));
-void testStkSearch(MPI_Comm comm, std::vector<mybox> &domainBoxes,
+void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<mybox> &domainBoxes,
         stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults);
+void testStkSearchUsingGtkAABoxes(MPI_Comm comm, std::vector<mybox> &domainBoxes,
+                stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults);
 void fillDomainBoxes(MPI_Comm comm, std::vector<mybox>& domainBoxes);
 
 TEST(Performance, ofAxisAlignedBoundingBoxesUsingOctTree)
@@ -169,24 +172,44 @@ void testPerformanceOfAxisAlignedBoundingBoxes(stk::search::SearchMethod searchM
 
 ////////////////////////////////////////////////////////////
 
-TEST(Performance, stkSearchUsingBoost)
+TEST(Performance, stkSearchUsingBoostUsingStkAABoxes)
 {
-    runStkSearchTest(stk::search::BOOST_RTREE);
+    runStkSearchTestUsingStkAABoxes(stk::search::BOOST_RTREE);
 }
 
-TEST(Performance, stkSearchUsingOcttree)
+TEST(Performance, stkSearchUsingOcttreeUsingStkAABoxes)
 {
-    runStkSearchTest(stk::search::OCTREE);
+    runStkSearchTestUsingStkAABoxes(stk::search::OCTREE);
 }
 
-void runStkSearchTest(stk::search::SearchMethod searchMethod)
+TEST(Performance, stkSearchUsingBoostUsingGtkAABoxes)
+{
+    runStkSearchTestUsingGtkAABoxes(stk::search::BOOST_RTREE);
+}
+
+TEST(Performance, stkSearchUsingOcttreeUsingGtkAABoxes)
+{
+    runStkSearchTestUsingGtkAABoxes(stk::search::OCTREE);
+}
+
+void runStkSearchTestUsingGtkAABoxes(stk::search::SearchMethod searchMethod)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
     std::vector<mybox> domainBoxes;
     fillDomainBoxes(comm, domainBoxes);
 
     SearchResults boxIdPairResults;
-    testStkSearch(comm, domainBoxes, searchMethod, boxIdPairResults);
+    testStkSearchUsingGtkAABoxes(comm, domainBoxes, searchMethod, boxIdPairResults);
+}
+
+void runStkSearchTestUsingStkAABoxes(stk::search::SearchMethod searchMethod)
+{
+    MPI_Comm comm = MPI_COMM_WORLD;
+    std::vector<mybox> domainBoxes;
+    fillDomainBoxes(comm, domainBoxes);
+
+    SearchResults boxIdPairResults;
+    testStkSearchUsingStkAABoxes(comm, domainBoxes, searchMethod, boxIdPairResults);
 }
 
 TEST(Performance, gtkSearch)
@@ -293,7 +316,87 @@ void testGtkSearch(MPI_Comm comm, const std::vector<mybox>&inputBoxes, SearchRes
     printSumOfResults(comm, searchResults.size());
 }
 
-void testStkSearch(MPI_Comm comm, std::vector<mybox> &domainBoxes,
+void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<mybox> &domainBoxes,
+        stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults)
+{
+    check_valgrind_version();
+    CALLGRIND_START_INSTRUMENTATION;
+
+    int procId=-1;
+    MPI_Comm_rank(comm, &procId);
+
+    int numProc=-1;
+    MPI_Comm_size(comm, &numProc);
+
+    BoxVector stkBoxes(domainBoxes.size());
+    for (size_t i=0;i<domainBoxes.size();i++)
+    {
+        Point min(domainBoxes[i].coordinates[0], domainBoxes[i].coordinates[1], domainBoxes[i].coordinates[2]);
+        Point max(domainBoxes[i].coordinates[3], domainBoxes[i].coordinates[4], domainBoxes[i].coordinates[5]);
+        Ident domainBoxId(i, procId);
+        stkBoxes[i] = std::make_pair(Box(min,max), domainBoxId);
+    }
+
+    CALLGRIND_TOGGLE_COLLECT;
+
+    double startTime = stk::wall_time();
+    stk::search::coarse_search(stkBoxes, stkBoxes, searchMethod, comm, boxIdPairResults);
+    double elapsedTime = stk::wall_time() - startTime;
+
+    CALLGRIND_TOGGLE_COLLECT;
+    CALLGRIND_STOP_INSTRUMENTATION;
+
+    printPeformanceStats(elapsedTime, comm);
+    print_debug_skip(comm);
+
+    int procIdDestination = 0;
+    stk::CommAll gather(comm);
+    for (int phase=0; phase<2; ++phase)
+    {
+        if ( procId != procIdDestination )
+        {
+            for (size_t j=0;j<boxIdPairResults.size();++j)
+            {
+                gather.send_buffer(procIdDestination).pack< std::pair<Ident, Ident> >(boxIdPairResults[j]);
+            }
+        }
+
+        if (phase == 0) { //allocation phase
+          gather.allocate_buffers( numProc / 4 );
+        }
+        else { // communication phase
+          gather.communicate();
+        }
+    }
+
+    if ( procId == procIdDestination )
+    {
+        for ( int p = 0 ; p < numProc ; ++p )
+        {
+            stk::CommBuffer &buf = gather.recv_buffer( p );
+            while ( buf.remaining() )
+            {
+                std::pair<Ident, Ident> temp;
+                buf.unpack< std::pair<Ident, Ident> >( temp );
+                boxIdPairResults.push_back(temp);
+            }
+        }
+        std::sort(boxIdPairResults.begin(), boxIdPairResults.end());
+        SearchResults::iterator iter_end = std::unique(boxIdPairResults.begin(), boxIdPairResults.end());
+        boxIdPairResults.erase(iter_end, boxIdPairResults.end());
+        size_t goldValueNumber=getGoldValueForTest();
+        if ( goldValueNumber != 0u)
+        {
+            EXPECT_EQ(goldValueNumber, boxIdPairResults.size());
+        }
+        else
+        {
+            std::cerr << "Number of interactions: " << boxIdPairResults.size() << std::endl;
+        }
+    }
+}
+
+void testStkSearchUsingGtkAABoxes(MPI_Comm comm, std::vector<mybox> &domainBoxes,
         stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults)
 {
     check_valgrind_version();
