@@ -60,6 +60,11 @@ namespace Zoltan2{
 template <typename Adapter>
 class AlgRCM
 {
+  private:
+    typedef typename Adapter::lno_t lno_t;
+    typedef typename Adapter::gno_t gno_t;
+    typedef typename Adapter::scalar_t scalar_t;
+  
   public:
   AlgRCM()
   {
@@ -73,10 +78,6 @@ class AlgRCM
     const RCP<Teuchos::Comm<int> > &comm
   )
   {
-    typedef typename Adapter::lno_t lno_t;
-    typedef typename Adapter::gno_t gno_t;
-    typedef typename Adapter::scalar_t scalar_t;
-  
     int ierr= 0;
   
     HELLO;
@@ -121,16 +122,28 @@ class AlgRCM
       invPerm[i] = INVALID;
     }
   
-    // TODO: Find min-degree (or pseudo-peripheral) root vertex.
-    lno_t root = 0;
-  
-    // Do BFS from root
+    // Loop over all connected components.
+    // Do BFS within each component.
+    lno_t root;
     std::queue<lno_t> Q;
     size_t count = 0; // CM label, reversed later
-    size_t next = 0;
+    size_t next = 0;  // next unmarked vertex
   
     while (count < nVtx) {
   
+      // Find suitable root vertex for this component.
+      // First find an unmarked vertex, use to find root in next component.
+      while ((next < nVtx) && (static_cast<Tpetra::global_size_t>(invPerm[next]) != INVALID)) next++;
+
+      // TODO: User parameter
+      std::string root_method ("psedoperipheral");
+      if (root_method == string("first"))
+        root = next;
+      else if (root_method == string("smallest_degree"))
+        root = findSmallestDegree(next, nVtx, edgeIds, offsets);
+      else if (root_method == string("pseudoperipheral"))
+        root = findPseudoPeripheral(next, nVtx, edgeIds, offsets);
+
       // Label connected component starting at root
       Q.push(root);
       //cout << "Debug: invPerm[" << root << "] = " << count << endl;
@@ -142,22 +155,18 @@ class AlgRCM
         Q.pop();
         //cout << "Debug: v= " << v << ", offsets[v] = " << offsets[v] << endl;
   
-        // Add unmarked nbors to queue
-        // TODO: If edge weights, sort nbors by decreasing weight,
-        // TODO: Else, sort nbors by increasing degree
+        // Add unmarked children to queue
+        // TODO: If edge weights, sort children by decreasing weight,
+        // TODO: Else, sort children by increasing degree
         for (lno_t ptr = offsets[v]; ptr < offsets[v+1]; ++ptr){
-  	lno_t nbor = edgeIds[ptr];
-  	if (static_cast<Tpetra::global_size_t>(invPerm[nbor]) == INVALID){
-  	  //cout << "Debug: invPerm[" << nbor << "] = " << count << endl;
-  	  invPerm[nbor] = count++; // Label as we push on Q
-  	  Q.push(nbor);
-  	}
+          lno_t child = edgeIds[ptr];
+          if (static_cast<Tpetra::global_size_t>(invPerm[child]) == INVALID){
+            //cout << "Debug: invPerm[" << child << "] = " << count << endl;
+            invPerm[child] = count++; // Label as we push on Q
+            Q.push(child);
+          }
         }
       }
-  
-      // Find an unmarked vertex, use as new root
-      while ((next < nVtx) && (static_cast<Tpetra::global_size_t>(invPerm[next]) != INVALID)) next++;
-      root = next;
     }
   
     // Reverse labels for RCM
@@ -174,6 +183,84 @@ class AlgRCM
   
     solution->setHaveInverse(true);
     return ierr;
+  }
+
+  private:
+  // Find a smallest degree vertex in component containing v
+  lno_t findSmallestDegree(
+    lno_t v,
+    lno_t nVtx,
+    ArrayView<const gno_t> edgeIds,
+    ArrayView<const lno_t> offsets)
+  {
+    std::queue<lno_t> Q;
+    std::vector<bool> mark(nVtx);
+
+    // Do BFS and compute smallest degree as we go
+    lno_t smallestDegree = nVtx;
+    lno_t smallestVertex = 0;
+
+    // Clear mark array - nothing marked yet
+    for (int i=0; i<nVtx; i++)
+      mark[i] = false;
+
+    // Start from v
+    Q.push(v);
+    while (Q.size()){
+      // Get first vertex from the queue
+      v = Q.front();
+      Q.pop();
+      // Check degree of v
+      lno_t deg = offsets[v+1] - offsets[v];
+      if (deg < smallestDegree){
+        smallestDegree = deg;
+        smallestVertex = v;
+      }
+      // Add unmarked children to queue
+      for (lno_t ptr = offsets[v]; ptr < offsets[v+1]; ++ptr){
+        lno_t child = edgeIds[ptr];
+        if (!mark[child]){
+          mark[child] = true; 
+          Q.push(child);
+        }
+      }
+    }
+    return smallestVertex;
+  }
+
+  // Find a pseudoperipheral vertex in component containing v
+  lno_t findPseudoPeripheral(
+    lno_t v,
+    lno_t nVtx,
+    ArrayView<const gno_t> edgeIds,
+    ArrayView<const lno_t> offsets)
+  {
+    std::queue<lno_t> Q;
+    std::vector<bool> mark(nVtx);
+
+    // Do BFS a couple times, pick vertex last visited (furthest away)
+    const int numBFS = 2;
+    for (int bfs=0; bfs<numBFS; bfs++){
+      // Clear mark array - nothing marked yet
+      for (int i=0; i<nVtx; i++)
+        mark[i] = false;
+      // Start from v
+      Q.push(v);
+      while (Q.size()){
+        // Get first vertex from the queue
+        v = Q.front();
+        Q.pop();
+        // Add unmarked children to queue
+        for (lno_t ptr = offsets[v]; ptr < offsets[v+1]; ++ptr){
+          lno_t child = edgeIds[ptr];
+          if (!mark[child]){
+            mark[child] = true; 
+            Q.push(child);
+          }
+        }
+      }
+    }
+    return v;
   }
   
 };
