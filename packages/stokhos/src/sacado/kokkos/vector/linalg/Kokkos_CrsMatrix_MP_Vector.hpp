@@ -173,8 +173,6 @@ public:
 
 namespace Stokhos {
 
-<<<<<<< HEAD:packages/stokhos/src/sacado/kokkos/Stokhos_CrsMatrix_MP_Vector.hpp
-=======
 // Specialization of ViewRank<> for View< Sacado::MP::Vector<...>,...> since
 // the rank enum for the view specialization isn't right
 template <typename Storage, typename L, typename D, typename M, typename S>
@@ -184,7 +182,6 @@ struct ViewRank< Kokkos::View<Sacado::MP::Vector<Storage>*,L,D,M,S> > {
 
 namespace details {
 
->>>>>>> Stokhos:  Re-arranging Sacado/Kokkos/LinAlg-related MP::Vector code.:packages/stokhos/src/sacado/kokkos/vector/linalg/Kokkos_CrsMatrix_MP_Vector.hpp
 /*
  * Compute work range = (begin, end) such that adjacent threads/blocks write to
  * separate cache lines
