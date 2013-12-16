@@ -369,10 +369,6 @@ void coarse_search_boost_rtree( std::vector< std::pair<DomainBox,DomainIdent> > 
         Output temp(domain_id, range_id);
         output.push_back(temp);
 
-        if (impl::get_proc<DomainIdent>()(domain_id) != p_rank) {
-          ThrowErrorMsg("coarse_search_boost_rtree() --- local_domain_tree assumption has been violated\n.");
-        }
-
         if ((p_size > 1)
             && (
                 impl::get_proc<DomainIdent>()(domain_id) != p_rank
