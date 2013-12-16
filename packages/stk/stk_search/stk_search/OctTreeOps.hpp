@@ -20,6 +20,8 @@
 
 #include <TPI.h>
 
+#define COARSE_SEARCH_OCTTREE_COMMUNICATE_TO_RANGE_OWNER 1
+
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
@@ -507,17 +509,23 @@ void communicate(
 
   for ( i = send_relation.begin() ; i != send_relation.end() ; ++i ) {
     const ValueType & val = *i ;
-    if ( static_cast<int>(val.first.proc()) == p_rank || static_cast<int>(val.second.proc()) == p_rank ) {
+    if ( static_cast<int>(val.first.proc()) == p_rank
+#if COARSE_SEARCH_OCTTREE_COMMUNICATE_TO_RANGE_OWNER
+        || static_cast<int>(val.second.proc()) == p_rank
+#endif
+        ) {
       recv_relation.insert( val );
     }
     if ( static_cast<int>(val.first.proc()) != p_rank ) {
       CommBuffer & buf = comm_all.send_buffer( val.first.proc() );
       buf.skip<ValueType>( 1 );
     }
+#if COARSE_SEARCH_OCTTREE_COMMUNICATE_TO_RANGE_OWNER
     if ( static_cast<int>(val.second.proc()) != p_rank && val.second.proc() != val.first.proc() ) {
       CommBuffer & buf = comm_all.send_buffer( val.second.proc() );
       buf.skip<ValueType>( 1 );
     }
+#endif
   }
 
   // If more than 25% messages then is dense
@@ -530,10 +538,12 @@ void communicate(
       CommBuffer & buf = comm_all.send_buffer( val.first.proc() );
       buf.pack<ValueType>( val );
     }
+#if COARSE_SEARCH_OCTTREE_COMMUNICATE_TO_RANGE_OWNER
     if ( static_cast<int>(val.second.proc()) != p_rank && val.second.proc() != val.first.proc() ) {
       CommBuffer & buf = comm_all.send_buffer( val.second.proc() );
       buf.pack<ValueType>( val );
     }
+#endif
   }
 
   comm_all.communicate();

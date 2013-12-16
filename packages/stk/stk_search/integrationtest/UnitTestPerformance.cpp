@@ -365,9 +365,18 @@ void testStkSearch(MPI_Comm comm, std::vector<mybox> &domainBoxes,
             }
         }
         std::sort(boxIdPairResults.begin(), boxIdPairResults.end());
-#if COARSE_SEARCH_COMMUNICATE_TO_RANGE_OWNER
-        SearchResults::iterator iter_end = std::unique(boxIdPairResults.begin(), boxIdPairResults.end());
-        boxIdPairResults.erase(iter_end, boxIdPairResults.end());
+
+#if COARSE_SEARCH_BOOST_RTREE_COMMUNICATE_TO_RANGE_OWNER
+        if (searchMethod == stk::search::BOOST_RTREE) {
+          SearchResults::iterator iter_end = std::unique(boxIdPairResults.begin(), boxIdPairResults.end());
+          boxIdPairResults.erase(iter_end, boxIdPairResults.end());
+        }
+#endif
+#if COARSE_SEARCH_OCTTREE_COMMUNICATE_TO_RANGE_OWNER
+        if (searchMethod == stk::search::OCTREE) {
+          SearchResults::iterator iter_end = std::unique(boxIdPairResults.begin(), boxIdPairResults.end());
+          boxIdPairResults.erase(iter_end, boxIdPairResults.end());
+        }
 #endif
         size_t goldValueNumber=getGoldValueForTest();
         if ( goldValueNumber != 0u)

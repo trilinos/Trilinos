@@ -29,7 +29,7 @@
 #include <utility>
 
 
-#define COARSE_SEARCH_COMMUNICATE_TO_RANGE_OWNER 1
+#define COARSE_SEARCH_BOOST_RTREE_COMMUNICATE_TO_RANGE_OWNER 1
 
 namespace stk { namespace search {
 
@@ -372,7 +372,7 @@ void coarse_search_boost_rtree( std::vector< std::pair<DomainBox,DomainIdent> > 
         if ((p_size > 1)
             && (
                 impl::get_proc<DomainIdent>()(domain_id) != p_rank
-#if COARSE_SEARCH_COMMUNICATE_TO_RANGE_OWNER
+#if COARSE_SEARCH_BOOST_RTREE_COMMUNICATE_TO_RANGE_OWNER
                 || impl::get_proc<RangeIdent>()(range_id) != p_rank
 #endif
                 )) {
