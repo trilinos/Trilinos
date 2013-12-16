@@ -358,12 +358,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   success = kernel::check(matrix, out);
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
-  Kokkos_CrsMatrix_MP, SpMv, Scalar, Ordinal, Device )
+template <typename VectorType, typename Multiply>
+bool test_mpvector_multiply(int VectorSize,
+                            Kokkos::DeviceConfig dev_config,
+                            Multiply multiply_op,
+                            Teuchos::FancyOStream& out)
 {
-  const Ordinal VectorSize = 3;
-  typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,VectorSize,Device> Storage;
-  typedef Sacado::MP::Vector<Storage> MatrixScalar;
+  typedef typename VectorType::storage_type storage_type;
+  typedef typename storage_type::ordinal_type Ordinal;
+  typedef typename storage_type::value_type Scalar;
+  typedef typename storage_type::device_type Device;
+  typedef VectorType MatrixScalar;
   typedef Kokkos::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
   typedef Kokkos::View<MatrixScalar*, Kokkos::LayoutRight, Device> Vector;
 
@@ -400,6 +405,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   }
   Kokkos::deep_copy(matrix_values, host_matrix_values_vec);
   Matrix A("matrix", fem_length, matrix_values, matrix_graph);
+  A.dev_config = dev_config;
 
   // Create x and y vectors
   Vector x("x", fem_length, VectorSize);
@@ -412,32 +418,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
         fem_length, VectorSize, i, j);
   Kokkos::deep_copy(x, host_x_vec);
 
-  // Setup DeviceConfig
-  if (Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value) {
-    // For GPU, 1 thread per vector and 16 rows per block
-    A.dev_config = Kokkos::DeviceConfig(0, 1, 16);
-  }
-  else {
-    // Use hwloc to get number of cores, hypertheads for CPU/MIC.
-    size_t num_cores =
-      Kokkos::hwloc::get_available_numa_count() *
-      Kokkos::hwloc::get_available_cores_per_numa();
-    size_t num_hyper_threads =
-      Kokkos::hwloc::get_available_threads_per_core();
-    size_t vector_threads = 1;
-    size_t row_threads = num_hyper_threads / vector_threads;
-    A.dev_config =
-      Kokkos::DeviceConfig(num_cores, vector_threads, row_threads);
-  }
-
-  // Multiply -- Using our kernel.  Besides not being optimal, the default one
-  // doesn't work because the implementation thinks its a 2-D view
-  Kokkos::MV_Multiply(y, A, x);
+  // Multiply
+  multiply_op(A, x, y);
+  //Kokkos::MV_Multiply(y, A, x);
 
   // Check
   HostVector host_y = Kokkos::create_mirror_view(y);
   Kokkos::deep_copy(host_y, y);
-  success = true;
+  bool success = true;
   for (Ordinal rowFEM=0, entryFEM=0; rowFEM<fem_length; ++rowFEM) {
     MatrixScalar y_expected = MatrixScalar(0.0);
     const Ordinal row_size = fem_graph[rowFEM].size();
@@ -455,14 +443,138 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
                          0.0, 0.0, out);
     success = success && s;
   }
+
+  return success;
+}
+
+struct Kokkos_MV_Multiply_Op {
+  template <typename Matrix, typename InputVector, typename OutputVector>
+  void operator() (const Matrix& A,
+                   const InputVector& x,
+                   OutputVector& y) const {
+    Kokkos::MV_Multiply(y, A, x);
+  }
+};
+
+template <typename Tag>
+struct Stokhos_MV_Multiply_Op {
+  Tag tag;
+  Stokhos_MV_Multiply_Op(const Tag& tg = Tag()) : tag(tg) {}
+
+  template <typename Matrix, typename InputVector, typename OutputVector>
+  void operator() (const Matrix& A,
+                   const InputVector& x,
+                   OutputVector& y) const {
+    Stokhos::multiply(A, x, y, tag);
+  }
+};
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_CrsMatrix_MP, Kokkos_SpMv, Scalar, Ordinal, Device )
+{
+  const Ordinal VectorSize = 3;
+  typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,VectorSize,Device> Storage;
+  typedef Sacado::MP::Vector<Storage> Vector;
+
+   // Setup DeviceConfig
+  Kokkos::DeviceConfig dev_config;
+  if (Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value) {
+    // For GPU, 1 thread per vector and 16 rows per block
+    dev_config = Kokkos::DeviceConfig(0, 1, 16);
+  }
+  else {
+    // Use hwloc to get number of cores, hypertheads for CPU/MIC.
+    size_t num_cores =
+      Kokkos::hwloc::get_available_numa_count() *
+      Kokkos::hwloc::get_available_cores_per_numa();
+    size_t num_hyper_threads =
+      Kokkos::hwloc::get_available_threads_per_core();
+    size_t vector_threads = 1;
+    size_t row_threads = num_hyper_threads / vector_threads;
+    dev_config =
+      Kokkos::DeviceConfig(num_cores, vector_threads, row_threads);
+  }
+
+  typedef Kokkos_MV_Multiply_Op MultiplyOp;
+  success = test_mpvector_multiply<Vector>(VectorSize, dev_config,
+                                           MultiplyOp(),
+                                           out);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_CrsMatrix_MP, Stokhos_SpMv_Ensemble, Scalar, Ordinal, Device )
+{
+  const Ordinal VectorSize = 3;
+  typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,VectorSize,Device> Storage;
+  typedef Sacado::MP::Vector<Storage> Vector;
+
+   // Setup DeviceConfig
+  Kokkos::DeviceConfig dev_config;
+  if (Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value) {
+    // For GPU, 1 thread per vector and 16 rows per block
+    dev_config = Kokkos::DeviceConfig(0, 1, 16);
+  }
+  else {
+    // Use hwloc to get number of cores, hypertheads for CPU/MIC.
+    size_t num_cores =
+      Kokkos::hwloc::get_available_numa_count() *
+      Kokkos::hwloc::get_available_cores_per_numa();
+    size_t num_hyper_threads =
+      Kokkos::hwloc::get_available_threads_per_core();
+    size_t vector_threads = 1;
+    size_t row_threads = num_hyper_threads / vector_threads;
+    dev_config =
+      Kokkos::DeviceConfig(num_cores, vector_threads, row_threads);
+  }
+
+  typedef Stokhos_MV_Multiply_Op<Stokhos::EnsembleMultiply> MultiplyOp;
+  success = test_mpvector_multiply<Vector>(VectorSize, dev_config,
+                                           MultiplyOp(),
+                                           out);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_CrsMatrix_MP, Stokhos_SpMv_Vector, Scalar, Ordinal, Device )
+{
+  const Ordinal VectorSize = 3;
+  typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,VectorSize,Device> Storage;
+  typedef Sacado::MP::Vector<Storage> Vector;
+
+   // Setup DeviceConfig
+  Kokkos::DeviceConfig dev_config;
+  if (Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value) {
+    // For GPU, 1 thread per vector and 16 rows per block
+    dev_config = Kokkos::DeviceConfig(0, 1, 16);
+  }
+  else {
+    // Use hwloc to get number of cores, hypertheads for CPU/MIC.
+    size_t num_cores =
+      Kokkos::hwloc::get_available_numa_count() *
+      Kokkos::hwloc::get_available_cores_per_numa();
+    size_t num_hyper_threads =
+      Kokkos::hwloc::get_available_threads_per_core();
+    size_t vector_threads = 1;
+    size_t row_threads = num_hyper_threads / vector_threads;
+    dev_config =
+      Kokkos::DeviceConfig(num_cores, vector_threads, row_threads);
+  }
+
+  typedef Stokhos_MV_Multiply_Op<Stokhos::DefaultMultiply> MultiplyOp;
+  success = test_mpvector_multiply<Vector>(VectorSize, dev_config,
+                                           MultiplyOp(),
+                                           out);
 }
 
 #define CRSMATRIX_MP_VECTOR_TESTS_SCALAR_ORDINAL_DEVICE(SCALAR, ORDINAL, DEVICE)\
-TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                 \
-  Kokkos_CrsMatrix_MP, ReplaceValues, SCALAR, ORDINAL, DEVICE )       \
-TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                 \
-  Kokkos_CrsMatrix_MP, SumIntoValues, SCALAR, ORDINAL, DEVICE )       \
-TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                 \
-  Kokkos_CrsMatrix_MP, SumIntoValuesAtomic, SCALAR, ORDINAL, DEVICE ) \
-TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                 \
-  Kokkos_CrsMatrix_MP, SpMv, SCALAR, ORDINAL, DEVICE )
+TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                   \
+  Kokkos_CrsMatrix_MP, ReplaceValues, SCALAR, ORDINAL, DEVICE )         \
+TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                   \
+  Kokkos_CrsMatrix_MP, SumIntoValues, SCALAR, ORDINAL, DEVICE )         \
+TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                   \
+  Kokkos_CrsMatrix_MP, SumIntoValuesAtomic, SCALAR, ORDINAL, DEVICE )   \
+TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                   \
+  Kokkos_CrsMatrix_MP, Kokkos_SpMv, SCALAR, ORDINAL, DEVICE )           \
+TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                   \
+  Kokkos_CrsMatrix_MP, Stokhos_SpMv_Ensemble, SCALAR, ORDINAL, DEVICE ) \
+TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                   \
+  Kokkos_CrsMatrix_MP, Stokhos_SpMv_Vector, SCALAR, ORDINAL, DEVICE )

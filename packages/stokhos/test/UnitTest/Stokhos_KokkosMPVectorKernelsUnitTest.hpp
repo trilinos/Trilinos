@@ -49,8 +49,7 @@
 #include "Stokhos_UnitTestHelpers.hpp"
 
 #include "Stokhos_Sacado_Kokkos.hpp"
-#include "Stokhos_CrsMatrix.hpp"
-#include "Stokhos_CrsMatrix_MP_Vector.hpp"
+#include "Kokkos_CrsMatrix_MP_Vector.hpp"
 
 namespace KokkosMPVectorKernelsUnitTest {
 
@@ -142,7 +141,7 @@ struct UnitTestSetup {
   typedef OrdinalType ordinal_type;
   typedef ScalarType value_type;
   typedef typename Device::host_mirror_device_type host_device;
-  typedef Stokhos::CrsMatrix<value_type,host_device> matrix_type;
+  typedef Kokkos::CrsMatrix<value_type,ordinal_type,host_device> matrix_type;
   typedef Kokkos::View<value_type[],host_device> vector_type;
 
   // The *local* vector size per thread.  Total size is the local
@@ -170,13 +169,16 @@ struct UnitTestSetup {
     A.resize(stoch_length);
     x.resize(stoch_length);
     y.resize(stoch_length);
-    typedef typename matrix_type::graph_type matrix_graph_type;
+    typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
     typedef typename matrix_type::values_type matrix_values_type;
     for (ordinal_type block=0; block<stoch_length; block++) {
-      A[block].graph = Kokkos::create_crsarray<matrix_graph_type>(
-        std::string("testing"), fem_graph);
-      A[block].values = matrix_values_type(
-        Kokkos::allocate_without_initializing, "matrix", fem_graph_length);
+      matrix_graph_type matrix_graph =
+        Kokkos::create_staticcrsgraph<matrix_graph_type>(
+          std::string("testing"), fem_graph);
+      matrix_values_type matrix_values =
+        matrix_values_type(
+          Kokkos::allocate_without_initializing, "matrix", fem_graph_length);
+      A[block] = matrix_type("matrix", fem_length, matrix_values, matrix_graph);
       x[block] = vector_type(
         Kokkos::allocate_without_initializing, "x", fem_length);
       y[block] = vector_type(
@@ -203,7 +205,7 @@ struct UnitTestSetup {
 
     // Multiply
     for (ordinal_type block=0; block<stoch_length; block++)
-      Stokhos::multiply(A[block], x[block], y[block]);
+      Kokkos::MV_Multiply(y[block], A[block], x[block]);
   }
 
   void cleanup() {
@@ -266,12 +268,12 @@ struct UnitTestSetup {
 
 };
 
-template <typename VectorType, typename Layout,
+template <typename VectorType,
           typename OrdinalType, typename ScalarType, typename Device,
           typename MultiplyTag>
 bool test_embedded_vector(
   const UnitTestSetup<OrdinalType,ScalarType,Device>& setup,
-  Stokhos::DeviceConfig dev_config,
+  Kokkos::DeviceConfig dev_config,
   MultiplyTag tag,
   Teuchos::FancyOStream& out)
 {
@@ -279,9 +281,10 @@ bool test_embedded_vector(
   typedef ScalarType value_type;
   typedef typename VectorType::storage_type storage_type;
   typedef typename storage_type::device_type device_type;
+  typedef Kokkos::LayoutRight Layout;
   typedef Kokkos::View< VectorType*, Layout, device_type > block_vector_type;
-  typedef Stokhos::CrsMatrix< VectorType, device_type, Layout > block_matrix_type;
-  typedef typename block_matrix_type::graph_type matrix_graph_type;
+  typedef Kokkos::CrsMatrix< VectorType, ordinal_type, device_type > block_matrix_type;
+  typedef typename block_matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef typename block_matrix_type::values_type matrix_values_type;
 
   //------------------------------
@@ -315,12 +318,16 @@ bool test_embedded_vector(
 
   //------------------------------
 
-  block_matrix_type matrix(dev_config);
-  matrix.graph = Kokkos::create_crsarray<matrix_graph_type>(
-    std::string("test crs graph"), setup.fem_graph);
-  matrix.values = matrix_values_type(
-    Kokkos::allocate_without_initializing,
-    "matrix", setup.fem_graph_length, setup.stoch_length);
+  matrix_graph_type matrix_graph =
+    Kokkos::create_staticcrsgraph<matrix_graph_type>(
+      std::string("test crs graph"), setup.fem_graph);
+  matrix_values_type matrix_values =
+    matrix_values_type(
+      Kokkos::allocate_without_initializing,
+      "matrix", setup.fem_graph_length, setup.stoch_length);
+  block_matrix_type matrix(
+    "block_matrix", setup.fem_length, matrix_values, matrix_graph);
+  matrix.dev_config = dev_config;
 
   typename matrix_values_type::HostMirror hM =
     Kokkos::create_mirror_view( matrix.values );

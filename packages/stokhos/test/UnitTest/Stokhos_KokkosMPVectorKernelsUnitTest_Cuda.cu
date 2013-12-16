@@ -31,7 +31,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include "Stokhos_KokkosMPVectorKernelsUnitTest.hpp"
-#include "Stokhos_CrsMatrix_MP_Vector_Cuda.hpp"
+#include "Kokkos_CrsMatrix_MP_Vector_Cuda.hpp"
 
 #include "Kokkos_Cuda.hpp"
 
@@ -40,11 +40,10 @@ using namespace KokkosMPVectorKernelsUnitTest;
 typedef UnitTestSetup<int,double,Kokkos::Cuda> SetupType;
 
 TEUCHOS_UNIT_TEST( Stokhos_KokkosMPVectorKernels,
-                   EmbeddedVector_Left_MPKernel_Cuda ) {
+                   EmbeddedVector_MPKernel_Cuda ) {
   typedef int Ordinal;
   typedef double Scalar;
   typedef Kokkos::Cuda Device;
-  typedef Kokkos::LayoutLeft Layout;
   const Ordinal VectorSize = SetupType::local_vec_size;
   typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,VectorSize,Device> Storage;
   typedef Sacado::MP::Vector<Storage> Vector;
@@ -52,70 +51,20 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosMPVectorKernels,
   int vector_threads = 16;
   int row_threads = 4;
   int num_cores = 10;
-  Stokhos::DeviceConfig dev_config(num_cores, vector_threads, row_threads);
+  Kokkos::DeviceConfig dev_config(num_cores, vector_threads, row_threads);
 
   SetupType setup;
   setup.setup(vector_threads);
-  success = test_embedded_vector<Vector,Layout>(
-    setup, dev_config, Stokhos::DefaultMultiply(), out);
-  setup.cleanup();
-}
-
-// This test appears to fail randomly, usually only when run by CTest.  So
-// there is probably a race condition or unitialized read somewhere in the
-// kernel.  But do we really care about LayoutLeft for matrix-vector products?
-// The kernel is useless in that case.
-
-// TEUCHOS_UNIT_TEST( Stokhos_KokkosMPVectorKernels,
-//                    EmbeddedVector_Left_Ensemble_Cuda ) {
-//   typedef int Ordinal;
-//   typedef double Scalar;
-//   typedef Kokkos::Cuda Device;
-//   typedef Kokkos::LayoutLeft Layout;
-//   const Ordinal VectorSize = SetupType::local_vec_size;
-//   typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,VectorSize,Device> Storage;
-//   typedef Sacado::MP::Vector<Storage> Vector;
-
-//   int vector_threads = 16;
-//   int row_threads = 4;
-//   int num_cores = 10;
-//   Stokhos::DeviceConfig dev_config(num_cores, vector_threads, row_threads);
-
-//   SetupType setup;
-//   setup.setup(vector_threads);
-//   success = test_embedded_vector<Vector,Layout>(
-//     setup, dev_config, Stokhos::EnsembleMultiply(), out);
-//   setup.cleanup();
-// }
-
-TEUCHOS_UNIT_TEST( Stokhos_KokkosMPVectorKernels,
-                   EmbeddedVector_Right_MPKernel_Cuda ) {
-  typedef int Ordinal;
-  typedef double Scalar;
-  typedef Kokkos::Cuda Device;
-  typedef Kokkos::LayoutRight Layout;
-  const Ordinal VectorSize = SetupType::local_vec_size;
-  typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,VectorSize,Device> Storage;
-  typedef Sacado::MP::Vector<Storage> Vector;
-
-  int vector_threads = 16;
-  int row_threads = 4;
-  int num_cores = 10;
-  Stokhos::DeviceConfig dev_config(num_cores, vector_threads, row_threads);
-
-  SetupType setup;
-  setup.setup(vector_threads);
-  success = test_embedded_vector<Vector,Layout>(
+  success = test_embedded_vector<Vector>(
     setup, dev_config, Stokhos::DefaultMultiply(), out);
   setup.cleanup();
 }
 
 TEUCHOS_UNIT_TEST( Stokhos_KokkosMPVectorKernels,
-                   EmbeddedVector_Right_Ensemble_Cuda ) {
+                   EmbeddedVector_Ensemble_Cuda ) {
   typedef int Ordinal;
   typedef double Scalar;
   typedef Kokkos::Cuda Device;
-  typedef Kokkos::LayoutRight Layout;
   const Ordinal VectorSize = SetupType::local_vec_size;
   typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,VectorSize,Device> Storage;
   typedef Sacado::MP::Vector<Storage> Vector;
@@ -123,11 +72,11 @@ TEUCHOS_UNIT_TEST( Stokhos_KokkosMPVectorKernels,
   int vector_threads = 16;
   int row_threads = 4;
   int num_cores = 10;
-  Stokhos::DeviceConfig dev_config(num_cores, vector_threads, row_threads);
+  Kokkos::DeviceConfig dev_config(num_cores, vector_threads, row_threads);
 
   SetupType setup;
   setup.setup(vector_threads);
-  success = test_embedded_vector<Vector,Layout>(
+  success = test_embedded_vector<Vector>(
     setup, dev_config, Stokhos::EnsembleMultiply(), out);
   setup.cleanup();
 }

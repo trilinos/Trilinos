@@ -349,13 +349,7 @@ IF (Stokhos_ENABLE_Sacado)
       sacado/kokkos/vector/Sacado_MP_ExpressionTraits.hpp
       sacado/kokkos/vector/Kokkos_View_MP_Vector.hpp
       sacado/kokkos/vector/Kokkos_Atomic_MP_Vector.hpp
-      sacado/kokkos/vector/Stokhos_CrsMatrix_MP_Vector.hpp
       )
-    IF(Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
-      SET(HEADERS ${HEADERS}
-        sacado/kokkos/vector/Stokhos_CrsMatrix_MP_Vector_Cuda.hpp
-        )
-    ENDIF()
     IF (Stokhos_ENABLE_KokkosLinAlg)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/linalg)
       SET(HEADERS ${HEADERS}
