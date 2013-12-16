@@ -93,7 +93,6 @@ struct find_test
   typedef typename device_type::size_type size_type;
   typedef Kokkos::View<const uint32_t*,device_type, Kokkos::MemoryRandomRead> local_id_view;
   typedef Kokkos::UnorderedMap<const uint32_t, const size_type,device_type> global_id_view;
-  typedef typename global_id_view::const_pointer const_pointer;
 
   global_id_view global_2_local;
   local_id_view local_2_global;
@@ -117,10 +116,9 @@ struct find_test
   KOKKOS_INLINE_FUNCTION
   void operator()(size_type i, value_type & num_errors) const
   {
-    const_pointer ptr = global_2_local.find( local_2_global[i] );
+    uint32_t index = global_2_local.find( local_2_global[i] );
 
-    if (ptr->first != local_2_global[i] || ptr->second != i)
-      ++num_errors;
+    if ( global_2_local.value_at(index) != i) ++num_errors;
   }
 
 };
