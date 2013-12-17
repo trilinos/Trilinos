@@ -174,6 +174,17 @@ namespace panzer_stk {
     bool isTransient() const  
     { return m_is_transient; }
 
+    /** Clone the internal model evaluator, but use new physics blocks. Note that
+      * the physics blocks must be in some sense compatible with the original set.
+      */
+    Teuchos::RCP<Thyra::ModelEvaluator<double> >
+    cloneWithNewPhysicsBlocks(const Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<ScalarT> > & solverFactory,
+                              const Teuchos::RCP<Teuchos::ParameterList> & physics_block_plist,
+                              const Teuchos::RCP<const panzer::EquationSetFactory>& eqset_factory,
+                              const panzer::BCStrategyFactory & bc_factory,
+                              const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & user_cm_factory,
+                              bool is_transient,bool is_explicit) const;
+
   protected:
  
     /** This method is to assist with construction of the model evaluators  internally.
