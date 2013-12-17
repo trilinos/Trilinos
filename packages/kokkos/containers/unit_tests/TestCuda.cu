@@ -54,6 +54,7 @@
 //----------------------------------------------------------------------------
 #include <TestUnorderedMap.hpp>
 #include <TestVector.hpp>
+#include <TestDualView.hpp>
 
 namespace Test {
 
@@ -100,6 +101,11 @@ void cuda_test_deep_copy(  uint32_t num_nodes )
 void cuda_test_vector_combinations(unsigned int size)
 {
   test_vector_combinations<int,Kokkos::Cuda>(size);
+}
+
+void cuda_test_dualview_combinations(unsigned int size)
+{
+  test_dualview_combinations<int,Kokkos::Cuda>(size);
 }
 
 }

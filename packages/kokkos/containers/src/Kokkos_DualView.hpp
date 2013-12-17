@@ -298,7 +298,7 @@ subview( const DualView<T,L,D,M> & src ,
 {
   DstViewType sub_view;
   sub_view.d_view = subview<typename DstViewType::t_dev>(src.d_view,arg0);
-  sub_view.h_view = subview<typename DstViewType::t_dev>(src.h_view,arg0);
+  sub_view.h_view = subview<typename DstViewType::t_host>(src.h_view,arg0);
   sub_view.modified_device = src.modified_device;
   sub_view.modified_host = src.modified_host;
   return sub_view;
@@ -315,7 +315,7 @@ subview( const DualView<T,L,D,M> & src ,
 {
   DstViewType sub_view;
   sub_view.d_view = subview<typename DstViewType::t_dev>(src.d_view,arg0,arg1);
-  sub_view.h_view = subview<typename DstViewType::t_dev>(src.h_view,arg0,arg1);
+  sub_view.h_view = subview<typename DstViewType::t_host>(src.h_view,arg0,arg1);
   sub_view.modified_device = src.modified_device;
   sub_view.modified_host = src.modified_host;
   return sub_view;
@@ -332,7 +332,7 @@ subview( const DualView<T,L,D,M> & src ,
 {
   DstViewType sub_view;
   sub_view.d_view = subview<typename DstViewType::t_dev>(src.d_view,arg0,arg1,arg2);
-  sub_view.h_view = subview<typename DstViewType::t_dev>(src.h_view,arg0,arg1,arg2);
+  sub_view.h_view = subview<typename DstViewType::t_host>(src.h_view,arg0,arg1,arg2);
   sub_view.modified_device = src.modified_device;
   sub_view.modified_host = src.modified_host;
   return sub_view;
@@ -350,7 +350,7 @@ subview( const DualView<T,L,D,M> & src ,
 {
   DstViewType sub_view;
   sub_view.d_view = subview<typename DstViewType::t_dev>(src.d_view,arg0,arg1,arg2,arg3);
-  sub_view.h_view = subview<typename DstViewType::t_dev>(src.h_view,arg0,arg1,arg2,arg3);
+  sub_view.h_view = subview<typename DstViewType::t_host>(src.h_view,arg0,arg1,arg2,arg3);
   sub_view.modified_device = src.modified_device;
   sub_view.modified_host = src.modified_host;
   return sub_view;
@@ -370,7 +370,7 @@ subview( const DualView<T,L,D,M> & src ,
 {
   DstViewType sub_view;
   sub_view.d_view = subview<typename DstViewType::t_dev>(src.d_view,arg0,arg1,arg2,arg3,arg4);
-  sub_view.h_view = subview<typename DstViewType::t_dev>(src.h_view,arg0,arg1,arg2,arg3,arg4);
+  sub_view.h_view = subview<typename DstViewType::t_host>(src.h_view,arg0,arg1,arg2,arg3,arg4);
   sub_view.modified_device = src.modified_device;
   sub_view.modified_host = src.modified_host;
   return sub_view;
@@ -391,7 +391,7 @@ subview( const DualView<T,L,D,M> & src ,
 {
   DstViewType sub_view;
   sub_view.d_view = subview<typename DstViewType::t_dev>(src.d_view,arg0,arg1,arg2,arg3,arg4,arg5);
-  sub_view.h_view = subview<typename DstViewType::t_dev>(src.h_view,arg0,arg1,arg2,arg3,arg4,arg5);
+  sub_view.h_view = subview<typename DstViewType::t_host>(src.h_view,arg0,arg1,arg2,arg3,arg4,arg5);
   sub_view.modified_device = src.modified_device;
   sub_view.modified_host = src.modified_host;
   return sub_view;
@@ -413,7 +413,7 @@ subview( const DualView<T,L,D,M> & src ,
 {
   DstViewType sub_view;
   sub_view.d_view = subview<typename DstViewType::t_dev>(src.d_view,arg0,arg1,arg2,arg3,arg4,arg5,arg6);
-  sub_view.h_view = subview<typename DstViewType::t_dev>(src.h_view,arg0,arg1,arg2,arg3,arg4,arg5,arg6);
+  sub_view.h_view = subview<typename DstViewType::t_host>(src.h_view,arg0,arg1,arg2,arg3,arg4,arg5,arg6);
   sub_view.modified_device = src.modified_device;
   sub_view.modified_host = src.modified_host;
   return sub_view;
@@ -436,7 +436,7 @@ subview( const DualView<T,L,D,M> & src ,
 {
   DstViewType sub_view;
   sub_view.d_view = subview<typename DstViewType::t_dev>(src.d_view,arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7);
-  sub_view.h_view = subview<typename DstViewType::t_dev>(src.h_view,arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7);
+  sub_view.h_view = subview<typename DstViewType::t_host>(src.h_view,arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7);
   sub_view.modified_device = src.modified_device;
   sub_view.modified_host = src.modified_host;
   return sub_view;
