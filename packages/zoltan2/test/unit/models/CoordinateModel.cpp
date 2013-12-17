@@ -161,7 +161,7 @@ void testCoordinateModel(std::string &fname, int weightDim,
   //////////////////////////////////////////////////////////////
 
   typedef Zoltan2::BasicCoordinateAdapter<mv_t> ia_t;
-  typedef Zoltan2::CoordinateAdapter<mv_t>      base_ia_t;
+  typedef Zoltan2::VectorAdapter<mv_t> base_ia_t;
 
   RCP<ia_t> ia;
 

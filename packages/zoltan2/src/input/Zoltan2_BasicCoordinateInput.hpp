@@ -50,7 +50,7 @@
 #ifndef _ZOLTAN2_BASICCOORDINATEADAPTER_HPP_
 #define _ZOLTAN2_BASICCOORDINATEADAPTER_HPP_
 
-#include <Zoltan2_CoordinateInput.hpp>
+#include <Zoltan2_VectorInput.hpp>
 #include <Zoltan2_StridedData.hpp>
 #include <vector>
 
@@ -90,7 +90,7 @@ namespace Zoltan2 {
 */
 
 template <typename User>
-  class BasicCoordinateAdapter : public CoordinateAdapter<User> {
+  class BasicCoordinateAdapter : public VectorAdapter<User> {
 
 public:
 
@@ -101,7 +101,7 @@ public:
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
-  typedef CoordinateAdapter<User>   base_adapter_t;
+  typedef VectorAdapter<User>   base_adapter_t;
   typedef User user_t;
 
 #endif
@@ -183,12 +183,12 @@ public:
   }
 
   ////////////////////////////////////////////////////
-  // The CoordinateAdapter interface.
+  // The VectorAdapter interface.
   ////////////////////////////////////////////////////
 
-  int getCoordinateDimension() const { return dimension_;}
+  int getNumEntriesPerID() const { return dimension_;}
 
-  void getCoordinatesView(const scalar_t *&coords, int &stride, int dim) const
+  void getEntriesView(const scalar_t *&coords, int &stride, int dim) const
   {
     if (dim < 0 || dim >= dimension_) {
       std::ostringstream emsg;

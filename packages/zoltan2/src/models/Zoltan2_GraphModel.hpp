@@ -55,7 +55,6 @@
 #include <Zoltan2_MatrixInput.hpp>
 #include <Zoltan2_GraphInput.hpp>
 #include <Zoltan2_IdentifierInput.hpp>
-#include <Zoltan2_CoordinateInput.hpp>
 #include <Zoltan2_VectorInput.hpp>
 #include <Zoltan2_StridedData.hpp>
 
@@ -1494,58 +1493,6 @@ template <typename User>
 
   return numLocalEdges_;
 }
-
-////////////////////////////////////////////////////////////////
-// Graph model derived from CoordinateAdapter.
-//
-//  We do not build a graph model from coordinates.  We include
-//  this definition so that other code will compile.
-////////////////////////////////////////////////////////////////
-
-template <typename User>
-class GraphModel<CoordinateAdapter<User> > : public Model<CoordinateAdapter<User> >
-{
-public:
-
-  typedef typename CoordinateAdapter<User>::scalar_t  scalar_t;
-  typedef typename CoordinateAdapter<User>::gno_t     gno_t;
-  typedef typename CoordinateAdapter<User>::lno_t     lno_t;
-  typedef StridedData<lno_t, scalar_t> input_t;
-
-  GraphModel(const CoordinateAdapter<User> *ia,
-    const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
-    modelFlag_t &flags)
-  {
-    throw std::runtime_error("may not build a graph with identifiers");
-  }
-
-  // GraphModel interface
-
-  size_t getLocalNumVertices() const { return 0;}
-  size_t getGlobalNumVertices() const { return 0;}
-  size_t getLocalNumGlobalEdges() const { return 0;}
-  size_t getLocalNumLocalEdges() const { return 0;}
-  size_t getGlobalNumEdges() const {return 0;}
-  int getVertexWeightDim() const { return 0; }
-  int getEdgeWeightDim() const { return 0; }
-  int getCoordinateDim() const { return 0; }
-  size_t getVertexList( ArrayView<const gno_t> &Ids,
-    ArrayView<input_t> &xyz,
-    ArrayView<input_t> &wgts) const { return 0; }
-  size_t getEdgeList( ArrayView<const gno_t> &edgeIds,
-    ArrayView<const int> &procIds, ArrayView<const lno_t> &offsets,
-    ArrayView<input_t> &wgts) const { return 0; }
-  size_t getLocalEdgeList( ArrayView<const lno_t> &edgeIds,
-    ArrayView<const lno_t> &offsets,
-    ArrayView<input_t> &wgts) { return 0; }
-
-  // Model interface
-
-  size_t getLocalNumObjects() const { return 0; }
-  size_t getGlobalNumObjects() const { return 0; }
-  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const {}
-
-};
 
 ////////////////////////////////////////////////////////////////
 // Graph model derived from VectorAdapter.

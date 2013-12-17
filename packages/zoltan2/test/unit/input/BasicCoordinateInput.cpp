@@ -72,7 +72,7 @@ int checkBasicCoordinate(
 {
   int fail = 0;
 
-  if (ia->getCoordinateDimension() != nCoords)
+  if (ia->getNumEntriesPerID() != nCoords)
     fail = 100;
 
   if (!fail && ia->getNumWeightsPerID() != nWeights)
@@ -87,7 +87,7 @@ int checkBasicCoordinate(
     int stride;
 
     ia->getIDsView(idList);
-    ia->getCoordinatesView(vals, stride, x);
+    ia->getEntriesView(vals, stride, x);
 
     scalar_t *coordVal = xyz + x;
     for (int i=0; !fail && i < len; i++, coordVal += 3){
