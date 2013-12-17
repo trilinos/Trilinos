@@ -61,17 +61,19 @@ namespace Zoltan2{
 
 namespace Details {
 
+  // These helper functions can't be class members, so put in Details namespace.
   template<class KeyType, class ValueType>
-  bool zort_inc (const std::pair<KeyType, ValueType>& a, const std::pair<KeyType, ValueType>& b)
+  bool SortInc (const std::pair<KeyType, ValueType>& a, const std::pair<KeyType, ValueType>& b)
   {
     return a.second < b.second;
   }
 
   template<class KeyType, class ValueType>
-  bool zort_dec (const std::pair<KeyType, ValueType>& a, const std::pair<KeyType, ValueType>& b)
+  bool SortDec (const std::pair<KeyType, ValueType>& a, const std::pair<KeyType, ValueType>& b)
   {
     return a.second > b.second;
   }
+
 } // namespace Details
 
 template <typename key_t, typename value_t>
@@ -87,12 +89,10 @@ class SortPairs
     {
       // Sort in increasing (default) or decreasing order of value
       if (inc)
-        std::sort (listofPairs.begin(), listofPairs.end(), Details::zort_inc<key_t, value_t>);
+        std::sort (listofPairs.begin(), listofPairs.end(), Details::SortInc<key_t, value_t>);
       else
-        std::sort (listofPairs.begin(), listofPairs.end(), Details::zort_dec<key_t, value_t>);
+        std::sort (listofPairs.begin(), listofPairs.end(), Details::SortDec<key_t, value_t>);
     }
-
-  private:
 
 };
 }

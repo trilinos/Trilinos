@@ -61,6 +61,12 @@ namespace Zoltan2{
 template <typename Adapter>
 class AlgSortedDegree
 {
+  private:
+    typedef typename Adapter::lno_t lno_t;
+    typedef typename Adapter::gno_t gno_t;
+    typedef typename Adapter::gid_t gid_t;
+    typedef typename Adapter::scalar_t scalar_t;
+  
   public:
 
     AlgSortedDegree()
@@ -75,11 +81,6 @@ class AlgSortedDegree
     const RCP<Teuchos::Comm<int> > &comm
   ) 
   {
-    typedef typename Adapter::lno_t lno_t;
-    typedef typename Adapter::gno_t gno_t;
-    typedef typename Adapter::gid_t gid_t;
-    typedef typename Adapter::scalar_t scalar_t;
-  
     int ierr= 0;
   
     HELLO;
@@ -113,7 +114,7 @@ class AlgSortedDegree
   
     // Copy permuted indices to perm.
     for (lno_t i=0; i<(lno_t)nVtx; i++){
-      perm[i] = degrees[i].second;
+      perm[i] = degrees[i].first;
     }
   
     solution->setHavePerm(true);
