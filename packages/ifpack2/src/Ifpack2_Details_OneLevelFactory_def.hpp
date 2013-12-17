@@ -59,23 +59,14 @@ namespace Ifpack2 {
 namespace Details {
 
 template<class MatrixType>
-Teuchos::RCP<Preconditioner<typename MatrixType::scalar_type,
-                            typename MatrixType::local_ordinal_type,
-                            typename MatrixType::global_ordinal_type,
-                            typename MatrixType::node_type> >
-OneLevelFactory::create (const std::string& precType,
-                         const Teuchos::RCP<const MatrixType>& matrix)
+Teuchos::RCP<typename OneLevelFactory<MatrixType>::prec_type>
+OneLevelFactory<MatrixType>::create (const std::string& precType,
+                                     const Teuchos::RCP<const row_matrix_type>& matrix) const
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
-  typedef typename MatrixType::scalar_type scalar_type;
-  typedef typename MatrixType::local_ordinal_type local_ordinal_type;
-  typedef typename MatrixType::global_ordinal_type global_ordinal_type;
-  typedef typename MatrixType::node_type node_type;
-  typedef Preconditioner<scalar_type, local_ordinal_type,
-                         global_ordinal_type, node_type> prec_base_type;
 
-  RCP<prec_base_type> prec;
+  RCP<prec_type> prec;
 
   // precTypeUpper is the upper-case version of precType.
   std::string precTypeUpper (precType);
@@ -86,21 +77,22 @@ OneLevelFactory::create (const std::string& precType,
     }
   }
 
-  const bool one_mpi_rank = (matrix->getComm ()->getSize () == 1);
-  // Forestall "unused variable" warnings.
-  (void) one_mpi_rank;
-
   if (precTypeUpper == "CHEBYSHEV") {
     prec = rcp (new ::Ifpack2::Chebyshev<MatrixType> (matrix));
   }
   else if (precTypeUpper == "DENSE" || precTypeUpper == "LAPACK") {
     prec = rcp (new Details::DenseSolver<MatrixType> (matrix));
   }
-#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_AMESOS2)
   else if (precTypeUpper == "AMESOS2") {
+#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_AMESOS2)
     prec = rcp (new Details::Amesos2Wrapper<MatrixType> (matrix));
-  }
+#else
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::invalid_argument, "Ifpack2::Details::OneLevelFactory: "
+      "You may not ask for the preconditioner \"AMESOS2\" unless "
+      "you have built Trilinos with the Amesos2 package enabled.");
 #endif
+  }
   else if (precTypeUpper == "DIAGONAL") {
     prec = rcp (new Diagonal<MatrixType> (matrix));
   }
@@ -121,6 +113,11 @@ OneLevelFactory::create (const std::string& precType,
       true, std::invalid_argument, "Ifpack2::Details::OneLevelFactory::create: "
       "Invalid preconditioner type \"" << precType << "\".");
   }
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    prec.is_null (), std::logic_error, "Ifpack2::Details::OneLevelFactory::"
+    "create: Return value is null right before return.  This should never "
+    "happen.  Please report this bug to the Ifpack2 developers.");
   return prec;
 }
 

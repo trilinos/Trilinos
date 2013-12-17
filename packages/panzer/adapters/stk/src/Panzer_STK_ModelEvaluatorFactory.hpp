@@ -175,6 +175,32 @@ namespace panzer_stk {
     { return m_is_transient; }
 
   protected:
+ 
+    /** This method is to assist with construction of the model evaluators  internally.
+      */ 
+    Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > 
+    buildPhysicsModelEvaluator(bool buildThyraME,
+                        const Teuchos::RCP<panzer::FieldManagerBuilder> & fmb,
+                        const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & rLibrary,
+       	 	        const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof,
+		        const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > & p_names,
+                        const Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<ScalarT> > & solverFactory,
+		        const Teuchos::RCP<panzer::GlobalData> & global_data,
+		        bool is_transient,double t_init) const;
+
+    Teuchos::RCP<panzer::FieldManagerBuilder> 
+    buildFieldManagerBuilder(const Teuchos::RCP<panzer::WorksetContainer> & wc,
+                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+                             const std::vector<panzer::BC> & bcs,
+                             const panzer::EquationSetFactory & eqset_factory,
+                             const panzer::BCStrategyFactory& bc_factory,
+                             const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& volume_cm_factory,
+                             const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& bc_cm_factory,
+                             const Teuchos::ParameterList& closure_models,
+                             const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
+                             const Teuchos::ParameterList& user_data,
+                             bool writeGraph,const std::string & graphPrefix) const;
+
     void addVolumeResponses(panzer::ResponseLibrary<panzer::Traits> & rLibrary,
                             const panzer_stk::STK_Interface & mesh,const Teuchos::ParameterList & pl) const;
 
@@ -247,12 +273,12 @@ namespace panzer_stk {
                                            const Teuchos::ParameterList & closure_models,
                                            int workset_size, Teuchos::ParameterList & user_data) const;
 
-  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
-  buildLOWSFactory(bool blockedAssembly,
-                   const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
-                   const Teuchos::RCP<panzer::ConnManagerBase<int> > & conn_manager,
-                   const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
-                   const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm);
+    Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
+    buildLOWSFactory(bool blockedAssembly,
+                     const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
+                     const Teuchos::RCP<panzer::ConnManagerBase<int> > & conn_manager,
+                     const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
+                     const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm);
 
     /** Build LOWS factory.
       */
@@ -318,7 +344,5 @@ addResponse(const std::string & responseName,const std::vector<panzer::WorksetDe
 }
 
 }
-
-// #include "Panzer_STK_ModelEvaluatorFactory_impl.hpp"
 
 #endif

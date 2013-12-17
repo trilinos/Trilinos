@@ -42,6 +42,7 @@
 */
 
 #include "Ifpack2_ConfigDefs.hpp"
+#include "Tpetra_ConfigDefs.hpp"
 #include "Ifpack2_Details_OneLevelFactory_decl.hpp"
 
 #ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
@@ -57,24 +58,36 @@ namespace Details {
   //
   // mfh 12 Dec 2013: For some reason, this all has to be on one line,
   // otherwise the macro definition includes the whole rest of the file.
-#define LCLINST(S, LO, GO) template Teuchos::RCP<Preconditioner<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> > OneLevelFactory::create<Tpetra::CrsMatrix< S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> > (const std::string&, const Teuchos::RCP<const Tpetra::CrsMatrix<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> >&);
+// #define LCLINST(S, LO, GO) template<> class OneLevelFactory<Tpetra::CrsMatrix<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> >; template<> class OneLevelFactory<Tpetra::RowMatrix<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> >;
 
-  IFPACK2_ETI_MANGLING_TYPEDEFS()
+//   //template<> class OneLevelFactory<Tpetra::CrsMatrix<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> >;
+//   //template<> class OneLevelFactory<Tpetra::RowMatrix<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> >;
 
-  IFPACK2_INSTANTIATE_SLG( LCLINST )
+//   IFPACK2_ETI_MANGLING_TYPEDEFS()
+
+//   IFPACK2_INSTANTIATE_SLG( LCLINST )
+
+  template<>
+  class OneLevelFactory<Tpetra::CrsMatrix<double, int, int, KokkosClassic::SerialNode> >;
+
+  template<>
+  class OneLevelFactory<Tpetra::RowMatrix<double, int, int, KokkosClassic::SerialNode> >;
+
 
 #if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
   template<>
-  Teuchos::RCP<Preconditioner<double, int, int, KokkosClassic::ThrustGPUNode> >
-  OneLevelFactory::create<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> > (const std::string& precType,
-                                                                                               const Teuchos::RCP<const Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >& A);
+  class OneLevelFactory<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
+
+  template<>
+  class OneLevelFactory<Tpetra::RowMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
 #endif
 
 #if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
   template<>
-  Teuchos::RCP<Preconditioner<double, int, int, KokkosClassic::TPINode> >
-  OneLevelFactory::create<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> > (const std::string& precType,
-                                                                                         const Teuchos::RCP<const Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >& A);
+  class OneLevelFactory<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >;
+
+  template<>
+  class OneLevelFactory<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode> >;
 #endif
 
 } // namespace Details

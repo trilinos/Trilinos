@@ -80,6 +80,10 @@ DenseSolver (const Teuchos::RCP<const row_matrix_type>& A) :
 template<class MatrixType>
 Teuchos::RCP<const typename DenseSolver<MatrixType, false>::map_type>
 DenseSolver<MatrixType, false>::getDomainMap () const {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (), std::runtime_error, "Ifpack2::Details::DenseSolver::"
+    "getDomainMap: The input matrix A is null.  Please call setMatrix() with a "
+    "nonnull input matrix before calling this method.");
   // For an input matrix A, DenseSolver solves Ax=b for x.
   // Thus, its Maps are reversed from those of the input matrix.
   return A_->getRangeMap ();
@@ -89,6 +93,10 @@ DenseSolver<MatrixType, false>::getDomainMap () const {
 template<class MatrixType>
 Teuchos::RCP<const typename DenseSolver<MatrixType, false>::map_type>
 DenseSolver<MatrixType, false>::getRangeMap () const {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (), std::runtime_error, "Ifpack2::Details::DenseSolver::"
+    "getRangeMap: The input matrix A is null.  Please call setMatrix() with a "
+    "nonnull input matrix before calling this method.");
   // For an input matrix A, DenseSolver solves Ax=b for x.
   // Thus, its Maps are reversed from those of the input matrix.
   return A_->getDomainMap ();
@@ -201,6 +209,8 @@ template<class MatrixType>
 void DenseSolver<MatrixType, false>::
 setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
 {
+  // It's legitimate to call setMatrix() with a null input.  This has
+  // the effect of resetting the preconditioner's internal state.
   if (! A_.is_null ()) {
     const global_size_t numRows = A->getRangeMap ()->getGlobalNumElements ();
     const global_size_t numCols = A->getDomainMap ()->getGlobalNumElements ();
@@ -233,8 +243,7 @@ void DenseSolver<MatrixType, false>::initialize ()
     timer = TimeMonitor::getNewCounter (timerName);
   }
 
-  // Begin timing initialization here.
-  {
+  { // Begin timing here.
     Teuchos::TimeMonitor timeMon (*timer);
 
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -256,6 +265,11 @@ void DenseSolver<MatrixType, false>::initialize ()
     } else {
       A_local_ = A_;
     }
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      A_local_.is_null (), std::logic_error, "Ifpack2::Details::DenseSolver::"
+      "initialize: A_local_ is null after it was supposed to have been "
+      "initialized.  Please report this bug to the Ifpack2 developers.");
 
     // Allocate the dense local matrix and the pivot array.
     const size_t numRows = A_local_->getNodeNumRows ();
@@ -301,6 +315,11 @@ void DenseSolver<MatrixType, false>::compute ()
       A_.is_null (), std::runtime_error, "Ifpack2::Details::DenseSolver::"
       "compute: The input matrix A is null.  Please call setMatrix() with a "
       "nonnull input, then call initialize(), before calling this method.");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      A_local_.is_null (), std::logic_error, "Ifpack2::Details::DenseSolver::"
+      "compute: A_local_ is null.  Please report this bug to the Ifpack2 "
+      "developers.");
 
     isComputed_ = false;
     if (! this->isInitialized ()) {

@@ -90,27 +90,38 @@ bool supportsUnsymmetric (const std::string& prec_type)
 #if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
   template<>
   Teuchos::RCP<Preconditioner<double, int, int, KokkosClassic::ThrustGPUNode> >
-  Factory::create<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> > (const std::string& prec_type,
-                                                                                       const Teuchos::RCP<const Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >& matrix);
+  Factory::create<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> > (const std::string&,
+                                                                                       const Teuchos::RCP<const Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >&);
 
   template<>
   Teuchos::RCP<Preconditioner<double, int, int, KokkosClassic::ThrustGPUNode> >
-  Factory::create<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> > (const std::string& prec_type,
-                                                                                       const Teuchos::RCP<const Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >& matrix,
+  Factory::create<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> > (const std::string&,
+                                                                                       const Teuchos::RCP<const Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >&,
                                                                                        const int overlap);
 #endif
 
 #if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
   template<>
   Teuchos::RCP<Preconditioner<double, int, int, KokkosClassic::TPINode> >
-  Factory::create<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> > (const std::string& prec_type,
-                                                                                 const Teuchos::RCP<const Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >& matrix);
+  Factory::create<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> > (const std::string&,
+                                                                                 const Teuchos::RCP<const Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >&);
 
   template<>
   Teuchos::RCP<Preconditioner<double, int, int, KokkosClassic::TPINode> >
-  Factory::create<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> > (const std::string& prec_type,
-                   const Teuchos::RCP<const Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >& matrix,
-                   const int overlap);
+  Factory::create<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> > (const std::string&,
+                   const Teuchos::RCP<const Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >&,
+                   const int);
+
+  // template<>
+  // Teuchos::RCP<Preconditioner<double, int, int, KokkosClassic::TPINode> >
+  // Factory::create<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode> > (const std::string&,
+  //                                                                                const Teuchos::RCP<const Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode> >&);
+
+  // template<>
+  // Teuchos::RCP<Preconditioner<double, int, int, KokkosClassic::TPINode> >
+  // Factory::create<Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode> > (const std::string&,
+  //                  const Teuchos::RCP<const Tpetra::RowMatrix<double, int, int, KokkosClassic::TPINode> >&,
+  //                  const int);
 #endif
 
 #endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION

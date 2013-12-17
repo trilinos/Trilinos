@@ -42,9 +42,13 @@
 #ifndef STOKHOS_TINY_VEC_HPP
 #define STOKHOS_TINY_VEC_HPP
 
+#if ! defined( __CUDACC__ )
+
 extern "C" {
 #include <immintrin.h>
 }
+
+#endif
 
 namespace Stokhos {
 
@@ -244,7 +248,7 @@ private:
   int sz;
 };
 
-#ifdef __SSE2__
+#if ! defined( __CUDACC__ ) && defined( __SSE2__ )
 template <>
 class TinyVec<double,2,true,false> {
 public:

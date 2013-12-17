@@ -5383,4 +5383,5 @@ namespace Tpetra {
                                                                CrsMatrix<SCALAR, LO, GO, NODE>::node_type> >& rangeMap,  \
                                                                const RCP<Teuchos::ParameterList>& params);
 
-#endif
+#endif // TPETRA_CRSMATRIX_DEF_HPP
+

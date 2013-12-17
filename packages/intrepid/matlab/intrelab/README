@@ -67,13 +67,14 @@ of an interface to some Trilinos solvers, through ML.
 
     REQUIRED:
     Point the variable MATLABPATH to the Intrelab installation path
-    that you defined in the Makefile.
+    that you defined in the Makefile, as well as the intrelab/mesh
+    directory.  Examples are in scripts/Ridzal_run_matlab2013.sh.
 
     REQUIRED:
     Point the variable BLAS_VERSION to the BLAS library used to build
     Trilinos (Intrepid/ML).
 
-    OPTIONAL/AS NEEDED:
+    OPTIONAL/AS NEEDED/NOTES:
     The modifications will depend on your platform, your version
     of Matlab, etc.  Some trial and error may be needed.  The main goal is to
     make Matlab aware of the library paths and the versions of BLAS (or LAPACK)

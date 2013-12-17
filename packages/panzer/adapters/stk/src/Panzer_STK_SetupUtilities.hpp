@@ -85,6 +85,22 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
               const std::string & sideset,
               bool useCascade=false);
 
+/** Build side worksets with elements on both sides (this is for DG)
+  *
+  * \param[in] mesh A pointer to the STK_Interface used to construct the worksets
+  * \param[in] pb_a Physics block associated with the element block
+  * \param[in] pb_b Physics block associated with the element block
+  * \param[in] workset_size The size of each workset measured in the number of elements
+  * \param[in] sideset The sideset id used to locate volume elements associated with the sideset
+  *
+  * \returns vector of worksets for the corresponding edge
+  */
+Teuchos::RCP<std::vector<panzer::Workset> >  
+buildWorksets(const panzer_stk::STK_Interface & mesh,
+              const panzer::PhysicsBlock & pb_a,
+              const panzer::PhysicsBlock & pb_b,
+              const std::string & sideset);
+
 /** Build boundary condition worksets for a STK mesh
   *
   * \param[in] mesh A pointer to the STK_Interface used to construct the worksets
@@ -134,6 +150,7 @@ void getIdsAndVertices(const panzer_stk::STK_Interface& mesh,
  * \param[out] elements On output this will contain the elements associated
  *             with each entity in the requested block. Assumed that on input
  *             <code>elements.size()==0</code>
+ * \param[in] onProcOnly Only return the elements owned by this processor
  *
  * \note Some elements may be repeated in the lists, however the
  *       local entity ID should be distinct for each of those.
@@ -193,6 +210,44 @@ void getSideElements(const panzer_stk::STK_Interface & mesh,
 		       const std::vector<stk::mesh::Entity*> & sides,
 		       std::vector<std::size_t> & localSideIds, 
 		       std::vector<stk::mesh::Entity*> & elements);
+
+/** This function loops over the passed in set of "Sides" and looks
+ * at there related elements. It is then determined which elements
+ * belong in the requested element block, and what the local ID of 
+ * the side is. This version is for sides where you want elements that
+ * live in two element blocks. The "a" elements are required to be owned,
+ * the "b" elements maybe ghosted.
+ *
+ * \param[in] mesh STK mesh interface
+ * \param[in] blockId_a Requested element block identifier (owned only)
+ * \param[in] blockId_b Requested element block identifier (owned and ghosted)
+ * \param[in] sides Set of sides (entities of dimension-1) where
+ *                  there is assumed part membership (induced or not)
+ *                  in the requested element block.
+ * \param[out] localSideIds_a On output this will contain the local side ids
+ *             for elements in block "a". Assumed that on input
+ *             <code>sides.size()==0</code>
+ * \param[out] elements_a On output this will contain the elements associated
+ *             with each side in the "a" block. Assumed that on input
+ *             <code>elements.size()==0</code>
+ * \param[out] localSideIds_b On output this will contain the local side ids
+ *             for elements in block "b". Assumed that on input
+ *             <code>sides.size()==0</code>
+ * \param[out] elements_b On output this will contain the elements associated
+ *             with each side in the "b" block. Assumed that on input
+ *             <code>elements.size()==0</code>
+ *
+ * \note Some elements may be repeated in the lists, however the
+ *       local side ID should be distinct for each of those.
+ */
+void getSideElements(const panzer_stk::STK_Interface & mesh,
+                     const std::string & blockId_a, 
+                     const std::string & blockId_b, 
+                     const std::vector<stk::mesh::Entity*> & sides,
+                     std::vector<std::size_t> & localSideIds_a, 
+                     std::vector<stk::mesh::Entity*> & elements_a,
+                     std::vector<std::size_t> & localSideIds_b, 
+                     std::vector<stk::mesh::Entity*> & elements_b);
 
 /** This function loops over the passed in set of "Nodes" and looks
  * at there related elements. It is then determined which elements

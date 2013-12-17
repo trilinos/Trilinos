@@ -904,4 +904,142 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_q2q1)
       TEUCHOS_ASSERT(false);
 }
 
+TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_nabors)
+{
+   // build global (or serial communicator)
+   #ifdef HAVE_MPI
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
+   #else
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
+   #endif
+
+   int numProcs = stk::parallel_machine_size(Comm);
+   int myRank = stk::parallel_machine_rank(Comm);
+
+   TEUCHOS_ASSERT(numProcs==2);
+
+   // build a geometric pattern from a single basis
+   RCP<const panzer::FieldPattern> patternC1 
+         = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+
+   RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,4,2,1,1);
+   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   RCP<panzer::DOFManager<int,int> > dofManager_noghosts = rcp(new panzer::DOFManager<int,int>());
+   dofManager->enableGhosting(true);
+
+   TEST_EQUALITY(dofManager->getOrientationsRequired(),false);
+   TEST_EQUALITY(dofManager->getConnManager(),Teuchos::null);
+
+   dofManager->setConnManager(connManager,MPI_COMM_WORLD);
+   dofManager_noghosts->setConnManager(connManager,MPI_COMM_WORLD);
+   TEST_EQUALITY(dofManager->getConnManager(),connManager);
+
+   dofManager->addField("ux",patternC1);
+   dofManager->addField("uy",patternC1);
+   dofManager->addField("p",patternC1);
+   dofManager_noghosts->addField("ux",patternC1);
+   dofManager_noghosts->addField("uy",patternC1);
+   dofManager_noghosts->addField("p",patternC1);
+
+   dofManager->buildGlobalUnknowns();
+   dofManager_noghosts->buildGlobalUnknowns();
+   dofManager->printFieldInformation(out);
+
+   TEST_EQUALITY(connManager->getElementBlock("eblock-0_0").size(),4);
+   TEST_EQUALITY(connManager->getNeighborElementBlock("eblock-0_0").size(),2);
+
+   TEST_EQUALITY(dofManager->getNumberElementGIDArrays(),6)
+
+   if(myRank==0) {
+      std::vector<int> gids;
+
+      for(int i=0;i<6;i++) {
+        dofManager->getElementGIDs(i,gids);
+
+        out << "Element " << i << ": ";
+        for(int j=0;j<12;j+=3)
+          out << gids[j] << " ";
+        out << std::endl;
+      }
+
+      dofManager->getElementGIDs(4,gids);
+      TEST_EQUALITY(gids.size(),4+4+4);
+
+      TEST_EQUALITY(gids[0],18); TEST_EQUALITY(gids[1],19); TEST_EQUALITY(gids[2],20);
+      TEST_EQUALITY(gids[3],21); TEST_EQUALITY(gids[4],22); TEST_EQUALITY(gids[5],23);
+      TEST_EQUALITY(gids[6],30); TEST_EQUALITY(gids[7],31); TEST_EQUALITY(gids[8],32);
+      TEST_EQUALITY(gids[9],27); TEST_EQUALITY(gids[10],28); TEST_EQUALITY(gids[11],29);
+
+      dofManager->getElementGIDs(5,gids);
+      TEST_EQUALITY(gids.size(),4+4+4);
+
+      TEST_EQUALITY(gids[0],27); TEST_EQUALITY(gids[1],28); TEST_EQUALITY(gids[2],29);
+      TEST_EQUALITY(gids[3],30); TEST_EQUALITY(gids[4],31); TEST_EQUALITY(gids[5],32);
+      TEST_EQUALITY(gids[6],39); TEST_EQUALITY(gids[7],40); TEST_EQUALITY(gids[8],41);
+      TEST_EQUALITY(gids[9],36); TEST_EQUALITY(gids[10],37); TEST_EQUALITY(gids[11],38);
+   }
+   else {
+      std::vector<int> gids;
+
+      for(int i=0;i<6;i++) {
+        dofManager->getElementGIDs(i,gids);
+
+        out << "Element " << i << ": ";
+        for(int j=0;j<12;j+=3)
+          out << gids[j] << " ";
+        out << std::endl;
+      }
+
+      dofManager->getElementGIDs(4,gids);
+      TEST_EQUALITY(gids.size(),4+4+4);
+
+      TEST_EQUALITY(gids[0],3); TEST_EQUALITY(gids[1],4); TEST_EQUALITY(gids[2],5);
+      TEST_EQUALITY(gids[3],18); TEST_EQUALITY(gids[4],19); TEST_EQUALITY(gids[5],20);
+      TEST_EQUALITY(gids[6],27); TEST_EQUALITY(gids[7],28); TEST_EQUALITY(gids[8],29);
+      TEST_EQUALITY(gids[9],9); TEST_EQUALITY(gids[10],10); TEST_EQUALITY(gids[11],11);
+
+      dofManager->getElementGIDs(5,gids);
+      TEST_EQUALITY(gids.size(),4+4+4);
+
+      TEST_EQUALITY(gids[0],9); TEST_EQUALITY(gids[1],10); TEST_EQUALITY(gids[2],11);
+      TEST_EQUALITY(gids[3],27); TEST_EQUALITY(gids[4],28); TEST_EQUALITY(gids[5],29);
+      TEST_EQUALITY(gids[6],36); TEST_EQUALITY(gids[7],37); TEST_EQUALITY(gids[8],38);
+      TEST_EQUALITY(gids[9],15); TEST_EQUALITY(gids[10],16); TEST_EQUALITY(gids[11],17);
+   }
+
+   // owned vector
+   {
+     std::vector<int> owned, owned_noghosts;
+     dofManager->getOwnedIndices(owned);
+     dofManager_noghosts->getOwnedIndices(owned_noghosts);
+     TEST_EQUALITY(owned.size(),owned_noghosts.size());
+  
+     bool owned_result = true;
+     for(std::size_t j=0;j<owned.size();j++) 
+       owned_result &= (owned[j]==owned_noghosts[j]);
+     TEST_ASSERT(owned_result);
+   }
+
+   // owned and shared vector
+   {
+     std::vector<int> shared;
+     dofManager->getOwnedAndSharedIndices(shared);
+
+     std::set<int> shared_set;
+     shared_set.insert(shared.begin(),shared.end());
+     TEST_EQUALITY(shared_set.size(),shared.size()); // make sure there are no duplicated entries
+
+     for(int e=0;e<6;e++) {
+       std::vector<int> gids;
+
+       dofManager->getElementGIDs(e,gids);
+       bool allFound = true;
+       for(std::size_t i=0;i<gids.size();i++) 
+         allFound &= (shared_set.find(gids[i])!=shared_set.end());
+
+       TEST_ASSERT(allFound); 
+     }
+   }
+}
+
 }

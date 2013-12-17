@@ -104,8 +104,22 @@ values:
   - "RELAXATION": returns an instance of Relaxation
   - "RILUK": returns an instance of RILUK
 */
+template<class MatrixType>
 class OneLevelFactory {
 public:
+  typedef typename MatrixType::scalar_type scalar_type;
+  typedef typename MatrixType::local_ordinal_type local_ordinal_type;
+  typedef typename MatrixType::global_ordinal_type global_ordinal_type;
+  typedef typename MatrixType::node_type node_type;
+  typedef ::Ifpack2::Preconditioner<scalar_type,
+                                    local_ordinal_type,
+                                    global_ordinal_type,
+                                    node_type> prec_type;
+  typedef ::Tpetra::RowMatrix<scalar_type,
+                              local_ordinal_type,
+                              global_ordinal_type,
+                              node_type> row_matrix_type;
+
   /** \brief Create an instance of Preconditioner given the string
    * name of the preconditioner type.
    *
@@ -116,14 +130,9 @@ public:
    * does not exist.  Otherwise, return a newly created preconditioner
    * object.
    */
-  template<class MatrixType>
-  static
-  Teuchos::RCP<Preconditioner<typename MatrixType::scalar_type,
-                              typename MatrixType::local_ordinal_type,
-                              typename MatrixType::global_ordinal_type,
-                              typename MatrixType::node_type> >
+  Teuchos::RCP<prec_type>
   create (const std::string& precType,
-          const Teuchos::RCP<const MatrixType>& matrix);
+          const Teuchos::RCP<const row_matrix_type>& matrix) const;
 };
 
 } // namespace Details

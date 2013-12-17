@@ -911,4 +911,17 @@ TEUCHOS_UNIT_TEST(MiniTensor, MechanicsTransforms)
   TEST_COMPARE(error, <=, machine_epsilon<Real>());
 }
 
+TEUCHOS_UNIT_TEST(MiniTensor, KroneckerProduct)
+{
+  Tensor4<Real> A = identity_3<Real>(3);
+
+  Tensor<Real> Q = eye<Real>(3);
+
+  Tensor4<Real> B = kronecker(Q, A);
+
+  Real const error = norm_f(B-A) / norm_f(A);
+
+  TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
+}
+
 } // namespace Intrepid

@@ -45,6 +45,16 @@
 
 #include "Ifpack2_AdditiveSchwarz_decl.hpp"
 
+// AdditiveSchwarz uses OneLevelFactory to create a default inner
+// preconditioner.
+//
+// FIXME (mfh 13 Dec 2013) For some inexplicable reason, I have to
+// include the _decl and _def headers separately here; including just
+// Ifpack2_Details_OneLevelFactory.hpp doesn't work.  It probably has
+// something to do with ETI, but I don't fully understand what.
+#include "Ifpack2_Details_OneLevelFactory_decl.hpp"
+#include "Ifpack2_Details_OneLevelFactory_def.hpp"
+
 #if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
 #include "Xpetra_RowMatrix.hpp"
 #include "Xpetra_TpetraRowMatrix.hpp"
@@ -68,6 +78,119 @@
 #include <locale> // std::toupper
 
 namespace Ifpack2 {
+
+namespace Details {
+//! Map from an Ifpack2::Preconditioner subclass to its string name.
+template<class PrecType>
+class OneLevelPreconditionerNamer {
+public:
+  //! Name corresponding to Preconditioner subclass PrecType.
+  static std::string name () {
+    // This is the default name for any preconditioner type for which
+    // a partial specialization does not exist.  We make this "ILUT"
+    // for backwards compatibility with the original AdditiveSchwarz
+    // implementation.
+    return "ILUT";
+  }
+};
+
+//
+// Partial specializations for each single-level preconditioner.
+//
+
+template<class MatrixType>
+class OneLevelPreconditionerNamer< ::Ifpack2::Chebyshev<MatrixType> > {
+public:
+  static std::string name () {
+    return "CHEBYSHEV";
+  }
+};
+
+template<class MatrixType>
+class OneLevelPreconditionerNamer< ::Ifpack2::Details::DenseSolver<MatrixType> > {
+public:
+  static std::string name () {
+    return "DENSE";
+  }
+};
+
+#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_AMESOS2)
+template<class MatrixType>
+class OneLevelPreconditionerNamer< ::Ifpack2::Details::Amesos2Wrapper<MatrixType> > {
+public:
+  static std::string name () {
+    return "AMESOS2";
+  }
+};
+#endif
+
+template<class MatrixType>
+class OneLevelPreconditionerNamer< ::Ifpack2::Diagonal<MatrixType> > {
+public:
+  static std::string name () {
+    return "DIAGONAL";
+  }
+};
+
+template<class MatrixType>
+class OneLevelPreconditionerNamer< ::Ifpack2::ILUT<MatrixType> > {
+public:
+  static std::string name () {
+    return "ILUT";
+  }
+};
+
+template<class MatrixType>
+class OneLevelPreconditionerNamer< ::Ifpack2::Relaxation<MatrixType> > {
+public:
+  static std::string name () {
+    return "RELAXATION";
+  }
+};
+
+template<class MatrixType>
+class OneLevelPreconditionerNamer< ::Ifpack2::RILUK<MatrixType> > {
+public:
+  static std::string name () {
+    return "RILUK";
+  }
+};
+
+template<class MatrixType>
+class OneLevelPreconditionerNamer< ::Ifpack2::IdentitySolver<MatrixType> > {
+public:
+  static std::string name () {
+    return "IDENTITY";
+  }
+};
+
+} // namespace Details
+
+
+template<class MatrixType, class LocalInverseType>
+std::string
+AdditiveSchwarz<MatrixType, LocalInverseType>::innerPrecName () const
+{
+  // TODO (mfh 14 Dec 2013) Add an "inner preconditioner" string
+  // parameter to the input ParameterList, rather than using a default
+  // name.  (The default name currently comes from the
+  // LocalInverseType template parameter, which will go away.)
+  return defaultInnerPrecName ();
+}
+
+
+template<class MatrixType, class LocalInverseType>
+std::string
+AdditiveSchwarz<MatrixType, LocalInverseType>::defaultInnerPrecName ()
+{
+  // FIXME (mfh 14 Dec 2013) We want to get rid of the
+  // LocalInverseType template parameter.  Soon, we will add an "inner
+  // preconditioner" string parameter to the input ParameterList.  For
+  // now, we map statically from LocalInverseType to its string name,
+  // and use the string name to create the inner preconditioner.
+  return Details::OneLevelPreconditionerNamer<LocalInverseType>::name ();
+}
+
 
 template<class MatrixType, class LocalInverseType>
 AdditiveSchwarz<MatrixType, LocalInverseType>::
@@ -95,6 +218,10 @@ AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A) :
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::SerialComm;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    Matrix_.is_null (), std::invalid_argument, "Ifpack2::AdditiveSchwarz "
+    "constructor: The input matrix A must be nonnull.");
 
   RCP<const Teuchos::Comm<int> > comm = Matrix_->getComm ();
   RCP<const map_type> rowMap = Matrix_->getRowMap ();
@@ -168,6 +295,10 @@ AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A,
   using Teuchos::rcp;
   using Teuchos::SerialComm;
 
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    Matrix_.is_null (), std::invalid_argument, "Ifpack2::AdditiveSchwarz "
+    "constructor: The input matrix A must be nonnull.");
+
   RCP<const Teuchos::Comm<int> > comm = Matrix_->getComm ();
   RCP<const map_type> rowMap = Matrix_->getRowMap ();
   RCP<node_type> node = Matrix_->getNode ();
@@ -220,6 +351,9 @@ template<class MatrixType,class LocalInverseType>
 Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type > >
 AdditiveSchwarz<MatrixType,LocalInverseType>::getDomainMap() const
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    Matrix_.is_null (), std::runtime_error, "Ifpack2::AdditiveSchwarz::getDomainMap: "
+    "The matrix A to precondition is null.");
   return Matrix_->getDomainMap ();
 }
 
@@ -228,6 +362,9 @@ template<class MatrixType,class LocalInverseType>
 Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> >
 AdditiveSchwarz<MatrixType,LocalInverseType>::getRangeMap () const
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    Matrix_.is_null (), std::runtime_error, "Ifpack2::AdditiveSchwarz::getRangeMap: "
+    "The matrix A to precondition is null.");
   return Matrix_->getRangeMap ();
 }
 
@@ -275,11 +412,29 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       "X and Y must have the same number of columns.  X has "
       << X.getNumVectors() << " columns, but Y has " << Y.getNumVectors() << ".");
 
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      Matrix_.is_null (), std::logic_error, "Ifpack2::AdditiveSchwarz::apply: "
+      "The input matrix A is null, but the preconditioner says that it has "
+      "been computed (isComputed() is true).  This should never happen.  "
+      "Please report this bug to the Ifpack2 developers.");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      Inverse_.is_null (), std::logic_error, "Ifpack2::AdditiveSchwarz::apply: "
+      "Inverse_ is null, but the preconditioner says that it has been computed "
+      "(isComputed() is true).  This should never happen.  "
+      "Please report this bug to the Ifpack2 developers.");
+
     const size_t numVectors = X.getNumVectors ();
 
     RCP<MV> OverlappingX,OverlappingY,Xtmp;
 
     if (IsOverlapping_) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        OverlappingMatrix_.is_null (), std::logic_error,
+        "Ifpack2::AdditiveSchwarz::apply: The overlapping matrix is null.  "
+        "This should never happen if IsOverlapping_ is true.  "
+        "Please report this bug to the Ifpack2 developers.");
+
       // Setup if we're overlapping
       OverlappingX = rcp (new MV (OverlappingMatrix_->getRowMap (), numVectors));
       OverlappingY = rcp (new MV (OverlappingMatrix_->getRowMap (), numVectors));
@@ -292,6 +447,18 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     }
     else {
       Xtmp = rcp (new MV (X));
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        LocalDistributedMap_.is_null (), std::logic_error,
+        "Ifpack2::AdditiveSchwarz::apply: "
+        "LocalDistributedMap_ is null.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        DistributedMap_.is_null (), std::logic_error,
+        "Ifpack2::AdditiveSchwarz::apply: "
+        "DistributedMap_ is null.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        SerialMap_.is_null (), std::logic_error, "Ifpack2::AdditiveSchwarz::apply: "
+        "SerialMap_ is null.");
 
       MV Serial (SerialMap_, numVectors);
       // Create Import object on demand, if necessary.
@@ -606,6 +773,12 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
     // Setup
     setup ();
 
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      Inverse_.is_null (), std::logic_error, "Ifpack2::AdditiveSchwarz::initialize: "
+      "Inverse_ is null after calling setup().  "
+      "This should never happen.  "
+      "Please report this bug to the Ifpack2 developers.");
+
     // Initialize subdomain solver.
     //
     // FIXME (mfh 28 Sep 2013) The "inverse" should have its own sublist
@@ -643,6 +816,19 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::compute ()
   if (! IsInitialized_) {
     initialize ();
   }
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ! isInitialized (), std::logic_error, "Ifpack2::AdditiveSchwarz::compute: "
+    "The preconditioner is not yet initialized, "
+    "even though initialize() supposedly has been called.  "
+    "This should never happen.  "
+    "Please report this bug to the Ifpack2 developers.");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    Inverse_.is_null (), std::logic_error, "Ifpack2::AdditiveSchwarz::compute: "
+    "Inverse_ is null, but the preconditioner says that it has been initialized "
+    "(isInitialized() is true).  This should never happen.  "
+    "Please report this bug to the Ifpack2 developers.");
 
   const std::string timerName ("Ifpack2::AdditiveSchwarz::compute");
   RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
@@ -846,8 +1032,13 @@ describe (Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) 
       else { // vl >= Teuchos::VERB_EXTREME
         for (int p = 0; p < numProcs; ++p) {
           if (p == myRank) {
-            out << "Subdomain solver on Process " << myRank << ":" << endl;
-            Inverse_->describe (out, vl);
+            out << "Subdomain solver on Process " << myRank << ":";
+            if (Inverse_.is_null ()) {
+              out << "null" << endl;
+            } else {
+              out << endl;
+              Inverse_->describe (out, vl);
+            }
           }
           Matrix_->getComm ()->barrier ();
           Matrix_->getComm ()->barrier ();
@@ -893,6 +1084,10 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
   typedef Xpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> XpetraMatrixType;
   typedef Xpetra::TpetraRowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> XpetraTpetraMatrixType;
 #endif
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    Matrix_.is_null (), std::runtime_error, "Ifpack2::AdditiveSchwarz::setup: "
+    "The matrix A to precondition is null.");
 
   // Localized version of Matrix_ or OverlappingMatrix_.
   RCP<row_matrix_type> LocalizedMatrix;
@@ -999,14 +1194,46 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
     "setup: Inner matrix is null right before constructing inner solver.  "
     "Please report this bug to the Ifpack2 developers.");
 
-  // Construct the inner solver if necessary.  We go through a bit
-  // more trouble than usual to do so, because we want to exercise the
-  // new setInnerPreconditioner feature.
+  // Construct the inner solver if necessary.
   if (Inverse_.is_null ()) {
-    setInnerPreconditioner (rcp (new LocalInverseType (Teuchos::null)));
-  } else {
-    setInnerPreconditioner (Inverse_);
+    const std::string innerName = innerPrecName ();
+
+    Details::OneLevelFactory<MatrixType> factory;
+    RCP<prec_type> innerPrec = factory.create (innerName, innerMatrix_);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      innerPrec.is_null (), std::logic_error,
+      "Ifpack2::AdditiveSchwarz::setup: Failed to create inner preconditioner "
+      "with name \"" << innerName << "\".");
+
+    Inverse_ = innerPrec;
   }
+  else if (Inverse_->getMatrix ().getRawPtr () != innerMatrix_.getRawPtr ()) {
+    // The new inner matrix is different from the inner
+    // preconditioner's current matrix, so give the inner
+    // preconditioner the new inner matrix.  First make sure that the
+    // inner solver knows how to have its matrix changed.
+    typedef Details::CanChangeMatrix<row_matrix_type> can_change_type;
+    can_change_type* innerSolver =
+      dynamic_cast<can_change_type*> (Inverse_.getRawPtr ());
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      innerSolver == NULL, std::invalid_argument, "Ifpack2::AdditiveSchwarz::"
+      "setup: The current inner preconditioner does not implement the "
+      "setMatrix() feature.  Only preconditioners that inherit from "
+      "Ifpack2::Details::CanChangeMatrix implement this feature.");
+
+    // Give the new inner matrix to the inner preconditioner.
+    innerSolver->setMatrix (innerMatrix_);
+  }
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    Inverse_.is_null (), std::logic_error, "Ifpack2::AdditiveSchwarz::"
+    "setup: Inverse_ is null right after we were supposed to have created it."
+    "  Please report this bug to the Ifpack2 developers.");
+
+  // We don't have to call setInnerPreconditioner() here, because we
+  // had the inner matrix (innerMatrix_) before creation of the inner
+  // preconditioner.  Calling setInnerPreconditioner here would be
+  // legal, but it would require an unnecessary reset of the inner
+  // preconditioner (i.e., calling initialize() and compute() again).
 }
 
 
@@ -1029,6 +1256,11 @@ setInnerPreconditioner (const Teuchos::RCP<Preconditioner<scalar_type,
     "setInnerPreconditioner: The input preconditioner does not implement the "
     "setMatrix() feature.  Only input preconditioners that inherit from "
     "Ifpack2::Details::CanChangeMatrix implement this feature.");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    innerMatrix_.is_null (), std::logic_error, "Ifpack2::AdditiveSchwarz::"
+    "setInnerPreconditioner: innerMatrix_ is null.  This should never happen.  "
+    "Please report this bug to the Ifpack2 developers.");
 
   // Give the local matrix to the new inner solver.
   innerSolver->setMatrix (innerMatrix_);

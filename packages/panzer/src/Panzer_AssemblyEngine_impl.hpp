@@ -70,18 +70,25 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
   in.ghostedContainer_->setRequiresDirichletAdjustment(true);
 
   GlobalEvaluationDataContainer gedc;
-  in.fillGlobalEvaluationDataContainer(gedc);
-  gedc.initialize(); // make sure all ghosted data is ready to go
-  gedc.globalToGhost(LOC::X | LOC::DxDt);
+  {
+    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_gather("+PHX::TypeString<EvalT>::value+")");
 
-  // Push solution, x and dxdt into ghosted domain
-  m_lin_obj_factory->globalToGhostContainer(*in.container_,*in.ghostedContainer_,LOC::X | LOC::DxDt);
-  m_lin_obj_factory->beginFill(*in.ghostedContainer_);
+    in.fillGlobalEvaluationDataContainer(gedc);
+    gedc.initialize(); // make sure all ghosted data is ready to go
+    gedc.globalToGhost(LOC::X | LOC::DxDt);
+
+    // Push solution, x and dxdt into ghosted domain
+    m_lin_obj_factory->globalToGhostContainer(*in.container_,*in.ghostedContainer_,LOC::X | LOC::DxDt);
+    m_lin_obj_factory->beginFill(*in.ghostedContainer_);
+  }
 
   // *********************
   // Volumetric fill
   // *********************
-  this->evaluateVolume(in);
+  {
+    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_volume("+PHX::TypeString<EvalT>::value+")");
+    this->evaluateVolume(in);
+  }
 
   // *********************
   // BC fill
@@ -90,18 +97,27 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
   // bcs overwrite equations where neumann sum into equations.  Make
   // sure all neumann are done before dirichlet.
 
-  this->evaluateNeumannBCs(in);
+  {
+    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_neumannbcs("+PHX::TypeString<EvalT>::value+")");
+    this->evaluateNeumannBCs(in);
+  }
 
   // Dirchlet conditions require a global matrix
-  this->evaluateDirichletBCs(in);
+  {
+    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_dirichletbcs("+PHX::TypeString<EvalT>::value+")");
+    this->evaluateDirichletBCs(in);
+  }
 
-  m_lin_obj_factory->ghostToGlobalContainer(*in.ghostedContainer_,*in.container_,LOC::F | LOC::Mat);
+  {
+    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_scatter("+PHX::TypeString<EvalT>::value+")");
+    m_lin_obj_factory->ghostToGlobalContainer(*in.ghostedContainer_,*in.container_,LOC::F | LOC::Mat);
 
-  m_lin_obj_factory->beginFill(*in.container_);
-  gedc.ghostToGlobal(LOC::F | LOC::Mat);
-  m_lin_obj_factory->endFill(*in.container_);
+    m_lin_obj_factory->beginFill(*in.container_);
+    gedc.ghostToGlobal(LOC::F | LOC::Mat);
+    m_lin_obj_factory->endFill(*in.container_);
 
-  m_lin_obj_factory->endFill(*in.ghostedContainer_);
+    m_lin_obj_factory->endFill(*in.ghostedContainer_);
+  }
 
   return;
 }

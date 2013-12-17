@@ -46,7 +46,7 @@
 
 // Don't bother compiling anything, or even including anything else,
 // unless OpenMPNode is enabled.
-#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_OPENMP)
 #include "Tpetra_CrsMatrix.hpp"
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION

@@ -317,18 +317,16 @@ void Krylov<MatrixType,PrecType>::apply(const Tpetra::MultiVector<typename Matri
     Xcopy = Teuchos::rcp( &X, false );
   }
 
-  const Teuchos::RCP< Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Zeros =
-    Teuchos::rcp( new Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> (Y) );
+  Teuchos::RCP< Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Ycopy = Teuchos::rcpFromRef(Y);
   if(ZeroStartingSolution_==true) {
-    Zeros->putScalar((scalar_type) 0.0);
+    Ycopy->putScalar((scalar_type) 0.0);
   }
-
+  
   // Set left and right hand sides for Belos
-  belosProblem_->setProblem(Zeros,Xcopy);
+  belosProblem_->setProblem(Ycopy,Xcopy);
   // iterative solve
   belosSolver_->solve();
 
-  Y=*Zeros;
   ++NumApply_;
   Time_.stop();
   ApplyTime_ += Time_.totalElapsedTime();

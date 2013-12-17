@@ -54,6 +54,7 @@
 //----------------------------------------------------------------------------
 #include <TestUnorderedMap.hpp>
 #include <TestVector.hpp>
+#include <TestDualView.hpp>
 
 namespace Test {
 
@@ -113,6 +114,11 @@ protected:
       test_vector_combinations<int,Kokkos::Threads>(size);                     \
   }
 
+#define THREADS_DUALVIEW_COMBINE_TEST( size )                             \
+  TEST_F( threads, dualview_combination##size##x) {       \
+      test_dualview_combinations<int,Kokkos::Threads>(size);                     \
+  }
+
 THREADS_INSERT_TEST(close,               100000, 90000, 100, 500)
 THREADS_INSERT_TEST(far,                 100000, 90000, 100, 500)
 THREADS_INSERT_TEST(mark_pending_delete, 100000, 90000, 100, 500)
@@ -121,12 +127,14 @@ THREADS_ASSIGNEMENT_TEST( 10000, 5000 )
 THREADS_DEEP_COPY( 10000, 5000 )
 THREADS_VECTOR_COMBINE_TEST( 10 )
 THREADS_VECTOR_COMBINE_TEST( 3057 )
+THREADS_DUALVIEW_COMBINE_TEST( 10 )
 
 #undef THREADS_INSERT_TEST
 #undef THREADS_FAILED_INSERT_TEST
 #undef THREADS_ASSIGNEMENT_TEST
 #undef THREADS_DEEP_COPY
-#undef THREADS_VECTOR_COMBINE
+#undef THREADS_VECTOR_COMBINE_TEST
+#undef THREADS_DUALVIEW_COMBINE_TEST
 
 #endif
 } // namespace Test
