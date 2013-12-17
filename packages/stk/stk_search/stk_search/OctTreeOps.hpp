@@ -20,8 +20,6 @@
 
 #include <TPI.h>
 
-#define COARSE_SEARCH_OCTTREE_COMMUNICATE_TO_RANGE_OWNER 1
-
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
@@ -494,7 +492,8 @@ template <class DomainBoundingBox, class RangeBoundingBox>
 void communicate(
   stk::ParallelMachine arg_comm ,
   const std::set< std::pair< typename DomainBoundingBox::second_type,  typename RangeBoundingBox::second_type > > & send_relation ,
-        std::set< std::pair< typename DomainBoundingBox::second_type,  typename RangeBoundingBox::second_type > > & recv_relation )
+        std::set< std::pair< typename DomainBoundingBox::second_type,  typename RangeBoundingBox::second_type > > & recv_relation ,
+        bool communicateRangeBoxInfo = true )
 {
   typedef typename DomainBoundingBox::second_type DomainKey;
   typedef typename RangeBoundingBox::second_type RangeKey;
@@ -509,23 +508,21 @@ void communicate(
 
   for ( i = send_relation.begin() ; i != send_relation.end() ; ++i ) {
     const ValueType & val = *i ;
-    if ( static_cast<int>(val.first.proc()) == p_rank
-#if COARSE_SEARCH_OCTTREE_COMMUNICATE_TO_RANGE_OWNER
-        || static_cast<int>(val.second.proc()) == p_rank
-#endif
-        ) {
+    if ( static_cast<int>(val.first.proc()) == p_rank || ( communicateRangeBoxInfo && static_cast<int>(val.second.proc()) == p_rank) )
+    {
       recv_relation.insert( val );
     }
     if ( static_cast<int>(val.first.proc()) != p_rank ) {
       CommBuffer & buf = comm_all.send_buffer( val.first.proc() );
       buf.skip<ValueType>( 1 );
     }
-#if COARSE_SEARCH_OCTTREE_COMMUNICATE_TO_RANGE_OWNER
-    if ( static_cast<int>(val.second.proc()) != p_rank && val.second.proc() != val.first.proc() ) {
-      CommBuffer & buf = comm_all.send_buffer( val.second.proc() );
-      buf.skip<ValueType>( 1 );
+    if ( communicateRangeBoxInfo )
+    {
+        if ( static_cast<int>(val.second.proc()) != p_rank && val.second.proc() != val.first.proc() ) {
+          CommBuffer & buf = comm_all.send_buffer( val.second.proc() );
+          buf.skip<ValueType>( 1 );
+        }
     }
-#endif
   }
 
   // If more than 25% messages then is dense
@@ -538,12 +535,13 @@ void communicate(
       CommBuffer & buf = comm_all.send_buffer( val.first.proc() );
       buf.pack<ValueType>( val );
     }
-#if COARSE_SEARCH_OCTTREE_COMMUNICATE_TO_RANGE_OWNER
-    if ( static_cast<int>(val.second.proc()) != p_rank && val.second.proc() != val.first.proc() ) {
-      CommBuffer & buf = comm_all.send_buffer( val.second.proc() );
-      buf.pack<ValueType>( val );
+    if ( communicateRangeBoxInfo )
+    {
+        if ( static_cast<int>(val.second.proc()) != p_rank && val.second.proc() != val.first.proc() ) {
+          CommBuffer & buf = comm_all.send_buffer( val.second.proc() );
+          buf.pack<ValueType>( val );
+        }
     }
-#endif
   }
 
   comm_all.communicate();
@@ -885,7 +883,8 @@ bool oct_tree_proximity_search(
   const std::pair<DomainBox,DomainIdent> * const arg_domain_boxes ,
   const size_t               arg_range_boxes_number ,
   const std::pair<RangeBox,RangeIdent> * const arg_range_boxes ,
-  std::vector< std::pair< DomainIdent, RangeIdent > > & arg_relation )
+  std::vector< std::pair< DomainIdent, RangeIdent > > & arg_relation,
+  bool communicateRangeBoxInfo )
 {
   typedef DomainIdent DomainKey;
   typedef RangeIdent RangeKey;
@@ -947,7 +946,7 @@ bool oct_tree_proximity_search(
 
     // Communicate relations back to domain and range processors
 
-    communicate<DomainBoundingBox, RangeBoundingBox>( arg_comm , local_relation , tmp_relation );
+    communicate<DomainBoundingBox, RangeBoundingBox>( arg_comm , local_relation , tmp_relation , communicateRangeBoxInfo);
   }
 
 
@@ -962,7 +961,8 @@ template <typename DomainBox, typename DomainIdent, typename RangeBox, typename 
 void coarse_search_octree( std::vector< std::pair<DomainBox, DomainIdent> > const& domain,
                            std::vector< std::pair<RangeBox, RangeIdent> >  const& range,
                            stk::ParallelMachine   comm,
-                           std::vector< std::pair< DomainIdent, RangeIdent> > & intersections
+                           std::vector< std::pair< DomainIdent, RangeIdent> > & intersections,
+                           bool communicateRangeBoxInfo
                          )
 {
 
@@ -975,7 +975,8 @@ void coarse_search_octree( std::vector< std::pair<DomainBox, DomainIdent> > cons
       &*domain.begin(),
       range.size(),
       &*range.begin(),
-      intersections
+      intersections,
+      communicateRangeBoxInfo
       );
 }
 

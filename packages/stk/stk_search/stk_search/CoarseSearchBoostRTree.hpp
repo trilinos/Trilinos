@@ -29,8 +29,6 @@
 #include <utility>
 
 
-#define COARSE_SEARCH_BOOST_RTREE_COMMUNICATE_TO_RANGE_OWNER 1
-
 namespace stk { namespace search {
 
 namespace impl {
@@ -286,7 +284,8 @@ template <typename DomainBox, typename DomainIdent, typename RangeBox, typename 
 void coarse_search_boost_rtree( std::vector< std::pair<DomainBox,DomainIdent> > const& local_domain,
                                 std::vector< std::pair<RangeBox,RangeIdent> > const& local_range,
                                 stk::ParallelMachine comm,
-                                std::vector<std::pair<DomainIdent, RangeIdent> >& output
+                                std::vector<std::pair<DomainIdent, RangeIdent> >& output,
+                                bool communicateRangeBoxInfo
                               )
 {
   namespace bg = boost::geometry;
@@ -369,13 +368,8 @@ void coarse_search_boost_rtree( std::vector< std::pair<DomainBox,DomainIdent> > 
         Output temp(domain_id, range_id);
         output.push_back(temp);
 
-        if ((p_size > 1)
-            && (
-                impl::get_proc<DomainIdent>()(domain_id) != p_rank
-#if COARSE_SEARCH_BOOST_RTREE_COMMUNICATE_TO_RANGE_OWNER
-                || impl::get_proc<RangeIdent>()(range_id) != p_rank
-#endif
-                )) {
+        if ((p_size > 1) && ( impl::get_proc<DomainIdent>()(domain_id) != p_rank || (communicateRangeBoxInfo &&  impl::get_proc<RangeIdent>()(range_id) != p_rank )))
+        {
           int other_proc = impl::get_proc<DomainIdent>()(domain_id) == p_rank ? impl::get_proc<RangeIdent>()(range_id) : impl::get_proc<DomainIdent>()(domain_id);
           send_matches[other_proc].push_back(temp);
         }

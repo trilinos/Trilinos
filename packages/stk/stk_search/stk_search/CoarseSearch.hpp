@@ -37,16 +37,17 @@ void coarse_search( std::vector<std::pair<DomainBox,DomainIdent> > const& domain
                     std::vector<std::pair<RangeBox,RangeIdent> >   const& range,
                     SearchMethod                                          method,
                     stk::ParallelMachine                                  comm,
-                    std::vector< std::pair< DomainIdent, RangeIdent> > &  intersections
+                    std::vector< std::pair< DomainIdent, RangeIdent> > &  intersections,
+                    bool communicateRangeBoxInfo=true
                   )
 {
   switch( method )
   {
   case BOOST_RTREE:
-    coarse_search_boost_rtree(domain,range,comm,intersections);
+    coarse_search_boost_rtree(domain,range,comm,intersections,communicateRangeBoxInfo);
     break;
   case OCTREE:
-    coarse_search_octree(domain,range,comm,intersections);
+    coarse_search_octree(domain,range,comm,intersections,communicateRangeBoxInfo);
     break;
   }
 }
