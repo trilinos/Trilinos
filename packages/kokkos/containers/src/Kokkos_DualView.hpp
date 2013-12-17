@@ -59,13 +59,16 @@
 #include <Kokkos_View.hpp>
 namespace Kokkos {
 
-template< class T , class L , class D>
+template< class T , class L , class D, class M = MemoryManaged>
 class DualView {
 public:
 
+  typedef D device_type;
+  typedef typename D::host_mirror_device_type host_mirror_device_type;
+
   /* Define base types for Device and Host */
 
-  typedef Kokkos::View<T,L,D> t_dev ;
+  typedef Kokkos::View<T,L,D,M> t_dev ;
 #if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM)
   typedef t_dev t_host;
 #else
@@ -74,7 +77,7 @@ public:
   /* Define typedefs for different usage scenarios */
 
   // Define const view types
-  typedef Kokkos::View<typename t_dev::const_data_type,L,D> t_dev_const;
+  typedef Kokkos::View<typename t_dev::const_data_type,L,D,M> t_dev_const;
 #if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM)
   typedef t_dev_const t_host_const;
 #else
@@ -114,8 +117,8 @@ public:
 
   /* Counters to keep track of changes (dirty-flags) */
 
-  unsigned int modified_device;
-  unsigned int modified_host;
+  View<unsigned int,LayoutLeft,host_mirror_device_type> modified_device;
+  View<unsigned int,LayoutLeft,host_mirror_device_type> modified_host;
 
   /* Return view on specific device via view<Device>() */
 
@@ -135,8 +138,8 @@ public:
   /* Empty Constructor */
 
   DualView() {
-    modified_host = 0;
-    modified_device = 0;
+    modified_host = View<unsigned int,LayoutLeft,host_mirror_device_type>("DualView::modified_host");
+    modified_device = View<unsigned int,LayoutLeft,host_mirror_device_type>("DualView::modified_device");
   }
 
   /* Create view with allocation on both host and device */
@@ -157,11 +160,20 @@ public:
     , h_view( create_mirror_view( d_view ) )
 #endif
   {
-    modified_host = 0;
-    modified_device = 0;
+
+    modified_host = View<unsigned int,LayoutLeft,host_mirror_device_type>("DualView::modified_host");;
+    modified_device = View<unsigned int,LayoutLeft,host_mirror_device_type>("DualView::modified_device");;
   }
 
   /* Update data on device or host only if other space is polluted */
+
+  template<class SS, class LS, class DS, class MS>
+  DualView(const DualView<SS,LS,DS,MS> src) {
+    d_view = src.d_view;
+    h_view = src.h_view;
+    modified_host = src.modified_host;
+    modified_device = src.modified_device;
+  }
 
   template<class Device>
   void sync() {
@@ -170,12 +182,12 @@ public:
                                   unsigned int , unsigned int >::select( 1, 0 );
 
     if(dev) {
-      if((modified_host > 0) && (modified_host >= modified_device)) {
+      if((modified_host() > 0) && (modified_host() >= modified_device())) {
       Kokkos::deep_copy(d_view,h_view);
       modified_host = modified_device = 0;
       }
     } else {
-      if((modified_device > 0) && (modified_device >= modified_host)) {
+      if((modified_device() > 0) && (modified_device() >= modified_host())) {
       Kokkos::deep_copy(h_view,d_view);
       modified_host = modified_device = 0;
       }
@@ -191,9 +203,9 @@ public:
                                   unsigned int , unsigned int >::select( 1, 0 );
 
     if(dev) {
-      modified_device = (modified_device > modified_host ? modified_device : modified_host)  + 1;
+      modified_device() = (modified_device() > modified_host() ? modified_device() : modified_host())  + 1;
     } else {
-      modified_host = (modified_device > modified_host ? modified_device : modified_host)  + 1;
+      modified_host() = (modified_device() > modified_host() ? modified_device() : modified_host())  + 1;
     }
   }
 
@@ -214,7 +226,7 @@ public:
      h_view = create_mirror_view( d_view );
 #endif
      /* Reset dirty flags */
-     modified_device = modified_host = 0;
+     modified_device() = modified_host() = 0;
   }
 
   /* Resize both views, only do deep_copy in space which was last marked as dirty */
@@ -227,7 +239,7 @@ public:
            const size_t n5 = 0 ,
            const size_t n6 = 0 ,
            const size_t n7 = 0 ) {
-   if(modified_device >= modified_host) {
+   if(modified_device() >= modified_host()) {
      /* Resize on Device */
      Kokkos::resize(d_view,n0,n1,n2,n3,n4,n5,n6,n7);
 #if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM)
@@ -237,7 +249,7 @@ public:
 #endif
 
      /* Mark Device copy as modified */
-     modified_device++;
+     modified_device() = modified_device()+1;
 
    } else {
      /* Realloc on Device */
@@ -254,13 +266,180 @@ public:
      h_view = temp_view;
 
      /* Mark Host copy as modified */
-     modified_host++;
+     modified_host() = modified_host()+1;
    }
   }
 
   size_t capacity() const {
     return d_view.capacity();
   }
+
+  template< typename iType>
+  void stride(iType* stride_) {
+    d_view.stride(stride_);
+  }
+
+  size_t dimension_0() const {return d_view.dimension_0();}
+  size_t dimension_1() const {return d_view.dimension_1();}
+  size_t dimension_2() const {return d_view.dimension_2();}
+  size_t dimension_3() const {return d_view.dimension_3();}
+  size_t dimension_4() const {return d_view.dimension_4();}
+  size_t dimension_5() const {return d_view.dimension_5();}
+  size_t dimension_6() const {return d_view.dimension_6();}
+  size_t dimension_7() const {return d_view.dimension_7();}
 };
+
+template< class DstViewType ,
+          class T , class L , class D , class M ,
+          class ArgType0 >
+DstViewType
+subview( const DualView<T,L,D,M> & src ,
+         const ArgType0 & arg0 )
+{
+  DstViewType sub_view;
+  sub_view.d_view = subview<typename DstViewType::t_dev>(src.d_view,arg0);
+  sub_view.h_view = subview<typename DstViewType::t_dev>(src.h_view,arg0);
+  sub_view.modified_device = src.modified_device;
+  sub_view.modified_host = src.modified_host;
+  return sub_view;
+}
+
+
+template< class DstViewType ,
+          class T , class L , class D , class M ,
+          class ArgType0 , class ArgType1 >
+DstViewType
+subview( const DualView<T,L,D,M> & src ,
+         const ArgType0 & arg0 ,
+         const ArgType1 & arg1 )
+{
+  DstViewType sub_view;
+  sub_view.d_view = subview<typename DstViewType::t_dev>(src.d_view,arg0,arg1);
+  sub_view.h_view = subview<typename DstViewType::t_dev>(src.h_view,arg0,arg1);
+  sub_view.modified_device = src.modified_device;
+  sub_view.modified_host = src.modified_host;
+  return sub_view;
+}
+
+template< class DstViewType ,
+          class T , class L , class D , class M ,
+          class ArgType0 , class ArgType1 , class ArgType2 >
+DstViewType
+subview( const DualView<T,L,D,M> & src ,
+         const ArgType0 & arg0 ,
+         const ArgType1 & arg1 ,
+         const ArgType2 & arg2 )
+{
+  DstViewType sub_view;
+  sub_view.d_view = subview<typename DstViewType::t_dev>(src.d_view,arg0,arg1,arg2);
+  sub_view.h_view = subview<typename DstViewType::t_dev>(src.h_view,arg0,arg1,arg2);
+  sub_view.modified_device = src.modified_device;
+  sub_view.modified_host = src.modified_host;
+  return sub_view;
+}
+
+template< class DstViewType ,
+          class T , class L , class D , class M ,
+          class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 >
+DstViewType
+subview( const DualView<T,L,D,M> & src ,
+         const ArgType0 & arg0 ,
+         const ArgType1 & arg1 ,
+         const ArgType2 & arg2 ,
+         const ArgType3 & arg3 )
+{
+  DstViewType sub_view;
+  sub_view.d_view = subview<typename DstViewType::t_dev>(src.d_view,arg0,arg1,arg2,arg3);
+  sub_view.h_view = subview<typename DstViewType::t_dev>(src.h_view,arg0,arg1,arg2,arg3);
+  sub_view.modified_device = src.modified_device;
+  sub_view.modified_host = src.modified_host;
+  return sub_view;
+}
+
+template< class DstViewType ,
+          class T , class L , class D , class M ,
+          class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
+          class ArgType4 >
+DstViewType
+subview( const DualView<T,L,D,M> & src ,
+         const ArgType0 & arg0 ,
+         const ArgType1 & arg1 ,
+         const ArgType2 & arg2 ,
+         const ArgType3 & arg3 ,
+         const ArgType4 & arg4 )
+{
+  DstViewType sub_view;
+  sub_view.d_view = subview<typename DstViewType::t_dev>(src.d_view,arg0,arg1,arg2,arg3,arg4);
+  sub_view.h_view = subview<typename DstViewType::t_dev>(src.h_view,arg0,arg1,arg2,arg3,arg4);
+  sub_view.modified_device = src.modified_device;
+  sub_view.modified_host = src.modified_host;
+  return sub_view;
+}
+
+template< class DstViewType ,
+          class T , class L , class D , class M ,
+          class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
+          class ArgType4 , class ArgType5 >
+DstViewType
+subview( const DualView<T,L,D,M> & src ,
+         const ArgType0 & arg0 ,
+         const ArgType1 & arg1 ,
+         const ArgType2 & arg2 ,
+         const ArgType3 & arg3 ,
+         const ArgType4 & arg4 ,
+         const ArgType5 & arg5 )
+{
+  DstViewType sub_view;
+  sub_view.d_view = subview<typename DstViewType::t_dev>(src.d_view,arg0,arg1,arg2,arg3,arg4,arg5);
+  sub_view.h_view = subview<typename DstViewType::t_dev>(src.h_view,arg0,arg1,arg2,arg3,arg4,arg5);
+  sub_view.modified_device = src.modified_device;
+  sub_view.modified_host = src.modified_host;
+  return sub_view;
+}
+
+template< class DstViewType ,
+          class T , class L , class D , class M ,
+          class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
+          class ArgType4 , class ArgType5 , class ArgType6 >
+DstViewType
+subview( const DualView<T,L,D,M> & src ,
+         const ArgType0 & arg0 ,
+         const ArgType1 & arg1 ,
+         const ArgType2 & arg2 ,
+         const ArgType3 & arg3 ,
+         const ArgType4 & arg4 ,
+         const ArgType5 & arg5 ,
+         const ArgType6 & arg6 )
+{
+  DstViewType sub_view;
+  sub_view.d_view = subview<typename DstViewType::t_dev>(src.d_view,arg0,arg1,arg2,arg3,arg4,arg5,arg6);
+  sub_view.h_view = subview<typename DstViewType::t_dev>(src.h_view,arg0,arg1,arg2,arg3,arg4,arg5,arg6);
+  sub_view.modified_device = src.modified_device;
+  sub_view.modified_host = src.modified_host;
+  return sub_view;
+}
+
+template< class DstViewType ,
+          class T , class L , class D , class M ,
+          class ArgType0 , class ArgType1 , class ArgType2 , class ArgType3 ,
+          class ArgType4 , class ArgType5 , class ArgType6 , class ArgType7 >
+DstViewType
+subview( const DualView<T,L,D,M> & src ,
+         const ArgType0 & arg0 ,
+         const ArgType1 & arg1 ,
+         const ArgType2 & arg2 ,
+         const ArgType3 & arg3 ,
+         const ArgType4 & arg4 ,
+         const ArgType5 & arg5 ,
+         const ArgType6 & arg6 ,
+         const ArgType7 & arg7 )
+{
+  DstViewType sub_view;
+  sub_view.d_view = subview<typename DstViewType::t_dev>(src.d_view,arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7);
+  sub_view.h_view = subview<typename DstViewType::t_dev>(src.h_view,arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7);
+  sub_view.modified_device = src.modified_device;
+  sub_view.modified_host = src.modified_host;
+  return sub_view;
+}
 }
 #endif

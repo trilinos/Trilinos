@@ -59,33 +59,31 @@ namespace Tpetra {
 //namespace KokkosRefactor {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::Vector(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut)
-    : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >(map,1,zeroOut) {
-  }
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  Vector (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
+          bool zeroOut)
+    : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > (map, 1, zeroOut)
+  {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::Vector(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &source)
-  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >(source) {
-  }
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  Vector(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &source)
+  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >(source)
+  {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::Vector(
-                              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
-                              const ArrayRCP<Scalar> &view, EPrivateHostViewConstructor /* dummy */)
-  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >(map,view,view.size(),1,HOST_VIEW_CONSTRUCTOR) {
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::Vector(
-                              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
-                              const ArrayRCP<Scalar> &view, EPrivateComputeViewConstructor /* dummy */)
-  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >(map,view,view.size(),1,COMPUTE_VIEW_CONSTRUCTOR) {
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::Vector(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const ArrayView<const Scalar> &values)
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  Vector (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
+          const ArrayView<const Scalar> &values)
   : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >(map,values,values.size(),1) {
   }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  Vector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+          const view_type view)
+  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > (map, view)
+  {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::~Vector() {}
