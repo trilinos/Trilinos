@@ -175,18 +175,11 @@ class AlgRCM
         }
         // Sort children by increasing degree
         // TODO: If edge weights, sort children by decreasing weight,
-        // TODO: Disable sorting for now
-        //SortPairs<lno_t,size_t> zort;
-        //zort.sort(children);
+        SortPairs<lno_t,size_t> zort;
+        zort.sort(children);
 
-        //Teuchos::Array<typename Teuchos::ScalarTraits<lno_t>::magnitudeType> a;
-        //typedef typename std::pair<lno_t, size_t>::first_type first_type;
-        //typename Teuchos::Array<std::pair<typename Teuchos::ScalarTraits<lno_t>::magnitudeType, size_t> >::iterator it;
-
-        typename Teuchos::Array<std::pair<lno_t,size_t> >::iterator it = 
-          children.begin ();
+        typename Teuchos::Array<std::pair<lno_t,size_t> >::iterator it = children.begin ();
         for ( ; it != children.end(); ++it){
-        //for (typename Teuchos::Array<std::pair<lno_t,size_t> >::iterator it= children.begin(); it != children.end(); ++it){
           // Push children on the queue in sorted order.
           lno_t child = it->first;
           invPerm[child] = count++; // Label as we push on Q
