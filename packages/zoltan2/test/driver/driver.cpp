@@ -68,9 +68,9 @@
 #include <Zoltan2_BasicCoordinateInput.hpp>
 #include <Zoltan2_BasicIdentifierInput.hpp>
 #include <Zoltan2_BasicVectorInput.hpp>
-#include <Zoltan2_XpetraCrsGraphInput.hpp>
-#include <Zoltan2_XpetraCrsMatrixInput.hpp>
-#include <Zoltan2_XpetraMultiVectorInput.hpp>
+#include <Zoltan2_XpetraCrsGraphAdapter.hpp>
+#include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
+#include <Zoltan2_XpetraMultiVectorAdapter.hpp>
 
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_XMLObject.hpp>

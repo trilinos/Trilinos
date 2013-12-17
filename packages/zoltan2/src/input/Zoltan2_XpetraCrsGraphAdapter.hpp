@@ -50,7 +50,7 @@
 #ifndef _ZOLTAN2_XPETRACRSGRAPHADAPTER_HPP_
 #define _ZOLTAN2_XPETRACRSGRAPHADAPTER_HPP_
 
-#include <Zoltan2_GraphInput.hpp>
+#include <Zoltan2_GraphAdapter.hpp>
 #include <Zoltan2_StridedData.hpp>
 #include <Zoltan2_XpetraTraits.hpp>
 #include <Zoltan2_Util.hpp>

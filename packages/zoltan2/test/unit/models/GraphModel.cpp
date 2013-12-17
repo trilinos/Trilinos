@@ -56,7 +56,7 @@
  */
 
 #include <Zoltan2_GraphModel.hpp>
-#include <Zoltan2_XpetraCrsMatrixInput.hpp>
+#include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 
 #include <string>

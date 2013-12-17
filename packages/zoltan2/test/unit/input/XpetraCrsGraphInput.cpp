@@ -51,7 +51,7 @@
 
 #include <string>
 
-#include <Zoltan2_XpetraCrsGraphInput.hpp>
+#include <Zoltan2_XpetraCrsGraphAdapter.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 

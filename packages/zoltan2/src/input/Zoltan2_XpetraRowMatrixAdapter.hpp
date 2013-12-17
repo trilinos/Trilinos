@@ -43,46 +43,41 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_XpetraCrsMatrixAdapter.hpp
-    \brief Defines the XpetraCrsMatrixAdapter class.
+/*! \file Zoltan2_XpetraRowMatrixAdapter.hpp
+    \brief Defines the XpetraRowMatrixAdapter class.
 */
 
 #ifndef _ZOLTAN2_XPETRACRSMATRIXADAPTER_HPP_
 #define _ZOLTAN2_XPETRACRSMATRIXADAPTER_HPP_
 
-#include <Zoltan2_MatrixInput.hpp>
+#include <Zoltan2_MatrixAdapter.hpp>
 #include <Zoltan2_StridedData.hpp>
 #include <Zoltan2_XpetraTraits.hpp>
 
-#include <Xpetra_CrsMatrix.hpp>
+#include <Xpetra_RowMatrix.hpp>
 
 namespace Zoltan2 {
 
 //////////////////////////////////////////////////////////////////////////////
-/*!  \brief Provides access for Zoltan2 to Xpetra::CrsMatrix data.
+/*!  \brief Provides access for Zoltan2 to Xpetra::RowMatrix data.
 
     \todo we assume FillComplete has been called.  We should support
                 objects that are not FillCompleted.
     \todo add RowMatrix
 
-    The template parameter is the user's input object:
-     \li Tpetra::CrsMatrix
-     \li Xpetra::CrsMatrix
-     \li Epetra_CrsMatrix
-
     The \c scalar_t type, representing use data such as matrix values, is
     used by Zoltan2 for weights, coordinates, part sizes and
     quality metrics.
-    Some User types (like Tpetra::CrsMatrix) have an inherent scalar type,
+    Some User types (like Tpetra::RowMatrix) have an inherent scalar type,
     and some
-    (like Tpetra::CrsGraph) do not.  For such objects, the scalar type is
+    (like Tpetra::RowGraph) do not.  For such objects, the scalar type is
     set by Zoltan2 to \c float.  If you wish to change it to double, set
     the second template parameter to \c double.
 
 */
 
 template <typename User>
-  class XpetraCrsMatrixAdapter : public MatrixAdapter<User> {
+  class XpetraRowMatrixAdapter : public MatrixAdapter<User> {
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -91,17 +86,17 @@ public:
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
-  typedef Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> xmatrix_t;
+  typedef Xpetra::RowMatrix<scalar_t, lno_t, gno_t, node_t> xmatrix_t;
   typedef MatrixAdapter<User> base_adapter_t;
   typedef User user_t;
 #endif
 
   /*! \brief Destructor
    */
-  ~XpetraCrsMatrixAdapter() { }
+  ~XpetraRowMatrixAdapter() { }
 
   /*! \brief Constructor   
-   *    \param inmatrix The users Epetra, Tpetra, or Xpetra CrsMatrix object 
+   *    \param inmatrix The users Epetra, Tpetra, or Xpetra RowMatrix object 
    *    \param numWeightsPerRow If row weights will be provided in setRowWeights(),
    *        the set \c weightDim to the number of weights per row.
    *    \param coordDim Some algorithms can use row geometric
@@ -109,16 +104,16 @@ public:
    *            supplied in setRowCoordinates() 
    *            then provide the dimension of the coordinates here.
    */
-  XpetraCrsMatrixAdapter(const RCP<const User> &inmatrix,
+  XpetraRowMatrixAdapter(const RCP<const User> &inmatrix,
                          int numWeightsPerRow=0, int coordDim=0);
 
   /*! \brief Specify geometric coordinates for matrix rows.
+   *    \param dim  A value between zero and one less that the \c coordDim
+   *                  argument to the constructor.
    *    \param coordVal  A pointer to the coordinates.
    *    \stride          A stride to be used in reading the values.  The
    *        dimension \c dim coordinate for row \k should be found at
    *        <tt>coordVal[k*stride]</tt>.
-   *    \param dim  A value between zero and one less that the \c coordDim
-   *                  argument to the constructor.
    *
    * The order of coordinates should correspond to the order of rows
    * returned by
@@ -129,12 +124,12 @@ public:
   void setRowCoordinates(const scalar_t *coordVal, int stride, int dim);
 
   /*! \brief Specify a weight for each row.
+   *    \param dim  A value between zero and one less that the \c weightDim 
+   *                  argument to the constructor.
    *    \param weightVal A pointer to the weights for this dimension.
    *    \stride          A stride to be used in reading the values.  The
    *        dimension \c dim weight for row \k should be found at
    *        <tt>weightVal[k*stride]</tt>.
-   *    \param dim  A value between zero and one less that the \c weightDim 
-   *                  argument to the constructor.
    *
    * The order of weights should correspond to the order of rows
    * returned by
@@ -176,13 +171,13 @@ public:
     rowIds = rowView.getRawPtr();
   }
 
-  void getCRSView(const lno_t *&offsets, const gid_t *&colIds) const
+  void getCRSView(const lno_t *&offsets, const gid_t *& colIds) const
   {
     offsets = offset_.getRawPtr();
     colIds = columnIds_.getRawPtr();
   }
 
-  void getCRSView(const lno_t *&offsets, const gid_t *&colIds,
+  void getCRSView(const lno_t *&offsets, const gid_t *& colIds,
                     const scalar_t *&values) const
   {
     offsets = offset_.getRawPtr();
@@ -190,14 +185,13 @@ public:
     values = values_.getRawPtr();
   }
 
-
   int getNumWeightsPerRow() const
   {
     return weightDim_;
   }
 
   void getRowWeightsView(const scalar_t *&weights, int &stride,
-                           int idx = 0) const
+                         int idx = 0) const
   {
     env_->localInputAssertion(__FILE__, __LINE__,
       "invalid weight index",
@@ -234,8 +228,8 @@ private:
   RCP<const Xpetra::Map<lno_t, gno_t, node_t> > colMap_;
   lno_t base_;
   ArrayRCP<lno_t> offset_;
-  ArrayRCP<gno_t> columnIds_;  // TODO:  KDD Is it necessary to copy and store
-  ArrayRCP<scalar_t> values_;  // TODO:  the matrix here?  Would prefer views.
+  ArrayRCP<gno_t> columnIds_;
+  ArrayRCP<scalar_t> values_;
 
   int coordinateDim_;
   ArrayRCP<StridedData<lno_t, scalar_t> > rowCoords_;
@@ -252,7 +246,7 @@ private:
 /////////////////////////////////////////////////////////////////
 
 template <typename User>
-  XpetraCrsMatrixAdapter<User>::XpetraCrsMatrixAdapter(
+  XpetraRowMatrixAdapter<User>::XpetraRowMatrixAdapter(
     const RCP<const User> &inmatrix, int weightDim, int coordDim):
       env_(rcp(new Environment)),
       inmatrix_(inmatrix), matrix_(), rowMap_(), colMap_(), base_(),
@@ -269,19 +263,18 @@ template <typename User>
 
   size_t nrows = matrix_->getNodeNumRows();
   size_t nnz = matrix_->getNodeNumEntries();
+  size_t maxnumentries = matrix_->getNodeMaxNumRowEntries();
  
   offset_.resize(nrows+1, 0);
   columnIds_.resize(nnz);
   values_.resize(nnz);
-  ArrayView<const lno_t> indices;
-  ArrayView<const scalar_t> nzs;
+  ArrayRCP<lno_t> indices(maxnumentries);
+  ArrayRCP<scalar_t> nzs(maxnumentries);
+
   lno_t next = 0;
-//TODO WE ARE COPYING THE MATRIX HERE.  IS THERE A WAY TO USE VIEWS?
-//TODO THEY ARE AVAILABLE IN EPETRA; ARE THEY AVAIL IN TPETRA AND XPETRA?
   for (size_t i=0; i < nrows; i++){
     lno_t row = i + base_;
-    nnz = matrix_->getNumEntriesInLocalRow(row);
-    matrix_->getLocalRowView(row, indices, nzs);
+    matrix_->getLocalRowCopy(row, indices(), nzs(), nnz);
     for (size_t j=0; j < nnz; j++){
       values_[next] = nzs[j];
       // TODO - this will be slow
@@ -304,7 +297,7 @@ template <typename User>
 
 // TODO (from 3/21/12 mtg):  Consider changing interface to take an XpetraMultivector
 template <typename User>
-  void XpetraCrsMatrixAdapter<User>::setRowCoordinates(
+  void XpetraRowMatrixAdapter<User>::setRowCoordinates(
     const scalar_t *coordVal, int stride, int dim)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
@@ -317,7 +310,7 @@ template <typename User>
 }
 
 template <typename User>
-  void XpetraCrsMatrixAdapter<User>::setRowWeights(
+  void XpetraRowMatrixAdapter<User>::setRowWeights(
     const scalar_t *weightVal, int stride, int idx)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
@@ -330,18 +323,17 @@ template <typename User>
 }
 
 template <typename User>
-  void XpetraCrsMatrixAdapter<User>::setRowWeightIsNumberOfNonZeros(int dim)
+  void XpetraRowMatrixAdapter<User>::setRowWeightIsNumberOfNonZeros(int dim)
 {
   env_->localInputAssertion(__FILE__, __LINE__,
     "invalid row weight dimension",
     dim >= 0 && dim < weightDim_, BASIC_ASSERTION);
-
   numNzWeight_[dim] = true;
 }
 
 template <typename User>
   template <typename Adapter>
-    size_t XpetraCrsMatrixAdapter<User>::applyPartitioningSolution(
+    size_t XpetraRowMatrixAdapter<User>::applyPartitioningSolution(
       const User &in, User *&out, 
       const PartitioningSolution<Adapter> &solution) const
 { 

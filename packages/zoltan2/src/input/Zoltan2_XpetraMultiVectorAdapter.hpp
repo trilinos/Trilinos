@@ -51,7 +51,7 @@
 #define _ZOLTAN2_XPETRAMULTIVECTORADAPTER_HPP_
 
 #include <Zoltan2_XpetraTraits.hpp>
-#include <Zoltan2_VectorInput.hpp>
+#include <Zoltan2_VectorAdapter.hpp>
 #include <Zoltan2_StridedData.hpp>
 #include <Zoltan2_Util.hpp>
 

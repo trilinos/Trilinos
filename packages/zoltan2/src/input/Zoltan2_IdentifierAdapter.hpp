@@ -51,7 +51,7 @@
 #ifndef _ZOLTAN2_IDENTIFIERADAPTER_HPP_
 #define _ZOLTAN2_IDENTIFIERADAPTER_HPP_
 
-#include <Zoltan2_InputAdapter.hpp>
+#include <Zoltan2_Adapter.hpp>
 
 #include <string>
 

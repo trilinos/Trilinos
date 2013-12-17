@@ -50,7 +50,7 @@
 #ifndef _ZOLTAN2_BASICIDENTIFIERADAPTER_HPP_
 #define _ZOLTAN2_BASICIDENTIFIERADAPTER_HPP_
 
-#include <Zoltan2_IdentifierInput.hpp>
+#include <Zoltan2_IdentifierAdapter.hpp>
 #include <Zoltan2_StridedData.hpp>
 
 namespace Zoltan2 {

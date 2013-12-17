@@ -9,7 +9,7 @@
 #include "Zoltan2_PartitionMapping.hpp"
 #include "Zoltan2_MachineRepresentation.hpp"
 #include "Teuchos_ReductionOp.hpp"
-#include "Zoltan2_XpetraMultiVectorInput.hpp"
+#include "Zoltan2_XpetraMultiVectorAdapter.hpp"
 #include "Teuchos_DefaultMpiComm.hpp"
 
 

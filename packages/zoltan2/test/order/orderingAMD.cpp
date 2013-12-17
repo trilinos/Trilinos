@@ -43,7 +43,7 @@
 //
 // @HEADER
 #include <Zoltan2_OrderingProblem.hpp>
-#include <Zoltan2_XpetraCrsMatrixInput.hpp>
+#include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 #include <iostream>
 #include <limits>

@@ -54,7 +54,7 @@
 
 #include <string>
 
-#include <Zoltan2_XpetraMultiVectorInput.hpp>
+#include <Zoltan2_XpetraMultiVectorAdapter.hpp>
 #include <Zoltan2_InputTraits.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 

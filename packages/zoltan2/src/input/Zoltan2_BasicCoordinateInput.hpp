@@ -50,7 +50,7 @@
 #ifndef _ZOLTAN2_BASICCOORDINATEADAPTER_HPP_
 #define _ZOLTAN2_BASICCOORDINATEADAPTER_HPP_
 
-#include <Zoltan2_VectorInput.hpp>
+#include <Zoltan2_VectorAdapter.hpp>
 #include <Zoltan2_StridedData.hpp>
 #include <vector>
 

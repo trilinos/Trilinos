@@ -55,7 +55,7 @@
 #include <sstream>
 #include <fstream>
 #include <Tpetra_MultiVector_decl.hpp>
-#include <Zoltan2_XpetraMultiVectorInput.hpp>
+#include <Zoltan2_XpetraMultiVectorAdapter.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Teuchos_ArrayViewDecl.hpp>
 #include <Teuchos_RCP.hpp>

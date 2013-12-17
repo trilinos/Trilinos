@@ -51,7 +51,7 @@
 #ifndef _ZOLTAN2_VECTORADAPTER_HPP_
 #define _ZOLTAN2_VECTORADAPTER_HPP_
 
-#include <Zoltan2_InputAdapter.hpp>
+#include <Zoltan2_Adapter.hpp>
 
 namespace Zoltan2 {
 

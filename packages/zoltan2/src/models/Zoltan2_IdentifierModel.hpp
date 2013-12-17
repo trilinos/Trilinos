@@ -51,10 +51,10 @@
 #define _ZOLTAN2_IDENTIFIERMODEL_HPP_
 
 #include <Zoltan2_Model.hpp>
-#include <Zoltan2_MatrixInput.hpp>
-#include <Zoltan2_VectorInput.hpp>
-#include <Zoltan2_GraphInput.hpp>
-#include <Zoltan2_IdentifierInput.hpp>
+#include <Zoltan2_MatrixAdapter.hpp>
+#include <Zoltan2_VectorAdapter.hpp>
+#include <Zoltan2_GraphAdapter.hpp>
+#include <Zoltan2_IdentifierAdapter.hpp>
 #include <Zoltan2_StridedData.hpp>
 
 namespace Zoltan2 {
