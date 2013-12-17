@@ -186,7 +186,7 @@ public:
   // The CoordinateAdapter interface.
   ////////////////////////////////////////////////////
 
-  int getDimension() const { return dimension_;}
+  int getCoordinateDimension() const { return dimension_;}
 
   void getCoordinatesView(const scalar_t *&coords, int &stride, int dim) const
   {

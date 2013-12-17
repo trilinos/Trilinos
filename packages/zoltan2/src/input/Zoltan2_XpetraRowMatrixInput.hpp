@@ -202,7 +202,7 @@ public:
 
   bool useNumNonzerosAsRowWeight(int idx) const { return numNzWeight_[idx];}
 
-  int getDimension() const {return coordinateDim_;}
+  int getCoordinateDimension() const {return coordinateDim_;}
 
   void getRowCoordinatesView(const scalar_t *&coords, int &stride,
                              int dim) const

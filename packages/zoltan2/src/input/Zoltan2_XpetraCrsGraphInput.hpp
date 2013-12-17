@@ -330,7 +330,7 @@ public:
   }
 
 
-  int getDimension() const { return coordinateDim_; }
+  int getCoordinateDimension() const { return coordinateDim_; }
 
   void getVertexCoordinatesView(const scalar_t *&coords, int &stride,
                                 int idx) const

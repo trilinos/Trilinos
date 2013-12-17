@@ -264,7 +264,7 @@ template <typename User>
 
   // Get coordinates and weights (if any)
 
-  coordinateDim_ = ia->getDimension();
+  coordinateDim_ = ia->getCoordinateDimension();
   userNumWeights_ = ia->getNumWeightsPerID();
 
   Model<CoordinateAdapter<User> >::maxCount(*comm, coordinateDim_, 
@@ -471,7 +471,7 @@ template <typename User>
 
   userNumWeights_= 0;  // matrix input does not have weights
 
-  coordinateDim_ = ia->getDimension();
+  coordinateDim_ = ia->getCoordinateDimension();
 
   Model<MatrixAdapter<User> >::maxCount(*comm, coordinateDim_, userNumWeights_);
 
@@ -857,7 +857,7 @@ CoordinateModel<GraphAdapter<User> >::CoordinateModel(
       coordinateDim_(), gids_(), xyz_(), userNumWeights_(0), weights_(), 
       gnos_(), gnosConst_()
 {
-  coordinateDim_ = ia->getDimension();
+  coordinateDim_ = ia->getCoordinateDimension();
 
   env->localInputAssertion(__FILE__, __LINE__, 
    "graph input does not have vertex coordinates",

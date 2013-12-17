@@ -960,7 +960,7 @@ template <typename User>
 
   // Vertex coordinates
 
-  vCoordDim_ = ia->getDimension();
+  vCoordDim_ = ia->getCoordinateDimension();
 
   if (vCoordDim_ > 0){
     input_t *coordInfo = new input_t [vCoordDim_];

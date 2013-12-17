@@ -125,7 +125,7 @@ public:
 
   /*! \brief Return dimension of the coordinates.
    */
-  virtual int getDimension() const = 0;
+  virtual int getCoordinateDimension() const = 0;
 
   /*! \brief Provide a pointer to one dimension of this process' coordinates.
       \param coordDim  is a value from 0 to one less than 

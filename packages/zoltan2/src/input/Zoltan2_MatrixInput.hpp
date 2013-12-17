@@ -346,7 +346,7 @@ public:
 //KDDDEC  allows user to provide a coordinate input adapter,
 //KDDDEC  and just save it.
 
-  virtual int getDimension() const { return 0; }
+  virtual int getCoordinateDimension() const { return 0; }
 
   /*! \brief Provide a pointer to one dimension of row coordinates.
       \param coords  [output] points to a list of coordinate values for the 

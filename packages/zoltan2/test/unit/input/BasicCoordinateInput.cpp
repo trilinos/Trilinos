@@ -72,7 +72,7 @@ int checkBasicCoordinate(
 {
   int fail = 0;
 
-  if (ia->getDimension() != nCoords)
+  if (ia->getCoordinateDimension() != nCoords)
     fail = 100;
 
   if (!fail && ia->getNumWeightsPerID() != nWeights)

@@ -192,7 +192,7 @@ public:
    *  that does not return coordinate info.  Individual graph adapters can
    *  override this definition.
    */
-  virtual int getDimension() const { return 0; }
+  virtual int getCoordinateDimension() const { return 0; }
 
   /*! \brief Provide a pointer to one dimension of vertex coordinates.
    *  \param ent is the entity for which coordinate information is requested
