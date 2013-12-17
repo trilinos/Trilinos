@@ -136,7 +136,7 @@ public:
        process.
   */
   virtual void getIDsViewOf(MeshEntityType etype,
-                              gid_t const *&Ids) const = 0;
+                            gid_t const *&Ids) const = 0;
 
 
   /*! \brief Return the number of weights per entity.
@@ -144,7 +144,7 @@ public:
    *   If the number of weights is zero, then we assume that the entities
    *   are equally weighted.
    */
-  virtual int getNumWeightsPerOf(MeshEntityType etype) const = 0;
+  virtual int getNumWeightsPerOf(MeshEntityType etype) const { return 0; }
 
 
   /*! \brief Provide a pointer to one of the number of this process'
@@ -163,7 +163,12 @@ public:
                    getNumWeightsPerEntityID()
   */
   virtual void getWeightsViewOf(MeshEntityType etype,
-     const scalar_t *&weights, int &stride, int idx = 0) const = 0;
+     const scalar_t *&weights, int &stride, int idx = 0) const
+  {
+    weights = NULL;
+    stride = 0;
+    Z2_THROW_NOT_IMPLEMENTED_ERROR
+  }
 
 
   /*! \brief Copy the weights for a specific entity into array provided by
@@ -328,7 +333,7 @@ public:
   /*! \brief Returns the number (0 or greater) of weights per second adjacency.
    */
   virtual int getNumWeightsPer2ndAdj(MeshEntityType sourcetarget,
-                                     MeshEntityType through) const = 0;
+                                     MeshEntityType through) const { return 0;}
 
 
   /*! \brief  Provide a pointer to the second adjacency weights, if any.
@@ -344,7 +349,12 @@ public:
 //KDD What about the through MeshEntityType?
   virtual void get2ndAdjWeightsView(MeshEntityType sourcetarget,
      MeshEntityType through, const scalar_t *&weights, int &stride,
-     int idx) const = 0;
+     int idx) const
+  {
+    weights = NULL;
+    stride = 0;
+    Z2_THROW_NOT_IMPLEMENTED_ERROR
+  }
 
 
   /*! \brief  Copy the second adjacency weights incident to a specific entity

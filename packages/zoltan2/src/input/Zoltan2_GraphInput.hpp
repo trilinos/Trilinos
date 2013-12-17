@@ -160,7 +160,7 @@ public:
        
   /*! \brief Returns the dimension (0 or greater) of vertex weights.
    */
-  virtual int getNumWeightsPerVertex() const = 0;
+  virtual int getNumWeightsPerVertex() const { return 0; }
 
   /*! \brief  Provide a pointer to the vertex weights, if any.
       \param weights is the list of weights of the given dimension for
@@ -171,11 +171,16 @@ public:
       \param idx ranges from zero to one less than getNumWeightsPerVertex().
    */
   virtual void getVertexWeightsView(const scalar_t *&weights, int &stride, 
-                                    int idx = 0) const = 0;
+                                    int idx = 0) const
+  {
+    weights = NULL;
+    stride = 0;
+    Z2_THROW_NOT_IMPLEMENTED_ERROR
+  }
 
   /*! \brief Returns the dimension (0 or greater) of vertex weights.
    */
-  virtual int getNumWeightsPerEdge() const = 0;
+  virtual int getNumWeightsPerEdge() const { return 0; }
 
   /*! \brief  Provide a pointer to the edge weights, if any.  
       \param weights is the list of weights of the given index for
@@ -184,7 +189,13 @@ public:
       \param idx ranges from zero to one less than getNumWeightsPerEdge().
    */
   virtual void getEdgeWeightsView(const scalar_t *&weights, int &stride,
-                                  int idx = 0) const = 0;
+                                  int idx = 0) const
+  {
+    weights = NULL;
+    stride = 0;
+    Z2_THROW_NOT_IMPLEMENTED_ERROR
+  }
+
 
   /*! \brief Returns the dimension of the geometry, if any.
    *  Some algorithms can use geometric coordinate information if it is present.
@@ -215,6 +226,7 @@ public:
   {
     coords = NULL;
     stride = 0;
+    Z2_THROW_NOT_IMPLEMENTED_ERROR
   }
 
   ////////////////////////////////////////////////////////////////////////////

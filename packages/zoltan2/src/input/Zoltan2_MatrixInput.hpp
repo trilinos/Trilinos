@@ -150,8 +150,8 @@ public:
    */
   virtual void getRowIDsView(const gid_t *&rowIds) const
   {
-// KDDDEC THROW AN ERROR INSTEAD OF RETURNING 0.
     rowIds = NULL;
+    Z2_THROW_NOT_IMPLEMENTED_ERROR
   }
 
   /*! \brief Sets pointer to this process' columns' global IDs.
@@ -162,8 +162,8 @@ public:
    */
   virtual void getColumnIDsView(const gid_t *&colIds) const
   {
-// KDDDEC THROW AN ERROR INSTEAD OF RETURNING 0.
     colIds = NULL;
+    Z2_THROW_NOT_IMPLEMENTED_ERROR
   }
 
   /*! \brief Indicates whether the MatrixAdapter implements a view of the 
@@ -195,9 +195,9 @@ public:
                           const gid_t *&colIds) const 
   {
     // Default implementation; no CRS view provided.
-// KDDDEC THROW AN ERROR INSTEAD OF RETURNING 0.
     offsets = NULL;
     colIds = NULL;
+    Z2_THROW_NOT_IMPLEMENTED_ERROR
   }
 
   /*! \brief Sets pointers to this process' matrix entries 
@@ -218,11 +218,11 @@ public:
                           const gid_t *& colIds,
                           const scalar_t *&values) const 
   {
-// KDDDEC THROW AN ERROR INSTEAD OF RETURNING 0.
     // Default implementation; no CRS view provided.
     offsets = NULL;
     colIds = NULL;
     values = NULL;
+    Z2_THROW_NOT_IMPLEMENTED_ERROR
   }
 
   /*! \brief Sets pointers to this process' matrix entries using
@@ -240,9 +240,9 @@ public:
                           const gid_t *&rowIds) const 
   {
     // Default implementation; no CCS view provided.
-// KDDDEC THROW AN ERROR INSTEAD OF RETURNING 0.
     offsets = NULL;
     rowIds = NULL;
+    Z2_THROW_NOT_IMPLEMENTED_ERROR
   }
 
   /*! \brief Sets pointers to this process' matrix entries 
@@ -263,11 +263,11 @@ public:
                           const gid_t *&rowIds,
                           const scalar_t *&values) const
   {
-// KDDDEC THROW AN ERROR INSTEAD OF RETURNING 0.
     // Default implementation; no CCS view provided.
     offsets = NULL;
     rowIds = NULL;
     values = NULL;
+    Z2_THROW_NOT_IMPLEMENTED_ERROR
   }
 
   /*! \brief Returns the number of weights per row (0 or greater).
@@ -286,10 +286,10 @@ public:
   virtual void getRowWeightsView(const scalar_t *&weights, int &stride,
                                  int idx = 0) const
   {
-// KDDDEC THROW AN ERROR INSTEAD OF RETURNING 0.
     // Default implementation
     weights = NULL;
     stride = 0;
+    Z2_THROW_NOT_IMPLEMENTED_ERROR
   }
 
   /*! \brief Indicate whether row weight with index idx should be the
@@ -315,9 +315,9 @@ public:
                                     int idx = 0) const 
   {
     // Default implementation
-// KDDDEC THROW AN ERROR INSTEAD OF RETURNING 0.
     weights = NULL;
     stride = 0;
+    Z2_THROW_NOT_IMPLEMENTED_ERROR
   }
 
   /*! \brief Indicate whether column weight with index idx should be the
@@ -325,14 +325,13 @@ public:
    */
   virtual bool useNumNonzerosAsColumnWeight(int idx) const { return 0; }
 
+#ifdef FUTURE_FEATURE
   /*! method saying whether the matrix is using symmetric storage; that is,
    *  for symmetric matrices, is only the upper or lower triangular matrix
    *  stored, or is the entire matrix stored?
-   *  TODO DO WE TEST THIS OPTION?
    */
-// Future feature
-//  virtual bool symmetricStorage() const {return false;}
-  
+  virtual bool symmetricStorage() const {return false;}
+#endif
 
   /*! \brief Returns the dimension of the geometry, if any.
    *
@@ -365,9 +364,9 @@ public:
   virtual void getRowCoordinatesView(const scalar_t *&coords, int &stride,
                                      int dim) const 
   {
-// KDDDEC THROW AN ERROR INSTEAD OF RETURNING 0.
     coords = NULL;
     stride = 0;
+    Z2_THROW_NOT_IMPLEMENTED_ERROR
   }
 
   /*! \brief Provide a pointer to one dimension of column coordinates.
@@ -389,6 +388,7 @@ public:
   {
     coords = NULL;
     stride = 0;
+    Z2_THROW_NOT_IMPLEMENTED_ERROR
   }
 
 
