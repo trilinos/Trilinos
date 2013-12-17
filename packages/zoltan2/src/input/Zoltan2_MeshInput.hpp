@@ -146,7 +146,6 @@ public:
    */
   virtual int getNumWeightsPerOf(MeshEntityType etype) const { return 0; }
 
-
   /*! \brief Provide a pointer to one of the number of this process'
                 optional entity weights.
 
@@ -171,20 +170,6 @@ public:
   }
 
 
-  /*! \brief Copy the weights for a specific entity into array provided by
-                Zoltan2.
-
-      \param id specific entity.  Works only if id is local to this process.
-
-      \param wgts array provided by Zoltan2.
-                wgts has size getNumWeightsPerID().
-
-      \return not sure what is needed, if anything.
-  */
-//KDD  For now, haven't been implementing functions for individual IDs.
-//KDD  virtual size_t getEntityIDWeights(gid_t id, scalar_t *wgts) const = 0;
-
-
   /*! \brief Return dimension of the entity coordinates, if any.
    *
    *  Some algorithms can partition mesh entities using geometric coordinate
@@ -195,7 +180,7 @@ public:
    */
 //KDD Assumed uniform dimension of all entity types in other adapters.
 //KDD Should we do the same here?
-  virtual int getDimensionOf(MeshEntityType etype) const = 0;
+  virtual int getDimensionOf(MeshEntityType etype) const { return 0; }
 
   /*! \brief Provide a pointer to one dimension of entity coordinates.
       \param coords  points to a list of coordinate values for the dimension.
@@ -208,20 +193,12 @@ public:
          being provided in the coords list.
   */
   virtual void getCoordinatesViewOf(MeshEntityType etype,
-    const scalar_t *&coords, int &stride, int coordDim) const = 0;
-
-
-  /*! \brief Copy the coordinates for a specific ID into array
-                provided by Zoltan2.
-
-      \param id specific ID.  Works only if id is local to this        process.
-
-      \param coords array provided by Zoltan2.
-
-      \return not sure what is needed, if anything.
-  */
-//KDD  For now, haven't been implementing functions for individual IDs.
-//KDD  virtual size_t getEntityCoordinates(gid_t id, scalar_t *coords) const = 0;
+    const scalar_t *&coords, int &stride, int coordDim) const 
+  {
+    coords = NULL;
+    stride = 0;
+    Z2_THROW_NOT_IMPLEMENTED_ERROR
+  }
 
 
   /*! \brief Returns whether a first adjacency combination is available.
@@ -232,15 +209,7 @@ public:
   /*! \brief Returns the number of first adjacencies on this process.
    */
   virtual size_t getLocalNumAdjs(MeshEntityType source,
-                                 MeshEntityType target) const = 0;
-
-
-  /*! \brief Returns the number of first adjacencies for this entity
-      \param source
-   */
-//KDD  For now, haven't been implementing functions for individual IDs.
-//KDD  virtual size_t getEntityNumAdjs(MeshEntityType source, MeshEntityType target,
-//KDD                                  gid_t id) const = 0;
+                                 MeshEntityType target) const { return 0;}
 
 
   /*! \brief Sets pointers to this process' mesh first adjacencies.
@@ -257,19 +226,12 @@ public:
 //KDD is the source MeshEntityType understood here?
 //KDD What about the target?
   virtual void getAdjsView(MeshEntityType source, MeshEntityType target,
-     const lno_t *&offsets, const gid_t *& adjacencyIds) const = 0;
-
-
-  /*! \brief Copy all the first adjacency IDs for a specific entity into arrays
-         provided by Zoltan2.
-      \param source
-      \param id specific entity.  Works only if id is local to this process.
-      \param adjacencyIds array provided by Zoltan2.
-      \return not sure what is needed, if anything.
-  */
-//KDD  For now, haven't been implementing functions for individual IDs.
-//KDD  virtual size_t getEntityAdjs(MeshEntityType source, MeshEntityType target,
-//KDD                               gid_t id, gid_t *adjacencyIds) const = 0;
+     const lno_t *&offsets, const gid_t *& adjacencyIds) const 
+  {
+    offsets = NULL;
+    adjacencyIds = NULL;
+    Z2_THROW_NOT_IMPLEMENTED_ERROR
+  }
 
 
   /*! \brief Returns whether a second adjacency combination is available.
@@ -285,18 +247,7 @@ public:
    *   balance_entity_type==MeshEntityType, adjacency_through==MeshEntityType
    */
   virtual size_t getLocalNum2ndAdjs(MeshEntityType sourcetarget,
-                                    MeshEntityType through) const = 0;
-
-
-  /*! \brief Return number of second adjacencies to specific entity.
-   *  \param sourcetarget
-   *  \param id specific entity.  Works only if id is local to this process.
-   *  \return number of second adjacendies to entity.
-   */
-//KDD  For now, haven't been implementing functions for individual IDs.
-//KDD  virtual lno_t getEntityNum2ndAdjs(MeshEntityType sourcetarget,
-//KDD     MeshEntityType through, gid_t id) const = 0;
-
+                                    MeshEntityType through) const { return 0; }
 
   /*! \brief Sets pointers to this process' mesh second adjacencies.
       \param sourcetarget
@@ -315,19 +266,12 @@ public:
 //KDD What about the through MeshEntityType?
   virtual void get2ndAdjsView(MeshEntityType sourcetarget,
      MeshEntityType through, const lno_t *&offsets,
-     const gid_t *& adjacencyIds) const = 0;
-
-
-  /*! \brief Copy the second adjacency IDs for all adjacencies incident to a
-         specific entity into array provided by Zoltan2.
-      \param sourcetarget
-      \param id specific entity.  Works only if id is local to this process.
-      \param nborIds array provided by Zoltan2.
-      \return not sure what is needed, if anything.
-  */
-//KDD  For now, haven't been implementing functions for individual IDs.
-//KDD  virtual size_t getEntity2ndAdjs(MeshEntityType sourcetarget,
-//KDD     MeshEntityType through, gid_t id, gid_t *nborIds) const = 0;
+     const gid_t *& adjacencyIds) const
+  {
+    offsets = NULL;
+    adjacencyIds = NULL;
+    Z2_THROW_NOT_IMPLEMENTED_ERROR
+  }
 
 
   /*! \brief Returns the number (0 or greater) of weights per second adjacency.
@@ -356,18 +300,8 @@ public:
     Z2_THROW_NOT_IMPLEMENTED_ERROR
   }
 
-
-  /*! \brief  Copy the second adjacency weights incident to a specific entity
-          id into array provided by Zoltan2.
-      \param sourcetarget
-      \param id specific entity id.  Works only if id is local to this process.
-      \param ewgts array provided by Zoltan2.
-      \return not sure what is needed, if anything.
-  */
-//KDD  For now, haven't been implementing functions for individual IDs.
-//KDD  virtual size_t getEntity2ndAdjWeights(MeshEntityType sourcetarget,
-//KDD     MeshEntityType through, gid_t id, scalar_t *ewgts);
-
+//KDD What if we wanted to provide weights with respect to first adjacencies?
+//KDD Should we add functions for that?
 
   /*! \brief Apply a partitioning problem solution to an input.
    *

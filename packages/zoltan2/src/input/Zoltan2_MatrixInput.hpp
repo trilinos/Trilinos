@@ -142,29 +142,7 @@ public:
    */
   virtual size_t getLocalNumEntries() const = 0;
 
-  /*! \brief Sets pointer to this process' rows' global IDs.
-      \param rowIds will on return a pointer to row global Ids
-      KDDKDD TODO SHOULD THIS FUNCTION BE OPTIONAL?
-      KDDKDD TODO SHOULD getColumnIDsView BE REQUIRED 
-      KDDKDD TODO ONLY WHEN CRSViewAvailable()?
-   */
-  virtual void getRowIDsView(const gid_t *&rowIds) const
-  {
-    rowIds = NULL;
-    Z2_THROW_NOT_IMPLEMENTED_ERROR
-  }
 
-  /*! \brief Sets pointer to this process' columns' global IDs.
-      \param colIds will on return a pointer to column global Ids
-      KDDKDD TODO SHOULD THIS FUNCTION BE OPTIONAL?
-      KDDKDD TODO SHOULD getColumnIDsView BE REQUIRED 
-      KDDKDD TODO ONLY WHEN CCSViewAvailable()?
-   */
-  virtual void getColumnIDsView(const gid_t *&colIds) const
-  {
-    colIds = NULL;
-    Z2_THROW_NOT_IMPLEMENTED_ERROR
-  }
 
   /*! \brief Indicates whether the MatrixAdapter implements a view of the 
              matrix in compressed sparse row (CRS) format.
@@ -173,12 +151,14 @@ public:
    */
   virtual bool CRSViewAvailable() const { return false; }
 
-  /*! \brief Indicates whether the MatrixAdapter implements a view of the 
-             matrix in compressed sparse column (CCS) format.
-             All matrix adapters must implement either getCRSView or 
-             getCCSView, but implementation of both is not required.
+  /*! \brief Sets pointer to this process' rows' global IDs.
+      \param rowIds will on return a pointer to row global Ids
    */
-  virtual bool CCSViewAvailable() const { return false; }
+  virtual void getRowIDsView(const gid_t *&rowIds) const
+  {
+    rowIds = NULL;
+    Z2_THROW_NOT_IMPLEMENTED_ERROR
+  }
 
   /*! \brief Sets pointers to this process' matrix entries using
              compressed sparse row (CRS) format.
@@ -222,6 +202,51 @@ public:
     offsets = NULL;
     colIds = NULL;
     values = NULL;
+    Z2_THROW_NOT_IMPLEMENTED_ERROR
+  }
+
+  /*! \brief Returns the number of weights per row (0 or greater).
+      Row weights may be used when partitioning matrix rows.
+   */
+  virtual int getNumWeightsPerRow() const { return 0;}
+
+  /*! \brief  Provide a pointer to the row weights, if any.
+      \param weights is the list of weights with a given index for
+           the rows returned in getRowIDsView().  If weights for
+           this index are to be uniform for all rows in the
+           global problem, the \c weights should be a NULL pointer.
+      \param stride The k'th weight is located at weights[stride*k]
+      \param idx ranges from zero to one less than getNumWeightsPerRow().
+   */
+  virtual void getRowWeightsView(const scalar_t *&weights, int &stride,
+                                 int idx = 0) const
+  {
+    // Default implementation
+    weights = NULL;
+    stride = 0;
+    Z2_THROW_NOT_IMPLEMENTED_ERROR
+  }
+
+  /*! \brief Indicate whether row weight with index idx should be the
+   *         global number of nonzeros in the row.
+   */
+  virtual bool useNumNonzerosAsRowWeight(int idx) const { return 0; }
+
+
+
+  /*! \brief Indicates whether the MatrixAdapter implements a view of the 
+             matrix in compressed sparse column (CCS) format.
+             All matrix adapters must implement either getCRSView or 
+             getCCSView, but implementation of both is not required.
+   */
+  virtual bool CCSViewAvailable() const { return false; }
+
+  /*! \brief Sets pointer to this process' columns' global IDs.
+      \param colIds will on return a pointer to column global Ids
+   */
+  virtual void getColumnIDsView(const gid_t *&colIds) const
+  {
+    colIds = NULL;
     Z2_THROW_NOT_IMPLEMENTED_ERROR
   }
 
@@ -269,34 +294,6 @@ public:
     values = NULL;
     Z2_THROW_NOT_IMPLEMENTED_ERROR
   }
-
-  /*! \brief Returns the number of weights per row (0 or greater).
-      Row weights may be used when partitioning matrix rows.
-   */
-  virtual int getNumWeightsPerRow() const { return 0;}
-
-  /*! \brief  Provide a pointer to the row weights, if any.
-      \param weights is the list of weights with a given index for
-           the rows returned in getRowIDsView().  If weights for
-           this index are to be uniform for all rows in the
-           global problem, the \c weights should be a NULL pointer.
-      \param stride The k'th weight is located at weights[stride*k]
-      \param idx ranges from zero to one less than getNumWeightsPerRow().
-   */
-  virtual void getRowWeightsView(const scalar_t *&weights, int &stride,
-                                 int idx = 0) const
-  {
-    // Default implementation
-    weights = NULL;
-    stride = 0;
-    Z2_THROW_NOT_IMPLEMENTED_ERROR
-  }
-
-  /*! \brief Indicate whether row weight with index idx should be the
-   *         global number of nonzeros in the row.
-   */
-  virtual bool useNumNonzerosAsRowWeight(int idx) const { return 0; }
-
 
   /*! \brief Returns the number of weights per column (0 or greater).
       Column weights may be used when partitioning matrix columns.

@@ -125,7 +125,7 @@ public:
 
   /*! \brief Return dimension of the coordinates.
    */
-  virtual int getCoordinateDimension() const = 0;
+  virtual int getCoordinateDimension() const { return 0; }
 
   /*! \brief Provide a pointer to one dimension of this process' coordinates.
       \param coordDim  is a value from 0 to one less than 
@@ -139,7 +139,12 @@ public:
    */
 
   virtual void getCoordinatesView(const scalar_t *&coords, int &stride,
-                                  int coordDim) const = 0;
+                                  int coordDim) const 
+  {
+    coords = NULL;
+    stride = 0;
+    Z2_THROW_NOT_IMPLEMENTED_ERROR
+  }
 
 private:
 };

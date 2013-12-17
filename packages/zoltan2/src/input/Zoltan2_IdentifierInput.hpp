@@ -115,12 +115,7 @@ public:
    */
   virtual ~IdentifierAdapter() {};
 
-  ////////////////////////////////////////////////////
-  // The Adapter interface.
-  ////////////////////////////////////////////////////
-
   enum BaseAdapterType adapterType() const {return IdentifierAdapterType;}
-
 };
   
   
