@@ -744,7 +744,46 @@ void BulkData::internal_resolve_parallel_create()
 //----------------------------------------------------------------------
 namespace {
 
+bool no_buckets(const stk::mesh::BulkData& mesh, const stk::mesh::Part& part) {
+    for(stk::topology::rank_t r = stk::topology::NODE_RANK; r < mesh.mesh_meta_data().entity_rank_count(); ++r) {
+        stk::mesh::Selector selector = part;
+        const stk::mesh::BucketVector& buckets = mesh.get_buckets(r, selector);
+        if (buckets.size() > 0) {
+            return false;
+        }
+    }
 
+    return true;
+}
+
+void print_bucket_data(const stk::mesh::BulkData& mesh)
+{
+    const stk::mesh::PartVector& all_parts = mesh.mesh_meta_data().get_parts();
+    for(size_t i=0; i<all_parts.size(); ++i) {
+        std::cout << "Part: " << all_parts[i]->name()<<std::endl;
+        if (no_buckets(mesh, *all_parts[i])) {
+            std::cout<<"\tEmpty"<<std::endl;
+            continue;
+        }
+        for(stk::topology::rank_t r = stk::topology::NODE_RANK; r < mesh.mesh_meta_data().entity_rank_count(); ++r) {
+            stk::mesh::Selector selector = *all_parts[i];
+            const stk::mesh::BucketVector& buckets = mesh.get_buckets(r, selector);
+            std::cout<<"\t"<< buckets.size() << " "<< r << " buckets";
+            size_t min_entities = 1000000, max_entities = 0, total_entities = 0;
+            double avg_entities = 0.0;
+            for(size_t j=0; j<buckets.size(); ++j) {
+                total_entities += buckets[j]->size();
+                min_entities = std::min(min_entities, buckets[j]->size());
+                max_entities = std::max(max_entities, buckets[j]->size());
+            }
+            avg_entities = buckets.size()>0 ? (1.0*total_entities)/buckets.size() : 0.0;
+            if (total_entities == 0) {
+                min_entities = 0;
+            }
+            std::cout << "; min=" << min_entities << ", avg=" << avg_entities << ", max=" << max_entities << ", tot=" << total_entities << std::endl;
+        }
+    }
+}
 
 }
 //----------------------------------------------------------------------
@@ -754,6 +793,10 @@ bool BulkData::modification_end( modification_optimization opt)
   Trace_("stk::mesh::BulkData::modification_end");
 
   bool return_value = internal_modification_end( true, opt );
+
+#ifdef STK_VERBOSE_OUTPUT
+  print_bucket_data(*this);
+#endif
 
   return return_value;
 }

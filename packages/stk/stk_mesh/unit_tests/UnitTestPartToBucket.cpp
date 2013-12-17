@@ -34,9 +34,9 @@ TEST(PartToBucket, simple)
 
     const stk::mesh::Bucket& nodeBucket = *nodeBuckets[0];
 
-    EXPECT_TRUE(nodeBucket.is_subset_of(locallyOwned));
-    EXPECT_TRUE(nodeBucket.is_subset_of(universal));
-    EXPECT_FALSE(nodeBucket.is_subset_of(globallyShared));
+    EXPECT_TRUE(nodeBucket.member(locallyOwned));
+    EXPECT_TRUE(nodeBucket.member(universal));
+    EXPECT_FALSE(nodeBucket.member(globallyShared));
 
     const stk::mesh::BucketVector &elemBuckets = stkMeshBulkData.buckets(stk::topology::ELEMENT_RANK);
     size_t expectedElemBuckets = 1;
@@ -44,9 +44,9 @@ TEST(PartToBucket, simple)
 
     const stk::mesh::Bucket& elemBucket = *elemBuckets[0];
 
-    EXPECT_TRUE(elemBucket.is_subset_of(locallyOwned));
-    EXPECT_TRUE(elemBucket.is_subset_of(universal));
-    EXPECT_FALSE(elemBucket.is_subset_of(globallyShared));
+    EXPECT_TRUE(elemBucket.member(locallyOwned));
+    EXPECT_TRUE(elemBucket.member(universal));
+    EXPECT_FALSE(elemBucket.member(globallyShared));
 
     const stk::mesh::BucketVector &edgeBuckets = stkMeshBulkData.buckets(stk::topology::EDGE_RANK);
     size_t expectedEdgeBuckets = 0;

@@ -446,7 +446,6 @@ void MetaData::declare_field_restriction(
       );
 }
 
-
 //----------------------------------------------------------------------
 
 void MetaData::commit()
@@ -454,6 +453,10 @@ void MetaData::commit()
   require_not_committed();
 
   m_commit = true ; // Cannot add or change parts or fields now
+
+#ifdef STK_VERBOSE_OUTPUT
+  dump_all_meta_info(std::cout);
+#endif
 }
 
 MetaData::~MetaData()
@@ -1050,7 +1053,7 @@ void MetaData::dump_all_meta_info(std::ostream& out) const
   out << "  Special Parts:\n";
   out << "    Universal part ord = " << m_universal_part->mesh_meta_data_ordinal() << std::endl;
   out << "    Owns part ord = " << m_owns_part->mesh_meta_data_ordinal() << std::endl;
-  out << "    Shared part ord = " << m_owns_part->mesh_meta_data_ordinal() << std::endl;
+  out << "    Shared part ord = " << m_shares_part->mesh_meta_data_ordinal() << std::endl;
 
   out << "  All parts:\n";
   const PartVector& all_parts = m_part_repo.get_all_parts();

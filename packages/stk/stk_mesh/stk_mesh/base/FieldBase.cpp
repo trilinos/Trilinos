@@ -18,7 +18,7 @@ namespace mesh {
 
 std::ostream & operator << ( std::ostream & s , const FieldBase & field )
 {
-  s << "FieldBase<" ;
+  s << "Field<" ;
   s << field.data_traits().name ;
   for ( unsigned i = 0 ; i < field.rank() ; ++i ) {
     s << "," << field.dimension_tags()[i]->name();
