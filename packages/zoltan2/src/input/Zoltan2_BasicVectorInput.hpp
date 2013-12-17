@@ -248,7 +248,7 @@ public:
 
   int getNumVectors() const { return numVectors_;}
 
-  size_t getVectorView(const scalar_t *&element, int &stride, int idx = 0) const
+  void getVectorView(const scalar_t *&element, int &stride, int idx = 0) const
   {
     if (idx < 0 || idx >= numVectors_) {
       std::ostringstream emsg;
@@ -258,7 +258,6 @@ public:
     }
     size_t length;
     elements_[idx].getStridedList(length, element, stride);
-    return length;
   }
 
 private:

@@ -117,14 +117,12 @@ int verifyInputAdapter(
     int stride;
 
     size_t nvals = ia.getLocalNum();
-    ia.getIDsView(vtxIds);
     if (nvals != vector.getLocalLength())
       fail = 8;
 
-    nvals = ia.getVectorView(vals, stride);
+    ia.getIDsView(vtxIds);
+    ia.getVectorView(vals, stride);
 
-    if (nvals != vector.getLocalLength())
-      fail = 9;
     if (!fail && stride != 1)
       fail = 10;
 

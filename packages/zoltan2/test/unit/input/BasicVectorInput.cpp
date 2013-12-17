@@ -89,10 +89,7 @@ int checkBasicVector(
     int correctStride = (strideOne ? 1 : valueStrides[v]);
     int stride;
 
-    size_t nvals = ia->getVectorView(vals, stride, v);
-
-    if (nvals != size_t(len*stride))
-      fail = 104;
+    ia->getVectorView(vals, stride, v);
 
     if (!fail && stride != correctStride)
       fail = 105;

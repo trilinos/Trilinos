@@ -142,7 +142,7 @@ public:
    *      be supplied as the third argument.  It must have been templated
    *      on user data that has the same global ID distribution as this
    *      user data.
-   *  \return   Returns the number of local Ids in the new partitioning.
+   *  \return   Returns the number of local Ids in the new partition.
    */
 
   template <typename Adapter>

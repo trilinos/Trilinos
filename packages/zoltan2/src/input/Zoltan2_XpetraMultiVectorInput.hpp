@@ -153,7 +153,7 @@ public:
 
   int getNumVectors() const {return vector_->getNumVectors();}
 
-  size_t getVectorView(const scalar_t *&elements, int &stride, int idx=0) const;
+  void getVectorView(const scalar_t *&elements, int &stride, int idx=0) const;
 
   template <typename Adapter>
     size_t applyPartitioningSolution(const User &in, User *&out,
@@ -216,7 +216,7 @@ template <typename User>
 }
 
 template <typename User>
-  size_t XpetraMultiVectorAdapter<User>::getVectorView(
+  void XpetraMultiVectorAdapter<User>::getVectorView(
     const scalar_t *&elements, int &stride, int idx) const
 {
   size_t vecsize;
@@ -248,9 +248,6 @@ template <typename User>
   else{
     throw logic_error("invalid underlying lib");
   }
-
-  ArrayView<const gid_t> gids = map_->getNodeElementList();
-  return vecsize;
 }
 
 template <typename User>

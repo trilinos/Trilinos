@@ -138,12 +138,10 @@ public:
       \param stride the k'th element is located at elements[stride*k]
       \param idx ranges from zero to one less than getNumVectors(), and
          represents the vector for which data is being requested.
-      \return The number of ids in the Ids list.
-      \todo TODO KDD THIS RETURN VALUE IS INCONSISTENT WITH SIMILAR FNS.
    */
 
-  virtual size_t getVectorView(const scalar_t *&elements, int &stride,
-                               int idx = 0) const = 0;
+  virtual void getVectorView(const scalar_t *&elements, int &stride,
+                             int idx = 0) const = 0;
 
 };
   
