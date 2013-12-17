@@ -581,22 +581,35 @@ FullOccupancyKernelLaunch(Kernel kernel) {
 
 } // namespace details
 
-// Specialization of multiply for CrsMatrix< Sacado::MP::Vector<...>, Cuda >
-// that uses the 2-D view directly.
-// Currently this only works for statically sized MP::Vector
+// Kernel implementing y = A * x for Cuda device where
+//   A == Kokkos::CrsMatrix< Sacado::MP::Vector<...>,...>,
+//   x, y == Kokkos::View< Sacado::MP::Vector<...>*,...>,
+//   x and y are rank 1
+// We spell everything out here to make sure the ranks and devices match.
+//
+// This implementation uses the underlying 2-D view directly.
+// Currently only works for statically sized MP::Vector
 template <typename MatrixStorage,
           typename MatrixOrdinal,
           typename MatrixMemory,
           typename MatrixSize,
-          typename InputVectorType,
-          typename OutputVectorType>
+          typename InputStorage,
+          typename InputMemory,
+          typename OutputStorage,
+          typename OutputMemory>
 class Multiply< Kokkos::CrsMatrix<Sacado::MP::Vector<MatrixStorage>,
                                   MatrixOrdinal,
                                   Kokkos::Cuda,
                                   MatrixMemory,
                                   MatrixSize>,
-                InputVectorType,
-                OutputVectorType,
+                Kokkos::View< Sacado::MP::Vector<InputStorage>*,
+                              Kokkos::LayoutRight,
+                              Kokkos::Cuda,
+                              InputMemory >,
+                Kokkos::View< Sacado::MP::Vector<OutputStorage>*,
+                              Kokkos::LayoutRight,
+                              Kokkos::Cuda,
+                              OutputMemory >,
                 void,
                 IntegralRank<1>,
                 EnsembleMultiply >
@@ -604,10 +617,11 @@ class Multiply< Kokkos::CrsMatrix<Sacado::MP::Vector<MatrixStorage>,
 public:
 
   typedef Sacado::MP::Vector<MatrixStorage> MatrixValue;
-  typedef typename InputVectorType::value_type InputVectorValue;
-  typedef typename OutputVectorType::value_type OutputVectorValue;
+  typedef Sacado::MP::Vector<InputStorage> InputVectorValue;
+  typedef Sacado::MP::Vector<OutputStorage> OutputVectorValue;
 
-  typedef typename Kokkos::Cuda device_type;
+  typedef typename Kokkos::Cuda Device;
+  typedef Device device_type;
   typedef typename device_type::size_type size_type;
 
   typedef Kokkos::CrsMatrix<MatrixValue,
@@ -616,8 +630,14 @@ public:
                             MatrixMemory,
                             MatrixSize> matrix_type;
   typedef typename matrix_type::values_type matrix_values_type;
-  typedef InputVectorType input_vector_type;
-  typedef OutputVectorType output_vector_type;
+  typedef Kokkos::View< InputVectorValue*,
+                        Kokkos::LayoutRight,
+                        Device,
+                        InputMemory > input_vector_type;
+  typedef Kokkos::View< OutputVectorValue*,
+                        Kokkos::LayoutRight,
+                        Device,
+                        OutputMemory > output_vector_type;
 
   static const unsigned NumPerThread = MatrixStorage::static_size;
 
@@ -686,32 +706,44 @@ public:
   }
 };
 
-// Specialization of multiply for CrsMatrix< Sacado::MP::Vector<...>, Cuda >
+// Kernel implementing y = A * x for Cuda device where
+//   A == Kokkos::CrsMatrix< Sacado::MP::Vector<...>,...>,
+//   x, y == Kokkos::View< Sacado::MP::Vector<...>*,...>,
+//   x and y are rank 1
+// We spell everything out here to make sure the ranks and devices match.
+//
+// This implementation uses overloaded operators for MP::Vector.
 template <typename MatrixStorage,
           typename MatrixOrdinal,
           typename MatrixMemory,
           typename MatrixSize,
-          typename InputVectorType,
-          typename OutputVectorType>
+          typename InputStorage,
+          typename InputMemory,
+          typename OutputStorage,
+          typename OutputMemory>
 class Multiply< Kokkos::CrsMatrix<Sacado::MP::Vector<MatrixStorage>,
                                   MatrixOrdinal,
                                   Kokkos::Cuda,
                                   MatrixMemory,
                                   MatrixSize>,
-                InputVectorType,
-                OutputVectorType,
-                void,
-                IntegralRank<1>,
-                DefaultMultiply >
+                Kokkos::View< Sacado::MP::Vector<InputStorage>*,
+                              Kokkos::LayoutRight,
+                              Kokkos::Cuda,
+                              InputMemory >,
+                Kokkos::View< Sacado::MP::Vector<OutputStorage>*,
+                              Kokkos::LayoutRight,
+                              Kokkos::Cuda,
+                              OutputMemory >
+                >
 {
 public:
 
   typedef Sacado::MP::Vector<MatrixStorage> MatrixValue;
-  typedef typename InputVectorType::value_type InputVectorValue;
-  typedef typename OutputVectorType::value_type OutputVectorValue;
-  typedef Kokkos::LayoutRight MatrixLayout;
+  typedef Sacado::MP::Vector<InputStorage> InputVectorValue;
+  typedef Sacado::MP::Vector<OutputStorage> OutputVectorValue;
 
-  typedef typename Kokkos::Cuda device_type;
+  typedef typename Kokkos::Cuda Device;
+  typedef Device device_type;
   typedef typename device_type::size_type size_type;
 
   typedef Kokkos::CrsMatrix<MatrixValue,
@@ -720,8 +752,14 @@ public:
                             MatrixMemory,
                             MatrixSize> matrix_type;
   typedef typename matrix_type::values_type matrix_values_type;
-  typedef InputVectorType input_vector_type;
-  typedef OutputVectorType output_vector_type;
+  typedef Kokkos::View< InputVectorValue*,
+                        Kokkos::LayoutRight,
+                        Device,
+                        InputMemory > input_vector_type;
+  typedef Kokkos::View< OutputVectorValue*,
+                        Kokkos::LayoutRight,
+                        Device,
+                        OutputMemory > output_vector_type;
 
   static const unsigned NumPerThread = MatrixStorage::static_size;
 

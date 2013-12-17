@@ -514,6 +514,14 @@ namespace Sacado {
 
   } // namespace MP
 
+  //! Trait class to determine if a scalar type is a Vector
+  template <typename T> struct is_mp_vector {
+    static const bool value = false;
+  };
+  template <typename S> struct is_mp_vector< MP::Vector<S> > {
+    static const bool value = true;
+  };
+
 } // namespace Sacado
 
 #include "Sacado_MP_Vector_ops.hpp"
