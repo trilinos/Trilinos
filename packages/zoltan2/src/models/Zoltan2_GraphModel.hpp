@@ -716,7 +716,7 @@ template <typename User>
   gid_t const *vtxIds=NULL, *nborIds=NULL;
   lno_t const  *offsets=NULL;
   try{
-    numLocalVertices_ = ia->getLocalNum();
+    numLocalVertices_ = ia->getLocalNumIDs();
     ia->getIDsView(vtxIds);
   }
   Z2_FORWARD_EXCEPTIONS;

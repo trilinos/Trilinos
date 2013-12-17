@@ -103,7 +103,7 @@ public:
    *  Objects may be coordinates, graph vertices, matrix rows, etc.
    *  They are the objects to be partitioned, ordered, or colored.
    */
-  virtual size_t getLocalNum() const = 0;
+  virtual size_t getLocalNumIDs() const = 0;
 
   /*! \brief Provide a pointer to this process' identifiers.
 

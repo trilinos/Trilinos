@@ -130,7 +130,7 @@ public:
   // The Adapter interface.
   ////////////////////////////////////////////////////
 
-  size_t getLocalNum() const { return vector_->getLocalLength();}
+  size_t getLocalNumIDs() const { return vector_->getLocalLength();}
 
   void getIDsView(const gid_t *&ids) const
   { 
@@ -151,9 +151,9 @@ public:
   // The VectorAdapter interface.
   ////////////////////////////////////////////////////
 
-  int getNumVectors() const {return vector_->getNumVectors();}
+  int getNumEntriesPerID() const {return vector_->getNumVectors();}
 
-  void getVectorView(const scalar_t *&elements, int &stride, int idx=0) const;
+  void getEntriesView(const scalar_t *&elements, int &stride, int idx=0) const;
 
   template <typename Adapter>
     size_t applyPartitioningSolution(const User &in, User *&out,
@@ -216,7 +216,7 @@ template <typename User>
 }
 
 template <typename User>
-  void XpetraMultiVectorAdapter<User>::getVectorView(
+  void XpetraMultiVectorAdapter<User>::getEntriesView(
     const scalar_t *&elements, int &stride, int idx) const
 {
   size_t vecsize;

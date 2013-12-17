@@ -84,7 +84,7 @@ int verifyInputAdapter(
   RCP<const Comm<int> > comm = vector.getMap()->getComm();
   int fail = 0, gfail=0;
 
-  if (!fail && ia.getNumVectors() !=nvec) 
+  if (!fail && ia.getNumEntriesPerID() !=nvec) 
     fail = 42;
 
   if (!fail && ia.getNumWeightsPerID() !=wdim) 
@@ -92,7 +92,7 @@ int verifyInputAdapter(
 
   size_t length = vector.getLocalLength();
 
-  if (!fail && ia.getLocalNum() != length)
+  if (!fail && ia.getLocalNumIDs() != length)
     fail = 4;
 
   gfail = globalFail(comm, fail);
@@ -102,14 +102,14 @@ int verifyInputAdapter(
     const scalar_t *vals=NULL;
     int stride;
 
-    size_t nvals = ia.getLocalNum();
+    size_t nvals = ia.getLocalNumIDs();
     if (nvals != vector.getLocalLength())
       fail = 8;
 
     ia.getIDsView(vtxIds);
 
     for (int v=0; v < nvec; v++){
-      ia.getVectorView(vals, stride, v);
+      ia.getEntriesView(vals, stride, v);
 
       if (!fail && stride != 1)
         fail = 10;

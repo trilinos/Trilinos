@@ -396,7 +396,7 @@ public:
   }
 
   // Functions from the BaseAdapter interface
-  size_t getLocalNum() const {
+  size_t getLocalNumIDs() const {
     return getLocalNumOf(getPrimaryEntityType());
   }
 

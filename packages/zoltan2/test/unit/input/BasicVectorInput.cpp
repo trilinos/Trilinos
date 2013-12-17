@@ -69,13 +69,13 @@ int checkBasicVector(
 
   if (valueStrides == NULL) strideOne = true;
 
-  if (ia->getNumVectors() != mvdim)
+  if (ia->getNumEntriesPerID() != mvdim)
     fail = 100;
 
   if (!fail && ia->getNumWeightsPerID() != wdim)
     fail = 101;
 
-  if (!fail && ia->getLocalNum() != size_t(len))
+  if (!fail && ia->getLocalNumIDs() != size_t(len))
     fail = 102;
 
   const gno_t *idList;
@@ -89,7 +89,7 @@ int checkBasicVector(
     int correctStride = (strideOne ? 1 : valueStrides[v]);
     int stride;
 
-    ia->getVectorView(vals, stride, v);
+    ia->getEntriesView(vals, stride, v);
 
     if (!fail && stride != correctStride)
       fail = 105;

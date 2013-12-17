@@ -260,7 +260,7 @@ template <typename User>
 {
   bool consecutiveIds = flags.test(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
 
-  size_t nLocalIds = ia->getLocalNum();
+  size_t nLocalIds = ia->getLocalNumIDs();
 
   // Get coordinates and weights (if any)
 
@@ -478,7 +478,7 @@ template <typename User>
   env_->localBugAssertion(__FILE__, __LINE__, "coordinate dimension",
     coordinateDim_ > 0, COMPLEX_ASSERTION);
 
-  size_t nLocalIds = (coordinateDim_ ? ia->getLocalNum() : 0);
+  size_t nLocalIds = (coordinateDim_ ? ia->getLocalNumIDs() : 0);
 
   // Get coordinates
 
@@ -630,11 +630,11 @@ CoordinateModel<VectorAdapter<User> >::CoordinateModel(
 {
   bool consecutiveIds = flags.test(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
 
-  size_t nLocalIds = ia->getLocalNum();
+  size_t nLocalIds = ia->getLocalNumIDs();
 
   // Get coordinates and weights (if any)
 
-  coordinateDim_ = ia->getNumVectors();
+  coordinateDim_ = ia->getNumEntriesPerID();
   userNumWeights_ = ia->getNumWeightsPerID();
 
   Model<VectorAdapter<User> >::maxCount(*comm, coordinateDim_, userNumWeights_);
@@ -661,7 +661,7 @@ CoordinateModel<VectorAdapter<User> >::CoordinateModel(
       int stride;
       const scalar_t *coords=NULL;
       try{
-        ia->getVectorView(coords, stride, dim);
+        ia->getEntriesView(coords, stride, dim);
       }
       Z2_FORWARD_EXCEPTIONS;
 

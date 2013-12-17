@@ -129,7 +129,7 @@ public:
 
   /*! \brief Return the number of vectors (typically one).
    */
-  virtual int getNumVectors() const = 0;
+  virtual int getNumEntriesPerID() const = 0;
 
   /*! \brief Provide a pointer to the elements of the specified vector.
 
@@ -140,8 +140,8 @@ public:
          represents the vector for which data is being requested.
    */
 
-  virtual void getVectorView(const scalar_t *&elements, int &stride,
-                             int idx = 0) const = 0;
+  virtual void getEntriesView(const scalar_t *&elements, int &stride,
+                              int idx = 0) const = 0;
 
 };
   

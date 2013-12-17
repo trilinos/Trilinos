@@ -78,7 +78,7 @@ int checkBasicCoordinate(
   if (!fail && ia->getNumWeightsPerID() != nWeights)
     fail = 101;
 
-  if (!fail && ia->getLocalNum() != size_t(len))
+  if (!fail && ia->getLocalNumIDs() != size_t(len))
     fail = 102;
 
   for (int x=0; !fail && x < nCoords; x++){

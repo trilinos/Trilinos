@@ -294,7 +294,7 @@ public:
   }
 
   // Functions from the BaseAdapter interface
-  size_t getLocalNum() const {
+  size_t getLocalNumIDs() const {
     if (getPrimaryEntityType() == GRAPH_VERTEX)
       return getLocalNumVertices();
     else

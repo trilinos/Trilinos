@@ -254,7 +254,7 @@ template <typename User>
       gids_(), userWeightDim_(0), weights_(), gnos_(), gnosConst_()
 {
   userWeightDim_ = ia->getNumWeightsPerID();
-  size_t nLocalIds = ia->getLocalNum();
+  size_t nLocalIds = ia->getLocalNumIDs();
 
   Model<IdentifierAdapter<User> >::maxCount(*comm, userWeightDim_);
 
@@ -433,7 +433,7 @@ template <typename User>
   /////////////////////////////////////////
   // Get global IDs.
 
-  size_t nLocalIds = ia->getLocalNum();
+  size_t nLocalIds = ia->getLocalNumIDs();
   const gid_t *gids=NULL;
 
   if (nLocalIds > 0){
@@ -615,7 +615,7 @@ template <typename User>
   const gid_t *gids;
 
   try{
-    nLocalIds = ia->getLocalNum();
+    nLocalIds = ia->getLocalNumIDs();
     ia->getIDsView(gids);
   }
   Z2_FORWARD_EXCEPTIONS;
@@ -764,7 +764,7 @@ template <typename User>
   const gid_t *gids;
 
   try{
-    nLocalIds = ia->getLocalNum();
+    nLocalIds = ia->getLocalNumIDs();
     ia->getIDsView(gids);
   }
   Z2_FORWARD_EXCEPTIONS;

@@ -944,7 +944,7 @@ template <typename Adapter>
 
   // Local number of objects.
 
-  size_t numLocalObjects = ia->getLocalNum();
+  size_t numLocalObjects = ia->getLocalNumIDs();
 
   // Parts to which objects are assigned.
 

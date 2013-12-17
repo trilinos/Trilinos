@@ -164,7 +164,7 @@ public:
   // The Adapter interface.
   ////////////////////////////////////////////////////////////////
 
-  size_t getLocalNum() const { return numIds_;}
+  size_t getLocalNumIDs() const { return numIds_;}
 
   void getIDsView(const gid_t *&ids) const {ids = idList_;}
 

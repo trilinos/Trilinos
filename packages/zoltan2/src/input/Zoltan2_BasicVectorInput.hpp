@@ -224,7 +224,7 @@ public:
   // The Adapter interface.
   ////////////////////////////////////////////////////////////////
 
-  size_t getLocalNum() const { return numIds_;}
+  size_t getLocalNumIDs() const { return numIds_;}
 
   void getIDsView(const gid_t *&ids) const {ids = idList_;}
 
@@ -246,9 +246,9 @@ public:
   // The VectorAdapter interface.
   ////////////////////////////////////////////////////
 
-  int getNumVectors() const { return numVectors_;}
+  int getNumEntriesPerID() const { return numVectors_;}
 
-  void getVectorView(const scalar_t *&element, int &stride, int idx = 0) const
+  void getEntriesView(const scalar_t *&element, int &stride, int idx = 0) const
   {
     if (idx < 0 || idx >= numVectors_) {
       std::ostringstream emsg;

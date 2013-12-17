@@ -424,7 +424,7 @@ public:
   }
 
   // Functions from the BaseAdapter interface
-  size_t getLocalNum() const {
+  size_t getLocalNumIDs() const {
     switch (getPrimaryEntityType()) {
     case MATRIX_ROW:
       return getLocalNumRows();
