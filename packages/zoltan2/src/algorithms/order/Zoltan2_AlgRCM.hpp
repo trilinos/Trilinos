@@ -129,7 +129,7 @@ class AlgRCM
     std::queue<lno_t> Q;
     size_t count = 0; // CM label, reversed later
     size_t next = 0;  // next unmarked vertex
-    std::vector<std::pair<lno_t, size_t> >  children; // children and their degrees
+    Teuchos::Array<std::pair<lno_t, size_t> >  children; // children and their degrees
   
     while (count < nVtx) {
   
@@ -166,8 +166,8 @@ class AlgRCM
         for (lno_t ptr = offsets[v]; ptr < offsets[v+1]; ++ptr){
           lno_t child = edgeIds[ptr];
           if (static_cast<Tpetra::global_size_t>(invPerm[child]) == INVALID){
-            // Not visited yet; add child to vector of pairs.
-            pair<lno_t,size_t> newchild;
+            // Not visited yet; add child to list of pairs.
+            std::pair<lno_t,size_t> newchild;
             newchild.first = child;
             newchild.second = offsets[child+1] - offsets[child];
             children.push_back(newchild); 
@@ -175,11 +175,20 @@ class AlgRCM
         }
         // Sort children by increasing degree
         // TODO: If edge weights, sort children by decreasing weight,
-        SortPairs<lno_t,size_t> zort;
-        zort.sort(children);
-        for (pair<lno_t,size_t> *ptr= children.begin(); ptr<children.end(); ptr++){
+        // TODO: Disable sorting for now
+        //SortPairs<lno_t,size_t> zort;
+        //zort.sort(children);
+
+        //Teuchos::Array<typename Teuchos::ScalarTraits<lno_t>::magnitudeType> a;
+        //typedef typename std::pair<lno_t, size_t>::first_type first_type;
+        //typename Teuchos::Array<std::pair<typename Teuchos::ScalarTraits<lno_t>::magnitudeType, size_t> >::iterator it;
+
+        typename Teuchos::Array<std::pair<lno_t,size_t> >::iterator it = 
+          children.begin ();
+        for ( ; it != children.end(); ++it){
+        //for (typename Teuchos::Array<std::pair<lno_t,size_t> >::iterator it= children.begin(); it != children.end(); ++it){
           // Push children on the queue in sorted order.
-          lno_t child = ptr->first;
+          lno_t child = it->first;
           invPerm[child] = count++; // Label as we push on Q
           Q.push(child);
           //cout << "Debug: invPerm[" << child << "] = " << count << endl;
@@ -212,7 +221,7 @@ class AlgRCM
     ArrayView<const lno_t> offsets)
   {
     std::queue<lno_t> Q;
-    std::vector<bool> mark(nVtx);
+    Teuchos::Array<bool> mark(nVtx);
 
     // Do BFS and compute smallest degree as we go
     lno_t smallestDegree = nVtx;
@@ -254,7 +263,7 @@ class AlgRCM
     ArrayView<const lno_t> offsets)
   {
     std::queue<lno_t> Q;
-    std::vector<bool> mark(nVtx);
+    Teuchos::Array<bool> mark(nVtx);
 
     // Do BFS a couple times, pick vertex last visited (furthest away)
     const int numBFS = 2;

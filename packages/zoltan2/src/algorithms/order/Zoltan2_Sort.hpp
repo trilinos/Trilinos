@@ -45,6 +45,7 @@
 #ifndef _ZOLTAN2_SORT_HPP_
 #define _ZOLTAN2_SORT_HPP_
 
+#include <Teuchos_Array.hpp>
 #include <algorithm>
 
 
@@ -54,8 +55,24 @@
 //! \brief This class is needed so we also get the sorted keys (indices).
   
 // TODO: This is a generic utility class; should move this source file.
+// We could perhaps use Sort2 from Tpetra, but that uses a custom sort not std::sort
 
 namespace Zoltan2{
+
+namespace Details {
+
+  template<class KeyType, class ValueType>
+  bool zort_inc (const std::pair<KeyType, ValueType>& a, const std::pair<KeyType, ValueType>& b)
+  {
+    return a.second < b.second;
+  }
+
+  template<class KeyType, class ValueType>
+  bool zort_dec (const std::pair<KeyType, ValueType>& a, const std::pair<KeyType, ValueType>& b)
+  {
+    return a.second > b.second;
+  }
+} // namespace Details
 
 template <typename key_t, typename value_t>
 class SortPairs
@@ -66,24 +83,16 @@ class SortPairs
     }
 
   public:
-    void sort(std::vector<std::pair<key_t,value_t> > &listofPairs, bool inc=true)
+    void sort(Teuchos::Array<std::pair<key_t,value_t> > &listofPairs, bool inc=true)
     {
       // Sort in increasing (default) or decreasing order of value
       if (inc)
-        std::sort(listofPairs.begin(), listofPairs.end(), zort_inc);
+        std::sort (listofPairs.begin(), listofPairs.end(), Details::zort_inc<key_t, value_t>);
       else
-        std::sort(listofPairs.begin(), listofPairs.end(), zort_dec);
+        std::sort (listofPairs.begin(), listofPairs.end(), Details::zort_dec<key_t, value_t>);
     }
 
   private:
-    bool zort_inc(std::pair<key_t,value_t> a, std::pair<key_t,value_t> b)
-    {
-      return (a.second < b.second);
-    }
-    bool zort_dec(std::pair<key_t,value_t> a, std::pair<key_t,value_t> b)
-    {
-      return (a.second > b.second);
-    }
 
 };
 }

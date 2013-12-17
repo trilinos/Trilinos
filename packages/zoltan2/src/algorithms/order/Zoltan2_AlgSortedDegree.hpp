@@ -100,14 +100,14 @@ class AlgSortedDegree
     model->getLocalEdgeList(edgeIds, offsets, wgts);
   
     // Store degrees together with index so we can sort.
-    std::vector<std::pair<size_t, size_t> >  degrees(nVtx);
+    Teuchos::Array<std::pair<lno_t, size_t> >  degrees(nVtx);
     for (lno_t i=0; i<(lno_t)nVtx; i++){
-      degrees[i].first  = offsets[i+1] - offsets[i];
-      degrees[i].second = i;
+      degrees[i].first = i;
+      degrees[i].second  = offsets[i+1] - offsets[i];
     }
   
     // Sort degrees.
-    SortPairs<size_t,size_t> zort;
+    SortPairs<lno_t,size_t> zort;
     bool inc = true; // TODO: Add user parameter
     zort.sort(degrees, inc);
   
