@@ -502,7 +502,7 @@ namespace Xpetra {
             const GlobalOrdinal gid = dofGids[i+j];
             const GlobalOrdinal r   = (gid - Teuchos::as<GlobalOrdinal>(j) - goStridedOffset - offset_ - indexBase_) /
                                       Teuchos::as<GlobalOrdinal>(getFixedBlockSize()) - goZeroOffset - cnt;
-            if (r) {
+            if (r != Teuchos::OrdinalTraits<GlobalOrdinal>::zero() ) {
               std::cout << "goZeroOffset   : " <<  goZeroOffset << std::endl
                         << "dofGids[0]     : " <<  dofGids[0] << std::endl
                         << "stridedOffset  : " <<  nStridedOffset << std::endl
