@@ -50,7 +50,7 @@
 
 #include <Zoltan2_config.h>
 #include <Zoltan2_TestHelpers.hpp>
-#include <Zoltan2_BasicCoordinateInput.hpp>
+#include <Zoltan2_BasicVectorInput.hpp>
 #include <Zoltan2_XpetraMultiVectorAdapter.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
@@ -149,7 +149,7 @@ void serialTest(int numParts, bool doRemap)
   UserInputForTests::getRandomData(555, numCoords, 0, 10,
     randomCoords.view(0,3));
 
-  typedef Zoltan2::BasicCoordinateAdapter<myTypes_t> inputAdapter_t;
+  typedef Zoltan2::BasicVectorAdapter<myTypes_t> inputAdapter_t;
 
   inputAdapter_t ia(numCoords, ids,
     randomCoords[0].getRawPtr(), randomCoords[1].getRawPtr(),
@@ -192,7 +192,7 @@ void meshCoordinatesTest(const RCP<const Teuchos::Comm<int> > & comm)
   z = coords->getDataNonConst(2).getRawPtr();
 
   const gno_t *globalIds = coords->getMap()->getNodeElementList().getRawPtr();
-  typedef Zoltan2::BasicCoordinateAdapter<tMVector_t> inputAdapter_t;
+  typedef Zoltan2::BasicVectorAdapter<tMVector_t> inputAdapter_t;
 
   inputAdapter_t ia(localCount, globalIds, x, y, z, 1, 1, 1);
 

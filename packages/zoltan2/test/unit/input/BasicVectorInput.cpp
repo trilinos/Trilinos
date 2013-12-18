@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
   
     try{
      ia = new Zoltan2::BasicVectorAdapter<userTypes_t>(numLocalIds, myIds,
-       v_values, 1, weightValues, strides);
+       v_values, 1);
     }
     catch (std::exception &e){
       fail = 1;
@@ -207,7 +207,7 @@ int main(int argc, char *argv[])
   
     try{
      ia = new Zoltan2::BasicVectorAdapter<userTypes_t>(numLocalIds, myIds,
-       v_values, 1, weightValues, strides);
+       v_values, 1, true, weightPtrs[0], 1);
     }
     catch (std::exception &e){
       fail = 1;
@@ -216,7 +216,7 @@ int main(int argc, char *argv[])
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 2", fail);
   
     fail = checkBasicVector(ia, numLocalIds, numLocalIds*nprocs,
-      myIds, 1, valuePtrs, NULL, wdim, weightPtrs, weightStrides);
+      myIds, 1, valuePtrs, NULL, 1, weightPtrs, weightStrides);
   
     delete ia;
 

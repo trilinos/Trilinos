@@ -43,9 +43,9 @@
 //
 // @HEADER
 //
-// Test for Zoltan2::BasicCoordinateInput 
+// Test for Zoltan2::BasicVectorInput for coordinate-based problems
 
-#include <Zoltan2_BasicCoordinateInput.hpp>
+#include <Zoltan2_BasicVectorInput.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 
 #include <Teuchos_GlobalMPISession.hpp>
@@ -64,7 +64,7 @@ typedef Teuchos::SerialDenseVector<lno_t, scalar_t> tvec_t;
 typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> userTypes_t;
 
 int checkBasicCoordinate(
-  Zoltan2::BasicCoordinateAdapter<userTypes_t> *ia, 
+  Zoltan2::BasicVectorAdapter<userTypes_t> *ia, 
   int len, int glen, gno_t *ids,
   scalar_t *xyz,
   scalar_t *weights,
@@ -162,6 +162,7 @@ int main(int argc, char *argv[])
   
   int wdim = 2;
   Array<scalar_t> weights(numLocalIds*wdim);
+  for (int i = 0; i < numLocalIds*wdim; i++) weights[i] = scalar_t(i);
 
   scalar_t *x_values= coords->getDataNonConst(0).getRawPtr();
   scalar_t *y_values= x_values;  // fake 3 dimensions if needed
@@ -188,7 +189,7 @@ int main(int argc, char *argv[])
     z[ii] = z_values[i];
   }
 
-  RCP<Zoltan2::BasicCoordinateAdapter<userTypes_t> > ia;
+  RCP<Zoltan2::BasicVectorAdapter<userTypes_t> > ia;
 
   {
     ////////////////////////////////////////////////////////////////
@@ -199,7 +200,7 @@ int main(int argc, char *argv[])
     int nweights = 0;
   
     try{
-     ia = rcp(new Zoltan2::BasicCoordinateAdapter<userTypes_t>(
+     ia = rcp(new Zoltan2::BasicVectorAdapter<userTypes_t>(
        numLocalIds, myIds.getRawPtr(), x_values, y_values, z_values));
     }
     catch (std::exception &e){
@@ -213,6 +214,33 @@ int main(int argc, char *argv[])
       weights.getRawPtr(), ncoords, nweights);
   
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check adapter 0", fail);
+  }
+
+  {
+    ////////////////////////////////////////////////////////////////
+    // 3-dimensional coordinates with stride one and one weight
+    //   using simpler constructor
+  
+    int ncoords = 3;
+    int nweights = 1;
+  
+    try{
+     ia = rcp(new Zoltan2::BasicVectorAdapter<userTypes_t>(
+       numLocalIds, myIds.getRawPtr(),
+       x_values, y_values, z_values, 1, 1, 1,
+       true, weights.getRawPtr(), 1));
+    }
+    catch (std::exception &e){
+      fail = 1;
+    }
+  
+    TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 0a", fail);
+  
+    fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, numGlobalIds,
+      myIds.getRawPtr(), xyz_values.getRawPtr(), 
+      weights.getRawPtr(), ncoords, nweights);
+  
+    TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check adapter 0a", fail);
   }
 
   {
@@ -233,7 +261,7 @@ int main(int argc, char *argv[])
     valueStrides.push_back(1);
   
     try{
-     ia = rcp(new Zoltan2::BasicCoordinateAdapter<userTypes_t>(
+     ia = rcp(new Zoltan2::BasicVectorAdapter<userTypes_t>(
        numLocalIds, myIds.getRawPtr(), values, valueStrides, 
        weightValues, weightStrides));
     }
@@ -254,7 +282,7 @@ int main(int argc, char *argv[])
     std::vector<int> emptyStrides;
   
     try{
-     ia = rcp(new Zoltan2::BasicCoordinateAdapter<userTypes_t>(
+     ia = rcp(new Zoltan2::BasicVectorAdapter<userTypes_t>(
        numLocalIds, myIds.getRawPtr(), values, emptyStrides, 
        weightValues, emptyStrides));
     }
@@ -292,7 +320,7 @@ int main(int argc, char *argv[])
     weightStrides.push_back(1);
   
     try{
-     ia = rcp(new Zoltan2::BasicCoordinateAdapter<userTypes_t>(
+     ia = rcp(new Zoltan2::BasicVectorAdapter<userTypes_t>(
        numLocalIds, myIds.getRawPtr(), values, valueStrides, 
        weightValues, weightStrides));
     }
@@ -313,7 +341,7 @@ int main(int argc, char *argv[])
     std::vector<int> emptyStrides;
   
     try{
-     ia = rcp(new Zoltan2::BasicCoordinateAdapter<userTypes_t>(
+     ia = rcp(new Zoltan2::BasicVectorAdapter<userTypes_t>(
        numLocalIds, myIds.getRawPtr(), values, valueStrides, 
        weightValues, emptyStrides));
     }
@@ -349,7 +377,7 @@ int main(int argc, char *argv[])
     weightStrides.push_back(1);
   
     try{
-     ia = rcp(new Zoltan2::BasicCoordinateAdapter<userTypes_t>(
+     ia = rcp(new Zoltan2::BasicVectorAdapter<userTypes_t>(
        numLocalIds, myIds.getRawPtr(), values, valueStrides, 
        weightValues, weightStrides));
     }

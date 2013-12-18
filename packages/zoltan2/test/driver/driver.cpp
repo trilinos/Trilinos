@@ -65,7 +65,6 @@
 #include <Zoltan2_Parameters.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_PartitioningSolutionQuality.hpp>
-#include <Zoltan2_BasicCoordinateInput.hpp>
 #include <Zoltan2_BasicIdentifierInput.hpp>
 #include <Zoltan2_BasicVectorInput.hpp>
 #include <Zoltan2_XpetraCrsGraphAdapter.hpp>
@@ -106,7 +105,6 @@ typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
 typedef Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> tVector_t;
 typedef Tpetra::Map<lno_t, gno_t, node_t> tmap_t;
 
-typedef Zoltan2::BasicCoordinateAdapter<tcrsMatrix_t> bci_t;
 typedef Zoltan2::BasicIdentifierAdapter<tcrsMatrix_t> bii_t;
 typedef Zoltan2::BasicVectorAdapter<tcrsMatrix_t>     bvi_t; 
 typedef Zoltan2::XpetraCrsGraphAdapter<tcrsGraph_t>  xgi_t;
@@ -341,22 +339,7 @@ int main(int argc, char *argv[])
     bool fail = false;
     ArrayRCP<const Zoltan2::MetricValues<scalar_t> > quality;
 
-    if (iaType == string("BasicCoordinateInput")){
-      bci_t *ia = NULL;
-      try{
-        ia = new bci_t(numRows, gids, coords, strides, vweights, strides);
-      }
-      catch (std::exception &e){
-        EXC_ERRMSG("Test error: InputAdapter build", e);
-        fail = true;
-      }
-
-      int err = runAlgorithm<bci_t>(rank, ia, pList, quality);
-
-      if (err != 0)
-        fail = true;
-    }
-    else if (iaType == string("BasicIdentifierInput")){
+    if (iaType == string("BasicIdentifierInput")){
       bii_t *ia = NULL;
       try{
         ia = new bii_t(numRows, gids, vweights, strides);

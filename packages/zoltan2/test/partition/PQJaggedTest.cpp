@@ -49,7 +49,6 @@
  */
 
 #include <Zoltan2_TestHelpers.hpp>
-#include <Zoltan2_BasicCoordinateInput.hpp>
 #include <Zoltan2_XpetraMultiVectorAdapter.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
@@ -96,8 +95,6 @@ using Teuchos::rcp;
 
 
 typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
-typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> myTypes_t;
-
 
 /*! \test PQJaggedTest.cpp
     An example of the use of the PQJagged algorithm to partition coordinate data.
@@ -256,14 +253,9 @@ int GeometricGen(const RCP<const Teuchos::Comm<int> > & comm,
     }
     vector <int> stride;
 
-#if 0
-  typedef Zoltan2::BasicCoordinateAdapter<tMVector_t> inputAdapter_t;
-  inputAdapter_t ia(localCount, globalIds, x, y, z, 1, 1, 1);
-#else
   typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
   //inputAdapter_t ia(coordsConst);
   inputAdapter_t ia(coordsConst,weights, stride);
-#endif
 
     Teuchos::RCP <Teuchos::ParameterList> params ;
 
@@ -367,28 +359,9 @@ int testFromDataFile(
 
     RCP<tMVector_t> coords = uinput.getCoordinates();
 
-#if 0
-    size_t localCount = coords->getLocalLength();
-    int dim = coords->getNumVectors();
-
-    scalar_t *x=NULL, *y=NULL, *z=NULL;
-    x = coords->getDataNonConst(0).getRawPtr();
-
-    if (dim > 1){
-        y = coords->getDataNonConst(1).getRawPtr();
-        if (dim > 2)
-            z = coords->getDataNonConst(2).getRawPtr();
-    }
-
-    const gno_t *globalIds = coords->getMap()->getNodeElementList().getRawPtr();
-
-    typedef Zoltan2::BasicCoordinateAdapter<tMVector_t> inputAdapter_t;
-    inputAdapter_t ia(localCount, globalIds, x, y, z, 1, 1, 1);
-#else
     RCP<const tMVector_t> coordsConst = rcp_const_cast<const tMVector_t>(coords);
     typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
     inputAdapter_t ia(coordsConst);
-#endif
 
     Teuchos::RCP <Teuchos::ParameterList> params ;
 
@@ -548,29 +521,10 @@ int testFromSeparateDataFiles(
 
 
 
-#if 0
-    size_t localCount = coords->getLocalLength();
-    int dim = coords->getNumVectors();
-
-    scalar_t *x=NULL, *y=NULL, *z=NULL;
-    x = coords->getDataNonConst(0).getRawPtr();
-
-    if (dim > 1){
-        y = coords->getDataNonConst(1).getRawPtr();
-        if (dim > 2)
-            z = coords->getDataNonConst(2).getRawPtr();
-    }
-
-    const gno_t *globalIds = coords->getMap()->getNodeElementList().getRawPtr();
-
-    typedef Zoltan2::BasicCoordinateInput<tMVector_t> inputAdapter_t;
-    inputAdapter_t ia(localCount, globalIds, x, y, z, 1, 1, 1);
-#else
     RCP<const tMVector_t> coordsConst = rcp_const_cast<const tMVector_t>(coords);
 
     typedef Zoltan2::XpetraMultiVectorInput<tMVector_t> inputAdapter_t;
     inputAdapter_t ia(coordsConst);
-#endif
 
     Teuchos::RCP <Teuchos::ParameterList> params ;
 
