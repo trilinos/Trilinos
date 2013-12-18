@@ -50,128 +50,71 @@
 
 using namespace KokkosMPVectorKernelsUnitTest;
 
-typedef UnitTestSetup<int,double,Kokkos::Threads> SetupType;
+template <typename Ordinal, typename Scalar, typename MultiplyTag,
+          Ordinal NumPerThread, Ordinal ThreadsPerVector>
+bool test_host_static_fixed_embedded_vector(Ordinal num_hyper_threads,
+                                            Ordinal num_cores,
+                                            Teuchos::FancyOStream& out) {
+  typedef Kokkos::Threads Device;
+
+  const Ordinal VectorSize = NumPerThread * ThreadsPerVector;
+  typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,VectorSize,Device> Storage;
+  typedef Sacado::MP::Vector<Storage> Vector;
+
+  const Ordinal nGrid = 5;
+
+  bool success = true;
+  if (num_hyper_threads >= ThreadsPerVector) {
+    int row_threads = num_hyper_threads / ThreadsPerVector;
+    Kokkos::DeviceConfig dev_config(num_cores, ThreadsPerVector, row_threads);
+
+    success = test_embedded_vector<Vector>(
+      nGrid, VectorSize, dev_config, MultiplyTag(), out);
+  }
+  return success;
+}
+
 size_t num_cores, num_hyper_threads;
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosMPVectorKernels,
-                   EmbeddedVector_1_MPKernel_Thread ) {
-  typedef int Ordinal;
-  typedef double Scalar;
-  typedef Kokkos::Threads Device;
-  const Ordinal VectorSize = SetupType::local_vec_size;
-  typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,VectorSize,Device> Storage;
-  typedef Sacado::MP::Vector<Storage> Vector;
-
-  int vector_threads = 1;
-  int row_threads = num_hyper_threads / vector_threads;
-  Kokkos::DeviceConfig dev_config(num_cores, vector_threads, row_threads);
-
-  SetupType setup;
-  setup.setup(vector_threads);
-  success = test_embedded_vector<Vector>(
-    setup, dev_config, Stokhos::DefaultMultiply(), out);
-  setup.cleanup();
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_CrsMatrix_MP, Multiply_1, Ordinal, Scalar, MultiplyTag )
+{
+  const Ordinal NumPerThread = 3;
+  const Ordinal ThreadsPerVector = 1;
+  success =
+    test_host_static_fixed_embedded_vector<Ordinal,Scalar,MultiplyTag,NumPerThread,ThreadsPerVector>(num_hyper_threads, num_cores, out);
 }
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosMPVectorKernels,
-                   EmbeddedVector_ALL_MPKernel_Threads ) {
-  typedef int Ordinal;
-  typedef double Scalar;
-  typedef Kokkos::Threads Device;
-  const Ordinal VectorSize = SetupType::local_vec_size;
-  typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,VectorSize,Device> Storage;
-  typedef Sacado::MP::Vector<Storage> Vector;
-
-  int vector_threads = num_hyper_threads;
-  int row_threads = num_hyper_threads / vector_threads;
-  Kokkos::DeviceConfig dev_config(num_cores, vector_threads, row_threads);
-
-  SetupType setup;
-  setup.setup(vector_threads);
-  success = test_embedded_vector<Vector>(
-    setup, dev_config, Stokhos::DefaultMultiply(), out);
-  setup.cleanup();
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_CrsMatrix_MP, Multiply_2, Ordinal, Scalar, MultiplyTag )
+{
+  const Ordinal NumPerThread = 3;
+  const Ordinal ThreadsPerVector = 2;
+  success =
+    test_host_static_fixed_embedded_vector<Ordinal,Scalar,MultiplyTag,NumPerThread,ThreadsPerVector>(num_hyper_threads, num_cores, out);
 }
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosMPVectorKernels,
-                   EmbeddedVector_HALF_MPKernel_Threads ) {
-  typedef int Ordinal;
-  typedef double Scalar;
-  typedef Kokkos::Threads Device;
-  const Ordinal VectorSize = SetupType::local_vec_size;
-  typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,VectorSize,Device> Storage;
-  typedef Sacado::MP::Vector<Storage> Vector;
-
-  int vector_threads = (num_hyper_threads+1)/2;
-  int row_threads = num_hyper_threads / vector_threads;
-  Kokkos::DeviceConfig dev_config(num_cores, vector_threads, row_threads);
-
-  SetupType setup;
-  setup.setup(vector_threads);
-  success = test_embedded_vector<Vector>(
-    setup, dev_config, Stokhos::DefaultMultiply(), out);
-  setup.cleanup();
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_CrsMatrix_MP, Multiply_4, Ordinal, Scalar, MultiplyTag )
+{
+  const Ordinal NumPerThread = 3;
+  const Ordinal ThreadsPerVector = 4;
+  success =
+    test_host_static_fixed_embedded_vector<Ordinal,Scalar,MultiplyTag,NumPerThread,ThreadsPerVector>(num_hyper_threads, num_cores, out);
 }
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosMPVectorKernels,
-                   EmbeddedVector_1_EnsembleKernel_Thread ) {
-  typedef int Ordinal;
-  typedef double Scalar;
-  typedef Kokkos::Threads Device;
-  const Ordinal VectorSize = SetupType::local_vec_size;
-  typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,VectorSize,Device> Storage;
-  typedef Sacado::MP::Vector<Storage> Vector;
+#define CRS_MATRIX_MP_VECTOR_TESTS_ORDINAL_SCALAR_TAG( ORDINAL, SCALAR, TAG ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                 \
+    Kokkos_CrsMatrix_MP, Multiply_1,  ORDINAL, SCALAR, TAG )            \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                 \
+    Kokkos_CrsMatrix_MP, Multiply_2,  ORDINAL, SCALAR, TAG )            \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                 \
+    Kokkos_CrsMatrix_MP, Multiply_4,  ORDINAL, SCALAR, TAG )
 
-  int vector_threads = 1;
-  int row_threads = num_hyper_threads / vector_threads;
-  Kokkos::DeviceConfig dev_config(num_cores, vector_threads, row_threads);
-
-  SetupType setup;
-  setup.setup(vector_threads);
-  success = test_embedded_vector<Vector>(
-    setup, dev_config, Stokhos::EnsembleMultiply(), out);
-  setup.cleanup();
-}
-
-TEUCHOS_UNIT_TEST( Stokhos_KokkosMPVectorKernels,
-                   EmbeddedVector_ALL_EnsembleKernel_Threads ) {
-  typedef int Ordinal;
-  typedef double Scalar;
-  typedef Kokkos::Threads Device;
-  const Ordinal VectorSize = SetupType::local_vec_size;
-  typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,VectorSize,Device> Storage;
-  typedef Sacado::MP::Vector<Storage> Vector;
-
-  int vector_threads = num_hyper_threads;
-  int row_threads = num_hyper_threads / vector_threads;
-  Kokkos::DeviceConfig dev_config(num_cores, vector_threads, row_threads);
-
-  SetupType setup;
-  setup.setup(vector_threads);
-  success = test_embedded_vector<Vector>(
-    setup, dev_config, Stokhos::EnsembleMultiply(), out);
-  setup.cleanup();
-}
-
-TEUCHOS_UNIT_TEST( Stokhos_KokkosMPVectorKernels,
-                   EmbeddedVector_HALF_EnsembleKernel_Threads ) {
-  typedef int Ordinal;
-  typedef double Scalar;
-  typedef Kokkos::Threads Device;
-  const Ordinal VectorSize = SetupType::local_vec_size;
-  typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,VectorSize,Device> Storage;
-  typedef Sacado::MP::Vector<Storage> Vector;
-
-  int vector_threads = (num_hyper_threads+1)/2;
-  int row_threads = num_hyper_threads / vector_threads;
-  Kokkos::DeviceConfig dev_config(num_cores, vector_threads, row_threads);
-
-  SetupType setup;
-  setup.setup(vector_threads);
-  success = test_embedded_vector<Vector>(
-    setup, dev_config, Stokhos::EnsembleMultiply(), out);
-  setup.cleanup();
-}
+using Stokhos::DefaultMultiply;
+using Stokhos::EnsembleMultiply;
+CRS_MATRIX_MP_VECTOR_TESTS_ORDINAL_SCALAR_TAG(int, double, DefaultMultiply)
+CRS_MATRIX_MP_VECTOR_TESTS_ORDINAL_SCALAR_TAG(int, double, EnsembleMultiply)
 
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);

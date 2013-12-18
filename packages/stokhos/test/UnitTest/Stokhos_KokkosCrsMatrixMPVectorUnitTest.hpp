@@ -358,8 +358,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   success = kernel::check(matrix, out);
 }
 
+template <typename Scalar> struct ScalarTol {};
+template <> struct ScalarTol<float> {  static float  tol() { return 1e-4;  } };
+template <> struct ScalarTol<double> { static double tol() { return 1e-10; } };
+
 template <typename VectorType, typename Multiply>
-bool test_mpvector_multiply(int VectorSize,
+bool test_mpvector_multiply(typename VectorType::ordinal_type ensemble_length,
                             Kokkos::DeviceConfig dev_config,
                             Multiply multiply_op,
                             Teuchos::FancyOStream& out)
@@ -377,6 +381,12 @@ bool test_mpvector_multiply(int VectorSize,
   typedef typename matrix_values_type::HostMirror host_matrix_values_type;
   typedef typename Vector::HostMirror HostVector;
 
+  // Check ensemble_length == storage_type::static_size for static storage
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    storage_type::is_static && storage_type::static_size != ensemble_length,
+    std::logic_error,
+    "Static storage size must equal ensemble size");
+
   // Generate FEM graph:
   Ordinal nGrid = 5;
   Ordinal fem_length = nGrid * nGrid * nGrid;
@@ -387,7 +397,7 @@ bool test_mpvector_multiply(int VectorSize,
 
   // Create matrix
   matrix_values_type matrix_values =
-    matrix_values_type("values", fem_graph_length, VectorSize);
+    matrix_values_type("values", fem_graph_length, ensemble_length);
   host_matrix_values_type host_matrix_values_vec =
     Kokkos::create_mirror_view(matrix_values);
   typename host_matrix_values_type::array_type host_matrix_values =
@@ -396,10 +406,10 @@ bool test_mpvector_multiply(int VectorSize,
     const Ordinal row_size = fem_graph[rowFEM].size();
     for (Ordinal rowEntryFEM=0; rowEntryFEM<row_size; ++rowEntryFEM,++entryFEM){
       const Ordinal colFEM = fem_graph[rowFEM][rowEntryFEM];
-      for (Ordinal k=0; k<VectorSize; ++k) {
+      for (Ordinal k=0; k<ensemble_length; ++k) {
         host_matrix_values(entryFEM,k) =
           generate_matrix_coefficient<Scalar>(
-            fem_length, VectorSize, rowFEM, colFEM, k);
+            fem_length, ensemble_length, rowFEM, colFEM, k);
       }
     }
   }
@@ -408,14 +418,14 @@ bool test_mpvector_multiply(int VectorSize,
   A.dev_config = dev_config;
 
   // Create x and y vectors
-  Vector x("x", fem_length, VectorSize);
-  Vector y("y", fem_length, VectorSize);
+  Vector x("x", fem_length, ensemble_length);
+  Vector y("y", fem_length, ensemble_length);
   HostVector host_x_vec = Kokkos::create_mirror_view(x);
   typename HostVector::array_type host_x = host_x_vec;
   for (Ordinal i=0; i<fem_length; ++i)
-    for (Ordinal j=0; j<VectorSize; ++j)
+    for (Ordinal j=0; j<ensemble_length; ++j)
       host_x(i,j) = generate_vector_coefficient<Scalar>(
-        fem_length, VectorSize, i, j);
+        fem_length, ensemble_length, i, j);
   Kokkos::deep_copy(x, host_x_vec);
 
   // Multiply
@@ -431,16 +441,18 @@ bool test_mpvector_multiply(int VectorSize,
     const Ordinal row_size = fem_graph[rowFEM].size();
     for (Ordinal rowEntryFEM=0; rowEntryFEM<row_size; ++rowEntryFEM,++entryFEM){
       const Ordinal colFEM = fem_graph[rowFEM][rowEntryFEM];
-      for (Ordinal k=0; k<VectorSize; ++k) {
+      for (Ordinal k=0; k<ensemble_length; ++k) {
         y_expected.fastAccessCoeff(k) +=
           generate_matrix_coefficient<Scalar>(
-            fem_length, VectorSize, rowFEM, colFEM, k) *
+            fem_length, ensemble_length, rowFEM, colFEM, k) *
           generate_vector_coefficient<Scalar>(
-            fem_length, VectorSize, colFEM, k);
+            fem_length, ensemble_length, colFEM, k);
       }
     }
+    Scalar rel_tol = ScalarTol<Scalar>::tol();
+    Scalar abs_tol = ScalarTol<Scalar>::tol();
     bool s = compareVecs(host_y(rowFEM), "host_y(rowFEM)", y_expected, "y_expected",
-                         0.0, 0.0, out);
+                         rel_tol, abs_tol, out);
     success = success && s;
   }
 
@@ -476,7 +488,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,VectorSize,Device> Storage;
   typedef Sacado::MP::Vector<Storage> Vector;
 
-   // Setup DeviceConfig
+  // Setup DeviceConfig
   Kokkos::DeviceConfig dev_config;
   if (Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value) {
     // For GPU, 1 thread per vector and 16 rows per block

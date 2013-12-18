@@ -47,7 +47,10 @@
 
 #include "Kokkos_Parallel.hpp"
 #include "Stokhos_Multiply.hpp"
-#include "Kokkos_Cuda.hpp" // for determining work range
+
+// For computing ParallelWorkRequest
+#include "Kokkos_hwloc.hpp"
+#include "Kokkos_Cuda.hpp"
 
 //----------------------------------------------------------------------------
 // Specializations of Kokkos::CrsMatrix for Sacado::MP::Vector scalar type
@@ -269,108 +272,184 @@ public:
                         Device,
                         OutputMemory > output_vector_type;
 
-  typedef Kokkos::View< typename matrix_values_type::data_type,
-                        typename matrix_values_type::array_layout,
-                        device_type,
-                        Kokkos::MemoryUnmanaged > matrix_local_view_type;
-  typedef Kokkos::View< typename input_vector_type::data_type,
-                        typename input_vector_type::array_layout,
-                        device_type,
-                        Kokkos::MemoryUnmanaged > input_local_view_type;
-  typedef Kokkos::View< typename output_vector_type::data_type,
-                        typename output_vector_type::array_layout,
-                        device_type,
-                        Kokkos::MemoryUnmanaged > output_local_view_type;
-  typedef typename matrix_local_view_type::Partition matrix_partition_type;
-  typedef typename input_local_view_type::Partition input_partition_type;
-  typedef typename output_local_view_type::Partition output_partition_type;
+private:
 
-  typedef OutputVectorValue scalar_type;
+  template <unsigned NumPerThread>
+  struct MultiplyKernel {
 
-  const matrix_type  m_A;
-  const input_vector_type  m_x;
-  output_vector_type  m_y;
+    typedef Device device_type;
 
-  Multiply( const matrix_type & A,
-            const input_vector_type & x,
-            output_vector_type & y )
-    : m_A( A )
-    , m_x( x )
-    , m_y( y )
-    {}
+    // Typenames for thread-local views
+    typedef typename Kokkos::LocalMPVectorView<matrix_values_type,
+                                               NumPerThread>::type matrix_local_view_type;
+    typedef typename Kokkos::LocalMPVectorView<input_vector_type,
+                                               NumPerThread>::type input_local_view_type;
+    typedef typename Kokkos::LocalMPVectorView<output_vector_type,
+                                               NumPerThread>::type output_local_view_type;
 
-  KOKKOS_INLINE_FUNCTION
-  void operator()( device_type dev ) const
-  {
-    // 2-D distribution of threads: num_vector_threads x num_row_threads
-    // where the x-dimension are vector threads and the y dimension are
-    // row threads
-    const size_type num_vector_threads = m_A.dev_config.block_dim.x;
-    const size_type num_row_threads = m_A.dev_config.block_dim.y;
-    const size_type vector_rank = dev.team_rank() % num_vector_threads;
-    const size_type row_rank = dev.team_rank() / num_vector_threads;
+    typedef typename matrix_local_view_type::Partition matrix_partition_type;
+    typedef typename input_local_view_type::Partition input_partition_type;
+    typedef typename output_local_view_type::Partition output_partition_type;
 
-    // Create local views with corresponding offset into the vector
-    // dimension based on vector_rank
-    matrix_partition_type matrix_partition(vector_rank, num_vector_threads);
-    input_partition_type input_partition(vector_rank, num_vector_threads);
-    output_partition_type output_partition(vector_rank, num_vector_threads);
-    const matrix_local_view_type A(m_A.values, matrix_partition);
-    const input_local_view_type x(m_x, input_partition);
-    const output_local_view_type y(m_y, output_partition);
+    typedef typename output_local_view_type::value_type scalar_type;
 
-    // Compute range of rows processed for each thread block
-    const size_type row_count = m_A.graph.row_map.dimension_0()-1;
-    size_type work_begin;
-    const size_type work_end =
-      details::compute_work_range<typename scalar_type::value_type,device_type,size_type>(row_count, dev.league_size(), dev.league_rank(), work_begin);
+    const matrix_type  m_A;
+    const input_vector_type  m_x;
+    output_vector_type  m_y;
 
-    // To make better use of L1 cache on the CPU/MIC, we move through the
-    // row range where each thread processes a cache-line's worth of rows,
-    // with adjacent threads processing adjacent cache-lines.
-    // For Cuda, adjacent threads process adjacent rows.
-    const size_type cache_line =
-      Kokkos::Impl::is_same<device_type,Kokkos::Cuda>::value ? 1 : 64;
-    const size_type scalar_size = sizeof(scalar_type);
-    const size_type rows_per_thread = (cache_line+scalar_size-1)/scalar_size;
-    const size_type row_block_size = rows_per_thread * num_row_threads;
+    MultiplyKernel( const matrix_type & A,
+                    const input_vector_type & x,
+                    output_vector_type & y )
+      : m_A( A )
+      , m_x( x )
+      , m_y( y )
+      {}
 
-    scalar_type sum;
+    KOKKOS_INLINE_FUNCTION
+    void operator()( device_type dev ) const
+    {
+      // 2-D distribution of threads: num_vector_threads x num_row_threads
+      // where the x-dimension are vector threads and the y dimension are
+      // row threads
+      const size_type num_vector_threads = m_A.dev_config.block_dim.x;
+      const size_type num_row_threads = m_A.dev_config.block_dim.y;
+      const size_type vector_rank = dev.team_rank() % num_vector_threads;
+      const size_type row_rank = dev.team_rank() / num_vector_threads;
 
-    // Loop over rows in blocks of row_block_size
-    for (size_type iBlockRow=work_begin+row_rank*rows_per_thread;
-         iBlockRow<work_end; iBlockRow+=row_block_size) {
+      // Create local views with corresponding offset into the vector
+      // dimension based on vector_rank and reduced number of vector entries
+      matrix_partition_type matrix_partition(vector_rank, num_vector_threads);
+      input_partition_type input_partition(vector_rank, num_vector_threads);
+      output_partition_type output_partition(vector_rank, num_vector_threads);
+      const matrix_local_view_type A(m_A.values, matrix_partition);
+      const input_local_view_type x(m_x, input_partition);
+      const output_local_view_type y(m_y, output_partition);
 
-      // Loop over rows within block
-      const size_type row_end = iBlockRow+rows_per_thread <= work_end ?
-        rows_per_thread : work_end - iBlockRow;
-      for (size_type row=0; row<row_end; ++row) {
-        const size_type iRow = iBlockRow + row;
+      // const matrix_values_type A(m_A.values);
+      // const input_vector_type x(m_x);
+      // const output_vector_type y(m_y);
 
-        // Compute mat-vec for this row
-        const size_type iEntryBegin = m_A.graph.row_map[iRow];
-        const size_type iEntryEnd   = m_A.graph.row_map[iRow+1];
-        sum = 0.0;
-        for (size_type iEntry = iEntryBegin; iEntry < iEntryEnd; ++iEntry) {
-          size_type iCol = m_A.graph.entries(iEntry);
-          sum += A(iEntry) * x(iCol);
-        }
-        y(iRow) = sum;
+      // Compute range of rows processed for each thread block
+      const size_type row_count = m_A.graph.row_map.dimension_0()-1;
+      size_type work_begin;
+      const size_type work_end =
+        details::compute_work_range<typename scalar_type::value_type,device_type,size_type>(row_count, dev.league_size(), dev.league_rank(), work_begin);
 
-      } // row loop
+      // To make better use of L1 cache on the CPU/MIC, we move through the
+      // row range where each thread processes a cache-line's worth of rows,
+      // with adjacent threads processing adjacent cache-lines.
+      // For Cuda, adjacent threads process adjacent rows.
+      const size_type cache_line =
+        Kokkos::Impl::is_same<device_type,Kokkos::Cuda>::value ? 1 : 64;
+      const size_type scalar_size = sizeof(scalar_type);
+      const size_type rows_per_thread = (cache_line+scalar_size-1)/scalar_size;
+      const size_type row_block_size = rows_per_thread * num_row_threads;
 
-    } // block row loop
+      scalar_type sum;
 
-  } // operator()
+      // Loop over rows in blocks of row_block_size
+      for (size_type iBlockRow=work_begin+row_rank*rows_per_thread;
+           iBlockRow<work_end; iBlockRow+=row_block_size) {
+
+        // Loop over rows within block
+        const size_type row_end = iBlockRow+rows_per_thread <= work_end ?
+          rows_per_thread : work_end - iBlockRow;
+        for (size_type row=0; row<row_end; ++row) {
+          const size_type iRow = iBlockRow + row;
+
+          // Compute mat-vec for this row
+          const size_type iEntryBegin = m_A.graph.row_map[iRow];
+          const size_type iEntryEnd   = m_A.graph.row_map[iRow+1];
+          sum = 0.0;
+          for (size_type iEntry = iEntryBegin; iEntry < iEntryEnd; ++iEntry) {
+            size_type iCol = m_A.graph.entries(iEntry);
+            sum += A(iEntry) * x(iCol);
+          }
+          y(iRow) = sum;
+
+        } // row loop
+
+      } // block row loop
+
+    } // operator()
+
+  }; // MatrixKernel<NumPerThread>
+
+public:
 
   static void apply( const matrix_type & A,
                      const input_vector_type & x,
                      output_vector_type & y )
   {
-    const size_type league_size = A.dev_config.num_blocks;
-    const size_type team_size = A.dev_config.num_threads_per_block;
+    const bool is_cuda =
+      Kokkos::Impl::is_same<device_type,Kokkos::Cuda>::value;
+
+    // By default, use one one entry per thread for GPU and
+    // one thread per vector for CPU/MIC
+    size_type threads_per_vector = A.dev_config.block_dim.x;
+    if (threads_per_vector == 0) {
+      if (is_cuda)
+        threads_per_vector = x.dimension_1();
+      else
+        threads_per_vector = 1;
+    }
+
+    // Check threads_per_vector evenly divides number of vector entries
+    size_type num_per_thread = x.dimension_1() / threads_per_vector;
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      num_per_thread * threads_per_vector != x.dimension_1(), std::logic_error,
+      "Entries/thread * threads/vector must equal number of vector entries");
+
+    // By default, use a block size of 256 for GPU and number of hyperthreads
+    // per core for CPU/MIC
+    size_type rows_per_block = A.dev_config.block_dim.y;
+    if (rows_per_block == 0) {
+      if (is_cuda)
+        rows_per_block = 256 / threads_per_vector;
+      else {
+        rows_per_block =
+          Kokkos::hwloc::get_available_threads_per_core();
+      }
+    }
+
+    // Thread team size
+    size_type team_size = threads_per_vector * rows_per_block;
+
+    // Number of teams -- For GPU, each block does rows_per_block rows,
+    // for CPU/MIC, league_size is the number of cores
+    size_type league_size = A.dev_config.num_blocks;
+    if (league_size == 0) {
+      if (is_cuda) {
+        const size_type row_count = A.graph.row_map.dimension_0()-1;
+        league_size = (row_count+rows_per_block-1)/rows_per_block;
+      }
+      else
+        league_size =
+          Kokkos::hwloc::get_available_numa_count() *
+          Kokkos::hwloc::get_available_cores_per_numa();
+    }
+
+    // Parallel launch with corresponding number of vector entries per thread
     Kokkos::ParallelWorkRequest config(league_size, team_size);
-    Kokkos::parallel_for( config, Multiply(A,x,y) );
+    if (num_per_thread == 1)
+      Kokkos::parallel_for( config, MultiplyKernel<1>(A,x,y) );
+    else if (num_per_thread == 2)
+      Kokkos::parallel_for( config, MultiplyKernel<2>(A,x,y) );
+    else if (num_per_thread == 3)
+      Kokkos::parallel_for( config, MultiplyKernel<3>(A,x,y) );
+    else if (num_per_thread == 4)
+      Kokkos::parallel_for( config, MultiplyKernel<4>(A,x,y) );
+    else if (num_per_thread == 8)
+      Kokkos::parallel_for( config, MultiplyKernel<8>(A,x,y) );
+    else if (num_per_thread == 12)
+      Kokkos::parallel_for( config, MultiplyKernel<12>(A,x,y) );
+    else if (num_per_thread == 16)
+      Kokkos::parallel_for( config, MultiplyKernel<16>(A,x,y) );
+    else if (num_per_thread == 32)
+      Kokkos::parallel_for( config, MultiplyKernel<32>(A,x,y) );
+    else
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::logic_error, "Invalid num_per_thread == " << num_per_thread);
   }
 };
 
@@ -432,110 +511,185 @@ public:
                         Device,
                         OutputMemory > output_vector_type;
 
-  typedef typename OutputVectorValue::value_type scalar_type;
-  typedef typename InputVectorValue::value_type x_scalar_type;
-  typedef typename OutputVectorValue::value_type y_scalar_type;
-  typedef typename MatrixValue::value_type A_scalar_type;
-  static const size_type NumPerThread = MatrixStorage::static_size;
+private:
 
-  const matrix_type  m_A;
-  const typename matrix_values_type::array_type m_Avals;
-  const typename input_vector_type::array_type  m_x;
-  typename output_vector_type::array_type  m_y;
+  template <unsigned NumPerThread>
+  struct MultiplyKernel {
 
-  Multiply( const matrix_type & A,
-            const input_vector_type & x,
-            output_vector_type & y )
-    : m_A( A )
-    , m_Avals( A.values )
-    , m_x( x )
-    , m_y( y )
-    {}
+    typedef Device device_type;
 
-  KOKKOS_INLINE_FUNCTION
-  void operator()( device_type dev ) const
-  {
-    // 2-D distribution of threads: num_vector_threads x num_row_threads
-    // where the x-dimension are vector threads and the y dimension are
-    // row threads
-    const size_type num_vector_threads = m_A.dev_config.block_dim.x;
-    const size_type num_row_threads = m_A.dev_config.block_dim.y;
-    const size_type vector_rank = dev.team_rank() % num_vector_threads;
-    const size_type row_rank = dev.team_rank() / num_vector_threads;
+    typedef typename OutputVectorValue::value_type scalar_type;
+    typedef typename InputVectorValue::value_type x_scalar_type;
+    typedef typename OutputVectorValue::value_type y_scalar_type;
+    typedef typename MatrixValue::value_type A_scalar_type;
 
-    // We have to extract pointers to the A, x, and y views below
-    // because the Intel compiler does not appear to be able to vectorize
-    // through them.  Thus we need to compute the correct stride for Cuda.
-    using Kokkos::Impl::is_same;
-    const bool is_cuda = is_same<device_type, Kokkos::Cuda>::value;
-    const size_type stride = is_cuda ? num_vector_threads : size_type(1);
+    const matrix_type  m_A;
+    const typename matrix_values_type::array_type m_Avals;
+    const typename input_vector_type::array_type  m_x;
+    typename output_vector_type::array_type  m_y;
 
-    // Compute range of rows processed for each thread block
-    const size_type row_count = m_A.graph.row_map.dimension_0()-1;
-    size_type work_begin;
-    const size_type work_end =
-      details::compute_work_range<scalar_type,device_type,size_type>(
-        row_count, dev.league_size(), dev.league_rank(), work_begin);
-    const size_type vector_offset =
-      is_cuda ? vector_rank : vector_rank*NumPerThread;
+    MultiplyKernel( const matrix_type & A,
+                    const input_vector_type & x,
+                    output_vector_type & y )
+      : m_A( A )
+      , m_Avals( A.values )
+      , m_x( x )
+      , m_y( y )
+      {}
 
-    // To make better use of L1 cache on the CPU/MIC, we move through the
-    // row range where each thread processes a cache-line's worth of rows,
-    // with adjacent threads processing adjacent cache-lines.
-    // For Cuda, adjacent threads process adjacent rows.
-    const size_type cache_line = is_cuda ? 1 : 64;
-    const size_type scalar_size = sizeof(scalar_type);
-    const size_type rows_per_thread = (cache_line+scalar_size-1)/scalar_size;
-    const size_type row_block_size = rows_per_thread * num_row_threads;
+    KOKKOS_INLINE_FUNCTION
+    void operator()( device_type dev ) const
+    {
+      // 2-D distribution of threads: num_vector_threads x num_row_threads
+      // where the x-dimension are vector threads and the y dimension are
+      // row threads
+      const size_type num_vector_threads = m_A.dev_config.block_dim.x;
+      const size_type num_row_threads = m_A.dev_config.block_dim.y;
+      const size_type vector_rank = dev.team_rank() % num_vector_threads;
+      const size_type row_rank = dev.team_rank() / num_vector_threads;
 
-    scalar_type sum[NumPerThread];
+      // We have to extract pointers to the A, x, and y views below
+      // because the Intel compiler does not appear to be able to vectorize
+      // through them.  Thus we need to compute the correct stride for Cuda.
+      using Kokkos::Impl::is_same;
+      const bool is_cuda = is_same<device_type, Kokkos::Cuda>::value;
+      const size_type stride = is_cuda ? num_vector_threads : size_type(1);
 
-    // Loop over rows in blocks of row_block_size
-    for (size_type iBlockRow=work_begin+row_rank*rows_per_thread;
-         iBlockRow<work_end; iBlockRow+=row_block_size) {
+      // Compute range of rows processed for each thread block
+      const size_type row_count = m_A.graph.row_map.dimension_0()-1;
+      size_type work_begin;
+      const size_type work_end =
+        details::compute_work_range<scalar_type,device_type,size_type>(
+          row_count, dev.league_size(), dev.league_rank(), work_begin);
+      const size_type vector_offset =
+        is_cuda ? vector_rank : vector_rank*NumPerThread;
 
-      // Loop over rows within block
-      const size_type row_end = iBlockRow+rows_per_thread <= work_end ?
-        rows_per_thread : work_end - iBlockRow;
-      for (size_type row=0; row<row_end; ++row) {
-        const size_type iRow = iBlockRow + row;
+      // To make better use of L1 cache on the CPU/MIC, we move through the
+      // row range where each thread processes a cache-line's worth of rows,
+      // with adjacent threads processing adjacent cache-lines.
+      // For Cuda, adjacent threads process adjacent rows.
+      const size_type cache_line = is_cuda ? 1 : 64;
+      const size_type scalar_size = sizeof(scalar_type);
+      const size_type rows_per_thread = (cache_line+scalar_size-1)/scalar_size;
+      const size_type row_block_size = rows_per_thread * num_row_threads;
 
-        // Compute mat-vec for this row
-        const size_type iEntryBegin = m_A.graph.row_map[iRow];
-        const size_type iEntryEnd   = m_A.graph.row_map[iRow+1];
+      scalar_type sum[NumPerThread];
 
-        y_scalar_type * const y = &m_y(iRow,vector_offset);
+      // Loop over rows in blocks of row_block_size
+      for (size_type iBlockRow=work_begin+row_rank*rows_per_thread;
+           iBlockRow<work_end; iBlockRow+=row_block_size) {
 
-        for (size_type e=0; e<NumPerThread; ++e)
-          sum[e] = 0;
+        // Loop over rows within block
+        const size_type row_end = iBlockRow+rows_per_thread <= work_end ?
+          rows_per_thread : work_end - iBlockRow;
+        for (size_type row=0; row<row_end; ++row) {
+          const size_type iRow = iBlockRow + row;
 
-        for ( size_type iEntry = iEntryBegin; iEntry < iEntryEnd; ++iEntry ) {
-          size_type iCol = m_A.graph.entries(iEntry);
+          // Compute mat-vec for this row
+          const size_type iEntryBegin = m_A.graph.row_map[iRow];
+          const size_type iEntryEnd   = m_A.graph.row_map[iRow+1];
 
-          const A_scalar_type * const A = &m_Avals(iEntry,vector_offset);
-          const x_scalar_type * const x = &m_x(iCol,vector_offset);
+          y_scalar_type * const y = &m_y(iRow,vector_offset);
 
           for (size_type e=0; e<NumPerThread; ++e)
-            sum[e] += A[e*stride] * x[e*stride];
-        }
+            sum[e] = 0;
 
-        for (size_type e=0; e<NumPerThread; ++e)
-          y[e*stride] = sum[e];
+          for ( size_type iEntry = iEntryBegin; iEntry < iEntryEnd; ++iEntry ) {
+            size_type iCol = m_A.graph.entries(iEntry);
 
-      } // row loop
+            const A_scalar_type * const A = &m_Avals(iEntry,vector_offset);
+            const x_scalar_type * const x = &m_x(iCol,vector_offset);
 
-    } // block row loop
+            for (size_type e=0; e<NumPerThread; ++e)
+              sum[e] += A[e*stride] * x[e*stride];
+          }
 
-  } // operator()
+          for (size_type e=0; e<NumPerThread; ++e)
+            y[e*stride] = sum[e];
+
+        } // row loop
+
+      } // block row loop
+
+    } // operator()
+
+  }; // MatrixKernel<NumPerThread>
+
+public:
 
   static void apply( const matrix_type & A,
                      const input_vector_type & x,
                      output_vector_type & y )
   {
-    const size_type league_size = A.dev_config.num_blocks;
-    const size_type team_size = A.dev_config.num_threads_per_block;
+    const bool is_cuda =
+      Kokkos::Impl::is_same<device_type,Kokkos::Cuda>::value;
+
+    // By default, use one one entry per thread for GPU and
+    // one thread per vector for CPU/MIC
+    size_type threads_per_vector = A.dev_config.block_dim.x;
+    if (threads_per_vector == 0) {
+      if (is_cuda)
+        threads_per_vector = x.dimension_1();
+      else
+        threads_per_vector = 1;
+    }
+
+    // Check threads_per_vector evenly divides number of vector entries
+    size_type num_per_thread = x.dimension_1() / threads_per_vector;
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      num_per_thread * threads_per_vector != x.dimension_1(), std::logic_error,
+      "Entries/thread * threads/vector must equal number of vector entries");
+
+    // By default, use a block size of 256 for GPU and number of hyperthreads
+    // per core for CPU/MIC
+    size_type rows_per_block = A.dev_config.block_dim.y;
+    if (rows_per_block == 0) {
+      if (is_cuda)
+        rows_per_block = 256 / threads_per_vector;
+      else {
+        rows_per_block =
+          Kokkos::hwloc::get_available_threads_per_core();
+      }
+    }
+
+    // Thread team size
+    size_type team_size = threads_per_vector * rows_per_block;
+
+    // Number of teams -- For GPU, each block does rows_per_block rows,
+    // for CPU/MIC, league_size is the number of cores
+    size_type league_size = A.dev_config.num_blocks;
+    if (league_size == 0) {
+      if (is_cuda) {
+        const size_type row_count = A.graph.row_map.dimension_0()-1;
+        league_size = (row_count+rows_per_block-1)/rows_per_block;
+      }
+      else
+        league_size =
+          Kokkos::hwloc::get_available_numa_count() *
+          Kokkos::hwloc::get_available_cores_per_numa();
+    }
+
+    // Parallel launch with corresponding number of vector entries per thread
     Kokkos::ParallelWorkRequest config(league_size, team_size);
-    Kokkos::parallel_for( config, Multiply(A,x,y) );
+    if (num_per_thread == 1)
+      Kokkos::parallel_for( config, MultiplyKernel<1>(A,x,y) );
+    else if (num_per_thread == 2)
+      Kokkos::parallel_for( config, MultiplyKernel<2>(A,x,y) );
+    else if (num_per_thread == 3)
+      Kokkos::parallel_for( config, MultiplyKernel<3>(A,x,y) );
+    else if (num_per_thread == 4)
+      Kokkos::parallel_for( config, MultiplyKernel<4>(A,x,y) );
+    else if (num_per_thread == 8)
+      Kokkos::parallel_for( config, MultiplyKernel<8>(A,x,y) );
+    else if (num_per_thread == 12)
+      Kokkos::parallel_for( config, MultiplyKernel<12>(A,x,y) );
+    else if (num_per_thread == 16)
+      Kokkos::parallel_for( config, MultiplyKernel<16>(A,x,y) );
+    else if (num_per_thread == 32)
+      Kokkos::parallel_for( config, MultiplyKernel<32>(A,x,y) );
+    else
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::logic_error, "Invalid num_per_thread == " << num_per_thread);
   }
 };
 

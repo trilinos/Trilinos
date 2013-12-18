@@ -279,9 +279,8 @@ struct PerformanceDriverOp {
 
   template <typename ArgT>
   void operator() (ArgT arg) const {
-    const int entries_per_thread = ArgT::value;
-    const int ensemble = dev_config.block_dim.x * entries_per_thread;
-    typedef typename Storage::template apply_N<entries_per_thread> NewStorageApply;
+    const int ensemble = ArgT::value;
+    typedef typename Storage::template apply_N<ensemble> NewStorageApply;
     typedef typename NewStorageApply::type storage_type;
 
     const std::vector<double> perf_scalar =

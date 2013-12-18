@@ -37,49 +37,114 @@
 
 using namespace KokkosMPVectorKernelsUnitTest;
 
-typedef UnitTestSetup<int,double,Kokkos::Cuda> SetupType;
-
-TEUCHOS_UNIT_TEST( Stokhos_KokkosMPVectorKernels,
-                   EmbeddedVector_MPKernel_Cuda ) {
-  typedef int Ordinal;
-  typedef double Scalar;
+template <typename Ordinal, typename Scalar, typename MultiplyTag,
+          Ordinal NumPerThread, Ordinal ThreadsPerVector>
+bool test_cuda_static_fixed_embedded_vector(Ordinal num_blocks,
+                                            Ordinal num_vec_threads,
+                                            Ordinal num_row_threads,
+                                            Teuchos::FancyOStream& out) {
   typedef Kokkos::Cuda Device;
-  const Ordinal VectorSize = SetupType::local_vec_size;
+
+  const Ordinal VectorSize = NumPerThread * ThreadsPerVector;
   typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,VectorSize,Device> Storage;
   typedef Sacado::MP::Vector<Storage> Vector;
 
-  int vector_threads = 16;
-  int row_threads = 4;
-  int num_cores = 10;
-  Kokkos::DeviceConfig dev_config(num_cores, vector_threads, row_threads);
+  const Ordinal nGrid = 5;
+  Kokkos::DeviceConfig dev_config(num_blocks, num_vec_threads, num_row_threads);
 
-  SetupType setup;
-  setup.setup(vector_threads);
-  success = test_embedded_vector<Vector>(
-    setup, dev_config, Stokhos::DefaultMultiply(), out);
-  setup.cleanup();
+  bool success = test_embedded_vector<Vector>(
+    nGrid, VectorSize, dev_config, MultiplyTag(), out);
+
+  return success;
 }
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosMPVectorKernels,
-                   EmbeddedVector_Ensemble_Cuda ) {
-  typedef int Ordinal;
-  typedef double Scalar;
-  typedef Kokkos::Cuda Device;
-  const Ordinal VectorSize = SetupType::local_vec_size;
-  typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,VectorSize,Device> Storage;
-  typedef Sacado::MP::Vector<Storage> Vector;
+// Test default configuration
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_CrsMatrix_MP, Multiply_Default, Ordinal, Scalar, MultiplyTag )
+{
+  const Ordinal NumPerThread = 1;
+  const Ordinal ThreadsPerVector = 16;
 
-  int vector_threads = 16;
-  int row_threads = 4;
-  int num_cores = 10;
-  Kokkos::DeviceConfig dev_config(num_cores, vector_threads, row_threads);
+  const Ordinal num_blocks = 0;
+  const Ordinal num_vec_threads = 0;
+  const Ordinal num_row_threads = 0;
 
-  SetupType setup;
-  setup.setup(vector_threads);
-  success = test_embedded_vector<Vector>(
-    setup, dev_config, Stokhos::EnsembleMultiply(), out);
-  setup.cleanup();
+  success =
+    test_cuda_static_fixed_embedded_vector<Ordinal,Scalar,MultiplyTag,NumPerThread,ThreadsPerVector>(num_blocks, num_vec_threads, num_row_threads, out);
 }
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_CrsMatrix_MP, Multiply_1, Ordinal, Scalar, MultiplyTag )
+{
+  const Ordinal NumPerThread = 1;
+  const Ordinal ThreadsPerVector = 16;
+
+  const Ordinal num_blocks = 10;
+  const Ordinal num_vec_threads = ThreadsPerVector;
+  const Ordinal num_row_threads = 4;
+
+  success =
+    test_cuda_static_fixed_embedded_vector<Ordinal,Scalar,MultiplyTag,NumPerThread,ThreadsPerVector>(num_blocks, num_vec_threads, num_row_threads, out);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_CrsMatrix_MP, Multiply_2, Ordinal, Scalar, MultiplyTag )
+{
+  const Ordinal NumPerThread = 2;
+  const Ordinal ThreadsPerVector = 16;
+
+  const Ordinal num_blocks = 10;
+  const Ordinal num_vec_threads = ThreadsPerVector;
+  const Ordinal num_row_threads = 4;
+
+  success =
+    test_cuda_static_fixed_embedded_vector<Ordinal,Scalar,MultiplyTag,NumPerThread,ThreadsPerVector>(num_blocks, num_vec_threads, num_row_threads, out);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_CrsMatrix_MP, Multiply_3, Ordinal, Scalar, MultiplyTag )
+{
+  const Ordinal NumPerThread = 3;
+  const Ordinal ThreadsPerVector = 16;
+
+  const Ordinal num_blocks = 10;
+  const Ordinal num_vec_threads = ThreadsPerVector;
+  const Ordinal num_row_threads = 4;
+
+  success =
+    test_cuda_static_fixed_embedded_vector<Ordinal,Scalar,MultiplyTag,NumPerThread,ThreadsPerVector>(num_blocks, num_vec_threads, num_row_threads, out);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_CrsMatrix_MP, Multiply_4, Ordinal, Scalar, MultiplyTag )
+{
+  const Ordinal NumPerThread = 4;
+  const Ordinal ThreadsPerVector = 16;
+
+  const Ordinal num_blocks = 10;
+  const Ordinal num_vec_threads = ThreadsPerVector;
+  const Ordinal num_row_threads = 4;
+
+  success =
+    test_cuda_static_fixed_embedded_vector<Ordinal,Scalar,MultiplyTag,NumPerThread,ThreadsPerVector>(num_blocks, num_vec_threads, num_row_threads, out);
+}
+
+#define CRS_MATRIX_MP_VECTOR_TESTS_ORDINAL_SCALAR_TAG( ORDINAL, SCALAR, TAG ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                 \
+    Kokkos_CrsMatrix_MP, Multiply_Default,  ORDINAL, SCALAR, TAG )      \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                 \
+    Kokkos_CrsMatrix_MP, Multiply_1,  ORDINAL, SCALAR, TAG )            \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                 \
+    Kokkos_CrsMatrix_MP, Multiply_2,  ORDINAL, SCALAR, TAG )            \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                 \
+    Kokkos_CrsMatrix_MP, Multiply_3,  ORDINAL, SCALAR, TAG )            \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                 \
+    Kokkos_CrsMatrix_MP, Multiply_4,  ORDINAL, SCALAR, TAG )
+
+using Stokhos::DefaultMultiply;
+using Stokhos::EnsembleMultiply;
+CRS_MATRIX_MP_VECTOR_TESTS_ORDINAL_SCALAR_TAG(int, double, DefaultMultiply)
+CRS_MATRIX_MP_VECTOR_TESTS_ORDINAL_SCALAR_TAG(int, double, EnsembleMultiply)
 
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);

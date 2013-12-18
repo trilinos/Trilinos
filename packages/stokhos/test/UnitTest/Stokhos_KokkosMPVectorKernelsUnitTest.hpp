@@ -136,149 +136,52 @@ template <typename Scalar> struct ScalarTol {};
 template <> struct ScalarTol<float> {  static float  tol() { return 1e-5;  } };
 template <> struct ScalarTol<double> { static double tol() { return 1e-12; } };
 
-template <typename OrdinalType, typename ScalarType, typename Device>
-struct UnitTestSetup {
-  typedef OrdinalType ordinal_type;
-  typedef ScalarType value_type;
-  typedef typename Device::host_mirror_device_type host_device;
-  typedef Kokkos::CrsMatrix<value_type,ordinal_type,host_device> matrix_type;
-  typedef Kokkos::View<value_type[],host_device> vector_type;
-
-  // The *local* vector size per thread.  Total size is the local
-  // vector size * number of threads per team
-  static const ordinal_type local_vec_size = 3;
-
-  ordinal_type nGrid, fem_length, fem_graph_length, stoch_length;
-  value_type rel_tol, abs_tol;
-  std::vector< std::vector<ordinal_type> > fem_graph;
-  std::vector< matrix_type > A;
-  std::vector< vector_type > x, y;
-
-  void setup(const ordinal_type threads_per_vector) {
-
-    nGrid = 10;
-    rel_tol = ScalarTol<ScalarType>::tol();
-    abs_tol = ScalarTol<ScalarType>::tol();
-
-    // Generate FEM graph:
-    fem_length = nGrid * nGrid * nGrid;
-    fem_graph_length = generate_fem_graph( nGrid, fem_graph );
-
-    // Generate FEM matrices and vectors
-    stoch_length = local_vec_size * threads_per_vector;
-    A.resize(stoch_length);
-    x.resize(stoch_length);
-    y.resize(stoch_length);
-    typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
-    typedef typename matrix_type::values_type matrix_values_type;
-    for (ordinal_type block=0; block<stoch_length; block++) {
-      matrix_graph_type matrix_graph =
-        Kokkos::create_staticcrsgraph<matrix_graph_type>(
-          std::string("testing"), fem_graph);
-      matrix_values_type matrix_values =
-        matrix_values_type(
-          Kokkos::allocate_without_initializing, "matrix", fem_graph_length);
-      A[block] = matrix_type("matrix", fem_length, matrix_values, matrix_graph);
-      x[block] = vector_type(
-        Kokkos::allocate_without_initializing, "x", fem_length);
-      y[block] = vector_type(
-        Kokkos::allocate_without_initializing, "y", fem_length);
-
-      for (ordinal_type iRowFEM=0, iEntryFEM=0; iRowFEM<fem_length; ++iRowFEM) {
-        const ordinal_type row_size = fem_graph[iRowFEM].size();
-        for (ordinal_type iRowEntryFEM=0; iRowEntryFEM<row_size;
-             ++iRowEntryFEM, ++iEntryFEM) {
-          const ordinal_type iColFEM = fem_graph[iRowFEM][iRowEntryFEM];
-
-          value_type v =
-            generate_matrix_coefficient<value_type>(
-              fem_length, stoch_length, iRowFEM, iColFEM, block);
-          A[block].values(iEntryFEM) = v;
-        }
-
-        x[block](iRowFEM) =
-          generate_vector_coefficient<value_type>(
-            fem_length, stoch_length, iRowFEM, block );
-        y[block](iRowFEM) = 0.0;
-      }
-    }
-
-    // Multiply
-    for (ordinal_type block=0; block<stoch_length; block++)
-      Kokkos::MV_Multiply(y[block], A[block], x[block]);
-  }
-
-  void cleanup() {
-    x.resize(0);
-    y.resize(0);
-    A.resize(0);
-  }
-
-  template <typename vec_type>
-  bool test_original(const vec_type& yy,
-                     Teuchos::FancyOStream& out) const
-  {
-    typename vec_type::array_type ayy = yy ;
-
-    bool success = true;
-    for (ordinal_type block=0; block<stoch_length; ++block) {
-      for (ordinal_type i=0; i<fem_length; ++i) {
-        value_type diff = std::abs( y[block][i] - ayy(block,i) );
-        value_type tol = rel_tol*std::abs(y[block][i]) + abs_tol;
-        bool s = diff < tol;
-        if (!s) {
-          out << "y_expected[" << block << "][" << i << "] - "
-              << "y(" << i << "," << block << ") = " << y[block][i]
-              << " - " << ayy(block,i) << " == "
-              << diff << " < " << tol << " : failed"
-              << std::endl;
-        }
-        success = success && s;
-      }
-    }
-
-    return success;
-  }
-
-  template <typename vec_type>
-  bool test_commuted(const vec_type& yy,
-                     Teuchos::FancyOStream& out) const
-  {
-    typename vec_type::array_type ayy = yy ;
-
-    bool success = true;
-    for (ordinal_type block=0; block<stoch_length; ++block) {
-      for (ordinal_type i=0; i<fem_length; ++i) {
-        value_type diff = std::abs( y[block][i] - ayy(i,block) );
-        value_type tol = rel_tol*std::abs(y[block][i]) + abs_tol;
-        bool s = diff < tol;
-        if (!s) {
-          out << "y_expected[" << block << "][" << i << "] - "
-              << "y(" << i << "," << block << ") = " << y[block][i]
-              << " - " << ayy(i,block) << " == "
-              << diff << " < " << tol << " : failed"
-              << std::endl;
-        }
-        success = success && s;
-      }
-    }
-
-    return success;
-  }
-
-};
-
-template <typename VectorType,
-          typename OrdinalType, typename ScalarType, typename Device,
-          typename MultiplyTag>
-bool test_embedded_vector(
-  const UnitTestSetup<OrdinalType,ScalarType,Device>& setup,
-  Kokkos::DeviceConfig dev_config,
-  MultiplyTag tag,
-  Teuchos::FancyOStream& out)
+template <typename array_type, typename scalar_type>
+bool compare_rank_2_views(const array_type& y,
+                          const array_type& y_exp,
+                          const scalar_type rel_tol,
+                          const scalar_type abs_tol,
+                          Teuchos::FancyOStream& out)
 {
-  typedef OrdinalType ordinal_type;
-  typedef ScalarType value_type;
+  typedef typename array_type::size_type size_type;
+  typename array_type::HostMirror hy = Kokkos::create_mirror_view(y);
+  typename array_type::HostMirror hy_exp = Kokkos::create_mirror_view(y_exp);
+  Kokkos::deep_copy(hy, y);
+  Kokkos::deep_copy(hy_exp, y_exp);
+
+  size_type num_rows = y.dimension_0();
+  size_type num_cols = y.dimension_1();
+  bool success = true;
+  for (size_type i=0; i<num_rows; ++i) {
+    for (size_type j=0; j<num_cols; ++j) {
+      scalar_type diff = std::abs( hy(i,j) - hy_exp(i,j) );
+      scalar_type tol = rel_tol*std::abs(hy_exp(i,j)) + abs_tol;
+      bool s = diff < tol;
+      out << "y_expected(" << i << "," << j << ") - "
+          << "y(" << i << "," << j << ") = " << hy_exp(i,j)
+          << " - " << hy(i,j) << " == "
+          << diff << " < " << tol << " : ";
+      if (s)
+        out << "passed";
+      else
+        out << "failed";
+      out << std::endl;
+      success = success && s;
+    }
+  }
+
+  return success;
+}
+
+template <typename VectorType, typename MultiplyTag>
+bool test_embedded_vector(const typename VectorType::ordinal_type nGrid,
+                          const typename VectorType::ordinal_type stoch_length,
+                          Kokkos::DeviceConfig dev_config,
+                          MultiplyTag tag,
+                          Teuchos::FancyOStream& out)
+{
+  typedef typename VectorType::ordinal_type ordinal_type;
+  typedef typename VectorType::value_type scalar_type;
   typedef typename VectorType::storage_type storage_type;
   typedef typename storage_type::device_type device_type;
   typedef Kokkos::LayoutRight Layout;
@@ -287,15 +190,20 @@ bool test_embedded_vector(
   typedef typename block_matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef typename block_matrix_type::values_type matrix_values_type;
 
+  // Generate FEM graph:
+  ordinal_type fem_length = nGrid * nGrid * nGrid;
+  std::vector< std::vector<ordinal_type> > fem_graph;
+  ordinal_type fem_graph_length = generate_fem_graph( nGrid, fem_graph );
+
   //------------------------------
   // Generate input multivector:
 
   block_vector_type x =
     block_vector_type(Kokkos::allocate_without_initializing,
-                      "x", setup.fem_length, setup.stoch_length);
+                      "x", fem_length, stoch_length);
   block_vector_type y =
     block_vector_type(Kokkos::allocate_without_initializing,
-                      "y", setup.fem_length, setup.stoch_length);
+                      "y", fem_length, stoch_length);
 
   typename block_vector_type::HostMirror hx = Kokkos::create_mirror_view( x );
   typename block_vector_type::HostMirror hy = Kokkos::create_mirror_view( y );
@@ -304,11 +212,11 @@ bool test_embedded_vector(
   typename block_vector_type::HostMirror::array_type hax = hx ;
   typename block_vector_type::HostMirror::array_type hay = hy ;
 
-  for (ordinal_type iRowFEM=0; iRowFEM<setup.fem_length; ++iRowFEM) {
-    for (ordinal_type iRowStoch=0; iRowStoch<setup.stoch_length; ++iRowStoch) {
+  for (ordinal_type iRowFEM=0; iRowFEM<fem_length; ++iRowFEM) {
+    for (ordinal_type iRowStoch=0; iRowStoch<stoch_length; ++iRowStoch) {
       hax(iRowFEM,iRowStoch) =
-        generate_vector_coefficient<ScalarType>(
-          setup.fem_length, setup.stoch_length, iRowFEM, iRowStoch );
+        generate_vector_coefficient<scalar_type>(
+          fem_length, stoch_length, iRowFEM, iRowStoch );
       hay(iRowFEM,iRowStoch) = 0.0;
     }
   }
@@ -317,16 +225,17 @@ bool test_embedded_vector(
   Kokkos::deep_copy( y, hy );
 
   //------------------------------
+  // Generate block matrix
 
   matrix_graph_type matrix_graph =
     Kokkos::create_staticcrsgraph<matrix_graph_type>(
-      std::string("test crs graph"), setup.fem_graph);
+      std::string("test crs graph"), fem_graph);
   matrix_values_type matrix_values =
     matrix_values_type(
       Kokkos::allocate_without_initializing,
-      "matrix", setup.fem_graph_length, setup.stoch_length);
+      "matrix", fem_graph_length, stoch_length);
   block_matrix_type matrix(
-    "block_matrix", setup.fem_length, matrix_values, matrix_graph);
+    "block_matrix", fem_length, matrix_values, matrix_graph);
   matrix.dev_config = dev_config;
 
   typename matrix_values_type::HostMirror hM =
@@ -334,16 +243,16 @@ bool test_embedded_vector(
 
   typename matrix_values_type::HostMirror::array_type haM = hM ;
 
-  for (ordinal_type iRowFEM=0, iEntryFEM=0; iRowFEM<setup.fem_length; ++iRowFEM) {
-    const ordinal_type row_size = setup.fem_graph[iRowFEM].size();
+  for (ordinal_type iRowFEM=0, iEntryFEM=0; iRowFEM<fem_length; ++iRowFEM) {
+    const ordinal_type row_size = fem_graph[iRowFEM].size();
     for (ordinal_type iRowEntryFEM=0; iRowEntryFEM<row_size;
          ++iRowEntryFEM, ++iEntryFEM) {
-      const ordinal_type iColFEM = setup.fem_graph[iRowFEM][iRowEntryFEM];
+      const ordinal_type iColFEM = fem_graph[iRowFEM][iRowEntryFEM];
 
-      for (ordinal_type k=0; k<setup.stoch_length; ++k) {
+      for (ordinal_type k=0; k<stoch_length; ++k) {
         haM(iEntryFEM,k) =
-          generate_matrix_coefficient<ScalarType>(
-            setup.fem_length, setup.stoch_length, iRowFEM, iColFEM, k);
+          generate_matrix_coefficient<scalar_type>(
+            fem_length, stoch_length, iRowFEM, iColFEM, k);
       }
     }
   }
@@ -351,12 +260,42 @@ bool test_embedded_vector(
   Kokkos::deep_copy( matrix.values, hM );
 
   //------------------------------
+  // multiply
 
   Stokhos::multiply( matrix, x, y, tag );
 
-  Kokkos::deep_copy( hy, y );
+  //------------------------------
+  // generate correct answer
 
-  bool success = setup.test_commuted(hy, out);
+  typedef typename block_vector_type::array_type array_type;
+  array_type ay_expected =
+    array_type("ay_expected", fem_length, stoch_length);
+  typename array_type::HostMirror hay_expected =
+    Kokkos::create_mirror_view(ay_expected);
+  for (ordinal_type iRowFEM=0, iEntryFEM=0; iRowFEM<fem_length; ++iRowFEM) {
+    const ordinal_type row_size = fem_graph[iRowFEM].size();
+    for (ordinal_type iRowEntryFEM=0; iRowEntryFEM<row_size;
+         ++iRowEntryFEM, ++iEntryFEM) {
+      const ordinal_type iColFEM = fem_graph[iRowFEM][iRowEntryFEM];
+      for (ordinal_type k=0; k<stoch_length; ++k) {
+        hay_expected(iRowFEM, k) +=
+          generate_matrix_coefficient<scalar_type>(
+            fem_length, stoch_length, iRowFEM, iColFEM, k) *
+          generate_vector_coefficient<scalar_type>(
+            fem_length, stoch_length, iColFEM, k );
+      }
+    }
+  }
+  Kokkos::deep_copy( ay_expected, hay_expected );
+
+  //------------------------------
+  // check
+
+  typename block_vector_type::array_type ay = y;
+  scalar_type rel_tol = ScalarTol<scalar_type>::tol();
+  scalar_type abs_tol = ScalarTol<scalar_type>::tol();
+  bool success = compare_rank_2_views(ay, ay_expected, rel_tol, abs_tol, out);
+
   return success;
 }
 

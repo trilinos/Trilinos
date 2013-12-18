@@ -268,8 +268,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy_DeviceArray, Storage
 // Some tests the fail, or fail to compile
 
   /*
-   // This doesn't compile because deep_copy() only an overload for scalar_type,
-   // and not value_type
+   // This doesn't compile because deep_copy() only has an overload for
+   // scalar_type, and not value_type
    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                \
     Kokkos_View_MP, DeepCopy_ConstantVector, STORAGE, LAYOUT )
   */
