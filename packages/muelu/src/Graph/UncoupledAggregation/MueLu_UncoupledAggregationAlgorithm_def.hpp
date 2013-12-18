@@ -70,8 +70,9 @@
 namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  LocalOrdinal UncoupledAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
-  BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat) const {
+  void UncoupledAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat,
+                  LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
 
     AggOptions::Ordering ordering    = params.get<AggOptions::Ordering>("Ordering");
@@ -185,6 +186,7 @@ namespace MueLu {
               }
             }
           }
+          numNonAggregatedNodes -= aggSize;
 
         } else {
           // Aggregate is not accepted
@@ -215,16 +217,6 @@ namespace MueLu {
 
     // print aggregation information
     this->PrintAggregationInformation("UncoupledAggregationAlgorithm:", graph, aggregates, aggStat);
-
-    // collect some local information
-    LO nLocalAggregated    = 0;
-    LO nLocalNotAggregated = 0;
-    for (LO i = 0; i < nRows; i++) {
-      if (aggStat[i] == NodeStats::AGGREGATED) nLocalAggregated++;
-      else                                     nLocalNotAggregated++;
-    }
-
-    return nLocalNotAggregated;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

@@ -74,7 +74,7 @@ IsolatedNodeAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-LocalOrdinal IsolatedNodeAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat) const {
+void IsolatedNodeAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
   Monitor m(*this, "BuildAggregates");
 
   // form new aggregates from non-aggregated nodes
@@ -89,27 +89,19 @@ LocalOrdinal IsolatedNodeAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node,
   for (LocalOrdinal iNode=0; iNode<nRows; iNode++) {
     if (aggStat[iNode] == NodeStats::BOUNDARY) {
       aggStat[iNode] = NodeStats::AGGREGATED;
+      numNonAggregatedNodes--;
     } else if(aggStat[iNode] != NodeStats::AGGREGATED) { // find unaggregated nodes
 
       Teuchos::ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(iNode);
       if(neighOfINode.size() == 1) {
         aggStat[iNode] = NodeStats::AGGREGATED;
+        numNonAggregatedNodes--;
       }
     }
   }   // end for
 
   // print aggregation information
   this->PrintAggregationInformation("Phase 4 (isolated node aggregation):", graph, aggregates, aggStat);
-
-  // collect some local information
-  LO nLocalAggregated    = 0;
-  LO nLocalNotAggregated = 0;
-  for (LO i = 0; i < nRows; i++) {
-    if (aggStat[i] == NodeStats::AGGREGATED) nLocalAggregated++;
-    else nLocalNotAggregated++;
-  }
-
-  return nLocalNotAggregated;
 }
 
 } // end namespace

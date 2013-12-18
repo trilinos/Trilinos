@@ -74,7 +74,7 @@ EmergencyAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::E
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-LocalOrdinal EmergencyAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat) const {
+void EmergencyAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
   Monitor m(*this, "BuildAggregates");
 
   // form new aggregates from non-aggregated nodes
@@ -112,6 +112,7 @@ LocalOrdinal EmergencyAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, Lo
         vertex2AggId[ag.list[k]] = ag.index;
         procWinner[ag.list[k]] = myRank;
       }
+      numNonAggregatedNodes -= ag.list.size();
     } // end if NOTSEL
   }   // end for
 
@@ -120,16 +121,6 @@ LocalOrdinal EmergencyAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, Lo
 
   // print aggregation information
   this->PrintAggregationInformation("Phase 5 (emergency aggregation):", graph, aggregates, aggStat);
-
-  // collect some local information
-  LO nLocalAggregated    = 0;
-  LO nLocalNotAggregated = 0;
-  for (LO i = 0; i < nRows; i++) {
-    if (aggStat[i] == NodeStats::AGGREGATED) nLocalAggregated++;
-    else nLocalNotAggregated++;
-  }
-
-  return nLocalNotAggregated;
 }
 
 } // end namespace

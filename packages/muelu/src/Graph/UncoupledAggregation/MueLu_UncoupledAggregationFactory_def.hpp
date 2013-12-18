@@ -220,18 +220,19 @@ namespace MueLu {
       }
     }
 
-    LO nonAggregatedNodes = -1;
+    LO numNonAggregatedNodes = nRows;
 
     for (size_t a = 0; a < algos_.size(); a++) {
-      nonAggregatedNodes = algos_[a]->BuildAggregates(pL, *graph, *aggregates, aggStat);
+      SubFactoryMonitor sfm(*this, "Algo \"" + algos_[a]->description() + "\"", currentLevel);
+      algos_[a]->BuildAggregates(pL, *graph, *aggregates, aggStat, numNonAggregatedNodes);
 
-      if (nonAggregatedNodes == 0) {
+      if (numNonAggregatedNodes == 0) {
         // All nodes have been aggregated, can quit early
         break;
       }
     }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(nonAggregatedNodes > 0, Exceptions::RuntimeError, "MueLu::UncoupledAggregationFactory::Build: Leftover nodes found! Error!");
+    TEUCHOS_TEST_FOR_EXCEPTION(numNonAggregatedNodes > 0, Exceptions::RuntimeError, "MueLu::UncoupledAggregationFactory::Build: Leftover nodes found! Error!");
 
     aggregates->AggregatesCrossProcessors(false);
 

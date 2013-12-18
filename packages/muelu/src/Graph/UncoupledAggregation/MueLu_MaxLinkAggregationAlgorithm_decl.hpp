@@ -91,7 +91,7 @@ namespace MueLu {
 
     /*! @brief Local aggregation. */
 
-    LO BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat) const;
+    void BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
     //@}
 
   }; //class MaxLinkAggregationAlgorithm

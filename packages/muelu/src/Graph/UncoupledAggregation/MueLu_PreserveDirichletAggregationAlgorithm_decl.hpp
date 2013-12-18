@@ -92,7 +92,7 @@ namespace MueLu {
 
     /*! @brief Local aggregation. */
 
-    LocalOrdinal BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat) const;
+    void BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
     //@}
 
   }; //class PreserveDirichletAggregationAlgorithm

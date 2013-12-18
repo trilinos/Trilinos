@@ -73,7 +73,7 @@ PreserveDirichletAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMa
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-LocalOrdinal PreserveDirichletAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat) const {
+void PreserveDirichletAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
   Monitor m(*this, "BuildAggregates");
 
   // form new aggregates from non-aggregated nodes
@@ -101,6 +101,7 @@ LocalOrdinal PreserveDirichletAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, 
         vertex2AggId[ag.list[k]] = ag.index;
         procWinner[ag.list[k]] = myRank;
       }
+      numNonAggregatedNodes -= ag.list.size();
 
     } else if(aggStat[iNode] != NodeStats::AGGREGATED) { // find unaggregated nodes
 
@@ -118,6 +119,7 @@ LocalOrdinal PreserveDirichletAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, 
           vertex2AggId[ag.list[k]] = ag.index;
           procWinner[ag.list[k]] = myRank;
         }
+        numNonAggregatedNodes -= ag.list.size();
       }
     }
   }   // end for
@@ -127,16 +129,6 @@ LocalOrdinal PreserveDirichletAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, 
 
   // print aggregation information
   this->PrintAggregationInformation("Phase 3 (Keep Dirichlet nodes):", graph, aggregates, aggStat);
-
-  // collect some local information
-  LO nLocalAggregated    = 0;
-  LO nLocalNotAggregated = 0;
-  for (LO i = 0; i < nRows; i++) {
-    if (aggStat[i] == NodeStats::AGGREGATED) nLocalAggregated++;
-    else nLocalNotAggregated++;
-  }
-
-  return nLocalNotAggregated;
 }
 
 } // end namespace

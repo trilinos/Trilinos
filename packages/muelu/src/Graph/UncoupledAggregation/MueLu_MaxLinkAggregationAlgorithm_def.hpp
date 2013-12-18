@@ -68,8 +68,8 @@
 namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  LocalOrdinal MaxLinkAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
-  BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat) const {
+  void MaxLinkAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
 
     // vertex ids for output
@@ -108,21 +108,13 @@ namespace MueLu {
         aggStat[iNode]      = NodeStats::AGGREGATED;
         vertex2AggId[iNode] = selectedAggregate;
         procWinner[iNode]   = myRank;
+
+        numNonAggregatedNodes--;
       }
     }
 
     // print aggregation information
     this->PrintAggregationInformation("Phase 2 (max_link, extend aggregates):", graph, aggregates, aggStat);
-
-    // collect some local information
-    LO nLocalAggregated    = 0;
-    LO nLocalNotAggregated = 0;
-    for (LO i = 0; i < nRows; i++) {
-      if (aggStat[i] == NodeStats::AGGREGATED) nLocalAggregated++;
-      else nLocalNotAggregated++;
-    }
-
-    return nLocalNotAggregated;
   }
 
 } // end namespace

@@ -131,7 +131,7 @@ class AggregationAlgorithmBase
   //@{
 
   //! BuildAggregates routine.
-  virtual LocalOrdinal BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat) const = 0;
+  virtual void BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const = 0;
   //@}
 
   //! @name Build routines
