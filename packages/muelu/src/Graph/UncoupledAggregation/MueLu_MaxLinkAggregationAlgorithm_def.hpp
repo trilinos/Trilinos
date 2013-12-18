@@ -60,84 +60,70 @@
 
 #include "MueLu_MaxLinkAggregationAlgorithm.hpp"
 
-//#include "MueLu_Graph.hpp"
 #include "MueLu_GraphBase.hpp"
 #include "MueLu_Aggregates.hpp"
-//#include "MueLu_LinkedList.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Monitor.hpp"
 
 namespace MueLu {
 
-template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-MaxLinkAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MaxLinkAggregationAlgorithm(RCP<const FactoryBase> const &graphFact)
-{
-}
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  LocalOrdinal MaxLinkAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat) const {
+    Monitor m(*this, "BuildAggregates");
 
-template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-LocalOrdinal MaxLinkAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat) const {
-  Monitor m(*this, "BuildAggregates");
+    // vertex ids for output
+    ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+    ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()  ->getDataNonConst(0);
 
-  // vertex ids for output
-  Teuchos::ArrayRCP<LocalOrdinal> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-  Teuchos::ArrayRCP<LocalOrdinal> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
+    const LO  nRows  = graph.GetNodeNumVertices();
+    const int myRank = graph.GetComm()->getRank();
 
-  const LocalOrdinal nRows = graph.GetNodeNumVertices();
-  const int myRank = graph.GetComm()->getRank();
+    for (LO iNode = 0; iNode < nRows; iNode++) {
+      if (aggStat[iNode] == NodeStats::AGGREGATED)
+        continue;
 
-  // loop over all local rows
-  for (LocalOrdinal iNode=0; iNode<Teuchos::as<LocalOrdinal>(nRows); iNode++) {
-    if(aggStat[iNode] != NodeStats::AGGREGATED ) {
-      LocalOrdinal selected_aggregate = -1;
+      typedef std::map<LO,LO> map_type;
+      map_type aggid2cntconnections;
 
-      std::map<LocalOrdinal,LocalOrdinal> aggid2cntconnections;
+      ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(iNode);
+      for (int j = 0; j < neighOfINode.size(); j++) {
+        LO neigh = neighOfINode[j];
 
-      Teuchos::ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(iNode);
-      for(typename Teuchos::ArrayView<const LocalOrdinal>::const_iterator it = neighOfINode.begin(); it!=neighOfINode.end(); ++it) {
-        LocalOrdinal index = *it;
-        if(graph.isLocalNeighborVertex(index) && aggStat[index] == NodeStats::AGGREGATED) {
-          LocalOrdinal aggid = vertex2AggId[index]; // get (local) aggregate id
-          if(aggid2cntconnections.count(aggid)>0) aggid2cntconnections[aggid] += 1;
-          else aggid2cntconnections[aggid] = 1;
-        } // if node is aggregated but not a one-pt node
+        if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == NodeStats::AGGREGATED)
+          aggid2cntconnections[vertex2AggId[neigh]]++;
+      }
 
-      } // loop over all columns
-
-      // find aggregate id with most connections
-      LocalOrdinal maxcnt = 0;
-      for(typename std::map<LocalOrdinal,LocalOrdinal>::const_iterator it=aggid2cntconnections.begin(); it!=aggid2cntconnections.end();++it) {
-        if(maxcnt < it->second) {
-          maxcnt = it->second;
-          selected_aggregate = it->first;
+      // Find an aggregate id with most connections to
+      LO maxNumConnections = 0;
+      LO selectedAggregate = -1;
+      for (typename map_type::const_iterator it = aggid2cntconnections.begin(); it != aggid2cntconnections.end(); it++)
+        if (maxNumConnections < it->second) {
+          maxNumConnections = it->second;
+          selectedAggregate = it->first;
         }
+
+      // Add node iNode to aggregate
+      if (selectedAggregate != -1) {
+        aggStat[iNode]      = NodeStats::AGGREGATED;
+        vertex2AggId[iNode] = selectedAggregate;
+        procWinner[iNode]   = myRank;
       }
+    }
 
-      // add node iNode to aggregate
-      if(selected_aggregate != -1) {
-        aggStat[iNode] = NodeStats::AGGREGATED;
-        vertex2AggId[iNode] = selected_aggregate;
-        procWinner[iNode] = myRank; //graph.GetComm()->getRank();
-      }
-    } // end if aggState == NOTSEL...
-  } // end loop over all local rows
+    // print aggregation information
+    this->PrintAggregationInformation("Phase 2 (max_link, extend aggregates):", graph, aggregates, aggStat);
 
-#if 0
-  // print aggregation information
-  this->PrintAggregationInformation("Phase 2 (max_link, extend aggregates):", graph, aggregates, aggStat);
+    // collect some local information
+    LO nLocalAggregated    = 0;
+    LO nLocalNotAggregated = 0;
+    for (LO i = 0; i < nRows; i++) {
+      if (aggStat[i] == NodeStats::AGGREGATED) nLocalAggregated++;
+      else nLocalNotAggregated++;
+    }
 
-  // collect some local information
-  LO nLocalAggregated    = 0;
-  LO nLocalNotAggregated = 0;
-  for (LO i = 0; i < nRows; i++) {
-    if (aggStat[i] == NodeStats::AGGREGATED) nLocalAggregated++;
-    else nLocalNotAggregated++;
+    return nLocalNotAggregated;
   }
-#else
-  int nLocalNotAggregated = 0;
-#endif
-
-  return nLocalNotAggregated;
-}
 
 } // end namespace
 

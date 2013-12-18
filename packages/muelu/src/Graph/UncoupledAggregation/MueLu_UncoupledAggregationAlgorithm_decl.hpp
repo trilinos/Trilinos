@@ -69,9 +69,8 @@ namespace MueLu {
 
   template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class UncoupledAggregationAlgorithm : public MueLu::AggregationAlgorithmBase<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
-    typedef void Scalar;
 #undef MUELU_UNCOUPLEDAGGREGATIONALGORITHM_SHORT
-#include "MueLu_UseShortNames.hpp"
+#include "MueLu_UseShortNamesOrdinal.hpp"
 
   public:
     //! @name Constructors/Destructors.
