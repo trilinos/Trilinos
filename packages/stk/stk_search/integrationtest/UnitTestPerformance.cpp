@@ -14,15 +14,7 @@
 
 #include <unit_tests/UnitTestUtils.hpp>
 
-#include <Geom_AxisAlignedBB.h>
-#include <Geom_Search.h>
-#include <search/ContactRangeSearch.h>
-#include <search/ContactCommunication.h>
-
 #include <exodusMeshInterface.h>
-#include <stk_search/CoarseSearch.hpp>
-#include <stk_search/OctTreeOps.hpp>
-
 
 extern int gl_argc;
 extern char** gl_argv;

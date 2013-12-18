@@ -1,12 +1,11 @@
-#include <stk_search/CoarseSearch.hpp>
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search/IdentProc.hpp>
+#include <unit_tests/UnitTestUtils.hpp>
 
 #include <mpi.h>
 #include <gtest/gtest.h>
 #include <vector>
 
-#include <unit_tests/UnitTestUtils.hpp>
 namespace
 {
 
@@ -242,56 +241,56 @@ TEST(Verification, BoxOverlappingNoSurroundingPoints_BOOST_RTREE)
 {
     const double radius = 0.99;
     const unsigned numExpectedResults = 0;
-    runBoxOverlappingEightSurroundingBoxes<Box,Point>(stk::search::BOOST_RTREE, radius, numExpectedResults);
+    runBoxOverlappingEightSurroundingBoxes<StkBox,Point>(stk::search::BOOST_RTREE, radius, numExpectedResults);
 }
 
 TEST(Verification, BoxOverlappingNoSurroundingPoints_OCTREE)
 {
     const double radius = 0.99;
     const unsigned numExpectedResults = 0;
-    runBoxOverlappingEightSurroundingBoxes<Box,Point>(stk::search::OCTREE, radius, numExpectedResults);
+    runBoxOverlappingEightSurroundingBoxes<StkBox,Point>(stk::search::OCTREE, radius, numExpectedResults);
 }
 
 TEST(Verification, BoxOverlappingEightSurroundingPoints_BOOST_RTREE)
 {
     const double radius = 1.01;
     const unsigned numExpectedResults = 8;
-    runBoxOverlappingEightSurroundingBoxes<Box,Point>(stk::search::BOOST_RTREE, radius, numExpectedResults);
+    runBoxOverlappingEightSurroundingBoxes<StkBox,Point>(stk::search::BOOST_RTREE, radius, numExpectedResults);
 }
 
 TEST(Verification, BoxOverlappingEightSurroundingPoints_OCTREE)
 {
     const double radius = 1.01;
     const unsigned numExpectedResults = 8;
-    runBoxOverlappingEightSurroundingBoxes<Box,Point>(stk::search::OCTREE, radius, numExpectedResults);
+    runBoxOverlappingEightSurroundingBoxes<StkBox,Point>(stk::search::OCTREE, radius, numExpectedResults);
 }
 
 TEST(Verification, PointOverlappingNoSurroundingBoxes_BOOST_RTREE)
 {
     const double radius = 0.99;
     const unsigned numExpectedResults = 0;
-    runBoxOverlappingEightSurroundingBoxes<Point,Box>(stk::search::BOOST_RTREE, radius, numExpectedResults);
+    runBoxOverlappingEightSurroundingBoxes<Point,StkBox>(stk::search::BOOST_RTREE, radius, numExpectedResults);
 }
 
 TEST(Verification, PointOverlappingEightSurroundingBoxes_BOOST_RTREE)
 {
     const double radius = 1.01;
     const unsigned numExpectedResults = 8;
-    runBoxOverlappingEightSurroundingBoxes<Point,Box>(stk::search::BOOST_RTREE, radius, numExpectedResults);
+    runBoxOverlappingEightSurroundingBoxes<Point,StkBox>(stk::search::BOOST_RTREE, radius, numExpectedResults);
 }
 
 TEST(Verification, PointOverlappingNoSurroundingBoxes_OCTREE)
 {
     const double radius = 0.99;
     const unsigned numExpectedResults = 0;
-    runBoxOverlappingEightSurroundingBoxes<Point,Box>(stk::search::OCTREE, radius, numExpectedResults);
+    runBoxOverlappingEightSurroundingBoxes<Point,StkBox>(stk::search::OCTREE, radius, numExpectedResults);
 }
 
 TEST(Verification, PointOverlappingEightSurroundingBoxes_OCTREE)
 {
     const double radius = 1.01;
     const unsigned numExpectedResults = 8;
-    runBoxOverlappingEightSurroundingBoxes<Point,Box>(stk::search::OCTREE, radius, numExpectedResults);
+    runBoxOverlappingEightSurroundingBoxes<Point,StkBox>(stk::search::OCTREE, radius, numExpectedResults);
 }
 
 enum Axis
@@ -374,12 +373,12 @@ TEST(Verification, LineOfSpheres_OCTREE)
 
 TEST(Verification, LineOfBoxes_BOOST_RTREE)
 {
-    runLineOfBoundingBoxes<Box>(stk::search::BOOST_RTREE, yDim);
+    runLineOfBoundingBoxes<StkBox>(stk::search::BOOST_RTREE, yDim);
 }
 
 TEST(Verification, LineOfBoxes_OCTREE)
 {
-    runLineOfBoundingBoxes<Box>(stk::search::OCTREE, yDim);
+    runLineOfBoundingBoxes<StkBox>(stk::search::OCTREE, yDim);
 }
 
 TEST(Verification, LineOfSpheresZDimension_BOOST_RTREE)

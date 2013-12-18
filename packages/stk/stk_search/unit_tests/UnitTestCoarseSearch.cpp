@@ -1,10 +1,7 @@
-#include <stk_search/Box.hpp>
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search/IdentProc.hpp>
-#include <unit_tests/UnitTestUtils.hpp>
 
-#include <Geom_AxisAlignedBB.h>
-#include <stk_search/CoarseSearch.hpp>
+#include <unit_tests/UnitTestUtils.hpp>
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
@@ -26,13 +23,13 @@ std::ostream & operator<<(std::ostream & out, std::pair<stk::search::IdentProc<I
 
 namespace {
 
+enum NewSearchMethod { BOOST_RTREE, OCTREE, GTK };
+
 void testCoarseSearchForAlgorithm(stk::search::SearchMethod algorithm, MPI_Comm comm)
 {
   typedef stk::search::Point<double> Point;
-  typedef stk::search::Box<double> Box;
-  typedef stk::search::IdentProc<int,int> Ident;
-  typedef std::vector<std::pair<Ident,Ident> > SearchResults;
-  typedef std::vector< std::pair<Box,Ident> > BoxVector;
+  typedef stk::search::Box<double> StkBox;
+  typedef std::vector< std::pair<StkBox,Ident> > BoxVector;
 
   int num_procs = stk::parallel_machine_size(comm);
   int proc_id   = stk::parallel_machine_rank(comm);
@@ -40,22 +37,22 @@ void testCoarseSearchForAlgorithm(stk::search::SearchMethod algorithm, MPI_Comm 
   BoxVector local_domain, local_range;
   // what if identifier is NOT unique
 
-  Box box;
+  StkBox box;
   Ident id;
 
-  box = Box( Point(proc_id + 0.1, 0.0, 0.0), Point(proc_id + 0.9, 1.0, 1.0));
+  box = StkBox( Point(proc_id + 0.1, 0.0, 0.0), Point(proc_id + 0.9, 1.0, 1.0));
   id = Ident(proc_id * 4, proc_id);
   local_domain.push_back(std::make_pair(box,id));
 
-  box = Box( Point(proc_id + 0.1, 2.0, 0.0), Point(proc_id + 0.9, 3.0, 1.0));
+  box = StkBox( Point(proc_id + 0.1, 2.0, 0.0), Point(proc_id + 0.9, 3.0, 1.0));
   id = Ident(proc_id * 4+1, proc_id);
   local_domain.push_back(std::make_pair(box,id));
 
-  box = Box( Point(proc_id + 0.6, 0.5, 0.0), Point(proc_id + 1.4, 1.5, 1.0));
+  box = StkBox( Point(proc_id + 0.6, 0.5, 0.0), Point(proc_id + 1.4, 1.5, 1.0));
   id = Ident(proc_id * 4+2, proc_id);
   local_range.push_back(std::make_pair(box,id));
 
-  box = Box( Point(proc_id + 0.6, 2.5, 0.0), Point(proc_id + 1.4, 3.5, 1.0));
+  box = StkBox( Point(proc_id + 0.6, 2.5, 0.0), Point(proc_id + 1.4, 3.5, 1.0));
   id = Ident(proc_id * 4+3, proc_id);
   local_range.push_back(std::make_pair(box,id));
 
@@ -98,20 +95,36 @@ void testCoarseSearchForAlgorithm(stk::search::SearchMethod algorithm, MPI_Comm 
   }
 }
 
-void testCoarseSearchForAlgorithmUsingGtkAABoxes(stk::search::SearchMethod algorithm, MPI_Comm comm)
+void coarse_search_new(BoxVector& local_domain, BoxVector& local_range, NewSearchMethod algorithm, MPI_Comm comm, SearchResults& searchResults)
 {
-  typedef geometry::AxisAlignedBB Box;
-  typedef stk::search::IdentProc<int,int> Ident;
-  typedef std::vector<std::pair<Ident,Ident> > SearchResults;
-  typedef std::vector< std::pair<Box,Ident> > BoxVector;
+    if ( algorithm == GTK )
+    {
+        gtk_search(local_domain, local_range, comm, searchResults);
+    }
+    else if ( algorithm == OCTREE )
+    {
+        stk::search::coarse_search(local_domain, local_range, stk::search::OCTREE, comm, searchResults);
+    }
+    else if ( algorithm == BOOST_RTREE )
+    {
+        stk::search::coarse_search(local_domain, local_range, stk::search::BOOST_RTREE, comm, searchResults);
+    }
+    else
+    {
+        throw("Invalid search algorithm: not supported.\n");
+    }
+}
 
+
+void testCoarseSearchForAlgorithmUsingGtkAABoxes(NewSearchMethod algorithm, MPI_Comm comm)
+{
   int num_procs = stk::parallel_machine_size(comm);
   int proc_id   = stk::parallel_machine_rank(comm);
 
   BoxVector local_domain, local_range;
   // what if identifier is NOT unique
 
-  Box box;
+  GtkBox box;
   Ident id;
 
   box.set_box(proc_id + 0.1, 0.0, 0.0, proc_id + 0.9, 1.0, 1.0);
@@ -132,7 +145,7 @@ void testCoarseSearchForAlgorithmUsingGtkAABoxes(stk::search::SearchMethod algor
 
   SearchResults searchResults;
 
-  stk::search::coarse_search(local_domain, local_range, algorithm, comm, searchResults);
+  coarse_search_new(local_domain, local_range, algorithm, comm, searchResults);
 
   if (num_procs == 1) {
     STKUNIT_ASSERT_EQ( searchResults.size(), 2u);
@@ -181,21 +194,25 @@ STKUNIT_UNIT_TEST(stk_search, coarse_search_octree)
 
 STKUNIT_UNIT_TEST(stk_search, coarse_search_boost_rtree_using_gtk_aa_boxes)
 {
-    testCoarseSearchForAlgorithmUsingGtkAABoxes(stk::search::BOOST_RTREE, MPI_COMM_WORLD);
+    testCoarseSearchForAlgorithmUsingGtkAABoxes(BOOST_RTREE, MPI_COMM_WORLD);
 }
 
 STKUNIT_UNIT_TEST(stk_search, coarse_search_octree_using_gtk_aa_boxes)
 {
-    testCoarseSearchForAlgorithmUsingGtkAABoxes(stk::search::OCTREE, MPI_COMM_WORLD);
+    testCoarseSearchForAlgorithmUsingGtkAABoxes(OCTREE, MPI_COMM_WORLD);
 }
 
+STKUNIT_UNIT_TEST(stk_search, coarse_search_gtk_using_gtk_aa_boxes)
+{
+    testCoarseSearchForAlgorithmUsingGtkAABoxes(GTK, MPI_COMM_WORLD);
+}
 
 STKUNIT_UNIT_TEST(stk_search, coarse_search_one_point)
 {
   typedef stk::search::IdentProc<uint64_t, unsigned> Ident;
   typedef stk::search::Point<double> Point;
-  typedef stk::search::Box<double> Box;
-  typedef std::vector<std::pair<Box,Ident> > BoxVector;
+  typedef stk::search::Box<double> StkBox;
+  typedef std::vector<std::pair<StkBox,Ident> > BoxVector;
   typedef std::vector<std::pair<Ident,Ident> > SearchResults;
 
   stk::ParallelMachine comm = MPI_COMM_WORLD;
@@ -217,7 +234,7 @@ STKUNIT_UNIT_TEST(stk_search, coarse_search_one_point)
   // All other processors have empty domain.
   Ident domainBox1(0, 0);
   if (proc_id == 0) {
-    local_domain.push_back(std::make_pair(Box(min_corner, max_corner), domainBox1));
+    local_domain.push_back(std::make_pair(StkBox(min_corner, max_corner), domainBox1));
   }
 
   min_corner[0] = 0.5; min_corner[1] = 0.5; min_corner[2] = 0.5;
@@ -227,7 +244,7 @@ STKUNIT_UNIT_TEST(stk_search, coarse_search_one_point)
   // All other processors have empty range.
   Ident rangeBox1(1, 0);
   if (proc_id == 0) {
-    local_range.push_back(std::make_pair(Box(min_corner, max_corner), rangeBox1));
+    local_range.push_back(std::make_pair(StkBox(min_corner, max_corner), rangeBox1));
   }
 
   SearchResults searchResults;
