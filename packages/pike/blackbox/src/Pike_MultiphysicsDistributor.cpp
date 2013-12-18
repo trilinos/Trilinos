@@ -62,7 +62,7 @@ namespace pike {
 
     // make sure processes are unique
     std::set<int> tmp_processes;
-    for (typename std::vector<int>::const_iterator i=processes.begin(); i != processes.end(); ++i)
+    for (std::vector<int>::const_iterator i=processes.begin(); i != processes.end(); ++i)
       tmp_processes.insert(*i);
 
     app.processes.assign(tmp_processes.begin(),tmp_processes.end());
@@ -147,7 +147,7 @@ namespace pike {
     //*************************************
     if (printCommDistribution) {
 
-      for (typename std::vector<ApplicationIndex>::const_iterator app = appRegistrationOrder_.begin(); app != appRegistrationOrder_.end(); ++app) {
+      for (std::vector<ApplicationIndex>::const_iterator app = appRegistrationOrder_.begin(); app != appRegistrationOrder_.end(); ++app) {
 	const std::vector<int>& appRanks = applications_[*app].processes; 
 	*pout_ << "Application Ranks(" << applications_[*app].name << ") = ";
 	for (std::vector<int>::const_iterator r=appRanks.begin(); r != appRanks.end(); ++r) {
@@ -158,7 +158,7 @@ namespace pike {
 	*pout_ << std::endl;
       }
       
-      for (typename std::map<TransferIndex,std::vector<int> >::const_iterator t = transferRanks_.begin(); t != transferRanks_.end(); ++t) {
+      for (std::map<TransferIndex,std::vector<int> >::const_iterator t = transferRanks_.begin(); t != transferRanks_.end(); ++t) {
 	const std::vector<int>& transRanks = t->second;
 	*pout_ << "Transfer Ranks(" << transferNames_[t->first] << ") = ";
 	for (std::vector<int>::const_iterator r=transRanks.begin(); r != transRanks.end(); ++r) {
@@ -185,7 +185,7 @@ namespace pike {
 
       // Make sure the total number of processes equals global comm size
       int totalNumProcesses = 0;
-      for (typename std::vector<ApplicationIndex>::const_iterator app = appRegistrationOrder_.begin();
+      for (std::vector<ApplicationIndex>::const_iterator app = appRegistrationOrder_.begin();
 	   app != appRegistrationOrder_.end(); ++app) {
 	TEUCHOS_TEST_FOR_EXCEPTION((applications_[*app].numProcesses < 1),
 				   std::logic_error,
@@ -198,7 +198,7 @@ namespace pike {
       
       // Add application process ranks to processes array
       int globalProcessCount = 0;
-      for (typename std::vector<ApplicationIndex>::const_iterator app = appRegistrationOrder_.begin();
+      for (std::vector<ApplicationIndex>::const_iterator app = appRegistrationOrder_.begin();
 	   app != appRegistrationOrder_.end(); ++app) {
 	for (int i = 0; i < applications_[*app].numProcesses; ++i,++globalProcessCount) {
 	  if (i == 0)
@@ -209,21 +209,21 @@ namespace pike {
     }
     
     // Build the application comms
-    for (typename std::vector<ApplicationIndex>::const_iterator app = appRegistrationOrder_.begin();
+    for (std::vector<ApplicationIndex>::const_iterator app = appRegistrationOrder_.begin();
 	 app != appRegistrationOrder_.end(); ++app) {
       applicationComms_[*app] = globalComm_->createSubcommunicator(Teuchos::arrayViewFromVector(applications_[*app].processes));
     }
 
     // Build transfer comms
-    for (typename std::map<TransferIndex,std::vector<ApplicationIndex> >::const_iterator t = transfers_.begin(); t != transfers_.end(); ++t) {
-      for (typename std::vector<ApplicationIndex>::const_iterator a = t->second.begin(); a != t->second.end(); ++a) {
+    for (std::map<TransferIndex,std::vector<ApplicationIndex> >::const_iterator t = transfers_.begin(); t != transfers_.end(); ++t) {
+      for (std::vector<ApplicationIndex>::const_iterator a = t->second.begin(); a != t->second.end(); ++a) {
 	transferRanks_[t->first].insert(transferRanks_[t->first].end(), applications_[*a].processes.begin(), applications_[*a].processes.end());
       }
       std::sort(transferRanks_[t->first].begin(), transferRanks_[t->first].end());
       transferRanks_[t->first].erase( std::unique( transferRanks_[t->first].begin(), transferRanks_[t->first].end() ), transferRanks_[t->first].end() );
     }
 
-    for (typename std::map<TransferIndex,std::vector<int> >::const_iterator t = transferRanks_.begin(); t != transferRanks_.end(); ++t) {
+    for (std::map<TransferIndex,std::vector<int> >::const_iterator t = transferRanks_.begin(); t != transferRanks_.end(); ++t) {
 	transferComms_[t->first] = globalComm_->createSubcommunicator(Teuchos::arrayViewFromVector(t->second));
     }
 
@@ -241,7 +241,7 @@ namespace pike {
       out_->setShowLinePrefix(true);
     }
 
-    for (typename std::map<ApplicationIndex,ApplicationData>::const_iterator a = applications_.begin(); a != applications_.end(); ++a) {
+    for (std::map<ApplicationIndex,ApplicationData>::const_iterator a = applications_.begin(); a != applications_.end(); ++a) {
       aout_[a->first] = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
       aout_[a->first]->pushLinePrefix(a->second.name);
       aout_[a->first]->setOutputToRootOnly(this->mapRankToCommWorldRank(a->second.startProcess,*globalComm_));
@@ -251,7 +251,7 @@ namespace pike {
 
     {
       pout_ = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-      for (typename std::map<ApplicationIndex,ApplicationData>::const_iterator a = applications_.begin(); a != applications_.end(); ++a) {
+      for (std::map<ApplicationIndex,ApplicationData>::const_iterator a = applications_.begin(); a != applications_.end(); ++a) {
 	if (this->appExistsOnProcess(a->first)) {
 	  pout_->pushLinePrefix(a->second.name);
 	}
@@ -283,42 +283,42 @@ namespace pike {
 
   std::string MultiphysicsDistributor::getApplicationName(const ApplicationIndex appIndex) const
   {
-    typename std::map<ApplicationIndex,ApplicationData>::const_iterator n = applications_.find(appIndex);
+    std::map<ApplicationIndex,ApplicationData>::const_iterator n = applications_.find(appIndex);
     TEUCHOS_ASSERT(n != applications_.end());
     return n->second.name;
   }
   
   std::string MultiphysicsDistributor::getTransferName(const TransferIndex transferIndex) const
   {
-    typename std::map<TransferIndex,std::string>::const_iterator n = transferNames_.find(transferIndex);
+    std::map<TransferIndex,std::string>::const_iterator n = transferNames_.find(transferIndex);
     TEUCHOS_ASSERT(n != transferNames_.end());
     return n->second;
   }
 
   MultiphysicsDistributor::ApplicationIndex MultiphysicsDistributor::getApplicationIndex(const std::string appName) const
   {
-    typename std::map<std::string,ApplicationIndex>::const_iterator n = applicationNameToIndex_.find(appName);
+    std::map<std::string,ApplicationIndex>::const_iterator n = applicationNameToIndex_.find(appName);
     TEUCHOS_ASSERT(n != applicationNameToIndex_.end());
     return n->second;
   }
   
   MultiphysicsDistributor::TransferIndex MultiphysicsDistributor::getTransferIndex(const std::string transferName) const
   {
-    typename std::map<std::string,MultiphysicsDistributor::TransferIndex>::const_iterator n = transferNameToIndex_.find(transferName);
+    std::map<std::string,MultiphysicsDistributor::TransferIndex>::const_iterator n = transferNameToIndex_.find(transferName);
     TEUCHOS_ASSERT(n != transferNameToIndex_.end());
     return n->second;
   }
 
   bool MultiphysicsDistributor::appExistsOnProcess(const MultiphysicsDistributor::ApplicationIndex index) const
   {
-    typename std::map<ApplicationIndex,Teuchos::RCP<const Teuchos::Comm<int> > >::const_iterator comm = applicationComms_.find(index);
+    std::map<ApplicationIndex,Teuchos::RCP<const Teuchos::Comm<int> > >::const_iterator comm = applicationComms_.find(index);
     TEUCHOS_ASSERT(comm != applicationComms_.end());
     return nonnull(comm->second);
   }
 
   bool MultiphysicsDistributor::transferExistsOnProcess(const MultiphysicsDistributor::TransferIndex index) const
   {
-    typename std::map<TransferIndex,Teuchos::RCP<const Teuchos::Comm<int> > >::const_iterator comm = transferComms_.find(index);
+    std::map<TransferIndex,Teuchos::RCP<const Teuchos::Comm<int> > >::const_iterator comm = transferComms_.find(index);
     TEUCHOS_ASSERT(comm != transferComms_.end());
     return nonnull(comm->second);
   }
@@ -331,7 +331,7 @@ namespace pike {
   Teuchos::RCP<const Teuchos::Comm<int> >
   MultiphysicsDistributor::getAppComm(const ApplicationIndex applicationIndex) const
   {
-    typename std::map<ApplicationIndex,Teuchos::RCP<const Teuchos::Comm<int> > >::const_iterator ac =
+    std::map<ApplicationIndex,Teuchos::RCP<const Teuchos::Comm<int> > >::const_iterator ac =
       applicationComms_.find(applicationIndex);
     TEUCHOS_ASSERT(ac != applicationComms_.end())
     return ac->second;
@@ -340,14 +340,14 @@ namespace pike {
   Teuchos::RCP<const Teuchos::Comm<int> >
   MultiphysicsDistributor::getTransferComm(const TransferIndex transferIndex) const
   {
-    typename std::map<TransferIndex,Teuchos::RCP<const Teuchos::Comm<int> > >::const_iterator tc = 
+    std::map<TransferIndex,Teuchos::RCP<const Teuchos::Comm<int> > >::const_iterator tc = 
       transferComms_.find(transferIndex);
     return tc->second;
   }
 
   int MultiphysicsDistributor::getPrintRank(const ApplicationIndex index) const
   {
-    typename std::map<ApplicationIndex,ApplicationData>::const_iterator s = applications_.find(index);
+    std::map<ApplicationIndex,ApplicationData>::const_iterator s = applications_.find(index);
     TEUCHOS_ASSERT(s != applications_.end());
     return s->second.startProcess;
   }
