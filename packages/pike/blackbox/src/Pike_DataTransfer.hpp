@@ -9,7 +9,7 @@ namespace pike {
 
     virtual ~DataTransfer() {};
 
-    virtual void doTransfer() = 0;
+    virtual bool doTransfer() = 0;
 
     virtual bool transferSucceeded() = 0;
 
