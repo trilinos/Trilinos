@@ -100,9 +100,10 @@ namespace MueLu {
       RandomReorder(randomVector);
     }
 
-    int agg_index = -1;
-    unsigned agg_cnt = 0;
-    std::vector<int> agg_list(100);
+    int              aggIndex = -1;
+    unsigned         aggSize  = 0;
+    const unsigned   magicConstAsDefaultSize = 100;
+    std::vector<int> aggList(magicConstAsDefaultSize);
 
     // Main loop over all local rows of graph(A)
     for (LO iNode2 = 0; iNode2 < nRows; iNode2++) {
@@ -131,13 +132,21 @@ namespace MueLu {
 
       if (aggStat[iNode1] == NodeStats::READY) {
         // Step 2: build tentative aggregate
-        agg_cnt = 0;
-        agg_list[agg_cnt++] = iNode1;
+        aggSize = 0;
+        aggList[aggSize++] = iNode1;
 
         ArrayView<const LO> neighOfINode = graph.getNeighborVertices(iNode1);
 
+        // TODO: I would like to get rid of this, but that requires something like
+        // graph.getMaxElementsPerRow(), which is trivial in Graph, but requires
+        // computation in LWGraph
+        if (neighOfINode.size() > aggList.size())
+          aggList.resize(neighOfINode.size()*2);
+
         LO numAggregatedNeighbours = 0;
 
+        // NOTE: if neighOfINode.size() < MinNodesPerAggregate, we could skip this loop,
+        // but only for NATURAL and RANDOM (for GRAPH we still need the list of local neighbors)
         for (int j = 0; j < neighOfINode.size(); j++) {
           LO neigh = neighOfINode[j];
 
@@ -145,7 +154,7 @@ namespace MueLu {
 
             if (aggStat[neigh] == NodeStats::READY || aggStat[neigh] == NodeStats::NOTSEL) {
               // Add neighbor node to tentative aggregate
-              agg_list[agg_cnt++] = neigh;
+              aggList[aggSize++] = neigh;
 
             } else {
               numAggregatedNeighbours++;
@@ -154,43 +163,42 @@ namespace MueLu {
         }
 
         // Step 3: check if tentative aggregate is acceptable
-        if ((numAggregatedNeighbours <= MaxNeighAlreadySelected) &&
-            (agg_cnt >= MinNodesPerAggregate)) {      // not enough nodes in new aggregate
+        if ((numAggregatedNeighbours <= MaxNeighAlreadySelected) &&   // too many connections to other aggregates
+            (aggSize                 >= MinNodesPerAggregate)) {      // too few nodes in the tentative aggregate
           // Accept new aggregate
-          aggregates.SetIsRoot(iNode1);        // mark iNode1 as root node for new aggregate 'ag'
-          agg_index = nLocalAggregates++;      // aggregate accepted, increment aggregate counter
-          vertex2AggId[iNode1] = agg_index;
-          procWinner[iNode1]   = myRank;      // graph.GetComm()->getRank();
+          // iNode1 becomes the root of the newly formed aggregate
+          aggregates.SetIsRoot(iNode1);
+          aggIndex = nLocalAggregates++;
 
-          for (unsigned int k = 0; k < agg_cnt; k++) {
-            aggStat     [agg_list[k]] = NodeStats::AGGREGATED;
-            vertex2AggId[agg_list[k]] = agg_index;
-            procWinner  [agg_list[k]] = myRank;
+          for (unsigned int k = 0; k < aggSize; k++) {
+            aggStat     [aggList[k]] = NodeStats::AGGREGATED;
+            vertex2AggId[aggList[k]] = aggIndex;
+            procWinner  [aggList[k]] = myRank;
 
             if (ordering == GRAPH) {
-              Teuchos::ArrayView<const LO> neighOfJNode = graph.getNeighborVertices(agg_list[k]);
+              Teuchos::ArrayView<const LO> neighOfJNode = graph.getNeighborVertices(aggList[k]);
               for (int j = 0; j < neighOfJNode.size(); j++) {
-                LO colIndex = neighOfJNode[j];
+                LO neigh = neighOfJNode[j];
 
-                if (graph.isLocalNeighborVertex(colIndex) &&    // TODO check me (index < nRows)
-                    aggStat[colIndex] == NodeStats::READY)      // jnode not aggregated and not selected
-                  graph_ordering_inodes.push(colIndex);
+                if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == NodeStats::READY)
+                  graph_ordering_inodes.push(neigh);
               }
             }
           }
 
         } else {
           // Aggregate is not accepted
-          agg_cnt = 0;
+          aggSize = 0;
           aggStat[iNode1] = NodeStats::NOTSEL;
 
           if (ordering == GRAPH) {
             // Even though the aggregate around iNode1 is not perfect, we want to try
             // the neighbor nodes of iNode1
             for (int j = 0; j < neighOfINode.size(); j++) {
-              LO colIndex = neighOfINode[j];
-              if (graph.isLocalNeighborVertex(colIndex) && aggStat[colIndex] == NodeStats::READY)
-                graph_ordering_inodes.push(colIndex);
+              LO neigh = neighOfINode[j];
+
+              if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == NodeStats::READY)
+                graph_ordering_inodes.push(neigh);
             }
           }
         }
