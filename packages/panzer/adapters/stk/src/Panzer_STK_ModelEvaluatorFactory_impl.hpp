@@ -998,6 +998,11 @@ namespace panzer_stk {
                                      write_dot_files,prefix);
     }
 
+    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > response_library 
+        = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(m_response_library->getWorksetContainer(),
+                                                                   m_response_library->getGlobalIndexer(),
+                                                                   m_response_library->getLinearObjFactory()));
+
     // using the FMB, build the model evaluator
     {
       // get nominal input values, make sure they match with internal me
@@ -1018,7 +1023,7 @@ namespace panzer_stk {
       Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyra_me
           = buildPhysicsModelEvaluator(useThyra,
                                        fmb,
-                                       Teuchos::null,
+                                       response_library,
                                        m_lin_obj_factory,
                                        p_names,
                                        solverFactory,
