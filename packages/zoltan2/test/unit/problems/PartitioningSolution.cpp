@@ -51,7 +51,7 @@
 // TODO test ::convertSolutionToImportList
 
 #include <Zoltan2_PartitioningSolution.hpp>
-#include <Zoltan2_BasicIdentifierInput.hpp>
+#include <Zoltan2_BasicIdentifierAdapter.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 
 typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> user_t;

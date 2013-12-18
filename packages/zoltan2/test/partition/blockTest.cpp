@@ -42,7 +42,7 @@
 // ***********************************************************************
 //
 // @HEADER
-#include <Zoltan2_BasicIdentifierInput.hpp>
+#include <Zoltan2_BasicIdentifierAdapter.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_TestHelpers.hpp>

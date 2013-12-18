@@ -49,7 +49,7 @@
 
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
-#include <Zoltan2_BasicIdentifierInput.hpp>
+#include <Zoltan2_BasicIdentifierAdapter.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 
 #include <set>

@@ -51,7 +51,7 @@
 
 #include <Zoltan2_PartitioningSolutionQuality.hpp>
 #include <Zoltan2_TestHelpers.hpp>
-#include <Zoltan2_BasicIdentifierInput.hpp>
+#include <Zoltan2_BasicIdentifierAdapter.hpp>
 #include <stdlib.h>
 #include <vector>
 
