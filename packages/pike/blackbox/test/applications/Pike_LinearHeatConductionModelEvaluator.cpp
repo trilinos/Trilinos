@@ -4,7 +4,7 @@
 #include "Pike_LinearHeatConductionModelEvaluator.hpp"
 #include "Teuchos_Assert.hpp"
 
-namespace pike {
+namespace pike_test {
   
   LinearHeatConductionModelEvaluator::LinearHeatConductionModelEvaluator(Teuchos::RCP<Teuchos::Comm<int> > comm,
 									 std::string name,
@@ -98,12 +98,12 @@ namespace pike {
   { return T_right_; }
   
   // non-member ctor
-  Teuchos::RCP<pike::LinearHeatConductionModelEvaluator> 
+  Teuchos::RCP<pike_test::LinearHeatConductionModelEvaluator> 
   linearHeatConductionModelEvaluator(Teuchos::RCP<Teuchos::Comm<int> > comm,
 				     std::string name,
-				     pike::LinearHeatConductionModelEvaluator::Mode mode)
+				     pike_test::LinearHeatConductionModelEvaluator::Mode mode)
   {
-    return Teuchos::rcp(new pike::LinearHeatConductionModelEvaluator(comm,name,mode));
+    return Teuchos::rcp(new pike_test::LinearHeatConductionModelEvaluator(comm,name,mode));
   }
 
 }

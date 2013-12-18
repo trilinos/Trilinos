@@ -7,7 +7,7 @@
 #include "Teuchos_RCP.hpp"
 #include <string>
 
-namespace pike {
+namespace pike_test {
 
   /** \brief Simple example of model evaluator for unit testing
 
@@ -86,17 +86,17 @@ namespace pike {
     double T_right_;
     
     std::map<std::string,int> responseMap_;
-    std::vector<Teuchos::RCP<ScalarResponse<double> > > responseValue_;
+    std::vector<Teuchos::RCP<pike::ScalarResponse<double> > > responseValue_;
     
   };
 
   /** \brief non-member ctor
       \relates LinearHeatConductionModelEvaluator
   */
-  Teuchos::RCP<pike::LinearHeatConductionModelEvaluator> 
+  Teuchos::RCP<pike_test::LinearHeatConductionModelEvaluator> 
   linearHeatConductionModelEvaluator(Teuchos::RCP<Teuchos::Comm<int> > comm,
 				     std::string name,
-				     pike::LinearHeatConductionModelEvaluator::Mode mode);
+				     pike_test::LinearHeatConductionModelEvaluator::Mode mode);
   
 
 }
