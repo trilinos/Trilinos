@@ -1057,10 +1057,134 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
 }
 
 
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+template<typename int_type>
+int jacobi_A_B_reuse(double omega,
+		     const Epetra_Vector & Dinv,
+		     const Epetra_CrsMatrix & A,
+		     const Epetra_CrsMatrix & B,
+		     CrsMatrixStruct& Bview,
+		     std::vector<int> & Bcol2Ccol,
+		     std::vector<int> & Bimportcol2Ccol,
+		     Epetra_CrsMatrix& C){
+
+  // *****************************
+  // Improved Parallel Gustavson in Local IDs
+  // *****************************
+  const Epetra_Map * colmap_C = &(C.ColMap());
+
+  int m=A.NumMyRows();
+  int n=colmap_C->NumMyElements();
+  int i,j,k;
+
+  // DataPointers for A
+  int *Arowptr, *Acolind;
+  double *Avals;
+  EPETRA_CHK_ERR(A.ExtractCrsDataPointers(Arowptr,Acolind,Avals));
+
+  // DataPointers for B, Bimport
+  int *Browptr, *Bcolind;
+  double *Bvals;
+  EPETRA_CHK_ERR(B.ExtractCrsDataPointers(Browptr,Bcolind,Bvals));
+
+  int *Irowptr=0, *Icolind=0;
+  double *Ivals=0;
+  if(Bview.importMatrix){
+    Irowptr = &Bview.importMatrix->rowptr_[0];
+    Icolind = &Bview.importMatrix->colind_[0];
+    Ivals   = &Bview.importMatrix->vals_[0];
+  }
+
+  // Data pointer for Dinv
+  const double *Dvals = Dinv.Values();
+
+  // DataPointers for C
+  int *CSR_rowptr, *CSR_colind;
+  double *CSR_vals;
+  EPETRA_CHK_ERR(C.ExtractCrsDataPointers(CSR_rowptr,CSR_colind,CSR_vals));
 
 
+  // The status array will contain the index into colind where this dude was last deposited.
+  // c_status[i] < CSR_ip - not in the row yet.
+  // c_status[i] >= CSR_ip, this is the entry where you can find the data
+  // We start with this filled with -1's indicating that there are no entries yet.
+  std::vector<int> c_status(n, -1);
 
+  // Classic csr assembly
+  int CSR_alloc=CSR_rowptr[m] - CSR_rowptr[0];
+  int CSR_ip=0,OLD_ip=0;
 
+  // For each row of C
+  for(i=0; i<m; i++){	
+    double Dval = Dvals[i];
+
+    // Entries of B
+    for(k=Browptr[i]; k<Browptr[i+1]; k++){
+      int Bk      = Bcolind[k];
+      double Bval = Bvals[k];
+      if(Bval==0) continue;
+      int Ck=Bcol2Ccol[Bcolind[k]];
+      
+      // Assume no repeated entries in B
+      c_status[Ck]=CSR_ip;
+      CSR_colind[CSR_ip]=Ck;
+      CSR_vals[CSR_ip]= Bvals[k];
+      CSR_ip++;
+    }
+
+    // Entries of -omega * Dinv * A * B		       
+    for(k=Arowptr[i]; k<Arowptr[i+1]; k++){
+      int Ak=Acolind[k];
+      double Aval = Avals[k];
+      if(Aval==0) continue;
+
+      if(Bview.targetMapToOrigRow[Ak] != -1){
+	// Local matrix
+	int Bk = Bview.targetMapToOrigRow[Ak];
+	for(j=Browptr[Bk]; j<Browptr[Bk+1]; ++j) {
+	  int Cj=Bcol2Ccol[Bcolind[j]];
+
+	  if(c_status[Cj]<OLD_ip){
+	    // New entry
+	    if(CSR_ip >= CSR_alloc) EPETRA_CHK_ERR(-13);
+	    c_status[Cj]=CSR_ip;
+	    CSR_colind[CSR_ip]=Cj;
+	    CSR_vals[CSR_ip]= - omega * Dval * Aval * Bvals[j];
+	    CSR_ip++;
+	  }
+	  else
+	    CSR_vals[c_status[Cj]]-= omega * Dval * Aval * Bvals[j];
+	}
+      }
+      else{
+	// Remote matrix
+	int Ik = Bview.targetMapToImportRow[Ak];
+	for(j=Irowptr[Ik]; j<Irowptr[Ik+1]; ++j) {
+	  int Cj=Bimportcol2Ccol[Icolind[j]];
+
+	  if(c_status[Cj]<OLD_ip){
+	    // New entry
+	    if(CSR_ip >= CSR_alloc) EPETRA_CHK_ERR(-14);
+	    c_status[Cj]=CSR_ip;
+	    CSR_colind[CSR_ip]=Cj;
+	    CSR_vals[CSR_ip]= - omega * Dval * Aval * Ivals[j];
+	    CSR_ip++;
+	  }
+	  else
+	    CSR_vals[c_status[Cj]]-=omega * Dval * Aval * Ivals[j];
+	}
+      }
+    }
+    OLD_ip=CSR_ip;
+  }
+
+  // Sort the entries
+  Epetra_Util::SortCrsEntries(m, &CSR_rowptr[0], &CSR_colind[0], &CSR_vals[0]);
+
+  return 0;
+}
 
 
 /*****************************************************************************/
@@ -1198,7 +1322,7 @@ int jacobi_A_B_newmatrix(double omega,
 	    // New entry
 	    c_status[Cj]=CSR_ip;
 	    CSR_colind[CSR_ip]=Cj;
-	    CSR_vals[CSR_ip]= - omega * Dvals[i] * Aval * Ivals[j];
+	    CSR_vals[CSR_ip]= - omega * Dval * Aval * Ivals[j];
 	    CSR_ip++;
 	  }
 	  else
@@ -1406,8 +1530,7 @@ int MatrixMatrix::Tjacobi_A_B(double omega,
   }
   else {
     // This always has a real map
-    throw std::runtime_error("jacobi_A_B_reuse not implemented");
-    //    EPETRA_CHK_ERR(jacobi_A_B_reuse<int_type>(A,B,Bview,Bcol2Ccol,Bimportcol2Ccol,C));
+    EPETRA_CHK_ERR(jacobi_A_B_reuse<int_type>(omega,Dinv,A,B,Bview,Bcol2Ccol,Bimportcol2Ccol,C));
   }
 
   // Cleanup      
