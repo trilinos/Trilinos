@@ -66,7 +66,7 @@
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_PartitioningSolutionQuality.hpp>
 #include <Zoltan2_BasicIdentifierInput.hpp>
-#include <Zoltan2_BasicVectorInput.hpp>
+#include <Zoltan2_BasicVectorAdapter.hpp>
 #include <Zoltan2_XpetraCrsGraphAdapter.hpp>
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 #include <Zoltan2_XpetraMultiVectorAdapter.hpp>

@@ -49,7 +49,7 @@
 
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
-#include <Zoltan2_BasicVectorInput.hpp>
+#include <Zoltan2_BasicVectorAdapter.hpp>
 #include <Zoltan2_InputTraits.hpp>
 #include <vector>
 #include <cstdlib>

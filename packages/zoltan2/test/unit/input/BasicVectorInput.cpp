@@ -45,7 +45,7 @@
 //
 // Test for Zoltan2::BasicVectorAdapter 
 
-#include <Zoltan2_BasicVectorInput.hpp>
+#include <Zoltan2_BasicVectorAdapter.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 
 #include <Teuchos_GlobalMPISession.hpp>
