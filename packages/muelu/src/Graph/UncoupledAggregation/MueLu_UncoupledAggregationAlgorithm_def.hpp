@@ -102,7 +102,7 @@ namespace MueLu {
     }
 
     int              aggIndex = -1;
-    unsigned         aggSize  = 0;
+    unsigned         aggSize  =  0;
     const unsigned   magicConstAsDefaultSize = 100;
     std::vector<int> aggList(magicConstAsDefaultSize);
 

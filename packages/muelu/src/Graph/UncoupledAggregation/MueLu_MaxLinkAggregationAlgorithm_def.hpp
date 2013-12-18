@@ -90,12 +90,14 @@ namespace MueLu {
       for (int j = 0; j < neighOfINode.size(); j++) {
         LO neigh = neighOfINode[j];
 
+        // NOTE: we don't need the check (neigh != iNode), as we work only
+        // if aggStat[neigh] == AGGREGATED, which we know is different from aggStat[iNode]
         if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == NodeStats::AGGREGATED)
           aggid2cntconnections[vertex2AggId[neigh]]++;
       }
 
       // Find an aggregate id with most connections to
-      LO maxNumConnections = 0;
+      LO maxNumConnections =  0;
       LO selectedAggregate = -1;
       for (typename map_type::const_iterator it = aggid2cntconnections.begin(); it != aggid2cntconnections.end(); it++)
         if (maxNumConnections < it->second) {

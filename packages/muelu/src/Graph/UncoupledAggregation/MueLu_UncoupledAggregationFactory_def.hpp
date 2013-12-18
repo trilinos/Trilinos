@@ -220,26 +220,29 @@ namespace MueLu {
       }
     }
 
-    LO numNonAggregatedNodes = nRows;
 
+    const RCP<const Teuchos::Comm<int> > comm = graph->GetComm();
+    GO numGlobalRows = 0;
+    if (IsPrint(Statistics1))
+      sumAll(comm, as<GO>(nRows), numGlobalRows);
+
+    LO numNonAggregatedNodes = nRows;
     for (size_t a = 0; a < algos_.size(); a++) {
       std::string phase = algos_[a]->description();
       SubFactoryMonitor sfm(*this, "Algo \"" + phase + "\"", currentLevel);
+
       algos_[a]->BuildAggregates(pL, *graph, *aggregates, aggStat, numNonAggregatedNodes);
 
       if (IsPrint(Statistics1)) {
-        const RCP<const Teuchos::Comm<int> > comm = graph->GetComm();
 
-        GO numLocalRows       = nRows,                         numGlobalRows       = 0;
-        GO numLocalAggregated = nRows - numNonAggregatedNodes, numGlobalAggregated = 0;
+        GO numLocalAggregated = nRows - numNonAggregatedNodes,  numGlobalAggregated = 0;
+        GO numLocalAggs       = aggregates->GetNumAggregates(), numGlobalAggs = 0;
         sumAll(comm, numLocalAggregated, numGlobalAggregated);
-        sumAll(comm, numLocalRows,       numGlobalRows);
+        sumAll(comm, numLocalAggs,       numGlobalAggs);
+
         double aggPercent = 100*as<double>(numGlobalAggregated)/as<double>(numGlobalRows);
         GetOStream(Statistics1, 0) << "  aggregated  : " << numGlobalAggregated << "/" << numGlobalRows << " (" << aggPercent << "%)\n"
                                    << "  remaining   : " << numGlobalRows - numGlobalAggregated << std::endl;
-
-        GO numLocalAggs = aggregates->GetNumAggregates(), numGlobalAggs = 0;
-        sumAll(comm, numLocalAggs, numGlobalAggs);
         GetOStream(Statistics1, 0) << "  # aggregates: " << numGlobalAggs << std::endl;
       }
 
@@ -250,7 +253,7 @@ namespace MueLu {
       }
     }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(numNonAggregatedNodes > 0, Exceptions::RuntimeError, "MueLu::UncoupledAggregationFactory::Build: Leftover nodes found! Error!");
+    TEUCHOS_TEST_FOR_EXCEPTION(numNonAggregatedNodes, Exceptions::RuntimeError, "MueLu::UncoupledAggregationFactory::Build: Leftover nodes found! Error!");
 
     aggregates->AggregatesCrossProcessors(false);
 

@@ -67,66 +67,33 @@
 
 namespace MueLu {
 
-template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-PreserveDirichletAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PreserveDirichletAggregationAlgorithm(RCP<const FactoryBase> const &graphFact)
-{
-}
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void PreserveDirichletAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
+    Monitor m(*this, "BuildAggregates");
 
-template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void PreserveDirichletAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
-  Monitor m(*this, "BuildAggregates");
+    Teuchos::ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+    Teuchos::ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()  ->getDataNonConst(0);
 
-  // form new aggregates from non-aggregated nodes
+    const LO  nRows  = graph.GetNodeNumVertices();
+    const int myRank = graph.GetComm()->getRank();
 
-  // vertex ids for output
-  Teuchos::ArrayRCP<LocalOrdinal> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-  Teuchos::ArrayRCP<LocalOrdinal> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
+    LO nLocalAggregates = aggregates.GetNumAggregates();
+    for (LO iNode = 0; iNode < nRows; iNode++) {
+      if (aggStat[iNode] == NodeStats::BOUNDARY ||
+          (aggStat[iNode] != NodeStats::AGGREGATED && graph.getNeighborVertices(iNode).size() == 1)) {
+        // This is a boundary or an isolated node
+        aggregates.SetIsRoot(iNode);
 
-  const int myRank = graph.GetComm()->getRank();
-  const LocalOrdinal nRows = graph.GetNodeNumVertices();
-  LocalOrdinal nLocalAggregates = aggregates.GetNumAggregates();    // number of local aggregates on current proc
+        aggStat[iNode]      = NodeStats::AGGREGATED;
+        vertex2AggId[iNode] = nLocalAggregates++;
+        procWinner[iNode]   = myRank;
 
-  // loop over all local rows
-  for (LocalOrdinal iNode=0; iNode<nRows; iNode++) {
-    if (aggStat[iNode] == NodeStats::BOUNDARY) {
-
-      aggregates.SetIsRoot(iNode);    // mark iNode as root node for new aggregate 'ag'
-      Aggregate ag;
-      ag.list.push_back(iNode);
-      ag.index = nLocalAggregates++;
-
-      // finalize aggregate
-      for(size_t k=0; k<ag.list.size(); k++) {
-        aggStat[ag.list[k]] = NodeStats::AGGREGATED;
-        vertex2AggId[ag.list[k]] = ag.index;
-        procWinner[ag.list[k]] = myRank;
-      }
-      numNonAggregatedNodes -= ag.list.size();
-
-    } else if(aggStat[iNode] != NodeStats::AGGREGATED) { // find unaggregated nodes
-
-      Teuchos::ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(iNode);
-      if(neighOfINode.size() == 1) {
-        // build aggregate for lonely Dirichlet node
-        aggregates.SetIsRoot(iNode);    // mark iNode as root node for new aggregate 'ag'
-        Aggregate ag;
-        ag.list.push_back(iNode);
-        ag.index = nLocalAggregates++;
-
-        // finalize aggregate
-        for(size_t k=0; k<ag.list.size(); k++) {
-          aggStat[ag.list[k]] = NodeStats::AGGREGATED;
-          vertex2AggId[ag.list[k]] = ag.index;
-          procWinner[ag.list[k]] = myRank;
-        }
-        numNonAggregatedNodes -= ag.list.size();
+        numNonAggregatedNodes--;
       }
     }
-  }   // end for
 
-  // update aggregate object
-  aggregates.SetNumAggregates(nLocalAggregates);
-}
+    aggregates.SetNumAggregates(nLocalAggregates);
+  }
 
 } // end namespace
 

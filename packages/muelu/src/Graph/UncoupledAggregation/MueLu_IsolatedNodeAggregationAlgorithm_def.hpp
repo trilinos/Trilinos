@@ -69,36 +69,22 @@
 namespace MueLu {
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-IsolatedNodeAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::IsolatedNodeAggregationAlgorithm(RCP<const FactoryBase> const &graphFact)
-{
-}
-
-template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void IsolatedNodeAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
+void IsolatedNodeAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
   Monitor m(*this, "BuildAggregates");
 
-  // form new aggregates from non-aggregated nodes
+  Teuchos::ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+  Teuchos::ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
 
-  // vertex ids for output
-  Teuchos::ArrayRCP<LocalOrdinal> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-  Teuchos::ArrayRCP<LocalOrdinal> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
+  const LO nRows = graph.GetNodeNumVertices();
 
-  const LocalOrdinal nRows = graph.GetNodeNumVertices();
-
-  // loop over all local rows
-  for (LocalOrdinal iNode=0; iNode<nRows; iNode++) {
-    if (aggStat[iNode] == NodeStats::BOUNDARY) {
+  for (LO iNode=0; iNode<nRows; iNode++) {
+    if (aggStat[iNode] == NodeStats::BOUNDARY ||
+        (aggStat[iNode] != NodeStats::AGGREGATED && graph.getNeighborVertices(iNode).size() == 1)) {
+      // This is a boundary or an isolated node
       aggStat[iNode] = NodeStats::AGGREGATED;
       numNonAggregatedNodes--;
-    } else if(aggStat[iNode] != NodeStats::AGGREGATED) { // find unaggregated nodes
-
-      Teuchos::ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(iNode);
-      if(neighOfINode.size() == 1) {
-        aggStat[iNode] = NodeStats::AGGREGATED;
-        numNonAggregatedNodes--;
-      }
     }
-  }   // end for
+  }
 }
 
 } // end namespace
