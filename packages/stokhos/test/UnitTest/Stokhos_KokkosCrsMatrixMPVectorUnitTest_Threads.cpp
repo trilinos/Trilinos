@@ -52,6 +52,71 @@
 using Kokkos::Threads;
 CRSMATRIX_MP_VECTOR_TESTS_SCALAR_ORDINAL_DEVICE( double, int, Threads )
 
+template <typename Ordinal, typename Scalar, typename MultiplyOp,
+          Ordinal NumPerThread, Ordinal ThreadsPerVector>
+bool test_host_static_fixed_embedded_vector(Ordinal num_hyper_threads,
+                                            Ordinal num_cores,
+                                            Teuchos::FancyOStream& out) {
+  typedef Kokkos::Threads Device;
+
+  const Ordinal VectorSize = NumPerThread * ThreadsPerVector;
+  typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,VectorSize,Device> Storage;
+  typedef Sacado::MP::Vector<Storage> Vector;
+
+  const Ordinal nGrid = 5;
+
+  bool success = true;
+  if (num_hyper_threads >= ThreadsPerVector) {
+    int row_threads = num_hyper_threads / ThreadsPerVector;
+    Kokkos::DeviceConfig dev_config(num_cores, ThreadsPerVector, row_threads);
+
+    success = test_embedded_vector<Vector>(
+      nGrid, VectorSize, dev_config, MultiplyOp(), out);
+  }
+  return success;
+}
+
+size_t num_cores, num_hyper_threads;
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_CrsMatrix_MP, Multiply_1, Ordinal, Scalar, MultiplyOp )
+{
+  const Ordinal NumPerThread = 3;
+  const Ordinal ThreadsPerVector = 1;
+  success =
+    test_host_static_fixed_embedded_vector<Ordinal,Scalar,MultiplyOp,NumPerThread,ThreadsPerVector>(num_hyper_threads, num_cores, out);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_CrsMatrix_MP, Multiply_2, Ordinal, Scalar, MultiplyOp )
+{
+  const Ordinal NumPerThread = 3;
+  const Ordinal ThreadsPerVector = 2;
+  success =
+    test_host_static_fixed_embedded_vector<Ordinal,Scalar,MultiplyOp,NumPerThread,ThreadsPerVector>(num_hyper_threads, num_cores, out);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_CrsMatrix_MP, Multiply_4, Ordinal, Scalar, MultiplyOp )
+{
+  const Ordinal NumPerThread = 3;
+  const Ordinal ThreadsPerVector = 4;
+  success =
+    test_host_static_fixed_embedded_vector<Ordinal,Scalar,MultiplyOp,NumPerThread,ThreadsPerVector>(num_hyper_threads, num_cores, out);
+}
+
+#define CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_ORDINAL_SCALAR_OP( ORDINAL, SCALAR, OP ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                 \
+    Kokkos_CrsMatrix_MP, Multiply_1,  ORDINAL, SCALAR, OP )             \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                 \
+    Kokkos_CrsMatrix_MP, Multiply_2,  ORDINAL, SCALAR, OP )             \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                 \
+    Kokkos_CrsMatrix_MP, Multiply_4,  ORDINAL, SCALAR, OP )
+
+CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_ORDINAL_SCALAR_OP(int, double, DefaultMultiply)
+CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_ORDINAL_SCALAR_OP(int, double, EnsembleMultiply)
+CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_ORDINAL_SCALAR_OP(int, double, KokkosMultiply)
+
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
