@@ -107,6 +107,7 @@ namespace Tpetra {
       }*/
     }
     else {
+      view_ = view_type("MV::dual_view",0,NumVectors);
       MVT::initializeValues(lclMV_,0,NumVectors,Teuchos::null,0);
     }
   }
@@ -1125,10 +1126,13 @@ namespace Tpetra {
     // the MultiVector's native device.
 
     const size_t numVecs = this->getNumVectors();
-    /*TEUCHOS_TEST_FOR_EXCEPTION(as<size_t>(norms.size()) != numVecs,
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      as<size_t> (norms.size ()) != numVecs,
       std::runtime_error,
-      "Tpetra::MultiVector::norm2(norms): norms.size() must be as large as the number of vectors in *this.");
-    if (isConstantStride ()) {
+      "Tpetra::MultiVector::norm2(norms): norms.size() must be as large as the "
+      "number of vectors in *this.  norms.size() = " << norms.size () << ", but "
+      "*this.getNumVectors() = " << numVecs << ".");
+    /*if (isConstantStride ()) {
       MVT::Norm2Squared (lclMV_,norms);
     }
     else {
@@ -1140,6 +1144,9 @@ namespace Tpetra {
         norms[i] = MVT::Norm2Squared (v);
       }
     }*/
+
+    // FIXME (mfh 17 Dec 2013) What about nonconstant stride?
+
     Kokkos::MV_Dot(&norms[0],view_.d_view,view_.d_view,getLocalLength());
     if (this->isDistributed ()) {
       Array<MT> lnorms (norms);
@@ -2733,15 +2740,15 @@ namespace Tpetra {
   {
     using std::endl;
     std::ostringstream oss;
-    oss << Teuchos::typeName (*this) << " {" << endl
-        << "  label: \"" << this->getObjectLabel () << "\"" << endl
-        << "  numRows: " << getGlobalLength () << endl
-        << "  numCols: " << getNumVectors () << endl
-        << "  isConstantStride: " << isConstantStride () << endl;
+    oss << Teuchos::typeName (*this) << " {"
+        << "label: \"" << this->getObjectLabel () << "\""
+        << ", numRows: " << getGlobalLength ()
+        << ", numCols: " << getNumVectors ()
+        << ", isConstantStride: " << isConstantStride ();
     if (isConstantStride ()) {
-      oss << "  columnStride: " << getStride () << endl;
+      oss << ", columnStride: " << getStride ();
     }
-    oss << "}" << endl;
+    oss << "}";
     return oss.str();
   }
 
@@ -2772,41 +2779,63 @@ namespace Tpetra {
 
     if (vl != VERB_NONE) {
       // Don't set the tab level unless we're printing something.
-      Teuchos::OSTab tab (out);
+      Teuchos::OSTab tab0 (out);
 
       if (myImageID == 0) { // >= VERB_LOW prints description()
-        out << this->description() << endl;
+        out << "Tpetra::MultiVector:" << endl;
+        Teuchos::OSTab tab1 (out);
+        out << "Template parameters:" << endl;
+        {
+          Teuchos::OSTab tab2 (out);
+          out << "Scalar: " << Teuchos::TypeNameTraits<Scalar>::name () << endl
+              << "LocalOrdinal: " << Teuchos::TypeNameTraits<LocalOrdinal>::name () << endl
+              << "GlobalOrdinal: " << Teuchos::TypeNameTraits<GlobalOrdinal>::name () << endl
+              << "Node: " << Teuchos::TypeNameTraits<Node>::name () << endl;
+        }
+        out << "label: \"" << this->getObjectLabel () << "\"" << endl
+            << "numRows: " << getGlobalLength () << endl
+            << "numCols: " << getNumVectors () << endl
+            << "isConstantStride: " << isConstantStride () << endl;
+        if (isConstantStride ()) {
+          out << "columnStride: " << getStride () << endl;
+        }
       }
       for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
         if (myImageID == imageCtr) {
           if (vl != VERB_LOW) {
             // At verbosity > VERB_LOW, each process prints something.
             out << "Process " << myImageID << ":" << endl;
+            Teuchos::OSTab tab2 (out);
 
-            Teuchos::OSTab procTab (out);
             // >= VERB_MEDIUM: print the local vector length.
-            out << "local length=" << getLocalLength();
+            out << "local length: " << getLocalLength();
             if (vl != VERB_MEDIUM) {
               // >= VERB_HIGH: print isConstantStride() and getStride()
               if (isConstantStride()) {
-                out << ", constant stride=" << getStride() << endl;
+                out << "constant stride: " << getStride() << endl;
               }
               else {
-                out << ", not constant stride" << endl;
+                out << "not constant stride" << endl;
               }
               if (vl == VERB_EXTREME) {
                 // VERB_EXTREME: print all the values in the multivector.
-                out << "Values:" << endl;
+                out << "values: " << endl;
                 ArrayRCP<ArrayRCP<const Scalar> > X = this->get2dView();
+                out << "[";
                 for (size_t i = 0; i < getLocalLength(); ++i) {
                   for (size_t j = 0; j < getNumVectors(); ++j) {
                     out << X[j][i];
-                    if (j < getNumVectors() - 1) {
-                      out << " ";
+                    if (j + 1 < getNumVectors()) {
+                      out << ", ";
                     }
                   } // for each column
-                  out << endl;
+                  if (i + 1 < getLocalLength ()) {
+                    out << "; ";
+                  } else {
+                    out << endl;
+                  }
                 } // for each row
+                out << "]" << endl;
               } // if vl == VERB_EXTREME
             } // if (vl != VERB_MEDIUM)
             else { // vl == VERB_LOW
@@ -2944,6 +2973,15 @@ namespace Tpetra {
     // unsupported Kokkos Node types.
     return rcp (new MV (map, VAN::template acceptView<Scalar> (view),
                         LDA, numVectors, HOST_VIEW_CONSTRUCTOR));*/
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
+    createCopy( MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > src) {
+    typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > MV;
+    MV cpy(src.getMap(),src.getNumVectors());
+    Kokkos::deep_copy(cpy.getLocalView(),src.getLocalView());
+    return cpy;
   }
 } // namespace Tpetra
 
