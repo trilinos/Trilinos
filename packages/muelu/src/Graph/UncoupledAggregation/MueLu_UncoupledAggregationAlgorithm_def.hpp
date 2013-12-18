@@ -60,9 +60,8 @@
 
 #include <Xpetra_Vector.hpp>
 
-#include "MueLu_UncoupledAggregationAlgorithm.hpp"
+#include "MueLu_UncoupledAggregationAlgorithm_decl.hpp"
 
-//#include "MueLu_Graph.hpp"
 #include "MueLu_GraphBase.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_Exceptions.hpp"

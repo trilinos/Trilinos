@@ -101,8 +101,6 @@ enum NodeState {
 // TODO: dangerous: same definition as in CheapAggregationAlgorithm
 class Aggregate {
 public:
-  int length;                   // current size of aggregate
-  int maxLength;                // max size of aggregate
   int index;                    // local aggregate id
   std::vector<int> list;  // list of node ids in aggregate
 };
@@ -133,14 +131,14 @@ class AggregationAlgorithmBase
   //@{
 
   //! BuildAggregates routine.
-  virtual LocalOrdinal BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const = 0;
+  virtual LocalOrdinal BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat) const = 0;
   //@}
 
   //! @name Build routines
   //@{
 
   //! BuildAggregates routine.
-  virtual void PrintAggregationInformation(const std::string phase, GraphBase const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const {
+  virtual void PrintAggregationInformation(const std::string phase, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat) const {
     const RCP<const Teuchos::Comm<int> > & comm = graph.GetComm();
     const LocalOrdinal nRows = graph.GetNodeNumVertices();
     const LocalOrdinal nLocalAggregates = aggregates.GetNumAggregates();

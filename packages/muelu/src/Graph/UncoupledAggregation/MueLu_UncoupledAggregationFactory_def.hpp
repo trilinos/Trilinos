@@ -188,42 +188,38 @@ namespace MueLu {
     const LO nRows = graph->GetNodeNumVertices();
 
     // construct aggStat information
-    ArrayRCP<unsigned int> aggStat;
-    if (nRows > 0)
-      aggStat = arcp<unsigned int>(nRows);
+    std::vector<unsigned> aggStat(nRows, NodeStats::READY);
 
     ArrayRCP<const bool> dirichletBoundaryMap = graph->GetBoundaryNodeMap();
-    if (dirichletBoundaryMap == null)
-      dirichletBoundaryMap = ArrayRCP<bool>(nRows, false);
+    if (dirichletBoundaryMap != Teuchos::null) {
+      for (LO i = 0; i < nRows; i++)
+        if (dirichletBoundaryMap[i] == true)
+          aggStat[i] = NodeStats::BOUNDARY;
+    }
 
     LO nDofsPerNode = Get<LO>(currentLevel, "DofsPerNode");
     GO indexBase = graph->GetDomainMap()->getIndexBase();
-    for (LO i = 0; i < nRows; i++) {
-      if (dirichletBoundaryMap[i] == false)
-        aggStat[i] = NodeStats::READY;
-      else
-        aggStat[i] = NodeStats::BOUNDARY;
-
-      if (SmallAggMap != null) {
-        GO grid = (graph->GetDomainMap()->getGlobalElement(i)-indexBase) * nDofsPerNode + indexBase;
+    if (SmallAggMap != Teuchos::null || OnePtMap != Teuchos::null) {
+      for (LO i = 0; i < nRows; i++) {
         // reconstruct global row id (FIXME only works for contiguous maps)
-        for (LO kr = 0; kr < nDofsPerNode; kr++) {
-          if (SmallAggMap->isNodeGlobalElement(grid + kr))
-            aggStat[i] = MueLu::NodeStats::SMALLAGG;
+        GO grid = (graph->GetDomainMap()->getGlobalElement(i)-indexBase) * nDofsPerNode + indexBase;
+
+        if (SmallAggMap != null) {
+          for (LO kr = 0; kr < nDofsPerNode; kr++) {
+            if (SmallAggMap->isNodeGlobalElement(grid + kr))
+              aggStat[i] = MueLu::NodeStats::SMALLAGG;
+          }
         }
-      }
 
-      if (OnePtMap != null) {
-        GO grid = (graph->GetDomainMap()->getGlobalElement(i)-indexBase) * nDofsPerNode + indexBase;
-        // reconstruct global row id (FIXME only works for contiguous maps)
-        for (LO kr = 0; kr < nDofsPerNode; kr++) {
-          if (OnePtMap->isNodeGlobalElement(grid + kr))
-            aggStat[i] = MueLu::NodeStats::ONEPT;
+        if (OnePtMap != null) {
+          for (LO kr = 0; kr < nDofsPerNode; kr++) {
+            if (OnePtMap->isNodeGlobalElement(grid + kr))
+              aggStat[i] = MueLu::NodeStats::ONEPT;
+          }
         }
       }
     }
 
-    // TODO: check return values of functions
     LO nonAggregatedNodes = -1;
 
     for (size_t a = 0; a < algos_.size(); a++)

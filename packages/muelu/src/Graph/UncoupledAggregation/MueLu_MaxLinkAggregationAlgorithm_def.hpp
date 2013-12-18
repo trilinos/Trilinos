@@ -75,7 +75,7 @@ MaxLinkAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Max
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-LocalOrdinal MaxLinkAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const {
+LocalOrdinal MaxLinkAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat) const {
   Monitor m(*this, "BuildAggregates");
 
   // vertex ids for output
@@ -121,6 +121,7 @@ LocalOrdinal MaxLinkAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, Loca
     } // end if aggState == NOTSEL...
   } // end loop over all local rows
 
+#if 0
   // print aggregation information
   this->PrintAggregationInformation("Phase 2 (max_link, extend aggregates):", graph, aggregates, aggStat);
 
@@ -131,6 +132,9 @@ LocalOrdinal MaxLinkAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, Loca
     if (aggStat[i] == NodeStats::AGGREGATED) nLocalAggregated++;
     else nLocalNotAggregated++;
   }
+#else
+  int nLocalNotAggregated = 0;
+#endif
 
   return nLocalNotAggregated;
 }

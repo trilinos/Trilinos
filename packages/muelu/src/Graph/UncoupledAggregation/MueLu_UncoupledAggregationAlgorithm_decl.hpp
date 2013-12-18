@@ -59,7 +59,6 @@
 
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
-//#include "MueLu_Graph_fwd.hpp"
 #include "MueLu_GraphBase.hpp"
 
 namespace MueLu {
@@ -70,15 +69,16 @@ namespace MueLu {
 
   template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
   class UncoupledAggregationAlgorithm : public MueLu::AggregationAlgorithmBase<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
+    typedef void Scalar;
 #undef MUELU_UNCOUPLEDAGGREGATIONALGORITHM_SHORT
-#include "MueLu_UseShortNamesOrdinal.hpp"
+#include "MueLu_UseShortNames.hpp"
 
   public:
     //! @name Constructors/Destructors.
     //@{
 
     //! Constructor.
-    UncoupledAggregationAlgorithm(RCP<const FactoryBase> const &graphFact = Teuchos::null);
+    UncoupledAggregationAlgorithm(const RCP<const FactoryBase>& graphFact = Teuchos::null) { }
 
     //! Destructor.
     virtual ~UncoupledAggregationAlgorithm() { }
@@ -91,7 +91,7 @@ namespace MueLu {
 
     /*! @brief Local aggregation. */
 
-    LocalOrdinal BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const;
+    LocalOrdinal BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat) const;
     //@}
 
   private:
@@ -100,7 +100,7 @@ namespace MueLu {
       @param list On input, a bunch of integers. On output, the same integers in a different order
       that is determined randomly.
     */
-    void RandomReorder(Teuchos::ArrayRCP<LO> list) const;
+    void RandomReorder(ArrayRCP<LO> list) const;
 
     /*! @brief Generate a random number in the range [min, max] */
     int RandomOrdinal(int min, int max) const;

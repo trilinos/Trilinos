@@ -91,7 +91,7 @@ namespace MueLu {
 
     /*! @brief Local aggregation. */
 
-    LocalOrdinal BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const;
+    LocalOrdinal BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, std::vector<unsigned>& aggStat) const;
     //@}
 
   }; //class MaxLinkAggregationAlgorithm
