@@ -126,9 +126,6 @@ void PreserveDirichletAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, Lo
 
   // update aggregate object
   aggregates.SetNumAggregates(nLocalAggregates);
-
-  // print aggregation information
-  this->PrintAggregationInformation("Phase 3 (Keep Dirichlet nodes):", graph, aggregates, aggStat);
 }
 
 } // end namespace

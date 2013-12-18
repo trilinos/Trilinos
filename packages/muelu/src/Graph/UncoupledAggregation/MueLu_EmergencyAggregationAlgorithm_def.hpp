@@ -118,9 +118,6 @@ void EmergencyAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOp
 
   // update aggregate object
   aggregates.SetNumAggregates(nLocalAggregates);
-
-  // print aggregation information
-  this->PrintAggregationInformation("Phase 5 (emergency aggregation):", graph, aggregates, aggStat);
 }
 
 } // end namespace

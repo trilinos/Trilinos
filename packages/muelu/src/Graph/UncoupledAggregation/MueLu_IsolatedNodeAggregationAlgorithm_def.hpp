@@ -99,9 +99,6 @@ void IsolatedNodeAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMa
       }
     }
   }   // end for
-
-  // print aggregation information
-  this->PrintAggregationInformation("Phase 4 (isolated node aggregation):", graph, aggregates, aggStat);
 }
 
 } // end namespace

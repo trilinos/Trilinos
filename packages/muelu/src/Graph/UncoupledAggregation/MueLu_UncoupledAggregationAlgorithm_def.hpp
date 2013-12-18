@@ -209,14 +209,6 @@ namespace MueLu {
 
     // update aggregate object
     aggregates.SetNumAggregates(nLocalAggregates);
-
-    // clean up
-    if (graph_ordering_inodes.size() > 0)
-      for (unsigned int k = 0; k < graph_ordering_inodes.size(); k++)
-        graph_ordering_inodes.pop();
-
-    // print aggregation information
-    this->PrintAggregationInformation("UncoupledAggregationAlgorithm:", graph, aggregates, aggStat);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

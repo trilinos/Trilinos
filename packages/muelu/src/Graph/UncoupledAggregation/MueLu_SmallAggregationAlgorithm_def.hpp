@@ -124,9 +124,6 @@ void SmallAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
 
   // update aggregate object
   aggregates.SetNumAggregates(nLocalAggregates);
-
-  // print aggregation information
-  this->PrintAggregationInformation("Phase 0 (small aggregates):", graph, aggregates, aggStat);
 }
 
 } // end namespace

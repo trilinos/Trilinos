@@ -112,9 +112,6 @@ namespace MueLu {
         numNonAggregatedNodes--;
       }
     }
-
-    // print aggregation information
-    this->PrintAggregationInformation("Phase 2 (max_link, extend aggregates):", graph, aggregates, aggStat);
   }
 
 } // end namespace

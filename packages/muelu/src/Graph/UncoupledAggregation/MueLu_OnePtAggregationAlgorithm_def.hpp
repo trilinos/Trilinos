@@ -112,9 +112,6 @@ void OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
 
   // update aggregate object
   aggregates.SetNumAggregates(nLocalAggregates);
-
-  // print aggregation information
-  this->PrintAggregationInformation("Phase 0 (1pt aggregates):", graph, aggregates, aggStat);
 }
 
 } // end namespace
