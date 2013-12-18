@@ -43,7 +43,7 @@
 
 #include <Kokkos_UnorderedMap.hpp>
 
-namespace Kokkos { namespace Impl {
+namespace Kokkos { namespace Impl { namespace UnorderedMap {
 
 uint32_t find_hash_size(uint32_t size)
 {
@@ -85,10 +85,11 @@ uint32_t find_hash_size(uint32_t size)
       , 232644089 , 241591943 , 250539763 , 259487603 , 268435399
   };
 
-  const uint32_t num_primes = sizeof(primes)/sizeof(uint32_t);
+
+  const size_t num_primes = sizeof(primes)/sizeof(uint32_t);
 
   uint32_t hsize = primes[num_primes-1] ;
-  for (uint32_t i = 0; i < num_primes; ++i) {
+  for (size_t i = 0; i < num_primes; ++i) {
     if (size <= primes[i]) {
       hsize = primes[i];
       break;
@@ -97,5 +98,5 @@ uint32_t find_hash_size(uint32_t size)
   return hsize;
 }
 
-}} // namespace Kokkos::Impl
+}}} // namespace Kokkos::Impl::UnorderedMap
 

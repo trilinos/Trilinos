@@ -44,72 +44,113 @@
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include "Stokhos_KokkosCrsMatrixMPVectorUnitTest.hpp"
+#include "Kokkos_CrsMatrix_MP_Vector_Cuda.hpp"
 
-#include "Kokkos_hwloc.hpp"
-#include "Kokkos_Threads.hpp"
-
-// Instantiate test for Threads device
-using Kokkos::Threads;
-CRSMATRIX_MP_VECTOR_TESTS_SCALAR_ORDINAL_DEVICE( double, int, Threads )
+// Instantiate test for Cuda device
+using Kokkos::Cuda;
+CRSMATRIX_MP_VECTOR_TESTS_SCALAR_ORDINAL_DEVICE( double, int, Cuda )
 
 template <typename Ordinal, typename Scalar, typename MultiplyOp,
           Ordinal NumPerThread, Ordinal ThreadsPerVector>
-bool test_host_static_fixed_embedded_vector(Ordinal num_hyper_threads,
-                                            Ordinal num_cores,
+bool test_cuda_static_fixed_embedded_vector(Ordinal num_blocks,
+                                            Ordinal num_vec_threads,
+                                            Ordinal num_row_threads,
                                             Teuchos::FancyOStream& out) {
-  typedef Kokkos::Threads Device;
+  typedef Kokkos::Cuda Device;
 
   const Ordinal VectorSize = NumPerThread * ThreadsPerVector;
   typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,VectorSize,Device> Storage;
   typedef Sacado::MP::Vector<Storage> Vector;
 
   const Ordinal nGrid = 5;
+  Kokkos::DeviceConfig dev_config(num_blocks, num_vec_threads, num_row_threads);
 
-  bool success = true;
-  if (num_hyper_threads >= ThreadsPerVector) {
-    int row_threads = num_hyper_threads / ThreadsPerVector;
-    Kokkos::DeviceConfig dev_config(num_cores, ThreadsPerVector, row_threads);
+  bool success = test_embedded_vector<Vector>(
+    nGrid, VectorSize, dev_config, MultiplyOp(), out);
 
-    success = test_embedded_vector<Vector>(
-      nGrid, VectorSize, dev_config, MultiplyOp(), out);
-  }
   return success;
 }
 
-size_t num_cores, num_hyper_threads;
+// Test default configuration
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_CrsMatrix_MP, Multiply_Default, Ordinal, Scalar, MultiplyOp )
+{
+  const Ordinal NumPerThread = 1;
+  const Ordinal ThreadsPerVector = 16;
+
+  const Ordinal num_blocks = 0;
+  const Ordinal num_vec_threads = 0;
+  const Ordinal num_row_threads = 0;
+
+  success =
+    test_cuda_static_fixed_embedded_vector<Ordinal,Scalar,MultiplyOp,NumPerThread,ThreadsPerVector>(num_blocks, num_vec_threads, num_row_threads, out);
+}
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_CrsMatrix_MP, Multiply_1, Ordinal, Scalar, MultiplyOp )
 {
-  const Ordinal NumPerThread = 3;
-  const Ordinal ThreadsPerVector = 1;
+  const Ordinal NumPerThread = 1;
+  const Ordinal ThreadsPerVector = 16;
+
+  const Ordinal num_blocks = 10;
+  const Ordinal num_vec_threads = ThreadsPerVector;
+  const Ordinal num_row_threads = 4;
+
   success =
-    test_host_static_fixed_embedded_vector<Ordinal,Scalar,MultiplyOp,NumPerThread,ThreadsPerVector>(num_hyper_threads, num_cores, out);
+    test_cuda_static_fixed_embedded_vector<Ordinal,Scalar,MultiplyOp,NumPerThread,ThreadsPerVector>(num_blocks, num_vec_threads, num_row_threads, out);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_CrsMatrix_MP, Multiply_2, Ordinal, Scalar, MultiplyOp )
 {
-  const Ordinal NumPerThread = 3;
-  const Ordinal ThreadsPerVector = 2;
+  const Ordinal NumPerThread = 2;
+  const Ordinal ThreadsPerVector = 16;
+
+  const Ordinal num_blocks = 10;
+  const Ordinal num_vec_threads = ThreadsPerVector;
+  const Ordinal num_row_threads = 4;
+
   success =
-    test_host_static_fixed_embedded_vector<Ordinal,Scalar,MultiplyOp,NumPerThread,ThreadsPerVector>(num_hyper_threads, num_cores, out);
+    test_cuda_static_fixed_embedded_vector<Ordinal,Scalar,MultiplyOp,NumPerThread,ThreadsPerVector>(num_blocks, num_vec_threads, num_row_threads, out);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_CrsMatrix_MP, Multiply_3, Ordinal, Scalar, MultiplyOp )
+{
+  const Ordinal NumPerThread = 3;
+  const Ordinal ThreadsPerVector = 16;
+
+  const Ordinal num_blocks = 10;
+  const Ordinal num_vec_threads = ThreadsPerVector;
+  const Ordinal num_row_threads = 4;
+
+  success =
+    test_cuda_static_fixed_embedded_vector<Ordinal,Scalar,MultiplyOp,NumPerThread,ThreadsPerVector>(num_blocks, num_vec_threads, num_row_threads, out);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_CrsMatrix_MP, Multiply_4, Ordinal, Scalar, MultiplyOp )
 {
-  const Ordinal NumPerThread = 3;
-  const Ordinal ThreadsPerVector = 4;
+  const Ordinal NumPerThread = 4;
+  const Ordinal ThreadsPerVector = 16;
+
+  const Ordinal num_blocks = 10;
+  const Ordinal num_vec_threads = ThreadsPerVector;
+  const Ordinal num_row_threads = 4;
+
   success =
-    test_host_static_fixed_embedded_vector<Ordinal,Scalar,MultiplyOp,NumPerThread,ThreadsPerVector>(num_hyper_threads, num_cores, out);
+    test_cuda_static_fixed_embedded_vector<Ordinal,Scalar,MultiplyOp,NumPerThread,ThreadsPerVector>(num_blocks, num_vec_threads, num_row_threads, out);
 }
 
 #define CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_ORDINAL_SCALAR_OP( ORDINAL, SCALAR, OP ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                 \
+    Kokkos_CrsMatrix_MP, Multiply_Default,  ORDINAL, SCALAR, OP )       \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                 \
     Kokkos_CrsMatrix_MP, Multiply_1,  ORDINAL, SCALAR, OP )             \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                 \
     Kokkos_CrsMatrix_MP, Multiply_2,  ORDINAL, SCALAR, OP )             \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                 \
+    Kokkos_CrsMatrix_MP, Multiply_3,  ORDINAL, SCALAR, OP )             \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                 \
     Kokkos_CrsMatrix_MP, Multiply_4,  ORDINAL, SCALAR, OP )
 
@@ -120,20 +161,17 @@ CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_ORDINAL_SCALAR_OP(int, double, KokkosMultipl
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-  // Initialize threads
-  size_t num_cores =
-    Kokkos::hwloc::get_available_numa_count() *
-    Kokkos::hwloc::get_available_cores_per_numa();
-  size_t num_hyper_threads =
-    Kokkos::hwloc::get_available_threads_per_core();
-  Kokkos::Threads::initialize(num_cores * num_hyper_threads);
-  Kokkos::Threads::print_configuration(std::cout);
+  // Initialize Cuda
+  Kokkos::Cuda::host_mirror_device_type::initialize();
+  Kokkos::Cuda::initialize(Kokkos::Cuda::SelectDevice(0));
+  Kokkos::Cuda::print_configuration(std::cout);
 
   // Run tests
   int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
   // Finish up
-  Kokkos::Threads::finalize();
+  Kokkos::Cuda::host_mirror_device_type::finalize();
+  Kokkos::Cuda::finalize();
 
   return ret;
 }

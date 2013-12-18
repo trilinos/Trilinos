@@ -39,33 +39,30 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_SACADO_KOKKOS_HPP
-#define STOKHOS_SACADO_KOKKOS_HPP
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_UnitTestRepository.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
-#include "Stokhos_ConfigDefs.h"
+#include "Stokhos_KokkosViewMPVectorUnitTest.hpp"
 
-#ifdef HAVE_STOKHOS_KOKKOSCORE
+// Instantiate test for Cuda device
+using Kokkos::Cuda;
+VIEW_MP_VECTOR_TESTS_DEVICE( Cuda )
 
-#include "KokkosCore_config.h"
+int main( int argc, char* argv[] ) {
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-#include "Stokhos_Sacado_Kokkos_MathFunctions.hpp"
+  // Initialize Cuda
+  Kokkos::Cuda::host_mirror_device_type::initialize();
+  Kokkos::Cuda::initialize(Kokkos::Cuda::SelectDevice(0));
+  Kokkos::Cuda::print_configuration(std::cout);
 
-#include "Stokhos_StaticFixedStorage.hpp"
-#include "Stokhos_StaticStorage.hpp"
-#include "Stokhos_DynamicStorage.hpp"
-#include "Stokhos_DynamicStridedStorage.hpp"
-#include "Stokhos_DynamicThreadedStorage.hpp"
-#include "Stokhos_LocalStorage.hpp"
-#include "Stokhos_ViewStorage.hpp"
-#include "Stokhos_ViewStridedStorage.hpp"
+  // Run tests
+  int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
-#include "Sacado_MP_ExpressionTraits.hpp"
-#include "Sacado_MP_VectorTraits.hpp"
+  // Finish up
+  Kokkos::Cuda::host_mirror_device_type::finalize();
+  Kokkos::Cuda::finalize();
 
-#include "Sacado_MP_Vector.hpp"
-#include "Kokkos_View_MP_Vector.hpp"
-#include "Kokkos_Atomic_MP_Vector.hpp"
-
-#endif // HAVE_STOKHOS_KOKKOSCORE
-
-#endif // STOKHOS_SACADO_KOKKOS_HPP
+  return ret;
+}

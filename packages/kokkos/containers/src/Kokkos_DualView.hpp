@@ -441,5 +441,17 @@ subview( const DualView<T,L,D,M> & src ,
   sub_view.modified_host = src.modified_host;
   return sub_view;
 }
+
+template< class DT , class DL , class DD , class DM ,
+          class ST , class SL , class SD , class SM >
+void deep_copy( DualView<DT,DL,DD,DM> dst, const DualView<ST,SL,SD,SM> & src) {
+  if(src.modified_device() >= src.modified_host()) {
+    Kokkos::deep_copy(dst.d_view,src.d_view);
+    dst.template modify<typename DualView<DT,DL,DD,DM>::device_type >();
+  } else {
+    Kokkos::deep_copy(dst.h_view,src.h_view);
+    dst.template modify<typename DualView<DT,DL,DD,DM>::host_mirror_device_type >();
+  }
+}
 }
 #endif

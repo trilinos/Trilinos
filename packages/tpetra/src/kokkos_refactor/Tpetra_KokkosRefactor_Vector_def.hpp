@@ -276,6 +276,14 @@ namespace Tpetra {
     }
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
+    createCopy( Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > src) {
+    typedef Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > MV;
+    MV cpy(src.getMap());
+    Kokkos::deep_copy(cpy.getLocalView(),src.getLocalView());
+    return cpy;
+  }
 } // namespace Tpetra
 
 

@@ -125,7 +125,7 @@ public:
         Kokkos::deep_copy( row_count , 0u );
 
         node_node_set.clear();
-        node_node_set.reserve( set_capacity );
+        node_node_set.rehash( set_capacity );
 
         // May be larger that requested:
         set_capacity = node_node_set.capacity();
@@ -148,7 +148,7 @@ public:
 
       unsigned graph_entry_count = 0 ;
 
-      Kokkos::deep_copy( graph_entry_count , row_total ); 
+      Kokkos::deep_copy( graph_entry_count , row_total );
 
       // Assign graph's row_map and allocate graph's entries
       graph.row_map = row_map ;
@@ -215,10 +215,8 @@ public:
   KOKKOS_INLINE_FUNCTION
   void fill_graph_entries( const unsigned iset ) const
   {
-    typename SetType::pointer p = node_node_set.get_value(iset);
-
-    if ( p ) {
-      const key_type key = p->first ;
+    if ( node_node_set.valid_at(iset) ) {
+      const key_type key = node_node_set.key_at(iset) ;
       const unsigned row_node = key >> 32 ;
       const unsigned col_node = key & ~0u ;
 
@@ -285,7 +283,7 @@ public:
       sort_graph_entries( iwork );
     }
     else if ( phase == FILL_ELEMENT_GRAPH ) {
-      fill_elem_graph_map( iwork ); 
+      fill_elem_graph_map( iwork );
     }
   }
 
@@ -438,7 +436,7 @@ public:
 
       unsigned graph_entry_count = 0 ;
 
-      Kokkos::deep_copy( graph_entry_count , row_total ); 
+      Kokkos::deep_copy( graph_entry_count , row_total );
 
       // Assign graph's row_map and allocate graph's entries
       graph.row_map = row_map ;
@@ -504,7 +502,7 @@ public:
       const unsigned row_node = elem_node_id( ielem , row_local_node );
 
       if ( row_node < row_count.dimension_0() ) {
-    
+
         const unsigned offset = graph.row_map( row_node ) + atomic_fetch_add( & row_count( row_node ) , 1 );
 
         graph.entries( offset , 0 ) = ielem ;
@@ -539,7 +537,7 @@ public:
     const unsigned node_elem_begin = graph.row_map(irow);
     const unsigned node_elem_end   = graph.row_map(irow+1);
 
-    //  for each element that a node belongs to 
+    //  for each element that a node belongs to
 
     for ( unsigned i = node_elem_begin ; i < node_elem_end ; i++ ) {
 
@@ -548,7 +546,7 @@ public:
 
       residual(irow) += elem_residual(elem_id, row_index);
 
-      //  for each node in a particular related element  
+      //  for each node in a particular related element
       //  gather the contents of the element stiffness
       //  matrix that belong in irow
 
@@ -635,7 +633,7 @@ public:
   typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >  sparse_matrix_type ;
   typedef typename sparse_matrix_type::StaticCrsGraphType                                       sparse_graph_type ;
 
-  typedef DeviceType   device_type ; 
+  typedef DeviceType   device_type ;
   typedef ScalarType   scalar_type ;
 
   static const unsigned SpatialDim       = element_data_type::spatial_dimension ;
@@ -982,7 +980,7 @@ public:
   typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >  sparse_matrix_type ;
   typedef typename sparse_matrix_type::StaticCrsGraphType                                       sparse_graph_type ;
 
-  typedef DeviceType   device_type ; 
+  typedef DeviceType   device_type ;
   typedef ScalarType   scalar_type ;
 
   //------------------------------------

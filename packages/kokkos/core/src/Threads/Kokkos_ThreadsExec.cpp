@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -47,6 +47,8 @@
 #include <Kokkos_Threads.hpp>
 #include <Kokkos_hwloc.hpp>
 #include <Kokkos_Atomic.hpp>
+
+#include <stdint.h>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -210,7 +212,7 @@ ThreadsExec::ThreadsExec()
                          : size_t(Kokkos::hwloc::bind_this_thread( s_threads_count , s_threads_coord ));
 
     // Given a good entry set this thread in the 's_threads_exec' array
-    if ( entry < s_threads_count && 
+    if ( entry < s_threads_count &&
          nil == atomic_compare_exchange( s_threads_exec + entry , nil , this ) ) {
 
       m_pool_base     = s_threads_exec ;
@@ -720,7 +722,7 @@ void ThreadsExec::initialize( unsigned thread_count ,
       // If hwloc available then spawned thread will
       // choose its own entry in 's_threads_coord'
       // otherwise specify the entry.
-      s_current_function_arg = (void*)( hwloc_avail ? ~0u : ith );
+      s_current_function_arg = (void*)static_cast<uintptr_t>( hwloc_avail ? ~0u : ith );
 
       // Spawn thread executing the 'driver()' function.
       // Wait until spawned thread has attempted to initialize.

@@ -248,7 +248,9 @@ private:
   int sz;
 };
 
-#if ! defined( __CUDACC__ ) && defined( __SSE2__ )
+#if ! defined( __CUDACC__ )
+
+#ifdef __SSE2__
 template <>
 class TinyVec<double,2,true,false> {
 public:
@@ -1036,6 +1038,8 @@ private:
   __m512d v1, v2;
 };
 #endif
+
+#endif // #if ! defined( __CUDACC__ )
 
 } // namespace Stokhos
 

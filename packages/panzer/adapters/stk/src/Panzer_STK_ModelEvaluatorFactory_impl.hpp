@@ -931,6 +931,118 @@ namespace panzer_stk {
   }
 
   template<typename ScalarT>
+  Teuchos::RCP<Thyra::ModelEvaluator<double> > 
+  ModelEvaluatorFactory<ScalarT>::
+  cloneWithNewPhysicsBlocks(const Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<ScalarT> > & solverFactory,
+                            const Teuchos::RCP<Teuchos::ParameterList> & physics_block_plist,
+                            const Teuchos::RCP<const panzer::EquationSetFactory>& eqset_factory,
+                            const panzer::BCStrategyFactory & bc_factory,
+                            const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & user_cm_factory,
+                            bool is_transient,bool is_explicit) const
+  {
+    typedef panzer::ModelEvaluator<ScalarT> PanzerME;
+
+    const Teuchos::ParameterList& p = *this->getParameterList();
+
+    // build PhysicsBlocks
+    std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
+    {
+      const Teuchos::ParameterList & assembly_params = p.sublist("Assembly");
+ 
+      // setup physical mappings and boundary conditions
+      std::map<std::string,std::string> block_ids_to_physics_ids;
+      panzer::buildBlockIdToPhysicsIdMap(block_ids_to_physics_ids, p.sublist("Block ID to Physics ID Mapping"));
+
+      // build cell ( block id -> cell topology ) mapping
+      std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
+      for(std::map<std::string,std::string>::const_iterator itr=block_ids_to_physics_ids.begin();
+          itr!=block_ids_to_physics_ids.end();++itr) {
+         block_ids_to_cell_topo[itr->first] = m_mesh->getCellTopology(itr->first);
+         TEUCHOS_ASSERT(block_ids_to_cell_topo[itr->first]!=Teuchos::null);
+      }
+
+      std::size_t workset_size = Teuchos::as<std::size_t>(assembly_params.get<int>("Workset Size"));
+
+      panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
+                                 block_ids_to_cell_topo,
+			         physics_block_plist,
+			         assembly_params.get<int>("Default Integration Order"),
+			         workset_size,
+	  		         eqset_factory,
+			         m_global_data,
+			         is_transient,
+			         physicsBlocks);
+    }
+
+    // build FMB
+    Teuchos::RCP<panzer::FieldManagerBuilder> fmb;
+    {
+      const Teuchos::ParameterList & user_data_params = p.sublist("User Data");
+
+      bool write_dot_files = false;
+      std::string prefix = "Cloned_";
+
+      std::vector<panzer::BC> bcs;
+      panzer::buildBCs(bcs, p.sublist("Boundary Conditions"));
+      
+      fmb = buildFieldManagerBuilder(Teuchos::rcp_const_cast<panzer::WorksetContainer>(m_response_library->getWorksetContainer()),
+                                     physicsBlocks,
+                                     bcs,
+                                     *eqset_factory,
+                                     bc_factory,
+                                     user_cm_factory,
+                                     user_cm_factory,
+                                     p.sublist("Closure Models"),
+                                     *m_lin_obj_factory,
+                                     user_data_params,
+                                     write_dot_files,prefix);
+    }
+
+    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > response_library 
+        = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(m_response_library->getWorksetContainer(),
+                                                                   m_response_library->getGlobalIndexer(),
+                                                                   m_response_library->getLinearObjFactory()));
+
+    // using the FMB, build the model evaluator
+    {
+      // get nominal input values, make sure they match with internal me
+      Thyra::ModelEvaluatorBase::InArgs<ScalarT> nomVals = m_physics_me->getNominalValues();
+  
+      // determine if this is a Epetra or Thyra ME
+      Teuchos::RCP<Thyra::EpetraModelEvaluator> ep_thyra_me = Teuchos::rcp_dynamic_cast<Thyra::EpetraModelEvaluator>(m_physics_me);
+      Teuchos::RCP<PanzerME> panzer_me = Teuchos::rcp_dynamic_cast<PanzerME>(m_physics_me);
+      bool useThyra = true;
+      if(ep_thyra_me!=Teuchos::null)
+        useThyra = false;
+  
+      // get parameter names
+      std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names(m_physics_me->Np());
+      for(std::size_t i=0;i<p_names.size();i++) 
+        p_names[i] = Teuchos::rcp(new Teuchos::Array<std::string>(*m_physics_me->get_p_names(i)));
+  
+      Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyra_me
+          = buildPhysicsModelEvaluator(useThyra,
+                                       fmb,
+                                       response_library,
+                                       m_lin_obj_factory,
+                                       p_names,
+                                       solverFactory,
+                                       m_global_data,
+                                       is_transient,
+                                       nomVals.get_t());
+  
+      // set the nominal values...does this work???
+      thyra_me->getNominalValues() = nomVals;
+  
+      // build an explicit model evaluator
+      if(is_explicit)
+        thyra_me = Teuchos::rcp(new panzer::ExplicitModelEvaluator<ScalarT>(thyra_me,true,false)); 
+  
+      return thyra_me;
+    }
+  }
+
+  template<typename ScalarT>
   Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > 
   ModelEvaluatorFactory<ScalarT>::
   buildPhysicsModelEvaluator(bool buildThyraME,

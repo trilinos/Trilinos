@@ -42,19 +42,19 @@
 // Tests
 #include "TestSpMv.hpp"
 #include "Stokhos_Cuda_CrsMatrix.hpp"
-#include "Stokhos_CrsMatrix_MP_Vector_Cuda.hpp"
+#include "Kokkos_CrsMatrix_MP_Vector_Cuda.hpp"
 
 // Devices
 #include "KokkosCore_config.h"
 #include "Kokkos_Cuda.hpp"
 
 template <typename Storage>
-void mainCuda(int nGrid, int nIter, Stokhos::DeviceConfig dev_config) {
-  const int entry_min = 1;
-  const int entry_max = 6;
-  const int entry_step = 1;
+void mainCuda(int nGrid, int nIter, Kokkos::DeviceConfig dev_config) {
+  const int entry_min = 16;
+  const int entry_max = 64;
+  const int entry_step = 16;
   performance_test_driver<Storage,entry_min,entry_max,entry_step>(
     nGrid,nIter,dev_config);
 }
 
-template void mainCuda< Stokhos::StaticFixedStorage<int,double,1,Kokkos::Cuda> >(int nGrid, int nIter, Stokhos::DeviceConfig dev_config);
+template void mainCuda< Stokhos::StaticFixedStorage<int,double,1,Kokkos::Cuda> >(int nGrid, int nIter, Kokkos::DeviceConfig dev_config);

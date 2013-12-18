@@ -39,33 +39,36 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_SACADO_KOKKOS_HPP
-#define STOKHOS_SACADO_KOKKOS_HPP
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_UnitTestRepository.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
-#include "Stokhos_ConfigDefs.h"
+#include "Stokhos_KokkosViewMPVectorUnitTest.hpp"
 
-#ifdef HAVE_STOKHOS_KOKKOSCORE
+#include "Kokkos_hwloc.hpp"
+#include "Kokkos_Threads.hpp"
 
-#include "KokkosCore_config.h"
+// Instantiate test for Threads device
+using Kokkos::Threads;
+VIEW_MP_VECTOR_TESTS_DEVICE( Threads )
 
-#include "Stokhos_Sacado_Kokkos_MathFunctions.hpp"
+int main( int argc, char* argv[] ) {
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-#include "Stokhos_StaticFixedStorage.hpp"
-#include "Stokhos_StaticStorage.hpp"
-#include "Stokhos_DynamicStorage.hpp"
-#include "Stokhos_DynamicStridedStorage.hpp"
-#include "Stokhos_DynamicThreadedStorage.hpp"
-#include "Stokhos_LocalStorage.hpp"
-#include "Stokhos_ViewStorage.hpp"
-#include "Stokhos_ViewStridedStorage.hpp"
+  // Initialize threads
+  size_t num_cores =
+    Kokkos::hwloc::get_available_numa_count() *
+    Kokkos::hwloc::get_available_cores_per_numa();
+  size_t num_hyper_threads =
+    Kokkos::hwloc::get_available_threads_per_core();
+  Kokkos::Threads::initialize(num_cores * num_hyper_threads);
+  Kokkos::Threads::print_configuration(std::cout);
 
-#include "Sacado_MP_ExpressionTraits.hpp"
-#include "Sacado_MP_VectorTraits.hpp"
+  // Run tests
+  int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
-#include "Sacado_MP_Vector.hpp"
-#include "Kokkos_View_MP_Vector.hpp"
-#include "Kokkos_Atomic_MP_Vector.hpp"
+  // Finish up
+  Kokkos::Threads::finalize();
 
-#endif // HAVE_STOKHOS_KOKKOSCORE
-
-#endif // STOKHOS_SACADO_KOKKOS_HPP
+  return ret;
+}

@@ -832,7 +832,7 @@ namespace Tpetra {
     // any memory can be freed before we allocate the new one.
 
     std::cout << "ValuesPtr C: " << vals << " " << k_vals.ptr_on_device() << std::endl;
-    std::cout << "Values C: " << vals[0] << " " << k_vals[0] << std::endl;
+    //std::cout << "Values C: " << vals[0] << " " << k_vals[0] << std::endl;
     lclMatrix_ = null;
     lclMatrix_ = rcp (new local_matrix_type (staticGraph_->getLocalGraph (), lclparams));
     lclMatrix_->setValues (vals);

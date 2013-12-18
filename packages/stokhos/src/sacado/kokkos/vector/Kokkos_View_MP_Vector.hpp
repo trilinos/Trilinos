@@ -39,8 +39,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SACADO_VEIW_MP_VECTOR_HPP
-#define SACADO_VEIW_MP_VECTOR_HPP
+#ifndef KOKKOS_VIEW_MP_VECTOR_HPP
+#define KOKKOS_VIEW_MP_VECTOR_HPP
 
 #include "Sacado_MP_Vector.hpp"
 #include "Sacado_MP_VectorTraits.hpp"
@@ -177,9 +177,13 @@ private:
     ( Impl::is_same< typename traits::array_layout , LayoutRight >::value ? 1 : 0 ) ,
     typename traits::device_type >  stokhos_view_storage_type ;
 
+public:
+
+  // This needs to be public so that we know what the return type of () is
   typedef Sacado::MP::Vector< stokhos_view_storage_type >  sacado_mp_vector_view_type ;
 
-public:
+  // Whether the storage type is statically sized
+  static const bool is_static = stokhos_storage_type::is_static;
 
   typedef View< typename traits::const_data_type ,
                 typename traits::array_layout ,
@@ -241,13 +245,13 @@ public:
 
 private:
 
-  // Restrict allocation to a multiple of 'StokhosStorageStaticDimension'
+  // Restrict allocation to 'StokhosStorageStaticDimension'
   inline
   void verify_dimension_storage_static_size() const
   {
-    if ( StokhosStorageStaticDimension && 
-         ( dimension( unsigned(Rank) ) % ( StokhosStorageStaticDimension ? StokhosStorageStaticDimension : 1 ) ) ) {
-        Impl::throw_runtime_exception( std::string("Kokkos::View< Sacado::MP::Vector<StorageType , ... > allocation dimension must be multple of StorageType::static_size" ) );
+    if ( StokhosStorageStaticDimension &&
+         ( dimension( unsigned(Rank) ) != ( StokhosStorageStaticDimension ? StokhosStorageStaticDimension : 1 ) ) ) {
+        Impl::throw_runtime_exception( std::string("Kokkos::View< Sacado::MP::Vector<StorageType , ... > allocation dimension must equal StorageType::static_size" ) );
     }
   }
 
@@ -1315,10 +1319,47 @@ struct RebindStokhosStorageDevice< Sacado::MP::Vector< OldStorageType > , Device
 //----------------------------------------------------------------------------
 
 } // namespace Impl
+
+// Type name for a local, unmanaged view with possibly a different static size
+template <typename ViewType,
+          unsigned LocalSize,
+          unsigned Rank = ViewType::Rank,
+          bool isStatic = ViewType::is_static>
+struct LocalMPVectorView {};
+
+template <typename ViewType,
+          unsigned LocalSize>
+struct LocalMPVectorView< ViewType, LocalSize, 1, true > {
+  typedef typename ViewType::value_type vector_type;
+  typedef typename ViewType::array_layout array_layout;
+  typedef typename ViewType::device_type device_type;
+  typedef typename vector_type::storage_type storage_type;
+  typedef typename storage_type::template apply_N<LocalSize> StorageApply;
+  typedef typename StorageApply::type local_storage_type;
+  typedef Sacado::MP::Vector< local_storage_type > local_value_type;
+
+  typedef Kokkos::View< local_value_type*,
+                        array_layout,
+                        device_type,
+                        Kokkos::MemoryUnmanaged > type;
+};
+
+template <typename ViewType,
+          unsigned LocalSize>
+struct LocalMPVectorView<ViewType, LocalSize, 1, false> {
+  typedef typename ViewType::value_type vector_type;
+  typedef typename ViewType::array_layout array_layout;
+  typedef typename ViewType::device_type device_type;
+
+  typedef Kokkos::View< vector_type*,
+                        array_layout,
+                        device_type,
+                        Kokkos::MemoryUnmanaged > type;
+};
+
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#endif /* #ifndef SACADO_VIEW_MP_VECTOR_HPP */
-
+#endif /* #ifndef KOKKOS_VIEW_MP_VECTOR_HPP */

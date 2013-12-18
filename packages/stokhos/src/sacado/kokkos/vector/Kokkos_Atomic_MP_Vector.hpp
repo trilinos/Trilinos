@@ -39,33 +39,51 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_SACADO_KOKKOS_HPP
-#define STOKHOS_SACADO_KOKKOS_HPP
-
-#include "Stokhos_ConfigDefs.h"
-
-#ifdef HAVE_STOKHOS_KOKKOSCORE
-
-#include "KokkosCore_config.h"
-
-#include "Stokhos_Sacado_Kokkos_MathFunctions.hpp"
-
-#include "Stokhos_StaticFixedStorage.hpp"
-#include "Stokhos_StaticStorage.hpp"
-#include "Stokhos_DynamicStorage.hpp"
-#include "Stokhos_DynamicStridedStorage.hpp"
-#include "Stokhos_DynamicThreadedStorage.hpp"
-#include "Stokhos_LocalStorage.hpp"
-#include "Stokhos_ViewStorage.hpp"
-#include "Stokhos_ViewStridedStorage.hpp"
-
-#include "Sacado_MP_ExpressionTraits.hpp"
-#include "Sacado_MP_VectorTraits.hpp"
+#ifndef KOKKOS_ATOMIC_MP_VECTOR_HPP
+#define KOKKOS_ATOMIC_MP_VECTOR_HPP
 
 #include "Sacado_MP_Vector.hpp"
-#include "Kokkos_View_MP_Vector.hpp"
-#include "Kokkos_Atomic_MP_Vector.hpp"
+#include "Kokkos_Atomic.hpp"
 
-#endif // HAVE_STOKHOS_KOKKOSCORE
+//----------------------------------------------------------------------------
+// Overloads of Kokkos atomic functions for Sacado::MP::Vector scalar type
+//----------------------------------------------------------------------------
 
-#endif // STOKHOS_SACADO_KOKKOS_HPP
+namespace Kokkos {
+
+template <typename Storage1, typename Storage2>
+KOKKOS_INLINE_FUNCTION
+void
+atomic_assign(Sacado::MP::Vector<Storage1>* const dest,
+              const Sacado::MP::Vector<Storage2>& src) {
+  typedef typename Storage1::ordinal_type ordinal_type;
+  typedef typename Storage1::pointer pointer1;
+  typedef typename Storage2::const_pointer pointer2;
+  pointer1 dest_c = dest->coeff();
+  pointer2 src_c = src.coeff();
+  const ordinal_type sz = dest->size();
+  for (ordinal_type i=0; i<sz; ++i)
+    atomic_exchange(dest_c+i, src_c[i]);
+}
+
+template <typename Storage1, typename Storage2>
+KOKKOS_INLINE_FUNCTION
+void
+atomic_add(Sacado::MP::Vector<Storage1>* const dest,
+           const Sacado::MP::Vector<Storage2>& src) {
+  typedef typename Storage1::ordinal_type ordinal_type;
+  typedef typename Storage1::pointer pointer1;
+  typedef typename Storage2::const_pointer pointer2;
+  pointer1 dest_c = dest->coeff();
+  pointer2 src_c = src.coeff();
+  const ordinal_type sz = dest->size();
+  for (ordinal_type i=0; i<sz; ++i)
+    atomic_add(dest_c+i, src_c[i]);
+}
+
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#endif /* #ifndef KOKKOS_ATOMIC_MP_VECTOR_HPP */
