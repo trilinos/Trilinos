@@ -93,6 +93,8 @@ namespace MueLu {
     void BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
     //@}
 
+    std::string description() const { return "Phase 1"; }
+
   private:
 
     /*! @brief Utility to take a list of integers and reorder them randomly (by using a local permutation).

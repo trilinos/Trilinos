@@ -94,6 +94,8 @@ namespace MueLu {
     void BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
     //@}
 
+    std::string description() const { return "Phase 2"; }
+
   }; //class MaxLinkAggregationAlgorithm
 
 } //namespace MueLu
