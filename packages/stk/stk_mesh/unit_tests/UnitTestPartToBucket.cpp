@@ -11,11 +11,22 @@
 namespace
 {
 
-TEST(PartToBucket, simple)
+int numProcessors(MPI_Comm comm)
+{
+  int numProcs = 1;
+  MPI_Comm_size(comm, &numProcs);
+  return numProcs;
+}
+
+TEST(PartToBucket, hex)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
+    if (numProcessors(communicator) != 1)
+    {
+        return;
+    }
     stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-    const std::string generatedMeshSpecification = "generated:2x2x2";
+    const std::string generatedMeshSpecification = "generated:1x1x1";
     stkMeshIoBroker.open_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
 
@@ -57,11 +68,15 @@ TEST(PartToBucket, simple)
     EXPECT_EQ(expectedFaceBuckets, faceBuckets.size());
 }
 
-TEST(PartToBucket, simpleWithSingleSideset)
+TEST(PartToBucket, hexWithSingleSideset)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
+    if (numProcessors(communicator) != 1)
+    {
+        return;
+    }
     stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-    const std::string generatedMeshSpecification = "generated:2x2x2|sideset:X";
+    const std::string generatedMeshSpecification = "generated:1x1x1|sideset:X";
     stkMeshIoBroker.open_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
 
@@ -70,15 +85,15 @@ TEST(PartToBucket, simpleWithSingleSideset)
     stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
     stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
 
-    stk::mesh::Part &boundaryConditionPart = *stkMeshMetaData.get_part("surface_1");
-    stk::mesh::Selector boundaryNodesSelector(boundaryConditionPart);
+    stk::mesh::Part &surface1Part = *stkMeshMetaData.get_part("surface_1");
+    stk::mesh::Selector surface1NodesSelector(surface1Part);
 
-    const stk::mesh::BucketVector &boundaryNodeBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, boundaryNodesSelector);
-    size_t expectedBoundaryNodeBuckets = 1;
-    EXPECT_EQ(expectedBoundaryNodeBuckets, boundaryNodeBuckets.size());
+    const stk::mesh::BucketVector &surface1NodeBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, surface1NodesSelector);
+    size_t expectedSurface1NodeBuckets = 1;
+    EXPECT_EQ(expectedSurface1NodeBuckets, surface1NodeBuckets.size());
 
-    size_t numNodesInBoundary = 9;
-    EXPECT_EQ(numNodesInBoundary, boundaryNodeBuckets[0]->size());
+    size_t numNodesInBoundary = 4;
+    EXPECT_EQ(numNodesInBoundary, surface1NodeBuckets[0]->size());
 
     const stk::mesh::BucketVector &nodeBuckets = stkMeshBulkData.buckets(stk::topology::NODE_RANK);
     size_t expectedNodeBuckets = 2;
@@ -96,15 +111,19 @@ TEST(PartToBucket, simpleWithSingleSideset)
     size_t expectedFaceBuckets = 1;
     EXPECT_EQ(expectedFaceBuckets, faceBuckets.size());
 
-    size_t numFacesInBucket = 4;
+    size_t numFacesInBucket = 1;
     EXPECT_EQ(numFacesInBucket, faceBuckets[0]->size());
 }
 
-TEST(PartToBucket, simpleWithTwoSidesets)
+TEST(PartToBucket, hexWithTwoSidesets)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
+    if (numProcessors(communicator) != 1)
+    {
+        return;
+    }
     stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-    const std::string generatedMeshSpecification = "generated:2x2x2|sideset:XY";
+    const std::string generatedMeshSpecification = "generated:1x1x1|sideset:XY";
     stkMeshIoBroker.open_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
 
@@ -113,12 +132,12 @@ TEST(PartToBucket, simpleWithTwoSidesets)
     stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
     stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
 
-    stk::mesh::Part &boundaryConditionPart = *stkMeshMetaData.get_part("surface_1");
-    stk::mesh::Selector boundaryNodesSelector(boundaryConditionPart);
+    stk::mesh::Part &surface1Part = *stkMeshMetaData.get_part("surface_1");
+    stk::mesh::Selector surface1NodesSelector(surface1Part);
 
-    const stk::mesh::BucketVector &boundaryNodeBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, boundaryNodesSelector);
-    size_t expectedBoundaryNodeBuckets = 2;
-    EXPECT_EQ(expectedBoundaryNodeBuckets, boundaryNodeBuckets.size());
+    const stk::mesh::BucketVector &surface1NodeBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, surface1NodesSelector);
+    size_t expectedSurface1NodeBuckets = 2;
+    EXPECT_EQ(expectedSurface1NodeBuckets, surface1NodeBuckets.size());
 
     const stk::mesh::BucketVector &nodeBuckets = stkMeshBulkData.buckets(stk::topology::NODE_RANK);
     size_t expectedNodeBuckets = 4;
@@ -136,52 +155,8 @@ TEST(PartToBucket, simpleWithTwoSidesets)
     size_t expectedFaceBuckets = 2;
     EXPECT_EQ(expectedFaceBuckets, faceBuckets.size());
 
-    size_t numFacesInBucket = 4;
+    size_t numFacesInBucket = 1;
     EXPECT_EQ(numFacesInBucket, faceBuckets[0]->size());
-}
-
-TEST(PartToBucket, simpleWithSixSidesets)
-{
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-    const std::string generatedMeshSpecification = "generated:2x2x2|sideset:xXyYzZ";
-    stkMeshIoBroker.open_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
-    stkMeshIoBroker.create_input_mesh();
-
-    stkMeshIoBroker.populate_bulk_data();
-
-    stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
-    stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
-
-    stk::mesh::Part &surface1Part = *stkMeshMetaData.get_part("surface_1");
-    stk::mesh::Selector surface1Selector(surface1Part);
-
-    const stk::mesh::BucketVector &boundaryNodeBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, surface1Selector);
-    size_t expectedBoundaryNodeBuckets = 9;
-    EXPECT_EQ(expectedBoundaryNodeBuckets, boundaryNodeBuckets.size());
-
-    stk::mesh::Part &surface3Part = *stkMeshMetaData.get_part("surface_3");
-    stk::mesh::Selector selectTwoAdjacentSurfaces = surface1Part | surface3Part;
-
-    const stk::mesh::BucketVector &twoAdjacentSurfacesNodeBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, selectTwoAdjacentSurfaces);
-    size_t expectedBucketsForTwoAdjacentSurfaces = 15;
-    EXPECT_EQ(expectedBucketsForTwoAdjacentSurfaces, twoAdjacentSurfacesNodeBuckets.size());
-
-    const stk::mesh::BucketVector &nodeBuckets = stkMeshBulkData.buckets(stk::topology::NODE_RANK);
-    size_t expectedNodeBuckets = 27;
-    EXPECT_EQ(expectedNodeBuckets, nodeBuckets.size());
-
-    const stk::mesh::BucketVector &elemBuckets = stkMeshBulkData.buckets(stk::topology::ELEMENT_RANK);
-    size_t expectedElemBuckets = 1;
-    EXPECT_EQ(expectedElemBuckets, elemBuckets.size());
-
-    const stk::mesh::BucketVector &edgeBuckets = stkMeshBulkData.buckets(stk::topology::EDGE_RANK);
-    size_t expectedEdgeBuckets = 0;
-    EXPECT_EQ(expectedEdgeBuckets, edgeBuckets.size());
-
-    const stk::mesh::BucketVector &faceBuckets = stkMeshBulkData.buckets(stk::topology::FACE_RANK);
-    size_t expectedFaceBuckets = 6;
-    EXPECT_EQ(expectedFaceBuckets, faceBuckets.size());
 }
 
 }
