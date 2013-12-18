@@ -151,7 +151,7 @@ namespace MueLu {
         for (int j = 0; j < neighOfINode.size(); j++) {
           LO neigh = neighOfINode[j];
 
-          if (graph.isLocalNeighborVertex(neigh)) {
+          if (neigh != iNode1 && graph.isLocalNeighborVertex(neigh)) {
 
             if (aggStat[neigh] == NodeStats::READY || aggStat[neigh] == NodeStats::NOTSEL) {
               // Add neighbor node to tentative aggregate
@@ -186,11 +186,11 @@ namespace MueLu {
               }
             }
           }
+
           numNonAggregatedNodes -= aggSize;
 
         } else {
           // Aggregate is not accepted
-          aggSize = 0;
           aggStat[iNode1] = NodeStats::NOTSEL;
 
           if (ordering == GRAPH) {
