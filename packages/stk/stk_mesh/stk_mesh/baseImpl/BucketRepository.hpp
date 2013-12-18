@@ -24,8 +24,6 @@ struct SyncToPartitions;
 
 namespace impl {
 
-class EntityRepository;
-
 class BucketRepository
 {
 
@@ -36,7 +34,6 @@ public:
   BucketRepository(
       BulkData & mesh,
       unsigned entity_rank_count,
-      EntityRepository & entity_repo,
       const ConnectivityMap & connectivity_map
       );
 
@@ -125,8 +122,6 @@ private:
   // Vector of bucket pointers by rank.  This is now a cache and no longer the primary
   // location of Buckets when USE_STK_MESH_IMPL_PARTITION is #defined.
   std::vector< std::vector<Bucket*> >   m_buckets ;
-
-  EntityRepository & m_entity_repo ;
 
   std::vector<std::vector<Partition *> > m_partitions;
   std::vector<bool> m_need_sync_from_partitions;

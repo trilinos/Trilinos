@@ -12,7 +12,6 @@
 
 #include <stk_mesh/baseImpl/BucketRepository.hpp>
 #include <stk_mesh/baseImpl/Partition.hpp>
-#include <stk_mesh/baseImpl/EntityRepository.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Trace.hpp>
@@ -23,11 +22,9 @@ namespace impl {
 
 BucketRepository::BucketRepository(BulkData & mesh,
                                    unsigned entity_rank_count,
-                                   EntityRepository & entity_repo,
                                    const ConnectivityMap& connectivity_map)
   : m_mesh(mesh),
     m_buckets(entity_rank_count),
-    m_entity_repo(entity_repo),
     m_partitions(entity_rank_count),
     m_need_sync_from_partitions(entity_rank_count, false),
     m_connectivity_map(connectivity_map)

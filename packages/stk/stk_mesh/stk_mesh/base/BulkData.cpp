@@ -135,7 +135,6 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_bucket_repository(
         *this,
         mesh_meta_data.entity_rank_count(),
-        m_entity_repo,
         arg_connectivity_map != NULL ? *arg_connectivity_map :
            (mesh_meta_data.spatial_dimension() == 2 ? ConnectivityMap::default_map_2d() : ConnectivityMap::default_map())
 /*           (mesh_meta_data.spatial_dimension() == 2 ? ConnectivityMap::fixed_edges_map_2d() : ConnectivityMap::fixed_edges_map()) */
