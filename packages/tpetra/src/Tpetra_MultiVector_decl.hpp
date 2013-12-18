@@ -1260,6 +1260,9 @@ namespace Tpetra {
         clonedMV_view = Teuchos::null;
         return clonedMV;
   }
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >
+    createCopy( const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& src);
 
 } // namespace Tpetra
 

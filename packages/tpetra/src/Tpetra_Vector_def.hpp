@@ -271,6 +271,11 @@ namespace Tpetra {
     }
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node >
+    createCopy( const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& src) {
+    return src;
+  }
 } // namespace Tpetra
 
 //
@@ -287,6 +292,7 @@ namespace Tpetra {
 #define TPETRA_VECTOR_INSTANT(SCALAR,LO,GO,NODE) \
   \
   template class Vector< SCALAR , LO , GO , NODE >; \
+  template Vector< SCALAR , LO , GO , NODE > createCopy( const Vector< SCALAR , LO , GO , NODE >& src); \
 
 
 #endif // TPETRA_VECTOR_DEF_HPP

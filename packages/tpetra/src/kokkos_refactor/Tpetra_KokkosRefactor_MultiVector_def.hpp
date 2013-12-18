@@ -1841,8 +1841,31 @@ namespace Tpetra {
   operator= (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &source)
   {
     const char tfecfFuncName[] = "operator=";
+    DO::operator=(source);
+    RCP<Node> node = MVT::getNode(source.lclMV_);
+    const LocalOrdinal myLen = source.getLocalLength();
+    const size_t numVecs = source.getNumVectors();
+
+    // On host-type Kokkos Nodes, allocBuffer() just calls the
+    // one-argument version of arcp to allocate memory.  This should
+    // not fill the memory by default, otherwise we would lose the
+    // first-touch allocation optimization.
+/*    ArrayRCP<Scalar> data = (myLen > 0) ?
+      node->template allocBuffer<Scalar> (myLen * numVecs) :
+      Teuchos::null;*/
+
+    view_ = source.view_; // OK View Semantics from Kokkos
+    whichVectors_ = source.whichVectors_; // Probably not ok (probably constitutes deep copy)
+
+    ArrayRCP<Scalar> data = (myLen > 0) ?
+      Kokkos::Compat::persistingView(view_.d_view) :
+      Teuchos::null;
+    const size_t stride = (myLen > 0) ? myLen : size_t (0);
+    // This just sets the dimensions, pointer, and stride of lclMV_.
+    MVT::initializeValues (lclMV_, myLen, numVecs, data, stride);
+
     // Check for special case of this=Source, in which case we do nothing.
-    if (this != &source) {
+    /*if (this != &source) {
       // Whether the input and *this are compatible on the calling process.
       const int locallyCompat =
         (this->getLocalLength () == source.getLocalLength ()) ? 1 : 0;
@@ -1887,7 +1910,7 @@ namespace Tpetra {
                                               getSubArrayRCP (MVT::getValuesNonConst(lclMV_), j));
         }
       }
-    }
+    }*/
     return *this;
   }
 
@@ -2977,7 +3000,7 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
-    createCopy( MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > src) {
+    createCopy( const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& src) {
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > MV;
     MV cpy(src.getMap(),src.getNumVectors());
     Kokkos::deep_copy(cpy.getLocalView(),src.getLocalView());
