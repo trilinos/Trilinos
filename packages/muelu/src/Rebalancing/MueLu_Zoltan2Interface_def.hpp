@@ -57,7 +57,7 @@
 #include "MueLu_Zoltan2Interface_decl.hpp"
 #if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)
 
-#include <Zoltan2_BasicCoordinateInput.hpp>
+#include <Zoltan2_BasicCoordinateAdapter.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 
 #include <Teuchos_Utils.hpp>
