@@ -56,7 +56,7 @@
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Exceptions.hpp"
 
-#include "XpetraExt_MatrixMatrix.hpp"
+//#include "XpetraExt_MatrixMatrix.hpp"
 
 #include "Xpetra_Matrix.hpp"
 
@@ -159,7 +159,6 @@ Epetra_CrsMatrix & Op2NonConstEpetraCrs(const Xpetra::Matrix<Scalar, LocalOrdina
     throw(Xpetra::Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed"));
   }
 } //Op2NonConstEpetraCrs
-
 #endif // HAVE_XPETRA_EPETRA
 
 #ifdef HAVE_XPETRA_TPETRA
@@ -479,7 +478,95 @@ void Jacobi(
     std::string msg = "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of B";
     throw(Xpetra::Exceptions::RuntimeError(msg));
   }
+  
+  if (!A.isFillComplete())
+    throw(Xpetra::Exceptions::RuntimeError("A is not fill-completed"));
+  if (!B.isFillComplete())
+    throw(Xpetra::Exceptions::RuntimeError("B is not fill-completed"));
 
+  bool haveMultiplyDoFillComplete = call_FillComplete_on_result && doOptimizeStorage;
+
+  if (C.getRowMap()->lib() == Xpetra::UseEpetra) {
+#ifndef HAVE_XPETRA_EPETRAEXT
+    throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixMatrix::Jacobi requires EpetraExt to be compiled."));
+#else
+    throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixMatrix::Jacobi requires you to use an Epetra-compatible data type."));
+#endif
+    } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
+#ifdef HAVE_XPETRA_TPETRA
+      // Placeholder until we get a for a Tpetra Jacobi implementation
+
+      const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & tpA = Xpetra::MatrixMatrix::Op2TpetraCrs(A);
+      const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & tpB = Xpetra::MatrixMatrix::Op2TpetraCrs(B);
+      Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>       & tpC = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(C);
+      const RCP<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>  >          & tpD = toTpetra(Dinv);
+
+      // Multiply setup For now, follow what ML and Epetra do.
+      double nnzPerRow = Teuchos::as<double>(0);
+      GlobalOrdinal numRowsA = A.getGlobalNumRows();
+      GlobalOrdinal numRowsB = B.getGlobalNumRows();
+      nnzPerRow = sqrt(Teuchos::as<double>(A.getGlobalNumEntries())/numRowsA) +
+	sqrt(Teuchos::as<double>(B.getGlobalNumEntries())/numRowsB) - 1;
+      nnzPerRow *=  nnzPerRow;
+      double totalNnz = nnzPerRow * A.getGlobalNumRows() * 0.75 + 100;
+      double minNnz = Teuchos::as<double>(1.2 * A.getGlobalNumEntries());
+      if (totalNnz < minNnz)
+	totalNnz = minNnz;
+      nnzPerRow = totalNnz / A.getGlobalNumRows();
+      Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> AB(tpA.getDomainMap(), Teuchos::as<LocalOrdinal>(nnzPerRow));
+
+      // Multiply
+      Tpetra::MatrixMatrix::Multiply(tpA, false, tpB, false, AB, true);
+
+      // Left Scale
+      AB.leftScale(*tpD);
+
+      // Add
+      Tpetra::MatrixMatrix::Add(tpB,false,Teuchos::ScalarTraits<Scalar>::one(),AB,false,-omega,Teuchos::rcp(&tpC,false));
+      tpC.fillComplete( tpB.getDomainMap(), tpB.getRangeMap() );
+#else
+      throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
+#endif
+    }
+  
+  if(call_FillComplete_on_result && !haveMultiplyDoFillComplete) {
+      RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
+      params->set("Optimize Storage",doOptimizeStorage);
+      C.fillComplete(B.getDomainMap(),B.getRangeMap(),params);
+    }
+
+    // transfer striding information
+    RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > rcpA = Teuchos::rcp_const_cast<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >(Teuchos::rcpFromRef(A));
+    RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > rcpB = Teuchos::rcp_const_cast<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >(Teuchos::rcpFromRef(B));
+    C.CreateView("stridedMaps", rcpA, false, rcpB, false); // TODO use references instead of RCPs
+} // end Jacobi
+
+
+template <>
+inline void Jacobi<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType,KokkosClassic::DefaultKernels<double,int,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps>(
+  double omega,
+  const Xpetra::Vector<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType> & Dinv,
+  const Xpetra::Matrix<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType> & A,
+  const Xpetra::Matrix<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType> & B,
+  Xpetra::Matrix<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType,KokkosClassic::DefaultKernels<double,int,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps> &C,
+  bool call_FillComplete_on_result,
+  bool doOptimizeStorage) {
+
+  typedef double Scalar;
+  typedef int LocalOrdinal;
+  typedef int GlobalOrdinal;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+  typedef KokkosClassic::DefaultKernels<double,int,KokkosClassic::DefaultNode::DefaultNodeType>::SparseOps LocalMatOps;
+
+  if(C.getRowMap()->isSameAs(*A.getRowMap()) == false) {
+    std::string msg = "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of A";
+    throw(Xpetra::Exceptions::RuntimeError(msg));
+  }
+  else if(C.getRowMap()->isSameAs(*B.getRowMap()) == false) {
+    std::string msg = "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of B";
+    throw(Xpetra::Exceptions::RuntimeError(msg));
+  }
+  
   if (!A.isFillComplete())
     throw(Xpetra::Exceptions::RuntimeError("A is not fill-completed"));
   if (!B.isFillComplete())
@@ -489,18 +576,20 @@ void Jacobi(
 
   if (C.getRowMap()->lib() == Xpetra::UseEpetra) {
 #       ifndef HAVE_XPETRA_EPETRAEXT
-    throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixMatrix::Multiply requires EpetraExt to be compiled."));
+    throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixMatrix::Jacobi requires EpetraExt to be compiled."));
 #else
     Epetra_CrsMatrix & epA = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(A);
     Epetra_CrsMatrix & epB = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(B);
     Epetra_CrsMatrix & epC = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(C);
-    const Epetra_Vector & epD = toEpetra(Dinv);
+    //    const Epetra_Vector & epD = toEpetra(Dinv);  
+    XPETRA_DYNAMIC_CAST(const EpetraVector, Dinv, epD, "Xpetra::MatrixMatrix::Jacobi() only accepts Xpetra::EpetraVector as input argument.");
 
-    int i = EpetraExt::MatrixMatrix::Jacobi(omega,epD,epA,epB,epC,haveMultiplyDoFillComplete);
+
+    int i = EpetraExt::MatrixMatrix::Jacobi(omega,*epD.getEpetra_Vector(),epA,epB,epC,haveMultiplyDoFillComplete);
     if (i != 0) {
       std::ostringstream buf;
       buf << i;
-      std::string msg = "EpetraExt::MatrixMatrix::Multiply return value of " + buf.str();
+      std::string msg = "EpetraExt::MatrixMatrix::Jacobi return value of " + buf.str();
       throw(Exceptions::RuntimeError(msg));
     }
 #endif
@@ -552,6 +641,10 @@ void Jacobi(
     RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > rcpB = Teuchos::rcp_const_cast<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >(Teuchos::rcpFromRef(B));
     C.CreateView("stridedMaps", rcpA, false, rcpB, false); // TODO use references instead of RCPs
 } // end Jacobi
+
+
+
+
 
 
 
