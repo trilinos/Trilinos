@@ -104,44 +104,52 @@ namespace {
 }
 
 template<class ScalarType, class MV, class MAT>
+void Chebyshev<ScalarType, MV, MAT>::checkInputMatrix () const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ! A_.is_null () && A_->getGlobalNumRows () != A_->getGlobalNumCols (),
+    std::invalid_argument,
+    "Ifpack2::Chebyshev: The input matrix A must be square.  "
+    "A has " << A_->getGlobalNumRows () << " rows and "
+    << A_->getGlobalNumCols () << " columns.");
+
+  // In a debug build, test that the domain and range Maps of the
+  // matrix are the same.
+#ifdef HAVE_TEUCHOS_DEBUG
+  if (! A_.is_null ()) {
+    Teuchos::RCP<const map_type> domainMap = A_->getDomainMap ();
+    Teuchos::RCP<const map_type> rangeMap = A_->getRangeMap ();
+
+    // isSameAs is a collective, but if the two pointers are the same,
+    // isSameAs will assume that they are the same on all processes, and
+    // return true without an all-reduce.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! domainMap->isSameAs (*rangeMap), std::invalid_argument,
+      "Ifpack2::Chebyshev: The domain Map and range Map of the matrix must be "
+      "the same (in the sense of isSameAs())." << std::endl << "We only check "
+      "for this if Trilinos was built with the CMake configuration option "
+      "Teuchos_ENABLE_DEBUG set to ON.");
+  }
+#endif // HAVE_TEUCHOS_DEBUG
+}
+
+
+template<class ScalarType, class MV, class MAT>
 void
 Chebyshev<ScalarType, MV, MAT>::
 checkConstructorInput () const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(STS::isComplex, std::logic_error,
-    "Ifpack2::Details::Chebyshev: This class' implementation of Chebyshev "
-    "iteration only works for real-valued, symmetric positive definite "
-    "matrices.  However, you instantiated this class for ScalarType="
+    "Ifpack2::Chebyshev: This class' implementation of Chebyshev iteration "
+    "only works for real-valued, symmetric positive definite matrices.  "
+    "However, you instantiated this class for ScalarType = "
     << Teuchos::TypeNameTraits<ScalarType>::name () << ", which is a complex-"
     "valued type.  While this may be algorithmically correct if all of the "
     "complex numbers in the matrix have zero imaginary part, we forbid using "
     "complex ScalarType altogether in order to remind you of the limitations "
     "of our implementation (and of the algorithm itself).");
-  TEUCHOS_TEST_FOR_EXCEPTION(A_.is_null (), std::invalid_argument,
-    "Ifpack2::Chebyshev: Input matrix to constructor is null.");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    A_->getGlobalNumRows() != A_->getGlobalNumCols(),
-    std::invalid_argument,
-    "Ifpack2::Chebyshev: The input matrix A must be square.  "
-    "A has " << A_->getGlobalNumRows() << " rows and "
-    << A_->getGlobalNumCols() << " columns.");
 
-  // In a debug build, test that the domain and range Maps of the
-  // matrix are the same.
-#ifdef HAVE_TEUCHOS_DEBUG
-  Teuchos::RCP<const map_type> domainMap = A_->getDomainMap ();
-  Teuchos::RCP<const map_type> rangeMap = A_->getRangeMap ();
-
-  // isSameAs is a collective, but if the two pointers are the same,
-  // isSameAs will assume that they are the same on all processes, and
-  // return true without an all-reduce.
-  TEUCHOS_TEST_FOR_EXCEPTION(
-     ! domainMap->isSameAs (*rangeMap), std::invalid_argument,
-     "Ifpack2::Chebyshev: The domain Map and range Map of the matrix must be "
-     "the same (in the sense of isSameAs())." << std::endl << "We only check "
-     "for this if Trilinos was built with the CMake configuration option "
-     "Teuchos_ENABLE_DEBUG set to ON.");
-#endif // HAVE_TEUCHOS_DEBUG
+  checkInputMatrix ();
 }
 
 template<class ScalarType, class MV, class MAT>
@@ -196,7 +204,8 @@ Chebyshev (Teuchos::RCP<const MAT> A, Teuchos::ParameterList& params) :
 template<class ScalarType, class MV, class MAT>
 void
 Chebyshev<ScalarType, MV, MAT>::
-setParameters (Teuchos::ParameterList& plist) {
+setParameters (Teuchos::ParameterList& plist)
+{
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_const_cast;
@@ -258,51 +267,62 @@ setParameters (Teuchos::ParameterList& plist) {
   // it's const or nonconst.
   if (plist.isParameter ("chebyshev: operator inv diagonal")) {
     try { // Could the type be const V*?
-      const V* rawUserInvDiag = plist.get<const V*> ("chebyshev: operator inv diagonal");
-      // It's OK to have a nonowning reference; we'll copy the vector anyway.
-      userInvDiag = rcp (rawUserInvDiag, false);
+      const V* rawUserInvDiag =
+        plist.get<const V*> ("chebyshev: operator inv diagonal");
+      // If it's a raw pointer, then we have to copy it, since we
+      // can't otherwise ensure that the user won't deallocate the
+      // Vector before we use it.
+      userInvDiag = rcp (new V (*rawUserInvDiag));
     } catch (Teuchos::Exceptions::InvalidParameterType&) {
     }
     if (userInvDiag.is_null ()) {
       try { // Could the type be V*?
         V* rawUserInvDiag = plist.get<V*> ("chebyshev: operator inv diagonal");
-        // It's OK to have a nonowning reference; we'll copy the vector anyway.
-        userInvDiag = rcp (const_cast<const V*> (rawUserInvDiag), false);
+        // If it's a raw pointer, then we have to copy it, since we
+        // can't otherwise ensure that the user won't deallocate the
+        // Vector before we use it.
+        userInvDiag = rcp (new V (*rawUserInvDiag));
       } catch (Teuchos::Exceptions::InvalidParameterType&) {
       }
     }
     if (userInvDiag.is_null ()) {
       try { // Could the type be RCP<const V>?
-        userInvDiag = plist.get<RCP<const V> > ("chebyshev: operator inv diagonal");
+        // If the type is RCP<const V>, then the user has promised
+        // that they won't change the Vector.  Thus, it's safe just to
+        // keep the RCP; we don't have to make a copy.
+        userInvDiag =
+          plist.get<RCP<const V> > ("chebyshev: operator inv diagonal");
       } catch (Teuchos::Exceptions::InvalidParameterType&) {
       }
     }
     if (userInvDiag.is_null ()) {
       try { // Could the type be RCP<V>?
-        RCP<V> userInvDiagNonconst = plist.get<RCP<V> > ("chebyshev: operator inv diagonal");
-        userInvDiag = rcp_const_cast<const V> (userInvDiagNonconst);
+        RCP<V> userInvDiagNonconst =
+          plist.get<RCP<V> > ("chebyshev: operator inv diagonal");
+        // If the type is RCP<V>, the user could still change the
+        // Vector.  That means we have to make a deep copy.
+        userInvDiag = rcp (new V (*userInvDiagNonconst));
       } catch (Teuchos::Exceptions::InvalidParameterType&) {
       }
     }
     if (userInvDiag.is_null ()) {
       try { // Could the type be const V?
         // The line below does a deep copy (V::operator=).
-        userInvDiag = rcp (new V (plist.get<const V> ("chebyshev: operator inv diagonal")));
+        userInvDiag =
+          rcp (new V (plist.get<const V> ("chebyshev: operator inv diagonal")));
       } catch (Teuchos::Exceptions::InvalidParameterType&) {
       }
     }
     if (userInvDiag.is_null ()) {
       try { // Could the type be V?
-        V userInvDiagNonconst = plist.get<V> ("chebyshev: operator inv diagonal");
-        userInvDiag = rcp (new V (userInvDiagNonconst)); // deep copy
+        // The line below does a deep copy (V::operator=).
+        userInvDiag =
+          rcp (new V (plist.get<V> ("chebyshev: operator inv diagonal")));
       } catch (Teuchos::Exceptions::InvalidParameterType&) {
       }
     }
-    // We've tried all the possible types.  If we got something, then
-    // make a range Map copy of it.
-    if (! userInvDiag.is_null ()) {
-      userInvDiag = makeRangeMapVector (*userInvDiag);
-    }
+    // We don't necessarily have a range Map yet.  compute() is the
+    // proper place to compute the range Map version of userInvDiag.
   }
 
   // Don't fill in defaults for the max or min eigenvalue, because
@@ -449,12 +469,39 @@ setParameters (Teuchos::ParameterList& plist) {
   computeMaxResNorm_ = computeMaxResNorm;
 }
 
+
 template<class ScalarType, class MV, class MAT>
 void
-Chebyshev<ScalarType, MV, MAT>::
-compute () {
-  using std::endl;
+Chebyshev<ScalarType, MV, MAT>::reset ()
+{
+  D_ = Teuchos::null;
+  diagOffsets_ = Teuchos::null;
+  savedDiagOffsets_ = false;
+  V_ = Teuchos::null;
+  W_ = Teuchos::null;
+  computedLambdaMax_ = STS::nan ();
+  computedLambdaMin_ = STS::nan ();
+}
 
+
+template<class ScalarType, class MV, class MAT>
+void
+Chebyshev<ScalarType, MV, MAT>::setMatrix (const Teuchos::RCP<const MAT>& A)
+{
+  if (A.getRawPtr () != A_.getRawPtr ()) {
+    if (! assumeMatrixUnchanged_) {
+      reset ();
+    }
+    A_ = A;
+  }
+}
+
+
+template<class ScalarType, class MV, class MAT>
+void
+Chebyshev<ScalarType, MV, MAT>::compute ()
+{
+  using std::endl;
   // Some of the optimizations below only work if A_ is a
   // Tpetra::CrsMatrix.  We'll make our best guess about its type
   // here, since we have no way to get back the original fifth
@@ -463,6 +510,12 @@ compute () {
     typename MV::local_ordinal_type,
     typename MV::global_ordinal_type,
     typename MV::node_type> crs_matrix_type;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (), std::runtime_error, "Ifpack2::Chebyshev::compute: The input "
+    "matrix A is null.  Please call setMatrix() with a nonnull input matrix "
+    "before calling this method.  This is probably a bug in Ifpack2; please "
+    "report this bug to the Ifpack2 developers.");
 
   // If A_ is a CrsMatrix and its graph is constant, we presume that
   // the user plans to reuse the structure of A_, but possibly change
@@ -476,6 +529,7 @@ compute () {
   // number is NaN.  Inf means something different.  However,
   // Teuchos::ScalarTraits doesn't distinguish the two cases.
 
+  // makeInverseDiagonal() returns a range Map Vector.
   if (userInvDiag_.is_null ()) {
     Teuchos::RCP<const crs_matrix_type> A_crsMat =
       Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
@@ -508,7 +562,7 @@ compute () {
     }
   }
   else { // the user provided an inverse diagonal
-    D_ = userInvDiag_;
+    D_ = makeRangeMapVectorConst (userInvDiag_);
   }
 
   // Have we estimated eigenvalues before?
@@ -593,7 +647,8 @@ compute () {
       eigRatioForApply_ = one; // Ifpack doesn't include this line.
     }
   }
-} //compute()
+}
+
 
 template<class ScalarType, class MV, class MAT>
 ScalarType
@@ -602,10 +657,15 @@ getLambdaMaxForApply() const {
   return lambdaMaxForApply_;
 }
 
+
 template<class ScalarType, class MV, class MAT>
 typename Chebyshev<ScalarType, MV, MAT>::MT
-Chebyshev<ScalarType, MV, MAT>::
-apply (const MV& B, MV& X) {
+Chebyshev<ScalarType, MV, MAT>::apply (const MV& B, MV& X)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (), std::runtime_error, "Ifpack2::Chebyshev::apply: The input "
+    "matrix A is null.  Please call setMatrix() with a nonnull input matrix, "
+    "and then call compute(), before calling this method.");
   TEUCHOS_TEST_FOR_EXCEPTION(
     STS::isnaninf (lambdaMaxForApply_), std::runtime_error,
     "Ifpack2::Chebyshev::apply: There is no estimate for the max eigenvalue."
@@ -677,9 +737,10 @@ solve (MV& Z, const ST alpha, const V& D_inv, const MV& R) {
 }
 
 template<class ScalarType, class MV, class MAT>
-Teuchos::RCP<typename Chebyshev<ScalarType, MV, MAT>::V>
+Teuchos::RCP<const typename Chebyshev<ScalarType, MV, MAT>::V>
 Chebyshev<ScalarType, MV, MAT>::
-makeInverseDiagonal (const MAT& A, const bool useDiagOffsets) const {
+makeInverseDiagonal (const MAT& A, const bool useDiagOffsets) const
+{
   using Teuchos::RCP;
   using Teuchos::rcpFromRef;
   using Teuchos::rcp_dynamic_cast;
@@ -707,9 +768,11 @@ makeInverseDiagonal (const MAT& A, const bool useDiagOffsets) const {
     }
   }
   else {
+    // This always works for a Tpetra::RowMatrix, even if it is not a
+    // Tpetra::CrsMatrix.  We just don't have offsets in this case.
     A.getLocalDiagCopy (*D_rowMap);
   }
-  RCP<V> D_rangeMap = makeRangeMapVector (*D_rowMap);
+  RCP<V> D_rangeMap = makeRangeMapVector (D_rowMap);
 
   // Invert the diagonal entries, replacing entries less (in
   // magnitude) than the user-specified value with that value.
@@ -717,38 +780,48 @@ makeInverseDiagonal (const MAT& A, const bool useDiagOffsets) const {
   KMV& localDiag = D_rangeMap->getLocalMVNonConst ();
   typedef KokkosClassic::DefaultArithmetic<KMV> KMVT;
   KMVT::ReciprocalThreshold (localDiag, minDiagVal_);
-  return D_rangeMap;
+  return Teuchos::rcp_const_cast<const V> (D_rangeMap);
 }
 
+
 template<class ScalarType, class MV, class MAT>
-Teuchos::RCP<typename Chebyshev<ScalarType, MV, MAT>::V>
+Teuchos::RCP<const typename Chebyshev<ScalarType, MV, MAT>::V>
 Chebyshev<ScalarType, MV, MAT>::
-makeRangeMapVector (const V& D) const {
+makeRangeMapVectorConst (const Teuchos::RCP<const V>& D) const
+{
   using Teuchos::RCP;
   using Teuchos::rcp;
   typedef Tpetra::Export<typename MV::local_ordinal_type,
                          typename MV::global_ordinal_type,
                          typename MV::node_type> export_type;
-  RCP<const map_type> sourceMap = D.getMap ();
+  // This throws logic_error instead of runtime_error, because the
+  // methods that call makeRangeMapVector should all have checked
+  // whether A_ is null before calling this method.
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (), std::logic_error, "Ifpack2::Details::Chebyshev::"
+    "makeRangeMapVector: The input matrix A is null.  Please call setMatrix() "
+    "with a nonnull input matrix before calling this method.  This is probably "
+    "a bug in Ifpack2; please report this bug to the Ifpack2 developers.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    D.is_null (), std::logic_error, "Ifpack2::Details::Chebyshev::"
+    "makeRangeMapVector: The input Vector D is null.  This is probably "
+    "a bug in Ifpack2; please report this bug to the Ifpack2 developers.");
+
+  RCP<const map_type> sourceMap = D->getMap ();
   RCP<const map_type> rangeMap = A_->getRangeMap ();
   RCP<const map_type> rowMap = A_->getRowMap ();
-  RCP<V> D_out;
 
-  if (rangeMap.getRawPtr () == sourceMap.getRawPtr ()) {
-    // The given vector's Map is identical to the matrix's range Map.
-    // That means we don't need to Export.  (We don't call isSameAs()
-    // here, because that takes at least one global reduction.  This
-    // is the fast path.  We may call isSameAs() in the slow path
-    // below, to avoid an even slower path.
-    D_out = rcp (new V (D));
+  if (rangeMap->isSameAs (*sourceMap)) {
+    // The given vector's Map is the same as the matrix's range Map.
+    // That means we don't need to Export.  This is the fast path.
+    return D;
   }
   else { // We need to Export.
     RCP<const export_type> exporter;
     // Making an Export object from scratch is expensive enough that
     // it's worth the O(1) global reductions to call isSameAs(), to
     // see if we can avoid that cost.
-    if (sourceMap.getRawPtr () == rowMap.getRawPtr () ||
-        sourceMap->isSameAs (*rowMap)) {
+    if (sourceMap->isSameAs (*rowMap)) {
       // We can reuse the matrix's Export object, if there is one.
       exporter = A_->getGraph ()->getExporter ();
     }
@@ -756,17 +829,25 @@ makeRangeMapVector (const V& D) const {
       exporter = rcp (new export_type (sourceMap, rangeMap));
     }
 
-    D_out = rcp (new V (D));
     if (exporter.is_null ()) {
-      // Row Map and range Map are the same; no need to Export.
-      *D_out = D;
+      return D; // Row Map and range Map are the same; no need to Export.
     }
-    else {
-      D_out->doExport (D, *exporter, Tpetra::ADD);
+    else { // Row Map and range Map are _not_ the same; must Export.
+      RCP<V> D_out = rcp (new V (*D));
+      D_out->doExport (*D, *exporter, Tpetra::ADD);
+      return Teuchos::rcp_const_cast<const V> (D_out);
     }
-  } // if we don't need to Export, or if we do
+  }
+}
 
-  return D_out;
+
+template<class ScalarType, class MV, class MAT>
+Teuchos::RCP<typename Chebyshev<ScalarType, MV, MAT>::V>
+Chebyshev<ScalarType, MV, MAT>::
+makeRangeMapVector (const Teuchos::RCP<V>& D) const
+{
+  using Teuchos::rcp_const_cast;
+  return rcp_const_cast<V> (makeRangeMapVectorConst (rcp_const_cast<V> (D)));
 }
 
 
@@ -984,7 +1065,8 @@ ifpackApplyImpl (const MAT& A,
 template<class ScalarType, class MV, class MAT>
 typename Chebyshev<ScalarType, MV, MAT>::ST
 Chebyshev<ScalarType, MV, MAT>::
-powerMethod (const MAT& A, const V& D_inv, const int numIters) {
+powerMethod (const MAT& A, const V& D_inv, const int numIters)
+{
   const ST zero = Teuchos::as<ST> (0);
   const ST one = Teuchos::as<ST> (1);
   ST lambdaMax = zero;
@@ -1019,14 +1101,14 @@ powerMethod (const MAT& A, const V& D_inv, const int numIters) {
 template<class ScalarType, class MV, class MAT>
 Teuchos::RCP<const MAT>
 Chebyshev<ScalarType, MV, MAT>::
-getMatrix() const {
+getMatrix () const {
   return A_;
 }
 
 template<class ScalarType, class MV, class MAT>
 bool
 Chebyshev<ScalarType, MV, MAT>::
-hasTransposeApply() const {
+hasTransposeApply () const {
   // Technically, this is true, because the matrix must be symmetric.
   return true;
 }
@@ -1054,12 +1136,15 @@ std::string
 Chebyshev<ScalarType, MV, MAT>::
 description() const {
   std::ostringstream oss;
-  oss << "Ifpack2::Details::Chebyshev : "
-      << "degree = " << numIters_
-      << ", lambdaMax = " << lambdaMaxForApply_
-      << ", alpha = " << eigRatioForApply_
-      << ", lambdaMin = " << lambdaMinForApply_;
-
+  // YAML requires quoting the key in this case, to distinguish
+  // key's colons from the colon that separates key from value.
+  oss << "\"Ifpack2::Details::Chebyshev\":"
+      << "{"
+      << "degree: " << numIters_
+      << ", lambdaMax: " << lambdaMaxForApply_
+      << ", alpha: " << eigRatioForApply_
+      << ", lambdaMin: " << lambdaMinForApply_
+      << "}";
   return oss.str();
 }
 
@@ -1078,13 +1163,11 @@ describe (Teuchos::FancyOStream& out,
     if (vl == Teuchos::VERB_LOW) {
       out << "Ifpack2::Details::Chebyshev" << endl;
     } else { // vl > Teuchos::VERB_LOW
-      // YAML flow mapping style (with curly braces) lets the key (the
-      // above "description") be arbitrarily long.  Simple indenting
-      // limits the key length to 1024 characters.  It's not an issue
-      // right now, but it's better to be more general.
-      out << "Ifpack2::Details::Chebyshev {" << endl;
+      // YAML requires quoting the key in this case, to distinguish
+      // key's colons from the colon that separates key from value.
+      out << "\"Ifpack2::Details::Chebyshev\":" << endl;
       Teuchos::OSTab tab1 (Teuchos::rcpFromRef (out));
-      out << "Template parameters: {" << endl;
+      out << "Template parameters:" << endl;
       {
         Teuchos::OSTab tab2 (Teuchos::rcpFromRef (out));
         out << "ScalarType: \"" << TypeNameTraits<ScalarType>::name () << "\"" << endl
@@ -1093,7 +1176,7 @@ describe (Teuchos::FancyOStream& out,
       }
       // "Computed parameters" literally means "parameters whose
       // values were computed by compute()."
-      out << "}" << endl << "Computed parameters: {" << endl;
+      out << endl << "Computed parameters:" << endl;
       {
         Teuchos::OSTab tab2 (Teuchos::rcpFromRef (out));
         // Users might want to see the values in the computed inverse
@@ -1104,12 +1187,12 @@ describe (Teuchos::FancyOStream& out,
         } else if (vl <= Teuchos::VERB_HIGH) {
           out << "set" << endl;
         } else { // D_ not null and vl > Teuchos::VERB_HIGH
-          out << "{" << endl;
+          out << endl;
           {
             Teuchos::OSTab tab3 (Teuchos::rcpFromRef (out));
             D_->describe (out, vl);
           }
-          out << "}" << endl;
+          out << endl;
         }
         // V_ and W_ are scratch space; their values are irrelevant.
         // All that matters is whether or not they have been set.
@@ -1121,7 +1204,7 @@ describe (Teuchos::FancyOStream& out,
             << "lambdaMinForApply_: " << lambdaMinForApply_ << endl
             << "eigRatioForApply_: " << eigRatioForApply_ << endl;
       }
-      out << "}" << endl << "User parameters: {" << endl;
+      out << "User parameters:" << endl;
       {
         Teuchos::OSTab tab2 (Teuchos::rcpFromRef (out));
         out << "userInvDiag_: ";
@@ -1130,12 +1213,12 @@ describe (Teuchos::FancyOStream& out,
         } else if (vl <= Teuchos::VERB_HIGH) {
           out << "set" << endl;
         } else { // userInvDiag_ not null and vl > Teuchos::VERB_HIGH
-          out << "{" << endl;
+          out << endl;
           {
             Teuchos::OSTab tab3 (Teuchos::rcpFromRef (out));
             userInvDiag_->describe (out, vl);
           }
-          out << "}" << endl;
+          out << endl;
         }
         out << "userLambdaMax_: " << userLambdaMax_ << endl
             << "userLambdaMin_: " << userLambdaMin_ << endl
@@ -1147,7 +1230,7 @@ describe (Teuchos::FancyOStream& out,
             << "textbookAlgorithm_: " << textbookAlgorithm_ << endl
             << "computeMaxResNorm_: " << computeMaxResNorm_ << endl;
       }
-      out << "}" << endl;
+      out << endl;
     }
   }
 }
