@@ -17,7 +17,9 @@ Information specifically for developers can be found at \ref z2_developer.
 
 \section z2_main_intro Introduction to Zoltan2
 
-Zoltan2 is a complete refactoring of the 
+Zoltan2 is a package for partitioning, load balancing and 
+combinatorial scientific computing. It can be vieweed as
+a complete refactoring of the well known
 <a href=http://www.cs.sandia.gov/Zoltan > Zoltan </a>
 library into C++ in order to support template programming,
 to scale to larger problems, and to support architecture aware partitioning.
@@ -33,11 +35,13 @@ Partitioning functionality that is available now is:
 </ul>
 
 
-Serial ordering available now is:
+Serial ordering currently available:
 
 <ul>
-<li> \ref rcmPage for RCM ordering.
-<li> \ref amdPage for AMD ordering.
+<li> \ref amdPage for fill-reducing ordering.
+<li> random ordering
+<li> \ref rcmPage for bandwidth-reducing ordering.
+<li> sorted_degree ordering
 </ul>
 
 <hr>
