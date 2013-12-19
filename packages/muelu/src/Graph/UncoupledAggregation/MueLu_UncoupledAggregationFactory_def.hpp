@@ -245,12 +245,6 @@ namespace MueLu {
                                    << "  remaining   : " << numGlobalRows - numGlobalAggregated << std::endl;
         GetOStream(Statistics1, 0) << "  # aggregates: " << numGlobalAggs << std::endl;
       }
-
-      // NOTE: only for uncoupled aggregation. For coupled we need to check the global number.
-      if (numNonAggregatedNodes == 0) {
-        // All nodes have been aggregated, can quit early
-        break;
-      }
     }
 
     TEUCHOS_TEST_FOR_EXCEPTION(numNonAggregatedNodes, Exceptions::RuntimeError, "MueLu::UncoupledAggregationFactory::Build: Leftover nodes found! Error!");
