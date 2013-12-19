@@ -146,8 +146,6 @@ public:
   {
     return getGlobalNumCoordinates();
   }
-
-  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const { return ; }
 };
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -229,12 +227,6 @@ public:
     return getGlobalNumCoordinates();
   }
 
-  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const 
-  { 
-    ArrayView<input_t> xyz;
-    ArrayView<input_t> weights;
-    getCoordinates(gnos, xyz, weights);
-  }
 
 private:
 
@@ -392,12 +384,6 @@ public:
   size_t getLocalNumObjects() const {return gids_.size();}
 
   size_t getGlobalNumObjects() const {return numGlobalCoordinates_;}
-
-  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const {
-    ArrayView<input_t> a, b;
-    getCoordinates(gnos, a, b);
-    return;
-  }
 
 private:
 
@@ -559,7 +545,6 @@ public:
 
   size_t getLocalNumObjects() const {return 0;}
   size_t getGlobalNumObjects() const {return 0;}
-  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const {return;}
 };
 
 
@@ -621,12 +606,6 @@ public:
   size_t getLocalNumObjects() const {return gids_.size();}
 
   size_t getGlobalNumObjects() const {return numGlobalCoordinates_;}
-
-  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const {
-    ArrayView<input_t> a, b;
-    getCoordinates(gnos, a, b);
-    return;
-  }
 
 private:
 

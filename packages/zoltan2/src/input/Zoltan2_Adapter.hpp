@@ -146,12 +146,10 @@ public:
    */
 
   template <typename Adapter>
-    size_t applyPartitioningSolution(const User &in, User *&out,
+    void applyPartitioningSolution(const User &in, User *&out,
       const PartitioningSolution<Adapter> &solution) const
   {
-//KDDDEC  This function should be void
-//KDDDEC  This function should throw an error.
-    return 0;
+    Z2_THROW_NOT_IMPLEMENTED_ERROR
   }
 
 };

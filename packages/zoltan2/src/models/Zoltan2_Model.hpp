@@ -166,13 +166,6 @@ public:
    */
   virtual global_size_t getGlobalNumObjects() const = 0;
 
-  /*! \brief Get a list of the global Ids for the local objects.
-   *
-   *  Set a view to the list of object global numbers, which may be
-   *  vertex IDs, matrix row IDs, identifiers, coordinate IDs,
-   *  or mesh node or element IDs.
-   */
-  virtual void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const = 0;
 
 protected:
 

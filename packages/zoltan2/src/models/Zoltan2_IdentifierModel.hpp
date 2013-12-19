@@ -139,12 +139,6 @@ public:
     return getGlobalNumIdentifiers();
   }
 
-  inline void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const 
-  { 
-    ArrayView<input_t> weights;
-    getIdentifierList(gnos, weights);
-  }
-
 private:
 
   bool gnosAreGids_;

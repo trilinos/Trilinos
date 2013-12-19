@@ -156,7 +156,7 @@ public:
   void getEntriesView(const scalar_t *&elements, int &stride, int idx=0) const;
 
   template <typename Adapter>
-    size_t applyPartitioningSolution(const User &in, User *&out,
+    void applyPartitioningSolution(const User &in, User *&out,
          const PartitioningSolution<Adapter> &solution) const;
 
 private:
@@ -252,7 +252,7 @@ template <typename User>
 
 template <typename User>
   template <typename Adapter>
-    size_t XpetraMultiVectorAdapter<User>::applyPartitioningSolution(
+    void XpetraMultiVectorAdapter<User>::applyPartitioningSolution(
       const User &in, User *&out, 
       const PartitioningSolution<Adapter> &solution) const
 {
@@ -277,14 +277,12 @@ template <typename User>
   Z2_FORWARD_EXCEPTIONS;
 
   RCP<const User> inPtr = rcp(&in, false);
-  lno_t localNumElts = numNewRows;
 
   RCP<const User> outPtr = XpetraTraits<User>::doMigration(
-   inPtr, localNumElts, importList.get());
+   inPtr, numNewRows, importList.get());
 
   out = const_cast<User *>(outPtr.get());
   outPtr.release();
-  return numNewRows;
 }
   
 }  //namespace Zoltan2

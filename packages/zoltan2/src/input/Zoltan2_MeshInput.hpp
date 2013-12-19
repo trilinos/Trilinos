@@ -303,31 +303,6 @@ public:
 //KDD What if we wanted to provide weights with respect to first adjacencies?
 //KDD Should we add functions for that?
 
-  /*! \brief Apply a partitioning problem solution to an input.
-   *
-   *  This is not a required part of the MeshAdapter interface. However
-   *  if the Caller calls a Problem method to redistribute data, it needs
-   *  this method to perform the redistribution.
-   *
-   *  \param in  An input object with a structure and assignment of
-   *           of global Ids to processes that matches that of the input
-   *           data that instantiated this Adapter.
-   *  \param out On return this should point to a newly created object
-   *            with the specified partitioning.
-   *  \param solution  The Solution object created by a Problem should
-   *      be supplied as the third argument.  It must have been templated
-   *      on user data that has the same global ID distribution as this
-   *      user data.
-   *  \return   Returns the number of local Ids in the new partitioning.
-   */
-
-  template <typename Adapter>
-    size_t applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<Adapter> &solution) const
-  {
-    return 0;
-  }
-
 
   ////////////////////////////////////////////////////////////////////////////
   // Implementations of base-class methods

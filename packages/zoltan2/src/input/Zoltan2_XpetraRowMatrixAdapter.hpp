@@ -215,7 +215,7 @@ public:
   }
 
   template <typename Adapter>
-    size_t applyPartitioningSolution(const User &in, User *&out,
+    void applyPartitioningSolution(const User &in, User *&out,
          const PartitioningSolution<Adapter> &solution) const;
 
 private:
@@ -333,7 +333,7 @@ template <typename User>
 
 template <typename User>
   template <typename Adapter>
-    size_t XpetraRowMatrixAdapter<User>::applyPartitioningSolution(
+    void XpetraRowMatrixAdapter<User>::applyPartitioningSolution(
       const User &in, User *&out, 
       const PartitioningSolution<Adapter> &solution) const
 { 
@@ -357,18 +357,13 @@ template <typename User>
   }
   Z2_FORWARD_EXCEPTIONS;
 
-  gno_t lsum = numNewRows;
-  gno_t gsum = 0;
-  reduceAll<int, gno_t>(*comm, Teuchos::REDUCE_SUM, 1, &lsum, &gsum);
-
   RCP<const User> inPtr = rcp(&in, false);
 
   RCP<const User> outPtr = XpetraTraits<User>::doMigration(
-   inPtr, lsum, importList.getRawPtr());
+   inPtr, numNewRows, importList.getRawPtr());
 
   out = const_cast<User *>(outPtr.get());
   outPtr.release();
-  return numNewRows;
 }
 
 }  //namespace Zoltan2

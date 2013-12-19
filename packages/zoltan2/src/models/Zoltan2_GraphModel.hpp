@@ -532,7 +532,6 @@ public:
 
   size_t getGlobalNumObjects() const { return 0;}
 
-  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const { return; }
 };
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -625,12 +624,6 @@ public:
   size_t getLocalNumObjects() const { return numLocalVertices_; }
 
   size_t getGlobalNumObjects() const { return numGlobalVertices_; }
-
-  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const
-  {
-    ArrayView<input_t> xyz, wgts;
-    getVertexList(gnos, xyz, wgts);
-  }
 
 private:
 
@@ -1108,12 +1101,6 @@ public:
 
   size_t getGlobalNumObjects() const { return numGlobalVertices_; }
 
-  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const
-  {
-    ArrayView<input_t> xyz, wgts;
-    getVertexList(gnos, xyz, wgts);
-  }
-
 private:
 
   const RCP<const Environment > env_;
@@ -1542,7 +1529,6 @@ public:
 
   size_t getLocalNumObjects() const { return 0; }
   size_t getGlobalNumObjects() const { return 0; }
-  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const {}
 
 };
 
@@ -1594,7 +1580,6 @@ public:
 
   size_t getLocalNumObjects() const { return 0; }
   size_t getGlobalNumObjects() const { return 0; }
-  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const {}
 
 };
 
