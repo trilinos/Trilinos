@@ -127,15 +127,27 @@ void testIdentifierModel(std::string fname, gno_t xdim, gno_t ydim, gno_t zdim,
   
   // Test the IdentifierModel interface
 
-  if (model->getLocalNumIdentifiers() != size_t(nLocalIds))
+  if (model->getLocalNumIdentifiers() != size_t(nLocalIds)) {
+    std::cerr << rank << ") getLocalNumIdentifiers "
+              << model->getLocalNumIdentifiers() << " "
+              << nLocalIds << std::endl;
     fail = 2;
+  }
 
-  if (!fail && model->getGlobalNumIdentifiers() != size_t(nGlobalIds))
+  if (!fail && model->getGlobalNumIdentifiers() != size_t(nGlobalIds)) {
+    std::cerr << rank << ") getGlobalNumIdentifiers "
+              << model->getGlobalNumIdentifiers() << " "
+              << nGlobalIds << std::endl;
     fail = 3;
+  }
 
   // For now, MatrixAdapter does not implement weights
-  if (!fail && model->getIdentifierWeightDim() !=  0)
+  if (!fail && model->getIdentifierWeightDim() !=  0) {
+    std::cerr << rank << ") getIdentifierWeightDim "
+              << model->getIdentifierWeightDim() << " "
+              << 0 << " " << ia->getNumWeightsPerID() << std::endl;
     fail = 4;
+  }
 
   gfail = globalFail(comm, fail);
 
@@ -147,24 +159,37 @@ void testIdentifierModel(std::string fname, gno_t xdim, gno_t ydim, gno_t zdim,
   
   model->getIdentifierList(gids, wgts);
 
-  if (!fail && gids.size() != nLocalIds)
+  if (!fail && gids.size() != nLocalIds) {
+    std::cerr << rank << ") getIdentifierList IDs "
+              << gids.size() << " "
+              << nLocalIds << std::endl;
     fail = 5;
+  }
 
-  if (!fail && wgts.size() != 0)
+  if (!fail && wgts.size() != 0) {
+    std::cerr << rank << ") getIdentifierList Weights "
+              << wgts.size() << " "
+              << 0 << std::endl;
     fail = 6;
+  }
 
   for (lno_t i=0; !fail && i < nLocalIds; i++){
     std::set<gno_t>::iterator next = idSet.find(gids[i]);
-    if (next == idSet.end())
+    if (next == idSet.end()) {
+      std::cerr << rank << ") getIdentifierList gid not found "
+              << gids[i] << std::endl;
       fail = 7;
+    }
   }
 
   if (!fail && consecutiveIds){
     bool inARow = Zoltan2::IdentifierTraits<gno_t>::areConsecutive(
       gids.getRawPtr(), nLocalIds);
 
-    if (!inARow)
+    if (!inARow) {
+      std::cerr << rank << ") getIdentifierList not consecutive " << std::endl;
       fail = 8;
+    }
   }
 
   gfail = globalFail(comm, fail);
