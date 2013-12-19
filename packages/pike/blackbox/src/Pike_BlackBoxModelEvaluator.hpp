@@ -12,9 +12,9 @@ namespace pike {
 
     virtual ~BlackBoxModelEvaluator() {}
 
-    virtual const std::string name() const = 0;
+    virtual std::string name() const = 0;
 
-    virtual void solve() = 0;
+    virtual bool solve() = 0;
 
     virtual bool isConverged() const = 0;
 

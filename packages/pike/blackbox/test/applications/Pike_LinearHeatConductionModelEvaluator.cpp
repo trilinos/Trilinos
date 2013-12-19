@@ -18,32 +18,36 @@ namespace pike_test {
       T_right_(1.0),
       responseValue_(1) // only one response
   {
+
     if (mode_ == T_RIGHT_IS_RESPONSE) {
       responseMap_["T_right"] = 0;
+      responseValue_[0] = Teuchos::rcp(new pike::ScalarResponse<double>("T_right"));
     }
     else if (mode_ == Q_IS_RESPONSE) {
       responseMap_["q"] = 0;
+      responseValue_[0] = Teuchos::rcp(new pike::ScalarResponse<double>("q"));
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Error the mode is not valid!");
     }
   }
-  
-  LinearHeatConductionModelEvaluator::~LinearHeatConductionModelEvaluator() {}
-  
-  const std::string LinearHeatConductionModelEvaluator::name() const
+
+  std::string LinearHeatConductionModelEvaluator::name() const
   { return name_; }
   
-  void LinearHeatConductionModelEvaluator::solve()
+  bool LinearHeatConductionModelEvaluator::solve()
   {
     // solution: T_left - T_right = q / k
     
     if (mode_ == T_RIGHT_IS_RESPONSE) {
-      responseValue_[0]->set(T_left_ - q_ / k_);
+      T_right_ = T_left_ - q_ / k_;
+      responseValue_[0]->set(T_right_);
     }
     else if (mode_ == Q_IS_RESPONSE) {
-      responseValue_[0]->set((T_left_ - T_right_) * k_);
+      q_ = (T_left_ - T_right_) * k_;
+      responseValue_[0]->set(q_);
     }
+    return true;
   }
   
   bool LinearHeatConductionModelEvaluator::isConverged() const
@@ -72,7 +76,6 @@ namespace pike_test {
 
   void LinearHeatConductionModelEvaluator::set_q(const double& q)
   {
-    TEUCHOS_ASSERT(mode_ == T_RIGHT_IS_RESPONSE);
     q_ = q;
   }
   
@@ -81,7 +84,6 @@ namespace pike_test {
   
   void LinearHeatConductionModelEvaluator::set_T_right(const double& T_right)
   {
-    TEUCHOS_ASSERT(mode_ == Q_IS_RESPONSE);
     T_right_ = T_right;
   }
   

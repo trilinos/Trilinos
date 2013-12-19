@@ -16,6 +16,7 @@ cmake \
 -D TPL_LAPACK_LIBRARIES:PATH="/home/rppawlo/install/gnu4.8.1/lapack/liblapack.a" \
 -D TPL_ENABLE_MPI:BOOL=ON \
 -D MPI_BASE_DIR:PATH="/home/rppawlo/install/gnu4.8.1/openmpi_clang" \
+-D MPI_EXEC_MAX_NUMPROCS:STRING=6 \
 -D COMPILER_VERSION="Clang-3.3" \
 -D CMAKE_CXX_COMPILER:FILEPATH="/home/rppawlo/install/gnu4.8.1/openmpi_clang/bin/mpiCC" \
 -D CMAKE_C_COMPILER:FILEPATH="/home/rppawlo/install/gnu4.8.1/openmpi_clang/bin/mpicc" \

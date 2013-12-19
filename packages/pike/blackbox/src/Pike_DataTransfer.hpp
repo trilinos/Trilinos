@@ -1,7 +1,11 @@
 #ifndef PIKE_DATA_TRANSFER_HPP
 #define PIKE_DATA_TRANSFER_HPP
 
+#include <string>
+
 namespace pike {
+
+  class Solver;
 
   class DataTransfer {
 
@@ -9,9 +13,11 @@ namespace pike {
 
     virtual ~DataTransfer() {};
 
-    virtual bool doTransfer() = 0;
+    virtual std::string name() const = 0;
 
-    virtual bool transferSucceeded() = 0;
+    virtual bool doTransfer(const pike::Solver& solver) = 0;
+
+    virtual bool transferSucceeded() const = 0;
 
   };
 

@@ -29,7 +29,7 @@ namespace pike_test {
       applications.
 
       See any book on heat transfer.  For example, "Transport
-      Phenomena" by Bird, Stewart and ightfoot, 2nd edition, section
+      Phenomena" by Bird, Stewart and Lightfoot, 2nd edition, section
       10.6 "Heat Conduction Through Composite Walls", pages 303-305.
    */
   class LinearHeatConductionModelEvaluator : public pike::BlackBoxModelEvaluator {
@@ -45,13 +45,11 @@ namespace pike_test {
 				       std::string name,
 				       Mode mode);
 
-    ~LinearHeatConductionModelEvaluator();
-
     //@{ BlackBoxModelEvaluator derived methods
     
-    virtual const std::string name() const;
+    virtual std::string name() const;
 
-    void solve();
+    bool solve();
 
     bool isConverged() const;
 
