@@ -53,11 +53,14 @@
 
 #include <Ifpack2_ConfigDefs.hpp>
 #include <Ifpack2_Preconditioner.hpp>
+#include <Ifpack2_Details_CanChangeMatrix.hpp>
+
 // FIXME (mfh 20 Nov 2013) We really shouldn't have to include both of
 // these, if we were to handle the implementation by pointer instead
 // of by value.
 #include <Ifpack2_Details_Chebyshev_decl.hpp>
 #include <Ifpack2_Details_Chebyshev_def.hpp>
+
 #include <Tpetra_CrsMatrix.hpp>
 
 #include <iostream>
@@ -198,7 +201,11 @@ class Chebyshev :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
                                            typename MatrixType::local_ordinal_type,
                                            typename MatrixType::global_ordinal_type,
-                                           typename MatrixType::node_type>
+                                           typename MatrixType::node_type>,
+    virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                                                       typename MatrixType::local_ordinal_type,
+                                                                       typename MatrixType::global_ordinal_type,
+                                                                       typename MatrixType::node_type> >
 {
 public:
   //! \name Typedefs
@@ -493,38 +500,34 @@ public:
     return IsComputed_;
   }
 
-  // This "template friend" declaration lets any Chebyshev
-  // specialization be a friend of any of its other specializations.
-  // That makes clone() easier to implement.
-  template <class NewMatrixType> friend class Chebyshev;
+  //@}
+  //! \name Implementation of Ifpack2::Details::CanChangeMatrix
+  //@{
 
-  /// \brief Clone this object to one with a different Kokkos Node type.
+  /// \brief Change the matrix to be preconditioned.
   ///
-  /// \tparam NewMatrixType The template parameter of the new
-  ///   preconditioner to return; a specialization of
-  ///   Tpetra::RowMatrix or Tpetra::CrsMatrix.  The intent is that
-  ///   this type differ from \c MatrixType only in its fourth Node
-  ///   template parameter, and/or its fifth \c LocalMatOps template
-  ///   parameter.  However, this is not strictly required.
+  /// \param A [in] The new matrix.
   ///
-  /// \param A_newnode [in] The matrix, with the new Kokkos Node type.
-  ///   This would generally be the result of cloning (calling
-  ///   <tt>Tpetra::CrsMatrix::clone()</tt> on) the original input
-  ///   matrix A, though the implementation does not require this.
+  /// \post <tt>! isInitialized ()</tt>
+  /// \post <tt>! isComputed ()</tt>
   ///
-  /// \param params [in/out] Parameters for the new preconditioner.
+  /// Calling this method resets the preconditioner's state.  After
+  /// calling this method with a nonnull input, you must first call
+  /// initialize() and compute() (in that order) before you may call
+  /// apply().
   ///
-  /// \pre If \c A_newnode is a Tpetra::CrsMatrix, it must be fill
-  ///   complete.
+  /// You may call this method with a null input.  If A is null, then
+  /// you may not call initialize() or compute() until you first call
+  /// this method again with a nonnull input.  This method invalidates
+  /// any previous factorization whether or not A is null, so calling
+  /// setMatrix() with a null input is one way to clear the
+  /// preconditioner's state (and free any memory that it may be
+  /// using).
   ///
-  /// \post <tt>P->isInitialized() && P->isComputed()</tt>, where \c P
-  ///   is the returned object.  That is, P's apply() method is ready
-  ///   to be called; P is ready for use as a preconditioner.  This is
-  ///   true regardless of the current state of <tt>*this</tt>.
-  template <typename NewMatrixType>
-  Teuchos::RCP<Chebyshev<NewMatrixType> >
-  clone (const Teuchos::RCP<const NewMatrixType>& A_newnode,
-         const Teuchos::ParameterList& params) const;
+  /// The new matrix A need not necessarily have the same Maps or even
+  /// the same communicator as the original matrix.
+  virtual void
+  setMatrix (const Teuchos::RCP<const row_matrix_type>& A);
 
   //@}
   //! @name Implementation of Tpetra::Operator
@@ -696,6 +699,39 @@ public:
       const int MaximumIterations,
       scalar_type& lambda_min, scalar_type& lambda_max);
 
+  // This "template friend" declaration lets any Chebyshev
+  // specialization be a friend of any of its other specializations.
+  // That makes clone() easier to implement.
+  template <class NewMatrixType> friend class Chebyshev;
+
+  /// \brief Clone this object to one with a different Kokkos Node type.
+  ///
+  /// \tparam NewMatrixType The template parameter of the new
+  ///   preconditioner to return; a specialization of
+  ///   Tpetra::RowMatrix or Tpetra::CrsMatrix.  The intent is that
+  ///   this type differ from \c MatrixType only in its fourth Node
+  ///   template parameter, and/or its fifth \c LocalMatOps template
+  ///   parameter.  However, this is not strictly required.
+  ///
+  /// \param A_newnode [in] The matrix, with the new Kokkos Node type.
+  ///   This would generally be the result of cloning (calling
+  ///   <tt>Tpetra::CrsMatrix::clone()</tt> on) the original input
+  ///   matrix A, though the implementation does not require this.
+  ///
+  /// \param params [in/out] Parameters for the new preconditioner.
+  ///
+  /// \pre If \c A_newnode is a Tpetra::CrsMatrix, it must be fill
+  ///   complete.
+  ///
+  /// \post <tt>P->isInitialized() && P->isComputed()</tt>, where \c P
+  ///   is the returned object.  That is, P's apply() method is ready
+  ///   to be called; P is ready for use as a preconditioner.  This is
+  ///   true regardless of the current state of <tt>*this</tt>.
+  template <typename NewMatrixType>
+  Teuchos::RCP<Chebyshev<NewMatrixType> >
+  clone (const Teuchos::RCP<const NewMatrixType>& A_newnode,
+         const Teuchos::ParameterList& params) const;
+
   //@}
 
 private:
@@ -736,7 +772,7 @@ private:
   /// I prefer that morals and syntax go together, so I didn't declare
   /// this class' apply() method const.  Hence, we have to declare the
   /// whole thing mutable here.
-  mutable Details::Chebyshev<scalar_type, MV, row_matrix_type> impl_;
+  mutable Details::Chebyshev<scalar_type, MV> impl_;
 
   //! The estimated condition number.
   magnitude_type Condest_;

@@ -59,20 +59,18 @@ namespace Details {
 //
 // mfh 12 Dec 2013: For some reason, this all has to be on one line,
 // otherwise the macro definition includes the whole rest of the file.
-#define IFPACK2_DETAILS_CHEBYSHEV(S,LO,GO) template class Chebyshev<S, Tpetra::MultiVector<S,LO,GO>, Tpetra::CrsMatrix<S,LO,GO> >;
+#define IFPACK2_DETAILS_CHEBYSHEV(S,LO,GO) template class Chebyshev<S, Tpetra::MultiVector<S,LO,GO> >;
 
 #if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
   template <>
   class Chebyshev<double,
-                  Tpetra::MultiVector<double, int, int, KokkosClassic::ThrustGPUNode>,
-                  Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
+                  Tpetra::MultiVector<double, int, int, KokkosClassic::ThrustGPUNode> >;
 #endif
 
 #if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
   template <>
   class Chebyshev<double,
-                  Tpetra::MultiVector<double, int, int, KokkosClassic::TPINode>,
-                  Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >;
+                  Tpetra::MultiVector<double, int, int, KokkosClassic::TPINode> >;
 #endif
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()

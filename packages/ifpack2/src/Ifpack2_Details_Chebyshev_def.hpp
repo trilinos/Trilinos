@@ -103,8 +103,8 @@ namespace {
     "(by calling setParameters()).";
 }
 
-template<class ScalarType, class MV, class MAT>
-void Chebyshev<ScalarType, MV, MAT>::checkInputMatrix () const
+template<class ScalarType, class MV>
+void Chebyshev<ScalarType, MV>::checkInputMatrix () const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     ! A_.is_null () && A_->getGlobalNumRows () != A_->getGlobalNumCols (),
@@ -134,9 +134,9 @@ void Chebyshev<ScalarType, MV, MAT>::checkInputMatrix () const
 }
 
 
-template<class ScalarType, class MV, class MAT>
+template<class ScalarType, class MV>
 void
-Chebyshev<ScalarType, MV, MAT>::
+Chebyshev<ScalarType, MV>::
 checkConstructorInput () const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(STS::isComplex, std::logic_error,
@@ -152,9 +152,9 @@ checkConstructorInput () const
   checkInputMatrix ();
 }
 
-template<class ScalarType, class MV, class MAT>
-Chebyshev<ScalarType, MV, MAT>::
-Chebyshev (Teuchos::RCP<const MAT> A) :
+template<class ScalarType, class MV>
+Chebyshev<ScalarType, MV>::
+Chebyshev (Teuchos::RCP<const row_matrix_type> A) :
   A_ (A),
   savedDiagOffsets_ (false),
   computedLambdaMax_ (STS::nan ()),
@@ -176,9 +176,9 @@ Chebyshev (Teuchos::RCP<const MAT> A) :
   checkConstructorInput ();
 }
 
-template<class ScalarType, class MV, class MAT>
-Chebyshev<ScalarType, MV, MAT>::
-Chebyshev (Teuchos::RCP<const MAT> A, Teuchos::ParameterList& params) :
+template<class ScalarType, class MV>
+Chebyshev<ScalarType, MV>::
+Chebyshev (Teuchos::RCP<const row_matrix_type> A, Teuchos::ParameterList& params) :
   A_ (A),
   savedDiagOffsets_ (false),
   computedLambdaMax_ (STS::nan ()),
@@ -201,9 +201,9 @@ Chebyshev (Teuchos::RCP<const MAT> A, Teuchos::ParameterList& params) :
   setParameters (params);
 }
 
-template<class ScalarType, class MV, class MAT>
+template<class ScalarType, class MV>
 void
-Chebyshev<ScalarType, MV, MAT>::
+Chebyshev<ScalarType, MV>::
 setParameters (Teuchos::ParameterList& plist)
 {
   using Teuchos::RCP;
@@ -470,9 +470,9 @@ setParameters (Teuchos::ParameterList& plist)
 }
 
 
-template<class ScalarType, class MV, class MAT>
+template<class ScalarType, class MV>
 void
-Chebyshev<ScalarType, MV, MAT>::reset ()
+Chebyshev<ScalarType, MV>::reset ()
 {
   D_ = Teuchos::null;
   diagOffsets_ = Teuchos::null;
@@ -484,9 +484,9 @@ Chebyshev<ScalarType, MV, MAT>::reset ()
 }
 
 
-template<class ScalarType, class MV, class MAT>
+template<class ScalarType, class MV>
 void
-Chebyshev<ScalarType, MV, MAT>::setMatrix (const Teuchos::RCP<const MAT>& A)
+Chebyshev<ScalarType, MV>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
 {
   if (A.getRawPtr () != A_.getRawPtr ()) {
     if (! assumeMatrixUnchanged_) {
@@ -497,9 +497,9 @@ Chebyshev<ScalarType, MV, MAT>::setMatrix (const Teuchos::RCP<const MAT>& A)
 }
 
 
-template<class ScalarType, class MV, class MAT>
+template<class ScalarType, class MV>
 void
-Chebyshev<ScalarType, MV, MAT>::compute ()
+Chebyshev<ScalarType, MV>::compute ()
 {
   using std::endl;
   // Some of the optimizations below only work if A_ is a
@@ -514,8 +514,7 @@ Chebyshev<ScalarType, MV, MAT>::compute ()
   TEUCHOS_TEST_FOR_EXCEPTION(
     A_.is_null (), std::runtime_error, "Ifpack2::Chebyshev::compute: The input "
     "matrix A is null.  Please call setMatrix() with a nonnull input matrix "
-    "before calling this method.  This is probably a bug in Ifpack2; please "
-    "report this bug to the Ifpack2 developers.");
+    "before calling this method.");
 
   // If A_ is a CrsMatrix and its graph is constant, we presume that
   // the user plans to reuse the structure of A_, but possibly change
@@ -650,17 +649,17 @@ Chebyshev<ScalarType, MV, MAT>::compute ()
 }
 
 
-template<class ScalarType, class MV, class MAT>
+template<class ScalarType, class MV>
 ScalarType
-Chebyshev<ScalarType, MV, MAT>::
+Chebyshev<ScalarType, MV>::
 getLambdaMaxForApply() const {
   return lambdaMaxForApply_;
 }
 
 
-template<class ScalarType, class MV, class MAT>
-typename Chebyshev<ScalarType, MV, MAT>::MT
-Chebyshev<ScalarType, MV, MAT>::apply (const MV& B, MV& X)
+template<class ScalarType, class MV>
+typename Chebyshev<ScalarType, MV>::MT
+Chebyshev<ScalarType, MV>::apply (const MV& B, MV& X)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     A_.is_null (), std::runtime_error, "Ifpack2::Chebyshev::apply: The input "
@@ -704,42 +703,42 @@ Chebyshev<ScalarType, MV, MAT>::apply (const MV& B, MV& X)
   }
 }
 
-template<class ScalarType, class MV, class MAT>
+template<class ScalarType, class MV>
 void
-Chebyshev<ScalarType, MV, MAT>::
+Chebyshev<ScalarType, MV>::
 print (std::ostream& out) {
   this->describe (* (Teuchos::getFancyOStream (Teuchos::rcpFromRef (out))),
                   Teuchos::VERB_MEDIUM);
 }
 
-template<class ScalarType, class MV, class MAT>
+template<class ScalarType, class MV>
 void
-Chebyshev<ScalarType, MV, MAT>::
-computeResidual (MV& R, const MV& B, const MAT& A, const MV& X,
+Chebyshev<ScalarType, MV>::
+computeResidual (MV& R, const MV& B, const op_type& A, const MV& X,
                  const Teuchos::ETransp mode)
 {
   R = B;
   A.apply (X, R, mode, -STS::one(), STS::one());
 }
 
-template<class ScalarType, class MV, class MAT>
+template<class ScalarType, class MV>
 void
-Chebyshev<ScalarType, MV, MAT>::
+Chebyshev<ScalarType, MV>::
 solve (MV& Z, const V& D_inv, const MV& R) {
   Z.elementWiseMultiply (STS::one(), D_inv, R, STS::zero());
 }
 
-template<class ScalarType, class MV, class MAT>
+template<class ScalarType, class MV>
 void
-Chebyshev<ScalarType, MV, MAT>::
+Chebyshev<ScalarType, MV>::
 solve (MV& Z, const ST alpha, const V& D_inv, const MV& R) {
   Z.elementWiseMultiply (alpha, D_inv, R, STS::zero());
 }
 
-template<class ScalarType, class MV, class MAT>
-Teuchos::RCP<const typename Chebyshev<ScalarType, MV, MAT>::V>
-Chebyshev<ScalarType, MV, MAT>::
-makeInverseDiagonal (const MAT& A, const bool useDiagOffsets) const
+template<class ScalarType, class MV>
+Teuchos::RCP<const typename Chebyshev<ScalarType, MV>::V>
+Chebyshev<ScalarType, MV>::
+makeInverseDiagonal (const row_matrix_type& A, const bool useDiagOffsets) const
 {
   using Teuchos::RCP;
   using Teuchos::rcpFromRef;
@@ -776,7 +775,7 @@ makeInverseDiagonal (const MAT& A, const bool useDiagOffsets) const
 
   // Invert the diagonal entries, replacing entries less (in
   // magnitude) than the user-specified value with that value.
-  typedef KokkosClassic::MultiVector<ST, typename MAT::node_type> KMV;
+  typedef KokkosClassic::MultiVector<ST, typename MV::node_type> KMV;
   KMV& localDiag = D_rangeMap->getLocalMVNonConst ();
   typedef KokkosClassic::DefaultArithmetic<KMV> KMVT;
   KMVT::ReciprocalThreshold (localDiag, minDiagVal_);
@@ -784,9 +783,9 @@ makeInverseDiagonal (const MAT& A, const bool useDiagOffsets) const
 }
 
 
-template<class ScalarType, class MV, class MAT>
-Teuchos::RCP<const typename Chebyshev<ScalarType, MV, MAT>::V>
-Chebyshev<ScalarType, MV, MAT>::
+template<class ScalarType, class MV>
+Teuchos::RCP<const typename Chebyshev<ScalarType, MV>::V>
+Chebyshev<ScalarType, MV>::
 makeRangeMapVectorConst (const Teuchos::RCP<const V>& D) const
 {
   using Teuchos::RCP;
@@ -841,9 +840,9 @@ makeRangeMapVectorConst (const Teuchos::RCP<const V>& D) const
 }
 
 
-template<class ScalarType, class MV, class MAT>
-Teuchos::RCP<typename Chebyshev<ScalarType, MV, MAT>::V>
-Chebyshev<ScalarType, MV, MAT>::
+template<class ScalarType, class MV>
+Teuchos::RCP<typename Chebyshev<ScalarType, MV>::V>
+Chebyshev<ScalarType, MV>::
 makeRangeMapVector (const Teuchos::RCP<V>& D) const
 {
   using Teuchos::rcp_const_cast;
@@ -851,10 +850,10 @@ makeRangeMapVector (const Teuchos::RCP<V>& D) const
 }
 
 
-template<class ScalarType, class MV, class MAT>
+template<class ScalarType, class MV>
 void
-Chebyshev<ScalarType, MV, MAT>::
-textbookApplyImpl (const MAT& A,
+Chebyshev<ScalarType, MV>::
+textbookApplyImpl (const op_type& A,
                    const MV& B,
                    MV& X,
                    const int numIters,
@@ -901,18 +900,18 @@ textbookApplyImpl (const MAT& A,
   }
 }
 
-template<class ScalarType, class MV, class MAT>
-typename Chebyshev<ScalarType, MV, MAT>::MT
-Chebyshev<ScalarType, MV, MAT>::maxNormInf (const MV& X) {
+template<class ScalarType, class MV>
+typename Chebyshev<ScalarType, MV>::MT
+Chebyshev<ScalarType, MV>::maxNormInf (const MV& X) {
   std::vector<MT> norms (X.getNumVectors ());
   X.normInf (norms);
   return *std::max_element (norms.begin (), norms.end ());
 }
 
-template<class ScalarType, class MV, class MAT>
+template<class ScalarType, class MV>
 void
-Chebyshev<ScalarType, MV, MAT>::
-ifpackApplyImpl (const MAT& A,
+Chebyshev<ScalarType, MV>::
+ifpackApplyImpl (const op_type& A,
                  const MV& B,
                  MV& X,
                  const int numIters,
@@ -1062,10 +1061,10 @@ ifpackApplyImpl (const MAT& A,
   }
 }
 
-template<class ScalarType, class MV, class MAT>
-typename Chebyshev<ScalarType, MV, MAT>::ST
-Chebyshev<ScalarType, MV, MAT>::
-powerMethod (const MAT& A, const V& D_inv, const int numIters)
+template<class ScalarType, class MV>
+typename Chebyshev<ScalarType, MV>::ST
+Chebyshev<ScalarType, MV>::
+powerMethod (const op_type& A, const V& D_inv, const int numIters)
 {
   const ST zero = Teuchos::as<ST> (0);
   const ST one = Teuchos::as<ST> (1);
@@ -1098,24 +1097,23 @@ powerMethod (const MAT& A, const V& D_inv, const int numIters)
   return lambdaMax;
 }
 
-template<class ScalarType, class MV, class MAT>
-Teuchos::RCP<const MAT>
-Chebyshev<ScalarType, MV, MAT>::
-getMatrix () const {
+template<class ScalarType, class MV>
+Teuchos::RCP<const typename Chebyshev<ScalarType, MV>::row_matrix_type>
+Chebyshev<ScalarType, MV>::getMatrix () const {
   return A_;
 }
 
-template<class ScalarType, class MV, class MAT>
+template<class ScalarType, class MV>
 bool
-Chebyshev<ScalarType, MV, MAT>::
+Chebyshev<ScalarType, MV>::
 hasTransposeApply () const {
   // Technically, this is true, because the matrix must be symmetric.
   return true;
 }
 
-template<class ScalarType, class MV, class MAT>
+template<class ScalarType, class MV>
 void
-Chebyshev<ScalarType, MV, MAT>::
+Chebyshev<ScalarType, MV>::
 makeTempMultiVectors (Teuchos::RCP<MV>& V1,
                       Teuchos::RCP<MV>& W,
                       const MV& X)
@@ -1131,10 +1129,10 @@ makeTempMultiVectors (Teuchos::RCP<MV>& V1,
   W = W_;
 }
 
-template<class ScalarType, class MV, class MAT>
+template<class ScalarType, class MV>
 std::string
-Chebyshev<ScalarType, MV, MAT>::
-description() const {
+Chebyshev<ScalarType, MV>::
+description () const {
   std::ostringstream oss;
   // YAML requires quoting the key in this case, to distinguish
   // key's colons from the colon that separates key from value.
@@ -1148,9 +1146,9 @@ description() const {
   return oss.str();
 }
 
-template<class ScalarType, class MV, class MAT>
+template<class ScalarType, class MV>
 void
-Chebyshev<ScalarType, MV, MAT>::
+Chebyshev<ScalarType, MV>::
 describe (Teuchos::FancyOStream& out,
           const Teuchos::EVerbosityLevel verbLevel) const
 {
@@ -1161,7 +1159,7 @@ describe (Teuchos::FancyOStream& out,
     (verbLevel == Teuchos::VERB_DEFAULT) ? Teuchos::VERB_LOW : verbLevel;
   if (vl > Teuchos::VERB_NONE) {
     if (vl == Teuchos::VERB_LOW) {
-      out << "Ifpack2::Details::Chebyshev" << endl;
+      out << description () << endl;
     } else { // vl > Teuchos::VERB_LOW
       // YAML requires quoting the key in this case, to distinguish
       // key's colons from the colon that separates key from value.
@@ -1171,8 +1169,7 @@ describe (Teuchos::FancyOStream& out,
       {
         Teuchos::OSTab tab2 (Teuchos::rcpFromRef (out));
         out << "ScalarType: \"" << TypeNameTraits<ScalarType>::name () << "\"" << endl
-            << "MV: \"" << TypeNameTraits<MV>::name () << "\"" << endl
-            << "MAT: \"" << TypeNameTraits<MAT>::name () << "\"" << endl;
+            << "MV: \"" << TypeNameTraits<MV>::name () << "\"" << endl;
       }
       // "Computed parameters" literally means "parameters whose
       // values were computed by compute()."

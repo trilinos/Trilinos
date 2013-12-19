@@ -89,7 +89,6 @@ namespace Details {
 /// \brief Left-scaled Chebyshev iteration.
 /// \tparam ScalarType The type of entries in the matrix and vectors.
 /// \tparam MV Specialization of Tpetra::MultiVector.
-/// \tparam MAT Corresponding specialization of Tpetra::RowMatrix.
 ///
 /// \warning This class is NOT for users; it is an implementation
 ///   detail of Ifpack2.  Users should use Ifpack2::Chebyshev instead.
@@ -124,7 +123,7 @@ namespace Details {
 /// implementation (ML_Cheby(), in
 /// packages/ml/src/Smoother/ml_smoother.c).  I couldn't get it to
 /// converge in time to be useful for testing, so it is disabled.
-template<class ScalarType, class MV, class MAT>
+template<class ScalarType, class MV>
 class Chebyshev : public Teuchos::Describable {
 public:
   //! \name Typedefs
@@ -140,7 +139,12 @@ public:
   typedef Tpetra::Operator<typename MV::scalar_type,
                            typename MV::local_ordinal_type,
                            typename MV::global_ordinal_type,
-                           typename MV::node_type> OP;
+                           typename MV::node_type> op_type;
+  //! Specialization of Tpetra::RowMatrix.
+  typedef Tpetra::RowMatrix<typename MV::scalar_type,
+                           typename MV::local_ordinal_type,
+                           typename MV::global_ordinal_type,
+                           typename MV::node_type> row_matrix_type;
   //! Specialization of Tpetra::Vector.
   typedef Tpetra::Vector<typename MV::scalar_type,
                          typename MV::local_ordinal_type,
@@ -159,7 +163,7 @@ public:
   ///   definite.  The input A may be null.  In that case, you must
   ///   call setMatrix() with a nonnull input before you may call
   ///   compute() or apply().
-  Chebyshev (Teuchos::RCP<const MAT> A);
+  Chebyshev (Teuchos::RCP<const row_matrix_type> A);
 
   /// Constructor that takes a sparse matrix and sets the user's parameters.
   ///
@@ -170,7 +174,7 @@ public:
   ///   compute() or apply().
   /// \param params [in/out] On input: the parameters.  On output:
   ///   filled with the current parameter settings.
-  Chebyshev (Teuchos::RCP<const MAT> A, Teuchos::ParameterList& params);
+  Chebyshev (Teuchos::RCP<const row_matrix_type> A, Teuchos::ParameterList& params);
 
   /// \brief Set (or reset) parameters.
   ///
@@ -335,14 +339,14 @@ public:
   ST getLambdaMaxForApply() const;
 
   //! Get the matrix given to the constructor.
-  Teuchos::RCP<const MAT> getMatrix () const;
+  Teuchos::RCP<const row_matrix_type> getMatrix () const;
 
   /// \brief Set the matrix.
   ///
   /// It's legal to call this method with a null input.  In that case,
   /// one must then call this method with a nonnull input before one
   /// may call compute() or apply().
-  void setMatrix (const Teuchos::RCP<const MAT>& A);
+  void setMatrix (const Teuchos::RCP<const row_matrix_type>& A);
 
   //! Whether it's possible to apply the transpose of this operator.
   bool hasTransposeApply () const;
@@ -373,7 +377,7 @@ private:
   /// setMatrix().  It may be null, in which case it is not legal to
   /// call compute() or apply() until setMatrix() is called with a
   /// nonnull input.
-  Teuchos::RCP<const MAT> A_;
+  Teuchos::RCP<const row_matrix_type> A_;
 
   /// \brief The inverse of the diagonal entries of A.
   ///
@@ -537,7 +541,7 @@ private:
 
   //! R = B - Op(A) * X, where Op(A) is either A, \f$A^T\f$, or \f$A^H\f$.
   static void
-  computeResidual (MV& R, const MV& B, const MAT& A, const MV& X,
+  computeResidual (MV& R, const MV& B, const op_type& A, const MV& X,
                    const Teuchos::ETransp mode = Teuchos::NO_TRANS);
 
   /// \brief Z = D_inv * R, = D \ R.
@@ -562,7 +566,7 @@ private:
   ///   offsets of diagonal entries (diagOffsets_) to speed up
   ///   extracting the diagonal entries of the sparse matrix A.
   Teuchos::RCP<const V>
-  makeInverseDiagonal (const MAT& A, const bool useDiagOffsets=false) const;
+  makeInverseDiagonal (const row_matrix_type& A, const bool useDiagOffsets=false) const;
 
   /// Return a range Map copy of the vector D.
   ///
@@ -598,7 +602,7 @@ private:
   /// \param D_inv [in] Vector of diagonal entries of A.  It must have
   ///   the same distribution as B.
   void
-  textbookApplyImpl (const MAT& A,
+  textbookApplyImpl (const op_type& A,
                      const MV& B,
                      MV& X,
                      const int numIters,
@@ -630,7 +634,7 @@ private:
   /// \param D_inv [in] Vector of diagonal entries of A.  It must have
   ///   the same distribution as b.
   void
-  ifpackApplyImpl (const MAT& A,
+  ifpackApplyImpl (const op_type& A,
                    const MV& B,
                    MV& X,
                    const int numIters,
@@ -642,7 +646,7 @@ private:
   /// \brief Use numIters power method iterations to estimate the
   ///   maximum eigenvalue of A*D_inv.
   static ST
-  powerMethod (const MAT& A, const V& D_inv, const int numIters);
+  powerMethod (const op_type& A, const V& D_inv, const int numIters);
 
   //! The maximum infinity norm of all the columns of X.
   static MT maxNormInf (const MV& X);
@@ -674,7 +678,7 @@ private:
   /// \param D_inv [in] Vector of diagonal entries of A.  It must have
   ///   the same distribution as b.
   void
-  mlApplyImpl (const MAT& A,
+  mlApplyImpl (const op_type& A,
                const MV& B,
                MV& X,
                const int numIters,
