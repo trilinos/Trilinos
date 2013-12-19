@@ -53,6 +53,8 @@
 #ifndef MUELU_MAXLINKAGGREGATIONALGORITHM_DEF_HPP_
 #define MUELU_MAXLINKAGGREGATIONALGORITHM_DEF_HPP_
 
+#include <algorithm>
+
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
@@ -79,31 +81,52 @@ namespace MueLu {
     const LO  nRows  = graph.GetNodeNumVertices();
     const int myRank = graph.GetComm()->getRank();
 
+    unsigned         aggSize  =  0;
+    const unsigned   magicConstAsDefaultSize = 100;
+    std::vector<int> aggList(magicConstAsDefaultSize);
+
     for (LO iNode = 0; iNode < nRows; iNode++) {
       if (aggStat[iNode] == NodeStats::AGGREGATED)
         continue;
 
-      typedef std::map<LO,LO> map_type;
-      map_type aggid2cntconnections;
-
       ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(iNode);
+
+      // TODO: I would like to get rid of this, but that requires something like
+      // graph.getMaxElementsPerRow(), which is trivial in Graph, but requires
+      // computation in LWGraph
+      if (neighOfINode.size() >= aggList.size())
+        aggList.resize(neighOfINode.size()*2);
+
+      aggSize = 0;
       for (int j = 0; j < neighOfINode.size(); j++) {
         LO neigh = neighOfINode[j];
 
         // NOTE: we don't need the check (neigh != iNode), as we work only
         // if aggStat[neigh] == AGGREGATED, which we know is different from aggStat[iNode]
         if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == NodeStats::AGGREGATED)
-          aggid2cntconnections[vertex2AggId[neigh]]++;
+          aggList[aggSize++] = vertex2AggId[neigh];
       }
 
+      // Ideally, we would have a _fast_ hash table here.
+      // But for the absense of that, sorting works just fine.
+      std::sort(aggList.begin(), aggList.begin() + aggSize);
+
+      // terminator
+      aggList[aggSize] = -1;
+
       // Find an aggregate id with most connections to
-      LO maxNumConnections =  0;
+      LO maxNumConnections =  0, curNumConnections;
       LO selectedAggregate = -1;
-      for (typename map_type::const_iterator it = aggid2cntconnections.begin(); it != aggid2cntconnections.end(); it++)
-        if (maxNumConnections < it->second) {
-          maxNumConnections = it->second;
-          selectedAggregate = it->first;
+      for (int i = 0; i < aggSize; i++) {
+        curNumConnections++;
+        if (aggList[i+1] != aggList[i]) {
+          if (curNumConnections > maxNumConnections) {
+            maxNumConnections = curNumConnections;
+            selectedAggregate = aggList[i];
+          }
+          curNumConnections = 0;
         }
+      }
 
       // Add node iNode to aggregate
       if (selectedAggregate != -1) {
