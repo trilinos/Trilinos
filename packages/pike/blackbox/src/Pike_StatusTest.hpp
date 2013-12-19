@@ -1,7 +1,11 @@
 #ifndef PIKE_STATUS_TESTS_HPP
 #define PIKE_STATUS_TESTS_HPP
 
+#include <iostream>
+
 namespace pike {
+
+  class Solver;
 
   //! The status of a solver
   enum SolveStatus {
@@ -24,8 +28,9 @@ namespace pike {
     NONE
   };
 
-  template <typename Solver>
   class StatusTest {
+
+  public:
 
     /** \brief Test the stopping criteria.
 
@@ -33,7 +38,7 @@ namespace pike {
 	checkType is "None".  If the test is skipped, then
 	the status should be set to NOX::StatusTest::Unevaluated.
     */
-    virtual pike::SolveStatus checkStatus(const Solver& solver, const CheckType checkType) = 0;
+    virtual pike::SolveStatus checkStatus(const pike::Solver& solver, const CheckType checkType = pike::COMPLETE) = 0;
     
     //! Return the result of the most recent checkStatus() call.
     virtual pike::SolveStatus getStatus() const = 0;
