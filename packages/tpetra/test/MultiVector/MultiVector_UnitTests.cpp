@@ -1956,6 +1956,9 @@ namespace {
       // test copy constructor with
       // copy it
       MV mcopy1(morig), mcopy2(morig);
+      mcopy1 = createCopy(morig);
+      mcopy2 = createCopy(morig);
+
       // verify that all three have identical values
       Array<Mag> norig(numVectors), ncopy1(numVectors), ncopy2(numVectors);
       morig.normInf(norig);
@@ -1995,6 +1998,8 @@ namespace {
     morig.randomize();
     // copy it
     V mcopy1(morig), mcopy2(morig);
+    mcopy1 = createCopy(morig);
+    mcopy2 = createCopy(morig);
     // verify that all three have identical values
     Magnitude norig, ncopy1, ncopy2;
     norig = morig.normInf();
