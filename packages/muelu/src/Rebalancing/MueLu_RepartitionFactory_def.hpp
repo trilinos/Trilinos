@@ -60,7 +60,6 @@
 #ifdef HAVE_MPI
 #include <Teuchos_DefaultMpiComm.hpp>
 #include <Teuchos_CommHelpers.hpp>
-#include <Teuchos_Hashtable.hpp>
 
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
