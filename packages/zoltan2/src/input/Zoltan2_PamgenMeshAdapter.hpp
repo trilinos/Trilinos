@@ -98,7 +98,7 @@ public:
    *  lifetime of this InputAdapter.
    */
 
-  PamgenMeshAdapter();
+  PamgenMeshAdapter(string typestr = "region");
 
   ////////////////////////////////////////////////////////////////
   // The MeshAdapter interface.
@@ -152,8 +152,10 @@ private:
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-  PamgenMeshInput<User>::PamgenMeshInput()
+PamgenMeshInput<User>::PamgenMeshInput(string typestr = "region")
 {
+  setPrimaryEntityType(typestr);
+
   int exoid, num_dim, num_nodes, num_elem;
   int num_elem_blk, num_node_sets, num_side_sets;
 
