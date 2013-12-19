@@ -17,11 +17,13 @@ typedef stk::search::IdentProc<int,int> Ident;
 typedef stk::search::Point<double> Point;
 typedef stk::search::Sphere<double> Sphere;
 typedef stk::search::Box<double> StkBox;
+typedef std::pair<StkBox,Ident> StkBoxWithId;
+typedef std::vector< StkBoxWithId > StkBoxVector;
 
 typedef geometry::AxisAlignedBB GtkBox;
 typedef std::vector<std::pair<Ident,Ident> > SearchResults;
 typedef std::pair<GtkBox,Ident> BoxWithId;
-typedef std::vector< BoxWithId > BoxVector;
+typedef std::vector< BoxWithId > GtkBoxVector;
 
 template<class VolumeType>
 VolumeType generateBoundingVolume(double x, double y, double z, double radius);
@@ -63,7 +65,7 @@ std::pair<VolumeType, Ident> generateBoundingVolume(double x, double y, double z
   return std::make_pair(generateBoundingVolume<VolumeType>(x,y,z,radius), Ident(id,proc));
 }
 
-inline void gtk_search(BoxVector& local_domain, BoxVector& local_range, MPI_Comm comm, SearchResults& searchResults)
+inline void gtk_search(GtkBoxVector& local_domain, GtkBoxVector& local_range, MPI_Comm comm, SearchResults& searchResults)
 {
     int num_procs = -1;
     int proc_id   = -1;
@@ -142,5 +144,67 @@ inline void gtk_search(BoxVector& local_domain, BoxVector& local_range, MPI_Comm
 //    std::sort(searchResults.begin(), searchResults.end());
 }
 
+extern int gl_argc;
+extern char** gl_argv;
 
+inline std::string getOption(const std::string& option, const std::string defaultString="no")
+{
+    std::string returnValue = defaultString;
+    if ( gl_argv != 0 )
+    {
+        for (int i=0;i<gl_argc;i++)
+        {
+            std::string input_argv(gl_argv[i]);
+            if ( option == input_argv )
+            {
+                if ( (i+1) < gl_argc )
+                {
+                    returnValue = std::string(gl_argv[i+1]);
+                }
+                break;
+            }
+        }
+    }
+    return returnValue;
+}
+
+#include <exodusMeshInterface.h>
+
+inline void createBoundingBoxForElement(const sierra::Mesh::LocalNodeId *connectivity, const int numNodesPerElement,
+        const std::vector<double> &coordinates, std::vector<double>& boxCoordinates)
+{
+    int spatialDim = 3;
+    double *minCoordinates = &boxCoordinates[0];
+    double *maxCoordinates = &boxCoordinates[spatialDim];
+
+    int firstNode=0;
+    for (int j=0;j<spatialDim;j++)
+    {
+        minCoordinates[j] = coordinates[spatialDim*connectivity[firstNode]+j];
+        maxCoordinates[j] = coordinates[spatialDim*connectivity[firstNode]+j];
+    }
+
+    for (int i=1;i<numNodesPerElement;i++)
+    {
+        sierra::Mesh::LocalNodeId nodeId = connectivity[i];
+        for (int j=0;j<spatialDim;j++)
+        {
+           minCoordinates[j] = std::min(minCoordinates[j], coordinates[spatialDim*nodeId+j]);
+           maxCoordinates[j] = std::max(maxCoordinates[j], coordinates[spatialDim*nodeId+j]);
+        }
+    }
+    bool inflateBox = true;
+    double percentInflation = 10;
+    if ( inflateBox )
+    {
+        for (int i=0;i<spatialDim;i++)
+        {
+            double dist = maxCoordinates[i]-minCoordinates[i];
+            if ( dist <= 1e-8 ) dist = 0.001;
+            double inflation = dist*(0.5*percentInflation)/100.0;
+            minCoordinates[i] -= inflation;
+            maxCoordinates[i] += inflation;
+        }
+    }
+}
 #endif

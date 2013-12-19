@@ -1,6 +1,3 @@
-#include <stk_search/BoundingBox.hpp>
-#include <stk_search/IdentProc.hpp>
-
 #include <unit_tests/UnitTestUtils.hpp>
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
@@ -95,7 +92,7 @@ void testCoarseSearchForAlgorithm(stk::search::SearchMethod algorithm, MPI_Comm 
   }
 }
 
-void coarse_search_new(BoxVector& local_domain, BoxVector& local_range, NewSearchMethod algorithm, MPI_Comm comm, SearchResults& searchResults)
+void coarse_search_new(GtkBoxVector& local_domain, GtkBoxVector& local_range, NewSearchMethod algorithm, MPI_Comm comm, SearchResults& searchResults)
 {
     if ( algorithm == GTK )
     {
@@ -121,7 +118,7 @@ void testCoarseSearchForAlgorithmUsingGtkAABoxes(NewSearchMethod algorithm, MPI_
   int num_procs = stk::parallel_machine_size(comm);
   int proc_id   = stk::parallel_machine_rank(comm);
 
-  BoxVector local_domain, local_range;
+  GtkBoxVector local_domain, local_range;
   // what if identifier is NOT unique
 
   GtkBox box;

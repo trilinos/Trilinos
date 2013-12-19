@@ -11,7 +11,7 @@ namespace
 void checkKeyAgainstOffset(const int key[], const int offset_key_1);
 void getCutsForProcessorCount(unsigned numProcsLocal, const float * const weights, stk::OctTreeKey *cuts);
 
-STKUNIT_UNIT_TEST(stk_search_not_boost, testCalculationOfKeyUsingOffset)
+STKUNIT_UNIT_TEST(stk_search_oct_tree, testCalculationOfKeyUsingOffset)
 {
     int procId=-1;
     MPI_Comm_rank(MPI_COMM_WORLD, &procId);
@@ -32,7 +32,7 @@ STKUNIT_UNIT_TEST(stk_search_not_boost, testCalculationOfKeyUsingOffset)
     }
 }
 
-STKUNIT_UNIT_TEST(stk_search_not_boost, testPartitioningOfPhysicalTreeForVaryingNumberOfProcsAndWeights)
+STKUNIT_UNIT_TEST(stk_search_oct_tree, testPartitioningOfPhysicalTreeForVaryingNumberOfProcsAndWeights)
 {
     int procId=-1;
     MPI_Comm_rank(MPI_COMM_WORLD, &procId);
@@ -82,7 +82,7 @@ STKUNIT_UNIT_TEST(stk_search_not_boost, testPartitioningOfPhysicalTreeForVarying
     }
 }
 
-STKUNIT_UNIT_TEST(stk_search_not_boost, stressTestPartitioningUpToOneMillionProcessors)
+STKUNIT_UNIT_TEST(stk_search_oct_tree, stressTestPartitioningUpToOneMillionProcessors)
 {
     unsigned depth = 4;
     unsigned tree_size = stk::oct_tree_size(depth);

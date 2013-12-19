@@ -1,6 +1,3 @@
-// #include <stk_search/CoarseSearch.hpp>
-#include <stk_search/BoundingBox.hpp>
-#include <stk_search/IdentProc.hpp>
 #include <stk_util/util/memory_util.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
@@ -15,9 +12,6 @@
 #include <unit_tests/UnitTestUtils.hpp>
 
 #include <exodusMeshInterface.h>
-
-extern int gl_argc;
-extern char** gl_argv;
 
 namespace
 {
@@ -39,43 +33,20 @@ void print_debug_skip(stk::ParallelMachine pm)
 #endif
 }
 
-
-typedef stk::search::IdentProc<int,int> Ident;
-typedef stk::search::Box<double> Box;
-typedef std::vector< std::pair<Box,Ident> > BoxVector;
-typedef std::vector< std::pair<geometry::AxisAlignedBB,Ident> > GtkBoxVector;
-typedef std::vector<std::pair<Ident,Ident> > SearchResults;
-typedef stk::search::Point<double> Point;
-
-struct mybox
-{
-    double coordinates[6];
-    void setCoordinates(double *inputCoord)
-    {
-        for (int i=0;i<6;i++)
-        {
-            coordinates[i] = inputCoord[i];
-        }
-    }
-};
-
 void printPeformanceStats(double elapsedTime, MPI_Comm comm);
-void createBoundingBoxForElement(const sierra::Mesh::LocalNodeId *connectivity, const int numNodesPerElement,
-        const std::vector<double> &coordinates, std::vector<double>& boxCoordinates);
-void writeExodusFileUsingBoxes(const std::vector<mybox> & boxes, const std::string &filename);
+void writeExodusFileUsingBoxes(const std::vector<GtkBox> & boxes, const std::string &filename);
 void runStkSearchTestUsingStkAABoxes(stk::search::SearchMethod search);
 void runStkSearchTestUsingGtkAABoxes(stk::search::SearchMethod search);
 void printSumOfResults(MPI_Comm comm, const size_t sizeResults);
-void testGtkSearch(MPI_Comm comm, const std::vector<mybox>&domainBoxes, SearchResults& boxIdPairResults);
-void fillBoxesUsingSidesetsFromFile(MPI_Comm comm, const std::string& filename, std::vector<mybox> &domainBoxes);
-void writeExodusFileUsingBoxes(const std::vector<mybox>& boxes, const std::string &filename);
+void testGtkSearch(MPI_Comm comm, std::vector<GtkBox>&domainBoxes, SearchResults& boxIdPairResults);
+void fillBoxesUsingSidesetsFromFile(MPI_Comm comm, const std::string& filename, std::vector<GtkBox> &domainBoxes);
+void writeExodusFileUsingBoxes(const std::vector<GtkBox>& boxes, const std::string &filename);
 void testPerformanceOfAxisAlignedBoundingBoxes(stk::search::SearchMethod searchMethod, MPI_Comm comm);
-std::string getOption(const std::string& option, const std::string defaultString = std::string("false"));
-void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<mybox> &domainBoxes,
+void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxes,
         stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults);
-void testStkSearchUsingGtkAABoxes(MPI_Comm comm, std::vector<mybox> &domainBoxes,
+void testStkSearchUsingGtkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxes,
                 stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults);
-void fillDomainBoxes(MPI_Comm comm, std::vector<mybox>& domainBoxes);
+void fillDomainBoxes(MPI_Comm comm, std::vector<GtkBox>& domainBoxes);
 void testResultsAcrossProcs(MPI_Comm comm, SearchResults& boxIdPairResults);
 
 
@@ -103,10 +74,9 @@ void testPerformanceOfAxisAlignedBoundingBoxes(stk::search::SearchMethod searchM
     size_t numColumnsPerProcessor = 1000;
     double boxSize = 1.0;
 
-    std::vector<std::pair<Box, Ident> > smallBoxVector;
-    std::vector<std::pair<Box, Ident> > bigBoxVector;
-
-    std::vector<std::pair<Ident, Ident> > boxIdPairResults;
+    StkBoxVector smallBoxVector;
+    StkBoxVector bigBoxVector;
+    SearchResults boxIdPairResults;
 
     if(proc % 2 == 0)
     {
@@ -123,7 +93,7 @@ void testPerformanceOfAxisAlignedBoundingBoxes(stk::search::SearchMethod searchM
 
                 int id = x * numColumnsPerProcessor + y;
 
-                smallBoxVector.push_back(generateBoundingVolume<Box>(centerX,
+                smallBoxVector.push_back(generateBoundingVolume<StkBox>(centerX,
                         centerY,
                         centerZ,
                         radius,
@@ -140,7 +110,7 @@ void testPerformanceOfAxisAlignedBoundingBoxes(stk::search::SearchMethod searchM
         double centerY = radius;
         double centerZ = boxSize / 2;
         int id = 1;
-        bigBoxVector.push_back(generateBoundingVolume<Box>(centerX,
+        bigBoxVector.push_back(generateBoundingVolume<StkBox>(centerX,
                 centerY,
                 centerZ,
                 radius - boxSize / 2,
@@ -187,10 +157,26 @@ TEST(Performance, stkSearchUsingOcttreeUsingGtkAABoxes)
     runStkSearchTestUsingGtkAABoxes(stk::search::OCTREE);
 }
 
+TEST(Performance, gtkSearchUsingOcttreeUsingGtkAABoxes)
+{
+    runStkSearchTestUsingGtkAABoxes(stk::search::OCTREE);
+}
+
+TEST(Performance, gtkSearch)
+{
+    MPI_Comm comm = MPI_COMM_WORLD;
+
+    std::vector<GtkBox> domainBoxes;
+    fillDomainBoxes(comm, domainBoxes);
+
+    SearchResults boxIdPairResults;
+    testGtkSearch(comm, domainBoxes, boxIdPairResults);
+}
+
 void runStkSearchTestUsingGtkAABoxes(stk::search::SearchMethod searchMethod)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
-    std::vector<mybox> domainBoxes;
+    std::vector<GtkBox> domainBoxes;
     fillDomainBoxes(comm, domainBoxes);
 
     SearchResults boxIdPairResults;
@@ -200,22 +186,11 @@ void runStkSearchTestUsingGtkAABoxes(stk::search::SearchMethod searchMethod)
 void runStkSearchTestUsingStkAABoxes(stk::search::SearchMethod searchMethod)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
-    std::vector<mybox> domainBoxes;
+    std::vector<GtkBox> domainBoxes;
     fillDomainBoxes(comm, domainBoxes);
 
     SearchResults boxIdPairResults;
     testStkSearchUsingStkAABoxes(comm, domainBoxes, searchMethod, boxIdPairResults);
-}
-
-TEST(Performance, gtkSearch)
-{
-    MPI_Comm comm = MPI_COMM_WORLD;
-
-    std::vector<mybox> domainBoxes;
-    fillDomainBoxes(comm, domainBoxes);
-
-    SearchResults boxIdPairResults;
-    testGtkSearch(comm, domainBoxes, boxIdPairResults);
 }
 
 size_t getGoldValueForTest()
@@ -229,7 +204,7 @@ size_t getGoldValueForTest()
     return goldValueNumber;
 }
 
-void testGtkSearch(MPI_Comm comm, const std::vector<mybox>&inputBoxes, SearchResults& searchResults)
+void testGtkSearch(MPI_Comm comm, std::vector<GtkBox>&domainBoxes, SearchResults& searchResults)
 {
     check_valgrind_version();
     CALLGRIND_START_INSTRUMENTATION;
@@ -240,20 +215,12 @@ void testGtkSearch(MPI_Comm comm, const std::vector<mybox>&inputBoxes, SearchRes
     MPI_Comm_size(comm, &num_procs);
     std::vector<int> procThatOwnsBox;
 
-    std::vector<geometry::AxisAlignedBB> domainBoxes(inputBoxes.size());
-    for(size_t i=0;i<inputBoxes.size();i++)
+    for(size_t i=0;i<domainBoxes.size();i++)
     {
-        domainBoxes[i] = geometry::AxisAlignedBB(inputBoxes[i].coordinates[0],
-                                                 inputBoxes[i].coordinates[1],
-                                                 inputBoxes[i].coordinates[2],
-                                                 inputBoxes[i].coordinates[3],
-                                                 inputBoxes[i].coordinates[4],
-                                                 inputBoxes[i].coordinates[5]
-        );
         procThatOwnsBox.push_back(proc_id);
     }
 
-    std::vector<geometry::AxisAlignedBB> rangeBoxes(domainBoxes);
+    std::vector<GtkBox> rangeBoxes(domainBoxes);
 
     CALLGRIND_TOGGLE_COLLECT;
 
@@ -262,8 +229,8 @@ void testGtkSearch(MPI_Comm comm, const std::vector<mybox>&inputBoxes, SearchRes
     std::vector<int> ghost_procs;
     ACME::BoxA_BoxB_Ghost(domainBoxes, rangeBoxes, comm, ghost_indices, ghost_procs);
 
-    std::vector< std::vector<geometry::AxisAlignedBB> > send_list(num_procs);
-    std::vector< std::vector<geometry::AxisAlignedBB> > recv_list(num_procs);
+    std::vector< std::vector<GtkBox> > send_list(num_procs);
+    std::vector< std::vector<GtkBox> > recv_list(num_procs);
 
     for (size_t i=0;i<ghost_indices.size();i++)
     {
@@ -327,7 +294,18 @@ void testGtkSearch(MPI_Comm comm, const std::vector<mybox>&inputBoxes, SearchRes
     testResultsAcrossProcs(comm, searchResults);
 }
 
-void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<mybox> &domainBoxes,
+void fillStkBoxesUsingGtkBoxes(const std::vector<GtkBox> &domainBoxes, const int procId, StkBoxVector& stkBoxes)
+    {
+    for (size_t i=0;i<domainBoxes.size();i++)
+    {
+        Point min(domainBoxes[i].get_x_min(), domainBoxes[i].get_y_min(), domainBoxes[i].get_z_min());
+        Point max(domainBoxes[i].get_x_max(), domainBoxes[i].get_y_max(), domainBoxes[i].get_z_max());
+        Ident domainBoxId(i, procId);
+        stkBoxes[i] = std::make_pair(StkBox(min,max), domainBoxId);
+    }
+}
+
+void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxes,
         stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults)
 {
     check_valgrind_version();
@@ -339,14 +317,8 @@ void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<mybox> &domainBoxes
     int numProc=-1;
     MPI_Comm_size(comm, &numProc);
 
-    BoxVector stkBoxes(domainBoxes.size());
-    for (size_t i=0;i<domainBoxes.size();i++)
-    {
-        Point min(domainBoxes[i].coordinates[0], domainBoxes[i].coordinates[1], domainBoxes[i].coordinates[2]);
-        Point max(domainBoxes[i].coordinates[3], domainBoxes[i].coordinates[4], domainBoxes[i].coordinates[5]);
-        Ident domainBoxId(i, procId);
-        stkBoxes[i] = std::make_pair(Box(min,max), domainBoxId);
-    }
+    StkBoxVector stkBoxes(domainBoxes.size());
+    fillStkBoxesUsingGtkBoxes(domainBoxes, procId, stkBoxes);
 
     std::string rangeBoxComm = getOption("-rangeBoxComm", "yes");
     bool rangeResultsCommunicated = ( rangeBoxComm == "yes" );
@@ -366,7 +338,7 @@ void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<mybox> &domainBoxes
     testResultsAcrossProcs(comm, boxIdPairResults);
 }
 
-void testStkSearchUsingGtkAABoxes(MPI_Comm comm, std::vector<mybox> &domainBoxes,
+void testStkSearchUsingGtkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxes,
         stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults)
 {
     check_valgrind_version();
@@ -379,18 +351,10 @@ void testStkSearchUsingGtkAABoxes(MPI_Comm comm, std::vector<mybox> &domainBoxes
     MPI_Comm_size(comm, &numProc);
 
     GtkBoxVector searchBoxPairs(domainBoxes.size());
-    std::vector<geometry::AxisAlignedBB> gtkBoxes(domainBoxes.size());
     for(size_t i=0;i<domainBoxes.size();i++)
     {
-        gtkBoxes[i] = geometry::AxisAlignedBB(domainBoxes[i].coordinates[0],
-                domainBoxes[i].coordinates[1],
-                domainBoxes[i].coordinates[2],
-                domainBoxes[i].coordinates[3],
-                domainBoxes[i].coordinates[4],
-                domainBoxes[i].coordinates[5]
-        );
         Ident domainBoxId(i, procId);
-        searchBoxPairs[i] = std::make_pair(gtkBoxes[i], domainBoxId);
+        searchBoxPairs[i] = std::make_pair(domainBoxes[i], domainBoxId);
     }
 
     std::string rangeBoxComm = getOption("-rangeBoxComm", "yes");
@@ -417,19 +381,13 @@ TEST(Performance, getGoldResults)
     int procId=-1;
     MPI_Comm_rank(comm, &procId);
 
-    std::vector<mybox> domainBoxes;
+    std::vector<GtkBox> domainBoxes;
     fillDomainBoxes(comm, domainBoxes);
 
     SearchResults boxIdPairResults;
 
-    BoxVector stkBoxes(domainBoxes.size());
-    for (size_t i=0;i<domainBoxes.size();i++)
-    {
-        Point min(domainBoxes[i].coordinates[0], domainBoxes[i].coordinates[1], domainBoxes[i].coordinates[2]);
-        Point max(domainBoxes[i].coordinates[3], domainBoxes[i].coordinates[4], domainBoxes[i].coordinates[5]);
-        Ident domainBoxId(i, procId);
-        stkBoxes[i] = std::make_pair(Box(min,max), domainBoxId);
-    }
+    StkBoxVector stkBoxes(domainBoxes.size());
+    fillStkBoxesUsingGtkBoxes(domainBoxes, procId, stkBoxes);
 
     double startTime = stk::wall_time();
     for (size_t i=0;i<stkBoxes.size();++i)
@@ -505,37 +463,9 @@ void testResultsAcrossProcs(MPI_Comm comm, SearchResults& boxIdPairResults)
         }
     }
 }
-void createBoundingBoxesForElementsInElementBlocks(const int procId, const sierra::Mesh &mesh, const std::vector<double> &coordinates, BoxVector& domainBoxes)
-{
-    size_t numberBoundingBoxes = mesh.getNumberLocalElements();
-    domainBoxes.resize(numberBoundingBoxes);
-
-    sierra::Mesh::BlockIdVector blockIds;
-    mesh.fillElementBlockIds(blockIds);
-
-    size_t boxCounter = 0;
-
-    std::vector<double> boxCoordinates(6);
-    for (size_t elemBlockNum=0;elemBlockNum<mesh.getNumberElementBlocks();elemBlockNum++)
-    {
-        sierra::Mesh::LocalNodeIdVector connectivity;
-        mesh.fillElementToLocalNodeConnectivityForBlock(blockIds[elemBlockNum], connectivity);
-        int numNodesPerElement = mesh.getNumberNodesPerElement(blockIds[elemBlockNum]);
-        size_t numElementsThisBlock = mesh.getNumberLocalElementsInBlock(blockIds[elemBlockNum]);
-        for (size_t elemCounter=0;elemCounter<numElementsThisBlock;elemCounter++)
-        {
-            createBoundingBoxForElement(&connectivity[numNodesPerElement*elemCounter], numNodesPerElement, coordinates, boxCoordinates);
-            Ident domainBoxId(boxCounter, procId);
-            Point min(boxCoordinates[0], boxCoordinates[1], boxCoordinates[2]);
-            Point max(boxCoordinates[3], boxCoordinates[4], boxCoordinates[5]);
-            domainBoxes[boxCounter] = std::make_pair(Box(min, max), domainBoxId);
-            boxCounter++;
-        }
-    }
-}
 
 void createBoundingBoxesForSidesInSidesets(const sierra::Mesh &mesh, const std::vector<double> &coordinates,
-        std::vector<mybox>& domainBoxes)
+        std::vector<GtkBox>& domainBoxes)
 {
     size_t numberBoundingBoxes = 0;
     sierra::Mesh::SideSetIdVector sidesetIds;
@@ -560,7 +490,8 @@ void createBoundingBoxesForSidesInSidesets(const sierra::Mesh &mesh, const std::
         for (size_t i=0;i<numNodesPerFace.size();i++)
         {
             createBoundingBoxForElement(&nodeIds[offset], numNodesPerFace[i], coordinates, boxCoordinates);
-            domainBoxes[boxCounter].setCoordinates(&boxCoordinates[0]);
+            domainBoxes[boxCounter].set_box(boxCoordinates[0], boxCoordinates[1], boxCoordinates[2],
+                                            boxCoordinates[3], boxCoordinates[4], boxCoordinates[5]);
             boxCounter++;
             offset += numNodesPerFace[i];
         }
@@ -588,7 +519,7 @@ void printSumOfResults(MPI_Comm comm, const size_t sizeResults)
     }
 }
 
-void fillBoxesUsingSidesetsFromFile(MPI_Comm comm, const std::string& filename, std::vector<mybox> &domainBoxes)
+void fillBoxesUsingSidesetsFromFile(MPI_Comm comm, const std::string& filename, std::vector<GtkBox> &domainBoxes)
 {
     sierra::ExodusMeshInterface mesh(filename, comm);
 
@@ -653,7 +584,7 @@ void setHexCoordinates(const double &xmin, const double &ymin, const double &zmi
     hexCoordinates[3*ordering[7]+2] = zmax;
 }
 
-void putCoordinatesInFile(const int exoid, const std::vector<mybox>& boxes)
+void putCoordinatesInFile(const int exoid, const std::vector<GtkBox>& boxes)
 {
     const int num_nodes_per_element = 8;
     const int spatialDim = 3;
@@ -664,14 +595,14 @@ void putCoordinatesInFile(const int exoid, const std::vector<mybox>& boxes)
     for (size_t i=0;i<boxes.size();i++)
     {
         double xmin=0, ymin=0, zmin=0;
-        xmin = boxes[i].coordinates[0];
-        ymin = boxes[i].coordinates[1];
-        zmin = boxes[i].coordinates[2];
+        xmin = boxes[i].get_x_min();
+        ymin = boxes[i].get_y_min();
+        zmin = boxes[i].get_z_min();
 
         double xmax=0, ymax=0, zmax=0;
-        xmax = boxes[i].coordinates[3];
-        ymax = boxes[i].coordinates[4];
-        zmax = boxes[i].coordinates[5];
+        xmax = boxes[i].get_x_max();
+        ymax = boxes[i].get_y_max();
+        zmax = boxes[i].get_z_max();
 
         double hexCoordinates[24];
         setHexCoordinates(xmin, ymin, zmin, xmax, ymax, zmax, &hexCoordinates[0]);
@@ -718,7 +649,7 @@ void fillNumElementsPerBlock(const int num_elements, std::vector<int> &numElemen
     }
 }
 
-void writeExodusFileUsingBoxes(const std::vector<mybox>& boxes, const std::string &filename)
+void writeExodusFileUsingBoxes(const std::vector<GtkBox>& boxes, const std::string &filename)
 {
     if ( boxes.size() == 0 )
     {
@@ -755,27 +686,6 @@ void writeExodusFileUsingBoxes(const std::vector<mybox>& boxes, const std::strin
     ex_close(exoid);
 }
 
-std::string getOption(const std::string& option, const std::string defaultString)
-{
-    std::string returnValue = defaultString;
-    if ( gl_argv != 0 )
-    {
-        for (int i=0;i<gl_argc;i++)
-        {
-            std::string input_argv(gl_argv[i]);
-            if ( option == input_argv )
-            {
-                if ( (i+1) < gl_argc )
-                {
-                    returnValue = std::string(gl_argv[i+1]);
-                }
-                break;
-            }
-        }
-    }
-    return returnValue;
-}
-
 void printPeformanceStats(double elapsedTime, MPI_Comm comm)
 {
     long int maxHwm = 0, minHwm = 0;
@@ -808,45 +718,7 @@ void printPeformanceStats(double elapsedTime, MPI_Comm comm)
     }
 }
 
-void createBoundingBoxForElement(const sierra::Mesh::LocalNodeId *connectivity, const int numNodesPerElement,
-        const std::vector<double> &coordinates, std::vector<double>& boxCoordinates)
-{
-    int spatialDim = 3;
-    double *minCoordinates = &boxCoordinates[0];
-    double *maxCoordinates = &boxCoordinates[spatialDim];
-
-    int firstNode=0;
-    for (int j=0;j<spatialDim;j++)
-    {
-        minCoordinates[j] = coordinates[spatialDim*connectivity[firstNode]+j];
-        maxCoordinates[j] = coordinates[spatialDim*connectivity[firstNode]+j];
-    }
-
-    for (int i=1;i<numNodesPerElement;i++)
-    {
-        sierra::Mesh::LocalNodeId nodeId = connectivity[i];
-        for (int j=0;j<spatialDim;j++)
-        {
-           minCoordinates[j] = std::min(minCoordinates[j], coordinates[spatialDim*nodeId+j]);
-           maxCoordinates[j] = std::max(maxCoordinates[j], coordinates[spatialDim*nodeId+j]);
-        }
-    }
-    bool inflateBox = true;
-    double percentInflation = 10;
-    if ( inflateBox )
-    {
-        for (int i=0;i<spatialDim;i++)
-        {
-            double dist = maxCoordinates[i]-minCoordinates[i];
-            if ( dist <= 1e-8 ) dist = 0.001;
-            double inflation = dist*(0.5*percentInflation)/100.0;
-            minCoordinates[i] -= inflation;
-            maxCoordinates[i] += inflation;
-        }
-    }
-}
-
-void fillDomainBoxes(MPI_Comm comm, std::vector<mybox>& domainBoxes)
+void fillDomainBoxes(MPI_Comm comm, std::vector<GtkBox>& domainBoxes)
 {
     std::string filename = getOption("-i", "input.exo");
     fillBoxesUsingSidesetsFromFile(comm, filename, domainBoxes);
