@@ -33,7 +33,9 @@ std::ostream& operator<<(std::ostream &out, SearchMethod method)
 
 
 template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
-void coarse_search( std::vector<std::pair<DomainBox,DomainIdent> > const& domain,
+typename boost::enable_if< boost::mpl::and_<typename impl::get_proc<DomainIdent>::supported,
+                                            typename impl::get_proc<RangeIdent>::supported> >::type
+coarse_search( std::vector<std::pair<DomainBox,DomainIdent> > const& domain,
                     std::vector<std::pair<RangeBox,RangeIdent> >   const& range,
                     SearchMethod                                          method,
                     stk::ParallelMachine                                  comm,
