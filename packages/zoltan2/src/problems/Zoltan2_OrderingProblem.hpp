@@ -187,6 +187,10 @@ void OrderingProblem<Adapter>::solve(bool newData)
   }
   Z2_FORWARD_EXCEPTIONS;
 
+  // Reset status for perm and InvPerm.
+  this->solution_->setHavePerm(false);
+  this->solution_->setHaveInverse(false);
+
   // Determine which algorithm to use based on defaults and parameters.
   // TODO: Use rcm if graph model is defined, otherwise use natural.
   // Need some exception handling here, too.
