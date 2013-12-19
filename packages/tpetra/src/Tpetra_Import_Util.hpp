@@ -43,7 +43,7 @@
 #define TPETRA_IMPORT_UTIL_HPP
 
 /*!
-  \file Tpetra_Util.hpp
+  \file Tpetra_Import_Util.hpp
   \brief Utility functions and macros designed for use with Tpetra::Import and Tpetra::Export objects.
 */
 
