@@ -3643,12 +3643,18 @@ namespace Tpetra {
     // Call the matvec
     if (beta == RST::zero()) {
       // Y = alpha*op(M)*X with overwrite semantics
-      //lclMatOps_->template multiply<DomainScalar,RangeScalar>(mode, alpha, *lclX, *lclY);
+
+      if(mode != NO_TRANS)
+      Kokkos::MV_MultiplyTranspose(RST::zero(),Y.getLocalView().d_view,alpha,k_lclMatrix_,X.getLocalView().d_view);
+      else
       Kokkos::MV_Multiply(Y.getLocalView().d_view,alpha,k_lclMatrix_,X.getLocalView().d_view);
     }
     else {
       // Y = alpha*op(M) + beta*Y
-      //lclMatOps_->template multiply<DomainScalar,RangeScalar>(mode, alpha, *lclX, beta, *lclY);
+
+      if(mode != NO_TRANS)
+      Kokkos::MV_MultiplyTranspose(beta,Y.getLocalView().d_view,alpha,k_lclMatrix_,X.getLocalView().d_view);
+      else
       Kokkos::MV_Multiply(beta,Y.getLocalView().d_view,alpha,k_lclMatrix_,X.getLocalView().d_view);
     }
   }
