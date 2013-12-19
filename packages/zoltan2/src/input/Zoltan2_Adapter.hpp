@@ -149,6 +149,8 @@ public:
     size_t applyPartitioningSolution(const User &in, User *&out,
       const PartitioningSolution<Adapter> &solution) const
   {
+//KDDDEC  This function should be void
+//KDDDEC  This function should throw an error.
     return 0;
   }
 
