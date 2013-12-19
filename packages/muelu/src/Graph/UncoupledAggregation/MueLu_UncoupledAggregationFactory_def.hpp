@@ -101,7 +101,7 @@ namespace MueLu {
                                   "this node probably can be added to one of these aggregates. We don't need a new one.");
     validParamList->set<LO>      ("MinNodesPerAggregate",       2, "Minimum number of nodes for aggregate");
 
-    validParamList->set<bool> ("UseOnePtAggregationAlgorithm",              true, "Allow special nodes to be marked for one-to-one transfer to the coarsest level. (default = on)");
+    validParamList->set<bool> ("UseOnePtAggregationAlgorithm",             false, "Allow special nodes to be marked for one-to-one transfer to the coarsest level. (default = off)");
     validParamList->set<bool> ("UseSmallAggregatesAggregationAlgorithm",   false, "Turn on/off build process for small aggregates in user defined regions. (default = off)");
     validParamList->set<bool> ("UsePreserveDirichletAggregationAlgorithm", false, "Turn on/off aggregate Dirichlet (isolated nodes) into separate 1pt node aggregates (default = off)");
     validParamList->set<bool> ("UseUncoupledAggregationAlgorithm",          true, "Turn on/off uncoupled aggregation process. Do not turn off: this is "
@@ -113,9 +113,9 @@ namespace MueLu {
     validParamList->set<bool> ("UseEmergencyAggregationAlgorithm",          true, "Turn on/off Emergency aggregation algorithm. Puts all left over nodes "
                                "into aggregates (including very small aggregates or one-point aggregates). (default = on)");
 
-    validParamList->set< std::string >           ("OnePt aggregate map name",                  "", "Name of input map for single node aggregates. (default='')");
+    validParamList->set< std::string >           ("OnePt aggregate map name",         "", "Name of input map for single node aggregates. (default='')");
     validParamList->set< RCP<const FactoryBase> >("OnePt aggregate map factory",    null, "Generating factory of (DOF) map for single node aggregates.");
-    validParamList->set< std::string >           ("SmallAgg aggregate map name",               "", "Name of input map for small aggregates. (default='')");
+    validParamList->set< std::string >           ("SmallAgg aggregate map name",      "", "Name of input map for small aggregates. (default='')");
     validParamList->set< RCP<const FactoryBase> >("SmallAgg aggregate map factory", null, "Generating factory of (DOF) map for small aggregates.");
 
     return validParamList;
