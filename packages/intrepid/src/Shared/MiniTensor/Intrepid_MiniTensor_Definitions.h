@@ -300,13 +300,13 @@ template <typename T, Index N>
 struct ScalarValue< Vector<T, N> > {
   typedef typename ValueType<T>::type value_type;
   typedef typename ScalarType<T>::type scalar_type;
-  static const Vector<scalar_type, N> &
+  static const Vector<scalar_type, N>
   eval(Vector<T, N> const & x)
   {
     Vector<scalar_type, N> v(x.get_dimension());
 
     for (Index i = 0; i < x.get_number_components(); ++i) {
-      v[i] = ScalarValue<value_type>::eval(x[i].val());
+      v[i] = ScalarValue<T>::eval(x[i]);
     }
     return v;
   }
@@ -379,13 +379,13 @@ template <typename T, Index N>
 struct ScalarValue< Tensor<T, N> > {
   typedef typename ValueType<T>::type value_type;
   typedef typename ScalarType<T>::type scalar_type;
-  static const Tensor<scalar_type, N> &
+  static const Tensor<scalar_type, N>
   eval(Tensor<T, N> const & x)
   {
     Tensor<scalar_type, N> v(x.get_dimension());
 
     for (Index i = 0; i < x.get_number_components(); ++i) {
-      v[i] = ScalarValue<value_type>::eval(x[i].val());
+      v[i] = ScalarValue<T>::eval(x[i]);
     }
 
     return v;
@@ -459,13 +459,13 @@ template <typename T, Index N>
 struct ScalarValue< Tensor3<T, N> > {
   typedef typename ValueType<T>::type value_type;
   typedef typename ScalarType<T>::type scalar_type;
-  static const Tensor3<scalar_type, N> &
+  static const Tensor3<scalar_type, N>
   eval(Tensor3<T, N> const & x)
   {
     Tensor3<scalar_type, N> v(x.get_dimension());
 
     for (Index i = 0; i < x.get_number_components(); ++i) {
-      v[i] = ScalarValue<value_type>::eval(x[i].val());
+      v[i] = ScalarValue<T>::eval(x[i]);
     }
 
     return v;
@@ -540,13 +540,13 @@ template <typename T, Index N>
 struct ScalarValue< Tensor4<T, N> > {
   typedef typename ValueType<T>::type value_type;
   typedef typename ScalarType<T>::type scalar_type;
-  static const Tensor4<scalar_type, N> &
+  static const Tensor4<scalar_type, N>
   eval(Tensor4<T, N> const & x)
   {
     Tensor4<scalar_type, N> v(x.get_dimension());
 
     for (Index i = 0; i < x.get_number_components(); ++i) {
-      v[i] = ScalarValue<value_type>::eval(x[i].val());
+      v[i] = ScalarValue<T>::eval(x[i]);
     }
 
     return v;
