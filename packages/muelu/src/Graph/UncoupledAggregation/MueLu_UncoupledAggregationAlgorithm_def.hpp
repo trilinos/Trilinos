@@ -110,8 +110,8 @@ namespace MueLu {
     for (LO iNode2 = 0; iNode2 < nRows; iNode2++) {
       // Step 1: pick the next node to aggregate
       LO iNode1 = 0;
-      if      (ordering == NATURAL) iNode1 = iNode2++;
-      else if (ordering == RANDOM)  iNode1 = randomVector[iNode2++];
+      if      (ordering == NATURAL) iNode1 = iNode2;
+      else if (ordering == RANDOM)  iNode1 = randomVector[iNode2];
       else if (ordering == GRAPH) {
 
         if (graph_ordering_inodes.size() == 0) {
