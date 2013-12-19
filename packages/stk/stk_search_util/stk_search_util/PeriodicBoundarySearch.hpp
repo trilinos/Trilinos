@@ -432,12 +432,7 @@ private:
     const double radius = 1e-10;
     const unsigned parallel_rank = m_bulk_data.parallel_rank();
 
-    stk::mesh::BucketVector buckets;
-
-    stk::mesh::get_buckets( side_selector
-                            ,m_bulk_data.buckets(stk::topology::NODE_RANK)
-                            ,buckets
-                            );
+    stk::mesh::BucketVector const& buckets = m_bulk_data.get_buckets( stk::topology::NODE_RANK, side_selector );
 
     size_t num_nodes = 0;
 
@@ -490,12 +485,9 @@ private:
   void calc_centroid(stk::ParallelMachine parallel, stk::mesh::Selector side_selector, double * global_centroid)
   {
     const int spatial_dimension = m_bulk_data.mesh_meta_data().spatial_dimension();
-    stk::mesh::BucketVector buckets;
 
-    stk::mesh::get_buckets( side_selector & m_bulk_data.mesh_meta_data().locally_owned_part()
-                            ,m_bulk_data.buckets(stk::topology::NODE_RANK)
-                            ,buckets
-                            );
+    stk::mesh::BucketVector const& buckets =
+      m_bulk_data.get_buckets( stk::topology::NODE_RANK, side_selector & m_bulk_data.mesh_meta_data().locally_owned_part());
 
     size_t num_nodes = 0;
 

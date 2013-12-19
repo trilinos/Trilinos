@@ -369,8 +369,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldWithSelector)
   unsigned num_f0 = stk::mesh::count_selected_entities(select_f0, node_buckets);
   STKUNIT_ASSERT_EQUAL(10u, num_f0);
 
-  std::vector<stk::mesh::Bucket*> f0_buckets;
-  stk::mesh::get_buckets(select_p0, bulk_data.buckets(NODE_RANK), f0_buckets);
+  stk::mesh::BucketVector const& f0_buckets = bulk_data.get_buckets(NODE_RANK, select_p0);
   unsigned num_buckets = f0_buckets.size();
   STKUNIT_ASSERT_EQUAL(1u, num_buckets);
 
@@ -433,21 +432,22 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldWithSelectorAnd)
     bulk_data.declare_entity( elem_rank , i , parts );
   }
 
-  stk::mesh::BucketVector f0_buckets;
-  stk::mesh::get_buckets(elem_hex_selector, bulk_data.buckets(elem_rank), f0_buckets);
+  {
+    stk::mesh::BucketVector const& f0_buckets = bulk_data.get_buckets(elem_rank, elem_hex_selector);
 
-  BOOST_FOREACH(stk::mesh::Bucket* b, f0_buckets) {
-    unsigned f0_size = stk::mesh::BulkData::get(*b).field_data_size_per_entity(f0, *b);
-    STKUNIT_ASSERT_EQUAL(64u, f0_size);
+    BOOST_FOREACH(stk::mesh::Bucket* b, f0_buckets) {
+      unsigned f0_size = stk::mesh::BulkData::get(*b).field_data_size_per_entity(f0, *b);
+      STKUNIT_ASSERT_EQUAL(64u, f0_size);
+    }
   }
 
-  f0_buckets.clear();
+  {
+    stk::mesh::BucketVector const& f0_buckets = bulk_data.get_buckets(elem_rank, elem_tet_selector);
 
-  stk::mesh::get_buckets(elem_tet_selector, bulk_data.buckets(elem_rank), f0_buckets);
-
-  BOOST_FOREACH(stk::mesh::Bucket* b, f0_buckets) {
-    unsigned f0_size = stk::mesh::BulkData::get(*b).field_data_size_per_entity(f0, *b);
-    STKUNIT_ASSERT_EQUAL(32u, f0_size);
+    BOOST_FOREACH(stk::mesh::Bucket* b, f0_buckets) {
+      unsigned f0_size = stk::mesh::BulkData::get(*b).field_data_size_per_entity(f0, *b);
+      STKUNIT_ASSERT_EQUAL(32u, f0_size);
+    }
   }
 }
 

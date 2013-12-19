@@ -1486,5 +1486,17 @@ BucketVector const& BulkData::get_buckets(EntityRank rank, Selector const& selec
   }
 }
 
+void BulkData::get_buckets(EntityRank rank, Selector const& selector, BucketVector & output_buckets) const
+{
+  output_buckets.clear();
+
+  BucketVector const& all_buckets_for_rank = buckets(rank);
+  for (size_t i = 0, e = all_buckets_for_rank.size(); i < e; ++i) {
+    if (selector(*all_buckets_for_rank[i])) {
+      output_buckets.push_back(all_buckets_for_rank[i]);
+    }
+  }
+}
+
 } // namespace mesh
 } // namespace stk

@@ -1201,7 +1201,11 @@ public:
   // Print all mesh info
   void dump_all_mesh_info(std::ostream& out = std::cout) const;
 
+  // memoized version
   BucketVector const& get_buckets(EntityRank rank, Selector const& selector) const;
+
+  // non-memoized version.
+  void get_buckets(EntityRank rank, Selector const& selector, BucketVector & output_buckets) const;
 
 private:
 

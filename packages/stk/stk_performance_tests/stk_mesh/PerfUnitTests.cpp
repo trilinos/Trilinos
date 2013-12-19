@@ -346,7 +346,7 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_selector )
           sel &= *element_parts[1][y];
           sel &= *element_parts[2][z];
 
-          get_buckets(sel, bulk.buckets(stk::topology::ELEMENT_RANK), output_buckets);
+          bulk.get_buckets(stk::topology::ELEMENT_RANK, sel, output_buckets);
           for (int j = 0, je = output_buckets.size(); j < je; ++j) {
             size_sum += output_buckets[j]->size();
           }
@@ -434,8 +434,6 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_single_part_selector )
 
   CALLGRIND_TOGGLE_COLLECT;
 
-  BucketVector output_buckets;
-
   for (int i = 0; i < num_iterations; ++i) {
     for (int x = 0; x < x_dim; ++x) {
       for (int y = 0; y < y_dim; ++y) {
@@ -443,7 +441,7 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_single_part_selector )
         for (int z = 0; z < z_dim; ++z) {
           Selector sel = *element_parts[2][z];
 
-          get_buckets(sel, bulk.buckets(stk::topology::ELEMENT_RANK), output_buckets);
+          BucketVector const& output_buckets = bulk.get_buckets(stk::topology::ELEMENT_RANK, sel);
           for (int j = 0, je = output_buckets.size(); j < je; ++j) {
             size_sum += output_buckets[j]->size();
           }
@@ -500,8 +498,6 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access)
     create_hex_with_complex_parts< !TIME_CHANGE_PARTS, !INDUCE_ELEMENT_PARTS, ALLOCATE_FIELDS>(pm, x_dim, y_dim, z_dim, dim_span, element_parts, &fields);
   BulkData & bulk = mesh->m_bulk_data;
 
-  BucketVector all_elem_buckets = bulk.buckets(stk::topology::ELEMENT_RANK);
-
   std::vector<std::vector<BucketVector> > bucket_map;
   bucket_map.resize(x_dim);
 
@@ -515,7 +511,7 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access)
         sel &= *element_parts[2][z];
 
         BucketVector selected_buckets;
-        get_buckets(sel, all_elem_buckets, selected_buckets);
+        bulk.get_buckets(stk::topology::ELEMENT_RANK, sel, selected_buckets);
         ThrowRequire(selected_buckets.size() == 1u);
         bucket_map[x][y][z] = selected_buckets[0];
       }

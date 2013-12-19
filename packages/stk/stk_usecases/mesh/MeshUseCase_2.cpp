@@ -332,18 +332,13 @@ bool verifyRelations( const UseCase_2_Mesh & mesh,
 
   bool result = true;
 
-  const std::vector<stk::mesh::Bucket*> & all_elem_buckets = bulkData.buckets( mesh.m_elem_rank );
-
   // For both left and right parts
   // Verify the element-node relationships for each part:
   for( std::vector<stk::mesh::Part*>::const_iterator iter_part = both_parts.begin();  iter_part < both_parts.end(); iter_part++)
   {
-    std::vector<stk::mesh::Bucket*> selected_elem_buckets ;
-
     // From all element buckets select part buckets
     stk::mesh::Selector selector(**iter_part);
-    stk::mesh::get_buckets( selector , all_elem_buckets ,
-                                            selected_elem_buckets );
+    stk::mesh::BucketVector const& selected_elem_buckets = bulkData.get_buckets( stk::topology::ELEMENT_RANK, selector );
 
     // Iterate over part buckets
     for ( size_t j = 0 ; j < selected_elem_buckets.size() ; ++j ) {
