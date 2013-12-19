@@ -49,6 +49,8 @@
 
 /*--------------------------------------------------------------------------*/
 
+#if 0
+
 namespace Test {
 
 struct ArrayProxyContiguous {};
@@ -243,7 +245,7 @@ struct ViewAssignment< Test::LayoutEmbedArray , Test::LayoutEmbedArray , void >
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM >
   KOKKOS_INLINE_FUNCTION
-  ViewAssignment(       View<DT,DL,DD,DM,Test::LayoutEmbedArray> & dst 
+  ViewAssignment(       View<DT,DL,DD,DM,Test::LayoutEmbedArray> & dst
                 , const View<ST,SL,SD,SM,Test::LayoutEmbedArray> & src
                 , const typename enable_if<(
                     ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
@@ -278,7 +280,7 @@ struct ViewAssignment< LayoutDefault , Test::LayoutEmbedArray , void >
   template< class DT , class DL , class DD , class DM ,
             class ST , class SL , class SD , class SM >
   KOKKOS_INLINE_FUNCTION
-  ViewAssignment(       View<DT,DL,DD,DM,LayoutDefault> & dst 
+  ViewAssignment(       View<DT,DL,DD,DM,LayoutDefault> & dst
                 , const View<ST,SL,SD,SM,Test::LayoutEmbedArray> & src
                 , const typename enable_if<(
                     ViewAssignable< ViewTraits<DT,DL,DD,DM> ,
@@ -707,6 +709,8 @@ public:
 
 } // namespace Kokkos
 
+#endif
+
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
 
@@ -715,6 +719,7 @@ namespace Test {
 template< class DeviceType >
 int TestViewAggregate()
 {
+#if 0
   typedef Kokkos::View< Test::Array<double,32> * , DeviceType > a32_type ;
   typedef Kokkos::View< double *[32] , DeviceType > a32_base_type ;
 
@@ -732,6 +737,7 @@ int TestViewAggregate()
 
   typename a32_type::array_type a32_array = a32 ;
   typename a0_type::array_type  a0_array = a32 ;
+#endif
 
   return 0 ;
 }
