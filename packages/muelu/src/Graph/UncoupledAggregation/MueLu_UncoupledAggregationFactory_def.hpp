@@ -227,6 +227,7 @@ namespace MueLu {
       sumAll(comm, as<GO>(nRows), numGlobalRows);
 
     LO numNonAggregatedNodes = nRows;
+    GO numGlobalAggregatedPrev = 0, numGlobalAggsPrev = 0;
     for (size_t a = 0; a < algos_.size(); a++) {
       std::string phase = algos_[a]->description();
       SubFactoryMonitor sfm(*this, "Algo \"" + phase + "\"", currentLevel);
@@ -241,9 +242,12 @@ namespace MueLu {
         sumAll(comm, numLocalAggs,       numGlobalAggs);
 
         double aggPercent = 100*as<double>(numGlobalAggregated)/as<double>(numGlobalRows);
-        GetOStream(Statistics1, 0) << "  aggregated  : " << numGlobalAggregated << "/" << numGlobalRows << " (" << aggPercent << "%)\n"
-                                   << "  remaining   : " << numGlobalRows - numGlobalAggregated << std::endl;
-        GetOStream(Statistics1, 0) << "  # aggregates: " << numGlobalAggs << std::endl;
+        GetOStream(Statistics1, 0) << "  aggregated : " << (numGlobalAggregated - numGlobalAggregatedPrev) << " (phase), " << std::fixed
+                                   << std::setprecision(2) << numGlobalAggregated << "/" << numGlobalRows << " [" << aggPercent << "%] (total)\n"
+                                   << "  remaining  : " << numGlobalRows - numGlobalAggregated << "\n"
+                                   << "  aggregates : " << numGlobalAggs-numGlobalAggsPrev << " (phase), " << numGlobalAggs << " (total)" << std::endl;
+        numGlobalAggregatedPrev = numGlobalAggregated;
+        numGlobalAggsPrev       = numGlobalAggs;
       }
     }
 
