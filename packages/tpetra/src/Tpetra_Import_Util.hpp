@@ -49,6 +49,7 @@
 
 #include "Tpetra_ConfigDefs.hpp" // for map, vector, string, and iostream
 #include "Tpetra_Import.hpp"
+#include "Tpetra_Distributor.hpp"
 #include <Teuchos_Array.hpp>
 #include <utility>
 
