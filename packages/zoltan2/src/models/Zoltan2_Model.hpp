@@ -188,20 +188,18 @@ protected:
    * weights are uniform.  If lengths for a given weight dimension
    * are zero on all processes, then we know that uniform weights are implied.
    *
-   * This must be called by all processes.
+   * This method must be called by all processes.
    */
   void setWeightArrayLengths(const Array<lno_t> &len, 
     const Teuchos::Comm<int> &comm)
   {
     weightDim_ = len.size();
 
-    if (weightDim_ < 1)
-      weightDim_ = 1;          // uniform weights are implied
+    int lvalsize = (weightDim_ > 0 ? weightDim_ : 1);
+    int *lval = new int [lvalsize];
+    uniform_ = arcp(lval, 0, lvalsize);
 
-    int *lval = new int [weightDim_];
-    uniform_ = arcp(lval, 0, weightDim_);
-
-    if (len.size() < 1){
+    if (weightDim_ < 1){
       uniform_[0] = 1;
       return;
     }
