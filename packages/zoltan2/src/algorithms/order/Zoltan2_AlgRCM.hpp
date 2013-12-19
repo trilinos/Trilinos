@@ -146,9 +146,9 @@ class AlgRCM
         root = findSmallestDegree(next, nVtx, edgeIds, offsets);
       else if (root_method == string("pseudoperipheral"))
         root = findPseudoPeripheral(next, nVtx, edgeIds, offsets);
-      else
+      else {
         // This should never happen if pl was validated.
-        ;
+      }
 
       // Label connected component starting at root
       Q.push(root);
