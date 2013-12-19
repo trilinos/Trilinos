@@ -51,18 +51,6 @@
 
 namespace MueLu {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Teuchos::ArrayView<const LocalOrdinal> Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::getNeighborVertices(LocalOrdinal v) const {
-    Teuchos::ArrayView<const LocalOrdinal> neighborVertices;
-    graph_->getLocalRowView(v, neighborVertices);
-    return neighborVertices;
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  bool Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::isLocalNeighborVertex(LocalOrdinal v) const {
-    return graph_->getDomainMap()->isNodeLocalElement(v);
-  }
-
 #ifdef MUELU_UNUSED
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   size_t Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetNodeNumGhost() const {
@@ -78,12 +66,6 @@ namespace MueLu {
     return nGhost;
   }
 #endif
-
-  /// Return a simple one-line description of this object.
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  std::string Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::description() const {
-    return "MueLu.description()";
-  }
 
   //! Print the object with some verbosity level to an FancyOStream object.
   //using MueLu::Describable::describe; // overloading, not hiding

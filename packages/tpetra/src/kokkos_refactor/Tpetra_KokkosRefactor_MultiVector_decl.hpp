@@ -360,6 +360,9 @@ namespace Tpetra {
     typedef DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> DO;
 #endif
 
+    template <class S, class LO, class GO, class D>
+    friend  MultiVector<S,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D> >
+        createCopy( const MultiVector<S,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D> >& src);
     //@}
     //! @name Constructors and destructor
     //@{
@@ -784,7 +787,7 @@ namespace Tpetra {
     //! Return a non-const reference to the underlying KokkosClassic::MultiVector object (advanced use only)
     KokkosClassic::MultiVector<Scalar,Node> & getLocalMVNonConst();
 
-    view_type getLocalView() const { return view_; };
+    view_type getLocalView() const;
     //@}
     //! @name Mathematical methods
     //@{

@@ -159,6 +159,7 @@ class AlgAMD
       if (result != AMD_OK && result != AMD_OK_BUT_JUMBLED)
           ierr = -1; // TODO: Change return value to lno_t
 
+      solution->setHavePerm(true);
       return ierr;
 #endif
     }

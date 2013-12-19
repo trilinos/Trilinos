@@ -57,7 +57,7 @@
 #include "MueLu_Zoltan2Interface_decl.hpp"
 #if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)
 
-#include <Zoltan2_BasicCoordinateInput.hpp>
+#include <Zoltan2_BasicVectorAdapter.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 
 #include <Teuchos_Utils.hpp>
@@ -185,7 +185,7 @@ namespace MueLu {
                                algo != "rcb",
                                Exceptions::RuntimeError, "Unknown partitioning algorithm: \"" << algo << "\"");
 
-    typedef Zoltan2::BasicCoordinateAdapter<Zoltan2::BasicUserTypes<SC,GO,LO,GO> > InputAdapterType;
+    typedef Zoltan2::BasicVectorAdapter<Zoltan2::BasicUserTypes<SC,GO,LO,GO> > InputAdapterType;
     typedef Zoltan2::PartitioningProblem<InputAdapterType> ProblemType;
 
     InputAdapterType adapter(numElements, map->getNodeElementList().getRawPtr(), values, strides, weights, strides);

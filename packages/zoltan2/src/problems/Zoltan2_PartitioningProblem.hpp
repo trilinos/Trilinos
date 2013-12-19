@@ -86,7 +86,11 @@ namespace Zoltan2{
  *  \todo allow unsetting of part sizes by passing in null pointers
  *  \todo add a parameter by which user tells us there are no self 
  *        edges to be removed.
+ *  \todo - Should Problems and Solution have interfaces for returning
+ *          views and for returning RCPs?  Or just one?  At a minimum, 
+ *          we should have the word "View" in function names that return views.
  */
+
 template<typename Adapter>
 class PartitioningProblem : public Problem<Adapter>
 {

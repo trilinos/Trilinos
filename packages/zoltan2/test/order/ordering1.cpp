@@ -115,21 +115,34 @@ int validatePerm(size_t n, z2TestLO *perm)
 }
 
 size_t computeBandwidth(RCP<SparseMatrix> A, z2TestLO *perm)
-// returns the bandwidth of the (local) permuted matrix
+// Returns the bandwidth of the (local) permuted matrix
+// Note we need to use the inverse permutation, but assume
+// the direct permutation is passed in.
 {
   z2TestLO ii, i, j, k;
+  z2TestLO *iperm = 0;
   ArrayView<const z2TestLO> indices;
   ArrayView<const Scalar> values;
   z2TestLO bw_left = 0;
   z2TestLO bw_right = 0;
 
+  z2TestLO  n = A->getNodeNumRows();
+
+  // Construct inverse perm
+  if (perm){
+    iperm = new z2TestLO [n];
+    for (ii=0; ii<n; ii++) {
+      iperm[perm[ii]] = ii;
+    }
+  }
+
   // Loop over rows of matrix
-  for (ii=0; ii<A->getNodeNumRows(); ii++) {
+  for (ii=0; ii<n; ii++) {
     A->getLocalRowView (ii, indices, values);
     for (k=0; k< indices.size(); k++){
       if (perm){
-        i = perm[ii];
-        j = perm[indices[k]];
+        i = iperm[ii];
+        j = iperm[indices[k]];
       } else {
         i = ii;
         j = indices[k];
@@ -140,6 +153,9 @@ size_t computeBandwidth(RCP<SparseMatrix> A, z2TestLO *perm)
         bw_left = i-j;
     }
   }
+
+  if (iperm)
+    delete [] iperm;
 
   // Total bandwidth is the sum of left and right + 1
   return (bw_left + bw_right + 1);

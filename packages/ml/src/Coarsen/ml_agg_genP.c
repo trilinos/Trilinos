@@ -696,12 +696,12 @@ else ML_DVector_GetDataPtr( Amat->diagonal, &(widget.Adiag) );
      printf("Gen_Prolongator (level %d) : not smoothing prolongator\n", level);
    StopTimer(&t1,&smooPTime);
    if ( ML_Get_PrintLevel() > 9) {
+     char eigmethod[32];
 #    ifdef ML_TIMING
      if (ml->comm->ML_mypid == 0)
        printf("Detailed timing for forming smoothed prolongator (level %d)\n", level);
 #    endif
      ReportTimer(createPtentTime,"Create tentative P (total)",ml->comm);
-     char eigmethod[32];
      switch( Amat->spectral_radius_scheme ) {
        case ML_USE_CG:
          sprintf(eigmethod,"Eigen estimate (cg)       ");

@@ -459,7 +459,7 @@ int run_test(Epetra_Comm& Comm,
   Epetra_Map* B_domain_map = NULL;
   err = create_maps(Comm, B_file, B_row_map, B_col_map, B_range_map, B_domain_map);
   if (err != 0) {
-    std::cout << "create_maps A returned err=="<<err<<std::endl;
+    std::cout << "create_maps B returned err=="<<err<<std::endl;
     return(err);
   }
 
@@ -540,6 +540,53 @@ Comm.Barrier();
 std::cout << "C"<<std::endl;
 std::cout << *C<<std::endl;
   }
+
+  // Test Matrix Jacobi for non-transpose matrices
+  if(!transA && !transB && A->RowMap().SameAs(B->RowMap())) {
+    if(!Comm.MyPID()) std::cout<<"--Testing: Jacobi for same matrices"<<std::endl;
+    delete C; delete C_check;
+
+    double omega=1.0;
+    Epetra_Vector Dinv(B->RowMap());
+    Dinv.PutScalar(1.0);
+
+    // Jacobi version
+    C = new Epetra_CrsMatrix(Copy,B->RowMap(),0);
+    EpetraExt::MatrixMatrix::Jacobi(omega,Dinv,*A,*B,*C);
+    
+    // Multiply + Add version
+    Dinv.PutScalar(omega);
+    Epetra_CrsMatrix * AB = new Epetra_CrsMatrix(Copy,B->RowMap(),0);
+    C_check = new Epetra_CrsMatrix(Copy,B->RowMap(),0);
+    EpetraExt::MatrixMatrix::Multiply(*A,false,*B,false,*AB);
+    AB->LeftScale(Dinv);
+    EpetraExt::MatrixMatrix::Add(*AB,false,-1.0,*B,false,1.0,C_check);
+
+    // Check the difference
+    EpetraExt::MatrixMatrix::Add(*C, false, -1.0, *C_check, 1.0);    
+    C_check->FillComplete(B->DomainMap(),B->RangeMap());
+    
+    // Error check
+    inf_norm = C_check->NormInf();
+    return_code = 0;    
+    if (inf_norm < 1.e-13) {
+      if (localProc == 0 && verbose) {
+	std::cout << "Jacobi Test Passed" << std::endl;
+      }
+    }
+    else {
+      return_code = -1;
+      if (localProc == 0) {
+	std::cout << "Jacobi Test Failed ("<<filename<<"), inf_norm = " << inf_norm << std::endl;
+    }
+      Comm.Barrier();
+      std::cout << "C"<<std::endl;
+      std::cout << *C<<std::endl;
+    }
+       
+    delete AB;
+  }
+
 
   delete A;
   delete B;

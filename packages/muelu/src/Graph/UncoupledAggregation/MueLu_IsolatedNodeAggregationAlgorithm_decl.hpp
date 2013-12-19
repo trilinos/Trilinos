@@ -78,7 +78,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    IsolatedNodeAggregationAlgorithm(RCP<const FactoryBase> const &graphFact = Teuchos::null);
+    IsolatedNodeAggregationAlgorithm(const RCP<const FactoryBase>& graphFact = Teuchos::null) { }
 
     //! Destructor.
     virtual ~IsolatedNodeAggregationAlgorithm() { }
@@ -91,7 +91,7 @@ namespace MueLu {
 
     /*! @brief Local aggregation. */
 
-    LocalOrdinal BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const;
+    void BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
     //@}
 
   }; //class MaxLinkAggregationAlgorithm

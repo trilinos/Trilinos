@@ -36,7 +36,7 @@ Level 1
    Ordering = 0   [default]
    MaxNeighAlreadySelected = 0   [default]
    MinNodesPerAggregate = 2   [default]
-   UseOnePtAggregationAlgorithm = 1   [default]
+   UseOnePtAggregationAlgorithm = 0   [default]
    UseSmallAggregatesAggregationAlgorithm = 0   [default]
    UsePreserveDirichletAggregationAlgorithm = 0   [default]
    UseUncoupledAggregationAlgorithm = 1   [default]
@@ -94,7 +94,7 @@ Level 2
    Ordering = 0   [default]
    MaxNeighAlreadySelected = 0   [default]
    MinNodesPerAggregate = 2   [default]
-   UseOnePtAggregationAlgorithm = 1   [default]
+   UseOnePtAggregationAlgorithm = 0   [default]
    UseSmallAggregatesAggregationAlgorithm = 0   [default]
    UsePreserveDirichletAggregationAlgorithm = 0   [default]
    UseUncoupledAggregationAlgorithm = 1   [default]
@@ -149,4 +149,3 @@ Level 2
 
  Smoother (level 2) pre  : Ifpack2::ILUT : {Initialized: true, Computed: true, Number of rows: 1111, Number of columns: 1111, Level of fill: 1, Absolute threshold: 0, Relative threshold: 1, Relax value: 0, nnz = 3331}
  Smoother (level 2) post : no smoother
-

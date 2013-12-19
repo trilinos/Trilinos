@@ -239,6 +239,9 @@ Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::clone(const RCP<Node2> &node2
         return clonedV;
   }
 
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node >
+  createCopy( const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& src);
 } // namespace Tpetra
 
 // Include KokkosRefactor partial specialisation if enabled

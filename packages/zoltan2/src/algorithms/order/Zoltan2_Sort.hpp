@@ -42,81 +42,58 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef _ZOLTAN2_ALGSPECTRAL_HPP_
-#define _ZOLTAN2_ALGSPECTRAL_HPP_
+#ifndef _ZOLTAN2_SORT_HPP_
+#define _ZOLTAN2_SORT_HPP_
 
-#include <Zoltan2_GraphModel.hpp>
-#include <Zoltan2_OrderingSolution.hpp>
+#include <Teuchos_Array.hpp>
+#include <algorithm>
 
 
 ////////////////////////////////////////////////////////////////////////
-//! \file Zoltan2_AlgSpectral.hpp
-//! \brief Spectral ordering of a graph (local or global).
-//! \brief Sorts the Fiedler vector of the graph Laplacian.
-
+//! \file Zoltan2_Sort.hpp
+//! \brief Sort vector of pairs (key, value) by value. 
+//! \brief This class is needed so we also get the sorted keys (indices).
+  
+// TODO: This is a generic utility class; should move this source file.
+// We could perhaps use Sort2 from Tpetra, but that uses a custom sort not std::sort
 
 namespace Zoltan2{
 
-template <typename Adapter>
-int AlgSpectral(
-  const RCP<GraphModel<Adapter> > &model, 
-  //const RCP<Adapter> &matrixadapter, // Hack: Use matrix adapter directly
-  const RCP<OrderingSolution<typename Adapter::gid_t,
-                             typename Adapter::lno_t> > &solution,
-  const RCP<Teuchos::ParameterList> &pl,
-  const RCP<const Teuchos::Comm<int> > &comm
-) 
-{
-#ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL
+namespace Details {
 
-  Z2_THROW_EXPERIMENTAL("Zoltan2 Spectral ordering is strictly "
-                        "experimental software "
-                        "while it is being developed and tested.")
-
-#else //INCLUDE_ZOLTAN2_EXPERIMENTAL
-
-  typedef typename Adapter::lno_t lno_t;
-  typedef typename Adapter::gno_t gno_t;
-  typedef typename Adapter::gid_t gid_t;
-  typedef typename Adapter::scalar_t scalar_t;
-
-  int ierr= 0;
-
-  HELLO;
-
-// TODO: Check params to do local or global ordering.
-  bool localOrder = true;
-
-  const size_t nVtx = model->getLocalNumVertices();
-  lno_t *perm;
-  perm = (lno_t *) (solution->getPermutationRCP().getRawPtr());
-  for (lno_t i=0; i<nVtx; i++){
-    perm[i] = -1;
+  // These helper functions can't be class members, so put in Details namespace.
+  template<class KeyType, class ValueType>
+  bool SortInc (const std::pair<KeyType, ValueType>& a, const std::pair<KeyType, ValueType>& b)
+  {
+    return a.second < b.second;
   }
 
-  // Get local graph.
-  ArrayView<const lno_t> edgeIds;
-  ArrayView<const lno_t> offsets;
-  ArrayView<StridedData<lno_t, scalar_t> > wgts;
+  template<class KeyType, class ValueType>
+  bool SortDec (const std::pair<KeyType, ValueType>& a, const std::pair<KeyType, ValueType>& b)
+  {
+    return a.second > b.second;
+  }
 
-  model->getLocalEdgeList(edgeIds, offsets, wgts);
+} // namespace Details
 
-  //cout << "Debug: Local graph from getLocalEdgeList" << endl;
-  //cout << "edgeIds: " << edgeIds << endl;
-  //cout << "offsets: " << offsets << endl;
+template <typename key_t, typename value_t>
+class SortPairs
+{
+  public:
+    SortPairs()
+    {
+    }
 
-  // Form the graph Laplacian: L = D-A
-  // Create a new Tpetra matrix, but use views of existing data when possible.
-  // TODO
+  public:
+    void sort(Teuchos::Array<std::pair<key_t,value_t> > &listofPairs, bool inc=true)
+    {
+      // Sort in increasing (default) or decreasing order of value
+      if (inc)
+        std::sort (listofPairs.begin(), listofPairs.end(), Details::SortInc<key_t, value_t>);
+      else
+        std::sort (listofPairs.begin(), listofPairs.end(), Details::SortDec<key_t, value_t>);
+    }
 
-  // TODO: Find smallest eigenvalues using Anasazi
-
-  // TODO: Sort Fiedler vector.
-
-  solution->setHavePerm(true);
-  return ierr;
-#endif // INCLUDE_ZOLTAN2_EXPERIMENTAL
-}
-
+};
 }
 #endif

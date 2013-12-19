@@ -49,12 +49,12 @@
 #include <Zoltan2_OrderingSolution.hpp>
 
 
+namespace Zoltan2{
+
 ////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_AlgNatural.hpp
 //! \brief Natural ordering == identity permutation.
-
-
-namespace Zoltan2{
+//! \brief Mainly useful for testing "no ordering"
 
 template <typename Adapter>
 class AlgNatural
@@ -94,6 +94,7 @@ class AlgNatural
       // TODO: throw exception?
       ierr = -1;
 
+    solution->setHavePerm(true);
     return ierr;
 
   }

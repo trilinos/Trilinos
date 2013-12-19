@@ -924,4 +924,123 @@ TEUCHOS_UNIT_TEST(MiniTensor, KroneckerProduct)
   TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
 }
 
+TEUCHOS_UNIT_TEST(MiniTensor, ScalarValue)
+{
+  {
+    Real
+    a = 0.0;
+
+    Sacado::Fad::DFad<Real>
+    b = 0.0;
+
+    Real
+    c = Sacado::ScalarValue<Real>::eval(a);
+
+    //std::cout << c << '\n';
+
+    Real
+    d = Sacado::ScalarValue<Sacado::Fad::DFad<Real> >::eval(a);
+
+    //std::cout << d << '\n';
+
+    bool const
+    is_equal = c == d;
+
+    TEST_COMPARE(is_equal, ==, true);
+  }
+
+  {
+    Vector<Real>
+    A(3, ZEROS);
+
+    Vector<Sacado::Fad::DFad<Real> >
+    B(3, ZEROS);
+
+    Vector<Real>
+    C = Sacado::ScalarValue<Vector<Real> >::eval(A);
+
+    //std::cout << C << '\n';
+
+    Vector<Real>
+    D = Sacado::ScalarValue<Vector<Sacado::Fad::DFad<Real> > >::eval(B);
+
+    //std::cout << D << '\n';
+
+    bool const
+    is_equal = C == D;
+
+    TEST_COMPARE(is_equal, ==, true);
+  }
+
+  {
+    Tensor<Real>
+    A(3, ZEROS);
+
+    Tensor<Sacado::Fad::DFad<Real> >
+    B(3, ZEROS);
+
+    Tensor<Real>
+    C = Sacado::ScalarValue<Tensor<Real> >::eval(A);
+
+    //std::cout << C << '\n';
+
+    Tensor<Real>
+    D = Sacado::ScalarValue<Tensor<Sacado::Fad::DFad<Real> > >::eval(B);
+
+    //std::cout << D << '\n';
+
+    bool const
+    is_equal = C == D;
+
+    TEST_COMPARE(is_equal, ==, true);
+  }
+
+  {
+    Tensor3<Real>
+    A(3, ZEROS);
+
+    Tensor3<Sacado::Fad::DFad<Real> >
+    B(3, ZEROS);
+
+    Tensor3<Real>
+    C = Sacado::ScalarValue<Tensor3<Real> >::eval(A);
+
+    //std::cout << C << '\n';
+
+    Tensor3<Real>
+    D = Sacado::ScalarValue<Tensor3<Sacado::Fad::DFad<Real> > >::eval(B);
+
+    //std::cout << D << '\n';
+
+    bool const
+    is_equal = C == D;
+
+    TEST_COMPARE(is_equal, ==, true);
+  }
+
+  {
+    Tensor4<Real>
+    A(3, ZEROS);
+
+    Tensor4<Sacado::Fad::DFad<Real> >
+    B(3, ZEROS);
+
+    Tensor4<Real>
+    C = Sacado::ScalarValue<Tensor4<Real> >::eval(A);
+
+    //std::cout << C << '\n';
+
+    Tensor4<Real>
+    D = Sacado::ScalarValue<Tensor4<Sacado::Fad::DFad<Real> > >::eval(B);
+
+    //std::cout << D << '\n';
+
+    bool const
+    is_equal = C == D;
+
+    TEST_COMPARE(is_equal, ==, true);
+  }
+
+}
+
 } // namespace Intrepid
