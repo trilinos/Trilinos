@@ -924,7 +924,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, KroneckerProduct)
   TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
 }
 
-TEUCHOS_UNIT_TEST(MiniTensor, ScalarValue)
+TEUCHOS_UNIT_TEST(MiniTensor, TemplateMetaProgramming)
 {
   {
     Real
@@ -939,7 +939,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, ScalarValue)
     //std::cout << c << '\n';
 
     Real
-    d = Sacado::ScalarValue<Sacado::Fad::DFad<Real> >::eval(a);
+    d = Sacado::ScalarValue<Sacado::Fad::DFad<Real> >::eval(b);
 
     //std::cout << d << '\n';
 
@@ -1041,6 +1041,54 @@ TEUCHOS_UNIT_TEST(MiniTensor, ScalarValue)
     TEST_COMPARE(is_equal, ==, true);
   }
 
+
+  {
+    //
+    // use double explicitly
+    //
+    typedef Vector<double> A;
+
+    typedef Vector<Sacado::Fad::DFad<double> > B;
+
+    typedef Vector<Sacado::Fad::DFad<Sacado::Fad::DFad<double> > > C;
+
+    std::string const
+    double_string = "double";
+
+    std::string const
+    fad_string = "Sacado::Fad::DFad< double >";
+
+    std::string
+    type_string =
+        Sacado::StringName<typename Sacado::ScalarType<A>::type >::eval();
+
+    TEST_COMPARE(type_string, ==, double_string);
+
+    type_string =
+        Sacado::StringName<typename Sacado::ValueType<A>::type >::eval();
+
+    TEST_COMPARE(type_string, ==, double_string);
+
+    type_string =
+        Sacado::StringName<typename Sacado::ScalarType<B>::type >::eval();
+
+    TEST_COMPARE(type_string, ==, double_string);
+
+    type_string =
+        Sacado::StringName<typename Sacado::ValueType<B>::type >::eval();
+
+    TEST_COMPARE(type_string, ==, double_string);
+
+    type_string =
+        Sacado::StringName<typename Sacado::ScalarType<C>::type >::eval();
+
+    TEST_COMPARE(type_string, ==, double_string);
+
+    type_string =
+        Sacado::StringName<typename Sacado::ValueType<C>::type >::eval();
+
+    TEST_COMPARE(type_string, ==, fad_string);
+  }
 }
 
 } // namespace Intrepid
