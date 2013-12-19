@@ -28,7 +28,7 @@ TRIBITS_ADD_EXECUTABLE(
   COMM serial mpi
 )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE(
   StridedMapFactory_UnitTests
   SOURCES
     StridedMapFactory_UnitTests
