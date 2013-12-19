@@ -82,6 +82,9 @@ namespace Zoltan2{
  *  is to be partitioned.
  *
  *  \todo follow ordering with partitioning
+ *  \todo - Should Problems and Solution have interfaces for returning
+ *          views and for returning RCPs?  Or just one?  At a minimum, 
+ *          we should have the word "View" in function names that return views.
  */
 
 template<typename Adapter>
