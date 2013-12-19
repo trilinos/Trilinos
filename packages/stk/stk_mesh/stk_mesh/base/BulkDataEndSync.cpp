@@ -849,8 +849,6 @@ bool BulkData::internal_modification_end( bool regenerate_aura, modification_opt
 
   if ( m_sync_state == SYNCHRONIZED ) { return false ; }
 
-  verify_SOA_relations();
-
   if (parallel_size() > 1) {
     // Resolve modification or deletion of shared entities
     // which can cause deletion of ghost entities.
@@ -929,8 +927,6 @@ bool BulkData::internal_modification_end( bool regenerate_aura, modification_opt
 
   m_bucket_repository.internal_modification_end();
   m_sync_state = SYNCHRONIZED ;
-
-  verify_SOA_relations();
 
   update_deleted_entities_container();
 
@@ -1041,11 +1037,6 @@ void BulkData::verify_relations(const Bucket & bucket, Bucket::size_type bucket_
   if (bucket.has_permutation(rank)) {
     verify_relation_data<Permutation>(bucket, bucket_ordinal, rank);
   }
-}
-
-void BulkData::verify_SOA_relations() const
-{
-
 }
 
 //----------------------------------------------------------------------

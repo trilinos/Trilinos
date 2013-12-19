@@ -169,14 +169,6 @@ public:
     return m_field_meta_data[f.mesh_meta_data_ordinal()];
   }
 
-  // current memory usage of stk_mesh data structures on current processor
-  void current_memory_usage(std::ostream & out);
-
-  // current max memory usage of stk_mesh data structures across all processor
-  void current_max_memory_usage(std::ostream & out);
-
-
-
   enum BulkDataSyncState { MODIFIABLE = 1 , SYNCHRONIZED = 2 };
 
   ~BulkData();
@@ -276,8 +268,6 @@ public:
   void allocate_field_data();
 
   void verify_relations(const Bucket & bucket, Bucket::size_type bucket_ordinal, EntityRank rank) const;
-
-  void verify_SOA_relations() const;
 
   bool final_modification_end()
   {

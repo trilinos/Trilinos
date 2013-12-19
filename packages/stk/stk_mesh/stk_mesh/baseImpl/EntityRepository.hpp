@@ -70,7 +70,7 @@ public:
 #endif
 
     // Return a pair: the relevant entity, and whether it had to be created
-    // or not. If there was already an active entity, the second item in the
+    // or not. If there was already an active entity with the specified key, the second item in the pair
     // will be false; otherwise it will be true (even if the Entity was present
     // but marked as destroyed).
     std::pair<Entity ,bool>
