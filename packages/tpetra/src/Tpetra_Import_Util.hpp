@@ -78,6 +78,22 @@ namespace Tpetra {
     template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
     void getRemotePIDs(const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> & Importer, Teuchos::Array<int> &RemotePIDs);
 
+
+    //! packAndPrepareWithOwningPIDs.  
+    /*! Note: The SourcePids vector should contain a list of owning PIDs for each column in the ColMap, as from Epetra_Util::GetPids,
+      without the "-1 for local" option being used.  This routine is basically Tpetra::CrsMatrix::packAndPrepare, but it
+      packs the owning PIDs as well as the GIDs.      
+      
+      \warning This method is intended for expert developer use only, and should never be called by user code.
+    */
+    template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node, typename LocalMatOps>
+    void packAndPrepareWithOwningPIDs(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & SourceMatrix,
+				      const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+				      Teuchos::Array<char>& exports,
+				      const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+				      size_t& constantNumPackets,
+				      Distributor &distor,
+				      const Teuchos::ArrayView<int>& SourcePids);    
   }// end Import_Util
 }//end Tpetra
 
@@ -198,6 +214,127 @@ void Tpetra::Import_Util::getRemotePIDs(const Tpetra::Import<LocalOrdinal,Global
       j++;
     }    
   }
+}
+
+
+//----------------------------------------------------------------------------
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node, typename LocalMatOps>
+void Tpetra::Import_Util::packAndPrepareWithOwningPIDs(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> &SourceMatrix,
+						       const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+						       Teuchos::Array<char>& exports,
+						       const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+						       size_t& constantNumPackets,
+						       Distributor &distor,
+						       const Teuchos::ArrayView<int>& SourcePids) {
+
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+  using Teuchos::as;
+  using Teuchos::av_reinterpret_cast;
+  using Teuchos::RCP;
+  typedef LocalOrdinal LO;
+  typedef GlobalOrdinal GO;
+  typedef Map<LocalOrdinal,GlobalOrdinal,Node>  map_type;
+  typedef typename ArrayView<const LO>::size_type size_type;
+  
+  TEUCHOS_TEST_FOR_EXCEPTION(exportLIDs.size() != numPacketsPerLID.size(),
+			     std::invalid_argument, "packAndPrepareWithOwningPIDs: exportLIDs.size() = " << exportLIDs.size()
+			     << "!= numPacketsPerLID.size() = " << numPacketsPerLID.size() << ".");
+  
+  // Get a reference to the matrix's row Map.
+  const map_type& rowMap = * (SourceMatrix.getRowMap());
+
+  // Sanity
+  const bool locallyIndexed = SourceMatrix.isLocallyIndexed();
+  TEUCHOS_TEST_FOR_EXCEPTION(!locallyIndexed,
+			     std::invalid_argument, "packAndPrepareWithOwningPIDs: SourceMatrix must be locally indexed.");
+
+  constantNumPackets = 0;
+  
+  // Get the GIDs of the rows we want to pack.
+  Array<GO> exportGIDs (exportLIDs.size());
+  const size_type numExportGIDs = exportGIDs.size ();
+  for (size_type i = 0; i < numExportGIDs; ++i) {
+    exportGIDs[i] = rowMap.getGlobalElement(exportLIDs[i]);
+  }
+
+
+  // Record initial sizing
+  const size_t sizeOfPacket = sizeof(GO) + sizeof(Scalar) + sizeof(int);
+  size_t totalNumEntries = 0;
+  size_t maxRowLength = 0;
+  for (size_type i = 0; i < exportGIDs.size(); ++i) {
+    const size_t curNumEntries = SourceMatrix.getNumEntriesInGlobalRow(exportGIDs[i]);
+    numPacketsPerLID[i] = curNumEntries * sizeOfPacket;
+    totalNumEntries += curNumEntries;
+    maxRowLength = std::max(curNumEntries, maxRowLength);
+  }
+
+  // Pack export data by interleaving rows' indices, pids and values in
+  // the following way:
+  //
+  // [inds_row0 pids_row0 vals_row0 inds_row1 pids_row1 vals_row1 ... ]
+  if (totalNumEntries > 0) {
+    const size_t totalNumBytes = totalNumEntries * sizeOfPacket;
+    exports.resize(totalNumBytes);
+
+    // Current position in the 'exports' output array.
+    size_t curOffsetInBytes = 0;
+
+    // For each row of the matrix owned by the calling process, pack
+    // that row's column indices and values into the exports array.
+
+    // Locally indexed matrices always have a column Map.
+    const map_type& colMap = * (SourceMatrix.getColMap());
+    ArrayView<const LocalOrdinal> lidsView;
+    ArrayView<const Scalar> valsView;
+    
+    // Temporary buffers for a copy of the column gids/pids
+    Array<GO>  gids(as<size_type>(maxRowLength));
+    Array<int> pids(as<size_type>(maxRowLength));
+    
+    const size_type numExportLIDs = exportLIDs.size();
+    for (size_type i = 0; i < numExportLIDs; i++) {
+      // Get a (locally indexed) view of the current row's data.
+      SourceMatrix.getLocalRowView(exportLIDs[i], lidsView, valsView);
+      
+      // Convert column indices as LIDs to column indices as GIDs.
+      const size_type curNumEntries = lidsView.size();
+      size_t curNumEntriesST = as<size_t>(curNumEntries);
+      ArrayView<GO>  gidsView = gids(0, curNumEntries);
+      ArrayView<int> pidsView = pids(0, curNumEntries);
+      for (size_type k = 0; k < curNumEntries; ++k) {
+	gidsView[k] = colMap.getGlobalElement(lidsView[k]);
+	pidsView[k] = SourcePids[lidsView[k]];
+      }
+      
+      // Views of the right places in each array so everthing looks like the right data type	
+      ArrayView<char> gidsViewOutChar = exports(curOffsetInBytes, curNumEntriesST*sizeof(GO));
+      ArrayView<char> pidsViewOutChar = exports(curOffsetInBytes+curNumEntriesST*sizeof(GO), curNumEntriesST*sizeof(int));
+      ArrayView<char> valsViewOutChar = exports(curOffsetInBytes+curNumEntriesST*(sizeof(GO)+sizeof(int)), curNumEntriesST*sizeof(Scalar));
+      
+      ArrayView<GO> gidsViewOut     = av_reinterpret_cast<GO>(gidsViewOutChar);
+      ArrayView<int> pidsViewOut    = av_reinterpret_cast<int>(pidsViewOutChar);
+      ArrayView<Scalar> valsViewOut = av_reinterpret_cast<Scalar>(valsViewOutChar);
+      
+      // Copy the row's data into the views of the exports array.
+      std::copy(gidsView.begin(), gidsView.begin() + curNumEntriesST, gidsViewOut.begin());
+      std::copy(pidsView.begin(), pidsView.begin() + curNumEntriesST, pidsViewOut.begin());
+      std::copy(valsView.begin(), valsView.begin() + curNumEntriesST, valsViewOut.begin());
+      
+      // Keep track of how many bytes we packed.
+      curOffsetInBytes += sizeOfPacket * curNumEntries;
+    }
+
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(curOffsetInBytes != totalNumBytes,
+        std::logic_error, ": At end of method, the final offset bytes count "
+        "curOffsetInBytes=" << curOffsetInBytes << " does not equal the total "
+        "number of bytes packed totalNumBytes=" << totalNumBytes << ".  Please "
+        "report this bug to the Tpetra developers.");
+#endif //  HAVE_TPETRA_DEBUG
+  }
+  
 }
 
 

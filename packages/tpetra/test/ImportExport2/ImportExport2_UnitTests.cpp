@@ -1043,7 +1043,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ReverseImportExport, doImport, Ordinal, Scala
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Import_Util, GetPids, Ordinal )  {
   // Unit Test the functionality in Tpetra_Import_Util
- RCP<const Comm<int> > Comm = getDefaultComm();
+  RCP<const Comm<int> > Comm = getDefaultComm();
   typedef Tpetra::Map<Ordinal,Ordinal> MapType;
   typedef Tpetra::Import<Ordinal,Ordinal> ImportType;
   typedef Tpetra::Export<Ordinal,Ordinal> ExportType;
@@ -1126,11 +1126,90 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Import_Util, GetPids, Ordinal )  {
     // We can't easily test this, so let's at least make sure it doesn't crash.
   }
 
-
-
   TEST_EQUALITY(total_err,0);
 }
 
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Import_Util, PackAndPrepareWithOwningPIDs, Ordinal )  {
+  // Unit Test the functionality in Tpetra_Import_Util
+  RCP<const Comm<int> > Comm = getDefaultComm();
+  typedef Tpetra::Map<Ordinal,Ordinal> MapType;
+  typedef Tpetra::Import<Ordinal,Ordinal> ImportType;
+  typedef Tpetra::Export<Ordinal,Ordinal> ExportType;
+  typedef Tpetra::Vector<int,Ordinal,Ordinal, Node> IntVectorType;
+  typedef Tpetra::CrsMatrix<double,Ordinal,Ordinal> CrsMatrixType;
+  typedef typename Tpetra::CrsMatrix<double,Ordinal,Ordinal>::mat_vec_type LocalOps;
+  using Teuchos::av_reinterpret_cast;
+
+  RCP<CrsMatrixType> A;
+  int total_err=0;
+  int test_err=0;
+  Teuchos::Array<char> exports1, exports2;
+  Teuchos::Array<size_t> numPackets1, numPackets2;
+  size_t constantNumPackets1=0, constantNumPackets2=0;
+
+  // Build sample matrix
+  build_test_matrix<CrsMatrixType>(Comm,A);
+  //  global_size_t num_global = A->getRowMap()->getGlobalNumElements();
+
+  // Get Importer
+  RCP<const ImportType> Importer = A->getCrsGraph()->getImporter();
+  if(Importer == Teuchos::null)  {
+    TEST_EQUALITY(0,0); // short circuit
+  }
+  else {
+    /////////////////////////////////////////////////////////
+    // Test #1: P&PWOPIDs
+    /////////////////////////////////////////////////////////
+    // Call Standard Pack & Prepare
+    test_err=0;
+    constantNumPackets1=0;
+    numPackets1.resize(Importer->getExportLIDs().size());
+    A->packAndPrepare(*A,Importer->getExportLIDs(),exports1,numPackets1(),constantNumPackets1,Importer->getDistributor());
+
+    // Call the P&PWOPIDs
+    Teuchos::Array<int> pids;
+    Tpetra::Import_Util::getPids<Ordinal,Ordinal,Node>(*Importer,pids,false);
+    constantNumPackets2=0;
+    numPackets2.resize(Importer->getExportLIDs().size());  
+    Tpetra::Import_Util::packAndPrepareWithOwningPIDs<double,Ordinal,Ordinal,Node,LocalOps>(*A,Importer->getExportLIDs(),exports2,numPackets2(),constantNumPackets2,Importer->getDistributor(),pids());
+
+    // Loop through the parts that should be the same
+    const size_t numExportLIDs = Importer->getExportLIDs().size();
+    Teuchos::ArrayView<const Ordinal> exportLIDs = Importer->getExportLIDs();
+
+    const int sizeOfPacket1 = sizeof(double) + sizeof(Ordinal);
+    const int sizeOfPacket2 = sizeof(double) + sizeof(Ordinal) + sizeof(int);
+    
+    size_t offset1=0,offset2=0;
+    for (size_t i = 0; i < numExportLIDs; i++) {
+      ArrayView<const Ordinal> lidsView;
+      ArrayView<const double>  valsView;
+      A->getLocalRowView(exportLIDs[i], lidsView, valsView);
+      const size_t curNumEntries = lidsView.size();
+      
+      ArrayView<char> gidsChar1 = exports1(offset1, curNumEntries*sizeof(Ordinal));
+      ArrayView<char> valsChar1 = exports1(offset1+curNumEntries*sizeof(Ordinal), curNumEntries*sizeof(double));
+      ArrayView<Ordinal> gids1  = av_reinterpret_cast<Ordinal>(gidsChar1);
+      ArrayView<double>  vals1  = av_reinterpret_cast<double>(valsChar1);
+
+      ArrayView<char> gidsChar2 = exports2(offset2, curNumEntries*sizeof(Ordinal));
+      //      ArrayView<char> pidsChar2 = exports2(offset2+curNumEntries*sizeof(Ordinal), curNumEntries*sizeof(int));
+      ArrayView<char> valsChar2 = exports2(offset2+curNumEntries*(sizeof(Ordinal)+sizeof(int)), curNumEntries*sizeof(double));
+      ArrayView<Ordinal> gids2  = av_reinterpret_cast<Ordinal>(gidsChar2);
+      ArrayView<double>  vals2  = av_reinterpret_cast<double>(valsChar2);
+
+      for (size_t k = 0; k < curNumEntries; ++k) {
+	if(gids1[k] != gids2[k] || vals1[k] != vals2[k]) test_err++;
+      }
+      offset1 += sizeOfPacket1 * curNumEntries;
+      offset2 += sizeOfPacket2 * curNumEntries;
+    }
+    total_err+=test_err;
+  }
+  
+  TEST_EQUALITY(total_err,0);
+}
 
 
 
@@ -1141,7 +1220,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Import_Util, GetPids, Ordinal )  {
 
 #   define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsGraphImportExport, doImport, ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Import_Util, GetPids, ORDINAL )
+      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Import_Util, GetPids, ORDINAL ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Import_Util, PackAndPrepareWithOwningPIDs, ORDINAL )
 
 #   define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrixImportExport, doImport, ORDINAL, SCALAR ) \
