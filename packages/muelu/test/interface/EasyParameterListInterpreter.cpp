@@ -200,7 +200,7 @@ int main(int argc, char *argv[]) {
       system((sed_cmd + baseFile + ".out").c_str());
 
       // Run comparison
-      std::string cmd = "diff -w -I\"^\\s*$\"" + baseFile + ".res " + baseFile + ".out";
+      std::string cmd = "diff -w -I\"^\\s*$\" " + baseFile + ".res " + baseFile + ".out";
       int ret = system(cmd.c_str());
       if (ret)
         failed = true;
