@@ -26,13 +26,13 @@ namespace pike {
 
     /** \brief Register an application/model evaluator with the solver. 
 
-	Only allowed to be called before the call to completeRegistrion()
+	Only allowed to be called before the call to completeRegistrion().
     */
     virtual void registerModelEvaluator(const Teuchos::RCP<pike::BlackBoxModelEvaluator>& me) = 0;
 
     /** \brief Register a DataTransfer with the solver. 
 
-	Only allowed to be called before the call to completeRegistrion()
+	Only allowed to be called before the call to completeRegistrion().
     */
     virtual void registerDataTransfer(const Teuchos::RCP<pike::DataTransfer>& dt) = 0;
 
@@ -42,6 +42,12 @@ namespace pike {
 	registerDataTransfer() can no longer be called.
      */
     virtual void completeRegistration() = 0;
+
+    //! Returns the requested model evaluator.
+    virtual Teuchos::RCP<const pike::BlackBoxModelEvaluator> getModelEvaluator(const std::string& name) const = 0;
+
+    //! Return the requested data transfer.
+    virtual Teuchos::RCP<const pike::DataTransfer> getDataTransfer(const std::string& name) const = 0;
 
     /** \brief Take one step of the solve iteration sequence. 
     
@@ -71,12 +77,11 @@ namespace pike {
     //! Returns the observers registered with the solver.
     virtual std::vector<Teuchos::RCP<pike::Observer> > getObservers() const = 0;
 
-    /** \brief Sets the status test to use with the solver.
+    /** \brief Sets/overrides the status test to use with the solver.
 
 	Users can optionally set their own status tests via this
 	method.  If no status test is set, then the solver will build
-	the status tests based either on input parameters or on the
-	default.
+	the status tests based on input parameters and/or defaults.
 
 	@param[in] statusTests The status test used to determine when to stop the solver.
      */ 

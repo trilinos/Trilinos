@@ -1,5 +1,5 @@
-#ifndef PIKE_STATUS_TESTS_HPP
-#define PIKE_STATUS_TESTS_HPP
+#ifndef PIKE_STATUS_TEST_HPP
+#define PIKE_STATUS_TEST_HPP
 
 #include "Pike_BlackBox_config.hpp"
 #include "Teuchos_VerboseObject.hpp"

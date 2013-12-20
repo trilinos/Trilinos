@@ -24,6 +24,12 @@ namespace pike {
 
     virtual void completeRegistration();
 
+    virtual Teuchos::RCP<const pike::BlackBoxModelEvaluator> 
+    getModelEvaluator(const std::string& name) const;
+
+    virtual Teuchos::RCP<const pike::DataTransfer> 
+    getDataTransfer(const std::string& name) const;
+
     virtual void stepImplementation() = 0;
 
     virtual pike::SolveStatus step();

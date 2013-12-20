@@ -40,6 +40,28 @@ namespace pike {
     registrationComplete_ = true;
   }
 
+  Teuchos::RCP<const pike::BlackBoxModelEvaluator> SolverDefaultImplementation::getModelEvaluator(const std::string& name) const
+  {
+    typedef std::vector<Teuchos::RCP<pike::BlackBoxModelEvaluator> >::const_iterator ModelIterator;
+    for (ModelIterator m = models_.begin(); m != models_.end(); ++m)
+      if ((*m)->name() == name)
+	return *m;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Failed to find the DataTransfer named \"" << name << "\" in the solver.");
+    return Teuchos::null;
+  }
+
+  Teuchos::RCP<const pike::DataTransfer> SolverDefaultImplementation::getDataTransfer(const std::string& name) const
+  {
+    typedef std::vector<Teuchos::RCP<pike::DataTransfer> >::const_iterator TransferIterator;
+    for (TransferIterator t = transfers_.begin(); t != transfers_.end(); ++t)
+      if ((*t)->name() == name)
+	return *t;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Failed to find the DataTransfer named \"" << name << "\" in the solver.");
+    return Teuchos::null;
+  }
+
   pike::SolveStatus SolverDefaultImplementation::step()
   {
     for (ObserverIterator observer = observers_.begin(); observer != observers_.end(); ++observer)
