@@ -114,24 +114,28 @@ namespace MueLu {
         coarseLevel.Keep("RAP Pattern", this);
 
       RCP<Matrix> A = Get< RCP<Matrix> >(fineLevel,   "A");
-      RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P");
-      RCP<Matrix> AP, Ac;
+      RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P"), R, AP, Ac;
+      if (!implicitTranspose_)
+        R = Get< RCP<Matrix> >(coarseLevel, "R");
 
       // Reuse pattern if available (multiple solve)
       if (coarseLevel.IsAvailable("AP Pattern", this)) {
         GetOStream(Runtime0, 0) << "Ac: Using previous AP pattern" << std::endl;
+
         AP = Get< RCP<Matrix> >(coarseLevel, "AP Pattern");
       }
 
       {
         SubFactoryMonitor subM(*this, "MxM: A x P", coarseLevel);
+
         AP = Utils::Multiply(*A, false, *P, false, AP, GetOStream(Statistics2,0));
-        Set(coarseLevel, "AP Pattern", AP);
       }
+      Set(coarseLevel, "AP Pattern", AP);
 
       // Reuse coarse matrix memory if available (multiple solve)
       if (coarseLevel.IsAvailable("RAP Pattern", this)) {
         GetOStream(Runtime0, 0) << "Ac: Using previous RAP pattern" << std::endl;
+
         Ac = Get< RCP<Matrix> >(coarseLevel, "RAP Pattern");
       }
 
@@ -147,9 +151,7 @@ namespace MueLu {
       } else {
         SubFactoryMonitor m2(*this, "MxM: R x (AP) (explicit)", coarseLevel);
 
-        RCP<Matrix> R = Get< RCP<Matrix> >(coarseLevel, "R");
         Ac = Utils::Multiply(*R, false, *AP, false, Ac, GetOStream(Statistics2,0), true, doOptimizedStorage);
-
       }
 
       CheckRepairMainDiagonal(Ac);
@@ -258,16 +260,25 @@ namespace MueLu {
           fixDiagMatrix->insertGlobalValues(grid,indout.view(0, 1), valout.view(0, 1));
         }
       }
-      Ac->fillComplete(p);
+      {
+        Teuchos::TimeMonitor m1(*Teuchos::TimeMonitor::getNewTimer("CheckRepairMainDiagonal: fillComplete1"));
+        Ac->fillComplete(p);
+      }
+
       MueLu::Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd(*Ac, false, 1.0, *fixDiagMatrix, 1.0);
-      if (Ac->IsView("stridedMaps")) fixDiagMatrix->CreateView("stridedMaps", Ac);
+      if (Ac->IsView("stridedMaps"))
+        fixDiagMatrix->CreateView("stridedMaps", Ac);
+
       Ac = Teuchos::null;     // free singular coarse level matrix
       Ac = fixDiagMatrix;     // set fixed non-singular coarse level matrix
     }
 
     // call fillComplete with optimized storage option set to true
     // This is necessary for new faster Epetra MM kernels.
-    Ac->fillComplete(p);
+    {
+      Teuchos::TimeMonitor m1(*Teuchos::TimeMonitor::getNewTimer("CheckRepairMainDiagonal: fillComplete2"));
+      Ac->fillComplete(p);
+    }
 
     // print some output
     if (IsPrint(Warnings0))
