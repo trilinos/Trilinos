@@ -126,6 +126,7 @@ void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &   
   // Array to store all the subtets containing the given pt
   Teuchos::Array<int> pt_tets;
   
+  
   switch (operatorType) {
     
     case OPERATOR_VALUE:
@@ -140,92 +141,100 @@ void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &   
 	// the same shape functions for each tet that contains it, so
 	// we only need to use the first one returned.
 	//for (int pt = 0; pt < pt_tets.size(); ++pt) 
-	int subtet = pt_tets[0]; //pt_tets[pt];
-	aux = 0.0;
-	// outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
-	switch (subtet) {
-	case 0:
-	  outputValues(0, i0) = 1. - 2. * (x + y + z);
-	  outputValues(4, i0) = 2. * x;
-	  outputValues(6, i0) = 2. * y;
-	  outputValues(7, i0) = 2. * z;
-	  break; 
-	case 1:
-	  outputValues(1, i0) = 2. * x - 1.;
-	  outputValues(4, i0) = 2. - 2. * (x + y + z);
-	  outputValues(5, i0) = 2. * y;
-	  outputValues(8, i0) = 2. * z;
-	  break; 
-	case 2:
-	  outputValues(2, i0) = 2. * y - 1.;
-	  outputValues(5, i0) = 2. * x;
-	  outputValues(6, i0) = 2. - 2. * (x + y + z);
-	  outputValues(9, i0) = 2. * z;
-	  break; 
-	case 3:
-	  outputValues(3, i0) = 2. * z - 1.;
-	  outputValues(7, i0) = 2. - 2. * (x + y + z);
-	  outputValues(8, i0) = 2. * x;
-	  outputValues(9, i0) = 2. * y;
-	  break;
-	case 4:
-	  outputValues(4, i0) = 1. - 2. * (y + z);
-	  outputValues(5, i0) = 2. * (x + y) - 1.;
-	  outputValues(8, i0) = 2. * (x + z) - 1.;
-	  aux = 2. - 4. * x;
-	  break; 
-	case 5:
-	  outputValues(5, i0) = 1. - 2. * (x + y);
-	  outputValues(8, i0) = 1. - 2. * (x + z);
-	  outputValues(9, i0) = 2. * (y + z) - 1.;
-	  aux = 4. - 4. * (x + y + z);
-	  break;
-	case 6:
-	  outputValues(7, i0) = 1. - 2. * (x + y);
-	  outputValues(8, i0) = 2. * (x + z) - 1.;
-	  outputValues(9, i0) = 2. * (y + z) - 1.;
-	  aux = 2. - 4. * z;
-	  break;
-	case 7:
-	  outputValues(4, i0) = 1. - 2. * (y + z);
-	  outputValues(7, i0) = 1. - 2. * (x + y);
-	  outputValues(8, i0) = 2. * (x + z) - 1.;
-	  aux = 4. * y;
-	  break;
-	case 8:
-	  outputValues(4, i0) = 1. - 2. * (y + z);
-	  outputValues(5, i0) = 2. * (x + y) - 1.;
-	  outputValues(6, i0) = 1. - 2. * (x + z);
-	  aux = 4. * z;
-	  break;
-	case 9:
-	  outputValues(5, i0) = 2. * (x + y) - 1.;
-	  outputValues(6, i0) = 1. - 2. * (x + z);
-	  outputValues(9, i0) = 2. * (y + z) - 1.;
-	  aux = 2. - 4. * y;
-	  break;
-	case 10:
-	  outputValues(6, i0) = 1. - 2. * (x + z);
-	  outputValues(7, i0) = 1. - 2. * (x + y);
-	  outputValues(9, i0) = 2. * (y + z) - 1.;
-	  aux = 4. * x;
-	  break;
-	case 11:
-	  outputValues(4, i0) = 1. - 2. * (y + z);
-	  outputValues(6, i0) = 1. - 2. * (x + z);
-	  outputValues(7, i0) = 1. - 2. * (x + y);
-	  aux = 4. * (x + y + z) - 2.;
-	  break; 
-	}
-	outputValues(4, i0) += aux/6.0;
-	outputValues(5, i0) += aux/6.0;
-	outputValues(6, i0) += aux/6.0;
-	outputValues(7, i0) += aux/6.0;
-	outputValues(8, i0) += aux/6.0;
-	outputValues(9, i0) += aux/6.0;
-	//}
+        if (pt_tets[0] != -1) {
+          int subtet = pt_tets[0];
+          aux = 0.0;
+          // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
+          switch (subtet) {
+          case 0:
+            outputValues(0, i0) = 1. - 2. * (x + y + z);
+            outputValues(4, i0) = 2. * x;
+            outputValues(6, i0) = 2. * y;
+            outputValues(7, i0) = 2. * z;
+            break; 
+          case 1:
+            outputValues(1, i0) = 2. * x - 1.;
+            outputValues(4, i0) = 2. - 2. * (x + y + z);
+            outputValues(5, i0) = 2. * y;
+            outputValues(8, i0) = 2. * z;
+            break; 
+          case 2:
+            outputValues(2, i0) = 2. * y - 1.;
+            outputValues(5, i0) = 2. * x;
+            outputValues(6, i0) = 2. - 2. * (x + y + z);
+            outputValues(9, i0) = 2. * z;
+            break; 
+          case 3:
+            outputValues(3, i0) = 2. * z - 1.;
+            outputValues(7, i0) = 2. - 2. * (x + y + z);
+            outputValues(8, i0) = 2. * x;
+            outputValues(9, i0) = 2. * y;
+            break;
+          case 4:
+            outputValues(4, i0) = 1. - 2. * (y + z);
+            outputValues(5, i0) = 2. * (x + y) - 1.;
+            outputValues(8, i0) = 2. * (x + z) - 1.;
+            aux = 2. - 4. * x;
+            break; 
+          case 5:
+            outputValues(5, i0) = 1. - 2. * (x + y);
+            outputValues(8, i0) = 1. - 2. * (x + z);
+            outputValues(9, i0) = 2. * (y + z) - 1.;
+            aux = 4. - 4. * (x + y + z);
+            break;
+          case 6:
+            outputValues(7, i0) = 1. - 2. * (x + y);
+            outputValues(8, i0) = 2. * (x + z) - 1.;
+            outputValues(9, i0) = 2. * (y + z) - 1.;
+            aux = 2. - 4. * z;
+            break;
+          case 7:
+            outputValues(4, i0) = 1. - 2. * (y + z);
+            outputValues(7, i0) = 1. - 2. * (x + y);
+            outputValues(8, i0) = 2. * (x + z) - 1.;
+            aux = 4. * y;
+            break;
+          case 8:
+            outputValues(4, i0) = 1. - 2. * (y + z);
+            outputValues(5, i0) = 2. * (x + y) - 1.;
+            outputValues(6, i0) = 1. - 2. * (x + z);
+            aux = 4. * z;
+            break;
+          case 9:
+            outputValues(5, i0) = 2. * (x + y) - 1.;
+            outputValues(6, i0) = 1. - 2. * (x + z);
+            outputValues(9, i0) = 2. * (y + z) - 1.;
+            aux = 2. - 4. * y;
+            break;
+          case 10:
+            outputValues(6, i0) = 1. - 2. * (x + z);
+            outputValues(7, i0) = 1. - 2. * (x + y);
+            outputValues(9, i0) = 2. * (y + z) - 1.;
+            aux = 4. * x;
+            break;
+          case 11:
+            outputValues(4, i0) = 1. - 2. * (y + z);
+            outputValues(6, i0) = 1. - 2. * (x + z);
+            outputValues(7, i0) = 1. - 2. * (x + y);
+            aux = 4. * (x + y + z) - 2.;
+            break; 
+          }
+          outputValues(4, i0) += aux/6.0;
+          outputValues(5, i0) += aux/6.0;
+          outputValues(6, i0) += aux/6.0;
+          outputValues(7, i0) += aux/6.0;
+          outputValues(8, i0) += aux/6.0;
+          outputValues(9, i0) += aux/6.0;
+          //}
+        } else {
+          outputValues(0, i0) = 1. - 2. * (x + y + z);
+          outputValues(4, i0) = 2. * x;
+          outputValues(6, i0) = 2. * y;
+          outputValues(7, i0) = 2. * z;
+        }
+        
+        break;
       }
-      break;
       
   case OPERATOR_GRAD:
   case OPERATOR_D1:
@@ -362,6 +371,7 @@ Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getLocalSubTetrahedra(Scalar x,
 {
   
   Teuchos::Array<int> subTets;
+  int count(0);
   
   // local coords
   Scalar xyz = x + y + z;
@@ -372,52 +382,81 @@ Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getLocalSubTetrahedra(Scalar x,
   // cycle through each subdomain and push back if the point lies within
 
   // subtet #0 E0 := 0.0 <= r + s + t <= 0.5 && 0.0 <= r <= 0.5 && 0.0 <= s <= 0.5 && 0.0 <= t <= 0.5
-  if ( (0.0 <= xyz && xyz <= 0.5) && (0.0 <= x && x <= 0.5) && (0.0 <= y && y <= 0.5) && (0.0 <= z && z <= 0.5) )
+  if ( (0.0 <= xyz && xyz <= 0.5) && (0.0 <= x && x <= 0.5) && (0.0 <= y && y <= 0.5) && (0.0 <= z && z <= 0.5) ) {
+    count++;
     subTets.push_back(0);
+  }
 
   // subtet #1 E1 := 0.5 <= r + s + t <= 1.0 && 0.5 <= r <= 1.0 && 0.0 <= s <= 0.5 && 0.0 <= t <= 0.5
-  if ( (0.5 <= xyz && xyz <= 1.0) && (0.5 <= x && x <= 1.0) && (0.0 <= y && y <= 0.5) && (0.0 <= z && z <= 0.5) )
+  if ( (0.5 <= xyz && xyz <= 1.0) && (0.5 <= x && x <= 1.0) && (0.0 <= y && y <= 0.5) && (0.0 <= z && z <= 0.5) ) {
+    count++;
     subTets.push_back(1);
+  }
 
   // subtet #2 E2 := 0.5 <= r + s + t <= 1.0 && 0.0 <= r <= 0.5 && 0.5 <= s <= 1.0 && 0.0 <= t <= 0.5
-  if ( (0.5 <= xyz && xyz <= 1.0) && (0.0 <= x && x <= 0.5) && (0.5 <= y && y <= 1.0) && (0.0 <= z && z<= 0.5) )
+  if ( (0.5 <= xyz && xyz <= 1.0) && (0.0 <= x && x <= 0.5) && (0.5 <= y && y <= 1.0) && (0.0 <= z && z<= 0.5) ) {
+    count++;
     subTets.push_back(2);
+  }
 
   // subtet #3 E3 := 0.5 <= r + s + t <= 1.0 && 0.0 <= r <= 0.5 && 0.0 <= s <= 0.5 && 0.5 <= t <= 1.0
-  if ( (0.5 <= xyz && xyz <= 1.0) && (0.0 <= x && x <= 0.5) && (0.0 <= y && y <= 0.5) && (0.5 <= z && z <= 1.0) )
+  if ( (0.5 <= xyz && xyz <= 1.0) && (0.0 <= x && x <= 0.5) && (0.0 <= y && y <= 0.5) && (0.5 <= z && z <= 1.0) ) {
+    count++;
     subTets.push_back(3);
+  }
 
   // subtet #4 E4 := 0.0 <= s + t <= 0.5 && 0.5 <= r + s <= 1.0 && 0.5 <= r + t <= 1.0 && 0.0 <= r <= 0.5
-  if ( (0.0 <= yz && yz <= 0.5) && (0.5 <= xy && xy <= 1.0) && (0.5 <= xz && xz <= 1.0) && (0.0 <= x && x <= 0.5) )
+  if ( (0.0 <= yz && yz <= 0.5) && (0.5 <= xy && xy <= 1.0) && (0.5 <= xz && xz <= 1.0) && (0.0 <= x && x <= 0.5) ) {
+    count++;
     subTets.push_back(4);
+  }
 
   // subtet #5 E5 := 0.5 <= r + s <= 1.0 && 0.5 <= s + t <= 1.0 && 0.5 <= r + t <= 1.0 && 0.75 <= r + s + t <= 1.0
-  if ( (0.5 <= xy && xy <= 1.0) && (0.5 <= yz && yz <= 1.0) && (0.5 <= xz && xz <= 1.0) && (0.75 <= xyz && xyz <= 1.0) )
+  if ( (0.5 <= xy && xy <= 1.0) && (0.5 <= yz && yz <= 1.0) && (0.5 <= xz && xz <= 1.0) && (0.75 <= xyz && xyz <= 1.0) ) {
+    count++;
     subTets.push_back(5);
+  }
 
   // subtet #6 E6 := 0.5 <= s + t <= 1.0 && 0.0 <= r + s <= 0.5 && 0.5 <= r + t <= 1.0 && 0.0 <= t <= 0.5
-  if ( (0.5 <= yz && yz <= 1.0) && (0.0 <= xy && xy <= 0.5) && (0.5 <= xz && xz <= 1.0) && (0.0 <= z && z <= 0.5) )
+  if ( (0.5 <= yz && yz <= 1.0) && (0.0 <= xy && xy <= 0.5) && (0.5 <= xz && xz <= 1.0) && (0.0 <= z && z <= 0.5) ) {
+    count++;
     subTets.push_back(6);
+  }
 
   // subtet #7 E7 := 0.0 <= s + t <= 0.5 && 0.0 <= r + s <= 0.5 && 0.5 <= r + t <= 1.0 && 0.0 <= s <= 0.25
-  if ( (0.0 <= yz && yz <= 0.5) && (0.0 <= xy && xy <= 0.5) && (0.5 <= xz && xz <= 1.0) && (0.0 <= y && y <= 0.25) )
+  if ( (0.0 <= yz && yz <= 0.5) && (0.0 <= xy && xy <= 0.5) && (0.5 <= xz && xz <= 1.0) && (0.0 <= y && y <= 0.25) ) {
+    count++;
     subTets.push_back(7);
+  }
 
   // subtet #8 E8 := 0.0 <= r + t <= 0.5 && 0.0 <= s + t <= 0.5 &&  0.5 <= r + s <= 1.0 && 0.0 <= t <= 0.25
-  if ( (0.0 <= xz && xz <= 0.5) && (0.0 <= yz && yz <= 0.5) && (0.5 <= xy && xy <= 1.0) && (0.0 <= z && z <= 0.5) )
+  if ( (0.0 <= xz && xz <= 0.5) && (0.0 <= yz && yz <= 0.5) && (0.5 <= xy && xy <= 1.0) && (0.0 <= z && z <= 0.5) ) {
+    count++;
     subTets.push_back(8);
+  }
 
   // subtet #9 E9 := 0.0 <= r + t <= 0.5 && 0.5 <= r + s <= 1.0 &&  0.5 <= s + t <= 1.0 && 0.0 <= s <= 0.5
-  if ( (0.0 <= xz && xz <= 0.5) && (0.5 <= xy && xy <= 1.0) && (0.5 <= yz && yz <= 1.0) && (0.0 <= y && y <= 0.5) )
+  if ( (0.0 <= xz && xz <= 0.5) && (0.5 <= xy && xy <= 1.0) && (0.5 <= yz && yz <= 1.0) && (0.0 <= y && y <= 0.5) ) {
+    count++;
     subTets.push_back(9);
+  }
 
   // subtet #10 E10 := 0.0 <= r + t <= 0.5 && 0.5 <= s + t <= 1.0 && 0.0 <= r + s <= 0.5 && 0.0 <= r <= 0.25
-  if ( (0.0 <= xz && xz <= 0.5) && (0.5 <= yz && yz <= 1.0) && (0.0 <= xy && xy <= 0.5) && (0.0 <= x && x <= 0.25) )
+  if ( (0.0 <= xz && xz <= 0.5) && (0.5 <= yz && yz <= 1.0) && (0.0 <= xy && xy <= 0.5) && (0.0 <= x && x <= 0.25) ) {
+    count++;
     subTets.push_back(10);
+  }
 
   // subtet #11 E11 := 0.5 <= r + s + t <= 0.75 && 0.0 <= r + t <= 0.5 && 0.0 <= s + t <= 0.5 && 0.0 <= r + s <= 0.5
-  if ( (0.5 <= xyz && xyz <= 0.75) && (0.0 <= xz && xz <= 0.5) && (0.0 <= yz && yz <= 0.5) && (0.0 <= xy && xy <= 0.5) )
+  if ( (0.5 <= xyz && xyz <= 0.75) && (0.0 <= xz && xz <= 0.5) && (0.0 <= yz && yz <= 0.5) && (0.0 <= xy && xy <= 0.5) ) {
+    count++;
     subTets.push_back(11);
+  }
+
+  // if the point doesn't lie in the parent domain return -1
+  if (count == 0) {
+    subTets.push_back(-1);
+  }
 
   return subTets;
 }
