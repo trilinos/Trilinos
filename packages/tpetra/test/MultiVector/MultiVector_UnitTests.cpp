@@ -1937,6 +1937,7 @@ namespace {
         nsub[j] = norig[inds[j]];
       }
       MV mvcopy(*mvview);
+      mvcopy = createCopy(*mvview);
       mvcopy.normInf(ncopy());
       TEST_COMPARE_FLOATING_ARRAYS(ncopy,nsub,M0);
       // reset both the view and the copy of the view, ensure that they are independent

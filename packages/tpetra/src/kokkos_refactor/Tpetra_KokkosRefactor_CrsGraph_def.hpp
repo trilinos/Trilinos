@@ -555,6 +555,7 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   allocateIndices (ELocalGlobal lg)
   {
+    std::cout<<"A\n";
     // This is a protected function, only callable by us.  If it was
     // called incorrectly, it is our fault.  That's why the tests
     // below throw std::logic_error instead of std::invalid_argument.
@@ -585,6 +586,7 @@ namespace Tpetra {
     }
     //
     if (getProfileType() == StaticProfile) {
+      std::cout<<"B\n";
       //
       //  STATIC ALLOCATION PROFILE
       //
@@ -596,6 +598,7 @@ namespace Tpetra {
       // Furthermore, first-touch allocation ensures that we don't
       // take up too much memory in any one NUMA affinity region.
       // rowPtrs_ = LocalMatOps::allocRowPtrs( getRowMap()->getNode(), numAllocPerRow_() );
+      //std::cout<<"NumAllocPerRow: "<< numAllocPerRow_.size() << " " << numAllocPerRow_[0] << std::endl;
       k_rowPtrs_ = t_RowPtrs("Tpetra::CrsGraph::RowPtrs",numAllocPerRow_.size()+1);
       rowPtrs_ = Teuchos::arcp(k_rowPtrs_.ptr_on_device(), 0, k_rowPtrs_.dimension_0(),
                                          Kokkos::Compat::deallocator(k_rowPtrs_), false);
@@ -619,8 +622,10 @@ namespace Tpetra {
       }
       nodeNumAllocated_ = rowPtrs_[numRows];
 
+      std::cout<<"C\n";
     }
     else {
+      std::cout<<"D\n";
       //
       //  DYNAMIC ALLOCATION PROFILE
       //
@@ -644,13 +649,16 @@ namespace Tpetra {
           if (howmany > 0) gblInds2D_[i].resize(howmany);
         }
       }
+      std::cout<<"E\n";
     }
     if (numRows > 0) {
+      std::cout<<"F\n";
       k_numRowEntries_ = t_numRowEntries_("Tpetra::CrsGraph::numRowEntries",numRows);
       numRowEntries_ = Teuchos::arcp(k_numRowEntries_.h_view.ptr_on_device(), 0, numRows,
                                      Kokkos::Compat::deallocator(k_numRowEntries_.h_view), false);
       //numRowEntries_ = arcp<size_t>(numRows);
       std::fill( numRowEntries_.begin(), numRowEntries_.end(), 0 );
+      std::cout<<"G\n";
     }
     // done with these
     numAllocForAllRows_ = 0;
@@ -2901,11 +2909,11 @@ namespace Tpetra {
   {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    std::cout << "MakeIndiciesLocal\n";
+    std::cout << "makeIndicesLocal\n";
     // All nodes must be in the same index state.
     // Update index state by checking isLocallyIndexed/Global on all nodes
     computeIndexState();
-    const char tfecfFuncName[] = "makeIndicesLocal()";
+    const char tfecfFuncName[] = "makeIndicesLocal";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       isLocallyIndexed() && isGloballyIndexed(), std::logic_error,
       ": inconsistent index state. Indices must be either local on all "
@@ -2915,10 +2923,22 @@ namespace Tpetra {
     makeColMap ();
     // Transform indices to local index space
     const size_t nlrs = getNodeNumRows();
+
+    std::cout << "Number of local rows: " << nlrs << std::endl;
+
+    if (isGloballyIndexed ()) {
+      std::cout << "makeIndicesLocal: globally indexed" << std::endl;
+    } else if (isLocallyIndexed ()) {
+      std::cout << "makeIndicesLocal: locally indexed" << std::endl;
+    } else {
+      std::cout << "makeIndicesLocal: neither globally nor locally indexed" << std::endl;
+    }
+
+
     if (isGloballyIndexed() && nlrs > 0) {
       // allocate data for local indices
       if (getProfileType() == StaticProfile) {
-        std::cout << "MakeIndiciesLocal Static\n";
+        std::cout << "makeIndicesLocal Static, Globally indexed\n";
 
         // If GO and LO are the same size, we can reuse the existing
         // array of 1-D index storage to convert column indices from
@@ -2953,10 +2973,10 @@ namespace Tpetra {
         // can deallocate the global column indices (which we know are
         // in 1-D storage, because the graph has static profile).
         gblInds1D_ = null;
-        std::cout << "MakeIndiciesLocal Static Done\n";
+        std::cout << "makeIndicesLocal Static Done\n";
       }
       else {  // the graph has dynamic profile (2-D index storage)
-        std::cout << "MakeIndiciesLocal Dynamic\n";
+        std::cout << "makeIndicesLocal Dynamic, Globally indexed\n";
 
         lclInds2D_ = arcp<Array<LO> > (nlrs);
         for (size_t r = 0; r < getNodeNumRows (); ++r) {
@@ -2983,12 +3003,15 @@ namespace Tpetra {
           }
         }
         gblInds2D_ = null;
-        std::cout << "MakeIndiciesLocal Done\n";
+        std::cout << "makeIndicesLocal Done\n";
 
       }
     }
+
+    std::cout << "makeIndicesLocal: k_rowPtrs_ has " << k_rowPtrs_.dimension_0 () << " entries." << std::endl;
+
     k_lclGraph_ = LocalStaticCrsGraphType(k_lclInds1D_,k_rowPtrs_);
-    std::cout << "MakeIndiciesLocal Finished\n";
+    std::cout << "makeIndicesLocal Finished\n";
     indicesAreLocal_  = true;
     indicesAreGlobal_ = false;
     checkInternalState();

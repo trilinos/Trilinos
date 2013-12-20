@@ -115,7 +115,8 @@ namespace Tpetra {
   MultiVector (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& source) :
     DO (source),
     lclMV_ (MVT::getNode (source.lclMV_)),
-    view_ (source.view_)
+    view_ (source.view_),
+    whichVectors_(source.whichVectors_)
   {
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
@@ -1056,7 +1057,7 @@ namespace Tpetra {
   dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &A,
        const Teuchos::ArrayView<Scalar> &dots) const
   {
-    /*using Teuchos::Array;
+    using Teuchos::Array;
     using Teuchos::ArrayRCP;
     using Teuchos::as;
     using Teuchos::arcp_const_cast;
@@ -1077,6 +1078,7 @@ namespace Tpetra {
         ": MultiVectors must have the same number of vectors.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(dots.size()) != numVecs, std::runtime_error,
         ": dots.size() must be as large as the number of vectors in *this and A.");
+    /*
     if (isConstantStride() && A.isConstantStride()) {
       MVT::Dot(lclMV_,A.lclMV_,dots);
     }
@@ -1092,9 +1094,22 @@ namespace Tpetra {
         dots[j] = MVT::Dot((const KMV&)v,(const KMV &)a);
       }
     }*/
-    Kokkos::MV_Dot(&dots[0],view_.d_view,A.view_.d_view,getLocalLength());
-    const size_t numVecs = getNumVectors();
-
+    if (isConstantStride() && A.isConstantStride() ) {
+      Kokkos::MV_Dot(&dots[0],view_.d_view,A.view_.d_view,getLocalLength());
+    } else {
+      for (size_t k = 0; k < numVecs; ++k) {
+        Kokkos::View<Scalar*,DeviceType> vector_k,vector_Ak;
+        if (!isConstantStride() )
+          vector_k = Kokkos::subview<Kokkos::View<Scalar*,DeviceType> > (view_.d_view, Kokkos::ALL (), whichVectors_[k]);
+        else
+          vector_k = Kokkos::subview<Kokkos::View<Scalar*,DeviceType> > (view_.d_view, Kokkos::ALL (), k);
+        if (!A.isConstantStride() )
+          vector_Ak = Kokkos::subview<Kokkos::View<Scalar*,DeviceType> > (A.view_.d_view, Kokkos::ALL (), A.whichVectors_[k]);
+        else
+          vector_Ak = Kokkos::subview<Kokkos::View<Scalar*,DeviceType> > (A.view_.d_view, Kokkos::ALL (), k);
+        dots[k] = Kokkos::V_Dot (vector_k,vector_Ak);
+      }
+    }
     if (this->isDistributed()) {
       Array<Scalar> ldots(dots);
       Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,Teuchos::as<int>(numVecs),ldots.getRawPtr(),dots.getRawPtr());
@@ -1146,9 +1161,15 @@ namespace Tpetra {
       }
     }*/
 
-    // FIXME (mfh 17 Dec 2013) What about nonconstant stride?
+    if (isConstantStride()) {
+      Kokkos::MV_Dot(&norms[0],view_.d_view,view_.d_view,getLocalLength());
+    } else {
+      for (size_t k = 0; k < numVecs; ++k) {
+        Kokkos::View<Scalar*,DeviceType> vector_k = Kokkos::subview<Kokkos::View<Scalar*,DeviceType> > (view_.d_view, Kokkos::ALL (), whichVectors_[k]);
+        norms[k] = Kokkos::V_Dot (vector_k,vector_k);
+      }
+    }
 
-    Kokkos::MV_Dot(&norms[0],view_.d_view,view_.d_view,getLocalLength());
     if (this->isDistributed ()) {
       Array<MT> lnorms (norms);
       // FIXME (mfh 25 Apr 2012) Somebody explain to me why we're
@@ -1687,7 +1708,40 @@ namespace Tpetra {
                       const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &A,
                       const Scalar &beta)
   {
-    Kokkos::MV_Add(view_.d_view,alpha,A.view_.d_view,beta,view_.d_view,getLocalLength());
+    using Teuchos::arcp_const_cast;
+    using Teuchos::ArrayRCP;
+    using Teuchos::as;
+
+    const char tfecfFuncName[] = "update()";
+    // this = beta*this + alpha*A
+    // must support case where &this == &A
+    // can't short circuit on alpha==0.0 or beta==0.0, because 0.0*NaN != 0.0
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*A.getMap()), std::runtime_error,
+        ": MultiVectors do not have compatible Maps:" << std::endl
+        << "this->getMap(): " << std::endl << this->getMap()
+        << "A.getMap(): " << std::endl << *A.getMap() << std::endl);
+#else
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( getLocalLength() != A.getLocalLength(), std::runtime_error,
+        ": MultiVectors do not have the same local length.");
+#endif
+    const size_t myLen = getLocalLength();
+    const size_t numVecs = getNumVectors();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(A.getNumVectors() != this->getNumVectors(), std::runtime_error,
+        ": MultiVectors must have the same number of vectors.");
+
+
+    if (isConstantStride() && A.isConstantStride ()) {
+      Kokkos::MV_Add(view_.d_view,alpha,A.view_.d_view,beta,view_.d_view,getLocalLength());
+    } else {
+      for (size_t k = 0; k < numVecs; ++k) {
+        Kokkos::V_Add (Kokkos::subview<Kokkos::View<Scalar*,DeviceType> > (view_.d_view, Kokkos::ALL (), whichVectors_[k]),
+                        alpha,
+                        Kokkos::subview<Kokkos::View<Scalar*,DeviceType> >  (A.view_.d_view, Kokkos::ALL (), A.whichVectors_[k]),
+                        beta,
+                        Kokkos::subview<Kokkos::View<Scalar*,DeviceType> >  (view_.d_view, Kokkos::ALL (), whichVectors_[k]));
+      }
+    }
     /*using Teuchos::arcp_const_cast;
     using Teuchos::ArrayRCP;
     using Teuchos::as;
