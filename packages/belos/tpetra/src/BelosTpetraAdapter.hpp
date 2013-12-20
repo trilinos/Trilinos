@@ -91,10 +91,6 @@ namespace Belos {
   class MultiVecTraits<Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node> > {
     typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
   public:
-#ifdef HAVE_BELOS_TPETRA_TIMERS
-    static Teuchos::RCP<Teuchos::Time> mvTimesMatAddMvTimer_, mvTransMvTimer_;
-#endif
-
     /// \brief Create a new multivector with \c numvecs columns.
     ///
     /// The returned Tpetra::MultiVector has the same Tpetra::Map
@@ -324,9 +320,23 @@ namespace Belos {
       using Teuchos::rcpFromRef;
       typedef Tpetra::Map<LO, GO, Node> map_type;
       KOKKOS_NODE_TRACE("Belos::MVT::MvTimesMatAddMv()")
+
 #ifdef HAVE_BELOS_TPETRA_TIMERS
-      Teuchos::TimeMonitor lcltimer(*mvTimesMatAddMvTimer_);
+      const std::string timerName ("Belos::MVT::MvTimesMatAddMv");
+      Teuchos::RCP<Teuchos::Time> timer =
+        Teuchos::TimeMonitor::lookupCounter (timerName);
+      if (timer.is_null ()) {
+        timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        timer.is_null (), std::logic_error, "Belos::MvTimesMatAddMv: "
+        "Failed to look up timer \"" << timerName << "\".  "
+        "Please report this bug to the Belos developers.");
+
+      // This starts the timer.  It will be stopped on scope exit.
+      Teuchos::TimeMonitor timeMon (*timer);
 #endif
+
       // Check if B is 1-by-1, in which case we can just call update()
       if (B.numRows() == 1 && B.numCols() == 1) {
         mv.update(alpha*B(0,0), A, beta);
@@ -384,9 +394,23 @@ namespace Belos {
                Teuchos::SerialDenseMatrix<int,Scalar>& C)
     {
       KOKKOS_NODE_TRACE("Belos::MVT::MvTransMv()")
+
 #ifdef HAVE_BELOS_TPETRA_TIMERS
-      Teuchos::TimeMonitor lcltimer(*mvTransMvTimer_);
+      const std::string timerName ("Belos::MVT::MvTransMv");
+      Teuchos::RCP<Teuchos::Time> timer =
+        Teuchos::TimeMonitor::lookupCounter (timerName);
+      if (timer.is_null ()) {
+        timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        timer.is_null (), std::logic_error, "Belos::MvTransMv: "
+        "Failed to look up timer \"" << timerName << "\".  "
+        "Please report this bug to the Belos developers.");
+
+      // This starts the timer.  It will be stopped on scope exit.
+      Teuchos::TimeMonitor timeMon (*timer);
 #endif
+
       // form alpha * A^H * B, then copy into SDM
       // we will create a multivector C_mv from a a local map
       // this map has a serial comm, the purpose being to short-circuit the MultiVector::reduce() call at the end of MultiVector::multiply()
