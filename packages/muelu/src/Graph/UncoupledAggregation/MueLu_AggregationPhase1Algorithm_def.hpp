@@ -43,15 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_UncoupledAggregationAlgorithm_def.hpp
- *
- *  Created on: Sep 17, 2012
- *      Author: Tobias Wiesner
- */
-
-#ifndef MUELU_UNCOUPLEDAGGREGATIONALGORITHM_DEF_HPP_
-#define MUELU_UNCOUPLEDAGGREGATIONALGORITHM_DEF_HPP_
+#ifndef MUELU_AGGREGATIONPHASE1ALGORITHM_DEF_HPP_
+#define MUELU_AGGREGATIONPHASE1ALGORITHM_DEF_HPP_
 
 #include <queue>
 
@@ -60,7 +53,7 @@
 
 #include <Xpetra_Vector.hpp>
 
-#include "MueLu_UncoupledAggregationAlgorithm_decl.hpp"
+#include "MueLu_AggregationPhase1Algorithm_decl.hpp"
 
 #include "MueLu_GraphBase.hpp"
 #include "MueLu_Aggregates.hpp"
@@ -70,7 +63,7 @@
 namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void UncoupledAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  void AggregationPhase1Algorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
   BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat,
                   LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
@@ -214,7 +207,7 @@ namespace MueLu {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void UncoupledAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RandomReorder(ArrayRCP<LO> list) const {
+  void AggregationPhase1Algorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RandomReorder(ArrayRCP<LO> list) const {
     //TODO: replace int
     int n = list.size();
     for(int i = 0; i < n-1; i++) {
@@ -223,11 +216,11 @@ namespace MueLu {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  int UncoupledAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RandomOrdinal(int min, int max) const {
+  int AggregationPhase1Algorithm<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RandomOrdinal(int min, int max) const {
     return min + Teuchos::as<int>((max-min+1) * (static_cast<double>(std::rand()) / (RAND_MAX + 1.0)));
   }
 
 } // end namespace
 
 
-#endif /* MUELU_UNCOUPLEDAGGREGATIONALGORITHM_DEF_HPP_ */
+#endif /* MUELU_AGGREGATIONPHASE1ALGORITHM_DEF_HPP_ */

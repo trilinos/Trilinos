@@ -1,4 +1,5 @@
 Aggregates
+AggregationPhase1Algorithm
 AmalgamationInfo
 CoupledAggregationCommHelper
 CoupledAggregationFactory
@@ -18,7 +19,6 @@ PRFactory
 RebalanceMapFactory
 RepartitionInterface
 SmallAggregationAlgorithm
-UncoupledAggregationAlgorithm
 UncoupledAggregationFactory
 UserAggregationFactory
 Zoltan2Interface - #if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)

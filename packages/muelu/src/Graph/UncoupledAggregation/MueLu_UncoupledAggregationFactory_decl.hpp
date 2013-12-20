@@ -67,7 +67,7 @@
 #include "MueLu_OnePtAggregationAlgorithm_fwd.hpp"
 #include "MueLu_SmallAggregationAlgorithm_fwd.hpp"
 #include "MueLu_PreserveDirichletAggregationAlgorithm_fwd.hpp"
-#include "MueLu_UncoupledAggregationAlgorithm_fwd.hpp"
+#include "MueLu_AggregationPhase1Algorithm_fwd.hpp"
 #include "MueLu_MaxLinkAggregationAlgorithm_fwd.hpp"
 #include "MueLu_IsolatedNodeAggregationAlgorithm_fwd.hpp"
 #include "MueLu_EmergencyAggregationAlgorithm_fwd.hpp"

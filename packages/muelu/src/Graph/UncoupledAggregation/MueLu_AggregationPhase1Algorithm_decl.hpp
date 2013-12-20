@@ -43,19 +43,12 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_UncoupledAggregationAlgorithm_decl.hpp
- *
- *  Created on: Sep 17, 2012
- *      Author: Tobias Wiesner
- */
-
-#ifndef MUELU_UNCOUPLEDAGGREGATIONALGORITHM_DECL_HPP_
-#define MUELU_UNCOUPLEDAGGREGATIONALGORITHM_DECL_HPP_
+#ifndef MUELU_AGGREGATIONPHASE1ALGORITHM_DECL_HPP_
+#define MUELU_AGGREGATIONPHASE1ALGORITHM_DECL_HPP_
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_AggregationAlgorithmBase.hpp"
-#include "MueLu_UncoupledAggregationAlgorithm_fwd.hpp"
+#include "MueLu_AggregationPhase1Algorithm_fwd.hpp"
 
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
@@ -63,13 +56,13 @@
 
 namespace MueLu {
   /*!
-    @class UncoupledAggregationAlgorithm class.
+    @class UncoupledAggregationAggregationPhase1 class.
     @brief Algorithm for coarsening a graph with uncoupled aggregation.
   */
 
   template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-  class UncoupledAggregationAlgorithm : public MueLu::AggregationAlgorithmBase<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
-#undef MUELU_UNCOUPLEDAGGREGATIONALGORITHM_SHORT
+  class AggregationPhase1Algorithm : public MueLu::AggregationAlgorithmBase<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
+#undef MUELU_AGGREGATIONPHASE1ALGORITHM_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
   public:
@@ -77,10 +70,10 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    UncoupledAggregationAlgorithm(const RCP<const FactoryBase>& graphFact = Teuchos::null) { }
+    AggregationPhase1Algorithm(const RCP<const FactoryBase>& graphFact = Teuchos::null) { }
 
     //! Destructor.
-    virtual ~UncoupledAggregationAlgorithm() { }
+    virtual ~AggregationPhase1Algorithm() { }
 
     //@}
 
@@ -106,9 +99,9 @@ namespace MueLu {
     /*! @brief Generate a random number in the range [min, max] */
     int RandomOrdinal(int min, int max) const;
 
-  }; //class CheapAggregationAlgorithm
+  };
 
 } //namespace MueLu
 
-#define MUELU_UNCOUPLEDAGGREGATIONALGORITHM_SHORT
-#endif /* MUELU_UNCOUPLEDAGGREGATIONALGORITHM_DECL_HPP_ */
+#define MUELU_AGGREGATIONPHASE1ALGORITHM_SHORT
+#endif /* MUELU_AGGREGATIONPHASE1ALGORITHM_DECL_HPP_ */

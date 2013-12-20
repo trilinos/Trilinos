@@ -62,7 +62,7 @@
 #include "MueLu_OnePtAggregationAlgorithm.hpp"
 #include "MueLu_SmallAggregationAlgorithm.hpp"
 #include "MueLu_PreserveDirichletAggregationAlgorithm.hpp"
-#include "MueLu_UncoupledAggregationAlgorithm.hpp"
+#include "MueLu_AggregationPhase1Algorithm.hpp"
 #include "MueLu_MaxLinkAggregationAlgorithm.hpp"
 #include "MueLu_IsolatedNodeAggregationAlgorithm.hpp"
 #include "MueLu_EmergencyAggregationAlgorithm.hpp"
@@ -160,7 +160,7 @@ namespace MueLu {
     algos_.clear();
     if (bUseOnePtAggregationAlgorithm)             algos_.push_back(rcp(new OnePtAggregationAlgorithm             (graphFact)));
     if (bUseSmallAggregationAlgorithm)             algos_.push_back(rcp(new SmallAggregationAlgorithm             (graphFact)));
-    if (bUseUncoupledAggregationAglorithm)         algos_.push_back(rcp(new UncoupledAggregationAlgorithm         (graphFact)));
+    if (bUseUncoupledAggregationAglorithm)         algos_.push_back(rcp(new AggregationPhase1Algorithm            (graphFact)));
     if (bUseMaxLinkAggregationAlgorithm)           algos_.push_back(rcp(new MaxLinkAggregationAlgorithm           (graphFact)));
     if (bUsePreserveDirichletAggregationAlgorithm) algos_.push_back(rcp(new PreserveDirichletAggregationAlgorithm (graphFact)));
     if (bUseIsolatedNodeAggregationAglorithm)      algos_.push_back(rcp(new IsolatedNodeAggregationAlgorithm      (graphFact)));

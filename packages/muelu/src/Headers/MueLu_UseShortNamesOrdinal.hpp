@@ -82,8 +82,8 @@ typedef MueLu::RepartitionInterface<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
 typedef MueLu::SmallAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SmallAggregationAlgorithm;
 #endif
 
-#ifdef MUELU_UNCOUPLEDAGGREGATIONALGORITHM_SHORT
-typedef MueLu::UncoupledAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> UncoupledAggregationAlgorithm;
+#ifdef MUELU_AGGREGATIONPHASE1ALGORITHM_SHORT
+typedef MueLu::AggregationPhase1Algorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> AggregationPhase1Algorithm;
 #endif
 
 #ifdef MUELU_UNCOUPLEDAGGREGATIONFACTORY_SHORT
