@@ -13,7 +13,7 @@
 namespace Performance {
 
 static const unsigned begin_id_size = 256u;
-static const unsigned end_id_size = 1u << 25;
+static const unsigned end_id_size = 1u << 22;
 static const unsigned id_step = 2u;
 
 union helper

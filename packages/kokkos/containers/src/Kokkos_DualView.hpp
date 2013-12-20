@@ -184,12 +184,12 @@ public:
     if(dev) {
       if((modified_host() > 0) && (modified_host() >= modified_device())) {
       Kokkos::deep_copy(d_view,h_view);
-      modified_host = modified_device = 0;
+      modified_host() = modified_device() = 0;
       }
     } else {
       if((modified_device() > 0) && (modified_device() >= modified_host())) {
       Kokkos::deep_copy(h_view,d_view);
-      modified_host = modified_device = 0;
+      modified_host() = modified_device() = 0;
       }
     }
   }

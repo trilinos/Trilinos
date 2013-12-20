@@ -1448,7 +1448,7 @@ struct MV_MultiplyFunctor {
             << CoeffVector2::memory_space::query_label(alphav.ptr_on_device()) << ") x("
             << CrsMatrix::values_type::memory_space::query_label(A.values.ptr_on_device()) << ") x("
             << DomainVector::memory_space::query_label(x.ptr_on_device()) << ")\n";
-        msg << "\t Dimensions are: y(" << y.dimension_0() << "," << y.dimension_1() << ") A(" << A.numCols() << "," << A.numRows() << ")\n";
+        msg << "\t Dimensions are: y(" << y.dimension_0() << "," << y.dimension_1() << ") A(" << A.numRows() << "," << A.numCols() << ")\n";
         Impl::throw_runtime_exception( msg.str() );
       }
       if (numCols > x.dimension_0()) {
@@ -1459,7 +1459,7 @@ struct MV_MultiplyFunctor {
             << CoeffVector2::memory_space::query_label(alphav.ptr_on_device()) << ") x("
             << CrsMatrix::values_type::memory_space::query_label(A.values.ptr_on_device()) << ") x("
             << DomainVector::memory_space::query_label(x.ptr_on_device()) << ")\n";
-        msg << "\t Dimensions are: x(" << x.dimension_0() << "," << x.dimension_1() << ") A(" << A.numCols() << "," << A.numRows() << ")\n";
+        msg << "\t Dimensions are: x(" << x.dimension_0() << "," << x.dimension_1() << ") A(" << A.numRows() << "," << A.numCols() << ")\n";
         Impl::throw_runtime_exception( msg.str() );
       }
       if (dobeta==2) {
