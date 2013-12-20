@@ -79,7 +79,7 @@ namespace MueLu {
     const int myRank = graph.GetComm()->getRank();
 
     int              aggIndex = -1;
-    unsigned         aggSize  =  0;
+    size_t           aggSize  =  0;
     const unsigned   magicConstAsDefaultSize = 100;
     std::vector<int> aggList(magicConstAsDefaultSize);
 
@@ -97,10 +97,10 @@ namespace MueLu {
         // TODO: I would like to get rid of this, but that requires something like
         // graph.getMaxElementsPerRow(), which is trivial in Graph, but requires
         // computation in LWGraph
-        if (neighOfINode.size() > aggList.size())
+        if (as<size_t>(neighOfINode.size()) > aggList.size())
           aggList.resize(neighOfINode.size()*2);
 
-        for (int j = 0; j < neighOfINode.size(); j++) {
+        for (LO j = 0; j < neighOfINode.size(); j++) {
           LO neigh = neighOfINode[j];
 
           if (neigh != iNode && graph.isLocalNeighborVertex(neigh) && aggStat[neigh] != NodeStats::AGGREGATED)
@@ -108,7 +108,7 @@ namespace MueLu {
         }
 
         // finalize aggregate
-        for (unsigned k = 0; k < aggSize; k++) {
+        for (size_t k = 0; k < aggSize; k++) {
           aggStat     [aggList[k]] = NodeStats::AGGREGATED;
           vertex2AggId[aggList[k]] = aggIndex;
           procWinner  [aggList[k]] = myRank;

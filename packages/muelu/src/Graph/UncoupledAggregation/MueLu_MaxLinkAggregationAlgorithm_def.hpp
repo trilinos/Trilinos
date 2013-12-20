@@ -81,7 +81,7 @@ namespace MueLu {
     const LO  nRows  = graph.GetNodeNumVertices();
     const int myRank = graph.GetComm()->getRank();
 
-    unsigned         aggSize  =  0;
+    size_t           aggSize = 0;
     const unsigned   magicConstAsDefaultSize = 100;
     std::vector<int> aggList(magicConstAsDefaultSize);
 
@@ -94,11 +94,11 @@ namespace MueLu {
       // TODO: I would like to get rid of this, but that requires something like
       // graph.getMaxElementsPerRow(), which is trivial in Graph, but requires
       // computation in LWGraph
-      if (neighOfINode.size() >= aggList.size())
+      if (as<size_t>(neighOfINode.size()) >= aggList.size())
         aggList.resize(neighOfINode.size()*2);
 
       aggSize = 0;
-      for (int j = 0; j < neighOfINode.size(); j++) {
+      for (LO j = 0; j < neighOfINode.size(); j++) {
         LO neigh = neighOfINode[j];
 
         // NOTE: we don't need the check (neigh != iNode), as we work only
@@ -115,9 +115,9 @@ namespace MueLu {
       aggList[aggSize] = -1;
 
       // Find an aggregate id with most connections to
-      LO maxNumConnections =  0, curNumConnections;
+      LO maxNumConnections =  0, curNumConnections = 0;
       LO selectedAggregate = -1;
-      for (int i = 0; i < aggSize; i++) {
+      for (size_t i = 0; i < aggSize; i++) {
         curNumConnections++;
         if (aggList[i+1] != aggList[i]) {
           if (curNumConnections > maxNumConnections) {
