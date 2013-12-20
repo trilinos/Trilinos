@@ -470,7 +470,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, InverseNxN)
   std::srand(std::time(NULL));
 
   Index const
-  N = static_cast<Real>(std::rand()) / static_cast<Real>(RAND_MAX) * 7 + 4;
+  N = static_cast<Index>((7.0 * std::rand()) / RAND_MAX + 4.0);
 
   Tensor<Real> const
   A = 2.0 * eye<Real>(N) + Tensor<Real>(N, RANDOM_UNIFORM);
@@ -492,7 +492,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, Inverse_4th_NxN)
   std::srand(std::time(NULL));
 
   Index const
-  N = static_cast<Real>(std::rand()) / static_cast<Real>(RAND_MAX) * 2 + 2;
+  N = static_cast<Index>((2.0 * std::rand()) / RAND_MAX + 2.0);
 
   Tensor4<Real> const
   A = 2.0 * identity_1<Real>(N) + Tensor4<Real>(N, RANDOM_UNIFORM);
@@ -1060,32 +1060,32 @@ TEUCHOS_UNIT_TEST(MiniTensor, TemplateMetaProgramming)
 
     std::string
     type_string =
-        Sacado::StringName<typename Sacado::ScalarType<A>::type >::eval();
+        Sacado::StringName<Sacado::ScalarType<A>::type >::eval();
 
     TEST_COMPARE(type_string, ==, double_string);
 
     type_string =
-        Sacado::StringName<typename Sacado::ValueType<A>::type >::eval();
+        Sacado::StringName<Sacado::ValueType<A>::type >::eval();
 
     TEST_COMPARE(type_string, ==, double_string);
 
     type_string =
-        Sacado::StringName<typename Sacado::ScalarType<B>::type >::eval();
+        Sacado::StringName<Sacado::ScalarType<B>::type >::eval();
 
     TEST_COMPARE(type_string, ==, double_string);
 
     type_string =
-        Sacado::StringName<typename Sacado::ValueType<B>::type >::eval();
+        Sacado::StringName<Sacado::ValueType<B>::type >::eval();
 
     TEST_COMPARE(type_string, ==, double_string);
 
     type_string =
-        Sacado::StringName<typename Sacado::ScalarType<C>::type >::eval();
+        Sacado::StringName<Sacado::ScalarType<C>::type >::eval();
 
     TEST_COMPARE(type_string, ==, double_string);
 
     type_string =
-        Sacado::StringName<typename Sacado::ValueType<C>::type >::eval();
+        Sacado::StringName<Sacado::ValueType<C>::type >::eval();
 
     TEST_COMPARE(type_string, ==, fad_string);
   }
