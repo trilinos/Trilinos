@@ -1,4 +1,5 @@
 #include <unit_tests/UnitTestUtils.hpp>
+#include <unit_tests/MeshUtilsForBoundingVolumes.hpp>
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
@@ -19,8 +20,6 @@ std::ostream & operator<<(std::ostream & out, std::pair<stk::search::IdentProc<I
 
 
 namespace {
-
-enum NewSearchMethod { BOOST_RTREE, OCTREE, GTK };
 
 void testCoarseSearchForAlgorithm(stk::search::SearchMethod algorithm, MPI_Comm comm)
 {
@@ -91,27 +90,6 @@ void testCoarseSearchForAlgorithm(stk::search::SearchMethod algorithm, MPI_Comm 
     }
   }
 }
-
-void coarse_search_new(GtkBoxVector& local_domain, GtkBoxVector& local_range, NewSearchMethod algorithm, MPI_Comm comm, SearchResults& searchResults)
-{
-    if ( algorithm == GTK )
-    {
-        gtk_search(local_domain, local_range, comm, searchResults);
-    }
-    else if ( algorithm == OCTREE )
-    {
-        stk::search::coarse_search(local_domain, local_range, stk::search::OCTREE, comm, searchResults);
-    }
-    else if ( algorithm == BOOST_RTREE )
-    {
-        stk::search::coarse_search(local_domain, local_range, stk::search::BOOST_RTREE, comm, searchResults);
-    }
-    else
-    {
-        throw("Invalid search algorithm: not supported.\n");
-    }
-}
-
 
 void testCoarseSearchForAlgorithmUsingGtkAABoxes(NewSearchMethod algorithm, MPI_Comm comm)
 {

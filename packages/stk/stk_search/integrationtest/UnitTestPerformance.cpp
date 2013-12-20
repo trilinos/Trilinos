@@ -1,7 +1,3 @@
-#include <stk_util/util/memory_util.hpp>
-#include <stk_util/environment/WallTime.hpp>
-#include <stk_util/parallel/ParallelComm.hpp>
-
 #include <valgrind/callgrind.h>
 
 #include <mpi.h>
@@ -10,6 +6,7 @@
 #include <fstream>
 
 #include <unit_tests/UnitTestUtils.hpp>
+#include <unit_tests/MeshUtilsForBoundingVolumes.hpp>
 
 #include <exodusMeshInterface.h>
 
@@ -33,22 +30,14 @@ void print_debug_skip(stk::ParallelMachine pm)
 #endif
 }
 
-void printPeformanceStats(double elapsedTime, MPI_Comm comm);
-void writeExodusFileUsingBoxes(const std::vector<GtkBox> & boxes, const std::string &filename);
 void runStkSearchTestUsingStkAABoxes(stk::search::SearchMethod search);
 void runStkSearchTestUsingGtkAABoxes(stk::search::SearchMethod search);
-void printSumOfResults(MPI_Comm comm, const size_t sizeResults);
 void testGtkSearch(MPI_Comm comm, std::vector<GtkBox>&domainBoxes, SearchResults& boxIdPairResults);
-void fillBoxesUsingSidesetsFromFile(MPI_Comm comm, const std::string& filename, std::vector<GtkBox> &domainBoxes);
-void writeExodusFileUsingBoxes(const std::vector<GtkBox>& boxes, const std::string &filename);
 void testPerformanceOfAxisAlignedBoundingBoxes(stk::search::SearchMethod searchMethod, MPI_Comm comm);
 void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxes,
         stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults);
 void testStkSearchUsingGtkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxes,
                 stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults);
-void fillDomainBoxes(MPI_Comm comm, std::vector<GtkBox>& domainBoxes);
-void testResultsAcrossProcs(MPI_Comm comm, SearchResults& boxIdPairResults);
-
 
 TEST(Performance, ofAxisAlignedBoundingBoxesUsingOctTree)
 {
@@ -193,17 +182,6 @@ void runStkSearchTestUsingStkAABoxes(stk::search::SearchMethod searchMethod)
     testStkSearchUsingStkAABoxes(comm, domainBoxes, searchMethod, boxIdPairResults);
 }
 
-size_t getGoldValueForTest()
-{
-    std::string goldValue = getOption("-gold");
-    if ( goldValue == "skip" ) return 0u;
-    EXPECT_LT(0u, goldValue.size());
-    std::istringstream ss(goldValue);
-    size_t goldValueNumber=0;
-    ss >> goldValueNumber;
-    return goldValueNumber;
-}
-
 void testGtkSearch(MPI_Comm comm, std::vector<GtkBox>&domainBoxes, SearchResults& searchResults)
 {
     check_valgrind_version();
@@ -291,17 +269,18 @@ void testGtkSearch(MPI_Comm comm, std::vector<GtkBox>&domainBoxes, SearchResults
         std::copy(localResults.begin(), localResults.end(), std::back_inserter(searchResults));
     }
 
-    testResultsAcrossProcs(comm, searchResults);
-}
-
-void fillStkBoxesUsingGtkBoxes(const std::vector<GtkBox> &domainBoxes, const int procId, StkBoxVector& stkBoxes)
+    gatherResultstoProcZero(comm, searchResults);
+    size_t goldValueNumber=getGoldValueForTest();
+    if ( proc_id == 0 )
     {
-    for (size_t i=0;i<domainBoxes.size();i++)
-    {
-        Point min(domainBoxes[i].get_x_min(), domainBoxes[i].get_y_min(), domainBoxes[i].get_z_min());
-        Point max(domainBoxes[i].get_x_max(), domainBoxes[i].get_y_max(), domainBoxes[i].get_z_max());
-        Ident domainBoxId(i, procId);
-        stkBoxes[i] = std::make_pair(StkBox(min,max), domainBoxId);
+        if ( goldValueNumber != 0u)
+        {
+            EXPECT_EQ(goldValueNumber, searchResults.size());
+        }
+        else
+        {
+            std::cerr << "Number of interactions: " << searchResults.size() << std::endl;
+        }
     }
 }
 
@@ -335,7 +314,19 @@ void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxe
     printPeformanceStats(elapsedTime, comm);
     print_debug_skip(comm);
 
-    testResultsAcrossProcs(comm, boxIdPairResults);
+    gatherResultstoProcZero(comm, boxIdPairResults);
+    size_t goldValueNumber=getGoldValueForTest();
+    if ( procId == 0 )
+    {
+        if ( goldValueNumber != 0u)
+        {
+            EXPECT_EQ(goldValueNumber, boxIdPairResults.size());
+        }
+        else
+        {
+            std::cerr << "Number of interactions: " << boxIdPairResults.size() << std::endl;
+        }
+    }
 }
 
 void testStkSearchUsingGtkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxes,
@@ -372,7 +363,19 @@ void testStkSearchUsingGtkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxe
     printPeformanceStats(elapsedTime, comm);
     print_debug_skip(comm);
 
-    testResultsAcrossProcs(comm, boxIdPairResults);
+    gatherResultstoProcZero(comm, boxIdPairResults);
+    size_t goldValueNumber=getGoldValueForTest();
+    if ( procId == 0 )
+    {
+        if ( goldValueNumber != 0u)
+        {
+            EXPECT_EQ(goldValueNumber, boxIdPairResults.size());
+        }
+        else
+        {
+            std::cerr << "Number of interactions: " << boxIdPairResults.size() << std::endl;
+        }
+    }
 }
 
 TEST(Performance, getGoldResults)
@@ -409,325 +412,6 @@ TEST(Performance, getGoldResults)
     printPeformanceStats(elapsedTime, comm);
 
     std::cerr << "Number of boxes: " << boxIdPairResults.size() << std::endl;
-}
-
-void testResultsAcrossProcs(MPI_Comm comm, SearchResults& boxIdPairResults)
-{
-    int procId=-1;
-    MPI_Comm_rank(comm, &procId);
-
-    int numProc=-1;
-    MPI_Comm_size(comm, &numProc);
-
-    int procIdDestination = 0;
-    stk::CommAll gather(comm);
-    for (int phase=0; phase<2; ++phase)
-    {
-        if ( procId != procIdDestination )
-        {
-            for (size_t j=0;j<boxIdPairResults.size();++j)
-            {
-                gather.send_buffer(procIdDestination).pack< std::pair<Ident, Ident> >(boxIdPairResults[j]);
-            }
-        }
-
-        if (phase == 0) { //allocation phase
-          gather.allocate_buffers( numProc / 4 );
-        }
-        else { // communication phase
-          gather.communicate();
-        }
-    }
-
-    if ( procId == procIdDestination )
-    {
-        for ( int p = 0 ; p < numProc ; ++p )
-        {
-            stk::CommBuffer &buf = gather.recv_buffer( p );
-            while ( buf.remaining() )
-            {
-                std::pair<Ident, Ident> temp;
-                buf.unpack< std::pair<Ident, Ident> >( temp );
-                boxIdPairResults.push_back(temp);
-            }
-        }
-
-        size_t goldValueNumber=getGoldValueForTest();
-        if ( goldValueNumber != 0u)
-        {
-            EXPECT_EQ(goldValueNumber, boxIdPairResults.size());
-        }
-        else
-        {
-            std::cerr << "Number of interactions: " << boxIdPairResults.size() << std::endl;
-        }
-    }
-}
-
-void createBoundingBoxesForSidesInSidesets(const sierra::Mesh &mesh, const std::vector<double> &coordinates,
-        std::vector<GtkBox>& domainBoxes)
-{
-    size_t numberBoundingBoxes = 0;
-    sierra::Mesh::SideSetIdVector sidesetIds;
-    mesh.fillSideSetIds(sidesetIds);
-
-    for (size_t i=0;i<sidesetIds.size();i++)
-    {
-        numberBoundingBoxes += mesh.getNumberSidesInSideSet(sidesetIds[i]);
-    }
-
-    domainBoxes.resize(numberBoundingBoxes);
-
-    size_t boxCounter = 0;
-
-    std::vector<double> boxCoordinates(6);
-    for (size_t ssetCounter=0;ssetCounter<sidesetIds.size();ssetCounter++)
-    {
-        sierra::Mesh::LocalNodeIdVector nodeIds;
-        std::vector<int> numNodesPerFace;
-        mesh.fillSideSetLocalNodeIds(sidesetIds[ssetCounter], nodeIds, numNodesPerFace);
-        size_t offset=0;
-        for (size_t i=0;i<numNodesPerFace.size();i++)
-        {
-            createBoundingBoxForElement(&nodeIds[offset], numNodesPerFace[i], coordinates, boxCoordinates);
-            domainBoxes[boxCounter].set_box(boxCoordinates[0], boxCoordinates[1], boxCoordinates[2],
-                                            boxCoordinates[3], boxCoordinates[4], boxCoordinates[5]);
-            boxCounter++;
-            offset += numNodesPerFace[i];
-        }
-    }
-
-    ASSERT_EQ(boxCounter, numberBoundingBoxes);
-}
-
-void printSumOfResults(MPI_Comm comm, const size_t sizeResults)
-{
-    int procId=-1;
-    MPI_Comm_rank(comm, &procId);
-    int numResults=sizeResults;
-    int sumOverAll=0;
-    MPI_Allreduce(&numResults, &sumOverAll, 1, MPI_INT, MPI_SUM, comm);
-
-    size_t goldValueNumber=getGoldValueForTest();
-    if ( goldValueNumber != 0u)
-    {
-        EXPECT_EQ(goldValueNumber, static_cast<size_t>(sumOverAll));
-    }
-    else if ( procId == 0 )
-    {
-        std::cerr << "Number of interactions: " << sumOverAll << std::endl;
-    }
-}
-
-void fillBoxesUsingSidesetsFromFile(MPI_Comm comm, const std::string& filename, std::vector<GtkBox> &domainBoxes)
-{
-    sierra::ExodusMeshInterface mesh(filename, comm);
-
-    std::vector<double> coordinates;
-    mesh.fillCoordinates(coordinates);
-
-    createBoundingBoxesForSidesInSidesets(mesh, coordinates, domainBoxes);
-}
-
-int openFileAndGetId(const int numBoxes, const int num_element_blocks, const std::string &filename)
-{
-    int CPU_word_size = sizeof(double);
-    int IO_word_size = 8;
-    int exoid = ex_create (filename.c_str(), EX_CLOBBER, &CPU_word_size, &IO_word_size);
-    int num_dim = 3;
-    int num_elements = numBoxes;
-    int num_nodes_per_element = 8;
-    int num_nodes = num_nodes_per_element*num_elements;
-
-    int num_ns = 0, num_ss = 0;
-    ex_put_init(exoid, "Boxes", num_dim, num_nodes, num_elements, num_element_blocks, num_ns, num_ss);
-    return exoid;
-}
-
-void setHexCoordinates(const double &xmin, const double &ymin, const double &zmin,
-                       const double &xmax, const double &ymax, const double &zmax,
-                       double* hexCoordinates)
-{
-//    int ordering[8] = { 4, 3, 2, 1, 8, 7, 6, 5 }; // one based!
-    int ordering[8] = { 3, 2, 1, 0, 7, 6, 5, 4 };
-
-    hexCoordinates[3*ordering[0]+0] = xmin;
-    hexCoordinates[3*ordering[0]+1] = ymin;
-    hexCoordinates[3*ordering[0]+2] = zmin;
-
-    hexCoordinates[3*ordering[1]+0] = xmax;
-    hexCoordinates[3*ordering[1]+1] = ymin;
-    hexCoordinates[3*ordering[1]+2] = zmin;
-
-    hexCoordinates[3*ordering[2]+0] = xmax;
-    hexCoordinates[3*ordering[2]+1] = ymin;
-    hexCoordinates[3*ordering[2]+2] = zmax;
-
-    hexCoordinates[3*ordering[3]+0] = xmin;
-    hexCoordinates[3*ordering[3]+1] = ymin;
-    hexCoordinates[3*ordering[3]+2] = zmax;
-
-    hexCoordinates[3*ordering[4]+0] = xmin;
-    hexCoordinates[3*ordering[4]+1] = ymax;
-    hexCoordinates[3*ordering[4]+2] = zmin;
-
-    hexCoordinates[3*ordering[5]+0] = xmax;
-    hexCoordinates[3*ordering[5]+1] = ymax;
-    hexCoordinates[3*ordering[5]+2] = zmin;
-
-    hexCoordinates[3*ordering[6]+0] = xmax;
-    hexCoordinates[3*ordering[6]+1] = ymax;
-    hexCoordinates[3*ordering[6]+2] = zmax;
-
-    hexCoordinates[3*ordering[7]+0] = xmin;
-    hexCoordinates[3*ordering[7]+1] = ymax;
-    hexCoordinates[3*ordering[7]+2] = zmax;
-}
-
-void putCoordinatesInFile(const int exoid, const std::vector<GtkBox>& boxes)
-{
-    const int num_nodes_per_element = 8;
-    const int spatialDim = 3;
-    double *x = new double[num_nodes_per_element*boxes.size()];
-    double *y = new double[num_nodes_per_element*boxes.size()];
-    double *z = new double[num_nodes_per_element*boxes.size()];
-
-    for (size_t i=0;i<boxes.size();i++)
-    {
-        double xmin=0, ymin=0, zmin=0;
-        xmin = boxes[i].get_x_min();
-        ymin = boxes[i].get_y_min();
-        zmin = boxes[i].get_z_min();
-
-        double xmax=0, ymax=0, zmax=0;
-        xmax = boxes[i].get_x_max();
-        ymax = boxes[i].get_y_max();
-        zmax = boxes[i].get_z_max();
-
-        double hexCoordinates[24];
-        setHexCoordinates(xmin, ymin, zmin, xmax, ymax, zmax, &hexCoordinates[0]);
-        unsigned offset = i*num_nodes_per_element;
-        for (int j=0;j<num_nodes_per_element;j++)
-        {
-            x[offset+j] = hexCoordinates[spatialDim*j+0];
-            y[offset+j] = hexCoordinates[spatialDim*j+1];
-            z[offset+j] = hexCoordinates[spatialDim*j+2];
-        }
-    }
-
-    ex_put_coord(exoid, x, y, z);
-
-    delete [] z;
-    delete [] y;
-    delete [] x;
-}
-
-void fillNumElementsPerBlock(const int num_elements, std::vector<int> &numElementsPerBlock)
-{
-    int numElementsPer=1;
-    if ( num_elements < 100 )
-    {
-        numElementsPer = 1;
-    }
-    else if ( num_elements < 1000 )
-    {
-        numElementsPer=10;
-    }
-    else if ( num_elements < 10000 )
-    {
-        numElementsPer=100;
-    }
-    else
-    {
-        numElementsPer=1000;
-    }
-
-    for (int i=0;i<num_elements;i+=numElementsPer)
-    {
-        int numElementsThisBlock = (i+numElementsPer) < num_elements ? numElementsPer : num_elements-i;
-        numElementsPerBlock.push_back(numElementsThisBlock);
-    }
-}
-
-void writeExodusFileUsingBoxes(const std::vector<GtkBox>& boxes, const std::string &filename)
-{
-    if ( boxes.size() == 0 )
-    {
-        std::cerr << "Skipping writing of file. No boxes to write.\n";
-        return;
-    }
-
-    const int num_nodes_per_elem = 8;
-    const int num_attr = 0;
-    const unsigned num_elements = boxes.size();
-    std::vector<int> numElementsPerBlock;
-    fillNumElementsPerBlock(num_elements, numElementsPerBlock);
-    const int num_blocks = numElementsPerBlock.size();
-    const int exoid = openFileAndGetId(boxes.size(), num_blocks, filename);
-    putCoordinatesInFile(exoid, boxes);
-
-    std::vector<int> connect(numElementsPerBlock[0]*num_nodes_per_elem);
-    int ordering[8] = { 4, 3, 2, 1, 8, 7, 6, 5 }; // one based!
-    unsigned offset = 0;
-    for (int blockId=1;blockId<=num_blocks;blockId++)
-    {
-        const int num_elements_this_block = numElementsPerBlock[blockId-1];
-        ex_put_elem_block(exoid, blockId, "HEX", num_elements_this_block, num_nodes_per_elem, num_attr);
-
-        for (int j=0;j<num_nodes_per_elem*num_elements_this_block;j++)
-        {
-            connect[j] = ordering[j%num_nodes_per_elem]+offset+num_nodes_per_elem*(j/num_nodes_per_elem);
-        }
-        offset += num_elements_this_block*num_nodes_per_elem;
-
-        ex_put_elem_conn(exoid, blockId, &connect[0]);
-    }
-
-    ex_close(exoid);
-}
-
-void printPeformanceStats(double elapsedTime, MPI_Comm comm)
-{
-    long int maxHwm = 0, minHwm = 0;
-    double avgHwm = 0;
-    stk::get_memory_high_water_mark_across_processors(comm, maxHwm, minHwm, avgHwm);
-
-    int proc=-1;
-    MPI_Comm_rank(comm, &proc);
-
-    int numProcs=0;
-    MPI_Comm_size(comm, &numProcs);
-
-    double minTime = 0, maxTime = 0, avgTime = 0;
-    MPI_Allreduce(&elapsedTime, &maxTime, 1, MPI_DOUBLE, MPI_MAX, comm);
-    MPI_Allreduce(&elapsedTime, &minTime, 1, MPI_DOUBLE, MPI_MIN, comm);
-    double elapsedTimeDivided = elapsedTime/numProcs;
-    MPI_Allreduce(&elapsedTimeDivided, &avgTime, 1, MPI_DOUBLE, MPI_SUM, comm);
-
-    if (proc == 0)
-    {
-      double bytesInMegabyte = 1024*1024;
-      std::cout << "Max time: "  << maxTime << ", Min time: " << minTime << ", Avg time: " << avgTime << std::endl;
-      std::cout << std::setw(6) << std::fixed << std::setprecision(1) << "Max HWM: "<<double(maxHwm)/double(bytesInMegabyte)
-        <<", Min HWM: "<<double(minHwm)/double(bytesInMegabyte)<<", Avg HWM: "<<avgHwm/bytesInMegabyte<<std::endl;
-      std::cout<<"### Total Number of Steps Taken ###: 1"<<std::endl;
-      std::cout<<"### Total Wall Clock Run Time Used ###: "<< maxTime <<std::endl;
-
-      std::cout << "\nSTKPERF peak memory sum: " << maxHwm << std::endl;
-
-    }
-}
-
-void fillDomainBoxes(MPI_Comm comm, std::vector<GtkBox>& domainBoxes)
-{
-    std::string filename = getOption("-i", "input.exo");
-    fillBoxesUsingSidesetsFromFile(comm, filename, domainBoxes);
-
-    std::string exodusFilename = getOption("-o", "boxes.exo");
-    if ( exodusFilename != "skip" )
-    {
-        writeExodusFileUsingBoxes(domainBoxes, exodusFilename);
-    }
 }
 
 }

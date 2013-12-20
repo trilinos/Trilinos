@@ -52,6 +52,30 @@ inline bool intersects(const geometry::AxisAlignedBB& a, const geometry::AxisAli
   return a.overlap(b);
 }
 
+// intersects: Sphere,Box
+template <typename T>
+inline bool intersects(Sphere<T> const& a, geometry::AxisAlignedBB const& b)
+{
+  Point<T> const& ac = a.center();
+  Point<T> const& bmin = Point<T>(b.get_x_min(), b.get_y_min(), b.get_z_min());
+  Point<T> const& bmax = Point<T>(b.get_x_max(), b.get_y_max(), b.get_z_max());
+
+  const T r2 = a.radius() * a.radius();
+
+  // check that the nearest point in the bounding box is within the sphere
+  T dmin = 0;
+  for( int i = 0; i < 3; ++i ) {
+    if( ac[i] < bmin[i] ) dmin += (ac[i]-bmin[i])*(ac[i]-bmin[i]);
+    else if( ac[i] > bmax[i] ) dmin += (ac[i]-bmax[i])*(ac[i]-bmax[i]);
+  }
+  return dmin <= r2;
+}
+
+// intersects: Box,Sphere
+template <typename T>
+inline bool intersects(geometry::AxisAlignedBB const& a, Sphere<T> const& b)
+{ return intersects(b,a); }
+
 }} // namespace stk::search
 
 #endif /* GTKTRAITSFORSEARCH_H_ */
