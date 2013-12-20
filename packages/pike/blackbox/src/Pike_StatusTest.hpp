@@ -1,6 +1,9 @@
 #ifndef PIKE_STATUS_TESTS_HPP
 #define PIKE_STATUS_TESTS_HPP
 
+#include "Pike_BlackBox_config.hpp"
+#include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_Describable.hpp"
 #include <iostream>
 
 namespace pike {
@@ -28,7 +31,9 @@ namespace pike {
     NONE
   };
 
-  class StatusTest {
+  /** Pure virtual interface for a specifying a stopping criteria for the coupled system */
+  class StatusTest : public Teuchos::Describable,
+		     public Teuchos::VerboseObject<pike::StatusTest> {
 
   public:
 
@@ -45,9 +50,6 @@ namespace pike {
     
     //! Reset the status test to reuse in another solve.
     virtual void reset() = 0;
-
-    //! Output formatted description of stopping test to output stream.
-    virtual std::ostream& print(std::ostream& stream) const = 0;
 
   };
   

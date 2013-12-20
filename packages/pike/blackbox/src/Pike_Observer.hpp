@@ -1,6 +1,8 @@
 #ifndef PIKE_OBSERVER_HPP
 #define PIKE_OBSERVER_HPP
 
+#include "Pike_BlackBox_config.hpp"
+
 namespace pike {
 
   class Solver;

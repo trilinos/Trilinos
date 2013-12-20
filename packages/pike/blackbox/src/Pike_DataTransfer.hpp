@@ -1,6 +1,7 @@
 #ifndef PIKE_DATA_TRANSFER_HPP
 #define PIKE_DATA_TRANSFER_HPP
 
+#include "Pike_BlackBox_config.hpp"
 #include <string>
 
 namespace pike {

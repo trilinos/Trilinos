@@ -1,6 +1,7 @@
 #ifndef PIKE_SOLVER_HPP
 #define PIKE_SOLVER_HPP
 
+#include "Pike_BlackBox_config.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Describable.hpp"

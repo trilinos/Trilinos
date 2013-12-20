@@ -1,6 +1,7 @@
 #ifndef PIKE_RESPONSE_HPP
 #define PIKE_RESPONSE_HPP
 
+#include "Pike_BlackBox_config.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include <string>

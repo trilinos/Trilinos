@@ -1,6 +1,7 @@
 #ifndef PIKE_BLACK_BOX_MODEL_EVALUATOR_HPP
 #define PIKE_BLACK_BOX_MODEL_EVALUATOR_HPP
 
+#include "Pike_BlackBox_config.hpp"
 #include "Pike_Response.hpp"
 #include <string>
 
