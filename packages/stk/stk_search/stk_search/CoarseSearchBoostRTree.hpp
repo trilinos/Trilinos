@@ -288,7 +288,7 @@ void create_parallel_domain(SpatialIndex& local_domain, stk::ParallelMachine com
 
 namespace impl {
 template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent, size_t MaxVolumesPerNode>
-void coarse_search_boost_rtree_gather_range( std::vector< std::pair<DomainBox,DomainIdent> > const& local_domain,
+int coarse_search_boost_rtree_gather_range( std::vector< std::pair<DomainBox,DomainIdent> > const& local_domain,
                                              std::vector< std::pair<RangeBox,RangeIdent> > const& local_range,
                                              boost::geometry::index::rtree< std::pair<DomainBox,DomainIdent>,
                                                                             boost::geometry::index::quadratic<MaxVolumesPerNode> > &local_domain_tree,
@@ -352,6 +352,7 @@ void coarse_search_boost_rtree_gather_range( std::vector< std::pair<DomainBox,Do
       ThrowRequireMsg(buf.remaining() == 0, buf.remaining());
     }
   }
+  return p_size;
 }
 
 } //namespace impl
@@ -428,12 +429,12 @@ coarse_search_boost_rtree( std::vector< std::pair<DomainBox,DomainIdent> > const
   LocalDomainTree local_domain_tree(local_domain.begin(), local_domain.end());
   std::vector<RangeValue> gather_range;
 
-  impl::coarse_search_boost_rtree_gather_range(local_domain, local_range, local_domain_tree,
-                                               gather_range, comm);
+  int p_size =
+      impl::coarse_search_boost_rtree_gather_range(local_domain, local_range, local_domain_tree,
+                                                   gather_range, comm);
 
   // Gather results into output
   {
-    int p_size = stk::parallel_machine_size(comm);
     int p_rank = stk::parallel_machine_rank(comm);
 
     stk::CommAll comm_all( comm );
