@@ -86,6 +86,7 @@ namespace pike {
     
   };
 
+  std::ostream& operator<<(std::ostream& os, const pike::Solver& solver);
 }
 
 #endif
