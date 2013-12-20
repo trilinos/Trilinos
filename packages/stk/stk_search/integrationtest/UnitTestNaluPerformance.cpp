@@ -33,16 +33,20 @@ TEST(NaluPerformance, BoxSphereIntersections)
     fillBoxesUsingElementBlocksFromFile(comm, volumeFilename, domainBoxes);
 
     SearchResults searchResults;
+
     stk::search::SearchMethod searchMethod = stk::search::OCTREE;
     if (getOption("-boost", "no") == "yes")
     {
         searchMethod = stk::search::BOOST_RTREE;
     }
+
     bool communicateRangeBoxInfo = true;
     if (getOption("-rangeBoxComm", "yes") == "no")
     {
         communicateRangeBoxInfo = false;
     }
+
+    double startTime = stk::wall_time();
 
     if ( getOption("-sb", "no" ) == "yes" )
     {
@@ -52,6 +56,9 @@ TEST(NaluPerformance, BoxSphereIntersections)
     {
         stk::search::coarse_search(domainBoxes, spheres, searchMethod, comm, searchResults, communicateRangeBoxInfo);
     }
+
+    double elapsedTime = stk::wall_time() - startTime;
+    printPeformanceStats(elapsedTime, comm);
 
     if ( getOption("-getGold", "no") == "yes" )
     {

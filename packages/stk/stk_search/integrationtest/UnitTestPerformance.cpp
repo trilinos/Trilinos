@@ -108,10 +108,10 @@ void testPerformanceOfAxisAlignedBoundingBoxes(stk::search::SearchMethod searchM
     }
 
     double startTime = stk::wall_time();
+
     stk::search::coarse_search(smallBoxVector, bigBoxVector, searchMethod, comm, boxIdPairResults);
 
     double elapsedTime = stk::wall_time() - startTime;
-
     printPeformanceStats(elapsedTime, comm);
 
     size_t numExpectedResults = numColumnsPerProcessor * numColumnsPerProcessor;
