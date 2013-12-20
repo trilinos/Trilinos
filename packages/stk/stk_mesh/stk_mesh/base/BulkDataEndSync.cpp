@@ -793,6 +793,9 @@ bool BulkData::modification_end( modification_optimization opt)
   Trace_("stk::mesh::BulkData::modification_end");
 
   bool return_value = internal_modification_end( true, opt );
+#ifdef GATHER_GET_BUCKETS_METRICS
+  ++m_num_modifications;
+#endif
 
 #ifdef STK_VERBOSE_OUTPUT
   print_bucket_data(*this);

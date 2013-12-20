@@ -39,6 +39,9 @@
 
 //----------------------------------------------------------------------
 
+// Use macro below to enable metric gathering for get_buckets memoization
+//#define GATHER_GET_BUCKETS_METRICS
+
 #ifdef SIERRA_MIGRATION
 
 namespace sierra { namespace Fmwk {
@@ -151,6 +154,8 @@ public:
   typedef std::map<std::pair<EntityRank, Selector>, TrackedBucketVector,
                    std::less<std::pair<EntityRank, Selector> >,
                    tracking_allocator<std::pair<std::pair<EntityRank, Selector>, TrackedBucketVector>, SelectorMapTag> > SelectorBucketMap;
+  typedef std::map<std::pair<EntityRank, Selector>, size_t> SelectorCountMap;
+
 #endif
 
   inline const FieldMetaDataVector& get_meta_data_for_field(const FieldBase & f, const stk::mesh::EntityRank rank) const {
@@ -1300,12 +1305,22 @@ private:
 
   // Memoize user bucket requests
   mutable SelectorBucketMap m_selector_to_buckets_map;
+#ifdef GATHER_GET_BUCKETS_METRICS
+  mutable SelectorCountMap m_selector_to_count_map;
+  mutable size_t m_num_memoized_get_buckets_calls;
+  mutable size_t m_num_non_memoized_get_buckets_calls;
+  size_t m_num_modifications;
+#endif
 
   impl::BucketRepository              m_bucket_repository; // needs to be destructed first!
 
   //
   // Internal methods
   //
+
+#ifdef GATHER_GET_BUCKETS_METRICS
+  void gather_and_print_get_buckets_metrics();
+#endif
 
   // Field callbacks
 
