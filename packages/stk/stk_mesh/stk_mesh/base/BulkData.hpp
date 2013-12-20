@@ -43,6 +43,7 @@
 
 namespace sierra { namespace Fmwk {
 class MeshBulkData;
+class MeshObjSharedAttr;
 }}
 
 #endif // SIERRA_MIGRATION
@@ -838,7 +839,7 @@ public:
     return *m_fmwk_aux_relations[entity.local_offset()];
   }
 
-  const void* get_shared_attr(Entity entity) const
+  const sierra::Fmwk::MeshObjSharedAttr* get_shared_attr(Entity entity) const
   {
     ThrowAssert(m_add_fmwk_data);
     entity_getter_debug_check(entity);
@@ -1280,7 +1281,7 @@ private:
 
   mutable std::vector<RelationVector* > m_fmwk_aux_relations;   // Relations that can't be managed by STK such as PARENT/CHILD
   std::vector<FmwkId>                   m_fmwk_global_ids;
-  std::vector<const void*>              m_fmwk_shared_attrs;
+  std::vector<const sierra::Fmwk::MeshObjSharedAttr*>              m_fmwk_shared_attrs;
   std::vector<unsigned short>           m_fmwk_connect_counts;
 #endif
 
