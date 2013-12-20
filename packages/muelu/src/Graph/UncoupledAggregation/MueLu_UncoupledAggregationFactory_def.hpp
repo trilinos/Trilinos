@@ -63,6 +63,7 @@
 #include "MueLu_SmallAggregationAlgorithm.hpp"
 #include "MueLu_PreserveDirichletAggregationAlgorithm.hpp"
 #include "MueLu_AggregationPhase1Algorithm.hpp"
+#include "MueLu_AggregationPhase2aAlgorithm.hpp"
 #include "MueLu_MaxLinkAggregationAlgorithm.hpp"
 #include "MueLu_IsolatedNodeAggregationAlgorithm.hpp"
 #include "MueLu_EmergencyAggregationAlgorithm.hpp"
