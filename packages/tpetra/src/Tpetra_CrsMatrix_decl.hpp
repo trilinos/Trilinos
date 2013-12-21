@@ -845,6 +845,20 @@ namespace Tpetra {
                   const ArrayRCP<LocalOrdinal>& columnIndices,
                   const ArrayRCP<Scalar>& values);
 
+    //! Gets the 1D pointer arrays of the graph.
+    /**
+       \pre <tt>hasColMap() == true</tt>
+       \pre <tt>getGraph() != Teuchos::null</tt>
+       \pre <tt>fillComplete() has been called</tt>
+
+       \warning This method is intended for expert developer use only, and should never be called by user code.
+    */
+    void
+    getAllValues (ArrayRCP<const size_t>& rowPointers,
+                  ArrayRCP<const LocalOrdinal>& columnIndices,
+                  ArrayRCP<const Scalar>& values) const;
+    
+
     //@}
     //! @name Transformational methods
     //@{
