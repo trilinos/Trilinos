@@ -47,7 +47,7 @@
     \brief An example of partitioning global ids with Block.
 */
 
-#include <Zoltan2_BasicIdentifierInput.hpp>
+#include <Zoltan2_BasicIdentifierAdapter.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 
@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
   typedef Zoltan2::BasicUserTypes<scalar_t, globalId_t, localId_t, globalId_t> myTypes;
 
   // TODO explain
-  typedef Zoltan2::BasicIdentifierInput<myTypes> inputAdapter_t;
+  typedef Zoltan2::BasicIdentifierAdapter<myTypes> inputAdapter_t;
 
   std::vector<const scalar_t *> noWeights;
   std::vector<int> noStrides;

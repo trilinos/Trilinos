@@ -468,6 +468,8 @@ namespace Ioex {
       return dbState != Ioss::STATE_INVALID;
     }
 
+    int app_opt_val = ex_opts(EX_DEFAULT); 
+
     // File has not yet been opened, so verify that it is readable or
     // writable.  HOWEVER, *DO NOT* overwrite the file here if it exists
     // and the mode is WRITE.
@@ -490,6 +492,8 @@ namespace Ioex {
       exodus_file_ptr = ex_create(decoded_filename.c_str(), exodusMode|mode,
 				  &cpu_word_size, &dbRealWordSize);
     }
+
+    ex_opts(app_opt_val); // Reset back to what it was.
 
     // Check for valid exodus_file_ptr (valid >= 0; invalid < 0)
     int global_file_ptr = exodus_file_ptr;

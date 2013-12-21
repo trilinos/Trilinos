@@ -462,7 +462,7 @@ struct MV_AddVectorFunctor<RVector,typename XVector::scalar_type, XVector, typen
 
 template<class RVector,class aVector, class XVector, class bVector, class YVector,int UNROLL>
 RVector MV_AddUnroll( const RVector & r,const aVector &av,const XVector & x,
-		const bVector &bv, const YVector & y,
+		const bVector &bv, const YVector & y, int n,
 		int a=2,int b=2)
 {
    if(a==1&&b==1) {
@@ -473,7 +473,7 @@ RVector MV_AddUnroll( const RVector & r,const aVector &av,const XVector & x,
      op.m_a = av ;
      op.m_b = bv ;
      op.n = x.dimension(1);
-     Kokkos::parallel_for( x.dimension(0) , op );
+     Kokkos::parallel_for( n , op );
      return r;
    }
    if(a==1&&b==-1) {
@@ -484,7 +484,7 @@ RVector MV_AddUnroll( const RVector & r,const aVector &av,const XVector & x,
      op.m_a = av ;
      op.m_b = bv ;
      op.n = x.dimension(1);
-     Kokkos::parallel_for( x.dimension(0) , op );
+     Kokkos::parallel_for( n , op );
      return r;
    }
    if(a==-1&&b==1) {
@@ -495,7 +495,7 @@ RVector MV_AddUnroll( const RVector & r,const aVector &av,const XVector & x,
      op.m_a = av ;
      op.m_b = bv ;
      op.n = x.dimension(1);
-     Kokkos::parallel_for( x.dimension(0) , op );
+     Kokkos::parallel_for( n , op );
      return r;
    }
    if(a==-1&&b==-1) {
@@ -506,7 +506,7 @@ RVector MV_AddUnroll( const RVector & r,const aVector &av,const XVector & x,
      op.m_a = av ;
      op.m_b = bv ;
      op.n = x.dimension(1);
-     Kokkos::parallel_for( x.dimension(0) , op );
+     Kokkos::parallel_for( n , op );
      return r;
    }
    if(a*a!=1&&b==1) {
@@ -517,7 +517,7 @@ RVector MV_AddUnroll( const RVector & r,const aVector &av,const XVector & x,
      op.m_a = av ;
      op.m_b = bv ;
      op.n = x.dimension(1);
-     Kokkos::parallel_for( x.dimension(0) , op );
+     Kokkos::parallel_for( n , op );
      return r;
    }
    if(a*a!=1&&b==-1) {
@@ -528,7 +528,7 @@ RVector MV_AddUnroll( const RVector & r,const aVector &av,const XVector & x,
      op.m_a = av ;
      op.m_b = bv ;
      op.n = x.dimension(1);
-     Kokkos::parallel_for( x.dimension(0) , op );
+     Kokkos::parallel_for( n , op );
      return r;
    }
    if(a==1&&b*b!=1) {
@@ -539,7 +539,7 @@ RVector MV_AddUnroll( const RVector & r,const aVector &av,const XVector & x,
      op.m_a = av ;
      op.m_b = bv ;
      op.n = x.dimension(1);
-     Kokkos::parallel_for( x.dimension(0) , op );
+     Kokkos::parallel_for( n , op );
      return r;
    }
    if(a==-1&&b*b!=1) {
@@ -550,7 +550,7 @@ RVector MV_AddUnroll( const RVector & r,const aVector &av,const XVector & x,
      op.m_a = av ;
      op.m_b = bv ;
      op.n = x.dimension(1);
-     Kokkos::parallel_for( x.dimension(0) , op );
+     Kokkos::parallel_for( n , op );
      return r;
    }
    MV_AddUnrollFunctor<RVector,aVector,XVector,bVector,YVector,2,2,UNROLL> op ;
@@ -560,48 +560,48 @@ RVector MV_AddUnroll( const RVector & r,const aVector &av,const XVector & x,
    op.m_a = av ;
    op.m_b = bv ;
    op.n = x.dimension(1);
-   Kokkos::parallel_for( x.dimension(0) , op );
+   Kokkos::parallel_for( n , op );
 
    return r;
 }
 
 template<class RVector,class aVector, class XVector, class bVector, class YVector>
 RVector MV_AddUnroll( const RVector & r,const aVector &av,const XVector & x,
-		const bVector &bv, const YVector & y,
+		const bVector &bv, const YVector & y, int n,
 		int a=2,int b=2)
 {
 	switch (x.dimension(1)){
-      case 1: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 1>( r,av,x,bv,y,a,b);
+      case 1: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 1>( r,av,x,bv,y,n,a,b);
 	          break;
-      case 2: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 2>( r,av,x,bv,y,a,b);
+      case 2: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 2>( r,av,x,bv,y,n,a,b);
 	          break;
-      case 3: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 3>( r,av,x,bv,y,a,b);
+      case 3: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 3>( r,av,x,bv,y,n,a,b);
 	          break;
-      case 4: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 4>( r,av,x,bv,y,a,b);
+      case 4: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 4>( r,av,x,bv,y,n,a,b);
 	          break;
-      case 5: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 5>( r,av,x,bv,y,a,b);
+      case 5: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 5>( r,av,x,bv,y,n,a,b);
 	          break;
-      case 6: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 6>( r,av,x,bv,y,a,b);
+      case 6: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 6>( r,av,x,bv,y,n,a,b);
 	          break;
-      case 7: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 7>( r,av,x,bv,y,a,b);
+      case 7: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 7>( r,av,x,bv,y,n,a,b);
 	          break;
-      case 8: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 8>( r,av,x,bv,y,a,b);
+      case 8: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 8>( r,av,x,bv,y,n,a,b);
 	          break;
-      case 9: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 9>( r,av,x,bv,y,a,b);
+      case 9: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 9>( r,av,x,bv,y,n,a,b);
 	          break;
-      case 10: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 10>( r,av,x,bv,y,a,b);
+      case 10: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 10>( r,av,x,bv,y,n,a,b);
 	          break;
-      case 11: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 11>( r,av,x,bv,y,a,b);
+      case 11: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 11>( r,av,x,bv,y,n,a,b);
 	          break;
-      case 12: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 12>( r,av,x,bv,y,a,b);
+      case 12: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 12>( r,av,x,bv,y,n,a,b);
 	          break;
-      case 13: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 13>( r,av,x,bv,y,a,b);
+      case 13: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 13>( r,av,x,bv,y,n,a,b);
 	          break;
-      case 14: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 14>( r,av,x,bv,y,a,b);
+      case 14: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 14>( r,av,x,bv,y,n,a,b);
 	          break;
-      case 15: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 15>( r,av,x,bv,y,a,b);
+      case 15: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 15>( r,av,x,bv,y,n,a,b);
 	          break;
-      case 16: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 16>( r,av,x,bv,y,a,b);
+      case 16: MV_AddUnroll<RVector, aVector, XVector, bVector, YVector, 16>( r,av,x,bv,y,n,a,b);
 	          break;
 	}
 	return r;
@@ -610,7 +610,7 @@ RVector MV_AddUnroll( const RVector & r,const aVector &av,const XVector & x,
 
 template<class RVector,class aVector, class XVector, class bVector, class YVector>
 RVector MV_AddVector( const RVector & r,const aVector &av,const XVector & x,
-		const bVector &bv, const YVector & y,
+		const bVector &bv, const YVector & y, int n,
 		int a=2,int b=2)
 {
    if(a==1&&b==1) {
@@ -621,7 +621,7 @@ RVector MV_AddVector( const RVector & r,const aVector &av,const XVector & x,
      op.m_a = av ;
      op.m_b = bv ;
      op.n = x.dimension(1);
-     Kokkos::parallel_for( x.dimension(0) , op );
+     Kokkos::parallel_for( n , op );
      return r;
    }
    if(a==1&&b==-1) {
@@ -632,7 +632,7 @@ RVector MV_AddVector( const RVector & r,const aVector &av,const XVector & x,
      op.m_a = av ;
      op.m_b = bv ;
      op.n = x.dimension(1);
-     Kokkos::parallel_for( x.dimension(0) , op );
+     Kokkos::parallel_for( n , op );
      return r;
    }
    if(a==-1&&b==1) {
@@ -643,7 +643,7 @@ RVector MV_AddVector( const RVector & r,const aVector &av,const XVector & x,
      op.m_a = av ;
      op.m_b = bv ;
      op.n = x.dimension(1);
-     Kokkos::parallel_for( x.dimension(0) , op );
+     Kokkos::parallel_for( n , op );
      return r;
    }
    if(a==-1&&b==-1) {
@@ -654,7 +654,7 @@ RVector MV_AddVector( const RVector & r,const aVector &av,const XVector & x,
      op.m_a = av ;
      op.m_b = bv ;
      op.n = x.dimension(1);
-     Kokkos::parallel_for( x.dimension(0) , op );
+     Kokkos::parallel_for( n , op );
      return r;
    }
    if(a*a!=1&&b==1) {
@@ -665,7 +665,7 @@ RVector MV_AddVector( const RVector & r,const aVector &av,const XVector & x,
      op.m_a = av ;
      op.m_b = bv ;
      op.n = x.dimension(1);
-     Kokkos::parallel_for( x.dimension(0) , op );
+     Kokkos::parallel_for( n , op );
      return r;
    }
    if(a*a!=1&&b==-1) {
@@ -676,7 +676,7 @@ RVector MV_AddVector( const RVector & r,const aVector &av,const XVector & x,
      op.m_a = av ;
      op.m_b = bv ;
      op.n = x.dimension(1);
-     Kokkos::parallel_for( x.dimension(0) , op );
+     Kokkos::parallel_for( n , op );
      return r;
    }
    if(a==1&&b*b!=1) {
@@ -687,7 +687,7 @@ RVector MV_AddVector( const RVector & r,const aVector &av,const XVector & x,
      op.m_a = av ;
      op.m_b = bv ;
      op.n = x.dimension(1);
-     Kokkos::parallel_for( x.dimension(0) , op );
+     Kokkos::parallel_for( n , op );
      return r;
    }
    if(a==-1&&b*b!=1) {
@@ -698,7 +698,7 @@ RVector MV_AddVector( const RVector & r,const aVector &av,const XVector & x,
      op.m_a = av ;
      op.m_b = bv ;
      op.n = x.dimension(1);
-     Kokkos::parallel_for( x.dimension(0) , op );
+     Kokkos::parallel_for( n , op );
      return r;
    }
    MV_AddVectorFunctor<RVector,aVector,XVector,bVector,YVector,2,2> op ;
@@ -708,14 +708,14 @@ RVector MV_AddVector( const RVector & r,const aVector &av,const XVector & x,
    op.m_a = av ;
    op.m_b = bv ;
    op.n = x.dimension(1);
-   Kokkos::parallel_for( x.dimension(0) , op );
+   Kokkos::parallel_for( n , op );
 
    return r;
 }
 
 template<class RVector,class aVector, class XVector, class bVector, class YVector>
-RVector MV_Add( const RVector & r,const aVector &av,const XVector & x,
-		const bVector &bv, const YVector & y,
+RVector MV_AddSpecialise( const RVector & r,const aVector &av,const XVector & x,
+		const bVector &bv, const YVector & y, unsigned int n,
 		int a=2,int b=2)
 {
 
@@ -731,15 +731,20 @@ RVector MV_Add( const RVector & r,const aVector &av,const XVector & x,
     XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
     YVector1D y_1d = Kokkos::subview< YVector1D >( y , ALL(),0 );
 
-    V_Add(r_1d,av,x_1d,bv,y_1d);
+    V_Add(r_1d,av,x_1d,bv,y_1d,n);
     return r;
   } else
 	return MV_AddUnroll( r,av,x,bv,y,a,b);
 }
 
-template<class RVector,class XVector,class YVector>
-RVector MV_Add( const RVector & r, const XVector & x, const YVector & y)
+template<class RVector,class aVector, class XVector, class bVector, class YVector>
+RVector MV_Add( const RVector & r,const aVector &av,const XVector & x,
+    const bVector &bv, const YVector & y, int n = -1)
 {
+  if(n==-1) n = x.dimension_0();
+  if(x.dimension(1)>16)
+    return MV_AddVector( r,av,x,bv,y,n,2,2);
+
   if(x.dimension_1()==1) {
     typedef View<typename RVector::scalar_type*,typename RVector::device_type> RVector1D;
     typedef View<typename XVector::const_scalar_type*,typename XVector::device_type> XVector1D;
@@ -749,17 +754,37 @@ RVector MV_Add( const RVector & r, const XVector & x, const YVector & y)
     XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
     YVector1D y_1d = Kokkos::subview< YVector1D >( y , ALL(),0 );
 
-    V_Add(r_1d,x_1d,y_1d);
+    V_Add(r_1d,av,x_1d,bv,y_1d,n);
+    return r;
+  } else
+  return MV_AddUnroll( r,av,x,bv,y,n,2,2);
+}
+
+template<class RVector,class XVector,class YVector>
+RVector MV_Add( const RVector & r, const XVector & x, const YVector & y, int n = -1)
+{
+  if(n==-1) n = x.dimension_0();
+  if(x.dimension_1()==1) {
+    typedef View<typename RVector::scalar_type*,typename RVector::device_type> RVector1D;
+    typedef View<typename XVector::const_scalar_type*,typename XVector::device_type> XVector1D;
+    typedef View<typename YVector::const_scalar_type*,typename YVector::device_type> YVector1D;
+
+    RVector1D r_1d = Kokkos::subview< RVector1D >( r , ALL(),0 );
+    XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
+    YVector1D y_1d = Kokkos::subview< YVector1D >( y , ALL(),0 );
+
+    V_Add(r_1d,x_1d,y_1d,n);
     return r;
   } else {
 	  typename XVector::scalar_type a = 1.0;
-    return MV_Add(r,a,x,a,y,1,1);
+    return MV_AddSpecialise(r,a,x,a,y,n,1,1);
   }
 }
 
 template<class RVector,class XVector,class bVector, class YVector>
-RVector MV_Add( const RVector & r, const XVector & x, const bVector & bv, const YVector & y )
+RVector MV_Add( const RVector & r, const XVector & x, const bVector & bv, const YVector & y, int n = -1 )
 {
+  if(n==-1) n = x.dimension_0();
   if(x.dimension_1()==1) {
     typedef View<typename RVector::scalar_type*,typename RVector::device_type> RVector1D;
     typedef View<typename XVector::const_scalar_type*,typename XVector::device_type> XVector1D;
@@ -769,10 +794,10 @@ RVector MV_Add( const RVector & r, const XVector & x, const bVector & bv, const 
     XVector1D x_1d = Kokkos::subview< XVector1D >( x , ALL(),0 );
     YVector1D y_1d = Kokkos::subview< YVector1D >( y , ALL(),0 );
 
-    V_Add(r_1d,x_1d,bv,y_1d);
+    V_Add(r_1d,x_1d,bv,y_1d,n);
     return r;
   } else
-  MV_Add(r,bv,x,bv,y,1,2);
+  MV_AddSpecialise(r,bv,x,bv,y,n,1,2);
 }
 
 

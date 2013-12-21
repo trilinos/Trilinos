@@ -43,22 +43,21 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_VectorInput.hpp
-    \brief Defines the VectorInput adapter interface.
+/*! \file Zoltan2_VectorAdapter.hpp
+    \brief Defines the VectorAdapter interface.
 */
 
 
-#ifndef _ZOLTAN2_VECTORINPUT_HPP_
-#define _ZOLTAN2_VECTORINPUT_HPP_
+#ifndef _ZOLTAN2_VECTORADAPTER_HPP_
+#define _ZOLTAN2_VECTORADAPTER_HPP_
 
-#include <Zoltan2_InputAdapter.hpp>
-#include <Zoltan2_PartitioningSolution.hpp>
+#include <Zoltan2_Adapter.hpp>
 
 namespace Zoltan2 {
 
-  /*!  \brief VectorInput defines the interface for vector input adapters.
+  /*!  \brief VectorAdapter defines the interface for vector input.
 
-    InputAdapter objects provide access for Zoltan2 to the user's data.
+    Adapter objects provide access for Zoltan2 to the user's data.
     Many built-in adapters are already defined for common data structures, 
     such as Tpetra and Epetra objects and C-language pointers to arrays.
 
@@ -91,7 +90,7 @@ namespace Zoltan2 {
     the second template parameter to \c double.
 
 
-    VectorInput may be a single vector or a set of corresponding vectors
+    VectorAdapter may be a single vector or a set of corresponding vectors
     which have with the same global identifiers and the same distribution 
     across processes.
 
@@ -100,13 +99,13 @@ namespace Zoltan2 {
 */
 
 template <typename User>
-  class VectorInput : public InputAdapter<User> {
+  class VectorAdapter : public BaseAdapter<User> {
 private:
 
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef typename InputTraits<User>::scalar_t    scalar_t;
+  typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
@@ -116,13 +115,13 @@ public:
 
   /*! \brief Destructor
    */
-  virtual ~VectorInput() {};
+  virtual ~VectorAdapter() {};
 
   ////////////////////////////////////////////////////
-  // The InputAdapter interface.
+  // The Adapter interface.
   ////////////////////////////////////////////////////
 
-  enum InputAdapterType inputAdapterType() const {return VectorAdapterType;}
+  enum BaseAdapterType adapterType() const {return VectorAdapterType;}
 
   ////////////////////////////////////////////////////
   // My interface.
@@ -130,87 +129,20 @@ public:
 
   /*! \brief Return the number of vectors (typically one).
    */
-  virtual int getNumberOfVectors() const = 0;
-
-  /*! \brief Return the number of weights per vector element.
-   *     Number of weights per element should be zero or greater.  If
-   *     zero, it is assumed each vector is equally weighted.
-   */
-  virtual int getNumberOfWeights() const = 0;
-
-  /*! \brief Return the length of the portion of the vector on this process.
-   */
-  virtual size_t getLocalLength() const = 0;
-
-  /*! \brief Provide a pointer to the vertex elements.  If the VectorInput
-       represents more than one vector, vector zero is implied.
-
-      \param ids will on return point to the list of global Ids for 
-        each element on this process.  
-      \param elements will on return point to the vector values
-        corresponding to the global Ids.
-      \param stride the k'th element is located at elements[stride*k]
-      \return The number of ids in the Ids list.
-   */
-
-  virtual size_t getVector(const gid_t *&ids, 
-     const scalar_t *&elements, int &stride) const = 0;
+  virtual int getNumEntriesPerID() const = 0;
 
   /*! \brief Provide a pointer to the elements of the specified vector.
 
-      \param i ranges from zero to one less than getNumberOfVector(), and
-         represents the vector for which data is being requested.
-      \param ids will on return point to the list of global Ids for 
-        each element on this process.  
       \param elements will on return point to the vector values
         corresponding to the global Ids.
       \param stride the k'th element is located at elements[stride*k]
-      \return The number of ids in the Ids list.
+      \param idx ranges from zero to one less than getNumVectors(), and
+         represents the vector for which data is being requested.
    */
 
-  virtual size_t getVector(int i, const gid_t *&ids, 
-     const scalar_t *&elements, int &stride) const = 0;
+  virtual void getEntriesView(const scalar_t *&elements, int &stride,
+                              int idx = 0) const = 0;
 
-  /*! \brief  Provide a pointer to the weights corresponding to the elements
-       returned in getVector().
-        
-      \param dimension ranges from zero to one less than getNumberOfWeights()
-      \param weights is the list of weights of the given dimension for
-           the elements listed in getVector.  If weights for
-           this dimension are to be uniform for all vectors in the
-           global problem, the \c weights should be a NULL pointer.
-       \param stride The k'th weight is located at weights[stride*k]
-       \return The number of weights listed, which should be the same
-                  as the number of elements listed in getVector().
-   */
-
-  virtual size_t getVectorWeights(int dimension,
-     const scalar_t *&weights, int &stride) const = 0;
-
-  /*! \brief Apply a PartitioningSolution to an input.
-   *
-   *  This is not a required part of the VectorInput interface. However
-   *  if the Caller calls a Problem method to redistribute data, it needs
-   *  this method to perform the redistribution.
-   *
-   *  \param in  An input object with a structure and assignment of
-   *           of global Ids to processes that matches that of the input
-   *           data that instantiated this InputAdapter.
-   *  \param out On return this should point to a newly created object
-   *            with the specified partitioning.
-   *  \param solution  The Solution object created by a Problem should
-   *      be supplied as the third argument.  It must have been templated
-   *      on user data that has the same global ID distribution as this
-   *      user data.
-   *  \return   Returns the number of local Ids in the new partitioning.
-   */
-
-  template <typename Adapter>
-    size_t applyPartitioningSolution(User &in, User *&out,
-         const PartitioningSolution<Adapter> &solution) const
-  {
-    return 0;
-  } 
 };
   
   

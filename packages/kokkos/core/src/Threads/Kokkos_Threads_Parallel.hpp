@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -72,7 +72,7 @@ public:
 
     const std::pair<size_t,size_t> work = exec.work_range( self.m_work );
 
-    for ( size_t iwork = work.first ; iwork < work.second ; ++iwork ) {
+    for ( size_t iwork = work.first, work_end = work.second ; iwork < work_end ; ++iwork ) {
       self.m_func( iwork );
     }
 
@@ -146,7 +146,7 @@ public:
 
     const std::pair<size_t,size_t> work = exec.work_range( self.m_work );
 
-    for ( size_t iwork = work.first ; iwork < work.second ; ++iwork ) {
+    for ( size_t iwork = work.first, work_end = work.second ; iwork < work_end ; ++iwork ) {
       self.m_func( iwork , update );
     }
 
@@ -261,7 +261,7 @@ public:
 
     self.m_func.init( update );
 
-    for ( size_t iwork = work.first ; iwork < work.second ; ++iwork ) {
+    for ( size_t iwork = work.first, work_end = work.second ; iwork < work_end ; ++iwork ) {
       self.m_func( iwork , update , false );
     }
 
@@ -274,7 +274,7 @@ public:
       exec.scan_small( self.m_func );
     }
 
-    for ( size_t iwork = work.first ; iwork < work.second ; ++iwork ) {
+    for ( size_t iwork = work.first, work_end = work.second ; iwork < work_end ; ++iwork ) {
       self.m_func( iwork , update , true );
     }
 
@@ -330,7 +330,7 @@ private:
       {
         Impl::ThreadsExec::resize_reduce_scratch( Reduce::value_size( m_func ) );
       }
-    
+
     void init( Impl::ThreadsExec & exec ) const
       { m_func.init( Reduce::reference( exec.reduce_base() ) ); }
 
@@ -340,7 +340,7 @@ private:
 
         const std::pair<size_t,size_t> work = exec.work_range( m_work );
 
-        for ( size_t iwork = work.first ; iwork < work.second ; ++iwork ) {
+        for ( size_t iwork = work.first, work_end = work.second ; iwork < work_end ; ++iwork ) {
           m_func( iwork , update );
         }
       }

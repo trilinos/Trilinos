@@ -1,6 +1,6 @@
-/* Tifpack_config.h.in is preprocessed by cmake to create Tifpack_config.h. */
+/* Ifpack2_config.h.in is preprocessed by CMake to create Ifpack2_config.h. */
 
-/* Define if we want to build tifpack-debug */
+/* Define if we want to build Ifpack2 with debug support */
 /* #undef HAVE_IFPACK2_DEBUG */
 
 /* Define if we have MPI */
@@ -21,8 +21,15 @@
 /* Define if we have Amesos2 */
 #define HAVE_IFPACK2_AMESOS2
 
+/* Define if building with the Boost library */
+/* #undef HAVE_IFPACK2_BOOST */
+
+/* Define if building with the Cholmod library */
+/* #undef HAVE_IFPACK2_CHOLMOD */
+
 /* Define if we have experimental. */
 /* #undef HAVE_IFPACK2_EXPERIMENTAL */
 
 /* Define if we have support graph. */
 /* #undef HAVE_IFPACK2_SUPPORTGRAPH */
+

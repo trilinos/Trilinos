@@ -43,15 +43,15 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_XpetraMultiVectorInput.hpp
-    \brief Defines the XpetraMultiVectorInput adapter.
+/*! \file Zoltan2_XpetraMultiVectorAdapter.hpp
+    \brief Defines the XpetraMultiVectorAdapter 
 */
 
-#ifndef _ZOLTAN2_XPETRAMULTIVECTORINPUT_HPP_
-#define _ZOLTAN2_XPETRAMULTIVECTORINPUT_HPP_
+#ifndef _ZOLTAN2_XPETRAMULTIVECTORADAPTER_HPP_
+#define _ZOLTAN2_XPETRAMULTIVECTORADAPTER_HPP_
 
 #include <Zoltan2_XpetraTraits.hpp>
-#include <Zoltan2_VectorInput.hpp>
+#include <Zoltan2_VectorAdapter.hpp>
 #include <Zoltan2_StridedData.hpp>
 #include <Zoltan2_Util.hpp>
 
@@ -60,7 +60,7 @@
 
 namespace Zoltan2 {
 
-/*!  \brief An input adapter for Xpetra::MultiVector.
+/*!  \brief An adapter for Xpetra::MultiVector.
 
     The template parameter is the user's input object: 
     \li \c Epetra_MultiVector
@@ -78,7 +78,7 @@ namespace Zoltan2 {
 */
 
 template <typename User>
-  class XpetraMultiVectorInput : public VectorInput<User> {
+  class XpetraMultiVectorAdapter : public VectorAdapter<User> {
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -87,7 +87,7 @@ public:
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
-  typedef VectorInput<User>       base_adapter_t;
+  typedef VectorAdapter<User>       base_adapter_t;
   typedef User user_t;
 
   typedef Xpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> x_mvector_t;
@@ -98,7 +98,7 @@ public:
 
   /*! \brief Destructor
    */
-  ~XpetraMultiVectorInput() { }
+  ~XpetraMultiVectorAdapter() { }
 
   /*! \brief Constructor   
    *
@@ -112,10 +112,10 @@ public:
    *     If \c weightStrides.size() is zero, it is assumed all strides are one.
    *
    *  The values pointed to the arguments must remain valid for the
-   *  lifetime of this InputAdapter.
+   *  lifetime of this Adapter.
    */
 
-  XpetraMultiVectorInput(const RCP<const User> &invector,
+  XpetraMultiVectorAdapter(const RCP<const User> &invector,
     vector<const scalar_t *> &weights, vector<int> &weightStrides);
 
   /*! \brief Constructor for case when weights are not being used.
@@ -123,66 +123,40 @@ public:
    *  \param invector  the user's Xpetra, Tpetra or Epetra MultiVector object
    */
 
-  XpetraMultiVectorInput(const RCP<const User> &invector);
+  XpetraMultiVectorAdapter(const RCP<const User> &invector);
 
-  /*! \brief Access to xpetra wrapper multivector
-   */
 
-  const RCP<const x_mvector_t> &getVector() const
-  {
-    return vector_;
+  ////////////////////////////////////////////////////
+  // The Adapter interface.
+  ////////////////////////////////////////////////////
+
+  size_t getLocalNumIDs() const { return vector_->getLocalLength();}
+
+  void getIDsView(const gid_t *&ids) const
+  { 
+    ids = map_->getNodeElementList().getRawPtr();
   }
 
-  ////////////////////////////////////////////////////
-  // The InputAdapter interface.
-  ////////////////////////////////////////////////////
+  int getNumWeightsPerID() const { return numWeights_;}
 
-  string inputAdapterName()const {return string("XpetraMultiVector");}
-
-  size_t getLocalNumberOfObjects() const { return getLocalLength();}
-
-  int getNumberOfWeightsPerObject() const { return numWeights_;}
-
-  size_t getObjectWeights(int dim, const scalar_t *&wgt, int &stride) const
+  void getWeightsView(const scalar_t *&weights, int &stride, int idx) const
   {
-    return getVectorWeights(dim, wgt, stride);
-  }
-
-  ////////////////////////////////////////////////////
-  // The VectorInput interface.
-  ////////////////////////////////////////////////////
-
-  int getNumberOfVectors() const {return vector_->getNumVectors();}
-
-  int getNumberOfWeights() const {return numWeights_;}
-  
-  size_t getLocalLength() const {return vector_->getLocalLength();}
-  
-  size_t getGlobalLength() const {return vector_->getGlobalLength();}
-
-  size_t getVector(const gid_t *&Ids, 
-    const scalar_t *&elements, int &stride) const
-  {
-    return getVector(0, Ids, elements, stride);
-  }
-
-  size_t getVector(int i, const gid_t *&Ids, 
-    const scalar_t *&elements, int &stride) const;
-
-  size_t getVectorWeights(int dim, const scalar_t *&weights, int &stride) const
-  {
-    env_->localInputAssertion(__FILE__, __LINE__, "invalid dimension",
-      dim >= 0 && dim < numWeights_, BASIC_ASSERTION);
-
+    env_->localInputAssertion(__FILE__, __LINE__, "invalid weight index",
+      idx >= 0 && idx < numWeights_, BASIC_ASSERTION);
     size_t length;
-
-    weights_[dim].getStridedList(length, weights, stride);
-
-    return length;
+    weights_[idx].getStridedList(length, weights, stride);
   }
+
+  ////////////////////////////////////////////////////
+  // The VectorAdapter interface.
+  ////////////////////////////////////////////////////
+
+  int getNumEntriesPerID() const {return vector_->getNumVectors();}
+
+  void getEntriesView(const scalar_t *&elements, int &stride, int idx=0) const;
 
   template <typename Adapter>
-    size_t applyPartitioningSolution(const User &in, User *&out,
+    void applyPartitioningSolution(const User &in, User *&out,
          const PartitioningSolution<Adapter> &solution) const;
 
 private:
@@ -202,7 +176,7 @@ private:
 //////////////////////////////////////////////////////////
 
 template <typename User>
-  XpetraMultiVectorInput<User>::XpetraMultiVectorInput(
+  XpetraMultiVectorAdapter<User>::XpetraMultiVectorAdapter(
     const RCP<const User> &invector,
     vector<const scalar_t *> &weights, vector<int> &weightStrides):
       invector_(invector), vector_(), map_(), 
@@ -230,7 +204,7 @@ template <typename User>
 
 
 template <typename User>
-  XpetraMultiVectorInput<User>::XpetraMultiVectorInput(
+  XpetraMultiVectorAdapter<User>::XpetraMultiVectorAdapter(
     const RCP<const User> &invector):
       invector_(invector), vector_(), map_(), 
       env_(rcp(new Environment)), base_(),
@@ -242,17 +216,19 @@ template <typename User>
 }
 
 template <typename User>
-  size_t XpetraMultiVectorInput<User>::getVector(
-    int i, const gid_t *&Ids, const scalar_t *&elements, int &stride) const
+  void XpetraMultiVectorAdapter<User>::getEntriesView(
+    const scalar_t *&elements, int &stride, int idx) const
 {
+  size_t vecsize;
   stride = 1;
   elements = NULL;
   if (map_->lib() == Xpetra::UseTpetra){
     const xt_mvector_t *tvector = 
       dynamic_cast<const xt_mvector_t *>(vector_.get());
      
-    if (tvector->getLocalLength() > 0){
-      ArrayRCP<const scalar_t> data = tvector->getData(i);
+    vecsize = tvector->getLocalLength();
+    if (vecsize > 0){
+      ArrayRCP<const scalar_t> data = tvector->getData(idx);
       elements = data.get();
     }
   }
@@ -260,8 +236,9 @@ template <typename User>
     const xe_mvector_t *evector = 
       dynamic_cast<const xe_mvector_t *>(vector_.get());
       
-    if (evector->getLocalLength() > 0){
-      ArrayRCP<const double> data = evector->getData(i);
+    vecsize = evector->getLocalLength();
+    if (vecsize > 0){
+      ArrayRCP<const double> data = evector->getData(idx);
 
       // Cast so this will compile when scalar_t is not double,
       // a case when this code should never execute.
@@ -271,15 +248,11 @@ template <typename User>
   else{
     throw logic_error("invalid underlying lib");
   }
-
-  ArrayView<const gid_t> gids = map_->getNodeElementList();
-  Ids = gids.getRawPtr();
-  return gids.size();
 }
 
 template <typename User>
   template <typename Adapter>
-    size_t XpetraMultiVectorInput<User>::applyPartitioningSolution(
+    void XpetraMultiVectorAdapter<User>::applyPartitioningSolution(
       const User &in, User *&out, 
       const PartitioningSolution<Adapter> &solution) const
 {
@@ -304,14 +277,12 @@ template <typename User>
   Z2_FORWARD_EXCEPTIONS;
 
   RCP<const User> inPtr = rcp(&in, false);
-  lno_t localNumElts = numNewRows;
 
   RCP<const User> outPtr = XpetraTraits<User>::doMigration(
-   inPtr, localNumElts, importList.get());
+   inPtr, numNewRows, importList.get());
 
   out = const_cast<User *>(outPtr.get());
   outPtr.release();
-  return numNewRows;
 }
   
 }  //namespace Zoltan2

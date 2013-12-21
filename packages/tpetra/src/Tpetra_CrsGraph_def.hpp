@@ -693,36 +693,36 @@ namespace Tpetra {
   }
 
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  template <ELocalGlobal lg, class T>
-  RowInfo
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  updateAllocAndValues (RowInfo rowinfo,
-                        size_t newAllocSize,
-                        Array<T>& rowVals)
-  {
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPT( ! rowMap_->isNodeLocalElement(rowinfo.localRow) );
-    TEUCHOS_TEST_FOR_EXCEPT( newAllocSize < rowinfo.allocSize );
-    TEUCHOS_TEST_FOR_EXCEPT( (lg == LocalIndices && ! isLocallyIndexed()) ||
-                             (lg == GlobalIndices && ! isGloballyIndexed()) );
-    TEUCHOS_TEST_FOR_EXCEPT( newAllocSize == 0 );
-    TEUCHOS_TEST_FOR_EXCEPT( ! indicesAreAllocated() );
-#endif
-    // ArrayRCP::resize automatically copies over values on reallocation.
-    if (lg == LocalIndices) {
-      lclInds2D_[rowinfo.localRow].resize (newAllocSize);
-    }
-    else { // lg == GlobalIndices
-      gblInds2D_[rowinfo.localRow].resize (newAllocSize);
-    }
-    rowVals.resize (newAllocSize);
-    nodeNumAllocated_ += (newAllocSize - rowinfo.allocSize);
-    rowinfo.allocSize = newAllocSize;
-    return rowinfo;
-  }
+//   /////////////////////////////////////////////////////////////////////////////
+//   /////////////////////////////////////////////////////////////////////////////
+//   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+//   template <ELocalGlobal lg, class T>
+//   RowInfo
+//   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+//   updateAllocAndValues (RowInfo rowinfo,
+//                         size_t newAllocSize,
+//                         Array<T>& rowVals)
+//   {
+// #ifdef HAVE_TPETRA_DEBUG
+//     TEUCHOS_TEST_FOR_EXCEPT( ! rowMap_->isNodeLocalElement(rowinfo.localRow) );
+//     TEUCHOS_TEST_FOR_EXCEPT( newAllocSize < rowinfo.allocSize );
+//     TEUCHOS_TEST_FOR_EXCEPT( (lg == LocalIndices && ! isLocallyIndexed()) ||
+//                              (lg == GlobalIndices && ! isGloballyIndexed()) );
+//     TEUCHOS_TEST_FOR_EXCEPT( newAllocSize == 0 );
+//     TEUCHOS_TEST_FOR_EXCEPT( ! indicesAreAllocated() );
+// #endif
+//     // ArrayRCP::resize automatically copies over values on reallocation.
+//     if (lg == LocalIndices) {
+//       lclInds2D_[rowinfo.localRow].resize (newAllocSize);
+//     }
+//     else { // lg == GlobalIndices
+//       gblInds2D_[rowinfo.localRow].resize (newAllocSize);
+//     }
+//     rowVals.resize (newAllocSize);
+//     nodeNumAllocated_ += (newAllocSize - rowinfo.allocSize);
+//     rowinfo.allocSize = newAllocSize;
+//     return rowinfo;
+//   }
 
 
   /////////////////////////////////////////////////////////////////////////////
@@ -951,85 +951,85 @@ namespace Tpetra {
   }
 
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  template <class T>
-  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  filterGlobalIndicesAndValues (const ArrayView<GlobalOrdinal>& ginds,
-                                const ArrayView<T>& vals) const
-  {
-    const Map<LocalOrdinal,GlobalOrdinal,Node>& cmap = *colMap_;
-    size_t numFiltered = 0;
-    typename ArrayView<T>::iterator fvalsend = vals.begin();
-    typename ArrayView<T>::iterator valscptr = vals.begin();
-#ifdef HAVE_TPETRA_DEBUG
-    size_t numFiltered_debug = 0;
-#endif
-    typename ArrayView<GlobalOrdinal>::iterator fend = ginds.begin();
-    typename ArrayView<GlobalOrdinal>::iterator cptr = ginds.begin();
-    while (cptr != ginds.end()) {
-      if (cmap.isNodeGlobalElement (*cptr)) {
-        *fend++ = *cptr;
-        *fvalsend++ = *valscptr;
-#ifdef HAVE_TPETRA_DEBUG
-        ++numFiltered_debug;
-#endif
-      }
-      ++cptr;
-      ++valscptr;
-    }
-    numFiltered = fend - ginds.begin();
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFiltered_debug );
-    TEUCHOS_TEST_FOR_EXCEPT( valscptr != vals.end() );
-    const size_t numFilteredActual =
-      Teuchos::as<size_t> (fvalsend - vals.begin ());
-    TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFilteredActual );
-#endif
-    return numFiltered;
-  }
+//   /////////////////////////////////////////////////////////////////////////////
+//   /////////////////////////////////////////////////////////////////////////////
+//   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+//   template <class T>
+//   size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+//   filterGlobalIndicesAndValues (const ArrayView<GlobalOrdinal>& ginds,
+//                                 const ArrayView<T>& vals) const
+//   {
+//     const Map<LocalOrdinal,GlobalOrdinal,Node>& cmap = *colMap_;
+//     size_t numFiltered = 0;
+//     typename ArrayView<T>::iterator fvalsend = vals.begin();
+//     typename ArrayView<T>::iterator valscptr = vals.begin();
+// #ifdef HAVE_TPETRA_DEBUG
+//     size_t numFiltered_debug = 0;
+// #endif
+//     typename ArrayView<GlobalOrdinal>::iterator fend = ginds.begin();
+//     typename ArrayView<GlobalOrdinal>::iterator cptr = ginds.begin();
+//     while (cptr != ginds.end()) {
+//       if (cmap.isNodeGlobalElement (*cptr)) {
+//         *fend++ = *cptr;
+//         *fvalsend++ = *valscptr;
+// #ifdef HAVE_TPETRA_DEBUG
+//         ++numFiltered_debug;
+// #endif
+//       }
+//       ++cptr;
+//       ++valscptr;
+//     }
+//     numFiltered = fend - ginds.begin();
+// #ifdef HAVE_TPETRA_DEBUG
+//     TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFiltered_debug );
+//     TEUCHOS_TEST_FOR_EXCEPT( valscptr != vals.end() );
+//     const size_t numFilteredActual =
+//       Teuchos::as<size_t> (fvalsend - vals.begin ());
+//     TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFilteredActual );
+// #endif
+//     return numFiltered;
+//   }
 
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  template <class T>
-  size_t
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  filterLocalIndicesAndValues (const ArrayView<LocalOrdinal>& linds,
-                               const ArrayView<T>& vals) const
-  {
-    const Map<LocalOrdinal,GlobalOrdinal,Node>& cmap = *colMap_;
-    size_t numFiltered = 0;
-    typename ArrayView<T>::iterator fvalsend = vals.begin();
-    typename ArrayView<T>::iterator valscptr = vals.begin();
-#ifdef HAVE_TPETRA_DEBUG
-    size_t numFiltered_debug = 0;
-#endif
-    typename ArrayView<LocalOrdinal>::iterator fend = linds.begin();
-    typename ArrayView<LocalOrdinal>::iterator cptr = linds.begin();
-    while (cptr != linds.end()) {
-      if (cmap.isNodeLocalElement (*cptr)) {
-        *fend++ = *cptr;
-        *fvalsend++ = *valscptr;
-#ifdef HAVE_TPETRA_DEBUG
-        ++numFiltered_debug;
-#endif
-      }
-      ++cptr;
-      ++valscptr;
-    }
-    numFiltered = fend - linds.begin();
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFiltered_debug );
-    TEUCHOS_TEST_FOR_EXCEPT( valscptr != vals.end() );
-    const size_t numFilteredActual =
-      Teuchos::as<size_t> (fvalsend - vals.begin ());
-    TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFilteredActual );
-#endif
-    return numFiltered;
-  }
+//   /////////////////////////////////////////////////////////////////////////////
+//   /////////////////////////////////////////////////////////////////////////////
+//   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+//   template <class T>
+//   size_t
+//   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+//   filterLocalIndicesAndValues (const ArrayView<LocalOrdinal>& linds,
+//                                const ArrayView<T>& vals) const
+//   {
+//     const Map<LocalOrdinal,GlobalOrdinal,Node>& cmap = *colMap_;
+//     size_t numFiltered = 0;
+//     typename ArrayView<T>::iterator fvalsend = vals.begin();
+//     typename ArrayView<T>::iterator valscptr = vals.begin();
+// #ifdef HAVE_TPETRA_DEBUG
+//     size_t numFiltered_debug = 0;
+// #endif
+//     typename ArrayView<LocalOrdinal>::iterator fend = linds.begin();
+//     typename ArrayView<LocalOrdinal>::iterator cptr = linds.begin();
+//     while (cptr != linds.end()) {
+//       if (cmap.isNodeLocalElement (*cptr)) {
+//         *fend++ = *cptr;
+//         *fvalsend++ = *valscptr;
+// #ifdef HAVE_TPETRA_DEBUG
+//         ++numFiltered_debug;
+// #endif
+//       }
+//       ++cptr;
+//       ++valscptr;
+//     }
+//     numFiltered = fend - linds.begin();
+// #ifdef HAVE_TPETRA_DEBUG
+//     TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFiltered_debug );
+//     TEUCHOS_TEST_FOR_EXCEPT( valscptr != vals.end() );
+//     const size_t numFilteredActual =
+//       Teuchos::as<size_t> (fvalsend - vals.begin ());
+//     TEUCHOS_TEST_FOR_EXCEPT( numFiltered != numFilteredActual );
+// #endif
+//     return numFiltered;
+//   }
 
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1179,79 +1179,79 @@ namespace Tpetra {
 #endif
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  template <class Scalar>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  insertIndicesAndValues (const RowInfo& rowInfo,
-                          const SLocalGlobalViews& newInds,
-                          const ArrayView<Scalar>& oldRowVals,
-                          const ArrayView<const Scalar>& newRowVals,
-                          const ELocalGlobal lg,
-                          const ELocalGlobal I)
-  {
-    const size_t numNewInds = insertIndices (rowInfo, newInds, lg, I);
-    typename ArrayView<const Scalar>::const_iterator newRowValsBegin =
-      newRowVals.begin ();
-    std::copy (newRowValsBegin, newRowValsBegin + numNewInds,
-               oldRowVals.begin () + rowInfo.numEntries);
-  }
+  // /////////////////////////////////////////////////////////////////////////////
+  // /////////////////////////////////////////////////////////////////////////////
+  // template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  // template <class Scalar>
+  // void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  // insertIndicesAndValues (const RowInfo& rowInfo,
+  //                         const SLocalGlobalViews& newInds,
+  //                         const ArrayView<Scalar>& oldRowVals,
+  //                         const ArrayView<const Scalar>& newRowVals,
+  //                         const ELocalGlobal lg,
+  //                         const ELocalGlobal I)
+  // {
+  //   const size_t numNewInds = insertIndices (rowInfo, newInds, lg, I);
+  //   typename ArrayView<const Scalar>::const_iterator newRowValsBegin =
+  //     newRowVals.begin ();
+  //   std::copy (newRowValsBegin, newRowValsBegin + numNewInds,
+  //              oldRowVals.begin () + rowInfo.numEntries);
+  // }
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  template <class Scalar, class BinaryFunction>
-  void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  transformLocalValues (RowInfo rowInfo,
-                        const Teuchos::ArrayView<Scalar>& rowVals,
-                        const Teuchos::ArrayView<const LocalOrdinal>& inds,
-                        const Teuchos::ArrayView<const Scalar>& newVals,
-                        BinaryFunction f) const
-  {
-    const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid();
-    const size_t numElts = Teuchos::as<size_t> (inds.size ());
-    size_t hint = 0; // Guess for the current index k into rowVals
+  // /////////////////////////////////////////////////////////////////////////////
+  // /////////////////////////////////////////////////////////////////////////////
+  // template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  // template <class Scalar, class BinaryFunction>
+  // void
+  // CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  // transformLocalValues (RowInfo rowInfo,
+  //                       const Teuchos::ArrayView<Scalar>& rowVals,
+  //                       const Teuchos::ArrayView<const LocalOrdinal>& inds,
+  //                       const Teuchos::ArrayView<const Scalar>& newVals,
+  //                       BinaryFunction f) const
+  // {
+  //   const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid();
+  //   const size_t numElts = Teuchos::as<size_t> (inds.size ());
+  //   size_t hint = 0; // Guess for the current index k into rowVals
 
-    // Get a view of the column indices in the row.  This amortizes
-    // the cost of getting the view over all the entries of inds.
-    ArrayView<const LocalOrdinal> colInds = getLocalView (rowInfo);
+  //   // Get a view of the column indices in the row.  This amortizes
+  //   // the cost of getting the view over all the entries of inds.
+  //   ArrayView<const LocalOrdinal> colInds = getLocalView (rowInfo);
 
-    for (size_t j = 0; j < numElts; ++j) {
-      const size_t k = findLocalIndex (rowInfo, inds[j], colInds, hint);
-      if (k != STINV) {
-        rowVals[k] = f( rowVals[k], newVals[j] );
-        hint = k+1;
-      }
-    }
-  }
+  //   for (size_t j = 0; j < numElts; ++j) {
+  //     const size_t k = findLocalIndex (rowInfo, inds[j], colInds, hint);
+  //     if (k != STINV) {
+  //       rowVals[k] = f( rowVals[k], newVals[j] );
+  //       hint = k+1;
+  //     }
+  //   }
+  // }
 
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  template <class Scalar, class BinaryFunction>
-  void
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  transformGlobalValues (RowInfo rowInfo,
-                         const Teuchos::ArrayView<Scalar>& rowVals,
-                         const Teuchos::ArrayView<const GlobalOrdinal>& inds,
-                         const Teuchos::ArrayView<const Scalar>& newVals,
-                         BinaryFunction f) const
-  {
-    const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid();
-    const size_t numElts = Teuchos::as<size_t> (inds.size ());
-    size_t hint = 0; // hint is a guess as to wheter the index is
+  // /////////////////////////////////////////////////////////////////////////////
+  // /////////////////////////////////////////////////////////////////////////////
+  // template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  // template <class Scalar, class BinaryFunction>
+  // void
+  // CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  // transformGlobalValues (RowInfo rowInfo,
+  //                        const Teuchos::ArrayView<Scalar>& rowVals,
+  //                        const Teuchos::ArrayView<const GlobalOrdinal>& inds,
+  //                        const Teuchos::ArrayView<const Scalar>& newVals,
+  //                        BinaryFunction f) const
+  // {
+  //   const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid();
+  //   const size_t numElts = Teuchos::as<size_t> (inds.size ());
+  //   size_t hint = 0; // hint is a guess as to wheter the index is
 
-    for (size_t j = 0; j < numElts; ++j) {
-      const size_t k = findGlobalIndex (rowInfo, inds[j], hint);
-      if (k != STINV) {
-        rowVals[k] = f( rowVals[k], newVals[j] );
-        hint = k+1;
-      }
-    }
-  }
+  //   for (size_t j = 0; j < numElts; ++j) {
+  //     const size_t k = findGlobalIndex (rowInfo, inds[j], hint);
+  //     if (k != STINV) {
+  //       rowVals[k] = f( rowVals[k], newVals[j] );
+  //       hint = k+1;
+  //     }
+  //   }
+  // }
 
 
 
@@ -3839,16 +3839,20 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
+// Include KokkosRefactor partial specialisation if enabled
+#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#include "Tpetra_KokkosRefactor_CrsGraph_def.hpp"
+#endif
+
 
 //
 // Explicit instantiation macro
 //
 // Must be expanded from within the Tpetra namespace!
 //
-
-#define TPETRA_CRSGRAPH_INSTANT(LO,GO,NODE) \
-  \
-  template class CrsGraph< LO , GO , NODE >; \
-
-
+#define TPETRA_CRSGRAPH_INSTANT(LO,GO,NODE) template class CrsGraph< LO , GO , NODE >;
+#define TPETRA_CRSGRAPH_SORTROWINDICESANDVALUES_INSTANT(S,LO,GO,NODE) template void CrsGraph< LO , GO , NODE >::sortRowIndicesAndValues< S >(RowInfo, ArrayView< S > );
+#define TPETRA_CRSGRAPH_MERGEROWINDICESANDVALUES_INSTANT(S,LO,GO,NODE) template void CrsGraph< LO , GO , NODE >::mergeRowIndicesAndValues< S >(RowInfo, const ArrayView< S >& );
+#define TPETRA_CRSGRAPH_ALLOCATEVALUES1D_INSTANT(S,LO,GO,NODE) template ArrayRCP< S > CrsGraph< LO , GO , NODE >::allocateValues1D< S >() const;
+#define TPETRA_CRSGRAPH_ALLOCATEVALUES2D_INSTANT(S,LO,GO,NODE) template ArrayRCP< Array< S > > CrsGraph< LO , GO , NODE >::allocateValues2D< S >() const;
 #endif // TPETRA_CRSGRAPH_DEF_HPP

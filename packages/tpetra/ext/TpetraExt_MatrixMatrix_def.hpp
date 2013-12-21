@@ -52,8 +52,10 @@
 #include "Tpetra_RowMatrixTransposer.hpp"
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Map.hpp"
+#include "Tpetra_Import_Util.hpp"
 #include <algorithm>
 #include "Teuchos_FancyOStream.hpp"
+
 
 
 /*! \file TpetraExt_MatrixMatrix_def.hpp

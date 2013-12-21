@@ -9,7 +9,7 @@
 #include "Zoltan2_PartitionMapping.hpp"
 #include "Zoltan2_MachineRepresentation.hpp"
 #include "Teuchos_ReductionOp.hpp"
-#include "Zoltan2_XpetraMultiVectorInput.hpp"
+#include "Zoltan2_XpetraMultiVectorAdapter.hpp"
 #include "Teuchos_DefaultMpiComm.hpp"
 
 
@@ -1999,6 +1999,8 @@ pcoord_t **shiftMachineCoordinates(int machine_dim, procId_t *machine_dimensions
 
 }
 
+// KDDKDD TODO:  This interface should go away or move to MiniGhost;
+// KDDKDD TODO:  it is only a convenience for the MiniGhost experiments.
 template <typename procId_t, typename pcoord_t, typename tcoord_t>
 void coordinateTaskMapperInterface(
   RCP<const Teuchos::Comm<int> > comm_,
@@ -2046,7 +2048,7 @@ void coordinateTaskMapperInterface(
                             numProcessors,
                             machine_coords_);
     }
-    CoordinateTaskMapper<XpetraMultiVectorInput <tMVector_t>, procId_t> *ctm = new CoordinateTaskMapper<XpetraMultiVectorInput <tMVector_t>, procId_t>(
+    CoordinateTaskMapper<XpetraMultiVectorAdapter <tMVector_t>, procId_t> *ctm = new CoordinateTaskMapper<XpetraMultiVectorAdapter <tMVector_t>, procId_t>(
                 comm_.getRawPtr(),
                 procDim,
                 numProcessors,
@@ -2092,6 +2094,8 @@ void coordinateTaskMapperInterface(
 }
 
 
+// KDDKDD TODO:  This interface should go away or move to MiniGhost;
+// KDDKDD TODO:  it is only a convenience for the MiniGhost experiments.
 template <typename procId_t, typename pcoord_t, typename tcoord_t>
 void coordinateTaskMapperInterface_Fortran(
   int *comm_World,

@@ -44,58 +44,84 @@
 #define IFPACK2_DIAGONAL_DEF_HPP
 
 #include "Ifpack2_Diagonal_decl.hpp"
+#include "Tpetra_CrsMatrix_def.hpp"
 #include "Ifpack2_Condest.hpp"
 
 namespace Ifpack2 {
 
 template<class MatrixType>
-Diagonal<MatrixType>::Diagonal(const Teuchos::RCP<const MatrixType>& A)
- : isInitialized_(false),
-   isComputed_(false),
-   domainMap_(A->getDomainMap()),
-   rangeMap_(A->getRangeMap()),
-   matrix_(A),
-   inversediag_(),
-   numInitialize_(0),
-   numCompute_(0),
-   numApply_(0),
+Diagonal<MatrixType>::Diagonal (const Teuchos::RCP<const row_matrix_type>& A)
+ : isInitialized_ (false),
+   isComputed_ (false),
+   domainMap_ (A->getDomainMap ()),
+   rangeMap_ (A->getRangeMap ()),
+   matrix_ (A),
+   numInitialize_ (0),
+   numCompute_ (0),
+   numApply_ (0),
    condEst_ (-Teuchos::ScalarTraits<magnitude_type>::one ())
-{
-}
+{}
 
 template<class MatrixType>
-Diagonal<MatrixType>::Diagonal(const Teuchos::RCP<const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& diag)
- : isInitialized_(false),
-   isComputed_(false),
-   domainMap_(),
-   rangeMap_(),
-   matrix_(),
-   inversediag_(diag),
-   numInitialize_(0),
-   numCompute_(0),
-   numApply_(0),
+Diagonal<MatrixType>::Diagonal (const Teuchos::RCP<const crs_matrix_type>& A)
+ : isInitialized_ (false),
+   isComputed_ (false),
+   domainMap_ (A->getDomainMap ()),
+   rangeMap_ (A->getRangeMap ()),
+   matrix_ (A),
+   numInitialize_ (0),
+   numCompute_ (0),
+   numApply_ (0),
    condEst_ (-Teuchos::ScalarTraits<magnitude_type>::one ())
-{
-}
+{}
+
+template<class MatrixType>
+Diagonal<MatrixType>::
+Diagonal (const Teuchos::RCP<const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& diag)
+ : isInitialized_ (false),
+   isComputed_ (false),
+   inversediag_ (diag),
+   numInitialize_ (0),
+   numCompute_ (0),
+   numApply_ (0),
+   condEst_ (-Teuchos::ScalarTraits<magnitude_type>::one ())
+{}
 
 template<class MatrixType>
 Diagonal<MatrixType>::~Diagonal()
-{
-}
+{}
 
 template<class MatrixType>
 void Diagonal<MatrixType>::setParameters(const Teuchos::ParameterList& /*params*/)
-{
-}
+{}
 
 template<class MatrixType>
 void Diagonal<MatrixType>::initialize()
 {
-  if (isInitialized_) return;
+  // mfh 13 Dec 2013: If you call initialize(), it means that you are
+  // asserting that the structure of the input sparse matrix may have
+  // changed.  This means we should definitely recompute the diagonal
+  // offsets.
 
-  // Precompute diagonal offsets so we don't have to search for them later.
-  if (matrix_ != Teuchos::null) {
-    matrix_->getLocalDiagOffsets(offsets_);
+  // if (isInitialized_) {
+  //   return;
+  // }
+
+  // Precompute diagonal offsets so we don't have to search for them
+  // later.  Only do this if the input matrix is nonnull and is a
+  // Tpetra::CrsMatrix.
+  if (matrix_.is_null ()) {
+    offsets_ = Teuchos::null; // offsets are no longer valid
+  }
+  else { // matrix is not null
+    Teuchos::RCP<const crs_matrix_type> A_crs =
+      Teuchos::rcp_dynamic_cast<const crs_matrix_type> (matrix_);
+    if (A_crs.is_null ()) {
+      offsets_ = Teuchos::null; // offsets are no longer valid
+    }
+    else {
+      A_crs->getLocalDiagOffsets (offsets_);
+    }
   }
 
   isInitialized_ = true;
@@ -114,13 +140,20 @@ void Diagonal<MatrixType>::compute()
     return;
   }
 
-  // Get the diagonal entries using the precomputed offsets and invert them.
-  typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vector_type;
-  Teuchos::RCP<vector_type> tmp_vec =
-    Teuchos::rcp (new vector_type (matrix_->getRowMap ()));
-  matrix_->getLocalDiagCopy (*tmp_vec, offsets_ ());
+  Teuchos::RCP<vector_type> tmp_vec (new vector_type (matrix_->getRowMap ()));
+  Teuchos::RCP<const crs_matrix_type> A_crs =
+    Teuchos::rcp_dynamic_cast<const crs_matrix_type> (matrix_);
+  if (A_crs.is_null ()) {
+    // Get the diagonal entries from the Tpetra::RowMatrix.
+    matrix_->getLocalDiagCopy (*tmp_vec);
+  }
+  else {
+    // Get the diagonal entries from the Tpetra::CrsMatrix using the
+    // precomputed offsets.
+    A_crs->getLocalDiagCopy (*tmp_vec, offsets_ ());
+  }
+  // Invert the diagonal entries.
   tmp_vec->reciprocal (*tmp_vec);
-
   inversediag_ = tmp_vec;
 
   isComputed_ = true;
@@ -139,7 +172,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     "Ifpack2::Diagonal::apply() ERROR, compute() hasn't been called yet.");
 
   ++numApply_;
-  Y.elementWiseMultiply(alpha, *inversediag_, X, beta);
+  Y.elementWiseMultiply (alpha, *inversediag_, X, beta);
 }
 
 template<class MatrixType>

@@ -154,12 +154,12 @@ namespace Galeri {
 
       for (size_t j = 0; j < numGaussPoints; j++) {
         SerialDenseMatrix<LO,SC>& S = Ss[j];
-        S.shape(sDim, nDim);
+        S.shape(Teuchos::as<LO>(sDim), Teuchos::as<LO>(nDim));
         EvalDxi (refPoints, gaussPoints[j], S[0]);
         EvalDeta(refPoints, gaussPoints[j], S[1]);
 
         SerialDenseMatrix<LO,SC>& B = Bs[j];
-        B.shape(bDim, numDofPerElem);
+        B.shape(Teuchos::as<LO>(bDim), numDofPerElem);
 
         for (size_t k = 0; k < numNodesPerElem; k++) {
           B(0, numDofPerNode*k + 0) = S(k,0);
@@ -170,16 +170,16 @@ namespace Galeri {
       }
 
       // Construct reordering matrix (see 6.2-9 from Cook)
-      SerialDenseMatrix<LO,SC> R(D->numRows(), bDim);
+      SerialDenseMatrix<LO,SC> R(D->numRows(), Teuchos::as<LO>(bDim));
       R(0,0) = R(1,3) = R(2,1) = R(2,2) = 1;
 
       this->A_ = MatrixTraits<Map,Matrix>::Build(this->Map_, 9*numDofPerNode);
 
       SC one = Teuchos::ScalarTraits<SC>::one(), zero = Teuchos::ScalarTraits<SC>::zero();
-      SerialDenseMatrix<LO,SC> prevKE(numDofPerElem, numDofPerElem), prevElementNodes(numNodesPerElem, nDim);        // cache
+      SerialDenseMatrix<LO,SC> prevKE(numDofPerElem, numDofPerElem), prevElementNodes(numNodesPerElem, Teuchos::as<LO>(nDim));        // cache
       for (size_t i = 0; i < elements.size(); i++) {
         // Select nodes subvector
-        SerialDenseMatrix<LO,SC> elementNodes(numNodesPerElem, nDim);
+        SerialDenseMatrix<LO,SC> elementNodes(numNodesPerElem, Teuchos::as<LO>(nDim));
         std::vector<LO>& elemNodes = elements[i];
         for (size_t j = 0; j < numNodesPerElem; j++) {
           elementNodes(j,0) = nodes[elemNodes[j]].x;
@@ -212,7 +212,7 @@ namespace Galeri {
             SerialDenseMatrix<LO,SC>& B = Bs[j];
             SerialDenseMatrix<LO,SC>& S = Ss[j];
 
-            SerialDenseMatrix<LO,SC> JAC(nDim, nDim);
+            SerialDenseMatrix<LO,SC> JAC(Teuchos::as<LO>(nDim), Teuchos::as<LO>(nDim));
 
             for (size_t p = 0; p < nDim; p++)
               for (size_t q = 0; q < nDim; q++) {
@@ -225,7 +225,7 @@ namespace Galeri {
             SC detJ = JAC(0,0)*JAC(1,1) - JAC(0,1)*JAC(1,0);
 
             // J2 = inv([JAC zeros(2); zeros(2) JAC])
-            SerialDenseMatrix<LO,SC> J2(nDim*nDim,nDim*nDim);
+            SerialDenseMatrix<LO,SC> J2(Teuchos::as<LO>(nDim*nDim),Teuchos::as<LO>(nDim*nDim));
             J2(0,0) = J2(2,2) =  JAC(1,1) / detJ;
             J2(0,1) = J2(2,3) = -JAC(0,1) / detJ;
             J2(1,0) = J2(3,2) = -JAC(1,0) / detJ;

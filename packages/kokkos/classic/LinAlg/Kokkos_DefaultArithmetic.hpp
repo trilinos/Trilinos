@@ -79,7 +79,19 @@ namespace KokkosClassic {
   struct NodeGEMM {
     public:
       static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha, const MultiVector<Scalar,Node> &A, const MultiVector<Scalar,Node> &B, Scalar beta, MultiVector<Scalar,Node> &C) {
-        TEUCHOS_TEST_FOR_EXCEPT(true);
+        Teuchos::BLAS<int,Scalar> blas;
+        const int m = Teuchos::as<int>(C.getNumRows()),
+                  n = Teuchos::as<int>(C.getNumCols()),
+                  k = (transA == Teuchos::NO_TRANS ? A.getNumCols() : A.getNumRows()),
+                  lda = Teuchos::as<int>(A.getStride()),
+                  ldb = Teuchos::as<int>(B.getStride()),
+                  ldc = Teuchos::as<int>(C.getStride());
+        // For some BLAS implementations (i.e. MKL), GEMM when B has one column
+        // is signficantly less efficient
+        if (n == 1 && transB == Teuchos::NO_TRANS)
+          blas.GEMV(transA, A.getNumRows(), A.getNumCols(), alpha, A.getValues().getRawPtr(), lda, B.getValues().getRawPtr(), Teuchos::as<int>(1), beta, C.getValuesNonConst().getRawPtr(), Teuchos::as<int>(1));
+        else
+          blas.GEMM(transA, transB, m, n, k, alpha, A.getValues().getRawPtr(), lda, B.getValues().getRawPtr(), ldb, beta, C.getValuesNonConst().getRawPtr(), ldc);
       }
   };
 

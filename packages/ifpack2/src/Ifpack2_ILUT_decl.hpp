@@ -49,6 +49,7 @@
 #include <Ifpack2_ConfigDefs.hpp>
 #include <Ifpack2_Preconditioner.hpp>
 #include <Ifpack2_Details_CanChangeMatrix.hpp>
+#include <Tpetra_CrsMatrix_decl.hpp>
 
 #include <string>
 #include <sstream>
@@ -138,6 +139,12 @@ public:
                             local_ordinal_type,
                             global_ordinal_type,
                             node_type> row_matrix_type;
+
+  //! Type of the Tpetra::CrsMatrix specialization that this class uses for the L and U factors.
+  typedef Tpetra::CrsMatrix<scalar_type,
+                            local_ordinal_type,
+                            global_ordinal_type,
+                            node_type> crs_matrix_type;
 
   //! Type of the Tpetra::Map specialization that this class uses.
   typedef Tpetra::Map<local_ordinal_type,
@@ -300,17 +307,17 @@ public:
     return Condest_;
   }
 
-  //! Returns the Tpetra::BlockMap object associated with the range of this matrix operator.
+  //! Returns the input matrix's communicator.
   Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
   //! Returns a reference to the matrix to be preconditioned.
-  Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > getMatrix() const;
+  Teuchos::RCP<const row_matrix_type> getMatrix () const;
 
   //! Returns a reference to the L factor.
-  Teuchos::RCP<const MatrixType> getL() const { return L_; }
+  Teuchos::RCP<const crs_matrix_type> getL () const { return L_; }
 
   //! Returns a reference to the U factor.
-  Teuchos::RCP<const MatrixType> getU() const { return U_; }
+  Teuchos::RCP<const crs_matrix_type> getU () const { return U_; }
 
   //! Returns the number of calls to Initialize().
   int getNumInitialize() const;
@@ -411,9 +418,9 @@ private:
   //! "Local filter" version of A_.
   Teuchos::RCP<const row_matrix_type> A_local_;
   //! L factor of the incomplete LU factorization of A_local_.
-  Teuchos::RCP<MatrixType> L_;
+  Teuchos::RCP<crs_matrix_type> L_;
   //! U factor of the incomplete LU factorization of A_local_.
-  Teuchos::RCP<MatrixType> U_;
+  Teuchos::RCP<crs_matrix_type> U_;
 
   //@}
   // \name Parameters (set by setParameters())

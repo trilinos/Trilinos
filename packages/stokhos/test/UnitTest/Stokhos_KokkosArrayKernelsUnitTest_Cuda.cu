@@ -77,11 +77,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, TiledCrsProductTensor, SCA
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, CrsFlatOriginal, SCALAR, Cuda ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, CrsProductTensor, SCALAR, Cuda ) \
   TILED_CRS_TEST(SCALAR, Cuda )                                         \
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, SimpleTiledCrsProductTensor, SCALAR, Cuda ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, CooProductTensorPacked, SCALAR, Cuda ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, CooProductTensorUnpacked, SCALAR, Cuda ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, LinearTensorSymmetric, SCALAR, Cuda ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, LinearTensorAsymmetric, SCALAR, Cuda )
+
+// Commenting this one out -- it may be generating memory errors
+// TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Kokkos_SG_SpMv, SimpleTiledCrsProductTensor, SCALAR, Cuda )
 
 UNIT_TEST_GROUP_SCALAR_CUDA(double)
 

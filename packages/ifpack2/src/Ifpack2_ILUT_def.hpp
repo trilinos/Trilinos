@@ -52,6 +52,7 @@
 #include <Ifpack2_Condest.hpp>
 #include <Ifpack2_LocalFilter.hpp>
 #include <Ifpack2_Parameters.hpp>
+#include <Tpetra_CrsMatrix_def.hpp>
 
 #include <Teuchos_Time.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
@@ -486,8 +487,8 @@ void ILUT<MatrixType>::compute ()
     const scalar_type one  = STS::one ();
 
     const local_ordinal_type myNumRows = A_local_->getNodeNumRows ();
-    L_ = rcp (new MatrixType (A_local_->getRowMap (), A_local_->getColMap (), 0));
-    U_ = rcp (new MatrixType (A_local_->getRowMap (), A_local_->getColMap (), 0));
+    L_ = rcp (new crs_matrix_type (A_local_->getRowMap (), A_local_->getColMap (), 0));
+    U_ = rcp (new crs_matrix_type (A_local_->getRowMap (), A_local_->getColMap (), 0));
 
     // CGB: note, this caching approach may not be necessary anymore
     // We will store ArrayView objects that are views of the rows of U, so that

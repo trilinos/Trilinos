@@ -79,7 +79,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    PreserveDirichletAggregationAlgorithm(RCP<const FactoryBase> const &graphFact = Teuchos::null);
+    PreserveDirichletAggregationAlgorithm(const RCP<const FactoryBase>& graphFact = Teuchos::null) { }
 
     //! Destructor.
     virtual ~PreserveDirichletAggregationAlgorithm() { }
@@ -92,7 +92,7 @@ namespace MueLu {
 
     /*! @brief Local aggregation. */
 
-    LocalOrdinal BuildAggregates(Teuchos::ParameterList const & params, GraphBase const & graph, Aggregates & aggregates, Teuchos::ArrayRCP<unsigned int> & aggStat) const;
+    void BuildAggregates(const Teuchos::ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const;
     //@}
 
   }; //class PreserveDirichletAggregationAlgorithm

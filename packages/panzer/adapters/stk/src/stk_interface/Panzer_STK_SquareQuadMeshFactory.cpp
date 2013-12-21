@@ -228,6 +228,17 @@ void SquareQuadMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK
    mesh.addSideset("right",side_ctd);
    mesh.addSideset("top",side_ctd);
    mesh.addSideset("bottom",side_ctd);
+
+   for(int bx=1;bx<xBlocks_;bx++) {
+     std::stringstream ss;
+     ss << "vertical_" << bx-1;
+     mesh.addSideset(ss.str(),side_ctd);
+   }
+   for(int by=1;by<yBlocks_;by++) {
+     std::stringstream ss;
+     ss << "horizontal_" << by-1;
+     mesh.addSideset(ss.str(),side_ctd);
+   }
 #endif
 
    // add nodesets
@@ -363,6 +374,19 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
    stk::mesh::Part * top = mesh.getSideset("top");
    stk::mesh::Part * bottom = mesh.getSideset("bottom");
 
+   std::vector<stk::mesh::Part*> vertical;
+   std::vector<stk::mesh::Part*> horizontal;
+   for(int bx=1;bx<xBlocks_;bx++) {
+     std::stringstream ss;
+     ss << "vertical_" << bx-1;
+     vertical.push_back(mesh.getSideset(ss.str()));
+   }
+   for(int by=1;by<yBlocks_;by++) {
+     std::stringstream ss;
+     ss << "horizontal_" << by-1;
+     horizontal.push_back(mesh.getSideset(ss.str()));
+   }
+
    std::vector<stk::mesh::Entity*> localElmts;
    mesh.getMyElements(localElmts);
 
@@ -396,6 +420,26 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
             mesh.addEntityToSideset(*edge,left);
       }
 
+      if(nx+1!=totalXElems && ((nx+1) % nXElems_==0)) {
+         stk::mesh::Entity * edge = getRelationByID(1,relations)->entity();
+
+         // on the right
+         if(edge->owner_rank()==machRank_) {
+            int index = (nx+1)/nXElems_-1;
+            mesh.addEntityToSideset(*edge,vertical[index]);
+         }
+      }
+
+      if(nx!=0 && (nx % nXElems_==0)) {
+         stk::mesh::Entity * edge = getRelationByID(3,relations)->entity();
+
+         // on the left
+         if(edge->owner_rank()==machRank_) {
+            int index = nx/nXElems_-1;
+            mesh.addEntityToSideset(*edge,vertical[index]);
+         }
+      }
+
       // horizontal boundaries
       ///////////////////////////////////////////
 
@@ -413,6 +457,26 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
          // on the top
          if(edge->owner_rank()==machRank_)
             mesh.addEntityToSideset(*edge,top);
+      }
+
+      if(ny!=0 && (ny % nYElems_==0)) {
+         stk::mesh::Entity * edge = getRelationByID(0,relations)->entity();
+
+         // on the bottom
+         if(edge->owner_rank()==machRank_) {
+            int index = ny/nYElems_-1;
+            mesh.addEntityToSideset(*edge,horizontal[index]);
+         }
+      }
+
+      if(ny+1!=totalYElems && ((ny+1) % nYElems_==0)) {
+         stk::mesh::Entity * edge = getRelationByID(2,relations)->entity();
+
+         // on the top
+         if(edge->owner_rank()==machRank_) {
+            int index = (ny+1)/nYElems_-1;
+            mesh.addEntityToSideset(*edge,horizontal[index]);
+         }
       }
    }
 

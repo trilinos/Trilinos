@@ -42,9 +42,13 @@
 #ifndef STOKHOS_TINY_VEC_HPP
 #define STOKHOS_TINY_VEC_HPP
 
+#if ! defined( __CUDACC__ )
+
 extern "C" {
 #include <immintrin.h>
 }
+
+#endif
 
 namespace Stokhos {
 
@@ -243,6 +247,8 @@ private:
   ValueType v[Num];
   int sz;
 };
+
+#if ! defined( __CUDACC__ )
 
 #ifdef __SSE2__
 template <>
@@ -1032,6 +1038,8 @@ private:
   __m512d v1, v2;
 };
 #endif
+
+#endif // #if ! defined( __CUDACC__ )
 
 } // namespace Stokhos
 

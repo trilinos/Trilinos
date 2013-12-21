@@ -206,7 +206,7 @@ public:
 
   size_t lower_bound(const size_t &start, const size_t &end, const Scalar &comp_val) const {
 
-    int lower = 0 > start  ? 0   : start;
+    int lower = start;
     int upper = _size > end? end : _size-1;
     if(upper<=lower) return end;
 
@@ -284,7 +284,7 @@ public:
     typedef typename DV::t_dev::device_type device_type;
     typename DV::t_dev _data;
     Scalar _val;
-  
+
     set_functor(typename DV::t_dev data, Scalar val) :
       _data(data),_val(val) {}
 
@@ -309,5 +309,7 @@ public:
   };
 
 };
+
+
 }
 #endif

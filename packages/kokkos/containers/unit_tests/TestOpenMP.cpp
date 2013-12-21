@@ -54,9 +54,12 @@
 #include <Kokkos_hwloc.hpp>
 
 #include <Kokkos_UnorderedMap.hpp>
+#include <Kokkos_Vector.hpp>
 
 //----------------------------------------------------------------------------
 #include <TestUnorderedMap.hpp>
+#include <TestVector.hpp>
+#include <TestDualView.hpp>
 
 #include <iomanip>
 
@@ -113,17 +116,30 @@ protected:
       test_deep_copy<Kokkos::OpenMP>(num_nodes);                     \
   }
 
+#define OPENMP_VECTOR_COMBINE_TEST( size )                             \
+  TEST_F( openmp, vector_combination##size##x) {       \
+      test_vector_combinations<int,Kokkos::OpenMP>(size);                     \
+  }
+
+#define OPENMP_DUALVIEW_COMBINE_TEST( size )                             \
+  TEST_F( openmp, dualview_combination##size##x) {       \
+      test_dualview_combinations<int,Kokkos::OpenMP>(size);                     \
+  }
+
 OPENMP_INSERT_TEST(close,               100000, 90000, 100, 500)
 OPENMP_INSERT_TEST(far,                 100000, 90000, 100, 500)
-OPENMP_INSERT_TEST(mark_pending_delete, 100000, 90000, 100, 500)
-OPENMP_FAILED_INSERT_TEST( 10000, 5000 )
-OPENMP_ASSIGNEMENT_TEST( 10000, 5000 )
-OPENMP_DEEP_COPY( 10000, 5000 )
+OPENMP_FAILED_INSERT_TEST( 10000, 1000 )
+OPENMP_DEEP_COPY( 10000, 1 )
+OPENMP_VECTOR_COMBINE_TEST( 10 )
+OPENMP_VECTOR_COMBINE_TEST( 3057 )
+OPENMP_DUALVIEW_COMBINE_TEST( 10 )
 
 #undef OPENMP_INSERT_TEST
 #undef OPENMP_FAILED_INSERT_TEST
 #undef OPENMP_ASSIGNEMENT_TEST
 #undef OPENMP_DEEP_COPY
+#undef OPENMP_VECTOR_COMBINE_TEST
+#undef OPENMP_DUALVIEW_COMBINE_TEST
 #endif
 } // namespace test
 

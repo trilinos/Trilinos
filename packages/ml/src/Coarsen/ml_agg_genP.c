@@ -340,7 +340,10 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    double t0;
    t0 =  GetClock();
 #endif
+   double t1=0, createPtentTime=0, smooPTime=0, eigenTime=0;
    widget.Adiag = NULL;
+
+   StartTimer(&t1);
 
    Amat = &(ml->Amat[level]);
    numSmSweeps = ML_Aggregate_Get_DampingSweeps(ag,level);
@@ -463,6 +466,9 @@ else ML_DVector_GetDataPtr( Amat->diagonal, &(widget.Adiag) );
      return -1;
    }
 
+   StopTimer(&t1,&createPtentTime);
+   StartTimer(&t1);
+
    if ( ag->smoothP_damping_factor != 0.0 && numSmSweeps > 0 )
    {
      /*********************************************************
@@ -575,6 +581,9 @@ else ML_DVector_GetDataPtr( Amat->diagonal, &(widget.Adiag) );
 
    } /* if ( ag->smoothP_damping_factor != 0.0 ) */
 
+   StopTimer(&t1,&eigenTime);
+   StartTimer(&t1);
+
    /* Smooth tentative prolongator. */
    if ( ag->smoothP_damping_factor != 0.0 && numSmSweeps > 0 )
    {
@@ -685,6 +694,32 @@ else ML_DVector_GetDataPtr( Amat->diagonal, &(widget.Adiag) );
    } /* if ( ag->smoothP_damping_factor != 0.0 ) */
    else if ( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() )
      printf("Gen_Prolongator (level %d) : not smoothing prolongator\n", level);
+   StopTimer(&t1,&smooPTime);
+   if ( ML_Get_PrintLevel() > 9) {
+     char eigmethod[32];
+#    ifdef ML_TIMING
+     if (ml->comm->ML_mypid == 0)
+       printf("Detailed timing for forming smoothed prolongator (level %d)\n", level);
+#    endif
+     ReportTimer(createPtentTime,"Create tentative P (total)",ml->comm);
+     switch( Amat->spectral_radius_scheme ) {
+       case ML_USE_CG:
+         sprintf(eigmethod,"Eigen estimate (cg)       ");
+         break;
+       case ML_USE_POWER:
+         sprintf(eigmethod,"Eigen estimate (power)    ");
+         break;
+       default:
+         sprintf(eigmethod,"Eigen estimate (max norm) ");
+         break;
+     }
+     ReportTimer(eigenTime,      eigmethod,ml->comm);
+     ReportTimer(smooPTime,      "Smooth tentative P        ",ml->comm);
+#    ifdef ML_TIMING
+     if (ml->comm->ML_mypid == 0)
+       printf("\n");
+#    endif
+   }
    ML_Operator_Set_1Levels(&(ml->Pmat[clevel]),
               &(ml->SingleLevel[clevel]), &(ml->SingleLevel[level]));
 

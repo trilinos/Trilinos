@@ -4,7 +4,9 @@
 #include <Tpetra_ConfigDefs.hpp>
 
 /* Tpetra provides official support for the following nodes */
-#include <Kokkos_SerialNode.hpp>
+#include <Kokkos_DefaultNode.hpp>
+
+/*#include <Kokkos_SerialNode.hpp>
 #if defined(HAVE_KOKKOSCLASSIC_TBB)
 #  include <Kokkos_TBBNode.hpp>
 #endif
@@ -17,6 +19,9 @@
 #if defined(HAVE_KOKKOSCLASSIC_THRUST)
 #  include <Kokkos_ThrustGPUNode.hpp>
 #endif
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT)
+#  include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+#endif*/
 
 /* Tpetra provides official support for dd_real and qd_real */
 #if defined(HAVE_TPETRA_QD)

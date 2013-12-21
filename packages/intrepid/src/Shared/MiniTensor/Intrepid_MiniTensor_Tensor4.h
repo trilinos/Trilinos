@@ -518,6 +518,16 @@ odot(Tensor<S, N> const & A, Tensor<T, N> const & B);
 ///
 /// 4th-order input
 /// \param A 4th-order tensor
+/// \param B 2nd-order tensor
+/// \return \f$ C'_{i'j'k'l'} = A_{i'i} A_{j'j} A_{k'k} A_{l'l} B_{ijkl} \f$
+///
+template<typename S, typename T, Index N>
+Tensor4<typename Promote<S, T>::type, N>
+kronecker(Tensor<S, N> const & A, Tensor4<T, N> const & B);
+
+///
+/// 4th-order input
+/// \param A 4th-order tensor
 /// \param is input stream
 /// \return is input stream
 ///

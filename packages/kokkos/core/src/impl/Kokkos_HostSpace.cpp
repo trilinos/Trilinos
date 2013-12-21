@@ -49,7 +49,6 @@
 
 #include <Kokkos_HostSpace.hpp>
 #include <impl/Kokkos_Error.hpp>
-#include <impl/Kokkos_MemoryTracking.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -89,6 +88,11 @@ Impl::MemoryTracking & host_space_singleton()
 }
 
 } // namespace <blank>
+namespace NEVEREVERUSEMEIWILLFINDYOU {
+Impl::MemoryTracking & host_space_singleton_wrapper() {
+  return host_space_singleton();
+}
+}
 } // namespade Kokkos
 
 /*--------------------------------------------------------------------------*/

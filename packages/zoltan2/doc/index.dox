@@ -17,7 +17,9 @@ Information specifically for developers can be found at \ref z2_developer.
 
 \section z2_main_intro Introduction to Zoltan2
 
-Zoltan2 is a complete refactoring of the 
+Zoltan2 is a package for partitioning, load balancing and 
+combinatorial scientific computing. It can be vieweed as
+a complete refactoring of the well known
 <a href=http://www.cs.sandia.gov/Zoltan > Zoltan </a>
 library into C++ in order to support template programming,
 to scale to larger problems, and to support architecture aware partitioning.
@@ -33,11 +35,13 @@ Partitioning functionality that is available now is:
 </ul>
 
 
-Serial ordering available now is:
+Serial ordering currently available:
 
 <ul>
-<li> \ref rcmPage for RCM ordering.
-<li> \ref amdPage for AMD ordering.
+<li> \ref amdPage for fill-reducing ordering.
+<li> random ordering
+<li> \ref rcmPage for bandwidth-reducing ordering.
+<li> sorted_degree ordering
 </ul>
 
 <hr>
@@ -53,8 +57,7 @@ Here we describe the typical user interaction with Zoltan2.  We use partitioning
 <ul>
 <li> Zoltan2::MatrixInput (a row oriented matrix with optional row weights)
 <li> Zoltan2::GraphInput (an undirected weighted graph)
-<li> Zoltan2::VectorInput (a single or multi-vector with optional weights)
-<li> Zoltan2::CoordinateInput (arbitrary-dimension geometric coordinates)
+<li> Zoltan2::VectorInput (a single or multi-vector with optional weights, also used for geometric coordinates)
 <li> Zoltan2::IdentifierInput (simple collection of identifiers)
 </ul>
 
@@ -89,17 +92,13 @@ Zoltan2 is part of the Trilinos framework and requires several of the other Tril
 
 Zoltan2 configuration refers to these CMake directives:
 
-  \li \c Trilinos_ENABLE_OpenMP explain
+  \li \c Trilinos_ENABLE_OpenMP if enabled, use OpenMP for multithreaded execution. (Note not all of Zoltan2 is thread-safe.)
   \li \c Trilinos_ENABLE_Zoltan if enabled Zoltan2 will build a test that compares the performance of Zoltan1 and Zoltan2
   \li \c Zoltan2_ENABLE_Experimental if enabled, code which is still under development will be available for use
   \li \c Explicit Instantiation if explicit instantiation is on, all Zoltan2 tests will be compiled with the instantiated types
-  \li \c Zoltan2_ENABLE_METIS etc
-  \li \c Zoltan2_ENABLE_PaToH etc
-  \li \c Zoltan2_ENABLE_ParMETIS etc
-  \li \c Zoltan2_ENABLE_Scotch etc
-  \li \c Zoltan2_ENABLE_OVIS etc
-  \li \c Zoltan2_ENABLE_AMD etc etc
-  \li \c Zoltan2_ENABLE_ANASAZI etc
+  \li \c Zoltan2_ENABLE_Scotch for graph partitioning using the Scotch package
+  \li \c Zoltan2_ENABLE_OVIS
+  \li \c Zoltan2_ENABLE_AMD
 
 These are some of the compilation flags used by Zoltan2:
 

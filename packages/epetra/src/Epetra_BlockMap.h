@@ -483,7 +483,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
 #endif
 
   //! Returns true if the LID passed in belongs to the calling processor in this map, otherwise returns false.
-  bool  MyLID(int LID_in) const {return(GID64(LID_in)!=BlockMapData_->IndexBase_-1);};
+  // bool  MyLID(int LID_in) const {return(GID64(LID_in)!=BlockMapData_->IndexBase_-1);};
+  bool MyLID(int lid) const {
+    if ((BlockMapData_->NumMyElements_ == 0) ||
+        (lid < BlockMapData_->MinLID_) || (lid > BlockMapData_->MaxLID_)) {
+      return false;
+    }
+    return true;
+  }
 
   //!Returns the minimum global ID across the entire map.
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES

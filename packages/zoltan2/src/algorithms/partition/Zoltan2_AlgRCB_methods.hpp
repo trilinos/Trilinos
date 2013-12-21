@@ -184,7 +184,7 @@ template <typename Adapter>
     ArrayRCP<double> &fractionLeft,
     partId_t &numPartsLeftHalf)
 {
-  env->debug(DETAILED_STATUS, string("Entering getFractionLeft"));
+  env->debug(DETAILED_STATUS, "Entering getFractionLeft");
   partId_t numParts = part1 - part0 + 1;
   // TODO In LDRD, substitute call to machine model for
   // TODO computation of numPartsLeftHalf below.
@@ -213,7 +213,7 @@ template <typename Adapter>
       fractionLeft[wdim] /= total;
     }
   }
-  env->debug(DETAILED_STATUS, string("Exiting getFractionLeft"));
+  env->debug(DETAILED_STATUS, "Exiting getFractionLeft");
 }
 
 /*! \brief Choose a coordinate dimension for the next cut.
@@ -245,7 +245,7 @@ template <typename mvector_t>
     typename mvector_t::scalar_type &minCoord,      // output
     typename mvector_t::scalar_type &maxCoord)      // output
 {
-  env->debug(DETAILED_STATUS, string("Entering getCutDimension"));
+  env->debug(DETAILED_STATUS, "Entering getCutDimension");
   typedef typename mvector_t::scalar_type scalar_t;
   typedef typename mvector_t::local_ordinal_type lno_t;
 
@@ -324,7 +324,7 @@ template <typename mvector_t>
       maxCoord = max;
     }
   }
-  env->debug(DETAILED_STATUS, string("Exiting getCutDimension"));
+  env->debug(DETAILED_STATUS, "Exiting getCutDimension");
 }
 
 /*! \brief Migrate coordinates and weights to new processes.
@@ -350,7 +350,7 @@ template <typename mvector_t>
     RCP<mvector_t> &vectors,    // on return is the new data
     int &leftNumProcs)          // on return is num procs with left data
 {
-  env->debug(DETAILED_STATUS, string("Entering migrateData"));
+  env->debug(DETAILED_STATUS, "Entering migrateData");
   typedef typename mvector_t::scalar_type scalar_t;
   typedef typename mvector_t::local_ordinal_type lno_t;
   typedef typename mvector_t::global_ordinal_type gno_t;
@@ -466,7 +466,7 @@ template <typename mvector_t>
 
   vectors = rcp_const_cast<mvector_t>(newMultiVector);
   env->memory("Former problem data replaced with new data");
-  env->debug(DETAILED_STATUS, string("Exiting migrateData"));
+  env->debug(DETAILED_STATUS, "Exiting migrateData");
 }
 
 template <typename lno_t, typename scalar_t>
@@ -517,7 +517,7 @@ template <typename scalar_t>
    leftRightFlag &lrf,
    scalar_t &cutValue)
 {
-  env->debug(DETAILED_STATUS, string("Entering emptyPartsCheck"));
+  env->debug(DETAILED_STATUS, "Entering emptyPartsCheck");
   // initialize return values
   lrf = leftFlag;
   cutValue = 0.0;
@@ -548,7 +548,7 @@ template <typename scalar_t>
     cutValue = maxCoord;
   }
 
-  env->debug(DETAILED_STATUS, string("Exiting emptyPartsCheck"));
+  env->debug(DETAILED_STATUS, "Exiting emptyPartsCheck");
   return true;
 }
 
@@ -579,7 +579,7 @@ template <typename lno_t, typename gno_t, typename scalar_t>
     ArrayView<unsigned char> lrFlags,
     scalar_t &globalWeightMovedRight)   // output
 {
-  env->debug(DETAILED_STATUS, string("Entering testCoordinatesOnRightBoundary"));
+  env->debug(DETAILED_STATUS, "Entering testCoordinatesOnRightBoundary");
   int nprocs = comm->getSize();
   int rank = comm->getRank();
 
@@ -655,7 +655,7 @@ template <typename lno_t, typename gno_t, typename scalar_t>
   }
   Z2_THROW_OUTSIDE_ERROR(*env)
 
-  env->debug(DETAILED_STATUS, string("Exiting testCoordinatesOnRightBoundary"));
+  env->debug(DETAILED_STATUS, "Exiting testCoordinatesOnRightBoundary");
   return;
 }
 
@@ -728,7 +728,7 @@ template <typename mvector_t>
     typename mvector_t::local_ordinal_type &localCountLeft, // output
     typename mvector_t::scalar_type &imbalance)        // output
 {
-  env->debug(DETAILED_STATUS, string("Entering BSPfindCut"));
+  env->debug(DETAILED_STATUS, "Entering BSPfindCut");
 
   // initialize output
   bool useIndices = index.size() > 0;
@@ -1246,7 +1246,7 @@ template <typename mvector_t, typename Adapter>
     typename mvector_t::scalar_type &weightRightHalf  // output
     )
 {
-  env->debug(DETAILED_STATUS, string("Entering determineCut"));
+  env->debug(DETAILED_STATUS, "Entering determineCut");
   typedef typename mvector_t::scalar_type scalar_t;
   typedef typename mvector_t::local_ordinal_type lno_t;
   typedef StridedData<lno_t, scalar_t> input_t;
@@ -1340,7 +1340,7 @@ template <typename mvector_t, typename Adapter>
       weightLeftHalf = 0;
     }
 
-    env->debug(DETAILED_STATUS, string("Exiting determineCut"));
+    env->debug(DETAILED_STATUS, "Exiting determineCut");
     return;
   }
 
@@ -1361,7 +1361,7 @@ template <typename mvector_t, typename Adapter>
       weightLeftHalf, weightRightHalf, localCountLeft, imbalance);
   }
   Z2_FORWARD_EXCEPTIONS
-  env->debug(DETAILED_STATUS, string("Exiting determineCut"));
+  env->debug(DETAILED_STATUS, "Exiting determineCut");
 }
 
 
@@ -1404,7 +1404,7 @@ template <typename mvector_t, typename Adapter>
     partId_t part1,
     ArrayView<partId_t> partNum)   // output
 {
-  env->debug(DETAILED_STATUS, string("Entering serialRCB"));
+  env->debug(DETAILED_STATUS, "Entering serialRCB");
   env->timerStart(MICRO_TIMERS, "serialRCB", depth, 2);
 
   typedef typename mvector_t::scalar_type scalar_t;
@@ -1447,7 +1447,7 @@ template <typename mvector_t, typename Adapter>
 
     env->memory("serial RCB end");
     env->timerStop(MICRO_TIMERS, "serialRCB", depth, 2);
-    env->debug(DETAILED_STATUS, string("Exiting serialRCB"));
+    env->debug(DETAILED_STATUS, "Exiting serialRCB");
 
     return;
   }
@@ -1506,7 +1506,7 @@ template <typename mvector_t, typename Adapter>
       
       imbalance = 0.0;       // perfect
       env->timerStop(MICRO_TIMERS, "serialRCB", depth, 2);
-      env->debug(DETAILED_STATUS, string("Exiting serialRCB"));
+      env->debug(DETAILED_STATUS, "Exiting serialRCB");
       return;
     }
   }
@@ -1604,7 +1604,7 @@ template <typename mvector_t, typename Adapter>
   }
 
   env->timerStop(MICRO_TIMERS, "serialRCB", depth, 2);
-  env->debug(DETAILED_STATUS, string("Exiting serialRCB"));
+  env->debug(DETAILED_STATUS, "Exiting serialRCB");
 }
 
 }// namespace Zoltan2

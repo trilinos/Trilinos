@@ -42,7 +42,7 @@
 #ifndef TPETRA_KOKKOS_REFACTOR_MULTIVECTOR_DECL_HPP
 #define TPETRA_KOKKOS_REFACTOR_MULTIVECTOR_DECL_HPP
 
-#include <Teuchos_DataAccess.hpp>
+/*#include <Teuchos_DataAccess.hpp>
 #include <Teuchos_Range1D.hpp>
 #include "Tpetra_ConfigDefs.hpp"
 #if TPETRA_USE_KOKKOS_DISTOBJECT
@@ -53,10 +53,10 @@
 #include "Tpetra_ViewAccepter.hpp"
 #include <Kokkos_MultiVector.hpp>
 #include <Teuchos_BLAS_types.hpp>
-
+*/
 #include <Kokkos_DualView.hpp>
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
-#include <Tpetra_MultiVector.hpp>
+//#include <Tpetra_MultiVector.hpp>
 
 namespace KokkosClassic {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -360,6 +360,9 @@ namespace Tpetra {
     typedef DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> DO;
 #endif
 
+    template <class S, class LO, class GO, class D>
+    friend  MultiVector<S,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D> >
+        createCopy( const MultiVector<S,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D> >& src);
     //@}
     //! @name Constructors and destructor
     //@{
@@ -394,8 +397,8 @@ namespace Tpetra {
     /// \post isConstantStride() == true
     MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
                  const Teuchos::ArrayView<const Scalar>& A,
-                 size_t LDA,
-                 size_t NumVectors);
+                 const size_t LDA,
+                 const size_t NumVectors);
 
     /// \brief Create multivector by copying array of views of local data.
     ///
@@ -412,7 +415,7 @@ namespace Tpetra {
     /// \post constantStride() == true
     MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
                  const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> >&ArrayOfPtrs,
-                 size_t NumVectors);
+                 const size_t NumVectors);
 
     /// \brief Expert mode constructor.
     ///
@@ -421,13 +424,14 @@ namespace Tpetra {
     ///   It may change or go away at any time.
     ///
     /// \param map [in] Map describing the distribution of rows.
-    /// \param data [in] Device pointer to the data (column-major)
-    /// \param LDA [in] Leading dimension (stride) of the data
-    /// \param numVecs [in] Number of vectors (columns)
+    /// \param view [in] Device view to the data (shallow copy)
     MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-                 const Teuchos::ArrayRCP<Scalar>& data,
-                 const size_t LDA,
-                 const size_t numVectors);
+                 const view_type view);
+
+    //! Advanced constructor for non-contiguous views.
+    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+                 const view_type view,
+                 const Teuchos::ArrayView<const size_t>& whichVectors);
 
     //! Create a cloned MultiVector for a different node type
     template <class Node2>
@@ -783,7 +787,7 @@ namespace Tpetra {
     //! Return a non-const reference to the underlying KokkosClassic::MultiVector object (advanced use only)
     KokkosClassic::MultiVector<Scalar,Node> & getLocalMVNonConst();
 
-    view_type getLocalView() const { return view_; };
+    view_type getLocalView() const;
     //@}
     //! @name Mathematical methods
     //@{
@@ -1036,26 +1040,11 @@ namespace Tpetra {
     //! @name View constructors, used only by nonmember constructors.
     //@{
 
-    template <class S,class LO,class GO,class N>
+    /*template <class S,class LO,class GO,class N>
     friend RCP<MultiVector<S,LO,GO,N> >
-    createMultiVectorFromView (const Teuchos::RCP<const Map<LO,GO,N> >&, const Teuchos::ArrayRCP<S>&, size_t, size_t);
+    createMultiVectorFromView (const Teuchos::RCP<const Map<LO,GO,N> >&, const Teuchos::ArrayRCP<S>&, size_t, size_t);*/
 
-    /// \brief View constructor with user-allocated data, for CPU nodes only.
-    ///
-    /// The tag says that views of the MultiVector are always host
-    /// views, that is, they do not live on a separate device memory
-    /// space (for example, on a GPU).
-    ///
-    /// This member constructor is meant to be called by its nonmember
-    /// constructor friend; it is not meant to be called by users
-    /// (hence it is protected).
-    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-                 const Teuchos::ArrayRCP<Scalar>& view,
-                 size_t LDA,
-                 size_t NumVectors,
-                 EPrivateHostViewConstructor /* dummy */);
-
-    bool vectorIndexOutOfRange (size_t VectorIndex) const;
+     bool vectorIndexOutOfRange (size_t VectorIndex) const;
 
     /// \fn getSubArrayRCP
     /// \brief Persisting view of j-th column in the given ArrayRCP.
@@ -1065,42 +1054,6 @@ namespace Tpetra {
     template <class T>
     ArrayRCP<T> getSubArrayRCP(ArrayRCP<T> arr, size_t j) const;
 
-    //! Advanced constructor for non-contiguous views.
-    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-                 Teuchos::ArrayRCP<Scalar> data,
-                 size_t LDA,
-                 Teuchos::ArrayView<const size_t> whichVectors,
-                 EPrivateComputeViewConstructor /* dummy */);
-
-    //! Advanced constructor for contiguous views.
-    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-                 Teuchos::ArrayRCP<Scalar> data,
-                 size_t LDA,
-                 size_t NumVectors,
-                 EPrivateComputeViewConstructor /* dummy */);
-
-    /// \brief Advanced constructor for contiguous views.
-    ///
-    /// This version of the contiguous view constructor takes a
-    /// previously constructed KokkosClassic::MultiVector, which is the
-    /// correct view of the local data.  The local multivector should
-    /// have been made using the appropriate offsetView* method of
-    /// KokkosClassic::MultiVector.
-    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-                 const KokkosClassic::MultiVector<Scalar, Node>& localMultiVector,
-                 EPrivateComputeViewConstructor /* dummy */);
-
-    /// \brief Advanced constructor for noncontiguous views.
-    ///
-    /// This version of the noncontiguous view constructor takes a
-    /// previously constructed KokkosClassic::MultiVector, which is the
-    /// correct view of the local data.  The local multivector should
-    /// have been made using the appropriate offsetView* method of
-    /// KokkosClassic::MultiVector.
-    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-                 const KokkosClassic::MultiVector<Scalar, Node>& localMultiVector,
-                 Teuchos::ArrayView<const size_t> whichVectors,
-                 EPrivateComputeViewConstructor /* dummy */);
 
     //@}
     //! @name Implementation of Tpetra::DistObject

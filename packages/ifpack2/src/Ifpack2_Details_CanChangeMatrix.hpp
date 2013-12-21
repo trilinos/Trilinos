@@ -98,6 +98,23 @@ namespace Details {
     /// \param A [in] The new matrix.  This is const by Ifpack2
     ///   convention, for the same reason that the input matrix to any
     ///   Ifpack2 preconditioner's constructor is always const.
+    ///
+    /// Calling this method with a matrix different than the
+    /// preconditioner's current matrix resets the preconditioner's
+    /// state.  After calling this method with a nonnull input, you
+    /// must first call initialize() and compute() (in that order)
+    /// before you may call apply().
+    ///
+    /// You may call this method with a null input.  If A is null, then
+    /// you may not call initialize() or compute() until you first call
+    /// this method again with a nonnull input.  This method invalidates
+    /// any previous factorization whether or not A is null, so calling
+    /// setMatrix() with a null input is one way to clear the
+    /// preconditioner's state (and free any memory that it may be
+    /// using).
+    ///
+    /// The new matrix A need not necessarily have the same Maps or even
+    /// the same communicator as the original matrix.
     virtual void
     setMatrix (const Teuchos::RCP<const RowMatrixType>& A) = 0;
 

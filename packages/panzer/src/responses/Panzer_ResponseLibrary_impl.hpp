@@ -64,8 +64,8 @@ ResponseLibrary<TraitsT>::ResponseLibrary()
 
 template <typename TraitsT>
 ResponseLibrary<TraitsT>::ResponseLibrary(const Teuchos::RCP<WorksetContainer> & wc,
-                                          const Teuchos::RCP<UniqueGlobalIndexerBase> & ugi,
-                                          const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof)
+                                          const Teuchos::RCP<const UniqueGlobalIndexerBase> & ugi,
+                                          const Teuchos::RCP<const LinearObjFactory<TraitsT> > & lof)
    : respAggManager_(ugi,lof), wkstContainer_(wc), globalIndexer_(ugi), linObjFactory_(lof), nextBC_id(0), responseEvaluatorsBuilt_(false)
 {
    // build dynamic dispatch objects
@@ -88,8 +88,8 @@ ResponseLibrary<TraitsT>::ResponseLibrary(const ResponseLibrary<TraitsT> & rl)
 template <typename TraitsT>
 void ResponseLibrary<TraitsT>::
 initialize(const Teuchos::RCP<WorksetContainer> & wc,
-           const Teuchos::RCP<UniqueGlobalIndexerBase> & ugi,
-           const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof)
+           const Teuchos::RCP<const UniqueGlobalIndexerBase> & ugi,
+           const Teuchos::RCP<const LinearObjFactory<TraitsT> > & lof)
 {
    respAggManager_ .initialize(ugi,lof);
    wkstContainer_ = wc;

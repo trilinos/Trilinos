@@ -183,8 +183,6 @@ namespace MueLuTests {
     Teuchos::RCP<TpetraOperator> tH;
     Teuchos::RCP<EpetraOperator> eH;
 
-    Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
-
     // Matrix
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     GO nx = 972;
@@ -193,6 +191,8 @@ namespace MueLuTests {
 
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
     std::string xmlFileName = "testPDE.xml";
+
+    Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
 
     Teuchos::ParameterList clist;
     clist.set("nx", (nx * comm->getSize())/3);

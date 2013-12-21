@@ -54,11 +54,7 @@
 /// Market format") for interchange of sparse and dense matrices.
 ///
 #include "Tpetra_config.h"
-#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-#include "Tpetra_KokkosRefactor_CrsMatrix.hpp"
-#else
 #include "Tpetra_CrsMatrix.hpp"
-#endif
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_ComputeGatherMap.hpp"
 #include "Teuchos_MatrixMarket_Raw_Adder.hpp"

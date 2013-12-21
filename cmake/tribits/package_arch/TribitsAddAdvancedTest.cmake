@@ -134,6 +134,12 @@ INCLUDE(PrintVar)
 #     If specified, then the remaining test commands will be aborted when any
 #     test command fails.  Otherwise, all of the test cases will be run.
 #
+#   RUN_SERIAL
+#
+#     If specified then no other tests will be allowed to run while this test
+#     is running. This is useful for devices(like cuda cards) that require
+#     exclusive access for processes/threads.
+#
 #   COMM [serial] [mpi]
 #
 #     If specified, selects if the test will be added in serial and/or MPI
@@ -312,7 +318,7 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
      #lists
      "${TEST_IDX_LIST};OVERALL_WORKING_DIRECTORY;KEYWORDS;COMM;OVERALL_NUM_MPI_PROCS;FINAL_PASS_REGULAR_EXPRESSION;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;FINAL_FAIL_REGULAR_EXPRESSION;TIMEOUT;ENVIRONMENT"
      #options
-     "FAIL_FAST"
+     "FAIL_FAST;RUN_SERIAL"
      ${ARGN}
      )
   # NOTE: The TIMEOUT argument is not documented on purpose.  I don't want to
@@ -377,6 +383,7 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
   # Loop through each test case
 
   SET(NUM_CMNDS 0)
+  SET(TEST_EXE_LIST "")
 
   FOREACH( TEST_CMND_IDX RANGE ${MAX_NUM_TEST_CMND_IDX} )
 
@@ -434,6 +441,10 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
         SET(ADD_THE_TEST FALSE)
       ENDIF()
 
+      IF(ADD_THE_TEST)
+        LIST(APPEND TEST_EXE_LIST ${EXECUTABLE_PATH})
+      ENDIF()
+
       TRIBITS_ADD_TEST_GET_TEST_CMND_ARRAY( TEST_CMND_ARRAY
         "${EXECUTABLE_PATH}" "${NUM_PROCS_USED}" ${ARGS_STR} )
       #PRINT_VAR(TEST_CMND_ARRAY)
@@ -455,6 +466,11 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
             " is out of range.")
         ENDIF()
         SET(ADD_THE_TEST FALSE)
+      ENDIF()
+
+      IF(ADD_THE_TEST)
+        FIND_PROGRAM(CMND_PATH ${PARSE_CMND})
+        LIST(APPEND TEST_EXE_LIST ${CMND_PATH})
       ENDIF()
 
       SET( TEST_CMND_ARRAY ${PARSE_CMND} ${ARGS_STR} )
@@ -607,6 +623,12 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
     ADD_TEST( ${TEST_NAME}
       ${CMAKE_COMMAND} "-DTEST_CONFIG=\${CTEST_CONFIGURATION_TYPE}" -P "${TEST_SCRIPT_FILE}"
       )
+    LIST(REMOVE_DUPLICATES TEST_EXE_LIST)
+    SET_PROPERTY(TEST ${TEST_NAME} PROPERTY REQUIRED_FILES ${TEST_EXE_LIST})
+
+    IF(PARSE_RUN_SERIAL)
+      SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES RUN_SERIAL ON)
+    ENDIF()
   
     TRIBITS_PRIVATE_ADD_TEST_ADD_LABEL_AND_KEYWORDS(${TEST_NAME})
   

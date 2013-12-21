@@ -43,23 +43,13 @@
 #ifndef IFPACK2_FACTORY_DEF_HPP
 #define IFPACK2_FACTORY_DEF_HPP
 
-#include "Ifpack2_Relaxation.hpp"
-#include "Ifpack2_Diagonal.hpp"
-#include "Ifpack2_Chebyshev.hpp"
-#include "Ifpack2_RILUK.hpp"
-#include "Ifpack2_ILUT.hpp"
-
-#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_AMESOS2)
-#  include "Ifpack2_Details_Amesos2Wrapper.hpp"
-#endif //  defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_AMESOS2)
-
-#include "Ifpack2_Krylov.hpp"
+#include "Ifpack2_Details_OneLevelFactory.hpp"
 #include "Ifpack2_AdditiveSchwarz.hpp"
-#include "Ifpack2_IdentitySolver.hpp"
-
+#include "Ifpack2_Krylov.hpp"
 #if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
 #  include "Ifpack2_SupportGraph.hpp"
 #endif // defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
+#include "Ifpack2_RILUK.hpp"
 
 namespace Ifpack2 {
 
@@ -96,29 +86,7 @@ Factory::create (const std::string& precType,
   // Forestall "unused variable" warnings.
   (void) one_mpi_rank;
 
-  if (precTypeUpper == "ILUT") {
-    prec = rcp (new ILUT<MatrixType> (matrix));
-  }
-#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_AMESOS2)
-#if defined(HAVE_AMESOS2_SUPERLU) || defined(HAVE_AMESOS2_SUPERLUDIST) || defined(HAVE_AMESOS2_KLU) || defined(HAVE_AMESOS2_LAPACK)
-  else if (precTypeUpper == "AMESOS2") {
-    prec = rcp (new Details::Amesos2Wrapper<MatrixType> (matrix));
-  }
-#endif
-#endif
-  else if (precTypeUpper == "RILUK") {
-    prec = rcp (new RILUK<MatrixType> (matrix));
-  }
-  else if (precTypeUpper == "RELAXATION") {
-    prec = rcp (new Relaxation<MatrixType> (matrix));
-  }
-  else if (precTypeUpper == "CHEBYSHEV") {
-    prec = rcp (new Chebyshev<MatrixType> (matrix));
-  }
-  else if (precTypeUpper == "DIAGONAL") {
-    prec = rcp (new Diagonal<MatrixType> (matrix));
-  }
-  else if (precTypeUpper == "SCHWARZ") {
+  if (precTypeUpper == "SCHWARZ") {
     typedef ILUT<MatrixType> inner_solver_type;
     typedef Details::NestedPreconditioner<prec_base_type> outer_solver_type;
 
@@ -130,18 +98,20 @@ Factory::create (const std::string& precType,
   else if (precTypeUpper == "KRYLOV") {
     prec = rcp (new Krylov<MatrixType, prec_base_type> (matrix));
   }
-  else if (precTypeUpper == "IDENTITY_SOLVER") {
-    prec = rcp (new IdentitySolver<MatrixType> (matrix));
-  }
 #if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
   else if (precTypeUpper == "SUPPORTGRAPH") {
     prec = rcp (new SupportGraph<MatrixType> (matrix));
   }
 #endif
   else {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::invalid_argument, "Ifpack2::Factory::create: "
-      "Invalid preconditioner type \"" << precType << "\".");
+    try {
+      Details::OneLevelFactory<MatrixType> factory;
+      prec = factory.create (precType, matrix);
+    } catch (std::invalid_argument&) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::invalid_argument, "Ifpack2::Factory::create: "
+        "Invalid preconditioner type \"" << precType << "\".");
+    }
   }
   return prec;
 }
@@ -181,29 +151,7 @@ Factory::create (const std::string& precType,
   // Forestall "unused variable" warnings.
   (void) one_mpi_rank;
 
-  if (precTypeUpper == "ILUT") {
-    prec = rcp (new ILUT<MatrixType> (matrix));
-  }
-#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_AMESOS2)
-#if defined(HAVE_AMESOS2_SUPERLU) || defined(HAVE_AMESOS2_SUPERLUDIST) || defined(HAVE_AMESOS2_KLU) || defined(HAVE_AMESOS2_LAPACK)
-  else if (precTypeUpper == "AMESOS2") {
-    prec = rcp (new Details::Amesos2Wrapper<MatrixType> (matrix));
-  }
-#endif
-#endif
-  else if (precTypeUpper == "RILUK") {
-    prec = rcp (new RILUK<MatrixType> (matrix));
-  }
-  else if (precTypeUpper == "RELAXATION") {
-    prec = rcp (new Relaxation<MatrixType> (matrix));
-  }
-  else if (precTypeUpper == "CHEBYSHEV") {
-    prec = rcp (new Chebyshev<MatrixType> (matrix));
-  }
-  else if (precTypeUpper == "DIAGONAL") {
-    prec = rcp (new Diagonal<MatrixType> (matrix));
-  }
-  else if (precTypeUpper == "SCHWARZ") {
+  if (precTypeUpper == "SCHWARZ") {
     typedef ILUT<MatrixType> inner_solver_type;
     typedef Details::NestedPreconditioner<prec_base_type> outer_solver_type;
 
@@ -221,10 +169,24 @@ Factory::create (const std::string& precType,
   }
 #endif
   else {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::invalid_argument, "Ifpack2::Factory::create: "
-      "Invalid preconditioner type \"" << precType << "\".");
+    bool success = false;
+    std::ostringstream err;
+    try {
+      Details::OneLevelFactory<MatrixType> factory;
+      prec = factory.create (precType, matrix);
+      success = true;
+    } catch (std::invalid_argument& e) {
+      err << "Ifpack2::Factory::create: Invalid preconditioner type \""
+          << precType << "\".  More information for Ifpack2 developers: "
+          << e.what ();
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(! success, std::invalid_argument, err.str ());
   }
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    prec.is_null (), std::logic_error, "Ifpack2::Factory::create: "
+    "Return value is null right before return.  This should never happen.  "
+    "Please report this bug to the Ifpack2 developers.");
   return prec;
 }
 

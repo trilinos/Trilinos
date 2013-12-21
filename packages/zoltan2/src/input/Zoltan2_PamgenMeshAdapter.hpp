@@ -35,27 +35,26 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Karen Devine      (kddevin@sandia.gov)
-//                    Erik Boman        (egboman@sandia.gov)
-//                    Siva Rajamanickam (srajama@sandia.gov)
+// Questions? Contact Vitus Leung       (vjleung@sandia.gov)
 //
 // ***********************************************************************
 //
 // @HEADER
 
-/*! \file Zoltan2_BasicIdentifierInput.hpp
-    \brief Defines the BasicIdentifierInput class.
+/*! \file Zoltan2_PamgenMeshAdapter.hpp
+    \brief Defines the PamgenMeshAdapter class.
 */
 
-#ifndef _ZOLTAN2_BASICIDENTIFIERINPUT_HPP_
-#define _ZOLTAN2_BASICIDENTIFIERINPUT_HPP_
+#ifndef _ZOLTAN2_PAMGENMESHADAPTER_HPP_
+#define _ZOLTAN2_PAMGENMESHADAPTER_HPP_
 
-#include <Zoltan2_IdentifierInput.hpp>
-#include <Zoltan2_StridedData.hpp>
+#include <Zoltan2_MeshInput.hpp>
 
 namespace Zoltan2 {
 
-/*! \brief This class represents a collection of global Identifiers
+/*! \brief This class represents a mesh.
+ *
+ *  A mesh can be a collection of global Identifiers
  *           and their associated weights, if any.
  *
  *  The user supplies the identifiers and weights by way of pointers
@@ -80,7 +79,7 @@ namespace Zoltan2 {
  */
 
 template <typename User>
-  class BasicIdentifierInput: public IdentifierInput<User> {
+  class PamgenMeshAdapter: public MeshAdapter<User> {
 
 public:
 
@@ -89,74 +88,63 @@ public:
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
-  typedef IdentifierInput<User>       base_adapter_t;
+  typedef MeshAdapter<User>       base_adapter_t;
   typedef User user_t;
 
-  /*! \brief Constructor
-   *  \param numIds is the number of identifiers in the list
-   *  \param ids should point to a list of numIds identifiers.
-   *  \param weights  a list of pointers to arrays of weights.
-   *      The number of weights per identifier is assumed to be
-   *      \c weights.size().
-   *  \param weightStrides  a list of strides for the \c weights.
-   *     The weight for weight dimension \c n for \c ids[k] should be
-   *     found at <tt>weights[n][weightStrides[n] * k]</tt>.
-   *     If \c weightStrides.size() is zero, it is assumed all strides are one.
+  /*! \brief Constructor for mesh with identifiers but no coordinates or edges
+   *  \param etype is the mesh entity type of the identifiers
    *
    *  The values pointed to the arguments must remain valid for the
    *  lifetime of this InputAdapter.
    */
 
-  BasicIdentifierInput( lno_t numIds, const gid_t *idPtr, 
-    vector<const scalar_t *> &weights, vector<int> &weightStrides);
+  PamgenMeshAdapter(string typestr = "region");
 
   ////////////////////////////////////////////////////////////////
-  // The InputAdapter interface.
-  ////////////////////////////////////////////////////////////////
-
-  string inputAdapterName() const {return string("BasicIdentifier");}
-
-  size_t getLocalNumberOfObjects() const { return numIds_;}
-
-  int getNumberOfWeightsPerObject() const { return weights_.size();}
-
-  size_t getObjectWeights(int dim, const scalar_t *&wgt, int &stride) const
-  {
-    return getIdentifierWeights(dim, wgt, stride);
-  }
-
-  ////////////////////////////////////////////////////////////////
-  // The IdentifierInput interface.
+  // The MeshAdapter interface.
   // This is the interface that would be called by a model or a problem .
   ////////////////////////////////////////////////////////////////
 
-  size_t getLocalNumberOfIdentifiers() const { return numIds_;}
-   
-  int getNumberOfWeights() const { return weights_.size(); }
-
-  size_t getIdentifierList(const gid_t *&Ids) const
+  size_t getLocalNumOf(MeshEntityType etype) const
   {
-    Ids = idList_;
-    return numIds_;
+    if (MESH_REGION == etype) {
+      return RnumIds_;
+    }
+    if (MESH_FACE == etype) {
+      return FnumIds_;
+    }
+    if (MESH_EDGE == etype) {
+      return EnumIds_;
+    }
+    if (MESH_VERTEX == etype) {
+      return VnumIds_:
+    }
   }
-
-  size_t getIdentifierWeights(int dimension,
-     const scalar_t *&weights, int &stride) const
+   
+  size_t getIDsViewOf(MeshEntityType etype, const gid_t *&Ids) const
   {
-    env_->localInputAssertion(__FILE__, __LINE__, "invalid weight dimension",
-      dimension >= 0 && dimension < weights_.size(), BASIC_ASSERTION);
-
-    size_t length;
-    weights_[dimension].getStridedList(length, weights, stride);
-    return length;
+    if (MESH_REGION == etype) {
+      Ids = RidList_;
+      return RnumIds_;
+    }
+    if (MESH_FACE == etype) {
+      Ids = FidList_;
+      return FnumIds_;
+    }
+    if (MESH_EDGE == etype) {
+      Ids = EidList_;
+      return EnumIds_;
+    }
+    if (MESH_VERTEX == etype) {
+      Ids = VidList_;
+      return VnumIds_;
+    }
   }
 
 private:
 
-  RCP<const Environment> env_;
-  lno_t numIds_;
-  const gid_t *idList_;
-  ArrayRCP<StridedData<lno_t, scalar_t> > weights_;
+  lno_t RnumIds_, FnumIds_, EnumIds_, VnumIds_;
+  const gid_t *RidList_, *FidList_, *EidList_, *VidList_;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -164,26 +152,43 @@ private:
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-  BasicIdentifierInput<User>::BasicIdentifierInput(
-    lno_t numIds, const gid_t *idPtr,
-    vector<const scalar_t *> &weights, vector<int> &weightStrides):
-      numIds_(numIds), idList_(idPtr), weights_()
+PamgenMeshInput<User>::PamgenMeshInput(string typestr = "region")
 {
-  typedef StridedData<lno_t,scalar_t> input_t;
-  env_ = rcp(new Environment);    // for error messages
-  size_t numWeights = weights.size();
+  setPrimaryEntityType(typestr);
 
-  if (numWeights > 0){
-    weights_ = arcp(new input_t [numWeights], 0, numWeights, true);
+  int exoid, num_dim, num_nodes, num_elem;
+  int num_elem_blk, num_node_sets, num_side_sets;
 
-    if (numIds > 0){
-      for (size_t i=0; i < numWeights; i++){
-        int stride = weightStrides.size() ? weightStrides[i] : 1;
-        ArrayRCP<const scalar_t> wgtV(weights[i], 0, stride*numIds, false);
-        weights_[i] = input_t(wgtV, stride);
-      }
-    }
+  im_ex_get_init( exoid, "PAMGEN Inline Mesh", &num_dim, &num_nodes,
+		  &num_elem, &num_elem_blk, &num_node_sets, &num_side_sets);
+
+  if (3 == num_dim) {
+    int * element_num_map = malloc(num_elem * sizeof(int *));
+    im_ex_get_elem_num_map( exoid, element_num_map);
+    RnumIds_ = num_elem;
+    RidList_ = element_num_map;
+  } else {
+    RnumIds_ = 0;
+    RidList_ = NULL;
   }
+
+  if (2 == num_dim) {
+    int * element_num_map = malloc(num_elem * sizeof(int *));
+    im_ex_get_elem_num_map( exoid, element_num_map);
+    FnumIds_ = num_elem;
+    FidList_ = element_num_map;
+  } else {
+    FnumIds_ = 0;
+    FidList_ = NULL;
+  }
+
+  EnumIds_ = 0;
+  EidList_ = NULL;
+
+  int * node_num_map = malloc(num_nodes * sizeof(int *));
+  im_ex_get_node_num_map( exoid, node_num_map);
+  VnumIds_ = num_nodes;
+  VidList_ = node_num_map;
 }
 
   

@@ -43,28 +43,27 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_IdentifierInput.hpp
-    \brief Defines the IdentifierInput interface.
+/*! \file Zoltan2_IdentifierAdapter.hpp
+    \brief Defines the IdentifierAdapter interface.
 */
 
 
-#ifndef _ZOLTAN2_IDENTIFIERINPUT_HPP_
-#define _ZOLTAN2_IDENTIFIERINPUT_HPP_
+#ifndef _ZOLTAN2_IDENTIFIERADAPTER_HPP_
+#define _ZOLTAN2_IDENTIFIERADAPTER_HPP_
 
-#include <Zoltan2_InputAdapter.hpp>
-#include <Zoltan2_PartitioningSolution.hpp>
+#include <Zoltan2_Adapter.hpp>
 
 #include <string>
 
 namespace Zoltan2 {
 
-/*!  \brief IdentifierInput defines the interface for identifiers.
+/*!  \brief IdentifierAdapter defines the interface for identifiers.
 
     Zoltan2 can partition a simple list of weighted identifiers 
-    with no geometry or topology provided.  IdentifierInput defines
-    the interface for input adapters of this type.
+    with no geometry or topology provided.  IdentifierAdapter defines
+    the interface for adapters of this type.
 
-    InputAdapter objects provide access for Zoltan2 to the user's data.
+    Adapter objects provide access for Zoltan2 to the user's data.
     Many built-in adapters are already defined for common data structures,
     such as Tpetra and Epetra objects and C-language pointers to arrays.
 
@@ -99,7 +98,7 @@ namespace Zoltan2 {
 */
 
 template <typename User>
-  class IdentifierInput : public InputAdapter<User> {
+  class IdentifierAdapter : public BaseAdapter<User> {
 
 public:
 
@@ -114,88 +113,9 @@ public:
 
   /*! \brief Destructor 
    */
-  virtual ~IdentifierInput() {};
+  virtual ~IdentifierAdapter() {};
 
-  ////////////////////////////////////////////////////
-  // The InputAdapter interface.
-  ////////////////////////////////////////////////////
-
-  enum InputAdapterType inputAdapterType() const {return IdentifierAdapterType;}
-
-  ////////////////////////////////////////////////////
-  // My interface.
-  ////////////////////////////////////////////////////
-
-  /*! \brief Return the number of identifiers on this process.
-   */
-  virtual size_t getLocalNumberOfIdentifiers() const = 0;
-
-  /*! \brief Return the number of weights associated with each identifier.
-   *   If the number of weights is zero, then we assume that the
-   *   identifiers are equally weighted.
-   */
-  virtual int getNumberOfWeights() const = 0;
-
-  /*! \brief Provide a pointer to this process' identifiers.
-
-      \param Ids will on return point to the list of the global Ids for 
-        this process.
-
-       \return The number of ids in the Ids list.
-   */
-
-  virtual size_t getIdentifierList(gid_t const *&Ids) const = 0;
-
-  /*! \brief Provide a pointer to one of the dimensions of this process' 
-                optional weights.
-
-      \param dimension is a value ranging from zero to one less than 
-                   getNumberOfWeights()
-      \param weights on return will contain a list of the weights for
-               the dimension specified.  If weights for
-           this dimension are to be uniform for all identifierse in the
-           global problem, the \c weights should be a NULL pointer.
-
-      \param stride on return will indicate the stride of the weights list.
-
-
-       If stride is \c k then the weight 
-       corresponding to the identifier Ids[n] (returned in getIdentifierList)
-       should be found at weights[k*n].
-
-       \return The number of values in the weights list.  This may be greater
-          than the number of identifiers, because the stride may be greater
-          than one.
-   */
-
-  virtual size_t getIdentifierWeights(int dimension,
-     const scalar_t *&weights, int &stride) const = 0;
-
-
- /*! \brief Apply a PartitioningSolution to an input.
-   *
-   *  This is not a required part of the IdentifierInput interface. However
-   *  if the Caller calls a Problem method to redistribute data, it needs
-   *  this method to perform the redistribution.
-   *
-   *  \param in  An input object with a structure and assignment of
-   *           of global Ids to processes that matches that of the input
-   *           data that instantiated this InputAdapter.
-   *  \param out On return this should point to a newly created object
-   *            with the specified partitioning.
-   *  \param solution  The Solution object created by a Problem should
-   *      be supplied as the third argument.  It must have been templated
-   *      on user data that has the same global ID distribution as this
-   *      user data.
-   *  \return   Returns the number of local Ids in the new partitioning.
-   */
-
-  template <typename Adapter>
-    size_t applyPartitioningSolution(User &in, User *&out,
-      const PartitioningSolution<Adapter> &solution) const
-  {
-    return 0;
-  } 
+  enum BaseAdapterType adapterType() const {return IdentifierAdapterType;}
 };
   
   

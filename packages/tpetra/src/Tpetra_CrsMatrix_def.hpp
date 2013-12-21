@@ -5331,6 +5331,11 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
+// Include KokkosRefactor partial specialisation if enabled
+#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#include "Tpetra_KokkosRefactor_CrsMatrix_def.hpp"
+#endif
+
 //
 // Explicit instantiation macro
 //
@@ -5378,4 +5383,5 @@ namespace Tpetra {
                                                                CrsMatrix<SCALAR, LO, GO, NODE>::node_type> >& rangeMap,  \
                                                                const RCP<Teuchos::ParameterList>& params);
 
-#endif
+#endif // TPETRA_CRSMATRIX_DEF_HPP
+
