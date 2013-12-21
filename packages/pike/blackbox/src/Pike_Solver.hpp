@@ -32,7 +32,7 @@ namespace pike {
 
     /** \brief Register a DataTransfer with the solver. 
 
-	Only allowed to be called before the call to completeRegistrion().
+	Only allowed to be called before the call to completeRegistration().
     */
     virtual void registerDataTransfer(const Teuchos::RCP<pike::DataTransfer>& dt) = 0;
 

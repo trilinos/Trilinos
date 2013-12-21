@@ -52,6 +52,9 @@ namespace pike_test {
   
   bool LinearHeatConductionModelEvaluator::isConverged() const
   { return true; }
+
+  bool LinearHeatConductionModelEvaluator::isGloballyConverged() const
+  { return true; }
   
   Teuchos::RCP<pike::Response> LinearHeatConductionModelEvaluator::getResponse(const int i) const
   {

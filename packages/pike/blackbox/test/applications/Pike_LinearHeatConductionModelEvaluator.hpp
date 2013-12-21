@@ -53,6 +53,8 @@ namespace pike_test {
 
     bool isConverged() const;
 
+    bool isGloballyConverged() const;
+
     Teuchos::RCP<pike::Response> getResponse(const int i) const;
 
     int getResponseIndex(const std::string name) const;
