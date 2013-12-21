@@ -1,5 +1,6 @@
-#ifndef PIKE_STATUS_TESTS_SCALAR_RESPONSE_RELATIVE_TOLERANCE_HPP
-#define PIKE_STATUS_TESTS_SCALAR_RESPONSE_RELATIVE_TOLERANCE_HPP
+
+#ifndef PIKE_STATUS_TESTS_MAX_ITERATIONS_HPP
+#define PIKE_STATUS_TESTS_MAX_ITERATIONS_HPP
 
 #include "Pike_StatusTest.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
@@ -9,12 +10,12 @@ namespace pike {
 
   class BlackBoxModelEvaluator;
 
-  class ScalarResponseRelativeTolerance : 
+  class MaxIterations : 
     public pike::StatusTest,
     public Teuchos::ParameterListAcceptorDefaultBase {
 
   public:
-    ScalarResponseRelativeTolerance();
+    MaxIterations();
 
     pike::SolveStatus checkStatus(const pike::Solver& solver, const CheckType checkType = pike::COMPLETE);
     
@@ -27,17 +28,10 @@ namespace pike {
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   private:
-    std::string applicationName_;
-    std::string responseName_;
-    int responseIndex_;
-    double tolerance_;
-    int previousIteration_;
-    double previousValue_;
-    int currentIteration_;
-    double currentValue_;
-    pike::SolveStatus status_;
+    int maximumIterations_;
+    int currentIterations_;
     Teuchos::RCP<Teuchos::ParameterList> validParameters_;
-    Teuchos::RCP<const pike::BlackBoxModelEvaluator> application_;
+    pike::SolveStatus status_;
   };
 
 }
