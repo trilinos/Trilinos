@@ -1,3 +1,2 @@
 ADD_SUBDIRECTORY(core)
-ADD_SUBDIRECTORY(version)
 ADD_SUBDIRECTORY(applications)
