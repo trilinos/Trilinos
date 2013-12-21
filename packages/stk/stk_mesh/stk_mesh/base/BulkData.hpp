@@ -154,7 +154,7 @@ public:
   typedef std::map<std::pair<EntityRank, Selector>, TrackedBucketVector,
                    std::less<std::pair<EntityRank, Selector> >,
                    tracking_allocator<std::pair<std::pair<EntityRank, Selector>, TrackedBucketVector>, SelectorMapTag> > SelectorBucketMap;
-  typedef std::map<std::pair<EntityRank, Selector>, size_t> SelectorCountMap;
+  typedef std::map<std::pair<EntityRank, Selector>, std::pair<size_t, size_t> > SelectorCountMap;
 
 #endif
 

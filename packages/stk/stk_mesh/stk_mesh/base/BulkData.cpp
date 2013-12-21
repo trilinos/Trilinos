@@ -179,7 +179,8 @@ void BulkData::gather_and_print_get_buckets_metrics()
     proc_0_buff.pack<size_t>(m_selector_to_count_map.size());
     for (SelectorCountMap::const_iterator itr = m_selector_to_count_map.begin(), end = m_selector_to_count_map.end(); itr != end; ++itr) {
       const EntityRank rank = itr->first.first;
-      const size_t usage_count = itr->second;
+      const size_t cache_hits = itr->second.first;
+      const size_t bucket_trav_saved = itr->second.second;
 
       std::ostringstream out;
       out << itr->first.second;
@@ -188,7 +189,8 @@ void BulkData::gather_and_print_get_buckets_metrics()
       proc_0_buff.pack<EntityRank>(rank);
       proc_0_buff.pack<size_t>(sel_str.size() + 1);
       proc_0_buff.pack<char>(sel_str.c_str(), sel_str.size() + 1);
-      proc_0_buff.pack<size_t>(usage_count);
+      proc_0_buff.pack<size_t>(cache_hits);
+      proc_0_buff.pack<size_t>(bucket_trav_saved);
     }
 
     if (phase == 0) { //allocation phase
@@ -204,11 +206,13 @@ void BulkData::gather_and_print_get_buckets_metrics()
     out << "get_buckets memoization_data:\n";
     out << "  Num modifications: " << m_num_modifications << "\n";
 
-    typedef std::map< std::pair<EntityRank, std::string>, size_t > GlobalUsageMap;
+    typedef std::map< std::pair<EntityRank, std::string>, std::pair<size_t, size_t> > GlobalUsageMap;
     GlobalUsageMap global_usage_map;
 
     size_t global_num_memoized_get_buckets_calls_sum = 0;
     size_t global_num_non_memoized_get_buckets_calls_sum = 0;
+    size_t global_num_cache_hits = 0;
+    size_t global_num_bucket_trav_saved = 0;
 
     const size_t MAX_TEXT_LEN = 32768;
     char sel_text[ MAX_TEXT_LEN ];
@@ -230,32 +234,39 @@ void BulkData::gather_and_print_get_buckets_metrics()
       for (size_t i = 0; i < map_size; ++i) {
         EntityRank rank = 0;
         size_t str_size = 0;
-        size_t usage_count = 0;
+        size_t cache_hits = 0;
+        size_t bucket_trav_saved = 0;
 
         buf.unpack<EntityRank>(rank);
         buf.unpack<size_t>(str_size);
         ThrowRequire(str_size < MAX_TEXT_LEN);
         buf.unpack<char>(sel_text, str_size);
-        buf.unpack<size_t>(usage_count);
+        buf.unpack<size_t>(cache_hits);
+        buf.unpack<size_t>(bucket_trav_saved);
+
+        global_num_cache_hits += cache_hits;
+        global_num_bucket_trav_saved += bucket_trav_saved;
 
         const std::string sel_str = sel_text;
         std::pair<EntityRank, std::string> search_key = std::make_pair(rank, sel_str);
         GlobalUsageMap::iterator f_itr = global_usage_map.find(search_key);
         if (f_itr == global_usage_map.end()) {
-          global_usage_map[search_key] = usage_count;
+          global_usage_map[search_key] = std::make_pair(cache_hits, bucket_trav_saved);
         }
         else {
-          f_itr->second += usage_count;
+          f_itr->second.first  += cache_hits;
+          f_itr->second.second += bucket_trav_saved;
         }
       }
     }
 
     out << "  Num memoized get_buckets calls: " << global_num_memoized_get_buckets_calls_sum << "\n";
     out << "  Num non-memoized get_buckets calls: " << global_num_non_memoized_get_buckets_calls_sum << "\n";
-    out << "  Num cache hits: " << global_num_memoized_get_buckets_calls_sum - global_usage_map.size() << "\n";
+    out << "  Num cache hits: " << global_num_cache_hits << "\n";
+    out << "  Num bucket traversals saved: " << global_num_bucket_trav_saved << "\n";
     out << "  Selector usage counts:\n";
     for (GlobalUsageMap::const_iterator itr = global_usage_map.begin(), end = global_usage_map.end(); itr != end; ++itr) {
-      out << "  (" << itr->first.first << ", " << itr->first.second << ") -> " << itr->second << "\n";
+      out << "  (" << itr->first.first << ", " << itr->first.second << ") -> (" << itr->second.first << ", " << itr->second.second << ")\n";
     }
     std::cout << out.str() << std::endl;
   }
@@ -1583,7 +1594,9 @@ BucketVector const& BulkData::get_buckets(EntityRank rank, Selector const& selec
     m_selector_to_buckets_map.find(search_item);
   if (fitr != m_selector_to_buckets_map.end()) {
 #ifdef GATHER_GET_BUCKETS_METRICS
-    m_selector_to_count_map[search_item]++;
+    std::pair<size_t, size_t> & data = m_selector_to_count_map[search_item];
+    ++data.first;
+    data.second += buckets(rank).size();
 #endif
     TrackedBucketVector const& rv = fitr->second;
     return reinterpret_cast<BucketVector const&>(rv);
@@ -1601,7 +1614,7 @@ BucketVector const& BulkData::get_buckets(EntityRank rank, Selector const& selec
     }
 
 #ifdef GATHER_GET_BUCKETS_METRICS
-    m_selector_to_count_map[search_item] = 1;
+    m_selector_to_count_map[search_item] = std::make_pair(0, 0); // (hits, bucket traversals saved)
 #endif
 
     return reinterpret_cast<BucketVector const&>(map_buckets);
