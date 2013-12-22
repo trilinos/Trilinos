@@ -388,8 +388,8 @@ void Tpetra::Import_Util::packAndPrepareWithOwningPIDs(const CrsMatrix<Scalar, L
     }
 
 #ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(curOffsetInBytes != totalNumBytes,
-        std::logic_error, ": At end of method, the final offset bytes count "
+      TEUCHOS_TEST_FOR_EXCEPTION(curOffsetInBytes != totalNumBytes,
+        std::logic_error, "packAndPrepareWithOwningPids: At end of method, the final offset bytes count "
         "curOffsetInBytes=" << curOffsetInBytes << " does not equal the total "
         "number of bytes packed totalNumBytes=" << totalNumBytes << ".  Please "
         "report this bug to the Tpetra developers.");
@@ -447,14 +447,6 @@ size_t Tpetra::Import_Util::unpackAndCombineWithOwningPIDsCount(const CrsMatrix<
     curOffsetInBytes += rowSize * sizeOfPacket;
     nnz +=rowSize;
   }
-#ifdef HAVE_TPETRA_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION(curOffsetInBytes != totalNumBytes,
-			     std::logic_error, "unpackAndCombineCount: After unpacking and counting all the imports, the "
-			     "final offset in bytes curOffsetInBytes=" << curOffsetInBytes << " != "
-			     "total number of bytes totalNumBytes=" << totalNumBytes << ".  Please "
-			     "report this bug to the Tpetra developers.");
-#endif // HAVE_TPETRA_DEBUG
-
   return nnz;
 }
 
