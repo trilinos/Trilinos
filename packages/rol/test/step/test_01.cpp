@@ -52,6 +52,7 @@
 #include "ROL_Algorithm.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include <iostream>
 
@@ -76,34 +77,15 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    Teuchos::ParameterList parlist;
-    // Enumerations
-    parlist.set("Linesearch Type",                        ROL::LINESEARCH_CUBICINTERP);
-    parlist.set("Linesearch Curvature Condition",         ROL::CURVATURECONDITION_NULL);
-    parlist.set("Secant Type",                            ROL::SECANT_LBFGS);
-    // Inexactness Information
-    parlist.set("Use Inexact Objective Function",                    false);
-    parlist.set("Use Inexact Gradient",                              false);
-    parlist.set("Use Inexact Hessian-Times-A-Vector",                true);
-    // Secant Information
-    parlist.set("Maximum Secant Storage",                            10);
-    parlist.set("Barzilai-Borwein Type",                             1);
-    // Linesearch Parameters
-    parlist.set("Maximum Number of Function Evaluations",            20);
-    parlist.set("Sufficient Decrease Parameter",                     1.e-4);
-    parlist.set("Curvature Conditions Parameter",                    0.9);
-    parlist.set("Curvature Conditions Parameter: Generalized Wolfe", 0.6);
-    parlist.set("Bracketing Tolerance",                              1.e-8);
-    parlist.set("Bracketing Tolerance",                              1.e-8);
-    parlist.set("Backtracking Rate",                                 0.5);
-    parlist.set("Initial Linesearch Parameter",                      1.0);
-    parlist.set("User Defined Linesearch Parameter",                 false);
-    // Krylov Parameters
-    parlist.set("Absolute Krylov Tolerance",                         1.e-4);
-    parlist.set("Relative Krylov Tolerance",                         1.e-2);                    
+    std::string filename = "input.xml";
+    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
 
     // Define Status Test
-    ROL::StatusTest<RealT> status(1.e-6,1.e-12,1000);    
+    RealT gtol = parlist->get("Gradient Tolerance",1.e-6);
+    RealT stol = parlist->get("Step Tolerance",1.e-12);
+    int maxit  = parlist->get("Maximum Number of Iterations",100);
+    ROL::StatusTest<RealT> status(gtol,stol,maxit);
 
     for ( ROL::ETestObjectives objFunc = ROL::TESTOBJECTIVES_ROSENBROCK; objFunc < ROL::TESTOBJECTIVES_LAST; objFunc++ ) {
       *outStream << "\n\n" << ROL::ETestObjectivesToString(objFunc) << "\n\n";
@@ -123,7 +105,7 @@ int main(int argc, char *argv[]) {
       // Get Dimension of Problem
       int dim = 
         Teuchos::rcp_const_cast<std::vector<RealT> >((Teuchos::dyn_cast<ROL::StdVector<RealT> >(x0)).getVector())->size();
-      parlist.set("Maximum Number of Krylov Iterations", 2*dim);
+      parlist->set("Maximum Number of Krylov Iterations", 2*dim);
 
       // Iteration Vector
       Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
@@ -136,15 +118,17 @@ int main(int argc, char *argv[]) {
       e.zero();
 
       for ( ROL::EDescent desc = ROL::DESCENT_STEEPEST; desc < ROL::DESCENT_LAST; desc++ ) {
-        parlist.set("Descent Type", desc);
+        parlist->set("Descent Type", ROL::EDescentToString(desc));
         if ( desc == ROL::DESCENT_NEWTON && 
-             ((objFunc == ROL::TESTOBJECTIVES_LEASTSQUARES) || objFunc == ROL::TESTOBJECTIVES_POISSONCONTROL) ) {
-          parlist.set("Descent Type", ROL::DESCENT_NEWTONKRYLOV);
+             ((objFunc == ROL::TESTOBJECTIVES_LEASTSQUARES)    || 
+              (objFunc == ROL::TESTOBJECTIVES_POISSONCONTROL)) ||
+              (objFunc == ROL::TESTOBJECTIVES_POISSONINVERSION) ) {
+          parlist->set("Descent Type", ROL::EDescentToString(ROL::DESCENT_NEWTONKRYLOV));
         }
         *outStream << "\n\n" << ROL::EDescentToString(desc) << "\n\n";
 
         // Define Step
-        ROL::LineSearchStep<RealT> step(parlist);
+        ROL::LineSearchStep<RealT> step(*parlist);
       
         // Define Algorithm
         ROL::DefaultAlgorithm<RealT> algo(step,status,false);

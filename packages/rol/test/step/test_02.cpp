@@ -52,6 +52,7 @@
 #include "ROL_Algorithm.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include <iostream>
 
@@ -76,35 +77,15 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    Teuchos::ParameterList parlist;
-    // Step Information
-    parlist.set("Secant Type",                          ROL::SECANT_LBFGS);
-    // Secant Information
-    parlist.set("Use Secant Preconditioning",           false); 
-    parlist.set("Maximum Secant Storage",               10);
-    parlist.set("Barzilai-Borwein Type",                1);
-    // Inexactness Information
-    parlist.set("Use Inexact Objective Function",       false);
-    parlist.set("Use Inexact Gradient",                 false);
-    parlist.set("Use Inexact Hessian-Times-A-Vector",   false);
-    // Trust-Region Parameters
-    parlist.set("Initial Trust-Region Radius",          10.0);
-    parlist.set("Minimum Trust-Region Radius",          1.e-8);
-    parlist.set("Maximum Trust-Region Radius",          5000.0);
-    parlist.set("Step Acceptance Parameter",            0.05);
-    parlist.set("Radius Shrinking Threshold",           0.05);
-    parlist.set("Radius Growing Threshold",             0.9);
-    parlist.set("Radius Shrinking Rate (Negative rho)", 0.0625);
-    parlist.set("Radius Shrinking Rate (Positive rho)", 0.25);
-    parlist.set("Radius Growing Rate",                  2.5);
-    parlist.set("Trust-Region Safeguard",               1e4);
-    // CG Parameters
-    parlist.set("Absolute CG Tolerance",                1.e-4);
-    parlist.set("Relative CG Tolerance",                1.e-2);
-    
+    std::string filename = "input.xml";
+    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
 
     // Define Status Test
-    ROL::StatusTest<RealT> status(1.e-10,1.e-12,1000);    
+    RealT gtol = parlist->get("Gradient Tolerance",1.e-6);
+    RealT stol = parlist->get("Step Tolerance",1.e-12);
+    int maxit  = parlist->get("Maximum Number of Iterations",100);
+    ROL::StatusTest<RealT> status(gtol,stol,maxit);    
 
     // Loop Through Test Objectives
     for ( ROL::ETestObjectives objFunc = ROL::TESTOBJECTIVES_ROSENBROCK; objFunc < ROL::TESTOBJECTIVES_LAST; objFunc++ ) {
@@ -125,7 +106,7 @@ int main(int argc, char *argv[]) {
       // Get Dimension of Problem
       int dim = 
         Teuchos::rcp_const_cast<std::vector<RealT> >((Teuchos::dyn_cast<ROL::StdVector<RealT> >(x0)).getVector())->size();
-      parlist.set("Maximum Number of CG Iterations", 2*dim);
+      parlist->set("Maximum Number of CG Iterations", 2*dim);
 
       // Iteration Vector
       Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
@@ -139,16 +120,16 @@ int main(int argc, char *argv[]) {
 
       for ( ROL::ETrustRegion tr = ROL::TRUSTREGION_CAUCHYPOINT; tr < ROL::TRUSTREGION_LAST; tr++ ) {
         *outStream << "\n\n" << ROL::ETrustRegionToString(tr) << "\n\n";
-        parlist.set("Trust-Region Subproblem Solver Type", tr);
+        parlist->set("Trust-Region Subproblem Solver Type", ETrustRegionToString(tr));
         if ( tr == ROL::TRUSTREGION_DOGLEG || tr == ROL::TRUSTREGION_DOUBLEDOGLEG ) {
-          parlist.set("Use Secant Hessian-Times-A-Vector", false);
+          parlist->set("Use Secant Hessian-Times-A-Vector", false);
         } 
         else {
-          parlist.set("Use Secant Hessian-Times-A-Vector", false);
+          parlist->set("Use Secant Hessian-Times-A-Vector", false);
         }
 
         // Define Step
-        ROL::TrustRegionStep<RealT> step(parlist);
+        ROL::TrustRegionStep<RealT> step(*parlist);
 
         // Define Algorithm
         ROL::DefaultAlgorithm<RealT> algo(step,status,false);

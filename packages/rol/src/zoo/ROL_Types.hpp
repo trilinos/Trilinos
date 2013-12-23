@@ -55,6 +55,8 @@
 #define ROL_VALIDATE( A ) /* empty */
 #endif
 
+#include <algorithm>
+#include <string>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_TestForException.hpp>
 
@@ -72,6 +74,19 @@ namespace ROL {
   /** \brief  Tolerance for various equality tests.
    */
   static const double ROL_THRESHOLD = 10.0 * ROL_EPSILON;
+
+  struct removeSpecialCharacters {
+    bool operator()(char c) {
+      return (c ==' ' || c =='-' || c == '(' || c == ')' || c=='\'' || c=='\r' || c=='\n' || c=='\t');
+    }
+  };
+
+  inline std::string removeStringFormat( std::string s ) {
+    std::string output = s;
+    output.erase( std::remove_if( output.begin(), output.end(), removeSpecialCharacters()), output.end() );
+    std::transform( output.begin(), output.end(), output.begin(), ::tolower );
+    return output;
+  }
 
   /** \enum   ROL::EDescent
       \brief  Enumeration of descent direction types.
@@ -107,7 +122,7 @@ namespace ROL {
     }
     return retString;
   }
-  
+
   /** \brief  Verifies validity of a Secant enum.
     
       \param  tr  [in]  - enum of the Secant
@@ -143,6 +158,16 @@ namespace ROL {
     return oldval;
   }
 
+  inline EDescent StringToEDescent(std::string s) {
+    s = removeStringFormat(s);
+    for ( EDescent des = DESCENT_STEEPEST; des < DESCENT_LAST; des++ ) {
+      if ( !s.compare(removeStringFormat(EDescentToString(des))) ) {
+        return des;
+      }
+    }
+    return DESCENT_STEEPEST;
+  }
+  
   /** \enum   ROL::ESecant
       \brief  Enumeration of secant update algorithms.
 
@@ -208,6 +233,16 @@ namespace ROL {
     return oldval;
   }
 
+  inline ESecant StringToESecant(std::string s) {
+    s = removeStringFormat(s);
+    for ( ESecant sec = SECANT_LBFGS; sec < SECANT_LAST; sec++ ) {
+      if ( !s.compare(removeStringFormat(ESecantToString(sec))) ) {
+        return sec;
+      }
+    }
+    return SECANT_LBFGS;
+  }
+  
   /** \enum   ROL::ENonlinearCG
       \brief  Enumeration of nonlinear CG algorithms.
 
@@ -285,6 +320,16 @@ namespace ROL {
     --type;
     return oldval;
   }
+
+  inline ENonlinearCG StringToENonlinearCG(std::string s) {
+    s = removeStringFormat(s);
+    for ( ENonlinearCG nlcg = NONLINEARCG_HESTENES_STIEFEL; nlcg < NONLINEARCG_LAST; nlcg++ ) {
+      if ( !s.compare(removeStringFormat(ENonlinearCGToString(nlcg))) ) {
+        return nlcg;
+      }
+    }
+    return NONLINEARCG_HESTENES_STIEFEL;
+  }
   
   /** \enum   ROL::ELineSearch
       \brief  Enumeration of line-search types.
@@ -350,6 +395,16 @@ namespace ROL {
     ELineSearch oldval = type;
     --type;
     return oldval;
+  }
+
+  inline ELineSearch StringToELineSearch(std::string s) {
+    s = removeStringFormat(s);
+    for ( ELineSearch ls = LINESEARCH_BACKTRACKING; ls < LINESEARCH_LAST; ls++ ) {
+      if ( !s.compare(removeStringFormat(ELineSearchToString(ls))) ) {
+        return ls;
+      }
+    }
+    return LINESEARCH_BACKTRACKING;
   }
 
   /** \enum   ROL::ECurvatureCondition
@@ -419,6 +474,16 @@ namespace ROL {
     return oldval;
   }
 
+  inline ECurvatureCondition StringToECurvatureCondition(std::string s) {
+    s = removeStringFormat(s);
+    for ( ECurvatureCondition cc = CURVATURECONDITION_WOLFE; cc < CURVATURECONDITION_LAST; cc++ ) {
+      if ( !s.compare(removeStringFormat(ECurvatureConditionToString(cc))) ) {
+        return cc;
+      }
+    }
+    return CURVATURECONDITION_WOLFE;
+  }
+
   /** \enum   ROL::ETrustRegion
       \brief  Enumeration of trust-region solver types.
 
@@ -479,6 +544,16 @@ namespace ROL {
     ETrustRegion oldval = type;
     --type;
     return oldval;
+  }
+
+  inline ETrustRegion StringToETrustRegion(std::string s) {
+    s = removeStringFormat(s);
+    for ( ETrustRegion tr = TRUSTREGION_CAUCHYPOINT; tr < TRUSTREGION_LAST; tr++ ) {
+      if ( !s.compare(removeStringFormat(ETrustRegionToString(tr))) ) {
+        return tr;
+      }
+    }
+    return TRUSTREGION_CAUCHYPOINT;
   }
 
   /** \enum   ROL::ETestObjectives
@@ -554,6 +629,16 @@ namespace ROL {
     ETestObjectives oldval = type;
     --type;
     return oldval;
+  }
+
+  inline ETestObjectives StringToETestObjectives(std::string s) {
+    s = removeStringFormat(s);
+    for ( ETestObjectives to = TESTOBJECTIVES_ROSENBROCK; to < TESTOBJECTIVES_LAST; to++ ) {
+      if ( !s.compare(removeStringFormat(ETestObjectivesToString(to))) ) {
+        return to;
+      }
+    }
+    return TESTOBJECTIVES_ROSENBROCK;
   }
 
 } // namespace ROL

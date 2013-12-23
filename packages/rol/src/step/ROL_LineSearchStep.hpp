@@ -90,11 +90,16 @@ public:
 
   LineSearchStep( Teuchos::ParameterList &parlist ) {
     // Enumerations
-    edesc_ = parlist.get("Descent Type",                   DESCENT_SECANT);
-    enlcg_ = parlist.get("Nonlinear CG Type",              NONLINEARCG_HAGAR_ZHANG);
-    els_   = parlist.get("Linesearch Type",                LINESEARCH_CUBICINTERP);
-    econd_ = parlist.get("Linesearch Curvature Condition", CURVATURECONDITION_STRONGWOLFE);
-    esec_  = parlist.get("Secant Type",                    SECANT_LBFGS);
+    edesc_ = StringToEDescent(            parlist.get("Descent Type",                   "Quasi-Newton Method"));
+    enlcg_ = StringToENonlinearCG(        parlist.get("Nonlinear CG Type",              "Hagar-Zhang"));
+    els_   = StringToELineSearch(         parlist.get("Linesearch Type",                "Cubic Interpolation"));
+    econd_ = StringToECurvatureCondition( parlist.get("Linesearch Curvature Condition", "Strong Wolfe Conditions"));
+    esec_  = StringToESecant(             parlist.get("Secant Type",                    "Limited-Memory BFGS"));
+    //edesc_ = parlist.get("Descent Type",                   DESCENT_SECANT);
+    //enlcg_ = parlist.get("Nonlinear CG Type",              NONLINEARCG_HAGAR_ZHANG);
+    //els_   = parlist.get("Linesearch Type",                LINESEARCH_CUBICINTERP);
+    //econd_ = parlist.get("Linesearch Curvature Condition", CURVATURECONDITION_STRONGWOLFE);
+    //esec_  = parlist.get("Secant Type",                    SECANT_LBFGS);
     // Inexactness Information
     useInexact_.clear();
     useInexact_.push_back(parlist.get("Use Inexact Objective Function", false));
@@ -133,11 +138,16 @@ public:
   LineSearchStep( Teuchos::RCP<Secant<Real> > &secant, Teuchos::ParameterList &parlist ) :
     secant_(secant) {
     // Enumerations
-    edesc_ = parlist.get("Descent Type",                   DESCENT_SECANT);
-    enlcg_ = parlist.get("Nonlinear CG Type",              NONLINEARCG_HAGAR_ZHANG);
-    els_   = parlist.get("Linesearch Type",                LINESEARCH_CUBICINTERP);
-    econd_ = parlist.get("Linesearch Curvature Condition", CURVATURECONDITION_STRONGWOLFE);
-    esec_  = SECANT_USERDEFINED;
+    edesc_ = StringToEDescent(            parlist.get("Descent Type",                   "Quasi-Newton Method"));
+    enlcg_ = StringToENonlinearCG(        parlist.get("Nonlinear CG Type",              "Hagar-Zhang"));
+    els_   = StringToELineSearch(         parlist.get("Linesearch Type",                "Cubic Interpolation"));
+    econd_ = StringToECurvatureCondition( parlist.get("Linesearch Curvature Condition", "Strong Wolfe Conditions"));
+    esec_  = StringToESecant(             parlist.get("Secant Type",                    "Limited-Memory BFGS"));
+    //edesc_ = parlist.get("Descent Type",                   DESCENT_SECANT);
+    //enlcg_ = parlist.get("Nonlinear CG Type",              NONLINEARCG_HAGAR_ZHANG);
+    //els_   = parlist.get("Linesearch Type",                LINESEARCH_CUBICINTERP);
+    //econd_ = parlist.get("Linesearch Curvature Condition", CURVATURECONDITION_STRONGWOLFE);
+    //esec_  = parlist.get("Secant Type",                    SECANT_LBFGS);
     // Inexactness Information
     useInexact_.clear();
     useInexact_.push_back(parlist.get("Use Inexact Objective Function", false));
