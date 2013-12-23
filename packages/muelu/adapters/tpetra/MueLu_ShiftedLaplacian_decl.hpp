@@ -87,7 +87,7 @@ namespace MueLu {
 
 #undef MUELU_SHIFTEDLAPLACIAN_SHORT
 #include "MueLu_UseShortNames.hpp"
-    
+
     typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
     typedef Tpetra::MultiVector<SC,LO,GO,NO>             TMV;
     typedef Tpetra::Operator<SC,LO,GO,NO>                OP;
@@ -95,7 +95,7 @@ namespace MueLu {
     typedef Belos::SolverManager<SC,TMV,OP>              BelosSolverManager;
     typedef Belos::BlockCGSolMgr<SC,TMV,OP>              BelosCG;
     typedef Belos::BlockGmresSolMgr<SC,TMV,OP>           BelosGMRES;
-    
+
   public:
 
     //! Constructors
@@ -115,7 +115,7 @@ namespace MueLu {
 
     // Destructor
     virtual ~ShiftedLaplacian();
-    
+
     // Parameters
     void setParameters(Teuchos::RCP< Teuchos::ParameterList > paramList);
 
@@ -139,7 +139,7 @@ namespace MueLu {
     void setupSlowRAP();
     void setupNormalRAP();
     void resetLinearProblem();
-    
+
     // Solve phase
     int solve(const RCP<TMV> B, RCP<TMV>& X);
     void multigrid_apply(const RCP<MultiVector> B, RCP<MultiVector>& X);
@@ -150,8 +150,8 @@ namespace MueLu {
     // Problem options
     // Problem  -> acoustic, elastic, acoustic-elastic
     // numPDEs_ -> number of DOFs at each node
-    
-    std::string Problem_; 
+
+    std::string Problem_;
     int numPDEs_, numSetups_;
 
     // Multigrid options
@@ -234,7 +234,7 @@ namespace MueLu {
     Teuchos::ParameterList            coarsestSmooList_;
     std::string                       precType_;
     Teuchos::ParameterList            precList_;
-    
+
     // Operator and Preconditioner
     RCP< MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO> > MueLuOp_;
     RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >           TpetraA_;

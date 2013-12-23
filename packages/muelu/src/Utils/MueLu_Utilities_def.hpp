@@ -314,9 +314,9 @@ namespace MueLu {
   Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Jacobi(Scalar omega,
 									const Vector& Dinv,
 									const Matrix& A,
-									const Matrix& B, 
+									const Matrix& B,
 									RCP<Matrix> C_in,
-									Teuchos::FancyOStream &fos) { 
+									Teuchos::FancyOStream &fos) {
     // Sanity checks
     if (!A.isFillComplete())
       throw Exceptions::RuntimeError("A is not fill-completed");
@@ -324,8 +324,8 @@ namespace MueLu {
       throw Exceptions::RuntimeError("B is not fill-completed");
 
     // Default case: Xpetra Jacobi
-    RCP<Matrix> C = C_in;    
-    if (C == Teuchos::null) 
+    RCP<Matrix> C = C_in;
+    if (C == Teuchos::null)
       C = MatrixFactory::Build(B.getRowMap(),Teuchos::OrdinalTraits<LO>::zero());
 
     Xpetra::MatrixMatrix::Jacobi(omega, Dinv, A, B, *C, true,true);
@@ -637,13 +637,13 @@ namespace MueLu {
     Teuchos::ArrayView<const SC> vals;
     for (size_t i = 0; i < numRows; ++i) {
       A.getLocalRowView(i, cols, vals);
-      
+
       LO j = 0;
       for (; j < cols.size(); ++j) {
         if (Teuchos::as<size_t>(cols[j]) == i) {
 	  if(Teuchos::ScalarTraits<SC>::magnitude(vals[j]) > tol)
 	    diagVals[i] = Teuchos::ScalarTraits<SC>::one() / vals[j];
-	  else 
+	  else
 	    diagVals[i]=Teuchos::ScalarTraits<SC>::zero();
 	  break;
 	}
@@ -651,13 +651,13 @@ namespace MueLu {
       if (j == cols.size()) {
         // Diagonal entry is absent
         diagVals[i]=Teuchos::ScalarTraits<SC>::zero();
-      }      
+      }
     }
     diagVals=null;
-    
+
     return diag;
   } //GetMatrixDiagonalInverse
-  
+
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

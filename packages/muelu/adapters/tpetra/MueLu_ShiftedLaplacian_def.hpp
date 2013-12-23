@@ -108,7 +108,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPr
 
   A_=A;
   if(A_!=Teuchos::null)
-    TpetraA_ = Utils::Op2NonConstTpetraCrs(A_);  
+    TpetraA_ = Utils::Op2NonConstTpetraCrs(A_);
   ProblemMatrixSet_=true;
   GridTransfersExist_=false;
 
@@ -326,7 +326,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
   smooFact_  = rcp( new SmootherFactory(smooProto_) );
   coarsestSmooProto_ = rcp( new DirectSolver("Superlu",coarsestSmooList_) );
   coarsestSmooFact_  = rcp( new SmootherFactory(coarsestSmooProto_, Teuchos::null) );
-  
+
   // Use stiffness matrix to setup prolongation/restriction operators
   Hierarchy_ = rcp( new Hierarchy(K_)  );
   if(NullSpace_!=Teuchos::null)
@@ -549,7 +549,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   coarsestSmooFact_  = rcp( new SmootherFactory(coarsestSmooProto_, Teuchos::null) );
   Manager_ -> SetFactory("Smoother", smooFact_);
   Manager_ -> SetFactory("CoarseSolver", coarsestSmooFact_);
-  
+
   // Normal setup
   Hierarchy_ = rcp( new Hierarchy(P_)  );
   if(NullSpace_!=Teuchos::null)
@@ -586,15 +586,15 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   }
 
 }
- 
+
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::resetLinearProblem()
 {
-  
+
   BelosLinearProblem_ -> setOperator (  TpetraA_  );
 
 }
- 
+
 // Solve phase
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 int ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::solve(const RCP<TMV> B, RCP<TMV>& X)

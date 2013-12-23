@@ -53,7 +53,7 @@
 // This should be general enough for 1-3 dimensions, but is originally
 // implemented to work with two, so deal with it if there are bugs
 // initially.
-// 
+//
 // ASSUMPTIONS TO ELIMINATE:
 //   1. none that i can think of currently
 //

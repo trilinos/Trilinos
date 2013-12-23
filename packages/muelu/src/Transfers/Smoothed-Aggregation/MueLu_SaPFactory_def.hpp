@@ -150,7 +150,7 @@ namespace MueLu {
 	SC omega = dampingFactor / lambdaMax;
 	finalP=Utils::Jacobi(omega,*invDiag,*A, *Ptent, finalP,GetOStream(Statistics2,0));
       }
-      
+
     } else {
       finalP = Ptent;
     }
