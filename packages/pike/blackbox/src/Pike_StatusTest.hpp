@@ -8,6 +8,9 @@
 
 namespace pike {
 
+  static const int defaultIndentation = 3;
+  static const int statusIndentation = 13;
+
   class Solver;
 
   //! The status of a solver
@@ -58,6 +61,8 @@ namespace pike {
    */
   std::ostream& operator<<(std::ostream& os, const pike::StatusTest& test);
 
+  std::string statusToString(const pike::SolveStatus& s);
+  
 }
 
 #endif

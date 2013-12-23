@@ -1,20 +1,31 @@
 INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE(TribitsCopyFilesToBinaryDir)
 
-#INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
-APPEND_GLOB(NOINSTALLHEADERS ${DIR}/*.hpp)
-APPEND_GLOB(SOURCES ${DIR}/*.cpp)
+SET(HEADERS "")
+SET(NOINSTALLHEADERS "")
+SET(SOURCES "")
+
+APPEND_SET(NOINSTALLHEADERS
+  Pike_Mock_ModelEvaluator.hpp
+  Pike_LinearHeatConductionModelEvaluator.hpp
+  Pike_LinearHeatConduction_DataTransfer.hpp
+  )
+
+APPEND_SET(SOURCES
+  Pike_Mock_ModelEvaluator.cpp
+  Pike_LinearHeatConductionModelEvaluator.cpp
+  Pike_LinearHeatConduction_DataTransfer.cpp
+  )
 
 TRIBITS_ADD_LIBRARY(
-  test_apps
+  pike-test-apps
   NO_INSTALL_LIB_OR_HEADERS
   NOINSTALLHEADERS ${NOINSTALLHEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS pikeblackbox
+  DEPLIBS pike-blackbox
   )
-
-
 
 SET(UNIT_TEST_DRIVER ${TEUCHOS_STD_UNIT_TEST_MAIN})
 

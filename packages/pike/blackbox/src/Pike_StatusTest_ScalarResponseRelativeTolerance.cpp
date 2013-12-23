@@ -55,7 +55,7 @@ namespace pike {
       previousValue_ = currentValue_;
       currentValue_ = pike::getScalarResponse<double>(*application_->getResponse(responseIndex_));
       if (std::abs(currentValue_ - previousValue_) < tolerance_)
-	status_ = pike::UNCONVERGED;
+	status_ = pike::CONVERGED;
       else
 	status_ = pike::UNCONVERGED;
     }
@@ -74,10 +74,22 @@ namespace pike {
     status_ = pike::UNCHECKED;
   }
   
+  void ScalarResponseRelativeTolerance::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const
+  {
+    Teuchos::tab(Teuchos::rcpFromRef(out),defaultIndentation);
+    out << pike::statusToString(status_) 
+	<< "Relative Tolerance: "
+	<< std::abs(currentValue_ - previousValue_) 
+	<< " must be < " << tolerance_
+	<< std::endl;
+    Teuchos::tab(Teuchos::rcpFromRef(out),statusIndentation);
+    out << " (" << applicationName_ << "," << responseName_ << ")" << std::endl;
+  }
+
   void ScalarResponseRelativeTolerance::setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& paramList)
   {
     paramList->validateParametersAndSetDefaults(*(this->getValidParameters()));
-    this->setParameterList(paramList);
+    this->setMyParamList(paramList);
     applicationName_ = paramList->get<std::string>("Application Name");
     responseName_ = paramList->get<std::string>("Response Name");
     tolerance_ = paramList->get<double>("Tolerance");

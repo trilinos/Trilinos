@@ -14,6 +14,9 @@ namespace pike {
     registrationComplete_(false)
   {
     validParameters_ = Teuchos::parameterList();
+    validParameters_->set("Print Begin Solve Status",true, "If set to true the status tests will print current status at the beginning of the solve.");
+    validParameters_->set("Print Step Status",true, "If set to true the status tests will print current status at the end of each step.");
+    validParameters_->set("Print End Solve Status",true,"If set to true the status tests will print current status at the end of the solve.");
     Teuchos::setupVerboseObjectSublist(validParameters_.get());
   }
 
@@ -37,6 +40,12 @@ namespace pike {
   
   void SolverDefaultImplementation::completeRegistration()
   {
+    // Set the defaults so the user doesn't have to set the parameter list
+    if (is_null(this->getMyParamList())) {
+      Teuchos::RCP<Teuchos::ParameterList> defaultParameters = Teuchos::parameterList();
+      this->setParameterList(defaultParameters);
+    }
+
     registrationComplete_ = true;
   }
 
@@ -72,6 +81,9 @@ namespace pike {
 
     status_ = statusTests_->checkStatus(*this);
     
+    if (printStepStatus_)
+      std::cout << *statusTests_;
+
     for (ObserverIterator observer = observers_.begin(); observer != observers_.end(); ++observer)
       (*observer)->observeEndStep(*this);
 
@@ -95,7 +107,7 @@ namespace pike {
 
     status_ = statusTests_->checkStatus(*this);
 
-    while ( (status_ != CONVERGED) || (status_ != FAILED) )
+    while ( (status_ != CONVERGED) && (status_ != FAILED) )
       this->step();
 
     for (ObserverIterator observer = observers_.begin(); observer != observers_.end(); ++observer)
@@ -119,7 +131,10 @@ namespace pike {
   void SolverDefaultImplementation::setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& paramList)
   {
     paramList->validateParametersAndSetDefaults(*(this->getValidParameters()));
-    this->setParameterList(paramList);
+    printBeginSolveStatus_ = paramList->get<bool>("Print Begin Solve Status");
+    printStepStatus_ = paramList->get<bool>("Print Step Status");
+    printEndSolveStatus_ = paramList->get<bool>("Print End Solve Status");
+    this->setMyParamList(paramList);
   }
   
   Teuchos::RCP<const Teuchos::ParameterList> SolverDefaultImplementation::getValidParameters() const

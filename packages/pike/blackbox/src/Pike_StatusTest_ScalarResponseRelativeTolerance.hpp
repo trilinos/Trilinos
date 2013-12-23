@@ -21,6 +21,8 @@ namespace pike {
     pike::SolveStatus getStatus() const;
     
     void reset();
+    
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=verbLevel_default) const ;
 
     void setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& paramList);
 

@@ -31,7 +31,7 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 #
 
 TRIBITS_ADD_LIBRARY(
-  pikeblackbox
+  pike-blackbox
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )

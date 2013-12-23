@@ -68,6 +68,11 @@ namespace pike {
     std::vector<Teuchos::RCP<pike::BlackBoxModelEvaluator> > models_;
     std::vector<Teuchos::RCP<pike::DataTransfer> > transfers_;
     bool registrationComplete_;
+
+    // Output
+    bool printBeginSolveStatus_;
+    bool printStepStatus_;
+    bool printEndSolveStatus_;
   };
 
 }

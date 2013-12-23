@@ -33,10 +33,18 @@ namespace pike {
   void MaxIterations::reset()
   { status_ = pike::UNCHECKED; }
   
+  void MaxIterations::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel) const
+  {
+    Teuchos::tab(Teuchos::rcpFromRef(out),defaultIndentation);
+    out << pike::statusToString(status_) 
+	<< "Max Iterations limited to " << maximumIterations_ << ": current iter = "
+	<< currentIterations_ << std::endl;
+  }
+
   void MaxIterations::setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& paramList)
   {
     paramList->validateParametersAndSetDefaults(*(this->getValidParameters()));
-    this->setParameterList(paramList);
+    this->setMyParamList(paramList);
     maximumIterations_ = paramList->get<int>("Maximum Iterations");
   }
   
