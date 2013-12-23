@@ -61,6 +61,7 @@ private:
   int maxit_;
   Real c1_;
   Real c2_;
+  Real c3_;
   Real tol_;
   Real rho_;
   Real alpha0_;
@@ -77,20 +78,31 @@ public:
     els_       = parlist.get("Linesearch Type",                LINESEARCH_CUBICINTERP);
     econd_     = parlist.get("Linesearch Curvature Condition", CURVATURECONDITION_STRONGWOLFE);
     // Linesearc Parameters
-    maxit_     = parlist.get("Maximum Number of Function Evaluations", 20);
-    c1_        = parlist.get("Sufficient Decrease Parameter",          1.e-4);
-    c2_        = parlist.get("Curvature Conditions Parameter",         0.9);
-    tol_       = parlist.get("Bracketing Tolerance",                   1.e-8);
-    rho_       = parlist.get("Backtracking Rate",                      0.5);
-    alpha0_    = parlist.get("Initial Linesearch Parameter",           1.0);
-    useralpha_ = parlist.get("User Defined Linesearch Parameter",      false);
+    maxit_     = parlist.get("Maximum Number of Function Evaluations",            20);
+    c1_        = parlist.get("Sufficient Decrease Parameter",                     1.e-4);
+    c2_        = parlist.get("Curvature Conditions Parameter",                    0.9);
+    c3_        = parlist.get("Curvature Conditions Parameter: Generalized Wolfe", 0.6);
+    tol_       = parlist.get("Bracketing Tolerance",                              1.e-8);
+    rho_       = parlist.get("Backtracking Rate",                                 0.5);
+    alpha0_    = parlist.get("Initial Linesearch Parameter",                      1.0);
+    useralpha_ = parlist.get("User Defined Linesearch Parameter",                 false);
 
+    if ( c1_ < 0.0 ) {
+      c1_ = 1.e-4;
+    }
+    if ( c2_ < 0.0 ) {
+      c2_ = 0.9;
+    }
+    if ( c3_ < 0.0 ) {
+      c3_ = 0.9;
+    }
     if ( c2_ <= c1_ ) {
       c1_ = 1.e-4;
       c2_ = 0.9;
     }
     if ( edesc_ == DESCENT_NONLINEARCG ) {
       c2_ = 0.4;
+      c3_ = std::min(1.0-c2_,c3_);
     }
   }
 
@@ -120,17 +132,27 @@ public:
           curvcond = true;
         }
       }
+      else if (this->econd_ == CURVATURECONDITION_NULL) {
+        curvcond = true;
+      }
       else { 
         Teuchos::RCP<Vector<Real> > xnew = x.clone();
         xnew->set(x);
         xnew->axpy(alpha,s);   
         Teuchos::RCP<Vector<Real> > grad = x.clone();
+        obj.update(*xnew);
         obj.gradient(*grad,*xnew,tol);
         Real sgnew = grad->dot(s);
         ls_ngrad++;
    
-        if (    ((this->econd_ == CURVATURECONDITION_WOLFE)       && (sgnew >= this->c2_*sgold))
-             || ((this->econd_ == CURVATURECONDITION_STRONGWOLFE) && (std::abs(sgnew) <= this->c2_*std::abs(sgold))) ) {
+        if (    ((this->econd_ == CURVATURECONDITION_WOLFE)       
+                     && (sgnew >= this->c2_*sgold))
+             || ((this->econd_ == CURVATURECONDITION_STRONGWOLFE) 
+                     && (std::abs(sgnew) <= this->c2_*std::abs(sgold)))
+             || ((this->econd_ == CURVATURECONDITION_GENERALIZEDWOLFE) 
+                     && (this->c2_*sgold <= sgnew && sgnew <= -this->c3_*sgold))
+             || ((this->econd_ == CURVATURECONDITION_APPROXIMATEWOLFE) 
+                     && (this->c2_*sgold <= sgnew && sgnew <= (2.0*this->c1_ - 1.0)*sgold)) ) {
           curvcond = true;
         }
       }
@@ -161,10 +183,12 @@ public:
       xnew->plus(s);
       Real ftol = 0.0;
       // TODO: Think about reusing for efficiency!
+      obj.update(*xnew);
       Real fnew = obj.value(*xnew, ftol);
       alpha = -gs/(2.0*(fnew-fval-gs));
       xnew->set(x);
       xnew->axpy(alpha,s);
+      obj.update(*xnew);
       fnew = obj.value(*xnew, ftol);
       bool stat = status(LINESEARCH_BISECTION,ls_neval,ls_ngrad,alpha,fval,gs,fnew,x,s,obj);
       if (!stat) {
@@ -206,6 +230,7 @@ public:
     xnew->axpy(alpha, s);
 
     Real fold = fval;
+    obj.update(*xnew);
     fval = obj.value(*xnew,tol);
     ls_neval++;
 
@@ -213,6 +238,7 @@ public:
       alpha *= this->rho_;
       xnew->set(x);
       xnew->axpy(alpha, s);
+      obj.update(*xnew);
       fval = obj.value(*xnew,tol);
       ls_neval++;
     }
@@ -227,6 +253,7 @@ public:
     xnew->axpy(alpha, s);
 
     Real fold = fval;
+    obj.update(*xnew);
     fval = obj.value(*xnew,tol);
     ls_neval++;
     Real fvalp = 0.0;
@@ -273,6 +300,7 @@ public:
 
       xnew->set(x);
       xnew->axpy(alpha, s);
+      obj.update(*xnew);
       fval = obj.value(*xnew,tol);
       ls_neval++;
     }
@@ -288,7 +316,8 @@ public:
     Teuchos::RCP<Vector<Real> > xnew = x.clone();
     xnew->set(x);
     xnew->axpy(tr,s);
-
+   
+    obj.update(*xnew);
     Real val_tr = obj.value(*xnew,tol); 
     ls_neval++;
     Real val_tl = fval;
@@ -313,6 +342,7 @@ public:
     Real tc = (tl+tr)/2.0;
     xnew->set(x);
     xnew->axpy(tc,s);
+    obj.update(*xnew);
     Real val_tc = obj.value(*xnew,tol);
     ls_neval++;
 
@@ -331,12 +361,14 @@ public:
       t1 = (tl+tc)/2.0;
       xnew->set(x);
       xnew->axpy(t1,s);
+      obj.update(*xnew);
       val_t1 = obj.value(*xnew,tol);
       ls_neval++;
 
       t2 = (tr+tc)/2.0;
       xnew->set(x);
       xnew->axpy(t2,s);
+      obj.update(*xnew);
       val_t2 = obj.value(*xnew,tol);
       ls_neval++;
 
@@ -399,6 +431,7 @@ public:
 
     xnew->set(x);
     xnew->axpy(tr,s);
+    obj.update(*xnew);
     Real val_tr = obj.value(*xnew,tol);
     ls_neval++;
     Real val_tl = fval;
@@ -425,11 +458,13 @@ public:
    
     xnew->set(x);
     xnew->axpy(tc1,s);
+    obj.update(*xnew);
     Real val_tc1 = obj.value(*xnew,tol);
     ls_neval++;
 
     xnew->set(x);
     xnew->axpy(tc2,s);
+    obj.update(*xnew);
     Real val_tc2 = obj.value(*xnew,tol);
     ls_neval++;
 
@@ -461,6 +496,7 @@ public:
         tc2     = (1.0-c)*tl + c*tr;     
         xnew->set(x);
         xnew->axpy(tc2,s);
+        obj.update(*xnew);
         val_tc2 = obj.value(*xnew,tol);
         ls_neval++;
       }
@@ -473,6 +509,7 @@ public:
         tc1     = c*tl + (1.0-c)*tr;
         xnew->set(x);
         xnew->axpy(tc1,s);
+        obj.update(*xnew);
         val_tc1 = obj.value(*xnew,tol);
         ls_neval++;
       }
@@ -512,6 +549,7 @@ public:
     xnew->axpy(tr, s);
  
     Real val_tl = fval;
+    obj.update(*xnew);
     Real val_tr = obj.value(*xnew,tol);
     Real val_tc = 0.0;
     ls_neval++;
@@ -554,6 +592,7 @@ public:
       tr     = goldinv * (tc + gr*tl);
       xnew->set(x);
       xnew->axpy(tr,s);
+      obj.update(*xnew);
       val_tr = obj.value(*xnew,tol);
       ls_neval++;
 
@@ -573,6 +612,7 @@ public:
       tc = tl + (gr-1.0)*(tr-tl);
       xnew->set(x);
       xnew->axpy(tc,s);
+      obj.update(*xnew);
       val_tc = obj.value(*xnew,tol);
       ls_neval++;
     }
@@ -609,6 +649,7 @@ public:
       if ( (tr-tm)*(tm-tc) > 0.0 ) {
         xnew->set(x);
         xnew->axpy(tm,s);
+        obj.update(*xnew);
         val_tm = obj.value(*xnew,tol);
         ls_neval++;
         if ( val_tm < val_tc ) {
@@ -624,12 +665,14 @@ public:
         tm = tc + gr*(tc-tr);
         xnew->set(x);
         xnew->axpy(tm,s);
+        obj.update(*xnew);
         val_tm = obj.value(*xnew,tol);
         ls_neval++;
       }
       else if ( (tc - tm)*(tm -tlim) > 0.0 ) {
         xnew->set(x);
         xnew->axpy(tm,s);
+        obj.update(*xnew);
         val_tm = obj.value(*xnew,tol);
         ls_neval++;
         if ( val_tm < val_tc ) {
@@ -642,6 +685,7 @@ public:
           tm     = tc + gr*(tc-tr);
           xnew->set(x);
           xnew->axpy(tm,s);
+          obj.update(*xnew);
           val_tm = obj.value(*xnew,tol);
           ls_neval++;
         }
@@ -650,6 +694,7 @@ public:
         tm = tlim;
         xnew->set(x);
         xnew->axpy(tm,s);
+        obj.update(*xnew);
         val_tm = obj.value(*xnew,tol);
         ls_neval++;
       }
@@ -657,6 +702,7 @@ public:
         tm = tc + gr*(tc-tr);
         xnew->set(x);
         xnew->axpy(tm,s);
+        obj.update(*xnew);
         val_tm = obj.value(*xnew,tol);
         ls_neval++;
       }
@@ -758,6 +804,7 @@ public:
       u = (std::abs(d)>=tol1 ? t+d : t+(d>=0.0 ? std::abs(tol1) : -std::abs(tol1)));
       xnew->set(x);
       xnew->axpy(u,s);
+      obj.update(*xnew);
       fu = obj.value(*xnew,tol);
       ls_neval++;
 

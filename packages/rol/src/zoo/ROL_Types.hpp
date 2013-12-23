@@ -362,18 +362,24 @@ namespace ROL {
   enum ECurvatureCondition{
     CURVATURECONDITION_WOLFE = 0,
     CURVATURECONDITION_STRONGWOLFE,
+    CURVATURECONDITION_GENERALIZEDWOLFE,
+    CURVATURECONDITION_APPROXIMATEWOLFE,
     CURVATURECONDITION_GOLDSTEIN,
+    CURVATURECONDITION_NULL,
     CURVATURECONDITION_LAST
   };
 
   inline std::string ECurvatureConditionToString(ECurvatureCondition ls) {
     std::string retString;
     switch(ls) {
-      case CURVATURECONDITION_WOLFE:       retString = "Wolfe Conditions";            break;
-      case CURVATURECONDITION_STRONGWOLFE: retString = "Strong Wolfe Conditions";     break;
-      case CURVATURECONDITION_GOLDSTEIN:   retString = "Goldstein Conditions";        break;
-      case CURVATURECONDITION_LAST:        retString = "Last Type (Dummy)";           break;
-      default:                             retString = "INVALID ECurvatureCondition";
+      case CURVATURECONDITION_WOLFE:            retString = "Wolfe Conditions";             break;
+      case CURVATURECONDITION_STRONGWOLFE:      retString = "Strong Wolfe Conditions";      break;
+      case CURVATURECONDITION_GENERALIZEDWOLFE: retString = "Generalized Wolfe Conditions"; break;
+      case CURVATURECONDITION_APPROXIMATEWOLFE: retString = "Approximate Wolfe Conditions"; break;
+      case CURVATURECONDITION_GOLDSTEIN:        retString = "Goldstein Conditions";         break;
+      case CURVATURECONDITION_NULL:             retString = "Null Curvature Condition";     break;
+      case CURVATURECONDITION_LAST:             retString = "Last Type (Dummy)";            break;
+      default:                                  retString = "INVALID ECurvatureCondition";
     }
     return retString;
   }
@@ -384,9 +390,12 @@ namespace ROL {
       \return 1 if the argument is a valid curvature condition; 0 otherwise.
     */
   inline int isValidCurvatureCondition(ECurvatureCondition ls){
-    return( (ls == CURVATURECONDITION_WOLFE)       ||
-            (ls == CURVATURECONDITION_STRONGWOLFE) ||
-            (ls == CURVATURECONDITION_GOLDSTEIN)
+    return( (ls == CURVATURECONDITION_WOLFE)            ||
+            (ls == CURVATURECONDITION_STRONGWOLFE)      ||
+            (ls == CURVATURECONDITION_GENERALIZEDWOLFE) ||
+            (ls == CURVATURECONDITION_APPROXIMATEWOLFE) ||
+            (ls == CURVATURECONDITION_GOLDSTEIN)        ||
+            (ls == CURVATURECONDITION_NULL)
           );
   }
 

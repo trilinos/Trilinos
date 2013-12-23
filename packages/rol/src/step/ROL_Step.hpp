@@ -93,6 +93,7 @@ public:
     Real tol = std::sqrt(ROL_EPSILON);
     state_->descentVec  = x.clone();
     state_->gradientVec = x.clone();
+    obj.update(x,true,algo_state.iter);
     obj.gradient(*(state_->gradientVec),x,tol);
     algo_state.ngrad = 1;
     algo_state.gnorm = (state_->gradientVec)->norm();

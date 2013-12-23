@@ -79,26 +79,28 @@ int main(int argc, char *argv[]) {
     Teuchos::ParameterList parlist;
     // Enumerations
     parlist.set("Linesearch Type",                        ROL::LINESEARCH_CUBICINTERP);
-    parlist.set("Linesearch Curvature Condition",         ROL::CURVATURECONDITION_STRONGWOLFE);
+    parlist.set("Linesearch Curvature Condition",         ROL::CURVATURECONDITION_NULL);
     parlist.set("Secant Type",                            ROL::SECANT_LBFGS);
     // Inexactness Information
-    parlist.set("Use Inexact Objective Function",         false);
-    parlist.set("Use Inexact Gradient",                   false);
-    parlist.set("Use Inexact Hessian-Times-A-Vector",     true);
+    parlist.set("Use Inexact Objective Function",                    false);
+    parlist.set("Use Inexact Gradient",                              false);
+    parlist.set("Use Inexact Hessian-Times-A-Vector",                true);
     // Secant Information
-    parlist.set("Maximum Secant Storage",                 10);
-    parlist.set("Barzilai-Borwein Type",                  1);
+    parlist.set("Maximum Secant Storage",                            10);
+    parlist.set("Barzilai-Borwein Type",                             1);
     // Linesearch Parameters
-    parlist.set("Maximum Number of Function Evaluations", 20);
-    parlist.set("Sufficient Decrease Parameter",          1.e-4);
-    parlist.set("Curvature Conditions Parameter",         0.9);
-    parlist.set("Bracketing Tolerance",                   1.e-8);
-    parlist.set("Backtracking Rate",                      0.5);
-    parlist.set("Initial Linesearch Parameter",           1.0);
-    parlist.set("User Defined Linesearch Parameter",      false);
+    parlist.set("Maximum Number of Function Evaluations",            20);
+    parlist.set("Sufficient Decrease Parameter",                     1.e-4);
+    parlist.set("Curvature Conditions Parameter",                    0.9);
+    parlist.set("Curvature Conditions Parameter: Generalized Wolfe", 0.6);
+    parlist.set("Bracketing Tolerance",                              1.e-8);
+    parlist.set("Bracketing Tolerance",                              1.e-8);
+    parlist.set("Backtracking Rate",                                 0.5);
+    parlist.set("Initial Linesearch Parameter",                      1.0);
+    parlist.set("User Defined Linesearch Parameter",                 false);
     // Krylov Parameters
-    parlist.set("Absolute Krylov Tolerance",              1.e-4);
-    parlist.set("Relative Krylov Tolerance",              1.e-2);                    
+    parlist.set("Absolute Krylov Tolerance",                         1.e-4);
+    parlist.set("Relative Krylov Tolerance",                         1.e-2);                    
 
     // Define Status Test
     ROL::StatusTest<RealT> status(1.e-6,1.e-12,1000);    

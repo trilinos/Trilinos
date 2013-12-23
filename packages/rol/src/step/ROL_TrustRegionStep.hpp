@@ -144,7 +144,8 @@ public:
 
     state->descentVec  = x.clone();
     state->gradientVec = x.clone();
-    
+
+    obj.update(x,true,algo_state.iter);    
     if ( this->useInexact_[1] ) {
       Real gtol = 2.0*this->del_;
       algo_state.gnorm = this->del_;
@@ -182,6 +183,7 @@ public:
       Teuchos::RCP<Vector<Real> > cp = x.clone();
       cp->set(*(state->gradientVec)); 
       cp->scale(-alpha);
+      obj.update(*cp);
       Real fnew = obj.value(*cp,ftol);
       algo_state.nfval++;
       // Perform Quadratic Interpolation to Determine Initial Trust Region Radius
@@ -214,10 +216,13 @@ public:
     algo_state.value = fnew;
     algo_state.nfval += this->TR_nfval_;
     algo_state.ngrad += this->TR_ngrad_;
+    algo_state.iter++;
+
 
     // Compute new gradient
     Teuchos::RCP<Vector<Real> > gp;
     if ( this->TRflag_ == 0 || this->TRflag_ == 1 ) {  
+      obj.update(x,true,algo_state.iter);
       if ( this->secant_ != Teuchos::null ) {
         gp = x.clone();
         gp->set(*(Step<Real>::state_->gradientVec));
@@ -232,7 +237,6 @@ public:
     // Update algorithm state
     (algo_state.iterateVec)->set(x);
     algo_state.gnorm = (Step<Real>::state_->gradientVec)->norm();
-    algo_state.iter++;
   }
 
   /** \brief Print iterate header.

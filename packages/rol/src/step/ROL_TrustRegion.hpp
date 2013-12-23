@@ -120,6 +120,7 @@ public:
     Teuchos::RCP<Vector<Real> > xnew = x.clone();
     xnew->set(x);
     xnew->axpy(1.0,s);
+    obj.update(*xnew);
     fnew = obj.value(*xnew,tol);
     nfval = 1;   
 

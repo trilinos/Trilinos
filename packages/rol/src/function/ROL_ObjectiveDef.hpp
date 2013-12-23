@@ -77,7 +77,8 @@ void Objective<Real>::hessVec( Vector<Real> &hv, const Vector<Real> &v, const Ve
   Real gtol = std::sqrt(ROL_EPSILON);
 
   // Get Step Length
-  Real h = std::max(1.0,x.norm()/v.norm())*tol;
+  //Real h = std::max(1.0,x.norm()/v.norm())*tol;
+  Real h = 2.0/(v.norm()*v.norm())*tol;
 
   // Compute New Step x + h*v
   Teuchos::RCP<Vector<Real> > xnew = x.clone();

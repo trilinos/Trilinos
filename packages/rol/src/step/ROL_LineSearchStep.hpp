@@ -73,7 +73,8 @@ private:
   int iterKrylov_;
   int flagKrylov_;
 
-  ELineSearch         els_; 
+  ELineSearch         els_;
+  ENonlinearCG        enlcg_; 
   ECurvatureCondition econd_;
   EDescent            edesc_;
   ESecant             esec_;
@@ -90,6 +91,7 @@ public:
   LineSearchStep( Teuchos::ParameterList &parlist ) {
     // Enumerations
     edesc_ = parlist.get("Descent Type",                   DESCENT_SECANT);
+    enlcg_ = parlist.get("Nonlinear CG Type",              NONLINEARCG_HAGAR_ZHANG);
     els_   = parlist.get("Linesearch Type",                LINESEARCH_CUBICINTERP);
     econd_ = parlist.get("Linesearch Curvature Condition", CURVATURECONDITION_STRONGWOLFE);
     esec_  = parlist.get("Secant Type",                    SECANT_LBFGS);
@@ -124,7 +126,7 @@ public:
     // Initialize Nonlinear CG Object
     nlcg_ = Teuchos::null;
     if ( edesc_ == DESCENT_NONLINEARCG ) {
-      nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(NONLINEARCG_HAGAR_ZHANG) );
+      nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
     }
   }
 
@@ -132,6 +134,7 @@ public:
     secant_(secant) {
     // Enumerations
     edesc_ = parlist.get("Descent Type",                   DESCENT_SECANT);
+    enlcg_ = parlist.get("Nonlinear CG Type",              NONLINEARCG_HAGAR_ZHANG);
     els_   = parlist.get("Linesearch Type",                LINESEARCH_CUBICINTERP);
     econd_ = parlist.get("Linesearch Curvature Condition", CURVATURECONDITION_STRONGWOLFE);
     esec_  = SECANT_USERDEFINED;
@@ -158,7 +161,7 @@ public:
     // Initialize Nonlinear CG Object
     nlcg_ = Teuchos::null;
     if ( edesc_ == DESCENT_NONLINEARCG ) {
-      nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(NONLINEARCG_HAGAR_ZHANG) );
+      nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
     }
   }
 
@@ -213,7 +216,9 @@ public:
     Real tol = std::sqrt(ROL_EPSILON);
 
     // Update iterate
+    algo_state.iter++;
     x.axpy(1.0, s);
+    obj.update(x,true,algo_state.iter);
 
     // Compute new gradient
     Teuchos::RCP<Vector<Real> > gp;
@@ -232,7 +237,6 @@ public:
     // Update algorithm state
     (algo_state.iterateVec)->set(x);
     algo_state.gnorm = (Step<Real>::state_->gradientVec)->norm();
-    algo_state.iter++;
   }
 
   /** \brief Print iterate header.
@@ -265,6 +269,9 @@ public:
          << ECurvatureConditionToString(this->econd_) << "\n";
     if ( this->edesc_ == DESCENT_SECANT || this->edesc_ == DESCENT_SECANTPRECOND ) {
       hist << "Secant Type: " << ESecantToString(this->esec_) << "\n";
+    }
+    if ( this->edesc_ == DESCENT_NONLINEARCG ) {
+      hist << "Nonlinear CG Type: " << ENonlinearCGToString(this->enlcg_) << "\n";
     }
     return hist.str();
   }
