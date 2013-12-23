@@ -14,6 +14,10 @@ typedef MueLu::AggregationPhase1Algorithm<LocalOrdinal,GlobalOrdinal,Node,LocalM
 typedef MueLu::AggregationPhase2aAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> AggregationPhase2aAlgorithm;
 #endif
 
+#ifdef MUELU_AGGREGATIONPHASE2BALGORITHM_SHORT
+typedef MueLu::AggregationPhase2bAlgorithm<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> AggregationPhase2bAlgorithm;
+#endif
+
 #ifdef MUELU_AMALGAMATIONINFO_SHORT
 typedef MueLu::AmalgamationInfo<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> AmalgamationInfo;
 #endif
