@@ -3007,6 +3007,7 @@ namespace Tpetra {
   \
   template class MultiVector< SCALAR , LO , GO , NODE >; \
   template MultiVector< SCALAR , LO , GO , NODE > createCopy( const MultiVector< SCALAR , LO , GO , NODE >& src); \
+  template void deep_copy( MultiVector< SCALAR , LO , GO , NODE >& dst, const MultiVector< SCALAR , LO , GO , NODE >& src); \
 
 
 #endif // TPETRA_MULTIVECTOR_DEF_HPP
