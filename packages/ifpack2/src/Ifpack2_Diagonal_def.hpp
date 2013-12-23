@@ -92,11 +92,11 @@ Diagonal<MatrixType>::~Diagonal()
 {}
 
 template<class MatrixType>
-void Diagonal<MatrixType>::setParameters(const Teuchos::ParameterList& /*params*/)
+void Diagonal<MatrixType>::setParameters (const Teuchos::ParameterList& /*params*/)
 {}
 
 template<class MatrixType>
-void Diagonal<MatrixType>::initialize()
+void Diagonal<MatrixType>::initialize ()
 {
   // mfh 13 Dec 2013: If you call initialize(), it means that you are
   // asserting that the structure of the input sparse matrix may have

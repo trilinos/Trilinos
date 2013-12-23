@@ -149,17 +149,11 @@ public:
   //! @name Methods implementing a Tpetra::Operator interface.
   //@{
 
-  //! Applies the preconditioner to X, returns the result in Y.
-  /*!
-    \param
-    X - (In) A Tpetra::MultiVector of dimension NumVectors to be preconditioned.
-    \param
-    Y - (InOut) A Tpetra::MultiVector of dimension NumVectors containing result.
-
-    \return Integer error code, set to 0 if successful.
-
-    \warning This routine is NOT AztecOO compliant.
-  */
+  /// \brief Apply the preconditioner to X, putting the result in Y.
+  ///
+  /// If the result of applying this preconditioner to a vector X is
+  /// \f$F \cdot X$, then this method computes \f$\beta Y + \alpha F \cdot X\f$.
+  /// The typical case is \f$\beta = 0\f$ and \f$\alpha = 1\f$.
   void
   apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
          Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
@@ -167,28 +161,17 @@ public:
          scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
          scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
-  //! Returns the Tpetra::Map object associated with the domain of this operator.
+  //! The Tpetra::Map representing this operator's domain.
   Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >
   getDomainMap () const {
     return domainMap_;
   }
 
-  //! Returns the Tpetra::Map object associated with the range of this operator.
+  //! The Tpetra::Map representing this operator's range.
   Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >
-  getRangeMap() const {
+  getRangeMap () const {
     return rangeMap_;
   }
-
-  //! Applies the matrix to a Tpetra::MultiVector.
-  /*!
-    \param
-    X - (In) A Tpetra::MultiVector of dimension NumVectors to multiply with matrix.
-    \param
-    Y - (Out) A Tpetra::MultiVector of dimension NumVectors containing the result.
-    */
-  void applyMat(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-                Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-                Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
   //@}
   //! \name Mathematical functions.
