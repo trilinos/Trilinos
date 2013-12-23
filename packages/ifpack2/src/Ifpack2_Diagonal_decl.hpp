@@ -89,12 +89,20 @@ public:
                             local_ordinal_type,
                             global_ordinal_type,
                             node_type> row_matrix_type;
-
   //! Tpetra::CrsMatrix specialization used by this class.
   typedef Tpetra::CrsMatrix<scalar_type,
                             local_ordinal_type,
                             global_ordinal_type,
                             node_type> crs_matrix_type;
+  //! Tpetra::Vector specialization used by this class.
+  typedef Tpetra::Vector<scalar_type,
+                         local_ordinal_type,
+                         global_ordinal_type,
+                         node_type> vector_type;
+  //! Tpetra::Map specialization used by this class.
+  typedef Tpetra::Map<local_ordinal_type,
+                      global_ordinal_type,
+                      node_type> map_type;
 
   /// \brief Constructor that takes a Tpetra::RowMatrix.
   ///
@@ -110,7 +118,9 @@ public:
   /// \param A_in [in] The input matrix.
   Diagonal (const Teuchos::RCP<const crs_matrix_type>& A_in);
 
-  /// \brief Constructor that accepts a Tpetra::Vector of diagonal entries.
+  /// \brief Constructor that accepts a Tpetra::Vector of inverse diagonal entries.
+  ///
+  /// \param diag [in] Vector of inverse diagonal entries.
   ///
   /// If your compiler complains about this constructor being ambigous
   /// with the other constructor overload, instead call the
@@ -119,7 +129,7 @@ public:
   /// may arise if this constructor is called with a
   /// <tt>Teuchos::RCP<Tpetra::Vector></tt> that isn't const-qualified
   /// exactly as declared here.)
-  Diagonal (const Teuchos::RCP<const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& diag);
+  Diagonal (const Teuchos::RCP<const vector_type>& diag);
 
   //! Destructor
   virtual ~Diagonal();
@@ -135,10 +145,10 @@ public:
 
   //! Returns \c true if the preconditioner has been successfully initialized.
   inline bool isInitialized() const {
-    return(isInitialized_);
+    return isInitialized_;
   }
 
-  //! compute the preconditioner
+  //! Compute the preconditioner.
   void compute();
 
   //! Return true if compute() has been called.
@@ -146,7 +156,7 @@ public:
     return(isComputed_);
   }
 
-  //! @name Methods implementing a Tpetra::Operator interface.
+  //! \name Implementation of Tpetra::Operator
   //@{
 
   /// \brief Apply the preconditioner to X, putting the result in Y.
@@ -162,19 +172,13 @@ public:
          scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! The Tpetra::Map representing this operator's domain.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >
-  getDomainMap () const {
-    return domainMap_;
-  }
+  Teuchos::RCP<const map_type> getDomainMap () const;
 
   //! The Tpetra::Map representing this operator's range.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >
-  getRangeMap () const {
-    return rangeMap_;
-  }
+  Teuchos::RCP<const map_type> getRangeMap () const;
 
   //@}
-  //! \name Mathematical functions.
+  //! \name Mathematical functions
   //@{
 
   /// \brief Compute the condition number estimate and return its value.
@@ -204,11 +208,14 @@ public:
   }
 
   //! Return the communicator associated with this matrix operator.
-  Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
+  //Teuchos::RCP<const Teuchos::Comm<int> > getComm () const;
 
-  //! Return a reference to the matrix to be preconditioned.
-  Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >
-  getMatrix () const {
+  /// \brief The original input matrix to be preconditioned.
+  ///
+  /// This could be null, for example if the user created this object
+  /// using the constructor that takes a Tpetra::Vector, or if the
+  /// user called setMatrix() with a null input.
+  Teuchos::RCP<const row_matrix_type> getMatrix () const {
     return matrix_;
   }
 
@@ -240,40 +247,44 @@ public:
   //! @name Implementation of Teuchos::Describable
   //@{
 
-  /** \brief Return a simple one-line description of this object. */
+  //! Return a one-line description of this object.
   std::string description() const;
 
-  /** \brief Print the object with some verbosity level to an FancyOStream object. */
-  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
-
+  //! Print the object with some verbosity level to an FancyOStream object.
+  void
+  describe (Teuchos::FancyOStream& out,
+            const Teuchos::EVerbosityLevel verbLevel =
+            Teuchos::Describable::verbLevel_default) const;
   //@}
 
 private:
-  typedef Tpetra::Vector<scalar_type,
-                         local_ordinal_type,
-                         global_ordinal_type,
-                         node_type> vector_type;
-  typedef Tpetra::Map<local_ordinal_type,
-                      global_ordinal_type,
-                      node_type> map_type;
+  //! Reset the preconditioner's state.  Call in setMatrix().
+  void reset ();
 
-  bool isInitialized_;
-  bool isComputed_;
-  Teuchos::RCP<const map_type> domainMap_;
-  Teuchos::RCP<const map_type> rangeMap_;
+  //! The input matrix provided by the user.
   Teuchos::RCP<const row_matrix_type> matrix_;
-  Teuchos::RCP<const vector_type> inversediag_;
-  Teuchos::ArrayRCP<size_t> offsets_;
 
-  mutable int numInitialize_;
-  mutable int numCompute_;
-  mutable int numApply_;
+  /// \brief Inverse diagonal provided by the user.
+  ///
+  /// This is only nonnull if this Diagonal instance was created using
+  /// the constructor that takes a pointer to a Tpetra::Vector.
+  Teuchos::RCP<const vector_type> userInverseDiag_;
+
+  //! The vector of inverse diagonal entries to use in apply().
+  Teuchos::RCP<const vector_type> inverseDiag_;
+  Teuchos::ArrayRCP<size_t> offsets_;
 
   double initializeTime_;
   double computeTime_;
-  double applyTime_;
+  mutable double applyTime_;
+
+  int numInitialize_;
+  int numCompute_;
+  mutable int numApply_;
 
   magnitude_type condEst_;
+  bool isInitialized_;
+  bool isComputed_;
 };
 
 /** Function to construct a Diagonal preconditioner with vector input.
