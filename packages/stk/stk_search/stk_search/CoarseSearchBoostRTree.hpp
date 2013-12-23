@@ -129,33 +129,6 @@ MPI_Datatype get_mpi_type(float)
   return MPI_FLOAT;
 }
 
-template <typename Ident>
-struct get_proc
-{
-  typedef boost::false_type supported;
-};
-
-template <typename T>
-struct get_proc<std::pair<T, int> >
-{
-  typedef boost::false_type supported;
-  int operator()(std::pair<T, int> const& id) const
-  {
-    ThrowErrorMsg("get_proc::operator()(..) called on unsupported type.");
-    return id.second;
-  }
-};
-
-template <typename Ident, typename Proc>
-struct get_proc< stk::search::IdentProc<Ident,Proc> >
-{
-  typedef boost::true_type supported;
-  int operator()(stk::search::IdentProc<Ident,Proc> const& id) const
-  {
-    return id.proc();
-  }
-};
-
 template <typename RangeBox>
 struct IntersectPredicate
 {
@@ -288,12 +261,11 @@ void create_parallel_domain(SpatialIndex& local_domain, stk::ParallelMachine com
 
 namespace impl {
 template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent, size_t MaxVolumesPerNode>
-int coarse_search_boost_rtree_gather_range( std::vector< std::pair<DomainBox,DomainIdent> > const& local_domain,
-                                             std::vector< std::pair<RangeBox,RangeIdent> > const& local_range,
-                                             boost::geometry::index::rtree< std::pair<DomainBox,DomainIdent>,
-                                                                            boost::geometry::index::quadratic<MaxVolumesPerNode> > &local_domain_tree,
-                                             std::vector<std::pair<RangeBox,RangeIdent> > &gather_range,
-                                             stk::ParallelMachine comm)
+int coarse_search_boost_rtree_gather_range( std::vector< std::pair<RangeBox,RangeIdent> > const& local_range,
+                                            boost::geometry::index::rtree< std::pair<DomainBox,DomainIdent>,
+                                                                           boost::geometry::index::quadratic<MaxVolumesPerNode> > &local_domain_tree,
+                                            std::vector<std::pair<RangeBox,RangeIdent> > &gather_range,
+                                            stk::ParallelMachine comm)
 {
   namespace bg = boost::geometry;
   namespace bgi = boost::geometry::index;
@@ -360,8 +332,8 @@ int coarse_search_boost_rtree_gather_range( std::vector< std::pair<DomainBox,Dom
 
 
 template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
-typename boost::disable_if<boost::mpl::or_<typename impl::get_proc<DomainIdent>::supported,
-                                           typename impl::get_proc<RangeIdent>::supported> >::type
+typename boost::disable_if<boost::mpl::or_<typename get_proc<DomainIdent>::supported,
+                                           typename get_proc<RangeIdent>::supported> >::type
 coarse_search_boost_rtree_output_locally( std::vector< std::pair<DomainBox,DomainIdent> > const& local_domain,
                                           std::vector< std::pair<RangeBox,RangeIdent> > const& local_range,
                                           stk::ParallelMachine comm,
@@ -381,7 +353,7 @@ coarse_search_boost_rtree_output_locally( std::vector< std::pair<DomainBox,Domai
   LocalDomainTree local_domain_tree(local_domain.begin(), local_domain.end());
   std::vector<RangeValue> gather_range;
 
-  impl::coarse_search_boost_rtree_gather_range(local_domain, local_range, local_domain_tree,
+  impl::coarse_search_boost_rtree_gather_range(local_range, local_domain_tree,
                                                gather_range, comm);
 
   // Gather results into output
@@ -407,8 +379,8 @@ coarse_search_boost_rtree_output_locally( std::vector< std::pair<DomainBox,Domai
 
 
 template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
-typename boost::enable_if< boost::mpl::and_<typename impl::get_proc<DomainIdent>::supported,
-                                            typename impl::get_proc<RangeIdent>::supported> >::type
+typename boost::enable_if< boost::mpl::and_<typename get_proc<DomainIdent>::supported,
+                                            typename get_proc<RangeIdent>::supported> >::type
 coarse_search_boost_rtree( std::vector< std::pair<DomainBox,DomainIdent> > const& local_domain,
                                 std::vector< std::pair<RangeBox,RangeIdent> > const& local_range,
                                 stk::ParallelMachine comm,
@@ -430,7 +402,7 @@ coarse_search_boost_rtree( std::vector< std::pair<DomainBox,DomainIdent> > const
   std::vector<RangeValue> gather_range;
 
   int p_size =
-      impl::coarse_search_boost_rtree_gather_range(local_domain, local_range, local_domain_tree,
+      impl::coarse_search_boost_rtree_gather_range(local_range, local_domain_tree,
                                                    gather_range, comm);
 
   // Gather results into output
@@ -450,9 +422,9 @@ coarse_search_boost_rtree( std::vector< std::pair<DomainBox,DomainIdent> > const
         Output temp(domain_id, range_id);
         output.push_back(temp);
 
-        if ((p_size > 1) && ( impl::get_proc<DomainIdent>()(domain_id) != p_rank || (communicateRangeBoxInfo &&  impl::get_proc<RangeIdent>()(range_id) != p_rank )))
+        if ((p_size > 1) && ( get_proc<DomainIdent>()(domain_id) != p_rank || (communicateRangeBoxInfo &&  get_proc<RangeIdent>()(range_id) != p_rank )))
         {
-          int other_proc = impl::get_proc<DomainIdent>()(domain_id) == p_rank ? impl::get_proc<RangeIdent>()(range_id) : impl::get_proc<DomainIdent>()(domain_id);
+          int other_proc = get_proc<DomainIdent>()(domain_id) == p_rank ? get_proc<RangeIdent>()(range_id) : get_proc<DomainIdent>()(domain_id);
           send_matches[other_proc].push_back(temp);
         }
       }

@@ -1026,7 +1026,9 @@ bool oct_tree_proximity_search(
 
 //----------------------------------------------------------------------
 template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
-void coarse_search_octree( std::vector< std::pair<DomainBox, DomainIdent> > const& domain,
+typename boost::enable_if< boost::mpl::and_<typename get_proc<DomainIdent>::supported,
+                                            typename get_proc<RangeIdent>::supported> >::type
+coarse_search_octree( std::vector< std::pair<DomainBox, DomainIdent> > const& domain,
                            std::vector< std::pair<RangeBox, RangeIdent> >  const& range,
                            stk::ParallelMachine   comm,
                            std::vector< std::pair< DomainIdent, RangeIdent> > & intersections,
@@ -1046,6 +1048,17 @@ void coarse_search_octree( std::vector< std::pair<DomainBox, DomainIdent> > cons
       intersections,
       communicateRangeBoxInfo
       );
+}
+
+template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
+typename boost::disable_if< boost::mpl::or_<typename get_proc<DomainIdent>::supported,
+                                             typename get_proc<RangeIdent>::supported> >::type
+coarse_search_octree( std::vector< std::pair<DomainBox, DomainIdent> > const& domain,
+                           std::vector< std::pair<RangeBox, RangeIdent> >  const& range,
+                           stk::ParallelMachine   comm,
+                           std::vector< std::pair< DomainIdent, RangeIdent> > & intersections)
+{
+
 }
 
 

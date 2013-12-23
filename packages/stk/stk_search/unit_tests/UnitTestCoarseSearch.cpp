@@ -91,6 +91,90 @@ void testCoarseSearchForAlgorithm(stk::search::SearchMethod algorithm, MPI_Comm 
   }
 }
 
+
+int IdentForTest(int id, int proc_id)
+{
+  return id + 1000 * proc_id;
+}
+
+void testCoarseSearchForAlgorithm_IntsForIdents(stk::search::SearchMethod algorithm, MPI_Comm comm)
+{
+  typedef stk::search::Point<double> Point;
+  typedef stk::search::Box<double> StkBox;
+  typedef std::vector< std::pair<StkBox, int > > BoxVector;
+
+  int num_procs = stk::parallel_machine_size(comm);
+  int proc_id   = stk::parallel_machine_rank(comm);
+
+  BoxVector local_domain, local_range;
+  // what if identifier is NOT unique
+
+  StkBox box;
+  int id;
+
+  box = StkBox( Point(proc_id + 0.1, 0.0, 0.0), Point(proc_id + 0.9, 1.0, 1.0));
+  id = IdentForTest(proc_id * 4, proc_id);
+  local_domain.push_back(std::make_pair(box,id));
+
+  box = StkBox( Point(proc_id + 0.1, 2.0, 0.0), Point(proc_id + 0.9, 3.0, 1.0));
+  id = IdentForTest(proc_id * 4+1, proc_id);
+  local_domain.push_back(std::make_pair(box,id));
+
+  box = StkBox( Point(proc_id + 0.6, 0.5, 0.0), Point(proc_id + 1.4, 1.5, 1.0));
+  id = IdentForTest(proc_id * 4+2, proc_id);
+  local_range.push_back(std::make_pair(box,id));
+
+  box = StkBox( Point(proc_id + 0.6, 2.5, 0.0), Point(proc_id + 1.4, 3.5, 1.0));
+  id = IdentForTest(proc_id * 4+3, proc_id);
+  local_range.push_back(std::make_pair(box,id));
+
+  std::vector<std::pair<int, int> > searchResults;
+
+  stk::search::coarse_search_nonIdentProc<StkBox, int, StkBox, int>(local_domain, local_range, algorithm, comm, searchResults);
+
+  if (num_procs == 1) {
+    STKUNIT_ASSERT_EQ( searchResults.size(), 2u);
+    STKUNIT_EXPECT_EQ( searchResults[0].first, IdentForTest(0,0) );
+    STKUNIT_EXPECT_EQ( searchResults[1].first, IdentForTest(1,0) );
+    STKUNIT_EXPECT_EQ( searchResults[0].second,IdentForTest(2,0) );
+    STKUNIT_EXPECT_EQ( searchResults[1].second,IdentForTest(3,0) );
+  }
+  else {
+    if (proc_id == 0) {
+      STKUNIT_ASSERT_EQ( searchResults.size(), 2u);
+      STKUNIT_EXPECT_EQ( searchResults[0].first, IdentForTest(0,0) );
+      STKUNIT_EXPECT_EQ( searchResults[1].first, IdentForTest(1,0) );
+      STKUNIT_EXPECT_EQ( searchResults[0].second, IdentForTest(2,0) );
+      STKUNIT_EXPECT_EQ( searchResults[1].second, IdentForTest(3,0) );
+    }
+    else if (proc_id == num_procs - 1) {
+      STKUNIT_ASSERT_EQ( searchResults.size(), 4u);
+      int prev = proc_id -1;
+      STKUNIT_EXPECT_EQ( searchResults[0].first, IdentForTest(proc_id*4,proc_id) );
+      STKUNIT_EXPECT_EQ( searchResults[1].first, IdentForTest(proc_id*4,proc_id) );
+      STKUNIT_EXPECT_EQ( searchResults[2].first, IdentForTest(proc_id*4+1,proc_id) );
+      STKUNIT_EXPECT_EQ( searchResults[3].first, IdentForTest(proc_id*4+1,proc_id) );
+      STKUNIT_EXPECT_EQ( searchResults[0].second, IdentForTest(prev*4+2,prev) );
+      STKUNIT_EXPECT_EQ( searchResults[1].second, IdentForTest(proc_id*4+2,proc_id) );
+      STKUNIT_EXPECT_EQ( searchResults[2].second, IdentForTest(prev*4+3,prev) );
+      STKUNIT_EXPECT_EQ( searchResults[3].second, IdentForTest(proc_id*4+3,proc_id) );
+
+    }
+    else {
+      STKUNIT_ASSERT_EQ( searchResults.size(), 4u);
+      int prev = proc_id -1;
+      STKUNIT_EXPECT_EQ( searchResults[0].first, IdentForTest(proc_id*4,proc_id) );
+      STKUNIT_EXPECT_EQ( searchResults[1].first, IdentForTest(proc_id*4,proc_id) );
+      STKUNIT_EXPECT_EQ( searchResults[2].first, IdentForTest(proc_id*4+1,proc_id) );
+      STKUNIT_EXPECT_EQ( searchResults[3].first, IdentForTest(proc_id*4+1,proc_id) );
+      STKUNIT_EXPECT_EQ( searchResults[0].second, IdentForTest(prev*4+2,prev) );
+      STKUNIT_EXPECT_EQ( searchResults[1].second, IdentForTest(proc_id*4+2,proc_id) );
+      STKUNIT_EXPECT_EQ( searchResults[2].second, IdentForTest(prev*4+3,prev) );
+      STKUNIT_EXPECT_EQ( searchResults[3].second, IdentForTest(proc_id*4+3,proc_id) );
+    }
+  }
+}
+
 void testCoarseSearchForAlgorithmUsingGtkAABoxes(NewSearchMethod algorithm, MPI_Comm comm)
 {
   int num_procs = stk::parallel_machine_size(comm);
@@ -156,6 +240,18 @@ void testCoarseSearchForAlgorithmUsingGtkAABoxes(NewSearchMethod algorithm, MPI_
     }
   }
 }
+
+STKUNIT_UNIT_TEST(stk_search, coarse_search_noIdentProc_boost_rtree)
+{
+  testCoarseSearchForAlgorithm_IntsForIdents(stk::search::BOOST_RTREE, MPI_COMM_WORLD);
+}
+
+#if 0
+STKUNIT_UNIT_TEST(stk_search, basic_coarse_search_octree)
+{
+  testCoarseSearchForAlgorithm_IntsForIdents(stk::search::OCTREE, MPI_COMM_WORLD);
+}
+#endif
 
 STKUNIT_UNIT_TEST(stk_search, coarse_search_boost_rtree)
 {

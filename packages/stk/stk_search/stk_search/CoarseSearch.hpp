@@ -31,17 +31,48 @@ std::ostream& operator<<(std::ostream &out, SearchMethod method)
   return out;
 }
 
-
+// intersections returned will be those resulting from the (local) domain boxes
+// intersecting range boxes from the entire distributed set.  NEEDS TO BE CALLED
+// WITH EXPLICIT TEMPLATE ARGUMENTS.
 template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
-typename boost::enable_if< boost::mpl::and_<typename impl::get_proc<DomainIdent>::supported,
-                                            typename impl::get_proc<RangeIdent>::supported> >::type
-coarse_search( std::vector<std::pair<DomainBox,DomainIdent> > const& domain,
+typename boost::disable_if< boost::mpl::or_<typename get_proc<DomainIdent>::supported,
+                                            typename get_proc<RangeIdent>::supported> >::type
+coarse_search_nonIdentProc(
+                    std::vector<std::pair<DomainBox,DomainIdent> > const& domain,
                     std::vector<std::pair<RangeBox,RangeIdent> >   const& range,
                     SearchMethod                                          method,
                     stk::ParallelMachine                                  comm,
-                    std::vector< std::pair< DomainIdent, RangeIdent> > &  intersections,
-                    bool communicateRangeBoxInfo=true
+                    std::vector< std::pair< DomainIdent, RangeIdent> > &  intersections
                   )
+{
+  switch( method )
+  {
+  case BOOST_RTREE:
+    coarse_search_boost_rtree_output_locally<DomainBox, DomainIdent, RangeBox, RangeIdent>(domain,range,comm,intersections);
+    break;
+  case OCTREE:
+    std::cerr << "coarse_search_octree(..) does not support std::search::coarse_search_nonIdentProc(..) yet" << std::endl;
+    std::abort();
+    // coarse_search_octree(domain,range,comm,intersections);
+    break;
+  }
+}
+
+// intersections will be those of distributed domain boxes associated with this
+// processor rank via get_proc<DomainIdent>(.) that intersect distributed range
+// boxes.  Optionally, also include intersections of distributed domain boxes
+// with distributed range boxes associated with this processor rank via
+// get_proc<RangeIdent>(.).
+template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
+typename boost::enable_if< boost::mpl::and_<typename get_proc<DomainIdent>::supported,
+                                            typename get_proc<RangeIdent>::supported> >::type
+coarse_search( std::vector<std::pair<DomainBox,DomainIdent> > const& domain,
+               std::vector<std::pair<RangeBox,RangeIdent> >   const& range,
+               SearchMethod                                          method,
+               stk::ParallelMachine                                  comm,
+               std::vector< std::pair< DomainIdent, RangeIdent> > &  intersections,
+               bool communicateRangeBoxInfo=true
+             )
 {
   switch( method )
   {
