@@ -76,8 +76,8 @@ namespace MueLu {
     Monitor m(*this, "BuildAggregates");
 
     AggOptions::Ordering ordering    = params.get<AggOptions::Ordering>("Ordering");
-    MaxNeighAlreadySelected          = params.get<LO>                  ("MaxNeighAlreadySelected");
-    MinNodesPerAggregate             = params.get<LO>                  ("MinNodesPerAggregate");
+    LO MaxNeighAlreadySelected       = params.get<LO>                  ("MaxNeighAlreadySelected");
+    LO MinNodesPerAggregate          = params.get<LO>                  ("MinNodesPerAggregate");
 
     if (ordering != NATURAL && ordering != RANDOM && ordering != GRAPH)
       throw Exceptions::RuntimeError("UncoupledAggregation::BuildAggregates : bad aggregation ordering option");
