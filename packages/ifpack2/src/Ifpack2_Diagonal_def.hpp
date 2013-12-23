@@ -155,6 +155,17 @@ void Diagonal<MatrixType>::reset ()
 
 
 template<class MatrixType>
+void Diagonal<MatrixType>::
+setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
+{
+  if (A.getRawPtr () != matrix_.getRawPtr ()) { // it's a different matrix
+    reset ();
+    matrix_ = A;
+  }
+}
+
+
+template<class MatrixType>
 void Diagonal<MatrixType>::initialize ()
 {
   // Either the matrix to precondition must be nonnull, or the user

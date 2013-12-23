@@ -49,8 +49,6 @@
 #include <Ifpack2_Condest.hpp>
 #include <Ifpack2_Parameters.hpp>
 #include <Tpetra_Vector.hpp>
-#include <Teuchos_Assert.hpp>
-#include <Teuchos_RCP.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Tpetra_CrsMatrix_decl.hpp> // Don't need the definition here
 
