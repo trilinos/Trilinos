@@ -227,7 +227,8 @@ typedef Field<double> SimpleField;
 template <bool TimeChangeParts, bool Induce, bool AllocateFields>
 HexFixture* create_hex_with_complex_parts(stk::ParallelMachine pm, int x_dim, int y_dim, int z_dim, int dim_span,
                                           std::vector<PartVector>& element_parts,
-                                          std::vector<std::vector<SimpleField*> >* fields = NULL)
+                                          std::vector<std::vector<std::vector<SimpleField*> > >* fields = NULL,
+                                          int num_fields_per_chunk = 1)
 {
   ThrowRequire(x_dim % dim_span == 0);
   ThrowRequire(y_dim % dim_span == 0);
@@ -241,44 +242,55 @@ HexFixture* create_hex_with_complex_parts(stk::ParallelMachine pm, int x_dim, in
   element_parts.clear();
   element_parts.resize(3);
   if (AllocateFields) {
+    ThrowRequire(fields != NULL);
+    ThrowRequire(num_fields_per_chunk > 0);
     fields->clear();
     fields->resize(3);
   }
 
   int dims[3] = {x_dim, y_dim, z_dim};
   char dim_names[3] = {'x', 'y', 'z'};
+  const EntityRank field_rank = Induce ? stk::topology::NODE_RANK : stk::topology::ELEMENT_RANK;
 
   for (int dim = 0; dim < 3; ++dim) {
-    int dim_size = dims[dim];
-    char dim_name = dim_names[dim];
-    for (int i = 0; i < dim_size; ++i) {
-      if (i % dim_span == 0) {
-        std::ostringstream oss;
-        oss << dim_name << "_" << i / dim_span;
-        if (Induce) {
-          element_parts[dim].push_back(&meta.declare_part(std::string("part_") + oss.str(), stk::topology::ELEMENT_RANK));
-        }
-        else {
-          element_parts[dim].push_back(&meta.declare_part(std::string("part_") + oss.str()));
-        }
+    const int dim_size = dims[dim];
+    const char dim_name = dim_names[dim];
+    const int dim_chunks = dim_size / dim_span;
 
-        if (AllocateFields) {
-          double init_val = 0.0;
-          (*fields)[dim].push_back(&meta.declare_field<SimpleField>(std::string("field_") + oss.str()));
-          put_field(*((*fields)[dim].back()), stk::topology::ELEMENT_RANK, *element_parts[dim].back(), &init_val);
+    if (AllocateFields) {
+      (*fields)[dim].resize(dim_chunks);
+    }
+
+    for (int i = 0; i < dim_chunks; ++i) {
+      std::ostringstream oss;
+      oss << dim_name << "_chunk_" << i;
+      if (Induce) {
+        element_parts[dim].push_back(&meta.declare_part(std::string("part_") + oss.str(), stk::topology::ELEMENT_RANK));
+      }
+      else {
+        element_parts[dim].push_back(&meta.declare_part(std::string("part_") + oss.str()));
+      }
+
+      if (AllocateFields) {
+        double init_val = 0.0;
+        for (int f = 0; f < num_fields_per_chunk; ++f) {
+          std::ostringstream append;
+          append << f << "_";
+          (*fields)[dim][i].push_back(&meta.declare_field<SimpleField>(std::string("field_") + append.str() + oss.str()));
+          put_field(*((*fields)[dim][i].back()), field_rank, *element_parts[dim].back(), &init_val);
         }
       }
     }
   }
 
-  ThrowRequire(element_parts[0].size() == static_cast<size_t>(x_dim));
-  ThrowRequire(element_parts[1].size() == static_cast<size_t>(y_dim));
-  ThrowRequire(element_parts[2].size() == static_cast<size_t>(z_dim));
+  ThrowRequire(element_parts[0].size() == static_cast<size_t>(x_dim / dim_span));
+  ThrowRequire(element_parts[1].size() == static_cast<size_t>(y_dim / dim_span));
+  ThrowRequire(element_parts[2].size() == static_cast<size_t>(z_dim / dim_span));
 
   if (AllocateFields) {
-    ThrowRequire((*fields)[0].size() == static_cast<size_t>(x_dim));
-    ThrowRequire((*fields)[1].size() == static_cast<size_t>(y_dim));
-    ThrowRequire((*fields)[2].size() == static_cast<size_t>(z_dim));
+    ThrowRequire((*fields)[0].size() == static_cast<size_t>(x_dim / dim_span));
+    ThrowRequire((*fields)[1].size() == static_cast<size_t>(y_dim / dim_span));
+    ThrowRequire((*fields)[2].size() == static_cast<size_t>(z_dim / dim_span));
   }
 
   meta.commit();
@@ -485,69 +497,195 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access)
 {
   PERFORMANCE_TEST_PREAMBLE(1 /*num procs*/);
 
-  const int x_dim = 10;
-  const int y_dim = 10;
-  const int z_dim = 10;
-  const int dim_span = 1; // max fragmentation
+  const int x_dim = 20;
+  const int y_dim = 20;
+  const int z_dim = 20;
+  const int dim_span = 5; // low fragmentation
+  const int num_fields = 3;
 
   // Set up mesh
   // This mesh uses incredible amounts of memory with part induction turned on
   std::vector<PartVector> element_parts;
-  std::vector<std::vector<SimpleField*> > fields;
+  std::vector<std::vector<std::vector<SimpleField*> > > fields; // fields[dim][chunk][field_offset]
   HexFixture* mesh =
-    create_hex_with_complex_parts< !TIME_CHANGE_PARTS, !INDUCE_ELEMENT_PARTS, ALLOCATE_FIELDS>(pm, x_dim, y_dim, z_dim, dim_span, element_parts, &fields);
+    create_hex_with_complex_parts< !TIME_CHANGE_PARTS, INDUCE_ELEMENT_PARTS, ALLOCATE_FIELDS>(pm, x_dim, y_dim, z_dim, dim_span, element_parts, &fields, num_fields);
   BulkData & bulk = mesh->m_bulk_data;
 
-  std::vector<std::vector<BucketVector> > bucket_map;
-  bucket_map.resize(x_dim);
+  const int x_chunks = x_dim / dim_span;
+  const int y_chunks = y_dim / dim_span;
+  const int z_chunks = z_dim / dim_span;
 
-  for (int x = 0; x < x_dim; ++x) {
-    bucket_map[x].resize(y_dim);
-    for (int y = 0; y < y_dim; ++y) {
-      bucket_map[x][y].resize(z_dim);
-      for (int z = 0; z < z_dim; ++z) {
+  const size_t nodes_per_chunk = (dim_span + 1) * (dim_span + 1) * (dim_span + 1);
+
+  std::vector<std::vector<std::vector<BucketVector> > > bucket_map;
+  bucket_map.resize(x_chunks);
+
+  for (int x = 0; x < x_chunks; ++x) {
+    bucket_map[x].resize(y_chunks);
+    for (int y = 0; y < y_chunks; ++y) {
+      bucket_map[x][y].resize(z_chunks);
+      for (int z = 0; z < z_chunks; ++z) {
         Selector sel = *element_parts[0][x];
         sel &= *element_parts[1][y];
         sel &= *element_parts[2][z];
 
-        BucketVector selected_buckets;
-        bulk.get_buckets(stk::topology::ELEMENT_RANK, sel, selected_buckets);
-        ThrowRequire(selected_buckets.size() == 1u);
-        bucket_map[x][y][z] = selected_buckets[0];
+        BucketVector& chunk_buckets = bucket_map[x][y][z];
+        bulk.get_buckets(stk::topology::NODE_RANK, sel, chunk_buckets);
+
+        size_t chunk_size = 0;
+        for (int b = 0, be = chunk_buckets.size(); b < be; ++b) {
+          chunk_size += chunk_buckets[b]->size();
+        }
+        STKUNIT_EXPECT_EQ(nodes_per_chunk, chunk_size);
       }
     }
   }
 
   CALLGRIND_TOGGLE_COLLECT;
 
-  const int num_iterations = 5000;
-  int dummy = 0;
+  const int num_iterations = 100;
+  size_t dummy = 0;
   for (int i = 0; i < num_iterations; ++i) {
-    for (int x = 0; x < x_dim; ++x) {
-      SimpleField& x_field = *fields[0][x];
-      for (int y = 0; y < y_dim; ++y) {
-        SimpleField& y_field = *fields[1][y];
-        for (int z = 0; z < z_dim; ++z) {
-          SimpleField& z_field = *fields[2][z];
-          Bucket& bucket = *bucket_map[x][y][z];
+    for (int x = 0; x < x_chunks; ++x) {
+      std::vector<SimpleField*> const& x_fields = fields[0][x];
+      for (int y = 0; y < y_chunks; ++y) {
+        std::vector<SimpleField*> const& y_fields = fields[1][y];
+        for (int z = 0; z < z_chunks; ++z) {
+          std::vector<SimpleField*> const& z_fields = fields[2][z];
+          BucketVector const& chunk_buckets = bucket_map[x][y][z];
+          for (int b = 0, be = chunk_buckets.size(); b < be; ++b) {
+            Bucket& bucket = *bucket_map[x][y][z][b];
 
-          const double* x_field_data = bulk.field_data(x_field, bucket);
-          const double* y_field_data = bulk.field_data(y_field, bucket);
-          const double* z_field_data = bulk.field_data(z_field, bucket);
+            // We are intentionally not using the much-faster style of accessing
+            // fields by bucket instead of by entity.
+            for (size_t e = 0, ee = bucket.size(); e < ee; ++e) {
+              Entity node = bucket[e];
 
-          if (x_field_data != NULL && y_field_data != NULL && z_field_data != NULL) {
-            ++dummy;
+              for (int f = 0; f < num_fields; ++f) {
+                const double* x_field_data = bulk.field_data(*x_fields[f], node);
+                const double* y_field_data = bulk.field_data(*y_fields[f], node);
+                const double* z_field_data = bulk.field_data(*z_fields[f], node);
+
+                if (x_field_data != NULL && y_field_data != NULL && z_field_data != NULL) {
+                  ++dummy;
+                }
+              }
+            }
           }
         }
       }
     }
   }
 
-  STKUNIT_EXPECT_EQ(dummy, x_dim * y_dim * z_dim * num_iterations);
+  CALLGRIND_TOGGLE_COLLECT;
+  CALLGRIND_STOP_INSTRUMENTATION;
+
+  STKUNIT_EXPECT_EQ(dummy, nodes_per_chunk * x_chunks * y_chunks * z_chunks * num_iterations * num_fields);
+
+  PERFORMANCE_TEST_POSTAMBLE();
+
+  delete mesh;
+}
+
+STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access_sm_style)
+{
+  PERFORMANCE_TEST_PREAMBLE(1 /*num procs*/);
+
+  const int x_dim = 20;
+  const int y_dim = 20;
+  const int z_dim = 20;
+  const int dim_span = 5; // low fragmentation
+  const int num_fields = 3;
+  const int spatial_dim = 3;
+
+  // Set up mesh
+  // This mesh uses incredible amounts of memory with part induction turned on
+  std::vector<PartVector> element_parts;
+  std::vector<std::vector<std::vector<SimpleField*> > > fields; // fields[dim][chunk][field_offset]
+  HexFixture* mesh =
+    create_hex_with_complex_parts< !TIME_CHANGE_PARTS, INDUCE_ELEMENT_PARTS, ALLOCATE_FIELDS>(pm, x_dim, y_dim, z_dim, dim_span, element_parts, &fields, num_fields);
+  BulkData & bulk = mesh->m_bulk_data;
+
+  const int x_chunks = x_dim / dim_span;
+  const int y_chunks = y_dim / dim_span;
+  const int z_chunks = z_dim / dim_span;
+
+  const size_t nodes_per_chunk = (dim_span + 1) * (dim_span + 1) * (dim_span + 1);
+
+  std::vector<std::vector<std::vector<BucketVector> > > bucket_map;
+  bucket_map.resize(x_chunks);
+
+  for (int x = 0; x < x_chunks; ++x) {
+    bucket_map[x].resize(y_chunks);
+    for (int y = 0; y < y_chunks; ++y) {
+      bucket_map[x][y].resize(z_chunks);
+      for (int z = 0; z < z_chunks; ++z) {
+        Selector sel = *element_parts[0][x];
+        sel &= *element_parts[1][y];
+        sel &= *element_parts[2][z];
+
+        BucketVector& chunk_buckets = bucket_map[x][y][z];
+        bulk.get_buckets(stk::topology::NODE_RANK, sel, chunk_buckets);
+
+        size_t chunk_size = 0;
+        for (int b = 0, be = chunk_buckets.size(); b < be; ++b) {
+          chunk_size += chunk_buckets[b]->size();
+        }
+        STKUNIT_EXPECT_EQ(nodes_per_chunk, chunk_size);
+      }
+    }
+  }
+
+  CALLGRIND_TOGGLE_COLLECT;
+
+  std::vector<BulkData::FieldMetaDataVector const*> field_meta(num_fields * spatial_dim, NULL);
+  const int num_iterations = 100;
+  size_t dummy = 0;
+  for (int i = 0; i < num_iterations; ++i) {
+    for (int x = 0; x < x_chunks; ++x) {
+      std::vector<SimpleField*> const& x_fields = fields[0][x];
+      for (int y = 0; y < y_chunks; ++y) {
+        std::vector<SimpleField*> const& y_fields = fields[1][y];
+        for (int z = 0; z < z_chunks; ++z) {
+          std::vector<SimpleField*> const& z_fields = fields[2][z];
+
+          for (int f = 0; f < num_fields; ++f) {
+            field_meta[f * spatial_dim]     = &bulk.get_meta_data_for_nodal_field(*x_fields[f]);
+            field_meta[f * spatial_dim + 1] = &bulk.get_meta_data_for_nodal_field(*y_fields[f]);
+            field_meta[f * spatial_dim + 2] = &bulk.get_meta_data_for_nodal_field(*z_fields[f]);
+          }
+
+          BucketVector const& chunk_buckets = bucket_map[x][y][z];
+          for (int b = 0, be = chunk_buckets.size(); b < be; ++b) {
+            Bucket& bucket = *bucket_map[x][y][z][b];
+
+            for (size_t e = 0, ee = bucket.size(); e < ee; ++e) {
+              Entity node = bucket[e];
+              MeshIndex index = bulk.mesh_index(node);
+              unsigned bucket_id = index.bucket->bucket_id();
+
+              // We are intentionally not using the much-faster style of accessing
+              // fields by bucket instead of by entity.
+              for (int f = 0; f < num_fields * spatial_dim; f += spatial_dim) {
+                const double* x_field_data = reinterpret_cast<const double*>((*field_meta[f])[bucket_id].m_data) + index.bucket_ordinal;
+                const double* y_field_data = reinterpret_cast<const double*>((*field_meta[f+1])[bucket_id].m_data) + index.bucket_ordinal;
+                const double* z_field_data = reinterpret_cast<const double*>((*field_meta[f+2])[bucket_id].m_data) + index.bucket_ordinal;
+
+                if (x_field_data != NULL && y_field_data != NULL && z_field_data != NULL) {
+                  ++dummy;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 
   CALLGRIND_TOGGLE_COLLECT;
   CALLGRIND_STOP_INSTRUMENTATION;
 
+  STKUNIT_EXPECT_EQ(dummy, nodes_per_chunk * x_chunks * y_chunks * z_chunks * num_iterations * num_fields);
 
   PERFORMANCE_TEST_POSTAMBLE();
 
