@@ -23,7 +23,6 @@ APPEND_SET(SOURCES
   BlockedPFactory.cpp
   CoalesceDropFactory.cpp
 # CoupledAggregationFactory.cpp
-  DistanceLaplacian.cpp
   GenericRFactory.cpp
   Hierarchy.cpp
   Level.cpp
