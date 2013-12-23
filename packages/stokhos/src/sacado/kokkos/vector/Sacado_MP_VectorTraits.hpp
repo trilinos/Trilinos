@@ -191,9 +191,124 @@ namespace Teuchos {
 
   //! Specializtion of Teuchos::ScalarTraits
   template <typename S>
-  struct ScalarTraits< Sacado::MP::Vector<S> > :
-    public Sacado::ETV::ScalarTraitsImp< Sacado::MP::Vector<S> > {};
+  struct ScalarTraits< Sacado::MP::Vector<S> > {
+    typedef Sacado::MP::Vector<S> ScalarType;
+    typedef typename S::value_type value_type;
+    typedef typename S::ordinal_type ordinal_type;
 
+    typedef typename Teuchos::ScalarTraits<value_type>::magnitudeType value_mag_type;
+    typedef typename Teuchos::ScalarTraits<value_type>::halfPrecision value_half_type;
+    typedef typename Teuchos::ScalarTraits<value_type>::doublePrecision value_double_type;
+
+    typedef typename Sacado::mpl::apply<S,ordinal_type,value_mag_type>::type storage_mag_type;
+    typedef typename Sacado::mpl::apply<S,ordinal_type,value_half_type>::type storage_half_type;
+    typedef typename Sacado::mpl::apply<S,ordinal_type,value_double_type>::type storage_double_type;
+
+    typedef Sacado::MP::Vector<storage_mag_type> magnitudeType;
+    typedef Sacado::MP::Vector<storage_half_type> halfPrecision;
+    typedef Sacado::MP::Vector<storage_double_type> doublePrecision;
+
+    static const bool isComplex = Teuchos::ScalarTraits<value_type>::isComplex;
+    static const bool isOrdinal = Teuchos::ScalarTraits<value_type>::isOrdinal;
+    static const bool isComparable =
+      Teuchos::ScalarTraits<value_type>::isComparable;
+    static const bool hasMachineParameters =
+      Teuchos::ScalarTraits<value_type>::hasMachineParameters;
+    static typename Teuchos::ScalarTraits<value_type>::magnitudeType eps() {
+      return Teuchos::ScalarTraits<value_type>::eps();
+    }
+    static typename Teuchos::ScalarTraits<value_type>::magnitudeType sfmin() {
+      return Teuchos::ScalarTraits<value_type>::sfmin();
+    }
+    static typename Teuchos::ScalarTraits<value_type>::magnitudeType base()  {
+      return Teuchos::ScalarTraits<value_type>::base();
+    }
+    static typename Teuchos::ScalarTraits<value_type>::magnitudeType prec()  {
+      return Teuchos::ScalarTraits<value_type>::prec();
+    }
+    static typename Teuchos::ScalarTraits<value_type>::magnitudeType t()     {
+      return Teuchos::ScalarTraits<value_type>::t();
+    }
+    static typename Teuchos::ScalarTraits<value_type>::magnitudeType rnd()   {
+      return Teuchos::ScalarTraits<value_type>::rnd();
+    }
+    static typename Teuchos::ScalarTraits<value_type>::magnitudeType emin()  {
+      return Teuchos::ScalarTraits<value_type>::emin();
+    }
+    static typename Teuchos::ScalarTraits<value_type>::magnitudeType rmin()  {
+      return Teuchos::ScalarTraits<value_type>::rmin();
+    }
+    static typename Teuchos::ScalarTraits<value_type>::magnitudeType emax()  {
+      return Teuchos::ScalarTraits<value_type>::emax();
+    }
+    static typename Teuchos::ScalarTraits<value_type>::magnitudeType rmax()  {
+      return Teuchos::ScalarTraits<value_type>::rmax();
+    }
+    static magnitudeType magnitude(const ScalarType& a) {
+      return std::fabs(a);
+    }
+    static value_type zero()  {
+      return value_type(0.0);
+    }
+    static value_type one()   {
+      return value_type(1.0);
+    }
+
+    // Conjugate is only defined for real derivative components
+    static ScalarType conjugate(const ScalarType& x) {
+      int sz = x.size();
+      ScalarType y(sz, value_type(0.0));
+      for (int i=0; i<sz; i++)
+        y.fastAccessCoeff(i) =
+          Teuchos::ScalarTraits<value_type>::conjugate(x.fastAccessCoeff(i));
+      return y;
+    }
+
+    // Real part is only defined for real derivative components
+    static ScalarType real(const ScalarType& x) {
+      int sz = x.size();
+      ScalarType y(sz, value_type(0.0));
+      for (int i=0; i<sz; i++)
+        y.fastAccessCoeff(i) =
+          Teuchos::ScalarTraits<value_type>::real(x.fastAccessCoeff(i));
+      return y;
+    }
+
+    // Imaginary part is only defined for real derivative components
+    static ScalarType imag(const ScalarType& x) {
+      int sz = x.size();
+      ScalarType y(sz, value_type(0.0));
+      for (int i=0; i<sz; i++)
+        y.fastAccessCoeff(i) =
+          Teuchos::ScalarTraits<value_type>::imag(x.fastAccessCoeff(i));
+      return y;
+    }
+
+    static value_type nan() {
+      return Teuchos::ScalarTraits<value_type>::nan();
+    }
+    static bool isnaninf(const ScalarType& x) {
+      for (int i=0; i<x.size(); i++)
+        if (Teuchos::ScalarTraits<value_type>::isnaninf(x.fastAccessCoeff(i)))
+          return true;
+      return false;
+    }
+    static void seedrandom(unsigned int s) {
+      Teuchos::ScalarTraits<value_type>::seedrandom(s);
+    }
+    static value_type random() {
+      return Teuchos::ScalarTraits<value_type>::random();
+    }
+    static std::string name() {
+      return Sacado::StringName<ScalarType>::eval();
+    }
+    static ScalarType squareroot(const ScalarType& x) {
+      return std::sqrt(x);
+    }
+    static ScalarType pow(const ScalarType& x, const ScalarType& y) {
+      return std::pow(x,y);
+    }
+  };
 
   //! Specialization of %Teuchos::SerializationTraits
   template <typename Ordinal, typename S>
