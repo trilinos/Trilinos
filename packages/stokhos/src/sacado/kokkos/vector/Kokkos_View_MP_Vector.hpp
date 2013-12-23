@@ -113,6 +113,42 @@ struct ViewSpecialize<
 
 template< class T , class Device > struct RebindStokhosStorageDevice ;
 
+//----------------------------------------------------------------------------
+/** \brief  Enable view parentheses operator for
+ *          match of layout and integral arguments.
+ *          If correct rank define type from traits,
+ *          otherwise define type as an error message.
+ *
+ *          We have to create our own here because the one in Kokkos_View.hpp
+ *          was recently changed in an incompatible way.
+ */
+template< class ReturnType , class Traits , class Layout , unsigned Rank ,
+          typename iType0 = int , typename iType1 = int ,
+          typename iType2 = int , typename iType3 = int ,
+          typename iType4 = int , typename iType5 = int ,
+          typename iType6 = int , typename iType7 = int ,
+          class Enable = void >
+struct ViewEnableArrayOperLayout ;
+
+template< class ReturnType , class Traits , class Layout , unsigned Rank ,
+          typename iType0 , typename iType1 ,
+          typename iType2 , typename iType3 ,
+          typename iType4 , typename iType5 ,
+          typename iType6 , typename iType7 >
+struct ViewEnableArrayOperLayout<
+   ReturnType , Traits , Layout , Rank ,
+   iType0 , iType1 , iType2 , iType3 ,
+   iType4 , iType5 , iType6 , iType7 ,
+   typename enable_if<
+     iType0(0) == 0 && iType1(0) == 0 && iType2(0) == 0 && iType3(0) == 0 &&
+     iType4(0) == 0 && iType5(0) == 0 && iType6(0) == 0 && iType7(0) == 0 &&
+     is_same< typename Traits::array_layout , Layout >::value &&
+     ( unsigned(Traits::rank) == Rank )
+   >::type >
+{
+  typedef ReturnType type ;
+};
+
 } // namespace Impl
 } // namespace Kokkos
 
@@ -533,7 +569,7 @@ public:
 
   template< typename iType0 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type , traits, LayoutLeft, 2, iType0 >::type
+  typename Impl::ViewEnableArrayOperLayout< sacado_mp_vector_view_type , traits, LayoutLeft, 2, iType0 >::type
     operator[] ( const iType0 & i0 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0, 0 );
@@ -548,7 +584,7 @@ public:
 
   template< typename iType0 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type , traits, LayoutLeft, 2, iType0 >::type
+  typename Impl::ViewEnableArrayOperLayout< sacado_mp_vector_view_type , traits, LayoutLeft, 2, iType0 >::type
     operator() ( const iType0 & i0 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0, 0 );
@@ -563,7 +599,7 @@ public:
 
   template< typename iType0 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+  typename Impl::ViewEnableArrayOperLayout< sacado_mp_vector_view_type ,
                                       traits, LayoutLeft, 2, iType0 >::type
     at( const iType0 & i0 , const int , const int , const int ,
         const int , const int , const int , const int ) const
@@ -584,7 +620,7 @@ public:
 
   template< typename iType0 , typename iType1 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+  typename Impl::ViewEnableArrayOperLayout< sacado_mp_vector_view_type ,
                                       traits, LayoutLeft, 3, iType0, iType1 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 ) const
     {
@@ -600,7 +636,7 @@ public:
 
   template< typename iType0 , typename iType1 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+  typename Impl::ViewEnableArrayOperLayout< sacado_mp_vector_view_type ,
                                       traits, LayoutLeft, 3, iType0, iType1 >::type
     at( const iType0 & i0 , const iType1 & i1 , const int , const int ,
         const int , const int , const int , const int ) const
@@ -621,7 +657,7 @@ public:
 
   template< typename iType0 , typename iType1 , typename iType2 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+  typename Impl::ViewEnableArrayOperLayout< sacado_mp_vector_view_type ,
                                       traits, LayoutLeft, 4, iType0, iType1, iType2 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
     {
@@ -639,7 +675,7 @@ public:
 
   template< typename iType0 , typename iType1 , typename iType2 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+  typename Impl::ViewEnableArrayOperLayout< sacado_mp_vector_view_type ,
                                       traits, LayoutLeft, 4, iType0, iType1, iType2 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const int ,
         const int , const int , const int , const int ) const
@@ -662,7 +698,7 @@ public:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+  typename Impl::ViewEnableArrayOperLayout< sacado_mp_vector_view_type ,
                                       traits, LayoutLeft, 5, iType0, iType1, iType2, iType3 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
     {
@@ -681,7 +717,7 @@ public:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+  typename Impl::ViewEnableArrayOperLayout< sacado_mp_vector_view_type ,
                                       traits, LayoutLeft, 5, iType0, iType1, iType2, iType3 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const int , const int , const int , const int ) const
@@ -705,7 +741,7 @@ public:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 , typename iType4 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+  typename Impl::ViewEnableArrayOperLayout< sacado_mp_vector_view_type ,
                                       traits, LayoutLeft, 6, iType0, iType1, iType2, iType3, iType4 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 , const iType4 & i4 ) const
     {
@@ -725,7 +761,7 @@ public:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 , typename iType4 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+  typename Impl::ViewEnableArrayOperLayout< sacado_mp_vector_view_type ,
                                       traits, LayoutLeft, 6, iType0, iType1, iType2, iType3 , iType4 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const iType4 & i4 , const int , const int , const int ) const
@@ -750,7 +786,7 @@ public:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 , typename iType4 , typename iType5 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+  typename Impl::ViewEnableArrayOperLayout< sacado_mp_vector_view_type ,
                                       traits, LayoutLeft, 7, iType0, iType1, iType2, iType3, iType4, iType5 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ,
                  const iType3 & i3 , const iType4 & i4 , const iType5 & i5 ) const
@@ -772,7 +808,7 @@ public:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 , typename iType4 , typename iType5 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+  typename Impl::ViewEnableArrayOperLayout< sacado_mp_vector_view_type ,
                                       traits, LayoutLeft, 7, iType0, iType1, iType2, iType3, iType4, iType5 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ,
         const iType3 & i3 , const iType4 & i4 , const iType5 & i5 ,
@@ -800,7 +836,7 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 , typename iType5 , typename iType6 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+  typename Impl::ViewEnableArrayOperLayout< sacado_mp_vector_view_type ,
                                       traits, LayoutLeft, 8, iType0, iType1, iType2, iType3, iType4, iType5, iType6 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
@@ -824,7 +860,7 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 , typename iType5 , typename iType6 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+  typename Impl::ViewEnableArrayOperLayout< sacado_mp_vector_view_type ,
                                       traits, LayoutLeft, 8, iType0, iType1, iType2, iType3, iType4, iType5, iType6 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const int ) const
@@ -851,7 +887,7 @@ public:
 
   template< typename iType0 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+  typename Impl::ViewEnableArrayOperLayout< sacado_mp_vector_view_type ,
                                       traits, LayoutRight, 2, iType0 >::type
     operator() ( const iType0 & i0 ) const
     {
@@ -866,7 +902,7 @@ public:
 
   template< typename iType0 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+  typename Impl::ViewEnableArrayOperLayout< sacado_mp_vector_view_type ,
                                       traits, LayoutRight, 2, iType0 >::type
     at( const iType0 & i0 , const int, const int, const int,
         const int, const int, const int, const int ) const
@@ -886,7 +922,7 @@ public:
 
   template< typename iType0 , typename iType1 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+  typename Impl::ViewEnableArrayOperLayout< sacado_mp_vector_view_type ,
                                       traits, LayoutRight, 3, iType0, iType1 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 ) const
     {
@@ -901,7 +937,7 @@ public:
 
   template< typename iType0 , typename iType1 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+  typename Impl::ViewEnableArrayOperLayout< sacado_mp_vector_view_type ,
                                       traits, LayoutRight, 3, iType0, iType1 >::type
     at( const iType0 & i0 , const iType1 & i1 , const int , const int ,
         const int , const int , const int , const int ) const
@@ -921,7 +957,7 @@ public:
 
   template< typename iType0 , typename iType1 , typename iType2 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+  typename Impl::ViewEnableArrayOperLayout< sacado_mp_vector_view_type ,
                                       traits, LayoutRight, 4, iType0, iType1, iType2 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
     {
@@ -938,7 +974,7 @@ public:
 
   template< typename iType0 , typename iType1 , typename iType2 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+  typename Impl::ViewEnableArrayOperLayout< sacado_mp_vector_view_type ,
                                       traits, LayoutRight, 4, iType0, iType1, iType2 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const int ,
         const int , const int , const int , const int ) const
@@ -960,7 +996,7 @@ public:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+  typename Impl::ViewEnableArrayOperLayout< sacado_mp_vector_view_type ,
                                       traits, LayoutRight, 5, iType0, iType1, iType2, iType3 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
     {
@@ -978,7 +1014,7 @@ public:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+  typename Impl::ViewEnableArrayOperLayout< sacado_mp_vector_view_type ,
                                       traits, LayoutRight, 5, iType0, iType1, iType2, iType3 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const int , const int , const int , const int ) const
@@ -1002,7 +1038,7 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+  typename Impl::ViewEnableArrayOperLayout< sacado_mp_vector_view_type ,
                                       traits, LayoutRight, 6, iType0, iType1, iType2, iType3, iType4 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 ) const
@@ -1023,7 +1059,7 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+  typename Impl::ViewEnableArrayOperLayout< sacado_mp_vector_view_type ,
                                       traits, LayoutRight, 6, iType0, iType1, iType2, iType3, iType4 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const iType4 & i4 , const int , const int , const int ) const
@@ -1049,7 +1085,7 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 , typename iType5 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+  typename Impl::ViewEnableArrayOperLayout< sacado_mp_vector_view_type ,
                                       traits, LayoutRight, 7, iType0, iType1, iType2, iType3, iType4, iType5 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 ) const
@@ -1071,7 +1107,7 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 , typename iType5 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+  typename Impl::ViewEnableArrayOperLayout< sacado_mp_vector_view_type ,
                                       traits, LayoutRight, 7, iType0, iType1, iType2, iType3, iType4, iType5 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const iType4 & i4 , const iType5 & i5 , const int , const int ) const
@@ -1097,7 +1133,7 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 , typename iType5, typename iType6 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+  typename Impl::ViewEnableArrayOperLayout< sacado_mp_vector_view_type ,
                                       traits, LayoutRight, 8, iType0, iType1, iType2, iType3, iType4, iType5, iType6 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
@@ -1120,7 +1156,7 @@ public:
   template< typename iType0 , typename iType1 , typename iType2 ,
             typename iType3 , typename iType4 , typename iType5, typename iType6 >
   KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< sacado_mp_vector_view_type ,
+  typename Impl::ViewEnableArrayOperLayout< sacado_mp_vector_view_type ,
                                       traits, LayoutRight, 8, iType0, iType1, iType2, iType3, iType4, iType5, iType6 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const int ) const
