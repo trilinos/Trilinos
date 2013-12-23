@@ -10,14 +10,14 @@
 
 namespace pike {
 
-  MultiphysicsDistributor::MultiphysicsDistributor(const std::string distributorName) :
+  MultiphysicsDistributor::MultiphysicsDistributor(const std::string& distributorName) :
     myName_(distributorName),
     applicationAddMethodType_(Unknown),
     setupCalled_(false)
   { }
   
   void 
-  MultiphysicsDistributor::addApplication(const ApplicationIndex index, const std::string name, const int numberOfProcesses)
+  MultiphysicsDistributor::addApplication(const ApplicationIndex index, const std::string& name, const int numberOfProcesses)
   {
     if (applicationAddMethodType_ == Unknown)
       applicationAddMethodType_ = NumberOfProcesses;
@@ -41,7 +41,7 @@ namespace pike {
   }
 
   void 
-  MultiphysicsDistributor::addApplication(const ApplicationIndex index, const std::string name, const std::vector<int> processes)
+  MultiphysicsDistributor::addApplication(const ApplicationIndex index, const std::string& name, const std::vector<int> processes)
   {
     if (applicationAddMethodType_ == Unknown)
       applicationAddMethodType_ = VectorOfProcessIndices;
@@ -72,7 +72,7 @@ namespace pike {
   }
   
   void
-  MultiphysicsDistributor::addApplication(const ApplicationIndex index, const std::string name, const int beginRank, const int endRank)
+  MultiphysicsDistributor::addApplication(const ApplicationIndex index, const std::string& name, const int beginRank, const int endRank)
   {
     if (applicationAddMethodType_ == Unknown)
       applicationAddMethodType_ = VectorOfProcessIndices;
@@ -98,7 +98,7 @@ namespace pike {
   }
   
   void
-  MultiphysicsDistributor::addTransfer(const TransferIndex index, const ApplicationIndex a, const ApplicationIndex b, const std::string name)
+  MultiphysicsDistributor::addTransfer(const TransferIndex index, const ApplicationIndex a, const ApplicationIndex b, const std::string& name)
   {
     TEUCHOS_TEST_FOR_EXCEPTION( (transfers_.find(index) != transfers_.end()), std::logic_error,
 				"Duplicate Index Error: The index for the TRANSFER with index " << index << " named \"" << name << "\" has already been used!");
@@ -114,7 +114,7 @@ namespace pike {
   }
 
   void
-  MultiphysicsDistributor::addTransfer(const TransferIndex index, const std::vector<ApplicationIndex>& appIndices, const std::string name)
+  MultiphysicsDistributor::addTransfer(const TransferIndex index, const std::vector<ApplicationIndex>& appIndices, const std::string& name)
   {
     TEUCHOS_TEST_FOR_EXCEPTION( (transfers_.find(index) != transfers_.end()), std::logic_error,
 				"Duplicate Index Error: The index for the TRANSFER with index " << index << " named \"" << name << "\" has already been used!");
@@ -295,14 +295,14 @@ namespace pike {
     return n->second;
   }
 
-  MultiphysicsDistributor::ApplicationIndex MultiphysicsDistributor::getApplicationIndex(const std::string appName) const
+  MultiphysicsDistributor::ApplicationIndex MultiphysicsDistributor::getApplicationIndex(const std::string& appName) const
   {
     std::map<std::string,ApplicationIndex>::const_iterator n = applicationNameToIndex_.find(appName);
     TEUCHOS_ASSERT(n != applicationNameToIndex_.end());
     return n->second;
   }
   
-  MultiphysicsDistributor::TransferIndex MultiphysicsDistributor::getTransferIndex(const std::string transferName) const
+  MultiphysicsDistributor::TransferIndex MultiphysicsDistributor::getTransferIndex(const std::string& transferName) const
   {
     std::map<std::string,MultiphysicsDistributor::TransferIndex>::const_iterator n = transferNameToIndex_.find(transferName);
     TEUCHOS_ASSERT(n != transferNameToIndex_.end());

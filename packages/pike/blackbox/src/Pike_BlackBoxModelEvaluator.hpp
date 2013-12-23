@@ -35,7 +35,9 @@ namespace pike {
      *	track responses internally and determine convergence based on
      *	relative error of local responses without having to expose the
      *	responses through a pike::Response.  This is primarily for
-     *	backwards compatibility with LIME.
+     *	backwards compatibility, new codes should use the StatusTest
+     *	objects for global convergence (and for checking the local
+     *	convergence).
      */
     virtual bool isGloballyConverged() const = 0;
 

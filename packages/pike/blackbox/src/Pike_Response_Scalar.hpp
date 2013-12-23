@@ -13,7 +13,7 @@ namespace pike {
 
   public:
 
-    ScalarResponse(const std::string name) : name_(name) { }
+    ScalarResponse(const std::string& name) : name_(name) { }
 
     std::string name() const
     { return name_; } 
@@ -35,7 +35,7 @@ namespace pike {
       \relates ScalarResponse
   */
   template<typename Scalar>
-  Teuchos::RCP<ScalarResponse<Scalar> > scalarResponse(const std::string name = "")
+  Teuchos::RCP<ScalarResponse<Scalar> > scalarResponse(const std::string& name = "")
   {
     return Teuchos::rcp(new pike::ScalarResponse<Scalar>(name));
   }

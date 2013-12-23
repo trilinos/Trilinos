@@ -27,7 +27,7 @@ namespace pike {
     typedef int ApplicationIndex;
     typedef int TransferIndex;
 
-    MultiphysicsDistributor(const std::string distributorName = "Pike");
+    MultiphysicsDistributor(const std::string& distributorName = "Pike");
 
     /** \brief Register a new application with this driver.
 	
@@ -44,7 +44,7 @@ namespace pike {
 
         NOTE: if this method is called, the process will be allocated internally and all calls to addApplication must use this particular method/signature.
      */
-    void addApplication(const ApplicationIndex index, const std::string name, const int numberOfProcesses);
+    void addApplication(const ApplicationIndex index, const std::string& name, const int numberOfProcesses);
 
     /** \brief Register a new application with this driver.
 	
@@ -54,7 +54,7 @@ namespace pike {
 	\param[in] name Name of the application
 	\param[in] processes A vector containing mpi processes that this application will be run on.  The process ranks are relative to the global comm used in the setup() method.
      */
-    void addApplication(const ApplicationIndex index, const std::string name, const std::vector<int> processes);
+    void addApplication(const ApplicationIndex index, const std::string& name, const std::vector<int> processes);
 
     /** \brief Register a new application  with this driver given a range of ranks to exist on.
 	
@@ -65,7 +65,7 @@ namespace pike {
 	\param[in] begin_rank The beginning of a range of processes that this application will exist on.  The range is inclusive of the end points, [begin_rank,end_rank].  The process ranks are relative to the global comm used in the setup() method.
 	\param[in] end_rank The end of a range of processes that this application will exist on.  The range is inclusive of the end points, [begin_rank,end_rank].  The process ranks are relative to the global comm used in the setup() method.
      */
-    void addApplication(const ApplicationIndex index, const std::string name, const int beginRank, const int endRank);
+    void addApplication(const ApplicationIndex index, const std::string& name, const int beginRank, const int endRank);
 
     /** \brief Tells this object that an active coupling between two physics exisits and that a union of the two applicaiton subcommunicators should be built for coupled data transfer.
 
@@ -76,7 +76,7 @@ namespace pike {
 
        This is a simplification of the general addTranfer that takes a std::vector as its argument.  Most couplings are between two codes, and this case comes up so often that we have a specialized ctor for it.
      */
-    void addTransfer(const TransferIndex index, const ApplicationIndex a, const ApplicationIndex b, const std::string name = "");
+    void addTransfer(const TransferIndex index, const ApplicationIndex a, const ApplicationIndex b, const std::string& name = "");
 
     /** \brief Tells this object that an active coupling between multiple physics exisits and that a union of the applicaiton subcommunicators should be built for coupled data transfer.
  
@@ -84,7 +84,7 @@ namespace pike {
        \param[in] appIndices Indices of the applications involved in the transfer.
        \param[in] name (optional) Name of the transfer.
     */
-    void addTransfer(const TransferIndex index, const std::vector<ApplicationIndex>& appIndices, const std::string name = "");
+    void addTransfer(const TransferIndex index, const std::vector<ApplicationIndex>& appIndices, const std::string& name = "");
 
     /** \brief Builds the application subcommunicators and any coupling subcommunicators. 
   
@@ -99,10 +99,10 @@ namespace pike {
     std::string getTransferName(const TransferIndex transferIndex) const;
 
     /** \brief Returns the application index given the application string identifier. */
-    ApplicationIndex getApplicationIndex(const std::string appName) const;
+    ApplicationIndex getApplicationIndex(const std::string& appName) const;
 
     /** \brief Returns the transfer index given the transfer string identifier. */
-    TransferIndex getTransferIndex(const std::string transferName) const;
+    TransferIndex getTransferIndex(const std::string& transferName) const;
 
     /** \brief Returns true if the application is active on this MPI process. */
     bool appExistsOnProcess(const ApplicationIndex index) const;
