@@ -469,7 +469,9 @@ namespace {
         RCP<MV> doubleViewA = mvViewA->subViewNonConst(Range1D(0,inView1.size()-1));
         RCP<MV> doubleViewB = mvViewB->subViewNonConst(Range1D(0,inView1.size()-1));
         RCP<const MV> doubleViewC = mvViewC->subView(Range1D(0,inView1.size()-1));
-        (*doubleViewA) = (*doubleViewB) = (*doubleViewC);
+        //(*doubleViewA) = (*doubleViewB) = (*doubleViewC);
+        deep_copy((*doubleViewB),(*doubleViewC));
+        deep_copy((*doubleViewA),(*doubleViewB));
         doubleViewA = Teuchos::null;
         doubleViewB = Teuchos::null;
         doubleViewC = Teuchos::null;
@@ -1669,6 +1671,7 @@ namespace {
     //   check that it equals B: subtraction in situ
     {
       MV A2(A);
+      A2 = createCopy(A);
       A2.scale(as<Scalar>(2));
       A2.update(as<Scalar>(-1),B,as<Scalar>(1));
       A2.norm1(norms);
@@ -1678,6 +1681,7 @@ namespace {
     //   check that it equals B: scale,subtraction in situ
     {
       MV A2(A);
+      A2 = createCopy(A);
       A2.update(as<Scalar>(-1),B,as<Scalar>(2));
       A2.norm1(norms);
       TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
@@ -1746,7 +1750,9 @@ namespace {
           {
             RCP<V> bj = B.getVectorNonConst(j);
             RCP<const V> aj = A.getVector(j);
-            (*bj) = (*aj);
+            //(*bj) = (*aj);
+            deep_copy((*bj),(*aj));
+
             ArrayRCP<Scalar> bjview = bj->get1dViewNonConst();
             for (size_t i=0; i < numLocal; ++i) {
               bjview[i] *= as<Scalar>(2);
@@ -1757,7 +1763,8 @@ namespace {
           {
             RCP<MV>       bj = B.subViewNonConst(Range1D(j,j));
             RCP<const MV> aj = A.subView(Range1D(j,j));
-            (*bj) = (*aj);
+            ////(*bj) = (*aj);
+            deep_copy((*bj),(*aj));
             ArrayRCP<Scalar> bjview = bj->get1dViewNonConst();
             for (size_t i=0; i < numLocal; ++i) {
               bjview[i] *= as<Scalar>(2);
@@ -1768,7 +1775,11 @@ namespace {
           {
             RCP<MV> bj = B.subViewNonConst(tuple<size_t>(j));
             RCP<const MV> aj = A.subView(tuple<size_t>(j));
-            (*bj) = (*aj);
+            //RCP<MV>       bj = B.subViewNonConst(Range1D(j,j));
+            //RCP<const MV> aj = A.subView(Range1D(j,j));
+            //(*bj) = (*aj);
+            deep_copy((*bj),(*aj));
+            ArrayRCP<const Scalar> ajview = aj->get1dView();
             ArrayRCP<Scalar> bjview = bj->get1dViewNonConst();
             for (size_t i=0; i < numLocal; ++i) {
               bjview[i] *= as<Scalar>(2);
@@ -1804,7 +1815,8 @@ namespace {
     // check that C=A, C.Scale(2.0) == B
     {
       MV C(map,numVectors,false);
-      C = A;
+      //C = A;
+      C = createCopy(A);
       C.scale(as<Scalar>(2));
       C.update(-1.0,B,1.0);
       Array<Mag> Cnorms(numVectors), zeros(numVectors,M0);
@@ -1814,7 +1826,8 @@ namespace {
     // check that C=A, C.Scale(tuple(2)) == B
     {
       MV C(map,numVectors,false);
-      C = A;
+      //C = A;
+      C = createCopy(A);
       Array<Scalar> twos(numVectors,as<Scalar>(2));
       C.scale(twos());
       C.update(-1.0,B,1.0);
@@ -1869,6 +1882,7 @@ namespace {
     //   check that it equals B: subtraction in situ
     {
       V A2(A);
+      A2 = createCopy(A);
       A2.scale(as<Scalar>(2));
       A2.update(as<Scalar>(-1),B,as<Scalar>(1));
       norm = A2.norm1(); A2.norm1(norms());
@@ -1879,6 +1893,7 @@ namespace {
     //   check that it equals B: scale,subtraction in situ
     {
       V A2(A);
+      A2 = createCopy(A);
       A2.update(as<Scalar>(-1),B,as<Scalar>(2));
       norm = A2.norm1(); A2.norm1(norms());
       TEST_EQUALITY(norm,M0);
@@ -2527,6 +2542,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, NonContigView     , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Describable       , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Typedefs          , LO, GO, SCALAR, NODE )
+
 
 #if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
 #  define TPETRA_MULTIVECTOR_COMPLEX_FLOAT_DOT_TEST( NODE ) \

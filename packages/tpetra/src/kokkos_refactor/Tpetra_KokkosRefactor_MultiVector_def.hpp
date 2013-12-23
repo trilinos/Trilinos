@@ -206,7 +206,7 @@ namespace Tpetra {
     size_t stride[8];
     view_.stride (stride);
     const int LDA = view_.dimension_1() > 1?stride[1]:view_.dimension_0();
-    const size_t NumVectors = view_.dimension_1();
+    size_t NumVectors = view_.dimension_1();
 
     const char tfecfFuncName[] = "MultiVector(view,LDA,NumVector)";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(NumVectors < 1, std::invalid_argument,
@@ -216,6 +216,14 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(LDA < myLen, std::invalid_argument,
       ": LDA must be large enough to accomodate the local entries.");
 
+    if (whichVectors.size () == 1) {
+      // shift data so that desired vector is vector 0
+      // kill whichVectors_; we are constant stride
+      view_type tmpview = Kokkos::subview<view_type>(view_,Kokkos::ALL(),whichVectors[0]);
+      view_ = tmpview;
+      NumVectors = 1;
+      whichVectors_.clear ();
+    }
     // This is a shallow copy into the KokkosClassic::MultiVector.
     // KokkosClassic::MultiVector doesn't know about whichVectors_.
     MVT::initializeValues (lclMV_, myLen, NumVectors, Kokkos::Compat::persistingView (view_.d_view), LDA);
@@ -1787,9 +1795,21 @@ namespace Tpetra {
                       const Scalar &beta,  const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &B,
                       const Scalar &gamma)
   {
+    const char tfecfFuncName[] = "update()";
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*A.getMap()) || !this->getMap()->isCompatible(*B.getMap()),
+        std::runtime_error,
+        ": MultiVectors do not have compatible Maps:" << std::endl
+        << "this->getMap(): " << std::endl << *this->getMap()
+        << "A.getMap(): " << std::endl << *A.getMap() << std::endl
+        << "B.getMap(): " << std::endl << *B.getMap() << std::endl);
+#else
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( getLocalLength() != A.getLocalLength() || getLocalLength() != B.getLocalLength(), std::runtime_error,
+        ": MultiVectors do not have the same local length.");
+#endif
     TEUCHOS_TEST_FOR_EXCEPTION(
       A.getNumVectors() != this->getNumVectors() || B.getNumVectors() != this->getNumVectors(),
-      std::invalid_argument,
+      std::runtime_error,
       "Tpetra::MultiVector::update(three MVs): MultiVectors must have the same number of vectors.");
 
     if (isConstantStride() && A.isConstantStride () && B.isConstantStride ()) {
@@ -2108,7 +2128,6 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::rcp;
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > MV;
-
     TEUCHOS_TEST_FOR_EXCEPTION(cols.size() == 0, std::runtime_error,
       "Tpetra::MultiVector::subViewNonConst(ArrayView): range must include at least one vector.");
     if (isConstantStride()) {
@@ -3059,19 +3078,35 @@ namespace Tpetra {
                         LDA, numVectors, HOST_VIEW_CONSTRUCTOR));*/
   }
 
-  template<class DstType, class SrcType, class DeviceType>
+  template<class DstType, class SrcType, class DeviceType,bool DstConstStride,bool SrcConstStride>
   struct DeepCopySelectedVectors {
     typedef DeviceType device_type;
     DstType dst;
     SrcType src;
-    Kokkos::View<int*,DeviceType> whichVector;
+    Kokkos::View<int*,DeviceType> whichVectorSrc;
+    Kokkos::View<int*,DeviceType> whichVectorDst;
     int n;
     DeepCopySelectedVectors(DstType dst_, SrcType src_,
-                            Kokkos::View<int*,DeviceType> whichVector_):
-                              dst(dst_),src(src_),whichVector(whichVector_),n(whichVector_.dimension_0()) {};
+                            Kokkos::View<int*,DeviceType> whichVectorDst_,
+                            Kokkos::View<int*,DeviceType> whichVectorSrc_):
+                              dst(dst_),src(src_),whichVectorDst(whichVectorDst_),whichVectorSrc(whichVectorSrc_),n(whichVectorSrc_.dimension_0()) {};
     void operator()(int i) const {
-      for(int j = 0; j<n ; j++) {
-        dst(i,j) = src(i,whichVector(j));
+      if(DstConstStride ) {
+        if(SrcConstStride) {
+          for(int j = 0; j<n ; j++)
+            dst(i,j) = src(i,j);
+        } else {
+          for(int j = 0; j<n ; j++)
+            dst(i,j) = src(i,whichVectorSrc(j));
+        }
+      } else {
+        if(SrcConstStride) {
+          for(int j = 0; j<n ; j++)
+            dst(i,whichVectorDst(j)) = src(i,j);
+        } else {
+          for(int j = 0; j<n ; j++)
+            dst(i,whichVectorDst(j)) = src(i,whichVectorSrc(j));
+        }
       }
     }
   };
@@ -3088,19 +3123,96 @@ namespace Tpetra {
         Kokkos::View<int*,DeviceType> whichVectors("MultiVector::createCopy::WhichVectors",src.whichVectors_.size());
         for(int i = 0; i < src.whichVectors_.size(); i++)
           whichVectors(i)=src.whichVectors_[i];
-        Kokkos::parallel_for(src.getLocalLength(),DeepCopySelectedVectors<typename MV::view_type::t_dev,typename MV::view_type::t_dev,DeviceType>
+        Kokkos::parallel_for(src.getLocalLength(),DeepCopySelectedVectors<typename MV::view_type::t_dev,typename MV::view_type::t_dev,DeviceType,true,false>
                                                   (cpy.getLocalView().template view<DeviceType>(),
-                                                   src.getLocalView().template view<DeviceType>(),whichVectors));
+                                                   src.getLocalView().template view<DeviceType>(),
+                                                   whichVectors,whichVectors));
       } else {
         Kokkos::View<int*,typename DeviceType::host_mirror_device_type> whichVectors("MultiVector::createCopy::WhichVectors",src.whichVectors_.size());
         for(int i = 0; i < src.whichVectors_.size(); i++)
           whichVectors(i)=src.whichVectors_[i];
-        Kokkos::parallel_for(src.getLocalLength(),DeepCopySelectedVectors<typename MV::view_type::t_dev,typename MV::view_type::t_dev,typename DeviceType::host_mirror_device_type>
+        Kokkos::parallel_for(src.getLocalLength(),DeepCopySelectedVectors<typename MV::view_type::t_host,typename MV::view_type::t_host,typename DeviceType::host_mirror_device_type,true,false>
                                                   (cpy.getLocalView().template view<typename DeviceType::host_mirror_device_type>(),
-                                                   src.getLocalView().template view<typename DeviceType::host_mirror_device_type>(),whichVectors));
+                                                   src.getLocalView().template view<typename DeviceType::host_mirror_device_type>(),
+                                                   whichVectors,whichVectors));
       }
     }
     return cpy;
+  }
+
+  template <class DS, class DL, class DG, class DD, class SS, class SL, class SG, class SD>
+  void deep_copy( MultiVector<DS,DL,DG,Kokkos::Compat::KokkosDeviceWrapperNode<DD> >& dst,
+                  const MultiVector<SS,SL,SG,Kokkos::Compat::KokkosDeviceWrapperNode<SD> >& src) {
+    typedef MultiVector<DS,DL,DG,Kokkos::Compat::KokkosDeviceWrapperNode<DD> > MVD;
+    typedef const MultiVector<SS,SL,SG,Kokkos::Compat::KokkosDeviceWrapperNode<SD> > MVS;
+    if(src.isConstantStride() && dst.isConstantStride()) {
+      Kokkos::deep_copy(dst.getLocalView(),src.getLocalView());
+    }
+    else {
+      if(dst.isConstantStride()) {
+        if(src.getLocalView().modified_device>=src.getLocalView().modified_host) {
+          Kokkos::View<int*,DD> whichVectors("MultiVector::createCopy::WhichVectors",src.whichVectors_.size());
+          for(int i = 0; i < src.whichVectors_.size(); i++)
+            whichVectors(i)=src.whichVectors_[i];
+          Kokkos::parallel_for(src.getLocalLength(),DeepCopySelectedVectors<typename MVD::view_type::t_dev,typename MVS::view_type::t_dev,DD,true,false>
+                                                    (dst.getLocalView().template view<DD>(),
+                                                     src.getLocalView().template view<DD>(),
+                                                     whichVectors,whichVectors));
+        } else {
+          Kokkos::View<int*,typename DD::host_mirror_device_type> whichVectors("MultiVector::createCopy::WhichVectors",src.whichVectors_.size());
+          for(int i = 0; i < src.whichVectors_.size(); i++)
+            whichVectors(i)=src.whichVectors_[i];
+          Kokkos::parallel_for(src.getLocalLength(),DeepCopySelectedVectors<typename MVD::view_type::t_host,typename MVS::view_type::t_host,typename DD::host_mirror_device_type,true,false>
+                                                    (dst.getLocalView().template view<typename DD::host_mirror_device_type>(),
+                                                     src.getLocalView().template view<typename DD::host_mirror_device_type>(),
+                                                     whichVectors,whichVectors));
+        }
+      } else {
+        if(src.isConstantStride()) {
+          if(src.getLocalView().modified_device>=src.getLocalView().modified_host) {
+            Kokkos::View<int*,DD> whichVectors("MultiVector::createCopy::WhichVectors",dst.whichVectors_.size());
+            for(int i = 0; i < dst.whichVectors_.size(); i++)
+              whichVectors(i)=dst.whichVectors_[i];
+            Kokkos::parallel_for(src.getLocalLength(),DeepCopySelectedVectors<typename MVD::view_type::t_dev,typename MVS::view_type::t_dev,DD,false,true>
+                                                      (dst.getLocalView().template view<DD>(),
+                                                       src.getLocalView().template view<DD>(),
+                                                       whichVectors,whichVectors));
+          } else {
+            Kokkos::View<int*,typename DD::host_mirror_device_type> whichVectors("MultiVector::createCopy::WhichVectors",dst.whichVectors_.size());
+            for(int i = 0; i < dst.whichVectors_.size(); i++)
+              whichVectors(i)=dst.whichVectors_[i];
+            Kokkos::parallel_for(src.getLocalLength(),DeepCopySelectedVectors<typename MVD::view_type::t_host,typename MVS::view_type::t_host,typename DD::host_mirror_device_type,false,true>
+                                                      (dst.getLocalView().template view<typename DD::host_mirror_device_type>(),
+                                                       src.getLocalView().template view<typename DD::host_mirror_device_type>(),
+                                                       whichVectors,whichVectors));
+          }
+        } else {
+          if(src.getLocalView().modified_device>=src.getLocalView().modified_host) {
+            Kokkos::View<int*,DD> whichVectorsDst("MultiVector::createCopy::WhichVectors",dst.whichVectors_.size());
+            for(int i = 0; i < dst.whichVectors_.size(); i++)
+              whichVectorsDst(i)=dst.whichVectors_[i];
+            Kokkos::View<int*,DD> whichVectorsSrc("MultiVector::createCopy::WhichVectors",dst.whichVectors_.size());
+            for(int i = 0; i < dst.whichVectors_.size(); i++)
+              whichVectorsSrc(i)=src.whichVectors_[i];
+            Kokkos::parallel_for(src.getLocalLength(),DeepCopySelectedVectors<typename MVD::view_type::t_dev,typename MVS::view_type::t_dev,DD,false,false>
+                                                      (dst.getLocalView().template view<DD>(),
+                                                       src.getLocalView().template view<DD>(),
+                                                       whichVectorsDst,whichVectorsSrc));
+          } else {
+            Kokkos::View<int*,typename DD::host_mirror_device_type> whichVectorsDst("MultiVector::createCopy::WhichVectors",dst.whichVectors_.size());
+            for(int i = 0; i < dst.whichVectors_.size(); i++)
+              whichVectorsDst(i)=dst.whichVectors_[i];
+            Kokkos::View<int*,typename DD::host_mirror_device_type> whichVectorsSrc("MultiVector::createCopy::WhichVectors",dst.whichVectors_.size());
+            for(int i = 0; i < dst.whichVectors_.size(); i++)
+              whichVectorsSrc(i)=src.whichVectors_[i];
+            Kokkos::parallel_for(src.getLocalLength(),DeepCopySelectedVectors<typename MVD::view_type::t_host,typename MVS::view_type::t_host,typename DD::host_mirror_device_type,false,false>
+                                                      (dst.getLocalView().template view<typename DD::host_mirror_device_type>(),
+                                                       src.getLocalView().template view<typename DD::host_mirror_device_type>(),
+                                                       whichVectorsDst,whichVectorsSrc));
+          }
+        }
+      }
+    }
   }
 } // namespace Tpetra
 

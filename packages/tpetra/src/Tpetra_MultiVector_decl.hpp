@@ -1287,6 +1287,10 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >
     createCopy( const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& src);
 
+  template <class DS, class DL, class DG, class DN, class SS, class SL, class SG, class SN>
+  void deep_copy( MultiVector<DS,DL,DG,DN>& dst,
+                  const MultiVector<SS,SL,SG,SN>& src);
+
 } // namespace Tpetra
 
 // Include KokkosRefactor partial specialisation if enabled

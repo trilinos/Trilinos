@@ -363,6 +363,9 @@ namespace Tpetra {
     template <class S, class LO, class GO, class D>
     friend  MultiVector<S,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D> >
         createCopy( const MultiVector<S,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D> >& src);
+    template <class DS, class DL, class DG, class DD, class SS, class SL, class SG, class SD>
+    friend void deep_copy( MultiVector<DS,DL,DG,Kokkos::Compat::KokkosDeviceWrapperNode<DD> >& dst,
+                    const MultiVector<SS,SL,SG,Kokkos::Compat::KokkosDeviceWrapperNode<SD> >& src);
     //@}
     //! @name Constructors and destructor
     //@{
