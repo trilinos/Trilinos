@@ -76,8 +76,8 @@ namespace MueLu {
     Monitor m(*this, "BuildAggregates");
 
     AggOptions::Ordering ordering    = params.get<AggOptions::Ordering>("Ordering");
-    unsigned MaxNeighAlreadySelected = as<unsigned>(params.get<LO>     ("MaxNeighAlreadySelected"));
-    unsigned MinNodesPerAggregate    = as<unsigned>(params.get<LO>     ("MinNodesPerAggregate"));
+    MaxNeighAlreadySelected          = params.get<LO>                  ("MaxNeighAlreadySelected");
+    MinNodesPerAggregate             = params.get<LO>                  ("MinNodesPerAggregate");
 
     if (ordering != NATURAL && ordering != RANDOM && ordering != GRAPH)
       throw Exceptions::RuntimeError("UncoupledAggregation::BuildAggregates : bad aggregation ordering option");
@@ -165,7 +165,7 @@ namespace MueLu {
 
         // Step 3: check if tentative aggregate is acceptable
         if ((numAggregatedNeighbours <= MaxNeighAlreadySelected) &&   // too many connections to other aggregates
-            (aggSize                 >= MinNodesPerAggregate)) {      // too few nodes in the tentative aggregate
+            (as<LO>(aggSize)         >= MinNodesPerAggregate)) {      // too few nodes in the tentative aggregate
           // Accept new aggregate
           // iNode1 becomes the root of the newly formed aggregate
           aggregates.SetIsRoot(iNode1);
