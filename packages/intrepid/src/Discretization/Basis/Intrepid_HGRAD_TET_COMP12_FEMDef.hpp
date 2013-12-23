@@ -225,16 +225,9 @@ void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &   
           outputValues(7, i0) += aux/6.0;
           outputValues(8, i0) += aux/6.0;
           outputValues(9, i0) += aux/6.0;
-          //}
-        } else {
-          outputValues(0, i0) = 1. - 2. * (x + y + z);
-          outputValues(4, i0) = 2. * x;
-          outputValues(6, i0) = 2. * y;
-          outputValues(7, i0) = 2. * z;
         }
-        
-        break;
       }
+      break;
       
   case OPERATOR_GRAD:
   case OPERATOR_D1:
