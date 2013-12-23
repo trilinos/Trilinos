@@ -573,6 +573,7 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
     dst.m_shape.N0      = src.m_shape.N0 ;
     dst.m_shape.N1      = 1 ;
     dst.m_ptr_on_device = src.m_ptr_on_device + src.m_stride.value * i1 ;
+    dst.m_stride        = src.m_stride;
 
     ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
   }
@@ -604,6 +605,7 @@ struct ViewAssignment< LayoutDefault , LayoutDefault , void >
     dst.m_shape.N0      = 1 ;
     dst.m_shape.N1      = src.m_shape.N1 ;
     dst.m_ptr_on_device = src.m_ptr_on_device + src.m_stride.value * i0 ;
+    dst.m_stride        = src.m_stride;
 
     ViewTracking< traits_type >::increment( dst.m_ptr_on_device );
   }
