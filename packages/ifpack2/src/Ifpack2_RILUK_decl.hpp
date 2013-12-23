@@ -40,6 +40,9 @@
 //@HEADER
 */
 
+/// \file Ifpack2_RILUK_decl.hpp
+/// \brief Declaration of RILUK interface
+
 #ifndef IFPACK2_CRSRILUK_DECL_HPP
 #define IFPACK2_CRSRILUK_DECL_HPP
 
@@ -49,8 +52,6 @@
 #include "Ifpack2_Preconditioner.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
-
-#include "Teuchos_RefCountPtr.hpp"
 
 namespace Teuchos {
   class ParameterList;
@@ -347,17 +348,17 @@ class RILUK:
   void compute();
 
   //! Whether compute() has been called.
-  bool isComputed() const {return(Factored_);}
+  bool isComputed() const { return isFactored_; }
 
   //! How many times compute() has been called for this object.
-  int getNumCompute() const {return numCompute_;}
+  int getNumCompute() const { return numCompute_; }
 
   //! How many times apply() has been called for this object.
   int getNumApply() const {return numApply_;}
 
-  double getInitializeTime() const {return -1;}
-  double getComputeTime() const {return -1;}
-  double getApplyTime() const {return -1;}
+  double getInitializeTime() const {return -1.0;}
+  double getComputeTime() const {return -1.0;}
+  double getApplyTime() const {return -1.0;}
 
   // Mathematical functions.
 
@@ -495,15 +496,11 @@ class RILUK:
 
   //@}
 
-protected:
-  void setFactored(bool Flag) {Factored_ = Flag;}
-  void setInitialized(bool Flag) {isInitialized_ = Flag;}
-  bool isAllocated() const {return(isAllocated_);}
-  void setAllocated(bool Flag) {isAllocated_ = Flag;}
-
 private:
   typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
   typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vec_type;
+  typedef Teuchos::ScalarTraits<scalar_type> STS;
+  typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
   void allocate_L_and_U();
   void initAllValues (const row_matrix_type& overlapA);
@@ -515,9 +512,6 @@ private:
               Teuchos::RCP<const MV>& Xout,
               Teuchos::RCP<MV>& Yout) const;
 
-  bool isOverlapped_;
-
-  // Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type,mat_vec_type> > > Graph_;
   Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type> > > Graph_;
 
   const Teuchos::RCP<const row_matrix_type> A_;
@@ -525,6 +519,7 @@ private:
   Teuchos::RCP<crs_matrix_type> U_;
   Teuchos::RCP<vec_type> D_;
 
+  bool isOverlapped_;
   bool UseTranspose_;
 
   int LevelOfFill_;
@@ -533,13 +528,16 @@ private:
   int NumMyDiagonals_;
   bool isAllocated_;
   bool isInitialized_;
+  bool isFactored_;
+
   mutable int numInitialize_;
   mutable int numCompute_;
   mutable int numApply_;
-  bool Factored_;
+
   magnitude_type RelaxValue_;
   magnitude_type Athresh_;
   magnitude_type Rthresh_;
+
   mutable magnitude_type Condest_;
 
   mutable Teuchos::RCP<MV> OverlapX_;
@@ -597,7 +595,7 @@ RILUK<MatrixType>::clone(const Teuchos::RCP< const new_matrix_type>& A_newnode) 
   new_riluk->numInitialize_ = numInitialize_;
   new_riluk->numCompute_ = numCompute_;
   new_riluk->numApply_ =  numApply_;
-  new_riluk->Factored_ = Factored_;
+  new_riluk->isFactored_ = isFactored_;
   new_riluk->RelaxValue_ = RelaxValue_;
   new_riluk->Athresh_ = Athresh_;
   new_riluk->Rthresh_ = Rthresh_;

@@ -40,16 +40,20 @@
 //@HEADER
  */
 
+/// \file Ifpack2_IlukGraph.hpp
+/// \brief Declaration and definition of IlukGraph
+///
+/// \warning This header file is an implementation detail of RILUK.
+///   Its contents may change or it may go away at any time.
+
 #ifndef IFPACK2_ILUK_GRAPH_HPP
 #define IFPACK2_ILUK_GRAPH_HPP
 
-#include <vector>
 #include <algorithm>
+#include <vector>
 
 #include <Ifpack2_ConfigDefs.hpp>
-#include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
-#include <Teuchos_Describable.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <Tpetra_CrsGraph.hpp>
 #include <Tpetra_Import.hpp>
@@ -58,27 +62,37 @@
 
 namespace Ifpack2 {
 
-
-//! A class for constructing level filled graphs for use with ILU(k) class preconditioners.
-
-/*! Ifpack2::IlukGraph enables the construction of matrix graphs using level-fill algorithms.
-  The only function required for construction is a getGlobalRowView capability, i.e., the graph that is passed in
- to the constructor must implement the RowGraph interface defined in Tpetra_RowGraph.hpp
-
-
- <b>Constructing IlukGraph objects</b>
-
- Constructing IlukGraph objects is usually a two step process of passing in a CrsGraph object and
- an integer indicating the desired level of fill and then calling the ConstructFilledGraph function to complete the
- process.  This allows warning error codes to be returned to the calling routine.
-
- It is worth noting that an IlukGraph object creates two Tpetra::CrsGraph objects containing L and U,
- the graphs for the lower and upper triangular parts of the ILU(k) graph.
- Thus, it is possible to manually insert and delete graph entries in L and U via the Tpetra::CrsGraph
- InsertIndices and RemoveIndices functions.  However, in this case FillComplete must be
- called before the graph is used for subsequent operations.
-
- */
+/// \class IlukGraph
+/// \tparam GraphType A specialization of Tpetra::CrsGraph (tested) or
+///   Tpetra::RowGraph (not tested).
+/// \brief Construct a level filled graph for use in computing an
+///   ILU(k) incomplete factorization.
+///
+/// \warning This class is an implementation detail of RILUK.  Its
+///   interface may change or it may go away at any time.
+///
+/// Ifpack2::IlukGraph enables the construction of matrix graphs using
+/// level-fill algorithms.  The only function required for
+/// construction is a getGlobalRowView capability, i.e., the graph
+/// that is passed in to the constructor must implement the
+/// Tpetra::RowGraph interface defined in Tpetra_RowGraph.hpp.
+///
+/// \section Ifpack2_IlukGraph_cnstr Constructing IlukGraph objects
+///
+/// Constructing an IlukGraph is a two step process.  First, call the
+/// constructor, passing in a CrsGraph object and an integer
+/// indicating the desired level of fill.  Then, call the initialize()
+/// method to complete the process.  This naturally matches the
+/// three-stage initialization of Preconditioner objects, and in
+/// particular of RILUK.
+///
+/// It is worth noting that an IlukGraph object creates two
+/// Tpetra::CrsGraph objects containing L and U, the graphs for the
+/// lower and upper triangular parts of the ILU(k) graph.  Thus, it is
+/// possible to manually insert and delete graph entries in L and U
+/// via the Tpetra::CrsGraph InsertIndices and RemoveIndices
+/// functions.  However, in this case FillComplete must be called
+/// before the graph is used for subsequent operations.
 template<class GraphType>
 class IlukGraph : public Teuchos::Describable {
 public:
@@ -100,21 +114,14 @@ public:
   /// Create a IlukGraph object using the input graph and specified
   /// level of fill.
   ///
-  /// \param Graph_in [in] An existing graph.  This object must
-  ///   implement the graph functions that provide graph dimension and
-  ///   pattern information.
+  /// \param G [in] An existing graph.
+  /// \param levelFill [in] The level of fill to compute; the k of ILU(k).
+  /// \param levelOverlap [in] The level of overlap between subdomains.
   ///
-  /// \param LevelFill_in [in] The level of fill to compute via ILU(k) algorithm.
-  ///
-  /// \param LevelOverlap_in [in] The level of overlap between subdomains.
-  ///
-  /// \note Actual construction occurs in constructFilledGraph.
-  IlukGraph (const Teuchos::RCP<const GraphType>& Graph_in,
-             const int LevelFill_in,
-             const int LevelOverlap_in);
-
-  //! Copy constructor.
-  IlukGraph (const IlukGraph<GraphType> & Graph_in);
+  /// \note Actual construction occurs in initialize().
+  IlukGraph (const Teuchos::RCP<const GraphType>& G,
+             const int levelFill,
+             const int levelOverlap);
 
   //! IlukGraph Destructor
   virtual ~IlukGraph ();
@@ -126,11 +133,18 @@ public:
   /// parameter must have type int.
   void setParameters (const Teuchos::ParameterList& parameterlist);
 
-  //! Construct the filled graph.
-  void constructFilledGraph ();
-
-  //! Construct the overlap graph.
-  void constructOverlapGraph();
+  /// \brief Set up the graph structure of the L and U factors.
+  ///
+  /// This method is called "initialize" by analogy with
+  /// Preconditioner, where initialize() computes the symbolic
+  /// (incomplete) factorization, and compute() computes the
+  /// corresponding numeric factorization.  IlukGraph is just a graph,
+  /// so it can only compute a symbolic factorization (i.e., the graph
+  /// structure of the factorization).  Hence, it implements
+  /// initialize(), but not compute().  RILUK calls IlukGraph's
+  /// initialize() method in its own initialize() method, as one would
+  /// expect.
+  void initialize ();
 
   //! The level of fill used to construct this graph.
   int getLevelFill () const { return LevelFill_; }
@@ -159,6 +173,29 @@ public:
 private:
   typedef typename GraphType::map_type map_type;
 
+  /// \brief Copy constructor (UNIMPLEMENTED; DO NOT USE).
+  ///
+  /// This copy constructor is declared private and unimplemented, in
+  /// order to forbid its use syntactically.  If you decide that you
+  /// need to implement this method, it should do deep copies of all
+  /// internal graphs.  It may do a shallow copy of the input graph
+  /// (which is not modified).  Also, you must implement operator= in
+  /// a similar way.
+  IlukGraph (const IlukGraph<GraphType>&);
+
+  /// \brief Assignment operator (UNIMPLEMENTED; DO NOT USE).
+  ///
+  /// This assignment operator is declared private and unimplemented,
+  /// in order to forbid its use syntactically.  If you decide that
+  /// you need to implement this method, it should do deep copies of
+  /// all internal graphs.  It may do a shallow copy of the input
+  /// graph (which is not modified).  Also, you must implement the
+  /// copy constructor in a similar way.
+  IlukGraph& operator= (const IlukGraph<GraphType>&);
+
+  //! Construct the overlap graph.
+  void constructOverlapGraph();
+
   Teuchos::RCP<const GraphType> Graph_;
   Teuchos::RCP<const crs_graph_type> OverlapGraph_;
   int LevelFill_;
@@ -172,31 +209,15 @@ private:
 
 template<class GraphType>
 IlukGraph<GraphType>::
-IlukGraph (const Teuchos::RCP<const GraphType>& Graph_in,
-           const int LevelFill_in,
-           const int LevelOverlap_in)
-: Graph_ (Graph_in),
-  LevelFill_ (LevelFill_in),
-  LevelOverlap_ (LevelOverlap_in),
-  NumMyDiagonals_ (0),
-  NumGlobalDiagonals_ (0)
+IlukGraph (const Teuchos::RCP<const GraphType>& G,
+           const int levelFill,
+           const int levelOverlap)
+  : Graph_ (G),
+    LevelFill_ (levelFill),
+    LevelOverlap_ (levelOverlap),
+    NumMyDiagonals_ (0),
+    NumGlobalDiagonals_ (0)
 {}
-
-
-template<class GraphType>
-IlukGraph<GraphType>::IlukGraph(const IlukGraph<GraphType> & Graph_in)
-: Graph_ (Graph_in.Graph_),
-  OverlapGraph_ (Graph_in.OverlapGraph_),
-  LevelFill_ (Graph_in.LevelFill_),
-  LevelOverlap_ (Graph_in.LevelOverlap_),
-  NumMyDiagonals_ (0),
-  NumGlobalDiagonals_ (0)
-{
-  crs_graph_type& L_Graph_In = Graph_in.L_Graph();
-  crs_graph_type& U_Graph_In = Graph_in.U_Graph();
-  L_Graph_ = Teuchos::rcp (new crs_graph_type (L_Graph_In));
-  U_Graph_ = Teuchos::rcp (new crs_graph_type (U_Graph_In));
-}
 
 
 template<class GraphType>
@@ -205,7 +226,8 @@ IlukGraph<GraphType>::~IlukGraph()
 
 
 template<class GraphType>
-void IlukGraph<GraphType>::setParameters (const Teuchos::ParameterList& parameterlist)
+void IlukGraph<GraphType>::
+setParameters (const Teuchos::ParameterList& parameterlist)
 {
   getParameter (parameterlist, "iluk level-of-fill", LevelFill_);
   getParameter (parameterlist, "iluk level-of-overlap", LevelOverlap_);
@@ -213,7 +235,7 @@ void IlukGraph<GraphType>::setParameters (const Teuchos::ParameterList& paramete
 
 
 template<class GraphType>
-void IlukGraph<GraphType>::constructOverlapGraph() {
+void IlukGraph<GraphType>::constructOverlapGraph () {
   // FIXME (mfh 22 Dec 2013) This won't do if we want
   // RILUK::initialize() to do the right thing (that is,
   // unconditionally recompute the "symbolic factorization").
@@ -224,7 +246,7 @@ void IlukGraph<GraphType>::constructOverlapGraph() {
 
 
 template<class GraphType>
-void IlukGraph<GraphType>::constructFilledGraph()
+void IlukGraph<GraphType>::initialize()
 {
   using Teuchos::Array;
   using Teuchos::ArrayView;
@@ -423,8 +445,9 @@ void IlukGraph<GraphType>::constructFilledGraph()
 
       // Diagonal
 
-      TEUCHOS_TEST_FOR_EXCEPTION(Next != i, std::runtime_error,
-                         "Ifpack2::IlukGraph::constructFilledGraph: FATAL: U has zero diagonal")
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        Next != i, std::runtime_error,
+        "Ifpack2::IlukGraph::initialize: FATAL: U has zero diagonal")
 
       LevelsRowU[0] = CurrentLevel[Next];
       Next = LinkList[Next];
