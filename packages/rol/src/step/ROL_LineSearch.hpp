@@ -310,18 +310,29 @@ public:
                   const Real &gs, const Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj ) {
     Real tol = std::sqrt(ROL_EPSILON);
 
+    // Compute value phi(0)
     Real tl = 0.0;
+    Real val_tl = fval;
+
+    // Compute value phi(alpha)
     Real tr = alpha;
- 
     Teuchos::RCP<Vector<Real> > xnew = x.clone();
     xnew->set(x);
     xnew->axpy(tr,s);
-   
     obj.update(*xnew);
     Real val_tr = obj.value(*xnew,tol); 
     ls_neval++;
-    Real val_tl = fval;
 
+    // Check if phi(alpha) < phi(0)
+    if ( val_tr < val_tl ) {
+      if ( status(LINESEARCH_BISECTION,ls_neval,ls_ngrad,tr,fval,gs,val_tr,x,s,obj) ) {
+        alpha = tr;
+        fval  = val_tr;
+        return;
+      }
+    }
+
+    // Get min( phi(0), phi(alpha) )
     Real t     = 0.0;
     Real val_t = 0.0;
     if ( val_tl < val_tr ) {
@@ -333,12 +344,7 @@ public:
       val_t = val_tr;
     }
 
-    if ( status(LINESEARCH_BISECTION,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj) ) {
-      alpha = t;
-      fval  = val_t;
-      return;
-    }
-
+    // Compute value phi(midpoint)
     Real tc = (tl+tr)/2.0;
     xnew->set(x);
     xnew->axpy(tc,s);
@@ -346,6 +352,7 @@ public:
     Real val_tc = obj.value(*xnew,tol);
     ls_neval++;
 
+    // Get min( phi(0), phi(alpha), phi(midpoint) )
     if ( val_tc < val_t ) {
       t     = tc;
       val_t = val_tc;
@@ -423,19 +430,32 @@ public:
                       const Real &gs, const Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj ) {
     Real tol = std::sqrt(ROL_EPSILON);
 
-    Teuchos::RCP<Vector<Real> > xnew = x.clone();
     Teuchos::RCP<Vector<Real> > grad = x.clone();
     Real c   = (-1.0+sqrt(5.0))/2.0;
-    Real tl  = 0.0;
-    Real tr  = alpha;
 
+    // Compute value phi(0)
+    Real tl  = 0.0;
+    Real val_tl = fval;
+
+    // Compute value phi(alpha)
+    Real tr  = alpha;
+    Teuchos::RCP<Vector<Real> > xnew = x.clone();
     xnew->set(x);
     xnew->axpy(tr,s);
     obj.update(*xnew);
     Real val_tr = obj.value(*xnew,tol);
     ls_neval++;
-    Real val_tl = fval;
 
+    // Check if phi(alpha) < phi(0)
+    if ( val_tr < val_tl ) {
+      if ( status(LINESEARCH_GOLDENSECTION,ls_neval,ls_ngrad,tr,fval,gs,val_tr,x,s,obj) ) {
+        alpha = tr;
+        fval  = val_tr;
+        return;
+      }
+    }
+
+    // Compute min( phi(0), phi(alpha) )
     Real t     = 0.0;
     Real val_t = 0.0;
     if ( val_tl < val_tr ) {
@@ -447,27 +467,23 @@ public:
       val_t = val_tr;
     }
 
-    if ( status(LINESEARCH_GOLDENSECTION,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj) ) {
-      alpha = t;
-      fval  = val_t;
-      return;
-    }
-
+    // Compute value phi(t1)
     Real tc1 = c*tl + (1.0-c)*tr;
-    Real tc2 = (1.0-c)*tl + c*tr;
-   
     xnew->set(x);
     xnew->axpy(tc1,s);
     obj.update(*xnew);
     Real val_tc1 = obj.value(*xnew,tol);
     ls_neval++;
 
+    // Compute value phi(t2)
+    Real tc2 = (1.0-c)*tl + c*tr;
     xnew->set(x);
     xnew->axpy(tc2,s);
     obj.update(*xnew);
     Real val_tc2 = obj.value(*xnew,tol);
     ls_neval++;
 
+    // Compute min( phi(0), phi(t1), phi(t2), phi(alpha) )
     if ( val_tl <= val_tc1 && val_tl <= val_tc2 && val_tl <= val_tr ) {
       val_t = val_tl;
       t     = tl;
@@ -540,20 +556,33 @@ public:
                const Real &gs, const Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj ) {
     Real tol = std::sqrt(ROL_EPSILON);
 
-    Teuchos::RCP<Vector<Real> > xnew = x.clone();
+    // Compute value phi(0)
     Real tl = 0.0;         // Left interval point
-    Real tr = alpha;     // Right interval point
-    Real tc = 0.0;         // Center interval point
+    Real val_tl = fval;
 
+    // Initialize value phi(t)
+    Real tc = 0.0;        // Center interval point
+    Real val_tc = 0.0;
+
+    // Compute value phi(alpha)
+    Teuchos::RCP<Vector<Real> > xnew = x.clone();
+    Real tr = alpha;      // Right interval point
     xnew->set(x);
     xnew->axpy(tr, s);
- 
-    Real val_tl = fval;
     obj.update(*xnew);
     Real val_tr = obj.value(*xnew,tol);
-    Real val_tc = 0.0;
     ls_neval++;
 
+    // Check if phi(alpha) < phi(0)
+    if ( val_tr < val_tl ) {
+      if ( status(LINESEARCH_BRENTS,ls_neval,ls_ngrad,tr,fval,gs,val_tr,x,s,obj) ) {
+        alpha = tr;
+        fval  = val_tr;
+        return;
+      }
+    }
+
+    // Compute min( phi(0), phi(alpha) )
     Real t     = 0.0;
     Real val_t = 0.0;
     if ( val_tl < val_tr ) {
@@ -563,12 +592,6 @@ public:
     else {
       t     = tr;
       val_t = val_tr;
-    }
-
-    if ( status(LINESEARCH_BRENTS,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj) ) {
-      alpha = t;
-      fval  = val_t;
-      return;
     }
 
     // Determine bracketing triple
