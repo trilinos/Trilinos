@@ -1316,6 +1316,22 @@ struct RebindStokhosStorageDevice< Sacado::MP::Vector< OldStorageType > , Device
   typedef typename NewVectorApply::type type ;
 };
 
+template< class OldStorageType , class Device >
+struct RebindStokhosStorageDevice< const Sacado::MP::Vector< OldStorageType > , Device >
+{
+  typedef typename
+    OldStorageType::template apply<
+      typename OldStorageType::ordinal_type ,
+      typename OldStorageType::value_type ,
+      Device >
+    NewStorageApply ;
+
+  typedef typename NewStorageApply::type NewStorageType ;
+  typedef typename Sacado::MP::Vector< OldStorageType >::template apply< NewStorageType > NewVectorApply ;
+
+  typedef const typename NewVectorApply::type type ;
+};
+
 //----------------------------------------------------------------------------
 
 } // namespace Impl
