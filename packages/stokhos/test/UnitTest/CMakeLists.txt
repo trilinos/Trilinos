@@ -162,66 +162,68 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  MatrixFreeOperatorUnitTest
-  SOURCES Stokhos_MatrixFreeOperatorUnitTest.cpp
+  LogNormalUnitTest
+  SOURCES Stokhos_LogNormalUnitTest.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  SDMUtilsUnitTest
+  SOURCES Stokhos_SDMUtilsUnitTest.cpp
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 1
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  InterlacedOpUnitTest
-  SOURCES Stokhos_InterlacedOpUnitTest.cpp
-          Stokhos_InterlacedTestSupport.cpp
-          Stokhos_InterlacedTestSupport.hpp
-          ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  NUM_MPI_PROCS 2
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  BasisInteractionGraphUnitTest
-  SOURCES Stokhos_BasisInteractionGraphUnitTest.cpp
-          Stokhos_InterlacedTestSupport.cpp
-          Stokhos_InterlacedTestSupport.hpp
-          ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ProductBasisUtilsUnitTest
+  SOURCES Stokhos_ProductBasisUtilsUnitTest.cpp
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 1
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  AdaptivityToolsUnitTest
-  SOURCES Stokhos_AdaptivityToolsUnitTest.cpp
-          Stokhos_InterlacedTestSupport.cpp
-          Stokhos_InterlacedTestSupport.hpp
-          ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  TensorProductBasisUnitTest
+  SOURCES Stokhos_TensorProductBasisUnitTest.cpp
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 1
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  BuildColBasisUnitTest
-  SOURCES Stokhos_BuildColBasisUnitTest.cpp
-          Stokhos_InterlacedTestSupport.cpp
-          Stokhos_InterlacedTestSupport.hpp
-          ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  TotalOrderBasisUnitTest
+  SOURCES Stokhos_TotalOrderBasisUnitTest.cpp
   COMM serial mpi
   STANDARD_PASS_OUTPUT
-  NUM_MPI_PROCS 2
+  NUM_MPI_PROCS 1
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  InterlacedMapUnitTest
-  SOURCES Stokhos_InterlacedMapUnitTest.cpp
-          Stokhos_InterlacedTestSupport.cpp
-          Stokhos_InterlacedTestSupport.hpp
-          ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  SmolyakBasisUnitTest
+  SOURCES Stokhos_SmolyakBasisUnitTest.cpp
   COMM serial mpi
   STANDARD_PASS_OUTPUT
-  NUM_MPI_PROCS 2
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TensorProductPseudoSpectralOperatorUnitTest
+  SOURCES Stokhos_TensorProductPseudoSpectralOperatorUnitTest.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  LexicographicTreeBasisUnitTest
+  SOURCES Stokhos_LexicographicTreeBasisUnitTest.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
   )
 
 IF(Stokhos_ENABLE_TriKota)
@@ -232,6 +234,81 @@ IF(Stokhos_ENABLE_TriKota)
     COMM serial mpi
     STANDARD_PASS_OUTPUT
     NUM_MPI_PROCS 1
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SmolyakPseudoSpectralOperatorUnitTest
+    SOURCES Stokhos_SmolyakPseudoSpectralOperatorUnitTest.cpp
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    )
+
+ENDIF()
+
+IF (Stokhos_ENABLE_EpetraExt)
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    MatrixFreeOperatorUnitTest
+    SOURCES Stokhos_MatrixFreeOperatorUnitTest.cpp
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    InterlacedOpUnitTest
+    SOURCES Stokhos_InterlacedOpUnitTest.cpp
+            Stokhos_InterlacedTestSupport.cpp
+            Stokhos_InterlacedTestSupport.hpp
+            ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 2
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    BasisInteractionGraphUnitTest
+    SOURCES Stokhos_BasisInteractionGraphUnitTest.cpp
+            Stokhos_InterlacedTestSupport.cpp
+            Stokhos_InterlacedTestSupport.hpp
+            ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    AdaptivityToolsUnitTest
+    SOURCES Stokhos_AdaptivityToolsUnitTest.cpp
+            Stokhos_InterlacedTestSupport.cpp
+            Stokhos_InterlacedTestSupport.hpp
+            ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    BuildColBasisUnitTest
+    SOURCES Stokhos_BuildColBasisUnitTest.cpp
+            Stokhos_InterlacedTestSupport.cpp
+            Stokhos_InterlacedTestSupport.hpp
+            ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 2
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    InterlacedMapUnitTest
+    SOURCES Stokhos_InterlacedMapUnitTest.cpp
+            Stokhos_InterlacedTestSupport.cpp
+            Stokhos_InterlacedTestSupport.hpp
+            ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 2
     )
 
 ENDIF()
@@ -404,90 +481,30 @@ IF(Stokhos_ENABLE_Sacado)
           )
       ENDIF()
 
+      # IF (Stokhos_ENABLE_Tpetra)
+
+      #   IF (Kokkos_ENABLE_Pthread)
+      #     TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      #       TpetraCrsMatrixMPVectorUnitTest_Threads
+      #       SOURCES Stokhos_TpetraCrsMatrixMPVectorUnitTest.hpp
+      #               Stokhos_TpetraCrsMatrixMPVectorUnitTest_Threads.cpp
+      #       COMM serial mpi
+      #       STANDARD_PASS_OUTPUT
+      #       NUM_MPI_PROCS 1
+      #       DEPLIBS stokhos kokkoscore kokkoslinalg
+      #       )
+      #   ENDIF()
+
+      # ENDIF()
+
     ENDIF()
 
   ENDIF()
 
 ENDIF()
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  LogNormalUnitTest
-  SOURCES Stokhos_LogNormalUnitTest.cpp
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  NUM_MPI_PROCS 1
-  )
-
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  SDMUtilsUnitTest
-  SOURCES Stokhos_SDMUtilsUnitTest.cpp
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  NUM_MPI_PROCS 1
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  ProductBasisUtilsUnitTest
-  SOURCES Stokhos_ProductBasisUtilsUnitTest.cpp
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  NUM_MPI_PROCS 1
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  TensorProductBasisUnitTest
-  SOURCES Stokhos_TensorProductBasisUnitTest.cpp
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  NUM_MPI_PROCS 1
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  TotalOrderBasisUnitTest
-  SOURCES Stokhos_TotalOrderBasisUnitTest.cpp
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  NUM_MPI_PROCS 1
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  SmolyakBasisUnitTest
-  SOURCES Stokhos_SmolyakBasisUnitTest.cpp
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  NUM_MPI_PROCS 1
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  TensorProductPseudoSpectralOperatorUnitTest
-  SOURCES Stokhos_TensorProductPseudoSpectralOperatorUnitTest.cpp
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  NUM_MPI_PROCS 1
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  LexicographicTreeBasisUnitTest
-  SOURCES Stokhos_LexicographicTreeBasisUnitTest.cpp
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  NUM_MPI_PROCS 1
-  )
-
-IF(Stokhos_ENABLE_TriKota)
-
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    SmolyakPseudoSpectralOperatorUnitTest
-    SOURCES Stokhos_SmolyakPseudoSpectralOperatorUnitTest.cpp
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 1
-    )
-
-ENDIF()
-
-IF (Stokhos_ENABLE_KokkosCore)
+# Need to fix these tests so they don't require Epetra
+IF (Stokhos_ENABLE_KokkosCore AND Stokhos_ENABLE_EpetraExt)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     KokkosArrayKernelsUnitTest_Serial

@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,53 +35,41 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_EPETRA_HPP
-#define STOKHOS_EPETRA_HPP
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_UnitTestRepository.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
-#include "Stokhos.hpp"
+#include "Stokhos_TpetraCrsMatrixMPVectorUnitTest.hpp"
 
-#include "Stokhos_ParallelData.hpp"
-#include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
-#include "Stokhos_Sparse3TensorUtilities.hpp"
+#include "Kokkos_hwloc.hpp"
+#include "Kokkos_Threads.hpp"
 
-// SG Operators
-#include "Stokhos_MLPrecOp.hpp"
-#include "Stokhos_MatrixFreeOperator.hpp"
-#include "Stokhos_KLMatrixFreeOperator.hpp"
-#include "Stokhos_KLReducedMatrixFreeOperator.hpp"
-#include "Stokhos_FullyAssembledOperator.hpp"
-#include "Stokhos_SGOperatorFactory.hpp"
+// Instantiate test for Threads device
+using Kokkos::Threads;
+using Kokkos::SerialNode;
+CRSMATRIX_MP_VECTOR_TESTS_SLGN( double, int, int, SerialNode )
 
-// SG Preconditioners
-#include "Stokhos_MeanBasedPreconditioner.hpp"
-#include "Stokhos_GaussSeidelPreconditioner.hpp"
-#include "Stokhos_ApproxGaussSeidelPreconditioner.hpp"
-#include "Stokhos_ApproxJacobiPreconditioner.hpp"
-#include "Stokhos_KroneckerProductPreconditioner.hpp"
-#include "Stokhos_FullyAssembledPreconditioner.hpp"
-#include "Stokhos_SGPreconditionerFactory.hpp"
+int main( int argc, char* argv[] ) {
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-// SG Model Evaluators
-#include "Stokhos_SGModelEvaluator.hpp"
-#include "Stokhos_SGQuadModelEvaluator.hpp"
-#include "Stokhos_SGInverseModelEvaluator.hpp"
-#include "Stokhos_ResponseStatisticModelEvaluator.hpp"
+  // Initialize threads
+  size_t num_cores =
+    Kokkos::hwloc::get_available_numa_count() *
+    Kokkos::hwloc::get_available_cores_per_numa();
+  size_t num_hyper_threads =
+    Kokkos::hwloc::get_available_threads_per_core();
+  Kokkos::Threads::initialize(num_cores * num_hyper_threads);
+  Kokkos::Threads::print_configuration(std::cout);
 
-// MP Operators
-#include "Stokhos_BlockDiagonalOperator.hpp"
+  // Run tests
+  int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
-// MP Preconditioners
-#include "Stokhos_MPBlockDiagonalPreconditioner.hpp"
-#include "Stokhos_MPPreconditionerFactory.hpp"
+  // Finish up
+  Kokkos::Threads::finalize();
 
-// MP Model Evaluators
-#include "Stokhos_MPModelEvaluator.hpp"
-#include "Stokhos_MPModelEvaluatorAdapter.hpp"
-#include "Stokhos_SGQuadMPModelEvaluator.hpp"
-#include "Stokhos_MPInverseModelEvaluator.hpp"
-
-#endif // STOKHOS_EPETRA_HPP 
+  return ret;
+}

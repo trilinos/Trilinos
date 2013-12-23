@@ -24,6 +24,9 @@
 /* Define if Fortran UQTK is enabled */
 #cmakedefine HAVE_STOKHOS_FORUQTK
 
+/* Define if EpetraExt is enabled */
+#cmakedefine HAVE_STOKHOS_EPETRAEXT
+
 /* Define if Ifpack is enabled */
 #cmakedefine HAVE_STOKHOS_IFPACK
 
