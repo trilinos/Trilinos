@@ -78,6 +78,8 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
   }
 
   if (precTypeUpper == "CHEBYSHEV") {
+    // We have to distinguish Ifpack2::Chebyshev from its
+    // implementation class Ifpack2::Details::Chebyshev.
     prec = rcp (new ::Ifpack2::Chebyshev<MatrixType> (matrix));
   }
   else if (precTypeUpper == "DENSE" || precTypeUpper == "LAPACK") {

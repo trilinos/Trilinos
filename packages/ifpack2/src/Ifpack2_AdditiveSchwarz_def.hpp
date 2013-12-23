@@ -80,16 +80,47 @@
 namespace Ifpack2 {
 
 namespace Details {
-//! Map from an Ifpack2::Preconditioner subclass to its string name.
+
+/// \class OneLevelPreconditionerNamer
+/// \brief Map from an Ifpack2::Preconditioner subclass to its string name.
+/// \tparam PrecType Specialization of a subclass of Ifpack2::Preconditioner.
+///
+/// \warning This class is an implementation detail of
+///   Ifpack2::AdditiveSchwarz.  Its interface may change or it may go
+///   away at any time.
+///
+/// Ifpack2::AdditiveSchwarz uses this class to map from its
+/// compile-time template parameter \c LocalInverseType, to a string
+/// name of the inner preconditioner which it can give to
+/// Details::OneLevelFactory in order to create the inner
+/// preconditioner.  This class will no longer be needed once
+/// Ifpack2::AdditiveSchwarz no longer has a LocalInverseType template
+/// parameter.
 template<class PrecType>
 class OneLevelPreconditionerNamer {
 public:
   //! Name corresponding to Preconditioner subclass PrecType.
   static std::string name () {
-    // This is the default name for any preconditioner type for which
-    // a partial specialization does not exist.  We make this "ILUT"
-    // for backwards compatibility with the original AdditiveSchwarz
-    // implementation.
+    // The default implementation returns an invalid preconditioner
+    // name.  This ensures that AdditiveSchwarz won't try to create a
+    // preconditioner it doesn't know how to create.  This is better
+    // than providing a valid default that is a different class than
+    // the user expects.
+    return "INVALID";
+  }
+};
+
+//
+// Partial specialization for Ifpack2::Preconditioner.
+// It picks a reasonable default subdomain solver.
+//
+
+template<class S, class LO, class GO, class NT>
+class OneLevelPreconditionerNamer< ::Ifpack2::Preconditioner<S, LO, GO, NT> > {
+public:
+  static std::string name () {
+    // The default inner preconditioner is "ILUT", for backwards
+    // compatibility with the original AdditiveSchwarz implementation.
     return "ILUT";
   }
 };
@@ -1197,6 +1228,18 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
   // Construct the inner solver if necessary.
   if (Inverse_.is_null ()) {
     const std::string innerName = innerPrecName ();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      innerName == "INVALID", std::logic_error,
+      "Ifpack2::AdditiveSchwarz::setup: AdditiveSchwarz doesn't know how to "
+      "create an instance of your LocalInverseType \""
+      << Teuchos::TypeNameTraits<LocalInverseType>::name () << "\".  If "
+      "LocalInverseType is a single-level preconditioner (does not take an "
+      "inner solver), then you can fix this in one of two ways.  Either (a) "
+      "create the LocalInverseType instance yourself and give it to "
+      "AdditiveSchwarz by calling setInnerPreconditioner(), before calling "
+      "initialize(), or (b) teach Details::OneLevelFactory how to create an "
+      "inner preconditioner of that type.  "
+      "Please talk to the Ifpack2 developers for details.");
 
     Details::OneLevelFactory<MatrixType> factory;
     RCP<prec_type> innerPrec = factory.create (innerName, innerMatrix_);
