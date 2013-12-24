@@ -1,10 +1,15 @@
-#ifndef NOX_OBSERVER_DEFAULTIMPL_HPP
-#define NOX_OBSERVER_DEFAULTIMPL_HPP
+#ifndef PIKE_OBSERVER_DEFAULT_IMPL_HPP
+#define PIKE_OBSERVER_DEFAULT_IMPL_HPP
 
-namespace nox {
+#include "Pike_Observer.hpp"
 
-  template<typename Solver>
-  class ObserverDefaultImpl {
+namespace pike {
+
+  class ObserverDefaultImpl : public pike::Observer {
+
+  public:
+
+    virtual ~ObserverDefaultImpl() {}
 
     virtual void observeBeginSolve(const Solver& solver);
 

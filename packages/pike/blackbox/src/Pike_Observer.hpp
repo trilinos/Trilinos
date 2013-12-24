@@ -11,7 +11,7 @@ namespace pike {
     
   public:
 
-    virtual ~Observer();
+    virtual ~Observer() {}
 
     virtual void observeBeginSolve(const pike::Solver& solver) = 0;
 

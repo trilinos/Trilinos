@@ -90,6 +90,11 @@ namespace pike {
     //! Returns the status tests.
     virtual Teuchos::RCP<const pike::StatusTest> getStatusTests() const = 0;
     
+    /** \brief Returns the name of the solver.  This is set by the
+        input parameter list.  This can be used to debug hierarchical
+        solves.
+    */
+    virtual std::string name() const = 0;
   };
 
   std::ostream& operator<<(std::ostream& os, const pike::Solver& solver);

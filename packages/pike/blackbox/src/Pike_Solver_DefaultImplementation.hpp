@@ -56,6 +56,8 @@ namespace pike {
 
     virtual Teuchos::RCP<const pike::StatusTest> getStatusTests() const;
 
+    virtual std::string name() const;
+
   protected:
 
     typedef std::vector<Teuchos::RCP<Observer> >::iterator ObserverIterator;
@@ -68,6 +70,7 @@ namespace pike {
     std::vector<Teuchos::RCP<pike::BlackBoxModelEvaluator> > models_;
     std::vector<Teuchos::RCP<pike::DataTransfer> > transfers_;
     bool registrationComplete_;
+    std::string name_;
 
     // Output
     bool printBeginSolveStatus_;
