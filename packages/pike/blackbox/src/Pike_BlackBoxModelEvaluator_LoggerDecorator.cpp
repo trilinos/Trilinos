@@ -3,69 +3,69 @@
 
 namespace pike {
 
-  BBMELoggerDecorator::BBMELoggerDecorator(const Teuchos::RCP<pike::BlackBoxModelEvaluator>& model)
+  ModelLoggerDecorator::ModelLoggerDecorator(const Teuchos::RCP<pike::BlackBoxModelEvaluator>& model)
     : model_(model)
   { 
     log_ = Teuchos::rcp(new std::vector<std::string>);
   }
   
-  void BBMELoggerDecorator::setLog(const Teuchos::RCP<std::vector<std::string> >& log)
+  void ModelLoggerDecorator::setLog(const Teuchos::RCP<std::vector<std::string> >& log)
   {
     log_ = log;
   }
 
-  Teuchos::RCP<const std::vector<std::string> > BBMELoggerDecorator::getLog() const
+  Teuchos::RCP<const std::vector<std::string> > ModelLoggerDecorator::getLog() const
   {
     return log_;
   }
 
-  Teuchos::RCP<std::vector<std::string> > BBMELoggerDecorator::getNonConstLog() const
+  Teuchos::RCP<std::vector<std::string> > ModelLoggerDecorator::getNonConstLog() const
   {
     return log_;
   }
 
-  std::string BBMELoggerDecorator::name() const
+  std::string ModelLoggerDecorator::name() const
   {
     return model_->name();
   }
 
-  bool BBMELoggerDecorator::solve()
+  bool ModelLoggerDecorator::solve()
   {
     log_->push_back(this->name()+": solve()");
     return model_->solve();
   }
 
-  bool BBMELoggerDecorator::isConverged() const
+  bool ModelLoggerDecorator::isConverged() const
   { 
     return model_->isConverged();
   }
   
-  bool BBMELoggerDecorator::isGloballyConverged() const
+  bool ModelLoggerDecorator::isGloballyConverged() const
   {
     return model_->isGloballyConverged();
   }
   
-  Teuchos::RCP<pike::Response> BBMELoggerDecorator::getResponse(const int i) const
+  Teuchos::RCP<pike::Response> ModelLoggerDecorator::getResponse(const int i) const
   {
     log_->push_back(this->name()+": getResponse()");
     return model_->getResponse(i);
   }
   
-  int BBMELoggerDecorator::getResponseIndex(const std::string name) const
+  int ModelLoggerDecorator::getResponseIndex(const std::string name) const
   {
     return model_->getResponseIndex(name);
   }
 
-  bool BBMELoggerDecorator::supportsResponse(const std::string name) const
+  bool ModelLoggerDecorator::supportsResponse(const std::string name) const
   {
     return model_->supportsResponse(name);
   }
 
   //! Non-member ctor
-  Teuchos::RCP<BBMELoggerDecorator>
-  bbmeLoggerDecorator(const Teuchos::RCP<pike::BlackBoxModelEvaluator>& model)
+  Teuchos::RCP<ModelLoggerDecorator>
+  modelLoggerDecorator(const Teuchos::RCP<pike::BlackBoxModelEvaluator>& model)
   {
-    return Teuchos::rcp(new BBMELoggerDecorator(model));
+    return Teuchos::rcp(new ModelLoggerDecorator(model));
   }
 
 }

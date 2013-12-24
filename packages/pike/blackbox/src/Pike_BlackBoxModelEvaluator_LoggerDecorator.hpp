@@ -13,11 +13,11 @@ namespace pike {
 
       Currently, this only logs the solve() and getResponse() methods.
    */
-  class BBMELoggerDecorator : public pike::BlackBoxModelEvaluator {
+  class ModelLoggerDecorator : public pike::BlackBoxModelEvaluator {
 
   public:
 
-    BBMELoggerDecorator(const Teuchos::RCP<pike::BlackBoxModelEvaluator>& model);
+    ModelLoggerDecorator(const Teuchos::RCP<pike::BlackBoxModelEvaluator>& model);
 
     void setLog(const Teuchos::RCP<std::vector<std::string> >& log);
 
@@ -46,10 +46,10 @@ namespace pike {
   };
 
   /** \brief Non-member ctor
-      \relates BBMELoggerDecorator
+      \relates ModelLoggerDecorator
   */
-  Teuchos::RCP<BBMELoggerDecorator>
-  bbmeLoggerDecorator(const Teuchos::RCP<pike::BlackBoxModelEvaluator>& model);
+  Teuchos::RCP<ModelLoggerDecorator>
+  modelLoggerDecorator(const Teuchos::RCP<pike::BlackBoxModelEvaluator>& model);
 
 }
 

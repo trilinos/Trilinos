@@ -66,8 +66,8 @@ namespace pike {
       pike_test::mockModelEvaluator(comm,"app2",pike_test::MockModelEvaluator::LOCAL_FAILURE,10,7);
 
     Teuchos::RCP<pike::LoggerObserver> logger = pike::loggerObserver();
-    Teuchos::RCP<pike::BBMELoggerDecorator> app1Logged = pike::bbmeLoggerDecorator(app1);
-    Teuchos::RCP<pike::BBMELoggerDecorator> app2Logged = pike::bbmeLoggerDecorator(app2);
+    Teuchos::RCP<pike::ModelLoggerDecorator> app1Logged = pike::modelLoggerDecorator(app1);
+    Teuchos::RCP<pike::ModelLoggerDecorator> app2Logged = pike::modelLoggerDecorator(app2);
     Teuchos::RCP<std::vector<std::string> > log = Teuchos::rcp(new std::vector<std::string>);
     logger->setLog(log);
     app1Logged->setLog(log);
