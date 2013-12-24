@@ -83,7 +83,7 @@ namespace pike {
     
     if (printStepStatus_) {
       Teuchos::RCP<Teuchos::FancyOStream> os = this->getOStream();
-      *os << "\n** Step Status Test **" << std::endl;
+      *os << "\n** Step " << this->getNumberOfIterations() << " Status **" << std::endl;
       os->pushTab(defaultIndentation);
       *os << *statusTests_;
       os->popTab();
@@ -109,11 +109,27 @@ namespace pike {
 
     for (ObserverIterator observer = observers_.begin(); observer != observers_.end(); ++observer)
       (*observer)->observeBeginSolve(*this);
+    
+    if (printBeginSolveStatus_) {
+      Teuchos::RCP<Teuchos::FancyOStream> os = this->getOStream();
+      *os << "\n** Begin Solve Status **" << std::endl;
+      os->pushTab(defaultIndentation);
+      *os << *statusTests_;
+      os->popTab();
+    }
 
     status_ = statusTests_->checkStatus(*this);
 
     while ( (status_ != CONVERGED) && (status_ != FAILED) )
       this->step();
+    
+    if (printEndSolveStatus_) {
+      Teuchos::RCP<Teuchos::FancyOStream> os = this->getOStream();
+      *os << "\n** End Solve Status **" << std::endl;
+      os->pushTab(defaultIndentation);
+      *os << *statusTests_;
+      os->popTab();
+    }
 
     for (ObserverIterator observer = observers_.begin(); observer != observers_.end(); ++observer)
       (*observer)->observeEndSolve(*this);
