@@ -205,6 +205,7 @@ namespace Teuchos {
     typedef typename Sacado::mpl::apply<S,ordinal_type,value_double_type>::type storage_double_type;
 
     typedef Sacado::MP::Vector<storage_mag_type> magnitudeType;
+    //typedef value_mag_type magnitudeType;
     typedef Sacado::MP::Vector<storage_half_type> halfPrecision;
     typedef Sacado::MP::Vector<storage_double_type> doublePrecision;
 
@@ -246,6 +247,11 @@ namespace Teuchos {
     }
     static magnitudeType magnitude(const ScalarType& a) {
       return std::fabs(a);
+      // magnitudeType m = magnitudeType(0.0);
+      // const ordinal_type sz = a.size();
+      // for (ordinal_type i=0; i<sz; ++i)
+      //   m += a.fastAccessCoeff(i)*a.fastAccessCoeff(i);
+      // return std::sqrt(m);
     }
     static value_type zero()  {
       return value_type(0.0);
@@ -314,7 +320,8 @@ namespace Teuchos {
   template <typename Ordinal, typename S>
   struct SerializationTraits<Ordinal, Sacado::MP::Vector<S> > :
     public Sacado::ETV::SerializationTraitsImp< Ordinal,
-                                                Sacado::MP::Vector<S> > {};
+                                                Sacado::MP::Vector<S>,
+                                                S::is_static > {};
 
   //! Specialization of %Teuchos::ValueTypeSerializer
   template <typename Ordinal, typename S>

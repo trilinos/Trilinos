@@ -342,6 +342,7 @@ IF (Stokhos_ENABLE_Sacado)
     SET(HEADERS ${HEADERS}
       sacado/kokkos/Stokhos_Sacado_Kokkos.hpp
       sacado/kokkos/Stokhos_Sacado_Kokkos_MathFunctions.hpp
+      sacado/kokkos/Stokhos_KokkosTraits.hpp
       sacado/kokkos/Stokhos_StaticArrayTraits.hpp
       sacado/kokkos/Stokhos_DynArrayTraits.hpp
       sacado/kokkos/Stokhos_LocalStorage.hpp
@@ -370,6 +371,11 @@ IF (Stokhos_ENABLE_Sacado)
           sacado/kokkos/vector/linalg/Kokkos_CrsMatrix_MP_Vector_Cuda.hpp
           )
       ENDIF()
+    ENDIF()
+    IF (Stokhos_ENABLE_Belos)
+      SET(HEADERS ${HEADERS}
+        sacado/kokkos/vector/Belos_TpetraAdapter_MP_Vector.hpp
+        )
     ENDIF()
   ENDIF()
   IF (Stokhos_ENABLE_Experimental AND Stokhos_ENABLE_MueLu)

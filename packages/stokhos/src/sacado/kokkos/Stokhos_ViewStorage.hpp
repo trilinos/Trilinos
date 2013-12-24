@@ -47,6 +47,10 @@
 #include "Kokkos_Macros.hpp"
 #include "impl/Kokkos_Traits.hpp"
 
+#include "Sacado_Traits.hpp"
+#include "Stokhos_KokkosTraits.hpp"
+#include <sstream>
+
 namespace Stokhos {
 
   struct error_storage_type_is_not_allocateable {};
@@ -219,5 +223,26 @@ public:
 
 
 } /* namespace Stokhos */
+
+namespace Sacado {
+  template <typename ordinal_t, typename value_t, unsigned static_length,
+            unsigned static_stride, typename device_t>
+  struct StringName< Stokhos::ViewStorage<ordinal_t,
+                                          value_t,
+                                          static_length,
+                                          static_stride,
+                                          device_t> > {
+    static std::string eval() {
+      std::stringstream ss;
+      ss << "Stokhos::ViewStorage<"
+         << StringName<ordinal_t>::eval() << ","
+         << StringName<value_t>::eval() << ","
+         << static_length << ","
+         << static_stride << ","
+         << StringName<device_t>::eval() << ">";
+      return ss.str();
+    }
+  };
+}
 
 #endif /* #ifndef STOKHOS_VIEW_STORAGE_HPP */

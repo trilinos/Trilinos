@@ -39,34 +39,51 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_SACADO_KOKKOS_HPP
-#define STOKHOS_SACADO_KOKKOS_HPP
+#ifndef STOKHOS_KOKKOS_TRAITS_HPP
+#define STOKHOS_KOKKOS_TRAITS_HPP
 
-#include "Stokhos_ConfigDefs.h"
-
-#ifdef HAVE_STOKHOS_KOKKOSCORE
+#include "Sacado_Traits.hpp"
 
 #include "KokkosCore_config.h"
+#include "Kokkos_Serial.hpp"
+#ifdef KOKKOS_HAVE_PTHREAD
+#include "Kokkos_Threads.hpp"
+#endif
+#ifdef KOKKOS_HAVE_OPENMP
+#include "Kokkos_OpenMP.hpp"
+#endif
+#ifdef KOKKOS_HAVE_CUDA
+#include "Kokkos_Cuda.hpp"
+#endif
 
-#include "Stokhos_Sacado_Kokkos_MathFunctions.hpp"
+namespace Sacado {
 
-#include "Stokhos_KokkosTraits.hpp"
-#include "Stokhos_StaticFixedStorage.hpp"
-#include "Stokhos_StaticStorage.hpp"
-#include "Stokhos_DynamicStorage.hpp"
-#include "Stokhos_DynamicStridedStorage.hpp"
-#include "Stokhos_DynamicThreadedStorage.hpp"
-#include "Stokhos_LocalStorage.hpp"
-#include "Stokhos_ViewStorage.hpp"
-#include "Stokhos_ViewStridedStorage.hpp"
+  template <>
+  struct StringName< Kokkos::Serial > {
+    static std::string eval() { return "Kokkos::Serial"; }
+  };
 
-#include "Sacado_MP_ExpressionTraits.hpp"
-#include "Sacado_MP_VectorTraits.hpp"
+#ifdef KOKKOS_HAVE_PTHREAD
+  template <>
+  struct StringName< Kokkos::Threads > {
+    static std::string eval() { return "Kokkos::Threads"; }
+  };
+#endif
 
-#include "Sacado_MP_Vector.hpp"
-#include "Kokkos_View_MP_Vector.hpp"
-#include "Kokkos_Atomic_MP_Vector.hpp"
+#ifdef KOKKOS_HAVE_OPENMP
+  template <>
+  struct StringName< Kokkos::OpenMP > {
+    static std::string eval() { return "Kokkos::OpenMP"; }
+  };
+#endif
 
-#endif // HAVE_STOKHOS_KOKKOSCORE
+#ifdef KOKKOS_HAVE_CUDA
+  template <>
+  struct StringName< Kokkos::Cuda > {
+    static std::string eval() { return "Kokkos::Cuda"; }
+  };
+#endif
 
-#endif // STOKHOS_SACADO_KOKKOS_HPP
+}
+
+#endif // STOKHOS_KOKKOS_TRAITS_HPP

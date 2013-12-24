@@ -46,6 +46,10 @@
 
 #include "Kokkos_Macros.hpp"
 
+#include "Sacado_Traits.hpp"
+#include "Stokhos_KokkosTraits.hpp"
+#include <sstream>
+
 namespace Stokhos {
 
   template <typename ordinal_t, typename value_t, typename device_t>
@@ -188,6 +192,22 @@ namespace Stokhos {
 
   };
 
+}
+
+namespace Sacado {
+  template <typename ordinal_t, typename value_t, typename device_t>
+  struct StringName< Stokhos::DynamicStorage<ordinal_t,
+                                             value_t,
+                                             device_t> > {
+    static std::string eval() {
+      std::stringstream ss;
+      ss << "Stokhos::DynamicStorage<"
+         << StringName<ordinal_t>::eval() << ","
+         << StringName<value_t>::eval() << ","
+         << StringName<device_t>::eval() << ">";
+      return ss.str();
+    }
+  };
 }
 
 #endif // STOKHOS_DYNAMIC_STORAGE_HPP
