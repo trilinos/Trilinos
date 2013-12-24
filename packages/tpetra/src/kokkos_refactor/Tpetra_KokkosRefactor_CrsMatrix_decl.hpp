@@ -849,6 +849,9 @@ namespace Tpetra {
                   const ArrayRCP<LocalOrdinal>& columnIndices,
                   const ArrayRCP<Scalar>& values);
 
+    void getAllValues(ArrayRCP<const size_t> & rowPointers,ArrayRCP<const LocalOrdinal> & columnIndices, ArrayRCP<const Scalar> & values) const;
+
+
     //@}
     //! @name Transformational methods
     //@{
@@ -1995,6 +1998,7 @@ namespace Tpetra {
         }
       }
     }
+
 
   protected:
     // useful typedefs
