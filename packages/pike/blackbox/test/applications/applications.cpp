@@ -1,7 +1,7 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Pike_BlackBox_config.hpp"
 #include "Pike_Solver_BlockGaussSeidel.hpp"
-#include "Pike_LinearHeatConductionModelEvaluator.hpp"
+#include "Pike_LinearHeatConduction_ModelEvaluator.hpp"
 #include "Pike_LinearHeatConduction_DataTransfer.hpp"
 
 #include "Teuchos_DefaultMpiComm.hpp"

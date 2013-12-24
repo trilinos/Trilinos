@@ -1,5 +1,5 @@
 #include "Pike_LinearHeatConduction_DataTransfer.hpp"
-#include "Pike_LinearHeatConductionModelEvaluator.hpp"
+#include "Pike_LinearHeatConduction_ModelEvaluator.hpp"
 
 namespace pike_test {
 

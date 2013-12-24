@@ -9,13 +9,13 @@ SET(SOURCES "")
 
 APPEND_SET(NOINSTALLHEADERS
   Pike_Mock_ModelEvaluator.hpp
-  Pike_LinearHeatConductionModelEvaluator.hpp
+  Pike_LinearHeatConduction_ModelEvaluator.hpp
   Pike_LinearHeatConduction_DataTransfer.hpp
   )
 
 APPEND_SET(SOURCES
   Pike_Mock_ModelEvaluator.cpp
-  Pike_LinearHeatConductionModelEvaluator.cpp
+  Pike_LinearHeatConduction_ModelEvaluator.cpp
   Pike_LinearHeatConduction_DataTransfer.cpp
   )
 
