@@ -7,6 +7,7 @@
 namespace pike {
 
   class Solver;
+  class BlackBoxModelEvaluator;
 
   class DataTransfer {
 
@@ -20,6 +21,9 @@ namespace pike {
 
     virtual bool transferSucceeded() const = 0;
 
+    // const std::vector<Teuchos::RCP<pike::BlackBoxModelEvaluator> >& getSourceModels() const = 0;
+
+    // const std::vector<Teuchos::RCP<pike::BlackBoxModelEvaluator> >& getTargetModels() const = 0;
   };
 
 }
