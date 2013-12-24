@@ -57,7 +57,7 @@ namespace pike {
       if ((*m)->name() == name)
 	return *m;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Failed to find the DataTransfer named \"" << name << "\" in the solver.");
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Failed to find the ModelEvaluator named \"" << name << "\" in the solver.");
     return Teuchos::null;
   }
 

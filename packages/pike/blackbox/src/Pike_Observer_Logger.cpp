@@ -8,6 +8,11 @@ namespace pike {
     log_ = Teuchos::rcp(new std::vector<std::string>);
   }
 
+  void LoggerObserver::setLog(const Teuchos::RCP<std::vector<std::string> >& log)
+  {
+    log_ = log;
+  }
+
   Teuchos::RCP<const std::vector<std::string> > LoggerObserver::getLog() const
   {
     return log_;

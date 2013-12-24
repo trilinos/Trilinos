@@ -14,6 +14,8 @@ namespace pike {
     
     LoggerObserver();
 
+    void setLog(const Teuchos::RCP<std::vector<std::string> >& log);
+
     Teuchos::RCP<const std::vector<std::string> > getLog() const;
 
     Teuchos::RCP<std::vector<std::string> > getNonConstLog() const;
