@@ -87,7 +87,6 @@ public:
     // Unravel Parameter List
     // Enumerations
     etr_ = StringToETrustRegion( parlist.get("Trust-Region Subproblem Solver Type",  "Cauchy Point"));
-    //etr_    = parlist.get("Trust-Region Subproblem Solver Type",  TRUSTREGION_TRUNCATEDCG);
     // Secant Information
     useSecantPrecond_ = parlist.get("Use Secant Preconditioning", false);
     useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
