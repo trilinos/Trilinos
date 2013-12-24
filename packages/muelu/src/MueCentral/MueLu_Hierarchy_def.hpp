@@ -186,34 +186,70 @@ namespace MueLu {
     if (fineLevelManager == Teuchos::null) isFinestLevel = true;
     if (nextLevelManager == Teuchos::null) isLastLevel   = true;
 
-    // Attach FactoryManager to coarse and fine levels
-    SetFactoryManager SFMCoarse(Levels_[coarseLevelID], rcpcoarseLevelManager);
-    RCP<SetFactoryManager> SFMFine, SFMNext;
+    // Attach FactoryManager to the fine level
+    RCP<SetFactoryManager> SFMFine;
     if (!isFinestLevel)
       SFMFine = rcp(new SetFactoryManager(Levels_[coarseLevelID-1], rcpfineLevelManager));
+
+    // Attach FactoryManager to the coarse level
+    SetFactoryManager SFMCoarse(Levels_[coarseLevelID], rcpcoarseLevelManager);
 
     if (isDumpingEnabled_ && dumpLevel_ == 0 && coarseLevelID == 1)
       DumpCurrentGraph();
 
+    RCP<TopSmootherFactory> coarseFact   = rcp(new TopSmootherFactory(rcpcoarseLevelManager, "CoarseSolver"));
+    RCP<TopSmootherFactory> smootherFact = rcp(new TopSmootherFactory(rcpcoarseLevelManager, "Smoother"));
+
     int nextLevelID = coarseLevelID + 1;
+
+    RCP<SetFactoryManager> SFMNext;
     if (isLastLevel == false) {
       // We are not at the coarsest level, so there is going to be another level ("next coarse") after this one ("coarse")
       if (nextLevelID > LastLevelID())
         AddNewLevel();
       CheckLevel(*Levels_[nextLevelID], nextLevelID);
 
-      // Attach FactoryManager
+      // Attach FactoryManager to the next level (level after coarse)
       SFMNext = rcp(new SetFactoryManager(Levels_[nextLevelID], rcpnextLevelManager));
       Levels_[nextLevelID]->Request(TopRAPFactory(rcpcoarseLevelManager, rcpnextLevelManager));
+
+      // Do smoother requests here. We don't know whether this is going to be
+      // the coarsest level or not, but we need to DeclareInput before we call
+      // coarseRAPFactory.Build(), otherwise some stuff may be erased after
+      // level releases
+      level.Request(*smootherFact);
+
+    } else {
+      // Similar to smoother above, do the coarse solver request here. We don't
+      // know whether this is going to be the coarsest level or not, but we
+      // need to DeclareInput before we call coarseRAPFactory.Build(),
+      // otherwise some stuff may be erased after level releases. This is
+      // actually evident on ProjectorSmoother. It requires both "A" and
+      // "Nullspace". However, "Nullspace" is erased after all releases, so if
+      // we call the coarse factory request after RAP build we would not have
+      // any data, and cannot get it as we don't have previous managers. The
+      // typical trace looks like this:
+      //
+      // MueLu::Level(0)::GetFactory(Aggregates, 0): No FactoryManager
+      //   during request for data "     Aggregates" on level 0 by factory TentativePFactory
+      //   during request for data "              P" on level 1 by factory EminPFactory
+      //   during request for data "              P" on level 1 by factory TransPFactory
+      //   during request for data "              R" on level 1 by factory RAPFactory
+      //   during request for data "              A" on level 1 by factory TentativePFactory
+      //   during request for data "      Nullspace" on level 2 by factory NullspaceFactory
+      //   during request for data "      Nullspace" on level 2 by factory NullspacePresmoothFactory
+      //   during request for data "      Nullspace" on level 2 by factory ProjectorSmoother
+      //   during request for data "    PreSmoother" on level 2 by factory NoFactory
+      level.Request(*coarseFact);
     }
 
     PrintMonitor m0(*this, "Level " +  Teuchos::Utils::toString(coarseLevelID), static_cast<MsgType>(GetVerbLevel()));
 
     // Build coarse level hierarchy
+    TopRAPFactory coarseRAPFactory(rcpfineLevelManager, rcpcoarseLevelManager);
     if (!isFinestLevel) {
-      TopRAPFactory coarseRAPFactory(rcpfineLevelManager, rcpcoarseLevelManager);
+      // We only build here, the release is done later
       coarseRAPFactory.Build(*level.GetPreviousLevel(), level);
-      // The release is done later
     }
 
     RCP<Matrix> Ac = Teuchos::null;
@@ -221,7 +257,6 @@ namespace MueLu {
       Ac = level.Get<RCP<Matrix> >("A");
 
     // Test if we reach the end of the hierarchy
-    RCP<TopSmootherFactory> smootherFact;
     bool isOrigLastLevel = isLastLevel;
     if (isLastLevel || Ac.is_null() || (Ac->getRowMap()->getGlobalNumElements() <= maxCoarseSize_)) {
       // This is definitely the last level, but reasons for it may be different:
@@ -229,17 +264,32 @@ namespace MueLu {
       //   - we do not belong to the next subcommunicator
       //   - the size of the coarse matrix is too small
       isLastLevel = true;
-      if (!Ac.is_null())
-        smootherFact = rcp(new TopSmootherFactory(rcpcoarseLevelManager, "CoarseSolver"));
-
-    } else {
-      smootherFact = rcp(new TopSmootherFactory(rcpcoarseLevelManager, "Smoother"));
     }
 
-    // Build smoother/solver
-    if (!smootherFact.is_null()) {
-      level.Request(*smootherFact);
-      smootherFact->Build(level);
+    if (isLastLevel) {
+      if (!isOrigLastLevel) {
+        // We did not expect to finish this early so we did request a smoother.
+        // We need a coarse solver instead. Do the magic.
+        level.Release(*smootherFact);
+        level.Request(*coarseFact);
+      }
+
+      // Do the actual build, if we have any data.
+      // NOTE: this is not a great check, we may want to call Build() regardless.
+      if (!Ac.is_null())
+        coarseFact->Build(level);
+
+      // Once the dirty deed is done, release stuff. The smoother has already
+      // been released.
+      level.Release(*coarseFact);
+
+    } else {
+      // isLastLevel = false => isOrigLastLevel = false, meaning that we have
+      // requested the smoother. Now we need to build it and to release it.
+      // We don't need to worry about the coarse solver, as we didn't request it.
+      if (!Ac.is_null())
+        smootherFact->Build(level);
+
       level.Release(*smootherFact);
     }
 
@@ -258,7 +308,6 @@ namespace MueLu {
       // Release the hierarchy data
       // We release so late to help blocked solvers, as the smoothers for them need A blocks
       // which we construct in RAPFactory
-      TopRAPFactory coarseRAPFactory(rcpfineLevelManager, rcpcoarseLevelManager);
       level.Release(coarseRAPFactory);
     }
 
