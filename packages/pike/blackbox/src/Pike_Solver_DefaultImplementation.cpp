@@ -52,8 +52,7 @@ namespace pike {
 
   Teuchos::RCP<const pike::BlackBoxModelEvaluator> SolverDefaultImplementation::getModelEvaluator(const std::string& name) const
   {
-    typedef std::vector<Teuchos::RCP<pike::BlackBoxModelEvaluator> >::const_iterator ModelIterator;
-    for (ModelIterator m = models_.begin(); m != models_.end(); ++m)
+    for (ModelConstIterator m = models_.begin(); m != models_.end(); ++m)
       if ((*m)->name() == name)
 	return *m;
 
@@ -63,8 +62,7 @@ namespace pike {
 
   Teuchos::RCP<const pike::DataTransfer> SolverDefaultImplementation::getDataTransfer(const std::string& name) const
   {
-    typedef std::vector<Teuchos::RCP<pike::DataTransfer> >::const_iterator TransferIterator;
-    for (TransferIterator t = transfers_.begin(); t != transfers_.end(); ++t)
+    for (TransferConstIterator t = transfers_.begin(); t != transfers_.end(); ++t)
       if ((*t)->name() == name)
 	return *t;
 

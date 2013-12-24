@@ -61,6 +61,10 @@ namespace pike {
   protected:
 
     typedef std::vector<Teuchos::RCP<Observer> >::iterator ObserverIterator;
+    typedef std::vector<Teuchos::RCP<pike::BlackBoxModelEvaluator> >::iterator ModelIterator;
+    typedef std::vector<Teuchos::RCP<pike::BlackBoxModelEvaluator> >::const_iterator ModelConstIterator;
+    typedef std::vector<Teuchos::RCP<pike::DataTransfer> >::iterator TransferIterator;
+    typedef std::vector<Teuchos::RCP<pike::DataTransfer> >::const_iterator TransferConstIterator;
 
     int numberOfIterations_;
     Teuchos::RCP<Teuchos::ParameterList> validParameters_;

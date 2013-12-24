@@ -7,9 +7,12 @@ namespace pike {
 
   void BlockGaussSeidel::stepImplementation()
   {
-    typedef std::vector<Teuchos::RCP<pike::BlackBoxModelEvaluator> >::iterator ModelIterator;
-    for (ModelIterator m = models_.begin(); m != models_.end(); ++m)
+    for (ModelIterator m = models_.begin(); m != models_.end(); ++m) {
+     
+      // for the model about to be solved, transfer all data to the model
+
       (*m)->solve();
+    }
   }
 
 }
