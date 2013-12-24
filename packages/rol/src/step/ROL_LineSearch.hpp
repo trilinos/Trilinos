@@ -77,9 +77,6 @@ public:
     edesc_ = StringToEDescent(            parlist.get("Descent Type",                   "Quasi-Newton Method"));
     els_   = StringToELineSearch(         parlist.get("Linesearch Type",                "Cubic Interpolation"));
     econd_ = StringToECurvatureCondition( parlist.get("Linesearch Curvature Condition", "Strong Wolfe Conditions"));
-    //edesc_     = parlist.get("Descent Type",                   DESCENT_SECANT);
-    //els_       = parlist.get("Linesearch Type",                LINESEARCH_CUBICINTERP);
-    //econd_     = parlist.get("Linesearch Curvature Condition", CURVATURECONDITION_STRONGWOLFE);
     // Linesearc Parameters
     maxit_     = parlist.get("Maximum Number of Function Evaluations",            20);
     c1_        = parlist.get("Sufficient Decrease Parameter",                     1.e-4);

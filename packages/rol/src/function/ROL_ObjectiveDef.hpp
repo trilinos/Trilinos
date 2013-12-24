@@ -80,14 +80,15 @@ void Objective<Real>::hessVec( Vector<Real> &hv, const Vector<Real> &v, const Ve
   //Real h = std::max(1.0,x.norm()/v.norm())*tol;
   Real h = 2.0/(v.norm()*v.norm())*tol;
 
-  // Compute New Step x + h*v
-  Teuchos::RCP<Vector<Real> > xnew = x.clone();
-  xnew->set(x);
-  xnew->axpy(h,v);
-  
   // Compute Gradient at x
   Teuchos::RCP<Vector<Real> > g = x.clone();
   this->gradient(*g,x,gtol);
+
+  // Compute New Step x + h*v
+  Teuchos::RCP<Vector<Real> > xnew = x.clone();
+  xnew->set(x);
+  xnew->axpy(h,v);  
+  this->update(*xnew);
 
   // Compute Gradient at x + h*v
   hv.zero();
