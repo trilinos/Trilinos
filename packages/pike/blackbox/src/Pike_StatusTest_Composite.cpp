@@ -7,6 +7,7 @@
 namespace pike {
 
   Composite::Composite(const pike::Composite::CompositeType type) :
+    type_(type),
     status_(pike::UNCHECKED)
   {
     validParameters_ = Teuchos::parameterList("Valid Parameters: Composite");
@@ -21,6 +22,11 @@ namespace pike {
     Teuchos::setupVerboseObjectSublist(validParameters_.get());
   }
   
+  void Composite::addTest(const Teuchos::RCP<pike::StatusTest>& t)
+  {
+    tests_.push_back(t);
+  }
+    
   pike::SolveStatus Composite::checkStatus(const pike::Solver& solver, const CheckType checkType)
   {
     if (type_ == pike::Composite::AND)
@@ -36,7 +42,29 @@ namespace pike {
     if (checkType == pike::NONE)
       status_ = pike::UNCHECKED;
 
-    //for (
+    bool isUnconverged = false;
+    pike::CheckType subCheckType = checkType;
+    
+    for (TestIterator test = tests_.begin(); test != tests_.end(); ++test) {
+      pike::SolveStatus testStatus = (*test)->checkStatus(solver,subCheckType);
+      
+      if (testStatus == pike::UNCONVERGED) {
+	isUnconverged = true;
+	status_ = pike::UNCONVERGED;
+	
+	// If any are unconverged, "AND" means all are unconverged, so
+	// we can disable the rest of the checks (but still need to
+	// call check status in case they need to store solver
+	// history.
+	if (checkType == pike::MINIMAL)
+	  subCheckType = pike::NONE;
+      }
+
+      // If we are not unconverged and 
+      if ( (!isUnconverged) && (status_ == pike::UNCONVERGED) ) {
+	status_ = testStatus;
+      }
+    }
 
   }
   
@@ -44,8 +72,21 @@ namespace pike {
   {
     if (checkType == pike::NONE)
       status_ = pike::UNCHECKED;
+    else
+      status_ = pike::UNCONVERGED;
 
-    //for (
+    pike::CheckType subCheckType = checkType;
+
+    for (TestIterator test = tests_.begin(); test != tests_.end(); ++test) {
+      pike::SolveStatus testStatus = (*test)->checkStatus(solver,subCheckType);
+
+      if ( (status_ == pike::UNCONVERGED) && (testStatus != pike::UNCONVERGED) ) {
+	status_ = testStatus;
+
+	if (checkType == pike::MINIMAL)
+	  subCheckType = pike::NONE;
+      }
+    }
 
   }
 
@@ -54,16 +95,40 @@ namespace pike {
   
   void Composite::reset()
   { status_ = pike::UNCHECKED; }
-  
+    
+  void Composite::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const
+  {
+    out << pike::statusToString(status_);
+    if (type_ == AND)
+      out << "AND";
+    else
+      out << "OR";
+    
+    out << " Composite (" << tests_.size() << " subtests):" << std::endl;
+
+    out.pushTab(defaultIndentation);
+
+    for (TestConstIterator t = tests_.begin(); t != tests_.end(); ++t)
+      (*t)->describe(out,verbLevel);
+
+    out.popTab();
+  }
+
   void Composite::setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& paramList)
   {
     paramList->validateParametersAndSetDefaults(*(this->getValidParameters()));
     this->setMyParamList(paramList);
-    //maximumIterations_ = paramList->get<int>("Maximum Iterations");
   }
   
   Teuchos::RCP<const Teuchos::ParameterList> Composite::getValidParameters() const
   {
     return validParameters_;
   }
+
+  // nonmember ctor
+  Teuchos::RCP<pike::Composite> composite(const pike::Composite::CompositeType type)
+  {
+    return Teuchos::rcp(new pike::Composite(type));
+  }
+  
 }

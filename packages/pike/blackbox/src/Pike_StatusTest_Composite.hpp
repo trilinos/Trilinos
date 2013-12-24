@@ -12,12 +12,13 @@ namespace pike {
     public pike::StatusTest,
     public Teuchos::ParameterListAcceptorDefaultBase {
 
+  public:
+
     enum CompositeType {
       AND,
       OR
     };
 
-  public:
     //! Default ctor.
     Composite(const pike::Composite::CompositeType type);
     
@@ -25,14 +26,16 @@ namespace pike {
     Composite(const pike::Composite::CompositeType type,
 	      const Teuchos::RCP<pike::StatusTest>& t1,
 	      const Teuchos::RCP<pike::StatusTest>& t2);
-
+    
     void addTest(const Teuchos::RCP<pike::StatusTest>& t);
-
+    
     pike::SolveStatus checkStatus(const pike::Solver& solver, const CheckType checkType = pike::COMPLETE);
     
     pike::SolveStatus getStatus() const;
     
     void reset();
+
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=verbLevel_default) const;
 
     void setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& paramList);
 
@@ -47,7 +50,13 @@ namespace pike {
     std::vector<Teuchos::RCP<pike::StatusTest> > tests_;
     Teuchos::RCP<Teuchos::ParameterList> validParameters_;
     pike::SolveStatus status_;
+
+    typedef std::vector<Teuchos::RCP<pike::StatusTest> >::iterator TestIterator;
+    typedef std::vector<Teuchos::RCP<pike::StatusTest> >::const_iterator TestConstIterator;
   };
+
+  //! Non-member ctor.
+  Teuchos::RCP<pike::Composite> composite(const pike::Composite::CompositeType type);
 
 }
 

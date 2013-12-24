@@ -76,14 +76,11 @@ namespace pike {
   
   void ScalarResponseRelativeTolerance::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const
   {
-    Teuchos::tab(Teuchos::rcpFromRef(out),defaultIndentation);
-    out << pike::statusToString(status_) 
-	<< "Relative Tolerance: "
+    out << pike::statusToString(status_)
+	<< "RTol of \""<< responseName_ << "\" in \"" << applicationName_ << "\": "
 	<< std::abs(currentValue_ - previousValue_) 
 	<< " must be < " << tolerance_
 	<< std::endl;
-    Teuchos::tab(Teuchos::rcpFromRef(out),statusIndentation);
-    out << " (" << applicationName_ << "," << responseName_ << ")" << std::endl;
   }
 
   void ScalarResponseRelativeTolerance::setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& paramList)

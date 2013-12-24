@@ -81,8 +81,13 @@ namespace pike {
 
     status_ = statusTests_->checkStatus(*this);
     
-    if (printStepStatus_)
-      std::cout << *statusTests_;
+    if (printStepStatus_) {
+      Teuchos::RCP<Teuchos::FancyOStream> os = this->getOStream();
+      *os << "\n** Step Status Test **" << std::endl;
+      os->pushTab(defaultIndentation);
+      *os << *statusTests_;
+      os->popTab();
+    }
 
     for (ObserverIterator observer = observers_.begin(); observer != observers_.end(); ++observer)
       (*observer)->observeEndStep(*this);

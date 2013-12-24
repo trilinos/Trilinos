@@ -35,10 +35,9 @@ namespace pike {
   
   void MaxIterations::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel) const
   {
-    Teuchos::tab(Teuchos::rcpFromRef(out),defaultIndentation);
     out << pike::statusToString(status_) 
-	<< "Max Iterations limited to " << maximumIterations_ << ": current iter = "
-	<< currentIterations_ << std::endl;
+	<< "Num Iterations = " << currentIterations_ 
+	<< ", limited to " << maximumIterations_ << std::endl;
   }
 
   void MaxIterations::setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& paramList)
