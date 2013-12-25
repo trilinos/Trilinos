@@ -1300,10 +1300,10 @@ setInnerPreconditioner (const Teuchos::RCP<Preconditioner<scalar_type,
     "setMatrix() feature.  Only input preconditioners that inherit from "
     "Ifpack2::Details::CanChangeMatrix implement this feature.");
 
-  /*TEUCHOS_TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION(
     innerMatrix_.is_null (), std::logic_error, "Ifpack2::AdditiveSchwarz::"
     "setInnerPreconditioner: innerMatrix_ is null.  This should never happen.  "
-    "Please report this bug to the Ifpack2 developers.");*/
+    "Please report this bug to the Ifpack2 developers.");
 
   // Give the local matrix to the new inner solver.
   innerSolver->setMatrix (innerMatrix_);
