@@ -229,10 +229,11 @@ LOCA::Epetra::AdaptiveStepper::buildLOCAFactory(){
   // Create step size strategy
   Teuchos::RCP<Teuchos::ParameterList> stepsizeParams = 
     parsedParams->getSublist("Step Size");
-   stepSizeStrategyPtr = globalData->locaFactory->createStepSizeStrategy(
+
+   if(Teuchos::is_null(stepSizeStrategyPtr))
+     stepSizeStrategyPtr = globalData->locaFactory->createStepSizeStrategy(
 							     parsedParams,
 							     stepsizeParams);
-
 
 }
 
