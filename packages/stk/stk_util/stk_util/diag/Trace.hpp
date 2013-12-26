@@ -305,9 +305,6 @@ public:
    * @brief Member function <b>printTraceback</b> writes the traceback stack
    * function specifications to the output stream <b>os</b>.
    *
-   * @param os      a <b>std::ostream</b> reference to the output stream
-   *        to write to.
-   *
    * @return      a <b>std::ostream</b> reference to the output stream.
    */
   static std::string printTraceback(const TracebackStack &traceback_stack);
@@ -493,9 +490,6 @@ inline Writer &operator<<(Writer &dout, const Trace &diag_trace) {
  *
  * @param os			a <b>std::ostream</b> reference to the output stream
  *				to write to.
- *
- * @param print_coverage	a <b>Coverage</b> const reference to the coverage
- *				to write.
  *
  * @return			a <b>std::ostream</b> reference to the output
  *				stream.

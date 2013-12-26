@@ -172,8 +172,9 @@ private:
    *
    * @param build_time		a <b>char</b> const pointer to __DATE__ " " __TIME__
    *
-   * @param exec_options	an <b>OptionMap</b> const reference to additional
-   *				options available for the command line/environment.
+   * @param mpi_key	        an <b>ExecType</b> 
+   *
+   * @param peer_sizes          a <b> std::vector<int> </b>
    *
    */
   void startup(int *argc, char ***argv, const char *product_name, const char *build_time,
@@ -198,12 +199,8 @@ private:
  *
  * @param mpi_comm		a <b>MPI_Comm</b> value for the new mpi
  *				communicator.
- *
- * @param work_dir		a <b>char</b> const pointer to the new working
- *				directory.
- *
  */
-void reset(MPI_Comm mpi_comm); // , const char * const work_dir = NULL);
+void reset(MPI_Comm mpi_comm);
 void setMpiCommunicator(MPI_Comm communicator);
 bool is_comm_valid();
 

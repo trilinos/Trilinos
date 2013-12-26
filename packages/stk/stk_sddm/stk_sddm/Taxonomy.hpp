@@ -150,12 +150,8 @@ public:
   
   /** 
    * @brief <b>findAnnotation</b> returns a pair of iterators which
-   * specifcy a range of annotations of the specified annotation
+   * specify a range of annotations of the specified annotation
    * interface.
-   * 
-   * 
-   * @return a pair of iterators which specify a range of annotations
-   * of the specified annotation interface.
    */
   template <class T, class Out>
   void findAnnotations(Out out) const {
@@ -164,9 +160,6 @@ public:
   
   /** 
    * @brief <b>getAnnotations</b> 
-   * 
-   * 
-   * @return 
    */
   std::pair<AnnotationMap::const_iterator, AnnotationMap::const_iterator> getAnnotations() const {
     return std::make_pair(m_annotationMap.begin(), m_annotationMap.end());
@@ -185,9 +178,6 @@ public:
   
   /** 
    * @brief <b>getChildren</b> 
-   * 
-   * 
-   * @return 
    */
   const TaxonVector &getChildren() const {
     return m_children;
@@ -210,7 +200,6 @@ public:
    * @brief <b>Taxonomy</b> 
    * 
    * @param name 
-   * @param data_types 
    */
   Taxonomy(const char *name)
     : m_name(name),
@@ -319,9 +308,7 @@ public:
   /** 
    * @brief <b>findType</b> 
    * 
-   * @param type
-   * 
-   * @return 
+   * @return a const AnyType* 
    */
   template <class T>
   const AnyType *findType() const {
@@ -339,8 +326,6 @@ public:
   
   /** 
    * @brief <b>registerType</b> 
-   * 
-   * @param any_type 
    */
   template <class It>
   void registerTypes(It first, It last) {

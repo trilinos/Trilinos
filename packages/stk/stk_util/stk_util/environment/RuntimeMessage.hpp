@@ -245,7 +245,6 @@ void reset_throttle_group(int throttle_group);
  *
  * @param message_code		a <b>MessageCode</b> ...
  *
- * @return			an <b>unsigned int</b> ...
  */
 void report_message(const char *message, unsigned message_type, const MessageCode &message_code);
 

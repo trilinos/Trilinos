@@ -45,10 +45,6 @@ inline ParallelMachine parallel_machine_null() { return MPI_COMM_NULL ; }
 /**
  * @brief <b>parallel_machine_init</b> calls MPI_Init.
  *
- * @param argc
- *
- * @param argv
- *
  * @return <b>ParallelMachine</b> (MPI_COMM_WORLD)
  */
 inline ParallelMachine parallel_machine_init( int * argc , char *** argv )
@@ -110,7 +106,7 @@ namespace stk {
 /**
  * @brief Member function <b>parallel_machine_size</b> ...
  *
- * @param m			a <b>ParallelMachine</b> ...
+ * @param parallel_machine	a <b>ParallelMachine</b> ...
  *
  * @return			an <b>unsigned int</b> ...
  */
@@ -119,7 +115,7 @@ int parallel_machine_size( ParallelMachine parallel_machine );
 /**
  * @brief Member function <b>parallel_machine_rank</b> ...
  *
- * @param m			a <b>ParallelMachine</b> ...
+ * @param parallel_machine	a <b>ParallelMachine</b> ...
  *
  * @return			an <b>unsigned int</b> ...
  */
@@ -127,7 +123,6 @@ int parallel_machine_rank( ParallelMachine parallel_machine );
 
 /**
  * @brief Member function <b>parallel_machine_barrier</b> ...
- *
  */
 void parallel_machine_barrier( ParallelMachine parallel_machine);
 }

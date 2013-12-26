@@ -104,9 +104,8 @@ Part &declare_part(MetaData& meta_data, const std::string &name) {
  *
  * \param entity
  * \param subcell_rank
- * \param subcell_indentifier
+ * \param subcell_identifier
  * \param subcell_nodes EntityVector output of the subcell nodes
- * \param use_reverse_polarity
  * \return CellTopologyData * of the requested subcell
  */
 const CellTopologyData * get_subcell_nodes(const BulkData& mesh,

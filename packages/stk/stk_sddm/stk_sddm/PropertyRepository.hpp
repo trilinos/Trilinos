@@ -51,10 +51,7 @@ public:
   /** 
    * @brief <b>match</b> 
    * 
-   * @param property 
-   * @param name 
-   * 
-   * @return 
+   * @return const Taxon pointer 
    */
   virtual const Taxon *match(const std::string &name) const;
 
@@ -73,8 +70,6 @@ public:
   
   /** 
    * @brief <b>setInvalidTaxonFunction</b> 
-   * 
-   * @param invalid_taxon_func 
    */
   void setValidationErrorFunction(ReportFunc validation_error_func) {
     m_validationErrorFunc = validation_error_func;

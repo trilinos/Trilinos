@@ -98,13 +98,13 @@ class Scheduler
     //! See discussion for time intervals.
     StepContainer stepIntervals_;
 
-    std::set<Time> times_; //<! List of addtional times at which output is desired.
-    std::set<Step> steps_; //<! List of addtional steps at which output is desired.
+    std::set<Time> times_;   ///<! List of addtional times at which output is desired.
+    std::set<Step> steps_;   ///<! List of addtional steps at which output is desired.
 
-    Time tolerance_; //<! tolerance for comparing times.
-    mutable Time lastTime_;  //<! Last time at which output was written.
-    mutable Time firstTime_; //<! First time at which output was written.
-    Time lastCalledTime_; //<! Time routine called last; to estimate dt
+    Time tolerance_;         ///<! tolerance for comparing times.
+    mutable Time lastTime_;  ///<! Last time at which output was written.
+    mutable Time firstTime_; ///<! First time at which output was written.
+    Time lastCalledTime_;    ///<! Time routine called last; to estimate dt
     mutable Step lastInterval_;
 
     /*!
@@ -114,7 +114,7 @@ class Scheduler
      */
     int lookAhead_;
 
-    mutable Time startTime_; //<! Used for backwards compatibility.
+    mutable Time startTime_; ///<! Used for backwards compatibility.
 
     /*! Time at which this scheduler ends.  A
      * is_it_time(time==terminationTime) call will return true, but
@@ -128,10 +128,10 @@ class Scheduler
      */
     Time restartTime_;
 
-    bool forceSchedule_; //<! Used to force scheduler to return true next time
-    bool synchronize_; //<! Synchronize output with outputs from other regions in this procedure.
+    bool forceSchedule_; ///<! Used to force scheduler to return true next time
+    bool synchronize_;   ///<! Synchronize output with outputs from other regions in this procedure.
 
-    mutable bool initialized_; //<! True if this scheduler has been called.
+    mutable bool initialized_; ///<! True if this scheduler has been called.
     std::string name_;
   };
 }

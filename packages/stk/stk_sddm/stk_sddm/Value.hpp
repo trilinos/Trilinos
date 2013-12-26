@@ -16,9 +16,9 @@ namespace sddm {
  * @brief Function <b>cast_error</b> creates a <b>bad_any_data_cast</b>, message
  * describing the invalid conversion.
  *
- * @param of_type		a <b>std::type_info</b> const ...
+ * @param of_type_name		a <b>std::type_info</b> const ...
  *
- * @param to_type		a <b>std::type_info</b> const ...
+ * @param to_type_name		a <b>std::type_info</b> const ...
  *
  * @return			a <b>bad_any_data_cast</b> ...
  */
@@ -44,14 +44,6 @@ public:
    */
   virtual ~AnyValue()
   {}
-
-// protected:
-//   template<typename T>
-//   inline void setValue(const typename DataTypeTraits<T>::Type &value);
-
-//   template<typename T>
-//   inline void setText(const typename DataTypeTraits<T>::TextType &text);
-
 
 public:
   /** 

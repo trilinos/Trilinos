@@ -159,9 +159,9 @@ public:
    * new node is allocated on a node list so that it may be
    * deallocated properly on exception.
    *
-   * @param opcode		a <b>int</b> value of the opcode for the node.
+   * @param op		a <b>int</b> value of the opcode for the node.
    *
-   * @return                    a <b>Node</b> pointer to the newly allocated node.
+   * @return            a <b>Node</b> pointer to the newly allocated node.
    */
   Node *newNode(int op);
   
@@ -239,14 +239,12 @@ public:
   /**
    * @brief Member function <b>parse</b> parses the current expression.  If
    * successful, the parse status is set to true.
-   *
    */
   void parse();
 
   /**
    * @brief Member function <b>resolve</b> calls the variable name resolver for each
    * variable in the variable map.
-   *
    */
   void resolve();
 

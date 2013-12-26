@@ -230,7 +230,7 @@ private:
   /**
    * @brief Member function <b>register_exception_a</b> performs the actual registration.
    *
-   * @param exception_type		a <b>std::type_info</b> reference of the
+   * @param parallel_exception_type	a <b>std::type_info</b> reference of the
    *					base exception type obtained via typeid of the
    *					BaseExceptionType type of the parallel exception type.
    *
@@ -619,18 +619,12 @@ public:
    */
   virtual void throw_copy() const {
     ParallelExceptionType t(*this);
-
-//    std::cerr << "throwing " << this->what() << std::endl
-//              << "      as " << t.what();
     throw t;
   }
 
   /**
    * @brief Member function <b>registerException</b> registers the exception with
    * the parallel exception registry.
-   *
-   * @return			an <b>ExParallel</b> reference to the exception to
-   *				be cloned when thrown.
    */
   static void registerException() {
 #ifdef SIERRA_TEMPLATE_CALL_BUG
@@ -729,25 +723,15 @@ public:
    * @brief Member function <b>throw_copy</b> throws a copy of the original
    * exception.  It copies the original message, appends the message to the exception
    * description, sets the parallel thrown flag and throws the new exception.
-   *
-   * @param message		a <b>std::string</b> const reference to a message to
-   *				be appended to the exception's description prior to being
-   *				thrown.
    */
   virtual void throw_copy() const {
     ParallelExceptionType t(*this);
-
-//    std::cerr << "throwing " << this->what() << std::endl
-//              << "      as " << t.what();
     throw t;
   }
 
   /**
    * @brief Member function <b>registerException</b> registers the exception with
    * the parallel exception registry.
-   *
-   * @return			an <b>ExParallel</b> reference to the exception to
-   *				be cloned when thrown.
    */
   static ExParallel &registerException() {
 #ifdef SIERRA_TEMPLATE_CALL_BUG

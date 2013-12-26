@@ -372,12 +372,8 @@ AllReduce(MPI_Comm mpi_comm, MPI_Op op, T *src_dest, size_t size)
  *
  * @param op		a <code>MPI_Op</code> value of the MPI operation.
  *
- * @param src_dest	a <code>std::vector<T></code> reference to be copied for the
+ * @param dest	        a <code>std::vector<T></code> reference to be copied for the
  *			source and used as the destination.
- *
- * @param size		a <code>size_t</code> value of the length of the array pointed to
- *			by <b>src_dest</b>
- *
  */
 template<class T>
 inline void
@@ -397,15 +393,11 @@ AllReduce(MPI_Comm mpi_comm, MPI_Op op, std::vector<T> &dest)
  *
  * @param op		a <code>MPI_Op</code> value of the MPI operation.
  *
- * @param src		a <code>std::vector<T></code> reference to the source data for the
+ * @param source	a <code>std::vector<T></code> reference to the source data for the
  *			MPI op.
  *
  * @param dest		a <code>std::vector<T></code> reference to the destination data
  *			for the MPI op.
- *
- * @param size		a <code>size_t</code> value of the length of the array pointed to
- *			by <b>src_dest</b>
- *
  */
 template<class T>
 inline void

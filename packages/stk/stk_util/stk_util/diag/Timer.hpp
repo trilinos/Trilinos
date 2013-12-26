@@ -86,7 +86,7 @@ Timer createRootTimer(const std::string &name, const TimerSet &timer_set);
  * Function <b>deleteRootTimer</b> deletes a root timer and all of it's children timers.  All
  * children Timers are invalidated and can no longer be used.
  *
- * @param                       a <b>Timer</b> value of the root timer to delete.
+ * @param timer <b>Timer</b> value of the root timer to delete.
  */
 void deleteRootTimer(Timer timer);
 
@@ -99,7 +99,7 @@ void deleteRootTimer(Timer timer);
  * @param path_tail    a <code>std::string</code> const reference to the dot separated tail
  *                              to match.
  *
- * @param found_timer    a <code>std::vector<Timer></code> reference to the vector to store
+ * @param found_timers    a <code>std::vector<Timer></code> reference to the vector to store
  *                              matching timers.
  *
  * @return      a <code>std::vector<Timer></code> reference to found_timer.
@@ -267,7 +267,7 @@ public:
      * If the <b>checkpoint</b> parameter if true, the value returned is the
      * difference between the accumulated value and the checkpointed value.
      *
-     * @param checkpoint  a <b>bool</b> value of true of the checkpointed
+     * @param arg_checkpoint  a <b>bool</b> value of true of the checkpointed
      *        value is to be returned.
      *
      * @return      a <b>T</b> value of the accumulated or the

@@ -56,10 +56,9 @@ typedef stk::basic_tee_streambuf<char, std::char_traits<char> > tee_streambuf;
  * @brief Function <b>register_ostream</b> registers an output stream with the output stream
  * registry.  The registration process creates an intermediate tee streambuf.
  *
- * @param name			a <b>std::string</b> const reference to the name of the output
- *                              stream. 
+ * @param os		a <b>std::ostream</b> reference to the output stream to register.
  *
- * @param output_stream		a <b>std::ostream</b> reference to the output stream to register.
+ * @param name		a <b>std::string</b> const reference to the name of the output stream. 
  *
  */
 void register_ostream(std::ostream &os, const std::string &name);
@@ -67,7 +66,7 @@ void register_ostream(std::ostream &os, const std::string &name);
 /**
  * @brief Function <b>unregister_ostream</b> unregisters an output stream.
  *
- * @param output_stream		a <b>std::ostream</b> reference to the output stream to unregister.
+ * @param os	a <b>std::ostream</b> reference to the output stream to unregister.
  *
  */
 void unregister_ostream(std::ostream &os);
@@ -98,10 +97,10 @@ void bind_output_streams(const std::string &output_description);
  * @brief Function <b>register_log_ostream</b> takes an existing std::ostream and makes it available
  * for output redirection.
  *
- * @param output_stream		a <b>std::ostream</b> reference to the output stream to register.
+ * @param os	a <b>std::ostream</b> reference to the output stream to register.
  *
- * @param name			a <b>std::string</b> const reference to the name of this log
- *                              stream. 
+ * @param name	a <b>std::string</b> const reference to the name of this log
+ *              stream. 
  *
  */
 void register_log_ostream(std::ostream &os, const std::string &name);
@@ -110,7 +109,7 @@ void register_log_ostream(std::ostream &os, const std::string &name);
  * @brief Function <b>register_log_ostream</b> takes an existing std::ostream and makes it available
  * for output redirection.
  *
- * @param output_stream		a <b>std::ostream</b> reference to the output stream to register.
+ * @param os		a <b>std::ostream</b> reference to the output stream to register.
  *
  */
 void unregister_log_ostream(std::ostream &os);

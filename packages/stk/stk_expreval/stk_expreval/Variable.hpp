@@ -347,10 +347,8 @@ private:
     /**
      * @brief Member function <b>resolve</b> implements the default resolvers
      * function, which does nothing.  I.E. lets the local variable values stand.
-     *
-     * @param it		a <b>VariableMap::iterator</b> variable ...
      */
-    virtual void resolve(VariableMap::iterator &it)
+    virtual void resolve(VariableMap::iterator &)
     {}
     
   };
