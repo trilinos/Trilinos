@@ -233,14 +233,34 @@ void Piro::Epetra::LOCAAdaptiveSolver::evalModel( const InArgs& inArgs,
 
   LOCA::Abstract::Iterator::IteratorStatus status = stepper->run();
 
-  if (status ==  LOCA::Abstract::Iterator::Finished)
-    utils.out() << "Continuation Stepper Finished" << std::endl;
-  else if (status ==  LOCA::Abstract::Iterator::NotFinished)
-    utils.out() << "Continuation Stepper did not reach final value." << std::endl;
-  else {
-    utils.out() << "Nonlinear solver failed to converge!" << std::endl;
-    outArgs.setFailed();
+  // Two acceptable outcomes: LOCA::Abstract::Iterator::Finished || LOCA::Abstract::Iterator::NotFinished
+
+  // Ckecking the convergence of a nonlinear step
+  if (status != LOCA::Abstract::Iterator::Finished)
+     if (globalData->locaUtils->isPrintType(NOX::Utils::Error))
+       globalData->locaUtils->out() << "Stepper failed to converge!" << std::endl;
+
+  // Output the parameter list
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperParameters)) {
+    globalData->locaUtils->out() << std::endl <<
+      "### Final Parameters ############" << std::endl;
+    stepper->getList()->print(globalData->locaUtils->out());
+    globalData->locaUtils->out() << std::endl;
   }
+
+  // The time spent
+  if (p_in->Map().Comm().MyPID() == 0)
+    std::cout << std::endl << "#### Statistics ########" << std::endl;
+
+  // Check number of steps
+  int numSteps = stepper->getStepNumber();
+  if (p_in->Map().Comm().MyPID() == 0)
+    std::cout << " Number of continuation Steps = " << numSteps << std::endl;
+
+  // Check number of failed steps
+  int numFailedSteps = stepper->getNumFailedSteps();
+  if (p_in->Map().Comm().MyPID() == 0)
+    std::cout << " Number of failed continuation Steps = " << numFailedSteps << std::endl;
 
   // Get current solution from solution manager
   Teuchos::RCP<const Epetra_Vector> finalSolution = solnManager->updateSolution();
@@ -445,7 +465,7 @@ void Piro::Epetra::LOCAAdaptiveSolver::evalModel( const InArgs& inArgs,
     // Resize gx if problem size has changed
     if(gx_out->MyLength() != finalSolution->MyLength()){
 
-      std::cout << "Mismatch in storage sizes between final solution and response vector - not returning final solution." 
+      std::cout << "Mismatch in storage sizes between final solution and response vector - not returning final solution."
                 << std::endl;
 
     }
