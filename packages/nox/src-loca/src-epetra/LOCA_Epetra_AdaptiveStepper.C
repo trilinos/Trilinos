@@ -107,7 +107,8 @@ LOCA::Epetra::AdaptiveStepper::AdaptiveStepper(
   minTangentFactor(0.1),
   tangentFactorExponent(1.0),
   calcEigenvalues(false),
-  return_failed_on_max_steps(true)
+  return_failed_on_max_steps(true),
+  max_steps_exceeded(false)
 {
 
   // Parse parameter list
@@ -176,7 +177,6 @@ LOCA::Epetra::AdaptiveStepper::AdaptiveStepper(
     stepperList->get("Tangent Factor Exponent",1.0);
   calcEigenvalues = stepperList->get("Compute Eigenvalues",false);
 
-  // TODO Deprecated as moved to LOCA::StatusTest::MaxIters
   return_failed_on_max_steps =
     stepperList->get("Return Failed on Reaching Max Steps", true);
 
@@ -682,12 +682,22 @@ LOCA::Epetra::AdaptiveStepper::run()
 
   iteratorStatus = iterate();
 
-  // we failed in the LOCA iteration sequence and cannot recover, bail out
-  if (iteratorStatus == LOCA::Abstract::Iterator::Failed)
+  if (iteratorStatus == LOCA::Abstract::Iterator::Failed){
+    if(max_steps_exceeded){
+      // not a true failure, the last iteration converged but we exceeded the maximum iterations specified by the user
+      max_steps_exceeded = false;
+      return LOCA::Abstract::Iterator::NotFinished;
+    }
+    else
+      // we failed in the LOCA iteration sequence and cannot recover, bail out
+      return LOCA::Abstract::Iterator::Failed;
+  }
+  else if(iteratorStatus == LOCA::Abstract::Iterator::Finished){
+      max_steps_exceeded = false;
+      return LOCA::Abstract::Iterator::Finished;
+  }
 
-    return LOCA::Abstract::Iterator::Failed;
-
-// This should only be called if the last Newton solve was successful!
+// This should only be called if the last Newton solve was successful but the status is NotFinished
   iteratorStatus = finish(iteratorStatus);
 
   return iteratorStatus;
@@ -874,10 +884,14 @@ LOCA::Epetra::AdaptiveStepper::stop(LOCA::Abstract::Iterator::StepStatus stepSta
         << LOCA::Abstract::Iterator::maxSteps << std::endl;
     }
 
-    if (return_failed_on_max_steps)
+    if (return_failed_on_max_steps){
+      max_steps_exceeded = true;
       return LOCA::Abstract::Iterator::Failed;
-    else
+    }
+    else {
+      max_steps_exceeded = true;
       return LOCA::Abstract::Iterator::Finished;
+    }
 
   }
 

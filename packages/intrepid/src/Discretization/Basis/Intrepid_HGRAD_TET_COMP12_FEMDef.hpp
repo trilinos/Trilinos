@@ -55,24 +55,24 @@ namespace Intrepid {
   Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::Basis_HGRAD_TET_COMP12_FEM()
   {
     this -> basisCardinality_  = 10;
-    this -> basisDegree_       = 1;    
+    this -> basisDegree_       = 1;
     this -> basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<11> >() );
     this -> basisType_         = BASIS_FEM_DEFAULT;
     this -> basisCoordinates_  = COORDINATES_CARTESIAN;
     this -> basisTagsAreSet_   = false;
   }
-  
-  
+
+
 template<class Scalar, class ArrayScalar>
 void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::initializeTags() {
-  
+
   // Basis-dependent intializations
   int tagSize  = 4;        // size of DoF tag
-  int posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
+  int posScDim = 0;        // position in the tag, counting from 0, of the subcell dim
   int posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
   int posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
 
-  // An array with local DoF tags assigned to basis functions, in the order of their local enumeration 
+  // An array with local DoF tags assigned to basis functions, in the order of their local enumeration
   int tags[]  = { 0, 0, 0, 1,
                   0, 1, 0, 1,
                   0, 2, 0, 1,
@@ -84,7 +84,7 @@ void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::initializeTags() {
                   1, 4, 0, 1,
                   1, 5, 0, 1,
   };
-  
+
   // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
   Intrepid::setOrdinalTagData(this -> tagToOrdinal_,
                               this -> ordinalToTag_,
@@ -102,7 +102,7 @@ template<class Scalar, class ArrayScalar>
 void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        outputValues,
                                                                 const ArrayScalar &  inputPoints,
                                                                 const EOperator      operatorType) const {
-  
+
   // Verify arguments
 #ifdef HAVE_INTREPID_DEBUG
   Intrepid::getValues_HGRAD_Args<Scalar, ArrayScalar>(outputValues,
@@ -111,24 +111,24 @@ void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &   
                                                       this -> getBaseCellTopology(),
                                                       this -> getCardinality() );
 #endif
-  
+
   // Number of evaluation points = dim 0 of inputPoints
-  int dim0 = inputPoints.dimension(0);  
-  
+  int dim0 = inputPoints.dimension(0);
+
   // Temporaries: (x,y,z) coordinates of the evaluation point
-  Scalar x = 0.0;                                    
-  Scalar y = 0.0;   
+  Scalar x = 0.0;
+  Scalar y = 0.0;
   Scalar z = 0.0;
-  
+
   // Temporary for the auxiliary node basis function
   Scalar aux = 0.0;
 
   // Array to store all the subtets containing the given pt
   Teuchos::Array<int> pt_tets;
-  
-  
+
+
   switch (operatorType) {
-    
+
     case OPERATOR_VALUE:
       for (int i0 = 0; i0 < dim0; i0++) {
         x = inputPoints(i0, 0);
@@ -140,7 +140,7 @@ void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &   
 	// idependent verification shows that a given point will produce
 	// the same shape functions for each tet that contains it, so
 	// we only need to use the first one returned.
-	//for (int pt = 0; pt < pt_tets.size(); ++pt) 
+	//for (int pt = 0; pt < pt_tets.size(); ++pt)
         if (pt_tets[0] != -1) {
           int subtet = pt_tets[0];
           aux = 0.0;
@@ -151,19 +151,19 @@ void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &   
             outputValues(4, i0) = 2. * x;
             outputValues(6, i0) = 2. * y;
             outputValues(7, i0) = 2. * z;
-            break; 
+            break;
           case 1:
             outputValues(1, i0) = 2. * x - 1.;
             outputValues(4, i0) = 2. - 2. * (x + y + z);
             outputValues(5, i0) = 2. * y;
             outputValues(8, i0) = 2. * z;
-            break; 
+            break;
           case 2:
             outputValues(2, i0) = 2. * y - 1.;
             outputValues(5, i0) = 2. * x;
             outputValues(6, i0) = 2. - 2. * (x + y + z);
             outputValues(9, i0) = 2. * z;
-            break; 
+            break;
           case 3:
             outputValues(3, i0) = 2. * z - 1.;
             outputValues(7, i0) = 2. - 2. * (x + y + z);
@@ -175,7 +175,7 @@ void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &   
             outputValues(5, i0) = 2. * (x + y) - 1.;
             outputValues(8, i0) = 2. * (x + z) - 1.;
             aux = 2. - 4. * x;
-            break; 
+            break;
           case 5:
             outputValues(5, i0) = 1. - 2. * (x + y);
             outputValues(8, i0) = 1. - 2. * (x + z);
@@ -217,7 +217,7 @@ void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &   
             outputValues(6, i0) = 1. - 2. * (x + z);
             outputValues(7, i0) = 1. - 2. * (x + y);
             aux = 4. * (x + y + z) - 2.;
-            break; 
+            break;
           }
           outputValues(4, i0) += aux/6.0;
           outputValues(5, i0) += aux/6.0;
@@ -228,7 +228,7 @@ void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &   
         }
       }
       break;
-      
+
   case OPERATOR_GRAD:
   case OPERATOR_D1:
     {
@@ -241,7 +241,7 @@ void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &   
         Scalar r = inputPoints(pt, 0);
         Scalar s = inputPoints(pt, 1);
         Scalar t = inputPoints(pt, 2);
-        
+
         Lopt(0,0) = (-17 + 20*r + 20*s + 20*t)/8.;
         Lopt(0,1) = (-17 + 20*r + 20*s + 20*t)/8.;
         Lopt(0,2) = (-17 + 20*r + 20*s + 20*t)/8.;
@@ -281,17 +281,17 @@ void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &   
       }
     }
     break;
-      
+
     case OPERATOR_CURL:
       TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_CURL), std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_TET_COMP12_FEM): CURL is invalid operator for rank-0 (scalar) functions in 3D");
       break;
-      
+
     case OPERATOR_DIV:
       TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_DIV), std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_TET_COMP12_FEM): DIV is invalid operator for rank-0 (scalar) functions in 3D");
       break;
-      
+
     case OPERATOR_D2:
     case OPERATOR_D3:
     case OPERATOR_D4:
@@ -303,7 +303,7 @@ void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &   
     case OPERATOR_D10:
       {
         // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, DkCardinality)
-        int DkCardinality = Intrepid::getDkCardinality(operatorType, 
+        int DkCardinality = Intrepid::getDkCardinality(operatorType,
                                                        this -> basisCellTopology_.getDimension() );
         for(int dofOrd = 0; dofOrd < this -> basisCardinality_; dofOrd++) {
           for (int i0 = 0; i0 < dim0; i0++) {
@@ -321,7 +321,7 @@ void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &   
 }
 
 
-  
+
 template<class Scalar, class ArrayScalar>
 void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&           outputValues,
                                                              const ArrayScalar &    inputPoints,
@@ -346,26 +346,26 @@ void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getDofCoords(ArrayScalar &
                       ">>> ERROR: (Intrepid::Basis_HGRAD_TET_COMP12_FEM::getDofCoords) incorrect reference cell (1st) dimension in DofCoords array");
 #endif
 
-  DofCoords(0,0) = 0.0;   DofCoords(0,1) = 0.0; DofCoords(0,2) = 0.0;  
-  DofCoords(1,0) = 1.0;   DofCoords(1,1) = 0.0; DofCoords(1,2) = 0.0;  
-  DofCoords(2,0) = 0.0;   DofCoords(2,1) = 1.0; DofCoords(2,2) = 0.0;  
-  DofCoords(3,0) = 0.0;   DofCoords(3,1) = 0.0; DofCoords(3,2) = 1.0;  
-  DofCoords(4,0) = 0.5;   DofCoords(4,1) = 0.0; DofCoords(4,2) = 0.0;  
-  DofCoords(5,0) = 0.5;   DofCoords(5,1) = 0.5; DofCoords(5,2) = 0.0;  
-  DofCoords(6,0) = 0.0;   DofCoords(6,1) = 0.5; DofCoords(6,2) = 0.0;  
+  DofCoords(0,0) = 0.0;   DofCoords(0,1) = 0.0; DofCoords(0,2) = 0.0;
+  DofCoords(1,0) = 1.0;   DofCoords(1,1) = 0.0; DofCoords(1,2) = 0.0;
+  DofCoords(2,0) = 0.0;   DofCoords(2,1) = 1.0; DofCoords(2,2) = 0.0;
+  DofCoords(3,0) = 0.0;   DofCoords(3,1) = 0.0; DofCoords(3,2) = 1.0;
+  DofCoords(4,0) = 0.5;   DofCoords(4,1) = 0.0; DofCoords(4,2) = 0.0;
+  DofCoords(5,0) = 0.5;   DofCoords(5,1) = 0.5; DofCoords(5,2) = 0.0;
+  DofCoords(6,0) = 0.0;   DofCoords(6,1) = 0.5; DofCoords(6,2) = 0.0;
   DofCoords(7,0) = 0.0;   DofCoords(7,1) = 0.0; DofCoords(7,2) = 0.5;
-  DofCoords(8,0) = 0.5;   DofCoords(8,1) = 0.0; DofCoords(8,2) = 0.5;  
-  DofCoords(9,0) = 0.0;   DofCoords(9,1) = 0.5; DofCoords(9,2) = 0.5;  
+  DofCoords(8,0) = 0.5;   DofCoords(8,1) = 0.0; DofCoords(8,2) = 0.5;
+  DofCoords(9,0) = 0.0;   DofCoords(9,1) = 0.5; DofCoords(9,2) = 0.5;
 }
 
 template<class Scalar, class ArrayScalar>
-Teuchos::Array<int> 
+Teuchos::Array<int>
 Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getLocalSubTetrahedra(Scalar x, Scalar y, Scalar z) const
 {
-  
+
   Teuchos::Array<int> subTets;
   int count(0);
-  
+
   // local coords
   Scalar xyz = x + y + z;
   Scalar xy = x + y;
@@ -473,7 +473,7 @@ Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getWeights(const ArrayScalar & 
   for (int pt = 0; pt < numPoints; ++pt)
     for (int i = 0; i < pt_tets[pt].size(); ++i)
       flat.push_back(pt_tets[pt][i]);
-  
+
   for (int i = 0; i < flat.size(); ++i)
     count(flat[i])++;
 
@@ -487,12 +487,12 @@ Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getWeights(const ArrayScalar & 
 
 
 template<class Scalar, class ArrayScalar>
-Intrepid::FieldContainer<Scalar> 
+Intrepid::FieldContainer<Scalar>
 Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getBarycentricCoords(const ArrayScalar & inPts) const
 {
   int numPoints = inPts.dimension(0);
   Intrepid::FieldContainer<Scalar> lambda(numPoints, 4);
-  
+
   for (int pt = 0; pt < numPoints; ++pt)
   {
     lambda(pt,0) = 1. - inPts(pt,0) - inPts(pt,1) - inPts(pt,2);
@@ -508,36 +508,36 @@ template<class Scalar, class ArrayScalar>
 Scalar
 Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::det44(const Intrepid::FieldContainer<Scalar> a) const
 {
-  Scalar det = a(0,3) * a(1,2) * a(2,1) * a(3,0) 
-    - a(0,2) * a(1,3) * a(2,1) * a(3,0) 
-    - a(0,3) * a(1,1) * a(2,2) * a(3,0) 
-    + a(0,1) * a(1,3) * a(2,2) * a(3,0) 
-    + a(0,2) * a(1,1) * a(2,3) * a(3,0) 
-    - a(0,1) * a(1,2) * a(2,3) * a(3,0) 
-    - a(0,3) * a(1,2) * a(2,0) * a(3,1) 
-    + a(0,2) * a(1,3) * a(2,0) * a(3,1) 
-    + a(0,3) * a(1,0) * a(2,2) * a(3,1) 
-    - a(0,0) * a(1,3) * a(2,2) * a(3,1) 
-    - a(0,2) * a(1,0) * a(2,3) * a(3,1) 
-    + a(0,0) * a(1,2) * a(2,3) * a(3,1) 
-    + a(0,3) * a(1,1) * a(2,0) * a(3,2) 
-    - a(0,1) * a(1,3) * a(2,0) * a(3,2) 
-    - a(0,3) * a(1,0) * a(2,1) * a(3,2) 
-    + a(0,0) * a(1,3) * a(2,1) * a(3,2) 
-    + a(0,1) * a(1,0) * a(2,3) * a(3,2) 
-    - a(0,0) * a(1,1) * a(2,3) * a(3,2) 
-    - a(0,2) * a(1,1) * a(2,0) * a(3,3) 
-    + a(0,1) * a(1,2) * a(2,0) * a(3,3) 
-    + a(0,2) * a(1,0) * a(2,1) * a(3,3) 
-    - a(0,0) * a(1,2) * a(2,1) * a(3,3) 
-    - a(0,1) * a(1,0) * a(2,2) * a(3,3) 
+  Scalar det = a(0,3) * a(1,2) * a(2,1) * a(3,0)
+    - a(0,2) * a(1,3) * a(2,1) * a(3,0)
+    - a(0,3) * a(1,1) * a(2,2) * a(3,0)
+    + a(0,1) * a(1,3) * a(2,2) * a(3,0)
+    + a(0,2) * a(1,1) * a(2,3) * a(3,0)
+    - a(0,1) * a(1,2) * a(2,3) * a(3,0)
+    - a(0,3) * a(1,2) * a(2,0) * a(3,1)
+    + a(0,2) * a(1,3) * a(2,0) * a(3,1)
+    + a(0,3) * a(1,0) * a(2,2) * a(3,1)
+    - a(0,0) * a(1,3) * a(2,2) * a(3,1)
+    - a(0,2) * a(1,0) * a(2,3) * a(3,1)
+    + a(0,0) * a(1,2) * a(2,3) * a(3,1)
+    + a(0,3) * a(1,1) * a(2,0) * a(3,2)
+    - a(0,1) * a(1,3) * a(2,0) * a(3,2)
+    - a(0,3) * a(1,0) * a(2,1) * a(3,2)
+    + a(0,0) * a(1,3) * a(2,1) * a(3,2)
+    + a(0,1) * a(1,0) * a(2,3) * a(3,2)
+    - a(0,0) * a(1,1) * a(2,3) * a(3,2)
+    - a(0,2) * a(1,1) * a(2,0) * a(3,3)
+    + a(0,1) * a(1,2) * a(2,0) * a(3,3)
+    + a(0,2) * a(1,0) * a(2,1) * a(3,3)
+    - a(0,0) * a(1,2) * a(2,1) * a(3,3)
+    - a(0,1) * a(1,0) * a(2,2) * a(3,3)
     + a(0,0) * a(1,1) * a(2,2) * a(3,3);
 
   return det;
 }
 
 template<class Scalar, class ArrayScalar>
-Intrepid::FieldContainer<Scalar> 
+Intrepid::FieldContainer<Scalar>
 Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::inverse44(const Intrepid::FieldContainer<Scalar> a) const
 {
   Intrepid::FieldContainer<Scalar> ai(4,4);
@@ -552,12 +552,12 @@ Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::inverse44(const Intrepid::Field
   ai(1,1) = (1/xj) * (-a(0,3) * a(2,2) * a(3,0) + a(0,2) * a(2,3) * a(3,0) + a(0,3) * a(2,0) * a(3,2) - a(0,0) * a(2,3) * a(3,2) - a(0,2) * a(2,0) * a(3,3) + a(0,0) * a(2,2) * a(3,3));
   ai(1,2) = (1/xj) * ( a(0,3) * a(1,2) * a(3,0) - a(0,2) * a(1,3) * a(3,0) - a(0,3) * a(1,0) * a(3,2) + a(0,0) * a(1,3) * a(3,2) + a(0,2) * a(1,0) * a(3,3) - a(0,0) * a(1,2) * a(3,3));
   ai(1,3) = (1/xj) * (-a(0,3) * a(1,2) * a(2,0) + a(0,2) * a(1,3) * a(2,0) + a(0,3) * a(1,0) * a(2,2) - a(0,0) * a(1,3) * a(2,2) - a(0,2) * a(1,0) * a(2,3) + a(0,0) * a(1,2) * a(2,3));
-  
+
   ai(2,0) = (1/xj) * (-a(1,3) * a(2,1) * a(3,0) + a(1,1) * a(2,3) * a(3,0) + a(1,3) * a(2,0) * a(3,1) - a(1,0) * a(2,3) * a(3,1) - a(1,1) * a(2,0) * a(3,3) + a(1,0) * a(2,1) * a(3,3));
   ai(2,1) = (1/xj) * ( a(0,3) * a(2,1) * a(3,0) - a(0,1) * a(2,3) * a(3,0) - a(0,3) * a(2,0) * a(3,1) + a(0,0) * a(2,3) * a(3,1) + a(0,1) * a(2,0) * a(3,3) - a(0,0) * a(2,1) * a(3,3));
   ai(2,2) = (1/xj) * (-a(0,3) * a(1,1) * a(3,0) + a(0,1) * a(1,3) * a(3,0) + a(0,3) * a(1,0) * a(3,1) - a(0,0) * a(1,3) * a(3,1) - a(0,1) * a(1,0) * a(3,3) + a(0,0) * a(1,1) * a(3,3));
   ai(2,3) = (1/xj) * ( a(0,3) * a(1,1) * a(2,0) - a(0,1) * a(1,3) * a(2,0) - a(0,3) * a(1,0) * a(2,1) + a(0,0) * a(1,3) * a(2,1) + a(0,1) * a(1,0) * a(2,3) - a(0,0) * a(1,1) * a(2,3));
-  
+
   ai(3,0) = (1/xj) * ( a(1,2) * a(2,1) * a(3,0) - a(1,1) * a(2,2) * a(3,0) - a(1,2) * a(2,0) * a(3,1) + a(1,0) * a(2,2) * a(3,1) + a(1,1) * a(2,0) * a(3,2) - a(1,0) * a(2,1) * a(3,2));
   ai(3,1) = (1/xj) * (-a(0,2) * a(2,1) * a(3,0) + a(0,1) * a(2,2) * a(3,0) + a(0,2) * a(2,0) * a(3,1) - a(0,0) * a(2,2) * a(3,1) - a(0,1) * a(2,0) * a(3,2) + a(0,0) * a(2,1) * a(3,2));
   ai(3,2) = (1/xj) * ( a(0,2) * a(1,1) * a(3,0) - a(0,1) * a(1,2) * a(3,0) - a(0,2) * a(1,0) * a(3,1) + a(0,0) * a(1,2) * a(3,1) + a(0,1) * a(1,0) * a(3,2) - a(0,0) * a(1,1) * a(3,2));
@@ -567,7 +567,7 @@ Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::inverse44(const Intrepid::Field
 }
 
 template<class Scalar, class ArrayScalar>
-Intrepid::FieldContainer<Scalar> 
+Intrepid::FieldContainer<Scalar>
 Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getSubTetGrads() const
 {
   Intrepid::FieldContainer<Scalar> dx(3,11,12);
@@ -666,13 +666,13 @@ Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getSubTetGrads() const
 }
 
 template<class Scalar, class ArrayScalar>
-Intrepid::FieldContainer<Scalar> 
+Intrepid::FieldContainer<Scalar>
 Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getSubTetDetF() const
 {
   Intrepid::FieldContainer<Scalar> xJ(12);
   // set sub-elem jacobians
   xJ(0) = 1./48.; xJ(1) = 1./48.; xJ(2) = 1./48.; xJ(3) = 1./48.;
-  xJ(4) = 1./96.; xJ(5) = 1./96.; xJ(6) = 1./96.; xJ(7) = 1./96.; 
+  xJ(4) = 1./96.; xJ(5) = 1./96.; xJ(6) = 1./96.; xJ(7) = 1./96.;
   xJ(8) = 1./96.; xJ(9) = 1./96.; xJ(10) = 1./96.; xJ(11) = 1./96.;
 
   return xJ;

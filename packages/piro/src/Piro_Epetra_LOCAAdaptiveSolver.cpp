@@ -235,18 +235,26 @@ void Piro::Epetra::LOCAAdaptiveSolver::evalModel( const InArgs& inArgs,
 
   // Two acceptable outcomes: LOCA::Abstract::Iterator::Finished || LOCA::Abstract::Iterator::NotFinished
 
-  // Ckecking the convergence of a nonlinear step
-  if (status != LOCA::Abstract::Iterator::Finished)
-     if (globalData->locaUtils->isPrintType(NOX::Utils::Error))
-       globalData->locaUtils->out() << "Stepper failed to converge!" << std::endl;
+  // Checking the convergence of a nonlinear step
+  if (status ==  LOCA::Abstract::Iterator::Finished)
+    utils.out() << "Continuation Stepper Finished" << std::endl;
+  else if (status ==  LOCA::Abstract::Iterator::NotFinished)
+    utils.out() << "Continuation Stepper did not reach final value." << std::endl;
+  else {
+    utils.out() << "Nonlinear solver failed to converge!" << std::endl;
+    outArgs.setFailed();
+  }
+
 
   // Output the parameter list
+/*
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperParameters)) {
     globalData->locaUtils->out() << std::endl <<
       "### Final Parameters ############" << std::endl;
     stepper->getList()->print(globalData->locaUtils->out());
     globalData->locaUtils->out() << std::endl;
   }
+*/
 
   // The time spent
   if (p_in->Map().Comm().MyPID() == 0)
@@ -261,6 +269,8 @@ void Piro::Epetra::LOCAAdaptiveSolver::evalModel( const InArgs& inArgs,
   int numFailedSteps = stepper->getNumFailedSteps();
   if (p_in->Map().Comm().MyPID() == 0)
     std::cout << " Number of failed continuation Steps = " << numFailedSteps << std::endl;
+
+  std::cout << std::endl;
 
   // Get current solution from solution manager
   Teuchos::RCP<const Epetra_Vector> finalSolution = solnManager->updateSolution();
