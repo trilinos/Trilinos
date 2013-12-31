@@ -41,14 +41,26 @@ namespace pike_test {
     return true;
   }
 
+  const std::vector<std::string>& LinearHeatConductionDataTransfer::getSourceModelNames() const
+  {
+    return sourceNames_;
+  }
+  
+  const std::vector<std::string>& LinearHeatConductionDataTransfer::getTargetModelNames() const
+  {
+    return targetNames_;
+  }
+
   void LinearHeatConductionDataTransfer::setSource(const Teuchos::RCP<pike_test::LinearHeatConductionModelEvaluator>& source)
   {
     source_ = source;
+    sourceNames_.push_back(source->name());
   }
 
   void LinearHeatConductionDataTransfer::addTarget(const Teuchos::RCP<pike_test::LinearHeatConductionModelEvaluator>& target)
   {
     targets_.push_back(target);
+    targetNames_.push_back(target->name());
     
     if (mode_ == TRANSFER_T)
       TEUCHOS_ASSERT(targets_.size() == 1);

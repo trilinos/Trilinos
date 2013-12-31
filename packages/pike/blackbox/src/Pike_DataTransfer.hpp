@@ -3,6 +3,7 @@
 
 #include "Pike_BlackBox_config.hpp"
 #include <string>
+#include <vector>
 
 namespace pike {
 
@@ -21,9 +22,9 @@ namespace pike {
 
     virtual bool transferSucceeded() const = 0;
 
-    // const std::vector<Teuchos::RCP<pike::BlackBoxModelEvaluator> >& getSourceModels() const = 0;
-
-    // const std::vector<Teuchos::RCP<pike::BlackBoxModelEvaluator> >& getTargetModels() const = 0;
+    virtual const std::vector<std::string>& getSourceModelNames() const = 0;
+    
+    virtual const std::vector<std::string>& getTargetModelNames() const = 0;
   };
 
 }

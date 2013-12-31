@@ -39,6 +39,16 @@ namespace pike {
     return transfer_->transferSucceeded();
   }
 
+  const std::vector<std::string>& DataTransferLoggerDecorator::getSourceModelNames() const
+  {
+    return transfer_->getSourceModelNames();
+  }
+  
+  const std::vector<std::string>& DataTransferLoggerDecorator::getTargetModelNames() const
+  {
+    return transfer_->getTargetModelNames();
+  }
+
   // Non-member ctor
   Teuchos::RCP<pike::DataTransferLoggerDecorator> 
   dataTransferLoggerDecorator(const Teuchos::RCP<pike::DataTransfer>& transfer)

@@ -46,6 +46,10 @@ namespace pike_test {
 
     bool transferSucceeded() const;
 
+    const std::vector<std::string>& getSourceModelNames() const;
+    
+    const std::vector<std::string>& getTargetModelNames() const;
+
     //@}
 
     void setSource(const Teuchos::RCP<pike_test::LinearHeatConductionModelEvaluator>& source);
@@ -58,6 +62,8 @@ namespace pike_test {
     Mode mode_;
     Teuchos::RCP<pike_test::LinearHeatConductionModelEvaluator> source_;
     std::vector<Teuchos::RCP<pike_test::LinearHeatConductionModelEvaluator> > targets_;
+    std::vector<std::string> sourceNames_;
+    std::vector<std::string> targetNames_;
   };
 
   /** \brief non-member ctor

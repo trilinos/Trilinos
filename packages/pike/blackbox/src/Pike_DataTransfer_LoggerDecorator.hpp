@@ -30,6 +30,10 @@ namespace pike {
 
     bool transferSucceeded() const;
 
+    const std::vector<std::string>& getSourceModelNames() const;
+    
+    const std::vector<std::string>& getTargetModelNames() const;
+
   private:
     
     Teuchos::RCP<std::vector<std::string> > log_;

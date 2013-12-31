@@ -1,2 +1,2 @@
 ADD_SUBDIRECTORY(core)
-ADD_SUBDIRECTORY(applications)
+ADD_SUBDIRECTORY(models)
