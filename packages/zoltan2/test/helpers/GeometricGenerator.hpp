@@ -1630,6 +1630,46 @@ public:
     }
   }
 
+  void blockPartition(){
+
+	  T *maxCoords= new T [this->coordinate_dimension];
+	  T *minCoords= new T [this->coordinate_dimension];
+
+	  for (int dim = 0; dim < this->coordinate_dimension; ++dim){
+		  minCoords[dim] = maxCoords[dim] = this->coords[dim][0];
+		  for (lno_t i = 0; i < this->numLocalCoords; ++i){
+			  if (minCoords[dim] > this->coords[dim][i]){
+				  minCoords[dim] = this->coords[dim][i];
+			  }
+
+			  if (maxCoords[dim] < this->coords[dim][i]){
+				  maxCoords[dim] = this->coords[dim][i];
+			  }
+		  }
+	  }
+      delete []minCoords;
+      delete []maxCoords;
+  }
+
+  void redistribute(){
+	  int redistributeOption = 0;
+	  switch (case redistributeOption){
+	  case 0:
+		  //RCB
+		  //break;
+	  case 1:
+		  //MJ
+		  //break;
+	  case 2:
+		  //block
+		  blockPartition();
+		  //break;
+	  }
+
+
+
+  }
+
   int getWeightDimension(){
     return this->weight_dimension;
   }
