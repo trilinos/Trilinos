@@ -81,6 +81,11 @@ namespace pike {
 	<< std::abs(currentValue_ - previousValue_) 
 	<< " must be < " << tolerance_
 	<< std::endl;
+    //if (verbLevel >= Teuchos::VERB_MEDIUM) {
+    out << "  Current Value = " << currentValue_ 
+	<< ", Previous Value = " << previousValue_
+	<< std::endl;
+    //}
   }
 
   void ScalarResponseRelativeTolerance::setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& paramList)
