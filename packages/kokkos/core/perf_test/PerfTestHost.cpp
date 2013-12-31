@@ -66,7 +66,7 @@ protected:
     const unsigned team_count = Kokkos::hwloc::get_available_numa_count();
     const unsigned threads_per_team = 4 ;
 
-    Kokkos::Threads::initialize( team_count , threads_per_team );
+    Kokkos::Threads::initialize( team_count * threads_per_team );
   }
 
   static void TearDownTestCase()

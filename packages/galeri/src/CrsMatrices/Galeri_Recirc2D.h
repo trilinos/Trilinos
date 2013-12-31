@@ -52,6 +52,7 @@
 namespace Galeri {
 namespace Matrices {
 
+template<typename int_type>
 inline
 Epetra_CrsMatrix* 
 Recirc2D(const Epetra_Map* Map, const int nx, const int ny,
@@ -59,7 +60,8 @@ Recirc2D(const Epetra_Map* Map, const int nx, const int ny,
          const double conv, const double diff)
 {
   int NumMyElements = Map->NumMyElements();
-  int* MyGlobalElements = Map->MyGlobalElements();
+  int_type* MyGlobalElements = 0;
+  Map->MyGlobalElementsPtr(MyGlobalElements);
 
   Epetra_Vector A(*Map);
   Epetra_Vector B(*Map);
@@ -119,6 +121,27 @@ Recirc2D(const Epetra_Map* Map, const int nx, const int ny,
   }
 
   return(Matrices::Cross2D(Map, nx, ny, A, B, C, D, E));
+}
+
+inline
+Epetra_CrsMatrix* 
+Recirc2D(const Epetra_Map* Map, const int nx, const int ny,
+         const double lx, const double ly,
+         const double conv, const double diff)
+{
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(Map->GlobalIndicesInt()) {
+	  return Recirc2D<int>(Map, nx, ny, lx, ly, conv, diff);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(Map->GlobalIndicesLongLong()) {
+	  return Recirc2D<long long>(Map, nx, ny, lx, ly, conv, diff);
+  }
+  else
+#endif
+    throw "Galeri::Matrices::Recirc2D: GlobalIndices type unknown";
 }
 
 } // namespace Matrices

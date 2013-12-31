@@ -54,6 +54,7 @@
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_SmootherPrototype_fwd.hpp"
 #include "MueLu_SmootherBase_fwd.hpp"
+#include "MueLu_Ifpack2Smoother_fwd.hpp"
 
 namespace MueLu {
 

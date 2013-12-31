@@ -68,6 +68,9 @@
 #if defined(HAVE_TRIOS_BGPDCMF)
 #include "nnti_dcmf.h"
 #endif
+#if defined(HAVE_TRIOS_BGQPAMI)
+#include "nnti_pami.h"
+#endif
 #if defined(HAVE_TRIOS_MPI)
 #include "nnti_mpi.h"
 #endif
@@ -178,6 +181,24 @@ NNTI_result_t NNTI_init (
         available_transports[trans_id].ops.nnti_waitany_fn           = NNTI_bgpdcmf_waitany;
         available_transports[trans_id].ops.nnti_waitall_fn           = NNTI_bgpdcmf_waitall;
         available_transports[trans_id].ops.nnti_fini_fn              = NNTI_bgpdcmf_fini;
+    }
+#endif
+#if defined(HAVE_TRIOS_BGQPAMI)
+    if (trans_id == NNTI_TRANSPORT_PAMI) {
+        available_transports[trans_id].initialized                   = 1;
+        available_transports[trans_id].ops.nnti_init_fn              = NNTI_bgqpami_init;
+        available_transports[trans_id].ops.nnti_get_url_fn           = NNTI_bgqpami_get_url;
+        available_transports[trans_id].ops.nnti_connect_fn           = NNTI_bgqpami_connect;
+        available_transports[trans_id].ops.nnti_disconnect_fn        = NNTI_bgqpami_disconnect;
+        available_transports[trans_id].ops.nnti_register_memory_fn   = NNTI_bgqpami_register_memory;
+        available_transports[trans_id].ops.nnti_unregister_memory_fn = NNTI_bgqpami_unregister_memory;
+        available_transports[trans_id].ops.nnti_send_fn              = NNTI_bgqpami_send;
+        available_transports[trans_id].ops.nnti_put_fn               = NNTI_bgqpami_put;
+        available_transports[trans_id].ops.nnti_get_fn               = NNTI_bgqpami_get;
+        available_transports[trans_id].ops.nnti_wait_fn              = NNTI_bgqpami_wait;
+        available_transports[trans_id].ops.nnti_waitany_fn           = NNTI_bgqpami_waitany;
+        available_transports[trans_id].ops.nnti_waitall_fn           = NNTI_bgqpami_waitall;
+        available_transports[trans_id].ops.nnti_fini_fn              = NNTI_bgqpami_fini;
     }
 #endif
 #if defined(HAVE_TRIOS_MPI)

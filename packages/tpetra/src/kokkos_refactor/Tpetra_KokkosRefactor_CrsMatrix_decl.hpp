@@ -42,7 +42,7 @@
 #ifndef TPETRA_KOKKOSREFACTOR_CRSMATRIX_DECL_HPP
 #define TPETRA_KOKKOSREFACTOR_CRSMATRIX_DECL_HPP
 
-#include <Kokkos_DefaultNode.hpp>
+/*#include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
 
 #include "Tpetra_ConfigDefs.hpp"
@@ -50,8 +50,9 @@
 #include "Tpetra_Exceptions.hpp"
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_KokkosRefactor_CrsGraph.hpp"
-#include "Tpetra_KokkosRefactor_Vector.hpp"
-#include "Tpetra_CrsMatrix_decl.hpp"
+#include "Tpetra_KokkosRefactor_Vector.hpp"*/
+//#include "Tpetra_CrsMatrix_decl.hpp"
+#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include "Kokkos_CrsMatrix.hpp"
 namespace Tpetra {
@@ -847,6 +848,9 @@ namespace Tpetra {
     setAllValues (const ArrayRCP<size_t>& rowPointers,
                   const ArrayRCP<LocalOrdinal>& columnIndices,
                   const ArrayRCP<Scalar>& values);
+
+    void getAllValues(ArrayRCP<const size_t> & rowPointers,ArrayRCP<const LocalOrdinal> & columnIndices, ArrayRCP<const Scalar> & values) const;
+
 
     //@}
     //! @name Transformational methods
@@ -1994,6 +1998,7 @@ namespace Tpetra {
         }
       }
     }
+
 
   protected:
     // useful typedefs

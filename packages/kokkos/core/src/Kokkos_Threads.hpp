@@ -176,15 +176,22 @@ public:
    *  If the 'use_' arguments are not supplied the hwloc is queried
    *  to use all available cores.
    */
-  static void initialize( unsigned team_count = 1 ,
-                          unsigned threads_per_team = 1 ,
+  static void initialize( unsigned threads_count = 1 ,
                           unsigned use_numa_count = 0 ,
-                          unsigned use_cores_per_numa = 0 );
+                          unsigned use_cores_per_numa = 0 ,
+                          bool allow_asynchronous_threadpool = false );
 
   static int is_initialized();
 
-  static unsigned league_max();
+  /** \brief  Maximum size of a single thread team.
+   *
+   *  If a parallel_{for,reduce,scan} operation requests a team_size that 
+   *  does not satisfy the condition: 0 == team_max() % team_size
+   *  then some threads will idle.
+   */
   static unsigned team_max();
+
+  static unsigned league_max();
 
   //@}
   /*------------------------------------------------------------------------*/

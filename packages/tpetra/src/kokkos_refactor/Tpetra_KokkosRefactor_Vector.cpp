@@ -41,7 +41,7 @@
 // @HEADER
 */
 
-#include "Tpetra_KokkosRefactor_Vector.hpp"
+#include "Tpetra_Vector.hpp"
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
@@ -52,7 +52,12 @@ namespace Tpetra {
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  TPETRA_INSTANTIATE_VECTOR(TPETRA_VECTOR_INSTANT)
+  // ETP 12/16/13:
+  // Tpetra_KokkosRefactor_Vector_def.hpp is now included in
+  // Tpetra_Vector_def.hpp, and thus should be instantiated by
+  // Tpetra_Vector.cpp, thus I don't think we need to do any
+  // instantiation here.
+  //TPETRA_INSTANTIATE_VECTOR(TPETRA_VECTOR_INSTANT)
 
 } // namespace Tpetra
 

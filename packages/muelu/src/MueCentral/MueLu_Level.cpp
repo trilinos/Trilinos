@@ -151,25 +151,24 @@ namespace MueLu {
     if (requestMode_ == REQUEST) {
       try {
         Request(ename, factory, requestedBy);
+
+      } catch (Exceptions::DependencyError& e) {
+        std::ostringstream msg;
+        msg << requestedBy->ShortClassName() << "::DeclareInput: (" << e.what() << ") unable to find or generate requested data \""
+            << ename << "\" with generating factory \"" << ((factory != NULL) ? factory->ShortClassName() : "null") << "\"";
+        msg << "\n    during request for data \"" << std::setw(15) << ename << "\" on level " << GetLevelID() << " by factory " << requestedBy->ShortClassName();
+        throw Exceptions::RuntimeError(msg.str());
+
+      } catch (Exceptions::RuntimeError &e) {
+        std::ostringstream msg;
+        msg << e.what() << "\n    during request for data \"" << std::setw(15) << ename << "\" on level " << GetLevelID() << " by factory " << requestedBy->ShortClassName();
+        throw Exceptions::RuntimeError(msg.str());
       }
-      catch(Exceptions::DependencyError &de) {
-        std::string previousMsg(de.what());
-        std::string msg = requestedBy->ShortClassName() + "::DeclareInput : (" + previousMsg + ") unable to find or generate requested data \""
-                          + ename + "\"" + ((factory != NULL) ? " with generating factory " + factory->ShortClassName() + "." : ".");
-        TEUCHOS_TEST_FOR_EXCEPTION(true,Exceptions::RuntimeError,msg);
-        throw Exceptions::RuntimeError(msg);
-      }
-      catch(Exceptions::RuntimeError &rte) {
-        std::string previousMsg(rte.what());
-        std::string msg = previousMsg + "\n    during request for data \"" + ename + "\" by factory " + requestedBy->ShortClassName();
-        TEUCHOS_TEST_FOR_EXCEPTION(true,Exceptions::RuntimeError,msg);
-        throw Exceptions::RuntimeError(msg);
-      }
-    }
-    else if (requestMode_ == RELEASE) {
+
+    } else if (requestMode_ == RELEASE) {
       Release(ename, factory, requestedBy);
-    }
-    else
+
+    } else
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::Level::DeclareInput(): requestMode_ undefined.");
   }
 
@@ -282,7 +281,9 @@ namespace MueLu {
         const FactoryBase* factory = kt->first;
 
         for (SubMap::const_iterator it = kt->second.begin(); it != kt->second.end(); it++) {
-          const std::string& ename = it->first;
+          // We really want a reference here, but because later we'll need to check whether the
+          // key was removed, we should copy the value
+          const std::string ename = it->first;
 
           // We clear all the data that
           //   a) has not been requested
@@ -474,7 +475,7 @@ namespace MueLu {
     } // for (TwoKeyMap::const_iterator kt = map_.begin(); kt != map_.end(); kt++) {
   }
 
-#if defined(HAVE_MUELU_BOOST) && defined(BOOST_VERSION) && (BOOST_VERSION >= 104400)
+#if defined(HAVE_MUELU_BOOST) && defined(HAVE_MUELU_BOOST_FOR_REAL) && defined(BOOST_VERSION) && (BOOST_VERSION >= 104400)
     void Level::UpdateGraph(std::map<const FactoryBase*, BoostVertex>&                   vindices,
                             std::map<std::pair<BoostVertex, BoostVertex>, std::string>&  edges,
                             BoostProperties&                                             dp,

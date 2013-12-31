@@ -53,7 +53,14 @@
 namespace Ifpack2 {
 
 /// \brief Construct an overlapped graph for use with Ifpack2 preconditioners.
-/// \tparam GraphType A specialization of Tpetra::CrsGraph.
+/// \tparam GraphType A specialization of Tpetra::RowGraph or Tpetra::CrsGraph.
+///
+/// \warning This function is an implementation detail of Ifpack2.
+///   Its interface may change or it may go away at any time.
+///
+/// \note This method has only been tested with GraphType =
+///   Tpetra::CrsGraph.  It should also work with GraphType =
+///   Tpetra::RowGraph, but I have not tested this case.
 ///
 /// \param inputGraph [in] The input graph.  We assume that its row
 ///   Map is nonoverlapping.
@@ -62,17 +69,18 @@ namespace Ifpack2 {
 ///   overlap, in which case this function just returns the original
 ///   \c inputGraph.
 template<class GraphType>
-Teuchos::RCP<const GraphType> 
-createOverlapGraph (const Teuchos::RCP<const GraphType>& inputGraph, 
-		    const int overlapLevel)
+Teuchos::RCP<const GraphType>
+createOverlapGraph (const Teuchos::RCP<const GraphType>& inputGraph,
+                    const int overlapLevel)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
-  typedef typename GraphType::map_type map_type;
-  typedef Tpetra::Import<typename GraphType::local_ordinal_type, 
-    typename GraphType::global_ordinal_type, 
-    typename GraphType::node_type> import_type;
-
+  typedef Tpetra::Map<typename GraphType::local_ordinal_type,
+                      typename GraphType::global_ordinal_type,
+                      typename GraphType::node_type> map_type;
+  typedef Tpetra::Import<typename GraphType::local_ordinal_type,
+                         typename GraphType::global_ordinal_type,
+                         typename GraphType::node_type> import_type;
   TEUCHOS_TEST_FOR_EXCEPTION(
     overlapLevel < 0, std::invalid_argument,
     "Ifpack2::createOverlapGraph: overlapLevel must be >= 0, "
@@ -94,7 +102,7 @@ createOverlapGraph (const Teuchos::RCP<const GraphType>& inputGraph,
     oldGraph = overlapGraph;
     oldRowMap = overlapRowMap;
 
-    RCP<const import_type> overlapImporter; 
+    RCP<const import_type> overlapImporter;
     if (level == 0) {
       overlapImporter = inputGraph->getImporter ();
     } else {
@@ -124,9 +132,9 @@ createOverlapGraph (const Teuchos::RCP<const GraphType>& inputGraph,
 ///   with Tpetra and Ifpack2 naming standards.  Please call
 ///   createOverlapGraph() instead.
 template<class GraphType>
-TEUCHOS_DEPRECATED Teuchos::RCP<const GraphType> 
-CreateOverlapGraph (const Teuchos::RCP<const GraphType>& inputGraph, 
-		    int OverlapLevel)
+TEUCHOS_DEPRECATED Teuchos::RCP<const GraphType>
+CreateOverlapGraph (const Teuchos::RCP<const GraphType>& inputGraph,
+                    int OverlapLevel)
 {
   return createOverlapGraph (inputGraph, OverlapLevel);
 }
@@ -141,9 +149,9 @@ CreateOverlapGraph (const Teuchos::RCP<const GraphType>& inputGraph,
 ///   overlap, in which case this function just returns the original
 ///   \c inputMatrix.
 template<class MatrixType>
-Teuchos::RCP<const MatrixType> 
-createOverlapMatrix (const Teuchos::RCP<const MatrixType>& inputMatrix, 
-		     const int overlapLevel)
+Teuchos::RCP<const MatrixType>
+createOverlapMatrix (const Teuchos::RCP<const MatrixType>& inputMatrix,
+                     const int overlapLevel)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -153,7 +161,7 @@ createOverlapMatrix (const Teuchos::RCP<const MatrixType>& inputMatrix,
     typename MatrixType::node_type> import_type;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    overlapLevel < 0, std::invalid_argument, 
+    overlapLevel < 0, std::invalid_argument,
     "Ifpack2::createOverlapMatrix: overlapLevel must be >= 0, "
     "but you specified overlapLevel = " << overlapLevel << ".");
 
@@ -203,9 +211,9 @@ createOverlapMatrix (const Teuchos::RCP<const MatrixType>& inputMatrix,
 ///   with Tpetra and Ifpack2 naming standards.  Please call
 ///   createOverlapMatrix() instead.
 template<class MatrixType>
-TEUCHOS_DEPRECATED Teuchos::RCP<const MatrixType> 
-CreateOverlapMatrix (const Teuchos::RCP<const MatrixType>& inputGraph, 
-		     int overlapLevel)
+TEUCHOS_DEPRECATED Teuchos::RCP<const MatrixType>
+CreateOverlapMatrix (const Teuchos::RCP<const MatrixType>& inputGraph,
+                     int overlapLevel)
 {
   return createOverlapMatrix (inputGraph, overlapLevel);
 }

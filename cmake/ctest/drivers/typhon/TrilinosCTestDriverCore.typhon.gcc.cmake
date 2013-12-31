@@ -88,16 +88,22 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DSuperLU_LIBRARY_NAMES=superlu_4.3"
 
     "-DTPL_ENABLE_BLAS:BOOL=ON"
-    "-DTPL_BLAS_LIBRARIES=/usr/lib64/libblas.so.3.2.1"
+    "-DBLAS_LIBRARY_DIRS=/usr/local/lapack/rhel6"
+    "-DBLAS_LIBRARY_NAMES=blas"
     "-DTPL_ENABLE_LAPACK:BOOL=ON"
-    "-DTPL_LAPACK_LIBRARIES=/usr/lib64/liblapack.so.3.2.1"
+    "-DLAPACK_LIBRARY_DIRS=/usr/local/lapack/rhel6"
+    "-DLAPACK_LIBRARY_NAMES=lapack"
     )
 
   SET_DEFAULT(COMPILER_VERSION "GCC-4.4.7")
 
   #Ensuring that MPI is on for all parallel builds that might be run.
   IF(COMM_TYPE STREQUAL MPI)
-    SET(TPL_ENABLE_MPI ON)
+    SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
+         ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
+         "-DTPL_ENABLE_MPI:BOOL=ON"
+         "-DMPI_BASE_DIR:PATH=/usr/local/mpich2/1.4.1p1_gcc_4.4.7"
+       )
   ENDIF()
 
   TRILINOS_CTEST_DRIVER()

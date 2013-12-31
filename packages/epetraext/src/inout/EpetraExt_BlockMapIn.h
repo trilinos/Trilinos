@@ -42,6 +42,7 @@
 #define EPETRAEXT_BLOCKMAPIN_H
 
 #include <EpetraExt_ConfigDefs.h>
+#include <Epetra_ConfigDefs.h>
 class Epetra_Comm;
 class Epetra_BlockMap;
 class Epetra_Map;
@@ -76,7 +77,12 @@ namespace EpetraExt {
       \return Returns 0 if no error, -1 if any problems with file system, returns 1 if number of processors differs from file creator.
 
   */
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int MatrixMarketFileToBlockMap( const char *filename, const Epetra_Comm & comm, Epetra_BlockMap * & blockMap);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  int MatrixMarketFileToBlockMap64( const char *filename, const Epetra_Comm & comm, Epetra_BlockMap * & blockMap);
+#endif
 
   //! Constructs an Epetra_BlockMap object from a Matrix Market format file
   /*! This function constructs an Epetra_BlockMap or Epetra_Map object by reading a Matrix Market file.
@@ -103,9 +109,15 @@ namespace EpetraExt {
       \return Returns 0 if no error, -1 if any problems with file system, -2 if file contained nontrivial Epetra_BlockMap, 1 if number of processors differs from file creator.
 
   */
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int MatrixMarketFileToMap( const char *filename, const Epetra_Comm & comm, Epetra_Map * & map);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  int MatrixMarketFileToMap64( const char *filename, const Epetra_Comm & comm, Epetra_Map * & map);
+#endif
 
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   /** Constructs row,col,range and domain maps from a matrix-market matrix file.
   */
   int MatrixMarketFileToBlockMaps(const char* filename,
@@ -114,5 +126,18 @@ namespace EpetraExt {
                                   Epetra_BlockMap*& colmap,
                                   Epetra_BlockMap*& rangemap,
                                   Epetra_BlockMap*& domainmap);
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  /** Constructs row,col,range and domain maps from a matrix-market matrix file.
+  */
+  int MatrixMarketFileToBlockMaps64(const char* filename,
+                                  const Epetra_Comm& comm,
+                                  Epetra_BlockMap*& rowmap,
+                                  Epetra_BlockMap*& colmap,
+                                  Epetra_BlockMap*& rangemap,
+                                  Epetra_BlockMap*& domainmap);
+#endif
+
 } // namespace EpetraExt
 #endif /* EPETRAEXT_BLOCKMAPIN_H */

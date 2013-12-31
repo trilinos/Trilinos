@@ -86,8 +86,8 @@ public:
       MaxProcesses = (int) sqrt(1.0 * MaxProcs);
       break;
     case -1:
-      MaxProcesses = 1 + EPETRA_MAX(A.NumGlobalRows() / 10000, 
-                                    A.NumGlobalNonzeros() / 1000000);
+      MaxProcesses = 1 + static_cast<int>(EPETRA_MAX(A.NumGlobalRows64() / 10000, 
+                                    A.NumGlobalNonzeros64() / 1000000));
       break;
     }
 

@@ -57,7 +57,7 @@ struct TestScan {
   void operator()( const int iwork , value_type & update , const bool final_pass ) const
   {
     const value_type n = iwork + 1 ;
-    const value_type imbalance = ( (100 <= n) && (0 == n % 100) ) ? 100 : 0 ;
+    const value_type imbalance = ( (1000 <= n) && (0 == n % 1000) ) ? 1000 : 0 ;
 
     // Insert an artificial load imbalance
 

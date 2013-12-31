@@ -52,11 +52,10 @@
 
 #include <Zoltan2_Model.hpp>
 #include <Zoltan2_InputTraits.hpp>
-#include <Zoltan2_MatrixInput.hpp>
-#include <Zoltan2_GraphInput.hpp>
-#include <Zoltan2_IdentifierInput.hpp>
-#include <Zoltan2_CoordinateInput.hpp>
-#include <Zoltan2_VectorInput.hpp>
+#include <Zoltan2_MatrixAdapter.hpp>
+#include <Zoltan2_GraphAdapter.hpp>
+#include <Zoltan2_IdentifierAdapter.hpp>
+#include <Zoltan2_VectorAdapter.hpp>
 #include <Zoltan2_StridedData.hpp>
 
 #include <vector>
@@ -98,7 +97,7 @@ namespace Zoltan2 {
  *        for the start of the neighbors for each vertex
  *  \return the number of edges left after removal of undesired edges
  *
- *  The template parameter is an InputAdapter type.
+ *  The template parameter is an Adapter type.
  */
 
 template <typename User> size_t removeUndesiredEdges(
@@ -533,17 +532,16 @@ public:
 
   size_t getGlobalNumObjects() const { return 0;}
 
-  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const { return; }
 };
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
 ////////////////////////////////////////////////////////////////
-// Graph model derived from MatrixInput.
+// Graph model derived from MatrixAdapter.
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-class GraphModel<MatrixInput<User> > : public Model<MatrixInput<User> >
+class GraphModel<MatrixAdapter<User> > : public Model<MatrixAdapter<User> >
 {
 public:
 
@@ -563,7 +561,7 @@ public:
    *  \param  modelFlags  a bit map of Zoltan2::GraphModelFlags
    */
 
-  GraphModel(const MatrixInput<User> *ia,
+  GraphModel(const MatrixAdapter<User> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &modelFlags);
 
@@ -627,12 +625,6 @@ public:
 
   size_t getGlobalNumObjects() const { return numGlobalVertices_; }
 
-  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const
-  {
-    ArrayView<input_t> xyz, wgts;
-    getVertexList(gnos, xyz, wgts);
-  }
-
 private:
 
   const RCP<const Environment > env_;
@@ -681,7 +673,7 @@ private:
 };
 
 template <typename User>
-  GraphModel<MatrixInput<User> >::GraphModel(const MatrixInput<User> *ia,
+  GraphModel<MatrixAdapter<User> >::GraphModel(const MatrixAdapter<User> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &modelFlags):
      env_(env), comm_(comm),
@@ -716,7 +708,19 @@ template <typename User>
   gid_t const *vtxIds=NULL, *nborIds=NULL;
   lno_t const  *offsets=NULL;
   try{
-    numLocalVertices_ = ia->getRowListView(vtxIds, offsets, nborIds);
+    numLocalVertices_ = ia->getLocalNumIDs();
+    ia->getIDsView(vtxIds);
+  }
+  Z2_FORWARD_EXCEPTIONS;
+  try{
+    if (ia->CRSViewAvailable()) {
+      ia->getCRSView(offsets, nborIds);
+    }
+    else {
+      // TODO:  Add support for CCS matrix layout
+      throw std::runtime_error("Only MatrixAdapter::getCRSView is supported "
+                               "in graph model");
+    }
   }
   Z2_FORWARD_EXCEPTIONS;
 
@@ -903,14 +907,14 @@ template <typename User>
 
   // Vertex weights
 
-  vWeightDim_ = ia->getRowWeightDimension();
+  vWeightDim_ = ia->getNumWeightsPerID();
 
   if (vWeightDim_ > 0){
     input_t *weightInfo = new input_t [vWeightDim_];
     env_->localMemoryAssertion(__FILE__, __LINE__, vWeightDim_, weightInfo);
 
     for (int dim=0; dim < vWeightDim_; dim++){
-      bool useNumNZ = ia->getRowWeightIsNumberOfNonZeros(dim);
+      bool useNumNZ = ia->useNumNonzerosAsRowWeight(dim); //TODO assuming vertices == rows
       if (useNumNZ){
         scalar_t *wgts = new scalar_t [numLocalVertices_];
         env_->localMemoryAssertion(__FILE__, __LINE__, numLocalVertices_, wgts);
@@ -924,10 +928,12 @@ template <typename User>
       else{
         const scalar_t *weights=NULL;
         int stride=0;
-        size_t len = ia->getRowWeights(dim, weights, stride);
+        ia->getWeightsView(weights, stride, dim);
         // If weights is NULL, user wants to use uniform weights
         if (weights != NULL){
-          ArrayRCP<const scalar_t> wgtArray = arcp(weights, 0, len, false);
+          ArrayRCP<const scalar_t> wgtArray = arcp(weights, 0,
+                                                   stride*numLocalVertices_,
+                                                   false);
           weightInfo[dim] = input_t(wgtArray, stride);
         }
       }
@@ -955,8 +961,10 @@ template <typename User>
     for (int dim=0; dim < vCoordDim_; dim++){
       const scalar_t *coords=NULL;
       int stride=0;
-      size_t len = ia->getRowCoordinates(dim, coords, stride);
-      ArrayRCP<const scalar_t> coordArray = arcp(coords, 0, len, false);
+      ia->getCoordinatesView(coords, stride, dim);
+      ArrayRCP<const scalar_t> coordArray = arcp(coords, 0,
+                                                 stride*numLocalVertices_,
+                                                 false);
       coordInfo[dim] = input_t(coordArray, stride);
     }
 
@@ -970,7 +978,7 @@ template <typename User>
 }
 
 template <typename User>
-  size_t GraphModel<MatrixInput<User> >::getVertexList(
+  size_t GraphModel<MatrixAdapter<User> >::getVertexList(
     ArrayView<const gno_t> &Ids, ArrayView<input_t> &xyz,
     ArrayView<input_t> &wgts) const
   {
@@ -988,7 +996,7 @@ template <typename User>
   }
 
 template <typename User>
-  size_t GraphModel<MatrixInput<User> >::getEdgeList(
+  size_t GraphModel<MatrixAdapter<User> >::getEdgeList(
     ArrayView<const gno_t> &edgeIds, ArrayView<const int> &procIds,
     ArrayView<const lno_t> &offsets, ArrayView<input_t> &wgts) const
 {
@@ -1005,19 +1013,19 @@ template <typename User>
 }
 
 ////////////////////////////////////////////////////////////////
-// Graph model derived from GraphInput.
+// Graph model derived from GraphAdapter.
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-class GraphModel<GraphInput<User> > : public Model<GraphInput<User> >
+class GraphModel<GraphAdapter<User> > : public Model<GraphAdapter<User> >
 {
 public:
 
-  typedef typename GraphInput<User>::scalar_t  scalar_t;
-  typedef typename GraphInput<User>::gno_t     gno_t;
-  typedef typename GraphInput<User>::lno_t     lno_t;
-  typedef typename GraphInput<User>::gid_t     gid_t;
-  typedef typename GraphInput<User>::node_t    node_t;
+  typedef typename GraphAdapter<User>::scalar_t  scalar_t;
+  typedef typename GraphAdapter<User>::gno_t     gno_t;
+  typedef typename GraphAdapter<User>::lno_t     lno_t;
+  typedef typename GraphAdapter<User>::gid_t     gid_t;
+  typedef typename GraphAdapter<User>::node_t    node_t;
   typedef IdentifierMap<User>     idmap_t;
   typedef StridedData<lno_t, scalar_t> input_t;
 
@@ -1030,7 +1038,7 @@ public:
    *  \param  modelFlags  a bit map of Zoltan2::GraphModelFlags
    */
 
-  GraphModel(const GraphInput<User> *ia,
+  GraphModel(const GraphAdapter<User> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &modelFlags);
 
@@ -1093,12 +1101,6 @@ public:
 
   size_t getGlobalNumObjects() const { return numGlobalVertices_; }
 
-  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const
-  {
-    ArrayView<input_t> xyz, wgts;
-    getVertexList(gnos, xyz, wgts);
-  }
-
 private:
 
   const RCP<const Environment > env_;
@@ -1148,7 +1150,7 @@ private:
 };
 
 template <typename User>
-  GraphModel<GraphInput<User> >::GraphModel(const GraphInput<User> *ia,
+  GraphModel<GraphAdapter<User> >::GraphModel(const GraphAdapter<User> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &modelFlags):
      env_(env), comm_(comm),
@@ -1163,6 +1165,14 @@ template <typename User>
      numLocalVertices_(0), numGlobalVertices_(0), numLocalEdges_(0),
      numGlobalEdges_(0), numLocalGraphEdges_(0)
 {
+
+  // This GraphModel is built with vertices == GRAPH_VERTEX from GraphAdapter.
+  // It is not ready to use vertices == GRAPH_EDGE from GraphAdapter.
+  env_->localInputAssertion(__FILE__, __LINE__,
+    "GraphModel from GraphAdapter is implemented only for "
+    "Graph Vertices as primary object, not for Graph Edges", 
+    ia->getPrimaryEntityType() == Zoltan2::GRAPH_VERTEX, BASIC_ASSERTION);
+
   // Model creation flags
 
   bool consecutiveIdsRequired =
@@ -1175,7 +1185,8 @@ template <typename User>
   gid_t const *vtxIds=NULL, *nborIds=NULL;
   lno_t const  *offsets=NULL;
   try{
-    numLocalVertices_ = ia->getVertexListView(vtxIds, offsets, nborIds);
+    numLocalVertices_ = ia->getLocalNumVertices();
+    ia->getVertexIDsView(vtxIds, offsets, nborIds);
   }
   Z2_FORWARD_EXCEPTIONS;
 
@@ -1185,7 +1196,7 @@ template <typename User>
   edgeGids_ = arcp<const gid_t>(nborIds, 0, numLocalEdges_, false);
   offsets_ = arcp<const lno_t>(offsets, 0, numLocalVertices_ + 1, false);
 
-  eWeightDim_ = ia->getEdgeWeightDimension();
+  eWeightDim_ = ia->getNumWeightPerEdge();
 
   if (eWeightDim_ > 0){
     input_t *wgts = new input_t [eWeightDim_];
@@ -1196,7 +1207,7 @@ template <typename User>
     const scalar_t *ewgts=NULL;
     int stride=0;
 
-    ia->getEdgeWeights(w, ewgts, stride);
+    ia->getEdgeWeightsView(ewgts, stride, w);
 
     ArrayRCP<const scalar_t> wgtArray(ewgts, 0, numLocalEdges_, false);
     eWeights_[w] = input_t(wgtArray, stride);
@@ -1380,20 +1391,22 @@ template <typename User>
 
   // Vertex weights
 
-  vWeightDim_ = ia->getVertexWeightDimension();
+  vWeightDim_ = ia->getNumWeightsPerVertex();
 
   if (vWeightDim_ > 0){
     input_t *weightInfo = new input_t [vWeightDim_];
     env_->localMemoryAssertion(__FILE__, __LINE__, vWeightDim_, weightInfo);
 
-    for (int dim=0; dim < vWeightDim_; dim++){
+    for (int idx=0; idx < vWeightDim_; idx++){
       const scalar_t *weights=NULL;
       int stride=0;
-      size_t len = ia->getVertexWeights(dim, weights, stride);
+      ia->getVertexWeightsView(weights, stride, idx);
       // If weights is NULL, user wants to use uniform weights
       if (weights != NULL){
-        ArrayRCP<const scalar_t> wgtArray = arcp(weights, 0, len, false);
-        weightInfo[dim] = input_t(wgtArray, stride);
+        ArrayRCP<const scalar_t> wgtArray = arcp(weights, 0, 
+                                                 stride*numLocalVertices_,
+                                                 false);
+        weightInfo[idx] = input_t(wgtArray, stride);
       }
     }
 
@@ -1403,14 +1416,14 @@ template <typename User>
   // Model base class needs to know if any weights are uniform.
 
   Array<lno_t> weightArrayLengths(vWeightDim_);
-  for (int dim=0; dim < vWeightDim_; dim++){
-    weightArrayLengths[dim] = vWeights_[dim].size();
+  for (int idx=0; idx < vWeightDim_; idx++){
+    weightArrayLengths[idx] = vWeights_[idx].size();
   }
   this->setWeightArrayLengths(weightArrayLengths, *comm_);
 
   // Vertex coordinates
 
-  vCoordDim_ = ia->getCoordinateDimension();
+  vCoordDim_ = ia->getDimensionOf(ia->getPrimaryEntityType());
 
   if (vCoordDim_ > 0){
     input_t *coordInfo = new input_t [vCoordDim_];
@@ -1419,8 +1432,8 @@ template <typename User>
     for (int dim=0; dim < vCoordDim_; dim++){
       const scalar_t *coords=NULL;
       int stride=0;
-      size_t len = ia->getVertexCoordinates(dim, coords, stride);
-      ArrayRCP<const scalar_t> coordArray = arcp(coords, 0, len, false);
+      ia->getVertexCoordinatesView(coords, stride, dim);
+      ArrayRCP<const scalar_t> coordArray = arcp(coords, 0, stride*numLocalVertices_, false);
       coordInfo[dim] = input_t(coordArray, stride);
     }
 
@@ -1434,7 +1447,7 @@ template <typename User>
 }
 
 template <typename User>
-  size_t GraphModel<GraphInput<User> >::getVertexList(
+  size_t GraphModel<GraphAdapter<User> >::getVertexList(
     ArrayView<const gno_t> &Ids, ArrayView<input_t> &xyz,
     ArrayView<input_t> &wgts) const
   {
@@ -1452,7 +1465,7 @@ template <typename User>
   }
 
 template <typename User>
-  size_t GraphModel<GraphInput<User> >::getEdgeList(
+  size_t GraphModel<GraphAdapter<User> >::getEdgeList(
     ArrayView<const gno_t> &edgeIds, ArrayView<const int> &procIds,
     ArrayView<const lno_t> &offsets, ArrayView<input_t> &wgts) const
 {
@@ -1469,75 +1482,23 @@ template <typename User>
 }
 
 ////////////////////////////////////////////////////////////////
-// Graph model derived from CoordinateInput.
-//
-//  We do not build a graph model from coordinates.  We include
-//  this definition so that other code will compile.
-////////////////////////////////////////////////////////////////
-
-template <typename User>
-class GraphModel<CoordinateInput<User> > : public Model<CoordinateInput<User> >
-{
-public:
-
-  typedef typename CoordinateInput<User>::scalar_t  scalar_t;
-  typedef typename CoordinateInput<User>::gno_t     gno_t;
-  typedef typename CoordinateInput<User>::lno_t     lno_t;
-  typedef StridedData<lno_t, scalar_t> input_t;
-
-  GraphModel(const CoordinateInput<User> *ia,
-    const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
-    modelFlag_t &flags)
-  {
-    throw std::runtime_error("may not build a graph with identifiers");
-  }
-
-  // GraphModel interface
-
-  size_t getLocalNumVertices() const { return 0;}
-  size_t getGlobalNumVertices() const { return 0;}
-  size_t getLocalNumGlobalEdges() const { return 0;}
-  size_t getLocalNumLocalEdges() const { return 0;}
-  size_t getGlobalNumEdges() const {return 0;}
-  int getVertexWeightDim() const { return 0; }
-  int getEdgeWeightDim() const { return 0; }
-  int getCoordinateDim() const { return 0; }
-  size_t getVertexList( ArrayView<const gno_t> &Ids,
-    ArrayView<input_t> &xyz,
-    ArrayView<input_t> &wgts) const { return 0; }
-  size_t getEdgeList( ArrayView<const gno_t> &edgeIds,
-    ArrayView<const int> &procIds, ArrayView<const lno_t> &offsets,
-    ArrayView<input_t> &wgts) const { return 0; }
-  size_t getLocalEdgeList( ArrayView<const lno_t> &edgeIds,
-    ArrayView<const lno_t> &offsets,
-    ArrayView<input_t> &wgts) { return 0; }
-
-  // Model interface
-
-  size_t getLocalNumObjects() const { return 0; }
-  size_t getGlobalNumObjects() const { return 0; }
-  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const {}
-
-};
-
-////////////////////////////////////////////////////////////////
-// Graph model derived from VectorInput.
+// Graph model derived from VectorAdapter.
 //
 //  We do not build a graph model from a vector.  We include
 //  this definition so that other code will compile.
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-class GraphModel<VectorInput<User> > : public Model<VectorInput<User> >
+class GraphModel<VectorAdapter<User> > : public Model<VectorAdapter<User> >
 {
 public:
 
-  typedef typename VectorInput<User>::scalar_t  scalar_t;
-  typedef typename VectorInput<User>::gno_t     gno_t;
-  typedef typename VectorInput<User>::lno_t     lno_t;
+  typedef typename VectorAdapter<User>::scalar_t  scalar_t;
+  typedef typename VectorAdapter<User>::gno_t     gno_t;
+  typedef typename VectorAdapter<User>::lno_t     lno_t;
   typedef StridedData<lno_t, scalar_t> input_t;
 
-  GraphModel(const VectorInput<User> *ia,
+  GraphModel(const VectorAdapter<User> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &flags)
   {
@@ -1568,28 +1529,27 @@ public:
 
   size_t getLocalNumObjects() const { return 0; }
   size_t getGlobalNumObjects() const { return 0; }
-  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const {}
 
 };
 
 ////////////////////////////////////////////////////////////////
-// Graph model derived from IdentifierInput.
+// Graph model derived from IdentifierAdapter.
 //
 //  We do not build a graph model from identifiers.  We include
 //  this definition so that other code will compile.
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-class GraphModel<IdentifierInput<User> > : public Model<IdentifierInput<User> >
+class GraphModel<IdentifierAdapter<User> > : public Model<IdentifierAdapter<User> >
 {
 public:
 
-  typedef typename IdentifierInput<User>::scalar_t  scalar_t;
-  typedef typename IdentifierInput<User>::gno_t     gno_t;
-  typedef typename IdentifierInput<User>::lno_t     lno_t;
+  typedef typename IdentifierAdapter<User>::scalar_t  scalar_t;
+  typedef typename IdentifierAdapter<User>::gno_t     gno_t;
+  typedef typename IdentifierAdapter<User>::lno_t     lno_t;
   typedef StridedData<lno_t, scalar_t> input_t;
 
-  GraphModel(const IdentifierInput<User> *ia,
+  GraphModel(const IdentifierAdapter<User> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &flags)
   {
@@ -1620,7 +1580,6 @@ public:
 
   size_t getLocalNumObjects() const { return 0; }
   size_t getGlobalNumObjects() const { return 0; }
-  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const {}
 
 };
 

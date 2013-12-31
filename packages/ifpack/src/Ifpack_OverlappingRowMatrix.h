@@ -472,6 +472,9 @@ private:
   int OverlapLevel_;
   string Label_;
 
+  template<typename int_type>
+  void BuildMap(int OverlapLevel_in);
+
 }; // class Ifpack_OverlappingRowMatrix
 
 #endif // IFPACK_OVERLAPPINGROWMATRIX_H

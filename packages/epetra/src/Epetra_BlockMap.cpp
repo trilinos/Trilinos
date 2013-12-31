@@ -552,7 +552,7 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobal_Elements, int NumMy_Elements,
 template<typename int_type>
 void Epetra_BlockMap::ConstructUserConstantNoComm(int_type NumGlobal_Elements, int NumMy_Elements,
 						  const int_type * myGlobalElements, 
-						  int Element_Size, int indexBase,
+						  int Element_Size, int_type indexBase,
 						  const Epetra_Comm& comm, bool IsLongLong,
 						  bool UserIsDistributedGlobal,
 						  int_type UserMinAllGID, int_type UserMaxAllGID)
@@ -647,6 +647,20 @@ void Epetra_BlockMap::ConstructUserConstantNoComm(int_type NumGlobal_Elements, i
 Epetra_BlockMap::Epetra_BlockMap(long long NumGlobal_Elements, int NumMy_Elements,
                                  const long long * myGlobalElements, 
 				 int ElementSize, int indexBase,
+                                 const Epetra_Comm& comm,
+				 bool UserIsDistributedGlobal,
+				 long long UserMinAllGID, long long UserMaxAllGID)
+  : Epetra_Object("Epetra::BlockMap"),
+    BlockMapData_(0)
+{
+  const bool IsLongLong = true;
+  ConstructUserConstantNoComm(NumGlobal_Elements, NumMy_Elements, myGlobalElements,
+			      ElementSize, (long long) indexBase, comm, IsLongLong,
+			      UserIsDistributedGlobal, UserMinAllGID, UserMaxAllGID);
+}
+Epetra_BlockMap::Epetra_BlockMap(long long NumGlobal_Elements, int NumMy_Elements,
+                                 const long long * myGlobalElements, 
+				 int ElementSize, long long indexBase,
                                  const Epetra_Comm& comm,
 				 bool UserIsDistributedGlobal,
 				 long long UserMinAllGID, long long UserMaxAllGID)

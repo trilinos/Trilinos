@@ -44,7 +44,6 @@
 #ifndef IFPACK2_UNITTESTHELPERS_HPP
 #define IFPACK2_UNITTESTHELPERS_HPP
 
-#include <Teuchos_RefCountPtr.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
@@ -146,6 +145,8 @@ Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > create_test_gra
   return crsgraph;
 }
 
+// ///////////////////////////////////////////////////////////////////////
+
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
 Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > create_test_matrix(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& rowmap)
 {
@@ -157,20 +158,20 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
   const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
   const Scalar two = one + one;
   const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
-  
+
   size_t upper_limit;
 
   for(LocalOrdinal l_row = 0; (size_t) l_row<rowmap->getNodeNumElements(); l_row++) {
     GlobalOrdinal g_row = rowmap->getGlobalElement(l_row);
 
-    if (g_row == rowmap->getMinGlobalIndex()) {
+    if (g_row == rowmap->getMinAllGlobalIndex()) {
       upper_limit=2;
       col[0] = g_row;
       col[1] = g_row+1;
       coef[0] = two;
       coef[1] = zero;
     }
-    else if (g_row == rowmap->getMaxGlobalIndex()) {
+    else if (g_row == rowmap->getMaxAllGlobalIndex()) {
       upper_limit=2;
       col[0] = g_row-1;
       col[1] = g_row;
@@ -192,12 +193,76 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
 
   crsmatrix->fillComplete();
   return crsmatrix;
-}
+} //create_test_matrix
+
+// ///////////////////////////////////////////////////////////////////////
 
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
 Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > create_test_matrix2(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& rowmap)
 {
   Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = Teuchos::rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap, 3/*tri-diagonal matrix*/));
+
+  Teuchos::Array<GlobalOrdinal> col(1);
+  Teuchos::Array<Scalar> coef(1);
+
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude;
+  const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+  magnitude mag_one = Teuchos::ScalarTraits<Scalar>::magnitude(one);
+  magnitude mag_two = mag_one*2.0;
+  magnitude mag_ten = mag_one*10.0;
+  Scalar two = one*mag_two;
+  const Scalar onetenth = one / mag_ten;
+
+  for(LocalOrdinal l_row = 0; (size_t) l_row<rowmap->getNodeNumElements(); l_row++) {
+    GlobalOrdinal g_row = rowmap->getGlobalElement(l_row);
+    if (g_row == rowmap->getMinAllGlobalIndex()) {
+      col.resize(2);
+      coef.resize(2);
+      col[0] = g_row;
+      col[1] = g_row+1;
+      coef[0] = two;
+      coef[1] = onetenth;
+    }
+    else if (g_row == rowmap->getMaxAllGlobalIndex()) {
+      col.resize(2);
+      coef.resize(2);
+      col[0] = g_row-1;
+      col[1] = g_row;
+      coef[0] = onetenth;
+      coef[1] = two;
+    }
+    else {
+      col.resize(3);
+      coef.resize(3);
+      col[0] = g_row-1;
+      col[1] = g_row;
+      col[2] = g_row+1;
+      coef[0] = onetenth;
+      coef[1] = two;
+      coef[2] = onetenth;
+    }
+
+    crsmatrix->insertGlobalValues(g_row, col(), coef() );
+  }
+
+  crsmatrix->fillComplete();
+
+  return crsmatrix;
+} //create_test_matrix2
+
+// ///////////////////////////////////////////////////////////////////////
+
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
+Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > create_test_matrix3(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& rowmap)
+{
+  Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = Teuchos::rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap, 3/*tri-diagonal matrix*/));
+
+  /*
+     NOTE:  this utility creates a matrix whose column map is equal to its row map.  At processor boundaries,
+     the row stencil is truncated so that it only contains local columns.  This is done by using
+     getMinGlobalIndex() & getMinGlobalIndex(), rather than getMinAllGlobalIndex() & getMaxAllGlobalIndex().
+     "
+  */
 
   Teuchos::Array<GlobalOrdinal> col(1);
   Teuchos::Array<Scalar> coef(1);
@@ -245,7 +310,83 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
   crsmatrix->fillComplete();
 
   return crsmatrix;
-}
+} //create_test_matrix3
+
+// ///////////////////////////////////////////////////////////////////////
+
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
+Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > create_banded_matrix(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& rowmap, const GlobalOrdinal bw)
+{
+  Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = Teuchos::rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap, 5));
+
+  Teuchos::Array<GlobalOrdinal> col(1);
+  Teuchos::Array<Scalar> coef(1);
+
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude;
+  const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+  magnitude mag_one = Teuchos::ScalarTraits<Scalar>::magnitude(one);
+  magnitude mag_four = mag_one*4.0;
+  Scalar four = one*mag_four;
+
+  size_t ne;
+  for(LocalOrdinal l_row = 0; (size_t) l_row<rowmap->getNodeNumElements(); l_row++) {
+    GlobalOrdinal g_row = rowmap->getGlobalElement(l_row);
+    if (g_row == rowmap->getMinGlobalIndex()) {
+      ne=2;
+      col.resize(2);
+      coef.resize(2);
+      col[0] = g_row;
+      col[1] = g_row+1;
+      coef[0] = four;
+      coef[1] = -one;
+    }
+    else if (g_row == rowmap->getMaxGlobalIndex()) {
+      ne=2;
+      col.resize(2);
+      coef.resize(2);
+      col[0] = g_row-1;
+      col[1] = g_row;
+      coef[0] = -one;
+      coef[1] = four;
+    }
+    else {
+      ne=3;
+      col.resize(3);
+      coef.resize(3);
+      col[0] = g_row-1;
+      col[1] = g_row;
+      col[2] = g_row+1;
+      coef[0] = -one;
+      coef[1] = four;
+      coef[2] = -one;
+    }
+
+    // upper band
+    if (g_row <= rowmap->getMaxGlobalIndex() - bw) {
+      ne++;
+      col.resize(ne);
+      coef.resize(ne);
+      col[ne-1] = g_row+bw;
+      coef[ne-1] = -one;
+    }
+
+    // lower band
+    if (g_row >= rowmap->getMinGlobalIndex() + bw) {
+      ne++;
+      col.resize(ne);
+      coef.resize(ne);
+      col[ne-1] = g_row-bw;
+      coef[ne-1] = -one;
+    }
+
+    crsmatrix->insertGlobalValues(g_row, col(), coef() );
+  }
+
+  crsmatrix->fillComplete();
+
+  return crsmatrix;
+} //create_banded_matrix
+
 
 }//namespace tif_utest
 

@@ -146,8 +146,6 @@ namespace {
 }
 
 namespace Ioss {
-  std::set<std::string> DatabaseIO::outputFileList; 
-  
   DatabaseIO::DatabaseIO(Region* region, const std::string& filename,
 			 DatabaseUsage db_usage,
 			 MPI_Comm communicator,
@@ -164,10 +162,6 @@ namespace Ioss {
     isParallel  = util_.parallel_size() > 1;
     myProcessor = util_.parallel_rank();
 
-    if (!isInput) {
-      check_for_duplicate_output_file(filename);
-    }
-    
     // Check environment variable IOSS_PROPERTIES. If it exists, parse
     // the contents and add to the 'properties' map.
 
@@ -236,15 +230,6 @@ namespace Ioss {
 
   DatabaseIO::~DatabaseIO()
   {
-  }
-
- void DatabaseIO::check_for_duplicate_output_file(const std::string &filename)
-  {
-    if (!outputFileList.insert(filename).second) {
-      IOSS_WARNING << "WARNING: Multiple outputs from this application may be attempting to write to the file\n         '"
-		   << "         " << filename
-		   << "'.\n         This can result in a corrupted file or loss of data and should be avoided.\n\n";
-    }
   }
 
   int DatabaseIO::int_byte_size_api() const

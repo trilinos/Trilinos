@@ -52,23 +52,76 @@ namespace Ifpack2 {
 
 /// \class LocalFilter
 /// \brief Access only local rows and columns of a sparse matrix.
-/// \tparam MatrixType A specialization of either Tpetra::RowMatrix,
-///   or Tpetra::CrsMatrix (which is a subclass of Tpetra::CrsMatrix).
+/// \tparam MatrixType A specialization of either Tpetra::RowMatrix
+///   (preferred) or Tpetra::CrsMatrix (which is a subclass of
+///   Tpetra::RowMatrix).
 ///
-/// For the template parameter of this class, it is better to use the
-/// most specific type you can, as long as that type is the same as
-/// the type of the object you plan to give to LocalFilter's
-/// constructor.  "Most specific" means, for example,
-/// Tpetra::CrsMatrix instead of Tpetra::RowMatrix, if you plan to
-/// give a Tpetra::CrsMatrix to this object's constructor.
+/// \section Ifpack2_LocalFilter_Summary Summary
 ///
-/// This class provides a view of only the local rows and columns of
-/// an existing sparse matrix.  "Local rows" are those owned by the
-/// row Map on the calling process; "local columns" are owned by both
-/// the column Map and the domain Map on the calling process.  The
-/// view's communicator contains only the local process (in MPI terms,
-/// <tt>MPI_COMM_SELF</tt>), and each process will have its own
+/// LocalFilter makes a global matrix "appear" local.  Solving a
+/// linear system with the LocalFilter of a matrix A, if possible, is
+/// equivalent to applying one step of nonoverlapping additive Schwarz
+/// to A.  This class is an implementation detail of Ifpack2.  It is
+/// not meant for users.  It may be useful to Ifpack2 developers who
+/// want to implement a "local" preconditioner (i.e., that only works
+/// within a single MPI process), and would like the preconditioner to
+/// work for a global matrix.  For example, ILUT uses LocalFilter to
+/// extract and compute the incomplete factorizaton of the "local
+/// matrix."  This makes the input to ILUT appear like a square
+/// matrix, assuming that the domain and range Maps have the same
+/// number of entries on each process.  This in turn makes the result
+/// of ILUT suitable for solving linear systems.
+///
+/// \section Ifpack2_LocalFilter_How How does it work?
+///
+/// \subsection Ifpack2_LocalFilter_How_Local View of the local rows and columns
+///
+/// LocalFilter provides a view of only the local rows and columns of
+/// an existing sparse matrix.  "Local rows" are those rows in the row
+/// Map that are owned by the range Map on the calling process.
+/// "Local columns" are those columns in the column Map that are owned
+/// by the domain Map on the calling process.  The view's communicator
+/// contains only the local process (in MPI terms,
+/// <tt>MPI_COMM_SELF</tt>), so each process will have its own
 /// distinct view of its local part of the matrix.
+///
+/// \subsection Ifpack2_LocalFilter_How_DiagBlock Square diagonal block of the original matrix
+///
+/// If the following conditions hold on the Maps of a matrix A, then
+/// the view resulting from a LocalFilter of A will be that of a
+/// square diagonal block of A:
+///   - Domain and range Maps are the same
+///   - On every process, the row Map's entries are the same as the
+///     range Map's entries, possibly followed by additional remote
+///     entries
+///   - On every process, the column Map's entries are the same as the
+///     domain Map's entries, possibly followed by additional remote
+///     entries
+///
+/// These conditions commonly hold for a Tpetra::CrsMatrix constructed
+/// without a column Map, after fillComplete() has been called on it,
+/// with default domain and range Maps.
+///
+/// \subsection Ifpack2_LocalFilter_How_Ind Remapping of global indices
+///
+/// The global indices of the view's domain and range Maps will be
+/// different than those in the original matrix's domain and range
+/// Maps.  The global indices of the new (domain, range) Map will be
+/// remapped to a consecutive sequence, corresponding exactly to the
+/// local indices of the original (domain, range) Map.  This ensures
+/// that the local indices of the old and new Maps match.
+///
+/// \subsection Ifpack2_LocalFilter_How_Copy Not necessarily a copy
+///
+/// This class does not necessarily copy the entire sparse matrix.  It
+/// may choose instead just to "filter out" the nonlocal entries.  The
+/// effect on the LocalFilter of changing the entries or structure of
+/// the original matrix is undefined.  LocalFilter may even make
+/// different implementation choices on different MPI processes.  It
+/// may do so because it does not invoke MPI communication outside of
+/// the calling process.
+///
+/// \section Ifpack2_LocalFilter_Examples Examples
 ///
 /// Here is an example of how to apply a LocalFilter to an existing
 /// Tpetra sparse matrix:
@@ -76,30 +129,41 @@ namespace Ifpack2 {
 /// #include "Ifpack2_LocalFilter.hpp"
 /// // ...
 /// using Teuchos::RCP;
-/// typedef Tpetra::RowMatrix<double> crs_matrix_type;
+/// typedef Tpetra::RowMatrix<double> row_matrix_type;
 /// typedef Tpetra::CrsMatrix<double> crs_matrix_type;
 ///
 /// RCP<crs_matrix_type> A = ...;
 /// // ... fill the entries of A ...
 /// A->FillComplete ();
 ///
-/// Ifpack2::LocalFilter<crs_matrix_type> A_local (A);
+/// Ifpack2::LocalFilter<row_matrix_type> A_local (A);
 /// \endcode
 ///
-/// This class does not necessarily copy the entire sparse matrix; it
-/// may choose instead just to "filter out" the nonlocal entries.
+/// Here is an example of how to apply a LocalFilter, using \c A and
+/// \c A_local from the example above.
+/// \code
+/// typedef Tpetra::Vector<double> vec_type;
 ///
-/// The intended use case of this class is to use Ifpack2 incomplete
-/// factorizations as subdomain solvers, where each process has
-/// exactly one subdomain.  LocalFilter "hides" the remote columns of
-/// the matrix, making it square and thus a suitable input for local
-/// linear solvers.
+/// // Make vectors x and y suitable for A->apply()
+/// vec_type x (A.domainMap ());
+/// vec_type y (A.rangeMap ());
+/// // ... fill x ...
+/// A->apply (x, y);
+///
+/// // Reinterpret x and y as local views suitable for A_local->apply()
+/// RCP<const vec_type> x_local = x.offsetView (A_local.getDomainMap (), 0);
+/// RCP<vec_type> y_local = y.offsetViewNonConst (A_local.getRangeMap (), 0);
+///
+/// // Apply the locally filtered version of A
+/// A_local.apply (*x_local, *y_local);
+/// \endcode
 template<class MatrixType>
 class LocalFilter :
     virtual public Tpetra::RowMatrix<typename MatrixType::scalar_type,
                                      typename MatrixType::local_ordinal_type,
                                      typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type>
+                                     typename MatrixType::node_type>,
+    virtual public Teuchos::Describable
 {
 public:
   //! \name Typedefs
@@ -139,18 +203,39 @@ public:
   //! Preserved only for backwards compatibility.  Please use "magnitude_type".
   TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
 
+  //! Type of the Tpetra::RowMatrix specialization that this class uses.
+  typedef Tpetra::RowMatrix<scalar_type,
+                            local_ordinal_type,
+                            global_ordinal_type,
+                            node_type> row_matrix_type;
+
+  //! Type of the Tpetra::Map specialization that this class uses.
+  typedef Tpetra::Map<local_ordinal_type,
+                      global_ordinal_type,
+                      node_type> map_type;
+  //@}
+  //! @name Implementation of Teuchos::Describable
+  //@{
+
+  //! A one-line description of this object.
+  virtual std::string description () const;
+
+  //! Print the object to the given output stream.
+  virtual void
+  describe (Teuchos::FancyOStream &out,
+            const Teuchos::EVerbosityLevel verbLevel =
+            Teuchos::Describable::verbLevel_default) const;
+
   //@}
   //! \name Constructor and destructor
   //@{
 
   /// \brief Constructor
   ///
-  /// \param A [in] The sparse matrix to which to apply the local
-  ///   filter, as a Tpetra::RowMatrix.  (Tpetra::CrsMatrix inherits
-  ///   from this, so you may use a Tpetra::CrsMatrix here instead.)
+  /// \param A [in] The sparse matrix to which to apply the local filter.
   ///
   /// This class will <i>not</i> modify the input matrix.
-  explicit LocalFilter (const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> >& Matrix);
+  explicit LocalFilter (const Teuchos::RCP<const row_matrix_type>& A);
 
   //! Destructor
   virtual ~LocalFilter();
@@ -166,19 +251,20 @@ public:
   virtual Teuchos::RCP<node_type> getNode() const;
 
   //! Returns the Map that describes the row distribution in this matrix.
-  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getRowMap() const;
+  virtual Teuchos::RCP<const map_type> getRowMap() const;
 
   //! Returns the Map that describes the column distribution in this matrix.
-  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getColMap() const;
+  virtual Teuchos::RCP<const map_type> getColMap() const;
 
   //! Returns the Map that describes the domain distribution in this matrix.
-  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getDomainMap() const;
+  virtual Teuchos::RCP<const map_type> getDomainMap() const;
 
   //! Returns the Map that describes the range distribution in this matrix.
-  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getRangeMap() const;
+  virtual Teuchos::RCP<const map_type> getRangeMap() const;
 
   //! The (locally filtered) matrix's graph.
-  virtual Teuchos::RCP<const Tpetra::RowGraph<local_ordinal_type,global_ordinal_type,node_type> > getGraph() const;
+  virtual Teuchos::RCP<const Tpetra::RowGraph<local_ordinal_type,global_ordinal_type,node_type> >
+  getGraph () const;
 
   //! The number of global rows in this matrix.
   virtual global_size_t getGlobalNumRows() const;
@@ -249,38 +335,41 @@ public:
   virtual bool supportsRowViews() const;
 
   //@}
-
-  //! @name Extraction Methods
+  //! \name Methods for getting the entries in a row.
   //@{
 
-  //! Extract a list of entries in a specified global row of this matrix. Put into pre-allocated storage.
-  /*!
-    \param LocalRow - (In) Global row number for which indices are desired.
-    \param Indices - (Out) Global column indices corresponding to values.
-    \param Values - (Out) Matrix values.
-    \param NumEntries - (Out) Number of indices.
-
-    Note: A std::runtime_error exception is thrown if either \c Indices or \c Values is not large enough to hold the data associated
-    with row \c GlobalRow. If \c GlobalRow does not belong to this node, then \c Indices and \c Values are unchanged and \c NumIndices is
-    returned as Teuchos::OrdinalTraits<size_t>::invalid().
-  */
+  /// \brief Get the entries in the given row, using global indices.
+  ///
+  /// \param GlobalRow [i] Global index of the row for which indices are desired.
+  /// \param Indices [out] Global indices of the entries in the given row.
+  /// \param Values [out] Values of the entries in the given row.
+  /// \param NumEntries [out] Number of entries in the row.
+  ///
+  /// This method throws an exception if either output array is not
+  /// large enough to hold the data associated with row \c
+  /// GlobalRow. If \c GlobalRow does not belong to the calling
+  /// process, then \c Indices and \c Values are unchanged and
+  /// \c NumIndices is <tt>Teuchos::OrdinalTraits<size_t>::invalid()</tt>
+  /// on output.
   virtual void
   getGlobalRowCopy (global_ordinal_type GlobalRow,
                     const Teuchos::ArrayView<global_ordinal_type> &Indices,
                     const Teuchos::ArrayView<scalar_type> &Values,
                     size_t &NumEntries) const;
 
-  //! Extract a list of entries in a specified local row of the graph. Put into storage allocated by calling routine.
-  /*!
-    \param LocalRow - (In) Local row number for which indices are desired.
-    \param Indices - (Out) Local column indices corresponding to values.
-    \param Values - (Out) Matrix values.
-    \param NumIndices - (Out) Number of indices.
-
-    Note: A std::runtime_error exception is thrown if either \c Indices or \c Values is not large enough to hold the data associated
-    with row \c LocalRow. If \c LocalRow is not valid for this node, then \c Indices and \c Values are unchanged and \c NumIndices is
-    returned as Teuchos::OrdinalTraits<size_t>::invalid().
-  */
+  /// \brief Get the entries in the given row, using local indices.
+  ///
+  /// \param LocalRow [i] Local index of the row for which indices are desired.
+  /// \param Indices [out] Local indices of the entries in the given row.
+  /// \param Values [out] Values of the entries in the given row.
+  /// \param NumEntries [out] Number of entries in the row.
+  ///
+  /// This method throws an exception if either output array is not
+  /// large enough to hold the data associated with row \c
+  /// LocalRow. If \c LocalRow does not belong to the calling
+  /// process, then \c Indices and \c Values are unchanged and
+  /// \c NumIndices is <tt>Teuchos::OrdinalTraits<size_t>::invalid()</tt>
+  /// on output.
   virtual void
   getLocalRowCopy (local_ordinal_type LocalRow,
                    const Teuchos::ArrayView<local_ordinal_type> &Indices,
@@ -289,9 +378,10 @@ public:
 
   //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
   /*!
-    \param GlobalRow - (In) Global row number for which indices are desired.
-    \param Indices   - (Out) Global column indices corresponding to values.
-    \param Values    - (Out) Row values
+    \param GlobalRow [in] Global row number for which indices are desired.
+    \param Indices [out] Global column indices corresponding to values.
+    \param Values [out] Row values
+
     \pre <tt>isLocallyIndexed() == false</tt>
     \post <tt>indices.size() == getNumEntriesInGlobalRow(GlobalRow)</tt>
 
@@ -304,9 +394,10 @@ public:
 
   //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
   /*!
-    \param LocalRow - (In) Local row number for which indices are desired.
-    \param Indices  - (Out) Global column indices corresponding to values.
-    \param Values   - (Out) Row values
+    \param LocalRow [in] Local row number for which indices are desired.
+    \param Indices [out] Local column indices corresponding to values.
+    \param Values [out] Row values
+
     \pre <tt>isGloballyIndexed() == false</tt>
     \post <tt>indices.size() == getNumEntriesInLocalRow(LocalRow)</tt>
 
@@ -317,14 +408,17 @@ public:
                    Teuchos::ArrayView<const local_ordinal_type> &indices,
                    Teuchos::ArrayView<const scalar_type> &values) const;
 
-  //! \brief Get a copy of the diagonal entries owned by this node, with local row indices.
-  /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the
-    the zero and non-zero diagonals owned by this node. */
+  /// \brief Get the diagonal entries of the (locally filtered) matrix.
+  ///
+  /// \param diag [in/out] On input: a Tpetra::Vector whose Map is the
+  ///   same as the local filter's row Map, which in turn is the same
+  ///   as the original matrix's row Map.  On output: filled with the
+  ///   diagonal entries owned by the calling process.
   virtual void
   getLocalDiagCopy (Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> &diag) const;
 
   //@}
-  //! \name Mathematical Methods
+  //! \name Mathematical methods
   //@{
 
   /**
@@ -359,12 +453,12 @@ public:
   /// \f$\|A\|_F = \sqrt{\sum_{i,j} \|A_{ij}\|^2}\f$.
   virtual magnitude_type getFrobeniusNorm() const;
 
-  //! \brief Computes the operator-multivector application.
-  /*! Loosely, performs \f$Y = \alpha \cdot A^{\textrm{mode}} \cdot X + \beta \cdot Y\f$. However, the details of operation
-    vary according to the values of \c alpha and \c beta. Specifically
-    - if <tt>beta == 0</tt>, apply() <b>must</b> overwrite \c Y, so that any values in \c Y (including NaNs) are ignored.
-    - if <tt>alpha == 0</tt>, apply() <b>may</b> short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
-  */
+  /// \brief Compute Y = beta*Y + alpha*A_local*X.
+  ///
+  /// If <tt>beta == 0</tt>, apply() <b>must</b> overwrite \c Y, so
+  /// that any values in \c Y (including NaNs) are ignored.  If
+  /// <tt>alpha == 0</tt>, apply() must short-circuit the operator, so
+  /// that any values in \c X (including NaNs) are ignored.
   virtual void
   apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> &X,
          Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> &Y,
@@ -372,11 +466,10 @@ public:
          scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
          scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
-  //! Indicates whether this operator supports applying the adjoint operator.
+  //! Whether this operator supports applying the transpose or conjugate transpose.
   virtual bool hasTransposeApply() const;
 
   //@}
-
   //! \name Deprecated routines to be removed at some point in the future.
   //@{
 
@@ -390,9 +483,10 @@ public:
 
     \pre isLocallyIndexed()==false
   */
-  TPETRA_DEPRECATED virtual void getGlobalRowView(global_ordinal_type GlobalRow,
-                                                  Teuchos::ArrayRCP<const global_ordinal_type> &indices,
-                                                  Teuchos::ArrayRCP<const scalar_type>        &values) const;
+  TPETRA_DEPRECATED
+  virtual void getGlobalRowView(global_ordinal_type GlobalRow,
+                                Teuchos::ArrayRCP<const global_ordinal_type> &indices,
+                                Teuchos::ArrayRCP<const scalar_type>        &values) const;
 
   //! Deprecated. Get a persisting const view of the entries in a specified local row of this matrix.
   /*!
@@ -404,35 +498,54 @@ public:
 
     \pre isGloballyIndexed()==false
   */
-  TPETRA_DEPRECATED virtual void getLocalRowView(local_ordinal_type LocalRow,
-                                                 Teuchos::ArrayRCP<const local_ordinal_type> &indices,
-                                                 Teuchos::ArrayRCP<const scalar_type>       &values) const;
+  TPETRA_DEPRECATED
+  virtual void getLocalRowView(local_ordinal_type LocalRow,
+                               Teuchos::ArrayRCP<const local_ordinal_type> &indices,
+                               Teuchos::ArrayRCP<const scalar_type>       &values) const;
   //@}
 
 
 private:
   //! Type of a read-only interface to a graph.
   typedef Tpetra::RowGraph<local_ordinal_type,
-			   global_ordinal_type,
-			   node_type> row_graph_type;
+                           global_ordinal_type,
+                           node_type> row_graph_type;
 
-  //! Type of a read-only interface to a sparse matrix.
-  typedef Tpetra::RowMatrix<scalar_type,
-			    local_ordinal_type,
-			    global_ordinal_type,
-			    node_type> row_matrix_type;
+  /// \brief Whether map1 is fitted to map2.
+  ///
+  /// \param map1 [in] The first map.
+  /// \param map2 [in] The second map.
+  ///
+  /// For Tpetra::Map instances map1 and map2, we say that map1 is
+  /// <i>fitted</i> to map2 (on the calling process), when the initial
+  /// indices of map1 (on the calling process) are the same and in the
+  /// same order as those of map2.  "Fittedness" is entirely a local
+  /// (per MPI process) property.  The predicate "map1 is fitted to
+  /// map2?" is <i>not</i> symmetric.  For example, map2 may have more
+  /// entries than map1.
+  static bool
+  mapPairIsFitted (const map_type& map1, const map_type& map2);
 
-  //! Tpetra::Map specialization corresponding to MatrixType.
-  typedef Tpetra::Map<local_ordinal_type,
-		      global_ordinal_type,
-		      node_type> map_type;
+  /// \brief Whether the domain Map of A is fitted to its column Map,
+  ///   and the range Map of A is fitted to its row Map.
+  ///
+  // If both pairs of Maps of the original matrix A are fitted on this
+  // process, then this process can use a fast "view" implementation.
+  static bool
+  mapPairsAreFitted (const row_matrix_type& A);
 
   //! Pointer to the matrix to be preconditioned.
   Teuchos::RCP<const row_matrix_type> A_;
-  //! Map based on SerialComm_, containing the local rows only.
-  Teuchos::RCP<const map_type> localMap_;
-  //! Number of rows in the local matrix.
-  size_t NumRows_;
+
+  //! Row Map of the locally filtered matrix.
+  Teuchos::RCP<const map_type> localRowMap_;
+
+  //! Domain Map of the locally filtered matrix.
+  Teuchos::RCP<const map_type> localDomainMap_;
+
+  //! Range Map of the locally filtered matrix.
+  Teuchos::RCP<const map_type> localRangeMap_;
+
   //! Number of nonzeros in the local matrix.
   size_t NumNonzeros_;
   //! Maximum number of nonzero entries in a row for the filtered matrix.
@@ -441,11 +554,12 @@ private:
   size_t MaxNumEntriesA_;
   //! NumEntries_[i] contains the nonzero entries in row `i'.
   std::vector<size_t> NumEntries_;
-  //! Used in ExtractMyRowCopy, to avoid allocation each time.
-  mutable Teuchos::Array<local_ordinal_type> Indices_;
-  //! Used in ExtractMyRowCopy, to avoid allocation each time.
-  mutable Teuchos::Array<scalar_type> Values_;
 
+  //! Temporary array used in getLocalRowCopy().
+  mutable Teuchos::Array<local_ordinal_type> Indices_;
+
+  //! Temporary array used in getLocalRowCopy().
+  mutable Teuchos::Array<scalar_type> Values_;
 };// class LocalFilter
 
 }// namespace Ifpack2

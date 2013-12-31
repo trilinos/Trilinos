@@ -58,8 +58,8 @@ namespace panzer {
   struct Workset;
   template <typename LO, typename GO> class ConnManager;
   template <typename LO, typename GO> class DOFManager;
-  class EquationSetFactory;
-  class BCStrategyFactory;
+  struct EquationSetFactory;
+  struct BCStrategyFactory;
   class PhysicsBlock;
 }
 

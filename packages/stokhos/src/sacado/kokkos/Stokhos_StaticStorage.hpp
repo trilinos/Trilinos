@@ -67,9 +67,9 @@ namespace Stokhos {
     typedef Stokhos::StaticArrayTraits<value_type,device_type> ss;
 
     //! Turn StaticStorage into a meta-function class usable with mpl::apply
-    template <typename ord_t, typename val_t>
+    template <typename ord_t, typename val_t = value_t , typename dev_t = device_t >
     struct apply {
-      typedef StaticStorage<ord_t,val_t,Num,device_type> type;
+      typedef StaticStorage<ord_t,val_t,Num,dev_t> type;
     };
 
     //! Constructor

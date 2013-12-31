@@ -170,8 +170,8 @@ void ReportTimer(double t0, const char *msgString, ML_Comm *comm)
   MPI_Reduce(&srct,&maxt,1,MPI_DOUBLE_INT,MPI_MAXLOC,0,comm->USR_comm);
   MPI_Reduce(&srct,&mint,1,MPI_DOUBLE_INT,MPI_MINLOC,0,comm->USR_comm);
   if (comm->ML_mypid==0 && comm->ML_nprocs > 1)
-    printf("%s \t avg = %1.3e seconds, min = %1.3e (%d), max = %1.3e (%d)\n",
-           msgString, t1, mint.value, mint.rank, maxt.value, maxt.rank);
+    printf("%32s (seconds)  :   min = %1.3e (%d), avg = %1.3e, max = %1.3e (%d)\n",
+           msgString, mint.value, mint.rank, t1, maxt.value, maxt.rank);
 # endif /*ifdef ML_MPI*/
   if (comm->ML_nprocs == 1)
     printf("%s  = %1.3e seconds\n",msgString,t1);

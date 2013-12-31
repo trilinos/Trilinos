@@ -21,9 +21,7 @@ int main()
     const unsigned use_numa_count     = Kokkos::hwloc::get_available_numa_count();
     const unsigned use_cores_per_numa = std::min( 4u , Kokkos::hwloc::get_available_cores_per_numa() );
 
-    // Use 2 cores per team and 1 thread/core:
-
-    Kokkos::Threads::initialize( ( use_numa_count * use_cores_per_numa ) / 2 , 2 );
+    Kokkos::Threads::initialize( use_numa_count * use_cores_per_numa );
 
     std::cout << "feint< Threads , NotUsingAtomic >" << std::endl ;
     Kokkos::Example::feint< Kokkos::Threads , false >();

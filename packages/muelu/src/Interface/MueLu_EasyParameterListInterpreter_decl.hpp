@@ -58,6 +58,7 @@
 #include "MueLu_CoupledAggregationFactory_fwd.hpp"
 #include "MueLu_DirectSolver_fwd.hpp"
 #include "MueLu_FilteredAFactory_fwd.hpp"
+#include "MueLu_NullspaceFactory_fwd.hpp"
 #include "MueLu_PgPFactory_fwd.hpp"
 #include "MueLu_RAPFactory_fwd.hpp"
 #include "MueLu_RebalanceAcFactory_fwd.hpp"
@@ -92,14 +93,16 @@ namespace MueLu {
 
     void SetParameterList(const Teuchos::ParameterList& paramList);
 
+    void SetupHierarchy(Hierarchy& H) const;
+
   private:
-    void UpdateFactoryManager(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, const FactoryManager& managerIn, RCP<FactoryManager>& manager);
+    void UpdateFactoryManager(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager);
 
     void SetupMatrix   (Matrix&    A) const;
-    void SetupHierarchy(Hierarchy& H) const;
 
     CycleType Cycle_;
     int       blockSize_;
+    bool      useCoordinates_;
 
   }; // class EasyParameterListInterpreter
 

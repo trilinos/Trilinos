@@ -112,6 +112,8 @@ namespace MueLu {
     }
 #endif
 
+    typedef Teuchos::ScalarTraits<SC> ST;
+
     if (perturb) {
       if (perturbWt_ == Teuchos::null || !perturbWt_->getMap()->isSameAs(*weightMap)) {
         perturbWt_ = VectorFactory::Build(weightMap,false); //no need to zero out because this will be randomized

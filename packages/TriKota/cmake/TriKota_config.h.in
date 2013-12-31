@@ -36,5 +36,9 @@
 /* Define to the version of this package. */
 #cmakedefine PACKAGE_VERSION
 
+/* Dakota currently unconditionally defines this.
+   undef it before we get there so we don't get the compiler warning about redefinitions */
+#undef HAVE_CONFIG_H
+
 /* All of Dakota's configured defines */
 @DAKOTA_DEFINES@

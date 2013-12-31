@@ -302,7 +302,7 @@ int main(int argc, char *argv[]){
 
 
         typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
-        typedef Zoltan2::XpetraMultiVectorInput<tMVector_t> inputAdapter_t;
+        typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
 
         /*
         Zoltan2::CoordinateCommunicationModel<scalar_t,scalar_t,zoltan2_partId_t> *cm =

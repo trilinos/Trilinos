@@ -4913,8 +4913,12 @@ template<class TransferType>
     }
     else {
       // Replace all the maps with dummy maps with SerialComm, then quit
+#if defined(EPETRA_NO_32BIT_GLOBAL_INDICES) && defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
+      Epetra_Map DummyMap;
+#else
       Epetra_SerialComm SComm;
       Epetra_Map DummyMap(0,0,SComm);
+#endif
       Graph_.CrsGraphData_->RowMap_    = DummyMap;
       Graph_.CrsGraphData_->ColMap_    = DummyMap;
       Graph_.CrsGraphData_->RangeMap_  = DummyMap;

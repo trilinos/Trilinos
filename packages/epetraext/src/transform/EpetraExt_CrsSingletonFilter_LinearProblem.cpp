@@ -40,13 +40,14 @@
 // ***********************************************************************
 //@HEADER
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Map.h"
 #include "Epetra_Util.h"
 #include "Epetra_Export.h"
 #include "Epetra_Import.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
-#include "Epetra_IntVector.h"
+#include "Epetra_GIDTypeVector.h"
 #include "Epetra_Comm.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_MapColoring.h"
@@ -84,7 +85,10 @@ LinearProblem_CrsSingletonFilter::
   if (ColSingletonPivotLIDs_ != 0) delete [] ColSingletonPivotLIDs_;
   if (ColSingletonPivots_ != 0) delete [] ColSingletonPivots_;
   if (tempExportX_ != 0) delete tempExportX_;
-  if (Indices_ != 0) delete [] Indices_;
+  if (Indices_int_ != 0) delete [] Indices_int_;
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if (Indices_LL_ != 0) delete [] Indices_LL_;
+#endif
   if (tempX_ != 0) delete tempX_;
   if (tempB_ != 0) delete tempB_;
 
@@ -227,7 +231,10 @@ void LinearProblem_CrsSingletonFilter::InitializeDefaults() {
   tempX_ = 0;
   tempB_ = 0;
 
-  Indices_ = 0;
+  Indices_int_ = 0;
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  Indices_LL_ = 0;
+#endif
 
   RowMapColors_ = 0;
   ColMapColors_ = 0;
@@ -245,8 +252,8 @@ int LinearProblem_CrsSingletonFilter::Analyze(Epetra_RowMatrix * FullMatrix) {
 
   if (AnalysisDone_) EPETRA_CHK_ERR(-1); // Analysis already done once.  Cannot do it again
   if (FullMatrix==0) EPETRA_CHK_ERR(-2); // Input matrix pointer is zero
-  if (FullMatrix->NumGlobalRows()==0) EPETRA_CHK_ERR(-3); // Full matrix has zero dimension.
-  if (FullMatrix->NumGlobalNonzeros()==0) EPETRA_CHK_ERR(-4); // Full matrix has no nonzero terms.
+  if (FullMatrix->NumGlobalRows64()==0) EPETRA_CHK_ERR(-3); // Full matrix has zero dimension.
+  if (FullMatrix->NumGlobalNonzeros64()==0) EPETRA_CHK_ERR(-4); // Full matrix has no nonzero terms.
 
   // First check for columns with single entries and find columns with singleton rows
   Epetra_IntVector ColProfiles(FullMatrixColMap()); ColProfiles.PutValue(0);
@@ -370,8 +377,8 @@ int LinearProblem_CrsSingletonFilter::Analyze(Epetra_RowMatrix * FullMatrix) {
   return(0);
 }
 //==============================================================================
-int LinearProblem_CrsSingletonFilter::ConstructReducedProblem(Epetra_LinearProblem * Problem) {
-
+template<typename int_type>
+int LinearProblem_CrsSingletonFilter::TConstructReducedProblem(Epetra_LinearProblem * Problem) {
   int i, j;
   if (HaveReducedProblem_) EPETRA_CHK_ERR(-1); // Setup already done once.  Cannot do it again
   if (Problem==0) EPETRA_CHK_ERR(-2); // Null problem pointer
@@ -443,14 +450,13 @@ int LinearProblem_CrsSingletonFilter::ConstructReducedProblem(Epetra_LinearProbl
     tempExportX_ = new Epetra_MultiVector(FullMatrixColMap(), NumVectors);
 
     int NumEntries;
-    int * Indices;
     double * Values;
     int NumMyRows = FullMatrix()->NumMyRows();
     int ColSingletonCounter = 0;
     for (i=0; i<NumMyRows; i++) {
-      int curGRID = FullMatrixRowMap().GID(i);
+      int_type curGRID = (int_type) FullMatrixRowMap().GID64(i);
       if (ReducedMatrixRowMap()->MyGID(curGRID)) { // Check if this row should go into reduced matrix
-
+        int_type * Indices;
         EPETRA_CHK_ERR(GetRowGCIDs(i, NumEntries, Values, Indices)); // Get current row (Indices are global)
       
         int ierr = ReducedMatrix()->InsertGlobalValues(curGRID, NumEntries, 
@@ -462,6 +468,7 @@ int LinearProblem_CrsSingletonFilter::ConstructReducedProblem(Epetra_LinearProbl
         if (ierr<0) EPETRA_CHK_ERR(ierr); 
       }
       else {
+        int * Indices;
         EPETRA_CHK_ERR(GetRow(i, NumEntries, Values, Indices)); // Get current row
         if (NumEntries==1) {
   	  double pivot = Values[0];
@@ -535,10 +542,10 @@ int LinearProblem_CrsSingletonFilter::ConstructReducedProblem(Epetra_LinearProbl
     ReducedMatrix_ = Teuchos::rcp( dynamic_cast<Epetra_CrsMatrix *>(Problem->GetMatrix()), false );
   }
 
-  double fn = FullMatrix()->NumGlobalRows();
-  double fnnz = FullMatrix()->NumGlobalNonzeros();
-  double rn = ReducedMatrix()->NumGlobalRows();
-  double rnnz = ReducedMatrix()->NumGlobalNonzeros();
+  double fn = (double) FullMatrix()->NumGlobalRows64();
+  double fnnz = (double) FullMatrix()->NumGlobalNonzeros64();
+  double rn = (double) ReducedMatrix()->NumGlobalRows64();
+  double rnnz = (double) ReducedMatrix()->NumGlobalNonzeros64();
 
   RatioOfDimensions_ = rn/fn;
   RatioOfNonzeros_ = rnnz/fnnz;
@@ -546,8 +553,26 @@ int LinearProblem_CrsSingletonFilter::ConstructReducedProblem(Epetra_LinearProbl
   
   return(0);
 }
+
+int LinearProblem_CrsSingletonFilter::ConstructReducedProblem(Epetra_LinearProblem * Problem) {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(Problem->GetMatrix()->RowMatrixRowMap().GlobalIndicesInt()) {
+    return TConstructReducedProblem<int>(Problem);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(Problem->GetMatrix()->RowMatrixRowMap().GlobalIndicesLongLong()) {
+    return TConstructReducedProblem<long long>(Problem);
+  }
+  else
+#endif
+    throw "LinearProblem_CrsSingletonFilter::ConstructReducedProblem: ERROR, GlobalIndices type unknown.";
+}
+
 //==============================================================================
-int LinearProblem_CrsSingletonFilter::UpdateReducedProblem(Epetra_LinearProblem * Problem) {
+template<typename int_type>
+int LinearProblem_CrsSingletonFilter::TUpdateReducedProblem(Epetra_LinearProblem * Problem) {
 
   int i, j;
 
@@ -570,13 +595,13 @@ int LinearProblem_CrsSingletonFilter::UpdateReducedProblem(Epetra_LinearProblem 
     tempExportX_->PutScalar(0.0);
 
     int NumEntries;
-    int * Indices;
     double * Values;
     int NumMyRows = FullMatrix()->NumMyRows();
     int ColSingletonCounter = 0;
     for (i=0; i<NumMyRows; i++) {
-      int curGRID = FullMatrixRowMap().GID(i);
+      int_type curGRID = (int_type) FullMatrixRowMap().GID64(i);
       if (ReducedMatrixRowMap()->MyGID(curGRID)) { // Check if this row should go into reduced matrix
+        int_type * Indices;
         EPETRA_CHK_ERR(GetRowGCIDs(i, NumEntries, Values, Indices)); // Get current row (indices global)
         int ierr = ReducedMatrix()->ReplaceGlobalValues(curGRID, NumEntries, 
 						      Values, Indices);
@@ -588,6 +613,7 @@ int LinearProblem_CrsSingletonFilter::UpdateReducedProblem(Epetra_LinearProblem 
       }
       // Otherwise if singleton row we explicitly eliminate this row and solve for corresponding X value
       else {
+        int * Indices;
         EPETRA_CHK_ERR(GetRow(i, NumEntries, Values, Indices)); // Get current row
         if (NumEntries==1) {
   	  double pivot = Values[0];
@@ -650,13 +676,30 @@ int LinearProblem_CrsSingletonFilter::UpdateReducedProblem(Epetra_LinearProblem 
 
   return(0);
 }
+
+int LinearProblem_CrsSingletonFilter::UpdateReducedProblem(Epetra_LinearProblem * Problem) {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(Problem->GetMatrix()->RowMatrixRowMap().GlobalIndicesInt()) {
+    return TUpdateReducedProblem<int>(Problem);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(Problem->GetMatrix()->RowMatrixRowMap().GlobalIndicesLongLong()) {
+    return TUpdateReducedProblem<long long>(Problem);
+  }
+  else
+#endif
+    throw "LinearProblem_CrsSingletonFilter::UpdateReducedProblem: ERROR, GlobalIndices type unknown.";
+}
 //==============================================================================
-int LinearProblem_CrsSingletonFilter::ConstructRedistributeExporter(Epetra_Map * SourceMap, Epetra_Map * TargetMap,
+template<typename int_type>
+int LinearProblem_CrsSingletonFilter::TConstructRedistributeExporter(Epetra_Map * SourceMap, Epetra_Map * TargetMap,
 							     Epetra_Export * & RedistributeExporter,
 							     Epetra_Map * & RedistributeMap) {
 
-  int IndexBase = SourceMap->IndexBase();
-  if (IndexBase!=TargetMap->IndexBase()) EPETRA_CHK_ERR(-1);
+  int_type IndexBase = (int_type) SourceMap->IndexBase64();
+  if (IndexBase!=(int_type) TargetMap->IndexBase64()) EPETRA_CHK_ERR(-1);
 
   const Epetra_Comm & Comm = TargetMap->Comm();
 
@@ -664,30 +707,50 @@ int LinearProblem_CrsSingletonFilter::ConstructRedistributeExporter(Epetra_Map *
   int SourceNumMyElements = SourceMap->NumMyElements();
 
   // ContiguousTargetMap has same number of elements per PE as TargetMap, but uses contigious indexing 
-  Epetra_Map ContiguousTargetMap(-1, TargetNumMyElements, IndexBase,Comm);
+  Epetra_Map ContiguousTargetMap((int_type) -1, TargetNumMyElements, IndexBase,Comm);
 
   // Same for ContiguousSourceMap
-  Epetra_Map ContiguousSourceMap(-1, SourceNumMyElements, IndexBase, Comm);
+  Epetra_Map ContiguousSourceMap((int_type) -1, SourceNumMyElements, IndexBase, Comm);
 
-  assert(ContiguousSourceMap.NumGlobalElements()==ContiguousTargetMap.NumGlobalElements());
+  assert(ContiguousSourceMap.NumGlobalElements64()==ContiguousTargetMap.NumGlobalElements64());
 
   // Now create a vector that contains the global indices of the Source Epetra_MultiVector
-  Epetra_IntVector SourceIndices(View, ContiguousSourceMap, SourceMap->MyGlobalElements());
+  int_type* SourceMapMyGlobalElements = 0;
+  SourceMap->MyGlobalElementsPtr(SourceMapMyGlobalElements);
+  typename Epetra_GIDTypeVector<int_type>::impl SourceIndices(View, ContiguousSourceMap, SourceMapMyGlobalElements);
 
   // Create an exporter to send the SourceMap global IDs to the target distribution
   Epetra_Export Exporter(ContiguousSourceMap, ContiguousTargetMap);
   
   // Create a vector to catch the global IDs in the target distribution
-  Epetra_IntVector TargetIndices(ContiguousTargetMap);
+  typename Epetra_GIDTypeVector<int_type>::impl TargetIndices(ContiguousTargetMap);
   TargetIndices.Export(SourceIndices, Exporter, Insert);
 
   // Create a new map that describes how the Source MultiVector should be laid out so that it has
   // the same number of elements on each processor as the TargetMap
-  RedistributeMap = new Epetra_Map(-1, TargetNumMyElements, TargetIndices.Values(), IndexBase, Comm);
+  RedistributeMap = new Epetra_Map((int_type) -1, TargetNumMyElements, TargetIndices.Values(), IndexBase, Comm);
 
   // This exporter will finally redistribute the Source MultiVector to the same layout as the TargetMap
   RedistributeExporter = new Epetra_Export(*SourceMap, *RedistributeMap);
   return(0);
+}
+
+int LinearProblem_CrsSingletonFilter::ConstructRedistributeExporter(Epetra_Map * SourceMap, Epetra_Map * TargetMap,
+							     Epetra_Export * & RedistributeExporter,
+							     Epetra_Map * & RedistributeMap) {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(SourceMap->GlobalIndicesInt() && TargetMap->GlobalIndicesInt()) {
+    return TConstructRedistributeExporter<int>(SourceMap, TargetMap, RedistributeExporter, RedistributeMap);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(SourceMap->GlobalIndicesLongLong() && TargetMap->GlobalIndicesLongLong()) {
+    return TConstructRedistributeExporter<long long>(SourceMap, TargetMap, RedistributeExporter, RedistributeMap);
+  }
+  else
+#endif
+    throw "LinearProblem_CrsSingletonFilter::ConstructRedistributeExporter: ERROR, GlobalIndices type unknown.";
 }
 //==============================================================================
 int LinearProblem_CrsSingletonFilter::ComputeFullSolution() {
@@ -744,7 +807,11 @@ int LinearProblem_CrsSingletonFilter::InitFullMatrixAccess() {
   // Cast to CrsMatrix, if possible.  Can save some work.
   FullCrsMatrix_ = dynamic_cast<Epetra_CrsMatrix *>(FullMatrix());
   FullMatrixIsCrsMatrix_ = (FullCrsMatrix_!=0); // Pointer is non-zero if cast worked
-  Indices_ = new int[MaxNumMyEntries_];
+  Indices_int_ = new int[MaxNumMyEntries_];
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(FullMatrix()->RowMatrixRowMap().GlobalIndicesLongLong())
+    Indices_LL_ = new long long[MaxNumMyEntries_];
+#endif
   Values_.Size(MaxNumMyEntries_);
 
   return(0);
@@ -757,8 +824,8 @@ int LinearProblem_CrsSingletonFilter::GetRow(int Row, int & NumIndices, int * & 
   }
   else { // Copy of current row (we must get the values, but we ignore them)
     EPETRA_CHK_ERR(FullMatrix()->ExtractMyRowCopy(Row, MaxNumMyEntries_, NumIndices, 
-						  Values_.Values(), Indices_));
-    Indices = Indices_;
+						  Values_.Values(), Indices_int_));
+    Indices = Indices_int_;
   } 
   return(0);
 }
@@ -771,23 +838,37 @@ int LinearProblem_CrsSingletonFilter::GetRow(int Row, int & NumIndices,
   }
   else { // Copy of current row (we must get the values, but we ignore them)
     EPETRA_CHK_ERR(FullMatrix()->ExtractMyRowCopy(Row, MaxNumMyEntries_, NumIndices, 
-						  Values_.Values(), Indices_));
+						  Values_.Values(), Indices_int_));
     Values = Values_.Values();
-    Indices = Indices_;
+    Indices = Indices_int_;
   } 
   return(0);
 }
 //==============================================================================
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int LinearProblem_CrsSingletonFilter::GetRowGCIDs(int Row, int & NumIndices, 
 					   double * & Values, int * & GlobalIndices) {
 
     EPETRA_CHK_ERR(FullMatrix()->ExtractMyRowCopy(Row, MaxNumMyEntries_, NumIndices, 
-						  Values_.Values(), Indices_));
-    for (int j=0; j<NumIndices; j++) Indices_[j] = FullMatrixColMap().GID(Indices_[j]);
+						  Values_.Values(), Indices_int_));
+    for (int j=0; j<NumIndices; j++) Indices_int_[j] = FullMatrixColMap().GID(Indices_int_[j]);
     Values = Values_.Values();
-    GlobalIndices = Indices_;
+    GlobalIndices = Indices_int_;
   return(0);
 }
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+int LinearProblem_CrsSingletonFilter::GetRowGCIDs(int Row, int & NumIndices, 
+					   double * & Values, long long * & GlobalIndices) {
+    EPETRA_CHK_ERR(FullMatrix()->ExtractMyRowCopy(Row, MaxNumMyEntries_, NumIndices, 
+						  Values_.Values(), Indices_int_));
+    for (int j=0; j<NumIndices; j++) Indices_LL_[j] = FullMatrixColMap().GID64(Indices_int_[j]);
+    Values = Values_.Values();
+    GlobalIndices = Indices_LL_;
+  return(0);
+}
+#endif
 //==============================================================================
 int LinearProblem_CrsSingletonFilter::CreatePostSolveArrays(const Epetra_IntVector & RowIDs,
 						     const Epetra_MapColoring & RowMapColors,

@@ -45,6 +45,9 @@
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include "Stokhos_Sacado_Kokkos.hpp"
+#include "Stokhos_UnitTestHelpers.hpp"
+
+#include <Kokkos_Threads.hpp>
 
 //
 // Currently this doesn't test:
@@ -52,53 +55,6 @@
 //   * threaded storage (needs the device)
 //   * strided storage with non-trivial stride
 //
-
-template<class ValueType, class VectorType>
-bool compareVecs(const VectorType& a1,
-                 const std::string& a1_name,
-                 const VectorType&a2,
-                 const std::string& a2_name,
-                 const ValueType& rel_tol, const ValueType& abs_tol,
-                 Teuchos::FancyOStream& out)
-{
-  bool success = true;
-
-  out << "Comparing " << a1_name << " == " << a2_name << " ... ";
-
-  const int n = a1.size();
-
-  // Compare sizes
-  if (a2.size() != n) {
-    out << "\nError, "<<a1_name<<".size() = "<<a1.size()<<" == "
-        << a2_name<<".size() = "<<a2.size()<<" : failed!\n";
-    return false;
-  }
-
-  // Compare elements
-  for( int i = 0; i < n; ++i ) {
-    ValueType err = std::abs(a1.coeff(i) - a2.coeff(i));
-    ValueType tol =
-      abs_tol + rel_tol*std::max(std::abs(a1.fastAccessCoeff(i)),
-                                 std::abs(a2.fastAccessCoeff(i)));
-    if (err  > tol) {
-      out
-        <<"\nError, relErr("<<a1_name<<"["<<i<<"],"
-        <<a2_name<<"["<<i<<"]) = relErr("<<a1.coeff(i)<<","<<a2.coeff(i)
-        <<") = "<<err<<" <= tol = "<<tol<<": failed!\n";
-      success = false;
-    }
-  }
-  if (success) {
-    out << "passed\n";
-  }
-  else {
-    out << std::endl
-        << a1_name << " = " << a1 << std::endl
-        << a2_name << " = " << a2 << std::endl;
-  }
-
-  return success;
-}
 
 // Common setup for unit tests
 template <typename VectorType>

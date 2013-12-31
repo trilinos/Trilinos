@@ -81,6 +81,14 @@ void assertModelVarScalings(
     "the scaling for x_dot must also be set and must be the same scaling\n"
     "as is used for x!"
     );
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    (varScalings.supports(EME::IN_ARG_x) && varScalings.supports(EME::IN_ARG_x_dotdot))
+    && (varScalings.get_x() != varScalings.get_x_dotdot()),
+    std::logic_error,
+    "Error, if scaling for x is given and x_dotdot is supported, then\n"
+    "the scaling for x_dotdot must also be set and must be the same scaling\n"
+    "as is used for x!"
+    );
 }
   
 
@@ -318,6 +326,10 @@ void EpetraExt::gatherModelNominalValues(
     nominalValues->set_x_dot(model.get_x_dot_init());
   }
   
+  if(nominalValues->supports(EME::IN_ARG_x_dotdot)) {
+    nominalValues->set_x_dotdot(model.get_x_dotdot_init());
+  }
+  
   for( int l = 0; l < nominalValues->Np(); ++l ) {
     nominalValues->set_p( l, model.get_p_init(l) );
   }
@@ -390,6 +402,11 @@ void EpetraExt::scaleModelVars(
       out, verbLevel );
   }
 
+  if (origVars.supports(EME::IN_ARG_x_dotdot)) {
+    scaleModelVar( InArgsGetterSetter_x_dotdot(), origVars, varScalings, scaledVars,
+      out, verbLevel );
+  }
+
   const int Np = origVars.Np();
   for ( int l = 0; l < Np; ++l ) {
     scaleModelVar( InArgsGetterSetter_p(l), origVars, varScalings, scaledVars,
@@ -410,6 +427,14 @@ void EpetraExt::scaleModelVars(
       "Error, can't hanlde scaling of x_dot_poly yet!"
       );
     scaledVars->set_x_dot_poly(origVars.get_x_dot_poly());
+  }
+
+  if (origVars.supports(EME::IN_ARG_x_dotdot_poly)) {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      !is_null(varScalings.get_x()), std::logic_error,
+      "Error, can't hanlde scaling of x_dotdot_poly yet!"
+      );
+    scaledVars->set_x_dotdot_poly(origVars.get_x_dotdot_poly());
   }
 
   if (origVars.supports(EME::IN_ARG_t)) {
@@ -475,6 +500,13 @@ void EpetraExt::scaleModelBounds(
       out, verbLevel );
   }
 
+  if (origLowerBounds.supports(EME::IN_ARG_x_dotdot)) {
+    scaleModelBound(
+      InArgsGetterSetter_x_dotdot(), origLowerBounds, origUpperBounds, infBnd,
+      varScalings, scaledLowerBounds, scaledUpperBounds,
+      out, verbLevel );
+  }
+
   const int Np = origLowerBounds.Np();
   for ( int l = 0; l < Np; ++l ) {
     scaleModelBound(
@@ -526,6 +558,11 @@ void EpetraExt::unscaleModelVars(
       out, verbLevel );
   }
 
+  if (scaledVars.supports(EME::IN_ARG_x_dotdot)) {
+    unscaleModelVar( InArgsGetterSetter_x_dotdot(), scaledVars, varScalings, origVars,
+      out, verbLevel );
+  }
+
   if (scaledVars.supports(EME::IN_ARG_x)) {
     unscaleModelVar( InArgsGetterSetter_x(), scaledVars, varScalings, origVars,
       out, verbLevel );
@@ -543,6 +580,14 @@ void EpetraExt::unscaleModelVars(
       "Error, can't hanlde unscaling of x_dot_poly yet!"
       );
     origVars->set_x_dot_poly(scaledVars.get_x_dot_poly());
+  }
+
+  if (scaledVars.supports(EME::IN_ARG_x_dotdot_poly)) {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      !is_null(varScalings.get_x()), std::logic_error,
+      "Error, can't hanlde unscaling of x_dotdot_poly yet!"
+      );
+    origVars->set_x_dotdot_poly(scaledVars.get_x_dotdot_poly());
   }
 
   if (scaledVars.supports(EME::IN_ARG_x_poly)) {
@@ -679,6 +724,24 @@ void EpetraExt::scaleModelFuncs(
         );
       if(didScaling)
         scaledFuncs->set_DgDx_dot(j,scaled_DgDx_dot_j);
+      else
+        *allFuncsWhereScaled = false;
+    }
+
+    EME::Derivative orig_DgDx_dotdot_j;
+    if (
+      !origFuncs.supports(EME::OUT_ARG_DgDx_dotdot,j).none()
+      && !(orig_DgDx_dotdot_j=origFuncs.get_DgDx_dotdot(j)).isEmpty()
+      )
+    {
+      EME::Derivative scaled_DgDx_dotdot_j;
+      bool didScaling = false;
+      scaleModelFuncFirstDeriv(
+        orig_DgDx_dotdot_j, varScalings.get_x().get(), funcScalings.get_g(j).get(),
+        &scaled_DgDx_dotdot_j, &didScaling
+        );
+      if(didScaling)
+        scaledFuncs->set_DgDx_dotdot(j,scaled_DgDx_dotdot_j);
       else
         *allFuncsWhereScaled = false;
     }

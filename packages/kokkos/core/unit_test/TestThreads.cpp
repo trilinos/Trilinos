@@ -56,6 +56,7 @@
 
 #include <TestMemoryTracking.hpp>
 #include <TestViewAPI.hpp>
+#include <TestAggregate.hpp>
 #include <TestAtomic.hpp>
 
 #include <TestCrsArray.hpp>
@@ -81,31 +82,31 @@ protected:
     unsigned threads_per_team = 0 ;
 
     // Initialize and finalize with no threads:
-    Kokkos::Threads::initialize( 1u , 1u );
+    Kokkos::Threads::initialize( 1u );
     Kokkos::Threads::finalize();
 
     team_count       = std::max( 1u , numa_count );
     threads_per_team = std::max( 2u , cores_per_numa * threads_per_core );
 
-    Kokkos::Threads::initialize( team_count , threads_per_team );
+    Kokkos::Threads::initialize( team_count * threads_per_team );
     Kokkos::Threads::finalize();
 
     team_count       = std::max( 1u , numa_count * 2 );
     threads_per_team = std::max( 2u , ( cores_per_numa * threads_per_core ) / 2 );
-    Kokkos::Threads::initialize( team_count , threads_per_team );
+    Kokkos::Threads::initialize( team_count * threads_per_team );
     Kokkos::Threads::finalize();
 
     // Quick attempt to verify thread start/terminate don't have race condition:
     team_count       = std::max( 1u , numa_count );
     threads_per_team = std::max( 2u , ( cores_per_numa * threads_per_core ) / 2 );
     for ( unsigned i = 0 ; i < 10 ; ++i ) {
-      Kokkos::Threads::initialize( team_count , threads_per_team );
+      Kokkos::Threads::initialize( team_count * threads_per_team );
       Kokkos::Threads::sleep();
       Kokkos::Threads::wake();
       Kokkos::Threads::finalize();
     }
 
-    Kokkos::Threads::initialize( team_count , threads_per_team );
+    Kokkos::Threads::initialize( team_count * threads_per_team );
     Kokkos::Threads::print_configuration( std::cout );
   }
 
@@ -125,6 +126,10 @@ TEST_F( threads, view_impl) {
 
 TEST_F( threads, view_api) {
   TestViewAPI< double , Kokkos::Threads >();
+}
+
+TEST_F( threads, view_aggregate ) {
+  TestViewAggregate< Kokkos::Threads >();
 }
 
 TEST_F( threads, long_reduce) {

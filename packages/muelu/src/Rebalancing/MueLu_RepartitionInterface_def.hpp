@@ -58,7 +58,6 @@ namespace MueLu {
 
     // extract amalgamation information from matrix A
     LO blockdim = 1;                          // block dim for fixed size blocks
-    GO indexBase = rowMap->getIndexBase();    // index base of maps
     GO offset    = 0;
     LO blockid          = -1;  // block id in strided map
     LO nStridedOffset   = 0;   // DOF offset for strided block id "blockid" (default = 0)

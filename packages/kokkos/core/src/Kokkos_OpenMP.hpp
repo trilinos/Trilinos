@@ -46,6 +46,10 @@
 #ifndef KOKKOS_OPENMP_HPP
 #define KOKKOS_OPENMP_HPP
 
+#include <Kokkos_Macros.hpp>
+
+#if defined(KOKKOS_HAVE_OPENMP)
+
 #include <omp.h>
 #include <cstddef>
 #include <iosfwd>
@@ -110,10 +114,16 @@ public:
    *  2) Allocate a HostThread for each OpenMP thread to hold its
    *     topology and fan in/out data.
    */
+#if 0
   static void initialize( const unsigned team_count         = 1 ,
                           const unsigned threads_per_team   = 1 ,
                           const unsigned use_numa_count     = 0 ,
                           const unsigned use_cores_per_numa = 0 );
+#endif
+
+  static void initialize( unsigned thread_count = 0 ,
+                          unsigned use_numa_count = 0 ,
+                          unsigned use_cores_per_numa = 0 );
 
   static int is_initialized();
 
@@ -164,15 +174,16 @@ private:
 
 };
 
-/*--------------------------------------------------------------------------*/
-
 } // namespace Kokkos
+
+/*--------------------------------------------------------------------------*/
 
 #include <OpenMP/Kokkos_OpenMPexec.hpp>
 #include <OpenMP/Kokkos_OpenMP_Parallel.hpp>
 
-#endif /* #define KOKKOS_OPENMP_HPP */
+/*--------------------------------------------------------------------------*/
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+#endif /* #if defined(KOKKOS_HAVE_OPENMP) */
+#endif /* #ifndef KOKKOS_OPENMP_HPP */
+
 

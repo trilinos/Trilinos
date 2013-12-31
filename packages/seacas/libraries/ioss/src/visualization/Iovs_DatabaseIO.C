@@ -154,6 +154,12 @@ namespace Iovs {
       {
       this->enableLogging = props.get("CATALYST_DEBUG_LEVEL").get_int();
       }
+
+    this->catalyst_output_directory = "";
+    if(props.exists("CATALYST_OUTPUT_DIRECTORY"))
+      {
+      this->catalyst_output_directory = props.get("CATALYST_OUTPUT_DIRECTORY").get_string();
+      }
   }
 
   DatabaseIO::~DatabaseIO() 
@@ -246,7 +252,8 @@ namespace Iovs {
                                        restart_tag.c_str(),
                                        this->enableLogging,
                                        this->debugLevel,
-                                       this->DBFilename.c_str());
+                                       this->DBFilename.c_str(),
+                                       this->catalyst_output_directory.c_str());
       std::vector<int> element_block_id_list;
       Ioss::ElementBlockContainer const & ebc = region->get_element_blocks();
       for(int i = 0;i<ebc.size();i++)
@@ -536,7 +543,8 @@ namespace Iovs {
               if(this->pvcsa)
                 this->pvcsa->CreateElementBlock(eb->name().c_str(),
                                                 id,
-                                                eb->topology()->name(),
+                                                eb->get_property("topology_type").get_string(),
+                                                element_nodes,
                                                 num_to_get,
                                                 &this->elemMap.map[eb_offset + 1],
                                                 static_cast<int*>(data),

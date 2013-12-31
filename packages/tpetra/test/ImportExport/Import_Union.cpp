@@ -87,7 +87,7 @@ namespace {
     //typedef double ST;
     typedef LocalOrdinalType LO;
     typedef GlobalOrdinalType GO;
-    typedef KokkosClassic::SerialNode NT;
+    typedef KokkosClassic::DefaultNode::DefaultNodeType NT;
     typedef Tpetra::Map<LO, GO, NT> map_type;
     typedef Tpetra::Import<LO, GO, NT> import_type;
     typedef Tpetra::Vector<double, LO, GO, NT> vector_type;
@@ -203,7 +203,12 @@ namespace {
 
     out << "Testing whether union Import (1,2) works like expected Union Import with a Vector" << endl;
     {
+      // KokkosRefactor classes use view semantics so we need an explicit copy here
+      // first use copy constructor which with KokkosRefactor classes will use view semantics.
+      // Since a copy is needed use createCopy afterwards.
+      // For original classes which means deep_copy is done twice.
       vector_type z_12 (y_expected);
+      z_12 = Tpetra::createCopy(y_expected);
       z_12.update (1.0, y_actual_12, -1.0);
       const double z_12_norm = z_12.norm2 ();
       out << "||y_expected - y_actual_12||_2 = " << z_12_norm << endl;
@@ -211,7 +216,12 @@ namespace {
     }
     out << "Testing whether union Import (2,1) works like expected Union Import with a Vector" << endl;
     {
+      // first use copy constructor which with KokkosRefactor classes will use view semantics.
+      // Since a copy is needed use createCopy afterwards.
+      // For original classes which means deep_copy is done twice.
       vector_type z_21 (y_expected);
+      z_21 = Tpetra::createCopy(y_expected);
+
       z_21.update (1.0, y_actual_21, -1.0);
       const double z_21_norm = z_21.norm2 ();
       out << "||y_expected - y_actual_21||_2 = " << z_21_norm << endl;

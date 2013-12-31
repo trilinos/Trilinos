@@ -104,11 +104,12 @@ namespace MueLu {
 
     if (pL.get<std::string>("type") == "Interpolation") {
       Input(coarseLevel, "P");
+
     } else {
       Input(coarseLevel, "R");
       Input(coarseLevel, "Nullspace");
-      if(pL.isParameter("Coordinates") && pL.get< RCP<const FactoryBase> >("Coordinates") != Teuchos::null)
-      Input(coarseLevel, "Coordinates");
+      if (pL.get< RCP<const FactoryBase> >("Coordinates") != Teuchos::null)
+        Input(coarseLevel, "Coordinates");
     }
 
     Input(coarseLevel, "Importer");

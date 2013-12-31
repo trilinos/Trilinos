@@ -47,9 +47,6 @@
 #include "Epetra_MapColoring.h"
 #include "Epetra_Util.h"
 
-#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES // FIXME
-// FIXME long long : whole file
-
 //=============================================================================
 Epetra_MapColoring::Epetra_MapColoring(const Epetra_BlockMap& map, int * elementColors, 
                const int defaultColor)
@@ -223,7 +220,8 @@ int * Epetra_MapColoring::ColorLIDList(int Color) const  {
   else return(0);
 }
 //=========================================================================
-Epetra_Map * Epetra_MapColoring::GenerateMap(int Color) const {
+template<typename int_type>
+Epetra_Map * Epetra_MapColoring::TGenerateMap(int Color) const {
 
   if (!ListsAreValid_) GenerateLists(); 
   int arrayIndex = -1;
@@ -231,20 +229,38 @@ Epetra_Map * Epetra_MapColoring::GenerateMap(int Color) const {
     arrayIndex = ColorIDs_->Get(Color);
   int NumElements = 0;
   int * ColorElementLIDs = 0;
-  int * ColorElementGIDs =0;
+  int_type * ColorElementGIDs =0;
   if (arrayIndex>-1) NumElements = ColorCount_[arrayIndex];
   if (NumElements>0) {
     ColorElementLIDs = ColorLIDList(Color);
-    ColorElementGIDs = new int[NumElements];
-    for (int i=0; i<NumElements; i++) ColorElementGIDs[i] = Map().GID64(ColorElementLIDs[i]); // FIXME long long
+    ColorElementGIDs = new int_type[NumElements];
+    for (int i=0; i<NumElements; i++) ColorElementGIDs[i] = (int_type) Map().GID64(ColorElementLIDs[i]);
   }
-  Epetra_Map * map = new Epetra_Map(-1, NumElements, ColorElementGIDs, // FIXME long long
-            Map().IndexBase(), Map().Comm()); // CJ TODO FIXME long long
+  Epetra_Map * map = new Epetra_Map((int_type) -1, NumElements, ColorElementGIDs,
+            (int_type) Map().IndexBase64(), Map().Comm());
   if (ColorElementGIDs!=0) delete [] ColorElementGIDs;
   return(map);
 }
+
+Epetra_Map * Epetra_MapColoring::GenerateMap(int Color) const {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(Map().GlobalIndicesInt()) {
+    return TGenerateMap<int>(Color);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(Map().GlobalIndicesLongLong()) {
+    return TGenerateMap<long long>(Color);
+  }
+  else
+#endif
+    throw "Epetra_MapColoring::GenerateMap: GlobalIndices type unknown";
+}
+
 //=========================================================================
-Epetra_BlockMap * Epetra_MapColoring::GenerateBlockMap(int Color) const {
+template<typename int_type>
+Epetra_BlockMap * Epetra_MapColoring::TGenerateBlockMap(int Color) const {
 
   if (!ListsAreValid_) GenerateLists(); 
   int arrayIndex = -1;
@@ -253,28 +269,45 @@ Epetra_BlockMap * Epetra_MapColoring::GenerateBlockMap(int Color) const {
   int NumElements = 0;
   int * ColorElementLIDs = 0;
   int * ColorElementSizes = 0;
-  int * ColorElementGIDs = 0;
+  int_type * ColorElementGIDs = 0;
   if (arrayIndex>-1) NumElements = ColorCount_[arrayIndex];
   if (NumElements>0) {
     ColorElementLIDs = ColorLIDList(Color);
     ColorElementSizes = new int[NumElements];
-    ColorElementGIDs = new int[NumElements];
-    for (int i=0; i<NumElements; i++) ColorElementGIDs[i] = Map().GID64(ColorElementLIDs[i]);// FIXME long long
+    ColorElementGIDs = new int_type[NumElements];
+    for (int i=0; i<NumElements; i++) ColorElementGIDs[i] = (int_type) Map().GID64(ColorElementLIDs[i]);
   }
   int * MapElementSizes = Map().ElementSizeList();
 
   {for (int i=0; i<NumElements; i++) 
     ColorElementSizes[i] = MapElementSizes[ColorElementLIDs[i]];}
 
-  Epetra_BlockMap * map = new Epetra_BlockMap(-1, NumElements, ColorElementGIDs, // FIXME long long
+  Epetra_BlockMap * map = new Epetra_BlockMap((int_type) -1, NumElements, ColorElementGIDs,
                 ColorElementSizes,
-                Map().IndexBase(), Map().Comm());
+                (int_type) Map().IndexBase64(), Map().Comm());
 
   if (ColorElementGIDs!=0) delete [] ColorElementGIDs;
   if (ColorElementSizes!=0) delete [] ColorElementSizes;
 
   return(map);
 }
+
+Epetra_BlockMap * Epetra_MapColoring::GenerateBlockMap(int Color) const {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(Map().GlobalIndicesInt()) {
+    return TGenerateBlockMap<int>(Color);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(Map().GlobalIndicesLongLong()) {
+    return TGenerateBlockMap<long long>(Color);
+  }
+  else
+#endif
+    throw "Epetra_MapColoring::GenerateBlockMap: GlobalIndices type unknown";
+}
+
 //=========================================================================
 void Epetra_MapColoring::Print(std::ostream& os) const {
   int MyPID = Map().Comm().MyPID();
@@ -510,5 +543,3 @@ int Epetra_MapColoring::UnpackAndCombine(const Epetra_SrcDistObject & Source,
   
   return(0);
 }
-
-#endif // EPETRA_NO_32BIT_GLOBAL_INDICES

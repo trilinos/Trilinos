@@ -1358,25 +1358,48 @@ Creating a tarball of the source tree
 -------------------------------------
 
 To create a source tarball of the project, first configure with the list of
-desired packages and configure with::
+desired packages (see `Selecting the list of packages to enable`_) and pass in
+::
 
   -D Trilinos_ENABLE_CPACK_PACKAGING:BOOL=ON
 
-see `Selecting the list of packages to enable`_), then generate the
-distribution files using::
+To actually generate the distribution files, use::
 
   $ make package_source
 
-The above command will tar up *everything* in the source tree (except for
-files explicitly excluded in the CMakeLists.txt files and packages that are
-not enabled) so make sure that you start with a totally clean source tree
-before you do this.  You can clean the source tree first to remove all ignored
-files using::
+The above command will tar up *everything* in the source tree except for files
+explicitly excluded in the CMakeLists.txt files and packages that are not
+enabled so make sure that you start with a totally clean source tree before
+you do this.  You can clean the source tree first to remove all ignored files
+using::
 
   $ git clean -fd -x
 
 You can also include generated files, such as Doxygen output files first, then
 run ``make package_source`` and it will be included in the distribution.
+
+While this TriBITS project has a default, disabled subpackages can be include
+or excluded from the tarball by setting
+``Trilinos_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION``.  If
+``Trilinos_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION=ON`` and one wants
+to include some subpackages that are otherwise excluded, just enble them or
+their outer package so they will be included in the source tarball.
+
+While a default set of CPack source generator types is defined, it can be
+overridded using, for exmaple::
+
+  -D Trilinos_CPACK_SOURCE_GENERATOR:STRING="TGZ;TBZ2"
+
+(see CMake documentation to find out the types of supported CPack source
+generators on your system).
+
+NOTE: When untarring the source with missing packages, one must configure
+with::
+
+  -D Trilinos_ASSERT_MISSING_PACKAGES:BOOL=OFF
+
+so that missing packages will be ignored.  Otherwise, TriBITS will error out
+about missing packages.
 
 
 Dashboard submissions

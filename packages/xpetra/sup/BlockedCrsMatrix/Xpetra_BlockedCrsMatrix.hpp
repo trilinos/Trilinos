@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -92,17 +92,8 @@ template <class Scalar,
           class Node          = KokkosClassic::DefaultNode::DefaultNodeType,
           class LocalMatOps   = typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
 class BlockedCrsMatrix : public Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
-
-  typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> MapClass;
-  typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractorClass;
-  typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixClass;
-  typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Matrix;
-  typedef Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsGraph;
-#ifdef HAVE_CTHULHU_TPETRA
-  typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
-#endif
-  typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixFactory;
-  typedef Xpetra::MatrixView<LocalOrdinal, GlobalOrdinal, Node> MatrixView;
+#undef XPETRA_BLOCKEDCRSMATRIX_SHORT
+#include "Xpetra_UseShortNames.hpp"
 
 public:
 
@@ -116,8 +107,8 @@ public:
    * \param npr extimated number of entries per row in each block(!)
    * \param pftype Xpetra profile type
    */
-  BlockedCrsMatrix(Teuchos::RCP<const MapExtractorClass>& rangeMaps,
-                     Teuchos::RCP<const MapExtractorClass>& domainMaps,
+  BlockedCrsMatrix(Teuchos::RCP<const MapExtractor>& rangeMaps,
+                     Teuchos::RCP<const MapExtractor>& domainMaps,
                      size_t npr,
                      Xpetra::ProfileType pftype = Xpetra::DynamicProfile)
   : domainmaps_(domainMaps),
@@ -133,7 +124,7 @@ public:
     {
       for(size_t c=0; c<Cols(); ++c)
       {
-        Teuchos::RCP<CrsMatrixClass> matblock = CrsMatrixFactory::Build(getRangeMap(r), npr, pftype);
+        Teuchos::RCP<CrsMatrix> matblock = CrsMatrixFactory::Build(getRangeMap(r), npr, pftype);
         blocks_.push_back(matblock);
       }
     }
@@ -182,7 +173,7 @@ public:
         "insertLocalValues not supported by BlockedCrsMatrix" );
   }
 
-  void removeEmptyProcessesInPlace(const Teuchos::RCP<const MapClass>& newMap) {
+  void removeEmptyProcessesInPlace(const Teuchos::RCP<const Map>& newMap) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
         "removeEmptyProcesses not supported by BlockedCrsMatrix");
   }
@@ -253,7 +244,7 @@ public:
   \post <tt>isFillComplete() == true<tt>
   \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
   */
-  void fillComplete(const RCP<const MapClass> &domainMap, const RCP<const MapClass> &rangeMap, const RCP<ParameterList> &params=null)
+  void fillComplete(const RCP<const Map> &domainMap, const RCP<const Map> &rangeMap, const RCP<ParameterList> &params=null)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
                                 "fillComplete with arguments not supported for block matrices" );
@@ -300,7 +291,7 @@ public:
         for (size_t r=0; r<Rows(); ++r)
         {
           if(getMatrix(r,c) != Teuchos::null) {
-            Teuchos::RCP<const MapClass> colmap = getMatrix(r,c)->getColMap();
+            Teuchos::RCP<const Map> colmap = getMatrix(r,c)->getColMap();
             copy(colmap->getNodeElementList().getRawPtr(),
           colmap->getNodeElementList().getRawPtr()+colmap->getNodeNumElements(),
           inserter(colset,colset.begin()));
@@ -533,7 +524,7 @@ public:
   //! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
   /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the
     the zero and non-zero diagonals owned by this node. */
-  void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const
+  void getLocalDiagCopy(Vector &diag) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
         "getLocalDiagCopy not supported by BlockedCrsMatrix" );
@@ -575,26 +566,26 @@ public:
   /*! Performs \f$Y = \alpha A^{\textrm{mode}} X + \beta Y\f$, with one special exceptions:
     - if <tt>beta == 0</tt>, apply() overwrites \c Y, so that any values in \c Y (including NaNs) are ignored.
   */
-  virtual void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
+  virtual void apply(const MultiVector & X, MultiVector &Y,
                      Teuchos::ETransp mode = Teuchos::NO_TRANS,
                      Scalar alpha = ScalarTraits<Scalar>::one(),
                      Scalar beta = ScalarTraits<Scalar>::zero()) const
   {
     // TODO: check maps
 
-    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tX   = Teuchos::rcp(&X,false);
-    Teuchos::RCP<      MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmpY = MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(Y.getMap(), Y.getNumVectors());
+    Teuchos::RCP<const MultiVector> tX   = Teuchos::rcp(&X,false);
+    Teuchos::RCP<      MultiVector> tmpY = MultiVectorFactory::Build(Y.getMap(), Y.getNumVectors());
 
     if (mode == Teuchos::NO_TRANS)
     {
       for(size_t rblock=0; rblock<Rows(); ++rblock)
       {
-        Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rowresult = rangemaps_->getVector(rblock,Y.getNumVectors()); // end result for block row
-        Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rowy      = rangemaps_->getVector(rblock,Y.getNumVectors()); // helper vector
+        Teuchos::RCP<MultiVector> rowresult = rangemaps_->getVector(rblock,Y.getNumVectors()); // end result for block row
+        Teuchos::RCP<MultiVector> rowy      = rangemaps_->getVector(rblock,Y.getNumVectors()); // helper vector
         for (size_t cblock=0; cblock<Cols(); ++cblock)
         {
-          Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > colx = domainmaps_->ExtractVector(tX,cblock);
-          Teuchos::RCP<CrsMatrixClass> bmat = getMatrix(rblock,cblock);
+          Teuchos::RCP<const MultiVector> colx = domainmaps_->ExtractVector(tX,cblock);
+          Teuchos::RCP<CrsMatrix> bmat = getMatrix(rblock,cblock);
           bmat->apply(*colx,*rowy);
           rowresult->update(ScalarTraits< Scalar >::one(),*rowy,ScalarTraits< Scalar >::one());
         }
@@ -607,12 +598,12 @@ public:
       // TODO: test me!
       for (size_t cblock = 0; cblock<Cols(); ++cblock)
       {
-        Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rowresult = domainmaps_->getVector(cblock,Y.getNumVectors()); // end result for block row
-        Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rowy      = domainmaps_->getVector(cblock,Y.getNumVectors()); // helper vector
+        Teuchos::RCP<MultiVector> rowresult = domainmaps_->getVector(cblock,Y.getNumVectors()); // end result for block row
+        Teuchos::RCP<MultiVector> rowy      = domainmaps_->getVector(cblock,Y.getNumVectors()); // helper vector
         for (size_t rblock = 0; rblock<Rows(); ++rblock)
         {
-          Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > colx = rangemaps_->ExtractVector(tX,rblock);
-          Teuchos::RCP<CrsMatrixClass> bmat = getMatrix(rblock,cblock);
+          Teuchos::RCP<const MultiVector> colx = rangemaps_->ExtractVector(tX,rblock);
+          Teuchos::RCP<CrsMatrix> bmat = getMatrix(rblock,cblock);
           bmat->apply(*colx,*rowy,Teuchos::TRANS);
           rowresult->update(ScalarTraits< Scalar >::one(),*rowy,ScalarTraits< Scalar >::one());
         }
@@ -628,40 +619,40 @@ public:
 
   //! \brief Returns the Map associated with the full domain of this operator.
   //! This will be <tt>null</tt> until fillComplete() is called.
-  const RCP<const MapClass > getDomainMap() const
+  const RCP<const Map > getDomainMap() const
   {
     return domainmaps_->getFullMap();
   }
 
   //! \brief Returns the Map associated with the i'th block domain of this operator.
   //! This will be <tt>null</tt> until fillComplete() is called.
-  const RCP<const MapClass > getDomainMap(size_t i) const
+  const RCP<const Map > getDomainMap(size_t i) const
   {
     return domainmaps_->getMap(i);
   }
 
   //! Returns the Map associated with the full range of this operator.
   //! This will be <tt>null</tt> until fillComplete() is called.
-  const RCP<const MapClass > getRangeMap() const
+  const RCP<const Map > getRangeMap() const
   {
     return rangemaps_->getFullMap();
   }
 
   //! Returns the Map associated with the i'th block range of this operator.
   //! This will be <tt>null</tt> until fillComplete() is called.
-  const RCP<const MapClass > getRangeMap(size_t i) const
+  const RCP<const Map > getRangeMap(size_t i) const
   {
     return rangemaps_->getMap(i);
   }
 
   //! Returns map extractor class for range map
-  const RCP<const MapExtractorClass> getRangeMapExtractor()
+  const RCP<const MapExtractor> getRangeMapExtractor()
   {
     return rangemaps_;
   }
 
   //! Returns map extractor for domain map
-  const RCP<const MapExtractorClass> getDomainMapExtractor()
+  const RCP<const MapExtractor> getDomainMapExtractor()
   {
     return domainmaps_;
   }
@@ -672,31 +663,31 @@ public:
   //{@
 
   //! Access function for the Tpetra::Map this DistObject was constructed with.
-  const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const {
+  const Teuchos::RCP< const Map > getMap() const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "BlockedCrsMatrix::getMap(): operation not supported.");
   }
 
   //! Import.
   void doImport(const Matrix &source,
-                const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) {
+                const Import &importer, CombineMode CM) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "BlockedCrsMatrix::doImport(): operation not supported.");
   }
 
   //! Export.
   void doExport(const Matrix &dest,
-                const Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM) {
+                const Import& importer, CombineMode CM) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "BlockedCrsMatrix::doExport(): operation not supported.");
   }
 
   //! Import (using an Exporter).
   void doImport(const Matrix &source,
-                const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) {
+                const Export& exporter, CombineMode CM) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "BlockedCrsMatrix::doImport(): operation not supported.");
   }
 
   //! Export (using an Importer).
   void doExport(const Matrix &dest,
-                const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) {
+                const Export& exporter, CombineMode CM) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "BlockedCrsMatrix::doExport(): operation not supported.");
   }
 
@@ -772,10 +763,10 @@ public:
   virtual size_t Cols() const { return domainmaps_->NumMaps(); }
 
   /// return block (r,c)
-  Teuchos::RCP<CrsMatrixClass> getMatrix(size_t r, size_t c) const { return blocks_[r*Cols()+c]; }
+  Teuchos::RCP<CrsMatrix> getMatrix(size_t r, size_t c) const { return blocks_[r*Cols()+c]; }
 
   /// set matrix block
-  void setMatrix(size_t r, size_t c, Teuchos::RCP<CrsMatrixClass>& mat)
+  void setMatrix(size_t r, size_t c, Teuchos::RCP<CrsMatrix>& mat)
   {
     // TODO: if filled -> return error
 
@@ -794,12 +785,12 @@ public:
   /*
    * This is a rather expensive operation, since all blocks are copied into a new big CrsMatrix
    */
-  Teuchos::RCP<CrsMatrixClass> Merge() const
+  Teuchos::RCP<CrsMatrix> Merge() const
   {
-    Teuchos::RCP<CrsMatrixClass> sparse = Teuchos::rcp_dynamic_cast<CrsMatrixClass>(Xpetra::CrsMatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal>::Build(fullrowmap_,33));// Teuchos::rcp(new CrsMatrixClass(*fullrowmap_,33));
+    Teuchos::RCP<CrsMatrix> sparse = Teuchos::rcp_dynamic_cast<CrsMatrix>(CrsMatrixFactory::Build(fullrowmap_,33));// Teuchos::rcp(new CrsMatrix(*fullrowmap_,33));
     for (size_t i=0; i<blocks_.size(); ++i)
     {
-      Teuchos::RCP<CrsMatrixClass> block = Teuchos::rcp_dynamic_cast<CrsMatrixClass>(blocks_[i]);
+      Teuchos::RCP<CrsMatrix> block = Teuchos::rcp_dynamic_cast<CrsMatrix>(blocks_[i]);
       this->Add(block,ScalarTraits< Scalar >::one(),sparse,ScalarTraits< Scalar >::one());
     }
     sparse->fillComplete(getDomainMap(),getRangeMap());
@@ -824,7 +815,7 @@ private:
    * This routine is private and used only by Merge. Since the blocks in BlockedCrsMatrix are seperated,
    * this routine works for merging a BlockedCrsMatrix.
    */
-  void Add(Teuchos::RCP<CrsMatrixClass>& A, const Scalar scalarA, Teuchos::RCP<CrsMatrixClass>& B, const Scalar scalarB) const
+  void Add(Teuchos::RCP<CrsMatrix>& A, const Scalar scalarA, Teuchos::RCP<CrsMatrix>& B, const Scalar scalarB) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(!A->isFillComplete(), Xpetra::Exceptions::RuntimeError,
         "Matrix A is not completed");
@@ -901,22 +892,22 @@ private:
   }
 
 private:
-  // Teuchos::RCP<CrsMatrixClass> matrixData_;
+  // Teuchos::RCP<CrsMatrix> matrixData_;
 
   /// the full domain map together with all partial domain maps
-  Teuchos::RCP<const MapExtractorClass> domainmaps_;
+  Teuchos::RCP<const MapExtractor> domainmaps_;
 
   /// the full range map together with all partial domain maps
-  Teuchos::RCP<const MapExtractorClass> rangemaps_;
+  Teuchos::RCP<const MapExtractor> rangemaps_;
 
   /// row major matrix block storage
-  std::vector<Teuchos::RCP<CrsMatrixClass> > blocks_;
+  std::vector<Teuchos::RCP<CrsMatrix> > blocks_;
 
   /// full matrix row map
-  Teuchos::RCP<MapClass> fullrowmap_;
+  Teuchos::RCP<Map> fullrowmap_;
 
   /// full matrix column map
-  Teuchos::RCP<MapClass> fullcolmap_;
+  Teuchos::RCP<Map> fullcolmap_;
 
 
 }; //class BlockedCrsMatrix

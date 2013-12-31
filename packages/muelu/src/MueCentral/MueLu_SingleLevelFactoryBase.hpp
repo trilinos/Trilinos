@@ -102,6 +102,8 @@ namespace MueLu {
       lastLevel_ = &requestedLevel;
 #endif
       Build(requestedLevel);
+
+      GetOStream(Test,0) << *RemoveFactoriesFromList(GetParameterList()) << std::endl;;
     }
 
     //!

@@ -61,7 +61,7 @@ enum ComponentOrder {CANONICAL, SIERRA_FULL, SIERRA_SYMMETRIC};
 template<typename T, Index N>
 struct tensor_store
 {
-  typedef Storage<T, dimension_power<check_static<N>::value, 2>::value> type;
+  typedef Storage<T, dimension_power<N, 2>::value> type;
 };
 
 ///
@@ -463,7 +463,7 @@ Tensor<typename Promote<S, T>::type, N>
 dyad(Vector<S, N> const & u, Vector<T, N> const & v);
 
 ///
-/// Bun operator, just for Jay
+/// Bun operator, just for Jay, and now Reese too.
 /// \param u vector
 /// \param v vector
 /// \return \f$ u \otimes v \f$

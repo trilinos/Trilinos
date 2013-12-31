@@ -64,7 +64,9 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Amesos2Smoother(const std::string& type, const Teuchos::ParameterList& paramList)
-    : type_(type), paramList_(paramList) {
+    : type_(type) {
+    this->SetParameterList(paramList);
+
     if (!type_.empty()) {
       // Transform string to "Abcde" notation
       std::transform(type_.begin(),   type_.end(),   type_.begin(), ::tolower);
@@ -170,7 +172,7 @@ namespace MueLu {
     if (verbLevel & Parameters1) {
       out0 << "Parameter list: " << std::endl;
       Teuchos::OSTab tab2(out);
-      out << paramList_;
+      out << this->GetParameterList();
     }
 
     if ((verbLevel & External) && prec_ != Teuchos::null) {

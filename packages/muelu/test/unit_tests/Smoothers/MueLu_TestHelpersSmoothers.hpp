@@ -62,6 +62,8 @@ namespace MueLuTests {
 
 #include "MueLu_UseShortNames.hpp"
 
+      typedef Teuchos::ScalarTraits<SC> ST;
+
       //! Test if Apply() throw an exception when called before Setup()
       void testApplyNoSetup(SmootherPrototype const & smoother, Teuchos::FancyOStream & out, bool & success);
 

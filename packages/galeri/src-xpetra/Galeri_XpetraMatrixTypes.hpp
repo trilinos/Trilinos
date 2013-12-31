@@ -150,9 +150,6 @@ namespace Galeri {
       std::vector<GlobalOrdinal> Indices(nnz);
 
       comm->barrier();
-      if (comm->getRank() == 0) {
-        std::cout << "starting global insert" << std::endl;
-      }
 
       Teuchos::RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TriDiag global insert"));
       timer->start(true);

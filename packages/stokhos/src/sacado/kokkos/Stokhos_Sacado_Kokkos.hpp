@@ -63,6 +63,8 @@
 #include "Sacado_MP_VectorTraits.hpp"
 
 #include "Sacado_MP_Vector.hpp"
+#include "Kokkos_View_MP_Vector.hpp"
+#include "Kokkos_Atomic_MP_Vector.hpp"
 
 #endif // HAVE_STOKHOS_KOKKOSCORE
 

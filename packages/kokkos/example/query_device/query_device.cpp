@@ -77,12 +77,10 @@ int main( int argc , char ** argv )
   msg << "{" << std::endl ;
 
   if ( Kokkos::hwloc::available() ) {
-    const std::pair<unsigned,unsigned> core_top = Kokkos::hwloc::get_core_topology();
-    const unsigned                     core_cap = Kokkos::hwloc::get_core_capacity();
-
     msg << "hwloc( NUMA[" << Kokkos::hwloc::get_available_numa_count()
-        << "] x CORE[" << Kokkos::hwloc::get_available_cores_per_numa()
-        << "] x HT[" << Kokkos::hwloc::get_available_threads_per_core() << "] )"
+        << "] x CORE["    << Kokkos::hwloc::get_available_cores_per_numa()
+        << "] x HT["      << Kokkos::hwloc::get_available_threads_per_core()
+        << "] )"
         << std::endl ;
   }
 

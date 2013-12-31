@@ -70,7 +70,7 @@ namespace MueLu {
     //
     // What we really want is for the user to have a const version outside and MueLu having a non-const version inside.
     // Is there a C++ pattern to do that?
-    virtual void SetParameterList(ParameterList & paramList) = 0;
+    virtual void SetParameterList(const ParameterList& paramList) = 0;
 
     // Get the parameter list.
     // Teuchos::ParameterListAcceptor also provides a non-const version of this but I don't see why.
@@ -112,14 +112,18 @@ namespace MueLu {
       }
     }
 
-    virtual void SetParameterList(ParameterList & paramList) {
+    virtual void SetParameterList(const ParameterList& paramList) {
+      paramList_ = paramList;
+
       // Validate and add defaults parameters.
-      RCP<const ParameterList> validParamList = GetValidParameterList(paramList);
-      if (validParamList != Teuchos::null) // Teuchos::null == GetValidParameterList() not implemented == skip validation and no default values (dangerous!)
-        paramList.validateParametersAndSetDefaults(*validParamList);
-      //else
-      // issue a warning
-      paramList_ = paramList; // copy
+      RCP<const ParameterList> validParamList = GetValidParameterList(paramList_);
+      if (validParamList != Teuchos::null) {
+        paramList_.validateParametersAndSetDefaults(*validParamList);
+      } else {
+        // Teuchos::null means that GetValidParameterList() not implemented.
+        // As such, we skip validation and have not way to set default values,
+        // which is potentially dangerous
+      }
     }
 
     // The returned list always has an entry for each valid parameter.

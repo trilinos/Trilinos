@@ -64,7 +64,9 @@
 namespace MueLu {
 
   AmesosSmoother::AmesosSmoother(const std::string& type, const Teuchos::ParameterList& paramList)
-    : type_(type), paramList_(paramList) {
+    : type_(type) {
+    this->SetParameterList(paramList);
+
     if (!type_.empty()) {
       // Transform string to "Abcde" notation
       std::transform(type_.begin(),   type_.end(),   type_.begin(), ::tolower);
@@ -125,9 +127,14 @@ namespace MueLu {
     // set Reindex flag, if A is distributed with non-contiguous maps
     // unfortunately there is no reindex for Amesos2, yet. So, this only works for Epetra based problems
     if (A_->getRowMap()->isDistributed() == true && A_->getRowMap()->isContiguous() == false)
-      paramList_.set("Reindex", true);
+      const_cast<ParameterList&>(this->GetParameterList()).set("Reindex", true);
 
-    prec_->SetParameters(paramList_);
+    const ParameterList& paramList = this->GetParameterList();
+    RCP<ParameterList> precList = this->RemoveFactoriesFromList(paramList);
+
+    prec_->SetParameters(*precList);
+
+    const_cast<ParameterList&>(paramList).setParameters(*precList);
 
     int r = prec_->NumericFactorization();
     TEUCHOS_TEST_FOR_EXCEPTION(r != 0, Exceptions::RuntimeError, "MueLu::AmesosSmoother::Setup(): Amesos solver returns value of " +
@@ -170,17 +177,20 @@ namespace MueLu {
   void AmesosSmoother::print(Teuchos::FancyOStream& out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
 
-    if (verbLevel & Parameters0) {
+    if (verbLevel & Parameters0)
       out0 << "Prec. type: " << type_ << std::endl;
-    }
 
     if (verbLevel & Parameters1) {
-      out0 << "Parameter list: " << std::endl; { Teuchos::OSTab tab2(out); out << paramList_; }
+      out0 << "Parameter list: " << std::endl;
+      Teuchos::OSTab tab2(out);
+      out << this->GetParameterList();
     }
 
-    if (verbLevel & External) {
-      if (prec_ != Teuchos::null) { prec_->PrintStatus(); prec_->PrintTiming(); } //TODO: redirect output?
-    }
+    if (verbLevel & External)
+      if (prec_ != Teuchos::null) {
+        prec_->PrintStatus();
+        prec_->PrintTiming();
+      }
 
     if (verbLevel & Debug) {
       out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl

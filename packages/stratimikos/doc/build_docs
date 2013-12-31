@@ -17,3 +17,10 @@ mkdir html
 # Build the documentation
 
 ./build_docs_guts
+
+# Files needed for collapsible parameter list (short term proof of concept)
+#TODO:
+mkdir html/common
+cp -r ../../common/paramList html/common/paramList
+cp ../example/simple_stratimikos_example.options.xml html
+

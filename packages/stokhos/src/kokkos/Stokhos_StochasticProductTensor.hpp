@@ -224,6 +224,27 @@ create_stochastic_product_tensor(
     basis, Cijk, params);
 }
 
+template < typename ValueType , typename Device, class TensorType >
+class BlockMultiply< StochasticProductTensor< ValueType, TensorType, Device > >
+{
+public:
+  typedef Device device_type ;
+  typedef typename device_type::size_type size_type ;
+  typedef StochasticProductTensor< ValueType, TensorType, device_type > block_type ;
+
+  template< typename MatrixValue , typename VectorValue >
+  KOKKOS_INLINE_FUNCTION
+  static void apply( const block_type  & block ,
+                     const MatrixValue *       a ,
+                     const VectorValue * const x ,
+                           VectorValue * const y )
+  {
+    typedef BlockMultiply< typename block_type::tensor_type > tensor_multiply ;
+
+    tensor_multiply::apply( block.tensor() , a , x , y );
+  }
+};
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 

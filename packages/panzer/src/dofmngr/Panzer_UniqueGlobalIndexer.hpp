@@ -243,7 +243,29 @@ protected:
    /** This method is used by derived classes to the construct the local IDs from 
      * the <code>getOwnedAndSharedIndices</code> method.
      */
-   void buildLocalIds();
+   void buildLocalIds()
+   { 
+     // this method is implmented as two steps to ensure
+     // that setLocalIds works, it would be better to simply
+     // call:
+     //   buildLocalIdsFromOwnedElements(localIDs_); 
+
+     std::vector<std::vector<LocalOrdinalT> > localIDs; 
+     buildLocalIdsFromOwnedElements(localIDs); 
+     setLocalIds(localIDs);
+   }
+
+   /** This method is used by derived classes to the construct the local IDs from 
+     * the <code>getOwnedAndSharedIndices</code> method.
+     */
+   void buildLocalIdsFromOwnedElements(std::vector<std::vector<LocalOrdinalT> > & localIDs) const ; 
+
+   /** This method provides some capability to set the local IDs externally without
+     * using the default buildLocalIds. The point is that we want to keep "getElementLIDs"
+     * access exteremly fast.
+     */
+   void setLocalIds(const std::vector<std::vector<LocalOrdinalT> > & localIDs)
+   { localIDs_ = localIDs; }
 
 private:
    std::vector<std::vector<LocalOrdinalT> > localIDs_; 
@@ -257,7 +279,8 @@ template <typename LocalOrdinalT,typename GlobalOrdinalT>
 inline UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::~UniqueGlobalIndexer() {}
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-inline void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::buildLocalIds() 
+inline void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::
+buildLocalIdsFromOwnedElements(std::vector<std::vector<LocalOrdinalT> > & localIDs) const
 {
   std::vector<GlobalOrdinalT> ownedAndShared;
   this->getOwnedAndSharedIndices(ownedAndShared);
@@ -274,7 +297,7 @@ inline void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::buildLocalIds()
   std::size_t numElmts = 0;
   for(std::size_t eb=0;eb<elementBlocks.size();eb++)
     numElmts += this->getElementBlock(elementBlocks[eb]).size();
-  localIDs_.resize(numElmts); // allocate local ids
+  localIDs.resize(numElmts); // allocate local ids
 
   // perform computation of local ids
   for(std::size_t eb=0;eb<elementBlocks.size();eb++) {
@@ -283,7 +306,7 @@ inline void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::buildLocalIds()
 
     for(std::size_t e=0;e<elmts.size();e++) {
       this->getElementGIDs(elmts[e],gids,elementBlocks[eb]);
-      std::vector<LocalOrdinalT> & lids = localIDs_[elmts[e]];
+      std::vector<LocalOrdinalT> & lids = localIDs[elmts[e]];
       lids.resize(gids.size());
  
       for(std::size_t g=0;g<gids.size();g++)

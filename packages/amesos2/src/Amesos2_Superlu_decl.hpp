@@ -286,6 +286,7 @@ private:
    * factorization.
    */
   bool same_symbolic_;
+  bool ILU_Flag_;
 
 };                              // End class Superlu
 

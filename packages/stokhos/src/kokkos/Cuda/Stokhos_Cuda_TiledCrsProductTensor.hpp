@@ -66,8 +66,7 @@ class Multiply<
   BlockCrsMatrix< TiledCrsProductTensor< TensorScalar, Kokkos::Cuda >,
                   MatrixScalar, Kokkos::Cuda >,
   Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
-  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
-  DefaultSparseMatOps >
+  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda> >
 {
 public:
 
@@ -99,15 +98,21 @@ public:
 
       // Number of bases in the stochastic system:
       const size_type dim = m_A.block.dimension();
+
+      // Number of Cijk tiles
+      const size_type n_tile = m_A.block.num_tiles();
       const size_type tile_size = m_A.block.tile_size();
-      //const size_type tile_dim = dim < tile_size ? dim : tile_size;
-      const size_type tile_dim = tile_size;
+      const size_type tile_dim = n_tile == 1 ? dim : tile_size;
+      //const size_type tile_dim = tile_size;
 
       VectorScalar * const sh_x_k =
         kokkos_impl_cuda_shared_memory<VectorScalar>();
-      VectorScalar * const sh_x_j = sh_x_k + m_block_size*tile_dim;
-      VectorScalar * const sh_A_k = sh_x_j + m_block_size*tile_dim;
-      VectorScalar * const sh_A_j = sh_A_k + m_block_size*tile_dim;
+      VectorScalar * const sh_x_j =
+        n_tile == 1 ? sh_x_k : sh_x_k + m_block_size*tile_dim;
+      VectorScalar * const sh_A_k =
+        sh_x_j + m_block_size*tile_dim;
+      VectorScalar * const sh_A_j =
+        n_tile == 1 ? sh_A_k : sh_A_k + m_block_size*tile_dim;
       VectorScalar * const sh_y   = sh_A_j + m_block_size*tile_dim;
       volatile VectorScalar * const sh_t = sh_y + tile_dim;
 
@@ -125,9 +130,6 @@ public:
       for (size_type i=tid; i<dim; i+=nid) {
         m_y(i,blockIdx.x) = 0.0;
       }
-
-      // Number of Cijk tiles
-      const size_type n_tile = m_A.block.num_tiles();
 
       // Loop over Cijk tiles
       for (size_type tile = 0; tile<n_tile; ++tile) {
@@ -153,6 +155,10 @@ public:
           const size_type block_size =
             (block == numBlock-1 && remBlock > 0) ? remBlock : m_block_size;
 
+          // Wait for X and A to be used in the previous iteration
+          // before reading new values.
+          __syncthreads();
+
           // Coalesced read blocks of X and A into shared memory
           for (size_type col=0; col<block_size; ++col) {
 
@@ -160,18 +166,18 @@ public:
               m_A.graph.entries( iBlockEntry + col );
             const VectorScalar * const x_k = & m_x( k_offset , iBlockColumn );
             const VectorScalar * const x_j = & m_x( j_offset , iBlockColumn );
-            const MatrixScalar * const A_k =
-              & m_A.values( k_offset , iBlockEntry + col );
-            const MatrixScalar * const A_j =
-              & m_A.values( j_offset , iBlockEntry + col );
+            const MatrixScalar * const A_k = & m_A.values( k_offset , iBlockEntry + col );
+            const MatrixScalar * const A_j = & m_A.values( j_offset , iBlockEntry + col );
 
             for (size_type j=tid; j<j_range; j+=nid) {
-              sh_x_j[col+j*block_size] = x_j[j];
-              sh_A_j[col+j*block_size] = A_j[j];
+              sh_x_j[col+j*m_block_size] = x_j[j];
+              sh_A_j[col+j*m_block_size] = A_j[j];
             }
-            for (size_type k=tid; k<k_range; k+=nid) {
-              sh_x_k[col+k*block_size] = x_k[k];
-              sh_A_k[col+k*block_size] = A_k[k];
+            if (n_tile > 1) {
+              for (size_type k=tid; k<k_range; k+=nid) {
+                sh_x_k[col+k*m_block_size] = x_k[k];
+                sh_A_k[col+k*m_block_size] = A_k[k];
+              }
             }
 
           }
@@ -189,15 +195,13 @@ public:
             // Loop through sparse tensor contributions with coalesced reads.
             for (size_type l=lBeg+threadIdx.x; l<lEnd; l+=blockDim.x) {
 
-              // Read entries from the tensor
-              const int j = m_A.block.coord(l,0);
-              const int k = m_A.block.coord(l,1);
-              const MatrixScalar v = m_A.block.value(l);
+              const size_type kj   = m_A.block.coord( l );
+              const TensorScalar v = m_A.block.value( l );
+              const size_type j    = ( kj & 0x0ffff ) * m_block_size ;
+              const size_type k    = ( kj >> 16     ) * m_block_size ;
 
-              for (size_type col=0; col<block_size; ++col) {
-                const size_type jj = col+j*block_size;
-                const size_type kk = col+k*block_size;
-                s += v * ( sh_A_j[jj] * sh_x_k[kk] + sh_A_k[kk] * sh_x_j[jj] );
+              for ( size_type col = 0; col < block_size; ++col ) {
+                s += v * ( sh_A_j[col+j] * sh_x_k[col+k] + sh_A_k[col+k] * sh_x_j[col+j] );
               }
 
             }
@@ -209,8 +213,7 @@ public:
             if ( threadIdx.x +  4 < WarpSize ) sh_t[tid] += sh_t[tid+ 4];
             if ( threadIdx.x +  2 < WarpSize ) sh_t[tid] += sh_t[tid+ 2];
             if ( threadIdx.x +  1 < WarpSize ) sh_t[tid] += sh_t[tid+ 1];
-            if ( threadIdx.x == 0 )
-              sh_y[i] += sh_t[tid];
+            if ( threadIdx.x == 0 ) sh_y[i] += sh_t[tid];
 
           }
 
@@ -250,10 +253,28 @@ public:
     const dim3 dBlock( Kokkos::Impl::CudaTraits::WarpSize , nWarp , 1 );
     const dim3 dGrid( row_count , 1 , 1 );
 
-    //const size_type shcap = Kokkos::Impl::CudaTraits::SharedMemoryCapacity;
-    const size_type block_size = 5;
+    const size_type shmem_factor = num_tiles == 1 ? 2 : 4;
+    const size_type tensor_align = num_tiles == 1 ? tensor_dimension : tile_dim;
+    const size_type shcap =
+      Kokkos::Impl::CudaTraits::SharedMemoryCapacity / 2;
+    size_type bs = ((shcap / sizeof(VectorScalar) - dBlock.x*dBlock.y) / tensor_align - 1) / shmem_factor;
+    if (bs % 2 == 0)
+      --bs;
+    const size_type block_size_max = 31;
+    const size_type block_size = std::min(bs, block_size_max);
+    // const int block_size = 9;
     const size_type shmem =
-      sizeof(VectorScalar) * ((4*block_size+1)*tile_dim + dBlock.x*dBlock.y);
+      sizeof(VectorScalar) * ((shmem_factor*block_size+1) * tensor_align + dBlock.x*dBlock.y);
+
+    /*
+    //const size_type shcap = Kokkos::Impl::CudaTraits::SharedMemoryCapacity;
+    const size_type block_size = 9;
+    size_type shmem;
+    if (num_tiles > 1)
+      shmem = sizeof(VectorScalar) * ((4*block_size+1)*tile_dim + dBlock.x*dBlock.y);
+    else
+      shmem = sizeof(VectorScalar) * ((2*block_size+1)*tensor_dimension + dBlock.x*dBlock.y);
+    */
 
 #if 0
 
@@ -287,8 +308,7 @@ class Multiply<
   BlockCrsMatrix< TiledCrsProductTensor< TensorScalar, Kokkos::Cuda >,
                   MatrixScalar, Kokkos::Cuda >,
   Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
-  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
-  DefaultSparseMatOps >
+  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda> >
 {
 public:
 
@@ -518,8 +538,7 @@ class Multiply<
   BlockCrsMatrix< TiledCrsProductTensor< TensorScalar, Kokkos::Cuda >,
                   MatrixScalar, Kokkos::Cuda >,
   Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
-  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda>,
-  DefaultSparseMatOps >
+  Kokkos::View<VectorScalar**, Kokkos::LayoutLeft, Kokkos::Cuda> >
 {
 public:
 

@@ -52,8 +52,10 @@
 #include "Tpetra_RowMatrixTransposer.hpp"
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Map.hpp"
+#include "Tpetra_Import_Util.hpp"
 #include <algorithm>
 #include "Teuchos_FancyOStream.hpp"
+
 
 
 /*! \file TpetraExt_MatrixMatrix_def.hpp
@@ -91,16 +93,9 @@ void Multiply(
   //A and B should already be Filled.
   //(Should we go ahead and call FillComplete() on them if necessary?
   // or error out? For now, we choose to error out.)
-  TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), std::runtime_error,
-    "Uh oh. Looks like there's a bit of a problem here. No worries though. We'll help you figure it out. You're "
-    "a fantastic programer and this just a minor bump in the road! Maybe the information below can help you out a bit."
-    "\n\n MatrixMatrix::Multiply(): Matrix A is not fill complete.");
-  TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), std::runtime_error,
-    "Uh oh. Looks like there's a bit of a problem here. No worries though. We'll help you figure it out. You're "
-    "a fantastic programer and this just a minor bump in the road! Maybe the information below can help you out a bit."
-    "\n\n MatrixMatrix::Multiply(): Matrix B is not fill complete.");
-  TEUCHOS_TEST_FOR_EXCEPTION(C.isLocallyIndexed() , std::runtime_error,
-    "MatrixMatrix::Add ERROR, input matrix C must not be locally indexed!");
+  TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), std::runtime_error, "MatrixMatrix::Multiply(): Matrix A is not fill complete.");
+  TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), std::runtime_error, "MatrixMatrix::Multiply(): Matrix B is not fill complete.");
+  TEUCHOS_TEST_FOR_EXCEPTION(C.isLocallyIndexed() , std::runtime_error, "MatrixMatrix::Multiply(): Result matrix C must not be locally indexed.");
 
   //Convience typedefs
   typedef CrsMatrixStruct<

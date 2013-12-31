@@ -9,6 +9,8 @@
 /* Define if you want to build Kokkos with OpenMP */
 /* #undef HAVE_KOKKOSCLASSIC_OPENMP */
 
+/* Define if the KokkosCompat subpackage is available in KokkosClassic */
+/* #undef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT */
 
 /* Define if you want to build kokkos-experimental */
 /* #undef HAVE_KOKKOSCLASSIC_EXPERIMENTAL */
@@ -44,6 +46,7 @@
 /* Other package dependencies */
 /* #undef HAVE_KOKKOSCLASSIC_TEUCHOS */
 #define HAVE_KOKKOSCLASSIC_THREADPOOL
+/* #undef HAVE_KOKKOSCLASSIC_KOKKOSCORE */
 
 /* TPL Dependencies */
 #define HAVE_KOKKOSCLASSIC_SERIAL

@@ -24,6 +24,9 @@
 /* Define if Fortran UQTK is enabled */
 #cmakedefine HAVE_STOKHOS_FORUQTK
 
+/* Define if EpetraExt is enabled */
+#cmakedefine HAVE_STOKHOS_EPETRAEXT
+
 /* Define if Ifpack is enabled */
 #cmakedefine HAVE_STOKHOS_IFPACK
 
@@ -51,6 +54,9 @@
 /* Define if Thrust is enabled */
 #cmakedefine HAVE_STOKHOS_THRUST
 
+/* Define if Thrust is enabled */
+#cmakedefine HAVE_STOKHOS_CUSPARSE
+
 /* Define if Clp is enabled */
 #cmakedefine HAVE_STOKHOS_CLP
 
@@ -65,6 +71,9 @@
 
 /* Define if KokkosCore is enabled */
 #cmakedefine HAVE_STOKHOS_KOKKOSCORE
+
+/* Define if KokkosCore is enabled */
+#cmakedefine HAVE_STOKHOS_KOKKOSLINALG
 
 /* Define if MueLu is enabled */
 #cmakedefine HAVE_STOKHOS_MUELU

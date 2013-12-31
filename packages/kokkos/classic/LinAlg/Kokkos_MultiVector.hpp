@@ -301,12 +301,20 @@ namespace KokkosClassic {
       // necessary test to allow a view of a 0 x C or R x 0
       // multivector when the offset(s) corresponding to the zero
       // dimension(s) is/are also zero.
+      //
+      // mfh 23 Oct 2013: Thanks to Deaglan Halligan for pointing out
+      // that I needed to revise this test to allow a zero-length view
+      // just past the length of the current vector.  If the new
+      // number of rows or columns is zero, then it doesn't matter
+      // what the offsets are.  That simplifies the tests a bit.
+      const bool offsetRowOutOfBounds =
+        (newNumRows > 0) && ((origNumRows == 0 && offsetRow > 0) ||
+                             (origNumRows > 0 && offsetRow >= origNumRows));
+      const bool offsetColOutOfBounds =
+        (newNumCols > 0) && ((origNumCols == 0 && offsetCol > 0) ||
+                             (origNumCols > 0 && offsetCol >= origNumCols));
       TEUCHOS_TEST_FOR_EXCEPTION(
-        (origNumRows == 0 && offsetRow > 0) ||
-        (origNumRows > 0 && offsetRow >= origNumRows) ||
-        (origNumCols == 0 && offsetCol > 0) ||
-        (origNumCols > 0 && offsetCol >= origNumCols),
-        std::invalid_argument,
+        offsetRowOutOfBounds || offsetColOutOfBounds, std::invalid_argument,
         Teuchos::typeName (*this) << "::offsetView: offset row or column are "
         "out of bounds.  The original multivector has dimensions "
         << this->getOrigNumRows () << " x " << this->getOrigNumCols ()

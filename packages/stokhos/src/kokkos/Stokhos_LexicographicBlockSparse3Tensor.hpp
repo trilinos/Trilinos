@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -289,6 +289,150 @@ create_lexicographic_block_sparse_3_tensor(
   return LexicographicBlockSparse3Tensor<ValueType, Device>::create(
     basis, Cijk, params);
 }
+
+  template < typename ValueType, typename Device >
+class BlockMultiply< LexicographicBlockSparse3Tensor< ValueType , Device > >
+{
+public:
+
+  typedef typename Device::size_type size_type ;
+  typedef LexicographicBlockSparse3Tensor< ValueType , Device > tensor_type ;
+
+  template< typename MatrixValue , typename VectorValue >
+  KOKKOS_INLINE_FUNCTION
+  static void apply( const tensor_type & tensor ,
+                     const MatrixValue * const a ,
+                     const VectorValue * const x ,
+                           VectorValue * const y )
+  {
+    const size_type nBlock = tensor.num_coord();
+
+    if (tensor.symmetric()) {
+
+      // Loop over coordinate blocks
+      size_type value_entry = 0;
+      for ( size_type block = 0; block < nBlock; ++block) {
+        const int i_begin = tensor.get_i_begin(block);
+        const int j_begin = tensor.get_j_begin(block);
+        const int k_begin = tensor.get_k_begin(block);
+        const int p_i = tensor.get_p_i(block);
+        const int p_j = tensor.get_p_j(block);
+        const int p_k = tensor.get_p_k(block);
+        VectorValue * const y_block = y + i_begin;
+        const MatrixValue * const a_j_block = a + j_begin;
+        const VectorValue * const x_k_block = x + k_begin;
+        const MatrixValue * const a_k_block = a + k_begin;
+        const VectorValue * const x_j_block = x + j_begin;
+
+        // for (int i=0; i<=p_i; ++i) {
+        //   VectorValue ytmp = 0;
+        //   for (int j=0; j<=p_j; ++j) {
+        //     int k0 = j_eq_k != 0 ? j : 0;
+        //     if (symmetric && (k0 % 2 != (i+j) % 2)) ++k0;
+        //     for (int k=k0; k<=p_k; k+=k_inc) {
+        //       ytmp += tensor.value(value_entry++) *
+        //         ( a_j_block[j] * x_k_block[k] + a_k_block[k] * x_j_block[j] );
+        //     }
+        //   }
+        //   y_block[i] += ytmp ;
+        // }
+
+        if (tensor.get_j_eq_k(block) != 0) {
+          for (int i=0; i<=p_i; ++i) {
+            VectorValue ytmp = 0;
+            for (int j=0; j<=p_j; ++j) {
+              int k0 = j%2 != (i+j)%2 ? j+1 : j;
+              for (int k=k0; k<=p_k; k+=2) {
+                ytmp += tensor.value(value_entry++) *
+                  ( a_j_block[j] * x_k_block[k] + a_k_block[k] * x_j_block[j] );
+              }
+            }
+            y_block[i] += ytmp ;
+          }
+        }
+        else {
+          for (int i=0; i<=p_i; ++i) {
+            VectorValue ytmp = 0;
+            for (int j=0; j<=p_j; ++j) {
+              for (int k=(i+j)%2; k<=p_k; k+=2) {
+                ytmp += tensor.value(value_entry++) *
+                  ( a_j_block[j] * x_k_block[k] + a_k_block[k] * x_j_block[j] );
+              }
+            }
+            y_block[i] += ytmp ;
+          }
+        }
+      }
+
+    }
+
+    else {
+
+      // Loop over coordinate blocks
+      size_type value_entry = 0;
+      for ( size_type block = 0; block < nBlock; ++block) {
+        const int i_begin = tensor.get_i_begin(block);
+        const int j_begin = tensor.get_j_begin(block);
+        const int k_begin = tensor.get_k_begin(block);
+        const int p_i = tensor.get_p_i(block);
+        const int p_j = tensor.get_p_j(block);
+        const int p_k = tensor.get_p_k(block);
+        VectorValue * const y_block = y + i_begin;
+        const MatrixValue * const a_j_block = a + j_begin;
+        const VectorValue * const x_k_block = x + k_begin;
+        const MatrixValue * const a_k_block = a + k_begin;
+        const VectorValue * const x_j_block = x + j_begin;
+
+        // for (int i=0; i<=p_i; ++i) {
+        //   VectorValue ytmp = 0;
+        //   for (int j=0; j<=p_j; ++j) {
+        //     int k0 = j_eq_k != 0 ? j : 0;
+        //     if (symmetric && (k0 % 2 != (i+j) % 2)) ++k0;
+        //     for (int k=k0; k<=p_k; k+=k_inc) {
+        //       ytmp += tensor.value(value_entry++) *
+        //         ( a_j_block[j] * x_k_block[k] + a_k_block[k] * x_j_block[j] );
+        //     }
+        //   }
+        //   y_block[i] += ytmp ;
+        // }
+
+        if (tensor.get_j_eq_k(block) != 0) {
+          for (int i=0; i<=p_i; ++i) {
+            VectorValue ytmp = 0;
+            for (int j=0; j<=p_j; ++j) {
+              for (int k=j; k<=p_k; ++k) {
+                ytmp += tensor.value(value_entry++) *
+                  ( a_j_block[j] * x_k_block[k] + a_k_block[k] * x_j_block[j] );
+              }
+            }
+            y_block[i] += ytmp ;
+          }
+        }
+        else {
+          for (int i=0; i<=p_i; ++i) {
+            VectorValue ytmp = 0;
+            for (int j=0; j<=p_j; ++j) {
+              for (int k=0; k<=p_k; ++k) {
+                ytmp += tensor.value(value_entry++) *
+                  ( a_j_block[j] * x_k_block[k] + a_k_block[k] * x_j_block[j] );
+              }
+            }
+            y_block[i] += ytmp ;
+          }
+        }
+      }
+
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  static size_type matrix_size( const tensor_type & tensor )
+  { return tensor.dimension(); }
+
+  KOKKOS_INLINE_FUNCTION
+  static size_type vector_size( const tensor_type & tensor )
+  { return tensor.dimension(); }
+};
 
 } /* namespace Stokhos */
 

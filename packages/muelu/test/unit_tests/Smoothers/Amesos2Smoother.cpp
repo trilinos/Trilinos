@@ -46,15 +46,14 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Amesos2_config.h>
 #include "MueLu_TestHelpers.hpp"
+#include "MueLu_Amesos2Smoother.hpp"
 #include "MueLu_TestHelpersSmoothers.hpp"
 
-#include "MueLu_Amesos2Smoother.hpp"
-
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 
 namespace MueLuTests {
 
+  // this namespace already has:  #include "MueLu_UseShortNames.hpp"
   using namespace TestHelpers::Smoothers;
 
   TEUCHOS_UNIT_TEST(Amesos2Smoother, NotSetup)

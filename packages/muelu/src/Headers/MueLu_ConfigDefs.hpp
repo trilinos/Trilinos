@@ -61,6 +61,9 @@
 // Verbose levels
 #include <Teuchos_Describable.hpp>
 
+// Misc
+#include <Teuchos_ParameterList.hpp>
+
 //! Namespace for MueLu classes and methods
 namespace MueLu {
 
@@ -78,6 +81,8 @@ namespace MueLu {
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::rcp_implicit_cast;
   using Teuchos::rcpFromRef;
+  using Teuchos::as;
+  using Teuchos::ParameterList;
 
   // verbose levels
   using Teuchos::VERB_DEFAULT;

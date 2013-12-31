@@ -45,6 +45,7 @@
 
 class Epetra_CrsMatrix;
 class Epetra_Map;
+class Epetra_Vector;
 
 #ifdef HAVE_VECTOR
 #include <vector>
@@ -147,13 +148,107 @@ class MatrixMatrix {
                    double scalarB,
                    Epetra_CrsMatrix * & C);
 
+
+  /** Given Epetra_CrsMatrix objects A, B and C, and Epetra_Vector Dinv, form the product C = (I-omega * Dinv A)*B
+	In a parallel setting, A and B need not have matching distributions,
+	but C needs to have the same row-map as A.
+
+    @param omega Input, scalar multiplier for Dinverse A
+    @param Dinv Input, Epetra_Vector representing a diagonal matrix, must match A's RowMap
+    @param A Input, must already have had 'FillComplete()' called.
+    @param B Input, must already have had 'FillComplete()' called.
+    @param C Result. On entry to this method, it doesn't matter whether
+             FillComplete() has already been called on C or not. If it has,
+	     then C's graph must already contain all nonzero locations that
+	     will be produced when forming the product A*B. On exit,
+	     C.FillComplete() will have been called, unless the last argument
+             to this function is specified to be false.
+    @param call_FillComplete_on_result Optional argument, defaults to true.
+           Power users may specify this argument to be false if they *DON'T*
+           want this function to call C.FillComplete. (It is often useful
+           to allow this function to call C.FillComplete, in cases where
+           one or both of the input matrices are rectangular and it is not
+           trivial to know which maps to use for the domain- and range-maps.)
+
+    @return error-code, 0 if successful. non-zero returns may result if A or
+             B are not already Filled, or if errors occur in putting values
+             into C, etc.
+     */
+    static int Jacobi(double omega,
+		      const Epetra_Vector & Dinv,
+		      const Epetra_CrsMatrix& A,
+		      const Epetra_CrsMatrix& B,
+		      Epetra_CrsMatrix& C,
+		      bool call_FillComplete_on_result=true);
+
  private:
+    template<typename int_type>
+    static int Tmult_A_B(const Epetra_CrsMatrix & A,
+		 CrsMatrixStruct & Aview,
+		 const Epetra_CrsMatrix & B,
+		 CrsMatrixStruct& Bview,
+		 Epetra_CrsMatrix& C,
+		 bool call_FillComplete_on_result);
+
     static int mult_A_B(const Epetra_CrsMatrix & A,
 		 CrsMatrixStruct & Aview,
 		 const Epetra_CrsMatrix & B,
 		 CrsMatrixStruct& Bview,
 		 Epetra_CrsMatrix& C,
 		 bool call_FillComplete_on_result);
+
+    template<typename int_type>
+    static int TMultiply(const Epetra_CrsMatrix& A,
+			bool transposeA,
+			const Epetra_CrsMatrix& B,
+			bool transposeB,
+			Epetra_CrsMatrix& C,
+                        bool call_FillComplete_on_result);
+
+    template<typename int_type>
+    static int TAdd(const Epetra_CrsMatrix& A,
+                   bool transposeA,
+                   double scalarA,
+                   Epetra_CrsMatrix& B,
+                   double scalarB);
+
+    template<typename int_type>
+    static int TAdd(const Epetra_CrsMatrix& A,
+                      bool transposeA,
+                      double scalarA,
+                      const Epetra_CrsMatrix & B,
+                      bool transposeB,
+                      double scalarB,
+                      Epetra_CrsMatrix * & C);
+
+    template<typename int_type>
+    static int Tjacobi_A_B(double omega,
+			   const Epetra_Vector & Dinv,
+			   const Epetra_CrsMatrix & A,
+			   CrsMatrixStruct & Aview,
+			   const Epetra_CrsMatrix & B,
+			   CrsMatrixStruct& Bview,
+			   Epetra_CrsMatrix& C,
+			   bool call_FillComplete_on_result);
+    
+    static int jacobi_A_B(double omega,
+			  const Epetra_Vector & Dinv,
+			  const Epetra_CrsMatrix & A,
+			  CrsMatrixStruct & Aview,
+			  const Epetra_CrsMatrix & B,
+			  CrsMatrixStruct& Bview,
+			  Epetra_CrsMatrix& C,
+			  bool call_FillComplete_on_result);
+
+    template<typename int_type>
+    static int TJacobi(double omega,
+		       const Epetra_Vector & Dinv,
+		       const Epetra_CrsMatrix& A,
+		       const Epetra_CrsMatrix& B,
+		       Epetra_CrsMatrix& C,
+		       bool call_FillComplete_on_result);
+    
+
 };//class MatrixMatrix
 
 
@@ -162,8 +257,9 @@ class MatrixMatrix {
  *sparsely-populated 'vectors'.
  *Important assumption: assumes the indices in u_ind and v_ind are sorted.
  */
- double sparsedot(double* u, int* u_ind, int u_len,
-		  double* v, int* v_ind, int v_len);
+ template<typename int_type>
+ double sparsedot(double* u, int_type* u_ind, int u_len,
+		  double* v, int_type* v_ind, int v_len);
 }//namespace EpetraExt
 
 #endif

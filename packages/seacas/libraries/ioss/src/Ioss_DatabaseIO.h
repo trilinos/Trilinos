@@ -426,13 +426,6 @@ namespace Ioss {
     bool doLogging; // True if logging field input/output
     bool useGenericCanonicalName; // True if "block_id" is used as canonical name instead of the name
                                   // given on the mesh file e.g. "fireset".  Both names are still aliases.
-
-    // Keep a list of files that are currently going to be written to by the current application.
-    // Throw an exception if application has multiple output requests with the same basename.
-    // For example, a 2 processor results.e.2.0 results.e.2.1 would raise an error if also
-    // outputting to results.e
-    static void check_for_duplicate_output_file(const std::string &filename);
-    static std::set<std::string> outputFileList; 
   };
 }
 #endif

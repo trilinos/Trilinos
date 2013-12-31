@@ -175,9 +175,6 @@ namespace MueLu {
     //! amesos-specific key phrase that denote smoother type
     std::string type_;
 
-    //! parameter list that is used by Amesos internally
-    Teuchos::ParameterList paramList_;
-
     //! Matrix. Not used directly, but held inside of linearProblem_. So we have to keep an RCP pointer to it!
     RCP<Matrix> A_;
 

@@ -53,14 +53,15 @@
 
 #include <Ifpack2_ConfigDefs.hpp>
 #include <Ifpack2_Preconditioner.hpp>
-#include <Ifpack2_Condest.hpp>
-#include <Ifpack2_Parameters.hpp>
+#include <Ifpack2_Details_CanChangeMatrix.hpp>
+
+// FIXME (mfh 20 Nov 2013) We really shouldn't have to include both of
+// these, if we were to handle the implementation by pointer instead
+// of by value.
 #include <Ifpack2_Details_Chebyshev_decl.hpp>
 #include <Ifpack2_Details_Chebyshev_def.hpp>
 
 #include <Tpetra_CrsMatrix.hpp>
-
-#include <Teuchos_Time.hpp>
 
 #include <iostream>
 #include <string>
@@ -69,7 +70,7 @@
 
 namespace Ifpack2 {
 
-/// \class Chebyshev 
+/// \class Chebyshev
 /// \brief Diagonally scaled Chebyshev iteration for Tpetra sparse matrices.
 /// \tparam MatrixType A specialization of Tpetra::RowMatrix or Tpetra::CrsMatrix.
 ///
@@ -120,7 +121,7 @@ namespace Ifpack2 {
 /// positive definite.  Thus, all of its eigenvalues must lie in a
 /// positive interval on the real line.  Furthermore, if D is the
 /// matrix of the diagonal elements of A, then the same is true of
-/// \f$D^{-1} A\f$.  
+/// \f$D^{-1} A\f$.
 ///
 /// Suppose \f$[\lambda_{min}, \lambda_{max}]\f$ is the interval of
 /// the eigenvalues of \f$D^{-1} A\f$.  Users may either give us an
@@ -196,15 +197,19 @@ namespace Ifpack2 {
 /// a Sandia employee in what was then (2006) Org 1416.  Ifpack2 has
 /// seen significant development since then.
 template<class MatrixType>
-class Chebyshev : 
+class Chebyshev :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
-					   typename MatrixType::local_ordinal_type,
-					   typename MatrixType::global_ordinal_type,
-					   typename MatrixType::node_type> 
+                                           typename MatrixType::local_ordinal_type,
+                                           typename MatrixType::global_ordinal_type,
+                                           typename MatrixType::node_type>,
+    virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                                                       typename MatrixType::local_ordinal_type,
+                                                                       typename MatrixType::global_ordinal_type,
+                                                                       typename MatrixType::node_type> >
 {
 public:
   //! \name Typedefs
-  //@{ 
+  //@{
 
   //! The template parameter of this class.
   typedef MatrixType matrix_type;
@@ -294,7 +299,7 @@ public:
 
   //@}
   //! \name Preconditioner computation methods
-  //@{ 
+  //@{
 
   /// \brief Set (or reset) parameters.
   ///
@@ -495,42 +500,38 @@ public:
     return IsComputed_;
   }
 
-  // This "template friend" declaration lets any Chebyshev
-  // specialization be a friend of any of its other specializations.
-  // That makes clone() easier to implement.
-  template <class NewMatrixType> friend class Chebyshev;
+  //@}
+  //! \name Implementation of Ifpack2::Details::CanChangeMatrix
+  //@{
 
-  /// \brief Clone this object to one with a different Kokkos Node type.
+  /// \brief Change the matrix to be preconditioned.
   ///
-  /// \tparam NewMatrixType The template parameter of the new
-  ///   preconditioner to return; a specialization of
-  ///   Tpetra::RowMatrix or Tpetra::CrsMatrix.  The intent is that
-  ///   this type differ from \c MatrixType only in its fourth Node
-  ///   template parameter, and/or its fifth \c LocalMatOps template
-  ///   parameter.  However, this is not strictly required.
+  /// \param A [in] The new matrix.
   ///
-  /// \param A_newnode [in] The matrix, with the new Kokkos Node type.
-  ///   This would generally be the result of cloning (calling
-  ///   <tt>Tpetra::CrsMatrix::clone()</tt> on) the original input
-  ///   matrix A, though the implementation does not require this.
+  /// \post <tt>! isInitialized ()</tt>
+  /// \post <tt>! isComputed ()</tt>
   ///
-  /// \param params [in/out] Parameters for the new preconditioner.
+  /// Calling this method resets the preconditioner's state.  After
+  /// calling this method with a nonnull input, you must first call
+  /// initialize() and compute() (in that order) before you may call
+  /// apply().
   ///
-  /// \pre If \c A_newnode is a Tpetra::CrsMatrix, it must be fill
-  ///   complete.
+  /// You may call this method with a null input.  If A is null, then
+  /// you may not call initialize() or compute() until you first call
+  /// this method again with a nonnull input.  This method invalidates
+  /// any previous factorization whether or not A is null, so calling
+  /// setMatrix() with a null input is one way to clear the
+  /// preconditioner's state (and free any memory that it may be
+  /// using).
   ///
-  /// \post <tt>P->isInitialized() && P->isComputed()</tt>, where \c P
-  ///   is the returned object.  That is, P's apply() method is ready
-  ///   to be called; P is ready for use as a preconditioner.  This is
-  ///   true regardless of the current state of <tt>*this</tt>.
-  template <typename NewMatrixType> 
-  Teuchos::RCP<Chebyshev<NewMatrixType> > 
-  clone (const Teuchos::RCP<const NewMatrixType>& A_newnode, 
-	 const Teuchos::ParameterList& params) const;
+  /// The new matrix A need not necessarily have the same Maps or even
+  /// the same communicator as the original matrix.
+  virtual void
+  setMatrix (const Teuchos::RCP<const row_matrix_type>& A);
 
   //@}
   //! @name Implementation of Tpetra::Operator
-  //@{ 
+  //@{
 
   /// \brief Apply the preconditioner to X, returning the result in Y.
   ///
@@ -562,10 +563,10 @@ public:
   /// \param beta [in] Scaling factor for Y.  The default is 0.
   void
   apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-	 Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-	 Teuchos::ETransp mode = Teuchos::NO_TRANS,
-	 scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-	 scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+         Teuchos::ETransp mode = Teuchos::NO_TRANS,
+         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! The Tpetra::Map representing the domain of this operator.
   Teuchos::RCP<const map_type> getDomainMap() const;
@@ -596,28 +597,38 @@ public:
   /// Since this class currently requires A to be real and symmetric
   /// positive definite, setting <tt>mode</tt> should not affect the
   /// result.
-  void 
+  void
   applyMat (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-	    Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-	    Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
+            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+            Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
   //@}
   //! \name Mathematical functions
   //@{
 
-  //! Compute and return the estimated condition number.
-  magnitude_type
-  computeCondEst (CondestType CT = Cheap, 
-		  local_ordinal_type MaxIters = 1550,
-		  magnitude_type Tol = 1e-9,
-		  const Teuchos::Ptr<const row_matrix_type>& matrix = Teuchos::null);
+  /// \brief Compute the condition number estimate and return its value.
+  ///
+  /// \warning This method is DEPRECATED.  It was inherited from
+  ///   Ifpack, and Ifpack never clearly stated what this method
+  ///   computes.  Furthermore, Ifpack's method just estimates the
+  ///   condition number of the matrix A, and ignores the
+  ///   preconditioner -- which is probably not what users thought it
+  ///   did.  If there is sufficient interest, we might reintroduce
+  ///   this method with a different meaning and a better algorithm.
+  virtual magnitude_type TEUCHOS_DEPRECATED
+  computeCondEst (CondestType CT = Cheap,
+                  local_ordinal_type MaxIters = 1550,
+                  magnitude_type Tol = 1e-9,
+                  const Teuchos::Ptr<const row_matrix_type>& matrix = Teuchos::null);
 
   //@}
   //! \name Attribute accessor methods
-  //@{ 
+  //@{
 
-  //! The estimated condition number, or -1.0 if it has not yet been computed.
-  magnitude_type getCondEst() const;
+  /// \brief Return the computed condition number estimate, or -1 if not computed.
+  ///
+  /// \warning This method is DEPRECATED.  See warning for computeCondEst().
+  virtual magnitude_type TEUCHOS_DEPRECATED getCondEst() const;
 
   //! The communicator over which the matrix is distributed.
   Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
@@ -627,7 +638,7 @@ public:
 
    //! Returns A as a CRS Matrix
   Teuchos::RCP<const MatrixType > getCrsMatrix() const;
-   
+
   //! The total number of floating-point operations taken by all calls to compute().
   double getComputeFlops() const;
 
@@ -656,7 +667,7 @@ public:
   typename MatrixType::scalar_type getLambdaMaxForApply() const;
 
   //@}
-  //! @name Implementation of Teuchos::Describable 
+  //! @name Implementation of Teuchos::Describable
   //@{
 
   //! A simple one-line description of this object.
@@ -675,18 +686,51 @@ public:
   /// don't normally need to, because this class now automatically
   /// uses the power method (a different implementation) to estimate
   /// the max eigenvalue, if you don't give it an estimate yourself.
-  static void TEUCHOS_DEPRECATED 
+  static void TEUCHOS_DEPRECATED
   PowerMethod (const Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Operator,
-	       const vector_type& InvPointDiagonal,
-	       const int MaximumIterations, 
-	       scalar_type& LambdaMax);
+               const vector_type& InvPointDiagonal,
+               const int MaximumIterations,
+               scalar_type& LambdaMax);
 
   //! Not currently implemented: Use CG to estimate lambda_min and lambda_max.
-  static void TEUCHOS_DEPRECATED 
-  CG (const Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Operator, 
-      const vector_type& InvPointDiagonal, 
-      const int MaximumIterations, 
+  static void TEUCHOS_DEPRECATED
+  CG (const Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Operator,
+      const vector_type& InvPointDiagonal,
+      const int MaximumIterations,
       scalar_type& lambda_min, scalar_type& lambda_max);
+
+  // This "template friend" declaration lets any Chebyshev
+  // specialization be a friend of any of its other specializations.
+  // That makes clone() easier to implement.
+  template <class NewMatrixType> friend class Chebyshev;
+
+  /// \brief Clone this object to one with a different Kokkos Node type.
+  ///
+  /// \tparam NewMatrixType The template parameter of the new
+  ///   preconditioner to return; a specialization of
+  ///   Tpetra::RowMatrix or Tpetra::CrsMatrix.  The intent is that
+  ///   this type differ from \c MatrixType only in its fourth Node
+  ///   template parameter, and/or its fifth \c LocalMatOps template
+  ///   parameter.  However, this is not strictly required.
+  ///
+  /// \param A_newnode [in] The matrix, with the new Kokkos Node type.
+  ///   This would generally be the result of cloning (calling
+  ///   <tt>Tpetra::CrsMatrix::clone()</tt> on) the original input
+  ///   matrix A, though the implementation does not require this.
+  ///
+  /// \param params [in/out] Parameters for the new preconditioner.
+  ///
+  /// \pre If \c A_newnode is a Tpetra::CrsMatrix, it must be fill
+  ///   complete.
+  ///
+  /// \post <tt>P->isInitialized() && P->isComputed()</tt>, where \c P
+  ///   is the returned object.  That is, P's apply() method is ready
+  ///   to be called; P is ready for use as a preconditioner.  This is
+  ///   true regardless of the current state of <tt>*this</tt>.
+  template <typename NewMatrixType>
+  Teuchos::RCP<Chebyshev<NewMatrixType> >
+  clone (const Teuchos::RCP<const NewMatrixType>& A_newnode,
+         const Teuchos::ParameterList& params) const;
 
   //@}
 
@@ -697,7 +741,7 @@ private:
 
   //! Abbreviation for the Tpetra::MultiVector specialization used in methods like apply().
   typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
-  
+
   //! Copy constructor (use is syntactically forbidden)
   Chebyshev (const Chebyshev<MatrixType>&);
 
@@ -711,12 +755,12 @@ private:
   /// is A if mode is <tt>Teuchos::NO_TRANS</tt>, \f$A^T\f$ if mode is
   /// <tt>Teuchos::TRANS</tt>, and \f$A^H\f$ if mode is
   /// <tt>Teuchos::CONJ_TRANS</tt>.
-  void 
+  void
   applyImpl (const MV& X,
-	     MV& Y,
-	     Teuchos::ETransp mode,
-	     scalar_type alpha,
-	     scalar_type beta) const;
+             MV& Y,
+             Teuchos::ETransp mode,
+             scalar_type alpha,
+             scalar_type beta) const;
 
   //! \name Internal state
   //@{
@@ -728,10 +772,8 @@ private:
   /// I prefer that morals and syntax go together, so I didn't declare
   /// this class' apply() method const.  Hence, we have to declare the
   /// whole thing mutable here.
-  mutable Details::Chebyshev<scalar_type, MV, row_matrix_type> impl_;
+  mutable Details::Chebyshev<scalar_type, MV> impl_;
 
-  //! Time object to track timing.
-  Teuchos::RCP<Teuchos::Time> Time_;
   //! The estimated condition number.
   magnitude_type Condest_;
   //! If \c true, initialize() has completed successfully.

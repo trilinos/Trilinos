@@ -203,8 +203,9 @@ public:
       dev.team_scan( dev.league_rank() + 1 + dev.team_rank() + 1 );
 
     if ( answer != result || answer != result2 ) {
-      printf("ScanRequestFunctor[%d.%d] %ld != %ld or %ld\n",
+      printf("ScanRequestFunctor[%d.%d of %d.%d] %ld != %ld or %ld\n",
              dev.league_rank(), dev.team_rank(),
+             dev.league_size(), dev.team_size(),
              answer,result,result2);
       error = 1 ;
     }
@@ -233,7 +234,7 @@ public:
 
   void run_test( const size_t nteam )
   {
-    const unsigned REPEAT = 1000 ;
+    const unsigned REPEAT = 100000 ;
     const unsigned Repeat = ( REPEAT + nteam - 1 ) / nteam ;
 
     Kokkos::ParallelWorkRequest request ; 

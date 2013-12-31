@@ -2109,7 +2109,7 @@ int fei::VectorSpace::setLocalEqnNumbers()
     std::map<int,int>::const_iterator
       it = rmap.begin(), it_end = rmap.end();
 
-    int* eqnNumPtr = &eqnNumbers_[0];
+    int* eqnNumPtr = eqnNumbers_.empty() ? NULL : &eqnNumbers_[0];
 
     for(; it!=it_end; ++it) {
       fei::Record<int>& thisrecord = *records->getRecordWithLocalID(it->second);

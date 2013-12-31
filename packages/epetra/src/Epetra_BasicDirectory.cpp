@@ -304,11 +304,13 @@ int Epetra_BasicDirectory::Generate(const Epetra_BlockMap& Map)
   int * send_procs = 0;
   if (Map_NumMyElements>0) send_procs = new int[Map_NumMyElements];
   int_type * Map_MyGlobalElements = 0;
+#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
   Map.MyGlobalElementsPtr(Map_MyGlobalElements);
 
   EPETRA_CHK_ERR(DirectoryMap_->RemoteIDList(Map_NumMyElements,
 					     Map_MyGlobalElements, 
 					     send_procs, 0));
+#endif
 
   bool det_flag = true;
 
@@ -593,8 +595,10 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
   int * dir_procs = 0;
   if (NumEntries>0) dir_procs = new int[ NumEntries ];
   
+#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
   // Get directory locations for the requested list of entries
   DirectoryMap_->RemoteIDList(NumEntries, GlobalEntries, dir_procs, 0);
+#endif
 
   //Check for unfound GlobalEntries and set corresponding Procs to -1
   int NumMissing = 0;

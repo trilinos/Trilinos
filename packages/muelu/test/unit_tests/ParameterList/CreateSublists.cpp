@@ -59,9 +59,10 @@
 #include "MueLu_Exceptions.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
-#include "MueLu_UseShortNames.hpp"
 
 namespace MueLuTests {
+
+#include "MueLu_UseShortNames.hpp"
 
   TEUCHOS_UNIT_TEST(MueLu_CreateSublists, SetParameterList)
   {

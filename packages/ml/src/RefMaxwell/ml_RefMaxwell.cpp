@@ -145,7 +145,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   if(vb_level >= 15) {very_verbose_=true;verbose_=true;}
   else if (vb_level >= 5) {very_verbose_=false;verbose_=true;}
   else very_verbose_=verbose_=false;
-  aggregate_with_sigma= List_.get("refmaxwell: aggregate with sigma",false);  
+  aggregate_with_sigma= List_.get("refmaxwell: aggregate with sigma",true);  
   bool disable_addon = List_.get("refmaxwell: disable addon",true);
 
   
@@ -216,13 +216,18 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   }/*end if */
   
   /* Build the TMT-Agg Matrix */
-  if(aggregate_with_sigma)
+  if(aggregate_with_sigma) {
 #ifdef ENABLE_MS_MATRIX
     ML_Epetra_PtAP(*Ms_Matrix_,*D0_Clean_Matrix_,TMT_Agg_Matrix_,verbose_);
 #else
-  ML_Epetra_PtAP(*SM_Matrix_,*D0_Clean_Matrix_,TMT_Agg_Matrix_,verbose_);
+    ML_Epetra_PtAP(*SM_Matrix_,*D0_Clean_Matrix_,TMT_Agg_Matrix_,verbose_);
 #endif
-  else ML_Epetra_PtAP(*M1_Matrix_,*D0_Clean_Matrix_,TMT_Agg_Matrix_,verbose_);
+    if(verbose_ && !Comm_->MyPID()) printf("EMFP: Aggregating with SM or Ms\n");
+  }
+  else {
+    ML_Epetra_PtAP(*M1_Matrix_,*D0_Clean_Matrix_,TMT_Agg_Matrix_,verbose_);
+    if(verbose_ && !Comm_->MyPID()) printf("EMFP: Aggregating with M1\n");    
+  }
   Remove_Zeroed_Rows(*TMT_Agg_Matrix_);
   
 #ifdef ML_TIMING
@@ -395,6 +400,7 @@ int ML_Epetra::RefMaxwellPreconditioner::DestroyPreconditioner(){
   int printl=ML_Get_PrintLevel();
   int output_level=List_.get("ML output",0);
   output_level=List_.get("output",output_level);
+  bool disable_addon = List_.get("refmaxwell: disable addon",true);
 
   ML_Set_PrintLevel(output_level);
   if(EdgePC) {delete EdgePC; EdgePC=0;}
@@ -403,7 +409,7 @@ int ML_Epetra::RefMaxwellPreconditioner::DestroyPreconditioner(){
   if(D0_Matrix_) {delete D0_Matrix_; D0_Matrix_=0;}
   if(TMT_Matrix_) {delete TMT_Matrix_; TMT_Matrix_=0;}
   if(TMT_Agg_Matrix_) {delete TMT_Agg_Matrix_; TMT_Agg_Matrix_=0;}
-  if(lump_m1) {delete M1_Matrix_; M1_Matrix_=0;}
+  if(!disable_addon && lump_m1) {delete M1_Matrix_; M1_Matrix_=0;}
   if(BCrows) {delete [] BCrows; BCrows=0;numBCrows=0;}
   ML_Set_PrintLevel(output_level);  
   if(PreEdgeSmoother)  {delete PreEdgeSmoother; PreEdgeSmoother=0;}

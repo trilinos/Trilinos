@@ -282,18 +282,18 @@ int Ifpack_Polynomial::Initialize()
 
   if (IsRowMatrix_)
   {
-    if (Matrix().NumGlobalRows() != Matrix().NumGlobalCols())
+    if (Matrix().NumGlobalRows64() != Matrix().NumGlobalCols64())
       IFPACK_CHK_ERR(-2); // only square matrices
 
     NumMyRows_ = Matrix_->NumMyRows();
     NumMyNonzeros_ = Matrix_->NumMyNonzeros();
-    NumGlobalRows_ = Matrix_->NumGlobalRows();
-    NumGlobalNonzeros_ = Matrix_->NumGlobalNonzeros();
+    NumGlobalRows_ = Matrix_->NumGlobalRows64();
+    NumGlobalNonzeros_ = Matrix_->NumGlobalNonzeros64();
   }
   else
   {
-    if (Operator_->OperatorDomainMap().NumGlobalElements() !=       
-        Operator_->OperatorRangeMap().NumGlobalElements())
+    if (Operator_->OperatorDomainMap().NumGlobalElements64() !=       
+        Operator_->OperatorRangeMap().NumGlobalElements64())
       IFPACK_CHK_ERR(-2); // only square operators
   }
 
@@ -564,7 +564,7 @@ ostream& Ifpack_Polynomial::Print(ostream & os) const
     os << "Ifpack_Polynomial" << endl;
     os << "Degree of polynomial      = " << PolyDegree_ << endl;
     os << "Condition number estimate = " << Condest() << endl;
-    os << "Global number of rows     = " << Operator_->OperatorRangeMap().NumGlobalElements() << endl;
+    os << "Global number of rows     = " << Operator_->OperatorRangeMap().NumGlobalElements64() << endl;
     if (IsComputed_) {
       os << "Minimum value on stored inverse diagonal = " << MinVal << endl;
       os << "Maximum value on stored inverse diagonal = " << MaxVal << endl;

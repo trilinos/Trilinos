@@ -1,15 +1,14 @@
-INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE(AddSubdirectories)
 
-ADD_SUBDIRECTORY(PowerMethod)
-ADD_SUBDIRECTORY(HybridPlatform)
+ADD_SUBDIRECTORY(Lesson01-Init)
+ADD_SUBDIRECTORY(Lesson02-Map-Vector)
+ADD_SUBDIRECTORY(Lesson03-Power-Method)
 
-IF (KokkosClassic_ENABLE_EXAMPLES)
-  ADD_SUBDIRECTORY(LocalMatOps)
-ENDIF()
+# mfh 08 Nov 2013: Lesson 04 doesn't currently require a build or test
+# step.  If you add one or more examples to that directory that do
+# require building and testing, please add that subdirectory here.
 
-IF (Tpetra_ENABLE_RTI)
-  ADD_SUBDIRECTORY(RTInterface)
-ENDIF()
+ADD_SUBDIRECTORY(Lesson05-Redistribution)
 
-ADD_SUBDIRECTORY(MultiPrec)
+ADD_SUBDIRECTORY(old)
+ADD_SUBDIRECTORY(advanced)

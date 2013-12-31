@@ -56,7 +56,7 @@
 namespace Stokhos {
 
 template<>
-class Multiply< SymmetricDiagonalSpec< Kokkos::Cuda > , void , void, DefaultSparseMatOps >
+class BlockMultiply< SymmetricDiagonalSpec< Kokkos::Cuda > >
 {
 public:
   typedef Kokkos::Cuda device_type ;

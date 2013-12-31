@@ -294,11 +294,17 @@ public:
   }
     
   //! Returns the number of nonzero entries in the global graph.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int NumGlobalNonzeros() const {
     // FIXME: diagonal of L_ should not be stored
     return(L().NumGlobalNonzeros() + U().NumGlobalNonzeros() - L().NumGlobalRows());
   }
- 
+#endif
+  long long NumGlobalNonzeros64() const {
+    // FIXME: diagonal of L_ should not be stored
+    return(L().NumGlobalNonzeros64() + U().NumGlobalNonzeros64() - L().NumGlobalRows64());
+  }
+
   //! Returns the number of nonzero entries in the local graph.
   int NumMyNonzeros() const {
     return(L().NumMyNonzeros() + U().NumMyNonzeros());
@@ -321,6 +327,9 @@ private:
   {
     return(*this);
   }
+
+  template<typename int_type>
+  int TCompute();
 
   //! Releases all allocated memory.
   void Destroy();
@@ -377,7 +386,7 @@ private:
   //! Used for timing purposed
   mutable Epetra_Time Time_;
   //! Global number of nonzeros in L and U factors
-  int GlobalNonzeros_;
+  long long GlobalNonzeros_;
   Teuchos::RefCountPtr<Epetra_SerialComm> SerialComm_;
   Teuchos::RefCountPtr<Epetra_Map> SerialMap_;
 }; // Ifpack_ILUT

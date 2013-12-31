@@ -313,11 +313,8 @@ parallel_reduce( const CudaWorkConfig & work_config ,
 /*--------------------------------------------------------------------------*/
 
 #include <Cuda/Kokkos_CudaExec.hpp>
-
 #include <Cuda/Kokkos_Cuda_View.hpp>
 #include <Cuda/Kokkos_Cuda_Parallel.hpp>
-#include <Cuda/Kokkos_Cuda_ParallelReduce.hpp>
-#include <Cuda/Kokkos_Cuda_ParallelScan.hpp>
 
 #endif /* #ifndef KOKKOS_CUDA_HPP */
 

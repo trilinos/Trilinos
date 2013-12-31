@@ -46,28 +46,14 @@
 /// \file Ifpack2_BlockRelaxation_decl.hpp
 /// \brief Ifpack2::BlockRelaxation class declaration
 
-#include "Ifpack2_ConfigDefs.hpp"
-#include "Ifpack2_Preconditioner.hpp"
-#include "Ifpack2_Condest.hpp"
-#include "Ifpack2_Parameters.hpp"
-#include "Ifpack2_Partitioner.hpp"
-
-#include <Tpetra_Vector.hpp>
-
-#include <Teuchos_Assert.hpp>
-#include <Teuchos_RCP.hpp>
+#include <Ifpack2_ConfigDefs.hpp>
+#include <Ifpack2_Preconditioner.hpp>
+#include <Ifpack2_Partitioner.hpp>
 #include <Teuchos_Time.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-
 #include <string>
 #include <iostream>
 #include <sstream>
 
-namespace Teuchos {
-  // forward declaration
-  class ParameterList;
-}
 
 namespace Ifpack2 {
 
@@ -264,8 +250,16 @@ public:
   //! \name Mathematical functions
   //@{
 
-  //! Compute and return the estimated condition number.
-  magnitude_type
+  /// \brief Compute the condition number estimate and return its value.
+  ///
+  /// \warning This method is DEPRECATED.  It was inherited from
+  ///   Ifpack, and Ifpack never clearly stated what this method
+  ///   computes.  Furthermore, Ifpack's method just estimates the
+  ///   condition number of the matrix A, and ignores the
+  ///   preconditioner -- which is probably not what users thought it
+  ///   did.  If there is sufficient interest, we might reintroduce
+  ///   this method with a different meaning and a better algorithm.
+  virtual magnitude_type TEUCHOS_DEPRECATED
   computeCondEst (CondestType CT = Cheap,
                   local_ordinal_type MaxIters = 1550,
                   magnitude_type Tol = 1e-9,
@@ -275,8 +269,10 @@ public:
   //! \name Attribute accessor methods
   //@{
 
-  //! Return the computed condition number estmate, or -1 if it has not been computed.
-  magnitude_type getCondEst() const;
+  /// \brief Return the computed condition number estimate, or -1 if not computed.
+  ///
+  /// \warning This method is DEPRECATED.  See warning for computeCondEst().
+  virtual magnitude_type TEUCHOS_DEPRECATED getCondEst() const;
 
   //! The communicator over which the input matrix is distributed.
   Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;

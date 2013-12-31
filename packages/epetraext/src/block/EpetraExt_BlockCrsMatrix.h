@@ -44,6 +44,7 @@
 
 #include <vector>
 
+#include "Epetra_ConfigDefs.h" 
 #include "Epetra_CrsMatrix.h" 
 
 //! EpetraExt::BlockCrsMatrix: A class for constructing a distributed block matrix.
@@ -70,8 +71,13 @@ class BlockCrsMatrix: public Epetra_CrsMatrix {
 	\param In
 	RowIndex - Defines the index used for this block row.
   */
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   BlockCrsMatrix( const Epetra_CrsGraph & BaseGraph, const std::vector<int> & RowStencil, int RowIndex, const Epetra_Comm & GlobalComm );
-  
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  BlockCrsMatrix( const Epetra_CrsGraph & BaseGraph, const std::vector<long long> & RowStencil, long long RowIndex, const Epetra_Comm & GlobalComm );
+#endif
+
   //! BlockCrsMatrix constuctor with multiple block rows per processor.
   /*! Creates a BlockCrsMatrix object and allocates storage.  
     
@@ -82,12 +88,22 @@ class BlockCrsMatrix: public Epetra_CrsMatrix {
 	\param In
 	RowIndices - Defines the indices used for this block row.
   */
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   BlockCrsMatrix( const Epetra_CrsGraph & BaseGraph, const std::vector< std::vector<int> > & RowStencil, const std::vector<int> & RowIndices, const Epetra_Comm & GlobalComm );
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  BlockCrsMatrix( const Epetra_CrsGraph & BaseGraph, const std::vector< std::vector<long long> > & RowStencil, const std::vector<long long> & RowIndices, const Epetra_Comm & GlobalComm );
+#endif
 
   //! Version taking a local block graph
   BlockCrsMatrix( const Epetra_CrsGraph & BaseGraph, const Epetra_CrsGraph& LocalBlockGraph, const Epetra_Comm & GlobalComm );
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   BlockCrsMatrix( const Epetra_RowMatrix & BaseMatrix, const std::vector< std::vector<int> > & RowStencil, const std::vector<int> & RowIndices, const Epetra_Comm & GlobalComm );
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  BlockCrsMatrix( const Epetra_RowMatrix & BaseMatrix, const std::vector< std::vector<long long> > & RowStencil, const std::vector<long long> & RowIndices, const Epetra_Comm & GlobalComm );
+#endif
   
   //! Copy constructor.
   BlockCrsMatrix( const BlockCrsMatrix & Matrix );
@@ -96,47 +112,163 @@ class BlockCrsMatrix: public Epetra_CrsMatrix {
   virtual ~BlockCrsMatrix();
   //@}
   
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   //! Local Stencil Info
-  const std::vector<int> & Stencil( int i = 0 ) { return RowStencil_[i]; }
+  const std::vector<int> & Stencil( int i = 0 ) {
+    if(BaseGraph_.RowMap().GlobalIndicesInt())
+      return RowStencil_int_[i];
+    else
+      throw "EpetraExt::BlockCrsMatrix::Stencil: Global Indices not int";
+  }
 
   //! RowIndex
-  int RowIndex( int i = 0 ) { return RowIndices_[i]; }
-	
+  int RowIndex( int i = 0 ) {
+    if(BaseGraph_.RowMap().GlobalIndicesInt())
+      return RowIndices_int_[i];
+    else
+      throw "EpetraExt::BlockCrsMatrix::RowIndex: Global Indices not int";
+  }
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  //! Local Stencil Info
+  const std::vector<long long> & Stencil64( int i = 0 ) {
+    if(BaseGraph_.RowMap().GlobalIndicesLongLong())
+      return RowStencil_LL_[i];
+    else
+      throw "EpetraExt::BlockCrsMatrix::Stencil: Global Indices not long long";
+  }
+
+  //! RowIndex
+  long long RowIndex64( int i = 0 ) {
+    if(BaseGraph_.RowMap().GlobalIndicesLongLong())
+      return RowIndices_LL_[i];
+    else
+      throw "EpetraExt::BlockCrsMatrix::RowIndex: Global Indices not long long";
+  }
+#endif
+
   //! Routine for loading a base matrices values into the large Block Matrix
   //! The Row and Col arguments are indices into RowStencil 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   void LoadBlock(const Epetra_RowMatrix & BaseMatrix, const int Row, const int Col);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  void LoadBlock(const Epetra_RowMatrix & BaseMatrix, const long long Row, const long long Col);
+#endif
 
   //! Routine for summing base matrices values into the large Block Matrix
   //! The Row and Col arguments are indices into RowStencil 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   void SumIntoBlock(double alpha, const Epetra_RowMatrix & BaseMatrix, const int Row, const int Col);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  void SumIntoBlock(double alpha, const Epetra_RowMatrix & BaseMatrix, const long long Row, const long long Col);
+#endif
 
   //! Routine for summing base matrices values into the large Block Matrix
   //! The Row and Col arguments are global indices
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   void SumIntoGlobalBlock(double alpha, const Epetra_RowMatrix & BaseMatrix, const int Row, const int Col);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  void SumIntoGlobalBlock(double alpha, const Epetra_RowMatrix & BaseMatrix, const long long Row, const long long Col);
+#endif
 
   //! Sum Entries into Block matrix using base-matrix numbering plus block Row and Col
   //! The Row and Col arguments are indices into RowStencil 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   void BlockSumIntoGlobalValues(const int BaseRow, int NumIndices,
      double* Values, const int* Indices, const int Row, const int Col);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  void BlockSumIntoGlobalValues(const long long BaseRow, int NumIndices,
+     double* Values, const long long* Indices, const long long Row, const long long Col);
+#endif
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   void BlockReplaceGlobalValues(const int BaseRow, int NumIndices,
      double* Values, const int* Indices, const int Row, const int Col);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  void BlockReplaceGlobalValues(const long long BaseRow, int NumIndices,
+     double* Values, const long long* Indices, const long long Row, const long long Col);
+#endif
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   void BlockExtractGlobalRowView(const int BaseRow, int& NumEntries, 
      double*& Values, const int Row, const int Col);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  void BlockExtractGlobalRowView(const long long BaseRow, int& NumEntries, 
+     double*& Values, const long long Row, const long long Col);
+#endif
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   void ExtractBlock(Epetra_CrsMatrix & BaseMatrix, const int Row, const int Col);
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  void ExtractBlock(Epetra_CrsMatrix & BaseMatrix, const long long Row, const long long Col);
+#endif
 
  protected:
 
   Epetra_CrsGraph BaseGraph_;
 
-  std::vector< std::vector<int> > RowStencil_;
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  std::vector< std::vector<int> > RowStencil_int_;
 
-  std::vector<int> RowIndices_; 
+  std::vector<int> RowIndices_int_; 
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  std::vector< std::vector<long long> > RowStencil_LL_;
 
-  int ROffset_;
-  int COffset_;
+  std::vector<long long> RowIndices_LL_; 
+#endif
 
+  long long ROffset_;
+  long long COffset_;
+
+private:
+  template<typename int_type>
+  void TLoadBlock(const Epetra_RowMatrix & BaseMatrix, const int_type Row, const int_type Col);
+
+  template<typename int_type>
+  void TSumIntoBlock(double alpha, const Epetra_RowMatrix & BaseMatrix, const int_type Row, const int_type Col);
+
+  template<typename int_type>
+  void TSumIntoGlobalBlock(double alpha, const Epetra_RowMatrix & BaseMatrix, const int_type Row, const int_type Col);
+
+  template<typename int_type>
+  void TBlockSumIntoGlobalValues(const int_type BaseRow, int NumIndices,
+     double* Values, const int_type* Indices, const int_type Row, const int_type Col);
+
+  template<typename int_type>
+  void TBlockReplaceGlobalValues(const int_type BaseRow, int NumIndices,
+     double* Values, const int_type* Indices, const int_type Row, const int_type Col);
+
+  template<typename int_type>
+  void TBlockExtractGlobalRowView(const int_type BaseRow, int& NumEntries, 
+     double*& Values, const int_type Row, const int_type Col);
+
+  template<typename int_type>
+  void TExtractBlock(Epetra_CrsMatrix & BaseMatrix, const int_type Row, const int_type Col);
+
+  template<typename int_type>
+  std::vector< std::vector<int_type> >& TRowStencil();
+
+  template<typename int_type>
+  std::vector<int_type>& TRowIndices();
 };
+
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+template<> inline std::vector<int>& BlockCrsMatrix::TRowIndices() { return RowIndices_int_; }
+template<> inline std::vector< std::vector<int> >& BlockCrsMatrix::TRowStencil() { return RowStencil_int_; }
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+template<> inline std::vector<long long>& BlockCrsMatrix::TRowIndices() { return RowIndices_LL_; }
+template<> inline std::vector< std::vector<long long> >& BlockCrsMatrix::TRowStencil() { return RowStencil_LL_; }
+#endif
 
 } //namespace EpetraExt
 

@@ -167,9 +167,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MapColoring: public Epetra_DistObject {
       method.  MyGID(GID) returns true if the GID is owned by the calling processor.
       \return MapColor(GID).
   */
-#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-  int& operator () (int GID) {ListsAreValid_ = false; return ElementColors_[Map().LID(GID)];};
-#endif
+  int& operator () (long long GID) {ListsAreValid_ = false; return ElementColors_[Map().LID(GID)];};
   //@}
   
   //! @name Local/Global color accessor methods
@@ -186,9 +184,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MapColoring: public Epetra_DistObject {
       method on the map object.
     \return MapColor(GID).
   */
-#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-  const int& operator () (int GID) const {return ElementColors_[Map().LID(GID)];};
-#endif
+  const int& operator () (long long GID) const {return ElementColors_[Map().LID(GID)];};
   //@}
   
   //! @name Color Information Access Methods
@@ -318,8 +314,11 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MapColoring: public Epetra_DistObject {
   
   Epetra_MapColoring & operator=(const Epetra_MapColoring & Coloring); // Make these inaccessible
 
+  template<typename int_type>
+  Epetra_Map * TGenerateMap(int Color) const;
   
-  
-};
+  template<typename int_type>
+  Epetra_BlockMap * TGenerateBlockMap(int Color) const;
+ };
 
 #endif /* EPETRA_MAPCOLORING_H */

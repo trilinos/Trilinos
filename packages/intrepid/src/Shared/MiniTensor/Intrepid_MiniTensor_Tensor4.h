@@ -49,7 +49,7 @@ namespace Intrepid {
 template<typename T, Index N>
 struct tensor4_store
 {
-  typedef Storage<T, dimension_power<check_static<N>::value, 4>::value> type;
+  typedef Storage<T, dimension_power<N, 4>::value> type;
 };
 
 ///
@@ -514,6 +514,16 @@ t_dot2(Tensor<S, N> const & A, Tensor4<T, N> const & B);
 template<typename S, typename T, Index N>
 Tensor4<typename Promote<S, T>::type, N>
 odot(Tensor<S, N> const & A, Tensor<T, N> const & B);
+
+///
+/// 4th-order input
+/// \param A 4th-order tensor
+/// \param B 2nd-order tensor
+/// \return \f$ C'_{i'j'k'l'} = A_{i'i} A_{j'j} A_{k'k} A_{l'l} B_{ijkl} \f$
+///
+template<typename S, typename T, Index N>
+Tensor4<typename Promote<S, T>::type, N>
+kronecker(Tensor<S, N> const & A, Tensor4<T, N> const & B);
 
 ///
 /// 4th-order input

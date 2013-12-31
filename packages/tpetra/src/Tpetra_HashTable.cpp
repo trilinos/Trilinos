@@ -48,6 +48,9 @@
 #include "Tpetra_ETIHelperMacros.h"
 #include "Tpetra_HashTable_def.hpp"
 
+#ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
+#pragma message "Have KokkosClassic KokkosCompat"
+#endif
 namespace Tpetra {
 
 namespace Details {

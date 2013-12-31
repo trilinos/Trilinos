@@ -342,7 +342,7 @@ namespace MueLu {
     RCP<FactoryBase> BuildUncoupledAggregationFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
       RCP<UncoupledAggregationFactory> factory = Build<UncoupledAggregationFactory>(paramList, factoryMapIn);
 
-      if(paramList.isParameter("Ordering")) {
+      /*if(paramList.isParameter("Ordering")) {
         std::string orderingStr = paramList.get<std::string>("Ordering");
         Ordering ordering;
         if (orderingStr == "Natural")
@@ -354,15 +354,60 @@ namespace MueLu {
         else TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory::BuildUncoupledAggregationFactory()::Unknown Ordering type");
 
         factory->SetOrdering(ordering);
-      }
+      }*/
 
-      if(paramList.isParameter("MaxNeighAlreadySelected")) {
+      /*if(paramList.isParameter("MaxNeighAlreadySelected")) {
         factory->SetMaxNeighAlreadySelected(paramList.get<int>("MaxNeighAlreadySelected"));
       }
 
       if(paramList.isParameter("MinNodesPerAggregate")) {
         factory->SetMinNodesPerAggregate(paramList.get<int>("MinNodesPerAggregate"));
+      }*/
+
+      ParameterList paramListWithFactories(paramList); // copy  (*might* also avoid indicating that parameter entry is used)
+      paramListWithFactories.remove("factory", false);
+      paramListWithFactories.remove("Ordering", false);
+      if(paramList.isParameter("Ordering")) {
+        std::string orderingStr = paramList.get<std::string>("Ordering");
+        Ordering ordering;
+        if (orderingStr == "Natural")
+          ordering = NATURAL;
+        else if (orderingStr == "Random")
+          ordering = RANDOM;
+        else if (orderingStr == "Graph")
+          ordering = GRAPH;
+        else TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory::BuildUncoupledAggregationFactory()::Unknown Ordering type");
+
+        paramListWithFactories.set("Ordering",ordering);
+        //factory->SetOrdering(ordering);
       }
+
+      // Read the RCP<Factory> parameters of the class T
+      RCP<const ParameterList> validParamList = factory->GetValidParameterList();
+      for (ParameterList::ConstIterator param = validParamList->begin(); param != validParamList->end(); ++param) {
+        const std::string & pName = validParamList->name(param);
+
+        if (validParamList->isType< RCP<const FactoryBase> >(pName) && paramList.isParameter(pName)) {
+          // Generate or get factory described by param
+          RCP<const FactoryBase> generatingFact = BuildFactory(paramList.getEntry(pName), factoryMapIn);
+
+          // Replace <std::string> or sub-list entry by an RCP<Factory> in paramListWithFactories
+          paramListWithFactories.remove(pName);
+          paramListWithFactories.set(pName, generatingFact);
+        }
+
+        if (pName == "ParameterList" && validParamList->isType<RCP<const ParameterList> >(pName) && paramList.isParameter(pName)) {
+          // NOTE: we cannot use
+          //     subList = sublist(rcpFromRef(paramList), pName)
+          // here as that would result in sublist also being a reference to a temporary object.
+          // The resulting dereferencing in the corresponding factory would then segfault
+          RCP<const ParameterList> subList = sublist(rcp(new ParameterList(paramList)), pName);
+          paramListWithFactories.set(pName, subList);
+        }
+      }
+
+      // Configure the factory
+      factory->SetParameterList(paramListWithFactories);
 
       return factory;
     }

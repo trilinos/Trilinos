@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -433,10 +433,8 @@ namespace {
   //
 
 #define UNIT_TEST_GROUP_ORDINAL( SC, LO, GO, Node )                     \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Apply, SC, LO, GO, Node )
-#define UNIT_TEST_GROUP_ORDINAL( SC, LO, GO, Node )                     \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Epetra_ReplaceLocalValues, SC, LO, GO, Node )
-#define UNIT_TEST_GROUP_ORDINAL( SC, LO, GO, Node )                     \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Apply, SC, LO, GO, Node ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Epetra_ReplaceLocalValues, SC, LO, GO, Node ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Tpetra_ReplaceLocalValues, SC, LO, GO, Node )
 #define UNIT_TEST_GROUP_ORDINAL1( SC, LO, GO, Node )                     \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TpetraDeepCopy, SC, LO, GO, Node )

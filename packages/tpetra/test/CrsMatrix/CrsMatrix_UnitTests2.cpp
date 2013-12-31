@@ -520,7 +520,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     if (ST::isOrdinal) {
       TEST_COMPARE_ARRAYS(norms,zeros);
     } else {
-      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+      const Mag tol = TestingTolGuts<Mag, ! MT::isOrdinal>::testingTol ();
+      TEST_COMPARE_FLOATING_ARRAYS( norms, zeros, tol );
     }
   }
 

@@ -393,11 +393,11 @@ Ifpack_IC::Print(std::ostream& os) const
     os << "Relative threshold = " << RelativeThreshold() << endl;
     os << "Drop tolerance     = " << DropTolerance() << endl;
     os << "Condition number estimate = " << Condest() << endl;
-    os << "Global number of rows            = " << A_->NumGlobalRows() << endl;
+    os << "Global number of rows            = " << A_->NumGlobalRows64() << endl;
     if (IsComputed_) {
-      os << "Number of nonzeros of H         = " << U_->NumGlobalNonzeros() << endl;
+      os << "Number of nonzeros of H         = " << U_->NumGlobalNonzeros64() << endl;
       os << "nonzeros / rows                 = " 
-         << 1.0 * U_->NumGlobalNonzeros() / U_->NumGlobalRows() << endl;
+         << 1.0 * U_->NumGlobalNonzeros64() / U_->NumGlobalRows64() << endl;
     }
     os << endl;
     os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;

@@ -103,7 +103,20 @@ void EpetraExt_BlockDiagMatrix::Allocate(){
     DataSize+=ElementSize[i];
   }
   
-  DataMap_=new Epetra_BlockMap(-1,Map().NumMyElements(),Map().MyGlobalElements(),ElementSize,0,Map().Comm());
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(Map().GlobalIndicesInt()) {
+    DataMap_=new Epetra_BlockMap(-1,Map().NumMyElements(),Map().MyGlobalElements(),ElementSize,0,Map().Comm());
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(Map().GlobalIndicesLongLong()) {
+    DataMap_=new Epetra_BlockMap((long long) -1,Map().NumMyElements(),Map().MyGlobalElements64(),ElementSize,0,Map().Comm());
+  }
+  else
+#endif
+    throw "EpetraExt_BlockDiagMatrix::Allocate: GlobalIndices type unknown";
+
   Values_=new double[DataSize];  
   delete [] ElementSize;
 }
@@ -299,7 +312,22 @@ void EpetraExt_BlockDiagMatrix::Print(std::ostream & os) const{
     if (MyPID==iproc) {
       int NumMyElements1 =DataMap_->NumMyElements();
       int MaxElementSize1 = DataMap_->MaxElementSize();
-      int * MyGlobalElements1 = DataMap_->MyGlobalElements();
+	  int * MyGlobalElements1_int = 0;
+	  long long * MyGlobalElements1_LL = 0;
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(DataMap_->GlobalIndicesInt()) {
+      MyGlobalElements1_int = DataMap_->MyGlobalElements();
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(DataMap_->GlobalIndicesLongLong()) {
+      MyGlobalElements1_LL = DataMap_->MyGlobalElements64();
+  }
+  else
+#endif
+    throw "EpetraExt_BlockDiagMatrix::Print: GlobalIndices type unknown";
+
       int * FirstPointInElementList1;
       if (MaxElementSize1!=1) FirstPointInElementList1 = DataMap_->FirstPointInElementList();
 
@@ -322,11 +350,11 @@ void EpetraExt_BlockDiagMatrix::Print(std::ostream & os) const{
 	  os <<  MyPID; os << "    ";
 	  os.width(10);
 	  if (MaxElementSize1==1) {
-	    os << MyGlobalElements1[i] << "    ";
+	    os << (MyGlobalElements1_int ? MyGlobalElements1_int[i] : MyGlobalElements1_LL[i]) << "    ";
 	    iii = i;
 	  }
 	  else {
-	    os <<  MyGlobalElements1[i]<< "/" << ii << "    ";
+	    os <<  (MyGlobalElements1_int ? MyGlobalElements1_int[i] : MyGlobalElements1_LL[i]) << "/" << ii << "    ";
 	    iii = FirstPointInElementList1[i]+ii;
 	  }
           os.width(20);

@@ -54,6 +54,8 @@
 #include <impl/Kokkos_Shape.hpp>
 #include <impl/Kokkos_AnalyzeShape.hpp>
 #include <impl/Kokkos_ViewSupport.hpp>
+#include <impl/Kokkos_CalculateOffset.hpp>
+
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -67,8 +69,13 @@ template< typename ScalarType , class ValueType ,
           class MemorySpace , class MemoryTraits >
 struct ViewSpecialize ;
 
-template< class DstViewSpecialize , class SrcViewSpecialize = void , class Enable = void >
+template< class DstViewSpecialize ,
+          class SrcViewSpecialize = void ,
+          class Enable = void >
 struct ViewAssignment ;
+
+template< class DstMemorySpace , class SrcMemorySpace >
+struct DeepCopy ;
 
 } /* namespace Impl */
 } // namespace Kokkos
@@ -131,11 +138,18 @@ public:
   typedef typename analysis::non_const_type   non_const_data_type ;
 
   //------------------------------------
-  // Scalar type traits:
+  // Intrinsic scalar type traits:
 
   typedef typename analysis::scalar_type            scalar_type ;
   typedef typename analysis::const_scalar_type      const_scalar_type ;
   typedef typename analysis::non_const_scalar_type  non_const_scalar_type ;
+
+  //------------------------------------
+  // Array of intrinsic scalar type traits:
+
+  typedef typename analysis::array_type            array_type ;
+  typedef typename analysis::const_array_type      const_array_type ;
+  typedef typename analysis::non_const_array_type  non_const_array_type ;
 
   //------------------------------------
   // Value type traits:
@@ -217,6 +231,7 @@ namespace Impl {
 namespace ViewError {
 
 struct allocation_constructor_requires_managed {};
+struct allocation_constructor_requires_nonconst {};
 struct user_pointer_constructor_requires_unmanaged {};
 struct device_shmem_constructor_requires_unmanaged {};
 
@@ -225,12 +240,23 @@ struct scalar_operator_called_from_non_scalar_view {};
 } /* namespace ViewError */
 
 //----------------------------------------------------------------------------
+
+template< class Type >
+struct IsViewLabel : public Kokkos::Impl::false_type {};
+
+template<>
+struct IsViewLabel<std::string> : public Kokkos::Impl::true_type {};
+
+template< unsigned N >
+struct IsViewLabel<char[N]> : public Kokkos::Impl::true_type {};
+
+//----------------------------------------------------------------------------
 /** \brief  Enable view parentheses operator for
  *          match of layout and integral arguments.
  *          If correct rank define type from traits,
  *          otherwise define type as an error message.
  */
-template< class ReturnType , class Traits , class Layout , unsigned Rank ,
+template< class ReturnType , class Traits , unsigned Rank ,
           typename iType0 = int , typename iType1 = int ,
           typename iType2 = int , typename iType3 = int ,
           typename iType4 = int , typename iType5 = int ,
@@ -238,19 +264,18 @@ template< class ReturnType , class Traits , class Layout , unsigned Rank ,
           class Enable = void >
 struct ViewEnableArrayOper ;
 
-template< class ReturnType , class Traits , class Layout , unsigned Rank ,
+template< class ReturnType , class Traits , unsigned Rank ,
           typename iType0 , typename iType1 ,
           typename iType2 , typename iType3 ,
           typename iType4 , typename iType5 ,
           typename iType6 , typename iType7 >
 struct ViewEnableArrayOper<
-   ReturnType , Traits , Layout , Rank ,
+   ReturnType , Traits , Rank ,
    iType0 , iType1 , iType2 , iType3 ,
    iType4 , iType5 , iType6 , iType7 ,
    typename enable_if<
      iType0(0) == 0 && iType1(0) == 0 && iType2(0) == 0 && iType3(0) == 0 &&
      iType4(0) == 0 && iType5(0) == 0 && iType6(0) == 0 && iType7(0) == 0 &&
-     is_same< typename Traits::array_layout , Layout >::value &&
      ( unsigned(Traits::rank) == Rank )
    >::type >
 {
@@ -321,34 +346,34 @@ const AllocateWithoutInitializing allocate_without_initializing = AllocateWithou
  *   wrap externally allocated memory in a View without automatic
  *   deallocation.
  *
- * \section Kokkos_View_MT \c MemoryTraits discussion
+ * \section Kokkos_View_MT MemoryTraits discussion
  *
- * \subsection Kokkos_View_MT_Interp \c MemoryTraits interpretation depends on \c Device
+ * \subsection Kokkos_View_MT_Interp MemoryTraits interpretation depends on Device
  *
  * Some \c MemoryTraits options may have different interpretations for
  * different \c Device types.  For example, with the Cuda device,
- * RandomRead tells Kokkos to fetch the data through the texture
+ * \c RandomRead tells Kokkos to fetch the data through the texture
  * cache, whereas the non-GPU devices have no such hardware construct.
  *
- * \subsection Kokkos_View_MT_PrefUse Preferred use of \c MemoryTraits
+ * \subsection Kokkos_View_MT_PrefUse Preferred use of MemoryTraits
  *
  * Users should defer applying the optional \c MemoryTraits parameter
  * until the point at which they actually plan to rely on it in a
  * computational kernel.  This minimizes the number of template
  * parameters exposed in their code, which reduces the cost of
  * compilation.  Users may always assign a View without specified
- * <tt>MemoryTraits</tt> to a compatible View with that specification.
+ * \c MemoryTraits to a compatible View with that specification.
  * For example:
  * \code
  * // Pass in the simplest types of View possible.
- * void 
- * doSomething (View<double*, Cuda> out, 
- *              View<const double*, Cuda> in) 
+ * void
+ * doSomething (View<double*, Cuda> out,
+ *              View<const double*, Cuda> in)
  * {
  *   // Assign the "generic" View in to a RandomRead View in_rr.
  *   // Note that RandomRead View objects must have const data.
  *   View<const double*, Cuda, RandomRead> in_rr = in;
- *   // ... do something with in_rr and out ... 
+ *   // ... do something with in_rr and out ...
  * }
  * \endcode
  */
@@ -359,6 +384,21 @@ template< class DataType ,
           class Specialize =
             typename ViewTraits<DataType,Arg1Type,Arg2Type,Arg3Type>::specialize >
 class View ;
+
+//----------------------------------------------------------------------------
+
+template< class V >
+struct is_view : public Impl::false_type {};
+
+template< class DataType ,
+          class Arg1 ,
+          class Arg2 ,
+          class Arg3 ,
+          class Spec >
+struct is_view< View< DataType , Arg1 , Arg2 , Arg3 , Spec > >
+  : public Impl::true_type {};
+
+//----------------------------------------------------------------------------
 
 template< class DataType ,
           class Arg1Type ,
@@ -382,16 +422,29 @@ private:
   typedef Impl::LayoutStride< typename traits::shape_type ,
                               typename traits::array_layout > stride_type ;
 
+  typedef Impl::CalculateOffset< typename traits::array_layout ,
+                         typename traits::shape_type > calculate_offset;
+
   typename traits::scalar_type * m_ptr_on_device ;
   typename traits::shape_type    m_shape ;
   stride_type                    m_stride ;
-  
+
 public:
+
+  typedef View< typename traits::array_type ,
+                typename traits::array_layout ,
+                typename traits::device_type ,
+                typename traits::memory_traits > array_type ;
 
   typedef View< typename traits::const_data_type ,
                 typename traits::array_layout ,
                 typename traits::device_type ,
                 typename traits::memory_traits > const_type ;
+
+  typedef View< typename traits::non_const_data_type ,
+                typename traits::array_layout ,
+                typename traits::device_type ,
+                typename traits::memory_traits > non_const_type ;
 
   typedef View< typename traits::non_const_data_type ,
                 typename traits::array_layout ,
@@ -431,34 +484,6 @@ public:
     { return Impl::dimension( m_shape , i ); }
 
   //------------------------------------
-
-private:
-
-  template< class ViewRHS >
-  KOKKOS_INLINE_FUNCTION
-  void assign_compatible_view( const ViewRHS & rhs ,
-                               typename Impl::enable_if< Impl::ViewAssignable< View , ViewRHS >::value >::type * = 0 )
-  {
-    typedef typename traits::shape_type    shape_type ;
-    typedef typename traits::memory_space  memory_space ;
-    typedef typename traits::memory_traits memory_traits ;
-
-    Impl::ViewTracking< traits >::decrement( m_ptr_on_device );
-
-    shape_type::assign( m_shape,
-                        rhs.m_shape.N0 , rhs.m_shape.N1 , rhs.m_shape.N2 , rhs.m_shape.N3 ,
-                        rhs.m_shape.N4 , rhs.m_shape.N5 , rhs.m_shape.N6 , rhs.m_shape.N7 );
-
-    stride_type::assign( m_stride , rhs.m_stride.value );
-
-    m_ptr_on_device = rhs.m_ptr_on_device ;
-
-    Impl::ViewTracking< traits >::increment( m_ptr_on_device );
-  }
-
-public:
-
-  //------------------------------------
   // Destructor, constructors, assignment operators:
 
   KOKKOS_INLINE_FUNCTION
@@ -472,34 +497,50 @@ public:
     }
 
   KOKKOS_INLINE_FUNCTION
-  View( const View & rhs ) : m_ptr_on_device(0) { assign_compatible_view( rhs ); }
+  View( const View & rhs ) : m_ptr_on_device(0)
+    {
+      (void) Impl::ViewAssignment<
+         typename traits::specialize ,
+         typename traits::specialize >( *this , rhs );
+    }
 
   KOKKOS_INLINE_FUNCTION
-  View & operator = ( const View & rhs ) { assign_compatible_view( rhs ); return *this ; }
+  View & operator = ( const View & rhs )
+    {
+      (void) Impl::ViewAssignment<
+         typename traits::specialize ,
+         typename traits::specialize >( *this , rhs );
+      return *this ;
+    }
 
   //------------------------------------
   // Construct or assign compatible view:
 
-  template< class RT , class RL , class RD , class RM >
+  template< class RT , class RL , class RD , class RM , class RS >
   KOKKOS_INLINE_FUNCTION
-  View( const View<RT,RL,RD,RM,typename traits::specialize> & rhs )
-    : m_ptr_on_device(0) { assign_compatible_view( rhs ); }
+  View( const View<RT,RL,RD,RM,RS> & rhs )
+    : m_ptr_on_device(0)
+    {
+      (void) Impl::ViewAssignment<
+         typename traits::specialize , RS >( *this , rhs );
+    }
 
-  template< class RT , class RL , class RD , class RM >
+  template< class RT , class RL , class RD , class RM , class RS >
   KOKKOS_INLINE_FUNCTION
-  View & operator = ( const View<RT,RL,RD,RM,typename traits::specialize> & rhs )
-    { assign_compatible_view( rhs ); return *this ; }
+  View & operator = ( const View<RT,RL,RD,RM,RS> & rhs )
+    {
+      (void) Impl::ViewAssignment<
+         typename traits::specialize , RS >( *this , rhs );
+      return *this ;
+    }
 
   //------------------------------------
   // Allocation of a managed view with possible alignment padding.
+  // Allocation constructor enabled for managed and non-const values
 
-  typedef Impl::if_c< traits::is_managed ,
-                      std::string ,
-                      Impl::ViewError::allocation_constructor_requires_managed >
-   if_allocation_constructor ;
-
+  template< class LabelType >
   explicit inline
-  View( const typename if_allocation_constructor::type & label ,
+  View( const LabelType & label ,
         const size_t n0 = 0 ,
         const size_t n1 = 0 ,
         const size_t n2 = 0 ,
@@ -507,7 +548,12 @@ public:
         const size_t n4 = 0 ,
         const size_t n5 = 0 ,
         const size_t n6 = 0 ,
-        const size_t n7 = 0 )
+        typename Impl::enable_if<(
+          Impl::IsViewLabel< LabelType >::value &&
+          ( ! Impl::is_const< typename traits::value_type >::value ) &&
+          ( ! Impl::is_const< typename traits::scalar_type >::value ) &&
+          traits::is_managed ),
+        const size_t >::type n7 = 0 )
     : m_ptr_on_device(0)
     {
       typedef typename traits::device_type   device_type ;
@@ -519,17 +565,18 @@ public:
       stride_type::assign_with_padding( m_stride , m_shape );
 
       m_ptr_on_device = (scalar_type *)
-        memory_space::allocate( if_allocation_constructor::select( label ) ,
+        memory_space::allocate( label ,
                                 typeid(scalar_type) ,
                                 sizeof(scalar_type) ,
                                 Impl::capacity( m_shape , m_stride ) );
 
-      Impl::ViewInitialize< device_type > init( *this );
+      Impl::ViewFill< View > init( *this , typename traits::value_type() );
     }
 
+  template< class LabelType >
   explicit inline
   View( const AllocateWithoutInitializing & ,
-        const typename if_allocation_constructor::type & label ,
+        const LabelType & label ,
         const size_t n0 = 0 ,
         const size_t n1 = 0 ,
         const size_t n2 = 0 ,
@@ -537,7 +584,12 @@ public:
         const size_t n4 = 0 ,
         const size_t n5 = 0 ,
         const size_t n6 = 0 ,
-        const size_t n7 = 0 )
+        typename Impl::enable_if<(
+          Impl::IsViewLabel< LabelType >::value &&
+          ( ! Impl::is_const< typename traits::value_type >::value ) &&
+          ( ! Impl::is_const< typename traits::scalar_type >::value ) &&
+          traits::is_managed ),
+        const size_t >::type n7 = 0 )
     : m_ptr_on_device(0)
     {
       typedef typename traits::device_type   device_type ;
@@ -549,7 +601,7 @@ public:
       stride_type::assign_with_padding( m_stride , m_shape );
 
       m_ptr_on_device = (scalar_type *)
-        memory_space::allocate( if_allocation_constructor::select( label ) ,
+        memory_space::allocate( label ,
                                 typeid(scalar_type) ,
                                 sizeof(scalar_type) ,
                                 Impl::capacity( m_shape , m_stride ) );
@@ -559,12 +611,9 @@ public:
   // Assign an unmanaged View from pointer, can be called in functors.
   // No alignment padding is performed.
 
-  typedef Impl::if_c< ! traits::is_managed ,
-                      typename traits::scalar_type * ,
-                      Impl::ViewError::user_pointer_constructor_requires_unmanaged >
-    if_user_pointer_constructor ;
-
-  View( typename if_user_pointer_constructor::type ptr ,
+  template< typename T >
+  explicit inline
+  View( T * ptr ,
         const size_t n0 = 0 ,
         const size_t n1 = 0 ,
         const size_t n2 = 0 ,
@@ -572,16 +621,17 @@ public:
         const size_t n4 = 0 ,
         const size_t n5 = 0 ,
         const size_t n6 = 0 ,
-        const size_t n7 = 0 )
-    : m_ptr_on_device(0)
+        typename Impl::enable_if<(
+          Impl::is_same<T,typename traits::scalar_type>::value &&
+          ! traits::is_managed ),
+        const size_t >::type n7 = 0 )
+    : m_ptr_on_device(ptr)
     {
       typedef typename traits::shape_type   shape_type ;
       typedef typename traits::scalar_type  scalar_type ;
 
       shape_type ::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
       stride_type::assign_no_padding( m_stride , m_shape );
-
-      m_ptr_on_device = if_user_pointer_constructor::select( ptr );
     }
 
   //------------------------------------
@@ -641,7 +691,7 @@ public:
 
     shape_type  shape ;
     stride_type stride ;
-    
+
     traits::shape_type::assign( shape, n0, n1, n2, n3, n4, n5, n6, n7 );
     stride_type::assign_no_padding( stride , shape );
 
@@ -651,7 +701,7 @@ public:
   //------------------------------------
   // Is not allocated
 
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   bool is_null() const { return 0 == m_ptr_on_device ; }
 
   //------------------------------------
@@ -670,21 +720,21 @@ public:
       return *this ;
     }
 
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   operator typename if_scalar_operator::type & () const
     {
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
       return if_scalar_operator::select( *m_ptr_on_device );
     }
 
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename if_scalar_operator::type & operator()() const
     {
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
       return if_scalar_operator::select( *m_ptr_on_device );
     }
 
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename if_scalar_operator::type & operator*() const
     {
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
@@ -697,11 +747,11 @@ public:
   // (2) the rank matches the number of arguments
   // (3) the memory space is valid for the access
   //------------------------------------
-  // LayoutLeft, rank 1:
+  // rank 1:
 
   template< typename iType0 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type & , traits, LayoutLeft, 1, iType0 >::type
+  KOKKOS_FORCEINLINE_FUNCTION
+  typename Impl::ViewEnableArrayOper< typename traits::scalar_type & , traits, 1, iType0 >::type
     operator[] ( const iType0 & i0 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
@@ -711,8 +761,8 @@ public:
     }
 
   template< typename iType0 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type & , traits, LayoutLeft, 1, iType0 >::type
+  KOKKOS_FORCEINLINE_FUNCTION
+  typename Impl::ViewEnableArrayOper< typename traits::scalar_type & , traits, 1, iType0 >::type
     operator() ( const iType0 & i0 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
@@ -722,8 +772,8 @@ public:
     }
 
   template< typename iType0 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type & , traits, LayoutLeft, 1, iType0 >::type
+  KOKKOS_FORCEINLINE_FUNCTION
+  typename Impl::ViewEnableArrayOper< typename traits::scalar_type & , traits, 1, iType0 >::type
     at( const iType0 & i0 , const int , const int , const int ,
         const int , const int , const int , const int ) const
     {
@@ -733,532 +783,212 @@ public:
       return m_ptr_on_device[ i0 ];
     }
 
-  // LayoutLeft, rank 2:
+  // rank 2:
 
   template< typename iType0 , typename iType1 >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, LayoutLeft, 2, iType0, iType1 >::type
+                                      traits, 2, iType0, iType1 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_stride.value * i1 ];
+      return m_ptr_on_device[ calculate_offset::apply(i0,i1,m_stride) ];
     }
 
   template< typename iType0 , typename iType1 >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, LayoutLeft, 2, iType0, iType1 >::type
+                                      traits, 2, iType0, iType1 >::type
     at( const iType0 & i0 , const iType1 & i1 , const int , const int ,
         const int , const int , const int , const int ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_stride.value * i1 ];
+      return m_ptr_on_device[ calculate_offset::apply(i0,i1,m_stride) ];
     }
 
-  // LayoutLeft, rank 3:
+  // rank 3:
 
   template< typename iType0 , typename iType1 , typename iType2 >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, LayoutLeft, 3, iType0, iType1, iType2 >::type
+                                      traits, 3, iType0, iType1, iType2 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_stride.value * (
-                              i1 + m_shape.N1 * i2 ) ];
+      return m_ptr_on_device[ calculate_offset::apply(i0,i1,i2,m_shape,m_stride) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, LayoutLeft, 3, iType0, iType1, iType2 >::type
+                                      traits, 3, iType0, iType1, iType2 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const int ,
         const int , const int , const int , const int ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_stride.value * (
-                              i1 + m_shape.N1 * i2 ) ];
+      return m_ptr_on_device[ calculate_offset::apply(i0,i1,i2,m_shape,m_stride) ];
     }
 
-  // LayoutLeft, rank 4:
+  // rank 4:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, LayoutLeft, 4, iType0, iType1, iType2, iType3 >::type
+                                      traits, 4, iType0, iType1, iType2, iType3 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_stride.value * (
-                              i1 + m_shape.N1 * (
-                              i2 + m_shape.N2 * i3 )) ];
+      return m_ptr_on_device[ calculate_offset::apply(i0,i1,i2,i3,m_shape,m_stride) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, LayoutLeft, 4, iType0, iType1, iType2, iType3 >::type
+                                      traits, 4, iType0, iType1, iType2, iType3 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const int , const int , const int , const int ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_stride.value * (
-                              i1 + m_shape.N1 * (
-                              i2 + m_shape.N2 * i3 )) ];
+      return m_ptr_on_device[ calculate_offset::apply(i0,i1,i2,i3,m_shape,m_stride) ];
     }
 
-  // LayoutLeft, rank 5:
+  // rank 5:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, LayoutLeft, 5, iType0, iType1, iType2, iType3 , iType4 >::type
+                                      traits, 5, iType0, iType1, iType2, iType3 , iType4 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_stride.value * (
-                              i1 + m_shape.N1 * (
-                              i2 + m_shape.N2 * (
-                              i3 + m_shape.N3 * i4 ))) ];
+      return m_ptr_on_device[ calculate_offset::apply(i0,i1,i2,i3,i4,m_shape,m_stride) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, LayoutLeft, 5, iType0, iType1, iType2, iType3 , iType4 >::type
+                                      traits, 5, iType0, iType1, iType2, iType3 , iType4 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const iType4 & i4 , const int , const int , const int ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_stride.value * (
-                              i1 + m_shape.N1 * (
-                              i2 + m_shape.N2 * (
-                              i3 + m_shape.N3 * i4 ))) ];
+      return m_ptr_on_device[ calculate_offset::apply(i0,i1,i2,i3,i4,m_shape,m_stride) ];
     }
 
-  // LayoutLeft, rank 6:
+  // rank 6:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 , typename iType5 >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, LayoutLeft, 6, iType0, iType1, iType2, iType3 , iType4, iType5 >::type
+                                      traits, 6, iType0, iType1, iType2, iType3 , iType4, iType5 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,i5 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_stride.value * (
-                              i1 + m_shape.N1 * (
-                              i2 + m_shape.N2 * (
-                              i3 + m_shape.N3 * (
-                              i4 + m_shape.N4 * i5 )))) ];
+      return m_ptr_on_device[ calculate_offset::apply(i0,i1,i2,i3,i4,i5,m_shape,m_stride) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 , typename iType5 >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, LayoutLeft, 6, iType0, iType1, iType2, iType3 , iType4, iType5 >::type
+                                      traits, 6, iType0, iType1, iType2, iType3 , iType4, iType5 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const iType4 & i4 , const iType5 & i5 , const int , const int ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,i5 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_stride.value * (
-                              i1 + m_shape.N1 * (
-                              i2 + m_shape.N2 * (
-                              i3 + m_shape.N3 * (
-                              i4 + m_shape.N4 * i5 )))) ];
+      return m_ptr_on_device[ calculate_offset::apply(i0,i1,i2,i3,i4,i5,m_shape,m_stride) ];
     }
 
-  // LayoutLeft, rank 7:
+  // rank 7:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 , typename iType5 , typename iType6 >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, LayoutLeft, 7, iType0, iType1, iType2, iType3 , iType4, iType5, iType6 >::type
+                                      traits, 7, iType0, iType1, iType2, iType3 , iType4, iType5, iType6 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_stride.value * (
-                              i1 + m_shape.N1 * (
-                              i2 + m_shape.N2 * (
-                              i3 + m_shape.N3 * (
-                              i4 + m_shape.N4 * (
-                              i5 + m_shape.N5 * i6 ))))) ];
+      return m_ptr_on_device[ calculate_offset::apply(i0,i1,i2,i3,i4,i5,i6,m_shape,m_stride) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 , typename iType5 , typename iType6 >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, LayoutLeft, 7, iType0, iType1, iType2, iType3 , iType4, iType5, iType6 >::type
+                                      traits, 7, iType0, iType1, iType2, iType3 , iType4, iType5, iType6 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const int ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_stride.value * (
-                              i1 + m_shape.N1 * (
-                              i2 + m_shape.N2 * (
-                              i3 + m_shape.N3 * (
-                              i4 + m_shape.N4 * (
-                              i5 + m_shape.N5 * i6 ))))) ];
+      return m_ptr_on_device[ calculate_offset::apply(i0,i1,i2,i3,i4,i5,i6,m_shape,m_stride) ];
     }
 
-  // LayoutLeft, rank 8:
+  // rank 8:
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 , typename iType5 , typename iType6 , typename iType7 >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, LayoutLeft, 8, iType0, iType1, iType2, iType3 , iType4, iType5, iType6, iType7 >::type
+                                      traits, 8, iType0, iType1, iType2, iType3 , iType4, iType5, iType6, iType7 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const iType7 & i7 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0,i1,i2,i3,i4,i5,i6,i7 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_stride.value * (
-                              i1 + m_shape.N1 * (
-                              i2 + m_shape.N2 * (
-                              i3 + m_shape.N3 * (
-                              i4 + m_shape.N4 * (
-                              i5 + m_shape.N5 * (
-                              i6 + m_shape.N6 * i7 )))))) ];
+      return m_ptr_on_device[ calculate_offset::apply(i0,i1,i2,i3,i4,i5,i6,i7,m_shape,m_stride) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
             typename iType4 , typename iType5 , typename iType6 , typename iType7 >
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, LayoutLeft, 8, iType0, iType1, iType2, iType3 , iType4, iType5, iType6, iType7 >::type
+                                      traits, 8, iType0, iType1, iType2, iType3 , iType4, iType5, iType6, iType7 >::type
     at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
         const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const iType7 & i7 ) const
     {
       KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0,i1,i2,i3,i4,i5,i6,i7 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ i0 + m_stride.value * (
-                              i1 + m_shape.N1 * (
-                              i2 + m_shape.N2 * (
-                              i3 + m_shape.N3 * (
-                              i4 + m_shape.N4 * (
-                              i5 + m_shape.N5 * (
-                              i6 + m_shape.N6 * i7 )))))) ];
-    }
-
-  //------------------------------------
-  // LayoutRight, rank 1:
-
-  template< typename iType0 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type & , traits, LayoutRight, 1, iType0 >::type
-    operator[] ( const iType0 & i0 ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      return m_ptr_on_device[ i0 ];
-    }
-
-  template< typename iType0 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type & , traits, LayoutRight, 1, iType0 >::type
-    operator() ( const iType0 & i0 ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      return m_ptr_on_device[ i0 ];
-    }
-
-  template< typename iType0 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type & , traits, LayoutRight, 1, iType0 >::type
-    at( const iType0 & i0 , const int , const int , const int ,
-        const int , const int , const int , const int ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      return m_ptr_on_device[ i0 ];
-    }
-
-  // LayoutRight, rank 2:
-
-  template< typename iType0 , typename iType1 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, LayoutRight, 2, iType0, iType1 >::type
-    operator() ( const iType0 & i0 , const iType1 & i1 ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      return m_ptr_on_device[ i1 + i0 * m_stride.value ];
-    }
-
-  template< typename iType0 , typename iType1 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, LayoutRight, 2, iType0, iType1 >::type
-    at( const iType0 & i0 , const iType1 & i1 , const int , const int ,
-        const int , const int , const int , const int ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      return m_ptr_on_device[ i1 + i0 * m_stride.value ];
-    }
-
-  // LayoutRight, rank 3:
-
-  template< typename iType0 , typename iType1 , typename iType2 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, LayoutRight, 3, iType0, iType1, iType2 >::type
-    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      return m_ptr_on_device[ i2 + m_shape.N2 * ( i1 ) + i0 * m_stride.value ];
-    }
-
-  template< typename iType0 , typename iType1 , typename iType2 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, LayoutRight, 3, iType0, iType1, iType2 >::type
-    at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const int ,
-        const int , const int , const int , const int ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      return m_ptr_on_device[ i2 + m_shape.N2 * ( i1 ) + i0 * m_stride.value ];
-    }
-
-  // LayoutRight, rank 4:
-
-  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, LayoutRight, 4, iType0, iType1, iType2, iType3 >::type
-    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      return m_ptr_on_device[ i3 + m_shape.N3 * (
-                              i2 + m_shape.N2 * (
-                              i1 )) + i0 * m_stride.value ];
-    }
-
-  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, LayoutRight, 4, iType0, iType1, iType2, iType3 >::type
-    at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-        const int , const int , const int , const int ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      return m_ptr_on_device[ i3 + m_shape.N3 * (
-                              i2 + m_shape.N2 * (
-                              i1 )) + i0 * m_stride.value ];
-    }
-
-  // LayoutRight, rank 5:
-
-  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
-            typename iType4 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, LayoutRight, 5, iType0, iType1, iType2, iType3, iType4 >::type
-    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-                 const iType4 & i4 ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      return m_ptr_on_device[ i4 + m_shape.N4 * (
-                              i3 + m_shape.N3 * (
-                              i2 + m_shape.N2 * (
-                              i1 ))) + i0 * m_stride.value ];
-    }
-
-  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
-            typename iType4 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, LayoutRight, 5, iType0, iType1, iType2, iType3, iType4 >::type
-    at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-        const iType4 & i4 , const int , const int , const int ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      return m_ptr_on_device[ i4 + m_shape.N4 * (
-                              i3 + m_shape.N3 * (
-                              i2 + m_shape.N2 * (
-                              i1 ))) + i0 * m_stride.value ];
-    }
-
-  // LayoutRight, rank 6:
-
-  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
-            typename iType4 , typename iType5 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, LayoutRight, 6, iType0, iType1, iType2, iType3, iType4, iType5 >::type
-    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-                 const iType4 & i4 , const iType5 & i5 ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,i5 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      return m_ptr_on_device[ i5 + m_shape.N5 * (
-                              i4 + m_shape.N4 * (
-                              i3 + m_shape.N3 * (
-                              i2 + m_shape.N2 * (
-                              i1 )))) + i0 * m_stride.value ];
-    }
-
-  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
-            typename iType4 , typename iType5 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, LayoutRight, 6, iType0, iType1, iType2, iType3, iType4, iType5 >::type
-    at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-        const iType4 & i4 , const iType5 & i5 , const int , const int ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,i5 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      return m_ptr_on_device[ i5 + m_shape.N5 * (
-                              i4 + m_shape.N4 * (
-                              i3 + m_shape.N3 * (
-                              i2 + m_shape.N2 * (
-                              i1 )))) + i0 * m_stride.value ];
-    }
-
-  // LayoutRight, rank 7:
-
-  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
-            typename iType4 , typename iType5 , typename iType6 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, LayoutRight, 7, iType0, iType1, iType2, iType3, iType4, iType5, iType6 >::type
-    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-                 const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      return m_ptr_on_device[ i6 + m_shape.N6 * (
-                              i5 + m_shape.N5 * (
-                              i4 + m_shape.N4 * (
-                              i3 + m_shape.N3 * (
-                              i2 + m_shape.N2 * (
-                              i1 ))))) + i0 * m_stride.value ];
-    }
-
-  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
-            typename iType4 , typename iType5 , typename iType6 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, LayoutRight, 7, iType0, iType1, iType2, iType3, iType4, iType5, iType6 >::type
-    at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-        const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const int ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      return m_ptr_on_device[ i6 + m_shape.N6 * (
-                              i5 + m_shape.N5 * (
-                              i4 + m_shape.N4 * (
-                              i3 + m_shape.N3 * (
-                              i2 + m_shape.N2 * (
-                              i1 ))))) + i0 * m_stride.value ];
-    }
-
-  // LayoutRight, rank 8:
-
-  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
-            typename iType4 , typename iType5 , typename iType6 , typename iType7 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, LayoutRight, 8, iType0, iType1, iType2, iType3, iType4, iType5, iType6, iType7 >::type
-    operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-                 const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const iType7 & i7 ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0,i1,i2,i3,i4,i5,i6,i7 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      return m_ptr_on_device[ i7 + m_shape.N7 * (
-                              i6 + m_shape.N6 * (
-                              i5 + m_shape.N5 * (
-                              i4 + m_shape.N4 * (
-                              i3 + m_shape.N3 * (
-                              i2 + m_shape.N2 * (
-                              i1 )))))) + i0 * m_stride.value ];
-    }
-
-  template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
-            typename iType4 , typename iType5 , typename iType6 , typename iType7 >
-  KOKKOS_INLINE_FUNCTION
-  typename Impl::ViewEnableArrayOper< typename traits::scalar_type & ,
-                                      traits, LayoutRight, 8, iType0, iType1, iType2, iType3, iType4, iType5, iType6, iType7 >::type
-    at( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
-        const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const iType7 & i7 ) const
-    {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0,i1,i2,i3,i4,i5,i6,i7 );
-      KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-
-      return m_ptr_on_device[ i7 + m_shape.N7 * (
-                              i6 + m_shape.N6 * (
-                              i5 + m_shape.N5 * (
-                              i4 + m_shape.N4 * (
-                              i3 + m_shape.N3 * (
-                              i2 + m_shape.N2 * (
-                              i1 )))))) + i0 * m_stride.value ];
+      return m_ptr_on_device[ calculate_offset::apply(i0,i1,i2,i3,i4,i5,i6,i7,m_shape,m_stride) ];
     }
 
   //------------------------------------
   // Access to the underlying contiguous storage of this view specialization.
   // These methods are specific to specialization of a view.
 
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   typename traits::scalar_type * ptr_on_device() const { return m_ptr_on_device ; }
 
   // Stride of physical storage, dimensioned to at least Rank
@@ -1420,7 +1150,7 @@ void deep_copy( const View< DT, DL, DD, DM, DS> & dst ,
 
 template< class T , class L , class D , class M , class S >
 typename Impl::enable_if<(
-    View<T,L,D,M,S>::is_managed 
+    View<T,L,D,M,S>::is_managed
   ), typename View<T,L,D,M,S>::HostMirror >::type
 inline
 create_mirror( const View<T,L,D,M,S> & src )
@@ -1431,7 +1161,7 @@ create_mirror( const View<T,L,D,M,S> & src )
 
   // 'view' is managed therefore we can allocate a
   // compatible host_view through the ordinary constructor.
-  
+
   std::string label = memory_space::query_label( src.ptr_on_device() );
   label.append("_mirror");
 

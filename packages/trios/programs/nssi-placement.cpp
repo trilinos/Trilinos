@@ -76,7 +76,7 @@ enum graph_connection_t {
 
 /* ----------------- COMMAND-LINE OPTIONS --------------- */
 
-#define DEBUG_PLACEMENT
+#undef DEBUG_PLACEMENT
 
 void construct_graph(
         int *rank_map,

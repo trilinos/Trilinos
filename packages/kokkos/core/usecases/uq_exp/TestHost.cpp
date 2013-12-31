@@ -21,7 +21,7 @@ void test_host_explicit( comm::Machine machine ,
                          size_t uq_count_end ,
                          size_t count_run )
 {
-  Kokkos::Threads::initialize( std::pair<unsigned,unsigned>( gang_count , gang_worker_count ) );
+  Kokkos::Threads::initialize( gang_count * gang_worker_count );
 
   Explicit::driver<double,Kokkos::Threads>( "Threads" , machine , gang_count ,
                                               elem_count_begin , elem_count_end ,

@@ -572,7 +572,7 @@ int Ifpack_BlockRelaxation<T>::Compute()
 
   IsComputed_ = false;
 
-  if (Matrix().NumGlobalRows() != Matrix().NumGlobalCols())
+  if (Matrix().NumGlobalRows64() != Matrix().NumGlobalCols64())
     IFPACK_CHK_ERR(-2); // only square matrices
 
   IFPACK_CHK_ERR(ExtractSubmatrices());
@@ -653,9 +653,9 @@ ApplyInverseJacobi(const Epetra_MultiVector& X,
 
   for (int j = 0; j < NumSweeps_ ; j++) {
     IFPACK_CHK_ERR(Apply(Y,AX));
-    ApplyInverseFlops_ += X.NumVectors() * 2 * Matrix_->NumGlobalNonzeros();
+    ApplyInverseFlops_ += X.NumVectors() * 2 * Matrix_->NumGlobalNonzeros64();
     IFPACK_CHK_ERR(AX.Update(1.0,X,-1.0));
-    ApplyInverseFlops_ += X.NumVectors() * 2 * Matrix_->NumGlobalRows();
+    ApplyInverseFlops_ += X.NumVectors() * 2 * Matrix_->NumGlobalRows64();
     IFPACK_CHK_ERR(DoJacobi(AX,Y));
     // flops counted in DoJacobi()
   }
@@ -1068,7 +1068,7 @@ ostream& Ifpack_BlockRelaxation<T>::Print(ostream & os) const
       os << ", using input starting solution" << endl;
     os << "Number of local blocks = " << Partitioner_->NumLocalParts() << endl;
     //os << "Condition number estimate = " << Condest_ << endl;
-    os << "Global number of rows            = " << Matrix_->NumGlobalRows() << endl;
+    os << "Global number of rows            = " << Matrix_->NumGlobalRows64() << endl;
     os << endl;
     os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;
     os << "-----           -------   --------------       ------------     --------" << endl;

@@ -109,6 +109,8 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
   #ifdef HAVE_STOKHOS
   , sg_lof_(Teuchos::null)
   #endif
+  , oneTimeDirichletBeta_on_(false)
+  , oneTimeDirichletBeta_(0.0)
 {
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
@@ -149,6 +151,8 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
   #ifdef HAVE_STOKHOS
   , sg_lof_(Teuchos::null)
   #endif
+  , oneTimeDirichletBeta_on_(false)
+  , oneTimeDirichletBeta_(0.0)
 {
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
@@ -178,6 +182,8 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
   build_transient_support_(build_transient_support),
   lof_(lof->getEpetraFactory()),
   sg_lof_(lof)
+  , oneTimeDirichletBeta_on_(false)
+  , oneTimeDirichletBeta_(0.0)
 {
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
@@ -557,6 +563,18 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
     ae_inargs.beta = inArgs.get_beta();
     ae_inargs.time = inArgs.get_t();
     ae_inargs.evaluate_transient_terms = true;
+  }
+
+  // handle application of the one time dirichlet beta in the
+  // assembly engine. Note that this has to be set explicitly
+  // each time because this badly breaks encapsulation. Essentially
+  // we must work around the model evaluator abstraction!
+  ae_inargs.apply_dirichlet_beta = false;
+  if(oneTimeDirichletBeta_on_) {
+    ae_inargs.dirichlet_beta = oneTimeDirichletBeta_;
+    ae_inargs.apply_dirichlet_beta = true;
+
+    oneTimeDirichletBeta_on_ = false;
   }
   
   // Set locally replicated scalar input parameters
@@ -1169,4 +1187,11 @@ panzer::buildEpetraME(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
 #endif
 
    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,ss.str());
+}
+
+void panzer::ModelEvaluator_Epetra::
+setOneTimeDirichletBeta(const double & beta) const
+{
+  oneTimeDirichletBeta_on_ = true;
+  oneTimeDirichletBeta_    = beta;
 }

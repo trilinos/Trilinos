@@ -90,6 +90,9 @@ class Mesh_Specification
     NODE_CMAP_IDS,
     ELEM_CMAP_ELEM_CNTS,
     ELEM_CMAP_IDS,
+    BLOCK_PARENT_MESHES,
+    SIDESET_PARENT_MESHES,
+    NODESET_PARENT_MESHES,
     NUM_MSPA};
 
   enum MSIA {
@@ -120,6 +123,7 @@ class Mesh_Specification
     NUM_NODE_COMM_MAPS,
     NUM_ELEM_COMM_MAPS,
     NUM_NBR_PROCS,
+    NUM_PARENT_MESHES,
     NUM_MSIA};
 
   long long getMSI(MSIA ind){return msia[ind];}

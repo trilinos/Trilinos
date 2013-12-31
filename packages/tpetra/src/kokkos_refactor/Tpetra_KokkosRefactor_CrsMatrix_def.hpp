@@ -173,6 +173,7 @@ namespace Tpetra {
     staticGraph_ = myGraph_;
     resumeFill (params);
     checkInternalState();
+    std::cout<<"USING KokkosRefactor_CrsMatrix"<<std::endl;
   }
 
   template <class Scalar,
@@ -209,12 +210,20 @@ namespace Tpetra {
              const RCP<Teuchos::ParameterList>& params) :
     DistObject<char, LocalOrdinal, GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > (rowMap)
   {
+    TEUCHOS_TEST_FOR_EXCEPTION(! staticGraph_.is_null(), std::logic_error,
+      "Tpetra::CrsMatrix ctor (row Map, col Map, maxNumEntriesPerRow, ...): "
+      "staticGraph_ is not null at the beginning of the constructor.  "
+      "Please report this bug to the Tpetra developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(! myGraph_.is_null(), std::logic_error,
+      "Tpetra::CrsMatrix ctor (row Map, col Map, maxNumEntriesPerRow, ...): "
+      "myGraph_ is not null at the beginning of the constructor.  "
+      "Please report this bug to the Tpetra developers.");
     try {
       myGraph_ = rcp (new Graph (rowMap, colMap, maxNumEntriesPerRow, pftype, params));
     }
     catch (std::exception &e) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-        typeName(*this) << "::CrsMatrix(): caught exception while allocating "
+        typeName(*this) << "::CrsMatrix ctor: Caught exception while allocating "
         "CrsGraph object: " << std::endl << e.what ());
     }
     staticGraph_ = myGraph_;
@@ -574,6 +583,31 @@ namespace Tpetra {
     }
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal, class DeviceType>
+  void
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  getAllValues(ArrayRCP<const size_t> & rowPointers,ArrayRCP<const LocalOrdinal> & columnIndices, ArrayRCP<const Scalar> & values) const
+  {
+    const char tfecfFuncName[] = "getAllValues()";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(columnIndices.size()!=values.size(),std::runtime_error," requires that columnIndices and values are the same size.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(myGraph_==Teuchos::null,std::runtime_error," requires that myGraph_ != Teuchos::null.");
+    try {
+      rowPointers   = myGraph_->getNodeRowPtrs();
+      columnIndices = myGraph_->getNodePackedIndices();
+    }
+    catch (std::exception &e) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::runtime_error," caught exception while allocating calling myGraph_->getAllIndices().");
+    }
+    values = values1D_;
+  }
+
+
+
+
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
@@ -626,7 +660,7 @@ namespace Tpetra {
       // values2D_ (for values).  We allocate 1-D storage and then
       // copy from 2-D storage in lclInds2D_ resp. values2D_ into 1-D
       // storage in inds resp. vals.
-
+      std::cout << "NumRowEntries_.size(): "<< numRowEntries_.size() << std::endl;
       typename Graph::t_RowPtrs tmpk_ptrs = typename Graph::t_RowPtrs("Tpetra::CrsGraph::RowPtrs",numRowEntries_.size()+1);
       ptrs = Teuchos::arcp(tmpk_ptrs.ptr_on_device(), 0, tmpk_ptrs.dimension_0(),
                                          Kokkos::Compat::deallocator(tmpk_ptrs), false);
@@ -638,9 +672,10 @@ namespace Tpetra {
         // hack until we get parallel_scan in kokkos
       for(int i = 0; i < numRowEntries_.size(); i++) {
         h_tmpk_ptrs(i+1) = h_tmpk_ptrs(i)+numRowEntries_[i];
+        std::cout << h_tmpk_ptrs(i+1) << " ";
       }
       Kokkos::deep_copy(tmpk_ptrs,h_tmpk_ptrs);
-
+      std::cout << std::endl;
 
       k_inds = typename Graph::t_LocalOrdinal_1D("Tpetra::CrsGraph::lclInds1D_",h_tmpk_ptrs[h_tmpk_ptrs.dimension_0()-1]);
       inds = Teuchos::arcp(k_inds.ptr_on_device(), 0, k_inds.dimension_0(),
@@ -658,8 +693,6 @@ namespace Tpetra {
 
       typename Graph::t_LocalOrdinal_1D::HostMirror h_inds = Kokkos::create_mirror_view(k_inds);
       typename t_ValuesType::HostMirror h_vals = Kokkos::create_mirror_view(k_vals);
-      Kokkos::deep_copy(h_inds,k_inds);
-      Kokkos::deep_copy(h_vals,k_vals);
 
       for (size_t row=0; row < numRows; ++row) {
               const size_t numentrs = numRowEntries_[row];
@@ -670,6 +703,8 @@ namespace Tpetra {
                          values2D_[row].begin() + numentrs,
                          h_vals.ptr_on_device() + h_tmpk_ptrs[row]);
       }
+      Kokkos::deep_copy(k_inds,h_inds);
+      Kokkos::deep_copy(k_vals,h_vals);
       /*for (size_t row=0; row < numRows; ++row) {
         const size_t numentrs = numRowEntries_[row];
         std::copy (lclInds2D_[row].begin(),
@@ -690,7 +725,9 @@ namespace Tpetra {
       // specified StaticProfile in the constructor and fixed the
       // number of matrix entries in each row, but didn't fill all
       // those entries.
+      std::cout<<"STartSomething"<<std::endl;
       if (nodeNumEntries_ != nodeNumAllocated_) {
+        std::cout<<"NotUPS " << numRowEntries_.size()+1 << std::endl;
         // We have to pack the 1-D storage, since the user didn't fill
         // up all requested storage.  We compute the row offsets
         // (ptrs) from numRowEntries_, which has the true number of
@@ -722,18 +759,51 @@ namespace Tpetra {
 
         //vals = sparse_ops_type::template allocStorage<Scalar> (node, ptrs ());
         k_vals = t_ValuesType("Tpetra::CrsMatrix::values1D_",*(ptrs.end()-1));
+
         vals = Teuchos::arcp(k_vals.ptr_on_device(), 0, k_vals.dimension_0(),
                                    Kokkos::Compat::deallocator(k_vals), false);
+
+
+        //If lclGraph of Graph does not yet exist data needs to be copied differently from the old
+        //data structure in Graph. This should change when Graph is refactored to not have the old
+        //data structures anymore.
         {
-          pack_functor<typename  Graph::t_LocalOrdinal_1D, typename Graph::LocalStaticCrsGraphType::row_map_type>
-             f(k_inds,k_lclInds1D_,tmpk_ptrs,k_rowPtrs_);
-          Kokkos::parallel_for(numRows,f);
+          if (k_rowPtrs_.dimension_0()==0) {
+            typename Graph::t_RowPtrs tmp_unpacked_ptrs = typename Graph::t_RowPtrs("Tpetra::CrsGraph::RowPtrs",numRowEntries_.size()+1);
+            for(int i = 0; i < rowPtrs_.size(); i++) {
+              tmp_unpacked_ptrs(i) = rowPtrs_[i];
+            }
+            k_rowPtrs_ = tmp_unpacked_ptrs;
+          }
+          typename Graph::t_LocalOrdinal_1D tmp_unpacked_inds;
+          if (k_lclInds1D_.dimension_0()==0) {
+            tmp_unpacked_inds = typename Graph::t_LocalOrdinal_1D("Tpetra::CrsGraph::t_LocalOridnal",lclInds1D_.size());
+            for(int i = 0; i < lclInds1D_.size(); i++) {
+              tmp_unpacked_inds(i) = lclInds1D_[i];
+            }
+          } else
+            tmp_unpacked_inds = k_lclInds1D_;
+          {
+            pack_functor<typename  Graph::t_LocalOrdinal_1D, typename Graph::LocalStaticCrsGraphType::row_map_type>
+              f(k_inds,tmp_unpacked_inds,tmpk_ptrs,k_rowPtrs_);
+            Kokkos::parallel_for(numRows,f);
+          }
+
+          t_ValuesType tmp_unpacked_vals;
+          if (k_values1D_.dimension_0()==0) {
+            tmp_unpacked_vals = t_ValuesType("Tpetra::CrsMatrix::t_Values",values1D_.size());
+            for(int i = 0; i < values1D_.size(); i++) {
+              tmp_unpacked_vals(i) = values1D_[i];
+            }
+          } else
+            tmp_unpacked_vals = k_values1D_;
+          {
+            pack_functor<t_ValuesType, typename Graph::LocalStaticCrsGraphType::row_map_type>
+              f(k_vals,tmp_unpacked_vals,tmpk_ptrs,k_rowPtrs_);
+            Kokkos::parallel_for(numRows,f);
+          }
         }
-        {
-          pack_functor<t_ValuesType, typename Graph::LocalStaticCrsGraphType::row_map_type>
-             f(k_vals,k_values1D_,tmpk_ptrs,k_rowPtrs_);
-          Kokkos::parallel_for(numRows,f);
-        }
+
         /*for (size_t row=0; row < numRows; ++row) {
           // rowPtrs_ contains the unpacked row offsets, so use it to
           // copy data out of unpacked 1-D storage.
@@ -828,6 +898,7 @@ namespace Tpetra {
     }
     // The local matrix should be null, but we delete it first so that
     // any memory can be freed before we allocate the new one.
+
     lclMatrix_ = null;
     lclMatrix_ = rcp (new local_matrix_type (staticGraph_->getLocalGraph (), lclparams));
     lclMatrix_->setValues (vals);
@@ -1025,8 +1096,8 @@ namespace Tpetra {
     lclMatrix_ = null;
     lclMatrix_ = rcp (new local_matrix_type (staticGraph_->getLocalGraph (), lclparams));
     lclMatrix_->setValues (vals);
-    printf("CreateLocalMatrix\n");
-    k_lclMatrix_ = k_local_matrix_type("TPetra::CrsMatrix::k_lclMatrix_",100,k_values1D_,staticGraph_->getLocalGraph_Kokkos());
+
+    k_lclMatrix_ = k_local_matrix_type("TPetra::CrsMatrix::k_lclMatrix_",getDomainMap()->getNodeNumElements(),k_values1D_,staticGraph_->getLocalGraph_Kokkos());
     vals = null;
 
     // Finalize the local matrix.
@@ -3607,9 +3678,9 @@ namespace Tpetra {
     const char tfecfFuncName[] = "localMultiply()";
 #endif // HAVE_TPETRA_DEBUG
     typedef Teuchos::ScalarTraits<RangeScalar> RST;
+#ifdef HAVE_TPETRA_DEBUG
     const KokkosClassic::MultiVector<DomainScalar,Node> *lclX = &X.getLocalMV();
     KokkosClassic::MultiVector<RangeScalar,Node>        *lclY = &Y.getLocalMVNonConst();
-#ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       mode == NO_TRANS && X.getMap() != getColMap() && *X.getMap() != *getColMap(),
       std::runtime_error, " X is not distributed according to the appropriate map.");
@@ -3638,12 +3709,18 @@ namespace Tpetra {
     // Call the matvec
     if (beta == RST::zero()) {
       // Y = alpha*op(M)*X with overwrite semantics
-      //lclMatOps_->template multiply<DomainScalar,RangeScalar>(mode, alpha, *lclX, *lclY);
+
+      if(mode != NO_TRANS)
+      Kokkos::MV_MultiplyTranspose(RST::zero(),Y.getLocalView().d_view,alpha,k_lclMatrix_,X.getLocalView().d_view);
+      else
       Kokkos::MV_Multiply(Y.getLocalView().d_view,alpha,k_lclMatrix_,X.getLocalView().d_view);
     }
     else {
       // Y = alpha*op(M) + beta*Y
-      lclMatOps_->template multiply<DomainScalar,RangeScalar>(mode, alpha, *lclX, beta, *lclY);
+
+      if(mode != NO_TRANS)
+      Kokkos::MV_MultiplyTranspose(beta,Y.getLocalView().d_view,alpha,k_lclMatrix_,X.getLocalView().d_view);
+      else
       Kokkos::MV_Multiply(beta,Y.getLocalView().d_view,alpha,k_lclMatrix_,X.getLocalView().d_view);
     }
   }
@@ -5181,52 +5258,5 @@ namespace Tpetra {
   }
 
 } // namespace Tpetra
-
-//
-// Explicit instantiation macro
-//
-// Must be expanded from within the Tpetra namespace!
-//
-
-#define TPETRA_CRSMATRIX_INSTANT(SCALAR,LO,GO,NODE) \
-  \
-  template class CrsMatrix< SCALAR , LO , GO , NODE >; \
-  template RCP< CrsMatrix< SCALAR , LO , GO , NODE > >   \
-                CrsMatrix< SCALAR , LO , GO , NODE >::convert< SCALAR > () const;
-
-#define TPETRA_CRSMATRIX_CONVERT_INSTANT(SO,SI,LO,GO,NODE) \
-  \
-  template RCP< CrsMatrix< SO , LO , GO , NODE > >   \
-                CrsMatrix< SI , LO , GO , NODE >::convert< SO > () const;
-
-#define TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(SCALAR, LO, GO, NODE) \
-  template<>                                                                        \
-  RCP<CrsMatrix<SCALAR, LO, GO, NODE> >                                \
-  importAndFillCompleteCrsMatrix (const RCP<const CrsMatrix<SCALAR, LO, GO, NODE> >& sourceMatrix, \
-                                  const Import<CrsMatrix<SCALAR, LO, GO, NODE>::local_ordinal_type,  \
-                                               CrsMatrix<SCALAR, LO, GO, NODE>::global_ordinal_type,  \
-                                               CrsMatrix<SCALAR, LO, GO, NODE>::node_type>& importer, \
-                                  const RCP<const Map<CrsMatrix<SCALAR, LO, GO, NODE>::local_ordinal_type,      \
-                                                               CrsMatrix<SCALAR, LO, GO, NODE>::global_ordinal_type,     \
-                                                               CrsMatrix<SCALAR, LO, GO, NODE>::node_type> >& domainMap, \
-                                  const RCP<const Map<CrsMatrix<SCALAR, LO, GO, NODE>::local_ordinal_type,      \
-                                                               CrsMatrix<SCALAR, LO, GO, NODE>::global_ordinal_type,     \
-                                                               CrsMatrix<SCALAR, LO, GO, NODE>::node_type> >& rangeMap,  \
-                                                               const RCP<Teuchos::ParameterList>& params);
-
-#define TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(SCALAR, LO, GO, NODE) \
-  template<>                                                                        \
-  RCP<CrsMatrix<SCALAR, LO, GO, NODE> >                                \
-  exportAndFillCompleteCrsMatrix (const RCP<const CrsMatrix<SCALAR, LO, GO, NODE> >& sourceMatrix, \
-                                  const Export<CrsMatrix<SCALAR, LO, GO, NODE>::local_ordinal_type,  \
-                                               CrsMatrix<SCALAR, LO, GO, NODE>::global_ordinal_type,  \
-                                               CrsMatrix<SCALAR, LO, GO, NODE>::node_type>& exporter, \
-                                  const RCP<const Map<CrsMatrix<SCALAR, LO, GO, NODE>::local_ordinal_type,      \
-                                                               CrsMatrix<SCALAR, LO, GO, NODE>::global_ordinal_type,     \
-                                                               CrsMatrix<SCALAR, LO, GO, NODE>::node_type> >& domainMap, \
-                                  const RCP<const Map<CrsMatrix<SCALAR, LO, GO, NODE>::local_ordinal_type,      \
-                                                               CrsMatrix<SCALAR, LO, GO, NODE>::global_ordinal_type,     \
-                                                               CrsMatrix<SCALAR, LO, GO, NODE>::node_type> >& rangeMap,  \
-                                                               const RCP<Teuchos::ParameterList>& params);
 
 #endif

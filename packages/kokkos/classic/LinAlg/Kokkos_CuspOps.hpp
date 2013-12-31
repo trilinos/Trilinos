@@ -491,6 +491,19 @@ namespace KokkosClassic {
         "CuspOps: gaussSeidel not implemented");
     }
 
+    template <class DomainScalar, class RangeScalar>
+    void
+    reorderedGaussSeidel (const MultiVector<DomainScalar,Node> &B,
+			  MultiVector< RangeScalar,Node> &X,
+			  const MultiVector<Scalar,Node> &D,
+			  const ArrayView<Ordinal> & rowIndices,	  
+			  const RangeScalar& dampingFactor,
+			  const ESweepDirection direction) const
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        "CuspOps: reorderedGaussSeidel not implemented");
+    }
+
     /// \brief "Add in place": compute <tt>*this = alpha*A + beta*(*this)</tt>.
     ///
     /// This method may choose to reuse storage of <tt>*this</tt>.

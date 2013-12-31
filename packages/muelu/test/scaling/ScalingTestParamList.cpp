@@ -63,7 +63,6 @@
 #include <MueLu_Utilities.hpp>
 
 #include <MueLu_UseDefaultTypes.hpp>
-#include <MueLu_UseShortNames.hpp>
 #include <MueLu_MutuallyExclusiveTime.hpp>
 
 #ifdef HAVE_MUELU_BELOS
@@ -76,6 +75,8 @@
 #endif
 
 int main(int argc, char *argv[]) {
+#include <MueLu_UseShortNames.hpp>
+
   using Teuchos::RCP; // reference count pointers
   using Teuchos::rcp;
   using Teuchos::TimeMonitor;
@@ -273,7 +274,7 @@ int main(int argc, char *argv[]) {
     X->randomize();
     A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
 
-    Teuchos::Array<ST::magnitudeType> norms(1);
+    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
     B->norm2(norms);
     B->scale(1.0/norms[0]);
     X->putScalar(zero);

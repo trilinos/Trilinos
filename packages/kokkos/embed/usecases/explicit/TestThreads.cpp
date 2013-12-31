@@ -20,7 +20,7 @@ void test_host_explicit( size_t numa_node_count ,
                          size_t elem_count ,
                          size_t iter_count )
 {
-  Kokkos::Threads::initialize( std::pair<unsigned,unsigned>( numa_node_count , numa_node_thread_count ) );
+  Kokkos::Threads::initialize( numa_node_count * numa_node_thread_count , numa_node_count );
 
   Explicit::test< Kokkos::Threads >( "Threads" , elem_count , iter_count );
 

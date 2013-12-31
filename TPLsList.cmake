@@ -177,6 +177,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   Gemini          "cmake/TPLs/"    SS
   InfiniBand      "cmake/TPLs/"    SS
   BGPDCMF         "cmake/TPLs/"    SS
+  BGQPAMI         "cmake/TPLs/"    SS
   Pablo           "cmake/TPLs/"    SS
   HPCToolkit      "cmake/TPLs/"    SS
   Pnetcdf         "cmake/TPLs/"    SS

@@ -68,8 +68,10 @@ Ifpack_LocalFilter::Ifpack_LocalFilter(const Teuchos::RefCountPtr<const Epetra_R
   // localized matrix has all the local rows of Matrix
   NumRows_ = Matrix->NumMyRows();
 
+#if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
   // build a linear map, based on the serial communicator
   Map_ = Teuchos::rcp( new Epetra_Map(NumRows_,0,*SerialComm_) );
+#endif
 
   // NumEntries_ will contain the actual number of nonzeros
   // for each localized row (that is, without external nodes,

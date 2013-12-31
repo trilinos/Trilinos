@@ -42,6 +42,7 @@
 */
 
 #include "EpetraExt_ConfigDefs.h"
+#include "Epetra_ConfigDefs.h"
 
 
 #ifdef HAVE_MPI
@@ -85,8 +86,8 @@ int RestrictedCrsMatrixWrapper::SetMPISubComm(MPI_Comm MPI_SubComm){
 }
 
 
-
-int RestrictedCrsMatrixWrapper::restrict_comm(Teuchos::RCP<Epetra_CrsMatrix> input_matrix){
+template<typename int_type>
+int RestrictedCrsMatrixWrapper::Trestrict_comm(Teuchos::RCP<Epetra_CrsMatrix> input_matrix){
   /* Pull the Matrix Info */
   input_matrix_=input_matrix;
   
@@ -96,8 +97,8 @@ int RestrictedCrsMatrixWrapper::restrict_comm(Teuchos::RCP<Epetra_CrsMatrix> inp
 
   if(!InComm || !InRowMap || !InColMap) return (-1);
   
-  int Nrows=InRowMap->NumGlobalElements();
-  int Ncols=InColMap->NumGlobalElements();
+  int_type Nrows = (int_type) InRowMap->NumGlobalElements64();
+  int_type Ncols = (int_type) InColMap->NumGlobalElements64();
   
   if(!subcomm_is_set){
     /* Build the Split Communicators, If Needed */
@@ -121,11 +122,16 @@ int RestrictedCrsMatrixWrapper::restrict_comm(Teuchos::RCP<Epetra_CrsMatrix> inp
   if(proc_is_active){      
     RestrictedComm_=new Epetra_MpiComm(MPI_SubComm_);
     
+    int_type* RowMapGlobalElements = 0;
+	InRowMap->MyGlobalElementsPtr(RowMapGlobalElements);
+    int_type* ColMapGlobalElements = 0;
+	InColMap->MyGlobalElementsPtr(ColMapGlobalElements);
+
     /* Build the Restricted Maps */
-    ResRowMap_ = new Epetra_Map(Nrows,InRowMap->NumMyElements(),InRowMap->MyGlobalElements(),
-                                InRowMap->IndexBase(),*RestrictedComm_);
-    ResColMap_ = new Epetra_Map(Ncols,InColMap->NumMyElements(),InColMap->MyGlobalElements(),
-                                InColMap->IndexBase(),*RestrictedComm_);        
+    ResRowMap_ = new Epetra_Map(Nrows,InRowMap->NumMyElements(),RowMapGlobalElements,
+                                (int_type) InRowMap->IndexBase64(),*RestrictedComm_);
+    ResColMap_ = new Epetra_Map(Ncols,InColMap->NumMyElements(),ColMapGlobalElements,
+                                (int_type) InColMap->IndexBase64(),*RestrictedComm_);        
     
     int *colind,Nr;
     double *values;
@@ -142,6 +148,22 @@ int RestrictedCrsMatrixWrapper::restrict_comm(Teuchos::RCP<Epetra_CrsMatrix> inp
   return 0;
 }/*end restrict_comm*/
 
+int RestrictedCrsMatrixWrapper::restrict_comm(Teuchos::RCP<Epetra_CrsMatrix> input_matrix)
+{
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(input_matrix->RowMap().GlobalIndicesInt()) {
+	return Trestrict_comm<int>(input_matrix);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(input_matrix->RowMap().GlobalIndicesLongLong()) {
+	return Trestrict_comm<long long>(input_matrix);
+  }
+  else
+#endif
+    throw "EpetraExt::Trestrict_comm: ERROR, GlobalIndices type unknown.";
+}
 
 
 }  

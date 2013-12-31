@@ -24,6 +24,21 @@
 #include <cusp/precond/diagonal.h>
 #include <cusp/krylov/arnoldi.h>
 
+namespace cusp
+{
+namespace precond
+{
+namespace aggregation
+{
+namespace detail
+{
+template <typename MatrixType>
+double estimate_rho_Dinv_A(const MatrixType& A);
+}
+}
+}
+}
+
 #include <cusp/graph/maximal_independent_set.h>
 #include <cusp/precond/aggregation/aggregate.h>
 #include <cusp/precond/aggregation/smooth.h>
@@ -67,9 +82,9 @@ double estimate_rho_Dinv_A(const MatrixType& A)
     typedef typename MatrixType::memory_space MemorySpace;
 
     Dinv_A<MatrixType> Dinv_A(A);
-   
+
     return cusp::detail::ritz_spectral_radius(Dinv_A, 8);
-  
+
 }
 
 
@@ -133,7 +148,7 @@ void block_smoothed_aggregation<IndexType,ValueType,MemorySpace,SmootherType,Sol
     sa_levels.back().A_ = A; // copy
     while (sa_levels.back().A_.num_rows > 100){
         extend_hierarchy();
-	}
+        }
     ML->solver = SolverType(sa_levels.back().A_);
 
     // Setup solve matrix for each level
@@ -151,43 +166,43 @@ void block_smoothed_aggregation<IndexType,ValueType,MemorySpace,SmootherType,Sol
 
     cusp::array1d<IndexType,MemorySpace> aggregates;
     {
-        // compute stength of connection matrix" 
+        // compute stength of connection matrix"
         SetupMatrixType C;
-        
+
         symmetric_strength_of_connection(A, C, theta);
         // compute aggregates
         aggregates.resize(C.num_rows);
         cusp::blas::fill(aggregates,IndexType(0));
-	cusp::coo_matrix<IndexType, ValueType, MemorySpace> CC;
-	cusp::convert(C, CC);
+        cusp::coo_matrix<IndexType, ValueType, MemorySpace> CC;
+        cusp::convert(C, CC);
         standard_aggregation(CC, aggregates);
-	cusp::convert(CC, C);
+        cusp::convert(CC, C);
     }
 
-    // compute spectral radius of diag(C)^-1 * C " 
+    // compute spectral radius of diag(C)^-1 * C "
     sa_levels.back().rho_DinvA = detail::estimate_rho_Dinv_A(A);
     SetupMatrixType P;
     cusp::array1d<ValueType,MemorySpace>  B_coarse;
     {
         // compute tenative prolongator and coarse nullspace vector
-        SetupMatrixType 				T;
+        SetupMatrixType                                 T;
         fit_candidates(aggregates, sa_levels.back().B, T, B_coarse);
 
 
-	// compute prolongation operator
-	cusp::coo_matrix<IndexType, ValueType, MemorySpace> AA;
-	cusp::coo_matrix<IndexType, ValueType, MemorySpace> TT;
-	cusp::coo_matrix<IndexType, ValueType, MemorySpace> PP;
-	cusp::convert(A, AA);
-	cusp::convert(T, TT);
-	cusp::convert(P, PP);
+        // compute prolongation operator
+        cusp::coo_matrix<IndexType, ValueType, MemorySpace> AA;
+        cusp::coo_matrix<IndexType, ValueType, MemorySpace> TT;
+        cusp::coo_matrix<IndexType, ValueType, MemorySpace> PP;
+        cusp::convert(A, AA);
+        cusp::convert(T, TT);
+        cusp::convert(P, PP);
         smooth_prolongator(AA, TT, PP, ValueType(4.0/3.0), sa_levels.back().rho_DinvA);  // TODO if C != A then compute rho_Dinv_C
         cusp::convert(PP, P);
-	}
+        }
     // compute restriction operator (transpose of prolongator)
     SetupMatrixType R;
     cusp::transpose(P,R);
-	
+
     // construct Galerkin product R*A*P
     SetupMatrixType RAP;
     {

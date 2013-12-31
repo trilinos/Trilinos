@@ -123,6 +123,8 @@ ENDIF()
 if (NOT ${PACKAGE_NAME}_ENABLE_Ifpack2)
   LIST(REMOVE_ITEM HEADERS ${DIR}/Smoothers/MueLu_Ifpack2Smoother.hpp)
   LIST(REMOVE_ITEM SOURCES ${DIR}/Utils/ExplicitInstantiation/MueLu_Ifpack2Smoother.cpp)
+  LIST(REMOVE_ITEM HEADERS ${DIR}/Smoothers/MueLu_SchwarzSmoother.hpp)
+  LIST(REMOVE_ITEM SOURCES ${DIR}/Utils/ExplicitInstantiation/MueLu_SchwarzSmoother.cpp)
 ENDIF()
 
 if (NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
@@ -150,4 +152,5 @@ TRIBITS_ADD_LIBRARY(
 #MESSAGE("INCLUDE_DIRECTORIES = ")
 #get_directory_property(output INCLUDE_DIRECTORIES)
 #message(STATUS ${output})
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration

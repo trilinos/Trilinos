@@ -683,7 +683,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, sideset_nodeset)
    mesh->getSidesetNames(sidesets);
    mesh->getNodesetNames(nodesets);
 
-   TEST_EQUALITY(sidesets.size(),4);
+   TEST_EQUALITY(sidesets.size(),7);
    TEST_EQUALITY(nodesets.size(),2);
 
    std::vector<stk::mesh::Entity *> nodes;

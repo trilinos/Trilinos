@@ -18,7 +18,7 @@ CoordinatesTransferFactory
 CoupledRBMFactory
 DemoFactory
 DirectSolver
-DistanceLaplacianFactory
+EasyParameterListInterpreter
 EminPFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
 FactoryFactory
 FactoryManager
@@ -55,6 +55,7 @@ RepartitionFactory - #ifdef HAVE_MPI
 RigidBodyModeFactory
 SaPFactory
 SchurComplementFactory
+SchwarzSmoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2) && defined(HAVE_MUELU_IFPACK2)
 ShiftedLaplacian
 ShiftedLaplacianOperator
 SimpleSmoother

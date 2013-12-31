@@ -53,7 +53,7 @@ namespace Stokhos {
   class StaticFixedStorage {
   public:
 
-    static const bool is_static = false;
+    static const bool is_static = true ;
     static const int static_size = Num;
     static const bool supports_reset = false;
 
@@ -67,9 +67,14 @@ namespace Stokhos {
     typedef Stokhos::StaticArrayTraits<value_type,device_type> ss;
 
     //! Turn StaticFixedStorage into a meta-function class usable with mpl::apply
-    template <typename ord_t, typename val_t>
+    template <typename ord_t, typename val_t = value_t , typename dev_t = device_t >
     struct apply {
-      typedef StaticFixedStorage<ord_t,val_t,Num,device_type> type;
+      typedef StaticFixedStorage<ord_t,val_t,Num,dev_t> type;
+    };
+
+    template <int N>
+    struct apply_N {
+      typedef StaticFixedStorage<ordinal_type,value_type,N,device_type> type;
     };
 
     //! Constructor

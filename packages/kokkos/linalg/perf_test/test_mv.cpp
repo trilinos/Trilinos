@@ -208,7 +208,7 @@ int main(int argc, char **argv)
  int size = 200000;
  int numVecs = 17;
  int loop = 100;
- int threads=1;
+ int threads_per_numa=1;
  int device = 0;
  int numa=1;
 
@@ -218,7 +218,7 @@ int main(int argc, char **argv)
   if((strcmp(argv[i],"-d")==0)) {device=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"-s")==0)) {size=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"-v")==0)) {numVecs=atoi(argv[++i]); continue;}
-  if((strcmp(argv[i],"--threads")==0)) {threads=atoi(argv[++i]); continue;}
+  if((strcmp(argv[i],"--threads")==0)) {threads_per_numa=atoi(argv[++i]); continue;}
   if((strcmp(argv[i],"--numa")==0)) {numa=atoi(argv[++i]); continue;}
  }
 
@@ -230,7 +230,7 @@ int main(int argc, char **argv)
 
  if(numa>1 || threads>1)
  {
-   Kokkos::Threads::initialize( std::pair<unsigned,unsigned>( numa , threads ) );
+   Kokkos::Threads::initialize( numa * threads_per_numa , numa );
  }
 
  test_mv_dot(size,numVecs,loop);
@@ -240,3 +240,4 @@ int main(int argc, char **argv)
  KokkosCUDA(Kokkos::Threads::finalize();)
  device_type::finalize(  );
 }
+

@@ -95,10 +95,10 @@ namespace panzer {
     
     // Scalar types we plan to use
     typedef double RealType;
-    typedef Sacado::Fad::DFad<double> FadType;
+    //typedef Sacado::Fad::DFad<double> FadType;
     //typedef Sacado::CacheFad::DFad<double> FadType;
     //typedef Sacado::ELRFad::DFad<double> FadType;
-    //typedef Sacado::ELRCacheFad::DFad<double> FadType;
+    typedef Sacado::ELRCacheFad::DFad<double> FadType;
 
     #ifdef HAVE_STOKHOS
        typedef Stokhos::StandardStorage<int,RealType> SGStorageType;
@@ -138,8 +138,8 @@ namespace panzer {
     typedef Sacado::mpl::vector< FadType,bool > TangentDataTypes;
 
     #ifdef HAVE_STOKHOS
-       typedef Sacado::mpl::vector< SGType > SGResidualDataTypes;
-       typedef Sacado::mpl::vector< SGFadType > SGJacobianDataTypes;
+       typedef Sacado::mpl::vector< SGType,bool > SGResidualDataTypes;
+       typedef Sacado::mpl::vector< SGFadType,bool > SGJacobianDataTypes;
     #endif
 
     // Maps the key EvalType a vector of DataTypes

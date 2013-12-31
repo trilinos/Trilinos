@@ -39,9 +39,11 @@
 // ***********************************************************************
 //@HEADER
 
+#include "Epetra_ConfigDefs.h"
 #include "EpetraExt_readEpetraLinearSystem.h"
 #include "Trilinos_Util.h"
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 void EpetraExt::readEpetraLinearSystem(
   const std::string                               &fileName
   ,const Epetra_Comm                              &comm
@@ -119,3 +121,84 @@ void EpetraExt::readEpetraLinearSystem(
   if(xExact)  *xExact  = loc_xExact;
   
 }
+#endif
+
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+void EpetraExt::readEpetraLinearSystem64(
+  const std::string                               &fileName
+  ,const Epetra_Comm                              &comm
+  ,Teuchos::RefCountPtr<Epetra_CrsMatrix>         *A
+  ,Teuchos::RefCountPtr<Epetra_Map>               *map
+  ,Teuchos::RefCountPtr<Epetra_Vector>            *x
+  ,Teuchos::RefCountPtr<Epetra_Vector>            *b
+  ,Teuchos::RefCountPtr<Epetra_Vector>            *xExact
+  )
+{
+
+  Epetra_Map       *readMap;
+  Epetra_CrsMatrix *readA; 
+  Epetra_Vector    *readx; 
+  Epetra_Vector    *readb;
+  Epetra_Vector    *readxexact;
+
+  const std::string::size_type ext_dot = fileName.rfind(".");
+  TEUCHOS_TEST_FOR_EXCEPT( ext_dot == std::string::npos );
+  std::string ext = fileName.substr(ext_dot+1);
+  //std::cout << "\nfileName = " << fileName << "\next = " << ext << std::endl;
+
+  char *hacked_file_str = const_cast<char*>(fileName.c_str());
+  
+  if ( ext == "triU" ) { 
+    const bool NonContiguousMap = true; 
+    TEUCHOS_TEST_FOR_EXCEPT(
+      0!=Trilinos_Util_ReadTriples2Epetra64(
+        hacked_file_str, false, comm, readMap, readA, readx, 
+        readb, readxexact, NonContiguousMap
+        )
+      );
+  }
+  else if ( ext == "triS" ) { 
+    const bool NonContiguousMap = true; 
+    TEUCHOS_TEST_FOR_EXCEPT(
+      0!=Trilinos_Util_ReadTriples2Epetra64(
+        hacked_file_str, true, comm, readMap, readA, readx, 
+        readb, readxexact, NonContiguousMap
+        )
+      );
+  }
+  else if( ext == "mtx" ) { 
+    TEUCHOS_TEST_FOR_EXCEPT(
+      0!=Trilinos_Util_ReadMatrixMarket2Epetra64(
+        hacked_file_str, comm, readMap, 
+        readA, readx, readb, readxexact
+        )
+      );
+  }
+  else if ( ext == "hb" ) {
+    Trilinos_Util_ReadHb2Epetra64(
+      hacked_file_str, comm, readMap, readA, readx, 
+      readb, readxexact
+      ); // No error return???
+  }
+  else {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error
+      ,"Error, the file = \'"<<hacked_file_str<<"\' has the extension "
+      "\'*."<<ext<<"\' is not \'*.triU\', \'*.triS\', \'*.mtx\', or \'*.hb\'!"
+      );
+  }
+
+  Teuchos::RefCountPtr<Epetra_CrsMatrix>    loc_A         = Teuchos::rcp(readA);
+  Teuchos::RefCountPtr<Epetra_Map>          loc_map       = Teuchos::rcp(readMap);
+  Teuchos::RefCountPtr<Epetra_Vector>       loc_x         = Teuchos::rcp(readx);
+  Teuchos::RefCountPtr<Epetra_Vector>       loc_b         = Teuchos::rcp(readb);
+  Teuchos::RefCountPtr<Epetra_Vector>       loc_xExact    = Teuchos::rcp(readxexact);
+
+  if(A)       *A       = loc_A;
+  if(map)     *map     = loc_map;
+  if(x)       *x       = loc_x;
+  if(b)       *b       = loc_b;
+  if(xExact)  *xExact  = loc_xExact;
+  
+}
+#endif

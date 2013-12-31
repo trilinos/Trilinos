@@ -127,27 +127,10 @@ User's Guide</a></font></b></td>
 <td COLSPAN="2"></td>
 </tr>
 
+
 <!-------------------------------------------------------------------------->
 <tr ALIGN=LEFT VALIGN=TOP>
 <td VALIGN=TOP WIDTH="150"><!----------- 2nd little turquoise bevel button ------------>
-<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="150" BGCOLOR="#00CCFF" >
-<tr ALIGN=CENTER VALIGN=CENTER>
-<td><b><font face="Verdana, Arial, Helvetica"><a href="dev_html/dev.html">Zoltan
-Developer's Guide</a></font></b></td>
-</tr>
-</table>
-</td>
-
-<td VALIGN=TOP WIDTH="20"></td>
-</tr>
-
-<tr VALIGN=TOP>
-<td COLSPAN="2"></td>
-</tr>
-
-<!-------------------------------------------------------------------------->
-<tr ALIGN=LEFT VALIGN=TOP>
-<td VALIGN=TOP WIDTH="150"><!----------- 2A-nd little turquoise bevel button ------------>
 <table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="150" BGCOLOR="#00CCFF" >
 <tr ALIGN=CENTER VALIGN=CENTER> 
 <td><b><font face="Verdana, Arial, Helvetica"><a href="Zoltan_FAQ.html">
@@ -354,40 +337,8 @@ Luis Gervasio<br>
 <!------------------------------------------------------------------------->
 <!------------------------------------------------------------------------->
 <hr width="100%">
-<b> Zoltan News:</b><br>
+<b> Tutorials:</b><br>
 <ul>
-<li>
-<a href="#ZOLTAN36">Zoltan v3.6</a> 
-was released in September 2011 as part of Trilinos v10.8.  
-This release includes new recoloring capability in Zoltan's <a href="ug_html/ug_color.html">coloring</a> algorithms.  
-Zoltan's hierarchical partitioning algorithm was
-also updated for greater efficiency.
-We have updated our third-party library support to include
-PT-Scotch versions up to 5.1.12 and ParMETIS v3.1 and v4.0.
-<br><br>
-</li>
-<li>
-<a href="#ZOLTAN35">Zoltan v3.5</a> was released in March 2011.  This release
-differs from the Trilinos 10.6 release by including the following features:
-<ul>
-<li>
-Fix in Fortran90 interface that causes compilation and run-time problems
-with gcc 4.5 and later when compiler optimization is enabled.
-</li>
-<li>
-Support for 64-bit builds of Zoltan, enabling operation on more than 2B objects.
-See details for building in the <a href="ug_html/ug_usage.html">Zoltan User's Guide</a>.
-</li>
-<li>
-Faster graph builds for very specific input types.  See parameter 
-<a href="ug_html/ug_graph_build.html">GRAPH_BUILD_TYPE</a>.
-</li>
-</ul>
-
-You can download this release as a <a href="http://www.cs.sandia.gov/~web1400/1400_download.html">stand-alone package</a>; these features will be included in
-Trilinos release 10.8 this summer.
-<br><br>
-</li>
 <li>
 <b>"Getting Started with Zoltan:  A Short Tutorial."</b><br>
 A ten-page introduction to using Zoltan is now available.  Download it here:<br>
@@ -418,11 +369,49 @@ The Zoltan Tutorial presented at SciDAC2007 is now on-line.  Download it here:
 </li>
 <p>
 </ul>
+<li>
+User's Guide (<a href="ug_html/ug.html">HTML</a>)
+</li>
+</ul>
+
+<hr width="100%">
+<b> Zoltan News:</b><br>
+<ul>
+<li>
+<a href="#ZOLTAN38">Zoltan v3.8</a> 
+was released in October 2013 as part of Trilinos v10.11.  
+This release uses Trilinos' BSD license!  See more details <a href="#ZOLTAN38">below</a>.
+<br><br>
 </li>
 <li>
-The Zoltan <a href="Zoltan_FAQ.html">Frequently Asked Question (FAQ)</a> list is now on-line.
+<a href="#ZOLTAN36">Zoltan v3.6</a> 
+was released in September 2011 as part of Trilinos v10.8.  
+This release includes new recoloring capability in Zoltan's <a href="ug_html/ug_color.html">coloring</a> algorithms.  
+Zoltan's hierarchical partitioning algorithm was
+also updated for greater efficiency.
+We have updated our third-party library support to include
+PT-Scotch versions up to 5.1.12 and ParMETIS v3.1 and v4.0.
+<br><br>
 </li>
-<p>
+<li>
+<a href="#ZOLTAN35">Zoltan v3.5</a> was released in March 2011.  This release
+differs from the Trilinos 10.6 release by including the following features:
+<ul>
+<li>
+Fix in Fortran90 interface that causes compilation and run-time problems
+with gcc 4.5 and later when compiler optimization is enabled.
+</li>
+<li>
+Support for 64-bit builds of Zoltan, enabling operation on more than 2B objects.
+See details for building in the <a href="ug_html/ug_usage.html">Zoltan User's Guide</a>.
+</li>
+<li>
+Faster graph builds for very specific input types.  See parameter 
+<a href="ug_html/ug_graph_build.html">GRAPH_BUILD_TYPE</a>.
+</li>
+</ul>
+<br><br>
+</li>
 <li>
 The Zoltan team received the "Best Algorithms Paper Award" at the
 <a href="http://www.ipdps.org">2007 International Parallel and Distributed
@@ -438,7 +427,12 @@ for their paper
 <p>
 </li>
 <li>
-Zoltan is part of two funded <a href="http://www.scidac.org">DOE SciDAC</a> projects:
+Zoltan is part of the <a href="http://www.scidac.org">DOE SciDAC-2</a> project
+<a href="http://fastmath-scidac.org">FASTMath</a>.
+<p>
+</li>
+<li>
+Zoltan was part of two funded <a href="http://www.scidac.org">DOE SciDAC</a> projects:
 <ul>
 <li>
 <a href="http://www.cscapes.org">CSCAPES:  Combinatorial Scientific Computing 
@@ -457,7 +451,24 @@ Contact:  Karen Devine<br>
 <!------------------------------------------------------------------------->
 <!------------------------------------------------------------------------->
 <hr width="100%">
-<b>Now available:  Zoltan 3.6</b>  <br>
+<b>Now available:  Zoltan 3.8</b>  <br>
+<p>
+<a NAME="ZOLTAN38"></a>
+New Features in Zoltan v3.8, released October 2013:  
+<a href="ug_html/ug_release.html">Release Notes</a> 
+&nbsp; &nbsp; &nbsp; | &nbsp; &nbsp; &nbsp;
+<a href="ug_html/ug_backward.html">Backward Compatibility</a>
+<ul>
+<li> Zoltan is now released under Trilinos' BSD license. </li>
+<li> Added an improved hash function that speeds lookups, 
+particularly for apps using partitioning parameter RETURN_LISTS=PARTS. </li>
+<li> Added fixes for integer overflows that occur when A and B are valid 
+integers, but A*B overflows an integer.
+<li> Removed support for OCT partitioning; use HSFC partitioning for similar decompositions.  </li>
+<li> Removed support for third-party library DRUM. </li>
+<li> Removed support for the Zoltan v1.x interface. </li>
+</ul>
+
 <p>
 <a NAME="ZOLTAN36"></a>
 New Features in Zoltan v3.6, released September 2011:
@@ -838,15 +849,7 @@ allows new algorithms to be used easily in many different applications.</li>
 </li>
 
 </ul>
-<b>Documentation:</b>
-<ul>
-<li>
-User's Guide (<a href="ug_html/ug.html">HTML</a>, <a href="http://www.cs.sandia.gov/~kddevin/Zoltan_pdf/ug.pdf">PDF</a>)
-</li>
 
-<li>
-Developer's Guide (<a href="dev_html/dev.html">HTML</a>, <a href="http://www.cs.sandia.gov/~kddevin/Zoltan_pdf/dev.pdf">PDF</a>)</li>
-</ul>
 <b>Related links:</b>
 <ul>
 <li>
@@ -937,7 +940,7 @@ Institute</a></li>
 </ul>
 </ul>
 <hr WIDTH="100%">
-Copyright (c) 2000-2012, Sandia National Laboratories. <br>
+Copyright (c) 2000-2013, Sandia National Laboratories. <br>
 See the README file in the main Zoltan directory for information on Zoltan licensing.
 <hr WIDTH="100%">
 

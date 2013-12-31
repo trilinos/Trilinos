@@ -45,11 +45,10 @@
 
 #include <Ifpack2_ConfigDefs.hpp>
 #include <Ifpack2_Preconditioner.hpp>
+#include <Ifpack2_Details_CanChangeMatrix.hpp>
 #include <Ifpack2_Condest.hpp>
 #include <Ifpack2_Parameters.hpp>
 #include <Tpetra_Vector.hpp>
-#include <Teuchos_Assert.hpp>
-#include <Teuchos_RCP.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Tpetra_CrsMatrix_decl.hpp> // Don't need the definition here
 
@@ -229,7 +228,11 @@ class Relaxation :
   virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
                                          typename MatrixType::local_ordinal_type,
                                          typename MatrixType::global_ordinal_type,
-                                         typename MatrixType::node_type>
+                                         typename MatrixType::node_type>,
+  virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                                                     typename MatrixType::local_ordinal_type,
+                                                                     typename MatrixType::global_ordinal_type,
+                                                                     typename MatrixType::node_type> >
 {
 public:
   //! @name Typedefs
@@ -269,13 +272,16 @@ public:
   //! Preserved only for backwards compatibility.  Please use "magnitude_type".
   TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
 
+  //! Tpetra::RowMatrix specialization used by this class.
+  typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type,
+                            global_ordinal_type, node_type> row_matrix_type;
   //@}
   //! @name Constructors and destructors
   //@{
 
   /// \brief Constructor.
   ///
-  /// \param Matrix [in] The matrix for which to make the constructor.
+  /// \param A [in] The matrix for which to make the constructor.
   ///   Tpetra::RowMatrix is the base class of Tpetra::CrsMatrix, so
   ///   you may give either a Tpetra::RowMatrix or a Tpetra::CrsMatrix
   ///   here.
@@ -306,7 +312,7 @@ public:
   /// RCP<const CrsMatrix<...> > A = ...;
   /// foo (A);
   /// \endcode
-  explicit Relaxation(const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& Matrix);
+  explicit Relaxation (const Teuchos::RCP<const row_matrix_type>& A);
 
   //! Destructor.
   virtual ~Relaxation();
@@ -428,6 +434,35 @@ public:
   }
 
   //@}
+  //! \name Implementation of Ifpack2::Details::CanChangeMatrix
+  //@{
+
+  /// \brief Change the matrix to be preconditioned.
+  ///
+  /// \param A [in] The new matrix.
+  ///
+  /// \post <tt>! isInitialized ()</tt>
+  /// \post <tt>! isComputed ()</tt>
+  ///
+  /// Calling this method with a matrix different than the current
+  /// matrix resets the preconditioner's state.  After calling this
+  /// method with a nonnull input, you must first call initialize()
+  /// and compute() (in that order) before you may call apply().
+  ///
+  /// You may call this method with a null input.  If A is null, then
+  /// you may not call initialize() or compute() until you first call
+  /// this method again with a nonnull input.  This method invalidates
+  /// any previous factorization whether or not A is null, so calling
+  /// setMatrix() with a null input is one way to clear the
+  /// preconditioner's state (and free any memory that it may be
+  /// using).
+  ///
+  /// The new matrix A need not necessarily have the same Maps or even
+  /// the same communicator as the original matrix.
+  virtual void
+  setMatrix (const Teuchos::RCP<const row_matrix_type>& A);
+
+  //@}
   //! @name Implementation of the Tpetra::Operator interface
   //@{
 
@@ -446,20 +481,23 @@ public:
   ///   options are supported.
   /// \param alpha [in] Scaling factor for the preconditioned input.
   /// \param beta [in] Scaling factor for the output.
-  void apply(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-             Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-             Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                 scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-                 scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+  void
+  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+         Teuchos::ETransp mode = Teuchos::NO_TRANS,
+         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
+         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! Returns the Tpetra::Map object associated with the domain of this operator.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getDomainMap() const;
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >
+  getDomainMap () const;
 
   //! Returns the Tpetra::Map object associated with the range of this operator.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getRangeMap() const;
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >
+  getRangeMap () const;
 
   //! Whether apply() and applyMat() let you apply the transpose or conjugate transpose.
-  bool hasTransposeApply() const;
+  bool hasTransposeApply () const;
 
   /// \brief Apply the preconditioner to X, returning the result in Y.
   ///
@@ -473,44 +511,44 @@ public:
   ///   support options other than the default (no transpose); please
   ///   call hasTransposeApply() to determine whether nondefault
   ///   options are supported.
-  void applyMat(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-                Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-                Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
+  void
+  applyMat (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+            Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
   //@}
   //! @name Mathematical functions
   //@{
 
-  /// \brief Computes and returns the estimated condition number.
+  /// \brief Compute the condition number estimate and return its value.
   ///
-  /// We use an iterative process to estimate the condition number.
-  /// You can control the number of iterations we use, the iteration
-  /// tolerance, and how hard to work at estimating.
-  ///
-  /// \param CondestType [in] How hard to work at estimating the
-  ///   condition number.  \c Cheap means not very hard.
-  /// \param MaxIters [in] Maximum number of iterations for estimating
-  ///   the condition number.
-  /// \param Tol [in] Iteration tolerance.
-  magnitude_type computeCondEst(CondestType CT = Cheap,
-                               local_ordinal_type MaxIters = 1550,
-                               magnitude_type Tol = 1e-9,
-                               const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > &matrix = Teuchos::null);
+  /// \warning This method is DEPRECATED.  It was inherited from
+  ///   Ifpack, and Ifpack never clearly stated what this method
+  ///   computes.  Furthermore, Ifpack's method just estimates the
+  ///   condition number of the matrix A, and ignores the
+  ///   preconditioner -- which is probably not what users thought it
+  ///   did.  If there is sufficient interest, we might reintroduce
+  ///   this method with a different meaning and a better algorithm.
+  virtual magnitude_type TEUCHOS_DEPRECATED
+  computeCondEst (CondestType CT = Cheap,
+                  local_ordinal_type MaxIters = 1550,
+                  magnitude_type Tol = 1e-9,
+                  const Teuchos::Ptr<const row_matrix_type>& matrix = Teuchos::null);
 
   //@}
   //! @name Attribute accessor methods
   //@{
 
-  /// \brief The computed estimated condition number, or -1 if not previously computed.
+  /// \brief Return the computed condition number estimate, or -1 if not computed.
   ///
-  /// If you haven't yet called computeCondEst(), then this method returns -1.
-  magnitude_type getCondEst() const;
+  /// \warning This method is DEPRECATED.  See warning for computeCondEst().
+  virtual magnitude_type TEUCHOS_DEPRECATED getCondEst() const;
 
   //! The communicator over which the matrix and vectors are distributed.
   Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
   //! The matrix to be preconditioned.
-  Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > getMatrix() const;
+  Teuchos::RCP<const row_matrix_type> getMatrix () const;
 
   //! Total number of floating-point operations over all calls to compute().
   double getComputeFlops() const;
@@ -577,26 +615,33 @@ public:
   //@}
 
 private:
+  //! \name Internal typedefs
+  //@{
 
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
-  // CrsMatrix specialization.  We use this for dynamic casts to
-  // dispatch to the most efficient implementation of various
-  // relaxation kernels.
-  //
-  // FIXME (mfh 07 Jul 2013) This typedef isn't ideal because it won't
-  // catch Tpetra::CrsMatrix specializations with nondefault
-  // LocalMatOps (fifth) template parameter.  The code will still be
-  // correct if the cast fails, but it won't pick up the "cached
-  // offsets" optimization.  An alternate approach would be to push
-  // kernels (like Gauss-Seidel) to the RowMatrix interface, so that
-  // RowMatrix's polymorphism can dispatch to the most efficient
-  // implementation.
-  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, 
-			    global_ordinal_type, node_type> crs_matrix_type;
-
-  //! @name Unimplemented methods that you are syntactically forbidden to call.
+  /// \brief Tpetra::CrsMatrix specialization used by this class.
+  ///
+  /// We use this for dynamic casts to dispatch to the most efficient
+  /// implementation of various relaxation kernels.
+  ///
+  /// \note This typedef isn't ideal because it won't catch
+  ///   Tpetra::CrsMatrix specializations with nondefault LocalMatOps
+  ///   (fifth) template parameter.  The code will still be correct if
+  ///   the cast fails, but it won't pick up the "cached offsets"
+  ///   optimization.  An alternate approach would be to push kernels
+  ///   (like Gauss-Seidel) to the RowMatrix interface, so that
+  ///   RowMatrix's polymorphism can dispatch to the most efficient
+  ///   implementation.  We accept this as reasonable because (a) the
+  ///   fifth template parameter of Tpetra::CrsMatrix and
+  ///   Tpetra::CrsGraph will be deprecated soon, and (b) very few
+  ///   users had interest in anything other than the default value of
+  ///   the fifth template parameter.
+  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
+                            global_ordinal_type, node_type> crs_matrix_type;
+  //@}
+  //! \name Unimplemented methods that you are syntactically forbidden to call.
   //@{
 
   //! Copy constructor (not implemented; you are not allowed to call this).
@@ -631,10 +676,10 @@ private:
               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
   //! Apply Gauss-Seidel for a Tpetra::CrsMatrix specialization.
-  void 
+  void
   ApplyInverseGS_CrsMatrix (const crs_matrix_type& A,
-			    const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-			    Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
+                            const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
   //! Apply symmetric Gauss-Seidel to X, returning the result in Y.
   void ApplyInverseSGS(
@@ -647,10 +692,10 @@ private:
               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
   //! Apply symmetric Gauss-Seidel for a Tpetra::CrsMatrix specialization.
-  void 
+  void
   ApplyInverseSGS_CrsMatrix (const crs_matrix_type& A,
-			     const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-			     Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
+                             const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                             Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
   //@}
   //! @name Internal data and parameters
@@ -665,12 +710,12 @@ private:
   mutable Teuchos::RCP<const Teuchos::ParameterList> validParams_;
 
   //! The matrix for which to construct the preconditioner or smoother.
-  const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > A_;
+  Teuchos::RCP<const row_matrix_type> A_;
   //! Time object to track timing.
   Teuchos::RCP<Teuchos::Time> Time_;
   //! Importer for parallel Gauss-Seidel and symmetric Gauss-Seidel.
   Teuchos::RCP<const Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> > Importer_;
-  //! Contains the diagonal elements of \c Matrix.
+  //! Contains the diagonal elements of \c A_.
   mutable Teuchos::RCP<Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Diagonal_;
 
   //! How many times to apply the relaxation per apply() call.
@@ -747,8 +792,11 @@ private:
   /// diagOffsets_ has size zero.  It is perfectly legitimate for the
   /// matrix to have zero rows on the calling process.
   bool savedDiagOffsets_;
-  //@}
 
+  /// \brief In case of local/reordered smoothing, the unknowns to use
+  Teuchos::ArrayRCP<local_ordinal_type> localSmoothingIndices_;
+
+  //@}
 }; //class Relaxation
 
 }//namespace Ifpack2

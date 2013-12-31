@@ -36,8 +36,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//                    Jeremie Gaidamour (jngaida@sandia.gov)
 //                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -63,84 +63,162 @@
 #include <Teuchos_Describable.hpp>
 #include <Xpetra_Import.hpp>
 #include <Xpetra_Map.hpp>
-#ifdef HAVE_XPETRA_EPETRA
-#include <Xpetra_EpetraMap.hpp>
-#include <Xpetra_EpetraImport.hpp>
-#include <Xpetra_EpetraVector.hpp>
-#include <Xpetra_EpetraMultiVector.hpp>
-#endif
 
-#ifdef HAVE_XPETRA_TPETRA
-#include <Xpetra_TpetraMap.hpp>
-#include <Xpetra_TpetraImport.hpp>
-#include <Xpetra_TpetraVector.hpp>
-#include <Xpetra_TpetraMultiVector.hpp>
-#endif
-
-#include <Xpetra_ImportFactory.hpp>
+#include "Xpetra_Import.hpp"
+#include "Xpetra_ImportFactory.hpp"
+#include "Xpetra_MultiVector.hpp"
+#include "Xpetra_MultiVectorFactory.hpp"
+#include "Xpetra_Vector.hpp"
+#include "Xpetra_VectorFactory.hpp"
 
 
-namespace Xpetra
-{
+namespace Xpetra {
+
   template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
-  class MapExtractor : public Teuchos::Describable
-  {
-    typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> MapClass;
-    typedef Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> VectorClass;
-    typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVectorClass;
-    typedef Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> ImportClass;
+  class MapExtractor : public Teuchos::Describable {
+    typedef void LocalMatOps;
+#undef XPETRA_MAPEXTRACTOR_SHORT
+#include "Xpetra_UseShortNames.hpp"
 
   public:
 
+    //! MapExtractor basic constructor
+    MapExtractor(const RCP<const Map>& fullmap, const std::vector<RCP<const Map> >& maps) {
+      fullmap_ = fullmap;
+      maps_ = maps;
+
+      importers_.resize(maps_.size());
+      for (unsigned i = 0; i < maps_.size(); ++i)
+        if (maps[i] != null)
+          importers_[i] = ImportFactory::Build(fullmap_, maps[i]);
+
+      TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, std::logic_error,
+                                 "logic error. full map and sub maps are inconsistently distributed over the processors.");
+    }
+
     /** \name Extract subblocks from full map */
     //@{
-    virtual void ExtractVector(Teuchos::RCP<const VectorClass>& full, size_t block, Teuchos::RCP<VectorClass>& partial) const = 0;
-    virtual void ExtractVector(Teuchos::RCP<      VectorClass>& full, size_t block, Teuchos::RCP<VectorClass>& partial) const = 0;
-    virtual Teuchos::RCP<VectorClass> ExtractVector(Teuchos::RCP<const VectorClass>& full, size_t block) const = 0;
-    virtual Teuchos::RCP<VectorClass> ExtractVector(Teuchos::RCP<      VectorClass>& full, size_t block) const = 0;
+    void ExtractVector(const Vector& full, size_t block, Vector& partial) const {
+      if (maps_[block] == null)
+        std::cout << "null map at block " << block << std::endl;
 
-    virtual void ExtractVector(Teuchos::RCP<const MultiVectorClass>& full, size_t block, Teuchos::RCP<MultiVectorClass>& partial) const = 0;
-    virtual void ExtractVector(Teuchos::RCP<      MultiVectorClass>& full, size_t block, Teuchos::RCP<MultiVectorClass>& partial) const = 0;
-    virtual Teuchos::RCP<MultiVectorClass> ExtractVector(Teuchos::RCP<const MultiVectorClass>& full, size_t block) const = 0;
-    virtual Teuchos::RCP<MultiVectorClass> ExtractVector(Teuchos::RCP<      MultiVectorClass>& full, size_t block) const = 0;
+      partial.doImport(full, *importers_[block], Xpetra::INSERT);
+    }
+    void ExtractVector(const MultiVector& full, size_t block, MultiVector& partial) const {
+      if (maps_[block] == null)
+        std::cout << "null map at block " << block << std::endl;
+
+      partial.doImport(full, *importers_[block], Xpetra::INSERT);
+    }
+    void ExtractVector(RCP<const      Vector>& full, size_t block, RCP<     Vector>& partial) const { ExtractVector(*full, block, *partial); }
+    void ExtractVector(RCP<           Vector>& full, size_t block, RCP<     Vector>& partial) const { ExtractVector(*full, block, *partial); }
+    void ExtractVector(RCP<const MultiVector>& full, size_t block, RCP<MultiVector>& partial) const { ExtractVector(*full, block, *partial); }
+    void ExtractVector(RCP<      MultiVector>& full, size_t block, RCP<MultiVector>& partial) const { ExtractVector(*full, block, *partial); }
+
+    RCP<     Vector> ExtractVector(RCP<const      Vector>& full, size_t block) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(maps_[block] == null, Xpetra::Exceptions::RuntimeError,
+            "ExtractVector: maps_[" << block << "] is null");
+      const RCP<Vector> ret = VectorFactory::Build(getMap(block), true);
+      ExtractVector(*full, block, *ret);
+      return ret;
+    }
+    RCP<     Vector> ExtractVector(RCP<           Vector>& full, size_t block) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(maps_[block] == null, Xpetra::Exceptions::RuntimeError,
+            "ExtractVector: maps_[" << block << "] is null");
+      const RCP<Vector> ret = VectorFactory::Build(getMap(block), true);
+      ExtractVector(*full, block, *ret);
+      return ret;
+    }
+    RCP<MultiVector> ExtractVector(RCP<const MultiVector>& full, size_t block) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(maps_[block] == null, Xpetra::Exceptions::RuntimeError,
+            "ExtractVector: maps_[" << block << "] is null");
+      const RCP<Vector> ret = VectorFactory::Build(getMap(block), true);
+      ExtractVector(*full, block, *ret);
+      return ret;
+    }
+    RCP<MultiVector> ExtractVector(RCP<      MultiVector>& full, size_t block) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(maps_[block] == null, Xpetra::Exceptions::RuntimeError,
+            "ExtractVector: maps_[" << block << "] is null");
+      const RCP<Vector> ret = VectorFactory::Build(getMap(block), true);
+      ExtractVector(*full, block, *ret);
+      return ret;
+    }
     //@}
 
-    //virtual Teuchos::RCP<Xpetra::Vector<LocalOrdinal,GlobalOrdinal,Node> >ExtractVector(Teuchos::RCP<const Xpetra::Vector<LocalOrdinal,GlobalOrdinal,Node> > full, int block) const {};
+    //RCP<Xpetra::Vector<LocalOrdinal,GlobalOrdinal,Node> >ExtractVector(RCP<const Xpetra::Vector<LocalOrdinal,GlobalOrdinal,Node> > full, int block) const {};
 
     /** \name Insert subblocks into full map */
     //@{
-    virtual void InsertVector(Teuchos::RCP<const VectorClass>& partial, size_t block, Teuchos::RCP<VectorClass>& full) const = 0;
-    virtual void InsertVector(Teuchos::RCP<      VectorClass>& partial, size_t block, Teuchos::RCP<VectorClass>& full) const = 0;
+    void InsertVector(const Vector& partial, size_t block, Vector& full) const {
+      if (maps_[block] == null)
+        std::cout << "null map at block " << block << std::endl;
 
-    virtual void InsertVector(Teuchos::RCP<const MultiVectorClass>& partial, size_t block, Teuchos::RCP<MultiVectorClass>& full) const = 0;
-    virtual void InsertVector(Teuchos::RCP<      MultiVectorClass>& partial, size_t block, Teuchos::RCP<MultiVectorClass>& full) const = 0;
+      full.doExport(partial, *importers_[block], Xpetra::INSERT);
+    }
+    void InsertVector(const MultiVector& partial, size_t block, MultiVector& full) const {
+      if (maps_[block] == null)
+        std::cout << "null map at block " << block << std::endl;
+
+      full.doExport(partial, *importers_[block], Xpetra::INSERT);
+    }
+
+    void InsertVector(RCP<const      Vector>& partial, size_t block, RCP<     Vector>& full) const { InsertVector(*partial, block, *full); }
+    void InsertVector(RCP<           Vector>& partial, size_t block, RCP<     Vector>& full) const { InsertVector(*partial, block, *full); }
+    void InsertVector(RCP<const MultiVector>& partial, size_t block, RCP<MultiVector>& full) const { InsertVector(*partial, block, *full); }
+    void InsertVector(RCP<      MultiVector>& partial, size_t block, RCP<MultiVector>& full) const { InsertVector(*partial, block, *full); }
+
 
     //@}
 
-    virtual Teuchos::RCP<VectorClass> getVector(size_t i) const = 0;
-    virtual Teuchos::RCP<MultiVectorClass> getVector(size_t i, size_t numvec) const = 0;
+    RCP<     Vector> getVector(size_t i) const                { return      VectorFactory::Build(getMap(i), true); }
+    RCP<MultiVector> getVector(size_t i, size_t numvec) const { return MultiVectorFactory::Build(getMap(i), numvec, true); }
 
     /** \name Maps */
     //@{
 
     /// number of partial maps
-    virtual size_t NumMaps() const = 0;
+    size_t NumMaps() const { return maps_.size(); }
 
     /// get the map
-    virtual const Teuchos::RCP<const MapClass> getMap(size_t i) const = 0;
+    const RCP<const Map> getMap(size_t i) const { return maps_[i]; }
 
     /// the full map
-    virtual const Teuchos::RCP<const MapClass> getFullMap() const = 0;
+    const RCP<const Map> getFullMap() const { return fullmap_; }
 
     /// returns map index in map extractor which contains GID or -1 otherwise
-    virtual size_t getMapIndexForGID(GlobalOrdinal gid) const = 0;
+    size_t getMapIndexForGID(GlobalOrdinal gid) const {
+      for (size_t i = 0; i < NumMaps(); i++)
+        if (getMap(i)->isNodeGlobalElement(gid) == true)
+          return i;
+
+      TEUCHOS_TEST_FOR_EXCEPTION(false, Xpetra::Exceptions::RuntimeError,
+                                 "getMapIndexForGID: GID " << gid << " is not contained by a map in mapextractor." );
+      return 0;
+    }
 
     //@}
 
   private:
-    virtual bool CheckConsistency() const = 0;
+    bool CheckConsistency() const {
+      const RCP<const Map> fullMap = getFullMap();
+
+      for (size_t i = 0; i < NumMaps(); i++) {
+        const RCP<const Map> map = getMap(i);
+
+        ArrayView<const GlobalOrdinal> mapGids = map->getNodeElementList();
+        for (typename ArrayView< const GlobalOrdinal >::const_iterator it = mapGids.begin(); it != mapGids.end(); it++)
+          if (fullMap->isNodeGlobalElement(*it) == false)
+            return false; // Global ID (*it) not found locally on this proc in fullMap -> error
+      }
+      return true;
+    }
+
+  private:
+    RCP<const Map >               fullmap_;
+    std::vector<RCP<const Map > > maps_;
+    std::vector<RCP<Import > >    importers_;
   };
 }
 
-
+#define XPETRA_MAPEXTRACTOR_SHORT
 #endif /* XPETRA_MAPEXTRACTOR_HPP_ */

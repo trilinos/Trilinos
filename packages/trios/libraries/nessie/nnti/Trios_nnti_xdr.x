@@ -51,10 +51,12 @@
 
 #ifdef RPC_HDR
 %#include "Trios_xdr.h"
+%#include <stdint.h>
 #endif
 
 #ifdef RPC_XDR
 %#include "Trios_xdr.h"
+%#include <Trios_xdr.h>
 #endif
 
 
@@ -110,6 +112,9 @@ enum NNTI_transport_id_t {
 
     /** @brief Use DCMF for Blue Gene /P transfer rpc requests. */
     NNTI_TRANSPORT_DCMF,
+
+    /** @brief Use PAMI for Blue Gene /P transfer rpc requests. */
+    NNTI_TRANSPORT_PAMI,
 
     /** @brief Use Cray Gemini to transfer rpc requests. */
     NNTI_TRANSPORT_MPI,
@@ -271,6 +276,18 @@ struct NNTI_bgpdcmf_process_t {
 
 
 /**
+ * @brief Remote process identifier for BG/Q PAMI.
+ *
+ * The <tt>\ref NNTI_bgpdcmf_process_t</tt> identifies a particular process
+ * on a particular node.
+ */
+struct NNTI_bgqpami_process_t {
+        int     pset_rank;
+	int     taskid;
+	int     thrid;
+};
+
+/**
  * @brief The instance ID of a Gemini process.
  *
  * The <tt>\ref NNTI_inst_id</tt> type identifies a particular process
@@ -331,6 +348,8 @@ union NNTI_remote_process_t switch (NNTI_transport_id_t transport_id) {
     case NNTI_TRANSPORT_GEMINI:  NNTI_gni_process_t     gni;
     /** @brief The BGP  DCMF library usage  on the torus network. */
     case NNTI_TRANSPORT_DCMF:      NNTI_bgpdcmf_process_t      bgpdcmf;
+    /** @brief The BGQ PAMI library usage  on the torus network. */
+    case NNTI_TRANSPORT_PAMI:      NNTI_bgqpami_process_t      bgqpami;
     /** @brief The MPI representation of a process on the network. */
     case NNTI_TRANSPORT_MPI:     NNTI_mpi_process_t     mpi;
 };
@@ -441,22 +460,25 @@ struct NNTI_gni_mem_hdl_t {
     uint64_t qword2;
 };
 
-
-
-
-struct NNTI_bgpdcmf_memreg_hdl_t
-{
-     unsigned word0;
-     unsigned word1;
-     unsigned word2;
-     unsigned word3;
+struct NNTI_bgpdcmf_memreg_hdl_t {
+	unsigned  word0;
+	unsigned  word1;
+	unsigned  word2;
+	unsigned  word3;
 };
+
 
 enum NNTI_bgpdcmf_buffer_type_t {
         NNTI_DCMF_REQUEST_BUFFER,
         NNTI_DCMF_RESULT_BUFFER,
         NNTI_DCMF_SEND_SRC,
         NNTI_DCMF_RECEIVE_DST
+};
+enum NNTI_bgqpami_buffer_type_t {
+        NNTI_PAMI_REQUEST_BUFFER,
+        NNTI_PAMI_RESULT_BUFFER,
+        NNTI_PAMI_SEND_SRC,
+        NNTI_PAMI_RECEIVE_DST
 };
 
 /**
@@ -471,7 +493,17 @@ struct NNTI_bgpdcmf_rdma_addr_t {
     NNTI_bgpdcmf_buffer_type_t type;
     NNTI_bgpdcmf_memreg_hdl_t mem_hdl;
     uint64_t wc_addr;
-   NNTI_bgpdcmf_memreg_hdl_t wc_mem_hdl;
+    NNTI_bgpdcmf_memreg_hdl_t wc_mem_hdl;
+};
+
+struct NNTI_bgqpami_rdma_addr_t {
+    uint64_t  buf;
+    uint32_t size;
+    uint32_t owner_rank;
+    NNTI_bgqpami_buffer_type_t type;
+    uint64_t  mem_hdl;
+    uint64_t wc_addr;
+    uint64_t wc_mem_hdl;
 };
 
 
@@ -532,6 +564,8 @@ union NNTI_remote_addr_t switch (NNTI_transport_id_t transport_id) {
     case NNTI_TRANSPORT_GEMINI:  NNTI_gni_rdma_addr_t     gni;
     /** @brief The BGP DCMF representation of a memory region. */
     case NNTI_TRANSPORT_DCMF:      NNTI_bgpdcmf_rdma_addr_t      bgpdcmf;
+    /** @brief The BGQ PAMI representation of a memory region. */
+    case NNTI_TRANSPORT_PAMI:      NNTI_bgqpami_rdma_addr_t      bgqpami;
     /** @brief The MPI representation of a memory region. */
     case NNTI_TRANSPORT_MPI:     NNTI_mpi_rdma_addr_t     mpi;
 };
@@ -545,6 +579,8 @@ union NNTI_remote_addr_t {
     NNTI_gni_rdma_addr_t     gni;
     /** @brief The BGP DCMF representation of a memory region. */
     NNTI_bgpdcmf_rdma_addr_t      bgpdcmf;
+    /** @brief The BGQ PAMI representation of a memory region. */
+    NNTI_bgqpami_rdma_addr_t      bgqpami;
     /** @brief The MPI representation of a memory region. */
     NNTI_mpi_rdma_addr_t     mpi;
 };

@@ -1322,8 +1322,10 @@ fei::MatrixGraph_Impl2::createGraph(bool blockEntryGraph,
 
   if (reducer_.get() != NULL) {
     std::vector<int>& reduced_eqns = reducer_->getLocalReducedEqns();
-    firstOffset = reduced_eqns[0];
-    lastOffset = reduced_eqns[reduced_eqns.size()-1];
+    if (!reduced_eqns.empty()) {
+      firstOffset = reduced_eqns[0];
+      lastOffset = reduced_eqns[reduced_eqns.size()-1];
+    }
   }
 
   fei::SharedPtr<fei::Graph> inner_graph(new fei::Graph_Impl(comm_, firstOffset, lastOffset) );

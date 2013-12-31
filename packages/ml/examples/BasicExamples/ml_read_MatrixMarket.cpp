@@ -252,8 +252,8 @@ int main(int argc, char *argv[])
 
 void ML_Read_Matrix_Dimensions(const char *filename, int *numGlobalRows, Epetra_Comm &Comm)
 {
-    char line[35], token1[35], token2[35], token3[35], token4[35], token5[35];
-    int lineLength = 1025;
+    const int lineLength = 1025;
+    char line[lineLength+1], token1[50], token2[50], token3[50], token4[50], token5[50];
     FILE *fid = fopen(filename,"r");
     int N, NZ;
     TEUCHOS_TEST_FOR_EXCEPTION(fgets(line, lineLength, fid)==0,std::runtime_error,"error opening matrix file");
@@ -273,6 +273,37 @@ void ML_Read_Matrix_Dimensions(const char *filename, int *numGlobalRows, Epetra_
       TEUCHOS_TEST_FOR_EXCEPTION(sscanf(line, "%d %d %d", numGlobalRows, &N, &NZ)==0,
                                  std::runtime_error,"error opening matrix file");
 } //ML_Read_Matrix_Dimensions()
+
+#else
+
+#include <iostream>
+#ifdef HAVE_MPI
+#include "mpi.h"
+#endif
+
+int main(int argc, char *argv[])
+{
+#ifdef HAVE_MPI
+  MPI_Init(&argc,&argv);
+#endif
+
+  std::cout << "Please configure Trilinos with the following enabled: " << std::endl;
+# if !defined(HAVE_ML_EPETRA)
+  std::cout << "  Epetra" << std::endl;
+# endif
+# if !defined(HAVE_ML_TEUCHOS)
+  std::cout << "  Teuchos" << std::endl;
+# endif
+# if !defined(HAVE_ML_AZTECOO)
+  std::cout << "  AztecOO" << std::endl;
+# endif
+
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
+  
+}
+
 
 
 #endif /* #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS) */

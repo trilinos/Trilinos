@@ -404,9 +404,9 @@ private:
   //! Number of local nonzeros.
   int NumMyNonzeros_;
   //! Number of global rows.
-  int NumGlobalRows_;
+  long long NumGlobalRows_;
   //! Number of global nonzeros.
-  int NumGlobalNonzeros_;
+  long long NumGlobalNonzeros_;
   //! Pointers to the matrix to be preconditioned as an Epetra_Operator.
   Teuchos::RefCountPtr<const Epetra_Operator> Operator_;
   //! Pointers to the matrix to be preconditioned as an Epetra_RowMatrix.

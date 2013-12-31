@@ -45,10 +45,11 @@
 
 #include "Ifpack2_BlockRelaxation_decl.hpp"
 #include "Ifpack2_LinearPartitioner_decl.hpp"
+#include <Ifpack2_Condest.hpp>
+#include <Ifpack2_Parameters.hpp>
 
 namespace Ifpack2 {
 
-//==========================================================================
 template<class MatrixType,class ContainerType>
 BlockRelaxation<MatrixType,ContainerType>::
 BlockRelaxation (const Teuchos::RCP<const row_matrix_type>& A)
@@ -861,49 +862,59 @@ BlockRelaxation<MatrixType,ContainerType>::DoSGS (MV& X, MV& Y) const
   }
 }
 
-//==========================================================================
-template<class MatrixType,class ContainerType>
-std::string BlockRelaxation<MatrixType,ContainerType>::description() const {
-  std::ostringstream oss;
-  oss << Teuchos::Describable::description();
-  if (isInitialized()) {
-    if (isComputed()) {
-      oss << "{status = initialized, computed";
-    }
-    else {
-      oss << "{status = initialized, not computed";
-    }
-  }
-  else {
-    oss << "{status = not initialized, not computed";
-  }
-  //
-  if (PrecType_ == Ifpack2::Details::JACOBI)   oss << "Type = Block Jacobi, " << std::endl;
-  else if (PrecType_ == Ifpack2::Details::GS)  oss << "Type = Block Gauss-Seidel, " << std::endl;
-  else if (PrecType_ == Ifpack2::Details::SGS) oss << "Type = Block Sym. Gauss-Seidel, " << std::endl;
-  //
-  oss << ", global rows = " << A_->getGlobalNumRows()
-      << ", global cols = " << A_->getGlobalNumCols();
 
-  oss << "}";
-  return oss.str();
+template<class MatrixType, class ContainerType>
+std::string BlockRelaxation<MatrixType,ContainerType>::description() const {
+  using Teuchos::TypeNameTraits;
+
+  std::ostringstream out;
+  out << "Ifpack2::BlockRelaxation<"
+      << TypeNameTraits<MatrixType>::name () << ", "
+      << TypeNameTraits<ContainerType>::name () << " >: {";
+
+  if (this->getObjectLabel () != "") {
+    out << "label: \"" << this->getObjectLabel () << "\", ";
+  }
+  out << "initialized: " << (isInitialized () ? "true" : "false") << ", ";
+  out << "computed: " << (isComputed () ? "true" : "false") << ", ";
+
+  std::string precType;
+  if (PrecType_ == Ifpack2::Details::JACOBI) {
+    precType = "Block Jacobi";
+  } else if (PrecType_ == Ifpack2::Details::GS) {
+    precType = "Block Gauss-Seidel";
+  } else if (PrecType_ == Ifpack2::Details::SGS) {
+    precType = "Block Symmetric Gauss-Seidel";
+  }
+  out << "type: " << precType << ", ";
+  out << "global number of rows: " << A_->getGlobalNumRows () << ", "
+      << "global number of columns: " << A_->getGlobalNumCols ()
+      << "}";
+
+  return out.str();
 }
 
-//==========================================================================
+
 template<class MatrixType,class ContainerType>
-void BlockRelaxation<MatrixType,ContainerType>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
+void BlockRelaxation<MatrixType,ContainerType>::
+describe (Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const
+{
   using std::endl;
   using std::setw;
+  using Teuchos::TypeNameTraits;
   using Teuchos::VERB_DEFAULT;
   using Teuchos::VERB_NONE;
   using Teuchos::VERB_LOW;
   using Teuchos::VERB_MEDIUM;
   using Teuchos::VERB_HIGH;
   using Teuchos::VERB_EXTREME;
+
   Teuchos::EVerbosityLevel vl = verbLevel;
   if (vl == VERB_DEFAULT) vl = VERB_LOW;
   const int myImageID = A_->getComm()->getRank();
-  Teuchos::OSTab tab(out);
+
+  // Convention requires that describe() begin with a tab.
+  Teuchos::OSTab tab (out);
 
   //    none: print nothing
   //     low: print O(1) info from node 0
@@ -911,19 +922,38 @@ void BlockRelaxation<MatrixType,ContainerType>::describe(Teuchos::FancyOStream &
   //    high:
   // extreme:
   if (vl != VERB_NONE && myImageID == 0) {
-    out << this->description() << endl;
-    out << endl;
-    out << "===============================================================================" << endl;
-    out << "Sweeps         = " << NumSweeps_ << endl;
-    out << "damping factor = " << DampingFactor_ << endl;
-    if (PrecType_ == Ifpack2::Details::GS && DoBackwardGS_) {
-      out << "Using backward mode (BGS only)" << endl;
+    out << "Ifpack2::BlockRelaxation<"
+        << TypeNameTraits<MatrixType>::name () << ", "
+        << TypeNameTraits<ContainerType>::name () << " >:";
+    Teuchos::OSTab tab1 (out);
+
+    if (this->getObjectLabel () != "") {
+      out << "label: \"" << this->getObjectLabel () << "\"" << endl;
     }
-    if   (ZeroStartingSolution_) { out << "Using zero starting solution" << endl; }
-    else                         { out << "Using input starting solution" << endl; }
-    if   (Condest_ == -1.0) { out << "Condition number estimate       = N/A" << endl; }
-    else                    { out << "Condition number estimate       = " << Condest_ << endl; }
-    out << endl;
+    out << "initialized: " << (isInitialized () ? "true" : "false") << endl
+        << "computed: " << (isComputed () ? "true" : "false") << endl;
+
+    std::string precType;
+    if (PrecType_ == Ifpack2::Details::JACOBI) {
+      precType = "Block Jacobi";
+    } else if (PrecType_ == Ifpack2::Details::GS) {
+      precType = "Block Gauss-Seidel";
+    } else if (PrecType_ == Ifpack2::Details::SGS) {
+      precType = "Block Symmetric Gauss-Seidel";
+    }
+    out << "type: " << precType << endl
+        << "global number of rows: " << A_->getGlobalNumRows () << endl
+        << "global number of columns: " << A_->getGlobalNumCols () << endl
+        << "number of sweeps: " << NumSweeps_ << endl
+        << "damping factor: " << DampingFactor_ << endl
+        << "backwards mode: "
+        << ((PrecType_ == Ifpack2::Details::GS && DoBackwardGS_) ? "true" : "false")
+        << endl
+        << "zero starting solution: "
+        << (ZeroStartingSolution_ ? "true" : "false") << endl
+        << "condition number estimate: " << Condest_ << endl;
+
+    out << "===============================================================================" << endl;
     out << "Phase           # calls    Total Time (s)     Total MFlops      MFlops/s       " << endl;
     out << "------------    -------    ---------------    ---------------   ---------------" << endl;
     out << setw(12) << "initialize()" << setw(5) << getNumInitialize() << "    " << setw(15) << getInitializeTime() << endl;

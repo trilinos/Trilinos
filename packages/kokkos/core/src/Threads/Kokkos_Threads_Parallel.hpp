@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -72,7 +72,7 @@ public:
 
     const std::pair<size_t,size_t> work = exec.work_range( self.m_work );
 
-    for ( size_t iwork = work.first ; iwork < work.second ; ++iwork ) {
+    for ( size_t iwork = work.first, work_end = work.second ; iwork < work_end ; ++iwork ) {
       self.m_func( iwork );
     }
 
@@ -113,7 +113,7 @@ public:
     : m_func( functor )
     {
       ThreadsExec::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
-      ThreadsExec::start( & ParallelFor::execute , this , work.league_size );
+      ThreadsExec::start( & ParallelFor::execute , this , work.league_size , work.team_size );
       ThreadsExec::fence();
     }
 
@@ -146,7 +146,7 @@ public:
 
     const std::pair<size_t,size_t> work = exec.work_range( self.m_work );
 
-    for ( size_t iwork = work.first ; iwork < work.second ; ++iwork ) {
+    for ( size_t iwork = work.first, work_end = work.second ; iwork < work_end ; ++iwork ) {
       self.m_func( iwork , update );
     }
 
@@ -212,7 +212,7 @@ public:
       ThreadsExec::resize_shared_scratch( FunctorShmemSize< FunctorType >::value( functor ) );
       ThreadsExec::resize_reduce_scratch( Reduce::value_size( m_func ) );
 
-      ThreadsExec::start( & ParallelReduce::execute , this , work.league_size );
+      ThreadsExec::start( & ParallelReduce::execute , this , work.league_size , work.team_size );
 
       const pointer_type data = (pointer_type) ThreadsExec::root_reduce_scratch();
 
@@ -261,7 +261,7 @@ public:
 
     self.m_func.init( update );
 
-    for ( size_t iwork = work.first ; iwork < work.second ; ++iwork ) {
+    for ( size_t iwork = work.first, work_end = work.second ; iwork < work_end ; ++iwork ) {
       self.m_func( iwork , update , false );
     }
 
@@ -274,7 +274,7 @@ public:
       exec.scan_small( self.m_func );
     }
 
-    for ( size_t iwork = work.first ; iwork < work.second ; ++iwork ) {
+    for ( size_t iwork = work.first, work_end = work.second ; iwork < work_end ; ++iwork ) {
       self.m_func( iwork , update , true );
     }
 
@@ -330,7 +330,7 @@ private:
       {
         Impl::ThreadsExec::resize_reduce_scratch( Reduce::value_size( m_func ) );
       }
-    
+
     void init( Impl::ThreadsExec & exec ) const
       { m_func.init( Reduce::reference( exec.reduce_base() ) ); }
 
@@ -340,7 +340,7 @@ private:
 
         const std::pair<size_t,size_t> work = exec.work_range( m_work );
 
-        for ( size_t iwork = work.first ; iwork < work.second ; ++iwork ) {
+        for ( size_t iwork = work.first, work_end = work.second ; iwork < work_end ; ++iwork ) {
           m_func( iwork , update );
         }
       }
@@ -385,20 +385,17 @@ private:
 
 public:
 
-  void execute() const
+  inline
+  void execute( void * host_ptr ) const
     {
       if ( ! m_members.empty() ) {
         Impl::ThreadsExec::start( & MultiFunctorParallelReduce::execute_members , this );
+        m_members.back()->output( host_ptr );
       }
     }
 
-  void output( void * ptr ) const
-    {
-      if ( ! m_members.empty() ) {
-        Impl::ThreadsExec::fence();
-        m_members.back()->output( ptr );
-      }
-    }
+  inline
+  void wait() const {}
 
   template< class FunctorType >
   void push_back( const size_t work_count , const FunctorType & f )

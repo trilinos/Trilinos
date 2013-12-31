@@ -84,6 +84,7 @@
 #include <Xpetra_Map.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_MapFactory.hpp>
+#include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
@@ -302,6 +303,36 @@ namespace MueLu {
     return tmp_TMap->getTpetra_Map();
   }
 #endif
+
+
+
+
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >
+  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Jacobi(Scalar omega,
+									const Vector& Dinv,
+									const Matrix& A,
+									const Matrix& B,
+									RCP<Matrix> C_in,
+									Teuchos::FancyOStream &fos) {
+    // Sanity checks
+    if (!A.isFillComplete())
+      throw Exceptions::RuntimeError("A is not fill-completed");
+    if (!B.isFillComplete())
+      throw Exceptions::RuntimeError("B is not fill-completed");
+
+    // Default case: Xpetra Jacobi
+    RCP<Matrix> C = C_in;
+    if (C == Teuchos::null)
+      C = MatrixFactory::Build(B.getRowMap(),Teuchos::OrdinalTraits<LO>::zero());
+
+    Xpetra::MatrixMatrix::Jacobi(omega, Dinv, A, B, *C, true,true);
+    C->CreateView("stridedMaps", rcpFromRef(A),false, rcpFromRef(B), false);
+    return C;
+  } //Jacobi
+
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >
@@ -593,6 +624,41 @@ namespace MueLu {
 
     return diag;
   } //GetMatrixDiagonal
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMatrixDiagonalInverse(const Matrix& A,Magnitude tol) {
+    RCP<const Map> rowMap = A.getRowMap();
+    RCP<Vector> diag      = VectorFactory::Build(rowMap);
+    ArrayRCP<SC> diagVals = diag->getDataNonConst(0);
+
+    size_t numRows = rowMap->getNodeNumElements();
+
+    Teuchos::ArrayView<const LO> cols;
+    Teuchos::ArrayView<const SC> vals;
+    for (size_t i = 0; i < numRows; ++i) {
+      A.getLocalRowView(i, cols, vals);
+
+      LO j = 0;
+      for (; j < cols.size(); ++j) {
+        if (Teuchos::as<size_t>(cols[j]) == i) {
+	  if(Teuchos::ScalarTraits<SC>::magnitude(vals[j]) > tol)
+	    diagVals[i] = Teuchos::ScalarTraits<SC>::one() / vals[j];
+	  else
+	    diagVals[i]=Teuchos::ScalarTraits<SC>::zero();
+	  break;
+	}
+      }
+      if (j == cols.size()) {
+        // Diagonal entry is absent
+        diagVals[i]=Teuchos::ScalarTraits<SC>::zero();
+      }
+    }
+    diagVals=null;
+
+    return diag;
+  } //GetMatrixDiagonalInverse
+
+
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Teuchos::ArrayRCP<Scalar> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetLumpedMatrixDiagonal(const Matrix &A) {
@@ -1271,11 +1337,8 @@ namespace MueLu {
 
       double avgNumRows = sumNumRows / numProcessesWithData;
       double avgNnz     = sumNnz     / numProcessesWithData;
-      // NOTE: division by zero is proper here, it produces reasonable nans
-      double devNumRows = sqrt((sum2NumRows - sumNumRows*sumNumRows/numProcessesWithData)/(numProcessesWithData-1));
-      double devNnz     = sqrt((sum2Nnz     -         sumNnz*sumNnz/numProcessesWithData)/(numProcessesWithData-1));
-      if (numProcessesWithData == 1)
-        devNumRows = devNnz = 0;
+      double devNumRows = (numProcessesWithData != 1 ? sqrt((sum2NumRows - sumNumRows*sumNumRows/numProcessesWithData)/(numProcessesWithData-1)) : 0);
+      double devNnz     = (numProcessesWithData != 1 ? sqrt((sum2Nnz     -     sumNnz*    sumNnz/numProcessesWithData)/(numProcessesWithData-1)) : 0);
 
       char buf[256];
       ss << msgTag << " Load balancing info:" << std::endl;

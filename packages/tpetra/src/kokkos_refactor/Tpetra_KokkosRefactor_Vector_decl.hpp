@@ -43,8 +43,6 @@
 #define TPETRA_KOKKOS_REFACTOR_VECTOR_DECL_HPP
 
 #include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_KokkosRefactor_MultiVector_decl.hpp"
-#include "Tpetra_Vector_decl.hpp"
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 namespace Tpetra {
@@ -61,13 +59,16 @@ template<class Scalar,
          class GlobalOrdinal,
          class DeviceType>
 class Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > :
-   public MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > {
+   public MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
+{
+private:
   // need this so that MultiVector::operator() can call Vector's private view constructor
   typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>  Node;
   friend class MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 
-  
 public:
+  typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::view_type view_type;
+  
   //! @name Constructor/Destructor Methods
   //@{
 
@@ -79,6 +80,17 @@ public:
 
   //! \brief Set vector values from an existing array (copy)
   Vector(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const ArrayView<const Scalar> &A);
+
+  /// \brief Expert mode constructor.
+  ///
+  /// \warning This constructor is only for expert users.  We make
+  ///   no promises about backwards compatibility for this interface.
+  ///   It may change or go away at any time.
+  ///
+  /// \param map [in] Map describing the distribution of rows.
+  /// \param view [in] Device view to the data (shallow copy)
+  Vector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+          const view_type view);
 
   //! Destructor.
   virtual ~Vector();
@@ -179,21 +191,6 @@ protected:
   friend RCP< Vector<S,LO,GO,N> >
   createVectorFromView(const RCP<const Map<LO,GO,N> > &,const ArrayRCP<S> &);
 
-  // view constructor, sitting on user allocated data, only for CPU nodes
-  // and his non-member constructor friend
-  Vector (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
-          const ArrayRCP<Scalar> &view,
-          EPrivateHostViewConstructor /* dummy tag */);
-
-  //! Advanced constructor accepting parallel buffer view, used by MultiVector to break off Vector objects
-  Vector (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
-          const ArrayRCP<Scalar> & data);
-
-  //! Advanced constructor accepting parallel buffer view, used by MultiVector to break off Vector objects
-  Vector (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
-          const ArrayRCP<Scalar> & data,
-          EPrivateComputeViewConstructor /* dummy tag */);
-
   typedef KokkosClassic::MultiVector<Scalar,Node> KMV;
   typedef KokkosClassic::DefaultArithmetic<KMV>   MVT;
 }; // class Vector
@@ -213,20 +210,15 @@ createVector (const RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map)
 /*! This use case is not supported for all nodes. Specifically, it is not typically supported for accelerator-based nodes like KokkosClassic::ThrustGPUNode.
     \relatesalso Vector
  */
-/*template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-createVectorFromView (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >
+createVectorFromView (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &map,
                       const ArrayRCP<Scalar> &view)
 {
-  return rcp(
-    // this is a protected constructor, but we are friends
-    new Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(
-      map,
-      // this will fail to compile for unsupported node types
-      Tpetra::details::ViewAccepter<Node>::template acceptView<Scalar>(view),
-      HOST_VIEW_CONSTRUCTOR)
-  );
-}*/
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    true, std::logic_error, "Tpetra::createVectorFromView: "
+    "Not implemented for Node = KokkosDeviceWrapperNode");
+}
 
 /*template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 template <class Node2>

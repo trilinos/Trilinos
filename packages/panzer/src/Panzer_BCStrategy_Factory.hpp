@@ -50,7 +50,7 @@ namespace panzer {
   
   class BC;
   template<typename T> class BCStrategy_TemplateManager;
-  class GlobalData;
+  struct GlobalData;
 
   /** \brief Interface for constructing a BCStrategy_TemplateManager
 

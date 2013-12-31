@@ -52,31 +52,33 @@ namespace MueLu {
 
   enum MsgType
     {
-      Errors          = 0x0000001, //!< Errors
+      Errors          = 0x00000001, //!< Errors
 
-      Warnings0       = 0x0000010, //!< Important warning messages (one line)
-      Warnings00      = 0x0000020, //!< Important warning messages (more verbose)
-      Warnings1       = 0x0000040, //!< Additional warnings
-      PerfWarnings    = 0x0000080, //!< Performance warnings
+      Warnings0       = 0x00000010, //!< Important warning messages (one line)
+      Warnings00      = 0x00000020, //!< Important warning messages (more verbose)
+      Warnings1       = 0x00000040, //!< Additional warnings
+      PerfWarnings    = 0x00000080, //!< Performance warnings
 
-      Runtime0        = 0x0000100, //!< One-liner description of what is happening
-      Runtime1        = 0x0000200, //!< Description of what is happening (more verbose)
-      RuntimeTimings  = 0x0000400, //!< Timers that are enabled (using Timings0/Timings1) will be printed during the execution
-      NoTimeReport    = 0x0000800, //!< By default, enabled timers appears in the teuchos time monitor summary. Use this option if you do not want to record timing information.
+      Runtime0        = 0x00000100, //!< One-liner description of what is happening
+      Runtime1        = 0x00000200, //!< Description of what is happening (more verbose)
+      RuntimeTimings  = 0x00000400, //!< Timers that are enabled (using Timings0/Timings1) will be printed during the execution
+      NoTimeReport    = 0x00000800, //!< By default, enabled timers appears in the teuchos time monitor summary. Use this option if you do not want to record timing information.
 
-      Parameters0     = 0x0001000, //!< Print class parameters
-      Parameters1     = 0x0002000, //!< Print class parameters (more parameters, more verbose)
+      Parameters0     = 0x00001000, //!< Print class parameters
+      Parameters1     = 0x00002000, //!< Print class parameters (more parameters, more verbose)
 
-      Statistics0     = 0x0010000, //!< Print statistics that do not involve significant additional computation
-      Statistics1     = 0x0020000, //!< Print more statistics
-      Statistics2     = 0x0040000, //!< Print even more statistics
+      Statistics0     = 0x00010000, //!< Print statistics that do not involve significant additional computation
+      Statistics1     = 0x00020000, //!< Print more statistics
+      Statistics2     = 0x00040000, //!< Print even more statistics
 
-      Timings0        = 0x0100000, //!< High level timing information (use Teuchos::TimeMonitor::summarize() to print)
-      Timings1        = 0x0200000, //!< Detailed timing information   (use Teuchos::TimeMonitor::summarize() to print)
-      TimingsByLevel  = 0x0400000, //!< Record timing information level by level. Must be used in combinaison with Timings0/Timings1
+      Timings0        = 0x00100000, //!< High level timing information (use Teuchos::TimeMonitor::summarize() to print)
+      Timings1        = 0x00200000, //!< Detailed timing information   (use Teuchos::TimeMonitor::summarize() to print)
+      TimingsByLevel  = 0x00400000, //!< Record timing information level by level. Must be used in combinaison with Timings0/Timings1
 
-      External        = 0x1000000, //!< Print external lib objects
-      Debug           = 0x2000000, //!< Print additional debugging information
+      External        = 0x01000000, //!< Print external lib objects
+      Debug           = 0x02000000, //!< Print additional debugging information
+
+      Test            = 0x10000000, //!< Print skeleton for the run, i.e. factory calls and used parameters
 
       // Predefined combinations of MsgType
       // Can be used in user code or examples. Do not used as input parameters of IsPrint() or GetOStream().

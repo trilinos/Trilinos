@@ -41,6 +41,7 @@
 //@HEADER
 */
 
+#include <stdio.h>
 #include <limits>
 #include <iostream>
 #include <Kokkos_OpenMP.hpp>
@@ -60,6 +61,19 @@ int kokkos_omp_in_parallel()
   return omp_in_parallel() && ! kokkos_omp_in_critical_region ;
 }
 
+unsigned s_threads_per_core = 0 ;
+unsigned s_threads_per_numa = 0 ;
+bool s_using_hwloc = false;
+
+inline
+unsigned fan_size( const unsigned rank , const unsigned size )
+{
+  const unsigned rank_rev = size - ( rank + 1 );
+  unsigned count = 0 ;
+  for ( unsigned n = 1 ; ( rank_rev + n < size ) && ! ( rank_rev & n ) ; n <<= 1 ) { ++count ; }
+  return count ;
+}
+
 } // namespace
 } // namespace Impl
 } // namespace Kokkos
@@ -68,42 +82,73 @@ int kokkos_omp_in_parallel()
 namespace Kokkos {
 namespace Impl {
 
-OpenMPexec * OpenMPexec::m_thread[ OpenMPexec::MAX_THREAD_COUNT ] = { 0 };
+OpenMPexec * OpenMPexec::m_thread[ OpenMPexec::MAX_THREAD_COUNT ] = { 0 }; // Indexed by omp_get_thread_num()
+OpenMPexec * OpenMPexec::m_pool[   OpenMPexec::MAX_THREAD_COUNT ] = { 0 }; // Indexed by OpenMPexec::m_pool_rank
 
-OpenMPexec * OpenMPexec::find_thread( const int init_league_rank ,
-                                      const int team_rank )
-{
-  for ( unsigned i = 0 ; i < OpenMPexec::MAX_THREAD_COUNT && 0 != m_thread[i] ; ++i ) {
-    if ( init_league_rank == m_thread[i]->m_init_league_rank &&
-         team_rank        == m_thread[i]->m_team_rank        ) {
-      return m_thread[i] ;
-    }
-  }
-  return (OpenMPexec *) 0 ;
-}
-
-OpenMPexec::OpenMPexec( const unsigned league_rank ,
-                        const unsigned league_size ,
-                        const unsigned team_rank ,
-                        const unsigned team_size )
-  : m_reduce(0)
-  , m_shared(0)
-  , m_shared_end(0)
-  , m_shared_iter(0)
-  , m_state_team( OpenMPexec::Active )
-  , m_fan_team_size(0)
-  , m_team_rank( team_rank )
-  , m_team_size( team_size )
-  , m_init_league_rank( league_rank )
-  , m_init_league_size( league_size )
-  , m_work_league_rank( league_rank )
-  , m_work_league_end(  league_rank + 1 )
-  , m_work_league_size( league_size )
-{
-  for ( int i = 0 ; i < MAX_FAN_COUNT ; ++i ) { m_fan_team[i] = 0 ; }
-}
+OpenMPexec::OpenMPexec( const unsigned pool_rank )
+  : m_team_base(0)
+  , m_alloc_reduce(0)
+  , m_alloc_shared(0)
+  , m_team_shared(0)
+  , m_alloc_shared_size(0)
+  , m_pool_rank( pool_rank )
+  , m_team_shared_end(0)
+  , m_team_shared_iter(0)
+  , m_team_rank(0)
+  , m_team_size(0)
+  , m_team_fan_size(0)
+  , m_league_rank(0)
+  , m_league_end(0)
+  , m_league_size(0)
+  , m_barrier_state( OpenMPexec::Active )
+  , m_scan_state( OpenMPexec::Active )
+{}
 
 OpenMPexec::~OpenMPexec() {}
+
+void OpenMPexec::team_work_init( size_t league_size , size_t team_size )
+{
+  m_team_base        = 0 ;
+  m_team_shared      = 0 ;
+  m_team_shared_end  = 0 ;
+  m_team_size        = 0 ;
+  m_team_rank        = 0 ;
+  m_team_fan_size    = 0 ;
+  m_league_size      = 0 ;
+  m_league_rank      = 0 ;
+  m_league_end       = 0 ;
+
+  if ( league_size ) {
+
+    if ( s_threads_per_numa < team_size ) { team_size = s_threads_per_numa ; }
+
+    // Execution is using device-team interface:
+
+    const unsigned pool_size     = omp_get_num_threads();
+    const unsigned team_alloc    = s_threads_per_core * ( ( team_size + s_threads_per_core - 1 ) / s_threads_per_core );
+    const unsigned pool_rank_rev = pool_size - ( m_pool_rank + 1 );
+    const unsigned team_rank_rev = pool_rank_rev % team_alloc ;
+
+    // May be using fewer threads per team than a multiple of threads per core,
+    // some threads will idle.
+
+    if ( team_rank_rev < team_size ) {
+      const size_t pool_league_size     = pool_size     / team_alloc ;
+      const size_t pool_league_rank_rev = pool_rank_rev / team_alloc ;
+      const size_t pool_league_rank     = pool_league_size - ( pool_league_rank_rev + 1 );
+
+      m_team_base        = m_pool + team_alloc * pool_league_rank_rev ;
+      m_team_shared      = (*m_team_base)->m_alloc_shared ;
+      m_team_shared_end  = (*m_team_base)->m_alloc_shared_size ;
+      m_team_size        = team_size ;
+      m_team_rank        = team_size - ( team_rank_rev + 1 );
+      m_team_fan_size    = fan_size( m_team_rank , team_size );
+      m_league_size      = league_size ;
+      m_league_rank      = ( league_size *  pool_league_rank    ) / pool_league_size ;
+      m_league_end       = ( league_size * (pool_league_rank+1) ) / pool_league_size ;
+    }
+  }
+}
 
 
 void OpenMPexec::verify_is_process( const char * const label )
@@ -147,13 +192,13 @@ void OpenMPexec::resize_reduce_scratch( size_t size )
       {
         kokkos_omp_in_critical_region = 1 ;
 
-        if ( th.m_reduce ) {
-          HostSpace::decrement( th.m_reduce );
-          th.m_reduce = 0 ;
+        if ( th.m_alloc_reduce ) {
+          HostSpace::decrement( th.m_alloc_reduce );
+          th.m_alloc_reduce = 0 ;
         }
 
         if ( size ) {
-          th.m_reduce = HostSpace::allocate( "openmp_reduce_scratch" , typeid(unsigned char) , 1 , size );
+          th.m_alloc_reduce = HostSpace::allocate( "openmp_reduce_scratch" , typeid(unsigned char) , 1 , size );
         }
         kokkos_omp_in_critical_region = 0 ;
       }
@@ -182,32 +227,26 @@ void OpenMPexec::resize_shared_scratch( size_t size )
     {
       OpenMPexec & th = * m_thread[ omp_get_thread_num() ];
 
-      if ( 0 == th.m_team_rank ) {
+      const unsigned rank_rev = omp_get_num_threads() - ( th.m_pool_rank + 1 );
+
+      if ( ! ( rank_rev % s_threads_per_core ) ) {
 #pragma omp critical
         {
           kokkos_omp_in_critical_region = 1 ;
 
-          if ( th.m_shared ) {
-            HostSpace::decrement( th.m_shared );
-            th.m_shared = 0 ;
+          if ( th.m_alloc_shared ) {
+            HostSpace::decrement( th.m_alloc_shared );
+            th.m_alloc_shared = 0 ;
           }
 
           if ( size ) {
-            th.m_shared = HostSpace::allocate( "openmp_shared_scratch" , typeid(unsigned char) , 1 , size );
-            th.m_shared_end = size ;
+            th.m_alloc_shared = HostSpace::allocate( "openmp_shared_scratch" , typeid(unsigned char) , 1 , size );
+            th.m_alloc_shared_size = size ;
           }
 
           kokkos_omp_in_critical_region = 0 ;
         }
 /* END #pragma omp critical */
-        // Push to threads in the same team
-
-        for ( int i = 0 ; i < omp_get_num_threads() ; ++i ) {
-          if ( th.m_init_league_rank == m_thread[i]->m_init_league_rank ) {
-            m_thread[i]->m_shared     = th.m_shared ;
-            m_thread[i]->m_shared_end = th.m_shared_end ;
-          }
-        }
       }
     }
 /* END #pragma omp parallel */
@@ -219,15 +258,15 @@ void OpenMPexec::resize_shared_scratch( size_t size )
 void * OpenMPexec::get_shmem( const int size )
 {
   // m_shared_iter is in bytes, convert to integer offsets
-  const int offset = m_shared_iter >> power_of_two<sizeof(int)>::value ;
+  const int offset = m_team_shared_iter >> power_of_two<sizeof(int)>::value ;
 
-  m_shared_iter += size ;
+  m_team_shared_iter += size ;
 
-  if ( m_shared_end < m_shared_iter ) {
+  if ( m_team_shared_end < m_team_shared_iter ) {
     Kokkos::Impl::throw_runtime_exception( std::string("OpenMPexec::get_shmem FAILED : exceeded shared memory size" ) );
   }
 
-  return ((int*)m_shared) + offset ;
+  return ((int*)m_team_shared) + offset ;
 }
 
 } // namespace Impl
@@ -251,13 +290,92 @@ unsigned OpenMP::team_max()
   Impl::OpenMPexec::verify_initialized("Kokkos::OpenMP::team_max" );
   Impl::OpenMPexec::verify_is_process("Kokkos::OpenMP::team_max" );
 
-  return Impl::OpenMPexec::m_thread[0]->m_team_size ;
+  return Impl::s_threads_per_numa ;
 }
 
 //----------------------------------------------------------------------------
 
 int OpenMP::is_initialized()
 { return 0 != Impl::OpenMPexec::m_thread[0]; }
+
+void OpenMP::initialize( unsigned thread_count ,
+                         unsigned use_numa_count ,
+                         unsigned use_cores_per_numa )
+{
+  if(thread_count==0) thread_count = omp_get_max_threads();
+  const bool is_initialized = 0 != Impl::OpenMPexec::m_thread[0] ;
+
+  bool thread_spawn_failed = false ;
+
+  if ( ! is_initialized ) {
+
+    Impl::s_using_hwloc = hwloc::available() && (use_cores_per_numa > 0);
+
+    std::pair<unsigned,unsigned> threads_coord[ Impl::OpenMPexec::MAX_THREAD_COUNT ];
+
+    if(Impl::s_using_hwloc)
+      hwloc::thread_mapping( "Kokkos::OpenMP::initialize" ,
+                           false /* do not allow asynchronous */ ,
+                           thread_count ,
+                           use_numa_count ,
+                           use_cores_per_numa ,
+                           threads_coord );
+
+    // Spawn threads:
+
+    omp_set_num_threads( thread_count );
+
+    // Verify OMP interaction:
+    if ( int(thread_count) != omp_get_max_threads() ) {
+      thread_spawn_failed = true ;
+    }
+
+    // Verify spawning and bind threads:
+#pragma omp parallel
+    {
+#pragma omp critical
+      {
+        if ( int(thread_count) != omp_get_num_threads() ) {
+          thread_spawn_failed = true ;
+        }
+
+        // Call to 'bind_this_thread' is not thread safe so place this whole block in a critical region.
+        // Call to 'new' may not be thread safe as well.
+
+        // Reverse the rank for threads so that the scan operation reduces to the highest rank thread.
+
+        const unsigned omp_rank    = omp_get_thread_num();
+        const unsigned thread_r    = Impl::s_using_hwloc ? Kokkos::hwloc::bind_this_thread( thread_count , threads_coord ) : omp_rank ;
+        const unsigned thread_rank = thread_count - ( thread_r + 1 );
+
+        Impl::OpenMPexec::m_thread[ omp_rank ] = new Impl::OpenMPexec( thread_rank );
+
+        Impl::OpenMPexec::m_pool[ thread_r ] = Impl::OpenMPexec::m_thread[ omp_rank ] ;
+      }
+/* END #pragma omp critical */
+    }
+/* END #pragma omp parallel */
+
+    if ( ! thread_spawn_failed ) {
+      Impl::s_threads_per_numa = Impl::s_using_hwloc ? thread_count / use_numa_count : thread_count;
+      Impl::s_threads_per_core = Impl::s_using_hwloc ? thread_count / ( use_numa_count * use_cores_per_numa ) : thread_count;
+
+      Impl::OpenMPexec::resize_reduce_scratch( 4096 - Impl::OpenMPexec::REDUCE_TEAM_BASE );
+      Impl::OpenMPexec::resize_shared_scratch( 4096 );
+    }
+  }
+
+  if ( is_initialized || thread_spawn_failed ) {
+    std::string msg("Kokkos::OpenMP::initialize ERROR");
+
+    if ( is_initialized ) { msg.append(" : already initialized"); }
+    if ( thread_spawn_failed ) { msg.append(" : failed spawning threads"); }
+
+    Kokkos::Impl::throw_runtime_exception(msg);
+  }
+}
+
+#if 0
 
 void OpenMP::initialize( const unsigned team_count ,
                          const unsigned threads_per_team ,
@@ -330,46 +448,23 @@ void OpenMP::initialize( const unsigned team_count ,
       const unsigned omp_rank    = omp_get_thread_num();
       const unsigned thread_r    = use_hwloc ? Kokkos::hwloc::bind_this_thread( thread_count , threads_coord ) : omp_rank ;
       const unsigned thread_rank = thread_count - ( thread_r + 1 );
-      const unsigned league_rank = thread_rank / threads_per_team ;
-      const unsigned team_rank   = thread_rank % threads_per_team ;
 
-      Impl::OpenMPexec::m_thread[ omp_rank ] = new Impl::OpenMPexec( league_rank , team_count , team_rank , threads_per_team );
+      Impl::OpenMPexec::m_thread[ omp_rank ] = new Impl::OpenMPexec( thread_rank );
+
+      Impl::OpenMPexec::m_pool[ thread_r ] = Impl::OpenMPexec::m_thread[ omp_rank ] ;
     }
 /* END #pragma omp critical */
   }
 /* END #pragma omp parallel */
 
-  // Set threads' fan_team relationships:
-
-#pragma omp parallel
-  {
-    Impl::OpenMPexec & th = * Impl::OpenMPexec::m_thread[ omp_get_thread_num() ];
-
-    // Intra-team fan-in with root as the highest rank thread:
-    const int team_r = th.m_team_size - ( th.m_team_rank + 1 );
-
-    for ( int n = 1 ; ( team_r + n < th.m_team_size ) && ( 0 == ( n & team_r ) ) ; n <<= 1 ) {
-      th.m_fan_team[ th.m_fan_team_size++ ] =
-        Impl::OpenMPexec::find_thread( th.m_init_league_rank , th.m_team_size - ( team_r + n + 1 ) );
-    }
-    // Intra-team scan:
-    {
-      int n ;
-      for ( n = 1 ; 0 == ( team_r & n ) && ( team_r + n < th.m_team_size ) ; n <<= 1 );
-      if ( ( team_r & n ) && ( team_r + n < th.m_team_size ) ) {
-        th.m_fan_team[ th.m_fan_team_size ] =
-          Impl::OpenMPexec::find_thread( th.m_init_league_rank , th.m_team_size - ( team_r + n + 1 ) );
-      }
-      else {
-        th.m_fan_team[ th.m_fan_team_size ] = 0 ;
-      }
-    }
-  }
-/* END #pragma omp parallel */
+  Impl::s_threads_per_numa = use_hwloc ? thread_count             / use_core_topology.first  : thread_count ;
+  Impl::s_threads_per_core = use_hwloc ? Impl::s_threads_per_numa / use_core_topology.second : 1 ;
 
   Impl::OpenMPexec::resize_reduce_scratch( 4096 - Impl::OpenMPexec::REDUCE_TEAM_BASE );
   Impl::OpenMPexec::resize_shared_scratch( 4096 );
 }
+
+#endif
 
 //----------------------------------------------------------------------------
 
@@ -385,10 +480,14 @@ void OpenMP::finalize()
     if ( Impl::OpenMPexec::m_thread[i] ) { delete Impl::OpenMPexec::m_thread[i] ; }
     Impl::OpenMPexec::m_thread[i] = 0 ;
   }
+  for ( int i = 0 ; i < Impl::OpenMPexec::MAX_THREAD_COUNT ; ++i ) {
+    Impl::OpenMPexec::m_pool[i] = 0 ;
+  }
 
   omp_set_num_threads(0);
 
-  hwloc::unbind_this_thread();
+  if(Impl::s_using_hwloc)
+    hwloc::unbind_this_thread();
 }
 
 } // namespace Kokkos
