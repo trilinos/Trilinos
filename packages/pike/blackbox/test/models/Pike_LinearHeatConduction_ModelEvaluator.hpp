@@ -41,9 +41,9 @@ namespace pike_test {
       Q_IS_RESPONSE
     };
 
-    LinearHeatConductionModelEvaluator(Teuchos::RCP<Teuchos::Comm<int> > comm,
-				       std::string name,
-				       Mode mode);
+    LinearHeatConductionModelEvaluator(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+				       const std::string& name,
+				       const Mode mode);
 
     //@{ BlackBoxModelEvaluator derived methods
     
@@ -76,7 +76,7 @@ namespace pike_test {
     double get_T_right() const;
     
   private:
-    Teuchos::RCP<Teuchos::Comm<int> > comm_;
+    Teuchos::RCP<const Teuchos::Comm<int> > comm_;
     std::string name_;
     Mode mode_;
 
@@ -94,9 +94,9 @@ namespace pike_test {
       \relates LinearHeatConductionModelEvaluator
   */
   Teuchos::RCP<pike_test::LinearHeatConductionModelEvaluator> 
-  linearHeatConductionModelEvaluator(Teuchos::RCP<Teuchos::Comm<int> > comm,
-				     std::string name,
-				     pike_test::LinearHeatConductionModelEvaluator::Mode mode);
+  linearHeatConductionModelEvaluator(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+				     const std::string& name,
+				     const pike_test::LinearHeatConductionModelEvaluator::Mode mode);
   
 
 }

@@ -5,8 +5,8 @@
 
 namespace pike {
 
-  MaxIterations::MaxIterations() :
-    maximumIterations_(-1),
+  MaxIterations::MaxIterations(const int maxIterations) :
+    maximumIterations_(maxIterations),
     currentIterations_(-1),
     status_(pike::UNCHECKED)
   {

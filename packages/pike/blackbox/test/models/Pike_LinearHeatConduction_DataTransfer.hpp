@@ -34,8 +34,8 @@ namespace pike_test {
       TRANSFER_Q
     };
 
-    LinearHeatConductionDataTransfer(const Teuchos::RCP<Teuchos::Comm<int> >& comm,
-				     const std::string name,
+    LinearHeatConductionDataTransfer(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+				     const std::string& name,
 				     const Mode mode);
 
     //@{ DataTransfer derived methods
@@ -57,7 +57,7 @@ namespace pike_test {
     void addTarget(const Teuchos::RCP<pike_test::LinearHeatConductionModelEvaluator>& target);
 
   private:
-    Teuchos::RCP<Teuchos::Comm<int> > comm_;
+    Teuchos::RCP<const Teuchos::Comm<int> > comm_;
     std::string name_;
     Mode mode_;
     Teuchos::RCP<pike_test::LinearHeatConductionModelEvaluator> source_;
@@ -70,9 +70,9 @@ namespace pike_test {
       \relates LinearHeatConductionModelEvaluator
   */
   Teuchos::RCP<pike_test::LinearHeatConductionDataTransfer> 
-  linearHeatConductionDataTransfer(Teuchos::RCP<Teuchos::Comm<int> > comm,
-				   std::string name,
-				   pike_test::LinearHeatConductionDataTransfer::Mode mode);
+  linearHeatConductionDataTransfer(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+				   const std::string& name,
+				   const pike_test::LinearHeatConductionDataTransfer::Mode mode);
   
 
 }

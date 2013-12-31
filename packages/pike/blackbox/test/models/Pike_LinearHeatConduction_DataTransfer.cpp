@@ -4,8 +4,8 @@
 namespace pike_test {
 
   LinearHeatConductionDataTransfer::
-  LinearHeatConductionDataTransfer(const Teuchos::RCP<Teuchos::Comm<int> >& comm,
-				   const std::string name,
+  LinearHeatConductionDataTransfer(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+				   const std::string& name,
 				   const Mode mode)
   :
     comm_(comm),
@@ -68,9 +68,9 @@ namespace pike_test {
 
   // non-member ctor
   Teuchos::RCP<pike_test::LinearHeatConductionDataTransfer> 
-  linearHeatConductionDataTransfer(Teuchos::RCP<Teuchos::Comm<int> > comm,
-				   std::string name,
-				   pike_test::LinearHeatConductionDataTransfer::Mode mode)
+  linearHeatConductionDataTransfer(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+				   const std::string& name,
+				   const pike_test::LinearHeatConductionDataTransfer::Mode mode)
   {
     return Teuchos::rcp(new pike_test::LinearHeatConductionDataTransfer(comm,name,mode));
   }

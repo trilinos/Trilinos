@@ -6,9 +6,9 @@
 
 namespace pike_test {
   
-  LinearHeatConductionModelEvaluator::LinearHeatConductionModelEvaluator(Teuchos::RCP<Teuchos::Comm<int> > comm,
-									 std::string name,
-									 Mode mode)
+  LinearHeatConductionModelEvaluator::LinearHeatConductionModelEvaluator(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+									 const std::string& name,
+									 const Mode mode)
     : comm_(comm),
       name_(name),
       mode_(mode),
@@ -104,9 +104,9 @@ namespace pike_test {
   
   // non-member ctor
   Teuchos::RCP<pike_test::LinearHeatConductionModelEvaluator> 
-  linearHeatConductionModelEvaluator(Teuchos::RCP<Teuchos::Comm<int> > comm,
-				     std::string name,
-				     pike_test::LinearHeatConductionModelEvaluator::Mode mode)
+  linearHeatConductionModelEvaluator(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+				     const std::string& name,
+				     const pike_test::LinearHeatConductionModelEvaluator::Mode mode)
   {
     return Teuchos::rcp(new pike_test::LinearHeatConductionModelEvaluator(comm,name,mode));
   }

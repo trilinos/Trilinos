@@ -11,14 +11,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 6  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  solver
-  SOURCES solver.cpp ${UNIT_TEST_DRIVER}
-  NUM_MPI_PROCS 1
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  block_gauss_seidel_solver
-  SOURCES block_gauss_seidel_solver.cpp ${UNIT_TEST_DRIVER}
+  solvers
+  SOURCES solvers.cpp ${UNIT_TEST_DRIVER}
+  DEPLIBS pike-test-apps
   NUM_MPI_PROCS 1
   )
 

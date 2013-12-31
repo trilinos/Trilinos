@@ -13,7 +13,7 @@ namespace pike {
     public Teuchos::ParameterListAcceptorDefaultBase {
 
   public:
-    MaxIterations();
+    MaxIterations(const int maxIterations = 100);
 
     pike::SolveStatus checkStatus(const pike::Solver& solver, const CheckType checkType = pike::COMPLETE);
     
