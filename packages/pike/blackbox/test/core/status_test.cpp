@@ -11,6 +11,7 @@
 #include "Pike_StatusTest_Composite.hpp"
 #include "Pike_StatusTest_MaxIterations.hpp"
 #include "Pike_StatusTest_ScalarResponseRelativeTolerance.hpp"
+#include "Pike_StatusTest_Factory.hpp"
 
 namespace pike {
 
@@ -214,6 +215,50 @@ namespace pike {
     Teuchos::RCP<pike::Composite> tests = pike::composite(pike::Composite::OR);
     tests->addTest(converged);
     tests->addTest(maxIters);
+
+    Teuchos::RCP<pike_test::MockModelEvaluator> app1 = 
+      pike_test::mockModelEvaluator(comm,"app1",pike_test::MockModelEvaluator::LOCAL_FAILURE,10,5);
+
+    Teuchos::RCP<pike_test::MockModelEvaluator> app2 = 
+      pike_test::mockModelEvaluator(comm,"app2",pike_test::MockModelEvaluator::LOCAL_FAILURE,10,7);
+
+    Teuchos::RCP<pike::BlockGaussSeidel> solver = Teuchos::rcp(new pike::BlockGaussSeidel);
+    app1->setSolver(solver);
+    app2->setSolver(solver);
+    solver->registerModelEvaluator(app1);
+    solver->registerModelEvaluator(app2);
+    solver->completeRegistration();
+    solver->setStatusTests(tests);
+    solver->solve();
+
+    TEST_EQUALITY(solver->getStatus(),pike::FAILED);
+    TEST_EQUALITY(solver->getNumberOfIterations(),6);
+  }
+
+  TEUCHOS_UNIT_TEST(status_test, Factory)
+  {
+
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+
+    Teuchos::RCP<Teuchos::ParameterList> statusTestParams = Teuchos::parameterList();
+    {
+      Teuchos::ParameterList& compositeOr = statusTestParams->sublist("Composite");
+      compositeOr.set("Type","OR");
+      Teuchos::ParameterList& maxIters = compositeOr.sublist("Max Iterations");
+      maxIters.set("Maximum Iterations",6);
+      Teuchos::ParameterList& compositeAnd = compositeOr.sublist("Composite");
+      compositeAnd.set("Type","AND");
+      Teuchos::ParameterList& relTol1 = compositeAnd.sublist("Scalar Response Relative Tolerance"); 
+      relTol1.set("Application Name","app1");
+      relTol1.set("Response Name","Mock Response");
+      relTol1.set("Tolerance",1.0e-3);
+      Teuchos::ParameterList& relTol2 = compositeAnd.sublist("Scalar Response Relative Tolerance"); 
+      relTol2.set("Application Name","app2");
+      relTol2.set("Response Name","Mock Response");
+      relTol2.set("Tolerance",1.0e-3);
+    }
+
+    Teuchos::RCP<pike::StatusTest> tests = pike::buildStatusTests(statusTestParams);
 
     Teuchos::RCP<pike_test::MockModelEvaluator> app1 = 
       pike_test::mockModelEvaluator(comm,"app1",pike_test::MockModelEvaluator::LOCAL_FAILURE,10,5);

@@ -20,12 +20,7 @@ namespace pike {
     };
 
     //! Default ctor.
-    Composite(const pike::Composite::CompositeType type);
-    
-    //! Ctor that takes 2 tests.  If you have more that 2 tests, they can be added via the addTest() method.
-    Composite(const pike::Composite::CompositeType type,
-	      const Teuchos::RCP<pike::StatusTest>& t1,
-	      const Teuchos::RCP<pike::StatusTest>& t2);
+    Composite(const pike::Composite::CompositeType type = OR);
     
     void addTest(const Teuchos::RCP<pike::StatusTest>& t);
     
@@ -56,7 +51,7 @@ namespace pike {
   };
 
   //! Non-member ctor.
-  Teuchos::RCP<pike::Composite> composite(const pike::Composite::CompositeType type);
+  Teuchos::RCP<pike::Composite> composite(const pike::Composite::CompositeType type = pike::Composite::OR);
 
 }
 

@@ -1,7 +1,11 @@
 #include "Pike_StatusTest_Composite.hpp"
 #include "Pike_Solver.hpp"
+#include "Pike_StatusTest_Factory.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Teuchos_ParameterList.hpp"
+
 #include <cmath>
 
 namespace pike {
@@ -13,7 +17,7 @@ namespace pike {
     validParameters_ = Teuchos::parameterList("Valid Parameters: Composite");
     Teuchos::setStringToIntegralParameter<int>(
         "Type",
-        "AND",
+        "OR",
         "Determines the form of the DCO_M model in the Momentum equation",
         Teuchos::tuple<std::string>("AND", "OR"),
         validParameters_.get()
@@ -114,10 +118,39 @@ namespace pike {
     out.popTab();
   }
 
-  void Composite::setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& paramList)
+  void Composite::setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& p)
   {
-    paramList->validateParametersAndSetDefaults(*(this->getValidParameters()));
-    this->setMyParamList(paramList);
+    // Don't call validation.  Sublist names can be arbitrary
+    //paramList->validateParametersAndSetDefaults(*(this->getValidParameters()));
+
+    // Loop over sublists for different tests
+    for (Teuchos::ParameterList::ConstIterator sublistEntry = p->begin();
+	 sublistEntry != p->end(); ++sublistEntry) {
+
+      if ( (sublistEntry->first == "Type") && (sublistEntry->second.isType<std::string>()) ) {
+	std::string stringType = "";
+	if (sublistEntry->second.getValue(&stringType) == "AND")
+	  type_ = pike::Composite::AND;
+	else if (sublistEntry->second.getValue(&stringType) == "OR")
+	  type_ = pike::Composite::OR;
+	else {
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+				     "The parameter with key \"" << sublistEntry->first << "\" is not valid for Composite object construction!");
+	}
+      }
+      else if (sublistEntry->second.isList()) {
+	Teuchos::RCP<Teuchos::ParameterList> sublist = Teuchos::sublist(p,sublistEntry->first,true);
+	Teuchos::RCP<StatusTest> subtest = pike::buildStatusTests(sublist);
+	this->addTest(subtest);
+      }
+      else {
+	TEUCHOS_TEST_FOR_EXCEPTION(sublistEntry->second.isList(),
+				   std::logic_error,
+				   "The parameter sublist key \"" << sublistEntry->first << "\" must be a sublist or a string that determines the type of Composite test!"); 
+      }
+    }
+
+    this->setMyParamList(p);
   }
   
   Teuchos::RCP<const Teuchos::ParameterList> Composite::getValidParameters() const

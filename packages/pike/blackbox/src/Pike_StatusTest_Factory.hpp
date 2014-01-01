@@ -9,7 +9,8 @@ namespace pike {
 
   class StatusTest;
 
-  Teuchos::RCP<pike::StatusTest> buildStatusTests(const Teuchos::ParameterList& p);
+  Teuchos::RCP<pike::StatusTest> 
+  buildStatusTests(const Teuchos::RCP<Teuchos::ParameterList>& p);
 
 }
 
