@@ -136,7 +136,6 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   ML                    packages/ml                       PS
   Belos                 packages/belos                    PS
   Anasazi               packages/anasazi                  PS
-  IQR                   packages/iqr                      EX
   Zoltan2               packages/zoltan2                  SS
   Ifpack2               packages/ifpack2                  PS
   ShyLU                 packages/shylu                    EX

@@ -65,7 +65,7 @@
 #include "shylu_util.h"
 #include <EpetraExt_Reindex_LinearProblem2.h>
 
-#include <Ifpack_DynamicFactory.h>
+#include <Ifpack.h>
 
 #include "gmres.h"
 #include "gmres_tools.h"
@@ -961,7 +961,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
                     (data->schur_op.get());
         assert (err == 0);
 
-    	Ifpack_DynamicFactory IfpackFactory;
+    	Ifpack IfpackFactory;
     	data->schur_prec = Teuchos::rcp<Ifpack_Preconditioner>
     				(IfpackFactory.Create(schurPrec,
 					 Sbar.getRawPtr(), 0, false));

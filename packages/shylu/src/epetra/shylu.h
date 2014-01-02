@@ -59,7 +59,6 @@
 
 #include "gmres.h"
 #include "gmres_tools.h"
-#include <ProjectionPreconditioner.hpp>
 
 //#include "shylu_debug_manager.hpp"
 
@@ -71,9 +70,6 @@ typedef IQR::GMRESManager<Epetra_BlockMap,
 						  std::vector<std::vector<double> >,
 						  std::vector<double> >
 			ShyLUGMRESManager;
-
-typedef IQR::ProjectionPreconditioner<Epetra_BlockMap, Epetra_Operator,
-									  Epetra_MultiVector> ShyLUProjectionPrec;
 
 typedef struct
 {
@@ -95,7 +91,6 @@ typedef struct
     std::vector<Teuchos::RCP<ShyLUGMRESManager> > savedGmresManagers;
     int iqrCurrentIteration;
     int iqrApplication;
-    Teuchos::RCP<ShyLUProjectionPrec> projectionPreconditioner;
     bool firstIteration;
     Teuchos::RCP<Ifpack_Preconditioner> gPrec;
     Teuchos::RCP<Epetra_CrsMatrix> Sbar; // Approx Schur complement
