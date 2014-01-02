@@ -43,87 +43,304 @@
 
 /// \file ArithTraitsTest.hpp
 /// \brief Templated test for Kokkos::Details::ArithTraits
+///
+/// This header file is an implementation detail of the tests for
+/// Kokkos::Details::ArithTraits.  Users must not rely on it existing,
+/// or on its contents.  On the other hand, it does give examples of
+/// how to use Kokkos::Details::ArithTraits, so it may be useful for
+/// users to read it.
 
 #ifndef KOKKOS_ARITHTRAITSTEST_HPP
 #define KOKKOS_ARITHTRAITSTEST_HPP
 
+#include <Kokkos_ParallelReduce.hpp>
 #include "Kokkos_ArithTraits.hpp"
 #include <limits> // std::numeric_limits
+#include <typeinfo> // typeid (T)
 
-#ifndef KOKKOS_DEVICE_FUNCTION
+// If KOKKOS_INLINE_FUNCTION isn't already defined from Kokkos, define
+// it here.  If compiling with CUDA, the macro includes both the
+// __host__ and __device__ attributes.  Whether or not compiling with
+// CUDA, the macro also includes the inline attribute.
+#ifndef KOKKOS_INLINE_FUNCTION
 #  ifdef __CUDA_ARCH__
-#    define KOKKOS_DEVICE_FUNCTION inline __host__ __device__
+#    define KOKKOS_INLINE_FUNCTION inline __host__ __device__
 #  else
-#    define KOKKOS_DEVICE_FUNCTION
+#    define KOKKOS_INLINE_FUNCTION inline
 #  endif // __CUDA_ARCH__
-#endif // KOKKOS_DEVICE_FUNCTION
+#endif // KOKKOS_INLINE_FUNCTION
 
-template<class T>
+/// \class ArithTraitsTesterBase
+/// \brief Base class providing tests for Kokkos::Details::ArithTraits
+/// \tparam ScalarType Any type for which Kokkos::Details::ArithTraits
+///   has a specialization, and which can be executed on the parallel
+///   device.
+/// \tparam DeviceType A Kokkos parallel device type.
+///
+/// This class is really an implementation detail of ArithTraitsTester
+/// (see below).  ArithTraitsTester works by inheriting "hooks" from
+/// ArithTraitsTesterBase and the chain of subclasses in between.
+/// ArithTraitsTesterBase provides basic tests that work for all
+/// <tt>ScalarType</tt>, and the subclasses provide additional tests
+/// relevant to things like complex-valued types or floating-point
+/// types.
+///
+/// This class provides a Kokkos reduction operator for testing
+/// Kokkos::Details::ArithTraits.  This test works for any type
+/// <tt>ScalarType</tt> for which Kokkos::Details::ArithTraits has a
+/// specialization, and which can be executed on the parallel device.
+///
+/// The tests include those suitable for execution on the parallel
+/// device (operator()) and those suitable for execution on the host
+/// (testHost()).  The device-based test is a reduction over redundant
+/// executions of the test.  All redundant executions must return
+/// 'true' (passed).
+template<class ScalarType, class DeviceType>
 class ArithTraitsTesterBase {
-protected:
-  static bool testFloatingPoint (std::ostream& out) {
-    using Kokkos::Details::ArithTraits;
-    using std::endl;
-    bool success = true;
+public:
+  typedef DeviceType device_type;
+  typedef typename device_type::size_type size_type;
+  //! Type of the result of the reduction.
+  typedef bool value_type;
 
-    //if (std::numeric_limits<T>::is_iec559) {
-    //success = success && ArithTraits<T>::isInf (ArithTraits<T>::inf ());
-    success = success && ArithTraits<T>::isNan (ArithTraits<T>::nan ());
-    if (! success) {
-      out << "isNaN or nan failed" << endl;
-    }
-    //}
-
-    const T zero = ArithTraits<T>::zero ();
-    const T one = ArithTraits<T>::one ();
-
-    if (ArithTraits<T>::isInf (zero)) {
-      out << "isInf(zero) is true" << endl;
-      success = false;
-    }
-    if (ArithTraits<T>::isInf (one)) {
-      out << "isInf(one) is true" << endl;
-      success = false;
-    }
-    if (ArithTraits<T>::isNan (zero)) {
-      out << "isNan(zero) is true" << endl;
-      success = false;
-    }
-    if (ArithTraits<T>::isNan (one)) {
-      out << "isNan(one) is true" << endl;
-      success = false;
-    }
-    return success;
+  //! Set the initial value (\c true) of the reduction.
+  KOKKOS_INLINE_FUNCTION void init (value_type& dst) const {
+    dst = true;
   }
 
-  static bool test (std::ostream& out) {
-    using Kokkos::Details::ArithTraits;
-    using std::endl;
+  //! Combine two intermediate reduction results into \c dst.
+  KOKKOS_INLINE_FUNCTION void
+  join (volatile value_type& dst,
+        const volatile value_type& src) const
+  {
+    dst = dst && src;
+  }
+
+  /// \brief The "parallel for" part of the reduction.
+  ///
+  /// It runs through a sequence of tests, and produces a 'true'
+  /// result if all the tests pass.
+  KOKKOS_INLINE_FUNCTION void
+  operator () (size_type iwork, value_type& dst) const
+  {
+    typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+    (void) iwork; // not using this argument
     bool success = true;
 
     // Make sure that the typedef exists.
-    typedef typename ArithTraits<T>::mag_type mag_type;
+    typedef typename AT::mag_type mag_type;
 
     // ArithTraits should not even compile if it's not specialized for
     // T, but we check for this bool constant for compatibility with
     // std::numeric_limits.
-    if (! ArithTraits<T>::is_specialized) {
+    if (! AT::is_specialized) {
+      success = false;
+    }
+
+    // It's OK to refer to std::numeric_limits constants, just not to
+    // its class methods (which are not marked as device functions).
+    if (AT::is_integer != std::numeric_limits<T>::is_integer) {
+      success = false;
+    }
+    if (AT::is_exact != std::numeric_limits<T>::is_exact) {
+      success = false;
+    }
+
+    const T zero = AT::zero ();
+    const T one = AT::one ();
+
+    // Test properties of the arithmetic and multiplicative identities.
+    if (zero + zero != zero) {
+      success = false;
+    }
+    if (zero + one != one) {
+      success = false;
+    }
+    if (one - one != zero) {
+      success = false;
+    }
+    // This is technically true even of Z_2, since in that field, one
+    // is its own inverse (so -one == one).
+    if ((one + one) - one != one) {
+      success = false;
+    }
+
+    if (AT::abs (zero) != zero) {
+      success = false;
+    }
+    if (AT::abs (one) != one) {
+      success = false;
+    }
+    if (AT::is_signed && AT::abs (-one) != one) {
+      success = false;
+    }
+    // Need enable_if to test whether T can be compared using <=.
+    // However, mag_type should always be comparable using <=.
+    //
+    // These are very mild ordering properties.
+    // They should work even for a set only containing zero.
+    if (AT::abs (zero) > AT::abs (AT::max ())) {
+      success = false;
+    }
+
+    const T two = one + one;
+    const T three = one + one + one;
+    const T four = two * two;
+    const T five = four + one;
+    const T six = three * two;
+    const T seven = four + three;
+    const T eight = four * two;
+    const T nine = eight + one;
+    const T eleven = five + six;
+    const T twentySeven = nine * three;
+    const T thirtySix = six * six;
+    const T fortyTwo = six * seven;
+    const T sixtyThree = eight * eight - one;
+    const T sixtyFour = eight * eight;
+    // max char value, for 8-bit char
+    const T oneTwentySeven = sixtyFour + sixtyThree;
+
+    T result;
+
+    // This fails inexplicably for complex numbers on gcc 4.2.1 on Mac.
+    if (! AT::is_complex) {
+      result = AT::pow (two, three);
+      if (result != eight) {
+        success = false;
+      }
+    }
+    if (AT::pow (three, zero) != one) {
+      success = false;
+    }
+    if (AT::pow (three, one) != three) {
+      success = false;
+    }
+    if (AT::pow (three, two) != nine) {
+      success = false;
+    }
+
+    // This fails inexplicably for complex numbers on gcc 4.2.1 on Mac.
+    if (! AT::is_complex) {
+      result = AT::pow (three, three);
+      if (result != twentySeven) {
+        success = false;
+      }
+    }
+
+    // These fail inexplicably for complex numbers on gcc 4.2.1 on Mac.
+    if (AT::is_signed && ! AT::is_complex) {
+      result = AT::pow (-three, one);
+      if (result != -three) {
+        success = false;
+      }
+      result = AT::pow (-three, two);
+      if (result != nine) {
+        success = false;
+      }
+      result = AT::pow (-three, three);
+      if (result != -twentySeven) {
+        success = false;
+      }
+    }
+
+    if (AT::sqrt (zero) != zero) {
+      success = false;
+    }
+    if (AT::sqrt (one) != one) {
+      success = false;
+    }
+    if (AT::sqrt (thirtySix) != six) {
+      success = false;
+    }
+    if (AT::sqrt (sixtyFour) != eight) {
+      success = false;
+    }
+    if (AT::is_integer) {
+      success = success && (AT::sqrt (fortyTwo) == six);
+      success = success && (AT::sqrt (oneTwentySeven) == eleven);
+    }
+
+    if (AT::log (one) != zero) {
+      success = false;
+    }
+    if (AT::log10 (one) != zero) {
+      success = false;
+    }
+
+    // Run the subclass' remaining tests, if any.
+    success = success && testDeviceImpl ();
+
+    dst = dst && success;
+  }
+
+protected:
+  /// \brief Hook for subclasses to add their own device-based tests.
+  ///
+  /// We use this to add complex-arithmetic tests, if appropriate for
+  /// \c ScalarType.  You may use it for other tests that are specific
+  /// to \c ScalarType or \c DeviceType.  (For example, some
+  /// <tt>ScalarType</tt> types may not work on GPU-based devices.)
+  ///
+  /// The default implementation does nothing.  (That's what makes
+  /// this a "hook.")
+  ///
+  /// \return \c true if all tests succeeded, else \c false.
+  virtual bool KOKKOS_INLINE_FUNCTION testDeviceImpl () const {
+    return true; // there are no tests, so trivially, all the tests pass
+  }
+
+  /// \brief Hook for subclasses to add their own host-based tests.
+  ///
+  /// We use this to add complex-arithmetic tests, if appropriate for
+  /// \c ScalarType.  You may use it for other tests that are specific
+  /// to \c ScalarType.
+  ///
+  /// The default implementation does nothing.  (That's what makes
+  /// this a "hook.")
+  ///
+  /// \return \c true if all tests succeeded, else \c false.
+  virtual bool testHostImpl (std::ostream& out) const {
+    return true; // there are no tests, so trivially, all the tests pass
+  }
+
+public:
+  /// \brief Run the tests on the host.
+  ///
+  /// This method only works on the host.  It's helpful for debugging,
+  /// because it prints a message (to the given output stream) for
+  /// each test that fails.
+  ///
+  /// \param out [out] Output stream to which to print error messages.
+  ///
+  /// \return \c true if all the tests pass, else \c false.
+  bool testHost (std::ostream& out) const {
+    typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+    using std::endl;
+    bool success = true;
+
+    // Make sure that the typedef exists.
+    typedef typename AT::mag_type mag_type;
+
+    // ArithTraits should not even compile if it's not specialized for
+    // T, but we check for this bool constant for compatibility with
+    // std::numeric_limits.
+    if (! AT::is_specialized) {
       out << "ArithTraits is not specialized for T" << endl;
       success = false;
     }
 
-    if (ArithTraits<T>::is_integer != std::numeric_limits<T>::is_integer) {
-      out << "ArithTraits<T>::is_integer != std::numeric_limits<T>::is_integer" << endl;
+    if (AT::is_integer != std::numeric_limits<T>::is_integer) {
+      out << "AT::is_integer != std::numeric_limits<T>::is_integer" << endl;
       success = false;
     }
 
-    if (ArithTraits<T>::is_exact != std::numeric_limits<T>::is_exact) {
-      out << "ArithTraits<T>::is_exact != std::numeric_limits<T>::is_exact" << endl;
+    if (AT::is_exact != std::numeric_limits<T>::is_exact) {
+      out << "AT::is_exact != std::numeric_limits<T>::is_exact" << endl;
       success = false;
     }
 
-    const T zero = ArithTraits<T>::zero ();
-    const T one = ArithTraits<T>::one ();
+    const T zero = AT::zero ();
+    const T one = AT::one ();
     // Test properties of the arithmetic and multiplicative identities.
 
     if (zero + zero != zero) {
@@ -145,17 +362,17 @@ protected:
       success = false;
     }
 
-    if (ArithTraits<T>::abs (zero) != zero) {
-      out << "ArithTraits<T>::abs (zero) != zero" << endl;
+    if (AT::abs (zero) != zero) {
+      out << "AT::abs (zero) != zero" << endl;
       success = false;
     }
-    if (ArithTraits<T>::abs (one) != one) {
-      out << "ArithTraits<T>::abs (one) != one" << endl;
+    if (AT::abs (one) != one) {
+      out << "AT::abs (one) != one" << endl;
       success = false;
     }
-    if (ArithTraits<T>::is_signed) {
-      if (ArithTraits<T>::abs (-one) != one) {
-        out << "ArithTraits<T>::abs (-one) != one" << endl;
+    if (AT::is_signed) {
+      if (AT::abs (-one) != one) {
+        out << "AT::abs (-one) != one" << endl;
         success = false;
       }
     }
@@ -164,14 +381,14 @@ protected:
     //
     // // These are very mild ordering properties.
     // // They should work even for a set only containing zero.
-    if (ArithTraits<T>::abs (zero) > ArithTraits<T>::abs (ArithTraits<T>::max ())) {
-      out << "ArithTraits<T>::abs (zero) > ArithTraits<T>::abs (ArithTraits<T>::max ())" << endl;
+    if (AT::abs (zero) > AT::abs (AT::max ())) {
+      out << "AT::abs (zero) > AT::abs (AT::max ())" << endl;
       success = false;
     }
-    //success = success && (ArithTraits<T>::abs (ArithTraits<T>::min ()) <= ArithTraits<T>::abs (ArithTraits<T>::max ()));
+    //success = success && (AT::abs (AT::min ()) <= AT::abs (AT::max ()));
 
     // Need enable_if to do a complex test.
-    // if (ArithTraits<T>::is_complex) {
+    // if (AT::is_complex) {
 
     // }
     // else {
@@ -198,143 +415,564 @@ protected:
     T result;
 
     // This fails inexplicably for complex numbers on gcc 4.2.1 on Mac.
-    if (! ArithTraits<T>::is_complex) {
-      result = ArithTraits<T>::pow (two, three);
+    if (! AT::is_complex) {
+      result = AT::pow (two, three);
       if (result != eight) {
-        out << "ArithTraits<T>::pow (two, three) != eight" << endl;
+        out << "AT::pow (two, three) != eight" << endl;
         success = false;
       }
     }
-    if (ArithTraits<T>::pow (three, zero) != one) {
-      out << "ArithTraits<T>::pow (three, zero) != one" << endl;
+    if (AT::pow (three, zero) != one) {
+      out << "AT::pow (three, zero) != one" << endl;
       success = false;
     }
-    if (ArithTraits<T>::pow (three, one) != three) {
-      out << "ArithTraits<T>::pow (three, one) != three" << endl;
+    if (AT::pow (three, one) != three) {
+      out << "AT::pow (three, one) != three" << endl;
       success = false;
     }
-    if (ArithTraits<T>::pow (three, two) != nine) {
-      out << "ArithTraits<T>::pow (three, two) != nine" << endl;
+    if (AT::pow (three, two) != nine) {
+      out << "AT::pow (three, two) != nine" << endl;
       success = false;
     }
 
     // This fails inexplicably for complex numbers on gcc 4.2.1 on Mac.
-    if (! ArithTraits<T>::is_complex) {
-      result = ArithTraits<T>::pow (three, three);
+    if (! AT::is_complex) {
+      result = AT::pow (three, three);
       if (result != twentySeven) {
-        out << "ArithTraits<T>::pow (three, three) = " << result
+        out << "AT::pow (three, three) = " << result
             << " != twentySeven = " << twentySeven << endl;
         success = false;
       }
     }
 
     // These fail inexplicably for complex numbers on gcc 4.2.1 on Mac.
-    if (ArithTraits<T>::is_signed && ! ArithTraits<T>::is_complex) {
-      result = ArithTraits<T>::pow (-three, one);
+    if (AT::is_signed && ! AT::is_complex) {
+      result = AT::pow (-three, one);
       if (result != -three) {
-        out << "ArithTraits<T>::pow (-three, one) = " << result
+        out << "AT::pow (-three, one) = " << result
             << " != -three = " << -three << endl;
         success = false;
       }
-      result = ArithTraits<T>::pow (-three, two);
+      result = AT::pow (-three, two);
       if (result != nine) {
-        out << "ArithTraits<T>::pow (-three, two) = " << result
+        out << "AT::pow (-three, two) = " << result
             << " != nine = " << nine << endl;
         success = false;
       }
-      result = ArithTraits<T>::pow (-three, three);
+      result = AT::pow (-three, three);
       if (result != -twentySeven) {
-        out << "ArithTraits<T>::pow (-three, three) = " << result
+        out << "AT::pow (-three, three) = " << result
             << " != -twentySeven = " << twentySeven << endl;
         success = false;
       }
     }
 
-    if (ArithTraits<T>::sqrt (zero) != zero) {
-      out << "ArithTraits<T>::sqrt (zero) != zero" << endl;
+    if (AT::sqrt (zero) != zero) {
+      out << "AT::sqrt (zero) != zero" << endl;
       success = false;
     }
-    if (ArithTraits<T>::sqrt (one) != one) {
-      out << "ArithTraits<T>::sqrt (one) != one" << endl;
+    if (AT::sqrt (one) != one) {
+      out << "AT::sqrt (one) != one" << endl;
       success = false;
     }
-    if (ArithTraits<T>::sqrt (thirtySix) != six) {
-      out << "ArithTraits<T>::sqrt (thirtySix) != six" << endl;
+    if (AT::sqrt (thirtySix) != six) {
+      out << "AT::sqrt (thirtySix) != six" << endl;
       success = false;
     }
-    if (ArithTraits<T>::sqrt (sixtyFour) != eight) {
-      out << "ArithTraits<T>::sqrt (sixtyFour) != eight" << endl;
+    if (AT::sqrt (sixtyFour) != eight) {
+      out << "AT::sqrt (sixtyFour) != eight" << endl;
       success = false;
     }
-    if (ArithTraits<T>::is_integer) {
-      success = success && (ArithTraits<T>::sqrt (fortyTwo) == six);
-      success = success && (ArithTraits<T>::sqrt (oneTwentySeven) == eleven);
+    if (AT::is_integer) {
+      success = success && (AT::sqrt (fortyTwo) == six);
+      success = success && (AT::sqrt (oneTwentySeven) == eleven);
     }
 
-    if (ArithTraits<T>::log (one) != zero) {
-      out << "ArithTraits<T>::log (one) != zero" << endl;
+    if (AT::log (one) != zero) {
+      out << "AT::log (one) != zero" << endl;
       success = false;
     }
-    if (ArithTraits<T>::log10 (one) != zero) {
-      out << "ArithTraits<T>::log10 (one) != zero" << endl;
+    if (AT::log10 (one) != zero) {
+      out << "AT::log10 (one) != zero" << endl;
       success = false;
     }
+
+    // Run the subclass' remaining tests, if any.
+    success = success && testHostImpl (out);
 
     return success;
   }
 };
 
 
-template<class T, const bool is_complex = Kokkos::Details::ArithTraits<T>::is_complex>
-class ArithTraitsTester : public ArithTraitsTesterBase<T> {
+/// \class ArithTraitsTesterComplexBase
+/// \brief Execute Kokkos::Details::ArithTraits tests relevant to
+///   complex numbers (whether or not \c ScalarType is itself a
+///   complex-valued type).
+///
+/// \tparam ScalarType The template parameter of ArithTraits
+/// \tparam DeviceType The Kokkos device type over which to execute tests
+/// \tparam is_complex Whether \c ScalarType is a complex-valued type
+///
+/// Some tests will be executed whether or not <tt>ScalarType</tt> is
+/// complex, but the specific tests that are run will depend on
+/// <tt>ScalarType</tt>.
+template<class ScalarType,
+         class DeviceType,
+         const bool is_complex = Kokkos::Details::ArithTraits<ScalarType>::is_complex>
+class ArithTraitsTesterComplexBase : public ArithTraitsTesterBase<ScalarType> {
+private:
+  //! The base class of this class.
+  typedef ArithTraitsTesterBase<ScalarType, DeviceType> base_type;
+
 public:
-  static bool testFloatingPoint (std::ostream& out);
-  static bool test (std::ostream& out);
+  typedef DeviceType device_type;
+  typedef typename device_type::size_type size_type;
+  //! Type of the result of the reduction.
+  typedef bool value_type;
+
+protected:
+  // The device and host hooks get implemented in the
+  // complex-arithmetic specialization of this class.
+  virtual bool KOKKOS_INLINE_FUNCTION testDeviceImpl () const;
+  virtual bool testHostImpl (std::ostream& out) const;
 };
 
-// Specialization for real T.
-template<class T>
-class ArithTraitsTester<T, false> : public ArithTraitsTesterBase<T> {
-public:
-  static bool testFloatingPoint (std::ostream& out) {
-    return ArithTraitsTesterBase<T>::testFloatingPoint (out);
-  }
-  static bool test (std::ostream& out) {
-    using Kokkos::Details::ArithTraits;
+//
+// Specialization of ArithTraitsTesterComplexBase for real T.
+//
+template<class ScalarType,
+         class DeviceType>
+class ArithTraitsTesterComplexBase<ScalarType, DeviceType, false> :
+  public ArithTraitsTesterBase<ScalarType, DeviceType> {
+private:
+  //! The base class of this class.
+  typedef ArithTraitsTesterBase<ScalarType, DeviceType> base_type;
 
-    bool success = ArithTraitsTesterBase<T>::test (out);
+public:
+  typedef DeviceType device_type;
+  typedef typename device_type::size_type size_type;
+  //! Type of the result of the reduction.
+  typedef bool value_type;
+
+protected:
+  virtual bool KOKKOS_INLINE_FUNCTION testDeviceImpl () const {
+    typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+
+    bool success = true;
+    // Apparently, std::numeric_limits<ScalarType>::is_signed is true
+    // only for real numbers.
+    if (AT::is_signed != std::numeric_limits<ScalarType>::is_signed) {
+      success = false;
+    }
+    if (AT::is_complex) {
+      success = false;
+    }
+
+    // Call the base class' implementation.  Every subclass'
+    // implementation of testDeviceImpl() should (must) do this, in
+    // order to include the parent class' tests.  In the case of this
+    // particular class, the base class' implementation doesn't do
+    // anything, but that's OK.
+    success = success && base_type::testDeviceImpl ();
+
+    return success;
+  }
+
+  virtual bool testHostImpl (std::ostream& out) const {
+    using std::endl;
+    typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+
+    bool success = true;
     // Apparently, std::numeric_limits<T>::is_signed is true only for real numbers.
-    if (ArithTraits<T>::is_signed != std::numeric_limits<T>::is_signed) {
-      out << "ArithTraits<T>::is_signed != std::numeric_limits<T>::is_signed" << std::endl;
+    if (AT::is_signed != std::numeric_limits<ScalarType>::is_signed) {
+      out << "ArithTraits<T>::is_signed != std::numeric_limits<T>::is_signed" << endl;
       success = false;
     }
-    if (ArithTraits<T>::is_complex) {
-      out << "ArithTraits<T>::is_complex is wrong" << std::endl;
+    if (AT::is_complex) {
+      out << "ArithTraits<T>::is_complex is wrong" << endl;
       success = false;
     }
+    // Call the base class' implementation.  Every subclass'
+    // implementation of testHostImpl() should (must) do this, in
+    // order to include the parent class' tests.  In the case of this
+    // particular class, the base class' implementation doesn't do
+    // anything, but that's OK.
+    success = success && base_type::testHostImpl (out);
+
     return success;
   }
 };
 
 // Specialization for complex T.
-template<class T>
-class ArithTraitsTester<T, true> : public ArithTraitsTesterBase<T> {
-public:
-  static bool testFloatingPoint (std::ostream& out) {
-    return ArithTraitsTesterBase<T>::testFloatingPoint (out);
-  }
-  static bool test (std::ostream& out) {
-    using Kokkos::Details::ArithTraits;
+template<class ScalarType,
+         class DeviceType>
+class ArithTraitsTesterComplexBase<ScalarType, DeviceType, true> :
+  public ArithTraitsTesterBase<ScalarType, DeviceType> {
+private:
+  //! The base class of this class.
+  typedef ArithTraitsTesterBase<ScalarType, DeviceType> base_type;
 
-    bool success = ArithTraitsTesterBase<T>::test (out);
-    if (! ArithTraits<T>::is_complex) {
-      out << "ArithTraits<T>::is_complex is wrong" << std::endl;
+public:
+  typedef DeviceType device_type;
+  typedef typename device_type::size_type size_type;
+  //! Type of the result of the reduction.
+  typedef bool value_type;
+
+protected:
+  virtual bool KOKKOS_INLINE_FUNCTION testDeviceImpl () const {
+    typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+
+    bool success = true;
+    if (! AT::is_complex) {
       success = false;
     }
+    typedef typename AT::mag_type mag_type;
+    const mag_type one = Kokkos::Details::ArithTraits<mag_type>::one ();
+
+    // This presumes that ScalarType, being a complex number, has a
+    // constructor which takes two mag_type arguments.
+    const ScalarType oneMinusOne (one, -one);
+    const ScalarType onePlusOne (one, one);
+
+    // Test conjugation.
+    if (AT::conj (oneMinusOne) != onePlusOne ||
+        AT::conj (onePlusOne) != oneMinusOne) {
+      success = false;
+    }
+
+    // Call the base class' implementation.  Every subclass'
+    // implementation of testDeviceImpl() should (must) do this, in
+    // order to include the parent class' tests.  In the case of this
+    // particular class, the base class' implementation doesn't do
+    // anything, but that's OK.
+    success = success && base_type::testDeviceImpl ();
+
+    return success;
+  }
+
+  virtual bool testHostImpl (std::ostream& out) const {
+    using std::endl;
+    typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+
+    if (! AT::is_complex) {
+      out << "ArithTraits<T>::is_complex is wrong" << endl;
+      success = false;
+    }
+    typedef typename AT::mag_type mag_type;
+    const mag_type one = Kokkos::Details::ArithTraits<mag_type>::one ();
+
+    // This presumes that ScalarType, being a complex number, has a
+    // constructor which takes two mag_type arguments.
+    const ScalarType oneMinusOne (one, -one);
+    const ScalarType onePlusOne (one, one);
+
+    // Test conjugation.
+    if (AT::conj (oneMinusOne) != onePlusOne) {
+      out << "AT::conj ((1, -1)) != (1, 1)" << endl;
+      success = false;
+    }
+    if (AT::conj (onePlusOne) != oneMinusOne) {
+      out << "AT::conj ((1, 1)) != (1, -1)" << endl;
+      success = false;
+    }
+    // Call the base class' implementation.  Every subclass'
+    // implementation of testHostImpl() should (must) do this, in
+    // order to include the parent class' tests.  In the case of this
+    // particular class, the base class' implementation doesn't do
+    // anything, but that's OK.
+    success = success && base_type::testHostImpl (out);
+
     return success;
   }
 };
 
 
+
+/// \class ArithTraitsTesterFloatingPointBase
+/// \brief Kokkos reduction functor for testing those attributes of
+///   ArithTraits suitable for floating-point types.
+/// \tparam ScalarType A type suitable for execution on the parallel
+///   device \c DeviceType.
+/// \tparam DeviceType A Kokkos parallel device type.
+///
+/// Kokkos reduction operator for testing those attributes of
+/// Kokkos::Details::ArithTraits relevant to floating-point types.
+///
+/// The tests include those suitable for execution on the parallel
+/// device (operator()) and those suitable for execution on the host
+/// (testHost()).  The device-based test is a reduction over redundant
+/// executions of the test.  All redundant executions must return
+/// 'true' (passed).
+template<class ScalarType,
+         class DeviceType,
+         const bool is_exact = Kokkos::Details::ArithTraits<ScalarType>::is_exact>
+class ArithTraitsTesterFloatingPointBase :
+  public ArithTraitsTesterComplexBase<ScalarType,
+                                      DeviceType,
+                                      Kokkos::Details::ArithTraits<ScalarType>::is_complex>
+{
+private:
+  //! The base class of this class.
+  typedef ArithTraitsTesterComplexBase<ScalarType,
+                                       DeviceType,
+                                       Kokkos::Details::ArithTraits<ScalarType>::is_complex> base_type;
+public:
+  typedef DeviceType device_type;
+  typedef typename device_type::size_type size_type;
+  //! Type of the result of the reduction.
+  typedef bool value_type;
+
+protected:
+  virtual bool KOKKOS_INLINE_FUNCTION testDeviceImpl () const;
+  virtual bool testHostImpl (std::ostream& out) const;
+};
+
+
+//
+// Specialization for is_exact = false (i.e., ScalarType is a
+// floating-point type).
+//
+template<class ScalarType, class DeviceType>
+class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, false> :
+  public ArithTraitsTesterComplexBase<ScalarType,
+                                      DeviceType,
+                                      Kokkos::Details::ArithTraits<ScalarType>::is_complex>
+{
+private:
+  //! The base class of this class.
+  typedef ArithTraitsTesterComplexBase<ScalarType,
+                                       DeviceType,
+                                       Kokkos::Details::ArithTraits<ScalarType>::is_complex> base_type;
+public:
+  typedef DeviceType device_type;
+  typedef typename device_type::size_type size_type;
+  //! Type of the result of the reduction.
+  typedef bool value_type;
+
+protected:
+  virtual bool KOKKOS_INLINE_FUNCTION testDeviceImpl () const {
+    typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+    (void) iwork; // not using this argument
+    bool success = true;
+
+    if (AT::is_exact) {
+      success = false;
+    }
+    if (! AT::isNan (AT::nan ())) {
+      success = false;
+    }
+
+    const T zero = AT::zero ();
+    const T one = AT::one ();
+
+    if (AT::isInf (zero)) {
+      success = false;
+    }
+    if (AT::isInf (one)) {
+      success = false;
+    }
+    if (AT::isNan (zero)) {
+      success = false;
+    }
+    if (AT::isNan (one)) {
+      success = false;
+    }
+
+    // Call the base class' implementation.  Every subclass'
+    // implementation of testDeviceImpl() should (must) do this, in
+    // order to include the parent class' tests.
+    success = success && base_type::testDeviceImpl ();
+
+    return success;
+  }
+
+  virtual bool testHostImpl (std::ostream& out) const {
+    typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+    using std::endl;
+    bool success = true;
+
+    if (AT::is_exact) {
+      out << "AT::is_exact is wrong" << endl;
+      success = false;
+    }
+
+    //if (std::numeric_limits<T>::is_iec559) {
+    //success = success && AT::isInf (AT::inf ());
+    success = success && AT::isNan (AT::nan ());
+    if (! success) {
+      out << "isNaN or nan failed" << endl;
+    }
+    //}
+
+    const T zero = AT::zero ();
+    const T one = AT::one ();
+
+    if (AT::isInf (zero)) {
+      out << "isInf(zero) is true" << endl;
+      success = false;
+    }
+    if (AT::isInf (one)) {
+      out << "isInf(one) is true" << endl;
+      success = false;
+    }
+    if (AT::isNan (zero)) {
+      out << "isNan(zero) is true" << endl;
+      success = false;
+    }
+    if (AT::isNan (one)) {
+      out << "isNan(one) is true" << endl;
+      success = false;
+    }
+
+    // Call the base class' implementation.  Every subclass'
+    // implementation of testHostImpl() should (must) do this, in
+    // order to include the parent class' tests.
+    success = success && base_type::testHostImpl (out);
+
+    return success;
+  }
+};
+
+
+//
+// Specialization for is_exact = true (i.e., ScalarType is <i>not</i>
+// a floating-point type).
+//
+template<class ScalarType, class DeviceType>
+class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, true> :
+  public ArithTraitsTesterComplexBase<ScalarType,
+                                      DeviceType,
+                                      Kokkos::Details::ArithTraits<ScalarType>::is_complex>
+{
+private:
+  //! The base class of this class.
+  typedef ArithTraitsTesterComplexBase<ScalarType,
+                                       DeviceType,
+                                       Kokkos::Details::ArithTraits<ScalarType>::is_complex> base_type;
+public:
+  typedef DeviceType device_type;
+  typedef typename device_type::size_type size_type;
+  //! Type of the result of the reduction.
+  typedef bool value_type;
+
+protected:
+  virtual bool KOKKOS_INLINE_FUNCTION testDeviceImpl () const {
+    typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+    (void) iwork; // not using this argument
+    bool success = true;
+
+    if (! AT::is_exact) {
+      success = false;
+    }
+    // Call the base class' implementation.  Every subclass'
+    // implementation of testDeviceImpl() should (must) do this, in
+    // order to include the parent class' tests.
+    success = success && base_type::testDeviceImpl ();
+
+    return success;
+  }
+
+  virtual bool testHostImpl (std::ostream& out) const {
+    typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+    using std::endl;
+    bool success = true;
+
+    if (! AT::is_exact) {
+      out << "AT::is_exact is wrong" << endl;
+      success = false;
+    }
+    // Call the base class' implementation.  Every subclass'
+    // implementation of testHostImpl() should (must) do this, in
+    // order to include the parent class' tests.
+    success = success && base_type::testHostImpl (out);
+
+    return success;
+  }
+};
+
+
+
+/// \class ArithTraitsTester
+/// \brief Tests for Kokkos::Details::ArithTraits
+/// \tparam ScalarType Any type for which Kokkos::Details::ArithTraits
+///   has a specialization, and which can be executed on the parallel
+///   device.
+/// \tparam DeviceType A Kokkos parallel device type.
+///
+/// This class works by inheriting "hooks" from ArithTraitsTesterBase
+/// and the chain of subclasses in between.  ArithTraitsTesterBase
+/// provides basic tests that work for all <tt>ScalarType</tt>, and
+/// the subclasses provide additional tests relevant to things like
+/// complex-valued types or floating-point types.
+///
+/// This class (through its base class) provides a Kokkos reduction
+/// operator for testing Kokkos::Details::ArithTraits.  This test
+/// works for any type <tt>ScalarType</tt> for which
+/// Kokkos::Details::ArithTraits has a specialization, and which can
+/// be executed on the parallel device.
+///
+/// The tests include those suitable for execution on the parallel
+/// device (operator()) and those suitable for execution on the host
+/// (testHost()).  The device-based test is a reduction over redundant
+/// executions of the test.  All redundant executions must return
+/// 'true' (passed).
+template<class ScalarType, class DeviceType>
+class ArithTraitsTester :
+  public ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType> {
+public:
+  typedef DeviceType device_type;
+  typedef typename device_type::size_type size_type;
+  //! Type of the result of the reduction.
+  typedef bool value_type;
+};
+
+
+/// \brief Run the Kokkos::Details::ArithTraits tests on the parallel device.
+/// \tparam ScalarType Any type for which Kokkos::Details::ArithTraits
+///   has a specialization, and which can be executed on the parallel
+///   device.
+/// \tparam DeviceType A Kokkos parallel device type.
+///
+/// This function must be called on the host, but it executes on the
+/// device with (redundant) parallelism.
+///
+/// \return \c true if all redundant executions pass, else \c false.
+template<class ScalarType, class DeviceType>
+bool testArithTraitsOnDevice (std::ostream& out)
+{
+  using std::endl;
+  typedef ArithTraitsTester<ScalarType, DeviceType> functor_type;
+  bool success = true; // output argument of parallel_reduce
+  Kokkos::parallel_reduce (1, functor_type (), success);
+  if (success) {
+    out << typeid (ScalarType).name () << " passed" << endl;
+  } else {
+    out << typeid (ScalarType).name () << " FAILED" << endl;
+  }
+  return success;
+}
+
+/// \brief Run the Kokkos::Details::ArithTraits tests on the host.
+/// \tparam ScalarType Any type for which Kokkos::Details::ArithTraits
+///   has a specialization.
+/// \tparam DeviceType A Kokkos parallel device type.
+///
+/// This function must be called on the host, and executes on the host.
+///
+/// \return \c true if all tests pass, else \c false.
+template<class ScalarType, class DeviceType>
+bool testArithTraitsOnHost (std::ostream& out)
+{
+  using std::endl;
+  ArithTraitsTester<ScalarType, DeviceType> f;
+  const bool localSuccess = f.testHost (out);
+  if (localSuccess) {
+    out << typeid (ScalarType).name () << " passed" << endl;
+  } else {
+    out << typeid (ScalarType).name () << " FAILED" << endl;
+  }
+  return localSuccess;
+}
 
 #endif // KOKKOS_ARITHTRAITSTEST_HPP

@@ -2074,6 +2074,261 @@ public:
   }
 };
 
+// dd_real and qd_real are floating-point types provided by the QD
+// library of David Bailey (LBNL):
+//
+// http://crd-legacy.lbl.gov/~dhbailey/mpdist/
+//
+// Kokkos does <i>not</i> currently support these types in device
+// functions.  It should be possible to use Kokkos' support for
+// aggregate types to implement device function support for dd_real
+// and qd_real, but we have not done this yet (as of 27 Dec 2013).
+// Hence, the class methods of the ArithTraits specializations for
+// dd_real and qd_real are not marked as device functions.
+#ifdef HAVE_KOKKOS_QD
+template<>
+struct ScalarTraits<dd_real>
+{
+  typedef dd_real val_type;
+  typedef dd_real mag_type;
+
+  static const bool is_specialized = true;
+  static const bool is_signed = true;
+  static const bool is_integer = false;
+  static const bool is_exact = false;
+  static const bool is_complex = false;
+
+  static inline bool isInf (const val_type& x) {
+    return isinf (x);
+  }
+  static inline bool isNan (const val_type& x) {
+    return isnan (x);
+  }
+  static inline mag_type abs (const val_type& x) {
+    return ::abs (x);
+  }
+  static inline val_type zero () {
+    return val_type (0.0);
+  }
+  static inline val_type one () {
+    return val_type (1.0);
+  }
+  static inline val_type min () {
+    return std::numeric_limits<val_type>::min ();
+  }
+  static inline val_type max () {
+    return std::numeric_limits<val_type>::max ();
+  }
+  static inline mag_type real (const val_type& x) {
+    return x;
+  }
+  static inline mag_type imag (const val_type&) {
+    return zero ();
+  }
+  static inline val_type conj (const val_type& x) {
+    return x;
+  }
+  static inline val_type pow (const val_type& x, const val_type& y) {
+    return ::pow(x,y);
+  }
+  static inline val_type sqrt (const val_type& x) {
+      return ::sqrt (x);
+  }
+  static inline val_type log (const val_type& x) {
+    // dd_real puts its transcendental functions in the global namespace.
+    return ::log (x);
+  }
+  static inline val_type log10 (const val_type& x) {
+    return ::log10 (x);
+  }
+  static inline val_type nan () {
+    return val_type::_nan;
+  }
+  static val_type epsilon () {
+    return std::numeric_limits<val_type>::epsilon ();
+  }
+
+  typedef dd_real magnitudeType;
+  typedef double halfPrecision;
+  typedef qd_real doublePrecision;
+
+  static const bool isComplex = false;
+  static const bool isOrdinal = false;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = true;
+
+  static mag_type eps () {
+    return epsilon ();
+  }
+  static mag_type sfmin () {
+    return min ();
+  }
+  static int base ()  {
+    return std::numeric_limits<val_type>::radix;
+  }
+  static mag_type prec () {
+    return eps () * base ();
+  }
+  static int t () {
+    return std::numeric_limits<val_type>::digits;
+  }
+  static mag_type rnd () {
+    return std::numeric_limits<val_type>::round_style == std::round_to_nearest ?
+      one () :
+      zero ();
+  }
+  static int emin () {
+    return std::numeric_limits<val_type>::min_exponent;
+  }
+  static mag_type rmin () {
+    return std::numeric_limits<val_type>::min ();
+  }
+  static int emax () {
+    return std::numeric_limits<val_type>::max_exponent;
+  }
+  static mag_type rmax () {
+    return std::numeric_limits<val_type>::max ();
+  }
+  static mag_type magnitude (const val_type& x) {
+    return ::abs (x);
+  }
+  static val_type conjugate (const val_type& x) {
+    return conj (x);
+  }
+  static bool isnaninf (const val_type& x) {
+    return isNan (x) || isInf (x);
+  }
+  static std::string name () { return "dd_real"; }
+  static val_type squareroot (const val_type& x) {
+    return ::sqrt (x);
+  }
+};
+
+template<>
+struct ScalarTraits<qd_real>
+{
+  typedef qd_real val_type;
+  typedef qd_real mag_type;
+
+  static const bool is_specialized = true;
+  static const bool is_signed = true;
+  static const bool is_integer = false;
+  static const bool is_exact = false;
+  static const bool is_complex = false;
+
+  static inline bool isInf (const val_type& x) {
+    return isinf (x);
+  }
+  static inline bool isNan (const val_type& x) {
+    return isnan (x);
+  }
+  static inline mag_type abs (const val_type& x) {
+    return ::abs (x);
+  }
+  static inline val_type zero () {
+    return val_type (0.0);
+  }
+  static inline val_type one () {
+    return val_type (1.0);
+  }
+  static inline val_type min () {
+    return std::numeric_limits<val_type>::min ();
+  }
+  static inline val_type max () {
+    return std::numeric_limits<val_type>::max ();
+  }
+  static inline mag_type real (const val_type& x) {
+    return x;
+  }
+  static inline mag_type imag (const val_type&) {
+    return zero ();
+  }
+  static inline val_type conj (const val_type& x) {
+    return x;
+  }
+  static inline val_type pow (const val_type& x, const val_type& y) {
+    return ::pow (x, y);
+  }
+  static inline val_type sqrt (const val_type& x) {
+      return ::sqrt (x);
+  }
+  static inline val_type log (const val_type& x) {
+    // val_type puts its transcendental functions in the global namespace.
+    return ::log (x);
+  }
+  static inline val_type log10 (const val_type& x) {
+    return ::log10 (x);
+  }
+  static inline val_type nan () {
+    return val_type::_nan;
+  }
+  static inline val_type epsilon () {
+    return std::numeric_limits<val_type>::epsilon ();
+  }
+
+  typedef qd_real magnitudeType;
+  typedef dd_real halfPrecision;
+  // The QD library does not have an "oct-double real" class.  One
+  // could use an arbitrary-precision library like MPFR or ARPREC,
+  // with the precision set appropriately, to get an
+  // extended-precision type for qd_real.
+  typedef qd_real doublePrecision;
+
+  static const bool isComplex = false;
+  static const bool isOrdinal = false;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = true;
+
+  static mag_type eps () {
+    return epsilon ();
+  }
+  static mag_type sfmin () {
+    return min ();
+  }
+  static int base ()  {
+    return std::numeric_limits<val_type>::radix;
+  }
+  static mag_type prec () {
+    return eps () * base ();
+  }
+  static int t () {
+    return std::numeric_limits<val_type>::digits;
+  }
+  static mag_type rnd () {
+    return std::numeric_limits<val_type>::round_style == std::round_to_nearest ?
+      one () :
+      zero ();
+  }
+  static int emin () {
+    return std::numeric_limits<val_type>::min_exponent;
+  }
+  static mag_type rmin () {
+    return std::numeric_limits<val_type>::min ();
+  }
+  static int emax () {
+    return std::numeric_limits<val_type>::max_exponent;
+  }
+  static mag_type rmax () {
+    return std::numeric_limits<val_type>::max ();
+  }
+  static mag_type magnitude (const val_type& x) {
+    return ::abs (x);
+  }
+  static val_type conjugate (const val_type& x) {
+    return conj (x);
+  }
+  static bool isnaninf (const val_type& x) {
+    return isNan (x) || isInf (x);
+  }
+  static std::string name () { return "qd_real"; }
+  static val_type squareroot (const val_type& x) {
+    return ::sqrt (x);
+  }
+};
+
+
+#endif // HAVE_KOKKOS_QD
+
 } // namespace Details
 } // namespace Kokkos
 
