@@ -47,7 +47,7 @@ namespace pike_test {
   { 
     TEUCHOS_ASSERT(nonnull(solver_));
     
-    if (iterationTrigger_ == (solver_->getNumberOfIterations()+1) )
+    if (iterationTrigger_ == solver_->getNumberOfIterations() )
       if (mode_ == LOCAL_FAILURE)
 	return false;
   
@@ -58,9 +58,9 @@ namespace pike_test {
   {
     TEUCHOS_ASSERT(nonnull(solver_));
     
-    // local or global failure should trigger global failure
-    if (iterationTrigger_ == (solver_->getNumberOfIterations()+1) )
-      return true;
+    if (iterationTrigger_ == solver_->getNumberOfIterations() )
+      if (mode_ == GLOBAL_CONVERGENCE)
+	return true;
 
     return false;
   }

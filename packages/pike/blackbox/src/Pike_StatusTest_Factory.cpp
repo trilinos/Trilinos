@@ -4,6 +4,7 @@
 // Status Tests
 #include "Pike_StatusTest_Composite.hpp"
 #include "Pike_StatusTest_MaxIterations.hpp"
+#include "Pike_StatusTest_ModelConvergence.hpp"
 #include "Pike_StatusTest_ScalarResponseRelativeTolerance.hpp"
 
 namespace pike {
@@ -23,9 +24,14 @@ namespace pike {
       test = c;
     }
     else if (testType == "Maximum Iterations") {
-      Teuchos::RCP<pike::MaxIterations> mi = Teuchos::rcp(new pike::MaxIterations());
+      Teuchos::RCP<pike::MaxIterations> mi = Teuchos::rcp(new pike::MaxIterations);
       mi->setParameterList(p);
       test = mi;
+    }
+    else if (testType == "Model Convergence") {
+      Teuchos::RCP<pike::ModelConvergence> mc = Teuchos::rcp(new pike::ModelConvergence);
+      mc->setParameterList(p);
+      test = mc;
     }
     else if (testType == "Scalar Response Relative Tolerance") {
       Teuchos::RCP<pike::ScalarResponseRelativeTolerance> rt = 

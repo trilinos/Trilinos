@@ -10,6 +10,7 @@
 // Status tests to check
 #include "Pike_StatusTest_Composite.hpp"
 #include "Pike_StatusTest_MaxIterations.hpp"
+#include "Pike_StatusTest_ModelConvergence.hpp"
 #include "Pike_StatusTest_ScalarResponseRelativeTolerance.hpp"
 #include "Pike_StatusTest_Factory.hpp"
 
@@ -44,6 +45,88 @@ namespace pike {
 
     TEST_EQUALITY(solver->getStatus(),pike::FAILED);
     TEST_EQUALITY(solver->getNumberOfIterations(),4);
+  }
+
+  TEUCHOS_UNIT_TEST(status_test, ModelConvergence_Local)
+  {
+
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+    Teuchos::RCP<Teuchos::ParameterList> statusTestParams = Teuchos::parameterList("My Status Tests");
+    {
+      statusTestParams->set("Type","Composite OR");
+      Teuchos::ParameterList& failure = statusTestParams->sublist("Failure 1");
+      failure.set("Type","Maximum Iterations");
+      failure.set("Maximum Iterations",10);
+      Teuchos::ParameterList& app1LocalConv = statusTestParams->sublist("Failure 2");      
+      app1LocalConv.set("Type","Model Convergence");
+      app1LocalConv.set("Model Name","app1");
+      app1LocalConv.set("Check Type","Local");
+      Teuchos::ParameterList& app2GlobalConv = statusTestParams->sublist("Converged");
+      app2GlobalConv.set("Type","Model Convergence");
+      app2GlobalConv.set("Model Name","app2");
+      app2GlobalConv.set("Check Type","Global");
+    }
+
+    Teuchos::RCP<pike::StatusTest> tests = pike::buildStatusTests(statusTestParams);
+
+    Teuchos::RCP<pike_test::MockModelEvaluator> app1 = 
+      pike_test::mockModelEvaluator(comm,"app1",pike_test::MockModelEvaluator::LOCAL_FAILURE,7,-1);
+
+    Teuchos::RCP<pike_test::MockModelEvaluator> app2 = 
+      pike_test::mockModelEvaluator(comm,"app2",pike_test::MockModelEvaluator::GLOBAL_CONVERGENCE,10,-1);
+
+    Teuchos::RCP<pike::BlockGaussSeidel> solver = Teuchos::rcp(new pike::BlockGaussSeidel);
+    app1->setSolver(solver);
+    app2->setSolver(solver);
+    solver->registerModelEvaluator(app1);
+    solver->registerModelEvaluator(app2);
+    solver->completeRegistration();
+    solver->setStatusTests(tests);
+    solver->solve();
+
+    TEST_EQUALITY(solver->getStatus(),pike::FAILED);
+    TEST_EQUALITY(solver->getNumberOfIterations(),7);
+  }
+
+  TEUCHOS_UNIT_TEST(status_test, ModelConvergence_Global)
+  {
+
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+    Teuchos::RCP<Teuchos::ParameterList> statusTestParams = Teuchos::parameterList("My Status Tests");
+    {
+      statusTestParams->set("Type","Composite OR");
+      Teuchos::ParameterList& failure = statusTestParams->sublist("Failure 1");
+      failure.set("Type","Maximum Iterations");
+      failure.set("Maximum Iterations",10);
+      Teuchos::ParameterList& app1LocalConv = statusTestParams->sublist("Failure 2");      
+      app1LocalConv.set("Type","Model Convergence");
+      app1LocalConv.set("Model Name","app1");
+      app1LocalConv.set("Check Type","Local");
+      Teuchos::ParameterList& app2GlobalConv = statusTestParams->sublist("Converged");
+      app2GlobalConv.set("Type","Model Convergence");
+      app2GlobalConv.set("Model Name","app2");
+      app2GlobalConv.set("Check Type","Global");
+    }
+
+    Teuchos::RCP<pike::StatusTest> tests = pike::buildStatusTests(statusTestParams);
+
+    Teuchos::RCP<pike_test::MockModelEvaluator> app1 = 
+      pike_test::mockModelEvaluator(comm,"app1",pike_test::MockModelEvaluator::LOCAL_FAILURE,11,-1);
+
+    Teuchos::RCP<pike_test::MockModelEvaluator> app2 = 
+      pike_test::mockModelEvaluator(comm,"app2",pike_test::MockModelEvaluator::GLOBAL_CONVERGENCE,8,-1);
+
+    Teuchos::RCP<pike::BlockGaussSeidel> solver = Teuchos::rcp(new pike::BlockGaussSeidel);
+    app1->setSolver(solver);
+    app2->setSolver(solver);
+    solver->registerModelEvaluator(app1);
+    solver->registerModelEvaluator(app2);
+    solver->completeRegistration();
+    solver->setStatusTests(tests);
+    solver->solve();
+
+    TEST_EQUALITY(solver->getStatus(),pike::CONVERGED);
+    TEST_EQUALITY(solver->getNumberOfIterations(),8);
   }
 
   TEUCHOS_UNIT_TEST(status_test, ScalarResponseRelativeError)
@@ -246,6 +329,14 @@ namespace pike {
       Teuchos::ParameterList& failure = statusTestParams->sublist("Failure");
       failure.set("Type","Maximum Iterations");
       failure.set("Maximum Iterations",6);
+      Teuchos::ParameterList& app1LocalConv = statusTestParams->sublist("Failure 2");      
+      app1LocalConv.set("Type","Model Convergence");
+      app1LocalConv.set("Model Name","app1");
+      app1LocalConv.set("Check Type","Local");
+      Teuchos::ParameterList& app2LocalConv = statusTestParams->sublist("Failure 3");      
+      app2LocalConv.set("Type","Model Convergence");
+      app2LocalConv.set("Model Name","app2");
+      app2LocalConv.set("Check Type","Local");
       Teuchos::ParameterList& converged = statusTestParams->sublist("Converged");
       converged.set("Type","Composite AND");
       Teuchos::ParameterList& relTolApp1 = converged.sublist("App 1");
@@ -258,6 +349,14 @@ namespace pike {
       relTolApp2.set("Application Name","app2");
       relTolApp2.set("Response Name","Mock Response");
       relTolApp2.set("Tolerance",1.0e-3);
+      Teuchos::ParameterList& app1GlobalConv = converged.sublist("Global App 1");
+      app1GlobalConv.set("Type","Model Convergence");
+      app1GlobalConv.set("Model Name","app1");
+      app1GlobalConv.set("Check Type","Global");
+      Teuchos::ParameterList& app2GlobalConv = converged.sublist("Global App 2");
+      app2GlobalConv.set("Type","Model Convergence");
+      app2GlobalConv.set("Model Name","app2");
+      app2GlobalConv.set("Check Type","Global");
     }
 
     Teuchos::RCP<pike::StatusTest> tests = pike::buildStatusTests(statusTestParams);
