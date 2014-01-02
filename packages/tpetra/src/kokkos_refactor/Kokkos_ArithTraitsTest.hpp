@@ -46,9 +46,12 @@
 ///
 /// This header file is an implementation detail of the tests for
 /// Kokkos::Details::ArithTraits.  Users must not rely on it existing,
-/// or on its contents.  On the other hand, it does give examples of
-/// how to use Kokkos::Details::ArithTraits, so it may be useful for
-/// users to read it.
+/// or on its contents.  This header file should <i>not</i> be
+/// installed with Kokkos' other header files.
+///
+/// On the other hand, this header file does give examples of how to
+/// use Kokkos::Details::ArithTraits, so it may be useful for users to
+/// read it.
 
 #ifndef KOKKOS_ARITHTRAITSTEST_HPP
 #define KOKKOS_ARITHTRAITSTEST_HPP
