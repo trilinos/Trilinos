@@ -1,5 +1,5 @@
-#ifndef PIKE_SOLVER_DEFAULT_IMPLEMENTATION_HPP
-#define PIKE_SOLVER_DEFAULT_IMPLEMENTATION_HPP
+#ifndef PIKE_SOLVER_DEFAULT_IMPL_HPP
+#define PIKE_SOLVER_DEFAULT_IMPL_HPP
 
 #include "Pike_Solver.hpp"
 #include "Teuchos_RCP.hpp"
@@ -10,13 +10,13 @@ namespace Teuchos {
 
 namespace pike {
 
-  class SolverDefaultImplementation : public pike::Solver {
+  class SolverDefaultImpl : public pike::Solver {
 
   public:
 
-    SolverDefaultImplementation();
+    SolverDefaultImpl();
 
-    virtual ~SolverDefaultImplementation();
+    virtual ~SolverDefaultImpl();
 
     virtual void registerModelEvaluator(const Teuchos::RCP<pike::BlackBoxModelEvaluator>& me);
 
@@ -27,8 +27,12 @@ namespace pike {
     virtual Teuchos::RCP<const pike::BlackBoxModelEvaluator> 
     getModelEvaluator(const std::string& name) const;
 
+    virtual const std::vector<Teuchos::RCP<const pike::BlackBoxModelEvaluator> > getModelEvaluators() const;
+
     virtual Teuchos::RCP<const pike::DataTransfer> 
     getDataTransfer(const std::string& name) const;
+
+    virtual const std::vector<Teuchos::RCP<const pike::DataTransfer> > getDataTransfers() const;
 
     virtual void stepImplementation() = 0;
 

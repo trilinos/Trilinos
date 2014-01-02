@@ -8,7 +8,7 @@ namespace pike {
 
   void BlockGaussSeidel::completeRegistration()
   {
-    this->pike::SolverDefaultImplementation::completeRegistration();
+    this->pike::SolverDefaultImpl::completeRegistration();
 
     modelAndTransfers_.resize(models_.size());
     for (std::size_t  i = 0; i < modelAndTransfers_.size(); ++i) {

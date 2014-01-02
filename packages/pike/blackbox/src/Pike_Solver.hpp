@@ -46,10 +46,16 @@ namespace pike {
     //! Returns the requested model evaluator.
     virtual Teuchos::RCP<const pike::BlackBoxModelEvaluator> getModelEvaluator(const std::string& name) const = 0;
 
+    //! Returns all registered model evaluators.
+    virtual const std::vector<Teuchos::RCP<const pike::BlackBoxModelEvaluator> > getModelEvaluators() const = 0;
+
     //! Return the requested data transfer.
     virtual Teuchos::RCP<const pike::DataTransfer> getDataTransfer(const std::string& name) const = 0;
 
-    /** \brief Take one step of the solve iteration sequence. 
+    //! Return all registered data transfers.
+    virtual const std::vector<Teuchos::RCP<const pike::DataTransfer> > getDataTransfers() const = 0;
+
+    /** \brief Take one step of the solve iteration sequence.
     
          @return Current SolveStatus.  
     */

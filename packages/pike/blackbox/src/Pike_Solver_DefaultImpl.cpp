@@ -1,4 +1,4 @@
-#include "Pike_Solver_DefaultImplementation.hpp"
+#include "Pike_Solver_DefaultImpl.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Pike_BlackBoxModelEvaluator.hpp"
@@ -8,7 +8,7 @@
 
 namespace pike {
 
-  SolverDefaultImplementation::SolverDefaultImplementation() :
+  SolverDefaultImpl::SolverDefaultImpl() :
     numberOfIterations_(0),
     status_(pike::UNCHECKED),
     registrationComplete_(false)
@@ -21,9 +21,9 @@ namespace pike {
     Teuchos::setupVerboseObjectSublist(validParameters_.get());
   }
 
-  SolverDefaultImplementation::~SolverDefaultImplementation() {}
+  SolverDefaultImpl::~SolverDefaultImpl() {}
 
-  void SolverDefaultImplementation::registerModelEvaluator(const Teuchos::RCP<pike::BlackBoxModelEvaluator>& me)
+  void SolverDefaultImpl::registerModelEvaluator(const Teuchos::RCP<pike::BlackBoxModelEvaluator>& me)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(registrationComplete_,
 			       std::logic_error,
@@ -31,7 +31,7 @@ namespace pike {
     models_.push_back(me);
   }
   
-  void SolverDefaultImplementation::registerDataTransfer(const Teuchos::RCP<pike::DataTransfer>& dt)
+  void SolverDefaultImpl::registerDataTransfer(const Teuchos::RCP<pike::DataTransfer>& dt)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(registrationComplete_,
 			       std::logic_error,
@@ -39,7 +39,7 @@ namespace pike {
     transfers_.push_back(dt);
   }
   
-  void SolverDefaultImplementation::completeRegistration()
+  void SolverDefaultImpl::completeRegistration()
   {
     // Set the defaults so the user doesn't have to set the parameter list
     if (is_null(this->getMyParamList())) {
@@ -50,7 +50,7 @@ namespace pike {
     registrationComplete_ = true;
   }
 
-  Teuchos::RCP<const pike::BlackBoxModelEvaluator> SolverDefaultImplementation::getModelEvaluator(const std::string& name) const
+  Teuchos::RCP<const pike::BlackBoxModelEvaluator> SolverDefaultImpl::getModelEvaluator(const std::string& name) const
   {
     for (ModelConstIterator m = models_.begin(); m != models_.end(); ++m)
       if ((*m)->name() == name)
@@ -60,7 +60,14 @@ namespace pike {
     return Teuchos::null;
   }
 
-  Teuchos::RCP<const pike::DataTransfer> SolverDefaultImplementation::getDataTransfer(const std::string& name) const
+  const std::vector<Teuchos::RCP<const pike::BlackBoxModelEvaluator> > SolverDefaultImpl::getModelEvaluators() const
+  {
+    std::vector<Teuchos::RCP<const pike::BlackBoxModelEvaluator> > constModels;
+    std::copy(models_.begin(),models_.end(),constModels.begin());
+    return constModels;
+  }
+
+  Teuchos::RCP<const pike::DataTransfer> SolverDefaultImpl::getDataTransfer(const std::string& name) const
   {
     for (TransferConstIterator t = transfers_.begin(); t != transfers_.end(); ++t)
       if ((*t)->name() == name)
@@ -70,7 +77,13 @@ namespace pike {
     return Teuchos::null;
   }
 
-  pike::SolveStatus SolverDefaultImplementation::step()
+  const std::vector<Teuchos::RCP<const pike::DataTransfer> > SolverDefaultImpl::getDataTransfers() const
+  { std::vector<Teuchos::RCP<const pike::DataTransfer> > constTransfers;
+    std::copy(transfers_.begin(),transfers_.end(),constTransfers.begin());
+    return constTransfers;
+  }
+
+  pike::SolveStatus SolverDefaultImpl::step()
   {
     for (ObserverIterator observer = observers_.begin(); observer != observers_.end(); ++observer)
       (*observer)->observeBeginStep(*this);
@@ -94,7 +107,7 @@ namespace pike {
     return status_;
   }
   
-  pike::SolveStatus SolverDefaultImplementation::solve()
+  pike::SolveStatus SolverDefaultImpl::solve()
   {
     TEUCHOS_ASSERT(registrationComplete_);
 
@@ -136,19 +149,19 @@ namespace pike {
     return status_;
   }
 
-  void SolverDefaultImplementation::reset()
+  void SolverDefaultImpl::reset()
   {
     numberOfIterations_ = 0;
     status_ = pike::UNCHECKED;
   }
   
-  pike::SolveStatus SolverDefaultImplementation::getStatus() const
+  pike::SolveStatus SolverDefaultImpl::getStatus() const
   { return status_; }
 
-  int SolverDefaultImplementation::getNumberOfIterations() const
+  int SolverDefaultImpl::getNumberOfIterations() const
   { return numberOfIterations_; }
   
-  void SolverDefaultImplementation::setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& paramList)
+  void SolverDefaultImpl::setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& paramList)
   {
     paramList->validateParametersAndSetDefaults(*(this->getValidParameters()));
     printBeginSolveStatus_ = paramList->get<bool>("Print Begin Solve Status");
@@ -158,33 +171,33 @@ namespace pike {
     this->setMyParamList(paramList);
   }
   
-  Teuchos::RCP<const Teuchos::ParameterList> SolverDefaultImplementation::getValidParameters() const
+  Teuchos::RCP<const Teuchos::ParameterList> SolverDefaultImpl::getValidParameters() const
   { return validParameters_; }
 
-  Teuchos::RCP<Teuchos::ParameterList> SolverDefaultImplementation::getNonconstValidParameters()
+  Teuchos::RCP<Teuchos::ParameterList> SolverDefaultImpl::getNonconstValidParameters()
   { return validParameters_; }
 
-  void SolverDefaultImplementation::addObserver(const Teuchos::RCP<pike::Observer>& observer)
+  void SolverDefaultImpl::addObserver(const Teuchos::RCP<pike::Observer>& observer)
   {
     observers_.push_back(observer);
   }
 
-  std::vector<Teuchos::RCP<pike::Observer> > SolverDefaultImplementation::getObservers() const
+  std::vector<Teuchos::RCP<pike::Observer> > SolverDefaultImpl::getObservers() const
   {
     return observers_;
   }
 
-  void SolverDefaultImplementation::setStatusTests(const Teuchos::RCP<pike::StatusTest>& statusTests)
+  void SolverDefaultImpl::setStatusTests(const Teuchos::RCP<pike::StatusTest>& statusTests)
   {
     statusTests_ = statusTests;
   }
 
-  Teuchos::RCP<const pike::StatusTest> SolverDefaultImplementation::getStatusTests() const
+  Teuchos::RCP<const pike::StatusTest> SolverDefaultImpl::getStatusTests() const
   {
     return statusTests_;
   }
   
-  std::string SolverDefaultImplementation::name() const
+  std::string SolverDefaultImpl::name() const
   {
     return name_;
   }
