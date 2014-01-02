@@ -25,7 +25,7 @@ IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "master")
     TIMEOUT_MINUTES 300
   )
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    MPI_DEBUG_DEV
+    MPI_DEBUG_DEV2
     ctest_linux_nightly_mpi_development_debug_gcc_4.8.2_muir.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
@@ -33,7 +33,7 @@ IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "master")
   )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    SERIAL_OPT_DEV
+    SERIAL_OPT_DEV2
     ctest_linux_nightly_serial_development_opt_gcc_4.8.2_muir.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
