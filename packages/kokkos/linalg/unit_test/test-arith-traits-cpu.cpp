@@ -41,7 +41,6 @@
 
 #include <iostream>
 
-#include "Kokkos_ArithTraits.hpp"
 #include "Kokkos_ArithTraitsTest.hpp"
 #include "Kokkos_Serial.hpp"
 
@@ -53,144 +52,82 @@
 #  include "Kokkos_Threads.hpp"
 #endif // KOKKOS_HAVE_PTHREAD
 
+#ifdef KOKKOS_HAVE_CUDA
+#  include "Kokkos_Cuda.hpp"
+#endif // KOKKOS_HAVE_CUDA
 
-template<class DeviceType>
-bool runHostTests (std::ostream& out)
+int
+main (int argc, char* argv[])
 {
-  bool success = true;
-
-  //
-  // Built-in char(acter) types
-  //
-
-  success = success && testArithTraitsOnHost<char, DeviceType> (out);
-  // Interestingly enough, char and int8_t are different types, but
-  // signed char and int8_t are the same (on my system).
-  success = success && testArithTraitsOnHost<signed char, DeviceType> (out);
-  success = success && testArithTraitsOnHost<unsigned char, DeviceType> (out);
-
-  //
-  // Built-in integer types
-  //
-
-  success = success && testArithTraitsOnHost<short, DeviceType> (out);
-  success = success && testArithTraitsOnHost<unsigned short, DeviceType> (out);
-  success = success && testArithTraitsOnHost<int8_t, DeviceType> (out);
-  success = success && testArithTraitsOnHost<uint8_t, DeviceType> (out);
-  success = success && testArithTraitsOnHost<int16_t, DeviceType> (out);
-  success = success && testArithTraitsOnHost<uint16_t, DeviceType> (out);
-  success = success && testArithTraitsOnHost<int32_t, DeviceType> (out);
-  success = success && testArithTraitsOnHost<uint32_t, DeviceType> (out);
-  success = success && testArithTraitsOnHost<int, DeviceType> (out);
-  success = success && testArithTraitsOnHost<unsigned int, DeviceType> (out);
-  success = success && testArithTraitsOnHost<int64_t, DeviceType> (out);
-  success = success && testArithTraitsOnHost<uint64_t, DeviceType> (out);
-  success = success && testArithTraitsOnHost<long, DeviceType> (out);
-  success = success && testArithTraitsOnHost<unsigned long, DeviceType> (out);
-  success = success && testArithTraitsOnHost<long long, DeviceType> (out);
-  success = success && testArithTraitsOnHost<unsigned long long, DeviceType> (out);
-
-  //
-  // Built-in real and complex floating-point types
-  //
-
-  success = success && testArithTraitsOnHost<float, DeviceType> (out);
-  success = success && testArithTraitsOnHost<double, DeviceType> (out);
-  success = success && testArithTraitsOnHost<long double, DeviceType> (out);
-  success = success && testArithTraitsOnHost<std::complex<float>, DeviceType> (out);
-  success = success && testArithTraitsOnHost<std::complex<double>, DeviceType> (out);
-  success = success && testArithTraitsOnHost<std::complex<long double>, DeviceType> (out);
-
-  return success;
-}
-
-
-template<class DeviceType>
-bool runDeviceTests (std::ostream& out)
-{
-  bool success = true;
-
-  //
-  // Built-in char(acter) types
-  //
-
-  success = success && testArithTraitsOnDevice<char, DeviceType> (out);
-  // Interestingly enough, char and int8_t are different types, but
-  // signed char and int8_t are the same (on my system).
-  success = success && testArithTraitsOnDevice<signed char, DeviceType> (out);
-  success = success && testArithTraitsOnDevice<unsigned char, DeviceType> (out);
-
-  //
-  // Built-in integer types
-  //
-
-  success = success && testArithTraitsOnDevice<short, DeviceType> (out);
-  success = success && testArithTraitsOnDevice<unsigned short, DeviceType> (out);
-  success = success && testArithTraitsOnDevice<int8_t, DeviceType> (out);
-  success = success && testArithTraitsOnDevice<uint8_t, DeviceType> (out);
-  success = success && testArithTraitsOnDevice<int16_t, DeviceType> (out);
-  success = success && testArithTraitsOnDevice<uint16_t, DeviceType> (out);
-  success = success && testArithTraitsOnDevice<int32_t, DeviceType> (out);
-  success = success && testArithTraitsOnDevice<uint32_t, DeviceType> (out);
-  success = success && testArithTraitsOnDevice<int, DeviceType> (out);
-  success = success && testArithTraitsOnDevice<unsigned int, DeviceType> (out);
-  success = success && testArithTraitsOnDevice<int64_t, DeviceType> (out);
-  success = success && testArithTraitsOnDevice<uint64_t, DeviceType> (out);
-  success = success && testArithTraitsOnDevice<long, DeviceType> (out);
-  success = success && testArithTraitsOnDevice<unsigned long, DeviceType> (out);
-  success = success && testArithTraitsOnDevice<long long, DeviceType> (out);
-  success = success && testArithTraitsOnDevice<unsigned long long, DeviceType> (out);
-
-  //
-  // Built-in real floating-point types
-  //
-
-  success = success && testArithTraitsOnDevice<float, DeviceType> (out);
-  success = success && testArithTraitsOnDevice<double, DeviceType> (out);
-
-  return success;
-}
-
-
-int main () {
   using std::cout;
   using std::endl;
+  (void) argc;
+  (void) argv;
 
   bool success = true;
+  const bool verbose = false;
 
-  bool serialSuccess = true;
-  serialSuccess = serialSuccess && runHostTests<Kokkos::Serial> (cout);
-  serialSuccess = serialSuccess && runDeviceTests<Kokkos::Serial> (cout);
-  success = success && serialSuccess;
-  if (serialSuccess) {
-    cout << endl << "Kokkos::Serial host and device: TEST PASSED" << endl;
-  } else {
-    cout << endl << "Kokkos::Serial host and device: TEST FAILED" << endl;
+  {
+    Kokkos::Serial::initialize (); // Start up the Kokkos device
+    bool serialSuccess = true;
+    serialSuccess = serialSuccess && runAllArithTraitsHostTests<Kokkos::Serial> (cout, verbose);
+    serialSuccess = serialSuccess && runAllArithTraitsDeviceTests<Kokkos::Serial> (cout, verbose);
+    success = success && serialSuccess;
+    if (serialSuccess) {
+      cout << endl << "Kokkos::Serial host and device: TEST PASSED" << endl;
+    } else {
+      cout << endl << "Kokkos::Serial host and device: TEST FAILED" << endl;
+    }
+    Kokkos::Serial::finalize (); // Close down the Kokkos device
   }
 
 #ifdef KOKKOS_HAVE_OPENMP
-  bool openmpSuccess = true;
-  openmpSuccess = openmpSuccess && runHostTests<Kokkos::OpenMP> (cout);
-  openmpSuccess = openmpSuccess && runDeviceTests<Kokkos::OpenMP> (cout);
-  success = success && openmpSuccess;
-  if (openmpSuccess) {
-    cout << endl << "Kokkos::OpenMP host and device: TEST PASSED" << endl;
-  } else {
-    cout << endl << "Kokkos::OpenMP host and device: TEST FAILED" << endl;
+  {
+    Kokkos::OpenMP::initialize (); // Start up the Kokkos device
+    bool openmpSuccess = true;
+    openmpSuccess = openmpSuccess && runAllArithTraitsHostTests<Kokkos::OpenMP> (cout, verbose);
+    openmpSuccess = openmpSuccess && runAllArithTraitsDeviceTests<Kokkos::OpenMP> (cout, verbose);
+    success = success && openmpSuccess;
+    if (openmpSuccess) {
+      cout << endl << "Kokkos::OpenMP host and device: TEST PASSED" << endl;
+    } else {
+      cout << endl << "Kokkos::OpenMP host and device: TEST FAILED" << endl;
+    }
+    Kokkos::OpenMP::finalize (); // Close down the Kokkos device
   }
 #endif // KOKKOS_HAVE_OPENMP
 
 #ifdef KOKKOS_HAVE_PTHREAD
-  bool threadsSuccess = true;
-  threadsSuccess = threadsSuccess && runHostTests<Kokkos::Threads> (cout);
-  threadsSuccess = threadsSuccess && runDeviceTests<Kokkos::Threads> (cout);
-  success = success && threadsSuccess;
-  if (threadsSuccess) {
-    cout << endl << "Kokkos::Threads host and device: TEST PASSED" << endl;
-  } else {
-    cout << endl << "Kokkos::Threads host and device: TEST FAILED" << endl;
+  {
+    Kokkos::Threads::initialize (); // Start up the Kokkos device
+    bool threadsSuccess = true;
+    threadsSuccess = threadsSuccess && runAllArithTraitsHostTests<Kokkos::Threads> (cout, verbose);
+    threadsSuccess = threadsSuccess && runAllArithTraitsDeviceTests<Kokkos::Threads> (cout, verbose);
+    success = success && threadsSuccess;
+    if (threadsSuccess) {
+      cout << endl << "Kokkos::Threads host and device: TEST PASSED" << endl;
+    } else {
+      cout << endl << "Kokkos::Threads host and device: TEST FAILED" << endl;
+    }
+    Kokkos::Threads::finalize (); // Close down the Kokkos device
   }
 #endif // KOKKOS_HAVE_PTHREAD
+
+// #ifdef KOKKOS_HAVE_CUDA
+// {
+//   Kokkos::Cuda::initialize (); // Start up the Kokkos device
+//   bool cudaSuccess = true;
+//   cudaSuccess = cudaSuccess && runAllArithTraitsHostTests<Kokkos::Cuda> (cout, verbose);
+//   cudaSuccess = cudaSuccess && runAllArithTraitsDeviceTests<Kokkos::Cuda> (cout, verbose);
+//   success = success && cudaSuccess;
+//   if (cudaSuccess) {
+//     cout << endl << "Kokkos::Cuda host and device: TEST PASSED" << endl;
+//   } else {
+//     cout << endl << "Kokkos::Cuda host and device: TEST FAILED" << endl;
+//   }
+//   Kokkos::Cuda::finalize (); // Close down the Kokkos device
+// }
+// #endif // KOKKOS_HAVE_CUDA
 
   if (success) {
     cout << endl << "End Result: TEST PASSED" << endl;

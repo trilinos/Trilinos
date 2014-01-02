@@ -64,9 +64,11 @@
 #include <cfloat>
 #include <climits>
 #include <cmath>
+#include <cstdlib> // strtof, strtod
+#include <stdint.h> // CUDA 5.5 doesn't recognize <cstdint>.
+
 #include <complex> // std::complex
 #include <limits> // std::numeric_limits
-#include <stdint.h> // CUDA 5.5 doesn't recognize <cstdint>.
 
 //
 // mfh 24 Dec 2013: Temporary measure for testing; will go away.

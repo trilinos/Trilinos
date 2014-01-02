@@ -41,15 +41,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DEPLIBS kokkoscore kokkoscorelinalg
   )
 
-IF(Kokkos_ENABLE_Cuda)
-# TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#   ArithTraitsCuda
-#   SOURCES test-arith-traits-cuda.cu
-#   COMM serial mpi
-#   NUM_MPI_PROCS 1
-#   DEPLIBS kokkoscore kokkoscorelinalg
-#   )
-ENDIF() # Kokkos_ENABLE_Cuda
+# IF(Kokkos_ENABLE_Cuda)
+#   TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#     ArithTraitsCuda
+#     SOURCES test-arith-traits-cuda.cu
+#     COMM serial mpi
+#     NUM_MPI_PROCS 1
+#     DEPLIBS kokkoscore kokkoscorelinalg
+#     )
+# ENDIF() # Kokkos_ENABLE_Cuda
 
 #  DEPLIBS kokkoscore kokkoslinalg
   

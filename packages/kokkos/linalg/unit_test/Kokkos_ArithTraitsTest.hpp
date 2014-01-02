@@ -942,14 +942,16 @@ public:
 ///
 /// \return \c true if all redundant executions pass, else \c false.
 template<class ScalarType, class DeviceType>
-bool testArithTraitsOnDevice (std::ostream& out)
+bool testArithTraitsOnDevice (std::ostream& out, const bool verbose)
 {
   using std::endl;
   typedef ArithTraitsTester<ScalarType, DeviceType> functor_type;
   bool success = true; // output argument of parallel_reduce
   Kokkos::parallel_reduce (1, functor_type (), success);
   if (success) {
-    out << typeid (ScalarType).name () << " passed" << endl;
+    if (verbose) {
+      out << typeid (ScalarType).name () << " passed" << endl;
+    }
   } else {
     out << typeid (ScalarType).name () << " FAILED" << endl;
   }
@@ -965,17 +967,136 @@ bool testArithTraitsOnDevice (std::ostream& out)
 ///
 /// \return \c true if all tests pass, else \c false.
 template<class ScalarType, class DeviceType>
-bool testArithTraitsOnHost (std::ostream& out)
+bool testArithTraitsOnHost (std::ostream& out, const bool verbose)
 {
   using std::endl;
   ArithTraitsTester<ScalarType, DeviceType> f;
   const bool localSuccess = f.testHost (out);
   if (localSuccess) {
-    out << typeid (ScalarType).name () << " passed" << endl;
+    if (verbose) {
+      out << typeid (ScalarType).name () << " passed" << endl;
+    }
   } else {
     out << typeid (ScalarType).name () << " FAILED" << endl;
   }
   return localSuccess;
 }
+
+
+/// \brief Run the Kokkos::Details::ArithTraits tests for all (valid)
+///   scalar types, on the given parallel device.
+/// \tparam DeviceType A Kokkos parallel device type.
+///
+/// This is the "outward-facing" function meant to be called by
+/// main().  This function must be called on the host, but it executes
+/// on the device with (redundant) parallelism.
+///
+/// \return \c true if all tests pass, else \c false.
+template<class DeviceType>
+bool runAllArithTraitsDeviceTests (std::ostream& out, const bool verbose)
+{
+  bool success = true;
+
+  //
+  // Built-in char(acter) types
+  //
+
+  success = success && testArithTraitsOnDevice<char, DeviceType> (out, verbose);
+  // Interestingly enough, char and int8_t are different types, but
+  // signed char and int8_t are the same (on my system).
+  success = success && testArithTraitsOnDevice<signed char, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnDevice<unsigned char, DeviceType> (out, verbose);
+
+  //
+  // Built-in integer types
+  //
+
+  success = success && testArithTraitsOnDevice<short, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnDevice<unsigned short, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnDevice<int8_t, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnDevice<uint8_t, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnDevice<int16_t, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnDevice<uint16_t, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnDevice<int32_t, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnDevice<uint32_t, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnDevice<int, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnDevice<unsigned int, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnDevice<int64_t, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnDevice<uint64_t, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnDevice<long, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnDevice<unsigned long, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnDevice<long long, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnDevice<unsigned long long, DeviceType> (out, verbose);
+
+  //
+  // Built-in real floating-point types
+  //
+
+  success = success && testArithTraitsOnDevice<float, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnDevice<double, DeviceType> (out, verbose);
+
+  return success;
+}
+
+
+/// \brief Run the Kokkos::Details::ArithTraits tests for all scalar
+///   types, on the host.
+/// \tparam DeviceType A Kokkos parallel device type.
+///
+/// This is the "outward-facing" function meant to be called by
+/// main().  This function must be called on the host, and executes on
+/// the host.
+///
+/// \return \c true if all tests pass, else \c false.
+template<class DeviceType>
+bool runAllArithTraitsHostTests (std::ostream& out, const bool verbose)
+{
+  bool success = true;
+
+  //
+  // Built-in char(acter) types
+  //
+
+  success = success && testArithTraitsOnHost<char, DeviceType> (out, verbose);
+  // Interestingly enough, char and int8_t are different types, but
+  // signed char and int8_t are the same (on my system).
+  success = success && testArithTraitsOnHost<signed char, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnHost<unsigned char, DeviceType> (out, verbose);
+
+  //
+  // Built-in integer types
+  //
+
+  success = success && testArithTraitsOnHost<short, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnHost<unsigned short, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnHost<int8_t, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnHost<uint8_t, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnHost<int16_t, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnHost<uint16_t, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnHost<int32_t, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnHost<uint32_t, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnHost<int, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnHost<unsigned int, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnHost<int64_t, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnHost<uint64_t, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnHost<long, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnHost<unsigned long, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnHost<long long, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnHost<unsigned long long, DeviceType> (out, verbose);
+
+  //
+  // Built-in real and complex floating-point types
+  //
+
+  success = success && testArithTraitsOnHost<float, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnHost<double, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnHost<long double, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnHost<std::complex<float>, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnHost<std::complex<double>, DeviceType> (out, verbose);
+  success = success && testArithTraitsOnHost<std::complex<long double>, DeviceType> (out, verbose);
+
+  return success;
+}
+
 
 #endif // KOKKOS_ARITHTRAITSTEST_HPP
