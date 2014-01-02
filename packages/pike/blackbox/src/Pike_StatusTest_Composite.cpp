@@ -17,9 +17,9 @@ namespace pike {
     validParameters_ = Teuchos::parameterList("Valid Parameters: Composite");
     Teuchos::setStringToIntegralParameter<int>(
         "Type",
-        "OR",
+        "Composite OR",
         "Determines the form of the DCO_M model in the Momentum equation",
-        Teuchos::tuple<std::string>("AND", "OR"),
+        Teuchos::tuple<std::string>("Composite AND", "Composite OR"),
         validParameters_.get()
         );
     validParameters_->disableRecursiveValidation();
@@ -120,7 +120,7 @@ namespace pike {
 
   void Composite::setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& p)
   {
-    // Don't call validation.  Sublist names can be arbitrary
+    // Don't call validation.  Sublist names can be arbitrary (or nonexistent)
     //paramList->validateParametersAndSetDefaults(*(this->getValidParameters()));
 
     // Loop over sublists for different tests
@@ -129,13 +129,15 @@ namespace pike {
 
       if ( (sublistEntry->first == "Type") && (sublistEntry->second.isType<std::string>()) ) {
 	std::string stringType = "";
-	if (sublistEntry->second.getValue(&stringType) == "AND")
+	if (sublistEntry->second.getValue(&stringType) == "Composite AND")
 	  type_ = pike::Composite::AND;
-	else if (sublistEntry->second.getValue(&stringType) == "OR")
+	else if (sublistEntry->second.getValue(&stringType) == "Composite OR")
 	  type_ = pike::Composite::OR;
 	else {
 	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-				     "The parameter with key \"" << sublistEntry->first << "\" is not valid for Composite object construction!");
+				     "The parameter with key \"" << sublistEntry->first 
+				     << "\" and value \"" << sublistEntry->second.getValue(&stringType)
+				     << "\" is not valid for Composite object construction!");
 	}
       }
       else if (sublistEntry->second.isList()) {

@@ -11,35 +11,32 @@ namespace pike {
   Teuchos::RCP<pike::StatusTest> 
   buildStatusTests(const Teuchos::RCP<Teuchos::ParameterList>& p)
   {
-    TEUCHOS_ASSERT(p->numParams() == 1);
-    TEUCHOS_TEST_FOR_EXCEPTION(!p->begin()->second.isList(),
-			       std::logic_error,
-			       "The ParameterList for building the Status Test with key \"" 
-			       << p->begin()->first << "\" must be a sublist!");
+    TEUCHOS_TEST_FOR_EXCEPTION(!p->isType<std::string>("Type"),std::logic_error,
+			       "The StatusTestFactory requires that each sublist declare its \"Type\".  This parameter does not exist for the sublist \"" << p->name() << "\".");
+    std::string testType = p->get<std::string>("Type");
 
-    Teuchos::ParameterList& sublistRef = p->begin()->second.getValue(p.get());
-    Teuchos::RCP<Teuchos::ParameterList> sublist = Teuchos::sublist(p,sublistRef.name(),true);
-    
     Teuchos::RCP<pike::StatusTest> test;
 
-    if (sublist->name() == "Composite") {
+    if ( (testType == "Composite AND") || (testType == "Composite OR") ) {
       Teuchos::RCP<pike::Composite> c = pike::composite();
-      c->setParameterList(sublist);
-      test = c;            
+      c->setParameterList(p);
+      test = c;
     }
-    else if (sublist->name() == "Max Iterations") {
+    else if (testType == "Maximum Iterations") {
       Teuchos::RCP<pike::MaxIterations> mi = Teuchos::rcp(new pike::MaxIterations());
-      mi->setParameterList(sublist);
+      mi->setParameterList(p);
       test = mi;
     }
-    else if (sublist->name() == "Scalar Response Relative Tolerance") {
+    else if (testType == "Scalar Response Relative Tolerance") {
       Teuchos::RCP<pike::ScalarResponseRelativeTolerance> rt = 
 	Teuchos::rcp(new pike::ScalarResponseRelativeTolerance());
-      rt->setParameterList(sublist);
+      rt->setParameterList(p);
       test = rt;
     }
     else {
-      
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
+				 "The status test factory failed to find a valid object type for the value \""
+				 << testType <<"\"!");
     }
     
     return test;

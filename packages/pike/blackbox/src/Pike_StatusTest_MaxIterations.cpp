@@ -11,6 +11,7 @@ namespace pike {
     status_(pike::UNCHECKED)
   {
     validParameters_ = Teuchos::parameterList("Valid Parameters: MaxIterations");
+    validParameters_->set("Type","Maximum Iterations","Type of test.");
     validParameters_->set("Maximum Iterations",-1,"Maximum number of iterations before the test returns a failed state.");
     Teuchos::setupVerboseObjectSublist(validParameters_.get());
   }
@@ -44,6 +45,7 @@ namespace pike {
   {
     paramList->validateParametersAndSetDefaults(*(this->getValidParameters()));
     this->setMyParamList(paramList);
+    TEUCHOS_ASSERT(paramList->get<std::string>("Type") == "Maximum Iterations");
     maximumIterations_ = paramList->get<int>("Maximum Iterations");
   }
   

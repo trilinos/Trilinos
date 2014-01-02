@@ -18,6 +18,7 @@ namespace pike {
     status_(pike::UNCHECKED)
   {
     validParameters_ = Teuchos::parameterList("Valid Parameters: ScalarResponseRelativeTolerance");
+    validParameters_->set("Type","Scalar Response Relative Tolerance","Type of object to build.");
     validParameters_->set("Application Name","???","Name of the BlackBoxModelEvaluator that contains the response");
     validParameters_->set("Response Name","???","Name of the ScalarResponse to check");
     validParameters_->set("Tolerance",1.0e-4,"Relative tolerance required for convergence");
