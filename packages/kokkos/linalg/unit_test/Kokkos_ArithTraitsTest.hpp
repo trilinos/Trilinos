@@ -140,17 +140,18 @@ public:
       success = false;
     }
 
-    // It's OK to refer to std::numeric_limits constants, just not to
-    // its class methods (which are not marked as device functions).
-    if (AT::is_integer != std::numeric_limits<T>::is_integer) {
+    // It's OK to refer to std::numeric_limits constants in a device
+    // function, just not to its class methods (which are not marked
+    // as device functions).
+    if (AT::is_integer != std::numeric_limits<ScalarType>::is_integer) {
       success = false;
     }
-    if (AT::is_exact != std::numeric_limits<T>::is_exact) {
+    if (AT::is_exact != std::numeric_limits<ScalarType>::is_exact) {
       success = false;
     }
 
-    const T zero = AT::zero ();
-    const T one = AT::one ();
+    const ScalarType zero = AT::zero ();
+    const ScalarType one = AT::one ();
 
     // Test properties of the arithmetic and multiplicative identities.
     if (zero + zero != zero) {
@@ -186,24 +187,24 @@ public:
       success = false;
     }
 
-    const T two = one + one;
-    const T three = one + one + one;
-    const T four = two * two;
-    const T five = four + one;
-    const T six = three * two;
-    const T seven = four + three;
-    const T eight = four * two;
-    const T nine = eight + one;
-    const T eleven = five + six;
-    const T twentySeven = nine * three;
-    const T thirtySix = six * six;
-    const T fortyTwo = six * seven;
-    const T sixtyThree = eight * eight - one;
-    const T sixtyFour = eight * eight;
+    const ScalarType two = one + one;
+    const ScalarType three = one + one + one;
+    const ScalarType four = two * two;
+    const ScalarType five = four + one;
+    const ScalarType six = three * two;
+    const ScalarType seven = four + three;
+    const ScalarType eight = four * two;
+    const ScalarType nine = eight + one;
+    const ScalarType eleven = five + six;
+    const ScalarType twentySeven = nine * three;
+    const ScalarType thirtySix = six * six;
+    const ScalarType fortyTwo = six * seven;
+    const ScalarType sixtyThree = eight * eight - one;
+    const ScalarType sixtyFour = eight * eight;
     // max char value, for 8-bit char
-    const T oneTwentySeven = sixtyFour + sixtyThree;
+    const ScalarType oneTwentySeven = sixtyFour + sixtyThree;
 
-    T result;
+    ScalarType result;
 
     // This fails inexplicably for complex numbers on gcc 4.2.1 on Mac.
     if (! AT::is_complex) {
@@ -332,18 +333,18 @@ public:
       success = false;
     }
 
-    if (AT::is_integer != std::numeric_limits<T>::is_integer) {
-      out << "AT::is_integer != std::numeric_limits<T>::is_integer" << endl;
+    if (AT::is_integer != std::numeric_limits<ScalarType>::is_integer) {
+      out << "AT::is_integer != std::numeric_limits<ScalarType>::is_integer" << endl;
       success = false;
     }
 
-    if (AT::is_exact != std::numeric_limits<T>::is_exact) {
-      out << "AT::is_exact != std::numeric_limits<T>::is_exact" << endl;
+    if (AT::is_exact != std::numeric_limits<ScalarType>::is_exact) {
+      out << "AT::is_exact != std::numeric_limits<ScalarType>::is_exact" << endl;
       success = false;
     }
 
-    const T zero = AT::zero ();
-    const T one = AT::one ();
+    const ScalarType zero = AT::zero ();
+    const ScalarType one = AT::one ();
     // Test properties of the arithmetic and multiplicative identities.
 
     if (zero + zero != zero) {
@@ -398,24 +399,24 @@ public:
 
     // }
 
-    const T two = one + one;
-    const T three = one + one + one;
-    const T four = two * two;
-    const T five = four + one;
-    const T six = three * two;
-    const T seven = four + three;
-    const T eight = four * two;
-    const T nine = eight + one;
-    const T eleven = five + six;
-    const T twentySeven = nine * three;
-    const T thirtySix = six * six;
-    const T fortyTwo = six * seven;
-    const T sixtyThree = eight * eight - one;
-    const T sixtyFour = eight * eight;
+    const ScalarType two = one + one;
+    const ScalarType three = one + one + one;
+    const ScalarType four = two * two;
+    const ScalarType five = four + one;
+    const ScalarType six = three * two;
+    const ScalarType seven = four + three;
+    const ScalarType eight = four * two;
+    const ScalarType nine = eight + one;
+    const ScalarType eleven = five + six;
+    const ScalarType twentySeven = nine * three;
+    const ScalarType thirtySix = six * six;
+    const ScalarType fortyTwo = six * seven;
+    const ScalarType sixtyThree = eight * eight - one;
+    const ScalarType sixtyFour = eight * eight;
     // max char value, for 8-bit char
-    const T oneTwentySeven = sixtyFour + sixtyThree;
+    const ScalarType oneTwentySeven = sixtyFour + sixtyThree;
 
-    T result;
+    ScalarType result;
 
     // This fails inexplicably for complex numbers on gcc 4.2.1 on Mac.
     if (! AT::is_complex) {
@@ -523,7 +524,7 @@ public:
 template<class ScalarType,
          class DeviceType,
          const bool is_complex = Kokkos::Details::ArithTraits<ScalarType>::is_complex>
-class ArithTraitsTesterComplexBase : public ArithTraitsTesterBase<ScalarType> {
+class ArithTraitsTesterComplexBase : public ArithTraitsTesterBase<ScalarType, DeviceType> {
 private:
   //! The base class of this class.
   typedef ArithTraitsTesterBase<ScalarType, DeviceType> base_type;
@@ -587,9 +588,9 @@ protected:
     typedef Kokkos::Details::ArithTraits<ScalarType> AT;
 
     bool success = true;
-    // Apparently, std::numeric_limits<T>::is_signed is true only for real numbers.
+    // Apparently, std::numeric_limits<ScalarType>::is_signed is true only for real numbers.
     if (AT::is_signed != std::numeric_limits<ScalarType>::is_signed) {
-      out << "ArithTraits<T>::is_signed != std::numeric_limits<T>::is_signed" << endl;
+      out << "ArithTraits<T>::is_signed != std::numeric_limits<ScalarType>::is_signed" << endl;
       success = false;
     }
     if (AT::is_complex) {
@@ -657,6 +658,7 @@ protected:
   virtual bool testHostImpl (std::ostream& out) const {
     using std::endl;
     typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+    bool success = true;
 
     if (! AT::is_complex) {
       out << "ArithTraits<T>::is_complex is wrong" << endl;
@@ -756,7 +758,6 @@ public:
 protected:
   virtual bool KOKKOS_INLINE_FUNCTION testDeviceImpl () const {
     typedef Kokkos::Details::ArithTraits<ScalarType> AT;
-    (void) iwork; // not using this argument
     bool success = true;
 
     if (AT::is_exact) {
@@ -766,8 +767,8 @@ protected:
       success = false;
     }
 
-    const T zero = AT::zero ();
-    const T one = AT::one ();
+    const ScalarType zero = AT::zero ();
+    const ScalarType one = AT::one ();
 
     if (AT::isInf (zero)) {
       success = false;
@@ -800,7 +801,7 @@ protected:
       success = false;
     }
 
-    //if (std::numeric_limits<T>::is_iec559) {
+    //if (std::numeric_limits<ScalarType>::is_iec559) {
     //success = success && AT::isInf (AT::inf ());
     success = success && AT::isNan (AT::nan ());
     if (! success) {
@@ -808,8 +809,8 @@ protected:
     }
     //}
 
-    const T zero = AT::zero ();
-    const T one = AT::one ();
+    const ScalarType zero = AT::zero ();
+    const ScalarType one = AT::one ();
 
     if (AT::isInf (zero)) {
       out << "isInf(zero) is true" << endl;
@@ -862,7 +863,6 @@ public:
 protected:
   virtual bool KOKKOS_INLINE_FUNCTION testDeviceImpl () const {
     typedef Kokkos::Details::ArithTraits<ScalarType> AT;
-    (void) iwork; // not using this argument
     bool success = true;
 
     if (! AT::is_exact) {
