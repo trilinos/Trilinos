@@ -344,7 +344,6 @@ static int shylu_local_solve(
 			data->gmresManager = Teuchos::rcp(
 					new ShyLUGMRESManager(data->schur_op->OperatorDomainMap(),
 										  kSize, false, config->iqrScaling));
-			data->gmresManager->id = 0;
 			data->gmresManager->isFirst = true;
 
 			double tol = 1e-10;
@@ -373,11 +372,11 @@ static int shylu_local_solve(
 
 			data->firstIteration = false;
 
-			if (! Xs.Comm().MyPID()) {
-				std::cout << "KSIZE: " << kSize
-						  << ", SSIZE: " << sSize
-						  << ", TOL: " << tol << std::endl;
-			}
+//			if (! Xs.Comm().MyPID()) {
+//				std::cout << "KSIZE: " << kSize
+//						  << ", SSIZE: " << sSize
+//						  << ", TOL: " << tol << std::endl;
+//			}
         } else {
 			// Solve phase
 			if (config->iqrNumIter > 0) {

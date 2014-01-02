@@ -46,7 +46,6 @@ public:
     int  m;
     int isFlex;
     bool doScaling;
-    int id;
     bool isFirst;
 
     // Q
