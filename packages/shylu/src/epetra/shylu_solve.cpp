@@ -371,6 +371,8 @@ static int shylu_local_solve(
 				data->gmresManager->P2 = 0;
 			}
 
+			data->firstIteration = false;
+
 			if (! Xs.Comm().MyPID()) {
 				std::cout << "KSIZE: " << kSize
 						  << ", SSIZE: " << sSize
