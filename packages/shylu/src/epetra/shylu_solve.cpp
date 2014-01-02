@@ -322,9 +322,7 @@ static int shylu_local_solve(
     }
     else if (config->schurSolver == "IQR")
     {
-        int& currentIteration = data->iqrCurrentIteration;
-
-        if (currentIteration == 0) {
+        if (data->firstIteration) {
         	Ifpack_Preconditioner* initialPrec = 0;
         	if (config->iqrInitialPrec) {
 				Epetra_CrsMatrix* G = data->schur_op->G_;
@@ -378,42 +376,7 @@ static int shylu_local_solve(
 						  << ", SSIZE: " << sSize
 						  << ", TOL: " << tol << std::endl;
 			}
-
-			currentIteration++;
-        } else if (currentIteration <= config->iqrNestedLevel) {
-			// Solve phase
-			// Computation phase - only during the first outer GMRES iteration
-			int sSize = data->schur_op->OperatorDomainMap().NumGlobalElements();
-			int kSize = std::floor(config->iqrKrylovDim * sSize);
-
-			(data->savedGmresManagers)[currentIteration - 1] = data->gmresManager;
-			data->gmresManager = Teuchos::rcp(
-					new ShyLUGMRESManager(data->schur_op->OperatorDomainMap(),
-										  kSize, false, config->iqrScaling));
-			data->gmresManager->isFirst = false;
-			data->gmresManager->id = currentIteration;
-			double tol = 1e-10;
-			IQR::IdPreconditioner L;
-			IQR::GMRES<Epetra_Operator,
-					   Epetra_MultiVector,
-					   IQR::IdPreconditioner,
-					   ShyLUGMRESManager,
-					   ShyLUGMRESManager,
-					   std::vector<double>,
-					   double> (*(data->schur_op), Xs, Bs, &L,
-								&*((data->savedGmresManagers)[currentIteration - 1]),
-								*(data->gmresManager), kSize, tol);
-
-			data->gmresManager->P = &*((data->savedGmresManagers)[currentIteration - 1]);
-
-			if (! Xs.Comm().MyPID()) {
-				std::cout << "KSIZE: " << kSize
-						  << ", SSIZE: " << sSize
-						  << ", TOL: " << tol << std::endl;
-			}
-
-			currentIteration++;
-        } else if (currentIteration > config->iqrNestedLevel) {
+        } else {
 			// Solve phase
 			if (config->iqrNumIter > 0) {
 				ShyLUGMRESManager newGmresManager(data->schur_op->OperatorDomainMap(),
