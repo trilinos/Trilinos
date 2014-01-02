@@ -3,22 +3,24 @@
 
 //static size_t KokkosHostWrapperNodeDUMMYINT = Kokkos::NEVEREVERUSEMEIWILLFINDYOU::host_space_singleton_wrapper().size();
 
-#ifdef KOKKOS_HAVE_CUDA
-  //static size_t KokkosCudaWrapperNodeDUMMYINT = Kokkos::Impl::cuda_internal_maximum_warp_count();
-  template<> int Kokkos::Compat::KokkosCudaWrapperNode::count = 0;// KokkosCudaWrapperNodeDUMMYINT;
-#endif
-
-#ifdef KOKKOS_HAVE_OPENMP
-  template<> int Kokkos::Compat::KokkosOpenMPWrapperNode::count = 0;
-#endif
-
-#ifdef KOKKOS_HAVE_PTHREAD
-  template<> int Kokkos::Compat::KokkosThreadsWrapperNode::count = 0;
-#endif
-
-
 namespace Kokkos {
   namespace Compat {
+
+    // mfh 01 Jan 2014: These definitions of the class variable count
+    // need to be inside the namespace.  Declaring them as "template<>
+    // int Kokkos::Compat::KokkosCudaWrapperNode::count = 0" in the
+    // global namespace is a C++11 extension and results in compiler
+    // warnings with Clang 3.2 on MacOS X.
+#ifdef KOKKOS_HAVE_CUDA
+    //static size_t KokkosCudaWrapperNodeDUMMYINT = Kokkos::Impl::cuda_internal_maximum_warp_count();
+    template<> int KokkosCudaWrapperNode::count = 0;// KokkosCudaWrapperNodeDUMMYINT;
+#endif
+#ifdef KOKKOS_HAVE_OPENMP
+    template<> int KokkosOpenMPWrapperNode::count = 0;
+#endif
+#ifdef KOKKOS_HAVE_PTHREAD
+    template<> int KokkosThreadsWrapperNode::count = 0;
+#endif
 
 #ifdef KOKKOS_HAVE_PTHREAD
     template<>
