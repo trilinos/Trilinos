@@ -113,21 +113,28 @@ main (int argc, char* argv[])
   }
 #endif // KOKKOS_HAVE_PTHREAD
 
-// #ifdef KOKKOS_HAVE_CUDA
-// {
-//   Kokkos::Cuda::initialize (); // Start up the Kokkos device
-//   bool cudaSuccess = true;
-//   cudaSuccess = cudaSuccess && runAllArithTraitsHostTests<Kokkos::Cuda> (cout, verbose);
-//   cudaSuccess = cudaSuccess && runAllArithTraitsDeviceTests<Kokkos::Cuda> (cout, verbose);
-//   success = success && cudaSuccess;
-//   if (cudaSuccess) {
-//     cout << endl << "Kokkos::Cuda host and device: TEST PASSED" << endl;
-//   } else {
-//     cout << endl << "Kokkos::Cuda host and device: TEST FAILED" << endl;
-//   }
-//   Kokkos::Cuda::finalize (); // Close down the Kokkos device
-// }
-// #endif // KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_HAVE_CUDA
+{
+  // Start up the Cuda device's host mirror device (must be done
+  // before starting up the Cuda device)
+  Kokkos::Cuda::host_mirror_device_type::initialize ();
+  Kokkos::Cuda::initialize (); // Start up the Kokkos device
+
+  bool cudaSuccess = true;
+  // cudaSuccess = cudaSuccess && runAllArithTraitsHostTests<Kokkos::Cuda> (cout, verbose);
+  // cudaSuccess = cudaSuccess && runAllArithTraitsDeviceTests<Kokkos::Cuda> (cout, verbose);
+  success = success && cudaSuccess;
+  if (cudaSuccess) {
+    cout << endl << "Kokkos::Cuda host and device: TEST PASSED" << endl;
+  } else {
+    cout << endl << "Kokkos::Cuda host and device: TEST FAILED" << endl;
+  }
+  Kokkos::Cuda::finalize (); // Close down the Kokkos device
+  // Close down the Cuda device's host mirror device (must be done
+  // after closing down the Cuda device)
+  Kokkos::Cuda::host_mirror_device_type::finalize ();
+}
+#endif // KOKKOS_HAVE_CUDA
 
   if (success) {
     cout << endl << "End Result: TEST PASSED" << endl;

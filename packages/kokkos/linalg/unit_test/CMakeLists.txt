@@ -9,9 +9,9 @@ IF(Kokkos_ENABLE_Cuda)
   # kokkos/core/unit_test/CMakeLists.txt.  I have no idea
   # if it works.
   #
-  # # Add subpackage include path dependencies for CUDA_COMPILE().
-  # CUDA_INCLUDE_DIRECTORIES( ${KokkosCore_INCLUDE_DIRS} )
-  # CUDA_INCLUDE_DIRECTORIES( ${KokkosLinAlg_INCLUDE_DIRS} )
+  # Add subpackage include path dependencies for CUDA_COMPILE().
+  CUDA_INCLUDE_DIRECTORIES( "." )
+  CUDA_INCLUDE_DIRECTORIES( "." )
   # CUDA_COMPILE(OBJECTS_CUDA TestCudaFunctions.cu)
 
   # LIST( APPEND SOURCES TestCuda.cpp ${OBJECTS_CUDA} )
