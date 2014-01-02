@@ -2,9 +2,12 @@
 
 void assignGIDs(int numApps);
 
+Discuss with Ross - unique strings fine for now.  no more than 100 apps so string lookups should not be that important.
+
 2. Build a DAG from global numbers of MEs based on data transfers that return source and target MEs. Add get source and get target mes.
 
 3. Possible change parameter and responses so that solver returns a PArameterLisbrary.  Something to handle active parameters vs inactive parameters?
 
 4. Rename DataTransfer to TransferOperator????  Does this matter?
 
+5. Need to add time monitor support.
