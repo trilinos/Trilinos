@@ -110,7 +110,7 @@ namespace MueLu {
 	GridTransfersExist_(false), UseLaplacian_(true), VariableShift_(false),
 	LaplaceOperatorSet_(false), ProblemMatrixSet_(false), PreconditioningMatrixSet_(false),
 	StiffMatrixSet_(false), MassMatrixSet_(false), DampMatrixSet_(false),
-	LevelShiftsSet_(false), isSymmetric_(true)
+	LevelShiftsSet_(false), isSymmetric_(true), useKrylov_(true)
     { }
 
     // Destructor
@@ -202,7 +202,7 @@ namespace MueLu {
     bool UseLaplacian_, VariableShift_;
     bool LaplaceOperatorSet_, ProblemMatrixSet_, PreconditioningMatrixSet_;
     bool StiffMatrixSet_, MassMatrixSet_, DampMatrixSet_, LevelShiftsSet_;
-    bool isSymmetric_;
+    bool isSymmetric_, useKrylov_;
 
     // Xpetra matrices
     // K_ -> stiffness matrix
