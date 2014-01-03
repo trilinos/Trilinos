@@ -49,7 +49,6 @@
 #include "Epetra_LinearProblem.h" 
 #include "Epetra_SerialComm.h"
 #include "Amesos_BaseSolver.h"
-#include "Ifpack_Preconditioner.h"
 #include "AztecOO.h"
 #include "Isorropia_EpetraProber.hpp"
 
@@ -57,19 +56,12 @@
 #include "shylu_probing_operator.h"
 #include "AmesosSchurOperator.h"
 
-#include "gmres.h"
-#include "gmres_tools.h"
+#include <IQRSolver.h>
 
 //#include "shylu_debug_manager.hpp"
 
 #define MIN(a, b) (((a) < (b)) ? a : b)
 #define MAX(a, b) (((a) > (b)) ? a : b)
-
-typedef IQR::GMRESManager<Epetra_BlockMap,
-						  Epetra_MultiVector,
-						  std::vector<std::vector<double> >,
-						  std::vector<double> >
-			ShyLUGMRESManager;
 
 typedef struct
 {
@@ -86,9 +78,7 @@ typedef struct
     //Epetra_Map *LDColMap;       // ColMap for block diagonals
     //Epetra_CrsMatrix *D;        // Actual D Matrix, not reqd for Amesos_KLU
                                 // but required for Amesos_Pardiso
-    Teuchos::RCP<ShyLUGMRESManager> gmresManager;
-    bool firstIteration;
-    Teuchos::RCP<Ifpack_Preconditioner> gPrec;
+    Teuchos::RCP<IQR::IQRSolver> iqrSolver; // Solver object for IQR func.
     Teuchos::RCP<Epetra_CrsMatrix> Sbar; // Approx Schur complement
     Teuchos::RCP<Epetra_CrsGraph> localSbargraph; // graph of local Sbar
     AztecOO *innersolver;            // inner solver
@@ -114,17 +104,8 @@ typedef struct
     int schurApproxMethod;      // ==1 implies blockdiagonal + A22
                                 // ==2 implies dropping based
     							// ==4 implies IQR
-    							// ==5 implies Projection
-    double iqrKrylovDim;
-    int iqrNumIter;
-    bool iqrScaling;
-    bool iqrInitialPrec;
-    std::string iqrInitialPrecType;
-    std::string iqrInitialPrecAmesosType;
-
     double relative_threshold;  // Relative threshold for dropping
                                 // only used if schurApproxMethod == 2
-
     int inner_maxiters;         // maximum iterations for inner solver
     double inner_tolerance;     // relative residual tolerance for inner solver
     string libName;             // library for the outer solver

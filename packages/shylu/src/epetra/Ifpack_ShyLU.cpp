@@ -51,7 +51,7 @@
 #include "Ifpack_ShyLU.h"
 #include "Teuchos_Time.hpp"
 
-#include <gmres_tools.h>
+#include <IQRSolver.h>
 
 //#define DUMP_MATRICES
 
@@ -71,10 +71,6 @@ void Ifpack_ShyLU::Destroy()
 {
     if (IsInitialized_)
     {
-    	if (slu_config_.schurApproxMethod == 4) {
-			delete slu_data_.gmresManager->P2;
-    	}
-
         //delete A_;
         //delete partitioner_;
         //delete rd_;
@@ -156,31 +152,6 @@ int Ifpack_ShyLU::Initialize()
 
     slu_config_.relative_threshold =  0.0;
     slu_config_.Sdiagfactor =  0.05;
-    if (schurApproxMethod == "G")
-    {
-    	slu_config_.schurSolver = "G";
-    	slu_config_.schurApproxMethod = 6;
-        slu_config_.iqrInitialPrecType = List_.get<string>("IQR Initial Prec Type", "Amesos stand-alone");
-        slu_config_.iqrInitialPrecAmesosType = List_.get<string>("IQR Initial Prec Amesos Type", "Amesos_Klu");
-        slu_data_.firstIteration = true;
-    }
-    if (schurApproxMethod == "IQR")
-    {
-    	slu_config_.schurSolver = "IQR";
-    	slu_config_.schurApproxMethod = 4;
-    	slu_config_.iqrKrylovDim = List_.get<double>("IQR Krylov Dim", 0.5);
-    	slu_config_.iqrNumIter = List_.get<int>("IQR Number Iterations", 1);
-        slu_config_.iqrScaling = List_.get<bool>("IQR Scaling", true);
-        slu_config_.iqrInitialPrec = List_.get<bool>("IQR Initial Prec", false);
-        slu_config_.iqrInitialPrecType = List_.get<string>("IQR Initial Prec Type", "Amesos stand-alone");
-        slu_config_.iqrInitialPrecAmesosType = List_.get<string>("IQR Initial Prec Amesos Type", "Amesos_Klu");
-        slu_data_.firstIteration = true;
-    }
-    if (schurApproxMethod == "Projection")
-    {
-    	slu_config_.schurSolver = "Projection";
-    	slu_config_.schurApproxMethod = 5;
-    }
     if (schurApproxMethod == "A22AndBlockDiagonals")
     {
         slu_config_.schurApproxMethod = 1;
@@ -199,6 +170,20 @@ int Ifpack_ShyLU::Initialize()
         slu_config_.reset_iter =  List_.get<int>("Schur Recompute Iteration", 10);
         slu_config_.relative_threshold =  Teuchos::getParameter<double>(List_,
                                                     "Relative Threshold");
+    }
+    if (schurApproxMethod == "IQR")
+    {
+    	slu_config_.schurSolver = "IQR";
+    	slu_config_.schurApproxMethod = 4;
+
+    	slu_data_.iqrSolver.reset(new IQR::IQRSolver(List_));
+    }
+    if (schurApproxMethod == "G")
+    {
+    	slu_config_.schurSolver = "G";
+    	slu_config_.schurApproxMethod = 5;
+
+    	slu_data_.iqrSolver.reset(new IQR::IQRSolver(List_));
     }
 
     slu_config_.schurPreconditioner = List_.get<string>("Schur Preconditioner",

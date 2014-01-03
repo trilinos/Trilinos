@@ -51,11 +51,7 @@
 #include "shylu_util.h"
 #include "shylu.h"
 
-#include <gmres.h>
-#include <gmres_tools.h>
-
 #include <Ifpack.h>
-#include <Ifpack_Preconditioner.h>
 
 static int shylu_dist_solve(
     shylu_symbolic *ssym,
@@ -144,10 +140,7 @@ static int shylu_dist_solve(
     Xs.PutScalar(0.0);
 
     Epetra_LinearProblem Problem(data->Sbar.get(), &Xs, &Bs);
-    if (config->schurSolver == "IQR")
-    {
-    	data->gmresManager->ApplyInverse(Bs, Xs);
-    } else if (config->schurSolver == "Amesos")
+    if (config->schurSolver == "Amesos")
     {
         Amesos_BaseSolver *solver2 = data->dsolver;
         data->LP2->SetLHS(&Xs);
@@ -302,98 +295,11 @@ static int shylu_local_solve(
 
     AztecOO *solver;
     Epetra_LinearProblem Problem(data->Sbar.get(), &Xs, &Bs);
-    if (config->schurSolver == "G")
+    if ((config->schurSolver == "G") || (config->schurSolver == "IQR"))
     {
-    	if (data->firstIteration) {
-			Epetra_CrsMatrix* G = data->schur_op->G_;
-			Ifpack Factory;
-			data->gPrec = Teuchos::rcp(Factory.Create(config->iqrInitialPrecType, G, 1));
-			Teuchos::ParameterList pList;
-			pList.set("amesos: solver type", config->iqrInitialPrecAmesosType, "");
-			pList.set("Reindex", true);
-			data->gPrec->SetParameters(pList);
-
-			data->gPrec->Initialize();
-			data->gPrec->Compute();
-			data->firstIteration = false;
-    	} else {
-    		data->gPrec->ApplyInverse(Bs, Xs);
-    	}
+    	data->iqrSolver->Solve(*(data->schur_op), Bs, Xs);
     }
-    else if (config->schurSolver == "IQR")
-    {
-        if (data->firstIteration) {
-        	Ifpack_Preconditioner* initialPrec = 0;
-        	if (config->iqrInitialPrec) {
-				Epetra_CrsMatrix* G = data->schur_op->G_;
-				Ifpack Factory;
-				initialPrec = Factory.Create(config->iqrInitialPrecType, G, 1);
-				Teuchos::ParameterList pList;
-				pList.set("amesos: solver type", config->iqrInitialPrecAmesosType, "");
-				pList.set("Reindex", true);
-				initialPrec->SetParameters(pList);
-
-				initialPrec->Initialize();
-				initialPrec->Compute();
-        	}
-
-			// Computation phase - only during the first outer GMRES iteration
-			int sSize = data->schur_op->OperatorDomainMap().NumGlobalElements();
-			int kSize = std::floor(config->iqrKrylovDim * sSize);
-
-			data->gmresManager = Teuchos::rcp(
-					new ShyLUGMRESManager(data->schur_op->OperatorDomainMap(),
-										  kSize, false, config->iqrScaling));
-			data->gmresManager->isFirst = true;
-
-			double tol = 1e-10;
-			IQR::IdPreconditioner L, M;
-			if (config->iqrInitialPrec) {
-				IQR::GMRES<Epetra_Operator,
-						   Epetra_MultiVector,
-						   IQR::IdPreconditioner,
-						   Ifpack_Preconditioner,
-						   ShyLUGMRESManager,
-						   std::vector<double>,
-						   double> (*(data->schur_op), Xs, Bs, &L, initialPrec,
-									*(data->gmresManager), kSize, tol);
-				data->gmresManager->P2 = initialPrec;
-			} else {
-				IQR::GMRES<Epetra_Operator,
-						   Epetra_MultiVector,
-						   IQR::IdPreconditioner,
-						   IQR::IdPreconditioner,
-						   ShyLUGMRESManager,
-						   std::vector<double>,
-						   double> (*(data->schur_op), Xs, Bs, &L, &M,
-									*(data->gmresManager), kSize, tol);
-				data->gmresManager->P2 = 0;
-			}
-
-			data->firstIteration = false;
-
-//			if (! Xs.Comm().MyPID()) {
-//				std::cout << "KSIZE: " << kSize
-//						  << ", SSIZE: " << sSize
-//						  << ", TOL: " << tol << std::endl;
-//			}
-        } else {
-			// Solve phase
-			if (config->iqrNumIter > 0) {
-				ShyLUGMRESManager newGmresManager(data->schur_op->OperatorDomainMap(),
-												  config->iqrNumIter+1, false);
-				double tol=1e-10;
-				IQR::IdPreconditioner L;
-				IQR::GMRES<Epetra_Operator, Epetra_MultiVector,
-						   IQR::IdPreconditioner, ShyLUGMRESManager, ShyLUGMRESManager,
-						   std::vector<double>, double>
-						(*(data->schur_op), Xs, Bs, &L, &*(data->gmresManager),
-						 newGmresManager, config->iqrNumIter, tol);
-			} else {
-				data->gmresManager->ApplyInverse(Bs, Xs);
-			}
-        }
-   } else if (config->schurSolver == "Amesos")
+    else if (config->schurSolver == "Amesos")
     {
         Amesos_BaseSolver *solver2 = data->dsolver;
         data->OrigLP2->SetLHS(&Xs);
