@@ -81,13 +81,13 @@ public:
 	virtual ~IQRSolver();
 
 	// Public methods
-	void Solve(const ShyLU_Probing_Operator& S,
+	int Solve(const ShyLU_Probing_Operator& S,
 			   const Epetra_MultiVector& B,
 			   Epetra_MultiVector & X);
 
 private:
 	// Private methods
-	void Compute(const ShyLU_Probing_Operator& S,
+	int Compute(const ShyLU_Probing_Operator& S,
 			     const Epetra_MultiVector& B,
 			     Epetra_MultiVector & X);
 

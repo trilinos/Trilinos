@@ -297,7 +297,7 @@ static int shylu_local_solve(
     Epetra_LinearProblem Problem(data->Sbar.get(), &Xs, &Bs);
     if ((config->schurSolver == "G") || (config->schurSolver == "IQR"))
     {
-    	data->iqrSolver->Solve(*(data->schur_op), Bs, Xs);
+    	IFPACK_CHK_ERR(data->iqrSolver->Solve(*(data->schur_op), Bs, Xs));
     }
     else if (config->schurSolver == "Amesos")
     {

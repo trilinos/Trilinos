@@ -84,7 +84,7 @@ IQRSolver::~IQRSolver()
 {
 }
 
-void IQRSolver::Compute(const ShyLU_Probing_Operator& S,
+int IQRSolver::Compute(const ShyLU_Probing_Operator& S,
 						const Epetra_MultiVector& B,
 						Epetra_MultiVector & X)
 {
@@ -97,8 +97,8 @@ void IQRSolver::Compute(const ShyLU_Probing_Operator& S,
 	pList.set("Reindex", true);
 	prec_->SetParameters(pList);
 
-	prec_->Initialize();
-	prec_->Compute();
+	IFPACK_CHK_ERR(prec_->Initialize());
+	IFPACK_CHK_ERR(prec_->Compute());
 
 	// Only for IQR
 	if (useFullIQR_) {
@@ -129,18 +129,20 @@ void IQRSolver::Compute(const ShyLU_Probing_Operator& S,
 //			}
 	}
 	isComputed_ = true;
+
+	return 0;
 }
 
-void IQRSolver::Solve(const ShyLU_Probing_Operator& S,
+int IQRSolver::Solve(const ShyLU_Probing_Operator& S,
 		   	   	   	  const Epetra_MultiVector& B,
 		   	   	   	  Epetra_MultiVector & X)
 {
 	if (! isComputed_) {
-		Compute(S, B, X);
+		IFPACK_CHK_ERR(Compute(S, B, X));
 	}
 	// Solve phase
 	if (! useFullIQR_) {
-		prec_->ApplyInverse(B, X);
+		IFPACK_CHK_ERR(prec_->ApplyInverse(B, X));
 	} else {
 		if (numIter_ > 0) {
 			GMRESStateManager newGmresManager(S.OperatorDomainMap(),
@@ -152,9 +154,11 @@ void IQRSolver::Solve(const ShyLU_Probing_Operator& S,
 				   std::vector<double>, double>
 			(S, X, B, &L, &*(gmresStateManager_), newGmresManager, numIter_, tol);
 		} else {
-			gmresStateManager_->ApplyInverse(B, X);
+			IFPACK_CHK_ERR(gmresStateManager_->ApplyInverse(B, X));
 		}
 	}
+
+	return 0;
 }
 
 } /* namespace IQR */
