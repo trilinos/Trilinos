@@ -20,6 +20,7 @@
   <Parameter name="Backtracking Rate"                                 type="double" value="0.5"                     />
   <Parameter name="Initial Linesearch Parameter"                      type="double" value="1.0"                     />
   <Parameter name="User Defined Linesearch Parameter"                 type="bool"   value="false"                   />
+  <Parameter name="Krylov Type"                                       type="string" value="Conjugate Gradients"     />
   <Parameter name="Absolute Krylov Tolerance"                         type="double" value="1.e-4"                   />
   <Parameter name="Relative Krylov Tolerance"                         type="double" value="1.e-2"                   />
   <Parameter name="Maximum Number of Krylov Iterations"               type="int"    value="100"                     />
