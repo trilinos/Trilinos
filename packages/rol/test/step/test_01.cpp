@@ -45,7 +45,7 @@
     \brief Test line search.
 */
 
-#define USE_HESSVEC 1
+#define USE_HESSVEC 0
 
 #include "ROL_TestObjectives.hpp"
 #include "ROL_LineSearchStep.hpp"
@@ -80,6 +80,10 @@ int main(int argc, char *argv[]) {
     std::string filename = "input.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
+    parlist->set("Use Inexact Hessian-Times-A-Vector",true);
+#if USE_HESSVEC
+    parlist->set("Use Inexact Hessian-Times-A-Vector",false);
+#endif
 
     // Define Status Test
     RealT gtol = parlist->get("Gradient Tolerance",1.e-6);
@@ -125,25 +129,27 @@ int main(int argc, char *argv[]) {
               (objFunc == ROL::TESTOBJECTIVES_POISSONINVERSION)) ) {
           parlist->set("Descent Type", ROL::EDescentToString(ROL::DESCENT_NEWTONKRYLOV));
         }
-        *outStream << "\n\n" << ROL::EDescentToString(desc) << "\n\n";
+        else {
+          *outStream << "\n\n" << ROL::EDescentToString(desc) << "\n\n";
 
-        // Define Step
-        ROL::LineSearchStep<RealT> step(*parlist);
+          // Define Step
+          ROL::LineSearchStep<RealT> step(*parlist);
       
-        // Define Algorithm
-        ROL::DefaultAlgorithm<RealT> algo(step,status,false);
+          // Define Algorithm
+          ROL::DefaultAlgorithm<RealT> algo(step,status,false);
 
-        // Run Algorithm
-        x.set(x0);
-        std::vector<std::string> output = algo.run(x, *obj);
-        for ( unsigned i = 0; i < output.size(); i++ ) {
-          std::cout << output[i];
+          // Run Algorithm
+          x.set(x0);
+          std::vector<std::string> output = algo.run(x, *obj);
+          for ( unsigned i = 0; i < output.size(); i++ ) {
+            std::cout << output[i];
+          }
+
+          // Compute Error
+          e.set(x);
+          e.axpy(-1.0,z);
+          *outStream << "\nNorm of Error: " << e.norm() << "\n";
         }
-
-        // Compute Error
-        e.set(x);
-        e.axpy(-1.0,z);
-        *outStream << "\nNorm of Error: " << e.norm() << "\n";
       }
     }
   }

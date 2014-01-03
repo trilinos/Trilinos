@@ -102,9 +102,9 @@ public:
 
     Teuchos::RCP<Vector<Real> > Hp = x.clone();
     itol = 0.0;
-    if ( useInexact_ ) {
-      itol = std::min( 0.5, gtol*p->norm()/(2.0 * this->maxit_ * gnorm * gnorm) ); 
-      //itol = gtol/(maxit_ * gnorm); 
+    if ( this->useInexact_ ) {
+      itol = gtol/(maxit_ * gnorm); 
+      //itol = std::min( 0.5, gtol*p->norm()/(2.0 * this->maxit_ * gnorm * gnorm) ); 
     }
     obj.hessVec( *Hp, *p, x, itol );  
 
@@ -148,7 +148,8 @@ public:
 
       itol = 0.0;
       if ( useInexact_ ) {
-        itol = std::min( 0.5, gtol*p->norm()/(2.0 * this->maxit_ * gnorm * gnorm) ); 
+        itol = gtol/(this->maxit_ * gnorm); 
+        //itol = std::min( 0.5, gtol*p->norm()/(2.0 * this->maxit_ * gnorm * gnorm) ); 
       }
       obj.hessVec( *Hp, *p, x, itol );
     }
