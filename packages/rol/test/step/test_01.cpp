@@ -120,9 +120,9 @@ int main(int argc, char *argv[]) {
       for ( ROL::EDescent desc = ROL::DESCENT_STEEPEST; desc < ROL::DESCENT_LAST; desc++ ) {
         parlist->set("Descent Type", ROL::EDescentToString(desc));
         if ( desc == ROL::DESCENT_NEWTON && 
-             ((objFunc == ROL::TESTOBJECTIVES_LEASTSQUARES)    || 
-              (objFunc == ROL::TESTOBJECTIVES_POISSONCONTROL)) ||
-              (objFunc == ROL::TESTOBJECTIVES_POISSONINVERSION) ) {
+             ((objFunc == ROL::TESTOBJECTIVES_LEASTSQUARES)   || 
+              (objFunc == ROL::TESTOBJECTIVES_POISSONCONTROL) ||
+              (objFunc == ROL::TESTOBJECTIVES_POISSONINVERSION)) ) {
           parlist->set("Descent Type", ROL::EDescentToString(ROL::DESCENT_NEWTONKRYLOV));
         }
         *outStream << "\n\n" << ROL::EDescentToString(desc) << "\n\n";

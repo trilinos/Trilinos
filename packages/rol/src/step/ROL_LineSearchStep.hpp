@@ -78,6 +78,7 @@ private:
   ECurvatureCondition econd_;
   EDescent            edesc_;
   ESecant             esec_;
+  EKrylov             ekv_;
  
   int ls_nfval_;
   int ls_ngrad_;
@@ -95,11 +96,8 @@ public:
     els_   = StringToELineSearch(         parlist.get("Linesearch Type",                "Cubic Interpolation"));
     econd_ = StringToECurvatureCondition( parlist.get("Linesearch Curvature Condition", "Strong Wolfe Conditions"));
     esec_  = StringToESecant(             parlist.get("Secant Type",                    "Limited-Memory BFGS"));
-    //edesc_ = parlist.get("Descent Type",                   DESCENT_SECANT);
-    //enlcg_ = parlist.get("Nonlinear CG Type",              NONLINEARCG_HAGAR_ZHANG);
-    //els_   = parlist.get("Linesearch Type",                LINESEARCH_CUBICINTERP);
-    //econd_ = parlist.get("Linesearch Curvature Condition", CURVATURECONDITION_STRONGWOLFE);
-    //esec_  = parlist.get("Secant Type",                    SECANT_LBFGS);
+    ekv_   = StringToEKrylov(             parlist.get("Krylov Type",                    "Conjugate Gradients"));
+
     // Inexactness Information
     useInexact_.clear();
     useInexact_.push_back(parlist.get("Use Inexact Objective Function", false));
@@ -115,7 +113,7 @@ public:
       Real CGtol1 = parlist.get("Absolute Krylov Tolerance", 1.e-4);
       Real CGtol2 = parlist.get("Relative Krylov Tolerance", 1.e-2);
       int maxitCG = parlist.get("Maximum Number of Krylov Iterations", 20);
-      krylov_ = Teuchos::rcp( new Krylov<Real>(CGtol1,CGtol2,maxitCG,useInexact_[2]) );
+      krylov_ = Teuchos::rcp( new Krylov<Real>(ekv_,CGtol1,CGtol2,maxitCG,useInexact_[2]) );
       iterKrylov_ = 0;
       flagKrylov_ = 0;
     }
@@ -143,11 +141,8 @@ public:
     els_   = StringToELineSearch(         parlist.get("Linesearch Type",                "Cubic Interpolation"));
     econd_ = StringToECurvatureCondition( parlist.get("Linesearch Curvature Condition", "Strong Wolfe Conditions"));
     esec_  = StringToESecant(             parlist.get("Secant Type",                    "Limited-Memory BFGS"));
-    //edesc_ = parlist.get("Descent Type",                   DESCENT_SECANT);
-    //enlcg_ = parlist.get("Nonlinear CG Type",              NONLINEARCG_HAGAR_ZHANG);
-    //els_   = parlist.get("Linesearch Type",                LINESEARCH_CUBICINTERP);
-    //econd_ = parlist.get("Linesearch Curvature Condition", CURVATURECONDITION_STRONGWOLFE);
-    //esec_  = parlist.get("Secant Type",                    SECANT_LBFGS);
+    ekv_   = StringToEKrylov(             parlist.get("Krylov Type",                    "Conjugate Gradients"));
+
     // Inexactness Information
     useInexact_.clear();
     useInexact_.push_back(parlist.get("Use Inexact Objective Function", false));
@@ -163,7 +158,7 @@ public:
       Real CGtol1 = parlist.get("Absolute Krylov Tolerance", 1.e-4);
       Real CGtol2 = parlist.get("Relative Krylov Tolerance", 1.e-2);
       int maxitCG = parlist.get("Maximum Number of Krylov Iterations", 20);
-      krylov_ = Teuchos::rcp( new Krylov<Real>(CGtol1,CGtol2,maxitCG,useInexact_) );
+      krylov_ = Teuchos::rcp( new Krylov<Real>(ekv_,CGtol1,CGtol2,maxitCG,useInexact_[2]) );
       iterKrylov_ = 0;
       flagKrylov_ = 0;
     }
@@ -181,7 +176,8 @@ public:
     // Compute step s
     if ( this->edesc_ == DESCENT_NEWTONKRYLOV || this->edesc_ == DESCENT_SECANTPRECOND ) {
       this->flagKrylov_ = 0;
-      this->krylov_->CG(s,this->iterKrylov_,this->flagKrylov_,*(Step<Real>::state_->gradientVec),x,obj,this->secant_);
+      this->krylov_->run(s,this->iterKrylov_,this->flagKrylov_,
+                         *(Step<Real>::state_->gradientVec),x,obj,this->secant_);
     }
     else if ( this->edesc_ == DESCENT_NEWTON ) {
       Real tol = std::sqrt(ROL_EPSILON);
@@ -277,6 +273,9 @@ public:
          << " with " << ELineSearchToString(this->els_) 
          << " Linesearch satisfying " 
          << ECurvatureConditionToString(this->econd_) << "\n";
+    if ( this->edesc_ == DESCENT_NEWTONKRYLOV || this->edesc_ == DESCENT_SECANTPRECOND ) {
+      hist << "Krylov Type: " << EKrylovToString(this->ekv_) << "\n";
+    }
     if ( this->edesc_ == DESCENT_SECANT || this->edesc_ == DESCENT_SECANTPRECOND ) {
       hist << "Secant Type: " << ESecantToString(this->esec_) << "\n";
     }
