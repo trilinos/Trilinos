@@ -112,12 +112,15 @@ public:
     if (MESH_REGION == etype) {
       return RnumIds_;
     }
+
     if (MESH_FACE == etype) {
       return FnumIds_;
     }
+
     if (MESH_EDGE == etype) {
       return EnumIds_;
     }
+
     if (MESH_VERTEX == etype) {
       return VnumIds_:
     }
@@ -129,21 +132,24 @@ public:
       Ids = RidList_;
       return RnumIds_;
     }
+
     if (MESH_FACE == etype) {
       Ids = FidList_;
       return FnumIds_;
     }
+
     if (MESH_EDGE == etype) {
       Ids = EidList_;
       return EnumIds_;
     }
+
     if (MESH_VERTEX == etype) {
       Ids = VidList_;
       return VnumIds_;
     }
   }
 
-  int getDimensionOf(MeshEntityType etype) const { return dimension_;}
+  int getDimensionOf(MeshEntityType etype) const { return dimension_; }
 
   void getCoordinatesViewOf(MeshEntityType etype, const scalar_t *&coords,
 			    int &stride, int dim} const {
@@ -180,10 +186,12 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region")
   im_ex_get_init( exoid, "PAMGEN Inline Mesh", &num_dim, &num_nodes,
 		  &num_elem, &num_elem_blk, &num_node_sets, &num_side_sets);
 
+  dimension_ = num_dim;
+
   double * coord = (double *) malloc (num_nodes * num_dim * sizeof (double));
   im_ex_get_coord(exoid, coord, coord+num_nodes, coord+2*num_nodes);
 
-  if (3 == num_dim) {
+  if ( 3 == num_dim && num_elem ) {
     int * element_num_map = ( int * ) malloc ( num_elem * sizeof ( int ) );
     im_ex_get_elem_num_map( exoid, element_num_map);
     RnumIds_ = num_elem;
@@ -193,7 +201,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region")
     RidList_ = NULL;
   }
 
-  if (2 == num_dim) {
+  if ( 2 == num_dim && num_elem ) {
     int * element_num_map = ( int * ) malloc ( num_elem * sizeof ( int ) );
     im_ex_get_elem_num_map( exoid, element_num_map);
     FnumIds_ = num_elem;
