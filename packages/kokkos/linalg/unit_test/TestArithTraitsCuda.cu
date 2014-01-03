@@ -39,28 +39,24 @@
 // ************************************************************************
 //@HEADER
 
+#include "Kokkos_ArithTraitsTest.hpp"
+#include "Kokkos_Cuda.hpp"
 #include <iostream>
 
-#include "Kokkos_ArithTraitsTestHelper.hpp"
-#include "Kokkos_Cuda.hpp"
-
-int
-main (int argc, char* argv[])
+bool
+runAllArithTraitsCudaTests (std::ostream& out, const bool verbose)
 {
-  using std::cout;
   using std::endl;
-  (void) argc;
-  (void) argv;
 
   bool success = true;
-
-  success = success && runHostTests<Kokkos::Cuda> (cout);
-  success = success && runDeviceTests<Kokkos::Cuda> (cout);
+  success = success && runAllArithTraitsDeviceTests<Kokkos::Cuda> (out, verbose);
 
   if (success) {
-    cout << endl << "End Result: TEST PASSED" << endl;
+    if (verbose) {
+      out << endl << "Kokkos::Cuda host and device: TEST PASSED" << endl;
+    }
   } else {
-    cout << endl << "End Result: TEST FAILED" << endl;
+    out << endl << "Kokkos::Cuda host and device: TEST FAILED" << endl;
   }
-  return success ? EXIT_SUCCESS : EXIT_FAILURE;
+  return success;
 }

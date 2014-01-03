@@ -12,9 +12,7 @@ IF(Kokkos_ENABLE_Cuda)
   # Add subpackage include path dependencies for CUDA_COMPILE().
   CUDA_INCLUDE_DIRECTORIES( "." )
   CUDA_INCLUDE_DIRECTORIES( "." )
-  # CUDA_COMPILE(OBJECTS_CUDA TestCudaFunctions.cu)
-
-  # LIST( APPEND SOURCES TestCuda.cpp ${OBJECTS_CUDA} )
+  CUDA_COMPILE(OBJECTS_CUDA TestArithTraitsCuda.cu)
 ENDIF()
 
 
@@ -33,23 +31,22 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DEPLIBS kokkoscore kokkoscorelinalg
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  ArithTraitsCpu
-  SOURCES test-arith-traits-cpu.cpp
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  DEPLIBS kokkoscore kokkoscorelinalg
-  )
+IF(Kokkos_ENABLE_Cuda)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    ArithTraits
+    SOURCES test-arith-traits.cpp ${OBJECTS_CUDA}
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    DEPLIBS kokkoscore kokkoscorelinalg
+    )
+ELSE()
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    ArithTraits
+    SOURCES test-arith-traits.cpp
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    DEPLIBS kokkoscore kokkoscorelinalg
+    )
+ENDIF() # Kokkos_ENABLE_Cuda
 
-# IF(Kokkos_ENABLE_Cuda)
-#   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#     ArithTraitsCuda
-#     SOURCES test-arith-traits-cuda.cu
-#     COMM serial mpi
-#     NUM_MPI_PROCS 1
-#     DEPLIBS kokkoscore kokkoscorelinalg
-#     )
-# ENDIF() # Kokkos_ENABLE_Cuda
-
-#  DEPLIBS kokkoscore kokkoslinalg
   

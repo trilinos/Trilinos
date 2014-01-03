@@ -106,6 +106,9 @@ public:
   //! Type of the result of the reduction.
   typedef bool value_type;
 
+  //! Constructor (does nothing, but marked as device function).
+  KOKKOS_INLINE_FUNCTION ArithTraitsTesterBase () {}
+
   //! Set the initial value (\c true) of the reduction.
   KOKKOS_INLINE_FUNCTION void init (value_type& dst) const {
     dst = true;
@@ -535,6 +538,9 @@ public:
   //! Type of the result of the reduction.
   typedef bool value_type;
 
+  //! Constructor (does nothing, but marked as device function).
+  KOKKOS_INLINE_FUNCTION ArithTraitsTesterComplexBase ();
+
 protected:
   // The device and host hooks get implemented in the
   // complex-arithmetic specialization of this class.
@@ -558,6 +564,9 @@ public:
   typedef typename device_type::size_type size_type;
   //! Type of the result of the reduction.
   typedef bool value_type;
+
+  //! Constructor (does nothing, but marked as device function).
+  KOKKOS_INLINE_FUNCTION ArithTraitsTesterComplexBase () {}
 
 protected:
   virtual bool KOKKOS_INLINE_FUNCTION testDeviceImpl () const {
@@ -622,6 +631,9 @@ public:
   typedef typename device_type::size_type size_type;
   //! Type of the result of the reduction.
   typedef bool value_type;
+
+  //! Constructor (does nothing, but marked as device function).
+  KOKKOS_INLINE_FUNCTION ArithTraitsTesterComplexBase () {}
 
 protected:
   virtual bool KOKKOS_INLINE_FUNCTION testDeviceImpl () const {
@@ -755,6 +767,9 @@ public:
   //! Type of the result of the reduction.
   typedef bool value_type;
 
+  //! Constructor (does nothing, but marked as device function).
+  KOKKOS_INLINE_FUNCTION ArithTraitsTesterFloatingPointBase () {}
+
 protected:
   virtual bool KOKKOS_INLINE_FUNCTION testDeviceImpl () const {
     typedef Kokkos::Details::ArithTraits<ScalarType> AT;
@@ -860,6 +875,9 @@ public:
   //! Type of the result of the reduction.
   typedef bool value_type;
 
+  //! Constructor (does nothing, but marked as device function).
+  KOKKOS_INLINE_FUNCTION ArithTraitsTesterFloatingPointBase () {}
+
 protected:
   virtual bool KOKKOS_INLINE_FUNCTION testDeviceImpl () const {
     typedef Kokkos::Details::ArithTraits<ScalarType> AT;
@@ -928,6 +946,9 @@ public:
   typedef typename device_type::size_type size_type;
   //! Type of the result of the reduction.
   typedef bool value_type;
+
+  //! Constructor (does nothing, but marked as device function).
+  KOKKOS_INLINE_FUNCTION ArithTraitsTester () {}
 };
 
 
@@ -1097,6 +1118,5 @@ bool runAllArithTraitsHostTests (std::ostream& out, const bool verbose)
 
   return success;
 }
-
 
 #endif // KOKKOS_ARITHTRAITSTEST_HPP
