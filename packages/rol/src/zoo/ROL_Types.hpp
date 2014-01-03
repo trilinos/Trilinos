@@ -118,7 +118,7 @@ namespace ROL {
       case DESCENT_NEWTONKRYLOV:  retString = "Newton-Krylov";                             break;
       case DESCENT_SECANTPRECOND: retString = "Newton-Krylov with Secant Preconditioning"; break;
       case DESCENT_LAST:          retString = "Last Type (Dummy)";                         break;
-      default:                    retString = "INVALID EDescent";
+      default:                    retString = "INVALID ESecant";
     }
     return retString;
   }
@@ -241,68 +241,6 @@ namespace ROL {
       }
     }
     return SECANT_LBFGS;
-  }
-
-  /** \enum   ROL::EKrylov
-      \brief  Enumeration of Krylov methods.
-
-      \arg    CG        describe
-   */
-  enum EKrylov{
-    KRYLOV_CG = 0,
-    KRYLOV_CR,
-    KRYLOV_LAST
-  };
-
-  inline std::string EKrylovToString(EKrylov kv) {
-    std::string retString;
-    switch(kv) {
-      case KRYLOV_CG:      retString = "Conjugate Gradients"; break;
-      case KRYLOV_CR:      retString = "Conjugate Residuals"; break;
-      case KRYLOV_LAST:    retString = "Last Type (Dummy)";   break;
-      default:             retString = "INVALID EKrylov";
-    }
-    return retString;
-  }
-
-  /** \brief  Verifies validity of a Krylov enum.
-    
-      \param  kv  [in]  - enum of the Krylov
-      \return 1 if the argument is a valid Krylov; 0 otherwise.
-    */
-  inline int isValidKrylov(EKrylov kv){
-    return( (kv == KRYLOV_CG) ||
-            (kv == KRYLOV_CR) );
-  }
-
-  inline EKrylov & operator++(EKrylov &type) {
-    return type = static_cast<EKrylov>(type+1);
-  }
-
-  inline EKrylov operator++(EKrylov &type, int) {
-    EKrylov oldval = type;
-    ++type;
-    return oldval;
-  }
-
-  inline EKrylov & operator--(EKrylov &type) {
-    return type = static_cast<EKrylov>(type-1);
-  }
-
-  inline EKrylov operator--(EKrylov &type, int) {
-    EKrylov oldval = type;
-    --type;
-    return oldval;
-  }
-
-  inline EKrylov StringToEKrylov(std::string s) {
-    s = removeStringFormat(s);
-    for ( EKrylov kv = KRYLOV_CG; kv < KRYLOV_LAST; kv++ ) {
-      if ( !s.compare(removeStringFormat(EKrylovToString(kv))) ) {
-        return kv;
-      }
-    }
-    return KRYLOV_CG;
   }
   
   /** \enum   ROL::ENonlinearCG

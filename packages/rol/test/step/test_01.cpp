@@ -45,7 +45,7 @@
     \brief Test line search.
 */
 
-#define USE_HESSVEC 0
+#define USE_HESSVEC 1
 
 #include "ROL_TestObjectives.hpp"
 #include "ROL_LineSearchStep.hpp"
@@ -121,8 +121,8 @@ int main(int argc, char *argv[]) {
         parlist->set("Descent Type", ROL::EDescentToString(desc));
         if ( desc == ROL::DESCENT_NEWTON && 
              ((objFunc == ROL::TESTOBJECTIVES_LEASTSQUARES)    || 
-              (objFunc == ROL::TESTOBJECTIVES_POISSONCONTROL)  ||
-              (objFunc == ROL::TESTOBJECTIVES_POISSONINVERSION)) ) {
+              (objFunc == ROL::TESTOBJECTIVES_POISSONCONTROL)) ||
+              (objFunc == ROL::TESTOBJECTIVES_POISSONINVERSION) ) {
           parlist->set("Descent Type", ROL::EDescentToString(ROL::DESCENT_NEWTONKRYLOV));
         }
         *outStream << "\n\n" << ROL::EDescentToString(desc) << "\n\n";
