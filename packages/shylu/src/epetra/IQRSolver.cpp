@@ -68,6 +68,7 @@ IQRSolver::IQRSolver(const Teuchos::ParameterList& pList)
 {
 	// We shouldn't modify the external parameter list
 	Teuchos::ParameterList params = pList;
+
 	// Default mode, G or IQR?
     useFullIQR_ = params.get<bool>("Use full IQR", true);
 
@@ -81,7 +82,6 @@ IQRSolver::IQRSolver(const Teuchos::ParameterList& pList)
 
 IQRSolver::~IQRSolver()
 {
-	// TODO: Free gmresManager->P2 if using full IQR
 }
 
 void IQRSolver::Compute(const ShyLU_Probing_Operator& S,
