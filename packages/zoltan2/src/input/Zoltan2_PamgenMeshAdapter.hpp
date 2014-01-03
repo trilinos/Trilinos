@@ -214,10 +214,15 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region")
   EnumIds_ = 0;
   EidList_ = NULL;
 
-  int * node_num_map = ( int * ) malloc ( num_nodes * sizeof ( int ) );
-  im_ex_get_node_num_map( exoid, node_num_map);
-  VnumIds_ = num_nodes;
-  VidList_ = node_num_map;
+  if (num_nodes) {
+    int * node_num_map = ( int * ) malloc ( num_nodes * sizeof ( int ) );
+    im_ex_get_node_num_map( exoid, node_num_map);
+    VnumIds_ = num_nodes;
+    VidList_ = node_num_map;
+  } else {
+    VnumIds_ = 0;
+    VidList_ = NULL;
+  }
 }
 
   
