@@ -147,7 +147,7 @@ public:
       p->axpy(1.0,*v);
 
       itol = 0.0;
-      if ( useInexact_ ) {
+      if ( this->useInexact_ ) {
         itol = gtol/(this->maxit_ * gnorm); 
         //itol = std::min( 0.5, gtol*p->norm()/(2.0 * this->maxit_ * gnorm * gnorm) ); 
       }
@@ -183,7 +183,7 @@ public:
 
     // Get Hessian tolerance
     itol = 0.0;
-    if ( useInexact_ ) {
+    if ( this->useInexact_ ) {
       itol = gtol/(maxit_ * gnorm); 
     }
     // Apply Hessian to residual
@@ -226,7 +226,7 @@ public:
       }
 
       itol = 0.0;
-      if ( useInexact_ ) {
+      if ( this->useInexact_ ) {
         itol = gtol/(this->maxit_ * gnorm); 
       }
       obj.hessVec( *Hv, *v, x, itol );
@@ -241,7 +241,7 @@ public:
       Hp->axpy(1.0,*Hv); 
     }
     iter++;
-    if ( iter == maxit_ ) {
+    if ( iter == this->maxit_ ) {
       flag = 1;
     }    
   }
