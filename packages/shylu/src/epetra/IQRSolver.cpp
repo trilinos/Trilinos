@@ -51,7 +51,13 @@
 
 #include <cmath>
 
-#include <Ifpack.h>
+#include <Ifpack_config.h>
+
+#ifdef HAVE_IFPACK_DYNAMIC_FACTORY
+#include "Ifpack_DynamicFactory.h"
+#else
+#include "Ifpack.h"
+#endif
 
 namespace IQR {
 
@@ -90,7 +96,11 @@ int IQRSolver::Compute(const ShyLU_Probing_Operator& S,
 {
 	// The preconditioner is used regardless of the value ofuseFullIQR_
 	Epetra_CrsMatrix* G = S.G_;
-	Ifpack Factory;
+#ifdef HAVE_IFPACK_DYNAMIC_FACTORY
+    Ifpack_DynamicFactory Factory;
+#else
+    Ifpack Factory;
+#endif
 	prec_ = Teuchos::rcp(Factory.Create(precType_, G, 1));
 	Teuchos::ParameterList pList;
 	pList.set("amesos: solver type", precAmesosType_, "");
