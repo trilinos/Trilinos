@@ -16,7 +16,6 @@
 #include "Epetra_Time.h"
 #include "ml_ifpack.h"
 #include "ml_ifpack_wrap.h"
-#include "Ifpack_DynamicFactory.h"
 #include "Ifpack_Chebyshev.h"
 #ifdef rst_dump
 #include "ml_Ifpack_ML.h"
