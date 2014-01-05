@@ -56,7 +56,7 @@ void getValidParameters(Teuchos::ParameterList& params)
   // Some options not very tested or documented anywhere          //
   // are not reported here.                                       //
   // ============================================================ //
-  
+
   // Ifpack2_IlukGraph.hpp
   params.set("fact: iluk level-of-fill", (int)1);
   params.set("fact: iluk level-of-overlap", (int)0);
@@ -115,7 +115,7 @@ void getValidParameters(Teuchos::ParameterList& params)
 
   // Additive Schwarz preconditioner
   params.set("schwarz: compute condest", true);
-  params.set("schwarz: combine mode", "Zero"); // use string mode for this
+  params.set("schwarz: combine mode", "ZERO"); // use string mode for this
   params.set("schwarz: use reordering", true);
   params.set("schwarz: filter singletons", false);
   params.set("schwarz: overlap level", (int)0);

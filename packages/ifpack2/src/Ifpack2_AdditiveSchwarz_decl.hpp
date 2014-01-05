@@ -74,9 +74,9 @@ optional overlap.  It operates on a given Tpetra::RowMatrix.  Each
 subdomain corresponds to exactly one MPI process in the given matrix's
 MPI communicator.
 
-This class implements Tpetra::Operator, like all other subclasses of
-Preconditioner.  Thus, the apply() method applies the preconditioner
-to a multivector.
+This class is a subclass of Tpetra::Operator, like all other
+subclasses of Preconditioner.  Thus, the apply() method applies the
+preconditioner to a multivector.
 
 \section Ifpack2_AdditiveSchwarz_Alg Algorithm
 
@@ -388,23 +388,37 @@ public:
   /// nonconst pointer to a list, in order to match the
   /// Teuchos::ParameterListAcceptor interface.
   ///
+  /// Both this method and setParameterList() have "delta" behavior.
+  /// That is, if called twice with two different lists, any
+  /// unspecified parameters in the new list retain their values in
+  /// the old list.
+  ///
+  /// \param plist [in] List of parameters.
+  ///
   /// Accepted parameters include the following:
   ///   - "schwarz: compute condest" (\c bool): If true, estimate the
-  ///     condition number each time compute() is called.
+  ///     condition number each time compute() is called.  Default is
+  ///     false.
   ///   - "schwarz: combine mode" (\c std::string): The rule for
   ///     combining incoming data with existing data in overlap
   ///     regions.  Valid values include "ADD", "INSERT", "REPLACE",
   ///     "ABSMAX", and "ZERO".  These correspond to the valid values
-  ///     of Tpetra::CombineMode.
+  ///     of Tpetra::CombineMode.  The default combine mode is "ZERO",
+  ///     meaning that overlapping incoming entries from different
+  ///     processes are not combined.  (See the class documentation
+  ///     for an explanation and example of the "ZERO" vs. "ADD"
+  ///     combine modes.)
   ///   - "schwarz: overlap level" (\c int): The level of overlap.
+  ///     The default is zero, meaning no overlap.
   ///   - "schwarz: use reordering" (\c bool): Whether to use Zoltan2
   ///     to do reordering.  If true, then Trilinos must have been
-  ///     built with Zoltan2 and Xpetra enabled.
+  ///     built with Zoltan2 and Xpetra enabled.  Default is false.
   ///   - "schwarz: subdomain id" (\c int): This option does not
   ///     currently work.
   ///   - "schwarz: filter singletons" (\c bool): If true, exclude
   ///     rows with just a single entry on the calling process.
-  virtual void setParameters (const Teuchos::ParameterList& List);
+  ///     Default is false.
+  virtual void setParameters (const Teuchos::ParameterList& plist);
 
   /// \brief Set the preconditioner's parameters.
   ///
@@ -413,22 +427,19 @@ public:
   /// setParameters() takes a const list, as required by the
   /// Preconditioner interface.
   ///
-  /// Accepted parameters include the following:
-  ///   - "schwarz: compute condest" (\c bool): If true, estimate the
-  ///     condition number each time compute() is called.
-  ///   - "schwarz: combine mode" (\c std::string): The rule for
-  ///     combining incoming data with existing data in overlap
-  ///     regions.  Valid values include "ADD", "INSERT", "REPLACE",
-  ///     "ABSMAX", and "ZERO".  These correspond to the valid values
-  ///     of Tpetra::CombineMode.
-  ///   - "schwarz: overlap level" (\c int): The level of overlap.
-  ///   - "schwarz: use reordering" (\c bool): Whether to use Zoltan2
-  ///     to do reordering.  If true, then Trilinos must have been
-  ///     built with Zoltan2 and Xpetra enabled.
-  ///   - "schwarz: subdomain id" (\c int): This option does not
-  ///     currently work.
-  ///   - "schwarz: filter singletons" (\c bool): If true, exclude
-  ///     rows with just a single entry on the calling process.
+  /// Both this method and setParameterList() have "delta" behavior.
+  /// That is, if called twice with two different lists, any
+  /// unspecified parameters in the new list retain their values in
+  /// the old list.
+  ///
+  /// \param plist [in/out] On input: List of parameters, or
+  ///   Teuchos::null (meaning "do not change the current parameter
+  ///   values").  On output: If nonnull, any missing parameters are
+  ///   filled in with their current values (or their default values,
+  ///   if they have not yet been set).
+  ///
+  /// See the documentation of setParameters() for a list of the
+  /// parameters this method accepts, and their default values.
   void
   setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
