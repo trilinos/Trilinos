@@ -16,6 +16,11 @@ cmake \
 -D TPL_LAPACK_LIBRARIES:PATH="/home/rppawlo/install/gnu4.8.1/lapack/liblapack.a" \
 -D TPL_ENABLE_MPI:BOOL=ON \
 -D MPI_BASE_DIR:PATH="/home/rppawlo/install/gnu4.8.1/openmpi_clang" \
+      -D TPL_ENABLE_Boost:BOOL=ON \
+      -D Boost_INCLUDE_DIRS:FILEPATH="/home/rppawlo/install/gnu4.8.1/boost/include" \
+      -D TPL_ENABLE_BoostLib:BOOL=ON \
+      -D BoostLib_INCLUDE_DIRS:FILEPATH="/home/rppawlo/install/gnu4.8.1/boost/include" \
+      -D BoostLib_LIBRARY_DIRS:FILEPATH="/home/rppawlo/install/gnu4.8.1/boost/lib/" \
 -D MPI_EXEC_MAX_NUMPROCS:STRING=6 \
 -D COMPILER_VERSION="Clang-3.3" \
 -D CMAKE_CXX_COMPILER:FILEPATH="/home/rppawlo/install/gnu4.8.1/openmpi_clang/bin/mpiCC" \
