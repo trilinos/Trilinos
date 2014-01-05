@@ -39,7 +39,15 @@ namespace pike_test {
     TEST_EQUALITY(check.size(),tv.size());
 
     // Test additions to boost any
-    
+    intVal = a.as<int>();
+    TEST_EQUALITY(intVal,i);
+    Teuchos::ArrayView<const double> check2 = 
+      v[3].as<Teuchos::ArrayView<const double> >();
+    TEST_EQUALITY(check2.size(),tv.size());
+
+    Teuchos::ArrayView<const double>& check3 = 
+      v[3].as<Teuchos::ArrayView<const double>& >();
+    TEST_EQUALITY(check3.size(),tv.size());
   }
 
 }
