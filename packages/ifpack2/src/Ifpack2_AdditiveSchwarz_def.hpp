@@ -1300,10 +1300,11 @@ setInnerPreconditioner (const Teuchos::RCP<Preconditioner<scalar_type,
     "setMatrix() feature.  Only input preconditioners that inherit from "
     "Ifpack2::Details::CanChangeMatrix implement this feature.");
 
-  /*TEUCHOS_TEST_FOR_EXCEPTION(
-    innerMatrix_.is_null (), std::logic_error, "Ifpack2::AdditiveSchwarz::"
-    "setInnerPreconditioner: innerMatrix_ is null.  This should never happen.  "
-    "Please report this bug to the Ifpack2 developers.");*/
+  // mfh 03 Jan 2014: Thanks to Paul Tsuji for pointing out that it's
+  // perfectly legal for innerMatrix_ to be null here.  This can
+  // happen if initialize() has not been called yet.  For example,
+  // when Factory creates an AdditiveSchwarz instance, it calls
+  // setInnerPreconditioner() without first calling initialize().
 
   // Give the local matrix to the new inner solver.
   innerSolver->setMatrix (innerMatrix_);
@@ -1311,8 +1312,6 @@ setInnerPreconditioner (const Teuchos::RCP<Preconditioner<scalar_type,
   // Set the new inner solver.
   Inverse_ = innerPrec;
 }
-
-
 
 } // namespace Ifpack2
 
