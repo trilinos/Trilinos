@@ -87,6 +87,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=TRUE"
     "-DTPL_ENABLE_Matio=OFF"
     "-DIntrepid_ENABLE_DEBUG_INF_CHECK=OFF"
+    "-DSuperLU_INCLUDE_DIRS:PATH=/home/trilinos/tpl/gcc4.4.4/SuperLU_4.3/SRC"
+    "-DSuperLU_LIBRARY_DIRS:PATH=/home/trilinos/tpl/gcc4.4.4/SuperLU_4.3/lib"
+    "-DSuperLU_LIBRARY_NAMES:STRING=superlu_4.3"
     )
 
   IF (BUILD_TYPE STREQUAL "DEBUG")
