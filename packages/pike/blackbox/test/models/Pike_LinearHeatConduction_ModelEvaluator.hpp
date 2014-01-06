@@ -90,6 +90,7 @@ namespace pike_test {
     double T_right_;
     
     std::map<std::string,int> responseMap_;
+    std::vector<std::string> responseNames_;
     std::vector<Teuchos::RCP<pike::any> > responseValue_;
     
   };

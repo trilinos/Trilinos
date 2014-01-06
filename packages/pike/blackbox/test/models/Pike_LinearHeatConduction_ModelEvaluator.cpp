@@ -17,16 +17,19 @@ namespace pike_test {
       q_(1.0),
       T_left_(1.0),
       T_right_(1.0),
-      responseValue_(1) // only one response
+      responseNames_(1), // only one response
+      responseValue_(1)
   {
 
     if (mode_ == T_RIGHT_IS_RESPONSE) {
       responseMap_["T_right"] = 0;
+      responseNames_[0] = "T_right";
       responseValue_[0] = Teuchos::rcp(new pike::any);
       *responseValue_[0] = T_right_;
     }
     else if (mode_ == Q_IS_RESPONSE) {
       responseMap_["q"] = 0;
+      responseNames_[0] = "q";
       responseValue_[0] = Teuchos::rcp(new pike::any);
       *responseValue_[0] = q_;
     }
@@ -68,15 +71,14 @@ namespace pike_test {
   {
     TEUCHOS_TEST_FOR_EXCEPTION(responseMap_.find(name) == responseMap_.end(),
 			       std::logic_error,
-			       "Response name is not valid!");
+			       "Response name \"" << name << "\"is not valid!");
     return responseMap_.find(name)->second;
   }
   
   std::string LinearHeatConductionModelEvaluator::getResponseName(const int i) const
   {
-    TEUCHOS_ASSERT(i < responseValue_.size());
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Not implemented yet!");
-    return "";
+    TEUCHOS_ASSERT( (i>=0) && (i<responseNames_.size()) );
+    return responseNames_[i];
   }
 
   bool LinearHeatConductionModelEvaluator::supportsResponse(const std::string& name) const

@@ -6,7 +6,24 @@ namespace pike {
   SolverModelEvaluator::SolverModelEvaluator(const std::string& name) : name_(name) {}
 
   void SolverModelEvaluator::setSolver(const Teuchos::RCP<pike::Solver>& solver)
-  { solver_ = solver; }
+  {
+    solver_ = solver;
+
+    std::vector<Teuchos::RCP<const pike::BlackBoxModelEvaluator> > models = 
+      solver_->getModelEvaluators();
+
+    responseNames_.clear();
+    responseNameToIndex_.clear();
+    responseIndexToModelIndices_.clear();
+    typedef std::vector<Teuchos::RCP<const pike::BlackBoxModelEvaluator> >::const_iterator it;
+    for (int m = 0; m < models.size(); ++m) {
+      for (int r=0; r < models[m]->getNumberOfResponses(); ++r) {
+	responseNameToIndex_[models[m]->getResponseName(r)] = responseNames_.size();
+	responseNames_.push_back(models[m]->getResponseName(r));
+	responseIndexToModelIndices_.push_back(std::make_pair(m,r));
+      }
+    }
+  }
   
   Teuchos::RCP<const pike::Solver> SolverModelEvaluator::getSolver() const
   { return solver_; }
@@ -30,32 +47,30 @@ namespace pike {
 
   Teuchos::RCP<const pike::any> SolverModelEvaluator::getResponse(const int i) const
   {
-    TEUCHOS_ASSERT(true);
-    return Teuchos::null;
+    return solver_->getModelEvaluators()[responseIndexToModelIndices_[i].first]->getResponse(responseIndexToModelIndices_[i].second);
   }
 
   int SolverModelEvaluator::getResponseIndex(const std::string& name) const
   {
-    TEUCHOS_ASSERT(true);
-    return 0;
+    TEUCHOS_TEST_FOR_EXCEPTION(responseNameToIndex_.find(name) == responseNameToIndex_.end(),
+			       std::logic_error,
+			       "The response name \"" << name << "\" does not exist!");
+    return responseNameToIndex_.find(name)->second;
   }
 
   std::string SolverModelEvaluator::getResponseName(const int i) const
   {
-    TEUCHOS_ASSERT(true);
-    return "???";
+    return responseNames_[i];
   }
 
   bool SolverModelEvaluator::supportsResponse(const std::string& name) const
   {
-    TEUCHOS_ASSERT(true);
-    return false;
+    return (responseNameToIndex_.find(name) !=  responseNameToIndex_.end());
   }
   
   int SolverModelEvaluator::getNumberOfResponses() const
   {
-    TEUCHOS_ASSERT(true);
-    return 0;
+    return responseNames_.size();
   }
 
 }

@@ -18,9 +18,11 @@ namespace pike_test {
       mode_(mode),
       iterationTrigger_(iterationTrigger),
       responseFreezeIteration_(responseFreezeIteration),
-      responseValue_(1) // only one response
+      responseNames_(1), // only one response
+      responseValue_(1)
   {
     responseMap_["Mock Response"] = 0;
+    responseNames_[0] = "Mock Response";
     responseValue_[0] = Teuchos::rcp(new pike::any);
     *responseValue_[0] = 0.0;
   }
@@ -76,14 +78,14 @@ namespace pike_test {
   {
     TEUCHOS_TEST_FOR_EXCEPTION(responseMap_.find(name) == responseMap_.end(),
 			       std::logic_error,
-			       "Response name is not valid!");
+			       "Response name \"" << name << "\" is not valid!");
     return responseMap_.find(name)->second;
   }
   
   std::string MockModelEvaluator::getResponseName(const int i) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Not implemented yet!");
-    return "";
+    TEUCHOS_ASSERT( (i >=0) && (i<responseNames_.size()) );
+    return responseNames_[i];
   }
 
   bool MockModelEvaluator::supportsResponse(const std::string& name) const

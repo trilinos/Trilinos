@@ -3,7 +3,9 @@
 
 #include "Pike_BlackBoxModelEvaluator.hpp"
 #include "Teuchos_RCP.hpp"
+#include <utility>
 #include <string>
+#include <map>
 
 namespace pike {
 
@@ -37,7 +39,10 @@ namespace pike {
   private:
     std::string name_;
     Teuchos::RCP<pike::Solver> solver_;
-
+    std::map<std::string,int> responseNameToIndex_;
+    std::vector<std::string> responseNames_;
+    //! Stores the model index and the response index in that model for the response. 
+    std::vector<std::pair<int,int> > responseIndexToModelIndices_;
   };
 
 }

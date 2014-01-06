@@ -66,6 +66,7 @@ namespace pike_test {
     int responseFreezeIteration_;
     Teuchos::RCP<pike::Solver> solver_;
     std::map<std::string,int> responseMap_;
+    std::vector<std::string> responseNames_;
     std::vector<Teuchos::RCP<pike::any> > responseValue_; 
   };
 
