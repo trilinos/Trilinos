@@ -136,6 +136,8 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
     m_selector_to_count_map(),
     m_num_memoized_get_buckets_calls(0),
     m_num_non_memoized_get_buckets_calls(0),
+    m_num_buckets_inserted_in_cache(0),
+    m_num_buckets_removed_from_cache(0),
     m_num_modifications(0),
 #endif
     m_bucket_repository(
@@ -172,6 +174,13 @@ void BulkData::gather_and_print_get_buckets_metrics()
 
   for (int phase = 0; phase < 2; ++phase) {
     CommBuffer& proc_0_buff = comm_all.send_buffer(0); // everything to rank 0
+
+    proc_0_buff.pack<size_t>(m_num_buckets_inserted_in_cache);
+    proc_0_buff.pack<size_t>(m_num_buckets_removed_from_cache);
+
+    for (EntityRank r = 0; r < m_mesh_meta_data.entity_rank_count(); ++r) {
+      proc_0_buff.pack<size_t>(buckets(r).size());
+    }
 
     proc_0_buff.pack<size_t>(m_num_memoized_get_buckets_calls);
     proc_0_buff.pack<size_t>(m_num_non_memoized_get_buckets_calls);
@@ -213,12 +222,31 @@ void BulkData::gather_and_print_get_buckets_metrics()
     size_t global_num_non_memoized_get_buckets_calls_sum = 0;
     size_t global_num_cache_hits = 0;
     size_t global_num_bucket_trav_saved = 0;
+    size_t global_num_buckets_inserted_in_cache = 0;
+    size_t global_num_buckets_removed_from_cache = 0;
+
+    std::vector<size_t> bucket_count(m_mesh_meta_data.entity_rank_count(), 0u);
 
     const size_t MAX_TEXT_LEN = 32768;
     char sel_text[ MAX_TEXT_LEN ];
 
     for ( int p = 0 ; p < real_size ; ++p ) {
       CommBuffer & buf = comm_all.recv_buffer(p);
+
+      size_t num_buckets_inserted_in_cache = 0;
+      size_t num_buckets_removed_from_cache = 0;
+
+      buf.unpack<size_t>(num_buckets_inserted_in_cache);
+      buf.unpack<size_t>(num_buckets_removed_from_cache);
+
+      global_num_buckets_inserted_in_cache  += num_buckets_inserted_in_cache;
+      global_num_buckets_removed_from_cache += num_buckets_removed_from_cache;
+
+      for (EntityRank r = 0; r < m_mesh_meta_data.entity_rank_count(); ++r) {
+        size_t count = 0;
+        buf.unpack<size_t>(count);
+        bucket_count[r] += count;
+      }
 
       size_t num_memoized_get_buckets_calls = 0;
       size_t num_non_memoized_get_buckets_calls = 0;
@@ -260,10 +288,20 @@ void BulkData::gather_and_print_get_buckets_metrics()
       }
     }
 
+    size_t total_buckets = 0;
+    out << "  Bucket counts by rank:\n";
+    for (EntityRank r = 0; r < m_mesh_meta_data.entity_rank_count(); ++r) {
+      out << "    " << r << ": " << bucket_count[r] << "\n";
+      total_buckets += bucket_count[r];
+    }
+    out << "  Total buckets: " << total_buckets << "\n";
+    out << "  Num buckets incrementally inserted in cache: " << global_num_buckets_inserted_in_cache << "\n";
+    out << "  Num buckets incrementally removed from cache: " << global_num_buckets_removed_from_cache << "\n";
     out << "  Num memoized get_buckets calls: " << global_num_memoized_get_buckets_calls_sum << "\n";
     out << "  Num non-memoized get_buckets calls: " << global_num_non_memoized_get_buckets_calls_sum << "\n";
     out << "  Num cache hits: " << global_num_cache_hits << "\n";
     out << "  Num bucket traversals saved: " << global_num_bucket_trav_saved << "\n";
+    out << "  Total number of selectors used: " << global_usage_map.size() << "\n";
     out << "  Selector usage counts:\n";
     for (GlobalUsageMap::const_iterator itr = global_usage_map.begin(), end = global_usage_map.end(); itr != end; ++itr) {
       out << "  (" << itr->first.first << ", " << itr->first.second << ") -> (" << itr->second.first << ", " << itr->second.second << ")\n";
@@ -1015,6 +1053,9 @@ void BulkData::new_bucket_callback(EntityRank rank, const PartVector& superset_p
       Selector const& sel = itr->first.second;
       const EntityRank map_rank = itr->first.first;
       if (map_rank == rank && sel(*new_bucket)) {
+#ifdef GATHER_GET_BUCKETS_METRICS
+        ++m_num_buckets_inserted_in_cache;
+#endif
         TrackedBucketVector& cached_buckets = itr->second;
         TrackedBucketVector::iterator lb_itr = std::lower_bound(cached_buckets.begin(), cached_buckets.end(), new_bucket, BucketIdComparator());
         cached_buckets.insert(lb_itr, new_bucket);
@@ -1207,6 +1248,9 @@ void BulkData::destroy_bucket_callback(EntityRank rank, Bucket const& dying_buck
       Selector const& sel = itr->first.second;
       const EntityRank map_rank = itr->first.first;
       if (map_rank == rank && sel(dying_bucket)) {
+#ifdef GATHER_GET_BUCKETS_METRICS
+        ++m_num_buckets_removed_from_cache;
+#endif
         TrackedBucketVector & cached_buckets = itr->second;
         TrackedBucketVector::iterator lb_itr = std::lower_bound(cached_buckets.begin(), cached_buckets.end(), bucket_id, BucketIdComparator());
         ThrowAssertMsg(lb_itr != cached_buckets.end() && (*lb_itr)->bucket_id() == bucket_id,

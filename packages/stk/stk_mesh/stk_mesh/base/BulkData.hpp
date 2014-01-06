@@ -1309,6 +1309,8 @@ private:
   mutable SelectorCountMap m_selector_to_count_map;
   mutable size_t m_num_memoized_get_buckets_calls;
   mutable size_t m_num_non_memoized_get_buckets_calls;
+  size_t m_num_buckets_inserted_in_cache;
+  size_t m_num_buckets_removed_from_cache;
   size_t m_num_modifications;
 #endif
 
