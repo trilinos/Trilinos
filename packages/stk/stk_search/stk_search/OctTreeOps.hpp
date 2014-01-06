@@ -556,6 +556,74 @@ void communicate(
   }
 }
 
+template <class DomainBoundingBox, class RangeBoundingBox>
+void communicateVector(
+  stk::ParallelMachine arg_comm ,
+  const std::vector< std::pair< typename DomainBoundingBox::second_type,  typename RangeBoundingBox::second_type > > & send_relation ,
+        std::vector< std::pair< typename DomainBoundingBox::second_type,  typename RangeBoundingBox::second_type > > & recv_relation ,
+        bool communicateRangeBoxInfo = true )
+{
+  typedef typename DomainBoundingBox::second_type DomainKey;
+  typedef typename RangeBoundingBox::second_type RangeKey;
+  typedef std::pair<DomainKey, RangeKey> ValueType ;
+
+  CommAll comm_all( arg_comm );
+
+  const int p_rank = comm_all.parallel_rank();
+  const int p_size = comm_all.parallel_size();
+
+  typename std::vector< ValueType >::const_iterator i ;
+
+  for ( i = send_relation.begin() ; i != send_relation.end() ; ++i ) {
+    const ValueType & val = *i ;
+    if ( static_cast<int>(val.first.proc()) == p_rank || ( communicateRangeBoxInfo && static_cast<int>(val.second.proc()) == p_rank) )
+    {
+      recv_relation.push_back( val );
+    }
+    if ( static_cast<int>(val.first.proc()) != p_rank ) {
+      CommBuffer & buf = comm_all.send_buffer( val.first.proc() );
+      buf.skip<ValueType>( 1 );
+    }
+    if ( communicateRangeBoxInfo )
+    {
+        if ( static_cast<int>(val.second.proc()) != p_rank && val.second.proc() != val.first.proc() ) {
+          CommBuffer & buf = comm_all.send_buffer( val.second.proc() );
+          buf.skip<ValueType>( 1 );
+        }
+    }
+  }
+
+  // If more than 25% messages then is dense
+
+  comm_all.allocate_buffers( p_size / 4 , false );
+
+  for ( i = send_relation.begin() ; i != send_relation.end() ; ++i ) {
+    const ValueType & val = *i ;
+    if ( static_cast<int>(val.first.proc()) != p_rank ) {
+      CommBuffer & buf = comm_all.send_buffer( val.first.proc() );
+      buf.pack<ValueType>( val );
+    }
+    if ( communicateRangeBoxInfo )
+    {
+        if ( static_cast<int>(val.second.proc()) != p_rank && val.second.proc() != val.first.proc() ) {
+          CommBuffer & buf = comm_all.send_buffer( val.second.proc() );
+          buf.pack<ValueType>( val );
+        }
+    }
+  }
+
+  comm_all.communicate();
+
+  for ( int p = 0 ; p < p_size ; ++p ) {
+    CommBuffer & buf = comm_all.recv_buffer( p );
+    while ( buf.remaining() ) {
+      ValueType val ;
+      buf.unpack<ValueType>( val );
+      recv_relation.push_back( val );
+    }
+  }
+}
+
 //----------------------------------------------------------------------
 // Partition a search tree among processors
 

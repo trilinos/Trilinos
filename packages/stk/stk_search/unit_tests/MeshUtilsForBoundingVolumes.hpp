@@ -345,6 +345,37 @@ inline void fillBoundingVolumesUsingNodesFromFile(
     }
 }
 
+inline void fillBoundingVolumesUsingNodesFromFile(
+        MPI_Comm comm, const std::string& sphereFilename, GtkBoxVector &spheres)
+{
+    int procId=-1;
+    MPI_Comm_rank(comm, &procId);
+
+    sierra::ExodusMeshInterface sphereMesh(sphereFilename, comm);
+
+    std::vector<double> coordinates;
+    sphereMesh.fillCoordinates(coordinates);
+
+    const int spatialDim = 3;
+    const size_t numSpheres = coordinates.size()/spatialDim;
+
+    spheres.clear();
+    spheres.resize(numSpheres);
+    sierra::Mesh::AnalystNodeIdVector analystIds;
+    sphereMesh.fillAnalystNodeIds(analystIds);
+
+    for (size_t i=0;i<numSpheres;i++)
+    {
+        double x=coordinates[spatialDim*i];
+        double y=coordinates[spatialDim*i+1];
+        double z=coordinates[spatialDim*i+2];
+        double radius=1e-5;
+        double offset = 0.5*radius;
+        GtkBox box(x-offset, y-offset, z-offset, x+offset, y+offset, z+offset);
+        spheres[i] = std::make_pair(box, Ident(analystIds[i],procId));
+    }
+}
+
 inline void gtk_search(GtkBoxVector& local_domain, GtkBoxVector& local_range, MPI_Comm comm, SearchResults& searchResults)
 {
     int num_procs = -1;
@@ -403,8 +434,10 @@ inline void gtk_search(GtkBoxVector& local_domain, GtkBoxVector& local_range, MP
 
     geometry::BoxA_BoxB_Search(domainBoxes, rangeBoxes, interaction_list, first_interaction, last_interaction);
 
-    typedef std::set <std::pair<Ident,Ident> > localJunk;
+    typedef std::vector <std::pair<Ident,Ident> > localJunk;
+    typedef std::set <std::pair<Ident,Ident> > localJunkSet;
     localJunk localResults;
+    localResults.reserve(domainBoxes.size());
 
     // Ident box1, Ident box2
     for (size_t i=0;i<domainBoxes.size();i++)
@@ -414,17 +447,41 @@ inline void gtk_search(GtkBoxVector& local_domain, GtkBoxVector& local_range, MP
         {
             //            Ident box2_ident = local_range[j].second;
             Ident box2_ident = local_range[interaction_list[j]].second;
-            localResults.insert(std::make_pair(box1_ident, box2_ident));
+            localResults.push_back(std::make_pair(box1_ident, box2_ident));
         }
     }
 
+//    std::cerr << "LocalResults.size = " << localResults.size() << std::endl;
+//    localJunkSet ljset;
+//    std::copy(localResults.begin(), localResults.end(), inserter(ljset, ljset.end()));
+
     localJunk tmp;
-    stk::search::communicate< std::pair<Ident,Ident>, std::pair<Ident,Ident> >(comm, localResults, tmp);
-    std::copy(tmp.begin(), tmp.end(), std::back_inserter(searchResults));
-//    std::sort(searchResults.begin(), searchResults.end());
+    tmp.reserve(localResults.size());
+    stk::search::communicateVector< std::pair<Ident,Ident>, std::pair<Ident,Ident> >(comm, localResults, tmp);
+
+    searchResults=tmp;
+//    std::copy(tmp.begin(), tmp.end(), std::back_inserter(searchResults));
+    std::sort(searchResults.begin(), searchResults.end());
 }
 
 enum NewSearchMethod { BOOST_RTREE, OCTREE, GTK };
+inline stk::search::SearchMethod mapSearchMethodToStk( NewSearchMethod method )
+{
+    if ( method == BOOST_RTREE )
+    {
+        return stk::search::BOOST_RTREE;
+    }
+    else if ( method == OCTREE )
+    {
+        return stk::search::OCTREE;
+    }
+    else
+    {
+        ThrowRequireMsg(false, "GTK method not implemented for this.");
+    }
+    return stk::search::BOOST_RTREE;
+}
+
 
 inline void coarse_search_new(GtkBoxVector& local_domain, GtkBoxVector& local_range, NewSearchMethod algorithm, MPI_Comm comm, SearchResults& searchResults)
 {

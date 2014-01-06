@@ -182,6 +182,74 @@ STKUNIT_UNIT_TEST(stk_search, coarse_search_gtk_using_gtk_aa_boxes)
     testCoarseSearchForAlgorithmUsingGtkAABoxes(GTK, MPI_COMM_WORLD);
 }
 
+void testIdentProcWithSearch(stk::search::SearchMethod searchMethod)
+{
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int procId=-1;
+    MPI_Comm_rank(comm, &procId);
+    int numProcs = -1;
+    MPI_Comm_size(comm, &numProcs);
+
+    if ( numProcs != 1 )
+    {
+        GtkBox box1(0,0,0,1,1,1);
+        GtkBox box2(0.5, 0.5, 0.5, 1.5, 1.5, 1.5);
+        Ident id1(1, -1);
+        Ident id2(1, -1);
+
+        GtkBoxVector boxes;
+        if ( procId == 0 )
+        {
+          boxes.push_back(std::make_pair(box1, id1));
+        }
+        else if ( procId == 1 )
+        {
+          boxes.push_back(std::make_pair(box2, id2));
+        }
+
+        SearchResults searchResults;
+
+        coarse_search(boxes, boxes, searchMethod, comm, searchResults);
+
+        SearchResults goldResults;
+
+        Ident goldId1(1, 0);
+        Ident goldId2(1, 1);
+
+        if (procId == 0 )
+        {
+            goldResults.push_back(std::make_pair(goldId1, goldId1));
+            goldResults.push_back(std::make_pair(goldId1, goldId2));
+            goldResults.push_back(std::make_pair(goldId2, goldId1));
+            ASSERT_EQ(goldResults.size(), searchResults.size());
+        }
+        else if ( procId == 1 )
+        {
+            goldResults.push_back(std::make_pair(goldId1, goldId2));
+            goldResults.push_back(std::make_pair(goldId2, goldId1));
+            goldResults.push_back(std::make_pair(goldId2, goldId2));
+            ASSERT_EQ(3u, searchResults.size());
+        }
+
+        for (size_t i=0;i<goldResults.size();i++)
+        {
+            EXPECT_EQ(goldResults[i], searchResults[i]) << "Test comparison for proc " << procId << " failed for comparsion #" << i << std::endl;
+        }
+    }
+}
+
+//STKUNIT_UNIT_TEST(stk_search, coarse_search_boost_ident_proc_switch)
+//{
+//    stk::search::SearchMethod sm = stk::search::BOOST_RTREE;
+//    testIdentProcWithSearch(sm);
+//}
+
+STKUNIT_UNIT_TEST(stk_search, coarse_search_octree_ident_proc_switch)
+{
+    stk::search::SearchMethod sm = stk::search::OCTREE;
+    testIdentProcWithSearch(sm);
+}
+
 STKUNIT_UNIT_TEST(stk_search, coarse_search_one_point)
 {
   typedef stk::search::IdentProc<uint64_t, unsigned> Ident;
