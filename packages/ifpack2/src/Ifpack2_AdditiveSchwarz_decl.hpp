@@ -61,18 +61,21 @@ namespace Ifpack2 {
 
 /** \class AdditiveSchwarz
 \brief Additive Schwarz domain decomposition for Tpetra sparse matrices
-\tparam MatrixType A specialization of Tpetra::RowMatrix
+\tparam MatrixType A specialization of Tpetra::CrsMatrix
 \tparam LocalInverseType The type of the solver for the local
   (subdomain) problem.  This must be a specialization of a concrete
-  subclass of Ifpack2::Preconditioner.  (This template parameter will
-  be DEPRECATED soon; refer to discussion below.)
+  subclass of Ifpack2::Preconditioner.  Using a type here other than
+  Ifpack2::Preconditioner is DEPRECATED, because the subdomain
+  solver's type is determined entirely at run time.  Please refer to
+  discussion below for more details.
 
 \section Ifpack2_AdditiveSchwarz_Summary Summary
 
 This class implements Additive Schwarz domain decomposition, with
 optional overlap.  It operates on a given Tpetra::RowMatrix.  Each
 subdomain corresponds to exactly one MPI process in the given matrix's
-MPI communicator.
+MPI communicator.  For nonoverlapping domain decomposition
+<i>within</i> an MPI process, please use BlockRelaxation.
 
 This class is a subclass of Tpetra::Operator, like all other
 subclasses of Preconditioner.  Thus, the apply() method applies the
@@ -232,21 +235,27 @@ Even though both of the above examples combine the local results in
 the same way, Zero produces a different final result than Add, because
 the Zero example uses overlap 1, whereas the Add example uses overlap 0.
 
-\section Ifpack2_AdditiveSchwarz_DevNotes Notes to Ifpack2 developers
+\section Ifpack2_AdditiveSchwarz_subdomain Subdomain solver
 
-The second template parameter (\c LocalInverseType) is being
-DEPRECATED.  It causes a lot of trouble for explicit template
-instantiation, and we can perfectly well support an arbitrary
-subdomain solver type by run-time polymorphism.  For example, a
-subclass of Preconditioner could expose a scalar_type (of the input
-and output vectors of apply()) different than its internal storage
-type, via a mechanism like that of Tpetra::ApplyOp.  The only issue is
-that the preconditioner would need to be creatable by Factory, but we
-could get around that by adding a method to AdditiveSchwarz that lets
-the user supply an arbitrary Preconditioner subclass instance for the
-subdomain solver.
+This class gives you two ways to specify the subdomain solver.  First,
+you may set the "subdomain solver name" or "inner preconditioner name"
+parameters in the input to setParameters() or setParameterList().
+Second, you may construct the subdomain solver yourself, as an
+Ifpack2::Preconditioner instance, and give it to setInnerPreconditioner().
+
+A third, deprecated method is to specify the concrete type of the
+subdomain solver at compile time, as the second template parameter
+\c LocalInverseType.  This method has been DEPRECATED, because it
+causes a lot of trouble for explicit template instantiation.  Users
+may perfectly well pick the type of the subdomain solver at run time,
+using either of the above two methods.  This has no performance cost.
 */
-template<class MatrixType, class LocalInverseType>
+template<class MatrixType,
+         class LocalInverseType =
+         Preconditioner<typename MatrixType::scalar_type,
+                        typename MatrixType::local_ordinal_type,
+                        typename MatrixType::global_ordinal_type,
+                        typename MatrixType::node_type> >
 class AdditiveSchwarz :
     virtual public Preconditioner<typename MatrixType::scalar_type,
                                   typename MatrixType::local_ordinal_type,

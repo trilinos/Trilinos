@@ -87,13 +87,7 @@ Factory::create (const std::string& precType,
   (void) one_mpi_rank;
 
   if (precTypeUpper == "SCHWARZ") {
-    typedef ILUT<MatrixType> inner_solver_type;
-    typedef Details::NestedPreconditioner<prec_base_type> outer_solver_type;
-
-    prec = rcp (new AdditiveSchwarz<MatrixType, inner_solver_type> (matrix, overlap));
-    // Create the inner solver, and pass it down into the "outer" solver.
-    RCP<prec_base_type> innerPrec = rcp (new inner_solver_type (Teuchos::null));
-    dynamic_cast<outer_solver_type*> (&*prec)->setInnerPreconditioner (innerPrec);
+    prec = rcp (new AdditiveSchwarz<MatrixType> (matrix, overlap));
   }
   else if (precTypeUpper == "KRYLOV") {
     prec = rcp (new Krylov<MatrixType, prec_base_type> (matrix));
@@ -152,13 +146,7 @@ Factory::create (const std::string& precType,
   (void) one_mpi_rank;
 
   if (precTypeUpper == "SCHWARZ") {
-    typedef ILUT<MatrixType> inner_solver_type;
-    typedef Details::NestedPreconditioner<prec_base_type> outer_solver_type;
-
-    prec = rcp (new AdditiveSchwarz<MatrixType, inner_solver_type> (matrix));
-    // Create the inner solver, and pass it down into the "outer" solver.
-    RCP<prec_base_type> innerPrec = rcp (new inner_solver_type (Teuchos::null));
-    dynamic_cast<outer_solver_type*> (&*prec)->setInnerPreconditioner (innerPrec);
+    prec = rcp (new AdditiveSchwarz<MatrixType> (matrix));
   }
   else if (precTypeUpper == "KRYLOV") {
     prec = rcp (new Krylov<MatrixType, prec_base_type> (matrix));

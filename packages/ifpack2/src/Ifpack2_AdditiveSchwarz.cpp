@@ -42,7 +42,6 @@
 
 #include "Ifpack2_AdditiveSchwarz_decl.hpp"
 #include "Ifpack2_ILUT_decl.hpp"
-#include "Ifpack2_IdentitySolver_decl.hpp"
 #include "Ifpack2_Details_DenseSolver_decl.hpp"
 
 #if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
@@ -53,43 +52,51 @@
 
 #include "Ifpack2_AdditiveSchwarz_def.hpp"
 #include "Ifpack2_ILUT_def.hpp"
-#include "Ifpack2_IdentitySolver_def.hpp"
 #include "Ifpack2_Details_DenseSolver_def.hpp"
 
-#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
-#  include "Ifpack2_SupportGraph_def.hpp"
-#endif
+// #if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
+// #  include "Ifpack2_SupportGraph_def.hpp"
+// #endif
 #include "Ifpack2_ETIHelperMacros.h"
 #include "KokkosClassic_config.h"
 
-// Note: Add similar explicit instantiation for ILU when this gets implemented
+// mfh 06 Jan 2014: AdditiveSchwarz's second template parameter, the
+// type of the subdomain solver, is being deprecated.  It's possible
+// already now to control the subdomain solver's type entirely at run
+// time, either by specifying it in the input ParameterList, or by
+// calling setInnerPreconditioner() with the subdomain solver to use
+// (that implements Preconditioner).  Thus, we only need to do
+// explicit instantiation for the version of AdditiveSchwarz with one
+// template parameter.  For backwards compatibility, we retain
+// explicit instantiation for the version with two template
+// parameters, only for the commonly used case of ILUT as the
+// subdomain solver's type.
+
+#define IFPACK2_INST_ADDITIVE_SCHWARZ(S,LO,GO) \
+  template class AdditiveSchwarz<Tpetra::CrsMatrix< S, LO, GO > >;
 
 #define IFPACK2_INST_ADDITIVE_SCHWARZ_ILUT(S,LO,GO) \
   template class AdditiveSchwarz<Tpetra::CrsMatrix< S, LO, GO >, \
                                  Ifpack2::ILUT<Tpetra::CrsMatrix< S, LO, GO > > >;
-#define IFPACK2_INST_ADDITIVE_SCHWARZ_IDENTITYSOLVER(S,LO,GO) \
-  template class AdditiveSchwarz<Tpetra::CrsMatrix< S, LO, GO >, \
-                                 Ifpack2::IdentitySolver<Tpetra::CrsMatrix< S, LO, GO > > >;
-#define IFPACK2_INST_ADDITIVE_SCHWARZ_DENSESOLVER(S,LO,GO) \
-  template class AdditiveSchwarz<Tpetra::CrsMatrix< S, LO, GO >, \
-                                 Ifpack2::Details::DenseSolver<Tpetra::CrsMatrix< S, LO, GO > > >;
 
 namespace Ifpack2 {
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 
+  IFPACK2_INSTANTIATE_SLG( IFPACK2_INST_ADDITIVE_SCHWARZ )
+
   IFPACK2_INSTANTIATE_SLG( IFPACK2_INST_ADDITIVE_SCHWARZ_ILUT )
 
-  IFPACK2_INSTANTIATE_SLG( IFPACK2_INST_ADDITIVE_SCHWARZ_IDENTITYSOLVER )
-
-  IFPACK2_INSTANTIATE_SLG( IFPACK2_INST_ADDITIVE_SCHWARZ_DENSESOLVER )
-
 #if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
-  template class AdditiveSchwarz<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode>, Ifpack2::ILUT<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> > >;
+  template class AdditiveSchwarz<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> >;
+  template class AdditiveSchwarz<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode>,
+                                 Ifpack2::ILUT<Tpetra::CrsMatrix<double, int, int, KokkosClassic::ThrustGPUNode> > >;
 #endif
 
 #if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
-  template class AdditiveSchwarz<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode>, Ifpack2::ILUT<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> > >;
+  template class AdditiveSchwarz<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> >;
+  template class AdditiveSchwarz<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode>,
+                                 Ifpack2::ILUT<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode> > >;
 #endif
 
 }

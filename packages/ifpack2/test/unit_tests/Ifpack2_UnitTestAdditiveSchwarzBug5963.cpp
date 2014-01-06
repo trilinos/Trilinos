@@ -77,37 +77,9 @@
 
 #include <Ifpack2_UnitTestHelpers.hpp>
 #include <Ifpack2_AdditiveSchwarz.hpp>
-#include <Ifpack2_Details_DenseSolver.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_RowMatrix.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
-
-
-// namespace Ifpack2 {
-//   namespace Details {
-//     template <>
-//     class DenseSolver<
-//       Tpetra::RowMatrix<double,
-//                         int,
-//                         int,
-//                         Tpetra::DefaultPlatform::DefaultPlatformType::NodeType>,
-//       false>;
-//   } // namespace Details
-
-//   template <>
-//   class AdditiveSchwarz<
-//     Tpetra::RowMatrix<double,
-//                       int,
-//                       int,
-//                       Tpetra::DefaultPlatform::DefaultPlatformType::NodeType>,
-//     Ifpack2::Details::DenseSolver<
-//       Tpetra::RowMatrix<double,
-//                         int,
-//                         int,
-//                         Tpetra::DefaultPlatform::DefaultPlatformType::NodeType>,
-//       false>
-//     >;
-// } // namespace Ifpack2
 
 
 namespace {
@@ -150,8 +122,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(AdditiveSchwarz, AddCombineMode, ScalarType, L
   typedef Tpetra::Map<local_ordinal_type,
                       global_ordinal_type,
                       node_type> map_type;
-  typedef Ifpack2::Details::DenseSolver<crs_matrix_type> local_solver_type;
-  typedef Ifpack2::AdditiveSchwarz<crs_matrix_type, local_solver_type> global_solver_type;
+  typedef Ifpack2::AdditiveSchwarz<crs_matrix_type> global_solver_type;
 
   RCP<const Teuchos::Comm<int> > comm =
     Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
@@ -241,6 +212,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(AdditiveSchwarz, AddCombineMode, ScalarType, L
     Teuchos::ParameterList pl;
     pl.set ("schwarz: combine mode", "ADD");
     pl.set ("schwarz: overlap level", 0);
+    pl.set ("inner preconditioner name", "DENSE");
     solver.setParameters (pl);
   }
   out << "Calling initialize" << endl;
@@ -317,8 +289,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(AdditiveSchwarz, ZeroCombineMode, ScalarType, 
   typedef Tpetra::Map<local_ordinal_type,
                       global_ordinal_type,
                       node_type> map_type;
-  typedef Ifpack2::Details::DenseSolver<crs_matrix_type> local_solver_type;
-  typedef Ifpack2::AdditiveSchwarz<crs_matrix_type, local_solver_type> global_solver_type;
+  typedef Ifpack2::AdditiveSchwarz<crs_matrix_type> global_solver_type;
 
   RCP<const Teuchos::Comm<int> > comm =
     Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
@@ -408,6 +379,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(AdditiveSchwarz, ZeroCombineMode, ScalarType, 
     Teuchos::ParameterList pl;
     pl.set ("schwarz: combine mode", "ADD");
     pl.set ("schwarz: overlap level", 0);
+    pl.set ("inner preconditioner name", "DENSE");
     solver.setParameters (pl);
   }
   out << "Calling initialize" << endl;
@@ -451,6 +423,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(AdditiveSchwarz, ZeroCombineMode, ScalarType, 
     Teuchos::ParameterList pl;
     pl.set ("schwarz: combine mode", "ZERO");
     pl.set ("schwarz: overlap level", 1);
+    pl.set ("inner preconditioner name", "DENSE");
     solver.setParameters (pl);
   }
   out << "Calling initialize" << endl;
@@ -492,8 +465,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(AdditiveSchwarz, ZeroCombineMode, ScalarType, 
 
 
 // Define the set of unit tests to instantiate in this file.
-// AdditiveSchwarz with a DenseSolver subdomain solver is not
-// explicitly instantiated by default, so do that here.
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AdditiveSchwarz, ZeroCombineMode, Scalar, LocalOrdinal, GlobalOrdinal)
 
