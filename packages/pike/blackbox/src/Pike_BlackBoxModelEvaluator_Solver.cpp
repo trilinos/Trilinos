@@ -1,6 +1,5 @@
 #include "Pike_BlackBoxModelEvaluator_Solver.hpp"
 #include "Pike_Solver.hpp"
-#include "Pike_Response.hpp"
 
 namespace pike {
 
