@@ -202,11 +202,56 @@ template<class MatrixType, class LocalInverseType>
 std::string
 AdditiveSchwarz<MatrixType, LocalInverseType>::innerPrecName () const
 {
-  // TODO (mfh 14 Dec 2013) Add an "inner preconditioner" string
-  // parameter to the input ParameterList, rather than using a default
-  // name.  (The default name currently comes from the
-  // LocalInverseType template parameter, which will go away.)
-  return defaultInnerPrecName ();
+  const char* options[4] = {
+    "inner preconditioner name",
+    "subdomain solver name",
+    "schwarz: inner preconditioner name",
+    "schwarz: subdomain solver name"
+  };
+  const int numOptions = 4;
+  std::string newName;
+  bool match = false;
+
+  // As soon as one parameter option matches, ignore all others.
+  for (int k = 0; k < numOptions && ! match; ++k) {
+    if (List_.isParameter (options[k])) {
+      // try-catch block protects against incorrect type errors.
+      //
+      // FIXME (mfh 04 Jan 2013) We should instead catch and report
+      // type errors.
+      try {
+        newName = List_.get<std::string> (options[k]);
+        match = true;
+      } catch (...) {}
+    }
+  }
+  return match ? newName : defaultInnerPrecName ();
+}
+
+
+template<class MatrixType, class LocalInverseType>
+std::pair<Teuchos::ParameterList, bool>
+AdditiveSchwarz<MatrixType, LocalInverseType>::innerPrecParams () const
+{
+  const char* options[4] = {
+    "inner preconditioner parameters",
+    "subdomain solver parameters",
+    "schwarz: inner preconditioner parameters",
+    "schwarz: subdomain solver parameters"
+  };
+  const int numOptions = 4;
+  Teuchos::ParameterList params;
+
+  // As soon as one parameter option matches, ignore all others.
+  bool match = false;
+  for (int k = 0; k < numOptions && ! match; ++k) {
+    if (List_.isSublist (options[k])) {
+      params = List_.sublist (options[k]);
+      match = true;
+    }
+  }
+  // Default is an empty list of parameters.
+  return std::make_pair (params, match);
 }
 
 
@@ -712,7 +757,8 @@ setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
   // gets extracted in setup().
 
   // Subdomain check
-  if (plist->isParameter ("schwarz: subdomain id") && plist->get ("schwarz: subdomain id", -1) > 0) {
+  if (plist->isParameter ("schwarz: subdomain id") &&
+      plist->get ("schwarz: subdomain id", -1) > 0) {
     UseSubdomain_ = true;
   }
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -726,8 +772,25 @@ setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
   // singletons should help for PDE problems with Dirichlet BCs.
   FilterSingletons_ = plist->get ("schwarz: filter singletons", FilterSingletons_);
 
-  // FIXME (mfh 18 Nov 2013) If the inner solver exists, now might be
-  // a good time to validate its parameters.
+  // If the inner solver exists, set its parameters using the sublist.
+  // Don't actually _create_ the inner solver here; initialize() does that.
+  //
+  // FIXME (mfh 05 Jan 2014) What if the "inner preconditioner name"
+  // parameter has changed???  In that case, initialize() needs to
+  // create a new preconditioner -- but it doesn't know what the
+  // previous inner preconditioner name was.  Thus, we should store
+  // the previous inner preconditioner's name to keep track of this.
+  // On the other hand, the user might have called
+  // setInnerPreconditioner(), so the "inner preconditioner name"
+  // parameter might not be valid.
+  if (! Inverse_.is_null ()) {
+    // Extract and apply the sublist of parameters to give to the
+    // inner solver, if there is such a sublist of parameters.
+    std::pair<Teuchos::ParameterList, bool> result = innerPrecParams ();
+    if (result.second) {
+      Inverse_->setParameters (result.first);
+    }
+  }
 }
 
 
@@ -811,13 +874,6 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
       "Please report this bug to the Ifpack2 developers.");
 
     // Initialize subdomain solver.
-    //
-    // FIXME (mfh 28 Sep 2013) The "inverse" should have its own sublist
-    // in the input ParameterList.  We shouldn't pass AdditiveSchwarz's
-    // parameters directly to the "inverse."
-    //
-    // FIXME (mfh 28 Sep 2013) Why don't we call these methods in setup()?
-    Inverse_->setParameters (List_);
     Inverse_->initialize ();
   } // Stop timing here.
 
@@ -1248,7 +1304,13 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
       "Ifpack2::AdditiveSchwarz::setup: Failed to create inner preconditioner "
       "with name \"" << innerName << "\".");
 
-    Inverse_ = innerPrec;
+    // Extract and apply the sublist of parameters to give to the
+    // inner solver, if there is such a sublist of parameters.
+    std::pair<Teuchos::ParameterList, bool> result = innerPrecParams ();
+    if (result.second) {
+      innerPrec->setParameters (result.first);
+    }
+    Inverse_ = innerPrec; // "Commit" the inner solver.
   }
   else if (Inverse_->getMatrix ().getRawPtr () != innerMatrix_.getRawPtr ()) {
     // The new inner matrix is different from the inner
@@ -1299,6 +1361,17 @@ setInnerPreconditioner (const Teuchos::RCP<Preconditioner<scalar_type,
     "setInnerPreconditioner: The input preconditioner does not implement the "
     "setMatrix() feature.  Only input preconditioners that inherit from "
     "Ifpack2::Details::CanChangeMatrix implement this feature.");
+
+  // mfh 05 Jan 2014: Please do not enable the commented-out code
+  // below, that sets the new inner solver's parameters.  See the
+  // public documentation of setParameters() for an explanation.
+
+  // // Extract and apply the sublist of parameters to give to the
+  // // inner solver, if there is such a sublist of parameters.
+  // std::pair<Teuchos::ParameterList, bool> result = innerPrecParams ();
+  // if (result.second) {
+  //   innerPrec->setParameters (result.first);
+  // }
 
   // mfh 03 Jan 2014: Thanks to Paul Tsuji for pointing out that it's
   // perfectly legal for innerMatrix_ to be null here.  This can

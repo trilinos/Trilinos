@@ -122,8 +122,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test0, Scalar, LocalOr
   out << "Filling in ParameterList for AdditiveSchwarz" << endl;
 
   zlist.set ("order_method", "rcm");
-  params.set ("fact: ilut level-of-fill", 1.0);
-  params.set ("fact: drop tolerance", 0.0);
+  params.set ("inner preconditioner name", std::string ("ILUT"));
+  {
+    Teuchos::ParameterList innerParams;
+    innerParams.set ("fact: ilut level-of-fill", 1.0);
+    innerParams.set ("fact: drop tolerance", 0.0);
+    params.set ("inner preconditioner parameters", innerParams);
+  }
   params.set ("schwarz: overlap level", static_cast<int> (0));
   params.set ("schwarz: combine mode", "Zero");
 
@@ -200,8 +205,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test1, Scalar, LocalOr
   const int overlapLevel=3;
   params.set ("schwarz: overlap level", overlapLevel);
   params.set ("schwarz: combine mode", "Add");
-  params.set ("fact: ilut level-of-fill", 1.0);
-  params.set ("fact: drop tolerance", 0.0);
+  params.set ("inner preconditioner name", std::string ("ILUT"));
+  {
+    Teuchos::ParameterList innerParams;
+    innerParams.set ("fact: ilut level-of-fill", 1.0);
+    innerParams.set ("fact: drop tolerance", 0.0);
+    params.set ("inner preconditioner parameters", innerParams);
+  }
 #if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
   params.set ("schwarz: use reordering", true);
   params.set ("schwarz: reordering list", zlist);
@@ -286,8 +296,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test2, Scalar, LocalOr
 
   const int overlapLevel=0;
   params.set ("schwarz: overlap level", overlapLevel);
-  params.set("fact: ilut level-of-fill", 6.0);
-  params.set("fact: drop tolerance", 0.0);
+  params.set ("inner preconditioner name", std::string ("ILUT"));
+  {
+    Teuchos::ParameterList innerParams;
+    innerParams.set ("fact: ilut level-of-fill", 6.0);
+    innerParams.set ("fact: drop tolerance", 0.0);
+    params.set ("inner preconditioner parameters", innerParams);
+  }
   params.set("schwarz: use reordering",false);
   TEST_NOTHROW(prec.setParameters(params));
 
@@ -360,6 +375,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, TestGIDs, Scalar, Loca
       zlist.set ("order_method", "rcm");
       params.set ("schwarz: reordering list", zlist);
       params.set("schwarz: combine mode", "Zero");
+      params.set ("inner preconditioner name", std::string ("IDENTITY"));
 
       prec.setParameters(params);
 

@@ -463,6 +463,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(AdditiveSchwarz, ZeroCombineMode, ScalarType, 
   vec_type x_zero (ranMap);
   solver.apply (b, x_zero);
 
+  out << "Checking solution" << endl;
 
   // Solution should be [5 9 19 35/2] to within a very small tolerance.
   vec_type x_zero_expected (ranMap);
