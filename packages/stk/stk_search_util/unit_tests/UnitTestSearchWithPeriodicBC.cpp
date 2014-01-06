@@ -23,15 +23,6 @@ void expect_eq_for_shared_or_owned_node(const stk::mesh::BulkData & bulk_data, s
   }
 }
 
-void set_field_for_node(const stk::mesh::BulkData & bulk_data, stk::mesh::Entity node, const stk::mesh::Field<double> & theField, double value )
-{
-  if (bulk_data.is_valid(node) && (bulk_data.bucket(node).owned() || bulk_data.bucket(node).shared() ) )
-  {
-    double * const vol = bulk_data.field_data(theField, node);
-    *vol = value;
-  }
-}
-
 void do_periodic_assembly(stk::mesh::BulkData & bulk_data, PeriodicSearch & pbc_search, stk::mesh::Field<double> & volField)
 {
   //gather to domain node from possibly multiple ranges
@@ -230,20 +221,6 @@ void check_gold_three_way_multiperiodic( const SearchPairVector & search_results
   }
 }
 
-void print_periodic_node_pairs(stk::mesh::BulkData & bulk_data,
-    PeriodicSearch & pbc_search,
-    CoordFieldType & coords_field)
-{
-  std::cout << "Periodic nodes identified:" << std::endl;
-  for (size_t i = 0; i < pbc_search.size(); ++i)
-  {
-    std::pair<stk::mesh::Entity, stk::mesh::Entity> aPair = pbc_search.get_node_pair(i);
-    stk::mesh::EntityId domainId = bulk_data.identifier(aPair.first);
-    stk::mesh::EntityId rangeId = bulk_data.identifier(aPair.second);
-    std::cout << "My Proc: " << std::setw(6) << bulk_data.parallel_rank() << std::setw(12) << domainId << ":";
-    std::cout << std::setw(12) << rangeId << std::endl;
-  }
-}
 void check_single_periodic_assembly(const stk::mesh::BulkData & bulk_data,
     const stk::mesh::fixtures::HexFixture & fixture,
     const stk::mesh::Field<double> & volField,
