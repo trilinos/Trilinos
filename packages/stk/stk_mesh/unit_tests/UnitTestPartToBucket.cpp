@@ -10,6 +10,7 @@
 
 namespace
 {
+void runTwoHexParallelBucketTests(const std::string &generatedMeshSpecification, const size_t numBucketsPerSlice);
 
 int numProcessors(MPI_Comm comm)
 {
@@ -207,9 +208,95 @@ TEST(PartToBucket, hexWithTwoSidesets)
                             \ |            \ |
                              \|             \|
                             A 1--------------2 A
-*/
 
+2D Z-plane Slices:
+
+       C 11------------12 C
+         |              |
+         |              |
+         |              |
+         |              |
+         |              |
+         |              |
+       C 9-------------10 C
+
+                B 7--------------8 B
+                  |              |
+                  |              |
+                  |              |
+                  |              |
+                  |              |
+                  |              |
+                B 5--------------6 B
+
+                         A 3--------------4 A
+                           |              |
+                           |              |
+                           |              |
+                           |              |
+                           |              |
+                           |              |
+                         A 1--------------2 A
+
+
+*/
 TEST(PartToBucket, np2TwoHex)
+{
+    const std::string generatedMeshSpecification = "generated:1x1x2";
+    size_t numBucketsPerSlice = 1;
+    runTwoHexParallelBucketTests(generatedMeshSpecification, numBucketsPerSlice);
+}
+
+/*
+ A different way of thinking about the following test, consider looking down the Z-axis at 'slices':
+
+        d--------c       - nodes c & d are part of Y-sideset
+        |        |       - nodes c & b are part of X-sideset
+        |        |       - node a is not part of either sideset
+        |        |
+        a--------b       so each node resides in it's own bucket per 'slice', there are 3 of these 2D slices in this problem
+          slice
+
+2D Z-plane Slices (numbers indicate nodes, letters denote buckets):
+
+       K 11------------12 L
+         |              |
+         |              |
+         |              |
+         |              |
+         |              |
+         |              |
+       I 9-------------10 J
+
+                G 7--------------8 H
+                  |              |
+                  |              |
+                  |              |
+                  |              |
+                  |              |
+                  |              |
+                E 5--------------6 F
+
+                         C 3--------------4 D
+                           |              |
+                           |              |
+                           |              |
+                           |              |
+                           |              |
+                           |              |
+                         A 1--------------2 B
+
+  12 buckets are needed for this problem (two hexes, with two sidesets in parallel).
+
+*/
+TEST(PartToBucket, np2TwoHexTwoSidesets)
+{
+    const std::string generatedMeshSpecification = "generated:1x1x2|sideset:XY";
+    size_t numBucketsPerSlice = 4;
+    runTwoHexParallelBucketTests(generatedMeshSpecification, numBucketsPerSlice);
+}
+
+void runTwoHexParallelBucketTests(const std::string &generatedMeshSpecification, const size_t numBucketsPerSlice)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
     if (numProcessors(communicator) != 2)
@@ -217,7 +304,6 @@ TEST(PartToBucket, np2TwoHex)
         return;
     }
     stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-    const std::string generatedMeshSpecification = "generated:1x1x2";
     stkMeshIoBroker.open_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
     stkMeshIoBroker.populate_bulk_data();
@@ -225,10 +311,14 @@ TEST(PartToBucket, np2TwoHex)
     stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
     stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
 
+
     const stk::mesh::BucketVector &nodeBuckets = stkMeshBulkData.buckets(stk::topology::NODE_RANK);
-    size_t expectedNodeBuckets = 3;
+    size_t numSlices = 3;
+    size_t expectedNodeBuckets = numSlices * numBucketsPerSlice;
     ASSERT_EQ(expectedNodeBuckets, nodeBuckets.size());
-    size_t expectedNumNodesInEveryBucket = 4;
+
+    size_t numNodesPerSlice = 4;
+    size_t expectedNumNodesInEveryBucket = numNodesPerSlice / numBucketsPerSlice;
     for(size_t i=0; i<nodeBuckets.size(); i++)
     {
         EXPECT_EQ(expectedNumNodesInEveryBucket, nodeBuckets[i]->size());
@@ -248,15 +338,15 @@ TEST(PartToBucket, np2TwoHex)
     size_t expectedNumGhostedNodeBuckets = 0;
     if(procId(communicator) == 0)
     {
-        expectedNumLocallyOwnedNodeBuckets = 2; // A, B
-        expectedNumGloballySharedNodeBuckets = 1; // B
-        expectedNumGhostedNodeBuckets = 1; // C
+        expectedNumLocallyOwnedNodeBuckets = 2 * numBucketsPerSlice;
+        expectedNumGloballySharedNodeBuckets = numBucketsPerSlice;
+        expectedNumGhostedNodeBuckets = numBucketsPerSlice;
     }
     else
     {
-        expectedNumLocallyOwnedNodeBuckets = 1; // C
-        expectedNumGloballySharedNodeBuckets = 1; // B
-        expectedNumGhostedNodeBuckets = 1; // A
+        expectedNumLocallyOwnedNodeBuckets = numBucketsPerSlice;
+        expectedNumGloballySharedNodeBuckets = numBucketsPerSlice;
+        expectedNumGhostedNodeBuckets = numBucketsPerSlice;
     }
     EXPECT_EQ(expectedNumLocallyOwnedNodeBuckets, locallyOwnedNodeBuckets.size());
     EXPECT_EQ(expectedNumGloballySharedNodeBuckets, globallySharedNodeBuckets.size());
