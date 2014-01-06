@@ -11,80 +11,62 @@
 
 namespace pike {
 
-  /** \brief Multiphysics driver utility that determines the
-      application distribution over MPI process space, builds MPI
-      sub-communicators and specialized ostreams for both applications
-      and data transfers between the applications.
+  /** \brief Multiphysics driver utility that builds MPI
+      sub-communicators and specialized ostreams for applications and
+      data transfers.
 
-      NOTE: All applications and transfers must be registered on all
-      processes of the global comm but do not have to actually exist
-      on all processes of the global comm.
+      NOTE: All applications and transfers must be registered with the
+      distributor on all processes of the global comm but do not have
+      to actually exist on all processes of the global comm.
    */
   class MultiphysicsDistributor {
 
   public:
 
-    typedef int ApplicationIndex;
-    typedef int TransferIndex;
+    typedef std::size_t ApplicationIndex;
+    typedef std::size_t TransferIndex;
 
     MultiphysicsDistributor(const std::string& distributorName = "Pike");
 
     /** \brief Register a new application with this driver.
 	
-        This particular method allocates a separate set of MPI
-        processes for each application.  Therefore the total number of
-        processes required for all applications must be equal to the
-        size of the global communicator passed in during setup.  If
-        you would like to have applications overlap, you must use one
-        of the other addApplication methods.
-
-	\param[in] index Index of the application
-	\param[in] name Name of the application
-	\param[in] numberOfProcesses
-
-        NOTE: if this method is called, the process will be allocated internally and all calls to addApplication must use this particular method/signature.
-     */
-    void addApplication(const ApplicationIndex index, const std::string& name, const int numberOfProcesses);
-
-    /** \brief Register a new application with this driver.
-	
 	This method allows applications to exist on the same set or a subset of MPI processes.
 
-	\param[in] index Index of the application
 	\param[in] name Name of the application
-	\param[in] processes A vector containing mpi processes that this application will be run on.  The process ranks are relative to the global comm used in the setup() method.
+	\param[in] processes A vector containing mpi processes that this application will be run on.  The process ranks are associated with the global comm used in the setup() method.
+	\returns Index of the application
      */
-    void addApplication(const ApplicationIndex index, const std::string& name, const std::vector<int> processes);
+    ApplicationIndex addApplication(const std::string& name, const std::vector<int> processes);
 
     /** \brief Register a new application  with this driver given a range of ranks to exist on.
 	
 	This method allows applications to exist on the same set or a subset of MPI processes.
 
-	\param[in] index Index of the application
-	\param[in] name Name of the application
-	\param[in] begin_rank The beginning of a range of processes that this application will exist on.  The range is inclusive of the end points, [begin_rank,end_rank].  The process ranks are relative to the global comm used in the setup() method.
-	\param[in] end_rank The end of a range of processes that this application will exist on.  The range is inclusive of the end points, [begin_rank,end_rank].  The process ranks are relative to the global comm used in the setup() method.
+	\param[in] name Name of the application.
+	\param[in] begin_rank The beginning of a range of processes that this application will exist on.  The range is inclusive of the end points, [begin_rank,end_rank].  The process ranks are associated with the global comm used in the setup() method.
+	\param[in] end_rank The end of a range of processes that this application will exist on.  The range is inclusive of the end points, [begin_rank,end_rank].  The process ranks are associated with the global comm used in the setup() method.
+	\returns Index of the application.
      */
-    void addApplication(const ApplicationIndex index, const std::string& name, const int beginRank, const int endRank);
+    ApplicationIndex addApplication(const std::string& name, const int beginRank, const int endRank);
 
     /** \brief Tells this object that an active coupling between two physics exisits and that a union of the two applicaiton subcommunicators should be built for coupled data transfer.
 
-       \param[in] index The transfer index.
        \param[in] a Index of the fist application involved in the transfer.
        \param[in] b Index of the second application involved in the transfer.
-       \param[in] name (optional) Name of the transfer.
+       \param[in] name Name of the transfer. Must be unique.
+       \returns The transfer index.
 
        This is a simplification of the general addTranfer that takes a std::vector as its argument.  Most couplings are between two codes, and this case comes up so often that we have a specialized ctor for it.
      */
-    void addTransfer(const TransferIndex index, const ApplicationIndex a, const ApplicationIndex b, const std::string& name = "");
+    TransferIndex addTransfer(const std::string& name, const ApplicationIndex a, const ApplicationIndex b);
 
     /** \brief Tells this object that an active coupling between multiple physics exisits and that a union of the applicaiton subcommunicators should be built for coupled data transfer.
  
-       \param[in] index The transfer index.
        \param[in] appIndices Indices of the applications involved in the transfer.
-       \param[in] name (optional) Name of the transfer.
+       \param[in] name Name of the transfer.  Must be unique.
+       \returns The transfer index.
     */
-    void addTransfer(const TransferIndex index, const std::vector<ApplicationIndex>& appIndices, const std::string& name = "");
+    TransferIndex addTransfer(const std::string& name, const std::vector<ApplicationIndex>& appIndices);
 
     /** \brief Builds the application subcommunicators and any coupling subcommunicators. 
   
@@ -133,12 +115,6 @@ namespace pike {
 
   private:
 
-    enum ApplicationAddMethodType {
-      Unknown,
-      NumberOfProcesses,
-      VectorOfProcessIndices
-    };
-
     struct ApplicationData {
 
       std::string name;
@@ -166,40 +142,36 @@ namespace pike {
 
   private:
     std::string myName_;
-    
-    ApplicationAddMethodType applicationAddMethodType_;
-
-    bool setupCalled_;
-
-    //! A vector to preserve the order applications are registered.
-    std::vector<ApplicationIndex> appRegistrationOrder_;
-
-    std::map<ApplicationIndex,ApplicationData> applications_;
-
-    std::map<TransferIndex,std::vector<ApplicationIndex> > transfers_;
 
     Teuchos::RCP<const Teuchos::Comm<int> > globalComm_;
 
-    //! A nonnull RCP means that this application is instantiatied on this process.
-    std::map<ApplicationIndex,Teuchos::RCP<const Teuchos::Comm<int> > > applicationComms_;
+    bool setupCalled_;
 
-    //! A nonnull RCP means that this transfer is instantiatied on this process.  A transfer comm must represent at least the union of all application comms.
-    std::map<TransferIndex,Teuchos::RCP<const Teuchos::Comm<int> > > transferComms_;
+    std::vector<ApplicationData> applications_;
 
     std::map<std::string,ApplicationIndex> applicationNameToIndex_;
 
-    std::map<TransferIndex,std::vector<int> > transferRanks_;
+    //! A nonnull RCP means that this application is instantiatied on this process.
+    std::vector<Teuchos::RCP<const Teuchos::Comm<int> > > applicationComms_;
 
-    std::map<TransferIndex,std::string> transferNames_;
+    //! Each transfer contains a vector of application indices associated with the transfer.
+    std::vector<std::vector<ApplicationIndex> > transfers_;
+
+    //! A nonnull RCP means that this transfer is instantiatied on this process.  A transfer comm must represent at least the union of all application comms.
+    std::vector<Teuchos::RCP<const Teuchos::Comm<int> > > transferComms_;
+
+    std::vector<std::vector<int> > transferRanks_;
+
+    std::vector<std::string> transferNames_;
 
     std::map<std::string,TransferIndex> transferNameToIndex_;
 
-    //! Serial ostream that pronts to global process 0.
+    //! Serial ostream that prints to global process 0.
     Teuchos::RCP<Teuchos::FancyOStream> out_;
     //! Application ostream that prints on the first process of each application comm.
-    std::map<ApplicationIndex,Teuchos::RCP<Teuchos::FancyOStream> > aout_;
+    std::vector<Teuchos::RCP<Teuchos::FancyOStream> > aout_;
     //! Transfer opstream that prints on the first process of each tranfer comm.
-    std::map<TransferIndex,Teuchos::RCP<Teuchos::FancyOStream> > tout_;
+    std::vector<Teuchos::RCP<Teuchos::FancyOStream> > tout_;
     //! Parallel ostream that prints on each process.
     Teuchos::RCP<Teuchos::FancyOStream> pout_;
   };
