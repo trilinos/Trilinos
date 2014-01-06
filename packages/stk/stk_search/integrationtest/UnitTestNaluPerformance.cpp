@@ -102,7 +102,7 @@ struct Options
 
      void setIfTestIsGoldTestRun()
      {
-         bool mTestToGetGoldResults = false;
+         mTestToGetGoldResults = false;
          std::string optionString = "-getGold";
          if ( getOption(optionString, "no") == "yes" )
          {
@@ -125,6 +125,29 @@ Options getOptionsForTest()
     return local;
 }
 
+void printOptions(const Options& options)
+{
+    int procId = -1;
+    MPI_Comm_rank(MPI_COMM_WORLD, &procId);
+    if ( procId == 0 )
+    {
+        std::cerr << "Sphere file: " << options.mSphereFile << std::endl;
+        std::cerr << "Volume file: " << options.mVolumeFile << std::endl;
+        std::cerr << "Search Method: ";
+        if ( options.mSearchMethod == OCTREE )
+        {
+            std::cerr << "OCTREE" << std::endl;
+        }
+        else if (options.mSearchMethod == GTK )
+        {
+            std::cerr << "GTK" << std::endl;
+        }
+        else
+        {
+            std::cerr << "BOOST" << std::endl;
+        }
+    }
+}
 
 TEST(NaluPerformance, BoxSphereIntersections)
 {
@@ -153,20 +176,7 @@ TEST(NaluPerformance, BoxSphereIntersections)
     double elapsedTime = stk::wall_time() - startTime;
     printPeformanceStats(elapsedTime, comm);
 
-    if ( options.mTestToGetGoldResults )
-    {
-        int numProcs=0;
-        MPI_Comm_size(comm, &numProcs);
-        if ( numProcs != 1 )
-        {
-            std::cerr << "Gold results are available only on serial runs.\n";
-        }
-        else
-        {
-            printGoldResults(domainBoxes, spheres);
-        }
-    }
-    else
+    if ( !options.mTestToGetGoldResults )
     {
         gatherResultstoProcZero(comm, searchResults);
 
@@ -187,12 +197,27 @@ TEST(NaluPerformance, BoxSphereIntersections)
             EXPECT_EQ(numInteractions, globalIdMapping.size());
         }
     }
+    else
+    {
+        int numProcs=0;
+        MPI_Comm_size(comm, &numProcs);
+        if ( numProcs != 1 )
+        {
+            std::cerr << "Gold results are available only on serial runs.\n";
+        }
+        else
+        {
+            printGoldResults(domainBoxes, spheres);
+        }
+    }
 }
 
 
 TEST(NaluPerformance, BoxBoxIntersections)
 {
     Options options = getOptionsForTest();
+    printOptions(options);
+
     MPI_Comm comm = MPI_COMM_WORLD;
 
     GtkBoxVector spheres;
