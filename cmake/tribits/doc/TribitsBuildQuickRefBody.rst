@@ -1073,7 +1073,34 @@ their current versions using::
 
 This will cause a <Project>RepoVersion.txt file to get created in the binary
 directory, get installed in the install directory, and get included in the
-soruce distribution tarball.
+source distribution tarball.
+
+
+CMake configure-time development mode and debug checking
+--------------------------------------------------------
+
+To turn off CMake configure-time development-mode checking, set::
+
+  -D <Project>_ENABLE_DEVELOPMENT_MODE:BOOL=OFF
+
+This turns off a number of CMake configure-time checks for the <Project>
+TriBITS/CMake files including checking the package dependencies.  These checks
+can be expensive and may also not be appropriate for a tarball release of the
+software.  For a release of <Project> this option is set OFF by default.
+
+One of the CMake configure-time debug-mode checks performed as part of
+``<Project>_ENABLE_DEVELOPMENT_MODE=ON`` is to assert the existence of TriBITS
+package directories.  In development mode, the failure to find a package
+directory is usually a programming error (i.e. a miss-spelled package
+directory name).  But in a tarball release of the project, package directories
+may be purposefully missing (see `Creating a tarball of the source tree`) and
+must be ignored.  When building from a reduced tarball created from the
+development sources, set::
+
+  -D <Project>_ASSERT_MISSING_PACKAGES:BOOL=OFF
+
+Setting this off will cause the TriBITS CMake configure to simply ignore any
+missing packages and turn off all dependencies on these missing packages.
 
 
 Building (Makefile generator)
@@ -1394,6 +1421,9 @@ overridden using, for example::
 
 (see CMake documentation to find out the types of supported CPack source
 generators on your system).
+
+NOTE: When configuring a tarball with missing packages, make sure and set
+<Project>_ASSERT_MISSING_PACKAGES=OFF.
 
 
 Dashboard submissions
