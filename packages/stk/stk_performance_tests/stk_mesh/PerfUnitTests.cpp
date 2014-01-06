@@ -493,32 +493,16 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_memory)
   delete mesh;
 }
 
-STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access)
+void fill_buckets_for_field_tests(BulkData const& bulk,
+                                  std::vector<PartVector> const& element_parts,
+                                  std::vector<std::vector<std::vector<BucketVector> > >& bucket_map,
+                                  int x_chunks, int y_chunks, int z_chunks, int dim_span)
 {
-  PERFORMANCE_TEST_PREAMBLE(1 /*num procs*/);
+  bucket_map.clear();
 
-  const int x_dim = 20;
-  const int y_dim = 20;
-  const int z_dim = 20;
-  const int dim_span = 5; // low fragmentation
-  const int num_fields = 3;
-
-  // Set up mesh
-  // This mesh uses incredible amounts of memory with part induction turned on
-  std::vector<PartVector> element_parts;
-  std::vector<std::vector<std::vector<SimpleField*> > > fields; // fields[dim][chunk][field_offset]
-  HexFixture* mesh =
-    create_hex_with_complex_parts< !TIME_CHANGE_PARTS, INDUCE_ELEMENT_PARTS, ALLOCATE_FIELDS>(pm, x_dim, y_dim, z_dim, dim_span, element_parts, &fields, num_fields);
-  BulkData & bulk = mesh->m_bulk_data;
-
-  const int x_chunks = x_dim / dim_span;
-  const int y_chunks = y_dim / dim_span;
-  const int z_chunks = z_dim / dim_span;
+  bucket_map.resize(x_chunks);
 
   const size_t nodes_per_chunk = (dim_span + 1) * (dim_span + 1) * (dim_span + 1);
-
-  std::vector<std::vector<std::vector<BucketVector> > > bucket_map;
-  bucket_map.resize(x_chunks);
 
   for (int x = 0; x < x_chunks; ++x) {
     bucket_map[x].resize(y_chunks);
@@ -540,6 +524,33 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access)
       }
     }
   }
+}
+
+STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access)
+{
+  PERFORMANCE_TEST_PREAMBLE(1 /*num procs*/);
+
+  const int x_dim = 20;
+  const int y_dim = 20;
+  const int z_dim = 20;
+  const int dim_span = 5; // low fragmentation
+  const int num_fields = 3;
+
+  // Set up mesh
+  std::vector<PartVector> element_parts;
+  std::vector<std::vector<std::vector<SimpleField*> > > fields; // fields[dim][chunk][field_offset]
+  HexFixture* mesh =
+    create_hex_with_complex_parts< !TIME_CHANGE_PARTS, INDUCE_ELEMENT_PARTS, ALLOCATE_FIELDS>(pm, x_dim, y_dim, z_dim, dim_span, element_parts, &fields, num_fields);
+  BulkData & bulk = mesh->m_bulk_data;
+
+  const int x_chunks = x_dim / dim_span;
+  const int y_chunks = y_dim / dim_span;
+  const int z_chunks = z_dim / dim_span;
+
+  const size_t nodes_per_chunk = (dim_span + 1) * (dim_span + 1) * (dim_span + 1);
+
+  std::vector<std::vector<std::vector<BucketVector> > > bucket_map;
+  fill_buckets_for_field_tests(bulk, element_parts, bucket_map, x_chunks, y_chunks, z_chunks, dim_span);
 
   CALLGRIND_TOGGLE_COLLECT;
 
@@ -599,7 +610,6 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access_sm_style)
   const int spatial_dim = 3;
 
   // Set up mesh
-  // This mesh uses incredible amounts of memory with part induction turned on
   std::vector<PartVector> element_parts;
   std::vector<std::vector<std::vector<SimpleField*> > > fields; // fields[dim][chunk][field_offset]
   HexFixture* mesh =
@@ -613,28 +623,7 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access_sm_style)
   const size_t nodes_per_chunk = (dim_span + 1) * (dim_span + 1) * (dim_span + 1);
 
   std::vector<std::vector<std::vector<BucketVector> > > bucket_map;
-  bucket_map.resize(x_chunks);
-
-  for (int x = 0; x < x_chunks; ++x) {
-    bucket_map[x].resize(y_chunks);
-    for (int y = 0; y < y_chunks; ++y) {
-      bucket_map[x][y].resize(z_chunks);
-      for (int z = 0; z < z_chunks; ++z) {
-        Selector sel = *element_parts[0][x];
-        sel &= *element_parts[1][y];
-        sel &= *element_parts[2][z];
-
-        BucketVector& chunk_buckets = bucket_map[x][y][z];
-        bulk.get_buckets(stk::topology::NODE_RANK, sel, chunk_buckets);
-
-        size_t chunk_size = 0;
-        for (int b = 0, be = chunk_buckets.size(); b < be; ++b) {
-          chunk_size += chunk_buckets[b]->size();
-        }
-        STKUNIT_EXPECT_EQ(nodes_per_chunk, chunk_size);
-      }
-    }
-  }
+  fill_buckets_for_field_tests(bulk, element_parts, bucket_map, x_chunks, y_chunks, z_chunks, dim_span);
 
   CALLGRIND_TOGGLE_COLLECT;
 
