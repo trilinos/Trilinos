@@ -11,24 +11,24 @@ Discuss with Ross - unique strings fine for now.  no more than 100 apps so strin
 Talk with Ross and Brian.  Going to experiment since this is not really needed yet.  Have a ME equivalent interface that Ross and I worked on:
 
     /** \brief Np */
-    // int getNumParamsVecs() const = 0;
+    int getNumParamsVecs() const = 0;
 
-    // Teuchos::ArrayView<const std::string> getParamVecName(int l) const = 0;
+    Teuchos::ArrayView<const std::string> getParamVecName(int l) const = 0;
 
     /** \brief 0 <= l < Np */
-    // void setParamVec(const Teuchos::ArrayView<const double> &p_l, int l) = 0;
+    void setParamVec(const Teuchos::ArrayView<const double> &p_l, int l) = 0;
 
-    // Teuchos::Ordinal getParamVecSize(int l) const = 0;
+    Teuchos::Ordinal getParamVecSize(int l) const = 0;
 
     /** \brief get Ng */
-    // int getNumResponseVecs() const  = 0;
+    int getNumResponseVecs() const  = 0;
 
-    // Teuchos::ArrayView<const std::string> getResponseName(int j) const = 0;
+    Teuchos::ArrayView<const std::string> getResponseName(int j) const = 0;
 
     /** \brief 0 <= j < Ng */
-    // void getResponse(int j, Teuchos::ArrayView<double> &g_j) const = 0;
+    void getResponse(int j, Teuchos::ArrayView<double> &g_j) const = 0;
 
-    // Teuchos::Ordinal getResponseSize(int j) const = 0;
+    Teuchos::Ordinal getResponseSize(int j) const = 0;
 
 
 Going to try experiment using a modified boost::any for now.
