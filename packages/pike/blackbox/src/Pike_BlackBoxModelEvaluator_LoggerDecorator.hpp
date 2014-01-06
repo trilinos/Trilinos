@@ -36,6 +36,8 @@ namespace pike {
 
     int getResponseIndex(const std::string& name) const;
 
+    std::string getResponseName(const int i) const;
+    
     bool supportsResponse(const std::string& name) const;
 
     int getNumberOfResponses() const;

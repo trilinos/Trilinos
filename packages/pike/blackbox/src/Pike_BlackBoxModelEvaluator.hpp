@@ -48,6 +48,9 @@ namespace pike {
     //! Returns the response index for the string name.
     virtual int getResponseIndex(const std::string& name) const = 0;
 
+    //! Returns the response name for the index.
+    virtual std::string getResponseName(const int i) const = 0;
+
     //! Returns true if the response is supported by this model evaluator.
     virtual bool supportsResponse(const std::string& name) const = 0;
 

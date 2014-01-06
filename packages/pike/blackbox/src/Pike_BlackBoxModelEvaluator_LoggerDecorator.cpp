@@ -56,6 +56,11 @@ namespace pike {
     return model_->getResponseIndex(name);
   }
 
+  std::string ModelLoggerDecorator::getResponseName(const int i) const
+  {
+    return model_->getResponseName(i);
+  }
+
   bool ModelLoggerDecorator::supportsResponse(const std::string& name) const
   {
     return model_->supportsResponse(name);

@@ -40,6 +40,12 @@ namespace pike {
     return 0;
   }
 
+  std::string SolverModelEvaluator::getResponseName(const int i) const
+  {
+    TEUCHOS_ASSERT(true);
+    return "???";
+  }
+
   bool SolverModelEvaluator::supportsResponse(const std::string& name) const
   {
     TEUCHOS_ASSERT(true);

@@ -72,6 +72,13 @@ namespace pike_test {
     return responseMap_.find(name)->second;
   }
   
+  std::string LinearHeatConductionModelEvaluator::getResponseName(const int i) const
+  {
+    TEUCHOS_ASSERT(i < responseValue_.size());
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Not implemented yet!");
+    return "";
+  }
+
   bool LinearHeatConductionModelEvaluator::supportsResponse(const std::string& name) const
   {
     return (responseMap_.find(name) != responseMap_.end());

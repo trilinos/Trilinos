@@ -80,6 +80,12 @@ namespace pike_test {
     return responseMap_.find(name)->second;
   }
   
+  std::string MockModelEvaluator::getResponseName(const int i) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Not implemented yet!");
+    return "";
+  }
+
   bool MockModelEvaluator::supportsResponse(const std::string& name) const
   {
     return (responseMap_.find(name) != responseMap_.end());
