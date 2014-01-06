@@ -2,7 +2,6 @@
 #define PIKE_BLACK_BOX_MODEL_EVALUATOR_LOGGER_DECORATOR_HPP
 
 #include "Pike_BlackBoxModelEvaluator.hpp"
-#include "Pike_Response.hpp"
 #include "Teuchos_RCP.hpp"
 #include <vector>
 #include <string>
@@ -33,11 +32,13 @@ namespace pike {
 
     bool isGloballyConverged() const;
 
-    Teuchos::RCP<pike::Response> getResponse(const int i) const;
+    Teuchos::RCP<const pike::any> getResponse(const int i) const;
 
-    int getResponseIndex(const std::string name) const;
+    int getResponseIndex(const std::string& name) const;
 
-    bool supportsResponse(const std::string name) const;
+    bool supportsResponse(const std::string& name) const;
+
+    int getNumberOfResponses() const;
 
   private:
     

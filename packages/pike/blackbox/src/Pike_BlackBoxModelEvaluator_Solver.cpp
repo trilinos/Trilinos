@@ -29,22 +29,28 @@ namespace pike {
   bool SolverModelEvaluator::isGloballyConverged() const
   { return true; }
 
-  Teuchos::RCP<pike::Response> SolverModelEvaluator::getResponse(const int i) const
+  Teuchos::RCP<const pike::any> SolverModelEvaluator::getResponse(const int i) const
   {
     TEUCHOS_ASSERT(true);
     return Teuchos::null;
   }
 
-  int SolverModelEvaluator::getResponseIndex(const std::string name) const
+  int SolverModelEvaluator::getResponseIndex(const std::string& name) const
   {
     TEUCHOS_ASSERT(true);
     return 0;
   }
 
-  bool SolverModelEvaluator::supportsResponse(const std::string name) const
+  bool SolverModelEvaluator::supportsResponse(const std::string& name) const
   {
     TEUCHOS_ASSERT(true);
     return false;
   }
   
+  int SolverModelEvaluator::getNumberOfResponses() const
+  {
+    TEUCHOS_ASSERT(true);
+    return 0;
+  }
+
 }

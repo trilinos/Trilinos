@@ -45,20 +45,25 @@ namespace pike {
     return model_->isGloballyConverged();
   }
   
-  Teuchos::RCP<pike::Response> ModelLoggerDecorator::getResponse(const int i) const
+  Teuchos::RCP<const pike::any> ModelLoggerDecorator::getResponse(const int i) const
   {
     log_->push_back(this->name()+": getResponse()");
     return model_->getResponse(i);
   }
   
-  int ModelLoggerDecorator::getResponseIndex(const std::string name) const
+  int ModelLoggerDecorator::getResponseIndex(const std::string& name) const
   {
     return model_->getResponseIndex(name);
   }
 
-  bool ModelLoggerDecorator::supportsResponse(const std::string name) const
+  bool ModelLoggerDecorator::supportsResponse(const std::string& name) const
   {
     return model_->supportsResponse(name);
+  }
+
+  int ModelLoggerDecorator::getNumberOfResponses() const
+  {
+    return model_->getNumberOfResponses();
   }
 
   //! Non-member ctor

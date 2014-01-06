@@ -3,6 +3,7 @@
 
 #include "Pike_LinearHeatConduction_ModelEvaluator.hpp"
 #include "Teuchos_Assert.hpp"
+#include "Teuchos_as.hpp"
 
 namespace pike_test {
   
@@ -21,11 +22,13 @@ namespace pike_test {
 
     if (mode_ == T_RIGHT_IS_RESPONSE) {
       responseMap_["T_right"] = 0;
-      responseValue_[0] = Teuchos::rcp(new pike::ScalarResponse<double>("T_right"));
+      responseValue_[0] = Teuchos::rcp(new pike::any);
+      *responseValue_[0] = T_right_;
     }
     else if (mode_ == Q_IS_RESPONSE) {
       responseMap_["q"] = 0;
-      responseValue_[0] = Teuchos::rcp(new pike::ScalarResponse<double>("q"));
+      responseValue_[0] = Teuchos::rcp(new pike::any);
+      *responseValue_[0] = q_;
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Error the mode is not valid!");
@@ -41,11 +44,11 @@ namespace pike_test {
     
     if (mode_ == T_RIGHT_IS_RESPONSE) {
       T_right_ = T_left_ - q_ / k_;
-      responseValue_[0]->set(T_right_);
+      (*responseValue_[0]) = T_right_;
     }
     else if (mode_ == Q_IS_RESPONSE) {
       q_ = (T_left_ - T_right_) * k_;
-      responseValue_[0]->set(q_);
+      (*responseValue_[0]) = q_;
     }
     return true;
   }
@@ -56,12 +59,12 @@ namespace pike_test {
   bool LinearHeatConductionModelEvaluator::isGloballyConverged() const
   { return true; }
   
-  Teuchos::RCP<pike::Response> LinearHeatConductionModelEvaluator::getResponse(const int i) const
+  Teuchos::RCP<const pike::any> LinearHeatConductionModelEvaluator::getResponse(const int i) const
   {
     return responseValue_[i];
   }
   
-  int LinearHeatConductionModelEvaluator::getResponseIndex(const std::string name) const
+  int LinearHeatConductionModelEvaluator::getResponseIndex(const std::string& name) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(responseMap_.find(name) == responseMap_.end(),
 			       std::logic_error,
@@ -69,11 +72,16 @@ namespace pike_test {
     return responseMap_.find(name)->second;
   }
   
-  bool LinearHeatConductionModelEvaluator::supportsResponse(const std::string name) const
+  bool LinearHeatConductionModelEvaluator::supportsResponse(const std::string& name) const
   {
     return (responseMap_.find(name) != responseMap_.end());
   }
   
+  int LinearHeatConductionModelEvaluator::getNumberOfResponses() const
+  {
+    return Teuchos::as<int>(responseMap_.size());
+  }
+
   void LinearHeatConductionModelEvaluator::set_k(const double& k)
   { k_ = k; }
 

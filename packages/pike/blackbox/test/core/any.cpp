@@ -1,6 +1,8 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Pike_Any.hpp"
 #include "Teuchos_Array.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 #include <iostream>
 #include <vector>
 
@@ -48,6 +50,31 @@ namespace pike_test {
     Teuchos::ArrayView<const double>& check3 = 
       v[3].as<Teuchos::ArrayView<const double>& >();
     TEST_EQUALITY(check3.size(),tv.size());
+  }
+
+  TEUCHOS_UNIT_TEST(any, const_rcp)
+  {
+    std::vector<Teuchos::RCP<any> > v(3);
+    for (std::vector<Teuchos::RCP<any> >::iterator i=v.begin(); i != v.end(); ++i)
+      (*i) = Teuchos::rcp(new any);
+
+    *v[0] = 1.0;
+    *v[1] = 5.0;
+    Teuchos::Array<double> a(5,2.0);
+    *v[2] = a.view(0,5);
+
+    Teuchos::RCP<const any> v0 = v[0];
+    Teuchos::RCP<const any> v1 = v[1];
+    Teuchos::RCP<const any> v2 = v[2];
+
+    const double r0 = v0->as<double>();
+    const double r1 = v1->as<double>();
+    const Teuchos::ArrayView<double> r2 = v2->as<Teuchos::ArrayView<double> >();
+    
+    const double tol = Teuchos::ScalarTraits<double>::eps();
+    TEST_FLOATING_EQUALITY(r0,1.0,tol);
+    TEST_FLOATING_EQUALITY(r1,5.0,tol);
+    TEST_FLOATING_EQUALITY(r2[0],2.0,tol);
   }
 
 }

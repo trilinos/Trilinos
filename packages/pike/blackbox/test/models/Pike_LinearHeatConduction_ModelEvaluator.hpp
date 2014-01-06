@@ -2,7 +2,7 @@
 #define PIKE_LINEAR_HEAT_CONDUCTION_MODEL_EVALUATOR_HPP
 
 #include "Pike_BlackBoxModelEvaluator.hpp"
-#include "Pike_Response_Scalar.hpp"
+#include "Pike_Any.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_RCP.hpp"
 #include <string>
@@ -55,11 +55,13 @@ namespace pike_test {
 
     bool isGloballyConverged() const;
 
-    Teuchos::RCP<pike::Response> getResponse(const int i) const;
+    Teuchos::RCP<const pike::any> getResponse(const int i) const;
 
-    int getResponseIndex(const std::string name) const;
+    int getResponseIndex(const std::string& name) const;
 
-    bool supportsResponse(const std::string name) const;
+    bool supportsResponse(const std::string& name) const;
+
+    int getNumberOfResponses() const;
 
     //@}
 
@@ -86,7 +88,7 @@ namespace pike_test {
     double T_right_;
     
     std::map<std::string,int> responseMap_;
-    std::vector<Teuchos::RCP<pike::ScalarResponse<double> > > responseValue_;
+    std::vector<Teuchos::RCP<pike::any> > responseValue_;
     
   };
 

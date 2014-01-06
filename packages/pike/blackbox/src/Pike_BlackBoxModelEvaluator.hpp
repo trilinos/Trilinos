@@ -1,11 +1,12 @@
 #ifndef PIKE_BLACK_BOX_MODEL_EVALUATOR_HPP
 #define PIKE_BLACK_BOX_MODEL_EVALUATOR_HPP
 
-#include "Pike_BlackBox_config.hpp"
-#include "Pike_Response.hpp"
+#include "Teuchos_RCP.hpp"
 #include <string>
 
 namespace pike {
+
+  class any;
 
   class BlackBoxModelEvaluator {
 
@@ -42,13 +43,16 @@ namespace pike {
     virtual bool isGloballyConverged() const = 0;
 
     //! Returns the response for index i.
-    virtual Teuchos::RCP<pike::Response> getResponse(const int i) const = 0;
+    virtual Teuchos::RCP<const pike::any> getResponse(const int i) const = 0;
 
     //! Returns the response index for the string name.
-    virtual int getResponseIndex(const std::string name) const = 0;
+    virtual int getResponseIndex(const std::string& name) const = 0;
 
     //! Returns true if the response is supported by this model evaluator.
-    virtual bool supportsResponse(const std::string name) const = 0;
+    virtual bool supportsResponse(const std::string& name) const = 0;
+
+    //! Get the number of responses, Ng.
+    virtual int getNumberOfResponses() const = 0;
 
   };
 

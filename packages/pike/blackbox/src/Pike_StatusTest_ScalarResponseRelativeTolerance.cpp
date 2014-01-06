@@ -1,6 +1,6 @@
 #include "Pike_StatusTest_ScalarResponseRelativeTolerance.hpp"
 #include "Pike_Solver.hpp"
-#include "Pike_Response_Scalar.hpp"
+#include "Pike_Any.hpp"
 #include "Pike_BlackBoxModelEvaluator.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include <cmath>
@@ -41,7 +41,7 @@ namespace pike {
       previousIteration_ = -1;
       currentIteration_ = 0;
       previousValue_ = 0.0;
-      currentValue_ = pike::getScalarResponse<double>(*application_->getResponse(responseIndex_));
+      currentValue_ = application_->getResponse(responseIndex_)->as<double>();
       status_ = pike::UNCONVERGED;
       return status_;
     }
@@ -54,7 +54,7 @@ namespace pike {
       previousIteration_ = currentIteration_;
       currentIteration_ = solver.getNumberOfIterations();
       previousValue_ = currentValue_;
-      currentValue_ = pike::getScalarResponse<double>(*application_->getResponse(responseIndex_));
+      currentValue_ = application_->getResponse(responseIndex_)->as<double>();
       if (std::abs(currentValue_ - previousValue_) < tolerance_)
 	status_ = pike::CONVERGED;
       else
@@ -71,7 +71,7 @@ namespace pike {
     previousIteration_ = -1;
     currentIteration_ = 0;
     previousValue_ = 0.0;
-    currentValue_ = pike::getScalarResponse<double>(*application_->getResponse(responseIndex_));
+    currentValue_ = application_->getResponse(responseIndex_)->as<double>();
     status_ = pike::UNCHECKED;
   }
   

@@ -4,6 +4,7 @@
 #include "Pike_Mock_ModelEvaluator.hpp"
 #include "Pike_Solver.hpp"
 #include "Teuchos_Assert.hpp"
+#include "Teuchos_as.hpp"
 
 namespace pike_test {
   
@@ -20,7 +21,8 @@ namespace pike_test {
       responseValue_(1) // only one response
   {
     responseMap_["Mock Response"] = 0;
-    responseValue_[0] = Teuchos::rcp(new pike::ScalarResponse<double>("Mock Response"));
+    responseValue_[0] = Teuchos::rcp(new pike::any);
+    *responseValue_[0] = 0.0;
   }
 
   std::string MockModelEvaluator::name() const
@@ -34,7 +36,7 @@ namespace pike_test {
       // do nothing - freeze the response
     }
     else
-      responseValue_[0]->set(responseValue_[0]->get() + 1.0);
+      *responseValue_[0] = responseValue_[0]->as<double>() + 1.0;
 
     if (iterationTrigger_ == (solver_->getNumberOfIterations()+1) )
       if (mode_ == LOCAL_FAILURE)
@@ -65,12 +67,12 @@ namespace pike_test {
     return false;
   }
   
-  Teuchos::RCP<pike::Response> MockModelEvaluator::getResponse(const int i) const
+  Teuchos::RCP<const pike::any> MockModelEvaluator::getResponse(const int i) const
   {
     return responseValue_[i];
   }
   
-  int MockModelEvaluator::getResponseIndex(const std::string name) const
+  int MockModelEvaluator::getResponseIndex(const std::string& name) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(responseMap_.find(name) == responseMap_.end(),
 			       std::logic_error,
@@ -78,9 +80,14 @@ namespace pike_test {
     return responseMap_.find(name)->second;
   }
   
-  bool MockModelEvaluator::supportsResponse(const std::string name) const
+  bool MockModelEvaluator::supportsResponse(const std::string& name) const
   {
     return (responseMap_.find(name) != responseMap_.end());
+  }
+
+  int MockModelEvaluator::getNumberOfResponses() const
+  {
+    return Teuchos::as<int>(responseMap_.size());
   }
 
   void MockModelEvaluator::setSolver(const Teuchos::RCP<pike::Solver>& solver)
