@@ -47,6 +47,7 @@
 #include <Kokkos_Macros.hpp>
 #include <stdint.h>
 
+#include <cstdio>
 #include <climits>
 
 namespace Kokkos { namespace Impl {
@@ -170,6 +171,36 @@ struct UnorderedMapSize
   {
     m_map.m_scalars().modified = false;
     m_map.m_scalars().size = size;
+  }
+};
+
+template <typename UMap>
+struct UnorderedMapPrint
+{
+  typedef UMap map_type;
+  typedef typename map_type::device_type device_type;
+  typedef typename map_type::size_type size_type;
+
+  map_type m_map;
+
+  UnorderedMapPrint( map_type const& map)
+    : m_map(map)
+  {}
+
+  void apply() const
+  {
+    parallel_for(m_map.m_hash_lists.size(), *this);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(size_type i) const
+  {
+    const size_type invalid_index = map_type::invalid_index;
+    size_type curr = m_map.m_hash_lists(i);
+    while (curr != invalid_index) {
+      printf("%d %d\n", m_map.m_keys[curr], i);
+      curr = m_map.m_next_index[curr];
+    }
   }
 };
 

@@ -382,6 +382,13 @@ public:
     return result;
   }
 
+  void print()
+  {
+    Impl::UnorderedMapPrint<const_map_type> f(*this);
+    f.apply();
+    device_type::fence();
+  }
+
 
   /// \brief The maximum number of entries that the table can hold.
   ///
@@ -434,9 +441,12 @@ public:
     size_type curr = *curr_ptr;
     size_type index = invalid_index;
 
+    // needs to be volatile to force a cache refresh
+    volatile key_type const * const key_ptr = m_keys.ptr_on_device();
+
     do {
       // find potential insertion point
-      while (curr != invalid_index && m_keys[curr] != k) {
+      while (curr != invalid_index && key_ptr[curr] != k) {
         curr_ptr = &m_next_index[curr];
         curr = *curr_ptr;
       }
@@ -716,6 +726,9 @@ private: // private members
 
   template <typename UMap>
   friend struct Impl::UnorderedMapErase;
+
+  template <typename UMap>
+  friend struct Impl::UnorderedMapPrint;
 };
 
 // Specialization of deep_copy for two UnorderedMap objects.
