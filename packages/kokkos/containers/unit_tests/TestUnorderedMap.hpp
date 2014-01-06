@@ -63,6 +63,58 @@ namespace Impl {
   };
 
   template <typename MapType>
+  struct test_erase_close
+  {
+    typedef test_erase_close<MapType> self_type;
+
+    typedef MapType map_type;
+    typedef typename MapType::device_type device_type;
+
+    map_type m_map;
+    uint32_t m_num_erase;
+    uint32_t m_num_duplicates;
+
+    test_erase_close(map_type map, uint32_t num_erases, uint32_t num_duplicates)
+      : m_map(map)
+      , m_num_erase(num_erases)
+      , m_num_duplicates(num_duplicates)
+    {
+      Kokkos::parallel_for(num_erases, *this);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(typename device_type::size_type i) const
+    {
+      m_map.erase(i/m_num_duplicates);
+    }
+  };
+
+  template <typename MapType>
+  struct test_erase_far
+  {
+    typedef MapType map_type;
+    typedef typename MapType::device_type device_type;
+
+    map_type m_map;
+    uint32_t m_num_erase;
+    uint32_t m_num_duplicates;
+
+    test_erase_far(map_type map, uint32_t num_erases, uint32_t num_duplicates)
+      : m_map(map)
+      , m_num_erase(num_erases)
+      , m_num_duplicates(num_duplicates)
+    {
+      Kokkos::parallel_for(num_erases, *this);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(typename device_type::size_type i) const
+    {
+      m_map.erase(i%(m_num_erase/m_num_duplicates));
+    }
+  };
+
+  template <typename MapType>
   struct test_find
   {
     typedef MapType map_type;
@@ -135,9 +187,17 @@ void test_insert_close(  uint32_t num_nodes
   if (!failed_inserts) {
     ASSERT_EQ(map_size, expected_inserts);
 
-    uint32_t find_errors = 0;
-    Impl::test_find<const_map_type> test_find(map, num_inserts, num_duplicates, find_errors);
-    ASSERT_EQ( find_errors, 0u);
+    {
+      uint32_t find_errors = 0;
+      Impl::test_find<const_map_type> test_find(map, num_inserts, num_duplicates, find_errors);
+      ASSERT_EQ( find_errors, 0u);
+    }
+
+    map.begin_erase();
+    Impl::test_erase_close<map_type> erase_close(map, num_inserts, num_duplicates);
+    map.end_erase();
+    ASSERT_EQ(map.size(), 0u);
+
   }
 }
 
@@ -166,9 +226,16 @@ void test_insert_far(  uint32_t num_nodes
   if (!failed_inserts) {
     ASSERT_EQ(map_size, expected_inserts);
 
-    uint32_t find_errors = 0;
-    Impl::test_find<const_map_type> test_find(map, num_inserts, num_duplicates, find_errors);
-    ASSERT_EQ( find_errors, 0u);
+    {
+      uint32_t find_errors = 0;
+      Impl::test_find<const_map_type> test_find(map, num_inserts, num_duplicates, find_errors);
+      ASSERT_EQ( find_errors, 0u);
+    }
+
+    map.begin_erase();
+    Impl::test_erase_far<map_type> erase_far(map, num_inserts, num_duplicates);
+    map.end_erase();
+    ASSERT_EQ(map.size(), 0u);
   }
 }
 

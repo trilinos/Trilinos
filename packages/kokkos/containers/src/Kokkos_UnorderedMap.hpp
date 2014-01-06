@@ -260,7 +260,7 @@ public:
     , m_hash_lists(AllocateWithoutInitializing(), "UnorderedMap hash list", Impl::find_hash_size(m_capacity))
     , m_next_index(AllocateWithoutInitializing(), "UnorderedMap next index", m_capacity+1)
     , m_keys("UnorderedMap keys",m_capacity+1)
-    , m_values("UnorderedMap values",(is_set? 0 : m_capacity+1))
+    , m_values("UnorderedMap values",(is_set? 1 : m_capacity+1))
     , m_scalars("UnorderedMap scalars")
     , m_failed_insert_scratch("UnorderedMap scratch", (m_available_indexes.size() ? m_available_indexes.size() : 1))
   {
@@ -344,6 +344,44 @@ public:
     raw_deep_copy(&result,&m_scalars.ptr_on_device()->failed_inserts, sizeof(size_type));
     return result;
   }
+
+  bool erasable() const
+  {
+    bool result = false;
+    if (is_insertable_map){
+      raw_deep_copy(&result,&m_scalars.ptr_on_device()->erasable, sizeof(bool));
+    }
+    return result;
+  }
+
+  bool begin_erase()
+  {
+    bool result = !erasable();
+    if (is_insertable_map && result) {
+      device_type::fence();
+      const bool true_ = true;
+      typedef Kokkos::Impl::DeepCopy< typename device_type::memory_space, Kokkos::HostSpace > copy_to_device;
+      copy_to_device(&m_scalars.ptr_on_device()->erasable, &true_, sizeof(bool) );
+      device_type::fence();
+    }
+    return result;
+  }
+
+  bool end_erase()
+  {
+    bool result = erasable();
+    if (is_insertable_map && result) {
+      device_type::fence();
+      Impl::UnorderedMapErase<declared_map_type> f(*this);
+      f.apply();
+      const bool false_ = false;
+      typedef Kokkos::Impl::DeepCopy< typename device_type::memory_space, Kokkos::HostSpace > copy_to_device;
+      copy_to_device(&m_scalars.ptr_on_device()->erasable, &false_, sizeof(bool) );
+      sync_scalars(true);
+    }
+    return result;
+  }
+
 
   /// \brief The maximum number of entries that the table can hold.
   ///
@@ -446,6 +484,22 @@ public:
     return result;
   }
 
+  KOKKOS_INLINE_FUNCTION
+  UnorderedMapOpStatus erase(key_type const& k) const
+  {
+    UnorderedMapOpStatus result = ERASE_FAILED;
+
+    if(is_insertable_map && m_scalars().erasable) {
+      size_type index = find(k);
+      if (valid_at(index)) {
+        free_index(index);
+        result = ERASE_SUCCESS;
+      }
+    }
+
+    return result;
+  }
+
   /// \brief Find the given key \c k, if it exists in the table.
   ///
   /// \return If the key exists in the table, the index of the
@@ -485,18 +539,11 @@ public:
   /// This <i>is</i> a device function; it may be called in a parallel
   /// kernel.
   KOKKOS_FORCEINLINE_FUNCTION
-  typename Impl::if_c< is_set, impl_value_type, typename Impl::if_c< has_const_value, impl_value_type, impl_value_type &>::type>::type
+  typename Impl::if_c< (is_set || has_const_value), impl_value_type, impl_value_type &>::type
   value_at(size_type i) const
   {
-    typedef typename Impl::if_c< is_set, impl_value_type, typename Impl::if_c< has_const_value, impl_value_type, impl_value_type &>::type>::type
-      return_type;
-    if (is_set) {
-      return return_type();
-    }
-    else {
-      i = i < m_capacity ? i : m_capacity;
-      return m_values[i];
-    }
+    i = is_set ? 0 : (i < m_capacity ? i : m_capacity);
+    return m_values[i];
   }
 
   /// \brief Get the key with \c i as its direct index.
@@ -626,11 +673,11 @@ private: // private member functions
   }
 
 
-  void sync_scalars() const
+  void sync_scalars(bool force_sync = false) const
   {
     bool modified = false;
     raw_deep_copy(&modified, &m_scalars.ptr_on_device()->modified, sizeof(bool) );
-    if (modified) {
+    if (force_sync || modified) {
       {
         Impl::UnorderedMapSize<const_map_type> f(*this);
         f.apply();
@@ -638,7 +685,7 @@ private: // private member functions
 
       bool has_failed_inserts = false;
       raw_deep_copy(&has_failed_inserts, &m_scalars.ptr_on_device()->has_failed_inserts, sizeof(bool) );
-      if (has_failed_inserts) {
+      if (force_sync || has_failed_inserts) {
         Impl::UnorderedMapCountFailedInserts<const_map_type> f(*this);
         f.apply();
       }
@@ -666,6 +713,9 @@ private: // private members
 
   template <typename UMap>
   friend struct Impl::UnorderedMapCountFailedInserts;
+
+  template <typename UMap>
+  friend struct Impl::UnorderedMapErase;
 };
 
 // Specialization of deep_copy for two UnorderedMap objects.
