@@ -41,6 +41,24 @@
 // @HEADER
 */
 
+// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
+// only the .cu version of this file is actually compiled
+#include <Tpetra_config.h>
+#ifdef HAVE_TPETRA_KOKKOSCOMPAT
+#include <KokkosCore_config.h>
+#ifdef KOKKOS_USE_CUDA_BUILD
+  #define DO_COMPILATION
+#else
+  #ifndef KOKKOS_HAVE_CUDA
+    #define DO_COMPILATION
+  #endif
+#endif
+#else
+  #define DO_COMPILATION
+#endif
+
+#ifdef DO_COMPILATION
+
 #include <Tpetra_TestingUtilities.hpp>
 
 #include <Teuchos_DefaultSerialComm.hpp>
@@ -182,6 +200,19 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MultiVector, ViewModeConstructorTests, Node )
   {
+    #ifdef HAVE_TPETRA_KOKKOSCOMPAT
+      #ifdef KOKKOS_HAVE_CUDA
+        if(typeid(Node)==typeid(Kokkos::Compat::KokkosCudaWrapperNode)) return;
+      #endif
+      #ifdef KOKKOS_HAVE_OPENMP
+        if(typeid(Node)==typeid(Kokkos::Compat::KokkosOpenMPWrapperNode)) return;
+      #endif
+      #ifdef KOKKOS_HAVE_PTHREAD
+        if(typeid(Node)==typeid(Kokkos::Compat::KokkosThreadsWrapperNode)) return;
+      #endif
+    #endif
+
+
     RCP<Node> node = getNode<Node>();
     typedef Tpetra::MultiVector<double,int,int,Node> MV;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -222,6 +253,19 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Vector, ViewModeConstructorTests, Node )
   {
+    #ifdef HAVE_TPETRA_KOKKOSCOMPAT
+      #ifdef KOKKOS_HAVE_CUDA
+        if(typeid(Node)==typeid(Kokkos::Compat::KokkosCudaWrapperNode)) return;
+      #endif
+      #ifdef KOKKOS_HAVE_OPENMP
+        if(typeid(Node)==typeid(Kokkos::Compat::KokkosOpenMPWrapperNode)) return;
+      #endif
+      #ifdef KOKKOS_HAVE_PTHREAD
+        if(typeid(Node)==typeid(Kokkos::Compat::KokkosThreadsWrapperNode)) return;
+      #endif
+    #endif
+
+
     RCP<Node> node = getNode<Node>();
     typedef Tpetra::Vector<double,int,int,Node> Vec;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -2587,3 +2631,5 @@ namespace {
   TPETRA_INSTANTIATE_TESTMV( UNIT_TEST_GROUP )
 
 }
+
+#endif //DO_COMPILATION
