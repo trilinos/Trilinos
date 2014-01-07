@@ -50,7 +50,7 @@ formatTime(
       oss << int_time%60;
 
     if (time_format & TIMEFORMAT_MILLIS) {
-      int milliseconds = int(std::fmod(time, 1.0)*1000.0 + 0.5);
+      int milliseconds = static_cast<int>(std::fmod(time, 1.0)*1000.0 + 0.5);
 
       oss << '.' << std::setw(3) << std::setfill('0') << milliseconds;
     }
