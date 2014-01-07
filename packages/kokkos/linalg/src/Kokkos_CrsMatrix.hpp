@@ -1514,6 +1514,7 @@ struct MV_MultiplyFunctor {
     RangeVector  m_y ;
     size_type n;
 
+    KOKKOS_INLINE_FUNCTION
     void operator()(int i) const {
       const size_type iRow = i/ShflThreadsPerRow::device_value;
       const int lane = i%ShflThreadsPerRow::device_value;
@@ -1562,6 +1563,7 @@ struct MV_MultiplyFunctor {
     RangeVector  m_y ;
     size_type n;
 
+    KOKKOS_INLINE_FUNCTION
     void operator()(int i) const {
       const size_type iRow = i/ShflThreadsPerRow::device_value;
       const int lane = i%ShflThreadsPerRow::device_value;

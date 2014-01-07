@@ -820,16 +820,16 @@ struct MV_DotProduct_Right_FunctorVector
   KOKKOS_INLINE_FUNCTION
   void operator()( const size_type i, value_type sum ) const
   {
-	const int numVecs=value_count;
+	const size_type numVecs=value_count;
 
     #pragma ivdep
     #pragma vector always
-	for(int k=0;k<numVecs;k++)
+	for(size_type k=0;k<numVecs;k++)
       sum[k]+=m_x(i,k)*m_y(i,k);
   }
   KOKKOS_INLINE_FUNCTION void init( value_type update) const
   {
-    const int numVecs = value_count;
+    const size_type numVecs = value_count;
     #pragma ivdep
     #pragma vector always
 	for(size_type k=0;k<numVecs;k++)
@@ -838,7 +838,7 @@ struct MV_DotProduct_Right_FunctorVector
   KOKKOS_INLINE_FUNCTION void join( volatile value_type  update ,
                     const volatile value_type  source ) const
   {
-    const int numVecs = value_count;
+    const size_type numVecs = value_count;
     #pragma ivdep
     #pragma vector always
 	for(size_type k=0;k<numVecs;k++){

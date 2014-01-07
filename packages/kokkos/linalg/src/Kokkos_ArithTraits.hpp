@@ -61,12 +61,107 @@
 /// Interestingly, though, int64_t and long long do appear to be the
 /// same type on my system.
 
+#define __STDC_LIMIT_MACROS
+#include <stdint.h> // CUDA 5.5 doesn't recognize <cstdint>.
+#undef __STDC_LIMIT_MACROS
+
+#ifndef INT8_MIN
+/* 7.18.2 Limits of specified-width integer types:
+ *   These #defines specify the minimum and maximum limits
+ *   of each of the types declared above.
+ */
+
+
+/* 7.18.2.1 Limits of exact-width integer types */
+#define INT8_MIN         (-127-1)
+#define INT16_MIN        (-32767-1)
+#define INT32_MIN        (-2147483647-1)
+#define INT64_MIN        (-9223372036854775807LL-1LL)
+
+#define INT8_MAX         +127
+#define INT16_MAX        +32767
+#define INT32_MAX        +2147483647
+#define INT64_MAX        +9223372036854775807LL
+
+#define UINT8_MAX         255
+#define UINT16_MAX        65535
+#define UINT32_MAX        4294967295U
+#define UINT64_MAX        18446744073709551615ULL
+
+/* 7.18.2.2 Limits of minimum-width integer types */
+#define INT_LEAST8_MIN    INT8_MIN
+#define INT_LEAST16_MIN   INT16_MIN
+#define INT_LEAST32_MIN   INT32_MIN
+#define INT_LEAST64_MIN   INT64_MIN
+
+#define INT_LEAST8_MAX    INT8_MAX
+#define INT_LEAST16_MAX   INT16_MAX
+#define INT_LEAST32_MAX   INT32_MAX
+#define INT_LEAST64_MAX   INT64_MAX
+
+#define UINT_LEAST8_MAX   UINT8_MAX
+#define UINT_LEAST16_MAX  UINT16_MAX
+#define UINT_LEAST32_MAX  UINT32_MAX
+#define UINT_LEAST64_MAX  UINT64_MAX
+
+/* 7.18.2.3 Limits of fastest minimum-width integer types */
+#define INT_FAST8_MIN     INT8_MIN
+#define INT_FAST16_MIN    INT16_MIN
+#define INT_FAST32_MIN    INT32_MIN
+#define INT_FAST64_MIN    INT64_MIN
+
+#define INT_FAST8_MAX     INT8_MAX
+#define INT_FAST16_MAX    INT16_MAX
+#define INT_FAST32_MAX    INT32_MAX
+#define INT_FAST64_MAX    INT64_MAX
+
+#define UINT_FAST8_MAX    UINT8_MAX
+#define UINT_FAST16_MAX   UINT16_MAX
+#define UINT_FAST32_MAX   UINT32_MAX
+#define UINT_FAST64_MAX   UINT64_MAX
+
+/* 7.18.2.4 Limits of integer types capable of holding object pointers */
+#if defined(__LP64__)
+#define INTPTR_MIN        INT64_MIN
+#define INTPTR_MAX        INT64_MAX
+#define UINTPTR_MAX       UINT64_MAX
+#else
+#define INTPTR_MIN        INT32_MIN
+#define INTPTR_MAX        INT32_MAX
+#define UINTPTR_MAX       UINT32_MAX
+#endif
+
+/* 7.18.2.5 Limits of greatest-width integer types */
+#define INTMAX_MIN        INT64_MIN
+#define INTMAX_MAX        INT64_MAX
+
+#define UINTMAX_MAX       UINT64_MAX
+
+/* 7.18.3 "Other" */
+#if defined(__LP64__)
+#define PTRDIFF_MIN       INT64_MIN
+#define PTRDIFF_MAX       INT64_MAX
+#else
+#define PTRDIFF_MIN       INT32_MIN
+#define PTRDIFF_MAX       INT32_MAX
+#endif
+/* We have no sig_atomic_t yet, so no SIG_ATOMIC_{MIN,MAX}.
+   Should end up being {-127,127} or {0,255} ... or bigger.
+   My bet would be on one of {U}INT32_{MIN,MAX}. */
+
+#define SIZE_MAX          UINT32_MAX
+
+//#define WCHAR_MAX         INT32_MAX
+
+/* We have no wint_t yet, so no WINT_{MIN,MAX}.
+   Should end up being {U}INT32_{MIN,MAX}, depending.  */
+
+
+#endif /* if C++, then __STDC_LIMIT_MACROS enables the above macros */
 #include <cfloat>
 #include <climits>
 #include <cmath>
 #include <cstdlib> // strtof, strtod
-#include <stdint.h> // CUDA 5.5 doesn't recognize <cstdint>.
-
 #include <complex> // std::complex
 #include <limits> // std::numeric_limits
 
@@ -1702,10 +1797,10 @@ public:
 
 
 template<>
-class ArithTraits<int64_t> {
+class ArithTraits<long long> {
 public:
-  typedef int64_t val_type;
-  typedef int64_t mag_type;
+  typedef long long val_type;
+  typedef long long mag_type;
 
   static const bool is_specialized = true;
   static const bool is_signed = true;
@@ -1797,7 +1892,7 @@ public:
     return false;
   }
   static std::string name () {
-    return "int64_t";
+    return "long long";
   }
   static KOKKOS_DEVICE_FUNCTION val_type squareroot (const val_type x) {
     return sqrt (x);
@@ -1988,10 +2083,10 @@ public:
 
 
 template<>
-class ArithTraits<uint64_t> {
+class ArithTraits<unsigned long long> {
 public:
-  typedef uint64_t val_type;
-  typedef uint64_t mag_type;
+  typedef unsigned long long val_type;
+  typedef unsigned long long mag_type;
 
   static const bool is_specialized = true;
   static const bool is_signed = false;
@@ -2069,7 +2164,7 @@ public:
     return false;
   }
   static std::string name () {
-    return "uint64_t";
+    return "unsigned long long";
   }
   static KOKKOS_DEVICE_FUNCTION val_type squareroot (const val_type x) {
     return sqrt (x);
