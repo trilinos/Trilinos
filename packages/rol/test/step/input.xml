@@ -24,6 +24,7 @@
   <Parameter name="Absolute Krylov Tolerance"                         type="double" value="1.e-4"                   />
   <Parameter name="Relative Krylov Tolerance"                         type="double" value="1.e-2"                   />
   <Parameter name="Maximum Number of Krylov Iterations"               type="int"    value="100"                     />
+  <Parameter name="Use Secant Preconditioner"                         type="bool"   value="false"                   />
   <Parameter name="Initial Trust-Region Radius"                       type="double" value="10.0"                    />
   <Parameter name="Minimum Trust-Region Radius"                       type="double" value="1.e-12"                  />
   <Parameter name="Maximum Trust-Region Radius"                       type="double" value="5.e3"                    />

@@ -104,7 +104,6 @@ namespace ROL {
     DESCENT_SECANT,
     DESCENT_NEWTON,
     DESCENT_NEWTONKRYLOV,
-    DESCENT_SECANTPRECOND,
     DESCENT_LAST
   };
 
@@ -116,7 +115,6 @@ namespace ROL {
       case DESCENT_SECANT:        retString = "Quasi-Newton Method";                       break;
       case DESCENT_NEWTON:        retString = "Newton's Method";                           break;
       case DESCENT_NEWTONKRYLOV:  retString = "Newton-Krylov";                             break;
-      case DESCENT_SECANTPRECOND: retString = "Newton-Krylov with Secant Preconditioning"; break;
       case DESCENT_LAST:          retString = "Last Type (Dummy)";                         break;
       default:                    retString = "INVALID ESecant";
     }
@@ -133,8 +131,7 @@ namespace ROL {
             (d == DESCENT_NONLINEARCG)   ||
             (d == DESCENT_SECANT)        ||
             (d == DESCENT_NEWTON)        ||
-            (d == DESCENT_NEWTONKRYLOV)  ||
-            (d == DESCENT_SECANTPRECOND)
+            (d == DESCENT_NEWTONKRYLOV) 
           );
   }
 

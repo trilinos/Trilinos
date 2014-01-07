@@ -239,12 +239,17 @@ public:
   
     // Update algorithm state
     (algo_state.iterateVec)->set(x);
-    Teuchos::RCP<Vector<Real> > xnew = x.clone();
-    xnew->set(x);
-    xnew->axpy(-1.0,*(Step<Real>::state_->gradientVec));
-    con.project(*xnew);
-    xnew->axpy(-1.0,x);
-    algo_state.gnorm = xnew->norm();
+    if ( con.isActivated() ) {
+      Teuchos::RCP<Vector<Real> > xnew = x.clone();
+      xnew->set(x);
+      xnew->axpy(-1.0,*(Step<Real>::state_->gradientVec));
+      con.project(*xnew);
+      xnew->axpy(-1.0,x);
+      algo_state.gnorm = xnew->norm();
+    }
+    else {
+      algo_state.gnorm = (Step<Real>::state_->gradientVec)->norm();
+    }
   }
 
   /** \brief Print iterate header.

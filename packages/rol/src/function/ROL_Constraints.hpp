@@ -57,9 +57,14 @@ namespace ROL {
 
 template <class Real>
 class Constraints {
+private:
+  bool activated_;
+
 public:
 
   virtual ~Constraints() {}
+
+  Constraints(void) : activated_(true) {}
 
   /** \brief Update constraint functions.  
                 x is the optimization variable, 
@@ -86,6 +91,10 @@ public:
                 x is the optimization variable
   */
   virtual void pruneInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x ) { v.zero(); }
+
+  void activate(void)    { this->activated_ = true;  }
+  void deactivate(void)  { this->activated_ = false; }
+  bool isActivated(void) { return this->activated_;  }
 
 }; // class Constraints
 

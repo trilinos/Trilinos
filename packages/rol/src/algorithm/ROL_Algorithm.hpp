@@ -81,6 +81,7 @@ public:
                                         Objective<Real>   &obj,
                                         bool               print = false ) {
     Constraints<Real> con;
+    con.deactivate();
     return this->run(x,obj,con,print);
   }
 

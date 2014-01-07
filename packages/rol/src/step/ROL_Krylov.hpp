@@ -61,23 +61,57 @@ class Krylov {
   Real tol2_;
   int  maxit_;
   bool useInexact_;
+  bool useSecantPrecond_;
 
   void applyReducedHessian( Vector<Real> &Hp, const Vector<Real> &p, const Vector<Real> &g, const Vector<Real> &x, 
                             Objective<Real> &obj, Constraints<Real> &con, Real itol) {
-    Teuchos::RCP<Vector<Real> > pnew = x.clone();
-    pnew->set(p);
-    con.pruneActive(*pnew,g,x);
-    obj.hessVec(Hp, *pnew, x, itol);  
-    con.pruneActive(Hp,g,x);
-    pnew->set(p);
-    con.pruneInactive(*pnew,g,x);
-    Hp.plus(*pnew);
+    if ( con.isActivated() ) {
+      Teuchos::RCP<Vector<Real> > pnew = x.clone();
+      pnew->set(p);
+      con.pruneActive(*pnew,g,x);
+      obj.hessVec(Hp, *pnew, x, itol);  
+      con.pruneActive(Hp,g,x);
+      pnew->set(p);
+      con.pruneInactive(*pnew,g,x);
+      Hp.plus(*pnew);
+    }
+    else {
+      obj.hessVec(Hp, p, x, itol);
+    }
+  }
+
+  void applyPrecond(Vector<Real> &Mv, const Vector<Real> &v, const Vector<Real> &x, Objective<Real> &obj, 
+                    Teuchos::RCP<Secant<Real> > &secant ) {
+    if ( secant != Teuchos::null && this->useSecantPrecond_ ) {
+      secant->applyB( Mv, v, x );
+    }
+    else {
+      obj.precond( Mv, v, x );
+    }
+  }
+
+  void applyReducedPrecond( Vector<Real> &Mv, const Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x,
+                            Objective<Real> &obj, Constraints<Real> &con, Teuchos::RCP<Secant<Real> > &secant ) { 
+    if ( con.isActivated() ) {
+      Teuchos::RCP<Vector<Real> > vnew = x.clone();
+      vnew->set(v);
+      con.pruneActive(*vnew,g,x);
+      this->applyPrecond(Mv,*vnew,x,obj,secant);
+      con.pruneActive(Mv,g,x);
+      vnew->set(v);
+      con.pruneInactive(*vnew,g,x);
+      Mv.plus(*vnew);
+    }
+    else {
+      this->applyPrecond(Mv,v,x,obj,secant);
+    }
   }
 
 public:
   Krylov( EKrylov &ekv = KRYLOV_CG, Real tol1 = 1.e-4, Real tol2 = 1.e-2, 
-          int maxit = 100, bool useInexact = false ) 
-    : ekv_(ekv), tol1_(tol1), tol2_(tol2), maxit_(maxit), useInexact_(useInexact) {}
+          int maxit = 100, bool useInexact = false, bool useSecantPrecond = false ) 
+    : ekv_(ekv), tol1_(tol1), tol2_(tol2), maxit_(maxit), 
+      useInexact_(useInexact), useSecantPrecond_(useSecantPrecond) {}
 
   // Run Krylov Method
   void run( Vector<Real> &s, int &iter, int &flag, const Vector<Real> &g, const Vector<Real> &x, 
@@ -102,12 +136,7 @@ public:
     gnew->set(g); 
 
     Teuchos::RCP<Vector<Real> > v = x.clone();  
-    if ( secant != Teuchos::null ) {
-      secant->applyB( *v, *gnew, x );
-    }
-    else {
-      obj.precond( *v, *gnew, x );  
-    }
+    this->applyReducedPrecond(*v,*gnew,g,x,obj,con,secant);
 
     Teuchos::RCP<Vector<Real> > p = x.clone(); 
     p->set(*v); 
@@ -145,12 +174,7 @@ public:
         break;
       }
 
-      if ( secant != Teuchos::null ) {
-        secant->applyB( *v, *gnew, x );
-      }
-      else {
-        obj.precond( *v, *gnew, x );  
-      }
+      this->applyReducedPrecond(*v,*gnew,g,x,obj,con,secant);
       tmp  = gv;         
       gv   = v->dot(*gnew); 
       beta = gv/tmp;
@@ -182,12 +206,7 @@ public:
 
     // Apply preconditioner to residual
     Teuchos::RCP<Vector<Real> > v = x.clone();  
-    if ( secant != Teuchos::null ) {
-      secant->applyB( *v, g, x );
-    }
-    else {
-      obj.precond( *v, g, x );  
-    }
+    this->applyReducedPrecond(*v,g,g,x,obj,con,secant);
 
     // Initialize direction p
     Teuchos::RCP<Vector<Real> > p = x.clone(); 
@@ -216,12 +235,7 @@ public:
     Real vHv   = Hv->dot(*v); 
 
     for (iter = 0; iter < this->maxit_; iter++) {
-      if ( secant != Teuchos::null ) {
-        secant->applyB( *MHp, *Hp, x );
-      }
-      else {
-        obj.precond( *MHp, *Hp, x );  
-      }
+      this->applyReducedPrecond(*MHp,*Hp,g,x,obj,con,secant);
       kappa = Hp->dot(*MHp);
       if ( vHv <= 0.0 || kappa <= 0.0 ) { 
         flag = 2;
