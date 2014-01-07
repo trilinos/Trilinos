@@ -19,6 +19,12 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_METIS
   "Enable support for Metis in Ifpack."
   OFF )
 
+# Add option to enable or disable support for MPI parallel subdomain solvers
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_PARALLEL_SUBDOMAIN_SOLVERS
+  HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
+  "Enable support for MPI parallel subdomain solvers."
+  OFF )
+
 # Add option to enable or disable the Ifpack_DynamicFactory class
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DYNAMIC_FACTORY
   HAVE_IFPACK_DYNAMIC_FACTORY

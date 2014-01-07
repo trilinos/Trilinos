@@ -70,6 +70,9 @@
 /* Define if want to build amesos-paraklete */
 #cmakedefine HAVE_AMESOS_CSPARSE
 
+/* Define to enable usage of MPI solvers as parallel subdomain solvers */
+#cmakedefine HAVE_AMESOS_PARALLEL_SUBDOMAIN_SOLVERS
+
 /* define if we want to use MPI */
 #cmakedefine HAVE_MPI
 

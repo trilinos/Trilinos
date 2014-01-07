@@ -53,7 +53,7 @@
 #include "Ifpack_METISReordering.h"
 #include "Ifpack_LocalFilter.h"
 #include "Ifpack_NodeFilter.h"
-#ifdef IFPACK_SUBCOMM_CODE
+#ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
 #include "Ifpack_SubdomainFilter.h"
 #endif
 #include "Ifpack_SingletonFilter.h"
@@ -71,7 +71,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 
-#ifdef IFPACK_SUBCOMM_CODE
+#ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
 #include "EpetraExt_Reindex_CrsMatrix.h"
 #include "EpetraExt_Reindex_MultiVector.h"
 #endif
@@ -401,7 +401,7 @@ protected:
   //TODO then we should switch to this definition.
   Teuchos::RefCountPtr<Epetra_RowMatrix> LocalizedMatrix_;
 */
-#ifdef IFPACK_SUBCOMM_CODE
+#ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
   //! The subdomain matrix (either LocalFilter or SubdomainFilter)
   Teuchos::RCP<Epetra_RowMatrix> LocalizedMatrix_;
   //! The subdomain matrix in Epetra_CrsMatrix format
@@ -426,7 +426,7 @@ protected:
   Teuchos::RefCountPtr<Ifpack_LocalFilter> LocalizedMatrix_;
 # endif
 #endif
-#ifdef IFPACK_SUBCOMM_CODE
+#ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
   // Some data members used for determining the subdomain id (color)
   //! The MPI rank of the current process
   int MpiRank_;
@@ -494,7 +494,7 @@ protected:
   //! Pointer to the local solver.
   Teuchos::RefCountPtr<T> Inverse_;
   //! Vectors used in overlap solve.
-#ifdef IFPACK_SUBCOMM_CODE
+#ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
   mutable Teuchos::RefCountPtr<Epetra_MultiVector> OverlappingX;
   mutable Teuchos::RefCountPtr<Epetra_MultiVector> OverlappingY;
 #endif
@@ -510,7 +510,7 @@ template<typename T>
 Ifpack_AdditiveSchwarz<T>::
 Ifpack_AdditiveSchwarz(Epetra_RowMatrix* Matrix_in,
         		       int OverlapLevel_in) :
-#ifdef IFPACK_SUBCOMM_CODE
+#ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
   MpiRank_(0),
   NumMpiProcs_(1),
   NumMpiProcsPerSubdomain_(1),
@@ -562,7 +562,7 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
 
   Epetra_RowMatrix* MatrixPtr;
 
-#ifndef IFPACK_SUBCOMM_CODE
+#ifndef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
 # ifdef IFPACK_NODE_AWARE_CODE
 /*
   sleep(3);
@@ -590,7 +590,7 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
   try{
   if (OverlappingMatrix_ != Teuchos::null)
   {
-#ifdef IFPACK_SUBCOMM_CODE
+#ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
     if (NumMpiProcsPerSubdomain_ > 1) {
       LocalizedMatrix_ = Teuchos::rcp(new Ifpack_SubdomainFilter(OverlappingMatrix_, SubdomainId_));
     } else {
@@ -608,7 +608,7 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
   }
   else
   {
-#ifdef IFPACK_SUBCOMM_CODE
+#ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
 
     if (NumMpiProcsPerSubdomain_ > 1) {
       LocalizedMatrix_ = Teuchos::rcp(new Ifpack_SubdomainFilter(Matrix_, SubdomainId_));
@@ -670,7 +670,7 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
     MatrixPtr = &*ReorderedLocalizedMatrix_;
   }
 
-#ifdef IFPACK_SUBCOMM_CODE
+#ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
   // The subdomain matrix needs to be reindexed by Amesos so we need to make a CrsMatrix
   // and then reindex it with EpetraExt.
   // The reindexing is done here because this feature is only implemented in Amesos_Klu,
@@ -714,7 +714,7 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
 template<typename T>
 int Ifpack_AdditiveSchwarz<T>::SetParameters(Teuchos::ParameterList& List_in)
 {
-#ifdef IFPACK_SUBCOMM_CODE
+#ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
   MpiRank_ = Matrix_->Comm().MyPID();
   NumMpiProcs_ = Matrix_->Comm().NumProc();
   NumMpiProcsPerSubdomain_ = List_in.get("subdomain: number-of-processors", 1);
@@ -803,7 +803,7 @@ int Ifpack_AdditiveSchwarz<T>::Initialize()
 
   // compute the overlapping matrix if necessary
   if (IsOverlapping_) {
-#ifdef IFPACK_SUBCOMM_CODE
+#ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
     if (NumMpiProcsPerSubdomain_ > 1) {
       OverlappingMatrix_ = Teuchos::rcp( new Ifpack_OverlappingRowMatrix(Matrix_, OverlapLevel_, SubdomainId_) );
     } else {
@@ -1023,7 +1023,7 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   // process overlap, may need to create vectors and import data
   if (IsOverlapping()) {
-#ifdef IFPACK_SUBCOMM_CODE
+#ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
     if (OverlappingX == Teuchos::null) {
       OverlappingX = Teuchos::rcp( new Epetra_MultiVector(OverlappingMatrix_->RowMatrixRowMap(), X.NumVectors()) );
       if (OverlappingX == Teuchos::null) IFPACK_CHK_ERR(-5);
@@ -1090,7 +1090,7 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   else {
     // process reordering
     if (!UseReordering_) {
-#ifdef IFPACK_SUBCOMM_CODE
+#ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
       tempX_.reset(&((*RangeVectorReindexer_)(*OverlappingX)), false);
       tempY_.reset(&((*DomainVectorReindexer_)(*OverlappingY)), false);
       IFPACK_CHK_ERR(Inverse_->ApplyInverse(*tempX_,*tempY_));
@@ -1168,7 +1168,7 @@ Print(std::ostream& os) const
   os << "Condition number estimate             = " << Condest_ << endl;
   os << "Global number of rows                 = " << Matrix_->NumGlobalRows64() << endl;
 
-#ifdef IFPACK_SUBCOMM_CODE
+#ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
   os << endl;
   os << "================================================================================" << endl;
   os << "Subcommunicator stats" << endl;

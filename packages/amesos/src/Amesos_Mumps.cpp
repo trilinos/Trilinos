@@ -472,7 +472,7 @@ int Amesos_Mumps::SymbolicFactorization()
 #endif
   }
 #else
-#ifdef IFPACK_SUBCOMM_CODE
+#ifdef HAVE_AMESOS_PARALLEL_SUBDOMAIN_SOLVERS
   // This next three lines of code were required to make Amesos_Mumps work
   // with Ifpack_SubdomainFilter. They may actually be usefull in all cases
   // when using MUMPS on a subdomain.

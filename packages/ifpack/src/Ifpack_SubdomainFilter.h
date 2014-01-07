@@ -38,9 +38,10 @@
 #ifndef IFPACK_SUBDOMAINFILTER_H
 #define IFPACK_SUBDOMAINFILTER_H
 
-#ifdef IFPACK_SUBCOMM_CODE
-
 #include "Ifpack_ConfigDefs.h"
+
+#ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
+
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -457,5 +458,5 @@ private:
   Teuchos::RCP<Epetra_Export> Exporter_;
 
 };
-#endif //ifdef IFPACK_SUBCOMM_CODE
+#endif //ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
 #endif /* IFPACK_SUBDOMAINFILTER_H */
