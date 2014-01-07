@@ -125,6 +125,15 @@ public:
   Selector & operator &= ( const Selector & selector)
   { return add_binary_op(SelectorNodeType::INTERSECTION, selector); }
 
+// Remove once Fmwk::MeshPart no longer exists
+#ifdef SIERRA_MIGRATION
+  Selector & operator &= ( const Part& part)
+  { return add_binary_op(SelectorNodeType::INTERSECTION, Selector(part)); }
+
+  Selector & operator |= ( const Part& part )
+  { return operator|=(Selector(part)); }
+#endif
+
   /** \brief  Union: this = this UNION ( expression ) */
   Selector & operator |= ( const Selector & selector)
   {
