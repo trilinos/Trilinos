@@ -2411,25 +2411,17 @@ ENDMACRO()
 
 
 #
-#  macro for helping set up exclude files only for the packages
-#  that will not be supporting autotools.
-#  Returns a list of the autotools files that shoudl be excluded for
-#  the package.
-#
-#  example: PACKAGE_APPLY_TO_NO_AUTOTOOLS_PACKAGES("configure.ac" list)
-#    assuming that the packages epetra and teuchos are not supporting 
-#    autotools anymore then the return value would be:
-#    "epetra/configure.ac;teuchos/configure.ac"
-#
+#  Macro for helping set up exclude files only for the packages that will not
+#  be supporting autotools.
 #
 
 MACRO(TRIBITS_EXCLUDE_AUTOTOOLS_FILES) # PACKAGE_NAME LIST_RETURN)
   SET(AUTOTOOLS_FILES 
-    configure.ac
-    configure
-    Makefile.am
-    Makefile.in
-    bootstrap
+    configure.ac$
+    configure$
+    Makefile.am$
+    Makefile.in$
+    bootstrap$
     .*[.]m4$
     config/
     )
