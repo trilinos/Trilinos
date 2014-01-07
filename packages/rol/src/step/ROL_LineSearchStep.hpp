@@ -182,10 +182,26 @@ public:
     }
     else if ( this->edesc_ == DESCENT_NEWTON ) {
       Real tol = std::sqrt(ROL_EPSILON);
-      obj.invHessVec(s,*(Step<Real>::state_->gradientVec),x,tol);
+      Teuchos::RCP<Vector<Real> > gnew = x.clone();
+      gnew->set(*(Step<Real>::state_->gradientVec));
+      con.pruneActive(*gnew,*(Step<Real>::state_->gradientVec),x);
+      obj.invHessVec(s,*gnew,x,tol);
+      con.pruneActive(s,*(Step<Real>::state_->gradientVec),x);
+      gnew->set(*(Step<Real>::state_->gradientVec));
+      con.pruneInactive(*gnew,*(Step<Real>::state_->gradientVec),x);
+      s.plus(*gnew);
+      //obj.invHessVec(s,*(Step<Real>::state_->gradientVec),x,tol);
     }
     else if ( this->edesc_ == DESCENT_SECANT ) {
-      this->secant_->applyH(s,*(Step<Real>::state_->gradientVec),x);
+      Teuchos::RCP<Vector<Real> > gnew = x.clone();
+      gnew->set(*(Step<Real>::state_->gradientVec));
+      con.pruneActive(*gnew,*(Step<Real>::state_->gradientVec),x);
+      this->secant_->applyH(s,*gnew,x);
+      con.pruneActive(s,*(Step<Real>::state_->gradientVec),x);
+      gnew->set(*(Step<Real>::state_->gradientVec));
+      con.pruneInactive(*gnew,*(Step<Real>::state_->gradientVec),x);
+      s.plus(*gnew);
+      //this->secant_->applyH(s,*(Step<Real>::state_->gradientVec),x);
     }
     else if ( this->edesc_ == DESCENT_NONLINEARCG ) {
       this->nlcg_->run(s,*(Step<Real>::state_->gradientVec),x,obj);
