@@ -1035,5 +1035,7 @@ struct ScalarTraits<
 
 } // Teuchos namespace
 
-
+#ifdef __CUDA_ARCH__
+#include <Teuchos_ScalarTraitsCUDA.hpp>
+#endif
 #endif // _TEUCHOS_SCALARTRAITS_HPP_
