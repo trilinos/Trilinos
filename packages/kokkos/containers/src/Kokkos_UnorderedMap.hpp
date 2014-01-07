@@ -272,6 +272,7 @@ public:
   //! Clear all entries in the table.
   void clear()
   {
+    if(m_capacity == 0) return;
     if (size() || failed_inserts()) {
       Kokkos::deep_copy(m_available_indexes,invalid_index);
       Kokkos::deep_copy(m_hash_lists,invalid_index);
@@ -326,6 +327,7 @@ public:
   /// must be computed.
   size_type size() const
   {
+    if( m_capacity == 0u ) return 0u;
     sync_scalars();
     size_type result;
     raw_deep_copy(&result,&m_scalars.ptr_on_device()->size, sizeof(size_type));
@@ -339,6 +341,7 @@ public:
   /// variable; it must be computed.
   size_type failed_inserts() const
   {
+    if( m_capacity == 0u ) return 0u;
     sync_scalars();
     size_type result;
     raw_deep_copy(&result,&m_scalars.ptr_on_device()->failed_inserts, sizeof(size_type));
@@ -347,6 +350,7 @@ public:
 
   bool erasable() const
   {
+    if( m_capacity == 0u ) return false;
     bool result = false;
     if (is_insertable_map){
       raw_deep_copy(&result,&m_scalars.ptr_on_device()->erasable, sizeof(bool));
@@ -384,6 +388,7 @@ public:
 
   void print()
   {
+    if( m_capacity == 0u ) return;
     Impl::UnorderedMapPrint<const_map_type> f(*this);
     f.apply();
     device_type::fence();
@@ -685,6 +690,7 @@ private: // private member functions
 
   void sync_scalars(bool force_sync = false) const
   {
+    if( m_capacity == 0u ) return;
     bool modified = false;
     raw_deep_copy(&modified, &m_scalars.ptr_on_device()->modified, sizeof(bool) );
     if (force_sync || modified) {
