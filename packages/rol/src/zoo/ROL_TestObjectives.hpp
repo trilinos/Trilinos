@@ -58,9 +58,18 @@
 #include "ROL_PoissonControl.hpp"
 #include "ROL_PoissonInversion.hpp"
 
+#include "ROL_HS1.hpp"
+#include "ROL_HS2.hpp"
+#include "ROL_HS3.hpp"
+#include "ROL_HS4.hpp"
+#include "ROL_HS5.hpp"
+#include "ROL_HS25.hpp"
+#include "ROL_HS38.hpp"
+
 #include "ROL_Types.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective.hpp"
+#include "ROL_Constraints.hpp"
 
 namespace ROL {
 
@@ -80,6 +89,21 @@ namespace ROL {
     }
   }
 
+  template<class Real>
+  void getTestObjectives( Teuchos::RCP<Objective<Real> > &obj, Teuchos::RCP<Constraints<Real> > &con, 
+                          Vector<Real> &x0, Vector<Real> &x, 
+                          const ETestOptProblem test ) {
+    switch (test) {
+      case TESTOPTPROBLEM_HS1:  getHS1(obj,con,x0,x);  break;
+      case TESTOPTPROBLEM_HS2:  getHS2(obj,con,x0,x);  break;
+      case TESTOPTPROBLEM_HS3:  getHS3(obj,con,x0,x);  break;
+      case TESTOPTPROBLEM_HS4:  getHS4(obj,con,x0,x);  break;
+      case TESTOPTPROBLEM_HS5:  getHS5(obj,con,x0,x);  break;
+      case TESTOPTPROBLEM_HS25: getHS25(obj,con,x0,x); break;
+      case TESTOPTPROBLEM_HS38: getHS38(obj,con,x0,x); break;
+      case TESTOPTPROBLEM_LAST: break;
+    }
+  }
 } // namespace ROL
 
 #endif

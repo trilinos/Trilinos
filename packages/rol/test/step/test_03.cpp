@@ -128,7 +128,8 @@ int main(int argc, char *argv[]) {
       ROL::StdVector<RealT> e(e_rcp);
       e.zero();
 
-      ROL::EDescent desc = ROL::DESCENT_STEEPEST; 
+      //ROL::EDescent desc = ROL::DESCENT_STEEPEST; 
+      ROL::EDescent desc = ROL::DESCENT_NEWTONKRYLOV; 
       parlist->set("Descent Type", ROL::EDescentToString(desc));
       *outStream << "\n\n" << ROL::EDescentToString(desc) << "\n\n";
 

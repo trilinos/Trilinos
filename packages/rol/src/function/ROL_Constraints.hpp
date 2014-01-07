@@ -71,7 +71,21 @@ public:
   /** \brief Project optimization variables onto constraint set.
                 x is the optimization variable
   */
-  virtual void project( Vector<Real> &x ) {};
+  virtual void project( Vector<Real> &x ) {}
+
+  /** \brief Remove active set variables.
+                v is the vector to be pruned 
+                g is the gradient of the objective function at x
+                x is the optimization variable
+  */
+  virtual void pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x ) {}
+
+  /** \brief Remove the inactive set variables.
+                v is the vector to be pruned 
+                g is the gradient of the objective function at x
+                x is the optimization variable
+  */
+  virtual void pruneInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x ) { v.zero(); }
 
 }; // class Constraints
 

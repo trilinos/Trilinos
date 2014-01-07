@@ -133,7 +133,8 @@ public:
 
   /** \brief Initialize step.
   */
-  void initialize( const Vector<Real> &x, Objective<Real> &obj, AlgorithmState<Real> &algo_state ) {
+  void initialize( Vector<Real> &x, Objective<Real> &obj, Constraints<Real> &con, 
+                   AlgorithmState<Real> &algo_state ) {
     algo_state.nfval = 0;
     algo_state.ngrad = 0;
 
@@ -194,7 +195,8 @@ public:
 
   /** \brief Compute step.
   */
-  void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, AlgorithmState<Real> &algo_state ) {
+  void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, Constraints<Real> &con, 
+                AlgorithmState<Real> &algo_state ) {
     this->CGflag_ = 0;
     this->CGiter_ = 0;
     this->trustRegion_->run(s,algo_state.snorm,this->del_,this->CGflag_,this->CGiter_,
@@ -203,7 +205,8 @@ public:
 
   /** \brief Update step, if successful.
   */
-  void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, AlgorithmState<Real> &algo_state ) {
+  void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, Constraints<Real> &con, 
+               AlgorithmState<Real> &algo_state ) {
     Real tol = std::sqrt(ROL_EPSILON);
 
     this->TRflag_   = 0;
@@ -236,7 +239,12 @@ public:
   
     // Update algorithm state
     (algo_state.iterateVec)->set(x);
-    algo_state.gnorm = (Step<Real>::state_->gradientVec)->norm();
+    Teuchos::RCP<Vector<Real> > xnew = x.clone();
+    xnew->set(x);
+    xnew->axpy(-1.0,*(Step<Real>::state_->gradientVec));
+    con.project(*xnew);
+    xnew->axpy(-1.0,x);
+    algo_state.gnorm = xnew->norm();
   }
 
   /** \brief Print iterate header.

@@ -704,6 +704,87 @@ namespace ROL {
     return TESTOBJECTIVES_ROSENBROCK;
   }
 
+  /** \enum   ROL::ETestOptProblem
+      \brief  Enumeration of test optimization problems.
+
+      \arg    HS1           describe
+      \arg    HS2           describe
+      \arg    HS3           describe
+      \arg    HS4           describe
+      \arg    HS5           describe
+      \arg    HS25          describe
+   */
+  enum ETestOptProblem {
+    TESTOPTPROBLEM_HS1 = 0,
+    TESTOPTPROBLEM_HS2,
+    TESTOPTPROBLEM_HS3,
+    TESTOPTPROBLEM_HS4,
+    TESTOPTPROBLEM_HS5,
+    TESTOPTPROBLEM_HS25,
+    TESTOPTPROBLEM_HS38,
+    TESTOPTPROBLEM_LAST
+  };
+
+  inline std::string ETestOptProblemToString(ETestOptProblem to) {
+    std::string retString;
+    switch(to) {
+      case TESTOPTPROBLEM_HS1:  retString = "Hock and Schittkowski Test Problem #1";  break;
+      case TESTOPTPROBLEM_HS2:  retString = "Hock and Schittkowski Test Problem #2";  break;
+      case TESTOPTPROBLEM_HS3:  retString = "Hock and Schittkowski Test Problem #3";  break;
+      case TESTOPTPROBLEM_HS4:  retString = "Hock and Schittkowski Test Problem #4";  break;
+      case TESTOPTPROBLEM_HS5:  retString = "Hock and Schittkowski Test Problem #5";  break;
+      case TESTOPTPROBLEM_HS25: retString = "Hock and Schittkowski Test Problem #25"; break;
+      case TESTOPTPROBLEM_HS38: retString = "Hock and Schittkowski Test Problem #38"; break;
+      case TESTOPTPROBLEM_LAST: retString = "Last Type (Dummy)";                      break;
+      default:                  retString = "INVALID ETestOptProblem";
+    }
+    return retString;
+  }
+  
+  /** \brief  Verifies validity of a TestOptProblem enum.
+    
+      \param  ls  [in]  - enum of the TestOptProblem
+      \return 1 if the argument is a valid TestOptProblem; 0 otherwise.
+    */
+  inline int isValidTestOptProblem(ETestOptProblem to){
+    return( (to == TESTOPTPROBLEM_HS1)  ||
+            (to == TESTOPTPROBLEM_HS2)  ||
+            (to == TESTOPTPROBLEM_HS3)  ||
+            (to == TESTOPTPROBLEM_HS4)  ||
+            (to == TESTOPTPROBLEM_HS5)  ||
+            (to == TESTOPTPROBLEM_HS25) ||
+            (to == TESTOPTPROBLEM_HS38) );
+  }
+
+  inline ETestOptProblem & operator++(ETestOptProblem &type) {
+    return type = static_cast<ETestOptProblem>(type+1);
+  }
+
+  inline ETestOptProblem operator++(ETestOptProblem &type, int) {
+    ETestOptProblem oldval = type;
+    ++type;
+    return oldval;
+  }
+
+  inline ETestOptProblem & operator--(ETestOptProblem &type) {
+    return type = static_cast<ETestOptProblem>(type-1);
+  }
+
+  inline ETestOptProblem operator--(ETestOptProblem &type, int) {
+    ETestOptProblem oldval = type;
+    --type;
+    return oldval;
+  }
+
+  inline ETestOptProblem StringToETestOptProblem(std::string s) {
+    s = removeStringFormat(s);
+    for ( ETestOptProblem to = TESTOPTPROBLEM_HS1; to < TESTOPTPROBLEM_LAST; to++ ) {
+      if ( !s.compare(removeStringFormat(ETestOptProblemToString(to))) ) {
+        return to;
+      }
+    }
+    return TESTOPTPROBLEM_HS1;
+  }
 } // namespace ROL
 
 

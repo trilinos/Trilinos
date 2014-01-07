@@ -62,6 +62,18 @@ class Krylov {
   int  maxit_;
   bool useInexact_;
 
+  void applyReducedHessian( Vector<Real> &Hp, const Vector<Real> &p, const Vector<Real> &g, const Vector<Real> &x, 
+                            Objective<Real> &obj, Constraints<Real> &con, Real itol) {
+    Teuchos::RCP<Vector<Real> > pnew = x.clone();
+    pnew->set(p);
+    con.pruneActive(*pnew,g,x);
+    obj.hessVec(Hp, *pnew, x, itol);  
+    con.pruneActive(Hp,g,x);
+    pnew->set(p);
+    con.pruneInactive(*pnew,g,x);
+    Hp.plus(*pnew);
+  }
+
 public:
   Krylov( EKrylov &ekv = KRYLOV_CG, Real tol1 = 1.e-4, Real tol2 = 1.e-2, 
           int maxit = 100, bool useInexact = false ) 
@@ -69,17 +81,17 @@ public:
 
   // Run Krylov Method
   void run( Vector<Real> &s, int &iter, int &flag, const Vector<Real> &g, const Vector<Real> &x, 
-            Objective<Real> &obj, Teuchos::RCP<Secant<Real> > secant = Teuchos::null ) {
+            Objective<Real> &obj, Constraints<Real> &con, Teuchos::RCP<Secant<Real> > secant = Teuchos::null ) {
     switch ( this->ekv_ ) {
-      case KRYLOV_CG: this->CG(s,iter,flag,g,x,obj,secant); break;
-      case KRYLOV_CR: this->CG(s,iter,flag,g,x,obj,secant); break;
+      case KRYLOV_CG: this->CG(s,iter,flag,g,x,obj,con,secant); break;
+      case KRYLOV_CR: this->CG(s,iter,flag,g,x,obj,con,secant); break;
       case KRYLOV_LAST: break; // DO NOTHING
     }
   }
 
   // Use (inexact) CG to solve Newton system 
   void CG( Vector<Real> &s, int &iter, int &flag, const Vector<Real> &g, const Vector<Real> &x, 
-           Objective<Real> &obj, Teuchos::RCP<Secant<Real> > secant = Teuchos::null ) {
+           Objective<Real> &obj, Constraints<Real> &con, Teuchos::RCP<Secant<Real> > secant = Teuchos::null ) {
     Real gnorm = g.norm(); 
     Real gtol = std::min(tol1_,tol2_*gnorm);
     Real itol = 0.0;
@@ -106,7 +118,7 @@ public:
       itol = gtol/(maxit_ * gnorm); 
       //itol = std::min( 0.5, gtol*p->norm()/(2.0 * this->maxit_ * gnorm * gnorm) ); 
     }
-    obj.hessVec( *Hp, *p, x, itol );  
+    this->applyReducedHessian(*Hp, *p, g, x, obj, con, itol);
 
     iter = 0; 
     flag = 0;
@@ -151,7 +163,7 @@ public:
         itol = gtol/(this->maxit_ * gnorm); 
         //itol = std::min( 0.5, gtol*p->norm()/(2.0 * this->maxit_ * gnorm * gnorm) ); 
       }
-      obj.hessVec( *Hp, *p, x, itol );
+      this->applyReducedHessian(*Hp, *p, g, x, obj, con, itol);
     }
     iter++;
     if ( iter == this->maxit_ ) {
@@ -161,7 +173,7 @@ public:
 
   // Use (inexact) CR to solve Newton system 
   void CR( Vector<Real> &s, int &iter, int &flag, const Vector<Real> &g, const Vector<Real> &x, 
-           Objective<Real> &obj, Teuchos::RCP<Secant<Real> > secant = Teuchos::null ) {
+           Objective<Real> &obj, Constraints<Real> &con, Teuchos::RCP<Secant<Real> > secant = Teuchos::null ) {
     // Initialize
     Real gnorm = g.norm(); 
     Real gtol = std::min(tol1_,tol2_*gnorm);
@@ -188,11 +200,11 @@ public:
     }
     // Apply Hessian to residual
     Teuchos::RCP<Vector<Real> > Hv  = x.clone();
-    obj.hessVec( *Hv, *v, x, itol );
+    this->applyReducedHessian(*Hv, *v, g, x, obj, con, itol);
     // Apply Hessian to direction p
     Teuchos::RCP<Vector<Real> > Hp  = x.clone();
     Teuchos::RCP<Vector<Real> > MHp = x.clone();  
-    obj.hessVec( *Hp, *p, x, itol );  
+    this->applyReducedHessian(*Hp, *p, g, x, obj, con, itol);
 
     // Initialize scalar quantities
     iter = 0; 
@@ -229,7 +241,7 @@ public:
       if ( this->useInexact_ ) {
         itol = gtol/(this->maxit_ * gnorm); 
       }
-      obj.hessVec( *Hv, *v, x, itol );
+      this->applyReducedHessian(*Hv, *v, g, x, obj, con, itol);
       tmp  = vHv;
       vHv  = Hv->dot(*v);
       beta = vHv/tmp;

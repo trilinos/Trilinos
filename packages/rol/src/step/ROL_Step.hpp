@@ -45,6 +45,8 @@
 #define ROL_STEP_H
 
 #include "ROL_Vector.hpp"
+#include "ROL_Objective.hpp"
+#include "ROL_Constraints.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 /** \class ROL::Step
@@ -89,27 +91,33 @@ public:
 
   /** \brief Initialize step.
   */
-  virtual void initialize( const Vector<Real> &x, Objective<Real> &obj, AlgorithmState<Real> &algo_state ) {
+  virtual void initialize( Vector<Real> &x, Objective<Real> &obj, Constraints<Real> &con, 
+                           AlgorithmState<Real> &algo_state ) {
     Real tol = std::sqrt(ROL_EPSILON);
+    // Initialize state descent direction and gradient storage
     state_->descentVec  = x.clone();
     state_->gradientVec = x.clone();
+    // Project x onto constraint set
+    con.project(x);
+    // Update objective function, get value, and get gradient
     obj.update(x,true,algo_state.iter);
-    obj.gradient(*(state_->gradientVec),x,tol);
-    algo_state.ngrad = 1;
-    algo_state.gnorm = (state_->gradientVec)->norm();
-    algo_state.snorm = 1.e10;
     algo_state.value = obj.value(x,tol);
     algo_state.nfval = 1;
+    obj.gradient(*(state_->gradientVec),x,tol);
+    algo_state.gnorm = (state_->gradientVec)->norm();
+    algo_state.ngrad = 1;
+    // Set initial step norm to something large
+    algo_state.snorm = 1.e10;
   }
 
   /** \brief Compute step.
   */
-  virtual void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, 
+  virtual void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, Constraints<Real> &con, 
                         AlgorithmState<Real> &algo_state ) = 0;
 
   /** \brief Update step, if successful.
   */
-  virtual void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, 
+  virtual void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, Constraints<Real> &con,
                        AlgorithmState<Real> &algo_state ) = 0;
 
   /** \brief Print iterate header.

@@ -77,7 +77,19 @@ public:
 
   /** \brief Run algorithm.
   */
-  virtual std::vector<std::string> run( Vector<Real> &x, Objective<Real> &obj, bool print = false ) {
+  virtual std::vector<std::string> run( Vector<Real>      &x,
+                                        Objective<Real>   &obj,
+                                        bool               print = false ) {
+    Constraints<Real> con;
+    return this->run(x,obj,con,print);
+  }
+
+  /** \brief Run algorithm.
+  */
+  virtual std::vector<std::string> run( Vector<Real>      &x, 
+                                        Objective<Real>   &obj,
+                                        Constraints<Real> &con,
+                                        bool               print = false ) {
     std::vector<std::string> output;
 
     // Initialize Current Iterate Container 
@@ -90,16 +102,16 @@ public:
     Teuchos::RCP<Vector<Real> > s = x.clone();
 
     // Initialize Step
-    this->step_->initialize(x, obj, *this->state_);
+    this->step_->initialize(x, obj, con, *this->state_);
     output.push_back(this->step_->print(*this->state_,true));
     if ( print ) {
       std::cout << this->step_->print(*this->state_,true);
     }
 
     // Run Algorithm
-    while (this->status_->check(*state_)) {
-      this->step_->compute(*s, x, obj, *this->state_);
-      this->step_->update(x, *s, obj, *this->state_);
+    while (this->status_->check(*this->state_)) {
+      this->step_->compute(*s, x, obj, con, *this->state_);
+      this->step_->update(x, *s, obj, con, *this->state_);
       output.push_back(this->step_->print(*this->state_,this->printHeader_));
       if ( print ) {
         std::cout << this->step_->print(*this->state_,this->printHeader_);

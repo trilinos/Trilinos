@@ -172,12 +172,13 @@ public:
 
   /** \brief Compute step.
   */
-  void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, AlgorithmState<Real> &algo_state ) {
+  void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, Constraints<Real> &con, 
+                AlgorithmState<Real> &algo_state ) {
     // Compute step s
     if ( this->edesc_ == DESCENT_NEWTONKRYLOV || this->edesc_ == DESCENT_SECANTPRECOND ) {
       this->flagKrylov_ = 0;
       this->krylov_->run(s,this->iterKrylov_,this->flagKrylov_,
-                         *(Step<Real>::state_->gradientVec),x,obj,this->secant_);
+                         *(Step<Real>::state_->gradientVec),x,obj,con,this->secant_);
     }
     else if ( this->edesc_ == DESCENT_NEWTON ) {
       Real tol = std::sqrt(ROL_EPSILON);
@@ -203,10 +204,15 @@ public:
     Real fnew  = algo_state.value;
     this->ls_nfval_ = 0;
     this->ls_ngrad_ = 0;
-    this->lineSearch_->run(alpha,fnew,this->ls_nfval_,this->ls_ngrad_,gs,s,x,obj);
+    this->lineSearch_->run(alpha,fnew,this->ls_nfval_,this->ls_ngrad_,gs,s,x,obj,con);
     algo_state.nfval += this->ls_nfval_;
     algo_state.ngrad += this->ls_ngrad_;
+
+    // Compute get scaled descent direction
     s.scale(alpha);
+    s.plus(x);
+    con.project(s);
+    s.axpy(-1.0,x);
 
     // Update step state information
     (Step<Real>::state_->descentVec)->set(s);
@@ -218,7 +224,8 @@ public:
 
   /** \brief Update step, if successful.
   */
-  void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, AlgorithmState<Real> &algo_state ) {
+  void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, Constraints<Real> &con,
+               AlgorithmState<Real> &algo_state ) {
     Real tol = std::sqrt(ROL_EPSILON);
 
     // Update iterate
@@ -242,7 +249,12 @@ public:
 
     // Update algorithm state
     (algo_state.iterateVec)->set(x);
-    algo_state.gnorm = (Step<Real>::state_->gradientVec)->norm();
+    Teuchos::RCP<Vector<Real> > xnew = x.clone();
+    xnew->set(x);
+    xnew->axpy(-1.0,*(Step<Real>::state_->gradientVec));
+    con.project(*xnew);
+    xnew->axpy(-1.0,x);
+    algo_state.gnorm = xnew->norm();
   }
 
   /** \brief Print iterate header.

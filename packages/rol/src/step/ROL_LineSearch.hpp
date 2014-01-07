@@ -108,7 +108,8 @@ public:
 
   bool status( const ELineSearch type, int &ls_neval, int &ls_ngrad, const Real alpha, 
                const Real fold, const Real sgold, const Real fnew, 
-               const Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj ) { 
+               const Vector<Real> &x, const Vector<Real> &s, 
+               Objective<Real> &obj, Constraints<Real> &con ) { 
     Real tol = std::sqrt(ROL_EPSILON);
 
     // Check Armijo Condition
@@ -138,7 +139,8 @@ public:
       else { 
         Teuchos::RCP<Vector<Real> > xnew = x.clone();
         xnew->set(x);
-        xnew->axpy(alpha,s);   
+        xnew->axpy(alpha,s);
+        con.project(*xnew);
         Teuchos::RCP<Vector<Real> > grad = x.clone();
         obj.update(*xnew);
         obj.gradient(*grad,*xnew,tol);
@@ -172,15 +174,17 @@ public:
   }
 
   void run( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
-            const Real &gs, const Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj ) {
+            const Real &gs, const Vector<Real> &s, const Vector<Real> &x, 
+            Objective<Real> &obj, Constraints<Real> &con ) {
+    Teuchos::RCP<Vector<Real> > xnew = x.clone();
     // Determine Initial Step Length
     if (this->useralpha_) {
       alpha = this->alpha0_;
     }
     else if ( this->edesc_ == DESCENT_STEEPEST || this->edesc_ == DESCENT_NONLINEARCG ) {
-      Teuchos::RCP<Vector<Real> > xnew = x.clone();
       xnew->set(x);
       xnew->plus(s);
+      con.project(*xnew);
       Real ftol = 0.0;
       // TODO: Think about reusing for efficiency!
       obj.update(*xnew);
@@ -188,9 +192,10 @@ public:
       alpha = -gs/(2.0*(fnew-fval-gs));
       xnew->set(x);
       xnew->axpy(alpha,s);
+      con.project(*xnew);
       obj.update(*xnew);
       fnew = obj.value(*xnew, ftol);
-      bool stat = status(LINESEARCH_BISECTION,ls_neval,ls_ngrad,alpha,fval,gs,fnew,x,s,obj);
+      bool stat = status(LINESEARCH_BISECTION,ls_neval,ls_ngrad,alpha,fval,gs,fnew,x,s,obj,con);
       if (!stat) {
         alpha = 1.0;
       }
@@ -204,40 +209,42 @@ public:
     ls_neval = 0;
     ls_ngrad = 0;
     if ( this->els_ == LINESEARCH_BACKTRACKING ) {
-      simplebacktracking( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj ); 
+      simplebacktracking( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj, con ); 
     }
     else if ( this->els_ == LINESEARCH_CUBICINTERP ) {
-      backtracking( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj ); 
+      backtracking( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj, con ); 
     }
     else if ( this->els_ == LINESEARCH_BRENTS ) {
-      brents( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj ); 
+      brents( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj, con ); 
     }
     else if ( this->els_ == LINESEARCH_BISECTION ) {
-      bisection( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj ); 
+      bisection( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj, con ); 
     }
     else if ( this->els_ == LINESEARCH_GOLDENSECTION ) {
-      goldensection( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj ); 
+      goldensection( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj, con ); 
     }
-
   }
 
   void simplebacktracking( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
-                           const Real &gs, const Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj ) {
+                           const Real &gs, const Vector<Real> &s, const Vector<Real> &x, 
+                           Objective<Real> &obj, Constraints<Real> &con ) {
     Real tol = std::sqrt(ROL_EPSILON);
 
     Teuchos::RCP<Vector<Real> > xnew = x.clone();
     xnew->set(x);
     xnew->axpy(alpha, s);
+    con.project(*xnew);
 
     Real fold = fval;
     obj.update(*xnew);
     fval = obj.value(*xnew,tol);
     ls_neval++;
 
-    while ( !status(LINESEARCH_BACKTRACKING,ls_neval,ls_ngrad,alpha,fold,gs,fval,*xnew,s,obj) ) {
+    while ( !status(LINESEARCH_BACKTRACKING,ls_neval,ls_ngrad,alpha,fold,gs,fval,*xnew,s,obj,con) ) {
       alpha *= this->rho_;
       xnew->set(x);
       xnew->axpy(alpha, s);
+      con.project(*xnew);
       obj.update(*xnew);
       fval = obj.value(*xnew,tol);
       ls_neval++;
@@ -245,12 +252,14 @@ public:
   }
 
   void backtracking( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
-                     const Real &gs, const Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj ) {
+                     const Real &gs, const Vector<Real> &s, const Vector<Real> &x, 
+                     Objective<Real> &obj, Constraints<Real> &con ) {
     Real tol = std::sqrt(ROL_EPSILON);
 
     Teuchos::RCP<Vector<Real> > xnew = x.clone();
     xnew->set(x);
     xnew->axpy(alpha, s);
+    con.project(*xnew);
 
     Real fold = fval;
     obj.update(*xnew);
@@ -267,7 +276,7 @@ public:
 
     bool first_iter = true;
 
-    while ( !status(LINESEARCH_CUBICINTERP,ls_neval,ls_ngrad,alpha,fold,gs,fval,x,s,obj) ) {
+    while ( !status(LINESEARCH_CUBICINTERP,ls_neval,ls_ngrad,alpha,fold,gs,fval,x,s,obj,con) ) {
       if ( first_iter ) {
         alpha1 = -gs*alpha*alpha/(2.0*(fval-fold-gs*alpha));
         first_iter = false;
@@ -300,6 +309,7 @@ public:
 
       xnew->set(x);
       xnew->axpy(alpha, s);
+      con.project(*xnew);
       obj.update(*xnew);
       fval = obj.value(*xnew,tol);
       ls_neval++;
@@ -307,7 +317,8 @@ public:
   }
 
   void bisection( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
-                  const Real &gs, const Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj ) {
+                  const Real &gs, const Vector<Real> &s, const Vector<Real> &x, 
+                  Objective<Real> &obj, Constraints<Real> &con ) {
     Real tol = std::sqrt(ROL_EPSILON);
 
     // Compute value phi(0)
@@ -319,13 +330,14 @@ public:
     Teuchos::RCP<Vector<Real> > xnew = x.clone();
     xnew->set(x);
     xnew->axpy(tr,s);
+    con.project(*xnew);
     obj.update(*xnew);
     Real val_tr = obj.value(*xnew,tol); 
     ls_neval++;
 
     // Check if phi(alpha) < phi(0)
     if ( val_tr < val_tl ) {
-      if ( status(LINESEARCH_BISECTION,ls_neval,ls_ngrad,tr,fval,gs,val_tr,x,s,obj) ) {
+      if ( status(LINESEARCH_BISECTION,ls_neval,ls_ngrad,tr,fval,gs,val_tr,x,s,obj,con) ) {
         alpha = tr;
         fval  = val_tr;
         return;
@@ -349,6 +361,7 @@ public:
     xnew->set(x);
     xnew->axpy(tc,s);
     obj.update(*xnew);
+    con.project(*xnew);
     Real val_tc = obj.value(*xnew,tol);
     ls_neval++;
 
@@ -363,11 +376,12 @@ public:
     Real t2     = 0.0;
     Real val_t2 = 0.0;
 
-    while (    !status(LINESEARCH_BISECTION,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj)  
+    while (    !status(LINESEARCH_BISECTION,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj,con)  
             && std::abs(tr - tl) > this->tol_ ) {
       t1 = (tl+tc)/2.0;
       xnew->set(x);
       xnew->axpy(t1,s);
+      con.project(*xnew);
       obj.update(*xnew);
       val_t1 = obj.value(*xnew,tol);
       ls_neval++;
@@ -375,6 +389,7 @@ public:
       t2 = (tr+tc)/2.0;
       xnew->set(x);
       xnew->axpy(t2,s);
+      con.project(*xnew);
       obj.update(*xnew);
       val_t2 = obj.value(*xnew,tol);
       ls_neval++;
@@ -427,7 +442,8 @@ public:
   }
 
   void goldensection( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
-                      const Real &gs, const Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj ) {
+                      const Real &gs, const Vector<Real> &s, const Vector<Real> &x, 
+                      Objective<Real> &obj, Constraints<Real> &con ) {
     Real tol = std::sqrt(ROL_EPSILON);
 
     Teuchos::RCP<Vector<Real> > grad = x.clone();
@@ -442,13 +458,14 @@ public:
     Teuchos::RCP<Vector<Real> > xnew = x.clone();
     xnew->set(x);
     xnew->axpy(tr,s);
+    con.project(*xnew);
     obj.update(*xnew);
     Real val_tr = obj.value(*xnew,tol);
     ls_neval++;
 
     // Check if phi(alpha) < phi(0)
     if ( val_tr < val_tl ) {
-      if ( status(LINESEARCH_GOLDENSECTION,ls_neval,ls_ngrad,tr,fval,gs,val_tr,x,s,obj) ) {
+      if ( status(LINESEARCH_GOLDENSECTION,ls_neval,ls_ngrad,tr,fval,gs,val_tr,x,s,obj,con) ) {
         alpha = tr;
         fval  = val_tr;
         return;
@@ -471,6 +488,7 @@ public:
     Real tc1 = c*tl + (1.0-c)*tr;
     xnew->set(x);
     xnew->axpy(tc1,s);
+    con.project(*xnew);
     obj.update(*xnew);
     Real val_tc1 = obj.value(*xnew,tol);
     ls_neval++;
@@ -479,6 +497,7 @@ public:
     Real tc2 = (1.0-c)*tl + c*tr;
     xnew->set(x);
     xnew->axpy(tc2,s);
+    con.project(*xnew);
     obj.update(*xnew);
     Real val_tc2 = obj.value(*xnew,tol);
     ls_neval++;
@@ -501,7 +520,7 @@ public:
       t     = tr;
     }
 
-    while (    !status(LINESEARCH_GOLDENSECTION,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj) 
+    while (    !status(LINESEARCH_GOLDENSECTION,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj,con) 
             && (std::abs(tl-tr) >= this->tol_) ) {
       if ( val_tc1 > val_tc2 ) {
         tl      = tc1;
@@ -512,6 +531,7 @@ public:
         tc2     = (1.0-c)*tl + c*tr;     
         xnew->set(x);
         xnew->axpy(tc2,s);
+        con.project(*xnew);
         obj.update(*xnew);
         val_tc2 = obj.value(*xnew,tol);
         ls_neval++;
@@ -525,6 +545,7 @@ public:
         tc1     = c*tl + (1.0-c)*tr;
         xnew->set(x);
         xnew->axpy(tc1,s);
+        con.project(*xnew);
         obj.update(*xnew);
         val_tc1 = obj.value(*xnew,tol);
         ls_neval++;
@@ -553,7 +574,8 @@ public:
 
 
   void brents( Real &alpha, Real &fval, int &ls_neval, int &ls_ngrad,
-               const Real &gs, const Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj ) {
+               const Real &gs, const Vector<Real> &s, const Vector<Real> &x, 
+               Objective<Real> &obj, Constraints<Real> &con ) {
     Real tol = std::sqrt(ROL_EPSILON);
 
     // Compute value phi(0)
@@ -569,13 +591,14 @@ public:
     Real tr = alpha;      // Right interval point
     xnew->set(x);
     xnew->axpy(tr, s);
+    con.project(*xnew);
     obj.update(*xnew);
     Real val_tr = obj.value(*xnew,tol);
     ls_neval++;
 
     // Check if phi(alpha) < phi(0)
     if ( val_tr < val_tl ) {
-      if ( status(LINESEARCH_BRENTS,ls_neval,ls_ngrad,tr,fval,gs,val_tr,x,s,obj) ) {
+      if ( status(LINESEARCH_BRENTS,ls_neval,ls_ngrad,tr,fval,gs,val_tr,x,s,obj,con) ) {
         alpha = tr;
         fval  = val_tr;
         return;
@@ -615,6 +638,7 @@ public:
       tr     = goldinv * (tc + gr*tl);
       xnew->set(x);
       xnew->axpy(tr,s);
+      con.project(*xnew);
       obj.update(*xnew);
       val_tr = obj.value(*xnew,tol);
       ls_neval++;
@@ -635,6 +659,7 @@ public:
       tc = tl + (gr-1.0)*(tr-tl);
       xnew->set(x);
       xnew->axpy(tc,s);
+      con.project(*xnew);
       obj.update(*xnew);
       val_tc = obj.value(*xnew,tol);
       ls_neval++;
@@ -653,7 +678,7 @@ public:
       val_t = val_tr;
     }
 
-    if ( status(LINESEARCH_BISECTION,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj) ) {
+    if ( status(LINESEARCH_BISECTION,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj,con) ) {
       alpha = t;
       fval  = val_t;
       return;
@@ -672,6 +697,7 @@ public:
       if ( (tr-tm)*(tm-tc) > 0.0 ) {
         xnew->set(x);
         xnew->axpy(tm,s);
+        con.project(*xnew);
         obj.update(*xnew);
         val_tm = obj.value(*xnew,tol);
         ls_neval++;
@@ -688,6 +714,7 @@ public:
         tm = tc + gr*(tc-tr);
         xnew->set(x);
         xnew->axpy(tm,s);
+        con.project(*xnew);
         obj.update(*xnew);
         val_tm = obj.value(*xnew,tol);
         ls_neval++;
@@ -695,6 +722,7 @@ public:
       else if ( (tc - tm)*(tm -tlim) > 0.0 ) {
         xnew->set(x);
         xnew->axpy(tm,s);
+        con.project(*xnew);
         obj.update(*xnew);
         val_tm = obj.value(*xnew,tol);
         ls_neval++;
@@ -708,6 +736,7 @@ public:
           tm     = tc + gr*(tc-tr);
           xnew->set(x);
           xnew->axpy(tm,s);
+          con.project(*xnew);
           obj.update(*xnew);
           val_tm = obj.value(*xnew,tol);
           ls_neval++;
@@ -717,6 +746,7 @@ public:
         tm = tlim;
         xnew->set(x);
         xnew->axpy(tm,s);
+        con.project(*xnew);
         obj.update(*xnew);
         val_tm = obj.value(*xnew,tol);
         ls_neval++;
@@ -725,6 +755,7 @@ public:
         tm = tc + gr*(tc-tr);
         xnew->set(x);
         xnew->axpy(tm,s);
+        con.project(*xnew);
         obj.update(*xnew);
         val_tm = obj.value(*xnew,tol);
         ls_neval++;
@@ -751,7 +782,7 @@ public:
       val_t = val_tr;
     }
 
-    if ( status(LINESEARCH_BISECTION,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj) ) {
+    if ( status(LINESEARCH_BISECTION,ls_neval,ls_ngrad,t,fval,gs,val_t,x,s,obj,con) ) {
       alpha = t;
       fval  = val_t;
       return;
@@ -789,7 +820,7 @@ public:
     a  = (tr < tc ? tr : tc);
     b  = (tr > tc ? tr : tc);
 
-    while (    !status(LINESEARCH_BRENTS,ls_neval,ls_ngrad,t,fval,gs,ft,x,s,obj)
+    while (    !status(LINESEARCH_BRENTS,ls_neval,ls_ngrad,t,fval,gs,ft,x,s,obj,con)
             && std::abs(t - tm) > this->tol_*(b-a) ) {
       if ( it < 2 ) {
         e = 2.0*(b-a);
@@ -827,6 +858,7 @@ public:
       u = (std::abs(d)>=tol1 ? t+d : t+(d>=0.0 ? std::abs(tol1) : -std::abs(tol1)));
       xnew->set(x);
       xnew->axpy(u,s);
+      con.project(*xnew);
       obj.update(*xnew);
       fu = obj.value(*xnew,tol);
       ls_neval++;
@@ -870,7 +902,7 @@ public:
 
     // Safeguard if Brent's does not find a minimizer
     if ( std::abs(alpha) < ROL_EPSILON ) {
-      simplebacktracking( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj ); 
+      simplebacktracking( alpha, fval, ls_neval, ls_ngrad, gs, s, x, obj, con ); 
     }
   }
 

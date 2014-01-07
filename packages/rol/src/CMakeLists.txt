@@ -45,6 +45,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/function)
 APPEND_SET(HEADERS
   function/ROL_Objective.hpp
   function/ROL_ObjectiveDef.hpp
+  function/ROL_Constraints.hpp
 )
 
 #
@@ -101,6 +102,13 @@ APPEND_SET(HEADERS
   zoo/ROL_LeastSquares.hpp
   zoo/ROL_PoissonControl.hpp
   zoo/ROL_PoissonInversion.hpp
+  zoo/ROL_HS1.hpp
+  zoo/ROL_HS2.hpp
+  zoo/ROL_HS3.hpp
+  zoo/ROL_HS4.hpp
+  zoo/ROL_HS5.hpp
+  zoo/ROL_HS25.hpp
+  zoo/ROL_HS38.hpp
   )
 
 

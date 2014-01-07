@@ -70,7 +70,9 @@ public:
   /** \brief Check algorithm status.
   */
   virtual bool check( AlgorithmState<Real> &state ) {
-     if ( state.gnorm > gtol_ && state.snorm > stol_ && state.iter < max_iter_ ) {
+     if ( (state.gnorm > this->gtol_) && 
+          (state.snorm > this->stol_) && 
+          (state.iter  < this->max_iter_) ) {
        return true;
      }
      else {
