@@ -297,6 +297,11 @@ TEST(stkSearch, boxSphereIntersection)
     Sphere sphere4(Point(0.5, 0.5, 0.5), 0.1);
     EXPECT_TRUE(stk::search::intersects(box, sphere4));
     EXPECT_TRUE(stk::search::intersects(sphere4, box));
+    Sphere sphere5(Point(1.5, 1.5, 1.5), 0.5);
+    EXPECT_FALSE(stk::search::intersects(box, sphere5));
+    EXPECT_FALSE(stk::search::intersects(sphere5, box));
+    GtkBox box1(1,1,1,2,2,2);
+    EXPECT_TRUE(stk::search::intersects(box1,box));
 }
 
 }

@@ -364,15 +364,13 @@ inline void fillBoundingVolumesUsingNodesFromFile(
     sierra::Mesh::AnalystNodeIdVector analystIds;
     sphereMesh.fillAnalystNodeIds(analystIds);
 
-    double sqrt2 = sqrt(2.0);
-
     for (size_t i=0;i<numSpheres;i++)
     {
         double x=coordinates[spatialDim*i];
         double y=coordinates[spatialDim*i+1];
         double z=coordinates[spatialDim*i+2];
         double radius=1e-5;
-        double offset = sqrt2*radius;
+        double offset = radius;
         GtkBox box(x-offset, y-offset, z-offset, x+offset, y+offset, z+offset);
         spheres[i] = std::make_pair(box, Ident(analystIds[i],procId));
     }
