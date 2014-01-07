@@ -21,38 +21,78 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
 
   IF(HAVE_MUELU_COMPLEX)
 
-    TRIBITS_ADD_EXECUTABLE(
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
       Helmholtz1D
       SOURCES Helmholtz1D.cpp
-      COMM serial mpi
+      COMM serial
       DEPLIBS muelu xpetra muelu-adapters
     )
 
-    TRIBITS_ADD_EXECUTABLE(
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
       Helmholtz2D
       SOURCES Helmholtz2D.cpp
-      COMM serial mpi
+      COMM serial
       DEPLIBS muelu xpetra muelu-adapters
     )
 
-    TRIBITS_ADD_EXECUTABLE(
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
       Helmholtz3D
       SOURCES Helmholtz3D.cpp
-      COMM serial mpi
+      COMM serial
       DEPLIBS muelu xpetra muelu-adapters
     )
 
-    TRIBITS_ADD_EXECUTABLE(
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
       HelmholtzFEM2D
       SOURCES HelmholtzFEM2D.cpp
-      COMM serial mpi
+      COMM serial
       DEPLIBS muelu xpetra muelu-adapters
     )
 
-    TRIBITS_ADD_EXECUTABLE(
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
       HelmholtzFEM3D
       SOURCES HelmholtzFEM3D.cpp
-      COMM serial mpi
+      COMM serial
+      DEPLIBS muelu xpetra muelu-adapters
+    )
+
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Helmholtz1D
+      SOURCES Helmholtz1D.cpp
+      NUM_MPI_PROCS 4
+      COMM mpi
+      DEPLIBS muelu xpetra muelu-adapters
+    )
+
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Helmholtz2D
+      SOURCES Helmholtz2D.cpp
+      NUM_MPI_PROCS 4
+      COMM mpi
+      DEPLIBS muelu xpetra muelu-adapters
+    )
+
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Helmholtz3D
+      SOURCES Helmholtz3D.cpp
+      NUM_MPI_PROCS 4
+      COMM mpi
+      DEPLIBS muelu xpetra muelu-adapters
+    )
+
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      HelmholtzFEM2D
+      SOURCES HelmholtzFEM2D.cpp
+      NUM_MPI_PROCS 4
+      COMM mpi
+      DEPLIBS muelu xpetra muelu-adapters
+    )
+
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      HelmholtzFEM3D
+      SOURCES HelmholtzFEM3D.cpp
+      NUM_MPI_PROCS 4
+      COMM mpi
       DEPLIBS muelu xpetra muelu-adapters
     )
 
