@@ -179,6 +179,7 @@ public:
 
   enum { is_hostspace = Impl::is_same< memory_space , HostSpace >::value };
   enum { is_managed   = memory_traits::Unmanaged == 0 };
+  enum { is_random_access   = memory_traits::RandomAccess == 1 };
 
   //------------------------------------
   // Specialization:
@@ -341,7 +342,7 @@ const AllocateWithoutInitializing allocate_without_initializing = AllocateWithou
  *   <tt>Device</tt>.
  *
  * \tparam MemoryTraits (optional) Assertion of the user's intended
- *   access behavior.  For example, RandomRead indicates read-only
+ *   access behavior.  For example, RandomAccess indicates read-only
  *   access with limited spatial locality, and Unmanaged lets users
  *   wrap externally allocated memory in a View without automatic
  *   deallocation.
@@ -352,7 +353,7 @@ const AllocateWithoutInitializing allocate_without_initializing = AllocateWithou
  *
  * Some \c MemoryTraits options may have different interpretations for
  * different \c Device types.  For example, with the Cuda device,
- * \c RandomRead tells Kokkos to fetch the data through the texture
+ * \c RandomAccess tells Kokkos to fetch the data through the texture
  * cache, whereas the non-GPU devices have no such hardware construct.
  *
  * \subsection Kokkos_View_MT_PrefUse Preferred use of MemoryTraits
@@ -370,9 +371,9 @@ const AllocateWithoutInitializing allocate_without_initializing = AllocateWithou
  * doSomething (View<double*, Cuda> out,
  *              View<const double*, Cuda> in)
  * {
- *   // Assign the "generic" View in to a RandomRead View in_rr.
- *   // Note that RandomRead View objects must have const data.
- *   View<const double*, Cuda, RandomRead> in_rr = in;
+ *   // Assign the "generic" View in to a RandomAccess View in_rr.
+ *   // Note that RandomAccess View objects must have const data.
+ *   View<const double*, Cuda, RandomAccess> in_rr = in;
  *   // ... do something with in_rr and out ...
  * }
  * \endcode

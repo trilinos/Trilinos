@@ -209,17 +209,17 @@ private:
 
   typedef typename Impl::if_c<   is_insertable_map
                                , View< key_type *, device_type>
-                               , View< const key_type *, device_type, MemoryTraits<RandomRead> >
+                               , View< const key_type *, device_type, MemoryTraits<RandomAccess> >
                              >::type key_type_view;
 
   typedef typename Impl::if_c<   is_insertable_map || is_modifiable_map
                                , View< impl_value_type *, device_type>
-                               , View< const impl_value_type *, device_type, MemoryTraits<RandomRead> >
+                               , View< const impl_value_type *, device_type, MemoryTraits<RandomAccess> >
                              >::type value_type_view;
 
   typedef typename Impl::if_c<   is_insertable_map
                                , View< size_type *, device_type>
-                               , View< const size_type *, device_type, MemoryTraits<RandomRead> >
+                               , View< const size_type *, device_type, MemoryTraits<RandomAccess> >
                              >::type size_type_view;
 
   typedef View< Impl::UnorderedMapScalars, device_type> scalars_view;

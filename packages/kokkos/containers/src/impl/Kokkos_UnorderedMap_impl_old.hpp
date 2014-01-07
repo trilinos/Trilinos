@@ -452,12 +452,12 @@ struct map_data
   typedef uint32_t size_type;
 
   typedef typename if_c<   has_const_key_type
-                         , View< const node_atomic *, device_type, MemoryTraits<RandomRead> >
+                         , View< const node_atomic *, device_type, MemoryTraits<RandomAccess> >
                          , View< node_atomic *, device_type >
                        >::type hash_view;
 
   typedef typename if_c<   is_const_map
-                         , View< const node_block_type *, device_type, MemoryTraits<RandomRead> >
+                         , View< const node_block_type *, device_type, MemoryTraits<RandomAccess> >
                          , View< node_block_type *, device_type >
                        >::type node_block_view;
 

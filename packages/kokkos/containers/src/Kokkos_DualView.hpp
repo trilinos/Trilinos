@@ -84,7 +84,7 @@ public:
   typedef typename t_dev_const::HostMirror t_host_const;
 #endif
   // Define const randomread view types
-  typedef Kokkos::View<typename t_dev::const_data_type,L,D,Kokkos::MemoryRandomRead> t_dev_const_randomread ;
+  typedef Kokkos::View<typename t_dev::const_data_type,L,D,Kokkos::MemoryRandomAccess> t_dev_const_randomread ;
 #if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM)
   typedef t_dev_const_randomread t_host_const_randomread;
 #else

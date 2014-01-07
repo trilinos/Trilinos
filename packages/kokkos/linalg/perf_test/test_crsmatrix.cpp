@@ -335,7 +335,7 @@ template<typename Scalar>
 int test_crs_matrix_test_singlevec(int numRows, int numCols, int nnz, int test, const char* filename, const bool binaryfile) {
         typedef Kokkos::CrsMatrix<Scalar,int,device_type> matrix_type ;
         typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,device_type> mv_type;
-        typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,device_type,Kokkos::MemoryRandomRead> mv_random_read_type;
+        typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,device_type,Kokkos::MemoryRandomAccess> mv_random_read_type;
         typedef typename mv_type::HostMirror h_mv_type;
 
         Scalar* val = NULL;

@@ -1614,19 +1614,19 @@ MV_MultiplyTranspose (typename Kokkos::Impl::enable_if<DomainVector::Rank == 2, 
     typedef View< typename DomainVector::const_data_type ,
                   typename DomainVector::array_layout ,
                   typename DomainVector::device_type ,
-                  Kokkos::MemoryRandomRead >
+                  Kokkos::MemoryRandomAccess >
     DomainVectorType;
 
     typedef View< typename CoeffVector1::const_data_type ,
                   typename CoeffVector1::array_layout ,
                   typename CoeffVector1::device_type ,
-                  Kokkos::MemoryRandomRead >
+                  Kokkos::MemoryRandomAccess >
     CoeffVector1Type;
 
     typedef View< typename CoeffVector2::const_data_type ,
                   typename CoeffVector2::array_layout ,
                   typename CoeffVector2::device_type ,
-                  Kokkos::MemoryRandomRead >
+                  Kokkos::MemoryRandomAccess >
     CoeffVector2Type;
 
     typedef CrsMatrix<typename TCrsMatrix::const_scalar_type,
@@ -1640,7 +1640,7 @@ MV_MultiplyTranspose (typename Kokkos::Impl::enable_if<DomainVector::Rank == 2, 
 #ifndef KOKKOS_FAST_COMPILE
 
     if(x.dimension_1()==1) {
-      typedef View<typename DomainVectorType::const_scalar_type*,typename DomainVector::array_layout ,typename DomainVectorType::device_type,Kokkos::MemoryRandomRead> DomainVector1D;
+      typedef View<typename DomainVectorType::const_scalar_type*,typename DomainVector::array_layout ,typename DomainVectorType::device_type,Kokkos::MemoryRandomAccess> DomainVector1D;
       typedef View<typename DomainVectorType::const_scalar_type*,typename DomainVector::array_layout ,typename DomainVectorType::device_type> DomainVector1DPlain;
       typedef View<typename RangeVectorType::scalar_type*,typename RangeVector::array_layout ,typename RangeVectorType::device_type,typename RangeVector::memory_traits> RangeVector1D;
 
@@ -1898,19 +1898,19 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
       typedef View< typename DomainVector::const_data_type ,
                     typename DomainVector::array_layout ,
                     typename DomainVector::device_type ,
-                    Kokkos::MemoryRandomRead >
+                    Kokkos::MemoryRandomAccess >
       DomainVectorType;
 
       typedef View< typename CoeffVector1::const_data_type ,
                     typename CoeffVector1::array_layout ,
                     typename CoeffVector1::device_type ,
-                    Kokkos::MemoryRandomRead >
+                    Kokkos::MemoryRandomAccess >
       CoeffVector1Type;
 
       typedef View< typename CoeffVector2::const_data_type ,
                     typename CoeffVector2::array_layout ,
                     typename CoeffVector2::device_type ,
-                    Kokkos::MemoryRandomRead >
+                    Kokkos::MemoryRandomAccess >
       CoeffVector2Type;
 
       typedef CrsMatrix<typename TCrsMatrix::const_scalar_type,
@@ -1924,7 +1924,7 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
 #ifndef KOKKOS_FAST_COMPILE
 
       if(x.dimension_1()==1) {
-        typedef View<typename DomainVectorType::const_scalar_type*,typename DomainVector::array_layout ,typename DomainVectorType::device_type,Kokkos::MemoryRandomRead> DomainVector1D;
+        typedef View<typename DomainVectorType::const_scalar_type*,typename DomainVector::array_layout ,typename DomainVectorType::device_type,Kokkos::MemoryRandomAccess> DomainVector1D;
         typedef View<typename DomainVectorType::const_scalar_type*,typename DomainVector::array_layout ,typename DomainVectorType::device_type> DomainVector1DPlain;
         typedef View<typename RangeVectorType::scalar_type*,typename RangeVector::array_layout ,typename RangeVectorType::device_type,typename RangeVector::memory_traits> RangeVector1D;
 
@@ -2035,19 +2035,19 @@ MV_MultiplyTranspose (typename RangeVector::const_scalar_type s_b,
       typedef View< typename DomainVector::const_data_type ,
                     typename DomainVector::array_layout ,
                     typename DomainVector::device_type ,
-                    Kokkos::MemoryRandomRead >
+                    Kokkos::MemoryRandomAccess >
       DomainVectorType;
 
       typedef View< typename CoeffVector1::const_data_type ,
                     typename CoeffVector1::array_layout ,
                     typename CoeffVector1::device_type ,
-                    Kokkos::MemoryRandomRead >
+                    Kokkos::MemoryRandomAccess >
       CoeffVector1Type;
 
       typedef View< typename CoeffVector2::const_data_type ,
                     typename CoeffVector2::array_layout ,
                     typename CoeffVector2::device_type ,
-                    Kokkos::MemoryRandomRead >
+                    Kokkos::MemoryRandomAccess >
       CoeffVector2Type;
 
       typedef CrsMatrix<typename TCrsMatrix::const_scalar_type,

@@ -32,7 +32,7 @@ struct MultiVectorDynamic{
 #endif
   typedef typename Kokkos::View<Scalar**  , layout, device>  type ;
   typedef typename Kokkos::View<const Scalar**  , layout, device>  const_type ;
-  typedef typename Kokkos::View<const Scalar**  , layout, device, Kokkos::MemoryRandomRead>  random_read_type ;
+  typedef typename Kokkos::View<const Scalar**  , layout, device, Kokkos::MemoryRandomAccess>  random_read_type ;
   MultiVectorDynamic() {}
   ~MultiVectorDynamic() {}
 };
@@ -43,7 +43,7 @@ struct MultiVectorStatic{
   typedef typename device::array_layout layout;
   typedef typename Kokkos::View<Scalar*[n]  , layout, device>  type ;
   typedef typename Kokkos::View<const Scalar*[n]  , layout, device>  const_type ;
-  typedef typename Kokkos::View<const Scalar*[n]  , layout, device, Kokkos::MemoryRandomRead>  random_read_type ;
+  typedef typename Kokkos::View<const Scalar*[n]  , layout, device, Kokkos::MemoryRandomAccess>  random_read_type ;
   MultiVectorStatic() {}
   ~MultiVectorStatic() {}
 };
