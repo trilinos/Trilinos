@@ -174,7 +174,7 @@ namespace Tpetra {
     // getting stride of view: if second dimension is 0 stride might be 0, so take view_dimension instead
     size_t stride[8];
     view_.stride (stride);
-    const int LDA = view_.dimension_1() > 1?stride[1]:view_.dimension_0();
+    const size_t LDA = view_.dimension_1() > 1?stride[1]:view_.dimension_0();
     const size_t NumVectors = view_.dimension_1();
 
     const char tfecfFuncName[] = "MultiVector(view,LDA,NumVector)";
@@ -205,7 +205,7 @@ namespace Tpetra {
     // getting stride of view: if second dimension is 0 stride might be 0, so take view_dimension instead
     size_t stride[8];
     view_.stride (stride);
-    const int LDA = view_.dimension_1() > 1?stride[1]:view_.dimension_0();
+    const size_t LDA = view_.dimension_1() > 1?stride[1]:view_.dimension_0();
     size_t NumVectors = view_.dimension_1();
 
     const char tfecfFuncName[] = "MultiVector(view,LDA,NumVector)";
@@ -1071,7 +1071,7 @@ namespace Tpetra {
     using Teuchos::arcp_const_cast;
 
     const char tfecfFuncName[] = "dot()";
-    const size_t myLen   = getLocalLength();
+    //const size_t myLen   = getLocalLength();
     const size_t numVecs = getNumVectors();
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*A.getMap()), std::runtime_error,
@@ -1733,7 +1733,6 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( getLocalLength() != A.getLocalLength(), std::runtime_error,
         ": MultiVectors do not have the same local length.");
 #endif
-    const size_t myLen = getLocalLength();
     const size_t numVecs = getNumVectors();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(A.getNumVectors() != this->getNumVectors(), std::runtime_error,
         ": MultiVectors must have the same number of vectors.");
@@ -1915,7 +1914,7 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   operator= (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &source)
   {
-    const char tfecfFuncName[] = "operator=";
+    //const char tfecfFuncName[] = "operator=";
     DO::operator=(source);
     RCP<Node> node = MVT::getNode(source.lclMV_);
     const LocalOrdinal myLen = source.getLocalLength();
@@ -2156,7 +2155,7 @@ namespace Tpetra {
 
     TEUCHOS_TEST_FOR_EXCEPTION(colRng.size() == 0, std::runtime_error,
       "Tpetra::MultiVector::subView(Range1D): range must include at least one vector.");
-    size_t numViewVecs = colRng.size();
+    //size_t numViewVecs = colRng.size();
     // this is const, so the lclMV_ is const, so that we can only get const buffers
     // we will cast away the const; this is okay, because
     //   a) the constructor doesn't modify the data, and
@@ -2215,7 +2214,7 @@ namespace Tpetra {
 
     TEUCHOS_TEST_FOR_EXCEPTION(colRng.size() == 0, std::runtime_error,
       "Tpetra::MultiVector::subView(Range1D): range must include at least one vector.");
-    size_t numViewVecs = colRng.size();
+    //size_t numViewVecs = colRng.size();
     // this is const, so the lclMV_ is const, so that we can only get const buffers
     // we will cast away the const; this is okay, because
     //   a) the constructor doesn't modify the data, and
@@ -3090,7 +3089,7 @@ namespace Tpetra {
                             Kokkos::View<int*,DeviceType> whichVectorDst_,
                             Kokkos::View<int*,DeviceType> whichVectorSrc_):
                               dst(dst_),src(src_),whichVectorDst(whichVectorDst_),whichVectorSrc(whichVectorSrc_),n(whichVectorSrc_.dimension_0()) {};
-    void operator()(int i) const {
+    void KOKKOS_INLINE_FUNCTION operator()(int i) const {
       if(DstConstStride ) {
         if(SrcConstStride) {
           for(int j = 0; j<n ; j++)

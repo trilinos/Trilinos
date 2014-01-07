@@ -568,10 +568,6 @@ namespace Tpetra {
       k_values1D_ = t_ValuesType("Tpetra::CrsMatrix::values1D_",*(staticGraph_->rowPtrs_.end()-1));
       values1D_ = Teuchos::arcp(k_values1D_.ptr_on_device(), 0, k_values1D_.dimension_0(),
                                  Kokkos::Compat::deallocator(k_values1D_), false);
-      //for(int i=0;i<k_values1D_.dimension_0()-1;i++)
-      //printf("LocalValuesA: %i %lf %lf %p %p \n",i,values1D_[i],k_values1D_(i),&values1D_[i],&k_values1D_(i));
-
-      std::cout<<"Allocate Values \n";
     }
     else {
       // "Dynamic profile" means the number of matrix entries in each
