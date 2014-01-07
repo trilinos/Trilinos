@@ -51,6 +51,8 @@
 #include "Ifpack_ShyLU.h"
 #include "Teuchos_Time.hpp"
 
+#include <IQRSolver.h>
+
 //#define DUMP_MATRICES
 
 Ifpack_ShyLU::Ifpack_ShyLU(Epetra_CrsMatrix* A):
@@ -169,6 +171,27 @@ int Ifpack_ShyLU::Initialize()
         slu_config_.relative_threshold =  Teuchos::getParameter<double>(List_,
                                                     "Relative Threshold");
     }
+    if (schurApproxMethod == "IQR")
+    {
+    	slu_config_.schurSolver = "IQR";
+    	slu_config_.schurApproxMethod = 4;
+
+    	List_.set<bool>("Use full IQR", true, "");
+    	slu_data_.iqrSolver.reset(new IQR::IQRSolver(List_));
+    }
+    if (schurApproxMethod == "G")
+    {
+    	slu_config_.schurSolver = "G";
+    	slu_config_.schurApproxMethod = 5;
+
+    	List_.set<bool>("Use full IQR", false, "");
+    	slu_data_.iqrSolver.reset(new IQR::IQRSolver(List_));
+    }
+
+    slu_config_.schurPreconditioner = List_.get<string>("Schur Preconditioner",
+    													"ILU stand-alone");
+    slu_config_.silent_subiter = List_.get<bool>("Silent subiterations",
+    											 true);
 
     slu_config_.inner_tolerance =  Teuchos::getParameter<double>(List_,
                                                 "Inner Solver Tolerance");

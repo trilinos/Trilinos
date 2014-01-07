@@ -100,7 +100,9 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    FILE *fp;
    static int level_count = 0;
 #endif
+   double t0=0,delta1=0,delta2=0,delta3=0,delta4=0;
 
+   StartTimer(&t0);
    /* ============================================================= */
    /* get the machine information and matrix references             */
    /* ============================================================= */
@@ -235,6 +237,8 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    }
    ML_free(col_ind);
    ML_free(col_val);
+   StopTimer(&t0,&delta1);
+
 
    /* ============================================================= */
    /* Construct the matrix that relates to the nodes by combining   */
@@ -242,6 +246,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    /* the same node.                                                */
    /* ============================================================= */
 
+   StartTimer(&t0);
    nvblockflag = 0;
    if ( nvblocks == 0 )
      {
@@ -341,10 +346,14 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
      if ( mypid == 0 && printflag  < ML_Get_PrintLevel()) 
        printf("Aggregation(UVB) : Amalgamated matrix done \n");
    }
+
+   StopTimer(&t0,&delta2);
+
    /* ============================================================= */
    /* perform coarsening                                            */
    /* ============================================================= */
 
+   StartTimer(&t0);
    csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(
 						  struct ML_CSR_MSRdata));
    csr_data->values  = NULL;
@@ -441,9 +450,13 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
      aggr_viz_and_stats->Amatrix = NULL;
    }
 
+   StopTimer(&t0,&delta3);
+
    /* ============================================================= */
    /* Form tentative prolongator                                    */
    /* ============================================================= */
+
+   StartTimer(&t0);
 
    Ncoarse = aggr_count * nullspace_dim;
    level   = ml_ag->cur_level;
@@ -963,6 +976,22 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    /* tuminaro change */
    /* I think this is what Charles wanted */
    if ( nvblockflag == 1 ) ML_memory_free((void**)&vblock_info);
+
+   StopTimer(&t0,&delta4);
+   if (ML_Get_PrintLevel() > 9) {
+#    ifdef ML_TIMING
+     if (mypid == 0)
+       printf("Detailed timing for forming tentative prolongator (level %d)\n", ml_ag->cur_level);
+#    endif
+     ReportTimer(delta1,"Drop weak entries      ",comm);
+     ReportTimer(delta2,"Amalgamate             ",comm);
+     ReportTimer(delta3,"Coarsen                ",comm);
+     ReportTimer(delta4,"QR and matrix formation",comm);
+#    ifdef ML_TIMING
+     if (mypid == 0)
+       printf("\n");
+#    endif
+   }
 
    return Ncoarse;
 }

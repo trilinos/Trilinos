@@ -96,6 +96,8 @@ typedef tif_utest::Node Node;
 //this macro declares the unit-test-class:
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test0, Scalar, LocalOrdinal, GlobalOrdinal)
 {
+  using std::endl;
+
 //we are now in a class method declared by the above macro, and
 //that method has these input arguments:
 //Teuchos::FancyOStream& out, bool& success
@@ -103,15 +105,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test0, Scalar, LocalOr
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CrsType;
 
   std::string version = Ifpack2::Version();
-  out << "Ifpack2::Version(): " << version << std::endl;
+  out << "Ifpack2::Version(): " << version << endl;
 
   global_size_t num_rows_per_proc = 5;
+
+  out << "Creating row Map and CrsMatrix" << endl;
 
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
   Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
 
+  out << "Creating AdditiveSchwarz instance" << endl;
+
   Ifpack2::AdditiveSchwarz<CrsType,Ifpack2::ILUT<CrsType > > prec (crsmatrix);
   Teuchos::ParameterList params, zlist;
+
+  out << "Filling in ParameterList for AdditiveSchwarz" << endl;
 
   zlist.set ("order_method", "rcm");
   params.set ("fact: ilut level-of-fill", 1.0);
@@ -126,7 +134,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test0, Scalar, LocalOr
   params.set ("schwarz: use reordering", false);
 #endif
 
+  out << "Setting AdditiveSchwarz's parameters" << endl;
+
   TEST_NOTHROW(prec.setParameters(params));
+
+  out << "Testing domain and range Maps of AdditiveSchwarz" << endl;
 
   //trivial tests to insist that the preconditioner's domain/range maps are
   //identically those of the matrix:
@@ -137,11 +149,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test0, Scalar, LocalOr
   TEST_EQUALITY( prec_dom_map_ptr, mtx_dom_map_ptr );
   TEST_EQUALITY( prec_rng_map_ptr, mtx_rng_map_ptr );
 
+  out << "Calling AdditiveSchwarz's initialize()" << endl;
   prec.initialize();
+
+  out << "Calling AdditiveSchwarz's compute()" << endl;
   prec.compute();
 
   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,2), y(rowmap,2), z(rowmap,2);
   x.putScalar(1);
+
+  out << "Applying AdditiveSchwarz to a multivector" << endl;
   prec.apply(x, y);
 
   // The solution should now be full of 1/2s

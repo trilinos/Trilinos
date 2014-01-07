@@ -49,14 +49,14 @@
 /*! \brief Test of GraphModel interface.
  *
  *  \todo test all methods of GraphModel
- *  \todo test with GraphInput: add testGraphInput which is 
-           like testMatrixInput except is uses GraphInput
+ *  \todo test with GraphAdapter: add testGraphAdapter which is 
+           like testMatrixAdapter except is uses GraphAdapter
            queries and it may have edges weights.
  *  \todo Address the TODOs in the code below.
  */
 
 #include <Zoltan2_GraphModel.hpp>
-#include <Zoltan2_XpetraCrsMatrixInput.hpp>
+#include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 
 #include <string>
@@ -131,7 +131,7 @@ void printGraph(lno_t nrows, const gno_t *v, const lno_t *elid,
   comm->barrier();
 }
 
-void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
+void testMatrixAdapter(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
     const RCP<const Comm<int> > &comm,
     bool idsAreConsecutive,
     int rowWeightDim, int nnzDim, int coordDim,
@@ -149,8 +149,8 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
 
   // Create a matrix input adapter.
 
-  typedef Zoltan2::MatrixInput<tcrsMatrix_t> base_adapter_t;
-  typedef Zoltan2::XpetraCrsMatrixInput<tcrsMatrix_t> adapter_t;
+  typedef Zoltan2::MatrixAdapter<tcrsMatrix_t> base_adapter_t;
+  typedef Zoltan2::XpetraCrsMatrixAdapter<tcrsMatrix_t> adapter_t;
 
   std::bitset<Zoltan2::NUM_MODEL_FLAGS> modelFlags;
   if (consecutiveIdsRequested)
@@ -185,17 +185,17 @@ void testMatrixInput(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
     }
   }
 
-  adapter_t tmi(M, coordDim, rowWeightDim);
+  adapter_t tmi(M, rowWeightDim, coordDim);
 
   for (int i=0; i < rowWeightDim; i++){
     if (nnzDim == i)
       tmi.setRowWeightIsNumberOfNonZeros(i);
     else
-      tmi.setRowWeights(i, rowWeights[i], 1);
+      tmi.setRowWeights(rowWeights[i], 1, i);
   }
 
   for (int i=0; i < coordDim; i++){
-    tmi.setRowCoordinates(i, coords[i], 1);
+    tmi.setRowCoordinates(coords[i], 1, i);
   }
 
   int numLocalDiags = M->getNodeNumDiags();
@@ -540,12 +540,12 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
 
   bool idsAreConsecutive = true;
 
-  testMatrixInput(Mconsec, comm,  idsAreConsecutive,
+  testMatrixAdapter(Mconsec, comm,  idsAreConsecutive,
     rowWeightDim, nnzDim, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
 
 #if 0
-  testGraphInput(Mconsec, comm, idsAreConsecutive,
+  testGraphAdapter(Mconsec, comm, idsAreConsecutive,
     rowWeightDim, nnzDim, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
 #endif
@@ -568,12 +568,12 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
 
   idsAreConsecutive = false;
 
-  testMatrixInput(Mnonconsec, comm, idsAreConsecutive,
+  testMatrixAdapter(Mnonconsec, comm, idsAreConsecutive,
     rowWeightDim, nnzDim, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
 
 #if 0
-  testGraphInput(Mnonconsec, comm, idsAreConsecutive,
+  testGraphAdapter(Mnonconsec, comm, idsAreConsecutive,
      rowWeightDim, nnzDim, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
 #endif

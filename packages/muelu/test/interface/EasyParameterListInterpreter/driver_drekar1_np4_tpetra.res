@@ -55,7 +55,7 @@ Level 1
       Ordering = 0   [default]
       MaxNeighAlreadySelected = 0   [default]
       MinNodesPerAggregate = 2   [default]
-      UseOnePtAggregationAlgorithm = 1   [default]
+      UseOnePtAggregationAlgorithm = 0   [default]
       UseSmallAggregatesAggregationAlgorithm = 0   [default]
       UsePreserveDirichletAggregationAlgorithm = 0   [default]
       UseUncoupledAggregationAlgorithm = 1   [default]
@@ -139,7 +139,7 @@ Level 2
       Ordering = 0   [default]
       MaxNeighAlreadySelected = 0   [default]
       MinNodesPerAggregate = 2   [default]
-      UseOnePtAggregationAlgorithm = 1   [default]
+      UseOnePtAggregationAlgorithm = 0   [default]
       UseSmallAggregatesAggregationAlgorithm = 0   [default]
       UsePreserveDirichletAggregationAlgorithm = 0   [default]
       UseUncoupledAggregationAlgorithm = 1   [default]
@@ -223,7 +223,7 @@ Level 3
       Ordering = 0   [default]
       MaxNeighAlreadySelected = 0   [default]
       MinNodesPerAggregate = 2   [default]
-      UseOnePtAggregationAlgorithm = 1   [default]
+      UseOnePtAggregationAlgorithm = 0   [default]
       UseSmallAggregatesAggregationAlgorithm = 0   [default]
       UsePreserveDirichletAggregationAlgorithm = 0   [default]
       UseUncoupledAggregationAlgorithm = 1   [default]
@@ -298,11 +298,11 @@ Level 3
  A 2    1111   3331     3.00  1
  A 3     371   1111     2.99  1
  
- Smoother (level 0) both : Ifpack2::Chebyshev{status = initialized, computed, Ifpack2::Details::Chebyshev : degree = 2, lambdaMax = 1.9477, alpha = 20, lambdaMin = 0.097385, global rows = 9999, global cols = 9999, global nnz  = 29995}
+ Smoother (level 0) both : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.94773, alpha: 20, lambdaMin: 0.0973864}, global rows = 9999, global cols = 9999, global nnz  = 29995}
  
- Smoother (level 1) both : Ifpack2::Chebyshev{status = initialized, computed, Ifpack2::Details::Chebyshev : degree = 2, lambdaMax = 1.95236, alpha = 20, lambdaMin = 0.0976182, global rows = 3335, global cols = 3335, global nnz  = 10015}
+ Smoother (level 1) both : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.95236, alpha: 20, lambdaMin: 0.0976182}, global rows = 3335, global cols = 3335, global nnz  = 10015}
  
- Smoother (level 2) both : Ifpack2::Chebyshev{status = initialized, computed, Ifpack2::Details::Chebyshev : degree = 2, lambdaMax = 1.9461, alpha = 20, lambdaMin = 0.097305, global rows = 1111, global cols = 1111, global nnz  = 3331}
+ Smoother (level 2) both : Ifpack2::Chebyshev{status = initialized, computed, "Ifpack2::Details::Chebyshev":{degree: 2, lambdaMax: 1.9461, alpha: 20, lambdaMin: 0.097305}, global rows = 1111, global cols = 1111, global nnz  = 3331}
  
  Smoother (level 3) pre  : SuperLU solver interface
  Smoother (level 3) post : no smoother

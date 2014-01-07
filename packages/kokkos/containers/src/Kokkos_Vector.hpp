@@ -284,7 +284,7 @@ public:
     typedef typename DV::t_dev::device_type device_type;
     typename DV::t_dev _data;
     Scalar _val;
-  
+
     set_functor(typename DV::t_dev data, Scalar val) :
       _data(data),_val(val) {}
 
@@ -309,5 +309,7 @@ public:
   };
 
 };
+
+
 }
 #endif

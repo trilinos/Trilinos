@@ -52,6 +52,7 @@
 #include <Epetra_Map.h>
 #include <Epetra_Comm.h>
 #include <Epetra_CrsMatrix.h>
+#include <Epetra_Vector.h>
 #include <Epetra_Directory.h>
 #include <Epetra_HashTable.h>
 #include <Epetra_Distributor.h>
@@ -1054,5 +1055,516 @@ int MatrixMatrix::mult_A_B(const Epetra_CrsMatrix & A,
 #endif
     throw "EpetraExt::MatrixMatrix::mult_A_B: GlobalIndices type unknown";
 }
+
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+template<typename int_type>
+int jacobi_A_B_reuse(double omega,
+		     const Epetra_Vector & Dinv,
+		     const Epetra_CrsMatrix & A,
+		     const Epetra_CrsMatrix & B,
+		     CrsMatrixStruct& Bview,
+		     std::vector<int> & Bcol2Ccol,
+		     std::vector<int> & Bimportcol2Ccol,
+		     Epetra_CrsMatrix& C){
+
+  // *****************************
+  // Improved Parallel Gustavson in Local IDs
+  // *****************************
+  const Epetra_Map * colmap_C = &(C.ColMap());
+
+  int m=A.NumMyRows();
+  int n=colmap_C->NumMyElements();
+  int i,j,k;
+
+  // DataPointers for A
+  int *Arowptr, *Acolind;
+  double *Avals;
+  EPETRA_CHK_ERR(A.ExtractCrsDataPointers(Arowptr,Acolind,Avals));
+
+  // DataPointers for B, Bimport
+  int *Browptr, *Bcolind;
+  double *Bvals;
+  EPETRA_CHK_ERR(B.ExtractCrsDataPointers(Browptr,Bcolind,Bvals));
+
+  int *Irowptr=0, *Icolind=0;
+  double *Ivals=0;
+  if(Bview.importMatrix){
+    Irowptr = &Bview.importMatrix->rowptr_[0];
+    Icolind = &Bview.importMatrix->colind_[0];
+    Ivals   = &Bview.importMatrix->vals_[0];
+  }
+
+  // Data pointer for Dinv
+  const double *Dvals = Dinv.Values();
+
+  // DataPointers for C
+  int *CSR_rowptr, *CSR_colind;
+  double *CSR_vals;
+  EPETRA_CHK_ERR(C.ExtractCrsDataPointers(CSR_rowptr,CSR_colind,CSR_vals));
+
+
+  // The status array will contain the index into colind where this dude was last deposited.
+  // c_status[i] < CSR_ip - not in the row yet.
+  // c_status[i] >= CSR_ip, this is the entry where you can find the data
+  // We start with this filled with -1's indicating that there are no entries yet.
+  std::vector<int> c_status(n, -1);
+
+  // Classic csr assembly
+  int CSR_alloc=CSR_rowptr[m] - CSR_rowptr[0];
+  int CSR_ip=0,OLD_ip=0;
+
+  // For each row of C
+  for(i=0; i<m; i++){	
+    double Dval = Dvals[i];
+
+    // Entries of B
+    for(k=Browptr[i]; k<Browptr[i+1]; k++){
+      int Bk      = Bcolind[k];
+      double Bval = Bvals[k];
+      if(Bval==0) continue;
+      int Ck=Bcol2Ccol[Bcolind[k]];
+      
+      // Assume no repeated entries in B
+      c_status[Ck]=CSR_ip;
+      CSR_colind[CSR_ip]=Ck;
+      CSR_vals[CSR_ip]= Bvals[k];
+      CSR_ip++;
+    }
+
+    // Entries of -omega * Dinv * A * B		       
+    for(k=Arowptr[i]; k<Arowptr[i+1]; k++){
+      int Ak=Acolind[k];
+      double Aval = Avals[k];
+      if(Aval==0) continue;
+
+      if(Bview.targetMapToOrigRow[Ak] != -1){
+	// Local matrix
+	int Bk = Bview.targetMapToOrigRow[Ak];
+	for(j=Browptr[Bk]; j<Browptr[Bk+1]; ++j) {
+	  int Cj=Bcol2Ccol[Bcolind[j]];
+
+	  if(c_status[Cj]<OLD_ip){
+	    // New entry
+	    if(CSR_ip >= CSR_alloc) EPETRA_CHK_ERR(-13);
+	    c_status[Cj]=CSR_ip;
+	    CSR_colind[CSR_ip]=Cj;
+	    CSR_vals[CSR_ip]= - omega * Dval * Aval * Bvals[j];
+	    CSR_ip++;
+	  }
+	  else
+	    CSR_vals[c_status[Cj]]-= omega * Dval * Aval * Bvals[j];
+	}
+      }
+      else{
+	// Remote matrix
+	int Ik = Bview.targetMapToImportRow[Ak];
+	for(j=Irowptr[Ik]; j<Irowptr[Ik+1]; ++j) {
+	  int Cj=Bimportcol2Ccol[Icolind[j]];
+
+	  if(c_status[Cj]<OLD_ip){
+	    // New entry
+	    if(CSR_ip >= CSR_alloc) EPETRA_CHK_ERR(-14);
+	    c_status[Cj]=CSR_ip;
+	    CSR_colind[CSR_ip]=Cj;
+	    CSR_vals[CSR_ip]= - omega * Dval * Aval * Ivals[j];
+	    CSR_ip++;
+	  }
+	  else
+	    CSR_vals[c_status[Cj]]-=omega * Dval * Aval * Ivals[j];
+	}
+      }
+    }
+    OLD_ip=CSR_ip;
+  }
+
+  // Sort the entries
+  Epetra_Util::SortCrsEntries(m, &CSR_rowptr[0], &CSR_colind[0], &CSR_vals[0]);
+
+  return 0;
+}
+
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+template<typename int_type>
+int jacobi_A_B_newmatrix(double omega,
+			 const Epetra_Vector & Dinv,
+			 const Epetra_CrsMatrix & A,
+			 const Epetra_CrsMatrix & B,
+			 CrsMatrixStruct& Bview,
+			 std::vector<int> & Bcol2Ccol,
+			 std::vector<int> & Bimportcol2Ccol,
+			 std::vector<int>& Cremotepids,
+			 Epetra_CrsMatrix& C)
+{
+#ifdef ENABLE_MMM_TIMINGS
+  Teuchos::Time myTime("global");
+  Teuchos::TimeMonitor M(myTime);
+  Teuchos::RCP<Teuchos::Time> mtime;
+  mtime=M.getNewTimer("J5 SerialCore");
+  mtime->start();
+#endif
+
+  // *****************************
+  // Improved Parallel Gustavson in Local IDs
+  // *****************************
+  const Epetra_Map * colmap_C = &(C.ColMap());
+  int NumMyDiagonals=0; // Counter to speed up ESFC
+
+  int m=A.NumMyRows();
+  int n=colmap_C->NumMyElements();
+  int i,j,k;
+
+  // DataPointers for A
+  int *Arowptr, *Acolind;
+  double *Avals;
+  EPETRA_CHK_ERR(A.ExtractCrsDataPointers(Arowptr,Acolind,Avals));
+
+  // DataPointers for B, Bimport
+  int *Browptr, *Bcolind;
+  double *Bvals;
+  EPETRA_CHK_ERR(B.ExtractCrsDataPointers(Browptr,Bcolind,Bvals));
+
+  // Data pointer for Dinv
+  const double *Dvals = Dinv.Values();
+
+  int *Irowptr=0, *Icolind=0;
+  double *Ivals=0;
+  if(Bview.importMatrix){
+    Irowptr = &Bview.importMatrix->rowptr_[0];
+    Icolind = (Bview.importMatrix->colind_.size()>0)?(&Bview.importMatrix->colind_[0]):0;
+    Ivals   = (Bview.importMatrix->vals_.size()>0)?(&Bview.importMatrix->vals_[0]):0;
+  }
+
+  // MemorySetup: If somebody else is sharing this C's graphdata, make a new one.
+  // This is needed because I'm about to walk all over the CrsGrapData...
+  C.ExpertMakeUniqueCrsGraphData();
+
+  // The status array will contain the index into colind where this entry was last deposited.
+  // c_status[i] < CSR_ip - not in the row yet.
+  // c_status[i] >= CSR_ip, this is the entry where you can find the data
+  // We start with this filled with -1's indicating that there are no entries yet.
+  std::vector<int> c_status(n, -1);
+
+  // Classic csr assembly (low memory edition)
+  int CSR_alloc=C_estimate_nnz(A,B);
+  if(CSR_alloc < B.NumMyNonzeros()) CSR_alloc = B.NumMyNonzeros(); // update for Jacobi
+  int CSR_ip=0,OLD_ip=0;
+  Epetra_IntSerialDenseVector & CSR_rowptr = C.ExpertExtractIndexOffset();
+  Epetra_IntSerialDenseVector & CSR_colind = C.ExpertExtractIndices();  
+  double *&                     CSR_vals   = C.ExpertExtractValues();
+
+  CSR_rowptr.Resize(m+1);
+  CSR_colind.Resize(CSR_alloc);
+  resize_doubles(0,CSR_alloc,CSR_vals);
+
+  // Static Profile stuff
+  std::vector<int> NumEntriesPerRow(m);
+
+  // For each row of C
+  for(i=0; i<m; i++){
+    bool found_diagonal=false;
+    CSR_rowptr[i]=CSR_ip;
+    double Dval = Dvals[i];
+
+    // Entries of B
+    for(k=Browptr[i]; k<Browptr[i+1]; k++){
+      int Bk      = Bcolind[k];
+      double Bval = Bvals[k];
+      if(Bval==0) continue;
+      int Ck=Bcol2Ccol[Bcolind[k]];
+      
+      // Assume no repeated entries in B
+      c_status[Ck]=CSR_ip;
+      CSR_colind[CSR_ip]=Ck;
+      CSR_vals[CSR_ip]= Bvals[k];
+      CSR_ip++;
+    }
+
+    // Entries of -omega * Dinv * A * B
+    for(k=Arowptr[i]; k<Arowptr[i+1]; k++){
+      int Ak      = Acolind[k];
+      double Aval = Avals[k];
+      if(Aval==0) continue;
+      
+      if(Bview.targetMapToOrigRow[Ak] != -1){
+	// Local matrix
+	int Bk = Bview.targetMapToOrigRow[Ak];
+	for(j=Browptr[Bk]; j<Browptr[Bk+1]; ++j) {
+	  int Cj=Bcol2Ccol[Bcolind[j]];
+
+	  if(Cj==i && !found_diagonal) {found_diagonal=true; NumMyDiagonals++;}
+
+	  if(c_status[Cj]<OLD_ip){
+	    // New entry
+	    c_status[Cj]=CSR_ip;
+	    CSR_colind[CSR_ip]=Cj;
+	    CSR_vals[CSR_ip]= - omega * Dval* Aval * Bvals[j];
+	    CSR_ip++;
+	  }
+	  else
+	    CSR_vals[c_status[Cj]]-= omega * Dval * Aval * Bvals[j];
+	}
+      }
+      else{
+	// Remote matrix
+	int Ik = Bview.targetMapToImportRow[Ak];
+	for(j=Irowptr[Ik]; j<Irowptr[Ik+1]; ++j) {
+	  int Cj=Bimportcol2Ccol[Icolind[j]];
+	  
+	  if(Cj==i && !found_diagonal) {found_diagonal=true; NumMyDiagonals++;}
+
+	  if(c_status[Cj]<OLD_ip){
+	    // New entry
+	    c_status[Cj]=CSR_ip;
+	    CSR_colind[CSR_ip]=Cj;
+	    CSR_vals[CSR_ip]= - omega * Dval * Aval * Ivals[j];
+	    CSR_ip++;
+	  }
+	  else
+	    CSR_vals[c_status[Cj]]-= omega * Dval * Aval * Ivals[j];
+	}
+      }
+    }
+    NumEntriesPerRow[i]=CSR_ip-CSR_rowptr[i];
+
+    // Resize for next pass if needed
+    if(CSR_ip + n > CSR_alloc){
+      resize_doubles(CSR_alloc,2*CSR_alloc,CSR_vals);
+      CSR_alloc*=2;
+      CSR_colind.Resize(CSR_alloc);
+    }
+    OLD_ip=CSR_ip;
+  }
+
+  CSR_rowptr[m]=CSR_ip;
+
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+  mtime=M.getNewTimer("J5 Final Sort");
+  mtime->start();
+#endif
+
+  // Sort the entries
+  Epetra_Util::SortCrsEntries(m, &CSR_rowptr[0], &CSR_colind[0], &CSR_vals[0]);
+
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+  mtime=M.getNewTimer("J5 Fast IE");
+  mtime->start();
+#endif
+
+  // Do a fast build of C's importer
+  Epetra_Import * Cimport=0; 
+  int *RemotePIDs = Cremotepids.size()?&Cremotepids[0]:0;
+  int NumExports=0;
+  int *ExportLIDs=0, *ExportPIDs=0;
+  if(Bview.importMatrix) { 
+    NumExports = Bview.importMatrix->ExportLIDs_.size();
+    ExportLIDs = Bview.importMatrix->ExportLIDs_.size()?&Bview.importMatrix->ExportLIDs_[0]:0;
+    ExportPIDs = Bview.importMatrix->ExportPIDs_.size()?&Bview.importMatrix->ExportPIDs_[0]:0;
+  }
+  else if(B.Importer()) {
+    // Grab the exports from B proper
+    NumExports = B.Importer()->NumExportIDs();
+    ExportLIDs = B.Importer()->ExportLIDs();
+    ExportPIDs = B.Importer()->ExportPIDs();    
+  }
+
+  if(!C.ColMap().SameAs(B.DomainMap()))
+    Cimport = new Epetra_Import(C.ColMap(),B.DomainMap(),Cremotepids.size(),RemotePIDs,NumExports,ExportLIDs,ExportPIDs);
+
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+  mtime=M.getNewTimer("J5 ESFC");
+  mtime->start();
+#endif
+
+  // Update the CrsGraphData
+  C.ExpertStaticFillComplete(B.DomainMap(),A.RangeMap(),Cimport,0,NumMyDiagonals);
+
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+#endif
+
+  return 0;
+}
+
+
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+template<typename int_type>
+int MatrixMatrix::Tjacobi_A_B(double omega,
+			     const Epetra_Vector & Dinv,
+			     const Epetra_CrsMatrix & A,
+			     CrsMatrixStruct & Aview,
+			     const Epetra_CrsMatrix & B,
+			     CrsMatrixStruct& Bview,
+			     Epetra_CrsMatrix& C,
+			      bool call_FillComplete_on_result){
+  int i,rv;
+  Epetra_Map* mapunion = 0;
+  const Epetra_Map * colmap_B = &(B.ColMap());
+  const Epetra_Map * colmap_C = &(C.ColMap());
+
+  std::vector<int> Cremotepids;
+  std::vector<int> Bcol2Ccol(B.ColMap().NumMyElements());
+  std::vector<int> Bimportcol2Ccol;
+  if(Bview.importMatrix) Bimportcol2Ccol.resize(Bview.importMatrix->ColMap_.NumMyElements());
+
+#ifdef ENABLE_MMM_TIMINGS
+  Teuchos::Time myTime("global");
+  Teuchos::TimeMonitor M(myTime);
+  Teuchos::RCP<Teuchos::Time> mtime;
+#endif  
+
+  // If the user doesn't want us to call FillComplete, use the general routine
+  if(!call_FillComplete_on_result) {
+#ifdef ENABLE_MMM_TIMINGS
+    mtime=M.getNewTimer("M4 Jacobi");
+    mtime->start();
+#endif
+    throw std::runtime_error("jacobi_A_B_general not implemented");
+    //    rv=mult_A_B_general<int_type>(A,Aview,B,Bview,C,false);
+#ifdef ENABLE_MMM_TIMINGS
+    mtime->stop();
+#endif
+    return rv;
+  }
+
+  // Is this a "clean" matrix
+  bool NewFlag=!C.IndicesAreLocal() && !C.IndicesAreGlobal();
+
+  // Does ExtractCrsDataPointers work?
+  int *C_rowptr, *C_colind;
+  double * C_vals;
+  C.ExtractCrsDataPointers(C_rowptr,C_colind,C_vals);
+  bool ExtractFailFlag=!C_rowptr || !C_colind || !C_vals;
+
+  // It's a new matrix that hasn't been fill-completed, use the general routine
+  if(!NewFlag && ExtractFailFlag){
+#ifdef ENABLE_MMM_TIMINGS
+    mtime=M.getNewTimer("M4 Jacobi");
+    mtime->start();
+#endif
+    throw std::runtime_error("jacobi_A_B_general not implemented");
+    //    rv=mult_A_B_general<int_type>(A,Aview,B,Bview,C,call_FillComplete_on_result);
+#ifdef ENABLE_MMM_TIMINGS
+    mtime->stop();
+#endif
+    return rv;
+  }
+
+#ifdef ENABLE_MMM_TIMINGS
+  if(NewFlag) mtime=M.getNewTimer("J5 CMap");
+  else mtime=M.getNewTimer("J5r CMap");
+  mtime->start();
+#endif
+
+  // If new, build & clobber a colmap for C
+  if(NewFlag){
+    if(Bview.importMatrix) {
+      EPETRA_CHK_ERR( aztecoo_and_ml_compatible_map_union<int_type>(B,*Bview.importMatrix,mapunion,Cremotepids,Bcol2Ccol,Bimportcol2Ccol) );
+      EPETRA_CHK_ERR( C.ReplaceColMap(*mapunion) );
+    }
+    else  {
+      EPETRA_CHK_ERR( C.ReplaceColMap(B.ColMap()) );
+      for(i=0;i<colmap_B->NumMyElements();i++) Bcol2Ccol[i]=i;
+      
+      // Copy B's remote list (if any)
+      if(B.Importer()) 
+	EPETRA_CHK_ERR( Epetra_Util::GetRemotePIDs(*B.Importer(),Cremotepids));
+    }
+  }
+
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+  if(NewFlag) mtime=M.getNewTimer("J5 Lookups");
+  else mtime=M.getNewTimer("J5r Lookups");
+  mtime->start();
+#endif
+
+  // ********************************************
+  // Setup Bcol2Ccol / Bimportcol2Ccol lookups
+  // ********************************************
+  // Note: If we ran the map_union, we have this information already
+
+  if(!NewFlag) {
+    if(colmap_B->SameAs(*colmap_C)){
+      // Maps are the same: Use local IDs as the hash
+      for(i=0;i<colmap_B->NumMyElements();i++)
+	Bcol2Ccol[i]=i;				
+    }
+    else {
+      // Maps are not the same:  Use the map's hash
+      for(i=0;i<colmap_B->NumMyElements();i++){
+	Bcol2Ccol[i]=colmap_C->LID((int_type) colmap_B->GID64(i));
+	if(Bcol2Ccol[i]==-1) EPETRA_CHK_ERR(-11);
+      }
+    }
+    
+    if(Bview.importMatrix){
+      Bimportcol2Ccol.resize(Bview.importMatrix->ColMap_.NumMyElements());
+      for(i=0;i<Bview.importMatrix->ColMap_.NumMyElements();i++){
+      Bimportcol2Ccol[i]=colmap_C->LID((int_type) Bview.importMatrix->ColMap_.GID64(i));
+      if(Bimportcol2Ccol[i]==-1) EPETRA_CHK_ERR(-12);
+      }
+      
+    }
+  }
+	
+
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+#endif
+
+  // Call the appropriate core routine
+  if(NewFlag) {
+    EPETRA_CHK_ERR(jacobi_A_B_newmatrix<int_type>(omega,Dinv,A,B,Bview,Bcol2Ccol,Bimportcol2Ccol,Cremotepids,C));
+  }
+  else {
+    // This always has a real map
+    EPETRA_CHK_ERR(jacobi_A_B_reuse<int_type>(omega,Dinv,A,B,Bview,Bcol2Ccol,Bimportcol2Ccol,C));
+  }
+
+  // Cleanup      
+  delete mapunion;
+  return 0;
+}
+
+
+int MatrixMatrix::jacobi_A_B(double omega,
+			     const Epetra_Vector & Dinv,
+			     const Epetra_CrsMatrix & A,
+			     CrsMatrixStruct & Aview,
+			     const Epetra_CrsMatrix & B,
+			     CrsMatrixStruct& Bview,
+			     Epetra_CrsMatrix& C,
+			     bool call_FillComplete_on_result)
+{
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(A.RowMap().GlobalIndicesInt() && B.RowMap().GlobalIndicesInt()) {
+    return Tjacobi_A_B<int>(omega,Dinv,A,Aview,B,Bview,C,call_FillComplete_on_result);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+    if(A.RowMap().GlobalIndicesLongLong() && B.RowMap().GlobalIndicesLongLong()) {
+      return Tjacobi_A_B<long long>(omega,Dinv,A,Aview,B,Bview,C,call_FillComplete_on_result);
+    }
+    else
+#endif
+    throw "EpetraExt::MatrixMatrix::jacobi_A_B: GlobalIndices type unknown";
+}
+
+
+
+
 
 }//namespace EpetraExt

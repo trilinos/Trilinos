@@ -141,16 +141,34 @@ namespace {
 
 namespace Ifpack2 {
 
-//==========================================================================
+template<class MatrixType>
+void Relaxation<MatrixType>::
+setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
+{
+  if (A.getRawPtr () != A_.getRawPtr ()) { // it's a different matrix
+    Importer_ = Teuchos::null;
+    Diagonal_ = Teuchos::null; // ??? what if this comes from the user???
+    isInitialized_ = false;
+    IsComputed_ = false;
+    diagOffsets_ = Teuchos::null;
+    savedDiagOffsets_ = false;
+    if (! A.is_null ()) {
+      IsParallel_ = (A->getRowMap ()->getComm ()->getSize () > 1);
+    }
+    A_ = A;
+  }
+}
+
+
 template<class MatrixType>
 Relaxation<MatrixType>::
-Relaxation (const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> >& A)
-: A_(A),
+Relaxation (const Teuchos::RCP<const row_matrix_type>& A)
+: A_ (A),
   Time_ (Teuchos::rcp (new Teuchos::Time ("Ifpack2::Relaxation"))),
   NumSweeps_ (1),
   PrecType_ (Ifpack2::Details::JACOBI),
   DampingFactor_ (STS::one ()),
-  IsParallel_ (A->getRowMap ()->getComm ()->getSize () > 1),
+  IsParallel_ (A.is_null () ? false : A->getRowMap ()->getComm ()->getSize () > 1), // pick a reasonable default if the matrix is null.  It doesn't really matter, because the methods that care can't use a null matrix anyway.
   ZeroStartingSolution_ (true),
   DoBackwardGS_ (false),
   DoL1Method_ (false),
@@ -177,9 +195,6 @@ Relaxation (const Teuchos::RCP<const Tpetra::RowMatrix<scalar_type, local_ordina
   savedDiagOffsets_ (false)
 {
   this->setObjectLabel ("Ifpack2::Relaxation");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    A_.is_null (), std::runtime_error,
-    "Ifpack2::Relaxation constructor: The input matrix A must be non-null.");
 }
 
 //==========================================================================
@@ -297,7 +312,7 @@ void Relaxation<MatrixType>::setParametersImpl (Teuchos::ParameterList& pl)
   localSmoothingIndices_ = localSmoothingIndices;
 }
 
-//==========================================================================
+
 template<class MatrixType>
 void Relaxation<MatrixType>::setParameters (const Teuchos::ParameterList& pl)
 {
@@ -306,38 +321,47 @@ void Relaxation<MatrixType>::setParameters (const Teuchos::ParameterList& pl)
   this->setParametersImpl(const_cast<Teuchos::ParameterList&>(pl));
 }
 
-//==========================================================================
+
 template<class MatrixType>
 Teuchos::RCP<const Teuchos::Comm<int> >
-Relaxation<MatrixType>::getComm() const{
+Relaxation<MatrixType>::getComm() const {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (), std::runtime_error, "Ifpack2::Relaxation::getComm: "
+    "The input matrix A is null.  Please call setMatrix() with a nonnull "
+    "input matrix before calling this method.");
   return A_->getRowMap ()->getComm ();
 }
 
-//==========================================================================
+
 template<class MatrixType>
-Teuchos::RCP<const Tpetra::RowMatrix<typename MatrixType::scalar_type,
-                                     typename MatrixType::local_ordinal_type,
-                                     typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type> >
+Teuchos::RCP<const typename Relaxation<MatrixType>::row_matrix_type>
 Relaxation<MatrixType>::getMatrix() const {
-  return(A_);
+  return A_;
 }
 
-//==========================================================================
+
 template<class MatrixType>
 Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
                                typename MatrixType::global_ordinal_type,
                                typename MatrixType::node_type> >
 Relaxation<MatrixType>::getDomainMap () const {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (), std::runtime_error, "Ifpack2::Relaxation::getDomainMap: "
+    "The input matrix A is null.  Please call setMatrix() with a nonnull "
+    "input matrix before calling this method.");
   return A_->getDomainMap ();
 }
 
-//==========================================================================
+
 template<class MatrixType>
 Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
                                typename MatrixType::global_ordinal_type,
                                typename MatrixType::node_type> >
 Relaxation<MatrixType>::getRangeMap () const {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (), std::runtime_error, "Ifpack2::Relaxation::getRangeMap: "
+    "The input matrix A is null.  Please call setMatrix() with a nonnull "
+    "input matrix before calling this method.");
   return A_->getRangeMap ();
 }
 
@@ -410,10 +434,7 @@ Relaxation<MatrixType>::
 computeCondEst (CondestType CT,
                 typename MatrixType::local_ordinal_type MaxIters,
                 magnitude_type Tol,
-                const Teuchos::Ptr<const Tpetra::RowMatrix<typename MatrixType::scalar_type,
-                                                           typename MatrixType::local_ordinal_type,
-                                                           typename MatrixType::global_ordinal_type,
-                                                           typename MatrixType::node_type> > &matrix)
+                const Teuchos::Ptr<const row_matrix_type>& matrix)
 {
   if (! isComputed ()) { // cannot compute right now
     return -Teuchos::ScalarTraits<magnitude_type>::one ();
@@ -426,39 +447,36 @@ computeCondEst (CondestType CT,
 
 
 template<class MatrixType>
-void Relaxation<MatrixType>::apply(
-          const Tpetra::MultiVector<typename MatrixType::scalar_type,
-                                    typename MatrixType::local_ordinal_type,
-                                    typename MatrixType::global_ordinal_type,
-                                    typename MatrixType::node_type>& X,
-                Tpetra::MultiVector<typename MatrixType::scalar_type,
-                                    typename MatrixType::local_ordinal_type,
-                                    typename MatrixType::global_ordinal_type,
-                                    typename MatrixType::node_type>& Y,
-                Teuchos::ETransp mode,
-                 scalar_type alpha,
-                 scalar_type beta) const
+void
+Relaxation<MatrixType>::
+apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
+       Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
+       Teuchos::ETransp mode,
+       scalar_type alpha,
+       scalar_type beta) const
 {
   using Teuchos::as;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
-  typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
-
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
+                              global_ordinal_type, node_type> MV;
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (), std::runtime_error, "Ifpack2::Relaxation::apply: "
+    "The input matrix A is null.  Please call setMatrix() with a nonnull "
+    "input matrix, then call compute(), before calling this method.");
   TEUCHOS_TEST_FOR_EXCEPTION(
     ! isComputed (),
     std::runtime_error,
     "Ifpack2::Relaxation::apply: You must call compute() on this Ifpack2 "
     "preconditioner instance before you may call apply().  You may call "
     "isComputed() to find out if compute() has been called already.");
-
   TEUCHOS_TEST_FOR_EXCEPTION(
     X.getNumVectors() != Y.getNumVectors(),
     std::runtime_error,
     "Ifpack2::Relaxation::apply: X and Y have different numbers of columns.  "
     "X has " << X.getNumVectors() << " columns, but Y has "
     << Y.getNumVectors() << " columns.");
-
   TEUCHOS_TEST_FOR_EXCEPTION(
     beta != STS::zero (), std::logic_error,
     "Ifpack2::Relaxation::apply: beta = " << beta << " != 0 case not "
@@ -514,36 +532,44 @@ void Relaxation<MatrixType>::apply(
   ++NumApply_;
 }
 
-//==========================================================================
+
 template<class MatrixType>
-void Relaxation<MatrixType>::applyMat(
-          const Tpetra::MultiVector<typename MatrixType::scalar_type,
-                                    typename MatrixType::local_ordinal_type,
-                                    typename MatrixType::global_ordinal_type,
-                                    typename MatrixType::node_type>& X,
-                Tpetra::MultiVector<typename MatrixType::scalar_type,
-                                    typename MatrixType::local_ordinal_type,
-                                    typename MatrixType::global_ordinal_type,
-                                    typename MatrixType::node_type>& Y,
-             Teuchos::ETransp mode) const
+void
+Relaxation<MatrixType>::
+applyMat (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
+          Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
+          Teuchos::ETransp mode) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(isComputed() == false, std::runtime_error,
-     "Ifpack2::Relaxation::applyMat() ERROR: isComputed() must be true prior to calling applyMat().");
-  TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
-     "Ifpack2::Relaxation::applyMat() ERROR: X.getNumVectors() != Y.getNumVectors().");
-  A_->apply(X, Y, mode);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (), std::runtime_error, "Ifpack2::Relaxation::applyMat: "
+    "The input matrix A is null.  Please call setMatrix() with a nonnull "
+    "input matrix, then call compute(), before calling this method.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ! isComputed (), std::runtime_error, "Ifpack2::Relaxation::applyMat: "
+    "isComputed() must be true before you may call applyMat().  "
+    "Please call compute() before calling this method.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    X.getNumVectors () != Y.getNumVectors (), std::invalid_argument,
+    "Ifpack2::Relaxation::applyMat: X.getNumVectors() = " << X.getNumVectors ()
+    << " != Y.getNumVectors() = " << Y.getNumVectors () << ".");
+  A_->apply (X, Y, mode);
 }
 
-//==========================================================================
+
 template<class MatrixType>
-void Relaxation<MatrixType>::initialize() {
+void Relaxation<MatrixType>::initialize () {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (), std::runtime_error, "Ifpack2::Relaxation::initialize: "
+    "The input matrix A is null.  Please call setMatrix() with a nonnull "
+    "input matrix before calling this method.");
+
   // Initialization for Relaxation is trivial, so we say it takes zero time.
   //InitializeTime_ += Time_->totalElapsedTime ();
   ++NumInitialize_;
   isInitialized_ = true;
 }
 
-//==========================================================================
+
 template<class MatrixType>
 void Relaxation<MatrixType>::compute ()
 {
@@ -572,6 +598,11 @@ void Relaxation<MatrixType>::compute ()
     // Reset the timer each time, since Relaxation uses the same Time
     // object to track times for different methods.
     Teuchos::TimeMonitor timeMon (*Time_, true);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      A_.is_null (), std::runtime_error, "Ifpack2::Relaxation::compute: "
+      "The input matrix A is null.  Please call setMatrix() with a nonnull "
+      "input matrix, then call initialize(), before calling this method.");
 
     // Reset state.
     IsComputed_ = false;
@@ -890,11 +921,12 @@ void Relaxation<MatrixType>::compute ()
   IsComputed_ = true;
 }
 
-//==========================================================================
+
 template<class MatrixType>
-void Relaxation<MatrixType>::ApplyInverseJacobi(
-        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
+void
+Relaxation<MatrixType>::
+ApplyInverseJacobi (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                    Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
   using Teuchos::as;
   typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
@@ -956,7 +988,7 @@ void Relaxation<MatrixType>::ApplyInverseJacobi(
     (2.0 * numGlobalRows + 2.0 * numGlobalNonzeros + dampingFlops);
 }
 
-//==========================================================================
+
 template<class MatrixType>
 void
 Relaxation<MatrixType>::
@@ -980,7 +1012,7 @@ ApplyInverseGS (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_
   }
 }
 
-//==========================================================================
+
 template<class MatrixType>
 void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
         const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
@@ -1099,7 +1131,7 @@ void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
     (2.0 * numGlobalRows + 2.0 * numGlobalNonzeros + dampingFlops);
 }
 
-//==========================================================================
+
 template<class MatrixType>
 void
 Relaxation<MatrixType>::
@@ -1136,11 +1168,12 @@ ApplyInverseGS_CrsMatrix (const crs_matrix_type& A,
     (2.0 * numGlobalRows + 2.0 * numGlobalNonzeros + dampingFlops);
 }
 
-//==========================================================================
+
 template<class MatrixType>
-void Relaxation<MatrixType>::ApplyInverseSGS(
-        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
+void
+Relaxation<MatrixType>::
+ApplyInverseSGS (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                 Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const
 {
   // The CrsMatrix version is faster, because it can access the sparse
   // matrix data directly, rather than by copying out each row's data
@@ -1159,7 +1192,7 @@ void Relaxation<MatrixType>::ApplyInverseSGS(
   }
 }
 
-//==========================================================================
+
 template<class MatrixType>
 void
 Relaxation<MatrixType>::
@@ -1277,7 +1310,7 @@ ApplyInverseSGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_t
     (2.0 * numGlobalRows + 2.0 * numGlobalNonzeros + dampingFlops);
 }
 
-//==========================================================================
+
 template<class MatrixType>
 void
 Relaxation<MatrixType>::
@@ -1317,7 +1350,7 @@ ApplyInverseSGS_CrsMatrix (const crs_matrix_type& A,
     (2.0 * numGlobalRows + 2.0 * numGlobalNonzeros + dampingFlops);
 }
 
-//==========================================================================
+
 template<class MatrixType>
 std::string Relaxation<MatrixType>::description() const {
   using Teuchos::TypeNameTraits;
@@ -1365,7 +1398,7 @@ std::string Relaxation<MatrixType>::description() const {
   return os.str ();
 }
 
-//==========================================================================
+
 template<class MatrixType>
 void
 Relaxation<MatrixType>::

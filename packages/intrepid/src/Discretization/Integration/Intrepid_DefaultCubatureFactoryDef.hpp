@@ -87,7 +87,8 @@ Teuchos::RCP<Cubature<Scalar,ArrayPoint,ArrayWeight> > DefaultCubatureFactory<Sc
       {
 	TEUCHOS_TEST_FOR_EXCEPTION( (degree.size() < 1), std::invalid_argument,
 			    ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
-	pickCubature = Teuchos::rcp(new CubatureCompositeTet<Scalar,ArrayPoint,ArrayWeight>(degree[0]));
+	//pickCubature = Teuchos::rcp(new CubatureCompositeTet<Scalar,ArrayPoint,ArrayWeight>(degree[0]));
+	pickCubature = Teuchos::rcp(new CubatureDirectTetDefault<Scalar,ArrayPoint,ArrayWeight>(degree[0]));
       } 
       else
       {

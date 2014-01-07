@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2012) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact 
+// Questions? Contact
 // Glen Hansen (gahanse@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -93,7 +93,7 @@ namespace Epetra {
     eigensolverReset( Teuchos::RCP<Teuchos::ParameterList> & newEigensolverList );
 
     //! Return the current solution group.
-    virtual Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup> 
+    virtual Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup>
     getSolutionGroup() const;
 
     //! Return the current bifurcation group.
@@ -102,18 +102,18 @@ namespace Epetra {
      * is the same as getSolutionGroup(), otherwise this method returns the
      * current bifurcation group (e.g., a turning point group).
      */
-    virtual Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup> 
+    virtual Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup>
     getBifurcationGroup() const;
 
     //! Return the output parameters from the stepper algorithm.
-    virtual Teuchos::RCP<const Teuchos::ParameterList> 
+    virtual Teuchos::RCP<const Teuchos::ParameterList>
     getList() const;
 
     /*! @brief Return the current nonlinear solver pointer.
      *
      * Will throw an error if the solver does not exist yet.
      */
-    virtual Teuchos::RCP<const NOX::Solver::Generic> 
+    virtual Teuchos::RCP<const NOX::Solver::Generic>
     getSolver() const;
 
     /*! @brief Return the current continuation parameter from the underlying LOCA::MultiContinuation::AbstractStrategy.
@@ -127,7 +127,7 @@ namespace Epetra {
 
   protected:
 
-    void setSolutionGroup(const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess, 
+    void setSolutionGroup(const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
       const double value);
 
     //! Build LOCA Factory needed to support stepping strategy
@@ -195,7 +195,7 @@ namespace Epetra {
     virtual bool withinThreshold();
 
   private:
-    
+
     //! Private to prohibit copying
     AdaptiveStepper(const AdaptiveStepper&);
 
@@ -300,6 +300,9 @@ namespace Epetra {
 
     //! Flag indicating whether to return failed upon reaching max steps
     bool return_failed_on_max_steps;
+
+    //! Flag indicating that the failed step is only due to the maximum number of steps being exceeded
+    bool max_steps_exceeded;
 
   };
 } // end namespace Epetra

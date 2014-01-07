@@ -52,10 +52,10 @@
 #include <Epetra_Map.h>
 #include <Epetra_Comm.h>
 #include <Epetra_CrsMatrix.h>
+#include <Epetra_Vector.h>
 #include <Epetra_Directory.h>
 #include <Epetra_HashTable.h>
 #include <Epetra_Distributor.h>
-
 
 #include <Teuchos_TimeMonitor.hpp>
 
@@ -1685,6 +1685,189 @@ int MatrixMatrix::Add(const Epetra_CrsMatrix& A,
 #endif
     throw "EpetraExt::MatrixMatrix::Add: GlobalIndices type unknown";
 }
+
+
+
+//=========================================================================
+template<typename int_type>
+int MatrixMatrix::TJacobi(double omega,
+			  const Epetra_Vector & Dinv,
+			  const Epetra_CrsMatrix& A,
+			  const Epetra_CrsMatrix& B,
+			  Epetra_CrsMatrix& C,
+			  bool call_FillComplete_on_result)
+{
+
+#ifdef ENABLE_MMM_TIMINGS
+  Teuchos::Time myTime("global");
+  Teuchos::TimeMonitor M(myTime);
+  Teuchos::RCP<Teuchos::Time> mtime;  
+  mtime=M.getNewTimer("Jacobi All Setup");
+  mtime->start();
+#endif
+
+  //A and B should already be Filled.
+  if (!A.Filled() || !B.Filled()) {
+    EPETRA_CHK_ERR(-1);
+  }
+
+  //now check size compatibility
+  long long Aouter = A.NumGlobalRows64();
+  long long Bouter = B.NumGlobalCols64();
+  long long Ainner = A.NumGlobalCols64();
+  long long Binner = B.NumGlobalRows64();
+  long long Dlen   = Dinv.GlobalLength64();
+  if (Ainner != Binner) {
+    std::cerr << "MatrixMatrix::Jacobi: ERROR, inner dimensions of A and B "
+         << "must match for matrix-matrix product. A is "
+         <<Aouter<<"x"<<Ainner << ", B is "<<Binner<<"x"<<Bouter<<std::endl;
+    return(-1);
+  }
+
+  //The result matrix C must at least have a row-map that reflects the
+  //correct row-size. Don't check the number of columns because rectangular
+  //matrices which were constructed with only one map can still end up
+  //having the correct capacity and dimensions when filled.
+  if (Aouter > C.NumGlobalRows64()) {
+    std::cerr << "MatrixMatrix::Jacobi: ERROR, dimensions of result C must "
+         << "match dimensions of A * B. C has "<<C.NumGlobalRows64()
+         << " rows, should have at least "<<Aouter << std::endl;
+    return(-1);
+  }
+
+  // Check against the D matrix
+  if(Dlen != Aouter) {
+    std::cerr << "MatrixMatrix::Jacboi: ERROR, dimensions of result D must "
+	      << "match dimensions of A's rows. D has "<< Dlen
+	      << " rows, should have " << Aouter << std::endl;
+    return(-1);
+  }
+  
+  if(!A.RowMap().SameAs(B.RowMap()) || !A.RowMap().SameAs(Dinv.Map())) {
+    std::cerr << "MatrixMatrix::Jacboi: ERROR, RowMap of A must match RowMap of B "
+	      << "and Map of D."<<std::endl;
+    return(-1);
+  }
+
+  //It doesn't matter whether C is already Filled or not. If it is already
+  //Filled, it must have space allocated for the positions that will be
+  //referenced in forming C. If it doesn't have enough space,
+  //we'll error out later when trying to store result values.
+
+  //We're going to need to import remotely-owned sections of A and/or B
+  //if more than 1 processor is performing this run, depending on the scenario.
+  int numProcs = A.Comm().NumProc();
+
+  // Maps
+  const Epetra_Map* rowmap_A = &(A.RowMap());
+  const Epetra_Map* rowmap_B = &(B.RowMap());
+
+
+
+  //Declare some 'work-space' maps which may be created depending on
+  //the scenario, and which will be deleted before exiting this function.
+  const Epetra_Map* workmap1 = NULL;
+  const Epetra_Map* workmap2 = NULL;
+  const Epetra_Map* mapunion1 = NULL;
+
+  //Declare a couple of structs that will be used to hold views of the data
+  //of A and B, to be used for fast access during the matrix-multiplication.
+  CrsMatrixStruct Aview;
+  CrsMatrixStruct Bview;
+
+  const Epetra_Map* targetMap_A = rowmap_A;
+  const Epetra_Map* targetMap_B = rowmap_B;
+
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+  mtime=M.getNewTimer("All I&X");
+  mtime->start();
+#endif
+
+  //Now import any needed remote rows and populate the Aview struct.
+  if(call_FillComplete_on_result) {
+    EPETRA_CHK_ERR(import_only<int_type>(A,*targetMap_A,Aview));
+  }
+  else  {
+    EPETRA_CHK_ERR( import_and_extract_views<int_type>(A, *targetMap_A, Aview));
+  }
+
+  // NOTE:  Next up is to switch to import_only for B as well, and then modify the THREE SerialCores
+  // to add a Acol2Brow and Acol2Bimportrow array for in-algorithm lookups.  
+  
+  // Make sure B's views are consistent with A even in serial.
+  const Epetra_Map* colmap_op_A = NULL;
+  if(numProcs > 1){
+    colmap_op_A = &(A.ColMap());
+    targetMap_B = colmap_op_A;
+  }
+
+  //Now import any needed remote rows and populate the Bview struct.  
+  if(call_FillComplete_on_result) {
+    EPETRA_CHK_ERR(import_only<int_type>(B,*targetMap_B,Bview,A.Importer()));
+  }
+  else {
+    EPETRA_CHK_ERR( import_and_extract_views<int_type>(B, *targetMap_B, Bview) );
+  }
+
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+  mtime=M.getNewTimer("Jacobi All Multiply");
+  mtime->start();
+#endif
+
+  // Zero if filled
+  if(C.Filled()) C.PutScalar(0.0);
+
+  //Now call the appropriate method to perform the actual multiplication.
+  CrsWrapper_Epetra_CrsMatrix ecrsmat(C);
+  EPETRA_CHK_ERR( jacobi_A_B(omega,Dinv,A,Aview,B,Bview,C,call_FillComplete_on_result) );
+
+  //Finally, delete the objects that were potentially created
+  //during the course of importing remote sections of A and B.
+  delete mapunion1; mapunion1 = NULL;
+  delete workmap1; workmap1 = NULL;
+  delete workmap2; workmap2 = NULL;
+
+#ifdef ENABLE_MMM_TIMINGS
+  mtime->stop();
+#endif
+
+  return(0);
+}
+
+
+
+int MatrixMatrix::Jacobi(double omega,
+			 const Epetra_Vector & Dinv,
+			 const Epetra_CrsMatrix& A,
+			 const Epetra_CrsMatrix& B,
+			 Epetra_CrsMatrix& C,
+			 bool call_FillComplete_on_result)
+{
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if(A.RowMap().GlobalIndicesInt() && B.RowMap().GlobalIndicesInt()) {
+    return TJacobi<int>(omega, Dinv, A, B, C, call_FillComplete_on_result);
+  }
+  else
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if(A.RowMap().GlobalIndicesLongLong() && B.RowMap().GlobalIndicesLongLong()) {
+    return TJacobi<long long>(omega, Dinv, A, B, C, call_FillComplete_on_result);
+  }
+  else
+#endif
+    throw "EpetraExt::MatrixMatrix::Jacobi: GlobalIndices type unknown";
+}
+
+
+
+
+
+
+
+
+
 
 } // namespace EpetraExt
 

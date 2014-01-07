@@ -68,12 +68,23 @@ Chebyshev (const Teuchos::RCP<const row_matrix_type>& A)
   this->setObjectLabel ("Ifpack2::Chebyshev");
 }
 
-//==========================================================================
+
 template<class MatrixType>
 Chebyshev<MatrixType>::~Chebyshev() {
 }
 
-//==========================================================================
+
+template<class MatrixType>
+void Chebyshev<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
+{
+  if (A.getRawPtr () != impl_.getMatrix ().getRawPtr ()) {
+    IsInitialized_ = false;
+    IsComputed_ = false;
+    impl_.setMatrix (A);
+  }
+}
+
+
 template<class MatrixType>
 void
 Chebyshev<MatrixType>::setParameters (const Teuchos::ParameterList& List)
@@ -82,14 +93,20 @@ Chebyshev<MatrixType>::setParameters (const Teuchos::ParameterList& List)
   impl_.setParameters (const_cast<Teuchos::ParameterList&> (List));
 }
 
-//==========================================================================
+
 template<class MatrixType>
 Teuchos::RCP<const Teuchos::Comm<int> >
-Chebyshev<MatrixType>::getComm() const {
-  return impl_.getMatrix ()->getRowMap ()->getComm ();
+Chebyshev<MatrixType>::getComm () const
+{
+  Teuchos::RCP<const row_matrix_type> A = impl_.getMatrix ();
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A.is_null (), std::runtime_error, "Ifpack2::Chebyshev::getComm: The input "
+    "matrix A is null.  Please call setMatrix() with a nonnull input matrix "
+    "before calling this method.");
+  return A->getRowMap ()->getComm ();
 }
 
-//==========================================================================
+
 template<class MatrixType>
 Teuchos::RCP<const typename Chebyshev<MatrixType>::row_matrix_type>
 Chebyshev<MatrixType>::
@@ -97,7 +114,7 @@ getMatrix() const {
   return impl_.getMatrix ();
 }
 
-//==========================================================================
+
 template<class MatrixType>
 Teuchos::RCP<const MatrixType>
 Chebyshev<MatrixType>::
@@ -105,85 +122,96 @@ getCrsMatrix() const {
   return Teuchos::rcp_dynamic_cast<const MatrixType> (impl_.getMatrix ());
 }
 
-//==========================================================================
+
 template<class MatrixType>
 Teuchos::RCP<const typename Chebyshev<MatrixType>::map_type>
 Chebyshev<MatrixType>::
-getDomainMap() const {
-  return impl_.getMatrix ()->getDomainMap ();
+getDomainMap () const
+{
+  Teuchos::RCP<const row_matrix_type> A = impl_.getMatrix ();
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A.is_null (), std::runtime_error, "Ifpack2::Chebyshev::getDomainMap: The "
+    "input matrix A is null.  Please call setMatrix() with a nonnull input "
+    "matrix before calling this method.");
+  return A->getDomainMap ();
 }
 
-//==========================================================================
+
 template<class MatrixType>
 Teuchos::RCP<const typename Chebyshev<MatrixType>::map_type>
 Chebyshev<MatrixType>::
-getRangeMap() const {
-  return impl_.getMatrix ()->getRangeMap ();
+getRangeMap () const
+{
+  Teuchos::RCP<const row_matrix_type> A = impl_.getMatrix ();
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A.is_null (), std::runtime_error, "Ifpack2::Chebyshev::getRangeMap: The "
+    "input matrix A is null.  Please call setMatrix() with a nonnull input "
+    "matrix before calling this method.");
+  return A->getRangeMap ();
 }
 
-//==========================================================================
+
 template<class MatrixType>
 bool Chebyshev<MatrixType>::hasTransposeApply() const {
   return impl_.hasTransposeApply ();
 }
 
-//==========================================================================
+
 template<class MatrixType>
 int Chebyshev<MatrixType>::getNumInitialize() const {
-  return(NumInitialize_);
+  return NumInitialize_;
 }
 
-//==========================================================================
+
 template<class MatrixType>
 int Chebyshev<MatrixType>::getNumCompute() const {
-  return(NumCompute_);
+  return NumCompute_;
 }
 
-//==========================================================================
+
 template<class MatrixType>
 int Chebyshev<MatrixType>::getNumApply() const {
-  return(NumApply_);
+  return NumApply_;
 }
 
-//==========================================================================
+
 template<class MatrixType>
 double Chebyshev<MatrixType>::getInitializeTime() const {
   return InitializeTime_;
 }
 
-//==========================================================================
+
 template<class MatrixType>
 double Chebyshev<MatrixType>::getComputeTime() const {
   return ComputeTime_;
 }
 
-//==========================================================================
+
 template<class MatrixType>
 double Chebyshev<MatrixType>::getApplyTime() const {
   return ApplyTime_;
 }
 
-//==========================================================================
+
 template<class MatrixType>
-double Chebyshev<MatrixType>::getComputeFlops() const {
-  return(ComputeFlops_);
+double Chebyshev<MatrixType>::getComputeFlops () const {
+  return ComputeFlops_;
 }
 
-//==========================================================================
+
 template<class MatrixType>
-double Chebyshev<MatrixType>::getApplyFlops() const {
-  return(ApplyFlops_);
+double Chebyshev<MatrixType>::getApplyFlops () const {
+  return ApplyFlops_;
 }
 
-//==========================================================================
+
 template<class MatrixType>
 typename Chebyshev<MatrixType>::magnitude_type
-Chebyshev<MatrixType>::
-getCondEst() const {
-  return(Condest_);
+Chebyshev<MatrixType>::getCondEst () const {
+  return Condest_;
 }
 
-//==========================================================================
+
 template<class MatrixType>
 typename Chebyshev<MatrixType>::magnitude_type
 Chebyshev<MatrixType>::
@@ -225,32 +253,15 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
 
     // compute() calls initialize() if it hasn't already been called.
     // Thus, we only need to check isComputed().
-    TEUCHOS_TEST_FOR_EXCEPTION(! isComputed(), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! isComputed (), std::runtime_error,
       "Ifpack2::Chebyshev::apply(): You must call the compute() method before "
       "you may call apply().");
     TEUCHOS_TEST_FOR_EXCEPTION(
-       X.getNumVectors() != Y.getNumVectors(),
-       std::runtime_error,
-       "Ifpack2::Chebyshev::apply(): X and Y must have the same number of "
-       "columns.  X.getNumVectors() = " << X.getNumVectors() << " != "
-       << "Y.getNumVectors() = " << Y.getNumVectors() << ".");
-#ifdef HAVE_TEUCHOS_DEBUG
-    {
-      // The relation 'isSameAs' is transitive.  It's also a collective,
-      // so we don't have to do a "shared" test for exception (i.e., a
-      // global reduction on the test value).
-      TEUCHOS_TEST_FOR_EXCEPTION(
-         ! X.getMap ()->isSameAs (*getDomainMap ()),
-         std::runtime_error,
-         "Ifpack2::Chebyshev: The domain Map of the matrix must be the same as "
-         "the Map of the input vector(s) X.");
-      TEUCHOS_TEST_FOR_EXCEPTION(
-         ! Y.getMap ()->isSameAs (*getRangeMap ()),
-         std::runtime_error,
-         "Ifpack2::Chebyshev: The range Map of the matrix must be the same as "
-         "the Map of the output vector(s) Y.");
-    }
-#endif // HAVE_TEUCHOS_DEBUG
+      X.getNumVectors () != Y.getNumVectors (), std::runtime_error,
+      "Ifpack2::Chebyshev::apply(): X and Y must have the same number of "
+      "columns.  X.getNumVectors() = " << X.getNumVectors() << " != "
+      << "Y.getNumVectors() = " << Y.getNumVectors() << ".");
     applyImpl (X, Y, mode, alpha, beta);
   }
   ++NumApply_;
@@ -268,9 +279,17 @@ applyMat (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordi
           Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
           Teuchos::ETransp mode) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
-   "Ifpack2::Chebyshev::applyMat(): X.getNumVectors() != Y.getNumVectors().");
-  impl_.getMatrix ()->apply (X, Y, mode);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    X.getNumVectors () != Y.getNumVectors (), std::invalid_argument,
+    "Ifpack2::Chebyshev::applyMat: X.getNumVectors() != Y.getNumVectors().");
+
+  Teuchos::RCP<const row_matrix_type> A = impl_.getMatrix ();
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A.is_null (), std::runtime_error, "Ifpack2::Chebyshev::applyMat: The input "
+    "matrix A is null.  Please call setMatrix() with a nonnull input matrix "
+    "before calling this method.");
+
+  A->apply (X, Y, mode);
 }
 
 
@@ -305,7 +324,7 @@ void Chebyshev<MatrixType>::compute ()
       initialize ();
     }
     IsComputed_ = false;
-    Condest_ = - Teuchos::ScalarTraits<magnitude_type>::one();
+    Condest_ = -Teuchos::ScalarTraits<magnitude_type>::one();
     impl_.compute ();
   }
   IsComputed_ = true;
@@ -313,7 +332,7 @@ void Chebyshev<MatrixType>::compute ()
 
   // timer->totalElapsedTime() returns the total time over all timer
   // calls.  Thus, we use = instead of +=.
-  ComputeTime_ = timer->totalElapsedTime();
+  ComputeTime_ = timer->totalElapsedTime ();
 }
 
 
@@ -325,32 +344,36 @@ PowerMethod (const Tpetra::Operator<scalar_type, local_ordinal_type, global_ordi
              const int MaximumIterations,
              scalar_type& lambda_max)
 {
-  const scalar_type one = STS::one();
-  const scalar_type zero = STS::zero();
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    true, std::logic_error, "Ifpack2::Chebyshev::PowerMethod: "
+    "This method is deprecated.  Please do not call it.");
 
-  lambda_max = zero;
-  Teuchos::Array<scalar_type> RQ_top(1), RQ_bottom(1);
-  vector_type x (Operator.getDomainMap ());
-  vector_type y (Operator.getRangeMap ());
-  x.randomize ();
-  Teuchos::Array<magnitude_type> norms (x.getNumVectors ());
-  x.norm2 (norms ());
-  x.scale (one / norms[0]);
+  // const scalar_type one = STS::one();
+  // const scalar_type zero = STS::zero();
 
-  for (int iter = 0; iter < MaximumIterations; ++iter) {
-    Operator.apply (x, y);
-    y.elementWiseMultiply (one, InvPointDiagonal, y, zero);
-    y.dot (x, RQ_top ());
-    x.dot (x, RQ_bottom ());
-    lambda_max = RQ_top[0] / RQ_bottom[0];
-    y.norm2 (norms ());
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      norms[0] == zero,
-      std::runtime_error,
-      "Ifpack2::Chebyshev::PowerMethod: norm == 0 at iteration " << (iter+1)
-      << " of " << MaximumIterations);
-    x.update (one / norms[0], y, zero);
-  }
+  // lambda_max = zero;
+  // Teuchos::Array<scalar_type> RQ_top(1), RQ_bottom(1);
+  // vector_type x (Operator.getDomainMap ());
+  // vector_type y (Operator.getRangeMap ());
+  // x.randomize ();
+  // Teuchos::Array<magnitude_type> norms (x.getNumVectors ());
+  // x.norm2 (norms ());
+  // x.scale (one / norms[0]);
+
+  // for (int iter = 0; iter < MaximumIterations; ++iter) {
+  //   Operator.apply (x, y);
+  //   y.elementWiseMultiply (one, InvPointDiagonal, y, zero);
+  //   y.dot (x, RQ_top ());
+  //   x.dot (x, RQ_bottom ());
+  //   lambda_max = RQ_top[0] / RQ_bottom[0];
+  //   y.norm2 (norms ());
+  //   TEUCHOS_TEST_FOR_EXCEPTION(
+  //     norms[0] == zero,
+  //     std::runtime_error,
+  //     "Ifpack2::Chebyshev::PowerMethod: norm == 0 at iteration " << (iter+1)
+  //     << " of " << MaximumIterations);
+  //   x.update (one / norms[0], y, zero);
+  // }
 }
 
 //==========================================================================

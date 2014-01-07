@@ -43,7 +43,9 @@
 #ifndef IFPACK2_DIAGONAL_DECL_HPP
 #define IFPACK2_DIAGONAL_DECL_HPP
 
-#include "Ifpack2_Preconditioner.hpp"
+#include <Ifpack2_Preconditioner.hpp>
+#include <Ifpack2_Details_CanChangeMatrix.hpp>
+#include <Tpetra_CrsMatrix_decl.hpp>
 
 namespace Ifpack2 {
 
@@ -69,7 +71,12 @@ class Diagonal :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
                                            typename MatrixType::local_ordinal_type,
                                            typename MatrixType::global_ordinal_type,
-                                           typename MatrixType::node_type> {
+                                           typename MatrixType::node_type>,
+    virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                                                       typename MatrixType::local_ordinal_type,
+                                                                       typename MatrixType::global_ordinal_type,
+                                                                       typename MatrixType::node_type> >
+{
 public:
   typedef TEUCHOS_DEPRECATED typename MatrixType::scalar_type Scalar;
   typedef TEUCHOS_DEPRECATED typename MatrixType::local_ordinal_type LocalOrdinal;
@@ -83,19 +90,52 @@ public:
   typedef typename MatrixType::node_type node_type;
   typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
-  //! Constructor to create a Diagonal preconditioner using a Tpetra::CrsMatrix.
-  Diagonal (const Teuchos::RCP<const MatrixType>& A);
+  //! Tpetra::RowMatrix specialization used by this class.
+  typedef Tpetra::RowMatrix<scalar_type,
+                            local_ordinal_type,
+                            global_ordinal_type,
+                            node_type> row_matrix_type;
+  //! Tpetra::CrsMatrix specialization used by this class.
+  typedef Tpetra::CrsMatrix<scalar_type,
+                            local_ordinal_type,
+                            global_ordinal_type,
+                            node_type> crs_matrix_type;
+  //! Tpetra::Vector specialization used by this class.
+  typedef Tpetra::Vector<scalar_type,
+                         local_ordinal_type,
+                         global_ordinal_type,
+                         node_type> vector_type;
+  //! Tpetra::Map specialization used by this class.
+  typedef Tpetra::Map<local_ordinal_type,
+                      global_ordinal_type,
+                      node_type> map_type;
 
-  //! Constructor to create a Diagonal preconditioner using a Tpetra::Vector.
-  /**
-   * If your compiler complains about this constructor being ambigous with the
-   * other constructor overload, instead call the free-standing function
-   * Ifpack2::createDiagonalPreconditioner which is located at the bottom
-   * of this header file.
-  * (This issue arises if this constructor is called with a RCP<Tpetra::Vector>
-  * that isn't const-qualified exactly as declared here.)
-  */
-  Diagonal (const Teuchos::RCP<const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& diag);
+  /// \brief Constructor that takes a Tpetra::RowMatrix.
+  ///
+  /// \param A_in [in] The input matrix.
+  Diagonal (const Teuchos::RCP<const row_matrix_type>& A);
+
+  /// \brief Constructor that takes a Tpetra::CrsMatrix.
+  ///
+  /// This constructor exists to avoid "ambiguous constructor"
+  /// warnings.  It does the same thing as the constructor that takes
+  /// a Tpetra::RowMatrix.
+  ///
+  /// \param A_in [in] The input matrix.
+  Diagonal (const Teuchos::RCP<const crs_matrix_type>& A_in);
+
+  /// \brief Constructor that accepts a Tpetra::Vector of inverse diagonal entries.
+  ///
+  /// \param diag [in] Vector of inverse diagonal entries.
+  ///
+  /// If your compiler complains about this constructor being ambigous
+  /// with the other constructor overload, instead call the
+  /// free-standing function Ifpack2::createDiagonalPreconditioner
+  /// which is located at the bottom of this header file.  (This issue
+  /// may arise if this constructor is called with a
+  /// <tt>Teuchos::RCP<Tpetra::Vector></tt> that isn't const-qualified
+  /// exactly as declared here.)
+  Diagonal (const Teuchos::RCP<const vector_type>& diag);
 
   //! Destructor
   virtual ~Diagonal();
@@ -111,10 +151,10 @@ public:
 
   //! Returns \c true if the preconditioner has been successfully initialized.
   inline bool isInitialized() const {
-    return(isInitialized_);
+    return isInitialized_;
   }
 
-  //! compute the preconditioner
+  //! Compute the preconditioner.
   void compute();
 
   //! Return true if compute() has been called.
@@ -122,20 +162,44 @@ public:
     return(isComputed_);
   }
 
-  //! @name Methods implementing a Tpetra::Operator interface.
+  //@}
+  //! \name Implementation of Ifpack2::Details::CanChangeMatrix
   //@{
 
-  //! Applies the preconditioner to X, returns the result in Y.
-  /*!
-    \param
-    X - (In) A Tpetra::MultiVector of dimension NumVectors to be preconditioned.
-    \param
-    Y - (InOut) A Tpetra::MultiVector of dimension NumVectors containing result.
+  /// \brief Change the matrix to be preconditioned.
+  ///
+  /// \param A [in] The new matrix.
+  ///
+  /// \post <tt>! isInitialized ()</tt>
+  /// \post <tt>! isComputed ()</tt>
+  ///
+  /// Calling this method with a matrix different than the current
+  /// matrix resets the preconditioner's state.  After calling this
+  /// method with a nonnull input, you must first call initialize()
+  /// and compute() (in that order) before you may call apply().
+  ///
+  /// You may call this method with a null input.  If A is null, then
+  /// you may not call initialize() or compute() until you first call
+  /// this method again with a nonnull input.  This method invalidates
+  /// any previous factorization whether or not A is null, so calling
+  /// setMatrix() with a null input is one way to clear the
+  /// preconditioner's state (and free any memory that it may be
+  /// using).
+  ///
+  /// The new matrix A need not necessarily have the same Maps or even
+  /// the same communicator as the original matrix.
+  virtual void
+  setMatrix (const Teuchos::RCP<const row_matrix_type>& A);
 
-    \return Integer error code, set to 0 if successful.
+  //@}
+  //! \name Implementation of Tpetra::Operator
+  //@{
 
-    \warning This routine is NOT AztecOO compliant.
-  */
+  /// \brief Apply the preconditioner to X, putting the result in Y.
+  ///
+  /// If the result of applying this preconditioner to a vector X is
+  /// \f$F \cdot X$, then this method computes \f$\beta Y + \alpha F \cdot X\f$.
+  /// The typical case is \f$\beta = 0\f$ and \f$\alpha = 1\f$.
   void
   apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
          Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
@@ -143,31 +207,14 @@ public:
          scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
          scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
-  //! Returns the Tpetra::Map object associated with the domain of this operator.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >
-  getDomainMap () const {
-    return domainMap_;
-  }
+  //! The Tpetra::Map representing this operator's domain.
+  Teuchos::RCP<const map_type> getDomainMap () const;
 
-  //! Returns the Tpetra::Map object associated with the range of this operator.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >
-  getRangeMap() const {
-    return rangeMap_;
-  }
-
-  //! Applies the matrix to a Tpetra::MultiVector.
-  /*!
-    \param
-    X - (In) A Tpetra::MultiVector of dimension NumVectors to multiply with matrix.
-    \param
-    Y - (Out) A Tpetra::MultiVector of dimension NumVectors containing the result.
-    */
-  void applyMat(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-                Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-                Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
+  //! The Tpetra::Map representing this operator's range.
+  Teuchos::RCP<const map_type> getRangeMap () const;
 
   //@}
-  //! \name Mathematical functions.
+  //! \name Mathematical functions
   //@{
 
   /// \brief Compute the condition number estimate and return its value.
@@ -197,11 +244,14 @@ public:
   }
 
   //! Return the communicator associated with this matrix operator.
-  Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
+  //Teuchos::RCP<const Teuchos::Comm<int> > getComm () const;
 
-  //! Return a reference to the matrix to be preconditioned.
-  Teuchos::RCP<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >
-  getMatrix () const {
+  /// \brief The original input matrix to be preconditioned.
+  ///
+  /// This could be null, for example if the user created this object
+  /// using the constructor that takes a Tpetra::Vector, or if the
+  /// user called setMatrix() with a null input.
+  Teuchos::RCP<const row_matrix_type> getMatrix () const {
     return matrix_;
   }
 
@@ -233,32 +283,44 @@ public:
   //! @name Implementation of Teuchos::Describable
   //@{
 
-  /** \brief Return a simple one-line description of this object. */
+  //! Return a one-line description of this object.
   std::string description() const;
 
-  /** \brief Print the object with some verbosity level to an FancyOStream object. */
-  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
-
+  //! Print the object with some verbosity level to an FancyOStream object.
+  void
+  describe (Teuchos::FancyOStream& out,
+            const Teuchos::EVerbosityLevel verbLevel =
+            Teuchos::Describable::verbLevel_default) const;
   //@}
 
-  private:
-    bool isInitialized_;
-    bool isComputed_;
-    Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > domainMap_;
-    Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > rangeMap_;
-    Teuchos::RCP<const MatrixType> matrix_;
-    Teuchos::RCP<const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > inversediag_;
-    Teuchos::ArrayRCP<size_t> offsets_;
+private:
+  //! Reset the preconditioner's state.  Call in setMatrix().
+  void reset ();
 
-    mutable int numInitialize_;
-    mutable int numCompute_;
-    mutable int numApply_;
+  //! The input matrix provided by the user.
+  Teuchos::RCP<const row_matrix_type> matrix_;
 
-    double initializeTime_;
-    double computeTime_;
-    double applyTime_;
+  /// \brief Inverse diagonal provided by the user.
+  ///
+  /// This is only nonnull if this Diagonal instance was created using
+  /// the constructor that takes a pointer to a Tpetra::Vector.
+  Teuchos::RCP<const vector_type> userInverseDiag_;
 
-    magnitude_type condEst_;
+  //! The vector of inverse diagonal entries to use in apply().
+  Teuchos::RCP<const vector_type> inverseDiag_;
+  Teuchos::ArrayRCP<size_t> offsets_;
+
+  double initializeTime_;
+  double computeTime_;
+  mutable double applyTime_;
+
+  int numInitialize_;
+  int numCompute_;
+  mutable int numApply_;
+
+  magnitude_type condEst_;
+  bool isInitialized_;
+  bool isComputed_;
 };
 
 /** Function to construct a Diagonal preconditioner with vector input.

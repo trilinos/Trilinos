@@ -129,9 +129,9 @@ public:
   }
 
   // deprecated
-  AggOptions::Ordering GetOrdering() const {
-    const ParameterList & pL = GetParameterList();
-    AggOptions::Ordering ordering = pL.get<AggOptions::Ordering>("Ordering");
+  Ordering GetOrdering() const {
+    const ParameterList& pL = GetParameterList();
+    Ordering ordering = pL.get<Ordering>("Ordering");
     return ordering;
   }
   // deprecated

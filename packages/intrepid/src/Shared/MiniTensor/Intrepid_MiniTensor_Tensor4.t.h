@@ -888,6 +888,47 @@ odot(Tensor<S, N> const & A, Tensor<T, N> const & B)
 }
 
 //
+// \return \f$ C'_{i'j'k'l'} = Q_{i'i} Q_{j'j} Q_{k'k} Q_{l'l} C_{ijkl}  \f$
+//
+template<typename S, typename T, Index N>
+Tensor4<typename Promote<S, T>::type, N>
+kronecker(Tensor<S, N> const & A, Tensor4<T, N> const & B)
+{
+  Index const
+  dimension = A.get_dimension();
+
+  assert(B.get_dimension() == dimension);
+
+  Tensor4<typename Promote<S, T>::type, N>
+  C(dimension);
+
+  for (Index i = 0; i < dimension; ++i) {
+    for (Index j = 0; j < dimension; ++j) {
+      for (Index k = 0; k < dimension; ++k) {
+        for (Index l = 0; l < dimension; ++l) {
+
+          typename Promote<S, T>::type
+          s = 0.0;
+
+          for (Index p = 0; p < dimension; ++p) {
+            for (Index q = 0; q < dimension; ++q) {
+              for (Index m = 0; m < dimension; ++m) {
+                for (Index n = 0; n < dimension; ++n) {
+                  s += A(i,p) * A(j,q) * A(k,m) * A(l,n) * B(p,q,m,n);
+                }
+              }
+            }
+          }
+          C(i,j,k,l) = s;
+        }
+      }
+    }
+  }
+
+  return C;
+}
+
+//
 // 4th-order input
 // \param A 4th-order tensor
 // \param is input stream

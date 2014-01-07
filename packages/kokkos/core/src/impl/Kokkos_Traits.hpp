@@ -46,6 +46,7 @@
 
 #include <stddef.h>
 #include <Kokkos_Macros.hpp>
+#include <stdint.h>
 
 namespace Kokkos {
 namespace Impl {
@@ -142,6 +143,8 @@ struct unsigned_ : public integral_constant<unsigned,I> {};
 template< int I >
 struct int_ : public integral_constant<int,I> {};
 
+typedef bool_<true> true_;
+typedef bool_<false> false_;
 //----------------------------------------------------------------------------
 // if_
 
@@ -267,6 +270,18 @@ struct integral_nonzero_constant<T,zero,false>
 };
 
 //----------------------------------------------------------------------------
+
+template <typename T> struct is_integral : public false_ {};
+
+template <> struct is_integral<int8_t>  : public true_ {};
+template <> struct is_integral<int16_t> : public true_ {};
+template <> struct is_integral<int32_t> : public true_ {};
+template <> struct is_integral<int64_t> : public true_ {};
+
+template <> struct is_integral<uint8_t>  : public true_ {};
+template <> struct is_integral<uint16_t> : public true_ {};
+template <> struct is_integral<uint32_t> : public true_ {};
+template <> struct is_integral<uint64_t> : public true_ {};
 
 } // namespace Impl
 } // namespace Kokkos

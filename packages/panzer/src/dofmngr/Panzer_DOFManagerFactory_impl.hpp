@@ -70,6 +70,8 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuc
                             const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
                             const std::string & fieldOrder) const
 {
+   PANZER_FUNC_TIME_MONITOR("panzer::DOFManagerFactory::buildUnqueGlobalIndexer");
+
    Teuchos::RCP<Teuchos::FancyOStream> pout = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
    pout->setShowProcRank(true);
    pout->setOutputToRootOnly(0);
@@ -144,7 +146,10 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuc
       dofManager->setFieldOrder(fieldOrderV);
    }
 
-   dofManager->buildGlobalUnknowns();
+   {
+     PANZER_FUNC_TIME_MONITOR("panzer::DOFManagerFactory::buildUnqueGlobalIndexer:buildGlobalUnknowns");
+     dofManager->buildGlobalUnknowns();
+   }
    // dofManager->printFieldInformation(*pout);
 
    return dofManager;

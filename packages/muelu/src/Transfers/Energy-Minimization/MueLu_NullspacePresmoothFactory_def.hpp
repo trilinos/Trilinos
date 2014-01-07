@@ -61,8 +61,8 @@ namespace MueLu {
   RCP<const ParameterList> NullspacePresmoothFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetValidParameterList(const ParameterList& paramList) const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< RCP<const FactoryBase> >("Nullspace", Teuchos::null, "Generating factory for the nonsmoothed nullspace");
     validParamList->set< RCP<const FactoryBase> >("A"        , Teuchos::null, "Generating factory for A");
+    validParamList->set< RCP<const FactoryBase> >("Nullspace", Teuchos::null, "Generating factory for the nonsmoothed nullspace");
 
     return validParamList;
   }

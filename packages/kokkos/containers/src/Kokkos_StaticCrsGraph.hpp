@@ -131,6 +131,11 @@ public:
    *           If the last view then allocated memory is deallocated.
    */
   ~StaticCrsGraph() {}
+
+  size_t numRows() const {
+    return row_map.dimension_0()>0?row_map.dimension_0()-1:0;
+  }
+
 };
 
 //----------------------------------------------------------------------------

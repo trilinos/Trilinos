@@ -51,12 +51,12 @@
 
 #include <Zoltan2_PartitioningSolutionQuality.hpp>
 #include <Zoltan2_TestHelpers.hpp>
-#include <Zoltan2_BasicIdentifierInput.hpp>
+#include <Zoltan2_BasicIdentifierAdapter.hpp>
 #include <stdlib.h>
 #include <vector>
 
 typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> user_t;
-typedef Zoltan2::BasicIdentifierInput<user_t> idInput_t;
+typedef Zoltan2::BasicIdentifierAdapter<user_t> idInput_t;
 typedef Zoltan2::PartitioningSolutionQuality<idInput_t> quality_t;
 
 using Teuchos::ArrayRCP;

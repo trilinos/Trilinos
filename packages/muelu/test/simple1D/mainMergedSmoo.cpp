@@ -176,6 +176,8 @@ RCP<SmootherPrototype> gimmeMergedSmoother(int nSmoothers, Xpetra::UnderlyingLib
 int main(int argc, char *argv[]) {
 #include "MueLu_UseShortNames.hpp"
 
+  using namespace MueLuTests;
+
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();

@@ -41,6 +41,24 @@
 // @HEADER
 */
 
+// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
+// only the .cu version of this file is actually compiled
+#include <Tpetra_config.h>
+#ifdef HAVE_TPETRA_KOKKOSCOMPAT
+#include <KokkosCore_config.h>
+#ifdef KOKKOS_USE_CUDA_BUILD
+  #define DO_COMPILATION
+#else
+  #ifndef KOKKOS_HAVE_CUDA
+    #define DO_COMPILATION
+  #endif
+#endif
+#else
+  #define DO_COMPILATION
+#endif
+
+#ifdef DO_COMPILATION
+
 #include <Tpetra_TestingUtilities.hpp>
 
 #include <Teuchos_DefaultSerialComm.hpp>
@@ -182,6 +200,19 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MultiVector, ViewModeConstructorTests, Node )
   {
+    #ifdef HAVE_TPETRA_KOKKOSCOMPAT
+      #ifdef KOKKOS_HAVE_CUDA
+        if(typeid(Node)==typeid(Kokkos::Compat::KokkosCudaWrapperNode)) return;
+      #endif
+      #ifdef KOKKOS_HAVE_OPENMP
+        if(typeid(Node)==typeid(Kokkos::Compat::KokkosOpenMPWrapperNode)) return;
+      #endif
+      #ifdef KOKKOS_HAVE_PTHREAD
+        if(typeid(Node)==typeid(Kokkos::Compat::KokkosThreadsWrapperNode)) return;
+      #endif
+    #endif
+
+
     RCP<Node> node = getNode<Node>();
     typedef Tpetra::MultiVector<double,int,int,Node> MV;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -222,6 +253,19 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Vector, ViewModeConstructorTests, Node )
   {
+    #ifdef HAVE_TPETRA_KOKKOSCOMPAT
+      #ifdef KOKKOS_HAVE_CUDA
+        if(typeid(Node)==typeid(Kokkos::Compat::KokkosCudaWrapperNode)) return;
+      #endif
+      #ifdef KOKKOS_HAVE_OPENMP
+        if(typeid(Node)==typeid(Kokkos::Compat::KokkosOpenMPWrapperNode)) return;
+      #endif
+      #ifdef KOKKOS_HAVE_PTHREAD
+        if(typeid(Node)==typeid(Kokkos::Compat::KokkosThreadsWrapperNode)) return;
+      #endif
+    #endif
+
+
     RCP<Node> node = getNode<Node>();
     typedef Tpetra::Vector<double,int,int,Node> Vec;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -469,7 +513,9 @@ namespace {
         RCP<MV> doubleViewA = mvViewA->subViewNonConst(Range1D(0,inView1.size()-1));
         RCP<MV> doubleViewB = mvViewB->subViewNonConst(Range1D(0,inView1.size()-1));
         RCP<const MV> doubleViewC = mvViewC->subView(Range1D(0,inView1.size()-1));
-        (*doubleViewA) = (*doubleViewB) = (*doubleViewC);
+        //(*doubleViewA) = (*doubleViewB) = (*doubleViewC);
+        deep_copy((*doubleViewB),(*doubleViewC));
+        deep_copy((*doubleViewA),(*doubleViewB));
         doubleViewA = Teuchos::null;
         doubleViewB = Teuchos::null;
         doubleViewC = Teuchos::null;
@@ -1669,6 +1715,7 @@ namespace {
     //   check that it equals B: subtraction in situ
     {
       MV A2(A);
+      A2 = createCopy(A);
       A2.scale(as<Scalar>(2));
       A2.update(as<Scalar>(-1),B,as<Scalar>(1));
       A2.norm1(norms);
@@ -1678,6 +1725,7 @@ namespace {
     //   check that it equals B: scale,subtraction in situ
     {
       MV A2(A);
+      A2 = createCopy(A);
       A2.update(as<Scalar>(-1),B,as<Scalar>(2));
       A2.norm1(norms);
       TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
@@ -1746,7 +1794,9 @@ namespace {
           {
             RCP<V> bj = B.getVectorNonConst(j);
             RCP<const V> aj = A.getVector(j);
-            (*bj) = (*aj);
+            //(*bj) = (*aj);
+            deep_copy((*bj),(*aj));
+
             ArrayRCP<Scalar> bjview = bj->get1dViewNonConst();
             for (size_t i=0; i < numLocal; ++i) {
               bjview[i] *= as<Scalar>(2);
@@ -1757,7 +1807,8 @@ namespace {
           {
             RCP<MV>       bj = B.subViewNonConst(Range1D(j,j));
             RCP<const MV> aj = A.subView(Range1D(j,j));
-            (*bj) = (*aj);
+            ////(*bj) = (*aj);
+            deep_copy((*bj),(*aj));
             ArrayRCP<Scalar> bjview = bj->get1dViewNonConst();
             for (size_t i=0; i < numLocal; ++i) {
               bjview[i] *= as<Scalar>(2);
@@ -1768,7 +1819,11 @@ namespace {
           {
             RCP<MV> bj = B.subViewNonConst(tuple<size_t>(j));
             RCP<const MV> aj = A.subView(tuple<size_t>(j));
-            (*bj) = (*aj);
+            //RCP<MV>       bj = B.subViewNonConst(Range1D(j,j));
+            //RCP<const MV> aj = A.subView(Range1D(j,j));
+            //(*bj) = (*aj);
+            deep_copy((*bj),(*aj));
+            ArrayRCP<const Scalar> ajview = aj->get1dView();
             ArrayRCP<Scalar> bjview = bj->get1dViewNonConst();
             for (size_t i=0; i < numLocal; ++i) {
               bjview[i] *= as<Scalar>(2);
@@ -1804,7 +1859,8 @@ namespace {
     // check that C=A, C.Scale(2.0) == B
     {
       MV C(map,numVectors,false);
-      C = A;
+      //C = A;
+      C = createCopy(A);
       C.scale(as<Scalar>(2));
       C.update(-1.0,B,1.0);
       Array<Mag> Cnorms(numVectors), zeros(numVectors,M0);
@@ -1814,7 +1870,8 @@ namespace {
     // check that C=A, C.Scale(tuple(2)) == B
     {
       MV C(map,numVectors,false);
-      C = A;
+      //C = A;
+      C = createCopy(A);
       Array<Scalar> twos(numVectors,as<Scalar>(2));
       C.scale(twos());
       C.update(-1.0,B,1.0);
@@ -1869,6 +1926,7 @@ namespace {
     //   check that it equals B: subtraction in situ
     {
       V A2(A);
+      A2 = createCopy(A);
       A2.scale(as<Scalar>(2));
       A2.update(as<Scalar>(-1),B,as<Scalar>(1));
       norm = A2.norm1(); A2.norm1(norms());
@@ -1879,6 +1937,7 @@ namespace {
     //   check that it equals B: scale,subtraction in situ
     {
       V A2(A);
+      A2 = createCopy(A);
       A2.update(as<Scalar>(-1),B,as<Scalar>(2));
       norm = A2.norm1(); A2.norm1(norms());
       TEST_EQUALITY(norm,M0);
@@ -1937,6 +1996,7 @@ namespace {
         nsub[j] = norig[inds[j]];
       }
       MV mvcopy(*mvview);
+      mvcopy = createCopy(*mvview);
       mvcopy.normInf(ncopy());
       TEST_COMPARE_FLOATING_ARRAYS(ncopy,nsub,M0);
       // reset both the view and the copy of the view, ensure that they are independent
@@ -1956,6 +2016,9 @@ namespace {
       // test copy constructor with
       // copy it
       MV mcopy1(morig), mcopy2(morig);
+      mcopy1 = createCopy(morig);
+      mcopy2 = createCopy(morig);
+
       // verify that all three have identical values
       Array<Mag> norig(numVectors), ncopy1(numVectors), ncopy2(numVectors);
       morig.normInf(norig);
@@ -1995,6 +2058,8 @@ namespace {
     morig.randomize();
     // copy it
     V mcopy1(morig), mcopy2(morig);
+    mcopy1 = createCopy(morig);
+    mcopy2 = createCopy(morig);
     // verify that all three have identical values
     Magnitude norig, ncopy1, ncopy2;
     norig = morig.normInf();
@@ -2522,6 +2587,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Describable       , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Typedefs          , LO, GO, SCALAR, NODE )
 
+
 #if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
 #  define TPETRA_MULTIVECTOR_COMPLEX_FLOAT_DOT_TEST( NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ComplexDotOneColumn, float, int, int, NODE )
@@ -2565,3 +2631,5 @@ namespace {
   TPETRA_INSTANTIATE_TESTMV( UNIT_TEST_GROUP )
 
 }
+
+#endif //DO_COMPILATION

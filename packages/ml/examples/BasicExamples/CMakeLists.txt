@@ -2,6 +2,8 @@
 INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE(TribitsCopyFilesToBinaryDir)
 
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Zoltan)
+
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   aztec_simple
@@ -16,6 +18,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1-4
   COMM serial mpi
   )
+
+IF (${PACKAGE_NAME}_ENABLE_Zoltan)
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  scalingtest
+  SOURCES ml_scalingtest.cpp
+  NUM_MPI_PROCS 1-4
+  COMM serial mpi
+  )
+ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   preconditioner

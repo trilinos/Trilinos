@@ -162,7 +162,7 @@ namespace MueLu {
 
     //! pointer to Ifpack2 preconditiioner
     RCP< Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > ifpack2prec_;
-    
+
   }; // class SchwarzSmoother
 
 } // namespace MueLu

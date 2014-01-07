@@ -176,15 +176,15 @@ int main(int argc, char *argv[]) {
       // "sed -i "<smth,could be empty>" 's//'" in Mac. Both, however, take '-i<extension>'
 
       // Ignore the value of "lambdaMax"
-      std::string sed_cmd = "sed -iorig 's/lambdaMax\\ =\\ [0-9]*\\.[0-9]*/lambdaMax\\ =\\ <ignored>/' ";
+      std::string sed_cmd = "sed -iorig 's/lambdaMax:\\ [0-9]*\\.[0-9]*/lambdaMax\\ =\\ <ignored>/' ";
       system((sed_cmd + baseFile + ".res").c_str());
       system((sed_cmd + baseFile + ".out").c_str());
 
       // Ignore the value of "lambdaMin"
 #ifndef __APPLE__
-      sed_cmd = "sed -i      's/lambdaMin\\ =\\ [0-9]*\\.[0-9]*/lambdaMin\\ =\\ <ignored>/' ";
+      sed_cmd = "sed -i      's/lambdaMin:\\ [0-9]*\\.[0-9]*/lambdaMin\\ =\\ <ignored>/' ";
 #else
-      sed_cmd = "sed -i \"\" 's/lambdaMin\\ =\\ [0-9]*\\.[0-9]*/lambdaMin\\ =\\ <ignored>/' ";
+      sed_cmd = "sed -i \"\" 's/lambdaMin:\\ [0-9]*\\.[0-9]*/lambdaMin\\ =\\ <ignored>/' ";
 #endif
       system((sed_cmd + baseFile + ".res").c_str());
       system((sed_cmd + baseFile + ".out").c_str());
@@ -200,7 +200,7 @@ int main(int argc, char *argv[]) {
       system((sed_cmd + baseFile + ".out").c_str());
 
       // Run comparison
-      std::string cmd = "diff -wB " + baseFile + ".res " + baseFile + ".out";
+      std::string cmd = "diff -w -I\"^\\s*$\" " + baseFile + ".res " + baseFile + ".out";
       int ret = system(cmd.c_str());
       if (ret)
         failed = true;

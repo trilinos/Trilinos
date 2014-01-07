@@ -60,12 +60,12 @@ public:
    ResponseAggregator_Manager()
       : globalIndexer_(Teuchos::null), linObjFactory_(Teuchos::null) {}
 
-   ResponseAggregator_Manager(const Teuchos::RCP<UniqueGlobalIndexerBase> & ugi,
-                              const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof)
+   ResponseAggregator_Manager(const Teuchos::RCP<const UniqueGlobalIndexerBase> & ugi,
+                              const Teuchos::RCP<const LinearObjFactory<TraitsT> > & lof)
       : globalIndexer_(ugi), linObjFactory_(lof) {}
 
-   void initialize(const Teuchos::RCP<UniqueGlobalIndexerBase> & ugi,
-                   const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof)
+   void initialize(const Teuchos::RCP<const UniqueGlobalIndexerBase> & ugi,
+                   const Teuchos::RCP<const LinearObjFactory<TraitsT> > & lof)
    { globalIndexer_ = ugi; linObjFactory_ = lof; }
 
    /** Statically access an aggregator of a particular type
@@ -112,10 +112,10 @@ public:
      */
    const AggregatorManager & getAggregatorManager(const std::string & type) const;
 
-   Teuchos::RCP<LinearObjFactory<TraitsT> > getLinearObjFactory() const
+   Teuchos::RCP<const LinearObjFactory<TraitsT> > getLinearObjFactory() const
    { return linObjFactory_; }
 
-   Teuchos::RCP<UniqueGlobalIndexerBase > getGlobalIndexer() const
+   Teuchos::RCP<const UniqueGlobalIndexerBase > getGlobalIndexer() const
    { return globalIndexer_; }
 
 
@@ -127,8 +127,8 @@ private:
 
    std::map<std::string,Teuchos::RCP<AggregatorManager> > aggregators_;
 
-   Teuchos::RCP<UniqueGlobalIndexerBase > globalIndexer_;
-   Teuchos::RCP<LinearObjFactory<TraitsT> > linObjFactory_;
+   Teuchos::RCP<const UniqueGlobalIndexerBase > globalIndexer_;
+   Teuchos::RCP<const LinearObjFactory<TraitsT> > linObjFactory_;
 
    ResponseAggregator_Manager(const ResponseAggregator_Manager &);
 };

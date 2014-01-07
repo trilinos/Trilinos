@@ -48,7 +48,7 @@
  
 #include "Teuchos_ScalarTraitsDecl.hpp"
 #include "Teuchos_ScalarTraits.hpp"
-
+#include <cfloat>
 namespace Teuchos {
 
 #ifdef __CUDA_ARCH__
@@ -157,6 +157,13 @@ struct ScalarTraits<float>
   static inline __device__ __host__ bool  isnaninf(float x) { return isnan(x) || isinf(x); }
   static inline __device__ __host__ float squareroot(float x) { return sqrtf(x); }
   static inline __device__ __host__ float pow(float x, float y) { return powf(x,y); }
+  static inline __device__ __host__ float eps() { return FLT_EPSILON; }
+  static inline __device__ __host__ float t() { return FLT_MANT_DIG; }
+  static inline __device__ __host__ float base() { return FLT_RADIX; }
+  static inline __device__ __host__ float log10(float x ) { return ::log10f(x); }
+  // Dummy operations, need to exist for parsing when compiling everything with NVCC
+  static inline __device__ __host__ float random() { return 9.0f; }
+  static inline __device__ __host__ void seedrandom(unsigned int ) {}
 };
 
 template<>
@@ -178,6 +185,13 @@ struct ScalarTraits<double>
   static inline __device__ __host__ bool  isnaninf(double x) { return isnan(x) || isinf(x); }
   static inline __device__ __host__ double squareroot(double x) { return sqrt(x); }
   static inline __device__ __host__ double pow(double x, double y) { return pow(x,y); }
+  static inline __device__ __host__ double eps() { return DBL_EPSILON; }
+  static inline __device__ __host__ double t() { return DBL_MANT_DIG; }
+  static inline __device__ __host__ double base() { return FLT_RADIX; }
+  static inline __device__ __host__ double log10(double x ) { return ::log10(x); }
+  // Dummy operations, need to exist for parsing when compiling everything with NVCC
+  static inline __device__ __host__ double random() { return 9.0; }
+  static inline __device__ __host__ void seedrandom(unsigned int ) {}
 };
 #endif // __CUDA_ARCH__
 

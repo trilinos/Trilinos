@@ -48,13 +48,15 @@
 #include "Epetra_MultiVector.h" 
 #include "Epetra_LinearProblem.h" 
 #include "Epetra_SerialComm.h"
-#include "Amesos_BaseSolver.h" 
+#include "Amesos_BaseSolver.h"
 #include "AztecOO.h"
 #include "Isorropia_EpetraProber.hpp"
 
 #include "shylu_symbolic.h"
 #include "shylu_probing_operator.h"
 #include "AmesosSchurOperator.h"
+
+#include <IQRSolver.h>
 
 //#include "shylu_debug_manager.hpp"
 
@@ -76,6 +78,7 @@ typedef struct
     //Epetra_Map *LDColMap;       // ColMap for block diagonals
     //Epetra_CrsMatrix *D;        // Actual D Matrix, not reqd for Amesos_KLU
                                 // but required for Amesos_Pardiso
+    Teuchos::RCP<IQR::IQRSolver> iqrSolver; // Solver object for IQR func.
     Teuchos::RCP<Epetra_CrsMatrix> Sbar; // Approx Schur complement
     Teuchos::RCP<Epetra_CrsGraph> localSbargraph; // graph of local Sbar
     AztecOO *innersolver;            // inner solver
@@ -85,7 +88,7 @@ typedef struct
     Teuchos::RCP<Epetra_LinearProblem> OrigLP2;   // Local problem to solve D
 	Teuchos::RCP<EpetraExt::ViewTransform<Epetra_LinearProblem> > ReIdx_LP2;
 	Amesos_BaseSolver *dsolver;  // Local Subdomain solver
-    Teuchos::RCP<AmesosSchurOperator> schur_prec;
+    Teuchos::RCP<Ifpack_Preconditioner> schur_prec;
     Teuchos::RCP<ShyLU_Probing_Operator> schur_op;
     int lmax;                    // May be this is optimizing too much
     int rmax;                    // May be this is optimizing too much
@@ -100,16 +103,17 @@ typedef struct
     double Sdiagfactor;         // % of diagonals added to Schur complement
     int schurApproxMethod;      // ==1 implies blockdiagonal + A22
                                 // ==2 implies dropping based
-
+    							// ==4 implies IQR
     double relative_threshold;  // Relative threshold for dropping
                                 // only used if schurApproxMethod == 2
-
     int inner_maxiters;         // maximum iterations for inner solver
     double inner_tolerance;     // relative residual tolerance for inner solver
     string libName;             // library for the outer solver
     string schurSolver;         // Solver for the Schur complement
     string schurAmesosSolver;   // Amesos solver for the Schur complement
     string diagonalBlockSolver; // Solver to use to factorize the diagonal blocks
+    string schurPreconditioner; // Preconditioner for the inner iterations on Sbar (AztecOO-Exact)
+    bool silent_subiter;
     int sep_type;
     int debug_level;
     //DebugManager dm;

@@ -199,6 +199,8 @@ RCP<SmootherPrototype> gimmeMergedSmoother(int nSmoothers, Xpetra::UnderlyingLib
 int main(int argc, char *argv[]) {
 #include "MueLu_UseShortNames.hpp"
 
+  using namespace MueLuTests;
+
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
@@ -349,9 +351,9 @@ int main(int argc, char *argv[]) {
 #ifdef NEUMANN
   // Use coarse level projection solver
   RCP<SmootherPrototype> projectedSolver = rcp(new ProjectorSmoother(coarseProto));
-  RCP<SmootherFactory> coarseSolveFact   = rcp(new SmootherFactory(projectedSolver));
+  RCP<SmootherFactory>   coarseSolveFact = rcp(new SmootherFactory(projectedSolver, Teuchos::null));
 #else
-  RCP<SmootherFactory> coarseSolveFact   = rcp(new SmootherFactory(coarseProto));
+  RCP<SmootherFactory> coarseSolveFact   = rcp(new SmootherFactory(coarseProto, Teuchos::null));
 #endif
   M.SetFactory("CoarseSolver", coarseSolveFact);
 

@@ -121,8 +121,8 @@ SGEpetraLinearObjFactory<Traits,LocalOrdinalT>
 {
    bool completed = false;
    try {
-      const SGEpetraLinearObjContainer & containerSG = Teuchos::dyn_cast<const SGEpetraLinearObjContainer>(container);
-      SGEpetraLinearObjContainer & ghostContainerSG = Teuchos::dyn_cast<SGEpetraLinearObjContainer>(ghostContainer);
+      const SGEpetraLinearObjContainer & containerSG = dynamic_cast<const SGEpetraLinearObjContainer&>(container);
+      SGEpetraLinearObjContainer & ghostContainerSG = dynamic_cast<SGEpetraLinearObjContainer&>(ghostContainer);
    
       // simply iterate over each deterministic system and run global to ghost
       SGEpetraLinearObjContainer::const_iterator inItr;
@@ -151,8 +151,8 @@ SGEpetraLinearObjFactory<Traits,LocalOrdinalT>
 {
    bool completed = false;
    try {
-      SGEpetraLinearObjContainer & containerSG = Teuchos::dyn_cast<SGEpetraLinearObjContainer>(container);
-      const SGEpetraLinearObjContainer & ghostContainerSG = Teuchos::dyn_cast<const SGEpetraLinearObjContainer>(ghostContainer);
+      SGEpetraLinearObjContainer & containerSG = dynamic_cast<SGEpetraLinearObjContainer&>(container);
+      const SGEpetraLinearObjContainer & ghostContainerSG = dynamic_cast<const SGEpetraLinearObjContainer&>(ghostContainer);
    
       // simply iterate over each deterministic system and run ghost to global
       SGEpetraLinearObjContainer::const_iterator inItr;
@@ -183,7 +183,7 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
 {
    bool completed = false;
    try {
-      SGEpetraLinearObjContainer & ghostContainerSG = Teuchos::dyn_cast<SGEpetraLinearObjContainer>(ghostedObjs);
+      SGEpetraLinearObjContainer & ghostContainerSG = dynamic_cast<SGEpetraLinearObjContainer&>(ghostedObjs);
    
       // simply iterate over each deterministic system and run adjustForDirichlet
       SGEpetraLinearObjContainer::iterator ghostObjsItr;
@@ -223,7 +223,7 @@ void SGEpetraLinearObjFactory<Traits,LocalOrdinalT>
 {
    bool completed = false;
    try {
-      SGEpetraLinearObjContainer & eloc = Teuchos::dyn_cast<SGEpetraLinearObjContainer>(loc);
+      SGEpetraLinearObjContainer & eloc = dynamic_cast<SGEpetraLinearObjContainer&>(loc);
    
       SGEpetraLinearObjContainer::iterator itr;
       for(itr=eloc.begin();itr!=eloc.end();++itr) 
@@ -248,7 +248,7 @@ SGEpetraLinearObjFactory<Traits,LocalOrdinalT>
 {
    bool completed = false;
    try {
-      SGEpetraLinearObjContainer & eloc = Teuchos::dyn_cast<SGEpetraLinearObjContainer>(loc);
+      SGEpetraLinearObjContainer & eloc = dynamic_cast<SGEpetraLinearObjContainer&>(loc);
 
       SGEpetraLinearObjContainer::iterator itr;
       for(itr=eloc.begin();itr!=eloc.end();++itr) 

@@ -102,8 +102,8 @@ namespace MueLu {
       implicitTranspose_ = implicit;
     }
 
-    
-    
+
+
 
     //@}
 
@@ -114,11 +114,11 @@ namespace MueLu {
 
   private:
 
-    
+
     //! If true, the action of the restriction operator action is implicitly defined by the transpose of the prolongator.
     bool implicitTranspose_;
 
-    
+
 
   }; //class MHDRAPFactory
 

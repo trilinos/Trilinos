@@ -470,7 +470,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, InverseNxN)
   std::srand(std::time(NULL));
 
   Index const
-  N = static_cast<Real>(std::rand()) / static_cast<Real>(RAND_MAX) * 7 + 4;
+  N = static_cast<Index>((7.0 * std::rand()) / RAND_MAX + 4.0);
 
   Tensor<Real> const
   A = 2.0 * eye<Real>(N) + Tensor<Real>(N, RANDOM_UNIFORM);
@@ -492,7 +492,7 @@ TEUCHOS_UNIT_TEST(MiniTensor, Inverse_4th_NxN)
   std::srand(std::time(NULL));
 
   Index const
-  N = static_cast<Real>(std::rand()) / static_cast<Real>(RAND_MAX) * 2 + 2;
+  N = static_cast<Index>((2.0 * std::rand()) / RAND_MAX + 2.0);
 
   Tensor4<Real> const
   A = 2.0 * identity_1<Real>(N) + Tensor4<Real>(N, RANDOM_UNIFORM);
@@ -909,6 +909,186 @@ TEUCHOS_UNIT_TEST(MiniTensor, MechanicsTransforms)
   error = norm(G - E) / norm(E);
 
   TEST_COMPARE(error, <=, machine_epsilon<Real>());
+}
+
+TEUCHOS_UNIT_TEST(MiniTensor, KroneckerProduct)
+{
+  Tensor4<Real> A = identity_3<Real>(3);
+
+  Tensor<Real> Q = eye<Real>(3);
+
+  Tensor4<Real> B = kronecker(Q, A);
+
+  Real const error = norm_f(B-A) / norm_f(A);
+
+  TEST_COMPARE(error, <=, 100.0 * machine_epsilon<Real>());
+}
+
+TEUCHOS_UNIT_TEST(MiniTensor, TemplateMetaProgramming)
+{
+  {
+    Real
+    a = 0.0;
+
+    Sacado::Fad::DFad<Real>
+    b = 0.0;
+
+    Real
+    c = Sacado::ScalarValue<Real>::eval(a);
+
+    //std::cout << c << '\n';
+
+    Real
+    d = Sacado::ScalarValue<Sacado::Fad::DFad<Real> >::eval(b);
+
+    //std::cout << d << '\n';
+
+    bool const
+    is_equal = c == d;
+
+    TEST_COMPARE(is_equal, ==, true);
+  }
+
+  {
+    Vector<Real>
+    A(3, ZEROS);
+
+    Vector<Sacado::Fad::DFad<Real> >
+    B(3, ZEROS);
+
+    Vector<Real>
+    C = Sacado::ScalarValue<Vector<Real> >::eval(A);
+
+    //std::cout << C << '\n';
+
+    Vector<Real>
+    D = Sacado::ScalarValue<Vector<Sacado::Fad::DFad<Real> > >::eval(B);
+
+    //std::cout << D << '\n';
+
+    bool const
+    is_equal = C == D;
+
+    TEST_COMPARE(is_equal, ==, true);
+  }
+
+  {
+    Tensor<Real>
+    A(3, ZEROS);
+
+    Tensor<Sacado::Fad::DFad<Real> >
+    B(3, ZEROS);
+
+    Tensor<Real>
+    C = Sacado::ScalarValue<Tensor<Real> >::eval(A);
+
+    //std::cout << C << '\n';
+
+    Tensor<Real>
+    D = Sacado::ScalarValue<Tensor<Sacado::Fad::DFad<Real> > >::eval(B);
+
+    //std::cout << D << '\n';
+
+    bool const
+    is_equal = C == D;
+
+    TEST_COMPARE(is_equal, ==, true);
+  }
+
+  {
+    Tensor3<Real>
+    A(3, ZEROS);
+
+    Tensor3<Sacado::Fad::DFad<Real> >
+    B(3, ZEROS);
+
+    Tensor3<Real>
+    C = Sacado::ScalarValue<Tensor3<Real> >::eval(A);
+
+    //std::cout << C << '\n';
+
+    Tensor3<Real>
+    D = Sacado::ScalarValue<Tensor3<Sacado::Fad::DFad<Real> > >::eval(B);
+
+    //std::cout << D << '\n';
+
+    bool const
+    is_equal = C == D;
+
+    TEST_COMPARE(is_equal, ==, true);
+  }
+
+  {
+    Tensor4<Real>
+    A(3, ZEROS);
+
+    Tensor4<Sacado::Fad::DFad<Real> >
+    B(3, ZEROS);
+
+    Tensor4<Real>
+    C = Sacado::ScalarValue<Tensor4<Real> >::eval(A);
+
+    //std::cout << C << '\n';
+
+    Tensor4<Real>
+    D = Sacado::ScalarValue<Tensor4<Sacado::Fad::DFad<Real> > >::eval(B);
+
+    //std::cout << D << '\n';
+
+    bool const
+    is_equal = C == D;
+
+    TEST_COMPARE(is_equal, ==, true);
+  }
+
+
+  {
+    //
+    // use double explicitly
+    //
+    typedef Vector<double> A;
+
+    typedef Vector<Sacado::Fad::DFad<double> > B;
+
+    typedef Vector<Sacado::Fad::DFad<Sacado::Fad::DFad<double> > > C;
+
+    std::string const
+    double_string = "double";
+
+    std::string const
+    fad_string = "Sacado::Fad::DFad< double >";
+
+    std::string
+    type_string =
+        Sacado::StringName<Sacado::ScalarType<A>::type >::eval();
+
+    TEST_COMPARE(type_string, ==, double_string);
+
+    type_string =
+        Sacado::StringName<Sacado::ValueType<A>::type >::eval();
+
+    TEST_COMPARE(type_string, ==, double_string);
+
+    type_string =
+        Sacado::StringName<Sacado::ScalarType<B>::type >::eval();
+
+    TEST_COMPARE(type_string, ==, double_string);
+
+    type_string =
+        Sacado::StringName<Sacado::ValueType<B>::type >::eval();
+
+    TEST_COMPARE(type_string, ==, double_string);
+
+    type_string =
+        Sacado::StringName<Sacado::ScalarType<C>::type >::eval();
+
+    TEST_COMPARE(type_string, ==, double_string);
+
+    type_string =
+        Sacado::StringName<Sacado::ValueType<C>::type >::eval();
+
+    TEST_COMPARE(type_string, ==, fad_string);
+  }
 }
 
 } // namespace Intrepid

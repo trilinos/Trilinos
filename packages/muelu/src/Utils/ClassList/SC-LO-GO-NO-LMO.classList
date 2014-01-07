@@ -18,7 +18,6 @@ CoordinatesTransferFactory
 CoupledRBMFactory
 DemoFactory
 DirectSolver
-DistanceLaplacianFactory
 EasyParameterListInterpreter
 EminPFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
 FactoryFactory

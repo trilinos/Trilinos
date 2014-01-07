@@ -80,17 +80,70 @@ public:
     gids_   = ArrayRCP<gid_t>(perm_size_);
     perm_  = ArrayRCP<lno_t>(perm_size_);
     invperm_  = ArrayRCP<lno_t>(perm_size_);
+    havePerm_ = false;
+    haveInverse_ = false;
+  }
+
+  /*! \brief Do we have the direct permutation?
+   */
+  bool havePerm()
+  {
+    return havePerm_; 
+  }
+
+  /*! \brief Set havePerm (intended for ordering algorithms only)
+   */
+  void setHavePerm(bool status)
+  {
+    havePerm_ = status; 
+  }
+
+
+  /*! \brief Do we have the inverse permutation?
+   */
+  bool haveInverse()
+  {
+    return haveInverse_; 
+  }
+
+  /*! \brief Set haveInverse (intended for ordering algorithms only)
+   */
+  void setHaveInverse(bool status)
+  {
+    haveInverse_ = status; 
+  }
+
+  /*! \brief Compute direct permutation from inverse.
+   */
+  void computePerm()
+  {
+    if (haveInverse_) {
+      for(size_t i=0; i<perm_size_; i++) {
+        perm_[invperm_[i]] = i;
+      }
+      havePerm_ = true;
+    }
+    else {
+      // TODO: throw exception
+      cerr << "No inverse!" << endl;
+    }
   }
 
   /*! \brief Compute inverse permutation.
    */
   void computeInverse()
   {
-    for(size_t i=0; i<perm_size_; i++) {
-      invperm_[perm_[i]] = i;
+    if (havePerm_) {
+      for(size_t i=0; i<perm_size_; i++) {
+        invperm_[perm_[i]] = i;
+      }
+      havePerm_ = true;
+    }
+    else {
+      // TODO: throw exception
+      cerr << "No perm!" << endl;
     }
   }
-
 
 
   //////////////////////////////////////////////
@@ -157,10 +210,13 @@ public:
   }
 
 protected:
-  // Ordering solution consists of GIDs, LIDs, and permutation vector(s).
+  // Ordering solution consists of permutation vector(s).
+  // Either perm or invperm should be computed by the algorithm.
   size_t perm_size_;
-  ArrayRCP<gid_t>  gids_;
+  ArrayRCP<gid_t>  gids_; // TODO: Remove?
   // For now, assume permutations are local. Revisit later (e.g., for Scotch)
+  bool havePerm_;    // has perm_ been computed yet?
+  bool haveInverse_; // has invperm_ been computed yet?
   ArrayRCP<lno_t> perm_;    // zero-based local permutation
   ArrayRCP<lno_t> invperm_; // inverse of permutation above
 };

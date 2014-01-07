@@ -43,37 +43,88 @@
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Stokhos_Sacado_Kokkos.hpp"
-#include "Kokkos_CrsMatrix.hpp"
+#include "Stokhos_KokkosCrsMatrixMPVectorUnitTest.hpp"
 
 #include "Kokkos_hwloc.hpp"
 #include "Kokkos_Threads.hpp"
 
+// Instantiate test for Threads device
+using Kokkos::Threads;
+CRSMATRIX_MP_VECTOR_TESTS_SCALAR_ORDINAL_DEVICE( double, int, Threads )
+
+template <typename Ordinal, typename Scalar, typename MultiplyOp,
+          Ordinal NumPerThread, Ordinal ThreadsPerVector>
+bool test_host_static_fixed_embedded_vector(Ordinal num_hyper_threads,
+                                            Ordinal num_cores,
+                                            Teuchos::FancyOStream& out) {
+  typedef Kokkos::Threads Device;
+
+  const Ordinal VectorSize = NumPerThread * ThreadsPerVector;
+  typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,VectorSize,Device> Storage;
+  typedef Sacado::MP::Vector<Storage> Vector;
+
+  const Ordinal nGrid = 5;
+
+  bool success = true;
+  if (num_hyper_threads >= ThreadsPerVector) {
+    int row_threads = num_hyper_threads / ThreadsPerVector;
+    Kokkos::DeviceConfig dev_config(num_cores, ThreadsPerVector, row_threads);
+
+    success = test_embedded_vector<Vector>(
+      nGrid, VectorSize, dev_config, MultiplyOp(), out);
+  }
+  return success;
+}
+
 size_t num_cores, num_hyper_threads;
 
-TEUCHOS_UNIT_TEST( Stokhos_KokkosMPVectorKernels,
-                   EmbeddedVector_Right_1_MPKernel_Thread ) {
-  typedef int Ordinal;
-  typedef double Scalar;
-  typedef Kokkos::Threads Device;
-  typedef Kokkos::LayoutRight Layout;
-  const Ordinal VectorSize = 1;
-  typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,VectorSize,Device> Storage;
-  typedef Sacado::MP::Vector<Storage> MatrixScalar;
-
-  // typedef Kokkos::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
-
-  // Matrix matrix;
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_CrsMatrix_MP, Multiply_1, Ordinal, Scalar, MultiplyOp )
+{
+  const Ordinal NumPerThread = 3;
+  const Ordinal ThreadsPerVector = 1;
+  success =
+    test_host_static_fixed_embedded_vector<Ordinal,Scalar,MultiplyOp,NumPerThread,ThreadsPerVector>(num_hyper_threads, num_cores, out);
 }
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_CrsMatrix_MP, Multiply_2, Ordinal, Scalar, MultiplyOp )
+{
+  const Ordinal NumPerThread = 3;
+  const Ordinal ThreadsPerVector = 2;
+  success =
+    test_host_static_fixed_embedded_vector<Ordinal,Scalar,MultiplyOp,NumPerThread,ThreadsPerVector>(num_hyper_threads, num_cores, out);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_CrsMatrix_MP, Multiply_4, Ordinal, Scalar, MultiplyOp )
+{
+  const Ordinal NumPerThread = 3;
+  const Ordinal ThreadsPerVector = 4;
+  success =
+    test_host_static_fixed_embedded_vector<Ordinal,Scalar,MultiplyOp,NumPerThread,ThreadsPerVector>(num_hyper_threads, num_cores, out);
+}
+
+#define CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_ORDINAL_SCALAR_OP( ORDINAL, SCALAR, OP ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                 \
+    Kokkos_CrsMatrix_MP, Multiply_1,  ORDINAL, SCALAR, OP )             \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                 \
+    Kokkos_CrsMatrix_MP, Multiply_2,  ORDINAL, SCALAR, OP )             \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(                                 \
+    Kokkos_CrsMatrix_MP, Multiply_4,  ORDINAL, SCALAR, OP )
+
+CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_ORDINAL_SCALAR_OP(int, double, DefaultMultiply)
+CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_ORDINAL_SCALAR_OP(int, double, EnsembleMultiply)
+CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_ORDINAL_SCALAR_OP(int, double, KokkosMultiply)
 
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // Initialize threads
-  num_cores =
+  size_t num_cores =
     Kokkos::hwloc::get_available_numa_count() *
     Kokkos::hwloc::get_available_cores_per_numa();
-  num_hyper_threads =
+  size_t num_hyper_threads =
     Kokkos::hwloc::get_available_threads_per_core();
   Kokkos::Threads::initialize(num_cores * num_hyper_threads);
   Kokkos::Threads::print_configuration(std::cout);

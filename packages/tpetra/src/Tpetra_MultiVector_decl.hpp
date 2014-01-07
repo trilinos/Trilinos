@@ -336,13 +336,13 @@ namespace Tpetra {
     //@{
 
     //! The type of entries in the vector(s).
-    typedef Scalar        scalar_type;
+    typedef Scalar scalar_type;
     //! The type of local indices.
-    typedef LocalOrdinal  local_ordinal_type;
+    typedef LocalOrdinal local_ordinal_type;
     //! The type of global indices.
     typedef GlobalOrdinal global_ordinal_type;
     //! The Kokkos Node type.
-    typedef Node          node_type;
+    typedef Node node_type;
 
 #if TPETRA_USE_KOKKOS_DISTOBJECT
     typedef DistObjectKA<Scalar, LocalOrdinal, GlobalOrdinal, Node> DO;
@@ -352,7 +352,7 @@ namespace Tpetra {
 #endif
 
     //@}
-    //! @name Constructors and destructor
+    //! \name Constructors and destructor
     //@{
 
     /// \brief Basic constuctor.
@@ -598,17 +598,26 @@ namespace Tpetra {
 
     //@}
 
-    //! @name Data Copy and View get methods
-    /** These methods are used to get the data underlying the MultiVector. They return data in one of three forms:
-      - a MultiVector with a subset of the columns of the target MultiVector
-      - a raw C pointer or array of raw C pointers
-      - one of the Teuchos memory management classes
-      Not all of these methods are valid for a particular MultiVector. For instance, calling a method that accesses a
-      view of the data in a 1-D format (i.e., get1dView) requires that the target MultiVector has constant stride.
-     */
+    /// \name Data copy and view methods
+    ///
+    /// These methods are used to get the data underlying the
+    /// MultiVector. They return data in one of two forms:
+    /// <ul>
+    /// <li> A MultiVector with a subset of the rows or columns of the
+    ///      input MultiVector </li>
+    /// <li> An array of data, wrapped in one of the Teuchos memory
+    ///      management classes </li>
+    /// </ul>
+    /// Not all of these methods are valid for a particular
+    /// MultiVector. For instance, calling a method that accesses a
+    /// view of the data in a 1-D format (i.e., get1dView) requires
+    /// that the target MultiVector has constant stride.
     //@{
 
-    //! Return a MultiVector with copies of selected columns.
+    /// \brief Return a MultiVector with copies of selected columns.
+    ///
+    /// \param colRng [in] Inclusive, contiguous range of columns.
+    ///   <tt>[colRng.lbound(), colRng.ubound()]</tt> defines the range.
     Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
     subCopy (const Teuchos::Range1D &colRng) const;
 
@@ -616,7 +625,10 @@ namespace Tpetra {
     Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
     subCopy (const Teuchos::ArrayView<const size_t> &cols) const;
 
-    //! Return a const MultiVector with const views of selected columns.
+    /// \brief Return a MultiVector with const views of selected columns.
+    ///
+    /// \param colRng [in] Inclusive, contiguous range of columns.
+    ///   <tt>[colRng.lbound(), colRng.ubound()]</tt> defines the range.
     Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
     subView (const Teuchos::Range1D &colRng) const;
 
@@ -624,7 +636,10 @@ namespace Tpetra {
     Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
     subView (const Teuchos::ArrayView<const size_t> &cols) const;
 
-    //! Return a MultiVector with views of selected columns.
+    /// \brief Return a MultiVector with views of selected columns.
+    ///
+    /// \param colRng [in] Inclusive, contiguous range of columns.
+    ///   <tt>[colRng.lbound(), colRng.ubound()]</tt> defines the range.
     Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
     subViewNonConst (const Teuchos::Range1D &colRng);
 
@@ -1017,7 +1032,7 @@ namespace Tpetra {
     /// isConstantStride() returns true.
     Array<size_t> whichVectors_;
 
-    //! @name View constructors, used only by nonmember constructors.
+    //! \name View constructors, used only by nonmember constructors.
     //@{
 
     template <class S,class LO,class GO,class N>
@@ -1087,7 +1102,7 @@ namespace Tpetra {
                  EPrivateComputeViewConstructor /* dummy */);
 
     //@}
-    //! @name Implementation of Tpetra::DistObject
+    //! \name Implementation of Tpetra::DistObject
     //@{
 
     /// \brief Whether data redistribution between \c sourceObj and this object is legal.
@@ -1179,10 +1194,11 @@ namespace Tpetra {
     }
 
 #endif
-  }; // class MultiVector
+  };
 
   /// \brief Nonmember MultiVector constructor: make a MultiVector from a given Map.
   /// \relatesalso MultiVector
+  /// \relatesalso Vector
   ///
   /// \param map [in] Map describing the distribution of rows of the
   ///   resulting MultiVector.
@@ -1191,7 +1207,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   createMultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-                     size_t numVectors)
+                     const size_t numVectors)
   {
     using Teuchos::rcp;
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
@@ -1229,8 +1245,8 @@ namespace Tpetra {
   Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   createMultiVectorFromView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
                              const Teuchos::ArrayRCP<Scalar>& view,
-                             size_t LDA,
-                             size_t numVectors)
+                             const size_t LDA,
+                             const size_t numVectors)
   {
     using Teuchos::rcp;
     typedef Tpetra::details::ViewAccepter<Node> VAN;
@@ -1248,18 +1264,32 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   template <class Node2>
   Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::clone(const RCP<Node2> &node2) const{
-        typedef Map<LocalOrdinal,GlobalOrdinal,Node2> Map2;
-        typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node2> MV2;
-        Teuchos::ArrayRCP< Teuchos::ArrayRCP<const Scalar> > MV_view = this->get2dView();
-        Teuchos::RCP<const Map2> clonedMap = this->getMap()->template clone<Node2> (node2);
-        Teuchos::RCP<MV2> clonedMV = Teuchos::rcp(new MV2(clonedMap, this->getNumVectors()));
-        Teuchos::ArrayRCP< Teuchos::ArrayRCP<Scalar> > clonedMV_view = clonedMV->get2dViewNonConst();
-        for (size_t i = 0; i < this->getNumVectors(); i++)
-                clonedMV_view[i].deepCopy(MV_view[i]());
-        clonedMV_view = Teuchos::null;
-        return clonedMV;
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  clone (const RCP<Node2> &node2) const
+  {
+    using Teuchos::ArrayRCP;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    typedef Map<LocalOrdinal, GlobalOrdinal, Node2> Map2;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> MV2;
+
+    ArrayRCP<ArrayRCP<const Scalar> > MV_view = this->get2dView ();
+    RCP<const Map2> clonedMap = this->getMap ()->template clone<Node2> (node2);
+    RCP<MV2> clonedMV = rcp (new MV2 (clonedMap, this->getNumVectors ()));
+    ArrayRCP<ArrayRCP<Scalar> > clonedMV_view = clonedMV->get2dViewNonConst ();
+    for (size_t j = 0; j < this->getNumVectors (); ++j) {
+      clonedMV_view[j].deepCopy (MV_view[j] ());
+    }
+    clonedMV_view = Teuchos::null;
+    return clonedMV;
   }
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >
+    createCopy( const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& src);
+
+  template <class DS, class DL, class DG, class DN, class SS, class SL, class SG, class SN>
+  void deep_copy( MultiVector<DS,DL,DG,DN>& dst,
+                  const MultiVector<SS,SL,SG,SN>& src);
 
 } // namespace Tpetra
 

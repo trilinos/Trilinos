@@ -47,7 +47,7 @@
 */
 
 #include <Zoltan2_TestHelpers.hpp>
-#include <Zoltan2_XpetraCrsMatrixInput.hpp>
+#include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 
@@ -111,7 +111,7 @@ static string testArgs[NUMTESTS*3] = {
 
 typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tMatrix_t;
 typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
-typedef Zoltan2::XpetraCrsMatrixInput<tMatrix_t> inputAdapter_t;
+typedef Zoltan2::XpetraCrsMatrixAdapter<tMatrix_t> inputAdapter_t;
 
 int runRCB(const RCP<const Comm<int> > &comm,
   string fname, bool average_cuts, bool rectilinear_blocks,
@@ -174,7 +174,7 @@ int runRCB(const RCP<const Comm<int> > &comm,
   RCP<inputAdapter_t> ia;
 
   try{
-    ia = rcp(new inputAdapter_t(matrixConst, coordDim, weightDim));
+    ia = rcp(new inputAdapter_t(matrixConst, weightDim, coordDim));
   }
   catch(...){
     if (rank == 0)
@@ -183,17 +183,17 @@ int runRCB(const RCP<const Comm<int> > &comm,
   }
 
   for (int dim=0; dim < coordDim; dim++){
-    ia->setRowCoordinates(dim, coords->getData(dim).getRawPtr(), 1);
+    ia->setRowCoordinates(coords->getData(dim).getRawPtr(), 1, dim);
   }
 
   for (int dim=0; dim < weightDim; dim++)
-    ia->setRowWeights(dim, weights->getData(dim).getRawPtr(), 1);
+    ia->setRowWeights(weights->getData(dim).getRawPtr(), 1, dim);
 
  // Parameters
 
   Teuchos::ParameterList params;
   params.set("timer_output_stream" , "std::cout");
-  //params.set("debug_level" , "verbose_detailed_status");
+  params.set("debug_level" , "verbose_detailed_status");
 
   params.set("algorithm", "rcb");
   params.set("partitioning_objective", "multicriteria_balance_total_maximum");
