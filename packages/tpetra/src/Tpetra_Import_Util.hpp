@@ -172,13 +172,13 @@ namespace Tpetra {
       \warning This method is intended for expert developer use only, and should never be called by user code.
 */
     template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-    void lowCommunicationMakeColMapAndReindex(const ArrayView<size_t> &rowPointers,
+    void lowCommunicationMakeColMapAndReindex(const ArrayView<const size_t> &rowPointers,
 					      const ArrayView<LocalOrdinal> &columnIndices_LID,
 					      const ArrayView<GlobalOrdinal> &columnIndices_GID,
-					      Tpetra::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
+					      const Tpetra::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
 					      const Teuchos::ArrayView<const int> &owningPids,
 					      Teuchos::Array<int> &remotePids,
-					      Teuchos::RCP<Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & colMap);
+					      Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & colMap);
 
 
   }// end Import_Util
@@ -440,7 +440,6 @@ size_t Tpetra::Import_Util::unpackAndCombineWithOwningPIDsCount(const CrsMatrix<
 								const ArrayView<const LocalOrdinal> &permuteToLIDs,
 								const ArrayView<const LocalOrdinal> &permuteFromLIDs) {
   typedef LocalOrdinal LO;
-  typedef Map<LocalOrdinal,GlobalOrdinal,Node>  map_type;
   typedef typename ArrayView<const LO>::size_type size_type;
   size_t nnz = 0;
 
@@ -680,13 +679,13 @@ void Tpetra::Import_Util::sortCrsEntries(const Teuchos::ArrayView<size_t> &CRS_r
 
 //----------------------------------------------------------------------------
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void Tpetra::Import_Util::lowCommunicationMakeColMapAndReindex(const ArrayView<size_t> &rowptr,
+void Tpetra::Import_Util::lowCommunicationMakeColMapAndReindex(const ArrayView<const size_t> &rowptr,
 							       const ArrayView<LocalOrdinal> &colind_LID,
 							       const ArrayView<GlobalOrdinal> &colind_GID,
 							       const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMapRCP,
 							       const Teuchos::ArrayView<const int> &owningPIDs,
 							       Teuchos::Array<int> &remotePIDs,
-							       Teuchos::RCP<Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & colMap) {
+							       Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & colMap) {
 
   // The domainMap is an RCP because there is a shortcut for a (common) special case to return the
   // columnMap = domainMap.
@@ -702,8 +701,8 @@ void Tpetra::Import_Util::lowCommunicationMakeColMapAndReindex(const ArrayView<s
   // In principle it is good to have RemoteGIDs and RemotGIDList be as long as the number of remote GIDs
   // on this processor, but this would require two passes through the column IDs, so we make it the max of 100
   // and the number of block rows.
-  const size_t numMyRows      =  rowptr.size()-1;
-  const int    hashsize       = Teuchos::as<int>(numMyRows); 
+  const size_t numMyRows =  rowptr.size()-1;
+  int    hashsize        = Teuchos::as<int>(numMyRows); 
   if (hashsize < 100) hashsize = 100;
 
   Tpetra::Details::HashTable<GlobalOrdinal,LocalOrdinal> RemoteGIDs(hashsize); 
@@ -724,7 +723,7 @@ void Tpetra::Import_Util::lowCommunicationMakeColMapAndReindex(const ArrayView<s
     for(size_t j = rowptr[i]; j < rowptr[i+1]; j++) {
       LocalOrdinal GID = colind_GID[j];
       // Check if GID matches a row GID
-      LocalOrdinal LID = domainMap->getLocalElement(GID);
+      LocalOrdinal LID = domainMap.getLocalElement(GID);
       if(LID != -1) {
 	bool alreadyFound = LocalGIDs[LID];
 	if (!alreadyFound) {
@@ -757,7 +756,7 @@ void Tpetra::Import_Util::lowCommunicationMakeColMapAndReindex(const ArrayView<s
     if (Teuchos::as<size_t>(NumLocalColGIDs)==numDomainElements) {
       // In this case, we just use the domainMap's indices, which is, not coincidently, what we clobbered colind with up above anyway. 
       // No further reindexing is needed.
-      colMap = domainMap;
+      colMap = domainMapRCP;
       return;
     }
   }
@@ -784,7 +783,8 @@ void Tpetra::Import_Util::lowCommunicationMakeColMapAndReindex(const ArrayView<s
   // Sort External column indices so that all columns coming from a given remote processor are contiguous
   // This is a sort with two auxillary arrays: RemoteColIndices and RemotePermuteIDs.
   // NTS: Iterators, I hate you so much.  
-  Tpetra::sort3<Teuchos::Array<int>::iterator,Teuchos::Array<GlobalOrdinal>::iterator,Teuchos::Array<LocalOrdinal>::iterator>(PIDList.begin(),PIDList.end(),ColIndices.begin()+NumLocalColGIDs,RemotePermuteIDs.begin());
+  //  Tpetra::sort3<Teuchos::Array<int>::iterator,Teuchos::Array<GlobalOrdinal>::iterator,Teuchos::Array<LocalOrdinal>::iterator>(PIDList.begin(),PIDList.end(),ColIndices.begin()+NumLocalColGIDs,RemotePermuteIDs.begin());
+  Tpetra::sort3(PIDList.begin(),PIDList.end(),ColIndices.begin()+NumLocalColGIDs,RemotePermuteIDs.begin());
 
   // Stash the RemotePIDs  
   // Note: If Teuchos::Array had a shrink_to_fit like std::vector, we'd call it here.
@@ -799,12 +799,13 @@ void Tpetra::Import_Util::lowCommunicationMakeColMapAndReindex(const ArrayView<s
   while ( StartNext < NumRemoteColGIDs ) {
     if (PIDList[StartNext]==PIDList[StartNext-1]) StartNext++;
     else {
-      Tpetra::sort2<Teuchos::Array<LocalOrdinal>::iterator,Teuchos::Array<LocalOrdinal>::iterator>(RemoteColIndices.begin()+StartCurrent,RemoteColIndices.begin()+StartNext,RemotePermuteIDs.begin()+StartCurrent);
+      //      Tpetra::sort2<Teuchos::Array<LocalOrdinal>::iterator,Teuchos::Array<LocalOrdinal>::iterator>(RemoteColIndices.begin()+StartCurrent,RemoteColIndices.begin()+StartNext,RemotePermuteIDs.begin()+StartCurrent);
+      Tpetra::sort2(ColIndices.begin()+NumLocalColGIDs+StartCurrent,ColIndices.begin()+NumLocalColGIDs+StartNext,RemotePermuteIDs.begin()+StartCurrent);
       StartCurrent = StartNext; StartNext++;
     }
   }
   //  Tpetra::sort2<Teuchos::Array<LocalOrdinal>::iterator,Teuchos::Array<LocalOrdinal>::iterator>(RemoteColIndices.begin()+StartCurrent,RemoteColIndices.begin()+StartNext,RemotePermuteIDs.begin()+StartCurrent); 
-    Tpetra::sort2(RemoteColIndices.begin()+StartCurrent,RemoteColIndices.begin()+StartNext,RemotePermuteIDs.begin()+StartCurrent); 
+    Tpetra::sort2(ColIndices.begin()+NumLocalColGIDs+StartCurrent,ColIndices.begin()+NumLocalColGIDs+StartNext,RemotePermuteIDs.begin()+StartCurrent); 
   // NTS: The above sorting code is almost guaranteed not to work since iterators hate me.
 
   // NTS: Can I get rid of the template parameters for the sort calls?

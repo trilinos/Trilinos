@@ -40,7 +40,6 @@
 // ************************************************************************
 // @HEADER
 */
-
 // Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
 // only the .cu version of this file is actually compiled
 #include <Tpetra_config.h>
@@ -59,6 +58,7 @@
 
 #ifdef DO_COMPILATION
 
+#include <Tpetra_TestingUtilities.hpp>
 #include "Teuchos_UnitTestHarness.hpp"
 
 #include <map>
@@ -1191,10 +1191,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Import_Util, GetPids, Ordinal )  {
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Import_Util, PackAndPrepareWithOwningPIDs, Ordinal )  {
   // Unit Test the functionality in Tpetra_Import_Util
   RCP<const Comm<int> > Comm = getDefaultComm();
-  typedef Tpetra::Map<Ordinal,Ordinal> MapType;
   typedef Tpetra::Import<Ordinal,Ordinal> ImportType;
-  typedef Tpetra::Export<Ordinal,Ordinal> ExportType;
-  typedef Tpetra::Vector<int,Ordinal,Ordinal, Node> IntVectorType;
   typedef Tpetra::CrsMatrix<double,Ordinal,Ordinal> CrsMatrixType;
   typedef typename Tpetra::CrsMatrix<double,Ordinal,Ordinal>::mat_vec_type LocalOps;
   using Teuchos::av_reinterpret_cast;
@@ -1276,8 +1273,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
   RCP<const Comm<int> > Comm = getDefaultComm();
   typedef Tpetra::Map<Ordinal,Ordinal> MapType;
   typedef Tpetra::Import<Ordinal,Ordinal> ImportType;
-  typedef Tpetra::Export<Ordinal,Ordinal> ExportType;
-  typedef Tpetra::Vector<int,Ordinal,Ordinal, Node> IntVectorType;
   typedef Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal> CrsMatrixType;
   typedef typename Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal>::mat_vec_type LocalOps;
   typedef typename Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal>::packet_type PacketType;
@@ -1398,6 +1393,66 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
   TEST_EQUALITY(total_err,0);
 }
 
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,LowCommunicationMakeColMapAndReindex, LocalOrdinal, GlobalOrdinal)  {
+  // Test the colmap...
+  RCP<const Comm<int> > Comm = getDefaultComm();
+  typedef double Scalar;
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal> MapType;
+  typedef Tpetra::Import<LocalOrdinal,GlobalOrdinal> ImportType;
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal> CrsMatrixType;
+  using Teuchos::av_reinterpret_cast;
+
+  RCP<CrsMatrixType> A;
+  RCP<const MapType> Acolmap, Adomainmap;
+  RCP<const MapType> Bcolmap;
+  int total_err=0;
+  int test_err=0;
+  //  int MyPID = Comm->getRank();
+
+  // Build sample matrix 
+  build_test_matrix<CrsMatrixType>(Comm,A);
+
+  // Get the matrix pointers / map
+  ArrayRCP<const size_t> rowptr;
+  ArrayRCP<const LocalOrdinal> colind;
+  ArrayRCP<const Scalar> values;
+  A->getAllValues(rowptr,colind,values);
+  Acolmap = A->getColMap();
+  Adomainmap = A->getDomainMap();
+
+  // Get owning PID information
+  size_t numMyCols = A->getColMap()->getNodeNumElements();
+  RCP<const ImportType> Importer = A->getGraph()->getImporter();
+  Teuchos::Array<int> AcolmapPIDs(numMyCols,-1);
+  if(Importer!=Teuchos::null)    
+    Tpetra::Import_Util::getPids<LocalOrdinal,GlobalOrdinal,Node>(*Importer,AcolmapPIDs,true);
+
+  // Build a "gid" version of colind & colind-sized pid list
+  Array<GlobalOrdinal> colind_GID(colind.size());
+  Array<int> colind_PID(colind.size());
+  for(size_t i=0; i<colind.size(); i++) { 
+    colind_GID[i] = Acolmap->getGlobalElement(colind[i]);
+    colind_PID[i] = AcolmapPIDs[colind[i]];
+  }
+  
+
+  {
+    /////////////////////////////////////////////////////////
+    // Test #1: Pre-sorted colinds
+    /////////////////////////////////////////////////////////
+    Teuchos::Array<int> BcolmapPIDs;
+    Teuchos::Array<LocalOrdinal> Bcolind_LID(colind.size());
+    Tpetra::Import_Util::lowCommunicationMakeColMapAndReindex<LocalOrdinal,GlobalOrdinal,Node>(rowptr(),Bcolind_LID(),colind_GID(),Adomainmap,colind_PID(),BcolmapPIDs,Bcolmap);
+
+    //    test_err++;
+    total_err+=test_err;
+  }
+
+  TEST_EQUALITY(total_err,0);
+}
+
+
   //
   // INSTANTIATIONS
   //
@@ -1412,6 +1467,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( FusedImportExport, doImport, ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Import_Util, UnpackAndCombineWithOwningPIDs, ORDINAL, SCALAR )
       
+#define UNIT_TEST_GROUP_LO_GO(LO, GO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Import_Util, LowCommunicationMakeColMapAndReindex, LO, GO)
+
+  
 
 
   // Note: This test fails.  Should fix later.
@@ -1441,6 +1500,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
 #else
   UNIT_TEST_GROUP_ORDINAL_SCALAR(int,float)
 #endif
+
+    TPETRA_ETI_MANGLING_TYPEDEFS()
+
+    TPETRA_INSTANTIATE_LG( UNIT_TEST_GROUP_LO_GO )
+
 }
 
 #endif  //DO_COMPILATION
