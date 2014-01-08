@@ -76,15 +76,9 @@ namespace ROL {
       Real f   = 0.0;
       Real h   = 1.0/((Real)(this->dim_) + 1.0);
       for ( int i = 0; i < this->dim_; i++ ) {
-        if ( i == 0 ) {
-          f = 2.0*(*ex)[i] - (*ex)[i+1] + h*h*std::pow((*ex)[i] + (Real)(i+1)*h + 1.0,3.0)/2.0;
-        } 
-        else if ( i == (this->dim_-1) ) {
-          f = 2.0*(*ex)[i] - (*ex)[i-1] + h*h*std::pow((*ex)[i] + (Real)(i+1)*h + 1.0,3.0)/2.0;
-        }
-        else {
-          f = 2.0*(*ex)[i] - (*ex)[i-1] - (*ex)[i+1] + h*h*std::pow((*ex)[i] + (Real)(i+1)*h + 1.0,3.0)/2.0;
-        }
+        f = 2.0*(*ex)[i] + h*h*std::pow((*ex)[i] + (Real)(i+1)*h + 1.0,3.0)/2.0; 
+        if ( i < (this->dim_-1) ) { f -= (*ex)[i+1]; } 
+        if ( i > 0 )              { f -= (*ex)[i-1]; }
         val += f*f;
       }
       return val; 
@@ -95,35 +89,23 @@ namespace ROL {
         (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
       Teuchos::RCP<std::vector<Real> > eg =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(g)).getVector());
+      g.zero();
       Real h  = 1.0/((Real)(this->dim_) + 1.0);
-      Real f1 = 0.0, f2 = 0.0, f3 = 0.0;
+      Real f = 0.0, fn = 0.0, df = 0.0;
       for ( int i = 0; i < this->dim_; i++ ) {
-        if ( i == 0 ) {
-          f1 = 2.0*(*ex)[i] - (*ex)[i+1] + h*h*std::pow((*ex)[i] + (Real)(i+1)*h + 1.0,3.0)/2.0;
-          f2 = 2.0*(*ex)[i+1] - (*ex)[i] - (*ex)[i+2] + h*h*std::pow((*ex)[i+1] + (Real)(i+2)*h + 1.0,3.0)/2.0;
-          (*eg)[i] = 2.0*(f1*(2.0 + 3.0/2.0 * h*h * std::pow((*ex)[i] + (Real)(i+1)*h + 1.0,2.0)) - f2);
+        f  = 2.0*(*ex)[i] + h*h*std::pow((*ex)[i] + (Real)(i+1)*h + 1.0,3.0)/2.0; 
+        df = 2.0 + 3.0/2.0 * h*h * std::pow((*ex)[i] + (Real)(i+1)*h + 1.0,2.0);
+        if ( i < (this->dim_-1) ) {
+          f -= (*ex)[i+1]; 
+          fn = 2.0*(*ex)[i+1] - (*ex)[i] - (*ex)[i+2] + h*h*std::pow((*ex)[i+1] + (Real)(i+2)*h + 1.0,3.0)/2.0;
+          (*eg)[i] -= 2.0*fn;
         } 
-        else if ( i == (this->dim_-1) ) {
-          f1 = 2.0*(*ex)[i] - (*ex)[i-1] + h*h*std::pow((*ex)[i] + (Real)(i+1)*h + 1.0,3.0)/2.0;
-          f2 = 2.0*(*ex)[i-1] - (*ex)[i-2] - (*ex)[i] + h*h*std::pow((*ex)[i-1] + (Real)(i)*h + 1.0,3.0)/2.0;
-          (*eg)[i] = 2.0*(f1*(2.0 + 3.0/2.0 * h*h * std::pow((*ex)[i] + (Real)(i+1)*h + 1.0,2.0)) - f2);
+        if ( i > 0 ) {
+          f -= (*ex)[i-1]; 
+          fn = 2.0*(*ex)[i-1] - (*ex)[i-2] - (*ex)[i] + h*h*std::pow((*ex)[i-1] + (Real)(i)*h + 1.0,3.0)/2.0;
+          (*eg)[i] -= 2.0*fn;
         }
-        else {
-          f1 = 2.0*(*ex)[i] - (*ex)[i-1] - (*ex)[i+1] + h*h*std::pow((*ex)[i] + (Real)(i+1)*h + 1.0,3.0)/2.0;
-          if ( i == 1 ) {
-            f2 = 2.0*(*ex)[i-1] - (*ex)[i] + h*h*std::pow((*ex)[i-1] + (Real)(i)*h + 1.0,3.0)/2.0;
-          }
-          else {
-            f2 = 2.0*(*ex)[i-1] - (*ex)[i-2] - (*ex)[i] + h*h*std::pow((*ex)[i-1] + (Real)(i)*h + 1.0,3.0)/2.0;
-          }
-          if ( i == (this->dim_-2) ) {
-            f3 = 2.0*(*ex)[i+1] - (*ex)[i] + h*h*std::pow((*ex)[i+1] + (Real)(i+2)*h + 1.0,3.0)/2.0;
-          }
-          else {
-            f3 = 2.0*(*ex)[i+1] - (*ex)[i] - (*ex)[i+2] + h*h*std::pow((*ex)[i+1] + (Real)(i+2)*h + 1.0,3.0)/2.0;
-          }
-          (*eg)[i] = 2.0*(f1*(2.0 + 3.0/2.0 * h*h * std::pow((*ex)[i] + (Real)(i+1)*h + 1.0,2.0)) - f2 - f3);
-        }
+        (*eg)[i] += 2.0*f*df;
       }
     }
 #if USE_HESSVEC
@@ -135,51 +117,31 @@ namespace ROL {
       Teuchos::RCP<std::vector<Real> > ehv =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(hv)).getVector());
       hv.zero();
-      Real h   = 1.0/((Real)(this->dim_) + 1.0);
-      Real f1  = 0.0;
-      Real gf1 = 0.0, gf2 = 0.0, hf1 = 0.0;
+      Real h = 1.0/((Real)(this->dim_) + 1.0);
+      Real f = 0.0, df = 0.0, dfn = 0.0, hf = 0.0;
       for ( int i = 0; i < this->dim_; i++ ) {
-        if ( i == 0 ) {
-          f1   = 2.0*(*ex)[i] - (*ex)[i+1] + h*h*std::pow((*ex)[i] + (Real)(i+1)*h + 1.0,3.0)/2.0;
-          gf1  = 2.0 + 3.0/2.0 * h*h * std::pow((*ex)[i] + (Real)(i+1)*h + 1.0,2.0);
-          hf1  = 3.0 * h*h * ((*ex)[i] + (Real)(i+1)*h + 1.0);
-          (*ehv)[i] += 2.0*(hf1*f1 + gf1*gf1 + 1.0)*(*ev)[i]; 
-
-          gf2  = 2.0 + 3.0/2.0 * h*h * std::pow((*ex)[i+1] + (Real)(i+2)*h + 1.0,2.0);
-          (*ehv)[i] += 2.0*(-gf1 - gf2)*(*ev)[i+1];
-     
+        f  = 2.0*(*ex)[i] + h*h*std::pow((*ex)[i] + (Real)(i+1)*h + 1.0,3.0)/2.0;
+        df = 2.0 + 3.0/2.0 * h*h * std::pow((*ex)[i] + (Real)(i+1)*h + 1.0,2.0);
+        hf = 3.0 * h*h * ((*ex)[i] + (Real)(i+1)*h + 1.0);
+        if ( i < (this->dim_-2) ) {
           (*ehv)[i] += 2.0*(*ev)[i+2];
-        } 
-        else if ( i == (this->dim_-1) ) {
-          f1   = 2.0*(*ex)[i] - (*ex)[i-1] + h*h*std::pow((*ex)[i] + (Real)(i+1)*h + 1.0,3.0)/2.0;
-          gf1  = 2.0 + 3.0/2.0 * h*h * std::pow((*ex)[i] + (Real)(i+1)*h + 1.0,2.0);
-          hf1  = 3.0 * h*h * ((*ex)[i] + (Real)(i+1)*h + 1.0);
-          (*ehv)[i] += 2.0*(hf1*f1 + gf1*gf1 + 1.0)*(*ev)[i]; 
-
-          gf2  = 2.0 + 3.0/2.0 * h*h * std::pow((*ex)[i-1] + (Real)(i)*h + 1.0,2.0);
-          (*ehv)[i] += 2.0*(-gf1 - gf2)*(*ev)[i-1];
-     
+        }
+        if ( i < (this->dim_-1) ) {
+          f -= (*ex)[i+1];
+          dfn = 2.0 + 3.0/2.0 * h*h * std::pow((*ex)[i+1] + (Real)(i+2)*h + 1.0,2.0);
+          (*ehv)[i] -= 2.0*(df + dfn)*(*ev)[i+1];
+          (*ehv)[i] += 2.0*(*ev)[i];
+        }
+        if ( i > 0 ) {
+          f -= (*ex)[i-1];
+          dfn = 2.0 + 3.0/2.0 * h*h * std::pow((*ex)[i-1] + (Real)(i)*h + 1.0,2.0);
+          (*ehv)[i] -= 2.0*(df + dfn)*(*ev)[i-1];
+          (*ehv)[i] += 2.0*(*ev)[i];
+        }  
+        if ( i > 1 ) {
           (*ehv)[i] += 2.0*(*ev)[i-2];
-        }
-        else {
-          f1   = 2.0*(*ex)[i] - (*ex)[i-1] - (*ex)[i+1] + h*h*std::pow((*ex)[i] + (Real)(i+1)*h + 1.0,3.0)/2.0;
-          gf1  = 2.0 + 3.0/2.0 * h*h * std::pow((*ex)[i] + (Real)(i+1)*h + 1.0,2.0);
-          hf1  = 3.0 * h*h * ((*ex)[i] + (Real)(i+1)*h + 1.0);
-          (*ehv)[i] += 2.0*(1.0 + hf1*f1 + gf1*gf1 + 1.0)*(*ev)[i]; 
-
-          gf2  = 2.0 + 3.0/2.0 * h*h * std::pow((*ex)[i-1] + (Real)(i)*h + 1.0,2.0);
-          (*ehv)[i] += 2.0*(-gf1 - gf2)*(*ev)[i-1];
-
-          gf2  = 2.0 + 3.0/2.0 * h*h * std::pow((*ex)[i+1] + (Real)(i+2)*h + 1.0,2.0);
-          (*ehv)[i] += 2.0*(-gf1 - gf2)*(*ev)[i+1];
-
-          if ( i > 1 ) {
-            (*ehv)[i] += 2.0*(*ev)[i-2];
-          }
-          else if ( i < (this->dim_-2) ) {
-            (*ehv)[i] += 2.0*(*ev)[i+2];
-          }
-        }
+        } 
+        (*ehv)[i] += 2.0*(hf*f + df*df)*(*ev)[i];  
       }
     } 
 #endif
