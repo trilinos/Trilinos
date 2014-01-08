@@ -776,6 +776,83 @@ void build_test_matrix(RCP<const Teuchos::Comm<int> > & Comm, RCP<CrsMatrixType>
   A->fillComplete();
 }
 
+// ===============================================================================
+template<class CrsMatrixType>
+void build_test_matrix_wideband(RCP<const Teuchos::Comm<int> > & Comm, RCP<CrsMatrixType> & A){
+  typedef typename CrsMatrixType::local_ordinal_type LO;
+  typedef typename CrsMatrixType::global_ordinal_type GO;
+  typedef typename CrsMatrixType::scalar_type Scalar;
+  typedef typename CrsMatrixType::node_type Node;
+
+  typedef Tpetra::Map<LO,GO, Node> map_type;
+  int NumProc = Comm->getSize();
+  int MyPID   = Comm->getRank();
+
+  LO NumMyEquations = 100;
+
+  GO NumGlobalEquations = (NumMyEquations * NumProc) + (NumProc < 3 ? NumProc : 3);
+  if(MyPID < 3)  NumMyEquations++;
+
+  // Construct a Map that puts approximately the same Number of equations on each processor
+  RCP<const map_type > MyMap = rcp(new map_type(NumGlobalEquations, NumMyEquations, 0, Comm));
+
+  // Create the matrix
+  A = rcp(new CrsMatrixType(MyMap,0));
+
+  // Add  rows one-at-a-time
+  // Need some vectors to help
+  // Off diagonal Values will always be -1
+  Teuchos::Array<Scalar> Values(10);
+  Teuchos::Array<GO> Indices(10);
+  size_t NumEntries=1;
+
+  for (LO i = 0; i < NumMyEquations; i++) {
+    GO GID = MyMap->getGlobalElement(i);
+    // Super / subdiagonal
+    if(GID == 0){
+      Indices[0] = 1;
+      NumEntries = 1;
+    }
+    else if (GID == NumGlobalEquations-1) {
+      Indices[0] = NumGlobalEquations-2;
+      NumEntries = 1;
+    }
+    else {
+      Indices[0] = GID-1;
+      Indices[1] = GID+1;
+      NumEntries = 2;
+    }
+
+    // Wide stuff
+    if(GID + NumMyEquations < NumGlobalEquations) {
+      Indices[NumEntries]=GID + NumMyEquations;
+      NumEntries++;
+    }
+    if(GID > NumMyEquations ) { // Note: Unsigned integers are evil.
+      Indices[NumEntries]=GID - NumMyEquations;
+      NumEntries++;
+    }
+
+    // Double wide stuff.  Truck signage required
+    if(GID + 2*NumMyEquations < NumGlobalEquations) {
+      Indices[NumEntries]=GID + 2*NumMyEquations;
+      NumEntries++;
+    }
+    if(GID > 2*NumMyEquations ) { // Note: Unsigned integers are evil.
+      Indices[NumEntries]=GID - 2*NumMyEquations;
+      NumEntries++;
+    }
+
+    Values[0] = -1.0; Values[1] = -1.0; Values[2] = -1.0; Values[3] = -1.0; Values[4] = -1.0; Values[5] = -1.0; Values[6] = -1.0; Values[7] = -1.0;
+    A->insertGlobalValues(GID,Indices.view(0,NumEntries),Values.view(0,NumEntries));
+
+    Indices[0]=GID; Values[0]=2.0;
+    A->insertGlobalValues(GID,Indices.view(0,1), Values.view(0,1));
+  }
+
+  A->fillComplete();
+}
+
 
 
  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( FusedImportExport, doImport, Ordinal, Scalar )  {
@@ -1408,10 +1485,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,LowCommunicationMakeColMapAndRein
   RCP<const MapType> Bcolmap;
   int total_err=0;
   int test_err=0;
-  //  int MyPID = Comm->getRank();
+  //#define DEBUG
+#ifdef DEBUG
+  int MyPID = Comm->getRank();
+#endif
 
   // Build sample matrix 
-  build_test_matrix<CrsMatrixType>(Comm,A);
+  build_test_matrix_wideband<CrsMatrixType>(Comm,A);
 
   // Get the matrix pointers / map
   ArrayRCP<const size_t> rowptr;
@@ -1445,9 +1525,28 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,LowCommunicationMakeColMapAndRein
     Teuchos::Array<LocalOrdinal> Bcolind_LID(colind.size());
     Tpetra::Import_Util::lowCommunicationMakeColMapAndReindex<LocalOrdinal,GlobalOrdinal,Node>(rowptr(),Bcolind_LID(),colind_GID(),Adomainmap,colind_PID(),BcolmapPIDs,Bcolmap);
 
-    //    test_err++;
+    // Since this was sorted to begin with, the outgoing maps should be 
+    // in an identical order.  So let's check.
+    if(Acolmap->getNodeNumElements()!=Bcolmap->getNodeNumElements()) test_err++;
+    else {
+      for(size_t i=0; i<Acolmap->getNodeNumElements(); i++)
+	if (Acolmap->getGlobalElement(i)!=Bcolmap->getGlobalElement(i)) test_err++;
+    }
     total_err+=test_err;
-  }
+  }    
+
+#ifdef DEBUG
+  // DEBUG: Print the colmaps
+  printf("[%d] Acolmap(%3d) = ",MyPID,(int)Acolmap->getNodeNumElements());
+  for(size_t i=0; i<Acolmap->getNodeNumElements(); i++)
+    printf("%3d ",(int) Acolmap->getGlobalElement(i));
+  printf("\n");
+  printf("[%d] Bcolmap(%3d) = ",MyPID,(int)Bcolmap->getNodeNumElements());
+  for(size_t i=0; i<Bcolmap->getNodeNumElements(); i++)
+    printf("%3d ",(int) Bcolmap->getGlobalElement(i));
+  printf("\n");
+#endif
+
 
   TEST_EQUALITY(total_err,0);
 }
