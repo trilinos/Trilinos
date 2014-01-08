@@ -1304,7 +1304,7 @@ namespace KokkosClassic {
 			       const RangeScalar& omega,
 			       const ESweepDirection direction) const
   {
-    typedef Teuchos::ScalarTraits<RangeScalar> STS;
+    //    typedef Teuchos::ScalarTraits<RangeScalar> STS;
 
     if (numRows_ == 0) {
       return; // Nothing to do.
