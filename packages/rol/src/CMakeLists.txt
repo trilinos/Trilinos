@@ -93,6 +93,7 @@ APPEND_SET(HEADERS
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/zoo)
 APPEND_SET(HEADERS
   zoo/ROL_Types.hpp
+  zoo/ROL_HelperFunctions.hpp
   zoo/ROL_TestObjectives.hpp
   zoo/ROL_Rosenbrock.hpp
   zoo/ROL_FreudensteinRoth.hpp

@@ -45,11 +45,14 @@
 #define ROL_LINESEARCHSTEP_H
 
 #include "ROL_Types.hpp"
+#include "ROL_HelperFunctions.hpp"
+
 #include "ROL_Step.hpp"
 #include "ROL_Secant.hpp"
 #include "ROL_Krylov.hpp"
 #include "ROL_NonlinearCG.hpp"
 #include "ROL_LineSearch.hpp"
+
 #include <sstream>
 #include <iomanip>
 
@@ -83,6 +86,7 @@ private:
   int ls_nfval_;
   int ls_ngrad_;
 
+  bool useSecantHessVec_;
   bool useSecantPrecond_;
 
   std::vector<bool> useInexact_;
@@ -110,13 +114,14 @@ public:
     lineSearch_ = Teuchos::rcp( new LineSearch<Real>(parlist) );
 
     // Initialize Krylov Object
-    useSecantPrecond_ = parlist.get("Use Secant Preconditioner", false);
+    useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
+    useSecantPrecond_ = parlist.get("Use Secant Preconditioning", false);
     krylov_ = Teuchos::null;
     if ( edesc_ == DESCENT_NEWTONKRYLOV ) {
       Real CGtol1 = parlist.get("Absolute Krylov Tolerance", 1.e-4);
       Real CGtol2 = parlist.get("Relative Krylov Tolerance", 1.e-2);
       int maxitCG = parlist.get("Maximum Number of Krylov Iterations", 20);
-      krylov_ = Teuchos::rcp( new Krylov<Real>(ekv_,CGtol1,CGtol2,maxitCG,useInexact_[2],useSecantPrecond_) );
+      krylov_ = Teuchos::rcp( new Krylov<Real>(ekv_,CGtol1,CGtol2,maxitCG,useInexact_[2],useSecantHessVec_,useSecantPrecond_) );
       iterKrylov_ = 0;
       flagKrylov_ = 0;
     }
@@ -156,13 +161,14 @@ public:
     lineSearch_ = Teuchos::rcp( new LineSearch<Real>(parlist) );
 
     // Initialize Krylov Object
+    useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
     useSecantPrecond_ = parlist.get("Use Secant Preconditioner", false);
     krylov_ = Teuchos::null;
     if ( edesc_ == DESCENT_NEWTONKRYLOV ) {
       Real CGtol1 = parlist.get("Absolute Krylov Tolerance", 1.e-4);
       Real CGtol2 = parlist.get("Relative Krylov Tolerance", 1.e-2);
       int maxitCG = parlist.get("Maximum Number of Krylov Iterations", 20);
-      krylov_ = Teuchos::rcp( new Krylov<Real>(ekv_,CGtol1,CGtol2,maxitCG,useInexact_[2],useSecantPrecond_) );
+      krylov_ = Teuchos::rcp( new Krylov<Real>(ekv_,CGtol1,CGtol2,maxitCG,useInexact_[2],useSecantHessVec_,useSecantPrecond_) );
       iterKrylov_ = 0;
       flagKrylov_ = 0;
     }
@@ -186,34 +192,13 @@ public:
     }
     else if ( this->edesc_ == DESCENT_NEWTON ) {
       Real tol = std::sqrt(ROL_EPSILON);
-      if ( con.isActivated() ) {
-        Teuchos::RCP<Vector<Real> > gnew = x.clone();
-        gnew->set(*(Step<Real>::state_->gradientVec));
-        con.pruneActive(*gnew,*(Step<Real>::state_->gradientVec),x);
-        obj.invHessVec(s,*gnew,x,tol);
-        con.pruneActive(s,*(Step<Real>::state_->gradientVec),x);
-        gnew->set(*(Step<Real>::state_->gradientVec));
-        con.pruneInactive(*gnew,*(Step<Real>::state_->gradientVec),x);
-        s.plus(*gnew);
-      }
-      else {
-        obj.invHessVec(s,*(Step<Real>::state_->gradientVec),x,tol);
-      }
+      applyReducedInvHessVec(s,*(Step<Real>::state_->gradientVec),*(Step<Real>::state_->gradientVec),x, 
+                             con,obj,tol,this->secant_,this->useSecantHessVec_);
     }
     else if ( this->edesc_ == DESCENT_SECANT ) {
-      if ( con.isActivated() ) {
-        Teuchos::RCP<Vector<Real> > gnew = x.clone();
-        gnew->set(*(Step<Real>::state_->gradientVec));
-        con.pruneActive(*gnew,*(Step<Real>::state_->gradientVec),x);
-        this->secant_->applyH(s,*gnew,x);
-        con.pruneActive(s,*(Step<Real>::state_->gradientVec),x);
-        gnew->set(*(Step<Real>::state_->gradientVec));
-        con.pruneInactive(*gnew,*(Step<Real>::state_->gradientVec),x);
-        s.plus(*gnew);
-      }
-      else {
-        this->secant_->applyH(s,*(Step<Real>::state_->gradientVec),x);
-      }
+      Real tol = std::sqrt(ROL_EPSILON);
+      applyReducedInvHessVec(s,*(Step<Real>::state_->gradientVec),*(Step<Real>::state_->gradientVec),x, 
+                             con,obj,tol,this->secant_,true);
     }
     else if ( this->edesc_ == DESCENT_NONLINEARCG ) {
       this->nlcg_->run(s,*(Step<Real>::state_->gradientVec),x,obj);
@@ -339,7 +324,8 @@ public:
     if ( this->edesc_ == DESCENT_NEWTONKRYLOV ) {
       hist << "Krylov Type: " << EKrylovToString(this->ekv_) << "\n";
     }
-    if ( this->edesc_ == DESCENT_SECANT || (this->edesc_ == DESCENT_NEWTONKRYLOV && this->useSecantPrecond_) ) {
+    if ( this->edesc_ == DESCENT_SECANT || 
+        (this->edesc_ == DESCENT_NEWTONKRYLOV && (this->useSecantPrecond_ || this->useSecantHessVec_)) ) {
       hist << "Secant Type: " << ESecantToString(this->esec_) << "\n";
     }
     if ( this->edesc_ == DESCENT_NONLINEARCG ) {

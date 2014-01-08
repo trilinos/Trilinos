@@ -200,7 +200,7 @@ public:
     this->CGflag_ = 0;
     this->CGiter_ = 0;
     this->trustRegion_->run(s,algo_state.snorm,this->del_,this->CGflag_,this->CGiter_,
-                            x,*(Step<Real>::state_->gradientVec),algo_state.gnorm,obj,this->secant_);
+                            x,*(Step<Real>::state_->gradientVec),algo_state.gnorm,obj,con,this->secant_);
   }
 
   /** \brief Update step, if successful.

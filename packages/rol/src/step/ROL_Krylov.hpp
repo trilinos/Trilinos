@@ -49,6 +49,7 @@
 */
 
 #include "ROL_Types.hpp"
+#include "ROL_HelperFunctions.hpp"
 
 namespace ROL {
 
@@ -61,57 +62,14 @@ class Krylov {
   Real tol2_;
   int  maxit_;
   bool useInexact_;
+  bool useSecantHessVec_;
   bool useSecantPrecond_;
-
-  void applyReducedHessian( Vector<Real> &Hp, const Vector<Real> &p, const Vector<Real> &g, const Vector<Real> &x, 
-                            Objective<Real> &obj, Constraints<Real> &con, Real itol) {
-    if ( con.isActivated() ) {
-      Teuchos::RCP<Vector<Real> > pnew = x.clone();
-      pnew->set(p);
-      con.pruneActive(*pnew,g,x);
-      obj.hessVec(Hp, *pnew, x, itol);  
-      con.pruneActive(Hp,g,x);
-      pnew->set(p);
-      con.pruneInactive(*pnew,g,x);
-      Hp.plus(*pnew);
-    }
-    else {
-      obj.hessVec(Hp, p, x, itol);
-    }
-  }
-
-  void applyPrecond(Vector<Real> &Mv, const Vector<Real> &v, const Vector<Real> &x, Objective<Real> &obj, 
-                    Teuchos::RCP<Secant<Real> > &secant ) {
-    if ( secant != Teuchos::null && this->useSecantPrecond_ ) {
-      secant->applyB( Mv, v, x );
-    }
-    else {
-      obj.precond( Mv, v, x );
-    }
-  }
-
-  void applyReducedPrecond( Vector<Real> &Mv, const Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x,
-                            Objective<Real> &obj, Constraints<Real> &con, Teuchos::RCP<Secant<Real> > &secant ) { 
-    if ( con.isActivated() ) {
-      Teuchos::RCP<Vector<Real> > vnew = x.clone();
-      vnew->set(v);
-      con.pruneActive(*vnew,g,x);
-      this->applyPrecond(Mv,*vnew,x,obj,secant);
-      con.pruneActive(Mv,g,x);
-      vnew->set(v);
-      con.pruneInactive(*vnew,g,x);
-      Mv.plus(*vnew);
-    }
-    else {
-      this->applyPrecond(Mv,v,x,obj,secant);
-    }
-  }
 
 public:
   Krylov( EKrylov &ekv = KRYLOV_CG, Real tol1 = 1.e-4, Real tol2 = 1.e-2, 
-          int maxit = 100, bool useInexact = false, bool useSecantPrecond = false ) 
+          int maxit = 100, bool useInexact = false, bool useSecantHessVec = false, bool useSecantPrecond = false ) 
     : ekv_(ekv), tol1_(tol1), tol2_(tol2), maxit_(maxit), 
-      useInexact_(useInexact), useSecantPrecond_(useSecantPrecond) {}
+      useInexact_(useInexact), useSecantHessVec_(useSecantHessVec), useSecantPrecond_(useSecantPrecond) {}
 
   // Run Krylov Method
   void run( Vector<Real> &s, int &iter, int &flag, const Vector<Real> &g, const Vector<Real> &x, 
@@ -135,19 +93,19 @@ public:
     Teuchos::RCP<Vector<Real> > gnew = x.clone(); 
     gnew->set(g); 
 
+    itol = 0.0;
     Teuchos::RCP<Vector<Real> > v = x.clone();  
-    this->applyReducedPrecond(*v,*gnew,g,x,obj,con,secant);
+    applyReducedPrecond(*v, *gnew, g, x, con, obj, itol, secant, this->useSecantPrecond_);
 
     Teuchos::RCP<Vector<Real> > p = x.clone(); 
     p->set(*v); 
 
-    Teuchos::RCP<Vector<Real> > Hp = x.clone();
-    itol = 0.0;
     if ( this->useInexact_ ) {
-      itol = gtol/(maxit_ * gnorm); 
-      //itol = std::min( 0.5, gtol*p->norm()/(2.0 * this->maxit_ * gnorm * gnorm) ); 
+      itol = gtol/(this->maxit_ * gnorm); 
     }
-    this->applyReducedHessian(*Hp, *p, g, x, obj, con, itol);
+
+    Teuchos::RCP<Vector<Real> > Hp = x.clone();
+    applyReducedHessVec(*Hp, *p, g, x, con, obj, itol, secant, this->useSecantHessVec_);
 
     iter = 0; 
     flag = 0;
@@ -174,7 +132,8 @@ public:
         break;
       }
 
-      this->applyReducedPrecond(*v,*gnew,g,x,obj,con,secant);
+      itol = 0.0;
+      applyReducedPrecond(*v, *gnew, g, x, con, obj, itol, secant, this->useSecantPrecond_);
       tmp  = gv;         
       gv   = v->dot(*gnew); 
       beta = gv/tmp;
@@ -182,12 +141,10 @@ public:
       p->scale(beta);
       p->axpy(1.0,*v);
 
-      itol = 0.0;
       if ( this->useInexact_ ) {
         itol = gtol/(this->maxit_ * gnorm); 
-        //itol = std::min( 0.5, gtol*p->norm()/(2.0 * this->maxit_ * gnorm * gnorm) ); 
       }
-      this->applyReducedHessian(*Hp, *p, g, x, obj, con, itol);
+      applyReducedHessVec(*Hp, *p, g, x, con, obj, itol, secant, this->useSecantHessVec_);
     }
     iter++;
     if ( iter == this->maxit_ ) {
@@ -205,25 +162,27 @@ public:
     s.zero(); 
 
     // Apply preconditioner to residual
+    itol = 0.0;
     Teuchos::RCP<Vector<Real> > v = x.clone();  
-    this->applyReducedPrecond(*v,g,g,x,obj,con,secant);
+    applyReducedPrecond(*v, g, g, x, con, obj, itol, secant, this->useSecantPrecond_);
 
     // Initialize direction p
     Teuchos::RCP<Vector<Real> > p = x.clone(); 
     p->set(*v); 
 
     // Get Hessian tolerance
-    itol = 0.0;
     if ( this->useInexact_ ) {
       itol = gtol/(maxit_ * gnorm); 
     }
+
     // Apply Hessian to residual
     Teuchos::RCP<Vector<Real> > Hv  = x.clone();
-    this->applyReducedHessian(*Hv, *v, g, x, obj, con, itol);
+    applyReducedHessVec(*Hv, *v, g, x, con, obj, itol, secant, this->useSecantHessVec_);
+
     // Apply Hessian to direction p
     Teuchos::RCP<Vector<Real> > Hp  = x.clone();
     Teuchos::RCP<Vector<Real> > MHp = x.clone();  
-    this->applyReducedHessian(*Hp, *p, g, x, obj, con, itol);
+    applyReducedHessVec(*Hp, *p, g, x, con, obj, itol, secant, this->useSecantHessVec_);
 
     // Initialize scalar quantities
     iter = 0; 
@@ -235,7 +194,8 @@ public:
     Real vHv   = Hv->dot(*v); 
 
     for (iter = 0; iter < this->maxit_; iter++) {
-      this->applyReducedPrecond(*MHp,*Hp,g,x,obj,con,secant);
+      itol = 0.0;
+      applyReducedPrecond(*MHp, *Hp, g, x, con, obj, itol, secant, this->useSecantPrecond_);
       kappa = Hp->dot(*MHp);
       if ( vHv <= 0.0 || kappa <= 0.0 ) { 
         flag = 2;
@@ -251,11 +211,10 @@ public:
         break;
       }
 
-      itol = 0.0;
       if ( this->useInexact_ ) {
         itol = gtol/(this->maxit_ * gnorm); 
       }
-      this->applyReducedHessian(*Hv, *v, g, x, obj, con, itol);
+      applyReducedHessVec(*Hv, *v, g, x, con, obj, itol, secant, this->useSecantHessVec_);
       tmp  = vHv;
       vHv  = Hv->dot(*v);
       beta = vHv/tmp;
