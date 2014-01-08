@@ -13,6 +13,20 @@ Number of mesh segments in directions K/Z/PHI 	1
 Using  BISECTION decomposition.
  No cuts will be made in radial direction.
 
+Inline mesh specification requested: 
+	96 Elements 
+	171 Nodes and
+ 	422 Edges.
+Using BISECTION LAYOUT decomposition.
+Number of elements/segment in directions I/X/R 		2
+Number of elements/segment in directions J/Y/THETA 	4
+Number of elements/segment in directions K/Z/PHI 	8
+Number of mesh segments in directions I/X/R 		1
+Number of mesh segments in directions J/Y/THETA 	1
+Number of mesh segments in directions K/Z/PHI 	1
+Using  BISECTION decomposition.
+ No cuts will be made in radial direction.
+
 Exodus header info:
 Title: PAMGEN Consolidated Mesh
 Dimension 3 

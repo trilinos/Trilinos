@@ -53,9 +53,47 @@ public:
   bool Debug_Location() {return debug_mode;};
   void Debug_Location(bool dm) {debug_mode = dm;};
 
-  std::string getErrorString(){return error_stream.str();}
-  std::string getInfoString(){return info_stream.str();}
-  std::string getWarningString(){return warning_stream.str();}
+  std::string getErrorString(){
+    std::stringstream tstring;
+    tstring << error_stream.str();
+    Inline_Mesh_Desc * imd = next;
+    while (imd){
+      if(imd->error_stream.str().size()>0){
+	tstring << "\n";
+	tstring << imd->error_stream.str();
+      }
+      imd = imd->next;
+    }
+    return tstring.str();
+  }
+  
+  std::string getInfoString(){
+    std::stringstream tstring;
+    tstring << info_stream.str();
+    Inline_Mesh_Desc * imd = next;
+    while (imd){
+      if(imd->info_stream.str().size()>0){
+	tstring << "\n";
+	tstring << imd->info_stream.str();
+      }
+      imd = imd->next;
+    }
+    return tstring.str();
+  }
+  
+  std::string getWarningString(){
+    std::stringstream tstring;
+    tstring << warning_stream.str();
+    Inline_Mesh_Desc * imd = next;
+    while (imd){
+      if(imd->warning_stream.str().size()>0){
+	tstring << "\n";
+	tstring << imd->warning_stream.str();
+      }
+      imd = imd->next;
+    }
+    return tstring.str();
+  }
  
   long long Check_Block_BC_Sets();
   long long Check_Blocks();
