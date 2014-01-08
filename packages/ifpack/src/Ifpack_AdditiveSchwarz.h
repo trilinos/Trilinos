@@ -53,9 +53,6 @@
 #include "Ifpack_METISReordering.h"
 #include "Ifpack_LocalFilter.h"
 #include "Ifpack_NodeFilter.h"
-#ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
-#include "Ifpack_SubdomainFilter.h"
-#endif
 #include "Ifpack_SingletonFilter.h"
 #include "Ifpack_ReorderFilter.h"
 #include "Ifpack_Utils.h"
@@ -72,6 +69,7 @@
 #include "Teuchos_RefCountPtr.hpp"
 
 #ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
+#include "Ifpack_SubdomainFilter.h"
 #include "EpetraExt_Reindex_CrsMatrix.h"
 #include "EpetraExt_Reindex_MultiVector.h"
 #endif
