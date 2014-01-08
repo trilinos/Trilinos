@@ -750,7 +750,7 @@ void Tpetra::Import_Util::lowCommunicationMakeColMapAndReindex(const ArrayView<c
   }
 
   // Possible short-circuit:  If all domain map GIDs are present as column indices, then set ColMap=domainMap and quit
-  if (domainMap.getComm()->getSize()) {  
+  if (domainMap.getComm()->getSize()==1) {  
     // Sanity check: When there is one processor,there can be no remoteGIDs
     TEUCHOS_TEST_FOR_EXCEPTION(NumRemoteColGIDs!=0,std::runtime_error,"lowCommunicationMakeColMapAndReindex: Some column IDs are not in domainMap."); 
     if (Teuchos::as<size_t>(NumLocalColGIDs)==numDomainElements) {
