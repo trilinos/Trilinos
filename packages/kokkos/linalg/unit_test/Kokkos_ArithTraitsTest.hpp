@@ -642,7 +642,7 @@ public:
   //! Constructor (does nothing, but marked as device function).
   KOKKOS_INLINE_FUNCTION ArithTraitsTesterComplexBase () {}
 
-  KOKKOS_INLINE_FUNCTION bool
+  KOKKOS_INLINE_FUNCTION void
   operator () (size_type iwork, value_type& dst) const {
     typedef Kokkos::Details::ArithTraits<ScalarType> AT;
     (void) iwork; // forestall compiler warning for unused variable

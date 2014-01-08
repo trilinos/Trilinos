@@ -2056,7 +2056,7 @@ public:
     return 0;
   }
   static KOKKOS_DEVICE_FUNCTION val_type max () {
-    return UINT64_MAX;
+    return ULLONG_MAX ;
   }
   static KOKKOS_DEVICE_FUNCTION mag_type real (const val_type x) {
     return x;
