@@ -64,6 +64,7 @@ struct Perf {
   double newton_residual ;
   double error_max ;
 
+  inline
   Perf()
     : global_elem_count(0)
     , global_node_count(0)

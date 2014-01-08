@@ -124,7 +124,6 @@ public:
         // Zero the row count to restart the fill
         Kokkos::deep_copy( row_count , 0u );
 
-        node_node_set.clear();
         node_node_set.rehash( set_capacity );
 
         // May be larger that requested:

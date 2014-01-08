@@ -137,6 +137,8 @@ public:
   //! Print configuration information to the given output stream.
   static void print_configuration( std::ostream & , const bool detail = false );
 
+  inline static void memory_fence() {};
+
   inline int league_rank() const { return 0 ; }
   inline int league_size() const { return 1 ; }
   inline int team_rank() const { return 0 ; }
