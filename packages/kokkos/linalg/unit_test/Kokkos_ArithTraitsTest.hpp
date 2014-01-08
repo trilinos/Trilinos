@@ -109,12 +109,16 @@ public:
   //! Constructor (does nothing, but marked as device function).
   KOKKOS_INLINE_FUNCTION ArithTraitsTesterBase () {}
 
-  //! Set the initial value (\c true) of the reduction.
+  /// \brief Set the initial value (\c true) of the reduction.
+  ///
+  /// Subclasses need not and must not override this method.
   KOKKOS_INLINE_FUNCTION void init (value_type& dst) const {
     dst = true;
   }
 
-  //! Combine two intermediate reduction results into \c dst.
+  /// \brief Combine two intermediate reduction results into \c dst.
+  ///
+  /// Subclasses need not and must not override this method.
   KOKKOS_INLINE_FUNCTION void
   join (volatile value_type& dst,
         const volatile value_type& src) const
@@ -124,8 +128,22 @@ public:
 
   /// \brief The "parallel for" part of the reduction.
   ///
-  /// It runs through a sequence of tests, and produces a 'true'
+  /// This is the method that actually runs the tests on the device.
+  /// It runs through a sequence of tests, and produces a \c true
   /// result if all the tests pass.
+  ///
+  /// Subclasses must override this to implement their own tests.
+  /// They must always call their parent class' version.  Refer to the
+  /// implementations of operator() in ArithTraitsTesterComplexBase
+  /// for examples.  Subclass' implementations must ignore \c work,
+  /// and set the \c dst argument to the logical AND of all the tests'
+  /// results.
+  ///
+  /// \param iwork [in] Ignored.
+  /// \param dst [in/out] On input: The result of any tests run thus
+  ///   far.  On output: The result of the tests run in this method.
+  ///   The result of more than one test is the logical AND of each
+  ///   test's result.
   KOKKOS_INLINE_FUNCTION void
   operator () (size_type iwork, value_type& dst) const
   {
@@ -274,28 +292,10 @@ public:
       success = false;
     }
 
-    // Run the subclass' remaining tests, if any.
-    success = success && testDeviceImpl ();
-
     dst = dst && success;
   }
 
 protected:
-  /// \brief Hook for subclasses to add their own device-based tests.
-  ///
-  /// We use this to add complex-arithmetic tests, if appropriate for
-  /// \c ScalarType.  You may use it for other tests that are specific
-  /// to \c ScalarType or \c DeviceType.  (For example, some
-  /// <tt>ScalarType</tt> types may not work on GPU-based devices.)
-  ///
-  /// The default implementation does nothing.  (That's what makes
-  /// this a "hook.")
-  ///
-  /// \return \c true if all tests succeeded, else \c false.
-  virtual bool KOKKOS_INLINE_FUNCTION testDeviceImpl () const {
-    return true; // there are no tests, so trivially, all the tests pass
-  }
-
   /// \brief Hook for subclasses to add their own host-based tests.
   ///
   /// We use this to add complex-arithmetic tests, if appropriate for
@@ -306,7 +306,7 @@ protected:
   /// this a "hook.")
   ///
   /// \return \c true if all tests succeeded, else \c false.
-  virtual bool testHostImpl (std::ostream& out) const {
+  bool testHostImpl (std::ostream& out) const {
     return true; // there are no tests, so trivially, all the tests pass
   }
 
@@ -538,13 +538,18 @@ public:
   //! Type of the result of the reduction.
   typedef bool value_type;
 
+  /// \brief The "parallel for" part of the reduction.
+  ///
+  /// See comments of ArithTraitsTesterBase's operator().
+  KOKKOS_INLINE_FUNCTION void
+  operator () (size_type iwork, value_type& dst) const;
+
   //! Constructor (does nothing, but marked as device function).
   KOKKOS_INLINE_FUNCTION ArithTraitsTesterComplexBase ();
 
 protected:
-  // The device and host hooks get implemented in the
-  // complex-arithmetic specialization of this class.
-  virtual bool KOKKOS_INLINE_FUNCTION testDeviceImpl () const;
+  // The host hook gets implemented in the complex-arithmetic
+  // specialization of this class.
   virtual bool testHostImpl (std::ostream& out) const;
 };
 
@@ -568,11 +573,12 @@ public:
   //! Constructor (does nothing, but marked as device function).
   KOKKOS_INLINE_FUNCTION ArithTraitsTesterComplexBase () {}
 
-protected:
-  virtual bool KOKKOS_INLINE_FUNCTION testDeviceImpl () const {
+  KOKKOS_INLINE_FUNCTION void
+  operator () (size_type iwork, value_type& dst) const {
     typedef Kokkos::Details::ArithTraits<ScalarType> AT;
-
+    (void) iwork; // forestall compiler warning for unused variable
     bool success = true;
+
     // Apparently, std::numeric_limits<ScalarType>::is_signed is true
     // only for real numbers.
     if (AT::is_signed != std::numeric_limits<ScalarType>::is_signed) {
@@ -583,15 +589,16 @@ protected:
     }
 
     // Call the base class' implementation.  Every subclass'
-    // implementation of testDeviceImpl() should (must) do this, in
-    // order to include the parent class' tests.  In the case of this
-    // particular class, the base class' implementation doesn't do
-    // anything, but that's OK.
-    success = success && base_type::testDeviceImpl ();
+    // implementation of operator() must do this, in order to include
+    // the parent class' tests.
+    bool baseResult = true;
+    base_type::operator () (iwork, baseResult);
+    success = success && baseResult;
 
-    return success;
+    dst = dst && success;
   }
 
+protected:
   virtual bool testHostImpl (std::ostream& out) const {
     using std::endl;
     typedef Kokkos::Details::ArithTraits<ScalarType> AT;
@@ -635,11 +642,12 @@ public:
   //! Constructor (does nothing, but marked as device function).
   KOKKOS_INLINE_FUNCTION ArithTraitsTesterComplexBase () {}
 
-protected:
-  virtual bool KOKKOS_INLINE_FUNCTION testDeviceImpl () const {
+  KOKKOS_INLINE_FUNCTION bool
+  operator () (size_type iwork, value_type& dst) const {
     typedef Kokkos::Details::ArithTraits<ScalarType> AT;
-
+    (void) iwork; // forestall compiler warning for unused variable
     bool success = true;
+
     if (! AT::is_complex) {
       success = false;
     }
@@ -658,15 +666,16 @@ protected:
     }
 
     // Call the base class' implementation.  Every subclass'
-    // implementation of testDeviceImpl() should (must) do this, in
-    // order to include the parent class' tests.  In the case of this
-    // particular class, the base class' implementation doesn't do
-    // anything, but that's OK.
-    success = success && base_type::testDeviceImpl ();
+    // implementation of operator() must do this, in order to include
+    // the parent class' tests.
+    bool baseResult = true;
+    base_type::operator () (iwork, baseResult);
+    success = success && baseResult;
 
-    return success;
+    dst = dst && success;
   }
 
+protected:
   virtual bool testHostImpl (std::ostream& out) const {
     using std::endl;
     typedef Kokkos::Details::ArithTraits<ScalarType> AT;
@@ -705,7 +714,6 @@ protected:
 };
 
 
-
 /// \class ArithTraitsTesterFloatingPointBase
 /// \brief Kokkos reduction functor for testing those attributes of
 ///   ArithTraits suitable for floating-point types.
@@ -740,8 +748,13 @@ public:
   //! Type of the result of the reduction.
   typedef bool value_type;
 
+  /// \brief The "parallel for" part of the reduction.
+  ///
+  /// See comments of ArithTraitsTesterBase's operator().
+  KOKKOS_INLINE_FUNCTION void
+  operator () (size_type iwork, value_type& dst) const;
+
 protected:
-  virtual bool KOKKOS_INLINE_FUNCTION testDeviceImpl () const;
   virtual bool testHostImpl (std::ostream& out) const;
 };
 
@@ -770,9 +783,10 @@ public:
   //! Constructor (does nothing, but marked as device function).
   KOKKOS_INLINE_FUNCTION ArithTraitsTesterFloatingPointBase () {}
 
-protected:
-  virtual bool KOKKOS_INLINE_FUNCTION testDeviceImpl () const {
+  KOKKOS_INLINE_FUNCTION void
+  operator () (size_type iwork, value_type& dst) const {
     typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+    (void) iwork; // forestall compiler warning for unused variable
     bool success = true;
 
     if (AT::is_exact) {
@@ -799,13 +813,16 @@ protected:
     }
 
     // Call the base class' implementation.  Every subclass'
-    // implementation of testDeviceImpl() should (must) do this, in
-    // order to include the parent class' tests.
-    success = success && base_type::testDeviceImpl ();
+    // implementation of operator() must do this, in order to include
+    // the parent class' tests.
+    bool baseResult = true;
+    base_type::operator () (iwork, baseResult);
+    success = success && baseResult;
 
-    return success;
+    dst = dst && success;
   }
 
+protected:
   virtual bool testHostImpl (std::ostream& out) const {
     typedef Kokkos::Details::ArithTraits<ScalarType> AT;
     using std::endl;
@@ -878,22 +895,27 @@ public:
   //! Constructor (does nothing, but marked as device function).
   KOKKOS_INLINE_FUNCTION ArithTraitsTesterFloatingPointBase () {}
 
-protected:
-  virtual bool KOKKOS_INLINE_FUNCTION testDeviceImpl () const {
+  KOKKOS_INLINE_FUNCTION void
+  operator () (size_type iwork, value_type& dst) const {
     typedef Kokkos::Details::ArithTraits<ScalarType> AT;
+    (void) iwork; // forestall compiler warning for unused variable
     bool success = true;
 
     if (! AT::is_exact) {
       success = false;
     }
-    // Call the base class' implementation.  Every subclass'
-    // implementation of testDeviceImpl() should (must) do this, in
-    // order to include the parent class' tests.
-    success = success && base_type::testDeviceImpl ();
 
-    return success;
+    // Call the base class' implementation.  Every subclass'
+    // implementation of operator() must do this, in order to include
+    // the parent class' tests.
+    bool baseResult = true;
+    base_type::operator () (iwork, baseResult);
+    success = success && baseResult;
+
+    dst = dst && success;
   }
 
+protected:
   virtual bool testHostImpl (std::ostream& out) const {
     typedef Kokkos::Details::ArithTraits<ScalarType> AT;
     using std::endl;
@@ -913,7 +935,6 @@ protected:
 };
 
 
-
 /// \class ArithTraitsTester
 /// \brief Tests for Kokkos::Details::ArithTraits
 /// \tparam ScalarType Any type for which Kokkos::Details::ArithTraits
@@ -925,7 +946,10 @@ protected:
 /// and the chain of subclasses in between.  ArithTraitsTesterBase
 /// provides basic tests that work for all <tt>ScalarType</tt>, and
 /// the subclasses provide additional tests relevant to things like
-/// complex-valued types or floating-point types.
+/// complex-valued types or floating-point types.  The hooks for
+/// device functions do <i>not</i> use run-time polymorphism, since
+/// this does not always work with CUDA device functions.  The hooks
+/// for host functions <i>do</i> use run-time polymorphism.
 ///
 /// This class (through its base class) provides a Kokkos reduction
 /// operator for testing Kokkos::Details::ArithTraits.  This test
