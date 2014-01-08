@@ -90,7 +90,12 @@ public:
                 g is the gradient of the objective function at x
                 x is the optimization variable
   */
-  virtual void pruneInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x ) { v.zero(); }
+  virtual void pruneInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x ) { 
+    Teuchos::RCP<Vector<Real> > tmp = x.clone(); 
+    tmp->set(v);
+    this->pruneActive(*tmp,g,x);
+    v.axpy(-1.0,*tmp);
+  }
 
   void activate(void)    { this->activated_ = true;  }
   void deactivate(void)  { this->activated_ = false; }
