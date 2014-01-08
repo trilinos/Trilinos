@@ -49,119 +49,11 @@
 ///
 /// \warning This interface is not ready for exposure to users yet.
 ///   Users beware!
-///
-/// This file works with CUDA 5.5 (with gcc, see next), gcc 4.2.1
-/// (stock Mac XCode), and Clang 3.2, all on Mac.
-///
-/// On my Mac, for all of the above compilers, long and int64_t are
-/// different, even though sizeof(long) == 8.  This manifests by an
-/// int64_t specialization not sufficing for long.  This could be
-/// because long and long long are two different types (not aliases of
-/// one another), even though they might have the same size.
-/// Interestingly, though, int64_t and long long do appear to be the
-/// same type on my system.
 
-#define __STDC_LIMIT_MACROS
-#include <stdint.h> // CUDA 5.5 doesn't recognize <cstdint>.
-#undef __STDC_LIMIT_MACROS
-
-#ifndef INT8_MIN
-/* 7.18.2 Limits of specified-width integer types:
- *   These #defines specify the minimum and maximum limits
- *   of each of the types declared above.
- */
-
-
-/* 7.18.2.1 Limits of exact-width integer types */
-#define INT8_MIN         (-127-1)
-#define INT16_MIN        (-32767-1)
-#define INT32_MIN        (-2147483647-1)
-#define INT64_MIN        (-9223372036854775807LL-1LL)
-
-#define INT8_MAX         +127
-#define INT16_MAX        +32767
-#define INT32_MAX        +2147483647
-#define INT64_MAX        +9223372036854775807LL
-
-#define UINT8_MAX         255
-#define UINT16_MAX        65535
-#define UINT32_MAX        4294967295U
-#define UINT64_MAX        18446744073709551615ULL
-
-/* 7.18.2.2 Limits of minimum-width integer types */
-#define INT_LEAST8_MIN    INT8_MIN
-#define INT_LEAST16_MIN   INT16_MIN
-#define INT_LEAST32_MIN   INT32_MIN
-#define INT_LEAST64_MIN   INT64_MIN
-
-#define INT_LEAST8_MAX    INT8_MAX
-#define INT_LEAST16_MAX   INT16_MAX
-#define INT_LEAST32_MAX   INT32_MAX
-#define INT_LEAST64_MAX   INT64_MAX
-
-#define UINT_LEAST8_MAX   UINT8_MAX
-#define UINT_LEAST16_MAX  UINT16_MAX
-#define UINT_LEAST32_MAX  UINT32_MAX
-#define UINT_LEAST64_MAX  UINT64_MAX
-
-/* 7.18.2.3 Limits of fastest minimum-width integer types */
-#define INT_FAST8_MIN     INT8_MIN
-#define INT_FAST16_MIN    INT16_MIN
-#define INT_FAST32_MIN    INT32_MIN
-#define INT_FAST64_MIN    INT64_MIN
-
-#define INT_FAST8_MAX     INT8_MAX
-#define INT_FAST16_MAX    INT16_MAX
-#define INT_FAST32_MAX    INT32_MAX
-#define INT_FAST64_MAX    INT64_MAX
-
-#define UINT_FAST8_MAX    UINT8_MAX
-#define UINT_FAST16_MAX   UINT16_MAX
-#define UINT_FAST32_MAX   UINT32_MAX
-#define UINT_FAST64_MAX   UINT64_MAX
-
-/* 7.18.2.4 Limits of integer types capable of holding object pointers */
-#if defined(__LP64__)
-#define INTPTR_MIN        INT64_MIN
-#define INTPTR_MAX        INT64_MAX
-#define UINTPTR_MAX       UINT64_MAX
-#else
-#define INTPTR_MIN        INT32_MIN
-#define INTPTR_MAX        INT32_MAX
-#define UINTPTR_MAX       UINT32_MAX
-#endif
-
-/* 7.18.2.5 Limits of greatest-width integer types */
-#define INTMAX_MIN        INT64_MIN
-#define INTMAX_MAX        INT64_MAX
-
-#define UINTMAX_MAX       UINT64_MAX
-
-/* 7.18.3 "Other" */
-#if defined(__LP64__)
-#define PTRDIFF_MIN       INT64_MIN
-#define PTRDIFF_MAX       INT64_MAX
-#else
-#define PTRDIFF_MIN       INT32_MIN
-#define PTRDIFF_MAX       INT32_MAX
-#endif
-/* We have no sig_atomic_t yet, so no SIG_ATOMIC_{MIN,MAX}.
-   Should end up being {-127,127} or {0,255} ... or bigger.
-   My bet would be on one of {U}INT32_{MIN,MAX}. */
-
-#define SIZE_MAX          UINT32_MAX
-
-//#define WCHAR_MAX         INT32_MAX
-
-/* We have no wint_t yet, so no WINT_{MIN,MAX}.
-   Should end up being {U}INT32_{MIN,MAX}, depending.  */
-
-
-#endif /* if C++, then __STDC_LIMIT_MACROS enables the above macros */
 #include <cfloat>
 #include <climits>
 #include <cmath>
-#include <cstdlib> // strtof, strtod
+#include <cstdlib> // strtof, strtod, strtold
 #include <complex> // std::complex
 #include <limits> // std::numeric_limits
 
@@ -365,11 +257,59 @@ namespace Details {
 /// refer to hidden state, so we will never include all class methods
 /// from Teuchos::ScalarTraits in ArithTraits.
 ///
-/// \section Kokkos_ArithTraits_unsupp Unsupported types
+/// \section Kokkos_ArithTraits_unsupp Unsupported types on CUDA devices
 ///
 /// CUDA does not support long double or std::complex<T> in device
 /// functions.  ArithTraits does have specializations for these types,
 /// but the class methods therein are not marked as device functions.
+///
+/// \section Kokkos_ArithTraits_whyNotC99 What about C99 integer types?
+///
+/// C99 and C++11 include typedefs int${N}_t and uint${N}_t, where N
+/// is the number of bits in the integer.  These typedefs are useful
+/// because they make the length of the type explicit.  Users are
+/// welcome to use these types as the template parameter of
+/// ArithTraits.
+///
+/// We chose not to use these types when <i>defining</i> full
+/// specializations of ArithTraits.  This is because the C99 integer
+/// types are typedefs, not types in themselves.  This makes it
+/// impossible to avoid duplicate or missing full specializations of
+/// ArithTraits.  For example, on my Mac, for CUDA 5.5, gcc 4.2.1, and
+/// Clang 3.2, <tt>int64_t</tt> is a typedef of <tt>long long</tt>,
+/// but <tt>long long</tt> and <tt>long</tt> are separate types, even
+/// though they have the same length (64 bits).  In contrast, on
+/// Windows (even Win64), <tt>long</tt> is a 32-bit type (but a
+/// distinct type from <tt>int</tt>), and <tt>long long</tt> is a
+/// 64-bit type.  Thus, if we define full specializations of
+/// ArithTraits using <i>only</i> the C99 integer types, we will be
+/// missing a specialization for <tt>long</tt> on at least one
+/// platform.
+///
+/// Rather than trouble ourselves with trying to figure this out for
+/// each platform, we decided to provide specializations only for the
+/// integer types in the C89 and C++03 language standards.  This
+/// includes signed and unsigned versions of <tt>char</tt>,
+/// <tt>short</tt>, <tt>int</tt>, and <tt>long</tt>.  We also include
+/// <tt>long long</tt> if your platform supports it.  We may thus have
+/// left out some C99 integer type, but this is only possible if the
+/// C89 / C++03 integer types do not have complete coverage of all
+/// powers of two bits from 8 up to the longest provided length (e.g.,
+/// 64 on a 64-bit system).  On all platforms I have encountered,
+/// <tt>char</tt> has 8 bits and <tt>short</tt> has 16 bits, so I am
+/// not worried about missing specializations for <tt>int16_t</tt> or
+/// <tt>uint16_t</tt>.  If you should find that either of these
+/// specializations are missing, though, please let us know.
+///
+/// Note that <tt>char</tt>, <tt>signed char</tt>, and <tt>unsigned
+/// char</tt> are distinct types, whether <tt>char</tt> is signed or
+/// unsigned.  (The language standards do not specify whether
+/// <tt>char</tt> is signed or unsigned.)  That is, <tt>char</tt> is
+/// <i>not</i> a typedef of <tt>signed char</tt> or <tt>unsigned
+/// char</tt>.  This is why we provide full specializations of
+/// ArithTraits for each of these types.  Interestingly enough, on my
+/// system, <tt>char</tt> and <tt>int8_t</tt> are different types, but
+/// <tt>signed char</tt> and <tt>int8_t</tt> are the same.
 ///
 /// \section Kokkos_ArithTraits_impl Implementation notes
 ///
@@ -385,7 +325,12 @@ class ArithTraits {
 public:
   //! The type T itself.
   typedef T val_type;
-  //! The type of the magnitude (absolute value) of T.
+  /// \brief The type of the magnitude (absolute value) of T.
+  ///
+  /// We define this as the type returned by abs() in this class.  If
+  /// T is real (not complex), then \c val_type and \c mag_type are
+  /// usually the same.  If T is <tt>std::complex<R></tt> for some R,
+  /// then R and \c mag_type are usually the same.
   typedef T mag_type;
 
   //! Whether ArithTraits has a specialization for T.
@@ -604,7 +549,7 @@ template<>
 class ArithTraits<float> {
 public:
   typedef float val_type;
-  typedef float mag_type;
+  typedef val_type mag_type;
 
   static const bool is_specialized = true;
   static const bool is_signed = true;
@@ -667,7 +612,8 @@ public:
   }
 
   // Backwards compatibility with Teuchos::ScalarTraits.
-  typedef float magnitudeType;
+  typedef mag_type magnitudeType;
+  // C++ doesn't have a standard "half-float" type.
   typedef float halfPrecision;
   typedef double doublePrecision;
 
@@ -731,7 +677,8 @@ public:
 };
 
 
-
+// The C++ Standard Library (with C++03 at least) only allows
+// std::complex<T> for T = float, double, or long double.
 template<class RealFloatType>
 class ArithTraits<std::complex<RealFloatType> > {
 public:
@@ -867,12 +814,11 @@ public:
 };
 
 
-
 template<>
 class ArithTraits<double> {
 public:
   typedef double val_type;
-  typedef double mag_type;
+  typedef val_type mag_type;
 
   static const bool is_specialized = true;
   static const bool is_signed = true;
@@ -1075,9 +1021,11 @@ public:
   }
 
   // Backwards compatibility with Teuchos::ScalarTraits.
-  typedef val_type magnitudeType;
+  typedef mag_type magnitudeType;
   typedef double halfPrecision;
-  typedef val_type doublePrecision; // long double is the most you get, alas
+  // It might be appropriate to use QD's qd_real here.
+  // For now, long double is the most you get.
+  typedef val_type doublePrecision;
 
   static const bool isComplex = false;
   static const bool isOrdinal = false;
@@ -1130,16 +1078,12 @@ public:
   }
 };
 
-// Interestingly enough, char and int8_t are different types, but
-// signed char and int8_t are the same (on my system).  This means we
-// need a separate specialization for char, but not for signed char or
-// unsigned char.  Note that the C(++) standard does not specify
-// whether char is signed or unsigned (!).
+
 template<>
 class ArithTraits<char> {
 public:
   typedef char val_type;
-  typedef char mag_type;
+  typedef val_type mag_type;
 
   static const bool is_specialized = true;
   // The C(++) standard does not require that char be signed.  In
@@ -1193,23 +1137,38 @@ public:
     }
   }
   static KOKKOS_DEVICE_FUNCTION val_type sqrt (const val_type x) {
-    // This will result in no loss of accuracy, though it might be
-    // more expensive than it should, if we were clever about using
+    // C++11 defines std::sqrt for integer arguments.  However, we
+    // currently can't assume C++11.
+    //
+    // This cast will result in no loss of accuracy, though it might
+    // be more expensive than it should, if we were clever about using
     // bit operations.
+    //
+    // We take the absolute value first to avoid negative arguments.
+    // Negative real arguments to sqrt(float) return (float) NaN, but
+    // built-in integer types do not have an equivalent to NaN.
+    // Casting NaN to an integer type will thus result in some integer
+    // value which appears valid, but is not.  We cannot raise an
+    // exception in device functions.  Thus, we prefer to take the
+    // absolute value of x first, to avoid issues.  Another
+    // possibility would be to test for a NaN output and convert it to
+    // some reasonable value (like 0), though this might be more
+    // expensive than the absolute value interpreted using the ternary
+    // operator.
     return static_cast<val_type> ( ::sqrt (static_cast<float> (abs (x))));
   }
   static KOKKOS_DEVICE_FUNCTION val_type log (const val_type x) {
-    return static_cast<val_type> ( ::log (static_cast<float> (x)));
+    return static_cast<val_type> ( ::log (static_cast<float> (abs (x))));
   }
   static KOKKOS_DEVICE_FUNCTION val_type log10 (const val_type x) {
-    return static_cast<val_type> ( ::log10 (static_cast<float> (x)));
+    return static_cast<val_type> ( ::log10 (static_cast<float> (abs (x))));
   }
   static KOKKOS_DEVICE_FUNCTION mag_type epsilon () {
     return zero ();
   }
 
   // Backwards compatibility with Teuchos::ScalarTraits.
-  typedef val_type magnitudeType;
+  typedef mag_type magnitudeType;
   typedef val_type halfPrecision;
   typedef val_type doublePrecision;
 
@@ -1236,10 +1195,10 @@ public:
 
 
 template<>
-class ArithTraits<int8_t> {
+class ArithTraits<signed char> {
 public:
-  typedef int8_t val_type;
-  typedef int8_t mag_type;
+  typedef signed char val_type;
+  typedef val_type mag_type;
 
   static const bool is_specialized = true;
   static const bool is_signed = true;
@@ -1254,11 +1213,6 @@ public:
     return false;
   }
   static KOKKOS_DEVICE_FUNCTION mag_type abs (const val_type x) {
-    // std::abs appears to work with CUDA 5.5 at least, but I'll use
-    // the ternary expression for maximum generality.  Note that this
-    // expression does not necessarily obey the rules for fabs() with
-    // NaN input, so it should not be used for floating-point types.
-    // It's perfectly fine for signed integer types, though.
     return x >= 0 ? x : -x;
   }
   static KOKKOS_DEVICE_FUNCTION val_type zero () {
@@ -1268,13 +1222,10 @@ public:
     return 1;
   }
   static KOKKOS_DEVICE_FUNCTION val_type min () {
-    // Macros like INT8_MIN work with CUDA, but
-    // std::numeric_limits<val_type>::min() does not, because it is not
-    // marked as a __device__ function.
-    return INT8_MIN;
+    return SCHAR_MIN;
   }
   static KOKKOS_DEVICE_FUNCTION val_type max () {
-    return INT8_MAX;
+    return SCHAR_MAX;
   }
   static KOKKOS_DEVICE_FUNCTION mag_type real (const val_type x) {
     return x;
@@ -1285,13 +1236,11 @@ public:
   static KOKKOS_DEVICE_FUNCTION val_type conj (const val_type x) {
     return x;
   }
-  static KOKKOS_DEVICE_FUNCTION val_type pow (const val_type x, const val_type y) {
+  static KOKKOS_DEVICE_FUNCTION val_type
+  pow (const val_type x, const val_type y) {
     return intPowSigned<val_type> (x, y);
   }
   static KOKKOS_DEVICE_FUNCTION val_type sqrt (const val_type x) {
-    // This will result in no loss of accuracy, though it might be
-    // more expensive than it should, if we were clever about using
-    // bit operations.
     return static_cast<val_type> ( ::sqrt (static_cast<float> (abs (x))));
   }
   static KOKKOS_DEVICE_FUNCTION val_type log (const val_type x) {
@@ -1305,7 +1254,7 @@ public:
   }
 
   // Backwards compatibility with Teuchos::ScalarTraits.
-  typedef val_type magnitudeType;
+  typedef mag_type magnitudeType;
   typedef val_type halfPrecision;
   typedef val_type doublePrecision;
 
@@ -1323,7 +1272,7 @@ public:
     return false;
   }
   static std::string name () {
-    return "int8_t";
+    return "signed char";
   }
   static KOKKOS_DEVICE_FUNCTION val_type squareroot (const val_type x) {
     return sqrt (x);
@@ -1331,12 +1280,11 @@ public:
 };
 
 
-
 template<>
-class ArithTraits<uint8_t> {
+class ArithTraits<unsigned char> {
 public:
-  typedef uint8_t val_type;
-  typedef uint8_t mag_type;
+  typedef unsigned char val_type;
+  typedef val_type mag_type;
 
   static const bool is_specialized = true;
   static const bool is_signed = false;
@@ -1363,7 +1311,7 @@ public:
     return 0;
   }
   static KOKKOS_DEVICE_FUNCTION val_type max () {
-    return UINT8_MAX;
+    return UCHAR_MAX;
   }
   static KOKKOS_DEVICE_FUNCTION mag_type real (const val_type x) {
     return x;
@@ -1396,7 +1344,7 @@ public:
   }
 
   // Backwards compatibility with Teuchos::ScalarTraits.
-  typedef val_type magnitudeType;
+  typedef mag_type magnitudeType;
   typedef val_type halfPrecision;
   typedef val_type doublePrecision;
 
@@ -1414,7 +1362,7 @@ public:
     return false;
   }
   static std::string name () {
-    return "uint8_t";
+    return "unsigned char";
   }
   static KOKKOS_DEVICE_FUNCTION val_type squareroot (const val_type x) {
     return sqrt (x);
@@ -1423,10 +1371,10 @@ public:
 
 
 template<>
-class ArithTraits<int16_t> {
+class ArithTraits<short> {
 public:
-  typedef int16_t val_type;
-  typedef int16_t mag_type;
+  typedef short val_type;
+  typedef val_type mag_type;
 
   static const bool is_specialized = true;
   static const bool is_signed = true;
@@ -1455,13 +1403,13 @@ public:
     return 1;
   }
   static KOKKOS_DEVICE_FUNCTION val_type min () {
-    // Macros like INT16_MIN work with CUDA, but
-    // std::numeric_limits<val_type>::min() does not, because it is not
-    // marked as a __device__ function.
-    return INT16_MIN;
+    // Macros like this work with CUDA, but
+    // std::numeric_limits<val_type>::min() does not, because it is
+    // not marked as a __device__ function.
+    return SHRT_MIN;
   }
   static KOKKOS_DEVICE_FUNCTION val_type max () {
-    return INT16_MAX;
+    return SHRT_MAX;
   }
   static KOKKOS_DEVICE_FUNCTION mag_type real (const val_type x) {
     return x;
@@ -1493,7 +1441,7 @@ public:
   }
 
   // Backwards compatibility with Teuchos::ScalarTraits.
-  typedef val_type magnitudeType;
+  typedef mag_type magnitudeType;
   typedef val_type halfPrecision;
   typedef val_type doublePrecision;
 
@@ -1511,7 +1459,7 @@ public:
     return false;
   }
   static std::string name () {
-    return "int16_t";
+    return "short";
   }
   static KOKKOS_DEVICE_FUNCTION val_type squareroot (const val_type x) {
     return sqrt (x);
@@ -1519,12 +1467,11 @@ public:
 };
 
 
-
 template<>
-class ArithTraits<uint16_t> {
+class ArithTraits<unsigned short> {
 public:
-  typedef uint16_t val_type;
-  typedef uint16_t mag_type;
+  typedef unsigned short val_type;
+  typedef val_type mag_type;
 
   static const bool is_specialized = true;
   static const bool is_signed = false;
@@ -1551,7 +1498,7 @@ public:
     return 0;
   }
   static KOKKOS_DEVICE_FUNCTION val_type max () {
-    return UINT16_MAX;
+    return USHRT_MAX;
   }
   static KOKKOS_DEVICE_FUNCTION mag_type real (const val_type x) {
     return x;
@@ -1572,7 +1519,6 @@ public:
     // bit operations.
     return static_cast<val_type> ( ::sqrt (static_cast<float> (x)));
   }
-
   static KOKKOS_DEVICE_FUNCTION val_type log (const val_type x) {
     return static_cast<val_type> ( ::log (static_cast<float> (x)));
   }
@@ -1584,7 +1530,7 @@ public:
   }
 
   // Backwards compatibility with Teuchos::ScalarTraits.
-  typedef val_type magnitudeType;
+  typedef mag_type magnitudeType;
   typedef val_type halfPrecision;
   typedef val_type doublePrecision;
 
@@ -1602,7 +1548,7 @@ public:
     return false;
   }
   static std::string name () {
-    return "uint16_t";
+    return "unsigned short";
   }
   static KOKKOS_DEVICE_FUNCTION val_type squareroot (const val_type x) {
     return sqrt (x);
@@ -1611,10 +1557,10 @@ public:
 
 
 template<>
-class ArithTraits<int32_t> {
+class ArithTraits<int> {
 public:
-  typedef int32_t val_type;
-  typedef int32_t mag_type;
+  typedef int val_type;
+  typedef val_type mag_type;
 
   static const bool is_specialized = true;
   static const bool is_signed = true;
@@ -1643,13 +1589,13 @@ public:
     return 1;
   }
   static KOKKOS_DEVICE_FUNCTION val_type min () {
-    // Macros like INT32_MIN work with CUDA, but
-    // std::numeric_limits<val_type>::min() does not, because it is not
-    // marked as a __device__ function.
-    return INT32_MIN;
+    // Macros like INT_MIN work with CUDA, but
+    // std::numeric_limits<val_type>::min() does not, because it is
+    // not marked as a __device__ function.
+    return INT_MIN;
   }
   static KOKKOS_DEVICE_FUNCTION val_type max () {
-    return INT32_MAX;
+    return INT_MAX;
   }
   static KOKKOS_DEVICE_FUNCTION mag_type real (const val_type x) {
     return x;
@@ -1681,7 +1627,7 @@ public:
   }
 
   // Backwards compatibility with Teuchos::ScalarTraits.
-  typedef val_type magnitudeType;
+  typedef mag_type magnitudeType;
   typedef val_type halfPrecision;
   typedef val_type doublePrecision;
 
@@ -1699,7 +1645,7 @@ public:
     return false;
   }
   static std::string name () {
-    return "int32_t";
+    return "int";
   }
   static KOKKOS_DEVICE_FUNCTION val_type squareroot (const val_type x) {
     return sqrt (x);
@@ -1708,10 +1654,10 @@ public:
 
 
 template<>
-class ArithTraits<uint32_t> {
+class ArithTraits<unsigned int> {
 public:
-  typedef uint32_t val_type;
-  typedef uint32_t mag_type;
+  typedef unsigned int val_type;
+  typedef val_type mag_type;
 
   static const bool is_specialized = true;
   static const bool is_signed = false;
@@ -1738,7 +1684,7 @@ public:
     return 0;
   }
   static KOKKOS_DEVICE_FUNCTION val_type max () {
-    return UINT32_MAX;
+    return UINT_MAX;
   }
   static KOKKOS_DEVICE_FUNCTION mag_type real (const val_type x) {
     return x;
@@ -1770,111 +1716,7 @@ public:
   }
 
   // Backwards compatibility with Teuchos::ScalarTraits.
-  typedef uint32_t magnitudeType;
-  typedef uint32_t halfPrecision;
-  typedef uint32_t doublePrecision;
-
-  static const bool isComplex = false;
-  static const bool isOrdinal = true;
-  static const bool isComparable = true;
-  static const bool hasMachineParameters = false;
-  static KOKKOS_DEVICE_FUNCTION magnitudeType magnitude (const val_type x) {
-    return abs (x);
-  }
-  static KOKKOS_DEVICE_FUNCTION val_type conjugate (const val_type x) {
-    return conj (x);
-  }
-  static KOKKOS_DEVICE_FUNCTION bool isnaninf (const val_type) {
-    return false;
-  }
-  static std::string name () {
-    return "uint32_t";
-  }
-  static KOKKOS_DEVICE_FUNCTION val_type squareroot (const val_type x) {
-    return sqrt (x);
-  }
-};
-
-
-template<>
-class ArithTraits<long long> {
-public:
-  typedef long long val_type;
-  typedef long long mag_type;
-
-  static const bool is_specialized = true;
-  static const bool is_signed = true;
-  static const bool is_integer = true;
-  static const bool is_exact = true;
-  static const bool is_complex = false;
-
-  static KOKKOS_DEVICE_FUNCTION bool isInf (const val_type x) {
-    return false;
-  }
-  static KOKKOS_DEVICE_FUNCTION bool isNan (const val_type x) {
-    return false;
-  }
-  static KOKKOS_DEVICE_FUNCTION mag_type abs (const val_type x) {
-    return x >= 0 ? x : -x;
-  }
-  static KOKKOS_DEVICE_FUNCTION val_type zero () {
-    return 0;
-  }
-  static KOKKOS_DEVICE_FUNCTION val_type one () {
-    return 1;
-  }
-  static KOKKOS_DEVICE_FUNCTION val_type min () {
-    return INT64_MIN;
-  }
-  static KOKKOS_DEVICE_FUNCTION val_type max () {
-    return INT64_MAX;
-  }
-  static KOKKOS_DEVICE_FUNCTION mag_type real (const val_type x) {
-    return x;
-  }
-  static KOKKOS_DEVICE_FUNCTION mag_type imag (const val_type x) {
-    return 0;
-  }
-  static KOKKOS_DEVICE_FUNCTION val_type conj (const val_type x) {
-    return x;
-  }
-  static KOKKOS_DEVICE_FUNCTION val_type
-  pow (const val_type x, const val_type y) {
-    return intPowSigned<val_type> (x, y);
-  }
-  static KOKKOS_DEVICE_FUNCTION val_type sqrt (const val_type x) {
-#ifdef __CUDA_ARCH__
-    // Casting from a 64-bit integer type to double does result in a
-    // loss of accuracy.  However, it gives us a good first
-    // approximation.  For very large numbers, we may lose some
-    // significand bits, but will always get within a factor of two
-    // (assuming correct rounding) of the exact double-precision
-    // number.  We could then binary search between half the result
-    // and twice the result (assuming the latter is <= INT64_MAX,
-    // which it has to be, so we don't have to check) to ensure
-    // correctness.  It actually should suffice to check numbers
-    // within 1 of the result.
-    return static_cast<val_type> ( ::sqrt (static_cast<double> (abs (x))));
-#else
-    // IEEE 754 promises that long double has at least 64 significand
-    // bits, so we can use it to represent any signed or unsigned
-    // 64-bit integer type exactly.  However, CUDA does not implement
-    // long double for device functions.
-    return static_cast<val_type> ( ::sqrt (static_cast<long double> (abs (x))));
-#endif // __CUDA_ARCH__
-  }
-  static KOKKOS_DEVICE_FUNCTION val_type log (const val_type x) {
-    return static_cast<val_type> ( ::log (static_cast<double> (abs (x))));
-  }
-  static KOKKOS_DEVICE_FUNCTION val_type log10 (const val_type x) {
-    return static_cast<val_type> ( ::log10 (static_cast<double> (abs (x))));
-  }
-  static KOKKOS_DEVICE_FUNCTION mag_type epsilon () {
-    return zero ();
-  }
-
-  // Backwards compatibility with Teuchos::ScalarTraits.
-  typedef val_type magnitudeType;
+  typedef mag_type magnitudeType;
   typedef val_type halfPrecision;
   typedef val_type doublePrecision;
 
@@ -1892,22 +1734,19 @@ public:
     return false;
   }
   static std::string name () {
-    return "long long";
+    return "unsigned int";
   }
   static KOKKOS_DEVICE_FUNCTION val_type squareroot (const val_type x) {
     return sqrt (x);
   }
 };
 
-// With CUDA 5.5, long and int64_t are different, even though
-// sizeof(long) == 8.  This could be because long and long long are
-// two different types (not aliases of one another), even though they
-// might have the same size.
+
 template<>
 class ArithTraits<long> {
 public:
   typedef long val_type;
-  typedef long mag_type;
+  typedef val_type mag_type;
 
   static const bool is_specialized = true;
   static const bool is_signed = true;
@@ -1967,7 +1806,7 @@ public:
   }
 
   // Backwards compatibility with Teuchos::ScalarTraits.
-  typedef val_type magnitudeType;
+  typedef mag_type magnitudeType;
   typedef val_type halfPrecision;
   typedef val_type doublePrecision;
 
@@ -1997,7 +1836,7 @@ template<>
 class ArithTraits<unsigned long> {
 public:
   typedef unsigned long val_type;
-  typedef unsigned long mag_type;
+  typedef val_type mag_type;
 
   static const bool is_specialized = true;
   static const bool is_signed = false;
@@ -2056,7 +1895,7 @@ public:
   }
 
   // Backwards compatibility with Teuchos::ScalarTraits.
-  typedef val_type magnitudeType;
+  typedef mag_type magnitudeType;
   typedef val_type halfPrecision;
   typedef val_type doublePrecision;
 
@@ -2083,10 +1922,114 @@ public:
 
 
 template<>
+class ArithTraits<long long> {
+public:
+  typedef long long val_type;
+  typedef val_type mag_type;
+
+  static const bool is_specialized = true;
+  static const bool is_signed = true;
+  static const bool is_integer = true;
+  static const bool is_exact = true;
+  static const bool is_complex = false;
+
+  static KOKKOS_DEVICE_FUNCTION bool isInf (const val_type x) {
+    return false;
+  }
+  static KOKKOS_DEVICE_FUNCTION bool isNan (const val_type x) {
+    return false;
+  }
+  static KOKKOS_DEVICE_FUNCTION mag_type abs (const val_type x) {
+    return x >= 0 ? x : -x;
+  }
+  static KOKKOS_DEVICE_FUNCTION val_type zero () {
+    return 0;
+  }
+  static KOKKOS_DEVICE_FUNCTION val_type one () {
+    return 1;
+  }
+  static KOKKOS_DEVICE_FUNCTION val_type min () {
+    return LLONG_MIN;
+  }
+  static KOKKOS_DEVICE_FUNCTION val_type max () {
+    return LLONG_MAX;
+  }
+  static KOKKOS_DEVICE_FUNCTION mag_type real (const val_type x) {
+    return x;
+  }
+  static KOKKOS_DEVICE_FUNCTION mag_type imag (const val_type x) {
+    return 0;
+  }
+  static KOKKOS_DEVICE_FUNCTION val_type conj (const val_type x) {
+    return x;
+  }
+  static KOKKOS_DEVICE_FUNCTION val_type
+  pow (const val_type x, const val_type y) {
+    return intPowSigned<val_type> (x, y);
+  }
+  static KOKKOS_DEVICE_FUNCTION val_type sqrt (const val_type x) {
+#ifdef __CUDA_ARCH__
+    // Casting from a 64-bit integer type to double does result in a
+    // loss of accuracy.  However, it gives us a good first
+    // approximation.  For very large numbers, we may lose some
+    // significand bits, but will always get within a factor of two
+    // (assuming correct rounding) of the exact double-precision
+    // number.  We could then binary search between half the result
+    // and twice the result (assuming the latter is <= INT64_MAX,
+    // which it has to be, so we don't have to check) to ensure
+    // correctness.  It actually should suffice to check numbers
+    // within 1 of the result.
+    return static_cast<val_type> ( ::sqrt (static_cast<double> (abs (x))));
+#else
+    // IEEE 754 promises that long double has at least 64 significand
+    // bits, so we can use it to represent any signed or unsigned
+    // 64-bit integer type exactly.  However, CUDA does not implement
+    // long double for device functions.
+    return static_cast<val_type> ( ::sqrt (static_cast<long double> (abs (x))));
+#endif // __CUDA_ARCH__
+  }
+  static KOKKOS_DEVICE_FUNCTION val_type log (const val_type x) {
+    return static_cast<val_type> ( ::log (static_cast<double> (abs (x))));
+  }
+  static KOKKOS_DEVICE_FUNCTION val_type log10 (const val_type x) {
+    return static_cast<val_type> ( ::log10 (static_cast<double> (abs (x))));
+  }
+  static KOKKOS_DEVICE_FUNCTION mag_type epsilon () {
+    return zero ();
+  }
+
+  // Backwards compatibility with Teuchos::ScalarTraits.
+  typedef mag_type magnitudeType;
+  typedef val_type halfPrecision;
+  typedef val_type doublePrecision;
+
+  static const bool isComplex = false;
+  static const bool isOrdinal = true;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = false;
+  static KOKKOS_DEVICE_FUNCTION magnitudeType magnitude (const val_type x) {
+    return abs (x);
+  }
+  static KOKKOS_DEVICE_FUNCTION val_type conjugate (const val_type x) {
+    return conj (x);
+  }
+  static KOKKOS_DEVICE_FUNCTION bool isnaninf (const val_type) {
+    return false;
+  }
+  static std::string name () {
+    return "long long";
+  }
+  static KOKKOS_DEVICE_FUNCTION val_type squareroot (const val_type x) {
+    return sqrt (x);
+  }
+};
+
+
+template<>
 class ArithTraits<unsigned long long> {
 public:
   typedef unsigned long long val_type;
-  typedef unsigned long long mag_type;
+  typedef val_type mag_type;
 
   static const bool is_specialized = true;
   static const bool is_signed = false;
@@ -2146,7 +2089,7 @@ public:
   }
 
   // Backwards compatibility with Teuchos::ScalarTraits.
-  typedef val_type magnitudeType;
+  typedef mag_type magnitudeType;
   typedef val_type halfPrecision;
   typedef val_type doublePrecision;
 
@@ -2176,10 +2119,13 @@ public:
 //
 // http://crd-legacy.lbl.gov/~dhbailey/mpdist/
 //
+// dd_real uses two doubles (128 bits), and qd_real uses four doubles
+// (256 bits).
+//
 // Kokkos does <i>not</i> currently support these types in device
 // functions.  It should be possible to use Kokkos' support for
 // aggregate types to implement device function support for dd_real
-// and qd_real, but we have not done this yet (as of 27 Dec 2013).
+// and qd_real, but we have not done this yet (as of 07 Jan 2014).
 // Hence, the class methods of the ArithTraits specializations for
 // dd_real and qd_real are not marked as device functions.
 #ifdef HAVE_KOKKOS_QD
@@ -2300,6 +2246,7 @@ struct ScalarTraits<dd_real>
     return ::sqrt (x);
   }
 };
+
 
 template<>
 struct ScalarTraits<qd_real>
@@ -2422,8 +2369,6 @@ struct ScalarTraits<qd_real>
     return ::sqrt (x);
   }
 };
-
-
 #endif // HAVE_KOKKOS_QD
 
 } // namespace Details
