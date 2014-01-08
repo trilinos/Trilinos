@@ -220,10 +220,27 @@ public:
     }
 
     // Check if s is a descent direction
-    Real gs = -(Step<Real>::state_->gradientVec)->dot(s);
+    Real gs = 0.0;
+    if ( con.isActivated() ) {
+      Teuchos::RCP<Vector<Real> > d = x.clone();
+      d->set(s);
+      con.pruneActive(*d,s,x);
+      gs = -(Step<Real>::state_->gradientVec)->dot(*d);
+    }
+    else {
+      gs = -(Step<Real>::state_->gradientVec)->dot(s);
+    }
     if ( gs > 0.0 || this->flagKrylov_ == 2 || this->edesc_ == DESCENT_STEEPEST ) {
       s.set(*(Step<Real>::state_->gradientVec));
-      gs = -(Step<Real>::state_->gradientVec)->dot(s);
+      if ( con.isActivated() ) {
+        Teuchos::RCP<Vector<Real> > d = x.clone();
+        d->set(s);
+        con.pruneActive(*d,s,x);
+        gs = -(Step<Real>::state_->gradientVec)->dot(*d);
+      }
+      else {
+        gs = -(Step<Real>::state_->gradientVec)->dot(s);
+      }
     }
     s.scale(-1.0);
 

@@ -719,6 +719,8 @@ namespace ROL {
     TESTOPTPROBLEM_HS5,
     TESTOPTPROBLEM_HS25,
     TESTOPTPROBLEM_HS38,
+    TESTOPTPROBLEM_HS45,
+    TESTOPTPROBLEM_BVP,
     TESTOPTPROBLEM_LAST
   };
 
@@ -732,6 +734,8 @@ namespace ROL {
       case TESTOPTPROBLEM_HS5:  retString = "Hock and Schittkowski Test Problem #5";  break;
       case TESTOPTPROBLEM_HS25: retString = "Hock and Schittkowski Test Problem #25"; break;
       case TESTOPTPROBLEM_HS38: retString = "Hock and Schittkowski Test Problem #38"; break;
+      case TESTOPTPROBLEM_HS45: retString = "Hock and Schittkowski Test Problem #45"; break;
+      case TESTOPTPROBLEM_BVP:  retString = "Boundary Value Problem";                 break;
       case TESTOPTPROBLEM_LAST: retString = "Last Type (Dummy)";                      break;
       default:                  retString = "INVALID ETestOptProblem";
     }
@@ -750,7 +754,9 @@ namespace ROL {
             (to == TESTOPTPROBLEM_HS4)  ||
             (to == TESTOPTPROBLEM_HS5)  ||
             (to == TESTOPTPROBLEM_HS25) ||
-            (to == TESTOPTPROBLEM_HS38) );
+            (to == TESTOPTPROBLEM_HS38) ||
+            (to == TESTOPTPROBLEM_HS45) ||
+            (to == TESTOPTPROBLEM_BVP) );
   }
 
   inline ETestOptProblem & operator++(ETestOptProblem &type) {

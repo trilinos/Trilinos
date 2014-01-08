@@ -42,7 +42,7 @@
 // @HEADER
 
 /** \file
-    \brief  Contains definitions for W. Hock and K. Schittkowski 2nd test function.
+    \brief  Contains definitions for W. Hock and K. Schittkowski 45th test function.
     \author Created by D. Ridzal and D. Kouri.
  */
 
@@ -50,8 +50,8 @@
 #define USE_HESSVEC 1
 #endif
 
-#ifndef ROL_HS2_HPP
-#define ROL_HS2_HPP
+#ifndef ROL_HS45_HPP
+#define ROL_HS45_HPP
 
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective.hpp"
@@ -59,17 +59,30 @@
 
 namespace ROL {
 
-  /** \brief W. Hock and K. Schittkowski 2nd test function.
+  /** \brief W. Hock and K. Schittkowski 45th test function.
    */
   template<class Real>
-  class Objective_HS2 : public Objective<Real> {
+  class Objective_HS45 : public Objective<Real> {
+  private: 
+    int  dim_;
+    Real fact_;
+
   public:
-    Objective_HS2(void) {}
+    Objective_HS45(int dim = 5) : dim_(dim) {
+      fact_ = 1.0;
+      for ( int i = 0; i < this->dim_; i++ ) {
+        fact_ *= (Real)(i+1);
+      } 
+    }
 
     Real value( const Vector<Real> &x, Real &tol ) {
       Teuchos::RCP<const std::vector<Real> > ex =
         (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
-      return 100.0 * std::pow((*ex)[1] - std::pow((*ex)[0],2.0),2.0) + std::pow(1.0-(*ex)[0],2.0);
+      Real prod = 1.0;
+      for ( int i = 0; i < this->dim_; i++ ) {
+        prod *= (*ex)[i];
+      }
+      return 2.0 - prod/this->fact_;
     }
 
     void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
@@ -77,8 +90,16 @@ namespace ROL {
         (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
       Teuchos::RCP<std::vector<Real> > eg =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(g)).getVector());
-      (*eg)[0] = -4.0 * 100.0 * ((*ex)[1] - std::pow((*ex)[0],2.0)) * (*ex)[0] - 2.0 * (1.0-(*ex)[0]);
-      (*eg)[1] = 2.0 * 100.0 * ((*ex)[1] - std::pow((*ex)[0],2.0)); 
+      Real prod = 1.0;
+      for ( int j = 0; j < this->dim_; j++ ) {
+        for ( int i = 0; i < this->dim_; i++ ) {
+          if ( j != i ) {
+            prod *= (*ex)[i];
+          }
+        }
+        (*eg)[j] = -prod/this->fact_;
+        prod = 1.0;
+      }
     }
 #if USE_HESSVEC
     void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
@@ -88,47 +109,51 @@ namespace ROL {
         (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(v))).getVector();
       Teuchos::RCP<std::vector<Real> > ehv =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(hv)).getVector());
-
-      Real h11 = -4.0 * 100.0 * (*ex)[1] + 12.0 * 100.0 * std::pow((*ex)[0],2.0) + 2.0; 
-      Real h22 = 2.0 * 100.0;
-      Real h12 = -4.0 * 100.0 * (*ex)[0];
-      Real h21 = -4.0 * 100.0 * (*ex)[0];
-
-      (*ehv)[0] = h11 * (*ev)[0] + h12 * (*ev)[1];
-      (*ehv)[1] = h21 * (*ev)[0] + h22 * (*ev)[1];
+      hv.zero();
+      Real prod = 1.0;
+      for ( int l = 0; l < this->dim_; l++ ) {
+        for ( int j = 0; j < this->dim_; j++ ) {
+          if ( l != j ) {
+            for ( int i = 0; i < this->dim_; i++ ) {
+              if ( j != i && l != i ) { 
+                prod *= (*ex)[i];
+              }
+            }
+            (*ehv)[l] += -prod/this->fact_*(*ev)[j];
+          }
+          prod = 1.0;
+        }
+      }
     } 
 #endif
-    void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-      Teuchos::RCP<const std::vector<Real> > ex =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
-      Teuchos::RCP<const std::vector<Real> > ev =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(v))).getVector();
-      Teuchos::RCP<std::vector<Real> > ehv =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(hv)).getVector());
-      
-      Real h11 = -4.0 * 100.0 * (*ex)[1] + 12.0 * 100.0 * std::pow((*ex)[0],2.0) + 2.0; 
-      Real h22 = 2.0 * 100.0;
-      Real h12 = -4.0 * 100.0 * (*ex)[0];
-      Real h21 = -4.0 * 100.0 * (*ex)[0];
-  
-      (*ehv)[0] = 1.0/(h11*h22 - h12*h21) * (h22 * (*ev)[0] - h12 * (*ev)[1]);
-      (*ehv)[1] = 1.0/(h11*h22 - h12*h21) * (-h21 * (*ev)[0] + h11 * (*ev)[1]);
-    }
   };
 
   template<class Real>
-  class Constraints_HS2 : public Constraints<Real> {
+  class Constraints_HS45 : public Constraints<Real> {
   private: 
-    Real x2_lo_;
+    int dim_;
+    std::vector<Real> x_lo_;
+    std::vector<Real> x_up_;
   public:
-    Constraints_HS2() {
-      x2_lo_ = 1.5;
+    Constraints_HS45(int dim = 5) : dim_(dim) {
+      for ( int i = 0; i < dim; i++ ) { 
+        if ( i%2 == 0 ) {
+          x_lo_.push_back(0.0);
+          x_up_.push_back((Real)(i+1));
+        }
+        else {
+          x_lo_.push_back(0.0);
+          x_up_.push_back((Real)(i+1));
+        }
+      }
     }
      
     void project( Vector<Real> &x ) {
       Teuchos::RCP<std::vector<Real> > ex =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(x)).getVector());
-      (*ex)[1] = std::max(this->x2_lo_,(*ex)[1]);
+      for ( int i = 0; i < this->dim_; i++ ) {
+        (*ex)[i] = std::max(this->x_lo_[i],std::min(this->x_up_[i],(*ex)[i]));
+      }
     }
 
     void pruneActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x) {
@@ -138,27 +163,32 @@ namespace ROL {
         (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(g))).getVector();
       Teuchos::RCP<std::vector<Real> > ev =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(v)).getVector());
-      if ( (*ex)[1] <= this->x2_lo_ && (*eg)[1] > 0.0 ) {
-        (*ev)[1] = 0.0;
-      } 
-    } 
-        
-    void pruneInactive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x) {
+      for ( int i = 0; i < this->dim_; i++ ) {
+        if ( ((*ex)[i] <= this->x_lo_[i] && (*eg)[i] > 0.0) || 
+             ((*ex)[i] >= this->x_up_[i] && (*eg)[i] < 0.0) ) {
+          (*ev)[i] = 0.0;
+        }
+      }
+    }           
+    
+    void pruneInactive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x) { 
       Teuchos::RCP<const std::vector<Real> > ex = 
         (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
-      Teuchos::RCP<const std::vector<Real> > eg = 
+      Teuchos::RCP<const std::vector<Real> > eg =
         (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(g))).getVector();
       Teuchos::RCP<std::vector<Real> > ev =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(v)).getVector());
-      (*ev)[0] = 0.0;
-      if ( !( (*ex)[1] <= this->x2_lo_ && (*eg)[1] > 0.0 ) ) {
-        (*ev)[1] = 0.0;
+      for ( int i = 0; i < this->dim_; i++ ) {
+        if ( !( ((*ex)[i] <= this->x_lo_[i] && (*eg)[i] > 0.0) || 
+                ((*ex)[i] >= this->x_up_[i] && (*eg)[i] < 0.0) ) ) {
+          (*ev)[i] = 0.0;
+        }
       }
-    }    
+    }
   };  
 
   template<class Real>
-  void getHS2( Teuchos::RCP<Objective<Real> > &obj, Teuchos::RCP<Constraints<Real> > &con, 
+  void getHS45( Teuchos::RCP<Objective<Real> > &obj, Teuchos::RCP<Constraints<Real> > &con, 
                 Vector<Real> &x0, Vector<Real> &x ) {
     // Cast Initial Guess and Solution Vectors
     Teuchos::RCP<std::vector<Real> > x0p =
@@ -167,21 +197,22 @@ namespace ROL {
       Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(x)).getVector());
     int n = xp->size();
     // Resize Vectors
-    n = 2;
+    n = 5;
     x0p->resize(n);
     xp->resize(n);
     // Instantiate Objective Function
-    obj = Teuchos::rcp( new Objective_HS2<Real> );
+    obj = Teuchos::rcp( new Objective_HS45<Real>(n) );
     // Instantiate Constraints
-    con = Teuchos::rcp( new Constraints_HS2<Real> );
+    con = Teuchos::rcp( new Constraints_HS45<Real>(n) );
     // Get Initial Guess
-    (*x0p)[0] =  -2.0;
-    (*x0p)[1] =  1.0;
+    for ( int i = 0; i < n; i++ ) {
+      (*x0p)[i] =  2.0;
+    }
+    con->project(x0);
     // Get Solution
-    Real a = std::sqrt(598.0/1200.0);
-    Real b = 400.0 * std::pow(a,3.0);
-    (*xp)[0] = 2.0*a*std::cos(1.0/3.0 * std::acos(1.0/b));
-    (*xp)[1] = 1.5;
+    for ( int i = 0; i < n; i++ ) {
+      (*xp)[i] = (Real)(i+1);
+    }
   }
 
 

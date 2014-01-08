@@ -151,7 +151,17 @@ public:
         Teuchos::RCP<Vector<Real> > grad = x.clone();
         obj.update(*xnew);
         obj.gradient(*grad,*xnew,tol);
-        Real sgnew = grad->dot(s);
+        Real sgnew = 0.0;
+        if ( con.isActivated() ) {
+          Teuchos::RCP<Vector<Real> > d = x.clone();
+          d->set(s);
+          d->scale(-alpha);
+          con.pruneActive(*d,s,x);
+          sgnew = -grad->dot(*d);
+        }
+        else {
+          sgnew = grad->dot(s);
+        }
         ls_ngrad++;
    
         if (    ((this->econd_ == CURVATURECONDITION_WOLFE)       

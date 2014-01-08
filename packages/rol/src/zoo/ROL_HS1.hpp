@@ -151,7 +151,7 @@ namespace ROL {
       Teuchos::RCP<std::vector<Real> > ev =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(v)).getVector());
       (*ev)[0] = 0.0;
-      if ( (*ex)[1] > this->x2_lo_ && (*eg)[1] <= 0.0 ) {
+      if ( !( (*ex)[1] <= this->x2_lo_ && (*eg)[1] > 0.0 ) ) {
         (*ev)[1] = 0.0;
       }
     }

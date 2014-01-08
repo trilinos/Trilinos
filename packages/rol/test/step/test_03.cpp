@@ -150,6 +150,9 @@ int main(int argc, char *argv[]) {
       e.set(x);
       e.axpy(-1.0,z);
       *outStream << "\nNorm of Error: " << e.norm() << "\n";
+      for ( int i = 0; i < dim; i++ ) {
+        *outStream << (*x_rcp)[i] << "  " << (*z_rcp)[i] << "  " << (*e_rcp)[i] << "\n";
+      }
     }
   }
   catch (std::logic_error err) {

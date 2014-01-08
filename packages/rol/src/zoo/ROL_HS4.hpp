@@ -134,10 +134,10 @@ namespace ROL {
         (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(g))).getVector();
       Teuchos::RCP<std::vector<Real> > ev =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(v)).getVector());
-      if ( (*ex)[0] > this->x_lo_[0] && (*eg)[0] <= 0.0 ) {
+      if ( !( (*ex)[0] <= this->x_lo_[0] && (*eg)[0] > 0.0 ) ) {
         (*ev)[0] = 0.0;
       }
-      if ( (*ex)[1] > this->x_lo_[1] && (*eg)[1] <= 0.0 ) {
+      if ( !( (*ex)[1] <= this->x_lo_[1] && (*eg)[1] > 0.0 ) ) {
         (*ev)[1] = 0.0;
       }
     }

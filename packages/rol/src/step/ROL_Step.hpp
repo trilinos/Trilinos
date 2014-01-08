@@ -98,13 +98,25 @@ public:
     state_->descentVec  = x.clone();
     state_->gradientVec = x.clone();
     // Project x onto constraint set
-    con.project(x);
+    if ( con.isActivated() ) {
+      con.project(x);
+    }
     // Update objective function, get value, and get gradient
     obj.update(x,true,algo_state.iter);
     algo_state.value = obj.value(x,tol);
     algo_state.nfval = 1;
     obj.gradient(*(state_->gradientVec),x,tol);
-    algo_state.gnorm = (state_->gradientVec)->norm();
+    if ( con.isActivated() ) {
+      Teuchos::RCP<Vector<Real> > xnew = x.clone();
+      xnew->set(x);
+      xnew->axpy(-1.0,*(state_->gradientVec));
+      con.project(*xnew);
+      xnew->axpy(-1.0,x);
+      algo_state.gnorm = xnew->norm();
+    }
+    else {
+      algo_state.gnorm = (state_->gradientVec)->norm();
+    }
     algo_state.ngrad = 1;
     // Set initial step norm to something large
     algo_state.snorm = 1.e10;

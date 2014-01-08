@@ -65,6 +65,8 @@
 #include "ROL_HS5.hpp"
 #include "ROL_HS25.hpp"
 #include "ROL_HS38.hpp"
+#include "ROL_HS45.hpp"
+#include "ROL_BVP.hpp"
 
 #include "ROL_Types.hpp"
 #include "ROL_StdVector.hpp"
@@ -101,6 +103,8 @@ namespace ROL {
       case TESTOPTPROBLEM_HS5:  getHS5(obj,con,x0,x);  break;
       case TESTOPTPROBLEM_HS25: getHS25(obj,con,x0,x); break;
       case TESTOPTPROBLEM_HS38: getHS38(obj,con,x0,x); break;
+      case TESTOPTPROBLEM_HS45: getHS45(obj,con,x0,x); break;
+      case TESTOPTPROBLEM_BVP:  getBVP(obj,con,x0,x);  break;
       case TESTOPTPROBLEM_LAST: break;
     }
   }
