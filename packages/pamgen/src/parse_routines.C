@@ -224,7 +224,7 @@ Inline_Mesh_Desc * Parse_Inline_Mesh(std::string & file_name,
     }
     {
       ims->info_stream << "Inline mesh specification requested: \n";
-      Inline_Mesh_Desc::im_static_storage->info_stream << "\t" << total_el_count;
+      ims->info_stream << "\t" << total_el_count;
       //       ims->info_stream << "\t" << EnglishNumber(total_el_count);
       ims->info_stream << " Elements \n";
       ims->info_stream << "\t" << total_node_count;
