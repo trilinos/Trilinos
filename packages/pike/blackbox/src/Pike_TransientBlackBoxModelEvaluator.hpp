@@ -21,7 +21,15 @@ namespace pike {
       to set a consistent step across the physics models and then
       solve from the pike::BlackBoxModelEvaluator.
 
-      NOTE: During a time step, the solver will typically use picard iteration to converge the coupled system for the specified time step.  This means that each physics model will be solved with a call the the pike::BlackBoxModelEvaluator::solve() multiple times FOR THE SAME TIME STEP.  When the simulation is ready to move on to a new time step, each physics model is notified by a call to  acceptTimeStep().  If any of the codes failed for a specified time step, the solver can cut the time step and attempt a new solve of the coupled system.
+      NOTE: During a time step, the solver will typically use picard
+      iteration to converge the coupled system for the specified time
+      step.  This means that each physics model will be solved with a
+      call the the pike::BlackBoxModelEvaluator::solve() multiple
+      times FOR THE SAME TIME STEP.  When the simulation is converged
+      and ready to move on to a new time step, each physics model is
+      notified by a call to acceptTimeStep().  If any of the codes
+      failed for a specified time step, the solver can set a new
+      reduced time step and attempt a new solve of the coupled system.
    */
   template<typename Scalar>
   class TransientBlackBoxModelEvaluator : public pike::BlackBoxModelEvaluator {
