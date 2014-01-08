@@ -765,11 +765,10 @@ void Tpetra::Import_Util::lowCommunicationMakeColMapAndReindex(const ArrayView<c
   // Build back end, containing remote GIDs, first
   LocalOrdinal numMyCols = NumLocalColGIDs + NumRemoteColGIDs;
   Teuchos::Array<GlobalOrdinal> ColIndices;
-  GlobalOrdinal * RemoteColIndices;
+  GlobalOrdinal * RemoteColIndices=0;
   if(numMyCols > 0) {
     ColIndices.resize(numMyCols);
     if(NumLocalColGIDs!=Teuchos::as<size_t>(numMyCols)) RemoteColIndices = &ColIndices[NumLocalColGIDs]; // Points to back half of ColIndices
-    else RemoteColIndices=0;
   }
   
   for(LocalOrdinal i = 0; i < NumRemoteColGIDs; i++) 
