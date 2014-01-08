@@ -1485,10 +1485,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,LowCommunicationMakeColMapAndRein
   RCP<const MapType> Bcolmap;
   int total_err=0;
   int test_err=0;
-  //#define DEBUG
-#ifdef DEBUG
-  int MyPID = Comm->getRank();
-#endif
 
   // Build sample matrix 
   build_test_matrix_wideband<CrsMatrixType>(Comm,A);
@@ -1530,23 +1526,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,LowCommunicationMakeColMapAndRein
     if(Acolmap->getNodeNumElements()!=Bcolmap->getNodeNumElements()) test_err++;
     else {
       for(size_t i=0; i<Acolmap->getNodeNumElements(); i++)
-	if (Acolmap->getGlobalElement(i)!=Bcolmap->getGlobalElement(i)) test_err++;
+	if(Acolmap->getGlobalElement(i)!=Bcolmap->getGlobalElement(i)) test_err++;
     }
+
+    // Now test the column indices
+    if(colind.size()!=Bcolind_LID.size()) test_err++;
+    else {
+      for(size_t i=0; i<colind.size(); i++)
+	if(colind[i] != Bcolind_LID[i]) test_err++;
+    }
+
     total_err+=test_err;
   }    
-
-#ifdef DEBUG
-  // DEBUG: Print the colmaps
-  printf("[%d] Acolmap(%3d) = ",MyPID,(int)Acolmap->getNodeNumElements());
-  for(size_t i=0; i<Acolmap->getNodeNumElements(); i++)
-    printf("%3d ",(int) Acolmap->getGlobalElement(i));
-  printf("\n");
-  printf("[%d] Bcolmap(%3d) = ",MyPID,(int)Bcolmap->getNodeNumElements());
-  for(size_t i=0; i<Bcolmap->getNodeNumElements(); i++)
-    printf("%3d ",(int) Bcolmap->getGlobalElement(i));
-  printf("\n");
-#endif
-
 
   TEST_EQUALITY(total_err,0);
 }
