@@ -225,14 +225,14 @@ const bool ALLOCATE_FIELDS = true;
 typedef Field<double> SimpleField;
 
 template <bool TimeChangeParts, bool Induce, bool AllocateFields>
-HexFixture* create_hex_with_complex_parts(stk::ParallelMachine pm, int x_dim, int y_dim, int z_dim, int dim_span,
+HexFixture* create_hex_with_complex_parts(stk::ParallelMachine pm, int x_dim, int y_dim, int z_dim, int chunk_span,
                                           std::vector<PartVector>& element_parts,
                                           std::vector<std::vector<std::vector<SimpleField*> > >* fields = NULL,
                                           int num_fields_per_chunk = 1)
 {
-  ThrowRequire(x_dim % dim_span == 0);
-  ThrowRequire(y_dim % dim_span == 0);
-  ThrowRequire(z_dim % dim_span == 0);
+  ThrowRequire(x_dim % chunk_span == 0);
+  ThrowRequire(y_dim % chunk_span == 0);
+  ThrowRequire(z_dim % chunk_span == 0);
 
   // Set up mesh
   HexFixture* mesh = new HexFixture(pm, x_dim, y_dim, z_dim);
@@ -255,7 +255,7 @@ HexFixture* create_hex_with_complex_parts(stk::ParallelMachine pm, int x_dim, in
   for (int dim = 0; dim < 3; ++dim) {
     const int dim_size = dims[dim];
     const char dim_name = dim_names[dim];
-    const int dim_chunks = dim_size / dim_span;
+    const int dim_chunks = dim_size / chunk_span;
 
     if (AllocateFields) {
       (*fields)[dim].resize(dim_chunks);
@@ -283,14 +283,14 @@ HexFixture* create_hex_with_complex_parts(stk::ParallelMachine pm, int x_dim, in
     }
   }
 
-  ThrowRequire(element_parts[0].size() == static_cast<size_t>(x_dim / dim_span));
-  ThrowRequire(element_parts[1].size() == static_cast<size_t>(y_dim / dim_span));
-  ThrowRequire(element_parts[2].size() == static_cast<size_t>(z_dim / dim_span));
+  ThrowRequire(element_parts[0].size() == static_cast<size_t>(x_dim / chunk_span));
+  ThrowRequire(element_parts[1].size() == static_cast<size_t>(y_dim / chunk_span));
+  ThrowRequire(element_parts[2].size() == static_cast<size_t>(z_dim / chunk_span));
 
   if (AllocateFields) {
-    ThrowRequire((*fields)[0].size() == static_cast<size_t>(x_dim / dim_span));
-    ThrowRequire((*fields)[1].size() == static_cast<size_t>(y_dim / dim_span));
-    ThrowRequire((*fields)[2].size() == static_cast<size_t>(z_dim / dim_span));
+    ThrowRequire((*fields)[0].size() == static_cast<size_t>(x_dim / chunk_span));
+    ThrowRequire((*fields)[1].size() == static_cast<size_t>(y_dim / chunk_span));
+    ThrowRequire((*fields)[2].size() == static_cast<size_t>(z_dim / chunk_span));
   }
 
   meta.commit();
@@ -307,9 +307,9 @@ HexFixture* create_hex_with_complex_parts(stk::ParallelMachine pm, int x_dim, in
     for (int y = 0; y < y_dim; ++y) {
       for (int z = 0; z < z_dim; ++z) {
         PartVector add(3);
-        add[0] = element_parts[0][x / dim_span];
-        add[1] = element_parts[1][y / dim_span];
-        add[2] = element_parts[2][z / dim_span];
+        add[0] = element_parts[0][x / chunk_span];
+        add[1] = element_parts[1][y / chunk_span];
+        add[2] = element_parts[2][z / chunk_span];
 
         Entity elem = mesh->elem(x, y, z);
         bulk.change_entity_parts(elem, add);
@@ -334,11 +334,11 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_selector )
   const int x_dim = 10;
   const int y_dim = 10;
   const int z_dim = 10;
-  const int dim_span = 1; // max fragmentation
+  const int chunk_span = 1; // max fragmentation
 
-  std::vector<PartVector> element_parts;
+  std::vector<PartVector> element_parts; // element_parts[dim][chunk]
   HexFixture* mesh =
-    create_hex_with_complex_parts< !TIME_CHANGE_PARTS, !INDUCE_ELEMENT_PARTS, !ALLOCATE_FIELDS >(pm, x_dim, y_dim, z_dim, dim_span, element_parts);
+    create_hex_with_complex_parts< !TIME_CHANGE_PARTS, !INDUCE_ELEMENT_PARTS, !ALLOCATE_FIELDS >(pm, x_dim, y_dim, z_dim, chunk_span, element_parts);
   BulkData & bulk = mesh->m_bulk_data;
 
   const int num_iterations = 5;
@@ -385,11 +385,11 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_selector_fast )
   const int x_dim = 10;
   const int y_dim = 10;
   const int z_dim = 10;
-  const int dim_span = 1; // max fragmentation
+  const int chunk_span = 1; // max fragmentation
 
-  std::vector<PartVector> element_parts;
+  std::vector<PartVector> element_parts; // element_parts[dim][chunk]
   HexFixture* mesh =
-    create_hex_with_complex_parts< !TIME_CHANGE_PARTS, !INDUCE_ELEMENT_PARTS, !ALLOCATE_FIELDS >(pm, x_dim, y_dim, z_dim, dim_span, element_parts);
+    create_hex_with_complex_parts< !TIME_CHANGE_PARTS, !INDUCE_ELEMENT_PARTS, !ALLOCATE_FIELDS >(pm, x_dim, y_dim, z_dim, chunk_span, element_parts);
   BulkData & bulk = mesh->m_bulk_data;
 
   const int num_iterations = 5;
@@ -433,11 +433,11 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_single_part_selector )
   const int x_dim = 10;
   const int y_dim = 10;
   const int z_dim = 10;
-  const int dim_span = 1; // max fragmentation
+  const int chunk_span = 1; // max fragmentation
 
-  std::vector<PartVector> element_parts;
+  std::vector<PartVector> element_parts; // element_parts[dim][chunk]
   HexFixture* mesh =
-    create_hex_with_complex_parts< !TIME_CHANGE_PARTS, !INDUCE_ELEMENT_PARTS, !ALLOCATE_FIELDS >(pm, x_dim, y_dim, z_dim, dim_span, element_parts);
+    create_hex_with_complex_parts< !TIME_CHANGE_PARTS, !INDUCE_ELEMENT_PARTS, !ALLOCATE_FIELDS >(pm, x_dim, y_dim, z_dim, chunk_span, element_parts);
   BulkData & bulk = mesh->m_bulk_data;
 
   const int num_iterations = 5;
@@ -480,13 +480,13 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_memory)
   const int x_dim = 10;
   const int y_dim = 10;
   const int z_dim = 10;
-  const int dim_span = 1; // max fragmentation
+  const int chunk_span = 1; // max fragmentation
 
   // Set up mesh
   // This mesh uses incredible amounts of memory with part induction turned on
-  std::vector<PartVector> element_parts;
+  std::vector<PartVector> element_parts; // element_parts[dim][chunk]
   HexFixture* mesh =
-    create_hex_with_complex_parts< TIME_CHANGE_PARTS, !INDUCE_ELEMENT_PARTS, !ALLOCATE_FIELDS >(pm, x_dim, y_dim, z_dim, dim_span, element_parts);
+    create_hex_with_complex_parts< TIME_CHANGE_PARTS, !INDUCE_ELEMENT_PARTS, !ALLOCATE_FIELDS >(pm, x_dim, y_dim, z_dim, chunk_span, element_parts);
 
   PERFORMANCE_TEST_POSTAMBLE();
 
@@ -496,13 +496,13 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_memory)
 void fill_buckets_for_field_tests(BulkData const& bulk,
                                   std::vector<PartVector> const& element_parts,
                                   std::vector<std::vector<std::vector<BucketVector> > >& bucket_map,
-                                  int x_chunks, int y_chunks, int z_chunks, int dim_span)
+                                  int x_chunks, int y_chunks, int z_chunks, int chunk_span)
 {
   bucket_map.clear();
 
   bucket_map.resize(x_chunks);
 
-  const size_t nodes_per_chunk = (dim_span + 1) * (dim_span + 1) * (dim_span + 1);
+  const size_t nodes_per_chunk = (chunk_span + 1) * (chunk_span + 1) * (chunk_span + 1);
 
   for (int x = 0; x < x_chunks; ++x) {
     bucket_map[x].resize(y_chunks);
@@ -533,24 +533,24 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access)
   const int x_dim = 20;
   const int y_dim = 20;
   const int z_dim = 20;
-  const int dim_span = 5; // low fragmentation
-  const int num_fields = 3;
+  const int chunk_span = 5; // low fragmentation
+  const int num_fields_per_chunk = 3;
 
   // Set up mesh
-  std::vector<PartVector> element_parts;
+  std::vector<PartVector> element_parts; // element_parts[dim][chunk]
   std::vector<std::vector<std::vector<SimpleField*> > > fields; // fields[dim][chunk][field_offset]
   HexFixture* mesh =
-    create_hex_with_complex_parts< !TIME_CHANGE_PARTS, INDUCE_ELEMENT_PARTS, ALLOCATE_FIELDS>(pm, x_dim, y_dim, z_dim, dim_span, element_parts, &fields, num_fields);
+    create_hex_with_complex_parts< !TIME_CHANGE_PARTS, INDUCE_ELEMENT_PARTS, ALLOCATE_FIELDS>(pm, x_dim, y_dim, z_dim, chunk_span, element_parts, &fields, num_fields_per_chunk);
   BulkData & bulk = mesh->m_bulk_data;
 
-  const int x_chunks = x_dim / dim_span;
-  const int y_chunks = y_dim / dim_span;
-  const int z_chunks = z_dim / dim_span;
+  const int x_chunks = x_dim / chunk_span;
+  const int y_chunks = y_dim / chunk_span;
+  const int z_chunks = z_dim / chunk_span;
 
-  const size_t nodes_per_chunk = (dim_span + 1) * (dim_span + 1) * (dim_span + 1);
+  const size_t nodes_per_chunk = (chunk_span + 1) * (chunk_span + 1) * (chunk_span + 1);
 
-  std::vector<std::vector<std::vector<BucketVector> > > bucket_map;
-  fill_buckets_for_field_tests(bulk, element_parts, bucket_map, x_chunks, y_chunks, z_chunks, dim_span);
+  std::vector<std::vector<std::vector<BucketVector> > > bucket_map; // bucket_map[x_chunk][y_chunk][z_chunk]
+  fill_buckets_for_field_tests(bulk, element_parts, bucket_map, x_chunks, y_chunks, z_chunks, chunk_span);
 
   CALLGRIND_TOGGLE_COLLECT;
 
@@ -572,7 +572,7 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access)
             for (size_t e = 0, ee = bucket.size(); e < ee; ++e) {
               Entity node = bucket[e];
 
-              for (int f = 0; f < num_fields; ++f) {
+              for (int f = 0; f < num_fields_per_chunk; ++f) {
                 const double* x_field_data = bulk.field_data(*x_fields[f], node);
                 const double* y_field_data = bulk.field_data(*y_fields[f], node);
                 const double* z_field_data = bulk.field_data(*z_fields[f], node);
@@ -591,7 +591,7 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access)
   CALLGRIND_TOGGLE_COLLECT;
   CALLGRIND_STOP_INSTRUMENTATION;
 
-  STKUNIT_EXPECT_EQ(dummy, nodes_per_chunk * x_chunks * y_chunks * z_chunks * num_iterations * num_fields);
+  STKUNIT_EXPECT_EQ(dummy, nodes_per_chunk * x_chunks * y_chunks * z_chunks * num_iterations * num_fields_per_chunk);
 
   PERFORMANCE_TEST_POSTAMBLE();
 
@@ -605,29 +605,29 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access_sm_style)
   const int x_dim = 20;
   const int y_dim = 20;
   const int z_dim = 20;
-  const int dim_span = 5; // low fragmentation
-  const int num_fields = 3;
+  const int chunk_span = 5; // low fragmentation
+  const int num_fields_per_chunk = 3;
   const int spatial_dim = 3;
 
   // Set up mesh
-  std::vector<PartVector> element_parts;
-  std::vector<std::vector<std::vector<SimpleField*> > > fields; // fields[dim][chunk][field_offset]
+  std::vector<PartVector> element_parts; // element_parts[dim][chunk]
+  std::vector<std::vector<std::vector<SimpleField*> > > fields; // fields[dim][chunk][field_offset_within_chunk]
   HexFixture* mesh =
-    create_hex_with_complex_parts< !TIME_CHANGE_PARTS, INDUCE_ELEMENT_PARTS, ALLOCATE_FIELDS>(pm, x_dim, y_dim, z_dim, dim_span, element_parts, &fields, num_fields);
+    create_hex_with_complex_parts< !TIME_CHANGE_PARTS, INDUCE_ELEMENT_PARTS, ALLOCATE_FIELDS>(pm, x_dim, y_dim, z_dim, chunk_span, element_parts, &fields, num_fields_per_chunk);
   BulkData & bulk = mesh->m_bulk_data;
 
-  const int x_chunks = x_dim / dim_span;
-  const int y_chunks = y_dim / dim_span;
-  const int z_chunks = z_dim / dim_span;
+  const int x_chunks = x_dim / chunk_span;
+  const int y_chunks = y_dim / chunk_span;
+  const int z_chunks = z_dim / chunk_span;
 
-  const size_t nodes_per_chunk = (dim_span + 1) * (dim_span + 1) * (dim_span + 1);
+  const size_t nodes_per_chunk = (chunk_span + 1) * (chunk_span + 1) * (chunk_span + 1);
 
-  std::vector<std::vector<std::vector<BucketVector> > > bucket_map;
-  fill_buckets_for_field_tests(bulk, element_parts, bucket_map, x_chunks, y_chunks, z_chunks, dim_span);
+  std::vector<std::vector<std::vector<BucketVector> > > bucket_map; // bucket_map[x_chunk][y_chunk][z_chunk]
+  fill_buckets_for_field_tests(bulk, element_parts, bucket_map, x_chunks, y_chunks, z_chunks, chunk_span);
 
   CALLGRIND_TOGGLE_COLLECT;
 
-  std::vector<BulkData::FieldMetaDataVector const*> field_meta(num_fields * spatial_dim, NULL);
+  std::vector<BulkData::FieldMetaDataVector const*> field_meta(num_fields_per_chunk * spatial_dim, NULL);
   const int num_iterations = 100;
   size_t dummy = 0;
   for (int i = 0; i < num_iterations; ++i) {
@@ -638,7 +638,7 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access_sm_style)
         for (int z = 0; z < z_chunks; ++z) {
           std::vector<SimpleField*> const& z_fields = fields[2][z];
 
-          for (int f = 0; f < num_fields; ++f) {
+          for (int f = 0; f < num_fields_per_chunk; ++f) {
             field_meta[f * spatial_dim]     = &bulk.get_meta_data_for_nodal_field(*x_fields[f]);
             field_meta[f * spatial_dim + 1] = &bulk.get_meta_data_for_nodal_field(*y_fields[f]);
             field_meta[f * spatial_dim + 2] = &bulk.get_meta_data_for_nodal_field(*z_fields[f]);
@@ -655,7 +655,7 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access_sm_style)
 
               // We are intentionally not using the much-faster style of accessing
               // fields by bucket instead of by entity.
-              for (int f = 0; f < num_fields * spatial_dim; f += spatial_dim) {
+              for (int f = 0; f < num_fields_per_chunk * spatial_dim; f += spatial_dim) {
                 const double* x_field_data = reinterpret_cast<const double*>((*field_meta[f])[bucket_id].m_data) + index.bucket_ordinal;
                 const double* y_field_data = reinterpret_cast<const double*>((*field_meta[f+1])[bucket_id].m_data) + index.bucket_ordinal;
                 const double* z_field_data = reinterpret_cast<const double*>((*field_meta[f+2])[bucket_id].m_data) + index.bucket_ordinal;
@@ -674,7 +674,7 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access_sm_style)
   CALLGRIND_TOGGLE_COLLECT;
   CALLGRIND_STOP_INSTRUMENTATION;
 
-  STKUNIT_EXPECT_EQ(dummy, nodes_per_chunk * x_chunks * y_chunks * z_chunks * num_iterations * num_fields);
+  STKUNIT_EXPECT_EQ(dummy, nodes_per_chunk * x_chunks * y_chunks * z_chunks * num_iterations * num_fields_per_chunk);
 
   PERFORMANCE_TEST_POSTAMBLE();
 
