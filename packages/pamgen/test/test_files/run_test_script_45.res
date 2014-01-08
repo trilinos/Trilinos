@@ -1,5 +1,5 @@
 INFO Records
-	96Inline mesh specification requested: 
+Inline mesh specification requested: 
 	96 Elements 
 	171 Nodes and
  	422 Edges.
