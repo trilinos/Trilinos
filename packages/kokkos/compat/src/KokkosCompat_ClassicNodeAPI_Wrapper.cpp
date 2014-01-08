@@ -78,7 +78,7 @@ namespace Kokkos {
       if(!Kokkos::Cuda::host_mirror_device_type::is_initialized())
         Kokkos::Cuda::host_mirror_device_type::initialize(NumTeams*NumThreads);
       Kokkos::Cuda::SelectDevice select_device(Device);
-      //if(!Kokkos::Cuda::is_initialized())
+      if(!Kokkos::Cuda::is_initialized())
         Kokkos::Cuda::initialize(select_device);
     }
 #endif
