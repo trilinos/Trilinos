@@ -156,8 +156,6 @@ example (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   typedef NodeType node_type;
   typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> matrix_type;
-  typedef Tpetra::Operator<scalar_type, local_ordinal_type,
-                           global_ordinal_type, node_type> op_type;
 
   // The type of the Tpetra::Map that describes how the matrix is distributed.
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
