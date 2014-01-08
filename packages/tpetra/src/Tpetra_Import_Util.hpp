@@ -606,7 +606,7 @@ void Tpetra::Import_Util::unpackAndCombineIntoCrsArrays(const CrsMatrix<Scalar, 
     ArrayView<const Scalar> avVals;
 
     size_t curOffsetInBytes = 0;
-    for (i = 0; i < importLIDs.size(); ++i) {
+    for (i = 0; i < Teuchos::as<size_t>(importLIDs.size()); ++i) {
       const size_t rowSize = numPacketsPerLID[i] / sizeOfPacket;
       LO ToLID     = importLIDs[i];
       int StartRow = NewStartRow[ToLID];
@@ -768,7 +768,7 @@ void Tpetra::Import_Util::lowCommunicationMakeColMapAndReindex(const ArrayView<c
   GlobalOrdinal * RemoteColIndices;
   if(numMyCols > 0) {
     ColIndices.resize(numMyCols);
-    if(NumLocalColGIDs!=numMyCols) RemoteColIndices = &ColIndices[NumLocalColGIDs]; // Points to back half of ColIndices
+    if(NumLocalColGIDs!=Teuchos::as<size_t>(numMyCols)) RemoteColIndices = &ColIndices[NumLocalColGIDs]; // Points to back half of ColIndices
     else RemoteColIndices=0;
   }
   
@@ -840,7 +840,7 @@ void Tpetra::Import_Util::lowCommunicationMakeColMapAndReindex(const ArrayView<c
 	ColIndices[NumLocalAgain++] = domainGlobalElements[i];
       }
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(NumLocalAgain!=NumLocalColGIDs,std::runtime_error,"lowCommunicationMakeColMapAndReindex: Local ID count test failed.");
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(NumLocalAgain)!=NumLocalColGIDs,std::runtime_error,"lowCommunicationMakeColMapAndReindex: Local ID count test failed.");
   }
 
   // Make Column map 

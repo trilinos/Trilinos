@@ -828,7 +828,7 @@ void build_test_matrix_wideband(RCP<const Teuchos::Comm<int> > & Comm, RCP<CrsMa
       Indices[NumEntries]=GID + NumMyEquations;
       NumEntries++;
     }
-    if(GID > NumMyEquations ) { // Note: Unsigned integers are evil.
+    if(GID > Teuchos::as<GO>(NumMyEquations) ) { // Note: Unsigned integers are evil.
       Indices[NumEntries]=GID - NumMyEquations;
       NumEntries++;
     }
@@ -838,7 +838,7 @@ void build_test_matrix_wideband(RCP<const Teuchos::Comm<int> > & Comm, RCP<CrsMa
       Indices[NumEntries]=GID + 2*NumMyEquations;
       NumEntries++;
     }
-    if(GID > 2*NumMyEquations ) { // Note: Unsigned integers are evil.
+    if(GID > Teuchos::as<GO>(2*NumMyEquations) ) { // Note: Unsigned integers are evil.
       Indices[NumEntries]=GID - 2*NumMyEquations;
       NumEntries++;
     }
@@ -1478,6 +1478,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,LowCommunicationMakeColMapAndRein
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal> MapType;
   typedef Tpetra::Import<LocalOrdinal,GlobalOrdinal> ImportType;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal> CrsMatrixType;
+  typedef Teuchos_Ordinal rsize_t;
   using Teuchos::av_reinterpret_cast;
 
   RCP<CrsMatrixType> A;
@@ -1507,7 +1508,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,LowCommunicationMakeColMapAndRein
   // Build a "gid" version of colind & colind-sized pid list
   Array<GlobalOrdinal> colind_GID(colind.size());
   Array<int> colind_PID(colind.size());
-  for(size_t i=0; i<colind.size(); i++) { 
+  for(rsize_t i=0; i<colind.size(); i++) { 
     colind_GID[i] = Acolmap->getGlobalElement(colind[i]);
     colind_PID[i] = AcolmapPIDs[colind[i]];
   }
@@ -1532,7 +1533,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,LowCommunicationMakeColMapAndRein
     // Now test the column indices
     if(colind.size()!=Bcolind_LID.size()) test_err++;
     else {
-      for(size_t i=0; i<colind.size(); i++)
+      for(rsize_t i=0; i<colind.size(); i++)
 	if(colind[i] != Bcolind_LID[i]) test_err++;
     }
 
