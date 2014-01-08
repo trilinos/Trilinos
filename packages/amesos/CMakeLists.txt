@@ -67,13 +67,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_LAPACK
   "Enable LAPACK functionality."
   ON )
   
-# Add option to enable support for using MPI parallel solvers as subdomain
-# solvers in Ifpack
-TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_PARALLEL_SUBDOMAIN_SOLVERS
-  HAVE_AMESOS_PARALLEL_SUBDOMAIN_SOLVERS
-  "Enable support for MPI parallel subdomain solvers."
-  OFF )
-
 # ...
 
 #
