@@ -151,6 +151,7 @@ template <typename User> size_t removeUndesiredEdges(
 
   lno_t *offs = new lno_t [numVtx + 1];
   env->localMemoryAssertion(__FILE__, __LINE__, numVtx+1, offs);
+  for (size_t i = 0; i < numVtx+1; i++) offs[i] = 0;
   ArrayRCP<const lno_t> offArray = arcp(offs, 0, numVtx+1, true);
 
   const lno_t *allOffs = offsets.getRawPtr();
@@ -196,7 +197,7 @@ template <typename User> size_t removeUndesiredEdges(
   }
   else if (numKeep == 0){
     newGidNbors = ArrayRCP<const gid_t>(Teuchos::null);
-    newOffsets = ArrayRCP<const lno_t>(Teuchos::null);
+    newOffsets = offArray;
     return 0;
   }
 
@@ -278,11 +279,18 @@ template <typename User> size_t computeLocalEdgeList(
   bool gnosAreGids = idMap->gnosAreGids();
 
   edgeLocalIds = ArrayRCP<const lno_t>(Teuchos::null);
-  offsets = ArrayRCP<const lno_t>(Teuchos::null);
   eWeights = ArrayRCP<input_t>(Teuchos::null);
+  offsets = ArrayRCP<const lno_t>(Teuchos::null);
 
-  if (numLocalGraphEdges == 0)
+  if (numLocalGraphEdges == 0) {
+    // Set the offsets array and return
+    size_t allOffsSize = allOffs.size();
+    lno_t *offs = new lno_t [allOffsSize];
+    env->localMemoryAssertion(__FILE__, __LINE__, allOffsSize, offs);
+    for (size_t i = 0; i < allOffsSize; i++) offs[i] = 0;
+    offsets = arcp(offs, 0, allOffsSize, true);
     return 0;
+  }
 
   if (numLocalGraphEdges == numLocalEdges){
 
@@ -599,8 +607,8 @@ public:
     ArrayView<const lno_t> &offsets,
     ArrayView<input_t> &wgts){
 
-    if (localGraphEdgeLnos_.size() <
-        static_cast<typename ArrayRCP<const lno_t>::size_type>(numLocalGraphEdges_)){
+    if (localGraphEdgeOffsets_.size() == 0) {
+      // Local graph not created yet
 
       RCP<const IdentifierMap<User> > idmap = this->getIdentifierMap();
 
@@ -1076,7 +1084,8 @@ public:
     ArrayView<const lno_t> &offsets,
     ArrayView<input_t> &wgts){
 
-    if (localGraphEdgeLnos_.size() < numLocalGraphEdges_){
+    if (localGraphEdgeOffsets_.size() == 0) {
+      // Local graph not created yet
 
       RCP<const IdentifierMap<User> > idmap = this->getIdentifierMap();
 
