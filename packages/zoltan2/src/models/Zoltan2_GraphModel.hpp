@@ -793,7 +793,7 @@ template <typename User>
 
     // Compiler complained of an error if gids_.view(0, n), etc
     // was listed directly as a parameter in removeUndesiredEdges.
-    // So we have to create the ArraView before before the call.
+    // So we have to create the ArrayView before before the call.
 
     ArrayView<const gid_t> vtxView= gids_.view(0, numLocalVertices_);
     ArrayView<const gid_t> nborView= edgeGids_.view(0, numLocalEdges_);
@@ -989,8 +989,8 @@ template <typename User>
     else
       Ids = gnosConst_.view(0, nv);
 
-    xyz = vCoords_.view(0, vWeightDim_);
-    wgts = vWeights_.view(0, vCoordDim_);
+    xyz = vCoords_.view(0, vCoordDim_);
+    wgts = vWeights_.view(0, vWeightDim_);
 
     return nv;
   }
@@ -1458,8 +1458,8 @@ template <typename User>
     else
       Ids = gnosConst_.view(0, nv);
 
-    xyz = vCoords_.view(0, vWeightDim_);
-    wgts = vWeights_.view(0, vCoordDim_);
+    xyz = vCoords_.view(0, vCoordDim_);
+    wgts = vWeights_.view(0, vWeightDim_);
 
     return nv;
   }
