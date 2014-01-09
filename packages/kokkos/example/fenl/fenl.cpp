@@ -1,12 +1,12 @@
 /*
 // ************************************************************************
-// 
+//
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 */
 
@@ -63,6 +63,28 @@ Perf fenl< Kokkos::Threads , Kokkos::Example::BoxElemPart::ElemQuadratic >(
   const int use_trials ,
   const int use_atomic ,
   const int global_elems[] );
+
+
+#if defined (KOKKOS_HAVE_OPENMP)
+
+template
+Perf fenl< Kokkos::OpenMP , Kokkos::Example::BoxElemPart::ElemLinear >(
+  MPI_Comm comm ,
+  const int use_print ,
+  const int use_trials ,
+  const int use_atomic ,
+  const int global_elems[] );
+
+
+template
+Perf fenl< Kokkos::OpenMP , Kokkos::Example::BoxElemPart::ElemQuadratic >(
+  MPI_Comm comm ,
+  const int use_print ,
+  const int use_trials ,
+  const int use_atomic ,
+  const int global_elems[] );
+
+#endif
 
 
 } /* namespace FENL */
