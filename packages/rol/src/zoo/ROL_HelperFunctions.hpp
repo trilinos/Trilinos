@@ -171,6 +171,7 @@ namespace ROL {
 
     void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
       this->obj_->update(x,flag,iter);
+      this->con_->update(x,flag,iter);
     }
 
     Real value( const Vector<Real> &x, Real &tol ) {
@@ -260,6 +261,25 @@ namespace ROL {
       }
     }
 
+    void project( Vector<Real> &x ) {
+      this->con_->project(x);
+    } 
+
+    void pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x ) {
+      this->con_->pruneActive(v,g,x);
+    }
+
+    void pruneInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x ) {
+      this->con_->pruneInactive(v,g,x);
+    }
+
+    bool isFeasible( const Vector<Real> &v ) {
+      return this->con_->isFeasible();
+    }
+
+    bool isActivated(void) {
+      return this->con_->isActivated();
+    }
   }; 
 
 } // namespace ROL
