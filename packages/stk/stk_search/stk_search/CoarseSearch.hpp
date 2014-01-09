@@ -31,6 +31,8 @@ std::ostream& operator<<(std::ostream &out, SearchMethod method)
   return out;
 }
 
+// EXPERIMENTAL
+//
 // intersections returned will be those resulting from the (local) domain boxes
 // intersecting range boxes from the entire distributed set.  NEEDS TO BE CALLED
 // WITH EXPLICIT TEMPLATE ARGUMENTS.
@@ -56,6 +58,22 @@ coarse_search_nonIdentProc(
     // coarse_search_octree(domain,range,comm,intersections);
     break;
   }
+}
+
+
+// THIS MIGHT BE WHAT WE ACTUALLY WANT FOR THE INTERFACE.
+template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
+void coarse_search_nonIdentProc(
+                    std::vector<std::pair<DomainBox,DomainIdent> > const& domain,
+                    std::vector<std::pair<RangeBox, RangeIdent> >  const& range,
+                    SearchMethod                                          method,
+                    stk::ParallelMachine                                  comm,
+                    std::vector< std::pair< IdentProc<DomainIdent, unsigned int>,
+                                            IdentProc<RangeIdent, unsigned int> > > &  intersections
+                  )
+{
+  std::cerr << "Future version of coarse_search called" << std::endl;
+  abort();
 }
 
 // intersections will be those of distributed domain boxes associated with this
@@ -84,6 +102,7 @@ coarse_search( std::vector<std::pair<DomainBox,DomainIdent> > const& domain,
     break;
   }
 }
+
 
 }} // namespace stk::search
 

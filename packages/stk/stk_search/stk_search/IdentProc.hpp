@@ -15,7 +15,6 @@
 
 namespace stk { namespace search {
 
-#if 1
 template <typename Ident, typename Proc = int>
 class IdentProc
 {
@@ -56,68 +55,6 @@ public:
 private:
   std::pair<proc_type,ident_type> m_value;
 };
-#else
-template <typename Ident, typename Proc = int>
-class IdentProc
-{
-public:
-  typedef Ident ident_type;
-  typedef Proc proc_type;
-
-  typedef IdentProc<ident_type,proc_type> self_type;
-
-  IdentProc()
-    : m_proc(), m_id()
-  {}
-
-  IdentProc( ident_type const& i , proc_type const& p )
-    : m_proc(p), m_id(i)
-  {}
-
-  ident_type const& id() const {return m_id; }
-  proc_type const& proc() const {return m_proc; }
-
-  void set_id(ident_type const& x_id) { m_id = x_id; }
-  void set_proc(proc_type const& x_proc) { m_proc = x_proc; }
-
-  bool operator==(self_type const& rhs) const
-  {
-    return m_proc == rhs.m_proc && m_id == rhs.m_id;
-  }
-  bool operator!=(self_type const& rhs) const
-  {
-    return m_proc != rhs.m_proc || m_id != rhs.m_id;
-  }
-  bool operator< (self_type const& rhs) const
-  {
-    return m_proc < rhs.m_proc || (m_proc == rhs.m_proc && m_id < rhs.m_id);
-  }
-  bool operator> (self_type const& rhs) const
-  {
-    return m_proc > rhs.m_proc || (m_proc == rhs.m_proc && m_id > rhs.m_id);
-  }
-  bool operator<=(self_type const& rhs) const
-  {
-    return m_proc <= rhs.m_proc || (m_proc == rhs.m_proc && m_id <= rhs.m_id);
-  }
-  bool operator>=(self_type const& rhs) const
-  {
-    return m_proc >= rhs.m_proc || (m_proc == rhs.m_proc && m_id >= rhs.m_id);
-  }
-
-  friend std::ostream& operator<<(std::ostream& out, IdentProc<ident_type,proc_type> const& ip)
-  {
-    out << "{id:" << ip.id() << ",proc:" << ip.proc() << "}";
-    return out;
-  }
-
-private:
-  proc_type  m_proc;
-  ident_type m_id;
-  bool padding;
-};
-#endif
-
 
 template <typename Ident>
 struct get_proc
