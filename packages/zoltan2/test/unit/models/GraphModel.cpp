@@ -598,7 +598,7 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
   printTpetraGraph<lno_t, gno_t>(comm, *graph, cout, 100, 
     "Graph with non-consecutive IDs");
 
-  if (rank == 0) std::cout << "   TEST without Consecutive IDs" << std::endl;
+  if (rank == 0) std::cout << "   TEST with Round-Robin IDs" << std::endl;
   idsAreConsecutive = false;
 
   testMatrixAdapter(Mnonconsec, comm, idsAreConsecutive,
