@@ -61,7 +61,7 @@
 #  undef TPETRA_DISTRIBUTOR_TIMERS
 #endif // TPETRA_DISTRIBUTOR_TIMERS
 
-#if TPETRA_USE_KOKKOS_DISTOBJECT
+#if TPETRA_USE_KOKKOS_DISTOBJECT || defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 #include "KokkosCompat_View.hpp"
 #include "Kokkos_View.hpp"
 #endif
@@ -561,7 +561,7 @@ namespace Tpetra {
     /// instead.
     void doReverseWaits ();
 
-#if TPETRA_USE_KOKKOS_DISTOBJECT
+#if TPETRA_USE_KOKKOS_DISTOBJECT || defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 
     /// \brief Execute the (forward) communication plan.
     ///
@@ -1877,7 +1877,7 @@ namespace Tpetra {
                                   imports, numImportPacketsPerLID);
   }
 
-#if TPETRA_USE_KOKKOS_DISTOBJECT
+#if TPETRA_USE_KOKKOS_DISTOBJECT || defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 
   template <class Packet, class Layout, class Device, class Mem>
   void Distributor::
