@@ -103,9 +103,9 @@ public:
     TRsafe_ = parlist.get("Trust-Region Safeguard",               100.0);
     // CG Parameters
     if ( etr_ == TRUSTREGION_TRUNCATEDCG ) {
-      maxit_ = parlist.get("Maximum Number of CG Iterations",     20);
-      tol1_  = parlist.get("Absolute CG Tolerance",               1.e-4);
-      tol2_  = parlist.get("Relative CG Tolerance",               1.e-2);
+      maxit_ = parlist.get("Maximum Number of Krylov Iterations",     20);
+      tol1_  = parlist.get("Absolute Krylov Tolerance",               1.e-4);
+      tol2_  = parlist.get("Relative Krylov Tolerance",               1.e-2);
     }
     eps_    = TRsafe_*ROL_EPSILON;
   }

@@ -34,9 +34,6 @@
   <Parameter name="Radius Shrinking Rate (Positive rho)"              type="double" value="0.25"                    />
   <Parameter name="Radius Growing Rate"                               type="double" value="2.5"                     />
   <Parameter name="Trust-Region Safeguard"                            type="double" value="1.e4"                    />
-  <Parameter name="Absolute CG Tolerance"                             type="double" value="1.e-4"                   />
-  <Parameter name="Relative CG Tolerance"                             type="double" value="1.e-2"                   />
-  <Parameter name="Maximum Number of CG Iterations"                   type="int"    value="100"                     />
   <Parameter name="Gradient Tolerance"                                type="double" value="1.e-6"                   />
   <Parameter name="Step Tolerance"                                    type="double" value="1.e-12"                  />
   <Parameter name="Maximum Number of Iterations"                      type="int"    value="100"                     />
