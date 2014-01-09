@@ -314,7 +314,6 @@ void testMatrixAdapter(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
   TEST_FAIL_AND_EXIT(*comm, !fail, "getVertexList size", 1)
 
   // We know model stores things in same order we gave it.
-
   if (idsAreConsecutive){
     int minLocalGID = rowMap->getMinGlobalIndex();
     for (lno_t i=0; i < nLocalRows; i++){
@@ -325,11 +324,32 @@ void testMatrixAdapter(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
     }
   }
   else{  // round robin ids
-    gno_t myGid = rank;
-    for (lno_t i=0; i < nLocalRows; i++, myGid += nprocs){
-      if (vertexGids[i] != myGid){
-        fail = 1;
-        break;
+    if (consecutiveIdsRequested) {
+      gno_t myFirstRow;
+      gno_t tnLocalRows = nLocalRows;
+      scan(*comm, Teuchos::REDUCE_SUM, 1, &tnLocalRows, &myFirstRow);
+      myFirstRow -= nLocalRows;
+      for (lno_t i=0; i < nLocalRows; i++){
+        if (vertexGids[i] != myFirstRow+i){
+          std::cout << rank << " Row " << i << " of " << nLocalRows
+                    << " myFirstRow+i " << myFirstRow+i
+                    << " vertexGids " << vertexGids[i] 
+                    << std::endl;
+          fail = 1;
+          break;
+        }
+      }
+    }
+    else {
+      gno_t myGid = rank;
+      for (lno_t i=0; i < nLocalRows; i++, myGid += nprocs){
+        if (vertexGids[i] != myGid){
+          std::cout << rank << " Row " << i << " of " << nLocalRows
+                    << " myGid " << myGid << " vertexGids " << vertexGids[i] 
+                    << std::endl;
+          fail = 1;
+          break;
+        }
       }
     }
   }
