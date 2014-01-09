@@ -62,28 +62,25 @@ class Krylov {
   Real tol2_;
   int  maxit_;
   bool useInexact_;
-  bool useSecantHessVec_;
-  bool useSecantPrecond_;
 
 public:
   Krylov( EKrylov &ekv = KRYLOV_CG, Real tol1 = 1.e-4, Real tol2 = 1.e-2, 
-          int maxit = 100, bool useInexact = false, bool useSecantHessVec = false, bool useSecantPrecond = false ) 
-    : ekv_(ekv), tol1_(tol1), tol2_(tol2), maxit_(maxit), 
-      useInexact_(useInexact), useSecantHessVec_(useSecantHessVec), useSecantPrecond_(useSecantPrecond) {}
+          int maxit = 100, bool useInexact = false ) 
+    : ekv_(ekv), tol1_(tol1), tol2_(tol2), maxit_(maxit), useInexact_(useInexact) {}
 
   // Run Krylov Method
   void run( Vector<Real> &s, int &iter, int &flag, const Vector<Real> &g, const Vector<Real> &x, 
-            Objective<Real> &obj, Constraints<Real> &con, Teuchos::RCP<Secant<Real> > secant = Teuchos::null ) {
+            ProjectedObjective<Real> &pObj ) {
     switch ( this->ekv_ ) {
-      case KRYLOV_CG: this->CG(s,iter,flag,g,x,obj,con,secant); break;
-      case KRYLOV_CR: this->CG(s,iter,flag,g,x,obj,con,secant); break;
+      case KRYLOV_CG: this->CG(s,iter,flag,g,x,pObj); break;
+      case KRYLOV_CR: this->CG(s,iter,flag,g,x,pObj); break;
       case KRYLOV_LAST: break; // DO NOTHING
     }
   }
 
   // Use (inexact) CG to solve Newton system 
   void CG( Vector<Real> &s, int &iter, int &flag, const Vector<Real> &g, const Vector<Real> &x, 
-           Objective<Real> &obj, Constraints<Real> &con, Teuchos::RCP<Secant<Real> > secant = Teuchos::null ) {
+           ProjectedObjective<Real> &pObj ) {
     Real gnorm = g.norm(); 
     Real gtol = std::min(tol1_,tol2_*gnorm);
     Real itol = 0.0;
@@ -95,7 +92,7 @@ public:
 
     itol = 0.0;
     Teuchos::RCP<Vector<Real> > v = x.clone();  
-    applyReducedPrecond(*v, *gnew, g, x, con, obj, itol, secant, this->useSecantPrecond_);
+    pObj.reducedPrecond(*v, *gnew, g, x, itol);
 
     Teuchos::RCP<Vector<Real> > p = x.clone(); 
     p->set(*v); 
@@ -105,7 +102,7 @@ public:
     }
 
     Teuchos::RCP<Vector<Real> > Hp = x.clone();
-    applyReducedHessVec(*Hp, *p, g, x, con, obj, itol, secant, this->useSecantHessVec_);
+    pObj.reducedHessVec(*Hp, *p, g, x, itol);
 
     iter = 0; 
     flag = 0;
@@ -133,7 +130,7 @@ public:
       }
 
       itol = 0.0;
-      applyReducedPrecond(*v, *gnew, g, x, con, obj, itol, secant, this->useSecantPrecond_);
+      pObj.reducedPrecond(*v, *gnew, g, x, itol);
       tmp  = gv;         
       gv   = v->dot(*gnew); 
       beta = gv/tmp;
@@ -144,7 +141,7 @@ public:
       if ( this->useInexact_ ) {
         itol = gtol/(this->maxit_ * gnorm); 
       }
-      applyReducedHessVec(*Hp, *p, g, x, con, obj, itol, secant, this->useSecantHessVec_);
+      pObj.reducedHessVec(*Hp, *p, g, x, itol);
     }
     iter++;
     if ( iter == this->maxit_ ) {
@@ -154,7 +151,7 @@ public:
 
   // Use (inexact) CR to solve Newton system 
   void CR( Vector<Real> &s, int &iter, int &flag, const Vector<Real> &g, const Vector<Real> &x, 
-           Objective<Real> &obj, Constraints<Real> &con, Teuchos::RCP<Secant<Real> > secant = Teuchos::null ) {
+           ProjectedObjective<Real> &pObj ) {
     // Initialize
     Real gnorm = g.norm(); 
     Real gtol = std::min(tol1_,tol2_*gnorm);
@@ -164,7 +161,7 @@ public:
     // Apply preconditioner to residual
     itol = 0.0;
     Teuchos::RCP<Vector<Real> > v = x.clone();  
-    applyReducedPrecond(*v, g, g, x, con, obj, itol, secant, this->useSecantPrecond_);
+    pObj.reducedPrecond(*v, g, g, x, itol);
 
     // Initialize direction p
     Teuchos::RCP<Vector<Real> > p = x.clone(); 
@@ -177,12 +174,12 @@ public:
 
     // Apply Hessian to residual
     Teuchos::RCP<Vector<Real> > Hv  = x.clone();
-    applyReducedHessVec(*Hv, *v, g, x, con, obj, itol, secant, this->useSecantHessVec_);
+    pObj.reducedHessVec(*Hv, *v, g, x, itol);
 
     // Apply Hessian to direction p
     Teuchos::RCP<Vector<Real> > Hp  = x.clone();
     Teuchos::RCP<Vector<Real> > MHp = x.clone();  
-    applyReducedHessVec(*Hp, *p, g, x, con, obj, itol, secant, this->useSecantHessVec_);
+    pObj.reducedHessVec(*Hp, *p, g, x, itol);
 
     // Initialize scalar quantities
     iter = 0; 
@@ -195,7 +192,7 @@ public:
 
     for (iter = 0; iter < this->maxit_; iter++) {
       itol = 0.0;
-      applyReducedPrecond(*MHp, *Hp, g, x, con, obj, itol, secant, this->useSecantPrecond_);
+      pObj.reducedPrecond(*MHp, *Hp, g, x, itol);
       kappa = Hp->dot(*MHp);
       if ( vHv <= 0.0 || kappa <= 0.0 ) { 
         flag = 2;
@@ -214,7 +211,7 @@ public:
       if ( this->useInexact_ ) {
         itol = gtol/(this->maxit_ * gnorm); 
       }
-      applyReducedHessVec(*Hv, *v, g, x, con, obj, itol, secant, this->useSecantHessVec_);
+      pObj.reducedHessVec(*Hv, *v, g, x, itol);
       tmp  = vHv;
       vHv  = Hv->dot(*v);
       beta = vHv/tmp;

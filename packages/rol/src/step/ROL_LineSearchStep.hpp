@@ -121,7 +121,7 @@ public:
       Real CGtol1 = parlist.get("Absolute Krylov Tolerance", 1.e-4);
       Real CGtol2 = parlist.get("Relative Krylov Tolerance", 1.e-2);
       int maxitCG = parlist.get("Maximum Number of Krylov Iterations", 20);
-      krylov_ = Teuchos::rcp( new Krylov<Real>(ekv_,CGtol1,CGtol2,maxitCG,useInexact_[2],useSecantHessVec_,useSecantPrecond_) );
+      krylov_ = Teuchos::rcp( new Krylov<Real>(ekv_,CGtol1,CGtol2,maxitCG,useInexact_[2]) );
       iterKrylov_ = 0;
       flagKrylov_ = 0;
     }
@@ -132,6 +132,9 @@ public:
       int L      = parlist.get("Maximum Secant Storage",10);
       int BBtype = parlist.get("Barzilai-Borwein Type",1);
       secant_ = getSecant<Real>(esec_,L,BBtype);
+    }
+    if ( edesc_ == DESCENT_SECANT ) {
+      useSecantHessVec_ = true;
     }
 
     // Initialize Nonlinear CG Object
@@ -156,7 +159,7 @@ public:
     useInexact_.push_back(parlist.get("Use Inexact Objective Function", false));
     useInexact_.push_back(parlist.get("Use Inexact Gradient", false));
     useInexact_.push_back(parlist.get("Use Inexact Hessian-Times-A-Vector", false));
-     
+
     // Initialize Linesearch Object
     lineSearch_ = Teuchos::rcp( new LineSearch<Real>(parlist) );
 
@@ -168,11 +171,16 @@ public:
       Real CGtol1 = parlist.get("Absolute Krylov Tolerance", 1.e-4);
       Real CGtol2 = parlist.get("Relative Krylov Tolerance", 1.e-2);
       int maxitCG = parlist.get("Maximum Number of Krylov Iterations", 20);
-      krylov_ = Teuchos::rcp( new Krylov<Real>(ekv_,CGtol1,CGtol2,maxitCG,useInexact_[2],useSecantHessVec_,useSecantPrecond_) );
+      krylov_ = Teuchos::rcp( new Krylov<Real>(ekv_,CGtol1,CGtol2,maxitCG,useInexact_[2]) );
       iterKrylov_ = 0;
       flagKrylov_ = 0;
     }
 
+    // Secant Information
+    if ( edesc_ == DESCENT_SECANT ) {
+      useSecantHessVec_ = true;
+    }
+     
     // Initialize Nonlinear CG Object
     nlcg_ = Teuchos::null;
     if ( edesc_ == DESCENT_NONLINEARCG ) {
@@ -184,27 +192,22 @@ public:
   */
   void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, Constraints<Real> &con, 
                 AlgorithmState<Real> &algo_state ) {
+    ProjectedObjective<Real> pObj(obj,con,*this->secant_,this->useSecantPrecond_,this->useSecantHessVec_);
+
     // Compute step s
     if ( this->edesc_ == DESCENT_NEWTONKRYLOV ) {
       this->flagKrylov_ = 0;
-      this->krylov_->run(s,this->iterKrylov_,this->flagKrylov_,
-                         *(Step<Real>::state_->gradientVec),x,obj,con,this->secant_);
+      this->krylov_->run(s,this->iterKrylov_,this->flagKrylov_,*(Step<Real>::state_->gradientVec),x,pObj);
     }
-    else if ( this->edesc_ == DESCENT_NEWTON ) {
+    else if ( this->edesc_ == DESCENT_NEWTON || this->edesc_ == DESCENT_SECANT ) {
       Real tol = std::sqrt(ROL_EPSILON);
-      applyReducedInvHessVec(s,*(Step<Real>::state_->gradientVec),*(Step<Real>::state_->gradientVec),x, 
-                             con,obj,tol,this->secant_,this->useSecantHessVec_);
-    }
-    else if ( this->edesc_ == DESCENT_SECANT ) {
-      Real tol = std::sqrt(ROL_EPSILON);
-      applyReducedInvHessVec(s,*(Step<Real>::state_->gradientVec),*(Step<Real>::state_->gradientVec),x, 
-                             con,obj,tol,this->secant_,true);
+      pObj.reducedInvHessVec(s,*(Step<Real>::state_->gradientVec),*(Step<Real>::state_->gradientVec),x,tol);
     }
     else if ( this->edesc_ == DESCENT_NONLINEARCG ) {
       this->nlcg_->run(s,*(Step<Real>::state_->gradientVec),x,obj);
     }
 
-    // Check if s is a descent direction
+    // Check if s is a descent direction i.e., g.dot(s) < 0
     Real gs = 0.0;
     if ( con.isActivated() ) {
       Teuchos::RCP<Vector<Real> > d = x.clone();
@@ -215,7 +218,7 @@ public:
     else {
       gs = -(Step<Real>::state_->gradientVec)->dot(s);
     }
-    if ( gs > 0.0 || this->flagKrylov_ == 2 || this->edesc_ == DESCENT_STEEPEST ) {
+    if ( gs >= 0.0 || this->flagKrylov_ == 2 || this->edesc_ == DESCENT_STEEPEST ) {
       s.set(*(Step<Real>::state_->gradientVec));
       if ( con.isActivated() ) {
         Teuchos::RCP<Vector<Real> > d = x.clone();

@@ -151,7 +151,7 @@ namespace ROL {
 
 
   template<class Real> 
-  class projectedObjective {
+  class ProjectedObjective {
   private:
     Teuchos::RCP<Objective<Real> >   obj_;
     Teuchos::RCP<Constraints<Real> > con_;
@@ -160,7 +160,7 @@ namespace ROL {
     bool useSecantHessVec_;
 
   public:
-    projectedObjective( Objective<Real> &obj, Constraints<Real> &con, Secant<Real> &secant, 
+    ProjectedObjective( Objective<Real> &obj, Constraints<Real> &con, Secant<Real> &secant, 
                         bool useSecantPrecond = false, bool useSecantHessVec = false ) {
       obj_              = Teuchos::rcp(&obj,    false);
       con_              = Teuchos::rcp(&con,    false);
@@ -191,7 +191,7 @@ namespace ROL {
         this->secant_->applyB( Hv, v, x );
       }
       else {
-        this->obj->hessVec( Hv, v, x, tol );
+        this->obj_->hessVec( Hv, v, x, tol );
       }
     }
 
@@ -277,7 +277,7 @@ namespace ROL {
       return this->con_->isFeasible();
     }
 
-    bool isActivated(void) {
+    bool isConActivated(void) {
       return this->con_->isActivated();
     }
   }; 
