@@ -448,9 +448,9 @@ public:
 
     if ( is_insertable_map && 0u < m_capacity && ! m_scalars().erasable ) {
 
-      const size_type hash_index = m_hasher(k) % m_hash_lists.size();
+      const size_type hash_value = m_hasher(k);
 
-      volatile size_type * curr_ptr = &m_hash_lists[hash_index];
+      volatile size_type * curr_ptr = &m_hash_lists[ hash_value % m_hash_lists.size() ];
 
       size_type curr  = *curr_ptr;
       size_type new_index = invalid_index;
@@ -477,9 +477,11 @@ public:
         // Key is not currently in the map, try to insert key
 
         if ( new_index == invalid_index ) {
-          // First try to insert new key, claim an unused entry.
+          // First attempt to insert new key, claim an unused entry.
+          // Use the hash_value to spread out the selection
+          // of a starting block for the claim.
 
-          new_index = claim_index( hash_index % m_available_indexes.size() );
+          new_index = claim_index( hash_value % m_available_indexes.size() );
 
           if ( new_index == invalid_index ) { // unable to claim an entry
             break ;
