@@ -75,6 +75,7 @@ reduceAll<int,int>(comm, Teuchos::REDUCE_SUM, 1, &lval, &gval);\
 if (gval){ \
   if ((comm).getRank() == 0){\
     std::cerr << "Error: " << s << std::endl;\
+    std::cout << "Error: " << s << std::endl;\
     std::cout << "FAIL" << std::endl;\
   } \
   exit(code);\
@@ -87,6 +88,7 @@ reduceAll<int,int>(comm, Teuchos::REDUCE_SUM, 1, &lval, &gval);\
 if (gval){ \
   if ((comm).getRank() == 0){\
     std::cerr << "Error: " << s << std::endl;\
+    std::cout << "Error: " << s << std::endl;\
     std::cout << "FAIL" << std::endl;\
   } \
   return; \
@@ -99,6 +101,7 @@ reduceAll<int,int>(comm, Teuchos::REDUCE_SUM, 1, &lval, &gval);\
 if (gval){ \
   if ((comm).getRank() == 0){\
     std::cerr << "Error: " << s << std::endl;\
+    std::cout << "Error: " << s << std::endl;\
     std::cout << "FAIL" << std::endl;\
   } \
   return (rc); \
@@ -115,6 +118,7 @@ if ((!ok)){ \
 #define TEST_FAIL_AND_EXIT(comm, ok, s, code) \
 if (!(ok)){ \
   std::cerr << "Error: " << s << std::endl;\
+  std::cout << "Error: " << s << std::endl;\
   std::cout << "FAIL" << std::endl;\
   exit(code);\
 } 
@@ -122,6 +126,7 @@ if (!(ok)){ \
 #define TEST_FAIL_AND_RETURN(comm, ok, s) \
 if (!(ok)){ \
   std::cerr << "Error: " << s << std::endl;\
+  std::cout << "Error: " << s << std::endl;\
   std::cout << "FAIL" << std::endl;\
   return;\
 } 
@@ -129,6 +134,7 @@ if (!(ok)){ \
 #define TEST_FAIL_AND_RETURN_VALUE(comm, ok, s, rc) \
 if (!(ok)){ \
   std::cerr << "Error: " << s << std::endl;\
+  std::cout << "Error: " << s << std::endl;\
   std::cout << "FAIL" << std::endl;\
   return (rc);\
 } 
