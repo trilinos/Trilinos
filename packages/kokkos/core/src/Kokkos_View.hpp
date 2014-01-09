@@ -571,7 +571,7 @@ public:
                                 sizeof(scalar_type) ,
                                 Impl::capacity( m_shape , m_stride ) );
 
-      Impl::ViewFill< View > init( *this , typename traits::value_type() );
+      (void) Impl::ViewFill< View >( *this , typename traits::scalar_type() );
     }
 
   template< class LabelType >

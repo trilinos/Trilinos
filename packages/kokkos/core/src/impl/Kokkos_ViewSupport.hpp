@@ -390,6 +390,7 @@ struct ViewFill
     : output( arg_out ), input( arg_in )
     {
       parallel_for( output.dimension_0() , *this );
+      device_type::fence();
     }
 
   KOKKOS_INLINE_FUNCTION
