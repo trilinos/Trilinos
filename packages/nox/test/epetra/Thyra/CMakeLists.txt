@@ -77,4 +77,12 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND
     SOURCES  ${UNIT_TEST_DRIVER} ModelEvaluator1DFEM.hpp ModelEvaluator1DFEM_def.hpp Thyra_1DFEM.C
     )
   
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Thyra_Rosenbrock_UserLimitingLineSearch
+    SOURCES ${UNIT_TEST_DRIVER}  ModelEvaluatorRosenbrock.hpp ModelEvaluatorRosenbrock.cpp
+    Thyra_Rosenbrock_UserLimitingLineSearch.cpp
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "Test passed!"
+    )
+  
 ENDIF()

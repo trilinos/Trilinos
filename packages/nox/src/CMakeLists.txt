@@ -57,6 +57,7 @@ APPEND_SET(HEADERS
   NOX_LineSearch_MoreThuente.H
   NOX_LineSearch_NonlinearCG.H
   NOX_LineSearch_Polynomial.H 
+  NOX_LineSearch_UserLimiting.H 
 )
 APPEND_SET(SOURCES
   NOX_LineSearch_Factory.C
@@ -68,6 +69,7 @@ APPEND_SET(SOURCES
   NOX_LineSearch_MoreThuente.C
   NOX_LineSearch_NonlinearCG.C
   NOX_LineSearch_Polynomial.C 
+  NOX_LineSearch_UserLimiting.C 
 )
 
 # Direction
