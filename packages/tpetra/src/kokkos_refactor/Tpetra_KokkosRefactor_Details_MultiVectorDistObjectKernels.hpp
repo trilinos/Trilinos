@@ -52,9 +52,7 @@
 #include "Kokkos_View.hpp"
 #include "Kokkos_Parallel.hpp"
 #include "Kokkos_Atomic.hpp"
-
-#include "Teuchos_ScalarTraits.hpp"
-#include "Teuchos_ScalarTraitsCUDA.hpp"
+#include "Kokkos_ArithTraits.hpp"
 
 namespace Tpetra {
 namespace KokkosRefactor {
@@ -203,31 +201,28 @@ namespace Details {
   struct InsertOp {
     KOKKOS_INLINE_FUNCTION
     void operator() (Scalar& dest, const Scalar& src) const {
-      //dest = src;
-      Kokkos::atomic_exchange(&dest, src);
+      Kokkos::atomic_assign(&dest, src);
     }
   };
   template <typename Scalar>
   struct AddOp {
     KOKKOS_INLINE_FUNCTION
     void operator() (Scalar& dest, const Scalar& src) const {
-      //dest += src;
-      Kokkos::atomic_fetch_add(&dest, src);
+      Kokkos::atomic_add(&dest, src);
     }
   };
   template <typename Scalar>
   struct AbsMaxOp {
+    // ETP:  Is this really what we want?  This seems very odd if
+    // Scalar != SCT::mag_type (e.g., Scalar == std::complex<T>)
+    template <typename T>
     KOKKOS_INLINE_FUNCTION
-    Scalar max(const Scalar& a, const Scalar& b) const {
-      return a > b ? a : b ;
-    }
+    T max(const T& a, const T& b) const { return a > b ? a : b; }
 
     KOKKOS_INLINE_FUNCTION
     void operator() (Scalar& dest, const Scalar& src) const {
-      typedef Teuchos::ScalarTraits<Scalar> SCT;
-      //dest = max( SCT::magnitude(dest), SCT::magnitude(src) );
-      Kokkos::atomic_exchange(
-        &dest, max( SCT::magnitude(dest), SCT::magnitude(src) ) );
+      typedef Kokkos::Details::ArithTraits<Scalar> SCT;
+      Kokkos::atomic_assign(&dest, Scalar(max(SCT::abs(dest),SCT::abs(src))));
     }
   };
 
