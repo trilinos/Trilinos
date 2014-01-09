@@ -150,6 +150,118 @@ namespace ROL {
   }
 
 
+  template<class Real> 
+  class projectedObjective {
+  private:
+    Teuchos::RCP<Objective<Real> >   obj_;
+    Teuchos::RCP<Constraints<Real> > con_;
+    Teuchos::RCP<Secant<Real> >      secant_;
+    bool useSecantPrecond_;
+    bool useSecantHessVec_;
+
+  public:
+    projectedObjective( Objective<Real> &obj, Constraints<Real> &con, Secant<Real> &secant, 
+                        bool useSecantPrecond = false, bool useSecantHessVec = false ) {
+      obj_              = Teuchos::rcp(&obj,    false);
+      con_              = Teuchos::rcp(&con,    false);
+      secant_           = Teuchos::rcp(&secant, false);
+      useSecantPrecond_ = useSecantPrecond;
+      useSecantHessVec_ = useSecantHessVec;
+    }
+
+    void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
+      this->obj_->update(x,flag,iter);
+    }
+
+    Real value( const Vector<Real> &x, Real &tol ) {
+      return this->obj_->value(x,tol);
+    }
+
+    void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
+      this->obj_->gradient(g,x,tol);
+    }
+
+    Real dirDeriv( const Vector<Real> &x, const Vector<Real> &d, Real &tol ) {
+      return this->obj_->dirDeriv(x,d,tol);
+    }
+
+    void hessVec( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
+      if ( this->useSecantHessVec_ ) {
+        this->secant_->applyB( Hv, v, x );
+      }
+      else {
+        this->obj->hessVec( Hv, v, x, tol );
+      }
+    }
+
+    void reducedHessVec( Vector<Real> &Hp, const Vector<Real> &p, const Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
+      if ( this->con_->isActivated() ) {
+        Teuchos::RCP<Vector<Real> > pnew = x.clone();
+        pnew->set(p);
+        this->con_->pruneActive(*pnew,g,x);
+        this->hessVec(Hp,*pnew,x,tol);
+        this->con_->pruneActive(Hp,g,x);
+        pnew->set(p);
+        this->con_->pruneInactive(*pnew,g,x);
+        Hp.plus(*pnew);
+      }
+      else {
+        this->hessVec(Hp,p,x,tol);
+      }
+    }
+ 
+    void invHessVec( Vector<Real> &Hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) { 
+      if ( this->useSecantHessVec_ ) {
+        this->secant_->applyH(Hv,v,x);
+      }
+      else {
+        this->obj_->invHessVec(Hv,v,x,tol);
+      }
+    }
+
+    void reducedInvHessVec( Vector<Real> &Hp, const Vector<Real> &p, const Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
+      if ( this->con_->isActivated() ) {
+        Teuchos::RCP<Vector<Real> > pnew = x.clone();
+        pnew->set(p);
+        this->con_->pruneActive(*pnew,g,x);
+        this->invHessVec(Hp,*pnew,x,tol);
+        this->con_->pruneActive(Hp,g,x);
+        pnew->set(p);
+        this->con_->pruneInactive(*pnew,g,x);
+        Hp.plus(*pnew);
+      }
+      else {
+        this->invHessVec(Hp,p,x,tol);
+      }
+    }
+
+    void precond( Vector<Real> &Mv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
+      if ( this->useSecantPrecond_ ) {
+        this->secant_->applyH( Mv, v, x );
+      }
+      else {
+        this->obj_->precond( Mv, v, x );
+      }
+    }
+
+    void reducedPrecond( Vector<Real> &Mv, const Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
+      if ( this->con_->isActivated() ) {
+        Teuchos::RCP<Vector<Real> > vnew = x.clone();
+        vnew->set(v);
+        this->con_->pruneActive(*vnew,g,x);
+        this->precond(Mv,*vnew,x,tol);
+        this->con_->pruneActive(Mv,g,x);
+        vnew->set(v);
+        this->con_->pruneInactive(*vnew,g,x);
+        Mv.plus(*vnew);
+      }
+      else {
+        this->precond(Mv,v,x,tol);
+      }
+    }
+
+  }; 
+
 } // namespace ROL
 
 #endif 
