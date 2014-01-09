@@ -4330,7 +4330,7 @@ namespace Tpetra {
     using Teuchos::av_reinterpret_cast;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    typedef typename ArrayView<const LO>::size_type size_type;
+    //    typedef typename ArrayView<const LO>::size_type size_type;
     const char tfecfFuncName[] = "packAndPrepare";
 
     // Attempt to cast the source object to RowMatrix.  If the cast

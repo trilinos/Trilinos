@@ -120,9 +120,9 @@ template<class CrsMatrixType>
 bool
 compareCrsMatrixMaps (const CrsMatrixType& A_orig, const CrsMatrixType& A, Teuchos::FancyOStream& out)
 {
-  typedef typename CrsMatrixType::scalar_type ST;
-  typedef typename CrsMatrixType::global_ordinal_type GO;
-  typedef typename ArrayView<const GO>::size_type size_type;
+  //  typedef typename CrsMatrixType::scalar_type ST;
+  //  typedef typename CrsMatrixType::global_ordinal_type GO;
+  //  typedef typename ArrayView<const GO>::size_type size_type;
 
   Teuchos::OSTab tab (out);
 

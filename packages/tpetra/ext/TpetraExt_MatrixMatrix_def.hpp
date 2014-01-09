@@ -410,12 +410,12 @@ void Add(
   using Teuchos::rcpFromRef;
   using Teuchos::tuple;
   using std::endl;
-  typedef typename ArrayView<const Scalar>::size_type size_type;
+  //  typedef typename ArrayView<const Scalar>::size_type size_type;
   typedef Teuchos::ScalarTraits<Scalar> STS;
   typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
-  typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
-  typedef RowGraph<LocalOrdinal, GlobalOrdinal, Node> row_graph_type;
-  typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node, SpMatOps> crs_graph_type;
+  //  typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
+  //  typedef RowGraph<LocalOrdinal, GlobalOrdinal, Node> row_graph_type;
+  //  typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node, SpMatOps> crs_graph_type;
   typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> crs_matrix_type;
   typedef RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> transposer_type;
 

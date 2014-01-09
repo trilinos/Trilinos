@@ -1884,7 +1884,6 @@ namespace Tpetra {
                       const ArrayView<const LocalOrdinal> &indices)
   {
     using Teuchos::ArrayView;
-    typedef LocalOrdinal LO;
     const char tfecfFuncName[] = "insertLocalIndices";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -1915,6 +1914,7 @@ namespace Tpetra {
       using Teuchos::Array;
       using Teuchos::toString;
       using std::endl;
+      typedef LocalOrdinal LO;
       typedef typename ArrayView<const LO>::size_type size_type;
 
       const map_type& colMap = * (getColMap ());

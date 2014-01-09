@@ -55,13 +55,16 @@
 
 namespace Zoltan2 {
 
-/*! \brief The class containing ordering solutions and metrics.
+/*! \brief The class containing ordering solutions.
 
     Template parameters:
     \li \c gid_t    data type for application global Ids
     \li \c lno_t    data type for local indices and local counts
 
-   \todo documentation
+The ordering solution always contains the permutation and the inverse permutation. These should be accessed through the accessor methods defined in this class, such as getPermutation(). Some ordering algorithms may compute and store other information. Currently, only serial ordering of the local data is supported.
+
+In Zoltan2, perm[i] is where the old index i should be placed in the new (reordered) vector/matrix. This is consistent with Matlab where A(perm,perm) is the reordered matrix. Unfortunately, this notation may conflict with some other packages (such as Ifpack2). 
+
 */
 
 template <typename gid_t, typename lno_t>

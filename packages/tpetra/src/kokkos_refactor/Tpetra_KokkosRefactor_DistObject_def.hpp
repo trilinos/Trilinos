@@ -39,8 +39,8 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef TPETRA_DISTOBJECT_DEF_HPP
-#define TPETRA_DISTOBJECT_DEF_HPP
+#ifndef TPETRA_KOKKOS_REFACTOR_DISTOBJECT_DEF_HPP
+#define TPETRA_KOKKOS_REFACTOR_DISTOBJECT_DEF_HPP
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Map.hpp"
@@ -52,10 +52,9 @@
 #  include "Tpetra_DistObject_decl.hpp"
 #endif // DOXYGEN_USE_ONLY
 
-
 namespace Tpetra {
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
   DistObject (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map)
     : map_ (map)
   {
@@ -106,19 +105,19 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
   DistObject (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& rhs)
     : map_ (rhs.map_)
   {}
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::~DistObject()
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::~DistObject()
   {}
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
   std::string
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::description () const
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::description () const
   {
     using Teuchos::TypeNameTraits;
 
@@ -132,9 +131,9 @@ namespace Tpetra {
     return os.str ();
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
   describe (Teuchos::FancyOStream &out,
             const Teuchos::EVerbosityLevel verbLevel) const
   {
@@ -154,15 +153,16 @@ namespace Tpetra {
     }
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
   void
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
   removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
       "Tpetra::DistObject::removeEmptyProcessesInPlace: Not implemented");
   }
 
+  /* These are provided in base DistObject template
   template<class DistObjectType>
   void
   removeEmptyProcessesInPlace (Teuchos::RCP<DistObjectType>& input,
@@ -189,10 +189,11 @@ namespace Tpetra {
     RCP<const map_type> newMap = input->getMap ()->removeEmptyProcesses ();
     removeEmptyProcessesInPlace<DistObjectType> (input, newMap);
   }
+  */
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
   doImport (const SrcDistObject& source,
             const Import<LocalOrdinal,GlobalOrdinal,Node>& importer,
             CombineMode CM)
@@ -222,9 +223,9 @@ namespace Tpetra {
                       DoForward);
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
   doExport (const SrcDistObject& source,
             const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter,
             CombineMode CM)
@@ -254,9 +255,9 @@ namespace Tpetra {
                 exportLIDs, exporter.getDistributor (), DoForward);
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
   doImport (const SrcDistObject& source,
             const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter,
             CombineMode CM)
@@ -287,9 +288,9 @@ namespace Tpetra {
                 exportLIDs, exporter.getDistributor (), DoReverse);
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
   doExport (const SrcDistObject& source,
             const Import<LocalOrdinal,GlobalOrdinal,Node> & importer,
             CombineMode CM)
@@ -320,23 +321,44 @@ namespace Tpetra {
                 exportLIDs, importer.getDistributor (), DoReverse);
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
   bool
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::isDistributed() const {
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::isDistributed() const {
     return map_->isDistributed ();
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
   size_t
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
   constantNumberOfPackets () const {
     return 0; // default implementation; subclasses may override
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
   doTransfer (const SrcDistObject& src,
+              CombineMode CM,
+              size_t numSameIDs,
+              const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs_,
+              const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs_,
+              const Teuchos::ArrayView<const LocalOrdinal>& remoteLIDs_,
+              const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs_,
+              Distributor &distor,
+              ReverseOption revOp)
+  {
+    if (this->useNewInterface()) {
+      doTransferNew(src, CM, numSameIDs, permuteToLIDs_, permuteFromLIDs_, remoteLIDs_, exportLIDs_, distor, revOp);
+    }
+    else {
+      doTransferOld(src, CM, numSameIDs, permuteToLIDs_, permuteFromLIDs_, remoteLIDs_, exportLIDs_, distor, revOp);
+    }
+  }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
+  void
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
+  doTransferOld (const SrcDistObject& src,
               CombineMode CM,
               size_t numSameIDs,
               const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
@@ -426,8 +448,8 @@ namespace Tpetra {
     // existing values. That means we don't need to communicate.
     if (CM != ZERO) {
       if (constantNumPackets == 0) {
-        numExportPacketsPerLID_.resize (exportLIDs.size ());
-        numImportPacketsPerLID_.resize (remoteLIDs.size ());
+        numExportPacketsPerLID_old_.resize (exportLIDs.size ());
+        numImportPacketsPerLID_old_.resize (remoteLIDs.size ());
       }
 
       {
@@ -439,7 +461,7 @@ namespace Tpetra {
         // an output argument).  If there are, constantNumPackets will
         // come back nonzero.  Otherwise, the source will fill the
         // numExportPacketsPerLID_ array.
-        packAndPrepare (src, exportLIDs, exports_, numExportPacketsPerLID_ (),
+        packAndPrepare (src, exportLIDs, exports_old_, numExportPacketsPerLID_old_ (),
                         constantNumPackets, distor);
       }
     }
@@ -460,8 +482,8 @@ namespace Tpetra {
         // elements) how many incoming elements we expect, so we can
         // resize the buffer accordingly.
         const size_t rbufLen = remoteLIDs.size() * constantNumPackets;
-        if (as<size_t> (imports_.size()) != rbufLen) {
-          imports_.resize (rbufLen);
+        if (as<size_t> (imports_old_.size()) != rbufLen) {
+          imports_old_.resize (rbufLen);
         }
       }
 
@@ -488,23 +510,23 @@ namespace Tpetra {
           Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
           if (constantNumPackets == 0) { //variable num-packets-per-LID:
-            distor.doReversePostsAndWaits (numExportPacketsPerLID_().getConst(),
+            distor.doReversePostsAndWaits (numExportPacketsPerLID_old_().getConst(),
                                            1,
-                                           numImportPacketsPerLID_());
+                                           numImportPacketsPerLID_old_());
             size_t totalImportPackets = 0;
-            for (Array_size_type i = 0; i < numImportPacketsPerLID_.size(); ++i) {
-              totalImportPackets += numImportPacketsPerLID_[i];
+            for (Array_size_type i = 0; i < numImportPacketsPerLID_old_.size(); ++i) {
+              totalImportPackets += numImportPacketsPerLID_old_[i];
             }
-            imports_.resize(totalImportPackets);
-            distor.doReversePostsAndWaits (exports_().getConst(),
-                                           numExportPacketsPerLID_(),
-                                           imports_(),
-                                           numImportPacketsPerLID_());
+            imports_old_.resize(totalImportPackets);
+            distor.doReversePostsAndWaits (exports_old_().getConst(),
+                                           numExportPacketsPerLID_old_(),
+                                           imports_old_(),
+                                           numImportPacketsPerLID_old_());
           }
           else {
-            distor.doReversePostsAndWaits (exports_ ().getConst (),
+            distor.doReversePostsAndWaits (exports_old_ ().getConst (),
                                            constantNumPackets,
-                                           imports_ ());
+                                           imports_old_ ());
           }
         }
         else { // revOp == DoForward
@@ -512,29 +534,29 @@ namespace Tpetra {
           Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
           if (constantNumPackets == 0) { //variable num-packets-per-LID:
-            distor.doPostsAndWaits (numExportPacketsPerLID_().getConst(), 1,
-                                    numImportPacketsPerLID_());
+            distor.doPostsAndWaits (numExportPacketsPerLID_old_().getConst(), 1,
+                                    numImportPacketsPerLID_old_());
             size_t totalImportPackets = 0;
-            for (Array_size_type i = 0; i < numImportPacketsPerLID_.size(); ++i) {
-              totalImportPackets += numImportPacketsPerLID_[i];
+            for (Array_size_type i = 0; i < numImportPacketsPerLID_old_.size(); ++i) {
+              totalImportPackets += numImportPacketsPerLID_old_[i];
             }
-            imports_.resize(totalImportPackets);
-            distor.doPostsAndWaits (exports_().getConst(),
-                                    numExportPacketsPerLID_(),
-                                    imports_(),
-                                    numImportPacketsPerLID_());
+            imports_old_.resize(totalImportPackets);
+            distor.doPostsAndWaits (exports_old_().getConst(),
+                                    numExportPacketsPerLID_old_(),
+                                    imports_old_(),
+                                    numImportPacketsPerLID_old_());
           }
           else {
-            distor.doPostsAndWaits (exports_ ().getConst (),
+            distor.doPostsAndWaits (exports_old_ ().getConst (),
                                     constantNumPackets,
-                                    imports_ ());
+                                    imports_old_ ());
           }
         }
         {
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
           Teuchos::TimeMonitor unpackAndCombineMon (*unpackAndCombineTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
-          unpackAndCombine (remoteLIDs, imports_(), numImportPacketsPerLID_(),
+          unpackAndCombine (remoteLIDs, imports_old_(), numImportPacketsPerLID_old_(),
                             constantNumPackets, distor, CM);
         }
       }
@@ -543,9 +565,246 @@ namespace Tpetra {
     this->releaseViews ();
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::print (std::ostream &os) const
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
+  doTransferNew (const SrcDistObject& src,
+              CombineMode CM,
+              size_t numSameIDs,
+              const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs_,
+              const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs_,
+              const Teuchos::ArrayView<const LocalOrdinal>& remoteLIDs_,
+              const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs_,
+              Distributor &distor,
+              ReverseOption revOp)
+  {
+    using Teuchos::as;
+    using Kokkos::Compat::getArrayView;
+    using Kokkos::Compat::getConstArrayView;
+    using Kokkos::Compat::getKokkosViewDeepCopy;
+    using Kokkos::Compat::create_const_view;
+
+#ifdef HAVE_TPETRA_TRANSFER_TIMERS
+    Teuchos::TimeMonitor doXferMon (*doXferTimer_);
+#endif // HAVE_TPETRA_TRANSFER_TIMERS
+
+    // Convert arguments to Kokkos::View's (involves deep copy to device)
+    typedef Kokkos::View<const LocalOrdinal*, device_type> lo_const_view_type;
+    lo_const_view_type permuteToLIDs =
+      getKokkosViewDeepCopy<device_type> (permuteToLIDs_);
+    lo_const_view_type permuteFromLIDs =
+      getKokkosViewDeepCopy<device_type> (permuteFromLIDs_);
+    lo_const_view_type remoteLIDs =
+      getKokkosViewDeepCopy<device_type> (remoteLIDs_);
+    lo_const_view_type exportLIDs =
+      getKokkosViewDeepCopy<device_type> (exportLIDs_);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! checkSizes (src), std::invalid_argument,
+      "Tpetra::DistObject::doTransfer(): checkSizes() indicates that the "
+      "destination object is not a legal target for redistribution from the "
+      "source object.  This probably means that they do not have the same "
+      "dimensions.  For example, MultiVectors must have the same number of "
+      "rows and columns.");
+    KokkosClassic::ReadWriteOption rwo = KokkosClassic::ReadWrite;
+    if (CM == INSERT || CM == REPLACE) {
+      const size_t numIDsToWrite = numSameIDs +
+        as<size_t> (permuteToLIDs.size ()) +
+        as<size_t> (remoteLIDs.size ());
+      if (numIDsToWrite == this->getMap ()->getNodeNumElements ()) {
+        // We're overwriting all of our local data in the destination
+        // object, so a write-only view suffices.
+        //
+        // FIXME (mfh 10 Apr 2012) This doesn't make sense for a
+        // CrsMatrix with a dynamic graph.  INSERT mode could mean
+        // that we're adding new entries to the object, but we don't
+        // want to get rid of the old ones.
+        rwo = KokkosClassic::WriteOnly;
+      }
+    }
+    // Tell the source to create a read-only view of its data.  On a
+    // discrete accelerator such as a GPU, this brings EVERYTHING from
+    // device memory to host memory.
+    //
+    // FIXME (mfh 23 Mar 2012) By passing in the list of GIDs (or
+    // rather, local LIDs to send) and packet counts, createViews()
+    // could create a "sparse view" that only brings in the necessary
+    // data from device to host memory.
+    typedef DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> this_type;
+    const this_type* srcDistObj = dynamic_cast<const this_type*> (&src);
+    if (srcDistObj != NULL) {
+      srcDistObj->createViews ();
+    }
+
+    // Tell the target to create a view of its data.  Depending on
+    // rwo, this could be a write-only view or a read-and-write view.
+    // On a discrete accelerator such as a GPU, a write-only view only
+    // requires a transfer from host to device memory.  A
+    // read-and-write view requires a two-way transfer.  This has the
+    // same problem as createViews(): it transfers EVERYTHING, not
+    // just the necessary data.
+    //
+    // FIXME (mfh 23 Mar 2012) By passing in the list of GIDs (or
+    // rather, local LIDs into which to receive) and packet counts,
+    // createViewsNonConst() could create a "sparse view" that only
+    // transfers the necessary data.
+    this->createViewsNonConst (rwo);
+
+    if (numSameIDs + permuteToLIDs.size()) {
+#ifdef HAVE_TPETRA_TRANSFER_TIMERS
+      Teuchos::TimeMonitor copyAndPermuteMon (*copyAndPermuteTimer_);
+#endif // HAVE_TPETRA_TRANSFER_TIMERS
+      // There is at least one GID to copy or permute.
+      copyAndPermuteNew (src, numSameIDs, permuteToLIDs, permuteFromLIDs);
+    }
+
+    // The method may return zero even if the implementation actually
+    // does have a constant number of packets per LID.  However, if it
+    // returns nonzero, we may use this information to avoid
+    // (re)allocating num{Ex,Im}portPacketsPerLID_.  packAndPrepare()
+    // will set this to its final value.
+    //
+    // We only need this if CM != ZERO, but it has to be lifted out of
+    // that scope because there are multiple tests for CM != ZERO.
+    size_t constantNumPackets = this->constantNumberOfPackets ();
+
+    // We only need to pack communication buffers if the combine mode
+    // is not ZERO. A "ZERO combine mode" means that the results are
+    // the same as if we had received all zeros, and added them to the
+    // existing values. That means we don't need to communicate.
+    if (CM != ZERO) {
+      if (constantNumPackets == 0) {
+        Kokkos::Compat::realloc (numExportPacketsPerLID_, exportLIDs.size ());
+        Kokkos::Compat::realloc (numImportPacketsPerLID_, remoteLIDs.size ());
+      }
+
+      {
+#ifdef HAVE_TPETRA_TRANSFER_TIMERS
+        Teuchos::TimeMonitor packAndPrepareMon (*packAndPrepareTimer_);
+#endif // HAVE_TPETRA_TRANSFER_TIMERS
+        // Ask the source to pack data.  Also ask it whether there are a
+        // constant number of packets per element (constantNumPackets is
+        // an output argument).  If there are, constantNumPackets will
+        // come back nonzero.  Otherwise, the source will fill the
+        // numExportPacketsPerLID_ array.
+        packAndPrepareNew (src, exportLIDs, exports_, numExportPacketsPerLID_,
+                        constantNumPackets, distor);
+      }
+    }
+
+    // We don't need the source's data anymore, so it can let go of
+    // its views.  On an accelerator device with a separate memory
+    // space (like a GPU), this frees host memory, since device memory
+    // has the "master" version of the data.
+    if (srcDistObj != NULL) {
+      srcDistObj->releaseViews ();
+    }
+
+    // We only need to send data if the combine mode is not ZERO.
+    if (CM != ZERO) {
+      if (constantNumPackets != 0) {
+        // There are a constant number of packets per element.  We
+        // already know (from the number of "remote" (incoming)
+        // elements) how many incoming elements we expect, so we can
+        // resize the buffer accordingly.
+        const size_t rbufLen = remoteLIDs.size() * constantNumPackets;
+        if (as<size_t> (imports_.size()) != rbufLen) {
+          Kokkos::Compat::realloc (imports_, rbufLen);
+        }
+      }
+
+      // Create mirror views of [import|export]PacketsPerLID
+      typename Kokkos::View<size_t*,device_type>::HostMirror host_numExportPacketsPerLID = Kokkos::create_mirror_view (numExportPacketsPerLID_);
+      typename Kokkos::View<size_t*,device_type>::HostMirror host_numImportPacketsPerLID = Kokkos::create_mirror_view (numImportPacketsPerLID_);
+
+      // Copy numExportPacketsPerLID to host
+      Kokkos::deep_copy (host_numExportPacketsPerLID, numExportPacketsPerLID_);
+
+      // Do we need to do communication (via doPostsAndWaits)?
+      bool needCommunication = true;
+      if (revOp == DoReverse && ! isDistributed ()) {
+        needCommunication = false;
+      }
+      // FIXME (mfh 30 Jun 2013): Checking whether the source object
+      // is distributed requires a cast to DistObject.  If it's not a
+      // DistObject, then I'm not quite sure what to do.  Perhaps it
+      // would be more appropriate for SrcDistObject to have an
+      // isDistributed() method.  For now, I'll just assume that we
+      // need to do communication unless the cast succeeds and the
+      // source is not distributed.
+      else if (revOp == DoForward && srcDistObj != NULL &&
+               ! srcDistObj->isDistributed ()) {
+        needCommunication = false;
+      }
+
+      if (needCommunication) {
+        if (revOp == DoReverse) {
+#ifdef HAVE_TPETRA_TRANSFER_TIMERS
+          Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
+#endif // HAVE_TPETRA_TRANSFER_TIMERS
+          if (constantNumPackets == 0) { //variable num-packets-per-LID:
+            distor.doReversePostsAndWaits (create_const_view (host_numExportPacketsPerLID),
+                                           1,
+                                           host_numImportPacketsPerLID);
+            size_t totalImportPackets = 0;
+            for (view_size_type i = 0; i < numImportPacketsPerLID_.size(); ++i) {
+              totalImportPackets += host_numImportPacketsPerLID[i];
+            }
+            Kokkos::Compat::realloc (imports_, totalImportPackets);
+            distor.doReversePostsAndWaits (create_const_view (exports_),
+                                           getArrayView (host_numExportPacketsPerLID),
+                                           imports_,
+                                           getArrayView (host_numImportPacketsPerLID));
+          }
+          else {
+            distor.doReversePostsAndWaits (create_const_view (exports_),
+                                           constantNumPackets,
+                                           imports_);
+          }
+        }
+        else { // revOp == DoForward
+#ifdef HAVE_TPETRA_TRANSFER_TIMERS
+          Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
+#endif // HAVE_TPETRA_TRANSFER_TIMERS
+          if (constantNumPackets == 0) { //variable num-packets-per-LID:
+            distor.doPostsAndWaits (create_const_view (host_numExportPacketsPerLID), 1,
+                                    host_numImportPacketsPerLID);
+            size_t totalImportPackets = 0;
+            for (view_size_type i = 0; i < numImportPacketsPerLID_.size(); ++i) {
+              totalImportPackets += host_numImportPacketsPerLID[i];
+            }
+            Kokkos::Compat::realloc (imports_, totalImportPackets);
+            distor.doPostsAndWaits (create_const_view (exports_),
+                                    getArrayView (host_numExportPacketsPerLID),
+                                    imports_,
+                                    getArrayView (host_numImportPacketsPerLID));
+          }
+          else {
+            distor.doPostsAndWaits (create_const_view (exports_),
+                                    constantNumPackets,
+                                    imports_);
+          }
+        }
+
+        // Copy numImportPacketsPerLID to device
+        Kokkos::deep_copy (numImportPacketsPerLID_, host_numImportPacketsPerLID);
+
+        {
+#ifdef HAVE_TPETRA_TRANSFER_TIMERS
+          Teuchos::TimeMonitor unpackAndCombineMon (*unpackAndCombineTimer_);
+#endif // HAVE_TPETRA_TRANSFER_TIMERS
+          unpackAndCombineNew (remoteLIDs, imports_, numImportPacketsPerLID_,
+                            constantNumPackets, distor, CM);
+        }
+      }
+    } // if (CM != ZERO)
+
+    this->releaseViews ();
+  }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
+  void
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::print (std::ostream &os) const
   {
     using Teuchos::FancyOStream;
     using Teuchos::getFancyOStream;
@@ -557,23 +816,24 @@ namespace Tpetra {
     this->describe (*out, Teuchos::VERB_DEFAULT);
   }
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::createViews () const
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::createViews () const
   {}
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
   createViewsNonConst (KokkosClassic::ReadWriteOption /*rwo*/)
   {}
 
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Device>
   void
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Device> >::
   releaseViews () const
   {}
 
+/* These are provided in base DistObject template
 #define TPETRA_DISTOBJECT_INSTANT(SCALAR, LO, GO, NODE) \
   \
   template class DistObject< SCALAR , LO , GO , NODE >;
@@ -582,13 +842,8 @@ namespace Tpetra {
 #define TPETRA_DISTOBJECT_INSTANT_CHAR(LO, GO, NODE) \
   \
   template class DistObject< char , LO , GO , NODE >;
-
+*/
 
 } // namespace Tpetra
-
-// Include KokkosRefactor partial specialisation if enabled
-#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-#include "Tpetra_KokkosRefactor_DistObject_def.hpp"
-#endif
 
 #endif /* TPETRA_DISTOBJECT_DEF_HPP */

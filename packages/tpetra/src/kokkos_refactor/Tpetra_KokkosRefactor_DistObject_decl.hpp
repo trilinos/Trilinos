@@ -39,15 +39,22 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef TPETRA_DISTOBJECT_DECL_HPP
-#define TPETRA_DISTOBJECT_DECL_HPP
+#ifndef TPETRA_KOKKOS_REFACTOR_DISTOBJECT_DECL_HPP
+#define TPETRA_KOKKOS_REFACTOR_DISTOBJECT_DECL_HPP
 
+/* These are provided in base DistObject template
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
 #include "Tpetra_SrcDistObject.hpp"
+*/
 
+#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#include "KokkosCompat_View.hpp"
+#include "Kokkos_View.hpp"
+
+/* These are provided in base DistObject template
 // #ifndef HAVE_TPETRA_TRANSFER_TIMERS
 // #  define HAVE_TPETRA_TRANSFER_TIMERS 1
 // #endif // HAVE_TPETRA_TRANSFER_TIMERS
@@ -55,124 +62,24 @@
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
 #  undef HAVE_TPETRA_TRANSFER_TIMERS
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
-
+*/
 
 namespace Tpetra {
   /// \class DistObject
-  /// \brief Base class for distributed Tpetra objects that support data redistribution.
-  ///
-  /// DistObject is a base class for all Tpetra distributed global
-  /// objects, including CrsMatrix and MultiVector.  It provides the
-  /// basic mechanisms and interface specifications for importing and
-  /// exporting operations using Import and Export objects.
-  ///
-  /// \tparam LocalOrdinal The type of local IDs.  Same as Map's
-  ///   \c LocalOrdinal template parameter.  This should be an integer
-  ///   type, preferably signed.
-  ///
-  /// \tparam GlobalOrdinal The type of global IDs.  Same as Map's
-  ///   \c GlobalOrdinal template parameter.  Defaults to the same type
-  ///   as \c LocalOrdinal.  This should also be an integer type,
-  ///   preferably signed.
-  ///
-  /// \tparam Node Same as Map's \c Node template parameter.  Defaults
-  ///   to the default Kokkos Node type.
-  ///
-  /// \section Tpetra_DistObject_Summary Summary
-  ///
-  /// Most Tpetra users will only use this class' methods to perform
-  /// data redistribution for subclasses such as CrsMatrix,
-  /// MultiVector, and Vector.  DistObject provides four methods for
-  /// redistributing data: two versions of <tt>doImport()</tt>, and
-  /// two versions of <tt>doExport()</tt>.  Import operations
-  /// redistribute data from a nonoverlapping (one-to-one)
-  /// distribution to a possibly overlapping distribution.  Export
-  /// operations redistribute data from a possibly overlapping
-  /// distribution to a nonoverlapping (one-to-one) distribution.
-  /// Once you have precomputed a data redistribution plan (an Import
-  /// or Export object), you may use the plan to redistribute an input
-  /// object's data into this object, by calling one of these methods.
-  /// The input object of <tt>doImport()</tt> or <tt>doExport()</tt>
-  /// is always the "source" of the redistribution operation, which
-  /// sends the data.  The <tt>*this</tt> object is the target, which
-  /// receives and combines the data.  It has the distribution given
-  /// by <tt>this->getMap()</tt>.
-  ///
-  /// \section Tpetra_DistObject_FwdRev Forward or reverse redistribution modes
-  ///
-  /// Both Import and Export operations occur in two modes: forward
-  /// and reverse.  Forward mode is the usual case, where you are
-  /// calling a method with its matching plan type
-  /// (<tt>doImport()</tt> for an Import plan, or <tt>doExport()</tt>
-  /// for an Export plan).  In that case, the input DistObject must
-  /// have the same Map as the source Map of the plan, and the target
-  /// DistObject must have the same Map as the target Map of the plan.
-  /// Reverse mode is also possible, where you call a method with the
-  /// opposite plan type (<tt>doImport()</tt> for an Export plan, or
-  /// <tt>doExport()</tt> for an Import plan).  In that case, the
-  /// source DistObject's Map must be the same as the target Map of
-  /// the plan, and the target DistObject's Map must be the same as
-  /// the source Map of the plan.  If you call <tt>doImport()</tt>, we
-  /// still call this an Import operation, even if you are using an
-  /// Export plan in reverse.  Similarly, if you call
-  /// <tt>doExport()</tt>, we call this an Export operation.
-  ///
-  /// Most users will want to use forward mode.  However, reverse mode
-  /// is useful for some applications.  For example, suppose you are
-  /// solving a nonlinear partial differential equation using the
-  /// finite element method, with Newton's method for the nonlinear
-  /// equation.  When assembling into a vector, it is convenient and
-  /// efficient to do local assembly first into a vector with an
-  /// overlapping distribution, then do global assembly via forward
-  /// mode Export into a vector with a nonoverlapping distribution.
-  /// After the linear solve, you may want to bring the resulting
-  /// nonoverlapping distribution vector back to the overlapping
-  /// distribution for another update phase.  This would be a reverse
-  /// mode Import, using the precomputed Export object.
-  ///
-  /// Another use case for reverse mode is in CrsMatrix, for the
-  /// transpose version of distributed sparse matrix-vector multiply
-  /// ("mat-vec").  Non-transpose mat-vec (a function from the domain
-  /// Map to the range Map) does an Import to bring in the source
-  /// vector's data from the domain Map to the column Map of the
-  /// sparse matrix, and an Export (if necessary) to bring the results
-  /// from the row Map of the sparse matrix to the range Map.
-  /// Transpose mat-vec (a function from the range Map to the domain
-  /// Map) uses these precomputed Import and Export objects in reverse
-  /// mode: first the Export in reverse mode to Import the source
-  /// vector's data to the row Map, and then the Import in reverse
-  /// mode to Export the results to the domain Map.  Reverse mode lets
-  /// us reuse the precomputed data redistribution plans for the
-  /// transpose case.
-  ///
-  /// \section Tpetra_DistObject_ImplSubclass How to implement a subclass
-  ///
-  /// If you want to implement your own DistObject subclass, you
-  /// should start by implementing the four pure virtual methods:
-  /// checkSizes(), copyAndPermute(), packAndPrepare(), and
-  /// unpackAndCombine().  The implementation of doTransfer() includes
-  /// documentation that explains how DistObject uses those methods to
-  /// do data redistribution.
-  ///
-  /// If you are writing a DistObject class that uses Kokkos compute
-  /// buffers and aims to work for any Kokkos Node type, you should
-  /// also implement the three hooks that create and release views:
-  /// createViews(), createViewsNonConst(), and releaseViews().  The
-  /// default implementation of these hooks does nothing.  The
-  /// documentation of these methods explains different ways you might
-  /// choose to implement them.
-  ///
-  /// DistObject implements SrcDistObject, because we presume that if
-  /// an object can be the target of an Import or Export, it can also
-  /// be the source of an Import or Export.
+  /// \brief Base class for distributed Tpetra objects that support
+  ///   data redistribution.
   template <class Packet,
-            class LocalOrdinal = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
-  class DistObject : 
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Device>
+  class DistObject<Packet, LocalOrdinal, GlobalOrdinal,
+                   Kokkos::Compat::KokkosDeviceWrapperNode<Device> > :
     virtual public SrcDistObject,
     virtual public Teuchos::Describable {
   public:
+
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device>  Node;
+
     //! @name Typedefs
     //@{
 
@@ -187,6 +94,10 @@ namespace Tpetra {
     typedef GlobalOrdinal global_ordinal_type;
     //! The Kokkos Node type.
     typedef Node node_type;
+
+    //! The Kokkos Device type
+    typedef typename Node::device_type device_type;
+    typedef typename device_type::size_type view_size_type;
 
     //@}
     //! @name Constructors and destructor
@@ -469,6 +380,27 @@ namespace Tpetra {
                 Distributor &distor,
                 ReverseOption revOp);
 
+    virtual void
+    doTransferOld (const SrcDistObject& src,
+                CombineMode CM,
+                size_t numSameIDs,
+                const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
+                const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs,
+                const Teuchos::ArrayView<const LocalOrdinal> &remoteLIDs,
+                const Teuchos::ArrayView<const LocalOrdinal> &exportLIDs,
+                Distributor &distor,
+                ReverseOption revOp);
+    virtual void
+    doTransferNew (const SrcDistObject& src,
+                CombineMode CM,
+                size_t numSameIDs,
+                const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
+                const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs,
+                const Teuchos::ArrayView<const LocalOrdinal> &remoteLIDs,
+                const Teuchos::ArrayView<const LocalOrdinal> &exportLIDs,
+                Distributor &distor,
+                ReverseOption revOp);
+
     /// \name Methods implemented by subclasses and used by doTransfer().
     ///
     /// The doTransfer() method uses the subclass' implementations of
@@ -486,6 +418,9 @@ namespace Tpetra {
     /// \return True if they are compatible, else false.
     virtual bool
     checkSizes (const SrcDistObject& source) = 0;
+
+    /// \brief Whether lass implements old or new interface
+    virtual bool useNewInterface () { return false; }
 
     /// \brief Perform copies and permutations that are local to this process.
     ///
@@ -508,7 +443,13 @@ namespace Tpetra {
     copyAndPermute (const SrcDistObject& source,
                     size_t numSameIDs,
                     const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
-                    const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs) = 0;
+                    const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs) {}
+    virtual void
+    copyAndPermuteNew (
+      const SrcDistObject& source,
+      size_t numSameIDs,
+      const Kokkos::View<const LocalOrdinal*, device_type> &permuteToLIDs,
+      const Kokkos::View<const LocalOrdinal*, device_type> &permuteFromLIDs) {}
 
     /// \brief Perform any packing or preparation required for communication.
     ///
@@ -538,7 +479,15 @@ namespace Tpetra {
                     Teuchos::Array<Packet>& exports,
                     const Teuchos::ArrayView<size_t>& numPacketsPerLID,
                     size_t& constantNumPackets,
-                    Distributor &distor) = 0;
+                    Distributor &distor) {}
+    virtual void
+    packAndPrepareNew (
+      const SrcDistObject& source,
+      const Kokkos::View<const LocalOrdinal*, device_type> &exportLIDs,
+      Kokkos::View<Packet*, device_type> &exports,
+      const Kokkos::View<size_t*, device_type> &numPacketsPerLID,
+      size_t& constantNumPackets,
+      Distributor &distor) {}
 
     /// \brief Perform any unpacking and combining after communication.
     ///
@@ -567,7 +516,15 @@ namespace Tpetra {
                       const Teuchos::ArrayView<size_t> &numPacketsPerLID,
                       size_t constantNumPackets,
                       Distributor &distor,
-                      CombineMode CM) = 0;
+                      CombineMode CM) {}
+    virtual void
+    unpackAndCombineNew (
+      const Kokkos::View<const LocalOrdinal*, device_type> &importLIDs,
+      const Kokkos::View<const Packet*, device_type> &imports,
+      const Kokkos::View<size_t*, device_type> &numPacketsPerLID,
+      size_t constantNumPackets,
+      Distributor &distor,
+      CombineMode CM) {}
     //@}
 
     /// \brief Hook for creating a const view.
@@ -612,7 +569,8 @@ namespace Tpetra {
 
   private:
     //! Buffer into which packed data are imported (received from other processes).
-    Teuchos::Array<Packet> imports_;
+    Kokkos::View<packet_type*,device_type> imports_;
+    Teuchos::Array<Packet> imports_old_;
 
     /// \brief Number of packets to receive for each receive operation.
     ///
@@ -624,10 +582,13 @@ namespace Tpetra {
     /// (For example, MultiVector sets the constantNumPackets output
     /// argument of packAndPrepare() to the number of columns in
     /// the multivector.)
-    Teuchos::Array<size_t> numImportPacketsPerLID_;
+    Kokkos::View<size_t*,device_type> numImportPacketsPerLID_;
+    typename Kokkos::View<size_t*,device_type>::HostMirror host_numImportPacketsPerLID_;
+    Teuchos::Array<size_t> numImportPacketsPerLID_old_;
 
     //! Buffer from which packed data are exported (sent to other processes).
-    Teuchos::Array<Packet> exports_;
+    Kokkos::View<packet_type*,device_type> exports_;
+    Teuchos::Array<Packet> exports_old_;
 
     /// \brief Number of packets to send for each send operation.
     ///
@@ -639,7 +600,8 @@ namespace Tpetra {
     /// (For example, MultiVector sets the constantNumPackets output
     /// argument of packAndPrepare() to the number of columns in the
     /// multivector.)
-    Teuchos::Array<size_t> numExportPacketsPerLID_;
+    Kokkos::View<size_t*,device_type> numExportPacketsPerLID_;
+    Teuchos::Array<size_t> numExportPacketsPerLID_old_;
 
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
     Teuchos::RCP<Teuchos::Time> doXferTimer_;
@@ -648,9 +610,10 @@ namespace Tpetra {
     Teuchos::RCP<Teuchos::Time> doPostsAndWaitsTimer_;
     Teuchos::RCP<Teuchos::Time> unpackAndCombineTimer_;
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
+
   }; // class DistObject
 
-
+  /* These are provided in base DistObject template
   /// \brief Remove processes which contain no elements in this object's Map.
   ///
   /// \tparam DistObjectType A specialization of DistObject.
@@ -779,12 +742,8 @@ namespace Tpetra {
   template<class DistObjectType>
   void
   removeEmptyProcessesInPlace (Teuchos::RCP<DistObjectType>& input);
+  */
 
 } // namespace Tpetra
-
-// Include KokkosRefactor partial specialisation if enabled
-#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-#include "Tpetra_KokkosRefactor_DistObject_decl.hpp"
-#endif
 
 #endif /* TPETRA_DISTOBJECT_DECL_HPP */

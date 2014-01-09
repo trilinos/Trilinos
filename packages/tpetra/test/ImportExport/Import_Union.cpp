@@ -109,7 +109,7 @@ namespace {
     typedef Tpetra::Map<LO, GO, NT> map_type;
     typedef Tpetra::Import<LO, GO, NT> import_type;
     typedef Tpetra::Vector<double, LO, GO, NT> vector_type;
-    typedef typename Array<GO>::size_type size_type;
+    //    typedef typename Array<GO>::size_type size_type;
 
     out << "Tpetra::Import::setUnion test" << endl;
     OSTab tab1 (out);

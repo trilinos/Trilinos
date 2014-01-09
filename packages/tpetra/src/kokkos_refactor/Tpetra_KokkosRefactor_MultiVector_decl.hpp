@@ -45,11 +45,7 @@
 /*#include <Teuchos_DataAccess.hpp>
 #include <Teuchos_Range1D.hpp>
 #include "Tpetra_ConfigDefs.hpp"
-#if TPETRA_USE_KOKKOS_DISTOBJECT
-#include "Tpetra_DistObjectKA.hpp"
-#else
 #include "Tpetra_DistObject.hpp"
-#endif
 #include "Tpetra_ViewAccepter.hpp"
 #include <Kokkos_MultiVector.hpp>
 #include <Teuchos_BLAS_types.hpp>
@@ -57,6 +53,8 @@
 #include <Kokkos_DualView.hpp>
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 //#include <Tpetra_MultiVector.hpp>
+
+#include "Tpetra_KokkosRefactor_DistObject.hpp"
 
 namespace KokkosClassic {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -70,9 +68,7 @@ namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration of Vector, needed to prevent circular inclusions
-  namespace KokkosRefactor {
   template<class S, class LO, class GO, class N> class Vector;
-  }
 
   // forward declaration of Map
   template<class LO, class GO, class N> class Map;
@@ -331,11 +327,7 @@ namespace Tpetra {
            class GlobalOrdinal,
            class DeviceType>
   class MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > :
-#if TPETRA_USE_KOKKOS_DISTOBJECT
-    public DistObjectKA<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
-#else
     public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
-#endif
   {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>  Node;
   public:
@@ -353,12 +345,8 @@ namespace Tpetra {
 
     typedef Kokkos::DualView<scalar_type**,Kokkos::LayoutLeft,typename node_type::device_type> view_type;
 
-#if TPETRA_USE_KOKKOS_DISTOBJECT
-    typedef DistObjectKA<Scalar, LocalOrdinal, GlobalOrdinal, Node> DO;
-    typedef typename DO::device_type device_type;
-#else
     typedef DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> DO;
-#endif
+    typedef typename Node::device_type device_type;
 
     template <class S, class LO, class GO, class D>
     friend  MultiVector<S,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D> >
@@ -1072,16 +1060,18 @@ namespace Tpetra {
     //! Number of packets to send per LID
     virtual size_t constantNumberOfPackets () const;
 
-#if TPETRA_USE_KOKKOS_DISTOBJECT
+    /// \brief Whether lass implements old or new interface
+    virtual bool useNewInterface () { return true; }
+
     virtual void
-    copyAndPermute (
+    copyAndPermuteNew (
       const SrcDistObject& sourceObj,
       size_t numSameIDs,
       const Kokkos::View<const LocalOrdinal*, device_type> &permuteToLIDs,
       const Kokkos::View<const LocalOrdinal*, device_type> &permuteFromLIDs);
 
     virtual void
-    packAndPrepare (
+    packAndPrepareNew (
       const SrcDistObject& sourceObj,
       const Kokkos::View<const LocalOrdinal*, device_type> &exportLIDs,
       Kokkos::View<Scalar*, device_type> &exports,
@@ -1090,36 +1080,13 @@ namespace Tpetra {
       Distributor &distor);
 
     virtual void
-    unpackAndCombine (
+    unpackAndCombineNew (
       const Kokkos::View<const LocalOrdinal*, device_type> &importLIDs,
       const Kokkos::View<const Scalar*, device_type> &imports,
       const Kokkos::View<size_t*, device_type> &numPacketsPerLID,
       size_t constantNumPackets,
       Distributor &distor,
       CombineMode CM);
-#else
-    virtual void
-    copyAndPermute (const SrcDistObject& sourceObj,
-                    size_t numSameIDs,
-                    const ArrayView<const LocalOrdinal>& permuteToLIDs,
-                    const ArrayView<const LocalOrdinal>& permuteFromLIDs);
-
-    virtual void
-    packAndPrepare (const SrcDistObject& sourceObj,
-                    const ArrayView<const LocalOrdinal>& exportLIDs,
-                    Array<Scalar>& exports,
-                    const ArrayView<size_t>& numExportPacketsPerLID,
-                    size_t& constantNumPackets,
-                    Distributor& distor);
-
-    virtual void
-    unpackAndCombine (const ArrayView<const LocalOrdinal>& importLIDs,
-                      const ArrayView<const Scalar>& imports,
-                      const ArrayView<size_t>& numPacketsPerLID,
-                      size_t constantNumPackets,
-                      Distributor& distor,
-                      CombineMode CM);
-#endif
 
     void createViews () const;
     void createViewsNonConst (KokkosClassic::ReadWriteOption rwo);
@@ -1133,24 +1100,8 @@ namespace Tpetra {
 
     //@}
 
-#if TPETRA_USE_KOKKOS_DISTOBJECT
+    typename view_type::t_dev getKokkosView() const { return view_.d_view; }
 
-    Kokkos::View<const Scalar*, device_type, Kokkos::MemoryUnmanaged>
-    getKokkosView() const {
-      Teuchos::ArrayRCP<const Scalar> buff = MVT::getValues (lclMV_);
-      Kokkos::View<const Scalar*, device_type, Kokkos::MemoryUnmanaged> v(
-        buff.getRawPtr(), buff.size());
-      return v;
-    }
-    Kokkos::View<Scalar*, device_type, Kokkos::MemoryUnmanaged>
-    getKokkosViewNonConst() {
-      Teuchos::ArrayRCP<Scalar> buff = MVT::getValuesNonConst (lclMV_);
-      Kokkos::View<Scalar*, device_type, Kokkos::MemoryUnmanaged> v(
-        buff.getRawPtr(), buff.size());
-      return v;
-    }
-
-#endif
   }; // class MultiVector
 
   /// \brief Nonmember MultiVector constructor: make a MultiVector from a given Map.
