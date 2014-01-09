@@ -679,25 +679,29 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
   SubdomainCrsMatrix_->Import(*MatrixPtr, *tempImporter, Insert);
   SubdomainCrsMatrix_->FillComplete();
 
-  tempMap_.reset(new Epetra_Map(SubdomainCrsMatrix_->RowMap().NumGlobalElements(),
-                               SubdomainCrsMatrix_->RowMap().NumMyElements(),
-                               0, SubdomainCrsMatrix_->Comm()));
-  tempRangeMap_.reset(new Epetra_Map(SubdomainCrsMatrix_->OperatorRangeMap().NumGlobalElements(),
-                                    SubdomainCrsMatrix_->OperatorRangeMap().NumMyElements(),
-                                    0, SubdomainCrsMatrix_->Comm()));
-  tempDomainMap_.reset(new Epetra_Map(SubdomainCrsMatrix_->OperatorDomainMap().NumGlobalElements(),
-                                     SubdomainCrsMatrix_->OperatorDomainMap().NumMyElements(),
-                                     0, SubdomainCrsMatrix_->Comm()));
+  if (NumMpiProcsPerSubdomain_ > 1) {
+	tempMap_.reset(new Epetra_Map(SubdomainCrsMatrix_->RowMap().NumGlobalElements(),
+								  SubdomainCrsMatrix_->RowMap().NumMyElements(),
+								  0, SubdomainCrsMatrix_->Comm()));
+	tempRangeMap_.reset(new Epetra_Map(SubdomainCrsMatrix_->OperatorRangeMap().NumGlobalElements(),
+									   SubdomainCrsMatrix_->OperatorRangeMap().NumMyElements(),
+									   0, SubdomainCrsMatrix_->Comm()));
+	tempDomainMap_.reset(new Epetra_Map(SubdomainCrsMatrix_->OperatorDomainMap().NumGlobalElements(),
+										SubdomainCrsMatrix_->OperatorDomainMap().NumMyElements(),
+										0, SubdomainCrsMatrix_->Comm()));
 
-  SubdomainMatrixReindexer_.reset(new EpetraExt::CrsMatrix_Reindex(*tempMap_));
-  DomainVectorReindexer_.reset(new EpetraExt::MultiVector_Reindex(*tempDomainMap_));
-  RangeVectorReindexer_.reset(new EpetraExt::MultiVector_Reindex(*tempRangeMap_));
+	SubdomainMatrixReindexer_.reset(new EpetraExt::CrsMatrix_Reindex(*tempMap_));
+	DomainVectorReindexer_.reset(new EpetraExt::MultiVector_Reindex(*tempDomainMap_));
+	RangeVectorReindexer_.reset(new EpetraExt::MultiVector_Reindex(*tempRangeMap_));
 
-  ReindexedCrsMatrix_.reset(&((*SubdomainMatrixReindexer_)(*SubdomainCrsMatrix_)), false);
+	ReindexedCrsMatrix_.reset(&((*SubdomainMatrixReindexer_)(*SubdomainCrsMatrix_)), false);
 
-  MatrixPtr = &*ReindexedCrsMatrix_;
+	MatrixPtr = &*ReindexedCrsMatrix_;
 
-  Inverse_ = Teuchos::rcp( new T(&*ReindexedCrsMatrix_) );
+	Inverse_ = Teuchos::rcp( new T(&*ReindexedCrsMatrix_) );
+  } else {
+	Inverse_ = Teuchos::rcp( new T(&*SubdomainCrsMatrix_) );
+  }
 #else
   Inverse_ = Teuchos::rcp( new T(MatrixPtr) );
 #endif
@@ -1089,9 +1093,13 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     // process reordering
     if (!UseReordering_) {
 #ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
-      tempX_.reset(&((*RangeVectorReindexer_)(*OverlappingX)), false);
-      tempY_.reset(&((*DomainVectorReindexer_)(*OverlappingY)), false);
-      IFPACK_CHK_ERR(Inverse_->ApplyInverse(*tempX_,*tempY_));
+    	if (NumMpiProcsPerSubdomain_ > 1) {
+		  tempX_.reset(&((*RangeVectorReindexer_)(*OverlappingX)), false);
+		  tempY_.reset(&((*DomainVectorReindexer_)(*OverlappingY)), false);
+		  IFPACK_CHK_ERR(Inverse_->ApplyInverse(*tempX_,*tempY_));
+    	} else {
+  		  IFPACK_CHK_ERR(Inverse_->ApplyInverse(*OverlappingX, *OverlappingY));
+    	}
 #else
       IFPACK_CHK_ERR(Inverse_->ApplyInverse(*OverlappingX,*OverlappingY));
 #endif
