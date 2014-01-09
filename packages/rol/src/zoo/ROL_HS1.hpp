@@ -124,6 +124,12 @@ namespace ROL {
     Constraints_HS1() {
       x2_lo_ = -1.5;
     }
+
+    bool isFeasible( const Vector<Real> &x ) {  
+      Teuchos::RCP<const std::vector<Real> > ex =
+        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
+      return ((*ex)[1] >= this->x2_lo_);
+    }
      
     void project( Vector<Real> &x ) {
       Teuchos::RCP<std::vector<Real> > ex =

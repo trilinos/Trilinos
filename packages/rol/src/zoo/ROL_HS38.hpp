@@ -131,7 +131,20 @@ namespace ROL {
       x_lo_.resize(4,-10.0);
       x_up_.resize(4,10.0);
     }
-     
+    
+    bool isFeasible( const Vector<Real> &x ) {
+      Teuchos::RCP<const std::vector<Real> > ex =
+        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
+      bool val = true;
+      int  cnt = 1;
+      for ( int i = 0; i < 4; i++ ) {
+        if ( (*ex)[i] >= this->x_lo_[i] && (*ex)[i] <= this->x_up_[i] ) { cnt *= 1; }
+        else                                                            { cnt *= 0; }
+      }
+      if ( cnt == 0 ) { val = false; }
+      return val; 
+    }  
+ 
     void project( Vector<Real> &x ) {
       Teuchos::RCP<std::vector<Real> > ex =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(x)).getVector());

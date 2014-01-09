@@ -96,9 +96,31 @@ public:
     this->pruneActive(*tmp,g,x);
     v.axpy(-1.0,*tmp);
   }
+  
+  /** \brief Check if the vector, v, is feasible
+  */
+  virtual bool isFeasible( const Vector<Real> &v ) { return true; }
 
+  /** \brief Compute projected step P(x+v)-x.
+               v is the step vector
+               x is the optimization variables
+  */
+  void computeProjectedStep( Vector<Real> &v, const Vector<Real> &x ) { 
+    v.plus(x);
+    this->project(v);
+    v.axpy(-1.0,x);
+  }
+
+  /** \brief Turn on constraints 
+  */
   void activate(void)    { this->activated_ = true;  }
+
+  /** \brief Turn off constraints
+  */
   void deactivate(void)  { this->activated_ = false; }
+
+  /** \brief Check if constraints are on
+  */
   bool isActivated(void) { return this->activated_;  }
 
 }; // class Constraints

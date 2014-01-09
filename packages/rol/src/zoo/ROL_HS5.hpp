@@ -137,6 +137,13 @@ namespace ROL {
       (*ex)[1] = std::max(x_lo_[1],std::min(x_up_[1],(*ex)[1]));
     }
 
+    bool isFeasible( const Vector<Real> &x ) {
+      Teuchos::RCP<const std::vector<Real> > ex =
+        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
+      return ((*ex)[0] >= this->x_lo_[0] && (*ex)[1] >= this->x_lo_[1] && 
+              (*ex)[0] <= this->x_up_[0] && (*ex)[1] <= this->x_up_[1]);
+    } 
+
     void pruneActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x) {
       Teuchos::RCP<const std::vector<Real> > ex = 
         (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
