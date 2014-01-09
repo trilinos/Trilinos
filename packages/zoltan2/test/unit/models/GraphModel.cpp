@@ -207,10 +207,6 @@ void testMatrixAdapter(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
 
   // How many neighbor vertices are not on my process.
 
-  // we know GIDs are consecutive
-  int minLocalGID = rowMap->getMinGlobalIndex();
-  int maxLocalGID = rowMap->getMaxGlobalIndex();
-
   int *numNbors = new int [nLocalRows];
   int *numLocalNbors = new int [nLocalRows];
   bool *haveDiag = new bool [nLocalRows];
@@ -232,7 +228,9 @@ void testMatrixAdapter(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
       }
       else{
         gno_t gidVal = colMap->getGlobalElement(idx[j]);
-        if (gidVal >= minLocalGID && gidVal <= maxLocalGID){
+        if (rowMap->getLocalElement(gidVal) !=
+            Teuchos::OrdinalTraits<lno_t>::invalid()) {
+          // nbor is local to this process
           numLocalNbors[i]++;
           totalLocalNbors++;
         }
@@ -318,6 +316,7 @@ void testMatrixAdapter(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
   // We know model stores things in same order we gave it.
 
   if (idsAreConsecutive){
+    int minLocalGID = rowMap->getMinGlobalIndex();
     for (lno_t i=0; i < nLocalRows; i++){
       if (vertexGids[i] != minLocalGID + i) {
         fail = 1;
