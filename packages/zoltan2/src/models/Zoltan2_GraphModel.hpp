@@ -291,7 +291,7 @@ template <typename User> size_t computeLocalEdgeList(
     lno_t *lnos = new lno_t [numLocalEdges];
     env->localMemoryAssertion(__FILE__, __LINE__,numLocalEdges, lnos);
     for (size_t i=0; i < numLocalEdges; i++)
-      lnos[i] = i;
+      lnos[i] = allEdgeIds[i];
     edgeLocalIds = arcp(lnos, 0, numLocalEdges, true);
     offsets = allOffs;
     eWeights = allWeights;
@@ -901,9 +901,9 @@ template <typename User>
 
   numLocalGraphEdges_ = 0;
   int *pids = procArray.getRawPtr();
+  int me = comm_->getRank();
   for (size_t i=0; i < numLocalEdges_; i++)
-    if (pids[i] == comm_->getRank())
-      numLocalGraphEdges_++;
+    if (pids[i] == me) numLocalGraphEdges_++;
 
   // Vertex weights
 
@@ -1385,9 +1385,9 @@ template <typename User>
 
   numLocalGraphEdges_ = 0;
   int *pids = procArray.getRawPtr();
+  int me = comm_->getRank();
   for (lno_t i=0; i < numLocalEdges_; i++)
-    if (pids[i] == comm_->getRank())
-      numLocalGraphEdges_++;
+    if (pids[i] == me) numLocalGraphEdges_++;
 
   // Vertex weights
 
