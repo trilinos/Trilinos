@@ -92,7 +92,7 @@ public:
 
     itol = 0.0;
     Teuchos::RCP<Vector<Real> > v = x.clone();  
-    pObj.reducedPrecond(*v, *gnew, g, x, itol);
+    pObj.reducedPrecond(*v, *gnew, x, g, x, itol);
 
     Teuchos::RCP<Vector<Real> > p = x.clone(); 
     p->set(*v); 
@@ -102,7 +102,7 @@ public:
     }
 
     Teuchos::RCP<Vector<Real> > Hp = x.clone();
-    pObj.reducedHessVec(*Hp, *p, g, x, itol);
+    pObj.reducedHessVec(*Hp, *p, x, g, x, itol);
 
     iter = 0; 
     flag = 0;
@@ -130,7 +130,7 @@ public:
       }
 
       itol = 0.0;
-      pObj.reducedPrecond(*v, *gnew, g, x, itol);
+      pObj.reducedPrecond(*v, *gnew, x, g, x, itol);
       tmp  = gv;         
       gv   = v->dot(*gnew); 
       beta = gv/tmp;
@@ -141,7 +141,7 @@ public:
       if ( this->useInexact_ ) {
         itol = gtol/(this->maxit_ * gnorm); 
       }
-      pObj.reducedHessVec(*Hp, *p, g, x, itol);
+      pObj.reducedHessVec(*Hp, *p, x, g, x, itol);
     }
     iter++;
     if ( iter == this->maxit_ ) {
@@ -161,7 +161,7 @@ public:
     // Apply preconditioner to residual
     itol = 0.0;
     Teuchos::RCP<Vector<Real> > v = x.clone();  
-    pObj.reducedPrecond(*v, g, g, x, itol);
+    pObj.reducedPrecond(*v, g, x, g, x, itol);
 
     // Initialize direction p
     Teuchos::RCP<Vector<Real> > p = x.clone(); 
@@ -174,12 +174,12 @@ public:
 
     // Apply Hessian to residual
     Teuchos::RCP<Vector<Real> > Hv  = x.clone();
-    pObj.reducedHessVec(*Hv, *v, g, x, itol);
+    pObj.reducedHessVec(*Hv, *v, x, g, x, itol);
 
     // Apply Hessian to direction p
     Teuchos::RCP<Vector<Real> > Hp  = x.clone();
     Teuchos::RCP<Vector<Real> > MHp = x.clone();  
-    pObj.reducedHessVec(*Hp, *p, g, x, itol);
+    pObj.reducedHessVec(*Hp, *p, x, g, x, itol);
 
     // Initialize scalar quantities
     iter = 0; 
@@ -192,7 +192,7 @@ public:
 
     for (iter = 0; iter < this->maxit_; iter++) {
       itol = 0.0;
-      pObj.reducedPrecond(*MHp, *Hp, g, x, itol);
+      pObj.reducedPrecond(*MHp, *Hp, x, g, x, itol);
       kappa = Hp->dot(*MHp);
       if ( vHv <= 0.0 || kappa <= 0.0 ) { 
         flag = 2;
@@ -211,7 +211,7 @@ public:
       if ( this->useInexact_ ) {
         itol = gtol/(this->maxit_ * gnorm); 
       }
-      pObj.reducedHessVec(*Hv, *v, g, x, itol);
+      pObj.reducedHessVec(*Hv, *v, x, g, x, itol);
       tmp  = vHv;
       vHv  = Hv->dot(*v);
       beta = vHv/tmp;

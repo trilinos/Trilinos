@@ -201,7 +201,7 @@ public:
     }
     else if ( this->edesc_ == DESCENT_NEWTON || this->edesc_ == DESCENT_SECANT ) {
       Real tol = std::sqrt(ROL_EPSILON);
-      pObj.reducedInvHessVec(s,*(Step<Real>::state_->gradientVec),*(Step<Real>::state_->gradientVec),x,tol);
+      pObj.reducedInvHessVec(s,*(Step<Real>::state_->gradientVec),x,*(Step<Real>::state_->gradientVec),x,tol);
     }
     else if ( this->edesc_ == DESCENT_NONLINEARCG ) {
       this->nlcg_->run(s,*(Step<Real>::state_->gradientVec),x,obj);
