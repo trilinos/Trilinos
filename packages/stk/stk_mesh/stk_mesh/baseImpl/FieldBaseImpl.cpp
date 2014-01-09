@@ -89,6 +89,13 @@ void FieldBaseImpl::insert_restriction(
 {
   TraceIfWatching("stk::mesh::impl::FieldBaseImpl::insert_restriction", LOG_FIELD, m_ordinal);
 
+  const FieldRestrictionVector & existing_restrictions = restrictions();
+  for(size_t i=0; i<existing_restrictions.size(); ++i)
+  {
+      ThrowRequireMsg(existing_restrictions[i].entity_rank() == arg_entity_rank,
+                      "ERROR in FieldBaseImpl::insert_restriction: field: "<<this->name()<<", new restriction on entity_rank ("<<arg_entity_rank<<"), but this field already has a restriction for entity-rank ("<<existing_restrictions[i].entity_rank()<<")");
+  }
+
   FieldRestriction tmp( arg_entity_rank , arg_selector );
 
   {
