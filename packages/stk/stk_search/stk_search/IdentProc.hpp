@@ -9,9 +9,13 @@
 #ifndef STK_SEARCH_IDENTPROC_HPP
 #define STK_SEARCH_IDENTPROC_HPP
 
+#include <cstdlib>
 #include <iostream>
 #include <utility>
+
+#if STK_SEARCH_HAVE_MODERN_COMPILER
 #include <boost/type_traits.hpp>
+#endif
 
 namespace stk { namespace search {
 
@@ -56,18 +60,30 @@ private:
   std::pair<proc_type,ident_type> m_value;
 };
 
-template <typename Ident>
+
+// If you have a modern compiler, some lack of semantic safety (intent) can be
+// caught at compilation time.
+
+template <typename T>
 struct get_proc
 {
+#if STK_SEARCH_HAVE_MODERN_COMPILER
   typedef boost::false_type supported;
+#endif
+  int operator()(T const& id) const
+  {
+    std::cerr << "get_proc::operator()(..) called on unsupported type." << std::endl;
+    std::abort();
+    return -1;
+  }
 };
 
-#if 0
-// Expresses what SHOULD NOT BE DONE.
 template <typename T>
 struct get_proc<std::pair<T, int> >
 {
+#if STK_SEARCH_HAVE_MODERN_COMPILER
   typedef boost::false_type supported;
+#endif
   int operator()(std::pair<T, int> const& id) const
   {
     std::cerr << "get_proc::operator()(..) called on unsupported type." << std::endl;
@@ -75,12 +91,13 @@ struct get_proc<std::pair<T, int> >
     return -1;
   }
 };
-#endif
 
 template <typename Ident, typename Proc>
 struct get_proc< stk::search::IdentProc<Ident,Proc> >
 {
+#if STK_SEARCH_HAVE_MODERN_COMPILER
   typedef boost::true_type supported;
+#endif
   int operator()(stk::search::IdentProc<Ident,Proc> const& id) const
   {
     return id.proc();

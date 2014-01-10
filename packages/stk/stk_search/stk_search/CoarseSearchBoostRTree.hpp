@@ -332,9 +332,7 @@ int coarse_search_boost_rtree_gather_range( std::vector< std::pair<RangeBox,Rang
 
 
 template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
-typename boost::disable_if<boost::mpl::or_<typename get_proc<DomainIdent>::supported,
-                                           typename get_proc<RangeIdent>::supported> >::type
-coarse_search_boost_rtree_output_locally( std::vector< std::pair<DomainBox,DomainIdent> > const& local_domain,
+void coarse_search_boost_rtree_output_locally( std::vector< std::pair<DomainBox,DomainIdent> > const& local_domain,
                                           std::vector< std::pair<RangeBox,RangeIdent> > const& local_range,
                                           stk::ParallelMachine comm,
                                           std::vector<std::pair<DomainIdent, RangeIdent> >& output
@@ -379,9 +377,7 @@ coarse_search_boost_rtree_output_locally( std::vector< std::pair<DomainBox,Domai
 
 
 template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
-typename boost::enable_if< boost::mpl::and_<typename get_proc<DomainIdent>::supported,
-                                            typename get_proc<RangeIdent>::supported> >::type
-coarse_search_boost_rtree( std::vector< std::pair<DomainBox,DomainIdent> > const& local_domain,
+void coarse_search_boost_rtree( std::vector< std::pair<DomainBox,DomainIdent> > const& local_domain,
                                 std::vector< std::pair<RangeBox,RangeIdent> > const& local_range,
                                 stk::ParallelMachine comm,
                                 std::vector<std::pair<DomainIdent, RangeIdent> >& output,

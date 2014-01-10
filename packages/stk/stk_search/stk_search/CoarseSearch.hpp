@@ -37,9 +37,7 @@ std::ostream& operator<<(std::ostream &out, SearchMethod method)
 // intersecting range boxes from the entire distributed set.  NEEDS TO BE CALLED
 // WITH EXPLICIT TEMPLATE ARGUMENTS.
 template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
-typename boost::disable_if< boost::mpl::or_<typename get_proc<DomainIdent>::supported,
-                                            typename get_proc<RangeIdent>::supported> >::type
-coarse_search_nonIdentProc(
+void coarse_search_nonIdentProc(
                     std::vector<std::pair<DomainBox,DomainIdent> > const& domain,
                     std::vector<std::pair<RangeBox,RangeIdent> >   const& range,
                     SearchMethod                                          method,
@@ -63,7 +61,7 @@ coarse_search_nonIdentProc(
 
 // THIS MIGHT BE WHAT WE ACTUALLY WANT FOR THE INTERFACE.
 template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
-void coarse_search_nonIdentProc(
+void coarse_search(
                     std::vector<std::pair<DomainBox,DomainIdent> > const& domain,
                     std::vector<std::pair<RangeBox, RangeIdent> >  const& range,
                     SearchMethod                                          method,
@@ -82,9 +80,7 @@ void coarse_search_nonIdentProc(
 // with distributed range boxes associated with this processor rank via
 // get_proc<RangeIdent>(.).
 template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
-typename boost::enable_if< boost::mpl::and_<typename get_proc<DomainIdent>::supported,
-                                            typename get_proc<RangeIdent>::supported> >::type
-coarse_search( std::vector<std::pair<DomainBox,DomainIdent> > const& domain,
+void coarse_search( std::vector<std::pair<DomainBox,DomainIdent> > const& domain,
                std::vector<std::pair<RangeBox,RangeIdent> >   const& range,
                SearchMethod                                          method,
                stk::ParallelMachine                                  comm,
